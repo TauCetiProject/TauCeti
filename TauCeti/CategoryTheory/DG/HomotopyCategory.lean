@@ -42,6 +42,8 @@ preadditive and linear over the ground ring.
   Mathlib's `HomologicalComplex.homologyπ`.
 * `TauCeti.homologyMap_dgHomotopyClass`: a chain map of Hom complexes sends the class of `f` to the
   class of the image of `f`.
+* `TauCeti.DGHomotopyCategory.isZero_of_iff_dgId_mem_dgBoundaries`: an object is zero in the
+  homotopy category exactly when its identity is a coboundary.
 
 ## References
 
@@ -675,6 +677,21 @@ theorem homOf_comp {X Y Z : C} (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z)
     homOf R f hf ≫ homOf R g hg =
       homOf R (dgCompZero R f g) (dgCompZero_mem_dgCycles R hf hg) :=
   dgHomotopyComp_dgHomotopyClass R f g hf hg
+
+/-- If the differential of a degree-minus-one morphism `k` is minus the composite of `f` and `g`,
+then the composite of `f` and `g` vanishes in the homotopy category. -/
+theorem homOf_comp_eq_zero_of_dgDifferential_eq_neg {X Y Z : C} {f : DGHom R 0 X Y}
+    {g : DGHom R 0 Y Z} (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R Y Z)
+    {k : DGHom R (-1) X Z} (hk : dgDifferential R (-1) k = -dgComp R f g (add_zero 0)) :
+    homOf R f hf ≫ homOf R g hg = 0 := by
+  rw [homOf_comp, homOf_eq_zero_iff, mem_dgBoundaries, dgCompZero_def]
+  exact ⟨-k, by rw [map_neg, hk, neg_neg]⟩
+
+/-- An object is a zero object of the homotopy category exactly when it is **contractible**: its
+identity is the differential of a degree-minus-one endomorphism. -/
+theorem isZero_of_iff_dgId_mem_dgBoundaries (X : C) :
+    Limits.IsZero (of R X) ↔ dgId R X ∈ dgBoundaries R X X := by
+  rw [Limits.IsZero.iff_id_eq_zero, ← homOf_dgId, homOf_eq_zero_iff]
 
 end DGHomotopyCategory
 

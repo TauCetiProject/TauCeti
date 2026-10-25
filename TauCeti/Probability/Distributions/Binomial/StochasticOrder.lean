@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Binomial.Basic
 public import TauCeti.Probability.StochasticOrder
+import TauCeti.Probability.Distributions.PoissonBinomial.Count
 import TauCeti.Probability.Distributions.Uniform.Basic
 
 /-!
@@ -53,9 +54,10 @@ theorem cdf_map_cast_binomial_le_of_le_prob (n : ℕ) {p q : I} (hpq : p ≤ q) 
   have hlaw (r : I) :
       HasLaw (fun z : Fin n → ℝ ↦ (Finset.univ.filter fun i ↦ z i ≤ r).card)
         Bin(n, r) P := by
-    simpa only [Fintype.card_fin, hmass, Subtype.coe_eta, mem_Iic] using
-      (hasLaw_card_filter_mem_pi (ι := Fin n) (μ := uniformMeasure 0 1)
-        (s := Iic (r : ℝ)) measurableSet_Iic)
+    simpa only [P, poissonBinomialMeasure_const, Fintype.card_fin, hmass,
+      Subtype.coe_eta, mem_Iic] using
+      (hasLaw_card_filter_mem_pi (fun _ : Fin n ↦ uniformMeasure 0 1)
+        (s := fun _ ↦ Iic (r : ℝ)) (fun _ ↦ measurableSet_Iic))
   have hcast (r : I) : HasLaw (Nat.cast : ℕ → ℝ) Bin(ℝ, n, r) Bin(n, r) :=
     hasLaw_map (by fun_prop)
   apply ((hcast p).comp (hlaw p)).cdf_le_of_ae_le ((hcast q).comp (hlaw q)) _ x

@@ -58,6 +58,8 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   `ℂ`, so an identity between `ℂ`-linear or `ℂ`-bilinear maps may be checked on real vectors
   alone.
 * `TauCeti.finrank_realPoints`: the real points have the `ℝ`-dimension that `V` has over `ℂ`.
+* `TauCeti.finrank_selfAdjoint_submodule`: in particular, the self-adjoint elements of a complex
+  star module have the `ℝ`-dimension that the module has over `ℂ`.
 * `TauCeti.exists_one_tmul_add_I_tmul`: every element of `ℂ ⊗[ℝ] W` is `1 ⊗ₜ w₁ + I ⊗ₜ w₂`; this
   is what makes the lift injective.
 * `TauCeti.tmulConj_involutive`, `TauCeti.tmulConj_tmul` and `TauCeti.tmulConj_eq_self_iff`: the
@@ -296,6 +298,17 @@ value `0`. -/
 theorem finrank_realPoints (hK : Function.Involutive K) :
     finrank ℝ (realPoints K) = finrank ℂ V := by
   rw [← (realPointsEquiv hK).finrank_eq, Module.finrank_baseChange]
+
+/-- The self-adjoint elements of a complex star module have the `ℝ`-dimension that the module has
+over `ℂ`: they are the real points of the conjugation `star`. -/
+theorem finrank_selfAdjoint_submodule {A : Type*} [AddCommGroup A] [Module ℂ A] [StarAddMonoid A]
+    [StarModule ℂ A] : finrank ℝ (selfAdjoint.submodule ℝ A) = finrank ℂ A := by
+  let K : A →ₛₗ[starRingEnd ℂ] A := (starLinearEquiv ℂ (A := A)).toLinearMap
+  have h : selfAdjoint.submodule ℝ A = realPoints K := by
+    ext x
+    rw [mem_realPoints, LinearEquiv.coe_coe, starLinearEquiv_apply]
+    exact selfAdjoint.mem_iff (R := A)
+  rw [h, finrank_realPoints (K := K) star_star]
 
 /-! ### The conjugation of a complexification -/
 

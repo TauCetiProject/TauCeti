@@ -28,6 +28,9 @@ integrable `f` lives on a σ-finite set, and there the inner regular case applie
 
 ## Main statements
 
+* `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_of_restrict`: a function vanishing
+  wherever an a.e. finitely strongly measurable `f` does is a.e. strongly measurable once it is so
+  on the σ-finite set carrying `f`.
 * `ContinuousOn.aestronglyMeasurable_of_measure_ne_top`: a function continuous on a measurable set
   of finite measure is a.e. strongly measurable for the restriction of `μ` to that set.
 * `Continuous.aestronglyMeasurable_of_sigmaFinite`: a continuous function is a.e. strongly
@@ -35,12 +38,31 @@ integrable `f` lives on a σ-finite set, and there the inner regular case applie
 * `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul`: the product `f • g` of an
   a.e. finitely strongly measurable `f` (for instance an integrable one) and a continuous `g` is
   a.e. strongly measurable.
+* `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply`: a continuous family of
+  continuous linear maps `g` applied to an a.e. finitely strongly measurable `f`, for instance an
+  `Lᵖ` function with `p < ∞`, is a.e. strongly measurable.
 -/
 
 public section
 
 open MeasureTheory Set TopologicalSpace
 open scoped ENNReal
+
+/-- A function `u` that vanishes wherever an a.e. finitely strongly measurable `f` vanishes is a.e.
+strongly measurable as soon as it is a.e. strongly measurable on the σ-finite set
+`hf.sigmaFiniteSet`, outside which `f` vanishes almost everywhere. This reduces a.e. strong
+measurability of `u` to the σ-finite case. -/
+theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_of_restrict {α β γ : Type*}
+    {_ : MeasurableSpace α} {μ : Measure α} [TopologicalSpace β] [T2Space β] [Zero β]
+    [TopologicalSpace γ] [PseudoMetrizableSpace γ] [Zero γ] {f : α → β}
+    (hf : AEFinStronglyMeasurable f μ) {u : α → γ}
+    (hu : AEStronglyMeasurable u (μ.restrict hf.sigmaFiniteSet)) (h0 : ∀ x, f x = 0 → u x = 0) :
+    AEStronglyMeasurable u μ := by
+  rw [← Measure.restrict_univ (μ := μ), ← union_compl_self hf.sigmaFiniteSet,
+    aestronglyMeasurable_union_iff]
+  refine ⟨hu, (aestronglyMeasurable_const (b := (0 : γ))).congr ?_⟩
+  filter_upwards [hf.ae_eq_zero_compl] with x hx
+  exact (h0 x hx).symm
 
 variable {α β : Type*} [TopologicalSpace α] [MeasurableSpace α] [R1Space α] [BorelSpace α]
   [TopologicalSpace β] [PseudoMetrizableSpace β] {μ : Measure α} [μ.InnerRegularCompactLTTop]
@@ -82,11 +104,25 @@ measurable by `Continuous.aestronglyMeasurable_of_sigmaFinite`. -/
 theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul {𝕜 : Type*}
     [TopologicalSpace 𝕜] [T2Space 𝕜] [Zero 𝕜] [Zero β] [SMulWithZero 𝕜 β] [ContinuousSMul 𝕜 β]
     {f : α → 𝕜} (hf : AEFinStronglyMeasurable f μ) {g : α → β} (hg : Continuous g) :
-    AEStronglyMeasurable (fun x ↦ f x • g x) μ := by
-  rw [← Measure.restrict_univ (μ := μ), ← union_compl_self hf.sigmaFiniteSet,
-    aestronglyMeasurable_union_iff]
-  refine ⟨(AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
-      hf.ae_eq_mk⟩).smul hg.aestronglyMeasurable_of_sigmaFinite,
-    (aestronglyMeasurable_const (b := (0 : β))).congr ?_⟩
-  filter_upwards [hf.ae_eq_zero_compl] with x hx
-  simp [hx]
+    AEStronglyMeasurable (fun x ↦ f x • g x) μ :=
+  hf.aestronglyMeasurable_of_restrict
+    ((AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
+      hf.ae_eq_mk⟩).smul hg.aestronglyMeasurable_of_sigmaFinite)
+    fun x hx ↦ by simp [hx]
+
+/-- A continuous family `g` of continuous linear maps applied to an a.e. finitely strongly
+measurable function `f`, for instance an `Lᵖ` function with `p < ∞`, is a.e. strongly measurable,
+for a measure that is inner regular with respect to compact sets on sets of finite measure. As in
+`MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul`, no σ-finiteness of the measure
+and no second countability is needed. This gives the measurability of `x ↦ g x (f x)` for
+multiplication of `L²` functions by bounded continuous operator-valued functions. -/
+theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : α → E} (hf : AEFinStronglyMeasurable f μ) {g : α → E →L[𝕜] F}
+    (hg : Continuous g) : AEStronglyMeasurable (fun x ↦ g x (f x)) μ :=
+  hf.aestronglyMeasurable_of_restrict
+    ((ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).aestronglyMeasurable_comp₂
+      hg.aestronglyMeasurable_of_sigmaFinite
+      (AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
+        hf.ae_eq_mk⟩))
+    fun x hx ↦ by simp [hx]

@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
+public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Reading the `ℤ/2`-grading: base cases, exterior bases, and ordered products
@@ -25,6 +26,12 @@ is homogeneous of degree `l.length`, which is Mathlib's
 degree of each factor read off `CliffordAlgebra.ι_mem_evenOdd_one`. Reading it off by the parity of
 the length is what matters downstream.
 
+Once `2` is invertible, the two graded pieces are the eigenspaces of the grade involution: the
+even part is its fixed space and the odd part its `-1`-eigenspace. Mathlib proves one implication
+of each (`CliffordAlgebra.involute_eq_of_mem_even`, `CliffordAlgebra.involute_eq_of_mem_odd`) and
+leaves the converses as a TODO; they are recorded here. This is the form in which the grading is
+transported along maps commuting with the involution, such as extension of scalars.
+
 The coordinate basis of an exterior algebra is homogeneous for this grading: the basis vector
 indexed by `s` has degree `s.card`, and — over a nontrivial ring, where a basis vector is nonzero
 and the two graded pieces meet only in `0` — that degree is the *only* one it has. This statement
@@ -41,6 +48,8 @@ belongs to the grading API independently of any spin representation.
   of degree `n`, and `CliffordAlgebra.prod_map_ι_mem_evenOdd_zero_of_even_length` and
   `CliffordAlgebra.prod_map_ι_mem_evenOdd_one_of_odd_length` read that off in the even and the odd
   case.
+* `CliffordAlgebra.involute_eq_self_iff` and `CliffordAlgebra.involute_eq_neg_iff`: with `2`
+  invertible, the even and odd parts are the `±1`-eigenspaces of the grade involution.
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
   homogeneous of degree given by the cardinality of its index set, and
   `Module.Basis.exteriorAlgebra_mem_evenOdd_iff` says that this is the only degree it has.
@@ -99,6 +108,37 @@ theorem prod_map_ι_mem_evenOdd_one_of_odd_length {l : List M} (hlen : Odd l.len
   have h : (l.length : ZMod 2) = 1 := by
     rw [← ZMod.natCast_mod l.length 2, Nat.odd_iff.mp hlen, Nat.cast_one]
   exact h ▸ prod_map_ι_mem_evenOdd l
+
+/-! ### The graded pieces as eigenspaces of the grade involution -/
+
+section Involute
+
+/-- Every Clifford element is the sum of an even and an odd element. -/
+private theorem exists_add_eq (x : CliffordAlgebra Q) :
+    ∃ e ∈ evenOdd Q 0, ∃ o ∈ evenOdd Q 1, e + o = x :=
+  Submodule.mem_sup.mp ((evenOdd_isCompl Q).sup_eq_top ▸ Submodule.mem_top)
+
+variable [Invertible (2 : R)]
+
+/-- **The even part is the fixed space of the grade involution** once `2` is invertible. Mathlib's
+`CliffordAlgebra.involute_eq_of_mem_even` is the reverse implication. -/
+theorem involute_eq_self_iff {x : CliffordAlgebra Q} : involute x = x ↔ x ∈ evenOdd Q 0 := by
+  refine ⟨fun hx => ?_, involute_eq_of_mem_even⟩
+  obtain ⟨e, he, o, ho, rfl⟩ := exists_add_eq x
+  rw [map_add, involute_eq_of_mem_even he, involute_eq_of_mem_odd ho] at hx
+  have h2 : (2 : R) • o = 0 := by linear_combination (norm := module) -hx
+  simpa [(isUnit_of_invertible (2 : R)).smul_eq_zero.mp h2] using he
+
+/-- **The odd part is the `-1`-eigenspace of the grade involution** once `2` is invertible.
+Mathlib's `CliffordAlgebra.involute_eq_of_mem_odd` is the reverse implication. -/
+theorem involute_eq_neg_iff {x : CliffordAlgebra Q} : involute x = -x ↔ x ∈ evenOdd Q 1 := by
+  refine ⟨fun hx => ?_, involute_eq_of_mem_odd⟩
+  obtain ⟨e, he, o, ho, rfl⟩ := exists_add_eq x
+  rw [map_add, involute_eq_of_mem_even he, involute_eq_of_mem_odd ho] at hx
+  have h2 : (2 : R) • e = 0 := by linear_combination (norm := module) hx
+  simpa [(isUnit_of_invertible (2 : R)).smul_eq_zero.mp h2] using ho
+
+end Involute
 
 end CliffordAlgebra
 

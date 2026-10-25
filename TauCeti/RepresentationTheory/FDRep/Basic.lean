@@ -1,0 +1,477 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Category.FGModuleCat.Abelian
+public import Mathlib.RingTheory.Finiteness.Small
+public import Mathlib.RepresentationTheory.Character
+public import Mathlib.RepresentationTheory.Rep.Res
+public import TauCeti.RepresentationTheory.Subrepresentation
+
+/-!
+# Finite-dimensional representations
+
+This file records how the forgetful functor `FDRep R G ⥤ Rep R G` preserves module-finiteness,
+finrank and characters. These facts let results proved for representation carriers transfer back to
+`FDRep`, in particular in `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`. In the
+same spirit it records that rebundling the representation an object carries returns that object,
+which is the identification a construction phrased as `FDRep.of ρ` needs in order to be read as a
+statement about the object it started from.
+
+`FDRep.forget₂Rep` supplies the canonical forgetful functor over any ring, extending Mathlib's
+commutative-ring instance with the same underlying construction. It preserves addition of
+intertwiners over any ring, by `FDRep.forget₂_additive`.
+
+It also records the character of a trivial representation, the constant `finrank`, in both the
+`Representation` and the `FDRep.of` spellings in which consumers meet it.
+
+An object of `FDRep k G` carries a module in the universe of `k`, so `FDRep.of` accepts a
+representation only when its carrier already lies there. A module-finite carrier is however always
+*equivalent* to one that does, because it is spanned by finitely many vectors over `k`;
+`FDRep.ofShrink` performs that transport, and the lemmas beside it say that the transport changes
+neither the dimension nor the character. Only the character transfer needs `k` to be a field, `k`
+being a commutative ring throughout otherwise.
+
+Finally it records the structural properties of the character that Mathlib's
+`RepresentationTheory/Character.lean` leaves out beside `FDRep.char_iso` and `FDRep.char_tensor`:
+the character is **additive on biproducts** (and, unbundled, on products of representations and on
+complementary subrepresentations), the
+character of the **tensor unit** is the constant function `1`, and the character is **constant on
+the cosets of its kernel**. The first two are what
+is still missing before the character can be read as a ring homomorphism out of the representation
+ring, `TauCeti.repRingCharacter`; the last is the elementary half of the kernel API whose analytic
+half, over `ℂ`, is `TauCeti/RepresentationTheory/CharacterTable/Kernel.lean`. Beside it, and needing
+no characters at all, the **common kernel of a family** of representations is registered as a normal
+subgroup.
+
+It also records the constructor `LinearEquiv.toFDRepIso`, which turns an equivariant linear
+equivalence into an isomorphism of `FDRep R G`: the `FDRep` counterpart of Mathlib's `Rep.mkIso`,
+with the equivariance condition read pointwise on the underlying linear maps rather than as an
+equation of morphisms of `FGModuleCat R`, and its converse `FDRep.isoToEquiv`, which reads an
+isomorphism of `FDRep R G` as an equivalence of the carried representations, so that invariants
+of `Representation.Equiv` apply to isomorphic objects.
+
+## Main definitions
+
+* `FDRep.ofShrink`: a module-finite representation on a carrier in an arbitrary universe, as an
+  object of `FDRep k G`.
+* `LinearEquiv.toFDRepIso`: an isomorphism in `FDRep R G` from an equivariant linear
+  equivalence.
+* `FDRep.isoToEquiv`: the equivalence of representations underlying an isomorphism in
+  `FDRep R G`.
+
+## Main statements
+
+* `Representation.char_trivial`: the character of a trivial representation is the dimension of its
+  carrier, whence `FDRep.character_of_trivial` for the trivial representation on `k` itself.
+* `Representation.char_prod`: the character is additive on products of representations, the
+  unbundled counterpart of `FDRep.char_biprod`.
+* `Subrepresentation.char_add_eq_of_isCompl`: the character is additive on complementary
+  subrepresentations.
+* `FDRep.character_eq_zero_of_finrank_intertwiningMap_eq_zero`: a representation without nonzero
+  equivariant endomorphisms has character zero.
+* `FDRep.forget₂Rep`: forgetting finite generation over any coefficient ring.
+* `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
+* `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
+* `FDRep.character_forget₂_obj`: forgetting does not change the character.
+* `MonoidHom.forget₂_map_actionRes`: restriction of intertwiners commutes with forgetting
+  finite-dimensionality.
+* `FDRep.character_actionRes`: restricting an action along a monoid homomorphism pulls back its
+  character.
+* `FDRep.character_of`: bundling a representation with `FDRep.of` does not change its character.
+* `FDRep.character_ρ`: the character of the carried representation is the character of the
+  object.
+* `FDRep.forget₂_additive`: forgetting is an additive functor, and `FDRep.forget₂_obj_tensor`:
+  it takes a tensor product to the tensor product of the forgotten objects, on the nose.
+* `FDRep.hom_hom_hom_comm`: a morphism intertwines the actions, read on the underlying linear
+  maps.
+* `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`: the actions on the tensor unit and on a tensor
+  product, read on the underlying linear maps.
+* `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
+* `FDRep.ofShrinkEquiv`: `FDRep.ofShrink ρ` carries a representation equivalent to `ρ`, whence
+  `FDRep.finrank_ofShrink` and `FDRep.character_ofShrink`.
+* `FDRep.char_biprod`: the character is additive on biproducts.
+* `FDRep.char_tensorUnit`: the character of the tensor unit is the constant function `1`.
+* `FDRep.char_mul_of_mem_ker_left`: the character is constant on the cosets of its kernel.
+* `FDRep.normal_iInf_ker`: the common kernel of a family of representations is a normal subgroup.
+-/
+
+public section
+
+universe u v w
+
+namespace Representation
+
+/-- **The character of a trivial representation is the dimension of its carrier**: every group
+element acts as the identity, whose trace is that dimension. -/
+@[simp]
+theorem char_trivial {k : Type u} {G : Type v} {V : Type w} [Field k] [Monoid G] [AddCommGroup V]
+    [Module k V] [FiniteDimensional k V] (g : G) :
+    (trivial k G V).character g = Module.finrank k V := by
+  have hone : trivial k G V g = 1 :=
+    LinearMap.ext fun v => by rw [trivial_apply, Module.End.one_apply]
+  rw [character, hone, LinearMap.trace_one]
+
+/-- **The character is additive on products of representations.** This is the unbundled counterpart
+of `FDRep.char_biprod`, and it is what reads a splitting `ρ ≃ ρ₁ × ρ₂` -- the shape
+`TauCeti.Subrepresentation.equivProdOfIsCompl` produces -- off the two characters. -/
+@[simp]
+theorem char_prod {k : Type u} {G : Type v} {V W : Type*} [Field k] [Monoid G]
+    [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+    [AddCommGroup W] [Module k W] [FiniteDimensional k W]
+    (ρ : Representation k G V) (σ : Representation k G W) (g : G) :
+    (ρ.prod σ).character g = ρ.character g + σ.character g := by
+  have hg : (ρ.prod σ) g = LinearMap.prodMap (ρ g) (σ g) := rfl
+  rw [character, character, character, hg]
+  exact LinearMap.trace_prodMap' (ρ g) (σ g)
+
+end Representation
+
+namespace Subrepresentation
+
+/-- **The character is additive on complementary subrepresentations**: if `ρ₁` and `ρ₂` are
+complementary subrepresentations of `ρ`, the characters of the representations they carry add up
+to the character of `ρ`. This is `Representation.char_prod` read through the splitting
+`Subrepresentation.equivProdOfIsCompl`. -/
+@[simp]
+theorem char_add_eq_of_isCompl {k : Type u} {G : Type v} {V : Type w} [Field k] [Monoid G]
+    [AddCommGroup V] [Module k V] [FiniteDimensional k V] {ρ : Representation k G V}
+    {ρ₁ ρ₂ : Subrepresentation ρ} (h : IsCompl ρ₁ ρ₂) :
+    ρ₁.toRepresentation.character + ρ₂.toRepresentation.character = ρ.character := by
+  funext g
+  rw [Pi.add_apply, ← Representation.char_prod, Representation.char_iso (equivProdOfIsCompl h)]
+
+end Subrepresentation
+
+namespace FDRep
+
+open CategoryTheory
+
+/-- Forgetting finite generation of a representation over any ring.
+
+This uses the same construction as Mathlib's `FDRep` forgetful instance, whose coefficient
+assumption is currently `CommRing`. The lower priority keeps that instance selected over
+commutative rings; the two functors agree definitionally. -/
+instance (priority := 100) forget₂Rep {R : Type u} [Ring R] {G : Type v} [Monoid G] :
+    HasForget₂ (FDRep R G) (Rep R G) where
+  forget₂ := (forget₂ (FGModuleCat R) (ModuleCat R)).mapAction G ⋙ Rep.ActionToRep R G
+
+/-- **The character of the trivial one-dimensional representation is constantly `1`**, that
+dimension being `1`. This is the form in which the trivial character enters a pairing or a
+Frobenius reciprocity computation, both of which are phrased for objects of `FDRep k G`. -/
+@[simp]
+theorem character_of_trivial {k : Type u} {G : Type v} [Field k] [Monoid G] (g : G) :
+    (FDRep.of (Representation.trivial k G k)).character g = 1 := by
+  rw [FDRep.character, FDRep.of_ρ']
+  -- the carrier of `FDRep.of ρ` is the module that `ρ` acts on, here `k` itself
+  exact (Representation.char_trivial g).trans (by simp)
+
+/-- The character of a representation restricted along a monoid homomorphism is the pullback of
+its character along that homomorphism. -/
+@[simp]
+theorem character_actionRes {k : Type u} {G : Type v} {H : Type w} [Field k] [Monoid G]
+    [Monoid H] (V : FDRep k G) (phi : H →* G) (h : H) :
+    FDRep.character ((Action.res (FGModuleCat k) phi).obj V) h = V.character (phi h) :=
+  (rfl)
+
+/-- Restriction of an intertwiner commutes with forgetting finite generation. -/
+theorem _root_.MonoidHom.forget₂_map_actionRes {k : Type u} [Ring k]
+    {H : Type v} {K : Type w} [Monoid H] [Monoid K]
+    (f : H →* K) {A B : FDRep k K} (g : A ⟶ B) :
+    (forget₂ (FDRep k H) (Rep k H)).map ((Action.res (FGModuleCat k) f).map g) =
+      (Rep.resFunctor f).map ((forget₂ (FDRep k K) (Rep k K)).map g) :=
+  rfl
+
+/-- Forgetting finite generation keeps the finite-generation instance on the carrier. -/
+instance moduleFinite_forget₂_obj {R : Type u} {G : Type v} [Ring R] [Monoid G]
+    (A : FDRep R G) : Module.Finite R ((forget₂ (FDRep R G) (Rep R G)).obj A) :=
+  inferInstanceAs (Module.Finite R A.V)
+
+/-- Forgetting finite-dimensionality does not change the dimension of the carrier. -/
+@[simp]
+theorem finrank_forget₂_obj {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (A : FDRep R G) :
+    Module.finrank R ((forget₂ (FDRep R G) (Rep R G)).obj A) = Module.finrank R A :=
+  rfl
+
+/-- Forgetting finite-dimensionality does not change the character of the carrier. -/
+@[simp]
+theorem character_forget₂_obj {k : Type u} {G : Type v} [Field k] [Monoid G] (A : FDRep k G)
+    (g : G) : ((forget₂ (FDRep k G) (Rep k G)).obj A).ρ.character g = A.character g := by
+  rw [FDRep.character, Representation.character, FDRep.forget₂_ρ]
+  -- The remaining `rfl` only identifies the two names of the single underlying module, the same
+  -- definitional identification that lets `FDRep.forget₂_ρ` be stated at all.
+  rfl
+
+/-- The character of the representation carried by an object of `FDRep k G` is the character of
+that object. -/
+@[simp]
+theorem character_ρ {k : Type u} {G : Type v} [Field k] [Monoid G] (A : FDRep k G) (g : G) :
+    Representation.character A.ρ g = A.character g :=
+  rfl
+
+/-- Bundling a finite-dimensional representation with `FDRep.of` does not change its character. -/
+@[simp]
+theorem character_of {k : Type u} {G : Type v} {V : Type u} [Field k] [Monoid G]
+    [AddCommGroup V] [Module k V] [FiniteDimensional k V] (rho : Representation k G V) :
+    (FDRep.of rho).character = rho.character :=
+  rfl
+
+/-- Rebundling the representation carried by an object of `FDRep R G` returns that object. -/
+@[simp]
+theorem of_ρ_eq_self {R : Type u} {G : Type v} [CommRing R] [Monoid G] (A : FDRep R G) :
+    FDRep.of A.ρ = A := (rfl)
+
+/-- **Forgetting finite generation is an additive functor**: `forget₂ (FDRep R G) (Rep R G)`
+preserves sums of intertwiners over any ring. It lets additive constructions on `Rep R G`, such as
+induction in `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`, be recognized through
+the forgetful functor. -/
+instance forget₂_additive {R : Type u} {G : Type v} [Ring R] [Monoid G] :
+    (forget₂ (FDRep R G) (Rep R G)).Additive where
+  -- The composite of `mapAction` and `Rep.ActionToRep` keeps the underlying linear maps, so
+  -- preservation of addition is definitional.
+  map_add := by intros; rfl
+
+/-- Forgetting finite generation preserves scalar multiplication of intertwiners. -/
+instance forget₂_linear {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
+    Functor.Linear R (forget₂ (FDRep R G) (Rep R G)) where
+  -- As for additivity, the forgetful functor keeps the underlying linear map.
+  map_smul := by intros; rfl
+
+open MonoidalCategory in
+/-- **Forgetting finite-dimensionality preserves the tensor product on the nose.**  The monoidal
+structure of `FDRep R G` is that of `FGModuleCat R` with the diagonal action, and the monoidal
+structure of `FGModuleCat R` is that of `ModuleCat R` on a carrier that happens to be finite, so
+the two sides are the same object rather than isomorphic ones.
+
+Deliberately not a `simp` lemma: it is an equation between *objects* of `Rep R G`, which has no
+business in the global `simp` set. It is used through `CategoryTheory.eqToIso`, where the
+definitional equality it records is too deep for the unifier to find on its own. -/
+theorem forget₂_obj_tensor {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) :
+    (forget₂ (FDRep R G) (Rep R G)).obj (X ⊗ Y) =
+      (forget₂ (FDRep R G) (Rep R G)).obj X ⊗ (forget₂ (FDRep R G) (Rep R G)).obj Y := (rfl)
+
+/-- **A morphism of `FDRep R G` intertwines the two actions**, read on the underlying linear maps:
+`CategoryTheory.Action.Hom.comm` with the two layers of bundling, by morphisms of `FGModuleCat R`
+and of `ModuleCat R`, stripped away. -/
+theorem hom_hom_hom_comm {R : Type u} {G : Type v} [CommRing R] [Monoid G] {X Y : FDRep R G}
+    (φ : X ⟶ Y) (g : G) : φ.hom.hom.hom ∘ₗ X.ρ g = Y.ρ g ∘ₗ φ.hom.hom.hom := by
+  simpa using congrArg (fun t : X.V ⟶ Y.V => t.hom.hom) (φ.comm g)
+
+open MonoidalCategory in
+/-- **The tensor unit of `FDRep R G` carries the trivial action**, read on the underlying linear
+maps: this is `CategoryTheory.Action.tensorUnit_ρ` stated for `FDRep.ρ` rather than for
+`Action.ρ`, the `FDRep` counterpart of Mathlib's `Rep.tensorUnit_ρ`. -/
+theorem tensorUnit_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (g : G) :
+    (𝟙_ (FDRep R G)).ρ g = LinearMap.id := (rfl)
+
+open MonoidalCategory in
+/-- **`G` acts diagonally on a tensor product in `FDRep R G`**, read on the underlying linear
+maps: this is `CategoryTheory.Action.tensor_ρ` stated for `FDRep.ρ` rather than for `Action.ρ`,
+the `FDRep` counterpart of Mathlib's `Rep.tensor_ρ`. -/
+theorem tensor_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) (g : G) :
+    (X ⊗ Y).ρ g = TensorProduct.map (X.ρ g) (Y.ρ g) := (rfl)
+
+section Shrink
+
+variable {k : Type u} {G : Type v} {V : Type w} [CommRing k] [Monoid G] [AddCommGroup V]
+  [Module k V] [Module.Finite k V] (ρ : Representation k G V)
+
+/-- **A module-finite representation as an object of `FDRep k G`**, whatever universe its carrier
+lives in. A module-finite `k`-module is `Small.{u}` for `k : Type u`, so the carrier may be
+replaced by `Shrink V` and the action conjugated across; `FDRep.ofShrinkEquiv` compares the result
+with `ρ`. -/
+noncomputable def ofShrink : FDRep k G :=
+  have : Small.{u} V := Module.Finite.small k V
+  FDRep.of ((Shrink.linearEquiv k V).symm.conjRingEquiv.toMonoidHom.comp ρ)
+
+/-- The representation carried by `FDRep.ofShrink ρ` is equivalent to `ρ`: shrinking the carrier
+loses nothing. -/
+noncomputable def ofShrinkEquiv : Representation.Equiv (ofShrink ρ).ρ ρ := by
+  have : Small.{u} V := Module.Finite.small k V
+  apply Representation.Equiv.mk (Shrink.linearEquiv k V)
+  intro g
+  ext x
+  simp [ofShrink]
+
+/-- Shrinking the carrier does not change the dimension. -/
+@[simp]
+theorem finrank_ofShrink : Module.finrank k (ofShrink ρ) = Module.finrank k V := by
+  have : Small.{u} V := Module.Finite.small k V
+  exact LinearEquiv.finrank_eq (Shrink.linearEquiv k V)
+
+end Shrink
+
+section ShrinkCharacter
+
+variable {k : Type u} {G : Type v} {V : Type w} [Field k] [Monoid G] [AddCommGroup V]
+  [Module k V] [FiniteDimensional k V] (ρ : Representation k G V)
+
+/-- Shrinking the carrier does not change the character: the shrunk representation is equivalent
+to the original one, by `FDRep.ofShrinkEquiv`. -/
+@[simp]
+theorem character_ofShrink (g : G) : (ofShrink ρ).character g = ρ.character g :=
+  congrFun (Representation.char_iso (ofShrinkEquiv ρ)) g
+
+end ShrinkCharacter
+
+section Biproduct
+
+open CategoryTheory Limits
+
+variable {k : Type u} {G : Type v} [Field k] [Monoid G]
+
+/-- The trace of `ρ g` cut down to a retract: if `p ∘ i` is the identity of `X`, then the trace of
+`ρ g` composed with the idempotent `i ∘ p` is the character of `X`.
+
+This is the one computation behind `FDRep.char_biprod`: cyclicity of the trace moves `p` past
+`ρ g ∘ i`, equivariance of `i` moves `ρ g` past it in the other direction, and what is left is
+`p ∘ i = 𝟙` applied to `X.ρ g`. -/
+private theorem trace_comp_of_retraction {X B : FDRep k G} (i : X ⟶ B) (p : B ⟶ X)
+    (h : i ≫ p = 𝟙 X) (g : G) :
+    LinearMap.trace k B ((B.ρ g ∘ₗ i.hom.hom.hom) ∘ₗ p.hom.hom.hom) = X.character g := by
+  -- the retraction `h`, read through the two layers of bundling the way `FDRep.hom_hom_hom_comm`
+  -- reads the equivariance of `i`; here `simp` also rewrites the underlying map of `𝟙 X`
+  have hpi : p.hom.hom.hom ∘ₗ i.hom.hom.hom = LinearMap.id := by
+    simpa using congrArg (fun t : X ⟶ X => t.hom.hom.hom) h
+  rw [LinearMap.trace_comp_comm', ← hom_hom_hom_comm i g, ← LinearMap.comp_assoc, hpi]
+  simp [FDRep.character]
+
+/-- **The character is additive on biproducts.** Together with `FDRep.char_iso` and
+`FDRep.char_tensor` this is what makes the character a ring homomorphism out of the representation
+ring; see `TauCeti.repRingCharacter`.
+
+The proof splits the identity of `X ⊞ Y` as the sum of the two idempotents
+`biprod.inl ∘ biprod.fst` and `biprod.inr ∘ biprod.snd` (`CategoryTheory.Limits.biprod.total`) and
+evaluates the trace of `ρ g` against each summand with `FDRep.trace_comp_of_retraction`. -/
+@[simp]
+theorem char_biprod (X Y : FDRep k G) : (X ⊞ Y).character = X.character + Y.character := by
+  ext g
+  have htot : (biprod.inl : X ⟶ X ⊞ Y).hom.hom.hom ∘ₗ (biprod.fst : X ⊞ Y ⟶ X).hom.hom.hom
+      + (biprod.inr : Y ⟶ X ⊞ Y).hom.hom.hom ∘ₗ (biprod.snd : X ⊞ Y ⟶ Y).hom.hom.hom
+      = LinearMap.id := by
+    have h := congrArg (fun t : (X ⊞ Y) ⟶ (X ⊞ Y) => t.hom.hom.hom)
+      (biprod.total (X := X) (Y := Y))
+    simp only [Action.id_hom] at h
+    exact h
+  have hsplit : (X ⊞ Y).ρ g
+      = ((X ⊞ Y).ρ g ∘ₗ (biprod.inl : X ⟶ X ⊞ Y).hom.hom.hom)
+          ∘ₗ (biprod.fst : X ⊞ Y ⟶ X).hom.hom.hom
+        + ((X ⊞ Y).ρ g ∘ₗ (biprod.inr : Y ⟶ X ⊞ Y).hom.hom.hom)
+          ∘ₗ (biprod.snd : X ⊞ Y ⟶ Y).hom.hom.hom := by
+    rw [LinearMap.comp_assoc, LinearMap.comp_assoc, ← LinearMap.comp_add, htot,
+      LinearMap.comp_id]
+  rw [FDRep.character, hsplit, map_add,
+    trace_comp_of_retraction biprod.inl biprod.fst biprod.inl_fst,
+    trace_comp_of_retraction biprod.inr biprod.snd biprod.inr_snd, Pi.add_apply]
+
+end Biproduct
+
+section TensorUnit
+
+open CategoryTheory MonoidalCategory
+
+/-- **The character of the tensor unit of `FDRep k G` is the constant function `1`**, the unit
+being the trivial representation on `k` itself. Beside `FDRep.char_tensor` this is what makes the
+character multiplicative out of the representation ring, see `TauCeti.repRingCharacter`. -/
+@[simp]
+theorem char_tensorUnit (k : Type u) (G : Type v) [Field k] [Monoid G] :
+    (𝟙_ (FDRep k G)).character = 1 := by
+  ext g
+  -- the two sides are the same object, not merely isomorphic ones: `Action.instMonoidalCategory`
+  -- takes the unit of `Action V G` to be the unit of `V` with the trivial action, and the unit of
+  -- `FGModuleCat k` is `k` itself, which is what `FDRep.of` bundles here
+  have hunit : 𝟙_ (FDRep k G) = FDRep.of (Representation.trivial k G k) := rfl
+  rw [hunit, Pi.one_apply, character_of_trivial]
+
+end TensorUnit
+
+section Kernel
+
+variable {k : Type u} {G : Type v} [Field k] [Group G]
+
+/-- **A character is constant on the cosets of its kernel**: an element acting as the identity may
+be deleted from a character value. This is an algebraic identity, so it holds over any field. The
+right-handed form is this one composed with `FDRep.char_mul_comm`. -/
+@[simp]
+theorem char_mul_of_mem_ker_left (V : FDRep k G) {g : G} (hg : g ∈ V.ρ.ker) (h : G) :
+    V.character (g * h) = V.character h := by
+  simp only [character, map_mul, MonoidHom.mem_ker.1 hg, one_mul]
+
+end Kernel
+
+section Zero
+
+variable {k : Type u} {G : Type v} [Field k] [Monoid G]
+
+open _root_.Representation in
+/-- A representation of dimension zero, recognised by its zero-dimensional space of equivariant
+endomorphisms, has character zero. -/
+theorem character_eq_zero_of_finrank_intertwiningMap_eq_zero (C : FDRep k G)
+    (hC : Module.finrank k (IntertwiningMap C.ρ C.ρ) = 0) : C.character = 0 := by
+  have : Subsingleton C := by
+    by_contra hC'
+    rw [not_subsingleton_iff_nontrivial] at hC'
+    obtain ⟨v, hv⟩ := exists_ne (0 : C)
+    have hid : IntertwiningMap.id C.ρ ≠ 0 := fun h0 =>
+      hv (by simpa using congrArg (fun φ : IntertwiningMap C.ρ C.ρ => φ v) h0)
+    exact (Module.finrank_pos_iff_exists_ne_zero.mpr ⟨_, hid⟩).ne' hC
+  funext g
+  rw [← FDRep.character_ρ, Representation.character, Subsingleton.elim (C.ρ g) 0, map_zero,
+    Pi.zero_apply]
+
+end Zero
+
+section CommonKernel
+
+variable {ι : Type*} {k : Type u} {G : Type v} [CommRing k] [Group G]
+
+/-- **The common kernel of a family of representations is a normal subgroup.** Each kernel is
+normal, and Mathlib's `Subgroup.normal_iInf_normal` passes that to the infimum; what is added here
+is the registration as an instance, that lemma taking its hypothesis as an explicit argument, so
+that the normality of a common kernel is available to instance search. Nothing here is analytic or
+character-theoretic; over `ℂ` the common kernel is a locus of character equations by
+`FDRep.coe_iInf_ker` (`TauCeti/RepresentationTheory/CharacterTable/Kernel.lean`). -/
+instance normal_iInf_ker (W : ι → FDRep k G) : (⨅ i, (W i).ρ.ker).Normal :=
+  Subgroup.normal_iInf_normal fun _ => inferInstance
+
+end CommonKernel
+
+section IsoToEquiv
+
+variable {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+
+/-- **The equivalence of representations underlying an isomorphism in `FDRep R G`**: the linear
+equivalence `FDRep.isoToLinearEquiv` intertwines the two actions, by `FDRep.Iso.conj_ρ`.  This is
+the `FDRep` counterpart of `Representation.equivOfIso` for `Rep`, and the converse of
+`LinearEquiv.toFDRepIso`. -/
+noncomputable def isoToEquiv {V W : FDRep R G} (i : V ≅ W) : Representation.Equiv V.ρ W.ρ :=
+  .mk (isoToLinearEquiv i) fun g => LinearMap.ext fun v => by
+    simp [Iso.conj_ρ i g, LinearEquiv.conj_apply]
+
+@[simp]
+theorem toLinearEquiv_isoToEquiv {V W : FDRep R G} (i : V ≅ W) :
+    (isoToEquiv i).toLinearEquiv = isoToLinearEquiv i :=
+  (rfl)
+
+end IsoToEquiv
+
+end FDRep
+
+namespace TauCeti
+
+open CategoryTheory
+
+/-- **An isomorphism in `FDRep R G` from an equivariant linear equivalence.** This is
+`CategoryTheory.Action.mkIso` for `FDRep R G`, with the commutation condition stated pointwise on
+the underlying linear maps instead of as an equation of morphisms of `FGModuleCat R`. -/
+noncomputable def _root_.LinearEquiv.toFDRepIso {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    {X Y : FDRep R G} (e : X ≃ₗ[R] Y)
+    (he : ∀ (g : G) (x : X), e (X.ρ g x) = Y.ρ g (e x)) : X ≅ Y :=
+  Action.mkIso e.toFGModuleCatIso fun g =>
+    FGModuleCat.hom_ext (by simpa using LinearMap.ext (he g))
+
+end TauCeti

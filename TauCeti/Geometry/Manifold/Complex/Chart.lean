@@ -28,9 +28,10 @@ such as the elementary symmetric atlas of its symmetric powers or the local mult
 holomorphic map.
 
 The same argument shows that a map between complex curves that is holomorphic near a point has an
-analytic representative in any charts of the maximal atlases at the point and its image. It follows
-that a holomorphic map between complex curves is `C^n` for every `n`. The complex inverse function
-theorem also shows that the inverse of a holomorphic homeomorphism of complex curves is
+analytic representative in any charts of the maximal atlases at the point and its image. (That such
+a map is `C^n` for every `n` holds on complex manifolds of any finite dimension; see
+`MDifferentiable.contMDiff` in `TauCeti.Geometry.Manifold.Complex.Analytic`.) The complex inverse
+function theorem also shows that the inverse of a holomorphic homeomorphism of complex curves is
 holomorphic, and that a homeomorphism from an open subset of a complex curve onto an open subset of
 `ℂ` is a chart of the maximal atlas as soon as its inverse is holomorphic.
 
@@ -42,7 +43,6 @@ holomorphic, and that a homeomorphism from an open subset of a complex curve ont
 * `TauCeti.analyticAt_chart_comp_comp_symm`: a map holomorphic near `x` has an analytic
   representative in any charts of the maximal atlases at `x` and `f x`;
   `TauCeti.analyticAt_chartAt_comp_comp_chartAt_symm` is the case of the preferred charts.
-* `MDifferentiable.contMDiff`: a holomorphic map between complex curves is `C^n` for every `n`.
 * `IsHomeomorph.mdifferentiable_symm`: the inverse of a holomorphic homeomorphism between complex
   curves is holomorphic.
 * `TauCeti.mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE`: Riemann's removable singularity
@@ -133,17 +133,6 @@ theorem analyticAt_chartAt_comp_comp_chartAt_symm
 end PreferredCharts
 
 /-! ### Regularity consequences -/
-
-/-- A holomorphic map between complex curves is `C^n` for every `n`, including `n = ω`. -/
-theorem _root_.MDifferentiable.contMDiff [IsManifold 𝓘(ℂ) 1 X]
-    [IsManifold 𝓘(ℂ) 1 Y] {n : ℕ∞ω} (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) :
-    ContMDiff 𝓘(ℂ) 𝓘(ℂ) n f := by
-  intro x
-  rw [contMDiffAt_iff]
-  refine ⟨hf.continuous.continuousAt, ?_⟩
-  simpa only [mfld_simps, contDiffWithinAt_univ, Function.comp_def] using
-    (analyticAt_chartAt_comp_comp_chartAt_symm (x := x)
-      (.of_forall fun y ↦ hf y)).contDiffAt (n := n)
 
 /-- The inverse of a holomorphic homeomorphism between complex curves is holomorphic. -/
 theorem _root_.IsHomeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X]

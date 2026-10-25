@@ -492,6 +492,13 @@ theorem modelPoint_modelIso_inv_toTotal :
     c.modelPoint hP ≫ c.modelIso.inv ≫ c.toTotal = (c.baseIso.inv ≫ c.baseMap) ≫ P := by
   simp [modelPoint]
 
+/-- The projective model of the equation of a chart, mapped to `X` through `modelIso` and `toTotal`,
+is the base change of `π` along `Spec c.ring ≅ c.base ⟶ S`. -/
+theorem isPullback_modelIso_inv_toTotal : IsPullback (c.modelIso.inv ≫ c.toTotal)
+    c.equation.projModelOver π (c.baseIso.inv ≫ c.baseMap) :=
+  c.isPullback.of_iso c.modelIso (.refl _) c.baseIso (.refl _) (by simp) c.modelIso_over.symm
+    (by simp) (by simp)
+
 /-- The zero section of the projective model, carried back to `X`, is the restriction of the
 section `zero` to the base of the chart. -/
 @[reassoc]
@@ -506,6 +513,14 @@ theorem projModelZero_modelIso_inv_toTotal :
 theorem modelPoint_zero (hzero : zero ≫ π = 𝟙 S) :
     c.modelPoint hzero = c.equation.projModelZero := by
   simp [modelPoint, c.modelIso_zero]
+
+/-- The model point of a section `Q` that differs from a section `P` at every point differs from
+the model point of `P` at every point. -/
+theorem modelPoint_apply_ne_modelPoint {Q : S ⟶ X} (hQ : Q ≫ π = 𝟙 S) (h : ∀ s, Q s ≠ P s)
+    (s : Spec c.ring) : c.modelPoint hQ s ≠ c.modelPoint hP s := fun hs ↦
+  h ((c.baseIso.inv ≫ c.baseMap) s) (by
+    simpa only [← Scheme.Hom.comp_apply, modelPoint_modelIso_inv_toTotal] using
+      congrArg (c.modelIso.inv ≫ c.toTotal) hs)
 
 /-- The model point of a section `P` missing the section `zero` at every point misses the zero
 section of the projective model at every point. -/
@@ -578,21 +593,16 @@ structure EllipticCurveGeom (S : Scheme.{u}) where
 
 attribute [instance] EllipticCurveGeom.smooth EllipticCurveGeom.proper
 
-namespace EllipticCurveGeom
+attribute [reassoc (attr := simp)] EllipticCurveGeom.zero_comp
 
-/-- The zero section of an elliptic curve is a section of its structure morphism: the field
-`zero_comp`, as a `simp` lemma. -/
-@[reassoc (attr := simp)]
-theorem zero_comp_structureMap {S : Scheme.{u}} (E : EllipticCurveGeom S) :
-    E.zero ≫ E.structureMap = 𝟙 S :=
-  E.zero_comp
+namespace EllipticCurveGeom
 
 /-- The zero section of an elliptic curve is a closed immersion, being a section of the separated
 structure morphism. -/
 instance isClosedImmersion_zero {S : Scheme.{u}} (E : EllipticCurveGeom S) :
     IsClosedImmersion E.zero := by
   have : IsClosedImmersion (E.zero ≫ E.structureMap) := by
-    rw [zero_comp_structureMap]
+    rw [E.zero_comp]
     infer_instance
   exact .of_comp E.zero E.structureMap
 
@@ -606,7 +616,7 @@ theorem left_apply_mem_range_zero_iff {S : Scheme.{u}} {E : EllipticCurveGeom S}
   have hx : E.structureMap (x.left z) = Z.hom z := by
     rw [← Scheme.Hom.comp_apply]
     simpa using congr($(Over.w x) z)
-  rw [← hx, ← hs, ← Scheme.Hom.comp_apply E.zero, zero_comp_structureMap]
+  rw [← hx, ← hs, ← Scheme.Hom.comp_apply E.zero, E.zero_comp]
   rfl
 
 /-- **Meeting the zero section is a closed condition.** For an over-morphism `x` from a scheme

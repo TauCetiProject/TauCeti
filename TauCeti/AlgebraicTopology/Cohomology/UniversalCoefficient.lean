@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
-public import TauCeti.Algebra.Homology.PrincipalIdealRing
+public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Naturality
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
@@ -14,12 +14,15 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 /-!
 # The universal coefficient theorem for singular cohomology
 
-Let `k` be a principal ideal domain, for instance `ℤ`, let `R` be a projective `k`-module, for
-instance `k` itself, and let `M` be any `k`-module.  For a topological space `X`, the singular
-chain modules `Cₙ(X; R) = ⨁ R` are projective (`SSet.projective_chainComplex_X`).  Over a
-principal ideal domain the cycles of such a complex are then free and split off its terms
-(`TauCeti.Algebra.Homology.PrincipalIdealRing`).  These are the hypotheses of the algebraic
-universal coefficient sequence (`TauCeti.Algebra.Homology.UniversalCoefficient.Basic`), so
+Let `k` be a hereditary commutative ring, expressed by requiring every `k`-module to have
+projective dimension at most one. This holds for principal ideal domains, for instance `ℤ`
+(`ModuleCat.hasProjectiveDimensionLE_one_of_isPrincipalIdealRing`). Let `R` be a projective
+`k`-module, for instance `k` itself, and let `M` be any `k`-module. For a topological space `X`,
+the singular chain modules `Cₙ(X; R) = ⨁ R` are projective (`SSet.projective_chainComplex_X`).
+Their cycles are then projective and split off the terms
+(`TauCeti.Algebra.Homology.HomologicalComplex.ProjectiveDimension`). These are the hypotheses
+of the algebraic universal coefficient sequence
+(`TauCeti.Algebra.Homology.UniversalCoefficient.Basic`), so
 
 `0 ⟶ Ext¹(Hₙ(X; R), M) ⟶ Hⁿ⁺¹(X; R, M) ⟶ Hom(Hₙ₊₁(X; R), M) ⟶ 0`
 
@@ -67,6 +70,7 @@ is an isomorphism `Hⁿ(X; R, M) ≃ₗ[k] Hom(Hₙ(X; R), M)` in every degree
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 3.1, Theorem 3.2.
+* C. Weibel, *An Introduction to Homological Algebra*, Section 3.6.
 -/
 
 public section
@@ -114,13 +118,13 @@ lemma singularKroneckerEquivOfProjectiveHomology_apply (n : ℕ)
 
 end ProjectiveHomology
 
-section PrincipalIdealDomain
+section Hereditary
 
-variable {k : Type w} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k]
+variable {k : Type w} [CommRing k] [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1]
   (X : TopCat.{w}) (R M : ModuleCat.{w} k) [Module.Projective k R]
 
 /-- **The `Ext` term of the universal coefficient sequence** of singular cohomology over a
-principal ideal domain, the `k`-linear map `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)`.  It is the
+hereditary commutative ring, the `k`-linear map `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)`.  It is the
 algebraic map `TauCeti.ChainComplex.extToHomology` of the singular chain complex: an extension
 class represented by a morphism `β : Bₙ ⟶ M` out of the singular boundaries goes to the class of
 the cocycle `Cₙ₊₁(X; R) ⟶ Bₙ ⟶ M`. -/
@@ -150,14 +154,15 @@ lemma singularExtToCohomology_extClass_comp_mk₀ (n : ℕ)
       (X.singularCochainComplex R k M).homologyπ (n + 1) φ :=
   TauCeti.ChainComplex.extToHomology_extClass_comp_mk₀ (n + 1) n β φ hφ
 
-/-- **Injectivity in the universal coefficient sequence**: over a principal ideal domain, the map
+/-- **Injectivity in the universal coefficient sequence**: over a hereditary commutative ring,
+the map
 `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)` is injective. -/
 theorem singularExtToCohomology_injective (n : ℕ) :
     Function.Injective (X.singularExtToCohomology R M n) :=
   TauCeti.ChainComplex.extToHomology_injective rfl
 
-/-- **Exactness in the middle of the universal coefficient sequence**: over a principal ideal
-domain, a class in `Hⁿ⁺¹(X; R, M)` evaluates to zero on `Hₙ₊₁(X; R)` exactly when it comes from
+/-- **Exactness in the middle of the universal coefficient sequence**: over a hereditary commutative
+ring, a class in `Hⁿ⁺¹(X; R, M)` evaluates to zero on `Hₙ₊₁(X; R)` exactly when it comes from
 `Ext¹(Hₙ(X; R), M)`. -/
 theorem exact_singularExtToCohomology_singularKronecker (n : ℕ) :
     Function.Exact (X.singularExtToCohomology R M n)
@@ -166,7 +171,7 @@ theorem exact_singularExtToCohomology_singularKronecker (n : ℕ) :
   exact TauCeti.ChainComplex.exact_extToHomology_kronecker rfl
 
 /-- **The splitting of the universal coefficient sequence** of singular cohomology over a
-principal ideal domain: a `k`-linear right inverse `Hom(Hₙ(X; R), M) →ₗ[k] Hⁿ(X; R, M)` of the
+hereditary commutative ring: a `k`-linear right inverse `Hom(Hₙ(X; R), M) →ₗ[k] Hⁿ(X; R, M)` of the
 Kronecker map.  It sends `g` to the class of the cocycle `Cₙ(X; R) ⟶ Zₙ ⟶ Hₙ(X; R) ⟶ M`, through
 a chosen retraction of the inclusion of the singular cycles, and need not be natural in `X`. -/
 def singularKroneckerSection (n : ℕ) :
@@ -182,14 +187,15 @@ lemma singularKronecker_singularKroneckerSection (n : ℕ)
   rw [singularKronecker_def]
   exact TauCeti.ChainComplex.kronecker_kroneckerSection (X := (toSSet.obj X).chainComplex R) n g
 
-/-- **Surjectivity in the universal coefficient sequence**: over a principal ideal domain, every
+/-- **Surjectivity in the universal coefficient sequence**: over a hereditary commutative ring,
+every
 morphism `Hₙ(X; R) ⟶ M` is the evaluation of a class in `Hⁿ(X; R, M)`. -/
 theorem singularKronecker_surjective (n : ℕ) :
     Function.Surjective (X.singularKronecker (R := R) (M := M) k n) :=
   fun g ↦ ⟨X.singularKroneckerSection R M n g, X.singularKronecker_singularKroneckerSection R M n g⟩
 
 /-- **The splitting of the universal coefficient sequence** of singular cohomology over a
-principal ideal domain: a `k`-linear equivalence
+hereditary commutative ring: a `k`-linear equivalence
 `Hⁿ⁺¹(X; R, M) ≃ₗ[k] Ext¹(Hₙ(X; R), M) × Hom(Hₙ₊₁(X; R), M)` whose second component is the
 Kronecker map (`TopCat.singularUniversalCoefficientEquiv_apply_snd`) and whose inverse restricts
 to `TopCat.singularExtToCohomology` on the first factor
@@ -236,7 +242,7 @@ lemma singularExtToCohomology_naturality {Y : TopCat.{w}} (f : X ⟶ Y) (n : ℕ
       TopCat.singularCohomologyMap f (n + 1) (Y.singularExtToCohomology R M n e) :=
   TauCeti.ChainComplex.extToHomology_naturality (SSet.chainComplexMap (toSSet.map f) R) (n + 1) n e
 
-end PrincipalIdealDomain
+end Hereditary
 
 end TopCat
 

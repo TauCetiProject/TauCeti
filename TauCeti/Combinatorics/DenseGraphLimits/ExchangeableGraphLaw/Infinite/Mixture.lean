@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Correspondence
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Measurable
-import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # Exchangeable laws on infinite graphs are integrals of joint sampling laws
@@ -71,8 +70,8 @@ theorem exchangeableGraphLawEquivInfinite_mixtureExchangeableLaw_law
     (exchangeableGraphLawEquivInfinite (mixtureExchangeableLaw P)).law =
       (P : Measure (GraphonSpace Ω μ)).bind infiniteSampleLawOnSpace := by
   refine SimpleGraph.measure_ext_of_map_restrictFin fun n => ?_
-  rw [TauCeti.MeasureTheory.map_bind measurable_infiniteSampleLawOnSpace.aemeasurable
-    (SimpleGraph.measurable_restrictFin n)]
+  rw [Measure.map_bind measurable_infiniteSampleLawOnSpace.aemeasurable
+    (SimpleGraph.measurable_restrictFin n).aemeasurable]
   simp_rw [infiniteSampleLawOnSpace_map_restrictFin]
   rw [exchangeableGraphLawEquivInfinite_law_map_restrictFin, mixtureExchangeableLaw_law]
 
@@ -112,8 +111,8 @@ theorem bind_map_graphonSpace_mk_infiniteSampleLawOnSpace (ν : Measure T) {W : 
     (hW : AEMeasurable (fun t => (SeparationQuotient.mk (W t) : GraphonSpace Ω μ)) ν) :
     (ν.map fun t => SeparationQuotient.mk (W t)).bind infiniteSampleLawOnSpace =
       ν.bind fun t => infiniteSampleLaw (W t) := by
-  rw [TauCeti.MeasureTheory.bind_map hW measurable_infiniteSampleLawOnSpace.aemeasurable]
-  simp only [Function.comp_def, infiniteSampleLawOnSpace_mk]
+  rw [Measure.bind_map hW measurable_infiniteSampleLawOnSpace.aemeasurable]
+  simp only [infiniteSampleLawOnSpace_mk]
 
 /-- **The mixing measure of a random graphon.** If an exchangeable law on infinite graphs is the
 mixture, against a probability measure `ν`, of the joint sampling laws of a family `W` of graphons

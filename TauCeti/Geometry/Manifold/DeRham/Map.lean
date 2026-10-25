@@ -18,6 +18,11 @@ induces a contravariant map on the de Rham complex and on de Rham cohomology. Th
 the class of a closed form to the class of its pullback, preserves identity maps, and reverses
 composition.
 
+Pullback also defines a cochain map of de Rham complexes, `TauCeti.deRhamComplex.map`, which
+induces the map on cohomology (`TauCeti.deRhamComplex.homologyMap_map`). It is stated for
+manifolds whose model vector spaces share one universe and whose underlying types share another,
+so that their de Rham complexes live in the same category of complexes of modules.
+
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 17.
@@ -30,6 +35,8 @@ noncomputable section
 open scoped ContDiff Manifold
 
 namespace TauCeti
+
+section Pullback
 
 variable {E H E' H' E'' H'' : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -157,5 +164,96 @@ theorem map_comp (f : M → M') (g : M' → M'')
   rfl
 
 end deRhamCohomology
+
+end Pullback
+
+section Complex
+
+/-! The induced cochain maps compare complexes in one universe, so the model spaces share a
+universe, as do the manifolds. -/
+
+open CategoryTheory
+
+universe u v
+
+variable {E E' E'' : Type u} {H H' H'' : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+  {I : ModelWithCorners ℝ E H} {I' : ModelWithCorners ℝ E' H'}
+  {I'' : ModelWithCorners ℝ E'' H''}
+  {M M' M'' : Type v}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 2 M']
+  [TopologicalSpace M''] [ChartedSpace H'' M''] [IsManifold I'' 2 M'']
+
+namespace deRhamComplex
+
+/-- The cochain map of de Rham complexes induced by a smooth map, given in each degree by pullback
+of smooth forms. -/
+def map (f : M → M') (hf : ContMDiff I I' ∞ f) : deRhamComplex I' M' ⟶ deRhamComplex I M :=
+  CochainComplex.ofHom (fun k ↦ (deRhamComplexXIso I' k).hom ≫
+      ModuleCat.ofHom (SmoothForm.mpullback f hf) ≫ (deRhamComplexXIso I k).inv)
+    fun k ↦ by
+      have hcomm : ModuleCat.ofHom (SmoothForm.mpullback (F := ℝ) (k := k) f hf) ≫
+          ModuleCat.ofHom (mextDerivₗ I (F := ℝ) k) =
+            ModuleCat.ofHom (mextDerivₗ I' (F := ℝ) k) ≫
+              ModuleCat.ofHom (SmoothForm.mpullback f hf) := by
+        ext φ : 2
+        exact SmoothForm.mextDerivₗ_mpullback f hf k φ
+      rw [(Iso.eq_comp_inv _).mpr (deRhamComplex_d I (M := M) k),
+        (Iso.eq_comp_inv _).mpr (deRhamComplex_d I' (M := M') k)]
+      simp only [Category.assoc, Iso.inv_hom_id_assoc, reassoc_of% hcomm]
+
+/-- Under the canonical identifications of the objects, the induced cochain map is pullback of
+smooth forms. -/
+@[reassoc]
+theorem map_f (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
+    (map f hf).f k ≫ (deRhamComplexXIso I k).hom =
+      (deRhamComplexXIso I' k).hom ≫ ModuleCat.ofHom (SmoothForm.mpullback f hf) := by
+  simp [map]
+
+/-- The induced cochain map, on a form read through the canonical identification of the
+degree-`k` object, is pullback of that form. -/
+theorem map_f_inv_apply (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ)
+    (φ : SmoothForm I' M' ℝ k) :
+    (map f hf).f k ((deRhamComplexXIso I' k).inv φ) =
+      (deRhamComplexXIso I k).inv (SmoothForm.mpullback f hf φ) := by
+  rw [(Iso.eq_comp_inv _).mpr (map_f f hf k)]
+  simp
+
+/-- The identity map induces the identity cochain map. -/
+@[simp]
+theorem map_id : map (I := I) (I' := I) (M := M) (M' := M) id contMDiff_id = 𝟙 _ := by
+  ext k : 2
+  simp [map]
+
+/-- The induced cochain maps reverse composition of smooth maps. -/
+theorem map_comp (f : M → M') (g : M' → M'') (hf : ContMDiff I I' ∞ f)
+    (hg : ContMDiff I' I'' ∞ g) : map (g ∘ f) (hg.comp hf) = map g hg ≫ map f hf := by
+  ext k : 2
+  simp only [map, HomologicalComplex.comp_f, Category.assoc, Iso.inv_hom_id_assoc,
+    SmoothForm.mpullback_comp f g hf hg, ModuleCat.ofHom_comp]
+
+/-- The map induced on cohomology by the cochain map of a smooth map is pullback on de Rham
+cohomology. -/
+theorem homologyMap_map (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
+    HomologicalComplex.homologyMap (map f hf) k =
+      ModuleCat.ofHom (deRhamCohomology.map f hf k) := by
+  refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
+  obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective I' k c
+  rw [ModuleCat.hom_ofHom, deRhamCohomology.map_mk, deRhamCohomology.mk_eq_moduleCatHomologyClass,
+    deRhamCohomology.mk_eq_moduleCatHomologyClass]
+  refine HomologicalComplex.homologyMap_moduleCatHomologyClass (Z' := closedForms I M k) _ _ _
+    (map f hf) _ _ (closedForms.mpullback f hf k) (fun φ ↦ ?_) φ
+  have h := ConcreteCategory.congr_hom ((Iso.eq_comp_inv _).mpr (map_f f hf k))
+    ((deRhamComplexXIso I' k).inv φ.1)
+  simp only [Category.assoc, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp,
+    Function.comp_apply, Iso.inv_hom_id_apply] at h
+  exact h.trans (congrArg (deRhamComplexXIso I k).inv.hom (closedForms.coe_mpullback f hf k φ).symm)
+
+end deRhamComplex
+
+end Complex
 
 end TauCeti

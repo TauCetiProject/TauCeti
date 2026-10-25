@@ -110,4 +110,22 @@ theorem isPlotOn_of_locally {n : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → X}
   exact ⟨f ⁻¹' v, hv.preimage hf.continuous, hfv, fun {k} g hgv hg ↦
     hpv (f ∘ g) (fun x _ ↦ hgv x) (hf.comp hg)⟩
 
+/-- A plot on an open subset is continuous on that subset for the D-topology. -/
+theorem IsPlotOn.continuousOn {n : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → X} (hp : IsPlotOn u p)
+    (hu : IsOpen u) : @ContinuousOn _ _ _ _root_.Diffeology.dTopology p u := by
+  let : TopologicalSpace X := _root_.Diffeology.dTopology
+  refine continuousOn_of_forall_continuousAt fun z hz ↦ ?_
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hu z hz
+  -- Reparametrize a ball around `z` by all of Cartesian space, where `p` becomes a plot.
+  let φ := OpenPartialHomeomorph.univBall z ε
+  have htarget : φ.target = Metric.ball z ε := OpenPartialHomeomorph.univBall_target z hε
+  have hφu : MapsTo φ univ u := fun y _ ↦
+    hball (htarget ▸ φ.map_source (by simp [φ, OpenPartialHomeomorph.univBall_source]))
+  have hzt : z ∈ φ.target := htarget ▸ Metric.mem_ball_self hε
+  have hcont : Continuous (p ∘ φ) :=
+    (hp.isPlot_comp hφu OpenPartialHomeomorph.contDiff_univBall).continuous
+  refine (hcont.continuousAt.comp (φ.continuousAt_symm hzt)).congr ?_
+  filter_upwards [φ.open_target.mem_nhds hzt] with y hy
+  simp [φ.right_inv hy]
+
 end TauCeti.Diffeology

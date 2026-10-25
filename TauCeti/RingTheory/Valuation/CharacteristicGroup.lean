@@ -58,7 +58,7 @@ formalised here.
 * `Valuation.hasFullCharacteristicGroup_iff_characteristicSubgroup_eq_top` : The
   elementwise fullness condition is exactly `cΓ_v = Γ_v`.
 * `Valuation.characteristicSubgroup_eq_comap_of_isEquiv` and
-  `Valuation.valueGroupOrderIso_mem_characteristicSubgroup_iff` : `cΓ_v` is invariant
+  `Valuation.orderMonoidIso_mem_characteristicSubgroup_iff` : `cΓ_v` is invariant
   under valuation equivalence, so it descends to points of the valuation spectrum.
 
 ## References
@@ -115,11 +115,11 @@ isomorphism of their value groups. -/
 theorem CofinalValue.of_isEquiv {v : Valuation A Γ₀} {w : Valuation A Γ₀'}
     (h : v.IsEquiv w) {a : A} (hv : CofinalValue v a) : CofinalValue w a := by
   intro γ hγ
-  obtain ⟨n, hn⟩ := hv (h.orderMonoidIso.symm γ)
-    (zero_lt_iff.mpr fun heq ↦ hγ.ne' (by simpa using congrArg h.orderMonoidIso heq))
+  obtain ⟨n, hn⟩ := hv (h.orderMonoidIso₀.symm γ)
+    (zero_lt_iff.mpr fun heq ↦ hγ.ne' (by simpa using congrArg h.orderMonoidIso₀ heq))
   refine ⟨n, ?_⟩
-  have := (map_lt_map_iff h.orderMonoidIso).mpr hn
-  rw [map_pow, Valuation.IsEquiv.orderMonoidIso_spec] at this
+  have := (map_lt_map_iff h.orderMonoidIso₀).mpr hn
+  rw [map_pow, Valuation.IsEquiv.orderMonoidIso₀_spec] at this
   simpa using this
 
 /-- Cofinality is invariant under valuation equivalence. -/
@@ -172,14 +172,14 @@ valuations, through the ordered isomorphism of their value groups. -/
 theorem HasFullCharacteristicGroup.of_isEquiv {v : Valuation A Γ₀} {w : Valuation A Γ₀'}
     (h : v.IsEquiv w) (hv : HasFullCharacteristicGroup v) : HasFullCharacteristicGroup w := by
   intro γ hγ
-  obtain ⟨a, ha_lo, ha_hi⟩ := hv (h.orderMonoidIso.symm γ)
-    (zero_lt_iff.mpr fun heq ↦ hγ.ne' (by simpa using congrArg h.orderMonoidIso heq))
+  obtain ⟨a, ha_lo, ha_hi⟩ := hv (h.orderMonoidIso₀.symm γ)
+    (zero_lt_iff.mpr fun heq ↦ hγ.ne' (by simpa using congrArg h.orderMonoidIso₀ heq))
   refine ⟨a, ?_, ?_⟩
-  · have := (map_le_map_iff h.orderMonoidIso).mpr ha_lo
-    rw [map_inv₀, Valuation.IsEquiv.orderMonoidIso_spec] at this
+  · have := (map_le_map_iff h.orderMonoidIso₀).mpr ha_lo
+    rw [map_inv₀, Valuation.IsEquiv.orderMonoidIso₀_spec] at this
     simpa using this
-  · have := (map_le_map_iff h.orderMonoidIso).mpr ha_hi
-    rw [Valuation.IsEquiv.orderMonoidIso_spec] at this
+  · have := (map_le_map_iff h.orderMonoidIso₀).mpr ha_hi
+    rw [Valuation.IsEquiv.orderMonoidIso₀_spec] at this
     simpa using this
 
 /-- The full-characteristic-group condition is invariant under valuation equivalence. -/
@@ -281,11 +281,11 @@ theorem valueGroup_mk_mem_characteristicSubgroup_of_one_le_value {v : Valuation 
 /-- Equivalent valuations have corresponding characteristic generators. -/
 theorem characteristicGenerators_map_of_isEquiv {v : Valuation A Γ₀} {w : Valuation A Γ₀'}
     (h : v.IsEquiv w) {γ : v.valueGroup} (hγ : γ ∈ characteristicGenerators v) :
-    h.valueGroupOrderIso γ ∈ characteristicGenerators w := by
+    h.orderMonoidIso γ ∈ characteristicGenerators w := by
   obtain ⟨h1, a, ha⟩ := hγ
   refine ⟨?_, a, ?_⟩
-  · simpa using h.valueGroupOrderIso.map_le_map_iff'.mpr h1
-  · rw [h.valueGroupOrderIso_coe, ← ha, h.orderMonoidIso_spec]
+  · simpa using h.orderMonoidIso.map_le_map_iff'.mpr h1
+  · rw [← h.orderMonoidIso₀_coe, ← ha, h.orderMonoidIso₀_spec]
 
 /-- **Invariance under valuation equivalence.** The characteristic subgroup is carried into
 the characteristic subgroup by the induced value-group isomorphism. Applying this to `h.symm`
@@ -294,7 +294,7 @@ may be used on points of the valuation spectrum. -/
 theorem characteristicSubgroup_le_comap_of_isEquiv {v : Valuation A Γ₀} {w : Valuation A Γ₀'}
     (h : v.IsEquiv w) :
     characteristicSubgroup v ≤
-      TauCeti.ConvexSubgroup.comap h.valueGroupOrderIso (characteristicSubgroup w) := by
+      TauCeti.ConvexSubgroup.comap h.orderMonoidIso (characteristicSubgroup w) := by
   rw [characteristicSubgroup_le_iff]
   intro γ hγ
   exact TauCeti.ConvexSubgroup.mem_comap.mpr
@@ -304,7 +304,7 @@ theorem characteristicSubgroup_le_comap_of_isEquiv {v : Valuation A Γ₀} {w : 
 /-- Membership form of the invariance. -/
 theorem mem_characteristicSubgroup_of_isEquiv {v : Valuation A Γ₀} {w : Valuation A Γ₀'}
     (h : v.IsEquiv w) {γ : v.valueGroup} (hγ : γ ∈ characteristicSubgroup v) :
-    h.valueGroupOrderIso γ ∈ characteristicSubgroup w :=
+    h.orderMonoidIso γ ∈ characteristicSubgroup w :=
   TauCeti.ConvexSubgroup.mem_comap.mp (characteristicSubgroup_le_comap_of_isEquiv h hγ)
 
 /-! ### Fullness as a statement about the characteristic subgroup -/
@@ -372,47 +372,47 @@ theorem hasFullCharacteristicGroup_iff_characteristicSubgroup_eq_top {v : Valuat
     · rw [ha, WithZero.coe_le_coe]; exact hdg
 
 /-- The generators correspond **exactly** under the induced value-group isomorphism: both
-sides are indexed by the same ring, and `orderMonoidIso_spec` matches `v.restrict a` with
+sides are indexed by the same ring, and `orderMonoidIso₀_spec` matches `v.restrict a` with
 `w.restrict a`.
 
 Not a `simp` lemma, though its subgroup counterpart is: `mem_characteristicGenerators` is
 already the `simp` normal form for the left-hand side, so tagging this one fails `simpNF`
 (the left-hand side rewrites to `1 ≤ …  ∧ ∃ a, w.restrict a = …` before it can fire). -/
-theorem valueGroupOrderIso_mem_characteristicGenerators_iff {v : Valuation A Γ₀}
+theorem orderMonoidIso_mem_characteristicGenerators_iff {v : Valuation A Γ₀}
     {w : Valuation A Γ₀'} (h : v.IsEquiv w) {γ : v.valueGroup} :
-    h.valueGroupOrderIso γ ∈ characteristicGenerators w ↔ γ ∈ characteristicGenerators v := by
+    h.orderMonoidIso γ ∈ characteristicGenerators w ↔ γ ∈ characteristicGenerators v := by
   refine ⟨fun ⟨h1, a, ha⟩ ↦ ⟨?_, a, ?_⟩, characteristicGenerators_map_of_isEquiv h⟩
-  · simpa using h.valueGroupOrderIso.map_le_map_iff'.mp (by simpa using h1)
-  · have hspec : h.orderMonoidIso (v.restrict a) = w.restrict a := h.orderMonoidIso_spec a
-    rw [ha, h.valueGroupOrderIso_coe] at hspec
-    exact h.orderMonoidIso.toMulEquiv.injective hspec
+  · simpa using h.orderMonoidIso.map_le_map_iff'.mp (by simpa using h1)
+  · have hspec : h.orderMonoidIso₀ (v.restrict a) = w.restrict a := h.orderMonoidIso₀_spec a
+    rw [ha, ← h.orderMonoidIso₀_coe] at hspec
+    exact h.orderMonoidIso₀.toMulEquiv.injective hspec
 
 /-- **`cΓ_v` is an invariant of the equivalence class**, in membership form. -/
 @[simp]
-theorem valueGroupOrderIso_mem_characteristicSubgroup_iff {v : Valuation A Γ₀}
+theorem orderMonoidIso_mem_characteristicSubgroup_iff {v : Valuation A Γ₀}
     {w : Valuation A Γ₀'} (h : v.IsEquiv w) {γ : v.valueGroup} :
-    h.valueGroupOrderIso γ ∈ characteristicSubgroup w ↔ γ ∈ characteristicSubgroup v := by
+    h.orderMonoidIso γ ∈ characteristicSubgroup w ↔ γ ∈ characteristicSubgroup v := by
   rw [mem_characteristicSubgroup_iff, mem_characteristicSubgroup_iff]
   constructor
   · rintro ⟨g, hg, hgγ, hγg⟩
-    refine ⟨h.valueGroupOrderIso.symm g, ?_, ?_, ?_⟩
-    · rw [← valueGroupOrderIso_mem_characteristicGenerators_iff h]
+    refine ⟨h.orderMonoidIso.symm g, ?_, ?_, ?_⟩
+    · rw [← orderMonoidIso_mem_characteristicGenerators_iff h]
       simpa using hg
-    · simpa using h.valueGroupOrderIso.symm.map_le_map_iff'.mpr hgγ
-    · simpa using h.valueGroupOrderIso.symm.map_le_map_iff'.mpr hγg
+    · simpa using h.orderMonoidIso.symm.map_le_map_iff'.mpr hgγ
+    · simpa using h.orderMonoidIso.symm.map_le_map_iff'.mpr hγg
   · rintro ⟨g, hg, hgγ, hγg⟩
-    exact ⟨h.valueGroupOrderIso g,
-      (valueGroupOrderIso_mem_characteristicGenerators_iff h).mpr hg,
-      by simpa using h.valueGroupOrderIso.map_le_map_iff'.mpr hgγ,
-      h.valueGroupOrderIso.map_le_map_iff'.mpr hγg⟩
+    exact ⟨h.orderMonoidIso g,
+      (orderMonoidIso_mem_characteristicGenerators_iff h).mpr hg,
+      by simpa using h.orderMonoidIso.map_le_map_iff'.mpr hgγ,
+      h.orderMonoidIso.map_le_map_iff'.mpr hγg⟩
 
 /-- Equality form of the invariance: `cΓ_v` is the pullback of `cΓ_w`. -/
 theorem characteristicSubgroup_eq_comap_of_isEquiv {v : Valuation A Γ₀}
     {w : Valuation A Γ₀'} (h : v.IsEquiv w) :
     characteristicSubgroup v =
-      TauCeti.ConvexSubgroup.comap h.valueGroupOrderIso (characteristicSubgroup w) :=
+      TauCeti.ConvexSubgroup.comap h.orderMonoidIso (characteristicSubgroup w) :=
   TauCeti.ConvexSubgroup.ext fun _ ↦
-    ((valueGroupOrderIso_mem_characteristicSubgroup_iff h).symm.trans
+    ((orderMonoidIso_mem_characteristicSubgroup_iff h).symm.trans
       TauCeti.ConvexSubgroup.mem_comap.symm)
 
 end Valuation

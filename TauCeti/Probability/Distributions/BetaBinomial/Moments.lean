@@ -34,6 +34,17 @@ open MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti.Probability
 
+/-- Every natural raw moment of the real cast beta-binomial law is a finite Beta-function sum.
+Integrability is given by `integrable_map_cast_betaBinomialMeasure`. -/
+theorem integral_pow_map_cast_betaBinomialMeasure {a b : ℝ}
+    (ha : 0 < a) (hb : 0 < b) (n m : ℕ) :
+    ∫ x : ℝ, x ^ m ∂((betaBinomialMeasure n a b).map (Nat.cast : ℕ → ℝ)) =
+      ∑ k ∈ Finset.Iic n,
+        (n.choose k * beta (a + k) (b + (n - k)) / beta a b) * (k : ℝ) ^ m := by
+  rw [(MeasurableEmbedding.natCast (α := ℝ)).integral_map,
+    integral_betaBinomialMeasure _ ha hb]
+  simp only [smul_eq_mul]
+
 /-- The mean of the real cast of a beta-binomial law. -/
 @[simp]
 theorem integral_id_map_cast_betaBinomialMeasure {a b : ℝ}

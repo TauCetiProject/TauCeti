@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.BackAndForth.Countable
 public import TauCeti.ModelTheory.BackAndForth.Presentation
-public import TauCeti.ModelTheory.Infinitary.Reindex
+public import TauCeti.ModelTheory.Infinitary.QuantifierRank
+
+import TauCeti.ModelTheory.Syntax
 
 /-!
 # Infinitary equivalence and Karp's theorem
@@ -21,7 +24,8 @@ when they satisfy the same infinitary sentences. The forward direction holds at 
 the converse at any carrier `κ` into which both structures are coded. Full infinitary equivalence
 `InfEquivW` quantifies, outside the syntax, over all carriers in the universe of `M ⊕ N`, and the
 carrier `M ⊕ N` packages the converse. No countability is assumed, and the carrier and the
-universes of the two structures are independent.
+universes of the two structures are independent. For countable structures, which are coded into
+`ℕ`, agreement on the `L_{ω₁ω}` sentences is therefore isomorphism.
 
 The theorem is Carol Karp's, *Finite-quantifier equivalence* (1965). Cameron Freer's
 `cameronfreer/infinitary-logic`, `InfinitaryLogic/Karp/CarrierTheorem.lean` at checkpoint
@@ -37,6 +41,10 @@ The theorem is Carol Karp's, *Finite-quantifier equivalence* (1965). Cameron Fre
 * `TauCeti.InfEquivAt.of_reindex`: agreement transports contravariantly along index codings.
 * `TauCeti.IsTupleBFSystem.realize_iff`: the tuples of a pair in a tuple back-and-forth system
   satisfy the same infinitary formulas.
+* `TauCeti.BFEquiv.realize_iff_of_qrank_le`: tuples that are back-and-forth equivalent at level
+  `α` satisfy the same infinitary formulas of quantifier rank at most `α`.
+* `TauCeti.BFEquiv.elementarilyEquivalent`: back-and-forth equivalence of the empty tuples at
+  level `ω` gives elementary equivalence.
 * `TauCeti.PotentialIso.infEquivAt`: potentially isomorphic structures satisfy the same
   infinitary sentences at every carrier.
 * `TauCeti.exists_forall_realize_snoc_iff_of_forall_realize_iff`: tuples agreeing on every
@@ -46,11 +54,13 @@ The theorem is Carol Karp's, *Finite-quantifier equivalence* (1965). Cameron Fre
 * `TauCeti.karp_theorem`: Karp's theorem for full infinitary equivalence.
 * `TauCeti.InfEquivAt.infEquivW` and `TauCeti.InfEquivW.infEquivAt`: agreement at one coded
   carrier gives full infinitary equivalence, which gives agreement at carriers in every universe.
+* `TauCeti.countable_infEquivAt_nat_iff_iso`: on countable structures, agreement on the
+  `L_{ω₁ω}` sentences is isomorphism.
 -/
 
 public section
 
-universe u v w w' uι uκ uμ
+universe u v w w' o uι uκ uμ
 
 namespace TauCeti
 
@@ -139,20 +149,36 @@ theorem exists_forall_realize_snoc_iff_of_forall_realize_iff {κ : Type uκ} (cN
 
 variable [L.IsRelational]
 
+section Atomic
+
+variable {κ : Type uκ} {n : ℕ} {a : Fin n → M} {b : Fin n → N}
+
+/-- Tuples of the same atomic type satisfy the same equations between terms. -/
+private theorem SameAtomicType.realize_equal_iff (h : SameAtomicType (L := L) a b)
+    (t₁ t₂ : L.Term (Empty ⊕ Fin n)) (v : Empty → M) (w : Empty → N) :
+    (BoundedFormulaInf.equal t₁ t₂ : L.BoundedFormulaInf κ Empty n).Realize v a ↔
+      (BoundedFormulaInf.equal t₁ t₂ : L.BoundedFormulaInf κ Empty n).Realize w b := by
+  obtain ⟨i, rfl⟩ := Term.exists_eq_var_inr_of_isRelational t₁
+  obtain ⟨j, rfl⟩ := Term.exists_eq_var_inr_of_isRelational t₂
+  simpa using ((sameAtomicType_iff a b).1 h).1 i j
+
+/-- Tuples of the same atomic type satisfy the same relations applied to terms. -/
+private theorem SameAtomicType.realize_rel_iff (h : SameAtomicType (L := L) a b) {l : ℕ}
+    (R : L.Relations l) (ts : Fin l → L.Term (Empty ⊕ Fin n)) (v : Empty → M) (w : Empty → N) :
+    (BoundedFormulaInf.rel R ts : L.BoundedFormulaInf κ Empty n).Realize v a ↔
+      (BoundedFormulaInf.rel R ts : L.BoundedFormulaInf κ Empty n).Realize w b := by
+  choose g hg using fun i => Term.exists_eq_var_inr_of_isRelational (ts i)
+  obtain rfl : ts = fun i => Term.var (Sum.inr (g i)) := funext hg
+  simpa [Function.comp_def] using ((sameAtomicType_iff a b).1 h).2 R g
+
+end Atomic
+
 /-- **Pairs in a tuple back-and-forth system satisfy the same infinitary formulas**, at every
 carrier. -/
 theorem IsTupleBFSystem.realize_iff {S : Set (Σ n, (Fin n → M) × (Fin n → N))}
     (hS : IsTupleBFSystem (L := L) S) {κ : Type uκ} :
     ∀ {n} (φ : L.BoundedFormulaInf κ Empty n) {a : Fin n → M} {b : Fin n → N},
       ⟨n, a, b⟩ ∈ S → ∀ (v : Empty → M) (w : Empty → N), φ.Realize v a ↔ φ.Realize w b := by
-  -- In a relational language, a term with no free variables is a bound variable.
-  have hterm : ∀ {n} (t : L.Term (Empty ⊕ Fin n)), ∃ i, t = Term.var (Sum.inr i) := by
-    intro n t
-    cases t with
-    | var x => rcases x with x | i
-               · exact x.elim
-               · exact ⟨i, rfl⟩
-    | func f _ => exact isEmptyElim f
   -- Induct on formulas: atomic formulas use atomic-type agreement, and quantifiers use the forth
   -- and back clauses.
   intro n φ
@@ -160,14 +186,10 @@ theorem IsTupleBFSystem.realize_iff {S : Set (Σ n, (Fin n → M) × (Fin n → 
   | falsum => intro _ _ _ _ _; simp only [BoundedFormulaInf.realize_falsum]
   | equal t₁ t₂ =>
     intro a b hab v w
-    obtain ⟨i, rfl⟩ := hterm t₁
-    obtain ⟨j, rfl⟩ := hterm t₂
-    simpa using ((sameAtomicType_iff a b).1 (hS.sameAtomicType hab)).1 i j
+    exact (hS.sameAtomicType hab).realize_equal_iff t₁ t₂ v w
   | rel R ts =>
     intro a b hab v w
-    choose g hg using fun i => hterm (ts i)
-    obtain rfl : ts = fun i => Term.var (Sum.inr (g i)) := funext hg
-    simpa [Function.comp_def] using ((sameAtomicType_iff a b).1 (hS.sameAtomicType hab)).2 R g
+    exact (hS.sameAtomicType hab).realize_rel_iff R ts v w
   | imp φ ψ ihφ ihψ =>
     intro a b hab v w
     simp only [BoundedFormulaInf.realize_imp, ihφ hab v w, ihψ hab v w]
@@ -189,6 +211,76 @@ theorem IsTupleBFSystem.realize_iff {S : Set (Σ n, (Fin n → M) × (Fin n → 
     intro a b hab v w
     simp only [BoundedFormulaInf.realize_iInf]
     exact forall_congr' fun i => ih i hab v w
+
+/-- **Back-and-forth equivalence at level `α` gives agreement up to quantifier rank `α`.** Tuples
+that are back-and-forth equivalent at level `α` satisfy the same infinitary formulas of quantifier
+rank at most `α`, at every carrier. The rank and the level are compared after lifting them to a
+common universe. -/
+theorem BFEquiv.realize_iff_of_qrank_le {κ : Type uκ} :
+    ∀ {n} (φ : L.BoundedFormulaInf κ Empty n) {α : Ordinal.{o}} {a : Fin n → M}
+      {b : Fin n → N}, BFEquiv (L := L) α n a b →
+      Ordinal.lift.{o} φ.qrank ≤ Ordinal.lift.{uκ} α →
+      ∀ (v : Empty → M) (w : Empty → N), φ.Realize v a ↔ φ.Realize w b := by
+  -- Induct on formulas: a quantifier of rank `β + 1 ≤ α` uses the forth and back clauses at `β`.
+  intro n φ
+  induction φ with
+  | falsum => intro _ _ _ _ _ _ _; simp only [BoundedFormulaInf.realize_falsum]
+  | equal t₁ t₂ =>
+    intro α a b hab _ v w
+    exact hab.sameAtomicType.realize_equal_iff t₁ t₂ v w
+  | rel R ts =>
+    intro α a b hab _ v w
+    exact hab.sameAtomicType.realize_rel_iff R ts v w
+  | imp φ ψ ihφ ihψ =>
+    intro α a b hab hrank v w
+    rw [BoundedFormulaInf.qrank_imp] at hrank
+    simp only [BoundedFormulaInf.realize_imp,
+      ihφ hab ((Ordinal.lift_le.mpr (le_max_left _ _)).trans hrank) v w,
+      ihψ hab ((Ordinal.lift_le.mpr (le_max_right _ _)).trans hrank) v w]
+  | all φ ih =>
+    intro α a b hab hrank v w
+    rw [BoundedFormulaInf.qrank_all] at hrank
+    replace hrank := (Ordinal.lift_lt.mpr (Order.lt_succ φ.qrank)).trans_le hrank
+    -- The rank of the body is the lift of some level `β` with `β + 1 ≤ α`.
+    obtain ⟨β, hβ⟩ := Ordinal.mem_range_lift_of_le hrank.le
+    rw [← hβ, Ordinal.lift_lt] at hrank
+    obtain ⟨-, hforth, hback⟩ :=
+      (BFEquiv.add_one β a b).mp (hab.mono (Order.add_one_le_of_lt hrank))
+    simp only [BoundedFormulaInf.realize_all]
+    constructor
+    · intro h y
+      obtain ⟨x, hx⟩ := hback y
+      exact (ih hx hβ.symm.le v w).1 (h x)
+    · intro h x
+      obtain ⟨y, hy⟩ := hforth x
+      exact (ih hy hβ.symm.le v w).2 (h y)
+  | iSup φs ih =>
+    intro α a b hab hrank v w
+    simp only [BoundedFormulaInf.realize_iSup]
+    exact exists_congr fun i => ih i hab ((Ordinal.lift_le.mpr
+      (BoundedFormulaInf.qrank_iSup (φs := φs) ▸ Ordinal.le_iSup _ i)).trans hrank) v w
+  | iInf φs ih =>
+    intro α a b hab hrank v w
+    simp only [BoundedFormulaInf.realize_iInf]
+    exact forall_congr' fun i => ih i hab ((Ordinal.lift_le.mpr
+      (BoundedFormulaInf.qrank_iInf (φs := φs) ▸ Ordinal.le_iSup _ i)).trans hrank) v w
+
+/-- **Back-and-forth equivalence at level `ω` gives elementary equivalence.** Relational
+structures whose empty tuples are back-and-forth equivalent at level `ω` satisfy the same
+first-order sentences, since a first-order sentence has finite quantifier rank. -/
+theorem BFEquiv.elementarilyEquivalent
+    (h : BFEquiv (L := L) (Ordinal.omega0 : Ordinal.{o}) 0 (Fin.elim0 : Fin 0 → M)
+      (Fin.elim0 : Fin 0 → N)) : M ≅[L] N := by
+  refine elementarilyEquivalent_iff.mpr fun φ => ?_
+  have hrank : Ordinal.lift.{o} (BoundedFormula.toInf (ι := PUnit.{1}) φ).qrank ≤
+      Ordinal.lift.{0} (Ordinal.omega0 : Ordinal.{o}) := by
+    rw [Ordinal.lift_omega0]
+    exact (Ordinal.lift_lt.mpr (BoundedFormulaInf.qrank_toInf_lt_omega0 φ)).le.trans_eq
+      Ordinal.lift_omega0
+  simpa only [BoundedFormula.realize_toInf, Sentence.Realize, Formula.Realize,
+    Subsingleton.elim default (Fin.elim0 : Fin 0 → M), Subsingleton.elim default Empty.elim,
+    Subsingleton.elim default (Fin.elim0 : Fin 0 → N)] using
+    h.realize_iff_of_qrank_le (BoundedFormula.toInf φ) hrank Empty.elim Empty.elim
 
 /-- **Karp's theorem, forward direction.** Potentially isomorphic structures in a relational
 language satisfy the same infinitary sentences, at every carrier. -/
@@ -247,5 +339,16 @@ theorem InfEquivAt.infEquivW (cM : IndexCoding M κ) (cN : IndexCoding N κ)
 theorem InfEquivW.infEquivAt (h : InfEquivW (L := L) M N) (μ : Type uμ) :
     InfEquivAt (L := L) μ M N :=
   (karp_theorem.2 h).infEquivAt μ
+
+/-- **Karp's theorem for countable structures.** Countable structures in a relational language are
+isomorphic exactly when they satisfy the same `L_{ω₁ω}` sentences, the infinitary sentences whose
+conjunctions and disjunctions are indexed by `ℕ`. -/
+theorem countable_infEquivAt_nat_iff_iso [Countable M] [Countable N] :
+    InfEquivAt (L := L) ℕ M N ↔ Nonempty (M ≃[L] N) := by
+  -- Both structures are coded into `ℕ`, so Karp's theorem applies at that carrier.
+  let _ := Encodable.ofCountable M
+  let _ := Encodable.ofCountable N
+  exact (karp_theorem_at (IndexCoding.ofEncodable M) (IndexCoding.ofEncodable N)).symm.trans
+    countable_potentialIso_iff_iso
 
 end TauCeti

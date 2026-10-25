@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.DG.AdditiveClosure
+public import TauCeti.CategoryTheory.DG.AdditiveClosure.Basic
 public import TauCeti.CategoryTheory.DG.Twisted.Basic
 
 /-!
@@ -30,9 +30,19 @@ splitting need not be closed: the differential of the inclusion of `Q` is `g` fo
 inclusion of `P`, and the differential of the projection onto `P` is minus the projection onto `Q`
 followed by `g`.
 
-With `P = Y[0]`, `Q = X[1]` and `g` a closed degree-zero morphism `f : X ⟶ Y` viewed as a
-degree-one morphism `X[1] ⟶ Y[0]`, the extension is the cone of `f`, the basic construction of
-the pretriangulated envelope of Bondal and Kapranov; see
+If `g` is invertible, with inverse `g' : P ⟶ Q` of degree `-1`, the extension is contractible:
+minus the projection onto `P`, followed by `g'` and the inclusion of `Q`, is a degree `-1`
+endomorphism whose differential is the identity, so the extension is a zero object of the
+homotopy category.
+
+The extension depends only on the homotopy class of `g`, up to isomorphism in the homotopy
+category.  If `g - g' = d k` for a degree-zero morphism `k : Q ⟶ P`, then the identity on the
+summands together with `k` in the block from `Q` to `P` is a closed morphism
+`extension P Q g ⟶ extension P Q g'`, with inverse the same construction for `-k`.
+
+With `Q` the shift `P'⟦1⟧` of a twisted object `P'` and `g` the degree-one morphism
+`P'⟦1⟧ ⟶ P' ⟶ P` underlying a closed degree-zero morphism `u : P' ⟶ P`, the extension is the
+cone of `u`, the basic construction of the pretriangulated envelope of Bondal and Kapranov; see
 `TauCeti/CategoryTheory/DG/Twisted/Cone.lean`.
 
 ## Main definitions
@@ -42,6 +52,10 @@ the pretriangulated envelope of Bondal and Kapranov; see
 * `TauCeti.DGTwistedObject.extensionInl`, `TauCeti.DGTwistedObject.extensionInr`,
   `TauCeti.DGTwistedObject.extensionFst`, `TauCeti.DGTwistedObject.extensionSnd`: the inclusions
   of and projections to the two summands.
+* `TauCeti.DGTwistedObject.extensionHomOfHomotopy`: the morphism of extensions induced by a
+  degree-zero morphism `k : Q ⟶ P`.
+* `TauCeti.DGTwistedObject.extensionIsoOfHomotopy`: the isomorphism in the homotopy category
+  between extensions along homotopic morphisms.
 
 ## Main results
 
@@ -55,6 +69,19 @@ the pretriangulated envelope of Bondal and Kapranov; see
 * `TauCeti.DGTwistedObject.dgComp_extensionInl_extensionSnd` and the other biproduct equations:
   the composite `P ⟶ extension P Q g ⟶ Q` vanishes, and the inclusions and projections exhibit
   the extension as the direct sum of `P` and `Q` as a graded object.
+* `TauCeti.DGTwistedObject.dgDifferential_neg_dgComp_extensionFst_extensionInr` and
+  `TauCeti.DGTwistedObject.isZero_of_extension`: an extension along an invertible morphism is
+  contractible.
+* `TauCeti.DGTwistedObject.extensionHomOfHomotopy_zero`: the zero morphism induces the identity.
+* `TauCeti.DGTwistedObject.dgComp_extensionInl_extensionHomOfHomotopy`,
+  `TauCeti.DGTwistedObject.dgComp_extensionHomOfHomotopy_extensionSnd` and their forms
+  `TauCeti.DGTwistedObject.homOf_extensionInl_comp_extensionIsoOfHomotopy_hom`,
+  `TauCeti.DGTwistedObject.extensionIsoOfHomotopy_hom_comp_homOf_extensionSnd` in the homotopy
+  category: the morphism induced by `k` commutes with the inclusion of `P` and the projection
+  onto `Q`.
+* `TauCeti.DGTwistedObject.dgDifferential_extensionHomOfHomotopy` and
+  `TauCeti.DGTwistedObject.dgComp_extensionHomOfHomotopy_neg`: the morphism induced by a homotopy
+  `k` from `g` to `g'` is closed, and the morphisms induced by `k` and `-k` are mutually inverse.
 
 ## References
 
@@ -523,7 +550,251 @@ theorem dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr :
     · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inr_inr]
       simp [-DGCategoryData.dgId_toDGCategory]
 
+/-- The inclusion of `P` followed by the projection onto `P` and then `x` is `x`. -/
+@[simp↓]
+theorem dgComp_extensionInl_extensionFst_assoc
+    {Z : DGTwistedObject R (DGAdditiveClosure E)} {n : ℤ} (x : DGHom R n P Z) :
+    dgComp R (extensionInl R hg) (dgComp R (extensionFst R hg) x (zero_add n)) (zero_add n) =
+      x := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
+    dgComp_extensionInl_extensionFst, dgId_dgComp]
+
+/-- The inclusion of `P` followed by the projection onto `Q` and then `x` vanishes. -/
+@[simp↓]
+theorem dgComp_extensionInl_extensionSnd_assoc
+    {Z : DGTwistedObject R (DGAdditiveClosure E)} {n : ℤ} (x : DGHom R n Q Z) :
+    dgComp R (extensionInl R hg) (dgComp R (extensionSnd R hg) x (zero_add n)) (zero_add n) =
+      0 := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
+    dgComp_extensionInl_extensionSnd, zero_dgComp]
+
+/-- The inclusion of `Q` followed by the projection onto `P` and then `x` vanishes. -/
+@[simp↓]
+theorem dgComp_extensionInr_extensionFst_assoc
+    {Z : DGTwistedObject R (DGAdditiveClosure E)} {n : ℤ} (x : DGHom R n P Z) :
+    dgComp R (extensionInr R hg) (dgComp R (extensionFst R hg) x (zero_add n)) (zero_add n) =
+      0 := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
+    dgComp_extensionInr_extensionFst, zero_dgComp]
+
+/-- The inclusion of `Q` followed by the projection onto `Q` and then `x` is `x`. -/
+@[simp↓]
+theorem dgComp_extensionInr_extensionSnd_assoc
+    {Z : DGTwistedObject R (DGAdditiveClosure E)} {n : ℤ} (x : DGHom R n Q Z) :
+    dgComp R (extensionInr R hg) (dgComp R (extensionSnd R hg) x (zero_add n)) (zero_add n) =
+      x := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
+    dgComp_extensionInr_extensionSnd, dgId_dgComp]
+
 end biproduct
+
+/-! ### Extensions along invertible morphisms are contractible -/
+
+section contractible
+
+variable {P Q : DGTwistedObject R (DGAdditiveClosure E)} {g : DGHom R 1 Q P}
+  (hg : dgDifferential R 1 g = 0) {g' : DGHom R (-1) P Q}
+
+/-- **The contracting homotopy of an extension along an invertible morphism**: if the closed
+degree-one morphism `g : Q ⟶ P` has an inverse `g' : P ⟶ Q` of degree `-1`, then the differential
+of minus the projection onto `P`, followed by `g'` and the inclusion of `Q`, is the identity of the
+extension. -/
+theorem dgDifferential_neg_dgComp_extensionFst_extensionInr
+    (hgg' : dgComp R g g' (add_neg_cancel 1) = dgId R Q)
+    (hg'g : dgComp R g' g (neg_add_cancel 1) = dgId R P) :
+    dgDifferential R (-1)
+        (-dgComp R (dgComp R (extensionFst R hg) g' (zero_add (-1))) (extensionInr R hg)
+          (add_zero (-1))) =
+      dgId R (extension P Q g hg) := by
+  -- The inverse pairs cancel inside the two terms produced by the Leibniz rule.
+  have hsnd : dgComp R (dgComp R (extensionSnd R hg) g (zero_add 1)) g' (add_neg_cancel 1) =
+      extensionSnd R hg := by
+    rw [dgComp_assoc R _ g g' (zero_add 1) (add_neg_cancel 1) (by omega), hgg', dgComp_dgId]
+  have hfst : dgComp R (dgComp R (extensionFst R hg) g' (zero_add (-1)))
+      (dgComp R g (extensionInl R hg) (add_zero 1)) (neg_add_cancel 1) =
+      dgComp R (extensionFst R hg) (extensionInl R hg) (add_zero 0) := by
+    rw [dgComp_assoc R _ g' _ (zero_add (-1)) (neg_add_cancel 1) (by omega),
+      ← dgComp_assoc R g' g _ (neg_add_cancel 1) (add_zero 1) (by omega), hg'g, dgId_dgComp]
+  -- Expand by the Leibniz rule; `g'` is closed, being inverse to the closed morphism `g`.
+  rw [map_neg, dgDifferential_dgComp, dgDifferential_dgComp, dgDifferential_extensionFst,
+    dgDifferential_extensionInr, dgDifferential_eq_zero_of_dgComp_eq_dgId R hg _ hgg' hg'g]
+  simp only [dgComp_zero, smul_zero, add_zero, neg_dgComp, Int.negOnePow_neg, Int.negOnePow_one,
+    Units.neg_smul, one_smul, hsnd, hfst]
+  rw [← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg]
+  abel
+
+/-- **An extension along an invertible morphism is contractible**: if the closed degree-one
+morphism `g : Q ⟶ P` has an inverse of degree `-1`, then the extension of `Q` by `P` along `g` is
+a zero object of the homotopy category. -/
+theorem isZero_of_extension (hgg' : dgComp R g g' (add_neg_cancel 1) = dgId R Q)
+    (hg'g : dgComp R g' g (neg_add_cancel 1) = dgId R P) :
+    Limits.IsZero (DGHomotopyCategory.of R (extension P Q g hg)) :=
+  (DGHomotopyCategory.isZero_of_iff_dgId_mem_dgBoundaries R _).mpr
+    ((mem_dgBoundaries R).mpr
+      ⟨_, dgDifferential_neg_dgComp_extensionFst_extensionInr R hg hgg' hg'g⟩)
+
+end contractible
+
+/-! ### Extensions along homotopic morphisms are isomorphic -/
+
+section homotopy
+
+variable {P Q : DGTwistedObject R (DGAdditiveClosure E)} {g g' : DGHom R 1 Q P}
+  (hg : dgDifferential R 1 g = 0) (hg' : dgDifferential R 1 g' = 0)
+
+/-- The degree-zero morphism `extension P Q g ⟶ extension P Q g'` induced by a degree-zero
+morphism `k : Q ⟶ P`: the identity on the summands `P` and `Q`, together with `k` in the block
+from `Q` to `P`.  It is closed when `d k = g - g'`
+(`TauCeti.DGTwistedObject.dgDifferential_extensionHomOfHomotopy`). -/
+noncomputable def extensionHomOfHomotopy (k : DGHom R 0 Q P) :
+    DGHom R 0 (extension P Q g hg) (extension P Q g' hg') :=
+  dgComp R (extensionFst R hg) (extensionInl R hg') (add_zero 0) +
+    dgComp R (extensionSnd R hg) (extensionInr R hg') (add_zero 0) +
+    dgComp R (extensionSnd R hg) (dgComp R k (extensionInl R hg') (add_zero 0)) (add_zero 0)
+
+theorem extensionHomOfHomotopy_def (k : DGHom R 0 Q P) :
+    extensionHomOfHomotopy R hg hg' k =
+      dgComp R (extensionFst R hg) (extensionInl R hg') (add_zero 0) +
+        dgComp R (extensionSnd R hg) (extensionInr R hg') (add_zero 0) +
+        dgComp R (extensionSnd R hg) (dgComp R k (extensionInl R hg') (add_zero 0)) (add_zero 0) :=
+  (rfl)
+
+/-- The morphism of extensions induced by the zero morphism is the identity. -/
+@[simp]
+theorem extensionHomOfHomotopy_zero :
+    extensionHomOfHomotopy R hg hg 0 = dgId R (extension P Q g hg) := by
+  rw [extensionHomOfHomotopy_def, zero_dgComp, dgComp_zero, add_zero,
+    dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr]
+
+/-- **The morphism of extensions induced by a homotopy is closed**: if `d k = g - g'`, then the
+differential of `TauCeti.DGTwistedObject.extensionHomOfHomotopy` vanishes. -/
+theorem dgDifferential_extensionHomOfHomotopy {k : DGHom R 0 Q P}
+    (hk : dgDifferential R 0 k = g - g') :
+    dgDifferential R 0 (extensionHomOfHomotopy R hg hg' k) = 0 := by
+  rw [extensionHomOfHomotopy_def, map_add, map_add, dgDifferential_dgComp, dgDifferential_dgComp,
+    dgDifferential_dgComp, dgDifferential_dgComp, dgDifferential_extensionFst,
+    dgDifferential_extensionSnd, dgDifferential_extensionInl, dgDifferential_extensionInr, hk,
+    neg_dgComp, dgComp_assoc R _ g _ (zero_add 1) (add_zero 1) (by omega), sub_eq_add_neg,
+    add_dgComp, neg_dgComp]
+  simp only [dgComp_zero, zero_dgComp, smul_zero, add_zero, zero_add, Int.negOnePow_zero,
+    one_smul, dgComp_add, dgComp_neg]
+  abel
+
+/-- The inclusion of `P` followed by the morphism of extensions induced by `k` is the inclusion
+of `P`. -/
+@[simp↓]
+theorem dgComp_extensionInl_extensionHomOfHomotopy (k : DGHom R 0 Q P) :
+    dgComp R (extensionInl R hg) (extensionHomOfHomotopy R hg hg' k) (add_zero 0) =
+      extensionInl R hg' := by
+  simp only [extensionHomOfHomotopy_def, dgComp_add, dgComp_extensionInl_extensionFst_assoc,
+    dgComp_extensionInl_extensionSnd_assoc, add_zero]
+
+/-- The inclusion of `Q` followed by the morphism of extensions induced by `k` is the inclusion
+of `Q` plus `k` followed by the inclusion of `P`. -/
+theorem dgComp_extensionInr_extensionHomOfHomotopy (k : DGHom R 0 Q P) :
+    dgComp R (extensionInr R hg) (extensionHomOfHomotopy R hg hg' k) (add_zero 0) =
+      extensionInr R hg' + dgComp R k (extensionInl R hg') (add_zero 0) := by
+  simp only [extensionHomOfHomotopy_def, dgComp_add, dgComp_extensionInr_extensionFst_assoc,
+    dgComp_extensionInr_extensionSnd_assoc, zero_add]
+
+/-- The morphism of extensions induced by `k` followed by the projection onto `Q` is the
+projection onto `Q`. -/
+@[simp↓]
+theorem dgComp_extensionHomOfHomotopy_extensionSnd (k : DGHom R 0 Q P) :
+    dgComp R (extensionHomOfHomotopy R hg hg' k) (extensionSnd R hg') (add_zero 0) =
+      extensionSnd R hg := by
+  simp only [extensionHomOfHomotopy_def, add_dgComp,
+    dgComp_assoc R _ _ (extensionSnd R hg') (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_extensionSnd, dgComp_extensionInr_extensionSnd, dgComp_zero, add_zero,
+    zero_add, dgComp_dgId]
+
+/-- The morphism of extensions induced by `k` followed by the projection onto `P` is the
+projection onto `P` plus the projection onto `Q` followed by `k`. -/
+theorem dgComp_extensionHomOfHomotopy_extensionFst (k : DGHom R 0 Q P) :
+    dgComp R (extensionHomOfHomotopy R hg hg' k) (extensionFst R hg') (add_zero 0) =
+      extensionFst R hg + dgComp R (extensionSnd R hg) k (add_zero 0) := by
+  simp only [extensionHomOfHomotopy_def, add_dgComp,
+    dgComp_assoc R _ _ (extensionFst R hg') (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_extensionFst, dgComp_extensionInr_extensionFst, dgComp_zero, add_zero,
+    dgComp_dgId]
+
+/-- **The morphisms of extensions induced by `k` and `-k` are mutually inverse.** -/
+theorem dgComp_extensionHomOfHomotopy_neg (k : DGHom R 0 Q P) :
+    dgComp R (extensionHomOfHomotopy R hg hg' k) (extensionHomOfHomotopy R hg' hg (-k))
+      (add_zero 0) = dgId R (extension P Q g hg) := by
+  simp only [extensionHomOfHomotopy_def, add_dgComp, dgComp_add, neg_dgComp, dgComp_neg,
+    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_extensionFst_assoc, dgComp_extensionInl_extensionSnd_assoc,
+    dgComp_extensionInr_extensionFst_assoc, dgComp_extensionInr_extensionSnd_assoc, dgComp_zero,
+    add_zero]
+  rw [← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg]
+  abel
+
+variable {hg hg'} in
+/-- **Extensions along homotopic morphisms are isomorphic**: if `g - g' = d k` for a degree-zero
+morphism `k : Q ⟶ P`, then `extension P Q g` and `extension P Q g'` are isomorphic in the
+homotopy category, through the morphisms induced by `k` and `-k`. -/
+noncomputable def extensionIsoOfHomotopy {k : DGHom R 0 Q P}
+    (hk : dgDifferential R 0 k = g - g') :
+    DGHomotopyCategory.of R (extension P Q g hg) ≅ DGHomotopyCategory.of R (extension P Q g' hg')
+    where
+  hom := DGHomotopyCategory.homOf R (extensionHomOfHomotopy R hg hg' k)
+    ((mem_dgCycles R).mpr (dgDifferential_extensionHomOfHomotopy R hg hg' hk))
+  inv := DGHomotopyCategory.homOf R (extensionHomOfHomotopy R hg' hg (-k))
+    ((mem_dgCycles R).mpr (dgDifferential_extensionHomOfHomotopy R hg' hg
+      (by rw [map_neg, hk, neg_sub])))
+  hom_inv_id := by
+    simp only [DGHomotopyCategory.homOf_comp, dgCompZero_def, dgComp_extensionHomOfHomotopy_neg,
+      DGHomotopyCategory.homOf_dgId]
+  inv_hom_id := by
+    have h := dgComp_extensionHomOfHomotopy_neg R hg' hg (-k)
+    rw [neg_neg] at h
+    simp only [DGHomotopyCategory.homOf_comp, dgCompZero_def, h, DGHomotopyCategory.homOf_dgId]
+
+variable {hg hg'} in
+@[simp]
+theorem extensionIsoOfHomotopy_hom {k : DGHom R 0 Q P} (hk : dgDifferential R 0 k = g - g') :
+    (extensionIsoOfHomotopy R (hg := hg) (hg' := hg') hk).hom =
+      DGHomotopyCategory.homOf R (extensionHomOfHomotopy R hg hg' k)
+        ((mem_dgCycles R).mpr (dgDifferential_extensionHomOfHomotopy R hg hg' hk)) :=
+  (rfl)
+
+variable {hg hg'} in
+@[simp]
+theorem extensionIsoOfHomotopy_inv {k : DGHom R 0 Q P} (hk : dgDifferential R 0 k = g - g') :
+    (extensionIsoOfHomotopy R (hg := hg) (hg' := hg') hk).inv =
+      DGHomotopyCategory.homOf R (extensionHomOfHomotopy R hg' hg (-k))
+        ((mem_dgCycles R).mpr (dgDifferential_extensionHomOfHomotopy R hg' hg
+          (by rw [map_neg, hk, neg_sub]))) :=
+  (rfl)
+
+variable {hg hg'} in
+/-- In the homotopy category, the inclusion of `P` followed by the isomorphism of extensions
+along homotopic morphisms is the inclusion of `P`. -/
+theorem homOf_extensionInl_comp_extensionIsoOfHomotopy_hom {k : DGHom R 0 Q P}
+    (hk : dgDifferential R 0 k = g - g') :
+    DGHomotopyCategory.homOf R (extensionInl R hg)
+        ((mem_dgCycles R).mpr (dgDifferential_extensionInl R hg)) ≫
+        (extensionIsoOfHomotopy R hk).hom =
+      DGHomotopyCategory.homOf R (extensionInl R hg')
+        ((mem_dgCycles R).mpr (dgDifferential_extensionInl R hg')) := by
+  simp only [extensionIsoOfHomotopy_hom, DGHomotopyCategory.homOf_comp, dgCompZero_def,
+    dgComp_extensionInl_extensionHomOfHomotopy]
+
+variable {hg hg'} in
+/-- In the homotopy category, the isomorphism of extensions along homotopic morphisms followed by
+the projection onto `Q` is the projection onto `Q`. -/
+theorem extensionIsoOfHomotopy_hom_comp_homOf_extensionSnd {k : DGHom R 0 Q P}
+    (hk : dgDifferential R 0 k = g - g') :
+    (extensionIsoOfHomotopy R hk).hom ≫
+        DGHomotopyCategory.homOf R (extensionSnd R hg')
+          ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R hg')) =
+      DGHomotopyCategory.homOf R (extensionSnd R hg)
+        ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R hg)) := by
+  simp only [extensionIsoOfHomotopy_hom, DGHomotopyCategory.homOf_comp, dgCompZero_def,
+    dgComp_extensionHomOfHomotopy_extensionSnd]
+
+end homotopy
 
 end DGTwistedObject
 

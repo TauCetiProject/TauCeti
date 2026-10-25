@@ -36,7 +36,7 @@ theorem exists_eq_sign_mul_pow_of_highest_weight_vector [FiniteDimensional ℂ V
     ∃ (m : ℕ) (ε : ℤˣ), μ = ε * q ^ m ∧
       f q ^ (m + 1) • v = 0 ∧ f q ^ m • v ≠ 0 := by
   classical
-  have hex : ∃ n : ℕ, f q ^ n • v = 0 := exists_f_pow_smul_eq_zero hq hv
+  have hex : ∃ n : ℕ, f q ^ n • v = 0 := exists_f_pow_smul_eq_zero hq v
   let N := Nat.find hex
   have hN : f q ^ N • v = 0 := Nat.find_spec hex
   have hNpos : 0 < N := by

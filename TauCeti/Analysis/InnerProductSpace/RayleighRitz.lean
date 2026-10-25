@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester.Basic
 
 /-!
 # The Rayleigh–Ritz procedure: compressions and Ritz residuals

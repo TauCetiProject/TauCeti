@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.ArrayLaw
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Infinite
 public import TauCeti.Probability.Process.Array.AldousHoover.Frozen
-import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.ProductKernel
 import TauCeti.Probability.Independence.InfinitePi
 
@@ -320,8 +319,8 @@ theorem graphLawOfArray_map_jointArray {f : I × I × I × I → Bool} (hf : Mea
       (volume : Measure I).bind fun t =>
         infiniteSampleLaw (codingGraphon (fun q => f (t, q)) (hf.comp measurable_prodMk_left)) := by
   rw [map_jointArray_eq_bind_frozen hf, graphLawOfArray_def,
-    TauCeti.MeasureTheory.map_bind (measurable_map_jointArray_frozen hf).aemeasurable
-      measurable_graphOfArray]
+    Measure.map_bind (measurable_map_jointArray_frozen hf).aemeasurable
+      measurable_graphOfArray.aemeasurable]
   congr 1
   funext t
   rw [← graphLawOfArray_def]

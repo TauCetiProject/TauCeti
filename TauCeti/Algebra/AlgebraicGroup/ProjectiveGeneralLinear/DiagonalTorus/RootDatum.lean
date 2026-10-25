@@ -175,6 +175,15 @@ instance isReduced_diagonalRootDatum (r : ℕ) : (diagonalRootDatum.{u} r).IsRed
   simp only [diagonalRootDatum_pairing_apply, eq_comm]
   ring
 
+/-- The root `ε_i - ε_r` is the corresponding basis character in normalized coordinates. -/
+theorem diagonalRootDatum_root_castSucc_last (i : ULift.{u} (Fin r)) :
+    (diagonalRootDatum.{u} r).root
+        ⟨(i.down.castSucc, Fin.last r), (Fin.castSucc_lt_last i.down).ne⟩ =
+      Finsupp.single i 1 := by
+  ext j
+  simp [diagonalRootDatum_root_apply, diagonalTorusWeight_apply,
+    Finsupp.single_apply, eq_comm]
+
 /-- The roots span the full character lattice, so this is the adjoint root datum. -/
 theorem rootSpan_diagonalRootDatum_eq_top (r : ℕ) :
     (diagonalRootDatum.{u} r).rootSpan ℤ = ⊤ := by
@@ -184,9 +193,7 @@ theorem rootSpan_diagonalRootDatum_eq_top (r : ℕ) :
   rintro _ ⟨i, rfl⟩
   apply Submodule.subset_span
   refine ⟨⟨(i.down.castSucc, Fin.last r), (Fin.castSucc_lt_last i.down).ne⟩, ?_⟩
-  ext j
-  simp [diagonalRootDatum_root_apply, diagonalTorusWeight_apply,
-    Finsupp.coe_basisSingleOne, Finsupp.single_apply, eq_comm]
+  simpa only [Finsupp.coe_basisSingleOne] using diagonalRootDatum_root_castSucc_last i
 
 section Points
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -42,7 +42,7 @@ Christoffel map, which is the input of the coordinate curvature formula of
 * `TauCeti.Manifold.leviCivitaConnection_model_space_eq_fderiv_add_christoffelSecondKind`: the
   Levi-Civita connection is the flat derivative plus the Christoffel symbols of the second kind
   of the metric, as constructed for any nondegenerate metric in
-  `TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel`.
+  `TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic`.
 * `TauCeti.Manifold.leviCivitaConnection_eq_fderiv_model_space`: for the standard metric, the
   Levi-Civita connection is the ordinary Fréchet derivative.
 

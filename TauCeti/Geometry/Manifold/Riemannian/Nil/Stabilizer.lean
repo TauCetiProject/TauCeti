@@ -118,7 +118,7 @@ private theorem differential_rotation (Φ : Isom J Nil) (hΦ : Φ 1 = 1) :
   refine ⟨c, hc, ?_, fun u => ?_⟩
   · have h := congrArg (fun v : P => c • v) hz
     simpa [smul_smul, ← pow_two, hc] using h
-  have h := Φ.mfderiv_leviCivitaConnection_mpullback (hZ (Φ 1))
+  have h := Φ.isLocalRiemannianIsometry.mfderiv_leviCivitaConnection_mpullback (hZ (Φ 1))
     ((tangentSpaceCastModel J (1 : Nil)).symm u)
   rw [hconn, smul_apply, map_smul] at h
   have hs := congrArg (tangentSpaceCastModel J (Φ 1)) h
