@@ -10,6 +10,7 @@ public import Mathlib.Algebra.QuadraticAlgebra.IsQuadraticExtension
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.FieldTheory.IsAlgClosed.OddDegreeRoot
 
 /-! # Real closed fields and their algebraically closed quadratic extensions
 
@@ -77,31 +78,6 @@ section Converse
 
 variable [IsAlgClosed K]
 
-/-- Over a field with an algebraically closed extension of degree two, every polynomial of odd
-degree has a root. -/
-private theorem exists_isRoot_of_odd_natDegree (hK : finrank R K = 2) :
-    ∀ n, ∀ f : R[X], f.natDegree = n → Odd n → ∃ x, f.IsRoot x := by
-  intro n
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    rintro f rfl hf
-    have hf0 : f ≠ 0 := by rintro rfl; simp at hf
-    obtain ⟨g, hg, hgf⟩ :=
-      WfDvdMonoid.exists_irreducible_factor (not_isUnit_of_natDegree_pos f hf.pos) hf0
-    have hdvd : g.natDegree ∣ 2 := hK ▸ hg.natDegree_dvd_finrank (IsAlgClosed.splits _)
-    rcases (Nat.dvd_prime Nat.prime_two).mp hdvd with hg1 | hg2
-    · obtain ⟨x, hx⟩ := exists_root_of_degree_eq_one
-        ((degree_eq_iff_natDegree_eq_of_pos one_pos).mpr hg1)
-      exact ⟨x, hx.dvd hgf⟩
-    · obtain ⟨q, rfl⟩ := hgf
-      have hq0 : q ≠ 0 := right_ne_zero_of_mul hf0
-      have hdeg : (g * q).natDegree = q.natDegree + 2 := by
-        rw [natDegree_mul hg.ne_zero hq0, hg2, add_comm]
-      obtain ⟨x, hx⟩ := ih q.natDegree (by omega) q rfl (by
-        rw [hdeg] at hf
-        exact (Nat.odd_add.mp hf).mpr even_two)
-      exact ⟨x, by simp [IsRoot, hx.eq_zero]⟩
-
 variable (hR : ¬IsSquare (-1 : R))
 include hR
 
@@ -144,8 +120,8 @@ theorem isRealClosed_of_isAlgClosed_of_isQuadraticExtension [Algebra.IsQuadratic
   refine
     { isSquare_or_isSquare_neg := fun x => ?_
       exists_isRoot_of_odd_natDegree := fun hf =>
-        exists_isRoot_of_odd_natDegree (K := K)
-          (Algebra.IsQuadraticExtension.finrank_eq_two R K) _ _ rfl hf }
+        exists_isRoot_of_odd_natDegree_of_finrank_eq_two_pow _ hf (k := 1)
+          (Algebra.IsQuadraticExtension.finrank_eq_two R K) }
   -- A square root `c + d √-1` of `x` has `c = 0` or `d = 0`.
   obtain ⟨c, d, rfl, hcd⟩ := exists_coords_sqrt (K := K) hR x 0
   rcases mul_eq_zero.mp ((mul_eq_zero.mp hcd).resolve_left h2) with rfl | rfl
