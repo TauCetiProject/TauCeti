@@ -30,6 +30,8 @@ field.
   closure of an extended lattice basis is the lattice's underlying additive subgroup.
 * `TauCeti.Submodule.IsLattice.relIndex_ne_zero`: a full `ℤ`-lattice has finite index in every
   full `ℤ`-lattice containing it.
+* `TauCeti.Submodule.IsLattice.relIndex_span_eq_abs_det_mul`: the indices of a full `ℤ`-lattice
+  in the `ℤ`-spans of two `ℚ`-bases differ by the determinant of the change of basis.
 * `Submodule.toAddSubgroup_submoduleOf`: taking the underlying additive subgroup commutes
   with restricting a submodule to another submodule.
 * `Submodule.finrank_eq_finrank`: a full lattice and its ambient space have the
@@ -124,6 +126,22 @@ theorem Submodule.IsLattice.relIndex_ne_zero {N M : Submodule ℤ V} [N.IsLattic
   intro h
   rw [h, Nat.cast_zero, eq_comm, abs_eq_zero] at hidx
   exact (eM.isUnit_det _).ne_zero hidx
+
+/-- **Indices of a common full sublattice differ by a determinant.** If a full `ℤ`-submodule `N`
+lies in the `ℤ`-spans of two `ℚ`-bases `b` and `c`, then its index in the span of `b` is
+`|b.det c|` times its index in the span of `c`. -/
+theorem Submodule.IsLattice.relIndex_span_eq_abs_det_mul {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {N : Submodule ℤ V} [N.IsLattice ℚ] (b c : Basis ι ℚ V)
+    (hb : N ≤ Submodule.span ℤ (Set.range b)) (hc : N ≤ Submodule.span ℤ (Set.range c)) :
+    (N.toAddSubgroup.relIndex (Submodule.span ℤ (Set.range b)).toAddSubgroup : ℚ) =
+      |b.det c| * N.toAddSubgroup.relIndex (Submodule.span ℤ (Set.range c)).toAddSubgroup := by
+  let bN := (Module.Free.chooseBasis ℤ N).reindex
+    (((Module.Free.chooseBasis ℤ N).extendOfIsLattice ℚ).indexEquiv b)
+  have hN := bN.toAddSubgroup_eq_closure_range_extendOfIsLattice
+  rw [AddSubgroup.relIndex_eq_abs_det _ _ ((Submodule.toAddSubgroup_le _ _).mpr hb) _ b hN
+      (Submodule.span_int_eq_addSubgroupClosure _),
+    AddSubgroup.relIndex_eq_abs_det _ _ ((Submodule.toAddSubgroup_le _ _).mpr hc) _ c hN
+      (Submodule.span_int_eq_addSubgroupClosure _), ← abs_mul, Basis.det_mul_det]
 
 end
 
