@@ -8,7 +8,11 @@ module
 public import Mathlib.Data.Set.Card
 
 /-!
-# Cardinalities of preimages under division
+# Cardinalities of images and of preimages under division
+
+Two maps on a common index type that identify the same pairs of indices take equally many values
+on every set of indices (`Set.encard_image_eq_encard_image_of_eq_iff`): the second map factors
+through the first by a map that is injective on its values.
 
 For `n > 0`, every natural number `j` is the quotient `i / n` of exactly the `n` natural numbers
 `n * j, …, n * j + n - 1`. Hence for `n > 0` the preimage of a finite set `S ⊆ ℕ` under
@@ -23,6 +27,22 @@ sides are `0` when `S` is infinite or `n = 0`.
 public section
 
 namespace Set
+
+/-- Two maps that identify the same pairs of indices take equally many values on every set of
+indices. -/
+theorem encard_image_eq_encard_image_of_eq_iff {ι α β : Type*} {f : ι → α} {g : ι → β}
+    (h : ∀ i j, f i = f j ↔ g i = g j) (I : Set ι) : (f '' I).encard = (g '' I).encard := by
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
+  · simp [Set.eq_empty_of_isEmpty I]
+  -- `g` factors through `f` by a map that is injective on the values of `f`.
+  have hfg : g.FactorsThrough f := fun i j hij => (h i j).mp hij
+  have hφ : g = Function.extend f g (fun _ => g i₀) ∘ f :=
+    funext fun i => (hfg.extend_apply _ i).symm
+  rw [hφ, Set.image_comp]
+  refine (Set.InjOn.encard_image ?_).symm
+  rintro _ ⟨i, -, rfl⟩ _ ⟨j, -, rfl⟩ hij
+  rw [hfg.extend_apply, hfg.extend_apply] at hij
+  exact (h i j).mpr hij
 
 /-- The preimage of a set `S ⊆ ℕ` under `i ↦ i / n` has `n` times as many elements as `S`. Both
 sides are `0` when `S` is infinite or `n = 0`. -/

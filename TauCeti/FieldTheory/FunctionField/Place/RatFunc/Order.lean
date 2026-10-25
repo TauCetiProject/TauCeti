@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
+public import TauCeti.FieldTheory.RatFunc.Basic
 
 /-!
 # Orders at the finite places of the rational function field
@@ -33,6 +34,14 @@ rational function field.
   `TauCeti.Place.ord_adicOfIrreducible_X` and its two `simp` specializations spell this out
   for `X`, and `TauCeti.Place.ord_adicOfIrreducible_X_sub_C_self` and
   `TauCeti.Place.ord_adicOfIrreducible_X_sub_C_of_not_associated` for `X - a`.
+* `TauCeti.Place.ord_X_eq_zero_of_ne` and `TauCeti.Place.ord_X_sub_C_eq_zero_of_ne`: `X` is a
+  unit at every place other than `X = 0` and `∞`, and `X - a` at every place other than `X = a`
+  and `∞`.
+* `TauCeti.Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow`: the order of
+  `c X ^ a (X - 1) ^ b` at a place of `k(X)`, with its values `a`, `b` and `-(a + b)` at `0`, `1`
+  and `∞`, so that
+  `TauCeti.Place.exists_gcd_ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_eq_one` finds a place
+  where this order is coprime to `n` when `n` is coprime to one of `a`, `b` and `a + b`.
 * `TauCeti.Place.valuation_ofIrreducible_le_one_iff` and
   `TauCeti.Place.residue_adicOfIrreducible_eq_zero_iff`: regularity and vanishing in the residue
   field are detected by the denominator and numerator respectively.
@@ -145,6 +154,84 @@ theorem ord_adicOfIrreducible_X_sub_C_of_not_associated {q : k[X]} (hq : Irreduc
   classical
   rw [← RatFunc.algebraMap_X, ← RatFunc.algebraMap_C, ← map_sub,
     ord_adicOfIrreducible_algebraMap_irreducible hq (irreducible_X_sub_C a), ite_eq_right h]
+
+/-- `X` has order zero at every place of `k(X)` other than `X = 0` and `∞`. -/
+theorem ord_X_eq_zero_of_ne {P : Place k (RatFunc k)}
+    (hP0 : P ≠ adicOfIrreducible (irreducible_X (R := k))) (hPinf : P ≠ infty k) :
+    P.ord (RatFunc.X : RatFunc k) = 0 := by
+  rcases eq_infty_or_exists_eq_adicOfIrreducible P with rfl | ⟨q, hq, rfl⟩
+  · exact absurd rfl hPinf
+  · exact ord_adicOfIrreducible_X_of_not_associated hq fun h ↦
+      hP0 ((adicOfIrreducible_eq_adicOfIrreducible_iff hq irreducible_X).mpr h)
+
+/-- `X - a` has order zero at every place of `k(X)` other than `X = a` and `∞`. -/
+theorem ord_X_sub_C_eq_zero_of_ne (a : k) {P : Place k (RatFunc k)}
+    (hPa : P ≠ adicOfIrreducible (irreducible_X_sub_C a)) (hPinf : P ≠ infty k) :
+    P.ord (RatFunc.X - RatFunc.C a) = 0 := by
+  rcases eq_infty_or_exists_eq_adicOfIrreducible P with rfl | ⟨q, hq, rfl⟩
+  · exact absurd rfl hPinf
+  · exact ord_adicOfIrreducible_X_sub_C_of_not_associated hq fun h ↦
+      hPa ((adicOfIrreducible_eq_adicOfIrreducible_iff hq (irreducible_X_sub_C a)).mpr h)
+
+/-- **The order of `c X ^ a (X - 1) ^ b`** at a place `P` of `k(X)` is
+`a · ord_P X + b · ord_P (X - 1)`. -/
+theorem ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow (P : Place k (RatFunc k)) {c : k}
+    (hc : c ≠ 0) (a b : ℤ) :
+    P.ord (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b) =
+      a * P.ord RatFunc.X + b * P.ord (RatFunc.X - 1) := by
+  have hc' : algebraMap k (RatFunc k) c ≠ 0 := (_root_.map_ne_zero _).mpr hc
+  have hXa : (RatFunc.X : RatFunc k) ^ a ≠ 0 := zpow_ne_zero a RatFunc.X_ne_zero
+  have hX1 : (RatFunc.X - 1 : RatFunc k) ≠ 0 := by simpa using RatFunc.X_sub_C_ne_zero (1 : k)
+  rw [P.ord_mul (mul_ne_zero hc' hXa) (zpow_ne_zero b hX1), P.ord_mul hc' hXa,
+    ord_algebraMap, ord_zpow, ord_zpow, zero_add]
+
+/-- The order of `c X ^ a (X - 1) ^ b` at the place `X = 0` is `a`. -/
+theorem ord_adicOfIrreducible_X_algebraMap_mul_X_zpow_mul_X_sub_one_zpow {c : k} (hc : c ≠ 0)
+    (a b : ℤ) :
+    (adicOfIrreducible (irreducible_X (R := k))).ord
+      (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b) = a := by
+  have h : ¬Associated (X : k[X]) (X - C 1) := fun h ↦ by
+    simpa using congrArg (eval 0) (eq_of_monic_of_associated monic_X (monic_X_sub_C 1) h)
+  have h1 := ord_adicOfIrreducible_X_sub_C_of_not_associated (irreducible_X (R := k)) h
+  rw [map_one RatFunc.C] at h1
+  rw [ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow _ hc, ord_adicOfIrreducible_X_self, h1]
+  ring
+
+/-- The order of `c X ^ a (X - 1) ^ b` at the place `X = 1` is `b`. -/
+theorem ord_adicOfIrreducible_X_sub_one_algebraMap_mul_X_zpow_mul_X_sub_one_zpow {c : k}
+    (hc : c ≠ 0) (a b : ℤ) :
+    (adicOfIrreducible (irreducible_X_sub_C (1 : k))).ord
+      (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b) = b := by
+  have h : ¬Associated (X - C 1 : k[X]) X := fun h ↦ by
+    simpa using congrArg (eval 0) (eq_of_monic_of_associated (monic_X_sub_C 1) monic_X h)
+  have h1 := ord_adicOfIrreducible_X_sub_C_self (1 : k)
+  rw [map_one RatFunc.C] at h1
+  rw [ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow _ hc,
+    ord_adicOfIrreducible_X_of_not_associated _ h, h1]
+  ring
+
+/-- The order of `c X ^ a (X - 1) ^ b` at the place `X = ∞` is `-(a + b)`. -/
+theorem ord_infty_algebraMap_mul_X_zpow_mul_X_sub_one_zpow {c : k} (hc : c ≠ 0) (a b : ℤ) :
+    (infty k).ord (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b) =
+      -(a + b) := by
+  have h1 : (RatFunc.X - 1 : RatFunc k).intDegree = 1 := by
+    rw [← RatFunc.algebraMap_X, ← map_one (algebraMap k[X] (RatFunc k)), ← map_sub, ← C_1,
+      RatFunc.intDegree_polynomial, natDegree_X_sub_C, Nat.cast_one]
+  rw [ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow _ hc, ord_infty, ord_infty, RatFunc.intDegree_X,
+    h1]
+  ring
+
+/-- If `n` is coprime to one of `a`, `b` and `a + b`, then it is coprime to the order of
+`c X ^ a (X - 1) ^ b` at one of the places `0`, `1` and `∞`. -/
+theorem exists_gcd_ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_eq_one {n : ℕ} {c : k}
+    (hc : c ≠ 0) {a b : ℤ} (hcop : Int.gcd n a = 1 ∨ Int.gcd n b = 1 ∨ Int.gcd n (a + b) = 1) :
+    ∃ P : Place k (RatFunc k), Int.gcd n
+      (P.ord (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b)) = 1 := by
+  rcases hcop with h | h | h
+  · exact ⟨_, by rwa [ord_adicOfIrreducible_X_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc]⟩
+  · exact ⟨_, by
+      rwa [ord_adicOfIrreducible_X_sub_one_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc]⟩
+  · exact ⟨_, by rwa [ord_infty_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc, Int.gcd_neg]⟩
 
 /-- The order of a nonzero rational function at the finite place associated to `q` is the
 multiplicity of `q` in its numerator minus its multiplicity in its denominator. -/

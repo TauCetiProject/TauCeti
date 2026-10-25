@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Euler
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.SpecialFunctions.Sqrt
@@ -38,6 +39,8 @@ which are therefore smooth hypersurfaces of `T*M` when `M` has no boundary.
 * `TauCeti.CotangentBundle.continuous_norm_snd`: the norm of covectors is continuous on `T*M`.
 * `TauCeti.CotangentBundle.contMDiffAt_norm_snd`: it is as smooth as the metric off the zero
   section.
+* `TauCeti.CotangentBundle.mfderiv_norm_snd_vectorBundleEulerField`: the differential of the norm
+  sends the Euler vector field `p ∂_p` to the norm.
 * `TauCeti.CotangentBundle.isRegularPoint_norm_snd` and
   `TauCeti.CotangentBundle.isRegularValue_norm_snd`: every covector other than zero is a regular
   point, and every nonzero value a regular value.
@@ -143,17 +146,17 @@ section Regular
 
 variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
-/-- **Covectors other than zero are regular points of the norm.** Every covector `z` with
-`z.2 ≠ 0` is a regular point of `z ↦ ‖z.2‖`. -/
-theorem isRegularPoint_norm_snd {z : CotangentBundle I M} (hz : z.2 ≠ 0) :
-    IsRegularPoint (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ)
-      (fun z : CotangentBundle I M ↦ ‖z.2‖) z := by
+/-- **The norm of covectors along the Euler vector field.** At a covector `z` other than zero,
+the differential of `z ↦ ‖z.2‖` sends the Euler vector field `p ∂_p` to `‖z.2‖`: along the fibre
+ray `t ↦ t • z` the norm is `t ↦ |t| ‖z.2‖`. -/
+theorem mfderiv_norm_snd_vectorBundleEulerField {z : CotangentBundle I M} (hz : z.2 ≠ 0) :
+    mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) (fun z : CotangentBundle I M ↦ ‖z.2‖) z
+      (vectorBundleEulerField I z) = ‖z.2‖ := by
   set f : CotangentBundle I M → ℝ := fun z ↦ ‖z.2‖
-  -- Along the fibre ray `t ↦ t • z` the norm is `t ↦ |t| ‖z.2‖`, whose derivative at `t = 1` is
-  -- `‖z.2‖ ≠ 0`, so the differential of the norm at `z` is surjective.
   set γ : ℝ → CotangentBundle I M := fun t ↦ ⟨z.proj, t • z.2⟩
-  have hγ : ContMDiff 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 1 γ :=
-    contMDiff_id.smul_totalSpace contMDiff_const
+  have hγ : HasMFDerivAt 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) γ 1
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (vectorBundleEulerField I z)) :=
+    hasMFDerivAt_vectorBundleEulerField z
   have hγ1 : γ 1 = z := by simp [γ]
   have hf : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) f (γ 1) := by
     rw [hγ1]
@@ -167,21 +170,36 @@ theorem isRegularPoint_norm_snd {z : CotangentBundle I M} (hz : z.2 ≠ 0) :
     -- Riemannian fibre norm, so it is supplied from the `NormedSpace` instance.
     exact ((NormedSpace.toNormSMulClass (𝕜 := ℝ) (E := TangentSpace I z.proj →L[ℝ] ℝ)).norm_smul
       t z.2).trans (by rw [Real.norm_of_nonneg ht.le])
-  -- The unit tangent vector of `ℝ` at `t = 1`, and its image, the velocity of the ray.
-  set v := mfderiv 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) γ 1
-    ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (1 : ℝ)).symm 1)
-  have hd : mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) f (γ 1) v = ‖z.2‖ := by
-    rw [← ContinuousLinearMap.comp_apply, ← mfderiv_comp 1 hf (hγ.mdifferentiableAt one_ne_zero),
+  -- The velocity of the ray at `t = 1`, for the unit tangent vector of `ℝ`, is the Euler field.
+  have hv : mfderiv 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) γ 1
+      ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (1 : ℝ)).symm 1) = vectorBundleEulerField I z := by
+    rw [hγ.mfderiv]
+    -- `smulRight 1 v` applied to `t` is `t • v` by definition, and `NormedSpace.fromTangentSpace`
+    -- is the identity of `ℝ`, so the scalar is `1`. The lemma `smulRight_apply` cannot be used by
+    -- `rw` or `simp` here, since `v` lives in the tangent space at `z` rather than at `γ 1`.
+    exact one_smul ℝ _
+  have hd : mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) f (γ 1) (mfderiv 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
+      γ 1 ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (1 : ℝ)).symm 1)) = ‖z.2‖ := by
+    rw [← ContinuousLinearMap.comp_apply, ← mfderiv_comp 1 hf hγ.mdifferentiableAt,
       mfderiv_eq_fderiv, hray.hasFDerivAt.fderiv]
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
       ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearMap.toSpanSingleton_apply, one_smul]
     -- `NormedSpace.fromTangentSpace` is the identity of `ℝ`.
     rfl
-  rw [← hγ1, isRegularPoint_iff]
+  rwa [hv, hγ1] at hd
+
+/-- **Covectors other than zero are regular points of the norm.** Every covector `z` with
+`z.2 ≠ 0` is a regular point of `z ↦ ‖z.2‖`. -/
+theorem isRegularPoint_norm_snd {z : CotangentBundle I M} (hz : z.2 ≠ 0) :
+    IsRegularPoint (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ)
+      (fun z : CotangentBundle I M ↦ ‖z.2‖) z := by
+  -- The differential of the norm sends the Euler vector field to `‖z.2‖ ≠ 0`, so it is
+  -- surjective; the tangent spaces of `ℝ` are `ℝ` itself, read through
+  -- `NormedSpace.fromTangentSpace`.
+  rw [isRegularPoint_iff]
   intro y
-  -- The tangent spaces of `ℝ` are `ℝ` itself, read through `NormedSpace.fromTangentSpace`.
-  refine ⟨(NormedSpace.fromTangentSpace (𝕜 := ℝ) (f (γ 1)) y / ‖z.2‖) • v, ?_⟩
-  rw [map_smul, hd]
+  refine ⟨(NormedSpace.fromTangentSpace (𝕜 := ℝ) ‖z.2‖ y / ‖z.2‖) • vectorBundleEulerField I z, ?_⟩
+  rw [map_smul, mfderiv_norm_snd_vectorBundleEulerField hz]
   exact div_mul_cancel₀ _ ((norm_ne_zero_iff (a := z.2)).2 hz)
 
 /-- **Every nonzero value is a regular value of the norm of covectors.** Its levels are the

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Topology.Instances.EReal.Lemmas
 public import TauCeti.MeasureTheory.Function.Monotone
 public import TauCeti.MeasureTheory.Measure.Mod0MeasureIso
 public import TauCeti.Probability.Cdf
@@ -62,8 +63,13 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   increasing where its values lie strictly between `0` and `1`; together they give
   `MeasureTheory.Measure.quantile_lt_iff`, `MeasureTheory.Measure.strictMonoOn_quantile` and
   `MeasureTheory.Measure.continuousOn_quantile`;
+* `MeasureTheory.Measure.quantile_eq_of_cdf_eq` — invert an interior cdf value under strict
+  monotonicity;
 * `MeasureTheory.Measure.quantile_eq_of_le_cdf_iff` — two quantiles agree when their defining cdf
   level sets agree;
+* `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos` and
+  `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one` — the infinite endpoint
+  limits when the cdf is everywhere positive or everywhere less than one, respectively;
 * `MeasureTheory.Measure.quantile_map_abs` — the quantile of the image of a symmetric law under
   absolute value;
 * `MeasureTheory.Measure.le_upperQuantile_iff` and `MeasureTheory.Measure.upperQuantile_lt_iff`
@@ -264,6 +270,26 @@ theorem lt_quantile_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
     x < μ.quantile t ↔ cdf μ x < t := by
   simpa only [not_le] using (quantile_le_iff (x := x) μ h0 h1).not
 
+/-- If the cdf is everywhere positive, quantiles tend to minus infinity as the level decreases
+to zero. -/
+theorem tendsto_quantile_nhdsGT_zero_of_cdf_pos (μ : Measure ℝ)
+    (hpos : ∀ x, 0 < cdf μ x) :
+    Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0) (𝓝 ⊥) := by
+  apply EReal.tendsto_coe_nhds_bot_iff.mpr
+  refine tendsto_atBot.mpr fun b ↦ ?_
+  filter_upwards [Ioo_mem_nhdsGT (hpos b)] with u hu
+  exact (quantile_le_iff μ hu.1 (hu.2.trans_le (cdf_le_one μ b))).mpr hu.2.le
+
+/-- If the cdf is everywhere less than one, quantiles tend to plus infinity as the level increases
+to one. -/
+theorem tendsto_quantile_nhdsLT_one_of_cdf_lt_one (μ : Measure ℝ)
+    (hlt : ∀ x, cdf μ x < 1) :
+    Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[<] 1) (𝓝 ⊤) := by
+  apply EReal.tendsto_coe_nhds_top_iff.mpr
+  refine tendsto_atTop.mpr fun b ↦ ?_
+  filter_upwards [Ioo_mem_nhdsLT (hlt b)] with u hu
+  exact ((lt_quantile_iff μ ((cdf_nonneg μ b).trans_lt hu.1) hu.2).mpr hu.1).le
+
 /-- The quantile function is monotone on the levels where it is the honest generalized
 inverse. -/
 theorem monotoneOn_quantile (μ : Measure ℝ) : MonotoneOn μ.quantile (Ioo 0 1) := by
@@ -315,6 +341,13 @@ theorem quantile_cdf (μ : Measure ℝ) (hmono : StrictMonoOn (cdf μ) (cdf μ �
   have hq : cdf μ (μ.quantile (cdf μ x)) ∈ Ioo 0 1 :=
     ⟨hx.1.trans_le hle, (monotone_cdf μ h.le).trans_lt hx.2⟩
   exact (hmono hq hx h).not_ge hle
+
+/-- A point whose cumulative mass is an interior level is the quantile at that level, when
+its cumulative distribution function is strictly increasing on interior levels. -/
+theorem quantile_eq_of_cdf_eq (μ : Measure ℝ)
+    (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1))
+    (hx : cdf μ x = t) (ht : t ∈ Ioo 0 1) : μ.quantile t = x :=
+  (congrArg μ.quantile hx).symm.trans (quantile_cdf μ hmono (by rw [hx]; exact ht))
 
 /-- The strict form of `MeasureTheory.Measure.quantile_le_iff`, for a law whose cumulative
 distribution function is continuous, and strictly increasing where its values lie strictly between

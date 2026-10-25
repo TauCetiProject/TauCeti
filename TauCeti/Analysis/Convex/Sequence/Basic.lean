@@ -27,7 +27,8 @@ recovers heights from an anchor and consecutive increments, and characterises co
 differences. A sequence is admissible when it has a real affine lower bound,
 which is equivalent to having a convex minorant. Convexity and admissibility are
 invariant under adding a real affine function, that is, under height translation
-and shear, and under translating the indices. These results provide the discrete
+and shear, and under translating the indices. Reflecting the indices in `N` preserves
+convexity; it discards the heights beyond `N`. These results provide the discrete
 geometry used to construct lower convex envelopes without any coefficient data.
 
 The supporting-line and chord arguments are adapted from William Coram's
@@ -420,6 +421,55 @@ theorem update_of_le {n : ℕ} {y : ℝ}
 
 end IsConvexSeq
 
+/-- Splice two convex sequences where their heights agree, taking the prefix from the
+sequence lying higher on that prefix. This comparison ensures convexity across the join;
+no finiteness assumption on the joining height is needed. -/
+theorem IsConvexSeq.ite_le_of_le_of_eq {g h : ℕ → WithTop ℝ}
+    (hg : IsConvexSeq g) (hh : IsConvexSeq h) {p : ℕ} (hle : ∀ n ≤ p, h n ≤ g n)
+    (heq : g p = h p) : IsConvexSeq (fun n => if n ≤ p then g n else h n) := by
+  have hfinite {n : ℕ} (hn : (if n ≤ p then g n else h n) ≠ ⊤) : h n ≠ ⊤ := by
+    split_ifs at hn with hnp
+    · exact ne_top_of_le_ne_top hn (hle n hnp)
+    · exact hn
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨⟨fun i hi k hk j hj => ?_⟩, fun n hn hn₂ => ?_⟩
+  · simp only [Set.mem_ofPred_eq] at hi hk ⊢
+    by_cases hjp : j ≤ p
+    · rw [ite_eq_left hjp]
+      have hip : i ≤ p := hj.1.trans hjp
+      rw [ite_eq_left hip] at hi
+      by_cases hkp : k ≤ p
+      · rw [ite_eq_left hkp] at hk
+        exact hg.ne_top_of_le_of_le hi hk hj.1 hj.2
+      · have hp : g p ≠ ⊤ := by
+          rw [heq]
+          exact hh.ne_top_of_le_of_le (ne_top_of_le_ne_top hi (hle i hip)) (hfinite hk)
+            hip (by omega)
+        exact hg.ne_top_of_le_of_le hi hp hj.1 hjp
+    · rw [ite_eq_right hjp]
+      exact hh.ne_top_of_le_of_le (hfinite hi) (hfinite hk) hj.1 hj.2
+  · by_cases hnp : n + 2 ≤ p
+    · simpa only [ite_eq_left (by omega : n ≤ p),
+        ite_eq_left (by omega : n + 1 ≤ p), ite_eq_left hnp] using
+        (isConvexSeq_iff_two_mul_le.mp hg).2 n
+          (by simpa only [ite_eq_left (by omega : n ≤ p)] using hn)
+          (by simpa only [ite_eq_left hnp] using hn₂)
+    · by_cases hpn : p ≤ n
+      · have hsame (k : ℕ) (hk : p ≤ k) : (if k ≤ p then g k else h k) = h k := by
+          rcases eq_or_lt_of_le hk with rfl | hk
+          · simp [heq]
+          · simp [not_le.mpr hk]
+        simpa only [hsame n hpn, hsame (n + 1) (by omega), hsame (n + 2) (by omega)] using
+          (isConvexSeq_iff_two_mul_le.mp hh).2 n (hfinite hn) (hfinite hn₂)
+      · have hmid : n + 1 = p := by omega
+        have hnf : g n ≠ ⊤ := by simpa [(by omega : n ≤ p)] using hn
+        have hnh : h n ≠ ⊤ := hfinite hn
+        have hcomp := WithTop.untop₀_le_untop₀ hnf (hle n (by omega))
+        have hconv := (isConvexSeq_iff_two_mul_le.mp hh).2 n hnh (hfinite hn₂)
+        simp only [ite_eq_left (by omega : n ≤ p), ite_eq_right hnp, hmid, heq,
+          ite_self]
+        rw [hmid] at hconv
+        linarith
+
 /-- A height sequence admits a convex minorant exactly when it is admissible, that
 is, when it admits a real affine lower bound. No nonempty-support hypothesis is
 needed. -/
@@ -570,5 +620,57 @@ moves every unit slope `k` places to the right. -/
 theorem unitSlope_shift (h : ℕ → WithTop ℝ) (k n : ℕ) :
     unitSlope (fun n => if k ≤ n then h (n - k) else ⊤) (n + k) = unitSlope h n := by
   simp [unitSlope_def, show k ≤ n + k + 1 by omega, show n + k + 1 - k = n + 1 by omega]
+
+/-! ### Reflection of indices -/
+
+/-- Reflecting heights in `N`, with infinite heights beyond `N`, preserves convexity. The heights
+of `h` beyond `N` are discarded. -/
+theorem IsConvexSeq.reflect {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) (N : ℕ) :
+    IsConvexSeq fun n => if n ≤ N then h (N - n) else ⊤ := by
+  have hmem {n : ℕ} : (if n ≤ N then h (N - n) else ⊤) ≠ ⊤ ↔ n ≤ N ∧ h (N - n) ≠ ⊤ := by
+    split_ifs with hn <;> simp [hn]
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨⟨fun i hi j hj l hl => ?_⟩, fun n hn hn₂ => ?_⟩
+  · obtain ⟨-, hi⟩ := hmem.mp hi
+    obtain ⟨hjN, hj⟩ := hmem.mp hj
+    exact hmem.mpr ⟨hl.2.trans hjN,
+      hh.ne_top_of_le_of_le hj hi (by have := hl.2; omega) (by have := hl.1; omega)⟩
+  · obtain ⟨-, hn⟩ := hmem.mp hn
+    obtain ⟨hn₂N, hn₂⟩ := hmem.mp hn₂
+    have e₀ : N - n = N - (n + 2) + 2 := by omega
+    have e₁ : N - (n + 1) = N - (n + 2) + 1 := by omega
+    rw [e₀] at hn
+    have key := (isConvexSeq_iff_two_mul_le.mp hh).2 (N - (n + 2)) hn₂ hn
+    simp only [show n ≤ N by omega, show n + 1 ≤ N by omega, hn₂N, ite_true, e₀, e₁]
+    linarith
+
+/-- Reflecting heights in `N`, when they are infinite beyond `N`, reverses the finite unit
+edges: the edge `[m, m + 1]` moves to `[N - 1 - m, N - m]`. -/
+theorem finiteEdges_reflect {h : ℕ → WithTop ℝ} {N : ℕ} (hh : ∀ n, N < n → h n = ⊤) :
+    finiteEdges (fun n => if n ≤ N then h (N - n) else ⊤) = (N - 1 - ·) '' finiteEdges h := by
+  ext n
+  simp only [mem_finiteEdges, Set.mem_image]
+  constructor
+  · rintro ⟨h₀, h₁⟩
+    have hn : n + 1 ≤ N := by
+      by_contra hn
+      simp [hn] at h₁
+    refine ⟨N - 1 - n, ⟨?_, ?_⟩, by omega⟩
+    · simpa [hn, show N - (n + 1) = N - 1 - n by omega] using h₁
+    · simpa [show n ≤ N by omega, show N - 1 - n + 1 = N - n by omega] using h₀
+  · rintro ⟨m, ⟨h₀, h₁⟩, rfl⟩
+    have hm : m + 1 ≤ N := by
+      by_contra hm
+      exact h₁ (hh _ (by omega))
+    simp only [show N - 1 - m ≤ N by omega, show N - 1 - m + 1 ≤ N by omega, ite_true,
+      show N - (N - 1 - m) = m + 1 by omega, show N - (N - 1 - m + 1) = m by omega]
+    exact ⟨h₁, h₀⟩
+
+/-- Reflecting heights in `N` negates the unit slopes and reverses their order. -/
+@[simp]
+theorem unitSlope_reflect (h : ℕ → WithTop ℝ) {N n : ℕ} (hn : n < N) :
+    unitSlope (fun n => if n ≤ N then h (N - n) else ⊤) n = -unitSlope h (N - 1 - n) := by
+  simp only [unitSlope_def, show n + 1 ≤ N by omega, show n ≤ N by omega, ite_true,
+    show N - (n + 1) = N - 1 - n by omega, show N - n = N - 1 - n + 1 by omega]
+  ring
 
 end TauCeti

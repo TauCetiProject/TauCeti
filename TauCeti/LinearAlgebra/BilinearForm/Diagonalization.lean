@@ -114,6 +114,19 @@ theorem iIsOrtho.toMatrix_eq_diagonal {R M ι : Type*} [CommSemiring R] [AddComm
   · simp [toMatrix_apply]
   · simp [toMatrix_apply, iIsOrtho_def.mp hb i j hij, hij]
 
+/-- The Gram determinant in an orthogonal basis is the product of the self-pairings. -/
+theorem iIsOrtho.det_toMatrix {R M ι : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+    [Fintype ι] [DecidableEq ι] {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M}
+    (hb : B.iIsOrtho b) : (B.toMatrix b).det = ∏ i, B (b i) (b i) := by
+  rw [hb.toMatrix_eq_diagonal, Matrix.det_diagonal]
+
+/-- The Gram determinant in an orthogonal basis with unit self-pairings is a unit. -/
+theorem iIsOrtho.isUnit_det_toMatrix {R M ι : Type*} [CommRing R] [AddCommMonoid M]
+    [Module R M] [Fintype ι] [DecidableEq ι] {B : LinearMap.BilinForm R M}
+    {b : Module.Basis ι R M} (hb : B.iIsOrtho b) (hbu : ∀ i, IsUnit (B (b i) (b i))) :
+    IsUnit (B.toMatrix b).det :=
+  hb.det_toMatrix ▸ IsUnit.prod_univ_iff.mpr hbu
+
 /-- The quadratic form of a symmetric bilinear form in an orthogonal basis is isometric to
 the diagonal form of its self-pairings. -/
 theorem IsSymm.equivalent_weightedSumSquares_of_iIsOrtho
@@ -319,8 +332,7 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det [IsLocalRing R] (hB 
     obtain ⟨c, hc, -, -⟩ := hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
       hxx.mem_nonZeroDivisors (fun _ ↦ hxx.dvd) hv'
     have hunit : IsUnit (∏ i, B (c i) (c i)) := by
-      rw [← Matrix.det_diagonal, ← hc.toMatrix_eq_diagonal,
-        det_toMatrix_eq_det_sq_mul_det b c]
+      rw [← hc.det_toMatrix, det_toMatrix_eq_det_sq_mul_det b c]
       exact ((b.isUnit_det c).pow 2).mul hdet
     exact ⟨c, hc, fun i ↦ isUnit_of_dvd_unit
       (Finset.dvd_prod_of_mem (fun j ↦ B (c j) (c j)) (Finset.mem_univ i)) hunit⟩

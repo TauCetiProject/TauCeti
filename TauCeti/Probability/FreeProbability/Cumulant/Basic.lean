@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Group.List
 public import TauCeti.Combinatorics.Enumerative.IncidenceAlgebra
 public import TauCeti.Combinatorics.NoncrossingPartition.Interval
 public import TauCeti.Data.Finset.Sort
@@ -33,7 +34,14 @@ lower interval `[0_s, π]` of `NC(s)` as the product of the lattices `NC(B)` ove
 `π`, and turns the moment–cumulant formula into its usual multiplicative form
 `φ (a_{i₁} * ⋯ * a_{iₙ}) = ∑_{π ∈ NC(s)} ∏_{B ∈ π} κ_B(a)`.
 
-No normalisation `φ 1 = 1`, positivity or traciality is assumed. For `s = ∅` the cumulant
+When `φ 1 = 1`, a free cumulant of order at least two vanishes as soon as one of its arguments
+is the unit. In the moment–cumulant formula for such a word, the partitions in which the unit forms
+a part on its own reproduce the moment of the word with the unit deleted, and in every remaining
+partition other than `1_s` the part through the unit gives a shorter cumulant with a unit
+argument.
+
+Apart from that vanishing result, no normalisation `φ 1 = 1` is assumed; positivity and
+traciality are never assumed. For `s = ∅` the cumulant
 `κ_∅(a)` is the empty product `1`; it carries no meaning, since free cumulants are indexed by
 `n ≥ 1`.
 
@@ -60,10 +68,13 @@ No normalisation `φ 1 = 1`, positivity or traciality is assumed. For `s = ∅` 
   partitions of the products of the cumulants along their parts.
 * `TauCeti.freeCumulant_singleton` and `TauCeti.freeCumulant_pair` — the first two cumulants are
   the mean `φ a_i` and the covariance `φ (a_i * a_j) - φ a_i * φ a_j`.
+* `TauCeti.freeCumulant_eq_zero_of_apply_eq_one` — if `φ 1 = 1`, the free cumulant of a word of
+  length at least two with a unit argument vanishes.
 
 ## References
 
-* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lectures 10 and 11.
+* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lectures 10 and 11
+  (Proposition 11.15 for the vanishing of cumulants with a unit argument).
 * R. Speicher, *Multiplicative functions on the lattice of non-crossing partitions and free
   convolution*, Math. Ann. 298 (1994), 611–628.
 -/
@@ -254,6 +265,55 @@ theorem apply_prod_ofFn_eq_sum_prod_freeCumulant {n : ℕ} (hn : n ≠ 0) (a : F
     φ (List.ofFn a).prod =
       ∑ π : NoncrossingPartition (univ : Finset (Fin n)), ∏ B ∈ π.1.parts, freeCumulant φ a B := by
   simp_rw [apply_prod_ofFn_eq_sum_partitionCumulant φ hn a, partitionCumulant_eq_prod_freeCumulant]
+
+/-- A free cumulant of order at least two vanishes as soon as one of its arguments is the unit,
+for a normalised `φ`: if `φ 1 = 1`, `i ∈ s`, `a i = 1` and `s` has at least two elements, then
+`κ_s(a) = 0`. -/
+theorem freeCumulant_eq_zero_of_apply_eq_one (h1 : φ 1 = 1) {i : α} (hai : a i = 1)
+    (hi : i ∈ s) (hs : 1 < #s) : freeCumulant φ a s = 0 := by
+  induction hn : #s using Nat.strong_induction_on generalizing s with | _ n ih =>
+  have hs₀ : s ≠ ∅ := (card_pos.1 (by omega)).ne_empty
+  have hs' : (s.erase i).Nonempty := by
+    rw [← card_pos, card_erase_of_mem hi]
+    omega
+  have htop : (⊤ : NoncrossingPartition s).1.parts = {s} := by
+    rw [NoncrossingPartition.coe_top, Finpartition.parts_top hs₀]
+  -- Split the moment–cumulant formula for `s` according to whether `{i}` is a part. The partitions
+  -- with the part `{i}` contribute the moment–cumulant formula for `s.erase i`, the partition `⊤`
+  -- contributes `κ_s(a)`, and every other partition has a part through `i` of size between `2`
+  -- and `#s - 1`, whose cumulant vanishes by induction.
+  have hsingle : ∑ π ∈ univ.filter fun π : NoncrossingPartition s => {i} ∈ π.1.parts,
+      ∏ B ∈ π.1.parts, freeCumulant φ a B =
+        ∑ τ : NoncrossingPartition (s.erase i), ∏ B ∈ τ.1.parts, freeCumulant φ a B := by
+    rw [sum_subtype _ fun π => by rw [mem_filter, and_iff_right (mem_univ π)]]
+    refine Fintype.sum_equiv (NoncrossingPartition.singletonPartEquiv hi) _ _ fun π => ?_
+    rw [NoncrossingPartition.parts_singletonPartEquiv_apply, ← mul_prod_erase _ _ π.2,
+      freeCumulant_singleton, hai, h1, one_mul]
+  have hother : ∑ π ∈ univ.filter fun π : NoncrossingPartition s => {i} ∉ π.1.parts,
+      ∏ B ∈ π.1.parts, freeCumulant φ a B = freeCumulant φ a s := by
+    refine (sum_eq_single_of_mem ⊤ (mem_filter.2 ⟨mem_univ _, fun h => ?_⟩)
+      fun π hπ hπtop => ?_).trans (by rw [htop, prod_singleton])
+    · rw [htop, mem_singleton] at h
+      rw [← h, card_singleton] at hs
+      exact lt_irrefl 1 hs
+    · have hpart := π.1.part_mem.2 hi
+      have hipart := π.1.mem_part_self.2 hi
+      refine prod_eq_zero hpart (ih _ ?_ hipart ?_ rfl)
+      · refine hn ▸ card_lt_card (ssubset_of_subset_of_ne (π.1.le hpart) fun hps => hπtop ?_)
+        exact Subtype.ext <| (Finpartition.eq_top_of_mem_parts (by rwa [hps] at hpart)).trans
+          NoncrossingPartition.coe_top.symm
+      · obtain ⟨x, hx⟩ | hnt := Finset.Nonempty.exists_eq_singleton_or_nontrivial ⟨i, hipart⟩
+        · rw [hx, mem_singleton] at hipart
+          rw [hx, ← hipart] at hpart
+          exact absurd hpart (mem_filter.1 hπ).2
+        · exact one_lt_card_iff_nontrivial.2 hnt
+  have h : φ (((s.erase i).sort.map a).prod) = φ ((s.sort.map a).prod) := by
+    rw [sort_erase, List.prod_map_erase_of_eq_one _ _ hai]
+  rw [apply_prod_eq_sum_prod_freeCumulant φ a hs',
+    apply_prod_eq_sum_prod_freeCumulant φ a (hs'.mono (erase_subset i s)),
+    ← sum_filter_add_sum_filter_not univ fun π : NoncrossingPartition s => {i} ∈ π.1.parts,
+    hsingle, hother] at h
+  exact add_eq_left.1 h.symm
 
 end Cumulant
 

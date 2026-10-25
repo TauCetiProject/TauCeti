@@ -194,6 +194,15 @@ theorem mpullback_apply (f : M → M') (hf : ContMDiff I I' ∞ f)
     (mpullback f hf φ).1 x v = φ.1 (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
   rw [coe_mpullback, TauCeti.mpullback_apply]
 
+/-- Evaluation of the smooth pullback of a two-form on a pair of tangent vectors. -/
+theorem eval₂_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f)
+    (φ : SmoothForm I' M' F 2) (x : M) (v w : TangentSpace I x) :
+    (mpullback f hf φ).eval₂ x v w = φ.eval₂ (f x) (mfderiv I I' f x v) (mfderiv I I' f x w) := by
+  rw [eval₂_apply, eval₂_apply, mpullback_apply]
+  congr 1
+  ext i
+  fin_cases i <;> rfl
+
 /-- Pullback by the identity is the identity linear map. -/
 @[simp]
 theorem mpullback_id :

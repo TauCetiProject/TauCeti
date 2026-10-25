@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.RingTheory.Derivation.Basic
 import Mathlib.Data.Nat.Choose.Sum
 
@@ -21,11 +22,18 @@ Iterates of a derivation remain linear over the scalars, so they commute with fi
 linear combinations. On products they satisfy the general Leibniz rule
 `Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`.
 
+An element whose derivative is a unit is squarefree, since a square factor `x * x` of `a` makes
+`x` divide `D a`. This detects squarefreeness of a polynomial from a partial derivative that is a
+unit, without factoring it.
+
 ## Main results
 
 * `Derivation.map_ofNat`: a derivation vanishes on numeric literals.
 * `Derivation.iterate_sum_smul`: iterated differentiation commutes with scalar linear combinations.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
+* `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
+* `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
+* `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
 -/
 
 public section
@@ -63,5 +71,26 @@ theorem iterate_apply_mul (D : Derivation R A A) (n : ℕ) (a b : A) :
     congr 1
     refine Finset.sum_congr rfl fun ij hij => ?_
     rw [n.choose_symm_of_eq_add (Finset.mem_antidiagonal.1 hij).symm, mul_comm]
+
+/-- Iterating a scalar multiple of a derivation scales its iterates by the corresponding power. -/
+theorem iterate_smul_apply (D : Derivation R A A) (r : R) (n : ℕ) (a : A) :
+    (r • D)^[n] a = r ^ n • D^[n] a := by
+  simpa [Module.End.pow_apply, coeFn_coe] using
+    LinearMap.congr_fun (smul_pow r D.toLinearMap n) a
+
+/-- Scalar multiples of a locally nilpotent derivation are locally nilpotent. -/
+theorem exists_iterate_smul_eq_zero (D : Derivation R A A)
+    (hD : ∀ a, ∃ n, D^[n] a = 0) (r : R) (a : A) : ∃ n, (r • D)^[n] a = 0 := by
+  obtain ⟨n, hn⟩ := hD a
+  exact ⟨n, by rw [iterate_smul_apply, hn, smul_zero]⟩
+
+/-- An element whose derivative is a unit is squarefree: if `a = x * x * y`, then `x` divides
+`D a = x * D (x * y) + x * y * D x`. -/
+theorem squarefree_of_isUnit (D : Derivation R A A) {a : A} (ha : IsUnit (D a)) :
+    Squarefree a := by
+  rintro x ⟨y, rfl⟩
+  refine isUnit_of_dvd_unit ?_ ha
+  rw [mul_assoc, leibniz, smul_eq_mul, smul_eq_mul]
+  exact dvd_add (dvd_mul_right x _) (dvd_mul_of_dvd_left (dvd_mul_right x y) _)
 
 end Derivation
