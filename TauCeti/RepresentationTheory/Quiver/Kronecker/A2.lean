@@ -186,7 +186,6 @@ theorem submatrix_cartanMatrix_eq_cartanMatrixA2 (k : Type v) [Field k] :
         (isExhaustiveSimpleFamily_vertexSimpleModuleFG k _)).submatrix ![src, tgt] ![src, tgt] =
       cartanMatrixA2 := by
   ext i j
-  rw [Matrix.submatrix_apply, PathAlgebra.cartanMatrix_vertexProjectiveFiniteProjective_apply]
   fin_cases i <;> fin_cases j <;> simp [cartanMatrixA2]
 
 /-- **The Cartan map of `1 ⟶ 2` sends `[P₁]` to `[S₁] + [S₂]`**, where `1` is the source. -/

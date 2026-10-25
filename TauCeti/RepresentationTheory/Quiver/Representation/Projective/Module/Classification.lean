@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Indecomposable
 public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Classification
-public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module
+public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module.Basic
 import Mathlib.Algebra.Category.ModuleCat.Projective
 
 /-!

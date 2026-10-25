@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.RepresentationTheory.GrothendieckGroup.CartanMatrix
 public import TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.ForgetGrading
 public import TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.Multiplicity
-public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.ModuleClassification
+public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module.Classification
 import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Specialization
 import TauCeti.RepresentationTheory.Quiver.LastArrow
 import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Dimension
@@ -65,8 +65,8 @@ a closed formula: if the `(i, j)` entry of `A` counts arrows `i ⟶ j`, then the
   the Cartan matrix is the number of paths from `j` to `i`.
 * `TauCeti.PathAlgebra.cartanMap_vertexProjectiveFiniteProjective`: the Cartan map sends `[Pⱼ]` to
   `∑ᵢ #(j → i) • [Sᵢ]`.
-* `TauCeti.PathAlgebra.cartanMatrix_vertexProjectiveFiniteProjective_eq_inv`: the Cartan matrix is
-  `(1 - Aᵀ)⁻¹`.
+* `TauCeti.PathAlgebra.cartanMatrix_vertexProjectiveFiniteProjective_eq_inv_one_sub_transpose`:
+  the Cartan matrix is `(1 - Aᵀ)⁻¹`.
 
 ## References
 
@@ -238,6 +238,20 @@ theorem vertexProjectiveClassBasis_apply (i : Q) :
       ExactK0.{max u v} (finiteProjectiveModulesExactStructure (pathAlgebra k Q))) :=
   indecomposableProjectiveClassBasis_apply _ _ _ _ i
 
+/-- The multiplicity `[Pⱼ : Sᵢ]` of a vertex simple in a vertex projective is the number of paths
+from `j` to `i`. The projective is read as the finitely generated module that
+`TauCeti.cartanMatrix_apply` and `TauCeti.cartanMap_of_eq_sum` produce from
+`TauCeti.PathAlgebra.vertexProjectiveFiniteProjective`. -/
+theorem jordanHolderMultiplicity_vertexProjectiveFiniteProjective_eq_card_path (i j : Q) :
+    jordanHolderMultiplicity (pathAlgebra k Q)
+        (⟨(vertexProjectiveFiniteProjective k Q j).obj, (ModuleCat.isFG_iff _).mpr
+          (finiteProjectiveModules_iff.mp (vertexProjectiveFiniteProjective k Q j).property).1⟩ :
+          FGModuleCat (pathAlgebra k Q))
+        (vertexSimpleModuleFG k Q i) =
+      Nat.card (Quiver.Path j i) :=
+  -- This finitely generated module is `vertexProjectiveModuleFG k Q j` up to structure eta.
+  jordanHolderMultiplicity_vertexProjectiveModuleFG_eq_card_path k Q i j
+
 /-- **The Cartan map of a path algebra on a vertex projective**: it sends `[Pⱼ]` to
 `∑ᵢ #(j → i) • [Sᵢ]`, the `j`th column of the path-counting matrix. -/
 theorem cartanMap_vertexProjectiveFiniteProjective [Fintype Q] (j : Q) :
@@ -246,12 +260,13 @@ theorem cartanMap_vertexProjectiveFiniteProjective [Fintype Q] (j : Q) :
   rw [cartanMap_of_eq_sum (vertexProjectiveFiniteProjective k Q) (vertexSimpleModuleFG k Q)
     (pairwise_isEmpty_linearEquiv_vertexSimpleModuleFG k Q)
     (isExhaustiveSimpleFamily_vertexSimpleModuleFG k Q) j]
-  -- The finitely generated module is `vertexProjectiveModuleFG k Q j` up to structure eta.
-  exact Finset.sum_congr rfl fun i _ ↦ by
-    rw [← jordanHolderMultiplicity_vertexProjectiveModuleFG_eq_card_path k Q i j]; rfl
+  simp only [jordanHolderMultiplicity_vertexProjectiveFiniteProjective_eq_card_path]
 
 /-- **The Cartan matrix of a path algebra counts paths.** In the bases of vertex projectives and
 vertex simples, the `(i, j)` entry `[Pⱼ : Sᵢ]` is the number of paths from `j` to `i`. -/
+-- The priority lets this fire before the general `TauCeti.cartanMatrix_apply`, which would leave a
+-- multiplicity of the wrapped module instead of a path count.
+@[simp high]
 theorem cartanMatrix_vertexProjectiveFiniteProjective_apply [Fintype Q] (i j : Q) :
     cartanMatrix (vertexProjectiveFiniteProjective k Q) (vertexSimpleModuleFG k Q)
         (isIndecomposableModule_vertexProjectiveFiniteProjective k Q)
@@ -260,8 +275,7 @@ theorem cartanMatrix_vertexProjectiveFiniteProjective_apply [Fintype Q] (i j : Q
         (pairwise_isEmpty_linearEquiv_vertexSimpleModuleFG k Q)
         (isExhaustiveSimpleFamily_vertexSimpleModuleFG k Q) i j =
       Nat.card (Quiver.Path j i) := by
-  rw [cartanMatrix_apply]
-  exact_mod_cast jordanHolderMultiplicity_vertexProjectiveModuleFG_eq_card_path k Q i j
+  rw [cartanMatrix_apply, jordanHolderMultiplicity_vertexProjectiveFiniteProjective_eq_card_path]
 
 /-- **The Cartan matrix of a path algebra inverts `1 - Aᵀ`**, where the `(i, j)` entry of `A`
 counts arrows `i ⟶ j`, in the bases of vertex projectives and vertex simples. Entrywise this is
@@ -277,10 +291,8 @@ theorem one_sub_transpose_mul_cartanMatrix_vertexProjectiveFiniteProjective_eq_o
         (pairwise_isEmpty_linearEquiv_vertexSimpleModuleFG k Q)
         (isExhaustiveSimpleFamily_vertexSimpleModuleFG k Q) = 1 := by
   have : ∀ a b : Q, Finite (a ⟶ b) := finite_hom_of_module_finite_pathAlgebra k Q inferInstance
-  have : Finite (Σ a b : Q, Quiver.Path a b) := (module_finite_pathAlgebra_iff k Q).mp inferInstance
-  have (a b : Q) : Finite (Quiver.Path a b) :=
-    Finite.of_injective (fun p : Quiver.Path a b ↦ (⟨a, b, p⟩ : Σ x y : Q, Quiver.Path x y))
-      fun p q hpq ↦ by simpa using hpq
+  have : ∀ a b : Q, Finite (Quiver.Path a b) :=
+    finite_path_of_finite_paths ((module_finite_pathAlgebra_iff k Q).mp inferInstance)
   ext i j
   have h := congrArg (fun n : ℕ ↦ (n : ℤ)) (card_path_eq_ite_add_sum_lastArrow j i)
   push_cast at h
@@ -292,7 +304,8 @@ theorem one_sub_transpose_mul_cartanMatrix_vertexProjectiveFiniteProjective_eq_o
 
 /-- **The Cartan matrix of a path algebra is `(1 - Aᵀ)⁻¹`**, where the `(i, j)` entry of `A`
 counts arrows `i ⟶ j`, in the bases of vertex projectives and vertex simples. -/
-theorem cartanMatrix_vertexProjectiveFiniteProjective_eq_inv [Fintype Q] [DecidableEq Q] :
+theorem cartanMatrix_vertexProjectiveFiniteProjective_eq_inv_one_sub_transpose [Fintype Q]
+    [DecidableEq Q] :
     cartanMatrix (vertexProjectiveFiniteProjective k Q) (vertexSimpleModuleFG k Q)
         (isIndecomposableModule_vertexProjectiveFiniteProjective k Q)
         (pairwise_isEmpty_linearEquiv_vertexProjectiveFiniteProjective k Q)
