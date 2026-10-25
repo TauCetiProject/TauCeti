@@ -371,7 +371,7 @@ theorem discrField_eq_bot_iff_range_le_alternatingGroup [IsGalois F E] (hf : f.M
   obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
   rw [discrField_eq_bot_iff (hf.discrSqrt_sq e)]
-  exact hf.isSquare_discr_iff_range_le_alternatingGroup hsep hchar
+  exact hsep.isSquare_discr_iff_range_le_alternatingGroup hchar
 
 open scoped Classical in
 /-- The discriminant field is a quadratic extension exactly when the Galois image contains an odd
@@ -383,7 +383,7 @@ theorem finrank_discrField_eq_two_iff [IsGalois F E] (hf : f.Monic) (hsep : f.Se
   obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
   have hδ := hf.discrSqrt_sq e
-  rw [← hf.isSquare_discr_iff_range_le_alternatingGroup (E := E) hsep hchar]
+  rw [← hsep.isSquare_discr_iff_range_le_alternatingGroup (E := E) hchar]
   refine ⟨fun h hsq ↦ ?_, finrank_discrField_eq_two hδ⟩
   rw [← finrank_discrField_eq_one_iff hδ] at hsq
   omega

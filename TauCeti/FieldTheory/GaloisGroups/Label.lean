@@ -33,10 +33,10 @@ exhibits the label then every numbering does. The predicate is therefore a prope
 A label records the permutation invariants of the Galois group. `f.Gal` has the order of the
 reference subgroup, and it is solvable, respectively acts primitively on the roots, exactly when
 the reference subgroup is solvable, respectively primitive. The Galois image consists of even
-permutations exactly when the reference subgroup does, and so, away from characteristic `2` and
-for monic `f`, the discriminant of `f` is a square exactly when the reference subgroup lies in the
-alternating group. In the same way `f` stays irreducible over its discriminant field exactly when
-the even part of the reference subgroup is transitive. Since every reference subgroup is
+permutations exactly when the reference subgroup does, and so, away from characteristic `2`,
+the discriminant of `f` is a square exactly when the reference subgroup lies in the
+alternating group. For monic `f`, irreducibility over its discriminant field is equivalent to
+transitivity of the even part of the reference subgroup. Since every reference subgroup is
 transitive, a polynomial with a label is irreducible.
 
 Separability and the degree are part of the predicate, so an inseparable polynomial, or one of
@@ -325,15 +325,15 @@ theorem HasGaloisLabel.range_le_alternatingGroup_iff (h : HasGaloisLabel f j) :
   obtain ⟨-, -, e, he⟩ := h
   rw [← he.le_alternatingGroup_iff, Equiv.map_permCongrHom_le_alternatingGroup_iff]
 
-/-- **The discriminant reads the parity of the label.** Away from characteristic `2`, a monic
+/-- **The discriminant reads the parity of the label.** Away from characteristic `2`, a
 polynomial with a label has a square discriminant exactly when the reference subgroup lies in the
 alternating group. -/
-theorem HasGaloisLabel.isSquare_discr_iff (h : HasGaloisLabel f j) (hf : f.Monic)
+theorem HasGaloisLabel.isSquare_discr_iff (h : HasGaloisLabel f j)
     (hchar : ringChar F ≠ 2) :
     IsSquare f.discr ↔ referenceSubgroup n j ≤ alternatingGroup (Fin n) := by
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
   rw [← h.range_le_alternatingGroup_iff,
-    hf.isSquare_discr_iff_range_le_alternatingGroup (E := f.SplittingField) h.separable hchar]
+    h.separable.isSquare_discr_iff_range_le_alternatingGroup (E := f.SplittingField) hchar]
 
 open scoped Classical in
 /-- The Galois image of a labelled polynomial consists of even permutations exactly for
@@ -346,15 +346,15 @@ theorem HasGaloisLabel.range_le_alternatingGroup_iff_label (h : HasGaloisLabel f
         (n = 5 ∧ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3)) := by
   rw [h.range_le_alternatingGroup_iff, referenceSubgroup_le_alternatingGroup_iff]
 
-/-- Away from characteristic two, a monic labelled polynomial has square discriminant
+/-- Away from characteristic two, a labelled polynomial has square discriminant
 exactly for the labels `1T1`, `3T1`, `4T2`, `4T4`, `5T1`, `5T2`, and `5T4`. -/
-theorem HasGaloisLabel.isSquare_discr_iff_label (h : HasGaloisLabel f j) (hf : f.Monic)
+theorem HasGaloisLabel.isSquare_discr_iff_label (h : HasGaloisLabel f j)
     (hchar : ringChar F ≠ 2) :
     IsSquare f.discr ↔
       n = 1 ∨ (n = 3 ∧ (j : ℕ) = 0) ∨
         (n = 4 ∧ ((j : ℕ) = 1 ∨ (j : ℕ) = 3)) ∨
         (n = 5 ∧ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3)) := by
-  rw [h.isSquare_discr_iff hf hchar, referenceSubgroup_le_alternatingGroup_iff]
+  rw [h.isSquare_discr_iff hchar, referenceSubgroup_le_alternatingGroup_iff]
 
 /-- **Irreducibility over the discriminant field reads the even part of the label.** Away from
 characteristic `2`, a monic polynomial with a label stays irreducible over its discriminant field

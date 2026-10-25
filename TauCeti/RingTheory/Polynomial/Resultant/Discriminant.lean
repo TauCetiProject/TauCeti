@@ -573,7 +573,7 @@ variable {F : Type*} [Field F] {f : F[X]}
 
 /-- Given a degree-sized numbering of the root set, the discriminant is a square in the base
 field exactly when the product of root differences in an extension domain comes from the base
-field. This is the nonmonic analogue of `Polynomial.Monic.isSquare_discr_iff_mem_range`. -/
+field. No Galois hypothesis is needed, and the zero polynomial is included. -/
 theorem isSquare_discr_iff_mem_range {E : Type*} [CommRing E] [IsDomain E] [Algebra F E]
     (e : Fin f.natDegree ≃ f.rootSet E) :
     IsSquare f.discr ↔ discrSqrt e ∈ Set.range (algebraMap F E) := by
@@ -664,30 +664,6 @@ theorem discrSqrt_sq (hf : f.Monic)
   exact Finset.prod_congr rfl fun i _ ↦ (Finset.prod_pow _ _ _).symm
 
 end Domain
-
-section Field
-
-variable {F : Type*} [Field F] {E : Type*} [CommRing E] [IsDomain E] [Algebra F E] {f : F[X]}
-
-/-- The discriminant is a square in the base field exactly when the product of the root
-differences already comes from the base field. No Galois hypothesis is involved: this is the
-elementary half of the discriminant test, and it is the reading of
-`Polynomial.Monic.discrSqrt_sq` in both directions. -/
-theorem isSquare_discr_iff_mem_range (hf : f.Monic)
-    (e : Fin f.natDegree ≃ f.rootSet E) :
-    IsSquare f.discr ↔ discrSqrt e ∈ Set.range (algebraMap F E) := by
-  constructor
-  · rintro ⟨c, hc⟩
-    have hsq : discrSqrt e * discrSqrt e = algebraMap F E c * algebraMap F E c := by
-      rw [← map_mul, ← hc, ← sq, hf.discrSqrt_sq]
-    rcases mul_self_eq_mul_self_iff.mp hsq with h | h
-    · exact ⟨c, h.symm⟩
-    · exact ⟨-c, by rw [map_neg, ← h]⟩
-  · rintro ⟨c, hc⟩
-    refine ⟨c, (algebraMap F E).injective ?_⟩
-    rw [map_mul, hc, ← sq, hf.discrSqrt_sq]
-
-end Field
 
 end Polynomial.Monic
 

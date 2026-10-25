@@ -102,7 +102,7 @@ when the Galois group is trivial, that is when the quadratic splits over the bas
 
 This holds in every characteristic. Away from characteristic `2`, combined with the quadratic
 formula `Polynomial.isSquare_discr_iff_exists_isRoot_of_degree_eq_two`, it recovers the
-discriminant test `Polynomial.Monic.isSquare_discr_iff_range_le_alternatingGroup` for quadratics
+discriminant test `Polynomial.Separable.isSquare_discr_iff_range_le_alternatingGroup` for quadratics
 independently of the root-difference product. In characteristic `2` the separable quadratic
 `X ^ 2 + X + 1` over `ZMod 2` has no root, so its image is odd, while its discriminant is a square
 by `Polynomial.Monic.isSquare_discr_of_char_two`. -/

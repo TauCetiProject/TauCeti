@@ -180,8 +180,8 @@ theorem range_galActionHom_X_pow_three_sub_three_mul_X_sub_one_le_alternatingGro
     [Fact (((X ^ 3 - 3 * X - 1 : ℚ[X]).map (algebraMap ℚ E)).Splits)] :
     (Gal.galActionHom (X ^ 3 - 3 * X - 1 : ℚ[X]) E).range ≤
       alternatingGroup ((X ^ 3 - 3 * X - 1 : ℚ[X]).rootSet E) := by
-  rw [← Gal.sign_eq_one_iff_range_le_alternatingGroup, ← Monic.isSquare_discr_iff_sign_eq_one
-    (by monicity!) irreducible_X_pow_three_sub_three_mul_X_sub_one.separable (by simp),
+  rw [← Gal.sign_eq_one_iff_range_le_alternatingGroup, ← Separable.isSquare_discr_iff_sign_eq_one
+    irreducible_X_pow_three_sub_three_mul_X_sub_one.separable (by simp),
     discr_X_pow_three_sub_three_mul_X_sub_one]
   exact ⟨9, by norm_num⟩
 
@@ -192,8 +192,8 @@ theorem not_range_galActionHom_X_pow_three_sub_two_le_alternatingGroup
     [Fact (((X ^ 3 - 2 : ℚ[X]).map (algebraMap ℚ E)).Splits)] :
     ¬ (Gal.galActionHom (X ^ 3 - 2 : ℚ[X]) E).range ≤
       alternatingGroup ((X ^ 3 - 2 : ℚ[X]).rootSet E) := by
-  rw [← Gal.sign_eq_one_iff_range_le_alternatingGroup, ← Monic.isSquare_discr_iff_sign_eq_one
-    (by monicity!) irreducible_X_pow_three_sub_two.separable (by simp), discr_X_pow_three_sub_two]
+  rw [← Gal.sign_eq_one_iff_range_le_alternatingGroup, ← Separable.isSquare_discr_iff_sign_eq_one
+    irreducible_X_pow_three_sub_two.separable (by simp), discr_X_pow_three_sub_two]
   rintro ⟨r, hr⟩
   nlinarith [mul_self_nonneg r]
 

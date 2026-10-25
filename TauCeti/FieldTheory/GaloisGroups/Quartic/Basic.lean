@@ -122,11 +122,11 @@ theorem HasGaloisLabel.exists_isRoot_specialize_quarticD4Spec_iff (h : HasGalois
     quarticD4Spec_H, exists_le_map_conj_referenceSubgroup_four_two_iff]
 
 /-- **The discriminant reads the parity of a quartic label.** Away from characteristic `2`, the
-discriminant of a monic quartic with a label is a square exactly when that label is `4T2` or
+discriminant of a quartic with a label is a square exactly when that label is `4T2` or
 `4T4`. -/
-theorem HasGaloisLabel.isSquare_discr_iff_four (h : HasGaloisLabel f j) (hf : f.Monic)
+theorem HasGaloisLabel.isSquare_discr_iff_four (h : HasGaloisLabel f j)
     (hchar : ringChar F ≠ 2) : IsSquare f.discr ↔ (j : ℕ) = 1 ∨ (j : ℕ) = 3 :=
-  (h.isSquare_discr_iff hf hchar).trans (referenceSubgroup_four_le_alternatingGroup_iff j)
+  (h.isSquare_discr_iff hchar).trans (referenceSubgroup_four_le_alternatingGroup_iff j)
 
 variable (hchar : ringChar F ≠ 2) (hf : f.Monic)
 include hchar hf in
@@ -145,13 +145,13 @@ theorem hasGaloisLabel_four_four_iff :
     Multiset.eq_zero_iff_forall_notMem]
   simp only [Polynomial.mem_roots hres0, ← not_exists]
   refine ⟨fun h => ⟨h.irreducible, h.natDegree_eq, fun hsq => ?_, fun hr => ?_⟩, ?_⟩
-  · simpa using (h.isSquare_discr_iff_four hf hchar).1 hsq
+  · simpa using (h.isSquare_discr_iff_four hchar).1 hsq
   · simpa using (h.exists_isRoot_specialize_quarticD4Spec_iff hf).1 hr
   · rintro ⟨hirr, hdeg, hsq, hroot⟩
     -- A non-square discriminant is nonzero, so `f` is separable and carries a label.
     have hsep : f.Separable := hf.discr_ne_zero_iff.1 fun h0 => hsq ⟨0, by simp [h0]⟩
     obtain ⟨k, hk, -⟩ := existsUnique_hasGaloisLabel_four hsep hirr hdeg
-    have hpar := hk.isSquare_discr_iff_four hf hchar
+    have hpar := hk.isSquare_discr_iff_four hchar
     have hrt := hk.exists_isRoot_specialize_quarticD4Spec_iff hf
     have hne : ¬ ((k : ℕ) = 1 ∨ (k : ℕ) = 3) := fun hk1 => hsq (hpar.2 hk1)
     have hgt : ¬ ((k : ℕ) ≤ 2) := fun hk2 => hroot (hrt.2 hk2)
@@ -178,12 +178,12 @@ theorem hasGaloisLabel_four_three_iff :
     Multiset.eq_zero_iff_forall_notMem]
   simp only [Polynomial.mem_roots hres0, ← not_exists]
   refine ⟨fun h => ⟨h.irreducible, h.natDegree_eq,
-    (h.isSquare_discr_iff_four hf hchar).2 (by simp), fun hr => ?_⟩, ?_⟩
+    (h.isSquare_discr_iff_four hchar).2 (by simp), fun hr => ?_⟩, ?_⟩
   · simpa using (h.exists_isRoot_specialize_quarticD4Spec_iff hf).1 hr
   · rintro ⟨hirr, hdeg, hsq, hroot⟩
     have hsep := Polynomial.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
     obtain ⟨k, hk, -⟩ := existsUnique_hasGaloisLabel_four hsep hirr hdeg
-    have hpar := (hk.isSquare_discr_iff_four hf hchar).1 hsq
+    have hpar := (hk.isSquare_discr_iff_four hchar).1 hsq
     have hgt : ¬ ((k : ℕ) ≤ 2) :=
       fun hk2 => hroot ((hk.exists_isRoot_specialize_quarticD4Spec_iff hf).2 hk2)
     have hk3val : (k : ℕ) = 3 := by omega
@@ -202,12 +202,12 @@ theorem hasGaloisLabel_four_one_iff :
       Irreducible f ∧ f.natDegree = 4 ∧ IsSquare f.discr ∧
         ∃ a : F, (quarticD4Spec.specialize F f).IsRoot a := by
   refine ⟨fun h => ⟨h.irreducible, h.natDegree_eq,
-    (h.isSquare_discr_iff_four hf hchar).2 (by simp),
+    (h.isSquare_discr_iff_four hchar).2 (by simp),
     (h.exists_isRoot_specialize_quarticD4Spec_iff hf).2 (by simp)⟩, ?_⟩
   rintro ⟨hirr, hdeg, hsq, hroot⟩
   have hsep := Polynomial.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
   obtain ⟨k, hk, -⟩ := existsUnique_hasGaloisLabel_four hsep hirr hdeg
-  have hpar := (hk.isSquare_discr_iff_four hf hchar).1 hsq
+  have hpar := (hk.isSquare_discr_iff_four hchar).1 hsq
   have hrt := (hk.exists_isRoot_specialize_quarticD4Spec_iff hf).1 hroot
   have hk1val : (k : ℕ) = 1 := by omega
   have hk1 : k = ⟨1, by simp⟩ := by
@@ -232,14 +232,14 @@ theorem hasGaloisLabel_four_zero_or_two_iff :
   constructor
   · rintro (h | h) <;>
       exact ⟨h.irreducible, h.natDegree_eq,
-        fun hsq => by simpa using (h.isSquare_discr_iff_four hf hchar).1 hsq,
+        fun hsq => by simpa using (h.isSquare_discr_iff_four hchar).1 hsq,
         (h.exists_isRoot_specialize_quarticD4Spec_iff hf).2 (by simp)⟩
   · rintro ⟨hirr, hdeg, hsq, hroot⟩
     -- A non-square discriminant is nonzero, so `f` is separable and carries a label.
     have hsep : f.Separable := hf.discr_ne_zero_iff.1 fun h0 => hsq ⟨0, by simp [h0]⟩
     obtain ⟨k, hk, -⟩ := existsUnique_hasGaloisLabel_four hsep hirr hdeg
     have hne : ¬ ((k : ℕ) = 1 ∨ (k : ℕ) = 3) :=
-      fun hk1 => hsq ((hk.isSquare_discr_iff_four hf hchar).2 hk1)
+      fun hk1 => hsq ((hk.isSquare_discr_iff_four hchar).2 hk1)
     have hrt := (hk.exists_isRoot_specialize_quarticD4Spec_iff hf).1 hroot
     have hk02 : (k : ℕ) = 0 ∨ (k : ℕ) = 2 := by omega
     rcases hk02 with hk0 | hk2
