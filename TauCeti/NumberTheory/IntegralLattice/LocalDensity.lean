@@ -11,6 +11,7 @@ public import TauCeti.Data.ZMod.MulCastHom
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.FiniteField
 import TauCeti.Algebra.BigOperators.Field
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -192,14 +193,6 @@ private theorem isSymm_map_toZMod (hp : p ≠ 2) {A : Matrix n n ℤ_[p]} (hA : 
   rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
   exact (hdet.map _).ne_zero
 
-/-- The exponent `∑_{i=1}^{m} 2i = m (m + 1)` of the leading power of `p` in
-`∏_{i=1}^{m} (p^{2i} - 1)`, shared by the odd- and even-rank density formulas. -/
-private theorem sum_range_two_mul_succ (m : ℕ) :
-    ∑ i ∈ Finset.range m, 2 * (i + 1) = m * (m + 1) := by
-  induction m with
-  | zero => rfl
-  | succ m ih => rw [Finset.sum_range_succ, ih]; ring
-
 /-- **The local density at a prime not dividing `2 det A`, in odd rank.** If `p` is odd and `A` is
 a symmetric `(2m + 1) × (2m + 1)` matrix over `ℤ_p` with unit determinant, the normalized count
 `#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)` converges to `2 ∏_{i=1}^{m} (1 - p^{-2i})`. -/
@@ -218,7 +211,8 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_one (hp : p ≠ 2)
   have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   have h' := congrArg (Int.cast : ℤ → ℚ) h
   push_cast at h'
-  rw [localDensityCount_one, h', hchoose, Finset.prod_pow_sub_one hp0, sum_range_two_mul_succ]
+  rw [localDensityCount_one, h', hchoose, Finset.prod_pow_sub_one hp0,
+    Finset.sum_range_two_mul_succ]
   field_simp
   ring
 
@@ -245,7 +239,8 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_two (hp : p ≠ 2)
   have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   have h' := congrArg (Int.cast : ℤ → ℚ) h
   push_cast at h'
-  rw [localDensityCount_one, h', hchoose, Finset.prod_pow_sub_one hp0, sum_range_two_mul_succ]
+  rw [localDensityCount_one, h', hchoose, Finset.prod_pow_sub_one hp0,
+    Finset.sum_range_two_mul_succ]
   field_simp
   ring
 
