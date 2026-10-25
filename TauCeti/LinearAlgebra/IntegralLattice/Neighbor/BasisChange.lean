@@ -8,10 +8,10 @@ module
 public import TauCeti.Algebra.Module.Lattice
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Basic
 public import Mathlib.Algebra.Field.ZMod
-public import Mathlib.FieldTheory.Finiteness
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.Rank
 
+import TauCeti.LinearAlgebra.Matrix.Rank
 import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.LinearAlgebra.Matrix.Notation
 
@@ -113,14 +113,7 @@ instance (A : Matrix ι ι ℚ) (p : ℕ) [NeZero p] : Decidable (A.IsNeighborBa
 theorem isNeighborBasisChange_iff_rank_eq_one {A : Matrix ι ι ℚ} {p : ℕ} [hp : Fact p.Prime] :
     A.IsNeighborBasisChange p ↔
       (∀ i j, ((p : ℚ) * A i j).den = 1) ∧ |A.det| = 1 ∧ (A.neighborReduction p).rank = 1 := by
-  classical
-  have hcard : Nat.card (Set.range (A.neighborReduction p).mulVec) =
-      p ^ (A.neighborReduction p).rank := by
-    have h := Module.card_eq_pow_finrank (K := ZMod p)
-      (V := LinearMap.range (A.neighborReduction p).mulVecLin)
-    rw [ZMod.card, ← Nat.card_eq_fintype_card] at h
-    rw [Matrix.rank, ← h, ← Matrix.coe_mulVecLin, ← LinearMap.coe_range, SetLike.coe_sort_coe]
-  rw [isNeighborBasisChange_iff, hcard,
+  rw [isNeighborBasisChange_iff, natCard_range_mulVec_eq_pow_rank, Nat.card_zmod,
     (Nat.pow_right_injective hp.out.two_le).eq_iff' (pow_one p)]
 
 end Matrix
