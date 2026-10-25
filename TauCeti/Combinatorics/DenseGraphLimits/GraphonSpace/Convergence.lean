@@ -23,19 +23,20 @@ graphon space is complete -- on the unit interval, or on any atomless standard B
 sequence has a limit in graphon space as soon as all its homomorphism densities converge
 (`exists_tendsto_graphonSpace_iff_forall_homDensity_cauchySeq`).
 
-The carriers need not be fixed. For graphons `Wₙ` on arbitrary, possibly different, probability
-carriers, `δ□(Wₙ, W) → 0` exactly when `t(F, Wₙ) → t(F, W)` for every `F`
-(`tendsto_cutDist_iff_forall_homDensity_tendsto`), and `δ□(Wⱼ, Wₖ) → 0` as `j, k → ∞` exactly
-when every `t(F, Wₖ)` is Cauchy (`tendsto_cutDist_prod_iff_forall_homDensity_cauchySeq`). The
-sequence converges in cut distance to some graphon on a given atomless standard Borel carrier,
-such as the unit interval, exactly when all its homomorphism densities converge
+The carriers need not be fixed. For graphons `Wᵢ` on arbitrary, possibly different, probability
+carriers, along any filter, `δ□(Wᵢ, W) → 0` exactly when `t(F, Wᵢ) → t(F, W)` for every `F`
+(`tendsto_cutDist_iff_forall_homDensity_tendsto`), and for a sequence `δ□(Wⱼ, Wₖ) → 0` as
+`j, k → ∞` exactly when every `t(F, Wₖ)` is Cauchy
+(`tendsto_cutDist_prod_iff_forall_homDensity_cauchySeq`). A sequence converges in cut distance to
+some graphon on a given atomless standard Borel carrier, such as the unit interval, exactly when all
+its homomorphism densities converge
 (`exists_graphon_tendsto_cutDist_iff_forall_homDensity_cauchySeq`), that is, exactly when it is
 Cauchy in cut distance (`exists_graphon_tendsto_cutDist_iff_tendsto_cutDist_prod`). Read on the
 step graphons of finite graphs, this is the theory of convergent graph sequences: a sequence of
-finite graphs converges to a graphon `W` in the cut distance of step graphons exactly when all its
-finite homomorphism densities converge to those of `W`
-(`tendsto_cutDist_finiteGraphGraphon_iff_forall_homDensityFin_tendsto`), it is Cauchy in cut
-distance exactly when all its finite homomorphism densities are Cauchy
+finite graphs, or more generally a family along any filter, converges to a graphon `W` in the cut
+distance of step graphons exactly when all its finite homomorphism densities converge to those of
+`W` (`tendsto_cutDist_finiteGraphGraphon_iff_forall_homDensityFin_tendsto`), a sequence is Cauchy
+in cut distance exactly when all its finite homomorphism densities are Cauchy
 (`tendsto_cutDist_finiteGraphGraphon_prod_iff_forall_homDensityFin_cauchySeq`), and it has a
 limit graphon on any given atomless standard Borel carrier exactly when all its finite
 homomorphism densities converge
@@ -149,17 +150,19 @@ variable {Ωs : ℕ → Type*} [∀ n, MeasurableSpace (Ωs n)] {μs : ∀ n, Me
   [∀ n, IsProbabilityMeasure (μs n)]
 
 /-- **Cut-distance convergence is convergence of all homomorphism densities**, for graphons on
-arbitrary, possibly different, probability carriers: `δ□(Wₙ, W) → 0` if and only if
-`t(F, Wₙ) → t(F, W)` for every finite simple graph `F`. -/
-theorem tendsto_cutDist_iff_forall_homDensity_tendsto (Ws : ∀ n, Graphon (Ωs n) (μs n))
-    (W : Graphon Ω' μ') :
-    Tendsto (fun n => cutDist (Ws n) W) atTop (𝓝 0) ↔
+arbitrary, possibly different, probability carriers, indexed by any type and taken along any
+filter: `δ□(Wᵢ, W) → 0` if and only if `t(F, Wᵢ) → t(F, W)` for every finite simple graph `F`.
+Sequences are the case of `atTop` on `ℕ`. -/
+theorem tendsto_cutDist_iff_forall_homDensity_tendsto {ι : Type*} {l : Filter ι}
+    {Ωι : ι → Type*} [∀ i, MeasurableSpace (Ωι i)] {μι : ∀ i, Measure (Ωι i)}
+    [∀ i, IsProbabilityMeasure (μι i)] (Ws : ∀ i, Graphon (Ωι i) (μι i)) (W : Graphon Ω' μ') :
+    Tendsto (fun i => cutDist (Ws i) W) l (𝓝 0) ↔
       ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj],
-        Tendsto (fun k => homDensity F (Ws k)) atTop (𝓝 (homDensity F W)) := by
-  have hd : (fun n => cutDist (Ws n) W) = fun n =>
-      dist (SeparationQuotient.mk (Ws n).unitIntervalRepr : GraphonSpaceI)
+        Tendsto (fun i => homDensity F (Ws i)) l (𝓝 (homDensity F W)) := by
+  have hd : (fun i => cutDist (Ws i) W) = fun i =>
+      dist (SeparationQuotient.mk (Ws i).unitIntervalRepr : GraphonSpaceI)
         (SeparationQuotient.mk W.unitIntervalRepr) := by
-    funext n
+    funext i
     simp [dist_graphonSpace_mk_mk]
   rw [hd, ← tendsto_iff_dist_tendsto_zero, tendsto_graphonSpace_iff_forall_homDensity]
   simp only [homDensityOnSpace_mk, Graphon.homDensity_unitIntervalRepr]
@@ -224,15 +227,17 @@ section GraphSequence
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {m : ℕ → ℕ}
 
-/-- **Convergence of a graph sequence to a graphon.** A sequence of finite graphs `Gₙ` on nonempty
-vertex sets converges to a graphon `W`, on any probability carrier, in the cut distance of their
-step graphons if and only if every finite homomorphism density `t(F, Gₙ)` converges to
-`t(F, W)`. -/
-theorem tendsto_cutDist_finiteGraphGraphon_iff_forall_homDensityFin_tendsto (hm : ∀ n, 0 < m n)
-    (G : ∀ n, SimpleGraph (Fin (m n))) (W : Graphon Ω μ) :
-    Tendsto (fun n => cutDist (finiteGraphGraphon (G n)) W) atTop (𝓝 0) ↔
+/-- **Convergence of finite graphs to a graphon.** A family of finite graphs `Gᵢ` on nonempty
+vertex sets, indexed by any type and taken along any filter, converges to a graphon `W`, on any
+probability carrier, in the cut distance of their step graphons if and only if every finite
+homomorphism density `t(F, Gᵢ)` converges to `t(F, W)`. Graph sequences are the case of `atTop`
+on `ℕ`. -/
+theorem tendsto_cutDist_finiteGraphGraphon_iff_forall_homDensityFin_tendsto {ι : Type*}
+    {l : Filter ι} {mι : ι → ℕ} (hm : ∀ i, 0 < mι i) (G : ∀ i, SimpleGraph (Fin (mι i)))
+    (W : Graphon Ω μ) :
+    Tendsto (fun i => cutDist (finiteGraphGraphon (G i)) W) l (𝓝 0) ↔
       ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj],
-        Tendsto (fun k => homDensityFin F (G k)) atTop (𝓝 (homDensity F W)) := by
+        Tendsto (fun i => homDensityFin F (G i)) l (𝓝 (homDensity F W)) := by
   simp only [tendsto_cutDist_iff_forall_homDensity_tendsto, homDensity_finiteGraphGraphon, hm]
 
 /-- **Cut-distance Cauchy graph sequences are those with Cauchy homomorphism densities.** A
