@@ -158,7 +158,7 @@ theorem _root_.Polynomial.Monic.isSquare_discr_iff_range_le_alternatingGroup
     IsSquare f.discr ↔ (Gal.galActionHom f E).range ≤ alternatingGroup (f.rootSet E) := by
   obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
-  exact (hf.isSquare_discr_iff_mem_range hsep e).trans (discrSqrt_mem_range_iff hchar e)
+  exact (hf.isSquare_discr_iff_mem_range e).trans (discrSqrt_mem_range_iff hchar e)
 
 /-- In characteristic `2` the discriminant of every monic polynomial is a square. For a separable
 polynomial, the sign of a permutation acts trivially because `-1 = 1`, so the product of the root
@@ -179,7 +179,7 @@ theorem _root_.Polynomial.Monic.isSquare_discr_of_char_two (hf : f.Monic)
     have h2 : (2 : E) = 0 := by rw [← map_ofNat (algebraMap F E) 2, hF, map_zero]
     obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
       ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
-    rw [hf.isSquare_discr_iff_mem_range hsep e, IsGalois.mem_range_algebraMap_iff_fixed]
+    rw [hf.isSquare_discr_iff_mem_range e, IsGalois.mem_range_algebraMap_iff_fixed]
     intro ϕ
     rw [AlgEquiv.map_discrSqrt]
     rcases Int.units_eq_one_or (Gal.sign f (Gal.restrict f E ϕ))
