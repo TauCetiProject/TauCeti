@@ -182,15 +182,9 @@ theorem spinSixSpecialLinearToIsometryGroup_transvection_ιMulti
   fin_cases k
   · rw [Function.comp_apply]
     rw [stdSLRep_apply_apply]
-    change ((Matrix.SpecialLinearGroup.transvection hij c : Matrix (Fin 4) (Fin 4) K)).mulVec u =
-      (Matrix.transvection i j c).mulVec u
-    rw [Matrix.SpecialLinearGroup.transvection_coe]
-    simp only [Matrix.transvection]
+    simp [Matrix.SpecialLinearGroup.transvection_coe, Matrix.transvection]
   · rw [Function.comp_apply]
     rw [stdSLRep_apply_apply]
-    change ((Matrix.SpecialLinearGroup.transvection hij c : Matrix (Fin 4) (Fin 4) K)).mulVec v =
-      (Matrix.transvection i j c).mulVec v
-    rw [Matrix.SpecialLinearGroup.transvection_coe]
-    simp only [Matrix.transvection]
+    simp [Matrix.SpecialLinearGroup.transvection_coe, Matrix.transvection]
 
 end TauCeti
