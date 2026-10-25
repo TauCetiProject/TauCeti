@@ -203,13 +203,17 @@ section desc
 
 variable {Z : Type*}
 
+/-- A point of the filled space outside the exterior lies in the filling solid torus. -/
+private theorem mem_range_solidTorusEmbedding_of_notMem (F : DehnFilling h s Y) {y : Y}
+    (hy : y ∉ range F.exteriorEmbedding) : y ∈ range F.solidTorusEmbedding :=
+  (eq_univ_iff_forall.1 F.range_union_range y).resolve_left hy
+
 open Classical in
 /-- The function underlying `TauCeti.DehnFilling.desc`: `a` on the exterior and `b` elsewhere. -/
 private def descFun (F : DehnFilling h s Y) (a : knotExterior (Φ := Φ) → Z) (b : SolidTorus → Z)
     (y : Y) : Z :=
   if hy : y ∈ range F.exteriorEmbedding then a hy.choose
-  else b ((show y ∈ range F.exteriorEmbedding ∪ range F.solidTorusEmbedding from
-    F.range_union_range ▸ mem_univ y).resolve_left hy).choose
+  else b (F.mem_range_solidTorusEmbedding_of_notMem hy).choose
 
 private theorem descFun_exteriorEmbedding (F : DehnFilling h s Y) (a : knotExterior (Φ := Φ) → Z)
     (b : SolidTorus → Z) (x : knotExterior (Φ := Φ)) :
@@ -226,8 +230,7 @@ private theorem descFun_solidTorusEmbedding (F : DehnFilling h s Y)
     obtain ⟨q, rfl, rfl⟩ := exteriorEmbedding_eq_solidTorusEmbedding_iff.1 hx
     rw [← hx, descFun_exteriorEmbedding, hab]
   · rw [descFun, dite_eq_right hp, F.isClosedEmbedding_solidTorusEmbedding.injective
-      ((show _ ∈ range F.exteriorEmbedding ∪ range F.solidTorusEmbedding from
-        F.range_union_range ▸ mem_univ _).resolve_left hp).choose_spec]
+      (F.mem_range_solidTorusEmbedding_of_notMem hp).choose_spec]
 
 variable [TopologicalSpace Z]
 
