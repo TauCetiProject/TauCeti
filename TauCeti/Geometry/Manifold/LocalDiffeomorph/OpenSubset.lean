@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
-# Restricting partial diffeomorphisms to open subsets
+# Partial diffeomorphisms and open subsets
 
 Mathlib's `OpenPartialHomeomorph.restrOpen` shrinks the source of an open partial homeomorphism
 to its intersection with an open set. This file provides the same operation for Mathlib's
@@ -16,9 +16,15 @@ to its intersection with an open set. This file provides the same operation for 
 domains are subsets of the original ones. It is used to make charts small, for example to make
 finitely many charts centred at distinct points pairwise disjoint.
 
+The file also records that the inclusion of an open subset, with the charts Mathlib restricts to
+it, is a local diffeomorphism. Structures defined through charts, such as orientations, can then
+be compared on an open subset and on the ambient manifold.
+
 ## Main declarations
 
 * `PartialDiffeomorph.restrOpen`: the restriction of a partial diffeomorphism to an open set.
+* `isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
+  diffeomorphism.
 -/
 
 public section
@@ -76,3 +82,27 @@ theorem coe_restrOpen_symm (hs : IsOpen s) :
   (rfl)
 
 end PartialDiffeomorph
+
+section Opens
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} {n : WithTop ℕ∞}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The inclusion of an open subset `U` of `M`, charted by the restrictions of the charts of `M`,
+is a `C^n` local diffeomorphism. -/
+theorem isLocalDiffeomorph_subtype_val {U : TopologicalSpace.Opens M} :
+    IsLocalDiffeomorph I I n (Subtype.val : U → M) := fun x ↦ by
+  let e := U.openPartialHomeomorphSubtypeCoe ⟨x⟩
+  let Φ : PartialDiffeomorph I I U M n :=
+    { e.toPartialEquiv with
+      open_source := e.open_source
+      open_target := e.open_target
+      contMDiffOn_toFun := contMDiff_subtype_val.contMDiffOn
+      contMDiffOn_invFun := fun y hy ↦ by
+        refine (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ _).1 ?_
+        exact contMDiffWithinAt_id.congr (fun z hz ↦ e.right_inv hz) (e.right_inv hy) }
+  exact Φ.isLocalDiffeomorphAt I I n (mem_univ x)
+
+end Opens

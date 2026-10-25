@@ -49,6 +49,10 @@ be cancelled on the right of a composite local diffeomorphism.
   local diffeomorphism at every point of its source.
 * `OpenPartialHomeomorph.isLocalDiffeomorphAt_symm_of_mem_maximalAtlas`: its inverse is a local
   diffeomorphism at every point of its target.
+* `PartialDiffeomorph.trans_mem_maximalAtlas`: a partial diffeomorphism followed by a
+  maximal-atlas chart is a maximal-atlas chart.
+* `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq`: a maximal-atlas chart pulls back
+  along a local diffeomorphism to a maximal-atlas chart.
 * `IsLocalDiffeomorphAt.eventually`: being a local diffeomorphism at a point is an open
   condition.
 * `IsLocalDiffeomorphAt.of_comp_right`: a map whose composite with a local diffeomorphism is a local
@@ -222,6 +226,32 @@ theorem _root_.OpenPartialHomeomorph.isLocalDiffeomorphAt_symm_of_mem_maximalAtl
       contMDiffOn_toFun := contMDiffOn_of_mem_maximalAtlas he
       contMDiffOn_invFun := contMDiffOn_symm_of_mem_maximalAtlas he }
   exact isLocalDiffeomorphAt_of_eqOn (Φ := φ.symm) hy fun _ _ => rfl
+
+/-- A partial diffeomorphism `Φ : M → N'` followed by a chart `e` of the maximal `C^n` atlas of
+`N'` is a chart of the maximal `C^n` atlas of `M`. -/
+theorem _root_.PartialDiffeomorph.trans_mem_maximalAtlas {N' : Type*} [TopologicalSpace N']
+    [ChartedSpace H N'] [IsManifold I n M] (Φ : PartialDiffeomorph I I M N' n)
+    {e : OpenPartialHomeomorph N' H} (he : e ∈ IsManifold.maximalAtlas I n N') :
+    Φ.toOpenPartialHomeomorph.trans e ∈ IsManifold.maximalAtlas I n M := by
+  rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
+  exact ⟨(contMDiffOn_of_mem_maximalAtlas he).comp (Φ.contMDiffOn_toFun.mono inter_subset_left)
+      fun _ hx ↦ hx.2,
+    Φ.contMDiffOn_invFun.comp ((contMDiffOn_symm_of_mem_maximalAtlas he).mono inter_subset_left)
+      fun _ hy ↦ hy.2⟩
+
+/-- A chart `e` of the maximal `C^n` atlas of `N'` at `f x` pulls back along a `C^n` local
+diffeomorphism `f` at `x` to a chart of the maximal `C^n` atlas of `M` at `x`, which agrees with
+`e ∘ f` near `x`. -/
+theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq {N' : Type*}
+    [TopologicalSpace N'] [ChartedSpace H N'] [IsManifold I n M] {f : M → N'}
+    {x : M} (hf : IsLocalDiffeomorphAt I I n f x) {e : OpenPartialHomeomorph N' H}
+    (he : e ∈ IsManifold.maximalAtlas I n N') (hfx : f x ∈ e.source) :
+    ∃ e' ∈ IsManifold.maximalAtlas I n M, x ∈ e'.source ∧ ⇑e' =ᶠ[𝓝 x] e ∘ f := by
+  obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
+  refine ⟨Φ.toOpenPartialHomeomorph.trans e, Φ.trans_mem_maximalAtlas he,
+    ⟨hxΦ, by simpa [← hfΦ hxΦ] using hfx⟩, ?_⟩
+  filter_upwards [Φ.open_source.mem_nhds hxΦ] with y hy
+  simp [hfΦ hy]
 
 /-- **Being a local diffeomorphism at a point is an open condition.** A `C^n` local diffeomorphism
 at `x` is a `C^n` local diffeomorphism at every nearby point. -/
