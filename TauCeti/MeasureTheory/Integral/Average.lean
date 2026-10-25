@@ -382,42 +382,6 @@ theorem setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq (hs : μ s
 
 end InnerProduct
 
-section SMulMeasure
-
-variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} {a : ℝ≥0∞}
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The lower average is unchanged when the measure is multiplied by a positive finite
-scalar. -/
-@[simp]
-theorem laverage_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (g : X → ℝ≥0∞) :
-    ⨍⁻ x, g x ∂(a • μ) = ⨍⁻ x, g x ∂μ := by
-  simp only [laverage_eq, lintegral_smul_measure, Measure.smul_apply, smul_eq_mul]
-  exact ENNReal.mul_div_mul_left _ _ ha ha'
-
-/-- The lower average over a set is unchanged when the measure is multiplied by a positive finite
-scalar. -/
-theorem setLAverage_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (g : X → ℝ≥0∞) (s : Set X) :
-    ⨍⁻ x in s, g x ∂(a • μ) = ⨍⁻ x in s, g x ∂μ := by
-  simp only [Measure.restrict_smul, laverage_smul_measure ha ha']
-
-/-- The average is unchanged when the measure is multiplied by a positive finite
-scalar. -/
-@[simp]
-theorem average_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (f : X → F) :
-    ⨍ x, f x ∂(a • μ) = ⨍ x, f x ∂μ := by
-  rw [average_eq, average_eq, integral_smul_measure]
-  simp only [measureReal_def, Measure.smul_apply, smul_eq_mul, ENNReal.toReal_mul]
-  rw [smul_smul, mul_inv_rev, inv_mul_cancel_right₀ (ENNReal.toReal_ne_zero.2 ⟨ha, ha'⟩)]
-
-/-- The average over a set is unchanged when the measure is multiplied by a positive finite
-scalar. -/
-theorem setAverage_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (f : X → F) (s : Set X) :
-    ⨍ x in s, f x ∂(a • μ) = ⨍ x in s, f x ∂μ := by
-  simp only [Measure.restrict_smul, average_smul_measure ha ha']
-
-end SMulMeasure
-
 section ChangeOfVariables
 
 variable {X Y F : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y}
@@ -458,6 +422,43 @@ theorem setAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (ha :
     smul_smul, mul_inv_rev, inv_mul_cancel_right₀ (ENNReal.toReal_ne_zero.2 ⟨ha, ha'⟩)]
 
 end ChangeOfVariables
+
+section SMulMeasure
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} {a : ℝ≥0∞}
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The lower average is unchanged when the measure is multiplied by a positive finite
+scalar. -/
+@[simp]
+theorem laverage_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (g : X → ℝ≥0∞) :
+    ⨍⁻ x, g x ∂(a • μ) = ⨍⁻ x, g x ∂μ := by
+  simpa [MeasurableEquiv.refl] using
+    setLAverage_comp_preimage_of_map_eq_smul (μ := a • μ) (ν := μ)
+      (e := MeasurableEquiv.refl X) (by simp [MeasurableEquiv.refl]) ha ha' g Set.univ
+
+/-- The lower average over a set is unchanged when the measure is multiplied by a positive finite
+scalar. -/
+theorem setLAverage_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (g : X → ℝ≥0∞) (s : Set X) :
+    ⨍⁻ x in s, g x ∂(a • μ) = ⨍⁻ x in s, g x ∂μ := by
+  simp only [Measure.restrict_smul, laverage_smul_measure ha ha']
+
+/-- The average is unchanged when the measure is multiplied by a positive finite
+scalar. -/
+@[simp]
+theorem average_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (f : X → F) :
+    ⨍ x, f x ∂(a • μ) = ⨍ x, f x ∂μ := by
+  simpa [MeasurableEquiv.refl] using
+    setAverage_comp_preimage_of_map_eq_smul (μ := a • μ) (ν := μ)
+      (e := MeasurableEquiv.refl X) (by simp [MeasurableEquiv.refl]) ha ha' f Set.univ
+
+/-- The average over a set is unchanged when the measure is multiplied by a positive finite
+scalar. -/
+theorem setAverage_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (f : X → F) (s : Set X) :
+    ⨍ x in s, f x ∂(a • μ) = ⨍ x in s, f x ∂μ := by
+  simp only [Measure.restrict_smul, average_smul_measure ha ha']
+
+end SMulMeasure
 
 section Exhaustion
 
