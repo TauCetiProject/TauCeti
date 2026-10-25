@@ -449,14 +449,12 @@ generator squares. -/
 lemma monomialGroup_mul_comm_or_neg
     (v : I → M) (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
     (c u : monomialGroup Q v) :
-    (c : (CliffordAlgebra Q)ˣ) * u = (u : (CliffordAlgebra Q)ˣ) * c ∨
-      (c : (CliffordAlgebra Q)ˣ) * u = -(u : (CliffordAlgebra Q)ˣ) * c := by
+    TauCeti.CommuteOrNeg (c : (CliffordAlgebra Q)ˣ) u := by
   let S : Set (CliffordAlgebra Q)ˣ := {x | (x : CliffordAlgebra Q) = -1 ∨
     ∃ i, (x : CliffordAlgebra Q) = ι Q (v i)}
-  have hgen : ∀ {x y : (CliffordAlgebra Q)ˣ}, x ∈ S → y ∈ S → TauCeti.CommuteOrNeg x y := by
-    intro x y hx hy
+  have hgen : ∀ x ∈ S, ∀ y ∈ S, TauCeti.CommuteOrNeg x y := by
+    intro x hx y hy
     dsimp [S] at hx hy
-    unfold TauCeti.CommuteOrNeg
     rcases hx with hx | ⟨i, hx⟩ <;> rcases hy with hy | ⟨j, hy⟩
     · left
       apply Units.ext
@@ -475,29 +473,9 @@ lemma monomialGroup_mul_comm_or_neg
       · right
         apply Units.ext
         simpa [hx, hy] using ι_mul_ι_comm_of_isOrtho (hv i j hij)
-  have hrel : ∀ {x y : (CliffordAlgebra Q)ˣ}, x ∈ Subgroup.closure S →
-      y ∈ Subgroup.closure S → TauCeti.CommuteOrNeg x y := by
-    intro x y hx hy
-    unfold TauCeti.CommuteOrNeg
-    induction hy using Subgroup.closure_induction with
-    | mem y hy =>
-      induction hx using Subgroup.closure_induction with
-      | mem x hx => exact hgen hx hy
-      | one => exact TauCeti.CommuteOrNeg.one_left y
-      | mul x z hx hz ihx ihz =>
-        exact TauCeti.CommuteOrNeg.symm
-          (TauCeti.CommuteOrNeg.mul_right (TauCeti.CommuteOrNeg.symm ihx)
-            (TauCeti.CommuteOrNeg.symm ihz))
-      | inv x hx ih => exact TauCeti.CommuteOrNeg.symm (TauCeti.CommuteOrNeg.inv_right
-          (TauCeti.CommuteOrNeg.symm ih))
-    | one => exact TauCeti.CommuteOrNeg.one_right x
-    | mul y z hy hz ihy ihz => exact TauCeti.CommuteOrNeg.mul_right ihy ihz
-    | inv y hy ih => exact TauCeti.CommuteOrNeg.inv_right ih
   have hc : (c : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := c.property
   have hu : (u : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := u.property
-  rcases hrel hc hu with h | h
-  · exact Or.inl h
-  · exact Or.inr h
+  exact TauCeti.CommuteOrNeg.of_mem_closure hgen hc hu
 
 omit [Invertible (2 : R)] [LinearOrder I] in
 /-- Every conjugate of a signed Clifford monomial is itself or its negative. -/
@@ -513,13 +491,13 @@ lemma monomialGroup_val_eq_or_neg_of_isConj
   rcases monomialGroup_mul_comm_or_neg v hv c u with hcu | hcu
   · left
     have hcancel : (w : (CliffordAlgebra Q)ˣ) * c = (u : (CliffordAlgebra Q)ˣ) * c :=
-      hcv.symm.trans hcu
+      hcv.symm.trans hcu.eq
     exact mul_right_cancel_iff.mp hcancel
   · right
     have hcancel : (w : (CliffordAlgebra Q)ˣ) * c = (-(u : (CliffordAlgebra Q)ˣ)) * c := by
       calc
         (w : (CliffordAlgebra Q)ˣ) * c = (c : (CliffordAlgebra Q)ˣ) * u := hcv.symm
-        _ = (-(u : (CliffordAlgebra Q)ˣ)) * c := hcu
+        _ = (-(u : (CliffordAlgebra Q)ˣ)) * c := hcu.eq
     exact mul_right_cancel_iff.mp hcancel
 
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Commute.Basic
+public import Mathlib.Algebra.Group.Subgroup.Basic
 public import Mathlib.Algebra.Ring.Basic
 
 /-!
@@ -58,6 +59,21 @@ theorem inv_right {M : Type*} [Group M] [HasDistribNeg M] {a x : M}
   · right
     simpa only [inv_neg] using hx.inv_right
 
+/-- Commutation up to a sign is preserved by multiplication on the left. -/
+theorem mul_left {M : Type*} [Semigroup M] [HasDistribNeg M] {a x y : M}
+    (hx : CommuteOrNeg x a) (hy : CommuteOrNeg y a) :
+    CommuteOrNeg (x * y) a :=
+  symm (mul_right (symm hx) (symm hy))
+
+/-- Commutation up to a sign is preserved by inversion on the left. -/
+theorem inv_left {M : Type*} [Group M] [HasDistribNeg M] {a x : M}
+    (hx : CommuteOrNeg x a) : CommuteOrNeg x⁻¹ a :=
+  symm (inv_right (symm hx))
+
+/-- Every element commutes or anticommutes with itself. -/
+theorem refl {M : Type*} [Semigroup M] [HasDistribNeg M] (a : M) : CommuteOrNeg a a :=
+  Or.inl (Commute.refl a)
+
 /-- The identity commutes or anticommutes with every element. -/
 theorem one_left {M : Type*} [Monoid M] [HasDistribNeg M] (x : M) : CommuteOrNeg 1 x :=
   Or.inl (Commute.one_left x)
@@ -65,6 +81,21 @@ theorem one_left {M : Type*} [Monoid M] [HasDistribNeg M] (x : M) : CommuteOrNeg
 /-- Every element commutes or anticommutes with the identity. -/
 theorem one_right {M : Type*} [Monoid M] [HasDistribNeg M] (x : M) : CommuteOrNeg x 1 :=
   Or.inl (Commute.one_right x)
+
+/-- Pairwise commutation up to a sign extends from a set to its subgroup closure. -/
+theorem of_mem_closure {G : Type*} [Group G] [HasDistribNeg G] {S : Set G}
+    (h : ∀ x ∈ S, ∀ y ∈ S, CommuteOrNeg x y) {x y : G}
+    (hx : x ∈ Subgroup.closure S) (hy : y ∈ Subgroup.closure S) : CommuteOrNeg x y := by
+  induction hy using Subgroup.closure_induction with
+  | mem y hy =>
+      induction hx using Subgroup.closure_induction with
+      | mem x hx => exact h x hx y hy
+      | one => exact one_left y
+      | mul x z hx hz ihx ihz => exact mul_left ihx ihz
+      | inv x hx ih => exact inv_left ih
+  | one => exact one_right x
+  | mul y z hy hz ihy ihz => exact mul_right ihy ihz
+  | inv y hy ih => exact inv_right ih
 
 end CommuteOrNeg
 

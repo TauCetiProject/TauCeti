@@ -294,7 +294,6 @@ theorem basis_mul_basis_comm_or_neg
     simp [Finset.inter_comm]
   · right
     rw [hs, ht, symmDiff_comm]
-    simp
     simp [Finset.inter_comm]
   · right
     rw [hs, ht, symmDiff_comm]
