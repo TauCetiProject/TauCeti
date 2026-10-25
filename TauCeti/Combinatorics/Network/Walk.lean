@@ -304,6 +304,16 @@ end Bottleneck
 
 end ArrowWalk
 
+/-- An arrow-disjoint family of walks between distinct vertices has distinct members: a walk
+between distinct vertices traverses some arrow, which a second copy of it would share. -/
+theorem injective_of_pairwise_disjoint_arrows {s t : V} (hst : s ≠ t) {ι : Type*}
+    {P : ι → ArrowWalk Q s t} (hP : Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows) :
+    Function.Injective P := by
+  intro i j hij
+  by_contra hne
+  obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil _ ((P j).arrows_ne_nil hst)
+  exact hP hne (hij ▸ ha) ha
+
 /-! ### Reachability along arrows of positive capacity -/
 
 section PositiveReachable
