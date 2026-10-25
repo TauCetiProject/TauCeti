@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.Padics.Distribution.AnalyticStage
 public import TauCeti.Topology.MetricSpace.Ultra.ContinuousMaps
 import Mathlib.Algebra.CharZero.Infinite
 import TauCeti.NumberTheory.Padics.Factorial
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Amice's polynomials on the discs of level `h`
@@ -97,29 +98,6 @@ private theorem natDegree_discProd_le (h n : ℕ) (a : ℤ_[p]) : (discProd h n 
   exact (natDegree_add_le _ _).trans <| max_le ((natDegree_C _).le.trans zero_le_one)
     ((natDegree_C_mul_le _ _).trans natDegree_X_le)
 
-open scoped Classical in
-/-- At least `⌊n / pʲ⌋` of the `n` consecutive elements `a, a - 1, …, a - (n - 1)` of `ℤ_p` are
-divisible by `pʲ`. -/
-private theorem div_pow_le_card_filter_dvd (a : ℤ_[p]) (n j : ℕ) :
-    n / p ^ j ≤ #{i ∈ Finset.range n | (p : ℤ_[p]) ^ j ∣ a - ((i : ℕ) : ℤ_[p])} := by
-  -- The indices `r + t pʲ`, `t < ⌊n / pʲ⌋`, where `r < pʲ` is congruent to `a` modulo `pʲ`.
-  obtain ⟨r, hr, har⟩ : ∃ r < p ^ j, (p : ℤ_[p]) ^ j ∣ a - r :=
-    ⟨a.appr j, a.appr_lt j, Ideal.mem_span_singleton.mp (a.appr_spec j)⟩
-  have hP : 0 < p ^ j := pow_pos hp.out.pos j
-  calc n / p ^ j = #(Finset.range (n / p ^ j)) := (Finset.card_range _).symm
-    _ ≤ _ := Finset.card_le_card_of_injOn (fun t ↦ r + t * p ^ j) (fun t ht ↦ ?_)
-        (fun s _ t _ hst ↦ ?_)
-  · simp only [Finset.coe_range, Set.mem_Iio] at ht
-    have hle : (t + 1) * p ^ j ≤ n := (Nat.le_div_iff_mul_le hP).mp ht
-    simp only [Finset.coe_filter, Finset.mem_range, Set.mem_ofPred_eq]
-    refine ⟨by nlinarith, ?_⟩
-    have hsub : a - ((r + t * p ^ j : ℕ) : ℤ_[p]) = (a - r) - t * (p : ℤ_[p]) ^ j := by
-      push_cast
-      ring
-    rw [hsub]
-    exact dvd_sub har (dvd_mul_left _ _)
-  · simpa [hP.ne', hp.out.ne_zero] using hst
-
 /-- The product `∏_{i < n} (a - i + pʰ X)` is divisible by `p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)`. -/
 private theorem C_pow_dvd_discProd (h n : ℕ) (a : ℤ_[p]) :
     C ((p : ℤ_[p]) ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1)) ∣ discProd h n a := by
@@ -138,7 +116,7 @@ private theorem C_pow_dvd_discProd (h n : ℕ) (a : ℤ_[p]) :
     calc ∑ k ∈ Finset.range h, n / p ^ (k + 1)
         ≤ ∑ k ∈ Finset.range h,
             #{i ∈ Finset.range n | (p : ℤ_[p]) ^ (k + 1) ∣ a - ((i : ℕ) : ℤ_[p])} :=
-          Finset.sum_le_sum fun k _ ↦ div_pow_le_card_filter_dvd a n (k + 1)
+          Finset.sum_le_sum fun k _ ↦ a.div_pow_le_card_filter_dvd n (k + 1)
       _ = ∑ i ∈ Finset.range n, #{k ∈ Finset.range h | (p : ℤ_[p]) ^ (k + 1) ∣ a - i} := by
           simp only [Finset.card_filter]
           exact Finset.sum_comm
@@ -153,20 +131,6 @@ private theorem C_pow_dvd_discProd (h n : ℕ) (a : ℤ_[p]) :
     _ = ∏ i ∈ Finset.range n, C ((p : ℤ_[p]) ^ d i) := by
         rw [← map_prod, Finset.prod_pow_eq_pow_sum]
     _ ∣ discProd h n a := Finset.prod_dvd_prod_of_dvd _ _ fun i _ ↦ hfac i
-
-/-- In `ℤ_p`, `n!` divides `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)`: by Legendre's formula both
-have valuation `v_p(n!)`. -/
-private theorem factorial_dvd_factorial_div_mul_pow (h n : ℕ) :
-    (n ! : ℤ_[p]) ∣
-      ((n / p ^ h)! : ℤ_[p]) * (p : ℤ_[p]) ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1) := by
-  refine PadicInt.dvd_of_norm_le (le_of_eq ?_)
-  have hm : (n / p ^ h)! * p ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1) ≠ 0 :=
-    mul_ne_zero (factorial_ne_zero _) (pow_ne_zero _ hp.out.ne_zero)
-  rw [← Nat.cast_pow, ← Nat.cast_mul, PadicInt.norm_def, PadicInt.norm_def, PadicInt.coe_natCast,
-    PadicInt.coe_natCast, Padic.norm_natCast_eq_zpow hm,
-    Padic.norm_natCast_eq_zpow (factorial_ne_zero _),
-    padicValNat.mul (factorial_ne_zero _) (pow_ne_zero _ hp.out.ne_zero), padicValNat.prime_pow,
-    ← padicValNat_factorial_eq_add_sum]
 
 /-- **Integrality of Amice's polynomials on discs.** For every centre `a ∈ ℤ_p`, the polynomial
 `w ↦ ⌊n / pʰ⌋! (a + pʰ w choose n)` has coefficients in `ℤ_p`: it is the evaluation of a

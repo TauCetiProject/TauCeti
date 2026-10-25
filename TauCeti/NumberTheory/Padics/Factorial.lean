@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.PadicNumbers
+public import Mathlib.NumberTheory.Padics.PadicIntegers
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Factorial.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -22,6 +22,8 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
 * `TauCeti.tendsto_padic_natCast_factorial`: the factorials tend to zero in `ℚ_[p]`.
 * `TauCeti.padicValNat_factorial_eq_add_sum`: Legendre's formula truncated at level `h`,
   `v_p(n!) = v_p(⌊n / pʰ⌋!) + ∑_{k = 1}^{h} ⌊n / pᵏ⌋`.
+* `TauCeti.factorial_dvd_factorial_div_mul_pow`: its consequence that `n!` divides
+  `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)` in `ℤ_[p]`.
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
 -/
 
@@ -57,6 +59,21 @@ theorem padicValNat_factorial_eq_add_sum (p : ℕ) [Fact p.Prime] (n h : ℕ) :
     rw [ih, Finset.sum_range_succ, ← padicValNat_mul_div_factorial (n / p ^ h),
       padicValNat_factorial_mul, Nat.div_div_eq_div_mul, ← pow_succ]
     ring
+
+open Nat in
+/-- In `ℤ_p`, `n!` divides `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)`: by Legendre's formula both
+have valuation `v_p(n!)`. -/
+theorem factorial_dvd_factorial_div_mul_pow {p : ℕ} [hp : Fact p.Prime] (h n : ℕ) :
+    (n ! : ℤ_[p]) ∣
+      ((n / p ^ h)! : ℤ_[p]) * (p : ℤ_[p]) ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1) := by
+  refine PadicInt.dvd_of_norm_le (le_of_eq ?_)
+  have hm : (n / p ^ h)! * p ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1) ≠ 0 :=
+    mul_ne_zero (factorial_ne_zero _) (pow_ne_zero _ hp.out.ne_zero)
+  rw [← Nat.cast_pow, ← Nat.cast_mul, PadicInt.norm_def, PadicInt.norm_def, PadicInt.coe_natCast,
+    PadicInt.coe_natCast, Padic.norm_natCast_eq_zpow hm,
+    Padic.norm_natCast_eq_zpow (factorial_ne_zero _),
+    padicValNat.mul (factorial_ne_zero _) (pow_ne_zero _ hp.out.ne_zero), padicValNat.prime_pow,
+    ← padicValNat_factorial_eq_add_sum]
 
 end TauCeti
 
