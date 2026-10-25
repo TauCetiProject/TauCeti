@@ -36,8 +36,9 @@ import TauCeti.RepresentationTheory.FDRep.Basic
 
 This file extends a representation's scalars to a possibly noncommutative algebra by base-changing
 each linear endomorphism. A nonzero common fixed vector after scalar extension to an algebra free
-over the base semiring descends to a nonzero common fixed vector over that semiring. In particular,
-this applies to every algebra over a field.
+over the base semiring descends to a nonzero common fixed vector over that semiring. Freeness is
+inferred automatically for ring algebras over a field. For a semiring algebra `A` over a field `K`,
+first install `let : AddCommGroup A := Module.addCommMonoidToAddCommGroup K`.
 
 Two invariants survive the extension unchanged. The **character** is the trace of a linear map, and
 the trace of a base-changed endomorphism is the image of the trace
@@ -252,9 +253,12 @@ variable {R : Type u} {A : Type v} [CommSemiring R] [Semiring A] [Algebra R A]
 variable [Module.Free R A] [AddCommMonoid V] [Module R V]
 
 /-- A nonzero common fixed vector after scalar extension to an algebra free over the base
-semiring descends to a nonzero common fixed vector over the base semiring. This applies to every
-algebra over a field. Neither commutativity nor nontriviality of the coefficient algebra is
-needed. -/
+semiring descends to a nonzero common fixed vector over the base semiring. Neither commutativity
+nor nontriviality of the coefficient algebra is needed.
+
+Freeness is inferred automatically for ring algebras over a field. For a semiring algebra `A` over
+a field `K`, first install
+`let : AddCommGroup A := Module.addCommMonoidToAddCommGroup K`. -/
 theorem _root_.Representation.exists_common_fixed_vector_of_baseChange
     (ρ : _root_.Representation R G V) {w : A ⊗[R] V} (hw : w ≠ 0)
     (hfixed : ∀ g, _root_.Representation.baseChange A ρ g w = w) :
