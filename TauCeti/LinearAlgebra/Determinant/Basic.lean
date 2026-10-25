@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.LinearAlgebra.Multilinear.Span
 import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+import TauCeti.LinearAlgebra.Reflection
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
@@ -295,27 +296,15 @@ theorem det_ker_eq_bot_of_finrank_le_one {R V : Type*} [CommRing R] [AddCommGrou
   · have := SpecialLinearGroup.subsingleton_of_finrank_eq_one (R := R) (V := V) hV
     exact congrArg Subtype.val (Subsingleton.elim (⟨g, hg⟩ : SpecialLinearGroup R V) 1)
 
-/-- A nonzero finite free module has a linear automorphism of determinant `-1`: in a basis, negate
-one coordinate. -/
+/-- A nonzero finite free module has a linear automorphism of determinant `-1`: the reflection
+along a basis vector. -/
 theorem exists_det_eq_neg_one {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
     [Module.Free R V] [Module.Finite R V] [Nontrivial V] :
     ∃ e : V ≃ₗ[R] V, LinearEquiv.det e = -1 := by
-  classical
   let b := Module.Free.chooseBasis R V
   obtain ⟨i⟩ := b.index_nonempty
-  let D := Matrix.diagonal (Function.update (1 : Module.Free.ChooseBasisIndex R V → R) i (-1))
-  have hD : D * D = 1 := by
-    rw [Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
-    congr 1
-    ext j
-    rcases eq_or_ne j i with rfl | h <;> simp [*]
-  have hf : Function.Involutive (Matrix.toLin b b D) := fun x ↦ by
-    rw [← LinearMap.comp_apply, ← Matrix.toLin_mul, hD, Matrix.toLin_one, LinearMap.id_apply]
-  refine ⟨LinearEquiv.ofInvolutive _ hf, Units.ext ?_⟩
-  have : ((LinearEquiv.ofInvolutive _ hf : V ≃ₗ[R] V) : V →ₗ[R] V) = Matrix.toLin b b D := (rfl)
-  rw [LinearEquiv.coe_det, this, LinearMap.det_toLin, Matrix.det_diagonal,
-    Finset.prod_update_of_mem (Finset.mem_univ i)]
-  simp
+  have h : ((2 : R) • b.coord i) (b i) = 2 := by simp
+  exact ⟨Module.reflection h, Module.det_reflection h⟩
 
 end LinearEquiv
 

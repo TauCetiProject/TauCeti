@@ -56,6 +56,8 @@ most two proper classes, so `h⁺(L)` is positive exactly when `h(L)` is.
   a single class.
 * `TauCeti.IntegralLattice.properGenusClasses_finite_iff`: the genus contains finitely many proper
   classes exactly when it contains finitely many classes.
+* `TauCeti.IntegralLattice.SameGenus.properClassNumber_eq`: lattices of the same genus, in
+  possibly different ambient spaces, have the same proper class number.
 
 ## References
 
@@ -269,6 +271,28 @@ theorem properClassNumber_pos_iff {L : IntegralLattice V} :
   rw [properClassNumber_def, Nat.card_pos_iff, Set.finite_coe_iff, properGenusClasses_finite_iff]
   refine and_iff_right ⟨⟨L.properIsometryClass, ?_⟩⟩
   exact properIsometryClass_mem_properGenusClasses_iff.mpr (SameGenus.refl L)
+
+/-- Transport along `f : V ≃ W` carries the proper classes in the genus of `L` onto the proper
+classes in the genus of any lattice in `W` with the same genus as `L`. -/
+theorem properIsometryQuotientEquiv_mem_properGenusClasses_iff (f : V ≃ₗ[ℚ] W)
+    {L : IntegralLattice V} {L' : IntegralLattice W} (h : L.SameGenus L')
+    (c : ProperIsometryQuotient V) :
+    properIsometryQuotientEquiv f c ∈ L'.properGenusClasses ↔ c ∈ L.properGenusClasses := by
+  rw [mem_properGenusClasses_iff, mem_properGenusClasses_iff,
+    toIsometryQuotient_properIsometryQuotientEquiv, isometryQuotientEquiv_mem_genusClasses_iff f h]
+
+/-- **The proper class number is an invariant of the genus.** Lattices of the same genus have the
+same proper class number, even when they live in different ambient spaces. -/
+theorem SameGenus.properClassNumber_eq {L : IntegralLattice V} {M : IntegralLattice W}
+    (h : L.SameGenus M) : L.properClassNumber = M.properClassNumber := by
+  obtain ⟨f⟩ := h.nonempty_linearEquiv
+  exact Nat.card_congr <| (properIsometryQuotientEquiv f).subtypeEquiv fun c ↦
+    (properIsometryQuotientEquiv_mem_properGenusClasses_iff f h c).symm
+
+/-- Isometric lattices have the same proper class number. -/
+theorem Isometry.properClassNumber_eq {L : IntegralLattice V} {M : IntegralLattice W}
+    (e : Isometry L M) : L.properClassNumber = M.properClassNumber :=
+  e.sameGenus.properClassNumber_eq
 
 /-- A positive definite lattice has positive proper class number. -/
 theorem IsPosDef.properClassNumber_pos {L : IntegralLattice V} (hL : L.IsPosDef) :

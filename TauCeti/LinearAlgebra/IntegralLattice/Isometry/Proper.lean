@@ -14,8 +14,8 @@ import TauCeti.LinearAlgebra.Determinant.Basic
 
 An isometry between two integral lattices in the same rational space `V` is *proper* when its
 ambient linear equivalence of `V` has positive determinant, that is, when it preserves the
-orientations of `V`. For lattices carrying the same form this is the usual condition `det = 1`,
-and for a self-isometry it is membership in `SO(L)`
+orientations of `V`. For lattices carrying the same nondegenerate form this is the usual
+condition `det = 1`, and for a self-isometry it is membership in `SO(L)`
 (`TauCeti.IntegralLattice.Isometry.isProper_iff_det_eq_one`). Since the lattices in `V` may carry
 different forms, the ambient determinant of an isometry can be any nonzero rational number, and
 positivity is the condition that is stable under composition and inversion.
@@ -35,6 +35,8 @@ classes in the class of `M` times the index of `SO(M)` is always `2`
 * `TauCeti.IntegralLattice.properIsometryClass`: the proper class `cls⁺ L` of a lattice.
 * `TauCeti.IntegralLattice.ProperIsometryQuotient.toIsometryQuotient`: the class containing a
   proper class.
+* `TauCeti.IntegralLattice.properIsometryQuotientEquiv`: transport of proper classes along a
+  rational linear equivalence.
 
 ## Main results
 
@@ -59,7 +61,7 @@ open Module
 
 namespace TauCeti.IntegralLattice
 
-universe u
+universe u v
 
 variable {V : Type u} [AddCommGroup V] [Module ℚ V]
 
@@ -249,6 +251,65 @@ theorem ProperIsometryQuotient.natCard_specialOrthogonalGroup_out_toIsometryQuot
   exact e.natCard_specialOrthogonalGroup_eq.symm
 
 end ProperIsometryQuotient
+
+section Transport
+
+variable {W : Type v} [AddCommGroup W] [Module ℚ W]
+
+/-- Transporting an isometry along a rational linear equivalence `f : V ≃ W` preserves
+properness: its ambient map is conjugated by `f`, which does not change the determinant. -/
+theorem Isometry.isProper_transport_iff (f : V ≃ₗ[ℚ] W) {M N : IntegralLattice V}
+    {e : Isometry M N} :
+    (((M.transportIsometry f).symm.trans e).trans (N.transportIsometry f)).IsProper ↔
+      e.IsProper := by
+  have h (x : W) : (M.transportIsometry f).symm x = f.symm x := by
+    simpa using (M.transportIsometry f).symm_apply_apply (f.symm x)
+  rw [isProper_def, isProper_def, ← LinearMap.det_conj _ f]
+  congr! 2
+  ext x
+  simp [h]
+
+/-- Transport along a rational linear equivalence `V ≃ W` identifies the proper classes of
+integral lattices in `V` with those in `W`. -/
+noncomputable def properIsometryQuotientEquiv (f : V ≃ₗ[ℚ] W) :
+    ProperIsometryQuotient V ≃ ProperIsometryQuotient W where
+  toFun := Quotient.map (·.transport f) fun _ _ ⟨e, he⟩ ↦
+    ⟨_, (Isometry.isProper_transport_iff f).mpr he⟩
+  invFun := Quotient.map (·.transport f.symm) fun _ _ ⟨e, he⟩ ↦
+    ⟨_, (Isometry.isProper_transport_iff f.symm).mpr he⟩
+  left_inv c := by
+    obtain ⟨M, rfl⟩ := properIsometryClass_surjective c
+    let e := (M.transportIsometry f).trans ((M.transport f).transportIsometry f.symm)
+    have h : ((e : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) = LinearMap.id := LinearMap.ext fun x ↦ by simp [e]
+    refine (Isometry.IsProper.properIsometryClass_eq (e := e) ?_).symm
+    rw [Isometry.isProper_def, h, LinearMap.det_id]
+    exact one_pos
+  right_inv c := by
+    obtain ⟨M, rfl⟩ := properIsometryClass_surjective c
+    let e := (M.transportIsometry f.symm).trans ((M.transport f.symm).transportIsometry f)
+    have h : ((e : W ≃ₗ[ℚ] W) : W →ₗ[ℚ] W) = LinearMap.id := LinearMap.ext fun x ↦ by simp [e]
+    refine (Isometry.IsProper.properIsometryClass_eq (e := e) ?_).symm
+    rw [Isometry.isProper_def, h, LinearMap.det_id]
+    exact one_pos
+
+/-- `properIsometryQuotientEquiv f` sends the proper class of `M` to the proper class of its
+transport along `f`. -/
+@[simp]
+theorem properIsometryQuotientEquiv_properIsometryClass (f : V ≃ₗ[ℚ] W) (M : IntegralLattice V) :
+    properIsometryQuotientEquiv f M.properIsometryClass = (M.transport f).properIsometryClass :=
+  (rfl)
+
+/-- Transport of proper classes is compatible with transport of classes. -/
+@[simp]
+theorem toIsometryQuotient_properIsometryQuotientEquiv (f : V ≃ₗ[ℚ] W)
+    (c : ProperIsometryQuotient V) :
+    (properIsometryQuotientEquiv f c).toIsometryQuotient =
+      isometryQuotientEquiv f c.toIsometryQuotient := by
+  obtain ⟨M, rfl⟩ := properIsometryClass_surjective c
+  rw [properIsometryQuotientEquiv_properIsometryClass, toIsometryQuotient_properIsometryClass,
+    toIsometryQuotient_properIsometryClass, isometryQuotientEquiv_isometryClass]
+
+end Transport
 
 section Fiber
 
