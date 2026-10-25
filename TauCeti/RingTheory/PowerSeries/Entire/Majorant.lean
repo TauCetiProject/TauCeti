@@ -165,9 +165,10 @@ section ColemanMajorant
 
 /-- The **Coleman majorant** `β_B(r) = sup_{m ≥ 1} ‖bₘ‖ rᵐ` of a power series `B = ∑ bₘ Tᵐ` at the
 radius `r`. For `r ≥ 0` it is the Gauss norm of `B - B(0)`
-(`PowerSeries.colemanMajorant_eq_gaussNorm`). It is a genuine supremum when `B` is restricted at
-the radius `r` (`PowerSeries.norm_coeff_succ_mul_pow_le_colemanMajorant`); otherwise it takes the
-junk value of an unbounded real supremum. -/
+(`PowerSeries.colemanMajorant_eq_gaussNorm`). It is a genuine supremum whenever the weighted
+coefficients `‖bₘ‖ rᵐ` are bounded above, for instance when `B` is restricted at the radius `r`
+(`PowerSeries.norm_coeff_succ_mul_pow_le_colemanMajorant`); only for an unbounded family does it
+take the junk value `0` of an unbounded real supremum. -/
 noncomputable def colemanMajorant (B : R⟦X⟧) (r : ℝ) : ℝ :=
   ⨆ m : ℕ, ‖coeff (m + 1) B‖ * r ^ (m + 1)
 
@@ -273,6 +274,7 @@ theorem colemanMajorant_zero (r : ℝ) : colemanMajorant (0 : R⟦X⟧) r = 0 :=
   simpa using colemanMajorant_C (0 : R) r
 
 /-- The Coleman majorant of a monomial `Tᵏ` of positive degree is `rᵏ` at a radius `r ≥ 0`. -/
+@[simp]
 theorem colemanMajorant_X_pow [NormOneClass R] {k : ℕ} (hk : k ≠ 0) {r : ℝ} (hr : 0 ≤ r) :
     colemanMajorant (X ^ k : R⟦X⟧) r = r ^ k := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
@@ -285,6 +287,7 @@ theorem colemanMajorant_X_pow [NormOneClass R] {k : ℕ} (hk : k ≠ 0) {r : ℝ
       ((isEntire_X (R := R)).pow (k + 1) |>.isRestricted r) k
 
 /-- The Coleman majorant of `T` is the radius `r ≥ 0` itself. -/
+@[simp]
 theorem colemanMajorant_X [NormOneClass R] {r : ℝ} (hr : 0 ≤ r) :
     colemanMajorant (X : R⟦X⟧) r = r := by
   simpa using colemanMajorant_X_pow (R := R) one_ne_zero hr
