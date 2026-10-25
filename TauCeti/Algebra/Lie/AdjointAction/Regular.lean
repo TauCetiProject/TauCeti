@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Abelian
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
 
 /-!
@@ -54,7 +54,8 @@ isomorphisms, hence by the adjoint action, and by nonzero scalars. In finite dim
 * `LieAlgebra.isCentralizerRegular_lieEquiv_apply_iff` and
   `LieAlgebra.isCentralizerRegular_smul_iff`: invariance under Lie algebra isomorphisms and
   nonzero scalars.
-* `LieAlgebra.isCentralizerRegular_zero_iff`: `0` is regular exactly when `L` is abelian.
+* `LieAlgebra.isCentralizerRegular_zero_iff`: in finite dimension, `0` is regular exactly when `L`
+  is abelian.
 * `LieAlgebra.not_isCentralizerRegular_of_mem_zeroLocus_vanishingIdeal`: the nonregular elements
   form a Zariski-closed set.
 * `LieAlgebra.vanishingIdeal_setOfPred_isCentralizerRegular_eq_bot`: over an infinite field the
@@ -115,7 +116,7 @@ theorem IsCentralizerRegular.rank_ker_eq {x y : L} (hx : IsCentralizerRegular K 
     Module.rank K (ker (ad K L x)) = Module.rank K (ker (ad K L y)) :=
   (hx y).antisymm (hy x)
 
-/-- Two regular elements have centralizers of the same finite dimension. -/
+/-- Two regular elements have centralizers with the same `Module.finrank`. -/
 theorem IsCentralizerRegular.finrank_ker_eq {x y : L} (hx : IsCentralizerRegular K x)
     (hy : IsCentralizerRegular K y) :
     finrank K (ker (ad K L x)) = finrank K (ker (ad K L y)) :=
@@ -149,19 +150,24 @@ theorem IsCentralizerRegular.isCentralizerRegular_iff_finrank_range_le [FiniteDi
   omega
 
 /-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image. -/
+theorem ker_ad_lieEquiv_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
+    ker (ad K L' (e x)) = (ker (ad K L x)).map (e.toLinearEquiv : L →ₗ[K] L') := by
+  rw [← conj_ad_apply, LinearEquiv.conj_apply, ker_comp, LinearEquiv.ker_comp,
+    Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
+
+/-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image,
+so the two have the same dimension. -/
 @[simp]
 theorem finrank_ker_ad_lieEquiv_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
     finrank K (ker (ad K L' (e x))) = finrank K (ker (ad K L x)) := by
-  rw [← conj_ad_apply, LinearEquiv.conj_apply, ker_comp, LinearEquiv.ker_comp,
-    Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm, LinearEquiv.finrank_map_eq]
+  rw [ker_ad_lieEquiv_apply, LinearEquiv.finrank_map_eq]
 
 /-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image,
 so the two have the same cardinal dimension, up to universe lifting. -/
 theorem lift_rank_ker_ad_lieEquiv_apply (e : L ≃ₗ⁅K⁆ L') (x : L) :
     Cardinal.lift.{u} (Module.rank K (ker (ad K L' (e x)))) =
       Cardinal.lift.{v} (Module.rank K (ker (ad K L x))) := by
-  rw [← conj_ad_apply, LinearEquiv.conj_apply, ker_comp, LinearEquiv.ker_comp,
-    Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm, LinearEquiv.lift_rank_map_eq]
+  rw [ker_ad_lieEquiv_apply, LinearEquiv.lift_rank_map_eq]
 
 /-- **Regularity is invariant under Lie algebra isomorphisms**, in particular under the adjoint
 action of a group acting by Lie algebra automorphisms. -/
@@ -184,13 +190,9 @@ theorem isCentralizerRegular_smul_iff {c : K} (hc : c ≠ 0) {x : L} :
   simp only [isCentralizerRegular_iff]
   rw [_root_.map_smul, ker_smul _ _ hc]
 
-/-- In an abelian Lie algebra the adjoint action of every element vanishes. -/
-private theorem ad_eq_zero_of_isLieAbelian [IsLieAbelian L] (x : L) : ad K L x = 0 :=
-  LinearMap.ext fun z ↦ by rw [ad_apply, trivial_lie_zero, LinearMap.zero_apply]
-
-/-- **`0` is regular exactly in an abelian Lie algebra.** In a finite-dimensional Lie algebra the
-centralizer of `0` is everything, so `0` is regular exactly when every centralizer is
-everything. -/
+/-- **In finite dimension, `0` is regular exactly in an abelian Lie algebra.** In a
+finite-dimensional Lie algebra the centralizer of `0` is everything, so `0` is regular exactly
+when every centralizer is everything. -/
 @[simp]
 theorem isCentralizerRegular_zero_iff [FiniteDimensional K L] :
     IsCentralizerRegular K (0 : L) ↔ IsLieAbelian L := by

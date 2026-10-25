@@ -39,6 +39,8 @@ of the elements whose centralizer has minimal dimension.
   `j`-th power, holding on a set of matrices holds on its Zariski closure.
 * `Matrix.isClosed_setOfPred_rank_le` and `Matrix.isClosed_setOfPred_rank_pow_le`: the matrices of
   rank at most `r`, and the square matrices `Z` with `rank (Z ^ j) ≤ r`, form closed sets.
+* `LinearMap.exists_eval_eq_det_submatrix`: each minor of the matrix of a linear family `φ x` is a
+  polynomial in the coordinates of `x`.
 * `LinearMap.finrank_range_le_of_mem_zeroLocus_vanishingIdeal`: a rank bound on a linear family
   of linear maps passes to the Zariski closure in the coordinates of the parameter.
 * `LinearMap.vanishingIdeal_setOfPred_le_finrank_range_eq_bot`: over an infinite field, a nonempty
@@ -127,8 +129,9 @@ variable {K V M N ι : Type*} [Field K] [AddCommGroup V] [Module K V] [AddCommGr
   (φ : V →ₗ[K] M →ₗ[K] N)
 
 /-- The minors of the matrices of a linear family of linear maps are polynomials in the
-coordinates of the parameter. -/
-private theorem exists_eval_eq_det_submatrix {κ κ' : Type*} [Fintype κ] [DecidableEq κ]
+coordinates of the parameter: for bases `bM` and `bN` and row and column selections `r` and `c`,
+some polynomial `q` evaluates at the `b`-coordinates of `x` to the minor of the matrix of `φ x`. -/
+theorem exists_eval_eq_det_submatrix {κ κ' : Type*} [Fintype κ] [DecidableEq κ]
     [Finite κ'] (bM : Module.Basis κ K M) (bN : Module.Basis κ' K N) {p : ℕ} (r : Fin p → κ')
     (c : Fin p → κ) :
     ∃ q : MvPolynomial ι K, ∀ x : V,
