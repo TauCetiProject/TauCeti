@@ -39,6 +39,8 @@ Chambert-Loir and María Inés de Frutos-Fernández.
   sends `∏ⱼ dp R kⱼ mⱼ` to the coefficient of `∏ⱼ Tⱼ ^ kⱼ` in `f (∑ⱼ Tⱼ ⊗ mⱼ)`.
 * `DividedPowerAlgebra.homogeneousLawMap_comp` and
   `DividedPowerAlgebra.homogeneousLawMap_comp_mapHomogeneousSubmodule`: naturality in both modules.
+* `DividedPowerAlgebra.homogeneousLawEquiv_symm_comp_mapHomogeneousSubmodule_eq_iff`: the same
+  naturality for representing linear maps.
 
 ## Implementation notes
 
@@ -440,6 +442,19 @@ theorem homogeneousLawEquiv_symm_apply_dp (d : ℕ)
   conv_rhs => rw [← (homogeneousLawEquiv R M N d).apply_symm_apply f]
   rw [homogeneousLawEquiv_apply, coe_homogeneousLawMap_apply,
     ground_toPolynomialLaw_comp_gamma_apply]
+
+/-- Representability is natural: the linear maps representing homogeneous laws `F` on `N` and
+`G` on `M` intertwine `Γ^d(f)` and `g` exactly when the laws intertwine `f` and `g`. -/
+theorem homogeneousLawEquiv_symm_comp_mapHomogeneousSubmodule_eq_iff (d : ℕ) {Q : Type*}
+    [AddCommMonoid Q] [Module R Q] (f : M →ₗ[R] N) (g : P →ₗ[R] Q)
+    (F : PolynomialLaw.homogeneousSubmodule R N Q d)
+    (G : PolynomialLaw.homogeneousSubmodule R M P d) :
+    (homogeneousLawEquiv R N Q d).symm F ∘ₗ mapHomogeneousSubmodule f d =
+        g ∘ₗ (homogeneousLawEquiv R M P d).symm G ↔
+      (F : N →ₚₗ[R] Q).comp f.toPolynomialLaw = g.toPolynomialLaw.comp (G : M →ₚₗ[R] P) := by
+  rw [← (homogeneousLawMap_injective (R := R) (M := M) (N := Q) d).eq_iff, Subtype.ext_iff,
+    homogeneousLawMap_comp_mapHomogeneousSubmodule, homogeneousLawMap_comp]
+  simp only [← homogeneousLawEquiv_apply, LinearEquiv.apply_symm_apply]
 
 end Existence
 

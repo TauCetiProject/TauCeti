@@ -116,13 +116,13 @@ private theorem tensorLaw_comp (d : ℕ) (f : M →ₗ[R] M') (g : N →ₗ[R] N
     (tensorLaw R M' N' d : M' × N' →ₚₗ[R] _).comp (f.prodMap g).toPolynomialLaw =
       (mapHomogeneousSubmodule (TensorProduct.map f g) d).toPolynomialLaw.comp
         (tensorLaw R M N d) := by
-  have hmk : (TensorProduct.mk R M' N').compl₁₂ f g =
-      (TensorProduct.mk R M N).compr₂ (TensorProduct.map f g) := by
-    ext m n
-    simp
-  rw [tensorLaw, tensorLaw, Subtype.coe_mk, Subtype.coe_mk, ← PolynomialLaw.comp_assoc,
-    ← LinearMap.toPolynomialLaw₂_compl₁₂, hmk, LinearMap.toPolynomialLaw₂_compr₂,
-    PolynomialLaw.comp_assoc, gamma_comp_toPolynomialLaw, PolynomialLaw.comp_assoc]
+  have hmk : (TensorProduct.mk R M' N').toPolynomialLaw₂.comp (f.prodMap g).toPolynomialLaw =
+      (TensorProduct.map f g).toPolynomialLaw.comp (TensorProduct.mk R M N).toPolynomialLaw₂ := by
+    rw [← LinearMap.toPolynomialLaw₂_compl₁₂, ← LinearMap.toPolynomialLaw₂_compr₂]
+    -- Both bilinear maps send `(m, n)` to `f m ⊗ g n`.
+    congr 1
+  simp only [tensorLaw, ← PolynomialLaw.comp_assoc, hmk]
+  simp only [PolynomialLaw.comp_assoc, gamma_comp_toPolynomialLaw]
 
 variable (R M N) in
 /-- Roby's tensor map `Γ^d_R(M) ⊗[R] Γ^d_R(N) → Γ^d_R(M ⊗[R] N)` of homogeneous divided powers,
@@ -195,16 +195,10 @@ theorem homogeneousTensorMap_comp_map (d : ℕ) (f : M →ₗ[R] M') (g : N →�
         TensorProduct.map (mapHomogeneousSubmodule f d) (mapHomogeneousSubmodule g d) =
       mapHomogeneousSubmodule (TensorProduct.map f g) d ∘ₗ homogeneousTensorMap R M N d := by
   -- Both representing maps on `Γ^{2d}(M × N)` come from the same law, by `tensorLaw_comp`.
-  have hrep :
-      (homogeneousLawEquiv R (M' × N') _ (d + d)).symm (tensorLaw R M' N' d) ∘ₗ
-          mapHomogeneousSubmodule (f.prodMap g) (d + d) =
-        mapHomogeneousSubmodule (TensorProduct.map f g) d ∘ₗ
-          (homogeneousLawEquiv R (M × N) _ (d + d)).symm (tensorLaw R M N d) := by
-    refine homogeneousLawMap_injective (d + d) (Subtype.ext ?_)
-    rw [homogeneousLawMap_comp_mapHomogeneousSubmodule, homogeneousLawMap_comp,
-      ← homogeneousLawEquiv_apply, ← homogeneousLawEquiv_apply, LinearEquiv.apply_symm_apply,
-      LinearEquiv.apply_symm_apply, tensorLaw_comp]
-  rw [homogeneousTensorMap, homogeneousTensorMap, LinearMap.comp_assoc, prodMul_comp_map,
-    ← LinearMap.comp_assoc, hrep, LinearMap.comp_assoc]
+  have hrep := (homogeneousLawEquiv_symm_comp_mapHomogeneousSubmodule_eq_iff (d + d)
+    (f.prodMap g) (mapHomogeneousSubmodule (TensorProduct.map f g) d) _ _).mpr
+      (tensorLaw_comp d f g)
+  simp only [homogeneousTensorMap, LinearMap.comp_assoc, prodMul_comp_map]
+  simp only [← LinearMap.comp_assoc, hrep]
 
 end DividedPowerAlgebra
