@@ -169,6 +169,7 @@ theorem kernelMap_add {C' C'' : ℝ} {m' : S₁ → S₀ → R}
     (finite_support_mul_kernelMap hm' a p₀)
 
 /-- The zero kernel gives the zero map. -/
+@[simp]
 theorem kernelMap_zero (hm : ∀ p₁ p₀, (0 : S₁ → S₀ → R) p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + C)
     (hmfin : ∀ p₁, (0 : S₁ → S₀ → R) p₁ ∈ NovikovModule R F₀) :
     kernelMap hm hmfin = 0 := by
@@ -177,6 +178,7 @@ theorem kernelMap_zero (hm : ∀ p₁ p₀, (0 : S₁ → S₀ → R) p₁ p₀ 
 
 /-- The identity kernel, with coefficient `1` on the diagonal and `0` off it, gives the identity
 map. -/
+@[simp]
 theorem kernelMap_eq_id {S : Type*} [DecidableEq S] {F : S → ℝ}
     (hm : ∀ p q, (if p = q then (1 : R) else 0) ≠ 0 → F q ≤ F p + C)
     (hmfin : ∀ p, (fun q => if p = q then (1 : R) else 0) ∈ NovikovModule R F) :
