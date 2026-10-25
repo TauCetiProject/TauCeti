@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.LayerInvariant
 import TauCeti.FieldTheory.Normal.Embeddings
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.PrimeDegree
 import TauCeti.NumberTheory.ClassFieldTheory.Global.CorestrictionLocalization
+import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.Sequence
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Input
 import TauCeti.NumberTheory.ClassFieldTheory.Global.PrimeDegreeDecomposition
 import TauCeti.NumberTheory.LocalField.Unramified.Existence
@@ -19,7 +20,7 @@ import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Con
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
-# Idele classes with prescribed sum of local invariants
+# Idele classes with prescribed local invariants
 
 Let `K` be a number field. This file proves the cyclotomic input to the global invariant map: every
 finite Galois layer `L/F` of the idele formation of `K` has a refinement `L'/F` carrying a class of
@@ -37,6 +38,14 @@ of the restricted character and of the component of `a` there
 localization vanishes. At `v`, the root of unity `ζ` generates the unramified extension of degree
 `n` of `K_v`, whose arithmetic Frobenius raises `ζ` to the `q`-th power, so the local invariant is
 `v(π) · χ(Frob_v) = 1 / n` (`invMap_ideleBrLocalization_characterCarryCocycle`).
+
+The integer multiples of these classes realize every family of local Brauer classes supported at
+one finite place. At a real place `w`, the carry class of the idele with component `-1` at `w` and
+`1` elsewhere, and of a character `ψ` of the action of `G_K` on a primitive fourth root of unity
+with `ψ (-1) = 1 / 2`, has invariant `1 / 2` at `w` and vanishes elsewhere: the archimedean Artin
+symbol of `-1` is complex conjugation (`infiniteArtinAt_rootsOfUnity_of_isReal`), which inverts the
+root of unity. Every family of local Brauer classes is therefore the family of localizations of a
+class of `H²(G_K, I_{Kˢ})` (`ideleLocalization_surjective`).
 
 To reach a layer `V ◁ U` of `G_K`, take `n = [L : F] · [G_K : U]`. The restriction of the class to
 `U` is inflated from a refinement `V' ◁ U` of the layer (`NormalLayer.exists_explicitInfl2_eq`).
@@ -78,6 +87,8 @@ invariant `1 / [U : V]` (`exists_ideleSumLocalInv_eq_one_div_degree_of_prime`).
 
 * `TauCeti.ClassFieldTheory.exists_sumLocalInv_ideleLocalization_eq`: for every `n ≥ 1` there is
   a class of `H²(G_K, I_{Kˢ})` whose local invariants sum to `1 / n`.
+* `TauCeti.ClassFieldTheory.ideleLocalization_surjective`: every family of local Brauer classes is
+  the family of localizations of a class of `H²(G_K, I_{Kˢ})`.
 * `TauCeti.ClassFieldTheory.exists_refinement_ideleLayerCorInfl_eq_index_nsmul`: `[G_K : U]`
   times every class of `H²(G_K, I_{Kˢ})` is the class over `G_K` of an idele-layer class of a
   refinement of a given layer over `U`.
@@ -192,8 +203,32 @@ private theorem ideleCoeffInfiniteComponent_placeIdele {E : Ω} {v : HeightOneSp
   simp only [h1, map_one, toMul_zero, Units.val_one]
 
 /-- **A carry class of an idele concentrated at a finite place is supported there**: for an idele
-of `E = K` concentrated at a place `w` above `v`, the local invariants of the carry class `a ∪ δχ`
-vanish away from `v`, so their sum is the invariant at `v`. -/
+of `E = K` concentrated at a place `w` above `v`, the localizations of the carry class `a ∪ δχ`
+vanish away from `v`. -/
+private theorem ideleLocalization_characterCarryCocycle_placeIdele {E : Ω}
+    [DecidableEq (HeightOneSpectrum (𝓞 K))]
+    (hE : E.toIntermediateField = ⊥) {v : HeightOneSpectrum (𝓞 K)} (w : HeightOneSpectrum (𝓞 E))
+    [w.asIdeal.LiesOver v.asIdeal] (π : (v.adicCompletion K)ˣ)
+    (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
+    (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K)))) :
+    ideleLocalization K (characterCarryCocycle χ hχ (baseIdele hE (placeIdele w π)) :
+        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K)) =
+      (DFinsupp.single v ((ideleLocalization K (characterCarryCocycle χ hχ
+        (baseIdele hE (placeIdele w π)) : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).1 v), 0) := by
+  refine Prod.ext (DFinsupp.ext fun v' ↦ ?_) (funext fun u ↦ ?_)
+  · obtain rfl | hv' := eq_or_ne v' v
+    · rw [DFinsupp.single_eq_same]
+    obtain ⟨τ', hτ'⟩ := exists_ideleCoeffComponent_placeIdele_eq_zero (E := E) w π hv'
+    rw [DFinsupp.single_eq_of_ne hv']
+    exact (ideleLocalization_fst_apply _ _).trans
+      (ideleBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero τ' χ hχ _ hτ')
+  · exact (ideleLocalization_snd_apply _ _).trans
+      (ideleInfiniteBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero
+        (IsSepClosed.lift : SeparableClosure K →ₐ[K] SeparableClosure u.Completion) χ hχ _
+        (ideleCoeffInfiniteComponent_placeIdele w π _))
+
+/-- The local invariants of a carry class of an idele concentrated at a finite place `v` sum to
+its invariant at `v`. -/
 private theorem sumLocalInv_ideleLocalization_characterCarryCocycle_placeIdele {E : Ω}
     (hE : E.toIntermediateField = ⊥) {v : HeightOneSpectrum (𝓞 K)} (w : HeightOneSpectrum (𝓞 E))
     [w.asIdeal.LiesOver v.asIdeal] (π : (v.adicCompletion K)ˣ)
@@ -203,30 +238,35 @@ private theorem sumLocalInv_ideleLocalization_characterCarryCocycle_placeIdele {
         (baseIdele hE (placeIdele w π)) : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))) =
       invMap (v.adicCompletion K) ((ideleLocalization K (characterCarryCocycle χ hχ
         (baseIdele hE (placeIdele w π)) : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).1 v) := by
-  have hS (v' : HeightOneSpectrum (𝓞 K)) (hv' : v' ∉ ({v} : Finset _)) :
-      (ideleLocalization K (characterCarryCocycle χ hχ (baseIdele hE (placeIdele w π)) :
-        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).1 v' = 0 := by
-    obtain ⟨τ', hτ'⟩ := exists_ideleCoeffComponent_placeIdele_eq_zero (E := E) w π
-      (Finset.notMem_singleton.1 hv')
-    exact (ideleLocalization_fst_apply _ _).trans
-      (ideleBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero τ' χ hχ _ hτ')
-  have hinf (u : InfinitePlace K) :
-      infiniteInvMap u ((ideleLocalization K (characterCarryCocycle χ hχ
-        (baseIdele hE (placeIdele w π)) : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).2 u) = 0 := by
-    rw [ideleLocalization_snd_apply,
-      ideleInfiniteBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero
-        (IsSepClosed.lift : SeparableClosure K →ₐ[K] SeparableClosure u.Completion) χ hχ _
-        (ideleCoeffInfiniteComponent_placeIdele w π _), map_zero]
-  rw [sumLocalInv_eq_sum K _ hS, Finset.sum_singleton, Finset.sum_eq_zero fun u _ ↦ hinf u,
-    add_zero]
+  classical
+  conv_lhs => rw [ideleLocalization_characterCarryCocycle_placeIdele hE w π χ hχ]
+  exact sumLocalInv_single K v _
 
-/-- **A class of `H²(G_K, I_{Kˢ})` with sum of local invariants `1 / n`**, supported at `v`: the
-carry class of a cyclotomic character and of an idele of `K` concentrated at `v`, read in the
-ideles of a finite Galois subextension `E` equal to `K`. -/
-private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
+omit [NumberField K] in
+/-- The kernel of a character of `(ℤ / m)ˣ` read on the action of `G_K` on a primitive `m`-th
+root of unity is open: it contains the fixing subgroup of `K(ζ)`. -/
+private theorem isOpen_ker_comp_autToPow {m : ℕ} [NeZero m] {ζ : SeparableClosure K}
+    (hζ : IsPrimitiveRoot ζ m) (ψ : Additive (ZMod m)ˣ →+ AddCircle (1 : ℚ)) :
+    IsOpen ((ψ.comp (hζ.autToPow K).toAdditive).ker :
+      Set (Additive (AbsoluteGaloisGroup K))) := by
+  have : FiniteDimensional K K⟮ζ⟯ :=
+    IntermediateField.adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral ζ)
+  refine AddSubgroup.isOpen_mono (H₁ := Subgroup.toAddSubgroup K⟮ζ⟯.fixingSubgroup)
+    (fun g hg ↦ ?_) (K⟮ζ⟯.fixingSubgroup_isOpen.preimage continuous_toMul)
+  have hu : hζ.autToPow K g.toMul = 1 := (hζ.autToPow_eq_one_iff g.toMul).2 <|
+    (IntermediateField.mem_fixingSubgroup_iff _ _).1 hg ζ
+      (IntermediateField.mem_adjoin_simple_self K ζ)
+  rw [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, hu,
+    ofMul_one, map_zero]
+
+/-- **A class of `H²(G_K, I_{Kˢ})` localizing to the invariant `1 / n` at `v` and to `0` at every
+other place**: the carry class of a cyclotomic character and of an idele of `K` concentrated at
+`v`, read in the ideles of a finite Galois subextension `E` equal to `K`. -/
+private theorem exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux {E : Ω}
+    [DecidableEq (HeightOneSpectrum (𝓞 K))]
     (hE : E.toIntermediateField = ⊥) (v : HeightOneSpectrum (𝓞 K)) {n : ℕ} (hn : n ≠ 0) :
     ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K),
-      sumLocalInv K (ideleLocalization K x) = ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
+      ideleLocalization K x = sumLocalInvSection K v ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
   obtain ⟨w, hw⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 E) v
   have : w.asIdeal.LiesOver v.asIdeal := hw ▸ inferInstance
   obtain ⟨π, hπ⟩ := exists_isUniformizer (K := v.adicCompletion K)
@@ -237,21 +277,10 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
     ⟨by have := Nat.one_lt_pow hn hq; omega⟩
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure K)
     (Nat.card 𝓀[v.adicCompletion K] ^ n - 1)
-  -- The global character: `ψ` of the action of `G_K` on `ζ`. It kills the fixing subgroup of
-  -- `K(ζ)`, which is open.
+  -- The global character: `ψ` of the action of `G_K` on `ζ`, with open kernel.
   let χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ) := ψ.comp (hζ.autToPow K).toAdditive
-  have hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))) := by
-    have : FiniteDimensional K K⟮ζ⟯ :=
-      IntermediateField.adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral ζ)
-    refine AddSubgroup.isOpen_mono (H₁ := Subgroup.toAddSubgroup K⟮ζ⟯.fixingSubgroup)
-      (fun g hg ↦ ?_) (K⟮ζ⟯.fixingSubgroup_isOpen.preimage continuous_toMul)
-    have hu : hζ.autToPow K g.toMul = 1 := (hζ.autToPow_eq_one_iff g.toMul).2 <|
-      (IntermediateField.mem_fixingSubgroup_iff _ _).1 hg ζ
-        (IntermediateField.mem_adjoin_simple_self K ζ)
-    -- `ψ : CharacterModule _` is a semireducible `→+`, so `AddMonoidHom.comp_apply` cannot
-    -- rewrite the composite `χ`; evaluate it definitionally.
-    change ψ (.ofMul (hζ.autToPow K g.toMul)) = 0
-    rw [hu, ofMul_one, map_zero]
+  have hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))) :=
+    isOpen_ker_comp_autToPow hζ ψ
   -- An embedding `τ : Kˢ → K_vˢ` along which the idele has coordinate `π` at `v`.
   -- `cases` rather than `obtain`, which exceeds the heartbeat budget here (as does stating this
   -- for the subextension `⊥` itself rather than a variable `E = ⊥`).
@@ -312,19 +341,23 @@ private theorem exists_sumLocalInv_ideleLocalization_eq_aux {E : Ω}
   -- The carry class of `χ` and the idele concentrated at `v` with component `π`.
   let a := baseIdele hE (placeIdele w π)
   let x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) := characterCarryCocycle χ hχ a
-  refine ⟨x, ?_⟩
   -- Its localizations vanish away from `v`, and at `v` the invariant is
   -- `v(π) · χ_v(Frob) = 1 / n`.
-  refine (sumLocalInv_ideleLocalization_characterCarryCocycle_placeIdele hE w π χ hχ).trans ?_
-  rw [ideleLocalization_fst_apply,
-    invMap_ideleBrLocalization_characterCarryCocycle τ Ev χ hχ χv a π hχv hτ, hfrob,
-    (isUniformizer_def π).1 hπ, toAdd_ofAdd, one_smul]
+  have hx : invMap (v.adicCompletion K) (ideleBrLocalization v x) =
+      ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
+    rw [invMap_ideleBrLocalization_characterCarryCocycle τ Ev χ hχ χv a π hχv hτ, hfrob,
+      (isUniformizer_def π).1 hπ, toAdd_ofAdd, one_smul]
+  refine ⟨x, (ideleLocalization_characterCarryCocycle_placeIdele hE w π χ hχ).trans ?_⟩
+  rw [sumLocalInvSection_apply, ideleLocalization_fst_apply, ← hx, AddEquiv.symm_apply_apply]
 
 /-- **A class of `H²(G_K, I_{Kˢ})` with sum of local invariants `1 / n`.** -/
 theorem exists_sumLocalInv_ideleLocalization_eq {n : ℕ} (hn : n ≠ 0) :
     ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K),
-      sumLocalInv K (ideleLocalization K x) = ((1 / n : ℚ) : AddCircle (1 : ℚ)) :=
-  exists_sumLocalInv_ideleLocalization_eq_aux (E := ⊥) rfl (Classical.arbitrary _) hn
+      sumLocalInv K (ideleLocalization K x) = ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
+  classical
+  obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux (E := ⊥) rfl
+    (Classical.arbitrary (HeightOneSpectrum (𝓞 K))) hn
+  exact ⟨x, by rw [hx, sumLocalInv_sumLocalInvSection]⟩
 
 variable (K) in
 /-- **Classes over `G_K` come from refinements of a layer, up to the index of its ground.** For a
@@ -993,5 +1026,177 @@ theorem exists_ideleSumLocalInv_eq_one_div_degree_of_prime
   have := NormalLayer.isCyclic_gal_of_prime_degree hL
   obtain ⟨v, τ, hτ⟩ := L.exists_surjective_absoluteGaloisGroupMap_of_degree_prime hL
   exact exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic L τ hτ
+
+/-! ### Classes with prescribed localizations
+
+Every family of local Brauer classes is the family of localizations of a class of
+`H²(G_K, I_{Kˢ})`. By additivity it suffices to treat a family supported at one place. At a finite
+place this is the class of invariant `1 / n` built above, and its integer multiples. At a real
+place `w`, take the carry class of the idele concentrated at `w` with component `-1` and of a
+character `ψ` of the action of `G_K` on a primitive fourth root of unity `ζ` with `ψ (-1) = 1 / 2`.
+The Artin symbol of `-1 ∈ K_w = ℝ` is complex conjugation, which inverts `ζ`, so this class has
+invariant `ψ (-1) = 1 / 2` at `w` and vanishes at every other place. -/
+
+/-- **A class of `H²(G_K, I_{Kˢ})` with any prescribed localization at one finite place** and
+trivial localizations at the other places. -/
+private theorem exists_ideleLocalization_eq_sumLocalInvSection
+    [DecidableEq (HeightOneSpectrum (𝓞 K))] (v : HeightOneSpectrum (𝓞 K))
+    (r : AddCircle (1 : ℚ)) :
+    ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K),
+      ideleLocalization K x = sumLocalInvSection K v r := by
+  -- `r` is an integer multiple of `1 / n` for some `n ≥ 1`.
+  obtain ⟨n, hn, hr⟩ := AddCircle.exists_mem_torsionBy_rat r
+  obtain ⟨k, rfl⟩ := AddCircle.exists_zsmul_eq_of_mem_torsionBy (1 : ℚ)
+    (by exact_mod_cast hn.ne' : (n : ℚ) ≠ 0) hr
+  obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux (E := ⊥) rfl v
+    hn.ne'
+  exact ⟨k • x, by rw [map_zsmul, hx, map_zsmul]⟩
+
+omit [NumberField K] in
+/-- **At a real place, the Artin symbol of `-1` inverts the fourth roots of unity**: if `σ`
+represents the archimedean Artin symbol of `-1 ∈ K_wˣ`, its image in `G_K` along `τ : Kˢ → K_wˢ`
+acts on a primitive fourth root of unity of `Kˢ` by the exponent `-1`. -/
+private theorem autToPow_absoluteGaloisGroupMap_of_isReal {w : InfinitePlace K} (hw : w.IsReal)
+    {ζ : SeparableClosure K} (hζ : IsPrimitiveRoot ζ 4)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
+    (σ : Field.absoluteGaloisGroup w.Completion)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization w.Completion) = infiniteArtinAt w (-1)) :
+    hζ.autToPow K (absoluteGaloisGroupMap τ (absoluteGaloisGroupRestrictEquiv w.Completion σ)) =
+      -1 := by
+  have hz : algebraMap (SeparableClosure w.Completion) (AlgebraicClosure w.Completion) (τ ζ) ^ 4 =
+      1 := by
+    rw [← map_pow, ← map_pow, hζ.pow_eq_one, map_one, map_one]
+  have h := infiniteArtinAt_rootsOfUnity_of_isReal w hw 4 (-1) σ hσ hz
+  rw [realCyclotomicSymbol_of_neg _ _ (by simp)] at h
+  -- Read in `K_wˢ`, the image of `σ` in `G_K` raises `ζ` to the power `3 = -1 mod 4`. The
+  -- hypothesis of `AlgHom.injective` is stated for the underlying ring homomorphism; `show` reads
+  -- it through the coercion of `τ`, on which `absoluteGaloisGroupMap_commutes` is stated.
+  have hg : absoluteGaloisGroupMap τ (absoluteGaloisGroupRestrictEquiv w.Completion σ) ζ = ζ ^ 3 :=
+    τ.injective <| show τ _ = τ _ by
+      rw [absoluteGaloisGroupMap_commutes, map_pow]
+      refine (algebraMap (SeparableClosure w.Completion)
+        (AlgebraicClosure w.Completion)).injective ?_
+      rw [map_pow]
+      exact (coe_absoluteGaloisGroupRestrictEquiv_apply w.Completion σ _).trans
+        (h.trans (congrArg _ (by decide : ((-1 : (ZMod 4)ˣ) : ZMod 4).val = 3)))
+  refine Units.ext ((hζ.coe_autToPow_eq_natCast hg).trans ?_)
+  decide
+
+/-- **A class of `H²(G_K, I_{Kˢ})` localizing to the nonzero class at a real place `w` and to `0`
+at every other place**: the carry class of a character detecting complex conjugation on the
+fourth roots of unity and of the idele concentrated at `w` with component `-1`, read in the ideles
+of a finite Galois subextension `E` equal to `K`. -/
+private theorem exists_ideleLocalization_eq_pi_single_aux {E : Ω}
+    (hE : E.toIntermediateField = ⊥) {w : InfinitePlace K} (hw : w.IsReal) :
+    ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K),
+      (ideleLocalization K x).1 = 0 ∧ (∀ u ≠ w, (ideleLocalization K x).2 u = 0) ∧
+        infiniteInvMap w ((ideleLocalization K x).2 w) = ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  -- A place `u` of `E = K` above `w`, and the idele of `E` concentrated at `u` with component
+  -- `-1`.
+  obtain ⟨u, hu⟩ := InfinitePlace.comap_surjective (K := E) w
+  have : u.LiesOver w := hu ▸ inferInstance
+  let a := baseIdele hE (IdeleGroup.ofCompletion (𝓞 E) E u (-1))
+  -- The character `ψ` of the action of `G_K` on a primitive fourth root of unity `ζ`, with
+  -- `ψ (-1) = 1 / 2`.
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (SeparableClosure K) 4
+  have hneg : addOrderOf (Additive.ofMul (-1 : (ZMod 4)ˣ)) = 2 := by
+    rw [addOrderOf_ofMul_eq_orderOf]
+    exact orderOf_eq_prime (by simp) (by decide)
+  obtain ⟨ψ, hψ⟩ : ∃ ψ : Additive (ZMod 4)ˣ →+ AddCircle (1 : ℚ),
+      ψ (Additive.ofMul (-1)) =
+        ((1 / addOrderOf (Additive.ofMul (-1 : (ZMod 4)ˣ)) : ℚ) : AddCircle (1 : ℚ)) :=
+    CharacterModule.exists_apply_eq_inv_addOrderOf _ (hneg.trans_ne (by decide))
+  set χ := ψ.comp (hζ.autToPow K).toAdditive with hχ_def
+  have hχ := isOpen_ker_comp_autToPow hζ ψ
+  refine ⟨characterCarryCocycle χ hχ a, DFinsupp.ext fun v ↦ ?_, fun u' hu' ↦ ?_, ?_⟩
+  · -- At a finite place the component of `a` is `1`.
+    obtain ⟨v', hv'⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 E) v
+    have : v'.asIdeal.LiesOver v.asIdeal := hv' ▸ inferInstance
+    obtain ⟨τ', τ, h⟩ := exists_ideleCoeffComponent_ideleCoeffOfIntermediateField_eq (v := v) v'
+    have h := h (IdeleGroup.ofCompletion (𝓞 E) E u (-1))
+    simp only [ideleCoeffOfIntermediateField_coe, HeightOneSpectrum.ideleFiniteCoord_ofCompletion,
+      map_one] at h
+    rw [ideleLocalization_fst_apply, DFinsupp.zero_apply]
+    exact ideleBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero τ χ hχ a
+      (Additive.toMul.injective h)
+  · -- At another infinite place `u'`, read through a place `u''` of `E` above it, the component
+    -- of `a` is `1`.
+    obtain ⟨u'', hu''⟩ := InfinitePlace.comap_surjective (K := E) u'
+    have : u''.LiesOver u' := hu'' ▸ inferInstance
+    obtain ⟨τ', τ, h⟩ :=
+      exists_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField_eq (w := u') u''
+    have hne : u'' ≠ u := by
+      rintro rfl
+      exact hu' (hu''.symm.trans hu)
+    have h := h (IdeleGroup.ofCompletion (𝓞 E) E u (-1))
+    simp only [ideleCoeffOfIntermediateField_coe,
+      InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne _ hne, map_one] at h
+    rw [ideleLocalization_snd_apply]
+    exact ideleInfiniteBrLocalization_characterCarryCocycle_eq_zero_of_component_eq_zero τ χ hχ a
+      (Additive.toMul.injective h)
+  · -- At `w` the component of `a` is `-1`, whose Artin symbol inverts `ζ`.
+    obtain ⟨τ', τ, h⟩ :=
+      exists_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField_eq (w := w) u
+    have h := h (IdeleGroup.ofCompletion (𝓞 E) E u (-1))
+    simp only [ideleCoeffOfIntermediateField_coe,
+      InfinitePlace.ideleInfiniteCoord_ofCompletion_self, Units.map_neg_one] at h
+    obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (infiniteArtinAt w (-1))
+    rw [ideleLocalization_snd_apply,
+      infiniteInvMap_ideleInfiniteBrLocalization_characterCarryCocycle_of_mk_eq_infiniteArtinAt τ χ
+        hχ a (-1) (Additive.toMul.injective (h.trans (by simp))) σ hσ, hχ_def,
+      AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
+      autToPow_absoluteGaloisGroupMap_of_isReal hw hζ τ σ hσ, hψ, hneg]
+    norm_num
+
+/-- **A class of `H²(G_K, I_{Kˢ})` with any prescribed localization at one infinite place** and
+trivial localizations at the other places. -/
+private theorem exists_ideleLocalization_eq_pi_single [DecidableEq (InfinitePlace K)]
+    (w : InfinitePlace K) (b : Br w.Completion) :
+    ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K),
+      ideleLocalization K x = (0, Pi.single w b) := by
+  -- The zero class needs no construction; at a complex place every class is zero.
+  obtain rfl | hb := eq_or_ne b 0
+  · exact ⟨0, by rw [map_zero, Pi.single_zero, Prod.mk_zero_zero]⟩
+  have hw : w.IsReal := InfinitePlace.not_isComplex_iff_isReal.1 fun hw ↦
+    hb (brCompletion_eq_zero_of_isComplex w hw b)
+  obtain ⟨x, hfin, hinf, hw'⟩ := exists_ideleLocalization_eq_pi_single_aux (E := ⊥) rfl hw
+  -- At the real place `w` the two nonzero classes have the same invariant `1 / 2`.
+  have hb' : (ideleLocalization K x).2 w = b := by
+    refine infiniteInvMap_injective w ?_
+    rw [hw', infiniteInvMap_apply_of_isReal w hw]
+    simp [hb]
+  refine ⟨x, Prod.ext hfin (funext fun u ↦ ?_)⟩
+  dsimp only
+  obtain rfl | hu := eq_or_ne u w
+  · rw [Pi.single_eq_same, hb']
+  · rw [Pi.single_eq_of_ne hu, hinf u hu]
+
+variable (K) in
+/-- **Every family of local Brauer classes is the localization of an idele class**: the
+localization map `H²(G_K, I_{Kˢ}) → ⨁_v Br K_v` is surjective. -/
+theorem ideleLocalization_surjective : Function.Surjective (ideleLocalization K) := by
+  classical
+  rintro ⟨y₁, y₂⟩
+  -- The family at the finite places, by induction on its finite support.
+  have h₁ : ((y₁, 0) : _ × ((w : InfinitePlace K) → Br w.Completion)) ∈
+      (ideleLocalization K).range := by
+    induction y₁ using DFinsupp.induction with
+    | h0 => exact ⟨0, by rw [map_zero, Prod.mk_zero_zero]⟩
+    | ha v b f _ _ ih =>
+      obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection v
+        (invMap (v.adicCompletion K) b)
+      rw [sumLocalInvSection_apply, AddEquiv.symm_apply_apply] at hx
+      rw [← add_zero (0 : (w : InfinitePlace K) → Br w.Completion), ← Prod.mk_add_mk]
+      exact add_mem ⟨x, hx⟩ ih
+  -- The family at the finitely many infinite places, one place at a time.
+  have h₂ : ((0, y₂) : (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) × _) ∈
+      (ideleLocalization K).range := by
+    rw [← Finset.univ_sum_single y₂, show ((0, ∑ w, Pi.single w (y₂ w)) :
+      (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) × _) =
+        ∑ w, (0, Pi.single w (y₂ w)) from
+          Prod.ext (by simp [Prod.fst_sum]) (by simp [Prod.snd_sum])]
+    exact sum_mem fun w _ ↦ exists_ideleLocalization_eq_pi_single w (y₂ w)
+  obtain ⟨x, hx⟩ := add_mem h₁ h₂
+  exact ⟨x, by rw [hx, Prod.mk_add_mk, add_zero, zero_add]⟩
 
 end TauCeti.ClassFieldTheory
