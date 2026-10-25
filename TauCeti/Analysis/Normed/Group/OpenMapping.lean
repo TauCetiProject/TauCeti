@@ -11,19 +11,20 @@ public import Mathlib.Topology.Algebra.Group.Neighborhood
 /-!
 # Open additive maps with bounded lifts
 
-An additive map between seminormed commutative groups is open if every element has a preimage
-whose norm is bounded by a fixed multiple of its norm. Neither continuity nor completeness is
-required. This criterion turns norm-controlled lifts into quotient-topology comparisons.
+An additive map between seminormed groups is open if every element has a preimage
+whose norm is bounded by a fixed multiple of its norm, provided the domain is a topological
+additive group. Neither continuity nor completeness is required. This criterion turns
+norm-controlled lifts into quotient-topology comparisons.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- An additive map between seminormed commutative groups with uniformly norm-bounded lifts
-is open. -/
+/-- An additive map between seminormed groups with uniformly norm-bounded lifts
+is open when its domain is a topological additive group. -/
 theorem isOpenMap_of_exists_norm_le {E F 𝓕 : Type*}
-    [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [FunLike 𝓕 E F]
+    [SeminormedAddGroup E] [IsTopologicalAddGroup E] [SeminormedAddGroup F] [FunLike 𝓕 E F]
     [AddMonoidHomClass 𝓕 E F] (f : 𝓕) {K : ℝ}
     (h : ∀ y, ∃ x, f x = y ∧ ‖x‖ ≤ K * ‖y‖) : IsOpenMap f := by
   let L := max K 1
