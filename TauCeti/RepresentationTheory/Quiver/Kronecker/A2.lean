@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.CartanMap
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.EulerForm
 public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Simple.ExtEuler
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
@@ -28,9 +29,13 @@ the Cartan matrix is
 ```
 
 The Ringel Euler matrix is `[1, -1; 0, 1]`. Its product with the transposed Cartan matrix is the
-identity on either side, and its symmetrization is the type `A₂` Cartan matrix. The final theorem
-computes the same Euler matrix categorically: it applies the Ext-Euler calculation obtained from
-the length-one projective resolutions of the two vertex simples.
+identity on either side, and its symmetrization is the type `A₂` Cartan matrix. The Euler matrix
+is also computed categorically: the Ext-Euler calculation obtained from the length-one projective
+resolutions of the two vertex simples gives the same matrix.
+
+The Cartan matrix is likewise the matrix of the categorical Cartan map
+`K₀(proj kQ) → G₀(mod kQ)` in the bases of vertex projectives and vertex simples. Thus the Cartan
+map sends `[P₁]` to `[S₁] + [S₂]` and `[P₂]` to `[S₂]`.
 
 ## Main results
 
@@ -43,6 +48,11 @@ the length-one projective resolutions of the two vertex simples.
   `CartanMatrix.A 2`.
 * `TauCeti.Quiver.Kronecker.extEulerMatrix_A2_eq`: the Ext-Euler matrix of the vertex simples is
   the same Euler matrix.
+* `TauCeti.Quiver.Kronecker.submatrix_cartanMatrix_eq_cartanMatrixA2`: the matrix of the Cartan
+  map in the vertex bases is `[1, 0; 1, 1]`.
+* `TauCeti.Quiver.Kronecker.cartanMap_vertexProjectiveFiniteProjective_src` and
+  `TauCeti.Quiver.Kronecker.cartanMap_vertexProjectiveFiniteProjective_tgt`: the Cartan map sends
+  `[P₁]` to `[S₁] + [S₂]` and `[P₂]` to `[S₂]`.
 
 ## References
 
@@ -161,6 +171,40 @@ theorem extEulerMatrix_A2_eq (k : Type v) [Field k] :
   by_cases hij : (![src, tgt] i : Kronecker A) = ![src, tgt] j
   · simpa only [hij, ↓reduceIte, Nat.card_eq_fintype_card] using h
   · simpa only [hij, ↓reduceIte, Nat.card_eq_fintype_card] using h
+
+/-- **The categorical Cartan matrix of `1 ⟶ 2` is `[1, 0; 1, 1]`**: this is the matrix of the
+Cartan map `K₀(proj kQ) → G₀(mod kQ)` in the bases of vertex projectives and vertex simples, with
+vertices ordered source first. -/
+theorem submatrix_cartanMatrix_eq_cartanMatrixA2 (k : Type v) [Field k] :
+    (cartanMatrix (PathAlgebra.vertexProjectiveFiniteProjective k (Kronecker A))
+        (vertexSimpleModuleFG k (Kronecker A))
+        (PathAlgebra.isIndecomposableModule_vertexProjectiveFiniteProjective k _)
+        (PathAlgebra.pairwise_isEmpty_linearEquiv_vertexProjectiveFiniteProjective k _)
+        (PathAlgebra.isExhaustiveIndecomposableProjectiveFamily_vertexProjectiveFiniteProjective
+          k _)
+        (pairwise_isEmpty_linearEquiv_vertexSimpleModuleFG k _)
+        (isExhaustiveSimpleFamily_vertexSimpleModuleFG k _)).submatrix ![src, tgt] ![src, tgt] =
+      cartanMatrixA2 := by
+  ext i j
+  rw [Matrix.submatrix_apply, PathAlgebra.cartanMatrix_vertexProjectiveFiniteProjective_apply]
+  fin_cases i <;> fin_cases j <;> simp [cartanMatrixA2]
+
+/-- **The Cartan map of `1 ⟶ 2` sends `[P₁]` to `[S₁] + [S₂]`**, where `1` is the source. -/
+theorem cartanMap_vertexProjectiveFiniteProjective_src (k : Type v) [Field k] :
+    cartanMap (pathAlgebra k (Kronecker A))
+        (ExactK0.of (PathAlgebra.vertexProjectiveFiniteProjective k (Kronecker A) src)) =
+      ExactK0.of (vertexSimpleModuleFG k (Kronecker A) src) +
+        ExactK0.of (vertexSimpleModuleFG k (Kronecker A) tgt) := by
+  rw [PathAlgebra.cartanMap_vertexProjectiveFiniteProjective]
+  simp
+
+/-- **The Cartan map of `1 ⟶ 2` sends `[P₂]` to `[S₂]`**, where `2` is the target. -/
+theorem cartanMap_vertexProjectiveFiniteProjective_tgt (k : Type v) [Field k] :
+    cartanMap (pathAlgebra k (Kronecker A))
+        (ExactK0.of (PathAlgebra.vertexProjectiveFiniteProjective k (Kronecker A) tgt)) =
+      ExactK0.of (vertexSimpleModuleFG k (Kronecker A) tgt) := by
+  rw [PathAlgebra.cartanMap_vertexProjectiveFiniteProjective]
+  simp
 
 end Quiver.Kronecker
 
