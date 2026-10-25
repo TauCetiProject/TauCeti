@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.Basic
+public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import Mathlib.Topology.LocallyConstant.Algebra
 
 /-!
@@ -17,6 +18,9 @@ closed smooth `0`-forms are the locally constant real functions. Since there are
 in degree zero, this identifies `H⁰_dR(M)` with `LocallyConstant M ℝ`; on a connected manifold
 it is one-dimensional.
 
+On a preconnected noncompact manifold a locally constant function is constant, and a nonzero
+constant does not have compact support, so compactly supported cohomology `H⁰_c(M)` vanishes.
+
 Everything holds on `C²` manifolds with boundary or corners, without finite dimensionality,
 separation or completeness hypotheses on the model.
 
@@ -27,11 +31,13 @@ separation or completeness hypotheses on the model.
 * `TauCeti.closedFormsZeroEquiv`: closed smooth `0`-forms are locally constant functions.
 * `TauCeti.deRhamCohomologyZeroEquiv`: `H⁰_dR(M) ≃ₗ[ℝ] LocallyConstant M ℝ`.
 * `TauCeti.finrank_deRhamCohomology_zero`: `H⁰_dR(M)` has dimension one when `M` is connected.
+* `TauCeti.subsingleton_compactlySupportedDeRhamCohomology_zero`: `H⁰_c(M) = 0` when `M` is
+  preconnected and noncompact.
 
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 17, cohomology in
-  degree zero.
+  degree zero, and section *Cohomology with Compact Support*.
 -/
 
 public section
@@ -130,5 +136,36 @@ theorem finrank_deRhamCohomology_zero [ConnectedSpace M] :
       exact ⟨a, ha.symm⟩
   rw [(deRhamCohomologyZeroEquiv I M ≪≫ₗ (LinearEquiv.ofBijective _ hconst).symm).finrank_eq,
     Module.finrank_self]
+
+/-- On a preconnected noncompact manifold, the only compactly supported closed `0`-form is zero:
+its function is locally constant, hence constant, and a nonzero constant function on a noncompact
+space does not have compact support. -/
+theorem eq_zero_of_mem_compactlySupportedClosedForms_zero [PreconnectedSpace M]
+    [NoncompactSpace M] {φ : SmoothForm I M ℝ 0}
+    (hφ : φ ∈ compactlySupportedClosedForms I M 0) : φ = 0 := by
+  rw [mem_compactlySupportedClosedForms, mem_compactlySupportedForms] at hφ
+  obtain ⟨c, hc⟩ := ((mem_closedForms_zero_iff I φ).mp hφ.2).exists_eq_const
+  have hφc (x : M) : φ.1 x 0 = c := congrFun hc x
+  obtain rfl | h0 := eq_or_ne c 0
+  · refine Subtype.ext (funext fun x ↦ ?_)
+    ext v
+    rw [Subsingleton.elim v 0, hφc]
+    simp
+  · refine absurd (hφ.1.of_isClosed_subset isClosed_univ fun x _ ↦ ?_) (noncompact_univ M)
+    refine subset_tsupport _ fun h ↦ h0 ?_
+    rw [← hφc x, h]
+    -- The support of a form is taken with the zero of the model fibre `E [⋀^Fin 0]→L[ℝ] ℝ`,
+    -- which is not syntactically the zero of the tangent fibre that `coe_zero` rewrites.
+    rfl
+
+variable (M) in
+/-- **Compactly supported cohomology in degree zero.** On a preconnected noncompact manifold,
+`H⁰_c(M)` vanishes. -/
+theorem subsingleton_compactlySupportedDeRhamCohomology_zero [PreconnectedSpace M]
+    [NoncompactSpace M] : Subsingleton (compactlySupportedDeRhamCohomology I M 0) := by
+  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
+  obtain ⟨φ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective I 0 c
+  rw [show φ = 0 from Subtype.ext (eq_zero_of_mem_compactlySupportedClosedForms_zero I φ.2),
+    map_zero]
 
 end TauCeti
