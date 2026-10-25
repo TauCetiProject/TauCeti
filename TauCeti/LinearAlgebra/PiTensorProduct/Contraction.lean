@@ -144,9 +144,9 @@ variable (R : Type*) [CommSemiring R] {M : Type*} [AddCommMonoid M] [Module R M]
   {ι : Type*} [DecidableEq ι]
 
 /-- Insert two vectors into two slots of a tensor power: `p` into the slot `i`, `q` into the slot
-`j`, and every other factor kept at its index. Against a bilinear form, contracting the same two
-distinct slots undoes it up to the pairing of `p` and `q`
-(`LinearMap.contractTensorPair_comp_insertPair`). -/
+`j` when `i ≠ j`, and every other factor kept at its index. When `i = j` only `p` is inserted and
+`q` is ignored. Against a bilinear form, contracting the same two distinct slots undoes it up to
+the pairing of `p` and `q` (`LinearMap.contractTensorPair_comp_insertPair`). -/
 noncomputable def insertPair (i j : ι) (p q : M) :
     (⨂[R] _ : {a : ι // a ≠ i ∧ a ≠ j}, M) →ₗ[R] ⨂[R] _ : ι, M :=
   lift <| (tprod R (s := fun _ : ι => M)).domDomRestrict (fun a => a ≠ i ∧ a ≠ j)
@@ -154,8 +154,8 @@ noncomputable def insertPair (i j : ι) (p q : M) :
 
 variable {R}
 
-/-- On a pure tensor, insertion fills the slot `i` with `p`, the slot `j` with `q`, and every
-other slot with the corresponding factor. -/
+/-- On a pure tensor, insertion fills the slot `i` with `p`, the slot `j` with `q` when `i ≠ j`,
+and every other slot with the corresponding factor. When `i = j` that slot holds `p`. -/
 @[simp]
 theorem insertPair_tprod (i j : ι) (p q : M) (w : {a : ι // a ≠ i ∧ a ≠ j} → M) :
     insertPair R i j p q (tprod R w) =
