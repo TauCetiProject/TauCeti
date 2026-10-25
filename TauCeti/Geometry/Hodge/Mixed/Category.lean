@@ -46,7 +46,12 @@ universe u
 
 The three carrier types and the two base-change witnesses are bundled so that objects may have
 different underlying integral carriers. A morphism is still a single rational map: the integral
-carrier is the arithmetic source of the base-change models, not an extra component of a morphism. -/
+carrier is the arithmetic source of the base-change models, not an extra component of a morphism.
+
+No finiteness is imposed on the carriers. Deligne's mixed Hodge structures (Théorie de Hodge II,
+2.3.1, and 2.3.8 for rational ones) have a finitely generated integral or finite-dimensional
+rational carrier; they form a full subcategory of this one, and the abelian structure
+(`TauCeti.Hodge.MixedHodgeStructureCat.abelian`) is that of this larger category. -/
 structure MixedHodgeStructureCat where
   /-- The integral carrier underlying a mixed Hodge structure. -/
   intCarrier : Type u
