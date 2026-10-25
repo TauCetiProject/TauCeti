@@ -47,6 +47,15 @@ theorem diagonalCLM_apply (d : ℓ^∞(ι, 𝕜)) (x : ℓ^p(ι, 𝕜)) (i : ι)
     diagonalCLM d x i = d i * x i := by
   simp [diagonalCLM]
 
+/-- Subtracting a diagonal operator from a scalar multiple of the identity multiplies the `i`-th
+coordinate by `c - d i`. -/
+theorem algebraMap_sub_diagonalCLM_apply (d : ℓ^∞(ι, 𝕜)) (c : 𝕜) (x : ℓ^p(ι, 𝕜)) (i : ι) :
+    ((algebraMap 𝕜 (ℓ^p(ι, 𝕜) →L[𝕜] ℓ^p(ι, 𝕜)) c - diagonalCLM (p := p) d) x) i =
+      (c - d i) * x i := by
+  simp only [sub_apply, ContinuousLinearMap.algebraMap_apply, lp.coeFn_sub, Pi.sub_apply,
+    lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, diagonalCLM_apply]
+  ring
+
 /-- Diagonal operators act diagonally on the coordinate vectors. -/
 @[simp]
 theorem diagonalCLM_single [DecidableEq ι] (d : ℓ^∞(ι, 𝕜)) (i : ι) (a : 𝕜) :

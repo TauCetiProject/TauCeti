@@ -25,6 +25,10 @@ Consequently every nonempty compact subset `K` of `ℂ` is the spectrum of a bou
 * `TauCeti.exists_spectrum_diagonalCLM_eq_of_isCompact`: every nonempty compact subset of `ℂ`
   is the spectrum of a bounded diagonal operator on `ℓ²(ℕ, ℂ)`.
 
+The resolvent coordinate formula
+`((algebraMap 𝕜 _ c - lp.diagonalCLM d) x) i = (c - d i) * x i` is
+`lp.algebraMap_sub_diagonalCLM_apply`, which lives in `TauCeti.Analysis.Normed.Lp.Diagonal`.
+
 ## References
 
 * The diagonal-operator spectrum is the standard worked example of a resolvent: at a scalar
@@ -43,16 +47,6 @@ open Filter
 namespace lp
 
 variable {ι 𝕜 : Type*} [NontriviallyNormedField 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- The pointwise action of `algebraMap 𝕜 _ c - diagonalCLM d` multiplies the `j`-th coordinate
-by `c - d j`. -/
-private lemma sub_algebraMap_diagonalCLM_apply (d : ℓ^∞(ι, 𝕜)) (c : 𝕜) (y : ℓ^p(ι, 𝕜))
-    (j : ι) :
-    ((algebraMap 𝕜 (ℓ^p(ι, 𝕜) →L[𝕜] ℓ^p(ι, 𝕜)) c - diagonalCLM (p := p) d) y) j =
-      (c - d j) * y j := by
-  simp only [sub_apply, ContinuousLinearMap.algebraMap_apply, lp.coeFn_sub, Pi.sub_apply,
-    lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, diagonalCLM_apply]
-  ring
 
 /-- A scalar outside the closure of the coefficient range has positive distance to it, so the
 reciprocal coefficients are bounded and give a two-sided inverse of
@@ -78,11 +72,11 @@ private lemma isUnit_algebraMap_sub_diagonalCLM (d : ℓ^∞(ι, 𝕜)) {c : �
     exact inv_anti₀ hδ0 (hδ i)
   refine isUnit_iff_exists.mpr ⟨diagonalCLM e, ?_, ?_⟩
   · ext x j
-    simp only [mul_apply_eq_comp, one_apply_eq_self, sub_algebraMap_diagonalCLM_apply,
+    simp only [mul_apply_eq_comp, one_apply_eq_self, algebraMap_sub_diagonalCLM_apply,
       diagonalCLM_apply, he j]
     rw [← mul_assoc, mul_inv_cancel₀ (hne j), one_mul]
   · ext x j
-    simp only [mul_apply_eq_comp, one_apply_eq_self, sub_algebraMap_diagonalCLM_apply,
+    simp only [mul_apply_eq_comp, one_apply_eq_self, algebraMap_sub_diagonalCLM_apply,
       diagonalCLM_apply, he j]
     rw [← mul_assoc, inv_mul_cancel₀ (hne j), one_mul]
 
@@ -106,12 +100,8 @@ private lemma not_isUnit_algebraMap_sub_diagonalCLM_of_mem_closure (d : ℓ^∞(
     obtain ⟨i, hi⟩ := hmem
     have hker : (algebraMap 𝕜 (ℓ^p(ι, 𝕜) →L[𝕜] ℓ^p(ι, 𝕜)) c -
         diagonalCLM (p := p) d) (lp.single (E := fun _ : ι => 𝕜) p i 1) = 0 := by
-      ext j
-      rw [sub_algebraMap_diagonalCLM_apply, lp.single_apply]
-      by_cases hj : j = i
-      · subst hj
-        simp [hi]
-      · simp [hj]
+      simp only [sub_apply, ContinuousLinearMap.algebraMap_apply, diagonalCLM_single,
+        ← lp.single_smul, smul_eq_mul, mul_one, hi, sub_self]
     have hsingle : lp.single (E := fun _ : ι => 𝕜) p i (1 : 𝕜) ≠ 0 := by
       intro h0
       have h1 : ‖lp.single (E := fun _ : ι => 𝕜) p i (1 : 𝕜)‖ = 1 := by
@@ -139,12 +129,8 @@ private lemma not_isUnit_algebraMap_sub_diagonalCLM_of_mem_closure (d : ℓ^∞(
         diagonalCLM (p := p) d) (lp.single (E := fun _ : ι => 𝕜) p (n k) 1) =
           lp.single (E := fun _ : ι => 𝕜) p (n k) (c - d (n k)) := by
       intro k
-      ext j
-      rw [sub_algebraMap_diagonalCLM_apply, lp.single_apply, lp.single_apply]
-      by_cases hj : j = n k
-      · subst hj
-        simp
-      · simp [hj]
+      simp only [sub_apply, ContinuousLinearMap.algebraMap_apply, diagonalCLM_single,
+        ← lp.single_smul, smul_eq_mul, ← lp.single_sub, mul_one]
     have hbound : ∀ k, (1 : ℝ) ≤ ‖g‖ * ‖c - d (n k)‖ := by
       intro k
       have hle := g.le_opNorm ((algebraMap 𝕜 (ℓ^p(ι, 𝕜) →L[𝕜] ℓ^p(ι, 𝕜)) c -
@@ -183,12 +169,7 @@ theorem exists_spectrum_diagonalCLM_eq_of_isCompact {K : Set ℂ} (hK : IsCompac
   classical
   -- a countable set dense in `K`
   obtain ⟨t, htK, htc, hKt⟩ := hK.exists_countable_dense_subset
-  have htne : t.Nonempty := by
-    rcases Set.eq_empty_or_nonempty t with h | h
-    · rw [h] at hKt
-      simp only [closure_empty, Set.subset_empty_iff] at hKt
-      exact (hne.ne_empty hKt).elim
-    · exact h
+  have htne : t.Nonempty := (hne.mono hKt).of_closure
   obtain ⟨f, rfl⟩ := htc.exists_eq_range htne
   have hcl : closure (Set.range f) = K := by
     refine le_antisymm ?_ hKt
