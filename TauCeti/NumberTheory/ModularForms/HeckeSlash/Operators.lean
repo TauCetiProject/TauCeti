@@ -20,8 +20,10 @@ This is the classical Hecke operator `Tₙ` unless `p ^ 2 ∣ n` for some prime 
 particular at a prime, at a squarefree `n`, and at an `n` whose prime factors all divide `N`.
 Otherwise the classical `Tₙ` is not a single double coset: for a prime `p ∤ N` the classical
 `T_{p²} = T_p² - p^(k-1) ⟨p⟩` (Diamond–Shurman, §5.3) exceeds the operator here at `p ^ 2` by
-`p^(k-2) ⟨p⟩`. The classical `Tₙ` at every `n` is the Hecke ring element
-`HeckeRing.GL2.heckeTCompositeGamma0 N n`.
+`p^(k-2) ⟨p⟩`. The classical `Tₙ` at every `n` is `HeckeRing.GL2.heckeTCompositeGamma0 N n`, an
+element of the `Γ₀(N)` Hecke ring rather than an operator on `M_k(Γ₁(N))`: it acts on each space of
+forms with character `χ` through `heckeRingHomCharSpace k χ`, and on cusp forms through
+`heckeRingHomCuspCharSpace k χ`.
 
 The double coset and its slash operator already exist as `diagCosetGamma1 N n` and
 `heckeSlashGamma1ModularFormEnd`; this file packages their composite under the uniform name
@@ -82,7 +84,8 @@ variable {N p : ℕ} [NeZero N] (k : ℤ)
 /-- **The Hecke operator `T_n` on `M_k(Γ₁(N))`.** It is the slash operator of the canonical
 double coset `Γ₁(N) · diag(1, n) · Γ₁(N)`, which is the classical `Tₙ` unless `p ^ 2 ∣ n` for
 some prime `p ∤ N`: see the module documentation, and `HeckeRing.GL2.heckeTCompositeGamma0` for
-the classical `Tₙ` at every `n`.
+the classical `Tₙ` at every `n`, an element of the `Γ₀(N)` Hecke ring acting on each space of forms
+with a character `χ` through `heckeRingHomCharSpace k χ`.
 
 The `NeZero n` binder records the classical convention that Hecke operators are indexed by
 positive integers, and it is not optional: at `n = 0` the entry tuple `![1, 0]` fails the
