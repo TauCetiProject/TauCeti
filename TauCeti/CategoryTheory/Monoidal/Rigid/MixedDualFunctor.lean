@@ -412,36 +412,6 @@ private theorem opMopRightDualLeftDualIso_hom_app (Y : Cᵒᵖᴹᵒᵖ) :
       ((leftDualRightDualIso C).inv.app Y.unmop.unop).op.mop :=
   rfl
 
-omit [RigidCategory C] in
-/-- The unit condition for `opMopRightDualLeftDualIso`, read in `C` and written through explicit
-pairings: a composite of left mates of comparisons between duals of `𝟙_ C` is the identity. -/
-private theorem leftMate_unit_aux {R₁ L L₁ : C} (pr : ExactPairing (𝟙_ C) R₁)
-    (pc : ExactPairing L R₁) (pl : ExactPairing L₁ (𝟙_ C)) :
-    (leftDualIso pc pr).inv ≫ leftMate pl pc (rightDualIso pr exactPairingUnit).inv ≫
-      (leftDualIso pl exactPairingUnit).hom = 𝟙 _ := by
-  rw [leftDualIso_inv, leftDualIso_hom, rightDualIso_inv, ← rightDualIso_hom, ← comp_leftMate,
-    ← comp_leftMate, Category.id_comp, Category.comp_id, leftMate_rightDualIso_hom, leftMate_id]
-
-omit [RigidCategory C] in
-/-- The tensor condition for `opMopRightDualLeftDualIso`, read in `C` and written through explicit
-pairings. -/
-private theorem leftMate_tensor_aux {X Y Xr Yr YXr LX LY LYX LT : C} (pX : ExactPairing X Xr)
-    (pY : ExactPairing Y Yr) (pYX : ExactPairing (Y ⊗ X) YXr) (cX : ExactPairing LX Xr)
-    (cY : ExactPairing LY Yr) (cYX : ExactPairing LYX YXr) (cT : ExactPairing LT (Xr ⊗ Yr)) :
-    (leftDualIso cYX pYX).inv ≫
-        leftMate cT cYX (rightDualIso pYX (@tensor _ _ _ _ _ _ _ pY pX)).inv ≫
-        (leftDualIso cT (@tensor _ _ _ _ _ _ _ cY cX)).hom =
-      (leftDualIso cY pY).inv ⊗ₘ (leftDualIso cX pX).inv := by
-  -- Both sides are left mates of identities: the left side with respect to the tensor product
-  -- pairings once the comparison `(Y ⊗ X)ᘁ ≅ Xᘁ ⊗ Yᘁ` is absorbed, and the right side by
-  -- `leftMate_tensorHom`.
-  rw [leftDualIso_inv, leftDualIso_hom, leftDualIso_inv, leftDualIso_inv, rightDualIso_inv,
-    ← rightDualIso_hom, ← leftMate_tensorHom cX cY pX pY, tensorHom_id, id_whiskerRight,
-    ← comp_leftMate, ← comp_leftMate, Category.id_comp, Category.comp_id,
-    ← Category.id_comp (rightDualIso (@tensor _ _ _ _ _ _ _ pY pX) pYX).hom,
-    comp_leftMate _ (@tensor _ _ _ _ _ _ _ pY pX), leftMate_rightDualIso_hom, leftMate_id,
-    Category.id_comp]
-
 private theorem opMopRightDualLeftDualIso_isMonoidal :
     NatTrans.IsMonoidal (opMopRightDualLeftDualIso C).hom where
   -- After removing the wrappers, the structure morphisms of the composite functor are written
@@ -458,7 +428,9 @@ private theorem opMopRightDualLeftDualIso_isMonoidal :
     -- The unit comparison of the wrapper removal is an identity, whose source is only
     -- definitionally the unit of `C`.
     erw [Category.id_comp]
-    exact leftMate_unit_aux (C := C) _ _ _
+    -- The conjugated mate is the comparison of the unit with itself, an identity.
+    exact (leftDualIso_inv_comp_leftMate_comp_leftDualIso_hom _ _ _ _ _).trans
+      (by rw [leftDualIso_id, Iso.refl_inv])
   tensor X Y := by
     apply Quiver.Hom.unmop_inj
     apply Quiver.Hom.unop_inj
@@ -471,7 +443,9 @@ private theorem opMopRightDualLeftDualIso_isMonoidal :
     -- The tensor comparisons of the wrapper removal and of the identity functor are identities.
     erw [Category.id_comp, Category.id_comp]
     rw [leftDualTensorIso, rightDualTensorIso]
-    exact leftMate_tensor_aux (C := C) _ _ _ _ _ _ _
+    -- The conjugated mate is the comparison between tensor product duals.
+    exact (leftDualIso_inv_comp_leftMate_comp_leftDualIso_hom _ _ _ _ _).trans
+      (leftDualIso_tensor_inv _ _ _ _)
 
 variable (C) in
 /-- The functor `Y ↦ (ᘁY)ᘁ` of `(Cᵒᵖ)ᴹᵒᵖ` is trivialized by the inverses of the comparisons
@@ -491,32 +465,6 @@ private theorem opMopLeftDualRightDualIso_hom_app (Y : Cᵒᵖᴹᵒᵖ) :
       ((rightDualLeftDualIso C).inv.app Y.unmop.unop).op.mop :=
   rfl
 
-omit [RigidCategory C] in
-/-- The unit condition for `opMopLeftDualRightDualIso`, the mirror of `leftMate_unit_aux`. -/
-private theorem rightMate_unit_aux {R₁ R L₁ : C} (pr : ExactPairing (𝟙_ C) R₁)
-    (cr : ExactPairing L₁ R) (pl : ExactPairing L₁ (𝟙_ C)) :
-    (rightDualIso cr pl).inv ≫ rightMate pr cr (leftDualIso pl exactPairingUnit).inv ≫
-      (rightDualIso pr exactPairingUnit).hom = 𝟙 _ := by
-  rw [rightDualIso_inv, rightDualIso_hom, leftDualIso_inv, ← leftDualIso_hom, ← comp_rightMate,
-    ← comp_rightMate, Category.id_comp, Category.comp_id, rightMate_leftDualIso_hom,
-    rightMate_id]
-
-omit [RigidCategory C] in
-/-- The tensor condition for `opMopLeftDualRightDualIso`, the mirror of `leftMate_tensor_aux`. -/
-private theorem rightMate_tensor_aux {X Y LX LY LYX RX RY RYX RT : C} (pX : ExactPairing LX X)
-    (pY : ExactPairing LY Y) (pYX : ExactPairing LYX (Y ⊗ X)) (cX : ExactPairing LX RX)
-    (cY : ExactPairing LY RY) (cYX : ExactPairing LYX RYX) (cT : ExactPairing (LX ⊗ LY) RT) :
-    (rightDualIso cYX pYX).inv ≫
-        rightMate cT cYX (leftDualIso pYX (@tensor _ _ _ _ _ _ _ pX pY)).inv ≫
-        (rightDualIso cT (@tensor _ _ _ _ _ _ _ cX cY)).hom =
-      (rightDualIso cY pY).inv ⊗ₘ (rightDualIso cX pX).inv := by
-  rw [rightDualIso_inv, rightDualIso_hom, rightDualIso_inv, rightDualIso_inv, leftDualIso_inv,
-    ← leftDualIso_hom, ← rightMate_tensorHom cX cY pX pY, tensorHom_id, id_whiskerRight,
-    ← comp_rightMate, ← comp_rightMate, Category.id_comp, Category.comp_id,
-    ← Category.id_comp (leftDualIso (@tensor _ _ _ _ _ _ _ pX pY) pYX).hom,
-    comp_rightMate _ (@tensor _ _ _ _ _ _ _ pX pY), rightMate_leftDualIso_hom, rightMate_id,
-    Category.id_comp]
-
 private theorem opMopLeftDualRightDualIso_isMonoidal :
     NatTrans.IsMonoidal (opMopLeftDualRightDualIso C).hom where
   -- The mirror of `opMopRightDualLeftDualIso_isMonoidal`, with right mates in place of left
@@ -530,7 +478,9 @@ private theorem opMopLeftDualRightDualIso_isMonoidal :
     simp only [rightDualFunctor_map, rightAdjointMate_eq_rightMate, Functor.LaxMonoidal.id_ε,
       unmop_id, unop_id]
     erw [Category.id_comp]
-    exact rightMate_unit_aux (C := C) _ _ _
+    -- The conjugated mate is the comparison of the unit with itself, an identity.
+    exact (rightDualIso_inv_comp_rightMate_comp_rightDualIso_hom _ _ _ _ _).trans
+      (by rw [rightDualIso_id, Iso.refl_inv])
   tensor X Y := by
     apply Quiver.Hom.unmop_inj
     apply Quiver.Hom.unop_inj
@@ -542,7 +492,9 @@ private theorem opMopLeftDualRightDualIso_isMonoidal :
       unmop_comp, unop_comp, unmop_id, unop_id]
     erw [Category.id_comp, Category.id_comp]
     rw [leftDualTensorIso, rightDualTensorIso]
-    exact rightMate_tensor_aux (C := C) _ _ _ _ _ _ _
+    -- The conjugated mate is the comparison between tensor product duals.
+    exact (rightDualIso_inv_comp_rightMate_comp_rightDualIso_hom _ _ _ _ _).trans
+      (rightDualIso_tensor_inv _ _ _ _)
 
 attribute [local instance] opMopRightDualLeftDualIso_isMonoidal
   opMopLeftDualRightDualIso_isMonoidal

@@ -76,9 +76,18 @@ morphism.
 * `TauCeti.leftAdjointMate_eq_leftMate`, `CategoryTheory.ExactPairing.leftDualIso_hom` and
   `CategoryTheory.ExactPairing.leftDualIso_inv`: Mathlib's `leftAdjointMate` and `leftDualIso`
   as left mates;
+* `CategoryTheory.ExactPairing.leftDualIso_tensor_inv` and
+  `CategoryTheory.ExactPairing.rightDualIso_tensor_inv`: the comparison between tensor product
+  duals is the tensor product of the comparisons;
 * `CategoryTheory.ExactPairing.leftMate_rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightMate_leftDualIso_hom`: the opposite-handed mate of the
-  comparison between two duals is an identity.
+  comparison between two duals is an identity, and more generally
+  `CategoryTheory.ExactPairing.leftMate_rightDualIso_inv` and
+  `CategoryTheory.ExactPairing.rightMate_leftDualIso_inv`: with respect to arbitrary pairings it
+  is a composite of comparisons, so that
+  `CategoryTheory.ExactPairing.leftDualIso_inv_comp_leftMate_comp_leftDualIso_hom` and
+  `CategoryTheory.ExactPairing.rightDualIso_inv_comp_rightMate_comp_rightDualIso_hom`:
+  conjugated by comparisons, it is again a comparison.
 
 ## References
 
@@ -250,6 +259,16 @@ theorem rightDualIso_inv {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁) (p₂ : 
     (rightDualIso p₁ p₂).inv = rightMate p₁ p₂ (𝟙 X) :=
   -- `(rightDualIso p₁ p₂).inv` and `(rightDualIso p₂ p₁).hom` are the same mate of `𝟙 X`.
   rightDualIso_hom p₂ p₁
+
+/-- The inverse of the comparison between the tensor product right duals `Y' ⊗ X'` and `Y ⊗ X` of
+`Z ⊗ W` is the tensor product of the inverse comparisons `Y ⟶ Y'` and `X ⟶ X'`. -/
+theorem rightDualIso_tensor_inv {X X' Y Y' Z W : C} (pX : ExactPairing Z X)
+    (pX' : ExactPairing Z X') (pY : ExactPairing W Y) (pY' : ExactPairing W Y') :
+    (rightDualIso (tensor : ExactPairing (Z ⊗ W) (Y' ⊗ X'))
+      (tensor : ExactPairing (Z ⊗ W) (Y ⊗ X))).inv =
+        (rightDualIso pY' pY).inv ⊗ₘ (rightDualIso pX' pX).inv := by
+  rw [rightDualIso_inv, rightDualIso_inv, rightDualIso_inv, ← rightMate_tensorHom pX' pY' pX pY,
+    tensorHom_id, id_whiskerRight]
 
 /-- Through the comparison `rightDualIso p₁ p₂ : Y₁ ≅ Y₂`, the evaluation of `p₂` is the
 evaluation of `p₁`. -/
@@ -440,6 +459,16 @@ theorem leftDualIso_inv {X₁ X₂ Y : C} (p₁ : ExactPairing X₁ Y) (p₂ : E
   -- `(leftDualIso p₁ p₂).inv` and `(leftDualIso p₂ p₁).hom` are the same left mate of `𝟙 Y`.
   leftDualIso_hom p₂ p₁
 
+/-- The inverse of the comparison between the tensor product left duals `Y' ⊗ X'` and `Y ⊗ X` of
+`Z ⊗ W` is the tensor product of the inverse comparisons `Y ⟶ Y'` and `X ⟶ X'`. -/
+theorem leftDualIso_tensor_inv {X X' Y Y' Z W : C} (pX : ExactPairing X Z)
+    (pX' : ExactPairing X' Z) (pY : ExactPairing Y W) (pY' : ExactPairing Y' W) :
+    (leftDualIso (tensor : ExactPairing (Y' ⊗ X') (Z ⊗ W))
+      (tensor : ExactPairing (Y ⊗ X) (Z ⊗ W))).inv =
+        (leftDualIso pY' pY).inv ⊗ₘ (leftDualIso pX' pX).inv := by
+  rw [leftDualIso_inv, leftDualIso_inv, leftDualIso_inv, ← leftMate_tensorHom pX' pY' pX pY,
+    tensorHom_id, id_whiskerRight]
+
 /-- If `X` has two right duals `Y₁` and `Y₂`, then taking the left mate with respect to `(X, Y₁)`
 turns the comparison `rightDualIso p₁ p₂ : Y₁ ≅ Y₂` into the identity, transported to the pairing
 `(X, Y₂)`. With `q = p₂`, the left mate of the comparison is `𝟙 X`. -/
@@ -462,6 +491,64 @@ theorem rightMate_leftDualIso_hom {X₁ X₂ Y Z : C} (p₁ : ExactPairing X₁ 
     rightHom_ext (X := X₁) (by
       rw [rightMate_comp_evaluation, leftDualIso_hom, leftMate_comp_evaluation])
   rw [← Category.comp_id (leftDualIso p₁ p₂).hom, comp_rightMate p₁ p₂ q, h, Category.comp_id]
+
+/-- If `X` has two right duals `Y₁` and `Y₂`, with left duals `Z₁` of `Y₁` and `Z₂` of `Y₂`, then
+the left mate of the comparison `(rightDualIso p₂ p₁).inv : Y₁ ⟶ Y₂` is the composite of the
+comparisons `Z₂ ≅ X ≅ Z₁` between left duals. -/
+theorem leftMate_rightDualIso_inv {X Y₁ Y₂ Z₁ Z₂ : C} (p₁ : ExactPairing X Y₁)
+    (p₂ : ExactPairing X Y₂) (q₁ : ExactPairing Z₁ Y₁) (q₂ : ExactPairing Z₂ Y₂) :
+    leftMate q₁ q₂ (rightDualIso p₂ p₁).inv =
+      (leftDualIso q₂ p₂).hom ≫ (leftDualIso q₁ p₁).inv := by
+  -- Factor the left mate through the pairings `p₂` and `p₁` of `X`, where it is an identity.
+  have h : leftMate p₁ p₂ (rightDualIso p₂ p₁).inv = 𝟙 X :=
+    (leftMate_rightDualIso_hom p₁ p₂ p₂).trans (leftMate_id p₂)
+  calc
+    _ = leftMate p₂ q₂ (𝟙 Y₂) ≫ leftMate p₁ p₂ (rightDualIso p₂ p₁).inv ≫
+          leftMate q₁ p₁ (𝟙 Y₁) := by
+      rw [← comp_leftMate, ← comp_leftMate, Category.id_comp, Category.comp_id]
+    _ = _ := by
+      rw [h, Category.id_comp, leftDualIso_hom, leftDualIso_inv]
+
+/-- Conjugating the left mate of a comparison of right duals of `X` by comparisons of left duals
+gives a comparison of left duals: the composite `X ⟶ Z₂ ⟶ Z₁ ⟶ W` is the inverse of the
+comparison `leftDualIso r p₁ : W ≅ X` between the left duals of `Y₁`. -/
+theorem leftDualIso_inv_comp_leftMate_comp_leftDualIso_hom {X Y₁ Y₂ Z₁ Z₂ W : C}
+    (p₁ : ExactPairing X Y₁) (p₂ : ExactPairing X Y₂) (q₁ : ExactPairing Z₁ Y₁)
+    (q₂ : ExactPairing Z₂ Y₂) (r : ExactPairing W Y₁) :
+    (leftDualIso q₂ p₂).inv ≫ leftMate q₁ q₂ (rightDualIso p₂ p₁).inv ≫ (leftDualIso q₁ r).hom =
+      (leftDualIso r p₁).inv := by
+  rw [leftMate_rightDualIso_inv, Category.assoc, Iso.inv_hom_id_assoc]
+  -- The remaining composite `X ⟶ Z₁ ⟶ W` is a composite of left mates of identities of `Y₁`.
+  rw [leftDualIso_inv, leftDualIso_hom, leftDualIso_inv, ← comp_leftMate, Category.id_comp]
+
+/-- If `Y` has two left duals `X₁` and `X₂`, with right duals `Z₁` of `X₁` and `Z₂` of `X₂`, then
+the right mate of the comparison `(leftDualIso p₂ p₁).inv : X₁ ⟶ X₂` is the composite of the
+comparisons `Z₂ ≅ Y ≅ Z₁` between right duals. -/
+theorem rightMate_leftDualIso_inv {X₁ X₂ Y Z₁ Z₂ : C} (p₁ : ExactPairing X₁ Y)
+    (p₂ : ExactPairing X₂ Y) (q₁ : ExactPairing X₁ Z₁) (q₂ : ExactPairing X₂ Z₂) :
+    rightMate q₁ q₂ (leftDualIso p₂ p₁).inv =
+      (rightDualIso q₂ p₂).hom ≫ (rightDualIso q₁ p₁).inv := by
+  -- Factor the right mate through the pairings `p₂` and `p₁` of `Y`, where it is an identity.
+  have h : rightMate p₁ p₂ (leftDualIso p₂ p₁).inv = 𝟙 Y :=
+    (rightMate_leftDualIso_hom p₁ p₂ p₂).trans (rightMate_id p₂)
+  calc
+    _ = rightMate p₂ q₂ (𝟙 X₂) ≫ rightMate p₁ p₂ (leftDualIso p₂ p₁).inv ≫
+          rightMate q₁ p₁ (𝟙 X₁) := by
+      rw [← comp_rightMate, ← comp_rightMate, Category.id_comp, Category.comp_id]
+    _ = _ := by
+      rw [h, Category.id_comp, rightDualIso_hom, rightDualIso_inv]
+
+/-- Conjugating the right mate of a comparison of left duals of `Y` by comparisons of right duals
+gives a comparison of right duals: the composite `Y ⟶ Z₂ ⟶ Z₁ ⟶ W` is the inverse of the
+comparison `rightDualIso r p₁ : W ≅ Y` between the right duals of `X₁`. -/
+theorem rightDualIso_inv_comp_rightMate_comp_rightDualIso_hom {X₁ X₂ Y Z₁ Z₂ W : C}
+    (p₁ : ExactPairing X₁ Y) (p₂ : ExactPairing X₂ Y) (q₁ : ExactPairing X₁ Z₁)
+    (q₂ : ExactPairing X₂ Z₂) (r : ExactPairing X₁ W) :
+    (rightDualIso q₂ p₂).inv ≫ rightMate q₁ q₂ (leftDualIso p₂ p₁).inv ≫ (rightDualIso q₁ r).hom =
+      (rightDualIso r p₁).inv := by
+  rw [rightMate_leftDualIso_inv, Category.assoc, Iso.inv_hom_id_assoc]
+  -- The remaining composite `Y ⟶ Z₁ ⟶ W` is a composite of right mates of identities of `X₁`.
+  rw [rightDualIso_inv, rightDualIso_hom, rightDualIso_inv, ← comp_rightMate, Category.id_comp]
 
 end CategoryTheory.ExactPairing
 
