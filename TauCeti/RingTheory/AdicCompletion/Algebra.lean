@@ -17,11 +17,12 @@ for use when constructing maps of completed algebras from quotient comparisons.
 
 public section
 
-namespace TauCeti.AdicCompletion
+namespace TauCeti
 
 /-- Reducing a projection of an adic completion gives the projection at the smaller power. -/
 @[simp]
-theorem factorPow_evalₐ {R : Type*} [CommRing R] (I : Ideal R) {m n : ℕ} (h : m ≤ n)
+theorem factorPow_adicCompletion_evalₐ {R : Type*} [CommRing R] (I : Ideal R)
+    {m n : ℕ} (h : m ≤ n)
     (x : AdicCompletion I R) :
     Ideal.Quotient.factorPow I h (_root_.AdicCompletion.evalₐ I n x) =
       _root_.AdicCompletion.evalₐ I m x := by
@@ -31,4 +32,4 @@ theorem factorPow_evalₐ {R : Type*} [CommRing R] (I : Ideal R) {m n : ℕ} (h 
     apply Ideal.Quotient.eq.mpr
     simpa only [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top] using (a.property h).symm
 
-end TauCeti.AdicCompletion
+end TauCeti
