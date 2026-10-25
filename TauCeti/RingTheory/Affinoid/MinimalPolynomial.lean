@@ -28,9 +28,9 @@ The inequality `≤` holds for every monic equation of `f`, by
 `TauCeti.IsAffinoidAlgebra.supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero`. For `≥`, fix a
 classical point `x` of `A` and a root `α` of the reduction of `p` in an algebraic closure of
 `A ⧸ x`. Evaluation at `α` factors through `A[f] ≅ A[X] ⧸ (p)`, and its kernel is a maximal
-ideal of `A[f]` lying under a classical point `y` of `B`, at which `|f(y)| = |α|`. Hence every
-root of the reduction of `p` at `x` has absolute value at most `|f|sup`, and so do the
-coefficients `|aᵢ(x)| ^ (1 / (d - i))` of the reduction.
+ideal of `A[f]` lying under a classical point `y` of `B`, at which `|f(y)| = |α|`. Taking `α` of
+largest absolute value, the coefficients of the reduction satisfy `|aᵢ(x)| ≤ |f(y)| ^ (d - i)`,
+and in particular `|aᵢ(x)| ^ (1 / (d - i)) ≤ |f|sup`.
 
 When `A` is an integrally closed domain and `B` is a torsion-free algebra, the minimal polynomial
 of `f` over `A` satisfies these hypotheses. This applies to a finite injective map from a Tate
@@ -42,6 +42,8 @@ are retained throughout.
 
 ## Main results
 
+* `TauCeti.IsAffinoidAlgebra.exists_pointNorm_coeff_le_pointNorm_pow`: over each classical point
+  `x` of `A` lies a classical point `y` of `B` with `|aᵢ(x)| ≤ |f(y)| ^ (d - i)` for all `i`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_iSup_coeff_rpow_of_dvd`: `|f|sup` is the spectral
   value of a monic polynomial generating the annihilator of `f`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_iSup_minpoly_coeff_rpow`: `|f|sup` is the spectral
@@ -111,12 +113,18 @@ private theorem exists_pointNorm_eq_spectralNorm (hB : IsAffinoidAlgebra K B)
     hB.pointNorm_maximalSpectrumComap]
   simp only [AlgHom.restrictScalars_apply, Subalgebra.coe_val]
 
-/-- At a classical point `x` of `A`, each coefficient of `p` satisfies
-`|aᵢ(x)| ≤ |f|sup ^ (d - i)`, provided `p` divides every polynomial vanishing at `f`. -/
-private theorem pointNorm_coeff_le_supSeminorm_pow (hB : IsAffinoidAlgebra K B)
+/-- **Coefficients of a minimal equation at a classical point.** Let `B` be an affinoid algebra
+integral over `A`, and let `f : B` be a root of a monic polynomial
+`p = X ^ d + ∑_{i < d} aᵢ X ^ i` over `A` of positive degree dividing every polynomial over `A`
+which vanishes at `f`. Over each classical point `x` of `A` there is a classical point `y` of `B`
+with `|aᵢ(x)| ≤ |f(y)| ^ (d - i)` for every `i`. -/
+theorem exists_pointNorm_coeff_le_pointNorm_pow (hB : IsAffinoidAlgebra K B)
     [Algebra.IsIntegral A B] [FaithfulSMul A B] {f : B} {p : A[X]} (hp : p.Monic)
-    (hdvd : ∀ q : A[X], aeval f q = 0 → p ∣ q) (x : MaximalSpectrum A) (i : ℕ) :
-    pointNorm K x (p.coeff i) ≤ supSeminorm K f ^ (p.natDegree - i) := by
+    (hpos : 0 < p.natDegree) (hdvd : ∀ q : A[X], aeval f q = 0 → p ∣ q)
+    (x : MaximalSpectrum A) :
+    ∃ y : MaximalSpectrum B, ∀ i,
+      pointNorm K x (p.coeff i) ≤ pointNorm K y f ^ (p.natDegree - i) := by
+  classical
   -- Compute the point norms at `x` in an algebraic closure `Ω` of the residue field.
   let := Ideal.Quotient.field x.asIdeal
   have := hB.finite_quotient_of_isIntegral (IsScalarTower.toAlgHom K A B)
@@ -128,18 +136,28 @@ private theorem pointNorm_coeff_le_supSeminorm_pow (hB : IsAffinoidAlgebra K B)
     rw [IsScalarTower.algebraMap_eq A (A ⧸ x.asIdeal) Ω,
       RingHom.ker_comp_of_injective _ (algebraMap (A ⧸ x.asIdeal) Ω).injective,
       Ideal.Quotient.algebraMap_eq, Ideal.mk_ker]
-  rw [pointNorm_eq_spectralNorm (ψ := IsScalarTower.toAlgHom K A Ω) hker.ge]
-  -- The roots of `p` in `Ω` are values of `f` at classical points of `B`.
+  -- A root `α` of `p` in `Ω` of largest absolute value is the value of `f` at a classical point
+  -- `y` of `B`, and it bounds the coefficients of `p` at `x`.
   set P := p.map (algebraMap A Ω)
   have hP : P.Monic := hp.map _
-  have hM (α : Ω) (hα : α ∈ P.roots) : spectralMulAlgNorm K Ω α ≤ supSeminorm K f := by
-    rw [mem_roots hP.ne_zero, IsRoot, eval_map_algebraMap] at hα
-    obtain ⟨y, hy⟩ := hB.exists_pointNorm_eq_spectralNorm hdvd (hker.symm ▸ x.isMaximal) hα
-    rw [spectralMulAlgNorm_def, ← hy]
-    exact hB.pointNorm_le_supSeminorm y f
+  have hroots : Multiset.card P.roots = P.natDegree :=
+    (IsAlgClosed.splits P).natDegree_eq_card_roots.symm
+  have hne : P.roots.toFinset.Nonempty := by
+    rw [Multiset.toFinset_nonempty, ← Multiset.card_pos, hroots, hp.natDegree_map]
+    exact hpos
+  obtain ⟨α, hαP, hαmax⟩ := P.roots.toFinset.exists_max_image (spectralMulAlgNorm K Ω) hne
+  rw [Multiset.mem_toFinset] at hαP
+  have hα : aeval α p = 0 := by
+    rwa [mem_roots hP.ne_zero, IsRoot, eval_map_algebraMap] at hαP
+  obtain ⟨y, hy⟩ := hB.exists_pointNorm_eq_spectralNorm hdvd (hker.symm ▸ x.isMaximal) hα
+  refine ⟨y, fun i ↦ ?_⟩
+  rw [pointNorm_eq_spectralNorm (ψ := IsScalarTower.toAlgHom K A Ω) hker.ge]
+  have hM (β : Ω) (hβ : β ∈ P.roots) : spectralMulAlgNorm K Ω β ≤ pointNorm K y f := by
+    rw [hy, ← spectralMulAlgNorm_def]
+    exact hαmax β (Multiset.mem_toFinset.mpr hβ)
   have h := hP.apply_coeff_le_pow_of_card_roots (map_one _).le
     (fun a b ↦ by simpa only [spectralMulAlgNorm_def] using isNonarchimedean_spectralNorm a b)
-    (IsAlgClosed.splits P).natDegree_eq_card_roots.symm hM i
+    hroots hM i
   rwa [spectralMulAlgNorm_def, coeff_map, hp.natDegree_map] at h
 
 /-- **The supremum seminorm is the spectral value of a minimal equation.** Let `B` be an
@@ -176,8 +194,10 @@ theorem supSeminorm_eq_iSup_coeff_rpow_of_dvd (hB : IsAffinoidAlgebra K B)
   · have hi : (p.natDegree - i : ℝ) = ((p.natDegree - i : ℕ) : ℝ) := by
       rw [Nat.cast_sub i.2.le]
     have hle : supSeminorm K (p.coeff i) ≤ supSeminorm K f ^ (p.natDegree - i : ℕ) :=
-      supSeminorm_le (pow_nonneg (supSeminorm_nonneg f) _) fun x ↦
-        hB.pointNorm_coeff_le_supSeminorm_pow hp hdvd x i
+      supSeminorm_le (pow_nonneg (supSeminorm_nonneg f) _) fun x ↦ by
+        obtain ⟨y, hy⟩ := hB.exists_pointNorm_coeff_le_pointNorm_pow hp hpos hdvd x
+        exact (hy i).trans (pow_le_pow_left₀ (pointNorm_nonneg f)
+          (hB.pointNorm_le_supSeminorm y f) _)
     rw [hi, one_div, Real.rpow_inv_le_iff_of_pos (supSeminorm_nonneg _) (supSeminorm_nonneg f)
       (by exact_mod_cast Nat.sub_pos_of_lt i.2), Real.rpow_natCast]
     exact hle
