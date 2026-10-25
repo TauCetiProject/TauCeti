@@ -17,14 +17,14 @@ at the denominator `-1` is the sign factor of the numerator.
 
 ## Main statements
 
-* `TauCeti.Int.ite_lt_zero_eq_sign`: for `x ≠ 0`, `(if x < 0 then -1 else 1) = x.sign`.
-* `TauCeti.Int.ite_and_mul_lt_zero`: the factor `if p ∧ x < 0 then -1 else 1` is multiplicative
+* `Int.ite_lt_zero_eq_sign`: for `x ≠ 0`, `(if x < 0 then -1 else 1) = x.sign`.
+* `Int.ite_and_mul_lt_zero`: the factor `if p ∧ x < 0 then -1 else 1` is multiplicative
   in `x` over nonzero factors.
 -/
 
 public section
 
-namespace TauCeti.Int
+namespace Int
 
 /-- For `x ≠ 0`, the sign factor `if x < 0 then -1 else 1` is the sign of `x`. -/
 theorem ite_lt_zero_eq_sign {x : ℤ} (hx : x ≠ 0) :
@@ -40,6 +40,6 @@ theorem ite_and_mul_lt_zero {p : Prop} [Decidable p] {x y : ℤ} (hx : x ≠ 0) 
   rcases hx.lt_or_gt with hx | hx <;> rcases hy.lt_or_gt with hy | hy <;> by_cases hp : p <;>
     simp [hp, hx, hy, hx.not_gt, hy.not_gt, mul_neg_iff]
 
-end TauCeti.Int
+end Int
 
 end
