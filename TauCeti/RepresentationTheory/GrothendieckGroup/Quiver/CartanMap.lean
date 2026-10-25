@@ -238,16 +238,6 @@ theorem vertexProjectiveClassBasis_apply (i : Q) :
       ExactK0.{max u v} (finiteProjectiveModulesExactStructure (pathAlgebra k Q))) :=
   indecomposableProjectiveClassBasis_apply _ _ _ _ i
 
-/-- The multiplicity of `Sᵢ` in the vertex projective `Pⱼ`, viewed as a finitely generated module,
-is the number of paths from `j` to `i`. -/
-private theorem jordanHolderMultiplicity_vertexProjectiveFiniteProjective (i j : Q)
-    (h : ModuleCat.isFG (pathAlgebra k Q) (vertexProjectiveFiniteProjective k Q j).obj) :
-    jordanHolderMultiplicity (pathAlgebra k Q)
-      (⟨(vertexProjectiveFiniteProjective k Q j).obj, h⟩ : FGModuleCat (pathAlgebra k Q))
-      (vertexSimpleModuleFG k Q i) = Nat.card (Quiver.Path j i) :=
-  -- The finitely generated module is `vertexProjectiveModuleFG k Q j` up to structure eta.
-  jordanHolderMultiplicity_vertexProjectiveModuleFG_eq_card_path k Q i j
-
 /-- **The Cartan map of a path algebra on a vertex projective**: it sends `[Pⱼ]` to
 `∑ᵢ #(j → i) • [Sᵢ]`, the `j`th column of the path-counting matrix. -/
 theorem cartanMap_vertexProjectiveFiniteProjective [Fintype Q] (j : Q) :
@@ -256,7 +246,9 @@ theorem cartanMap_vertexProjectiveFiniteProjective [Fintype Q] (j : Q) :
   rw [cartanMap_of_eq_sum (vertexProjectiveFiniteProjective k Q) (vertexSimpleModuleFG k Q)
     (pairwise_isEmpty_linearEquiv_vertexSimpleModuleFG k Q)
     (isExhaustiveSimpleFamily_vertexSimpleModuleFG k Q) j]
-  simp only [jordanHolderMultiplicity_vertexProjectiveFiniteProjective]
+  -- The finitely generated module is `vertexProjectiveModuleFG k Q j` up to structure eta.
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    rw [← jordanHolderMultiplicity_vertexProjectiveModuleFG_eq_card_path k Q i j]; rfl
 
 /-- **The Cartan matrix of a path algebra counts paths.** In the bases of vertex projectives and
 vertex simples, the `(i, j)` entry `[Pⱼ : Sᵢ]` is the number of paths from `j` to `i`. -/
@@ -268,7 +260,8 @@ theorem cartanMatrix_vertexProjectiveFiniteProjective_apply [Fintype Q] (i j : Q
         (pairwise_isEmpty_linearEquiv_vertexSimpleModuleFG k Q)
         (isExhaustiveSimpleFamily_vertexSimpleModuleFG k Q) i j =
       Nat.card (Quiver.Path j i) := by
-  rw [cartanMatrix_apply, jordanHolderMultiplicity_vertexProjectiveFiniteProjective]
+  rw [cartanMatrix_apply]
+  exact_mod_cast jordanHolderMultiplicity_vertexProjectiveModuleFG_eq_card_path k Q i j
 
 /-- **The Cartan matrix of a path algebra inverts `1 - Aᵀ`**, where the `(i, j)` entry of `A`
 counts arrows `i ⟶ j`, in the bases of vertex projectives and vertex simples. Entrywise this is
