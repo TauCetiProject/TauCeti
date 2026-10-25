@@ -129,6 +129,8 @@ lemma monotone_renewalFunction : Monotone F.renewalFunction :=
 
 variable [SFinite F]
 
+/-- For an s-finite measure `F`, the renewal function sums the masses of the convolution powers
+over the positive arrival indices: `m t = ∑_{n ≥ 1} F^{*n} [0, t]`. -/
 lemma renewalFunction_eq_tsum (t : ℝ≥0) :
     F.renewalFunction t = ∑' n, F.convolutionPower (n + 1) (Iic t) := by
   rw [renewalFunction_def, conv_renewalMeasure, sum_apply_of_countable]
@@ -206,6 +208,8 @@ theorem renewalFunction_lt_top (hF : F {0} < 1) (t : ℝ≥0) : F.renewalFunctio
     ⟨(hP n).measurable.aemeasurable, (hP 0).measurable.aemeasurable, by
       rw [(hP n).map_eq, (hP 0).map_eq]⟩
   have hzero : P {w | w 0 = 0} < 1 := by
+    -- Write the event as a preimage under the coordinate `w 0` so that `measure_preimage`
+    -- transfers its measure to `F {0}`.
     rwa [show {w : ℕ → ℝ≥0 | w 0 = 0} = (fun w ↦ w 0) ⁻¹' {0} from rfl,
       (hP 0).measure_preimage (measurableSet_singleton 0).nullMeasurableSet]
   rw [← (hP 0).map_eq, ← lintegral_renewalCount hindep hid t]
