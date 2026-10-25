@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Jacobson.NonUnital
 
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
-import TauCeti.RingTheory.Jacobson.MulOpposite
+import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
 # Spectral characterization of the Jacobson radical

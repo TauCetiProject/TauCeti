@@ -42,14 +42,16 @@ biproducts, exactly as its input in `Radical.Basic` does.  The construction of t
 linear structure need none of that, so they are stated for an arbitrary `k`-linear category over a
 ring `k`.
 
-What is *not* built here is the bimodule structure of `Irr(X, Y)` over the residue division rings
-`End X / rad(End X)` and `End Y / rad(End Y)`.  It is the dimensions over *those* rings, not the
-`k`-dimension computed below, that count the arrows `X → Y` of the Auslander-Reiten quiver; the two
-counts do agree whenever both residue division rings are `k` itself, as happens for instance over an
-algebraically closed `k` when the two endomorphism algebras are finite-dimensional over it, but that
-is only a sufficient condition — they also agree, vacuously, whenever `Irr(X, Y)` vanishes.  So no
-statement below claims to compute an arrow multiplicity: what is proved is the `k`-dimension, its
-bound by `finrank k (X ⟶ Y)`, and its positivity exactly when an irreducible morphism exists.
+What is built not here but in `TauCeti/CategoryTheory/Preadditive/Radical/Bimodule.lean` is the
+bimodule structure of `Irr(X, Y)` over the residue division rings `End X / rad(End X)` and
+`End Y / rad(End Y)`, together with the positivity of the rank over each of them.  It is a rank
+over *those* rings, not the `k`-dimension computed below, that the textbook convention counts the
+arrows `X → Y` of a *valued* Auslander-Reiten quiver by; the counts do agree whenever both residue
+division rings are `k` itself, as happens for instance over an algebraically closed `k` when the
+two endomorphism algebras are finite-dimensional over it, but that is only a sufficient condition —
+they also agree, vacuously, whenever `Irr(X, Y)` vanishes.  So no statement below claims to compute
+an arrow multiplicity: what is proved is the `k`-dimension, its bound by `finrank k (X ⟶ Y)`, and
+its positivity exactly when an irreducible morphism exists.
 
 ## Main definitions
 
