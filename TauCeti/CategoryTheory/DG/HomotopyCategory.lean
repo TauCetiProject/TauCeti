@@ -630,6 +630,11 @@ theorem homOf_def {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
     homOf R f hf = dgHomotopyClass R f hf :=
   (rfl)
 
+/-- Every morphism of the homotopy category is the class of a closed degree-zero DG morphism. -/
+theorem exists_homOf_eq {X Y : C} (a : of R X ⟶ of R Y) :
+    ∃ (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y), homOf R f hf = a :=
+  exists_dgHomotopyClass_eq R a
+
 /-- The zero DG morphism represents the zero morphism in the homotopy category. -/
 @[simp]
 theorem homOf_zero (X Y : C) :
