@@ -29,6 +29,7 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
 `projectiveCharpolyRev f` is the reversed characteristic polynomial of the matrix of `σ ∘ f ∘ π`
 (`LinearMap.projectiveCharpolyRev_eq_charpolyRev_toMatrix`). Through this description:
 
+* its value at `1` is the determinant of `1 - f` (`LinearMap.eval_one_projectiveCharpolyRev`);
 * it commutes with base change (`LinearMap.projectiveCharpolyRev_baseChange`);
 * it is transported along semilinear isomorphisms
   (`LinearMap.projectiveCharpolyRev_eq_map_of_comp_eq`);
@@ -115,6 +116,19 @@ theorem coeff_projectiveCharpolyRev_zero (f : Module.End R M) :
   obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
   rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
     coeff_zero_eq_eval_zero, Matrix.eval_charpolyRev]
+
+/-- The value at `1` of the reversed characteristic polynomial `det (1 - X f)` is the determinant
+of `1 - f`. -/
+@[simp]
+theorem eval_one_projectiveCharpolyRev (f : Module.End R M) :
+    (projectiveCharpolyRev f).eval 1 = projectiveDet (1 - f) := by
+  obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  have hσ : σ ∘ₗ (1 - f) ∘ₗ π + (1 - σ ∘ₗ π) = 1 - σ ∘ₗ f ∘ₗ π := by
+    ext x
+    simp
+  rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
+    Matrix.eval_one_charpolyRev, projectiveDet_eq_det_of_comp_eq_id π σ h, hσ,
+    ← det_toMatrix (Pi.basisFun R (Fin n)), map_sub, toMatrix_one]
 
 /-- The reversed characteristic polynomial commutes with base change. -/
 @[simp]
