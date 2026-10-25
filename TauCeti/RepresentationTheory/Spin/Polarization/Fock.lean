@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.RepresentationTheory.Spin.Polarization.ComplexStructure
 public import TauCeti.RepresentationTheory.Spin.Polarization.DegreeScaling
 
@@ -31,6 +32,8 @@ together with the formula for `c(v)`.
 ## Main definitions
 
 * `TauCeti.AlmostComplexStructure.fockAction`: the `√2`-normalized Fock action.
+* `TauCeti.AlmostComplexStructure.realFockAction`: its restriction to the real Clifford algebra
+  `CliffordAlgebra Q`, making `⋀ W` a complex Clifford module of the real space `(V, Q)`.
 
 ## Main results
 
@@ -41,6 +44,11 @@ together with the formula for `c(v)`.
   `c(v) = √2 (ε(v^(1,0)) + (1/2) · contraction against polar (Q.baseChange ℂ) · v^(0,1))`.
 * `TauCeti.AlmostComplexStructure.fockAction_ι_one_tmul_mul_self`: the Clifford relation
   `c(v) ^ 2 = Q v`, which is `-|v|² Id` in the geometric convention.
+* `TauCeti.AlmostComplexStructure.fockAction_ι_coe_W`: a vector of `W` acts by `√2` times
+  exterior multiplication.
+* `TauCeti.AlmostComplexStructure.realFockAction_ι`: a real generator `ι Q v` acts by `c(v)`.
+* `TauCeti.AlmostComplexStructure.realFockAction_ι_mul_ι_apply_apply_one`: on the vacuum,
+  `c(u) c(J u) 1 = i Q(u)`.
 
 ## References
 
@@ -151,5 +159,65 @@ theorem fockAction_ι_one_tmul_mul_self (v : V) :
       algebraMap ℂ _ (Q v : ℂ) := by
   rw [← map_mul, ι_sq_scalar, AlgHom.commutes, QuadraticForm.baseChange_tmul, mul_one,
     Complex.real_smul, mul_one]
+
+/-- In the normalized Fock action a vector of `W` acts by `√2` times exterior multiplication. -/
+theorem fockAction_ι_coe_W (x : (J.spinPolarizationData hQJ hQ).W) :
+    J.fockAction hQJ hQ (ι (Q.baseChange ℂ) (x : ℂ ⊗[ℝ] V)) =
+      (Real.sqrt 2 : ℂ) • (J.spinPolarizationData hQJ hQ).wedge x := by
+  rw [J.fockAction_eq_scaledSpinAction hQJ hQ coe_sqrtTwoUnit,
+    SpinPolarizationData.scaledSpinAction_ι_coe_W, coe_sqrtTwoUnit]
+
+/-- **The Fock action of the real Clifford algebra**: the normalized Fock action
+`TauCeti.AlmostComplexStructure.fockAction` restricted along the canonical map
+`CliffordAlgebra.ofBaseChangeAux : CliffordAlgebra Q → CliffordAlgebra (Q.baseChange ℂ)`, which
+sends `ι Q v` to `ι (1 ⊗ v)`. It makes `⋀ W` a complex Clifford module of the real quadratic
+space `(V, Q)`, on which a real vector `v` acts by `c(v) = √2 (ε(v^(1,0)) - ι(v^(0,1)))`. -/
+noncomputable def realFockAction :
+    CliffordAlgebra Q →ₐ[ℝ]
+      Module.End ℂ (ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W) :=
+  ((J.fockAction hQJ hQ).restrictScalars ℝ).comp (ofBaseChangeAux ℂ Q)
+
+/-- Unfolding lemma for `TauCeti.AlmostComplexStructure.realFockAction`. -/
+theorem realFockAction_apply (a : CliffordAlgebra Q) :
+    J.realFockAction hQJ hQ a = J.fockAction hQJ hQ (ofBaseChangeAux ℂ Q a) :=
+  (rfl)
+
+/-- In the real Fock action a real generator `ι Q v` acts by the normalized Fock operator
+`c(v)` of `1 ⊗ v`. -/
+@[simp]
+theorem realFockAction_ι (v : V) :
+    J.realFockAction hQJ hQ (ι Q v) = J.fockAction hQJ hQ (ι (Q.baseChange ℂ) ((1 : ℂ) ⊗ₜ v)) := by
+  rw [realFockAction_apply, ofBaseChangeAux_ι]
+
+/-- **The Fock operators of `u` and `J u` on the vacuum**: `c(u) c(J u) 1 = i Q(u)` for the
+vacuum `1` of `⋀ W`. -/
+theorem realFockAction_ι_mul_ι_apply_apply_one (u : V) :
+    J.realFockAction hQJ hQ (ι Q u * ι Q (J u)) 1 = (Complex.I * Q u) • 1 := by
+  set P := J.spinPolarizationData hQJ hQ
+  have hW : (⟨J.holomorphicPart (J u), J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ _⟩ :
+      P.W) = Complex.I • ⟨J.holomorphicPart u,
+        J.holomorphicPart_mem_spinPolarizationData_W hQJ hQ u⟩ :=
+    Subtype.ext (J.holomorphicPart_apply_apply u)
+  have hpolar : QuadraticMap.polar (Q.baseChange ℂ) (J.holomorphicPart u)
+      (J.antiholomorphicPart u) = Q u := by
+    have h0 : QuadraticMap.polar Q u (J u) = 0 := by
+      have h := J.polar_apply_left_eq_neg_polar_apply_right hQJ u u
+      rw [QuadraticMap.polar_comm] at h
+      linarith
+    rw [J.polar_holomorphicPart_antiholomorphicPart hQJ, h0, QuadraticMap.polar_self]
+    push_cast
+    ring
+  have hsqrt : (Real.sqrt 2 : ℂ) * Real.sqrt 2 = 2 := by
+    rw [← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
+  rw [map_mul, Module.End.mul_apply, realFockAction_ι, realFockAction_ι,
+    fockAction_ι_one_tmul, fockAction_ι_one_tmul]
+  simp only [LinearMap.smul_apply, LinearMap.add_apply, SpinPolarizationData.wedge_apply,
+    SpinPolarizationData.contract_apply, hW, map_smul, mul_one, contractLeft_one, smul_zero,
+    add_zero, smul_add, ExteriorAlgebra.ι_sq_zero, contractLeft_ι,
+    SpinPolarizationData.pairingEquiv_apply]
+  rw [hpolar, Algebra.algebraMap_eq_smul_one, smul_smul, smul_smul, smul_smul, smul_smul,
+    zero_add]
+  congr 1
+  linear_combination (Complex.I * (Q u : ℂ) / 2) * hsqrt
 
 end TauCeti.AlmostComplexStructure
