@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
 import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Topology.MetricSpace.Holder.Basic
 
 /-!
 # Sard's lemma on the flat stratum

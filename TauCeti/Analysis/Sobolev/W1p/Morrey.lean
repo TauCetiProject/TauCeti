@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Density
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Sobolev.Morrey
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Topology.MetricSpace.Holder.Basic
 
 /-!
 # Morrey's embedding for `W^{1,p}(ℝⁿ)`

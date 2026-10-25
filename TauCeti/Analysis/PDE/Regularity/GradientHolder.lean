@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Topology.MetricSpace.Holder.Basic
 
 /-!
 # Hölder continuity of the gradient for `-Δu = -div G`

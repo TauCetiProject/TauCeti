@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Convex.Integral
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Topology.MetricSpace.Holder.Basic
 
 /-!
 # Campanato's characterization of Hölder continuity

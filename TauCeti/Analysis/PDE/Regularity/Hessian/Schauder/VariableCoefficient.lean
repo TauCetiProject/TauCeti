@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Basic
 public import Mathlib.Topology.MetricSpace.HolderNorm
 import TauCeti.Analysis.Holder.Lp
 import TauCeti.Analysis.Normed.Operator.Holder
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Topology.MetricSpace.Holder.Basic
 
 /-!
 # Schauder estimates for coefficients of small oscillation

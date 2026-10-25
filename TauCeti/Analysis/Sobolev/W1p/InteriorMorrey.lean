@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Morrey
 import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Topology.MetricSpace.Holder.Basic
 
 /-!
 # Morrey's embedding for `W^{1,p}(Ω)` in the interior of a domain

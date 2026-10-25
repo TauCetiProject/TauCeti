@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Covering.DensityTheorem
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Convex.Integral
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Topology.MetricSpace.Holder.Basic
 
 /-!
 # The precise representative of a function

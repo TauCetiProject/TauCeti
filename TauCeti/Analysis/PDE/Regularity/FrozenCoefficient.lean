@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
-public import TauCeti.Topology.MetricSpace.Holder
+public import TauCeti.Topology.MetricSpace.Holder.Basic
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
 

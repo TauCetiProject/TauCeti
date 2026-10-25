@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 public import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Topology.MetricSpace.Holder.Basic
 
 /-!
 # Morrey's Dirichlet growth theorem

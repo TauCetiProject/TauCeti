@@ -13,7 +13,7 @@ import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Topology.MetricSpace.Holder.Basic
 
 /-!
 # Interior Schauder estimates for classical solutions
