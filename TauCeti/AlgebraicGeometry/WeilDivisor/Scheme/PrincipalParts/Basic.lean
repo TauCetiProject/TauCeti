@@ -153,12 +153,6 @@ lemma principalPartMapOfLE_refl (D : SchemeWeilDivisor X) (x : CodimensionOnePoi
     principalPartMapOfLE (le_refl D) x = LinearMap.id :=
   Submodule.mapQ_id _ (stalkSubmodule_mono (le_refl D) x)
 
-/-- A reflexive local principal-parts map fixes every quotient class. -/
-lemma principalPartMapOfLE_refl_apply (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X)
-    (q : PrincipalPart D x) :
-    principalPartMapOfLE (le_refl D) x q = q := by
-  simp
-
 /-- Local principal-parts maps compose along a chain of divisor inequalities. -/
 @[simp]
 lemma principalPartMapOfLE_comp {D E F : SchemeWeilDivisor X} (h : D ≤ E) (h' : E ≤ F)

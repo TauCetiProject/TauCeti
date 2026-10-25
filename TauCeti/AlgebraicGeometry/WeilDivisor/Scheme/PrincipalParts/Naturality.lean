@@ -101,9 +101,7 @@ lemma principalPartsHomOfLE_refl (D : SchemeWeilDivisor X) :
   apply DFinsupp.ext
   intro x
   simp only [Scheme.Modules.Hom.id_app, ConcreteCategory.id_apply,
-    principalPartsHomOfLE_app_apply]
-  induction principalPartsSectionsEquiv D U s x using Submodule.Quotient.induction_on with
-  | _ f => simp only [principalPartMapOfLE_mk]
+    principalPartsHomOfLE_app_apply, principalPartMapOfLE_refl, LinearMap.id_apply]
 
 /-- Principal-parts maps compose along inclusions of divisors. -/
 @[reassoc (attr := simp)]
@@ -117,8 +115,7 @@ lemma principalPartsHomOfLE_comp {F : SchemeWeilDivisor X} (h : D ≤ E) (h' : E
   intro x
   simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
     principalPartsHomOfLE_app_apply]
-  induction principalPartsSectionsEquiv D U s x using Submodule.Quotient.induction_on with
-  | _ f => simp only [principalPartMapOfLE_mk]
+  exact principalPartMapOfLE_comp_apply h h' x.1 _
 
 /-- Taking principal parts commutes with enlargement of the divisor. -/
 @[reassoc (attr := simp)]
