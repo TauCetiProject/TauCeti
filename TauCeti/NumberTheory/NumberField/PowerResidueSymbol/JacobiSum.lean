@@ -111,13 +111,16 @@ theorem jacobiSum_powerResidueSymbol_mul_jacobiSum_inv (hP : (absNorm P).Coprime
   -- The residue field is finite, while `K` has characteristic zero.
   have hchar : ringChar K ≠ ringChar (𝓞 K ⧸ P) := by
     simpa only [ringChar.eq_zero] using (CharP.ringChar_ne_zero_of_finite (𝓞 K ⧸ P)).symm
-  apply RingOfIntegers.coe_injective
-  rw [map_mul, ← jacobiSum_ringHomComp, ← jacobiSum_ringHomComp, ← MulChar.ringHomComp_inv,
-    jacobiSum_mul_jacobiSum_inv hchar
-      ((MulChar.ringHomComp_ne_one_iff RingOfIntegers.coe_injective).mpr h1)
-      ((MulChar.ringHomComp_ne_one_iff RingOfIntegers.coe_injective).mpr h1)
-      (by rwa [← MulChar.ringHomComp_mul,
-        MulChar.ringHomComp_ne_one_iff RingOfIntegers.coe_injective]),
-    ← Nat.card_eq_fintype_card, ← absNorm_eq_natCard, map_natCast]
+  -- Transport the nontriviality hypotheses along the embedding `𝓞 K → K`.
+  have hinj := RingOfIntegers.coe_injective (K := K)
+  have h1K : (powerResidueSymbol P n).ringHomComp (algebraMap (𝓞 K) K) ≠ 1 :=
+    (MulChar.ringHomComp_ne_one_iff hinj).mpr h1
+  have h2K : (powerResidueSymbol P n).ringHomComp (algebraMap (𝓞 K) K) *
+      (powerResidueSymbol P n).ringHomComp (algebraMap (𝓞 K) K) ≠ 1 := by
+    rwa [← MulChar.ringHomComp_mul, MulChar.ringHomComp_ne_one_iff hinj]
+  have key := jacobiSum_mul_jacobiSum_inv hchar h1K h1K h2K
+  apply hinj
+  simpa [MulChar.ringHomComp_inv, jacobiSum_ringHomComp, ← Nat.card_eq_fintype_card,
+    ← absNorm_eq_natCard] using key
 
 end Ideal
