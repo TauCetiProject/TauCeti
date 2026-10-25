@@ -127,7 +127,7 @@ def cohomologyGradingRepresentation (p : ℤ) :
   hM.cohomologyRepresentation.subrepresentation _ fun g _ ↦
     hM.cohomologyRepresentation_apply_mem_cohomologyGrading g
 
-/-- A class of degree `p` acts on `H^p(𝓕)` as it does on `H(𝓕)`. -/
+/-- A fundamental-group element acts on a class of degree `p` as it does on `H(𝓕)`. -/
 @[simp]
 theorem coe_cohomologyGradingRepresentation_apply (p : ℤ) (g : FundamentalGroup B b)
     (x : hM.cohomologyGrading p) :
