@@ -141,8 +141,9 @@ theorem IsPiecewiseContMDiffOn.eVariationOn_le_pathELength
     hγ.edist_le_pathELength_of_subset has hst htb
 
 /-- The total variation of a pointwise limit of eventually `C¹` curves is at most the `liminf` of
-their Riemannian path lengths. No regularity of the limit is needed; for a `C¹` limit the left side
-is its path length, see `TauCeti.Manifold.pathELength_le_liminf_pathELength`. -/
+their Riemannian path lengths. No regularity of the limit is needed. For a differentiable limit,
+the total variation bounds its path length; see
+`TauCeti.Manifold.pathELength_le_liminf_pathELength`. -/
 theorem eVariationOn_le_liminf_pathELength {ι : Type*} {l : Filter ι} {γi : ι → ℝ → M}
     (hγi : ∀ᶠ i in l, CMDiff[Icc a b] 1 (γi i))
     (hγ : ∀ t ∈ Icc a b, Tendsto (fun i ↦ γi i t) l (nhds (γ t))) :
