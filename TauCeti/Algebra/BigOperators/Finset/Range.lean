@@ -56,6 +56,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   before each element.
 * `Finset.prod_range_mul_eq_prod_prod`, `Finset.sum_range_mul_eq_sum_sum`: split a product or
   sum over `range (n * q)` into `q` consecutive blocks of `n` terms.
+* `Finset.sum_range_two_mul_succ`: the sum `∑_{i=1}^{m} 2i` of the first `m` positive even
+  numbers is `m (m + 1)`.
 -/
 
 public section
@@ -126,6 +128,13 @@ theorem prod_range_mul_eq_prod_prod {M : Type*} [CommMonoid M] (f : ℕ → M) (
   induction q with
   | zero => simp
   | succ q ih => rw [Nat.mul_succ, prod_range_add, ih, prod_range_succ]
+
+/-- The sum `∑_{i=1}^{m} 2i` of the first `m` positive even numbers is `m (m + 1)`. It is, for
+instance, the exponent of the leading power of `q` in `∏_{i=1}^{m} (q^{2i} - 1)`. -/
+theorem sum_range_two_mul_succ (m : ℕ) : ∑ i ∈ range m, 2 * (i + 1) = m * (m + 1) := by
+  induction m with
+  | zero => rfl
+  | succ m ih => rw [sum_range_succ, ih]; ring
 
 end Finset
 
