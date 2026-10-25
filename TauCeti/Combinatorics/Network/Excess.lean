@@ -182,6 +182,67 @@ theorem arrowSum_eq_zero_iff_of_nonneg [PartialOrder K] [IsOrderedAddMonoid K] {
     sum_eq_zero_iff_of_nonneg fun w _ ↦ h₃ _ w, sum_eq_zero_iff_of_nonneg fun e _ ↦ hf _ _ e,
     mem_univ, true_implies]
 
+section Nonneg
+
+variable [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
+
+/-- A nonnegative assignment has nonnegative total value on the arrows from `S` to `T`. -/
+theorem arrowSum_nonneg (hf : 0 ≤ f) (S T : Finset V) : 0 ≤ arrowSum f S T :=
+  sum_nonneg fun _ _ ↦ sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hf _ _ e
+
+/-- For a nonnegative assignment, the arrow sum is monotone in the set of source vertices. -/
+theorem arrowSum_mono_left (hf : 0 ≤ f) {S S' : Finset V} (h : S ⊆ S') (T : Finset V) :
+    arrowSum f S T ≤ arrowSum f S' T :=
+  sum_le_sum_of_subset_of_nonneg h fun v _ _ ↦ sum_nonneg fun w _ ↦ sum_nonneg fun e _ ↦ hf v w e
+
+/-- For a nonnegative assignment, the arrow sum is monotone in the set of target vertices. -/
+theorem arrowSum_mono_right (hf : 0 ≤ f) (S : Finset V) {T T' : Finset V} (h : T ⊆ T') :
+    arrowSum f S T ≤ arrowSum f S T' :=
+  sum_le_sum fun v _ ↦ sum_le_sum_of_subset_of_nonneg h fun w _ _ ↦ sum_nonneg fun e _ ↦ hf v w e
+
+/-- For a nonnegative assignment, the arrow sum is subadditive in the set of source vertices. -/
+theorem arrowSum_union_left_le [DecidableEq V] (hf : 0 ≤ f) (S S' T : Finset V) :
+    arrowSum f (S ∪ S') T ≤ arrowSum f S T + arrowSum f S' T := by
+  rw [← union_sdiff_self_eq_union, arrowSum_union_left f disjoint_sdiff]
+  grw [arrowSum_mono_left hf sdiff_subset]
+
+/-- For a nonnegative assignment, the arrow sum is subadditive in the set of target vertices. -/
+theorem arrowSum_union_right_le [DecidableEq V] (hf : 0 ≤ f) (S T T' : Finset V) :
+    arrowSum f S (T ∪ T') ≤ arrowSum f S T + arrowSum f S T' := by
+  rw [← union_sdiff_self_eq_union, arrowSum_union_right f S disjoint_sdiff]
+  grw [arrowSum_mono_right hf S sdiff_subset]
+
+/-- Adding the vertices of `X` to a vertex set `S` increases the nonnegative value leaving it by
+at most the total value leaving `X`. -/
+theorem arrowSum_union_compl_le [Fintype V] [DecidableEq V] (hf : 0 ≤ f) (S X : Finset V) :
+    arrowSum f (S ∪ X) (S ∪ X)ᶜ ≤ arrowSum f S Sᶜ + arrowSum f X univ := by
+  grw [arrowSum_union_left_le hf, arrowSum_mono_right hf S (compl_subset_compl.mpr
+    subset_union_left), arrowSum_mono_right hf X (subset_univ _)]
+
+/-- Removing the vertices of `Y` from a vertex set `S` increases the nonnegative value leaving it
+by at most the total value entering `Y`. -/
+theorem arrowSum_sdiff_compl_le [Fintype V] [DecidableEq V] (hf : 0 ≤ f) (S Y : Finset V) :
+    arrowSum f (S \ Y) (S \ Y)ᶜ ≤ arrowSum f S Sᶜ + arrowSum f univ Y := by
+  have h : (S \ Y)ᶜ = Sᶜ ∪ Y := by
+    ext v
+    simp [imp_iff_not_or]
+  rw [h]
+  grw [arrowSum_union_right_le hf, arrowSum_mono_left hf sdiff_subset,
+    arrowSum_mono_left hf (subset_univ (S \ Y))]
+
+/-- The value of a nonnegative assignment on a single arrow from `S` to `T` is at most its total
+value on the arrows from `S` to `T`. -/
+theorem apply_le_arrowSum (hf : 0 ≤ f) {S T : Finset V} {v w : V} (hv : v ∈ S) (hw : w ∈ T)
+    (e : Q v w) : f e ≤ arrowSum f S T :=
+  calc f e ≤ ∑ e : Q v w, f e := single_le_sum (fun e _ ↦ hf _ _ e) (mem_univ e)
+    _ ≤ ∑ w ∈ T, ∑ e : Q v w, f e :=
+      single_le_sum (f := fun w ↦ ∑ e : Q v w, f e) (fun _ _ ↦ sum_nonneg fun e _ ↦ hf _ _ e) hw
+    _ ≤ arrowSum f S T :=
+      single_le_sum (f := fun v ↦ ∑ w ∈ T, ∑ e : Q v w, f e)
+        (fun _ _ ↦ sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hf _ _ e) hv
+
+end Nonneg
+
 /-- The total value entering `v` for a single arrow from `x` to `y` is `q` when `v = y` and
 zero otherwise. -/
 theorem sum_sum_single_in [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q : K) (v : V) :
@@ -294,6 +355,24 @@ theorem excessAt_nonneg_of_nonneg_of_forall_out_eq_zero [PartialOrder K] [IsOrde
     0 ≤ excessAt f v := by
   simp only [excessAt_def, h, sum_const_zero, sub_zero]
   exact sum_nonneg fun w _ ↦ sum_nonneg fun e _ ↦ hf _ _ e
+
+/-- An assignment between zero and `cap` has excess at `v` at most the total capacity of the arrows
+entering `v`. -/
+theorem excessAt_le_of_mem_Icc [PartialOrder K] [IsOrderedAddMonoid K] {f cap : Assignment Q K}
+    (hf : f ∈ Set.Icc 0 cap) (v : V) : excessAt f v ≤ ∑ w, ∑ e : Q w v, cap e :=
+  calc excessAt f v ≤ ∑ w, ∑ e : Q w v, f e :=
+        sub_le_self _ (sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hf.1 _ _ e)
+    _ ≤ ∑ w, ∑ e : Q w v, cap e := sum_le_sum fun _ _ ↦ sum_le_sum fun e _ ↦ hf.2 _ _ e
+
+/-- An assignment between zero and `cap` has minus its excess at `v` at most the total capacity of
+the arrows leaving `v`. -/
+theorem neg_excessAt_le_of_mem_Icc [PartialOrder K] [IsOrderedAddMonoid K]
+    {f cap : Assignment Q K} (hf : f ∈ Set.Icc 0 cap) (v : V) :
+    -excessAt f v ≤ ∑ w, ∑ e : Q v w, cap e :=
+  calc -excessAt f v ≤ ∑ w, ∑ e : Q v w, f e := by
+        rw [excessAt_def, neg_sub]
+        exact sub_le_self _ (sum_nonneg fun _ _ ↦ sum_nonneg fun e _ ↦ hf.1 _ _ e)
+    _ ≤ ∑ w, ∑ e : Q v w, cap e := sum_le_sum fun _ _ ↦ sum_le_sum fun e _ ↦ hf.2 _ _ e
 
 /-- **Excess on a vertex set.** The total excess of `f` on `S` is the value on arrows entering `S`
 from its complement minus the value on arrows leaving `S` for its complement; arrows with both ends
@@ -430,6 +509,13 @@ end AddCommGroup
 /-! ### Change of coefficients -/
 
 namespace Assignment
+
+/-- Subtracting a subgroup-valued reference preserves membership on each arrow. -/
+theorem sub_apply_mem_iff [AddGroup K] {M : Type*} [SetLike M K]
+    [AddSubgroupClass M K] {H : M} {f h : Assignment Q K} {x y : V} (e : Q x y)
+    (hh : h e ∈ H) : (f - h) e ∈ H ↔ f e ∈ H := by
+  simpa only [Pi.sub_apply, sub_eq_add_neg] using
+    add_mem_cancel_right (y := f e) (neg_mem hh)
 
 section Algebra
 

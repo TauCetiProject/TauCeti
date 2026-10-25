@@ -1,11 +1,11 @@
 name: pick-runner
 
-# The existing dispatcher selects from one complete capacity snapshot. Machines
+# Staging tries eligible dedicated machines before cloud-capacity discovery. Machines
 # advertise class, permanent machine, and ephemeral instance labels. All limits
 # are approximate: concurrent pickers can observe the same free capacity.
 # Full or unknown cloud capacity queues on GitHub instead of bypassing the
 # Namespace cap. Picker/control jobs do not count towards the build-job cap.
-# Preserve App and repository API reserves for status and merge automation.
+# Preserve the repository API reserve for status and merge automation.
 on:
   workflow_call:
     inputs:
@@ -24,8 +24,6 @@ on:
     secrets:
       FLEET_READ_TOKEN: { required: false }
       TAUCETI_GITHUB_STATE_TOKEN: { required: false }
-      APP_ID: { required: false }
-      APP_PRIVATE_KEY: { required: false }
     outputs:
       runner:
         description: JSON runs-on target; callers must match attempt to their current github.run_attempt before using runner or pool
@@ -51,11 +49,9 @@ on:
 
 jobs:
   pick:
-    # Preserve the current GitHub control runner so Namespace queues cannot
-    # prevent selection of available dedicated capacity.
-    runs-on: ubuntu-latest
-    env:
-      HAS_APP: ${{ secrets.APP_ID != '' && secrets.APP_PRIVATE_KEY != '' }}
+    # Bors selection must not wait behind the GitHub builds it is trying to
+    # dispatch. Reuse the existing small, high-priority Namespace control profile.
+    runs-on: ${{ inputs.fleet-staging && fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) || 'ubuntu-24.04' }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
@@ -77,32 +73,19 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
-      - name: Mint picker read token
-        if: ${{ env.HAS_APP == 'true' }}
-        id: app-token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
-        continue-on-error: true
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          permission-metadata: read
-          permission-actions: read
       - name: Select destination in configured preference order
         id: pick
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
-          FALLBACK_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
           BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '18' }}
           NAMESPACE_BUILD_CAP: ${{ vars.NAMESPACE_BUILD_CAP }}
-          API_RESERVE: ${{ steps.app-token.outputs.token && (vars.PICKER_API_RESERVE || '1500') || (vars.PICKER_REPOSITORY_API_RESERVE || '250') }}
-          REPOSITORY_API_RESERVE: ${{ vars.PICKER_REPOSITORY_API_RESERVE || '250' }}
+          API_RESERVE: ${{ vars.PICKER_REPOSITORY_API_RESERVE || '250' }}
           FLEET_JOB_KIND: ${{ inputs.fleet-staging && 'staging' || inputs.fleet-pr && 'pr' || 'other' }}
           PR_HEAD: ${{ inputs.pr-head }}
           FLEET_CI_ENABLED: ${{ vars.FLEET_CI_ENABLED }}

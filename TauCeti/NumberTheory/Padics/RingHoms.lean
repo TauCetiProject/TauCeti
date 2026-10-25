@@ -15,6 +15,7 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.RingTheory.LocalRing.RingHom.Basic
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
@@ -37,7 +38,11 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   reduction modulo `p` are continuous, `ZMod (p ^ n)` and `ZMod p` carrying the discrete
   topology.
 * `PadicInt.toZMod_eq_zero_iff_dvd`, `PadicInt.toZModPow_eq_zero_iff_dvd`: the kernels of
-  reduction and truncation, as divisibility statements.
+  reduction and truncation, as divisibility statements; `PadicInt.toZModPow_eq_iff_dvd_sub`:
+  two `p`-adic integers truncate to the same residue exactly when `p ^ n` divides their
+  difference; `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is its case `p ^ n = 8`.
+* `PadicInt.isUnit_iff_toZModPow_three_mul_self`: the units of `ℤ_[2]` are exactly the elements
+  whose residue modulo `8` squares to `1`.
 * `PadicInt.two_dvd_sq_sub_self`: every `2`-adic integer satisfies `x ^ 2 ≡ x` modulo `2`.
 * `PadicInt.toZModPow_eq_one_of_norm_sub_one_le`: a norm bound forcing a `p`-adic integer to
   reduce to `1` modulo `p ^ n`.
@@ -151,6 +156,30 @@ theorem two_dvd_sq_sub_self (x : ℤ_[2]) : (2 : ℤ_[2]) ∣ x ^ 2 - x := by
 theorem toZModPow_eq_zero_iff_dvd (n : ℕ) (x : ℤ_[p]) :
     toZModPow n x = 0 ↔ (p : ℤ_[p]) ^ n ∣ x := by
   rw [← RingHom.mem_ker, ker_toZModPow, Ideal.mem_span_singleton]
+
+/-- Two `p`-adic integers have the same truncation modulo `p ^ n` exactly when `p ^ n` divides
+their difference. -/
+theorem toZModPow_eq_iff_dvd_sub (n : ℕ) {x y : ℤ_[p]} :
+    toZModPow n x = toZModPow n y ↔ (p : ℤ_[p]) ^ n ∣ y - x := by
+  rw [eq_comm, ← sub_eq_zero, ← map_sub, toZModPow_eq_zero_iff_dvd]
+
+/-- Divisibility by `8` in `ℤ_[2]` is equality of residues modulo `8`. -/
+theorem eight_dvd_sub_iff_toZModPow_three_eq {a c : ℤ_[2]} :
+    (8 : ℤ_[2]) ∣ c - a ↔ toZModPow 3 a = toZModPow 3 c := by
+  rw [toZModPow_eq_iff_dvd_sub]
+  norm_num
+
+/-- An element of `ℤ_[2]` is a unit exactly when its residue modulo `8` squares to `1`. -/
+theorem isUnit_iff_toZModPow_three_mul_self {z : ℤ_[2]} :
+    IsUnit z ↔ toZModPow 3 z * toZModPow 3 z = 1 := by
+  refine ⟨fun ⟨u, hu⟩ ↦ ?_, fun hz ↦ ?_⟩
+  · subst hu
+    have key : ∀ a b : ZMod (2 ^ 3), a * b = 1 → a * a = 1 := by decide
+    exact key _ (toZModPow 3 (↑u⁻¹ : ℤ_[2])) (by rw [← map_mul, Units.mul_inv, map_one])
+  · by_contra h
+    obtain ⟨w, rfl⟩ := not_isUnit_iff_dvd.mp h
+    have key : ∀ a : ZMod (2 ^ 3), 2 * a * (2 * a) ≠ 1 := by decide
+    exact key (toZModPow 3 w) (by simpa [map_ofNat] using hz)
 
 /-- A `p`-adic integer within `p ^ (-n)` of `1` reduces to `1` modulo `p ^ n`. -/
 theorem toZModPow_eq_one_of_norm_sub_one_le {n : ℕ} {x : ℤ_[p]}

@@ -8,11 +8,12 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 
 /-!
-# Factoring morphisms over a base through closed immersions
+# Closed immersions over a base
 
 Mathlib's `IsClosedImmersion.lift` factors a scheme morphism through a closed immersion
 when the defining ideal vanishes on the source. The factor remains over the same base.
 This file packages that lift in `Over S`, for use with structure maps of group schemes.
+Sections over a base with at most one point are also closed immersions.
 -/
 
 public section
@@ -24,6 +25,11 @@ namespace TauCeti
 universe u
 
 variable {S : Scheme.{u}} {X Y Z : Over S}
+
+/-- A section over a base with at most one point is a closed immersion. -/
+instance isClosedImmersion_section [Subsingleton S] (x : Over.mk (𝟙 S) ⟶ X) :
+    IsClosedImmersion x.left :=
+  isClosedImmersion_of_comp_eq_id X.hom x.left (Over.w x)
 
 /-- Factor a morphism over `S` through a closed immersion over `S`, when the defining ideal
 of the immersion vanishes on the morphism. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PrincipalParts.Basic
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PrincipalParts.Naturality
 
 /-!
 # First cohomology as principal parts modulo rational functions
@@ -182,6 +182,46 @@ lemma principalPartsBoundary_eq_zero_iff (D : SchemeWeilDivisor X)
       ∃ f : Γ(Scheme.rationalFunctions X, ⊤),
         globalToPrincipalPartsBaseLinear R D f = p := by
   rw [← LinearMap.mem_ker, ker_principalPartsBoundary, LinearMap.mem_range]
+
+variable {D E : SchemeWeilDivisor X}
+
+/-- The natural morphism between the principal-parts resolutions for `D ≤ E`. -/
+private def principalPartsShortComplexMapOfLE (h : D ≤ E) :
+    principalPartsShortComplex D ⟶ principalPartsShortComplex E where
+  τ₁ := sheafHomOfLE h
+  τ₂ := 𝟙 _
+  τ₃ := principalPartsHomOfLE h
+  comm₁₂ := by simp [principalPartsShortComplex]
+  comm₂₃ := by simp [principalPartsShortComplex]
+
+/-- The boundary of principal parts is natural for the sheaf inclusion `𝒪(D) ⟶ 𝒪(E)`. -/
+lemma principalPartsBoundary_naturality (h : D ≤ E) (p : Γ(principalParts D, ⊤)) :
+    Scheme.Modules.cohomologyMapBaseLinear R X (sheafHomOfLE h) 1
+        (principalPartsBoundary R hclosed D p) =
+      principalPartsBoundary R hclosed E ((principalPartsHomOfLE h).app ⊤ p) := by
+  rw [Scheme.Modules.cohomologyMapBaseLinear_apply,
+    TauCeti.AlgebraicGeometry.Scheme.Modules.cohomologyFunctor_map,
+    principalPartsBoundary_apply, principalPartsBoundary_apply]
+  have hn := Scheme.Modules.cohomologyδ_naturality
+    (principalPartsShortComplex_shortExact hclosed D)
+    (principalPartsShortComplex_shortExact hclosed E)
+    (principalPartsShortComplexMapOfLE h) 0 1 rfl
+    ((Scheme.Modules.cohomologyZeroBaseLinearEquiv R X (principalParts D)).symm p)
+  -- The private short-complex constructor is opaque; identify just its outer arrows.
+  rw [show (principalPartsShortComplexMapOfLE h).τ₁ = sheafHomOfLE h from rfl,
+    show (principalPartsShortComplexMapOfLE h).τ₃ = principalPartsHomOfLE h from rfl] at hn
+  -- The sheaf and additive-category presentations agree at default transparency.
+  erw [hn]
+  congr 1
+  apply (Scheme.Modules.cohomologyZeroBaseLinearEquiv R X (principalParts E)).injective
+  have hm (z : Scheme.Modules.Cohomology (principalParts D) 0) :
+      Scheme.Modules.cohomologyMap (principalPartsHomOfLE h) 0 z =
+        Scheme.Modules.cohomologyMapBaseLinear R X (principalPartsHomOfLE h) 0 z := by
+    rw [Scheme.Modules.cohomologyMapBaseLinear_apply,
+      TauCeti.AlgebraicGeometry.Scheme.Modules.cohomologyFunctor_map]
+    rfl
+  erw [hm, Scheme.Modules.cohomologyZeroBaseLinearEquiv_naturality,
+    LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
 
 end SchemeWeilDivisor
 

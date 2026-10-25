@@ -27,6 +27,8 @@ not be free.
 
 ## Main results
 
+* `ContinuousLinearMap.IsRowCompact.exists_ringOpNorm_sub_mul_indicatorCLM_mul_lt_one`: a
+  row-compact idempotent `e` satisfies `‖e - e ∘ π_S ∘ e‖ < 1` for some finite `S`.
 * `ContinuousLinearMap.IsRowCompact.exists_comp_eq_id_of_isIdempotentElem`: the range of a
   row-compact idempotent is a direct summand of `S → R` for a finite set `S` of coordinates.
 * `ContinuousLinearMap.IsRowCompact.finite_range_of_isIdempotentElem`,
@@ -55,6 +57,24 @@ namespace ContinuousLinearMap
 
 open scoped TauCeti.RingOpNorm
 
+omit [CompleteSpace R] in
+/-- A row-compact idempotent endomorphism `e` of `C₀(I, R)` is close to its compression by a
+finite coordinate projection: `‖e - e ∘ π_S ∘ e‖ < 1` for some finite set `S` of coordinates. -/
+theorem IsRowCompact.exists_ringOpNorm_sub_mul_indicatorCLM_mul_lt_one
+    {e : C₀(I, R) →L[R] C₀(I, R)} (hu : e.IsRowCompact) (he : IsIdempotentElem e) :
+    ∃ S : Finset I, ‖e - e * indicatorCLM R (S : Set I) * e‖ < 1 := by
+  have hlim := (isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp.1 hu).const_mul ‖e‖
+  rw [mul_zero] at hlim
+  obtain ⟨S, hS⟩ := (hlim.eventually_lt_const one_pos).exists
+  refine ⟨S, ?_⟩
+  have hee (x : C₀(I, R)) : e (e x) = e x := congr($he.eq x)
+  have : e - e * indicatorCLM R (S : Set I) * e =
+      e.comp (e - (indicatorCLM R (S : Set I)).comp e) := by
+    ext x : 1
+    simp [hee]
+  rw [this]
+  exact (ringOpNorm_comp_le _ _).trans_lt hS
+
 /-- **The range of a row-compact idempotent is a direct summand of a finite free module.** For a
 row-compact idempotent endomorphism `e` of `C₀(I, R)` there are a finite set `S` of coordinates
 and linear maps `f : (S → R) → range e`, `g : range e → (S → R)` with `f ∘ g = id`. -/
@@ -62,23 +82,14 @@ theorem IsRowCompact.exists_comp_eq_id_of_isIdempotentElem {e : C₀(I, R) →L[
     (hu : e.IsRowCompact) (he : IsIdempotentElem e) :
     ∃ (S : Finset I) (f : (S → R) →ₗ[R] LinearMap.range (e : C₀(I, R) →ₗ[R] C₀(I, R)))
       (g : LinearMap.range (e : C₀(I, R) →ₗ[R] C₀(I, R)) →ₗ[R] S → R), f ∘ₗ g = .id := by
-  have hlim := (isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp.1 hu).const_mul ‖e‖
-  rw [mul_zero] at hlim
-  obtain ⟨S, hS⟩ := (hlim.eventually_lt_const one_pos).exists
+  obtain ⟨S, hS⟩ := hu.exists_ringOpNorm_sub_mul_indicatorCLM_mul_lt_one he
   refine ⟨S, ContinuousLinearMap.exists_comp_eq_id_of_isIdempotentElem
     (c := indicatorCLM R (S : Set I)) he
     (LinearMap.pi fun s : S ↦ ((evalCLM R (s : I) : C₀(I, R) →L[R] R) : C₀(I, R) →ₗ[R] R))
     (Fintype.linearCombination R fun s : S ↦ ZeroAtInftyContinuousMap.single (s : I) (1 : R))
-    ?_ ?_⟩
-  · ext x : 1
-    simp [Fintype.linearCombination_apply, smul_single_one, indicatorCLM_finset_apply]
-  · have hee (x : C₀(I, R)) : e (e x) = e x := congr($he.eq x)
-    have : e - e * indicatorCLM R (S : Set I) * e =
-        e.comp (e - (indicatorCLM R (S : Set I)).comp e) := by
-      ext x : 1
-      simp [hee]
-    rw [this]
-    exact (ringOpNorm_comp_le _ _).trans_lt hS
+    ?_ hS⟩
+  ext x : 1
+  simp [Fintype.linearCombination_apply, smul_single_one, indicatorCLM_finset_apply]
 
 /-- **A row-compact idempotent has finitely generated range.** -/
 theorem IsRowCompact.finite_range_of_isIdempotentElem {e : C₀(I, R) →L[R] C₀(I, R)}

@@ -80,11 +80,13 @@
     var names = {
       github: "GitHub-hosted",
       namespace: "Namespace",
-      "self-hosted": "Self-hosted",
+      eastanglia: "eastanglia",
+      leanfro: "leanfro",
+      "self-hosted": "Other self-hosted",
       unknown: "Unassigned",
     };
     var kinds = new Set(
-      ["github", "namespace", "self-hosted"].concat(
+      ["github", "namespace", "eastanglia", "leanfro"].concat(
         Object.keys(current.running || {}),
         Object.keys(current.queued || {}),
       ),

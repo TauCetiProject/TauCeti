@@ -143,6 +143,27 @@ theorem coeff_taylorExpPolynomial (a : A) (n : ℕ) :
     (taylorExpPolynomial D hD a).coeff n = (n ! : ℚ)⁻¹ • D^[n] a :=
   coeff_taylorPolynomial D hD a n
 
+/-- Any iterate killing an element bounds the support of its Taylor expansion. -/
+theorem support_taylorExpPolynomial_subset_range {a : A} {n : ℕ} (hn : D^[n] a = 0) :
+    (taylorExpPolynomial D hD a).support ⊆ range n := fun i hi => by
+  rw [mem_support_iff, coeff_taylorExpPolynomial] at hi
+  rw [mem_range]
+  by_contra! h
+  have hn' : (D.toLinearMap ^ n) a = 0 := by simpa [Module.End.pow_apply] using hn
+  rw [← coeFn_coe, ← Module.End.pow_apply, Module.End.pow_map_zero_of_le h hn',
+    smul_zero] at hi
+  exact hi rfl
+
+/-- Evaluating a Taylor expansion at any point gives a finite sum whenever an iterate
+kills the input. -/
+theorem aeval_taylorExpPolynomial_eq_sum (c : A) {a : A} {n : ℕ} (hn : D^[n] a = 0) :
+    aeval c (taylorExpPolynomial D hD a) =
+      ∑ i ∈ range n, c ^ i * ((i ! : ℚ)⁻¹ • D^[i] a) := by
+  rw [aeval_def, eval₂_eq_sum,
+    Polynomial.sum_eq_of_subset _ (fun i => by rw [map_zero, zero_mul])
+      (D.support_taylorExpPolynomial_subset_range hD hn)]
+  simp [mul_comm]
+
 /-- The **Taylor exponential** `a ↦ ∑ Dⁿ a / n!` of a locally nilpotent derivation `D` of a
 commutative `ℚ`-algebra. The sum is finite because some iterate of `D` kills `a`, and the map is
 an algebra endomorphism by the general Leibniz rule. -/
@@ -159,19 +180,7 @@ theorem aeval_one_taylorExpPolynomial (a : A) :
 exponential of `a` is the sum of its first `n` Taylor terms. -/
 theorem taylorExp_apply_eq_sum {a : A} {n : ℕ} (hn : D^[n] a = 0) :
     taylorExp D hD a = ∑ i ∈ range n, (i ! : ℚ)⁻¹ • D^[i] a := by
-  -- The Taylor coefficients vanish from `n` on, so the Taylor expansion is supported in
-  -- `range n`.
-  have hsupp : (taylorExpPolynomial D hD a).support ⊆ range n := fun i hi => by
-    rw [mem_support_iff, coeff_taylorExpPolynomial] at hi
-    rw [mem_range]
-    by_contra! h
-    have hn' : (D.toLinearMap ^ n) a = 0 := by simpa [Module.End.pow_apply] using hn
-    rw [← coeFn_coe, ← Module.End.pow_apply, Module.End.pow_map_zero_of_le h hn',
-      smul_zero] at hi
-    exact hi rfl
-  rw [← aeval_one_taylorExpPolynomial, aeval_def, eval₂_eq_sum,
-    Polynomial.sum_eq_of_subset _ (fun i => by rw [map_zero, zero_mul]) hsupp]
-  simp
+  simpa using D.aeval_taylorExpPolynomial_eq_sum hD 1 hn
 
 /-- The Taylor exponential of the zero derivation is the identity. -/
 @[simp]
@@ -186,10 +195,7 @@ ideal into itself, so does its Taylor exponential. -/
 theorem taylorExp_apply_mem {I : Ideal A} (hI : ∀ x ∈ I, D x ∈ I) {a : A} (ha : a ∈ I) :
     taylorExp D hD a ∈ I := by
   obtain ⟨n, hn⟩ := hD a
-  have hiter : ∀ i, D^[i] a ∈ I := fun i => by
-    induction i with
-    | zero => exact ha
-    | succ i ih => exact Function.iterate_succ_apply' D i a ▸ hI _ ih
+  have hiter (i : ℕ) := Set.MapsTo.iterate (s := (I : Set A)) hI i ha
   rw [taylorExp_apply_eq_sum D hD hn]
   refine sum_mem fun i _ => ?_
   have hi := hiter i

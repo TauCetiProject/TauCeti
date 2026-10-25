@@ -24,10 +24,15 @@ degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient van
 positive degree, `hp.natDegree_aeval_le` bounds by `n` the degree of a substitution of
 polynomials of degree at most one, and `hp.homogeneousComponent_mul_right` records that
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
-by `d`.
+by `d`. `TauCeti.eval_coe_homogeneousSubmodule_eq_sum` restates the expansion of values for
+`eval` on elements of `homogeneousSubmodule`.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
-product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous.
+product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
+`TauCeti.sum_smul_X_pow_mem_homogeneousSubmodule`: the `n`-th power of a linear form is
+homogeneous of degree `n`. Conversely, `MvPolynomial.homogeneousComponent_one_eq_sum` writes the
+degree-one component of a polynomial in finitely many variables as the linear form
+`∑ i, c i • X i` whose coefficients `c i` are the coefficients of the variables `X i`.
 -/
 
 public section
@@ -150,9 +155,52 @@ theorem aeval_eq_sum_finsuppAntidiag {σ R S : Type*} [Fintype σ] [DecidableEq 
 
 end MvPolynomial.IsHomogeneous
 
+namespace TauCeti
+
+open MvPolynomial
+
+variable {σ R : Type*} [CommSemiring R]
+
+/-- A homogeneous polynomial of degree `n` in finitely many variables evaluates as the sum, over
+the exponent vectors `l` of degree `n`, of its coefficient at `l` times `∏ i, v i ^ l i`. -/
+theorem eval_coe_homogeneousSubmodule_eq_sum [Fintype σ] [DecidableEq σ] {n : ℕ}
+    (p : homogeneousSubmodule σ R n) (v : σ → R) :
+    eval v (p : MvPolynomial σ R) = ∑ l ∈ Finset.univ.finsuppAntidiag n,
+      (p : MvPolynomial σ R).coeff l * ∏ i, v i ^ l i := by
+  simpa using ((mem_homogeneousSubmodule n _).mp p.2).aeval_eq_sum_finsuppAntidiag v
+
+end TauCeti
+
 namespace MvPolynomial
 
-variable {σ R : Type*} [CommRing R]
+variable {σ R : Type*}
+
+section CommSemiring
+
+variable [CommSemiring R]
+
+/-- The degree-one component of a polynomial in finitely many variables is the linear form whose
+coefficient of `X i` is the coefficient of `X i` in the polynomial. -/
+theorem homogeneousComponent_one_eq_sum [Fintype σ] (φ : MvPolynomial σ R) :
+    homogeneousComponent 1 φ = ∑ i, φ.coeff (Finsupp.single i 1) • X i := by
+  classical
+  ext d
+  simp only [coeff_homogeneousComponent, coeff_sum, coeff_smul, coeff_X, smul_eq_mul, mul_ite,
+    mul_one, mul_zero]
+  split_ifs with hd
+  · obtain ⟨i, rfl⟩ := (Finsupp.sum_eq_one_iff d).1 <| by
+      rw [Finsupp.sum, ← Finsupp.degree_apply]
+      exact hd
+    simp [Finsupp.single_left_inj one_ne_zero]
+  · refine (Finset.sum_eq_zero fun i _ ↦ ite_eq_right ?_).symm
+    rintro rfl
+    simp at hd
+
+end CommSemiring
+
+section CommRing
+
+variable [CommRing R]
 
 /-- The coefficient of `X ^ k` in a product of linear factors `X - C Ψ`, whose constant terms `Ψ`
 are all homogeneous of degree `m`, is homogeneous of degree `m * (s.card - k)`. -/
@@ -192,4 +240,21 @@ theorem isHomogeneous_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι)
         rw [Polynomial.coeff_eq_zero_of_natDegree_lt hlt, zero_mul]
         exact isHomogeneous_zero σ R _
 
+end CommRing
+
 end MvPolynomial
+
+namespace TauCeti
+
+open MvPolynomial
+
+/-- The `n`-th power of a linear form is homogeneous of degree `n`. -/
+theorem sum_smul_X_pow_mem_homogeneousSubmodule {σ R : Type*} [Fintype σ] [CommSemiring R]
+    (x : σ → R) (n : ℕ) :
+    (∑ i, x i • X i : MvPolynomial σ R) ^ n ∈ homogeneousSubmodule σ R n := by
+  have h1 : (∑ i, x i • X i : MvPolynomial σ R) ∈ homogeneousSubmodule σ R 1 :=
+    Submodule.sum_mem _ fun i _ ↦
+      Submodule.smul_mem _ _ ((mem_homogeneousSubmodule 1 _).mpr (isHomogeneous_X R i))
+  simpa using ((mem_homogeneousSubmodule 1 _).mp h1).pow n
+
+end TauCeti

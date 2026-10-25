@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
 public import TauCeti.Data.Finsupp.Order
@@ -35,6 +36,9 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
+* `Finsupp.prod_pow_optionElim`, `Finsupp.sum_nsmul_optionElim`: extending by `n` at `none`
+  splits off the factor `c none ^ n` from the weighted product `∏ c i ^ (f.optionElim n) i`, and
+  the summand `n • c none` from the weighted sum.
 * `Finsupp.pow_degree_le_pow_degree_optionElim`: `a ^ degree f ≤ b ^ degree (f.optionElim m)`
   for `0 ≤ a ≤ b` and `1 ≤ b`.
 * `Finsupp.weight_le_degree_nsmul`: if `w s ≤ c` for all `s`, then `weight w f ≤ degree f • c`.
@@ -50,6 +54,10 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   corresponding value of `Finsupp.mapDomain b`.
 * `Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply`: for the block map `Sum.elim id b` on
   `τ ⊕ σ`, the indicator weight of block `h` of `a.sumElim e` is `a h + e.mapDomain b h`.
+* `Finsupp.finite_degree_eq`: in finitely many variables there are finitely many exponent
+  vectors of each degree.
+* `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
+  vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
 -/
 
 public section
@@ -81,6 +89,16 @@ theorem degree_optionElim {σ R : Type*} [AddCommMonoid R] (f : σ →₀ R) (y 
   have h (g : Option σ →₀ R) : g.degree = g.sum fun _ e ↦ e := degree_apply g
   rw [h, sum_option_index _ _ (fun _ ↦ rfl) fun _ _ _ ↦ rfl, optionElim_apply_none,
     some_optionElim, degree_apply, Finsupp.sum]
+
+/-- The weighted product of `f.optionElim n` splits off the factor `c none ^ n`. This is the
+form of Mathlib's `Finsupp.prod_option_index` used to separate one variable from the monomial
+weights of multivariate series. -/
+@[to_additive /-- The weighted sum of `f.optionElim n` splits off the summand `n • c none`. -/]
+theorem prod_pow_optionElim {α N : Type*} [CommMonoid N] (c : Option α → N) (n : ℕ)
+    (f : α →₀ ℕ) :
+    (f.optionElim n).prod (c · ^ ·) = c none ^ n * f.prod (fun i k ↦ c (Option.some i) ^ k) := by
+  rw [prod_option_index _ _ (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _,
+    optionElim_apply_none, some_optionElim]
 
 /-- A power `a ^ degree f` is bounded by the power `b ^ degree (f.optionElim m)` of a larger
 base `b ≥ 1`, for any value `m` at `none`. -/
@@ -185,5 +203,21 @@ theorem weight_ite_sumElim_eq_add_mapDomain_apply {σ τ R : Type*} [DecidableEq
   rw [weight_ite_eq_mapDomain_apply, sumElim_eq_add, mapDomain_add, ← mapDomain_comp,
     ← mapDomain_comp]
   simp
+
+end Finsupp
+
+namespace Finsupp
+
+/-- In finitely many variables there are finitely many exponent vectors of each degree. -/
+instance finite_degree_eq {σ : Type*} [Finite σ] (n : ℕ) :
+    Finite {s : σ →₀ ℕ // s.degree = n} :=
+  (finite_of_degree_eq n).to_subtype
+
+/-- For a fintype of variables with decidable equality, the exponent vectors of degree `n` form a
+fintype, enumerated by `Finset.finsuppAntidiag`. -/
+instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
+    Fintype {s : σ →₀ ℕ // s.degree = n} :=
+  Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree = n}) ((Finset.univ : Finset σ).finsuppAntidiag n)
+    fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
 
 end Finsupp

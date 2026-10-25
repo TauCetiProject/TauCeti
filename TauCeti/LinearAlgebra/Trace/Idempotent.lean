@@ -45,6 +45,8 @@ maximal ideal.
   `trace f = a * finrank (range f)`, the case `f = 1` of the previous statement.
 * `LinearMap.trace_eq_finrank_range_of_isIdempotentElem`: over a local ring, the trace of
   an idempotent endomorphism of a finite free module is the rank of its range.
+* `Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero`: over a field of characteristic zero, an
+  idempotent matrix of trace zero is zero.
 * `TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one`: for an involution `σ`,
   `2 dim ker (1 + σ) = dim M - tr σ`, applying the above to `f = 1 + σ`, whose square is `2 f`.
 * `TauCeti.LinearMap.three_mul_finrank_ker_one_add_add_sq_of_pow_three_eq_one`: for `υ ^ 3 = 1`,
@@ -191,3 +193,18 @@ theorem trace_eq_finrank_range_of_isIdempotentElem {f : Module.End A N}
   exact (LinearMap.IsIdempotentElem.isProj_range f hf).trace
 
 end LinearMap
+
+namespace Matrix
+
+/-- Over a field of characteristic zero, an idempotent matrix of trace zero is zero: the trace of
+an idempotent is the dimension of its range. This is the matrix form of
+`LinearMap.IsIdempotentElem.eq_zero_of_trace_eq_zero`. -/
+theorem IsIdempotentElem.eq_zero_of_trace_eq_zero {ι K : Type*} [Fintype ι] [Field K] [CharZero K]
+    {A : Matrix ι ι K} (hA : IsIdempotentElem A) (htr : A.trace = 0) : A = 0 := by
+  classical
+  refine toLinAlgEquiv'.injective ?_
+  rw [map_zero]
+  exact LinearMap.IsIdempotentElem.eq_zero_of_trace_eq_zero (hA.map toLinAlgEquiv')
+    ((trace_toLin'_eq A).trans htr)
+
+end Matrix

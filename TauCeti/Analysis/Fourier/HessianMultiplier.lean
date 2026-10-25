@@ -88,19 +88,21 @@ theorem norm_hessianSymbol_le (v w ξ : E) : ‖hessianSymbol v w ξ‖ ≤ ‖v
         gcongr <;> exact abs_real_inner_le_norm _ _
     _ = ‖v‖ * ‖w‖ * ‖ξ‖ ^ 2 := by ring
 
-variable [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E]
 
 @[fun_prop]
-theorem measurable_hessianSymbol (v w : E) : Measurable (hessianSymbol v w) := by
+theorem measurable_hessianSymbol [OpensMeasurableSpace E] (v w : E) :
+    Measurable (hessianSymbol v w) := by
   unfold hessianSymbol
   fun_prop
 
 /-- The symbol of `∂_v ∂_w Δ⁻¹` is essentially bounded for every measure. -/
-theorem memLp_hessianSymbol (v w : E) (μ : Measure E) : MemLp (hessianSymbol v w) ∞ μ :=
+theorem memLp_hessianSymbol [OpensMeasurableSpace E] (v w : E) (μ : Measure E) :
+    MemLp (hessianSymbol v w) ∞ μ :=
   memLp_top_of_bound (measurable_hessianSymbol v w).aestronglyMeasurable _
     (.of_forall (norm_hessianSymbol_le v w))
 
-variable [FiniteDimensional ℝ E]
+variable [BorelSpace E] [FiniteDimensional ℝ E]
 
 /-- The symbol `ξ ↦ ⟪ξ, v⟫ ⟪ξ, w⟫ / ‖ξ‖²` of `∂_v ∂_w Δ⁻¹`, as an element of `L^∞`. -/
 def hessianSymbolLp (v w : E) : Lp ℂ ∞ (volume : Measure E) :=
