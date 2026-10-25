@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 -/
 module
 
@@ -15,6 +15,8 @@ For bounded operators between complete inner product spaces, the adjoint takes v
 orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
 bijective (`ContinuousLinearEquiv.adjoint_bijective`).
+For a finite-dimensional linear isometry, the adjoint returns its image vectors to their
+preimages (`LinearIsometry.adjoint_apply_apply`).
 
 Two families of adjoints of linear maps between finite-dimensional inner product spaces:
 
@@ -33,6 +35,7 @@ If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`). For a surjective
 linear map, the orthogonal complement of its kernel has the dimension of the codomain
 (`LinearMap.finrank_orthogonal_ker_of_surjective`).
+
 -/
 
 public section
@@ -72,6 +75,16 @@ theorem adjoint_bijective [CompleteSpace E] [CompleteSpace F] (e : E ≃L[𝕜] 
 end ContinuousLinearEquiv
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+
+namespace LinearIsometry
+
+/-- The adjoint of a linear isometry sends each image vector back to its preimage. -/
+@[simp]
+theorem adjoint_apply_apply (f : E →ₗᵢ[𝕜] F) (x : E) :
+    LinearMap.adjoint f.toLinearMap (f x) = x :=
+  LinearMap.congr_fun (adjoint_comp_self' f) x
+
+end LinearIsometry
 
 namespace LinearIsometryEquiv
 
