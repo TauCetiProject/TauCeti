@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Isometry
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Finite
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Gram
+public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.RepresentationNumber
 public import TauCeti.LinearAlgebra.IntegralLattice.Unit
 
 /-!
@@ -68,10 +69,6 @@ universe u v
 
 variable {V : Type u} [AddCommGroup V] [Module ℚ V] (L : IntegralLattice V)
 
-private theorem mem_vectorsOfNorm_one_iff {x : L} :
-    x ∈ L.vectorsOfNorm 1 ↔ L.integralForm x x = 1 := by
-  rw [mem_vectorsOfNorm, ← integralNorm_cast, integralNorm_apply, Int.cast_eq_one]
-
 /-- The **unit-norm sublattice** of an integral lattice: the span of its vectors of norm one. -/
 noncomputable def unitNormSubmodule : Submodule ℤ L :=
   Submodule.span ℤ (L.vectorsOfNorm 1)
@@ -98,6 +95,13 @@ the carrier of `unitNormComplement`. -/
 noncomputable def unitNormComplementEquiv :
     L.integralForm.orthogonal L.unitNormSubmodule ≃ₗ[ℤ] L.unitNormComplement :=
   ofIntegralForm.carrierEquiv _ _
+
+/-- The identification `unitNormComplementEquiv` sends `x` to the pure tensor `1 ⊗ x`. -/
+@[simp]
+theorem coe_unitNormComplementEquiv_apply (x : L.integralForm.orthogonal L.unitNormSubmodule) :
+    (L.unitNormComplementEquiv x : ℚ ⊗[ℤ] L.integralForm.orthogonal L.unitNormSubmodule) =
+      1 ⊗ₜ[ℤ] x :=
+  ofIntegralForm.coe_carrierEquiv_apply _ _ x
 
 /-- The identification `unitNormComplementEquiv` preserves the integral forms. -/
 @[simp]
@@ -304,9 +308,8 @@ private theorem gramMatrix_unitLatticeBasis_eq :
         (L.isSymm_integralForm.restrict _)).gramMatrix
         (hL.unitNormBasis.map (ofIntegralForm.carrierEquiv _ _)) := by
   ext i j
-  rw [gramMatrix_unitLatticeBasis, gramMatrix_apply, Basis.map_apply, Basis.map_apply,
-    ofIntegralForm.integralForm_carrierEquiv, LinearMap.BilinForm.restrict_apply,
-    LinearMap.domRestrict_apply, integralForm_unitNormBasis, Matrix.one_apply]
+  rw [gramMatrix_unitLatticeBasis]
+  simp [gramMatrix_apply, integralForm_unitNormBasis, Matrix.one_apply]
 
 /-- The rationalized unit-norm sublattice of a positive definite lattice is a standard lattice. -/
 private noncomputable def unitLatticeIsometry :
@@ -405,32 +408,15 @@ variable {W : Type v} [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W}
 
 /-- An isometry carries the unit-norm sublattice onto the unit-norm sublattice. -/
 theorem map_unitNormSubmodule (e : Isometry L M) :
-    L.unitNormSubmodule.map (e.carrierEquiv : L →ₗ[ℤ] M) = M.unitNormSubmodule := by
-  rw [unitNormSubmodule, Submodule.map_span, unitNormSubmodule]
-  congr 1
-  ext y
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    exact (e.carrierEquiv_mem_vectorsOfNorm_iff x 1).2 hx
-  · intro hy
-    refine ⟨e.carrierEquiv.symm y, ?_, e.carrierEquiv.apply_symm_apply y⟩
-    rwa [← e.carrierEquiv_mem_vectorsOfNorm_iff, LinearEquiv.apply_symm_apply]
+    L.unitNormSubmodule.map (e.carrierEquiv : L →ₗ[ℤ] M) = M.unitNormSubmodule :=
+  e.map_span_vectorsOfNorm 1
 
 /-- An isometry carries the orthogonal complement of the unit-norm sublattice onto the orthogonal
 complement of the unit-norm sublattice. -/
 theorem map_orthogonal_unitNormSubmodule (e : Isometry L M) :
     (L.integralForm.orthogonal L.unitNormSubmodule).map (e.carrierEquiv : L →ₗ[ℤ] M) =
       M.integralForm.orthogonal M.unitNormSubmodule := by
-  ext y
-  rw [Submodule.mem_map_equiv, LinearMap.BilinForm.mem_orthogonal_iff,
-    LinearMap.BilinForm.mem_orthogonal_iff, ← e.map_unitNormSubmodule]
-  constructor
-  · rintro h _ ⟨u, hu, rfl⟩
-    have := h u hu
-    rwa [← e.carrierEquiv_map_integralForm, LinearEquiv.apply_symm_apply] at this
-  · intro h u hu
-    have := h (e.carrierEquiv u) ⟨u, hu, rfl⟩
-    rwa [← e.carrierEquiv_map_integralForm, LinearEquiv.apply_symm_apply]
+  rw [e.map_orthogonal, e.map_unitNormSubmodule]
 
 /-- **Isometric lattices have isometric complements of their unit-norm sublattices.** -/
 noncomputable def unitNormComplement (e : Isometry L M) :
@@ -441,6 +427,16 @@ noncomputable def unitNormComplement (e : Isometry L M) :
     obtain ⟨x, rfl⟩ := L.unitNormComplementEquiv.surjective x
     obtain ⟨y, rfl⟩ := L.unitNormComplementEquiv.surjective y
     simp [LinearEquiv.ofSubmodules_apply]
+
+/-- The isometry `Isometry.unitNormComplement` acts on the orthogonal complement of the unit-norm
+sublattice as the carrier equivalence of the original isometry. -/
+@[simp]
+theorem coe_unitNormComplementEquiv_symm_unitNormComplement_apply (e : Isometry L M)
+    (t : L.integralForm.orthogonal L.unitNormSubmodule) :
+    (M.unitNormComplementEquiv.symm
+        (e.unitNormComplement.carrierEquiv (L.unitNormComplementEquiv t)) : M) =
+      e.carrierEquiv t := by
+  simp [unitNormComplement, LinearEquiv.ofSubmodules_apply]
 
 end Isometry
 
@@ -484,13 +480,9 @@ private theorem orthogonal_unitNormSubmodule_orthogonalSum (hN : N.IsPosDef)
       refine (unitLatticeBasis ι).ext fun i ↦ ?_
       have hi : orthogonalSumInl _ N (unitLatticeBasis ι i) ∈ S.unitNormSubmodule := by
         refine S.vectorsOfNorm_one_subset_unitNormSubmodule ?_
-        rw [mem_vectorsOfNorm_one_iff, integralForm_orthogonalSum, orthogonalSumFst_inl,
-          orthogonalSumSnd_inl, map_zero, add_zero, ← gramMatrix_apply,
-          gramMatrix_unitLatticeBasis, Matrix.one_apply_eq]
-      have := hx _ hi
-      rw [integralForm_orthogonalSum, orthogonalSumFst_inl, orthogonalSumSnd_inl, map_zero,
-        LinearMap.zero_apply, add_zero] at this
-      simpa using this
+        rw [mem_vectorsOfNorm_one_iff]
+        simp [S, ← gramMatrix_apply, gramMatrix_unitLatticeBasis]
+      simpa using hx _ hi
     have hfst : orthogonalSumFst _ N x = 0 := by
       by_contra h
       have := (isPosDef_unitLattice ι).posDef_integralNorm _ h
@@ -504,9 +496,8 @@ private theorem orthogonal_unitNormSubmodule_orthogonalSum (hN : N.IsPosDef)
     refine Submodule.span_le (p := LinearMap.ker (LinearMap.flip S.integralForm
       (orthogonalSumInr _ N b))).2 (fun z hz ↦ ?_) hu
     rw [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.flip_apply,
-      eq_orthogonalSumInl_of_mem_vectorsOfNorm_one hN hN1 hz, integralForm_orthogonalSum,
-      orthogonalSumFst_inr, orthogonalSumSnd_inl, map_zero, map_zero, LinearMap.zero_apply,
-      add_zero]
+      eq_orthogonalSumInl_of_mem_vectorsOfNorm_one hN hN1 hz]
+    simp [S]
 
 /-- **The complement of the unit-norm sublattice of `I_ι ⊕ N` is `N`**, when `N` is positive
 definite without vectors of norm one. -/
@@ -519,6 +510,17 @@ noncomputable def unitNormComplementOrthogonalSumIsometry (hN : N.IsPosDef)
       LinearEquiv.ofEq _ _ (orthogonal_unitNormSubmodule_orthogonalSum hN hN1).symm ≪≫ₗ
       ((unitLattice ι).orthogonalSum N).unitNormComplementEquiv) fun x y ↦ by
     simp [integralForm_orthogonalSum]
+
+/-- The isometry `unitNormComplementOrthogonalSumIsometry` is the second inclusion of `I_ι ⊕ N`,
+read in the orthogonal complement of the unit-norm sublattice. -/
+@[simp]
+theorem coe_unitNormComplementEquiv_symm_unitNormComplementOrthogonalSumIsometry_apply
+    (hN : N.IsPosDef) (hN1 : N.vectorsOfNorm 1 = ∅) (x : N) :
+    (((unitLattice ι).orthogonalSum N).unitNormComplementEquiv.symm
+        ((unitNormComplementOrthogonalSumIsometry hN hN1).carrierEquiv x) :
+        (unitLattice ι).orthogonalSum N) =
+      orthogonalSumInr _ N x := by
+  simp [unitNormComplementOrthogonalSumIsometry]
 
 variable {κ : Type*} [Fintype κ] {X : Type*} [AddCommGroup X] [Module ℚ X]
   {N' : IntegralLattice X}
