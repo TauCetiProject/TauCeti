@@ -160,16 +160,12 @@ private theorem upperSemicontinuous_openContent [TopologicalSpace Y] [T2Space Y]
 
 variable [MeasurableSpace X] [BorelSpace X]
 
-private theorem hausdorffMeasure_eq_iSup_content (d : ℝ) (s : Set X) :
-    μH[d] s = ⨆ (r : ℝ≥0∞) (_ : 0 < r), content d r s :=
-  hausdorffMeasure_apply d s
-
 /-- Hausdorff measure is the countable supremum of the open-cover contents at the scales
 `1 / k`. -/
 private theorem hausdorffMeasure_eq_iSup_openContent (d : ℝ) (s : Set X) :
     μH[d] s = ⨆ k : ℕ, openContent d (k : ℝ≥0∞)⁻¹ s := by
   refine le_antisymm ?_ (iSup_le fun k ↦ ?_)
-  · rw [hausdorffMeasure_eq_iSup_content]
+  · rw [hausdorffMeasure_apply]
     refine iSup₂_le fun r hr ↦ ?_
     obtain ⟨k, hk⟩ := ENNReal.exists_inv_nat_lt hr.ne'
     exact (content_anti d hk.le s).trans ((content_le_openContent d _ s).trans
@@ -177,7 +173,7 @@ private theorem hausdorffMeasure_eq_iSup_openContent (d : ℝ) (s : Set X) :
   · have hk : ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ < (k : ℝ≥0∞)⁻¹ :=
       ENNReal.inv_lt_inv.2 (by exact_mod_cast k.lt_succ_self)
     refine (openContent_le_content d hk s).trans ?_
-    rw [hausdorffMeasure_eq_iSup_content]
+    rw [hausdorffMeasure_apply]
     exact le_iSup₂ (f := fun r (_ : 0 < r) ↦ content d r s) _
       (ENNReal.inv_pos.2 (ENNReal.natCast_ne_top _))
 
