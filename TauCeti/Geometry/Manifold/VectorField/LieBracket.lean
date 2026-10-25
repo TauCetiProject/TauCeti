@@ -20,7 +20,7 @@ The chart argument follows the pullback idiom used for the manifold bracket in
 `Mathlib/Geometry/Manifold/VectorField/LieBracket.lean`. The resulting lemma is a general manifold
 prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
 
-## Main result
+## Main results
 
 * `TauCeti.mlieBracket_eq_lieBracket`: on a normed space, the manifold Lie bracket is the Lie
   bracket of vector fields on that space.
@@ -32,6 +32,11 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
   this identity characterises the manifold bracket at that point.
 * `VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm`: at the chart centre, the flat
   bracket of the coordinate expressions of two fields is their manifold bracket.
+* `VectorField.lieBracketWithin_neg_right` and `VectorField.mlieBracket_neg_right`: the flat and
+  manifold brackets are odd in their second argument.
+* `VectorField.jacobi_identity_mlieBracket_apply`: the cyclic Jacobi identity for the manifold
+  bracket.
+* `VectorField.contMDiff_mlieBracket`: the bracket of two smooth vector fields is smooth.
 
 ## References
 
@@ -53,7 +58,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I (minSmoothness 𝕜 2) M]
+
+section
+
+variable [IsManifold I (minSmoothness 𝕜 2) M]
 
 namespace TauCeti
 
@@ -216,9 +224,11 @@ theorem eq_mlieBracket_of_mvfderiv_extChartAt {V W : ∀ y : M, TangentSpace I y
 
 end TauCeti
 
+end
+
 namespace VectorField
 
-omit [CompleteSpace E] [IsManifold I (minSmoothness 𝕜 2) M] in
+omit [CompleteSpace E] in
 /-- At the centre of the preferred chart, the Lie bracket of the inverse-chart pullbacks of two
 vector fields is their manifold Lie bracket. -/
 theorem lieBracketWithin_mpullbackWithin_extChartAt_symm [IsManifold I 1 M]
@@ -234,5 +244,51 @@ theorem lieBracketWithin_mpullbackWithin_extChartAt_symm [IsManifold I 1 M]
       ContinuousLinearMap.inverse_id
   rw [mlieBracketWithin_apply]
   exact (congrArg (fun f : E →L[𝕜] E ↦ f (lieBracketWithin 𝕜 _ _ _ _)) hinverse).symm
+
+omit [CompleteSpace E] in
+/-- On a normed space, negating the second vector field negates the Lie bracket at any point where
+the set has unique derivatives. -/
+theorem lieBracketWithin_neg_right {V W : E → E} {s : Set E} {x : E}
+    (hs : UniqueDiffWithinAt 𝕜 s x) :
+    lieBracketWithin 𝕜 V (-W) s x = -lieBracketWithin 𝕜 V W s x := by
+  rw [lieBracketWithin, lieBracketWithin, fderivWithin_neg hs, Pi.neg_apply, map_neg, neg_apply]
+  abel
+
+omit [CompleteSpace E] in
+/-- Negating the second vector field negates the manifold Lie bracket. -/
+theorem mlieBracket_neg_right {V W : ∀ y : M, TangentSpace I y} {x : M} :
+    mlieBracket I V (-W) x = -mlieBracket I V W x := by
+  have hs : UniqueDiffWithinAt 𝕜 ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
+      (extChartAt I x x) := by
+    rw [Set.preimage_univ, Set.univ_inter]
+    exact I.uniqueDiffOn _ (Set.mem_range_self _)
+  rw [← mlieBracketWithin_univ, ← mlieBracketWithin_univ]
+  simp only [mlieBracketWithin_apply, mpullbackWithin_neg]
+  exact (congrArg _ (lieBracketWithin_neg_right hs)).trans (map_neg _ _)
+
+/-- The **Jacobi identity** for the manifold Lie bracket, in cyclic form:
+`[U, [V, W]] + [V, [W, U]] + [W, [U, V]] = 0`. This rearranges Mathlib's Leibniz form
+`leibniz_identity_mlieBracket_apply`. -/
+theorem jacobi_identity_mlieBracket_apply [IsManifold I (minSmoothness 𝕜 3) M]
+    {U V W : ∀ y : M, TangentSpace I y} {x : M}
+    (hU : CMDiffAt (minSmoothness 𝕜 2) (T% U) x)
+    (hV : CMDiffAt (minSmoothness 𝕜 2) (T% V) x)
+    (hW : CMDiffAt (minSmoothness 𝕜 2) (T% W) x) :
+    mlieBracket I U (mlieBracket I V W) x + mlieBracket I V (mlieBracket I W U) x +
+      mlieBracket I W (mlieBracket I U V) x = 0 := by
+  rw [leibniz_identity_mlieBracket_apply hU hV hW,
+    mlieBracket_swap_apply (V := mlieBracket I U V), mlieBracket_swap (V := U) (W := W),
+    mlieBracket_neg_right]
+  abel
+
+/-- The Lie bracket of two smooth vector fields is smooth. -/
+theorem contMDiff_mlieBracket [IsRCLikeNormedField 𝕜] [IsManifold I ∞ M]
+    {V W : ∀ y : M, TangentSpace I y} (hV : CMDiff ∞ (T% V)) (hW : CMDiff ∞ (T% W)) :
+    CMDiff ∞ (T% (mlieBracket I V W)) := by
+  let _ : IsManifold I (minSmoothness 𝕜 2) M :=
+    IsManifold.of_le (m := minSmoothness 𝕜 2) (n := ∞) (by simp)
+  let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M :=
+    IsManifold.of_le (m := (∞ : ℕ∞ω) + 1) (n := ∞) (by simp)
+  exact ContDiff.mlieBracket_vectorField (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) hV hW (by simp)
 
 end VectorField

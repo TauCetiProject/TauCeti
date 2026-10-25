@@ -267,7 +267,7 @@ theorem GL2_sum_degreeCount_mul_degree_sq_eq_natCard :
           (Fintype.card F * (Fintype.card F - 1) / 2) *
             (Fintype.card F - 1) ^ 2 =
       Nat.card (GL (Fin 2) F) := by
-  rw [natCard_GL_fin_two_eq_sq_sub_one_mul]
+  rw [natCard_GL_fin_two_eq_sq_sub_one_mul, Nat.card_eq_fintype_card]
   have hq := Fintype.one_lt_card (α := F)
   have hq_one : 1 ≤ Fintype.card F := by omega
   have hq_two : 2 ≤ Fintype.card F := by omega

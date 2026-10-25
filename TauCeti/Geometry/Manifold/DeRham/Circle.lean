@@ -91,8 +91,7 @@ theorem isSmoothForm_circleAngularForm : IsSmoothForm (𝓡 1) ∞ circleAngular
 /-- The angular form `dθ` as a smooth closed form on the circle. It is closed because the circle
 is `1`-dimensional. -/
 def circleAngularClosedForm : closedForms (𝓡 1) Circle 1 :=
-  ⟨⟨circleAngularForm, mem_smoothForms.mpr ((isSmoothBundleForm_def ∞ _).mpr
-    ((isSmoothForm_def ∞ _).mp isSmoothForm_circleAngularForm))⟩,
+  ⟨⟨circleAngularForm, isSmoothForm_circleAngularForm.mem_smoothForms⟩,
     mem_closedForms_of_finrank_le (𝓡 1) (by simp) _⟩
 
 /-- The underlying rough form of `circleAngularClosedForm` is `circleAngularForm`. -/

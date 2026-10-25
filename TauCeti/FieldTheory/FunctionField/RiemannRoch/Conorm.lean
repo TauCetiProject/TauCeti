@@ -21,7 +21,9 @@ image lies in `L(D')` for any divisor `D'` of `F'` with the coefficients `e(P' �
 conorm (`TauCeti.mem_riemannRochSpace_algebraMap_iff_of_coeff_eq`). Multiples of a pole divisor
 are an example: a function `f` of `F` lies in `L(n (z)_∞)` exactly when its image lies in
 `L(n (z)_∞)` computed in `F'` (`TauCeti.mem_riemannRochSpace_nsmul_poles_map_iff`), with no
-conorm needed, because both pole divisors are read off from the orders of `z`.
+conorm needed, because both pole divisors are read off from the orders of `z`. For `F' = F`
+this says that `L(n (z)_∞)` does not change when the constants `k` are enlarged to an algebraic
+extension inside `F` (`TauCeti.restrictScalars_riemannRochSpace_nsmul_poles`).
 
 Multiplying a basis of `L(A)` by an `F`-linearly independent family of `r` functions in `L(C)`
 gives `r ℓ(A) ≤ [k' : k] ℓ(Con A + C)`
@@ -96,6 +98,16 @@ theorem mem_riemannRochSpace_nsmul_poles_map_iff [Algebra.IsIntegral F F']
   rw [mul_zero, mul_neg] at hmax
   rw [← hmax]
   ring
+
+/-- **Enlarging the constants does not change `L(n (z)_∞)`**: for an algebraic extension `k'` of
+`k` inside `F`, for instance the full constant field `algebraicClosure k F`, the Riemann–Roch space
+of `n` times the pole divisor of `z`, computed over `k'`, is the one computed over `k`. -/
+theorem restrictScalars_riemannRochSpace_nsmul_poles [Algebra k' F] [IsScalarTower k k' F]
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F) (n : ℕ) (z : Fˣ) :
+    (riemannRochSpace (n • Divisor.poles hF' z)).restrictScalars k =
+      riemannRochSpace (n • Divisor.poles hF z) := by
+  ext f
+  simpa using mem_riemannRochSpace_nsmul_poles_map_iff (F' := F) hF hF' n z f
 
 section FiniteFibres
 

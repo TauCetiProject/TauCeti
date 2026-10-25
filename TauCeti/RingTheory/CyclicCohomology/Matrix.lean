@@ -43,6 +43,8 @@ The construction uses `MultilinearMap.compLinearMapₗ` and `Matrix.entryLinearM
 ## Main results
 
 * `TauCeti.matrixCochainExtension_cyclic`: matrix extension preserves signed cyclicity.
+* `TauCeti.matrixCochainExtension_fromBlocks_zero₁₂_zero₂₁`: matrix extension is additive on
+  block-diagonal matrices, the cochain-level input to additivity of the pairings on direct sums.
 * `TauCeti.matrixCochainExtension_hochschildCoface`,
   `TauCeti.matrixCochainExtension_hochschildCoboundary`: compatibility with the cofaces and the
   Hochschild coboundary.
@@ -196,6 +198,43 @@ theorem matrixCochainExtension_submatrix_equiv (ι κ : Type*) [Fintype ι] [Fin
   intro j r hr
   exact (hr (e.surjective r)).elim
 
+/-- The matrix extension of a tuple of block-diagonal matrices is the sum of the matrix extensions
+of the two tuples of diagonal blocks. -/
+theorem matrixCochainExtension_fromBlocks_zero₁₂_zero₂₁ (ι κ : Type*) [Fintype ι] [Fintype κ]
+    (n : ℕ) (φ : MultilinearMap R (fun _ : Fin (n + 1) => A) M)
+    (a : Fin (n + 1) → Matrix ι ι A) (b : Fin (n + 1) → Matrix κ κ A) :
+    matrixCochainExtension (ι ⊕ κ) n φ (fun j => Matrix.fromBlocks (a j) 0 0 (b j)) =
+      matrixCochainExtension ι n φ a + matrixCochainExtension κ n φ b := by
+  classical
+  simp only [matrixCochainExtension_apply]
+  -- The closed paths inside `ι` or inside `κ` contribute the two extensions.
+  have h := Fintype.sum_of_injective
+    (Sum.elim (fun q j ↦ Sum.inl (q j)) (fun q j ↦ Sum.inr (q j)) :
+      (Fin (n + 1) → ι) ⊕ (Fin (n + 1) → κ) → Fin (n + 1) → ι ⊕ κ)
+    (by rintro (q | q) (q' | q') h <;> simp_all [funext_iff])
+    (Sum.elim (fun q ↦ φ fun j ↦ a j (q j) (q (finRotate (n + 1) j)))
+      (fun q ↦ φ fun j ↦ b j (q j) (q (finRotate (n + 1) j))))
+    (fun p ↦ φ fun j ↦ Matrix.fromBlocks (a j) 0 0 (b j) (p j) (p (finRotate (n + 1) j)))
+    (by
+      intro p hp
+      -- Every other closed path steps between the summands somewhere, since a path which
+      -- never does stays in the summand of its starting point.
+      obtain ⟨j, hj⟩ : ∃ j, (p (finRotate (n + 1) j)).isLeft ≠ (p j).isLeft := by
+        by_contra! h
+        have hc (j) : (p j).isLeft = (p 0).isLeft :=
+          apply_eq_apply_zero_of_add_one (f := fun j ↦ (p j).isLeft)
+            (fun j ↦ by simpa only [finRotate_apply] using h j) j
+        cases h₀ : (p 0).isLeft
+        · exact hp ⟨.inr fun j ↦ (p j).getRight (Sum.isLeft_eq_false.1 (by rw [hc, h₀])),
+            funext fun j ↦ by simp⟩
+        · exact hp ⟨.inl fun j ↦ (p j).getLeft (by rw [hc, h₀]), funext fun j ↦ by simp⟩
+      -- There the path meets a vanishing off-diagonal block.
+      apply φ.map_coord_zero j
+      revert hj
+      rcases p (finRotate (n + 1) j) with s | s <;> rcases p j with r | r <;> simp)
+    (by rintro (q | q) <;> rfl)
+  simpa only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr] using h.symm
+
 /-- Adding a zero diagonal block leaves the matrix extension unchanged. -/
 @[simp] theorem matrixCochainExtension_fromBlocks_zero (ι κ : Type*)
     [Fintype ι] [Fintype κ] (n : ℕ)
@@ -203,18 +242,7 @@ theorem matrixCochainExtension_submatrix_equiv (ι κ : Type*) [Fintype ι] [Fin
     (a : Fin (n + 1) → Matrix ι ι A) :
     matrixCochainExtension (ι ⊕ κ) n φ (fun j => Matrix.fromBlocks (a j) 0 0 0) =
       matrixCochainExtension ι n φ a := by
-  let e : ι ↪ ι ⊕ κ := ⟨Sum.inl, Sum.inl_injective⟩
-  have h := matrixCochainExtension_submatrix ι (ι ⊕ κ) e n φ
-    (fun j => Matrix.fromBlocks (a j) 0 0 0) (by
-      intro j r hr s
-      cases r with
-      | inl r => exact (hr ⟨r, rfl⟩).elim
-      | inr r => cases s <;> simp)
-  have he (r : ι) : e r = Sum.inl r := rfl
-  have hsub (j) : (Matrix.fromBlocks (a j) 0 0 0).submatrix e e = a j := by
-    ext r s
-    simp [he]
-  simpa only [hsub] using h.symm
+  simpa using matrixCochainExtension_fromBlocks_zero₁₂_zero₂₁ ι κ n φ a 0
 
 /-- Restricting to a diagonal matrix corner recovers the original cochain in every degree. -/
 @[simp] theorem matrixCochainExtension_single (ι : Type*) [Fintype ι] [DecidableEq ι]

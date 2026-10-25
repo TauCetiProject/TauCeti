@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.Matrix
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.FiniteLength
 
 /-!
 # The graded Cartan matrix of an algebra with split degree-zero part
@@ -37,6 +39,10 @@ supplies the hypothesis, that the projective basis vectors are the classes `[A e
   coefficients vanish.
 * `TauCeti.coeff_zero_gradedCartanMatrix_gradedIdempotentProjectiveBasis`: the constant term of
   the `(i, j)` entry is `δᵢⱼ`.
+* `TauCeti.isUnit_det_gradedCartanMatrix_gradedIdempotentProjectiveBasis`: if every pair of graded
+  heads `(Sᵢ, Sⱼ)` is graded Euler-admissible, the graded Cartan matrix has unit determinant.
+  Contrapositively, a graded Cartan determinant that is not a unit of `ℤ[q,q⁻¹]` exhibits a pair
+  of graded heads that is not graded Euler-admissible.
 
 ## References
 
@@ -104,5 +110,38 @@ theorem coeff_zero_gradedCartanMatrix_gradedIdempotentProjectiveBasis [Decidable
         exact lt_irrefl 0
           (pos_of_mem_cornerSubmodule_inf he.toOrthogonalIdempotents hneg hspan hij hx hx₀)
     rw [hbot, finrank_bot, Nat.cast_zero]
+
+/-! ### Unimodularity -/
+
+variable [DecidableEq I] [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
+
+/-- **Graded Cartan unimodularity follows from admissibility of the graded heads.** If every
+pair `(Sᵢ, Sⱼ)` of graded heads of the `A eᵢ` is graded Euler-admissible, then the graded Cartan
+matrix in the canonical bases has unit determinant in `ℤ[q,q⁻¹]`. -/
+theorem isUnit_det_gradedCartanMatrix_gradedIdempotentProjectiveBasis
+    (h : ∀ i j, IsGradedEulerAdmissible.{uA} k (GradedModuleCat.shift 𝒜)
+      (gradedPositiveMulQuotient 𝒜 (he₀ i)) (gradedPositiveMulQuotient 𝒜 (he₀ j))) :
+    IsUnit (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasis he he₀ hI hneg hspan hne)
+      (gradedIdempotentHeadBasis hneg he he₀ hspan hne)).det := by
+  -- Every finite graded module has a composition series by shifts of the `Sᵢ`, so admissibility
+  -- of the heads makes every pair of finite graded modules admissible, and
+  -- `TauCeti.isUnit_det_gradedCartanMatrix` applies.
+  have hS := isExhaustiveGradedSimpleFamily_gradedIdempotentHead (hcomplete := he) hneg he₀ hspan
+  have hne' : Pairwise fun i j =>
+      (gradedPositiveMulQuotient 𝒜 (he₀ j)).smulGradedDimension (e i) = 0 := fun i j hij => by
+    simpa [hij] using
+      smulGradedDimension_gradedIdempotentHead hneg he.toOrthogonalIdempotents he₀ hspan i j (hne j)
+  have hself (i : I) : (gradedPositiveMulQuotient 𝒜 (he₀ i)).smulGradedDimension (e i) = 1 := by
+    simpa using
+      smulGradedDimension_gradedIdempotentHead hneg he.toOrthogonalIdempotents he₀ hspan i i (hne i)
+  -- The head basis is the graded simple-class basis of the heads.
+  have hbasis : gradedSimpleClassBasis _ he.idem he₀ hne' hself hS =
+      gradedIdempotentHeadBasis hneg he he₀ hspan hne :=
+    Module.Basis.eq_of_apply_eq fun i => by
+      rw [gradedSimpleClassBasis_apply, gradedIdempotentHeadBasis_apply]
+  rw [← hbasis]
+  exact isUnit_det_gradedCartanMatrix _ he.idem he₀ hI hne' hself hS _
+    (gradedIdempotentProjectiveBasis_apply he he₀ hI hneg hspan hne)
+    ((isGradedEulerAdmissibleOn_gradedFiniteModules_iff hS).2 h)
 
 end TauCeti

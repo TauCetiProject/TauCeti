@@ -19,6 +19,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
+* `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
+  integral of its squared norm does, for a measure charging every nonempty open set.
 -/
 
 public section
@@ -41,6 +43,18 @@ theorem integrable_norm_pow_mul_norm_sq (f : 𝓢(E, F)) (k : ℕ) :
   rw [Real.norm_of_nonneg (by positivity), sq, ← mul_assoc, mul_comm _ ‖f x‖]
   gcongr
   exact f.norm_le_seminorm ℝ x
+
+/-- A Schwartz function vanishes if and only if the integral of its squared norm does, against a
+measure of temperate growth that charges every nonempty open set. -/
+theorem integral_norm_sq_eq_zero_iff [μ.IsOpenPosMeasure] {f : 𝓢(E, F)} :
+    ∫ x, ‖f x‖ ^ 2 ∂μ = 0 ↔ f = 0 := by
+  refine ⟨fun h => ?_, fun h => by simp [h]⟩
+  have hint : Integrable (fun x => ‖f x‖ ^ 2) μ := by
+    simpa using f.integrable_norm_pow_mul_norm_sq (μ := μ) 0
+  have hae := (integral_eq_zero_iff_of_nonneg (fun x => sq_nonneg ‖f x‖) hint).mp h
+  have hcont : Continuous fun x => ‖f x‖ ^ 2 := by fun_prop
+  have := (hcont.ae_eq_iff_eq μ continuous_zero).mp hae
+  exact SchwartzMap.ext fun x => by simpa using congrFun this x
 
 /-- For Schwartz functions `f` and `g` with values in a real inner product space, the pointwise
 inner product `⟪f x, g x⟫` is integrable. -/

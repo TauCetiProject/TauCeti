@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
-public import TauCeti.Topology.Algebra.Group.UCB
+public import TauCeti.Topology.Algebra.Group.UCB.Basic
 
 /-!
 # Means on bounded uniformly continuous functions
