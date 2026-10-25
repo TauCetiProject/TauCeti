@@ -58,9 +58,11 @@ theorem effectiveActionFunctor_mapAut_stabilizerMulEquivAut (x : X) (g : stabili
       ((effectiveActionFunctor G X).mapAut _ (ActionCategory.stabilizerMulEquivAut G x g)) =
       ActionCategory.stabilizerMulEquivAut (G ⧸ (toPermHom G X).ker) x
         (effectiveStabilizerMap G X x g) := by
-  -- Exposing the functor makes its object transport reflexive and both label maps identical.
+  -- Compare arrow labels using the public projections of the bundled automorphism maps.
   dsimp only [effectiveActionFunctor]
-  rfl
+  ext : 2
+  apply Functor.Elements.hom_ext
+  simp
 
 /-- Every arrow of the faithful action groupoid lifts, with its source and target fixed. -/
 instance effectiveActionFunctor_full : (effectiveActionFunctor G X).Full where
