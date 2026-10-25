@@ -85,6 +85,20 @@ the group. -/
 def IsFullyResiduallyFree : Prop :=
   ∀ s : Finset G, (∀ g ∈ s, g ≠ 1) → ∃ (ι : Type u) (φ : G →* FreeGroup ι), ∀ g ∈ s, φ g ≠ 1
 
+/-- Characterization of residual freeness by homomorphisms to free groups `FreeGroup ι`, with `ι`
+in the universe of the group. -/
+theorem isResiduallyFree_def :
+    IsResiduallyFree G ↔ ∀ g : G, g ≠ 1 → ∃ (ι : Type u) (φ : G →* FreeGroup ι), φ g ≠ 1 :=
+  Iff.rfl
+
+/-- Characterization of full residual freeness by homomorphisms to free groups `FreeGroup ι`, with
+`ι` in the universe of the group. -/
+theorem isFullyResiduallyFree_def :
+    IsFullyResiduallyFree G ↔
+      ∀ s : Finset G, (∀ g ∈ s, g ≠ 1) →
+        ∃ (ι : Type u) (φ : G →* FreeGroup ι), ∀ g ∈ s, φ g ≠ 1 :=
+  Iff.rfl
+
 /-- A group is fully residually free if and only if every finite family of nonidentity elements
 survives under one homomorphism to the free group of rank two. -/
 theorem isFullyResiduallyFree_iff_fin_two :
@@ -189,15 +203,16 @@ theorem not_isResiduallyFree_of_finite [Finite G] [Nontrivial G] : ¬IsResiduall
   obtain ⟨g, hg⟩ := exists_ne (1 : G)
   exact not_isOfFinOrder_of_isMulTorsionFree hg (isOfFinOrder_of_finite g)
 
-/-- A fully residually free group is commutative transitive: if `y ≠ 1` commutes with `x` and with
-`z`, a homomorphism to a free group keeping both `y` and the commutator of `x` and `z` nontrivial
-would contradict commutation transitivity in the free group. -/
+/-- A fully residually free group is commutative transitive: if `y ≠ 1`, `Commute x y`, and
+`Commute y z`, then `Commute x z`. -/
 theorem IsFullyResiduallyFree.isCommTransitive (h : IsFullyResiduallyFree G) :
     IsCommTransitive G := by
   classical
   rw [isCommTransitive_iff]
   intro x y z hy hxy hyz
   rw [← commutatorElement_eq_one_iff_commute]
+  -- Otherwise one homomorphism to a free group keeps both `y` and `⁅x, z⁆` nontrivial, which
+  -- contradicts commutative transitivity of the free group.
   by_contra hxz
   obtain ⟨ι, φ, hφ⟩ := h ({y, ⁅x, z⁆} : Finset G) (by simp [hy, hxz])
   have hφxz : Commute (φ x) (φ z) := (isCommTransitive_iff _).1 IsFreeGroup.isCommTransitive
