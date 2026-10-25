@@ -191,6 +191,30 @@ def unknotZeroDehnFilling :
       (SolidTorus.boundaryInclusion_snd _))
   fillingSlope_gluing := isSolidTorusNeighborhood_unknotSolidTorus.fillingSlope_prodComm
 
+/-- The `0`-surgery on the unknot embeds its exterior as the solid torus `S¹ × D²₊` over the upper
+hemisphere, through `TauCeti.unknotExteriorHomeomorph`. -/
+@[simp]
+theorem unknotZeroDehnFilling_exteriorEmbedding_apply
+    (x : knotExterior (Φ := unknotSolidTorus)) :
+    unknotZeroDehnFilling.exteriorEmbedding x =
+      ((unknotExteriorHomeomorph x).2,
+        hemisphereGraph (one_pow 2) (unknotExteriorHomeomorph x).1) :=
+  (rfl)
+
+/-- The filling solid torus of the `0`-surgery on the unknot is the solid torus `S¹ × D²₋` over
+the lower hemisphere. -/
+@[simp]
+theorem unknotZeroDehnFilling_solidTorusEmbedding_apply (p : SolidTorus) :
+    unknotZeroDehnFilling.solidTorusEmbedding p =
+      (p.2, hemisphereGraph (c := -1) (by norm_num) p.1) :=
+  (rfl)
+
+/-- The `0`-surgery on the unknot glues the boundary tori by exchanging the circle factors. -/
+@[simp]
+theorem unknotZeroDehnFilling_gluing :
+    unknotZeroDehnFilling.gluing = Homeomorph.prodComm Circle Circle :=
+  (rfl)
+
 end ZeroSurgery
 
 end TauCeti
