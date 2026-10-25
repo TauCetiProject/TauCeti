@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Algebra.QuadraticAlgebra.AlgEquiv
 public import TauCeti.Algebra.QuadraticAlgebra.Star
 public import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 
@@ -30,6 +31,11 @@ chosen square root of the radicand lies in the upper half-plane.
 * `QuadraticAlgebra.complexEmbedding_star`: it intertwines `star` with complex conjugation.
 * `QuadraticAlgebra.algHom_eq_or_eq_comp_starAe`: every `ℚ`-algebra map to `ℂ` is the
   distinguished embedding or its precomposition with `starAe`.
+* `QuadraticAlgebra.complexEmbedding_comp_smulOmegaEquiv_of_pos`,
+  `QuadraticAlgebra.complexEmbedding_comp_smulOmegaEquiv_of_neg`: along the rescaling isomorphism
+  `QuadraticAlgebra.smulOmegaEquiv u h : ℚ(√d) ≃ₐ[ℚ] ℚ(√e)` with `d = u² e`, the distinguished
+  embedding of `ℚ(√e)` pulls back to that of `ℚ(√d)` when `u > 0` and to its complex conjugate
+  when `u < 0`.
 * `QuadraticAlgebra.ringHom_eq_complexEmbedding_iff`: for `a < 0`, a ring homomorphism to `ℂ` is
   the distinguished embedding exactly when it sends `ω` into the upper half-plane.
 * `QuadraticAlgebra.ringHom_eq_or_eq_conjugate`: the two complex embeddings of the field model.
@@ -111,6 +117,40 @@ theorem ringHom_eq_complexEmbedding_iff (ha : a < 0) (φ : QuadraticAlgebra ℚ 
   · have him : (φ ω).im = -√(-(a : ℝ)) := by
       simpa using congrArg Complex.im (AlgHom.congr_fun h' ω)
     linarith
+
+section smulOmegaEquiv
+
+variable {d e : ℚ}
+
+/-- The square root `√(-(u² e))` is `|u| √(-e)`. -/
+private theorem sqrt_neg_sq_mul (u e : ℝ) : √(-(u ^ 2 * e)) = |u| * √(-e) := by
+  rw [← mul_neg, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs]
+
+/-- **Naturality of the distinguished embedding, positive scalar.** If `d = u² e` with `u > 0`,
+the distinguished embedding of `ℚ(√e)` composed with the rescaling isomorphism
+`smulOmegaEquiv u h : ℚ(√d) ≃ₐ[ℚ] ℚ(√e)` is the distinguished embedding of `ℚ(√d)`. -/
+theorem complexEmbedding_comp_smulOmegaEquiv_of_pos (hd : d ≤ 0) (he : e ≤ 0) (u : ℚˣ)
+    (h : d = u ^ 2 * e) (hu : 0 < (u : ℚ)) :
+    (complexEmbedding he).comp (smulOmegaEquiv u h).toAlgHom = complexEmbedding hd := by
+  refine algHom_ext ?_
+  subst h
+  have hu' : (0 : ℝ) < u := Rat.cast_pos.mpr hu
+  apply Complex.ext <;> simp [Rat.smul_def, sqrt_neg_sq_mul, abs_of_pos hu']
+
+/-- **Naturality of the distinguished embedding, negative scalar.** If `d = u² e` with `u < 0`,
+the distinguished embedding of `ℚ(√e)` composed with the rescaling isomorphism
+`smulOmegaEquiv u h : ℚ(√d) ≃ₐ[ℚ] ℚ(√e)` is the complex conjugate of the distinguished embedding
+of `ℚ(√d)`, that is, its precomposition with the quadratic involution. -/
+theorem complexEmbedding_comp_smulOmegaEquiv_of_neg (hd : d ≤ 0) (he : e ≤ 0) (u : ℚˣ)
+    (h : d = u ^ 2 * e) (hu : (u : ℚ) < 0) :
+    (complexEmbedding he).comp (smulOmegaEquiv u h).toAlgHom =
+      (complexEmbedding hd).comp (starAe : _ ≃ₐ[ℚ] _).toAlgHom := by
+  refine algHom_ext ?_
+  subst h
+  have hu' : (u : ℝ) < 0 := Rat.cast_lt_zero.mpr hu
+  apply Complex.ext <;> simp [Rat.smul_def, sqrt_neg_sq_mul, abs_of_neg hu']
+
+end smulOmegaEquiv
 
 section Field
 
