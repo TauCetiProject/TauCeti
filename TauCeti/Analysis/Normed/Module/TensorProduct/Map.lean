@@ -17,12 +17,9 @@ at most `‖f‖ * ‖g‖`, for both the projective and the injective seminorm.
 on pure tensors over `ℝ` and `ℂ`, this says that both are uniform cross norms. The induced
 operators `ProjectiveTensor.mapL f g` and `InjectiveTensor.mapL f g` respect identities and
 composition, and the contraction from the projective to the injective tensor product is natural
-with respect to them.
-
-For the projective tensor product, this file also proves the norm-preserving universal property
-on algebraic tensors: bounded bilinear maps `E →L[𝕜] F →L[𝕜] G` correspond isometrically to
-bounded operators `ProjectiveTensor 𝕜 E F →L[𝕜] G` (`ProjectiveTensor.liftIsometry`), the
-canonical bilinear map being `ProjectiveTensor.tmulL`.
+with respect to them. Composing the operator that the universal property
+`ProjectiveTensor.liftIsometry` attaches to a bilinear map with `ProjectiveTensor.mapL f g`
+precomposes that bilinear map with `f` and `g`.
 
 On the dual of `E'`, the operator induced by `map f g u` is
 `g ∘L contractStrongDual u ∘L f*`, where `f*` is the adjoint `ContinuousLinearMap.precomp 𝕜 f`
@@ -30,9 +27,6 @@ On the dual of `E'`, the operator induced by `map f g u` is
 
 ## Main definitions
 
-* `TauCeti.ProjectiveTensor.tmulL`: the bounded bilinear map `(x, y) ↦ x ⊗ₜ y`.
-* `TauCeti.ProjectiveTensor.liftIsometry`: the isometric universal property of the projective
-  tensor product.
 * `TauCeti.ProjectiveTensor.mapL` and `TauCeti.InjectiveTensor.mapL`: the operators induced by a
   pair of bounded operators.
 
@@ -50,9 +44,8 @@ On the dual of `E'`, the operator induced by `map f g u` is
 
 * R. A. Ryan, *Introduction to Tensor Products of Banach Spaces*, Springer, 2002, §§2.1, 3.1.
 
-The construction of `ProjectiveTensor.liftIsometry` and `ProjectiveTensor.mapL` follows Mathlib's
-`PiTensorProduct.liftIsometry` and `PiTensorProduct.mapL` for the projective seminorm on
-finite-family tensor products.
+The construction of `ProjectiveTensor.mapL` follows Mathlib's `PiTensorProduct.mapL` for the
+projective seminorm on finite-family tensor products.
 -/
 
 public section
@@ -113,88 +106,6 @@ variable {𝕜 E E' E'' F F' F'' G : Type*} [NontriviallyNormedField 𝕜]
 
 namespace ProjectiveTensor
 
-/-- Two bounded operators out of the projective tensor product agree when they agree on pure
-tensors. -/
-@[ext]
-theorem continuousLinearMap_ext {M : Type*} [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M]
-    {l l' : ProjectiveTensor 𝕜 E F →L[𝕜] M}
-    (h : ∀ x y, l ⟨x ⊗ₜ y⟩ = l' ⟨x ⊗ₜ y⟩) : l = l' := by
-  ext ⟨u⟩
-  induction u with
-  | tmul x y => exact h x y
-  | add u v hu hv => simp only [mk_add, map_add, hu, hv]
-
-variable (𝕜 E F) in
-/-- The canonical bounded bilinear map `(x, y) ↦ x ⊗ₜ y` into the projective tensor product. -/
-noncomputable def tmulL : E →L[𝕜] F →L[𝕜] ProjectiveTensor 𝕜 E F :=
-  LinearMap.mkContinuous₂ ((_root_.TensorProduct.mk 𝕜 E F).compr₂
-    (linearEquiv 𝕜 E F).symm.toLinearMap) 1 fun x y ↦ by
-      simpa [norm_def, mul_assoc] using TensorProduct.projectiveSeminorm_tmul_le x y
-
-/-- The canonical bilinear map sends `(x, y)` to the pure tensor `x ⊗ₜ y`. -/
-@[simp]
-theorem tmulL_apply (x : E) (y : F) : tmulL 𝕜 E F x y = ⟨x ⊗ₜ y⟩ := by
-  simp [tmulL]
-
-/-- The canonical bilinear map into the projective tensor product has norm at most one. -/
-theorem norm_tmulL_le : ‖tmulL 𝕜 E F‖ ≤ 1 :=
-  LinearMap.mkContinuous₂_norm_le _ zero_le_one _
-
-private theorem norm_lift_apply_le (B : E →L[𝕜] F →L[𝕜] G) (u : ProjectiveTensor 𝕜 E F) :
-    ‖(_root_.TensorProduct.lift B.toLinearMap₁₂ ∘ₗ (linearEquiv 𝕜 E F).toLinearMap) u‖ ≤
-      ‖B‖ * ‖u‖ := by
-  simpa [norm_def] using TensorProduct.norm_lift_le_projectiveSeminorm B u.toTensorProduct
-
-variable (𝕜 E F G) in
-/-- The **universal property** of the projective tensor product: bounded bilinear maps
-`E →L[𝕜] F →L[𝕜] G` correspond isometrically to bounded operators on `ProjectiveTensor 𝕜 E F`.
-The operator induced by `B` sends `x ⊗ₜ y` to `B x y`. -/
-noncomputable def liftIsometry :
-    (E →L[𝕜] F →L[𝕜] G) ≃ₗᵢ[𝕜] (ProjectiveTensor 𝕜 E F →L[𝕜] G) :=
-  LinearIsometryEquiv.ofBounds
-    { toFun B := LinearMap.mkContinuous
-        (_root_.TensorProduct.lift B.toLinearMap₁₂ ∘ₗ (linearEquiv 𝕜 E F).toLinearMap) ‖B‖
-        (norm_lift_apply_le B)
-      map_add' B B' := continuousLinearMap_ext fun x y ↦ by simp
-      map_smul' a B := continuousLinearMap_ext fun x y ↦ by simp
-      invFun l := (ContinuousLinearMap.compL 𝕜 F (ProjectiveTensor 𝕜 E F) G l).comp (tmulL 𝕜 E F)
-      left_inv B := by ext x y; simp
-      right_inv l := continuousLinearMap_ext fun x y ↦ by simp }
-    (fun B ↦ LinearMap.mkContinuous_norm_le _ (norm_nonneg B) (norm_lift_apply_le B))
-    (fun l ↦ by
-      refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
-      calc _ ≤ ‖l‖ * 1 := by
-            gcongr
-            · simpa using ContinuousLinearMap.le_of_opNorm_le _
-                (ContinuousLinearMap.norm_compL_le 𝕜 F _ G) l
-            · exact norm_tmulL_le
-        _ = ‖l‖ := mul_one _)
-
-/-- The operator induced by a bounded bilinear map acts on the underlying tensor by
-`TensorProduct.lift`. -/
-theorem liftIsometry_apply (B : E →L[𝕜] F →L[𝕜] G) (u : ProjectiveTensor 𝕜 E F) :
-    liftIsometry 𝕜 E F G B u = _root_.TensorProduct.lift B.toLinearMap₁₂ u.toTensorProduct := by
-  simp [liftIsometry, LinearIsometryEquiv.ofBounds]
-
-/-- The operator induced by a bounded bilinear map `B` sends `x ⊗ₜ y` to `B x y`. -/
-@[simp]
-theorem liftIsometry_apply_tmul (B : E →L[𝕜] F →L[𝕜] G) (x : E) (y : F) :
-    liftIsometry 𝕜 E F G B ⟨x ⊗ₜ y⟩ = B x y := by
-  simp [liftIsometry_apply]
-
-/-- The bilinear map corresponding to an operator `l` on the projective tensor product is
-`(x, y) ↦ l (x ⊗ₜ y)`. -/
-@[simp]
-theorem liftIsometry_symm_apply_apply (l : ProjectiveTensor 𝕜 E F →L[𝕜] G) (x : E) (y : F) :
-    (liftIsometry 𝕜 E F G).symm l x y = l ⟨x ⊗ₜ y⟩ :=
-  congrArg l (tmulL_apply x y)
-
-/-- The canonical bilinear map induces the identity of the projective tensor product. -/
-@[simp]
-theorem liftIsometry_tmulL :
-    liftIsometry 𝕜 E F _ (tmulL 𝕜 E F) = ContinuousLinearMap.id 𝕜 (ProjectiveTensor 𝕜 E F) :=
-  continuousLinearMap_ext fun x y ↦ by simp
-
 /-- The bounded operator `x ⊗ₜ y ↦ f x ⊗ₜ g y` between projective tensor products induced by
 bounded operators `f` and `g`. -/
 noncomputable def mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
@@ -241,17 +152,6 @@ theorem liftIsometry_comp_mapL (B : E' →L[𝕜] F' →L[𝕜] G) (f : E →L[�
 end ProjectiveTensor
 
 namespace InjectiveTensor
-
-/-- Two bounded operators out of the injective tensor product agree when they agree on pure
-tensors. -/
-@[ext]
-theorem continuousLinearMap_ext {M : Type*} [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M]
-    {l l' : InjectiveTensor 𝕜 E F →L[𝕜] M}
-    (h : ∀ x y, l ⟨x ⊗ₜ y⟩ = l' ⟨x ⊗ₜ y⟩) : l = l' := by
-  ext ⟨u⟩
-  induction u with
-  | tmul x y => exact h x y
-  | add u v hu hv => simp only [mk_add, map_add, hu, hv]
 
 /-- The bounded operator `x ⊗ₜ y ↦ f x ⊗ₜ g y` between injective tensor products induced by
 bounded operators `f` and `g`. -/
