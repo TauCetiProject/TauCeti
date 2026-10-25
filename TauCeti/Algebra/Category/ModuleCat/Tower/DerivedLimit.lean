@@ -214,7 +214,7 @@ theorem homotopyLimitFst_def (K : CochainComplex (ModuleTower.{v} R) ℤ) :
 
 /-- The fibre triangle `holim K → ∏ₙ Kₙ → ∏ₙ Kₙ → (holim K)[1]` of the shift chain map, the
 mapping cocone triangle of `δ`. -/
-@[expose]
+@[expose, simps! obj₁ obj₂ obj₃ mor₁ mor₂ mor₃]
 def homotopyLimitTriangle (K : CochainComplex (ModuleTower.{v} R) ℤ) :
     Pretriangulated.Triangle (CochainComplex (ModuleCat.{v} R) ℤ) :=
   Pretriangulated.Triangle.mk (homotopyLimitFst K) ((complexShift R).app K)
@@ -272,12 +272,12 @@ variable [HasDerivedCategory.{w} (ModuleTower.{v} R)] [HasDerivedCategory.{w'} (
 /-- The **derived limit** functor `Rlim : D(ℕᵒᵖ ⥤ ModuleCat R) ⥤ D(R)` on the derived category of
 towers of `R`-modules, induced by the homotopy limit `Cone(δ)[-1]`
 (`ModuleTower.derivedLimitFactors`). -/
-@[expose]
 def derivedLimit :
     DerivedCategory (ModuleTower.{v} R) ⥤ DerivedCategory (ModuleCat.{v} R) :=
   Localization.lift _ (quasiIso_isInvertedBy_homotopyLimitFunctor_comp_Q R)
     (DerivedCategory.Q (C := ModuleTower.{v} R))
 
+@[no_expose]
 instance : Localization.Lifting (DerivedCategory.Q (C := ModuleTower.{v} R))
     (HomologicalComplex.quasiIso (ModuleTower.{v} R) (ComplexShape.up ℤ))
     (homotopyLimitFunctor R ⋙ DerivedCategory.Q) (derivedLimit R) :=
@@ -324,10 +324,8 @@ theorem derivedLimitπ_comp_transition (K : CochainComplex (ModuleTower.{v} R) �
     exact congr_app h₀ (K.X i)
   -- The correction term factors through `holim K → ∏ₙ Kₙ → ∏ₙ Kₙ`, which vanishes in `D(R)`.
   rw [derivedLimitπ, derivedLimitπ, Category.assoc, ← CategoryTheory.Functor.map_comp,
-    Category.assoc, h, Preadditive.comp_sub, Functor.map_sub,
-    CategoryTheory.Functor.map_comp _ (homotopyLimitFst K) (_ ≫ _),
-    CategoryTheory.Functor.map_comp _ ((complexShift R).app K),
-    ← Category.assoc, Q_map_homotopyLimitFst_comp_Q_map_complexShift, Limits.zero_comp, sub_zero]
+    Category.assoc, h]
+  simp [Preadditive.comp_sub]
 
 end Projections
 
