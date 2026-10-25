@@ -25,12 +25,8 @@ open NumberField
 
 namespace TauCeti.Examples.QuadraticNorm
 
-local instance instFactNotSquareFiveInt : Fact (¬ IsSquare (5 : ℤ)) := ⟨by
-  rintro ⟨r, hr⟩
-  have hr2 : r ^ 2 = 5 := by nlinarith
-  have hlo : -3 < r := by nlinarith [sq_nonneg (r + 3)]
-  have hhi : r < 3 := by nlinarith [sq_nonneg (r - 3)]
-  interval_cases r <;> norm_num at hr2⟩
+local instance instFactNotSquareFiveInt : Fact (¬ IsSquare (5 : ℤ)) :=
+  ⟨fun h => Nat.prime_five.not_isSquare (Int.isSquare_natCast_iff.mp h)⟩
 local instance instFactNotSquareFiveRat : Fact (¬ IsSquare (5 : ℚ)) :=
   Rat.instFactNotIsSquareIntCast 5
 
