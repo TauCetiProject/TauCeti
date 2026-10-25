@@ -1,0 +1,252 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Polynomial.Belyi
+public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
+public import TauCeti.FieldTheory.FunctionField.Different.Derivative
+import TauCeti.FieldTheory.FunctionField.AffineModel.Place
+import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
+import TauCeti.FieldTheory.RatFunc.Transcendental
+
+/-!
+# Polynomial Belyi maps
+
+Let `k` be a field and `q ∈ k[X]` a polynomial with `q′ ≠ 0`. Regarded as a map of the
+projective line, `x ↦ q(x)` is branched only over `∞` and over the critical values of `q`, the
+values `q(ξ)` at the roots `ξ` of `q′` (`Polynomial.criticalValues`). This file proves that
+containment in the language of function fields: if `F = k(x)` is separable over `k(t)`, where
+`t = q(x)`, then every place of `k(t)` at which `t` is regular and `r(t)` is a unit, for some
+polynomial `r` vanishing at every critical value of `q`, is unramified in `F`
+(`TauCeti.Place.ramificationIdx_eq_one_of_aeval_eq`).
+
+The proof is the derivative criterion for the different (Stichtenoth, Theorem 3.5.10(a)): `x` is
+a root of the monic polynomial `(q(X) - t) / lc(q)`, whose coefficients are regular at such a
+place `P`, so a place `P'` of `F` over `P` is unramified as soon as `q′(x)` is a unit at `P'`.
+If it is not, then evaluating at `P'` makes the residue `x(P')` a root of `q′` in the residue
+field, so `t(P') = q(x(P'))` is a critical value of `q` there, and `r(t)` vanishes at `P`.
+
+In characteristic zero, taking `r = X (X - 1)` gives the criterion for Belyi maps: if the critical
+values of `q`, in every field extension of `k`, lie in `{0, 1}`, then `F = k(x)` over `k(t)`,
+`t = q(x)`, is an algebraic Belyi pair (`TauCeti.IsAlgebraicBelyiPair.of_criticalValues_subset`).
+This applies to the Belyi polynomials `B_{m,n}`
+(`TauCeti.IsAlgebraicBelyiPair.of_aeval_belyiPolynomial`) and, over `ℚ`, to the polynomials
+produced by polynomial Belyification (`TauCeti.exists_polynomial_eval_mem_criticalValues_subset`).
+In Belyi's theorem it is the ramification computation for the last step, which composes a map
+`t₀` with such a polynomial `q`: the extension `k(t₀) / k(q(t₀))` is unramified away from `0`, `1`
+and `∞`.
+
+## Main results
+
+* `TauCeti.finiteDimensional_of_aeval_eq`: `F = k(x)` is finite over `k(t)`, `t = q(x)`.
+* `TauCeti.Place.ramificationIdx_eq_one_of_aeval_eq`: the places of `k(t)` away from `∞` and
+  from the critical values of `q` are unramified in `k(x)`.
+* `TauCeti.IsAlgebraicBelyiPair.of_criticalValues_subset`: a polynomial whose critical values lie
+  in `{0, 1}` is an algebraic Belyi pair.
+* `TauCeti.IsAlgebraicBelyiPair.of_aeval_belyiPolynomial`: the Belyi polynomials are algebraic
+  Belyi pairs.
+
+## References
+
+* H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
+  Theorem 3.5.10.
+* Bernhard Köck, *Belyi's theorem revisited*, Beiträge zur Algebra und Geometrie 45 (2004),
+  253–265, §3.
+-/
+
+public section
+
+open Polynomial
+
+open scoped IntermediateField
+
+namespace TauCeti
+
+universe u v
+
+variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F] [Algebra (RatFunc k) F]
+  [IsScalarTower k (RatFunc k) F] {x : F} {q : k[X]}
+
+/-- The monic equation `(q(X) - a) / lc(q)` over a `k`-algebra `R`, satisfied by `x` when
+`a = q(x)`. -/
+private noncomputable def monicEquation {R : Type*} [CommRing R] [Algebra k R] (q : k[X]) (a : R) :
+    R[X] :=
+  (C q.leadingCoeff⁻¹ * q).map (algebraMap k R) - C (algebraMap k R q.leadingCoeff⁻¹ * a)
+
+/-- If the variable `t` of `k(t)` acts as `q(x)`, then `q` is not constant, since `t` is
+transcendental over `k`. -/
+private theorem natDegree_pos_of_aeval_eq
+    (hq : algebraMap (RatFunc k) F RatFunc.X = aeval x q) : 0 < q.natDegree := by
+  refine Nat.pos_of_ne_zero fun h ↦ RatFunc.transcendental_X (K := k) ?_
+  rw [eq_C_of_natDegree_eq_zero h, aeval_C, IsScalarTower.algebraMap_apply k (RatFunc k) F] at hq
+  rw [(algebraMap (RatFunc k) F).injective hq]
+  exact isAlgebraic_algebraMap _
+
+private theorem monic_monicEquation {R : Type*} [CommRing R] [Nontrivial R] [Algebra k R]
+    (hq : 0 < q.natDegree) (a : R) : (monicEquation q a).Monic := by
+  have hq0 : q ≠ 0 := ne_zero_of_natDegree_gt hq
+  have hm : (C q.leadingCoeff⁻¹ * q).Monic :=
+    monic_C_mul_of_mul_leadingCoeff_eq_one (inv_mul_cancel₀ (leadingCoeff_ne_zero.mpr hq0))
+  refine (hm.map _).sub_of_left (degree_C_le.trans_lt ?_)
+  rw [hm.degree_map, degree_C_mul (inv_ne_zero (leadingCoeff_ne_zero.mpr hq0)),
+    degree_eq_natDegree hq0]
+  exact_mod_cast hq
+
+private theorem aeval_monicEquation {R S : Type*} [CommRing R] [Algebra k R] [CommRing S]
+    [Algebra k S] [Algebra R S] [IsScalarTower k R S] (a : R) (y : S) :
+    aeval y (monicEquation q a) =
+      algebraMap k S q.leadingCoeff⁻¹ * (aeval y q - algebraMap R S a) := by
+  simp [monicEquation, aeval_map_algebraMap, mul_sub, ← IsScalarTower.algebraMap_apply]
+
+private theorem aeval_derivative_monicEquation {R S : Type*} [CommRing R] [Algebra k R]
+    [CommRing S] [Algebra k S] [Algebra R S] [IsScalarTower k R S] (a : R) (y : S) :
+    aeval y (derivative (monicEquation q a)) =
+      algebraMap k S q.leadingCoeff⁻¹ * aeval y (derivative q) := by
+  simp [monicEquation, derivative_map, aeval_map_algebraMap, ← IsScalarTower.algebraMap_apply]
+
+/-- The coefficients of the monic equation are regular wherever `t` is. -/
+private theorem coeff_monicEquation_mem_integers {P : Place k (RatFunc k)}
+    (hX : (RatFunc.X : RatFunc k) ∈ P.integers) (i : ℕ) :
+    (monicEquation q RatFunc.X).coeff i ∈ P.integers := by
+  rw [monicEquation, coeff_sub, coeff_map, coeff_C]
+  refine sub_mem (P.algebraMap_mem_integers _) ?_
+  split_ifs
+  exacts [mul_mem (P.algebraMap_mem_integers _) hX, zero_mem _]
+
+/-- **`k(x)` is finite over `k(t)`** when `t = q(x)`: `x` is a root of the monic polynomial
+`(q(X) - t) / lc(q)` over `k(t)`. -/
+theorem finiteDimensional_of_aeval_eq (hx : k⟮x⟯ = ⊤)
+    (hq : algebraMap (RatFunc k) F RatFunc.X = aeval x q) : FiniteDimensional (RatFunc k) F := by
+  have hint : IsIntegral (RatFunc k) x :=
+    ⟨_, monic_monicEquation (natDegree_pos_of_aeval_eq hq) RatFunc.X, by
+      rw [← aeval_def, aeval_monicEquation, ← hq, sub_self, mul_zero]⟩
+  have := IntermediateField.adjoin.finiteDimensional hint
+  rw [IntermediateField.adjoin_eq_top_of_adjoin_eq_top k (E := RatFunc k) hx] at this
+  exact IntermediateField.topEquiv.toLinearEquiv.finiteDimensional
+
+namespace Place
+
+omit [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] in
+/-- **Evaluation at a place sends a critical point to a critical value**: if `x` and `a = q(x)` are
+regular at a place `P` and `q′(x)` vanishes at `P`, then the value `a(P)` is a critical value of
+`q` in the residue field. -/
+private theorem residue_mem_criticalValues {P : Place k F} {x a : P.integers}
+    (hd : derivative q ≠ 0)
+    (hxa : aeval x q = a) (hlt : P.valuation (aeval (x : F) (derivative q)) < 1) :
+    IsLocalRing.residue P.integers a ∈ q.criticalValues P.ResidueField := by
+  have hcoe (p : k[X]) (y : P.integers) : ((aeval y p : P.integers) : F) = aeval (y : F) p := by
+    rw [← ValuationSubring.algebraMap_apply, ← aeval_algebraMap_apply,
+      ValuationSubring.algebraMap_apply]
+  have hres (p : k[X]) (y : P.integers) :
+      IsLocalRing.residue P.integers (aeval y p) = aeval (IsLocalRing.residue P.integers y) p := by
+    rw [← IsLocalRing.ResidueField.algebraMap_eq, aeval_algebraMap_apply]
+  refine mem_criticalValues.mpr ⟨IsLocalRing.residue P.integers x, (mem_rootSet_of_ne hd).mpr ?_,
+    by rw [← hres, hxa]⟩
+  rw [← hres, residue_eq_zero_iff_valuation_lt_one, hcoe]
+  exact hlt
+
+variable [FiniteDimensional (RatFunc k) F] [Algebra.IsSeparable (RatFunc k) F]
+
+/-- **A polynomial map is unramified away from `∞` and its critical values**: let `F = k(x)` be
+separable over `k(t)`, where `t = q(x)` for a polynomial `q` with `q′ ≠ 0`. If `r ∈ k[X]` vanishes
+at every critical value of `q`, in every field extension of `k`, then every place of `F` over a
+place of `k(t)` other than `∞` at which `r(t)` is a unit has ramification index `1`. -/
+theorem ramificationIdx_eq_one_of_aeval_eq (hx : k⟮x⟯ = ⊤)
+    (hq : algebraMap (RatFunc k) F RatFunc.X = aeval x q) (hd : derivative q ≠ 0) {r : k[X]}
+    (hr : ∀ (L : Type v) [Field L] [Algebra k L], ∀ c ∈ q.criticalValues L, aeval c r = 0)
+    {P' : Place k F} (hP : P'.restrict k (RatFunc k) ≠ infty k)
+    (hr1 : (P'.restrict k (RatFunc k)).valuation (aeval RatFunc.X r) = 1) :
+    ramificationIdx (RatFunc k) P' = 1 := by
+  have hdeg := natDegree_pos_of_aeval_eq hq
+  have hX : (RatFunc.X : RatFunc k) ∈ (P'.restrict k (RatFunc k)).integers :=
+    not_not.mp (X_notMem_integers_iff_eq_infty.not.mpr hP)
+  -- `t` is regular at `P'`, and so is `x`, which is integral over the valuation ring of `P'`.
+  set a := algebraMap (RatFunc k) F RatFunc.X
+  have ha : a ∈ P'.integers := (mem_integers_restrict_iff k (RatFunc k) P' _).mp hX
+  have hxO : x ∈ P'.integers := by
+    refine P'.mem_integers_of_isIntegral (R := P'.integers) (fun r ↦ r.2)
+      ⟨_, monic_monicEquation hdeg (⟨a, ha⟩ : P'.integers), ?_⟩
+    rw [← aeval_def, aeval_monicEquation, ValuationSubring.algebraMap_apply]
+    simp [← hq]
+  -- The derivative criterion reduces the claim to `q′(x)` being a unit at `P'`.
+  suffices hval : P'.valuation (aeval x (derivative q)) = 1 by
+    have h0 := differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one k (RatFunc k)
+      (IntermediateField.adjoin_eq_top_of_adjoin_eq_top k hx) (monic_monicEquation hdeg _)
+      (coeff_monicEquation_mem_integers hX) (by rw [aeval_monicEquation, ← hq, sub_self, mul_zero])
+      (by
+        rw [aeval_derivative_monicEquation, map_mul, hval, mul_one,
+          P'.valuation_eq_one_of_isAlgebraic (isAlgebraic_algebraMap _)
+            ((_root_.map_ne_zero _).mpr (inv_ne_zero (leadingCoeff_ne_zero.mpr
+              (ne_zero_of_natDegree_gt hdeg))))])
+    have := ramificationIdx_le_differentExponent_add_one k (RatFunc k) P'
+    have := ramificationIdx_pos (RatFunc k) P'
+    omega
+  -- Otherwise `t(P')` is a critical value of `q`, at which `r` vanishes; so `r(t)` would vanish at
+  -- `P'`, while it is a unit at `P`.
+  refine le_antisymm (P'.mem_integers_iff.mp
+    (P'.adjoin_le_integers_iff.mpr hxO _ (aeval_mem_adjoin_singleton k x)))
+    (not_lt.mp fun hlt ↦ ?_)
+  have hcrit := residue_mem_criticalValues (x := ⟨x, hxO⟩) (a := ⟨a, ha⟩) hd
+    (Subtype.ext (by
+      rw [← ValuationSubring.algebraMap_apply, ← aeval_algebraMap_apply,
+        ValuationSubring.algebraMap_apply]
+      exact hq.symm)) hlt
+  have hzero : IsLocalRing.residue P'.integers (aeval (⟨a, ha⟩ : P'.integers) r) = 0 := by
+    rw [← IsLocalRing.ResidueField.algebraMap_eq, ← aeval_algebraMap_apply,
+      IsLocalRing.ResidueField.algebraMap_eq]
+    exact hr _ _ hcrit
+  rw [residue_eq_zero_iff_valuation_lt_one, ← ValuationSubring.algebraMap_apply,
+    ← aeval_algebraMap_apply, ValuationSubring.algebraMap_apply] at hzero
+  have hra : aeval a r = algebraMap (RatFunc k) F (aeval RatFunc.X r) :=
+    aeval_algebraMap_apply (R := k) (B := F) RatFunc.X r
+  rw [hra, valuation_algebraMap_restrict k (RatFunc k) P', hr1, one_pow] at hzero
+  exact hzero.false
+
+end Place
+
+namespace IsAlgebraicBelyiPair
+
+variable [CharZero k] [FiniteDimensional (RatFunc k) F]
+
+/-- **Polynomials with critical values in `{0, 1}` are Belyi maps**: if `F = k(x)` over `k(t)`,
+where `t = q(x)` for a polynomial `q` whose critical values in every field extension of `k` lie in
+`{0, 1}`, then `F` is an algebraic Belyi pair. -/
+theorem of_criticalValues_subset (hx : k⟮x⟯ = ⊤)
+    (hq : algebraMap (RatFunc k) F RatFunc.X = aeval x q)
+    (hcrit : ∀ (L : Type v) [Field L] [Algebra k L], q.criticalValues L ⊆ {0, 1}) :
+    IsAlgebraicBelyiPair k F where
+  isIntegrallyClosedIn := by
+    have htr : Transcendental k (aeval x q) :=
+      hq ▸ (transcendental_algebraMap_iff (algebraMap (RatFunc k) F).injective).mpr
+        RatFunc.transcendental_X
+    replace htr := (transcendental_aeval_iff.mp htr).1
+    exact ((IntermediateField.equivOfEq hx).trans
+      IntermediateField.topEquiv).isIntegrallyClosedIn.mp htr.isIntegrallyClosedIn_adjoin
+  ramificationIdx_eq_one {P'} hP := by
+    simp only [Place.mem_zeroOneInfty_iff, not_or] at hP
+    refine Place.ramificationIdx_eq_one_of_aeval_eq hx hq
+      (fun h ↦ (natDegree_pos_of_aeval_eq hq).ne' (derivative_eq_zero.mp h)) (r := X * (X - 1))
+      (fun L _ _ c hc ↦ ?_) hP.2.2 ?_
+    · rcases hcrit L hc with rfl | rfl <;> simp
+    · have h0 := Place.ord_X_eq_zero_of_ne hP.1 hP.2.2
+      have h1 := Place.ord_X_sub_C_eq_zero_of_ne (1 : k) hP.2.1 hP.2.2
+      rw [map_one] at h1
+      have hX1 : (RatFunc.X : RatFunc k) - 1 ≠ 0 := fun h ↦
+        RatFunc.transcendental_X (K := k) (sub_eq_zero.mp h ▸ isAlgebraic_one)
+      rw [map_mul, map_sub, aeval_X, map_one, Place.valuation_eq_exp_neg_ord _
+        (mul_ne_zero RatFunc.X_ne_zero hX1), Place.ord_mul _ RatFunc.X_ne_zero hX1, h0, h1,
+        add_zero, neg_zero, WithZero.exp_zero]
+
+/-- **The Belyi polynomials are Belyi maps**: if `F = k(x)` over `k(t)`, where
+`t = B_{m,n}(x)` for the Belyi polynomial `B_{m,n}`, then `F` is an algebraic Belyi pair. -/
+theorem of_aeval_belyiPolynomial (hx : k⟮x⟯ = ⊤) {m n : ℕ}
+    (hq : algebraMap (RatFunc k) F RatFunc.X = aeval x (belyiPolynomial k m n)) :
+    IsAlgebraicBelyiPair k F :=
+  of_criticalValues_subset hx hq fun L _ _ ↦ criticalValues_belyiPolynomial_subset L m n
+
+end IsAlgebraicBelyiPair
+
+end TauCeti
