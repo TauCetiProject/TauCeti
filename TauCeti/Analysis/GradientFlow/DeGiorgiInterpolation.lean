@@ -29,7 +29,8 @@ with `W = deGiorgiInterpolant τ V` the variational interpolant. The sum is half
 defining curves of maximal slope. Passing to the limit as `τ → 0` in it is how
 Ambrosio–Gigli–Savaré show that generalized minimizing movements are curves of maximal slope.
 For that limit the variational interpolant has to stay close to the piecewise constant one, which
-is the distance estimate `d(U n, W t) ≤ d(U n, U (n + 1))` on `(n τ, (n + 1) τ]`.
+is the distance estimate `d(U n, W t) ≤ d(U n, U (n + 1))` on `(n τ, (n + 1) τ]`, valid when
+`V n τ = U (n + 1)`, `φ (U n) ≠ ⊤` and `φ (U (n + 1)) ≠ ⊥`.
 
 ## Main definitions
 
@@ -42,8 +43,8 @@ is the distance estimate `d(U n, W t) ≤ d(U n, U (n + 1))` on `(n τ, (n + 1) 
 * `TauCeti.exists_forall_mem_moreauYosidaResolvent_and_eq`: a selection `V` with
   `V n τ = U (n + 1)` exists as soon as the intermediate resolvents are nonempty.
 * `TauCeti.apply_deGiorgiInterpolant_le` and `TauCeti.edist_deGiorgiInterpolant_le`: on
-  `(n τ, (n + 1) τ]` the interpolant has energy at most `φ (U n)` and distance at most
-  `d(U n, U (n + 1))` from `U n`.
+  `(n τ, (n + 1) τ]` the interpolant has energy at most `φ (U n)`, and, when `V n τ = U (n + 1)`,
+  `φ (U n) ≠ ⊤` and `φ (U (n + 1)) ≠ ⊥`, distance at most `d(U n, U (n + 1))` from `U n`.
 * `TauCeti.apply_add_sum_add_lintegral_descendingSlope_le_of_forall_mem_moreauYosidaResolvent`:
   the discrete energy–dissipation inequality along a minimizing movement sequence.
 
