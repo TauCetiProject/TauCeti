@@ -73,12 +73,16 @@ noncomputable def reindex : ShellLieAlgebra B ≃ₗ[ℤ] ShellLieAlgebra B' :=
       (Sum.elim 1 fun b => inversionSign B e ((normTwoShellCongr he).symm b)))
     (e.sumCongr (normTwoShellCongr he))
 
+/-- The relabelling rescales the root vector `x_a` by the inversion sign `σ(a)` and moves it to the
+relabelled root: `x_a ↦ σ(a) x_(a ∘ e.symm)`. -/
 @[simp]
 theorem reindex_root (a : B.normTwoShell) :
     reindex e he (root B a) = inversionSign B e a • root B' (normTwoShellCongr he a) := by
   rw [← basis_inr, reindex, Basis.equiv_apply, Basis.unitsSMul_apply]
   simp [Function.comp_assoc]
 
+/-- The relabelling sends the Cartan vector `H_h` to the relabelled Cartan vector
+`H_(h ∘ e.symm)`, with no sign. -/
 @[simp]
 theorem reindex_cartan (h : I → ℤ) : reindex e he (cartan B h) = cartan B' (h ∘ e.symm) := by
   classical
@@ -130,8 +134,8 @@ theorem reindex_rootBracket (hB : B.IsSymm) (a b : B.normTwoShell) :
   · have hm' := hmem.2 hm
     have hroot : normTwoShellCongr he ⟨_, hm⟩ = ⟨_, hm'⟩ :=
       Subtype.ext <| by rw [coe_normTwoShellCongr_apply]; exact hsum.symm
-    rw [rootBracket_of_mem hm, rootBracket_of_mem hm', Units.smul_def, map_zsmul, ← Units.smul_def,
-      reindex_root, hroot, smul_smul, smul_smul]
+    rw [rootBracket_of_mem hm, rootBracket_of_mem hm', map_zsmul_unit, reindex_root, hroot,
+      smul_smul, smul_smul]
     congr 1
     rw [coe_normTwoShellCongr_apply, coe_normTwoShellCongr_apply,
       mul_comm _ (orderedSignForm _ _ _).negOnePow]
@@ -140,8 +144,8 @@ theorem reindex_rootBracket (hB : B.IsSymm) (a b : B.normTwoShell) :
   · have hz' : (normTwoShellCongr he a : J → ℤ) + normTwoShellCongr he b = 0 := by
       rw [hsum, hz, Pi.zero_comp]
     rw [hz, inversionSign_zero, mul_one] at key
-    rw [rootBracket_of_add_eq_zero hz, rootBracket_of_add_eq_zero hz', Units.smul_def, map_zsmul,
-      ← Units.smul_def, reindex_cartan, smul_smul]
+    rw [rootBracket_of_add_eq_zero hz, rootBracket_of_add_eq_zero hz', map_zsmul_unit,
+      reindex_cartan, smul_smul]
     simp only [coe_normTwoShellCongr_apply]
     rw [key, mul_comm]
   · have hz' : (normTwoShellCongr he a : J → ℤ) + normTwoShellCongr he b ≠ 0 := by
@@ -195,9 +199,8 @@ theorem reindex_trans {B'' : Matrix K K ℤ} (f : J ≃ K) (hB : B.IsSymm) (hf :
   · classical
     rw [basis_inl, LinearEquiv.trans_apply, reindex_cartan, reindex_cartan, reindex_cartan]
     rfl
-  · rw [basis_inr, LinearEquiv.trans_apply, reindex_root, Units.smul_def, map_zsmul,
-      ← Units.smul_def, reindex_root, reindex_root, smul_smul, coe_normTwoShellCongr_apply,
-      inversionSign_trans B e hB f]
+  · rw [basis_inr, LinearEquiv.trans_apply, reindex_root, map_zsmul_unit, reindex_root,
+      reindex_root, smul_smul, coe_normTwoShellCongr_apply, inversionSign_trans B e hB f]
     congr 2
     apply Subtype.ext
     rw [coe_normTwoShellCongr_apply, coe_normTwoShellCongr_apply, coe_normTwoShellCongr_apply]
