@@ -45,6 +45,8 @@ nonzero exactly in the cases `a + b ∈ Φ` and `a = -b` isolated here.
 ## Main definitions
 
 * `Matrix.normTwoShell`: the vectors of norm two of an integer Gram matrix.
+* `Matrix.normTwoShellCongr`: the bijection of norm-two shells induced by a relabelling of the
+  vertices.
 
 ## Main results
 
@@ -278,5 +280,49 @@ theorem normTwoShell_nonneg_induction [DecidableEq I] (hB : B.PosDef) (hdiag : �
     rwa [sub_add_cancel] at this
 
 end PosDef
+
+section Reindex
+
+variable {J : Type*} [Fintype J] (e : I ≃ J)
+
+/-- **Relabelling the vertices is an isometry**: for a relabelling `e : I ≃ J` of the indices of a
+square matrix `M`, the vectors `u ∘ e.symm` and `v ∘ e.symm` pair under `M.reindex e e` as `u`
+and `v` do under `M`. -/
+theorem comp_equiv_symm_dotProduct_reindex_mulVec {α : Type*} [NonUnitalNonAssocSemiring α]
+    (M : Matrix I I α) (u v : I → α) :
+    u ∘ e.symm ⬝ᵥ M.reindex e e *ᵥ (v ∘ e.symm) = u ⬝ᵥ M *ᵥ v := by
+  simp [submatrix_mulVec_equiv, Function.comp_assoc]
+
+/-- A relabelled vector lies in the norm-two shell of the relabelled matrix exactly when the vector
+lies in the norm-two shell of the matrix. -/
+theorem comp_equiv_symm_mem_normTwoShell_reindex_iff :
+    a ∘ e.symm ∈ (B.reindex e e).normTwoShell ↔ a ∈ B.normTwoShell := by
+  rw [mem_normTwoShell, mem_normTwoShell, comp_equiv_symm_dotProduct_reindex_mulVec]
+
+variable {e} {B' : Matrix J J ℤ}
+
+/-- **The norm-two shell of a relabelled Gram matrix**: for a relabelling `e : I ≃ J` of the
+vertices of `B` with `B.reindex e e = B'`, the bijection `a ↦ a ∘ e.symm` from the norm-two
+shell of `B` to that of `B'`. -/
+def normTwoShellCongr (he : B.reindex e e = B') : B.normTwoShell ≃ B'.normTwoShell :=
+  (e.arrowCongr (Equiv.refl ℤ)).subtypeEquiv fun a => by
+    have ha : e.arrowCongr (Equiv.refl ℤ) a = a ∘ e.symm := by
+      ext j
+      simp
+    rw [ha, ← he, comp_equiv_symm_mem_normTwoShell_reindex_iff]
+
+@[simp]
+theorem coe_normTwoShellCongr_apply (he : B.reindex e e = B') (a : B.normTwoShell) :
+    (normTwoShellCongr he a : J → ℤ) = a ∘ e.symm := by
+  ext j
+  simp [normTwoShellCongr]
+
+@[simp]
+theorem coe_normTwoShellCongr_symm_apply (he : B.reindex e e = B') (b : B'.normTwoShell) :
+    ((normTwoShellCongr he).symm b : I → ℤ) = b ∘ e := by
+  ext i
+  simp [normTwoShellCongr]
+
+end Reindex
 
 end Matrix
