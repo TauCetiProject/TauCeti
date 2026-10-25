@@ -50,7 +50,7 @@ depressed specialization of that formula is used to compare a quartic with its c
   written against a numbering `r : Fin f.natDegree → L` of its root multiset over an extension.
 * `TauCeti.discrSqrt`, `TauCeti.discrSqrt_ne_zero`, `Polynomial.Monic.discrSqrt_sq`: the product
   of the differences of a numbering of the distinct roots, its nonvanishing, and the fact that
-  its square is the discriminant for a monic separable polynomial.
+  its square is the discriminant for a monic polynomial with such a numbering.
 * `Polynomial.Monic.prod_roots_eval_derivative`: the product of the derivative over the root
   multiset, which is the discriminant up to the same sign. This is the shape in which the
   discriminant of a minimal polynomial is a norm.
@@ -492,7 +492,7 @@ variable {F : Type*} [CommRing F] {E : Type*} [CommRing E] [IsDomain E] [Algebra
 /-- The product `∏_{i < j} (rᵢ - rⱼ)` of the differences of the roots of `f` in `E`, taken along a
 numbering `e` of the root set.
 
-For monic separable `f` this is a square root of the discriminant, by
+For monic `f` this is a square root of the discriminant, by
 `Polynomial.Monic.discrSqrt_sq`. It is only *a* square root: `TauCeti.discrSqrt_trans` shows that
 changing the numbering by an odd permutation changes the sign. The root set carries no order, so
 the numbering is an explicit argument and is never fixed globally. -/
@@ -571,13 +571,17 @@ section NonmonicField
 
 variable {F : Type*} [Field F] {f : F[X]}
 
-/-- For a separable polynomial, the discriminant is a square in the base field exactly when the
-product of the root differences in an extension domain comes from the base field. This is the
-nonmonic analogue of `Polynomial.Monic.isSquare_discr_iff_mem_range`. -/
+/-- Given a degree-sized numbering of the root set, the discriminant is a square in the base
+field exactly when the product of root differences in an extension domain comes from the base
+field. This is the nonmonic analogue of `Polynomial.Monic.isSquare_discr_iff_mem_range`. -/
 theorem isSquare_discr_iff_mem_range {E : Type*} [CommRing E] [IsDomain E] [Algebra F E]
-    (hsep : f.Separable) (e : Fin f.natDegree ≃ f.rootSet E) :
+    (e : Fin f.natDegree ≃ f.rootSet E) :
     IsSquare f.discr ↔ discrSqrt e ∈ Set.range (algebraMap F E) := by
-  have hf0 : f ≠ 0 := hsep.ne_zero
+  by_cases hf0 : f = 0
+  · subst f
+    have hdiscr : (0 : F[X]).discr = 1 := by simpa using discr_C (0 : F)
+    have : IsEmpty (Fin (0 : F[X]).natDegree) := by simp
+    simp [discrSqrt, hdiscr, Finset.prod_of_isEmpty]
   have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf0
   have hlcE : algebraMap F E f.leadingCoeff ≠ 0 :=
     (map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc

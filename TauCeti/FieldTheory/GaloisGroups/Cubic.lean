@@ -78,7 +78,7 @@ private theorem HasGaloisLabel.isSquare_discr_iff_three {j : TransitiveGroupInde
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
   let _ : Fact ((f.map (algebraMap F f.SplittingField)).Splits) := ⟨SplittingField.splits f⟩
   obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
-  exact (isSquare_discr_iff_mem_range h.separable e.symm).trans <|
+  exact (isSquare_discr_iff_mem_range e.symm).trans <|
     (discrSqrt_mem_range_iff hchar e.symm).trans h.range_le_alternatingGroup_iff
 
 variable (hchar : ringChar F ≠ 2)
