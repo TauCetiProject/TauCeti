@@ -165,7 +165,8 @@ theorem subsingleton_compactlySupportedDeRhamCohomology_zero [PreconnectedSpace 
     [NoncompactSpace M] : Subsingleton (compactlySupportedDeRhamCohomology I M 0) := by
   refine subsingleton_of_forall_eq 0 fun c ↦ ?_
   obtain ⟨φ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective I 0 c
-  rw [show φ = 0 from Subtype.ext (eq_zero_of_mem_compactlySupportedClosedForms_zero I φ.2),
-    map_zero]
+  -- The closed-form representative vanishes because its underlying form does.
+  have hφ : φ = 0 := Subtype.ext (eq_zero_of_mem_compactlySupportedClosedForms_zero I φ.2)
+  rw [hφ, map_zero]
 
 end TauCeti
