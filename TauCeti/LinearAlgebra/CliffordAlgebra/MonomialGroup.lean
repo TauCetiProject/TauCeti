@@ -485,18 +485,20 @@ omit [Invertible (2 : R)] in
 private lemma monomialGroupRel_one_right (x : (CliffordAlgebra Q)ˣ) : monomialGroupRel x 1 :=
   Or.inl (Commute.one_right x)
 
+omit [Invertible (2 : R)] [LinearOrder I] in
 /-- Any two signed monomials commute or anticommute, without a normalization assumption on their
 generator squares. -/
-theorem monomialGroup_mul_comm_or_neg
-    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (c u : monomialGroup Q b) :
+lemma monomialGroup_mul_comm_or_neg
+    (v : I → M) (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
+    (c u : monomialGroup Q v) :
     (c : (CliffordAlgebra Q)ˣ) * u = (u : (CliffordAlgebra Q)ˣ) * c ∨
       (c : (CliffordAlgebra Q)ˣ) * u = -(u : (CliffordAlgebra Q)ˣ) * c := by
   let S : Set (CliffordAlgebra Q)ˣ := {x | (x : CliffordAlgebra Q) = -1 ∨
-    ∃ i, (x : CliffordAlgebra Q) = ι Q (b i)}
+    ∃ i, (x : CliffordAlgebra Q) = ι Q (v i)}
   have hgen : ∀ {x y : (CliffordAlgebra Q)ˣ}, x ∈ S → y ∈ S → monomialGroupRel x y := by
     intro x y hx hy
-    change (x : CliffordAlgebra Q) = -1 ∨ ∃ i, (x : CliffordAlgebra Q) = ι Q (b i) at hx
-    change (y : CliffordAlgebra Q) = -1 ∨ ∃ i, (y : CliffordAlgebra Q) = ι Q (b i) at hy
+    change (x : CliffordAlgebra Q) = -1 ∨ ∃ i, (x : CliffordAlgebra Q) = ι Q (v i) at hx
+    change (y : CliffordAlgebra Q) = -1 ∨ ∃ i, (y : CliffordAlgebra Q) = ι Q (v i) at hy
     rcases hx with hx | ⟨i, hx⟩ <;> rcases hy with hy | ⟨j, hy⟩
     · left
       apply Units.ext
@@ -514,8 +516,7 @@ theorem monomialGroup_mul_comm_or_neg
         simp [hx, hy]
       · right
         apply Units.ext
-        simpa [hx, hy] using
-          (ι_mul_ι_comm_of_isOrtho (QuadraticMap.associated_isOrtho.mp (hb hij)))
+        simpa [hx, hy] using ι_mul_ι_comm_of_isOrtho (hv i j hij)
   have hrel : ∀ {x y : (CliffordAlgebra Q)ˣ}, x ∈ Subgroup.closure S →
       y ∈ Subgroup.closure S → monomialGroupRel x y := by
     intro x y hx hy
@@ -539,25 +540,26 @@ theorem monomialGroup_mul_comm_or_neg
   · exact Or.inl h
   · exact Or.inr h
 
+omit [Invertible (2 : R)] [LinearOrder I] in
 /-- Every conjugate of a signed Clifford monomial is itself or its negative. -/
-theorem monomialGroup_val_eq_or_neg_of_isConj
-    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
-    {u v : monomialGroup Q b} (h : IsConj u v) :
-  (v : (CliffordAlgebra Q)ˣ) = (u : (CliffordAlgebra Q)ˣ) ∨
-      (v : (CliffordAlgebra Q)ˣ) = -(u : (CliffordAlgebra Q)ˣ) := by
+lemma monomialGroup_val_eq_or_neg_of_isConj
+    (v : I → M) (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
+    {u w : monomialGroup Q v} (h : IsConj u w) :
+  (w : (CliffordAlgebra Q)ˣ) = (u : (CliffordAlgebra Q)ˣ) ∨
+      (w : (CliffordAlgebra Q)ˣ) = -(u : (CliffordAlgebra Q)ˣ) := by
   obtain ⟨c, hc⟩ := isConj_iff.mp h
-  have hmul := congrArg (fun z : monomialGroup Q b => (z : (CliffordAlgebra Q)ˣ) * c) hc
-  have hcv : (c : (CliffordAlgebra Q)ˣ) * u = (v : (CliffordAlgebra Q)ˣ) * c := by
+  have hmul := congrArg (fun z : monomialGroup Q v => (z : (CliffordAlgebra Q)ˣ) * c) hc
+  have hcv : (c : (CliffordAlgebra Q)ˣ) * u = (w : (CliffordAlgebra Q)ˣ) * c := by
     simpa [mul_assoc] using hmul
-  rcases monomialGroup_mul_comm_or_neg hb c u with hcu | hcu
+  rcases monomialGroup_mul_comm_or_neg v hv c u with hcu | hcu
   · left
-    have hcancel : (v : (CliffordAlgebra Q)ˣ) * c = (u : (CliffordAlgebra Q)ˣ) * c :=
+    have hcancel : (w : (CliffordAlgebra Q)ˣ) * c = (u : (CliffordAlgebra Q)ˣ) * c :=
       hcv.symm.trans hcu
     exact mul_right_cancel_iff.mp hcancel
   · right
-    have hcancel : (v : (CliffordAlgebra Q)ˣ) * c = (-(u : (CliffordAlgebra Q)ˣ)) * c := by
+    have hcancel : (w : (CliffordAlgebra Q)ˣ) * c = (-(u : (CliffordAlgebra Q)ˣ)) * c := by
       calc
-        (v : (CliffordAlgebra Q)ˣ) * c = (c : (CliffordAlgebra Q)ˣ) * u := hcv.symm
+        (w : (CliffordAlgebra Q)ˣ) * c = (c : (CliffordAlgebra Q)ˣ) * u := hcv.symm
         _ = (-(u : (CliffordAlgebra Q)ˣ)) * c := hcu
     exact mul_right_cancel_iff.mp hcancel
 
