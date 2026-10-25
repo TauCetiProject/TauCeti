@@ -40,7 +40,7 @@ noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
 
-namespace TauCeti.NumberField.QuadraticForm
+namespace TauCeti.NumberField
 
 variable (K : Type*) [Field K] [NumberField K]
 
@@ -187,4 +187,4 @@ theorem wittAtComplexEmbedding_eq_of_globalToLocalWitt_eq {x y : WittRing K}
   have hc := (wittAtComplexEmbedding_eq_zero_iff (x - y) w).mpr hdim
   simpa only [map_sub, sub_eq_zero] using hc
 
-end TauCeti.NumberField.QuadraticForm
+end TauCeti.NumberField
