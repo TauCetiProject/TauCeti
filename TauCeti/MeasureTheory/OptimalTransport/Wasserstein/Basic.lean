@@ -178,8 +178,12 @@ variable [EDist X] {μ ν : Measure X} {π : Measure (X × X)}
 and `ν`, of the `L^p (π)` seminorm of the ground extended distance `fun z ↦ edist z.1 z.2`.
 
 It is `∞` when `μ` and `ν` have no coupling at all. For a jointly measurable ground distance the
-objective at `p = ∞` is the `π`-essential supremum, by Mathlib's `MeasureTheory.eLpNorm`
-convention; without measurability that convention makes every objective `∞`. -/
+objective at `p = ∞` is the `π`-essential supremum. Mathlib's `MeasureTheory.eLpNorm` makes the
+objective of a coupling `π` equal to `∞` when the ground distance is not almost everywhere
+strongly measurable for `π`. Without joint measurability that depends on `π`: when points are
+measurable, every function is almost everywhere constant for a Dirac coupling, and for `p ≠ 0` its
+objective is the distance between the two points (`TauCeti.wassersteinEDist_dirac_dirac`, which
+assumes no measurability of the distance). -/
 def wassersteinEDist (p : ℝ≥0∞) (μ ν : Measure X) : ℝ≥0∞ :=
   ⨅ (π : Measure (X × X)) (_ : IsCoupling π μ ν), eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π
 
