@@ -14,6 +14,7 @@ import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.BoundedVariation.Ball
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Normed.Module.LipschitzHyperplane
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
@@ -63,28 +64,6 @@ open MeasureTheory Metric Set Filter TopologicalSpace TestFunction
 open scoped ENNReal Distributions Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- If the normal component `f ∘ χ` of a smooth compactly supported vector field `χ` vanishes on
-the hyperplane `{f = a}`, then it is bounded by a multiple of `|f x - a|`. -/
-private theorem exists_abs_le_mul_abs_sub (f : StrongDual ℝ E) (a : ℝ) {χ : E → E}
-    (hχ : ContDiff ℝ 1 χ) (hχc : HasCompactSupport χ) (hχ0 : ∀ x, f x = a → f (χ x) = 0) :
-    ∃ C, ∀ x, |f (χ x)| ≤ C * |f x - a| := by
-  by_cases hf : f = 0
-  · exact ⟨0, fun x => by simp [hf]⟩
-  obtain ⟨v₀, hv₀⟩ : ∃ v₀, f v₀ ≠ 0 := by
-    by_contra! h
-    exact hf (ContinuousLinearMap.ext h)
-  set v := (f v₀)⁻¹ • v₀
-  have hv : f v = 1 := by simp [v, hv₀]
-  obtain ⟨L, hL⟩ := ContDiff.lipschitzWith_of_hasCompactSupport
-    (hχc.comp_left (g := f) f.map_zero) (f.contDiff.comp hχ) one_ne_zero
-  refine ⟨L * ‖v‖, fun x => ?_⟩
-  -- The point `x - (f x - a) • v` lies on the hyperplane, at distance `|f x - a| ‖v‖` from `x`.
-  have hP : f (x - (f x - a) • v) = a := by simp [hv]
-  have h := hL.dist_le_mul x (x - (f x - a) • v)
-  simp only [Function.comp_apply, hχ0 _ hP, sub_zero, dist_eq_norm,
-    sub_sub_cancel, norm_smul, Real.norm_eq_abs] at h
-  linarith [mul_comm |f x - a| ‖v‖]
 
 /-- The slab error term of the gluing: if `|y| ≤ C |t|` then `ψ₀'((n + 1) t) (n + 1) y` is bounded
 by `M C`, where `M` bounds the derivative of the smooth transition `ψ₀`, supported in `[0, 1]`. -/
@@ -239,8 +218,20 @@ theorem ofReal_setIntegral_add_setIntegral_le_perimeter [OpensMeasurableSpace E]
       ← divergenceCLM_apply, (hσd n x).fderiv]
     simp [smul_eq_mul]
   -- The normal component of `χ` is `O (|f - a|)`, and the derivative of `ψ₀` is bounded.
-  obtain ⟨C, hC⟩ := exists_abs_le_mul_abs_sub f a (χ.contDiff.of_le (by simp))
-    χ.hasCompactSupport fun x hx => by simp [χ, hφψ x hx]
+  obtain ⟨C, hC⟩ : ∃ C, ∀ x, |f (χ x)| ≤ C * |f x - a| := by
+    by_cases hf : f = 0
+    · exact ⟨0, fun x => by simp [hf]⟩
+    obtain ⟨v, hv⟩ : ∃ v, f v = 1 := by
+      obtain ⟨v₀, hv₀⟩ : ∃ v₀, f v₀ ≠ 0 := by
+        by_contra! h
+        exact hf (ContinuousLinearMap.ext h)
+      exact ⟨(f v₀)⁻¹ • v₀, by simp [hv₀]⟩
+    obtain ⟨L, hL⟩ := ContDiff.lipschitzWith_of_hasCompactSupport
+      (χ.hasCompactSupport.comp_left (g := f) f.map_zero)
+      (f.contDiff.comp (χ.contDiff.of_le (by simp))) one_ne_zero
+    exact ⟨L * ‖v‖, fun x => by
+      simpa using hL.norm_le_mul_abs_sub_of_eq_zero (f := f) hv
+        (fun x hx => by simp [χ, hφψ x hx]) x⟩
   obtain ⟨M, hM⟩ := Continuous.bounded_above_of_compact_support
     ((Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl)
     Real.smoothTransition.hasCompactSupport_deriv
@@ -321,8 +312,9 @@ theorem ofReal_setIntegral_add_setIntegral_le_perimeter [OpensMeasurableSpace E]
 /-- **Cutting by a half-space does not increase the perimeter.** For a null-measurable set `s` of
 finite measure and a closed half-space `{f ≤ c}`, `P(s ∩ {f ≤ c}) ≤ P(s)`.
 
-The finiteness of `μ s` cannot be dropped: the whole space has perimeter zero, while a half-space
-has infinite perimeter. -/
+The finiteness of `μ s` cannot be dropped: for an additive Haar measure the whole space has
+perimeter zero, while a half-space `{f ≤ c}` with `f ≠ 0` has positive perimeter (infinite in
+dimension at least two). -/
 theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ]
     (f : StrongDual ℝ E) (c : ℝ) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
     perimeter μ ⊤ (s ∩ {x | f x ≤ c}) ≤ perimeter μ ⊤ s := by
@@ -378,8 +370,9 @@ theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E] [IsFiniteMeasureOn
 contained in a null-measurable set `L` of finite measure, then `P(K) ≤ P(L)`. In particular the
 perimeter is monotone on bounded convex sets.
 
-The finiteness of `μ L` cannot be dropped: a half-space is convex and has infinite perimeter,
-while the whole space has perimeter zero. -/
+The finiteness of `μ L` cannot be dropped: a half-space `{f ≤ c}` with `f ≠ 0` is convex and has
+positive perimeter (infinite in dimension at least two), while the whole space has perimeter
+zero. -/
 theorem _root_.Convex.perimeter_le_of_subset [BorelSpace E] [μ.IsAddHaarMeasure] {K L : Set E}
     (hK : Convex ℝ K) (hKL : K ⊆ L) (hL : NullMeasurableSet L μ) (hμL : μ L ≠ ∞) :
     perimeter μ ⊤ K ≤ perimeter μ ⊤ L := by
