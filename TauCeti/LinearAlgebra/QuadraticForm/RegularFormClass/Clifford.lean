@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Brauer
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.BaseChange
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting
 import TauCeti.Algebra.Quaternion.Binary
@@ -103,6 +104,8 @@ invariant, so it depends only on the Witt class.
   when `x` has even rank and trivial signed discriminant.
 * `TauCeti.RegularFormClass.cliffordInvariant_nsmul_hyperbolicClass_add`: adding hyperbolic planes
   does not change the Clifford invariant.
+* `TauCeti.RegularFormClass.cliffordInvariant_baseChange`: the Clifford invariant of a scalar
+  extension is the scalar extension of the Clifford invariant.
 
 ## References
 
@@ -693,6 +696,22 @@ theorem cliffordInvariant_nsmul_hyperbolicClass_add (m : ℕ) (x : RegularFormCl
     rw [succ_nsmul', add_assoc, cliffordInvariant_add_of_signedDiscr_eq_zero
       (by rw [rank_hyperbolicClass]; exact even_two) signedDiscr_hyperbolicClass,
       cliffordInvariant_hyperbolicClass, one_mul, ih]
+
+/-! ### Scalar extension -/
+
+section BaseChange
+
+variable {L : Type u} [Field L] [Algebra K L] [Invertible (2 : L)]
+
+/-- **The Clifford invariant commutes with scalar extension**: the Clifford invariant of the
+extension of a class to `L` is the image of its Clifford invariant in the Brauer group of `L`. -/
+@[simp]
+theorem cliffordInvariant_baseChange (x : RegularFormClass K) :
+    cliffordInvariant (baseChange L x) = BrauerGroup.baseChange K L (cliffordInvariant x) := by
+  rw [cliffordInvariant_eq_hasseInvariant_mul, cliffordInvariant_eq_hasseInvariant_mul]
+  simp [RingHom.squareClassMap_apply]
+
+end BaseChange
 
 end RegularFormClass
 

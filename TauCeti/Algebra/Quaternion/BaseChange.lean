@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Quaternion
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.Algebra.BrauerGroup.BaseChange
 public import TauCeti.Algebra.Quaternion.BrauerClass
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 
 /-!
@@ -24,6 +25,12 @@ The formula `baseChange_tmul` sends a pure tensor to the scalar multiple of the 
 image. The inverse formula `baseChange_symm_mk` expands a quaternion in the basis `1, i, j, k`.
 For the two-parameter notation, `baseChangeTwoParams` gives the equivalence directly with
 `ℍ[S,algebraMap R S a,algebraMap R S b]`.
+
+Over fields in which `2` is invertible, the Brauer class of a quaternion algebra is therefore
+carried by scalar extension to the class with the same parameters
+(`TauCeti.BrauerGroup.baseChange_quaternionClass`), and the quaternion pairing on square classes
+is carried to the pairing of the pushed-forward square classes
+(`TauCeti.BrauerGroup.baseChange_quaternionClassOnSquareClasses`).
 -/
 
 public section
@@ -193,5 +200,17 @@ theorem baseChange_quaternionClass (a b : Kˣ) :
         (Units.map (algebraMap K L).toMonoidHom b) := by
   rw [quaternionClass_def, baseChange_mk, quaternionClass_def]
   exact mk_eq_mk_of_algEquiv (QuaternionAlgebra.baseChangeTwoParams K L a b)
+
+/-- **Scalar extension of the quaternion pairing on square classes**: the pairing of two square
+classes is carried to the pairing of their images in the square-class group of the extension. -/
+@[simp]
+theorem baseChange_quaternionClassOnSquareClasses (x y : SquareClassGroup K) :
+    baseChange K L (quaternionClassOnSquareClasses x y) =
+      quaternionClassOnSquareClasses ((algebraMap K L).squareClassMap x)
+        ((algebraMap K L).squareClassMap y) := by
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y,
+    quaternionClassOnSquareClasses_squareClass, RingHom.squareClassMap_apply,
+    RingHom.squareClassMap_apply, quaternionClassOnSquareClasses_squareClass,
+    baseChange_quaternionClass]
 
 end TauCeti.BrauerGroup

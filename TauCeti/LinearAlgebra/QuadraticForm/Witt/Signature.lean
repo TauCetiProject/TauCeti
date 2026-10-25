@@ -116,4 +116,11 @@ noncomputable def WittRing.equivInt : WittRing K ≃+* ℤ :=
 theorem WittRing.equivInt_apply (x : WittRing K) : equivInt x = signature x :=
   RingEquiv.ofBijective_apply _ _ x
 
+/-- **Witt classes over a real closed field.** Over an ordered real closed field, two regular-form
+classes have the same Witt class exactly when their signatures agree. -/
+theorem wittClass_eq_iff_signature_eq {x y : RegularFormClass K} :
+    wittClass x = wittClass y ↔ RegularFormClass.signature x = RegularFormClass.signature y := by
+  rw [← WittRing.equivInt.injective.eq_iff, WittRing.equivInt_apply, WittRing.equivInt_apply,
+    WittRing.signature_wittClass, WittRing.signature_wittClass]
+
 end TauCeti
