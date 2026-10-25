@@ -219,6 +219,13 @@ theorem homClass_eq_zero_iff {X Y : C} {f : homModule (R := R) X Y}
   rw [← 𝒞.homClass_zero X Y, 𝒞.homClass_eq_iff]
   simp only [sub_zero]
 
+/-- A closed degree-zero morphism represents zero exactly when it is the differential of some
+morphism, of any degree. -/
+theorem homClass_eq_zero_iff_mem_range {X Y : C} {f : homModule (R := R) X Y}
+    (hf : f ∈ 𝒞.homCyclesZero X Y) :
+    𝒞.homClass f hf = 0 ↔ f ∈ LinearMap.range (𝒞.homDifferential X Y) := by
+  rw [← 𝒞.homClass_zero X Y, 𝒞.homClass_eq_iff_sub_mem_range, sub_zero]
+
 /-- The composite of two closed degree-zero morphisms is closed of degree zero. -/
 theorem comp_mem_homCyclesZero {X Y Z : C} {g : homModule (R := R) Y Z}
     {f : homModule (R := R) X Y} (hg : g ∈ 𝒞.homCyclesZero Y Z)

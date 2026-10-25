@@ -45,9 +45,10 @@ statements that use it.
 
 * `TauCeti.GradedLinearQuiver.mem_totalGrading_piece_iff`: an element of the total module has
   degree `n` exactly when each of its components has.
-* `TauCeti.GradedLinearQuiver.totalHom_induction` and
-  `TauCeti.GradedLinearQuiver.totalGrading_piece_induction`: induction on the total module, and on
-  its elements of a given degree, from the hom modules.
+* `TauCeti.GradedLinearQuiver.totalHom_induction`,
+  `TauCeti.GradedLinearQuiver.totalHom_induction_homProjection` and
+  `TauCeti.GradedLinearQuiver.totalGrading_piece_induction`: induction on the total module, on the
+  components of a single element, and on the elements of a given degree, from the hom modules.
 * `TauCeti.GradedLinearQuiver.homInclusion_homProjection_of_mem_range`: an element of the image
   of a hom module is recovered from its component there.
 * `TauCeti.GradedLinearQuiver.multilinearMap_apply_mem_of_mem_totalGrading_piece`: on elements of
@@ -150,6 +151,17 @@ theorem totalHom_induction {P : TotalHom R C → Prop} (zero : P 0)
   | of a f =>
     have h := homInclusion a.1 a.2 f
     rwa [homInclusion_eq_lof, DirectSum.lof_eq_of] at h
+
+/-- **Componentwise induction on the total module of morphisms**: a property closed under sums
+holds on an element once it holds on the inclusion of each of its components. -/
+theorem totalHom_induction_homProjection {P : TotalHom R C → Prop} (zero : P 0)
+    (add : ∀ x y, P x → P y → P (x + y)) (x : TotalHom R C)
+    (homInclusion : ∀ X Y : C, P (homInclusion X Y (homProjection X Y x))) : P x := by
+  classical
+  rw [← DirectSum.sum_support_of x]
+  refine Finset.sum_induction _ P add zero fun a _ ↦ ?_
+  have h := homInclusion a.1 a.2
+  rwa [homProjection_apply, homInclusion_eq_lof, DirectSum.lof_eq_of] at h
 
 /-- An element of the image of the morphisms `X ⟶ Y` is the inclusion of its component there. -/
 theorem homInclusion_homProjection_of_mem_range {X Y : C} {x : TotalHom R C}
