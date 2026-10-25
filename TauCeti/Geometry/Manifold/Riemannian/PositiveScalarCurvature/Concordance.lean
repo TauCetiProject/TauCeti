@@ -105,7 +105,8 @@ public section
 open Bundle Set Topology Filter
 open TauCeti.Manifold (tangentSpaceProdEquiv tangentSpaceProdEquiv_apply mfderiv_prodMap_apply
   tangentSpaceProdEquiv_mfderiv_prodMap_id isInvertible_mfderiv_prodMap_id
-  isInvertible_mfderiv_prodMap_id_right isInvertible_mfderiv_prodMap_id_subtypeVal_Icc)
+  isInvertible_mfderiv_prodMap_id_right isInvertible_mfderiv_prodMap_id_subtypeVal_Icc
+  contMDiff_prod_right_comm isInvertible_mfderiv_prod_right_comm mfderiv_prod_right_comm_apply)
 open scoped ContDiff Manifold
 
 noncomputable section
@@ -952,68 +953,22 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimension
   {H'' : Type*} [TopologicalSpace H''] {J : ModelWithCorners ℝ F H''}
   {N : Type*} [TopologicalSpace N] [T2Space N] [ChartedSpace H'' N] [IsManifold J ∞ N]
 
-/-- The map `((x, y), t) ↦ ((x, t), y)`, which moves the cylinder coordinate of `(M × N) × ℝ` to
-the factor `M`. -/
-private def swapTime (q : (M × N) × ℝ) : (M × ℝ) × N :=
-  ((q.1.1, q.2), q.1.2)
-
-omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F] [T2Space N]
-  [IsManifold J ∞ N] in
-private theorem contMDiff_swapTime : ContMDiff ((I.prod J).prod 𝓘(ℝ)) ((I.prod 𝓘(ℝ)).prod J)
-    (∞ + 1) (swapTime (M := M) (N := N)) :=
-  (contMDiff_fst.fst.prodMk contMDiff_snd).prodMk contMDiff_fst.snd
-
-omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F] [T2Space N]
-  [IsManifold J ∞ N] in
-private theorem hasMFDerivAt_swapTime (q : (M × N) × ℝ) :
-    HasMFDerivAt ((I.prod J).prod 𝓘(ℝ)) ((I.prod 𝓘(ℝ)).prod J) swapTime q
-      ((((ContinuousLinearMap.fst ℝ E F).comp (ContinuousLinearMap.fst ℝ (E × F) ℝ)).prod
-        (ContinuousLinearMap.snd ℝ (E × F) ℝ)).prod
-        ((ContinuousLinearMap.snd ℝ E F).comp (ContinuousLinearMap.fst ℝ (E × F) ℝ))) :=
-  (((hasMFDerivAt_fst q.1).comp q (hasMFDerivAt_fst q)).prodMk (hasMFDerivAt_snd q)).prodMk
-    ((hasMFDerivAt_snd q.1).comp q (hasMFDerivAt_fst q))
-
-omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F] [T2Space N]
-  [IsManifold J ∞ N] in
-private theorem isInvertible_mfderiv_swapTime (q : (M × N) × ℝ) :
-    (mfderiv ((I.prod J).prod 𝓘(ℝ)) ((I.prod 𝓘(ℝ)).prod J) swapTime q).IsInvertible := by
-  rw [(hasMFDerivAt_swapTime q).mfderiv]
-  exact ⟨ContinuousLinearEquiv.equivOfInverse
-    ((((ContinuousLinearMap.fst ℝ E F).comp (ContinuousLinearMap.fst ℝ (E × F) ℝ)).prod
-        (ContinuousLinearMap.snd ℝ (E × F) ℝ)).prod
-        ((ContinuousLinearMap.snd ℝ E F).comp (ContinuousLinearMap.fst ℝ (E × F) ℝ)))
-    ((((ContinuousLinearMap.fst ℝ E ℝ).comp (ContinuousLinearMap.fst ℝ (E × ℝ) F)).prod
-      (ContinuousLinearMap.snd ℝ (E × ℝ) F)).prod
-      ((ContinuousLinearMap.snd ℝ E ℝ).comp (ContinuousLinearMap.fst ℝ (E × ℝ) F)))
-    (fun _ ↦ rfl) (fun _ ↦ rfl), ContinuousLinearMap.ext fun _ ↦ rfl⟩
-
-omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F] [T2Space N]
-  [IsManifold J ∞ N] in
-/-- The differential of `swapTime` moves the components of a tangent vector as `swapTime` moves
-the coordinates. -/
-private theorem mfderiv_swapTime_apply (q : (M × N) × ℝ)
-    (v : TangentSpace ((I.prod J).prod 𝓘(ℝ)) q) :
-    mfderiv ((I.prod J).prod 𝓘(ℝ)) ((I.prod 𝓘(ℝ)).prod J) swapTime q v =
-      (((v.1.1, v.2), v.1.2) : (E × ℝ) × F) := by
-  rw [(hasMFDerivAt_swapTime q).mfderiv]
-  -- Both sides live in the model space `(E × ℝ) × F`, where the continuous linear map of
-  -- `hasMFDerivAt_swapTime` acts by definition as `((a, b), t) ↦ ((a, t), b)`.
-  rfl
-
 omit [T2Space M] [T2Space N] in
 /-- Where `G` is `g + dt²`, the pullback of `G × g₂` along `((x, y), t) ↦ ((x, t), y)` is the
 cylinder metric `g × g₂ + dt²`. -/
-private theorem pullback_swapTime_inner {g₂ : ContMDiffRiemannianMetric J ∞ F
+private theorem pullback_prod_right_comm_inner {g₂ : ContMDiffRiemannianMetric J ∞ F
       (fun y : N ↦ TangentSpace J y)} {q : (M × N) × ℝ}
-    (hG : G.inner (swapTime q).1 = g.cylinder.inner (swapTime q).1) :
-    ((G.prodTangentSpace g₂).pullback swapTime contMDiff_swapTime
-      fun q ↦ (isInvertible_mfderiv_swapTime q).injective).inner q =
+    (hG : G.inner (q.1.1, q.2) = g.cylinder.inner (q.1.1, q.2)) :
+    ((G.prodTangentSpace g₂).pullback (fun q : (M × N) × ℝ ↦ ((q.1.1, q.2), q.1.2))
+      contMDiff_prod_right_comm
+      fun q ↦ (isInvertible_mfderiv_prod_right_comm q).injective).inner q =
       (g.prodTangentSpace g₂).cylinder.inner q := by
   ext v w
   rw [pullback_inner, prodTangentSpace_inner, hG, cylinder_inner, cylinder_inner,
     prodTangentSpace_inner]
   simp only [tangentSpaceProdEquiv_apply]
-  rw [mfderiv_swapTime_apply, mfderiv_swapTime_apply]
+  rw [tangentSpaceProdEquiv_apply, tangentSpaceProdEquiv_apply, mfderiv_prod_right_comm_apply,
+    mfderiv_prod_right_comm_apply]
   exact add_right_comm _ _ _
 
 /-- **Products of concordances.** If `g₀` and `g₁` are concordant and `g₂` has nonnegative scalar
@@ -1024,9 +979,9 @@ theorem Concordant.prodTangentSpace_of_nonneg (h : Concordant g₀ g₁)
     Concordant (g₀.prodTangentSpace g₂) (g₁.prodTangentSpace g₂) :=
   let ⟨_, hG⟩ := h
   ⟨_, (hG.hasPositiveScalarCurvature.prodTangentSpace_of_nonneg h₂).pullback_of_isInvertible
-      contMDiff_swapTime isInvertible_mfderiv_swapTime,
-    fun _ hq ↦ pullback_swapTime_inner (hG.inner_of_nonpos _ hq),
-    fun _ hq ↦ pullback_swapTime_inner (hG.inner_of_one_le _ hq)⟩
+      contMDiff_prod_right_comm isInvertible_mfderiv_prod_right_comm,
+    fun _ hq ↦ pullback_prod_right_comm_inner (hG.inner_of_nonpos _ hq),
+    fun _ hq ↦ pullback_prod_right_comm_inner (hG.inner_of_one_le _ hq)⟩
 
 end Prod
 

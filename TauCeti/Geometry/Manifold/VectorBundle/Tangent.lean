@@ -77,6 +77,9 @@ are those of its summands, so its tangent coordinate changes are those of the su
   under this equivalence.
 * `TauCeti.Manifold.isInvertible_mfderiv_prodMap`: the differential of a product map is invertible
   where the differentials of both factors are.
+* `TauCeti.Manifold.contMDiff_prod_right_comm` and
+  `TauCeti.Manifold.isInvertible_mfderiv_prod_right_comm`: the map `((x, y), z) ↦ ((x, z), y)`
+  exchanging the last two factors of a triple product is smooth with invertible differential.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_mfderiv_prodMap_id` and
   `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id`: the differential of `(x, t) ↦ (x, φ t)` on
   `M × 𝕜` multiplies the `𝕜`-component by `φ' t`, so it is invertible where `φ' t ≠ 0`.
@@ -782,6 +785,53 @@ theorem isInvertible_mfderiv_prodMap_id_right
     (mfderiv (I.prod J) (I'.prod J) (Prod.map f (id : N → N)) p).IsInvertible :=
   isInvertible_mfderiv_prodMap hf mdifferentiableAt_id hf'
     ⟨.refl 𝕜 _, by rw [mfderiv_id, ContinuousLinearEquiv.coe_refl]⟩
+
+section RightComm
+
+variable
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+
+/-- The map `((x, y), z) ↦ ((x, z), y)`, which exchanges the last two factors of a triple product,
+is smooth. -/
+theorem contMDiff_prod_right_comm {n : WithTop ℕ∞} :
+    ContMDiff ((I.prod J).prod I') ((I.prod I').prod J) n
+      fun q : (M × N) × M' ↦ ((q.1.1, q.2), q.1.2) :=
+  (contMDiff_fst.fst.prodMk contMDiff_snd).prodMk contMDiff_fst.snd
+
+/-- The differential of `((x, y), z) ↦ ((x, z), y)` is the same exchange of the last two factors
+of the model space, assembled from Mathlib's product equivalences. -/
+theorem hasMFDerivAt_prod_right_comm (q : (M × N) × M') :
+    HasMFDerivAt ((I.prod J).prod I') ((I.prod I').prod J)
+      (fun q : (M × N) × M' ↦ ((q.1.1, q.2), q.1.2)) q
+      ((ContinuousLinearEquiv.prodAssoc 𝕜 E F E').trans
+        (((ContinuousLinearEquiv.refl 𝕜 E).prodCongr
+          (ContinuousLinearEquiv.prodComm 𝕜 F E')).trans
+          (ContinuousLinearEquiv.prodAssoc 𝕜 E E' F).symm) : (E × F) × E' →L[𝕜] (E × E') × F) :=
+  (((hasMFDerivAt_fst q.1).comp q (hasMFDerivAt_fst q)).prodMk (hasMFDerivAt_snd q)).prodMk
+    ((hasMFDerivAt_snd q.1).comp q (hasMFDerivAt_fst q))
+
+/-- The differential of `((x, y), z) ↦ ((x, z), y)` is invertible. -/
+theorem isInvertible_mfderiv_prod_right_comm (q : (M × N) × M') :
+    (mfderiv ((I.prod J).prod I') ((I.prod I').prod J)
+      (fun q : (M × N) × M' ↦ ((q.1.1, q.2), q.1.2)) q).IsInvertible := by
+  rw [(hasMFDerivAt_prod_right_comm q).mfderiv]
+  exact ⟨_, rfl⟩
+
+/-- The differential of `((x, y), z) ↦ ((x, z), y)` moves the components of a tangent vector as
+the map moves the coordinates. -/
+theorem mfderiv_prod_right_comm_apply (q : (M × N) × M')
+    (v : TangentSpace ((I.prod J).prod I') q) :
+    mfderiv ((I.prod J).prod I') ((I.prod I').prod J)
+        (fun q : (M × N) × M' ↦ ((q.1.1, q.2), q.1.2)) q v =
+      (((v.1.1, v.2), v.1.2) : (E × E') × F) := by
+  rw [(hasMFDerivAt_prod_right_comm q).mfderiv]
+  -- Both sides live in the model space `(E × E') × F`, where the product equivalences of
+  -- `hasMFDerivAt_prod_right_comm` act by definition as `((a, b), c) ↦ ((a, c), b)`.
+  rfl
+
+end RightComm
 
 /-- The differential of `(x, t) ↦ (x, φ t)` on `M × 𝕜` fixes the `M`-component and multiplies the
 `𝕜`-component by `φ' t`. -/
