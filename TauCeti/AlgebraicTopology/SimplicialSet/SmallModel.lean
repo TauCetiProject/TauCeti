@@ -12,8 +12,9 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.NerveCodiscrete
 # Small models of simplicial homotopy types
 
 A simplicial set can have a small homotopy type without having small sets of simplices.
-`TauCeti.SmallSpaceModel` records a Kan complex in a specified smaller universe, comparison
-maps after universe lifting, and simplicial homotopies from both composites to the identities.
+`TauCeti.SmallSpaceModel` records a Kan complex in an independently specified universe `u`,
+comparison maps after lifting both the model and the ambient simplicial set in universe `v`
+to the common universe `max u v`, and simplicial homotopies from both composites to the identities.
 `TauCeti.HasSmallSpaceModel` asserts the existence of such data. These models provide the
 universe control needed when representing mapping spaces by small Kan complexes.
 
@@ -53,8 +54,9 @@ structure SmallSpaceModel (X : SSet.{v}) where
 
 attribute [instance] SmallSpaceModel.kanComplex
 
-/-- The homotopy type of `X` admits a Kan model in universe `u`, with explicit comparison
-maps inverse up to simplicial homotopy after lifting that model to the ambient universe. -/
+/-- The homotopy type of `X` admits a Kan model in an independently specified universe `u`,
+with explicit comparison maps inverse up to simplicial homotopy after lifting both the model
+and `X` to the common universe `max u v`. -/
 def HasSmallSpaceModel (X : SSet.{v}) : Prop := Nonempty (SmallSpaceModel.{u, v} X)
 
 /-- Introduce or extract the data of a small Kan model. -/
