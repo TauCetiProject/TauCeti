@@ -49,19 +49,15 @@ theorem exists_contMDiff_parametrization (x : M) :
   let b := OpenPartialHomeomorph.univBall (c x) r
   have hb : b.target ⊆ c.target := by
     simpa [b, OpenPartialHomeomorph.univBall_target _ hr] using hball
+  have hbc : ∀ z, b z ∈ c.target := fun z => hb (b.map_source (by simp [b]))
   let e := b.trans c.symm
   have hs : e.source = univ := by
-    ext z
-    simp only [e, OpenPartialHomeomorph.trans_source, mem_inter_iff, b,
-      OpenPartialHomeomorph.univBall_source, mem_univ, true_and, mem_preimage,
-      OpenPartialHomeomorph.symm_source]
-    exact iff_true_intro (hb (b.map_source (by simp [b])))
+    apply eq_univ_of_forall
+    intro z
+    simp [e, hbc, b]
   have ht : x ∈ e.target := by
-    simp only [e, OpenPartialHomeomorph.trans_target, mem_inter_iff,
-      OpenPartialHomeomorph.symm_target, mem_preimage, OpenPartialHomeomorph.symm_symm]
-    exact ⟨by simp [c, mem_chart_source], by
-      simpa only [b, OpenPartialHomeomorph.univBall_target _ hr] using
-        Metric.mem_ball_self hr⟩
+    simp [e, c, b, mem_chart_source,
+      OpenPartialHomeomorph.univBall_target _ hr, hr]
   have hcs : ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
       𝓘(ℝ, E) n c.symm c.target := by
     rw [OpenPartialHomeomorph.coe_trans_symm]
@@ -74,7 +70,7 @@ theorem exists_contMDiff_parametrization (x : M) :
   refine ⟨e, hs, ht, ?_, ?_⟩
   · rw [OpenPartialHomeomorph.coe_trans]
     exact hcs.comp_contMDiff OpenPartialHomeomorph.contDiff_univBall.contMDiff
-      (fun z => hb (b.map_source (by simp [b])))
+      hbc
   · rw [OpenPartialHomeomorph.coe_trans_symm]
     exact OpenPartialHomeomorph.contDiffOn_univBall_symm.contMDiffOn.comp
       (hcf.mono inter_subset_left) (fun z hz => by
