@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.Padics.LogGauge
 
 These calculations use the actual valuation on `ℚ_[p]`, normalized by `v(p) = 1`.
 They check products of distinct slopes, repeated slopes, collinear coefficient points,
-and the separate contribution of zero roots.
+the separate contribution of zero roots, and a supplied lower polygon with slopes zero and two.
 -/
 
 public section
@@ -101,5 +101,33 @@ theorem natTrailingDegree_X_sq_mul_one_sub_prime_mul_X :
       sub_zero, ne_eq, one_ne_zero, not_false_eq_true]
   rw [mul_comm, natTrailingDegree_mul_X_pow (by intro hf; exact h (by rw [hf, coeff_zero])),
     natTrailingDegree_eq_zero_of_constantCoeff_ne_zero h, zero_add]
+
+/-- The supplied lower polygon with consecutive slopes zero and two. -/
+def zeroTwoSlopes : FiniteSlopeData ℝ :=
+  ⟨0, 0, 2, fun i => 2 * (i.val : ℝ), by
+    intro i j hij
+    exact mul_le_mul_of_nonneg_left (by exact_mod_cast hij) (by norm_num)⟩
+
+private theorem realValuation_two_nonneg : 0 ≤ Padic.realAddValuation p (2 : ℚ_[p]) := by
+  rw [Padic.realAddValuation_eq_map_addValuation,
+    Padic.addValuation.apply (by norm_num : (2 : ℚ_[p]) ≠ 0)]
+  simp only [Padic.valuation_ofNat, WithTop.map_coe]
+  exact_mod_cast (Nat.zero_le (padicValNat p 2))
+
+/-- The supplied slopes `(0, 2)` give a lower polygon for the repeated-factor polynomial. -/
+theorem zeroTwoSlopes_heights_le_newtonPolygon_square : zeroTwoSlopes.heights ≤
+    ((1 - C (p : ℚ_[p]) * X) ^ 2).newtonPolygon (Padic.realAddValuation p) := by
+  apply le_newtonPolygon zeroTwoSlopes.isConvexSeq_heights
+  have hpoly : (1 - C (p : ℚ_[p]) * X) ^ 2 =
+      1 + C (-2 * (p : ℚ_[p])) * X + C ((p : ℚ_[p]) ^ 2) * X ^ 2 := by
+    simp only [map_mul, map_neg, map_ofNat, map_pow]
+    ring
+  intro n
+  rw [hpoly]
+  rcases n with _ | _ | _ | n
+  all_goals simp only [coeff_add, coeff_C_mul, coeff_one, coeff_X, coeff_X_pow]
+  all_goals norm_num [zeroTwoSlopes, FiniteSlopeData.heights_def, prefixSum_succ, prefixSum_zero,
+    Padic.realAddValuation_p, AddValuation.map_pow, AddValuation.map_mul, AddValuation.map_neg]
+  exact add_nonneg (realValuation_two_nonneg p) zero_le_one
 
 end TauCeti.Examples.Newton
