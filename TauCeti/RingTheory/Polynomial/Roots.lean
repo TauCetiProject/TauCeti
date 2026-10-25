@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Multiset.UnionInter
 public import TauCeti.Data.Multiset.Rel
+import TauCeti.RingTheory.Polynomial.RootEnumeration
 public import TauCeti.RingTheory.Polynomial.Vieta
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.FieldTheory.Separable
@@ -152,22 +153,13 @@ theorem _root_.Polynomial.map_eq_C_mul_prod_numbering
     f.map (algebraMap F E) =
       C (algebraMap F E f.leadingCoeff) * ∏ i, (X - C (e i : E)) := by
   classical
-  have hroots := roots_map_eq_map_numbering e
-  have hdeg : (f.map (algebraMap F E)).natDegree = f.natDegree :=
-    le_antisymm natDegree_map_le (by
-      simpa [hroots] using card_roots' (f.map (algebraMap F E)))
-  have hlc : (f.map (algebraMap F E)).leadingCoeff = algebraMap F E f.leadingCoeff := by
-    simp only [leadingCoeff, coeff_map, hdeg]
-  have hsplits : (f.map (algebraMap F E)).Splits :=
-    splits_iff_card_roots.mpr (by rw [hdeg, hroots]; simp)
-  calc
-    f.map (algebraMap F E) = C (f.map (algebraMap F E)).leadingCoeff *
-        ((f.map (algebraMap F E)).roots.map (X - C ·)).prod := hsplits.eq_prod_roots
-    _ = C (algebraMap F E f.leadingCoeff) *
-        ((univ.val.map fun i ↦ (e i : E)).map (X - C ·)).prod := by rw [hlc, hroots]
-    _ = C (algebraMap F E f.leadingCoeff) * ∏ i, (X - C (e i : E)) := by
-      rw [Multiset.map_map, ← Finset.prod_eq_multiset_prod]
-      rfl
+  have hroots : IsRootEnumeration f (fun i ↦ (e i : E)) :=
+    isRootEnumeration_iff.mpr (roots_map_eq_map_numbering e)
+  have hbound : (f.map (algebraMap F E)).natDegree ≤ Fintype.card (Fin f.natDegree) := by
+    simpa using (natDegree_map_le (f := algebraMap F E) (p := f))
+  have hdeg : (f.map (algebraMap F E)).natDegree = f.natDegree := by
+    simpa using hroots.natDegree_map_eq_card hbound
+  simpa only [leadingCoeff, coeff_map, hdeg] using hroots.eq_C_mul_prod_X_sub_C hbound
 
 /-- The root set of a product of polynomials is the union of the root sets of the factors,
 provided neither factor vanishes after base change to `E`. -/

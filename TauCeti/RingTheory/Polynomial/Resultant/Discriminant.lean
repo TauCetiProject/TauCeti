@@ -21,6 +21,7 @@ public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.GaussLemma
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
+import TauCeti.RingTheory.Polynomial.RootEnumeration
 import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
@@ -585,9 +586,11 @@ theorem algebraMap_discr_eq_leadingCoeff_pow_mul_discrSqrt_sq
     algebraMap F E f.discr =
       algebraMap F E f.leadingCoeff ^ (2 * f.natDegree - 2) * discrSqrt e ^ 2 := by
   classical
-  have hdeg : (f.map (algebraMap F E)).natDegree = f.natDegree :=
-    le_antisymm natDegree_map_le (by
-      simpa [roots_map_eq_map_numbering e] using card_roots' (f.map (algebraMap F E)))
+  have hroots : IsRootEnumeration f (fun i ↦ (e i : E)) :=
+    isRootEnumeration_iff.mpr (roots_map_eq_map_numbering e)
+  have hdeg : (f.map (algebraMap F E)).natDegree = f.natDegree := by
+    simpa using hroots.natDegree_map_eq_card
+      (by simpa using (natDegree_map_le (f := algebraMap F E) (p := f)))
   by_cases hzero : f.map (algebraMap F E) = 0
   · have hfdeg : f.natDegree = 0 := by simpa [hzero] using hdeg.symm
     have hdiscr : f.discr = 1 := by rw [eq_C_of_natDegree_eq_zero hfdeg, discr_C]
