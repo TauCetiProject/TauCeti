@@ -248,7 +248,7 @@ theorem IsGloballyGenerated.nonempty_generatingSections {L : InvertibleSheaf X}
     rfl
   simpa only [SheafOfModules.sectionsMap, PresheafOfModules.sectionsMap_coe,
     compatibleSection_val, hres, Scheme.Modules.Hom.app, ModuleCat.forget₂_map,
-    AddCommGrpCat.ofHom_apply] using htop
+    ConcreteCategory.hom_ofHom, LinearMap.toAddMonoidHom_coe] using htop
 
 /-- Global generation of a line bundle is equivalent to the existence of Mathlib's
 family of generating global sections. -/
