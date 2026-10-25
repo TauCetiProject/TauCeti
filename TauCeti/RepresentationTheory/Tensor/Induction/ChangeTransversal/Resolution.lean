@@ -176,6 +176,8 @@ private theorem resolutionChange_augmentation [LinearOrder (G ⧸ U)]
         ((smoothTensorInductionFunctor R G U hU a).map
           (smoothGradedResolutionAugmentationApp A)).hom.hom.toLinearMap =
         PiTensorProduct.map (fun _ : G ⧸ U ↦ A.obj.gradedResolutionAugmentation) := by
+      -- The smooth functor-map equation leaves the dictionary morphism wrapper. Reduce that
+      -- wrapper and the discrete functor map so `tensorInduced_toLinearMap` matches below.
       change (((ofSmoothDiscrete R U).map
         (smoothGradedResolutionAugmentationApp A)).tensorInduced a).toLinearMap = _
       rw [Representation.IntertwiningMap.tensorInduced_toLinearMap,
@@ -186,6 +188,8 @@ private theorem resolutionChange_augmentation [LinearOrder (G ⧸ U)]
         (smoothGradedResolutionAugmentationApp A))
     erw [ObjectProperty.FullSubcategory.comp_hom,
       ObjectProperty.FullSubcategory.comp_hom] at h
+    -- Reduce the remaining `TopRep` and continuous intertwining-map composition projections
+    -- to linear-map composition, exposing each functor-map projection in the form `hmap` rewrites.
     change (smoothTensorInducedChangeTransversalIso U hU s t
         (smoothGradedResolutionFunctor.obj A)).hom.hom.hom.toLinearMap ∘ₗ
         ((smoothTensorInductionFunctor R G U hU t).map
