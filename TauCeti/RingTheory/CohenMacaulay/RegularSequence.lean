@@ -37,14 +37,14 @@ dimension formula `dim S = dim R + dim S ⧸ 𝔪_R S` of miracle flatness (Stac
 (00R4)), whose proof starts from exactly this regular sequence.
 
 For a finite torsion-free algebra `B` over a Noetherian integrally closed local domain `A`, the
-localization `B_𝔮` at a maximal ideal is not finite over `A`, but going down along `A → B` gives it
-the dimension of `A`, and its closed fibre `B_𝔮 ⧸ 𝔪_A B_𝔮` is Artinian. So `B_𝔮` satisfies the
-dimension formula of miracle flatness, and a Cohen–Macaulay `B_𝔮` receives a regular sequence
-from a regular system of parameters of `A`. In dimension two, normality of `B_𝔮` already implies
-that it is Cohen–Macaulay (Stacks, Lemma 10.157.4 (031S)). This is the input to miracle flatness
-for the localizations of finite normal algebras over a normal local domain of dimension two, such
-as a regular local ring of dimension two, as in the proof of purity for regular local rings
-(Stacks, Lemma 58.21.3 (0BMA)).
+localization `B_𝔮` at a maximal ideal need not be finite over `A`, but going down along `A → B`
+gives it the dimension of `A`, and its closed fibre `B_𝔮 ⧸ 𝔪_A B_𝔮` is Artinian. So `B_𝔮`
+satisfies the dimension formula of miracle flatness, and a Cohen–Macaulay `B_𝔮` receives a
+regular sequence from a regular system of parameters of `A`. In dimension two, normality of
+`B_𝔮` already implies that it is Cohen–Macaulay (Stacks, Lemma 10.157.4 (031S)). This is the
+input to miracle flatness for the localizations of finite normal algebras over a normal local
+domain of dimension two, such as a regular local ring of dimension two, as in the proof of purity
+for regular local rings (Stacks, Lemma 58.21.3 (0BMA)).
 
 ## Main results
 
