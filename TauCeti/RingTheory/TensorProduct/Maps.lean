@@ -32,6 +32,10 @@ on `T` involved. This is the form needed when `T` already carries an `R`-algebra
 `x` and `y` do not respect, for instance when `T` is itself a tensor product over `R` and `x`
 twists the first factor by a ring automorphism.
 
+A square between base changes along a map of coefficient algebras is determined by its
+restriction to the right factor (`TauCeti.Algebra.tensorProduct_comp_rTensor_ext`). This avoids
+repeating coefficient-linearity calculations when transporting maps between stages of a colimit.
+
 ## Main declarations
 
 * `AlgHom.lTensor_toLinearMap_apply`: `f.toLinearMap.lTensor S` is
@@ -232,3 +236,32 @@ theorem sectionBaseChange_sectionBaseChange {B : Type*} [CommSemiring B] [Algebr
   | add x y hx hy => simp only [map_add, hx, hy]
 
 end AlgHom
+
+namespace TauCeti.Algebra
+
+open _root_.Algebra.TensorProduct
+
+/-- A square of maps between base changes commutes if it commutes on the right factor.
+The maps on the two tensor products are linear over their respective coefficient rings,
+so commutativity on the left factor is automatic. -/
+theorem tensorProduct_comp_rTensor_ext {R C D U V : Type*} [CommSemiring R]
+    [CommSemiring C] [Algebra R C] [CommSemiring D] [Algebra R D]
+    [Semiring U] [Algebra R U] [Semiring V] [Algebra R V]
+    (g : C →ₐ[R] D) (p : C ⊗[R] U →ₐ[C] C ⊗[R] V)
+    (q : D ⊗[R] U →ₐ[D] D ⊗[R] V)
+    (h : (q.restrictScalars R).comp includeRight =
+      ((rTensor V g).comp (p.restrictScalars R)).comp includeRight) :
+    (q.restrictScalars R).comp (rTensor U g) =
+      (rTensor V g).comp (p.restrictScalars R) := by
+  apply _root_.Algebra.TensorProduct.ext
+  · ext c
+    have hp := p.commutes c
+    have hq := q.commutes (g c)
+    simp only [algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply] at hp hq
+    simp only [AlgHom.comp_apply, includeLeft_apply, _root_.Algebra.TensorProduct.map_tmul,
+      AlgHom.coe_restrictScalars', hp, hq, map_one]
+  · ext u
+    simpa only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', includeRight_apply,
+      _root_.Algebra.TensorProduct.map_tmul, map_one, AlgHom.id_apply] using congr($h u)
+
+end TauCeti.Algebra
