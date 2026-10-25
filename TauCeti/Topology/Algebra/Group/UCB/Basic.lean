@@ -47,6 +47,8 @@ general group can differ, so no `IsUniformGroup` structure is used.
   `u ↦ f (u * ·)` tends to `f` in supremum norm as `u → 1`.
 * `TauCeti.mem_ucb_iff_uniformContinuous`: the condition is uniform continuity for the right
   uniformity of `G`.
+* `TauCeti.ucbSubalgebra_eq_top`, `TauCeti.ucb_eq_top`: for a discrete group the condition is
+  vacuous, so every bounded function lies in `ucb G`.
 * `TauCeti.isClosed_ucb`: `ucb G` is closed under uniform limits, so `UCB G` is complete.
 * `TauCeti.sup_mem_ucb`, `TauCeti.inf_mem_ucb`, `TauCeti.abs_mem_ucb`: closure under the lattice
   operations.
@@ -166,6 +168,12 @@ theorem compLeftContinuousBounded_mem_ucbSubalgebra {𝕜' 𝕜'' : Type*} [Norm
       (mem_ucbSubalgebra_iff_tendsto.1 hf)).congr fun _ =>
         L.compLeftContinuousBounded_compContinuous ..
 
+variable (𝕜 G) in
+/-- On a discrete group every bounded function lies in `ucbSubalgebra 𝕜 G`, since the defining
+condition only involves `u = 1`. -/
+theorem ucbSubalgebra_eq_top [DiscreteTopology G] : ucbSubalgebra 𝕜 G = ⊤ :=
+  eq_top_iff.2 fun f _ ε hε => by simp [nhds_discrete, hε]
+
 variable (G) in
 /-- The real bounded continuous functions `f` on `G` such that `f (u * x)` is uniformly close to
 `f x` for all `u` near `1`, as a subalgebra of `G →ᵇ ℝ`. -/
@@ -182,6 +190,11 @@ variable (G) in
 /-- `ucb G` is the case `𝕜 = ℝ` of `ucbSubalgebra 𝕜 G`. -/
 theorem ucb_eq_ucbSubalgebra : ucb G = ucbSubalgebra ℝ G :=
   rfl
+
+variable (G) in
+/-- On a discrete group `UCB G` consists of all bounded real functions. -/
+theorem ucb_eq_top [DiscreteTopology G] : ucb G = ⊤ :=
+  ucbSubalgebra_eq_top ℝ G
 
 /-- The defining condition of `ucb G`. -/
 theorem mem_ucb_iff {f : G →ᵇ ℝ} :
