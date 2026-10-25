@@ -15,9 +15,9 @@ the corresponding basis vector.  This repackages `Module.Basis.repr_symm_single`
 through in the same direction, for the common situation where what one holds is a bound on the
 support rather than an explicit `Finsupp.single`.
 
-The coordinate and linear-map lemmas hold over a semiring of scalars. For an integer basis of an
-additive group, we also express an additive map in coordinates. A ring homomorphism's values on an
-integer basis cannot all vanish when its target is nontrivial.
+The coordinate and linear-map lemmas hold over a semiring of scalars. For a finite integer basis of
+an additive group, we also express an additive map in coordinates. A ring homomorphism's values on
+an integer basis cannot all vanish when its target is nontrivial.
 
 ## Main results
 
@@ -30,7 +30,7 @@ integer basis cannot all vanish when its target is nontrivial.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
 * `Module.Basis.apply_eq_sum_repr_zsmul`: an additive map evaluated at a vector is the sum of its
-  values on an integer basis, weighted by the coordinates.
+  values on a finite integer basis, weighted by the coordinates.
 * `Module.Basis.ringHom_comp_ne_zero`: the values of a ring homomorphism to a nontrivial ring on
   an integer basis do not all vanish.
 -/
@@ -93,7 +93,7 @@ theorem linearIndependent_coe_basis (b : Module.Basis n R U) :
 
 end Submodule
 
-/-- An additive map evaluated at a vector is the sum of its values on an integer basis,
+/-- An additive map evaluated at a vector is the sum of its values on a finite integer basis,
 weighted by the coordinates. -/
 theorem apply_eq_sum_repr_zsmul {M N F : Type*} [AddCommGroup M] [AddCommGroup N]
     [FunLike F M N] [AddMonoidHomClass F M N] [Fintype ι] (b : Basis ι ℤ M) (f : F) (y : M) :
