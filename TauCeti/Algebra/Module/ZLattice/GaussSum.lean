@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.GroupTheory.IndexNSmul
 public import TauCeti.Algebra.Module.ZLattice.Integral
+public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 
 /-!
 # Gauss sums of an even lattice
@@ -115,12 +115,6 @@ end Quotient
 
 section GaussTerm
 
-/-- `e(x + k) = e(x)` for an integer `k`. -/
-private theorem cexp_two_pi_I_mul_add_intCast (x : ℝ) (k : ℤ) :
-    cexp (2 * π * I * ((x + k : ℝ) : ℂ)) = cexp (2 * π * I * (x : ℂ)) := by
-  rw [ofReal_add, mul_add, exp_add, ofReal_intCast, mul_comm (2 * π * I) (k : ℂ),
-    exp_int_mul_two_pi_mul_I, mul_one]
-
 /-- The argument of `e` in the twisted Gauss summand, at `v + c w`: the change from `v` is
 `a ⟪v, w⟫ + a c ‖w‖² / 2 + ⟪w, m⟫`. -/
 private theorem gaussArg_add_smul (a : ℝ) {c : ℝ} (hc : c ≠ 0) (m v w : E) :
@@ -149,11 +143,13 @@ noncomputable def gaussTerm (hL : IsEven L) (a : ℤ) (c : ℕ) (m : dual L)
       obtain ⟨i, hi⟩ := isIntegral_iff.mp hL.isIntegral _ v₂.2 _ w.2
       obtain ⟨j, hj⟩ := isEven_iff.mp hL _ w.2
       obtain ⟨k, hk⟩ := mem_dual.mp m.2 _ w.2
+      -- The argument changes by `a ⟪v₂, w⟫ + a c ‖w‖² / 2 + ⟪w, m⟫`, an integer.
+      have hint : (a : ℝ) * i + a * (c * (2 * j)) / 2 + k = ((a * i + a * c * j + k : ℤ) : ℝ) := by
+        push_cast; ring
       simp only [coe_add, Submodule.coe_smul_of_tower, ← Nat.cast_smul_eq_nsmul ℝ]
-      rw [gaussArg_add_smul _ hc', hi, hj, real_inner_comm (m : E) (w : E), hk,
-        show (a : ℝ) * i + a * (c * (2 * j)) / 2 + k = ((a * i + a * c * j + k : ℤ) : ℝ) by
-          push_cast; ring,
-        cexp_two_pi_I_mul_add_intCast]
+      rw [gaussArg_add_smul _ hc', hi, hj, real_inner_comm (m : E) (w : E), hk, hint,
+        ofReal_add _ ((a * i + a * c * j + k : ℤ) : ℝ), ofReal_intCast,
+        exp_two_pi_mul_I_mul_add_intCast]
 
 variable {L}
 
@@ -207,11 +203,12 @@ theorem gaussTerm_eq_of_modEq {a a' : ℤ} {c : ℕ} (h : a ≡ a' [ZMOD c]) (m 
   obtain ⟨t, ht⟩ := Int.modEq_iff_add_fac.mp h.symm
   obtain ⟨j, hj⟩ := isEven_iff.mp hL _ v.2
   have hc' : (c : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hc
-  rw [gaussTerm_mk, gaussTerm_mk, ht,
-    show (((a' + c * t : ℤ) : ℝ) * ‖(v : E)‖ ^ 2 / 2 + ⟪(v : E), (m : E)⟫) / c =
-      (a' * ‖(v : E)‖ ^ 2 / 2 + ⟪(v : E), (m : E)⟫) / c + ((t * j : ℤ) : ℝ) by
-      rw [hj]; push_cast; field_simp; ring,
-    cexp_two_pi_I_mul_add_intCast]
+  -- Replacing `a'` by `a' + c t` changes the argument by the integer `t j`, as `‖v‖² = 2 j`.
+  have harg : (((a' + c * t : ℤ) : ℝ) * ‖(v : E)‖ ^ 2 / 2 + ⟪(v : E), (m : E)⟫) / c =
+      (a' * ‖(v : E)‖ ^ 2 / 2 + ⟪(v : E), (m : E)⟫) / c + ((t * j : ℤ) : ℝ) := by
+    rw [hj]; push_cast; field_simp; ring
+  rw [gaussTerm_mk, gaussTerm_mk, ht, harg, ofReal_add _ ((t * j : ℤ) : ℝ), ofReal_intCast,
+    exp_two_pi_mul_I_mul_add_intCast]
 
 /-- The twisted Gauss sums depend on `a` only modulo `c`. -/
 theorem gaussSumTwisted_eq_of_modEq {a a' : ℤ} {c : ℕ} (h : a ≡ a' [ZMOD c])
@@ -302,11 +299,14 @@ theorem gaussSumTwisted_eq_zero [FiniteDimensional ℝ E] [DiscreteTopology L] [
     induction y using Submodule.Quotient.induction_on with | H v
     obtain ⟨i, hi⟩ := mem_dual.mp hw _ v.2
     obtain ⟨j, hj⟩ := hc w hw
+    -- The argument changes by `⟪m, w⟫` plus the integer `a ⟪v, w⟫ + a c ‖w‖² / 2 = a i + a j`.
+    have harg (x : ℝ) : x + (a * i + a * (2 * j) / 2 + ⟪(m : E), w⟫) =
+        (x + ⟪(m : E), w⟫) + ((a * i + a * j : ℤ) : ℝ) := by
+      push_cast; ring
     rw [← Submodule.Quotient.mk_add, gaussTerm_mk, gaussTerm_mk, coe_add,
       gaussArg_add_smul _ (Nat.cast_ne_zero.mpr (NeZero.ne c)), real_inner_comm w (v : E), hi, hj,
-      real_inner_comm (m : E) w, show ∀ x : ℝ, x + (a * i + a * (2 * j) / 2 + ⟪(m : E), w⟫) =
-        (x + ⟪(m : E), w⟫) + ((a * i + a * j : ℤ) : ℝ) from fun x => by push_cast; ring,
-      cexp_two_pi_I_mul_add_intCast, ofReal_add, mul_add, exp_add, mul_comm]
+      real_inner_comm (m : E) w, harg, ofReal_add _ ((a * i + a * j : ℤ) : ℝ), ofReal_intCast,
+      exp_two_pi_mul_I_mul_add_intCast, ofReal_add, mul_add, exp_add, mul_comm]
   have hne : cexp (2 * π * I * (⟪(m : E), w⟫ : ℂ)) ≠ 1 := by
     rw [Ne, exp_eq_one_iff]
     rintro ⟨k, hk⟩
@@ -355,7 +355,7 @@ theorem gaussSumTwisted_eq_of_mem {a d : ℤ} {c : ℕ} [Fintype (L ⧸ ((c : �
       field_simp
       linear_combination (2 * (i : ℝ)) * had'
     rw [huv, ZeroMemClass.coe_zero, inner_zero_right, add_zero, harg,
-      cexp_two_pi_I_mul_add_intCast]
+      ofReal_add _ ((t * i : ℤ) : ℝ), ofReal_intCast, exp_two_pi_mul_I_mul_add_intCast]
   have h : gaussSum L hL a c =
       cexp (2 * π * I * ((a * d ^ 2 * ‖(m : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)) *
         gaussSumTwisted L hL a c m := by
