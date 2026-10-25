@@ -459,7 +459,7 @@ theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v
 
 /-- A `G`-homomorphism out of `G_{R(S)}` is determined by its values on the variables. -/
 @[ext]
-theorem gHom_ext {φ ψ : GHom (coeff ι S) ι}
+theorem gHom_ext {K : Type*} [Group K] {ιK : G →* K} {φ ψ : GHom (coeff ι S) ιK}
     (h : ∀ x, φ (inr (FreeGroup.of x) : GX G X) = ψ (inr (FreeGroup.of x) : GX G X)) : φ = ψ :=
   GX.quotientGHom_ext h
 
@@ -526,7 +526,7 @@ theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v
 
 /-- A `G`-homomorphism out of `G_S` is determined by its values on the variables. -/
 @[ext]
-theorem gHom_ext {φ ψ : GHom (coeff S) ι}
+theorem gHom_ext {K : Type*} [Group K] {ιK : G →* K} {φ ψ : GHom (coeff S) ιK}
     (h : ∀ x, φ (inr (FreeGroup.of x) : GX G X) = ψ (inr (FreeGroup.of x) : GX G X)) : φ = ψ :=
   GX.quotientGHom_ext h
 
