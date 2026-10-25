@@ -45,12 +45,10 @@ theorem exists_adapted_orthonormalBasis (hJ : ∀ v, ‖J v‖ = ‖v‖) :
     ∃ b : OrthonormalBasis (Fin 4) ℝ V, b 1 = J (b 0) ∧ b 3 = J (b 2) := by
   have hinner (v w : V) : ⟪J v, J w⟫ = ⟪v, w⟫ :=
     ({ J.toLinearMap with norm_map' := hJ } : V →ₗᵢ[ℝ] V).inner_map_map v w
-  have hswap (v w : V) : ⟪v, J w⟫ = -⟪J v, w⟫ := by
-    have h := hinner v (J w)
-    rw [apply_apply, inner_neg_right] at h
-    linarith
-  have hperp (v : V) : ⟪v, J v⟫ = 0 := by
-    linarith [hswap v v, real_inner_comm v (J v)]
+  have hswap (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
+    J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hinner v w
+  have hperp (v : V) : ⟪v, J v⟫ = 0 :=
+    J.bilinForm_apply_apply_self_eq_zero (g := innerₗ V) ⟨fun _ _ ↦ real_inner_comm _ _⟩ hinner v
   have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
   obtain ⟨u₁, hu₁⟩ := exists_norm_eq V zero_le_one
@@ -68,7 +66,7 @@ theorem exists_adapted_orthonormalBasis (hJ : ∀ v, ‖J v‖ = ‖v‖) :
   have hperp' (v : V) : ⟪J v, v⟫ = 0 := by rw [real_inner_comm, hperp]
   have h₂₁ : ⟪u₂, u₁⟫ = 0 := by rw [real_inner_comm, h₁₂]
   have h₂J₁ : ⟪u₂, J u₁⟫ = 0 := by rw [real_inner_comm, hJ₁₂]
-  have h₁J₂ : ⟪u₁, J u₂⟫ = 0 := by rw [hswap, hJ₁₂, neg_zero]
+  have h₁J₂ : ⟪u₁, J u₂⟫ = 0 := by rw [← neg_eq_zero, ← hswap, hJ₁₂]
   have hJ₂₁ : ⟪J u₂, u₁⟫ = 0 := by rw [real_inner_comm, h₁J₂]
   have hf : Orthonormal ℝ ![u₁, J u₁, u₂, J u₂] := by
     rw [orthonormal_iff_ite]

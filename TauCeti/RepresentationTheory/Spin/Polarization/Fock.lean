@@ -200,10 +200,9 @@ theorem realFockAction_ι_mul_ι_apply_apply_one (u : V) :
     Subtype.ext (J.holomorphicPart_apply_apply u)
   have hpolar : QuadraticMap.polar (Q.baseChange ℂ) (J.holomorphicPart u)
       (J.antiholomorphicPart u) = Q u := by
-    have h0 : QuadraticMap.polar Q u (J u) = 0 := by
-      have h := J.polar_apply_left_eq_neg_polar_apply_right hQJ u u
-      rw [QuadraticMap.polar_comm] at h
-      linarith
+    have h0 : QuadraticMap.polar Q u (J u) = 0 :=
+      J.bilinForm_apply_apply_self_eq_zero (g := Q.polarBilin) ⟨QuadraticMap.polar_comm Q⟩
+        (J.polar_apply_apply hQJ) u
     rw [J.polar_holomorphicPart_antiholomorphicPart hQJ, h0, QuadraticMap.polar_self]
     push_cast
     ring
