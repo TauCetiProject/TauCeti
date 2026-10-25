@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.RingTheory.Finiteness.Ideal
+public import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Powers of the ideal defining an adic topology
@@ -88,7 +89,7 @@ theorem comap {S : Type*} [CommRing S] [TopologicalSpace S] (hI : IsAdic I)
     { toContinuousAdd := he.continuousAdd e, toContinuousMul := he.continuousMul e }
   have hset (n : ℕ) : ((I.comap e ^ n : Ideal S) : Set S) =
       e ⁻¹' ((I ^ n : Ideal R) : Set R) := by
-    rw [← Ideal.map_symm, ← Ideal.map_pow, Ideal.map_symm, Ideal.coe_comap]
+    rw [← Ideal.comap_pow_of_ringEquiv, Ideal.coe_comap]
   refine isAdic_iff.mpr ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
   · rw [hset]
     exact (hI.isOpen_pow n).preimage he.continuous

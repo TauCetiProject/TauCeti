@@ -653,7 +653,7 @@ theorem comap_idealImage {B : Type*} [CommRing B] [TopologicalSpace B]
   have hI : (P.comap f hf hP).idealOfDefinition = P.idealOfDefinition.comap e := rfl
   ext x
   simp only [mem_idealImage, AddSubgroup.mem_comap, AddMonoidHom.coe_ofClass]
-  rw [hI, ← Ideal.map_symm, ← Ideal.map_pow, Ideal.map_symm]
+  rw [hI, ← Ideal.comap_pow_of_ringEquiv]
   constructor
   · rintro ⟨y, hy, rfl⟩
     exact ⟨e y, hy, P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP y⟩
