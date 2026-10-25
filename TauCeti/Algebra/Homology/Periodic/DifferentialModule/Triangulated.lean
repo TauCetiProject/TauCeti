@@ -104,6 +104,13 @@ noncomputable def stableToHomotopy :
     ExactStructure.homologicalComplexSplitStableToHomotopy C (ComplexShape.up (ZMod 1))
       (fun i ↦ ⟨i + 1, rfl⟩)
 
+/-- The comparison factors through the split stable category of one-periodic complexes. -/
+theorem stableToHomotopy_eq_comp :
+    stableToHomotopy C =
+      (stableOnePeriodicComplexEquivalence C).functor ⋙
+        ExactStructure.homologicalComplexSplitStableToHomotopy C (ComplexShape.up (ZMod 1))
+          (fun i ↦ ⟨i + 1, rfl⟩) := (rfl)
+
 /-- The comparison restricts to the homotopy quotient of one-periodic complexes on differential
 modules. -/
 theorem projectiveStableFunctor_comp_stableToHomotopy :
@@ -193,8 +200,8 @@ theorem stableToHomotopy_commShiftIso (n : ℤ) :
     letI := PeriodicComplex.stableToHomotopyCommShift C 1
     letI := stableToHomotopyCommShift C
     (stableToHomotopy C).commShiftIso n = (by
-      -- Rewrite the opaque comparison's endpoints before elaborating its explicit factors.
-      rw [stableToHomotopy]
+      -- The public equation identifies the endpoints without exposing the functor body.
+      rw [stableToHomotopy_eq_comp]
       exact (Functor.associator _ _ _).symm ≪≫
         Functor.isoWhiskerRight
           ((stableOnePeriodicComplexEquivalence C).functor.commShiftIso n) _ ≪≫
