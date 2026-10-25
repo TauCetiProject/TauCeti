@@ -466,33 +466,6 @@ private theorem apply_torsionCoeffBaseChange_eq_zero {L : Type*} [Field L] [Alge
   rwa [cocyclesMap1_apply] at hval
 
 omit [DecidableEq K] [W.toAffine.IsCharNeTwoNF] in
-/-- **Pairing with a sum of points of order two.** For a family `m` of square roots of unity
-indexed by `E(Kˢ)[2]`, the sum of the points `T` with `m T ≠ 0` pairs with a nonzero point `S` to
-`∑ T, m T - m O - m S`, as two distinct nonzero points of order two pair to `-1`. -/
-theorem torsionCoeffWeilPairing_sum_ite (h2 : IsUnit ((2 : ℕ) : K))
-    [Fintype (W.TorsionCoeff 2)] (m : W.TorsionCoeff 2 → KummerCoeff K 2)
-    [DecidablePred (m · = 0)] {S : W.TorsionCoeff 2} (hS : S ≠ 0) :
-    W.torsionCoeffWeilPairing 2 h2 (∑ T, if m T = 0 then 0 else T) S =
-      (∑ T, m T) - m 0 - m S := by
-  classical
-  have hterm (T : W.TorsionCoeff 2) :
-      W.torsionCoeffWeilPairing 2 h2 (if m T = 0 then 0 else T) S =
-        m T - (if T = 0 then m T else 0) - (if T = S then m T else 0) := by
-    by_cases hT0 : T = 0
-    · simp [hT0, Ne.symm hS]
-    by_cases hTS : T = S
-    · subst hTS
-      rcases eq_or_ne (m T) 0 with h | h <;> simp [h, hS]
-    simp only [hT0, hTS, ↓reduceIte, sub_zero]
-    have : Invertible (2 : K) := (by simpa using h2 : IsUnit (2 : K)).invertible
-    rcases eq_zero_or_eq_mu2NegOne (m T) with h | h
-    · simp [h]
-    · simp only [h, mu2NegOne_ne_zero, ↓reduceIte]
-      exact WeierstrassCurve.torsionCoeffWeilPairing_two_eq_mu2NegOne h2 hT0 hS hTS
-  simp only [map_sum, AddMonoidHom.finsetSum_apply, hterm, Finset.sum_sub_distrib,
-    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
-
-omit [DecidableEq K] [W.toAffine.IsCharNeTwoNF] in
 /-- **A cocycle into `E(Kˢ)[2]` killed on stabilizers is a coboundary.** If `z : G_K → E(Kˢ)[2]`
 is a `1`-cocycle and `e₂(z(g), T) = 0` whenever `g` fixes `T`, then `z` is a `1`-coboundary. -/
 private theorem isCoboundary₁_of_torsionCoeffWeilPairing_eq_zero
@@ -540,7 +513,7 @@ private theorem isCoboundary₁_of_torsionCoeffWeilPairing_eq_zero
   -- the sum `P` of the `T` with `m T ≠ 0` has `e₂(P, S) = ∑ m - m O - m S` for `S ≠ O`
   let P : W.TorsionCoeff 2 := ∑ T, if m T = 0 then 0 else T
   have hP {S : W.TorsionCoeff 2} (hS : S ≠ 0) : e P S = (∑ T, m T) - m 0 - m S :=
-    torsionCoeffWeilPairing_sum_ite W h2 m hS
+    W.torsionCoeffWeilPairing_sum_ite h2 m hS
   -- and `z` is the coboundary of `P`, by nondegeneracy of the Weil pairing
   refine ⟨P, fun g ↦ ?_⟩
   rw [← sub_eq_zero, ← neg_sub, neg_eq_zero]

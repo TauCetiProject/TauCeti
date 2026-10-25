@@ -134,7 +134,7 @@ private theorem torsionCoeffWeilPairing_descentCocycle [Fintype (W.TorsionCoeff 
   · rw [hS, map_zero, descentRatio_zero hsq h0]
   -- the sum of the points `T` with nontrivial ratio pairs with `S ≠ O` to the product of the
   -- ratios at all `T ∉ {O, S}`, which is the ratio at `S` as all the ratios multiply to `1`
-  rw [descentCocycle, torsionCoeffWeilPairing_sum_ite W h2 _ hS, sum_descentRatio hsq hprod,
+  rw [descentCocycle, W.torsionCoeffWeilPairing_sum_ite h2 _ hS, sum_descentRatio hsq hprod,
     descentRatio_zero hsq h0, sub_zero, zero_sub]
   exact neg_eq_of_add_eq_zero_right (descentRatio_add_self hsq g S)
 
