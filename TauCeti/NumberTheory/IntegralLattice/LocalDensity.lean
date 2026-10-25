@@ -10,6 +10,7 @@ public import Mathlib.Topology.Instances.Rat
 public import TauCeti.Data.ZMod.MulCastHom
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.FiniteField
+import TauCeti.Algebra.BigOperators.Field
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -58,8 +59,9 @@ the reduction is split; the hyperbolic plane at `p = 3` has `det = -1`, a nonsqu
 * `Matrix.tendsto_localDensityCount_div_of_isUnit_det`: at such a prime the normalized count
   converges, and its limit, the local density, is the count at level `1` divided by
   `p ^ (n.choose 2)`.
-* `Matrix.localDensityCount_one`: the count at level `1` is the order of the orthogonal group of
-  the reduction of `A` modulo `p`.
+* `Matrix.localDensityCount_one`: the count at level `1` is the number of matrices over `𝔽_p`
+  preserving the reduction of `A` modulo `p`; when that reduction is nondegenerate, this is the
+  order of its orthogonal group.
 * `Matrix.tendsto_localDensityCount_div_of_card_eq_two_mul_add_one`,
   `Matrix.tendsto_localDensityCount_div_of_card_eq_two_mul_add_two`: the closed values of the
   local density at such a prime, in odd and in even rank.
@@ -168,8 +170,9 @@ theorem tendsto_localDensityCount_div_of_isUnit_det (hp : p ≠ 2) {A : Matrix n
   tendsto_const_nhds.congr' <| (eventually_ne_atTop 0).mono fun _ hr =>
     (localDensityCount_div_pow_of_isUnit_det hp hA hdet hr).symm
 
-/-- **The local density count at level `1` is the order of an orthogonal group over `𝔽_p`**: it is
-the number of `X ∈ Mₙ(𝔽_p)` with `Xᵀ Ā X = Ā`, for `Ā` the reduction of `A` modulo `p`. -/
+/-- **The local density count at level `1` is a count over `𝔽_p`**: it is the number of
+`X ∈ Mₙ(𝔽_p)` with `Xᵀ Ā X = Ā`, for `Ā` the reduction of `A` modulo `p`. When `Ā` is symmetric
+and nondegenerate, this is the order of the orthogonal group of `Ā`. -/
 theorem localDensityCount_one (A : Matrix n n ℤ_[p]) :
     A.localDensityCount 1 = Nat.card (isometryMatrices (A.map PadicInt.toZMod)) := by
   set f := ZMod.castHom (dvd_pow_self p one_ne_zero) (ZMod p)
@@ -179,18 +182,6 @@ theorem localDensityCount_one (A : Matrix n n ℤ_[p]) :
     funext fun x => by simp [f]
   rw [localDensityCount_def, ← natCard_isometryMatrices_map_ringEquiv (RingEquiv.ofBijective f hf),
     Matrix.map_map, hfun]
-
-/-- `∏_{i<m} (q^{2(i+1)} - 1) = q^{m(m+1)} ∏_{i<m} (1 - q^{-2(i+1)})`. -/
-private theorem prod_range_pow_sub_one {q : ℚ} (hq : q ≠ 0) (m : ℕ) :
-    ∏ i ∈ Finset.range m, (q ^ (2 * (i + 1)) - 1) =
-      q ^ (m * (m + 1)) * ∏ i ∈ Finset.range m, (1 - (q ^ (2 * (i + 1)))⁻¹) := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [Finset.prod_range_succ, Finset.prod_range_succ, ih]
-    have : q ^ (2 * (m + 1)) ≠ 0 := pow_ne_zero _ hq
-    field_simp
-    ring
 
 /-- The reduction modulo an odd prime `p` of a symmetric matrix with unit determinant over `ℤ_p`
 is a nondegenerate symmetric matrix over a field of characteristic different from two. -/
@@ -217,9 +208,13 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_one (hp : p ≠ 2)
     rw [hn, Nat.choose_two_right, Nat.add_sub_cancel,
       show (2 * m + 1) * (2 * m) = (m ^ 2 + m * (m + 1)) * 2 by ring, Nat.mul_div_cancel _ two_pos]
   have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  have hsum : ∑ i ∈ Finset.range m, 2 * (i + 1) = m * (m + 1) := by
+    rw [← Finset.mul_sum, ← Nat.add_zero (∑ i ∈ Finset.range m, (i + 1)),
+      ← Finset.sum_range_succ' (fun i => i), mul_comm, Finset.sum_range_id_mul_two,
+      Nat.add_sub_cancel, mul_comm]
   have h' := congrArg (Int.cast : ℤ → ℚ) h
   push_cast at h'
-  rw [localDensityCount_one, h', hchoose, prod_range_pow_sub_one hp0]
+  rw [localDensityCount_one, h', hchoose, Finset.prod_pow_sub_one hp0, hsum]
   field_simp
   ring
 
@@ -244,9 +239,13 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_two (hp : p ≠ 2)
       show (2 * m + 2) * (2 * m + 1) = (2 * (m * (m + 1)) + (m + 1)) * 2 by ring,
       Nat.mul_div_cancel _ two_pos]
   have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  have hsum : ∑ i ∈ Finset.range m, 2 * (i + 1) = m * (m + 1) := by
+    rw [← Finset.mul_sum, ← Nat.add_zero (∑ i ∈ Finset.range m, (i + 1)),
+      ← Finset.sum_range_succ' (fun i => i), mul_comm, Finset.sum_range_id_mul_two,
+      Nat.add_sub_cancel, mul_comm]
   have h' := congrArg (Int.cast : ℤ → ℚ) h
   push_cast at h'
-  rw [localDensityCount_one, h', hchoose, prod_range_pow_sub_one hp0]
+  rw [localDensityCount_one, h', hchoose, Finset.prod_pow_sub_one hp0, hsum]
   field_simp
   ring
 
