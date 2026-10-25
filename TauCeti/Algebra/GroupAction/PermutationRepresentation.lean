@@ -88,7 +88,6 @@ theorem permutationRepresentation_injective [FaithfulSMul G α] (e : α ≃ β) 
   (e.permCongrHom.toEquiv.comp_injective _).2 MulAction.toPerm_injective
 
 /-- A faithful action has an image with the same cardinality as the acting group. -/
-@[simp]
 theorem natCard_permutationRepresentation_range [FaithfulSMul G α] (e : α ≃ β) :
     Nat.card (permutationRepresentation (G := G) e).range = Nat.card G :=
   (Nat.card_congr
