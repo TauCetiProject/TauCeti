@@ -17,6 +17,7 @@ import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Regular.Category
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.Algebra.Module.Projective.Quotient
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # Projective dimension along the quotient by a nonzerodivisor
@@ -161,54 +162,6 @@ theorem hasProjectiveDimensionLE_of_isScalarTower_quotient (hx : x ∈ nonZeroDi
   have := hasProjectiveDimensionLE_restrictScalars_quotient hx n (of (R ⧸ span {x}) L)
   hasProjectiveDimensionLT_of_iso (restrictScalarsAlgebraMapIso (S := R ⧸ span {x}) L) (n + 2)
 
-section Reduction
-
-variable {K P M : Type*} [AddCommGroup K] [Module R K] [AddCommGroup P] [Module R P]
-  [AddCommGroup M] [Module R M] {f : K →ₗ[R] P} {g : P →ₗ[R] M}
-
-/-- The `R ⧸ I`-linear map `M ⧸ I M → N ⧸ I N` induced by an `R`-linear map `M → N`. -/
-private noncomputable abbrev quotMap (I : Ideal R) {M N : Type*} [AddCommGroup M] [Module R M]
-    [AddCommGroup N] [Module R N] (f : M →ₗ[R] N) :
-    M ⧸ I • (⊤ : Submodule R M) →ₗ[R ⧸ I] N ⧸ I • (⊤ : Submodule R N) :=
-  LinearMap.extendScalarsOfSurjective Ideal.Quotient.mk_surjective
-    (Submodule.mapQ _ _ f (Submodule.smul_top_le_comap_smul_top I f))
-
-omit [Small.{v} R] in
-/-- `quotMap (x) f` is Mathlib's `QuotSMulTop.map x f`, up to the identification of `(x) • ⊤` with
-`x • ⊤`. -/
-private lemma quotSMulTop_map_comp_quotEquivOfEq {M N : Type*} [AddCommGroup M] [Module R M]
-    [AddCommGroup N] [Module R N] (f : M →ₗ[R] N) :
-    QuotSMulTop.map x f ∘ₗ
-        (Submodule.quotEquivOfEq _ _ (Submodule.ideal_span_singleton_smul x ⊤)).toLinearMap =
-      (Submodule.quotEquivOfEq _ _ (Submodule.ideal_span_singleton_smul x ⊤)).toLinearMap ∘ₗ
-        (quotMap (span {x}) f).restrictScalars R :=
-  Submodule.linearMap_qext _ rfl
-
-omit [Small.{v} R] in
-/-- Reducing a short exact sequence `0 → K → P → M → 0` modulo an element `x` that is regular on
-`M` gives a short exact sequence `0 → K ⧸ x K → P ⧸ x P → M ⧸ x M → 0`. -/
-private lemma quotMap_shortExact (hfg : Function.Exact f g) (hf : Function.Injective f)
-    (hg : Function.Surjective g) (hM : IsSMulRegular M x) :
-    Function.Exact (quotMap (span {x}) f) (quotMap (span {x}) g) ∧
-      Function.Injective (quotMap (span {x}) f) ∧ Function.Surjective (quotMap (span {x}) g) := by
-  have hf' := quotSMulTop_map_comp_quotEquivOfEq (x := x) f
-  have hg' := quotSMulTop_map_comp_quotEquivOfEq (x := x) g
-  refine ⟨(Function.Exact.iff_of_ladder_linearEquiv hf' hg').mp
-    (QuotSMulTop.map_exact x hfg hg), ?_, ?_⟩
-  · -- Mathlib's four-term lemma, applied to `0 → K → P → M`.
-    have := QuotSMulTop.map_first_exact_on_four_term_exact_of_isSMulRegular_last
-      ((LinearMap.exact_zero_iff_injective PUnit.{1} f).mpr hf) hfg hM
-    rw [map_zero, LinearMap.exact_zero_iff_injective] at this
-    have h := congrArg DFunLike.coe hf'
-    rw [LinearMap.coe_comp, LinearMap.coe_comp] at h
-    exact (h ▸ this.comp (LinearEquiv.injective _)).of_comp
-  · intro m
-    obtain ⟨m, rfl⟩ := Submodule.mkQ_surjective _ m
-    obtain ⟨p, rfl⟩ := hg m
-    exact ⟨Submodule.Quotient.mk p, rfl⟩
-
-end Reduction
-
 /-- **Change of rings for projective dimension, by reduction.** If `x` is a nonzerodivisor of `R`
 which is regular on an `R`-module `M` of projective dimension at most `n`, then `M ⧸ x M` has
 projective dimension at most `n` over `R ⧸ (x)`. -/
@@ -236,12 +189,13 @@ theorem hasProjectiveDimensionLE_quotient_smul_top (hx : x ∈ nonZeroDivisors R
     have : HasProjectiveDimensionLE S.X₁ n :=
       hS.hasProjectiveDimensionLT_X₁ (n + 1) inferInstance ‹_›
     have := ih S.X₁ hK
-    obtain ⟨hex, hinj, hsurj⟩ := quotMap_shortExact (x := x)
-      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).mp hS.exact)
-      hS.injective_f hS.surjective_g hM
+    have hSex := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).mp hS.exact
+    have hex := (span {x}).mapQSMulTop_exact hSex hS.surjective_g
     have hT := shortComplex_shortExact
-      (shortComplexOfCompEqZero (quotMap (span {x}) S.f.hom) (quotMap (span {x}) S.g.hom)
-        (LinearMap.ext fun k ↦ hex.apply_apply_eq_zero k)) hex hinj hsurj
+      (shortComplexOfCompEqZero ((span {x}).mapQSMulTop S.f.hom) ((span {x}).mapQSMulTop S.g.hom)
+        (LinearMap.ext fun k ↦ hex.apply_apply_eq_zero k)) hex
+      (mapQSMulTop_span_singleton_injective hSex hS.injective_f hM)
+      ((span {x}).mapQSMulTop_surjective hS.surjective_g)
     exact hT.hasProjectiveDimensionLT_X₃ (n + 1) inferInstance
       (hasProjectiveDimensionLT_of_ge _ 1 _ (by omega))
 
