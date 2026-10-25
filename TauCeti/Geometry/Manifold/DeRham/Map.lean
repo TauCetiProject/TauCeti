@@ -53,9 +53,9 @@ namespace closedForms
 
 /-- Pullback of closed smooth forms along a smooth map. -/
 def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
-    closedForms I' M' k →ₗ[ℝ] closedForms I M k :=
-  ((SmoothForm.mpullback f hf).domRestrict (closedForms I' M' k)).codRestrict
-    (closedForms I M k) fun φ ↦ by
+    closedForms I' M' ℝ k →ₗ[ℝ] closedForms I M ℝ k :=
+  ((SmoothForm.mpullback f hf).domRestrict (closedForms I' M' ℝ k)).codRestrict
+    (closedForms I M ℝ k) fun φ ↦ by
       rw [mem_closedForms_iff_mextDerivₗ_eq_zero, LinearMap.domRestrict_apply,
         SmoothForm.mextDerivₗ_mpullback,
         (mem_closedForms_iff_mextDerivₗ_eq_zero I' φ.1).mp φ.2, map_zero]
@@ -63,7 +63,7 @@ def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
 /-- The underlying smooth form of a pullback of a closed form is the usual smooth pullback. -/
 @[simp]
 theorem coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ)
-    (φ : closedForms I' M' k) :
+    (φ : closedForms I' M' ℝ k) :
     (mpullback f hf k φ).1 = SmoothForm.mpullback f hf φ.1 := by
   rw [mpullback]
   rfl
@@ -87,15 +87,15 @@ theorem mpullback_comp (f : M → M') (g : M' → M'')
 
 /-- Pullback preserves exact forms. -/
 theorem mpullback_mem_exactForms (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ)
-    (φ : closedForms I' M' k) (hφ : φ.1 ∈ exactForms I' M' k) :
-    (mpullback f hf k φ).1 ∈ exactForms I M k := by
+    (φ : closedForms I' M' ℝ k) (hφ : φ.1 ∈ exactForms I' M' ℝ k) :
+    (mpullback f hf k φ).1 ∈ exactForms I M ℝ k := by
   cases k with
   | zero =>
       rw [exactForms_zero, Submodule.mem_bot] at hφ ⊢
       rw [coe_mpullback, hφ]
       exact LinearMap.map_zero _
   | succ k =>
-      rw [exactForms_succ, LinearMap.mem_range] at hφ ⊢
+      rw [exactForms_succ, SmoothForm.mextDerivLinearMap_real, LinearMap.mem_range] at hφ ⊢
       obtain ⟨ψ, hψ⟩ := hφ
       exact ⟨SmoothForm.mpullback f hf ψ, by
         rw [SmoothForm.mextDerivₗ_mpullback, hψ, coe_mpullback]⟩
@@ -107,7 +107,7 @@ namespace deRhamCohomology
 /-- The map from closed forms on the target to cohomology on the source obtained by pulling back
 and taking the cohomology class. -/
 private def pullbackClass (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
-    closedForms I' M' k →ₗ[ℝ] deRhamCohomology I M k :=
+    closedForms I' M' ℝ k →ₗ[ℝ] deRhamCohomology I M ℝ k :=
   (mk I k).comp (closedForms.mpullback f hf k)
 
 /-- Exact target forms lie in the kernel of pullback followed by the cycle-class map. -/
@@ -121,19 +121,19 @@ private theorem ker_mk_le_ker_pullbackClass (f : M → M')
 
 /-- The contravariant map on de Rham cohomology induced by a smooth map. -/
 def map (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
-    deRhamCohomology I' M' k →ₗ[ℝ] deRhamCohomology I M k := by
-  let q := mk I' (M := M') k
-  exact (LinearMap.liftOfSurjective (R := ℝ) (M := closedForms I' M' k)
-    (M₂ := deRhamCohomology I' M' k) (M₃ := deRhamCohomology I M k) (f := q)
+    deRhamCohomology I' M' ℝ k →ₗ[ℝ] deRhamCohomology I M ℝ k := by
+  let q := mk (𝕜 := ℝ) I' (M := M') k
+  exact (LinearMap.liftOfSurjective (R := ℝ) (M := closedForms I' M' ℝ k)
+    (M₂ := deRhamCohomology I' M' ℝ k) (M₃ := deRhamCohomology I M ℝ k) (f := q)
     (mk_surjective I' (M := M') k))
       (⟨pullbackClass f hf k, ker_mk_le_ker_pullbackClass f hf k⟩ :
-        {g : closedForms I' M' k →ₗ[ℝ] deRhamCohomology I M k //
+        {g : closedForms I' M' ℝ k →ₗ[ℝ] deRhamCohomology I M ℝ k //
           LinearMap.ker q ≤ LinearMap.ker g})
 
 /-- The induced map sends the class of a closed form to the class of its pullback. -/
 @[simp]
 theorem map_mk (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ)
-    (φ : closedForms I' M' k) :
+    (φ : closedForms I' M' ℝ k) :
     map f hf k (mk I' k φ) = mk I k (closedForms.mpullback f hf k φ) := by
   rw [map, LinearMap.equivOfSurjective_apply]
   rfl
@@ -191,9 +191,9 @@ namespace deRhamComplex
 
 /-- The cochain map of de Rham complexes induced by a smooth map, given in each degree by pullback
 of smooth forms. -/
-def map (f : M → M') (hf : ContMDiff I I' ∞ f) : deRhamComplex I' M' ⟶ deRhamComplex I M :=
-  CochainComplex.ofHom (fun k ↦ (deRhamComplexXIso I' k).hom ≫
-      ModuleCat.ofHom (SmoothForm.mpullback f hf) ≫ (deRhamComplexXIso I k).inv)
+def map (f : M → M') (hf : ContMDiff I I' ∞ f) : deRhamComplex I' M' ℝ ⟶ deRhamComplex I M ℝ :=
+  CochainComplex.ofHom (fun k ↦ (deRhamComplexXIso (𝕜 := ℝ) I' k).hom ≫
+      ModuleCat.ofHom (SmoothForm.mpullback f hf) ≫ (deRhamComplexXIso (𝕜 := ℝ) I k).inv)
     fun k ↦ by
       have hcomm : ModuleCat.ofHom (SmoothForm.mpullback (F := ℝ) (k := k) f hf) ≫
           ModuleCat.ofHom (mextDerivₗ I (F := ℝ) k) =
@@ -203,22 +203,23 @@ def map (f : M → M') (hf : ContMDiff I I' ∞ f) : deRhamComplex I' M' ⟶ deR
         exact SmoothForm.mextDerivₗ_mpullback f hf k φ
       rw [(Iso.eq_comp_inv _).mpr (deRhamComplex_d I (M := M) k),
         (Iso.eq_comp_inv _).mpr (deRhamComplex_d I' (M := M') k)]
-      simp only [Category.assoc, Iso.inv_hom_id_assoc, reassoc_of% hcomm]
+      simp only [SmoothForm.mextDerivLinearMap_real, Category.assoc,
+        Iso.inv_hom_id_assoc, reassoc_of% hcomm]
 
 /-- Under the canonical identifications of the objects, the induced cochain map is pullback of
 smooth forms. -/
 @[reassoc]
 theorem map_f (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
-    (map f hf).f k ≫ (deRhamComplexXIso I k).hom =
-      (deRhamComplexXIso I' k).hom ≫ ModuleCat.ofHom (SmoothForm.mpullback f hf) := by
+    (map f hf).f k ≫ (deRhamComplexXIso (𝕜 := ℝ) I k).hom =
+      (deRhamComplexXIso (𝕜 := ℝ) I' k).hom ≫ ModuleCat.ofHom (SmoothForm.mpullback f hf) := by
   simp [map]
 
 /-- The induced cochain map, on a form read through the canonical identification of the
 degree-`k` object, is pullback of that form. -/
 theorem map_f_inv_apply (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ)
     (φ : SmoothForm I' M' ℝ k) :
-    (map f hf).f k ((deRhamComplexXIso I' k).inv φ) =
-      (deRhamComplexXIso I k).inv (SmoothForm.mpullback f hf φ) := by
+    (map f hf).f k ((deRhamComplexXIso (𝕜 := ℝ) I' k).inv φ) =
+      (deRhamComplexXIso (𝕜 := ℝ) I k).inv (SmoothForm.mpullback f hf φ) := by
   rw [(Iso.eq_comp_inv _).mpr (map_f f hf k)]
   simp
 
@@ -244,13 +245,14 @@ theorem homologyMap_map (f : M → M') (hf : ContMDiff I I' ∞ f) (k : ℕ) :
   obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective I' k c
   rw [ModuleCat.hom_ofHom, deRhamCohomology.map_mk, deRhamCohomology.mk_eq_moduleCatHomologyClass,
     deRhamCohomology.mk_eq_moduleCatHomologyClass]
-  refine HomologicalComplex.homologyMap_moduleCatHomologyClass (Z' := closedForms I M k) _ _ _
+  refine HomologicalComplex.homologyMap_moduleCatHomologyClass (Z' := closedForms I M ℝ k) _ _ _
     (map f hf) _ _ (closedForms.mpullback f hf k) (fun φ ↦ ?_) φ
   have h := ConcreteCategory.congr_hom ((Iso.eq_comp_inv _).mpr (map_f f hf k))
-    ((deRhamComplexXIso I' k).inv φ.1)
+    ((deRhamComplexXIso (𝕜 := ℝ) I' k).inv φ.1)
   simp only [Category.assoc, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp,
     Function.comp_apply, Iso.inv_hom_id_apply] at h
-  exact h.trans (congrArg (deRhamComplexXIso I k).inv.hom (closedForms.coe_mpullback f hf k φ).symm)
+  exact h.trans (congrArg (deRhamComplexXIso (𝕜 := ℝ) I k).inv.hom
+    (closedForms.coe_mpullback f hf k φ).symm)
 
 end deRhamComplex
 

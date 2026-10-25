@@ -117,13 +117,13 @@ variable (I M) in
 dimension `k + l`, sending classes `[φ]` and `[ψ]` to `∫_M φ ∧ ψ`. It is the wedge product
 `H^k_dR(M) → H^l_c(M) → H^(k+l)_c(M)` followed by integration. -/
 def poincarePairing (o : Manifold.Orientation I M (Fin (k + l))) :
-    deRhamCohomology I M k →ₗ[ℝ] compactlySupportedDeRhamCohomology I M l →ₗ[ℝ] ℝ :=
+    deRhamCohomology I M ℝ k →ₗ[ℝ] compactlySupportedDeRhamCohomology I M l →ₗ[ℝ] ℝ :=
   (compactlySupportedDeRhamCohomology.wedge I M k l).compr₂
     (compactlySupportedDeRhamCohomology.integral o)
 
 /-- The Poincaré pairing of two classes is the integral of their wedge product. -/
 theorem poincarePairing_apply (o : Manifold.Orientation I M (Fin (k + l)))
-    (x : deRhamCohomology I M k) (y : compactlySupportedDeRhamCohomology I M l) :
+    (x : deRhamCohomology I M ℝ k) (y : compactlySupportedDeRhamCohomology I M l) :
     poincarePairing I M o x y =
       compactlySupportedDeRhamCohomology.integral o
         (compactlySupportedDeRhamCohomology.wedge I M k l x y) :=
@@ -133,7 +133,7 @@ theorem poincarePairing_apply (o : Manifold.Orientation I M (Fin (k + l)))
 form `ψ` is `∫_M φ ∧ ψ`. -/
 @[simp]
 theorem poincarePairing_mk (o : Manifold.Orientation I M (Fin (k + l)))
-    (φ : closedForms I M k) (ψ : compactlySupportedClosedForms I M l) :
+    (φ : closedForms I M ℝ k) (ψ : compactlySupportedClosedForms I M l) :
     poincarePairing I M o (deRhamCohomology.mk I k φ)
         (compactlySupportedDeRhamCohomology.mk I l ψ) =
       integralTopForm o ((φ.1 : RoughForm I M ℝ k).wedge ψ.1.1) := by

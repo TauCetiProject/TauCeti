@@ -49,7 +49,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 /-- A smooth real `0`-form is closed exactly when its function is locally constant. -/
 theorem mem_closedForms_zero_iff (φ : SmoothForm I M ℝ 0) :
-    φ ∈ closedForms I M 0 ↔ IsLocallyConstant fun x ↦ φ.1 x 0 := by
+    φ ∈ closedForms I M ℝ 0 ↔ IsLocallyConstant fun x ↦ φ.1 x 0 := by
   have hφ : IsSmoothForm I ∞ (RoughForm.ofFunction I fun x ↦ φ.1 x 0) := by
     rw [← RoughForm.eq_ofFunction, isSmoothForm_def]
     exact φ.contMDiff
@@ -59,7 +59,7 @@ theorem mem_closedForms_zero_iff (φ : SmoothForm I M ℝ 0) :
 
 variable (M) in
 /-- Closed smooth real `0`-forms are exactly the locally constant real functions. -/
-def closedFormsZeroEquiv : closedForms I M 0 ≃ₗ[ℝ] LocallyConstant M ℝ where
+def closedFormsZeroEquiv : closedForms I M ℝ 0 ≃ₗ[ℝ] LocallyConstant M ℝ where
   toFun φ := ⟨fun x ↦ φ.1.1 x 0, (mem_closedForms_zero_iff I φ.1).mp φ.2⟩
   invFun f := ⟨⟨RoughForm.ofFunction I f,
       (isSmoothForm_ofFunction_iff.mpr fun x ↦ contMDiffAt_const.congr_of_eventuallyEq
@@ -74,7 +74,7 @@ def closedFormsZeroEquiv : closedForms I M 0 ≃ₗ[ℝ] LocallyConstant M ℝ w
 
 /-- The locally constant function of a closed `0`-form is its value on the empty tuple. -/
 @[simp]
-theorem closedFormsZeroEquiv_apply (φ : closedForms I M 0) (x : M) :
+theorem closedFormsZeroEquiv_apply (φ : closedForms I M ℝ 0) (x : M) :
     closedFormsZeroEquiv I M φ x = φ.1.1 x 0 := by
   rw [closedFormsZeroEquiv]
   rfl
@@ -88,7 +88,7 @@ theorem coe_closedFormsZeroEquiv_symm_apply (f : LocallyConstant M ℝ) :
 
 /-- In degree zero the cycle-class map is injective, since there are no exact `0`-forms. -/
 theorem deRhamCohomology.mk_zero_injective :
-    Function.Injective (deRhamCohomology.mk I (M := M) 0) := by
+    Function.Injective (deRhamCohomology.mk (𝕜 := ℝ) I (M := M) 0) := by
   refine (injective_iff_map_eq_zero _).mpr fun φ hφ ↦ ?_
   rw [deRhamCohomology.mk_eq_zero_iff, exactForms_zero, Submodule.mem_bot] at hφ
   exact Subtype.ext hφ
@@ -96,14 +96,14 @@ theorem deRhamCohomology.mk_zero_injective :
 variable (M) in
 /-- **Degree-zero de Rham cohomology.** `H⁰_dR(M)` is the space of locally constant real
 functions on `M`, for any `C²` manifold with boundary or corners. -/
-def deRhamCohomologyZeroEquiv : deRhamCohomology I M 0 ≃ₗ[ℝ] LocallyConstant M ℝ :=
+def deRhamCohomologyZeroEquiv : deRhamCohomology I M ℝ 0 ≃ₗ[ℝ] LocallyConstant M ℝ :=
   (LinearEquiv.ofBijective (deRhamCohomology.mk I 0)
     ⟨deRhamCohomology.mk_zero_injective I, deRhamCohomology.mk_surjective I 0⟩).symm ≪≫ₗ
     closedFormsZeroEquiv I M
 
 /-- The class of a closed `0`-form corresponds to its locally constant function. -/
 @[simp]
-theorem deRhamCohomologyZeroEquiv_mk (φ : closedForms I M 0) (x : M) :
+theorem deRhamCohomologyZeroEquiv_mk (φ : closedForms I M ℝ 0) (x : M) :
     deRhamCohomologyZeroEquiv I M (deRhamCohomology.mk I 0 φ) x = φ.1.1 x 0 := by
   rw [deRhamCohomologyZeroEquiv, LinearEquiv.trans_apply, ← closedFormsZeroEquiv_apply]
   congr 2
@@ -121,7 +121,7 @@ theorem deRhamCohomologyZeroEquiv_symm_apply (f : LocallyConstant M ℝ) :
 variable (M) in
 /-- On a connected manifold, degree-zero de Rham cohomology is one-dimensional. -/
 theorem finrank_deRhamCohomology_zero [ConnectedSpace M] :
-    Module.finrank ℝ (deRhamCohomology I M 0) = 1 := by
+    Module.finrank ℝ (deRhamCohomology I M ℝ 0) = 1 := by
   have hconst : Function.Bijective (LocallyConstant.constₗ (X := M) ℝ (Y := ℝ)) := by
     refine ⟨fun a b hab ↦ ?_, fun f ↦ ?_⟩
     · obtain ⟨x⟩ := ‹ConnectedSpace M›.toNonempty
