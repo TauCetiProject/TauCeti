@@ -51,7 +51,8 @@ instance isIrreducible_typeB_standard :
       ((IsSimpleOrder.eq_bot_or_eq_top N.toSubmodule).resolve_left
         ((LieSubmodule.toSubmodule_eq_bot N).not.mpr hN))
   | inr h =>
-    apply isIrreducible_skewAdjointMatricesLieSubalgebra_standard
+    rw [Orthogonal.typeB]
+    apply isIrreducible_skewAdjointMatricesLieSubalgebra_standard (J := Orthogonal.JB ι K)
     · exact Orthogonal.isSymm_JB
     · exact Orthogonal.isUnit_JB (isUnit_iff_ne_zero.mpr (NeZero.ne (2 : K)))
     · simp only [Fintype.card_sum, Fintype.card_unit]
