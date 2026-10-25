@@ -433,6 +433,8 @@ scalar. -/
 @[simp]
 theorem laverage_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (g : X → ℝ≥0∞) :
     ⨍⁻ x, g x ∂(a • μ) = ⨍⁻ x, g x ∂μ := by
+  -- The identity change of variables reuses the scalar cancellation proved above.
+  -- Unfolding refl only normalizes its function and preimage of the whole space.
   simpa [MeasurableEquiv.refl] using
     setLAverage_comp_preimage_of_map_eq_smul (μ := a • μ) (ν := μ)
       (e := MeasurableEquiv.refl X) (by simp [MeasurableEquiv.refl]) ha ha' g Set.univ
@@ -448,6 +450,8 @@ scalar. -/
 @[simp]
 theorem average_smul_measure (ha : a ≠ 0) (ha' : a ≠ ∞) (f : X → F) :
     ⨍ x, f x ∂(a • μ) = ⨍ x, f x ∂μ := by
+  -- Specialize the same transport identity rather than duplicate its scalar arithmetic;
+  -- unfolding refl identifies its function and whole-space preimage with the identity.
   simpa [MeasurableEquiv.refl] using
     setAverage_comp_preimage_of_map_eq_smul (μ := a • μ) (ν := μ)
       (e := MeasurableEquiv.refl X) (by simp [MeasurableEquiv.refl]) ha ha' f Set.univ

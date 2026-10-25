@@ -644,9 +644,9 @@ theorem measure_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
       ENNReal.ofReal (2 * Real.exp (-(Real.log 2 * s / (2 ^ (Fintype.card ι + 1) * M)))) *
         μ (closedBall c r) := by
   obtain ⟨a, hμ, havg, hfv, hMv⟩ := exists_eq_smul_volume_and_setLAverage_le hf hM
-  rw [havg]
-  simpa only [hμ, Measure.smul_apply, smul_eq_mul, mul_left_comm] using
-    mul_le_mul_right (volume_lt_norm_sub_setAverage_closedBall_le hfv hMv s) a
+  rw [havg, hμ, Measure.smul_apply, Measure.smul_apply, smul_eq_mul, smul_eq_mul,
+    mul_left_comm]
+  exact mul_le_mul_right (volume_lt_norm_sub_setAverage_closedBall_le hfv hMv s) a
 
 /-- **Exponential integrability of functions of bounded mean oscillation** on a cube, for any
 additive Haar measure. Let `f` be integrable on the closed sup-norm ball `closedBall c r ⊆ ℝⁿ`,
@@ -666,10 +666,10 @@ theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [CompleteSpace E]
       ENNReal.ofReal (1 + 2 * Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)) /
         (2 - Real.exp (σ * (2 ^ (Fintype.card ι + 1) * M)))) * μ (closedBall c r) := by
   obtain ⟨a, hμ, havg, hfv, hMv⟩ := exists_eq_smul_volume_and_setLAverage_le hf hM
-  rw [havg]
-  simpa only [hμ, Measure.restrict_smul, lintegral_smul_measure, Measure.smul_apply,
-    smul_eq_mul, mul_left_comm] using
-    mul_le_mul_right (setLIntegral_exp_mul_norm_sub_setAverage_closedBall_volume_le hfv hMv hρ) a
+  rw [havg, hμ, Measure.restrict_smul, lintegral_smul_measure, Measure.smul_apply,
+    smul_eq_mul, smul_eq_mul, mul_left_comm]
+  exact mul_le_mul_right
+    (setLIntegral_exp_mul_norm_sub_setAverage_closedBall_volume_le hfv hMv hρ) a
 
 end ClosedBall
 
