@@ -564,6 +564,11 @@ theorem of_underlying (X : DGHomotopyCategory R C) : of R (underlying R X) = X :
   rfl
 
 omit [CommRing R] [DGCategory R C] in
+/-- Every object of the DG homotopy category comes from an object of the DG category. -/
+theorem of_surjective : Function.Surjective (of R : C → DGHomotopyCategory R C) :=
+  fun X ↦ ⟨underlying R X, of_underlying R X⟩
+
+omit [CommRing R] [DGCategory R C] in
 /-- Objects of the DG homotopy category are equal when their underlying DG objects are equal. -/
 @[ext]
 theorem ext {X Y : DGHomotopyCategory R C} (h : underlying R X = underlying R Y) : X = Y := by
@@ -630,11 +635,6 @@ theorem homOf_def {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
     homOf R f hf = dgHomotopyClass R f hf :=
   (rfl)
 
-/-- Every morphism of the homotopy category is the class of a closed degree-zero DG morphism. -/
-theorem exists_homOf_eq {X Y : C} (a : of R X ⟶ of R Y) :
-    ∃ (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y), homOf R f hf = a :=
-  exists_dgHomotopyClass_eq R a
-
 /-- The zero DG morphism represents the zero morphism in the homotopy category. -/
 @[simp]
 theorem homOf_zero (X Y : C) :
@@ -682,6 +682,22 @@ theorem homOf_comp {X Y Z : C} (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z)
     homOf R f hf ≫ homOf R g hg =
       homOf R (dgCompZero R f g) (dgCompZero_mem_dgCycles R hf hg) :=
   dgHomotopyComp_dgHomotopyClass R f g hf hg
+
+/-- If the DG composite of `f` and `g` is `k`, then the composite of their classes in the homotopy
+category is the class of `k`. -/
+theorem homOf_comp_eq_homOf_of_dgComp_eq {X Y Z : C} {f : DGHom R 0 X Y} {g : DGHom R 0 Y Z}
+    {k : DGHom R 0 X Z} (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R Y Z)
+    (hk : k ∈ dgCycles R X Z) (e : dgComp R f g (add_zero 0) = k) :
+    homOf R f hf ≫ homOf R g hg = homOf R k hk := by
+  subst e
+  exact homOf_comp R f g hf hg
+
+/-- If the DG composite of `f` and `g` is the identity, then so is the composite of their classes
+in the homotopy category. -/
+theorem homOf_comp_eq_id_of_dgComp_eq_dgId {X Y : C} {f : DGHom R 0 X Y} {g : DGHom R 0 Y X}
+    (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R Y X) (e : dgComp R f g (add_zero 0) = dgId R X) :
+    homOf R f hf ≫ homOf R g hg = 𝟙 (of R X) :=
+  homOf_comp_eq_homOf_of_dgComp_eq R hf hg _ e
 
 /-- If the differential of a degree-minus-one morphism `k` is minus the composite of `f` and `g`,
 then the composite of `f` and `g` vanishes in the homotopy category. -/

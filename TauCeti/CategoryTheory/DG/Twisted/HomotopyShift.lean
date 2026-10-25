@@ -26,8 +26,8 @@ the comparison morphisms `σ : P ⟶ P⟦n⟧` of degree `-n` and `σ⁻¹ : P�
 `P⟦a + b⟧ ⟶ P ⟶ P⟦b⟧ ⟶ P⟦a⟧⟦b⟧` whose last map is the shift by `b` of `P ⟶ P⟦a⟧`, and
 `P⟦0⟧ ⟶ P` is the comparison morphism itself.  Composing directly through `P ⟶ P⟦a⟧ ⟶ P⟦a⟧⟦b⟧`
 instead gives `(-1)^(a * b)` times `shiftAddHom P a b`
-(`TauCeti.DGTwistedObject.shiftAddHom_eq_units_smul`), by the Koszul-sign naturality of the
-comparison morphisms.  This second description makes the associativity and unit coherences of
+(`TauCeti.DGTwistedObject.shiftAddHom_eq_negOnePow_smul_dgComp`), by the Koszul-sign naturality of
+the comparison morphisms.  This second description makes the associativity and unit coherences of
 the shift a cancellation of comparison morphisms, the signs `(-1)^((a + b) * c + a * b)` and
 `(-1)^(a * (b + c) + b * c)` agreeing.
 
@@ -70,44 +70,19 @@ variable {R : Type v} [CommRing R] {C : Type u} [DGCategory R C]
 /-! ### Degree bookkeeping
 
 The coherences below compare composites of comparison morphisms whose degrees are integer
-expressions such as `-a + -b` and `a + -(a + b)`, which agree only propositionally.  The following
-rewriting rules bring such composites to a normal form: a degree transport `castDeg` of a
-right-associated composite whose intermediate degrees are the sums of the degrees of the factors.
-Two composites of the same factors then agree up to the outer degree transport.  The rules are
-applied with `simp -proj`, which keeps the shifted objects `(shiftFunctor R n).obj P` folded so that
-the comparison lemmas about `TauCeti.DGTwistedObject.toShift` and
-`TauCeti.DGTwistedObject.fromShift` keep matching. -/
+expressions such as `-a + -b` and `a + -(a + b)`, which agree only propositionally.  The general
+rewriting rules `TauCeti.dgComp_assoc_eq_castDeg`, `TauCeti.castDeg_dgComp_eq_castDeg`,
+`TauCeti.dgComp_castDeg_eq_castDeg` and `TauCeti.dgId_dgComp_eq_castDeg`, together with the
+following rules for the comparison morphisms, bring such composites to a normal form: a degree
+transport `castDeg` of a right-associated composite whose intermediate degrees are the sums of the
+degrees of the factors.  Two composites of the same factors then agree up to the outer degree
+transport.  The rules are applied with `simp -proj`, which keeps the shifted objects
+`(shiftFunctor R n).obj P` folded so that the comparison lemmas about
+`TauCeti.DGTwistedObject.toShift` and `TauCeti.DGTwistedObject.fromShift` keep matching. -/
 
 section calculus
 
 variable {P Q W X Y Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))}
-
-private theorem dgComp_eq_castDeg {p q n : ℤ} (f : DGHom R p X Y) (g : DGHom R q Y Z)
-    (h : p + q = n) : dgComp R f g h = castDeg R h (dgComp R f g rfl) := by
-  subst h
-  rw [castDeg_self]
-
-private theorem dgComp_assoc' {p q r pq n : ℤ} (f : DGHom R p W X) (g : DGHom R q X Y)
-    (k : DGHom R r Y Z) (hpq : p + q = pq) (h : pq + r = n) :
-    dgComp R (dgComp R f g hpq) k h =
-      castDeg R (by omega) (dgComp R f (dgComp R g k rfl) rfl) := by
-  subst hpq h
-  rw [dgComp_assoc R f g k rfl rfl rfl, dgComp_eq_castDeg (n := p + q + r)]
-
-private theorem castDeg_dgComp' {p p' q n : ℤ} (hp : p = p') (f : DGHom R p X Y)
-    (g : DGHom R q Y Z) (h : p' + q = n) :
-    dgComp R (castDeg R hp f) g h = castDeg R (by omega) (dgComp R f g rfl) :=
-  castDeg_dgComp R hp _ f g h
-
-private theorem dgComp_castDeg' {p q q' n : ℤ} (hq : q = q') (f : DGHom R p X Y)
-    (g : DGHom R q Y Z) (h : p + q' = n) :
-    dgComp R f (castDeg R hq g) h = castDeg R (by omega) (dgComp R f g rfl) :=
-  dgComp_castDeg R hq _ f g h
-
-private theorem dgId_dgComp' {q n : ℤ} (g : DGHom R q X Y) (h : 0 + q = n) :
-    dgComp R (dgId R X) g h = castDeg R (by omega) g := by
-  have := castDeg_dgId_dgComp R (rfl : (0 : ℤ) = 0) g h
-  rwa [castDeg_self] at this
 
 private theorem dgComp_fromShift_toShift' (n : ℤ) {m : ℤ} (h : n + -n = m) :
     dgComp R (fromShift P n) (toShift P n) h = castDeg R (by omega) (dgId R _) := by
@@ -119,29 +94,29 @@ private theorem dgComp_toShift_fromShift_assoc' (n : ℤ) {q m m' : ℤ} (x : DG
     dgComp R (toShift P n) (dgComp R (fromShift P n) x h) h' = castDeg R (by omega) x := by
   subst h h'
   rw [← dgComp_assoc R _ _ x (neg_add_cancel n) rfl (by omega), dgComp_toShift_fromShift,
-    dgId_dgComp']
+    dgId_dgComp_eq_castDeg]
 
 private theorem dgComp_fromShift_toShift_assoc' (n : ℤ) {q m m' : ℤ}
     (x : DGHom R q ((shiftFunctor R n).obj P) Z) (h : -n + q = m) (h' : n + m = m') :
     dgComp R (fromShift P n) (dgComp R (toShift P n) x h) h' = castDeg R (by omega) x := by
   subst h h'
   rw [← dgComp_assoc R _ _ x (add_neg_cancel n) rfl (by omega), dgComp_fromShift_toShift,
-    dgId_dgComp']
+    dgId_dgComp_eq_castDeg]
 
 private theorem toShift_dgComp_dgMap (n : ℤ) (f : DGHom R 0 P Q) {m : ℤ} (h : -n + 0 = m) :
     dgComp R (toShift P n) ((shiftFunctor R n).dgMap 0 f) h =
       castDeg R (by omega) (dgComp R f (toShift Q n) rfl) := by
   subst h
   rw [dgComp_toShift n f rfl, mul_zero, Int.negOnePow_zero, one_smul,
-    dgComp_eq_castDeg (n := 0 + -n), castDeg_castDeg, castDeg_self]
+    dgComp_eq_castDeg_dgComp R (n := 0 + -n), castDeg_castDeg, castDeg_self]
 
 private theorem toShift_dgComp_dgMap_assoc (n : ℤ) (f : DGHom R 0 P Q) {q m m' : ℤ}
     (x : DGHom R q ((shiftFunctor R n).obj Q) Z) (h : 0 + q = m) (h' : -n + m = m') :
     dgComp R (toShift P n) (dgComp R ((shiftFunctor R n).dgMap 0 f) x h) h' =
       castDeg R (by omega) (dgComp R f (dgComp R (toShift Q n) x rfl) rfl) := by
   subst h h'
-  rw [← dgComp_assoc R _ _ x rfl rfl (by omega), toShift_dgComp_dgMap, castDeg_dgComp',
-    dgComp_assoc', castDeg_castDeg]
+  rw [← dgComp_assoc R _ _ x rfl rfl (by omega), toShift_dgComp_dgMap,
+    castDeg_dgComp_eq_castDeg, dgComp_assoc_eq_castDeg, castDeg_castDeg]
 
 private theorem dgMap_dgComp_fromShift_assoc (n : ℤ) (f : DGHom R 0 P Q) {q m m' : ℤ}
     (x : DGHom R q Q Z) (h : n + q = m) (h' : 0 + m = m') :
@@ -149,7 +124,7 @@ private theorem dgMap_dgComp_fromShift_assoc (n : ℤ) (f : DGHom R 0 P Q) {q m 
       castDeg R (by omega) (dgComp R (fromShift P n) (dgComp R f x rfl) rfl) := by
   subst h h'
   rw [← dgComp_assoc R _ _ x rfl rfl (by omega), dgComp_fromShift n f rfl, mul_zero,
-    Int.negOnePow_zero, one_smul, dgComp_assoc']
+    Int.negOnePow_zero, one_smul, dgComp_assoc_eq_castDeg]
 
 end calculus
 
@@ -195,15 +170,15 @@ theorem shiftAddInv_def (a b : ℤ) :
 
 /-- Through `P ⟶ P⟦a⟧ ⟶ P⟦a⟧⟦b⟧` instead, the comparison `P⟦a + b⟧ ⟶ P⟦a⟧⟦b⟧` acquires the
 Koszul sign `(-1)^(a * b)`. -/
-theorem shiftAddHom_eq_units_smul (a b : ℤ) :
+theorem shiftAddHom_eq_negOnePow_smul_dgComp (a b : ℤ) :
     shiftAddHom P a b = (a * b).negOnePow • dgComp R (fromShift P (a + b))
       (dgComp R (toShift P a) (toShift ((shiftFunctor R a).obj P) b) rfl) (by omega) := by
-  rw [shiftAddHom_def, dgComp_toShift b (toShift P a) rfl, dgComp_units_smul, smul_smul, mul_neg,
-    Int.negOnePow_neg, mul_comm b a, Int.units_mul_self, one_smul]
+  rw [shiftAddHom_def, dgComp_toShift b (toShift P a) rfl, dgComp_units_smul]
+  simp [smul_smul, mul_comm b a]
 
 /-- Through `P⟦a⟧⟦b⟧ ⟶ P⟦a⟧ ⟶ P` instead, the comparison `P⟦a⟧⟦b⟧ ⟶ P⟦a + b⟧` acquires the
 Koszul sign `(-1)^(a * b)`. -/
-theorem shiftAddInv_eq_units_smul (a b : ℤ) :
+theorem shiftAddInv_eq_negOnePow_smul_dgComp (a b : ℤ) :
     shiftAddInv P a b = (a * b).negOnePow • dgComp R (fromShift ((shiftFunctor R a).obj P) b)
       (dgComp R (fromShift P a) (toShift P (a + b)) rfl) (by omega) := by
   rw [shiftAddInv_def, ← dgComp_assoc R _ _ _ rfl rfl (by omega), dgComp_fromShift b _ rfl,
@@ -212,34 +187,34 @@ theorem shiftAddInv_eq_units_smul (a b : ℤ) :
 /-- The comparison `P⟦a + b⟧ ⟶ P⟦a⟧⟦b⟧` is closed. -/
 @[simp↓]
 theorem dgDifferential_shiftAddHom (a b : ℤ) : dgDifferential R 0 (shiftAddHom P a b) = 0 := by
-  rw [shiftAddHom_eq_units_smul, map_zsmul_unit, dgDifferential_dgComp, dgDifferential_dgComp,
-    dgDifferential_fromShift, dgDifferential_toShift, dgDifferential_toShift, zero_dgComp,
-    zero_dgComp, dgComp_zero, smul_zero, add_zero, dgComp_zero, smul_zero, add_zero, smul_zero]
+  simp -proj only [shiftAddHom_eq_negOnePow_smul_dgComp, map_zsmul_unit, dgDifferential_dgComp,
+    dgDifferential_fromShift, dgDifferential_toShift, zero_dgComp, dgComp_zero, smul_zero,
+    add_zero]
 
 /-- The comparison `P⟦a⟧⟦b⟧ ⟶ P⟦a + b⟧` is closed. -/
 @[simp↓]
 theorem dgDifferential_shiftAddInv (a b : ℤ) : dgDifferential R 0 (shiftAddInv P a b) = 0 := by
-  rw [shiftAddInv_eq_units_smul, map_zsmul_unit, dgDifferential_dgComp, dgDifferential_dgComp,
-    dgDifferential_fromShift, dgDifferential_fromShift, dgDifferential_toShift, zero_dgComp,
-    zero_dgComp, dgComp_zero, smul_zero, add_zero, dgComp_zero, smul_zero, add_zero, smul_zero]
+  simp -proj only [shiftAddInv_eq_negOnePow_smul_dgComp, map_zsmul_unit, dgDifferential_dgComp,
+    dgDifferential_fromShift, dgDifferential_toShift, zero_dgComp, dgComp_zero, smul_zero,
+    add_zero]
 
 /-- The comparisons `P⟦a + b⟧ ⟶ P⟦a⟧⟦b⟧ ⟶ P⟦a + b⟧` compose to the identity. -/
 @[simp↓]
 theorem dgComp_shiftAddHom_shiftAddInv (a b : ℤ) :
     dgComp R (shiftAddHom P a b) (shiftAddInv P a b) (add_zero 0) = dgId R _ := by
-  simp -proj only [shiftAddHom_eq_units_smul, shiftAddInv_eq_units_smul, units_smul_dgComp,
-    dgComp_units_smul, smul_smul, Int.units_mul_self, one_smul, dgComp_assoc',
-    dgComp_toShift_fromShift_assoc', dgComp_castDeg', castDeg_castDeg,
-    dgComp_fromShift_toShift', castDeg_self]
+  simp -proj only [shiftAddHom_eq_negOnePow_smul_dgComp, shiftAddInv_eq_negOnePow_smul_dgComp,
+    units_smul_dgComp, dgComp_units_smul, smul_smul, Int.units_mul_self, one_smul,
+    dgComp_assoc_eq_castDeg, dgComp_toShift_fromShift_assoc', dgComp_castDeg_eq_castDeg,
+    castDeg_castDeg, dgComp_fromShift_toShift', castDeg_self]
 
 /-- The comparisons `P⟦a⟧⟦b⟧ ⟶ P⟦a + b⟧ ⟶ P⟦a⟧⟦b⟧` compose to the identity. -/
 @[simp↓]
 theorem dgComp_shiftAddInv_shiftAddHom (a b : ℤ) :
     dgComp R (shiftAddInv P a b) (shiftAddHom P a b) (add_zero 0) = dgId R _ := by
-  simp -proj only [shiftAddHom_eq_units_smul, shiftAddInv_eq_units_smul, units_smul_dgComp,
-    dgComp_units_smul, smul_smul, Int.units_mul_self, one_smul, dgComp_assoc',
-    dgComp_toShift_fromShift_assoc', dgComp_fromShift_toShift_assoc', dgComp_castDeg',
-    castDeg_castDeg, dgComp_fromShift_toShift', castDeg_self]
+  simp -proj only [shiftAddHom_eq_negOnePow_smul_dgComp, shiftAddInv_eq_negOnePow_smul_dgComp,
+    units_smul_dgComp, dgComp_units_smul, smul_smul, Int.units_mul_self, one_smul,
+    dgComp_assoc_eq_castDeg, dgComp_toShift_fromShift_assoc', dgComp_fromShift_toShift_assoc',
+    dgComp_castDeg_eq_castDeg, castDeg_castDeg, dgComp_fromShift_toShift', castDeg_self]
 
 variable {P} in
 /-- **The comparison `P⟦a + b⟧ ⟶ P⟦a⟧⟦b⟧` is natural** in degree-zero morphisms `f : P ⟶ Q`. -/
@@ -248,9 +223,9 @@ theorem dgMap_dgComp_shiftAddHom {Q : DGTwistedObject R (DGAdditiveClosure (DGSh
     dgComp R ((shiftFunctor R (a + b)).dgMap 0 f) (shiftAddHom Q a b) (add_zero 0) =
       dgComp R (shiftAddHom P a b)
         ((shiftFunctor R b).dgMap 0 ((shiftFunctor R a).dgMap 0 f)) (add_zero 0) := by
-  simp -proj only [shiftAddHom_eq_units_smul, units_smul_dgComp, dgComp_units_smul,
-    dgComp_assoc', dgMap_dgComp_fromShift_assoc, castDeg_castDeg, dgComp_castDeg',
-    toShift_dgComp_dgMap_assoc, toShift_dgComp_dgMap]
+  simp -proj only [shiftAddHom_eq_negOnePow_smul_dgComp, units_smul_dgComp, dgComp_units_smul,
+    dgComp_assoc_eq_castDeg, dgMap_dgComp_fromShift_assoc, castDeg_castDeg,
+    dgComp_castDeg_eq_castDeg, toShift_dgComp_dgMap_assoc, toShift_dgComp_dgMap]
 
 /-- The associativity coherence of the comparisons, at the level of DG morphisms. -/
 private theorem shiftAddHom_assoc (a b c : ℤ) :
@@ -259,12 +234,12 @@ private theorem shiftAddHom_assoc (a b c : ℤ) :
       dgComp R (dgComp R (fromShift P (a + b + c)) (toShift P (a + (b + c))) (by omega))
         (dgComp R (shiftAddHom P a (b + c)) (shiftAddHom ((shiftFunctor R a).obj P) b c)
           (add_zero 0)) (add_zero 0) := by
-  rw [shiftAddHom_eq_units_smul P (a + b) c]
-  simp -proj only [units_smul_dgComp, dgComp_assoc', toShift_dgComp_dgMap, dgComp_castDeg',
-    castDeg_castDeg]
-  simp -proj only [shiftAddHom_eq_units_smul, units_smul_dgComp, dgComp_units_smul, smul_smul,
-    dgComp_assoc', dgComp_toShift_fromShift_assoc', dgComp_castDeg', castDeg_castDeg,
-    map_zsmul_unit]
+  rw [shiftAddHom_eq_negOnePow_smul_dgComp P (a + b) c]
+  simp -proj only [units_smul_dgComp, dgComp_assoc_eq_castDeg, toShift_dgComp_dgMap,
+    dgComp_castDeg_eq_castDeg, castDeg_castDeg]
+  simp -proj only [shiftAddHom_eq_negOnePow_smul_dgComp, units_smul_dgComp, dgComp_units_smul,
+    smul_smul, dgComp_assoc_eq_castDeg, dgComp_toShift_fromShift_assoc', dgComp_castDeg_eq_castDeg,
+    castDeg_castDeg, map_zsmul_unit]
   congr 1
   rw [← Int.negOnePow_add, ← Int.negOnePow_add]
   congr 1
@@ -275,18 +250,19 @@ private theorem shiftAddHom_zero_add (n : ℤ) :
     shiftAddHom P 0 n =
       dgComp R (dgComp R (fromShift P (0 + n)) (toShift P n) (by omega))
         ((shiftFunctor R n).dgMap 0 (toShift P 0)) (add_zero 0) := by
-  simp -proj only [shiftAddHom_eq_units_smul, dgComp_assoc', toShift_dgComp_dgMap,
-    dgComp_castDeg', castDeg_castDeg, zero_mul, Int.negOnePow_zero, one_smul]
-  exact dgComp_eq_castDeg _ _ _
+  simp -proj only [shiftAddHom_eq_negOnePow_smul_dgComp, dgComp_assoc_eq_castDeg,
+    toShift_dgComp_dgMap, dgComp_castDeg_eq_castDeg, castDeg_castDeg, zero_mul,
+    Int.negOnePow_zero, one_smul]
+  exact dgComp_eq_castDeg_dgComp R _ _ _
 
 /-- The right unit coherence of the comparisons, at the level of DG morphisms. -/
 private theorem shiftAddHom_add_zero (n : ℤ) :
     shiftAddHom P n 0 =
       dgComp R (dgComp R (fromShift P (n + 0)) (toShift P n) (by omega))
         (toShift ((shiftFunctor R n).obj P) 0) (add_zero 0) := by
-  simp -proj only [shiftAddHom_eq_units_smul, dgComp_assoc', mul_zero, Int.negOnePow_zero,
-    one_smul]
-  exact dgComp_eq_castDeg _ _ _
+  simp -proj only [shiftAddHom_eq_negOnePow_smul_dgComp, dgComp_assoc_eq_castDeg, mul_zero,
+    Int.negOnePow_zero, one_smul]
+  exact dgComp_eq_castDeg_dgComp R _ _ _
 
 end comparison
 
@@ -300,40 +276,8 @@ variable (P : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C)))
 
 private theorem dgDifferential_dgComp_fromShift_toShift (a b : ℤ) (h : a + -b = 0) :
     dgDifferential R 0 (dgComp R (fromShift P a) (toShift P b) h) = 0 := by
-  rw [dgDifferential_dgComp, dgDifferential_fromShift, dgDifferential_toShift, zero_dgComp,
-    dgComp_zero, smul_zero, add_zero]
-
-private theorem homOf_fromShift_comp_homOf_toShift_zero :
-    homOf R (fromShift P 0) ((mem_dgCycles R).mpr (dgDifferential_fromShift P 0)) ≫
-        homOf R (toShift P 0) ((mem_dgCycles R).mpr (dgDifferential_toShift P 0)) =
-      𝟙 _ := by
-  rw [homOf_comp, ← homOf_dgId]
-  congr 1
-  exact (dgCompZero_def R _ _).trans (dgComp_fromShift_toShift P 0)
-
-private theorem homOf_toShift_comp_homOf_fromShift_zero :
-    homOf R (toShift P 0) ((mem_dgCycles R).mpr (dgDifferential_toShift P 0)) ≫
-        homOf R (fromShift P 0) ((mem_dgCycles R).mpr (dgDifferential_fromShift P 0)) =
-      𝟙 _ := by
-  rw [homOf_comp, ← homOf_dgId]
-  congr 1
-  exact (dgCompZero_def R _ _).trans (dgComp_toShift_fromShift P 0)
-
-private theorem homOf_shiftAddHom_comp_homOf_shiftAddInv (a b : ℤ) :
-    homOf R (shiftAddHom P a b) ((mem_dgCycles R).mpr (dgDifferential_shiftAddHom P a b)) ≫
-        homOf R (shiftAddInv P a b) ((mem_dgCycles R).mpr (dgDifferential_shiftAddInv P a b)) =
-      𝟙 _ := by
-  rw [homOf_comp, ← homOf_dgId]
-  congr 1
-  exact (dgCompZero_def R _ _).trans (dgComp_shiftAddHom_shiftAddInv P a b)
-
-private theorem homOf_shiftAddInv_comp_homOf_shiftAddHom (a b : ℤ) :
-    homOf R (shiftAddInv P a b) ((mem_dgCycles R).mpr (dgDifferential_shiftAddInv P a b)) ≫
-        homOf R (shiftAddHom P a b) ((mem_dgCycles R).mpr (dgDifferential_shiftAddHom P a b)) =
-      𝟙 _ := by
-  rw [homOf_comp, ← homOf_dgId]
-  congr 1
-  exact (dgCompZero_def R _ _).trans (dgComp_shiftAddInv_shiftAddHom P a b)
+  simp -proj only [dgDifferential_dgComp, dgDifferential_fromShift, dgDifferential_toShift,
+    zero_dgComp, dgComp_zero, smul_zero, add_zero]
 
 variable {P} in
 /-- An identity `P⟦a⟧ = P⟦b⟧` in the homotopy category, for `a = b`, is represented by the
@@ -357,10 +301,9 @@ private theorem homOf_fromShift_zero_naturality
         homOf R (fromShift Q 0) ((mem_dgCycles R).mpr (dgDifferential_fromShift Q 0)) =
       homOf R (fromShift P 0) ((mem_dgCycles R).mpr (dgDifferential_fromShift P 0)) ≫
         homOf R f hf := by
-  rw [homOf_comp, homOf_comp]
-  congr 1
-  rw [dgCompZero_def, dgCompZero_def, dgComp_fromShift 0 f, mul_zero, Int.negOnePow_zero,
-    one_smul]
+  conv_rhs => simp only [homOf_comp, dgCompZero_def]
+  exact homOf_comp_eq_homOf_of_dgComp_eq R _ _ _ (by
+    rw [dgComp_fromShift 0 f, mul_zero, Int.negOnePow_zero, one_smul])
 
 variable {P} in
 private theorem homOf_shiftAddHom_naturality
@@ -372,10 +315,8 @@ private theorem homOf_shiftAddHom_naturality
       homOf R (shiftAddHom P a b) ((mem_dgCycles R).mpr (dgDifferential_shiftAddHom P a b)) ≫
         homOf R ((shiftFunctor R b).dgMap 0 ((shiftFunctor R a).dgMap 0 f))
           ((shiftFunctor R b).dgMap_mem_dgCycles ((shiftFunctor R a).dgMap_mem_dgCycles hf)) := by
-  rw [homOf_comp, homOf_comp]
-  congr 1
-  rw [dgCompZero_def, dgCompZero_def]
-  exact dgMap_dgComp_shiftAddHom a b f
+  conv_rhs => simp only [homOf_comp, dgCompZero_def]
+  exact homOf_comp_eq_homOf_of_dgComp_eq R _ _ _ (dgMap_dgComp_shiftAddHom a b f)
 
 private theorem homOf_shiftAddHom_assoc (a b c : ℤ) :
     homOf R (shiftAddHom P (a + b) c)
@@ -389,10 +330,8 @@ private theorem homOf_shiftAddHom_assoc (a b c : ℤ) :
             ((mem_dgCycles R).mpr (dgDifferential_shiftAddHom P a (b + c))) ≫
           homOf R (shiftAddHom ((shiftFunctor R a).obj P) b c)
             ((mem_dgCycles R).mpr (dgDifferential_shiftAddHom _ b c)) := by
-  rw [homOf_comp, homOf_comp, homOf_comp]
-  congr 1
-  rw [dgCompZero_def, dgCompZero_def, dgCompZero_def]
-  exact shiftAddHom_assoc P a b c
+  conv_rhs => simp only [homOf_comp, dgCompZero_def]
+  exact homOf_comp_eq_homOf_of_dgComp_eq R _ _ _ (shiftAddHom_assoc P a b c)
 
 private theorem homOf_shiftAddHom_zero_add (n : ℤ) :
     homOf R (shiftAddHom P 0 n) ((mem_dgCycles R).mpr (dgDifferential_shiftAddHom P 0 n)) =
@@ -400,22 +339,16 @@ private theorem homOf_shiftAddHom_zero_add (n : ℤ) :
           ((mem_dgCycles R).mpr (dgDifferential_dgComp_fromShift_toShift P _ _ _)) ≫
         homOf R ((shiftFunctor R n).dgMap 0 (toShift P 0))
           ((shiftFunctor R n).dgMap_mem_dgCycles
-            ((mem_dgCycles R).mpr (dgDifferential_toShift P 0))) := by
-  rw [homOf_comp]
-  congr 1
-  rw [dgCompZero_def]
-  exact shiftAddHom_zero_add P n
+            ((mem_dgCycles R).mpr (dgDifferential_toShift P 0))) :=
+  (homOf_comp_eq_homOf_of_dgComp_eq R _ _ _ (shiftAddHom_zero_add P n).symm).symm
 
 private theorem homOf_shiftAddHom_add_zero (n : ℤ) :
     homOf R (shiftAddHom P n 0) ((mem_dgCycles R).mpr (dgDifferential_shiftAddHom P n 0)) =
       homOf R (dgComp R (fromShift P (n + 0)) (toShift P n) (by omega))
           ((mem_dgCycles R).mpr (dgDifferential_dgComp_fromShift_toShift P _ _ _)) ≫
         homOf R (toShift ((shiftFunctor R n).obj P) 0)
-          ((mem_dgCycles R).mpr (dgDifferential_toShift _ 0)) := by
-  rw [homOf_comp]
-  congr 1
-  rw [dgCompZero_def]
-  exact shiftAddHom_add_zero P n
+          ((mem_dgCycles R).mpr (dgDifferential_toShift _ 0)) :=
+  (homOf_comp_eq_homOf_of_dgComp_eq R _ _ _ (shiftAddHom_add_zero P n).symm).symm
 
 variable (R C) in
 /-- The shift of the homotopy category of twisted objects: the shift by `n` is induced by the DG
@@ -427,17 +360,20 @@ noncomputable def homotopyCategoryShiftMkCore :
     ShiftMkCore
       (DGHomotopyCategory R (DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C)))) ℤ where
   F n := (shiftFunctor R n).mapDGHomotopyCategory
-  -- The private inverse laws are only accessible from tactic blocks in this exposed definition.
+  -- The private naturality and coherence lemmas are only accessible from tactic blocks in this
+  -- exposed definition.
   zero := NatIso.ofComponents (fun X ↦
       { hom := homOf R (fromShift (underlying R X) 0)
           ((mem_dgCycles R).mpr (dgDifferential_fromShift _ 0))
         inv := homOf R (toShift (underlying R X) 0)
           ((mem_dgCycles R).mpr (dgDifferential_toShift _ 0))
-        hom_inv_id := by exact homOf_fromShift_comp_homOf_toShift_zero _
-        inv_hom_id := by exact homOf_toShift_comp_homOf_fromShift_zero _ }) fun {X Y} f ↦ by
-    obtain ⟨P, rfl⟩ : ∃ P, of R P = X := ⟨_, of_underlying R X⟩
-    obtain ⟨Q, rfl⟩ : ∃ Q, of R Q = Y := ⟨_, of_underlying R Y⟩
-    obtain ⟨f, hf, rfl⟩ := exists_homOf_eq R f
+        hom_inv_id := homOf_comp_eq_id_of_dgComp_eq_dgId R _ _ (dgComp_fromShift_toShift _ 0)
+        inv_hom_id := homOf_comp_eq_id_of_dgComp_eq_dgId R _ _ (dgComp_toShift_fromShift _ 0) })
+      fun {X Y} f ↦ by
+    obtain ⟨P, rfl⟩ := of_surjective R X
+    obtain ⟨Q, rfl⟩ := of_surjective R Y
+    obtain ⟨f, hf, rfl⟩ := exists_dgHomotopyClass_eq R (X := P) (Y := Q) f
+    rw [← homOf_def]
     exact (congrArg (· ≫ _) (EnrichedFunctor.mapDGHomotopyCategory_map_homOf _ f hf)).trans
       (homOf_fromShift_zero_naturality f hf)
   add a b := NatIso.ofComponents (fun X ↦
@@ -445,29 +381,33 @@ noncomputable def homotopyCategoryShiftMkCore :
           ((mem_dgCycles R).mpr (dgDifferential_shiftAddHom _ a b))
         inv := homOf R (shiftAddInv (underlying R X) a b)
           ((mem_dgCycles R).mpr (dgDifferential_shiftAddInv _ a b))
-        hom_inv_id := by exact homOf_shiftAddHom_comp_homOf_shiftAddInv _ a b
-        inv_hom_id := by exact homOf_shiftAddInv_comp_homOf_shiftAddHom _ a b }) fun {X Y} f ↦ by
-    obtain ⟨P, rfl⟩ : ∃ P, of R P = X := ⟨_, of_underlying R X⟩
-    obtain ⟨Q, rfl⟩ : ∃ Q, of R Q = Y := ⟨_, of_underlying R Y⟩
-    obtain ⟨f, hf, rfl⟩ := exists_homOf_eq R f
+        hom_inv_id :=
+          homOf_comp_eq_id_of_dgComp_eq_dgId R _ _ (dgComp_shiftAddHom_shiftAddInv _ a b)
+        inv_hom_id :=
+          homOf_comp_eq_id_of_dgComp_eq_dgId R _ _ (dgComp_shiftAddInv_shiftAddHom _ a b) })
+      fun {X Y} f ↦ by
+    obtain ⟨P, rfl⟩ := of_surjective R X
+    obtain ⟨Q, rfl⟩ := of_surjective R Y
+    obtain ⟨f, hf, rfl⟩ := exists_dgHomotopyClass_eq R (X := P) (Y := Q) f
+    rw [← homOf_def]
     refine (congrArg (· ≫ _) (EnrichedFunctor.mapDGHomotopyCategory_map_homOf _ f hf)).trans
       ((homOf_shiftAddHom_naturality a b f hf).trans ?_)
     exact congrArg (_ ≫ ·) ((EnrichedFunctor.mapDGHomotopyCategory_map_homOf _ _ _).symm.trans
       (congrArg _ (EnrichedFunctor.mapDGHomotopyCategory_map_homOf _ f hf).symm))
   assoc_hom_app m₁ m₂ m₃ X := by
-    obtain ⟨P, rfl⟩ : ∃ P, of R P = X := ⟨_, of_underlying R X⟩
+    obtain ⟨P, rfl⟩ := of_surjective R X
     refine (congrArg (_ ≫ ·) (EnrichedFunctor.mapDGHomotopyCategory_map_homOf _ _ _)).trans
       ((homOf_shiftAddHom_assoc P m₁ m₂ m₃).trans ?_)
     exact congrArg (· ≫ _)
       (eqToHom_mapDGHomotopyCategory_shiftFunctor (add_assoc m₁ m₂ m₃) _).symm
   zero_add_hom_app n X := by
-    obtain ⟨P, rfl⟩ : ∃ P, of R P = X := ⟨_, of_underlying R X⟩
+    obtain ⟨P, rfl⟩ := of_surjective R X
     refine (homOf_shiftAddHom_zero_add P n).trans ?_
     exact congrArg₂ (· ≫ ·)
       (eqToHom_mapDGHomotopyCategory_shiftFunctor (zero_add n) _).symm
       (EnrichedFunctor.mapDGHomotopyCategory_map_homOf _ _ _).symm
   add_zero_hom_app n X := by
-    obtain ⟨P, rfl⟩ : ∃ P, of R P = X := ⟨_, of_underlying R X⟩
+    obtain ⟨P, rfl⟩ := of_surjective R X
     exact (homOf_shiftAddHom_add_zero P n).trans (congrArg (· ≫ _)
       (eqToHom_mapDGHomotopyCategory_shiftFunctor (add_zero n) _).symm)
 
