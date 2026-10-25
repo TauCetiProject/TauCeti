@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
+public import TauCeti.MeasureTheory.Measure.QuasiMeasurePreserving
 
 /-!
 # Precomposition on `Lᵖ` by a map with dominated pushforward
@@ -46,12 +47,6 @@ namespace MeasureTheory
 variable {α β γ E : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace γ]
   {μ : Measure α} {ν : Measure β} {ρ : Measure γ} [NormedAddCommGroup E] {p : ℝ≥0∞}
   {f : α → β} {C : ℝ≥0∞}
-
-/-- A measurable map whose pushforward is dominated by a multiple of `ν` is quasi-measure
-preserving. -/
-theorem QuasiMeasurePreserving.of_map_le_smul (hf : Measurable f) (hmap : μ.map f ≤ C • ν) :
-    QuasiMeasurePreserving f μ ν :=
-  ⟨hf, Measure.absolutelyContinuous_of_le_smul hmap⟩
 
 /-- Precomposition with a map whose pushforward is dominated by a finite multiple of `ν` preserves
 membership in `Lᵖ`, for every exponent `p`. This generalizes Mathlib's
@@ -117,6 +112,15 @@ def compOfMapLeSmul (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.map f ≤ C 
 
 variable {𝕜}
 
+/-- The almost-everywhere class underlying the precomposition of `g` with `f` is
+`AEEqFun.compQuasiMeasurePreserving`. -/
+@[simp]
+theorem compOfMapLeSmul_val (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.map f ≤ C • ν)
+    (g : Lp E p ν) :
+    (compOfMapLeSmul 𝕜 hf hC hmap g).1 =
+      g.1.compQuasiMeasurePreserving f (.of_map_le_smul hf hmap) :=
+  (rfl)
+
 /-- Precomposition with `f` is `g ↦ g ∘ f` almost everywhere. -/
 theorem coeFn_compOfMapLeSmul (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.map f ≤ C • ν)
     (g : Lp E p ν) : compOfMapLeSmul 𝕜 hf hC hmap g =ᵐ[μ] g ∘ f :=
@@ -136,11 +140,9 @@ theorem compOfMapLeSmul_comp {g : β → γ} {D : ℝ≥0∞} (hf : Measurable f
     (compOfMapLeSmul 𝕜 (hg.comp hf) hB hmapgf : Lp E p ρ →L[𝕜] Lp E p μ) =
       (compOfMapLeSmul 𝕜 hf hC hmap).comp (compOfMapLeSmul 𝕜 hg hD hmapg) := by
   ext1 h
-  refine Lp.ext ((coeFn_compOfMapLeSmul _ hB hmapgf h).trans ?_)
-  rw [ContinuousLinearMap.comp_apply]
-  refine Filter.EventuallyEq.symm ((coeFn_compOfMapLeSmul hf hC hmap _).trans ?_)
-  exact (QuasiMeasurePreserving.of_map_le_smul hf hmap).ae_eq_comp
-    (coeFn_compOfMapLeSmul hg hD hmapg h)
+  exact Subtype.ext <| by
+    simp [AEEqFun.compQuasiMeasurePreserving_comp _ (.of_map_le_smul hg hmapg)
+      (.of_map_le_smul hf hmap)]
 
 /-- Precomposition with the identity is the identity. -/
 @[simp]
@@ -148,7 +150,7 @@ theorem compOfMapLeSmul_id (hC : C ≠ ∞) (hmap : μ.map id ≤ C • μ) :
     (compOfMapLeSmul 𝕜 measurable_id hC hmap : Lp E p μ →L[𝕜] Lp E p μ) =
       ContinuousLinearMap.id 𝕜 _ := by
   ext1 g
-  exact Lp.ext (coeFn_compOfMapLeSmul measurable_id hC hmap g)
+  exact Subtype.ext <| by simp
 
 variable (𝕜) in
 /-- **Precomposition with mutually inverse maps.** If `f : α → β` and `g : β → α` are mutually
@@ -161,14 +163,12 @@ def compEquivOfMapLeSmul {g : β → α} {D : ℝ≥0∞} (hf : Measurable f) (h
     Lp E p ν ≃L[𝕜] Lp E p μ :=
   ContinuousLinearEquiv.equivOfInverse (compOfMapLeSmul 𝕜 hf hC hmap)
     (compOfMapLeSmul 𝕜 hg hD hmapg)
-    (fun h ↦ Lp.ext <| ((coeFn_compOfMapLeSmul hg hD hmapg _).trans
-      ((QuasiMeasurePreserving.of_map_le_smul hg hmapg).ae_eq_comp
-        (coeFn_compOfMapLeSmul hf hC hmap h))).trans <| .of_eq <| by
-          simp [Function.comp_def, hfg _])
-    (fun h ↦ Lp.ext <| ((coeFn_compOfMapLeSmul hf hC hmap _).trans
-      ((QuasiMeasurePreserving.of_map_le_smul hf hmap).ae_eq_comp
-        (coeFn_compOfMapLeSmul hg hD hmapg h))).trans <| .of_eq <| by
-          simp [Function.comp_def, hgf _])
+    (fun h ↦ Subtype.ext <| by
+      simp [← AEEqFun.compQuasiMeasurePreserving_comp _ (.of_map_le_smul hf hmap)
+        (.of_map_le_smul hg hmapg), hfg.comp_eq_id])
+    (fun h ↦ Subtype.ext <| by
+      simp [← AEEqFun.compQuasiMeasurePreserving_comp _ (.of_map_le_smul hg hmapg)
+        (.of_map_le_smul hf hmap), hgf.comp_eq_id])
 
 section Equiv
 
