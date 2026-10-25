@@ -52,8 +52,9 @@ witness it needs is the one this file constructs from it.
   `TauCeti.IsGradedEulerAdmissible.shiftSource`: graded Euler-admissibility is preserved by the
   grading shift in either variable; `TauCeti.IsGradedEulerAdmissible.shiftTargetInverse` and
   `TauCeti.IsGradedEulerAdmissible.shiftSourceInverse` are the same for the inverse shift.
-* `TauCeti.IsGradedEulerAdmissible.shiftObj`: for graded modules, admissibility is preserved
-  by any integer internal shift of the source.
+* `TauCeti.IsGradedEulerAdmissible.shiftObj` and
+  `TauCeti.IsGradedEulerAdmissible.shiftObjTarget`: for graded modules, admissibility is
+  preserved by any integer internal shift of the source or of the target.
 * `TauCeti.gradedExtEuler_shiftTarget`: `χ_q(X, Y{1}) = q · χ_q(X, Y)`.
 * `TauCeti.gradedExtEuler_shiftSource`: `χ_q(X{1}, Y) = q⁻¹ · χ_q(X, Y)`.
 * `TauCeti.gradedExtEuler_shiftTargetInverse` and
@@ -426,6 +427,21 @@ theorem IsGradedEulerAdmissible.shiftObj {X Y : GradedModuleCat.{v} 𝒜}
       have hs := ih.shiftSourceInverse
       exact hs.of_iso k ((GradedModuleCat.shiftFunctorAddIso 𝒜 (- (n : ℤ)) (-1)).app X)
         (Iso.refl Y)
+
+/-- Any integer internal shift of the target of an Euler-admissible pair remains
+Euler-admissible. This is the target counterpart of
+`TauCeti.IsGradedEulerAdmissible.shiftObj`. -/
+theorem IsGradedEulerAdmissible.shiftObjTarget {X Y : GradedModuleCat.{v} 𝒜}
+    (h : IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X Y) (d : ℤ) :
+    IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X (Y.shiftObj d) := by
+  induction d using Int.induction_on with
+  | zero =>
+      exact h.of_iso k (Iso.refl X) ((GradedModuleCat.shiftFunctorZeroIso 𝒜).app Y).symm
+  | succ n ih =>
+      exact ih.shiftTarget.of_iso k (Iso.refl X) ((GradedModuleCat.shiftFunctorAddIso 𝒜 n 1).app Y)
+  | pred n ih =>
+      exact ih.shiftTargetInverse.of_iso k (Iso.refl X)
+        ((GradedModuleCat.shiftFunctorAddIso 𝒜 (- (n : ℤ)) (-1)).app Y)
 
 end GradedModules
 

@@ -5,11 +5,12 @@ Authors: Wentao Li
 -/
 module
 
-public import TauCeti.Data.ZMod.LocalRing
+public import Mathlib.Data.ZMod.Units
 
 import TauCeti.RingTheory.Henselian.BinaryForm
 import TauCeti.RingTheory.Henselian.Basic
 import Mathlib.RingTheory.Artinian.Module
+import Mathlib.RingTheory.ZMod.LocalRing
 -- Supplies completeness of Artinian local rings, needed by the Henselian instance.
 import Mathlib.RingTheory.AdicCompletion.Noetherian
 
@@ -43,9 +44,8 @@ theorem exists_sq_add_sq_eq_of_isUnit_prime_pow (p k : ℕ) [Fact p.Prime]
   · subst k
     have : Subsingleton (ZMod (p ^ 0)) := ZMod.subsingleton_iff.mpr (pow_zero p)
     exact ⟨0, 0, Subsingleton.elim _ _⟩
-  · have hkpos := Nat.pos_of_ne_zero hk
+  · have : NeZero k := ⟨hk⟩
     let : NeZero (p ^ k) := ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
-    let : IsLocalRing (ZMod (p ^ k)) := isLocalRing_prime_pow p k hkpos
     let : IsArtinianRing (ZMod (p ^ k)) := isArtinian_of_finite
     let : Finite (IsLocalRing.ResidueField (ZMod (p ^ k))) :=
       Finite.of_surjective (IsLocalRing.residue _) IsLocalRing.residue_surjective

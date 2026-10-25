@@ -153,6 +153,29 @@ lemma isSelfAdjoint_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSe
   rw [ContinuousLinearMap.adjoint_inner_right, P.inner_proj_apply_left,
     P.inner_proj]
 
+/-- Applying a measurable-set projection twice is the same as applying it once. -/
+@[simp]
+lemma proj_apply_proj (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) (v : H) :
+    P.proj B hB (P.proj B hB v) = P.proj B hB v := by
+  calc
+    P.proj B hB (P.proj B hB v) =
+        (P.proj B hB * P.proj B hB) v :=
+      (mul_apply_eq_comp (P.proj B hB) (P.proj B hB) v).symm
+    _ = P.proj B hB v := by rw [P.proj_idem B hB]
+
+/-- A measurable projection has the same matrix element when applied in both arguments. -/
+lemma inner_proj_eq_inner_proj_proj (P : ProjValMeasure X H)
+    (B : Set X) (hB : MeasurableSet B) (ψ ξ : H) :
+    ⟪ψ, P.proj B hB ξ⟫_ℂ =
+      ⟪P.proj B hB ψ, P.proj B hB ξ⟫_ℂ := by
+  let T := P.proj B hB
+  have hsym := (P.isSelfAdjoint_proj B hB).isSymmetric
+  calc
+    ⟪ψ, T ξ⟫_ℂ = ⟪T ψ, ξ⟫_ℂ := (hsym ψ ξ).symm
+    _ = ⟪T (T ψ), ξ⟫_ℂ := by rw [P.proj_apply_proj]
+    _ = ⟪T ψ, T ξ⟫_ℂ := hsym (T ψ) ξ
+
 /-- For each measurable set `B`, the operator `P(B)` is positive. -/
 theorem isPositive_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B) :
     (P.proj B hB).IsPositive := by
@@ -252,10 +275,8 @@ on the measurable set, interpreted as a real number. -/
 lemma norm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B)
     (ξ : H) :
     ‖P.proj B hB ξ‖ ^ 2 = ((P.diag ξ) B).toReal := by
-  have h1 : ⟪P.proj B hB ξ, P.proj B hB ξ⟫_ℂ = ⟪ξ, P.proj B hB ξ⟫_ℂ := by
-    rw [← ContinuousLinearMap.adjoint_inner_right,
-      ← ContinuousLinearMap.star_eq_adjoint, P.isSelfAdjoint_proj B hB,
-      ← mul_apply_eq_comp, P.proj_idem]
+  have h1 : ⟪P.proj B hB ξ, P.proj B hB ξ⟫_ℂ = ⟪ξ, P.proj B hB ξ⟫_ℂ :=
+    (P.inner_proj_eq_inner_proj_proj B hB ξ ξ).symm
   rw [norm_sq_eq_re_inner (𝕜 := ℂ), h1, P.inner_proj, RCLike.re_eq_complex_re,
     Complex.ofReal_re]
 

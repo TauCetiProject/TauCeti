@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.ModelTheory.Basic
+public import Mathlib.MeasureTheory.Group.Arithmetic
 public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
+public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 
 /-!
 # Relational configurations
@@ -23,6 +25,11 @@ atom of `W`. This **restriction** is measurable and functorial: restriction alon
 the identity, and restriction along a composite is the composite of the restrictions in the
 opposite order.
 
+Over the vertex set `ℕ`, functoriality makes restriction along inverses a left action of the
+finitely supported permutations `TauCeti.FinitaryPerm` by relabelling vertices, and each element
+acts measurably. This is the action under which laws of random structures on `ℕ` are invariant or
+ergodic.
+
 The function symbols of `L` are permitted and play no role. A structure of `L` determines a
 configuration by deciding its relations (`ofStructure`).
 
@@ -31,6 +38,8 @@ configuration by deciding its relations (`ofStructure`).
 * `TauCeti.RelationalConfiguration.Atom L V` — a relation symbol of `L` with a tuple of vertices;
 * `TauCeti.RelationalConfiguration L V` — a truth value for every atom;
 * `TauCeti.RelationalConfiguration.restrict` — pulling a configuration back along a vertex map;
+* `TauCeti.RelationalConfiguration.instMulActionFinitaryPerm` — finitely supported permutations
+  of `ℕ` relabel configurations over `ℕ`;
 * `TauCeti.RelationalConfiguration.ofStructure` — the configuration of an `L`-structure.
 
 ## Main results
@@ -39,7 +48,9 @@ configuration by deciding its relations (`ofStructure`).
   exactly when each atom coordinate is;
 * `TauCeti.RelationalConfiguration.measurable_restrict` — restriction is measurable;
 * `TauCeti.RelationalConfiguration.restrict_id` and
-  `TauCeti.RelationalConfiguration.restrict_comp` — restriction is functorial.
+  `TauCeti.RelationalConfiguration.restrict_comp` — restriction is functorial;
+* `TauCeti.RelationalConfiguration.instMeasurableConstSMulFinitaryPerm` — each finitary
+  relabelling is measurable.
 -/
 
 public section
@@ -247,6 +258,33 @@ open Classical in
 @[simp]
 theorem eval_ofStructure [L.Structure V] {n : ℕ} (R : L.Relations n) (x : Fin n → V) :
     (ofStructure L V).eval (atom R x) = decide (Language.Structure.RelMap R x) := (rfl)
+
+/-! ### Finitary relabelling of configurations over `ℕ` -/
+
+/-- Finitely supported permutations of `ℕ` relabel configurations over `ℕ`: `g` acts by
+restriction along `g⁻¹`, so that relabelling is a left action. -/
+instance instSMulFinitaryPerm : SMul FinitaryPerm (RelationalConfiguration L ℕ) :=
+  ⟨fun g c => c.restrict ⇑(FinitaryPerm.toPerm g)⁻¹⟩
+
+/-- Relabelling by `g` is restriction along `g⁻¹`. -/
+theorem finitaryPerm_smul_def (g : FinitaryPerm) (c : RelationalConfiguration L ℕ) :
+    g • c = c.restrict ⇑(FinitaryPerm.toPerm g)⁻¹ := (rfl)
+
+/-- Relabelling by `g` reads every atom at its relabelling along `g⁻¹`. -/
+@[simp]
+theorem eval_finitaryPerm_smul (g : FinitaryPerm) (c : RelationalConfiguration L ℕ)
+    (a : Atom L ℕ) : (g • c).eval a = c.eval (a.map ⇑(FinitaryPerm.toPerm g)⁻¹) := by
+  rw [finitaryPerm_smul_def, eval_restrict]
+
+/-- Finitary relabelling is a left action on configurations over `ℕ`. -/
+instance instMulActionFinitaryPerm : MulAction FinitaryPerm (RelationalConfiguration L ℕ) where
+  one_smul c := ext fun a => by simp [FinitaryPerm.toPerm_one, Atom.map_id]
+  mul_smul g h c := ext fun a => by simp [FinitaryPerm.toPerm_mul, mul_inv_rev, ← Atom.map_comp]
+
+/-- Each finitary relabelling of configurations over `ℕ` is measurable. -/
+instance instMeasurableConstSMulFinitaryPerm :
+    MeasurableConstSMul FinitaryPerm (RelationalConfiguration L ℕ) :=
+  ⟨fun _ => measurable_restrict _⟩
 
 end RelationalConfiguration
 

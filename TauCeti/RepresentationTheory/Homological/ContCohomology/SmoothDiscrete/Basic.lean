@@ -465,12 +465,10 @@ constructor, and its definitional checks unfold it. -/
 module becomes the identity morphism of the object it names. -/
 @[simp] lemma ofDiscreteModuleMap_id :
     ofDiscreteModuleMap (LinearMap.id (R := R) (M := M)) (fun _ _ ↦ rfl) =
-      𝟙 (ofDiscreteModule R G M) := by
-  -- Both sides fix `m`: `ofDiscreteModuleMap_hom_apply` on the left, `TopRep.id_apply` on the
-  -- right.
-  refine TopRep.hom_ext (DFunLike.ext _ _ fun (m : M) ↦ ?_)
-  exact (ofDiscreteModuleMap_hom_apply _ _ m).trans
-    (TopRep.id_apply (ofDiscreteModule R G M) m).symm
+      𝟙 (ofDiscreteModule R G M) :=
+  -- Both sides have the identity intertwining map as underlying map: `ofDiscreteModuleMap` is a
+  -- `TopRep.ofHom`, and `TopRep.hom_ofHom` and `TopRep.hom_id` hold by `rfl`.
+  (rfl)
 
 -- The left-hand side is the composite, which carries both equivariance hypotheses, and the
 -- right-hand side derives the equivariance of the composite: a hypothesis occurring on the left
@@ -483,14 +481,10 @@ by two `G`-equivariant `R`-linear maps is the morphism named by their composite.
     (f : M →ₗ[R] N) (hf : ∀ (g : G) (m : M), f (g • m) = g • f m)
     (f' : N →ₗ[R] P) (hf' : ∀ (g : G) (n : N), f' (g • n) = g • f' n) :
     ofDiscreteModuleMap f hf ≫ ofDiscreteModuleMap f' hf' =
-      ofDiscreteModuleMap (f'.comp f) (fun g m ↦ by simp only [LinearMap.comp_apply, hf, hf']) := by
-  -- Both sides send `m` to `f' (f m)`: `TopRep.comp_apply` for the composite on the left, and
-  -- `ofDiscreteModuleMap_hom_apply` on each factor.
-  refine TopRep.hom_ext (DFunLike.ext _ _ fun (m : M) ↦ ?_)
-  exact ((ofDiscreteModuleMap_hom_apply _ _ m).trans <|
-    (congrArg (⇑f') (ofDiscreteModuleMap_hom_apply f hf m).symm).trans <|
-      (ofDiscreteModuleMap_hom_apply f' hf' _).symm.trans
-        (TopRep.comp_apply (ofDiscreteModuleMap f hf) (ofDiscreteModuleMap f' hf') m).symm).symm
+      ofDiscreteModuleMap (f'.comp f) (fun g m ↦ by simp only [LinearMap.comp_apply, hf, hf']) :=
+  -- Both sides have underlying map `f' ∘ f`: `ofDiscreteModuleMap` is a `TopRep.ofHom`, and
+  -- `TopRep.hom_ofHom` and `TopRep.hom_comp` hold by `rfl`.
+  (rfl)
 
 /-- A `G`-equivariant `R`-linear equivalence of discrete modules as an isomorphism of
 `TopRep R G`, with `ofDiscreteModuleMap` of the equivalence and of its inverse as the two
@@ -538,18 +532,11 @@ def ofDiscreteModuleHomAddEquiv :
         (Representation.ofDistribMulAction R G N) where
   toFun φ := φ.hom.toIntertwiningMap
   invFun f := ofDiscreteModuleMap f.toLinearMap fun g m ↦ f.isIntertwining _ _ g m
-  -- Both round trips rewrap the *same* underlying function, so it is enough to compare the two
-  -- sides at a point, where `TauCeti.ofDiscreteModuleMap_hom_apply` identifies them.
-  left_inv φ := by
-    ext (m : M); exact ofDiscreteModuleMap_hom_apply (G := G) _ _ m
-  right_inv f := by
-    ext (m : M)
-    exact ofDiscreteModuleMap_hom_apply (G := G) f.toLinearMap
-      (fun g m ↦ f.isIntertwining _ _ g m) m
-  -- Addition of morphisms of `TopRep` is addition of the underlying intertwining maps
-  -- (`TopRep.hom_add`), so the translation is additive pointwise.
-  map_add' φ ψ := by
-    ext (m : M); exact congr($(TopRep.hom_add _ _ φ ψ) m)
+  -- Both round trips rewrap the same underlying function, and addition of morphisms of `TopRep` is
+  -- addition of the underlying intertwining maps (`TopRep.hom_add`).
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
 
 variable {R G M N}
 
@@ -772,21 +759,23 @@ variable (R : Type u) [Ring R] [TopologicalSpace R]
 
 variable {R G} in
 /-- Restriction of a bundled smooth discrete representation to a subgroup, as an object whose
-underlying representation is definitionally `TopRep.res U.subtype A.obj`. The object map of
-`smoothDiscreteResFunctor` is not exposed, so statements that must see this definitional equality
-(for instance the domain of `coindTraceHom`) use this abbreviation instead. -/
+underlying representation is `TopRep.res U.subtype A.obj` at reducible transparency. It is the
+object map of `TauCeti.smoothDiscreteResFunctor` by `rfl`, but not at reducible transparency, so
+statements that must see the restricted representation (for instance the domain of
+`TauCeti.coindTraceHom`) use this abbreviation. -/
 abbrev smoothDiscreteResTopRep (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     SmoothDiscreteTopRep.{u, v, w} R U :=
   ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩
 
-/-- Restriction along `U → G` on smooth discrete representations. -/
-def smoothDiscreteResFunctor :
-    SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U where
-  obj A := ⟨TopRep.res (U.subtype : U →* G) A.obj,
-    A.property.res continuous_subtype_val⟩
-  map f := ObjectProperty.homMk ((TopRep.resFunctor (U.subtype : U →* G)).map f.hom)
-  map_id _ := rfl
-  map_comp _ _ := rfl
+/-- Restriction along `U → G` on smooth discrete representations: Mathlib's `TopRep.resFunctor`
+along the subgroup inclusion, lifted to the smooth discrete objects since restriction preserves
+smoothness (`TauCeti.IsSmoothDiscrete.res`). The body is `@[expose]`d so that other modules see its
+object map as `TauCeti.smoothDiscreteResTopRep` and its action on morphisms as that of
+`TopRep.resFunctor`, both by `rfl`. -/
+@[expose] def smoothDiscreteResFunctor :
+    SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U :=
+  ObjectProperty.lift _ (smoothDiscreteι R G ⋙ TopRep.resFunctor (U.subtype : U →* G))
+    fun A ↦ A.property.res continuous_subtype_val
 
 /-- Restriction along `U → G` restricts the underlying topological representation. -/
 @[simp]
@@ -795,20 +784,10 @@ theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
       ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ :=
   (rfl)
 
--- `dsimp% only` on the left-hand side: see the comment on `ofDiscreteModulePair_hom_apply`. Here
--- `simp` also unfolds the `have` that `show … from` elaborates to, and the `.obj` of `⟨_, _⟩`.
-/-- Restriction along `U → G` does not change the underlying map of a morphism. The object
-transports identify the opaque functor's objects with the restricted representations. -/
-@[simp]
-theorem smoothDiscreteResFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R G}
-    (f : A ⟶ B) (x : A.obj.V) :
-    (dsimp% only (show B.obj.V from
-      (((eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
-          (smoothDiscreteResFunctor_obj R G U B))).hom.comp
-        ((smoothDiscreteResFunctor R G U).map f).hom.hom).comp
-          (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, w} R U => X.obj)
-            (smoothDiscreteResFunctor_obj R G U A).symm)).hom) x)) = f.hom.hom x :=
-  (rfl)
+/-- Restriction along `U → G` does not change the underlying map of a morphism. -/
+@[simp] lemma smoothDiscreteResFunctor_map_hom_hom_apply
+    {A B : SmoothDiscreteTopRep.{u, v, w} R G} (f : A ⟶ B) (x : A.obj.V) :
+    ((smoothDiscreteResFunctor R G U).map f).hom.hom x = f.hom.hom x := (rfl)
 
 end Restriction
 
