@@ -167,6 +167,11 @@ theorem quasiIsos_iff {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) :
     CategoryTheory.ConcreteCategory.isIso_iff_bijective]
   exact Iff.rfl
 
+/-- Quasi-isomorphisms are unchanged by isomorphisms of arrows. -/
+instance : (quasiIsos.{uR, uA, uM} h).RespectsIso := by
+  unfold quasiIsos
+  infer_instance
+
 end DGRightModuleCat
 
 end TauCeti

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Cohomology
-public import TauCeti.Algebra.Homology.DG.Module.Right.Cohomology
+public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Cohomology
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Basic
 
 /-!
@@ -139,5 +139,27 @@ theorem restrictScalarsCohomologyEquiv_cohomologyAction (c : hA.Cohomology)
     simp [MulAction.compHom_smul_def]
 
 end IsDGRightModule
+
+namespace DGRightModuleHom
+
+variable {N : Type*} [AddCommGroup N] [Module R N] [Module Bᵐᵒᵖ N]
+  [IsScalarTower R Bᵐᵒᵖ N] {𝒩 : ℤ → Submodule R N} [DirectSum.Decomposition 𝒩]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece 𝒩]
+  {dN : N →ₗ[R] N} {hN : IsDGRightModule hB 𝒩 dN}
+
+/-- The cohomology identification for restriction of scalars is natural in the module. -/
+@[simp]
+theorem restrictScalarsCohomologyEquiv_cohomologyMap (g : DGRightModuleHom hM hN)
+    (x : (hM.restrictScalars f).Cohomology) :
+    hN.restrictScalarsCohomologyEquiv f ((g.restrictScalars f).cohomologyMap x) =
+      g.cohomologyMap (hM.restrictScalarsCohomologyEquiv f x) := by
+  obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  simp only [cohomologyMap_mk, IsDGRightModule.restrictScalarsCohomologyEquiv_mk]
+  congr 1
+  apply Subtype.ext
+  simp only [cyclesMap_apply_coe]
+  exact val_restrictScalars f g z
+
+end DGRightModuleHom
 
 end TauCeti
