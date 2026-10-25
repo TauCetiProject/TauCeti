@@ -30,6 +30,11 @@ changes the left dimension of `X` into the left trace of an automorphism `a⁻¹
 dimension into the right trace of `a`, the product `leftDim X ≫ rightDim X` of the two dimensions
 of a simple object does not depend on the pivotal structure, although each factor may.
 
+When the unit is simple, every scalar `𝟙_ C ⟶ 𝟙_ C` is a multiple of the identity, so it acts on
+every object in the same way from the left and from the right. Hence the left and right traces
+and dimensions are multiplicative on tensor products, as in a braided category
+(`TauCeti.leftTrace_tensorHom_eq_comp_of_simple` and its companions).
+
 ## References
 
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §§4.7, 7.21
@@ -102,5 +107,43 @@ theorem leftDim_comp_rightDim_eq :
     leftTrace_inv_comp_rightTrace_hom k (@pivotalIsoApp C _ _ _ P X ≪≫ (pivotalIsoApp X).symm)
 
 end ChangeOfPivotal
+
+section SimpleUnit
+
+variable [Simple (𝟙_ C)] [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
+
+include k in
+/-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically
+closed field, the left trace is multiplicative. -/
+theorem leftTrace_tensorHom_eq_comp_of_simple {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
+    leftTrace (f ⊗ₘ g) = leftTrace f ≫ leftTrace g :=
+  leftTrace_tensorHom_eq_comp f g
+    (leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple k _ Y)
+
+include k in
+/-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically
+closed field, the right trace is multiplicative. -/
+theorem rightTrace_tensorHom_eq_comp_of_simple {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
+    rightTrace (f ⊗ₘ g) = rightTrace f ≫ rightTrace g :=
+  rightTrace_tensorHom_eq_comp f g
+    (leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple k _ X)
+
+include k in
+/-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically
+closed field, the left dimension is multiplicative. -/
+theorem leftDim_tensor_eq_comp_of_simple (X Y : C) :
+    leftDim (X ⊗ Y) = leftDim X ≫ leftDim Y :=
+  leftDim_tensor_eq_comp X Y
+    (leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple k _ Y)
+
+include k in
+/-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically
+closed field, the right dimension is multiplicative. -/
+theorem rightDim_tensor_eq_comp_of_simple (X Y : C) :
+    rightDim (X ⊗ Y) = rightDim X ≫ rightDim Y :=
+  rightDim_tensor_eq_comp X Y
+    (leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple k _ X)
+
+end SimpleUnit
 
 end TauCeti
