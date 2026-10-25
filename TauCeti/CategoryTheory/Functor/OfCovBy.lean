@@ -204,6 +204,9 @@ theorem ofCovBy_map_of_covBy {S T : Finset ι} (h : S ⋖ T) (φ : S ⟶ T) :
     (ofCovBy f comm).map φ =
       eqToHom (ofCovBy_obj f comm S) ≫ f h ≫ eqToHom (ofCovBy_obj f comm T).symm := by
   classical
+  -- By definition `(ofCovBy f comm).map φ` is `OfCovBy.map f h.le` and `(ofCovBy f comm).obj`
+  -- is `X`, so both transports are `eqToHom rfl`. They cannot be rewritten away directly,
+  -- because the proofs `ofCovBy_obj f comm _` keep their unreduced type, so we restate the goal.
   change OfCovBy.map f h.le = eqToHom rfl ≫ f h ≫ eqToHom rfl
   rw [eqToHom_refl, eqToHom_refl, id_comp, comp_id, OfCovBy.map_of_covBy f h]
 
