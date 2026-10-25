@@ -31,11 +31,11 @@ The slice is closed, hence compact, and discrete.
   along `W^u(x)`, so the closure of the set also meets `W^u(x)` away from `x`. This is
   `Flow.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet`, applied in a metric
   compatible with the topology of `M`, around a ball containing no other critical point. Iterating
-  it, under the Morse–Smale condition, shows that the closure of `W^s(q)` meets the stable manifolds
-  only of critical points of index larger than `ind q`, and the closure of `W^u(p)` meets the
-  unstable manifolds only of critical points of index smaller than `ind p`. When the indices
-  differ by one, a limit of points of the slice can therefore only lie on a trajectory from `p` to
-  `q`.
+  it, under the Morse–Smale condition, shows that besides `W^s(q)` itself, the closure of `W^s(q)`
+  meets the stable manifolds only of critical points of index larger than `ind q`, and besides
+  `W^u(p)` itself, the closure of `W^u(p)` meets the unstable manifolds only of critical points of
+  index smaller than `ind p`. When the indices differ by one, a limit of points of the slice can
+  therefore only lie on a trajectory from `p` to `q`.
 * **Discreteness** comes from transversality. At a point `y` of the slice, the tangent space of
   `W^u(p) ∩ W^s(q)` is the line spanned by the velocity `X y`, on which `df_y` does not vanish,
   while `df_y` vanishes on the tangent cone of the level slice. So that tangent cone is zero, and
@@ -52,8 +52,9 @@ ambient space.
 * `IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_stableSet_inter_stableSet` and its time
   reversal `IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet`, in
   the namespace `TauCeti.IsAdaptedPseudoGradient`:
-  the Morse index strictly increases (respectively decreases) at the critical points whose stable
-  (respectively unstable) manifolds meet the closure of `W^s(q)` (respectively `W^u(p)`).
+  the Morse index strictly increases (respectively decreases) at the critical points other than `q`
+  (respectively `p`) whose stable (respectively unstable) manifolds meet the closure of `W^s(q)`
+  (respectively `W^u(p)`).
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level`:
   an index-one level slice is closed.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.isDiscrete_unstableSet_inter_stableSet_inter_level`:
