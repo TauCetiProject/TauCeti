@@ -75,8 +75,10 @@ theorem effectiveActionFunctor_mapAut_stabilizerMulEquivAut (x : X) (g : stabili
     hhom, hinv, effectiveActionFunctor_map_hom,
     ActionCategory.stabilizerMulEquivAut_apply_hom_hom, effectiveStabilizerMap_apply]
   -- Read the labels in the quotient group before applying its identity laws.
-  change (1 : G ⧸ (toPermHom G X).ker) * QuotientGroup.mk (g : G) *
-    (1 : G ⧸ (toPermHom G X).ker) = QuotientGroup.mk (g : G)
+  change (1 : G ⧸ (toPermHom G X).ker) *
+    (QuotientGroup.mk (g : G) : G ⧸ (toPermHom G X).ker) *
+    (1 : G ⧸ (toPermHom G X).ker) =
+    (QuotientGroup.mk (g : G) : G ⧸ (toPermHom G X).ker)
   simp only [one_mul, mul_one]
 
 /-- Every arrow of the faithful action groupoid lifts, with its source and target fixed. -/
