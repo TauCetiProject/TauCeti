@@ -42,7 +42,8 @@ a time.
 * `TauCeti.Manifold.coordChangeL_toMatrix`: a trivialization coordinate change has the
   change-of-basis matrix between the corresponding local frames.
 * `TauCeti.Manifold.contMDiffOn_hom_of_localFrame`: a section of the bundle of continuous linear
-  maps is `C^n` once its evaluations on a local frame of the source bundle are.
+  maps, possibly along a base map, is `C^n` once its evaluations on a local frame of the source
+  bundle are.
 -/
 
 public section
@@ -130,37 +131,42 @@ variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
   [∀ x, AddCommGroup (V' x)] [∀ x, Module 𝕜 (V' x)] [∀ x, TopologicalSpace (V' x)]
   [FiberBundle F' V'] [VectorBundle 𝕜 F' V']
   {e' : Trivialization F' (TotalSpace.proj : TotalSpace F' V' → M)} [MemTrivializationAtlas e']
-  {n : ℕ∞ω} {u : Set M}
+  {n : ℕ∞ω}
 
 variable [∀ x, IsTopologicalAddGroup (V' x)] [∀ x, ContinuousSMul 𝕜 (V' x)]
   [ContMDiffVectorBundle n F V I] [ContMDiffVectorBundle n F' V' I]
+  {EN : Type*} [NormedAddCommGroup EN] [NormedSpace 𝕜 EN]
+  {HN : Type*} [TopologicalSpace HN] {J : ModelWithCorners 𝕜 EN HN}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace HN N]
 
-/-- **A hom-bundle section is tested on a local frame.** A section `A` of the bundle of continuous
-linear maps from `V` to `V'` is `C^n` on a subset of `e.baseSet ∩ e'.baseSet` as soon as each
-of its evaluations `A (e.localFrame b j)` on the local frame of the source bundle is. -/
-theorem contMDiffOn_hom_of_localFrame (hu : u ⊆ e.baseSet ∩ e'.baseSet)
-    {A : Π y : M, V y →L[𝕜] V' y}
-    (hA : ∀ j : ι, ContMDiffOn I (I.prod 𝓘(𝕜, F')) n
-      (fun y ↦ TotalSpace.mk' F' y (A y (e.localFrame b j y))) u) :
-    ContMDiffOn I (I.prod 𝓘(𝕜, F →L[𝕜] F')) n
-      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F') y (A y)) u := by
+/-- **A hom-bundle section is tested on a local frame.** Let `A y : V (f y) →L V' (f y)` be
+continuous linear maps between fibres over a `C^n` base map `f : N → M` which sends `u` into
+`e.baseSet ∩ e'.baseSet`. Then `y ↦ A y` is `C^n` on `u` as soon as each of its evaluations
+`A y (e.localFrame b j (f y))` on the local frame of the source bundle is. For `f = id` this tests
+a section of the bundle of continuous linear maps from `V` to `V'`. -/
+theorem contMDiffOn_hom_of_localFrame {f : N → M} {u : Set N} (hf : ContMDiffOn J I n f u)
+    (hu : MapsTo f u (e.baseSet ∩ e'.baseSet)) {A : Π y : N, V (f y) →L[𝕜] V' (f y)}
+    (hA : ∀ j : ι, ContMDiffOn J (I.prod 𝓘(𝕜, F')) n
+      (fun y ↦ TotalSpace.mk' F' (f y) (A y (e.localFrame b j (f y)))) u) :
+    ContMDiffOn J (I.prod 𝓘(𝕜, F →L[𝕜] F')) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F') (E := fun x ↦ V x →L[𝕜] V' x) (f y) (A y)) u := by
   classical
   let := FiniteDimensional.fintypeBasisIndex b
   set eh := e.continuousLinearMap (RingHom.id 𝕜) e' with heh
   apply (eh.contMDiffOn_iff (fun y hy ↦ eh.mem_source.mpr (by simpa [heh] using hu hy))).2
-  refine ⟨contMDiffOn_id, ?_⟩
+  refine ⟨hf, ?_⟩
   -- The `j`-th coordinate of the trivialized section is the trivialized evaluation on the frame.
-  have key {y : M} (hy : y ∈ u) (j : ι) :
-      (eh ⟨y, A y⟩).2 (b j) = (e' ⟨y, A y (e.localFrame b j y)⟩).2 := by
+  have key {y : N} (hy : y ∈ u) (j : ι) :
+      (eh ⟨f y, A y⟩).2 (b j) = (e' ⟨f y, A y (e.localFrame b j (f y))⟩).2 := by
     simp [heh, Bundle.Trivialization.continuousLinearMap_apply,
       symmL_basis_eq_localFrame b (hu hy).1,
       Bundle.Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e' (hu hy).2]
-  have hcoord (j : ι) : ContMDiffOn I 𝓘(𝕜, F') n (fun y ↦ (eh ⟨y, A y⟩).2 (b j)) u := by
+  have hcoord (j : ι) : ContMDiffOn J 𝓘(𝕜, F') n (fun y ↦ (eh ⟨f y, A y⟩).2 (b j)) u := by
     refine ContMDiffOn.congr ?_ fun y hy ↦ key hy j
     exact ((e'.contMDiffOn_iff (fun y hy ↦ e'.mem_source.mpr (hu hy).2)).1 (hA j)).2
-  have hsum : ContMDiffOn I 𝓘(𝕜, F →L[𝕜] F') n
+  have hsum : ContMDiffOn J 𝓘(𝕜, F →L[𝕜] F') n
       (fun y ↦ ∑ j, (LinearMap.toContinuousLinearMap (b.coord j)).smulRight
-        ((eh ⟨y, A y⟩).2 (b j))) u := by
+        ((eh ⟨f y, A y⟩).2 (b j))) u := by
     refine contMDiffOn_finsetSum fun j _ ↦ ?_
     exact ContMDiffOn.clm_apply
       (g := fun _ ↦ ContinuousLinearMap.smulRightL 𝕜 F F'
