@@ -51,6 +51,11 @@ depressed specialization of that formula is used to compare a quartic with its c
 * `TauCeti.discrSqrt`, `TauCeti.discrSqrt_ne_zero`, `Polynomial.Monic.discrSqrt_sq`: the product
   of the differences of a numbering of the distinct roots, its nonvanishing, and the fact that
   its square is the discriminant for a monic polynomial with such a numbering.
+* `TauCeti.algebraMap_discr_eq_leadingCoeff_pow_mul_discrSqrt_sq`: for a degree-sized root
+  numbering over a domain, the discriminant is the root-difference square times the indicated
+  power of the leading coefficient, with an arbitrary commutative coefficient ring.
+* `TauCeti.leadingCoeff_pow_mul_discrSqrt_sq`: the corresponding scaled root-difference product
+  is a square root of the discriminant, including degree zero and annihilating base change.
 * `Polynomial.Monic.prod_roots_eval_derivative`: the product of the derivative over the root
   multiset, which is the discriminant up to the same sign. This is the shape in which the
   discriminant of a minimal polynomial is a norm.
@@ -493,7 +498,9 @@ variable {F : Type*} [CommRing F] {E : Type*} [CommRing E] [IsDomain E] [Algebra
 numbering `e` of the root set.
 
 For monic `f` this is a square root of the discriminant, by
-`Polynomial.Monic.discrSqrt_sq`. It is only *a* square root: `TauCeti.discrSqrt_trans` shows that
+`Polynomial.Monic.discrSqrt_sq`. In general, `TauCeti.leadingCoeff_pow_mul_discrSqrt_sq` gives a
+square root after scaling by the indicated power of the leading coefficient. It is only *a*
+square root: `TauCeti.discrSqrt_trans` shows that
 changing the numbering by an odd permutation changes the sign. The root set carries no order, so
 the numbering is an explicit argument and is never fixed globally. -/
 def discrSqrt (e : Fin f.natDegree ≃ f.rootSet E) : E :=
@@ -567,6 +574,44 @@ theorem discr_C_mul (a : F) (ha : a ≠ 0) :
 
 end Nonmonic
 
+section Numbering
+
+variable {F E : Type*} [CommRing F] [CommRing E] [IsDomain E] [Algebra F E] {f : F[X]}
+
+/-- The root-difference product computes the discriminant, with the leading-coefficient factor,
+for any degree-sized root numbering, including an annihilating base change in degree zero. -/
+theorem algebraMap_discr_eq_leadingCoeff_pow_mul_discrSqrt_sq
+    (e : Fin f.natDegree ≃ f.rootSet E) :
+    algebraMap F E f.discr =
+      algebraMap F E f.leadingCoeff ^ (2 * f.natDegree - 2) * discrSqrt e ^ 2 := by
+  classical
+  have hdeg : (f.map (algebraMap F E)).natDegree = f.natDegree :=
+    le_antisymm natDegree_map_le (by
+      simpa [roots_map_eq_map_numbering e] using card_roots' (f.map (algebraMap F E)))
+  by_cases hzero : f.map (algebraMap F E) = 0
+  · have hfdeg : f.natDegree = 0 := by simpa [hzero] using hdeg.symm
+    have hdiscr : f.discr = 1 := by rw [eq_C_of_natDegree_eq_zero hfdeg, discr_C]
+    have : IsEmpty (Fin f.natDegree) := by simp [hfdeg]
+    simp [hdiscr, hfdeg, discrSqrt, Finset.prod_of_isEmpty]
+  · have hlc : algebraMap F E f.leadingCoeff ≠ 0 := by
+      have hmaplc : (f.map (algebraMap F E)).leadingCoeff =
+          algebraMap F E f.leadingCoeff := by simp only [leadingCoeff, coeff_map, hdeg]
+      rw [← hmaplc]
+      exact leadingCoeff_ne_zero.mpr hzero
+    have hpdeg : (∏ i, (X - C (e i : E))).natDegree = f.natDegree := by simp
+    rw [← discr_map_of_natDegree_eq (algebraMap F E) hdeg, map_eq_C_mul_prod_numbering e,
+      discr_C_mul _ hlc, hpdeg, discr_prod_X_sub_C_eq_sq, discrSqrt_def]
+
+/-- Multiplying the root-difference product by the indicated power of the leading coefficient
+gives a square root of the discriminant, without a monicity hypothesis. -/
+theorem leadingCoeff_pow_mul_discrSqrt_sq (e : Fin f.natDegree ≃ f.rootSet E) :
+    (algebraMap F E f.leadingCoeff ^ (f.natDegree - 1) * discrSqrt e) ^ 2 =
+      algebraMap F E f.discr := by
+  have hexp : (f.natDegree - 1) * 2 = 2 * f.natDegree - 2 := by omega
+  rw [algebraMap_discr_eq_leadingCoeff_pow_mul_discrSqrt_sq e, mul_pow, ← pow_mul, hexp]
+
+end Numbering
+
 section NonmonicField
 
 variable {F : Type*} [Field F] {f : F[X]}
@@ -577,69 +622,31 @@ field. No Galois hypothesis is needed, and the zero polynomial is included. -/
 theorem isSquare_discr_iff_mem_range {E : Type*} [CommRing E] [IsDomain E] [Algebra F E]
     (e : Fin f.natDegree ≃ f.rootSet E) :
     IsSquare f.discr ↔ discrSqrt e ∈ Set.range (algebraMap F E) := by
-  by_cases hf0 : f = 0
-  · subst f
-    have hdiscr : (0 : F[X]).discr = 1 := by simpa using discr_C (0 : F)
-    have : IsEmpty (Fin (0 : F[X]).natDegree) := by simp
-    simp [discrSqrt, hdiscr, Finset.prod_of_isEmpty]
-  have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf0
-  have hlcE : algebraMap F E f.leadingCoeff ≠ 0 :=
-    (map_eq_zero_iff _ (algebraMap F E).injective).not.mpr hlc
-  let p : E[X] := ∏ i, (X - C (e i : E))
-  have hfmapdeg : (f.map (algebraMap F E)).natDegree = f.natDegree :=
-    natDegree_map_eq_of_injective (algebraMap F E).injective f
-  have hroots := roots_map_eq_map_numbering e
-  have hrootsCard : (f.map (algebraMap F E)).roots.card =
-      (f.map (algebraMap F E)).natDegree := by
-    rw [hroots, hfmapdeg]
-    simp
-  have hsplits : (f.map (algebraMap F E)).Splits :=
-    splits_iff_card_roots.mpr hrootsCard
-  have hfac : f.map (algebraMap F E) = C (algebraMap F E f.leadingCoeff) * p := by
-    calc
-      f.map (algebraMap F E) = C (f.map (algebraMap F E)).leadingCoeff *
-          ((f.map (algebraMap F E)).roots.map (X - C ·)).prod := hsplits.eq_prod_roots
-      _ = C (algebraMap F E f.leadingCoeff) *
-          ((univ.val.map fun i ↦ (e i : E)).map (X - C ·)).prod := by
-            rw [leadingCoeff_map_of_injective (algebraMap F E).injective, hroots]
-      _ = C (algebraMap F E f.leadingCoeff) * ∏ i, (X - C (e i : E)) := by
-            rw [Multiset.map_map, ← Finset.prod_eq_multiset_prod]
-            rfl
-      _ = C (algebraMap F E f.leadingCoeff) * p := rfl
-  have hpdeg : p.natDegree = f.natDegree := by
-    rw [← hfmapdeg, hfac, natDegree_C_mul hlcE]
-  have hdiscr : algebraMap F E f.discr =
-      (algebraMap F E f.leadingCoeff) ^ (2 * f.natDegree - 2) * discrSqrt e ^ 2 := by
-    rw [← discr_map_of_natDegree_eq (algebraMap F E) hfmapdeg, hfac,
-      discr_C_mul _ hlcE, hpdeg, discr_prod_X_sub_C_eq_sq, discrSqrt_def]
-  have hexp : 2 * f.natDegree - 2 = 2 * (f.natDegree - 1) := by omega
-  rw [hexp, mul_comm 2, pow_mul] at hdiscr
-  set d : E := algebraMap F E f.leadingCoeff ^ (f.natDegree - 1) with hd_def
-  simp only [pow_two] at hdiscr
-  have hd : d ≠ 0 := pow_ne_zero _ hlcE
+  let c : F := f.leadingCoeff ^ (f.natDegree - 1)
+  have hc : c ≠ 0 := by
+    by_cases hf : f = 0
+    · simp [c, hf]
+    · exact pow_ne_zero _ (leadingCoeff_ne_zero.mpr hf)
+  -- Scaling by a nonzero base-field element preserves membership in the base field.
+  have hmem : c • discrSqrt e ∈ Set.range (algebraMap F E) ↔
+      discrSqrt e ∈ Set.range (algebraMap F E) := by
+    simpa only [Subalgebra.mem_toSubmodule, Algebra.mem_bot] using
+      (⊥ : Subalgebra F E).toSubmodule.smul_mem_iff (x := discrSqrt e) hc
+  have hdiscr : (c • discrSqrt e) ^ 2 = algebraMap F E f.discr := by
+    simpa only [c, Algebra.smul_def, map_pow] using leadingCoeff_pow_mul_discrSqrt_sq e
+  rw [← hmem]
+  -- Two elements with equal squares differ only by sign in the extension domain.
   constructor
-  · rintro ⟨c, hc⟩
-    have hs : discrSqrt e * discrSqrt e =
-        algebraMap F E (f.leadingCoeff⁻¹ ^ (f.natDegree - 1) * c) *
-          algebraMap F E (f.leadingCoeff⁻¹ ^ (f.natDegree - 1) * c) := by
-      apply mul_left_cancel₀ (a := d * d) (mul_ne_zero hd hd)
-      calc
-        d * d * (discrSqrt e * discrSqrt e) = algebraMap F E (c * c) := by
-          rw [← hc, hdiscr]
-        _ = _ := by
-          simp only [hd_def, ← map_pow, ← map_mul]
-          congr 1
-          rw [inv_pow]
-          field_simp
+  · rintro ⟨a, ha⟩
+    have hs : (c • discrSqrt e) * (c • discrSqrt e) =
+        algebraMap F E a * algebraMap F E a := by
+      rw [← map_mul, ← ha, ← sq, hdiscr]
     rcases mul_self_eq_mul_self_iff.mp hs with hs | hs
-    · exact ⟨_, hs.symm⟩
-    · exact ⟨-_, by rw [map_neg, ← hs]⟩
-  · rintro ⟨c, hc⟩
-    refine ⟨f.leadingCoeff ^ (f.natDegree - 1) * c, (algebraMap F E).injective ?_⟩
-    simp only [map_mul, map_pow]
-    rw [← hd_def]
-    rw [hc, hdiscr]
-    ring
+    · exact ⟨a, hs.symm⟩
+    · exact ⟨-a, by rw [map_neg, ← hs]⟩
+  · rintro ⟨a, ha⟩
+    refine ⟨a, (algebraMap F E).injective ?_⟩
+    rw [map_mul, ha, ← sq, hdiscr]
 
 end NonmonicField
 
@@ -659,9 +666,7 @@ variable {F : Type*} [CommRing F] {E : Type*} [CommRing E] [IsDomain E] [Algebra
 theorem discrSqrt_sq (hf : f.Monic)
     (e : Fin f.natDegree ≃ f.rootSet E) :
     discrSqrt e ^ 2 = algebraMap F E f.discr := by
-  rw [hf.discr_eq_prod_roots_sub_sq (roots_map_eq_map_numbering e), discrSqrt_def,
-    ← Finset.prod_pow]
-  exact Finset.prod_congr rfl fun i _ ↦ (Finset.prod_pow _ _ _).symm
+  simpa [hf.leadingCoeff] using leadingCoeff_pow_mul_discrSqrt_sq e
 
 end Domain
 

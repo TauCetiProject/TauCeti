@@ -316,21 +316,21 @@ theorem hasGaloisLabel_four_zero_or_two_iff_existsUnique_isRoot_resolvent :
 variable {E : Type*} [Field E] [Algebra F E]
 
 /-- **The discriminant field detects the cyclic quartic label.** Away from characteristic `2`, a
-monic quartic with a label stays irreducible over its discriminant field exactly when that label
+quartic with a label stays irreducible over its discriminant field exactly when that label
 is not `4T1`. The discriminant field may be taken in any extension `E` containing a square root
 `δ` of the discriminant. -/
 theorem HasGaloisLabel.irreducible_map_discrField_iff_ne_zero (h : HasGaloisLabel f j)
-    (hf : f.Monic) (hchar : ringChar F ≠ 2) {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr) :
+    (hchar : ringChar F ≠ 2) {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr) :
     Irreducible (f.map (algebraMap F (discrField f E))) ↔ j ≠ ⟨0, by simp⟩ := by
-  rw [h.irreducible_map_discrField_iff hf hchar hδ]
+  rw [h.irreducible_map_discrField_iff hchar hδ]
   exact (transitiveGroupLabel_referenceSubgroup 4 j)
     |>.isPretransitive_inf_alternatingGroup_iff_ne_zero
 
 variable {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr)
-include hchar hf hδ
+include hchar hδ
 
 /-- **An irreducible quartic that factors over its discriminant field has label `4T1`.** Away from
-characteristic `2`, a monic polynomial has label `4T1`, that is cyclic Galois group of order four,
+characteristic `2`, a polynomial has label `4T1`, that is cyclic Galois group of order four,
 exactly when it is an irreducible quartic that becomes reducible over its discriminant field. The
 discriminant field may be taken in any extension `E` containing a square root `δ` of the
 discriminant.
@@ -341,15 +341,16 @@ theorem hasGaloisLabel_four_zero_iff :
     HasGaloisLabel f (⟨0, by simp⟩ : TransitiveGroupIndex 4) ↔
       Irreducible f ∧ f.natDegree = 4 ∧ ¬ Irreducible (f.map (algebraMap F (discrField f E))) := by
   refine ⟨fun h => ⟨h.irreducible, h.natDegree_eq,
-    fun hK => (h.irreducible_map_discrField_iff_ne_zero hf hchar hδ).1 hK rfl⟩, ?_⟩
+    fun hK => (h.irreducible_map_discrField_iff_ne_zero hchar hδ).1 hK rfl⟩, ?_⟩
   rintro ⟨hirr, hdeg, hK⟩
   have hsep := Polynomial.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
   obtain ⟨k, hk, -⟩ := existsUnique_hasGaloisLabel_four hsep hirr hdeg
   obtain rfl : k = ⟨0, by simp⟩ := by
     by_contra hk0
-    exact hK ((hk.irreducible_map_discrField_iff_ne_zero hf hchar hδ).2 hk0)
+    exact hK ((hk.irreducible_map_discrField_iff_ne_zero hchar hδ).2 hk0)
   exact hk
 
+include hf in
 /-- **A quartic in the last row that stays irreducible over its discriminant field has label
 `4T3`.** Away from characteristic `2`, a monic polynomial has label `4T3`, that is dihedral Galois
 group of order eight, exactly when it is an irreducible quartic whose discriminant is not a square,
@@ -369,10 +370,10 @@ theorem hasGaloisLabel_four_two_iff :
     obtain ⟨hirr, hdeg, hsq, hroot⟩ :=
       (hasGaloisLabel_four_zero_or_two_iff hchar hf).1 (Or.inr h)
     exact ⟨hirr, hdeg, hsq, hroot,
-      (h.irreducible_map_discrField_iff_ne_zero hf hchar hδ).2 (by simp)⟩
+      (h.irreducible_map_discrField_iff_ne_zero hchar hδ).2 (by simp)⟩
   · rintro ⟨hirr, hdeg, hsq, hroot, hK⟩
     refine ((hasGaloisLabel_four_zero_or_two_iff hchar hf).2
       ⟨hirr, hdeg, hsq, hroot⟩).resolve_left fun h => ?_
-    exact (h.irreducible_map_discrField_iff_ne_zero hf hchar hδ).1 hK rfl
+    exact (h.irreducible_map_discrField_iff_ne_zero hchar hδ).1 hK rfl
 
 end TauCeti

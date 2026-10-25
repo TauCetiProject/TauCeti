@@ -20,7 +20,8 @@ or after base change to a domain `E`.
 First, a numbering of the root set by `Fin f.natDegree` enumerates the full root multiset after
 base change. The number of distinct roots exhausts the degree bound, so all roots are simple.
 This lets root-product formulas be expressed as finite products indexed by `Fin f.natDegree`,
-without choosing a global order on the root set.
+without choosing a global order on the root set. Retaining the leading coefficient gives the
+factorization of the mapped polynomial, including annihilating base change in degree zero.
 
 Second, the root set of a product of polynomials whose base changes to `E` are nonzero is the
 union of the root sets of the factors. This is the lemma that decomposes the roots of a
@@ -55,6 +56,8 @@ the gcd with the derivative as the number of distinct roots.
   every rational root suffices for the rational root multiset to have no repetitions.
 * `Polynomial.roots_map_eq_map_numbering`: a degree-sized numbering of the root set enumerates
   the full root multiset after base change, without a separability assumption.
+* `Polynomial.map_eq_C_mul_prod_numbering`: a degree-sized root numbering factors the mapped
+  polynomial as its leading coefficient times the product of the numbered linear factors.
 * `Polynomial.rootSet_mul`: the root set of a product of polynomials whose base changes to `E` are
   nonzero is the union of the root sets of the factors.
 * `Polynomial.roots_prod_toFinset`: the distinct roots of a finite product of nonzero polynomials
@@ -141,6 +144,30 @@ theorem _root_.Polynomial.roots_map_eq_map_numbering
   · intro a
     simp only [Multiset.mem_map, Finset.mem_val, mem_univ, true_and]
     exact ⟨fun ha ↦ ⟨e.symm ⟨a, hmem.mp ha⟩, by simp⟩, fun ⟨i, hi⟩ ↦ hi ▸ hmem.mpr (e i).2⟩
+
+/-- A degree-sized numbering of the root set gives the factorization of the mapped polynomial,
+with its leading coefficient retained. This includes polynomials annihilated by base change. -/
+theorem _root_.Polynomial.map_eq_C_mul_prod_numbering
+    (e : Fin f.natDegree ≃ f.rootSet E) :
+    f.map (algebraMap F E) =
+      C (algebraMap F E f.leadingCoeff) * ∏ i, (X - C (e i : E)) := by
+  classical
+  have hroots := roots_map_eq_map_numbering e
+  have hdeg : (f.map (algebraMap F E)).natDegree = f.natDegree :=
+    le_antisymm natDegree_map_le (by
+      simpa [hroots] using card_roots' (f.map (algebraMap F E)))
+  have hlc : (f.map (algebraMap F E)).leadingCoeff = algebraMap F E f.leadingCoeff := by
+    simp only [leadingCoeff, coeff_map, hdeg]
+  have hsplits : (f.map (algebraMap F E)).Splits :=
+    splits_iff_card_roots.mpr (by rw [hdeg, hroots]; simp)
+  calc
+    f.map (algebraMap F E) = C (f.map (algebraMap F E)).leadingCoeff *
+        ((f.map (algebraMap F E)).roots.map (X - C ·)).prod := hsplits.eq_prod_roots
+    _ = C (algebraMap F E f.leadingCoeff) *
+        ((univ.val.map fun i ↦ (e i : E)).map (X - C ·)).prod := by rw [hlc, hroots]
+    _ = C (algebraMap F E f.leadingCoeff) * ∏ i, (X - C (e i : E)) := by
+      rw [Multiset.map_map, ← Finset.prod_eq_multiset_prod]
+      rfl
 
 /-- The root set of a product of polynomials is the union of the root sets of the factors,
 provided neither factor vanishes after base change to `E`. -/

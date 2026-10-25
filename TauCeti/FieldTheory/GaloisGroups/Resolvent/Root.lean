@@ -113,9 +113,7 @@ private theorem map_eq_prod_rootEnum (hf : f.Monic)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) :
     f.map (algebraMap F E) = ∏ i, (X - C (rootEnum e i)) := by
   subst hdeg
-  apply Polynomial.eq_prod_X_sub_C_of_monic_of_roots_eq (hf.map _)
-  · rw [hf.natDegree_map, Fintype.card_fin]
-  · exact Polynomial.roots_map_eq_map_numbering e.symm
+  simpa [hf.leadingCoeff, rootEnum] using Polynomial.map_eq_C_mul_prod_numbering e.symm
 
 section
 

@@ -30,14 +30,15 @@ when `discr f` is a square in `F`. This is the **discriminant test** for contain
 alternating group.
 
 The discriminant test itself does not require monicity: the leading coefficient contributes only
-a square factor, as `TauCeti.isSquare_discr_iff_mem_range` records for any polynomial with a
-degree-sized root numbering.
+a square factor. For any polynomial with a degree-sized root numbering,
+`TauCeti.leadingCoeff_pow_mul_discrSqrt_sq` supplies a square root by scaling the root-difference
+product, and `TauCeti.isSquare_discr_iff_mem_range` gives the same square criterion.
 
 The characteristic hypothesis `ringChar F ≠ 2` is not decoration. In characteristic `2` one has
-`-1 = 1`, so the sign never moves `δ`; inseparable monic polynomials have zero discriminant.
-Thus the discriminant of every monic polynomial is *always* a square, and the test decides
+`-1 = 1`, so the sign never moves `δ`; nonzero inseparable polynomials have zero discriminant.
+Thus the discriminant of every polynomial is *always* a square, and the test decides
 nothing; this is recorded as
-`Polynomial.Monic.isSquare_discr_of_char_two`.
+`Polynomial.isSquare_discr_of_char_two`.
 
 ## Main definitions
 
@@ -46,7 +47,9 @@ nothing; this is recorded as
 
 ## Main results
 
-* `Polynomial.Monic.discrSqrt_sq`: `discrSqrt e ^ 2` is the image of `Polynomial.discr f` in `E`.
+* `TauCeti.leadingCoeff_pow_mul_discrSqrt_sq`: the root-difference product scaled by the indicated
+  leading-coefficient power squares to the image of the discriminant.
+* `Polynomial.Monic.discrSqrt_sq`: for monic `f`, the unscaled root-difference product suffices.
 * `TauCeti.discrSqrt_trans`: renumbering the roots by `π` multiplies `discrSqrt` by `sign π`.
 * `AlgEquiv.map_discrSqrt`: an automorphism of `E` over `F` multiplies `discrSqrt e` by the sign of
   the permutation of the roots that it induces.
@@ -56,8 +59,8 @@ nothing; this is recorded as
   Galois image is even; this does not require monicity.
 * `Polynomial.Separable.isSquare_discr_iff_range_le_alternatingGroup`: **the discriminant test**,
   valid away from characteristic `2`.
-* `Polynomial.Monic.isSquare_discr_of_char_two`: in characteristic `2` the discriminant of every
-  monic polynomial is a square, so the test is vacuous there.
+* `Polynomial.isSquare_discr_of_char_two`: in characteristic `2` the discriminant of every
+  polynomial is a square, so the test is vacuous there.
 * `Polynomial.Separable.isSquare_discr_iff_sign_eq_one`: the discriminant test in terms of the
   parity character `Polynomial.Gal.sign`, with no choice of splitting extension.
 
@@ -155,7 +158,7 @@ other than `2`, the discriminant is a square in the base field exactly when the 
 on the roots by even permutations.
 
 The characteristic hypothesis cannot be dropped: see
-`Polynomial.Monic.isSquare_discr_of_char_two`. -/
+`Polynomial.isSquare_discr_of_char_two`. -/
 theorem _root_.Polynomial.Separable.isSquare_discr_iff_range_le_alternatingGroup
     [IsGalois F E] (hsep : f.Separable)
     (hchar : ringChar F ≠ 2) :
@@ -164,16 +167,21 @@ theorem _root_.Polynomial.Separable.isSquare_discr_iff_range_le_alternatingGroup
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
   exact (isSquare_discr_iff_mem_range e).trans (discrSqrt_mem_range_iff hchar e)
 
-/-- In characteristic `2` the discriminant of every monic polynomial is a square. For a separable
+/-- In characteristic `2` the discriminant of every polynomial is a square. For a separable
 polynomial, the sign of a permutation acts trivially because `-1 = 1`, so the product of the root
-differences is fixed by the whole Galois group and therefore lies in the base field. For an
-inseparable polynomial, the discriminant is zero.
+differences is fixed by the whole Galois group and therefore lies in the base field. For a
+nonzero inseparable polynomial, the discriminant is zero; the zero polynomial has discriminant
+one.
 
 This is why the discriminant test carries the hypothesis `ringChar F ≠ 2`. The invariant that
 replaces the discriminant in characteristic `2` is Berlekamp's. -/
-theorem _root_.Polynomial.Monic.isSquare_discr_of_char_two (hf : f.Monic)
-    (hchar : ringChar F = 2) : IsSquare f.discr := by
+theorem _root_.Polynomial.isSquare_discr_of_char_two (hchar : ringChar F = 2) :
+    IsSquare f.discr := by
   classical
+  by_cases hf0 : f = 0
+  · subst f
+    have hdiscr : (0 : F[X]).discr = 1 := by simpa using discr_C (0 : F)
+    simp [hdiscr]
   by_cases hsep : f.Separable
   · let E := f.SplittingField
     let _ : IsGalois F E := IsGalois.of_separable_splitting_field hsep
@@ -191,7 +199,8 @@ theorem _root_.Polynomial.Monic.isSquare_discr_of_char_two (hf : f.Monic)
     · rw [one_smul]
     · simp only [Units.smul_def, Units.val_neg, Units.val_one, neg_smul, one_smul]
       linear_combination -h2 * discrSqrt e
-  · have hdiscr : f.discr = 0 := not_ne_iff.mp fun hne ↦ hsep (hf.discr_ne_zero_iff.mp hne)
+  · have hdiscr : f.discr = 0 :=
+      not_ne_iff.mp fun hne ↦ hsep ((Polynomial.discr_ne_zero_iff hf0).mp hne)
     simp [hdiscr]
 
 end Galois

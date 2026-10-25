@@ -35,9 +35,9 @@ reference subgroup, and it is solvable, respectively acts primitively on the roo
 the reference subgroup is solvable, respectively primitive. The Galois image consists of even
 permutations exactly when the reference subgroup does, and so, away from characteristic `2`,
 the discriminant of `f` is a square exactly when the reference subgroup lies in the
-alternating group. For monic `f`, irreducibility over its discriminant field is equivalent to
-transitivity of the even part of the reference subgroup. Since every reference subgroup is
-transitive, a polynomial with a label is irreducible.
+alternating group. Away from characteristic `2`, irreducibility over its discriminant field is
+equivalent to transitivity of the even part of the reference subgroup. Since every reference
+subgroup is transitive, a polynomial with a label is irreducible.
 
 Separability and the degree are part of the predicate, so an inseparable polynomial, or one of
 degree other than `n`, has no label in degree `n`; nor does a polynomial of degree zero or of
@@ -357,10 +357,10 @@ theorem HasGaloisLabel.isSquare_discr_iff_label (h : HasGaloisLabel f j)
   rw [h.isSquare_discr_iff hchar, referenceSubgroup_le_alternatingGroup_iff]
 
 /-- **Irreducibility over the discriminant field reads the even part of the label.** Away from
-characteristic `2`, a monic polynomial with a label stays irreducible over its discriminant field
+characteristic `2`, a polynomial with a label stays irreducible over its discriminant field
 exactly when the even permutations in the reference subgroup act transitively. The discriminant
 field may be taken in any extension `E` containing a square root `δ` of the discriminant. -/
-theorem HasGaloisLabel.irreducible_map_discrField_iff (h : HasGaloisLabel f j) (hf : f.Monic)
+theorem HasGaloisLabel.irreducible_map_discrField_iff (h : HasGaloisLabel f j)
     (hchar : ringChar F ≠ 2) {E : Type*} [Field E] [Algebra F E] {δ : E}
     (hδ : δ ^ 2 = algebraMap F E f.discr) :
     Irreducible (f.map (algebraMap F (discrField f E))) ↔
@@ -370,8 +370,8 @@ theorem HasGaloisLabel.irreducible_map_discrField_iff (h : HasGaloisLabel f j) (
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
   obtain ⟨e₀⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
   -- Move to the discriminant field inside the splitting field, where the Galois image lives.
-  rw [irreducible_map_discrField_congr hδ (hf.discrSqrt_sq e₀.symm),
-    TauCeti.irreducible_map_discrField_iff hf h.separable hchar
+  rw [irreducible_map_discrField_congr hδ (leadingCoeff_pow_mul_discrSqrt_sq e₀.symm),
+    TauCeti.irreducible_map_discrField_iff h.separable hchar
       (h.natDegree_eq ▸ pos_of_transitiveGroupIndex j)]
   obtain ⟨-, -, e, he⟩ := h
   rw [← he.isPretransitive_inf_alternatingGroup_iff, MulEquiv.toMonoidHom_eq_coe,

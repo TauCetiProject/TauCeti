@@ -105,7 +105,7 @@ formula `Polynomial.isSquare_discr_iff_exists_isRoot_of_degree_eq_two`, it recov
 discriminant test `Polynomial.Separable.isSquare_discr_iff_range_le_alternatingGroup` for quadratics
 independently of the root-difference product. In characteristic `2` the separable quadratic
 `X ^ 2 + X + 1` over `ZMod 2` has no root, so its image is odd, while its discriminant is a square
-by `Polynomial.Monic.isSquare_discr_of_char_two`. -/
+by `Polynomial.isSquare_discr_of_char_two`. -/
 theorem _root_.Polynomial.Gal.range_le_alternatingGroup_iff_exists_isRoot_of_natDegree_eq_two
     (hsep : p.Separable) (hdeg : p.natDegree = 2) :
     (Gal.galActionHom p E).range ≤ alternatingGroup (p.rootSet E) ↔ ∃ x, p.IsRoot x := by
