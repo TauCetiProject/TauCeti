@@ -47,7 +47,8 @@ linear map `ρ(g) - 1`. Mathlib states this elementwise, in
 `Representation.mem_invariants_iff_of_forall_mem_zpowers`; the submodule-level equality with
 `ker (ρ(g) - 1)` is the form used to present the (co)homology of a finite cyclic group as a
 subquotient of `M`, where each group is the homology of `ρ(g) - 1` and the norm in one order or
-the other.
+the other. More generally, a vector is invariant as soon as it is fixed by each element of a
+generating set of `G`.
 
 Finally, a nontrivial irreducible representation has no nonzero invariant vector. This is what makes
 the Haar integral of a nontrivial irreducible character vanish. A dimension-based corollary handles
@@ -60,6 +61,14 @@ When `G` is finite and `#G` is invertible in a field `k`, Maschke's theorem make
 representation projective over `k[G]`, so the surjectivity result above makes taking invariants
 exact. In particular the dimension of the invariants is additive in short exact sequences of
 finite-dimensional representations.
+
+A functor `F : ModuleCat A ⥤ ModuleCat B` carries a representation `σ` of `G` by `A`-linear maps
+on `M` to the representation `g ↦ F(σ g)` on `F(M)`, the representation-level form of Mathlib's
+`CategoryTheory.Functor.mapAction`. When `G` is finite and `#G` is invertible in `A`, the averaging
+projection exhibits the invariants `M^G` as a direct summand of `M`. Applying an additive `F` to
+this splitting shows that the invariants of `F(M)` are exactly `F(M^G)`, embedded by the
+inclusion. The main example is `F = Tor'ₙ(N, -)`, the derived functor of the tensor product in its
+first variable: its invariants are `Tor'ₙ(N, M^G)`.
 
 ## Main results
 
@@ -91,6 +100,8 @@ finite-dimensional representations.
   vectors.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
   kernel of the action of a generator minus the identity.
+* `Representation.mem_invariants_iff_of_closure_eq_top`: invariance may be tested on a generating
+  set.
 * `Representation.IsIrreducible.invariants_eq_bot`: a nontrivial irreducible representation has no
   nonzero invariant vector.
 * `Representation.IsIrreducible.invariants_eq_bot_of_finrank_ne_one`: the dimension-based
@@ -102,6 +113,10 @@ finite-dimensional representations.
 * `Rep.quotientToInvariantsFunctor` is additive.
 * `TauCeti.Rep.shortExact_map_invariantsFunctor`: under Maschke's hypothesis, taking invariants
   preserves short exact sequences.
+* `CategoryTheory.Functor.mapRepresentation`: the representation `g ↦ F(σ g)` on `F(M)`.
+* `CategoryTheory.Functor.invariants_mapRepresentation` and
+  `CategoryTheory.Functor.map_ofHom_subtype_invariants_injective`: when `#G` is invertible, an
+  additive functor identifies `F(M^G)` with the invariants of `F(M)`.
 * `TauCeti.FDRep.finrank_invariants_add_of_shortExact`: under Maschke's hypothesis, the dimension
   of the invariants is additive in short exact sequences of finite-dimensional representations.
 -/
@@ -166,6 +181,20 @@ theorem invariants_comp_of_surjective {k G H V : Type*} [CommRing k] [Group G] [
   ext v
   simp only [mem_invariants, MonoidHom.comp_apply]
   exact ⟨fun h g ↦ by obtain ⟨g, rfl⟩ := hf g; exact h g, fun h g ↦ h (f g)⟩
+
+/-- **Invariance may be tested on a generating set**: if `s` generates `G`, a vector is invariant
+exactly when every element of `s` fixes it. -/
+theorem mem_invariants_iff_of_closure_eq_top {k G V : Type*} [CommRing k] [Group G]
+    [AddCommGroup V] [Module k V] (ρ : Representation k G V) {s : Set G}
+    (hs : Subgroup.closure s = ⊤) (v : V) : v ∈ ρ.invariants ↔ ∀ g ∈ s, ρ g v = v := by
+  refine ⟨fun h g _ ↦ h g, fun h g ↦ ?_⟩
+  induction hs.ge (Subgroup.mem_top g) using Subgroup.closure_induction with
+  | mem g hg => exact h g hg
+  | one => simp
+  | mul g g' _ _ hg hg' => rw [map_mul, Module.End.mul_apply, hg', hg]
+  | inv g _ hg =>
+    conv_lhs => rw [← hg]
+    rw [← Module.End.mul_apply, ← map_mul, inv_mul_cancel, map_one, Module.End.one_apply]
 
 end Representation
 
@@ -535,3 +564,90 @@ theorem FDRep.finrank_invariants_add_of_shortExact {S : ShortComplex (FDRep k G)
     ModuleCat.free_shortExact_finrank_add hInv rfl rfl
 
 end TauCeti
+
+namespace CategoryTheory.Functor
+
+universe u v u' v'
+
+variable {A : Type u} {B : Type u'} [CommRing A] [CommRing B] {G : Type*} [Group G]
+  {M : Type v} [AddCommGroup M] [Module A M] (F : ModuleCat.{v} A ⥤ ModuleCat.{v'} B)
+
+/-- A functor `F : ModuleCat A ⥤ ModuleCat B` carries a representation `σ` of `G` by `A`-linear
+maps on `M` to the representation `g ↦ F(σ g)` of `G` on `F(M)`. This is the representation-level
+form of `CategoryTheory.Functor.mapAction`. -/
+noncomputable def mapRepresentation (σ : Representation A G M) :
+    Representation B G (F.obj (ModuleCat.of A M)) where
+  toFun g := (F.map (ModuleCat.ofHom (σ g))).hom
+  map_one' := by
+    rw [map_one, Module.End.one_eq_id, ModuleCat.ofHom_id, F.map_id, ModuleCat.hom_id,
+      Module.End.one_eq_id]
+  map_mul' g h := by
+    rw [map_mul, Module.End.mul_eq_comp, ModuleCat.ofHom_comp, F.map_comp, ModuleCat.hom_comp,
+      Module.End.mul_eq_comp]
+
+/-- The element `g` acts on `F(M)` by `F(σ g)`. -/
+@[simp]
+theorem mapRepresentation_apply (σ : Representation A G M) (g : G) :
+    F.mapRepresentation σ g = (F.map (ModuleCat.ofHom (σ g))).hom :=
+  (rfl)
+
+variable [Fintype G] [Invertible (Fintype.card G : A)] (σ : Representation A G M)
+
+/-- When `#G` is invertible in `A`, every functor `F` carries the inclusion `M^G ⊆ M` of the
+invariants to an injective map, since the averaging projection retracts the inclusion. For an
+additive `F`, this identifies `F(M^G)` with the invariants of `F(M)`
+(`CategoryTheory.Functor.invariants_mapRepresentation`). -/
+theorem map_ofHom_subtype_invariants_injective :
+    Function.Injective (F.map (ModuleCat.ofHom σ.invariants.subtype)).hom := by
+  -- The inclusion has the retraction given by the averaging projection.
+  let π : ModuleCat.of A M ⟶ ModuleCat.of A σ.invariants :=
+    ModuleCat.ofHom (σ.averageMap.codRestrict σ.invariants σ.averageMap_invariant)
+  have h : ModuleCat.ofHom σ.invariants.subtype ≫ π = 𝟙 _ := by
+    ext m
+    exact σ.averageMap_id m m.2
+  refine Function.LeftInverse.injective (g := (F.map π).hom) fun y ↦ ?_
+  rw [← ModuleCat.comp_apply, ← F.map_comp, h, F.map_id, ModuleCat.id_apply]
+
+variable [F.Additive]
+
+/-- **Additive functors commute with invariants.** When `#G` is invertible in `A`, the invariants
+of `F(M)` are the image of `F(M^G)` under `F` applied to the inclusion `M^G ⊆ M`. -/
+theorem invariants_mapRepresentation :
+    (F.mapRepresentation σ).invariants =
+      LinearMap.range (F.map (ModuleCat.ofHom σ.invariants.subtype)).hom := by
+  -- The averaging projection factors as `π ≫ ι` through the invariants, and is the group sum
+  -- `σ.norm` followed by multiplication `u` by `⅟#G`.
+  let π : ModuleCat.of A M ⟶ ModuleCat.of A σ.invariants :=
+    ModuleCat.ofHom (σ.averageMap.codRestrict σ.invariants σ.averageMap_invariant)
+  let ι : ModuleCat.of A σ.invariants ⟶ ModuleCat.of A M := ModuleCat.ofHom σ.invariants.subtype
+  let u : ModuleCat.of A M ⟶ ModuleCat.of A M :=
+    ModuleCat.ofHom (⅟(Fintype.card G : A) • LinearMap.id)
+  have hu : Fintype.card G • u = 𝟙 _ := by
+    ext m
+    simp [u, ← Nat.cast_smul_eq_nsmul A, smul_smul]
+  have havg : ModuleCat.ofHom σ.norm ≫ u = π ≫ ι := by
+    ext m
+    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.coe_comp, Function.comp_apply,
+      u, π, ι, Submodule.subtype_apply, LinearMap.codRestrict_apply, σ.averageMap_apply,
+      LinearMap.smul_apply, LinearMap.id_apply, Representation.norm, LinearMap.sum_apply]
+  have hnorm : ModuleCat.ofHom σ.norm = ∑ g : G, ModuleCat.ofHom (σ g) := by
+    ext m
+    simp [Representation.norm]
+  apply le_antisymm
+  · intro x hx
+    refine ⟨(F.map π).hom x, ?_⟩
+    -- On an invariant `x`, `F(σ.norm)` is multiplication by `#G`, which `F(u)` inverts.
+    have h₁ : (F.map (ModuleCat.ofHom σ.norm)).hom x = Fintype.card G • x := by
+      rw [hnorm, F.map_sum, ModuleCat.hom_sum, LinearMap.sum_apply]
+      exact (Finset.sum_congr rfl fun g _ ↦ hx g).trans (by simp)
+    have h₂ : (F.map u).hom (Fintype.card G • x) = x := by
+      rw [_root_.map_nsmul, ← LinearMap.smul_apply, ← ModuleCat.hom_nsmul, ← F.map_nsmul, hu,
+        F.map_id, ModuleCat.id_apply]
+    rw [← ModuleCat.comp_apply, ← F.map_comp, ← havg, F.map_comp, ModuleCat.comp_apply, h₁, h₂]
+  · rintro _ ⟨y, rfl⟩ g
+    have h : ι ≫ ModuleCat.ofHom (σ g) = ι := by
+      ext m
+      exact m.2 g
+    rw [mapRepresentation_apply, ← ModuleCat.comp_apply, ← F.map_comp, h]
+
+end CategoryTheory.Functor
