@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Basic
 public import TauCeti.RingTheory.Derivation.Flow
 import TauCeti.Data.Nat.Choose.Cast
 import Mathlib.Algebra.Polynomial.Bivariate

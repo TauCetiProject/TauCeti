@@ -31,6 +31,11 @@ each diffeomorphism acts by a homeomorphism.
 * `Diffeomorph.applyContinuousConstSMul`: each diffeomorphism acts continuously.
 * `Diffeomorph.applySubgroupContinuousConstSMul`: subgroups inherit continuity in the
   point.
+
+## Main statements
+
+* `Diffeomorph.isFixedPt_zpow_iff_minimalPeriod_dvd`: a point is fixed by `f ^ k` exactly when
+  its minimal period under `f` divides `k`.
 -/
 
 public section
@@ -62,6 +67,13 @@ theorem toPermHom_eq_toPerm :
   ext f x
   simp only [MulAction.toPermHom_apply, MulAction.toPerm_apply, smul_def, toPerm_apply,
     coe_toEquiv]
+
+/-- A point `x` is a fixed point of the power `f ^ k` of a self-diffeomorphism exactly when the
+minimal period of `x` under `f` divides `k`. -/
+theorem isFixedPt_zpow_iff_minimalPeriod_dvd (f : M ≃ₘ^n⟮I, I⟯ M) (x : M) (k : ℤ) :
+    Function.IsFixedPt (f ^ k) x ↔ (Function.minimalPeriod f x : ℤ) ∣ k := by
+  simpa [Function.IsFixedPt] using MulAction.zpow_smul_eq_iff_minimalPeriod_dvd (a := f) (b := x)
+    (n := k)
 
 /-- The tautological action of `M ≃ₘ^n⟮I, I⟯ M` on `M` is faithful. -/
 instance applyFaithfulSMul : FaithfulSMul (M ≃ₘ^n⟮I, I⟯ M) M :=

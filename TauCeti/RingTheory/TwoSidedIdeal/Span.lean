@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import Mathlib.RingTheory.Jacobson.Radical
+public import TauCeti.RingTheory.TwoSidedIdeal.Full
 import TauCeti.RingTheory.Jacobson.MulOpposite
 
 /-!
@@ -83,14 +83,6 @@ theorem twoSidedIdeal_span_image_eq_top_iff (f : R →+* S) (hf : Function.Surje
     have hJ : J.asIdeal = ⊤ := J.asIdeal.eq_top_of_isUnit_mem ha hu
     apply TwoSidedIdeal.eq_top
     exact (TwoSidedIdeal.mem_asIdeal).mp (hJ ▸ Submodule.mem_top)
-  · intro hs
-    have hle : TwoSidedIdeal.span s ≤ (TwoSidedIdeal.span (f '' s)).comap f := by
-      apply TwoSidedIdeal.span_le.mpr
-      intro x hx
-      exact (TwoSidedIdeal.mem_comap f).mpr
-        (TwoSidedIdeal.subset_span (Set.mem_image_of_mem f hx))
-    apply TwoSidedIdeal.eq_top
-    simpa only [map_one] using (TwoSidedIdeal.mem_comap f).mp
-      (hle (hs ▸ TwoSidedIdeal.mem_top R : (1 : R) ∈ TwoSidedIdeal.span s))
+  · exact TwoSidedIdeal.span_image_eq_top f
 
 end RingHom

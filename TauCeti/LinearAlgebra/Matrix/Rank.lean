@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Fable 5
 -/
 module
 
+public import Mathlib.GroupTheory.GroupAction.ConjAct
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Matrix.ColumnRowPartitioned
@@ -14,17 +16,22 @@ import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 # Matrix rank
 
 This file records general results relating matrix rank to the corresponding linear maps,
-maximal minors and change of scalars. In particular, over an integral domain a finite family of
-rows is linearly independent exactly when one of its maximal minors is nonzero. Over a
-star-ordered field, the source of `A` splits into the kernel of `A` and the range of its conjugate
-transpose `Aᴴ`; read in a basis, this splits a space into the common kernel and the sum of the
-ranges of a family of operators that are self-adjoint for the Hermitian form making the basis
-orthonormal.
+minors and change of scalars. In particular, over an integral domain a finite family of
+rows is linearly independent exactly when one of its maximal minors is nonzero, and over a field
+the rank is the largest size of a nonzero minor. Over a star-ordered field, the source of `A`
+splits into the kernel of `A` and the range of its conjugate transpose `Aᴴ`; read in a basis, this
+splits a space into the common kernel and the sum of the ranges of a family of operators that are
+self-adjoint for the Hermitian form making the basis orthonormal.
 
 ## Main results
 
 * `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: over an integral domain, the
   rows are linearly independent exactly when some maximal minor is nonzero.
+* `Matrix.le_rank_iff_exists_det_submatrix_ne_zero` and
+  `Matrix.rank_le_iff_forall_det_submatrix_eq_zero`: over a field, the rank is at least `p`
+  exactly when some `p × p` minor is nonzero, and at most `p` exactly when every
+  `(p + 1) × (p + 1)` minor vanishes.
+* `Matrix.rank_map`: the rank is unchanged by a homomorphism of fields applied to the entries.
 * `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
   scalar extension to a domain.
 * `Matrix.linearIndependent_rat_row_iff`: the case of integer matrices extended to `ℚ`.
@@ -36,6 +43,7 @@ orthonormal.
   factorization gives a full-column-rank left factor with the same column range.
 * `Matrix.rank_add_rank_le_rank_mul_add_card`: Sylvester's rank inequality
   `rank A + rank B ≤ rank (A * B) + n` for an `m × n` matrix `A` and an `n × o` matrix `B`.
+* `Matrix.rank_conjAct_smul`: conjugation by an invertible matrix preserves the rank.
 * `Matrix.exists_eq_mul_fin_rank`: a rectangular matrix factors through `Fin A.rank`.
 * `Matrix.exists_eq_mul_of_rank_le` and `Matrix.rank_le_iff_exists_eq_mul`: a matrix has rank at
   most `r` exactly when it factors through `Fin r`.
@@ -99,6 +107,48 @@ theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero [CommRing R] [IsD
   simp only [submatrix_map, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
     map_ne_zero_iff _ (IsFractionRing.injective R K)]
 
+omit [Fintype m] [DecidableEq m] [Finite n] in
+/-- **Rank and minors.** Over a field, a matrix has rank at least `p` exactly when one of its
+`p × p` minors is nonzero. -/
+theorem le_rank_iff_exists_det_submatrix_ne_zero {K : Type*} [Field K] [Finite m] [Fintype n]
+    {A : Matrix m n K} {p : ℕ} :
+    p ≤ A.rank ↔ ∃ (r : Fin p ↪ m) (c : Fin p ↪ n), (A.submatrix r c).det ≠ 0 := by
+  refine ⟨fun hp ↦ ?_, fun ⟨r, c, h⟩ ↦ ?_⟩
+  · -- Choose `p` linearly independent rows, then a nonzero maximal minor among them.
+    obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K A.row
+    have : Finite κ := Finite.of_injective a ha
+    have : Fintype κ := Fintype.ofFinite κ
+    have hcard : A.rank = Fintype.card κ := by
+      rw [linearIndependent_iff_card_eq_finrank_span.1 hli, Set.finrank, hspan,
+        rank_eq_finrank_span_row]
+    let r : Fin p ↪ m :=
+      ((Fin.castLEEmb (hcard ▸ hp)).trans (Fintype.equivFin κ).symm.toEmbedding).trans ⟨a, ha⟩
+    -- The rows of `A.submatrix r id` are the rows `A.row (r i)`.
+    have hr : LinearIndependent K (A.submatrix r id).row :=
+      hli.comp _ (Fin.castLEEmb _ |>.trans (Fintype.equivFin κ).symm.toEmbedding).injective
+    obtain ⟨c, hc⟩ := linearIndependent_row_iff_exists_det_submatrix_ne_zero.1 hr
+    exact ⟨r, c, by rwa [submatrix_submatrix] at hc⟩
+  · classical
+    simpa [rank_of_det_ne_zero h] using rank_submatrix_le A r c
+
+omit [Fintype m] [DecidableEq m] [Finite n] in
+/-- Over a field, a matrix has rank at most `p` exactly when all of its `(p + 1) × (p + 1)` minors
+vanish. -/
+theorem rank_le_iff_forall_det_submatrix_eq_zero {K : Type*} [Field K] [Finite m] [Fintype n]
+    {A : Matrix m n K} {p : ℕ} :
+    A.rank ≤ p ↔ ∀ (r : Fin (p + 1) ↪ m) (c : Fin (p + 1) ↪ n), (A.submatrix r c).det = 0 := by
+  rw [← not_lt, Nat.lt_iff_add_one_le, le_rank_iff_exists_det_submatrix_ne_zero]
+  simp only [not_exists, ne_eq, not_not]
+
+omit [Fintype m] [DecidableEq m] [Finite n] in
+/-- The rank of a matrix over a field is unchanged by applying a homomorphism to another field to
+its entries, since the images of its minors are the minors of its image. -/
+theorem rank_map {K L : Type*} [Field K] [Field L] [Finite m] [Fintype n] (A : Matrix m n K)
+    (φ : K →+* L) : (A.map φ).rank = A.rank :=
+  eq_of_forall_le_iff fun p ↦ by
+    simp only [le_rank_iff_exists_det_submatrix_ne_zero, submatrix_map, ← RingHom.mapMatrix_apply,
+      ← RingHom.map_det, map_ne_zero]
+
 omit [Fintype m] [DecidableEq m] in
 /-- The rows of an integer matrix are linearly independent over `ℚ` exactly when they are linearly
 independent over `ℤ`. -/
@@ -156,6 +206,17 @@ theorem range_left_factor_eq {ι : Type*} [Fintype ι]
     exact hM.trans hL.symm
 
 end ExactRankFactorRange
+
+section Conjugation
+
+/-- Conjugation by an invertible matrix preserves the rank. -/
+@[simp]
+theorem rank_conjAct_smul {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    (g : ConjAct (GL n R)) (A : Matrix n n R) : (g • A).rank = A.rank := by
+  rw [ConjAct.units_smul_def, rank_mul_eq_left_of_isUnit_det _ _ (isUnits_det_units _),
+    rank_mul_eq_right_of_isUnit_det _ _ (isUnits_det_units _)]
+
+end Conjugation
 
 variable {K : Type*} [Field K] {m n : Type*} [Fintype n]
 

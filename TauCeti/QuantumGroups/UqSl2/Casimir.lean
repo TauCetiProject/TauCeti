@@ -80,11 +80,7 @@ theorem casimir_eq_e_mul_f :
 private theorem commute_k_casimir : Commute (k q) (casimir q) := by
   have hfe : Commute (k q) (f q * e q) := by
     rcases eq_or_ne q 0 with rfl | hq
-    · -- When `q = 0`, the relation `K E = q² E K` forces `E = 0`.
-      have he : e (0 : ℂ) = 0 := by
-        rw [← one_mul (e 0), ← kInv_mul_k, mul_assoc, k_mul_e]
-        simp
-      simp [he]
+    · simp
     · rw [Commute, SemiconjBy, ← mul_assoc]
       simp only [k_mul_f, k_mul_e, smul_mul_assoc, mul_smul_comm, smul_smul, mul_assoc]
       match_scalars

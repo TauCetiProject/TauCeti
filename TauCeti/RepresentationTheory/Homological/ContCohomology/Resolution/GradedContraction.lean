@@ -55,6 +55,8 @@ a homogeneous cocycle is its class in continuous cohomology
   `gradedCohomologyClass_smul`: the class is linear in the cocycle.
 * `TopRep.ResolutionContraction.gradedCohomologyClass_eq_of_sub_eq_d`: homogeneous cocycles
   differing by the differential of a homogeneous invariant element have the same class.
+* `TopRep.ResolutionContraction.gradedCohomologyClass_eq_of_ι_eq`: over a locally compact group,
+  the class depends on the contraction only through its augmentation.
 * `TopRep.gradedCohomologyClass_gradedResolutionContraction`: on the total coinduced resolution,
   the class of a homogeneous cocycle is its class in continuous cohomology.
 
@@ -226,6 +228,15 @@ theorem gradedCohomologyClass_smul {n : ℕ} (r : k) {z : M.V} (hz : z ∈ ℳ n
   rw [Submodule.coe_smul, map_smul]
   simp
 
+/-- **Independence of the contraction.** Over a locally compact group, two contractions of the
+complex of a graded representation with the same augmentation give a homogeneous cocycle the same
+class. -/
+theorem gradedCohomologyClass_eq_of_ι_eq [LocallyCompactSpace G]
+    (c' : ResolutionContraction X (M.gradedCochainComplex ℳ hρ d hd hdd)) (h : c.ι = c'.ι)
+    {n : ℕ} (z : M.V) (hz : z ∈ ℳ n) (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
+    c.gradedCohomologyClass z hz hinv hdz = c'.gradedCohomologyClass z hz hinv hdz :=
+  c.cohomologyClass_eq_of_ι_eq c' h _ _
+
 end ResolutionContraction
 
 section CoinducedResolution
@@ -335,16 +346,9 @@ noncomputable def gradedResolutionContraction :
     (fun x ↦ by
       rw [gradedResolutionTopRepAugmentation_apply]
       exact X.gradedResolutionProjection_augmentation x)
-    (fun n v hv ↦ by
-      classical
-      rw [X.gradedResolutionPiece_natCast] at hv
-      obtain ⟨F, rfl⟩ := hv
-      exact X.gradedResolutionProjection_lof_succ n F)
-    (fun v hv ↦ by
-      classical
-      rw [← Nat.cast_zero, X.gradedResolutionPiece_natCast] at hv
-      obtain ⟨F, rfl⟩ := hv
-      exact X.gradedResolutionHomotopy_lof_zero F)
+    (fun n _ hv ↦
+      X.gradedResolutionProjection_eq_zero_of_mem (Int.natCast_pos.2 n.succ_pos).ne' hv)
+    (fun _ hv ↦ X.gradedResolutionHomotopy_eq_zero_of_mem_zero hv)
     (fun v ↦ by
       rw [gradedResolutionTopRepDifferential_apply X v, gradedResolutionTopRepAugmentation_apply]
       exact (congrArg (· + _) (gradedResolutionTopRepDifferential_apply X _)).trans

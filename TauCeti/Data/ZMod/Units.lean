@@ -42,7 +42,7 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `M / p` along a chain of divisibilities.
 * `ZMod.zmultiples_coe_unit_eq_top` — a unit of `ZMod d` generates `ZMod d` additively, so that
   translation by it is a single cycle; its consumer is the genus-one Heegaard diagram of a lens
-  space in `TauCeti/LowDimTopology/Heegaard/LensSpace.lean`.
+  space in `TauCeti/LowDimTopology/Heegaard/LensSpace/Diagram.lean`.
 * `ZMod.eq_of_cast_eq_of_coprime` — the uniqueness half of the Chinese remainder theorem: two
   residues modulo `a * b`, with `a` and `b` coprime, that agree modulo `a` and modulo `b` are
   equal. Its consumer is the cyclotomic normalization of the local Artin map in

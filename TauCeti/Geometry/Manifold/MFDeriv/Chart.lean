@@ -67,6 +67,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   derivative after an inverse chart, including derivatives within the model range.
 * `HasMFDerivAt.hasFDerivAt_extChartAt_comp`: read the coordinate derivative of a map from
   a normed source by composing its manifold derivative with the tangent chart.
+* `MDifferentiableAt.differentiableAt_chartAt_comp`: a differentiable map from a normed space
+  into a manifold modelled on a normed space is differentiable in the preferred chart at its
+  image.
 * `TauCeti.mfderivWithin_extChartAt_symm_of_subset`: within a subset of the chart target with
   unique derivatives, the derivative of the inverse chart is its derivative within the model range.
 * `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
@@ -495,5 +498,20 @@ theorem _root_.ContMDiffAt.hasStrictFDerivAt_extChartAt_conj {f : M → M'} {y :
   exact h.hasStrictFDerivAt one_ne_zero
 
 end RCLikeCharts
+
+section ModelSpaceSource
+
+variable {𝕜 E F N : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace N] [ChartedSpace E N]
+
+/-- A map from a normed space into a manifold modelled on a normed space, differentiable at `x`,
+read in the preferred chart at its image, is differentiable at `x`. -/
+theorem _root_.MDifferentiableAt.differentiableAt_chartAt_comp {g : F → N} {x : F}
+    (hg : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, E) g x) :
+    DifferentiableAt 𝕜 (chartAt E (g x) ∘ g) x := by
+  have h := hg.hasMFDerivAt.2.differentiableWithinAt
+  simpa [writtenInExtChartAt, differentiableWithinAt_univ] using h
+
+end ModelSpaceSource
 
 end TauCeti

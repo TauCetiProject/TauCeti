@@ -39,6 +39,10 @@ such as an affine homothety of a finite-dimensional space with its Haar measure:
 equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the average of `f ∘ e` over
 `e ⁻¹' s` with respect to `μ` is the average of `f` over `s` with respect to `ν`.
 
+Along an increasing sequence of sets `V n` covering a set `s` of finite measure, the measures of
+the pieces `s ∩ V n` converge to that of `s`, and so do the averages of an integrable function, as
+used when an inequality proved on each set of an exhaustion is passed to the whole domain.
+
 Hölder's inequality also bounds the average by the `Lᵖ` seminorm on the set, with the
 normalizing factor `μ s ^ (-1/p)`, and bounds its `q`-th power by `(μ s)⁻¹ ∫⁻_s ‖f‖ₑ ^ q`.
 These estimates hold for arbitrary sets, including zero or infinite measure, with only the
@@ -60,6 +64,9 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   over a subset `s ⊆ t` is at most `μ t / μ s` times its average over `t`.
 * `TauCeti.enorm_setAverage_sub_le_of_subset`: the extended-norm form of
   `TauCeti.norm_setAverage_sub_le_of_subset`.
+* `TauCeti.enorm_setAverage_sub_le_setLAverage`: on a set of finite positive measure, the average
+  differs from a constant `c` by at most the average of `‖f - c‖ₑ`, with no integrability
+  assumption.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le`: the square mean oscillation of `f` about its
   average is at most four times its square mean oscillation about any constant.
 * `TauCeti.setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add` and
@@ -73,6 +80,9 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`,
   `TauCeti.setAverage_comp_preimage_of_map_eq_smul`: integrals and averages under a measurable
   equivalence that rescales the measure by a constant.
+* `TauCeti.tendsto_measureReal_inter_of_monotone`, `TauCeti.tendsto_setAverage_inter_of_monotone`:
+  along an increasing sequence of sets covering `s`, the measures of and averages over the pieces
+  of `s` converge to those over `s`.
 -/
 
 public section
@@ -237,16 +247,38 @@ theorem setLAverage_le_div_mul_setLAverage_of_subset {g : X → ℝ≥0∞} (hst
 
 /-- The average of `f` over a subset `s` of `t` differs from a constant `c` by at most `μ t / μ s`
 times the average of `‖f - c‖ₑ` over `t`. This is the extended-norm form of
-`TauCeti.norm_setAverage_sub_le_of_subset`; it needs `f` to be integrable only on `s`. -/
+`TauCeti.norm_setAverage_sub_le_of_subset`. No integrability is assumed: if `f` is not integrable
+on `s`, the right-hand side is infinite. -/
 theorem enorm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht : μ t ≠ ⊤)
-    (hf : IntegrableOn f s μ) (c : F) :
+    (hf : AEStronglyMeasurable f (μ.restrict s)) (c : F) :
     ‖(⨍ x in s, f x ∂μ) - c‖ₑ ≤ μ t / μ s * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ := by
   have hs' : μ s ≠ ⊤ := ne_top_of_le_ne_top ht (measure_mono hst)
-  calc ‖(⨍ x in s, f x ∂μ) - c‖ₑ = ‖⨍ x in s, (f x - c) ∂μ‖ₑ := by
-        rw [setAverage_fun_sub hf (integrableOn_const hs'), setAverage_const hs hs']
-    _ ≤ ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := enorm_setAverage_le_setLAverage _ _ _
-    _ ≤ μ t / μ s * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ :=
-        setLAverage_le_div_mul_setLAverage_of_subset hst ht
+  by_cases hfi : IntegrableOn f s μ
+  · calc ‖(⨍ x in s, f x ∂μ) - c‖ₑ = ‖⨍ x in s, (f x - c) ∂μ‖ₑ := by
+          rw [setAverage_fun_sub hfi (integrableOn_const hs'), setAverage_const hs hs']
+      _ ≤ ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := enorm_setAverage_le_setLAverage _ _ _
+      _ ≤ μ t / μ s * ⨍⁻ x in t, ‖f x - c‖ₑ ∂μ :=
+          setLAverage_le_div_mul_setLAverage_of_subset hst ht
+  -- If `f` is not integrable on `s`, then `‖f - c‖ₑ` has infinite integral over `s ⊆ t`.
+  have htop : ∫⁻ x in t, ‖f x - c‖ₑ ∂μ = ⊤ := by
+    refine top_le_iff.1 ((top_le_iff.2 ?_).trans (lintegral_mono_set hst))
+    by_contra h
+    have hfc : IntegrableOn (fun x => f x - c) s μ :=
+      ⟨hf.sub aestronglyMeasurable_const, lt_top_iff_ne_top.2 h⟩
+    exact hfi ((hfc.add (integrableOn_const hs')).congr (.of_forall fun x => by simp))
+  have hts : μ t / μ s ≠ 0 := by
+    rw [Ne, ENNReal.div_eq_zero_iff, not_or]
+    exact ⟨fun h => hs (measure_mono_null hst h), hs'⟩
+  rw [setLAverage_eq, htop, ENNReal.top_div_of_ne_top ht, ENNReal.mul_top hts]
+  exact le_top
+
+/-- On a set of finite positive measure, the average of an almost everywhere strongly measurable
+`f` differs from a constant `c` by at most the average of `‖f - c‖ₑ`. No integrability is assumed:
+if `f` is not integrable on `s`, the right-hand side is infinite. -/
+theorem enorm_setAverage_sub_le_setLAverage (hf : AEStronglyMeasurable f (μ.restrict s))
+    (hs : μ s ≠ 0) (hs' : μ s ≠ ⊤) (c : F) :
+    ‖(⨍ x in s, f x ∂μ) - c‖ₑ ≤ ⨍⁻ x in s, ‖f x - c‖ₑ ∂μ := by
+  simpa [ENNReal.div_self hs hs'] using enorm_setAverage_sub_le_of_subset subset_rfl hs hs' hf c
 
 /-- The average of `f` over a subset `s` of `t` differs from a constant `c` by at most
 `μ t / μ s` times the average of `‖f - c‖` over `t`. -/
@@ -260,7 +292,7 @@ theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht :
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono
     (ENNReal.mul_ne_top (ENNReal.div_ne_top ht hs) (setLAverage_lt_top hfc.2.ne).ne)
-    (enorm_setAverage_sub_le_of_subset hst hs ht (hf.mono_set hst) c)
+    (enorm_setAverage_sub_le_of_subset hst hs ht (hf.mono_set hst).1 c)
 
 /-- The square mean oscillation of `f` on a set `s` of finite measure about its own average is at
 most four times its square mean oscillation about any constant `c`:
@@ -386,5 +418,38 @@ theorem setAverage_comp_preimage_of_map_eq_smul (he : μ.map e = a • ν) (ha :
     smul_smul, mul_inv_rev, inv_mul_cancel_right₀ (ENNReal.toReal_ne_zero.2 ⟨ha, ha'⟩)]
 
 end ChangeOfVariables
+
+section Exhaustion
+
+open Filter Topology
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {f : X → F} {s : Set X} {V : ℕ → Set X}
+
+/-- Along an increasing sequence of sets `V n` whose union contains `s`, the measures of the
+pieces `s ∩ V n` converge to the measure of `s`, if it is finite. -/
+theorem tendsto_measureReal_inter_of_monotone (hV : Monotone V) (hsV : s ⊆ ⋃ n, V n)
+    (hs : μ s ≠ ⊤) : Tendsto (fun n ↦ μ.real (s ∩ V n)) atTop (𝓝 (μ.real s)) := by
+  have hunion : ⋃ n, s ∩ V n = s := by rw [← Set.inter_iUnion, Set.inter_eq_left.2 hsV]
+  refine (ENNReal.tendsto_toReal hs).comp ?_
+  simpa [hunion, Function.comp_def] using
+    tendsto_measure_iUnion_atTop (μ := μ) fun m n hmn ↦ Set.inter_subset_inter_right s (hV hmn)
+
+/-- Along an increasing sequence of sets `V n` whose union contains `s`, the averages of a
+function integrable on `s` over the pieces `s ∩ V n` converge to its average over `s`, if `s` has
+finite measure. -/
+theorem tendsto_setAverage_inter_of_monotone (hV : Monotone V) (hsV : s ⊆ ⋃ n, V n)
+    (hm : ∀ n, NullMeasurableSet (s ∩ V n) μ) (hs : μ s ≠ ⊤) (hf : IntegrableOn f s μ) :
+    Tendsto (fun n ↦ ⨍ x in s ∩ V n, f x ∂μ) atTop (𝓝 (⨍ x in s, f x ∂μ)) := by
+  rcases eq_or_ne (μ s) 0 with hs0 | hs0
+  · simp [setAverage_eq, measureReal_def, hs0, measure_mono_null Set.inter_subset_left hs0]
+  have hunion : ⋃ n, s ∩ V n = s := by rw [← Set.inter_iUnion, Set.inter_eq_left.2 hsV]
+  simp only [setAverage_eq]
+  refine ((tendsto_measureReal_inter_of_monotone hV hsV hs).inv₀
+    (ENNReal.toReal_pos hs0 hs).ne').smul ?_
+  simpa [hunion] using tendsto_setIntegral_of_monotone₀ hm
+    (fun m n hmn ↦ Set.inter_subset_inter_right s (hV hmn)) (by rwa [hunion])
+
+end Exhaustion
 
 end TauCeti
