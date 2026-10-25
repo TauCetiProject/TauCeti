@@ -25,9 +25,9 @@ One direction holds since `‖aⱼ‖ |r| ^ j ≤ ∏ i < j, |ρᵢ| |r|` and th
 zero (`PowerSeries.isEntire_of_norm_coeff_le_prod`). For the other, the `j`-th roots
 `‖aⱼ‖ ^ (1 / j)` of the coefficients of an entire series tend to zero
 (`PowerSeries.IsEntire.tendsto_norm_coeff_rpow_inv_natCast`), and `ρᵢ` is the supremum of the
-roots of index greater than `i`, plus `2⁻ⁱ` to make it positive. In terms of `v = -log ‖·‖`, the
-bound says that the points `(j, v(aⱼ))` lie above the convex polygon with slopes `-log ρᵢ`, whence
-the name; no valuation is needed here.
+roots of index greater than `i`, plus `2⁻ⁱ` to make it positive. In terms of `v = -log ‖·‖`, with
+the convention `v(0) = +∞`, the bound says that the points `(j, v(aⱼ))` lie above the convex
+polygon with slopes `-log ρᵢ`, whence the name; no valuation is needed here.
 
 **Coleman majorants.** For a power series `B = ∑ bₘ Tᵐ` and a radius `r`, the Coleman majorant
 is the supremum of the weighted coefficients of positive degree,
@@ -262,6 +262,11 @@ theorem colemanMajorant_trunc_le {r : ℝ} (hB : B.IsRestricted r) (hr : 0 ≤ r
   split_ifs
   · exact norm_coeff_succ_mul_pow_le_colemanMajorant hB m
   · simpa using colemanMajorant_nonneg B hr
+
+/-- The Coleman majorant at the radius `0` vanishes. -/
+@[simp]
+theorem colemanMajorant_zero_right (B : R⟦X⟧) : colemanMajorant B 0 = 0 := by
+  simp [colemanMajorant_def]
 
 /-- The Coleman majorant ignores the constant term. -/
 @[simp]
