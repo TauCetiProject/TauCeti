@@ -209,15 +209,12 @@ theorem realFockAction_ι_mul_ι_apply_apply_one (u : V) :
     ring
   have hsqrt : (Real.sqrt 2 : ℂ) * Real.sqrt 2 = 2 := by
     rw [← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
-  rw [map_mul, Module.End.mul_apply, realFockAction_ι, realFockAction_ι,
-    fockAction_ι_one_tmul, fockAction_ι_one_tmul]
-  simp only [LinearMap.smul_apply, LinearMap.add_apply, SpinPolarizationData.wedge_apply,
+  simp only [map_mul, Module.End.mul_apply, realFockAction_ι, fockAction_ι_one_tmul,
+    LinearMap.smul_apply, LinearMap.add_apply, SpinPolarizationData.wedge_apply,
     SpinPolarizationData.contract_apply, hW, map_smul, mul_one, contractLeft_one, smul_zero,
     add_zero, smul_add, ExteriorAlgebra.ι_sq_zero, contractLeft_ι,
-    SpinPolarizationData.pairingEquiv_apply]
-  rw [hpolar, Algebra.algebraMap_eq_smul_one, smul_smul, smul_smul, smul_smul, smul_smul,
-    zero_add]
-  congr 1
+    SpinPolarizationData.pairingEquiv_apply, hpolar, Algebra.algebraMap_eq_smul_one]
+  match_scalars
   linear_combination (Complex.I * (Q u : ℂ) / 2) * hsqrt
 
 end TauCeti.AlmostComplexStructure
