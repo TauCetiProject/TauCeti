@@ -19,6 +19,8 @@ is Wishart of degree `n > p - 1` and scale `S⁻¹`, the reciprocal of the diago
 `(W⁻¹) i i` — the Schur complement of the complementary principal block of `W` — is `(S i i)⁻¹`
 times a chi-squared variable with `n - p + 1` degrees of freedom. These scalar laws are what the
 inverse-Wishart family offers to one-dimensional observables, such as its diagonal quantiles.
+The identification of `((W⁻¹) i i)⁻¹` with the scalar Schur complement is
+`Matrix.PosDef.inv_inv_apply_self_eq_sub`.
 The general-scale laws extend the standard-scale case
 `TauCeti.Probability.map_coe_apply_inverseWishartMeasure_one`.
 
@@ -81,7 +83,11 @@ theorem map_coe_apply_inverseWishartMeasure (hS : S.PosDef) (i : Fin p) :
       ((C : Matrix (Fin p) (Fin p) ℝ) i j ^ 2 * ·) ∘
         fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
           (B : Matrix (Fin p) (Fin p) ℝ) j j :=
-    funext (Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply_self_of_apply_eq_zero hrow)
+    funext fun B ↦ by
+      rw [Function.comp_apply, Function.comp_apply,
+        Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply,
+        ← Matrix.coe_symmetricCongruenceLinearMap_apply,
+        Matrix.coe_symmetricCongruenceLinearMap_apply_self_of_apply_eq_zero hrow]
   calc (inverseWishartMeasure n S).map
           (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
             (B : Matrix (Fin p) (Fin p) ℝ) i i)
@@ -101,8 +107,8 @@ theorem map_coe_apply_inverseWishartMeasure (hS : S.PosDef) (i : Fin p) :
 /-- **The reciprocal diagonal entries of an inverted Wishart matrix are scaled chi-squared.** If
 `W` is Wishart of degree `n > p - 1` and positive-definite scale `S⁻¹`, the reciprocal of the
 diagonal entry `(W⁻¹) i i`, which is the Schur complement in `W` of the principal block away from
-`i`, has the law of `(S i i)⁻¹` times a chi-squared variable with `n - p + 1` degrees of
-freedom. -/
+`i` (`Matrix.PosDef.inv_inv_apply_self_eq_sub`), has the law of `(S i i)⁻¹` times a chi-squared
+variable with `n - p + 1` degrees of freedom. -/
 theorem map_inv_inv_apply_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
     (i : Fin p) :
     (nonsingularWishartMeasure n S⁻¹).map

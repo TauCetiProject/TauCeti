@@ -91,6 +91,19 @@ theorem coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin q) (Fin p) ℝ)
       M * (A : Matrix (Fin p) (Fin p) ℝ) * Mᵀ :=
   (rfl)
 
+/-- Congruence by a matrix whose `i`-th row vanishes off the column `j` reads the diagonal entry
+`(i, i)` off the diagonal entry `(j, j)`, scaled by the square of the surviving entry. -/
+theorem coe_symmetricCongruenceLinearMap_apply_self_of_apply_eq_zero
+    {M : Matrix (Fin q) (Fin p) ℝ} {i : Fin q} {j : Fin p} (hrow : ∀ a, a ≠ j → M i a = 0)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ) i i =
+      M i j ^ 2 * (A : Matrix (Fin p) (Fin p) ℝ) j j := by
+  rw [coe_symmetricCongruenceLinearMap_apply, Matrix.mul_apply,
+    Fintype.sum_eq_single j fun a ha ↦ by rw [Matrix.transpose_apply, hrow a ha, mul_zero],
+    Matrix.mul_apply, Fintype.sum_eq_single j fun a ha ↦ by rw [hrow a ha, zero_mul],
+    Matrix.transpose_apply]
+  ring
+
 /-- Congruence by a square matrix `M` multiplies the determinant of a symmetric matrix by
 `(det M) ^ 2`, including when `M` is singular. -/
 theorem det_coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin p) (Fin p) ℝ)
@@ -364,20 +377,6 @@ theorem coe_symmetricCongruence_apply (C : Matrix.GeneralLinearGroup (Fin p) ℝ
       (C : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ) *
         (C : Matrix (Fin p) (Fin p) ℝ)ᵀ :=
   (rfl)
-
-/-- Congruence by a matrix whose `i`-th row vanishes off the column `j` reads the diagonal entry
-`(i, i)` off the diagonal entry `(j, j)`, scaled by the square of the surviving entry. -/
-theorem coe_symmetricCongruence_apply_self_of_apply_eq_zero
-    {C : Matrix.GeneralLinearGroup (Fin p) ℝ} {i j : Fin p}
-    (hrow : ∀ a, a ≠ j → (C : Matrix (Fin p) (Fin p) ℝ) i a = 0)
-    (B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    (symmetricCongruence C B : Matrix (Fin p) (Fin p) ℝ) i i =
-      (C : Matrix (Fin p) (Fin p) ℝ) i j ^ 2 * (B : Matrix (Fin p) (Fin p) ℝ) j j := by
-  rw [coe_symmetricCongruence_apply, Matrix.mul_apply,
-    Fintype.sum_eq_single j fun a ha ↦ by rw [Matrix.transpose_apply, hrow a ha, mul_zero],
-    Matrix.mul_apply, Fintype.sum_eq_single j fun a ha ↦ by rw [hrow a ha, zero_mul],
-    Matrix.transpose_apply]
-  ring
 
 @[simp]
 theorem symmetricCongruence_toLinearMap (C : Matrix.GeneralLinearGroup (Fin p) ℝ) :
