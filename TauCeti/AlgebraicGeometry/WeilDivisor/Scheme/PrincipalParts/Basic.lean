@@ -128,6 +128,25 @@ function field by the stalk of `𝒪_X(D)` at `x`. -/
 abbrev PrincipalPart (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) : Type u :=
   X.functionField ⧸ stalkSubmodule D x
 
+/-- Enlarging a divisor enlarges its stalk submodule in the function field. -/
+lemma stalkSubmodule_mono (h : D ≤ E) (x : CodimensionOnePoint X) :
+    stalkSubmodule D x ≤ stalkSubmodule E x := by
+  intro f hf
+  exact mem_stalkSubmodule.mpr <|
+    (mem_stalkSubmodule.mp hf).imp id (le_trans (neg_le_neg (WeilDivisor.coeff_le_coeff h x)))
+
+/-- The quotient map on principal parts induced by an inclusion of divisors. -/
+def principalPartMapOfLE (h : D ≤ E) (x : CodimensionOnePoint X) :
+    PrincipalPart D x →ₗ[X.presheaf.stalk (x : X)] PrincipalPart E x :=
+  Submodule.mapQ _ _ LinearMap.id (stalkSubmodule_mono h x)
+
+/-- The map of local principal parts preserves the representing rational function. -/
+@[simp]
+lemma principalPartMapOfLE_mk (h : D ≤ E) (x : CodimensionOnePoint X)
+    (f : X.functionField) :
+    principalPartMapOfLE h x (Submodule.Quotient.mk f) = Submodule.Quotient.mk f := by
+  rw [principalPartMapOfLE, Submodule.mapQ_apply, LinearMap.id_apply]
+
 /-- The finitely supported families of principal parts of `D` at the codimension-one points of
 `U`. -/
 abbrev principalPartsSections (D : SchemeWeilDivisor X) (U : X.Opens) :=
