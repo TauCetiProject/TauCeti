@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.JensenFormula
-public import Mathlib.Analysis.SpecialFunctions.Integrability.PosLog
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 public import TauCeti.Analysis.Analytic.IsolatedZeros
+public import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
 
 /-!
 # Radial limits determine a holomorphic function: the F. and M. Riesz uniqueness theorem
@@ -111,27 +111,6 @@ private lemma volume_setOf_tendsto_circleMap_inter_Ioc_ne_zero {l : Filter ℝ} 
     exact (periodic_circleMap c r).zsmul k |>.sub_eq θ
   simp [Set.mem_vadd_set_iff_neg_vadd_mem, AddSubgroup.vadd_def, hθ]
 
-/-- On a circle where `f` is meromorphic, the integral of `log⁺ ‖f‖⁻¹` over one period is `2π`
-times the difference of the circle averages of `log⁺ ‖f‖` and of `log ‖f‖`. -/
-private lemma lintegral_ofReal_posLog_inv_norm_circleMap
-    (hf : MeromorphicOn f (sphere c |r|)) :
-    ∫⁻ θ in Ioc 0 (2 * π), ENNReal.ofReal (log⁺ ‖f (circleMap c r θ)‖⁻¹) =
-      ENNReal.ofReal (2 * π * (circleAverage (fun z ↦ log⁺ ‖f z‖) c r -
-        circleAverage (fun z ↦ Real.log ‖f z‖) c r)) := by
-  have hinv : (fun z ↦ log⁺ ‖f z‖⁻¹) = (fun z ↦ log⁺ ‖f z‖) - fun z ↦ Real.log ‖f z‖ := by
-    funext z
-    simp only [Pi.sub_apply]
-    linarith [posLog_sub_posLog_inv (x := ‖f z‖)]
-  have hint : CircleIntegrable (fun z ↦ log⁺ ‖f z‖⁻¹) c r := by
-    rw [hinv]
-    exact hf.circleIntegrable_posLog_norm.sub hf.circleIntegrable_log_norm
-  rw [← circleAverage_sub hf.circleIntegrable_posLog_norm hf.circleIntegrable_log_norm, ← hinv,
-    circleAverage_def, intervalIntegral.integral_of_le two_pi_pos.le, smul_eq_mul,
-    ← mul_assoc, mul_inv_cancel₀ two_pi_pos.ne', one_mul,
-    ofReal_integral_eq_lintegral_ofReal
-      ((intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le).1 hint)
-      (Eventually.of_forall fun θ ↦ posLog_nonneg)]
-
 /-- **F. and M. Riesz uniqueness theorem.** Let `f` be holomorphic on the disc `ball c R`, with
 circle averages of `log⁺ ‖f‖` at most `C` on circles about `c` whose radii accumulate at `R` from
 below. If the radial limit of `f` is `0` at every angle of a set `E` of positive measure, then `f`
@@ -198,7 +177,7 @@ theorem eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_l
   -- Fatou's lemma then makes the integrals of `G n` unbounded, against the bound `2π (C - L)`.
   have hbound : ∀ n, ∫⁻ θ in A, G n θ ≤ ENNReal.ofReal (2 * π * (C - L)) := fun n ↦
     (lintegral_mono_set (sdiff_subset.trans inter_subset_right)).trans <| by
-      rw [lintegral_ofReal_posLog_inv_norm_circleMap (han.mono (hsphere n)).meromorphicOn]
+      rw [(han.mono (hsphere n)).meromorphicOn.lintegral_ofReal_posLog_inv_norm_circleMap]
       refine ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left ?_ two_pi_pos.le)
       linarith [(hρ n).1, hlow (ρ n) (hρ n).2]
   have htop : ∫⁻ θ in A, liminf (fun n ↦ G n θ) atTop = ⊤ := by
