@@ -499,6 +499,17 @@ theorem shiftLongitudeBasis_one (n : ℤ) :
     coord_basis_zero]
   simp
 
+/-- Shifting the longitude by `0` leaves the framing unchanged. -/
+@[simp]
+theorem shiftLongitude_zero : T.shiftLongitude 0 = T := by
+  obtain ⟨torus, basis⟩ := T
+  dsimp only [shiftLongitude]
+  congr 1
+  refine Module.Basis.eq_of_apply_eq fun i ↦ ?_
+  fin_cases i
+  · exact shiftLongitudeBasis_zero _ 0
+  · simp [shiftLongitudeBasis_one]
+
 end FramedBoundaryTorus
 
 end TauCeti
