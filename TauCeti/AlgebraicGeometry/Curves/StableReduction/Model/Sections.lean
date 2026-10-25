@@ -47,6 +47,13 @@ private def sectionSquare (M : Model R K C toK) (p : Spec (.of K) ⟶ C)
   i₂ := 𝟙 _
   commSq := ⟨by simp [reassoc_of% hp]⟩
 
+/-- The structure morphism of a proper model satisfies the valuative criterion. -/
+theorem valuativeCriterion (M : Model R K C toK) [M.IsProper] :
+    ValuativeCriterion M.toBase :=
+  ValuativeCriterion.iff.mpr
+    ⟨(UniversallyClosed.eq_valuativeCriterion ▸
+      (inferInstance : UniversallyClosed M.toBase)).1, IsSeparated.valuativeCriterion _⟩
+
 /-- A rational point of the prescribed generic fibre of a proper model extends uniquely to a
 section. The equality on the generic fibre uses the model's prescribed identification. -/
 theorem existsUnique_section (M : Model R K C toK) [M.IsProper]
@@ -54,11 +61,7 @@ theorem existsUnique_section (M : Model R K C toK) [M.IsProper]
     ∃! s : Spec (.of R) ⟶ M.total,
       s ≫ M.toBase = 𝟙 _ ∧
         Spec.map (CommRingCat.ofHom (algebraMap R K)) ≫ s = p ≫ M.genericι := by
-  have hv : ValuativeCriterion M.toBase := by
-    have h : AlgebraicGeometry.IsProper M.toBase := inferInstance
-    rw [AlgebraicGeometry.IsProper.eq_valuativeCriterion] at h
-    exact h.1.1.1
-  obtain ⟨h⟩ := hv (sectionSquare M p hp)
+  obtain ⟨h⟩ := M.valuativeCriterion (sectionSquare M p hp)
   refine ⟨h.default.l, ⟨h.default.fac_right, h.default.fac_left⟩, ?_⟩
   intro s hs
   exact congrArg CommSq.LiftStruct.l (h.uniq ⟨s, hs.2, hs.1⟩)
@@ -110,6 +113,15 @@ theorem genericSection_genericι (M : Model R K C toK)
     M.genericSection s hs ≫ M.genericι =
       Spec.map (CommRingCat.ofHom (algebraMap R K)) ≫ s :=
   M.isPullback_genericι.lift_fst _ _ _
+
+/-- A morphism of models preserves the generic value of a section. -/
+@[simp]
+theorem genericSection_hom {M N : Model R K C toK} (f : M ⟶ N)
+    (s : Spec (.of R) ⟶ M.total) (hs : s ≫ M.toBase = 𝟙 _) :
+    N.genericSection (s ≫ f.hom) (by simp [hs]) = M.genericSection s hs := by
+  apply N.isPullback_genericι.hom_ext
+  · rw [genericSection_genericι, ← genericι_hom f, genericSection_genericι_assoc]
+  · simp
 
 /-- Restricting an extended section recovers the rational point. -/
 @[simp]
