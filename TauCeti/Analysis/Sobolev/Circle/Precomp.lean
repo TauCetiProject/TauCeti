@@ -189,17 +189,10 @@ variable {F F' : ℝ → ℝ} {c M : ℝ} (hF : ∀ x, HasDerivAt F (F' x) x)
   (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) (hc : 0 < c)
   (hcF : ∀ x, c ≤ F' x) (hMF : ∀ x, F' x ≤ M)
 
-include hF hc hcF in
-private theorem strictMono_of_lift : StrictMono F :=
-  strictMono_of_hasDerivAt_pos hF fun x ↦ hc.trans_le (hcF x)
-
-include hF in
-private theorem continuous_of_hasDerivAt : Continuous F :=
-  continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
-
 /-- The inverse map of the circle, for `φ` with lift `F`, `0 < c ≤ F'`. -/
 private def symmOfLift : AddCircle T ≃ₜ AddCircle T :=
-  (homeomorphOfLift φ (strictMono_of_lift hF hc hcF) (continuous_of_hasDerivAt hF) hper hφ).symm
+  (homeomorphOfLift φ (strictMono_of_hasDerivAt_pos hF fun x ↦ hc.trans_le (hcF x))
+    (continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt) hper hφ).symm
 
 private theorem symmOfLift_apply_apply (x : AddCircle T) :
     symmOfLift hF hper hφ hc hcF (φ x) = x :=
@@ -215,7 +208,8 @@ private theorem apply_symmOfLift_apply (x : AddCircle T) :
 whose inverse is precomposition with the inverse map of the circle. -/
 def precompEquivOfLift : CircleSobolev 0 ℂ ≃L[ℂ] CircleSobolev 0 ℂ :=
   ((toLpₗᵢ T).toContinuousLinearEquiv.trans
-    (Lp.compEquivOfMapLeSmul ℂ (continuous_of_lift (continuous_of_hasDerivAt hF) hφ).measurable
+    (Lp.compEquivOfMapLeSmul ℂ
+      (continuous_of_lift (continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt) hφ).measurable
       (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne')
       (map_haarAddCircle_le_of_lift hF hper hφ hc hcF)
       (symmOfLift hF hper hφ hc hcF).continuous.measurable ENNReal.ofReal_ne_top
@@ -258,8 +252,9 @@ theorem toLpₗᵢ_precompEquivOfLift_symm {ψ : AddCircle T → AddCircle T}
     toLpₗᵢ T ((precompEquivOfLift hF hper hφ hc hcF hMF).symm a) =ᵐ[haarAddCircle]
       toLpₗᵢ T a ∘ ψ := by
   have hψ : ψ = symmOfLift hF hper hφ hc hcF := funext fun y ↦ by
-    obtain ⟨x, rfl⟩ := (bijective_of_lift (strictMono_of_lift hF hc hcF)
-      (continuous_of_hasDerivAt hF) hper hφ).2 y
+    obtain ⟨x, rfl⟩ := (bijective_of_lift
+      (strictMono_of_hasDerivAt_pos hF fun x ↦ hc.trans_le (hcF x))
+      (continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt) hper hφ).2 y
     rw [hψφ x, symmOfLift_apply_apply]
   subst hψ
   rw [precompEquivOfLift_symm_apply]
