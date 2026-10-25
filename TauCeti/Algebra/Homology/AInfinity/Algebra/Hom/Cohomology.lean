@@ -47,6 +47,8 @@ solely through the boundary it produces.
   cohomology preserves identities and composition.
 * `TauCeti.AInfinityHom.cohomologyStrictHom_id` and
   `TauCeti.AInfinityHom.cohomologyStrictHom_comp`: the same laws for strict cohomology morphisms.
+* `TauCeti.AInfinityHom.isQuasiIso_iff_forall_cycles`: the quasi-isomorphism condition stated on
+  cycles and boundaries.
 * `TauCeti.AInfinityHom.isQuasiIso_id` and `TauCeti.AInfinityHom.IsQuasiIso.comp`: identities are
   quasi-isomorphisms and quasi-isomorphisms compose.
 * `TauCeti.AInfinityHom.IsQuasiIso.of_precomp` and `TauCeti.AInfinityHom.IsQuasiIso.of_postcomp`:
@@ -380,6 +382,34 @@ def IsQuasiIso (f : AInfinityHom AA BB) : Prop :=
 bijective. -/
 theorem isQuasiIso_def (f : AInfinityHom AA BB) :
     f.IsQuasiIso ↔ Function.Bijective f.cohomologyMap := Iff.rfl
+
+/-- **The quasi-isomorphism criterion on cycles.**  An `A∞` morphism is a quasi-isomorphism
+exactly when every cycle of the target differs from the image of a cycle by a boundary, and every
+cycle whose image is a boundary is itself a boundary. -/
+theorem isQuasiIso_iff_forall_cycles (f : AInfinityHom AA BB) :
+    f.IsQuasiIso ↔
+      (∀ y ∈ BB.cycles, ∃ x ∈ AA.cycles, f.linearPart x - y ∈ BB.boundaries) ∧
+        ∀ x ∈ AA.cycles, f.linearPart x ∈ BB.boundaries → x ∈ AA.boundaries := by
+  rw [isQuasiIso_def, Function.Bijective, injective_iff_map_eq_zero]
+  constructor
+  · rintro ⟨hinj, hsurj⟩
+    refine ⟨fun y hy ↦ ?_, fun x hx hfx ↦ ?_⟩
+    · obtain ⟨c, hc⟩ := hsurj (BB.cohomologyClass hy)
+      obtain ⟨x, hx, rfl⟩ := AA.exists_cohomologyClass_eq c
+      rw [cohomologyMap_cohomologyClass, BB.cohomologyClass_eq_iff] at hc
+      exact ⟨x, hx, hc⟩
+    · rw [← AA.cohomologyClass_eq_zero_iff hx]
+      exact hinj _ (by rwa [cohomologyMap_cohomologyClass, BB.cohomologyClass_eq_zero_iff])
+  · rintro ⟨hsurj, hinj⟩
+    refine ⟨fun c hc ↦ ?_, fun d ↦ ?_⟩
+    · obtain ⟨x, hx, rfl⟩ := AA.exists_cohomologyClass_eq c
+      rw [cohomologyMap_cohomologyClass, BB.cohomologyClass_eq_zero_iff] at hc
+      rw [AA.cohomologyClass_eq_zero_iff]
+      exact hinj x hx hc
+    · obtain ⟨y, hy, rfl⟩ := BB.exists_cohomologyClass_eq d
+      obtain ⟨x, hx, hxy⟩ := hsurj y hy
+      exact ⟨AA.cohomologyClass hx, by
+        rwa [cohomologyMap_cohomologyClass, BB.cohomologyClass_eq_iff]⟩
 
 /-- The identity `A∞` morphism is a quasi-isomorphism. -/
 @[simp]
