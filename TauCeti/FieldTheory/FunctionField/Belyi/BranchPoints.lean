@@ -11,7 +11,6 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Equiv
 public import TauCeti.FieldTheory.RatFunc.Mobius
 import Mathlib.LinearAlgebra.Matrix.Notation
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
-import TauCeti.GroupTheory.Perm.FinThree.Basic
 
 /-!
 # Permuting the branch points of an algebraic Belyi pair
@@ -31,7 +30,8 @@ are the Möbius transformations permuting `0, 1, ∞`, defined over the prime fi
 `0, 1, ∞` as `0, 1, 2 : Fin 3`, the transformation `m` attached to `ρ` sends the point numbered
 `ρ i` to the point numbered `i`. Its substitution `t ↦ m(t)` is the automorphism
 `RatFunc.branchPointAut ρ` of `k(t)`, and `ρ ↦ RatFunc.branchPointAut ρ` is a group
-homomorphism from the symmetric group on the three branch points.
+homomorphism from the symmetric group on the three branch points; it is constructed with the
+other linear fractional transformations in `TauCeti.FieldTheory.RatFunc.Mobius`.
 
 Postcomposing a Belyi map `β` with `m` gives the Belyi map `m ∘ β` on the same curve. Its fibre
 over the point numbered `i` is the fibre of `β` over the point numbered `ρ i`, so `m ∘ β` is the
@@ -44,12 +44,6 @@ the points is `0 → ∞ → 1 → 0`.
 On function fields, `m ∘ β` replaces the embedding `φ : k(t) → F` by `φ ∘ m`. This file states
 this along an isomorphism `e : F ≃ₐ[k] F'` with `e (φ (m x)) = φ' x`, so that `F'` may be `F`
 itself with the new algebra structure, or any other model of it.
-
-## Main definitions
-
-* `RatFunc.branchPointAut`: the homomorphism `Perm (Fin 3) →* Aut(k(t)/k)`, with its values
-  at `X` on the five nonidentity permutations (`RatFunc.branchPointAut_swap_zero_one_X` and its
-  siblings).
 
 ## Main results
 
@@ -75,120 +69,6 @@ public section
 
 open Equiv
 
-namespace RatFunc
-
-variable {K : Type*} [Field K]
-
-/-- The integer coefficient matrices `!![a, b; c, d]` of the six transformations
-`(a t + b) / (c t + d)` permuting `0, 1, ∞`, normalized so that they form a subgroup of
-`GL₂(ℤ)` isomorphic to the symmetric group. A permutation of `Fin 3` is determined by its values
-at `0` and `1`. -/
-private def branchPointMatrix (ρ : Perm (Fin 3)) : Matrix (Fin 2) (Fin 2) ℤ :=
-  match ρ 0, ρ 1 with
-  | 1, 0 => !![-1, 1; 0, 1]
-  | 0, 2 => !![1, 0; 1, -1]
-  | 2, 1 => !![0, -1; -1, 0]
-  | 1, 2 => !![-1, 1; -1, 0]
-  | 2, 0 => !![0, -1; 1, -1]
-  | _, _ => 1
-
-/-- Substitution composes the matrices in the opposite order. -/
-private theorem branchPointMatrix_mul (ρ ρ' : Perm (Fin 3)) :
-    branchPointMatrix (ρ * ρ') = branchPointMatrix ρ' * branchPointMatrix ρ := by
-  revert ρ ρ'
-  decide
-
-/-- The six coefficient matrices have determinant `±1`, so they are invertible over any field. -/
-private theorem det_branchPointMatrix_ne_zero (ρ : Perm (Fin 3)) :
-    ((branchPointMatrix ρ 0 0 : ℤ) : K) * (branchPointMatrix ρ 1 1 : ℤ) -
-      (branchPointMatrix ρ 0 1 : ℤ) * (branchPointMatrix ρ 1 0 : ℤ) ≠ 0 := by
-  have h : ∀ ρ : Perm (Fin 3), branchPointMatrix ρ 0 0 * branchPointMatrix ρ 1 1 -
-      branchPointMatrix ρ 0 1 * branchPointMatrix ρ 1 0 = 1 ∨
-    branchPointMatrix ρ 0 0 * branchPointMatrix ρ 1 1 -
-      branchPointMatrix ρ 0 1 * branchPointMatrix ρ 1 0 = -1 := by decide
-  rw [← Int.cast_mul, ← Int.cast_mul, ← Int.cast_sub]
-  rcases h ρ with h | h <;> simp [h]
-
-/-- The substitution attached to `ρ`, before it is bundled as a homomorphism. -/
-private noncomputable def branchPointAutFun (ρ : Perm (Fin 3)) : RatFunc K ≃ₐ[K] RatFunc K :=
-  mobiusAutOf (det_branchPointMatrix_ne_zero ρ)
-
-/-- The defining value of the substitution attached to `ρ`. -/
-private theorem branchPointAutFun_X (ρ : Perm (Fin 3)) :
-    branchPointAutFun ρ X = mobiusOf ((branchPointMatrix ρ 0 0 : ℤ) : K)
-      (branchPointMatrix ρ 0 1 : ℤ) (branchPointMatrix ρ 1 0 : ℤ) (branchPointMatrix ρ 1 1 : ℤ) :=
-  mobiusAutOf_X _
-
-variable (K) in
-/-- **The automorphisms of `k(t)` permuting the branch points `0, 1, ∞`**: for
-`ρ : Perm (Fin 3)`, the substitution `t ↦ m(t)` by the linear fractional transformation `m` that
-sends the point numbered `ρ i` to the point numbered `i`, where `0, 1, 2` number `0, 1, ∞`. The
-five nonidentity substitutions are `1 - t`, `t / (t - 1)`, `1 / t`, `(t - 1) / t` and
-`1 / (1 - t)` (`RatFunc.branchPointAut_swap_zero_one_X` and its siblings, the last one for
-the inverse of `finRotate 3`), and they act on the
-marked places through `ρ` (`TauCeti.Place.map_branchPointAut_markedPlace`). -/
-noncomputable def branchPointAut : Perm (Fin 3) →* (RatFunc K ≃ₐ[K] RatFunc K) where
-  toFun := branchPointAutFun
-  map_one' := algEquiv_ext (by
-    rw [branchPointAutFun_X, AlgEquiv.one_apply]
-    simp [branchPointMatrix, mobiusOf_def])
-  map_mul' ρ ρ' := algEquiv_ext (by
-    rw [AlgEquiv.mul_apply, branchPointAutFun_X, branchPointAutFun_X, branchPointAutFun,
-      mobiusAutOf_mobiusOf, branchPointMatrix_mul]
-    simp [Matrix.mul_apply, Fin.sum_univ_two])
-
-/-- The value of `RatFunc.branchPointAut ρ` at `X`, read off the coefficient matrix. -/
-private theorem branchPointAut_X (ρ : Perm (Fin 3)) :
-    branchPointAut K ρ X = mobiusOf ((branchPointMatrix ρ 0 0 : ℤ) : K)
-      (branchPointMatrix ρ 0 1 : ℤ) (branchPointMatrix ρ 1 0 : ℤ) (branchPointMatrix ρ 1 1 : ℤ) :=
-  branchPointAutFun_X ρ
-
-/-- The substitution exchanging `0` and `1` is `t ↦ 1 - t`. -/
-@[simp]
-theorem branchPointAut_swap_zero_one_X : branchPointAut K (swap 0 1) X = 1 - X := by
-  rw [branchPointAut_X, show branchPointMatrix (swap 0 1) = !![-1, 1; 0, 1] by decide]
-  simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one, Int.cast_neg, Int.cast_one, Int.cast_zero, mobiusOf_def, map_neg,
-    map_one, map_zero, zero_mul, zero_add, div_one]
-  ring
-
-/-- The substitution exchanging `1` and `∞` is `t ↦ t / (t - 1)`. -/
-@[simp]
-theorem branchPointAut_swap_one_two_X : branchPointAut K (swap 1 2) X = X / (X - 1) := by
-  rw [branchPointAut_X, show branchPointMatrix (swap 1 2) = !![1, 0; 1, -1] by decide]
-  simp [mobiusOf_def, sub_eq_add_neg]
-
-/-- The substitution exchanging `0` and `∞` is `t ↦ 1 / t`. -/
-@[simp]
-theorem branchPointAut_swap_zero_two_X : branchPointAut K (swap 0 2) X = X⁻¹ := by
-  rw [branchPointAut_X, show branchPointMatrix (swap 0 2) = !![0, -1; -1, 0] by decide]
-  simp [mobiusOf_def]
-
-/-- The substitution reordering the branch points along `0 → 1 → ∞ → 0` is
-`t ↦ (t - 1) / t`. -/
-@[simp]
-theorem branchPointAut_finRotate_X : branchPointAut K (finRotate 3) X = (X - 1) / X := by
-  rw [branchPointAut_X, show branchPointMatrix (finRotate 3) = !![-1, 1; -1, 0] by decide]
-  simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one, Int.cast_neg, Int.cast_one, Int.cast_zero, mobiusOf_def, map_neg,
-    map_one, map_zero, add_zero]
-  ring
-
-/-- The substitution reordering the branch points along `0 → ∞ → 1 → 0`, the inverse of
-`RatFunc.branchPointAut (finRotate 3)`, is `t ↦ 1 / (1 - t)`. It is stated for the inverse
-automorphism, the simp-normal form of `branchPointAut K (finRotate 3)⁻¹`. -/
-@[simp]
-theorem branchPointAut_finRotate_symm_X : (branchPointAut K (finRotate 3)).symm X = (1 - X)⁻¹ := by
-  rw [← AlgEquiv.aut_inv, ← map_inv, branchPointAut_X,
-    show branchPointMatrix (finRotate 3)⁻¹ = !![0, -1; 1, -1] by decide]
-  simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one, Int.cast_neg, Int.cast_one, Int.cast_zero, mobiusOf_def, map_neg,
-    map_one, map_zero, zero_mul, zero_add, one_mul]
-  rw [neg_div, one_div, ← inv_neg]
-  ring
-
-end RatFunc
-
 open RatFunc
 
 namespace TauCeti
@@ -206,6 +86,14 @@ private theorem ord_markedPlace_monomial (i : Fin 3) {c : k} (hc : c ≠ 0) (a b
   · simpa using ord_adicOfIrreducible_X_sub_one_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc a b
   · simpa using ord_infty_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc a b
 
+/-- The order at a marked place transported along an involutive substitution `τ` is the order of
+the image under `τ`, read off a monomial form `c X ^ a (X - 1) ^ b` of that image. -/
+private theorem ord_map_branchPointAut_markedPlace {τ : Perm (Fin 3)} (hτ : τ⁻¹ = τ) (i : Fin 3)
+    {f : RatFunc k} {c : k} (hc : c ≠ 0) {a b : ℤ}
+    (hf : branchPointAut k τ f = algebraMap k (RatFunc k) c * X ^ a * (X - 1) ^ b) :
+    ((markedPlace k i).map (branchPointAut k τ)).ord f = ![a, b, -(a + b)] i := by
+  rw [ord_map, ← AlgEquiv.aut_inv, ← map_inv, hτ, hf, ord_markedPlace_monomial i hc]
+
 /-- The two generating transpositions move the marked places as they move their numbers. -/
 private theorem map_branchPointAut_markedPlace_of_mem {ρ : Perm (Fin 3)}
     (hρ : ρ = swap 0 1 ∨ ρ = swap 1 2) (i : Fin 3) :
@@ -220,45 +108,29 @@ private theorem map_branchPointAut_markedPlace_of_mem {ρ : Perm (Fin 3)}
     rw [markedPlace_two]
     exact X_notMem_integers_iff_eq_infty.mp (by rwa [mem_integers_iff_ord_nonneg, not_le])
   have hX1 : (X - 1 : RatFunc k) ≠ 0 := by simpa using RatFunc.X_sub_C_ne_zero (1 : k)
-  -- Each case evaluates the order of `X` or of `X - 1` at the transported place, which is the
-  -- order of a monomial `c X ^ a (X - 1) ^ b` at a marked place.
+  have hm : (-1 : k) ≠ 0 := neg_ne_zero.mpr one_ne_zero
+  -- The images of `X` and `X - 1` under the two generators, as monomials `c X ^ a (X - 1) ^ b`.
+  have h01X : branchPointAut k (swap 0 1) X =
+      algebraMap k (RatFunc k) (-1) * X ^ (0 : ℤ) * (X - 1) ^ (1 : ℤ) := by simp
+  have h01X1 : branchPointAut k (swap 0 1) (X - 1) =
+      algebraMap k (RatFunc k) (-1) * X ^ (1 : ℤ) * (X - 1) ^ (0 : ℤ) := by simp
+  have h12X : branchPointAut k (swap 1 2) X =
+      algebraMap k (RatFunc k) 1 * X ^ (1 : ℤ) * (X - 1) ^ (-1 : ℤ) := by
+    simp [div_eq_mul_inv]
+  have h12X1 : branchPointAut k (swap 1 2) (X - 1) =
+      algebraMap k (RatFunc k) 1 * X ^ (0 : ℤ) * (X - 1) ^ (-1 : ℤ) := by
+    simp only [map_sub, map_one, branchPointAut_swap_one_two_X]
+    field_simp
+    simp
   rcases hρ with rfl | rfl <;> fin_cases i <;>
     simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, swap_apply_left, swap_apply_right,
       swap_apply_of_ne_of_ne, ne_eq, Fin.reduceEq, not_false_eq_true]
-  · refine h1 ?_
-    rw [ord_map, ← AlgEquiv.aut_inv, ← map_inv, swap_inv, map_sub, map_one,
-      branchPointAut_swap_zero_one_X,
-      show (1 - X - 1 : RatFunc k) = algebraMap k _ (-1) * X ^ (1 : ℤ) * (X - 1) ^ (0 : ℤ) by
-        simp, ord_markedPlace_monomial 0 (neg_ne_zero.mpr one_ne_zero)]
-    simp
-  · refine h0 ?_
-    rw [ord_map, ← AlgEquiv.aut_inv, ← map_inv, swap_inv, branchPointAut_swap_zero_one_X,
-      show (1 - X : RatFunc k) = algebraMap k _ (-1) * X ^ (0 : ℤ) * (X - 1) ^ (1 : ℤ) by
-        simp, ord_markedPlace_monomial 1 (neg_ne_zero.mpr one_ne_zero)]
-    simp
-  · refine h2 ?_
-    rw [ord_map, ← AlgEquiv.aut_inv, ← map_inv, swap_inv, branchPointAut_swap_zero_one_X,
-      show (1 - X : RatFunc k) = algebraMap k _ (-1) * X ^ (0 : ℤ) * (X - 1) ^ (1 : ℤ) by
-        simp, ord_markedPlace_monomial 2 (neg_ne_zero.mpr one_ne_zero)]
-    simp
-  · refine h0 ?_
-    rw [ord_map, ← AlgEquiv.aut_inv, ← map_inv, swap_inv, branchPointAut_swap_one_two_X,
-      show (X / (X - 1) : RatFunc k) = algebraMap k _ 1 * X ^ (1 : ℤ) * (X - 1) ^ (-1 : ℤ) by
-        simp [div_eq_mul_inv], ord_markedPlace_monomial 0 one_ne_zero]
-    simp
-  · refine h2 ?_
-    rw [ord_map, ← AlgEquiv.aut_inv, ← map_inv, swap_inv, branchPointAut_swap_one_two_X,
-      show (X / (X - 1) : RatFunc k) = algebraMap k _ 1 * X ^ (1 : ℤ) * (X - 1) ^ (-1 : ℤ) by
-        simp [div_eq_mul_inv], ord_markedPlace_monomial 1 one_ne_zero]
-    simp
-  · refine h1 ?_
-    rw [ord_map, ← AlgEquiv.aut_inv, ← map_inv, swap_inv, map_sub, map_one,
-      branchPointAut_swap_one_two_X,
-      show (X / (X - 1) - 1 : RatFunc k) =
-          algebraMap k _ 1 * X ^ (0 : ℤ) * (X - 1) ^ (-1 : ℤ) by
-        field_simp
-        simp, ord_markedPlace_monomial 2 one_ne_zero]
-    simp
+  · exact h1 (by rw [ord_map_branchPointAut_markedPlace (swap_inv _ _) _ hm h01X1]; simp)
+  · exact h0 (by rw [ord_map_branchPointAut_markedPlace (swap_inv _ _) _ hm h01X]; simp)
+  · exact h2 (by rw [ord_map_branchPointAut_markedPlace (swap_inv _ _) _ hm h01X]; simp)
+  · exact h0 (by rw [ord_map_branchPointAut_markedPlace (swap_inv _ _) _ one_ne_zero h12X]; simp)
+  · exact h2 (by rw [ord_map_branchPointAut_markedPlace (swap_inv _ _) _ one_ne_zero h12X]; simp)
+  · exact h1 (by rw [ord_map_branchPointAut_markedPlace (swap_inv _ _) _ one_ne_zero h12X1]; simp)
 
 /-- **The branch-point substitutions permute the marked places**: `RatFunc.branchPointAut ρ`
 carries the marked place numbered `i` to the marked place numbered `ρ i`. -/

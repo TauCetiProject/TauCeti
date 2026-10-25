@@ -183,11 +183,7 @@ theorem IsAlgebraicBelyiPair.of_equiv_equiv (h : IsAlgebraicBelyiPair k F)
     (hσ : Set.MapsTo (Place.map σ) (Place.zeroOneInfty k) (Place.zeroOneInfty k))
     (e : F ≃ₐ[k] F') (he : ∀ x, e (algebraMap (RatFunc k) F x) = algebraMap (RatFunc k) F' (σ x)) :
     IsAlgebraicBelyiPair k F' where
-  isIntegrallyClosedIn := by
-    have := h.isIntegrallyClosedIn
-    refine isIntegrallyClosedIn_iff.mpr ⟨(algebraMap k F').injective, fun {x} hx ↦ ?_⟩
-    obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.algebraMap_eq_of_integral (hx.map (e.symm : F' →ₐ[k] F))
-    exact ⟨c, by rw [← e.commutes, hc]; exact e.apply_symm_apply x⟩
+  isIntegrallyClosedIn := e.isIntegrallyClosedIn.mp h.isIntegrallyClosedIn
   ramificationIdx_eq_one {P'} hP' := by
     obtain ⟨Q, rfl⟩ : ∃ Q : Place k F, Q.map e = P' := ⟨P'.map e.symm, Place.map_map_symm e P'⟩
     rw [Place.ramificationIdx_map e σ.toRingEquiv he]

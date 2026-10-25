@@ -49,11 +49,6 @@ section Commute
 
 variable {K K' : Type*} [Field K] [Field K'] [Algebra K L] [Algebra K' L'] (e : L ≃ₐ[k] L')
 
-private theorem symm_algebraMap_of_commute (σ : K ≃+* K')
-    (he : ∀ x, e (algebraMap K L x) = algebraMap K' L' (σ x)) (x : K') :
-    e.symm (algebraMap K' L' x) = algebraMap K L (σ.symm x) :=
-  e.injective (by rw [he, AlgEquiv.apply_symm_apply, RingEquiv.apply_symm_apply])
-
 /-- **The ramification index is invariant under a commutative square of isomorphisms**: if
 `e : L ≃ₐ[k] L'` carries the image of `K` onto the image of `K'` along `σ : K ≃+* K'`, then
 transporting a place of `L` along `e` does not change its ramification index. -/
@@ -63,7 +58,8 @@ theorem ramificationIdx_map (σ : K ≃+* K')
   have h : (Q.map e).valuation.comap (algebraMap K' L') =
       (Q.valuation.comap (algebraMap K L)).comap (σ.symm : K' →+* K) := by
     ext x
-    simp [valuation_map, symm_algebraMap_of_commute e σ he]
+    simp [valuation_map, e.symm_apply_eq.mpr (by rw [he, σ.apply_symm_apply] :
+      algebraMap K' L' x = e (algebraMap K L (σ.symm x)))]
   rw [ramificationIdx_def, ramificationIdx_def, h,
     Valuation.ordIndex_comap_of_surjective _ σ.symm.surjective]
 
@@ -77,8 +73,8 @@ theorem restrict_map [Algebra k K] [Algebra k K'] [IsScalarTower k K L] [IsScala
   rw [restrict_eq_iff_integers_le]
   intro f hf
   rw [mem_integers_map_iff, mem_integers_restrict_iff] at hf
-  rw [mem_integers_map_iff, symm_algebraMap_of_commute e σ.toRingEquiv he]
-  exact hf
+  rwa [mem_integers_map_iff, e.symm_apply_eq.mpr (by rw [he, σ.apply_symm_apply] :
+    algebraMap K' L' f = e (algebraMap K L (σ.symm f)))]
 
 end Commute
 
