@@ -41,6 +41,8 @@ Borel measurable structure on the scalar field.
   `𝕜 × 𝕜ⁿ`.
 * `EuclideanSpace.finTwoEquivProd`: the two coordinates identify `𝕜²` isometrically with the `L²`
   product `WithLp 2 (𝕜 × 𝕜)`.
+* `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
+  `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
 -/
 
 public section
@@ -195,6 +197,65 @@ theorem finTwoEquivProd_apply_snd (x : EuclideanSpace 𝕜 (Fin 2)) :
 theorem finTwoEquivProd_symm_apply (p : WithLp 2 (𝕜 × 𝕜)) :
     (finTwoEquivProd 𝕜).symm p = WithLp.toLp 2 ![p.fst, p.snd] :=
   (rfl)
+
+section sumCompl
+
+variable (𝕜) (p : ι → Prop) [DecidablePred p]
+
+/-- Splitting the coordinates along a predicate `p` identifies `EuclideanSpace 𝕜 ι` with the
+product of the Euclidean spaces on the coordinates satisfying `p` and on the others. This is
+`EuclideanSpace.sumEquivProd` for the decomposition `ι ≃ {i // p i} ⊕ {i // ¬p i}`. -/
+def sumComplEquivProd :
+    EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i} :=
+  (LinearIsometryEquiv.piLpCongrLeft 2 𝕜 𝕜 (Equiv.sumCompl p).symm).toContinuousLinearEquiv.trans
+    sumEquivProd
+
+variable {𝕜 p}
+
+@[simp]
+theorem sumComplEquivProd_apply_fst (x : EuclideanSpace 𝕜 ι) (i : {i // p i}) :
+    (sumComplEquivProd 𝕜 p x).1 i = x i := by
+  simp [sumComplEquivProd, Equiv.piCongrLeft']
+
+@[simp]
+theorem sumComplEquivProd_apply_snd (x : EuclideanSpace 𝕜 ι) (i : {i // ¬p i}) :
+    (sumComplEquivProd 𝕜 p x).2 i = x i := by
+  simp [sumComplEquivProd, Equiv.piCongrLeft']
+
+theorem sumComplEquivProd_symm_apply
+    (z : EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}) (i : ι) :
+    (sumComplEquivProd 𝕜 p).symm z i = if h : p i then z.1 ⟨i, h⟩ else z.2 ⟨i, h⟩ := by
+  obtain ⟨x, rfl⟩ := (sumComplEquivProd 𝕜 p).surjective z
+  split_ifs <;> simp
+
+theorem norm_fst_sumComplEquivProd_sq (x : EuclideanSpace 𝕜 ι) :
+    ‖(sumComplEquivProd 𝕜 p x).1‖ ^ 2 = ∑ i with p i, ‖x i‖ ^ 2 := by
+  rw [EuclideanSpace.norm_sq_eq,
+    Finset.sum_subtype (F := inferInstance) _ fun _ ↦ Finset.mem_filter_univ _]
+  simp
+
+theorem norm_snd_sumComplEquivProd_sq (x : EuclideanSpace 𝕜 ι) :
+    ‖(sumComplEquivProd 𝕜 p x).2‖ ^ 2 = ∑ i with ¬p i, ‖x i‖ ^ 2 := by
+  rw [EuclideanSpace.norm_sq_eq,
+    Finset.sum_subtype (F := inferInstance) _ fun _ ↦ Finset.mem_filter_univ _]
+  simp
+
+/-- The two components of the splitting are orthogonal: their squared norms add up to the squared
+norm of the vector. -/
+theorem norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (x : EuclideanSpace 𝕜 ι) :
+    ‖(sumComplEquivProd 𝕜 p x).1‖ ^ 2 + ‖(sumComplEquivProd 𝕜 p x).2‖ ^ 2 = ‖x‖ ^ 2 := by
+  rw [norm_fst_sumComplEquivProd_sq, norm_snd_sumComplEquivProd_sq,
+    Finset.sum_filter_add_sum_filter_not, EuclideanSpace.norm_sq_eq]
+
+/-- The diagonal quadratic form with coefficient `-1` on the coordinates satisfying `p` and `1` on
+the others is `-‖u‖² + ‖v‖²` in the components `(u, v)` of the splitting along `p`. -/
+theorem sum_ite_neg_one_mul_sq_eq (x : EuclideanSpace ℝ ι) :
+    ∑ i, (if p i then -1 else 1) * x i ^ 2 =
+      -‖(sumComplEquivProd ℝ p x).1‖ ^ 2 + ‖(sumComplEquivProd ℝ p x).2‖ ^ 2 := by
+  simp only [norm_fst_sumComplEquivProd_sq, norm_snd_sumComplEquivProd_sq, Real.norm_eq_abs,
+    sq_abs, ite_mul, neg_one_mul, one_mul, Finset.sum_ite, Finset.sum_neg_distrib]
+
+end sumCompl
 
 end EuclideanSpace
 
