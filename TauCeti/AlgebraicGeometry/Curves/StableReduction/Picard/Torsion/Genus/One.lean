@@ -44,15 +44,9 @@ private lemma not_dvd_intersection_of_small_weights (ℓ : ℕ) [Fact ℓ.Prime]
     (hℓ : 4 < ℓ) (hw : ∀ i, (T.weight i : ℕ) ≤ 4)
     (hself : ∀ i, T.intersection i i = -(2 * (T.weight i : ℤ)))
     (i j : T.Component) (hij : T.Adj i j) : ¬ (ℓ : ℤ) ∣ T.intersection i j := by
-  obtain ⟨a, ha⟩ := T.weight_dvd i j
-  obtain ⟨b, hb⟩ := T.weight_dvd_intersection i j
+  obtain ⟨a, b, ha0, hb0, ha, hb⟩ :=
+    T.exists_intersection_eq_weight_mul (T.adj_iff.mp hij).2
   have hpos := (T.adj_iff.mp hij).2
-  have ha0 : 0 < a := by
-    have : (0 : ℤ) < T.weight i := Int.natCast_pos.mpr (T.weight i).pos
-    nlinarith [hpos]
-  have hb0 : 0 < b := by
-    have : (0 : ℤ) < T.weight j := Int.natCast_pos.mpr (T.weight j).pos
-    nlinarith [hpos]
   have hab := T.intersection_ratio_mul_le_four (hself i) (hself j) hpos ha hb
   have ha4 : a ≤ 4 := by nlinarith
   intro hdvd
