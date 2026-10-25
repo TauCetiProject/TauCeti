@@ -223,51 +223,6 @@ section MorseCharts
 
 variable {M ι : Type*} [TopologicalSpace M] {n : ℕ}
 
-/-- In the splitting of the coordinates along `j < k`, scaling the second component by `s` scales
-the coordinates `j ≥ k`. -/
-private theorem sumComplEquivProd_symm_smul_snd (k : ℕ) (y : EuclideanSpace ℝ (Fin n)) (s : ℝ) :
-    (EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k).symm
-        (((EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k) y).1,
-          s • ((EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k) y).2) =
-      WithLp.toLp 2 fun j ↦ if j.val < k then y j else s * y j := by
-  ext j
-  by_cases h : j.val < k <;> simp [EuclideanSpace.sumComplEquivProd_symm_apply, h]
-
-/-- Scaling the coordinates `j ≥ k` by a factor in `[0, 1]` does not increase the norm. -/
-private theorem norm_sumComplEquivProd_symm_smul_snd_le (k : ℕ) (y : EuclideanSpace ℝ (Fin n))
-    {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
-    ‖(EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k).symm
-        (((EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k) y).1,
-          s • ((EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k) y).2)‖ ≤ ‖y‖ := by
-  set e := EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k
-  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
-  have hnorm (z : EuclideanSpace ℝ (Fin n)) : ‖(e z).1‖ ^ 2 + ‖(e z).2‖ ^ 2 = ‖z‖ ^ 2 :=
-    EuclideanSpace.norm_fst_sumComplEquivProd_sq_add_norm_snd_sq z
-  rw [← hnorm, ← hnorm y, e.apply_symm_apply,
-    norm_smul, mul_pow, Real.norm_of_nonneg hs.1]
-  have : s ^ 2 ≤ 1 := pow_le_one₀ hs.1 hs.2
-  nlinarith [sq_nonneg ‖(e y).2‖]
-
-/-- In the splitting of the coordinates along `j < k`, the cell condition `‖u‖² ≤ ε`, `v = 0`
-says that `‖y‖² ≤ ε` and that the coordinates `j ≥ k` vanish. -/
-private theorem fst_norm_sq_le_and_snd_eq_zero_iff {k : ℕ} {y : EuclideanSpace ℝ (Fin n)}
-    {ε : ℝ} :
-    (‖((EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k) y).1‖ ^ 2 ≤ ε ∧
-        ((EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k) y).2 = 0) ↔
-      ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k ≤ j.val → y j = 0 := by
-  set e := EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k
-  have hv : (e y).2 = 0 ↔ ∀ j : Fin n, k ≤ j.val → y j = 0 := by
-    refine ⟨fun h j hj ↦ ?_, fun h ↦ ?_⟩
-    · simpa [e] using congr($h ⟨j, not_lt.2 hj⟩)
-    · ext j
-      simpa [e] using h j (not_lt.1 j.2)
-  have hnorm : ‖(e y).1‖ ^ 2 + ‖(e y).2‖ ^ 2 = ‖y‖ ^ 2 :=
-    EuclideanSpace.norm_fst_sumComplEquivProd_sq_add_norm_snd_sq y
-  rw [← hv, ← hnorm]
-  refine and_congr_left fun h ↦ ?_
-  rw [h, norm_zero]
-  simp
-
 /-- **Milnor's handle retraction in Morse charts.** Let `ψ i` be charts of `M` with pairwise
 disjoint sources, each containing the closed ball of radius `ρ` about `0` in its target, in which
 `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`. The cell of the chart `ψ i` is the disc
@@ -315,7 +270,8 @@ theorem exists_inter_sublevel_union_cells_deformation [T2Space M] [Finite ι]
   have hQ (i : ι) {x : M} (hx : x ∈ (ψ i).source) :
       φ i x ∈ quadraticSublevelUnionCell ε ↔ f x ≤ c - ε ∨
         x ∈ (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0} := by
-    rw [mem_quadraticSublevelUnionCell, hfφ i hx, hφ_apply, fst_norm_sq_le_and_snd_eq_zero_iff]
+    rw [mem_quadraticSublevelUnionCell, hfφ i hx, hφ_apply,
+      EuclideanSpace.norm_fst_sumComplEquivProd_sq_le_and_snd_eq_zero_iff]
     exact or_congr ⟨fun h ↦ by linarith, fun h ↦ by linarith⟩ (by simp [hx])
   have hS (x : M) (hxX : x ∈ X) :
       x ∈ S ↔ ∀ i, x ∈ (φ i).source → φ i x ∈ quadraticSublevelUnionCell ε := by
@@ -352,9 +308,11 @@ theorem exists_inter_sublevel_union_cells_deformation [T2Space M] [Finite ι]
     set w := (e i).symm ((φ i x).1, s • (φ i x).2)
     refine ⟨⟨w, ?_, (e i).apply_symm_apply _⟩, ?_⟩
     · rw [Metric.mem_closedBall, dist_zero_right]
-      exact (norm_sumComplEquivProd_symm_smul_snd_le (k i) (ψ i x) hs).trans hρx
+      exact (EuclideanSpace.norm_sumComplEquivProd_symm_smul_snd_le (ψ i x)
+        ((Real.norm_of_nonneg hs.1).trans_le hs.2)).trans hρx
     · rw [hφ_symm, hφ_apply]
-      simpa only [e, sumComplEquivProd_symm_smul_snd] using hXscale i x ⟨hxX, hx⟩ hρx s hs
+      simpa only [e, EuclideanSpace.sumComplEquivProd_symm_smul_snd] using
+        hXscale i x ⟨hxX, hx⟩ hρx s hs
   exact exists_deformation_of_charts (φ := φ) (by simpa only [hφ_source] using hψ) hCφ hX hC hS
 
 end MorseCharts

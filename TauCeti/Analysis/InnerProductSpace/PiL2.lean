@@ -247,6 +247,46 @@ theorem norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (x : EuclideanSpace 𝕜 �
   rw [norm_fst_sumComplEquivProd_sq, norm_snd_sumComplEquivProd_sq,
     Finset.sum_filter_add_sum_filter_not, EuclideanSpace.norm_sq_eq]
 
+/-- Scaling the second component of the splitting along `p` by `s` scales the coordinates not
+satisfying `p` by `s`. -/
+theorem sumComplEquivProd_symm_smul_snd (x : EuclideanSpace 𝕜 ι) (s : 𝕜) :
+    (sumComplEquivProd 𝕜 p).symm ((sumComplEquivProd 𝕜 p x).1, s • (sumComplEquivProd 𝕜 p x).2) =
+      WithLp.toLp 2 fun i ↦ if p i then x i else s * x i := by
+  ext i
+  by_cases h : p i <;> simp [sumComplEquivProd_symm_apply, h]
+
+/-- Scaling the second component of the splitting by a factor of norm at most `1` does not
+increase the norm. -/
+theorem norm_sumComplEquivProd_symm_smul_snd_le (x : EuclideanSpace 𝕜 ι) {s : 𝕜}
+    (hs : ‖s‖ ≤ 1) :
+    ‖(sumComplEquivProd 𝕜 p).symm
+        ((sumComplEquivProd 𝕜 p x).1, s • (sumComplEquivProd 𝕜 p x).2)‖ ≤ ‖x‖ := by
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
+  rw [← norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (p := p),
+    ← norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (p := p) x,
+    ContinuousLinearEquiv.apply_symm_apply, norm_smul, mul_pow]
+  have : ‖s‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg _) hs
+  nlinarith [sq_nonneg ‖(sumComplEquivProd 𝕜 p x).2‖]
+
+/-- The second component of the splitting along `p` vanishes exactly when the coordinates not
+satisfying `p` do. -/
+theorem snd_sumComplEquivProd_eq_zero_iff {x : EuclideanSpace 𝕜 ι} :
+    (sumComplEquivProd 𝕜 p x).2 = 0 ↔ ∀ i, ¬p i → x i = 0 := by
+  refine ⟨fun h i hi ↦ ?_, fun h ↦ ?_⟩
+  · simpa using congr($h ⟨i, hi⟩)
+  · ext i
+    simpa using h i i.2
+
+/-- The cell condition `‖u‖² ≤ ε`, `v = 0` on the components `(u, v)` of the splitting along `p`
+says that `‖x‖² ≤ ε` and that the coordinates not satisfying `p` vanish. -/
+theorem norm_fst_sumComplEquivProd_sq_le_and_snd_eq_zero_iff {x : EuclideanSpace 𝕜 ι} {ε : ℝ} :
+    (‖(sumComplEquivProd 𝕜 p x).1‖ ^ 2 ≤ ε ∧ (sumComplEquivProd 𝕜 p x).2 = 0) ↔
+      ‖x‖ ^ 2 ≤ ε ∧ ∀ i, ¬p i → x i = 0 := by
+  rw [← snd_sumComplEquivProd_eq_zero_iff, ← norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (p := p)]
+  refine and_congr_left fun h ↦ ?_
+  rw [h, norm_zero]
+  simp
+
 /-- The diagonal quadratic form with coefficient `-1` on the coordinates satisfying `p` and `1` on
 the others is `-‖u‖² + ‖v‖²` in the components `(u, v)` of the splitting along `p`. -/
 theorem sum_ite_neg_one_mul_sq_eq (x : EuclideanSpace ℝ ι) :
