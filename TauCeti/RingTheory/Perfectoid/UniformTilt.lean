@@ -88,20 +88,6 @@ section Bound
 variable [hp : Fact p.Prime] [TopologicalSpace B] [NonarchimedeanAddGroup B]
   [SeparatelyContinuousMul B]
 
-/-- The homogeneity bound: if `c * S ^ n` and `c * T ^ n` are power-bounded and `a + b ≤ n`, then
-so is `c * (S ^ a * T ^ b)`, its `n`-th power being `c ^ (n - a - b)` times a product of powers of
-the two given elements. -/
-private theorem mul_pow_mul_pow_mem {c S T : B} {n a b : ℕ} (hn : n ≠ 0) (hab : a + b ≤ n)
-    (hc : c ∈ powerBoundedSubring B) (hS : c * S ^ n ∈ powerBoundedSubring B)
-    (hT : c * T ^ n ∈ powerBoundedSubring B) :
-    c * (S ^ a * T ^ b) ∈ powerBoundedSubring B := by
-  obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le hab
-  refine mem_powerBoundedSubring.mpr <| IsPowerBounded.of_pow hn <| mem_powerBoundedSubring.mp ?_
-  have h : (c * (S ^ a * T ^ b)) ^ (a + b + r) =
-      c ^ r * ((c * S ^ (a + b + r)) ^ a * (c * T ^ (a + b + r)) ^ b) := by ring
-  rw [h]
-  exact mul_mem (pow_mem hc r) (mul_mem (pow_mem hS a) (pow_mem hT b))
-
 variable (p) in
 /-- For `c ∈ B°`, the additive subgroup `W(c, N)` of elements `z` with `c * z ^ p ^ N ∈ B°`. -/
 private def boundSubgroup (c : powerBoundedSubring B) (N : ℕ) : AddSubgroup B where
@@ -113,7 +99,7 @@ private def boundSubgroup (c : powerBoundedSubring B) (N : ℕ) : AddSubgroup B 
     rw [add_pow, Finset.mul_sum]
     refine (powerBoundedSubring B).sum_mem fun m hm ↦ ?_
     rw [← mul_assoc]
-    exact mul_mem (mul_pow_mul_pow_mem (pow_ne_zero N hp.out.ne_zero)
+    exact mul_mem (mul_pow_mul_pow_mem_powerBoundedSubring
       (by have := Finset.mem_range.mp hm; omega) c.2 hS hT) (natCast_mem _ _)
   neg_mem' {S} hS := by
     simp only [Set.mem_ofPred_eq] at hS ⊢
@@ -144,7 +130,7 @@ private theorem mul_mem_boundSubgroup {N : ℕ} {a z : B} (ha : a ∈ powerBound
   rw [mem_boundSubgroup, mul_pow, mul_left_comm]
   exact mul_mem (pow_mem ha _) hz
 
-/-- Raising to the power `p ^ n` carries `W(c, M + n)` onto `W(c, M)`. -/
+/-- `z ^ p ^ n` lies in `W(c, M)` exactly when `z` lies in `W(c, M + n)`. -/
 private theorem pow_mem_boundSubgroup_iff {M n : ℕ} {z : B} :
     z ^ p ^ n ∈ boundSubgroup p c M ↔ z ∈ boundSubgroup p c (M + n) := by
   rw [mem_boundSubgroup, mem_boundSubgroup, ← pow_mul, ← pow_add, add_comm n]
@@ -170,7 +156,7 @@ private theorem pow_mul_pow_mem_boundSubgroup {N j l : ℕ} {S T : B} (hjl : j +
     (hS : S ∈ boundSubgroup p c (N + 1)) (hT : T ∈ boundSubgroup p c (N + 1)) :
     S ^ j * T ^ l ∈ boundSubgroup p c N := by
   rw [mem_boundSubgroup, mul_pow, ← pow_mul, ← pow_mul]
-  exact mul_pow_mul_pow_mem (pow_ne_zero (N + 1) hp.out.ne_zero)
+  exact mul_pow_mul_pow_mem_powerBoundedSubring
     (by rw [← add_mul, hjl, pow_succ, mul_comm]) c.2 hS hT
 
 /-- A multiple `p ^ e * z` of `z ∈ W(c, N)` lies in `p ^ k • W(c, N)` for `k ≤ e`. -/
@@ -334,26 +320,6 @@ private theorem tendsto_pow_mul [IsUniform B] [hpn : Fact (IsTopologicallyNilpot
 
 end Huber
 
-section Tate
-
-variable [TopologicalSpace B] [IsTopologicalRing B] [IsTateRing B]
-
-/-- Finitely many elements of `B` are moved into `B°` by a common unit `c ∈ B°`, a power of a
-pseudouniformiser. -/
-private theorem exists_bound {s : Set B} (hs : s.Finite) : ∃ c : powerBoundedSubring B,
-    IsUnit (c : B) ∧ ∀ b ∈ s, (c : B) * b ∈ powerBoundedSubring B := by
-  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := B)
-  have hev : ∀ b ∈ s, ∀ᶠ k in atTop, ϖ ^ k * b ∈ powerBoundedSubring B := fun b _ ↦ by
-    have h := hϖ.isTopologicallyNilpotent.mul_const b
-    rw [zero_mul] at h
-    exact h.eventually_mem ((isOpen_powerBoundedSubring B).mem_nhds (zero_mem _))
-  obtain ⟨k, hk⟩ := ((Filter.eventually_all_finite hs).mpr hev).exists
-  exact ⟨⟨ϖ ^ k, pow_mem (mem_powerBoundedSubring.mpr
-    (IsPowerBounded.of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent)) k⟩,
-    hϖ.isUnit.pow k, hk⟩
-
-end Tate
-
 section Limit
 
 variable [hp : Fact p.Prime] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
@@ -477,7 +443,8 @@ variable [hp : Fact p.Prime] [UniformSpace B] [IsUniformAddGroup B] [IsTopologic
 /-- The limit addition `(x + y)⁽ⁱ⁾ = lim_m (x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾) ^ p ^ m`. -/
 private noncomputable def add' (x y : Perfection B p) : Perfection B p :=
   ⟨tiltLim p (x.1 + y.1), fun i ↦ by
-    obtain ⟨c, hc, h⟩ := exists_bound (s := {x.1 0, y.1 0}) (Set.toFinite _)
+    obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
+      (Set.toFinite {x.1 0, y.1 0})
     exact tiltLim_succ_pow hc ((isQuasiCompatible_val x (h _ (by simp))).add
       (isQuasiCompatible_val y (h _ (by simp)))) i⟩
 
@@ -485,7 +452,8 @@ private noncomputable def add' (x y : Perfection B p) : Perfection B p :=
 for `p = 2`. -/
 private noncomputable def neg' (x : Perfection B p) : Perfection B p :=
   ⟨tiltLim p (-x.1), fun i ↦ by
-    obtain ⟨c, hc, h⟩ := exists_bound (s := {x.1 0}) (Set.toFinite _)
+    obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
+      (Set.toFinite {x.1 0})
     exact tiltLim_succ_pow hc (isQuasiCompatible_val x (h _ (by simp))).neg i⟩
 
 private theorem val_add' (x y : Perfection B p) : (add' x y).1 = tiltLim p (x.1 + y.1) := rfl
@@ -500,7 +468,8 @@ private theorem add'_zero (x : Perfection B p) : add' x zero' = x :=
 
 private theorem add'_assoc (x y z : Perfection B p) :
     add' (add' x y) z = add' x (add' y z) := by
-  obtain ⟨c, hc, h⟩ := exists_bound (s := {x.1 0, y.1 0, z.1 0}) (Set.toFinite _)
+  obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
+    (Set.toFinite {x.1 0, y.1 0, z.1 0})
   have hx := isQuasiCompatible_val x (h _ (by simp))
   have hy := isQuasiCompatible_val y (h _ (by simp))
   have hz := isQuasiCompatible_val z (h _ (by simp))
@@ -516,7 +485,8 @@ private theorem add'_assoc (x y z : Perfection B p) :
   abel
 
 private theorem neg'_add' (x : Perfection B p) : add' (neg' x) x = zero' := by
-  obtain ⟨c, hc, h⟩ := exists_bound (s := {x.1 0}) (Set.toFinite _)
+  obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
+    (Set.toFinite {x.1 0})
   have hx := isQuasiCompatible_val x (h _ (by simp))
   refine Subtype.ext ?_
   rw [val_add', val_neg',
@@ -526,7 +496,8 @@ private theorem neg'_add' (x : Perfection B p) : add' (neg' x) x = zero' := by
   exact val_zero'.symm
 
 private theorem mul_add' (x y z : Perfection B p) : x * add' y z = add' (x * y) (x * z) := by
-  obtain ⟨c, hc, h⟩ := exists_bound (s := {y.1 0, z.1 0}) (Set.toFinite _)
+  obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
+    (Set.toFinite {y.1 0, z.1 0})
   have hyz := (isQuasiCompatible_val y (h _ (by simp))).add
     (isQuasiCompatible_val z (h _ (by simp)))
   refine Subtype.ext (funext fun i ↦ ?_)
@@ -610,7 +581,7 @@ theorem coeff_zero (n : ℕ) : coeff p B n 0 = 0 := (rfl)
 theorem coeff_add (x y : uniformTilt p B) (i : ℕ) :
     Tendsto (fun m ↦ (coeff p B (i + m) x + coeff p B (i + m) y) ^ p ^ m) atTop
       (𝓝 (coeff p B i (x + y))) := by
-  obtain ⟨c, hc, h⟩ := exists_bound
+  obtain ⟨c, hc, h⟩ := IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring
     (s := {(x : Perfection B p).1 0, (y : Perfection B p).1 0}) (Set.toFinite _)
   rw [coeff_add_eq]
   simp only [coeff_apply]
@@ -639,6 +610,7 @@ theorem coeff_add_sub_mem {x y : uniformTilt p B} (hx : coeff p B 0 x ∈ powerB
   linear_combination he
 
 /-- **In characteristic `p` the addition is coordinatewise.** -/
+@[simp]
 theorem coeff_add_of_charP [CharP B p] (x y : uniformTilt p B) (n : ℕ) :
     coeff p B n (x + y) = coeff p B n x + coeff p B n y := by
   refine tendsto_nhds_unique (coeff_add x y n) (tendsto_const_nhds.congr fun m ↦ ?_)

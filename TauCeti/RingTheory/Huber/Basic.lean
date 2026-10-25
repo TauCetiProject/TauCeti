@@ -897,6 +897,21 @@ theorem IsTateRing.exists_hasBasis_nhds_zero (A : Type*) [CommRing A] [Topologic
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   exact ⟨a, P, ha, ha.hasBasis_nhds_zero P⟩
 
+/-- In a Tate ring, finitely many elements are moved into `A°` by a common unit `c ∈ A°`, which
+may be taken to be a power of a pseudouniformiser. -/
+theorem IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring [IsTateRing A] {s : Set A}
+    (hs : s.Finite) : ∃ c : powerBoundedSubring A,
+      IsUnit (c : A) ∧ ∀ b ∈ s, (c : A) * b ∈ powerBoundedSubring A := by
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  have hev : ∀ b ∈ s, ∀ᶠ k in atTop, ϖ ^ k * b ∈ powerBoundedSubring A := fun b _ ↦ by
+    have h := hϖ.isTopologicallyNilpotent.mul_const b
+    rw [zero_mul] at h
+    exact h.eventually_mem ((isOpen_powerBoundedSubring A).mem_nhds (zero_mem _))
+  obtain ⟨k, hk⟩ := ((Filter.eventually_all_finite hs).mpr hev).exists
+  exact ⟨⟨ϖ ^ k, pow_mem (mem_powerBoundedSubring.mpr
+    (IsPowerBounded.of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent)) k⟩,
+    hϖ.isUnit.pow k, hk⟩
+
 namespace PairOfDefinition
 
 variable (A₀ : Subring A) (hA₀ : IsOpen (A₀ : Set A)) (hb : IsBounded (A₀ : Set A)) {ϖ : A}

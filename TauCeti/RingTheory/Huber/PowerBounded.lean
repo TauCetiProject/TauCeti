@@ -491,10 +491,10 @@ theorem isPowerBounded_of_isIntegral {x : A} (hx : IsIntegral (powerBoundedSubri
     · rw [h]; exact zero_mem _
     · exact Subring.subset_closure (Polynomial.coeff_mem_coeffs h)
 
-/-- An element with a power-bounded positive power is power-bounded: it is a root of the monic
-polynomial `X ^ n - x ^ n` over `A°`, so `isPowerBounded_of_isIntegral` applies. -/
+/-- An element with a power-bounded positive power is power-bounded. -/
 theorem IsPowerBounded.of_pow {x : A} {n : ℕ} (hn : n ≠ 0) (hx : IsPowerBounded (x ^ n)) :
     IsPowerBounded x :=
+  -- `x` is a root of the monic polynomial `X ^ n - x ^ n` over `A°`
   isPowerBounded_of_isIntegral <| IsIntegral.of_pow (Nat.pos_of_ne_zero hn) <|
     isIntegral_algebraMap (x := (⟨x ^ n, hx⟩ : powerBoundedSubring A))
 
@@ -502,6 +502,23 @@ theorem IsPowerBounded.of_pow {x : A} {n : ℕ} (hn : n ≠ 0) (hx : IsPowerBoun
 theorem isPowerBounded_pow_iff {x : A} {n : ℕ} (hn : n ≠ 0) :
     IsPowerBounded (x ^ n) ↔ IsPowerBounded x :=
   ⟨IsPowerBounded.of_pow hn, fun h ↦ h.pow n⟩
+
+/-- **Homogeneity of power bounds**: if `c ∈ A°` and `c * S ^ n`, `c * T ^ n` are power-bounded,
+then so is `c * (S ^ a * T ^ b)` whenever `a + b ≤ n`. -/
+theorem mul_pow_mul_pow_mem_powerBoundedSubring {c S T : A} {n a b : ℕ} (hab : a + b ≤ n)
+    (hc : c ∈ powerBoundedSubring A) (hS : c * S ^ n ∈ powerBoundedSubring A)
+    (hT : c * T ^ n ∈ powerBoundedSubring A) :
+    c * (S ^ a * T ^ b) ∈ powerBoundedSubring A := by
+  obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le hab
+  rcases eq_or_ne (a + b + r) 0 with hn | hn
+  · obtain ⟨rfl, rfl⟩ : a = 0 ∧ b = 0 := by omega
+    simpa using hc
+  -- the `(a + b + r)`-th power is `c ^ r` times a product of powers of the two given elements
+  refine mem_powerBoundedSubring.mpr <| IsPowerBounded.of_pow hn <| mem_powerBoundedSubring.mp ?_
+  have h : (c * (S ^ a * T ^ b)) ^ (a + b + r) =
+      c ^ r * ((c * S ^ (a + b + r)) ^ a * (c * T ^ (a + b + r)) ^ b) := by ring
+  rw [h]
+  exact mul_mem (pow_mem hc r) (mul_mem (pow_mem hS a) (pow_mem hT b))
 
 /-- **Wedhorn Proposition 5.30(4), as an instance**: `A°` is integrally closed in `A`. This is the
 form Mathlib's generic integral-closure API consumes; `isPowerBounded_of_isIntegral` is the
