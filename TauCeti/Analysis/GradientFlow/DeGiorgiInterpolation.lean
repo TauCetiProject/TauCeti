@@ -21,15 +21,15 @@ Along this interpolant the descending slope `|∂φ|` is controlled, and summing
 energy–dissipation inequality `TauCeti.apply_add_add_lintegral_descendingSlope_le` over the steps
 gives the discrete energy–dissipation inequality
 
-`φ (U N) + ∑_{n < N} d(U n, U (n + 1))² / (2τ) + ∫₀^{Nτ} |∂φ|²(Ũ t) / 2 dt ≤ φ (U 0)`,
+`φ (U N) + ∑_{n < N} d(U n, U (n + 1))² / (2τ) + ∫₀^{Nτ} |∂φ|²(W t) / 2 dt ≤ φ (U 0)`,
 
-with `Ũ` the variational interpolant. The sum is half the discrete `2`-action of the scheme and the
-integral is the discrete counterpart of `(1/2) ∫ |∂φ|²(u t) dt`, so this is the discrete form of
-the energy–dissipation inequality defining curves of maximal slope. Passing to the limit as
-`τ → 0` in it is how Ambrosio–Gigli–Savaré show that generalized minimizing movements are curves of
-maximal slope. For that limit the variational interpolant has to stay close to the piecewise
-constant one, which is the distance estimate `d(U n, Ũ t) ≤ d(U n, U (n + 1))` on
-`(n τ, (n + 1) τ]`.
+with `W = deGiorgiInterpolant τ V` the variational interpolant. The sum is half the discrete
+`2`-action of the scheme and the integral is the discrete counterpart of
+`(1/2) ∫ |∂φ|²(u t) dt`, so this is the discrete form of the energy–dissipation inequality
+defining curves of maximal slope. Passing to the limit as `τ → 0` in it is how
+Ambrosio–Gigli–Savaré show that generalized minimizing movements are curves of maximal slope.
+For that limit the variational interpolant has to stay close to the piecewise constant one, which
+is the distance estimate `d(U n, W t) ≤ d(U n, U (n + 1))` on `(n τ, (n + 1) τ]`.
 
 ## Main definitions
 
@@ -169,10 +169,10 @@ variable {X : Type*} [EMetricSpace X] {φ : X → EReal} {τ : ℝ≥0} {U : ℕ
 
 /-- **Discrete energy–dissipation inequality** (compare Ambrosio–Gigli–Savaré, Lemma 3.2.2).
 Let `U` be a minimizing movement sequence for `φ` with time step `τ > 0`, and let
-`V n r ∈ J_r (U n)` be resolvent steps for every `r ∈ (0, τ]`. Then, with `Ũ` the variational
-interpolant of `V`, for every `N`
+`V n r ∈ J_r (U n)` be resolvent steps for every `r ∈ (0, τ]`. Then, with `W` the variational
+interpolant `deGiorgiInterpolant τ V`, for every `N`
 
-`φ (U N) + ∑_{n < N} d(U n, U (n + 1))² / (2τ) + ∫₀^{Nτ} |∂φ|²(Ũ t) / 2 dt ≤ φ (U 0)`,
+`φ (U N) + ∑_{n < N} d(U n, U (n + 1))² / (2τ) + ∫₀^{Nτ} |∂φ|²(W t) / 2 dt ≤ φ (U 0)`,
 
 where `|∂φ|` is the descending slope. -/
 theorem apply_add_sum_add_lintegral_descendingSlope_le_of_forall_mem_moreauYosidaResolvent
