@@ -62,6 +62,7 @@ theorem effectiveActionFunctor_mapAut_stabilizerMulEquivAut (x : X) (g : stabili
   dsimp only [effectiveActionFunctor]
   ext : 2
   apply Functor.Elements.hom_ext
+  rw [Aut.autMulEquivOfIso_apply_asIso, Functor.mapAut_apply_asIso]
   simp
 
 /-- Every arrow of the faithful action groupoid lifts, with its source and target fixed. -/
