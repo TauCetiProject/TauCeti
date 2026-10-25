@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Height.Northcott
+public import TauCeti.NumberTheory.Height.AbsoluteNorthcott
 import TauCeti.NumberTheory.Height.FiniteOrder
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import Mathlib.RingTheory.RootsOfUnity.Minpoly
