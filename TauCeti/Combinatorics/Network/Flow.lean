@@ -36,6 +36,7 @@ flows is assembled.
 * `TauCeti.BoundedFlow.swap`: the same assignment as a bounded `t`–`s` assignment.
 * `TauCeti.BoundedFlow.update`: the residual update by a residual `s`–`t` assignment.
 * `TauCeti.Flow cap s t`: ordinary `s`–`t` flows for the capacities `cap`.
+* `TauCeti.Flow.zero`: the zero flow for nonnegative capacities.
 * `TauCeti.BoundedFlow.swapFlow`: terminal exchange, turning a capacity-feasible assignment of
   nonpositive value into an ordinary flow in the opposite direction.
 * `TauCeti.Flow.augment`: augmentation of a flow by a flow of its residual network.
@@ -262,6 +263,21 @@ structure Flow (cap : Assignment Q K) (s t : V) extends BoundedFlow 0 cap s t wh
 namespace Flow
 
 variable {cap : Assignment Q K} {s t : V}
+
+/-- The zero flow for nonnegative capacities. -/
+def zero (hcap : 0 ≤ cap) : Flow cap s t where
+  toFun := 0
+  mem_Icc := ⟨le_rfl, hcap⟩
+  conserve v _ _ := excessAt_zero v
+  excessAt_sink_nonneg := (excessAt_zero t).ge
+
+@[simp]
+theorem zero_toFun (hcap : 0 ≤ cap) : (zero hcap : Flow cap s t).toFun = 0 :=
+  (rfl)
+
+@[simp]
+theorem val_zero (hcap : 0 ≤ cap) : (zero hcap : Flow cap s t).val = 0 := by
+  rw [BoundedFlow.val_def, zero_toFun, excessAt_zero]
 
 theorem nonneg (f : Flow cap s t) {x y : V} (e : Q x y) : 0 ≤ f.toFun e :=
   f.lower_le e

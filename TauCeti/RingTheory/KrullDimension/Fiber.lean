@@ -36,6 +36,10 @@ set-theoretic fibre of `Spec S → Spec R` over `p`. Mathlib's
 * `Ideal.height_eq_height_under_of_quasiFinite`: along a quasi-finite algebra satisfying going
   down, for instance an étale algebra, the height of a prime equals the height of the prime
   below it.
+* `Ideal.ringKrullDim_localization_atPrime_eq_height_under`: under the same hypotheses, the
+  localization of `S` at a prime `P` has Krull dimension the height of the prime below `P`.
+* `Ideal.ringKrullDim_localization_atPrime_quotient_map_eq_zero`: for a quasi-finite algebra and
+  a prime `P` over `p`, the fibre `S_P ⧸ p S_P` of the local ring `S_P` has Krull dimension zero.
 * `TauCeti.ringKrullDim_le_ringKrullDim_add_of_ringKrullDim_fiber_le`: the Krull dimension of `S`
   is at most that of `R` plus a bound on the Krull dimensions of all fibres.
 
@@ -118,6 +122,29 @@ theorem height_eq_height_under_of_quasiFinite [IsNoetherianRing R] [IsNoetherian
   have h0 : (P.map (Quotient.mk ((P.under R).map (algebraMap R S)))).height = 0 :=
     nonpos_iff_eq_zero.mp (by exact_mod_cast h)
   rw [h0, add_zero]
+
+variable (R) in
+/-- Let `S` be a Noetherian `R`-algebra which is quasi-finite and satisfies going down, for
+instance a finite torsion-free algebra over a Noetherian integrally closed domain. Then the
+localization of `S` at a prime `P` has Krull dimension the height of the prime of `R` below `P`. -/
+theorem ringKrullDim_localization_atPrime_eq_height_under [IsNoetherianRing R]
+    [IsNoetherianRing S] [Algebra.HasGoingDown R S] [Algebra.QuasiFinite R S] (P : Ideal S)
+    [P.IsPrime] : ringKrullDim (Localization.AtPrime P) = (P.under R).height := by
+  rw [IsLocalization.AtPrime.ringKrullDim_eq_height P,
+    height_eq_height_under_of_quasiFinite (R := R)]
+
+/-- Let `S` be a quasi-finite `R`-algebra and `P` a prime of `S` lying over `p`. The fibre
+`S_P ⧸ p S_P` of the local ring `S_P` over `p` has Krull dimension zero. -/
+theorem ringKrullDim_localization_atPrime_quotient_map_eq_zero [Algebra.QuasiFinite R S]
+    (p : Ideal R) (P : Ideal S) [P.IsPrime] [P.LiesOver p] :
+    ringKrullDim (Localization.AtPrime P ⧸ p.map (algebraMap R (Localization.AtPrime P))) = 0 := by
+  have hle : p.map (algebraMap R (Localization.AtPrime P)) ≤
+      IsLocalRing.maximalIdeal (Localization.AtPrime P) := by
+    rw [map_le_iff_le_comap, ← under_def, ← under_under (B := S),
+      Localization.AtPrime.under_maximalIdeal, ← over_def P p]
+  have : Nontrivial (Localization.AtPrime P ⧸ p.map (algebraMap R (Localization.AtPrime P))) :=
+    Quotient.nontrivial_iff.mpr (ne_top_of_le_ne_top IsPrime.ne_top' hle)
+  exact ringKrullDimZero_iff_ringKrullDim_eq_zero.mp inferInstance
 
 end Ideal
 
