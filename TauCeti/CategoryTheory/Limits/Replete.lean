@@ -62,6 +62,7 @@ tower `⋯ ⟶ F (n + 1) ⟶ F n ⟶ ⋯ ⟶ F 0` whose transition maps are epim
 `lim F ⟶ F 0` of every limit cone is an epimorphism. Every projection `lim F ⟶ F n` is then an
 epimorphism (`TauCeti.IsReplete.epi_π_app`). -/
 class IsReplete : Prop where
+  /-- The projection `lim F ⟶ F 0` of a sequential limit of epimorphisms is an epimorphism. -/
   epi_π_app_zero {F : ℕᵒᵖ ⥤ C} (hF : ∀ n, Epi (F.map (homOfLE (Nat.le_succ n)).op))
     {c : Cone F} (hc : IsLimit c) : Epi (c.π.app ⟨0⟩)
 
@@ -202,12 +203,6 @@ private noncomputable abbrev cone : Cone (pullbackTower φ cG) where
     (fun n ↦ lift φ cG n (hcG.map cF φ) (cF.π.app ⟨n⟩) (IsLimit.map_π _ _ _ _)) fun n ↦
       hom_ext φ cG (by simp) (by simp)
 
-private lemma cone_π_app_fst (n : ℕ) : (cone φ hcG cF).π.app ⟨n⟩ ≫ fst φ cG n = hcG.map cF φ :=
-  lift_fst _ _ _ _ _ _
-
-private lemma cone_π_app_snd (n : ℕ) : (cone φ hcG cF).π.app ⟨n⟩ ≫ snd φ cG n = cF.π.app ⟨n⟩ :=
-  lift_snd _ _ _ _ _ _
-
 /-- The cone `pullbackTower.cone` is a limit cone: `lim F` is the limit of the tower
 `lim G ×_{G n} F n`. -/
 private noncomputable def isLimitCone (hcF : IsLimit cF) :
@@ -224,7 +219,8 @@ private noncomputable def isLimitCone (hcF : IsLimit cF) :
       IsLimit.fac_assoc]
     rw [← condition, ← Category.assoc, ← Category.assoc, π_app_fst φ cG s m, π_app_fst φ cG s n]
   uniq s m hm := hcF.hom_ext fun ⟨n⟩ ↦ by
-    rw [IsLimit.fac, NatTrans.ofOpSequence_app, ← hm, Category.assoc, cone_π_app_snd]
+    rw [IsLimit.fac, NatTrans.ofOpSequence_app, ← hm, Category.assoc, NatTrans.ofOpSequence_app,
+      lift_snd]
 
 end pullbackTower
 
@@ -246,8 +242,8 @@ theorem epi_isLimitMap {cF : Cone F} (hcF : IsLimit cF) (h₀ : Epi (φ.app ⟨0
     MorphismProperty.of_isPullback (P := MorphismProperty.epimorphisms C)
       (pullbackTower.isPullback_fst_zero φ cG) h₀
   have hπ := epi_π_app_zero hW (pullbackTower.isLimitCone φ hcG cF hcF)
-  rw [← pullbackTower.cone_π_app_fst φ hcG cF 0]
-  exact epi_comp _ _
+  rw [← pullbackTower.lift_fst φ cG 0 (hcG.map cF φ) (cF.π.app ⟨0⟩) (IsLimit.map_π _ _ _ _)]
+  exact epi_comp' hπ hfst
 
 end Map
 
