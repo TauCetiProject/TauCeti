@@ -156,13 +156,14 @@ theorem contractTensorPair_stdSymplecticBilinForm_comp_symplecticCupCapAt {i j :
     Matrix.sum_sum_J_mul_J, Fintype.card_fin]
 
 /-- **An arc and the contraction of its two slots have the same kernel**, for every `n` and over
-every commutative ring. One inclusion is the factorization
-`TauCeti.symplecticCupCapAt_eq_comp_contractTensorPair`. For the other, contracting the same two
-slots against the coordinate form `v ⊗ w ↦ v (inl 0) * w (inr 0)` undoes the insertion of the
-bivector of `-J`, whose coefficient there is `1`; for `n = 0` the tensor power is zero. -/
+every commutative ring; no invertibility of the loop value `-2n` is needed. -/
 theorem ker_symplecticCupCapAt {i j : Fin d} (hij : i ≠ j) :
     LinearMap.ker (symplecticCupCapAt k n d i j) =
       LinearMap.ker ((stdSymplecticBilinForm k n).contractTensorPair i j hij) := by
+  -- `⊆`: contracting the same two slots against the coordinate form
+  -- `v ⊗ w ↦ v (inl 0) * w (inr 0)` undoes the insertion of the bivector of `-J`, whose
+  -- coefficient there is `1`; for `n = 0` the tensor power is zero.
+  -- `⊇`: the factorization `TauCeti.symplecticCupCapAt_eq_comp_contractTensorPair`.
   refine le_antisymm (fun z hz => ?_) ?_
   · rw [LinearMap.mem_ker] at hz ⊢
     rcases Nat.eq_zero_or_pos n with rfl | hn
