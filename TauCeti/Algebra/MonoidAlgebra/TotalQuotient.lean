@@ -92,7 +92,7 @@ noncomputable def AddMonoidAlgebra.totalQuotientAlgEquiv
 /-- The canonical total-quotient identification sends a fraction to the same fraction
 in the coefficient extension. -/
 @[simp]
-theorem AddMonoidAlgebra.totalQuotientAlgEquiv_mk'
+theorem addMonoidAlgebra_totalQuotientAlgEquiv_mk'
     (R K H Q : Type*) [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
     [AddCommMonoid H] [Finite H] [CommRing Q] [Algebra (AddMonoidAlgebra R H) Q]
     [IsFractionRing (AddMonoidAlgebra R H) Q]
@@ -122,7 +122,7 @@ noncomputable def AddMonoidAlgebra.algEquivPiField
 
 /-- Evaluation of the field decomposition is the quotient map at the chosen maximal ideal. -/
 @[simp]
-theorem AddMonoidAlgebra.algEquivPiField_apply
+theorem addMonoidAlgebra_algEquivPiField_apply
     (K H : Type*) [Field K] [AddCommGroup H] [Finite H] [NeZero (Nat.card H : K)]
     (x : AddMonoidAlgebra K H) (I : MaximalSpectrum (AddMonoidAlgebra K H)) :
     AddMonoidAlgebra.algEquivPiField K H x I = Ideal.Quotient.mk I.asIdeal x :=
