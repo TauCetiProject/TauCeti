@@ -145,6 +145,7 @@ theorem restrictScalarsCohomologyEquiv_cohomologyAction (c : hA.Cohomology)
 
 /-- The identification `H(f^* M) ≃ H(M)` preserves degrees: a class of the restricted module has
 degree `p` exactly when its image does. -/
+@[simp]
 theorem restrictScalarsCohomologyEquiv_mem_cohomologyGrading_iff {p : ℤ}
     {x : (hM.restrictScalars f).Cohomology} :
     hM.restrictScalarsCohomologyEquiv f x ∈ hM.cohomologyGrading p ↔
@@ -160,6 +161,7 @@ theorem restrictScalarsCohomologyEquiv_mem_cohomologyGrading_iff {p : ℤ}
     exact ⟨_, hz, (restrictScalarsCohomologyEquiv_mk f hM z).symm⟩
 
 /-- The identification `H(f^* M) ≃ H(M)` carries `H^p(f^* M)` onto `H^p(M)`. -/
+@[simp]
 theorem map_restrictScalarsCohomologyEquiv_cohomologyGrading (p : ℤ) :
     ((hM.restrictScalars f).cohomologyGrading p).map
         (hM.restrictScalarsCohomologyEquiv f).toLinearMap =
