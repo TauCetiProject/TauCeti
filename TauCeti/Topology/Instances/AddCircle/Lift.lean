@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Add
 public import Mathlib.Topology.Instances.AddCircle.Real
 
-import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
@@ -20,18 +18,13 @@ of such maps used to work with diffeomorphisms of the circle through their lifts
 
 A continuous lift makes `φ` continuous, and a continuous strictly monotone lift makes `φ` a
 homeomorphism, `AddCircle.homeomorphOfLift`: such a lift maps each fundamental interval
-`(t, t + T]` onto the fundamental interval `(F t, F t + T]`. The derivative of a differentiable
-lift is `T`-periodic, so a lift with continuous positive derivative, the lift of an
-orientation-preserving `C¹` diffeomorphism, has derivative bounded between two positive
-constants.
+`(t, t + T]` onto the fundamental interval `(F t, F t + T]`. Derivatives of lifts are treated in
+`TauCeti.Analysis.Calculus.Deriv.AddCircle`.
 
 ## Main declarations
 
 * `AddCircle.bijective_of_lift`: a circle map with a continuous strictly monotone lift is
   bijective, and `AddCircle.homeomorphOfLift` is the resulting homeomorphism.
-* `AddCircle.periodic_deriv_of_lift`: the derivative of a lift is `T`-periodic.
-* `AddCircle.exists_pos_le_deriv_le_of_lift`: a lift with continuous positive derivative has
-  derivative in some interval `[c, M]` with `0 < c`.
 -/
 
 public section
@@ -60,8 +53,8 @@ theorem image_Ioc_subset_of_lift (hF : StrictMono F) (hper : ∀ x, F (x + T) = 
 
 /-- A circle map with a continuous lift is continuous. -/
 theorem continuous_of_lift (hF : Continuous F) (hφ : ∀ x : ℝ, φ x = F x) : Continuous φ := by
-  rw [(QuotientAddGroup.isQuotientMap_mk _).continuous_iff,
-    show φ ∘ (↑) = ((↑) : ℝ → AddCircle T) ∘ F from funext hφ]
+  have hcomp : φ ∘ (↑) = ((↑) : ℝ → AddCircle T) ∘ F := funext hφ
+  rw [(QuotientAddGroup.isQuotientMap_mk _).continuous_iff, hcomp]
   exact continuous_quotient_mk'.comp hF
 
 variable [hT : Fact (0 < T)]
@@ -119,25 +112,5 @@ theorem apply_homeomorphOfLift_symm_apply (hF : StrictMono F) (hFc : Continuous 
     (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) (x : AddCircle T) :
     φ ((homeomorphOfLift φ hF hFc hper hφ).symm x) = x :=
   (homeomorphOfLift φ hF hFc hper hφ).apply_symm_apply x
-
-omit hT in
-/-- The derivative of a lift `F` with `F (x + T) = F x + T` is `T`-periodic. -/
-theorem periodic_deriv_of_lift (hF : ∀ x, HasDerivAt F (F' x) x)
-    (hper : ∀ x, F (x + T) = F x + T) : Function.Periodic F' T := fun x ↦ by
-  have h₁ : HasDerivAt (fun y ↦ F (y + T)) (F' (x + T)) x := (hF (x + T)).comp_add_const x T
-  have h₂ : HasDerivAt (fun y ↦ F (y + T)) (F' x) x := by
-    simpa only [hper] using (hF x).add_const T
-  exact h₁.unique h₂
-
-/-- A lift with continuous positive derivative has derivative bounded above and below by
-positive constants: a `C¹` lift of an orientation-preserving diffeomorphism of the circle has
-derivative in some `[c, M]` with `0 < c`. -/
-theorem exists_pos_le_deriv_le_of_lift (hF : ∀ x, HasDerivAt F (F' x) x)
-    (hper : ∀ x, F (x + T) = F x + T) (hF' : Continuous F') (hpos : ∀ x, 0 < F' x) :
-    ∃ c M : ℝ, 0 < c ∧ (∀ x, c ≤ F' x) ∧ ∀ x, F' x ≤ M := by
-  have hK := (periodic_deriv_of_lift hF hper).compact_of_continuous hT.out.ne' hF'
-  obtain ⟨_, ⟨x₀, rfl⟩, hmin⟩ := hK.exists_isLeast (Set.range_nonempty F')
-  obtain ⟨M, hM⟩ := hK.isBounded.bddAbove
-  exact ⟨F' x₀, M, hpos x₀, fun x ↦ hmin ⟨x, rfl⟩, fun x ↦ hM ⟨x, rfl⟩⟩
 
 end AddCircle

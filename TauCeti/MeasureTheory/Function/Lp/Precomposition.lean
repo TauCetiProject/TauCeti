@@ -126,6 +126,7 @@ theorem compOfMapLeSmul_comp {g : β → γ} {D : ℝ≥0∞} (hf : Measurable f
     (coeFn_compOfMapLeSmul hg hD hmapg h)
 
 /-- Precomposition with the identity is the identity. -/
+@[simp]
 theorem compOfMapLeSmul_id (hC : C ≠ ∞) (hmap : μ.map id ≤ C • μ) :
     (compOfMapLeSmul 𝕜 measurable_id hC hmap : Lp E p μ →L[𝕜] Lp E p μ) =
       ContinuousLinearMap.id 𝕜 _ := by

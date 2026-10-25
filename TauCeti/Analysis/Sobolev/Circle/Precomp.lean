@@ -123,9 +123,9 @@ theorem norm_precomp_le (hφ : Measurable φ) (hC : C ≠ ∞)
     (a : CircleSobolev 0 ℂ) :
     ‖precomp T hφ hC hmap a‖ ≤ √C.toReal * ‖a‖ := by
   have h := Lp.norm_compOfMapLeSmul_le (𝕜 := ℂ) hφ hC hmap (toLpₗᵢ T a)
+  have hexp : (1 / (2 : ℝ≥0∞)).toReal = 1 / 2 := by norm_num
   rw [LinearIsometryEquiv.norm_map, ← toLpₗᵢ_precomp_apply, LinearIsometryEquiv.norm_map,
-    ← ENNReal.toReal_rpow, show (1 / (2 : ℝ≥0∞)).toReal = 1 / 2 by norm_num,
-    ← Real.sqrt_eq_rpow] at h
+    ← ENNReal.toReal_rpow, hexp, ← Real.sqrt_eq_rpow] at h
   exact h
 
 /-- **Precomposition of continuous representatives.** For `s > 1/2`, `a ∈ H^s` and a continuous
