@@ -113,4 +113,12 @@ theorem apply_homeomorphOfLift_symm_apply (hF : StrictMono F) (hFc : Continuous 
     φ ((homeomorphOfLift φ hF hFc hper hφ).symm x) = x :=
   (homeomorphOfLift φ hF hFc hper hφ).apply_symm_apply x
 
+/-- The composition form of `apply_homeomorphOfLift_symm_apply`, usable by `simp`: the applied
+form cannot be a simp lemma, because its left-hand side has the variable `φ` as head symbol. -/
+@[simp]
+theorem comp_homeomorphOfLift_symm (hF : StrictMono F) (hFc : Continuous F)
+    (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) :
+    φ ∘ (homeomorphOfLift φ hF hFc hper hφ).symm = id :=
+  (homeomorphOfLift φ hF hFc hper hφ).self_comp_symm
+
 end AddCircle
