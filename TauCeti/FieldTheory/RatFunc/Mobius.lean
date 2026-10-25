@@ -550,6 +550,26 @@ private theorem det_branchPointMatrix_ne_zero (ρ : Perm (Fin 3)) :
   rw [← Int.cast_mul, ← Int.cast_mul, ← Int.cast_sub]
   rcases h ρ with h | h <;> simp [h]
 
+/-- The coefficient matrix of `t ↦ 1 - t`. -/
+private theorem branchPointMatrix_swap_zero_one :
+    branchPointMatrix (swap 0 1) = !![-1, 1; 0, 1] := by decide
+
+/-- The coefficient matrix of `t ↦ t / (t - 1)`. -/
+private theorem branchPointMatrix_swap_one_two :
+    branchPointMatrix (swap 1 2) = !![1, 0; 1, -1] := by decide
+
+/-- The coefficient matrix of `t ↦ 1 / t`. -/
+private theorem branchPointMatrix_swap_zero_two :
+    branchPointMatrix (swap 0 2) = !![0, -1; -1, 0] := by decide
+
+/-- The coefficient matrix of `t ↦ (t - 1) / t`. -/
+private theorem branchPointMatrix_finRotate :
+    branchPointMatrix (finRotate 3) = !![-1, 1; -1, 0] := by decide
+
+/-- The coefficient matrix of `t ↦ 1 / (1 - t)`. -/
+private theorem branchPointMatrix_finRotate_inv :
+    branchPointMatrix (finRotate 3)⁻¹ = !![0, -1; 1, -1] := by decide
+
 /-- The substitution attached to `ρ`, before it is bundled as a homomorphism. -/
 private noncomputable def branchPointAutFun (ρ : Perm (Fin 3)) : RatFunc K ≃ₐ[K] RatFunc K :=
   mobiusAutOf (det_branchPointMatrix_ne_zero ρ)
@@ -587,7 +607,7 @@ private theorem branchPointAut_X (ρ : Perm (Fin 3)) :
 /-- The substitution exchanging `0` and `1` is `t ↦ 1 - t`. -/
 @[simp]
 theorem branchPointAut_swap_zero_one_X : branchPointAut K (swap 0 1) X = 1 - X := by
-  rw [branchPointAut_X, show branchPointMatrix (swap 0 1) = !![-1, 1; 0, 1] by decide]
+  rw [branchPointAut_X, branchPointMatrix_swap_zero_one]
   simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_fin_one, Int.cast_neg, Int.cast_one, Int.cast_zero, mobiusOf_def, map_neg,
     map_one, map_zero, zero_mul, zero_add, div_one]
@@ -596,20 +616,20 @@ theorem branchPointAut_swap_zero_one_X : branchPointAut K (swap 0 1) X = 1 - X :
 /-- The substitution exchanging `1` and `∞` is `t ↦ t / (t - 1)`. -/
 @[simp]
 theorem branchPointAut_swap_one_two_X : branchPointAut K (swap 1 2) X = X / (X - 1) := by
-  rw [branchPointAut_X, show branchPointMatrix (swap 1 2) = !![1, 0; 1, -1] by decide]
+  rw [branchPointAut_X, branchPointMatrix_swap_one_two]
   simp [mobiusOf_def, sub_eq_add_neg]
 
 /-- The substitution exchanging `0` and `∞` is `t ↦ 1 / t`. -/
 @[simp]
 theorem branchPointAut_swap_zero_two_X : branchPointAut K (swap 0 2) X = X⁻¹ := by
-  rw [branchPointAut_X, show branchPointMatrix (swap 0 2) = !![0, -1; -1, 0] by decide]
+  rw [branchPointAut_X, branchPointMatrix_swap_zero_two]
   simp [mobiusOf_def]
 
 /-- The substitution reordering the branch points along `0 → 1 → ∞ → 0` is
 `t ↦ (t - 1) / t`. -/
 @[simp]
 theorem branchPointAut_finRotate_X : branchPointAut K (finRotate 3) X = (X - 1) / X := by
-  rw [branchPointAut_X, show branchPointMatrix (finRotate 3) = !![-1, 1; -1, 0] by decide]
+  rw [branchPointAut_X, branchPointMatrix_finRotate]
   simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_fin_one, Int.cast_neg, Int.cast_one, Int.cast_zero, mobiusOf_def, map_neg,
     map_one, map_zero, add_zero]
@@ -620,8 +640,7 @@ theorem branchPointAut_finRotate_X : branchPointAut K (finRotate 3) X = (X - 1) 
 automorphism, the simp-normal form of `branchPointAut K (finRotate 3)⁻¹`. -/
 @[simp]
 theorem branchPointAut_finRotate_symm_X : (branchPointAut K (finRotate 3)).symm X = (1 - X)⁻¹ := by
-  rw [← AlgEquiv.aut_inv, ← map_inv, branchPointAut_X,
-    show branchPointMatrix (finRotate 3)⁻¹ = !![0, -1; 1, -1] by decide]
+  rw [← AlgEquiv.aut_inv, ← map_inv, branchPointAut_X, branchPointMatrix_finRotate_inv]
   simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_fin_one, Int.cast_neg, Int.cast_one, Int.cast_zero, mobiusOf_def, map_neg,
     map_one, map_zero, zero_mul, zero_add, one_mul]
