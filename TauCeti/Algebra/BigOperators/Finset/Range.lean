@@ -20,7 +20,9 @@ import Mathlib.Tactic.Ring
 Generic identities for sums indexed by `Finset.range` and `Finset.Ioo`. These are used by
 coderivation/Taylor expansions, which reindex a cut-and-collapse double sum over a triangle to a
 square and enlarge a vanishing-off-the-block range, and by divided-power exponential calculations,
-which reindex a sum over antidiagonals to a rectangle.
+which reindex a sum over antidiagonals to a rectangle. Reindexing a sum over a finite subset of a
+linear order by the rank of each element turns the recurrences of Catalan-type enumerations, such
+as those of noncrossing partitions, into sums over `Finset.range`.
 
 ## Main results
 
@@ -35,6 +37,8 @@ which reindex a sum over antidiagonals to a rectangle.
 * `sum_range_eq_of_eq_zero_off_pair` and `sum_range_eq_of_eq_zero_off_triple`: convenient
   specializations to supports of size two and three.
 * `sum_range_add_add`: splitting a `range n` sum into a prefix, a block, and a suffix.
+* `sum_sum_range_split_blocks`: splitting a double sum over the blocks of a word at one position
+  into the blocks containing it, those before it, and those after it.
 * `sum_range_min_add_two`: the two-step recurrence satisfied by the sums
   `∑_{i ≤ min j r} c^i a (j + r − 2i)`.
 * `sum_range_min_zero`: the base case `j = 0` of that recurrence, which its `j + 1` cannot state.
@@ -45,6 +49,11 @@ which reindex a sum over antidiagonals to a rectangle.
   `V m = ∑ k ∈ range (m + 1), c k • a ^ (m - k)` of scalars with the powers of `a`.
 * `Finset.sum_range_succ_eq_sum_range_add`: regroup a sum whose successive terms split into
   adjacent contributions, retaining the final boundary term.
+* `Finset.prod_range_two_mul_add_one`, `Finset.sum_range_two_mul_add_one`: split a product or sum
+  over `range (2 * k + 1)` into its even and odd indices.
+* `Finset.prod_card_filter_lt_card_filter_gt`, `Finset.sum_card_filter_lt_card_filter_gt`: reindex
+  a product or sum over a finite subset `s` of a linear order by the number of elements of `s`
+  before each element.
 * `Finset.prod_range_mul_eq_prod_prod`, `Finset.sum_range_mul_eq_sum_sum`: split a product or
   sum over `range (n * q)` into `q` consecutive blocks of `n` terms.
 -/
@@ -63,6 +72,51 @@ theorem sum_range_succ_eq_sum_range_add {M : Type*} [AddCommMonoid M]
     sum_congr rfl (fun k hk ↦ hsucc k (mem_range.mp hk)), sum_add_distrib, sum_add_distrib]
   have hshift := (sum_range_succ' g n).symm.trans (sum_range_succ g n)
   simpa only [add_assoc, add_left_comm, add_comm] using congrArg (· + ∑ k ∈ range n, h k) hshift
+
+/-- A product over `range (2 * k + 1)` splits into its factors at even and at odd indices. -/
+@[to_additive sum_range_two_mul_add_one /-- A sum over `range (2 * k + 1)` splits into its terms at
+even and at odd indices. -/]
+theorem prod_range_two_mul_add_one {M : Type*} [CommMonoid M] (g : ℕ → M) (k : ℕ) :
+    ∏ i ∈ range (2 * k + 1), g i =
+      (∏ j ∈ range (k + 1), g (2 * j)) * ∏ j ∈ range k, g (2 * j + 1) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [show 2 * (k + 1) + 1 = 2 * k + 1 + 1 + 1 by ring, prod_range_succ, prod_range_succ, ih,
+      prod_range_succ (fun j => g (2 * j)) (k + 1), prod_range_succ (fun j => g (2 * j + 1)) k,
+      show 2 * k + 1 + 1 = 2 * (k + 1) by ring]
+    ac_rfl
+
+/-- Reindexing a product over a finite subset `s` of a linear order by the number `i` of elements
+of `s` before each element; there are then `#s - 1 - i` elements of `s` after it. -/
+@[to_additive /-- Reindexing a sum over a finite subset `s` of a linear order by the number `i` of
+elements of `s` before each element; there are then `#s - 1 - i` elements of `s` after it. -/]
+theorem prod_card_filter_lt_card_filter_gt {α M : Type*} [LinearOrder α] [CommMonoid M]
+    (s : Finset α) (f : ℕ → ℕ → M) :
+    ∏ x ∈ s, f #{y ∈ s | y < x} #{y ∈ s | x < y} = ∏ i ∈ range #s, f i (#s - 1 - i) := by
+  -- The elements of `s` other than `x` are those before `x` and those after `x`.
+  have hcard {x : α} (hx : x ∈ s) : #{y ∈ s | x < y} = #s - 1 - #{y ∈ s | y < x} := by
+    have h1 : {y ∈ s | ¬y < x}.erase x = {y ∈ s | x < y} := by
+      ext y
+      simp only [mem_erase, mem_filter, not_lt]
+      grind
+    have h2 := card_erase_add_one (s := {y ∈ s | ¬y < x}) (mem_filter.2 ⟨hx, lt_irrefl x⟩)
+    have h3 := card_filter_add_card_filter_not (s := s) (· < x)
+    rw [h1] at h2
+    omega
+  -- The number of elements before `x` is strictly increasing in `x`, with values below `#s`.
+  have hinj : Set.InjOn (fun x => #{y ∈ s | y < x}) s :=
+    StrictMonoOn.injOn fun x hx x' _ hxx' => card_lt_card <|
+      (ssubset_iff_of_subset fun y hy =>
+        mem_filter.2 ⟨(mem_filter.1 hy).1, (mem_filter.1 hy).2.trans hxx'⟩).2
+        ⟨x, mem_filter.2 ⟨hx, hxx'⟩, fun h => lt_irrefl x (mem_filter.1 h).2⟩
+  have himage : s.image (fun x => #{y ∈ s | y < x}) = range #s :=
+    eq_of_subset_of_card_le (fun i hi => by
+        obtain ⟨x, hx, rfl⟩ := mem_image.1 hi
+        exact mem_range.2 (card_lt_card (filter_ssubset.2 ⟨x, hx, lt_irrefl x⟩)))
+      (by rw [card_range, card_image_of_injOn hinj])
+  rw [← himage, prod_image hinj]
+  exact prod_congr rfl fun x hx => by rw [hcard hx]
 
 /-- A product over `range (n * q)` is the product of `q` consecutive blocks of `n` factors. -/
 @[to_additive sum_range_mul_eq_sum_sum
@@ -218,6 +272,42 @@ theorem sum_range_add_add {N : Type*} [AddCommMonoid N] (g : ℕ → N) {p d n :
     refine key.trans ?_
     simp only [Nat.add_assoc]
   rw [s1, s2, ← add_assoc]
+
+/-- Splitting a double sum over the blocks `(p, d)` (start and length) of a word of length
+`l + 1 + n` at its position `l`.  When the summand vanishes on blocks running past the end of the
+word, the sum is the sum over the blocks containing position `l`, those ending before it, and
+those starting after it.  The blocks containing position `l` are indexed by their start `j ≤ l`
+and the number `k ≤ n` of their letters after position `l`. -/
+theorem sum_sum_range_split_blocks {N : Type*} [AddCommMonoid N] (l n : ℕ) (g : ℕ → ℕ → N)
+    (hg : ∀ p d, l + 1 + n < p + d → g p d = 0) :
+    ∑ p ∈ range (l + 1 + n), ∑ d ∈ range (l + 1 + n + 1), g p d =
+      (∑ k ∈ range (n + 1), ∑ j ∈ range (l + 1), g j (l - j + 1 + k) +
+        ∑ p ∈ range (l + 1), ∑ d ∈ range (l + 1 + 1), if p + d ≤ l then g p d else 0) +
+      ∑ p ∈ range n, ∑ d ∈ range (n + 1), g (l + 1 + p) d := by
+  rw [sum_range_add, sum_comm (s := range (n + 1)), ← sum_add_distrib]
+  congr 1
+  · refine sum_congr rfl fun p hp ↦ ?_
+    rw [mem_range] at hp
+    have h₁ : ∑ k ∈ range p, g p (l - p + 1 + (n + 1) + k) = 0 :=
+      sum_eq_zero fun k _ ↦ hg p _ (by omega)
+    have h₂ : ∑ k ∈ range (p + 1), (if p + (l - p + 1 + k) ≤ l then g p (l - p + 1 + k) else 0) =
+        0 := sum_eq_zero fun k _ ↦ ite_eq_right_iff.2 fun h ↦ absurd h (by omega)
+    have h₃ : ∑ d ∈ range (l - p + 1), (if p + d ≤ l then g p d else 0) =
+        ∑ d ∈ range (l - p + 1), g p d :=
+      sum_congr rfl fun d hd ↦ ite_eq_left (by rw [mem_range] at hd; omega)
+    -- Cut the lengths of the blocks starting at `p` where they reach position `l` and the end.
+    have hlen : l + 1 + n + 1 = (l - p + 1) + (n + 1) + p := by omega
+    have hlen' : l + 1 + 1 = (l - p + 1) + (p + 1) := by omega
+    rw [hlen, sum_range_add (fun d ↦ g p d) (l - p + 1 + (n + 1)) p,
+      sum_range_add (fun d ↦ g p d) (l - p + 1) (n + 1), hlen',
+      sum_range_add (fun d ↦ if p + d ≤ l then g p d else 0) (l - p + 1) (p + 1), h₁, h₂, h₃,
+      add_zero, add_zero, add_comm]
+  · refine sum_congr rfl fun p hp ↦ ?_
+    rw [mem_range] at hp
+    have h₁ : ∑ k ∈ range (l + 1), g (l + 1 + p) (n + 1 + k) = 0 :=
+      sum_eq_zero fun k _ ↦ hg _ _ (by omega)
+    have hlen : l + 1 + n + 1 = (n + 1) + (l + 1) := by omega
+    rw [hlen, sum_range_add (fun d ↦ g (l + 1 + p) d) (n + 1) (l + 1), h₁, add_zero]
 
 
 

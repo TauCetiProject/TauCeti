@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.InnerProductSpace.Trace
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Analysis.Normed.Module.Trace
@@ -15,6 +16,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -25,8 +28,12 @@ import TauCeti.Geometry.Manifold.VectorField.LieBracket
 This file introduces the pointwise Riemannian divergence as the trace of the Levi–Civita
 covariant derivative, the scalar Hessian obtained by pairing that derivative of the gradient,
 and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  The orthonormal-basis
-trace formula makes the relationship between the Laplacian and the Hessian explicit. On a
-finite-dimensional inner-product space, the operator agrees with Mathlib's flat Laplacian.
+trace formula makes the relationship between the Laplacian and the Hessian explicit. The operator
+laws include the Leibniz rule and the chain rule `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a
+real function `h`, with its special case `Δ (log f) = Δ f / f - |grad f|² / f²`. On a
+finite-dimensional inner-product space, the operator agrees with Mathlib's
+flat Laplacian. The Hessian conventions follow Lee, *Introduction to Riemannian Manifolds*,
+Chapter 3.
 
 -/
 
@@ -146,20 +153,22 @@ variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [Charte
 /-- The Hessian applied to a vector field and a differentiable vector field is the directional
 derivative of the directional derivative of `f`, minus the derivative in the covariant derivative
 direction. -/
-theorem hessian_apply_eq_mvfderiv_sub [IsManifold I ∞ M]
+theorem hessian_apply_eq_mvfderiv_sub [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M)
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (x : M) (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (V W : (y : M) → TangentSpace I y)
     (hW : MDiffAt (T% W) x) :
     hessian I f x (V x) (W x) =
       mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
         mvfderiv I f x ((CovariantDerivative.leviCivitaConnection I M W) x (V x)) := by
-  let _ : IsManifold I (∞ + 1) M := by
-    simpa using (inferInstance : IsManifold I ∞ M)
-  have hG : ContMDiff I I.tangent ∞
-      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) :=
-    contMDiff_mgradient hf
+  let _ : IsManifold I (1 + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
+  have hG : ContMDiffAt I I.tangent 1
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x := by
+    simpa only [one_add_one_eq_two] using
+      (contMDiffAt_mgradient (I := I) (f := f) (x := x) (n := 1)
+        (by simpa only [one_add_one_eq_two] using hf))
   have hG' : MDiffAt (T% (mgradient I f)) x := hG.mdifferentiableAt (by simp)
   have hinner :=
     (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
@@ -181,26 +190,26 @@ theorem hessian_apply_eq_mvfderiv_sub [IsManifold I ∞ M]
   rw [hessian_def]
   linarith
 
-/-- The Hessian of a smooth function is symmetric for the Levi–Civita connection. -/
-theorem hessian_symm [IsManifold I ∞ M]
+/-- The Hessian of a twice continuously differentiable function is symmetric for the
+Levi–Civita connection. -/
+theorem hessian_symm [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) (v w : TangentSpace I x) :
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (x : M) (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (v w : TangentSpace I x) :
     hessian I f x v w = hessian I f x w v := by
   let V : (y : M) → TangentSpace I y := FiberBundle.extend E v
   let W : (y : M) → TangentSpace I y := FiberBundle.extend E w
   have hV : MDiffAt (T% V) x := FiberBundle.mdifferentiableAt_extend I E v
   have hW : MDiffAt (T% W) x := FiberBundle.mdifferentiableAt_extend I E w
-  let _ : IsManifold I (∞ + 1) M := by
-    simpa using (inferInstance : IsManifold I ∞ M)
-  have hessianVW := hessian_apply_eq_mvfderiv_sub hf x V W hW
-  have hessianWV := hessian_apply_eq_mvfderiv_sub hf x W V hV
-  have hmin : minSmoothness ℝ 2 ≤ (∞ : ℕ∞ω) := by simp
+  have hessianVW := hessian_apply_eq_mvfderiv_sub x hf V W hW
+  have hessianWV := hessian_apply_eq_mvfderiv_sub x hf W V hV
+  have hmin : minSmoothness ℝ 2 ≤ (2 : ℕ∞ω) := by simp
   let _ : IsManifold I (minSmoothness ℝ 2) M :=
-    IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) hmin
+    IsManifold.of_le (m := minSmoothness ℝ 2) (n := 2) hmin
   -- The mixed-derivative identity and torsion-freeness identify the remaining bracket term.
   have hbracket := mvfderiv_mlieBracket (I := I) (𝕜 := ℝ) (F := ℝ)
-    hf.contMDiffAt (by simp) hV hW
+    (n := (2 : ℕ∞ω)) hf (by simp) hV hW
   have hzero :
       (CovariantDerivative.leviCivitaConnection I M).torsion x (V x) (W x) = 0 := by
     rw [CovariantDerivative.torsion_leviCivitaConnection_eq_zero I]
@@ -431,6 +440,41 @@ theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(�
   simp only [laplaceBeltrami, mgradient_smul c (hf.mdifferentiable (by simp))]
   exact divergence_smul I c _ x
     (mdifferentiable_mgradient (I := I) hf x)
+
+/-- **Chain rule for the Laplace--Beltrami operator.** If `h` is `C²` on an open set of real
+numbers containing all values of a `C²` function `f`, then
+`Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²`. -/
+theorem laplaceBeltrami_comp {h : ℝ → ℝ} {s : Set ℝ} (hs : IsOpen s) (hh : ContDiffOn ℝ 2 h s)
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (hfs : ∀ y, f y ∈ s) (x : M) :
+    laplaceBeltrami I (h ∘ f) x =
+      deriv h (f x) * laplaceBeltrami I f x +
+        deriv (deriv h) (f x) * ‖mgradient I f x‖ ^ 2 := by
+  have hfd : ∀ y, MDifferentiableAt I 𝓘(ℝ) f y := fun y ↦ hf.mdifferentiableAt (by simp)
+  have hh' : ContDiffOn ℝ 1 (deriv h) s := hh.deriv_of_isOpen hs (by norm_num)
+  -- The gradient of `h ∘ f` is the section `h'(f) • grad f`, to which the product rule applies.
+  have hgrad : mgradient I (h ∘ f) = (deriv h ∘ f) • mgradient I f := by
+    funext y
+    exact mgradient_comp_deriv ((hh.differentiableOn (by norm_num) _ (hfs y)).differentiableAt
+      (hs.mem_nhds (hfs y))) (hfd y)
+  have hd : DifferentiableAt ℝ (deriv h) (f x) :=
+    (hh'.differentiableOn one_ne_zero _ (hfs x)).differentiableAt (hs.mem_nhds (hfs x))
+  rw [laplaceBeltrami, hgrad, divergence_smul_function I _ _ x
+      (hd.comp_mdifferentiableAt (hfd x)) (mdifferentiable_mgradient (I := I) hf x),
+    ← laplaceBeltrami_def, ← inner_mgradient, mgradient_comp_deriv hd (hfd x),
+    real_inner_smul_left, real_inner_self_eq_norm_sq, Function.comp_apply]
+
+/-- The Laplace--Beltrami operator of the logarithm of a nowhere-vanishing `C²` function:
+`Δ (log f) = Δ f / f - |grad f|² / f²`. -/
+theorem laplaceBeltrami_log {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (hf0 : ∀ y, f y ≠ 0)
+    (x : M) :
+    laplaceBeltrami I (fun y ↦ Real.log (f y)) x =
+      laplaceBeltrami I f x / f x - ‖mgradient I f x‖ ^ 2 / f x ^ 2 := by
+  have hdd : deriv (deriv Real.log) (f x) = -(f x ^ 2)⁻¹ := by
+    rw [Real.deriv_log', deriv_inv]
+  rw [show (fun y ↦ Real.log (f y)) = Real.log ∘ f from rfl,
+    laplaceBeltrami_comp I isOpen_compl_singleton Real.contDiffOn_log hf hf0 x,
+    Real.deriv_log, hdd]
+  ring
 
 end OperatorLaws
 

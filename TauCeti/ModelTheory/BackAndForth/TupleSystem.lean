@@ -53,6 +53,15 @@ namespace IsTupleBFSystem
 
 variable {S : Set (Σ n, (Fin n → M) × (Fin n → N))}
 
+/-- Swapping the two tuples of every pair of a tuple back-and-forth system gives a tuple
+back-and-forth system in the other direction. -/
+theorem symm (h : IsTupleBFSystem (L := L) S) :
+    IsTupleBFSystem (L := L) {p : Σ n, (Fin n → N) × (Fin n → M) | ⟨p.1, p.2.2, p.2.1⟩ ∈ S} where
+  empty_mem := h.empty_mem
+  sameAtomicType hab := (h.sameAtomicType hab).symm
+  forth hab x := h.back hab x
+  back hab y := h.forth hab y
+
 /-- Pairs in one back-and-forth system agree at every ordinal level. -/
 theorem bfEquiv (h : IsTupleBFSystem (L := L) S) (α : Ordinal.{o})
     {n : ℕ} {a : Fin n → M} {b : Fin n → N} (hab : ⟨n, a, b⟩ ∈ S) :

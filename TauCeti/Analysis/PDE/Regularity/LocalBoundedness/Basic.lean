@@ -20,7 +20,7 @@ import TauCeti.MeasureTheory.Integral.Bochner.Basic
 Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `0 < λ ≤ Λ`, and let
 `u ∈ H¹(Ω)` be a weak subsolution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0` in `Ω`,
 
 meaning `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`. This file proves De Giorgi's local
 boundedness theorem: on every ball `B(x₀, R) ⊆ Ω` and above every level `k`,
@@ -49,7 +49,7 @@ truncations `w = (u - l)⁺` above the level `k`,
 `∫ ψ² ‖∇w‖² ≤ A ∫ ‖∇ψ‖² w² + B ∫ ψ² w²` for every smooth cutoff `ψ`,
 
 so the iteration is carried out for every `u` with this property (`TauCeti.PDE.CaccioppoliAbove`),
-with constants `A, B ≥ 0`. Weak subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` have it at every level with
+with constants `A, B ≥ 0`. Weak subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0` have it at every level with
 `A = (2Λ/λ)²` and `B = 0`. The zeroth-order term `B ∫ ψ² w²` is what a drift contributes, and it
 costs a factor `(1 + A + B R²)ⁿ` in the bound on `B(x₀, R/2)`.
 
@@ -165,7 +165,7 @@ with `A ≥ 0`. Then
 
 The truncation at the higher level is controlled by a power `1 + (1 - 2/q) > 1` of the
 truncation at the lower level: this superlinear gain is what drives De Giorgi's iteration. For
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` the Caccioppoli inequality holds with `A = (2Λ/λ)²` and `B = 0`
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0` the Caccioppoli inequality holds with `A = (2Λ/λ)²` and `B = 0`
 (`TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_max_sub_sq_le`). For equations with a
 drift it carries a zeroth-order term `B ∫_Ω ψ² w²`, which is at most `B I` when `|ψ| ≤ 1`. -/
 theorem setIntegral_sq_mul_max_sub_sq_le_of_caccioppoli {q : ℝ≥0∞} (hq : 2 ≤ q) {S : ℝ≥0}
@@ -773,7 +773,7 @@ over `B(x₀, R)`, with `A, B ≥ 0`. Then
 `B(x₀, R/2)`.
 
 Functions satisfying such Caccioppoli inequalities form De Giorgi's classes
-(`TauCeti.PDE.CaccioppoliAbove`). Weak subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` belong to them at every
+(`TauCeti.PDE.CaccioppoliAbove`). Weak subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0` belong to them at every
 level with `B = 0`, which gives the scale-invariant bound
 `TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral`. A drift contributes the
 zeroth-order term `B ∫ ψ² w²`, which is why the bound depends on `B R²`.
@@ -856,7 +856,7 @@ variable [DecidableEq ι] {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam 
 /-- **De Giorgi's energy recursion for weak subsolutions.** Let `a` be measurable and uniformly
 elliptic on `Ω` with constants `0 < λ ≤ Λ`, and suppose that `W^{1,2}_0(Ω)` satisfies a Sobolev
 inequality `‖v‖_q ≤ S ‖∇v‖₂` for some exponent `q ≥ 2`. Let `u ∈ H¹(Ω)` be a weak subsolution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Take levels
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Take levels
 `k < l` with `(u - k)⁺ ∈ L²(Ω)`, and a smooth `ψ` compactly supported in `Ω` with
 `‖∇ψ‖ ≤ G`. Then, writing `I = ∫_{Ω ∩ supp ψ} ((u - k)⁺)²`,
 
@@ -890,7 +890,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_max_sub_sq_le
     (sq_nonneg (2 * Lam / lam)) (B := 0) ?_).trans_eq (by ring)
   simpa only [zero_mul, add_zero] using hcacc
 
-/-- Weak subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` belong to De Giorgi's class above every level, with
+/-- Weak subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0` belong to De Giorgi's class above every level, with
 `A = (2Λ/λ)²` and `B = 0`. -/
 theorem UniformlyEllipticOn.caccioppoliAbove
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
@@ -907,7 +907,7 @@ theorem UniformlyEllipticOn.caccioppoliAbove
 ellipticity constants `λ, Λ` and an exponent `q > 2`, and let `α = 1 - 2/q`. There is `D > 0`,
 depending only on these (and the dimension), such that the following holds. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
-subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`.
+subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`.
 If `B(x₀, R) ⊆ Ω` and `‖v‖_q ≤ S ‖∇v‖₂` for every `v ∈ W^{1,2}_0(B(x₀, R))`, then for every
 level `k`,
 
@@ -958,7 +958,7 @@ theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_of_forall_
 /-- **Local boundedness of weak subsolutions (De Giorgi).** In every dimension `n ≥ 1` there is
 `D > 0`, depending on `λ`, `Λ`, the dimension and the normalization of the additive Haar measure
 `mu`, such that for every measurable, uniformly elliptic `a` on `Ω` with constants `λ, Λ`, every
-weak subsolution `u ∈ H¹(Ω)` of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, every level `k` and every ball
+weak subsolution `u ∈ H¹(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`, every level `k` and every ball
 `B(x₀, R) ⊆ Ω`,
 
 `u ≤ k + D R^{-n/2} (∫_{B(x₀, R)} ((u - k)⁺)²)^{1/2}` almost everywhere on `B(x₀, R/2)`.
@@ -993,7 +993,7 @@ theorem exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral [Nonempty ι] :
 /-- **Local boundedness of weak solutions (De Giorgi).** In every dimension `n ≥ 1` there is
 `D > 0`, depending on `λ`, `Λ`, the dimension and the normalization of the additive Haar measure
 `mu`, such that for every measurable, uniformly elliptic `a` on `Ω` with constants `λ, Λ`, every
-weak solution `u ∈ H¹(Ω)` of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, that is `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`,
+weak solution `u ∈ H¹(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`, that is `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`,
 and every ball `B(x₀, R) ⊆ Ω`,
 
 `|u| ≤ D R^{-n/2} ‖u‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`.
@@ -1272,7 +1272,7 @@ Fix ellipticity constants `λ, Λ`, an exponent `q > 2`, a constant `S` and `0 <
 `D > 0`, depending only on these (and the dimension), such that the following holds. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, suppose that `‖v‖_q ≤ S ‖∇v‖₂`
 for every `v ∈ W^{1,2}_0(B)` and every ball `B ⊆ Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution
-of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`. Then for every level `k` and every ball `B(x₀, R) ⊆ Ω`,
+of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`. Then for every level `k` and every ball `B(x₀, R) ⊆ Ω`,
 
 `u ≤ k + D R^{-2/(α p)} (∫_{B(x₀, R)} ((u - k)⁺)ᵖ)^{1/p}` almost everywhere on `B(x₀, R/2)`,
 
@@ -1315,7 +1315,7 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_eLpNorm_l
 dimension `n ≥ 1` there is `D > 0`, depending on `λ`, `Λ`, `p`, the dimension and the
 normalization of the additive Haar measure `mu`, such that for every measurable, uniformly
 elliptic `a` on `Ω` with constants `λ, Λ`, every weak subsolution `u ∈ H¹(Ω)` of
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, every level `k` and every ball `B(x₀, R) ⊆ Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`, every level `k` and every ball `B(x₀, R) ⊆ Ω`,
 
 `u ≤ k + D R^{-n/p} (∫_{B(x₀, R)} ((u - k)⁺)ᵖ)^{1/p}` almost everywhere on `B(x₀, R/2)`.
 

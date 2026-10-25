@@ -190,8 +190,8 @@ private def finiteToFiniteResolutionFunctor :
     ((gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution_inverseImage_shift
       gradedFiniteProjectiveModules_gradedAbelian_shift) h
 
-/-- Under finite graded-projective dimension, compare all finite graded modules with the
-subcategory of modules admitting finite graded-projective resolutions. -/
+/-- When every finite graded module admits a finite resolution by finite graded projectives,
+compare all finite graded modules with the subcategory of modules admitting such resolutions. -/
 def toGradedFiniteProjectiveResolution :
     LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜) :=
@@ -233,7 +233,8 @@ theorem toGradedFiniteProjectiveResolution_fromGradedFiniteProjectiveResolution
   rcases M with ⟨M, hM⟩
   simp
 
-/-- The inverse of the graded Cartan map under finite graded-projective dimension. -/
+/-- The inverse of the graded Cartan map, when every finite graded module admits a finite
+resolution by finite graded projectives. -/
 def gradedCartanInverse :
     LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) :=

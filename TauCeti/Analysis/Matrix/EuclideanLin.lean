@@ -86,6 +86,13 @@ theorem toEuclideanCLM_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace 𝕜 ι
     toEuclideanCLM (𝕜 := 𝕜) A x = toEuclideanLin A x := by
   rw [← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
 
+/-- The determinant of a diagonal continuous linear map is the product of its diagonal entries. -/
+@[simp]
+theorem det_toEuclideanCLM_diagonal (d : ι → 𝕜) :
+    (toEuclideanCLM (𝕜 := 𝕜) (diagonal d)).det = ∏ i, d i := by
+  rw [ContinuousLinearMap.det, coe_toEuclideanCLM_eq_toEuclideanLin,
+    LinearMap.det_toLpLin, det_diagonal]
+
 section Invertible
 
 /-- **The continuous linear equivalence of an invertible matrix** on Euclidean space, defined

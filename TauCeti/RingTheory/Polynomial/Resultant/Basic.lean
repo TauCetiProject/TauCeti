@@ -22,9 +22,14 @@ discriminant formulas that use different bounds.
 That absence is the point. `C x - X` is `C (-1) * (X - C x)`, which contributes `(-1) ^ m`, and
 `resultant_X_sub_C_right` contributes another `(-1) ^ m`, so the two cancel.
 
+Finally, resultants taken at the actual degrees commute with any coefficient map preserving both
+degrees, the form of base change used when comparing a resultant with its specializations.
+
 ## Main results
 
 * `Polynomial.resultant_C_sub_X_right`
+* `Polynomial.resultant_map_of_natDegree_eq`: resultants at the actual degrees commute with a
+  coefficient map that preserves both degrees.
 * `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
   the valid degree bound supplied for the right argument.
 
@@ -51,6 +56,15 @@ theorem resultant_C_sub_X_right (f : R[X]) (x : R) (m : ℕ) (hm : f.natDegree �
   have hneg : C x - X = C (-1 : R) * (X - C x) := by simp
   rw [hneg, resultant_C_mul_right, resultant_X_sub_C_right f m x hm, ← mul_assoc, ← pow_add,
     ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
+
+/-- Resultants at the actual degrees commute with a coefficient map that preserves both degrees,
+for instance an injective one or one that does not kill the leading coefficients
+(`Polynomial.natDegree_map_of_leadingCoeff_ne_zero`). Without this hypothesis the original
+degrees must be kept as explicit bounds, as in `Polynomial.resultant_map_map`. -/
+theorem resultant_map_of_natDegree_eq {S : Type*} [CommRing S] (φ : R →+* S) {f g : R[X]}
+    (hf : (f.map φ).natDegree = f.natDegree) (hg : (g.map φ).natDegree = g.natDegree) :
+    (f.map φ).resultant (g.map φ) = φ (f.resultant g) := by
+  rw [hf, hg, resultant_map_map]
 
 end Polynomial
 

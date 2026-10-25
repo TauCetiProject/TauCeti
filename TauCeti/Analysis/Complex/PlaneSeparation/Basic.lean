@@ -95,6 +95,11 @@ compact connected set `L` off `S ∪ T`. Then `Z_S ∪ L` misses the connected s
 their connected overlap `L`. The argument is the Mayer–Vietoris sequence for `Sᶜ` and `Tᶜ`, read in
 degree zero through continuous logarithms.
 
+## Filled hulls through logarithms
+
+Taking for `b` a point far to the left of a bounded closed set `K`, Borsuk's theorem says that
+`z ↦ z - a` has a continuous logarithm on `K` exactly when `a` lies outside the filled hull of `K`.
+
 ## Main results
 
 * `TauCeti.not_hasContinuousLogOn_sub_sphere` — `z ↦ z - a` has no continuous logarithm on a circle
@@ -109,6 +114,8 @@ degree zero through continuous logarithms.
   continuous logarithm on every compact set missing their intersection.
 * `TauCeti.not_isPreconnected_compl_union_of_not_isPreconnected_inter` — **Janiszewski's second
   theorem**: two closed connected sets with bounded disconnected intersection separate the plane.
+* `TauCeti.hasContinuousLogOn_sub_iff_notMem_filledHull` — a point lies outside the filled hull of a
+  bounded closed set exactly when the map to it has a continuous logarithm there.
 
 ## References
 
@@ -383,5 +390,42 @@ theorem not_isPreconnected_compl_union_of_not_isPreconnected_inter {S T : Set �
         hZST))))
   by_contra hzW'
   exact connectedComponentIn_subset _ _ hz (hZW ▸ ⟨hzW, hzW'⟩)
+
+
+/-! ## Filled hulls through logarithms -/
+
+/-- Some point `b` outside the filled hull of a bounded set `K ⊆ ℂ` makes `z ↦ z - b` have a
+continuous logarithm on `K`: far to the left of `K`, the values `z - b` lie in the right
+half-plane. -/
+private theorem exists_notMem_filledHull_hasContinuousLogOn_sub (hKb : IsBounded K) :
+    ∃ b ∉ filledHull K, HasContinuousLogOn (fun z => z - b) K := by
+  obtain ⟨R, hR⟩ := (isBounded_filledHull.mpr hKb).subset_closedBall 0
+  refine ⟨-((|R| + 1 : ℝ) : ℂ), fun hb => ?_,
+    hasContinuousLogOn_of_mapsTo_slitPlane (by fun_prop) fun z hz => ?_⟩
+  · have hnorm := mem_closedBall_zero_iff.mp (hR hb)
+    rw [norm_neg, Complex.norm_real, Real.norm_of_nonneg (by positivity)] at hnorm
+    linarith [le_abs_self R]
+  · have hz' := mem_closedBall_zero_iff.mp (hR (subset_filledHull hz))
+    refine mem_slitPlane_iff.mpr (Or.inl ?_)
+    simp only [sub_re, neg_re, ofReal_re]
+    linarith [neg_abs_le z.re, abs_re_le_norm z, le_abs_self R]
+
+/-- **A point lies outside the filled hull of a bounded closed set exactly when the map to it has a
+continuous logarithm there.** For `K ⊆ ℂ` bounded and closed, `z ↦ z - a` has a continuous
+logarithm on `K` if and only if `a` lies in the unbounded component of `Kᶜ`. -/
+theorem hasContinuousLogOn_sub_iff_notMem_filledHull (hK : IsClosed K) (hKb : IsBounded K) :
+    HasContinuousLogOn (fun z => z - a) K ↔ a ∉ filledHull K := by
+  obtain ⟨b, hb, hlogb⟩ := exists_notMem_filledHull_hasContinuousLogOn_sub hKb
+  have hbK : b ∉ K := fun h => hb (subset_filledHull h)
+  refine ⟨fun hlog ha => hb ?_, fun ha => ?_⟩
+  · -- `K` does not separate `a` from `b`, so they share a component, bounded since `a` is enclosed
+    have hab := mem_connectedComponentIn_of_hasContinuousLogOn hK hKb (hlog.div hlogb)
+    rw [mem_filledHull_iff, ← connectedComponentIn_eq hab]
+    exact mem_filledHull_iff.mp ha
+  · -- `a` and `b` lie in the unbounded component of `Kᶜ`, so their Borsuk map has a logarithm
+    have hlogab : HasContinuousLogOn (fun z => (z - a) / (z - b)) K := by_contra fun h =>
+      (mem_filledHull_or_mem_filledHull_of_not_hasContinuousLogOn hK hKb h).elim ha hb
+    refine (hlogab.mul hlogb).congr fun z hz => ?_
+    exact div_mul_cancel₀ _ (sub_ne_zero.mpr fun h => hbK (h ▸ hz))
 
 end TauCeti
