@@ -301,11 +301,15 @@ theorem IsFullSetOfSections.charpoly_eq (h : IsFullSetOfSections s) (T : Type w)
     [Algebra A T] [Module.Free T (T ⊗[A] B)] (f : T ⊗[A] B) :
     (Algebra.lmul T (T ⊗[A] B) f).charpoly =
       ∏ i, (Polynomial.X - Polynomial.C ((s i).sectionBaseChange T f)) := by
+  -- Conjugation by `lid` makes the base ring `T`, over which `T ⊗[A] B` is free, so the
+  -- characteristic-polynomial/norm identity and the base-changed norm formula apply.
   let e := Algebra.TensorProduct.lid T (T ⊗[A] B)
   have he : e.toLinearEquiv.conj (Algebra.lmul T _ (e.symm f)) = Algebra.lmul T _ f := by
     ext x
     simp [LinearEquiv.conj_apply]
   rw [← he, LinearEquiv.charpoly_conj, Algebra.charpoly_lmul_eq_norm, (h.baseChange T).norm_eq]
+  -- Keep the iterated sections: transitivity introduces `cancelBaseChange`, while the pure
+  -- tensors from `lid.symm` and `rTensor` evaluate directly by `sectionBaseChange_tmul`.
   simp [e, Polynomial.algebraMap_eq, -AlgHom.sectionBaseChange_sectionBaseChange]
 
 /-- **Characteristic-polynomial formulation** (Katz–Mazur 1.8.2). A family of sections `s` is a
