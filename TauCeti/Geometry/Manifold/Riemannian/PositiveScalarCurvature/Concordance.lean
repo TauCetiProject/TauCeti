@@ -29,6 +29,14 @@ at `x`, and reparametrisations of the `ℝ`-coordinate of a metric on `M × ℝ`
 near both ends: an affine rescaling of `t` would replace `dt²` by a multiple and destroy the product
 ends. Hence concordance is an equivalence relation on metrics of positive scalar curvature.
 
+Concordance is natural. Pulling a concordance back along `(x, t) ↦ (f x, t)`, for a smooth map
+`f` whose differential is invertible at every point, such as a diffeomorphism or a covering map,
+gives a concordance between the pullbacks of its ends. Multiplying a concordance by a constant
+`c > 0` multiplies `dt²` by `c` as well; reparametrising by `t ↦ t / √c` restores the product ends,
+so `c g₀` and `c g₁` are concordant when `g₀` and `g₁` are. The product of a concordance from `g₀`
+to `g₁` with a metric `g₂` of nonnegative scalar curvature, with the cylinder coordinate moved
+from `M × ℝ` to `(M × N) × ℝ`, is a concordance from `g₀ × g₂` to `g₁ × g₂`.
+
 Concordances can equivalently be taken on the manifold with boundary `M × [0, 1]`: a *collared
 concordance* is a metric of positive scalar curvature on `M × [0, 1]` which is `g₀ + dt²` near
 `t = 0` and `g₁ + dt²` near `t = 1`, where `g + dt²` on `M × [0, 1]` is the restriction
@@ -68,6 +76,17 @@ the product ends: it is pulled back to `M × ℝ` along `(x, t) ↦ (x, θ t)` f
 * `Bundle.ContMDiffRiemannianMetric.Concordant.trans`: concatenation of concordances.
 * `Bundle.ContMDiffRiemannianMetric.equivalence_concordant`: concordance is an equivalence relation
   on metrics of positive scalar curvature.
+* `Bundle.ContMDiffRiemannianMetric.concordant_of_inner_eq_cylinder`: a metric of positive scalar
+  curvature on `M × ℝ` with product ends outside any window `[a, b]` witnesses a concordance.
+* `Bundle.ContMDiffRiemannianMetric.Concordant.pullback` and
+  `Bundle.ContMDiffRiemannianMetric.concordant_pullback_iff`: concordance is preserved by pullback
+  along maps with invertible differential, and preserved and reflected by pullback along
+  diffeomorphisms.
+* `Bundle.ContMDiffRiemannianMetric.Concordant.rescale_const` and
+  `Bundle.ContMDiffRiemannianMetric.concordant_rescale_const_iff`: rescaling by a positive constant
+  preserves and reflects concordance.
+* `Bundle.ContMDiffRiemannianMetric.Concordant.prodTangentSpace_of_nonneg`: concordance is preserved
+  by products with a metric of nonnegative scalar curvature.
 * `Bundle.ContMDiffRiemannianMetric.IsConcordance.exists_isCollaredConcordance` and
   `Bundle.ContMDiffRiemannianMetric.IsCollaredConcordance.concordant`: concordances give collared
   concordances with the same ends, and conversely, so that
@@ -84,8 +103,9 @@ the product ends: it is pulled back to `M × ℝ` along `(x, t) ↦ (x, θ t)` f
 public section
 
 open Bundle Set Topology Filter
-open TauCeti.Manifold (tangentSpaceProdEquiv tangentSpaceProdEquiv_mfderiv_prodMap_id
-  isInvertible_mfderiv_prodMap_id isInvertible_mfderiv_prodMap_id_subtypeVal_Icc)
+open TauCeti.Manifold (tangentSpaceProdEquiv tangentSpaceProdEquiv_apply mfderiv_prodMap_apply
+  tangentSpaceProdEquiv_mfderiv_prodMap_id isInvertible_mfderiv_prodMap_id
+  isInvertible_mfderiv_prodMap_id_right isInvertible_mfderiv_prodMap_id_subtypeVal_Icc)
 open scoped ContDiff Manifold
 
 noncomputable section
@@ -301,56 +321,65 @@ theorem Concordant.symm (h : Concordant g₀ g₁) : Concordant g₁ g₀ :=
 theorem concordant_comm : Concordant g₀ g₁ ↔ Concordant g₁ g₀ :=
   ⟨Concordant.symm, Concordant.symm⟩
 
-/-- The smooth increasing map `t ↦ t + 2 s(3t - 1)` of `ℝ`, with `s` the smooth transition from
-`0` to `1` on `[0, 1]`. It is the identity on `t ≤ 1/3` and the translation by `2` on `t ≥ 2/3`,
-so it compresses the window `[0, 3]` of a glued pair of concordances into `[0, 1]`. -/
-private def stretch (t : ℝ) : ℝ :=
-  t + 2 * Real.smoothTransition (3 * t - 1)
+/-- For `d ≥ 0`, the smooth increasing map `t ↦ t + d s(3t - 1)` of `ℝ`, with `s` the smooth
+transition from `0` to `1` on `[0, 1]`. It is the identity on `t ≤ 1/3` and the translation by `d`
+on `t ≥ 2/3`, so it compresses the window `[0, 1 + d]` into `[0, 1]`. -/
+private def stretch (d t : ℝ) : ℝ :=
+  t + d * Real.smoothTransition (3 * t - 1)
 
-private theorem contDiff_stretch : ContDiff ℝ ∞ stretch :=
+private theorem contDiff_stretch (d : ℝ) : ContDiff ℝ ∞ (stretch d) :=
   contDiff_id.add (contDiff_const.mul
     ((Real.smoothTransition.contDiff (n := ⊤)).comp (by fun_prop)))
 
-private theorem hasDerivAt_stretch (t : ℝ) :
-    HasDerivAt stretch (1 + 2 * (deriv Real.smoothTransition (3 * t - 1) * 3)) t := by
+private theorem hasDerivAt_stretch (d t : ℝ) :
+    HasDerivAt (stretch d) (1 + d * (deriv Real.smoothTransition (3 * t - 1) * 3)) t := by
   have h : HasDerivAt (fun t : ℝ ↦ 3 * t - 1) 3 t := by
     simpa using ((hasDerivAt_id t).const_mul 3).sub_const 1
   exact (hasDerivAt_id t).add
     ((Real.smoothTransition.contDiffAt (n := 1)).differentiableAt one_ne_zero
-      |>.hasDerivAt.comp t h |>.const_mul 2)
+      |>.hasDerivAt.comp t h |>.const_mul d)
 
-private theorem deriv_stretch_ne_zero (t : ℝ) : deriv stretch t ≠ 0 := by
-  rw [(hasDerivAt_stretch t).deriv]
+private theorem deriv_stretch_ne_zero {d : ℝ} (hd : 0 ≤ d) (t : ℝ) : deriv (stretch d) t ≠ 0 := by
+  rw [(hasDerivAt_stretch d t).deriv]
   have := Real.smoothTransition.monotone.deriv_nonneg (x := 3 * t - 1)
   positivity
 
-private theorem stretch_eventuallyEq_of_lt {t : ℝ} (ht : t < 1 / 3) : stretch =ᶠ[𝓝 t] id := by
+private theorem stretch_eventuallyEq_of_lt (d : ℝ) {t : ℝ} (ht : t < 1 / 3) :
+    stretch d =ᶠ[𝓝 t] id := by
   filter_upwards [eventually_lt_nhds ht] with s hs
   simp [stretch, Real.smoothTransition.zero_of_nonpos (by linarith : 3 * s - 1 ≤ 0)]
 
-private theorem stretch_eventuallyEq_of_gt {t : ℝ} (ht : 2 / 3 < t) :
-    stretch =ᶠ[𝓝 t] (· + 2) := by
+private theorem stretch_eventuallyEq_of_gt (d : ℝ) {t : ℝ} (ht : 2 / 3 < t) :
+    stretch d =ᶠ[𝓝 t] (· + d) := by
   filter_upwards [eventually_gt_nhds ht] with s hs
   simp [stretch, Real.smoothTransition.one_of_one_le (by linarith : 1 ≤ 3 * s - 1)]
 
-/-- A metric of positive scalar curvature on `M × ℝ` which is `g₀ + dt²` where `t ≤ 0` and
-`g₂ + dt²` where `t ≥ 3` gives a concordance from `g₀` to `g₂`, after compressing the window
-`[0, 3]` into `[0, 1]` by `stretch`. -/
-private theorem concordant_of_window_three (hG : G.HasPositiveScalarCurvature)
-    (h₀ : ∀ p : M × ℝ, p.2 ≤ 0 → G.inner p = g₀.cylinder.inner p)
-    (h₃ : ∀ p : M × ℝ, 3 ≤ p.2 → G.inner p = g₂.cylinder.inner p) : Concordant g₀ g₂ := by
-  refine ⟨G.reparamTime contDiff_stretch deriv_stretch_ne_zero,
-    hG.reparamTime _ _, fun p hp ↦ ?_, fun p hp ↦ ?_⟩
-  · -- Near `t ≤ 0`, `stretch` is the identity.
-    have hψ := stretch_eventuallyEq_of_lt (show p.2 < 1 / 3 by linarith)
+/-- If a metric of positive scalar curvature on `M × ℝ` is `g₀ + dt²` where `t ≤ a` and
+`g₁ + dt²` where `t ≥ b`, then `g₀` and `g₁` are concordant, whatever the window `[a, b]`. -/
+theorem concordant_of_inner_eq_cylinder (hG : G.HasPositiveScalarCurvature) {a b : ℝ}
+    (h₀ : ∀ p : M × ℝ, p.2 ≤ a → G.inner p = g₀.cylinder.inner p)
+    (h₁ : ∀ p : M × ℝ, b ≤ p.2 → G.inner p = g₁.cylinder.inner p) : Concordant g₀ g₁ := by
+  -- Reparametrise by `t ↦ stretch d t + a`, which is `t ↦ t + a` near `t ≤ 0` and
+  -- `t ↦ t + (d + a)` near `t ≥ 1`, where `1 + d + a ≥ b`.
+  set d := max (b - a - 1) 0
+  have hd : 0 ≤ d := le_max_right _ _
+  have hφ : ContDiff ℝ ∞ fun t ↦ stretch d t + a := (contDiff_stretch d).add contDiff_const
+  have hφ' (t : ℝ) : deriv (fun t ↦ stretch d t + a) t ≠ 0 := by
+    rw [deriv_add_const]
+    exact deriv_stretch_ne_zero hd t
+  refine ⟨G.reparamTime hφ hφ', hG.reparamTime _ _, fun p hp ↦ ?_, fun p hp ↦ ?_⟩
+  · have hψ : (fun t ↦ stretch d t + a) =ᶠ[𝓝 p.2] (· + a) :=
+      (stretch_eventuallyEq_of_lt d (show p.2 < 1 / 3 by linarith)).fun_comp (· + a)
     refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
     rw [hψ.eq_of_nhds]
-    exact h₀ p hp
-  · -- Near `t ≥ 1`, `stretch` is the translation by `2`.
-    have hψ := stretch_eventuallyEq_of_gt (show 2 / 3 < p.2 by linarith)
+    exact h₀ _ (by simp; linarith)
+  · have hψ : (fun t ↦ stretch d t + a) =ᶠ[𝓝 p.2] (· + (d + a)) := by
+      filter_upwards [stretch_eventuallyEq_of_gt d (show 2 / 3 < p.2 by linarith)] with t ht
+      simp only [ht]
+      ring
     refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
     rw [hψ.eq_of_nhds]
-    exact h₃ _ (by simp; linarith)
+    exact h₁ _ (by simp; linarith [le_max_left (b - a - 1) 0])
 
 /-- **Concatenation of concordances**: concordance is transitive. Translate a concordance from
 `g₁` to `g₂` to the window `[2, 3]`, glue it to a concordance from `g₀` to `g₁` along `1 < t < 2`,
@@ -371,7 +400,8 @@ theorem Concordant.trans (h₁ : Concordant g₀ g₁) (h₂ : Concordant g₁ g
   have hV : IsOpen {p : M × ℝ | 1 < p.2} := isOpen_lt continuous_const continuous_snd
   have hUV : {p : M × ℝ | p.2 < 2} ∪ {p | 1 < p.2} = univ :=
     eq_univ_of_forall fun p ↦ (lt_or_ge p.2 2).imp id fun hp ↦ by simp; linarith
-  refine concordant_of_window_three (G := G₁.piecewise G₂' hU hV hUV fun p hp ↦ by
+  refine concordant_of_inner_eq_cylinder (a := 0) (b := 3)
+    (G := G₁.piecewise G₂' hU hV hUV fun p hp ↦ by
       rw [h₁.inner_of_one_le p hp.2.le, hG₂'₁ p hp.1.le])
     ((hasPositiveScalarCurvature_iff _).2 fun p ↦ ?_)
     (fun p hp ↦ (piecewise_inner_of_mem_left (show p.2 < 2 by linarith)).trans
@@ -693,16 +723,17 @@ theorem IsConcordance.exists_isCollaredConcordance (h : IsConcordance G g₀ g�
     reparamTime_inner_eq_cylinder_inner _ _ (h.inner_of_one_le _ (by simp; linarith)) (hd q.2)
   -- `stretch` maps `[0, 1]` onto `[0, 3]`, as the identity near `0` and the translation by `2`
   -- near `1`.
-  refine ⟨(G'.reparamTime contDiff_stretch deriv_stretch_ne_zero).restrictIcc 0 1,
+  refine ⟨(G'.reparamTime (contDiff_stretch 2)
+      (deriv_stretch_ne_zero zero_le_two)).restrictIcc 0 1,
     ((h.hasPositiveScalarCurvature.reparamTime _ _).reparamTime _ _).restrictIcc,
     1 / 3, by norm_num, fun p hp ↦ restrictIcc_inner_congr ?_,
     fun p hp ↦ restrictIcc_inner_congr ?_⟩
-  · have hψ := stretch_eventuallyEq_of_lt hp
+  · have hψ := stretch_eventuallyEq_of_lt 2 hp
     refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
     rw [hψ.eq_of_nhds]
     exact hG'₀ _ p.2.2.2
   · have hp' : 2 / 3 < (p.2 : ℝ) := by linarith
-    have hψ := stretch_eventuallyEq_of_gt hp'
+    have hψ := stretch_eventuallyEq_of_gt 2 hp'
     refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
     rw [hψ.eq_of_nhds]
     exact hG'₁ _ (by simp [p.2.2.1])
@@ -767,5 +798,238 @@ theorem concordant_iff_exists_isCollaredConcordance :
   ⟨fun ⟨_, hG⟩ ↦ hG.exists_isCollaredConcordance, fun ⟨_, hGc⟩ ↦ hGc.concordant⟩
 
 end Collar
+
+section Naturality
+
+/-! ### Pullback and rescaling of concordances -/
+
+variable [FiniteDimensional ℝ E] [T2Space M]
+  {G : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
+    (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)}
+  {g g₀ g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+
+section Pullback
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M' : Type*} [TopologicalSpace M'] [T2Space M'] [ChartedSpace H' M'] [IsManifold I' ∞ M']
+  {f : M' → M}
+
+omit [FiniteDimensional ℝ E] [T2Space M] [T2Space M'] in
+/-- The cylinder metric `g + dt²` pulled back along `(x, t) ↦ (f x, t)` is the cylinder metric
+`f^* g + dt²` of the pullback of `g`. -/
+theorem pullback_prodMap_cylinder
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hf : ContMDiff I' I (∞ + 1) f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
+    (hinj' : ∀ p, Function.Injective
+      (mfderiv (I'.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)) (Prod.map f (id : ℝ → ℝ)) p)) :
+    g.cylinder.pullback (Prod.map f id) (hf.prodMap contMDiff_id) hinj' =
+      (g.pullback f hf hinj).cylinder := by
+  ext p v w
+  -- The differential of `(x, t) ↦ (f x, t)` acts componentwise.
+  have hd (u : TangentSpace (I'.prod 𝓘(ℝ)) p) :
+      tangentSpaceProdEquiv (Prod.map f id p)
+          (mfderiv (I'.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)) (Prod.map f id) p u) =
+        (mfderiv I' I f p.1 (tangentSpaceProdEquiv p u).1, (tangentSpaceProdEquiv p u).2) := by
+    have := mfderiv_prodMap_apply (hf.mdifferentiableAt (by simp)) mdifferentiableAt_id
+      (tangentSpaceProdEquiv p u)
+    rw [ContinuousLinearEquiv.symm_apply_apply, mfderiv_id, ContinuousLinearMap.id_apply] at this
+    rw [this]
+    exact (tangentSpaceProdEquiv (f p.1, p.2)).apply_symm_apply _
+  rw [pullback_inner, cylinder_inner, cylinder_inner, pullback_inner, hd, hd]
+  -- The sides differ only in writing the point `(f x, t)` as `Prod.map f id (x, t)`.
+  rfl
+
+/-- Pulling a concordance from `g₀` to `g₁` back along `(x, t) ↦ (f x, t)`, for a smooth map `f`
+whose differential is invertible at every point, gives a concordance from `f^* g₀` to `f^* g₁`. -/
+theorem IsConcordance.pullback_prodMap (h : IsConcordance G g₀ g₁) (hf : ContMDiff I' I (∞ + 1) f)
+    (hinv : ∀ x, (mfderiv I' I f x).IsInvertible) :
+    IsConcordance (G.pullback (Prod.map f id) (hf.prodMap contMDiff_id) fun p ↦
+        (isInvertible_mfderiv_prodMap_id_right (hf.mdifferentiableAt (by simp))
+          (hinv p.1)).injective)
+      (g₀.pullback f hf fun x ↦ (hinv x).injective)
+      (g₁.pullback f hf fun x ↦ (hinv x).injective) := by
+  have hinv' (p : M' × ℝ) :=
+    isInvertible_mfderiv_prodMap_id_right (J := 𝓘(ℝ)) (hf.mdifferentiableAt (by simp)) (hinv p.1)
+  refine ⟨h.hasPositiveScalarCurvature.pullback_of_isInvertible _ hinv', fun p hp ↦ ?_,
+    fun p hp ↦ ?_⟩
+  · rw [← pullback_prodMap_cylinder g₀ hf _
+      fun p ↦ (hinv' p).injective]
+    ext v w
+    rw [pullback_inner, pullback_inner, h.inner_of_nonpos _ hp]
+  · rw [← pullback_prodMap_cylinder g₁ hf _
+      fun p ↦ (hinv' p).injective]
+    ext v w
+    rw [pullback_inner, pullback_inner, h.inner_of_one_le _ hp]
+
+/-- **Naturality of concordance.** If `g₀` and `g₁` are concordant, then so are their pullbacks
+along a smooth map whose differential is invertible at every point, such as a diffeomorphism or a
+covering map. -/
+theorem Concordant.pullback (h : Concordant g₀ g₁) (hf : ContMDiff I' I (∞ + 1) f)
+    (hinv : ∀ x, (mfderiv I' I f x).IsInvertible) :
+    Concordant (g₀.pullback f hf fun x ↦ (hinv x).injective)
+      (g₁.pullback f hf fun x ↦ (hinv x).injective) :=
+  let ⟨_, hG⟩ := h
+  (hG.pullback_prodMap hf hinv).concordant
+
+/-- Two metrics are concordant exactly when their pullbacks along a diffeomorphism are. -/
+@[simp]
+theorem concordant_pullback_iff (Φ : M' ≃ₘ^∞⟮I', I⟯ M) (hf : ContMDiff I' I (∞ + 1) Φ)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I Φ x)) :
+    Concordant (g₀.pullback Φ hf hinj) (g₁.pullback Φ hf hinj) ↔ Concordant g₀ g₁ := by
+  have hinv (x : M') : (mfderiv I' I Φ x).IsInvertible := Φ.isInvertible_mfderiv (by simp)
+  refine ⟨fun h ↦ ?_, fun h ↦ h.pullback hf hinv⟩
+  -- Pull back along `Φ⁻¹`; pulling back along `Φ` and then along `Φ⁻¹` is the identity.
+  have key (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :
+      (g.pullback Φ hf hinj).pullback Φ.symm (by rw [ENat.coe_top_add_one]; exact Φ.symm.contMDiff)
+        (fun y ↦ (Φ.symm.isInvertible_mfderiv (by simp) (x := y)).injective) = g := by
+    have hΦ : (Φ ∘ Φ.symm : M → M) = id := funext Φ.apply_symm_apply
+    rw [← pullback_comp]
+    simp only [hΦ, pullback_id]
+  have := h.pullback (by rw [ENat.coe_top_add_one]; exact Φ.symm.contMDiff) fun y ↦
+    Φ.symm.isInvertible_mfderiv (by simp)
+  rwa [key, key] at this
+
+end Pullback
+
+section Rescale
+
+variable {c : ℝ}
+
+omit [T2Space M] in
+/-- The cylinder metric `c g + dt²` of a rescaled metric is the rescaled cylinder metric
+`c (g + dt²)` reparametrised by `t ↦ t / √c`. -/
+theorem reparamTime_rescale_cylinder
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (hc : 0 < c) :
+    (g.cylinder.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).reparamTime
+        (φ := fun t ↦ t / √c) (contDiff_id.div_const _)
+        (fun t ↦ by simp [Real.sqrt_ne_zero'.2 hc]) =
+      (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).cylinder := by
+  have hd (t : ℝ) : DifferentiableAt ℝ (fun t ↦ t / √c) t := differentiableAt_id.div_const _
+  ext p v w
+  rw [reparamTime_inner, rescale_inner, cylinder_inner, cylinder_inner, rescale_inner,
+    tangentSpaceProdEquiv_mfderiv_prodMap_id (hd p.2),
+    tangentSpaceProdEquiv_mfderiv_prodMap_id (hd p.2)]
+  simp only [ContinuousLinearEquiv.apply_symm_apply, deriv_div_const, deriv_id'']
+  field_simp
+  rw [Real.sq_sqrt hc.le]
+  ring
+
+/-- If `g₀` and `g₁` are concordant, then so are `c g₀` and `c g₁` for every constant `c > 0`. -/
+theorem Concordant.rescale_const (h : Concordant g₀ g₁) (hc : 0 < c) :
+    Concordant (g₀.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc)
+      (g₁.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc) := by
+  obtain ⟨G, hG⟩ := h
+  have hsc : 0 < √c := Real.sqrt_pos.2 hc
+  -- `c G` agrees with `c (gᵢ + dt²)` wherever `G` agrees with `gᵢ + dt²`.
+  have key {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {p : M × ℝ}
+      (hp : G.inner (p.1, p.2 / √c) = g.cylinder.inner (p.1, p.2 / √c)) :
+      ((G.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).reparamTime (φ := fun t ↦ t / √c)
+          (contDiff_id.div_const _) (fun t ↦ by simp [Real.sqrt_ne_zero'.2 hc])).inner p =
+        (g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).cylinder.inner p := by
+    rw [← reparamTime_rescale_cylinder g hc]
+    refine reparamTime_inner_congr _ _ ?_
+    ext v w
+    rw [rescale_inner, rescale_inner, hp]
+  refine concordant_of_inner_eq_cylinder (a := 0) (b := √c)
+    ((hG.hasPositiveScalarCurvature.rescale_const hc).reparamTime _ _)
+    (fun p hp ↦ key (hG.inner_of_nonpos _ (div_nonpos_of_nonpos_of_nonneg hp hsc.le)))
+    (fun p hp ↦ key (hG.inner_of_one_le _ ((one_le_div hsc).2 hp)))
+
+/-- Rescaling by a positive constant preserves and reflects concordance. -/
+@[simp]
+theorem concordant_rescale_const_iff (hc : 0 < c) :
+    Concordant (g₀.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc)
+        (g₁.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc) ↔ Concordant g₀ g₁ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.rescale_const hc⟩
+  simpa [inv_mul_cancel₀ hc.ne'] using h.rescale_const (inv_pos.2 hc)
+
+end Rescale
+
+section Prod
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H'' : Type*} [TopologicalSpace H''] {J : ModelWithCorners ℝ F H''}
+  {N : Type*} [TopologicalSpace N] [T2Space N] [ChartedSpace H'' N] [IsManifold J ∞ N]
+
+/-- The map `((x, y), t) ↦ ((x, t), y)`, which moves the cylinder coordinate of `(M × N) × ℝ` to
+the factor `M`. -/
+private def swapTime (q : (M × N) × ℝ) : (M × ℝ) × N :=
+  ((q.1.1, q.2), q.1.2)
+
+omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F] [T2Space N]
+  [IsManifold J ∞ N] in
+private theorem contMDiff_swapTime : ContMDiff ((I.prod J).prod 𝓘(ℝ)) ((I.prod 𝓘(ℝ)).prod J)
+    (∞ + 1) (swapTime (M := M) (N := N)) :=
+  (contMDiff_fst.fst.prodMk contMDiff_snd).prodMk contMDiff_fst.snd
+
+omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F] [T2Space N]
+  [IsManifold J ∞ N] in
+private theorem hasMFDerivAt_swapTime (q : (M × N) × ℝ) :
+    HasMFDerivAt ((I.prod J).prod 𝓘(ℝ)) ((I.prod 𝓘(ℝ)).prod J) swapTime q
+      ((((ContinuousLinearMap.fst ℝ E F).comp (ContinuousLinearMap.fst ℝ (E × F) ℝ)).prod
+        (ContinuousLinearMap.snd ℝ (E × F) ℝ)).prod
+        ((ContinuousLinearMap.snd ℝ E F).comp (ContinuousLinearMap.fst ℝ (E × F) ℝ))) :=
+  (((hasMFDerivAt_fst q.1).comp q (hasMFDerivAt_fst q)).prodMk (hasMFDerivAt_snd q)).prodMk
+    ((hasMFDerivAt_snd q.1).comp q (hasMFDerivAt_fst q))
+
+omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F] [T2Space N]
+  [IsManifold J ∞ N] in
+private theorem isInvertible_mfderiv_swapTime (q : (M × N) × ℝ) :
+    (mfderiv ((I.prod J).prod 𝓘(ℝ)) ((I.prod 𝓘(ℝ)).prod J) swapTime q).IsInvertible := by
+  rw [(hasMFDerivAt_swapTime q).mfderiv]
+  exact ⟨ContinuousLinearEquiv.equivOfInverse
+    ((((ContinuousLinearMap.fst ℝ E F).comp (ContinuousLinearMap.fst ℝ (E × F) ℝ)).prod
+        (ContinuousLinearMap.snd ℝ (E × F) ℝ)).prod
+        ((ContinuousLinearMap.snd ℝ E F).comp (ContinuousLinearMap.fst ℝ (E × F) ℝ)))
+    ((((ContinuousLinearMap.fst ℝ E ℝ).comp (ContinuousLinearMap.fst ℝ (E × ℝ) F)).prod
+      (ContinuousLinearMap.snd ℝ (E × ℝ) F)).prod
+      ((ContinuousLinearMap.snd ℝ E ℝ).comp (ContinuousLinearMap.fst ℝ (E × ℝ) F)))
+    (fun _ ↦ rfl) (fun _ ↦ rfl), ContinuousLinearMap.ext fun _ ↦ rfl⟩
+
+omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F] [T2Space N]
+  [IsManifold J ∞ N] in
+/-- The differential of `swapTime` moves the components of a tangent vector as `swapTime` moves
+the coordinates. -/
+private theorem mfderiv_swapTime_apply (q : (M × N) × ℝ)
+    (v : TangentSpace ((I.prod J).prod 𝓘(ℝ)) q) :
+    mfderiv ((I.prod J).prod 𝓘(ℝ)) ((I.prod 𝓘(ℝ)).prod J) swapTime q v =
+      (((v.1.1, v.2), v.1.2) : (E × ℝ) × F) := by
+  rw [(hasMFDerivAt_swapTime q).mfderiv]
+  -- Both sides live in the model space `(E × ℝ) × F`, where the continuous linear map of
+  -- `hasMFDerivAt_swapTime` acts by definition as `((a, b), t) ↦ ((a, t), b)`.
+  rfl
+
+omit [T2Space M] [T2Space N] in
+/-- Where `G` is `g + dt²`, the pullback of `G × g₂` along `((x, y), t) ↦ ((x, t), y)` is the
+cylinder metric `g × g₂ + dt²`. -/
+private theorem pullback_swapTime_inner {g₂ : ContMDiffRiemannianMetric J ∞ F
+      (fun y : N ↦ TangentSpace J y)} {q : (M × N) × ℝ}
+    (hG : G.inner (swapTime q).1 = g.cylinder.inner (swapTime q).1) :
+    ((G.prodTangentSpace g₂).pullback swapTime contMDiff_swapTime
+      fun q ↦ (isInvertible_mfderiv_swapTime q).injective).inner q =
+      (g.prodTangentSpace g₂).cylinder.inner q := by
+  ext v w
+  rw [pullback_inner, prodTangentSpace_inner, hG, cylinder_inner, cylinder_inner,
+    prodTangentSpace_inner]
+  simp only [tangentSpaceProdEquiv_apply]
+  rw [mfderiv_swapTime_apply, mfderiv_swapTime_apply]
+  exact add_right_comm _ _ _
+
+/-- **Products of concordances.** If `g₀` and `g₁` are concordant and `g₂` has nonnegative scalar
+curvature, then `g₀ × g₂` and `g₁ × g₂` are concordant. -/
+theorem Concordant.prodTangentSpace_of_nonneg (h : Concordant g₀ g₁)
+    {g₂ : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)}
+    (h₂ : ∀ y, 0 ≤ g₂.scalarCurvature y) :
+    Concordant (g₀.prodTangentSpace g₂) (g₁.prodTangentSpace g₂) :=
+  let ⟨_, hG⟩ := h
+  ⟨_, (hG.hasPositiveScalarCurvature.prodTangentSpace_of_nonneg h₂).pullback_of_isInvertible
+      contMDiff_swapTime isInvertible_mfderiv_swapTime,
+    fun _ hq ↦ pullback_swapTime_inner (hG.inner_of_nonpos _ hq),
+    fun _ hq ↦ pullback_swapTime_inner (hG.inner_of_one_le _ hq)⟩
+
+end Prod
+
+end Naturality
 
 end Bundle.ContMDiffRiemannianMetric

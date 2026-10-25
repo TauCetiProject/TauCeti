@@ -771,6 +771,18 @@ theorem isInvertible_mfderiv_prodMap
   rw [mfderiv_prodMap hf hg, ← he₁, ← he₂]
   exact ⟨e₁.prodCongr e₂, rfl⟩
 
+/-- The differential of `(x, y) ↦ (f x, y)` is invertible at a point where the differential of `f`
+is invertible. -/
+theorem isInvertible_mfderiv_prodMap_id_right
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+    {f : M → M'} {p : M × N} (hf : MDifferentiableAt I I' f p.1)
+    (hf' : (mfderiv I I' f p.1).IsInvertible) :
+    (mfderiv (I.prod J) (I'.prod J) (Prod.map f (id : N → N)) p).IsInvertible :=
+  isInvertible_mfderiv_prodMap hf mdifferentiableAt_id hf'
+    ⟨.refl 𝕜 _, by rw [mfderiv_id, ContinuousLinearEquiv.coe_refl]⟩
+
 /-- The differential of `(x, t) ↦ (x, φ t)` on `M × 𝕜` fixes the `M`-component and multiplies the
 `𝕜`-component by `φ' t`. -/
 theorem tangentSpaceProdEquiv_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 𝕜}
