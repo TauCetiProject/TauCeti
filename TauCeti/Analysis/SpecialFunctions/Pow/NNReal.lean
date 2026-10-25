@@ -52,6 +52,8 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
 * `ENNReal.eventually_forall_mem_Icc_rpow_le_add`: `y ^ d ≤ x ^ d + ε` for `y ∈ [x, z]` and `z`
   near `x`.
+* `ENNReal.exists_pos_forall_mem_Icc_rpow_le_add`: for `x < r`, a radius `η > 0` with
+  `x + η ≤ r` and `y ^ d ≤ x ^ d + ε` for `y ∈ [x, x + η]`.
 * `ENNReal.ofReal_inv_sqrt_le_enorm_rpow`: `ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹)` for every real `x`.
 * `ENNReal.ofReal_inv_sqrt_le_of_pow_three_le`: `y³ ≤ 2 |d|` gives `1 / √d ≤ √2 y^(-3/2)`.
 * `ENNReal.exists_enorm_sub_rpow_neg_half_mul_le`: for three distinct points `eᵢ`, the product of
@@ -62,7 +64,7 @@ closed intervals for a reciprocal radius parameter `α / r`.
 
 public section
 
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 namespace ENNReal
 
@@ -115,6 +117,18 @@ theorem eventually_forall_mem_Icc_rpow_le_add (x : ℝ≥0∞) {ε : ℝ≥0∞}
     exact (rpow_le_rpow hy.2 hd).trans hz.le
   · exact Filter.Eventually.of_forall fun _ y hy ↦
       (rpow_le_rpow_of_nonpos hy.1 hd.le).trans le_self_add
+
+/-- For `x < r` and `ε ≠ 0` there is `η > 0` with `x + η ≤ r` such that every `y ∈ [x, x + η]`
+satisfies `y ^ d ≤ x ^ d + ε`. -/
+theorem exists_pos_forall_mem_Icc_rpow_le_add {x r ε : ℝ≥0∞} (hxr : x < r) (hε : ε ≠ 0) (d : ℝ) :
+    ∃ η : ℝ≥0, 0 < η ∧ x + η ≤ r ∧ ∀ y ∈ Set.Icc x (x + η), y ^ d ≤ x ^ d + ε := by
+  have hg : Filter.Tendsto (fun η : ℝ≥0 ↦ x + η) (𝓝 0) (𝓝 x) := by
+    have hc : Continuous fun η : ℝ≥0 ↦ x + η := continuous_const.add continuous_coe
+    simpa using hc.tendsto 0
+  obtain ⟨η, ⟨hηr, hηd⟩, hη0⟩ := (((hg.eventually_lt_const hxr).and
+    (hg.eventually (eventually_forall_mem_Icc_rpow_le_add x hε d))).filter_mono
+    nhdsWithin_le_nhds |>.and self_mem_nhdsWithin).exists (f := 𝓝[>] (0 : ℝ≥0))
+  exact ⟨η, hη0, hηr.le, hηd⟩
 
 /-- The inverse square root of a real `x` is at most `‖x‖ₑ ^ (-1/2)`, as a value in `ℝ≥0∞`. The two
 agree for `x > 0`; for `x ≤ 0` the left side is `0`. -/
