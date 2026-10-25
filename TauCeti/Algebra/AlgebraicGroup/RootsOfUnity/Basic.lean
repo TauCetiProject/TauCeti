@@ -27,6 +27,8 @@ coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure
 
 * `TauCeti.RootsOfUnityGroup.generator_pow_val`: every element of `Multiplicative (ZMod n)` is
   the power of the standard generator given by its `ZMod.val`.
+* `TauCeti.RootsOfUnityGroup.single_generator_pow`: the standard generator of the group algebra
+  is an `n`th root of unity.
 * `TauCeti.RootsOfUnityGroup.characterMulEquivRootsOfUnity`: the multiplicative equivalence from
   characters `Multiplicative (ZMod n) →* Aˣ` to `rootsOfUnity n A`, given by the value on the
   standard generator.
@@ -66,6 +68,12 @@ universe u v
 /-- The standard generator of the character group defining `μ_n = D(ℤ/n)`. -/
 abbrev generator (n : ℕ) : Multiplicative (ZMod n) :=
   Multiplicative.ofAdd 1
+
+/-- The standard group-algebra generator is an `n`th root of unity. -/
+@[simp high] -- Simplify the relation before `MonoidAlgebra.single_pow` expands the power.
+theorem single_generator_pow {R : Type*} [Semiring R] (n : ℕ) :
+    MonoidAlgebra.single (generator n) (1 : R) ^ n = 1 := by
+  simp [generator, ← ofAdd_nsmul, MonoidAlgebra.one_def]
 
 section Characters
 
