@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactness.SigmaCompact
-public import Mathlib.Topology.Homotopy.Basic
-public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.Topology.Homotopy.AddCircle
+public import TauCeti.Topology.Homotopy.Proper
+public import TauCeti.Topology.Homotopy.Trans
 
 /-!
 # Simple connectivity at infinity
@@ -27,6 +27,9 @@ Freedman).
 
 ## Main results
 
+* `TauCeti.simplyConnectedAtInfinity_iff` unfolds the definition, and
+  `TauCeti.SimplyConnectedAtInfinity.exists_isCompact_superset` supplies, for a compact `K`, the
+  compact `L ⊇ K` outside which circles contract away from `K`.
 * `CompactExhaustion.simplyConnectedAtInfinity_iff`: along any compact exhaustion `K₀ ⊆ K₁ ⊆ ⋯`
   of `X`, simple connectivity at infinity says that for every `n` there is an `m` such that
   circles missing `Kₘ` are null-homotopic in `X \ Kₙ`. Any two compact exhaustions therefore give
@@ -69,19 +72,24 @@ def SimplyConnectedAtInfinity (X : Type*) [TopologicalSpace X] : Prop :=
     ∀ f : C(AddCircle (1 : ℝ), X), (∀ z, f z ∉ L) →
       ∃ p ∉ K, ∃ H : Homotopy f (const (AddCircle (1 : ℝ)) p), ∀ z, H z ∉ K
 
-/-- A homotopy missing `K` followed by a null-homotopy missing `K` is a null-homotopy missing
-`K`. -/
-private theorem exists_homotopy_const_of_homotopy {Z : Type*} [TopologicalSpace Z] {K : Set X}
-    {f g : C(Z, X)} (F : Homotopy f g) (hF : ∀ z, F z ∉ K)
-    (hg : ∃ p ∉ K, ∃ H : Homotopy g (const Z p), ∀ z, H z ∉ K) :
-    ∃ p ∉ K, ∃ H : Homotopy f (const Z p), ∀ z, H z ∉ K := by
-  obtain ⟨p, hp, H, hH⟩ := hg
-  refine ⟨p, hp, F.trans H, fun z => ?_⟩
-  rw [Homotopy.trans_apply]
-  split_ifs
-  exacts [hF _, hH _]
+/-- The defining property of simple connectivity at infinity: for every compact `K` there is a
+compact `L ⊇ K` such that every continuous circle missing `L` is null-homotopic through a homotopy
+that misses `K`. -/
+theorem simplyConnectedAtInfinity_iff : SimplyConnectedAtInfinity X ↔
+    ∀ K : Set X, IsCompact K → ∃ L : Set X, IsCompact L ∧ K ⊆ L ∧
+      ∀ f : C(AddCircle (1 : ℝ), X), (∀ z, f z ∉ L) →
+        ∃ p ∉ K, ∃ H : Homotopy f (const (AddCircle (1 : ℝ)) p), ∀ z, H z ∉ K :=
+  Iff.rfl
 
 namespace SimplyConnectedAtInfinity
+
+/-- In a space simply connected at infinity, every compact `K` lies in a compact `L` such that
+every continuous circle missing `L` is null-homotopic through a homotopy that misses `K`. -/
+theorem exists_isCompact_superset (h : SimplyConnectedAtInfinity X) {K : Set X}
+    (hK : IsCompact K) : ∃ L : Set X, IsCompact L ∧ K ⊆ L ∧
+      ∀ f : C(AddCircle (1 : ℝ), X), (∀ z, f z ∉ L) →
+        ∃ p ∉ K, ∃ H : Homotopy f (const (AddCircle (1 : ℝ)) p), ∀ z, H z ∉ K :=
+  h K hK
 
 /-- A compact space is simply connected at infinity: take `L` to be the whole space. -/
 theorem of_compactSpace [CompactSpace X] : SimplyConnectedAtInfinity X :=
@@ -97,18 +105,20 @@ A circle `γ` far out in `Y` is moved by `g` far out in `X`, contracted there aw
 theorem of_isProperMap (hX : SimplyConnectedAtInfinity X) {f : C(X, Y)} {g : C(Y, X)}
     (hf : IsProperMap f) (hg : IsProperMap g) (H : Homotopy (f.comp g) (ContinuousMap.id Y))
     (hH : IsProperMap H) : SimplyConnectedAtInfinity Y := by
-  intro K hK
-  obtain ⟨L, hL, -, hXL⟩ := hX (f ⁻¹' K) (hf.isCompact_preimage hK)
+  refine simplyConnectedAtInfinity_iff.2 fun K hK => ?_
+  obtain ⟨L, hL, -, hXL⟩ := hX.exists_isCompact_superset (hf.isCompact_preimage hK)
   -- the points of `Y` whose track under `H` meets `K`
   have hC : IsCompact (Prod.snd '' (H ⁻¹' K)) := (hH.isCompact_preimage hK).image continuous_snd
   refine ⟨K ∪ Prod.snd '' (H ⁻¹' K) ∪ g ⁻¹' L, (hK.union hC).union (hg.isCompact_preimage hL),
     subset_union_left.trans subset_union_left, fun γ hγ => ?_⟩
   obtain ⟨p, hp, G, hG⟩ := hXL (g.comp γ) fun z hz => hγ z (Or.inr hz)
-  refine exists_homotopy_const_of_homotopy
-    ((H.symm.compContinuousMap γ).cast (ContinuousMap.id_comp γ) (ContinuousMap.comp_assoc _ _ _))
-    (fun z hz => hγ z.2 (Or.inl (Or.inr ⟨(σ z.1, γ z.2), by simpa using hz, rfl⟩)))
-    ⟨f p, hp, ((Homotopy.refl f).comp G).cast rfl (ContinuousMap.comp_const f p),
-      fun z => by simpa using hG z⟩
+  let F := (H.symm.compContinuousMap γ).cast (ContinuousMap.id_comp γ)
+    (ContinuousMap.comp_assoc _ _ _)
+  have hF (z) : F z ∉ K := fun hz =>
+    hγ z.2 (Or.inl (Or.inr ⟨(σ z.1, γ z.2), by simpa [F] using hz, rfl⟩))
+  let G' := ((Homotopy.refl f).comp G).cast rfl (ContinuousMap.comp_const f p)
+  have hG' (z) : G' z ∉ K := by simpa [G'] using hG z
+  exact ⟨f p, hp, F.trans G', Homotopy.trans_apply_mem (S := Kᶜ) hF hG'⟩
 
 end SimplyConnectedAtInfinity
 
@@ -118,7 +128,7 @@ that ball is pushed radially onto the sphere of radius `R + 1`, which is simply 
 entering the ball. -/
 theorem simplyConnectedAtInfinity_of_two_lt_rank {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [ProperSpace E] (h : 2 < Module.rank ℝ E) : SimplyConnectedAtInfinity E := by
-  intro K hK
+  refine simplyConnectedAtInfinity_iff.2 fun K hK => ?_
   obtain ⟨r, hr⟩ := hK.isBounded.subset_closedBall 0
   set R := max r 0
   have hKR : K ⊆ closedBall 0 R := hr.trans (closedBall_subset_closedBall (le_max_left _ _))
@@ -151,9 +161,9 @@ theorem simplyConnectedAtInfinity_of_two_lt_rank {E : Type*} [NormedAddCommGroup
             fun x => (hf0 x.2).ne'))
       map_zero_left := fun z => by simp
       map_one_left := fun z => by simp [ι, g] }
-  refine exists_homotopy_const_of_homotopy F (fun x => hout ?_)
-    ⟨ι q, hι q, ((Homotopy.refl ι).comp G).cast rfl (ContinuousMap.comp_const ι q),
-      fun z => by simpa using hι (G z)⟩
+  let G' := ((Homotopy.refl ι).comp G).cast rfl (ContinuousMap.comp_const ι q)
+  have hG' (z) : G' z ∉ K := by simpa [G'] using hι (G z)
+  refine ⟨ι q, hι q, F.trans G', Homotopy.trans_apply_mem (S := Kᶜ) (fun x => hout ?_) hG'⟩
   -- the norm along the straight-line homotopy is a convex combination of `‖f z‖` and `R + 1`
   obtain ⟨t, z⟩ := x
   obtain ⟨ht₀, ht₁⟩ := t.2
@@ -189,10 +199,10 @@ theorem CompactExhaustion.simplyConnectedAtInfinity_iff {X : Type*} [Topological
         ∃ p ∉ K n, ∃ H : ContinuousMap.Homotopy f (ContinuousMap.const _ p), ∀ z, H z ∉ K n := by
   constructor
   · intro h n
-    obtain ⟨L, hL, -, hf⟩ := h (K n) (K.isCompact n)
+    obtain ⟨L, hL, -, hf⟩ := h.exists_isCompact_superset (K.isCompact n)
     obtain ⟨m, hm⟩ := K.exists_superset_of_isCompact hL
     exact ⟨m, fun f hfm => hf f fun z hz => hfm z (hm hz)⟩
-  · intro h C hC
+  · refine fun h => TauCeti.simplyConnectedAtInfinity_iff.2 fun C hC => ?_
     obtain ⟨n, hn⟩ := K.exists_superset_of_isCompact hC
     obtain ⟨m, hm⟩ := h n
     refine ⟨C ∪ K m, hC.union (K.isCompact m), Set.subset_union_left, fun f hf => ?_⟩
@@ -203,33 +213,15 @@ namespace ContinuousMap
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
-/-- A continuous map `f : X → Y` is a **proper homotopy equivalence** if it is proper and has a
-proper homotopy inverse `g`, with both homotopies `g ∘ f ≃ id` and `f ∘ g ≃ id` proper as maps
-`I × X → X` and `I × Y → Y`. -/
-def HasProperHomotopyInverse (f : C(X, Y)) : Prop :=
-  IsProperMap f ∧ ∃ g : C(Y, X), IsProperMap g ∧
-    ∃ H : Homotopy (g.comp f) (ContinuousMap.id X), ∃ H' : Homotopy (f.comp g) (ContinuousMap.id Y),
-      IsProperMap H ∧ IsProperMap H'
-
 /-- **Simple connectivity at infinity is invariant under proper homotopy equivalences.** -/
 theorem HasProperHomotopyInverse.simplyConnectedAtInfinity_iff {f : C(X, Y)}
     (hf : f.HasProperHomotopyInverse) :
     TauCeti.SimplyConnectedAtInfinity X ↔ TauCeti.SimplyConnectedAtInfinity Y := by
-  obtain ⟨hf, g, hg, H, H', hH, hH'⟩ := hf
+  obtain ⟨g, hg, H, H', hH, hH'⟩ := hf.exists_inverse
+  have hf := hf.isProperMap
   exact ⟨fun h => h.of_isProperMap hf hg H' hH', fun h => h.of_isProperMap hg hf H hH⟩
 
 end ContinuousMap
-
-/-- A homeomorphism is a proper homotopy equivalence, with constant homotopies: these are the
-projections `I × X → X` and `I × Y → Y`, which are proper as `I` is compact. -/
-theorem Homeomorph.hasProperHomotopyInverse {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] (e : X ≃ₜ Y) : (e : C(X, Y)).HasProperHomotopyInverse := by
-  refine ⟨e.isProperMap, e.symm, e.symm.isProperMap,
-    (ContinuousMap.Homotopy.refl _).cast rfl e.symm_comp_toContinuousMap,
-    (ContinuousMap.Homotopy.refl _).cast rfl e.toContinuousMap_comp_symm, ?_, ?_⟩ <;>
-  · convert isProperMap_snd_of_compactSpace (X := I) using 1
-    ext x
-    simp
 
 /-- **Simple connectivity at infinity is invariant under homeomorphisms.** -/
 theorem Homeomorph.simplyConnectedAtInfinity_iff {X Y : Type*} [TopologicalSpace X]
