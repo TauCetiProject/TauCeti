@@ -23,11 +23,11 @@ graph, is aspherical (`TauCeti.isAspherical_of_forall_isEmpty_cell`). In particu
 circles indexed by `S` is a `K(F, 1)` for the free group `F` on `S`
 (`TauCeti.WedgeSum.isEilenbergMacLaneSpaceOne_circle`), with no finiteness hypothesis on `S`.
 
-The proof passes to the universal cover `X̃` of `X`, which exists because `X` is locally
-path-connected and semilocally simply connected. The CW structure of `X` lifts to `X̃`, cell by
-cell (`TauCeti.cwComplexPreimage`), so `X̃` is again a CW complex with no cells of dimension at
+The proof passes to the universal cover `Y` of `X`, which exists because `X` is locally
+path-connected and semilocally simply connected. The CW structure of `X` lifts to `Y`, cell by
+cell (`TauCeti.cwComplexPreimage`), so `Y` is again a CW complex with no cells of dimension at
 least `2`. Its singular homology therefore vanishes in every degree at least `2`
-(`TauCeti.isZero_singularHomology_complexBasePair_of_isEmpty_cell`), and since `X̃` is simply
+(`TauCeti.isZero_singularHomology_complexBasePair_of_isEmpty_cell`), and since `Y` is simply
 connected, the Hurewicz theorem shows that all of its homotopy groups vanish
 (`TauCeti.subsingleton_homotopyGroup_of_isZero_homology_singularChains`). A covering map is an
 isomorphism on homotopy groups in dimensions at least `2`, so those of `X` vanish too. This is a
