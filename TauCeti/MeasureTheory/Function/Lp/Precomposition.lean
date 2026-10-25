@@ -70,8 +70,21 @@ most `C • ν` with `C` finite. -/
 private def compOfMapLeSmulₗ (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.map f ≤ C • ν) :
     Lp E p ν →ₗ[𝕜] Lp E p μ where
   toFun g := ⟨_, compQuasiMeasurePreserving_mem_Lp hf hC hmap g⟩
-  map_add' := by rintro ⟨⟨_⟩, _⟩ ⟨⟨_⟩, _⟩; rfl
-  map_smul' c g := by rcases g with ⟨⟨_⟩, _⟩; rfl
+  map_add' g h := by
+    have hqmp := QuasiMeasurePreserving.of_map_le_smul hf hmap
+    refine Lp.ext <| (AEEqFun.coeFn_compQuasiMeasurePreserving _ hqmp).trans <|
+      .trans ?_ (Lp.coeFn_add _ _).symm
+    filter_upwards [hqmp.ae_eq_comp (Lp.coeFn_add g h),
+      AEEqFun.coeFn_compQuasiMeasurePreserving (g : β →ₘ[ν] E) hqmp,
+      AEEqFun.coeFn_compQuasiMeasurePreserving (h : β →ₘ[ν] E) hqmp] with x hx hgx hhx
+    exact hx.trans (congr_arg₂ (· + ·) hgx.symm hhx.symm)
+  map_smul' c g := by
+    have hqmp := QuasiMeasurePreserving.of_map_le_smul hf hmap
+    refine Lp.ext <| (AEEqFun.coeFn_compQuasiMeasurePreserving _ hqmp).trans <|
+      .trans ?_ (Lp.coeFn_smul _ _).symm
+    filter_upwards [hqmp.ae_eq_comp (Lp.coeFn_smul c g),
+      AEEqFun.coeFn_compQuasiMeasurePreserving (g : β →ₘ[ν] E) hqmp] with x hx hgx
+    exact hx.trans (congr_arg (c • ·) hgx.symm)
 
 private theorem coeFn_compOfMapLeSmulₗ (hf : Measurable f) (hC : C ≠ ∞)
     (hmap : μ.map f ≤ C • ν) (g : Lp E p ν) :
