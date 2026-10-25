@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
-public import Mathlib.MeasureTheory.Function.L1Space.AEEqFun
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 
@@ -294,28 +293,11 @@ theorem toL1CLM_apply (u : BV μ Ω) : toL1CLM u = u.toL1 := (rfl)
 theorem toL1CLM_injective : Function.Injective (toL1CLM : BV μ Ω →L[ℝ] _) :=
   toL1_injective
 
-private theorem variation_le_of_tendsto_L1 {u : ℕ → E →₁[μ.restrict Ω] ℝ}
-    {v : E →₁[μ.restrict Ω] ℝ} {C : ℝ≥0∞} (h : Tendsto u atTop (𝓝 v))
-    (hC : ∀ᶠ n in atTop, totalVariationOn μ Ω (u n) ≤ C) :
-    totalVariationOn μ Ω v ≤ C := by
-  refine (totalVariationOn_le_liminf
-    (.of_forall fun n => IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn (u n)))
-    (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn v)) ?_).trans
-      (liminf_le_of_frequently_le' hC.frequently)
-  intro K _ hK
-  have hd := tendsto_iff_edist_tendsto_0.mp h
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hd
-    (fun _ => zero_le) fun n => ?_
-  rw [L1.edist_def]
-  simpa only [edist_eq_enorm_sub] using
-    (lintegral_mono_set hK :
-      (∫⁻ x in K, ‖u n x - v x‖ₑ ∂μ) ≤ ∫⁻ x in Ω, ‖u n x - v x‖ₑ ∂μ)
-
 private theorem variation_sub_limit_le {u : ℕ → BV μ Ω} {v : E →₁[μ.restrict Ω] ℝ}
     (hv : Tendsto (fun n => (u n).toL1) atTop (𝓝 v)) (N M : ℕ) {C : ℝ} (hC : 0 ≤ C)
     (hbound : ∀ n ≥ N, ‖u n - u M‖ ≤ C) :
     totalVariationOn μ Ω (v - (u M).toL1 : E →₁[μ.restrict Ω] ℝ) ≤ ENNReal.ofReal C := by
-  apply variation_le_of_tendsto_L1 (hv.sub tendsto_const_nhds)
+  apply totalVariationOn_le_of_tendsto_L1 (hv.sub tendsto_const_nhds)
   filter_upwards [eventually_ge_atTop N] with n hn
   rw [← toL1_sub]
   apply (ENNReal.le_ofReal_iff_toReal_le (u n - u M).totalVariationOn_lt_top.ne hC).mpr
