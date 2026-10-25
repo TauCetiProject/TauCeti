@@ -99,7 +99,8 @@ theorem kroneckerSym_of_odd (a : ℤ) {b : ℤ} (hb : Odd b) :
     kroneckerSym a b = (if a < 0 ∧ b < 0 then -1 else 1) * jacobiSym a b.natAbs := by
   have h2 : ¬ 2 ∣ b.natAbs := Nat.two_dvd_ne_zero.mpr (Nat.odd_iff.mp (Int.natAbs_odd.mpr hb))
   rw [kroneckerSym_of_ne_zero a (by rintro rfl; exact Int.not_odd_zero hb),
-    Nat.factorization_eq_zero_of_not_dvd h2, pow_zero, pow_zero, Nat.div_one, mul_one]
+    (Nat.ordCompl_eq_self_iff_zero_or_not_dvd _ Nat.prime_two).mpr (Or.inr h2),
+    Nat.factorization_eq_zero_of_not_dvd h2, pow_zero, mul_one]
 
 /-- At an odd positive denominator the Kronecker symbol is the Jacobi symbol. -/
 theorem kroneckerSym_eq_jacobiSym (a : ℤ) {b : ℕ} (hb : Odd b) :
