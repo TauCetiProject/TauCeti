@@ -39,9 +39,8 @@ over some finite Galois `M ⊇ L`, after refinement (`TwoCocycle.inflateZ2_mem_B
 continuous primitive takes only finitely many values, which lie in `Mˣ` for the fixed field `M` of
 an open normal subgroup on whose cosets it is constant.
 
-Every statement about the explicit cocycle groups `Z²` and `B²` and the explicit `H²` holds for a
-field `K` in an arbitrary universe. Only the comparison with `continuousCohomology`, which is built
-from representations over `ℤ`, requires `K : Type`.
+Every statement holds for a field `K` in an arbitrary universe, both those about the explicit
+cocycle groups `Z²` and `B²` and the explicit `H²` and those about Mathlib's `continuousCohomology`.
 
 The conventions follow Gille--Szamuely, *Central Simple Algebras and Galois Cohomology*, §4.4,
 and Serre, *Local Fields*, Chapter X.
@@ -617,7 +616,7 @@ end Cocycle
 
 section ContinuousClass
 
-variable {K : Type} [Field K]
+variable {K : Type u} [Field K]
 
 section Finite
 
@@ -722,7 +721,7 @@ theorem inflateH2_def (c : GaloisCocycle K) : c.inflateH2 = c.cocycle.inflateH2 
 
 end ExplicitClass
 
-variable {K : Type} [Field K]
+variable {K : Type u} [Field K]
 
 /-- The continuous cohomology class obtained by inflating a bundled finite Galois cocycle. -/
 def inflateClass (c : GaloisCocycle K) :
@@ -780,7 +779,7 @@ theorem exists_galoisCocycle_inflateH2 (x : H2 (AbsoluteGaloisGroup K) (UnitsCoe
 
 end Exhaustion
 
-variable {K : Type} [Field K]
+variable {K : Type u} [Field K]
 
 /-- **Every continuous degree-two class of the absolute Galois group is inflated from a finite
 Galois cocycle.** -/

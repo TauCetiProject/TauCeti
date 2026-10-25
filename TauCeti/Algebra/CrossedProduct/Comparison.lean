@@ -24,9 +24,9 @@ coboundaries, for a field `K` in any universe. It is characterized by its value 
 class of the crossed product of a cocycle `z` of a finite Galois subextension `L ⊆ Kˢ`, which is
 `z.inflateH2 L`, the class of the inflation of `z` (`brauerExplicitH2Equiv_crossedProductClass`).
 Every Brauer class is such a crossed-product class, so this equation determines the comparison
-(`brauerExplicitH2Equiv_unique`). For `K : Type`, composing with the comparison of the explicit
-`H²` with Mathlib's `continuousCohomology` gives `brauerCohomologyEquiv K`, which sends the same
-class to `z.inflateClass L` (`brauerCohomologyEquiv_crossedProductClass`).
+(`brauerExplicitH2Equiv_unique`). Composing with the comparison of the explicit `H²` with Mathlib's
+`continuousCohomology` gives `brauerCohomologyEquiv K`, which sends the same class to
+`z.inflateClass L` (`brauerCohomologyEquiv_crossedProductClass`).
 
 The equation is consistent because both sides only depend on the Brauer class. Two bundled Galois
 cocycles can be compared over the compositum of their splitting fields, where neither side changes
@@ -46,8 +46,8 @@ bijective.
 
 * `TauCeti.brauerExplicitH2Equiv K`: the comparison `Additive (Br K) ≃+ H²(G_K, (Kˢ)ˣ)` with the
   explicit continuous `H²`, for `K` in any universe.
-* `TauCeti.brauerCohomologyEquiv K`: for `K : Type`, the comparison
-  `Additive (Br K) ≃+ H²_cont(G_K, (Kˢ)ˣ)` with Mathlib's continuous cohomology.
+* `TauCeti.brauerCohomologyEquiv K`: the comparison `Additive (Br K) ≃+ H²_cont(G_K, (Kˢ)ˣ)` with
+  Mathlib's continuous cohomology.
 
 ## Main results
 
@@ -62,7 +62,7 @@ bijective.
   products and inflated cocycles; `TauCeti.brauerExplicitH2Equiv_unique`: these values determine
   the comparison.
 * `TauCeti.brauerCohomologyEquiv_crossedProductClass`, `TauCeti.brauerCohomologyEquiv_unique`:
-  for `K : Type`, the value of `brauerCohomologyEquiv K` on crossed products, which determines it.
+  the value of `brauerCohomologyEquiv K` on crossed products, which determines it.
 
 ## References
 
@@ -250,7 +250,7 @@ end Explicit
 
 section Continuous
 
-variable {K : Type} [Field K]
+variable {K : Type u} [Field K]
 
 /-- The absolute Galois group is locally compact, being compact and Hausdorff. Instance search
 does not find this within its default budget under the imports of this file, so it is assembled
@@ -266,7 +266,7 @@ local instance locallyCompactSpace_absoluteGaloisGroup :
 
 variable (K) in
 /-- **The comparison isomorphism** `Br(K) ≃ H²_cont(G_K, (Kˢ)ˣ)` with Mathlib's continuous
-cohomology, for `K : Type`: the explicit comparison `brauerExplicitH2Equiv K` followed by
+cohomology, for `K` in any universe: the explicit comparison `brauerExplicitH2Equiv K` followed by
 `explicitH2AddEquivContinuousCohomology`. It is characterized by
 `brauerCohomologyEquiv_crossedProductClass`: the class of the crossed product of a cocycle of a
 finite Galois `L ⊆ Kˢ` goes to the continuous class of the inflation of that cocycle; see
@@ -277,8 +277,7 @@ def brauerCohomologyEquiv :
   (brauerExplicitH2Equiv K).trans
     (explicitH2AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K))
 
-/-- For `K : Type`, the continuous comparison is the explicit one read in Mathlib's continuous
-cohomology. -/
+/-- The continuous comparison is the explicit one read in Mathlib's continuous cohomology. -/
 theorem brauerCohomologyEquiv_apply (x : Additive (BrauerGroup K)) :
     brauerCohomologyEquiv K x =
       explicitH2AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K)

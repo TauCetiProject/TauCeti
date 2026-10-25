@@ -55,6 +55,8 @@ arrow capacities and arrow cuts.
 * `TauCeti.SplitHom.network`: the split network, with zero lower bounds and the split capacities
   as upper bounds.
 * `TauCeti.SplitHom.originalAssignment g`: the values of a split assignment on original arrows.
+* `TauCeti.SplitHom.cutVertices S` and `TauCeti.SplitHom.cutArrows Q S`: the vertices whose split
+  arrows leave a vertex set `S` of the split network, and the original arrows leaving `S`.
 
 ## Main results
 
@@ -72,6 +74,8 @@ arrow capacities and arrow cuts.
 * `TauCeti.SplitHom.arrowSum_originalAssignment_univ_singleton_le` and
   `TauCeti.SplitHom.arrowSum_originalAssignment_singleton_univ_le`: a split-arrow capacity bounds
   the traffic entering and leaving its vertex.
+* `TauCeti.SplitHom.arrowSum_assignment_compl`: the capacity of a cut of the split network is the
+  capacity of its crossing split arrows plus the capacity of its crossing original arrows.
 
 ## References
 
@@ -808,6 +812,67 @@ theorem arrowSum_originalAssignment_singleton_univ_le (hg : g (split v) ≤ c)
   exact h ▸ hg
 
 end Excess
+
+section Cut
+
+variable [Fintype V] [DecidableEq V] (S : Finset (V × Bool))
+
+/-- The vertices whose split arrows leave the vertex set `S` of the split network: those whose
+entrance lies in `S` and whose exit does not. -/
+def cutVertices : Finset V :=
+  {v | (v, false) ∈ S ∧ (v, true) ∉ S}
+
+@[simp]
+theorem mem_cutVertices {v : V} : v ∈ cutVertices S ↔ (v, false) ∈ S ∧ (v, true) ∉ S := by
+  simp [cutVertices]
+
+variable (Q) [∀ v w, Fintype (Q v w)]
+
+/-- The original arrows leaving the vertex set `S` of the split network, each recorded with its
+endpoints: the arrows from a vertex whose exit lies in `S` to a vertex whose entrance does not. -/
+def cutArrows : Finset (Σ v w, Q v w) :=
+  {a | (a.1, true) ∈ S ∧ (a.2.1, false) ∉ S}
+
+@[simp]
+theorem mem_cutArrows {a : Σ v w, Q v w} :
+    a ∈ cutArrows Q S ↔ (a.1, true) ∈ S ∧ (a.2.1, false) ∉ S := by
+  simp [cutArrows]
+
+variable {Q}
+
+/-- **Cuts of the split network.** The total value of a split assignment on the arrows leaving a
+vertex set `S` is its value on the split arrows leaving `S` plus its value on the original arrows
+leaving `S`. -/
+theorem arrowSum_assignment_compl [AddCommMonoid K] (f : Assignment Q K) (φ : V → K) :
+    arrowSum (assignment f φ) S Sᶜ =
+      ∑ v ∈ cutVertices S, φ v + ∑ a ∈ cutArrows Q S, f a.2.2 := by
+  have hsplit (v w : V) :
+      ∑ e : SplitHom Q (v, false) (w, true),
+          (if (v, false) ∈ S ∧ (w, true) ∈ Sᶜ then assignment f φ e else 0) =
+        if v = w then (if (v, false) ∈ S ∧ (v, true) ∉ S then φ v else 0) else 0 := by
+    by_cases hvw : v = w
+    · subst hvw
+      rw [Fintype.sum_eq_single (split v) fun e he ↦ (he (eq_split e)).elim]
+      simp
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false hvw)]
+      exact Finset.sum_eq_zero fun e _ ↦ (hvw e.2).elim
+  have horiginal (v w : V) :
+      ∑ e ∈ @univ _ (instFintype Q (v, true) (w, false)),
+          (if (v, true) ∈ S ∧ (w, false) ∈ Sᶜ then assignment f φ e else 0) =
+        ∑ e : Q v w, if (v, true) ∈ S ∧ (w, false) ∉ S then f e else 0 := by
+    -- The arrows from an exit to an entrance are the original arrows, and the `Fintype` instance
+    -- of the split arrow family is that of `Q` on them, as in `sum_original`.
+    change ∑ e : Q v w,
+        (if (v, true) ∈ S ∧ (w, false) ∈ Sᶜ then assignment f φ (original e) else 0) = _
+    simp only [assignment_original, mem_compl]
+  rw [arrowSum_eq_sum_ite, Fintype.sum_prod_type]
+  simp only [Fintype.sum_prod_type, Fintype.sum_bool, univ_eq_empty, sum_empty, hsplit, horiginal,
+    Fintype.sum_ite_eq, sum_add_distrib]
+  simp only [sum_const_zero, add_zero, zero_add]
+  rw [cutVertices, cutArrows, sum_filter, sum_filter, Fintype.sum_sigma]
+  simp only [Fintype.sum_sigma]
+
+end Cut
 
 end SplitHom
 

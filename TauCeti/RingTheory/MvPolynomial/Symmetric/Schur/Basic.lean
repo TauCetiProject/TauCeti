@@ -456,6 +456,14 @@ theorem schurPoly_partition_zero (p : Nat.Partition 0) : schurPoly σ R p = 1 :=
       YoungDiagram.cells_bot.symm)
   rw [schurPoly, hbot, diagramSchurPoly_bot, map_one]
 
+/-- **A Schur polynomial vanishes for a partition with more parts than the alphabet has letters**,
+over every commutative semiring; `TauCeti.schurPoly_eq_zero_iff` is the converse over a nontrivial
+one. -/
+theorem schurPoly_eq_zero_of_card_lt (h : Fintype.card σ < μ.parts.card) :
+    schurPoly σ R μ = 0 := by
+  rw [schurPoly, diagramSchurPoly_eq_zero_of_lt_colLen
+    (by rwa [YoungDiagram.colLen_zero_ofPartition]), map_zero]
+
 /-- **A Schur polynomial vanishes exactly for a partition with more parts than the alphabet has
 letters.** -/
 theorem schurPoly_eq_zero_iff [Nontrivial R] :
