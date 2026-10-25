@@ -180,7 +180,8 @@ theorem integrable_skewNormalPDFReal (m s α : ℝ) : Integrable (skewNormalPDFR
 
 /-- For a positive scale, the derivative of the skew-normal cdf `x ↦ Φ(y) - 2 * T(y, α)`, with
 `y = (x - m) / s`, is the skew-normal density. -/
-theorem hasDerivAt_skewNormalPDFReal (hs : 0 < s) (m α x : ℝ) :
+theorem hasDerivAt_cdf_gaussianReal_sub_two_mul_owensT_skewNormalPDFReal (hs : 0 < s)
+    (m α x : ℝ) :
     HasDerivAt (fun x => cdf (gaussianReal 0 1) ((x - m) / s) - 2 * Real.owensT ((x - m) / s) α)
       (skewNormalPDFReal m s α x) x := by
   have h := (hasDerivAt_cdf_gaussianReal_sub_two_mul_owensT α ((x - m) / s)).comp x
@@ -199,7 +200,7 @@ theorem integral_skewNormalPDFReal_Iic (hs : 0 < s) (m α x : ℝ) :
     ∫ y in Iic x, skewNormalPDFReal m s α y =
       cdf (gaussianReal 0 1) ((x - m) / s) - 2 * Real.owensT ((x - m) / s) α := by
   rw [integral_Iic_of_hasDerivAt_of_tendsto'
-      (fun y _ => hasDerivAt_skewNormalPDFReal hs m α y)
+      (fun y _ => hasDerivAt_cdf_gaussianReal_sub_two_mul_owensT_skewNormalPDFReal hs m α y)
       (integrable_skewNormalPDFReal m s α).integrableOn
       ((tendsto_cdf_gaussianReal_sub_two_mul_owensT_atBot α).comp (tendsto_div_atBot hs m)),
     sub_zero]
@@ -244,7 +245,8 @@ theorem isProbabilityMeasure_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
   rw [skewNormalMeasure_eq_withDensity, withDensity_apply _ MeasurableSet.univ,
     Measure.restrict_univ]
   have h : ∫ x, skewNormalPDFReal m s α x = 1 := by
-    rw [integral_of_hasDerivAt_of_tendsto (hasDerivAt_skewNormalPDFReal hs m α)
+    rw [integral_of_hasDerivAt_of_tendsto
+      (hasDerivAt_cdf_gaussianReal_sub_two_mul_owensT_skewNormalPDFReal hs m α)
       (integrable_skewNormalPDFReal m s α)
       ((tendsto_cdf_gaussianReal_sub_two_mul_owensT_atBot α).comp (tendsto_div_atBot hs m))
       ((tendsto_cdf_gaussianReal_sub_two_mul_owensT_atTop α).comp
@@ -382,7 +384,7 @@ theorem strictMono_cdf_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
     funext (cdf_skewNormalMeasure_eq hs m α)
   rw [h]
   exact strictMono_of_deriv_pos fun x => by
-    rw [(hasDerivAt_skewNormalPDFReal hs m α x).deriv]
+    rw [(hasDerivAt_cdf_gaussianReal_sub_two_mul_owensT_skewNormalPDFReal hs m α x).deriv]
     exact skewNormalPDFReal_pos hs m α x
 
 /-- For a positive scale the skew-normal cdf is continuous. -/
@@ -393,7 +395,7 @@ theorem continuous_cdf_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
     funext (cdf_skewNormalMeasure_eq hs m α)
   rw [h]
   exact continuous_iff_continuousAt.mpr fun x =>
-    (hasDerivAt_skewNormalPDFReal hs m α x).continuousAt
+    (hasDerivAt_cdf_gaussianReal_sub_two_mul_owensT_skewNormalPDFReal hs m α x).continuousAt
 
 /-- **The quantile function of the skew-normal law** is the Owen-T root: at a level `0 < u < 1`,
 the quantile is the unique `x` with `Φ(y) - 2 * T(y, α) = u`, where `y = (x - m) / s`. -/
