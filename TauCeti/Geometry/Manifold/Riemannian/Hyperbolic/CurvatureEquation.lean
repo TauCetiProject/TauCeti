@@ -17,6 +17,7 @@ dimension two the scalar curvature is twice the Gaussian curvature, and the conf
 scalar curvature becomes `Scal^ĝ = e^(-2φ) (Scal^g - 2 Δφ)`, with `Δ = div ∘ grad` the
 Laplace–Beltrami operator of `g`. Thus `ĝ` has constant Gaussian curvature `-1` exactly when
 `φ` solves the curvature equation
+(`Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_eq_iff_of_finrank_eq_two`)
 
 `Δ⁺φ + K + e^(2φ) = 0`,
 
@@ -32,10 +33,6 @@ for every constant negative scalar curvature `c`, the hyperbolic case being `c =
 
 ## Main results
 
-* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_of_finrank_eq_two`: the conformal
-  change of scalar curvature on a surface.
-* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_eq_iff_of_finrank_eq_two`: `e^(2φ) g`
-  has scalar curvature `c` exactly when `-Δφ + Scal^g / 2 = (c / 2) e^(2φ)`.
 * `Bundle.ContMDiffRiemannianMetric.apply_le_of_scalarCurvature_rescale_eq`,
   `Bundle.ContMDiffRiemannianMetric.le_apply_of_scalarCurvature_rescale_eq`: the upper and
   lower barriers for the conformal factor.
@@ -65,34 +62,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
   (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-
-/-- **Scalar curvature under conformal change on a surface.** Let `g` be a smooth metric on a
-surface and `f = e^(2φ)` a smooth positive function. Then
-`Scal^(f g) = f⁻¹ (Scal^g - 2 Δφ)`, where `Δφ = div grad φ` is taken for `g`. -/
-theorem scalarCurvature_rescale_of_finrank_eq_two (hE : finrank ℝ E = 2)
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ}
-    (hfφ : ∀ x, f x = Real.exp (2 * φ x)) (x : M) :
-    (g.rescale f hf hf_pos).scalarCurvature x =
-      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-      (f x)⁻¹ * (g.scalarCurvature x - 2 * laplaceBeltrami I φ x) := by
-  rw [g.scalarCurvature_rescale hf hf_pos hfφ x, hE]
-  norm_num
-
-/-- **The prescribed curvature equation on a surface.** Let `g` be a smooth metric on a surface
-and `f = e^(2φ)` a smooth positive function. Then `e^(2φ) g` has scalar curvature `c` at `x`
-exactly when `-Δφ + Scal^g / 2 = (c / 2) e^(2φ)` there, where `Δφ = div grad φ` is taken for
-`g`. Since the scalar curvature of a surface is twice its Gaussian curvature, for `c = -2` this is
-the equation `Δ⁺φ + K + e^(2φ) = 0` for a metric of Gaussian curvature `-1`, where
-`Δ⁺ = -div grad` and `K = Scal^g / 2`. -/
-theorem scalarCurvature_rescale_eq_iff_of_finrank_eq_two (hE : finrank ℝ E = 2)
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ}
-    (hfφ : ∀ x, f x = Real.exp (2 * φ x)) (c : ℝ) (x : M) :
-    (g.rescale f hf hf_pos).scalarCurvature x = c ↔
-      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      -laplaceBeltrami I φ x + g.scalarCurvature x / 2 = c / 2 * Real.exp (2 * φ x) := by
-  rw [scalarCurvature_rescale_of_finrank_eq_two g hE hf hf_pos hfφ x, ← hfφ x,
-    inv_mul_eq_iff_eq_mul₀ (hf_pos x).ne']
-  constructor <;> intro h <;> linarith
 
 /-- If `f g` has constant scalar curvature `c` on a surface, the logarithmic conformal factor
 `log f / 2` solves `Δ (log f / 2) = Scal^g / 2 - (c / 2) f`. -/

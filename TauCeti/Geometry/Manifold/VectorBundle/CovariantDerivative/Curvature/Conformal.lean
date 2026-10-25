@@ -58,6 +58,8 @@ contractions are the classical formulas
 `Scal^ĝ = e^(-2φ) (Scal^g - 2 (n - 1) Δφ - (n - 1) (n - 2) |dφ|²)`.
 
 The scalar formula is the input from which the conformal Laplacian of the Yamabe problem arises.
+In dimension two it becomes `Scal^ĝ = e^(-2φ) (Scal^g - 2 Δφ)`, the curvature equation of
+conformal metrics on surfaces.
 
 In dimension `n ≥ 3` the Ricci and scalar formulas combine into the transformation law of the
 Schouten tensor `P = (Ric - Scal g / (2 (n - 1))) / (n - 2)`,
@@ -82,6 +84,10 @@ characterization of local conformal flatness by the Weyl tensor.
 * `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_rescale`: the Ricci tensor of
   `e^(2φ) g`.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale`: the scalar curvature of `e^(2φ) g`.
+* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_of_finrank_eq_two`: on a surface,
+  `Scal^(e^(2φ) g) = e^(-2φ) (Scal^g - 2 Δφ)`.
+* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_eq_iff_of_finrank_eq_two`: on a surface,
+  `e^(2φ) g` has scalar curvature `c` exactly when `-Δφ + Scal^g / 2 = (c / 2) e^(2φ)`.
 * `Bundle.ContMDiffRiemannianMetric.schoutenTensor_leviCivitaConnection_rescale`: the Schouten
   tensor of `e^(2φ) g`.
 * `Bundle.ContMDiffRiemannianMetric.weylTensor_leviCivitaConnection_rescale`: the Weyl tensor of
@@ -439,6 +445,36 @@ theorem scalarCurvature_rescale
   simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, Finset.sum_const,
     Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, TauCeti.finrank_tangentSpace]
   ring
+
+/-- **Scalar curvature under conformal change on a surface.** Let `g` be a smooth metric on a
+surface and `f = e^(2φ)` a smooth positive function. Then
+`Scal^(f g) = f⁻¹ (Scal^g - 2 Δφ)`, where `Δφ = div grad φ` is taken for `g`. -/
+theorem scalarCurvature_rescale_of_finrank_eq_two
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hE : Module.finrank ℝ E = 2) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ} (hfφ : ∀ x, f x = Real.exp (2 * φ x)) (x : M) :
+    (g.rescale f hf hf_pos).scalarCurvature x =
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+      (f x)⁻¹ * (g.scalarCurvature x - 2 * laplaceBeltrami I φ x) := by
+  rw [g.scalarCurvature_rescale hf hf_pos hfφ x, hE]
+  norm_num
+
+/-- **The prescribed curvature equation on a surface.** Let `g` be a smooth metric on a surface
+and `f = e^(2φ)` a smooth positive function. Then `e^(2φ) g` has scalar curvature `c` at `x`
+exactly when `-Δφ + Scal^g / 2 = (c / 2) e^(2φ)` there, where `Δφ = div grad φ` is taken for
+`g`. Since the scalar curvature of a surface is twice its Gaussian curvature, for `c = -2` this is
+the equation `Δ⁺φ + K + e^(2φ) = 0` for a metric of Gaussian curvature `-1`, where
+`Δ⁺ = -div grad` and `K = Scal^g / 2`. -/
+theorem scalarCurvature_rescale_eq_iff_of_finrank_eq_two
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hE : Module.finrank ℝ E = 2) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ} (hfφ : ∀ x, f x = Real.exp (2 * φ x)) (c : ℝ) (x : M) :
+    (g.rescale f hf hf_pos).scalarCurvature x = c ↔
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      -laplaceBeltrami I φ x + g.scalarCurvature x / 2 = c / 2 * Real.exp (2 * φ x) := by
+  rw [scalarCurvature_rescale_of_finrank_eq_two g hE hf hf_pos hfφ x, ← hfφ x,
+    inv_mul_eq_iff_eq_mul₀ (hf_pos x).ne']
+  constructor <;> intro h <;> linarith
 
 /-- **Schouten tensor under conformal change.** Let `g` be a smooth metric on a manifold of
 dimension `n ≥ 3` and `f = e^(2φ)` a smooth positive function. Then the Schouten tensor of `f g` is
