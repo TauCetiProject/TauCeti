@@ -79,6 +79,15 @@ lemma restrictFiber_comp_prod_obj (F : LocallyDiscrete (Γ × SingleObj H) ⥤�
       (F.restrictFiber (ψ.obj l)).obj a :=
   rfl
 
+/-- The restriction to the fiber `{l} × SingleObj H` of the composite of `F` with `ψ × 𝟭` has the
+same values on arrows as the restriction of `F` to the fiber `{ψ l} × SingleObj H`. -/
+lemma restrictFiber_comp_prod_map (F : LocallyDiscrete (Γ × SingleObj H) ⥤ᵖ Cat.{v, w})
+    (ψ : Λ ⥤ Γ) (l : Λ) {a b : LocallyDiscrete (SingleObj H)} (f : a ⟶ b) :
+    (((ψ.prod (𝟭 (SingleObj H))).toPseudofunctor.comp F).restrictFiber l).map f =
+      (F.restrictFiber (ψ.obj l)).map f := by
+  obtain ⟨f⟩ := f
+  exact congrArg F.map (congrArg Quiver.Hom.toLoc (Prod.hom_ext (ψ.map_id l) rfl))
+
 /-- The comparison of the restriction to the fiber `{l} × SingleObj H` of the composite of `F`
 with `ψ × 𝟭 : Λ × SingleObj H ⥤ Γ × SingleObj H` with the restriction of `F` to the fiber
 `{ψ l} × SingleObj H`. The two restrictions have the same value `F (ψ l, ⋆)` at the unique
@@ -149,6 +158,22 @@ given by these equalities. -/
         simp
       exact h _ rfl _ _ _ _ _ _ (hmap f) (hmap g) }
 
+/-- The components of `restrictFiberPullback` are identities. -/
+@[simp]
+lemma restrictFiberPullback_app (F : LocallyDiscrete (Γ × SingleObj H) ⥤ᵖ Cat.{v, w})
+    (ψ : Λ ⥤ Γ) (l : Λ) (a : LocallyDiscrete (SingleObj H)) :
+    (restrictFiberPullback F ψ l).app a = eqToHom (restrictFiber_comp_prod_obj F ψ l a) :=
+  rfl
+
+/-- The naturality isomorphisms of `restrictFiberPullback` are the identities given by
+`restrictFiber_comp_prod_map`. -/
+@[simp]
+lemma restrictFiberPullback_naturality (F : LocallyDiscrete (Γ × SingleObj H) ⥤ᵖ Cat.{v, w})
+    (ψ : Λ ⥤ Γ) (l : Λ) {a b : LocallyDiscrete (SingleObj H)} (f : a ⟶ b) :
+    (restrictFiberPullback F ψ l).naturality f = eqToIso ((Category.comp_id _).trans
+      ((restrictFiber_comp_prod_map F ψ l f).trans (Category.id_comp _).symm)) :=
+  rfl
+
 end CategoryTheory.Pseudofunctor
 
 namespace TauCeti.EquivariantGroupoidLift
@@ -171,6 +196,19 @@ comparison of `L` at `ψ l`, precomposed with `Pseudofunctor.restrictFiberPullba
   comparison l :=
     (Pseudofunctor.restrictFiberPullback L.joint ψ l).vcomp (L.comparison (ψ.obj l))
   isEquivalence_comparison l := L.isEquivalence_comparison (ψ.obj l)
+
+/-- The joint pseudofunctor of the pullback along `ψ` is the composite of `L.joint` with
+`ψ × 𝟭`. -/
+lemma pullback_joint :
+    (L.pullback ψ).joint = (ψ.prod (𝟭 (SingleObj H))).toPseudofunctor.comp L.joint :=
+  rfl
+
+/-- The fiber comparison of the pullback along `ψ` at `l` is the fiber comparison of `L` at `ψ l`,
+precomposed with `Pseudofunctor.restrictFiberPullback`. -/
+lemma pullback_comparison (l : Λ) :
+    (L.pullback ψ).comparison l =
+      (Pseudofunctor.restrictFiberPullback L.joint ψ l).vcomp (L.comparison (ψ.obj l)) :=
+  rfl
 
 /-- The fiber comparisons of the pullback along `ψ` are those of `L` at the image of `ψ`. -/
 @[simp]
