@@ -30,7 +30,8 @@ tempered distributions therefore maps every `f ∈ Lᵖ` to an `Lᵖ` function w
 (`TauCeti.exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le`), by density of
 the Schwartz functions in `Lᵖ`. The symbols of the Riesz transforms and of
 `∂_v ∂_w Δ⁻¹`, and more generally every symbol that is smooth away from the origin and
-homogeneous of degree `0`, satisfy Mihlin's condition of every order.
+homogeneous of degree `0`, satisfy Mihlin's condition of every order
+(`TauCeti.exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq`).
 
 ## The argument
 
@@ -403,5 +404,54 @@ theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le [No
   simp only [S, e, T, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, SchwartzMap.toLpCLM_apply,
     Lp.toTemperedDistribution_toLp_eq,
     TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq hm]
+
+/-! ### Homogeneous symbols -/
+
+/-- **Homogeneous symbols satisfy Mihlin's condition.** Let `m` be a map on a proper (for instance
+finite-dimensional) real normed space that is `C^N` away from the origin and homogeneous of
+degree `0`, that is `m (t • ξ) = m ξ` for every `t > 0`. Then there is a constant `A` with
+`‖D^k m ξ‖ ≤ A / ‖ξ‖ ^ k` for every `k ≤ N` and every `ξ ≠ 0`. -/
+theorem exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq {W G : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] [ProperSpace W] [NormedAddCommGroup G] [NormedSpace ℝ G] {m : W → G}
+    {N : ℕ} (hm : ContDiffOn ℝ N m {0}ᶜ) (hhom : ∀ t : ℝ, 0 < t → ∀ ξ, m (t • ξ) = m ξ) :
+    ∃ A : ℝ≥0, ∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k m ξ‖ ≤ A / ‖ξ‖ ^ k := by
+  -- Each iterated derivative is bounded on the unit sphere, which is compact.
+  have hbd : ∀ k ≤ N, ∃ C : ℝ, ∀ ξ ∈ sphere (0 : W) 1, ‖iteratedFDeriv ℝ k m ξ‖ ≤ C := by
+    intro k hk
+    have hc : ContinuousOn (iteratedFDeriv ℝ k m) {0}ᶜ :=
+      (hm.continuousOn_iteratedFDerivWithin (mod_cast hk)
+        isOpen_compl_singleton.uniqueDiffOn).congr
+        (iteratedFDerivWithin_of_isOpen k isOpen_compl_singleton).symm
+    exact (isCompact_sphere 0 1).exists_bound_of_continuousOn
+      (hc.mono fun ξ hξ ↦ ne_zero_of_mem_unit_sphere ⟨ξ, hξ⟩)
+  choose! C hC using hbd
+  refine ⟨∑ k ∈ Finset.range (N + 1), (C k).toNNReal, fun k hk ξ hξ ↦ ?_⟩
+  have hn : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  -- By homogeneity `m = m ∘ g` for `g = ‖ξ‖⁻¹ • ·`, so `D^k m ξ` is `D^k m (g ξ)` composed with
+  -- `g` in each argument, and `g ξ` lies on the unit sphere.
+  set g : W ≃L[ℝ] W := ContinuousLinearEquiv.smulLeft (Units.mk0 ‖ξ‖⁻¹ (inv_ne_zero hn.ne'))
+  have hg : ∀ x, g x = ‖ξ‖⁻¹ • x := fun x ↦ (rfl)
+  have hmg : m ∘ g = m := funext fun x ↦ by simp [hg, hhom _ (inv_pos.2 hn)]
+  have hgξ : g ξ ∈ sphere (0 : W) 1 := by simp [hg, norm_smul, hn.ne']
+  have heq : iteratedFDeriv ℝ k m ξ =
+      (iteratedFDeriv ℝ k m (g ξ)).compContinuousLinearMap fun _ ↦ (g : W →L[ℝ] W) := by
+    simpa only [← iteratedFDerivWithin_univ, Set.preimage_univ, hmg] using
+      g.iteratedFDerivWithin_comp_right m uniqueDiffOn_univ (Set.mem_univ (g ξ)) k
+  have hgn : ‖(g : W →L[ℝ] W)‖ ≤ ‖ξ‖⁻¹ :=
+    ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ by simp [hg, norm_smul]
+  have hCk : C k ≤ ∑ k ∈ Finset.range (N + 1), ((C k).toNNReal : ℝ) :=
+    (Real.le_coe_toNNReal _).trans (Finset.single_le_sum (f := fun k ↦ ((C k).toNNReal : ℝ))
+      (fun _ _ ↦ NNReal.coe_nonneg _) (Finset.mem_range.2 (Nat.lt_succ_of_le hk)))
+  rw [heq, NNReal.coe_sum, le_div_iff₀ (by positivity)]
+  calc _ ≤ ‖iteratedFDeriv ℝ k m (g ξ)‖ * (∏ _ : Fin k, ‖(g : W →L[ℝ] W)‖) * ‖ξ‖ ^ k := by
+        gcongr; exact ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _
+    _ ≤ C k * (‖ξ‖⁻¹) ^ k * ‖ξ‖ ^ k := by
+        gcongr
+        · exact (norm_nonneg _).trans (hC k hk _ hgξ)
+        · exact hC k hk _ hgξ
+        · rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+          exact pow_le_pow_left₀ (norm_nonneg _) hgn k
+    _ = C k := by rw [mul_assoc, ← mul_pow, inv_mul_cancel₀ hn.ne', one_pow, mul_one]
+    _ ≤ _ := hCk
 
 end TauCeti
