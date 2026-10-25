@@ -638,20 +638,9 @@ end Isotypic
 
 section IsotypicComponent
 
-variable {k A M S : Type*} [Ring A] [AddCommGroup M] [Module A M]
-variable [AddCommGroup S] [Module A S] [IsSimpleModule A S]
-
-/-- The `finrank` of a hom space out of `S` is unchanged by restricting the target to its
-`S`-isotypic component, because every map out of `S` lands there. The scalar semiring acts only
-on the target; no field or scalar action on `S` is needed. -/
-@[simp]
-theorem finrank_linearMap_isotypicComponent [CommSemiring k] [Algebra k A] [Module k M]
-    [IsScalarTower k A M] :
-    Module.finrank k (S →ₗ[A] isotypicComponent A M S) = Module.finrank k (S →ₗ[A] M) :=
-  (linearMapIsotypicComponentEquiv k).finrank_eq
-
-variable [Field k] [Algebra k A] [Module k M] [IsScalarTower k A M]
-variable [Module k S] [IsScalarTower k A S]
+variable {k A M S : Type*} [Field k] [Ring A] [Algebra k A]
+variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
 variable [IsAlgClosed k] [FiniteDimensional k S] [FiniteDimensional k M]
 
 /-- **The isotypic component is the power of its type with exponent the multiplicity.**  Mathlib's
