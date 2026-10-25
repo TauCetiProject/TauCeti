@@ -57,10 +57,11 @@ variable {ι : Type u} {X : ι → Type v} [∀ i, TopologicalSpace (X i)] {x : 
 /-- The wedge sum is semilocally simply connected at a point `y ≠ x i` of the `i`-th summand at
 which `X i` is, provided the base point `x i` is closed: a witnessing neighbourhood of `y` avoiding
 `x i` pulls back along the retraction onto `X i` to one in the wedge sum. -/
-theorem semilocallySimplyConnectedAt_incl {i : ι} [T1Space (X i)] {y : X i} (hy : y ≠ x i)
-    (h : SemilocallySimplyConnectedAt y) : SemilocallySimplyConnectedAt (incl x i y) := by
+theorem semilocallySimplyConnectedAt_incl {i : ι} (hx : IsClosed ({x i} : Set (X i)))
+    {y : X i} (hy : y ≠ x i) (h : SemilocallySimplyConnectedAt y) :
+    SemilocallySimplyConnectedAt (incl x i y) := by
   obtain ⟨U, hUo, hyU, hUx, hU⟩ :=
-    h.exists_isOpen_mem_nhds_subset_loops_nullhomotopic (isOpen_compl_singleton.mem_nhds hy)
+    h.exists_isOpen_mem_nhds_subset_loops_nullhomotopic (hx.isOpen_compl.mem_nhds hy)
   have hxy : proj x i (incl x i y) = y := proj_incl_self i y
   refine semilocallySimplyConnectedAt_def.2
     ⟨proj x i ⁻¹' U, ((hUo.preimage (proj x i).continuous).mem_nhds (by rwa [mem_preimage, hxy])),
@@ -77,8 +78,8 @@ theorem semilocallySimplyConnectedAt_incl {i : ι} [T1Space (X i)] {y : X i} (hy
 provided every base point `x i` is closed and has an open neighbourhood `V` which deformation
 retracts onto `x i`. The wedge sum of these neighbourhoods is a contractible open neighbourhood of
 the wedge point. -/
-theorem semilocallySimplyConnectedSpace [∀ i, T1Space (X i)]
-    [∀ i, SemilocallySimplyConnectedSpace (X i)]
+theorem semilocallySimplyConnectedSpace [∀ i, SemilocallySimplyConnectedSpace (X i)]
+    (hx : ∀ i, IsClosed ({x i} : Set (X i)))
     (hV : ∀ i, ∃ V : Set (X i), IsOpen V ∧ ∃ hx : x i ∈ V,
       Nonempty ((ContinuousMap.id V).HomotopyRel (.const V ⟨x i, hx⟩) {⟨x i, hx⟩})) :
     SemilocallySimplyConnectedSpace (WedgeSum x) where
@@ -103,14 +104,14 @@ theorem semilocallySimplyConnectedSpace [∀ i, T1Space (X i)]
     | incl i y =>
       by_cases hy : y = x i
       · rwa [hy, incl_apply_self]
-      · exact semilocallySimplyConnectedAt_incl hy
+      · exact semilocallySimplyConnectedAt_incl (hx i) hy
           (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt y)
 
 /-- **A wedge of circles is semilocally simply connected**, for any number of circles: the circle
 is a manifold, and `Circle ∖ {-1}` deformation retracts onto `1` (`TauCeti.circleChordHomotopy`). -/
 instance instSemilocallySimplyConnectedSpaceCircle :
     SemilocallySimplyConnectedSpace (WedgeSum fun _ : ι ↦ (1 : Circle)) :=
-  semilocallySimplyConnectedSpace fun _ ↦
+  semilocallySimplyConnectedSpace (fun _ ↦ isClosed_singleton) fun _ ↦
     ⟨{z : Circle | z ≠ -1}, isOpen_ne, (Circle.neg_ne_self 1).symm, ⟨circleChordHomotopy⟩⟩
 
 end WedgeSum

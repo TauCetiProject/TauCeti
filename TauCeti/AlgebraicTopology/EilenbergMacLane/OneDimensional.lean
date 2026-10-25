@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
 public import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.WedgeSum
-public import TauCeti.AlgebraicTopology.UniversalCover.Covering
+public import TauCeti.AlgebraicTopology.UniversalCover.Action
 public import TauCeti.Topology.CWComplex.Classical.Covering
 public import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
 public import TauCeti.Topology.CWComplex.Classical.WedgeCircles
@@ -87,12 +87,9 @@ theorem isAspherical_of_forall_isEmpty_cell {X : Type} [TopologicalSpace X] [T2S
     exact hC.of_iso (((AlgebraicTopology.singularHomologyFunctor _ (n + 2)).obj _).mapIso
       (TopCat.isoOfHomeo ((Homeomorph.setCongr preimage_univ).trans
         (Homeomorph.Set.univ _)))).symm
-  have hsurj : Function.Surjective (UniversalCover.proj (x₀ := x)) := by
-    rw [← range_eq_univ, UniversalCover.range_proj]
-    exact eq_univ_of_forall fun y ↦ PathConnectedSpace.joined x y
   have : Subsingleton (π_ 1 (UniversalCover x) (UniversalCover.basepointLift x)) :=
     HomotopyGroup.pi1EquivFundamentalGroup.subsingleton_congr.mpr inferInstance
-  exact hp.isAspherical_of_subsingleton_homotopyGroup hsurj
+  exact hp.isAspherical_of_subsingleton_homotopyGroup UniversalCover.proj_surjective
     (UniversalCover.proj_basepointLift x) fun n ↦
       subsingleton_homotopyGroup_of_isZero_homology_singularChains _ hH (n + 2)
 
