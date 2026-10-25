@@ -147,6 +147,36 @@ lemma principalPartMapOfLE_mk (h : D ≤ E) (x : CodimensionOnePoint X)
     principalPartMapOfLE h x (Submodule.Quotient.mk f) = Submodule.Quotient.mk f := by
   rw [principalPartMapOfLE, Submodule.mapQ_apply, LinearMap.id_apply]
 
+/-- The local principal-parts map attached to a reflexive divisor inequality is the identity. -/
+@[simp]
+lemma principalPartMapOfLE_refl (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) :
+    principalPartMapOfLE (le_refl D) x = LinearMap.id :=
+  Submodule.mapQ_id _ _
+
+/-- A reflexive local principal-parts map fixes every quotient class. -/
+lemma principalPartMapOfLE_refl_apply (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X)
+    (q : PrincipalPart D x) :
+    principalPartMapOfLE (le_refl D) x q = q := by
+  simp
+
+/-- Local principal-parts maps compose along a chain of divisor inequalities. -/
+@[simp]
+lemma principalPartMapOfLE_comp {D E F : SchemeWeilDivisor X} (h : D ≤ E) (h' : E ≤ F)
+    (x : CodimensionOnePoint X) :
+    (principalPartMapOfLE h' x).comp (principalPartMapOfLE h x) =
+      principalPartMapOfLE (h.trans h') x := by
+  simpa only [principalPartMapOfLE, LinearMap.id_comp] using
+    (Submodule.mapQ_comp (stalkSubmodule D x) (stalkSubmodule E x) (stalkSubmodule F x)
+      LinearMap.id LinearMap.id (stalkSubmodule_mono h x) (stalkSubmodule_mono h' x)).symm
+
+/-- Successive local principal-parts maps agree with the direct map on every quotient class. -/
+@[simp]
+lemma principalPartMapOfLE_comp_apply {D E F : SchemeWeilDivisor X} (h : D ≤ E) (h' : E ≤ F)
+    (x : CodimensionOnePoint X) (q : PrincipalPart D x) :
+    principalPartMapOfLE h' x (principalPartMapOfLE h x q) =
+      principalPartMapOfLE (h.trans h') x q :=
+  LinearMap.congr_fun (principalPartMapOfLE_comp h h' x) q
+
 /-- The finitely supported families of principal parts of `D` at the codimension-one points of
 `U`. -/
 abbrev principalPartsSections (D : SchemeWeilDivisor X) (U : X.Opens) :=
