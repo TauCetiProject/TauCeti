@@ -211,7 +211,9 @@ theorem finrank_add_finrank_le_of_re_leviForm_pos {P : Submodule ℂ V}
     simpa [Q, J, ι] using (by linarith : 0 < B v v + B (I • (v : V)) (I • (v : V)))
   have hWP : ((-Q).restrict (W.comap ι)).PosDef := fun w hw ↦ by
     simpa [Q] using hW ⟨ι w, w.2⟩ (by simpa [ι] using hw)
-  have h₁ := Q.two_mul_finrank_le_of_add_comp_posDef J hQJ hWP
+  have h₁ := Q.two_mul_finrank_le_of_add_comp_posDef J hQJ fun v hv ↦ by
+    simpa only [QuadraticMap.restrict_apply, _root_.neg_apply, neg_nonneg]
+      using hWP.nonneg ⟨v, hv⟩
   have h₂ := Submodule.finrank_add_finrank_le_finrank_comap_add_finrank ι W
   have h₃ : finrank ℝ P = 2 * finrank ℂ P := TauCeti.finrank_real_eq_two_mul_finrank_complex
   have h₄ : finrank ℝ V = 2 * finrank ℂ V := TauCeti.finrank_real_eq_two_mul_finrank_complex

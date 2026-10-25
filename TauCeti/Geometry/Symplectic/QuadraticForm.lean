@@ -55,7 +55,8 @@ theorem finrank_le_complexFinrank_of_add_comp_posDef
     (hQJ : (Q + Q.comp J.toLinearMap).PosDef)
     (hW : ((-Q).restrict W).PosDef) :
     finrank ℝ W ≤ J.complexFinrank := by
-  have hdim := Q.two_mul_finrank_le_of_add_comp_posDef J.toLinearMap hQJ hW
+  have hdim := Q.two_mul_finrank_le_of_add_comp_posDef J.toLinearMap hQJ fun v hv ↦ by
+    simpa only [QuadraticMap.restrict_apply, neg_apply, neg_nonneg] using hW.nonneg ⟨v, hv⟩
   rw [J.finrank_real_eq_two_mul_complexFinrank] at hdim
   omega
 
