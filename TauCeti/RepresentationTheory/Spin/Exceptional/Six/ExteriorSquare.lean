@@ -177,12 +177,20 @@ theorem spinSixSpecialLinearToIsometryGroup_transvection_ιMulti
         ![Matrix.mulVec (Matrix.transvection i j c) u,
           Matrix.mulVec (Matrix.transvection i j c) v] := by
   rw [spinSixSpecialLinearToIsometryGroup_apply, Representation.exteriorPower_apply_ιMulti]
-  change exteriorPower.ιMulti K 2
-      ![stdSLRep K 4 (Matrix.SpecialLinearGroup.transvection hij c) u,
-        stdSLRep K 4 (Matrix.SpecialLinearGroup.transvection hij c) v] = _
-  rw [stdSLRep_apply]
-  simp only [Matrix.mulVecLin_apply]
-  rw [Matrix.SpecialLinearGroup.transvection_coe]
-  simp only [Matrix.transvection]
+  apply congrArg (exteriorPower.ιMulti K 2)
+  funext k
+  fin_cases k
+  · rw [Function.comp_apply]
+    rw [stdSLRep_apply_apply]
+    change ((Matrix.SpecialLinearGroup.transvection hij c : Matrix (Fin 4) (Fin 4) K)).mulVec u =
+      (Matrix.transvection i j c).mulVec u
+    rw [Matrix.SpecialLinearGroup.transvection_coe]
+    simp only [Matrix.transvection]
+  · rw [Function.comp_apply]
+    rw [stdSLRep_apply_apply]
+    change ((Matrix.SpecialLinearGroup.transvection hij c : Matrix (Fin 4) (Fin 4) K)).mulVec v =
+      (Matrix.transvection i j c).mulVec v
+    rw [Matrix.SpecialLinearGroup.transvection_coe]
+    simp only [Matrix.transvection]
 
 end TauCeti
