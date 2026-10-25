@@ -36,7 +36,8 @@ rational function field.
   `TauCeti.Place.ord_adicOfIrreducible_X_sub_C_of_not_associated` for `X - a`.
 * `TauCeti.Place.ord_X_eq_zero_of_ne` and `TauCeti.Place.ord_X_sub_C_eq_zero_of_ne`: `X` is a
   unit at every place other than `X = 0` and `∞`, and `X - a` at every place other than `X = a`
-  and `∞`.
+  and `∞`; so `X = 0` and `X = a` are the only places where they vanish
+  (`TauCeti.Place.ord_X_pos_iff` and `TauCeti.Place.ord_X_sub_C_pos_iff`).
 * `TauCeti.Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow`: the order of
   `c X ^ a (X - 1) ^ b` at a place of `k(X)`, with its values `a`, `b` and `-(a + b)` at `0`, `1`
   and `∞`, so that
@@ -172,6 +173,33 @@ theorem ord_X_sub_C_eq_zero_of_ne (a : k) {P : Place k (RatFunc k)}
   · exact absurd rfl hPinf
   · exact ord_adicOfIrreducible_X_sub_C_of_not_associated hq fun h ↦
       hPa ((adicOfIrreducible_eq_adicOfIrreducible_iff hq (irreducible_X_sub_C a)).mpr h)
+
+/-- **`X = 0` is the only zero of `X`**: a place of `k(X)` is the place `X = 0` exactly when `X`
+has positive order there. -/
+theorem ord_X_pos_iff {P : Place k (RatFunc k)} :
+    0 < P.ord (RatFunc.X : RatFunc k) ↔ P = adicOfIrreducible (irreducible_X (R := k)) := by
+  refine ⟨fun h ↦ ?_, by rintro rfl; simp⟩
+  by_contra hP0
+  by_cases hPinf : P = infty k
+  · rw [hPinf, ord_infty, RatFunc.intDegree_X] at h
+    omega
+  · rw [ord_X_eq_zero_of_ne hP0 hPinf] at h
+    exact h.false
+
+/-- **`X = a` is the only zero of `X - a`**: a place of `k(X)` is the place `X = a` exactly when
+`X - a` has positive order there. -/
+theorem ord_X_sub_C_pos_iff {a : k} {P : Place k (RatFunc k)} :
+    0 < P.ord (RatFunc.X - RatFunc.C a) ↔ P = adicOfIrreducible (irreducible_X_sub_C a) := by
+  refine ⟨fun h ↦ ?_, by rintro rfl; simp⟩
+  by_contra hPa
+  by_cases hPinf : P = infty k
+  · have h1 : (RatFunc.X - RatFunc.C a : RatFunc k).intDegree = 1 := by
+      rw [← RatFunc.algebraMap_X, ← RatFunc.algebraMap_C, ← map_sub, RatFunc.intDegree_polynomial,
+        natDegree_X_sub_C, Nat.cast_one]
+    rw [hPinf, ord_infty, h1] at h
+    omega
+  · rw [ord_X_sub_C_eq_zero_of_ne a hPa hPinf] at h
+    exact h.false
 
 /-- **The order of `c X ^ a (X - 1) ^ b`** at a place `P` of `k(X)` is
 `a · ord_P X + b · ord_P (X - 1)`. -/

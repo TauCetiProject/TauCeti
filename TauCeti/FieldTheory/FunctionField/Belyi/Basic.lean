@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Equiv
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
@@ -34,18 +35,26 @@ examples behave: in characteristic `p` the map `t ↦ t ^ p` is inseparable, and
 constant in characteristic `2`.
 
 The rational function field itself, with the identity embedding, is the Belyi pair of degree
-one (`TauCeti.isAlgebraicBelyiPair_ratFunc`). Radical examples `y ^ n = c t ^ a (t - 1) ^ b`,
-among them the power maps, are in `TauCeti.FieldTheory.FunctionField.Belyi.Radical`.
+one (`TauCeti.isAlgebraicBelyiPair_ratFunc`). Being a Belyi pair is invariant under
+isomorphisms over `k(t)`, and more generally under a commutative square of isomorphisms whose
+automorphism of `k(t)` permutes the three marked places
+(`TauCeti.IsAlgebraicBelyiPair.of_equiv_equiv`); the six automorphisms permuting them are in
+`TauCeti.FieldTheory.FunctionField.Belyi.BranchPoints`. Radical examples
+`y ^ n = c t ^ a (t - 1) ^ b`, among them the power maps, are in
+`TauCeti.FieldTheory.FunctionField.Belyi.Radical`.
 
 ## Main definitions
 
-* `TauCeti.Place.zeroOneInfty`: the places `t = 0`, `t = 1` and `t = ∞` of `k(t)`.
+* `TauCeti.Place.zeroOneInfty`: the places `t = 0`, `t = 1` and `t = ∞` of `k(t)`, and
+  `TauCeti.Place.markedPlace`, the same places numbered `0`, `1` and `2`.
 * `TauCeti.IsAlgebraicBelyiPair`: `F / k(t)` is an algebraic Belyi pair.
 
 ## Main results
 
 * `TauCeti.isAlgebraicBelyiPair_iff`: the characterization by unramified places.
 * `TauCeti.isAlgebraicBelyiPair_ratFunc`: `k(t)` over itself is an algebraic Belyi pair.
+* `TauCeti.IsAlgebraicBelyiPair.of_equiv_equiv` and `TauCeti.IsAlgebraicBelyiPair.of_algEquiv`:
+  transport along isomorphisms.
 
 ## References
 
@@ -93,6 +102,31 @@ theorem adicOfIrreducible_X_sub_one_mem_zeroOneInfty :
 theorem infty_mem_zeroOneInfty : infty k ∈ zeroOneInfty k :=
   Or.inr (Or.inr rfl)
 
+variable (k) in
+/-- The three marked places `t = 0`, `t = 1` and `t = ∞` of `k(t)`, numbered `0`, `1` and `2`:
+the numbering of the branch points used for permutation triples. -/
+noncomputable def markedPlace : Fin 3 → Place k (RatFunc k) :=
+  ![adicOfIrreducible (irreducible_X (R := k)), adicOfIrreducible (irreducible_X_sub_C (1 : k)),
+    infty k]
+
+@[simp]
+theorem markedPlace_zero : markedPlace k 0 = adicOfIrreducible (irreducible_X (R := k)) :=
+  (rfl)
+
+@[simp]
+theorem markedPlace_one : markedPlace k 1 = adicOfIrreducible (irreducible_X_sub_C (1 : k)) :=
+  (rfl)
+
+@[simp]
+theorem markedPlace_two : markedPlace k 2 = infty k :=
+  (rfl)
+
+variable (k) in
+/-- The numbered marked places are exactly the three marked places. -/
+theorem range_markedPlace : Set.range (markedPlace k) = zeroOneInfty k := by
+  ext P
+  simp [mem_zeroOneInfty_iff, Fin.exists_fin_succ, eq_comm]
+
 end Place
 
 /-- An **algebraic Belyi pair** over a field `k` of characteristic zero: a function field `F / k`
@@ -134,6 +168,38 @@ theorem isAlgebraicBelyiPair_iff :
     fun ⟨hex, h⟩ ↦ ⟨hex, fun hP ↦ (h _ hP).ramificationIdx_eq_one rfl⟩⟩
   exact Place.restrict_surjective_of_finiteDimensional (IsFunctionField.ratFunc k)
     (isFunctionField_iff_functionField.mpr inferInstance) P
+
+variable {F' : Type*} [Field F'] [Algebra k F'] [Algebra (RatFunc k) F']
+  [IsScalarTower k (RatFunc k) F'] [FiniteDimensional (RatFunc k) F']
+
+/-- **Transport of Belyi pairs along a commutative square of isomorphisms.** Let
+`σ : k(t) ≃ₐ[k] k(t)` carry the three marked places into themselves, and let `e : F ≃ₐ[k] F'`
+restrict to `σ` on `k(t)`. If `F` is an algebraic Belyi pair then so is `F'`.
+
+For `F' = F` as fields, this changes the Belyi function `t` of `F` into its image under an
+automorphism of `k(t)`; see `TauCeti.IsAlgebraicBelyiPair.of_branchPointAut`. -/
+theorem IsAlgebraicBelyiPair.of_equiv_equiv (h : IsAlgebraicBelyiPair k F)
+    (σ : RatFunc k ≃ₐ[k] RatFunc k)
+    (hσ : Set.MapsTo (Place.map σ) (Place.zeroOneInfty k) (Place.zeroOneInfty k))
+    (e : F ≃ₐ[k] F') (he : ∀ x, e (algebraMap (RatFunc k) F x) = algebraMap (RatFunc k) F' (σ x)) :
+    IsAlgebraicBelyiPair k F' where
+  isIntegrallyClosedIn := by
+    have := h.isIntegrallyClosedIn
+    refine isIntegrallyClosedIn_iff.mpr ⟨(algebraMap k F').injective, fun {x} hx ↦ ?_⟩
+    obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.algebraMap_eq_of_integral (hx.map (e.symm : F' →ₐ[k] F))
+    exact ⟨c, by rw [← e.commutes, hc]; exact e.apply_symm_apply x⟩
+  ramificationIdx_eq_one {P'} hP' := by
+    obtain ⟨Q, rfl⟩ : ∃ Q : Place k F, Q.map e = P' := ⟨P'.map e.symm, Place.map_map_symm e P'⟩
+    rw [Place.ramificationIdx_map e σ.toRingEquiv he]
+    refine h.ramificationIdx_eq_one fun hQ ↦ hP' ?_
+    rw [Place.restrict_map e σ he]
+    exact hσ hQ
+
+/-- **Being an algebraic Belyi pair is invariant under isomorphism over `k(t)`.** -/
+theorem IsAlgebraicBelyiPair.of_algEquiv (h : IsAlgebraicBelyiPair k F)
+    (e : F ≃ₐ[RatFunc k] F') : IsAlgebraicBelyiPair k F' :=
+  h.of_equiv_equiv AlgEquiv.refl (fun P hP ↦ by rwa [Place.map_refl]) (e.restrictScalars k)
+    e.commutes
 
 variable (k) in
 /-- **The trivial Belyi pair**: the rational function field `k(t)` over itself, the Belyi map of
