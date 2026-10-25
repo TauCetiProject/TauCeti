@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Affinoid.SupSeminorm
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 import Mathlib.RingTheory.Polynomial.RationalRoot
 import TauCeti.Analysis.Normed.Ring.Ultra
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
 import TauCeti.RingTheory.Algebraic.Basic
@@ -78,8 +79,7 @@ theorem exists_pointNorm_eq_norm (f : T) : ∃ x : MaximalSpectrum T, pointNorm 
   -- finitely many such coefficients since `f` is restricted and nonzero.
   have hD : {t : Fin n →₀ ℕ | ‖coeff t (f : MvPowerSeries (Fin n) K)‖ = ‖f‖}.Finite := by
     have h := f.2.eventually (gt_mem_nhds (norm_pos_iff.mpr hf))
-    have h1 (t : Fin n →₀ ℕ) : (t.prod fun _ _ ↦ (1 : ℝ)) = 1 := by simp [Finsupp.prod]
-    simp only [Filter.eventually_cofinite, not_lt, one_pow, h1, mul_one] at h
+    simp only [Filter.eventually_cofinite, not_lt, one_pow, Finsupp.prod_fun_one, mul_one] at h
     exact h.subset fun t ht ↦ ht.ge
   obtain ⟨m, hNm, hm⟩ := IsUltrametricDist.exists_lt_norm_natCast_eq_one K
     (hD.toFinset.sup Finsupp.degree)
@@ -147,11 +147,8 @@ private theorem exists_supSeminorm_le_pointNorm_of_isDomain {B : Type*} [CommRin
   refine ⟨y, ?_⟩
   rw [hB.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := T) f, ← hi,
     MvPowerSeries.supSeminorm_eq_norm, ← hx]
-  have hdi : ((minpoly T f).natDegree - i : ℝ) = ((minpoly T f).natDegree - i : ℕ) := by
-    rw [Nat.cast_sub i.2.le]
-  rw [hdi, one_div, Real.rpow_inv_le_iff_of_pos (pointNorm_nonneg _) (pointNorm_nonneg f)
-    (by exact_mod_cast Nat.sub_pos_of_lt i.2), Real.rpow_natCast]
-  exact hy i
+  exact (Real.rpow_one_div_natCast_sub_le_iff (pointNorm_nonneg _) (pointNorm_nonneg f) i.2).mpr
+    (hy i)
 
 /-- **The maximum modulus principle.** On a nonzero affinoid algebra the supremum seminorm is
 attained at a classical point: for every `f : A` there is a maximal ideal `x` of `A` with

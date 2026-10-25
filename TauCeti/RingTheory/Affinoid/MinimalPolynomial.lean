@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.Minpoly.TorsionFree
 
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.RingTheory.Ideal.GoingUp
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Minimal polynomials and the supremum seminorm
@@ -191,16 +192,13 @@ theorem supSeminorm_eq_iSup_coeff_rpow_of_dvd (hB : IsAffinoidAlgebra K B)
       (f := f) (by rwa [eval_map_algebraMap])
     rw [natDegree_map_eq_of_injective (FaithfulSMul.algebraMap_injective A B)] at h
     simpa only [coeff_map, hcoeff] using h
-  · have hi : (p.natDegree - i : ℝ) = ((p.natDegree - i : ℕ) : ℝ) := by
-      rw [Nat.cast_sub i.2.le]
-    have hle : supSeminorm K (p.coeff i) ≤ supSeminorm K f ^ (p.natDegree - i : ℕ) :=
+  · have hle : supSeminorm K (p.coeff i) ≤ supSeminorm K f ^ (p.natDegree - i : ℕ) :=
       supSeminorm_le (pow_nonneg (supSeminorm_nonneg f) _) fun x ↦ by
         obtain ⟨y, hy⟩ := hB.exists_pointNorm_coeff_le_pointNorm_pow hp hpos hdvd x
         exact (hy i).trans (pow_le_pow_left₀ (pointNorm_nonneg f)
           (hB.pointNorm_le_supSeminorm y f) _)
-    rw [hi, one_div, Real.rpow_inv_le_iff_of_pos (supSeminorm_nonneg _) (supSeminorm_nonneg f)
-      (by exact_mod_cast Nat.sub_pos_of_lt i.2), Real.rpow_natCast]
-    exact hle
+    exact (Real.rpow_one_div_natCast_sub_le_iff (supSeminorm_nonneg _) (supSeminorm_nonneg f)
+      i.2).mpr hle
 
 /-- **The supremum seminorm is the spectral value of the minimal polynomial.** Let `B` be an
 affinoid algebra which is integral and torsion-free over an integrally closed domain `A`. For

@@ -104,10 +104,7 @@ theorem exists_norm_restrictedEval₂_eq_norm (hφ : ∀ r, ‖φ r‖ = ‖r‖
   · have : Nonempty (Fin k → Fin m) := ⟨fun _ ↦ ⟨0, Nat.pos_of_ne_zero hm0⟩⟩
     exact ⟨Classical.arbitrary _, by simp⟩
   -- A dominant exponent `t₀`.
-  obtain ⟨t₀, ht₀⟩ := exists_achievesGaussNorm f
-  have h1 (t : Fin k →₀ ℕ) : (t.prod fun _ _ ↦ (1 : ℝ)) = 1 := by simp [Finsupp.prod]
-  simp only [AchievesGaussNorm, one_pow, h1, mul_one] at ht₀
-  rw [← norm_eq_gaussNorm] at ht₀
+  obtain ⟨t₀, ht₀⟩ := exists_norm_coeff_eq_norm f
   -- The character `j ↦ ζ ^ (-⟨j, t₀⟩)`, written with natural exponents.
   let w (j : Fin k → Fin m) : S := ∏ i, ζ ^ ((j i : ℕ) * ((m - 1) * t₀ i))
   have hw (j : Fin k → Fin m) : ‖w j‖ = 1 := by
@@ -123,16 +120,14 @@ theorem exists_norm_restrictedEval₂_eq_norm (hφ : ∀ r, ‖φ r‖ = ‖r‖
     simp [g, hdvd, hφ, hm, ht₀]
   have hg (t : Fin k →₀ ℕ) (ht : t ≠ t₀) : ‖g t‖ < ‖g t₀‖ := by
     rw [hgt₀]
-    rcases (norm_coeff_mul_prod_le f t).lt_or_eq with hlt | heq
+    rcases (norm_coeff_le_norm f t).lt_or_eq with hlt | heq
     · -- Each factor of the product has norm at most one.
-      simp only [one_pow, h1, mul_one] at hlt
       refine lt_of_le_of_lt ?_ hlt
       rw [norm_mul, hφ, norm_prod]
       refine mul_le_of_le_one_right (norm_nonneg _) <|
         Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ ?_
       split_ifs <;> simp [hm]
     -- A second dominant exponent is not congruent to `t₀`, so its term vanishes.
-    simp only [one_pow, h1, mul_one] at heq
     obtain ⟨i, hi⟩ : ∃ i, t i ≠ t₀ i := by
       by_contra! h
       exact ht (Finsupp.ext h)
