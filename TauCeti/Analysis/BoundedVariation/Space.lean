@@ -58,6 +58,42 @@ theorem memBV_congr_ae {u v : E → ℝ} (h : u =ᵐ[μ.restrict Ω] v) :
   rw [memBV_iff, memBV_iff, totalVariationOn_congr_ae h]
   exact and_congr (integrable_congr h) Iff.rfl
 
+/-- The zero function belongs to BV. -/
+@[simp]
+theorem MemBV.zero : MemBV μ Ω 0 :=
+  memBV_iff.mpr ⟨integrableOn_zero, by simp⟩
+
+/-- Negation preserves BV membership. -/
+theorem MemBV.neg {u : E → ℝ} (hu : MemBV μ Ω u) : MemBV μ Ω (-u) := by
+  rcases memBV_iff.mp hu with ⟨hu, hfinite⟩
+  exact memBV_iff.mpr ⟨hu.neg, by simpa using hfinite⟩
+
+/-- BV membership is unchanged by negation. -/
+@[simp]
+theorem memBV_neg_iff {u : E → ℝ} : MemBV μ Ω (-u) ↔ MemBV μ Ω u :=
+  ⟨fun hu => by simpa using hu.neg, MemBV.neg⟩
+
+/-- Multiplication by a real scalar preserves BV membership. -/
+theorem MemBV.smul {u : E → ℝ} (hu : MemBV μ Ω u) (c : ℝ) : MemBV μ Ω (c • u) := by
+  rcases memBV_iff.mp hu with ⟨hu, hfinite⟩
+  refine memBV_iff.mpr ⟨hu.smul c, ?_⟩
+  rw [totalVariationOn_smul]
+  exact ENNReal.mul_lt_top (by finiteness) hfinite
+
+/-- The sum of two BV functions belongs to BV. -/
+theorem MemBV.add [OpensMeasurableSpace E] {u v : E → ℝ}
+    (hu : MemBV μ Ω u) (hv : MemBV μ Ω v) : MemBV μ Ω (u + v) := by
+  rcases memBV_iff.mp hu with ⟨hu, hufinite⟩
+  rcases memBV_iff.mp hv with ⟨hv, hvfinite⟩
+  exact memBV_iff.mpr ⟨hu.add hv,
+    (totalVariationOn_add_le hu.locallyIntegrableOn hv.locallyIntegrableOn).trans_lt
+      (ENNReal.add_lt_top.mpr ⟨hufinite, hvfinite⟩)⟩
+
+/-- The difference of two BV functions belongs to BV. -/
+theorem MemBV.sub [OpensMeasurableSpace E] {u v : E → ℝ}
+    (hu : MemBV μ Ω u) (hv : MemBV μ Ω v) : MemBV μ Ω (u - v) := by
+  simpa only [sub_eq_add_neg] using hu.add hv.neg
+
 variable [OpensMeasurableSpace E]
 
 /-- The submodule of `L¹(Ω)` consisting of classes of finite total variation. Its inherited
@@ -201,14 +237,16 @@ instance instNorm : Norm (BV μ Ω) where
 theorem norm_def (u : BV μ Ω) :
     ‖u‖ = ‖u.toL1‖ + (totalVariationOn μ Ω u).toReal := (rfl)
 
+private theorem norm_smul_eq (c : ℝ) (u : BV μ Ω) : ‖c • u‖ = ‖c‖ * ‖u‖ := by
+  rw [norm_def, norm_def, toL1_smul,
+    totalVariationOn_congr_ae (Lp.coeFn_smul c u.toL1), totalVariationOn_smul]
+  simp [norm_smul, ENNReal.toReal_mul, mul_add]
+
 /-- The `L¹`-plus-variation norm makes BV a normed additive commutative group. -/
 instance instNormedAddCommGroup : NormedAddCommGroup (BV μ Ω) :=
   let core : NormedSpace.Core ℝ (BV μ Ω) := {
     norm_nonneg u := add_nonneg (norm_nonneg _) ENNReal.toReal_nonneg
-    norm_smul c u := by
-      rw [norm_def, norm_def, toL1_smul, norm_smul,
-        totalVariationOn_congr_ae (Lp.coeFn_smul c u.toL1), totalVariationOn_smul,
-        ENNReal.toReal_mul, toReal_enorm, mul_add]
+    norm_smul c u := by exact norm_smul_eq c u
     norm_triangle u v := by
       rw [norm_def, norm_def, norm_def, toL1_add,
         totalVariationOn_congr_ae (Lp.coeFn_add u.toL1 v.toL1)]
@@ -235,10 +273,7 @@ instance instNormedAddCommGroup : NormedAddCommGroup (BV μ Ω) :=
 
 /-- BV is a normed real vector space for its `L¹`-plus-variation norm. -/
 instance instNormedSpace : NormedSpace ℝ (BV μ Ω) where
-  norm_smul_le c u := by
-    rw [norm_def, norm_def, toL1_smul, norm_smul,
-      totalVariationOn_congr_ae (Lp.coeFn_smul c u.toL1), totalVariationOn_smul,
-      ENNReal.toReal_mul, toReal_enorm, mul_add]
+  norm_smul_le c u := by exact (norm_smul_eq c u).le
 
 /-- The inclusion into `L¹` decreases the norm. -/
 theorem norm_toL1_le (u : BV μ Ω) : ‖u.toL1‖ ≤ ‖u‖ := by
