@@ -244,9 +244,11 @@ theorem IsGloballyGenerated.nonempty_generatingSections {L : InvertibleSheaf X}
   have hres : L.obj.presheaf.map (⊤ : X.Opens).leTop.op s = s := by
     -- The restriction from the top open to itself is the identity morphism.
     have hi : (⊤ : X.Opens).leTop.op = 𝟙 (op (⊤ : X.Opens)) := Subsingleton.elim _ _
-    simp only [hi, Functor.map_id, CategoryTheory.id_apply]
+    rw [hi, L.obj.presheaf.map_id]
+    rfl
   simpa only [SheafOfModules.sectionsMap, PresheafOfModules.sectionsMap_coe,
-    compatibleSection_val, hres, Scheme.Modules.Hom.app] using htop
+    compatibleSection_val, hres, Scheme.Modules.Hom.app, ModuleCat.forget₂_map,
+    AddCommGrpCat.ofHom_apply] using htop
 
 /-- Global generation of a line bundle is equivalent to the existence of Mathlib's
 family of generating global sections. -/
