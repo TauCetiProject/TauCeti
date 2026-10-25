@@ -283,7 +283,7 @@ private theorem SepStage.exists_succ [ContinuousConstSMul G E] (hxy : y ∉ MulA
       rcases (mem_closedBall_zero_iff.1 hu).lt_or_eq with hu1 | hu1
       · refine absurd ?_ (map_notMem_skeletonLT (cellRep G j) hu1)
         rw [hu']
-        exact smul_mem_skeletonLT hcell _ hz
+        exact smul_mem_skeletonLT _ (hcell _) hz
       · exact mem_sphere_zero_iff_norm.2 hu1
     let vu : closedBall (0 : Fin n → ℝ) 1 := ⟨u, hu⟩
     have hKL : K j (z, v) =
@@ -291,7 +291,7 @@ private theorem SepStage.exists_succ [ContinuousConstSMul G E] (hxy : y ∉ MulA
       congrArg (L _) (Subtype.ext hu'.symm)
     cases z
     rw [hKL, hL, hψs _ u hus,
-      ← S.apply_smul (cellElt G j)⁻¹ _ hz (smul_mem_skeletonLT hcell _ hz)]
+      ← S.apply_smul (cellElt G j)⁻¹ _ hz (smul_mem_skeletonLT _ (hcell _) hz)]
     simp only [hu']
   obtain ⟨F, hF, hFK⟩ := exists_continuousMap_prod_skeletonLT_succ S.toFun K hK
   have hFKL (j : cell (univ : Set E) n) (z : Unit)
@@ -313,8 +313,8 @@ private theorem SepStage.exists_succ [ContinuousConstSMul G E] (hxy : y ∉ MulA
     exact exists_cellElt_smul_map ⟨v, mem_ball_zero_iff.2 hv, hvz⟩
   refine ⟨⟨F, fun g z hz hgz ↦ ?_, fun hx ↦ ?_, fun hy ↦ ?_⟩, hF ()⟩
   · rcases hcases hz with hzn | ⟨j, u, hu, rfl⟩
-    · rw [hF () z hzn, ← S.apply_smul g z hzn (smul_mem_skeletonLT hcell g hzn),
-        ← hF () _ (smul_mem_skeletonLT hcell g hzn)]
+    · rw [hF () z hzn, ← S.apply_smul g z hzn (smul_mem_skeletonLT g (hcell g) hzn),
+        ← hF () _ (smul_mem_skeletonLT g (hcell g) hzn)]
     · obtain ⟨j', hj'⟩ := hcell g n j
       have hg' : (g * cellElt G j) • openCell n (cellRep G j) = openCell n j' := by
         rw [mul_smul, cellElt_smul_openCell, hj']
@@ -357,7 +357,7 @@ theorem exists_invariant_continuousMap_one_zero (hxy : y ∉ MulAction.orbit G x
     hF j () z hz
   refine ⟨f, fun g z ↦ ?_, ?_, ?_⟩
   · obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add 0 (mem_univ z)
-    rw [hf z j hj, hf _ j (smul_mem_skeletonLT hcell g hj), SepStage.apply_smul]
+    rw [hf z j hj, hf _ j (smul_mem_skeletonLT g (hcell g) hj), SepStage.apply_smul]
   · obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add 0 (mem_univ x)
     rw [hf x j hj, SepStage.apply_left]
   · obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add 0 (mem_univ y)

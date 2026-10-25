@@ -21,8 +21,8 @@ open cells give a free action on cells.
 * `TauCeti.cellMulAction`: the induced monoid action on cells.
 * `TauCeti.smul_openCell` and `TauCeti.smul_mem_openCell_smul`: compatibility with open cells.
 * `TauCeti.smul_closedCell`: compatibility with closed cells for continuous translations.
-* `TauCeti.smul_mem_skeletonLT`: translations carrying open cells onto open cells preserve
-  every skeleton of a CW complex.
+* `TauCeti.smul_mem_skeletonLT`: a fixed translation carrying each open cell onto an open cell
+  of the same dimension preserves every skeleton of a CW complex.
 * `TauCeti.smul_closedCell_of_smul_openCell`: continuous translations carrying an open cell
   onto another also carry the corresponding closed cells onto each other.
 * `TauCeti.isCancelSMul_cell`: freeness of the induced group action on cells.
@@ -49,17 +49,17 @@ namespace TauCeti
 
 variable {E : Type u} [TopologicalSpace E] {G : Type*}
 
-/-- Translation by an element carrying each open cell onto an open cell of the same dimension
+/-- Translation by a fixed element carrying each open cell onto an open cell of the same dimension
 preserves every skeleton of a CW complex. -/
 lemma smul_mem_skeletonLT {C : Set E} [CWComplex C] [T2Space E] [SMul G E]
-    (hcell : ∀ (g : G) (n : ℕ) (i : cell C n),
+    (g : G) (hcell : ∀ (n : ℕ) (i : cell C n),
       ∃ j : cell C n, g • openCell n i = openCell n j)
-    (g : G) {n : ℕ∞} {z : E} (hz : z ∈ (skeletonLT C n : Set E)) :
+    {n : ℕ∞} {z : E} (hz : z ∈ (skeletonLT C n : Set E)) :
     g • z ∈ (skeletonLT C n : Set E) := by
   rw [← CWComplex.iUnion_openCell_eq_skeletonLT] at hz ⊢
   simp only [mem_iUnion] at hz ⊢
   obtain ⟨m, hm, i, hi⟩ := hz
-  obtain ⟨j, hj⟩ := hcell g m i
+  obtain ⟨j, hj⟩ := hcell m i
   exact ⟨m, hm, j, hj ▸ smul_mem_smul_set hi⟩
 
 /-- A continuous translation carrying an open cell onto another also carries the corresponding
