@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 -- Private: the orthogonal-basis and volume-element computations are used only inside proofs.
@@ -66,7 +67,9 @@ two-forms to trace-free endomorphisms of `W⁺`; that trace statement is not mad
 * `CliffordAlgebra.chirality_eq`: `Γ = -c(e₁) c(e₂) c(e₃) c(e₄)` for every positively
   oriented orthonormal basis `e`.
 * `CliffordAlgebra.chirality_mul_self`: `Γ² = 1`.
-* `CliffordAlgebra.chirality_mul_ι`: `Γ c(v) = -c(v) Γ`.
+* `CliffordAlgebra.chirality_mul_ι`: `Γ c(v) = -c(v) Γ`, and
+  `CliffordAlgebra.ofBaseChangeAux_chirality_mul_ι`: the same for the image of `Γ` in the Clifford
+  algebra of a base change, against every vector of `A ⊗[ℝ] V`.
 * `CliffordAlgebra.reverse_chirality`, `CliffordAlgebra.involute_chirality`: `Γ` is
   fixed by reversal and by the grade involution.
 * `CliffordAlgebra.commute_chirality_bivectorExterior`: two-forms commute with `Γ`, and
@@ -105,7 +108,7 @@ noncomputable section
 namespace CliffordAlgebra
 
 open Module exteriorPower Set
-open scoped RealInnerProductSpace
+open scoped RealInnerProductSpace TensorProduct
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
 
@@ -184,6 +187,20 @@ theorem chirality_mul_ι (v : V) : chirality Q o * ι Q v = -(ι Q v * chirality
   rw [chirality_eq_neg_prod o hQ (frame o) (frame_orientation o), neg_mul, mul_neg,
     prod_map_ι_mul_ι_of_even_length ((frame o).pairwise_isOrtho_map hQ (List.nodup_finRange 4))
       (by simp [Nat.even_iff]) hspan]
+
+/-- **The base-changed chirality element anticommutes with every vector**: for a commutative
+`ℝ`-algebra `A`, the image of `Γ` in `CliffordAlgebra (Q.baseChange A)` anticommutes with `ι z`
+for every `z : A ⊗[ℝ] V`. -/
+theorem ofBaseChangeAux_chirality_mul_ι (A : Type*) [CommRing A] [Algebra ℝ A] (z : A ⊗[ℝ] V) :
+    ofBaseChangeAux A Q (chirality Q o) * ι (Q.baseChange A) z =
+      -(ι (Q.baseChange A) z * ofBaseChangeAux A Q (chirality Q o)) := by
+  induction z using TensorProduct.inductionOn with
+  | tmul a v =>
+    have h : ι (Q.baseChange A) (a ⊗ₜ v) = a • ofBaseChangeAux A Q (ι Q v) := by
+      simp [← map_smul, TensorProduct.smul_tmul']
+    simp only [h, mul_smul_comm, smul_mul_assoc, ← map_mul, chirality_mul_ι o hQ, map_neg,
+      smul_neg]
+  | add x y hx hy => rw [map_add, mul_add, add_mul, hx, hy, neg_add]
 
 omit hQ in
 /-- The chirality element is fixed by reversal. Together with `involute_chirality`, it is fixed by

@@ -38,6 +38,8 @@ In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetric`:
   metric.
 * `IsLeviCivitaConnection.christoffelSymbol_eq`: the index formula for the scalar Christoffel
   symbols of a Levi-Civita connection.
+* `IsLeviCivitaConnection.christoffelSymbol_eventuallyEq`: near a point, the scalar Christoffel
+  symbols are the coordinates of the Christoffel symbols of the second kind of the chart metric.
 
 ## References
 
@@ -172,6 +174,24 @@ theorem IsLeviCivitaConnection.christoffelSymbol_eq [DecidableEq ι]
     repr_christoffelSecondKind (g := g.chartMetric x₀)
       (g.isSymm_chartMetric ((extChartAt I x₀).map_source hy))
       (g.nondegenerate_chartMetric ((extChartAt I x₀).map_source hy))]
+
+omit [Fintype ι] in
+/-- Near a point of the chart domain at `x₀` whose chart image is interior, the Christoffel
+symbols of a Levi-Civita connection of `g`, in the frame of `b`, are the coordinates of the
+Christoffel symbols of the second kind of the chart metric. -/
+theorem IsLeviCivitaConnection.christoffelSymbol_eventuallyEq [Finite ι]
+    (h : g.IsLeviCivitaConnection cov) (hy : y ∈ (extChartAt I x₀).source)
+    (hint : extChartAt I x₀ y ∈ interior (range I)) (i j k : ι) :
+    christoffelSymbol I b (trivializationAt E (TangentSpace I) x₀) cov i j k =ᶠ[𝓝 y]
+      fun y' ↦ b.repr
+        (christoffelSecondKind (g.chartMetric x₀) (extChartAt I x₀ y') (b i) (b j)) k := by
+  filter_upwards [(isOpen_extChartAt_source x₀).mem_nhds hy,
+    (continuousAt_extChartAt' hy).preimage_mem_nhds (isOpen_interior.mem_nhds hint)]
+    with y' hy' hint'
+  have := Fintype.ofFinite ι
+  rw [← coord_christoffelMap_apply_basis b (cov.isCovariantDerivativeOn (s := _))
+    (by simpa using hy') i j k, h.christoffelMap_apply_eq_christoffelSecondKind b hy' hint',
+    Basis.coord_apply]
 
 end Coordinates
 
