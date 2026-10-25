@@ -39,6 +39,7 @@ open Polynomial
 namespace TauCeti
 
 /-- A norm-preserving ring homomorphism preserves the coefficient sup norm. -/
+@[simp]
 theorem _root_.Polynomial.supNorm_map {R S : Type*} [SeminormedRing R] [SeminormedRing S]
     (p : R[X]) (f : R →+* S) (hf : ∀ x, ‖f x‖ = ‖x‖) :
     (p.map f).supNorm = p.supNorm := by
