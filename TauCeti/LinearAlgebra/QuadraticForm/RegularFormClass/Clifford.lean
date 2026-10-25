@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Brauer
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.BaseChange
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting

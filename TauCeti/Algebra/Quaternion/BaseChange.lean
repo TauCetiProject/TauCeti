@@ -208,9 +208,8 @@ theorem baseChange_quaternionClassOnSquareClasses (x y : SquareClassGroup K) :
     baseChange K L (quaternionClassOnSquareClasses x y) =
       quaternionClassOnSquareClasses ((algebraMap K L).squareClassMap x)
         ((algebraMap K L).squareClassMap y) := by
-  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y,
-    quaternionClassOnSquareClasses_squareClass, RingHom.squareClassMap_apply,
-    RingHom.squareClassMap_apply, quaternionClassOnSquareClasses_squareClass,
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y]
+  simp only [quaternionClassOnSquareClasses_squareClass, RingHom.squareClassMap_apply,
     baseChange_quaternionClass]
 
 end TauCeti.BrauerGroup

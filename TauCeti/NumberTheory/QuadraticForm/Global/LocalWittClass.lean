@@ -79,9 +79,8 @@ theorem wittClass_formClass_atRealPlace_eq_iff (Q : _root_.QuadraticForm K V)
         wittClass (formClass (R.atRealPlace w) (Nondegenerate.atRealPlace hR w)) ↔
       (Q.realPositiveIndex w : ℤ) - Q.realNegativeIndex w =
         (R.realPositiveIndex w : ℤ) - R.realNegativeIndex w := by
-  rw [wittClass_eq_iff_signature_eq, signature_formClass, signature_formClass,
-    realPositiveIndex_eq_sigPos, realPositiveIndex_eq_sigPos, realNegativeIndex_eq_sigNeg,
-    realNegativeIndex_eq_sigNeg]
+  rw [wittClass_eq_iff_signature_eq]
+  simp only [signature_formClass, realPositiveIndex_eq_sigPos, realNegativeIndex_eq_sigNeg]
 
 variable [NumberField K]
 
