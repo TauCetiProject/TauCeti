@@ -7,17 +7,19 @@ module
 
 public import Mathlib.LinearAlgebra.SymplecticGroup
 
--- Non-public: `noncomm_ring` normalises the conjugation identities below, but no statement
--- mentions it.
+-- Non-public: `noncomm_ring` normalises the conjugation identities below, and the Schur complement
+-- evaluates `det J`, but no statement mentions either.
+import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.Tactic.NoncommRing
 
 /-!
 # The canonical skew-symmetric matrix as a unit, and block matrices in the symplectic group
 
-Mathlib's `Matrix.J` satisfies `J * J = -1`, so it is a unit with inverse `-J`. This file records
-that unit and the conjugation cancellation it supports — `X = J * Y * J⁻¹` iff `X * J = J * Y` —
-and solves the symplectic inverse formula `SymplecticGroup.inv_eq_symplectic_inv` for the
-transpose, `Aᵀ = J * A⁻¹ * J⁻¹`. Conjugation by `J` is the shape the matrix exponential consumes:
+Mathlib's `Matrix.J` satisfies `J * J = -1`, so it is a unit with inverse `-J`, and its
+determinant is `1`. This file records that unit and the conjugation cancellation it supports —
+`X = J * Y * J⁻¹` iff `X * J = J * Y` — and solves the symplectic inverse formula
+`SymplecticGroup.inv_eq_symplectic_inv` for the transpose, `Aᵀ = J * A⁻¹ * J⁻¹`.
+Conjugation by `J` is the shape the matrix exponential consumes:
 the exponential does not interact with `Aᵀ * J = J * (-A)`, but it does turn `Aᵀ = J * (-A) * J⁻¹`
 into `(exp A)ᵀ = J * (exp A)⁻¹ * J⁻¹`.
 
@@ -33,6 +35,7 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 
 * `Matrix.J_mul_neg_J`, `Matrix.neg_J_mul_J` and `Matrix.isUnit_J`: the canonical skew-symmetric
   matrix is a unit, with inverse `-J`.
+* `Matrix.det_J`: its determinant is `1`.
 * `Matrix.J_apply_swap` and `Matrix.sum_J_mul_J`: the two entrywise identities for `J`, its
   antisymmetry and the pairing of a row with itself; `Matrix.sum_sum_J_mul_J` is the double sum of
   the latter, `tr (J * Jᵀ) = 2 * card l`.
@@ -67,6 +70,18 @@ theorem neg_J_mul_J : (-J l R) * J l R = 1 := by
 /-- The canonical skew-symmetric matrix is a unit, with inverse `-J`, because `J * J = -1`. -/
 theorem isUnit_J : IsUnit (J l R) :=
   ⟨⟨J l R, -J l R, J_mul_neg_J l R, neg_J_mul_J l R⟩, rfl⟩
+
+/-- The canonical skew-symmetric matrix has determinant one. Mathlib records only
+`det J * det J = 1` (`Matrix.J_det_mul_J_det`), which leaves the sign open. -/
+@[simp]
+theorem det_J : (J l R).det = 1 := by
+  -- Multiplying by a unipotent block matrix moves the identity block into the corner, where
+  -- `Matrix.det_fromBlocks_one₂₂` evaluates the determinant.
+  have hJ : J l R * fromBlocks 1 1 0 1 = fromBlocks 0 (-1) 1 1 := by
+    simp [J, fromBlocks_multiply]
+  have h := congrArg det hJ
+  rwa [det_mul, det_fromBlocks_zero₂₁, det_fromBlocks_one₂₂, det_one, mul_one, mul_one,
+    zero_sub, neg_mul, one_mul, neg_neg, det_one] at h
 
 omit [Fintype l] in
 /-- `J` is antisymmetric, entrywise: `Jᵀ = -J` read at a pair of indices. -/

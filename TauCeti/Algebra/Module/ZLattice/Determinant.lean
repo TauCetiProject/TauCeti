@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Int.ModEq
 public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.Algebra.Module.ZLattice.Integral
+import TauCeti.LinearAlgebra.Matrix.Determinant.Skew
 
 /-!
 # The determinant and the discriminant group of a lattice
@@ -29,6 +31,10 @@ For an integral lattice, unimodularity `L = L^∨` is equivalent to each of `cov
 `det L = 1` and the triviality of the discriminant group. Unimodular lattices have covolume one
 whether or not they are assumed integral (`ZLattice.IsUnimodular.covolume_eq_one`).
 
+For an even lattice of even rank `2k`, the signed determinant `(-1)^k det L` is congruent to `0`
+or `1` modulo `4`, because the Gram matrix of a `ℤ`-basis is a symmetric integer matrix with even
+diagonal (`Matrix.IsSymm.neg_one_pow_mul_det_modEq_zero_or_one`).
+
 ## Main definitions
 
 * `ZLattice.det L`: the determinant `covolume L ^ 2` of a lattice.
@@ -44,6 +50,8 @@ whether or not they are assumed integral (`ZLattice.IsUnimodular.covolume_eq_one
   `ZLattice.IsIntegral.isUnimodular_iff_det_eq_one`,
   `ZLattice.IsIntegral.isUnimodular_iff_subsingleton_discriminantGroup`: the forms of
   unimodularity for an integral lattice.
+* `ZLattice.IsEven.neg_one_pow_mul_card_discriminantGroup_modEq_zero_or_one`: for an even
+  lattice of rank `2k`, `(-1)^k det L ≡ 0` or `1` modulo `4`.
 
 ## References
 
@@ -167,6 +175,46 @@ theorem IsIntegral.det_eq_card_discriminantGroup (h : IsIntegral L) :
 theorem IsIntegral.finite_discriminantGroup (h : IsIntegral L) : Finite (DiscriminantGroup L) :=
   Nat.finite_of_card_ne_zero <| by
     exact_mod_cast h.det_eq_card_discriminantGroup ▸ (det_pos L).ne'
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- **The signed determinant of an even lattice is a discriminant.** For an even lattice `L` of
+even rank `2k`, the signed determinant `(-1)^k det L` is an integer congruent to `0` or `1`
+modulo `4`. Here `det L` appears as the order of the discriminant group, which it equals
+(`ZLattice.IsIntegral.det_eq_card_discriminantGroup`). -/
+theorem IsEven.neg_one_pow_mul_card_discriminantGroup_modEq_zero_or_one (h : IsEven L) {k : ℕ}
+    (hk : finrank ℝ E = 2 * k) :
+    (-1) ^ k * (Nat.card (DiscriminantGroup L) : ℤ) ≡ 0 [ZMOD 4] ∨
+      (-1) ^ k * (Nat.card (DiscriminantGroup L) : ℤ) ≡ 1 [ZMOD 4] := by
+  classical
+  -- The statement involves no measure; the comparison with `det L` uses the Borel volume.
+  borelize E
+  -- The Gram matrix of a `ℤ`-basis of `L` is a symmetric integer matrix with even diagonal.
+  let b := Free.chooseBasis ℤ L
+  have hint := isIntegral_iff.1 h.isIntegral
+  let G : Matrix (Free.ChooseBasisIndex ℤ L) (Free.ChooseBasisIndex ℤ L) ℤ :=
+    Matrix.of fun i j ↦ (hint _ (b i).2 _ (b j).2).choose
+  have hG (i j) : (G i j : ℝ) = inner ℝ (b i : E) (b j) :=
+    (hint _ (b i).2 _ (b j).2).choose_spec.symm
+  have hGsymm : G.IsSymm := Matrix.IsSymm.ext fun i j ↦
+    Int.cast_injective (α := ℝ) (by rw [hG, hG, real_inner_comm])
+  have hGeven (i) : Even (G i i) := by
+    obtain ⟨m, hm⟩ := isEven_iff.1 h _ (b i).2
+    refine ⟨m, Int.cast_injective (α := ℝ) ?_⟩
+    rw [hG, real_inner_self_eq_norm_sq, hm]
+    push_cast
+    ring
+  have hcard : Fintype.card (Free.ChooseBasisIndex ℤ L) = 2 * k := by
+    rw [← finrank_eq_card_chooseBasisIndex, ZLattice.rank ℝ L, hk]
+  -- Its determinant is `det L`, the order of the discriminant group.
+  have hdet : (Nat.card (DiscriminantGroup L) : ℤ) = G.det := by
+    refine Int.cast_injective (α := ℝ) ?_
+    rw [Int.cast_natCast, ← h.isIntegral.det_eq_card_discriminantGroup, det_eq_det_gram L b,
+      Int.cast_det]
+    congr 1
+    ext i j
+    simp [hG, Matrix.gram_apply]
+  rw [hdet]
+  exact hGsymm.neg_one_pow_mul_det_modEq_zero_or_one hGeven hcard
 
 /-! ### Unimodular lattices -/
 
