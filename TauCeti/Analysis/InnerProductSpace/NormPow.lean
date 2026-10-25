@@ -21,8 +21,8 @@ origin.  This file supplies the corresponding local derivative, Hessian, and Lap
 under the explicit hypothesis `x ≠ 0`, together with the Laplacian of the dipole-type product
 `x ↦ ⟪a, x⟫ ‖x‖^p`.  The critical exponents give the functions `‖x‖^(2 - dim E)` and
 `⟪a, x⟫ ‖x‖^(-dim E)`, harmonic away from the origin, from which the Poisson kernel of a ball is
-assembled. The logarithm of the norm, the limiting case `p = 0`, has derivative
-`‖x‖⁻² ⟨x, ·⟩` and Laplacian `(dim E - 2) / ‖x‖²` away from the origin.
+assembled. The logarithm of the norm, the limit of `(‖x‖ ^ p - 1) / p` as `p → 0`, has
+derivative `‖x‖⁻² ⟨x, ·⟩` and Laplacian `(dim E - 2) / ‖x‖²` away from the origin.
 
 The Hessian is bounded by `‖x‖ ^ (p - 2)` in size and, for `p ≤ 3`, by `‖a - b‖ ‖b‖ ^ (p - 3)`
 in its variation between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.  For negative `p` these are

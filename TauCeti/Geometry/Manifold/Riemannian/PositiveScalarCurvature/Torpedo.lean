@@ -107,7 +107,8 @@ theorem torpedoSlope_nonneg (s : ℝ) : 0 ≤ torpedoSlope s := by
   rcases le_or_gt (-1) s with hs | hs
   · rw [torpedoSlope_of_ge hs]
   · refine mul_nonneg ?_ (sub_nonneg.2 (smoothTransition.le_one _))
-    have := tanh_strictMono (show s < 0 by linarith)
+    have hs0 : s < 0 := by linarith
+    have := tanh_strictMono hs0
     rw [tanh_zero] at this
     linarith
 
@@ -129,7 +130,8 @@ theorem antitone_torpedoSlope : Antitone torpedoSlope := by
   · rw [torpedoSlope_of_ge hb]
     exact torpedoSlope_nonneg a
   · have hta : tanh b < 0 := by
-      have := tanh_strictMono (show b < 0 by linarith)
+      have hb0 : b < 0 := by linarith
+      have := tanh_strictMono hb0
       rwa [tanh_zero] at this
     refine mul_le_mul (neg_le_neg (tanh_strictMono.monotone hab))
       (sub_le_sub_left (smoothTransition.monotone (by linarith)) _)
@@ -229,10 +231,11 @@ theorem torpedoExponent_of_le {ρ : ℝ} (h₀ : 0 ≤ ρ) (h : ρ ≤ exp (-2))
   · simp
   have hR := torpedoCapRadius_pos
   have hc : 0 < (ρ + ρ⁻¹) / 2 := by positivity
+  have hfrac : 2 * torpedoCapRadius / (1 + ρ ^ 2) = torpedoCapRadius / ((ρ + ρ⁻¹) / 2 * ρ) := by
+    field_simp
+    ring
   rw [torpedoExponent_of_ne_zero hρ.ne', torpedoProfile_of_le ((log_le_iff_le_exp hρ).2 h),
-    cosh_log hρ, show 2 * torpedoCapRadius / (1 + ρ ^ 2) =
-      torpedoCapRadius / ((ρ + ρ⁻¹) / 2 * ρ) by field_simp; ring,
-    log_div hR.ne' (by positivity), log_mul hc.ne' hρ.ne']
+    cosh_log hρ, hfrac, log_div hR.ne' (by positivity), log_mul hc.ne' hρ.ne']
   ring
 
 /-- On the cylindrical end `e⁻¹ ≤ ρ` the conformal factor `e^(2 Φ(ρ))` is `ρ⁻²`. -/
@@ -392,10 +395,12 @@ theorem scalarCurvature_torpedoMetric_of_ne_zero {y : F} (hy : y ≠ 0) :
   have hρ : 0 < ‖y‖ := norm_pos_iff.2 hy
   have hexp : (exp (2 * torpedoExponent ‖y‖))⁻¹ =
       exp (-2 * torpedoProfile (log ‖y‖)) * ‖y‖ ^ 2 := by
-    rw [torpedoExponent_of_ne_zero hρ.ne', ← exp_neg,
-      show -(2 * (torpedoProfile (log ‖y‖) - log ‖y‖)) =
-        -2 * torpedoProfile (log ‖y‖) + log (‖y‖ ^ 2) by rw [log_pow]; push_cast; ring,
-      exp_add, exp_log (by positivity)]
+    have harg : -(2 * (torpedoProfile (log ‖y‖) - log ‖y‖)) =
+        -2 * torpedoProfile (log ‖y‖) + log (‖y‖ ^ 2) := by
+      rw [log_pow]
+      push_cast
+      ring
+    rw [torpedoExponent_of_ne_zero hρ.ne', ← exp_neg, harg, exp_add, exp_log (by positivity)]
   rw [hscal, hΔ, hG, hexp, laplacian_torpedoExponent_norm hy,
     norm_gradient_torpedoExponent_norm hy, mul_pow, sq_abs]
   field_simp
@@ -432,9 +437,12 @@ private theorem exists_pos_le_exp_mul_one_sub_torpedoSlope_sq :
     refine (min_le_right _ _).trans ((min_le_right _ _).trans_eq ?_)
     have hc := cosh_pos s
     simp only [torpedoProfile_of_le hs, torpedoSlope_of_le hs, neg_sq, tanh_eq_sinh_div_cosh]
-    rw [show -2 * (log torpedoCapRadius - log (cosh s)) =
-        log (cosh s ^ 2) - log (torpedoCapRadius ^ 2) by rw [log_pow, log_pow]; push_cast; ring,
-      exp_sub, exp_log (by positivity), exp_log (by positivity)]
+    have harg : -2 * (log torpedoCapRadius - log (cosh s)) =
+        log (cosh s ^ 2) - log (torpedoCapRadius ^ 2) := by
+      rw [log_pow, log_pow]
+      push_cast
+      ring
+    rw [harg, exp_sub, exp_log (by positivity), exp_log (by positivity)]
     field_simp
     linear_combination (-1 : ℝ) * cosh_sq s
   rcases le_or_gt (-1) s with hs' | hs'
