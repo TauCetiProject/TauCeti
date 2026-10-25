@@ -52,7 +52,7 @@ theorem matrixCoefficientTensor_injective :
   obtain ⟨f, rfl⟩ := convolutionAction_surjective (C := C) T
   rw [LinearMap.trace_mul_comm, ← WithConv.apply_matrixCoefficientTensor_eq_trace, hz, map_zero]
 
-/-- The coefficient tensor identifies a simple comodule's dual tensor square with the
+/-- The coefficient tensor identifies a simple comodule's tensor product `M* ⊗ M` with the
 underlying module of its coefficient subcoalgebra. -/
 noncomputable def matrixCoefficientTensorEquiv :
     Module.Dual k M ⊗[k] M ≃ₗ[k]
