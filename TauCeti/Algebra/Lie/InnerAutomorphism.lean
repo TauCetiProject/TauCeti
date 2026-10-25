@@ -136,6 +136,7 @@ lemma expAd_apply_self (x : L) (hx : IsNilpotent (ad K L x)) : expAd x hx x = x 
   expAd_apply_of_lie_eq_zero hx (lie_self x)
 
 /-- **The inverse of `exp (ad x)` is `exp (ad (-x))`.** -/
+@[simp]
 theorem expAd_symm (x : L) (hx : IsNilpotent (ad K L x)) :
     (expAd x hx).symm = expAd (-x) (by simpa only [map_neg] using hx.neg) := by
   ext y

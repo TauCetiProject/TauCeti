@@ -132,6 +132,7 @@ theorem intLieAlgebraLieEquiv_mul (g h : intLieAlgebra K L) :
   LieEquiv.ext fun _ => by simp [mul_smul]
 
 /-- An inverse in `Int L` is the inverse automorphism. -/
+@[simp]
 theorem intLieAlgebraLieEquiv_inv (g : intLieAlgebra K L) :
     intLieAlgebraLieEquiv g⁻¹ = (intLieAlgebraLieEquiv g).symm :=
   LieEquiv.ext fun _ => rfl
