@@ -12,10 +12,9 @@ import Mathlib.Algebra.Field.ZMod
 /-!
 # Concrete checks for the Hasse Wronskian
 
-These are the checks in TauCetiRoadmap/DiophantineApproximationAndTranscendence/README.md,
-§1.4, “Wronskians and separation of variables”. They distinguish the Hasse determinant from
-the classical determinant, test the characteristic-zero hypothesis of the independence criterion,
-and test the domain hypothesis of the dependence-to-vanishing implication.
+These checks distinguish the Hasse determinant from the classical determinant, test the
+characteristic-zero hypothesis of the independence criterion, and test the domain hypothesis of
+the dependence-to-vanishing implication.
 -/
 
 public section
@@ -26,15 +25,9 @@ namespace TauCeti.Examples.HasseWronskian
 
 local instance : Fact (Nat.Prime 2) := ⟨by decide⟩
 
-private theorem hasseDeriv_two_X_sq (R : Type*) [CommRing R] :
-    hasseDeriv 2 (X ^ 2 : R[X]) = 1 := by
-  have h : (X ^ 2 : R[X]) = monomial 2 1 := by rw [monomial_one_right_eq_X_pow]
-  rw [h, hasseDeriv_monomial]
-  simp only [tsub_self, Nat.choose_self, Nat.cast_one, mul_one, monomial_zero_left, map_one]
-
 /-- The divided Wronskian of `(1, X, X²)` over `ℚ` is one. -/
 theorem rational_one_X_sq : hasseWronskian (![1, X, X ^ 2] : Fin 3 → ℚ[X]) = 1 := by
-  norm_num [hasseWronskian_def, Matrix.det_fin_three, hasseDeriv_two_X_sq,
+  norm_num [hasseWronskian_def, Matrix.det_fin_three, X_pow_eq_monomial, hasseDeriv_monomial,
     hasseDeriv_X, hasseDeriv_apply_one]
 
 /-- The dependent pair `(X, 2X)` has zero Hasse Wronskian. -/
@@ -54,8 +47,7 @@ theorem rational_one_X : hasseWronskian (![1, X] : Fin 2 → ℚ[X]) = 1 := by
 theorem rational_classical_one_X_sq : (derivative' : Derivation ℚ ℚ[X] ℚ[X]).wronskian
     (![1, X, X ^ 2] : Fin 3 → ℚ[X]) = 2 := by
   rw [← prod_factorial_mul_hasseWronskian]
-  norm_num [hasseWronskian_def, Matrix.det_fin_three, hasseDeriv_two_X_sq,
-    hasseDeriv_X, hasseDeriv_apply_one, Fin.prod_univ_succ]
+  norm_num [rational_one_X_sq, Fin.prod_univ_succ]
 
 /-- In characteristic two, `(1, X²)` has zero Hasse Wronskian. -/
 theorem zmod_two_one_X_sq : hasseWronskian (![1, X ^ 2] : Fin 2 → (ZMod 2)[X]) = 0 := by
@@ -87,8 +79,7 @@ theorem zmod_four_singleton_two_not_linearIndependent :
   have h' := h.smul_left_injective (i := (0 : Fin 1)) (a₁ := (2 : ZMod 4)) (a₂ := 0)
   have he : (2 : ZMod 4) • (2 : (ZMod 4)[X]) = 0 := by
     rw [smul_eq_C_mul]
-    change C 2 * C 2 = 0
-    rw [← C_mul]
+    rw [← C_ofNat (n := 2), ← C_mul]
     simpa only [map_zero] using
       congrArg (C : ZMod 4 →+* (ZMod 4)[X]) (by decide : (2 : ZMod 4) * 2 = 0)
   exact (by decide : (2 : ZMod 4) ≠ 0) (h' (by simpa using he))
