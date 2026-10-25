@@ -537,7 +537,7 @@ private lemma supportedHPresheafδZero_app_apply (hT : T.ShortExact) (W : (Opens
     (s : (T.X₃.supportedSectionsSheaf S).obj.obj W) :
     (supportedHPresheafδZero S hT).app W s =
       ((T.X₃.supportedHZeroEquiv S W.unop).symm s).comp hT.extClass (zero_add 1) :=
-  (rfl)
+  supportedHPresheafδ_app_apply S hT 0 W _
 
 /-- The short complex `Γ_S(W, F₂) ⟶ Γ_S(W, F₃) ⟶ H_S¹(W, F₁)` of a short exact sequence
 `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0`. -/
@@ -546,8 +546,9 @@ private abbrev supportedHδZeroComplex (hT : T.ShortExact) (W : Opens X) :
   ShortComplex.mk ((T.map (supportedSectionsFunctor S)).g.hom.app (op W))
     ((supportedHPresheafδZero S hT).app (op W)) <| by
       ext s
-      refine (congrArg (fun z ↦ z.comp hT.extClass (zero_add 1))
-        (supportedHZeroEquiv_symm_map_g S (op W) s)).trans ?_
+      refine (supportedHPresheafδZero_app_apply S hT (op W) _).trans <|
+        (congrArg (fun z ↦ z.comp hT.extClass (zero_add 1))
+          (supportedHZeroEquiv_symm_map_g S (op W) s)).trans ?_
       rw [Ext.comp_assoc_of_second_deg_zero, hT.comp_extClass, Ext.comp_zero]
       rfl
 
@@ -558,7 +559,8 @@ private lemma exact_supportedHδZeroComplex (hT : T.ShortExact)
     (supportedHδZeroComplex S hT W).Exact ∧ Epi (supportedHδZeroComplex S hT W).g := by
   refine ⟨(ShortComplex.ab_exact_iff _).2 fun s hs ↦ ?_,
     (AddCommGrpCat.epi_iff_surjective _).2 fun c ↦ ?_⟩
-  · obtain ⟨z, hz⟩ := Ext.covariant_sequence_exact₃ _ hT _ (zero_add 1) hs
+  · obtain ⟨z, hz⟩ := Ext.covariant_sequence_exact₃ _ hT _ (zero_add 1)
+      ((supportedHPresheafδZero_app_apply S hT (op W) s).symm.trans hs)
     refine ⟨T.X₂.supportedHZeroEquiv S W z, ?_⟩
     apply (T.X₃.supportedHZeroEquiv S W).symm.injective
     refine (supportedHZeroEquiv_symm_map_g S (op W) _).trans ?_

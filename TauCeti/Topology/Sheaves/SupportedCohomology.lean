@@ -465,7 +465,6 @@ variable {X : TopCat.{u}} (S : Closeds X)
 
 /-- The connecting morphism `H_Sⁿ(-, F₃) ⟶ H_Sⁿ⁺¹(-, F₁)` of presheaves of cohomology with
 supports attached to a short exact sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` of sheaves. -/
-@[expose]
 noncomputable def supportedHPresheafδ (hT : T.ShortExact) (n : ℕ) :
     T.X₃.supportedHPresheaf S n ⟶ T.X₁.supportedHPresheaf S (n + 1) where
   app W := AddCommGrpCat.ofHom (hT.extClass.postcomp _ rfl)
