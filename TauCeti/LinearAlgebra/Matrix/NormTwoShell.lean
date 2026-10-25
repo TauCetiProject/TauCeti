@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.Algebra.Order.Group.PosPart
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.Gram
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
@@ -284,14 +285,6 @@ end PosDef
 section Reindex
 
 variable {J : Type*} [Fintype J] (e : I ≃ J)
-
-/-- **Relabelling the vertices is an isometry**: for a relabelling `e : I ≃ J` of the indices of a
-square matrix `M`, the vectors `u ∘ e.symm` and `v ∘ e.symm` pair under `M.reindex e e` as `u`
-and `v` do under `M`. -/
-theorem comp_equiv_symm_dotProduct_reindex_mulVec {α : Type*} [NonUnitalNonAssocSemiring α]
-    (M : Matrix I I α) (u v : I → α) :
-    u ∘ e.symm ⬝ᵥ M.reindex e e *ᵥ (v ∘ e.symm) = u ⬝ᵥ M *ᵥ v := by
-  simp [submatrix_mulVec_equiv, Function.comp_assoc]
 
 /-- A relabelled vector lies in the norm-two shell of the relabelled matrix exactly when the vector
 lies in the norm-two shell of the matrix. -/

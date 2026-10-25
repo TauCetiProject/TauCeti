@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover.Reindex
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # Relabelling the vertices of the signed shell Lie algebra
@@ -23,9 +24,11 @@ vectors are rescaled accordingly: the linear equivalence `Matrix.ShellLieAlgebra
 from `ShellLieAlgebra B` to `ShellLieAlgebra B'` preserves the bracket as soon as `B` is symmetric
 (`Matrix.ShellLieAlgebra.reindex_lie`). It is therefore an isomorphism of Lie rings for positive
 definite `B` with even diagonal (`Matrix.ShellLieAlgebra.reindexLieEquiv`). Since a coordinate
-vector has inversion sign `1`, it sends the Chevalley generators `H_(αᵢ)`, `x_(αᵢ)`, `x_(-αᵢ)` of
-`B` to those of `B'` at the vertex `e i`, so it respects the simple positive pinning. The
-relabellings are functorial (`Matrix.ShellLieAlgebra.reindex_refl`,
+vector has inversion sign `1`, it sends `x_(αᵢ)` and `x_(-αᵢ)` to `x_(α_(e i))` and
+`x_(-α_(e i))` whenever these coordinate vectors lie in the shells. When `B` is a simply laced
+Cartan matrix they do, and together with `H_(αᵢ) ↦ H_(α_(e i))` the relabelling sends the
+Chevalley generators of `B` to those of `B'` at the vertex `e i`, so it respects the simple
+positive pinning. The relabellings are functorial (`Matrix.ShellLieAlgebra.reindex_refl`,
 `Matrix.ShellLieAlgebra.reindex_trans`).
 
 ## Main definitions
@@ -83,11 +86,11 @@ theorem reindex_cartan (h : I → ℤ) : reindex e he (cartan B h) = cartan B' (
       cartan B' ∘ₗ LinearMap.funLeft ℤ ℤ e.symm :=
     (Pi.basisFun ℤ I).ext fun i => by
       have hsingle : LinearMap.funLeft ℤ ℤ e.symm (Pi.single i 1) = Pi.single (e i) 1 := by
-        rw [LinearMap.funLeft, LinearMap.coe_mk, AddHom.coe_mk, Pi.single_comp_equiv,
-          Equiv.symm_symm]
-      simp only [Pi.basisFun_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply]
-      rw [← basis_inl, reindex, Basis.equiv_apply, Basis.unitsSMul_apply, Equiv.sumCongr_apply,
-        Sum.map_inl, Sum.elim_inl, Pi.one_apply, one_smul, basis_inl, hsingle]
+        ext j
+        simp [LinearMap.funLeft_apply, Pi.single_apply, Equiv.symm_apply_eq]
+      rw [Pi.basisFun_apply, LinearMap.comp_apply, LinearMap.comp_apply, hsingle, ← basis_inl,
+        ← basis_inl, LinearEquiv.coe_coe, reindex, Basis.equiv_apply]
+      simp [Basis.unitsSMul_apply]
   exact congr($key h)
 
 /-- The relabelling sends the simple root vector `x_(αᵢ)` to `x_(α_(e i))`. -/

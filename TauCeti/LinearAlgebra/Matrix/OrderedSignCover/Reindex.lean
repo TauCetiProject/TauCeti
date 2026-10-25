@@ -102,7 +102,8 @@ theorem inversionSign_zero : inversionSign B e 0 = 1 := by
 theorem inversionSign_neg (a : I → ℤ) : inversionSign B e (-a) = inversionSign B e a := by
   simp [inversionSign]
 
-/-- **A coordinate vector has inversion sign `1`**: the inversion form vanishes on the diagonal. -/
+/-- **A coordinate vector has inversion sign `1`**: the matrix of the inversion form has zero
+diagonal, so the form vanishes on pairs of vectors supported at the same index. -/
 @[simp]
 theorem inversionSign_single [DecidableEq I] (i : I) (n : ℤ) :
     inversionSign B e (Pi.single i n) = 1 := by
