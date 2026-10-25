@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Basic
 public import TauCeti.Topology.Path.Separation
+import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Null chains and prime ends
@@ -27,12 +28,13 @@ infinity, as the semicircles `|z| = R` of the upper half-plane do as `R → ∞`
 Pommerenke requires instead that each crosscut `C n`, `n ≥ 1`, separates `C 0` from `C (n + 1)`,
 and then deduces that the domains are nested from the fact that a crosscut cuts a simply connected
 domain into exactly two pieces. Nesting is taken as part of the definition here, and Pommerenke's
-separation condition follows from it (`TauCeti.IsNullChain.separatesIn`); by the two-pieces
-theorem the definitions agree on bounded simply connected domains, though only the implication
-from nesting to separation is proved here. On unbounded domains this definition is narrower than
-Pommerenke's, whose crosscuts live in the Riemann sphere and may end at `∞`, while the crosscuts
-here have finite endpoints. The nested-domain form makes the
-equivalence of chains visibly an equivalence relation.
+separation condition follows from it (`TauCeti.IsNullChain.separatesIn`). Conversely, on a
+connected open set separation already forces nesting
+(`TauCeti.nullChainDomain_succ_subset_of_separatesIn`), so the two definitions agree there
+(`TauCeti.isNullChain_iff_separatesIn`); the two-pieces theorem is not needed for this. On
+unbounded domains this definition is narrower than Pommerenke's, whose crosscuts live in the
+Riemann sphere and may end at `∞`, while the crosscuts here have finite endpoints. The
+nested-domain form makes the equivalence of chains visibly an equivalence relation.
 
 ## Main declarations
 
@@ -45,6 +47,9 @@ equivalence of chains visibly an equivalence relation.
 * `TauCeti.IsNullChain.nullChainDomain_eq_connectedComponentIn` -- each domain is the component
   of the cut set containing the next crosscut.
 * `TauCeti.IsNullChain.separatesIn` -- Pommerenke's separation condition.
+* `TauCeti.nullChainDomain_succ_subset_of_separatesIn`, `TauCeti.isNullChain_iff_separatesIn` --
+  conversely, on a connected open set separation forces the domains to be nested, so the two
+  definitions of a null chain agree.
 * `TauCeti.NullChainEquivalent` -- equivalence of chains, an equivalence relation.
 * `TauCeti.PrimeEnd` -- the prime ends of a plane set.
 * `TauCeti.PrimeEnd.lift`, `TauCeti.PrimeEnd.ind` -- maps out of prime ends and induction on them.
@@ -92,6 +97,20 @@ theorem _root_.IsPreconnected.subset_nullChainDomain {S : Set ℂ} (hS : IsPreco
   have hSw := hS.subset_connectedComponentIn hqS hSC
   rw [← connectedComponentIn_eq hqw] at hSw
   exact fun z hz => mem_nullChainDomain_iff.mpr ⟨w, hw, hSw hz⟩
+
+/-- If the part of `C (n + 1)` inside `U` is preconnected and misses `C n`, then the domain cut off
+by `C n` is the connected component of `U \ C n` containing any point of `C (n + 1)` inside `U`. -/
+theorem nullChainDomain_eq_connectedComponentIn_of_isPreconnected
+    (hC : IsPreconnected (C (n + 1) ∩ U)) (hdisj : Disjoint (C n) (C (n + 1))) {z : ℂ}
+    (hz : z ∈ C (n + 1) ∩ U) :
+    nullChainDomain U C n = connectedComponentIn (U \ C n) z := by
+  have hsub : C (n + 1) ∩ U ⊆ connectedComponentIn (U \ C n) z :=
+    hC.subset_connectedComponentIn hz fun w hw => ⟨hw.2, disjoint_right.mp hdisj hw.1⟩
+  refine Subset.antisymm (fun q hq => ?_) fun q hq =>
+    mem_nullChainDomain_iff.mpr ⟨z, hz.1, hq⟩
+  obtain ⟨w, hw, hqw⟩ := mem_nullChainDomain_iff.mp hq
+  have hwU : w ∈ U := (connectedComponentIn_nonempty_iff.mp ⟨q, hqw⟩).1
+  rwa [connectedComponentIn_eq (hsub ⟨hw, hwU⟩)]
 
 /-- A **null chain** of `U ⊆ ℂ`: a sequence of crosscuts of `U`, recorded by their closed ranges,
 each disjoint from the next, cutting off a decreasing sequence of domains, and with chordal
@@ -153,15 +172,9 @@ null chain is the connected component of `U \ C n` containing any point of `C (n
 `U`. -/
 theorem nullChainDomain_eq_connectedComponentIn (hC : IsNullChain U C) {z : ℂ}
     (hz : z ∈ C (n + 1) ∩ U) :
-    nullChainDomain U C n = connectedComponentIn (U \ C n) z := by
-  have hsub : C (n + 1) ∩ U ⊆ connectedComponentIn (U \ C n) z :=
-    (hC.isConnected_inter (n + 1)).isPreconnected.subset_connectedComponentIn hz
-      fun w hw => ⟨hw.2, disjoint_right.mp (hC.disjoint_succ n) hw.1⟩
-  refine Subset.antisymm (fun q hq => ?_) fun q hq =>
-    mem_nullChainDomain_iff.mpr ⟨z, hz.1, hq⟩
-  obtain ⟨w, hw, hqw⟩ := mem_nullChainDomain_iff.mp hq
-  have hwU : w ∈ U := (connectedComponentIn_nonempty_iff.mp ⟨q, hqw⟩).1
-  rwa [connectedComponentIn_eq (hsub ⟨hw, hwU⟩)]
+    nullChainDomain U C n = connectedComponentIn (U \ C n) z :=
+  nullChainDomain_eq_connectedComponentIn_of_isPreconnected
+    (hC.isConnected_inter (n + 1)).isPreconnected (hC.disjoint_succ n) hz
 
 /-- Every domain cut off by a null chain is nonempty. -/
 theorem nonempty_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
@@ -191,6 +204,89 @@ theorem separatesIn (hC : IsNullChain U C) {x y : ℂ} {γ : Path x y}
   exact (h0 (hC.antitone_nullChainDomain (Nat.zero_le _) hzD)).2 hz.1
 
 end IsNullChain
+
+/-- **Pommerenke's separation condition forces nesting.** Let `U` be a preconnected open set and
+let `C` be a sequence of closed ranges of crosscuts of `U`, each disjoint from the next. If each
+crosscut `C (n + 1)` separates the points of the first crosscut inside `U` from those of the next
+one, then the domains cut off by `C` decrease. -/
+theorem nullChainDomain_succ_subset_of_separatesIn (hUo : IsOpen U) (hUc : IsPreconnected U)
+    (hcut : ∀ n, ∃ (x y : ℂ) (γ : Path x y), γ.IsCrosscut U ∧ range γ = C n)
+    (hdisj : ∀ n, Disjoint (C n) (C (n + 1)))
+    (hsep : ∀ n {x y : ℂ} (γ : Path x y), range γ = C (n + 1) →
+      ∀ z ∈ C 0 ∩ U, ∀ w ∈ C (n + 2) ∩ U, γ.SeparatesIn U z w) (n : ℕ) :
+    nullChainDomain U C (n + 1) ⊆ nullChainDomain U C n := by
+  have hconn (k : ℕ) : IsConnected (C k ∩ U) := by
+    obtain ⟨x, y, γ, hγ, hrange⟩ := hcut k
+    exact hrange ▸ hγ.isConnected_range_inter
+  have hopen (k : ℕ) : IsOpen (U \ C k) := by
+    obtain ⟨x, y, γ, -, hrange⟩ := hcut k
+    exact hUo.sdiff (hrange ▸ (isCompact_range γ.continuous).isClosed)
+  -- Inside `U`, the crosscut `C k` lies in one component of `U \ C j` for any `C j` it misses.
+  have hcomp {j k : ℕ} (hjk : Disjoint (C j) (C k)) {v : ℂ} (hv : v ∈ C k ∩ U) :
+      C k ∩ U ⊆ connectedComponentIn (U \ C j) v :=
+    (hconn k).isPreconnected.subset_connectedComponentIn hv
+      fun w hw => ⟨hw.2, disjoint_right.mp hjk hw.1⟩
+  have hsep' (k : ℕ) {z w : ℂ} (hz : z ∈ C 0 ∩ U) (hw : w ∈ C (k + 2) ∩ U) :
+      z ∈ U \ C (k + 1) ∧ w ∈ U \ C (k + 1) ∧
+        connectedComponentIn (U \ C (k + 1)) z ≠ connectedComponentIn (U \ C (k + 1)) w := by
+    obtain ⟨x, y, γ, -, hrange⟩ := hcut (k + 1)
+    simpa only [Path.separatesIn_def, hrange] using hsep k γ hrange z hz w hw
+  obtain ⟨a, ha⟩ := (hconn (n + 1)).nonempty
+  obtain ⟨b, hb⟩ := (hconn (n + 2)).nonempty
+  obtain ⟨z, hz⟩ := (hconn 0).nonempty
+  rw [nullChainDomain_eq_connectedComponentIn_of_isPreconnected (hconn (n + 2)).isPreconnected
+      (hdisj (n + 1)) hb,
+    nullChainDomain_eq_connectedComponentIn_of_isPreconnected (hconn (n + 1)).isPreconnected
+      (hdisj n) ha]
+  obtain ⟨hzU, hbU, hzb⟩ := hsep' n hz hb
+  -- First, the domain `D` cut off by `C (n + 1)` misses `C n`.
+  have hDC : connectedComponentIn (U \ C (n + 1)) b ⊆ U \ C n := by
+    intro q hq
+    have hqU : q ∈ U := (connectedComponentIn_subset _ _ hq).1
+    refine ⟨hqU, fun hqC => ?_⟩
+    cases n with
+    | zero => exact (hsep' 0 ⟨hqC, hqU⟩ hb).2.2 (connectedComponentIn_eq hq).symm
+    | succ m =>
+      -- Otherwise `D` contains `C (m + 1) ∩ U`. The component `F` of `U \ C (m + 1)` on the side of
+      -- `C 0` is not all of `U`, so its closure meets `C (m + 1) ∩ U ⊆ D`, and `D` meets `F`.
+      -- But `F` misses `C (m + 2)`, so it lies on the side of `C 0` of `C (m + 2)`, unlike `D`.
+      obtain ⟨hzm, -, hza⟩ := hsep' m hz ha
+      have hCD : C (m + 1) ∩ U ⊆ connectedComponentIn (U \ C (m + 1 + 1)) b := by
+        rw [connectedComponentIn_eq hq]
+        exact hcomp (hdisj (m + 1)).symm ⟨hqC, hqU⟩
+      obtain ⟨p, hp, hpF⟩ := hUc.exists_mem_inter_closure_connectedComponentIn_sdiff (hopen (m + 1))
+        hzm ha.2 fun h => hza (connectedComponentIn_eq h)
+      obtain ⟨y, hyD, hyF⟩ :=
+        mem_closure_iff.mp hpF _ (hopen (m + 1 + 1)).connectedComponentIn (hCD hp)
+      have hFE : connectedComponentIn (U \ C (m + 1)) z ⊆
+          connectedComponentIn (U \ C (m + 1 + 1)) z := by
+        refine isPreconnected_connectedComponentIn.subset_connectedComponentIn
+          (mem_connectedComponentIn hzm) fun v hv => ⟨(connectedComponentIn_subset _ _ hv).1,
+            fun hvC => hza ?_⟩
+        rw [connectedComponentIn_eq hv, connectedComponentIn_eq
+          (hcomp (hdisj (m + 1)) ha ⟨hvC, (connectedComponentIn_subset _ _ hv).1⟩)]
+      exact hzb (by rw [connectedComponentIn_eq (hFE hyF), connectedComponentIn_eq hyD])
+  -- Second, the closure of `D` meets `C (n + 1) ∩ U`, which lies in the domain cut off by `C n`.
+  obtain ⟨p, hp, hpD⟩ := hUc.exists_mem_inter_closure_connectedComponentIn_sdiff (hopen (n + 1))
+    hbU hzU.1 fun h => hzb (connectedComponentIn_eq h).symm
+  obtain ⟨y, hya, hyD⟩ :=
+    mem_closure_iff.mp hpD _ (hopen n).connectedComponentIn (hcomp (hdisj n) ha hp)
+  rw [connectedComponentIn_eq hya]
+  exact isPreconnected_connectedComponentIn.subset_connectedComponentIn hyD hDC
+
+/-- **Pommerenke's definition of a null chain.** On a preconnected open set, a sequence of closed
+ranges of crosscuts, each disjoint from the next and with chordal diameters tending to zero, is a
+null chain exactly when each crosscut `C (n + 1)` separates the points of the first crosscut
+inside `U` from those of the next one. -/
+theorem isNullChain_iff_separatesIn (hUo : IsOpen U) (hUc : IsPreconnected U)
+    (hcut : ∀ n, ∃ (x y : ℂ) (γ : Path x y), γ.IsCrosscut U ∧ range γ = C n)
+    (hdisj : ∀ n, Disjoint (C n) (C (n + 1)))
+    (hdiam : ∀ ε > 0, ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n,
+      ‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) < ε) :
+    IsNullChain U C ↔ ∀ n {x y : ℂ} (γ : Path x y), range γ = C (n + 1) →
+      ∀ z ∈ C 0 ∩ U, ∀ w ∈ C (n + 2) ∩ U, γ.SeparatesIn U z w :=
+  ⟨fun hC _ _ _ _ hγ _ hz _ hw => hC.separatesIn hγ hz hw, fun hsep =>
+    ⟨hcut, hdisj, nullChainDomain_succ_subset_of_separatesIn hUo hUc hcut hdisj hsep, hdiam⟩⟩
 
 /-- Two sequences of cuts of `U` are **equivalent** when every domain cut off by either one
 contains a domain cut off by the other. -/
