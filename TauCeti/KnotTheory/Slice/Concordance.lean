@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Group.BallSphere
 public import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
 public import TauCeti.Geometry.Manifold.LocallyFlat.Concordance.Basic
@@ -151,30 +152,15 @@ private theorem isOpenEmbedding_ballCollar : IsOpenEmbedding (ballCollar (V := V
   rw [range_ballCollar]
   exact isOpen_ne_fun continuous_subtype_val continuous_const
 
-omit [NormedSpace ℝ V] in
-/-- An open subset of the closed unit ball avoiding the unit sphere is an open subset of the
-ambient space. -/
-private theorem isOpenEmbedding_coe_coe {U : Set (closedBall (0 : V) 1)} (hU : IsOpen U)
-    (h : ∀ z ∈ U, ‖(z : V)‖ < 1) :
-    IsOpenEmbedding fun z : U => ((z : closedBall (0 : V) 1) : V) := by
-  refine ⟨IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal, ?_⟩
-  obtain ⟨O, hO, rfl⟩ := isOpen_induced_iff.1 hU
-  have hrange : range (fun z : (Subtype.val ⁻¹' O : Set (closedBall (0 : V) 1)) =>
-      ((z : closedBall (0 : V) 1) : V)) = O ∩ ball 0 1 := by
-    ext v
-    refine ⟨?_, fun hv => ⟨⟨⟨v, ball_subset_closedBall hv.2⟩, hv.1⟩, rfl⟩⟩
-    rintro ⟨z, rfl⟩
-    exact ⟨z.2, mem_ball_zero_iff.2 (h z z.2)⟩
-  rw [hrange]
-  exact hO.inter isOpen_ball
-
 end Radial
 
 /-! ### Capping a collared track -/
 
 section Cap
 
-/-- The polar coordinates `TauCeti.polar` of the punctured plane, read on the standard circle. -/
+/-- The polar coordinates `TauCeti.polar` of the punctured plane, read on the standard circle.
+The `Circle`-typed adapters below let `rw` match without unfolding `Circle` to the complex sphere
+at its restricted transparency level. Their proofs reuse the generic radial-coordinate API. -/
 private def polarC (q : Circle × ℝ) : ℂ :=
   Real.exp (q.2 - 1) • (q.1 : ℂ)
 
@@ -362,10 +348,11 @@ private theorem isLocallyFlat_capDisc_comp_coe_of_pos_of_lt (hF : finrank ℝ F 
       (⟨((z : closedBall (0 : ℂ) 1) : ℂ), mem_range_polarC (norm_pos_iff.1 z.2.1)⟩ :
         range polarC) :=
     (IsOpenEmbedding.of_comp_iff _ isOpenEmbedding_polarC.isOpen_range.isOpenEmbedding_subtypeVal).1
-      (isOpenEmbedding_coe_coe hU fun z hz => hz.2)
+      (hU.isOpenEmbedding_coe_openSubset_closedBall fun z hz => hz.2)
   have h2 : IsLocallyFlat (F × ℝ) (EuclideanSpace ℝ (Fin (n - 1)))
       fun z : U => (⟨capDisc hΦ z, hmem z⟩ : B) := by
-    refine IsLocallyFlat.of_isOpenEmbedding_comp (isOpenEmbedding_coe_coe hB fun y hy => hy) ?_
+    refine IsLocallyFlat.of_isOpenEmbedding_comp
+      (hB.isOpenEmbedding_coe_openSubset_closedBall fun y hy => hy) ?_
     convert h1.comp_isOpenEmbedding hj using 1
     funext z
     simp only [Function.comp_apply, coe_capDisc]
