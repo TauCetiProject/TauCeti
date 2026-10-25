@@ -102,6 +102,24 @@ theorem isFreelyIndependent_iff {φ : A →ₗ[R] R} {B : ι → Subalgebra R A}
         (∀ x ∈ w, x.2 ∈ B x.1) → (∀ x ∈ w, φ x.2 = 0) → φ (w.map Prod.snd).prod = 0 :=
   Iff.rfl
 
+/-- Freeness annihilates the product of mapped letters of a nonempty alternating word when
+each mapped letter lies in the subalgebra with the original label and is centred. -/
+theorem IsFreelyIndependent.apply_prod_map_of_mem {φ : A →ₗ[R] R}
+    {B : ι → Subalgebra R A} (h : IsFreelyIndependent φ B) (w : List (ι × A))
+    (hne : w ≠ []) (halt : (w.map Prod.fst).IsChain (· ≠ ·)) (f : ι × A → A)
+    (hf : ∀ x ∈ w, f x ∈ B x.1) (hc : ∀ x ∈ w, φ (f x) = 0) :
+    φ (w.map f).prod = 0 := by
+  let v := w.map fun x ↦ (x.1, f x)
+  have hvfst : v.map Prod.fst = w.map Prod.fst := by simp [v, List.map_map]
+  have hv : ∀ x ∈ v, x.2 ∈ B x.1 ∧ φ x.2 = 0 := by
+    rintro _ hx
+    simp only [v, List.mem_map] at hx
+    obtain ⟨x, hx, rfl⟩ := hx
+    exact ⟨hf x hx, hc x hx⟩
+  simpa only [v, List.map_map, Function.comp_def] using
+    h v (by simpa [v] using hne) (hvfst ▸ halt)
+      (fun x hx ↦ (hv x hx).1) (fun x hx ↦ (hv x hx).2)
+
 /-- For a normalised functional over a ring, freeness can be tested on arbitrary alternating
 words by subtracting each letter's scalar expectation. No centring hypothesis on the letters is
 needed. -/
@@ -113,18 +131,9 @@ theorem isFreelyIndependent_iff_centered_prod {R A ι : Type*} [CommRing R] [Rin
           φ (w.map fun x ↦ x.2 - algebraMap R A (φ x.2)).prod = 0 := by
   constructor
   · intro h w hne halt hw
-    let v := w.map fun x ↦ (x.1, x.2 - algebraMap R A (φ x.2))
-    have hvfst : v.map Prod.fst = w.map Prod.fst := by simp [v, List.map_map]
-    have hv := h v (by simpa [v] using hne) (hvfst ▸ halt) (by
-      rintro _ hx
-      simp only [v, List.mem_map] at hx
-      obtain ⟨x, hx, rfl⟩ := hx
-      exact (B x.1).sub_mem (hw x hx) ((B x.1).algebraMap_mem _)) (by
-      rintro _ hx
-      simp only [v, List.mem_map] at hx
-      obtain ⟨x, _, rfl⟩ := hx
-      simp [Algebra.algebraMap_eq_smul_one, hφ])
-    simpa only [v, List.map_map, Function.comp_def] using hv
+    exact h.apply_prod_map_of_mem w hne halt _
+      (fun x hx ↦ (B x.1).sub_mem (hw x hx) ((B x.1).algebraMap_mem _))
+      (fun x _ ↦ by simp [Algebra.algebraMap_eq_smul_one, hφ])
   · intro h w hne halt hw hc
     have heq : (w.map fun x ↦ x.2 - algebraMap R A (φ x.2)) = w.map Prod.snd :=
       List.map_congr_left fun x hx ↦ by simp [hc x hx]

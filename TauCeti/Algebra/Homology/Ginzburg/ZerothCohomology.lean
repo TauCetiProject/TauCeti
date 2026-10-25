@@ -91,6 +91,8 @@ theorem preprojectiveMk_ginzburgRetraction_ginzburgTwoDifferential
     | cons p e ih =>
       have he := preprojectiveMk_ginzburgRetraction_ginzburgTwoArrowRelator k e
       rw [← ofArrow_mul_ofPath, ginzburgTwoDifferential_ofArrow_mul]
+      -- The full simp set rewrites quotient-map vanishing to ideal membership before `he`
+      -- and `ih` can apply, so simplify the homomorphisms and use these equalities explicitly.
       simp only [Units.smul_def, map_add, map_zsmul, map_mul, he, ih, mul_zero, zero_mul,
         smul_zero, zero_add]
   induction x using induction_linear with

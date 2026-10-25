@@ -53,7 +53,7 @@ continuous functional. In a normed algebra these are the norm closures. -/
 theorem topologicalClosure (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1)
     (hcont : Continuous φ) :
     IsFreelyIndependent φ fun i ↦ (B i).topologicalClosure := by
-  rw [isFreelyIndependent_iff_centered_prod hφ] at h ⊢
+  rw [isFreelyIndependent_iff_centered_prod hφ]
   intro w hne halt hw
   -- Index approximation coordinates by labelled letters; repetitions use the same coordinate.
   let S : Set ((ι × A) → A) := Set.pi {x | x ∈ w} fun x ↦ (B x.1 : Set A)
@@ -64,14 +64,9 @@ theorem topologicalClosure (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1)
       (hcont.comp (continuous_apply x))))
   have hzero : S ⊆ {b | F b = 0} := by
     intro b hb
-    let v := w.map fun x ↦ (x.1, b x)
-    have hvfst : v.map Prod.fst = w.map Prod.fst := by simp [v, List.map_map]
-    have hv := h v (by simpa [v] using hne) (hvfst ▸ halt) (by
-      rintro _ hx
-      simp only [v, List.mem_map] at hx
-      obtain ⟨x, hx, rfl⟩ := hx
-      exact hb x hx)
-    simpa only [Set.mem_ofPred_eq, F, v, List.map_map, Function.comp_def] using hv
+    exact h.apply_prod_map_of_mem w hne halt _
+      (fun x hx ↦ (B x.1).sub_mem (hb x hx) ((B x.1).algebraMap_mem _))
+      (fun x _ ↦ by simp [Algebra.algebraMap_eq_smul_one, hφ])
   have hmem : Prod.snd ∈ closure S := by
     apply mem_closure_pi.2
     intro x hx
