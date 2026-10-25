@@ -11,10 +11,10 @@ public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 /-!
 # Cauchy–Binet normalization checks
 
-These check DiophantineApproximationAndTranscendence §2.5 on the native Plücker coordinates.
-The complex row `(1,i)` distinguishes conjugate transpose from transpose. Empty families
-have determinant and squared Plücker norm one; overfull families have no maximal minors
-and product determinant zero.
+These examples check conjugation conventions and the empty and overfull boundary cases for
+the Plücker Cauchy–Binet identities. The complex row `(1,i)` distinguishes conjugate transpose
+from transpose. Empty families have determinant and squared Plücker norm one; overfull families
+have no maximal minors and product determinant zero.
 -/
 
 public section
@@ -57,10 +57,8 @@ theorem empty_plucker_norm {n : ℕ} (x : Fin 0 → Fin n → ℂ) :
 /-- With more rows than columns there are no maximal minors. -/
 theorem plucker_product_eq_zero_of_columns_lt_rows {m n : ℕ} (h : n < m)
     (x y : Fin m → Fin n → ℂ) : ∑ s, plucker x s * plucker y s = 0 := by
-  have : IsEmpty (Set.powersetCard (Fin n) m) := ⟨fun s => by
-    have hc := Finset.card_le_univ s.val
-    rw [s.prop, Fintype.card_fin] at hc
-    omega⟩
+  have : IsEmpty (Set.powersetCard (Fin n) m) :=
+    Set.isEmpty_coe_sort.mpr (Set.powersetCard.eq_empty_iff.mpr (by simpa using h))
   exact Finset.sum_eq_zero fun s _ => isEmptyElim s
 
 /-- The product determinant also vanishes with more rows than columns. -/
