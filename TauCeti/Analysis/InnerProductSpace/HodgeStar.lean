@@ -8,8 +8,11 @@ module
 public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.ExteriorPower.HodgeStar
+public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+public import TauCeti.LinearAlgebra.Trace.Idempotent
 -- Private: `stdOrthonormalBasis`, `InnerProductSpace.ext_inner_right_basis`,
 -- `Module.Basis.topVector_eq_ιMulti`, `exteriorPower.wedgePairing_exteriorPower_apply` and the
 -- exterior-algebra contraction lemmas in `TauCeti.ExteriorAlgebra` are used only inside proofs.
@@ -38,7 +41,9 @@ Its value on the orthonormal basis of `⋀ᵏ V` induced by a positively oriente
 `e` of `V` is the familiar formula: `⋆ e_I = ε(I) e_{Iᶜ}`, where `e_I` is the increasing wedge
 of the `eᵢ` with `i ∈ I` and `ε(I)` is the sign of the shuffle permutation listing `I` before its
 complement. For instance, in an oriented four-dimensional space `⋆(e₁ ∧ e₂) = e₃ ∧ e₄`, so the
-self-dual and anti-self-dual two-forms are the `±1` eigenvectors of `⋆` on `⋀² V`.
+self-dual and anti-self-dual two-forms are the `±1` eigenvectors of `⋆` on `⋀² V`. The Hodge star is
+trace free on a positive middle degree, since `Iᶜ ≠ I`, so these eigenspaces have equal dimension:
+three each for two-forms in dimension four.
 
 In dimension four a unit vector `s` splits a two-form as `F = s ∧ a + b`, where `a = s ⌟ F` is
 the contraction of `F` by `⟪s, ·⟫` and `b` has no `s`-component. Since `b ∧ b = 0`, the pairing
@@ -61,6 +66,13 @@ of a curvature form, its self-dual part and its Chern–Weil density.
 * `Orientation.hodgeStar_basis`: the formula `⋆ e_I = ε(I) e_{Iᶜ}` on an orthonormal basis.
 * `Orientation.hodgeStar_hodgeStar`: `⋆⋆x = (-1) ^ (k * l) x`, and
   `Orientation.hodgeStar_hodgeStar_of_even`: `⋆⋆x = x` in an even middle degree.
+* `Orientation.trace_hodgeStar`: in a positive middle degree the Hodge star is trace free, so
+  `Orientation.two_mul_finrank_eigenspace_hodgeStar_one` and
+  `Orientation.two_mul_finrank_eigenspace_hodgeStar_neg_one`: in an even positive middle degree
+  the self-dual and anti-self-dual forms each make up half of `⋀ᵏ V`. In dimension four, `Λ⁺` and
+  `Λ⁻` have dimension three.
+* `Orientation.hodgeStar_coe_of_mem_eigenspace_one`: forms in the `1`-eigenspace of `⋆` are
+  self-dual, `⋆x = x`.
 * `TauCeti.inner_ιMulti_two_eq_inner_ιInv_contractLeft`: on two-forms, wedging with `u` is adjoint
   to contracting with `⟪u, ·⟫`, `⟪u ∧ w, b⟫ = ⟪w, u ⌟ b⟫`.
 * `Orientation.inner_ιMulti_ιInv_contractLeft_add_hodgeStar`: for a unit vector `s` in dimension
@@ -234,6 +246,74 @@ anti-self-dual two-forms are the `±1` eigenspaces of `⋆`. -/
 theorem hodgeStar_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
     (x : ⋀[ℝ]^k V) : o.hodgeStar hkk (o.hodgeStar hkk x) = x := by
   rw [hodgeStar_hodgeStar, (hk.mul_right k).neg_one_pow, one_smul]
+
+/-- In a positive middle degree, `k + k = finrank ℝ V` with `0 < k`, the Hodge star is trace free:
+it sends each vector `e_I` of the basis of `⋀ᵏ V` induced by an orthonormal basis to a multiple of
+`e_{Iᶜ}`, and `Iᶜ ≠ I`. -/
+theorem trace_hodgeStar {k : ℕ} (hk : 0 < k) (hkk : k + k = finrank ℝ V) :
+    LinearMap.trace ℝ _ (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) = 0 := by
+  classical
+  set b : OrthonormalBasis (Fin n) ℝ V := (stdOrthonormalBasis ℝ V).reindex (finCongr _i.out)
+  rw [LinearMap.trace_eq_matrix_trace ℝ (b.toBasis.exteriorPower k), Matrix.trace]
+  refine Finset.sum_eq_zero fun s _ ↦ ?_
+  have hcard : k + k = Fintype.card (Fin n) := by rw [Fintype.card_fin, ← _i.out, hkk]
+  -- A `k`-element set with `0 < k` is not disjoint from itself, so it is not its own complement.
+  have hne : powersetCard.compl hcard s ≠ s := fun h ↦ by
+    have hs := disjoint_self.1 ((powersetCard.disjoint_iff_eq_compl hcard).2 h.symm)
+    have := powersetCard.mem_iff.1 s.2
+    simp_all
+  -- The diagonal entry is the `e_I` coordinate of `⋆ e_I = ±e_{Iᶜ}`, which vanishes.
+  rw [Matrix.diag_apply, LinearMap.toMatrix_apply, LinearEquiv.coe_coe, hodgeStar_orthonormalBasis]
+  simp only [map_smul, map_zsmul_unit, Basis.repr_self]
+  simp [hne]
+
+/-- In an even positive middle degree, twice the dimension of the `ε` eigenspace of `⋆` is
+`n.choose k` for each `ε` with `ε * ε = 1`. -/
+private theorem two_mul_finrank_eigenspace_hodgeStar {k : ℕ} (hk : Even k) (hk₀ : 0 < k)
+    (hkk : k + k = finrank ℝ V) {ε : ℝ} (hε : ε * ε = 1) :
+    2 * finrank ℝ (Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) ε) =
+      n.choose k := by
+  set S : Module.End ℝ (⋀[ℝ]^k V) := ↑(o.hodgeStar hkk)
+  -- `σ = -ε ⋆` is a trace-free involution whose `-1` eigenspace is the `ε` eigenspace of `⋆`.
+  have hσ : (-(ε • S)) ^ 2 = 1 := by
+    ext x
+    simp [S, sq, smul_smul, hε, hodgeStar_hodgeStar_of_even o hk]
+  have hker : LinearMap.ker (1 + -(ε • S)) = Module.End.eigenspace S ε := by
+    ext x
+    simp only [LinearMap.mem_ker, Module.End.mem_eigenspace_iff, LinearMap.add_apply,
+      Module.End.one_apply, LinearMap.neg_apply, LinearMap.smul_apply, add_neg_eq_zero]
+    refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, smul_smul, hε, one_smul]⟩
+    conv_rhs => rw [h]
+    rw [smul_smul, hε, one_smul]
+  have h := TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one hσ
+  rw [hker, map_neg, map_smul, trace_hodgeStar o hk₀ hkk, smul_zero, neg_zero, sub_zero,
+    exteriorPower.finrank_eq, _i.out] at h
+  exact_mod_cast h
+
+/-- In an even positive middle degree, the self-dual forms make up half of `⋀ᵏ V`: twice the
+dimension of the `+1` eigenspace of `⋆` is `n.choose k`. For two-forms in dimension four, the
+self-dual two-forms `Λ⁺` have dimension three. -/
+theorem two_mul_finrank_eigenspace_hodgeStar_one {k : ℕ} (hk : Even k) (hk₀ : 0 < k)
+    (hkk : k + k = finrank ℝ V) :
+    2 * finrank ℝ (Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) 1) =
+      n.choose k :=
+  o.two_mul_finrank_eigenspace_hodgeStar hk hk₀ hkk (one_mul 1)
+
+/-- In an even positive middle degree, the anti-self-dual forms make up half of `⋀ᵏ V`: twice the
+dimension of the `-1` eigenspace of `⋆` is `n.choose k`. For two-forms in dimension four, the
+anti-self-dual two-forms `Λ⁻` have dimension three. -/
+theorem two_mul_finrank_eigenspace_hodgeStar_neg_one {k : ℕ} (hk : Even k) (hk₀ : 0 < k)
+    (hkk : k + k = finrank ℝ V) :
+    2 * finrank ℝ (Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) (-1)) =
+      n.choose k :=
+  o.two_mul_finrank_eigenspace_hodgeStar hk hk₀ hkk (by norm_num)
+
+/-- A form in the `1`-eigenspace of the Hodge star is self-dual: `⋆x = x`. -/
+@[simp]
+theorem hodgeStar_coe_of_mem_eigenspace_one {k : ℕ} (hkk : k + k = finrank ℝ V)
+    (x : Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) 1) :
+    o.hodgeStar hkk x = x := by
+  simpa using Module.End.mem_eigenspace_iff.1 x.2
 
 /-! ### Two-forms split along a unit vector -/
 

@@ -17,6 +17,12 @@ not change, both operations preserve the support and edge list. In particular, t
 paths, trails, cycles, and reachability. In particular, reachability after deleting a set of edges
 is witnessed exactly by walks avoiding those edges.
 
+The single-edge deletion results describe the original component as the union of the endpoint
+components after deletion (`Graph.IsLink.reachable_iff_reachable_deleteEdges_or`) and show that
+reachability outside that component is unchanged
+(`Graph.IsLink.reachable_deleteEdges_iff_of_not_reachable`). They supply the walk-level input for
+the bridge/component-count characterization.
+
 The interface follows Mathlib's `SimpleGraph.Walk.mapLe`, `SimpleGraph.Walk.transfer`, and
 `SimpleGraph.reachable_deleteEdges_iff_exists_walk`, adapted to retain multigraph edge identities.
 -/
@@ -303,5 +309,56 @@ theorem reachable_deleteEdges_iff_exists_walk {α : Type u} {β : Type v} {G : G
     refine (p.transfer deleteEdges_le fun e he ↦ ?_).reachable (by simpa using hx)
     rw [edgeSet_deleteEdges]
     exact ⟨p.edges_subset_edgeSet he, hp e he⟩
+
+section DeleteOneEdge
+
+variable {α : Type u} {β : Type v} {G : Graph α β} {e : β} {x y u v : α}
+
+/-- After deleting an edge joining `x` and `y`, a vertex `v` reachable from `u` remains reachable
+from `u`, unless `x` or `y` is reachable from `u` in the deletion. -/
+theorem IsLink.reachable_deleteEdges_or_reachable_deleteEdges_or (h : G.IsLink e x y)
+    (huv : G.Reachable u v) : (G.deleteEdges {e}).Reachable u v ∨
+      (G.deleteEdges {e}).Reachable u x ∨ (G.deleteEdges {e}).Reachable u y := by
+  obtain ⟨hu, ⟨p⟩⟩ := reachable_def.mp huv
+  clear huv
+  induction p with
+  | nil => exact .inl (Reachable.refl (by simpa using hu))
+  | @cons u w _ f hf q ih =>
+    by_cases hfe : f = e
+    · subst hfe
+      obtain rfl | rfl := hf.left_eq_or_eq h
+      · exact .inr (.inl (Reachable.refl (by simpa using hu)))
+      · exact .inr (.inr (Reachable.refl (by simpa using hu)))
+    · have huw : (G.deleteEdges {e}).Reachable u w :=
+        IsLink.reachable (e := f) (by simpa [deleteEdges_isLink] using ⟨hf, hfe⟩)
+      exact (ih hf.right_mem).imp huw.trans (Or.imp huw.trans huw.trans)
+
+/-- After deleting an edge joining `x` and `y`, every vertex reachable from `x` remains
+reachable from `x` or from `y`. -/
+theorem IsLink.reachable_iff_reachable_deleteEdges_or (h : G.IsLink e x y) :
+    G.Reachable x u ↔ (G.deleteEdges {e}).Reachable x u ∨ (G.deleteEdges {e}).Reachable y u := by
+  refine ⟨fun hu ↦ ?_, fun hu ↦ ?_⟩
+  · rcases h.reachable_deleteEdges_or_reachable_deleteEdges_or hu.symm with hux | hux | huy
+    exacts [.inl hux.symm, .inl hux.symm, .inr huy.symm]
+  · rcases hu with hu | hu
+    · exact hu.mono deleteEdges_le
+    · exact h.reachable.trans (hu.mono deleteEdges_le)
+
+/-- If `v` is reachable from `u`, then it remains reachable after deleting an edge joining `x`
+and `y`, unless `x` is reachable from `u`. -/
+theorem IsLink.reachable_deleteEdges_or_reachable (h : G.IsLink e x y)
+    (huv : G.Reachable u v) : (G.deleteEdges {e}).Reachable u v ∨ G.Reachable u x :=
+  (h.reachable_deleteEdges_or_reachable_deleteEdges_or huv).imp_right fun hu ↦
+    hu.elim (Reachable.mono deleteEdges_le) fun huy ↦
+      (huy.mono deleteEdges_le).trans h.reachable.symm
+
+/-- Deleting an edge joining `x` and `y` does not change reachability from a vertex `u` from
+which `x` is unreachable: the components not containing the ends of the edge are unaffected. -/
+theorem IsLink.reachable_deleteEdges_iff_of_not_reachable (h : G.IsLink e x y)
+    (hux : ¬ G.Reachable u x) : (G.deleteEdges {e}).Reachable u v ↔ G.Reachable u v :=
+  ⟨Reachable.mono deleteEdges_le, fun huv ↦
+    (h.reachable_deleteEdges_or_reachable huv).resolve_right hux⟩
+
+end DeleteOneEdge
 
 end Graph

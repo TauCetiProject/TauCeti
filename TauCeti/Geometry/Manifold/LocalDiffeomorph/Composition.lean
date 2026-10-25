@@ -17,7 +17,9 @@ principle.
 Dually, a map out of a manifold is `C^m` at the image of a point at which `p` is a `C^n` local
 diffeomorphism, for `m ≤ n`, exactly when its precomposite with `p` is `C^m` at that point. For a
 surjective local diffeomorphism, such as the orbit projection of a free properly discontinuous
-action, this characterises the `C^m` maps out of its target.
+action, this characterises the `C^m` maps out of its target. The same holds for maps out of a
+product `A × B` whose second factor is the target of `p`, precomposed with `Prod.map id p`; this
+characterises the `C^m` maps `A × B → N`, such as flows on a quotient manifold.
 
 ## Main results
 
@@ -27,6 +29,9 @@ action, this characterises the `C^m` maps out of its target.
 * `IsLocalDiffeomorphAt.contMDiffAt_comp_iff`: pointwise cancellation on the source side.
 * `IsLocalDiffeomorph.contMDiff_comp_iff`: global cancellation on the source side, for a
   surjective local diffeomorphism.
+* `IsLocalDiffeomorphAt.contMDiffAt_comp_prodMap_iff`,
+  `IsLocalDiffeomorph.contMDiff_comp_prodMap_iff`: the same cancellation for maps out of a
+  product, along the second factor.
 -/
 
 public section
@@ -94,5 +99,44 @@ theorem _root_.IsLocalDiffeomorph.contMDiff_comp_iff {m : ℕ∞ω} {g : B → N
   refine ⟨fun hg y ↦ ?_, fun hg ↦ hg.comp (hp.contMDiff.of_le hm)⟩
   obtain ⟨x, rfl⟩ := hsurj y
   exact ((hp x).contMDiffAt_comp_iff hm).1 (hg x)
+
+section Prod
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] {H'' : Type*}
+  [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+
+/-- If `p` is a `C^n` local diffeomorphism at `x` and `m ≤ n`, a map `g` out of a product is `C^m`
+at `(a, p x)` exactly when `g ∘ Prod.map id p` is `C^m` at `(a, x)`. -/
+theorem _root_.IsLocalDiffeomorphAt.contMDiffAt_comp_prodMap_iff {m : ℕ∞ω} {x : M} {a : N}
+    {g : N × B → P} (hp : IsLocalDiffeomorphAt I J n p x) (hm : m ≤ n) :
+    ContMDiffAt (I'.prod I) I'' m (g ∘ Prod.map id p) (a, x) ↔
+      ContMDiffAt (I'.prod J) I'' m g (a, p x) := by
+  refine ⟨fun hg ↦ ?_,
+    fun hg ↦ hg.comp (a, x) (contMDiffAt_id.prodMap (hp.contMDiffAt.of_le hm))⟩
+  -- near `(a, p x)`, the map `g` agrees with `(g ∘ Prod.map id p) ∘ Prod.map id q` for the local
+  -- inverse `q` of `p`
+  have hcomp : ContMDiffAt (I'.prod J) I'' m
+      ((g ∘ Prod.map id p) ∘ Prod.map id hp.localInverse) (a, p x) :=
+    hg.comp_of_eq (contMDiffAt_id.prodMap (hp.contMDiffAt_localInverse.of_le hm))
+      (by simp [hp.localInverse_left_inv hp.localInverse_mem_target])
+  refine hcomp.congr_of_eventuallyEq ?_
+  filter_upwards [hp.localInverse_eventuallyEq_right.comp_tendsto
+    (continuous_snd.tendsto (a, p x))] with ⟨b, y⟩ hy
+  simp only [Function.comp_apply, Prod.map_apply, id_eq] at hy ⊢
+  rw [hy]
+
+/-- If `p` is a surjective `C^n` local diffeomorphism and `m ≤ n`, a map `g` out of a product with
+second factor the target of `p` is `C^m` exactly when `g ∘ Prod.map id p` is `C^m`. -/
+theorem _root_.IsLocalDiffeomorph.contMDiff_comp_prodMap_iff {m : ℕ∞ω} {g : N × B → P}
+    (hp : IsLocalDiffeomorph I J n p) (hsurj : Function.Surjective p) (hm : m ≤ n) :
+    ContMDiff (I'.prod I) I'' m (g ∘ Prod.map id p) ↔ ContMDiff (I'.prod J) I'' m g := by
+  refine ⟨fun hg y ↦ ?_,
+    fun hg ↦ hg.comp (contMDiff_id.prodMap (hp.contMDiff.of_le hm))⟩
+  obtain ⟨x, hx⟩ := hsurj y.2
+  rw [← Prod.mk.eta (p := y), ← hx]
+  exact ((hp x).contMDiffAt_comp_prodMap_iff hm).1 (hg (y.1, x))
+
+end Prod
 
 end TauCeti

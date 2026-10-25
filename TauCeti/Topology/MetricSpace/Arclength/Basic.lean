@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.ConstantSpeed
 public import TauCeti.Topology.EMetricSpace.VariationOnFromTo
 public import Mathlib.Topology.Order.IntermediateValue
 public import Mathlib.Topology.Order.MonotoneContinuity
@@ -20,6 +21,7 @@ whose length interval is a singleton.
 For curves injective on the interior of their parameter interval, cumulative variation induces
 an increasing homeomorphism between the original parameter interval and the length interval.
 This includes injective arcs and simple closed curves.
+On its length interval, the factor is Mathlib's `naturalParameterization`.
 
 We use Mathlib's `variationOnFromTo`, its continuity criterion, and the exact variation formula
 for composition with a monotone map. Length is always `eVariationOn`; its conversion to a real
@@ -36,9 +38,38 @@ public section
 open Set
 open scoped ENNReal
 
+/-- The natural parameterization of a curve of locally bounded variation on `s` recovers the
+curve at the cumulative variation of each point of `s`. -/
+theorem LocallyBoundedVariationOn.naturalParameterization_variationOnFromTo {α E : Type*}
+    [LinearOrder α] [TopologicalSpace E] [WeakEMetricSpace E] {f : α → E} {s : Set α}
+    (hf : LocallyBoundedVariationOn f s) {a b : α} (ha : a ∈ s) (hb : b ∈ s) :
+    naturalParameterization f s a (variationOnFromTo f s a b) = f b :=
+  edist_eq_zero.mp (edist_naturalParameterization_eq_zero hf ha hb)
+
+/-- The natural parameterization of a curve of locally bounded variation has the same trace
+when restricted to the set of cumulative variations from a base point. -/
+@[simp]
+theorem LocallyBoundedVariationOn.image_naturalParameterization {α E : Type*}
+    [LinearOrder α] [TopologicalSpace E] [WeakEMetricSpace E] {f : α → E} {s : Set α}
+    (hf : LocallyBoundedVariationOn f s) {a : α} (ha : a ∈ s) :
+    naturalParameterization f s a '' (variationOnFromTo f s a '' s) = f '' s := by
+  rw [image_image]
+  exact image_congr fun x hx ↦ hf.naturalParameterization_variationOnFromTo ha hx
+
 namespace BoundedVariationOn
 
 variable {X : Type*} [MetricSpace X] {γ : ℝ → X} {a b : ℝ}
+
+/-- Cumulative variation maps the parameter interval of a continuous rectifiable curve onto its
+length interval. -/
+theorem image_variationOnFromTo_Icc (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
+    variationOnFromTo γ (Icc a b) a '' Icc a b = Icc 0 (eVariationOn γ (Icc a b)).toReal := by
+  have ha : a ∈ Icc a b := left_mem_Icc.mpr hab
+  rw [ContinuousOn.image_Icc_of_monotoneOn hab
+      (fun t ht ↦ (hγ.continuousWithinAt_variationOnFromTo_iff ha ht).mpr (hcont t ht))
+      (variationOnFromTo.monotoneOn hγ.locallyBoundedVariationOn ha),
+    variationOnFromTo.self, variationOnFromTo.eq_of_le _ _ hab, inter_self]
 
 /-- A continuous rectifiable curve factors through a 1-Lipschitz curve on its length interval.
 The factor has exactly the parameter difference as variation on every subinterval, including
@@ -59,11 +90,7 @@ theorem exists_arclength_factorization (hγ : BoundedVariationOn γ (Icc a b))
     (hγ.continuousWithinAt_variationOnFromTo_iff ha ht).mpr (hcont t ht)
   have hm : MonotoneOn s (Icc a b) :=
     variationOnFromTo.monotoneOn hγ.locallyBoundedVariationOn ha
-  have hsa : s a = 0 := variationOnFromTo.self _ _ _
-  have hsb : s b = L := by
-    simp only [s, variationOnFromTo.eq_of_le _ _ hab, inter_self, L]
-  have himage : s '' Icc a b = Icc 0 L := by
-    rw [hs.image_Icc_of_monotoneOn hab hm, hsa, hsb]
+  have himage : s '' Icc a b = Icc 0 L := hγ.image_variationOnFromTo_Icc hcont hab
   -- The general variation factorization collapses each constant fibre.
   obtain ⟨g, hg, hfactor⟩ :=
     hγ.locallyBoundedVariationOn.exists_lipschitzOnWith_comp_variationOnFromTo_eqOn ha
@@ -96,6 +123,27 @@ theorem exists_arclength_factorization (hγ : BoundedVariationOn γ (Icc a b))
         rw [variationOnFromTo.eq_of_le _ _ hp, inter_eq_right.mpr hsub]
   rw [hdiff, ENNReal.ofReal_toReal (hγ.mono hsub), hvar]
 
+/-- The arclength factor of a continuous rectifiable curve is unique on its length interval:
+a curve `g` with `g ∘ variationOnFromTo γ (Icc a b) a = γ` on `[a, b]` agrees there with the
+natural parameterization. -/
+theorem eqOn_naturalParameterization (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) {g : ℝ → X}
+    (hg : EqOn (g ∘ variationOnFromTo γ (Icc a b) a) γ (Icc a b)) :
+    EqOn g (naturalParameterization γ (Icc a b) a) (Icc 0 (eVariationOn γ (Icc a b)).toReal) := by
+  rw [← hγ.image_variationOnFromTo_Icc hcont hab]
+  rintro _ ⟨t, ht, rfl⟩
+  exact (hg ht).trans <| .symm <|
+    hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab) ht
+
+/-- The natural parameterization of a continuous rectifiable curve traces, on its length
+interval, the same set as the curve on its parameter interval. -/
+theorem image_naturalParameterization_Icc (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
+    naturalParameterization γ (Icc a b) a '' Icc 0 (eVariationOn γ (Icc a b)).toReal =
+      γ '' Icc a b := by
+  rw [← hγ.image_variationOnFromTo_Icc hcont hab]
+  exact hγ.locallyBoundedVariationOn.image_naturalParameterization (left_mem_Icc.2 hab)
+
 /-- For a continuous rectifiable curve injective on the interior of its parameter interval,
 cumulative variation is an increasing homeomorphism onto the length interval. The endpoint
 values may coincide, and the singleton interval case is included. -/
@@ -106,15 +154,9 @@ theorem exists_arclength_homeomorph (hγ : BoundedVariationOn γ (Icc a b))
   let s := variationOnFromTo γ (Icc a b) a
   let L := (eVariationOn γ (Icc a b)).toReal
   have ha : a ∈ Icc a b := left_mem_Icc.mpr hab
-  have hs : ContinuousOn s (Icc a b) := fun t ht ↦
-    (hγ.continuousWithinAt_variationOnFromTo_iff ha ht).mpr (hcont t ht)
   have hm : StrictMonoOn s (Icc a b) :=
     hγ.locallyBoundedVariationOn.strictMonoOn_variationOnFromTo_of_injOn_Ioo ha hinj
-  have hsa : s a = 0 := variationOnFromTo.self _ _ _
-  have hsb : s b = L := by
-    simp only [s, variationOnFromTo.eq_of_le _ _ hab, inter_self, L]
-  have himage : s '' Icc a b = Icc 0 L := by
-    rw [hs.image_Icc_of_monotoneOn hab hm.monotoneOn, hsa, hsb]
+  have himage : s '' Icc a b = Icc 0 L := hγ.image_variationOnFromTo_Icc hcont hab
   let S : Icc a b → Icc 0 L := fun t ↦ ⟨s t, himage ▸ mem_image_of_mem s t.property⟩
   have hS : StrictMono S := fun t u htu ↦ hm t.property u.property htu
   have hsurj : Function.Surjective S := by

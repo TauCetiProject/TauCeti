@@ -40,6 +40,8 @@ summability and moment arguments for discrete laws with Beta-function masses.
 
 * `Real.measurable_Gamma` — `Real.Gamma` is measurable.
 * `Real.continuous_inv_Gamma` — `s ↦ (Real.Gamma s)⁻¹` is continuous.
+* `TauCeti.continuous_Gamma_sum_div_prod` — the finite Gamma quotient is jointly continuous on
+  positive parameters.
 * `Real.exists_abs_inv_Gamma_le` — `(Real.Gamma s)⁻¹` is bounded on `[a, ∞)`.
 * `Real.Gamma_add_nat_div_Gamma_eq` — `Γ(x + n) / Γ x` is the rising factorial `x (x + 1) ⋯`.
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
@@ -74,6 +76,27 @@ theorem _root_.Real.continuous_inv_Gamma : Continuous fun s : ℝ => (Real.Gamma
   rw [h]
   exact Complex.continuous_re.comp
     (Complex.differentiable_one_div_Gamma.continuous.comp Complex.continuous_ofReal)
+
+/-- For a finite family of positive parameters, the Gamma quotient
+`Γ(∑ i, a i) / ∏ i, Γ(a i)` is jointly continuous. -/
+@[fun_prop]
+theorem continuous_Gamma_sum_div_prod {ι : Type*} [Fintype ι] :
+    Continuous (fun a : ι → Set.Ioi (0 : ℝ) ↦
+      Real.Gamma (∑ i, (a i : ℝ)) / ∏ i, Real.Gamma (a i)) := by
+  cases isEmpty_or_nonempty ι with
+  | inl h =>
+    let := h
+    -- With no parameters, the quotient is constant.
+    simpa using (continuous_const : Continuous (fun _ : ι → Set.Ioi (0 : ℝ) ↦ Real.Gamma 0))
+  | inr h =>
+    let := h
+    have hΓ := Real.differentiableOn_Gamma_Ioi.continuousOn
+    have hc (i : ι) : Continuous (fun a : ι → Set.Ioi (0 : ℝ) ↦ (a i : ℝ)) := by
+      fun_prop
+    exact (hΓ.comp_continuous (by fun_prop)
+      (fun a ↦ Finset.sum_pos (fun i _ ↦ (a i).2) Finset.univ_nonempty)).div
+      (continuous_finsetProd _ fun i _ ↦ hΓ.comp_continuous (hc i) fun a ↦ (a i).2)
+      (fun a ↦ Finset.prod_ne_zero_iff.mpr fun i _ ↦ (Real.Gamma_pos_of_pos (a i).2).ne')
 
 /-- The reciprocal of the real Gamma function is bounded on every half-line `[a, ∞)`. -/
 theorem _root_.Real.exists_abs_inv_Gamma_le (a : ℝ) :

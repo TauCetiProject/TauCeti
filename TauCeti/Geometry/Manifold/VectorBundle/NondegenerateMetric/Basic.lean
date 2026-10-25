@@ -30,6 +30,12 @@ Levi-Civita connection for an indefinite metric.
 
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric`: a smooth symmetric nondegenerate tangent
   bilinear form.
+* `TauCeti.Manifold.tangentBilinFormInCoordinates`: a tangent bilinear form read in a
+  tangent-bundle trivialization, with its symmetry and nondegeneracy on the base set.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetric.inCoordinates`: the metric read in a
+  tangent-bundle trivialization, with its symmetry, nondegeneracy and smoothness on the base set.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetric.chartMetric`: the metric read in the chart at a
+  point, a field of symmetric nondegenerate bilinear forms on the chart target, smooth there.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.flat`: its fibrewise flat musical equivalence,
   for a finite-dimensional model space.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.sharp`: the inverse musical equivalence, for a
@@ -111,6 +117,203 @@ theorem ext {g h : ContMDiffNondegenerateMetric (I := I) (M := M)}
       intro x
       ext v w
       exact heq x v w
+
+end ContMDiffNondegenerateMetric
+
+/-! ### Tangent bilinear forms read in a trivialization -/
+
+/-- A bilinear form `ϕ` on the tangent space at `x`, read in the trivialization of the tangent
+bundle at `a`: a continuous bilinear form on the model space. It is meaningful for `x` in the base
+set of that trivialization. -/
+def tangentBilinFormInCoordinates (a x : M)
+    (ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) : E →L[ℝ] E →L[ℝ] ℝ :=
+  ContinuousLinearMap.inCoordinates E (fun y : M ↦ TangentSpace I y)
+    (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) a x a x ϕ
+
+/-- On the base set of the trivialization at `a`, a tangent bilinear form read in that
+trivialization pairs two vectors of the model space as the form pairs the tangent vectors with
+these coordinates. -/
+theorem tangentBilinFormInCoordinates_apply (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet)
+    (ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (v w : E) :
+    tangentBilinFormInCoordinates a x ϕ v w =
+      ϕ ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).symm x v)
+        ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).symm x w) := by
+  simpa only [tangentBilinFormInCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.linearMapAt_trivialization, LinearMap.id_coe, id_eq] using
+    (inCoordinates_apply_eq₂ (F₁ := E) (F₂ := E) (F₃ := ℝ)
+      (E₁ := fun y : M ↦ TangentSpace I y) (E₂ := fun y : M ↦ TangentSpace I y)
+      (E₃ := Bundle.Trivial M ℝ) (x₀ := a) (x := x)
+      (ϕ := ϕ) hx hx (by simp) (v := v) (w := w))
+
+/-- On the base set of the trivialization at `a`, a tangent bilinear form read in that
+trivialization is the congruence of the form by the trivialization's linear equivalence. -/
+theorem tangentBilinFormInCoordinates_toBilinForm (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet)
+    (ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) :
+    (tangentBilinFormInCoordinates a x ϕ).toBilinForm =
+      LinearMap.BilinForm.congr
+        ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).continuousLinearEquivAt ℝ x hx
+          |>.toLinearEquiv) ϕ.toBilinForm := by
+  ext v w
+  rw [ContinuousLinearMap.toBilinForm_apply, LinearMap.BilinForm.congr_apply,
+    tangentBilinFormInCoordinates_apply a hx, ContinuousLinearMap.toBilinForm_apply,
+    ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+    Trivialization.continuousLinearEquivAt_symm_apply]
+
+/-- A symmetric tangent bilinear form read in a trivialization is symmetric on its base set. -/
+theorem isSymm_tangentBilinFormInCoordinates (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet)
+    {ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ} (hϕ : ϕ.toBilinForm.IsSymm) :
+    (tangentBilinFormInCoordinates a x ϕ).toBilinForm.IsSymm := by
+  constructor
+  intro v w
+  simpa only [ContinuousLinearMap.toBilinForm_apply, tangentBilinFormInCoordinates_apply a hx]
+    using hϕ.eq _ _
+
+/-- A nondegenerate tangent bilinear form read in a trivialization is nondegenerate on its base
+set. -/
+theorem nondegenerate_tangentBilinFormInCoordinates (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet)
+    {ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ} (hϕ : ϕ.toBilinForm.Nondegenerate) :
+    (tangentBilinFormInCoordinates a x ϕ).toBilinForm.Nondegenerate := by
+  rw [tangentBilinFormInCoordinates_toBilinForm a hx]
+  exact hϕ.congr _
+
+/-- A family of tangent bilinear forms that is continuous at `y₀`, as a map into the total space
+of the tangent bilinear-form bundle, is continuous at `y₀` when read in the trivialization at its
+base point at `y₀`. -/
+theorem continuousAt_tangentBilinFormInCoordinates {X : Type*} [TopologicalSpace X]
+    {q : X → TotalSpace (E →L[ℝ] E →L[ℝ] ℝ)
+      fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+    {y₀ : X} (hq : ContinuousAt q y₀) :
+    ContinuousAt (fun y ↦ tangentBilinFormInCoordinates (q y₀).proj (q y).proj (q y).snd) y₀ := by
+  simpa only [tangentBilinFormInCoordinates, hom_trivializationAt_apply] using
+    ((FiberBundle.continuousAt_totalSpace (E →L[ℝ] E →L[ℝ] ℝ) q).mp hq).2
+
+namespace ContMDiffNondegenerateMetric
+
+/-! ### The metric read in a trivialization -/
+
+/-- The metric `g` at `x`, read in the trivialization of the tangent bundle at `a`: a continuous
+bilinear form on the model space. It is meaningful for `x` in the base set of that
+trivialization. -/
+def inCoordinates (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a x : M) :
+    E →L[ℝ] E →L[ℝ] ℝ :=
+  tangentBilinFormInCoordinates a x (g x)
+
+/-- Reading the metric in a trivialization is the general tangent bilinear-form coordinate
+construction applied to its value at the point. -/
+theorem inCoordinates_eq_tangentBilinFormInCoordinates
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a x : M) :
+    g.inCoordinates a x = tangentBilinFormInCoordinates a x (g x) :=
+  (rfl)
+
+/-- On the base set of the trivialization at `a`, the metric read in that trivialization pairs two
+vectors of the model space as `g` pairs the tangent vectors with these coordinates. -/
+theorem inCoordinates_apply
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) (v w : E) :
+    g.inCoordinates a x v w =
+      g x ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).symm x v)
+        ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).symm x w) :=
+  tangentBilinFormInCoordinates_apply a hx (g x) v w
+
+/-- On the base set of the trivialization at `a`, the metric read in that trivialization is the
+congruence of the metric by the trivialization's linear equivalence. -/
+theorem inCoordinates_toBilinForm
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
+    (g.inCoordinates a x).toBilinForm =
+      LinearMap.BilinForm.congr
+        ((trivializationAt E (fun y : M ↦ TangentSpace I y) a).continuousLinearEquivAt ℝ x hx
+          |>.toLinearEquiv) (g x).toBilinForm :=
+  tangentBilinFormInCoordinates_toBilinForm a hx (g x)
+
+/-- The metric read in a trivialization is symmetric on its base set. -/
+theorem isSymm_inCoordinates
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
+    (g.inCoordinates a x).toBilinForm.IsSymm :=
+  isSymm_tangentBilinFormInCoordinates a hx (g.symm x)
+
+/-- The metric read in a trivialization is nondegenerate on its base set. -/
+theorem nondegenerate_inCoordinates
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
+    (g.inCoordinates a x).toBilinForm.Nondegenerate :=
+  nondegenerate_tangentBilinFormInCoordinates a hx (g.nondegenerate x)
+
+/-- The metric read in the trivialization at `a` is smooth at every point of its base set. -/
+theorem contMDiffAt_inCoordinates
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (a : M) {x : M}
+    (hx : x ∈ (trivializationAt E (fun y : M ↦ TangentSpace I y) a).baseSet) :
+    ContMDiffAt I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) ∞ (g.inCoordinates a) x := by
+  have hsec := ((trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
+      (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) a).contMDiffAt_section_iff
+      (IB := I) (n := ∞) (s := fun y ↦ g y) (by simpa using hx)).1 (g.contMDiff x)
+  simp only [hom_trivializationAt_apply] at hsec
+  exact hsec
+
+/-! ### The metric read in a chart -/
+
+section Chart
+
+variable (g : ContMDiffNondegenerateMetric (I := I) (M := M)) {x₀ y : M}
+
+/-- The metric `g` read in the chart at `x₀`: at a point `z` of the model space, the bilinear form
+on `E` obtained by reading `g` at `(extChartAt I x₀).symm z` in the trivialization of the tangent
+bundle at `x₀`. It is meaningful on the chart target `(extChartAt I x₀).target`. -/
+def chartMetric (x₀ : M) (z : E) : E →L[ℝ] E →L[ℝ] ℝ :=
+  g.inCoordinates x₀ ((extChartAt I x₀).symm z)
+
+/-- At a point `z` of the chart target, the chart metric pairs two vectors of the model space as
+`g` pairs the tangent vectors at `(extChartAt I x₀).symm z` with these coordinates. -/
+theorem chartMetric_apply {z : E} (hz : z ∈ (extChartAt I x₀).target) (u w : E) :
+    g.chartMetric x₀ z u w =
+      g ((extChartAt I x₀).symm z)
+        ((trivializationAt E (TangentSpace I) x₀).symm ((extChartAt I x₀).symm z) u)
+        ((trivializationAt E (TangentSpace I) x₀).symm ((extChartAt I x₀).symm z) w) :=
+  g.inCoordinates_apply x₀ (by simpa using (extChartAt I x₀).map_target hz) u w
+
+/-- At the chart image of a point `y` of the chart domain, the chart metric pairs two vectors of
+the model space as `g` pairs the tangent vectors at `y` with these coordinates. -/
+theorem chartMetric_extChartAt_apply (hy : y ∈ (extChartAt I x₀).source) (u w : E) :
+    g.chartMetric x₀ (extChartAt I x₀ y) u w =
+      g y ((trivializationAt E (TangentSpace I) x₀).symm y u)
+        ((trivializationAt E (TangentSpace I) x₀).symm y w) := by
+  rw [chartMetric, (extChartAt I x₀).left_inv hy]
+  exact g.inCoordinates_apply x₀ (by simpa using hy) u w
+
+/-- The chart metric is symmetric at every point of the chart target. -/
+theorem isSymm_chartMetric {z : E} (hz : z ∈ (extChartAt I x₀).target) :
+    LinearMap.IsSymm (g.chartMetric x₀ z).toBilinForm :=
+  LinearMap.BilinForm.isSymm_iff.1 <|
+    g.isSymm_inCoordinates x₀ (by simpa using (extChartAt I x₀).map_target hz)
+
+/-- The chart metric is nondegenerate at every point of the chart target. -/
+theorem nondegenerate_chartMetric {z : E} (hz : z ∈ (extChartAt I x₀).target) :
+    (g.chartMetric x₀ z).toBilinForm.Nondegenerate :=
+  g.nondegenerate_inCoordinates x₀ (by simpa using (extChartAt I x₀).map_target hz)
+
+/-- The chart metric is smooth on the chart target. -/
+theorem contDiffOn_chartMetric (x₀ : M) :
+    ContDiffOn ℝ ∞ (g.chartMetric x₀) (extChartAt I x₀).target := by
+  rw [← contMDiffOn_iff_contDiffOn]
+  intro z hz
+  exact (g.contMDiffAt_inCoordinates x₀ (by simpa using (extChartAt I x₀).map_target hz))
+    |>.comp_contMDiffWithinAt z (contMDiffOn_extChartAt_symm x₀ z hz)
+
+/-- The chart metric is smooth at the chart image of every point of the chart domain lying in the
+interior of the model. -/
+theorem contDiffAt_chartMetric (hy : y ∈ (extChartAt I x₀).source)
+    (hint : extChartAt I x₀ y ∈ interior (Set.range I)) :
+    ContDiffAt ℝ ∞ (g.chartMetric x₀) (extChartAt I x₀ y) := by
+  refine (g.contDiffOn_chartMetric x₀).contDiffAt ?_
+  rw [← nhdsWithin_eq_nhds.2 (mem_interior_iff_mem_nhds.1 hint)]
+  exact extChartAt_target_mem_nhdsWithin' hy
+
+end Chart
 
 section FiniteDimensional
 
