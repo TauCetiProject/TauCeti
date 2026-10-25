@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
 public import Mathlib.NumberTheory.ModularForms.SlashInvariantForms
+import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 
 /-!
 # The `S`-transformation of the complex extension of a slash-invariant form
@@ -47,8 +48,7 @@ points of the open upper half-plane. -/
 theorem comp_ofComplex_S_transform [SlashInvariantFormClass F Γ k] (f : F)
     (hS : ModularGroup.S ∈ Γ) {w : ℂ} (hw : 0 < w.im) :
     (⇑f ∘ ofComplex) (-1 / w) = w ^ k * (⇑f ∘ ofComplex) w := by
-  have him : 0 < (-1 / w).im := by
-    simpa [neg_div, one_div, inv_neg] using (⟨w, hw⟩ : ℍ).im_inv_neg_coe_pos
+  have him : 0 < (-1 / w).im := TauCeti.UpperHalfPlane.im_neg_one_div_pos hw
   have hSw : ModularGroup.S • (⟨w, hw⟩ : ℍ) = (⟨-1 / w, him⟩ : ℍ) := by
     rw [modular_S_smul]
     exact UpperHalfPlane.ext (by simp [neg_div, inv_neg])
@@ -62,8 +62,7 @@ theorem differentiableAt_comp_ofComplex_S_transform [SlashInvariantFormClass F �
     (f : F) (hS : ModularGroup.S ∈ Γ) {w : ℂ} (hw : 0 < w.im)
     (hd : DifferentiableAt ℂ (⇑f ∘ ofComplex) w) :
     DifferentiableAt ℂ (⇑f ∘ ofComplex) (-1 / w) := by
-  have him : 0 < (-1 / w).im := by
-    simpa [neg_div, one_div, inv_neg] using (⟨w, hw⟩ : ℍ).im_inv_neg_coe_pos
+  have him : 0 < (-1 / w).im := TauCeti.UpperHalfPlane.im_neg_one_div_pos hw
   have hiw0 : (-1 : ℂ) / w ≠ 0 := fun h ↦ absurd him (by simp [h])
   have hrw : (-1 : ℂ) / (-1 / w) = w := by
     field_simp

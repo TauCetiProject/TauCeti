@@ -11,12 +11,15 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
 # The exponential `e^{2π i τ}` on the upper half-plane
 
 Elementary facts about `q = e^{2π i τ}`, its square root `e^{π i τ}` and `e^{2π i (x τ + y)}`
-for `τ` in the upper half-plane, complementing `Mathlib.Analysis.Complex.UpperHalfPlane.Exp`.
+for `τ` in the upper half-plane, complementing `Mathlib.Analysis.Complex.UpperHalfPlane.Exp`,
+and the positivity of the imaginary part of `-1/τ` needed to evaluate them at the image of `τ`
+under `S`.
 
 ## Main results
 
 * `TauCeti.UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq`: `e^{2π i τ} = (e^{π i τ})²`.
 * `TauCeti.UpperHalfPlane.norm_exp_pi_I_lt_one`: `‖e^{π i τ}‖ < 1` on the upper half-plane.
+* `TauCeti.UpperHalfPlane.im_neg_one_div_pos`: `-1/τ` lies in the upper half-plane with `τ`.
 * `TauCeti.UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero`: `1 - e^{2π i (x τ + y)}` has no zero in
   the upper half-plane unless `x = 0` and `y ∈ ℤ`.
 * `TauCeti.UpperHalfPlane.exp_two_pi_I_zpow_mul_exp`:
@@ -43,6 +46,11 @@ half-plane. -/
 theorem norm_exp_pi_I_lt_one {τ : ℂ} (hτ : 0 < τ.im) : ‖cexp (π * I * τ)‖ < 1 := by
   rw [Complex.norm_exp, Real.exp_lt_one_iff]
   simpa using mul_pos Real.pi_pos hτ
+
+/-- `-1/τ` lies in the upper half-plane whenever `τ` does: the image of `τ` under `S`, stated for
+complex numbers rather than points of `ℍ`. -/
+theorem im_neg_one_div_pos {τ : ℂ} (hτ : 0 < τ.im) : 0 < (-1 / τ).im := by
+  simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨τ, hτ⟩
 
 /-- `1 - e^{2π i (x τ + y)}` vanishes at a point `τ` of the upper half-plane only when `x = 0` and
 `y` is an integer. -/

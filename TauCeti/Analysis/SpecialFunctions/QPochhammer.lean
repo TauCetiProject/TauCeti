@@ -44,6 +44,10 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   `0 < ‖q‖ < 1` and `w ≠ 0`.
 * `TauCeti.qTheta_neg_one`, `TauCeti.qTheta_sq_self`: `θ_q(-1) = 2 (∏_{n ≥ 1} (1 + qⁿ))²` and
   `θ_{s²}(s) = (∏_{n ≥ 0} (1 - s^{2n+1}))²`.
+* `TauCeti.tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul`,
+  `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow`: the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is
+  `∏_{n ≥ 0} (1 - q^{2n+1}) ∏_{n ≥ 1} (1 - q^{2n})`, and multiplying it by `∏_{n ≥ 1} (1 + qⁿ)`
+  gives `∏_{n ≥ 1} (1 - q^{2n})`.
 * `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow_odd`: **Euler's identity**
   `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1` for `‖q‖ < 1`, the analytic form of the
   equinumerosity of partitions into distinct parts and into odd parts.
@@ -176,28 +180,32 @@ theorem tprod_one_sub_pow_odd_mul_tprod_one_add_pow_odd {q : 𝕜} (hq : ‖q‖
   rw [← (multipliable_one_sub_pow_odd hq).tprod_mul (multipliable_one_add_pow_odd hq)]
   exact tprod_congr fun n ↦ by ring
 
+/-- The Euler product `∏_{n ≥ 1} (1 - qⁿ)` split into its odd and even factors:
+`∏_{n ≥ 1} (1 - qⁿ) = ∏_{n ≥ 0} (1 - q^{2n+1}) ∏_{n ≥ 1} (1 - q^{2n})` for `‖q‖ < 1`. -/
+theorem tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∏' n : ℕ, (1 - q ^ (n + 1)) =
+      (∏' n : ℕ, (1 - q ^ (2 * n + 1))) * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
+  have hP₂ : Multipliable fun n : ℕ ↦ 1 - (q ^ 2) ^ (n + 1) := by
+    simpa using multipliable_one_sub_pow_mul (norm_pow_lt_one hq two_ne_zero) 1
+  rw [← tprod_even_mul_odd (f := fun n ↦ 1 - q ^ (n + 1))
+    (multipliable_one_sub_pow_odd hq) (by simpa [← pow_mul, mul_add] using hP₂)]
+  simp [← pow_mul, mul_add]
+
+/-- `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 1} (1 - qⁿ) = ∏_{n ≥ 1} (1 - q^{2n})` for `‖q‖ < 1`. -/
+theorem tprod_one_add_pow_mul_tprod_one_sub_pow {q : 𝕜} (hq : ‖q‖ < 1) :
+    (∏' n : ℕ, (1 + q ^ (n + 1))) * ∏' n : ℕ, (1 - q ^ (n + 1)) =
+      ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
+  rw [← (multipliable_one_add_pow hq).tprod_mul (by simpa using multipliable_one_sub_pow_mul hq 1)]
+  exact tprod_congr fun n ↦ by ring
+
 /-- **Euler's identity** `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1` for `‖q‖ < 1`. Comparing
 coefficients, partitions into distinct parts and partitions into odd parts are equinumerous. -/
 theorem tprod_one_add_pow_mul_tprod_one_sub_pow_odd {q : 𝕜} (hq : ‖q‖ < 1) :
     (∏' n : ℕ, (1 + q ^ (n + 1))) * ∏' n : ℕ, (1 - q ^ (2 * n + 1)) = 1 := by
-  have hq2 := norm_pow_lt_one hq two_ne_zero
-  have hP : Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) := by
-    simpa using multipliable_one_sub_pow_mul hq 1
-  have hP₂ : Multipliable fun n : ℕ ↦ 1 - (q ^ 2) ^ (n + 1) := by
-    simpa using multipliable_one_sub_pow_mul hq2 1
-  -- Split `∏ (1 - qⁿ)` into its odd and even factors.
-  have hsplit : ∏' n : ℕ, (1 - q ^ (n + 1)) =
-      (∏' n : ℕ, (1 - q ^ (2 * n + 1))) * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
-    rw [← tprod_even_mul_odd (f := fun n ↦ 1 - q ^ (n + 1))
-      (multipliable_one_sub_pow_odd hq) (by simpa [← pow_mul, mul_add] using hP₂)]
-    simp [← pow_mul, mul_add]
-  -- `(1 + qⁿ) (1 - qⁿ) = 1 - q²ⁿ`.
-  have hmul : (∏' n : ℕ, (1 + q ^ (n + 1))) * ∏' n : ℕ, (1 - q ^ (n + 1)) =
-      ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
-    rw [← (multipliable_one_add_pow hq).tprod_mul hP]
-    exact tprod_congr fun n ↦ by ring
-  rw [hsplit, ← mul_assoc] at hmul
-  exact mul_right_cancel₀ (tprod_one_sub_pow_ne_zero hq2) (hmul.trans (one_mul _).symm)
+  have hmul := tprod_one_add_pow_mul_tprod_one_sub_pow hq
+  rw [tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul hq, ← mul_assoc] at hmul
+  exact mul_right_cancel₀ (tprod_one_sub_pow_ne_zero (norm_pow_lt_one hq two_ne_zero))
+    (hmul.trans (one_mul _).symm)
 
 /-- The theta product at `w = -1`: `θ_q(-1) = 2 (∏_{n ≥ 1} (1 + qⁿ))²` for `‖q‖ < 1`. -/
 theorem qTheta_neg_one {q : 𝕜} (hq : ‖q‖ < 1) :
