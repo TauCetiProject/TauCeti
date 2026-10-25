@@ -124,6 +124,7 @@ theorem card_mul_card_mul_edgeDensity_real (s t : Finset V) :
 /-- **Edge densities are invariant under relabelling.** Relabelling the vertices along `e`, the
 graph as `G.comap e.symm` and both finsets by mapping along `e`, leaves the edge density unchanged.
 -/
+@[simp]
 theorem edgeDensity_comap_symm {W : Type*} (e : V ≃ W) (s t : Finset V) :
     (G.comap e.symm).edgeDensity (s.map e.toEmbedding) (t.map e.toEmbedding) =
       G.edgeDensity s t := by

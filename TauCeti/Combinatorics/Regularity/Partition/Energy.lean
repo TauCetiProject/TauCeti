@@ -114,6 +114,7 @@ theorem weightedEnergy_eq_sum_part (P : Finpartition (univ : Finset V)) :
 /-- **The weighted energy is invariant under relabelling.** Relabel the vertices along `e`: the
 graph becomes `G.comap e.symm` and the partition becomes the pullback of `P` along `e.symm`. The
 size-weighted energy is unchanged. -/
+@[simp]
 theorem weightedEnergy_comap_symm {W : Type*} [Fintype W] [DecidableEq W] (e : V ≃ W)
     (P : Finpartition (univ : Finset V)) :
     (G.comap e.symm).weightedEnergy ((P.copy (image_univ_equiv e.symm).symm).comap e.symm) =
