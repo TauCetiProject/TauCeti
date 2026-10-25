@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.HasseWronskian
-import Mathlib.Data.ZMod.Basic
 import Mathlib.Algebra.Field.ZMod
 
 /-!
@@ -23,7 +22,7 @@ open Polynomial
 
 namespace TauCeti.Examples.HasseWronskian
 
-local instance : Fact (Nat.Prime 2) := ⟨by decide⟩
+local instance instFactPrimeTwo : Fact (Nat.Prime 2) := ⟨by decide⟩
 
 /-- The divided Wronskian of `(1, X, X²)` over `ℚ` is one. -/
 theorem rational_one_X_sq : hasseWronskian (![1, X, X ^ 2] : Fin 3 → ℚ[X]) = 1 := by
@@ -34,14 +33,14 @@ theorem rational_one_X_sq : hasseWronskian (![1, X, X ^ 2] : Fin 3 → ℚ[X]) =
 theorem rational_X_two_mul_X : hasseWronskian (![X, 2 * X] : Fin 2 → ℚ[X]) = 0 := by
   simp only [Nat.succ_eq_add_one, Nat.reduceAdd, hasseWronskian_fin_two, wronskian, Fin.isValue,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, derivative_mul,
-    derivative_ofNat, zero_mul,     derivative_X, mul_one, zero_add, one_mul]
+    derivative_ofNat, zero_mul, derivative_X, mul_one, zero_add, one_mul]
   ring
 
 /-- The Hasse Wronskian of `(1, X)` is one. -/
 theorem rational_one_X : hasseWronskian (![1, X] : Fin 2 → ℚ[X]) = 1 := by
   simp only [Nat.succ_eq_add_one, Nat.reduceAdd, hasseWronskian_fin_two, wronskian, Fin.isValue,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, derivative_X, mul_one,
-    derivative_one, zero_mul,     sub_zero]
+    derivative_one, zero_mul, sub_zero]
 
 /-- The ordinary Wronskian of `(1, X, X²)` is two, distinguishing the normalization. -/
 theorem rational_classical_one_X_sq : (derivative' : Derivation ℚ ℚ[X] ℚ[X]).wronskian
@@ -60,11 +59,11 @@ theorem zmod_two_one_X_sq_linearIndependent :
   rw [linearIndependent_fin2]
   constructor
   · simp only [Fin.isValue, Matrix.cons_val_one, Matrix.cons_val_fin_one, ne_eq,
-    OfNat.ofNat_ne_zero,     not_false_eq_true, pow_eq_zero_iff, X_ne_zero]
+    OfNat.ofNat_ne_zero, not_false_eq_true, pow_eq_zero_iff, X_ne_zero]
   · intro a h
     have h0 := congrArg (coeff · 0) h
     simp only [Fin.isValue, Matrix.cons_val_one, Matrix.cons_val_fin_one, coeff_smul,
-      coeff_X_pow,     OfNat.zero_ne_ofNat, ↓reduceIte, smul_eq_mul, mul_zero,
+      coeff_X_pow, OfNat.zero_ne_ofNat, ↓reduceIte, smul_eq_mul, mul_zero,
       Matrix.cons_val_zero, coeff_one_zero, zero_ne_one] at h0
 
 /-- Over `ℤ/4ℤ`, the singleton constant two has Hasse Wronskian two. -/
