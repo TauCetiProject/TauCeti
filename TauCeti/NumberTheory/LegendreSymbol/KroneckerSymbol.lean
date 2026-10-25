@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
+import TauCeti.Data.Int.Sign
+import TauCeti.Data.Nat.Factorization.GcdSplit
 
 /-!
 # The Kronecker symbol
@@ -143,22 +145,6 @@ theorem kroneckerSym_one_left (b : ℤ) : kroneckerSym 1 b = 1 := by
 
 /-! ### Multiplicativity in the denominator -/
 
-/-- The sign factor `if p ∧ x < 0 then -1 else 1` of `kroneckerSym` is multiplicative in `x` over
-nonzero factors. It serves both `kroneckerSym_mul_right` and `kroneckerSym_mul_left`. -/
-private theorem ite_and_mul_neg {p : Prop} [Decidable p] {x y : ℤ} (hx : x ≠ 0) (hy : y ≠ 0) :
-    (if p ∧ x * y < 0 then -1 else 1 : ℤ) =
-      (if p ∧ x < 0 then -1 else 1) * (if p ∧ y < 0 then -1 else 1) := by
-  rcases hx.lt_or_gt with hx | hx <;> rcases hy.lt_or_gt with hy | hy <;> by_cases hp : p <;>
-    simp [hp, hx, hy, hx.not_gt, hy.not_gt, mul_neg_iff]
-
-/-- For `x ≠ 0`, the sign factor `if x < 0 then -1 else 1` is the sign of `x`. It serves both
-`kroneckerSym_eq_jacobiSym_emod` and `kroneckerChar_neg_one`. -/
-private theorem ite_lt_zero_eq_sign {x : ℤ} (hx : x ≠ 0) :
-    (if x < 0 then -1 else 1 : ℤ) = x.sign := by
-  rcases hx.lt_or_gt with h | h
-  · rw [Int.sign_eq_neg_one_of_neg h, ite_eq_left h]
-  · rw [Int.sign_eq_one_of_pos h, ite_eq_right h.not_gt]
-
 /-- Multiplicativity of the Kronecker symbol in the denominator, over nonzero factors, as in
 `jacobiSym.mul_right'`. The hypotheses cannot be dropped: for `a = -1`, `b = 0`, `c = 3` the left
 side is `(-1 / 0) = 1` and the right side is `-1` (`kroneckerSym_zero_right`). -/
@@ -167,7 +153,7 @@ theorem kroneckerSym_mul_right (a : ℤ) {b c : ℤ} (hb : b ≠ 0) (hc : c ≠ 
   have hb' : b.natAbs ≠ 0 := Int.natAbs_ne_zero.mpr hb
   have hc' : c.natAbs ≠ 0 := Int.natAbs_ne_zero.mpr hc
   rw [kroneckerSym_of_ne_zero a (mul_ne_zero hb hc), kroneckerSym_of_ne_zero a hb,
-    kroneckerSym_of_ne_zero a hc, ite_and_mul_neg hb hc]
+    kroneckerSym_of_ne_zero a hc, Int.ite_and_mul_lt_zero hb hc]
   -- `|b c| = |b| |c|` splits both the power of `2` and the odd part, which `J(a | ·)` respects.
   simp only [Int.natAbs_mul, Nat.ordCompl_mul,
     jacobiSym.mul_right' a (Nat.ordCompl_pos 2 hb').ne' (Nat.ordCompl_pos 2 hc').ne']
@@ -202,19 +188,6 @@ theorem kroneckerSym_pow_right (a b : ℤ) (k : ℕ) :
 
 /-! ### Vanishing and the values `0`, `1`, `-1` -/
 
-/-- The gcd bookkeeping behind `kroneckerSym_eq_zero_iff`: writing `n = 2 ^ e * m` with `m` odd,
-`a` and `n` have a common factor exactly when `a` is even and `e ≠ 0`, or `a` and `m` have one. -/
-private theorem natAbs_gcd_ne_one_iff (a : ℤ) (n : ℕ) :
-    a.natAbs.gcd n ≠ 1 ↔ (2 ∣ a ∧ n.factorization 2 ≠ 0) ∨ a.natAbs.gcd (ordCompl[2] n) ≠ 1 := by
-  conv_lhs => rw [← Nat.ordProj_mul_ordCompl_eq_self n 2]
-  simp only [Ne, ← Nat.coprime_iff_gcd_eq_one, Nat.coprime_mul_iff_right, not_and_or]
-  refine or_congr_left ?_
-  rcases eq_or_ne (n.factorization 2) 0 with he | he
-  · simp [he]
-  · rw [Nat.coprime_pow_right_iff (Nat.pos_of_ne_zero he), Nat.coprime_two_right,
-      Nat.not_odd_iff_even, even_iff_two_dvd, Int.natCast_dvd.symm, Nat.cast_ofNat]
-    exact (and_iff_left he).symm
-
 /-- The Kronecker symbol `(a / b)` vanishes exactly when `a` and `b` have a common factor, as for
 `jacobiSym.eq_zero_iff`. At `b = 0` this says that `(a / 0) ≠ 0` exactly for `a = ±1`. -/
 theorem kroneckerSym_eq_zero_iff {a b : ℤ} : kroneckerSym a b = 0 ↔ a.gcd b ≠ 1 := by
@@ -223,10 +196,14 @@ theorem kroneckerSym_eq_zero_iff {a b : ℤ} : kroneckerSym a b = 0 ↔ a.gcd b 
     split_ifs <;> simp_all
   have hm : ordCompl[2] b.natAbs ≠ 0 := (Nat.ordCompl_pos 2 (Int.natAbs_ne_zero.mpr hb)).ne'
   have hs : (if a < 0 ∧ b < 0 then -1 else 1 : ℤ) ≠ 0 := by split_ifs <;> norm_num
-  rw [kroneckerSym_of_ne_zero a hb, Int.gcd_eq_natAbs_gcd_natAbs, natAbs_gcd_ne_one_iff]
+  -- Writing `|b| = 2 ^ e * m` with `m` odd, `a` and `b` have a common factor exactly when `a` is
+  -- even and `e ≠ 0`, or `a` and `m` have one.
+  rw [kroneckerSym_of_ne_zero a hb, Int.gcd_eq_natAbs_gcd_natAbs, Ne,
+    ← Nat.coprime_iff_gcd_eq_one, Nat.coprime_iff_coprime_ordCompl Nat.prime_two]
   simp only [mul_eq_zero, hs, false_or, pow_eq_zero_iff', χ₈_intCast_eq_zero_iff,
     jacobiSym.eq_zero_iff, Ne, hm, not_false_eq_true, true_and, Int.gcd_eq_natAbs_gcd_natAbs,
-    Int.natAbs_natCast]
+    Int.natAbs_natCast, not_and_or, not_imp, Nat.coprime_iff_gcd_eq_one, ← Int.natCast_dvd,
+    Nat.cast_ofNat]
 
 /-- `(0 / b)` is `1` for `b = ±1` and `0` otherwise. -/
 @[simp]
@@ -265,7 +242,7 @@ theorem kroneckerSym_mul_left {a a' : ℤ} (ha : a ≠ 0) (ha' : a' ≠ 0) (b : 
     split_ifs <;> simp_all
   have hs : (if a * a' < 0 ∧ b < 0 then -1 else 1 : ℤ) =
       (if a < 0 ∧ b < 0 then -1 else 1) * (if a' < 0 ∧ b < 0 then -1 else 1) := by
-    simpa only [and_comm] using ite_and_mul_neg (p := b < 0) ha ha'
+    simpa only [and_comm] using Int.ite_and_mul_lt_zero (p := b < 0) ha ha'
   rw [kroneckerSym_of_ne_zero _ hb, kroneckerSym_of_ne_zero a hb, kroneckerSym_of_ne_zero a' hb,
     Int.cast_mul, map_mul, mul_pow, jacobiSym.mul_left, hs]
   ring
@@ -340,7 +317,7 @@ private theorem kroneckerSym_eq_jacobiSym_emod {D : ℤ} (hD : D % 4 = 0) (hD₀
     have hk₀ : -(k : ℤ) < 0 := by have := hk.pos; omega
     rw [kroneckerSym_of_odd D hm, Int.natAbs_neg, Int.natAbs_natCast,
       jacobiSym_eq_sign_mul_of_emod_four_eq_zero hD hk hr hdvd]
-    simp only [hk₀, and_true, ite_lt_zero_eq_sign hD₀]
+    simp only [hk₀, and_true, Int.ite_lt_zero_eq_sign hD₀]
 
 private theorem kroneckerSym_eq_zero_of_two_dvd {D m : ℤ} (hD : 2 ∣ D) (hm : 2 ∣ m) :
     kroneckerSym D m = 0 :=
@@ -443,7 +420,7 @@ theorem kroneckerChar_isQuadratic : (kroneckerChar R D hD hD₀).IsQuadratic := 
 @[simp]
 theorem kroneckerChar_neg_one : kroneckerChar R D hD hD₀ (-1) = D.sign := by
   rw [← Int.cast_one (R := ZMod D.natAbs), ← Int.cast_neg, kroneckerChar_intCast,
-    kroneckerSym_neg_one_right, ite_lt_zero_eq_sign hD₀]
+    kroneckerSym_neg_one_right, Int.ite_lt_zero_eq_sign hD₀]
 
 end KroneckerChar
 

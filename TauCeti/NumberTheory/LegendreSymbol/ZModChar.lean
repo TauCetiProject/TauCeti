@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
+import TauCeti.Data.ZMod.Divisibility
 
 /-!
 # Parity and vanishing of the characters `χ₄` and `χ₈`
@@ -25,11 +26,6 @@ in the form used under reflection `b ↦ b'` with `n ∣ b + b'`, together with 
 public section
 
 namespace ZMod
-
-/-- If `n ∣ b + b'`, then `b' = -b` in `ZMod n`. -/
-theorem natCast_eq_neg_of_dvd_add {n b b' : ℕ} (h : n ∣ b + b') : (b' : ZMod n) = -b := by
-  rw [eq_neg_iff_add_eq_zero, add_comm, ← Nat.cast_add, ZMod.natCast_eq_zero_iff]
-  exact h
 
 /-- The character `χ₄` is odd. -/
 theorem χ₄_neg (x : ZMod 4) : χ₄ (-x) = -χ₄ x := by
