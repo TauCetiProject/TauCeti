@@ -31,10 +31,11 @@ character, so it is cyclic.
 
 For polynomial functions on a vector space `V`, take `M = V*` with the contragredient action
 `ρ.dual`. A nonzero linear form `ℓ` spans the ideal of the hyperplane `ker ℓ`, and the inertia
-group of that ideal is the pointwise stabilizer of `ker ℓ`. Thus the inertia groups of the
-codimension-one primes of `V → V/G` are precisely the pointwise stabilizers of hyperplanes. When
-`G` acts faithfully they are cyclic, and each of their nonidentity elements is a pseudoreflection
-whose fixed hyperplane is exactly `ker ℓ`.
+group of that ideal is the pointwise stabilizer of `ker ℓ`. Thus a height-one prime of `Sym(V*)`
+whose inertia group acts nontrivially on `V` is the ideal of a hyperplane `ker ℓ`, its inertia
+group is the pointwise stabilizer of `ker ℓ`, and each element of it acting nontrivially on `V` is
+a pseudoreflection whose fixed hyperplane is exactly `ker ℓ`. If moreover `G` is finite of order
+invertible in `K` and acts faithfully, these inertia groups are cyclic.
 
 ## Main results
 
