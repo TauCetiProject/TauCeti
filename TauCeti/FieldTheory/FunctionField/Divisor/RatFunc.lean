@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.RatFunc.IntermediateField
 public import TauCeti.FieldTheory.FunctionField.Divisor.ProductFormula
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
+import Mathlib.Algebra.FiniteSupport.Basic
 
 /-!
 # Divisors of the rational function field
@@ -38,6 +39,8 @@ poles.
 * `TauCeti.Divisor.poles_X`: the pole divisor of `x` is `P_∞`.
 * `TauCeti.Divisor.degree_poles_eq_max_natDegree`: the pole divisor of `z ∈ k(x)ˣ` has degree
   `max (deg z.num) (deg z.denom)`, which for nonconstant `z` is the degree of `k(x) / k(z)`.
+* `TauCeti.Place.finsum_natDegree_mul_ord_adicOfIrreducible`: the finite-place weighted
+  product formula, summing orders against the degrees of monic irreducible polynomials.
 * `TauCeti.Divisor.degree_zeros_algebraMap`: the zero divisor of a nonzero polynomial has
   degree equal to its polynomial degree.
 
@@ -181,5 +184,36 @@ theorem Divisor.degree_zeros_algebraMap {f : k[X]} (hf : f ≠ 0) :
     omega
   rw [hzp, Divisor.degree_poles_eq_max_natDegree]
   simp [z, RatFunc.num_algebraMap, RatFunc.denom_algebraMap]
+
+/-- The finite-place product formula for `k(x)`: the degree-weighted sum of the orders
+at monic irreducible polynomials equals `f.intDegree`, the negative of the order at infinity. -/
+theorem Place.finsum_natDegree_mul_ord_adicOfIrreducible (f : (RatFunc k)ˣ) :
+    (∑ᶠ q : {q : k[X] // q.Monic ∧ Irreducible q},
+      (q.val.natDegree : ℤ) * (Place.adicOfIrreducible q.property.2).ord f) =
+      (f : RatFunc k).intDegree := by
+  classical
+  have hord : (fun P : Place k (RatFunc k) => P.ord f).HasFiniteSupport :=
+    Place.finite_setOf_ord_ne_zero (IsFunctionField.ratFunc k) f
+  have hfin := hord.mul_left (fun P : Place k (RatFunc k) => (P.degree : ℤ))
+  have h : ∑ᶠ P : Place k (RatFunc k), P.ord f * P.degree = 0 := by
+    let D := Divisor.principal (IsFunctionField.ratFunc k) f
+    rw [finsum_eq_sum_of_support_subset _ (s := D.support)]
+    · have hc (P : Place k (RatFunc k)) : D P = P.ord f :=
+        Divisor.coeff_principal (IsFunctionField.ratFunc k) f P
+      have h : Divisor.degree D = 0 := Divisor.degree_principal (IsFunctionField.ratFunc k) f
+      simpa only [Divisor.degree_eq_sum_support, hc] using h
+    · intro P hP
+      apply (Divisor.mem_support_principal_iff (IsFunctionField.ratFunc k)).mpr
+      intro h0
+      exact hP (by dsimp; rw [h0, zero_mul])
+  rw [← finsum_comp_equiv (Place.ratFuncEquivMonicIrreducible k)] at h
+  rw [finsum_option] at h
+  · simp only [Place.ratFuncEquivMonicIrreducible_none,
+      Place.ratFuncEquivMonicIrreducible_some, Place.degree_infty, Place.ord_infty,
+      Nat.cast_one, Place.degree_adicOfIrreducible, mul_comm] at h
+    omega
+  · exact Function.HasFiniteSupport.comp_of_injective (Option.some_injective _)
+      (hfin.comp_of_injective (Place.ratFuncEquivMonicIrreducible k).injective)
+
 
 end TauCeti
