@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Between
 public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.ContinuousOn
+public import TauCeti.Analysis.Convex.Between
 public import TauCeti.Analysis.Convex.Polyhedron.Basic
 
 /-!
@@ -380,13 +380,6 @@ theorem IsPLOn.exists_eqOn_Icc {g : ℝ → F} {s : Set ℝ} {t : ℝ} (hg : IsP
   · refine (hcell htj hb).mono fun y hy => ?_
     rw [uIcc_of_le (le_of_lt htb)]
     exact ⟨hy.1, by linarith [hy.2, min_le_right (t - a) (b - t)]⟩
-
-/-- A map of `ℝ` that agrees with a continuous affine map on `[a, b]` sends `[a, b]` onto the
-segment between the images of its endpoints. -/
-theorem _root_.Set.EqOn.image_Icc_eq_segment {g : ℝ → F} {A : ℝ →ᴬ[ℝ] F} {a b : ℝ}
-    (hA : EqOn g A (Icc a b)) (hab : a ≤ b) : g '' Icc a b = segment ℝ (g a) (g b) := by
-  rw [hA.image_eq, ← segment_eq_Icc hab, hA ⟨le_rfl, hab⟩, hA ⟨hab, le_rfl⟩]
-  exact image_segment ℝ (A : ℝ →ᵃ[ℝ] F) _ _
 
 /-- **An injective piecewise-linear curve is two segments near each point.** If `g` is piecewise
 linear and injective near `t`, then for some `ε > 0` it maps `[t - ε, t]` and `[t, t + ε]` onto
