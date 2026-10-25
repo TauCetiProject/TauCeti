@@ -33,8 +33,8 @@ This identifies extension of ideals with extension of the underlying submodule.
 * `Algebra.IsPushout.lift_algebraMap`: `lift f` restricts to `f` on `S`.
 * `Algebra.IsPushout.algHom_ext'`: `R'`-algebra homomorphisms out of `S'` agreeing on `S` are
   equal.
-* `Ideal.restrictScalars_map_eq_span`: an extended ideal is spanned over the base
-  change by the image of the original ideal.
+* `Ideal.restrictScalars_map_eq_span`: the extension to `S'` of an ideal `J` of `R'` is the
+  `S`-span of the image of `J`.
 * `Module.Finite.of_isPushout`, `Module.Projective.of_isPushout`,
   `Algebra.FinitePresentation.of_isPushout`: finiteness, projectivity and finite presentation are
   stable under pushout.
