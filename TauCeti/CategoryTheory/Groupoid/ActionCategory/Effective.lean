@@ -58,12 +58,23 @@ theorem effectiveActionFunctor_mapAut_stabilizerMulEquivAut (x : X) (g : stabili
       ((effectiveActionFunctor G X).mapAut _ (ActionCategory.stabilizerMulEquivAut G x g)) =
       ActionCategory.stabilizerMulEquivAut (G ⧸ (toPermHom G X).ker) x
         (effectiveStabilizerMap G X x g) := by
-  -- Compare arrow labels using the public projections of the bundled automorphism maps.
-  dsimp only [effectiveActionFunctor]
+  -- Equality transport has identity labels, even when its endpoints have opaque descriptions.
+  have hhom {a b : ActionCategory (G ⧸ (toPermHom G X).ker) X} (h : a = b) :
+      (eqToIso h).hom.hom = 1 := by
+    subst b
+    simp
+  have hinv {a b : ActionCategory (G ⧸ (toPermHom G X).ker) X} (h : a = b) :
+      (eqToIso h).inv.hom = 1 := by
+    subst b
+    simp
+  -- Keep the functor folded while rewriting the bundled automorphism projections.
   ext : 2
   apply Functor.Elements.hom_ext
   rw [Aut.autMulEquivOfIso_apply_asIso, Functor.mapAut_apply_asIso]
-  simp
+  simp only [Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom, ActionCategory.comp_hom,
+    hhom, hinv, effectiveActionFunctor_map_hom,
+    ActionCategory.stabilizerMulEquivAut_apply_hom_hom, effectiveStabilizerMap_apply,
+    one_mul, mul_one]
 
 /-- Every arrow of the faithful action groupoid lifts, with its source and target fixed. -/
 instance effectiveActionFunctor_full : (effectiveActionFunctor G X).Full where
