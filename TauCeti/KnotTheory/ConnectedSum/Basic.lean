@@ -172,8 +172,9 @@ private theorem coe_turnOver_apply (ι : ℂ →ₗᵢ[ℝ] E)
     (turnOver ι K z : E) = (LinearMap.range ι.toLinearMap)ᗮ.reflection (K (-z)) := by
   simp [turnOver]
 
-/-- The half-turn and the antipodal parametrization together fix the great circle. -/
-private theorem reflection_greatCircle_neg (z : Circle) :
+/-- The half-turn in the plane `ι ℂ` and the antipodal parametrization `z ↦ -z` together fix the
+great circle: `ρ (ι (-z)) = ι z`. -/
+theorem reflection_greatCircle_neg (z : Circle) :
     (LinearMap.range ι.toLinearMap)ᗮ.reflection (greatCircle (n := n) ι (-z)) = ι z := by
   rw [coe_greatCircle_apply, Circle.coe_neg, map_neg, map_neg,
     Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
