@@ -136,12 +136,6 @@ private theorem linearIndependent_over_adjoin_of_linearIndependent_residue_of_or
     (P.residue_eq_zero_iff_ord_pos hx0).mpr hx
   have hxtr : Transcendental k x := P.transcendental_of_ord_ne_zero hx.ne'
   have hinj : Function.Injective (aeval x : k[X] →ₐ[k] F) := transcendental_iff_injective.mp hxtr
-  -- The coercion `𝒪_P → F` as a `k`-algebra map, used to move relations between `F` and `𝒪_P`.
-  have hcoe : ∀ (p : k[X]), ((aeval (⟨x, hxmem⟩ : P.integers) p : P.integers) : F) =
-      aeval x p := fun p ↦ by
-    have := Polynomial.aeval_algHom_apply (IsScalarTower.toAlgHom k P.integers F)
-      (⟨x, hxmem⟩ : P.integers) p
-    simpa using this.symm
   rw [← LinearIndependent.iff_fractionRing (Algebra.adjoin k {x}) k⟮x⟯]
   rw [linearIndependent_iff']
   intro s g hsum i₀ hi₀
@@ -172,7 +166,7 @@ private theorem linearIndependent_over_adjoin_of_linearIndependent_residue_of_or
   have hsumO : ∑ i ∈ s, aeval (⟨x, hxmem⟩ : P.integers) (q i) * z i = 0 := by
     apply Subtype.ext
     push_cast
-    simpa [hcoe] using hsumF
+    simpa using hsumF
   -- Reducing modulo the maximal ideal turns it into a `k`-relation between the residues.
   have hres : ∑ i ∈ s, (q i).coeff 0 • IsLocalRing.residue P.integers (z i) = 0 := by
     have := congrArg (IsLocalRing.residue P.integers) hsumO

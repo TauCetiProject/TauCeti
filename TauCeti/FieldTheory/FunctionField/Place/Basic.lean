@@ -511,6 +511,7 @@ theorem residue_eq_zero_iff_ord_pos {f : P.integers} (hf : (f : F) ≠ 0) :
   rw [IsLocalRing.residue_eq_zero_iff, P.mem_maximalIdeal_iff_ord_pos hf]
 
 /-- Evaluating a polynomial over `k` commutes with the inclusion of the valuation ring. -/
+@[simp, norm_cast]
 theorem coe_aeval_integers (p : Polynomial k) (y : P.integers) :
     ((Polynomial.aeval y p : P.integers) : F) = Polynomial.aeval (y : F) p := by
   rw [← ValuationSubring.algebraMap_apply, ← Polynomial.aeval_algebraMap_apply,

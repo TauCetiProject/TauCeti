@@ -190,12 +190,9 @@ theorem of_criticalValues_subset (hx : k⟮x⟯ = ⊤)
     (hcrit : ∀ (L : Type v) [Field L] [Algebra k L], q.criticalValues L ⊆ {0, 1}) :
     IsAlgebraicBelyiPair k F where
   isIntegrallyClosedIn := by
-    have htr : Transcendental k (aeval x q) :=
-      hq ▸ (transcendental_algebraMap_iff (algebraMap (RatFunc k) F).injective).mpr
-        RatFunc.transcendental_X
-    replace htr := (transcendental_aeval_iff.mp htr).1
     exact ((IntermediateField.equivOfEq hx).trans
-      IntermediateField.topEquiv).isIntegrallyClosedIn.mp htr.isIntegrallyClosedIn_adjoin
+      IntermediateField.topEquiv).isIntegrallyClosedIn.mp
+        (transcendental_of_aeval_eq hq).isIntegrallyClosedIn_adjoin
   ramificationIdx_eq_one {P'} hP := by
     refine Place.ramificationIdx_eq_one_of_aeval_eq hx hq
       (fun h ↦ (natDegree_pos_of_aeval_eq hq).ne' (derivative_eq_zero.mp h)) (r := X * (X - 1))
