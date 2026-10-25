@@ -23,7 +23,7 @@ be compared on an open subset and on the ambient manifold.
 ## Main declarations
 
 * `PartialDiffeomorph.restrOpen`: the restriction of a partial diffeomorphism to an open set.
-* `isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
+* `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
   diffeomorphism.
 -/
 
@@ -83,7 +83,7 @@ theorem coe_restrOpen_symm (hs : IsOpen s) :
 
 end PartialDiffeomorph
 
-section Opens
+namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
@@ -105,4 +105,4 @@ theorem isLocalDiffeomorph_subtype_val {U : TopologicalSpace.Opens M} :
         exact contMDiffWithinAt_id.congr (fun z hz ↦ e.right_inv hz) (e.right_inv hy) }
   exact Φ.isLocalDiffeomorphAt I I n (mem_univ x)
 
-end Opens
+end TauCeti
