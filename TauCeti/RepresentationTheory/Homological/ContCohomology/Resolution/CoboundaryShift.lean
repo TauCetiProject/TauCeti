@@ -99,8 +99,8 @@ private theorem shiftHomotopyLinear_lof_self (v : (resolutionX X (m + 1 + 1)).V)
         (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) (m + 1) v) =
       DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) m
         ((shiftComponent hX m f c).hom v) := by
-  simp only [shiftHomotopyLinear, LinearMap.comp_apply, DirectSum.component.lof_self]
-  rfl
+  simp only [shiftHomotopyLinear, LinearMap.comp_apply, DirectSum.component.lof_self,
+    ContinuousLinearMap.coe_coe, ContIntertwiningMap.toContinuousLinearMap_apply]
 
 private theorem shiftHomotopyLinear_lof_of_ne {n : ℕ} (hn : n ≠ m + 1)
     (v : (resolutionX X (n + 1)).V) :
@@ -166,9 +166,34 @@ private theorem shift_hom_apply (v : X.gradedResolutionModule) :
   -- `shiftHomotopy` is `shiftHomotopyLinear` (`TauCeti.discreteTopRepFunctor_map_apply`).
   rfl
 
+private theorem isHomogeneous_shift :
+    TauCeti.LinearMap.IsHomogeneous (shift hX m f c).hom.toLinearMap X.gradedResolutionPiece
+      X.gradedResolutionPiece 0 := by
+  have hD := X.isHomogeneous_gradedResolutionDifferential
+  have hh := isHomogeneous_shiftHomotopyLinear hX m f c
+  refine TauCeti.LinearMap.isHomogeneous_def.2 fun p v hv ↦ ?_
+  have h₁ := hD.map_mem (hh.map_mem hv)
+  have h₂ := hh.map_mem (hD.map_mem hv)
+  rw [neg_add_cancel_right] at h₁
+  rw [add_neg_cancel_right] at h₂
+  rw [add_zero]
+  convert add_mem (add_mem hv h₁) h₂ using 1
+  exact shift_hom_apply hX m f c v
+
 end Homotopy
 
 variable [DiscreteTopology R]
+
+omit [CompactSpace G] in
+/-- An element of a term of the resolution is invariant once its inclusion into the total
+resolution is, since the inclusion is injective. -/
+private theorem resolutionX_ρ_eq_of_gradedResolutionTopRep_ρ_lof_eq {n : ℕ}
+    {v : (resolutionX X (n + 1)).V} {g : G}
+    (h : X.gradedResolutionTopRep.ρ g (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n v) =
+      DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n v) :
+    (resolutionX X (n + 1)).ρ g v = v := by
+  rw [gradedResolutionTopRep_ρ_lof] at h
+  exact DirectSum.of_injective (β := fun n ↦ (resolutionX X (n + 1)).V) n h
 
 /-- **Realizing a coboundary shift by a chain endomorphism.** Let `z` and `w` be homogeneous
 elements of degrees `m + 1` and `m` of the total coinduced resolution of a smooth discrete
@@ -191,9 +216,7 @@ theorem exists_gradedResolutionTopRep_hom_apply_eq_add_of_apply_eq_one
   obtain ⟨z₀, rfl⟩ := hz
   obtain ⟨w₀, rfl⟩ := hw
   let c : (resolutionX X m).V := (w₀ : C(G, (resolutionX X m).V)) 1
-  have hD := X.isHomogeneous_gradedResolutionDifferential
-  have hh := isHomogeneous_shiftHomotopyLinear hX m f c
-  refine ⟨shift hX m f c, ?_, fun x ↦ ?_, ?_, ?_⟩
+  refine ⟨shift hX m f c, ?_, fun x ↦ ?_, isHomogeneous_shift hX m f c, ?_⟩
   · have key (v : X.gradedResolutionModule) :
         (shift hX m f c).hom (X.gradedResolutionTopRepDifferential.hom v) =
           X.gradedResolutionTopRepDifferential.hom ((shift hX m f c).hom v) := by
@@ -207,23 +230,10 @@ theorem exists_gradedResolutionTopRep_hom_apply_eq_add_of_apply_eq_one
   · rw [shift_hom_apply, gradedResolutionDifferential_augmentation, map_zero, add_zero,
       shiftHomotopyLinear_eq_zero_of_mem hX m f c (by push_cast; omega)
         (X.gradedResolutionAugmentation_mem x), map_zero, add_zero]
-  · refine TauCeti.LinearMap.isHomogeneous_def.2 fun p v hv ↦ ?_
-    have h₁ := hD.map_mem (hh.map_mem hv)
-    have h₂ := hh.map_mem (hD.map_mem hv)
-    rw [neg_add_cancel_right] at h₁
-    rw [add_neg_cancel_right] at h₂
-    rw [add_zero]
-    convert add_mem (add_mem hv h₁) h₂ using 1
-    exact shift_hom_apply hX m f c v
-  · -- `z₀` and `w₀` are invariant, since the inclusions of the terms are injective.
-    have hz₀ (g : G) : (resolutionX X (m + 1 + 1)).ρ g z₀ = z₀ := by
-      have h := hzinv g
-      rw [gradedResolutionTopRep_ρ_lof] at h
-      exact DirectSum.of_injective (β := fun n ↦ (resolutionX X (n + 1)).V) (m + 1) h
-    have hw₀ (g : G) : (resolutionX X (m + 1)).ρ g w₀ = w₀ := by
-      have h := hwinv g
-      rw [gradedResolutionTopRep_ρ_lof] at h
-      exact DirectSum.of_injective (β := fun n ↦ (resolutionX X (n + 1)).V) m h
+  · have hz₀ (g : G) : (resolutionX X (m + 1 + 1)).ρ g z₀ = z₀ :=
+      resolutionX_ρ_eq_of_gradedResolutionTopRep_ρ_lof_eq (hzinv g)
+    have hw₀ (g : G) : (resolutionX X (m + 1)).ρ g w₀ = w₀ :=
+      resolutionX_ρ_eq_of_gradedResolutionTopRep_ρ_lof_eq (hwinv g)
     -- `h z = w`: the lift of `v ↦ f v • w 1` takes `z₀` to `x ↦ x • w₀ 1 = w₀ x`.
     have hhz : (shiftComponent hX m f c).hom z₀ = w₀ := by
       ext x : 1
