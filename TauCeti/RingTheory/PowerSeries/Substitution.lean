@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
 -- Proof-only: lowest homogeneous components of powers.
 import TauCeti.RingTheory.MvPowerSeries.Order
+-- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
+import TauCeti.RingTheory.PowerSeries.Evaluation
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -179,9 +181,8 @@ theorem coeff_one_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) (f : R⟦X⟧)
 substitution `f ↦ f (σ X)`. No continuity hypothesis is needed. -/
 theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : HasSubst (σ X)) :
     σ = substAlgHom hσ := by
-  have hpoly : σ.comp (Polynomial.coeToPowerSeries.algHom R) =
-      (substAlgHom hσ).comp (Polynomial.coeToPowerSeries.algHom R) :=
-    Polynomial.algHom_ext (by simp [substAlgHom_X])
+  have hpoly (g : Polynomial R) : σ (g : R⟦X⟧) = substAlgHom hσ (g : R⟦X⟧) := by
+    rw [algHom_coe_eq_aeval, algHom_coe_eq_aeval, substAlgHom_X]
   refine AlgHom.ext fun f ↦ ext fun n ↦ ?_
   obtain ⟨m, hm⟩ := (hσ.eventually_coeff_pow_eq_zero n).exists_forall_of_atTop
   have key (g : S⟦X⟧) : coeff n (σ X ^ m * g) = 0 := by
@@ -193,7 +194,7 @@ theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : HasSubst
   -- zero coefficients through degree `n` after either map is applied.
   rw [eq_X_pow_mul_shift_add_trunc m f]
   simp only [map_add, map_mul, map_pow, substAlgHom_X, key, zero_add]
-  exact congr(coeff n ($hpoly (trunc m f)))
+  rw [hpoly]
 
 /-- The first-order Taylor formula: substituting a square-zero perturbation `X + h` of `X` gives
 `f (X + h) = f + h f'`. -/

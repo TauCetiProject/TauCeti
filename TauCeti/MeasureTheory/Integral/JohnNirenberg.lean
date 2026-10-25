@@ -787,7 +787,7 @@ private theorem norm_setAverage_preimage_closedBall_sub_setAverage_ball_le [None
   have hosc : ⨍⁻ x in Q, ‖f x - ⨍ y in Q, f y ∂μ‖ₑ ∂μ ≤ M' :=
     (setLAverage_preimage_closedBall_le he hf hM hr₀ subset_rfl).trans hM'
   have h : ‖(⨍ y in B, f y ∂μ) - ⨍ y in Q, f y ∂μ‖ₑ ≤ ENNReal.ofReal (s ^ n) * M' :=
-    (enorm_setAverage_sub_le_of_subset hBQ hB0 hQtop (hf.mono_set hBR) _).trans <| by
+    (enorm_setAverage_sub_le_of_subset hBQ hB0 hQtop (hf.mono_set hBR).1 _).trans <| by
       gcongr
       exact ENNReal.div_le_of_le_mul hQB
   rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal,
