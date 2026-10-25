@@ -54,8 +54,8 @@ On two strands the trace tensors are the **trace line** `TauCeti.symplecticTrace
 the invariant bivector, on which the symplectic group acts trivially
 (`TauCeti.symplecticTraceTensors_two`), and the splitting reads `V ⊗ V = ker (cap) ⊕ k · cup`.
 There it needs only the loop value `-2n` to be invertible, `cap ∘ cup` being multiplication by it.
-For `n = 1`, where the symplectic group is `SL₂` and the alternating form is the determinant, the
-kernel of the cap is the symmetric square of `k²` and the trace line is spanned by
+For `n = 1`, where the symplectic group is `SL₂` and the alternating form is minus the determinant,
+the kernel of the cap is the symmetric square of `k²` and the trace line is spanned by
 `e₁ ⊗ e₂ - e₂ ⊗ e₁`.
 
 ## Main definitions
