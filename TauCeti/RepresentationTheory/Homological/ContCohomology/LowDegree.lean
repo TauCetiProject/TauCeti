@@ -451,8 +451,9 @@ theorem explicitCoeff0_comp {N : Type*} [AddCommGroup N] [DistribMulAction G N]
 /-- A bijective equivariant homomorphism of coefficients induces a bijection on degree-zero
 cohomology. -/
 theorem explicitCoeff0_bijective {N : Type*} [AddCommGroup N] [DistribMulAction G N]
-    {f : M →+[G] N} (hf : Function.Bijective f) : Function.Bijective (explicitCoeff0 G M f) :=
-  explicitMap0_bijective G M (MonoidHom.id G) Function.surjective_id f.toAddMonoidHom hf
+    {f : M →+[G] N} (hf : Function.Bijective f) : Function.Bijective (explicitCoeff0 G M f) := by
+  rw [explicitCoeff0_eq_explicitMap0]
+  exact explicitMap0_bijective G M (MonoidHom.id G) Function.surjective_id f.toAddMonoidHom hf
     (fun g m => f.map_smul g m)
 
 end CompatiblePairDegreeZero
