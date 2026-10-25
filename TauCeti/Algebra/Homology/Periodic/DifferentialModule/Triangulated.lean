@@ -192,15 +192,16 @@ theorem stableToHomotopy_commShiftIso (n : ℤ) :
       ExactStructure.differentialModule_split_isFrobenius (hP)
     letI := PeriodicComplex.stableToHomotopyCommShift C 1
     letI := stableToHomotopyCommShift C
-    (stableToHomotopy C).commShiftIso n =
-      (Functor.associator _ _ _).symm ≪≫
-      Functor.isoWhiskerRight
-        ((stableOnePeriodicComplexEquivalence C).functor.commShiftIso n) _ ≪≫
-      Functor.associator _ _ _ ≪≫
-      Functor.isoWhiskerLeft _
-        ((ExactStructure.homologicalComplexSplitStableToHomotopy C
-          (ComplexShape.up (ZMod 1)) (fun i ↦ ⟨i + 1, rfl⟩)).commShiftIso n) ≪≫
-      (Functor.associator _ _ _).symm :=
+    (stableToHomotopy C).commShiftIso n = (by
+      unfold stableToHomotopy
+      exact (Functor.associator _ _ _).symm ≪≫
+        Functor.isoWhiskerRight
+          ((stableOnePeriodicComplexEquivalence C).functor.commShiftIso n) _ ≪≫
+        Functor.associator _ _ _ ≪≫
+        Functor.isoWhiskerLeft _
+          ((ExactStructure.homologicalComplexSplitStableToHomotopy C
+            (ComplexShape.up (ZMod 1)) (fun i ↦ ⟨i + 1, rfl⟩)).commShiftIso n) ≪≫
+        (Functor.associator _ _ _).symm) :=
   -- The composite CommShift instance stores precisely this chain of associators and factors.
   (rfl)
 
