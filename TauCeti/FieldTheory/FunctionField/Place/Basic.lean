@@ -517,7 +517,9 @@ theorem coe_aeval_integers (p : Polynomial k) (y : P.integers) :
   rw [← ValuationSubring.algebraMap_apply, ← Polynomial.aeval_algebraMap_apply,
     ValuationSubring.algebraMap_apply]
 
-/-- Evaluating a polynomial over `k` commutes with evaluation at a place. -/
+/-- Evaluating a polynomial over `k` commutes with evaluation at a place. The low simp priority
+lets `TauCeti.Place.residue_aeval_of_residue_eq_zero` fire first when it applies. -/
+@[simp low]
 theorem residue_aeval (p : Polynomial k) (y : P.integers) :
     IsLocalRing.residue P.integers (Polynomial.aeval y p) =
       Polynomial.aeval (IsLocalRing.residue P.integers y) p := by
