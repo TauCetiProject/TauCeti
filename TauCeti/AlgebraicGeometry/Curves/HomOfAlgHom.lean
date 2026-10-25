@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Birational.RationalMap
+public import TauCeti.AlgebraicGeometry.Birational.AlgHom
 public import TauCeti.AlgebraicGeometry.Curves.Category
 
 /-!
@@ -15,7 +15,8 @@ For regular proper curves `X` and `Y` over a field `k`, a `k`-embedding
 `φ : k(Y) → k(X)` determines a unique dominant `k`-morphism `X ⟶ Y`. The local rings of `X`
 are valuation rings and `Y` is proper, so the morphism through the generic point extends to `X`.
 
-`RegularProperCurveCat.homOfAlgHom` constructs this morphism for arbitrary regular proper curves.
+`RegularProperCurveCat.homOfAlgHom` constructs this morphism for arbitrary regular proper curves,
+as `AlgebraicGeometry.Scheme.homOfFunctionFieldAlgHom`.
 The lemmas `functionFieldAlgHom_homOfAlgHom` and `homOfAlgHom_functionFieldAlgHom` show that this
 construction and pullback of rational functions are inverse. The two-chart model construction and
 anti-equivalence are in `TauCeti.AlgebraicGeometry.Curves.TwoChartModel.AntiEquivalence`.
@@ -48,36 +49,21 @@ function fields: the unique dominant `k`-morphism `X ⟶ Y` whose pullback of ra
 `φ` (`functionFieldAlgHom_homOfAlgHom`, `homOfAlgHom_functionFieldAlgHom`). -/
 noncomputable def homOfAlgHom (φ : Y.toScheme.functionField →ₐ[k] X.toScheme.functionField) :
     X ⟶ Y :=
-  haveI hX := Scheme.IsCurveOver.valuationRing_stalk k X.toScheme
-  haveI hφ := Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over k
-    (CommRingCat.ofHom φ.toRingHom) φ.commutes
-  { hom := Scheme.homOfFunctionField hX _ hφ
-    isOver := Scheme.isOver_homOfFunctionField hX _ hφ
-    isDominant := Scheme.Hom.isDominant_of_SpecMap_fromSpecStalk _ _
-      (Scheme.fromSpecStalk_homOfFunctionField hX _ hφ).symm }
+  ⟨Scheme.homOfFunctionFieldAlgHom (Scheme.IsCurveOver.valuationRing_stalk k X.toScheme) φ⟩
 
 /-- **The pullback of rational functions along `homOfAlgHom φ` is `φ`.** -/
 @[simp]
 theorem functionFieldAlgHom_homOfAlgHom
     (φ : Y.toScheme.functionField →ₐ[k] X.toScheme.functionField) :
-    (homOfAlgHom φ).hom.functionFieldAlgHom k = φ := by
-  have hX := Scheme.IsCurveOver.valuationRing_stalk k X.toScheme
-  have h := ((Scheme.Hom.eq_functionFieldMap_iff (homOfAlgHom φ).hom
-    (CommRingCat.ofHom φ.toRingHom)).mpr
-    (Scheme.fromSpecStalk_homOfFunctionField hX _ _).symm).symm
-  ext x
-  rw [Scheme.Hom.functionFieldAlgHom_apply]
-  exact congr($h x)
+    (homOfAlgHom φ).hom.functionFieldAlgHom k = φ :=
+  Scheme.functionFieldAlgHom_homOfFunctionFieldAlgHom ..
 
 /-- **A dominant `k`-morphism is induced by its pullback of rational functions**: `f : X ⟶ Y` is
 `homOfAlgHom` of `f^* : k(Y) → k(X)`. -/
 @[simp]
 theorem homOfAlgHom_functionFieldAlgHom (f : X ⟶ Y) :
-    homOfAlgHom (f.hom.functionFieldAlgHom k) = f := by
-  refine hom_ext (Scheme.Hom.ext_of_functionFieldMap_eq (Spec (.of k)) ?_)
-  ext z
-  have h := DFunLike.congr_fun (functionFieldAlgHom_homOfAlgHom (f.hom.functionFieldAlgHom k)) z
-  rwa [Scheme.Hom.functionFieldAlgHom_apply, Scheme.Hom.functionFieldAlgHom_apply] at h
+    homOfAlgHom (f.hom.functionFieldAlgHom k) = f :=
+  hom_ext (Scheme.homOfFunctionFieldAlgHom_functionFieldAlgHom ..)
 
 /-- A dominant `k`-morphism of regular proper curves is determined by its pullback of rational
 functions. -/

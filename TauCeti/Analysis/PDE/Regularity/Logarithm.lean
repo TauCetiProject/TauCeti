@@ -137,7 +137,7 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le :
   intro mu _ Omega a lam Lam u ε x₀ r h ha hu hε hεu hr hball
   have hlam := h.pos
   -- A cutoff equal to `1` on `B(x₀, r)`, supported in `closedBall x₀ (3r/2)`, with `‖∇ψ‖ ≤ 2c/r`.
-  obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg⟩ := hcut x₀ hr (by linarith : r < 3 * r / 2)
+  obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le (by linarith : r < 3 * r / 2)
   have hR : 3 * r / 2 - r = r / 2 := by ring
   rw [hR] at hψg
   have hclosed : Metric.closedBall x₀ (3 * r / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=

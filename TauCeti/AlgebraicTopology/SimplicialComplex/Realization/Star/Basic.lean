@@ -134,6 +134,13 @@ theorem isCompact_geometricLink (hc : IsCompact (closedStarRealization K {v})) :
   exact hc.inter_left
     (isClosed_eq ((continuous_apply v).comp (continuous_realization_coe K)) continuous_const)
 
+/-- The coordinate vectors of the geometric link form a compact set whenever its closed star is
+compact. -/
+theorem isCompact_range_geometricLink (hc : IsCompact (closedStarRealization K {v})) :
+    IsCompact (range fun y : geometricLink K v => (y.1.1 : ι → ℝ)) := by
+  have := isCompact_iff_compactSpace.mp (K.isCompact_geometricLink v hc)
+  exact isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
+
 /-- The apex coordinate of a geometric link point is zero. -/
 @[simp]
 theorem geometricLink_apex (x : geometricLink K v) : x.1.1 v = 0 :=
@@ -164,6 +171,15 @@ def starApex : closedStarRealization K {v} :=
 /-- The underlying realization point of the closed-star apex is its vertex. -/
 @[simp]
 theorem starApex_val : (starApex K v).1 = vertex K v := (rfl)
+
+/-- A point of the closed star is the apex exactly when its apex coordinate is one. -/
+theorem eq_starApex_iff (x : closedStarRealization K {v}) : x = starApex K v ↔ x.1.1 v = 1 := by
+  rw [← Subtype.coe_inj, starApex_val, Realization.eq_vertex_iff]
+
+/-- A point of the closed star whose apex coordinate is not less than one is the apex. -/
+theorem eq_starApex_of_not_lt {x : closedStarRealization K {v}} (hx : ¬x.1.1 v < 1) :
+    x = starApex K v :=
+  (eq_starApex_iff K v x).mpr (le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx))
 
 /-- The punctured geometric closed star, expressed by the apex coordinate being less than one. -/
 def puncturedClosedStar : Set (Realization K) :=

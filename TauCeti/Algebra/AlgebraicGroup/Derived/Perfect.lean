@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Abelianization
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
+import TauCeti.RingTheory.FiniteType.PointSeparation
 
 /-!
 # Perfect affine groups and commutative images
@@ -20,6 +21,12 @@ derived subgroup, not perfectness of the group of rational points.
 The converse uses the affine abelianization: its coordinate map is trivial, so its kernel
 is the whole group. The exact-kernel theorem for coinvariant projections identifies this
 kernel with the derived subgroup, including its scheme structure.
+
+A separate criterion needs only reducedness: a finite-type affine group with reduced coordinate
+ring equals its derived closed subgroup as soon as its group of points with values in one
+algebraically closed extension field is perfect, because such points separate functions. This is
+how scheme-theoretic perfectness of concrete matrix groups is deduced from perfectness of their
+abstract groups of geometric points.
 
 ## References
 
@@ -37,8 +44,11 @@ open TauCeti TauCeti.CommHopfAlgCat
 
 universe u v
 
-variable {k : Type u} [Field k] (H : _root_.CommHopfAlgCat.{v} k)
-  [Algebra.FiniteType k H] [Algebra.IsGeometricallyReduced k H]
+variable {k : Type u} [Field k] (H : _root_.CommHopfAlgCat.{v} k) [Algebra.FiniteType k H]
+
+section GeometricallyReduced
+
+variable [Algebra.IsGeometricallyReduced k H]
 
 /-- A geometrically reduced finite-type affine group equals its derived closed subgroup
 exactly when all its homomorphisms to commutative affine groups are trivial.
@@ -67,5 +77,34 @@ theorem derivedDefiningIdeal_eq_bot_iff_forall_hom_eq_unit_comp_counit :
     apply le_antisymm _ bot_le
     rw [← HopfIdeal.toIdeal_le_toIdeal, HopfIdeal.bot_toIdeal]
     exact hker
+
+end GeometricallyReduced
+
+section Reduced
+
+variable {H} [IsReduced H]
+
+/-- A reduced finite-type affine group equals its derived closed subgroup if its group of points
+with values in some algebraically closed extension field is perfect. The derived defining ideal
+is then zero, so the equality retains the full scheme structure. -/
+theorem derivedDefiningIdeal_eq_bot_of_commutator_eq_top
+    {K : Type*} [Field K] [Algebra k K] [IsAlgClosed K]
+    (hK : commutator (WithConv (H →ₐ[k] K)) = ⊤) :
+    derivedDefiningIdeal (R := k) H = ⊥ := by
+  apply le_bot_iff.mp
+  rw [← HopfIdeal.toIdeal_le_toIdeal, HopfIdeal.bot_toIdeal]
+  intro x hx
+  rw [Ideal.mem_bot]
+  apply eq_of_forall_algHom_apply_eq (k := k) (K := K)
+  intro f
+  rw [map_zero]
+  have hf : WithConv.toConv f ∈ commutator (WithConv (H →ₐ[k] K)) := by
+    rw [hK]
+    trivial
+  exact (mem_quotientPointsSubgroup_iff _ _ _ _).mp
+    (commutator_le_quotientPointsSubgroup_of_le_derivedDefiningIdeal H _ le_rfl
+      (CommAlgCat.of k K) hf) x hx
+
+end Reduced
 
 end CommHopfAlgCat

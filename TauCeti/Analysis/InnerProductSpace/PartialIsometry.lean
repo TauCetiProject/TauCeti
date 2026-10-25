@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Star.PartialIsometry
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Partial isometries between Hilbert spaces
@@ -62,30 +63,7 @@ namespace ContinuousLinearMap
 
 section Complete
 
-variable [CompleteSpace E] {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-
-/-- A bounded operator does not see the component of a vector in its kernel: it agrees with its
-composition with the orthogonal projection onto the orthogonal complement of its kernel. -/
-theorem apply_starProjection_orthogonal_ker (u : E →L[𝕜] G) (x : E) :
-    u (u.kerᗮ.starProjection x) = u x := by
-  have hx : x - u.kerᗮ.starProjection x ∈ u.ker :=
-    (Submodule.orthogonal_orthogonal u.ker).le (Submodule.sub_starProjection_mem_orthogonal x)
-  rw [LinearMap.mem_ker, coe_coe, map_sub, sub_eq_zero] at hx
-  exact hx.symm
-
-/-- Composing a bounded operator with the orthogonal projection onto the orthogonal complement of
-its kernel does not change it. -/
-@[simp]
-theorem comp_starProjection_orthogonal_ker (u : E →L[𝕜] G) :
-    u ∘L u.kerᗮ.starProjection = u :=
-  ext (apply_starProjection_orthogonal_ker u)
-
-variable [CompleteSpace F] {u : E →L[𝕜] F}
-
-/-- The adjoint of a bounded operator takes values in the orthogonal complement of its kernel. -/
-theorem adjoint_apply_mem_orthogonal_ker (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
-  rw [orthogonal_ker]
-  exact Submodule.le_topologicalClosure _ ⟨y, rfl⟩
+variable [CompleteSpace E] [CompleteSpace F] {u : E →L[𝕜] F}
 
 /-- A bounded operator `u : E →L[𝕜] F` is a **partial isometry** when `u u† u = u`. -/
 def IsPartialIsometry (u : E →L[𝕜] F) : Prop :=
@@ -135,7 +113,8 @@ theorem isPartialIsometry_iff_adjoint_apply_apply :
     exact sub_eq_zero.mp <| (Submodule.mem_bot 𝕜).mp <|
       u.ker.inf_orthogonal_eq_bot ▸ ⟨hker, hmem⟩
   · ext x
-    rw [comp_apply, comp_apply, ← u.apply_starProjection_orthogonal_ker x,
+    rw [comp_apply, comp_apply,
+      ← DFunLike.congr_fun u.comp_starProjection_orthogonal_ker x, comp_apply,
       h _ (Submodule.starProjection_apply_mem _ x)]
 
 /-- A bounded partial isometry `u` satisfies `u† u x = x` on its initial space `(ker u)ᗮ`. -/
@@ -148,7 +127,7 @@ its initial space `(ker u)ᗮ`. -/
 theorem IsPartialIsometry.adjoint_comp_self_eq_starProjection (hu : u.IsPartialIsometry) :
     u† ∘L u = u.kerᗮ.starProjection := by
   ext x
-  rw [comp_apply, ← u.apply_starProjection_orthogonal_ker x,
+  rw [comp_apply, ← DFunLike.congr_fun u.comp_starProjection_orthogonal_ker x, comp_apply,
     hu.adjoint_apply_apply (Submodule.starProjection_apply_mem _ x)]
 
 /-- A bounded operator is a partial isometry iff `u† u` is a star projection. -/

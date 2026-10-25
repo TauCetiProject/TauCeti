@@ -37,17 +37,25 @@ Points to the left of `a` are sampled at `a` when `0 < δ`. -/
 def intervalStep (a δ : ℝ) (g : ℝ → E) (t : ℝ) : E :=
   g (a + (⌊(t - a) / δ⌋₊ : ℝ) * δ)
 
-private theorem measurable_sample (a δ : ℝ) :
-    Measurable (fun t : ℝ ↦ a + (⌊(t - a) / δ⌋₊ : ℝ) * δ) := by
-  fun_prop
-
 variable [NormedAddCommGroup E] in
-/-- Sampling a bounded continuous function gives a step function integrable on a finite interval. -/
-theorem integrableOn_intervalStep (a b δ : ℝ) (g : ℝ →ᵇ E) :
+/-- Sampling any function gives a step function integrable on a finite interval. -/
+theorem integrableOn_intervalStep (a b δ : ℝ) (g : ℝ → E) :
     IntegrableOn (intervalStep a δ g) (Ioc a b) := by
-  apply (integrable_const ‖g‖).mono'
-    (g.continuous.stronglyMeasurable.comp_measurable (measurable_sample a δ)).aestronglyMeasurable
-  exact Filter.Eventually.of_forall fun t ↦ g.norm_coe_le_norm _
+  have hm : StronglyMeasurable (intervalStep a δ g) := by
+    unfold intervalStep
+    exact (StronglyMeasurable.of_discrete (f := fun n : ℕ ↦ g (a + n * δ))).comp_measurable
+      (by fun_prop : Measurable fun t : ℝ ↦ ⌊(t - a) / δ⌋₊)
+  have hfinite : (intervalStep a δ g '' Icc a b).Finite := by
+    have h := (Nat.floor_mono.map_bddAbove
+      (isCompact_Icc.bddAbove_image (by fun_prop : ContinuousOn (fun t : ℝ ↦ (t - a) / δ)
+        (Icc a b)))).finite
+    unfold intervalStep
+    simpa only [image_image, Function.comp_def] using
+      h.image (fun n : ℕ ↦ g (a + n * δ))
+  obtain ⟨C, hC⟩ := hfinite.isBounded.exists_norm_le
+  apply volume.integrableOn_of_bounded measure_Ioc_lt_top.ne hm.aestronglyMeasurable
+  exact (ae_restrict_mem measurableSet_Ioc).mono fun t ht ↦
+    hC _ (mem_image_of_mem _ ⟨ht.1.le, ht.2⟩)
 
 private theorem sample_bounds {a δ t : ℝ} (hδ : 0 < δ) (hat : a ≤ t) :
     a ≤ a + (⌊(t - a) / δ⌋₊ : ℝ) * δ ∧

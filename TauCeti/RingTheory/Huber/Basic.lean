@@ -14,7 +14,7 @@ import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import TauCeti.RingTheory.Ideal.PowerStabilization
 import TauCeti.RingTheory.Subring.SpanSingleton
 public import TauCeti.Topology.Algebra.Group.FirstCountable
-public import TauCeti.Topology.Algebra.TopologicallyNilpotent
+public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
 # Huber rings and Tate rings
@@ -42,6 +42,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   map.
 * `TauCeti.Huber.PairOfDefinition.quotient`: the image of a pair of definition in a quotient
   ring `A ⧸ J`.
+* `TauCeti.Huber.PairOfDefinition.comap`: the pullback of a pair of definition along an
+  embedding whose image contains the ring of definition.
 
 ## Main results
 
@@ -76,6 +78,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 * `TauCeti.Huber.PairOfDefinition.map_idealImage` and
   `TauCeti.Huber.PairOfDefinition.quotient_idealImage`: the neighbourhood basis of zero of the
   image (resp. quotient) pair of definition is the image of that of the original pair.
+* `TauCeti.Huber.PairOfDefinition.comap_idealImage`: the neighbourhood basis of zero of the
+  pullback pair of definition is the preimage of that of the original pair.
 * `TauCeti.Huber.PairOfDefinition.isBounded_ringOfDefinition`: a ring of definition is bounded,
   hence `A₀ ≤ A°` (`TauCeti.Huber.PairOfDefinition.le_powerBoundedSubring`). This is the
   boundedness half of Wedhorn Corollary 6.4.
@@ -593,6 +597,87 @@ theorem quotient_idealImage [IsTopologicalRing A] (P : PairOfDefinition A) (J : 
     (n : ℕ) :
     (P.quotient J).idealImage n = (P.idealImage n).map (Ideal.Quotient.mk J).toAddMonoidHom :=
   P.map_idealImage _ _ n
+
+/-- The identification of `f⁻¹(A₀)` with `A₀` induced by an injective `f` whose image contains
+the ring of definition `A₀`. -/
+private noncomputable def comapRingOfDefinitionEquiv (P : PairOfDefinition A) {B : Type*}
+    [CommRing B] (f : B →+* A) (hf : Function.Injective f) (hP : P.ringOfDefinition ≤ f.range) :
+    P.ringOfDefinition.comap f ≃+* P.ringOfDefinition :=
+  (Subring.equivMapOfInjective _ f hf).trans
+    (RingEquiv.subringCongr (Subring.map_comap_eq_self hP))
+
+/-- The identification `f⁻¹(A₀) ≃+* A₀` acts as `f` on underlying elements. -/
+private theorem coe_comapRingOfDefinitionEquiv_apply (P : PairOfDefinition A) {B : Type*}
+    [CommRing B] (f : B →+* A) (hf : Function.Injective f) (hP : P.ringOfDefinition ≤ f.range)
+    (b : P.ringOfDefinition.comap f) :
+    (P.comapRingOfDefinitionEquiv f hf hP b : A) = f b :=
+  -- Both `Subring.equivMapOfInjective` and `RingEquiv.subringCongr` act as the identity on the
+  -- underlying element in `A`, so this holds by unfolding them.
+  rfl
+
+/-- The pullback of a pair of definition along an embedding `f : B →+* A` whose image
+contains the ring of definition: its ring of definition is `f⁻¹(A₀)`, which `f` identifies with
+`A₀` as a topological ring, and its ideal of definition is the preimage of `I` under that
+identification (`TauCeti.Huber.PairOfDefinition.mem_comap_idealOfDefinition`). -/
+noncomputable def comap [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A) (hf : IsEmbedding f)
+    (hP : P.ringOfDefinition ≤ f.range) : PairOfDefinition B :=
+  let e := P.comapRingOfDefinitionEquiv f hf.injective hP
+  have he : IsInducing e :=
+    (hf.isInducing.comp IsInducing.subtypeVal).codRestrict fun b ↦ b.2
+  { ringOfDefinition := P.ringOfDefinition.comap f
+    isOpen_ringOfDefinition := P.isOpen_ringOfDefinition.preimage hf.continuous
+    idealOfDefinition := P.idealOfDefinition.comap e
+    fg_idealOfDefinition := by
+      rw [← Ideal.map_symm]
+      exact P.fg_idealOfDefinition.map e.symm.toRingHom
+    isAdic_idealOfDefinition := IsAdic.comap e he P.isAdic_idealOfDefinition }
+
+/-- The ring of definition of the pullback pair of definition is the preimage of the original
+one. -/
+@[simp]
+theorem comap_ringOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A)
+    (hf : IsEmbedding f) (hP : P.ringOfDefinition ≤ f.range) :
+    (P.comap f hf hP).ringOfDefinition = P.ringOfDefinition.comap f :=
+  (rfl)
+
+/-- An element of the ring of definition of the pullback pair of definition lies in its ideal of
+definition exactly when its image lies in the original ideal of definition. -/
+@[simp]
+theorem mem_comap_idealOfDefinition [IsTopologicalRing A] {B : Type*} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A)
+    (hf : IsEmbedding f) (hP : P.ringOfDefinition ≤ f.range)
+    {b : (P.comap f hf hP).ringOfDefinition} :
+    b ∈ (P.comap f hf hP).idealOfDefinition ↔
+      (⟨f b, Subring.mem_comap.mp (P.comap_ringOfDefinition f hf hP ▸ b.2)⟩ :
+        P.ringOfDefinition) ∈ P.idealOfDefinition :=
+  Ideal.mem_comap.trans <| Iff.of_eq <| congrArg (· ∈ P.idealOfDefinition) <| Subtype.ext <|
+    P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP b
+
+/-- **The neighbourhood basis of the pullback pair is the preimage of the original one**: the
+image in `B` of the `n`-th power of the ideal of definition of `P.comap f hf hP` is the preimage
+of `P.idealImage n` under `f`. -/
+@[simp]
+theorem comap_idealImage [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] (P : PairOfDefinition A) (f : B →+* A) (hf : IsEmbedding f)
+    (hP : P.ringOfDefinition ≤ f.range) (n : ℕ) :
+    (P.comap f hf hP).idealImage n = (P.idealImage n).comap (f : B →+ A) := by
+  let e : (P.comap f hf hP).ringOfDefinition ≃+* P.ringOfDefinition :=
+    P.comapRingOfDefinitionEquiv f hf.injective hP
+  -- The ideal of definition of the pullback is, by construction, the preimage under `e`.
+  have hI : (P.comap f hf hP).idealOfDefinition = P.idealOfDefinition.comap e := rfl
+  ext x
+  simp only [mem_idealImage, AddSubgroup.mem_comap, AddMonoidHom.coe_ofClass]
+  rw [hI, ← comap_pow_of_equiv]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨e y, hy, P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP y⟩
+  · rintro ⟨z, hz, hzx⟩
+    have hx : f x ∈ P.ringOfDefinition := hzx ▸ z.2
+    have hez : e ⟨x, hx⟩ = z := Subtype.ext <|
+      (P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP ⟨x, hx⟩).trans hzx.symm
+    exact ⟨⟨x, hx⟩, by rwa [Ideal.mem_comap, hez], rfl⟩
 
 
 end PairOfDefinition

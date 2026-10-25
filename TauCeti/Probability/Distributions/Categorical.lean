@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Multinomial.Measurability
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.StdSimplex
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 import TauCeti.Probability.Distributions.Multinomial.Transforms
 import TauCeti.MeasureTheory.Measure.Dirac
@@ -19,6 +21,9 @@ A probability vector `p : Convexity.StdSimplex ℝ≥0 ι` determines the catego
 definition, its singleton masses and finite-sum integration formula, and measurability in the
 probability vector.
 
+With the coordinate topology on the finite simplex, the categorical law is weakly continuous
+on the full simplex, including zero weights.
+
 Categorical laws are functorial in the category type: mapping categories along `f : ι → κ`
 adds the weights over the fibres of `f`, exactly as `Convexity.StdSimplex.map` does.  Encoding a
 category `i` by the one-hot count vector `Pi.single i 1` identifies the categorical law with the
@@ -31,6 +36,8 @@ connect them to the existing multinomial API.
 * `TauCeti.Probability.categoricalMeasure_singleton` gives its masses;
 * `TauCeti.Probability.integral_categoricalMeasure` evaluates integrals as finite weighted sums;
 * `TauCeti.Probability.measurable_categoricalMeasure` proves parameter measurability;
+* `TauCeti.Probability.continuous_categoricalMeasure` proves weak continuity on the full simplex,
+  including zero weights;
 * `TauCeti.Probability.map_categoricalMeasure` aggregates categories;
 * `TauCeti.Probability.map_piSingle_categoricalMeasure` identifies one-hot encoding with a
   one-trial multinomial law.
@@ -112,6 +119,28 @@ theorem measurable_categoricalMeasure :
         ((measurable_pi_apply i).comp StdSimplex.measurable_toFun_comp_weights))
 
 end Measurability
+
+section Continuity
+
+variable [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
+  [TopologicalSpace I] [OpensMeasurableSpace I]
+
+/-- Categorical laws vary weakly continuously with all their weights, including zero weights. -/
+theorem continuous_categoricalMeasure :
+    Continuous (fun p : StdSimplex ℝ≥0 I ↦ (categoricalMeasure p).toProbabilityMeasure) := by
+  apply ProbabilityMeasure.continuous_iff_forall_continuous_integral.2
+  intro f
+  simp only [Measure.coe_toProbabilityMeasure, integral_categoricalMeasure, smul_eq_mul]
+  fun_prop
+
+/-- A continuous probability vector gives a weakly continuous categorical family. -/
+@[fun_prop]
+theorem _root_.Continuous.categoricalMeasure {X : Type*} [TopologicalSpace X]
+    {p : X → StdSimplex ℝ≥0 I} (hp : Continuous p) :
+    Continuous (fun x ↦ (categoricalMeasure (p x)).toProbabilityMeasure) :=
+  continuous_categoricalMeasure.comp hp
+
+end Continuity
 
 section Aggregation
 

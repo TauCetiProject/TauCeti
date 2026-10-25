@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Abelian
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Coproduct
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Triangulated
 public import TauCeti.CategoryTheory.Triangulated.LocalizingClosure
 
@@ -49,6 +50,8 @@ particular its preimage in the closed category is extension-closed in the sense 
   `TauCeti.CurvedDGRightModuleCat.prop_X₁_of_shortExact`: an isomorphism-closed triangulated
   subcategory containing all totalizations is closed under extensions, cokernels of
   monomorphisms and kernels of epimorphisms.
+* `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_le_coacyclic`: absolutely acyclic modules are
+  coacyclic, because the curved homotopy category has coproducts.
 * `TauCeti.CurvedDGRightModuleCat.isClosedUnderExtensions_inverseImage`: the same closure under
   extensions, as Mathlib's `CategoryTheory.ObjectProperty.IsClosedUnderExtensions`; instances
   record it for the three acyclic classes.
@@ -216,6 +219,13 @@ instance : (coacyclic R h).IsClosedUnderIsomorphisms :=
 instance (J : Type u) : (coacyclic R h).IsClosedUnderColimitsOfShape (Discrete J) :=
   inferInstanceAs ((totalizations R h).localizingClosure.IsClosedUnderColimitsOfShape (Discrete J))
 
+/-- The coacyclic class is thick, since the curved homotopy category has countable
+coproducts. -/
+instance : (coacyclic R h).IsStableUnderRetracts :=
+  have := hasCoproducts_shrink.{0, u}
+    (C := DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h))
+  inferInstanceAs (totalizations R h).localizingClosure.IsStableUnderRetracts
+
 instance : (contraacyclic R h).IsTriangulated :=
   inferInstanceAs (totalizations R h).colocalizingClosure.IsTriangulated
 
@@ -269,6 +279,12 @@ theorem contraacyclic_le_iff
     [∀ J : Type u, Q.IsClosedUnderLimitsOfShape (Discrete J)] :
     contraacyclic R h ≤ Q ↔ totalizations R h ≤ Q :=
   (totalizations R h).colocalizingClosure_le_iff
+
+variable (R h) in
+/-- Every absolutely acyclic curved module is coacyclic: the curved homotopy category has countable
+coproducts, so the coacyclic class is thick. -/
+theorem absolutelyAcyclic_le_coacyclic : absolutelyAcyclic R h ≤ coacyclic R h :=
+  absolutelyAcyclic_le_iff.2 (totalizations_le_coacyclic R h)
 
 instance : ((absolutelyAcyclic R h).inverseImage (dgClosedToHomotopy R)).IsClosedUnderExtensions :=
   isClosedUnderExtensions_inverseImage _ (totalizations_le_absolutelyAcyclic R h)

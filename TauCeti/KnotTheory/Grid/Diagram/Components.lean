@@ -373,6 +373,16 @@ theorem isKnot_relabelColumns (κ : Equiv.Perm (Fin n)) :
     (G.relabelColumns κ).IsKnot ↔ G.IsKnot := by
   simp [IsKnot]
 
+/-- Exchanging two columns preserves whether a grid diagram represents a knot. -/
+@[simp]
+theorem isKnot_swapColumns (a b : Fin n) : (G.swapColumns a b).IsKnot ↔ G.IsKnot :=
+  G.isKnot_relabelColumns (Equiv.swap a b)
+
+/-- Exchanging two columns of a knot grid gives a knot grid. -/
+theorem IsKnot.swapColumns {G : GridDiagram n} (hG : G.IsKnot) (a b : Fin n) :
+    (G.swapColumns a b).IsKnot :=
+  (G.isKnot_swapColumns a b).mpr hG
+
 /-- Diagonal reflection preserves whether a grid diagram represents a knot. -/
 @[simp]
 theorem isKnot_transpose : G.transpose.IsKnot ↔ G.IsKnot := by

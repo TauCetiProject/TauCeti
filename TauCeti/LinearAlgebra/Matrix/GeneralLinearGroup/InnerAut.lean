@@ -72,6 +72,14 @@ theorem innerAut_apply [CommSemiring R] (g : GL n R) (x : Matrix n n R) :
     innerAut g x = (g : Matrix n n R) * x * (g⁻¹ : GL n R) := by
   simp [innerAut, ConjAct.units_smul_def]
 
+/-- Conjugation by an invertible scalar matrix is the identity algebra automorphism. -/
+@[simp]
+theorem innerAut_scalar [CommSemiring R] (a : Rˣ) : innerAut (scalar n a) = 1 := by
+  ext X i j
+  rw [innerAut_apply, ← map_inv (scalar n) a, coe_scalar, coe_scalar]
+  simp only [scalar_apply, mul_diagonal, diagonal_mul, AlgEquiv.one_apply]
+  rw [mul_right_comm, Units.mul_inv, one_mul]
+
 variable [CommRing R]
 
 /-- **An inner automorphism of a matrix algebra is trivial exactly when the conjugating matrix is

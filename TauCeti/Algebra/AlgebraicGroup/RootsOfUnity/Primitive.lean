@@ -142,10 +142,8 @@ theorem exists_isIdempotentElem_ker_primitiveRootsMap (hn : IsUnit (n : R)) :
   have hab' : e + aeval g b * aeval g Ψ = 1 := by
     rw [he_def, ← map_mul, ← map_add, hab, map_one]
   have he : IsIdempotentElem e := by
-    rw [IsIdempotentElem]
-    rw [he_def, map_mul] at hab' ⊢
-    linear_combination (aeval g a * aeval g (cyclotomic n R)) * hab' -
-      (aeval g a * aeval g b) * hΦΨ
+    refine (IsIdempotentElem.of_mul_add ?_ hab').1
+    rw [he_def, map_mul, mul_mul_mul_comm, hΦΨ, mul_zero]
   refine ⟨e, he, le_antisymm (fun x hx ↦ ?_) ?_⟩
   · -- `Φ_n(g)` lies in the ideal `(e)`, so the quotient map `R[ℤ/n] → R[ℤ/n] ⧸ (e)` factors
     -- through `primitiveRootsMap`, and its kernel contains that of `primitiveRootsMap`.

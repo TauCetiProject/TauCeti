@@ -38,6 +38,24 @@ They never include tokens or PR/comment bodies. Remaining quota is shared with
 other jobs: a change in that value alone cannot be attributed to this process.
 The counters measure these scripts, not all workflows using the installation.
 
+For a comparison across workflows, download a bounded sample of Actions logs
+with `gh run view RUN_ID --attempt ATTEMPT --log > logs/RUN_ID.log`. Save an
+array of the corresponding Actions run objects (including `id`, `name`,
+`conclusion`, and `run_attempt`) in `runs.json`, then run:
+
+```bash
+python3 scripts/github_api_report.py --runs runs.json --logs logs --out api-report.json
+```
+
+The offline report groups observed reads/writes by workflow, credential role,
+and API resource, and includes GraphQL costs and structured rate-limit evidence.
+It reports missing logs and missing instrumentation explicitly. Sampled totals
+are not installation-wide usage; quota changes include other consumers. Use
+matching run attempts and unique run IDs, and compare samples collected in the
+same way. New runs also count unchanged roadmap-label/structure-comment
+decisions; these are not hypothetical HTTP requests saved. Queue age and
+admission delay need separate queue observations.
+
 ## Writes and retries
 
 A PR already carrying exactly the desired roadmap label causes no label mutation

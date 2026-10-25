@@ -6,12 +6,9 @@ Authors: Codex, Claude
 module
 
 public import Mathlib.Data.Set.BoolIndicator
-public import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
-public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 import Mathlib.Data.Finset.Sym
 import Mathlib.Order.Sym2
-import Mathlib.MeasureTheory.Constructions.Projective
 
 /-!
 # Edge coordinates of an infinite simple graph
@@ -21,9 +18,8 @@ pairs of natural numbers.  This file makes that equivalence measurable and recor
 equivariance under relabelling.  It is the carrier-level bridge between laws on infinite simple
 graphs and laws on jointly exchangeable symmetric, irreflexive Boolean arrays.
 
-Finite measures on infinite graphs are determined by the laws of all their finite vertex windows:
-every finite collection of edge coordinates lies in one such window, so projective-limit
-uniqueness applies after transporting the measures through the coordinate equivalence.
+Every finite collection of edge coordinates lies in the coordinates of a finite vertex window,
+and below a window's bound the coordinates of an infinite graph are read off that window.
 
 The coordinate type excludes diagonal pairs, rather than imposing an irreflexivity condition on a
 two-dimensional array.  Consequently every Boolean assignment is a graph, and relabelling acts by
@@ -41,8 +37,8 @@ an honest equivalence of coordinates.
 * `TauCeti.DenseGraphLimits.measurable_graphCoordEquiv` and
   `TauCeti.DenseGraphLimits.measurable_graphCoordEquiv_symm` show that the coordinate equivalence
   is measurable in both directions;
-* `TauCeti.DenseGraphLimits.measure_ext_of_map_restrictFin` shows that a finite measure on infinite
-  graphs is determined by its finite windows;
+* `TauCeti.DenseGraphLimits.graphCoordEquiv_eq_windowCoord` reads the coordinates below a bound
+  off the corresponding finite window;
 * `Equiv.Perm.graphCoordEquiv_comap` is the relabelling commuting square.
 
 ## References
@@ -203,35 +199,6 @@ theorem graphCoordEquiv_eq_windowCoord {n : ℕ} (G : SimpleGraph ℕ) {e : Edge
       (a := ⟨x, hx⟩) (b := ⟨y, hy⟩)
     rw [SimpleGraph.restrictFin_adj] at h
     exact h.symm
-
-/-! ### Finite measures on infinite graphs are determined by their windows -/
-
-/-- **A finite measure on the graphs on `ℕ` is determined by its windows.** The coordinates of an
-infinite graph below any bound are a function of its window, so the laws of all finitely many
-coordinates agree, and the law of the coordinates is their unique projective limit. -/
-theorem measure_ext_of_map_restrictFin {μ ν : Measure (SimpleGraph ℕ)} [IsFiniteMeasure μ]
-    (h : ∀ n, μ.map (·.restrictFin n) = ν.map (·.restrictFin n)) : μ = ν := by
-  -- The law of the coordinates in `J` is a pushforward of the window below `windowBound J`.
-  have hcoord : ∀ J : Finset EdgeIndex, (fun G => J.restrict (graphCoordEquiv G)) =
-      (fun H => J.restrict (windowCoord H)) ∘ (·.restrictFin (windowBound J)) := fun J => by
-    funext G
-    ext e
-    exact graphCoordEquiv_eq_windowCoord G (subset_edgeWindow_windowBound J e.2)
-  have hlaw : ∀ ρ : Measure (SimpleGraph ℕ), ∀ J : Finset EdgeIndex,
-      (ρ.map graphCoordEquiv).map J.restrict =
-        (ρ.map (·.restrictFin (windowBound J))).map fun H => J.restrict (windowCoord H) :=
-    fun ρ J => by
-      rw [Measure.map_map (Finset.measurable_restrict J) measurable_graphCoordEquiv,
-        Measure.map_map (measurable_of_countable _) (SimpleGraph.measurable_restrictFin _)]
-      exact congrArg ρ.map (hcoord J)
-  have hcoordEq : μ.map graphCoordEquiv = ν.map graphCoordEquiv :=
-    IsProjectiveLimit.unique (P := fun J => (μ.map graphCoordEquiv).map J.restrict)
-      (fun _ => rfl) fun J => by beta_reduce; rw [hlaw, hlaw, h]
-  have hsymm : ∀ ρ : Measure (SimpleGraph ℕ),
-      (ρ.map graphCoordEquiv).map graphCoordEquiv.symm = ρ := fun ρ => by
-    rw [Measure.map_map measurable_graphCoordEquiv_symm measurable_graphCoordEquiv,
-      Equiv.symm_comp_self, Measure.map_id]
-  rw [← hsymm μ, hcoordEq, hsymm]
 
 end DenseGraphLimits
 

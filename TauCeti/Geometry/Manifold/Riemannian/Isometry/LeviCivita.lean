@@ -5,35 +5,42 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 
 /-!
 # The Levi-Civita connection under Riemannian isometries
 
-A smooth Riemannian isometry `Φ : M → N` transports the Levi-Civita connection of `N` to that of
-`M`: for a vector field `Y` on `N`, differentiable at `Φ x`, and a tangent vector `v` at `x`,
+A local Riemannian isometry `f : M → N`, and in particular a smooth Riemannian isometry, transports
+the Levi-Civita connection of `N` to that of `M`: for a vector field `Y` on `N`, differentiable at
+`f x`, and a tangent vector `v` at `x`,
 
-`dΦ_x (∇ᴹ_v (Φ^* Y)) = ∇ᴺ_{dΦ_x v} Y`,
+`df_x (∇ᴹ_v (f^* Y)) = ∇ᴺ_{df_x v} Y`,
 
-where `Φ^* Y = VectorField.mpullback I J Φ Y` is the pullback vector field
-`x ↦ (dΦ_x)⁻¹ (Y (Φ x))`. Equivalently, the connection on `M` obtained by transporting `∇ᴺ`
-along `Φ` agrees with `∇ᴹ` on differentiable vector fields.
+where `f^* Y = VectorField.mpullback I J f Y` is the pullback vector field
+`x ↦ (df_x)⁻¹ (Y (f x))`. Equivalently, the connection on `M` obtained by transporting `∇ᴺ`
+along `f` agrees with `∇ᴹ` on differentiable vector fields. Only the differential of `f` at each
+point enters, so `f` need not be injective or surjective: this also covers the inclusion of an
+open submanifold with the restricted metric.
 
 This is the connection-level input for transporting geodesics, their maximal intervals, and
 exponential maps along Riemannian isometries.
 
 ## Main results
 
-In the namespace `TauCeti.RiemannianIsometry`:
+In the namespace `TauCeti.IsLocalRiemannianIsometry`:
 
-* `koszul_mpullback`: the Koszul expression is natural under Riemannian isometries.
+* `koszul_mpullback`: the Koszul expression is natural under local Riemannian isometries.
 * `mfderiv_apply_mpullback_of_isLeviCivitaConnection`: **naturality of Levi-Civita
-  connections** under Riemannian isometries.
+  connections** under local Riemannian isometries.
 * `mfderiv_leviCivitaConnection_mpullback`: the same statement for Mathlib's
   `CovariantDerivative.leviCivitaConnection`.
 * `leviCivitaConnection_mpullback_apply_mpullback`: the vector-field form
-  `∇ᴹ_{Φ^* Y} (Φ^* Z) = Φ^* (∇ᴺ_Y Z)`.
+  `∇ᴹ_{f^* Y} (f^* Z) = f^* (∇ᴺ_Y Z)`.
+
+A Riemannian isometry `Φ` is a local Riemannian isometry
+(`TauCeti.RiemannianIsometry.isLocalRiemannianIsometry`), so these apply to it through
+`Φ.isLocalRiemannianIsometry`.
 
 ## References
 
@@ -48,7 +55,7 @@ open scoped ContDiff Manifold
 
 noncomputable section
 
-namespace TauCeti.RiemannianIsometry
+namespace TauCeti
 
 open TauCeti.Manifold
 
@@ -64,100 +71,82 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable [IsManifold I 2 M] [IsManifold J 2 N]
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
 
+namespace IsLocalRiemannianIsometry
+
+variable {f : M → N}
+
 /-- **Naturality of the Koszul expression.** The Koszul expression of the pullbacks of three
-vector fields along a Riemannian isometry `Φ` is the Koszul expression of the fields themselves,
-evaluated at the image point. -/
-@[simp]
-theorem koszul_mpullback [CompleteSpace E] (Φ : RiemannianIsometry I J M N)
-    {X Y Z : Π y : N, TangentSpace J y} {x : M} (hX : MDiffAt (T% X) (Φ x))
-    (hY : MDiffAt (T% Y) (Φ x)) (hZ : MDiffAt (T% Z) (Φ x)) :
-    koszul I (mpullback I J Φ X) (mpullback I J Φ Y) (mpullback I J Φ Z) x =
-      koszul J X Y Z (Φ x) := by
-  -- Directional derivatives of inner products: the chain rule through `Φ`.
-  have hd : ∀ {V W : Π y : N, TangentSpace J y} (U : Π y : N, TangentSpace J y),
-      MDiffAt (T% V) (Φ x) → MDiffAt (T% W) (Φ x) →
-      mvfderiv I (fun y ↦ inner ℝ (mpullback I J Φ V y) (mpullback I J Φ W y)) x
-          (mpullback I J Φ U x) =
-        mvfderiv J (fun y ↦ inner ℝ (V y) (W y)) (Φ x) (U (Φ x)) := by
-    intro V W U hV hW
-    have hcomp : (fun y ↦ inner ℝ (mpullback I J Φ V y) (mpullback I J Φ W y)) =
-        (fun y ↦ inner ℝ (V y) (W y)) ∘ Φ := funext fun y ↦ Φ.inner_mpullback V W y
-    rw [hcomp, mvfderiv_comp_apply x (mdifferentiableAt_inner hV hW) (Φ.mdifferentiableAt x)]
-    exact congrArg _ (Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) U x)
-  -- Lie brackets: Mathlib's naturality of the Lie bracket under pullback.
-  have hb : ∀ {V W : Π y : N, TangentSpace J y}, MDiffAt (T% V) (Φ x) →
-      MDiffAt (T% W) (Φ x) →
-      mlieBracket I (mpullback I J Φ V) (mpullback I J Φ W) x =
-        mpullback I J Φ (mlieBracket J V W) x := fun hV hW ↦ by
-    let _ : IsManifold I (minSmoothness ℝ 2) M := by
-      rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
-    let _ : IsManifold J (minSmoothness ℝ 2) N := by
-      rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
-    exact (mpullback_mlieBracket hV hW (Φ.toDiffeomorph.contMDiff.contMDiffAt) (by simp)).symm
-  rw [koszul_apply, koszul_apply, hd X hY hZ, hd Y hZ hX, hd Z hX hY, hb hX hY, hb hX hZ,
-    hb hY hZ, inner_mpullback, inner_mpullback, inner_mpullback]
+vector fields along a local Riemannian isometry `f` is the Koszul expression of the fields
+themselves, evaluated at the image point. -/
+theorem koszul_mpullback [CompleteSpace E] (hf : IsLocalRiemannianIsometry I J f)
+    {X Y Z : Π y : N, TangentSpace J y} {x : M} (hX : MDiffAt (T% X) (f x))
+    (hY : MDiffAt (T% Y) (f x)) (hZ : MDiffAt (T% Z) (f x)) :
+    koszul I (mpullback I J f X) (mpullback I J f Y) (mpullback I J f Z) x =
+      koszul J X Y Z (f x) := by
+  have h := koszulBilinear_mpullback (b := fun _ ↦ innerSL ℝ) (b' := fun _ ↦ innerSL ℝ)
+    (hf.contMDiff.contMDiffAt.of_le (by simp)) hf.isInvertible_mfderiv
+    (fun y v w ↦ by simp only [innerSL_apply_apply ℝ, hf.inner_mfderiv])
+    (fun _ _ hV hW ↦ by simpa only [innerSL_apply_apply ℝ] using mdifferentiableAt_inner hV hW)
+    hX hY hZ
+  rw [koszul_apply, koszul_apply]
+  simpa only [koszulBilinear_apply, innerSL_apply_apply ℝ] using h
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
-/-- **Naturality of Levi-Civita connections under Riemannian isometries.** If `∇ᴹ` and `∇ᴺ` are
-Levi-Civita connections of `M` and `N` and `Φ : M → N` is a smooth Riemannian isometry, then
-`dΦ_x (∇ᴹ_v (Φ^* Y)) = ∇ᴺ_{dΦ_x v} Y` for every vector field `Y` on `N` differentiable at
-`Φ x`. -/
-theorem mfderiv_apply_mpullback_of_isLeviCivitaConnection (Φ : RiemannianIsometry I J M N)
+/-- **Naturality of Levi-Civita connections under local Riemannian isometries.** If `∇ᴹ` and `∇ᴺ`
+are Levi-Civita connections of `M` and `N` and `f : M → N` is a local Riemannian isometry, then
+`df_x (∇ᴹ_v (f^* Y)) = ∇ᴺ_{df_x v} Y` for every vector field `Y` on `N` differentiable at
+`f x`. -/
+theorem mfderiv_apply_mpullback_of_isLeviCivitaConnection (hf : IsLocalRiemannianIsometry I J f)
     {covM : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
     {covN : CovariantDerivative J F (fun y : N ↦ TangentSpace J y)}
     (hM : covM.IsLeviCivitaConnection) (hN : covN.IsLeviCivitaConnection)
-    {Y : Π y : N, TangentSpace J y} {x : M} (hY : MDiffAt (T% Y) (Φ x)) (v : TangentSpace I x) :
-    mfderiv I J Φ x (covM (mpullback I J Φ Y) x v) = covN Y (Φ x) (mfderiv I J Φ x v) := by
-  have hpull : ∀ {V : Π y : N, TangentSpace J y}, MDiffAt (T% V) (Φ x) →
-      MDiffAt (T% (mpullback I J Φ V)) x := fun hV ↦
-    hV.mpullback_vectorField (Φ.toDiffeomorph.contMDiff.contMDiffAt)
-      (Φ.toDiffeomorph.isInvertible_mfderiv (by simp)) (by simp)
-  -- Realize the direction `dΦ_x v` by a vector field on `N` whose pullback takes the value `v`.
+    {Y : Π y : N, TangentSpace J y} {x : M} (hY : MDiffAt (T% Y) (f x)) (v : TangentSpace I x) :
+    mfderiv I J f x (covM (mpullback I J f Y) x v) = covN Y (f x) (mfderiv I J f x v) := by
+  -- Realize the direction `df_x v` by a vector field on `N` whose pullback takes the value `v`.
   obtain ⟨X, hX, hXv⟩ : ∃ X : Π y : N, TangentSpace J y,
-      MDiffAt (T% X) (Φ x) ∧ X (Φ x) = mfderiv I J Φ x v :=
+      MDiffAt (T% X) (f x) ∧ X (f x) = mfderiv I J f x v :=
     ⟨extend F _, mdifferentiableAt_extend J F _, extend_apply_self F _⟩
-  have hXx : mpullback I J Φ X x = v := by
-    rw [mpullback_apply, hXv]
-    exact (Φ.toDiffeomorph.isInvertible_mfderiv (by simp)).inverse_apply_self v
-  refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (Φ x) ?_
+  have hXx : mpullback I J f X x = v := (hf.mpullback_apply_eq_iff X v).2 hXv
+  refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (f x) ?_
   ext Z hZ
   dsimp only
-  have hMk := hM.two_inner_eq_koszul (hpull hX) (hpull hY) (hpull hZ)
+  have hMk := hM.two_inner_eq_koszul (hf.mdifferentiableAt_mpullback hX)
+    (hf.mdifferentiableAt_mpullback hY) (hf.mdifferentiableAt_mpullback hZ)
   have hNk := hN.two_inner_eq_koszul hX hY hZ
-  rw [Φ.koszul_mpullback hX hY hZ, hXx] at hMk
+  rw [hf.koszul_mpullback hX hY hZ, hXx] at hMk
   rw [hXv] at hNk
-  have hinner : inner ℝ (mfderiv I J Φ x (covM (mpullback I J Φ Y) x v)) (Z (Φ x)) =
-      inner ℝ (covM (mpullback I J Φ Y) x v) (mpullback I J Φ Z x) := by
-    rw [← Φ.inner_mfderiv x]
-    exact congrArg _ (Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) Z x).symm
+  have hinner : inner ℝ (mfderiv I J f x (covM (mpullback I J f Y) x v)) (Z (f x)) =
+      inner ℝ (covM (mpullback I J f Y) x v) (mpullback I J f Z x) := by
+    rw [← hf.inner_mfderiv x, hf.mfderiv_apply_mpullback]
   linarith
 
-/-- **Naturality of the Levi-Civita connection under Riemannian isometries**, for Mathlib's
+/-- **Naturality of the Levi-Civita connection under local Riemannian isometries**, for Mathlib's
 `CovariantDerivative.leviCivitaConnection`:
-`dΦ_x (∇ᴹ_v (Φ^* Y)) = ∇ᴺ_{dΦ_x v} Y` for every vector field `Y` on `N` differentiable at
-`Φ x`. -/
+`df_x (∇ᴹ_v (f^* Y)) = ∇ᴺ_{df_x v} Y` for every vector field `Y` on `N` differentiable at
+`f x`. -/
 @[simp]
-theorem mfderiv_leviCivitaConnection_mpullback (Φ : RiemannianIsometry I J M N)
-    {Y : Π y : N, TangentSpace J y} {x : M} (hY : MDiffAt (T% Y) (Φ x)) (v : TangentSpace I x) :
-    mfderiv I J Φ x (leviCivitaConnection I M (mpullback I J Φ Y) x v) =
-      leviCivitaConnection J N Y (Φ x) (mfderiv I J Φ x v) :=
-  Φ.mfderiv_apply_mpullback_of_isLeviCivitaConnection
+theorem mfderiv_leviCivitaConnection_mpullback (hf : IsLocalRiemannianIsometry I J f)
+    {Y : Π y : N, TangentSpace J y} {x : M} (hY : MDiffAt (T% Y) (f x)) (v : TangentSpace I x) :
+    mfderiv I J f x (leviCivitaConnection I M (mpullback I J f Y) x v) =
+      leviCivitaConnection J N Y (f x) (mfderiv I J f x v) :=
+  hf.mfderiv_apply_mpullback_of_isLeviCivitaConnection
     (isLeviCivitaConnection_leviCivitaConnection I) (isLeviCivitaConnection_leviCivitaConnection J)
     hY v
 
 /-- The covariant derivative of a pulled-back vector field in a pulled-back direction is the
-pullback of the covariant derivative: `∇ᴹ_{Φ^* Y} (Φ^* Z) = Φ^* (∇ᴺ_Y Z)` at `x`. -/
-theorem leviCivitaConnection_mpullback_apply_mpullback (Φ : RiemannianIsometry I J M N)
-    {Y Z : Π y : N, TangentSpace J y} {x : M} (hZ : MDiffAt (T% Z) (Φ x)) :
-    leviCivitaConnection I M (mpullback I J Φ Z) x (mpullback I J Φ Y x) =
-      mpullback I J Φ (fun y ↦ leviCivitaConnection J N Z y (Y y)) x := by
-  apply Φ.mfderiv_injective x
-  rw [Φ.mfderiv_leviCivitaConnection_mpullback hZ, ← coe_toDiffeomorph Φ,
-    Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp),
-    Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp)]
+pullback of the covariant derivative: `∇ᴹ_{f^* Y} (f^* Z) = f^* (∇ᴺ_Y Z)` at `x`. -/
+theorem leviCivitaConnection_mpullback_apply_mpullback (hf : IsLocalRiemannianIsometry I J f)
+    {Y Z : Π y : N, TangentSpace J y} {x : M} (hZ : MDiffAt (T% Z) (f x)) :
+    leviCivitaConnection I M (mpullback I J f Z) x (mpullback I J f Y x) =
+      mpullback I J f (fun y ↦ leviCivitaConnection J N Z y (Y y)) x := by
+  apply hf.mfderiv_injective x
+  rw [hf.mfderiv_leviCivitaConnection_mpullback hZ, hf.mfderiv_apply_mpullback,
+    hf.mfderiv_apply_mpullback]
 
-end TauCeti.RiemannianIsometry
+end IsLocalRiemannianIsometry
+
+end TauCeti
 
 end

@@ -92,6 +92,18 @@ theorem relativeFrobenius_fst :
 theorem relativeFrobenius_snd : π.relativeFrobenius p hS ≫ pullback.snd _ _ = π :=
   pullback.lift_snd _ _ _
 
+/-- The projection `X^{(p)} ⟶ X` from the Frobenius twist, followed by the relative Frobenius,
+is the absolute Frobenius of the twist. -/
+@[reassoc (attr := simp)]
+theorem fst_relativeFrobenius :
+    pullback.fst π (S.frobenius p hS) ≫ π.relativeFrobenius p hS =
+      (pullback π (S.frobenius p hS)).frobenius p
+        (natCast_eq_zero_of_hom (pullback.snd _ _) hS) := by
+  ext
+  · rw [Category.assoc, relativeFrobenius_fst,
+      frobenius_naturality _ (natCast_eq_zero_of_hom π hS)]
+  · rw [Category.assoc, relativeFrobenius_snd, pullback.condition, frobenius_naturality _ hS]
+
 /-- The projection from the Frobenius twist `(X ×_S T)^{(p)}` of the base change of `X` along
 `f : T ⟶ S` to the Frobenius twist `X^{(p)}` of `X`, induced by the projection `X ×_S T ⟶ X`
 and by `f`. -/

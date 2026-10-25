@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Radical API for quadratic forms
@@ -49,10 +50,10 @@ regular case.
   trivial kernel is nondegenerate.
 * `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
 * `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
-* `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a subspace on which the form restricts
-  nondegenerately is complementary to its polar orthogonal complement.
-* `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal`: in a regular finite-dimensional
-  quadratic space, the orthogonal complement of a regular subspace is regular.
+* `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a finite-dimensional subspace on which the
+  form restricts nondegenerately is complementary to its polar orthogonal complement.
+* `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal`: in a regular quadratic space,
+  the orthogonal complement of a finite-dimensional regular subspace is regular.
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic map on a nontrivial module is
   nonzero.
@@ -512,19 +513,22 @@ theorem exists_isUnit {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 section Orthogonal
 
 variable {K : Type*} [Field K] [Invertible (2 : K)] {V : Type*} [AddCommGroup V] [Module K V]
-  [FiniteDimensional K V] {Q : QuadraticForm K V} {W : Submodule K V}
+  {Q : QuadraticForm K V} {W : Submodule K V} [FiniteDimensional K W]
 
-/-- A subspace on which a quadratic form restricts nondegenerately is complementary to its
-orthogonal complement. -/
+/-- A finite-dimensional subspace on which a quadratic form restricts nondegenerately is
+complementary to its orthogonal complement, even in an infinite-dimensional ambient space. -/
 theorem isCompl_orthogonal (hW : (Q.restrict W).Nondegenerate) :
     IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) := by
-  apply LinearMap.BilinForm.isCompl_orthogonal_of_restrict_nondegenerate
-    Q.isSymm_polarBilin.isRefl
   have hpolar := QuadraticMap.nondegenerate_polar_iff.mpr hW
-  rwa [QuadraticMap.polarBilin_restrict] at hpolar
+  rw [QuadraticMap.polarBilin_restrict] at hpolar
+  apply LinearMap.BilinForm.isCompl_orthogonal_of_restrict_bijective Q.polarBilin W
+    (Q.isSymm_polarBilin.restrict W)
+  have hinj := LinearMap.ker_eq_bot.mp (LinearMap.BilinForm.Nondegenerate.ker_eq_bot hpolar)
+  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    Subspace.dual_finrank_eq.symm).mp hinj⟩
 
-/-- In a regular finite-dimensional quadratic space, the orthogonal complement of a regular
-subspace is regular. -/
+/-- In a regular quadratic space, the orthogonal complement of a finite-dimensional regular
+subspace is regular, even when the ambient space is infinite-dimensional. -/
 theorem nondegenerate_restrict_orthogonal (hQ : Q.Nondegenerate)
     (hW : (Q.restrict W).Nondegenerate) :
     (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)).Nondegenerate := by
@@ -534,11 +538,9 @@ theorem nondegenerate_restrict_orthogonal (hQ : Q.Nondegenerate)
     hW.isCompl_orthogonal
   apply QuadraticMap.nondegenerate_polar_iff.mp
   rw [QuadraticMap.polarBilin_restrict]
-  exact
-    (LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal
-      (B := Q.polarBilin) hBsymm).mpr (by
-      rw [LinearMap.BilinForm.orthogonal_orthogonal hB hBsymm]
-      exact hcomp.symm)
+  apply Q.polarBilin.nondegenerate_restrict_of_disjoint_orthogonal hBsymm
+  exact hcomp.symm.disjoint.mono_right
+    (LinearMap.BilinForm.orthogonal_orthogonal_of_isCompl Q.polarBilin hBsymm hB.2 W hcomp).le
 
 end Orthogonal
 

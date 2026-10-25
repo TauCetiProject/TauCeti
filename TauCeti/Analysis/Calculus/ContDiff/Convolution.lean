@@ -11,6 +11,8 @@ public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.Analysis.Calculus.ContDiff.Integrable
 public import TauCeti.Analysis.Convolution
 
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
+
 /-!
 # Smoothness of convolutions with dominated kernels
 
@@ -39,6 +41,12 @@ For a compactly supported `C¹` factor `g`, the file also records the directiona
 `∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g` of Mathlib's rule `HasCompactSupport.hasFDerivAt_convolution_right`, in
 which the derivative is a convolution with values in `F` rather than in a space of linear maps.
 
+For mollification by a nonnegative compactly supported kernel `ρ` of integral `1`, the file
+records two bounds that need no regularity of the mollified function `u`. One-sided bounds on the
+forward differences of `u` in a direction pass to the directional derivative of `ρ ⋆ u`: this is
+how a nonsmooth subsolution of a Hamilton–Jacobi inequality, such as a Hopf–Lax function, becomes
+a smooth one. And a bounded `u` has a mollification with bounded derivative.
+
 ## Main declarations
 
 * `MeasureTheory.continuous_convolution_right_of_dominated`: continuity of `f ⋆ g`.
@@ -50,6 +58,11 @@ which the derivative is a convolution with values in `F` rather than in a space 
 * `MeasureTheory.iteratedFDeriv_convolution_left_of_dominated`: `D^n (f ⋆ g) = D^n f ⋆ g`.
 * `HasCompactSupport.fderiv_convolution_right_apply`: for `g` compactly supported, the
   directional derivative `∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g`.
+* `HasCompactSupport.fderiv_convolution_left_apply_le`: mollifying by a nonnegative kernel of
+  integral `1` turns a one-sided bound `u (y + s • d) ≤ u y + s * c` on forward differences into
+  the bound `∂_d (ρ ⋆ u) ≤ c` on the directional derivative.
+* `HasCompactSupport.norm_fderiv_convolution_left_le`: the mollification of a function bounded by
+  `M` has derivative bounded by `M * ∫ ‖Dρ‖`.
 -/
 
 public section
@@ -230,5 +243,63 @@ theorem _root_.HasCompactSupport.fderiv_convolution_right_apply (hcg : HasCompac
     fderiv ℝ (f ⋆[L, μ] g) x v = (f ⋆[L, μ] fun y => fderiv ℝ g y v) x := by
   rw [(hcg.hasFDerivAt_convolution_right L hf hg x).fderiv,
     convolution_precompR_apply L hf (hcg.fderiv (𝕜 := ℝ)) (hg.continuous_fderiv one_ne_zero) x v]
+
+section Mollifier
+
+variable [μ.IsNegInvariant] {ρ : G → ℝ}
+
+/-- **Mollifying a one-sided difference bound.** Let `ρ` be a nonnegative `C¹` compactly supported
+kernel of integral `1` and `u` a locally integrable function. If, for all small `s > 0`, the
+forward difference `u (y + s • d) - u y` is at most `s * c` at every point `y = x - z` with
+`z` in the support of `ρ`, then the derivative of the mollification `ρ ⋆ u` at `x` in the
+direction `d` is at most `c`. No regularity of `u` is needed. -/
+theorem _root_.HasCompactSupport.fderiv_convolution_left_apply_le (hρc : HasCompactSupport ρ)
+    (hρ : ContDiff ℝ 1 ρ) (hρ0 : ∀ y, 0 ≤ ρ y) (hρ1 : ∫ y, ρ y ∂μ = 1) {u : G → ℝ}
+    (hu : LocallyIntegrable u μ) {x d : G} {c : ℝ}
+    (h : ∀ᶠ s in 𝓝[>] (0 : ℝ), ∀ z ∈ Function.support ρ, u (x - z + s • d) ≤ u (x - z) + s * c) :
+    fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] u) x d ≤ c := by
+  have hD := hρc.hasFDerivAt_convolution_left (lsmul ℝ ℝ) hρ hu x
+  have hconv := hρc.convolutionExists_left (lsmul ℝ ℝ) hρ.continuous hu (μ := μ)
+  have hρi : Integrable ρ μ := integrable_of_integral_eq_one hρ1
+  have hi : Integrable (fun z ↦ ρ z * u (x - z)) μ := by simpa using (hconv x).integrable
+  rw [hD.fderiv]
+  refine le_of_tendsto (hD.hasLineDerivAt d).tendsto_slope_zero_right ?_
+  filter_upwards [h, self_mem_nhdsWithin] with s hs (hs0 : 0 < s)
+  -- Averaging the difference bound against `ρ`, of integral `1`.
+  have hle : (ρ ⋆[lsmul ℝ ℝ, μ] u) (x + s • d) ≤ (ρ ⋆[lsmul ℝ ℝ, μ] u) x + s * c := by
+    have h1 : (ρ ⋆[lsmul ℝ ℝ, μ] u) x + s * c = ∫ z, ρ z * u (x - z) + ρ z * (s * c) ∂μ := by
+      rw [integral_add hi (hρi.mul_const _), integral_mul_const, hρ1, one_mul, convolution_def]
+      simp
+    rw [h1, convolution_def]
+    refine integral_mono (hconv _).integrable (hi.add (hρi.mul_const _)) fun z ↦ ?_
+    simp only [lsmul_apply, smul_eq_mul]
+    by_cases hz : ρ z = 0
+    · simp [hz]
+    rw [show x + s • d - z = x - z + s • d by abel, ← mul_add]
+    exact mul_le_mul_of_nonneg_left (hs z hz) (hρ0 z)
+  rw [smul_eq_mul, inv_mul_le_iff₀ hs0]
+  linarith
+
+/-- The mollification `ρ ⋆ u` of a function bounded by `M`, by a `C¹` compactly supported kernel
+`ρ`, has derivative bounded by `M * ∫ ‖Dρ‖`, uniformly in the point. -/
+theorem _root_.HasCompactSupport.norm_fderiv_convolution_left_le [IsFiniteMeasureOnCompacts μ]
+    (hρc : HasCompactSupport ρ) (hρ : ContDiff ℝ 1 ρ) {u : G → E'} (hu : LocallyIntegrable u μ)
+    (huM : ∀ y, ‖u y‖ ≤ M) (x : G) :
+    ‖fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] u) x‖ ≤ M * ∫ y, ‖fderiv ℝ ρ y‖ ∂μ := by
+  have hM : 0 ≤ M := (norm_nonneg _).trans (huM 0)
+  refine opNorm_le_bound _ (mul_nonneg hM (integral_nonneg fun y ↦ norm_nonneg _)) fun d ↦ ?_
+  have hgi : Integrable (fun y ↦ ‖fderiv ℝ ρ y‖) μ :=
+    (hρ.continuous_fderiv one_ne_zero).norm.integrable_of_hasCompactSupport (hρc.fderiv ℝ).norm
+  rw [← convolution_flip, hρc.fderiv_convolution_right_apply _ hu hρ, convolution_def]
+  refine (norm_integral_le_of_norm_le ((hgi.comp_sub_left x).mul_const (M * ‖d‖))
+    (Eventually.of_forall fun y ↦ ?_)).trans_eq ?_
+  · simp only [flip_apply, lsmul_apply, norm_smul]
+    calc ‖fderiv ℝ ρ (x - y) d‖ * ‖u y‖ ≤ (‖fderiv ℝ ρ (x - y)‖ * ‖d‖) * M :=
+          mul_le_mul ((fderiv ℝ ρ (x - y)).le_opNorm d) (huM y) (norm_nonneg _) (by positivity)
+      _ = ‖fderiv ℝ ρ (x - y)‖ * (M * ‖d‖) := by ring
+  · rw [integral_mul_const, integral_sub_left_eq_self (fun y ↦ ‖fderiv ℝ ρ y‖) μ x]
+    ring
+
+end Mollifier
 
 end MeasureTheory

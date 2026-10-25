@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Graph.Connected.EdgeCut
-public import TauCeti.Combinatorics.Graph.EdgeEnds
+public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
 
 /-!
@@ -24,6 +23,9 @@ pair of distinct ends therefore preserves every cut capacity.
 ## Main result
 
 * `Graph.pairCutCapacity_pairCapacity`: aggregation preserves every cut capacity.
+* `Graph.isSubmodular_edgeCutCapacity`: an edge-capacity function nonnegative on nonloop edges has
+  a submodular cut function.
+* `Graph.isSymmSubmodular_edgeCutCapacity`: the bundled symmetric-submodular result.
 -/
 
 public section
@@ -33,21 +35,6 @@ open Finset
 namespace Graph
 
 variable {V E K : Type*} (G : Graph V E)
-
-/-- An actual edge crosses a vertex cut exactly when its unordered pair of ends crosses the
-corresponding cut of actual vertices. -/
-theorem edgeEnds_crosses_iff_mem_edgeCut (e : G.edgeSet) (S : Finset G.vertexSet) :
-    (G.edgeEnds e).Crosses (S : Set G.vertexSet) ↔
-      e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) := by
-  classical
-  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
-  let x' : G.vertexSet := ⟨x, hxy.left_mem⟩
-  let y' : G.vertexSet := ⟨y, hxy.right_mem⟩
-  have hend : G.edgeEnds e = s(x', y') := (G.edgeEnds_eq_iff_isLink e x' y').2 hxy
-  have hx' : x'.1 = x := rfl
-  have hy' : y'.1 = y := rfl
-  rw [hend, Sym2.crosses_mk_iff, hxy.mem_edgeCut_iff, ← hx', ← hy',
-    Subtype.val_injective.mem_set_image, Subtype.val_injective.mem_set_image]
 
 open Classical in
 /-- The capacity of a cut in a weighted multigraph. Each actual crossing edge is counted once. -/
@@ -155,5 +142,46 @@ theorem pairCutCapacity_pairCapacity [Fintype G.vertexSet] [Fintype G.edgeSet]
       apply sum_congr rfl
       intro e _
       simp only [G.edgeEnds_crosses_iff_mem_edgeCut e S]
+
+/-- Multigraph cut capacity is unchanged when the two sides of the cut are exchanged. -/
+@[simp]
+theorem edgeCutCapacity_compl [Fintype G.vertexSet] [Fintype G.edgeSet]
+    [DecidableEq G.vertexSet] [AddCommMonoid K] (c : G.edgeSet → K)
+    (S : Finset G.vertexSet) :
+    G.edgeCutCapacity c Sᶜ = G.edgeCutCapacity c S := by
+  classical
+  rw [edgeCutCapacity_def, edgeCutCapacity_def]
+  apply sum_congr rfl
+  intro e _
+  rw [← G.edgeEnds_crosses_iff_mem_edgeCut e (Sᶜ : Finset G.vertexSet),
+    ← G.edgeEnds_crosses_iff_mem_edgeCut e S]
+  simp only [Finset.coe_compl, Sym2.crosses_compl]
+
+/-- The cut function of edge weights nonnegative on nonloop edges is submodular. Together with
+`edgeCutCapacity_compl`, this makes it a symmetric submodular set function. Parallel edges are
+counted separately, and loop weights are unrestricted. -/
+theorem isSubmodular_edgeCutCapacity [Fintype G.edgeSet] [DecidableEq G.vertexSet]
+    [AddCommMonoid K] [Preorder K] [IsOrderedAddMonoid K]
+    (c : G.edgeSet → K) (hc : ∀ e, ¬ (G.edgeEnds e).IsDiag → 0 ≤ c e) :
+    TauCeti.IsSubmodular (G.edgeCutCapacity c) := by
+  classical
+  rw [TauCeti.isSubmodular_def]
+  intro S T
+  simp only [sup_eq_union, inf_eq_inter]
+  simp_rw [edgeCutCapacity_def]
+  rw [← sum_add_distrib, ← sum_add_distrib]
+  apply sum_le_sum
+  intro e _
+  simp_rw [← G.edgeEnds_crosses_iff_mem_edgeCut e]
+  simp only [Finset.coe_union, Finset.coe_inter]
+  exact (G.edgeEnds e).ite_crosses_union_add_ite_crosses_inter_le (c e) (hc e) S T
+
+/-- The cut function of edge weights nonnegative on nonloop edges is symmetric submodular.
+Loop weights are unrestricted. -/
+theorem isSymmSubmodular_edgeCutCapacity [Fintype G.vertexSet] [Fintype G.edgeSet]
+    [DecidableEq G.vertexSet] [AddCommMonoid K] [Preorder K] [IsOrderedAddMonoid K]
+    (c : G.edgeSet → K) (hc : ∀ e, ¬ (G.edgeEnds e).IsDiag → 0 ≤ c e) :
+    TauCeti.IsSymmSubmodular (G.edgeCutCapacity c) :=
+  ⟨G.edgeCutCapacity_compl c, G.isSubmodular_edgeCutCapacity c hc⟩
 
 end Graph

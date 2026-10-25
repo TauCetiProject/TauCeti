@@ -25,7 +25,7 @@ minimal projective presentations and scalar duality, computed on actual isomorph
 
 public section
 
-namespace TauCeti.irreducibleMorphismQuiver
+namespace TauCeti.IrreducibleMorphismQuiver
 
 open CategoryTheory Quiver.Kronecker
 
@@ -37,17 +37,17 @@ variable (k : Type u) [Field k] (A : Type) [Unique A]
 translation is undefined at the projective vertices `[S₂]` and `[P₁]`. -/
 @[simp↓]
 theorem translate_a2VertexEquiv (i : Fin 3) :
-    translate (a2VertexEquiv k A i) =
+    (arTranslation.{u, 0, 0, u} k (Quiver.Kronecker A)).translate (a2VertexEquiv k A i) =
       if i = 0 then some (a2VertexEquiv k A 1) else none := by
   classical
   have cases : ∀ i : Fin 3, i = 0 ∨ i = 1 ∨ i = 2 := by decide
   rcases cases i with rfl | rfl | rfl
   · simp only [a2VertexEquiv_zero, a2VertexEquiv_one, ↓reduceIte]
-    rw [translate_of_eq_some_of_iff]
+    rw [ARTranslation.translate_of_eq_some_of_iff, arTranslation_obj]
     exact ⟨(isAlmostSplit_kroneckerARSequence k A).not_projective_X₃,
       nonempty_iso_arTranslate_simpleRep_src_kronecker k A _⟩
   · simp only [a2VertexEquiv_one, show (1 : Fin 3) ≠ 0 by decide, ↓reduceIte,
-      translate_of_eq_none_iff]
+      ARTranslation.translate_of_eq_none_iff]
     -- The target projective has dimension vector (0,1), so the three-object
     -- classification identifies it with the target simple.
     rcases nonempty_iso_simpleRep_src_or_simpleRep_tgt_or_indecProjRep_of_indecomposable_kronecker
@@ -64,7 +64,7 @@ theorem translate_a2VertexEquiv (i : Fin 3) :
       rw [dimVector_indecProjRep, dimVector_indecProjRep] at h
       simp at h
   · simp only [a2VertexEquiv_two, show (2 : Fin 3) ≠ 0 by decide, ↓reduceIte,
-      translate_of_eq_none_iff]
+      ARTranslation.translate_of_eq_none_iff]
     infer_instance
 
-end TauCeti.irreducibleMorphismQuiver
+end TauCeti.IrreducibleMorphismQuiver
