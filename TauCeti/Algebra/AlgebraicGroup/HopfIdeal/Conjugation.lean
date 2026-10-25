@@ -31,9 +31,10 @@ A rational point `g` normalizes the closed subgroup `N` cut out by `I` when conj
 maps `I` into itself; every rational point normalizes a normal closed subgroup. Conjugation by a
 normalizing point then restricts to an endomorphism of `N`, whose coordinate map is the bialgebra
 endomorphism of `H ⧸ I` induced by point conjugation. This is how normalizing points act on the
-characters of `N`. The coordinate isomorphism between conjugate subgroups uses
-`Ideal.quotientEquivAlg` for bijectivity and `Bialgebra.Quotient.liftBialgHom` for its
-bialgebra structure.
+characters of `N`. If `I` cuts out `N` and `J = I.conjugate g` cuts out `gNg⁻¹`,
+the coordinate isomorphism goes contravariantly from `H ⧸ J` to `H ⧸ I`. It pulls back functions
+by `x ↦ gxg⁻¹`, so conjugation between these subgroups commutes with their embeddings into the
+ambient group.
 
 ## Main declarations
 
@@ -286,6 +287,8 @@ isomorphism goes from the conjugated subgroup to the original subgroup. -/
 noncomputable def quotientConjugationEquiv (I J : HopfIdeal R H)
     (g : WithConv (H →ₐ[R] R)) (hJ : J = I.conjugate g) :
     (H ⧸ J.toIdeal) ≃ₐc[R] (H ⧸ I.toIdeal) := by
+  -- Use the quotient bialgebra lift for the bialgebra structure and the algebra quotient
+  -- equivalence for bijectivity.
   subst J
   let e := HopfAlgebra.pointConjugationBialgEquiv g
   have he (x : H) : e x = HopfAlgebra.pointConjugationAlgHom g x :=
