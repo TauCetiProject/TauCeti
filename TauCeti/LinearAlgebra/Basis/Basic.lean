@@ -15,9 +15,9 @@ the corresponding basis vector.  This repackages `Module.Basis.repr_symm_single`
 through in the same direction, for the common situation where what one holds is a bound on the
 support rather than an explicit `Finsupp.single`.
 
-The coordinate and linear-map lemmas hold over a semiring of scalars. For an integer basis of a
-ring, we also express a ring homomorphism in coordinates and show that its values on the basis
-cannot all vanish when its target is nontrivial.
+The coordinate and linear-map lemmas hold over a semiring of scalars. For an integer basis of an
+additive group, we also express an additive map in coordinates. A ring homomorphism's values on an
+integer basis cannot all vanish when its target is nontrivial.
 
 ## Main results
 
@@ -29,9 +29,9 @@ cannot all vanish when its target is nontrivial.
   linear equivalence are the coordinates of the vector transported back.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
-* `Module.Basis.ringHom_apply_eq_sum`: a ring homomorphism evaluated at a vector is the sum of its
+* `Module.Basis.apply_eq_sum_repr_zsmul`: an additive map evaluated at a vector is the sum of its
   values on an integer basis, weighted by the coordinates.
-* `Module.Basis.ringHom_apply_ne_zero`: the values of a ring homomorphism to a nontrivial ring on
+* `Module.Basis.ringHom_comp_ne_zero`: the values of a ring homomorphism to a nontrivial ring on
   an integer basis do not all vanish.
 -/
 
@@ -93,20 +93,21 @@ theorem linearIndependent_coe_basis (b : Module.Basis n R U) :
 
 end Submodule
 
+/-- An additive map evaluated at a vector is the sum of its values on an integer basis,
+weighted by the coordinates. -/
+theorem apply_eq_sum_repr_zsmul {M N F : Type*} [AddCommGroup M] [AddCommGroup N]
+    [FunLike F M N] [AddMonoidHomClass F M N] [Fintype ι] (b : Basis ι ℤ M) (f : F) (y : M) :
+    f y = ∑ l, b.repr y l • f (b l) := by
+  conv_lhs => rw [← b.sum_repr y]
+  simp only [map_sum, map_zsmul]
+
 section RingHom
 
 variable {R S : Type*} [NonAssocRing R] [NonAssocRing S] (b : Basis ι ℤ R)
 
-/-- A ring homomorphism evaluated at a vector is the sum of its values on an integer basis,
-weighted by the coordinates. -/
-theorem ringHom_apply_eq_sum [Fintype ι] (ψ : R →+* S) (y : R) :
-    ψ y = ∑ l, (b.repr y l : S) * ψ (b l) := by
-  conv_lhs => rw [← b.sum_repr y]
-  simp [map_sum]
-
 /-- The values of a ring homomorphism to a nontrivial ring on an integer basis do not all
 vanish. The basis need not be finite. -/
-theorem ringHom_apply_ne_zero [Nontrivial S] (ψ : R →+* S) : (fun l ↦ ψ (b l)) ≠ 0 := fun h ↦ by
+theorem ringHom_comp_ne_zero [Nontrivial S] (ψ : R →+* S) : ⇑ψ ∘ ⇑b ≠ 0 := fun h ↦ by
   have : ψ.toAddMonoidHom.toIntLinearMap = 0 := b.ext fun l ↦ congrFun h l
   simpa using LinearMap.congr_fun this 1
 

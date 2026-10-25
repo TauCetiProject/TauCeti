@@ -39,8 +39,8 @@ they are nonnegative they are positive, and any two such eigenvectors are propor
 
 ## Main results
 
-* `Module.Basis.exists_ringHom_apply_pos`: a transitive ℤ₊-ring of finite rank has a character
-  which is positive on the basis.
+* `Module.Basis.exists_ringHom_apply_pos`: a transitive ℤ₊-ring of finite nonzero rank has a
+  character which is positive on the basis.
 * `Module.Basis.existsUnique_ringHom_nonneg`: it is the only character which is nonnegative on the
   basis.
 * `Module.Basis.ringHom_eq_of_nonneg` and `Module.Basis.ringHom_apply_pos_of_nonneg`: two
@@ -108,8 +108,8 @@ right multiplication by the sum of the basis, for the value of the character at 
 private theorem rightMulSum_transpose_mulVec (ψ : R →+* ℝ) :
     (rightMulSum b)ᵀ *ᵥ (fun l ↦ ψ (b l)) = ψ (∑ i, b i) • fun l ↦ ψ (b l) := by
   ext j
-  rw [Pi.smul_apply, smul_eq_mul, mul_comm, ← map_mul, ringHom_apply_eq_sum b ψ]
-  simp [mulVec, dotProduct, rightMulSum_apply, mul_comm]
+  rw [Pi.smul_apply, smul_eq_mul, mul_comm, ← map_mul, apply_eq_sum_repr_zsmul b ψ]
+  simp [mulVec, dotProduct, rightMulSum_apply, zsmul_eq_mul, mul_comm]
 
 end Matrices
 
@@ -124,7 +124,7 @@ which is nonnegative on the basis is positive on the basis. -/
 theorem ringHom_apply_pos_of_nonneg {χ : R →+* ℝ} (hχ : ∀ i, 0 ≤ χ (b i)) (i : ι) :
     0 < χ (b i) := by
   classical
-  exact pos_of_mulVec_eq_smul (fun i j ↦ rightMulSum_pos b ht j i) hχ (ringHom_apply_ne_zero b χ)
+  exact pos_of_mulVec_eq_smul (fun i j ↦ rightMulSum_pos b ht j i) hχ (ringHom_comp_ne_zero b χ)
     (rightMulSum_transpose_mulVec b χ) i
 
 /-- **Uniqueness of the Frobenius–Perron character.** If every basis element occurs in
@@ -137,17 +137,18 @@ theorem ringHom_eq_of_nonneg {χ ψ : R →+* ℝ} (hχ : ∀ i, 0 ≤ χ (b i))
   -- the values of `χ` are a positive eigenvector, so they are proportional.
   obtain ⟨c, -, hc⟩ := exists_pos_eq_smul_of_mulVec_eq_smul
     (fun i j ↦ rightMulSum_pos b ht j i) (ringHom_apply_pos_of_nonneg b ht hχ)
-    (rightMulSum_transpose_mulVec b χ) hψ (ringHom_apply_ne_zero b ψ)
+    (rightMulSum_transpose_mulVec b χ) hψ (ringHom_comp_ne_zero b ψ)
     (rightMulSum_transpose_mulVec b ψ)
   have hψc (l : ι) : ψ (b l) = c * χ (b l) := congrFun hc l
   -- Evaluating at `1` shows that the proportionality constant is `1`.
   have hc1 : c = 1 := by
-    have h := ringHom_apply_eq_sum b ψ 1
-    simp_rw [hψc, mul_left_comm _ c, ← Finset.mul_sum, ← ringHom_apply_eq_sum, map_one,
+    have h := apply_eq_sum_repr_zsmul b ψ 1
+    simp_rw [hψc, ← mul_smul_comm, ← Finset.mul_sum, ← apply_eq_sum_repr_zsmul, map_one,
       mul_one] at h
     exact h.symm
   ext y
-  simp [ringHom_apply_eq_sum b _ y, hψc, hc1]
+  rw [apply_eq_sum_repr_zsmul b χ y, apply_eq_sum_repr_zsmul b ψ y]
+  simp [hψc, hc1]
 
 end Transitive
 
@@ -212,7 +213,7 @@ theorem spectralRadius_leftMulMatrix [DecidableEq ι] {χ : R →+* ℝ} (hχ : 
   have hNχ : (leftMulReal b x)ᵀ *ᵥ (fun l ↦ χ (b l)) = χ x • fun l ↦ χ (b l) := by
     ext j
     simp only [mulVec, dotProduct, transpose_apply, leftMulReal_apply, Pi.smul_apply, smul_eq_mul,
-      ← ringHom_apply_eq_sum, map_mul]
+      ← zsmul_eq_mul, ← apply_eq_sum_repr_zsmul, map_mul]
   have hmap : ((leftMulReal b x)ᵀ).map ((↑) : ℝ → ℂ) =
       ((Algebra.leftMulMatrix b x).map (Int.cast : ℤ → ℂ))ᵀ := by
     ext l j
