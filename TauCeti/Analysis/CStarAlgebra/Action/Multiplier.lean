@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
-public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
+public import TauCeti.Analysis.CStarAlgebra.Multiplier
 
 /-!
 # The induced action on the multiplier algebra
@@ -23,8 +23,7 @@ multiplier `m` and every `a : A`, both `g ↦ α.multiplier g m * a` and
 Mathlib has no strict topology on `𝓜(ℂ, A)`, so this continuity is stated pointwise. No
 continuity of inversion in `G` is assumed. This is the form in which multiplier-valued
 covariant homomorphisms and unitary group maps into multiplier algebras are compared with
-actions. An operator implements an action on the multiplier extension of a nondegenerate
-representation exactly when it does so on the coefficient algebra, `mul_multiplierExtension_iff`.
+actions.
 
 ## References
 
@@ -107,23 +106,5 @@ theorem continuous_coe_mul_multiplier_apply (α : CStarAction G A) (m : 𝓜(ℂ
   simp only [DoubleCentralizer.coe_mul_eq_coe_snd]
   exact DoubleCentralizer.isometry_coe.continuous.comp
     (α.continuous_multiplier_apply_snd m a)
-
-/-- An operator implements an action automorphism on the multiplier extension of a nondegenerate
-representation exactly when it implements it on the coefficient algebra. -/
-theorem mul_multiplierExtension_iff {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] (α : CStarAction G A)
-    {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hπ : π.IsNondegenerate) (g : G) (T : H →L[ℂ] H) :
-    (∀ m : 𝓜(ℂ, A), T * π.multiplierExtension hπ m =
-      π.multiplierExtension hπ (α.multiplier g m) * T) ↔
-      ∀ a : A, T * π a = π (α g a) * T := by
-  constructor
-  · intro h a
-    simpa using h (a : 𝓜(ℂ, A))
-  · intro h m
-    apply hπ.ext
-    intro a
-    simp only [mul_assoc, NonUnitalStarAlgHom.multiplierExtension_mul_eq_fst, h]
-    rw [← mul_assoc, NonUnitalStarAlgHom.multiplierExtension_mul_eq_fst]
-    simp
 
 end TauCeti.CStarAction

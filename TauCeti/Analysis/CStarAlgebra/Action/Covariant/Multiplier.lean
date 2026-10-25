@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Multiplier
+public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 
 /-!
 # Covariance on multiplier algebras
@@ -14,7 +15,9 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Multiplier
 A nondegenerate covariant pair remains covariant after extending its coefficient representation
 to the multiplier algebra. Thus the same unitary group implements both the original action and
 its canonical multiplier extension. The multiplier covariance identity is characterized by its
-restriction to the coefficient algebra.
+restriction to the coefficient algebra. An operator implements an action on the multiplier
+extension of a nondegenerate representation exactly when it does so on the coefficient algebra,
+`CStarAction.mul_multiplierExtension_iff`.
 
 Conversely, a strictly continuous homomorphism into the unitary multipliers that implements a
 C⋆-action gives a covariant pair in every nondegenerate representation of the coefficient algebra.
@@ -38,10 +41,31 @@ noncomputable section
 
 open scoped MultiplierAlgebra
 
-namespace TauCeti.CStarAction.CovariantRepresentation
+namespace TauCeti.CStarAction
 
-variable {G A H : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
-  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
+
+/-- An operator implements an action automorphism on the multiplier extension of a nondegenerate
+representation exactly when it implements it on the coefficient algebra. -/
+theorem mul_multiplierExtension_iff {H : Type*} [NormedAddCommGroup H]
+    [InnerProductSpace ℂ H] [CompleteSpace H] (α : CStarAction G A)
+    {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hπ : π.IsNondegenerate) (g : G) (T : H →L[ℂ] H) :
+    (∀ m : 𝓜(ℂ, A), T * π.multiplierExtension hπ m =
+      π.multiplierExtension hπ (α.multiplier g m) * T) ↔
+      ∀ a : A, T * π a = π (α g a) * T := by
+  constructor
+  · intro h a
+    simpa using h (a : 𝓜(ℂ, A))
+  · intro h m
+    apply hπ.ext
+    intro a
+    simp only [mul_assoc, NonUnitalStarAlgHom.multiplierExtension_mul_eq_fst, h]
+    rw [← mul_assoc, NonUnitalStarAlgHom.multiplierExtension_mul_eq_fst]
+    simp
+
+namespace CovariantRepresentation
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {α : CStarAction G A} (P : CovariantRepresentation α H)
   (hπ : P.coefficient.IsNondegenerate)
 
@@ -95,4 +119,6 @@ theorem ofUnitaryMultiplier_group (g : G) :
       π.multiplierExtension hπ (u g : 𝓜(ℂ, A)) :=
   (rfl)
 
-end TauCeti.CStarAction.CovariantRepresentation
+end CovariantRepresentation
+
+end TauCeti.CStarAction
