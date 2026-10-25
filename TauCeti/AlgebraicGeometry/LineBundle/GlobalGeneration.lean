@@ -229,8 +229,17 @@ theorem IsGloballyGenerated.nonempty_generatingSections {L : InvertibleSheaf X}
   change @Epi X.Modules _ _ _ _
   refine ⟨fun {N : X.Modules} f g hfg ↦ hL.hom_ext f g fun s ↦ ?_⟩
   -- Compute the free-sheaf universal property through its public evaluation equations.
-  have h := congrArg (fun p ↦ SheafOfModules.freeHomEquiv N p s) hfg
-  simp only [SheafOfModules.freeHomEquiv_comp_apply, Equiv.apply_symm_apply] at h
+  have heval (p : L.obj ⟶ N) :
+      SheafOfModules.freeHomEquiv N
+        ((SheafOfModules.freeHomEquiv L.obj).symm (compatibleSection L) ≫ p) s =
+        SheafOfModules.sectionsMap p (compatibleSection L s) :=
+    (SheafOfModules.freeHomEquiv_comp_apply _ p s).trans
+      (congrArg (fun t ↦ SheafOfModules.sectionsMap p (t s))
+        ((SheafOfModules.freeHomEquiv L.obj).apply_symm_apply (compatibleSection L)))
+  have h : SheafOfModules.sectionsMap f (compatibleSection L s) =
+      SheafOfModules.sectionsMap g (compatibleSection L s) :=
+    (heval f).symm.trans
+      ((congrArg (fun p ↦ SheafOfModules.freeHomEquiv N p s) hfg).trans (heval g))
   have htop := congrArg (fun t ↦ t.val (op ⊤)) h
   simpa only [SheafOfModules.sectionsMap, PresheafOfModules.sectionsMap_coe,
     compatibleSection_val, L.obj.presheaf.map_id] using htop
