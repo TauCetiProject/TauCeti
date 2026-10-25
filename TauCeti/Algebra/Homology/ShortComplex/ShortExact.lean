@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.DiagramLemmas.KernelCokernelComp
+public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.CategoryTheory.Subobject.Limits
 
 /-!
@@ -33,6 +34,10 @@ an abelian category is short exact as soon as it is short exact objectwise.
   sequence.
 * `CategoryTheory.ShortComplex.shortExact_of_forall_evaluation`: a short complex of functors is
   short exact if it is short exact after evaluation at every object.
+* `CategoryTheory.ShortComplex.Exact.shortExact_factorThruImage`: an exact sequence
+  `0 ⟶ X₁ ⟶ X₂ ⟶ X₃` gives the short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ image (X₂ ⟶ X₃) ⟶ 0`.
+* `CategoryTheory.ShortComplex.shortExact_image_ι_cokernel_π`: the sequence
+  `0 ⟶ image g ⟶ Y ⟶ cokernel g ⟶ 0` of a morphism `g : X ⟶ Y` is short exact.
 * `CategoryTheory.ShortComplex.ShortExact.of_isColimit_cokernelCofork`: the cokernel of a morphism
   of short exact sequences whose third component is a monomorphism is short exact; the source
   only needs to be exact with an epimorphic second map.
@@ -204,6 +209,20 @@ lemma shortExact_of_forall_evaluation {J : Type*} [Category* J] (S : ShortComple
   rw [exact_iff_isZero_homology]
   exact Functor.isZero _ fun j ↦ ((exact_iff_isZero_homology _).1 (h j).exact).of_iso
     (S.mapHomologyIso ((evaluation J C).obj j)).symm
+
+/-- If `X₁ ⟶ X₂ ⟶ X₃` is exact and `X₁ ⟶ X₂` is a monomorphism, then
+`0 ⟶ X₁ ⟶ X₂ ⟶ image (X₂ ⟶ X₃) ⟶ 0` is short exact. -/
+lemma Exact.shortExact_factorThruImage {S : ShortComplex C} (hS : S.Exact) [Mono S.f] :
+    (ShortComplex.mk S.f (factorThruImage S.g) (comp_factorThruImage_eq_zero S.zero)).ShortExact
+    where
+  exact := exact_of_g_is_cokernel _ hS.isColimitImage
+
+/-- For a morphism `g : X ⟶ Y`, the sequence `0 ⟶ image g ⟶ Y ⟶ cokernel g ⟶ 0` is short
+exact. -/
+lemma shortExact_image_ι_cokernel_π {X Y : C} (g : X ⟶ Y) :
+    (ShortComplex.mk (image.ι g) (cokernel.π g)
+      (image_ι_comp_eq_zero (cokernel.condition g))).ShortExact where
+  exact := exact_of_f_is_kernel _ (exact_cokernel g).isLimitImage'
 
 /-- **The cokernel of a morphism into a short exact sequence.** Let `v : L₁ ⟶ L₂` be a morphism
 from an exact sequence `L₁` whose second map is an epimorphism to a short exact sequence `L₂`, and

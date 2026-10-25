@@ -64,6 +64,10 @@ supported in `S` glues with zero on `W ∖ S` to a unique section over `W` suppo
   `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with `F₂` flasque are bijective;
 * `CategoryTheory.Sheaf.supportedHRestrict`: the restriction map `H_Sⁿ(W, F) ⟶ H_Sⁿ(W', F)` for
   `W' ≤ W`, and `CategoryTheory.Sheaf.supportedHPresheaf F S n`, the presheaf `W ↦ H_Sⁿ(W, F)`;
+* `CategoryTheory.Sheaf.supportedHPresheafδ`: the connecting morphism
+  `H_Sⁿ(-, F₃) ⟶ H_Sⁿ⁺¹(-, F₁)` of presheaves attached to a short exact sequence
+  `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0`, an isomorphism in positive degrees when `F₂` is flasque
+  (`CategoryTheory.Sheaf.isIso_supportedHPresheafδ_succ`);
 * `CategoryTheory.Sheaf.existsUnique_mem_supportedSections_map_eq`: excision for sections
   supported in `S`;
 * `TopologicalSpace.Closeds.isIso_relativeFreeYonedaSheafMap_complInclusion`: excision for the
@@ -451,6 +455,42 @@ theorem extClass_postcomp_bijective_of_isFlasque
   · exact Abelian.Ext.covariant_sequence_exact₁ _ hT x (Subsingleton.elim _ _) rfl
 
 end relativeH'
+
+section connecting
+
+open Abelian
+
+variable {X : TopCat.{u}} (S : Closeds X)
+  {T : ShortComplex (Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
+
+/-- The connecting morphism `H_Sⁿ(-, F₃) ⟶ H_Sⁿ⁺¹(-, F₁)` of presheaves of cohomology with
+supports attached to a short exact sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` of sheaves. -/
+@[expose]
+noncomputable def supportedHPresheafδ (hT : T.ShortExact) (n : ℕ) :
+    T.X₃.supportedHPresheaf S n ⟶ T.X₁.supportedHPresheaf S (n + 1) where
+  app W := AddCommGrpCat.ofHom (hT.extClass.postcomp _ rfl)
+  naturality W W' f := by
+    ext x
+    exact (T.X₃.supportedHRestrict_comp S (leOfHom f.unop) x hT.extClass rfl).symm
+
+/-- The connecting morphism of presheaves is the Yoneda product with the class of the short exact
+sequence. -/
+@[simp]
+lemma supportedHPresheafδ_app_apply (hT : T.ShortExact) (n : ℕ) (W : (Opens X)ᵒᵖ)
+    (x : T.X₃.supportedH S W.unop n) :
+    (supportedHPresheafδ S hT n).app W x = x.comp hT.extClass rfl :=
+  (rfl)
+
+/-- If `F₂` is flasque, the connecting morphism `H_Sⁿ⁺¹(-, F₃) ⟶ H_Sⁿ⁺²(-, F₁)` is an
+isomorphism of presheaves. -/
+instance isIso_supportedHPresheafδ_succ (hT : T.ShortExact) [TopCat.Presheaf.IsFlasque T.X₂.obj]
+    (n : ℕ) : IsIso (supportedHPresheafδ S hT (n + 1)) := by
+  have (W : (Opens X)ᵒᵖ) : IsIso ((supportedHPresheafδ S hT (n + 1)).app W) :=
+    (ConcreteCategory.isIso_iff_bijective _).2
+      (relativeH'.extClass_postcomp_bijective_of_isFlasque hT (S.complInclusion W.unop) n)
+  exact NatIso.isIso_of_isIso_app _
+
+end connecting
 
 end Sheaf
 

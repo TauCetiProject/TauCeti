@@ -192,25 +192,12 @@ namespace TopCat.Sheaf.IsFlasque
 variable {X : TopCat.{u}}
   {E : ShortComplex (CategoryTheory.Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
 
-/-- The short exact sequence `0 ⟶ A ⟶ B ⟶ im g ⟶ 0` of an exact sequence `A ⟶ B ⟶ C` of sheaves
-with `A ⟶ B` a monomorphism. -/
-private lemma shortExact_factorThruImage (hE : E.Exact) [Mono E.f] :
-    (ShortComplex.mk E.f (factorThruImage E.g) (comp_factorThruImage_eq_zero E.zero)).ShortExact
-    where
-  exact := ShortComplex.exact_of_g_is_cokernel _ hE.isColimitImage
-
-/-- The short exact sequence `0 ⟶ im g ⟶ C ⟶ coker g ⟶ 0` of a morphism `g` of sheaves. -/
-private lemma shortExact_image_ι :
-    (ShortComplex.mk (image.ι E.g) (cokernel.π E.g)
-      (image_ι_comp_eq_zero (cokernel.condition E.g))).ShortExact where
-  exact := ShortComplex.exact_of_f_is_kernel _ (ShortComplex.exact_cokernel E.g).isLimitImage'
-
 /-- If `0 ⟶ A ⟶ B ⟶ C` is an exact sequence of sheaves of abelian groups with `A` and `B` flasque,
 then every section of the cokernel of `B ⟶ C` lifts to a section of `C`. -/
 theorem epi_cokernel_π_app (hE : E.Exact) [Mono E.f] [Presheaf.IsFlasque E.X₁.obj]
     [Presheaf.IsFlasque E.X₂.obj] (U : Opens X) : Epi ((cokernel.π E.g).hom.app (op U)) :=
-  have := of_shortExact_of_isFlasque₁₂ (shortExact_factorThruImage hE)
-  epi_of_shortExact shortExact_image_ι
+  have := of_shortExact_of_isFlasque₁₂ hE.shortExact_factorThruImage
+  epi_of_shortExact (ShortComplex.shortExact_image_ι_cokernel_π E.g)
 
 /-- If `0 ⟶ A ⟶ B ⟶ C` is an exact sequence of sheaves of abelian groups with `A` flasque, then a
 section of `C` maps to zero in the cokernel of `B ⟶ C` exactly when it comes from a section of
@@ -222,12 +209,12 @@ theorem exact_cokernel_π_app (hE : E.Exact) [Mono E.f] [Presheaf.IsFlasque E.X�
   rw [ShortComplex.ab_exact_iff]
   intro c hc
   -- `c` is a section of the image sheaf, since sections preserve kernels
-  have h₂ := (shortExact_image_ι (E := E)).exact.map_of_mono_of_preservesKernel
+  have h₂ := (ShortComplex.shortExact_image_ι_cokernel_π E.g).exact.map_of_mono_of_preservesKernel
     (sheafToPresheaf _ _ ⋙ (evaluation _ _).obj (op U)) inferInstance inferInstance
   obtain ⟨i, rfl⟩ := (ShortComplex.ab_exact_iff _).1 h₂ c hc
   -- and sections of the image lift to `B`, because the kernel `A` is flasque
   obtain ⟨b, rfl⟩ := (AddCommGrpCat.epi_iff_surjective _).1
-    (epi_of_shortExact (shortExact_factorThruImage hE) (U := U)) i
+    (epi_of_shortExact hE.shortExact_factorThruImage (U := U)) i
   exact ⟨b, by simp [← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
     ← ObjectProperty.FullSubcategory.comp_hom]⟩
 
