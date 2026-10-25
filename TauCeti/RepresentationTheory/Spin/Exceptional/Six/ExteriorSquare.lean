@@ -165,4 +165,24 @@ theorem spinSixSpecialLinearToIsometryGroup_apply
   simp [spinSixSpecialLinearToIsometryGroup,
     LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv, Representation.asGroupHom_apply]
 
+/-- A special-linear transvection acts on a pure bivector by applying the standard
+transvection to each factor. This is the generator calculation used when comparing the
+exterior-square action with transported Spin-vector action. -/
+theorem spinSixSpecialLinearToIsometryGroup_transvection_ιMulti
+    {i j : Fin 4} (hij : i ≠ j) (c : K) (u v : Fin 4 → K) :
+    (spinSixSpecialLinearToIsometryGroup K
+      (Matrix.SpecialLinearGroup.transvection hij c)).1
+      (exteriorPower.ιMulti K 2 ![u, v]) =
+      exteriorPower.ιMulti K 2
+        ![Matrix.mulVec (Matrix.transvection i j c) u,
+          Matrix.mulVec (Matrix.transvection i j c) v] := by
+  rw [spinSixSpecialLinearToIsometryGroup_apply, Representation.exteriorPower_apply_ιMulti]
+  change exteriorPower.ιMulti K 2
+      ![stdSLRep K 4 (Matrix.SpecialLinearGroup.transvection hij c) u,
+        stdSLRep K 4 (Matrix.SpecialLinearGroup.transvection hij c) v] = _
+  rw [stdSLRep_apply]
+  simp only [Matrix.mulVecLin_apply]
+  rw [Matrix.SpecialLinearGroup.transvection_coe]
+  simp only [Matrix.transvection]
+
 end TauCeti
