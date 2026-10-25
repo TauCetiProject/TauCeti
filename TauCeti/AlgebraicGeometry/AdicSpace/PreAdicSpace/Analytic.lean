@@ -328,16 +328,10 @@ namespace AdicSpace
 
 variable (X : AdicSpace.{u})
 
--- The object is exposed: its underlying pre-adic space must be `X.obj.analyticLocus` by
--- definition for the inclusion `analyticLocus.ι` to typecheck.
-@[expose] public section AnalyticLocusDef
-
 /-- **The analytic locus** `X_a` of an adic space `X` (Wedhorn, Remark 8.37): the open adic
 subspace of `X` on its analytic points. -/
 noncomputable def analyticLocus : AdicSpace.{u} :=
   ⟨X.obj.analyticLocus, PreAdicSpace.isAdic_analyticLocus X.obj X.property⟩
-
-end AnalyticLocusDef
 
 /-- The pre-adic space underlying the analytic locus of an adic space is the analytic locus of
 the underlying pre-adic space. -/
@@ -345,13 +339,15 @@ the underlying pre-adic space. -/
 theorem analyticLocus_obj : X.analyticLocus.obj = X.obj.analyticLocus :=
   (rfl)
 
-/-- The inclusion `X_a ⟶ X` of the analytic locus of an adic space. -/
+/-- The inclusion `X_a ⟶ X` of the analytic locus of an adic space, transported along
+`analyticLocus_obj` from the inclusion of the analytic locus of the underlying pre-adic space. -/
 noncomputable def analyticLocus.ι : X.analyticLocus ⟶ X :=
-  ObjectProperty.homMk (PreAdicSpace.analyticLocus.ι X.obj)
+  ObjectProperty.homMk (eqToHom (analyticLocus_obj X) ≫ PreAdicSpace.analyticLocus.ι X.obj)
 
 /-- The underlying morphism of pre-adic spaces of the inclusion of the analytic locus. -/
 @[simp]
-theorem analyticLocus.ι_hom : (analyticLocus.ι X).hom = PreAdicSpace.analyticLocus.ι X.obj :=
+theorem analyticLocus.ι_hom :
+    (analyticLocus.ι X).hom = eqToHom (analyticLocus_obj X) ≫ PreAdicSpace.analyticLocus.ι X.obj :=
   (rfl)
 
 end AdicSpace
