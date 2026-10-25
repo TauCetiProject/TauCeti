@@ -11,11 +11,11 @@ import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Ring.NegOnePow
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+import TauCeti.Algebra.Homology.ModuleCat.Finrank
 public import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Alternating.Append
 import TauCeti.LinearAlgebra.Basis.Semilinear
 import TauCeti.LinearAlgebra.Exact
-import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
 # The torsion of a based chain complex over a field
@@ -65,9 +65,9 @@ short exact sequence `0 → B₁,ⱼ → B₂,ⱼ → B₃,ⱼ → 0` when `C₃
 The torsion is compatible with scalar extension along a homomorphism of fields `φ : F →+* K`
 (`HomologicalComplex.map_reidemeisterTorsion`): if `D` is a complex over `K` with bases `e i` in
 which the matrices of the differentials are the images under `φ` of those of `C` in the bases
-`c i`, then `τ(D) = φ(τ(C))`. The ranks of the differentials do not change under `φ`
-(`Matrix.rank_map`), so `D` is acyclic exactly when `C` is, and the brackets of `D` are computed
-from the images of the boundary bases and lifts of `C` under the `φ`-semilinear map
+`c i`, then `τ(D) = φ(τ(C))`. The ranks of the differentials do not change under `φ`, so `D` is
+acyclic exactly when `C` is (`HomologicalComplex.acyclic_iff_of_toMatrix_eq`), and the brackets
+of `D` are computed from the images of the boundary bases and lifts of `C` under the semilinear map
 `Module.Basis.semilinearMap φ (c i) (e i)`, whose determinants are the images under `φ` of those
 in `C`. Thus the torsion of a based complex over a ring with several residue or fraction fields can
 be compared componentwise along the field homomorphisms between them.
@@ -730,54 +730,10 @@ section ScalarExtension
 
 /-! ### Scalar extension along a homomorphism of fields -/
 
-include c in
-/-- A based complex is exact in degree `j + 1` exactly when the dimensions of its boundaries in
-degrees `j + 1` and `j` add up to the dimension of `Cⱼ₊₁`. -/
-private theorem exactAt_iff_finrank_add_finrank {j : ℤ} :
-    C.ExactAt (j + 1) ↔ finrank F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom) +
-      finrank F (LinearMap.range (C.d (j + 1) j).hom) = n (j + 1) := by
-  have : Module.Finite F (C.X (j + 1)) := .of_basis (c (j + 1))
-  have hex : C.ExactAt (j + 1) ↔
-      LinearMap.ker (C.d (j + 1) j).hom ≤ LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom :=
-    (C.exactAt_iff' _ _ _ (by simp) (by simp)).trans
-      (ShortComplex.moduleCat_exact_iff_ker_sub_range _)
-  have hle : LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom ≤
-      LinearMap.ker (C.d (j + 1) j).hom := by
-    rintro _ ⟨x, rfl⟩
-    exact d_comp_d_apply C _ _ _ x
-  have hrk := LinearMap.finrank_range_add_finrank_ker (C.d (j + 1) j).hom
-  rw [finrank_eq_card_basis (c (j + 1)), Fintype.card_fin] at hrk
-  rw [hex]
-  refine ⟨fun h ↦ ?_, fun h ↦ (Submodule.eq_of_le_of_finrank_le hle (by omega)).ge⟩
-  have := Submodule.finrank_mono h
-  have := Submodule.finrank_mono hle
-  omega
-
 variable {C c} {K : Type*} [Field K] (φ : F →+* K) {D : ChainComplex (ModuleCat K) ℤ}
   {e : ∀ i, Basis (Fin (n i)) K (D.X i)}
   (hd : ∀ i, LinearMap.toMatrix (e (i + 1)) (e i) (D.d (i + 1) i).hom =
     (LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom).map φ)
-
-include hd in
-/-- The boundaries of the scalar extension have the same dimensions, since the differentials have
-matrices of the same rank. -/
-private theorem finrank_range_d_eq_of_toMatrix_eq (i : ℤ) :
-    finrank K (LinearMap.range (D.d (i + 1) i).hom) =
-      finrank F (LinearMap.range (C.d (i + 1) i).hom) := by
-  have hC := Matrix.rank_eq_finrank_range_toLin
-    (LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom) (c i) (c (i + 1))
-  have hD := Matrix.rank_eq_finrank_range_toLin
-    (LinearMap.toMatrix (e (i + 1)) (e i) (D.d (i + 1) i).hom) (e i) (e (i + 1))
-  rw [Matrix.toLin_toMatrix] at hC hD
-  rw [← hC, ← hD, hd, Matrix.rank_map]
-
-include hd in
-/-- The scalar extension of a based complex is acyclic exactly when the complex is. -/
-private theorem acyclic_iff_of_toMatrix_eq : D.Acyclic ↔ C.Acyclic :=
-  forall_congr' fun i ↦ by
-    obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega⟩
-    rw [exactAt_iff_finrank_add_finrank D e, exactAt_iff_finrank_add_finrank C c,
-      finrank_range_d_eq_of_toMatrix_eq φ hd, finrank_range_d_eq_of_toMatrix_eq φ hd]
 
 /-- The bracket of the scalar extension, for the images of boundary bases and lifts, is the image
 of the bracket. -/
@@ -827,11 +783,13 @@ theorem map_reidemeisterTorsion : φ (C.reidemeisterTorsion c) = D.reidemeisterT
   by_cases hn : {i | n i ≠ 0}.Finite
   swap
   · simp [reidemeisterTorsion_of_not_finite _ _ hn]
+  have hDC : D.Acyclic ↔ C.Acyclic :=
+    acyclic_iff_of_toMatrix_eq φ fun i j (hij : j + 1 = i) ↦ hij ▸ hd j
   by_cases h : C.Acyclic
   swap
   · rw [reidemeisterTorsion_of_not_acyclic C c h, reidemeisterTorsion_of_not_acyclic D e
-      (mt (acyclic_iff_of_toMatrix_eq φ hd).1 h), map_zero]
-  have hD := (acyclic_iff_of_toMatrix_eq φ hd).2 h
+      (mt hDC.1 h), map_zero]
+  have hD := hDC.2 h
   have : ∀ i, Module.Finite K (D.X i) := fun i ↦ .of_basis (e i)
   have hcomm (j : ℤ) (x : C.X (j + 1)) :
       (D.d (j + 1) j).hom ((c (j + 1)).semilinearMap φ (e (j + 1)) x) =
@@ -848,7 +806,7 @@ theorem map_reidemeisterTorsion : φ (C.reidemeisterTorsion c) = D.reidemeisterT
     basisOfLinearIndependentOfCardEqFinrank' (fun k ↦ ⟨_, hmem j k⟩)
       (LinearIndependent.of_comp (LinearMap.range (D.d (j + 1) j).hom).subtype
         (linearIndependent_semilinearMap_chosenBasis φ h j))
-      (by rw [Fintype.card_fin, finrank_range_d_eq_of_toMatrix_eq φ hd])
+      (by rw [Fintype.card_fin, finrank_range_d_eq_of_toMatrix_eq φ (hd j)])
   have hb (j : ℤ) (k) : (b j k : D.X j) =
       (c j).semilinearMap φ (e j) (chosenBasis C c j k) := by
     simp [b]
