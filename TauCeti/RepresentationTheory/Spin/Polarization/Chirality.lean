@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
 public import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock
