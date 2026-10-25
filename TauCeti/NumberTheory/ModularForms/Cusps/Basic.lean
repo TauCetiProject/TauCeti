@@ -32,7 +32,7 @@ its slash action gives the weight-parity sign under translation.
 * `TauCeti.Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty`: the integer cusp
   width is a positive integer multiple of the strict width at `∞`.
 * `TauCeti.ModularForm.slash_T_zpow_apply`: slashing by a power of `T` is an integer shift.
-* `TauCeti.Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty`: the negative shift
+* `TauCeti.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty`: the negative shift
   belonging to the group at an irregular cusp.
 * `TauCeti.SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem`: a negative
   shift in the group gives translation by the weight-parity sign.
@@ -261,7 +261,7 @@ end IntegerCuspWidth
 
 /-- At an irregular cusp the negative translation by the projective width belongs
 to the group. -/
-theorem Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty
+theorem neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty
     (Γ : Subgroup (GL (Fin 2) ℝ)) [DiscreteTopology Γ.periods]
     (hΓ : ¬Γ.IsRegularAtInfty) :
     -Matrix.GeneralLinearGroup.upperRightHom Γ.widthInfty ∈ Γ := by

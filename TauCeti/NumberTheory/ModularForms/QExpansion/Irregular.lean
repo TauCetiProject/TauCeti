@@ -105,7 +105,7 @@ theorem isZeroAtImInfty_of_odd_of_not_isRegularAtInfty [Γ.IsArithmetic]
     IsZeroAtImInfty f := by
   have hzero : (qExpansion (2 * Γ.widthInfty) f).coeff 0 = 0 :=
     qExpansion_coeff_eq_zero_of_parity_ne f Γ.widthInfty_pos
-      (Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γ hΓ)
+      (neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γ hΓ)
       (by simpa using Int.not_even_iff_odd.mpr hk)
   simpa only [IsZeroAtImInfty, Filter.ZeroAtFilter, hzero] using
     ModularFormClass.tendsto_atImInfty f
@@ -122,7 +122,7 @@ theorem even_qExpansion_order_toNat_iff_even_weight [Γ.IsArithmetic]
       (SlashInvariantFormClass.periodic_comp_ofComplex f Γ.two_mul_widthInfty_mem_strictPeriods)
       (ModularFormClass.holo f) (ModularFormClass.bdd_at_infty f)).not.mpr hf
   exact even_qExpansion_index_iff_even_weight f Γ.widthInfty_pos
-    (Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γ hΓ)
+    (neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γ hΓ)
     (PowerSeries.coeff_order hq)
 
 /-- A nonzero odd-weight form at an irregular cusp has odd leading degree in
@@ -154,7 +154,7 @@ theorem exists_orderAtCusp_eq_natCast_of_even [Γ.IsArithmetic]
     · apply UpperHalfPlane.periodic_comp_ofComplex
       intro z
       rw [SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem f
-        (Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γ hΓ),
+        (neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γ hΓ),
         hk.neg_one_zpow, one_mul]
   have : Fact (IsCusp OnePoint.infty Γ) := ⟨Γ.isCusp_of_mem_strictPeriods
     (mul_pos (by norm_num) Γ.widthInfty_pos) Γ.two_mul_widthInfty_mem_strictPeriods⟩
