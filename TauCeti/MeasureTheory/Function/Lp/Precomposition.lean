@@ -24,6 +24,8 @@ precompositions are mutually inverse, giving a continuous linear equivalence
 
 ## Main declarations
 
+* `MeasureTheory.AEEqFun.compQuasiMeasurePreserving_mem_Lp`: precomposition with a map of
+  dominated pushforward preserves membership in `Lᵖ`.
 * `MeasureTheory.Lp.compOfMapLeSmul`: precomposition with `f`, as a continuous linear map
   `Lp E p ν →L[𝕜] Lp E p μ`.
 * `MeasureTheory.Lp.coeFn_compOfMapLeSmul` and `MeasureTheory.Lp.norm_compOfMapLeSmul_le`: it is
@@ -51,17 +53,18 @@ theorem QuasiMeasurePreserving.of_map_le_smul (hf : Measurable f) (hmap : μ.map
     QuasiMeasurePreserving f μ ν :=
   ⟨hf, Measure.absolutelyContinuous_of_le_smul hmap⟩
 
-namespace Lp
-
-private theorem compQuasiMeasurePreserving_mem_Lp (hf : Measurable f) (hC : C ≠ ∞)
-    (hmap : μ.map f ≤ C • ν) (g : Lp E p ν) :
-    (g : β →ₘ[ν] E).compQuasiMeasurePreserving f
-      (QuasiMeasurePreserving.of_map_le_smul hf hmap) ∈ Lp E p μ := by
-  rw [Lp.mem_Lp_iff_eLpNorm_lt_top,
-    eLpNorm_congr_ae (AEEqFun.coeFn_compQuasiMeasurePreserving (g : β →ₘ[ν] E) _)]
+/-- Precomposition with a map whose pushforward is dominated by a finite multiple of `ν` preserves
+membership in `Lᵖ`, for every exponent `p`. This generalizes Mathlib's
+`MeasureTheory.AEEqFun.compMeasurePreserving_mem_Lp`. -/
+theorem AEEqFun.compQuasiMeasurePreserving_mem_Lp {g : β →ₘ[ν] E} (hg : g ∈ Lp E p ν)
+    (hf : QuasiMeasurePreserving f μ ν) (hC : C ≠ ∞) (hmap : μ.map f ≤ C • ν) :
+    g.compQuasiMeasurePreserving f hf ∈ Lp E p μ := by
+  rw [Lp.mem_Lp_iff_eLpNorm_lt_top] at hg ⊢
+  rw [eLpNorm_congr_ae (AEEqFun.coeFn_compQuasiMeasurePreserving g hf)]
   exact (eLpNorm_comp_le_of_map_le_smul hf.aemeasurable hmap p).trans_lt
-    (ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg hC)
-      (Lp.eLpNorm_lt_top g))
+    (ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg hC) hg)
+
+namespace Lp
 
 variable (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 E]
 
@@ -69,7 +72,8 @@ variable (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 E]
 most `C • ν` with `C` finite. -/
 private def compOfMapLeSmulₗ (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.map f ≤ C • ν) :
     Lp E p ν →ₗ[𝕜] Lp E p μ where
-  toFun g := ⟨_, compQuasiMeasurePreserving_mem_Lp hf hC hmap g⟩
+  toFun g := ⟨_, AEEqFun.compQuasiMeasurePreserving_mem_Lp g.2
+    (QuasiMeasurePreserving.of_map_le_smul hf hmap) hC hmap⟩
   map_add' g h := by
     have hqmp := QuasiMeasurePreserving.of_map_le_smul hf hmap
     refine Lp.ext <| (AEEqFun.coeFn_compQuasiMeasurePreserving _ hqmp).trans <|
