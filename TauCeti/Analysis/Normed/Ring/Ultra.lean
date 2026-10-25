@@ -49,9 +49,11 @@ theorem IsUltrametricDist.exists_lt_norm_natCast_eq_one (R : Type*) [SeminormedR
   have h1 := (IsUltrametricDist.norm_natCast_le_one R (N + 1)).lt_of_ne (h _ (by omega))
   have h2 := (IsUltrametricDist.norm_natCast_le_one R (N + 2)).lt_of_ne (h _ (by omega))
   have h3 := IsUltrametricDist.norm_add_le_max ((N + 2 : ℕ) : R) (-((N + 1 : ℕ) : R))
-  rw [norm_neg, show ((N + 2 : ℕ) : R) + -((N + 1 : ℕ) : R) = 1 by
-    rw [← sub_eq_add_neg, ← Nat.cast_sub (by omega), Nat.add_sub_add_left, Nat.cast_one],
-    norm_one] at h3
+  have hsum : ((N + 2 : ℕ) : R) + -((N + 1 : ℕ) : R) = 1 := by
+    push_cast
+    abel_nf
+    norm_num
+  rw [norm_neg, hsum, norm_one] at h3
   exact (h3.trans_lt (max_lt h2 h1)).false
 
 /-- **An ultrametric seminormed ring is a nonarchimedean ring.** This is the ring form of
