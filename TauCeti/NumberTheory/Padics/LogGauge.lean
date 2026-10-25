@@ -14,7 +14,8 @@ public import Mathlib.NumberTheory.Padics.PadicNumbers
 On the `p`-adic field the norm is multiplicative and ultrametric with `‖p‖ = p⁻¹`. For a
 multiplicative pseudo-uniformiser `ϖ` of norm `p⁻¹`, for instance `p` itself through
 `TauCeti.NormedRing.PseudoUniformizer.ofAlgebraMap` and `padicNormE.norm_p`, the logarithmic gauge
-`v_ϖ(x) = log ‖x‖ / log ‖ϖ‖` is the `p`-adic valuation: it agrees with Mathlib's integer-valued
+`v_ϖ(x) = log ‖x‖ / log ‖ϖ‖` is the `p`-adic valuation: it agrees with
+Mathlib's integer-valued
 `Padic.addValuation` after viewing its integer values as reals. Thus the additive valuation
 `ϖ.addValuation`, with values in `WithTop ℝ`, is the real form of the `p`-adic valuation
 normalised by `v(p) = 1`.
@@ -23,6 +24,9 @@ normalised by `v(p) = 1`.
 
 * `TauCeti.NormedRing.PseudoUniformizer.logGauge_eq_map_padicAddValuation`: the logarithmic gauge
   of a multiplicative pseudo-uniformiser of norm `p⁻¹` is `Padic.addValuation`.
+* `Padic.realAddValuation`: the real-valued p-adic additive valuation.
+* `Padic.realAddValuation_eq_map_addValuation`: comparison with the integer-valued valuation.
+* `Padic.realAddValuation_p`: normalization at the prime.
 -/
 
 public section
@@ -31,7 +35,8 @@ namespace TauCeti.NormedRing.PseudoUniformizer
 
 variable {p : ℕ} [Fact p.Prime]
 
-/-- On `ℚ_[p]`, the logarithmic gauge of a multiplicative pseudo-uniformiser of norm `p⁻¹` is the
+/-- On `ℚ_[p]`, the logarithmic gauge of a multiplicative pseudo-uniformiser
+of norm `p⁻¹` is the
 `p`-adic additive valuation `Padic.addValuation`, with its integer values viewed as reals. -/
 theorem logGauge_eq_map_padicAddValuation (ϖ : PseudoUniformizer ℚ_[p])
     (hϖ : ‖(ϖ.unit : ℚ_[p])‖ = (p : ℝ)⁻¹) (x : ℚ_[p]) :
@@ -51,3 +56,35 @@ theorem addValuation_eq_map_padicAddValuation (ϖ : PseudoUniformizer ℚ_[p])
   rw [addValuation_apply, logGauge_eq_map_padicAddValuation ϖ hϖ]
 
 end TauCeti.NormedRing.PseudoUniformizer
+
+namespace Padic
+
+variable (p : ℕ) [Fact p.Prime]
+
+private noncomputable def primeUniformizer : TauCeti.NormedRing.PseudoUniformizer ℚ_[p] :=
+  TauCeti.NormedRing.PseudoUniformizer.ofAlgebraMap (c := (p : ℚ_[p]))
+    (by exact_mod_cast (Fact.out : p.Prime).ne_zero)
+    (by
+      rw [Padic.norm_p]
+      exact inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt))
+
+/-- The standard p-adic additive valuation with values in `WithTop ℝ`. -/
+noncomputable def realAddValuation : AddValuation ℚ_[p] (WithTop ℝ) :=
+  (primeUniformizer p).addValuation
+
+/-- The real-valued p-adic valuation is the integer-valued one followed by the cast to reals. -/
+theorem realAddValuation_eq_map_addValuation (x : ℚ_[p]) :
+    realAddValuation p x = (Padic.addValuation x).map ((↑) : ℤ → ℝ) := by
+  apply TauCeti.NormedRing.PseudoUniformizer.addValuation_eq_map_padicAddValuation
+  simpa only [primeUniformizer, TauCeti.NormedRing.PseudoUniformizer.coe_unit_ofAlgebraMap,
+    Algebra.algebraMap_self, RingHom.id_apply] using (Padic.norm_p (p := p))
+
+/-- The real-valued p-adic valuation is normalized to take the value one on `p`. -/
+@[simp]
+theorem realAddValuation_p : realAddValuation p (p : ℚ_[p]) = 1 := by
+  rw [realAddValuation_eq_map_addValuation,
+    Padic.addValuation.apply (by exact_mod_cast (Fact.out : p.Prime).ne_zero)]
+  simp only [Padic.valuation_natCast, padicValNat_self, Nat.cast_one,
+    WithTop.coe_one, WithTop.map_one, Int.cast_one]
+
+end Padic
