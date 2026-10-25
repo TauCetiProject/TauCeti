@@ -125,12 +125,11 @@ private theorem exists_finsupp_E₄_discriminant {k : ℤ} (f : ModularForm 𝒮
     -- Subtracting the constant term of `f` times `E₄ ^ n` leaves a cusp form `g`, and `g` is `Δ`
     -- times the form `g / Δ` of weight `4 n - 12`.
     let m : ModularForm 𝒮ℒ (4 * n) := mcast (by ring) (E₄.pow n)
+    have hE : PowerSeries.constantCoeff (qExpansion 1 E₄) = 1 := by
+      simpa using E_qExpansion_coeff_zero (k := 4) _ ⟨2, rfl⟩
     have hm : (qExpansion 1 m).coeff 0 = 1 := by
-      rw [ModularForm.qExpansion_mcast,
-        ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL,
-        PowerSeries.coeff_zero_eq_constantCoeff_apply, map_pow,
-        ← PowerSeries.coeff_zero_eq_constantCoeff_apply, E_qExpansion_coeff_zero _ ⟨2, rfl⟩,
-        one_pow]
+      rw [ModularForm.qExpansion_mcast, ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL]
+      simp [hE]
     obtain ⟨g, hg⟩ := sub_smul_isCuspForm f m hm
     obtain ⟨c, hc, hgc⟩ :=
       ih (4 * n - 12) (by omega) (CuspForm.discriminantEquiv g) ⟨(n : ℤ) - 3, by ring⟩
