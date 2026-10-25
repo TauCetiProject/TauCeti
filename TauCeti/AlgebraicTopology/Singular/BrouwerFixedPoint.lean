@@ -20,8 +20,8 @@ self-map of `Dⁿ` has a fixed point (`TauCeti.brouwerFixedPoint_topCatDisk`).
 For `n = 0` the boundary is empty while the disk is a point, so there is no map at all from the
 disk to its boundary. For `n = m + 1`, apply reduced singular homology in degree `m` with integer
 coefficients to maps `i : Sᵐ ⟶ Dᵐ⁺¹` and `r : Dᵐ⁺¹ ⟶ Sᵐ` with `i ≫ r = 𝟙`: the identity of
-`H̃ₘ(Sᵐ; ℤ) ≅ ℤ` (`TauCeti.reducedSingularHomologyTopCatSphereIso`) would factor as `i_*`
-followed by `r_*` through `H̃ₘ(Dᵐ⁺¹; ℤ)`, which vanishes as the disk is contractible
+`H~ₘ(Sᵐ; ℤ) ≅ ℤ` (`TauCeti.reducedSingularHomologyTopCatSphereIso`) would factor as `i_*`
+followed by `r_*` through `H~ₘ(Dᵐ⁺¹; ℤ)`, which vanishes as the disk is contractible
 (`TauCeti.isZero_reducedSingularHomologyFunctor_of_contractibleSpace`).
 
 A self-map `f` of the disk without fixed points gives a retraction of the boundary inclusion,
@@ -61,7 +61,7 @@ theorem noRetraction_diskBoundary (n : ℕ) :
     let F := reducedSingularHomologyFunctor R m
     have hD : IsZero (F.obj (TopCat.disk.{w} (m + 1))) :=
       isZero_reducedSingularHomologyFunctor_of_contractibleSpace R _ m
-    -- The identity of `H̃ₘ(Sᵐ)` factors through `H̃ₘ(Dᵐ⁺¹) = 0`.
+    -- The identity of `H~ₘ(Sᵐ)` factors through `H~ₘ(Dᵐ⁺¹) = 0`.
     have hS : IsZero (F.obj (TopCat.diskBoundary.{w} (m + 1))) := by
       rw [IsZero.iff_id_eq_zero, ← F.map_id, ← ρ.retract, F.map_comp,
         hD.eq_of_src (F.map ρ.r) 0, comp_zero]
