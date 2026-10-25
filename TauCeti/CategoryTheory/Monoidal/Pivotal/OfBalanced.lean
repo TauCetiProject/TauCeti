@@ -43,19 +43,14 @@ its twist followed by the Drinfeld isomorphism. This is not an instance, since i
 the chosen twist. -/
 @[instance_reducible]
 noncomputable def pivotalOfBalanced [BalancedCategory C] : PivotalCategory C where
-  -- Explicit components keep the comparison with `Xᘁᘁ` available without unfolding the
-  -- double-dual functor. Compose equalities at default transparency: rewriting and `simp`
-  -- cannot in general identify that object with the functor's wrapped object.
-  pivotalIso := NatIso.ofComponents
-    (fun X => BalancedCategory.twist.app X ≪≫ drinfeldIso X) fun f =>
-      (BalancedCategory.twist.hom.naturality_assoc f _).trans
-        ((congrArg (fun g => BalancedCategory.twist.hom.app _ ≫ g)
-          (drinfeldIso_hom_naturality f)).trans (Category.assoc _ _ _).symm)
+  pivotalIso := BalancedCategory.twist ≪≫ drinfeldNatIso
   pivotalIso_isMonoidal :=
     { unit := (Category.id_comp _).trans
         ((congrArg (· ≫ _) BalancedCategory.twist_hom_app_unit).trans
-          ((Category.id_comp _).trans drinfeldIso_unit_hom))
+          ((Category.id_comp _).trans
+            ((drinfeldNatIso_hom_app _).trans drinfeldIso_unit_hom)))
       tensor X Y := by
+        simp only [Iso.trans_hom, NatTrans.comp_app, drinfeldNatIso_hom_app]
         -- The identity functor's tensor comparison is the identity. The Drinfeld tensor
         -- identity uses explicit double duals, so compose it before simplifying the wrappers.
         calc
@@ -80,14 +75,16 @@ variable {C}
 theorem pivotalOfBalanced_pivotalIsoApp_hom [BalancedCategory C] (X : C) :
     (@pivotalIsoApp C _ _ _ (pivotalOfBalanced C) X).hom =
       BalancedCategory.twist.hom.app X ≫ (drinfeldIso X).hom :=
-  (@pivotalIso_hom_app C _ _ _ (pivotalOfBalanced C) X).symm.trans (by rfl)
+  (@pivotalIso_hom_app C _ _ _ (pivotalOfBalanced C) X).symm.trans
+    (congrArg (BalancedCategory.twist.hom.app X ≫ ·) (drinfeldNatIso_hom_app X))
 
 /-- The inverse pivotal isomorphism obtained from a twist is `u_X⁻¹ ≫ θ_X⁻¹`. -/
 @[simp]
 theorem pivotalOfBalanced_pivotalIsoApp_inv [BalancedCategory C] (X : C) :
     (@pivotalIsoApp C _ _ _ (pivotalOfBalanced C) X).inv =
       (drinfeldIso X).inv ≫ BalancedCategory.twist.inv.app X :=
-  (@pivotalIso_inv_app C _ _ _ (pivotalOfBalanced C) X).symm.trans (by rfl)
+  (@pivotalIso_inv_app C _ _ _ (pivotalOfBalanced C) X).symm.trans
+    (congrArg (· ≫ BalancedCategory.twist.inv.app X) (drinfeldNatIso_inv_app X))
 
 /-- Passing from a pivotal structure to its twist and back recovers the pivotal structure. -/
 @[simp]
