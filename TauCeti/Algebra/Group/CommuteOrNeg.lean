@@ -104,16 +104,14 @@ theorem one_right {M : Type*} [Monoid M] [HasDistribNeg M] (x : M) : CommuteOrNe
 theorem of_mem_closure {G : Type*} [Group G] [HasDistribNeg G] {S : Set G}
     (h : ∀ x ∈ S, ∀ y ∈ S, CommuteOrNeg x y) {x y : G}
     (hx : x ∈ Subgroup.closure S) (hy : y ∈ Subgroup.closure S) : CommuteOrNeg x y := by
-  induction hy using Subgroup.closure_induction with
-  | mem y hy =>
-      induction hx using Subgroup.closure_induction with
-      | mem x hx => exact h x hx y hy
-      | one => exact one_left y
-      | mul x z hx hz ihx ihz => exact mul_left ihx ihz
-      | inv x hx ih => exact inv_left ih
-  | one => exact one_right x
-  | mul y z hy hz ihy ihz => exact mul_right ihy ihz
-  | inv y hy ih => exact inv_right ih
+  induction hx, hy using Subgroup.closure_induction₂ with
+  | mem x y hx hy => exact h x hx y hy
+  | one_left y hy => exact one_left y
+  | one_right x hx => exact one_right x
+  | mul_left x y z hx hy hz ihx ihy => exact mul_left ihx ihy
+  | mul_right x y z hx hy hz ihx ihy => exact mul_right ihx ihy
+  | inv_left x y hx hy ih => exact inv_left ih
+  | inv_right x y hx hy ih => exact inv_right ih
 
 end CommuteOrNeg
 
