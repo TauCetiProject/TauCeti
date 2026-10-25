@@ -53,7 +53,7 @@ theorem isCentralizerRegular_iff_forall_ringKrullDim_le
       ∀ y : Module.Dual k (Bialgebra.CotangentSpace k H),
         ringKrullDim (H ⧸ (centralizerHopfIdeal H x).toIdeal) ≤
           ringKrullDim (H ⧸ (centralizerHopfIdeal H y).toIdeal) := by
-  simp only [LieAlgebra.isCentralizerRegular_iff, ringKrullDim_quotient_centralizerHopfIdeal,
-    Nat.cast_le]
+  simp only [LieAlgebra.isCentralizerRegular_iff_forall_finrank_ker_le,
+    ringKrullDim_quotient_centralizerHopfIdeal, Nat.cast_le]
 
 end TauCeti
