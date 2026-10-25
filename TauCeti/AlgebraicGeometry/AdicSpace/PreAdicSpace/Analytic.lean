@@ -350,6 +350,10 @@ theorem analyticLocus.ι_hom :
     (analyticLocus.ι X).hom = eqToHom (analyticLocus_obj X) ≫ PreAdicSpace.analyticLocus.ι X.obj :=
   (rfl)
 
+instance : PreAdicSpace.IsOpenImmersion (analyticLocus.ι X).hom := by
+  rw [analyticLocus.ι_hom]
+  infer_instance
+
 end AdicSpace
 
 end TauCeti
