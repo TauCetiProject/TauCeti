@@ -127,6 +127,10 @@ on geometric fibres, its diagonal is an epimorphism on fibres, hence an epimorph
 monomorphism. -/
 instance [PreconnectedSpace S] (x : Spec (.of Ω) ⟶ S) : (fiber x).ReflectsMonomorphisms where
   reflects {X Y} f hf := by
+    -- Adapted from Mathlib's `ReflectsMonomorphisms` instance for
+    -- `CategoryTheory.PreGaloisCategory.FiberFunctor` in
+    -- `Mathlib/CategoryTheory/Galois/Basic.lean`, which uses that fibre functors reflect
+    -- isomorphisms; here we only know that `fiber x` reflects epimorphisms.
     have : IsIso ((fiber x).map (pullback.fst f f)) := by
       rw [← PreservesPullback.iso_hom_fst]
       have := isIso_fst_of_mono ((fiber x).map f)
