@@ -11,6 +11,9 @@ public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.Order.Minimal
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
 
+import Mathlib.Basic.Finite.Sum
+import Mathlib.SetTheory.Cardinal.Finite
+
 /-!
 # Connected components of multigraphs
 
@@ -35,6 +38,7 @@ elementary order API, follow Peter Nelson and Jun Kwon's Mathlib proposal
   infinitely many; it is exact whenever there are finitely many components.
 * `Graph.toSimpleGraphHomOfLE` is the homomorphism of underlying simple graphs induced by a
   subgraph inclusion, along which simple components can be mapped.
+* `Graph.ConnectedComponent.mapOfLE` maps native components along a subgraph inclusion.
 
 Component membership is described by the walk-based `Graph.Reachable`, which agrees with
 reachability in the underlying simple graph.
@@ -490,6 +494,72 @@ theorem map_toSimpleGraphHomOfLE_connectedComponentMk_eq_map_iff (hHG : H ≤ G)
         G.Reachable z w := by
   rw [SimpleGraph.ConnectedComponent.map_mk _ w,
     map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff, coe_toSimpleGraphHomOfLE_apply]
+
+/-- A subgraph inclusion maps each native connected component to the ambient connected component
+containing it. -/
+def ConnectedComponent.mapOfLE (hHG : H ≤ G) : H.ConnectedComponent → G.ConnectedComponent :=
+  fun C ↦ ConnectedComponent.ofSimple
+    (SimpleGraph.ConnectedComponent.map (toSimpleGraphHomOfLE hHG) C.toSimple)
+
+/-- The component containing a vertex maps along an inclusion to the ambient component containing
+that vertex. -/
+@[simp]
+theorem ConnectedComponent.mapOfLE_connectedComponentOf (hHG : H ≤ G) {x : α}
+    (hx : x ∈ V(H)) :
+    ConnectedComponent.mapOfLE hHG (H.connectedComponentOf x hx) =
+      G.connectedComponentOf x (hHG.vertexSet_mono hx) := by
+  apply G.connectedComponentEquiv.injective
+  simp only [ConnectedComponent.mapOfLE, connectedComponentEquiv_apply,
+    ConnectedComponent.toSimple_ofSimple, ConnectedComponent.toSimple_connectedComponentOf]
+  exact (map_toSimpleGraphHomOfLE_connectedComponentMk_eq_iff hHG).mpr
+    (Reachable.refl (hHG.vertexSet_mono hx))
+
+/-- Every vertex of a component remains in the ambient component obtained by mapping along a
+subgraph inclusion. -/
+theorem ConnectedComponent.mem_vertexSet_mapOfLE (hHG : H ≤ G) (C : H.ConnectedComponent)
+    {x : α} (hx : x ∈ V(C.1)) : x ∈ V((ConnectedComponent.mapOfLE hHG C).1) := by
+  have hxH : x ∈ V(H) := C.property.le.vertexSet_mono hx
+  rw [C.eq_connectedComponentOf hx, ConnectedComponent.mapOfLE_connectedComponentOf]
+  exact mem_vertexSet_connectedComponentOf_self (hHG.vertexSet_mono hxH)
+
+/-- A component maps along a subgraph inclusion to exactly the ambient component containing all
+of its vertices. -/
+theorem ConnectedComponent.mapOfLE_eq_iff (hHG : H ≤ G) {C : H.ConnectedComponent}
+    {D : G.ConnectedComponent} :
+    ConnectedComponent.mapOfLE hHG C = D ↔ V(C.1) ⊆ V(D.1) := by
+  constructor
+  · intro h x hx
+    rw [← h]
+    exact C.mem_vertexSet_mapOfLE hHG hx
+  · intro h
+    obtain ⟨x, hx⟩ := C.property.nonempty
+    exact ConnectedComponent.eq_of_mem_of_mem (C.mem_vertexSet_mapOfLE hHG hx) (h hx)
+
+/-- If deleting a finite set of vertices leaves finitely many connected components, then the
+original graph also has finitely many connected components. -/
+theorem finite_connectedComponent_of_finite_deleteVerts (S : Set α) [Finite S]
+    [Finite (G.deleteVerts S).ConnectedComponent] : Finite G.ConnectedComponent := by
+  classical
+  let _ : Finite ↥(S ∩ V(G)) := Finite.of_injective
+    (fun x : ↥(S ∩ V(G)) ↦ (⟨x.1, x.2.1⟩ : ↥S))
+    (fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
+  let f : ↥(S ∩ V(G)) ⊕ (G.deleteVerts S).ConnectedComponent → G.ConnectedComponent
+    | Sum.inl x => G.connectedComponentOf x.1 x.2.2
+    | Sum.inr C => ConnectedComponent.mapOfLE deleteVerts_le C
+  apply Finite.of_surjective f
+  intro C
+  obtain ⟨x, hxC⟩ := C.property.nonempty
+  have hxG : x ∈ V(G) := C.property.le.vertexSet_mono hxC
+  by_cases hxS : x ∈ S
+  · refine ⟨Sum.inl ⟨x, hxS, hxG⟩, ?_⟩
+    exact ConnectedComponent.eq_of_mem_of_mem
+      (mem_vertexSet_connectedComponentOf_self hxG) hxC
+  · have hx : x ∈ V(G.deleteVerts S) := by simp [hxG, hxS]
+    refine ⟨Sum.inr ((G.deleteVerts S).connectedComponentOf x hx), ?_⟩
+    simp only [f]
+    rw [ConnectedComponent.mapOfLE_connectedComponentOf]
+    exact ConnectedComponent.eq_of_mem_of_mem
+      (mem_vertexSet_connectedComponentOf_self hxG) hxC
 
 /-! ### Basic examples -/
 
