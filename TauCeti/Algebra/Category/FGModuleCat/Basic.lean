@@ -20,8 +20,9 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
 
 * `FGModuleCat.hom_hom_ofHom`: the linear map underlying `FGModuleCat.ofHom f` is `f`, the
   analogue of Mathlib's `ModuleCat.hom_ofHom`.
-* `FGModuleCat.hom_hom_add`: morphisms of finitely generated modules add pointwise, the
-  companion of Mathlib's `FGModuleCat.hom_hom_comp` and `FGModuleCat.hom_hom_id`.
+* `FGModuleCat.hom_hom_add`, `FGModuleCat.hom_hom_smul`: morphisms of finitely generated modules
+  add and scale pointwise, the companions of Mathlib's `FGModuleCat.hom_hom_comp` and
+  `FGModuleCat.hom_hom_id`.
 * `FGModuleCat.braiding_hom_hom_hom`: the braiding of finitely generated modules is the swap
   `TensorProduct.comm` of the tensor product.
 * `FGModuleCat.whiskerRight_hom_hom`: right whiskering of finitely generated modules is
@@ -53,6 +54,13 @@ addition of the underlying linear maps. -/
 @[simp]
 theorem _root_.FGModuleCat.hom_hom_add {R : Type u} [Ring R] {V W : FGModuleCat.{v} R}
     (f g : V ⟶ W) : (f + g).hom.hom = f.hom.hom + g.hom.hom :=
+  (rfl)
+
+/-- The linear map underlying a scalar multiple of a morphism of finitely generated modules over a
+commutative ring is the scalar multiple of the underlying linear map. -/
+@[simp]
+theorem _root_.FGModuleCat.hom_hom_smul {R : Type u} [CommRing R] {V W : FGModuleCat.{v} R}
+    (r : R) (f : V ⟶ W) : (r • f).hom.hom = r • f.hom.hom :=
   (rfl)
 
 open MonoidalCategory in

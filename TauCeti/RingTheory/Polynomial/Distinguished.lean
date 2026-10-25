@@ -15,11 +15,11 @@ public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 The polynomial `(1 + X) ^ n - 1` over a ring `R` is monic of degree `n` for `n ≠ 0`,
 with constant coefficient `0` and, for `0 < k`, `k`-th coefficient the binomial coefficient
 `n.choose k`. Over a commutative ring, when `n = p ^ m` is a power of a prime `p`, every
-binomial coefficient
-`(p ^ m).choose k` with `0 < k < p ^ m` is divisible by `p`, so the polynomial is
-*distinguished* at the ideal `(p)`: monic with all non-leading coefficients in `(p)`. Over the
-`p`-adic integers this is the shape of divisor for which Mathlib's Weierstrass division in
-`ℤ_p⟦X⟧` is available.
+binomial coefficient `(p ^ m).choose k` with `0 < k < p ^ m` is divisible by `p`, so the
+polynomial is *distinguished* at every ideal `I` containing `p`: monic with all non-leading
+coefficients in `I`. Over the `p`-adic integers, or any complete local ring of residue
+characteristic `p`, this is the shape of divisor for which Mathlib's Weierstrass division is
+available.
 
 This is the polynomial cutting out the finite levels of the power-series coordinate on the
 completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a level `Γ ⧸ U` of order
@@ -32,7 +32,7 @@ completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a le
 * `TauCeti.Polynomial.natDegree_one_add_X_pow_sub_one`: `(1 + X) ^ n - 1` has `natDegree` equal
   to `n` (at `n = 0` the polynomial is `0`, whose `natDegree` is `0` by convention).
 * `TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one`: `(1 + X) ^ (p ^ m) - 1` is
-  distinguished at `(p)`.
+  distinguished at every ideal containing `p`.
 -/
 
 public section
@@ -68,20 +68,19 @@ end Ring
 
 variable [CommRing R]
 
-/-- **`(1 + X) ^ (p ^ m) - 1` is a distinguished polynomial at `(p)`**, for a prime `p`: it is
-monic, its constant coefficient is `0`, and its other non-leading coefficients are the binomial
-coefficients `(p ^ m).choose k` with `0 < k < p ^ m`, which `p` divides. -/
-theorem isDistinguishedAt_one_add_X_pow_sub_one {p : ℕ} (hp : p.Prime) (m : ℕ) :
-    ((1 + X) ^ p ^ m - 1 : R[X]).IsDistinguishedAt (Ideal.span {(p : R)}) := by
+/-- **`(1 + X) ^ (p ^ m) - 1` is a distinguished polynomial at every ideal containing `p`**, for a
+prime `p`: it is monic, its constant coefficient is `0`, and its other non-leading coefficients are
+the binomial coefficients `(p ^ m).choose k` with `0 < k < p ^ m`, which `p` divides. -/
+theorem isDistinguishedAt_one_add_X_pow_sub_one {p : ℕ} (hp : p.Prime) {I : Ideal R}
+    (hI : (p : R) ∈ I) (m : ℕ) : ((1 + X) ^ p ^ m - 1 : R[X]).IsDistinguishedAt I := by
   rcases subsingleton_or_nontrivial R with hR | hR
   · exact ⟨⟨fun hk ↦ by simp [natDegree_of_subsingleton] at hk⟩, monic_of_subsingleton _⟩
   refine ⟨⟨fun {k} hk ↦ ?_⟩, monic_one_add_X_pow_sub_one (pow_ne_zero m hp.ne_zero)⟩
   rw [natDegree_one_add_X_pow_sub_one] at hk
   rcases Nat.eq_zero_or_pos k with rfl | hk0
   · simp [coeff_one_add_X_pow]
-  · rw [coeff_sub, coeff_one_add_X_pow, coeff_one, ite_eq_right hk0.ne', sub_zero,
-      Ideal.mem_span_singleton]
-    exact Nat.cast_dvd_cast (hp.dvd_choose_pow hk0.ne' hk.ne)
+  · rw [coeff_sub, coeff_one_add_X_pow, coeff_one, ite_eq_right hk0.ne', sub_zero]
+    exact I.mem_of_dvd (Nat.cast_dvd_cast (hp.dvd_choose_pow hk0.ne' hk.ne)) hI
 
 end Polynomial
 

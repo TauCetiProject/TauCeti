@@ -59,7 +59,10 @@ variable {N n : ℕ} [NeZero N] [NeZero n] (k : ℤ)
 /-- **The Petersson adjoint of `Tₙ`** (Diamond–Shurman, Theorem 5.5.3). For `n` coprime to the
 level `N` and cusp forms `f`, `g` on `Γ₁(N)`,
 
-`⟪Tₙ f, g⟫ = ⟪f, ⟨n⟩⁻¹ (Tₙ g)⟫`. -/
+`⟪Tₙ f, g⟫ = ⟪f, ⟨n⟩⁻¹ (Tₙ g)⟫`,
+
+for the double-coset operator `Tₙ = heckeTCuspNat k n`, which for `n` coprime to `N` is the
+classical one exactly when `n` is squarefree (see `heckeTNat`). -/
 theorem peterssonInnerCosets_heckeTCuspNat_left (hn : n.Coprime N)
     (f g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
     CuspForm.peterssonInnerCosets (heckeTCuspNat k n f) g =

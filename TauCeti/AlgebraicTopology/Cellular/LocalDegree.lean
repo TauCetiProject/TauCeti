@@ -741,7 +741,8 @@ lemma singularHomologyπ_singularHomology₀Section_apply_one {i : cell C 0}
     -- The composite is evaluated at `1` across the two presentations of the homology of the
     -- `0`-skeleton, which `simp` cannot split as a composite.
     exact (ConcreteCategory.congr_hom
-      (singularHomology₀Section_comp_singularHomologyπ_of_mem (ModuleCat.of R R) hyx) 1).trans
+      ((TopPair.ofSubset _).singularHomology₀Section_comp_singularHomologyπ
+        (ModuleCat.of R R) ⟨y, hyx⟩) 1).trans
         (by simp)
 
 end Ring
