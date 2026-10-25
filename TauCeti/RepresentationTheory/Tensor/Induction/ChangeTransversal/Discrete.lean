@@ -30,7 +30,7 @@ Evens norm.
 * `TauCeti.smoothTensorInducedChangeTransversalIso`: the comparison on smooth discrete
   representations.
 * `TauCeti.smoothTensorInductionChangeTransversalNatIso`: its functorial form.
-* `TauCeti.smoothTensorInducedTrivialF2Iso_changeTransversal_apply_tprod`: compatibility with
+* `TauCeti.smoothTensorInducedTrivialF2Iso_changeTransversal_hom`: compatibility with
   the canonical trivial-`𝔽₂` coefficient identification.
 
 ## References
@@ -238,5 +238,38 @@ theorem smoothTensorInducedTrivialF2Iso_changeTransversal_apply_tprod
   -- wrapper. Unfolding only the carrier projection aligns the two action expressions.
   change (trivialF2 U).ρ _ (m x) = m x
   exact trivialF2_ρ_apply_apply U _ _
+
+/-- The canonical identification of tensor-induced trivial `𝔽₂` coefficients commutes with
+change of transversal. -/
+@[reassoc]
+theorem smoothTensorInducedTrivialF2Iso_changeTransversal_hom
+    (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    (U : Subgroup G) (hU : IsOpen (U : Set G)) (s t : U.LeftTransversal) [U.FiniteIndex] :
+    (smoothTensorInducedChangeTransversalIso U hU s t
+        ⟨trivialF2 U, isSmoothDiscrete_trivialF2 U⟩).hom ≫
+        (smoothTensorInducedTrivialF2Iso G U hU s).hom =
+      (smoothTensorInducedTrivialF2Iso G U hU t).hom := by
+  -- Use the scalar structures carried by the coefficient objects rather than the default
+  -- integer module structures, so extensionality sees the same underlying linear maps.
+  let : Module ℤ (trivialF2 G).V := (trivialF2 G).hV2
+  let : Module ℤ (DiscreteRep.trivialF2 U).V := (DiscreteRep.trivialF2 U).module
+  apply ObjectProperty.hom_ext
+  apply TopRep.hom_ext
+  apply ContIntertwiningMap.toIntertwiningMap_injective
+  apply Representation.IntertwiningMap.ext
+  apply PiTensorProduct.ext
+  ext m
+  apply (trivialF2Equiv G).injective
+  -- Tensor extensionality evaluates the underlying linear-map composite; the named tensor
+  -- equation aligns its carrier with the public pure-tensor calculation.
+  change trivialF2Equiv G
+      ((smoothTensorInducedTrivialF2Iso G U hU s).hom.hom.hom
+        ((smoothTensorInducedChangeTransversalIso U hU s t
+            ⟨trivialF2 U, isSmoothDiscrete_trivialF2 U⟩).hom.hom.hom
+          (PiTensorProduct.tprod ℤ m))) =
+    trivialF2Equiv G
+      ((smoothTensorInducedTrivialF2Iso G U hU t).hom.hom.hom (PiTensorProduct.tprod ℤ m))
+  simpa only [smoothTensorInducedTrivialF2Tprod_eq] using
+    smoothTensorInducedTrivialF2Iso_changeTransversal_apply_tprod G U hU s t m
 
 end TauCeti
