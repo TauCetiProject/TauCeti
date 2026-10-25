@@ -251,6 +251,11 @@ theorem single_mem_cyclicTotalCochains {m k : ℕ} (hk : k ≤ m)
   intro q hq
   exact Pi.single_eq_of_ne (by omega) _
 
+/-- A total cochain of degree `m` is a total cochain of every degree `n ≥ m`. -/
+theorem cyclicTotalCochains_mono : Monotone (cyclicTotalCochains R A M) := fun m n hmn x hx ↦ by
+  rw [mem_cyclicTotalCochains_iff] at hx ⊢
+  exact fun q hq ↦ hx q (lt_of_le_of_lt hmn hq)
+
 /-- A total cochain of degree `m` vanishing below row `m` is concentrated in column zero. -/
 private theorem eq_single_of_forall_lt {m : ℕ}
     {x : ∀ k : ℕ, MultilinearMap R (fun _ : Fin (k + 1) ↦ A) M}

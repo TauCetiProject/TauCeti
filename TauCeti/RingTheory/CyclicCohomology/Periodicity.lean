@@ -89,11 +89,6 @@ section Cochains
 variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M]
   [Module R M]
 
-/-- A total cochain of degree `m` is a total cochain of every degree `n ≥ m`. -/
-theorem cyclicTotalCochains_mono : Monotone (cyclicTotalCochains R A M) := fun m n hmn x hx ↦ by
-  rw [mem_cyclicTotalCochains_iff] at hx ⊢
-  exact fun q hq ↦ hx q (lt_of_le_of_lt hmn hq)
-
 variable (R A M) in
 /-- The periodicity map `Tot^m → Tot^(m+2)` of the cyclic bicomplex. It is the identity on
 families of cochains: the component in row `q` moves from column `m - q` to column `m + 2 - q`. -/
@@ -123,7 +118,7 @@ theorem mem_range_cyclicTotalPeriodicity_iff {m : ℕ} {x : cyclicTotalCochains 
     exact ⟨mem_cyclicTotalCochains_iff.1 y.2 _ (by omega),
       mem_cyclicTotalCochains_iff.1 y.2 _ (by omega)⟩
   · refine mem_cyclicTotalCochains_iff.2 fun q hq ↦ ?_
-    rcases (show q = m + 1 ∨ q = m + 2 ∨ m + 2 < q by omega) with rfl | rfl | hq
+    obtain rfl | rfl | hq : q = m + 1 ∨ q = m + 2 ∨ m + 2 < q := by omega
     · exact h₁
     · exact h₂
     · exact mem_cyclicTotalCochains_iff.1 x.2 q hq
@@ -135,7 +130,7 @@ private theorem cyclicBicomplexHorizontal_sub_apply {m : ℕ} (x : cyclicTotalCo
     cyclicBicomplexHorizontal R A M (m + 2 - k) k (x.1 k) =
       cyclicBicomplexHorizontal R A M (m - k) k (x.1 k) := by
   by_cases hk : k ≤ m
-  · rw [show m + 2 - k = m - k + 2 by omega, cyclicBicomplexHorizontal_add_two]
+  · rw [Nat.sub_add_comm hk, cyclicBicomplexHorizontal_add_two]
   · rw [mem_cyclicTotalCochains_iff.1 x.2 k (by omega), map_zero, map_zero]
 
 /-! ### The projection onto column zero -/
@@ -180,7 +175,7 @@ private theorem cyclicBicomplexVertical_sub_apply {m : ℕ} (x : cyclicTotalCoch
     cyclicBicomplexVertical R A M (m + 2 - k) k (x.1 k) =
       cyclicBicomplexVertical R A M (m - k) k (x.1 k) := by
   by_cases hk : k ≤ m
-  · rw [show m + 2 - k = m - k + 2 by omega, cyclicBicomplexVertical_add_two]
+  · rw [Nat.sub_add_comm hk, cyclicBicomplexVertical_add_two]
   · rw [mem_cyclicTotalCochains_iff.1 x.2 k (by omega), map_zero, map_zero]
 
 /-- The periodicity map commutes with the total differential. -/
@@ -252,8 +247,11 @@ private theorem exists_eq_cyclicTotalPeriodicity_add_cyclicTotalDifferential {m 
       (one_sub_cyclicOperator_comp_hochschildCoboundary R A M (m + 1)) χ
     simp only [LinearMap.comp_apply, LinearMap.sub_apply, Module.End.one_apply, hχ] at hb
     simp only [cyclicTotalDifferential_apply_succ, Submodule.coe_zero, Pi.zero_apply] at hx'
-    rw [show m + 2 - (m + 1) = 1 by omega, show m + 2 - (m + 1 + 1) = 0 by omega,
-      cyclicBicomplexVertical_of_odd odd_one, cyclicBicomplexHorizontal_of_even Even.zero] at hx'
+    -- the rows `m + 1` and `m + 2` of a total cochain of degree `m + 2` sit in columns one and zero
+    have h₁ : m + 2 - (m + 1) = 1 := by omega
+    have h₀ : m + 2 - (m + 1 + 1) = 0 := Nat.sub_self _
+    rw [h₁, h₀, cyclicBicomplexVertical_of_odd odd_one,
+      cyclicBicomplexHorizontal_of_even Even.zero] at hx'
     simp only [LinearMap.neg_apply, LinearMap.sub_apply, Module.End.one_apply] at hx'
     simp only [y, Pi.sub_apply, map_sub, hc₁, ← hb]
     exact sub_eq_zero.2 (neg_add_eq_zero.1 hx')
@@ -267,7 +265,8 @@ private theorem exists_eq_cyclicTotalPeriodicity_add_cyclicTotalDifferential {m 
     rw [hy₁, map_zero, add_zero] at h
     simp [z, h]
   have hz₂ : (cyclicTotalDifferential R A M (m + 1) z).1 (m + 2) = 0 := by
-    simp [z, Pi.single_eq_of_ne (show m + 1 + 1 ≠ m by omega)]
+    have hne : m + 1 + 1 ≠ m := by omega
+    simp [z, Pi.single_eq_of_ne hne]
   -- the total cochain `y + D z` vanishes in columns zero and one
   let v : cyclicTotalCochains R A M (m + 2) := ⟨y + (cyclicTotalDifferential R A M (m + 1) z).1,
     add_mem (sub_mem x.2 (cyclicTotalDifferential R A M (m + 1) c).2)
@@ -309,7 +308,7 @@ def cyclicTotalComplexPeriodicity :
     | 1 =>
       exact (HomologicalComplex.isZero_extend_X _ _ 1 fun _ ↦ by simp).eq_of_src _ _
     | m + 2 =>
-      rw [show m + 2 + 1 = m + 1 + 2 by omega, HomologicalComplex.extend_d_eq _ _
+      rw [Nat.add_right_comm m 2 1, HomologicalComplex.extend_d_eq _ _
         (ComplexShape.embeddingUpNatAdd_f 2 m) (ComplexShape.embeddingUpNatAdd_f 2 (m + 1))]
       dsimp only
       refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
