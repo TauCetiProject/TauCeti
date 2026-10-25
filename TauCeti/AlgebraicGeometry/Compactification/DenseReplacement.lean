@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 public import Mathlib.CategoryTheory.Adjunction.Reflective
-public import TauCeti.AlgebraicGeometry.Compactification.BaseChange
+public import TauCeti.AlgebraicGeometry.Compactification.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Basic
 
 /-!

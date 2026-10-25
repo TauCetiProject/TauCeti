@@ -81,6 +81,30 @@ abbrev ofHom {Y : Scheme.{u}} (j : X ⟶ Y) (p : Y ⟶ S)
   ⟨⟨Y, j, p, fac⟩, (compactificationProperty_iff f _).mpr
     ⟨inferInstance, inferInstance, inferInstance⟩⟩
 
+/-- An ambient isomorphism respecting the interior and structure map gives an isomorphism
+of compactifications. -/
+def isoMk {C D : Compactification f} (e : C.Xbar ≅ D.Xbar)
+    (hj : C.j ≫ e.hom = D.j) (hp : e.hom ≫ D.p = C.p) : C ≅ D :=
+  (compactificationProperty f).isoMk
+    { hom := { h := e.hom, ι_h := hj, h_π := hp }
+      inv := { h := e.inv
+               ι_h := by simpa [Category.assoc] using congrArg (· ≫ e.inv) hj.symm
+               h_π := by simpa using congrArg (e.inv ≫ ·) hp.symm }
+      hom_inv_id := Factorisation.Hom.ext (by simp)
+      inv_hom_id := Factorisation.Hom.ext (by simp) }
+
+@[simp]
+theorem isoMk_hom_hom_h {C D : Compactification f} (e : C.Xbar ≅ D.Xbar)
+    (hj : C.j ≫ e.hom = D.j) (hp : e.hom ≫ D.p = C.p) :
+    (isoMk e hj hp).hom.hom.h = e.hom :=
+  (rfl)
+
+@[simp]
+theorem isoMk_inv_hom_h {C D : Compactification f} (e : C.Xbar ≅ D.Xbar)
+    (hj : C.j ≫ e.hom = D.j) (hp : e.hom ≫ D.p = C.p) :
+    (isoMk e hj hp).inv.hom.h = e.inv :=
+  (rfl)
+
 /-- A morphism of compactifications fixes the source and lies over the base. -/
 abbrev Hom (C D : Compactification f) : Type _ := C ⟶ D
 

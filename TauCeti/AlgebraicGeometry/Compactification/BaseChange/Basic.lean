@@ -97,6 +97,12 @@ theorem baseChange_j_fst (C : Compactification f) (g : T ⟶ S) :
     (C.baseChange g).j ≫ pullback.fst C.p g = pullback.fst f g ≫ C.j :=
   baseChangeJ_fst C g
 
+/-- The interior of a base change lies over the new base. -/
+@[reassoc (attr := simp)]
+theorem baseChange_j_snd (C : Compactification f) (g : T ⟶ S) :
+    (C.baseChange g).j ≫ pullback.snd C.p g = pullback.snd f g :=
+  baseChangeJ_snd C g
+
 /-- The square relating the original and pulled-back interiors is cartesian. -/
 theorem isPullback_baseChange (C : Compactification f) (g : T ⟶ S) :
     IsPullback (pullback.fst f g) (C.baseChange g).j C.j (pullback.fst C.p g) :=
@@ -116,8 +122,6 @@ def baseChangeMap {C D : Compactification f} (h : C ⟶ D) (g : T ⟶ S) :
         (by simp) (by simp)
       ι_h := by
         apply pullback.hom_ext <;> simp [Category.assoc]
-        simpa only [baseChange_p] using
-          ((C.baseChange g).obj.ι_π.trans (D.baseChange g).obj.ι_π.symm)
       h_π := by simp }
 
 @[simp]
