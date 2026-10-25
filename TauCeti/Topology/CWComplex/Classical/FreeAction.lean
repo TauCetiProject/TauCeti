@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Covering.Quotient
 public import Mathlib.Topology.TietzeExtension
+public import TauCeti.Topology.CWComplex.Classical.CellAction
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Induction
 
 /-!
@@ -78,16 +79,6 @@ lemma smul_mem_skeletonLT [T2Space E] (g : G) {n : ℕ∞} {z : E}
   obtain ⟨m, hm, i, hi⟩ := hz
   obtain ⟨j, hj⟩ := hcell g m i
   exact ⟨m, hm, j, hj ▸ smul_mem_smul_set hi⟩
-
-include hcell hfree in
-/-- Only the identity carries a point of an open cell into the same open cell. -/
-lemma eq_one_of_mem_openCell_of_smul_mem {n : ℕ} {i : cell (univ : Set E) n} {g : G}
-    {z : E} (hz : z ∈ openCell n i) (hgz : g • z ∈ openCell n i) : g = 1 := by
-  obtain ⟨j, hj⟩ := hcell g n i
-  have hji : (⟨n, j⟩ : Σ m, cell (univ : Set E) m) = ⟨n, i⟩ :=
-    eq_of_not_disjoint_openCell (not_disjoint_iff.2 ⟨g • z, hj ▸ smul_mem_smul_set hz, hgz⟩)
-  obtain rfl : j = i := eq_of_heq (Sigma.mk.inj_iff.1 hji).2
-  exact hfree g n j hj
 
 variable (G) in
 /-- Two `n`-cells are related when a group element carries the open cell of one onto the open

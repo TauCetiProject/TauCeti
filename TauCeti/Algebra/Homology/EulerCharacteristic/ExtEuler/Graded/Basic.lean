@@ -61,6 +61,9 @@ the polynomial.
 * `TauCeti.IsGradedEulerAdmissible.congr` and `TauCeti.gradedExtEuler_congr`: admissibility and
   the q-Euler characteristic transport along linear equivalences of the bigraded `Ext` groups,
   also between different graded categories.
+* `TauCeti.IsGradedEulerAdmissible.of_isZero_left` and
+  `TauCeti.IsGradedEulerAdmissible.of_isZero_right`: a pair with a zero entry is graded
+  Euler-admissible.
 * `TauCeti.isGradedEulerAdmissible_of_projective` and `TauCeti.gradedExtEuler_projective`:
   **graded projective evaluation**, `χ_q(P, Y) = ∑ j, q⁻ʲ dim_k Hom(P, Y{j})` for projective `P`.
 
@@ -484,6 +487,36 @@ theorem gradedExtEuler_congr
       targetShiftGradedDimension_congr _ _ fun j ↦ (φ n j).finrank_eq.symm]
 
 end congr
+
+/-! ### Zero entries -/
+
+section Zero
+
+variable (e)
+
+/-- A pair whose first entry is zero is graded Euler-admissible: every bigraded `Ext` group out
+of it vanishes. -/
+theorem IsGradedEulerAdmissible.of_isZero_left {X Y : C} (hX : Limits.IsZero X) :
+    IsGradedEulerAdmissible.{w} k e X Y := by
+  have hsub (n : ℕ) (j : ℤ) : Subsingleton (GradedExt.{w} e X Y n j) :=
+    subsingleton_ext_of_isZero_left hX ((e ^ j).functor.obj Y) n
+  refine ⟨⟨fun n ↦ HasFiniteLaurentSupport.of_finset (fun j ↦ ?_) ∅ fun j _ ↦ hsub n j⟩,
+    ⟨0, ⟨fun n _ j ↦ hsub n j⟩⟩⟩
+  have := hsub n j
+  infer_instance
+
+/-- A pair whose second entry is zero is graded Euler-admissible: every shift of the target is
+zero, so every bigraded `Ext` group vanishes. -/
+theorem IsGradedEulerAdmissible.of_isZero_right {X Y : C} (hY : Limits.IsZero Y) :
+    IsGradedEulerAdmissible.{w} k e X Y := by
+  have hsub (n : ℕ) (j : ℤ) : Subsingleton (GradedExt.{w} e X Y n j) :=
+    subsingleton_ext_of_isZero_right X ((e ^ j).functor.map_isZero hY) n
+  refine ⟨⟨fun n ↦ HasFiniteLaurentSupport.of_finset (fun j ↦ ?_) ∅ fun j _ ↦ hsub n j⟩,
+    ⟨0, ⟨fun n _ j ↦ hsub n j⟩⟩⟩
+  have := hsub n j
+  infer_instance
+
+end Zero
 
 /-! ### Projective evaluation -/
 

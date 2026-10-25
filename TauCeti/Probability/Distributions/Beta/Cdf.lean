@@ -34,6 +34,7 @@ integral divided by itself, namely `1`.
 ## Main results
 
 * `TauCeti.Probability.cdf_betaMeasure_eq` — the closed-form cdf `I_x(α, β)`;
+* `TauCeti.Probability.cdf_betaMeasure_one_right` — the power-function cdf `x ^ α` when `β = 1`;
 * `TauCeti.Probability.measureReal_Iic_betaMeasure` — the same in measure form;
 * `TauCeti.Probability.measureReal_Ioc_betaMeasure` — the mass of a bounded interval, as a
   difference of two
@@ -143,6 +144,12 @@ theorem cdf_betaMeasure_eq (hα : 0 < α) (hβ : 0 < β) (x : ℝ) :
       regularizedIncompleteBeta_def_of_mem_Icc hα hβ ⟨hx.le, hx₁⟩]
   · rw [setIntegral_betaPDFReal_Iic_of_one_le hα hβ hx₁.le,
       regularizedIncompleteBeta_eq_one_of_one_le hα.le hβ hx₁.le]
+
+/-- With second shape parameter one the beta law is the power-function law: on `[0, 1]` its
+cumulative distribution function is `x ^ α`. -/
+theorem cdf_betaMeasure_one_right (hα : 0 < α) (hx : x ∈ Icc 0 1) :
+    cdf (betaMeasure α 1) x = x ^ α := by
+  rw [cdf_betaMeasure_eq hα one_pos, regularizedIncompleteBeta_one_right hα hx.1 hx.2]
 
 /-! ### Consequences -/
 

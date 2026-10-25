@@ -45,6 +45,8 @@ continuous bilinear forms.
   space (`ContinuousLinearMap.dual_finrank_eq`).
 * `ContinuousLinearMap.isInvertible_of_separatingLeft`: in finite dimensions, a map into the dual
   with left-separating bilinear form is invertible.
+* `ContinuousLinearMap.isInvertible_of_pos`: in finite dimensions, a map into the dual that is
+  positive on nonzero diagonal vectors is invertible.
 * `TauCeti.isInvertible_toContinuousBilinearMap_iff_separatingLeft`:
   contraction with a bilinear form is invertible exactly when it is left-separating in
   finite dimensions, identifying covectors with vectors for local contraction equations.
@@ -124,6 +126,15 @@ theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
     fun hb ↦ _root_.ContinuousLinearMap.isInvertible_of_injective (hsep.mp hb)⟩
 
 end FiniteDimensional
+
+/-- In finite dimensions, a continuous linear map into the dual that is positive on nonzero
+diagonal vectors is invertible. This is the musical isomorphism of a Riemannian metric. -/
+theorem _root_.ContinuousLinearMap.isInvertible_of_pos
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {L : E →L[ℝ] E →L[ℝ] ℝ} (hpos : ∀ v, v ≠ 0 → 0 < L v v) : L.IsInvertible :=
+  ContinuousLinearMap.isInvertible_of_separatingLeft fun v hv ↦ by
+    by_contra hv0
+    exact (hpos v hv0).ne' (hv v)
 
 section Convex
 

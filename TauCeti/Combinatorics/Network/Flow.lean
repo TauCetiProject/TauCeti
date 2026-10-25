@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import Mathlib.Algebra.Order.Group.Basic
 public import TauCeti.Combinatorics.Network.Residual
 
 /-!
@@ -34,6 +36,7 @@ flows is assembled.
 * `TauCeti.BoundedFlow.swap`: the same assignment as a bounded `t`–`s` assignment.
 * `TauCeti.BoundedFlow.update`: the residual update by a residual `s`–`t` assignment.
 * `TauCeti.Flow cap s t`: ordinary `s`–`t` flows for the capacities `cap`.
+* `TauCeti.Flow.zero`: the zero flow for nonnegative capacities.
 * `TauCeti.BoundedFlow.swapFlow`: terminal exchange, turning a capacity-feasible assignment of
   nonpositive value into an ordinary flow in the opposite direction.
 * `TauCeti.Flow.augment`: augmentation of a flow by a flow of its residual network.
@@ -45,6 +48,8 @@ flows is assembled.
 * `TauCeti.BoundedFlow.val_le_cutBound` and `TauCeti.BoundedFlow.neg_cutBound_compl_le_val`:
   weak duality for bounded `s`–`t` assignments, from above and from below.
 * `TauCeti.Flow.val_le_arrowSum`: weak duality for ordinary flows.
+* `TauCeti.Flow.arrowSum_le_arrowSum_univ`: a flow carries at most the total capacity across any
+  pair of vertex sets.
 * `TauCeti.map_cutBound`: cut bounds commute with additive coefficient maps.
 * `TauCeti.BoundedFlow.cutBound_sub_val` and `TauCeti.BoundedFlow.val_eq_cutBound_iff`: the gap
   between a cut bound and the value is the residual capacity leaving the cut, so the value attains
@@ -53,6 +58,8 @@ flows is assembled.
   add values, and connect any two bounded `s`–`t` assignments.
 * `TauCeti.Flow.exists_augment_eq`: every flow of at least the value of `f` is an augmentation of
   `f` by a flow of its residual network.
+* `TauCeti.Flow.exists_nsmul_eq_val`: a flow with arrow values in `zmultiples d` has value
+  `n • d` for a natural number `n`.
 
 ## References
 
@@ -167,6 +174,11 @@ theorem swap_swap (f : BoundedFlow lo hi s t) : f.swap.swap = f :=
 theorem val_swap (f : BoundedFlow lo hi s t) : f.swap.val = -f.val := by
   rw [val_def, swap_toFun, excessAt_source]
 
+/-- A bounded assignment whose terminals coincide has value zero. -/
+theorem val_eq_zero_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.val = 0 := by
+  subst hst
+  rw [val_def, ← sum_excessAt f.toFun, Fintype.sum_eq_single s fun v hv ↦ f.conserve v hv hv]
+
 end Preorder
 
 section Ordered
@@ -252,6 +264,21 @@ namespace Flow
 
 variable {cap : Assignment Q K} {s t : V}
 
+/-- The zero flow for nonnegative capacities. -/
+def zero (hcap : 0 ≤ cap) : Flow cap s t where
+  toFun := 0
+  mem_Icc := ⟨le_rfl, hcap⟩
+  conserve v _ _ := excessAt_zero v
+  excessAt_sink_nonneg := (excessAt_zero t).ge
+
+@[simp]
+theorem zero_toFun (hcap : 0 ≤ cap) : (zero hcap : Flow cap s t).toFun = 0 :=
+  (rfl)
+
+@[simp]
+theorem val_zero (hcap : 0 ≤ cap) : (zero hcap : Flow cap s t).val = 0 := by
+  rw [BoundedFlow.val_def, zero_toFun, excessAt_zero]
+
 theorem nonneg (f : Flow cap s t) {x y : V} (e : Q x y) : 0 ≤ f.toFun e :=
   f.lower_le e
 
@@ -309,6 +336,15 @@ theorem val_le_arrowSum [DecidableEq V] (f : Flow cap s t) {S : Finset V} (hs : 
   calc f.val ≤ cutBound 0 cap S := f.toBoundedFlow.val_le_cutBound hs ht
     _ = arrowSum cap S Sᶜ := cutBound_zero_left cap S
 
+/-- The value of an ordinary flow on the arrows from any vertex set to any other is at most the
+total capacity of all arrows. -/
+theorem arrowSum_le_arrowSum_univ (f : Flow cap s t) (S T : Finset V) :
+    arrowSum f.toFun S T ≤ arrowSum cap univ univ :=
+  calc arrowSum f.toFun S T ≤ arrowSum f.toFun univ univ :=
+        (arrowSum_mono_left f.mem_Icc.1 (subset_univ S) T).trans
+          (arrowSum_mono_right f.mem_Icc.1 univ (subset_univ T))
+    _ ≤ arrowSum cap univ univ := arrowSum_mono f.mem_Icc.2 univ univ
+
 /-- The *augmentation* of an ordinary `s`–`t` flow `f` by an ordinary `s`–`t` flow `r` of its
 residual network: the residual update of `f` by `r`. -/
 def augment (f : Flow cap s t) (r : Flow (residualCapacity 0 cap f.toFun) s t) :
@@ -338,6 +374,17 @@ theorem Flow.exists_augment_eq [Lattice K] [IsOrderedAddMonoid K] {cap : Assignm
   refine ⟨⟨r, ?_⟩, Flow.ext (congrArg BoundedFlow.toFun hr)⟩
   rw [← BoundedFlow.val_def, hval]
   exact sub_nonneg.mpr hfg
+
+/-- For `0 < d`, an ordinary flow with arrow values in `zmultiples d` has value `n • d` for a
+natural number `n`. -/
+theorem Flow.exists_nsmul_eq_val [PartialOrder K] [IsOrderedAddMonoid K] {cap : Assignment Q K}
+    {s t : V} {d : K} (hd : 0 < d) {f : Flow cap s t}
+    (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ AddSubgroup.zmultiples d) :
+    ∃ n : ℕ, n • d = f.val := by
+  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 (excessAt_mem hf t)
+  rw [← BoundedFlow.val_def] at hk
+  have hk₀ : 0 ≤ k := (zsmul_le_zsmul_iff_left hd).1 (by simpa [hk] using f.val_nonneg)
+  exact ⟨k.toNat, by rw [← natCast_zsmul, Int.toNat_of_nonneg hk₀, hk]⟩
 
 end BoundedFlow
 

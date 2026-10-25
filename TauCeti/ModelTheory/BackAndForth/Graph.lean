@@ -17,6 +17,10 @@ A graph isomorphism is then an isomorphism of these structures, and two tuples o
 the same atomic type exactly when they have the same pattern of equalities and the same pattern
 of adjacencies. These two facts reduce back-and-forth computations on concrete graphs to
 statements about vertices and edges.
+
+An equivalence relation `r` is presented as the graph `SimpleGraph.fromRel r`, and
+`Setoid.sameAtomicType_fromRel_iff` describes atomic types there by equalities and
+`r`-relations.
 -/
 
 public section
@@ -67,3 +71,25 @@ theorem sameAtomicType_iff {n : ℕ} (a : Fin n → V) (b : Fin n → W) :
   exact h (f 0) (f 1)
 
 end SimpleGraph
+
+namespace Setoid
+
+open SimpleGraph
+
+variable {r : Setoid V} {s : Setoid W}
+
+variable (r s) in
+/-- Two tuples have the same atomic type in the graphs of equivalence relations exactly when they
+have the same equalities and the same relations between their entries. -/
+theorem sameAtomicType_fromRel_iff {n : ℕ} (a : Fin n → V) (b : Fin n → W) :
+    letI := (fromRel r).structure
+    letI := (fromRel s).structure
+    TauCeti.SameAtomicType (L := Language.graph) a b ↔
+      (∀ i j, a i = a j ↔ b i = b j) ∧ ∀ i j, r (a i) (a j) ↔ s (b i) (b j) := by
+  rw [SimpleGraph.sameAtomicType_iff]
+  refine and_congr_right fun heq => forall₂_congr fun i j => ?_
+  by_cases h : a i = a j
+  · simp [h, (heq i j).mp h]
+  · simp [h, mt (heq i j).mpr h, r.comm' (x := a j), s.comm' (x := b j)]
+
+end Setoid

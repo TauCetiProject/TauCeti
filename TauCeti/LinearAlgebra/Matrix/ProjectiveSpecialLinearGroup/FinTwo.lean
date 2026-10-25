@@ -27,10 +27,14 @@ them; that classification, which runs through the action on the projective line,
 
 ## Main declarations
 
+* `Matrix.ProjectiveSpecialLinearGroup.mk_inv_mul_mul`: projection to `PSL(2, R)` preserves
+  conjugation, with the inverse on the left.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff`: over a ring without zero divisors, two
   matrices of `SL(2, R)` have the same class exactly when they agree up to sign.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic`: an element of `PSL(2, R)` is parabolic when
   it has a parabolic representative, and `isParabolic_mk_iff`: then every representative is.
+* `Matrix.ProjectiveSpecialLinearGroup.eq_one_or_isParabolic_of_trace_sq_eq_four`: a matrix of
+  `SL(2, R)` with `tr² = 4` has trivial or parabolic class.
 * `Matrix.ProjectiveSpecialLinearGroup.isParabolic_conj_iff`: parabolicity is invariant under
   conjugation, `isParabolic_inv_iff`: under inversion, and `IsParabolic.pow`, `IsParabolic.zpow`:
   under nonzero powers in characteristic zero.
@@ -54,6 +58,11 @@ open scoped MatrixGroups
 namespace Matrix.ProjectiveSpecialLinearGroup
 
 variable {R : Type*} [CommRing R]
+
+/-- Projection to `PSL(2, R)` preserves conjugation, with the inverse on the left. -/
+theorem mk_inv_mul_mul (S Y : SL(2, R)) :
+    ((S⁻¹ * Y * S : SL(2, R)) : PSL(2, R)) = (S : PSL(2, R))⁻¹ * Y * S := by
+  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
 
 /-- An element of `PSL(2, R)` is *parabolic* when it is the class of a parabolic matrix of
 `SL(2, R)`. When `R` has no zero divisors every representative is then parabolic
@@ -122,6 +131,25 @@ theorem isParabolic_inv_iff {g : PSL(2, R)} : IsParabolic g⁻¹ ↔ IsParabolic
   simp [eq_comm, and_comm, add_comm, mul_comm]
 
 alias ⟨_, IsParabolic.inv⟩ := isParabolic_inv_iff
+
+/-- The class of a matrix of `SL(2, R)` with `tr² = 4` is the identity or parabolic: the
+discriminant `tr² - 4` vanishes, so the matrix is parabolic unless it is scalar, and a scalar
+matrix of determinant one is `±1`. -/
+theorem eq_one_or_isParabolic_of_trace_sq_eq_four {a : SL(2, R)}
+    (h : (a : Matrix (Fin 2) (Fin 2) R).trace ^ 2 = 4) :
+    (a : PSL(2, R)) = 1 ∨ IsParabolic (a : PSL(2, R)) := by
+  rw [isParabolic_mk_iff, GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix,
+    Matrix.IsParabolic, Matrix.discr_fin_two, a.det_coe, h]
+  by_cases hs : (a : Matrix (Fin 2) (Fin 2) R) ∈ Set.range (scalar (Fin 2))
+  · left
+    obtain ⟨r, hr⟩ := hs
+    have hdet := a.det_coe
+    rw [← hr, scalar_apply, det_diagonal, Fin.prod_univ_two] at hdet
+    rw [← QuotientGroup.mk_one, mk_eq_mk_iff]
+    rcases mul_self_eq_one_iff.1 hdet with rfl | rfl
+    · exact Or.inl (Subtype.ext (by rw [← hr]; simp))
+    · exact Or.inr (Subtype.ext (by rw [SpecialLinearGroup.coe_neg, ← hr]; simp))
+  · exact Or.inr ⟨hs, by ring⟩
 
 /-- A nonzero power of a parabolic element of `PSL(2, K)` is parabolic. -/
 theorem IsParabolic.pow {K : Type*} [Field K] [CharZero K] {g : PSL(2, K)} (hg : IsParabolic g)

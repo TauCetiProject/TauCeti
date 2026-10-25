@@ -69,9 +69,9 @@ theorem natCard_GL_fin_two_eq_sq_sub_one_mul :
 variable {F} in
 /-- **`GL₂` over a field with two elements has order `6`.** This is `(q - 1)² · q(q + 1)` at
 `q = 2`. -/
-theorem natCard_GL_fin_two_of_card_eq_two [Fintype F] (hF : Fintype.card F = 2) :
+theorem natCard_GL_fin_two_of_card_eq_two (hF : Nat.card F = 2) :
     Nat.card (GL (Fin 2) F) = 6 := by
-  rw [natCard_GL_fin_two F, Nat.card_eq_fintype_card, hF]
+  rw [natCard_GL_fin_two F, hF]
   norm_num
 
 end TauCeti

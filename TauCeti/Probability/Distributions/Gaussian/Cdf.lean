@@ -36,6 +36,8 @@ over `Set.Iic x` is then the limit of those interval integrals, using
 * `TauCeti.Probability.cdf_gaussianReal_zero` — the cdf at the singular boundary `v = 0`.
 * `TauCeti.Probability.cdf_gaussianReal_zero_one_neg` — the symmetry `Φ (-x) = 1 - Φ x` of the
   standard Gaussian cdf.
+* `TauCeti.Probability.cdf_gaussianReal_self` — for a nonzero variance the cdf equals `1 / 2` at
+  the mean.
 * `TauCeti.Probability.cdf_gaussianReal_pos`, `TauCeti.Probability.cdf_gaussianReal_lt_one` — for
   a nonzero variance the cdf takes values strictly between `0` and `1`.
 * `TauCeti.Probability.hasDerivAt_cdf_gaussianReal` — the cdf has the Gaussian density as its
@@ -143,6 +145,13 @@ theorem cdf_gaussianReal_zero_one_neg (x : ℝ) :
     cdf (gaussianReal 0 1) (-x) = 1 - cdf (gaussianReal 0 1) x := by
   rw [cdf_gaussianReal_zero_one, cdf_gaussianReal_zero_one, neg_div, Real.erf_neg]
   ring
+
+/-- A Gaussian law with nonzero variance has its mean as median: its cumulative distribution
+function takes the value `1 / 2` at the mean. -/
+@[simp]
+theorem cdf_gaussianReal_self (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) :
+    cdf (gaussianReal m v) m = 1 / 2 := by
+  simp [cdf_gaussianReal_eq m hv, Real.erf_zero]
 
 /-- The cumulative distribution function of a Gaussian law with nonzero variance is positive. -/
 theorem cdf_gaussianReal_pos (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :

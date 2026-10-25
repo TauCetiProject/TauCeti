@@ -7,10 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
-public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import Mathlib.Geometry.Manifold.Metrizable
 import Mathlib.Geometry.Manifold.PartitionOfUnity
@@ -374,43 +371,20 @@ theorem mayerVietorisShortComplex_shortExact [FiniteDimensional ℝ E] [IsManifo
   -- In each degree, transport the exactness of the restriction maps of smooth forms along the
   -- identification of `(Ω^•(U) ⊞ Ω^•(V))^k` with the product module `Ωᵏ(U) × Ωᵏ(V)`.
   unfold mayerVietorisShortComplex
-  refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun k ↦ ?_
-  have hinl : biprod.inl ≫ (ModuleCat.biprodIsoProd (.of ℝ (SmoothForm I U ℝ k))
-      (.of ℝ (SmoothForm I V ℝ k))).hom = ModuleCat.ofHom (LinearMap.inl ℝ _ _) := by
-    rw [← Iso.eq_comp_inv]
-    apply biprod.hom_ext <;> ext x <;> simp
-  have hinr : biprod.inr ≫ (ModuleCat.biprodIsoProd (.of ℝ (SmoothForm I U ℝ k))
-      (.of ℝ (SmoothForm I V ℝ k))).hom = ModuleCat.ofHom (LinearMap.inr ℝ _ _) := by
-    rw [← Iso.eq_comp_inv]
-    apply biprod.hom_ext <;> ext x <;> simp
-  have hmap {U₁ U₂ : Opens M} (h : U₁ ≤ U₂) :
-      (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion h) (contMDiff_inclusion _)).f k =
-        (deRhamComplexXIso I k).hom ≫
-          ModuleCat.ofHom (SmoothForm.mpullback (Opens.inclusion h) (contMDiff_inclusion _)) ≫
-            (deRhamComplexXIso I k).inv := by
-    rw [← deRhamComplex.map_f_assoc, Iso.hom_inv_id, Category.comp_id]
-  let e₂ := HomologicalComplex.biprodXIso (deRhamComplex I U) (deRhamComplex I V) k ≪≫
-    biprod.mapIso (deRhamComplexXIso I k) (deRhamComplexXIso I k) ≪≫ ModuleCat.biprodIsoProd _ _
-  have hexact := SmoothForm.exact_mayerVietoris (I := I) (F := ℝ) (k := k) U V
-  refine ShortComplex.shortExact_of_iso (ShortComplex.isoMk (deRhamComplexXIso I k).symm e₂.symm
-      (deRhamComplexXIso I k).symm ?_ ?_)
-    (ModuleCat.shortComplex_shortExact
-      (ModuleCat.shortComplexOfCompEqZero _ _ hexact.linearMap_comp_eq_zero) hexact
-      (SmoothForm.injective_mayerVietoris U V) (SmoothForm.surjective_mayerVietoris U V))
-  -- The two squares commute: compare components of the biproducts.
-  · rw [← cancel_mono (HomologicalComplex.biprodXIso (deRhamComplex I U) (deRhamComplex I V) k).hom]
-    apply biprod.hom_ext
-    · ext x
-      simp [e₂, hmap, reassoc_of% ModuleCat.biprodIsoProd_inv_comp_fst]
-    · ext x
-      simp [e₂, hmap, reassoc_of% ModuleCat.biprodIsoProd_inv_comp_snd]
-  · refine (cancel_epi (ModuleCat.biprodIsoProd (.of ℝ (SmoothForm I U ℝ k))
-      (.of ℝ (SmoothForm I V ℝ k))).hom).mp ?_
-    apply biprod.hom_ext'
-    · ext x
-      simp [e₂, hmap, reassoc_of% hinl]
-    · ext x
-      simp [e₂, hmap, reassoc_of% hinr]
+  exact HomologicalComplex.moduleCat_shortExact_biprod _
+    (fun k ↦ deRhamComplexXIso I k) (fun k ↦ deRhamComplexXIso I k)
+    (fun k ↦ deRhamComplexXIso I k) (fun k ↦ deRhamComplexXIso I k) _ _ _
+    (fun k ↦ -SmoothForm.mpullback (k := k) (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
+      (contMDiff_inclusion _))
+    (fun k ↦ deRhamComplex.map_f _ _ k) (fun k ↦ deRhamComplex.map_f _ _ k)
+    (fun k ↦ deRhamComplex.map_f _ _ k)
+    (fun k ↦ by
+      rw [HomologicalComplex.neg_f_apply, Preadditive.neg_comp, deRhamComplex.map_f,
+        ← Preadditive.comp_neg]
+      ext x
+      simp)
+    (fun _ ↦ SmoothForm.exact_mayerVietoris U V) (fun _ ↦ SmoothForm.injective_mayerVietoris U V)
+    fun _ ↦ SmoothForm.surjective_mayerVietoris U V
 
 end Complex
 

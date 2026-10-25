@@ -43,7 +43,8 @@ range, so the value is a `dite` rather than a plain application.
   backward rotation and conversely.
 * `Fin.finRotate_rev_finRotate_rev`: negation modulo `n`, written as `i ↦ finRotate n i.rev`, is
   an involution.
-* `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`.
+* `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`;
+  `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
@@ -248,6 +249,13 @@ theorem coe_finRotate_pow {n : ℕ} (k : ℕ) (c : Fin n) :
     have : NeZero n := ⟨Nat.pos_iff_ne_zero.mp c.pos⟩
     rw [pow_succ', Equiv.Perm.mul_apply, finRotate_apply, Fin.val_add, ih, Fin.val_one',
       ← Nat.add_mod, ← add_assoc]
+
+/-- Away from the last index, the cyclic permutation `finRotate n` adds one without wrapping
+around. -/
+theorem coe_finRotate_of_add_one_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
+    (finRotate n i : ℕ) = i + 1 := by
+  have := coe_finRotate_pow 1 i
+  rwa [pow_one, Nat.mod_eq_of_lt h] at this
 
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/
