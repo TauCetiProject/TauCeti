@@ -14,7 +14,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
-public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices
+public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 

@@ -23,7 +23,8 @@ the bilinear form with Gram matrix `A`. Counting these matrices over the finite 
 here are what that count needs.
 
 * A change of basis `A ↦ Pᵀ * A * P` by an invertible `P` conjugates the submonoid by `P`, so its
-  cardinality does not depend on the basis.
+  cardinality does not depend on the basis. Neither does it change under reindexing or under a
+  ring isomorphism of the coefficients.
 * Let `f : R →+* S` be surjective with square-zero kernel, let `2` be a unit of `R`, and let `A`
   be symmetric with unit determinant. Then every solution over `S` lifts to a solution over `R`,
   and the solutions over `R` lying above a fixed one correspond to the skew-symmetric matrices
@@ -40,6 +41,8 @@ the matrix `M * (1 + ½ A⁻¹ E)` is a solution, since all quadratic terms in t
 
 * `Matrix.natCard_isometryMatrices_transpose_mul_mul`: the count is invariant under
   `A ↦ Pᵀ * A * P` for invertible `P`.
+* `Matrix.natCard_isometryMatrices_reindex`, `Matrix.natCard_isometryMatrices_map_ringEquiv`: the
+  count is invariant under reindexing and under ring isomorphisms.
 * `Matrix.exists_map_eq_of_mem_isometryMatrices_map`: solutions lift across a surjection with
   square-zero kernel.
 * `Matrix.isometryMatricesFiberEquiv`: the solutions congruent to a given one modulo a
@@ -85,6 +88,33 @@ theorem map_mem_isometryMatrices_map (f : R →+* S) {A X : Matrix n n R}
     (hX : X ∈ isometryMatrices A) : X.map f ∈ isometryMatrices (A.map f) := by
   rw [mem_isometryMatrices] at *
   rw [← transpose_map, ← Matrix.map_mul, ← Matrix.map_mul, hX]
+
+/-- A matrix preserving `A` preserves the values `xᵀ A y`. -/
+theorem mulVec_dotProduct_mulVec_mulVec_of_mem_isometryMatrices {A X : Matrix n n R}
+    (hX : X ∈ isometryMatrices A) (x y : n → R) :
+    (X *ᵥ x) ⬝ᵥ A *ᵥ (X *ᵥ y) = x ⬝ᵥ A *ᵥ y := by
+  rw [mulVec_mulVec, dotProduct_mulVec, ← vecMul_transpose, vecMul_vecMul, ← dotProduct_mulVec,
+    ← Matrix.mul_assoc, mem_isometryMatrices.mp hX]
+
+/-- **The count of matrices preserving a Gram matrix does not depend on the indexing**:
+reindexing `A` along an equivalence `e` reindexes the solutions along `e`. -/
+theorem natCard_isometryMatrices_reindex {m : Type*} [Fintype m] [DecidableEq m] (e : n ≃ m)
+    (A : Matrix n n R) :
+    Nat.card (isometryMatrices (reindex e e A)) = Nat.card (isometryMatrices A) := by
+  refine (Nat.card_congr <| (reindex e e).subtypeEquiv fun X => ?_).symm
+  rw [mem_isometryMatrices, mem_isometryMatrices, ← (reindex e e).apply_eq_iff_eq,
+    transpose_reindex]
+  simp only [reindex_apply, submatrix_mul_equiv]
+
+/-- **The count of matrices preserving a Gram matrix is invariant under ring isomorphisms**: a
+ring isomorphism `e` carries the solutions for `A` to the solutions for `A.map e`. -/
+theorem natCard_isometryMatrices_map_ringEquiv (e : R ≃+* S) (A : Matrix n n R) :
+    Nat.card (isometryMatrices (A.map e)) = Nat.card (isometryMatrices A) := by
+  refine (Nat.card_congr <| e.mapMatrix.toEquiv.subtypeEquiv fun X => ?_).symm
+  rw [mem_isometryMatrices, mem_isometryMatrices, RingEquiv.toEquiv_eq_coe, EquivLike.coe_coe,
+    RingEquiv.mapMatrix_apply, ← transpose_map, ← RingEquiv.coe_toRingHom,
+    ← Matrix.map_mul, ← Matrix.map_mul, RingEquiv.coe_toRingHom,
+    (Matrix.map_injective e.injective).eq_iff]
 
 end CommSemiring
 
