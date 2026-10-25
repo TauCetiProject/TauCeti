@@ -14,11 +14,12 @@ public import TauCeti.RingTheory.Polynomial.Subresultant.GCD
 This file reads root counts off the principal subresultant coefficients, through the
 principal-subresultant gcd criterion `Polynomial.natDegree_gcd_eq_iff_psc`.
 
-For two nonzero polynomials `p` and `q`, the first nonzero principal coefficient of `(p, q)`
-occurs at the number of their common roots, each counted with the minimum of its multiplicities
-in `p` and in `q`. For a polynomial in characteristic zero, the first nonzero principal
-coefficient of `(p, p')` occurs at the degree of the derivative gcd; subtracting that index from
-the polynomial's degree gives the number of distinct roots.
+For two nonzero polynomials `p` and `q` with `p` split, the first nonzero principal coefficient
+of `(p, q)` occurs at the number of their common roots, each counted with the minimum of its
+multiplicities in `p` and in `q`; without a splitting hypothesis, the same holds for the common
+roots in an algebraically closed extension. For a split polynomial in characteristic zero, the
+first nonzero principal coefficient of `(p, p')` occurs at the degree of the derivative gcd;
+subtracting that index from the polynomial's degree gives the number of distinct roots.
 
 The coefficient bounds are the actual degrees, as required by the fixed-bound subresultant
 convention.
