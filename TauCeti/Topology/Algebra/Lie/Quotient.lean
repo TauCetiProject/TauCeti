@@ -21,24 +21,24 @@ public section
 namespace TauCeti
 
 /-- The topology of a Lie ideal quotient is the topology of its submodule quotient. -/
-instance LieIdeal.instTopologicalSpaceQuotient {R L : Type*} [CommRing R] [LieRing L]
+instance instTopologicalSpaceLieIdealQuotient {R L : Type*} [CommRing R] [LieRing L]
     [LieAlgebra R L] [TopologicalSpace L] (I : LieIdeal R L) :
     TopologicalSpace (L ⧸ I) :=
   inferInstanceAs (TopologicalSpace (L ⧸ I.toSubmodule))
 
-instance LieIdeal.instIsTopologicalAddGroupQuotient {R L : Type*} [CommRing R] [LieRing L]
+instance instIsTopologicalAddGroupLieIdealQuotient {R L : Type*} [CommRing R] [LieRing L]
     [LieAlgebra R L] [TopologicalSpace L] [IsTopologicalAddGroup L] (I : LieIdeal R L) :
     IsTopologicalAddGroup (L ⧸ I) :=
   inferInstanceAs (IsTopologicalAddGroup (L ⧸ I.toSubmodule))
 
-instance LieIdeal.instContinuousConstSMulQuotient {R L : Type*} [CommRing R] [LieRing L]
+instance instContinuousConstSMulLieIdealQuotient {R L : Type*} [CommRing R] [LieRing L]
     [LieAlgebra R L] [TopologicalSpace L] [ContinuousConstSMul R L] (I : LieIdeal R L) :
     ContinuousConstSMul R (L ⧸ I) :=
   inferInstanceAs (ContinuousConstSMul R (L ⧸ I.toSubmodule))
 
 /-- Descent through a Lie ideal quotient preserves continuity. -/
 @[fun_prop]
-theorem LieIdeal.continuous_liftQ {R L L' : Type*} [CommRing R] [LieRing L]
+theorem continuous_lieIdeal_liftQ {R L L' : Type*} [CommRing R] [LieRing L]
     [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] [TopologicalSpace L]
     [TopologicalSpace L'] (I : LieIdeal R L) (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker)
     (hcont : Continuous f) : Continuous (I.liftQ f h) :=

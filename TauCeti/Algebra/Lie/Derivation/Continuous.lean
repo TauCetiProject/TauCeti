@@ -232,7 +232,7 @@ theorem continuousOuterDerivation_hom_ext
 
 /-- Killing the actual inner derivations is precisely the hypothesis for `LieIdeal.liftQ`.
 Its uniqueness and pullback equation are `LieIdeal.eq_liftQ` and `LieIdeal.liftQ_mkQ`;
-`TauCeti.LieIdeal.continuous_liftQ` supplies continuous descent. -/
+`TauCeti.continuous_lieIdeal_liftQ` supplies continuous descent. -/
 theorem continuousInnerDerivations_le_ker_iff
     (f : continuousDerivationLieAlgebra R A →ₗ⁅R⁆ L) :
     continuousInnerDerivations R A ≤ f.ker ↔
