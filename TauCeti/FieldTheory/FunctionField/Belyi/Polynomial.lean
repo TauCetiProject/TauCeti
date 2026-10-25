@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Polynomial.Belyi
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 import TauCeti.FieldTheory.FunctionField.AffineModel.Place
+import TauCeti.FieldTheory.FunctionField.Belyi.Radical
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
@@ -18,8 +19,8 @@ import TauCeti.FieldTheory.RatFunc.Transcendental
 Let `k` be a field and `q ∈ k[X]` a polynomial with `q′ ≠ 0`. Regarded as a map of the
 projective line, `x ↦ q(x)` is branched only over `∞` and over the critical values of `q`, the
 values `q(ξ)` at the roots `ξ` of `q′` (`Polynomial.criticalValues`). This file proves that
-containment in the language of function fields: if `F = k(x)` is separable over `k(t)`, where
-`t = q(x)`, then every place of `k(t)` at which `t` is regular and `r(t)` is a unit, for some
+containment in the language of function fields: if `F = k(x)` over `k(t)`, where `t = q(x)`,
+then every place of `k(t)` at which `t` is regular and `r(t)` is a unit, for some
 polynomial `r` vanishing at every critical value of `q`, is unramified in `F`
 (`TauCeti.Place.ramificationIdx_eq_one_of_aeval_eq`).
 
@@ -127,7 +128,48 @@ theorem finiteDimensional_of_aeval_eq (hx : k⟮x⟯ = ⊤)
   rw [IntermediateField.adjoin_eq_top_of_adjoin_eq_top k (E := RatFunc k) hx] at this
   exact IntermediateField.topEquiv.toLinearEquiv.finiteDimensional
 
+/-- `k(x)` is separable over `k(t)` when `t = q(x)` and `q′ ≠ 0`: `x` is a simple root of
+`(q(X) - t) / lc(q)`, since `q′(x) ≠ 0` for the transcendental `x`. -/
+private theorem isSeparable_of_aeval_eq (hx : k⟮x⟯ = ⊤)
+    (hq : algebraMap (RatFunc k) F RatFunc.X = aeval x q) (hd : derivative q ≠ 0) :
+    Algebra.IsSeparable (RatFunc k) F := by
+  have hdeg := natDegree_pos_of_aeval_eq hq
+  have hroot : aeval x (monicEquation q (RatFunc.X : RatFunc k)) = 0 := by
+    rw [aeval_monicEquation, ← hq, sub_self, mul_zero]
+  have hint : IsIntegral (RatFunc k) x := ⟨_, monic_monicEquation hdeg RatFunc.X, hroot⟩
+  have htr : Transcendental k x := (transcendental_aeval_iff.mp (hq ▸
+    (transcendental_algebraMap_iff (algebraMap (RatFunc k) F).injective).mpr
+      RatFunc.transcendental_X)).1
+  have hd' : aeval x (derivative (monicEquation q (RatFunc.X : RatFunc k))) ≠ 0 := by
+    rw [aeval_derivative_monicEquation]
+    exact mul_ne_zero ((_root_.map_ne_zero _).mpr (inv_ne_zero (leadingCoeff_ne_zero.mpr
+      (ne_zero_of_natDegree_gt hdeg)))) (fun h ↦ htr ⟨_, hd, h⟩)
+  -- Writing the equation as `minpoly · s`, its derivative at `x` is `minpoly'(x) s(x)`.
+  have hsep : IsSeparable (RatFunc k) x := by
+    rw [IsSeparable, separable_iff_derivative_ne_zero (minpoly.irreducible hint)]
+    intro h0
+    obtain ⟨s, hs⟩ := minpoly.dvd (RatFunc k) x hroot
+    refine hd' ?_
+    rw [hs, derivative_mul, h0, map_add, map_mul, map_mul, minpoly.aeval]
+    simp
+  have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable (RatFunc k) F).mpr hsep
+  exact AlgEquiv.Algebra.isSeparable ((IntermediateField.equivOfEq
+    (IntermediateField.adjoin_eq_top_of_adjoin_eq_top k hx)).trans IntermediateField.topEquiv)
+
 namespace Place
+
+omit [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] in
+/-- Evaluating a polynomial over `k` commutes with the inclusion of the valuation ring. -/
+private theorem coe_aeval_integers {P : Place k F} (p : k[X]) (y : P.integers) :
+    ((aeval y p : P.integers) : F) = aeval (y : F) p := by
+  rw [← ValuationSubring.algebraMap_apply, ← aeval_algebraMap_apply,
+    ValuationSubring.algebraMap_apply]
+
+omit [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] in
+/-- Evaluating a polynomial over `k` commutes with the residue map. -/
+private theorem residue_aeval {P : Place k F} (p : k[X]) (y : P.integers) :
+    IsLocalRing.residue P.integers (aeval y p) = aeval (IsLocalRing.residue P.integers y) p := by
+  rw [← IsLocalRing.ResidueField.algebraMap_eq, aeval_algebraMap_apply]
 
 omit [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] in
 /-- **Evaluation at a place sends a critical point to a critical value**: if `x` and `a = q(x)` are
@@ -137,21 +179,16 @@ private theorem residue_mem_criticalValues {P : Place k F} {x a : P.integers}
     (hd : derivative q ≠ 0)
     (hxa : aeval x q = a) (hlt : P.valuation (aeval (x : F) (derivative q)) < 1) :
     IsLocalRing.residue P.integers a ∈ q.criticalValues P.ResidueField := by
-  have hcoe (p : k[X]) (y : P.integers) : ((aeval y p : P.integers) : F) = aeval (y : F) p := by
-    rw [← ValuationSubring.algebraMap_apply, ← aeval_algebraMap_apply,
-      ValuationSubring.algebraMap_apply]
-  have hres (p : k[X]) (y : P.integers) :
-      IsLocalRing.residue P.integers (aeval y p) = aeval (IsLocalRing.residue P.integers y) p := by
-    rw [← IsLocalRing.ResidueField.algebraMap_eq, aeval_algebraMap_apply]
   refine mem_criticalValues.mpr ⟨IsLocalRing.residue P.integers x, (mem_rootSet_of_ne hd).mpr ?_,
-    by rw [← hres, hxa]⟩
-  rw [← hres, residue_eq_zero_iff_valuation_lt_one, hcoe]
+    by rw [← residue_aeval, hxa]⟩
+  rw [← residue_aeval, residue_eq_zero_iff_valuation_lt_one, coe_aeval_integers]
   exact hlt
 
-variable [FiniteDimensional (RatFunc k) F] [Algebra.IsSeparable (RatFunc k) F]
+variable [Algebra.IsIntegral (RatFunc k) F]
 
-/-- **A polynomial map is unramified away from `∞` and its critical values**: let `F = k(x)` be
-separable over `k(t)`, where `t = q(x)` for a polynomial `q` with `q′ ≠ 0`. If `r ∈ k[X]` vanishes
+/-- **A polynomial map is unramified away from `∞` and its critical values**: let `F = k(x)` over
+`k(t)`, where `t = q(x)` for a polynomial `q` with `q′ ≠ 0`, so that `F` is finite and separable
+over `k(t)`. If `r ∈ k[X]` vanishes
 at every critical value of `q`, in every field extension of `k`, then every place of `F` over a
 place of `k(t)` other than `∞` at which `r(t)` is a unit has ramification index `1`. -/
 theorem ramificationIdx_eq_one_of_aeval_eq (hx : k⟮x⟯ = ⊤)
@@ -160,6 +197,8 @@ theorem ramificationIdx_eq_one_of_aeval_eq (hx : k⟮x⟯ = ⊤)
     {P' : Place k F} (hP : P'.restrict k (RatFunc k) ≠ infty k)
     (hr1 : (P'.restrict k (RatFunc k)).valuation (aeval RatFunc.X r) = 1) :
     ramificationIdx (RatFunc k) P' = 1 := by
+  have := finiteDimensional_of_aeval_eq hx hq
+  have := isSeparable_of_aeval_eq hx hq hd
   have hdeg := natDegree_pos_of_aeval_eq hq
   have hX : (RatFunc.X : RatFunc k) ∈ (P'.restrict k (RatFunc k)).integers :=
     not_not.mp (X_notMem_integers_iff_eq_infty.not.mpr hP)
@@ -190,16 +229,11 @@ theorem ramificationIdx_eq_one_of_aeval_eq (hx : k⟮x⟯ = ⊤)
     (P'.adjoin_le_integers_iff.mpr hxO _ (aeval_mem_adjoin_singleton k x)))
     (not_lt.mp fun hlt ↦ ?_)
   have hcrit := residue_mem_criticalValues (x := ⟨x, hxO⟩) (a := ⟨a, ha⟩) hd
-    (Subtype.ext (by
-      rw [← ValuationSubring.algebraMap_apply, ← aeval_algebraMap_apply,
-        ValuationSubring.algebraMap_apply]
-      exact hq.symm)) hlt
+    (Subtype.ext ((coe_aeval_integers q _).trans hq.symm)) hlt
   have hzero : IsLocalRing.residue P'.integers (aeval (⟨a, ha⟩ : P'.integers) r) = 0 := by
-    rw [← IsLocalRing.ResidueField.algebraMap_eq, ← aeval_algebraMap_apply,
-      IsLocalRing.ResidueField.algebraMap_eq]
+    rw [residue_aeval]
     exact hr _ _ hcrit
-  rw [residue_eq_zero_iff_valuation_lt_one, ← ValuationSubring.algebraMap_apply,
-    ← aeval_algebraMap_apply, ValuationSubring.algebraMap_apply] at hzero
+  rw [residue_eq_zero_iff_valuation_lt_one, coe_aeval_integers] at hzero
   have hra : aeval a r = algebraMap (RatFunc k) F (aeval RatFunc.X r) :=
     aeval_algebraMap_apply (R := k) (B := F) RatFunc.X r
   rw [hra, valuation_algebraMap_restrict k (RatFunc k) P', hr1, one_pow] at hzero
@@ -226,19 +260,17 @@ theorem of_criticalValues_subset (hx : k⟮x⟯ = ⊤)
     exact ((IntermediateField.equivOfEq hx).trans
       IntermediateField.topEquiv).isIntegrallyClosedIn.mp htr.isIntegrallyClosedIn_adjoin
   ramificationIdx_eq_one {P'} hP := by
-    simp only [Place.mem_zeroOneInfty_iff, not_or] at hP
     refine Place.ramificationIdx_eq_one_of_aeval_eq hx hq
       (fun h ↦ (natDegree_pos_of_aeval_eq hq).ne' (derivative_eq_zero.mp h)) (r := X * (X - 1))
-      (fun L _ _ c hc ↦ ?_) hP.2.2 ?_
+      (fun L _ _ c hc ↦ ?_) (fun h ↦ hP (h ▸ Place.infty_mem_zeroOneInfty)) ?_
     · rcases hcrit L hc with rfl | rfl <;> simp
-    · have h0 := Place.ord_X_eq_zero_of_ne hP.1 hP.2.2
-      have h1 := Place.ord_X_sub_C_eq_zero_of_ne (1 : k) hP.2.1 hP.2.2
-      rw [map_one] at h1
-      have hX1 : (RatFunc.X : RatFunc k) - 1 ≠ 0 := fun h ↦
-        RatFunc.transcendental_X (K := k) (sub_eq_zero.mp h ▸ isAlgebraic_one)
-      rw [map_mul, map_sub, aeval_X, map_one, Place.valuation_eq_exp_neg_ord _
-        (mul_ne_zero RatFunc.X_ne_zero hX1), Place.ord_mul _ RatFunc.X_ne_zero hX1, h0, h1,
-        add_zero, neg_zero, WithZero.exp_zero]
+    · have he : aeval (RatFunc.X : RatFunc k) (X * (X - 1) : k[X]) =
+          algebraMap k (RatFunc k) 1 * RatFunc.X ^ (1 : ℤ) * (RatFunc.X - 1) ^ (1 : ℤ) := by
+        simp
+      rw [he, Place.valuation_eq_exp_neg_ord _
+        (RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero one_ne_zero 1 1),
+        Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty hP one_ne_zero,
+        neg_zero, WithZero.exp_zero]
 
 /-- **The Belyi polynomials are Belyi maps**: if `F = k(x)` over `k(t)`, where
 `t = B_{m,n}(x)` for the Belyi polynomial `B_{m,n}`, then `F` is an algebraic Belyi pair. -/
