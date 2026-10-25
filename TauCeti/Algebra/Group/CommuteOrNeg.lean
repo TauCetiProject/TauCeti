@@ -22,10 +22,25 @@ public section
 namespace TauCeti
 
 /-- Two elements commute or anticommute. -/
-abbrev CommuteOrNeg {M : Type*} [Semigroup M] [HasDistribNeg M] (a x : M) : Prop :=
+def CommuteOrNeg {M : Type*} [Semigroup M] [HasDistribNeg M] (a x : M) : Prop :=
   Commute a x ∨ SemiconjBy a x (-x)
 
 namespace CommuteOrNeg
+
+/-- Construct commutation up to a sign from ordinary commutation. -/
+theorem of_commute {M : Type*} [Semigroup M] [HasDistribNeg M] {a x : M}
+    (h : Commute a x) : CommuteOrNeg a x :=
+  Or.inl h
+
+/-- Construct commutation up to a sign from anticommutation. -/
+theorem of_semiconjBy {M : Type*} [Semigroup M] [HasDistribNeg M] {a x : M}
+    (h : SemiconjBy a x (-x)) : CommuteOrNeg a x :=
+  Or.inr h
+
+/-- Eliminate commutation up to a sign into its two alternatives. -/
+theorem out {M : Type*} [Semigroup M] [HasDistribNeg M] {a x : M} :
+    CommuteOrNeg a x → Commute a x ∨ SemiconjBy a x (-x) :=
+  id
 
 /-- Commutation up to a sign is symmetric. -/
 theorem symm {M : Type*} [Semigroup M] [HasDistribNeg M] {a x : M} :
@@ -71,14 +86,17 @@ theorem inv_left {M : Type*} [Group M] [HasDistribNeg M] {a x : M}
   symm (inv_right (symm hx))
 
 /-- Every element commutes or anticommutes with itself. -/
+@[simp]
 theorem refl {M : Type*} [Semigroup M] [HasDistribNeg M] (a : M) : CommuteOrNeg a a :=
   Or.inl (Commute.refl a)
 
 /-- The identity commutes or anticommutes with every element. -/
+@[simp]
 theorem one_left {M : Type*} [Monoid M] [HasDistribNeg M] (x : M) : CommuteOrNeg 1 x :=
   Or.inl (Commute.one_left x)
 
 /-- Every element commutes or anticommutes with the identity. -/
+@[simp]
 theorem one_right {M : Type*} [Monoid M] [HasDistribNeg M] (x : M) : CommuteOrNeg x 1 :=
   Or.inl (Commute.one_right x)
 

@@ -456,21 +456,21 @@ lemma monomialGroup_mul_comm_or_neg
     intro x hx y hy
     dsimp [S] at hx hy
     rcases hx with hx | ⟨i, hx⟩ <;> rcases hy with hy | ⟨j, hy⟩
-    · left
+    · apply TauCeti.CommuteOrNeg.of_commute
       apply Units.ext
       simp [hx, hy]
-    · left
+    · apply TauCeti.CommuteOrNeg.of_commute
       apply Units.ext
       simp [hx, hy]
-    · left
+    · apply TauCeti.CommuteOrNeg.of_commute
       apply Units.ext
       simp [hx, hy]
     · by_cases hij : i = j
       · subst j
-        left
+        apply TauCeti.CommuteOrNeg.of_commute
         apply Units.ext
         simp [hx, hy]
-      · right
+      · apply TauCeti.CommuteOrNeg.of_semiconjBy
         apply Units.ext
         simpa [hx, hy] using ι_mul_ι_comm_of_isOrtho (hv i j hij)
   have hc : (c : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := c.property
@@ -488,7 +488,8 @@ lemma monomialGroup_val_eq_or_neg_of_isConj
   have hmul := congrArg (fun z : monomialGroup Q v => (z : (CliffordAlgebra Q)ˣ) * c) hc
   have hcv : (c : (CliffordAlgebra Q)ˣ) * u = (w : (CliffordAlgebra Q)ˣ) * c := by
     simpa [mul_assoc] using hmul
-  rcases monomialGroup_mul_comm_or_neg v hv c u with hcu | hcu
+  have hcu := monomialGroup_mul_comm_or_neg v hv c u
+  rcases TauCeti.CommuteOrNeg.out hcu with hcu | hcu
   · left
     have hcancel : (w : (CliffordAlgebra Q)ˣ) * c = (u : (CliffordAlgebra Q)ˣ) * c :=
       hcv.symm.trans hcu.eq
