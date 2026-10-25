@@ -23,8 +23,9 @@ a singleton at the anchor, not the empty polygon.
 Expansion repeats each slope according to its length, giving `FiniteSlopeData`.
 Compression counts equal unit slopes, merging collinear segments. Both round trips hold,
 and equality of represented heights determines compressed data when addition is cancellative.
-The construction works over any linearly ordered slope type; heights additionally require
-an additive commutative monoid. In particular it applies to rational as well as real slopes.
+Compression requires only a preorder and decidable equality; expansion requires a linear
+order. Heights additionally require an additive commutative monoid. In particular the
+construction applies to rational as well as real slopes.
 
 The expansion and compression reuse Mathlib's `Finsupp.toMultiset`, `Multiset.toFinsupp`
 and `Multiset.sort` rather than a separate run-length encoding algorithm.
@@ -114,7 +115,7 @@ theorem expand_length : d.expand.length = d.lengths.sum (fun _ n => n) := by
 
 /-- Expansion repeats each slope exactly its stored number of times. -/
 @[simp]
-theorem multiset_expand_slope : d.expand.slopeMultiset =
+theorem slopeMultiset_expand : d.expand.slopeMultiset =
     d.lengths.toMultiset := by
   rw [FiniteSlopeData.slopeMultiset_def]
   simp [expand, List.ofFn_get]
@@ -123,7 +124,9 @@ end FiniteCompressedSlopeData
 
 namespace FiniteSlopeData
 
-variable (d : FiniteSlopeData Γ)
+section Compression
+
+variable {Γ : Type*} [Preorder Γ] [DecidableEq Γ] (d : FiniteSlopeData Γ)
 
 /-- Merge all equal unit slopes, storing their multiplicities as positive segment lengths
 on their support. The anchor is unchanged. -/
@@ -143,11 +146,15 @@ theorem compress_initialHeight : d.compress.initialHeight = d.initialHeight := (
 theorem compress_lengths (m : Γ) :
     d.compress.lengths m = d.slopeMultiset.count m := (rfl)
 
+end Compression
+
+variable (d : FiniteSlopeData Γ)
+
 /-- Compressing and expanding recovers the original unit-slope presentation. -/
 @[simp]
 theorem expand_compress : d.compress.expand = d := by
-  apply eq_of_multiset_eq (by simp) (by simp)
-  rw [FiniteCompressedSlopeData.multiset_expand_slope]
+  apply eq_of_slopeMultiset_eq (by simp) (by simp)
+  rw [FiniteCompressedSlopeData.slopeMultiset_expand]
   exact Multiset.toFinsupp_toMultiset _
 
 end FiniteSlopeData
@@ -160,7 +167,7 @@ theorem compress_expand (d : FiniteCompressedSlopeData Γ) : d.expand.compress =
   ext m
   · simp
   · simp
-  · simp only [FiniteSlopeData.compress_lengths, multiset_expand_slope,
+  · simp only [FiniteSlopeData.compress_lengths, slopeMultiset_expand,
       Finsupp.count_toMultiset]
 
 /-- Normalized compressed slope data and nondecreasing unit-slope data are equivalent. -/
@@ -205,7 +212,7 @@ theorem heights_eq_top_iff {n : ℕ} : d.heights n = ⊤ ↔
 theorem heights_start_add_length :
     d.heights (d.start + d.lengths.sum (fun _ k => k)) =
       ((d.initialHeight + d.lengths.sum (fun m k => k • m) : Γ) : WithTop Γ) := by
-  have hsum := congrArg Multiset.sum d.multiset_expand_slope
+  have hsum := congrArg Multiset.sum d.slopeMultiset_expand
   rw [FiniteSlopeData.sum_slopeMultiset_eq_sum, Finsupp.sum_toMultiset] at hsum
   rw [heights_def, ← expand_length, ← expand_start, FiniteSlopeData.heights_start_add_length,
     expand_initialHeight, hsum]

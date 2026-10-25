@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Basic
 public import TauCeti.CategoryTheory.Semisimple.Finrank
 
@@ -28,8 +29,8 @@ objects in tensor products of simple objects. Over an algebraically closed field
 finite-dimensional morphism spaces, these are the **fusion coefficients**
 `N_{ST}^U = finrank k (S ⊗ T ⟶ U)` (`TauCeti.fusionCoeff`), which can equally be computed from
 `U ⟶ S ⊗ T`. If the tensor unit is simple, the unit of the ring is a basis element. This is the
-based ring of a fusion category in the sense of Etingof–Gelaki–Nikshych–Ostrik, apart from the
-duality involution.
+based ring of a fusion category in the sense of Etingof–Gelaki–Nikshych–Ostrik; its duality
+involution is in `TauCeti/CategoryTheory/Semisimple/Rigid.lean`.
 
 ⚠ The fusion coefficients are computed by a `k`-dimension, so their identification with
 multiplicities needs the endomorphisms of each simple object to be `k`. Over a field that is not
@@ -44,6 +45,8 @@ two-dimensional rotation representation `V` has `End V ≅ ℂ`, so `finrank ℝ
   representatives.
 * `TauCeti.fusionCoeff k S T U`: the fusion coefficient `finrank k (S ⊗ T ⟶ U)` of three simple
   classes.
+* `TauCeti.fusionMatrix k S`: the fusion matrix of `S`, with entry `N_{ST}^U` in row `T` and
+  column `U`.
 
 ## Main results
 
@@ -59,6 +62,15 @@ two-dimensional rotation representation `V` has `End V ≅ ℂ`, so `finrank ℝ
   the basis elements weighted by the multiplicities of the simple objects in their tensor product.
 * `TauCeti.SplitK0.simpleBasis_mul_simpleBasis_eq_sum_fusionCoeff`: the same expansion, weighted
   by the fusion coefficients.
+* `TauCeti.SplitK0.simpleBasis_repr_simpleBasis_mul_simpleBasis_nonneg`: the structure constants
+  are nonnegative, so the Grothendieck ring is a ℤ₊-ring.
+* `TauCeti.fusionMatrix_classOf_unit`: the fusion matrix of a simple tensor unit is the identity.
+* `TauCeti.SplitK0.fusionMatrix_map_mulVec_ringHom`: the values of a ring homomorphism on the
+  simple classes form a common eigenvector of the fusion matrices.
+* `TauCeti.SplitK0.fusionMatrix_eq_transpose_leftMulMatrix`: the fusion matrix of `S` is the
+  transpose of the matrix of left multiplication by `[S]`.
+* `TauCeti.SplitK0.isIntegral_ringHom_apply`: the values of a ring homomorphism out of the
+  Grothendieck ring are algebraic integers.
 
 ## References
 
@@ -190,6 +202,13 @@ theorem simpleBasis_repr_simpleBasis_mul_simpleBasis (S T U : SimpleClasses C) :
       simpleMultiplicities (S.repr ⊗ T.repr) U := by
   simp
 
+/-- The structure constants of the Grothendieck ring in the basis of simple classes are
+nonnegative: it is a ℤ₊-ring. -/
+theorem simpleBasis_repr_simpleBasis_mul_simpleBasis_nonneg (S T U : SimpleClasses C) :
+    0 ≤ (simpleBasis C).repr (simpleBasis C S * simpleBasis C T) U := by
+  rw [simpleBasis_repr_simpleBasis_mul_simpleBasis]
+  positivity
+
 /-- The product of two basis elements of the Grothendieck ring of a finite semisimple category
 with finitely many simple classes is the sum of the basis elements weighted by the multiplicities
 of the simple objects in the tensor product of the representatives. -/
@@ -198,6 +217,13 @@ theorem simpleBasis_mul_simpleBasis [Fintype (SimpleClasses C)] (S T : SimpleCla
       ∑ U, (simpleMultiplicities (S.repr ⊗ T.repr) U : ℤ) • simpleBasis C U := by
   conv_lhs => rw [← (simpleBasis C).sum_repr (simpleBasis C S * simpleBasis C T)]
   simp_rw [simpleBasis_repr_simpleBasis_mul_simpleBasis]
+
+/-- The values of a ring homomorphism out of the Grothendieck ring of a finite semisimple
+category with finitely many simple classes are algebraic integers, since the Grothendieck ring is
+then a finitely generated abelian group. -/
+theorem isIntegral_ringHom_apply [Finite (SimpleClasses C)] {R : Type*} [Ring R]
+    (ψ : SplitK0 C →+* R) (x : SplitK0 C) : IsIntegral ℤ (ψ x) :=
+  (IsIntegral.of_finite ℤ x).map ψ.toIntAlgHom
 
 end Mul
 
@@ -221,6 +247,20 @@ theorem fusionCoeff_def {C : Type u} [Category.{v} C] [Preadditive C] [Linear k 
     fusionCoeff k S T U = Module.finrank k (S.repr ⊗ T.repr ⟶ U.repr) :=
   (rfl)
 
+/-- The **fusion matrix** of a simple class `S`: the matrix of fusion coefficients `N_{ST}^U`,
+indexed by `T` (row) and `U` (column). Over an algebraically closed field, with
+finite-dimensional morphism spaces, its row `T` lists the coordinates of `[S] * [T]` in the basis
+of simple classes (`TauCeti.SplitK0.simpleBasis_mul_simpleBasis_eq_sum_fusionCoeff`). -/
+def fusionMatrix {C : Type u} [Category.{v} C] [Preadditive C] [Linear k C] [MonoidalCategory C]
+    (S : SimpleClasses C) : Matrix (SimpleClasses C) (SimpleClasses C) ℕ :=
+  Matrix.of fun T U ↦ fusionCoeff k S T U
+
+/-- The entry `(T, U)` of the fusion matrix of `S` is the fusion coefficient `N_{ST}^U`. -/
+@[simp]
+theorem fusionMatrix_apply {C : Type u} [Category.{v} C] [Preadditive C] [Linear k C]
+    [MonoidalCategory C] (S T U : SimpleClasses C) : fusionMatrix k S T U = fusionCoeff k S T U :=
+  (rfl)
+
 variable [IsAlgClosed k] {C : Type u} [Category.{v} C] [Abelian C] [Linear k C]
   [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] [MonoidalCategory C]
 
@@ -236,6 +276,21 @@ theorem fusionCoeff_eq_finrank_hom (S T U : SimpleClasses C) :
   rw [fusionCoeff_eq_simpleMultiplicities, finrank_hom_simple_eq_simpleMultiplicities,
     SimpleClasses.classOf_repr]
 
+omit [IsFiniteSemisimpleCategory C] in
+/-- When the tensor unit is simple, its fusion matrix is the identity matrix:
+`N_{𝟙 T}^U = 1` if `T = U` and `0` otherwise. -/
+@[simp]
+theorem fusionMatrix_classOf_unit [Simple (𝟙_ C)] [DecidableEq (SimpleClasses C)] :
+    fusionMatrix k (SimpleClasses.classOf (𝟙_ C)) = 1 := by
+  ext T U
+  rw [fusionMatrix_apply, fusionCoeff_def,
+    (Linear.homCongr k (whiskerRightIso (SimpleClasses.classOfReprIso (𝟙_ C)) T.repr ≪≫ λ_ T.repr)
+      (Iso.refl U.repr)).finrank_eq, finrank_hom_simple_simple, Matrix.one_apply]
+  by_cases h : T = U
+  · subst h
+    rw [ite_eq_left ⟨Iso.refl _⟩, ite_eq_left rfl]
+  · rw [ite_eq_right (mt (SimpleClasses.eq_iff_nonempty_iso T U).2 h), ite_eq_right h]
+
 namespace SplitK0
 
 variable [EssentiallySmall.{w} C] [MonoidalPreadditive C]
@@ -246,6 +301,15 @@ theorem simpleBasis_repr_simpleBasis_mul_simpleBasis_eq_fusionCoeff (S T U : Sim
     (simpleBasis C).repr (simpleBasis C S * simpleBasis C T) U = fusionCoeff k S T U := by
   rw [simpleBasis_repr_simpleBasis_mul_simpleBasis, fusionCoeff_eq_simpleMultiplicities]
 
+/-- The fusion matrix of `S` is the transpose of the matrix of left multiplication by `[S]` in the
+basis of simple classes. -/
+theorem fusionMatrix_eq_transpose_leftMulMatrix [Fintype (SimpleClasses C)]
+    [DecidableEq (SimpleClasses C)] (S : SimpleClasses C) :
+    (fusionMatrix k S).map (Nat.cast : ℕ → ℤ) =
+      (Algebra.leftMulMatrix (simpleBasis C) (simpleBasis C S)).transpose := by
+  ext T U
+  simp [Algebra.leftMulMatrix_eq_repr_mul, fusionCoeff_eq_simpleMultiplicities]
+
 /-- The product of two basis elements of the Grothendieck ring of a finite semisimple category
 with finitely many simple classes is the sum of the basis elements weighted by the fusion
 coefficients: `[S] * [T] = ∑ U, N_{ST}^U [U]`. -/
@@ -253,6 +317,19 @@ theorem simpleBasis_mul_simpleBasis_eq_sum_fusionCoeff [Fintype (SimpleClasses C
     (S T : SimpleClasses C) :
     simpleBasis C S * simpleBasis C T = ∑ U, (fusionCoeff k S T U : ℤ) • simpleBasis C U := by
   simp_rw [simpleBasis_mul_simpleBasis, fusionCoeff_eq_simpleMultiplicities]
+
+open Matrix in
+/-- The values of a ring homomorphism `ψ` on the basis of simple classes form an eigenvector of
+each fusion matrix, with eigenvalue the value of `ψ` on that class:
+`∑ U, N_{ST}^U ψ [U] = ψ [S] ψ [T]` for all simple classes `S` and `T`. -/
+theorem fusionMatrix_map_mulVec_ringHom [Fintype (SimpleClasses C)] {R : Type*} [Ring R]
+    (ψ : SplitK0 C →+* R) (S : SimpleClasses C) :
+    (fusionMatrix k S).map (Nat.cast : ℕ → R) *ᵥ (fun T ↦ ψ (simpleBasis C T)) =
+      ψ (simpleBasis C S) • fun T ↦ ψ (simpleBasis C T) := by
+  ext T
+  rw [Pi.smul_apply, smul_eq_mul, ← map_mul, simpleBasis_mul_simpleBasis_eq_sum_fusionCoeff k,
+    map_sum]
+  simp [Matrix.mulVec, dotProduct]
 
 end SplitK0
 

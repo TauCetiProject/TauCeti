@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Parabolic
-import TauCeti.Algebra.Polynomial.Laurent.Polynomial
 
 /-!
 # Opposite dynamic parabolics
@@ -17,8 +16,8 @@ value semiring: a Laurent-valued conjugation family that extends over both ends 
 its constant coefficient, so it centralizes the cocharacter.
 
 This identifies the Levi as an intersection of closed subgroups, without reductivity or
-smoothness assumptions. The polynomial-extension criterion is from
-`TauCeti.Algebra.Polynomial.Laurent.Polynomial`.
+smoothness assumptions. The negative-coefficient criterion is
+`TauCeti.Cocharacter.mem_parabolic_iff_forall_coeff_conjugate_eq_zero`.
 
 ## References
 
@@ -64,16 +63,6 @@ theorem levi_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
     mul_inv_eq_iff_eq_mul]
   exact Commute.inv_left_iff
 
-private theorem coeff_conjugate_eq_zero_of_mem_parabolic
-    (l : H →ₐc[R] LaurentPolynomial R) {g : WithConv (H →ₐ[R] A)}
-    (hg : g ∈ parabolic A l) (h : H) {n : ℤ} (hn : n < 0) :
-    ((conjugate A l g).ofConv h).coeff n = 0 := by
-  obtain ⟨F, hF⟩ := mem_parabolic_iff.mp hg
-  apply exists_toLaurent_eq_iff.mp ⟨F.ofConv h, ?_⟩ n hn
-  simpa only [ofPolyPoint_apply, ofConv_toConv, AlgHom.comp_apply,
-    AlgHom.restrictScalars_apply, Polynomial.coe_toLaurentAlg] using
-    congrArg (fun x : WithConv (H →ₐ[R] LaurentPolynomial A) ↦ x.ofConv h) hF
-
 /-- The two opposite dynamic parabolics meet exactly in their common Levi subgroup. -/
 @[simp]
 theorem parabolic_inf_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
@@ -84,11 +73,11 @@ theorem parabolic_inf_oppositeCocharacter (l : H →ₐc[R] LaurentPolynomial R)
         LaurentPolynomial.C (((conjugate A l g).ofConv h).coeff 0) := by
       ext n
       rcases lt_trichotomy n 0 with hn | rfl | hn
-      · rw [coeff_conjugate_eq_zero_of_mem_parabolic l hg.1 h hn]
+      · rw [mem_parabolic_iff_forall_coeff_conjugate_eq_zero.mp hg.1 h n hn]
         simp only [LaurentPolynomial.C_apply, ne_of_lt hn, ite_false]
       · simp
-      · have hz := coeff_conjugate_eq_zero_of_mem_parabolic
-          l.oppositeCocharacter hg.2 h (neg_neg_of_pos hn)
+      · have hz := mem_parabolic_iff_forall_coeff_conjugate_eq_zero.mp hg.2 h (-n)
+          (neg_neg_of_pos hn)
         rw [conjugate_oppositeCocharacter] at hz
         simpa [AlgHom.mapValue_apply, ne_of_gt hn] using hz
     let e : LaurentPolynomial A →ₐ[R] A := (laurentEval (R := A) (1 : Aˣ)).restrictScalars R

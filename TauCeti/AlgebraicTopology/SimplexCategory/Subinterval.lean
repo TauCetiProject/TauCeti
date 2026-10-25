@@ -17,7 +17,10 @@ subinterval is the front face of a simplex and with `j + l = n` it is the back f
 the identities behind the Alexander–Whitney formula and its compatibility with the simplicial
 boundary.  It also records that a subinterval of a subinterval is a subinterval and that the
 front face of full length is the identity, the identities behind associativity and the unit laws
-of the cup product.
+of the cup product.  Finally, a subinterval containing two consecutive vertices is not injective
+after the codegeneracy collapsing them (`SimplexCategory.not_mono_subinterval_comp_σ`): a front or
+back face of a degenerate simplex is degenerate as soon as it contains the collapsed edge, which
+is why the Alexander–Whitney map preserves degenerate chains.
 -/
 
 public section
@@ -96,6 +99,19 @@ lemma subinterval_zero_comp_δ_of_lt {n p : ℕ} (k : Fin (n + 2)) (hk : p < (k 
     Fin.succAbove, Fin.lt_def, apply_ite Fin.val, Fin.val_castSucc, Fin.val_succ,
     val_subinterval_toOrderHom_apply]
   split_ifs <;> omega
+
+/-- A subinterval containing two consecutive vertices `i` and `i + 1` is not injective after the
+codegeneracy `σ i`, which identifies them. -/
+lemma not_mono_subinterval_comp_σ {n j l : ℕ} (h : j + l ≤ n + 1) (i : Fin (n + 1))
+    (hji : j ≤ i) (hil : (i : ℕ) < j + l) : ¬ Mono (subinterval j l h ≫ σ i) := by
+  rw [mono_iff_injective]
+  intro hinj
+  have h₁ : (subinterval j l h).toOrderHom ⟨i - j, by dsimp; omega⟩ = i.castSucc := by
+    ext; simp; omega
+  have h₂ : (subinterval j l h).toOrderHom ⟨i - j + 1, by dsimp; omega⟩ = i.succ := by
+    ext; simp; omega
+  have := @hinj ⟨i - j, by dsimp; omega⟩ ⟨i - j + 1, by dsimp; omega⟩ (by simp [σ, h₁, h₂])
+  simp [Fin.ext_iff] at this
 
 end SimplexCategory
 

@@ -58,7 +58,7 @@ theorem slopeMultiset_def (d : FiniteSlopeData Γ) : d.slopeMultiset = List.ofFn
 
 /-- A nondecreasing unit-slope presentation is determined by its anchor and slope multiset.
 In particular, different subdivisions of equal slopes do not give different unit data. -/
-theorem eq_of_multiset_eq {Γ : Type*} [PartialOrder Γ] {d e : FiniteSlopeData Γ}
+theorem eq_of_slopeMultiset_eq {Γ : Type*} [PartialOrder Γ] {d e : FiniteSlopeData Γ}
     (hs : d.start = e.start) (hy : d.initialHeight = e.initialHeight)
     (hm : d.slopeMultiset = e.slopeMultiset) : d = e := by
   simp only [slopeMultiset_def] at hm

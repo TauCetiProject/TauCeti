@@ -51,8 +51,8 @@ variable {K L : Type*}
 
 section Coefficients
 
-variable [NormedCommRing K] [NormOneClass K] [CompleteSpace K] [IsUltrametricDist K]
-  [NormedCommRing L] [NormOneClass L] [CompleteSpace L] [IsUltrametricDist L]
+variable [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K]
+  [NormedCommRing L] [CompleteSpace L] [IsUltrametricDist L]
   (f : K →+* L) [RingHomIsometric f]
 
 /-- The fourth analytic Tate coefficient commutes with an isometric ring homomorphism. -/
@@ -142,6 +142,20 @@ theorem tateParameterBaseChange_mk (q u : Kˣ) :
       (Units.map (f : K →* L) u :
         Lˣ ⧸ Subgroup.zpowers (Units.map (f : K →* L) q)) := by
   apply QuotientGroup.map_mk
+
+/-- An injective coefficient map induces an injective map on Tate parameters. -/
+theorem tateParameterBaseChange_injective (hf : Function.Injective f) (q : Kˣ) :
+    Function.Injective (tateParameterBaseChange f q) := by
+  apply (injective_iff_map_eq_one (tateParameterBaseChange f q)).mpr
+  intro x hx
+  induction x using QuotientGroup.induction_on with
+  | H u =>
+    rw [tateParameterBaseChange_mk, QuotientGroup.eq_one_iff] at hx
+    obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp hx
+    apply (QuotientGroup.eq_one_iff u).mpr
+    refine Subgroup.mem_zpowers_iff.mpr
+      ⟨n, Units.map_injective (f := (f : K →* L)) hf ?_⟩
+    simpa only [map_zpow] using hn
 
 end Parameters
 

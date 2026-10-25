@@ -38,7 +38,6 @@ topological groups.
   homomorphisms.
 * `ContinuousMulEquiv.amenable_iff`: amenability is invariant under isomorphisms of topological
   groups.
-* Groups with at most one element are amenable.
 
 ## References
 
@@ -109,13 +108,20 @@ theorem map_map (ψ : H →ₜ* K) (φ : G →ₜ* H) (m : Mean G) :
     (m.map φ).map ψ = m.map (ψ.comp φ) :=
   ext fun f => by simp [UCB.compRightAlgHom_comp]
 
+/-- The pushforward of a left-invariant mean along a continuous homomorphism `φ` is invariant under
+left translation by the elements `φ g` of the range of `φ`. -/
+theorem IsLeftInvariant.map_apply_leftTranslation {m : Mean G} (hm : m.IsLeftInvariant)
+    (φ : G →ₜ* H) (g : G) (f : UCB H) :
+    m.map φ (UCB.leftTranslation (φ g) f) = m.map φ f := by
+  rw [map_apply, map_apply, UCB.compRightAlgHom_leftTranslation, hm]
+
 /-- The pushforward of a left-invariant mean along a surjective continuous homomorphism is left
 invariant. -/
 theorem IsLeftInvariant.map {m : Mean G} (hm : m.IsLeftInvariant) {φ : G →ₜ* H}
     (hφ : Function.Surjective φ) : (m.map φ).IsLeftInvariant := by
   intro h f
   obtain ⟨g, rfl⟩ := hφ h
-  rw [map_apply, map_apply, UCB.compRightAlgHom_leftTranslation, hm]
+  exact hm.map_apply_leftTranslation φ g f
 
 end Mean
 
@@ -136,10 +142,6 @@ theorem Amenable.of_surjective [Amenable G] (φ : G →ₜ* H) (hφ : Function.S
     Amenable H :=
   have ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   ⟨⟨m.map φ, hm.map hφ⟩⟩
-
-/-- A topological group with at most one element is amenable. -/
-instance (priority := 100) Amenable.of_subsingleton [Subsingleton G] : Amenable G :=
-  ⟨⟨Mean.eval G 1, fun g f => by simp [Subsingleton.elim g 1]⟩⟩
 
 end TauCeti
 

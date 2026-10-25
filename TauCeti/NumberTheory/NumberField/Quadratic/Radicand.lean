@@ -32,6 +32,8 @@ The comparison of models reuses the classification of the models themselves,
   of `d` is isomorphic to `QuadraticAlgebra ℚ d 0`.
 * `NumberField.nonempty_algEquiv_iff_of_squarefree`: two quadratic fields presented by squarefree
   radicands `d` and `e` are isomorphic exactly when `d = e`.
+* `NumberField.eq_of_sq_eq_intCast_of_squarefree`: the squarefree radicand is the only
+  squarefree integer other than `1` with a square root in `K`.
 * `NumberField.existsUnique_squarefree_algEquiv`: every quadratic field is isomorphic to
   `QuadraticAlgebra ℚ d 0` for exactly one squarefree integer `d`.
 * `NumberField.existsUnique_neg_squarefree_algEquiv`: every imaginary quadratic field is
@@ -67,6 +69,25 @@ theorem nonempty_algEquiv_iff_of_squarefree (hK : finrank ℚ K = 2) (hL : finra
   obtain ⟨ψ⟩ := nonempty_algEquiv_quadraticAlgebra hL hη
   rw [← QuadraticAlgebra.nonempty_algEquiv_iff_of_squarefree hd he]
   exact ⟨fun ⟨σ⟩ => ⟨(φ.symm.trans σ).trans ψ⟩, fun ⟨τ⟩ => ⟨(φ.trans τ).trans ψ.symm⟩⟩
+
+/-- **The radicand is the only squarefree square class in `K`.** If `K` is presented by a square
+root of the squarefree integer `d`, and `z ∈ K` squares to a squarefree integer `n ≠ 1`, then
+`n = d`. Such a `z` is irrational, so it presents `K` with radicand `n`, and the radicand does not
+depend on the presentation. -/
+theorem eq_of_sq_eq_intCast_of_squarefree (hK : finrank ℚ K = 2) {θ : 𝓞 K}
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd : Squarefree d) {z : K} {n : ℤ}
+    (hz : z ^ 2 = (n : K)) (hn : Squarefree n) (hn1 : n ≠ 1) : n = d := by
+  have : Algebra.IsQuadraticExtension ℚ K := ⟨hK⟩
+  -- A rational square root would make `n` a square, hence `1` since it is squarefree.
+  have hzQ : z ∉ Set.range (algebraMap ℚ K) := by
+    rintro ⟨q, rfl⟩
+    have hq : (n : ℚ) = q * q := by
+      rw [← sq]
+      exact_mod_cast ((algebraMap ℚ K).injective (by simpa using hz)).symm
+    obtain ⟨m, rfl⟩ := Rat.isSquare_intCast_iff.1 ⟨q, hq⟩
+    rcases Int.isUnit_iff.1 (hn m dvd_rfl) with rfl | rfl <;> exact hn1 rfl
+  obtain ⟨η, hη, -⟩ := exists_gen_of_sq_eq_intCast hz hzQ
+  exact (nonempty_algEquiv_iff_of_squarefree hK hK hη hmin hn hd).1 ⟨AlgEquiv.refl⟩
 
 /-- **The squarefree model of a quadratic field.** Every number field of degree `2` over `ℚ` is
 isomorphic to `QuadraticAlgebra ℚ d 0` for exactly one squarefree integer `d`. -/
