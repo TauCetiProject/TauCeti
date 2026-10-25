@@ -18,7 +18,7 @@ Let `F` be an extension of a field `k` and let `x ∈ F` be transcendental over 
 `RatFunc.algEquivOfTranscendental` identifies `k(X)` with the intermediate field `k⟮x⟯`;
 composing with its inclusion into `F` makes `F` an algebra over `k(X)` in which `X` acts as `x`.
 This file packages that algebra structure together with the transfers along it of the scalar
-tower over `k` and of separability over `k⟮x⟯`.
+tower over `k`, of separability over `k⟮x⟯` and of finite-dimensionality over `k⟮x⟯`.
 
 The structure is not an instance: it depends on the element `x` and on a proof, and distinct
 transcendental elements induce distinct `k(X)`-algebra structures on the same `F`. It is meant
@@ -47,6 +47,8 @@ characteristic.
   `k`-algebra structure.
 * `TauCeti.isSeparable_ratFuncAlgebraOfTranscendental`: separability over `k⟮x⟯` transfers to
   separability over `k(X)`.
+* `TauCeti.finiteDimensional_ratFuncAlgebraOfTranscendental`: finite-dimensionality over `k⟮x⟯`
+  transfers to finite-dimensionality over `k(X)`.
 * `TauCeti.ratFuncAlgebraOfTranscendental_eq_liftAlgebra`: when `x` is the image of `X` under a
   `k[X]`-algebra structure, the structure is Mathlib's `RatFunc.liftAlgebra`.
 * `TauCeti.coe_algEquivOfTranscendental_algebraMap_X_apply`: conversely, every `k(X)`-algebra
@@ -160,6 +162,20 @@ theorem isSeparable_ratFuncAlgebraOfTranscendental (hx : Transcendental k x)
   -- reads, at an element `r` of `k(x)`, as `algebraMap (RatFunc k) F (e.symm r) = r` for
   -- `e := RatFunc.algEquivOfTranscendental x hx`, which is what the structure map computes.
   refine Algebra.IsSeparable.of_equiv_equiv
+    (RatFunc.algEquivOfTranscendental x hx).symm.toRingEquiv (RingEquiv.refl F) ?_
+  ext r
+  rw [RingHom.comp_apply, RingHom.comp_apply, algebraMap_ratFuncAlgebraOfTranscendental_apply]
+  simp
+
+/-- Finite-dimensionality over `k(x)` transfers to the rational-function algebra structure
+induced by `x`. -/
+theorem finiteDimensional_ratFuncAlgebraOfTranscendental (hx : Transcendental k x)
+    [FiniteDimensional k⟮x⟯ F] :
+    letI := ratFuncAlgebraOfTranscendental hx
+    FiniteDimensional (RatFunc k) F := by
+  let _ := ratFuncAlgebraOfTranscendental hx
+  -- As for separability, transport along the identification `k(X) ≃ k(x)`.
+  refine Module.Finite.of_equiv_equiv
     (RatFunc.algEquivOfTranscendental x hx).symm.toRingEquiv (RingEquiv.refl F) ?_
   ext r
   rw [RingHom.comp_apply, RingHom.comp_apply, algebraMap_ratFuncAlgebraOfTranscendental_apply]

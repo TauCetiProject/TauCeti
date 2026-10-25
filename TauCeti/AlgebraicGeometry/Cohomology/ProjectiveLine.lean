@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Cohomology.Cech
 public import TauCeti.AlgebraicGeometry.Cohomology.Genus
 public import TauCeti.AlgebraicGeometry.Cohomology.MayerVietoris
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
@@ -12,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.SectionsQuotient.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Modules.Localization
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
 public import TauCeti.RingTheory.Adjoin.Inverse
@@ -58,6 +60,11 @@ is localization at `t`; the sections vanishing on the overlap thus form a finite
 `R[t]`-module killed by a power of `t`, which is finitely generated over `R`
 (`TauCeti.Algebra.fg_restrictScalars_of_forall_pow_smul_eq_zero`).
 
+Finiteness passes to schemes finite over `ℙ¹_R`. For a finite morphism `f : X ⟶ ℙ¹_R` and a
+quasi-coherent sheaf `M` of finite type on `X`, the direct image `f_* M` is again quasi-coherent of
+finite type, and `Hⁿ(X, M) ≅ Hⁿ(ℙ¹_R, f_* M)` because `f` is affine
+(`AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardBaseLinearEquivOfIsAffineHom`).
+
 ## Main results
 
 All in the namespace `TauCeti.AlgebraicGeometry.projectiveLine`:
@@ -70,6 +77,8 @@ All in the namespace `TauCeti.AlgebraicGeometry.projectiveLine`:
 * `finite_cohomology_zero`, `finite_cohomology_one`: `H⁰(ℙ¹_R, M)` and `H¹(ℙ¹_R, M)` are finitely
   generated `R`-modules for `M` quasi-coherent of finite type, over a Noetherian ring.
 * `finite_cohomology`: the same for `Hⁿ(ℙ¹_R, M)` in every degree `n`.
+* `finite_cohomology_of_isFinite`: for a scheme `X` finite over `ℙ¹_R` and a quasi-coherent sheaf
+  `M` of finite type on `X`, every `Hⁿ(X, M)` is a finitely generated `R`-module.
 * `genus_eq_zero`: the projective line over a field has genus zero.
 
 ## References
@@ -763,6 +772,32 @@ instance finite_cohomology [IsNoetherianRing R] (M : (projectiveLine R).Modules)
   · exact finite_cohomology_one R M
   · have := subsingleton_cohomology_of_two_le R M (n + 2) (by omega)
     infer_instance
+
+/-! ### Schemes finite over the projective line -/
+
+/-- **The cohomology of a coherent sheaf on a scheme finite over the projective line is finitely
+generated** over a Noetherian base ring `R`, in every degree: for a finite morphism
+`f : X ⟶ ℙ¹_R` over `R` and a quasi-coherent sheaf `M` of finite type on `X`, every `Hⁿ(X, M)` is
+a finitely generated `R`-module. -/
+theorem finite_cohomology_of_isFinite [IsNoetherianRing R] {X : Scheme.{u}}
+    [X.Over (Spec (.of R))] (f : X ⟶ projectiveLine R) [IsFinite f] [f.IsOver (Spec (.of R))]
+    (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) :
+    Module.Finite R (Cohomology M n) := by
+  have : IsLocallyNoetherian (projectiveLine R) :=
+    LocallyOfFiniteType.isLocallyNoetherian (projectiveLine R ↘ Spec (.of R))
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian f
+  -- the two standard charts, indexed in the universe of the schemes
+  let U : ULift.{u} (Fin 2) → (projectiveLine R).Opens := fun i ↦ Proj.basicOpen 𝒜 (coord R i.down)
+  have hcover : ⨆ i, U i = ⊤ :=
+    (Equiv.ulift.surjective.iSup_comp fun i ↦ Proj.basicOpen 𝒜 (coord R i)).trans
+      (iSup_basicOpen_coord_eq_top R)
+  -- `f_* M` is coherent; instance search does not unfold `Scheme.Modules`, so finite type is
+  -- derived from finite presentation on the underlying sheaf of modules
+  have : ((pushforward f).obj M).IsFiniteType :=
+    let N : SheafOfModules (projectiveLine R).ringCatSheaf := (pushforward f).obj M
+    inferInstanceAs N.IsFiniteType
+  exact Module.Finite.equiv (f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom U
+    (fun i ↦ Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R i.down) one_pos) hcover R M n)
 
 variable (k : Type u) [Field k]
 
