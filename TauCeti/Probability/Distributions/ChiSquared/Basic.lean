@@ -121,6 +121,10 @@ def chiSquaredPDFReal (k x : ℝ) : ℝ :=
 `0 < k`. -/
 def chiSquaredPDF (k x : ℝ) : ℝ≥0∞ := ENNReal.ofReal (chiSquaredPDFReal k x)
 
+/-- The extended candidate density is obtained from its real companion. -/
+theorem chiSquaredPDF_eq_ofReal (k x : ℝ) :
+    chiSquaredPDF k x = ENNReal.ofReal (chiSquaredPDFReal k x) := (rfl)
+
 /-- On the nonnegative half-line, the candidate real-valued chi-squared density is given by its
 textbook formula. -/
 @[simp]
@@ -147,6 +151,18 @@ theorem chiSquaredPDF_of_nonneg (hx : 0 ≤ x) :
 theorem chiSquaredPDF_of_neg (hx : x < 0) : chiSquaredPDF k x = 0 := by
   rw [chiSquaredPDF, chiSquaredPDFReal_of_neg hx, ENNReal.ofReal_zero]
 
+/-- At zero degrees of freedom the real candidate density vanishes identically. -/
+@[simp]
+theorem chiSquaredPDFReal_zero_degree : chiSquaredPDFReal 0 = 0 := by
+  funext x
+  simp [chiSquaredPDFReal]
+
+/-- At zero degrees of freedom the extended candidate density vanishes identically. -/
+@[simp]
+theorem chiSquaredPDF_zero_degree : chiSquaredPDF 0 = 0 := by
+  funext x
+  simp [chiSquaredPDF]
+
 /-- The chi-squared density is the gamma density of shape `k / 2` and rate `1 / 2`. -/
 theorem chiSquaredPDFReal_eq_gammaPDFReal (k x : ℝ) :
     chiSquaredPDFReal k x = gammaPDFReal (k / 2) (1 / 2) x := by
@@ -165,7 +181,7 @@ theorem chiSquaredPDF_eq_gammaPDF (k x : ℝ) : chiSquaredPDF k x = gammaPDF (k 
 /-- The chi-squared density is nonnegative for nonnegative degrees of freedom. -/
 theorem chiSquaredPDFReal_nonneg (hk : 0 ≤ k) (x : ℝ) : 0 ≤ chiSquaredPDFReal k x := by
   rcases hk.eq_or_lt' with rfl | hk
-  · simp [chiSquaredPDFReal_eq_gammaPDFReal, gammaPDFReal]
+  · simp
   · rw [chiSquaredPDFReal_eq_gammaPDFReal]
     exact gammaPDFReal_nonneg (by positivity) one_half_pos x
 
@@ -234,6 +250,12 @@ theorem ae_pos_chiSquaredMeasure {k : ℝ} (hk : 0 < k) :
     ∀ᵐ x ∂chiSquaredMeasure k, 0 < x := by
   rw [chiSquaredMeasure_eq_gammaMeasure hk]
   exact ae_pos_gammaMeasure _ _
+
+/-- For a chi-squared variable `V` with `k > 0` degrees of freedom, the normalized square root
+`√(V / k)`, the denominator of Student-type ratios, is positive almost surely. -/
+theorem ae_pos_sqrt_div_chiSquaredMeasure {k : ℝ} (hk : 0 < k) :
+    ∀ᵐ x ∂chiSquaredMeasure k, 0 < √(x / k) :=
+  (ae_pos_chiSquaredMeasure hk).mono fun _ hx ↦ sqrt_pos.2 (div_pos hx hk)
 
 /-- Every chi-squared measure is carried by the nonnegative half-line, including its Dirac
 and invalid zero-measure cases. -/

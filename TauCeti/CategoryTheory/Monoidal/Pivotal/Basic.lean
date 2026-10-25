@@ -26,7 +26,10 @@ the double right dual functor carries the evaluation of `(X, Xᘁ)` to the evalu
 `(Xᘁᘁ, Xᘁᘁᘁ)`.
 
 Through `φ_X`, the object `X` becomes a right dual of `Xᘁ`, so in a pivotal category every right
-dual is also a left dual.
+dual is also a left dual. The same observation shows that a pivotal structure needs only right
+duals to make sense: in a right rigid category, a monoidal natural isomorphism
+`𝟭 C ≅ doubleRightDualFunctor C` makes `Xᘁ` a left dual of `X`, and is then a pivotal structure
+for the resulting rigid structure.
 
 ## Main declarations
 
@@ -39,7 +42,12 @@ dual is also a left dual.
   `TauCeti.pivotalIsoApp_tensor_hom`: monoidality of `φ`, in components;
 * `TauCeti.pivotalIsoApp_rightDual`: the Freyd–Yetter identity `φ_{Xᘁ} = (φ_X⁻¹)ᘁ`, with its
   inverse form `TauCeti.pivotalIsoApp_rightDual_inv`;
-* `TauCeti.pivotalExactPairing`: the exact pairing `ExactPairing Xᘁ X` obtained from `φ_X`.
+* `TauCeti.pivotalExactPairing`: the exact pairing `ExactPairing Xᘁ X` obtained from `φ_X`, whose
+  evaluation is dinatural by
+  `TauCeti.whiskerLeft_rightAdjointMate_comp_pivotalIsoApp_hom_whiskerRight`;
+* `TauCeti.pivotalCategoryOfRightRigid`: a monoidal trivialization of the double right dual
+  functor of a right rigid category is a pivotal structure for the rigid structure
+  `TauCeti.rigidCategoryOfIsoDoubleRightDual`, whose left duals are the right duals.
 
 ## References
 
@@ -72,9 +80,13 @@ class PivotalCategory (C : Type u) [Category.{v} C] [MonoidalCategory C] [RigidC
 
 attribute [instance] PivotalCategory.pivotalIso_isMonoidal
 
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [PivotalCategory C]
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
 
 open PivotalCategory
+
+section Pivotal
+
+variable [RigidCategory C] [PivotalCategory C]
 
 /-- The component `φ_X : X ≅ Xᘁᘁ` of the pivotal structure. -/
 noncomputable def pivotalIsoApp (X : C) : X ≅ ((Xᘁ : C)ᘁ : C) :=
@@ -174,6 +186,12 @@ theorem pivotalIsoApp_rightDual_inv (X : C) :
 noncomputable def pivotalExactPairing (X : C) : ExactPairing Xᘁ X :=
   exactPairingCongrRight (pivotalIsoApp X)
 
+/-- The pivotal pairing is the right transport of the chosen pairing along the pivotal
+isomorphism. -/
+theorem pivotalExactPairing_def (X : C) :
+    pivotalExactPairing X = exactPairingCongrRight (pivotalIsoApp X) :=
+  (rfl)
+
 /-- The evaluation `X ⊗ Xᘁ ⟶ 𝟙_ C` of `pivotalExactPairing X`. -/
 theorem pivotalExactPairing_evaluation (X : C) :
     @ExactPairing.evaluation C _ _ Xᘁ X (pivotalExactPairing X) =
@@ -185,5 +203,40 @@ theorem pivotalExactPairing_coevaluation (X : C) :
     @ExactPairing.coevaluation C _ _ Xᘁ X (pivotalExactPairing X) =
       η_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) ≫ Xᘁ ◁ (pivotalIsoApp X).inv :=
   exactPairingCongrRight_coevaluation _
+
+/-- The evaluation of the pivotal pairing is dinatural: for `f : X ⟶ Y`, pairing `X` with `Yᘁ`
+through `fᘁ` or through `f` gives the same morphism. -/
+@[reassoc]
+theorem whiskerLeft_rightAdjointMate_comp_pivotalIsoApp_hom_whiskerRight {X Y : C} (f : X ⟶ Y) :
+    X ◁ fᘁ ≫ (pivotalIsoApp X).hom ▷ Xᘁ ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) =
+      f ▷ Yᘁ ≫ (pivotalIsoApp Y).hom ▷ Yᘁ ≫ ε_ (Yᘁ : C) ((Yᘁ : C)ᘁ : C) := by
+  rw [whisker_exchange_assoc, ← rightAdjointMate_comp_evaluation, ← comp_whiskerRight_assoc,
+    ← pivotalIsoApp_hom_naturality, comp_whiskerRight_assoc]
+
+end Pivotal
+
+section RightRigid
+
+variable [RightRigidCategory C]
+
+/-- A monoidal trivialization `φ : 𝟭 C ≅ doubleRightDualFunctor C` of the double right dual
+functor of a right rigid category is a pivotal structure, for the rigid structure whose left
+duals are the right duals, paired with `X` through `φ`. -/
+@[instance_reducible]
+noncomputable def pivotalCategoryOfRightRigid (φ : 𝟭 C ≅ doubleRightDualFunctor C)
+    [NatTrans.IsMonoidal φ.hom] :
+    @PivotalCategory C _ _ (rigidCategoryOfIsoDoubleRightDual φ.app) :=
+  @PivotalCategory.mk C _ _ (rigidCategoryOfIsoDoubleRightDual φ.app) φ ‹_›
+
+/-- The components of the pivotal structure built from a monoidal trivialization `φ` of the double
+right dual are the components of `φ`. -/
+theorem pivotalIsoApp_pivotalCategoryOfRightRigid (φ : 𝟭 C ≅ doubleRightDualFunctor C)
+    [NatTrans.IsMonoidal φ.hom] (X : C) :
+    @pivotalIsoApp C _ _ (rigidCategoryOfIsoDoubleRightDual φ.app)
+      (pivotalCategoryOfRightRigid φ) X = φ.app X :=
+  Iso.ext (@pivotalIso_hom_app C _ _ (rigidCategoryOfIsoDoubleRightDual φ.app)
+    (pivotalCategoryOfRightRigid φ) X).symm
+
+end RightRigid
 
 end TauCeti

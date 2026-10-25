@@ -50,13 +50,6 @@ variable (A K : Type*) {L B : Type*} [CommRing A] [Field K] [CommRing B] [Field 
   [IsDomain A] [IsFractionRing A K] [FiniteDimensional K L] [Algebra.IsSeparable K L]
   [IsIntegralClosure B A L]
 
-omit [IsDomain A] [IsFractionRing A K] [FiniteDimensional K L] [Algebra.IsSeparable K L]
-  [IsIntegralClosure B A L] in
-private theorem algebraMap_smul_eq (r : A) (y : B) :
-    algebraMap B L (r • y) = algebraMap A K r • algebraMap B L y := by
-  rw [Algebra.smul_def, map_mul, ← IsScalarTower.algebraMap_apply,
-    IsScalarTower.algebraMap_apply A K L, ← Algebra.smul_def]
-
 variable {A} in
 /-- **Linear forms are trace pairings.** Every `A`-linear form `f : B → A` on the integral closure
 of `A` in a finite separable extension `L / K` is `x ↦ Tr_{L/K}(y x)` for some `y ∈ L`. -/
@@ -90,18 +83,6 @@ theorem exists_trace_mul_algebraMap_eq (f : B →ₗ[A] A) :
 
 variable [Module.Finite A B] [Module.Projective A B]
 
-omit [Algebra A B] [Algebra A L] [IsScalarTower A K L] [IsScalarTower A B L]
-  [IsDomain A] [IsFractionRing A K] [FiniteDimensional K L] [Algebra.IsSeparable K L]
-  [IsIntegralClosure B A L] [Module.Finite A B] [Module.Projective A B] in
-/-- Moving a scalar trace pairing between the two entries of a trace-dual expansion. -/
-private theorem trace_pairing_smul_swap (x y : L) (b z : B) (r : A)
-    (hr : Algebra.trace K L (y * algebraMap B L z) = algebraMap A K r) :
-    Algebra.trace K L ((Algebra.trace K L (x * algebraMap B L b) • y) *
-        algebraMap B L z) =
-      Algebra.trace K L (x * (algebraMap A K r • algebraMap B L b)) := by
-  rw [smul_mul_assoc, map_smul, hr, mul_smul_comm, map_smul,
-    smul_eq_mul, smul_eq_mul, mul_comm]
-
 /-- **A finite trace-dual family.** If the integral closure `B` of `A` in a finite separable
 extension `L / K` is a finite projective `A`-module, there are finitely many `bᵢ ∈ B` and
 `yᵢ ∈ Bᵛ` such that `x = ∑ᵢ Tr_{L/K}(x bᵢ) yᵢ` for every `x ∈ L`. -/
@@ -120,7 +101,7 @@ theorem exists_sum_trace_mul_smul_eq :
       simp [Pi.single_apply]
     conv_rhs => rw [← LinearMap.id_apply (R := A) z, ← hFG, LinearMap.comp_apply, hG, map_sum,
       map_sum]
-    simp only [map_smul, algebraMap_smul_eq A K, b]
+    simp only [b, ← IsScalarTower.toAlgHom_apply A B L, map_smul, algebraMap_smul]
   refine ⟨n, b, y, fun i ↦ ?_, fun x ↦ ?_⟩
   · rw [Submodule.mem_traceDual]
     intro _ hz
@@ -133,8 +114,8 @@ theorem exists_sum_trace_mul_smul_eq :
     rw [sub_mul, map_sub, Finset.sum_mul, map_sum, sub_eq_zero]
     conv_rhs => rw [← hB z, Finset.mul_sum, map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    exact trace_pairing_smul_swap A K x (y i) (b i) z (G z i) (by
-      simpa only [LinearMap.comp_apply, LinearMap.proj_apply] using hy i z)
+    simp only [mul_smul_comm, map_smul, hy, LinearMap.comp_apply,
+      LinearMap.proj_apply, smul_eq_mul, mul_comm]
   rw [← sub_eq_zero]
   refine (traceForm_nondegenerate K L).1 _ fun z ↦ ?_
   obtain ⟨⟨a, ha⟩, hm⟩ := IsIntegral.exists_multiple_integral_of_isLocalization A⁰ z

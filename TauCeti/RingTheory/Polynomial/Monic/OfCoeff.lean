@@ -81,6 +81,12 @@ theorem coeff_monicOfCoeff (c : Fin n → R) (i : Fin n) : (monicOfCoeff c).coef
   have hne : (i : ℕ) ≠ n := i.2.ne
   simp [monicOfCoeff, coeff_X_pow, coeff_monomial, hne, Fin.val_eq_val]
 
+/-- The coefficient of `X ^ n` in `TauCeti.Polynomial.monicOfCoeff c` is its leading coefficient
+`1`. -/
+@[simp]
+theorem coeff_monicOfCoeff_self (c : Fin n → R) : (monicOfCoeff c).coeff n = 1 := by
+  simp [monicOfCoeff, coeff_monomial, fun i : Fin n ↦ i.2.ne]
+
 /-- Monic polynomials with prescribed lower coefficients agree exactly when their
 coefficient tuples agree. -/
 @[simp]
@@ -121,10 +127,7 @@ theorem monicOfCoeff_coeff {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
   refine Polynomial.ext fun k => ?_
   rcases lt_trichotomy k n with hk | hk | hk
   · exact coeff_monicOfCoeff _ ⟨k, hk⟩
-  · have hlead : (monicOfCoeff fun i : Fin n => p.coeff (i : ℕ)).coeff n = 1 := by
-      simpa [natDegree_monicOfCoeff] using
-        (monic_monicOfCoeff fun i : Fin n => p.coeff (i : ℕ)).coeff_natDegree
-    rw [hk, hlead, ← hdeg, hp.coeff_natDegree]
+  · rw [hk, coeff_monicOfCoeff_self, ← hdeg, hp.coeff_natDegree]
   · rw [coeff_eq_zero_of_natDegree_lt (by rwa [natDegree_monicOfCoeff]),
       coeff_eq_zero_of_natDegree_lt (by rwa [hdeg])]
 

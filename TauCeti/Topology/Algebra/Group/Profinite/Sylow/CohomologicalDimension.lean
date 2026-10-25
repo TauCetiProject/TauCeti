@@ -29,6 +29,9 @@ computation of `cd_p` for an arbitrary profinite group reduces to that of a pro-
 
 ## Main results
 
+* `TauCeti.IsProPSylow.res_injective`: restriction `Hⁿ(G, X) → Hⁿ(P, X)` to a Sylow pro-`p`
+  subgroup `P` is injective in every degree, for a smooth discrete `p`-primary torsion
+  representation `X` of `G`.
 * `TauCeti.CohomologicalDimensionLE.of_isProPSylow`: the vanishing predicate `cd_p P ≤ n` for a
   Sylow pro-`p` subgroup `P` implies `cd_p G ≤ n`.
 * `TauCeti.IsProPSylow.cohomologicalDimensionAt_le`: `cd_p G ≤ cd_p P` for a Sylow pro-`p`
@@ -41,17 +44,28 @@ computation of `cd_p` for an arbitrary profinite group reduces to that of a pro-
 ## References
 
 * J.-P. Serre, *Galois Cohomology*, Ch. I, §3.3, Cor. 1 to Prop. 14.
-* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (3.3.6).
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (1.6.10) and
+  (3.3.6).
 -/
 
 public section
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 variable {p : ℕ} [Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G] {P : Subgroup G}
+
+/-- **Restriction to a Sylow pro-`p` subgroup is injective** (NSW (1.6.10)): for a Sylow pro-`p`
+subgroup `P` of a profinite group `G` and a smooth discrete `p`-primary torsion representation `X`
+of `G`, restriction `Hⁿ(G, X) → Hⁿ(P, X)` is injective in every degree `n`. -/
+theorem IsProPSylow.res_injective (hP : IsProPSylow p P) {k : Type w} [Ring k]
+    [TopologicalSpace k] {X : TopRep k G} (hX : IsSmoothDiscrete k X)
+    (hX' : IsPPrimaryTorsion p X.V) (n : ℕ) :
+    Function.Injective (ContinuousCohomology.res P X n).hom :=
+  ContinuousCohomology.res_injective_of_forall_not_dvd_index Fact.out hX hX' hP.isClosed
+    hP.not_dvd_index_of_le n
 
 /-- **`cd_p G ≤ cd_p P` for a Sylow pro-`p` subgroup `P`**, as the vanishing predicate: for a
 Sylow pro-`p` subgroup `P` of a profinite group `G`, `CohomologicalDimensionLE p P n` implies

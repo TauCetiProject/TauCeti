@@ -23,8 +23,8 @@ The total variation `eVariationOn γ (Set.Icc a b)` of a curve in a Riemannian m
 supremum of the sums of the ambient distances along finite monotone partitions of `[a, b]`. For a
 `C¹` curve it equals `Manifold.pathELength I γ a b`, the integral of the norm of the velocity.
 Consequently Riemannian path length is lower semicontinuous: under pointwise, and in particular
-uniform, convergence of `C¹` curves to a `C¹` curve on a fixed compact interval, the length of the
-limit is at most the `liminf` of the lengths.
+uniform, convergence of `C¹` curves to a differentiable curve on a fixed compact interval, the
+length of the limit is at most the `liminf` of the lengths.
 
 The proof tests the total variation on an arbitrary finite monotone partition: the ambient
 distance between consecutive partition points is at most the path length over that subinterval,
@@ -34,9 +34,10 @@ of curves and gives a lower bound for the `liminf` of their Riemannian lengths. 
 carrying that last step is stated in `TauCeti.Topology.EMetricSpace.BoundedVariation`, since its
 proof uses no manifold structure.
 
-The reverse comparison bounds the path length of a `C¹` curve by its total variation. Together
-with the forward comparison, it identifies the two quantities and transfers lower semicontinuity
-of total variation to Riemannian path length.
+The reverse comparison bounds the path length of a differentiable curve by its total variation.
+Together with the forward comparison, it identifies the two quantities for `C¹` curves and
+transfers lower semicontinuity of total variation to Riemannian path length. The limit curve need
+only be differentiable; its velocity need not be continuous.
 
 Like the corner-smoothing comparison of
 `TauCeti/Geometry/Manifold/Riemannian/EDistComparison.lean`, the piecewise-`C¹` statement here
@@ -56,11 +57,11 @@ uniform limits of families that are eventually `C¹`.
   of eventually `C¹` curves is at most the `liminf` of their Riemannian path lengths.
 * `TauCeti.Manifold.eVariationOn_le_liminf_pathELength_of_tendstoUniformlyOn`: the same bound for
   a uniform limit.
-* `TauCeti.Manifold.pathELength_le_eVariationOn`: the Riemannian path length of a `C¹` curve on
-  `[a, b]` is at most its total variation there.
+* `TauCeti.Manifold.pathELength_le_eVariationOn`: the Riemannian path length of a differentiable
+  curve on `[a, b]` is at most its total variation there.
 * `TauCeti.Manifold.eVariationOn_eq_pathELength`: hence the two agree for `C¹` curves.
 * `TauCeti.Manifold.pathELength_le_liminf_pathELength`: **lower semicontinuity of path length**
-  under pointwise convergence of eventually `C¹` curves to a `C¹` curve.
+  under pointwise convergence of eventually `C¹` curves to a differentiable curve.
 * `TauCeti.Manifold.pathELength_le_liminf_pathELength_of_tendstoUniformlyOn`: the same under
   uniform convergence.
 
@@ -79,8 +80,6 @@ uniform limits of families that are eventually `C¹`.
   combines Mathlib's sharp trivialization estimate, the chart displacement bound
   `TauCeti.Manifold.enorm_sub_le_mul_pathELength`, and Mathlib's integral bound for derivatives of
   monotone functions.
-* [The Hopf--Rinow roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 0, "Regular reparametrization and limits".
 -/
 
 public section
@@ -142,8 +141,9 @@ theorem IsPiecewiseContMDiffOn.eVariationOn_le_pathELength
     hγ.edist_le_pathELength_of_subset has hst htb
 
 /-- The total variation of a pointwise limit of eventually `C¹` curves is at most the `liminf` of
-their Riemannian path lengths. No regularity of the limit is needed; for a `C¹` limit the left side
-is its path length, see `TauCeti.Manifold.pathELength_le_liminf_pathELength`. -/
+their Riemannian path lengths. No regularity of the limit is needed. For a differentiable limit,
+the total variation bounds its path length; see
+`TauCeti.Manifold.pathELength_le_liminf_pathELength`. -/
 theorem eVariationOn_le_liminf_pathELength {ι : Type*} {l : Filter ι} {γi : ι → ℝ → M}
     (hγi : ∀ᶠ i in l, CMDiff[Icc a b] 1 (γi i))
     (hγ : ∀ t ∈ Icc a b, Tendsto (fun i ↦ γi i t) l (nhds (γ t))) :
@@ -166,13 +166,14 @@ section Converse
 
 variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
-/-- At an interior parameter where the variation function of a `C¹` curve is differentiable, the
+/-- At an interior parameter where the curve and its variation function are differentiable, the
 speed of the curve is at most `r` times the derivative of the variation function, for any `r > 1`.
 The derivative is compared, functional by functional on the tangent space, with the right slopes
 of the curve read in the chart centred at the current point. -/
 private theorem norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo
-    (hγ : CMDiff[Icc a b] 1 γ) (hbv : LocallyBoundedVariationOn γ (Icc a b)) {t : ℝ}
-    (ht : t ∈ Ioo a b) (hd : DifferentiableAt ℝ (variationOnFromTo γ (Icc a b) a) t) {r : ℝ}
+    {t : ℝ} (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ (Icc a b) t)
+    (hbv : LocallyBoundedVariationOn γ (Icc a b)) (ht : t ∈ Ioo a b)
+    (hd : DifferentiableAt ℝ (variationOnFromTo γ (Icc a b) a) t) {r : ℝ}
     (hr : 1 < r) :
     ‖curveVelocityWithin I γ (Icc a b) t‖ ≤ r * deriv (variationOnFromTo γ (Icc a b) a) t := by
   set V := variationOnFromTo γ (Icc a b) a with hVdef
@@ -182,8 +183,8 @@ private theorem norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo
   have htab : t ∈ Icc a b := Ioo_subset_Icc_self ht
   have ha : a ∈ Icc a b := left_mem_Icc.2 (ht.1.trans ht.2).le
   have hcurve : HasDerivAt (extChartAt I x ∘ γ) w t :=
-    (hasDerivWithinAt_extChartAt_comp_curve (hasMFDerivWithinAt_curveVelocityWithin
-      ((hγ t htab).mdifferentiableWithinAt one_ne_zero))).hasDerivAt hIcc
+    (hasDerivWithinAt_extChartAt_comp_curve
+      (hasMFDerivWithinAt_curveVelocityWithin hγ)).hasDerivAt hIcc
   have hV := hd.hasDerivAt.tendsto_slope_zero_right
   have hshift : Tendsto (fun h : ℝ ↦ t + h) (𝓝[>] 0) (𝓝 t) := by
     simpa using (tendsto_const_nhds (x := t)).add (tendsto_id (x := 𝓝 (0 : ℝ))) |>.mono_left
@@ -197,7 +198,7 @@ private theorem norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo
     have := variationOnFromTo.monotoneOn hbv ha htab hh.2 (by linarith [hh.1])
     exact smul_nonneg (inv_nonneg.2 hh.1.le) (sub_nonneg.2 this)
   have hγt : Tendsto (fun h ↦ γ (t + h)) (𝓝[>] 0) (𝓝 x) :=
-    ((hγ.continuousOn.continuousAt hIcc).tendsto).comp hshift
+    ((hγ.continuousWithinAt.continuousAt hIcc).tendsto).comp hshift
   refine NormedSpace.norm_le_dual_bound ℝ w (by positivity) fun ℓ ↦ ?_
   -- The same functional, typed on the model space so that it can be composed with the chart.
   let ℓE : E →L[ℝ] ℝ := ℓ
@@ -207,7 +208,8 @@ private theorem norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo
       (ℓE.hasFDerivAt.comp_hasDerivAt t hcurve).tendsto_slope_zero_right
   rw [mul_right_comm]
   refine le_of_tendsto_of_tendsto hlim (hV.const_mul (r * ‖ℓ‖)) ?_
-  filter_upwards [hmem, hγt.eventually (eventually_enorm_apply_extChartAt_sub_le (I := I) x hr)]
+  filter_upwards [hmem, hγt.eventually
+      (eventually_enorm_apply_extChartAt_sub_le (I := I) (F := ℝ) x hr)]
     with h hh hy
   have hth : t ≤ t + h := by linarith [hh.1]
   -- The distance travelled on `[t, t + h]` is at most the variation there.
@@ -233,11 +235,12 @@ private theorem norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo
         exact inv_nonneg.2 hh.1.le
     _ = r * ‖ℓ‖ * (h⁻¹ * (V (t + h) - V t)) := by ring
 
-/-- At an interior parameter where the variation function of a `C¹` curve is differentiable, the
+/-- At an interior parameter where the curve and its variation function are differentiable, the
 speed of the curve is at most the derivative of the variation function. -/
 private theorem norm_curveVelocityWithin_le_deriv_variationOnFromTo
-    (hγ : CMDiff[Icc a b] 1 γ) (hbv : LocallyBoundedVariationOn γ (Icc a b)) {t : ℝ}
-    (ht : t ∈ Ioo a b) (hd : DifferentiableAt ℝ (variationOnFromTo γ (Icc a b) a) t) :
+    {t : ℝ} (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ (Icc a b) t)
+    (hbv : LocallyBoundedVariationOn γ (Icc a b)) (ht : t ∈ Ioo a b)
+    (hd : DifferentiableAt ℝ (variationOnFromTo γ (Icc a b) a) t) :
     ‖curveVelocityWithin I γ (Icc a b) t‖ ≤ deriv (variationOnFromTo γ (Icc a b) a) t := by
   -- Let `r` decrease to `1` in `norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo`.
   have hc : Continuous fun r : ℝ ↦ r * deriv (variationOnFromTo γ (Icc a b) a) t := by fun_prop
@@ -245,9 +248,10 @@ private theorem norm_curveVelocityWithin_le_deriv_variationOnFromTo
     (eventually_mem_nhdsWithin.mono fun r hr ↦
       norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo hγ hbv ht hd hr)
 
-/-- **Riemannian path length is bounded by total variation.** For a `C¹` curve on `[a, b]`, its
-Riemannian path length is at most its total variation for the Riemannian distance. -/
-theorem pathELength_le_eVariationOn (hγ : CMDiff[Icc a b] 1 γ) :
+/-- **Riemannian path length is bounded by total variation.** For a differentiable curve on
+`[a, b]`, its Riemannian path length is at most its total variation for the Riemannian distance.
+Continuity of the velocity is not required. -/
+theorem pathELength_le_eVariationOn (hγ : MDiff[Icc a b] γ) :
     Manifold.pathELength I γ a b ≤ eVariationOn γ (Icc a b) := by
   rcases le_or_gt b a with hba | hab
   · rw [Manifold.pathELength_eq_lintegral_mfderivWithin_Icc,
@@ -269,7 +273,8 @@ theorem pathELength_le_eVariationOn (hγ : CMDiff[Icc a b] 1 γ) :
     have ht' : t ∈ Ioo a b := ⟨lt_of_le_of_ne ht.1 hta.symm, lt_of_le_of_ne ht.2 htb⟩
     exact ⟨ht', (hdiff ht).differentiableAt (Icc_mem_nhds ht'.1 ht'.2)⟩
   have hspeed := hae.mono fun t ht ↦
-    norm_curveVelocityWithin_le_deriv_variationOnFromTo (I := I) hγ hbv ht.1 ht.2
+    norm_curveVelocityWithin_le_deriv_variationOnFromTo (I := I)
+      (hγ t (Ioo_subset_Icc_self ht.1)) hbv ht.1 ht.2
   have hint : IntegrableOn (deriv V) (Icc a b) := by
     rw [← intervalIntegrable_iff_integrableOn_Icc_of_le hab.le]
     exact (uIcc_of_le hab.le ▸ hmono).intervalIntegrable_deriv
@@ -302,23 +307,24 @@ Not `@[simp]`: the model with corners `I` occurs only on the right-hand side, so
 infer `I` (or its model spaces) by matching the left-hand side. -/
 theorem eVariationOn_eq_pathELength (hγ : CMDiff[Icc a b] 1 γ) :
     eVariationOn γ (Icc a b) = Manifold.pathELength I γ a b :=
-  (eVariationOn_le_pathELength hγ).antisymm (pathELength_le_eVariationOn hγ)
+  (eVariationOn_le_pathELength hγ).antisymm
+    (pathELength_le_eVariationOn (hγ.mdifferentiableOn one_ne_zero))
 
 /-- **Lower semicontinuity of Riemannian path length.** Let `γᵢ` be eventually `C¹` on `[a, b]`
-and converge pointwise there to a `C¹` curve `γ`. Then the length of `γ` on `[a, b]` is at most the
-`liminf` of the lengths of the `γᵢ`. -/
+and converge pointwise there to a differentiable curve `γ`. Then the length of `γ` on `[a, b]` is at
+most the `liminf` of the lengths of the `γᵢ`. -/
 theorem pathELength_le_liminf_pathELength {ι : Type*} {l : Filter ι} {γi : ι → ℝ → M}
-    (hγi : ∀ᶠ i in l, CMDiff[Icc a b] 1 (γi i)) (hγ : CMDiff[Icc a b] 1 γ)
+    (hγi : ∀ᶠ i in l, CMDiff[Icc a b] 1 (γi i)) (hγ : MDiff[Icc a b] γ)
     (hconv : ∀ t ∈ Icc a b, Tendsto (fun i ↦ γi i t) l (𝓝 (γ t))) :
     Manifold.pathELength I γ a b ≤ liminf (fun i ↦ Manifold.pathELength I (γi i) a b) l :=
   (pathELength_le_eVariationOn hγ).trans (eVariationOn_le_liminf_pathELength hγi hconv)
 
 /-- **Lower semicontinuity of Riemannian path length under uniform convergence.** If eventually
-`C¹` curves `γᵢ` converge uniformly on `[a, b]` to a `C¹` curve `γ`, then
+`C¹` curves `γᵢ` converge uniformly on `[a, b]` to a differentiable curve `γ`, then
 `pathELength I γ a b ≤ liminf pathELength I γᵢ a b`. -/
 theorem pathELength_le_liminf_pathELength_of_tendstoUniformlyOn
     {ι : Type*} {l : Filter ι} {γi : ι → ℝ → M}
-    (hγi : ∀ᶠ i in l, CMDiff[Icc a b] 1 (γi i)) (hγ : CMDiff[Icc a b] 1 γ)
+    (hγi : ∀ᶠ i in l, CMDiff[Icc a b] 1 (γi i)) (hγ : MDiff[Icc a b] γ)
     (hconv : TendstoUniformlyOn γi γ l (Icc a b)) :
     Manifold.pathELength I γ a b ≤ liminf (fun i ↦ Manifold.pathELength I (γi i) a b) l :=
   pathELength_le_liminf_pathELength hγi hγ fun _ ht ↦ hconv.tendsto_at ht

@@ -26,7 +26,9 @@ other two cases pair the terms off two by two, by a weight-preserving involution
 points: rectangles with disjoint side columns are applied in the opposite order, and rectangles
 sharing one side column bound an L-shaped hexagon which is cut the other way. Each pairing changes
 the intermediate grid state and preserves the covered-square domain, hence the monomial weight, so
-in characteristic two the two terms of a pair cancel.
+in characteristic two the two terms of a pair cancel. The pairing is stated separately, for any
+function on decompositions whose paired terms cancel, so that a sign assignment can reuse it over
+coefficient rings of other characteristics.
 
 Specializing carries the square-zero identity to the two blocked theories as well. Setting one
 `V_i` to zero gives the simply blocked map, and specialization intertwines the two differentials.
@@ -38,6 +40,10 @@ the constant terms of `∂⁻` over `ZMod 2`.
 
 ## Main results
 
+* `TauCeti.GridDiagram.sum_unblockedDecompositions_eq_zero`: the pairing itself, for any function
+  on decompositions whose paired terms cancel, over any coefficients.
+* `TauCeti.GridDiagram.unblockedDecompositionWeight_recut`: recutting a decomposition preserves
+  its weight.
 * `TauCeti.GridDiagram.sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero`: every matrix
   entry of the square of `∂⁻` vanishes.
 * `TauCeti.GridDiagram.unblockedDifferential_comp_self_eq_zero`: `∂⁻ ∘ ∂⁻ = 0`.
@@ -58,26 +64,32 @@ namespace TauCeti
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (R : Type*) [CommSemiring R] [CharP R 2]
+variable {n : ℕ} (G : GridDiagram n)
 
-/-- In characteristic two every matrix entry of the square of the unblocked grid differential
-vanishes. -/
-theorem sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero (x z : GridState n) :
-    ∑ y : GridState n, G.unblockedCoefficient R x y * G.unblockedCoefficient R y z = 0 := by
+/-- The juxtaposition pairing: a function on the two-step decompositions counted by the square of
+`∂⁻` sums to zero over the decompositions from `x` to a different state `z`, provided each term
+cancels its partner under both pairings, reordering two rectangles with disjoint side columns and
+recutting two rectangles that share one side column.
+
+Over `𝔽₂` the partners carry equal weights; over a general coefficient ring a sign assignment makes
+them carry opposite signs. -/
+theorem sum_unblockedDecompositions_eq_zero {M : Type*} [AddCommMonoid M] {x z : GridState n}
+    (hzx : z ≠ x) (f : GridRectangleDecomposition x z → M)
+    (hcommute : ∀ D ∈ G.unblockedDecompositions x z, ∀ h : D.HasDisjointSides,
+      f D + f (D.commute h) = 0)
+    (hrecut : ∀ D ∈ G.unblockedDecompositions x z, ∀ (hone : D.HasOneCommonSide)
+      (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty),
+      f D + f (D.recut hone hfirst hsecond) = 0) :
+    ∑ D ∈ G.unblockedDecompositions x z, f D = 0 := by
   classical
-  rcases eq_or_ne z x with rfl | hzx
-  · exact Finset.sum_eq_zero fun y _ =>
-      G.unblockedCoefficient_mul_unblockedCoefficient_eq_zero R z y
-  rw [G.sum_unblockedCoefficient_mul_unblockedCoefficient R x z,
-    ← Finset.sum_filter_add_sum_filter_not (G.unblockedDecompositions x z)
-      (fun D => D.HasDisjointSides) (G.unblockedDecompositionWeight R)]
+  rw [← Finset.sum_filter_add_sum_filter_not (G.unblockedDecompositions x z)
+      (fun D => D.HasDisjointSides) f]
   have hdisjoint : ∑ D ∈ (G.unblockedDecompositions x z).filter
-      (fun D => D.HasDisjointSides), G.unblockedDecompositionWeight R D = 0 := by
+      (fun D => D.HasDisjointSides), f D = 0 := by
     refine Finset.sum_involution
       (fun D hD => D.commute (Finset.mem_filter.mp hD).2) (fun D hD => ?_) (fun D hD _ => ?_)
       (fun D hD => ?_) (fun D hD => ?_)
-    · rw [G.unblockedDecompositionWeight_commute R D]
-      exact CharTwo.add_self_eq_zero _
+    · exact hcommute D (Finset.mem_filter.mp hD).1 _
     · exact D.commute_ne _
     · exact Finset.mem_filter.mpr ⟨(G.commute_mem_unblockedDecompositions_iff D _).mpr
         (Finset.mem_filter.mp hD).1, D.hasDisjointSides_commute _⟩
@@ -95,18 +107,11 @@ theorem sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero (x z : GridSta
       (fun D => ¬D.HasDisjointSides), D.second.IsEmpty := fun D hD =>
     G.isEmpty_of_mem_unblockedRectangles (hmem D hD).2
   have hcommon : ∑ D ∈ (G.unblockedDecompositions x z).filter
-      (fun D => ¬D.HasDisjointSides), G.unblockedDecompositionWeight R D = 0 := by
+      (fun D => ¬D.HasDisjointSides), f D = 0 := by
     refine Finset.sum_involution
       (fun D hD => D.recut (hone D hD) (hfirst D hD) (hsecond D hD)) (fun D hD => ?_)
       (fun D hD _ => ?_) (fun D hD => ?_) (fun D hD => ?_)
-    · have hweight : G.unblockedDecompositionWeight R
-          (D.recut (hone D hD) (hfirst D hD) (hsecond D hD)) =
-            G.unblockedDecompositionWeight R D := by
-        rw [G.unblockedDecompositionWeight_def R, G.unblockedDecompositionWeight_def R]
-        exact (D.isRecut_recut (hone D hD) (hfirst D hD)
-          (hsecond D hD)).isRepartition.OMonomial_mul_OMonomial G R
-      rw [hweight]
-      exact CharTwo.add_self_eq_zero _
+    · exact hrecut D (Finset.mem_filter.mp hD).1 _ _ _
     · exact D.recut_ne _ _ _
     · -- The recut covers the same squares, so it again avoids the `X`-markings.
       have hrecut := D.isRecut_recut (hone D hD) (hfirst D hD) (hsecond D hD)
@@ -121,6 +126,33 @@ theorem sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero (x z : GridSta
           (D.hasOneCommonSide_recut _ _ _)
     · exact D.recut_recut _ _ _
   rw [hdisjoint, hcommon, add_zero]
+
+/-- Recutting a two-step decomposition by two empty rectangles sharing one side column preserves
+its weight: the two decompositions cover the same squares. -/
+theorem unblockedDecompositionWeight_recut (R : Type*) [CommSemiring R] {x z : GridState n}
+    (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty)
+    (hsecond : D.second.IsEmpty) :
+    G.unblockedDecompositionWeight R (D.recut hone hfirst hsecond) =
+      G.unblockedDecompositionWeight R D := by
+  rw [G.unblockedDecompositionWeight_def R, G.unblockedDecompositionWeight_def R]
+  exact (D.isRecut_recut hone hfirst hsecond).isRepartition.OMonomial_mul_OMonomial G R
+
+variable (R : Type*) [CommSemiring R] [CharP R 2]
+
+/-- In characteristic two every matrix entry of the square of the unblocked grid differential
+vanishes. -/
+theorem sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero (x z : GridState n) :
+    ∑ y : GridState n, G.unblockedCoefficient R x y * G.unblockedCoefficient R y z = 0 := by
+  rcases eq_or_ne z x with rfl | hzx
+  · exact Finset.sum_eq_zero fun y _ =>
+      G.unblockedCoefficient_mul_unblockedCoefficient_eq_zero R z y
+  rw [G.sum_unblockedCoefficient_mul_unblockedCoefficient R x z]
+  refine G.sum_unblockedDecompositions_eq_zero hzx _ (fun D _ h => ?_)
+    (fun D _ hone hfirst hsecond => ?_)
+  · rw [G.unblockedDecompositionWeight_commute R D]
+    exact CharTwo.add_self_eq_zero _
+  · rw [G.unblockedDecompositionWeight_recut R D]
+    exact CharTwo.add_self_eq_zero _
 
 /-- In characteristic two the square of the unblocked grid differential vanishes on a
 generator. -/

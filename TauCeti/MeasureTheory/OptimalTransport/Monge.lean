@@ -78,6 +78,10 @@ non-top value implies feasibility.
 * `TauCeti.isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan` — the equality case
   of the relaxation: a transport map attains the Kantorovich value exactly when its graph plan
   is an optimal plan;
+* `TauCeti.lintegral_eq_transportCost_of_ae_eq_comp` and `TauCeti.lintegral_le_of_ae_eq_comp` —
+  if `U = T ∘ s` almost everywhere for an optimal transport map `T` from `μ` to the law of `U`
+  and a map `s` of law `μ`, then `s` attains the transport cost and minimises the cost of
+  `(s', U)` among maps `s'` of law `μ`;
 * `TauCeti.isKantorovichOptimalTransportMap_id` and `TauCeti.mongeCost_self_eq_zero` — for a
   cost vanishing on the diagonal the identity transports any measure onto itself at no cost;
 * `TauCeti.isKantorovichOptimalTransportMap_dirac_dirac` and `TauCeti.mongeCost_dirac_dirac` —
@@ -389,6 +393,46 @@ theorem isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan (hT : H
       ← transportMapCost_eq_lintegral_graphPlan hT.aemeasurable hc, h.transportMapCost_eq]
   · rw [transportMapCost_eq_lintegral_graphPlan hT.aemeasurable hc,
       lintegral_graphPlan hT.aemeasurable hc, h]
+
+section Factor
+
+variable {α : Type*} [MeasurableSpace α] {m : Measure α} {U : α → Y} {s s' : α → X}
+
+/-- **A factor through an optimal map attains the transport cost.** Let `T` be an optimal
+transport map for a measurable cost `c` from `μ` to the law of `U : α → Y`, and let `s : α → X`
+have law `μ` with `U = T ∘ s` almost everywhere. Then the pair `(s, U)` pushes `m` to the graph
+plan of `T`, so `∫⁻ c (s ω, U ω) dm` is the optimal transport cost from `μ` to the law of `U`. -/
+theorem lintegral_eq_transportCost_of_ae_eq_comp (hc : Measurable c)
+    (hT : IsKantorovichOptimalTransportMap c μ (m.map U) T) (hs : HasLaw s μ m)
+    (h : U =ᵐ[m] T ∘ s) :
+    ∫⁻ ω, c (s ω, U ω) ∂m = transportCost c μ (m.map U) := by
+  have hT' : AEMeasurable T (m.map s) := hs.map_eq ▸ hT.aemeasurable
+  have hU : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT.aemeasurable h
+  have hgraph : m.map (fun ω => (s ω, U ω)) = graphPlan T μ := by
+    rw [Measure.map_congr (f := fun ω => (s ω, U ω)) (g := fun ω => (s ω, T (s ω)))
+        (h.mono fun ω hω => Prod.ext rfl hω), graphPlan_def, ← hs.map_eq,
+      AEMeasurable.map_map_of_aemeasurable (aemeasurable_prodMk_self hT') hs.aemeasurable]
+    rfl
+  refine (lintegral_map' hc.aemeasurable (hs.aemeasurable.prodMk hU)).symm.trans ?_
+  rw [hgraph]
+  exact ((isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hT.toHasLaw
+    hc.aemeasurable).1 hT).lintegral_eq
+
+/-- **A factor through an optimal map is cost-minimising.** Let `T` be an optimal transport map
+for a measurable cost `c` from `μ` to the law of `U : α → Y`, and let `s : α → X` have law `μ`
+with `U = T ∘ s` almost everywhere. Then among all maps `s'` of law `μ`, `s` minimises the cost
+`∫⁻ c (s' ω, U ω) dm`. -/
+theorem lintegral_le_of_ae_eq_comp (hc : Measurable c)
+    (hT : IsKantorovichOptimalTransportMap c μ (m.map U) T) (hs : HasLaw s μ m)
+    (h : U =ᵐ[m] T ∘ s) (hs' : HasLaw s' μ m) :
+    ∫⁻ ω, c (s ω, U ω) ∂m ≤ ∫⁻ ω, c (s' ω, U ω) ∂m := by
+  have hU : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT.aemeasurable h
+  rw [lintegral_eq_transportCost_of_ae_eq_comp hc hT hs h]
+  refine le_of_le_of_eq ?_ (lintegral_map' hc.aemeasurable (hs'.aemeasurable.prodMk hU))
+  exact transportCost_le_lintegral
+    (isCoupling_map_prodMk_of_aemeasurable hs'.aemeasurable hU hs'.map_eq rfl) c
+
+end Factor
 
 /-! ### Transporting a measure to itself -/
 

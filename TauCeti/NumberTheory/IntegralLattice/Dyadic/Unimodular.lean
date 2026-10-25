@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 import TauCeti.LinearAlgebra.BilinearForm.Even.Henselian
+import TauCeti.LinearAlgebra.BilinearForm.Even.Basic
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.Henselian.Basic
 
@@ -28,6 +30,8 @@ represents `1` over `ℤ_[2]`.
 
 * `TauCeti.IntegralLattice.IsEven.two_dvd_localIntegralForm_apply_self`: the dyadic localization
   of an even lattice is even.
+* `TauCeti.IntegralLattice.IsEven.even_finrank_of_isUnit_determinant`: an even lattice of odd
+  determinant has even rank.
 * `TauCeti.IntegralLattice.exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm`: an even
   lattice unimodular at `2` splits off a perfect binary summand after localization.
 * `TauCeti.IntegralLattice.localIntegralForm_two_equivalent_iff_of_isEven`: even lattices with
@@ -54,6 +58,16 @@ theorem IsEven.two_dvd_localIntegralForm_apply_self {L : IntegralLattice V} (hev
   rw [← Ideal.mem_span_singleton]
   exact (L.isEven_iff_localNormIdeal_le_span_two.mp heven)
     ((L.localIntegralForm 2).self_mem_normIdeal x)
+
+/-- **An even lattice of odd determinant has even rank.** Its dyadic localization is a perfect
+pairing whose self-pairings are all divisible by `2`, and such a form has even rank. -/
+theorem IsEven.even_finrank_of_isUnit_determinant {L : IntegralLattice V} (heven : L.IsEven)
+    (hdet : IsUnit (L.determinant : ℤ_[2])) : Even (finrank ℤ L) := by
+  have := L.isPerfPair_localIntegralForm_of_isUnit_determinant 2 hdet
+  have h := (L.isSymm_localIntegralForm 2).even_finrank_of_isPerfPair (L.localIntegralForm 2)
+    fun x hx ↦ PadicInt.not_isUnit_two
+      (isUnit_of_dvd_unit (heven.two_dvd_localIntegralForm_apply_self x) hx)
+  rwa [Module.finrank_baseChange] at h
 
 /-- **An even lattice unimodular at `2` splits off a perfect binary summand.** If the rank is at
 least two, the dyadic localization has a rank-two submodule carrying a perfect restriction of the
