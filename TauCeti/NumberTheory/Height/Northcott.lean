@@ -1,72 +1,96 @@
 /-
-Copyright (c) 2026 Ralf Stephan. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Ralf Stephan
+Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Height.Projectivization
-public import Mathlib.Order.Northcott
-public import TauCeti.LinearAlgebra.Projectivization.Basic
-public import TauCeti.NumberTheory.Height.Basic
+public import TauCeti.NumberTheory.Height.Absolute
+import TauCeti.NumberTheory.Height.FiniteOrder
 
 /-!
-# The Northcott property on projective space
+# Boundary cases and field embeddings for Northcott sets
 
-If a field has finitely many elements of bounded scalar height, its finite-dimensional
-projective spaces have finitely many points of bounded multiplicative or logarithmic height.
-The instances allow callers to use `Northcott.finite_le` and `Northcott.exists_min_image`.
-Over a number field the scalar hypothesis follows from Mathlib's number-field instance.
-
-Normalizing a nonzero coordinate to `1` bounds the scalar height of every coordinate of the
-representative by the projective height. Such representatives form a finite product of finite
-scalar sublevel sets. The statement concerns projective points: tuple heights are invariant
-under nonzero scaling, so bounded-height tuples need not form a finite set.
-
-## References
-
-The proof is adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
-[`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights/Northcott.lean),
-commit `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0).
-The mathematical argument is Hindry–Silverman, *Diophantine Geometry: An Introduction*,
-Theorem B.2.3, for points over a fixed number field; see also Bombieri–Gubler,
-*Heights in Diophantine Geometry*, Theorem 2.4.9, specialized to projective space and degree `1`.
+The algebraic elements satisfying a fixed rational-degree bound and absolute-height bound
+form a Northcott set. Height bounds below one give the empty set. When both bounds are one,
+the set consists of minus one, zero, and one. Taking the preimage under a homomorphism of
+characteristic-zero fields preserves these sets, without choosing a complex embedding.
 -/
 
 public section
+open NumberField Height
+namespace TauCeti
 
-namespace Projectivization
+/-- A Northcott set is empty if its absolute-height bound is below one. -/
+theorem setOf_absMulHeight₁_le_eq_empty_of_lt_one (F : Type*) [Field F] [CharZero F]
+    (d : ℕ) {B : ℝ} (hB : B < 1) :
+    {x : F | IsAlgebraic ℚ x ∧
+      (minpoly ℚ x).natDegree ≤ d ∧ absMulHeight₁ x ≤ B} = ∅ := by
+  apply Set.eq_empty_iff_forall_notMem.mpr
+  intro x hx
+  exact (hB.trans_le (one_le_absMulHeight₁ x)).not_ge hx.2.2
 
-open Height
+private theorem rat_height_one_iff (q : ℚ) :
+    mulHeight₁ q ≤ 1 ↔ q = -1 ∨ q = 0 ∨ q = 1 := by
+  rw [Rat.mulHeight₁_eq_max, Nat.cast_max, max_le_iff]
+  constructor
+  · rintro ⟨hnum, hden⟩
+    have hn : q.num.natAbs ≤ 1 := by exact_mod_cast hnum
+    have hd : q.den ≤ 1 := by exact_mod_cast hden
+    have hdeq : q.den = 1 := by have := q.pos; omega
+    have hq : q = (q.num : ℚ) := by simpa [hdeq] using (Rat.num_div_den q).symm
+    have hnumBounds : -1 ≤ q.num ∧ q.num ≤ 1 := by omega
+    obtain h | h | h : q.num = -1 ∨ q.num = 0 ∨ q.num = 1 := by omega
+    · left; simpa [h] using hq
+    · right; left; simpa [h] using hq
+    · right; right; simpa [h] using hq
+  · rintro (rfl | rfl | rfl) <;> norm_num
 
-variable {K : Type*} [Field K] [AdmissibleAbsValues K] {ι : Type*} [Finite ι]
+/-- In every characteristic-zero field, the algebraic elements of degree and absolute height
+at most one are exactly minus one, zero, and one. -/
+theorem setOf_degree_le_one_absMulHeight₁_le_one (F : Type*) [Field F] [CharZero F] :
+    {x : F | IsAlgebraic ℚ x ∧ (minpoly ℚ x).natDegree ≤ 1 ∧ absMulHeight₁ x ≤ 1} =
+      {-1, 0, 1} := by
+  ext x
+  constructor
+  · rintro ⟨hx, hd, hH⟩
+    have heq : (minpoly ℚ x).natDegree = 1 := by
+      have := minpoly.natDegree_pos hx.isIntegral
+      omega
+    obtain ⟨q, rfl⟩ := minpoly.natDegree_eq_one_iff.mp heq
+    have hq : mulHeight₁ q ≤ 1 := by
+      simpa only [eq_ratCast, absMulHeight₁_ratCast] using hH
+    rcases (rat_height_one_iff q).mp hq with rfl | rfl | rfl <;> simp
+  · have hmem (q : ℚ) (hq : mulHeight₁ q ≤ 1) :
+        IsAlgebraic ℚ (algebraMap ℚ F q) ∧
+          (minpoly ℚ (algebraMap ℚ F q)).natDegree ≤ 1 ∧
+          absMulHeight₁ (algebraMap ℚ F q) ≤ 1 := by
+      refine ⟨isIntegral_algebraMap.isAlgebraic, ?_, ?_⟩
+      · exact (minpoly.natDegree_eq_one_iff.mpr ⟨q, rfl⟩).le
+      · simpa only [eq_ratCast, absMulHeight₁_ratCast] using hq
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+    rintro (rfl | rfl | rfl)
+    · simpa using hmem (-1) ((rat_height_one_iff _).mpr (Or.inl rfl))
+    · simpa using hmem 0 ((rat_height_one_iff _).mpr (Or.inr (Or.inl rfl)))
+    · simpa using hmem 1 ((rat_height_one_iff _).mpr (Or.inr (Or.inr rfl)))
 
-/-- Projective multiplicative height has the Northcott property whenever scalar multiplicative
-height does. In particular, this applies to every number field. -/
-instance instNorthcottMulHeight [Northcott (mulHeight₁ (K := K))] :
-    Northcott (mulHeight (K := K) (ι := ι)) where
-  finite_le B := by
-    have hpi : {v : ι → K | ∀ i, mulHeight₁ (v i) ≤ B}.Finite :=
-      Set.Finite.pi' fun _ : ι ↦ Northcott.finite_le (h := mulHeight₁ (K := K)) B
-    have hsub : (Subtype.val ⁻¹' {v : ι → K | ∀ i, mulHeight₁ (v i) ≤ B} :
-        Set {w : ι → K // w ≠ 0}).Finite :=
-      hpi.preimage Subtype.val_injective.injOn
-    refine (hsub.image (mk' K)).subset ?_
-    rintro x hx
-    obtain ⟨v, hv, i₀, hi₀, -, rfl⟩ := exists_rep_apply_eq_one x
-    refine ⟨⟨v, hv⟩, fun i ↦ ?_, rfl⟩
-    have h := mulHeight₁_div_le_mulHeight v i i₀
-    rw [hi₀, div_one] at h
-    exact h.trans (by rwa [← mulHeight_mk hv])
+/-- Algebraicity, rational degree, and absolute height are preserved by a field embedding.
+Thus a Northcott set pulls back to the Northcott set with the same bounds. -/
+theorem preimage_setOf_absMulHeight₁_le {F E : Type*}
+    [Field F] [CharZero F] [Field E] [CharZero E]
+    (f : F →+* E) (d : ℕ) (B : ℝ) :
+    f ⁻¹' {x : E | IsAlgebraic ℚ x ∧
+      (minpoly ℚ x).natDegree ≤ d ∧ absMulHeight₁ x ≤ B} =
+      {x : F | IsAlgebraic ℚ x ∧
+        (minpoly ℚ x).natDegree ≤ d ∧ absMulHeight₁ x ≤ B} := by
+  ext x
+  change (IsAlgebraic ℚ (f x) ∧ _ ∧ _) ↔
+    (IsAlgebraic ℚ x ∧ (minpoly ℚ x).natDegree ≤ d ∧ absMulHeight₁ x ≤ B)
+  have hi : IsIntegral ℚ (f x) ↔ IsIntegral ℚ x :=
+    isIntegral_algHom_iff f.toRatAlgHom f.injective
+  have hm : minpoly ℚ (f x) = minpoly ℚ x :=
+    minpoly.algHom_eq f.toRatAlgHom f.injective x
+  rw [isAlgebraic_iff_isIntegral, isAlgebraic_iff_isIntegral, hi, hm, absMulHeight₁_map]
 
-/-- Projective logarithmic height has the Northcott property whenever projective multiplicative
-height does, and hence whenever scalar multiplicative height does. -/
-instance instNorthcottLogHeight [Northcott (mulHeight (K := K) (ι := ι))] :
-    Northcott (logHeight (K := K) (ι := ι)) := by
-  have heq : logHeight (K := K) (ι := ι) = Real.log ∘ mulHeight :=
-    funext logHeight_eq_log_mulHeight
-  rw [heq]
-  exact Northcott.comp_of_bddAbove _ _ fun B ↦
-    bddAbove_def.mpr ⟨Real.exp B, fun _ ↦ Real.le_exp_of_log_le⟩
 
-end Projectivization
+end TauCeti
