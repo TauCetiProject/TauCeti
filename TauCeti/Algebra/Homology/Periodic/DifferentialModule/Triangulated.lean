@@ -54,7 +54,8 @@ variable (C : Type u) [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBin
 
 local notation "hP" => ExactStructure.homologicalComplex_split_isFrobenius
   (C := C) (c := ComplexShape.up (ZMod 1))
-  (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩) (fun i ↦ ⟨i + 1, rfl⟩)
+  (fun j ↦ Exists.intro (j - 1) (sub_add_cancel j 1))
+  (fun i ↦ Exists.intro (i + 1) rfl)
 
 /-- Passing to one-periodic complexes is stable conflation-exact for the componentwise split
 exact structures. -/
