@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.Killing
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Basic
-import Mathlib.LinearAlgebra.Matrix.SchurComplement
+import TauCeti.Algebra.Lie.Orthogonal.Basic
 
 /-!
 # The Killing form of the split odd orthogonal Lie algebra
@@ -53,15 +53,10 @@ instance isKilling_typeB [CharZero K] :
     infer_instance
   | inr h =>
     have : HasTrivialRadical K (Orthogonal.typeB ι K) := by
-      apply hasTrivialRadical_skewAdjointMatricesLieSubalgebra
-      · simp [Orthogonal.JB, Orthogonal.JD, Matrix.isSymm_fromBlocks_iff]
-      · rw [Orthogonal.JB, Matrix.isUnit_fromBlocks_zero₂₁]
-        constructor
-        · simpa only [Algebra.algebraMap_eq_smul_one] using
-            (isUnit_iff_ne_zero.mpr (two_ne_zero : (2 : K) ≠ 0)).map
-              (algebraMap K (Matrix Unit Unit K))
-        · refine isUnit_iff_exists_inv.mpr ⟨Orthogonal.JD ι K, ?_⟩
-          simp [Orthogonal.JD, Matrix.fromBlocks_multiply]
+      rw [Orthogonal.typeB]
+      apply hasTrivialRadical_skewAdjointMatricesLieSubalgebra (J := Orthogonal.JB ι K)
+      · exact Orthogonal.isSymm_JB
+      · exact Orthogonal.isUnit_JB (isUnit_iff_ne_zero.mpr two_ne_zero)
       · simp only [Fintype.card_sum, Fintype.card_unit]
         have := Fintype.card_pos_iff.mpr h
         omega
