@@ -64,20 +64,28 @@ theorem norm_qExpansion_coeff_prime_sq_of_not_exists_eq_comp (f : Newform N k) (
     (hpN : p ∣ N)
     (hχ : ¬ ∃ χ₀ : (ZMod (N / p))ˣ →* ℂˣ, f.χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN))) :
     ‖(qExpansion 1 f.toCuspForm).coeff p‖ ^ 2 = (p : ℝ) ^ (k - 1) := by
-  set a := (qExpansion 1 f.toCuspForm).coeff p with ha
+  set a := (qExpansion 1 f.toCuspForm).coeff p
+  set c := f.frickePseudoEigenvalue
+  have hU : heckeUCuspNat k p hp hpN f.toCuspForm = a • f.toCuspForm :=
+    f.heckeUCuspNat_eq_qExpansion_coeff_smul hp hpN
+  have hW : normalizedFrickeOperatorCusp k f.toCuspForm = c • f.conj.toCuspForm :=
+    f.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul
   -- `f_ρ` is a `U_p`-eigenvector with eigenvalue `conj a`
-  have hUc := f.conj.heckeUCuspNat_eq_qExpansion_coeff_smul hp hpN
-  rw [qExpansion_conj, PowerSeries.coeff_map, ← ha] at hUc
-  have hlam : f.frickePseudoEigenvalue ≠ 0 :=
-    norm_ne_zero_iff.mp (f.norm_frickePseudoEigenvalue.symm ▸ one_ne_zero)
-  -- apply `U_p 𝒲_N U_p = p ^ (k - 1) 𝒲_N` to `f`, using `U_p f = a f` and `𝒲_N f = λ_N(f) f_ρ`
+  have hUc : heckeUCuspNat k p hp hpN f.conj.toCuspForm = starRingEnd ℂ a • f.conj.toCuspForm := by
+    rw [f.conj.heckeUCuspNat_eq_qExpansion_coeff_smul hp hpN, qExpansion_conj,
+      PowerSeries.coeff_map]
+  have hc : c ≠ 0 := norm_ne_zero_iff.mp (f.norm_frickePseudoEigenvalue.symm ▸ one_ne_zero)
+  -- both sides of `U_p 𝒲_N U_p f = p ^ (k - 1) 𝒲_N f` are multiples of `f_ρ`
+  have hlhs : heckeUCuspNat k p hp hpN (normalizedFrickeOperatorCusp k
+      (heckeUCuspNat k p hp hpN f.toCuspForm)) = (a * c * starRingEnd ℂ a) • f.conj.toCuspForm := by
+    simp only [hU, hW, hUc, map_smul, smul_smul]
+  have hrhs : (p : ℂ) ^ (k - 1) • normalizedFrickeOperatorCusp k f.toCuspForm =
+      ((p : ℂ) ^ (k - 1) * c) • f.conj.toCuspForm := by
+    rw [hW, smul_smul]
   have h := heckeUCuspNat_normalizedFrickeOperatorCusp_heckeUCuspNat hp hpN hχ f.mem_charSpace
-  rw [f.heckeUCuspNat_eq_qExpansion_coeff_smul hp hpN, ← ha, map_smul,
-    f.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul, map_smul, map_smul, hUc,
-    smul_smul, smul_smul, smul_smul] at h
-  have h' := smul_left_injective ℂ f.conj.ne_zero h
+  rw [hlhs, hrhs] at h
   have hmul : a * starRingEnd ℂ a = (p : ℂ) ^ (k - 1) :=
-    mul_right_cancel₀ hlam (by linear_combination h')
+    mul_right_cancel₀ hc (by linear_combination smul_left_injective ℂ f.conj.ne_zero h)
   rw [Complex.mul_conj, Complex.normSq_eq_norm_sq] at hmul
   exact Complex.ofReal_injective (by rw [hmul, Complex.ofReal_zpow, Complex.ofReal_natCast])
 

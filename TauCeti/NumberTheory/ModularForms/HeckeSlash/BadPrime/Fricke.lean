@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.HeckeSlash.BadPrime.Basic
 import Mathlib.Algebra.Field.ZMod
 import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.NumberTheory.ModularForms.Fricke.CharacterSpace
+import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Ring
 
 /-!
 # `U_p 𝒲_N U_p` when the nebentypus is not defined modulo `N / p`
@@ -75,36 +76,16 @@ private lemma lowerShear_one_zero (M : ℕ) (c b : ℤ) : lowerShear M c b 1 0 =
 private lemma lowerShear_one_one (M : ℕ) (c b : ℤ) :
     lowerShear M c b 1 1 = c * M * b + 1 := (rfl)
 
-/-- A function with nebentypus `ψ` for `Γ₀(N)` is invariant under `Γ₁(N)`. -/
-private lemma slash_mapGL_eq_self_of_mem_Gamma1 {G : ℍ → ℂ} {ψ : (ZMod N)ˣ →* ℂˣ}
-    (hG : ∀ g : ↥(Gamma0 N),
-      G ∣[k] mapGL ℝ (g : SL(2, ℤ)) = (ψ ((Gamma0Map N).toHomUnits g) : ℂ) • G)
-    {κ : SL(2, ℤ)} (hκ : κ ∈ Gamma1 N) : G ∣[k] mapGL ℝ κ = G := by
-  have h := hG ⟨κ, Gamma1_in_Gamma0 N hκ⟩
-  rwa [(mem_Gamma1_iff_toHomUnits_eq_one _).mp hκ, map_one, Units.val_one, one_smul] at h
-
-/-- A function with nebentypus `ψ` for `Γ₀(N)` has the same slash by two matrices whose lower
-rows agree modulo `N`, since these lie in one right coset of `Γ₁(N)`. -/
-private lemma slash_mapGL_eq_of_dvd_sub {G : ℍ → ℂ} {ψ : (ZMod N)ˣ →* ℂˣ}
-    (hG : ∀ g : ↥(Gamma0 N),
-      G ∣[k] mapGL ℝ (g : SL(2, ℤ)) = (ψ ((Gamma0Map N).toHomUnits g) : ℂ) • G)
-    {A B : SL(2, ℤ)} (h10 : (N : ℤ) ∣ A 1 0 - B 1 0) (h11 : (N : ℤ) ∣ A 1 1 - B 1 1) :
-    G ∣[k] mapGL ℝ A = G ∣[k] mapGL ℝ B := by
-  conv_lhs => rw [← inv_mul_cancel_right A B]
-  rw [map_mul, SlashAction.slash_mul, slash_mapGL_eq_self_of_mem_Gamma1 hG
-    (mul_inv_mem_Gamma1_iff_dvd_sub.mpr ⟨h10, h11⟩)]
-
 /-- The slash by `lowerShear M c b` depends only on `c` and `b` modulo `p`, where `M = N / p`. -/
 private lemma slash_lowerShear_congr {G : ℍ → ℂ} {ψ : (ZMod N)ˣ →* ℂˣ}
-    (hG : ∀ g : ↥(Gamma0 N),
-      G ∣[k] mapGL ℝ (g : SL(2, ℤ)) = (ψ ((Gamma0Map N).toHomUnits g) : ℂ) • G)
+    (hG : G ∈ functionCharSpace k ψ)
     (hpN : p ∣ N) {c₁ c₂ b₁ b₂ : ℤ} (hc : (c₁ : ZMod p) = c₂) (hb : (b₁ : ZMod p) = b₂) :
     G ∣[k] mapGL ℝ (lowerShear (N / p) c₁ b₁) = G ∣[k] mapGL ℝ (lowerShear (N / p) c₂ b₂) := by
   have hMp : ((N / p : ℕ) : ℤ) * p = N := by exact_mod_cast Nat.div_mul_cancel hpN
   obtain ⟨x, hx⟩ := (ZMod.intCast_eq_intCast_iff_dvd_sub c₂ c₁ p).mp hc.symm
   obtain ⟨y, hy⟩ := (ZMod.intCast_eq_intCast_iff_dvd_sub (c₂ * b₂) (c₁ * b₁) p).mp
     (by push_cast; rw [hc, hb])
-  refine slash_mapGL_eq_of_dvd_sub hG ⟨x, ?_⟩ ⟨y, ?_⟩
+  refine slash_mapGL_eq_of_mem_functionCharSpace_of_dvd_sub hG ⟨x, ?_⟩ ⟨y, ?_⟩
   · rw [lowerShear_one_zero, lowerShear_one_zero]
     linear_combination (N / p : ℕ) * hx + x * hMp
   · rw [lowerShear_one_one, lowerShear_one_one]
@@ -116,8 +97,7 @@ For `c ≠ 0` modulo `p`, the product `g · !![1, b; c M, c M b + 1]` has, modul
 the same matrix at `(v c, b + t (v c)⁻¹)`. -/
 private lemma slash_mul_lowerShear [Fact p.Prime] (hpN : p ∣ N) {G : ℍ → ℂ}
     {ψ : (ZMod N)ˣ →* ℂˣ}
-    (hG : ∀ g : ↥(Gamma0 N),
-      G ∣[k] mapGL ℝ (g : SL(2, ℤ)) = (ψ ((Gamma0Map N).toHomUnits g) : ℂ) • G)
+    (hG : G ∈ functionCharSpace k ψ)
     (g : ↥(Gamma0 N)) {t : ℤ} (ht : (g : SL(2, ℤ)) 1 1 - 1 = (N / p : ℕ) * t) {v : (ZMod p)ˣ}
     (hv : (v : ZMod p) = (g : SL(2, ℤ)) 1 1) {c : ZMod p} (hc : c ≠ 0) (b : ZMod p) :
     G ∣[k] mapGL ℝ ((g : SL(2, ℤ)) * lowerShear (N / p) c.val b.val) =
@@ -136,7 +116,8 @@ private lemma slash_mul_lowerShear [Fact p.Prime] (hpN : p ∣ N) {G : ℍ → �
       push_cast
       simp only [ZMod.natCast_val, ZMod.cast_id', id, ← hv]
       field_simp)
-  refine slash_mapGL_eq_of_dvd_sub hG ⟨z - y₁, ?_⟩ ⟨z * b.val - y₂, ?_⟩ <;>
+  refine slash_mapGL_eq_of_mem_functionCharSpace_of_dvd_sub hG ⟨z - y₁, ?_⟩
+    ⟨z * b.val - y₂, ?_⟩ <;>
     simp only [coe_mul, Matrix.mul_apply, Fin.sum_univ_two, coe_lowerShear, Matrix.of_apply,
       Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val',
       Matrix.cons_val_fin_one]
@@ -150,8 +131,7 @@ lower-right entry `u` permutes their right `Γ₁(N)`-cosets (`slash_mul_lowerSh
 `G` by `ψ(u)`. -/
 private lemma sum_slash_lowerShear_eq_zero [Fact p.Prime] (hpN : p ∣ N) {G : ℍ → ℂ}
     {ψ : (ZMod N)ˣ →* ℂˣ}
-    (hG : ∀ g : ↥(Gamma0 N),
-      G ∣[k] mapGL ℝ (g : SL(2, ℤ)) = (ψ ((Gamma0Map N).toHomUnits g) : ℂ) • G)
+    (hG : G ∈ functionCharSpace k ψ)
     {u : (ZMod N)ˣ} (hu : ZMod.unitsMap (Nat.div_dvd_of_dvd hpN) u = 1) (hψ : ψ u ≠ 1) :
     ∑ c ∈ ({0}ᶜ : Finset (ZMod p)), ∑ b : ZMod p,
       G ∣[k] mapGL ℝ (lowerShear (N / p) c.val b.val) = 0 := by
@@ -178,8 +158,9 @@ private lemma sum_slash_lowerShear_eq_zero [Fact p.Prime] (hpN : p ∣ N) {G : �
           refine Finset.sum_congr rfl fun c _ ↦ ?_
           rw [Finset.smul_sum]
           refine Finset.sum_congr rfl fun b _ ↦ ?_
-          rw [map_mul, SlashAction.slash_mul, hG g, hg, ModularForm.smul_slash_of_det_pos k
-            (det_pos_of_mem_slGL (MonoidHom.mem_range.mpr ⟨_, rfl⟩))]
+          rw [map_mul, SlashAction.slash_mul, (mem_functionCharSpace_iff k ψ G).mp hG g, hg,
+            ModularForm.smul_slash_of_det_pos k
+              (det_pos_of_mem_slGL (MonoidHom.mem_range.mpr ⟨_, rfl⟩))]
       _ = ∑ c ∈ ({0}ᶜ : Finset (ZMod p)), ∑ b : ZMod p,
             G ∣[k] mapGL ℝ (lowerShear (N / p) ((v : ZMod p) * c).val b.val) := by
           refine Finset.sum_congr rfl fun c hc ↦ ?_
@@ -220,8 +201,7 @@ private lemma map_upperTriRep_mul_frickeGL_mul_map_upperTriRep [NeZero N] [NeZer
 nebentypus `ψ` for `Γ₀(N)` that is not trivial on the units that are `1` modulo `N / p`. -/
 private lemma heckeSlashUpperTri_slash_frickeGL_heckeSlashUpperTri [NeZero N] [Fact p.Prime]
     (hpN : p ∣ N) {F : ℍ → ℂ} {ψ : (ZMod N)ˣ →* ℂˣ}
-    (hG : ∀ g : ↥(Gamma0 N), (F ∣[k] frickeGL ℝ N) ∣[k] mapGL ℝ (g : SL(2, ℤ)) =
-      (ψ ((Gamma0Map N).toHomUnits g) : ℂ) • (F ∣[k] frickeGL ℝ N))
+    (hG : F ∣[k] frickeGL ℝ N ∈ functionCharSpace k ψ)
     {u : (ZMod N)ˣ} (hu : ZMod.unitsMap (Nat.div_dvd_of_dvd hpN) u = 1) (hψ : ψ u ≠ 1) :
     heckeSlashUpperTri k p (heckeSlashUpperTri k p F ∣[k] frickeGL ℝ N) =
       (p : ℂ) ^ (k - 1) • (F ∣[k] frickeGL ℝ N) := by
@@ -231,20 +211,24 @@ private lemma heckeSlashUpperTri_slash_frickeGL_heckeSlashUpperTri [NeZero N] [F
       upperTriRep p b' = (p : ℂ) ^ (k - 2) •
         (F ∣[k] frickeGL ℝ N) ∣[k] mapGL ℝ (lowerShear (N / p) (-(b : ℤ)) b') := by
     intro b b'
-    rw [ModularForm.rat_slash, ModularForm.rat_slash, ← SlashAction.slash_mul,
-      ← SlashAction.slash_mul, ← mul_assoc,
-      map_upperTriRep_mul_frickeGL_mul_map_upperTriRep (Nat.div_mul_cancel hpN),
-      SlashAction.slash_mul, ModularForm.slash_scalar, SlashAction.slash_mul,
-      ModularForm.smul_slash_of_det_pos k val_det_frickeGL_pos,
-      ModularForm.smul_slash_of_det_pos k
-        (det_pos_of_mem_slGL (MonoidHom.mem_range.mpr ⟨_, rfl⟩)), Units.val_mk0,
-      Complex.ofReal_natCast]
+    -- the three slashes are one slash by the product `α_b W α_{b'} = p · W · lowerShear`
+    have hprod : ((F ∣[k] upperTriRep p b) ∣[k] frickeGL ℝ N) ∣[k] upperTriRep p b' =
+        F ∣[k] (Matrix.GeneralLinearGroup.scalar (Fin 2) (Units.mk0 (p : ℝ) (NeZero.ne _)) *
+          (frickeGL ℝ N * mapGL ℝ (lowerShear (N / p) (-(b : ℤ)) b'))) := by
+      rw [ModularForm.rat_slash, ModularForm.rat_slash, ← SlashAction.slash_mul,
+        ← SlashAction.slash_mul, ← mul_assoc,
+        map_upperTriRep_mul_frickeGL_mul_map_upperTriRep (Nat.div_mul_cancel hpN)]
+    -- the scalar matrix `p` acts by `p ^ (k - 2)`, which commutes with the remaining slashes
+    rw [hprod, SlashAction.slash_mul, ModularForm.slash_scalar, SlashAction.slash_mul]
+    simp only [ModularForm.smul_slash_of_det_pos k val_det_frickeGL_pos,
+      ModularForm.smul_slash_of_det_pos k (det_pos_of_mem_slGL (MonoidHom.mem_range.mpr ⟨_, rfl⟩)),
+      Units.val_mk0, Complex.ofReal_natCast]
   set G := F ∣[k] frickeGL ℝ N
   -- the terms with `c = 0` are translates of `G`, hence equal to `G`
   have hzero : ∑ y : ZMod p, G ∣[k] mapGL ℝ (lowerShear (N / p) (0 : ZMod p).val y.val) =
       (p : ℂ) • G := by
     have hT : ∀ y : ZMod p, G ∣[k] mapGL ℝ (lowerShear (N / p) (0 : ZMod p).val y.val) = G :=
-      fun y ↦ slash_mapGL_eq_self_of_mem_Gamma1 hG
+      fun y ↦ slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1 hG
         (mem_Gamma1_of_dvd_lowerRow (by simp [lowerShear_one_zero])
           (by simp [lowerShear_one_one]))
     rw [Finset.sum_congr rfl fun y _ ↦ hT y, Finset.sum_const, Finset.card_univ, ZMod.card,
@@ -298,17 +282,20 @@ theorem heckeUCuspNat_normalizedFrickeOperatorCusp_heckeUCuspNat [NeZero N] (hp 
       ⟨χ, fun v hv ↦ h v hv⟩, (MonoidHom.liftOfRightInverse_comp (ZMod.unitsMap _) _
         (Function.rightInverse_surjInv hs) ⟨χ, fun v hv ↦ h v hv⟩).symm⟩
   -- `W f` has nebentypus `χ⁻¹`
-  have hG := (mem_cuspFormCharSpace_iff_nebentypus k χ⁻¹ _).mp
-    (frickeOperatorCusp_mem_cuspFormCharSpace k χ hf)
-  simp only [coe_frickeOperatorCusp] at hG
+  have hG : ⇑f ∣[k] frickeGL ℝ N ∈ functionCharSpace k χ⁻¹ := by
+    rw [mem_functionCharSpace_iff]
+    simpa only [coe_frickeOperatorCusp] using (mem_cuspFormCharSpace_iff_nebentypus k χ⁻¹ _).mp
+      (frickeOperatorCusp_mem_cuspFormCharSpace k χ hf)
   have hψ : χ⁻¹ u ≠ 1 := by
     rw [MonoidHom.inv_apply]
     exact inv_ne_one.mpr hχu
+  -- the identity on functions
+  have hfun := heckeSlashUpperTri_slash_frickeGL_heckeSlashUpperTri hpN hG hu hψ
+  -- unfold `U_p` and `𝒲_N` into slash sums, and pull out the normalizing scalar of `𝒲_N`
   refine DFunLike.coe_injective ?_
-  rw [heckeUCuspNat_eq_heckeTCuspNat, heckeTCuspNat_eq_upperTri k hpN,
-    coe_heckeSlashUpperTriCuspFormEnd, coe_normalizedFrickeOperatorCusp,
-    coe_heckeSlashUpperTriCuspFormEnd, heckeSlashUpperTri_smul,
-    heckeSlashUpperTri_slash_frickeGL_heckeSlashUpperTri hpN hG hu hψ, FunLike.coe_smul,
-    coe_normalizedFrickeOperatorCusp, smul_comm]
+  simp only [heckeUCuspNat_eq_heckeTCuspNat, heckeTCuspNat_eq_upperTri k hpN,
+    coe_heckeSlashUpperTriCuspFormEnd, coe_normalizedFrickeOperatorCusp, FunLike.coe_smul,
+    heckeSlashUpperTri_smul]
+  rw [hfun, smul_comm]
 
 end HeckeRing.GL2
