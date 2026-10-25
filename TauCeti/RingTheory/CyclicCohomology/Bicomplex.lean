@@ -242,6 +242,12 @@ theorem mem_cyclicTotalCochains_iff {m : ℕ}
     x ∈ cyclicTotalCochains R A M m ↔ ∀ q, m < q → x q = 0 := by
   simp [cyclicTotalCochains, Submodule.mem_pi]
 
+/-- A total cochain of degree `m` vanishes in every row `q > m`. -/
+@[simp]
+theorem coe_cyclicTotalCochains_apply_of_lt {m q : ℕ} (x : cyclicTotalCochains R A M m)
+    (hq : m < q) : (x : ∀ q : ℕ, MultilinearMap R (fun _ : Fin (q + 1) ↦ A) M) q = 0 :=
+  mem_cyclicTotalCochains_iff.1 x.2 q hq
+
 /-- A cochain placed in row `k ≤ m` is a total cochain of degree `m`. -/
 theorem single_mem_cyclicTotalCochains {m k : ℕ} (hk : k ≤ m)
     (φ : MultilinearMap R (fun _ : Fin (k + 1) ↦ A) M) :

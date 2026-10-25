@@ -8,8 +8,7 @@ module
 public import TauCeti.RingTheory.CyclicCohomology.Bicomplex
 public import TauCeti.RingTheory.CyclicCohomology.Hochschild
 public import TauCeti.Algebra.Homology.Embedding.UpNatAdd
-public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
-public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.Algebra.Homology.ModuleCat.Extend
 
 /-!
 # The periodicity map of the cyclic bicomplex
@@ -158,8 +157,7 @@ theorem cyclicTotalToHochschild_cyclicCochainsToTotal {m : ℕ} (φ : cyclicCoch
 theorem cyclicTotalToHochschild_cyclicTotalPeriodicity {m : ℕ}
     (x : cyclicTotalCochains R A M m) :
     cyclicTotalToHochschild R A M (m + 2) (cyclicTotalPeriodicity R A M m x) = 0 := by
-  rw [cyclicTotalToHochschild_apply, coe_cyclicTotalPeriodicity_apply,
-    mem_cyclicTotalCochains_iff.1 x.2 (m + 2) (by omega)]
+  simp
 
 end Cochains
 
@@ -409,21 +407,16 @@ theorem cyclicTotalHomologyPeriodicity_homologyπ (m : ℕ) (x : (cyclicTotalCom
           rw [cyclicTotalComplex_d_apply, Iso.inv_hom_id_apply,
             cyclicTotalDifferential_cyclicTotalPeriodicity, ← cyclicTotalComplex_d_apply, hx,
             map_zero, map_zero, map_zero])) := by
-  have hπ := HomologicalComplex.homologyπ_extendHomologyIso_inv (cyclicTotalComplex R A M)
-    (ComplexShape.embeddingUpNatAdd 2) (ComplexShape.embeddingUpNatAdd_f 2 m)
-  rw [cyclicTotalHomologyPeriodicity, ModuleCat.comp_apply, ← ModuleCat.comp_apply _
-    (HomologicalComplex.extendHomologyIso _ _ _).inv, hπ, ModuleCat.comp_apply,
-    ← ModuleCat.comp_apply _ (HomologicalComplex.homologyMap _ _),
-    HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
-  congr 1
-  apply HomologicalComplex.moduleCat_iCycles_injective
+  rw [cyclicTotalHomologyPeriodicity, ModuleCat.comp_apply,
+    HomologicalComplex.extendHomologyIso_inv_homologyπ_moduleCatCyclesMk _ _ _ _ _ _ hx (m + 3)
+      (by simp) (by
+        rw [HomologicalComplex.extend_d_eq _ _ (ComplexShape.embeddingUpNatAdd_f 2 m)
+          (ComplexShape.embeddingUpNatAdd_f 2 (m + 1)), ModuleCat.comp_apply, ModuleCat.comp_apply,
+          Iso.inv_hom_id_apply, hx, map_zero]),
+    HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
+  congr 2
   apply (ModuleCat.mono_iff_injective (cyclicTotalComplexXIso R A M (m + 2)).hom).1 inferInstance
-  rw [HomologicalComplex.iCycles_moduleCatCyclesMk, Iso.inv_hom_id_apply,
-    ← ModuleCat.comp_apply _ (HomologicalComplex.iCycles _ _), HomologicalComplex.cyclesMap_i,
-    ModuleCat.comp_apply, ← ModuleCat.comp_apply _ (HomologicalComplex.iCycles _ _),
-    HomologicalComplex.extendCyclesIso_inv_iCycles, ModuleCat.comp_apply,
-    HomologicalComplex.iCycles_moduleCatCyclesMk, cyclicTotalComplexPeriodicity_f_apply,
-    Iso.inv_hom_id_apply]
+  rw [cyclicTotalComplexPeriodicity_f_apply, Iso.inv_hom_id_apply, Iso.inv_hom_id_apply]
 
 /-- The projection onto column zero kills the image of the periodicity map on cohomology:
 `I ∘ S = 0`. -/
