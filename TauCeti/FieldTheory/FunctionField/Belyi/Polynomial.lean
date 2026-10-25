@@ -42,7 +42,6 @@ and `∞`.
 
 ## Main results
 
-* `TauCeti.finiteDimensional_of_aeval_eq`: `F = k(x)` is finite over `k(t)`, `t = q(x)`.
 * `TauCeti.Place.ramificationIdx_eq_one_of_aeval_eq`: the places of `k(t)` away from `∞` and
   from the critical values of `q` are unramified in `k(x)`.
 * `TauCeti.IsAlgebraicBelyiPair.of_criticalValues_subset`: a polynomial whose critical values lie
@@ -77,15 +76,6 @@ private noncomputable def monicEquation {R : Type*} [CommRing R] [Algebra k R] (
     R[X] :=
   (C q.leadingCoeff⁻¹ * q).map (algebraMap k R) - C (algebraMap k R q.leadingCoeff⁻¹ * a)
 
-/-- If the variable `t` of `k(t)` acts as `q(x)`, then `q` is not constant, since `t` is
-transcendental over `k`. -/
-private theorem natDegree_pos_of_aeval_eq
-    (hq : algebraMap (RatFunc k) F RatFunc.X = aeval x q) : 0 < q.natDegree := by
-  refine Nat.pos_of_ne_zero fun h ↦ RatFunc.transcendental_X (K := k) ?_
-  rw [eq_C_of_natDegree_eq_zero h, aeval_C, IsScalarTower.algebraMap_apply k (RatFunc k) F] at hq
-  rw [(algebraMap (RatFunc k) F).injective hq]
-  exact isAlgebraic_algebraMap _
-
 private theorem monic_monicEquation {R : Type*} [CommRing R] [Nontrivial R] [Algebra k R]
     (hq : 0 < q.natDegree) (a : R) : (monicEquation q a).Monic := by
   have hq0 : q ≠ 0 := ne_zero_of_natDegree_gt hq
@@ -117,59 +107,7 @@ private theorem coeff_monicEquation_mem_integers {P : Place k (RatFunc k)}
   split_ifs
   exacts [mul_mem (P.algebraMap_mem_integers _) hX, zero_mem _]
 
-/-- **`k(x)` is finite over `k(t)`** when `t = q(x)`: `x` is a root of the monic polynomial
-`(q(X) - t) / lc(q)` over `k(t)`. -/
-theorem finiteDimensional_of_aeval_eq (hx : k⟮x⟯ = ⊤)
-    (hq : algebraMap (RatFunc k) F RatFunc.X = aeval x q) : FiniteDimensional (RatFunc k) F := by
-  have hint : IsIntegral (RatFunc k) x :=
-    ⟨_, monic_monicEquation (natDegree_pos_of_aeval_eq hq) RatFunc.X, by
-      rw [← aeval_def, aeval_monicEquation, ← hq, sub_self, mul_zero]⟩
-  have := IntermediateField.adjoin.finiteDimensional hint
-  rw [IntermediateField.adjoin_eq_top_of_adjoin_eq_top k (E := RatFunc k) hx] at this
-  exact IntermediateField.topEquiv.toLinearEquiv.finiteDimensional
-
-/-- `k(x)` is separable over `k(t)` when `t = q(x)` and `q′ ≠ 0`: `x` is a simple root of
-`(q(X) - t) / lc(q)`, since `q′(x) ≠ 0` for the transcendental `x`. -/
-private theorem isSeparable_of_aeval_eq (hx : k⟮x⟯ = ⊤)
-    (hq : algebraMap (RatFunc k) F RatFunc.X = aeval x q) (hd : derivative q ≠ 0) :
-    Algebra.IsSeparable (RatFunc k) F := by
-  have hdeg := natDegree_pos_of_aeval_eq hq
-  have hroot : aeval x (monicEquation q (RatFunc.X : RatFunc k)) = 0 := by
-    rw [aeval_monicEquation, ← hq, sub_self, mul_zero]
-  have hint : IsIntegral (RatFunc k) x := ⟨_, monic_monicEquation hdeg RatFunc.X, hroot⟩
-  have htr : Transcendental k x := (transcendental_aeval_iff.mp (hq ▸
-    (transcendental_algebraMap_iff (algebraMap (RatFunc k) F).injective).mpr
-      RatFunc.transcendental_X)).1
-  have hd' : aeval x (derivative (monicEquation q (RatFunc.X : RatFunc k))) ≠ 0 := by
-    rw [aeval_derivative_monicEquation]
-    exact mul_ne_zero ((_root_.map_ne_zero _).mpr (inv_ne_zero (leadingCoeff_ne_zero.mpr
-      (ne_zero_of_natDegree_gt hdeg)))) (fun h ↦ htr ⟨_, hd, h⟩)
-  -- Writing the equation as `minpoly · s`, its derivative at `x` is `minpoly'(x) s(x)`.
-  have hsep : IsSeparable (RatFunc k) x := by
-    rw [IsSeparable, separable_iff_derivative_ne_zero (minpoly.irreducible hint)]
-    intro h0
-    obtain ⟨s, hs⟩ := minpoly.dvd (RatFunc k) x hroot
-    refine hd' ?_
-    rw [hs, derivative_mul, h0, map_add, map_mul, map_mul, minpoly.aeval]
-    simp
-  have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable (RatFunc k) F).mpr hsep
-  exact AlgEquiv.Algebra.isSeparable ((IntermediateField.equivOfEq
-    (IntermediateField.adjoin_eq_top_of_adjoin_eq_top k hx)).trans IntermediateField.topEquiv)
-
 namespace Place
-
-omit [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] in
-/-- Evaluating a polynomial over `k` commutes with the inclusion of the valuation ring. -/
-private theorem coe_aeval_integers {P : Place k F} (p : k[X]) (y : P.integers) :
-    ((aeval y p : P.integers) : F) = aeval (y : F) p := by
-  rw [← ValuationSubring.algebraMap_apply, ← aeval_algebraMap_apply,
-    ValuationSubring.algebraMap_apply]
-
-omit [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] in
-/-- Evaluating a polynomial over `k` commutes with the residue map. -/
-private theorem residue_aeval {P : Place k F} (p : k[X]) (y : P.integers) :
-    IsLocalRing.residue P.integers (aeval y p) = aeval (IsLocalRing.residue P.integers y) p := by
-  rw [← IsLocalRing.ResidueField.algebraMap_eq, aeval_algebraMap_apply]
 
 omit [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] in
 /-- **Evaluation at a place sends a critical point to a critical value**: if `x` and `a = q(x)` are
@@ -229,7 +167,7 @@ theorem ramificationIdx_eq_one_of_aeval_eq (hx : k⟮x⟯ = ⊤)
     (P'.adjoin_le_integers_iff.mpr hxO _ (aeval_mem_adjoin_singleton k x)))
     (not_lt.mp fun hlt ↦ ?_)
   have hcrit := residue_mem_criticalValues (x := ⟨x, hxO⟩) (a := ⟨a, ha⟩) hd
-    (Subtype.ext ((coe_aeval_integers q _).trans hq.symm)) hlt
+    (Subtype.ext ((P'.coe_aeval_integers q _).trans hq.symm)) hlt
   have hzero : IsLocalRing.residue P'.integers (aeval (⟨a, ha⟩ : P'.integers) r) = 0 := by
     rw [residue_aeval]
     exact hr _ _ hcrit

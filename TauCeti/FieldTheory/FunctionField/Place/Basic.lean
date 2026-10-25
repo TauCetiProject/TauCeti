@@ -510,6 +510,18 @@ theorem residue_eq_zero_iff_ord_pos {f : P.integers} (hf : (f : F) ≠ 0) :
     IsLocalRing.residue P.integers f = 0 ↔ 0 < P.ord (f : F) := by
   rw [IsLocalRing.residue_eq_zero_iff, P.mem_maximalIdeal_iff_ord_pos hf]
 
+/-- Evaluating a polynomial over `k` commutes with the inclusion of the valuation ring. -/
+theorem coe_aeval_integers (p : Polynomial k) (y : P.integers) :
+    ((Polynomial.aeval y p : P.integers) : F) = Polynomial.aeval (y : F) p := by
+  rw [← ValuationSubring.algebraMap_apply, ← Polynomial.aeval_algebraMap_apply,
+    ValuationSubring.algebraMap_apply]
+
+/-- Evaluating a polynomial over `k` commutes with evaluation at a place. -/
+theorem residue_aeval (p : Polynomial k) (y : P.integers) :
+    IsLocalRing.residue P.integers (Polynomial.aeval y p) =
+      Polynomial.aeval (IsLocalRing.residue P.integers y) p := by
+  rw [← IsLocalRing.ResidueField.algebraMap_eq, Polynomial.aeval_algebraMap_apply]
+
 /-- The **degree** `deg P = [F_P : k]` of a place (Stichtenoth, Definition 1.1.14). Its
 finiteness, which guards the junk value of `Module.finrank`, holds whenever `F/k` is a function
 field: see `TauCeti.Place.finiteDimensional_residueField` (Stichtenoth,
