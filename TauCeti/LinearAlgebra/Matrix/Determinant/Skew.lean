@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.Matrix.Polynomial
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.LinearAlgebra.Matrix.Alternating
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -89,15 +90,10 @@ theorem isSquare_det_of_transpose_eq_neg_of_diag_eq_zero {K : Type*} [Field K]
 
 /-- **The determinant of a skew-symmetric integer matrix is a square.** -/
 theorem isSquare_det_of_transpose_eq_neg {M : Matrix ι ι ℤ} (hM : Mᵀ = -M) : IsSquare M.det := by
-  have hd (i : ι) : M i i = 0 := by
-    have := congrFun (congrFun hM i) i
-    simp only [transpose_apply, neg_apply] at this
-    omega
+  have hd := diag_eq_zero_of_transpose_eq_neg hM fun x hx ↦ by omega
   rw [← Rat.isSquare_intCast_iff, Int.cast_det]
-  refine isSquare_det_of_transpose_eq_neg_of_diag_eq_zero ?_ (by simp [hd])
-  rw [← transpose_map, hM]
-  ext i j
-  simp
+  exact isSquare_det_of_transpose_eq_neg_of_diag_eq_zero
+    (transpose_map_of_transpose_eq_neg (Int.castRingHom ℚ) hM) (by simp [hd])
 
 /-! ### The determinant of `S + Sᵀ` modulo `4` -/
 
