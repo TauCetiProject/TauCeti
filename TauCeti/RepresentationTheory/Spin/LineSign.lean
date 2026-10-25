@@ -15,8 +15,8 @@ import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 # The two signs of the line coordinate
 
 A polarization `P` of a quadratic space `V = W ⊕ W' ⊕ L` carries a coordinate on its orthogonal
-remainder `L` whose square is `Q`. Such a coordinate is determined only up to sign, and negating
-it gives a second polarization `P⁻ = P.negLineCoordinate` with the same isotropic summands, the same
+remainder `L` whose square is `Q`. Negating this coordinate preserves its square and gives a
+polarization `P⁻ = P.negLineCoordinate` with the same isotropic summands, the same
 decomposition and the same pairing. Both make the exterior algebra `S = ⋀·W` into a module over
 the Clifford algebra, and this file compares the two Fock actions `c_P` and `c_{P⁻}`.
 
@@ -88,8 +88,7 @@ variable {K : Type u} [CommRing K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
 
 /-- The polarization `P⁻` with the same isotropic summands, decomposition and pairing as `P`, and
-the opposite line coordinate. The coordinate of the remainder is a square root of `Q`, so it is
-pinned only up to this sign.
+the opposite line coordinate. Negating the coordinate preserves its square `Q`.
 
 This is an `abbrev` so that the isotropic summand of `P⁻` is reducibly that of `P`: the two Fock
 actions are then actions on one and the same spinor module `⋀·W`, with its instances, and can be
