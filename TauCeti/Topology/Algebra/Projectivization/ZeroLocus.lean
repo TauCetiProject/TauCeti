@@ -131,24 +131,17 @@ theorem mk_mem_complexProjectiveIncidence_iff (c : ∀ i, homogeneousSubmodule (
       ∀ i, eval v (c i : MvPolynomial (Fin N) ℂ) = 0 :=
   complexProjectiveZeroLocus_mk_iff (fun i ↦ (mem_homogeneousSubmodule _ _).mp (c i).2) v hv
 
-/-- On the product of the coefficient space with the nonzero vectors, the common zeros of the
-equations form a closed set. -/
-private theorem isClosed_setOf_forall_eval_eq_zero :
-    IsClosed {x : (∀ i, homogeneousSubmodule (Fin N) ℂ (d i)) × {v : Fin N → ℂ // v ≠ 0} |
-      ∀ i, eval x.2.1 (x.1 i : MvPolynomial (Fin N) ℂ) = 0} := by
-  simp only [Set.ofPred_forall]
-  refine isClosed_iInter fun i ↦ isClosed_eq ?_ continuous_const
-  have hi : Continuous fun x : (∀ i, homogeneousSubmodule (Fin N) ℂ (d i)) ×
-      {v : Fin N → ℂ // v ≠ 0} ↦ (x.1 i, x.2.1) := by fun_prop
-  exact (continuous_eval_homogeneousSubmodule (σ := Fin N) (R := ℂ) (d i)).comp hi
-
 /-- The incidence variety is closed in the product of the coefficient space with projective
 space. -/
 theorem isClosed_complexProjectiveIncidence (d : ι → ℕ) :
     IsClosed (complexProjectiveIncidence N d) := by
   rw [← (IsOpenQuotientMap.id.prodMap
     Projectivization.isOpenQuotientMap_mk').isQuotientMap.isClosed_preimage]
-  convert isClosed_setOf_forall_eval_eq_zero (d := d) using 1
+  have hZ := (isClosed_setOf_forall_eval_eq_zero_homogeneousSubmodule
+    (σ := Fin N) (R := ℂ) d).preimage (show Continuous
+      (fun x : (∀ i, homogeneousSubmodule (Fin N) ℂ (d i)) ×
+        {v : Fin N → ℂ // v ≠ 0} ↦ (x.1, x.2.1)) by fun_prop)
+  convert hZ using 1
   ext ⟨c, v⟩
   simp only [Set.mem_preimage, Prod.map_apply, id_eq, Projectivization.mk'_eq_mk,
     mk_mem_complexProjectiveIncidence_iff, Set.mem_ofPred_eq]
@@ -208,7 +201,11 @@ theorem isClosed_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :
       {v : Fin N → ℂ // v ≠ 0} ↦ jacobiMatrixAt (fun i ↦ (x.1 i : MvPolynomial (Fin N) ℂ)) x.2.1 :=
     (continuous_jacobiMatrixAt_homogeneousSubmodule d).comp
       (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
-  convert isClosed_setOf_forall_eval_eq_zero.inter
+  have hZ := (isClosed_setOf_forall_eval_eq_zero_homogeneousSubmodule
+    (σ := Fin N) (R := ℂ) d).preimage (show Continuous
+      (fun x : (∀ i, homogeneousSubmodule (Fin N) ℂ (d i)) ×
+        {v : Fin N → ℂ // v ≠ 0} ↦ (x.1, x.2.1)) by fun_prop)
+  convert hZ.inter
     (isOpen_setOf_mulVec_surjective.preimage hJ).isClosed_compl using 1
   ext ⟨c, v⟩
   simp only [Set.mem_preimage, Prod.map_apply, id_eq, Projectivization.mk'_eq_mk,
