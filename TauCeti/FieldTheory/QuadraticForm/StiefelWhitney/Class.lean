@@ -37,8 +37,8 @@ On these classes the two low-degree identities hold: `w₁(q) = (d(q))` for the 
 `d`, so `w₁` is additive over orthogonal sums, and `w₂(q ⊥ r) = w₂(q) + w₂(r) + w₁(q) ∪ w₁(r)`,
 the degree-two part of the product formula for Delzant's total class.
 
-The binary cup identity rests on the comparison of the Brauer group with Galois cohomology, which
-is available for fields `K : Type`; the second class is defined in that generality.
+The binary cup identity rests on the comparison of the Brauer group with Galois cohomology. Both
+classes are defined for fields in any universe.
 
 ## Main definitions
 
@@ -57,6 +57,7 @@ is available for fields `K : Type`; the second class is defined in that generali
 * `TauCeti.sw1Class_eq_kummerSquareClassEquiv_discr`: `w₁(q) = (d(q))`.
 * `TauCeti.sw1Class_add` and `TauCeti.sw2Class_add`: `w₁(q ⊥ r) = w₁(q) + w₁(r)` and
   `w₂(q ⊥ r) = w₂(q) + w₂(r) + w₁(q) ∪ w₁(r)`.
+* `TauCeti.sw1Class_mk_rankOne_mul`: `w₁(⟨c⟩ ⊗ q) = n · (c) + w₁(q)` for `q` of rank `n`.
 * `TauCeti.sw1Class_formClass_congr` and `TauCeti.sw2Class_formClass_congr`: isometric regular
   forms have the same classes.
 * `TauCeti.sw1Class_zero`, `TauCeti.sw2Class_zero`, `TauCeti.sw1Class_one`,
@@ -154,6 +155,13 @@ theorem sw1Class_mk_rankOne (a : Kˣ) :
     sw1Class (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) = kummerClass a := by
   rw [sw1Class_mk, sw1_fin_one]
 
+/-- **Scaling formula for `w₁`**: `w₁(⟨c⟩ ⊗ q) = n · (c) + w₁(q)` for `q` of rank `n`. -/
+theorem sw1Class_mk_rankOne_mul (c : Kˣ) (x : RegularFormClass K) :
+    sw1Class (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => c⟩ * x) =
+      x.rank • kummerClass c + sw1Class x := by
+  rw [sw1Class_eq_kummerSquareClassEquiv_discr, sw1Class_eq_kummerSquareClassEquiv_discr,
+    RegularFormClass.discr_mk_rankOne_mul, map_add, map_nsmul, kummerSquareClassEquiv_squareClass]
+
 /-- The unit class `⟨1⟩` has trivial `w₁`. -/
 @[simp]
 theorem sw1Class_one : sw1Class (1 : RegularFormClass K) = 0 := by
@@ -171,7 +179,7 @@ end FirstClass
 
 section SecondClass
 
-variable {K : Type} [Field K] [Invertible (2 : K)] {n : ℕ}
+variable {K : Type u} [Field K] [Invertible (2 : K)] {n : ℕ}
 
 /-- **A binary step of a diagonal chain does not change `w₂`**: replacing two coefficients of a
 diagonal form by the coefficients of an isometric binary form leaves `∑_{i<j} (aᵢ) ∪ (aⱼ)`

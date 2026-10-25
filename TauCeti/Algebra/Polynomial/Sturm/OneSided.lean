@@ -13,9 +13,12 @@ public import TauCeti.Algebra.Polynomial.Sturm.Tarski
 
 `TauCeti.Sturm.signVariationsRight cs a` and `TauCeti.Sturm.signVariationsLeft cs a` count the
 sign variations of a polynomial list immediately to the right and to the left of `a`. They are
-computed algebraically from the one-sided signs `Polynomial.signRight` and
-`Polynomial.signLeft`, and are realized by evaluation at every point of a small enough interval
-on the corresponding side of `a`.
+computed algebraically from the one-sided signs `Polynomial.derivSignRight` and
+`Polynomial.derivSignLeft`, and are realized by evaluation at every point of a small enough interval
+on the corresponding side of `a`. They satisfy the append, negation and zero-deletion laws of
+`List.signVariations`, and multiplying every entry by a common nonzero polynomial does not change
+them, even at a root of that polynomial. So a common factor of the two inputs of
+`Polynomial.sturmSeq` does not change its one-sided variations anywhere.
 
 With these, Sturm–Tarski holds on every bounded interval, with no condition on the endpoints.
 Write `V(a⁺)` and `V(b⁻)` for the right-hand variations at `a` and the left-hand variations at
@@ -31,6 +34,9 @@ Specializing to `Polynomial.sturmSeq` and to the query `1` counts distinct roots
 
 * `TauCeti.Sturm.signVariationsRight`, `TauCeti.Sturm.signVariationsLeft`: one-sided
   variations.
+* `TauCeti.Sturm.signVariationsRight_append`, `TauCeti.Sturm.signVariationsRight_map_neg`,
+  `TauCeti.Sturm.signVariationsRight_map_mul`, `TauCeti.Sturm.signVariationsRight_filter_ne_zero`
+  and their left-hand analogues: the append, negation, scaling and zero-deletion laws.
 * `TauCeti.Sturm.sum_sign_Ioo`: Sturm–Tarski on `(a, b)` as `V(a⁺) - V(b⁻)`.
 * `TauCeti.Sturm.signVariationsLeft_sub_signVariationsRight`: the contribution of a point.
 * `TauCeti.Sturm.sum_sign_Ioc`, `TauCeti.Sturm.sum_sign_Ico`, `TauCeti.Sturm.sum_sign_Icc`:
@@ -56,20 +62,20 @@ section Basic
 variable {R : Type*} [CommRing R] [LinearOrder R]
 
 /-- The sign variations of a polynomial list immediately to the right of `a`: the variations
-of the right-hand signs `Polynomial.signRight` of its entries at `a`. -/
+of the right-hand signs `Polynomial.derivSignRight` of its entries at `a`. -/
 noncomputable def signVariationsRight (cs : List R[X]) (a : R) : ℕ :=
-  List.signVariations (cs.map (·.signRight a))
+  List.signVariations (cs.map (·.derivSignRight a))
 
 /-- The sign variations of a polynomial list immediately to the left of `a`: the variations
-of the left-hand signs `Polynomial.signLeft` of its entries at `a`. -/
+of the left-hand signs `Polynomial.derivSignLeft` of its entries at `a`. -/
 noncomputable def signVariationsLeft (cs : List R[X]) (a : R) : ℕ :=
-  List.signVariations (cs.map (·.signLeft a))
+  List.signVariations (cs.map (·.derivSignLeft a))
 
 theorem signVariationsRight_def (cs : List R[X]) (a : R) :
-    signVariationsRight cs a = List.signVariations (cs.map (·.signRight a)) := (rfl)
+    signVariationsRight cs a = List.signVariations (cs.map (·.derivSignRight a)) := (rfl)
 
 theorem signVariationsLeft_def (cs : List R[X]) (a : R) :
-    signVariationsLeft cs a = List.signVariations (cs.map (·.signLeft a)) := (rfl)
+    signVariationsLeft cs a = List.signVariations (cs.map (·.derivSignLeft a)) := (rfl)
 
 @[simp, grind =]
 theorem signVariationsRight_nil (a : R) : signVariationsRight ([] : List R[X]) a = 0 := by
@@ -90,7 +96,7 @@ theorem signVariationsLeft_singleton (p : R[X]) (a : R) : signVariationsLeft [p]
 /-- Evaluation at a point where every entry has its right-hand sign at `a` realizes the
 right-hand variations at `a`. -/
 theorem signVariationsAt_eq_right {cs : List R[X]} {a x : R}
-    (h : ∀ p ∈ cs, sign (p.eval x) = p.signRight a) :
+    (h : ∀ p ∈ cs, sign (p.eval x) = p.derivSignRight a) :
     signVariationsAt cs x = signVariationsRight cs a := by
   rw [signVariationsAt_def, signVariationsRight_def,
     ← List.signVariations_map_sign (cs.map (eval x)), List.map_map]
@@ -99,7 +105,7 @@ theorem signVariationsAt_eq_right {cs : List R[X]} {a x : R}
 /-- Evaluation at a point where every entry has its left-hand sign at `a` realizes the
 left-hand variations at `a`. -/
 theorem signVariationsAt_eq_left {cs : List R[X]} {a x : R}
-    (h : ∀ p ∈ cs, sign (p.eval x) = p.signLeft a) :
+    (h : ∀ p ∈ cs, sign (p.eval x) = p.derivSignLeft a) :
     signVariationsAt cs x = signVariationsLeft cs a := by
   rw [signVariationsAt_def, signVariationsLeft_def,
     ← List.signVariations_map_sign (cs.map (eval x)), List.map_map]
@@ -108,16 +114,134 @@ theorem signVariationsAt_eq_left {cs : List R[X]} {a x : R}
 /-- If no entry vanishes at `a`, the right-hand variations are the variations at `a`. -/
 theorem signVariationsRight_eq_signVariationsAt {cs : List R[X]} {a : R}
     (h : ∀ p ∈ cs, p.eval a ≠ 0) : signVariationsRight cs a = signVariationsAt cs a :=
-  (signVariationsAt_eq_right fun p hp => (signRight_eq_sign_eval p (h p hp)).symm).symm
+  (signVariationsAt_eq_right fun p hp => (derivSignRight_eq_sign_eval p (h p hp)).symm).symm
 
 /-- If no entry vanishes at `a`, the left-hand variations are the variations at `a`. -/
 theorem signVariationsLeft_eq_signVariationsAt {cs : List R[X]} {a : R}
     (h : ∀ p ∈ cs, p.eval a ≠ 0) : signVariationsLeft cs a = signVariationsAt cs a :=
-  (signVariationsAt_eq_left fun p hp => (signLeft_eq_sign_eval p (h p hp)).symm).symm
+  (signVariationsAt_eq_left fun p hp => (derivSignLeft_eq_sign_eval p (h p hp)).symm).symm
+
+/-- Ordered coefficient embeddings preserve variations immediately to the right of a point. -/
+@[simp]
+theorem signVariationsRight_map {S : Type*} [CommRing S] [LinearOrder S]
+    (cs : List R[X]) (f : R →+* S) (hf : StrictMono f) (x : R) :
+    signVariationsRight (cs.map (Polynomial.map f)) (f x) = signVariationsRight cs x := by
+  simp only [signVariationsRight_def, List.map_map, Function.comp_def, derivSignRight_map _ f hf]
+
+/-- Ordered coefficient embeddings preserve variations immediately to the left of a point. -/
+@[simp]
+theorem signVariationsLeft_map {S : Type*} [CommRing S] [LinearOrder S]
+    (cs : List R[X]) (f : R →+* S) (hf : StrictMono f) (x : R) :
+    signVariationsLeft (cs.map (Polynomial.map f)) (f x) = signVariationsLeft cs x := by
+  simp only [signVariationsLeft_def, List.map_map, Function.comp_def, derivSignLeft_map _ f hf]
+
+/-- The right-hand variations at `a` of a concatenation are those of the two parts, plus one
+exactly when the last nonzero right-hand sign of the first part is opposite to the first nonzero
+right-hand sign of the second part. -/
+theorem signVariationsRight_append (cs ds : List R[X]) (a : R) :
+    signVariationsRight (cs ++ ds) a =
+      signVariationsRight cs a +
+        (if List.lastSign (cs.map (·.derivSignRight a)) *
+            List.firstSign (ds.map (·.derivSignRight a)) = -1 then 1 else 0) +
+        signVariationsRight ds a := by
+  simp only [signVariationsRight_def, List.map_append, List.signVariations_append]
+
+/-- The left-hand variations at `a` of a concatenation are those of the two parts, plus one
+exactly when the last nonzero left-hand sign of the first part is opposite to the first nonzero
+left-hand sign of the second part. -/
+theorem signVariationsLeft_append (cs ds : List R[X]) (a : R) :
+    signVariationsLeft (cs ++ ds) a =
+      signVariationsLeft cs a +
+        (if List.lastSign (cs.map (·.derivSignLeft a)) *
+            List.firstSign (ds.map (·.derivSignLeft a)) = -1 then 1 else 0) +
+        signVariationsLeft ds a := by
+  simp only [signVariationsLeft_def, List.map_append, List.signVariations_append]
+
+/-- Negating every entry does not change the right-hand variations at a point. -/
+@[simp]
+theorem signVariationsRight_map_neg [AddLeftMono R] (cs : List R[X]) (a : R) :
+    signVariationsRight (cs.map Neg.neg) a = signVariationsRight cs a := by
+  simpa only [signVariationsRight_def, List.map_map, Function.comp_def, derivSignRight_neg] using
+    List.signVariations_map_of_sign_eq_neg (f := Neg.neg) (by decide) (cs.map (·.derivSignRight a))
+
+/-- Negating every entry does not change the left-hand variations at a point. -/
+@[simp]
+theorem signVariationsLeft_map_neg [AddLeftMono R] (cs : List R[X]) (a : R) :
+    signVariationsLeft (cs.map Neg.neg) a = signVariationsLeft cs a := by
+  simpa only [signVariationsLeft_def, List.map_map, Function.comp_def, derivSignLeft_neg] using
+    List.signVariations_map_of_sign_eq_neg (f := Neg.neg) (by decide) (cs.map (·.derivSignLeft a))
 
 end Basic
 
+section OrderedRing
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- The right-hand variations at `a` split at any nonzero entry. -/
+theorem signVariationsRight_append_cons_of_ne_zero (cs ds : List R[X]) {p : R[X]} (hp : p ≠ 0)
+    (a : R) :
+    signVariationsRight (cs ++ p :: ds) a =
+      signVariationsRight (cs ++ [p]) a + signVariationsRight (p :: ds) a := by
+  simpa only [signVariationsRight_def, List.map_append, List.map_cons, List.map_nil] using
+    List.signVariations_append_cons_of_ne_zero _ _ ((derivSignRight_eq_zero_iff p a).not.2 hp)
+
+/-- The left-hand variations at `a` split at any nonzero entry. -/
+theorem signVariationsLeft_append_cons_of_ne_zero (cs ds : List R[X]) {p : R[X]} (hp : p ≠ 0)
+    (a : R) :
+    signVariationsLeft (cs ++ p :: ds) a =
+      signVariationsLeft (cs ++ [p]) a + signVariationsLeft (p :: ds) a := by
+  simpa only [signVariationsLeft_def, List.map_append, List.map_cons, List.map_nil] using
+    List.signVariations_append_cons_of_ne_zero _ _ ((derivSignLeft_eq_zero_iff p a).not.2 hp)
+
+/-- Deleting the zero entries does not change the right-hand variations. -/
+@[simp]
+theorem signVariationsRight_filter_ne_zero (cs : List R[X]) (a : R) :
+    signVariationsRight (cs.filter fun p ↦ !decide (p = 0)) a = signVariationsRight cs a := by
+  rw [signVariationsRight_def, signVariationsRight_def,
+    ← List.signVariations_filter_ne_zero (cs.map _), List.filter_map]
+  simp [Function.comp_def]
+
+/-- Deleting the zero entries does not change the left-hand variations. -/
+@[simp]
+theorem signVariationsLeft_filter_ne_zero (cs : List R[X]) (a : R) :
+    signVariationsLeft (cs.filter fun p ↦ !decide (p = 0)) a = signVariationsLeft cs a := by
+  rw [signVariationsLeft_def, signVariationsLeft_def,
+    ← List.signVariations_filter_ne_zero (cs.map _), List.filter_map]
+  simp [Function.comp_def]
+
+/-- Multiplying every entry by a common nonzero polynomial does not change the right-hand
+variations at any point, even one where that polynomial vanishes. -/
+theorem signVariationsRight_map_mul (cs : List R[X]) {d : R[X]} (hd : d ≠ 0) (a : R) :
+    signVariationsRight (cs.map (d * ·)) a = signVariationsRight cs a := by
+  simpa only [signVariationsRight_def, List.map_map, Function.comp_def, derivSignRight_mul] using
+    List.signVariations_map_signType_mul_left (cs.map (·.derivSignRight a))
+      ((derivSignRight_eq_zero_iff d a).not.2 hd)
+
+/-- Multiplying every entry by a common nonzero polynomial does not change the left-hand
+variations at any point, even one where that polynomial vanishes. -/
+theorem signVariationsLeft_map_mul (cs : List R[X]) {d : R[X]} (hd : d ≠ 0) (a : R) :
+    signVariationsLeft (cs.map (d * ·)) a = signVariationsLeft cs a := by
+  simpa only [signVariationsLeft_def, List.map_map, Function.comp_def, derivSignLeft_mul] using
+    List.signVariations_map_signType_mul_left (cs.map (·.derivSignLeft a))
+      ((derivSignLeft_eq_zero_iff d a).not.2 hd)
+
+end OrderedRing
+
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- Multiplying both inputs by a common nonzero polynomial does not change the right-hand
+variations of their signed remainder sequence. -/
+@[simp]
+theorem signVariationsRight_sturmSeq_mul_left {r : R[X]} (hr : r ≠ 0) (p q : R[X]) (a : R) :
+    signVariationsRight (sturmSeq (r * p) (r * q)) a = signVariationsRight (sturmSeq p q) a := by
+  rw [sturmSeq_mul_left hr, signVariationsRight_map_mul _ hr]
+
+/-- Multiplying both inputs by a common nonzero polynomial does not change the left-hand
+variations of their signed remainder sequence. -/
+@[simp]
+theorem signVariationsLeft_sturmSeq_mul_left {r : R[X]} (hr : r ≠ 0) (p q : R[X]) (a : R) :
+    signVariationsLeft (sturmSeq (r * p) (r * q)) a = signVariationsLeft (sturmSeq p q) a := by
+  rw [sturmSeq_mul_left hr, signVariationsLeft_map_mul _ hr]
 
 /-- The right-hand variations at `a` are the variations at every point of a small enough
 interval to the right of `a`. -/
@@ -155,9 +279,9 @@ theorem sum_sign_Ioo (h : IsSignedRemainderSeq (p :: cs))
   obtain ⟨a', haa', ha'⟩ := exists_between (lt_min hau hab)
   obtain ⟨b', hb', hb'b⟩ := exists_between (max_lt hlb (ha'.trans_le (min_le_right _ _)))
   have hpu (x : R) (hx : x ∈ Ioo a u) : p.eval x ≠ 0 :=
-    eval_ne_zero_of_sign_eq_signRight hp (hu p (by simp) x hx)
+    eval_ne_zero_of_sign_eq_derivSignRight hp (hu p (by simp) x hx)
   have hpl (x : R) (hx : x ∈ Ioo l b) : p.eval x ≠ 0 :=
-    eval_ne_zero_of_sign_eq_signLeft hp (hl p (by simp) x hx)
+    eval_ne_zero_of_sign_eq_derivSignLeft hp (hl p (by simp) x hx)
   have ha'u : a' ∈ Ioo a u := ⟨haa', ha'.trans_le (min_le_left _ _)⟩
   have hb'l : b' ∈ Ioo l b := ⟨(le_max_left _ _).trans_lt hb', hb'b⟩
   have hfilter : p.roots.toFinset.filter (fun r => a < r ∧ r < b) =
@@ -185,9 +309,9 @@ theorem signVariationsLeft_sub_signVariationsRight (h : IsSignedRemainderSeq (p 
   obtain ⟨l', hll', hl'a⟩ := exists_between hla
   obtain ⟨u', hau', hu'u⟩ := exists_between hau
   have hpl (x : R) (hx : x ∈ Ioo l a) : p.eval x ≠ 0 :=
-    eval_ne_zero_of_sign_eq_signLeft hp (hl p (by simp) x hx)
+    eval_ne_zero_of_sign_eq_derivSignLeft hp (hl p (by simp) x hx)
   have hpu (x : R) (hx : x ∈ Ioo a u) : p.eval x ≠ 0 :=
-    eval_ne_zero_of_sign_eq_signRight hp (hu p (by simp) x hx)
+    eval_ne_zero_of_sign_eq_derivSignRight hp (hu p (by simp) x hx)
   have hfilter : p.roots.toFinset.filter (fun r => l' < r ∧ r < u') =
       p.roots.toFinset.filter (fun r => False ∨ r = a) := by
     refine Finset.filter_congr fun r hr => ?_

@@ -125,7 +125,8 @@ theorem contMDiff_projectiveSpaceHomeomorph_symm (r : ℕ∞ω) :
       fun j : {j : Option (Fin n) // j ≠ k} ↦
         Fin.insertNth (α := fun _ ↦ ℂ) k' 1 z ((finSuccEquiv n).symm j) :=
     contDiff_pi.2 fun j ↦
-      contDiff_pi.1 (ComplexProjectiveSpace.contDiff_insertNth_one k' r) ((finSuccEquiv n).symm j)
+      contDiff_pi.1 ((contDiff_const (c := (1 : ℂ))).finInsertNth (F := fun _ ↦ ℂ) k'
+        contDiff_id) ((finSuccEquiv n).symm j)
   refine (((((Φ).contMDiff_analyticAffineChartι hΦ (Fan.projectiveSpaceMaximalCone b hi k)
     hB κ g r).comp D.symm.contMDiff).comp hratio.contMDiff).comp_contMDiffOn
       (ComplexProjectiveSpace.contMDiffOn_affineChart k' r)

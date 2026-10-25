@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 -- Private: `CliffordAlgebra.nonempty_evenOddEquivAddOne` is used only inside the proof that the
 -- two halves of the `ℤ/2`-grading are equidimensional.
 import TauCeti.LinearAlgebra.CliffordAlgebra.ParitySwap
+-- Private: the ordered exterior-basis formula proves the empty and singleton basis identities.
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
 # Freeness and dimension of a Clifford algebra
@@ -64,6 +66,8 @@ isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filt
 
 ## Main results
 
+* `CliffordAlgebra.basis_empty` and `CliffordAlgebra.basis_singleton`: for every basis, the basis
+  vectors indexed by `∅` and by `{i}` are `1` and the generator `ι Q (b i)`.
 * `CliffordAlgebra.rank_eq_rank_exteriorAlgebra` and
   `CliffordAlgebra.finrank_eq_finrank_exteriorAlgebra`: the rank of `CliffordAlgebra Q`
   is the rank of `ExteriorAlgebra R M`. The right-hand sides do not mention `Q`, so this is the
@@ -121,6 +125,25 @@ has to unfold this definition. -/
 theorem basis_apply {I : Type w} [LinearOrder I] (b : Basis I R M) (s : Finset I) :
     basis Q b s = (equivExterior Q).symm (b.ExteriorAlgebra s) :=
   rfl
+
+variable {Q}
+
+/-- For every basis, the basis vector indexed by the empty set is `1`. -/
+-- Reduce this index before the general `basis_apply` formula exposes the transported basis.
+@[simp high]
+theorem basis_empty {I : Type w} [LinearOrder I] (b : Basis I R M) : basis Q b ∅ = 1 := by
+  rw [basis_apply, b.exteriorAlgebra_eq_prod_map_sort]
+  simp
+
+/-- For every basis, the basis vector indexed by `{i}` is the generator `ι Q (b i)`. -/
+-- Reduce this index before the general `basis_apply` formula exposes the transported basis.
+@[simp high]
+theorem basis_singleton {I : Type w} [LinearOrder I] (b : Basis I R M) (i : I) :
+    basis Q b {i} = ι Q (b i) := by
+  rw [basis_apply, b.exteriorAlgebra_eq_prod_map_sort]
+  simp
+
+variable (Q)
 
 /-- `CliffordAlgebra.equivExterior` sends the basis element `basis Q b s` back to the exterior
 algebra basis element `b.ExteriorAlgebra s` it was transported from.

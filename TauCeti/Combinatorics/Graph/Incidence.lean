@@ -45,6 +45,11 @@ loop once and counting parallel edges separately. The result is zero when this s
 noncomputable def incidenceCount (x : α) : ℕ :=
   (G.incidenceSet x).ncard
 
+theorem nonloopIncidenceCount_def (x : α) :
+    G.nonloopIncidenceCount x = (G.incidenceSet x \ G.loopSet x).ncard := (rfl)
+
+theorem incidenceCount_def (x : α) : G.incidenceCount x = (G.incidenceSet x).ncard := (rfl)
+
 /-- The incidence set of a vertex is finite when the graph has finitely many actual edges. -/
 theorem finite_incidenceSet [Finite G.edgeSet] (x : α) : (G.incidenceSet x).Finite :=
   (Set.finite_coe_iff.mp inferInstance).subset (G.incidenceSet_subset_edgeSet x)

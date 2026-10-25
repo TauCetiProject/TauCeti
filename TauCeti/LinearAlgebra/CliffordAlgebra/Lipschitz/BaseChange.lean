@@ -78,8 +78,6 @@ theorem lipschitzGroupBaseChange_inv_coe (x : lipschitzGroup Q) :
 represented by `1 ⊗ₜ v`. -/
 @[simp]
 theorem ofBaseChangeAux_unitι (v : M) [Invertible (Q v)] :
-    let _ : Invertible (Q.baseChange A (1 ⊗ₜ v)) :=
-      (Invertible.map (algebraMap R A) (Q v)).copy _ (by simp [Algebra.smul_def])
     Units.map (ofBaseChangeAux A Q) (unitι Q v) = unitι (Q.baseChange A) (1 ⊗ₜ v) := by
   ext
   simp
@@ -88,8 +86,6 @@ theorem ofBaseChangeAux_unitι (v : M) [Invertible (Q v)] :
 vector units. -/
 @[simp]
 theorem lipschitzGroupBaseChange_unitι (v : M) [Invertible (Q v)] :
-    let _ : Invertible (Q.baseChange A (1 ⊗ₜ v)) :=
-      (Invertible.map (algebraMap R A) (Q v)).copy _ (by simp [Algebra.smul_def])
     lipschitzGroupBaseChange (A := A) Q ⟨unitι Q v, unitι_mem_lipschitzGroup v⟩ =
       ⟨unitι (Q.baseChange A) (1 ⊗ₜ v), unitι_mem_lipschitzGroup _⟩ := by
   ext

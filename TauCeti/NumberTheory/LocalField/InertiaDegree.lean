@@ -47,6 +47,8 @@ side, and conversely.
   equivalent to surjectivity of the residue-field map.
 * `TauCeti.inertiaDegree_tower`: multiplicativity `f(M/K) = f(L/K) · f(M/L)` in a tower.
 * `TauCeti.natCard_residueField`: `#𝓀[L] = #𝓀[K] ^ f(L/K)`.
+* `TauCeti.pow_natCard_residueField_pow_eq_self`: a root of `X^{q^g} − X` is a root of
+  `X^{(q^f)^g} − X`, where `q = #𝓀[K]` and `f = f(L/K)`.
 
 ## References
 
@@ -83,6 +85,14 @@ variable (K L) in
 cardinalities here are genuine. -/
 theorem natCard_residueField : Nat.card 𝓀[L] = Nat.card 𝓀[K] ^ inertiaDegree K L :=
   Module.natCard_eq_pow_finrank
+
+/-- A root of `X^{q^g} − X` is a root of `X^{(q^f)^g} − X`, where `q` and `q^f` are the
+cardinalities of the residue fields of `K` and `L`. -/
+theorem pow_natCard_residueField_pow_eq_self {R : Type*} [Monoid R] {z : R} {g : ℕ}
+    (hz : z ^ Nat.card 𝓀[K] ^ g = z) : z ^ Nat.card 𝓀[L] ^ g = z := by
+  rw [natCard_residueField K L, ← pow_mul, mul_comm, pow_mul]
+  have h := Function.IsFixedPt.iterate (f := (· ^ Nat.card 𝓀[K] ^ g)) hz (inertiaDegree K L)
+  rwa [pow_iterate] at h
 
 variable (K L) in
 /-- **The residue degree is the ideal-theoretic inertia degree** of `𝓂[L]` over `𝒪[K]`. -/

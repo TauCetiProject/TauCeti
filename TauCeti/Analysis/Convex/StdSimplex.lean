@@ -14,7 +14,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
-# The standard simplex as a join with its barycentre
+# The standard simplex as a join with its barycentre or a vertex
 
 The standard simplex, the set of weight vectors of `Convexity.StdSimplex ℝ ι`, is the convex join
 of its relative boundary, the points with some vanishing coordinate, and its barycentre, the
@@ -26,6 +26,10 @@ This is pseudo-radial projection of a simplex from its barycentre onto its bound
 the cone on the boundary of a simplex, with apex at the barycentre, with the whole simplex; this is
 the local model of a closed vertex star whose link is a combinatorial sphere.
 
+Similarly, the standard simplex is the convex join of the facet opposite a vertex `i` with that
+vertex, the `i`-th coordinate recovering the position along each segment. This is the local model
+of a closed vertex star whose link is a combinatorial ball.
+
 ## Main results
 
 * `Convexity.StdSimplex.convex_range_toFun_comp_weights`: the weight vectors of the standard
@@ -34,6 +38,8 @@ the local model of a closed vertex star whose link is a combinatorial sphere.
   the parameter along a segment from a boundary point to the barycentre.
 * `TauCeti.convexJoin_boundary_stdSimplex_barycenter`: the standard simplex is the convex join of
   its relative boundary with its barycentre.
+* `TauCeti.convexJoin_facet_stdSimplex_single`: the standard simplex is the convex join of a facet
+  with the opposite vertex.
 
 ## References
 
@@ -132,5 +138,60 @@ theorem convexJoin_boundary_stdSimplex_barycenter [Nontrivial ι] :
       ⟨hS ▸ mem_range_self _, k, by simp [hjk]⟩
     rw [hzb]
     exact subset_convexJoin_right ⟨_, hj⟩ (mem_singleton _)
+
+omit [Fintype ι] in
+/-- **The standard simplex as a cone on a facet.** The standard simplex is the convex join of the
+facet opposite a vertex `i`, the points with vanishing `i`-th coordinate, with that vertex. Along
+the segment from a point of the facet to the vertex, the `i`-th coordinate is the parameter. -/
+theorem convexJoin_facet_stdSimplex_single {R : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Finite ι] [Nontrivial ι] [DecidableEq ι] (i : ι) :
+    convexJoin R {y ∈ range fun s : StdSimplex R ι => ⇑s.weights | y i = 0} {Pi.single i 1} =
+      range fun s : StdSimplex R ι => ⇑s.weights := by
+  have := Fintype.ofFinite ι
+  have hS : (range fun s : StdSimplex R ι => ⇑s.weights) =
+      {z | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} := by
+    rw [StdSimplex.range_toFun_comp_weights]
+    ext z
+    simp
+  have hconv := StdSimplex.convex_range_toFun_comp_weights R ι
+  rw [hS] at hconv
+  rw [hS]
+  have hb : (Pi.single i 1 : ι → R) ∈ {z : ι → R | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} :=
+    ⟨fun j => by rcases eq_or_ne j i with rfl | hj <;> simp [*], by simp⟩
+  refine Subset.antisymm (convexJoin_subset (fun y hy => hy.1)
+    (singleton_subset_iff.mpr hb) hconv) fun z hz => ?_
+  have hle : z i ≤ 1 := by
+    rw [← hz.2]
+    exact single_le_sum (fun j _ => hz.1 j) (Finset.mem_univ i)
+  rcases hle.lt_or_eq with ht | ht
+  · -- Write `z` as the point at parameter `z i` on a segment from the facet.
+    have hpos : 0 < 1 - z i := sub_pos.mpr ht
+    refine mem_convexJoin.mpr ⟨(1 - z i)⁻¹ • (z - z i • Pi.single i 1), ⟨⟨fun j => ?_, ?_⟩, ?_⟩,
+      _, rfl, 1 - z i, z i, hpos.le, hz.1 i, by ring, ?_⟩
+    · rcases eq_or_ne j i with rfl | hj
+      · simp
+      · simpa [hj] using mul_nonneg (inv_nonneg.mpr hpos.le) (hz.1 j)
+    · simp [← mul_sum, sum_sub_distrib, hz.2, inv_mul_cancel₀ hpos.ne']
+    · simp
+    · ext j
+      rcases eq_or_ne j i with rfl | hj
+      · simp
+      · simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul, Pi.single_eq_of_ne hj]
+        field_simp
+        ring
+  · -- At parameter one every other coordinate vanishes, so `z` is the vertex.
+    have hzero : ∀ j ∈ univ.erase i, z j = 0 := by
+      refine (sum_eq_zero_iff_of_nonneg fun j _ => hz.1 j).mp ?_
+      linarith [add_sum_erase univ z (Finset.mem_univ i), hz.2]
+    have hzi : z = Pi.single i 1 := funext fun j => by
+      rcases eq_or_ne j i with rfl | hj
+      · simp [ht]
+      · simp [hj, hzero j (mem_erase.mpr ⟨hj, Finset.mem_univ j⟩)]
+    obtain ⟨j, hj⟩ := exists_ne i
+    have hj' : (Pi.single j 1 : ι → R) ∈
+        {y ∈ {z : ι → R | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} | y i = 0} :=
+      ⟨⟨fun k => by rcases eq_or_ne k j with rfl | hk <;> simp [*], by simp⟩, by simp [hj.symm]⟩
+    rw [hzi]
+    exact subset_convexJoin_right ⟨_, hj'⟩ (mem_singleton _)
 
 end TauCeti

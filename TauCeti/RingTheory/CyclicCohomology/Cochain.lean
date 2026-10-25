@@ -53,6 +53,8 @@ identities between faces and the cyclic rotation
 * `TauCeti.hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero`: the Hochschild
   coboundary of a cyclic cochain vanishes on a tuple whose cyclically adjacent entries are
   quasi-inverse.
+* `TauCeti.apply_update_const_eq_zero_of_isIdempotentElem`: an even-degree cyclic cocycle vanishes
+  on `(e, …, y, …, e)` when `e` is idempotent and `y` is tangent to the idempotents at `e`.
 * `TauCeti.cyclicHochschildCoboundary_cyclicHochschildCoboundary`: the restriction of `b` to
   cyclic cochains also squares to zero.
 * `TauCeti.hochschildCoboundary_zero_eq_zero_iff`: the degree-zero cocycles are the traces.
@@ -78,10 +80,6 @@ section NatFace
 
 variable {A : Type*}
 
-private theorem exists_eq_comp_val {m : ℕ} (a : Fin (m + 1) → A) :
-    ∃ b : ℕ → A, a = fun k : Fin (m + 1) ↦ b k :=
-  ⟨fun k ↦ a ⟨min k m, by omega⟩, by funext k; simp [Nat.min_eq_left (Nat.le_of_lt_succ k.2)]⟩
-
 /-- Cyclic rotation `(b₀, …, bₙ) ↦ (bₙ, b₀, …, bₙ₋₁)` of a sequence of length `n + 1`. -/
 private def natRotate (n : ℕ) (b : ℕ → A) (k : ℕ) : A :=
   if k = 0 then b n else b (k - 1)
@@ -101,10 +99,6 @@ variable [Mul A]
 /-- Contraction of the entries `i` and `i + 1` of a sequence. -/
 private def natContract (i : ℕ) (b : ℕ → A) (k : ℕ) : A :=
   if k < i then b k else if k = i then b k * b (k + 1) else b (k + 1)
-
-/-- The last Hochschild face of a sequence of length `n + 2`. -/
-private def natWrap (n : ℕ) (b : ℕ → A) (k : ℕ) : A :=
-  if k = 0 then b (n + 1) * b 0 else b k
 
 private theorem contractNth_comp_val {n : ℕ} (j : Fin (n + 2)) (b : ℕ → A) :
     Fin.contractNth j (· * ·) (fun k : Fin (n + 2) ↦ b k) =
@@ -171,7 +165,24 @@ private theorem natContract_update_of_ne [Mul A] {j k m : ℕ}
   simp only [natContract, natContractPos, update_apply] at hm ⊢
   split_ifs at hm ⊢ <;> first | omega | rfl
 
-private theorem natContract_update_add [NonUnitalNonAssocSemiring A] (j k : ℕ) (b : ℕ → A)
+/-- Updating one entry of a tuple only changes one entry of a contraction of it. -/
+private theorem contractNth_update_comp_val [Mul A] {n : ℕ} (j : Fin (n + 1)) (b : ℕ → A)
+    (k : Fin (n + 2)) (x : A) :
+    Fin.contractNth j.castSucc (· * ·) (update (fun m : Fin (n + 2) ↦ b m) k x) =
+      update (fun m : Fin (n + 1) ↦ natContract j b m)
+        ⟨natContractPos j k, natContractPos_lt j.2 k.2⟩
+        (natContract j (update b k x) (natContractPos j k)) := by
+  have hupd : update (fun m : Fin (n + 2) ↦ b m) k x = fun m : Fin (n + 2) ↦ update b k x m :=
+    (update_comp_eq_of_injective b Fin.val_injective k x).symm
+  rw [hupd, contractNth_comp_val]
+  funext m
+  by_cases hm : (m : ℕ) = natContractPos j k
+  · obtain rfl : m = ⟨natContractPos j k, natContractPos_lt j.2 k.2⟩ := Fin.ext hm
+    rw [update_self, Fin.val_castSucc]
+  · rw [update_of_ne (fun h ↦ hm (congrArg Fin.val h)), Fin.val_castSucc,
+      natContract_update_of_ne hm]
+
+private theorem natContract_update_add [Distrib A] (j k : ℕ) (b : ℕ → A)
     (x y : A) :
     natContract j (update b k (x + y)) (natContractPos j k) =
       natContract j (update b k x) (natContractPos j k) +
@@ -179,7 +190,7 @@ private theorem natContract_update_add [NonUnitalNonAssocSemiring A] (j k : ℕ)
   simp only [natContract, natContractPos, update_apply]
   split_ifs <;> first | omega | simp [add_mul, mul_add]
 
-private theorem natContract_update_smul {R : Type*} [NonUnitalNonAssocSemiring A] [SMul R A]
+private theorem natContract_update_smul {R : Type*} [Mul A] [SMul R A]
     [IsScalarTower R A A] [SMulCommClass R A A] (j k : ℕ) (b : ℕ → A) (c : R) (x : A) :
     natContract j (update b k (c • x)) (natContractPos j k) =
       c • natContract j (update b k x) (natContractPos j k) := by
@@ -222,7 +233,8 @@ theorem hochschildFace_last_eq_contractNth (a : Fin (n + 2) → A) :
 theorem hochschildFace_last (a : Fin (n + 2) → A) :
     hochschildFace (Fin.last (n + 1)) a =
       Fin.cons (a (Fin.last (n + 1)) * a 0) fun k ↦ a k.castSucc.succ := by
-  obtain ⟨b, rfl⟩ := exists_eq_comp_val a
+  obtain ⟨b, hb⟩ := Fin.val_injective.surjective_comp_right' (fun _ : ℕ ↦ a 0) a
+  obtain rfl : a = fun k : Fin _ ↦ b k := hb.symm
   rw [hochschildFace_last_eq_contractNth, comp_finRotate_symm_comp_val, contractNth_comp_val]
   funext k
   cases k using Fin.cases <;> simp [natContract, natRotate]
@@ -248,7 +260,8 @@ theorem hochschildFace_zero_comp_finRotate_symm (a : Fin (n + 2) → A) :
 theorem hochschildFace_succ_comp_finRotate_symm (i : Fin (n + 1)) (a : Fin (n + 2) → A) :
     hochschildFace i.succ (a ∘ (finRotate (n + 2)).symm) =
       hochschildFace i.castSucc a ∘ (finRotate (n + 1)).symm := by
-  obtain ⟨b, rfl⟩ := exists_eq_comp_val a
+  obtain ⟨b, hb⟩ := Fin.val_injective.surjective_comp_right' (fun _ : ℕ ↦ a 0) a
+  obtain rfl : a = fun k : Fin _ ↦ b k := hb.symm
   rw [comp_finRotate_symm_comp_val]
   induction i using Fin.lastCases with
   | last =>
@@ -303,7 +316,8 @@ theorem hochschildFace_hochschildFace [Semigroup A] {i j : Fin (n + 2)} (hij : i
     (a : Fin (n + 3) → A) :
     hochschildFace i (hochschildFace j.succ a) =
       hochschildFace j (hochschildFace i.castSucc a) := by
-  obtain ⟨b, rfl⟩ := exists_eq_comp_val a
+  obtain ⟨b, hb⟩ := Fin.val_injective.surjective_comp_right' (fun _ : ℕ ↦ a 0) a
+  obtain rfl : a = fun k : Fin _ ↦ b k := hb.symm
   induction j using Fin.lastCases with
   | last =>
     rw [Fin.succ_last, hochschildFace_last_comp_val]
@@ -337,23 +351,6 @@ variable (R A M : Type*) [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommMonoid M] [Module R M]
   [SMulCommClass R R M] {n : ℕ}
 
-/-- Updating one entry of a tuple only changes one entry of a contraction of it. -/
-private theorem contractNth_update_comp_val (j : Fin (n + 1)) (b : ℕ → A) (k : Fin (n + 2))
-    (x : A) :
-    Fin.contractNth j.castSucc (· * ·) (update (fun m : Fin (n + 2) ↦ b m) k x) =
-      update (fun m : Fin (n + 1) ↦ natContract j b m)
-        ⟨natContractPos j k, natContractPos_lt j.2 k.2⟩
-        (natContract j (update b k x) (natContractPos j k)) := by
-  have hupd : update (fun m : Fin (n + 2) ↦ b m) k x = fun m : Fin (n + 2) ↦ update b k x m :=
-    (update_comp_eq_of_injective b Fin.val_injective k x).symm
-  rw [hupd, contractNth_comp_val]
-  funext m
-  by_cases hm : (m : ℕ) = natContractPos j k
-  · obtain rfl : m = ⟨natContractPos j k, natContractPos_lt j.2 k.2⟩ := Fin.ext hm
-    rw [update_self, Fin.val_castSucc]
-  · rw [update_of_ne (fun h ↦ hm (congrArg Fin.val h)), Fin.val_castSucc,
-      natContract_update_of_ne hm]
-
 variable {R A M} in
 /-- Precomposition of a cochain with the contraction of the entries `j` and `j + 1`. -/
 private def contractCoface (j : Fin (n + 1)) (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
@@ -362,12 +359,14 @@ private def contractCoface (j : Fin (n + 1)) (φ : MultilinearMap R (fun _ : Fin
   map_update_add' := by
     intro _ a k x y
     obtain rfl : ‹DecidableEq (Fin (n + 2))› = instDecidableEqFin _ := Subsingleton.elim _ _
-    obtain ⟨b, rfl⟩ := exists_eq_comp_val a
+    obtain ⟨b, hb⟩ := Fin.val_injective.surjective_comp_right' (fun _ : ℕ ↦ a 0) a
+    obtain rfl : a = fun k : Fin _ ↦ b k := hb.symm
     simp only [contractNth_update_comp_val, natContract_update_add, MultilinearMap.map_update_add]
   map_update_smul' := by
     intro _ a k c x
     obtain rfl : ‹DecidableEq (Fin (n + 2))› = instDecidableEqFin _ := Subsingleton.elim _ _
-    obtain ⟨b, rfl⟩ := exists_eq_comp_val a
+    obtain ⟨b, hb⟩ := Fin.val_injective.surjective_comp_right' (fun _ : ℕ ↦ a 0) a
+    obtain rfl : a = fun k : Fin _ ↦ b k := hb.symm
     simp only [contractNth_update_comp_val, natContract_update_smul,
       MultilinearMap.map_update_smul]
 
@@ -401,21 +400,16 @@ arguments) to the `(n + 1)`-cochain `a ↦ φ (dᵢ a)`. -/
 def hochschildCoface (i : Fin (n + 2)) :
     MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M →ₗ[R]
       MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M where
-  toFun φ :=
-    { toFun a := φ (hochschildFace i a)
-      map_update_add' a k x y := by
-        simpa only [cofaceAux_apply] using (cofaceAux i φ).map_update_add a k x y
-      map_update_smul' a k c x := by
-        simpa only [cofaceAux_apply] using (cofaceAux i φ).map_update_smul a k c x }
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+  toFun := cofaceAux i
+  map_add' φ ψ := by ext a; simp only [cofaceAux_apply, add_apply]
+  map_smul' c φ := by ext a; simp only [cofaceAux_apply, smul_apply, RingHom.id_apply]
 
 /-- The `i`-th coface evaluates a cochain on the `i`-th Hochschild face of the tuple. -/
 @[simp]
 theorem hochschildCoface_apply (i : Fin (n + 2))
     (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (a : Fin (n + 2) → A) :
     hochschildCoface R A M i φ a = φ (hochschildFace i a) :=
-  (rfl)
+  cofaceAux_apply R A M i φ a
 
 end Cochain
 
@@ -459,10 +453,51 @@ theorem apply_const_eq_neg_of_mem_cyclicCochains
   have h := hφ fun _ ↦ x
   simpa only [Function.comp_def, hn.neg_one_pow, neg_one_smul] using h
 
+variable {R A M} in
+/-- In even degree, a cyclic cochain takes the same value when the single distinguished entry of
+an otherwise constant tuple moves to the first slot. -/
+private theorem apply_update_const_eq_apply_update_const_zero (hn : Even n)
+    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    (e z : A) (k : Fin (n + 1)) :
+    φ (Function.update (fun _ ↦ e) k z) = φ (Function.update (fun _ ↦ e) 0 z) := by
+  induction k using Fin.induction with
+  | zero => rfl
+  | succ k ih =>
+    have h := mem_cyclicCochains_iff.1 hφ (Function.update (fun _ ↦ e) k.castSucc z)
+    rw [Function.update_comp_equiv, Equiv.symm_symm, hn.neg_one_pow, one_smul] at h
+    rw [← ih, ← h]
+    congr 2
+    exact Fin.ext (by simp)
+
 /-- Every `0`-cochain is cyclic. -/
 @[simp]
 theorem cyclicCochains_zero : cyclicCochains R A M 0 = ⊤ :=
   eq_top_iff.2 fun φ _ a ↦ by simp [finRotate_one]
+
+variable {R A M} in
+/-- A `1`-cochain is cyclic exactly when it is antisymmetric: `φ(a₁, a₀) = -φ(a₀, a₁)`. -/
+theorem mem_cyclicCochains_one_iff {φ : MultilinearMap R (fun _ : Fin 2 ↦ A) M} :
+    φ ∈ cyclicCochains R A M 1 ↔ ∀ x y : A, φ ![y, x] = -φ ![x, y] := by
+  have hrot (a : Fin 2 → A) : a ∘ (finRotate 2).symm = ![a 1, a 0] := by
+    funext i; fin_cases i <;> rfl
+  have heta (a : Fin 2 → A) : a = ![a 0, a 1] := by
+    funext i; fin_cases i <;> rfl
+  refine ⟨fun hφ x y ↦ ?_, fun hφ a ↦ ?_⟩
+  · simpa [hrot] using hφ ![x, y]
+  · rw [hrot, hφ, ← heta, pow_one, neg_one_smul]
+
+variable {R A M} in
+/-- A `2`-cochain is cyclic exactly when it is invariant under cyclic rotation of its arguments:
+`φ(a₂, a₀, a₁) = φ(a₀, a₁, a₂)`. -/
+theorem mem_cyclicCochains_two_iff {φ : MultilinearMap R (fun _ : Fin 3 ↦ A) M} :
+    φ ∈ cyclicCochains R A M 2 ↔ ∀ x y z : A, φ ![z, x, y] = φ ![x, y, z] := by
+  have hrot (a : Fin 3 → A) : a ∘ (finRotate 3).symm = ![a 2, a 0, a 1] := by
+    funext i; fin_cases i <;> rfl
+  have heta (a : Fin 3 → A) : a = ![a 0, a 1, a 2] := by
+    funext i; fin_cases i <;> rfl
+  refine ⟨fun hφ x y z ↦ ?_, fun hφ a ↦ ?_⟩
+  · simpa [hrot] using hφ ![x, y, z]
+  · rw [hrot, hφ, ← heta, neg_one_sq, one_smul]
 
 end Cyclic
 
@@ -549,6 +584,40 @@ theorem hochschildCoboundary_zero_apply (φ : MultilinearMap R (fun _ : Fin 1 �
     fin_cases k
     rfl
   rw [hochschildCoboundary_apply_eq_sum_contractNth_add, Fin.sum_univ_one, h₀, h₁]
+  simp [sub_eq_add_neg]
+
+/-- In degree one, `(bφ)(a₀, a₁, a₂) = φ(a₀a₁, a₂) - φ(a₀, a₁a₂) + φ(a₂a₀, a₁)`. -/
+theorem hochschildCoboundary_one_apply (φ : MultilinearMap R (fun _ : Fin 2 ↦ A) M)
+    (a : Fin 3 → A) :
+    hochschildCoboundary R A M 1 φ a =
+      φ ![a 0 * a 1, a 2] - φ ![a 0, a 1 * a 2] + φ ![a 2 * a 0, a 1] := by
+  have h₀ : Fin.contractNth (0 : Fin 2).castSucc (· * ·) a = ![a 0 * a 1, a 2] := by
+    funext i; fin_cases i <;> rfl
+  have h₁ : Fin.contractNth (1 : Fin 2).castSucc (· * ·) a = ![a 0, a 1 * a 2] := by
+    funext i; fin_cases i <;> rfl
+  have h₂ : (Fin.cons (a (Fin.last 2) * a 0) fun i : Fin 1 ↦ a i.castSucc.succ : Fin 2 → A) =
+      ![a 2 * a 0, a 1] := by
+    funext i; fin_cases i <;> rfl
+  rw [hochschildCoboundary_apply_eq_sum_contractNth_add, Fin.sum_univ_two, h₀, h₁, h₂]
+  simp [sub_eq_add_neg]
+
+/-- In degree two, `(bφ)(a₀, a₁, a₂, a₃)` is
+`φ(a₀a₁, a₂, a₃) - φ(a₀, a₁a₂, a₃) + φ(a₀, a₁, a₂a₃) - φ(a₃a₀, a₁, a₂)`. -/
+theorem hochschildCoboundary_two_apply (φ : MultilinearMap R (fun _ : Fin 3 ↦ A) M)
+    (a : Fin 4 → A) :
+    hochschildCoboundary R A M 2 φ a =
+      φ ![a 0 * a 1, a 2, a 3] - φ ![a 0, a 1 * a 2, a 3] + φ ![a 0, a 1, a 2 * a 3] -
+        φ ![a 3 * a 0, a 1, a 2] := by
+  have h₀ : Fin.contractNth (0 : Fin 3).castSucc (· * ·) a = ![a 0 * a 1, a 2, a 3] := by
+    funext i; fin_cases i <;> rfl
+  have h₁ : Fin.contractNth (1 : Fin 3).castSucc (· * ·) a = ![a 0, a 1 * a 2, a 3] := by
+    funext i; fin_cases i <;> rfl
+  have h₂ : Fin.contractNth (2 : Fin 3).castSucc (· * ·) a = ![a 0, a 1, a 2 * a 3] := by
+    funext i; fin_cases i <;> rfl
+  have h₃ : (Fin.cons (a (Fin.last 3) * a 0) fun i : Fin 2 ↦ a i.castSucc.succ : Fin 3 → A) =
+      ![a 3 * a 0, a 1, a 2] := by
+    funext i; fin_cases i <;> rfl
+  rw [hochschildCoboundary_apply_eq_sum_contractNth_add, Fin.sum_univ_three, h₀, h₁, h₂, h₃]
   simp [sub_eq_add_neg]
 
 /-- A degree-zero cochain is a Hochschild cocycle exactly when it is a trace. -/
@@ -685,6 +754,56 @@ theorem cyclicHochschildCoboundary_comp_cyclicHochschildCoboundary :
     cyclicHochschildCoboundary_cyclicHochschildCoboundary (R := R) (A := A) (M := M) φ
 
 end Assoc
+
+section Idempotent
+
+variable {R A M : Type*} [Semiring R] [NonUnitalRing A] [Module R A] [IsScalarTower R A A]
+  [SMulCommClass R A A] [AddCommGroup M] [Module R M] [SMulCommClass R R M]
+
+/-- **Infinitesimal invariance of the even pairing.** Let `φ` be a cyclic cocycle of even degree
+and `e` an idempotent. If `y` is tangent to the idempotents at `e`, that is `e y + y e = y`, then
+`φ` vanishes on the tuple `(e, …, e)` with one entry replaced by `y`. -/
+theorem apply_update_const_eq_zero_of_isIdempotentElem {n : ℕ} (hn : Even n)
+    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    (hbφ : hochschildCoboundary R A M n φ = 0) {e y : A} (he : IsIdempotentElem e)
+    (hy : e * y + y * e = y) (k : Fin (n + 1)) :
+    φ (Function.update (fun _ ↦ e) k y) = 0 := by
+  rw [apply_update_const_eq_apply_update_const_zero hn hφ]
+  -- Tangency forces `e y e = 0`, so `y = x e - e x` for `x = y e - e y`.
+  have hey : e * (y * e) = 0 := by
+    have h : e * (y * e) + e * (y * e) = e * (y * e) := by
+      conv_rhs => rw [← hy]
+      simp only [mul_add, add_mul, mul_assoc, he.eq, he.mul_self_mul]
+    simpa using h
+  set x := y * e - e * y
+  have hxy : x * e - e * x = y := by
+    simp only [x, sub_mul, mul_sub, mul_assoc, he.eq, he.mul_self_mul, hey, sub_zero, zero_sub,
+      sub_neg_eq_add]
+    rwa [add_comm]
+  -- Evaluate `bφ = 0` on `(x, e, …, e)`: the middle faces cancel in even degree.
+  have hb := congrArg (fun ψ ↦ ψ (Fin.cons x fun _ ↦ e)) hbφ
+  simp only [hochschildCoboundary_apply_eq_sum_contractNth_add, Fin.sum_univ_succ] at hb
+  have h0 : Fin.contractNth (0 : Fin (n + 1)).castSucc (· * ·)
+      (Fin.cons x fun _ ↦ e : Fin (n + 2) → A) = Function.update (fun _ ↦ e) 0 (x * e) := by
+    funext k
+    cases k using Fin.cases <;> simp [Fin.contractNth]
+  have hj (j : Fin n) : Fin.contractNth j.succ.castSucc (· * ·)
+      (Fin.cons x fun _ ↦ e : Fin (n + 2) → A) = Function.update (fun _ ↦ e) 0 x := by
+    funext k
+    cases k using Fin.cases <;> simp [Fin.contractNth, he.eq]
+  have hl : (Fin.cons ((Fin.cons x fun _ ↦ e : Fin (n + 2) → A) (Fin.last (n + 1)) *
+      (Fin.cons x fun _ ↦ e : Fin (n + 2) → A) 0)
+      fun k : Fin n ↦ (Fin.cons x fun _ ↦ e : Fin (n + 2) → A) k.castSucc.succ) =
+      Function.update (fun _ ↦ e) 0 (e * x) := by
+    funext k
+    cases k using Fin.cases <;> simp
+  simp only [Fin.val_zero, pow_zero, one_smul, Fin.val_succ, h0, hj, hl, zero_apply] at hb
+  rw [← Finset.sum_smul, Fin.sum_univ_eq_sum_range (fun i ↦ (-1 : ℤ) ^ (i + 1)) n] at hb
+  simp only [pow_succ, mul_neg_one, Finset.sum_neg_distrib, neg_one_geom_sum, hn, ↓reduceIte,
+    neg_zero, zero_smul, add_zero, (hn.add_one).neg_one_pow, neg_one_smul] at hb
+  rwa [← hxy, φ.map_update_sub, sub_eq_add_neg]
+
+end Idempotent
 
 end Coboundary
 

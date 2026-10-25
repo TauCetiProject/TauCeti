@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Finset.Finsupp
 public import Mathlib.RingTheory.PowerSeries.Expand
-public import Mathlib.RingTheory.PowerSeries.PiTopology
+public import TauCeti.RingTheory.PowerSeries.PiTopology
 
 /-!
 # Products of expanded power series
@@ -29,6 +29,8 @@ bound, the infinite product converges in the coefficientwise topology
   over `l ∈ s.weightedFinsuppAntidiag m n` of `∏ c ∈ s, coeff (l c) (f c)`.
 * `PowerSeries.coeff_prod_expand_of_subset`: adjoining factors with `n < m c` and constant term
   `1` does not change the `n`-th coefficient.
+* `PowerSeries.X_pow_dvd_expand_sub_C_constantCoeff`: an expanded series agrees with its
+  constant coefficient modulo the corresponding power of `X`.
 * `PowerSeries.hasProd_expand`, `PowerSeries.multipliable_expand`,
   `PowerSeries.coeff_tprod_expand`: the infinite product of the expanded series and its
   coefficients, when `{c | m c ≤ n}` is finite for every `n`.
@@ -149,6 +151,14 @@ theorem coeff_prod_expand_of_subset {s t : Finset ι} (hst : s ⊆ t) {m : ι �
   rw [Finsupp.notMem_support_iff.1 fun hc ↦ hcs ((Finset.mem_weightedFinsuppAntidiag.1 hl).1 hc),
     coeff_zero_eq_constantCoeff_apply, hf c hct hcs]
 
+/-- An expanded series `f (X ^ p)` agrees with its constant coefficient modulo `X ^ p`. -/
+theorem X_pow_dvd_expand_sub_C_constantCoeff (p : ℕ) (hp : p ≠ 0) (f : R⟦X⟧) :
+    X ^ p ∣ expand p hp f - C (constantCoeff f) := by
+  obtain ⟨g, hg⟩ := X_dvd_iff.2 (by simp : constantCoeff (f - C (constantCoeff f)) = 0)
+  refine ⟨expand p hp g, ?_⟩
+  rw [← expand_C p hp, ← map_sub, hg, map_mul, expand_X]
+
+
 open scoped PowerSeries.WithPiTopology
 
 variable [TopologicalSpace R]
@@ -161,12 +171,15 @@ theorem hasProd_expand {m : ι → ℕ+} (hm : ∀ n : ℕ, {c | (m c : ℕ) ≤
     {f : ι → R⟦X⟧} (hf : ∀ c, constantCoeff (f c) = 1) :
     HasProd (fun c ↦ expand (m c) (m c).ne_zero (f c))
       (mk fun n ↦ coeff n (∏ c ∈ (hm n).toFinset, expand (m c) (m c).ne_zero (f c))) := by
-  rw [HasProd, SummationFilter.unconditional_filter, WithPiTopology.tendsto_iff_coeff_tendsto]
-  intro n
-  rw [coeff_mk]
-  refine tendsto_const_nhds.congr' (Filter.eventually_atTop.2 ⟨(hm n).toFinset, fun s hs ↦ ?_⟩)
-  refine (coeff_prod_expand_of_subset hs (fun c _ hc ↦ ?_) fun c _ _ ↦ hf c).symm
-  simpa using hc
+  refine WithPiTopology.hasProd_of_X_pow_dvd_sub_one (fun n ↦ (hm n).toFinset) ?_
+  intro n c hc
+  have hlt : n + 1 ≤ (m c : ℕ) := by
+    have hnot : ¬ (m c : ℕ) ≤ n := by simpa using hc
+    omega
+  have hdiv : X ^ (m c : ℕ) ∣ expand (m c) (m c).ne_zero (f c) - 1 := by
+    simpa [hf c] using
+      X_pow_dvd_expand_sub_C_constantCoeff (m c) (m c).ne_zero (f c)
+  exact (pow_dvd_pow (X : R⟦X⟧) hlt).trans hdiv
 
 /-- If `{c | m c ≤ n}` is finite for every `n` and every `f c` has constant term `1`, the
 factors `f c (X ^ m c)` have an infinite product in the coefficientwise topology

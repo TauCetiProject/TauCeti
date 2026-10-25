@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 import Mathlib.Algebra.Algebra.Operations
 import Mathlib.Data.List.Chain
+import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.BigOperators.Ring.List
 
 /-!
@@ -52,7 +53,12 @@ labels.
 * `TauCeti.isFreelyIndependent_domRestrict_iff` — for a normalised functional, members equal to the
   scalars may be added to or removed from a free family.
 * `TauCeti.IsFreelyIndependent.apply_mul_of_ne` — the first mixed moment factorises,
-  `φ (a * b) = φ a * φ b`.
+  `φ (a * b) = φ a * φ b`; `TauCeti.IsFreelyIndependent.apply_mul_mul_of_ne` and
+  `TauCeti.IsFreelyIndependent.apply_mul_mul_mul_of_ne` compute the alternating mixed moments of
+  orders three and four.
+* `TauCeti.IsFreelyIndependent.sub_mul_sub_eq_zero_of_commute` — freeness is not
+  classical independence: for commuting letters from distinct members the product of their
+  variances vanishes.
 * `TauCeti.toSubmodule_iSup_eq_span_insert_one_centeredAlternatingProds` — for a normalised
   functional, `1` and the values of the centred alternating words span the generated subalgebra;
   `TauCeti.IsFreelyIndependent.mem_span_centeredAlternatingProds_iff` identifies, for a free
@@ -163,6 +169,24 @@ theorem map (h : IsFreelyIndependent φ B) (f : A →ₐ[R] A') {φ' : A' →ₗ
     rw [← hφ, hgf]
     exact hc x hx
 
+/-- Pulling back a free family and its functional along an algebra homomorphism preserves
+freeness. The homomorphism need not be injective: letters in its kernel have zero expectation. -/
+theorem comap {φ' : A' →ₗ[R] R} {B' : ι → Subalgebra R A'}
+    (h : IsFreelyIndependent φ' B') (f : A →ₐ[R] A') :
+    IsFreelyIndependent (φ'.comp f.toLinearMap) fun i => (B' i).comap f := by
+  intro w hne halt hw hc
+  have hz := h (w.map (Prod.map id f)) (by simpa using hne)
+    (by simpa [List.map_map, Function.comp_def] using halt)
+    (by
+      simp only [List.mem_map]
+      rintro _ ⟨x, hx, rfl⟩
+      exact hw x hx)
+    (by
+      simp only [List.mem_map]
+      rintro _ ⟨x, hx, rfl⟩
+      exact hc x hx)
+  simpa [List.map_map, Function.comp_def, map_list_prod] using hz
+
 end IsFreelyIndependent
 
 /-- For a normalised functional, members of a family equal to the scalars do not affect freeness:
@@ -216,6 +240,67 @@ theorem apply_mul_of_ne (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {i j : �
     (by simp [sub_mem, ha, hb])
     (by simp [Algebra.algebraMap_eq_smul_one, hφ])
   simpa [Algebra.algebraMap_eq_smul_one, sub_mul, mul_sub, hφ, sub_eq_zero] using this
+
+/-- The mixed moment of order three of a free family: for a normalised functional, letters
+`a, a'` from one member and `b` from a member with a different label,
+`φ (a * b * a') = φ (a * a') * φ b`. -/
+theorem apply_mul_mul_of_ne (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {i j : ι}
+    (hij : i ≠ j) {a b a' : A} (ha : a ∈ B i) (hb : b ∈ B j) (ha' : a' ∈ B i) :
+    φ (a * b * a') = φ (a * a') * φ b := by
+  -- Expand the vanishing moment of the centred word `a° b° a'°`.
+  have := h [(i, a - algebraMap R A (φ a)), (j, b - algebraMap R A (φ b)),
+    (i, a' - algebraMap R A (φ a'))] (by simp) (by simp [hij, hij.symm])
+    (by simp [sub_mem, ha, hb, ha']) (by simp [Algebra.algebraMap_eq_smul_one, hφ])
+  simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
+    Algebra.algebraMap_eq_smul_one, sub_mul, mul_sub, smul_mul_assoc, mul_smul_comm, one_mul,
+    mul_one, map_sub, map_smul, smul_eq_mul, hφ] at this
+  rw [mul_assoc]
+  linear_combination this + φ a' * h.apply_mul_of_ne hφ hij ha hb +
+    φ a * h.apply_mul_of_ne hφ hij.symm hb ha'
+
+/-- The alternating mixed moment of order four of a free family: for a normalised functional,
+letters `a, a'` from one member and `b, b'` from a member with a different label,
+`φ (a * b * a' * b') = φ (a * a') * φ b * φ b' + φ a * φ a' * φ (b * b') - φ a * φ a' * φ b * φ b'`.
+
+For centred `a = a'` and `b = b'` it gives `φ (a * b * a * b) = 0`, whereas
+`φ (a * a * (b * b)) = φ (a * a) * φ (b * b)` by `IsFreelyIndependent.apply_mul_of_ne`; for
+variance one these are `0` and `1`, while for commuting classically independent variables both
+equal `1`. -/
+theorem apply_mul_mul_mul_of_ne (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {i j : ι}
+    (hij : i ≠ j) {a b a' b' : A} (ha : a ∈ B i) (hb : b ∈ B j) (ha' : a' ∈ B i)
+    (hb' : b' ∈ B j) :
+    φ (a * b * a' * b') =
+      φ (a * a') * φ b * φ b' + φ a * φ a' * φ (b * b') - φ a * φ a' * φ b * φ b' := by
+  -- Expand the vanishing moment of the centred word `a° b° a'° b'°`, and evaluate the moments
+  -- of its subwords by the mixed moments of orders two and three.
+  have := h [(i, a - algebraMap R A (φ a)), (j, b - algebraMap R A (φ b)),
+    (i, a' - algebraMap R A (φ a')), (j, b' - algebraMap R A (φ b'))] (by simp)
+    (by simp [hij, hij.symm])
+    (by simp [sub_mem, ha, hb, ha', hb']) (by simp [Algebra.algebraMap_eq_smul_one, hφ])
+  simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
+    Algebra.algebraMap_eq_smul_one, sub_mul, mul_sub, smul_mul_assoc, mul_smul_comm, one_mul,
+    mul_one, map_sub, map_smul, smul_eq_mul, hφ] at this
+  have h₁ := h.apply_mul_mul_of_ne hφ hij ha hb ha'
+  have h₂ := h.apply_mul_mul_of_ne hφ hij.symm hb ha' hb'
+  have h₃ := h.apply_mul_of_ne hφ hij ha (mul_mem hb hb')
+  have h₄ := h.apply_mul_of_ne hφ hij (mul_mem ha ha') hb'
+  simp only [mul_assoc] at h₁ h₂ h₃ h₄ ⊢
+  linear_combination this + φ b' * h₁ + φ a * h₂ + φ a' * h₃ + φ b * h₄ -
+    φ a' * φ b' * h.apply_mul_of_ne hφ hij ha hb - φ a' * φ b * h.apply_mul_of_ne hφ hij ha hb' -
+    φ a * φ b' * h.apply_mul_of_ne hφ hij.symm hb ha' -
+    φ a * φ b * h.apply_mul_of_ne hφ hij ha' hb'
+
+/-- Freeness differs from classical independence: if `a` and `b` lie in members of a free family
+with distinct labels and commute, then for a normalised functional the product of their variances
+`φ (a * a) - φ a ^ 2` and `φ (b * b) - φ b ^ 2` vanishes; over a ring without zero divisors, such
+as `ℂ`, one of them is zero, so commuting variables of nonzero variance are never free. -/
+theorem sub_mul_sub_eq_zero_of_commute (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1)
+    {i j : ι} (hij : i ≠ j) {a b : A} (ha : a ∈ B i) (hb : b ∈ B j) (hab : Commute a b) :
+    (φ (a * a) - φ a ^ 2) * (φ (b * b) - φ b ^ 2) = 0 := by
+  -- Compare the two evaluations of `φ (a * b * a * b) = φ (a * a * (b * b))`.
+  have h₁ := h.apply_mul_mul_mul_of_ne hφ hij ha hb ha hb
+  rw [mul_assoc (a * b), hab.symm.mul_mul_mul_comm] at h₁
+  linear_combination h₁ - h.apply_mul_of_ne hφ hij (mul_mem ha ha) (mul_mem hb hb)
 
 end IsFreelyIndependent
 

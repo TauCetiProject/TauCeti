@@ -14,10 +14,13 @@ The hypergeometric law is unchanged when the number of marked population element
 size are exchanged. Combinatorially, both descriptions count the size of the intersection of a
 fixed `K`-element subset and a uniformly chosen `n`-element subset of an `N`-element population.
 
-## Main result
+## Main results
 
 * `TauCeti.Probability.hypergeometricMeasure_comm` — exchanging the marked count and sample size
   leaves the hypergeometric measure unchanged.
+* `TauCeti.Probability.hypergeometricMeasure_zero_marked` and
+  `TauCeti.Probability.hypergeometricMeasure_full_marked` — the deterministic marked-count
+  boundaries, obtained by exchanging marked count and sample size.
 
 ## References
 
@@ -78,6 +81,20 @@ theorem hypergeometricMeasure_comm (N K n : ℕ) :
     · simp [hkK, hkn]
   · rw [hypergeometricMeasure_eq_zero_of_invalid hvalid,
       hypergeometricMeasure_eq_zero_of_invalid (by simpa [and_comm] using hvalid)]
+
+/-- With no marked objects, every valid sample has marked count zero. -/
+@[simp]
+theorem hypergeometricMeasure_zero_marked {N n : ℕ} (hn : n ≤ N) :
+    hypergeometricMeasure N 0 n = Measure.dirac 0 := by
+  rw [hypergeometricMeasure_comm]
+  exact hypergeometricMeasure_zero_sample hn
+
+/-- If every population object is marked, a valid sample has exactly its sample size as count. -/
+@[simp]
+theorem hypergeometricMeasure_full_marked {N n : ℕ} (hn : n ≤ N) :
+    hypergeometricMeasure N N n = Measure.dirac n := by
+  rw [hypergeometricMeasure_comm]
+  exact hypergeometricMeasure_full_sample hn
 
 end Probability
 
