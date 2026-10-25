@@ -100,6 +100,13 @@ theorem cyclicBicomplexHorizontal_of_odd (hp : Odd p) :
     cyclicBicomplexHorizontal R A M p q = cyclicNorm R A M q :=
   ite_eq_right (Nat.not_even_iff_odd.2 hp)
 
+variable (R A M p q) in
+/-- The horizontal differentials are periodic of period two in the column. -/
+@[simp]
+theorem cyclicBicomplexHorizontal_add_two :
+    cyclicBicomplexHorizontal R A M (p + 2) q = cyclicBicomplexHorizontal R A M p q := by
+  simp [cyclicBicomplexHorizontal, Nat.even_add]
+
 /-- Two consecutive horizontal differentials compose to zero: `N (1 - λ) = 0 = (1 - λ) N`. -/
 @[simp]
 theorem cyclicBicomplexHorizontal_succ_mul_cyclicBicomplexHorizontal :
@@ -159,6 +166,13 @@ theorem cyclicBicomplexVertical_of_even (hp : Even p) :
 theorem cyclicBicomplexVertical_of_odd (hp : Odd p) :
     cyclicBicomplexVertical R A M p q = -barCoboundary R A M q :=
   ite_eq_right (Nat.not_even_iff_odd.2 hp)
+
+variable (R A M p q) in
+/-- The vertical differentials are periodic of period two in the column. -/
+@[simp]
+theorem cyclicBicomplexVertical_add_two :
+    cyclicBicomplexVertical R A M (p + 2) q = cyclicBicomplexVertical R A M p q := by
+  simp [cyclicBicomplexVertical, Nat.even_add]
 
 variable (R A M p q) in
 /-- Adjacent squares of the cyclic bicomplex anticommute: going right then up is minus going up
