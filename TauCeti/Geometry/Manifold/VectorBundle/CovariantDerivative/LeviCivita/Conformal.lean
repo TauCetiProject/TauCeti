@@ -45,6 +45,8 @@ the connections are compared directly on `M`.
 * `TauCeti.Manifold.conformalConnectionTensor`: the tensor `A` above, for the metric of the
   `RiemannianBundle` instance; `TauCeti.Manifold.conformalConnectionTensor_apply` evaluates it,
   and `TauCeti.Manifold.inner_conformalConnectionTensor` pairs it with a third vector.
+* `TauCeti.Manifold.trace_conformalConnectionTensor`: its trace in the direction of
+  differentiation is `(N / 2) f⁻¹ df` in real dimension `N`.
 * `TauCeti.Manifold.contMDiff_conformalConnectionTensor_apply`: evaluated on `C^n` vector fields,
   the tensor of a nowhere vanishing `C^(n + 1)` function is a `C^n` vector field.
 * `TauCeti.Manifold.conformalConnectionTensor_rpow`: the tensor of `u ^ p` is `p` times the
@@ -115,6 +117,27 @@ theorem inner_conformalConnectionTensor (f : M → ℝ) (x : M) (v w z : Tangent
         mvfderiv I f x z * inner ℝ v w) := by
   simp only [conformalConnectionTensor_apply, real_inner_smul_left, inner_sub_left,
     inner_add_left, inner_mgradient]
+  ring
+
+/-- The trace of the conformal connection tensor in the direction of differentiation:
+`tr (w ↦ A(v, w)) = (N / 2) f⁻¹ df(v)` in real dimension `N`. This is the change of the divergence
+under conformal change of the metric. -/
+theorem trace_conformalConnectionTensor (f : M → ℝ) (x : M) (v : TangentSpace I x) :
+    LinearMap.trace ℝ (TangentSpace I x) (conformalConnectionTensor I f x v).toLinearMap =
+      (Module.finrank ℝ E / 2) * (f x)⁻¹ * mvfderiv I f x v := by
+  have h : (conformalConnectionTensor I f x v).toLinearMap =
+      (2 * f x)⁻¹ • ((mvfderiv I f x).toLinearMap.smulRight v +
+        mvfderiv I f x v • LinearMap.id -
+          (innerSL ℝ v).toLinearMap.smulRight (mgradient I f x)) := by
+    ext w
+    simp [conformalConnectionTensor_apply]
+  rw [h]
+  simp only [map_smul, map_add, map_sub, LinearMap.trace_smulRight, LinearMap.trace_id,
+    ContinuousLinearMap.coe_coe, innerSL_apply_apply, smul_eq_mul]
+  -- `TangentSpace I x` is the model space `E`, with the same real module structure.
+  rw [real_inner_comm, inner_mgradient,
+    show Module.finrank ℝ (TangentSpace I x) = Module.finrank ℝ E from rfl]
+  field_simp
   ring
 
 /-- The conformal connection tensor of a nowhere vanishing `C^(n + 1)` function, evaluated on two
