@@ -9,88 +9,145 @@ public import Mathlib.RingTheory.Henselian
 public import Mathlib.RingTheory.Unramified.LocalStructure
 public import TauCeti.RingTheory.Etale.FiniteEtaleSplit
 
+import TauCeti.RingTheory.Henselization.Section
 import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
-# Sections of étale algebras over a Henselian local ring
+# Étale sections over henselian pairs
 
-Let `R` be a Henselian local ring with residue field `k`, and let `S` be an étale `R`-algebra.
-Reducing modulo the maximal ideal is a bijection from `R`-algebra maps `S → R` to `R`-algebra maps
-`S → k` (`TauCeti.HenselianLocalRing.comp_bijective`): every `k`-point of `S` lifts uniquely to an
-`R`-point. This is one of the equivalent characterisations of Henselian local rings, and the
-analogue for the maximal ideal of `Algebra.FormallyEtale.comp_bijective`, where the ideal is
-square-zero.
+For a henselian pair `(R, I)`, reduction induces a bijection from the `R`-points of every étale
+`R`-algebra to its points over `R ⧸ I`. Conversely, this lifting property characterizes henselian
+pairs, including the requirement that `I` lie in the Jacobson radical. The ring need not be
+local, noetherian, complete, or reduced, and the étale algebra need not be finite as a module.
 
-For a standard étale algebra `R[X]_g ⧸ (f)` an `R`-point is a root `a` of `f` with `g(a)` a unit,
-so this is Hensel's lemma: `f'(a)` is a unit at such a root. A general étale algebra is standard
-étale after inverting an element `g` outside the kernel of a given `k`-point
-(`Algebra.IsEtaleAt.exists_isStandardEtale`), and both `k`-points and their lifts extend
-uniquely to the localisation.
+The maximal-ideal specialization gives sections over henselian local rings and their relative
+form. A henselian local ring with separably closed residue field consequently has no nonsplit
+finite étale covers (`TauCeti.IsFiniteEtaleSplit.of_henselianLocalRing`).
 
-Consequently a *strictly Henselian* local ring, one whose residue field is separably closed, has
-no nonsplit finite étale covers (`TauCeti.IsFiniteEtaleSplit.of_henselianLocalRing`): a faithfully
-flat finite étale algebra has a `k`-point because `k` is separably closed, and this lifts to a
-section. Such rings need be neither fields nor reduced.
+The relative form allows an arbitrary base ring and a henselian pair in the target. These
+section-lifting results are the étale input to lifting smooth sections and to comparing finite
+étale algebras across a henselian reduction.
 
-## Main results
+## Implementation notes
 
-* `TauCeti.HenselianLocalRing.comp_bijective`: over a Henselian local ring, `R`-points of an étale
-  algebra are in bijection with its points over the residue field.
-* `TauCeti.HenselianLocalRing.comp_bijective_of_algebra`: the same for an étale algebra over an
-  arbitrary base `R` and a Henselian local `R`-algebra `S`.
-* `TauCeti.IsFiniteEtaleSplit.of_henselianLocalRing`: a Henselian local ring with separably
-  closed residue field has no nonsplit finite étale covers.
+`Henselization.exists_isNeighbourhood_localization` isolates the specified residue section as an
+étale neighbourhood. `Henselization.nonempty_algHom_of_bijective_reducedMap` then supplies a
+section over the henselian pair. Uniqueness follows from the unramified diagonal and the
+Jacobson radical, via `Algebra.FormallyUnramified.ext_of_quotient_eq`.
 
 ## References
 
+* [Stacks Project, Lemma 15.11.6, Tag 09XI](https://stacks.math.columbia.edu/tag/09XI),
+  equivalence of henselianity and lifting sections of étale algebras.
 * [Stacks Project, Tag 04GG](https://stacks.math.columbia.edu/tag/04GG), characterisations of
-  Henselian local rings by sections of étale algebras.
-* [Stacks Project, Lemma 10.153.11, Tag 08HQ](https://stacks.math.columbia.edu/tag/08HQ), unique
-  lifting of residue field points of an étale algebra to a Henselian local algebra over an
-  arbitrary base.
-* P. Scholze, *Étale cohomology of diamonds*, Lemma 15.3, for rings without nonsplit finite étale
-  covers.
+  henselian local rings by sections of étale algebras.
+* [Stacks Project, Tag 08HQ](https://stacks.math.columbia.edu/tag/08HQ), the relative local form.
+* P. Scholze, *Étale cohomology of diamonds*, Lemma 15.3, for rings without nonsplit finite
+  étale covers.
 -/
 
 public section
 
-open IsLocalRing Polynomial TensorProduct
-
 universe u
 
+open scoped TensorProduct
+
 namespace TauCeti
+
+namespace HenselianRing
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- Over a henselian pair `(R, I)`, every point of an étale `R`-algebra over `R ⧸ I` lifts
+uniquely to an `R`-point. -/
+@[stacks 09XI "(1) ⇒ (2), with uniqueness"]
+theorem comp_bijective (I : Ideal R) [HenselianRing R I] [Algebra.Etale R S] :
+    Function.Bijective
+      ((Ideal.Quotient.mkₐ R I).comp : (S →ₐ[R] R) → S →ₐ[R] R ⧸ I) := by
+  refine ⟨fun f g h ↦ Algebra.FormallyUnramified.ext_of_quotient_eq R S I
+    HenselianRing.jac h, fun ψ ↦ ?_⟩
+  obtain ⟨x, hx, hC⟩ := Henselization.exists_isNeighbourhood_localization I ψ
+  let C := Localization.Away x
+  let ψ' : C →ₐ[R] R ⧸ I := IsLocalization.liftAlgHom (M := Submonoid.powers x)
+    (f := ψ) fun ⟨_, n, hn⟩ ↦ hn ▸ by simp [hx]
+  have hψ' (s : S) : ψ' (algebraMap S C s) = ψ s := IsLocalization.lift_eq _ s
+  obtain ⟨hEtale, hBij⟩ := (Henselization.isNeighbourhood_iff I _).mp hC
+  have : Algebra.Etale R C := hEtale
+  obtain ⟨σ⟩ := Henselization.nonempty_algHom_of_bijective_reducedMap I (C := C) hBij
+  have heq : (Ideal.Quotient.mkₐ R I).comp σ = ψ' := hC.algHom_ext (by simp)
+  refine ⟨σ.comp (IsScalarTower.toAlgHom R S C), AlgHom.ext fun s ↦ ?_⟩
+  exact (AlgHom.congr_fun heq (algebraMap S C s)).trans (hψ' s)
+
+section Relative
+
+variable {A : Type*} [CommRing A] [Algebra R A] [Algebra.Etale R A]
+
+/-- For a henselian `R`-algebra pair `(S, J)`, reduction is a bijection from `R`-algebra maps
+from an étale `R`-algebra to `S` to such maps into `S ⧸ J`. -/
+theorem comp_bijective_of_algebra (J : Ideal S) [HenselianRing S J] :
+    Function.Bijective
+      ((Ideal.Quotient.mkₐ R J).comp : (A →ₐ[R] S) → A →ₐ[R] S ⧸ J) := by
+  have h := comp_bijective (R := S) (S := S ⊗[R] A) J
+  have hcomp : ((Ideal.Quotient.mkₐ R J).comp : (A →ₐ[R] S) → A →ₐ[R] S ⧸ J) =
+      (AlgHom.liftEquiv R S A (S ⧸ J)).symm ∘
+        (Ideal.Quotient.mkₐ S J).comp ∘ AlgHom.liftEquiv R S A S := by
+    ext f a
+    simp
+  rw [hcomp]
+  exact (AlgHom.liftEquiv R S A (S ⧸ J)).symm.bijective.comp
+    (h.comp (AlgHom.liftEquiv R S A S).bijective)
+
+end Relative
+
+end HenselianRing
+
+open Polynomial
+
+/-- A pair is henselian if and only if every section of an étale algebra modulo its ideal
+lifts to a section over the ring. The lifting property itself forces the ideal into the
+Jacobson radical. It suffices to test algebras in the universe of the base ring. -/
+@[stacks 09XI "(1) ⇔ (2)"]
+theorem henselianRing_iff_etale_comp_surjective (R : Type u) [CommRing R] (I : Ideal R) :
+    HenselianRing R I ↔ ∀ (S : Type u) [CommRing S] [Algebra R S] [Algebra.Etale R S],
+      Function.Surjective
+        ((Ideal.Quotient.mkₐ R I).comp : (S →ₐ[R] R) → S →ₐ[R] R ⧸ I) := by
+  refine ⟨fun _ S _ _ _ ↦ (HenselianRing.comp_bijective I).2, fun H ↦ ?_⟩
+  refine ⟨?_, fun f hf a₀ ha₀ hd ↦ ?_⟩
+  · -- Localizations at elements congruent to one force the Jacobson-radical condition.
+    intro r hr
+    rw [Ideal.mem_jacobson_bot]
+    intro y
+    let x := r * y + 1
+    have hx : Ideal.Quotient.mk I x = 1 := by
+      simp [x, Ideal.Quotient.eq_zero_iff_mem.mpr (I.mul_mem_right y hr)]
+    let ψ : Localization.Away x →ₐ[R] R ⧸ I :=
+      IsLocalization.liftAlgHom (M := Submonoid.powers x) (f := Ideal.Quotient.mkₐ R I)
+        fun ⟨_, n, hn⟩ ↦ hn ▸ by simpa only [Ideal.Quotient.mkₐ_eq_mk, map_pow, hx, one_pow]
+          using isUnit_one
+    obtain ⟨φ, _⟩ := H (Localization.Away x) ψ
+    simpa using (IsLocalization.Away.algebraMap_isUnit (S := Localization.Away x) x).map φ
+  · -- A simple root is a point of the standard étale algebra with the derivative inverted.
+    let P : StandardEtalePair R := ⟨f, hf, f.derivative, 1, 0, 1, by simp⟩
+    have hP : P.HasMap (Ideal.Quotient.mk I a₀) := by
+      constructor
+      · simp only [P, ← Ideal.Quotient.algebraMap_eq, aeval_algebraMap_apply,
+          coe_aeval_eq_eval]
+        exact Ideal.Quotient.eq_zero_iff_mem.mpr ha₀
+      · simp only [P, ← Ideal.Quotient.algebraMap_eq, aeval_algebraMap_apply,
+          coe_aeval_eq_eval]
+        exact hd
+    obtain ⟨φ, hφ⟩ := H P.Ring (P.lift _ hP)
+    refine ⟨φ P.X, ?_, ?_⟩
+    · have := (P.hasMap_X.map φ).1
+      simpa [P, coe_aeval_eq_eval] using this
+    · rw [← Ideal.Quotient.eq]
+      simpa using AlgHom.congr_fun hφ P.X
+
+open IsLocalRing
 
 namespace HenselianLocalRing
 
 variable {R S : Type*} [CommRing R] [HenselianLocalRing R] [CommRing S] [Algebra R S]
-
-/-- The surjectivity half of `HenselianLocalRing.comp_bijective` for a standard étale algebra
-`R[X]_g ⧸ (f)`: its `R`-points are the roots of `f` at which `g` is a unit, and such a root over the
-residue field lifts by Hensel's lemma, because `f'` is a unit there. -/
-private theorem comp_surjective_of_isStandardEtale [Algebra.IsStandardEtale R S] :
-    Function.Surjective
-      ((Algebra.ofId R (ResidueField R)).comp : (S →ₐ[R] R) → S →ₐ[R] ResidueField R) := by
-  intro ψ
-  obtain ⟨P⟩ := Algebra.IsStandardEtale.nonempty_standardEtalePresentation (R := R) (S := S)
-  -- Reduction commutes with evaluating polynomials over `R`.
-  have hres (a : R) (p : R[X]) : residue R (aeval a p) = aeval (residue R a) p := by
-    rw [← ResidueField.algebraMap_eq, aeval_algebraMap_apply]
-  have hy := P.hasMap.map ψ
-  obtain ⟨a₀, ha₀⟩ := residue_surjective (ψ P.x)
-  obtain ⟨a, ha, haa₀⟩ := HenselianLocalRing.is_henselian P.f P.monic_f a₀
-    (by rw [← residue_eq_zero_iff, ← coe_aeval_eq_eval, hres, ha₀]; exact hy.1)
-    (by
-      rw [← residue_ne_zero_iff_isUnit, ← coe_aeval_eq_eval, hres, ha₀]
-      exact hy.isUnit_derivative_f.ne_zero)
-  have hra : residue R a = ψ P.x := by
-    rw [← ha₀, ← sub_eq_zero, ← map_sub, residue_eq_zero_iff]
-    exact haa₀
-  have hP : P.HasMap a := by
-    refine ⟨ha, ?_⟩
-    rw [← residue_ne_zero_iff_isUnit, hres, hra]
-    exact hy.2.ne_zero
-  refine ⟨(P.lift a hP).comp P.equivRing.toAlgHom, P.hom_ext ?_⟩
-  simp [hra]
 
 /-- Over a Henselian local ring `R`, reduction modulo the maximal ideal is a bijection from the
 `R`-points of an étale `R`-algebra `S` to its points over the residue field: every `R`-algebra map
@@ -101,20 +158,8 @@ arbitrary base. -/
 theorem comp_bijective [Algebra.Etale R S] :
     Function.Bijective
       ((Algebra.ofId R (ResidueField R)).comp : (S →ₐ[R] R) → S →ₐ[R] ResidueField R) := by
-  -- Uniqueness holds for unramified algebras, as the maximal ideal is the Jacobson radical.
-  refine ⟨fun φ₁ φ₂ h ↦ Algebra.FormallyUnramified.ext_of_quotient_eq R S
-    (maximalIdeal R) (maximalIdeal_le_jacobson ⊥) (AlgHom.ext fun s ↦ ?_), fun ψ ↦ ?_⟩
-  · simpa [Ideal.Quotient.eq, ← residue_ne_zero_iff_isUnit, sub_eq_zero] using AlgHom.congr_fun h s
-  -- Invert some `g ∉ ker ψ` to make `S` standard étale, and extend `ψ` to `S[1/g]`.
-  have : (RingHom.ker ψ).IsPrime := RingHom.ker_isPrime ψ
-  obtain ⟨g, hg, _⟩ := Algebra.IsEtaleAt.exists_isStandardEtale (R := R) (RingHom.ker ψ)
-  have hg : IsUnit (ψ g) := isUnit_iff_ne_zero.mpr fun h ↦ hg (RingHom.mem_ker.mpr h)
-  let ψ' : Localization.Away g →ₐ[R] ResidueField R :=
-    IsLocalization.liftAlgHom (M := .powers g) (f := ψ) fun ⟨_, n, hn⟩ ↦ hn ▸ by
-      simpa using hg.pow n
-  obtain ⟨φ, hφ⟩ := comp_surjective_of_isStandardEtale ψ'
-  refine ⟨φ.comp (IsScalarTower.toAlgHom R S _), AlgHom.ext fun s ↦ ?_⟩
-  simpa [ψ'] using AlgHom.congr_fun hφ (algebraMap S _ s)
+  -- The residue field is the quotient by the maximal ideal, with the same scalar map.
+  convert HenselianRing.comp_bijective (R := R) (S := S) (maximalIdeal R) using 1 <;> rfl
 
 section Relative
 
@@ -130,20 +175,9 @@ theorem comp_bijective_of_algebra :
     Function.Bijective
       ((IsScalarTower.toAlgHom R S (ResidueField S)).comp :
         (A →ₐ[R] S) → A →ₐ[R] ResidueField S) := by
-  -- Base change `A` to the étale `S`-algebra `S ⊗[R] A` and apply `comp_bijective` over `S`.
-  have h : Function.Bijective
-      ((Algebra.ofId S (ResidueField S)).comp :
-        (S ⊗[R] A →ₐ[S] S) → S ⊗[R] A →ₐ[S] ResidueField S) :=
-    comp_bijective (R := S) (S := S ⊗[R] A)
-  have hcomp : ((IsScalarTower.toAlgHom R S (ResidueField S)).comp :
-      (A →ₐ[R] S) → A →ₐ[R] ResidueField S) =
-      (AlgHom.liftEquiv R S A (ResidueField S)).symm ∘
-        (Algebra.ofId S (ResidueField S)).comp ∘ AlgHom.liftEquiv R S A S := by
-    ext f a
-    simp
-  rw [hcomp]
-  exact (AlgHom.liftEquiv R S A (ResidueField S)).symm.bijective.comp
-    (h.comp (AlgHom.liftEquiv R S A S).bijective)
+  -- The residue field is the quotient by the maximal ideal, with the same scalar map.
+  convert HenselianRing.comp_bijective_of_algebra (R := R) (S := S) (A := A)
+    (maximalIdeal S) using 1 <;> rfl
 
 end Relative
 
