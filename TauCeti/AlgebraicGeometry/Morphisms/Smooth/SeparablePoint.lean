@@ -18,12 +18,12 @@ this applies for instance to smooth curves over the fraction field of a discrete
 
 The point is a closed point of a nonempty affine open `U` of `X`: the ring `Γ(X, U)` is a nonzero
 smooth `k`-algebra, so it has a maximal ideal with finite separable residue field
-(`Algebra.Smooth.exists_isMaximal_isSeparable`).
+(`TauCeti.Algebra.Smooth.exists_isMaximal_isSeparable`).
 
 ## Main results
 
-* `AlgebraicGeometry.Smooth.exists_finite_isSeparable_comp_eq`: a nonempty scheme smooth over a
-  field `k` has a point with values in a finite separable extension of `k`.
+* `AlgebraicGeometry.Scheme.Hom.exists_finite_isSeparable_comp_eq`: a nonempty scheme smooth
+  over a field `k` has a point with values in a finite separable extension of `k`.
 
 ## References
 
@@ -40,7 +40,7 @@ namespace AlgebraicGeometry
 
 /-- A nonempty scheme smooth over a field `k` has a point with values in a finite separable
 extension `K` of `k`, that is, a morphism `Spec K ⟶ X` over `Spec k`. -/
-theorem Smooth.exists_finite_isSeparable_comp_eq {k : Type u} [Field k] {X : Scheme.{u}}
+theorem Scheme.Hom.exists_finite_isSeparable_comp_eq {k : Type u} [Field k] {X : Scheme.{u}}
     (f : X ⟶ Spec (.of k)) [Smooth f] [Nonempty X] :
     ∃ (K : Type u) (_ : Field K) (_ : Algebra k K), Module.Finite k K ∧
       Algebra.IsSeparable k K ∧
@@ -57,7 +57,7 @@ theorem Smooth.exists_finite_isSeparable_comp_eq {k : Type u} [Field k] {X : Sch
       (Scheme.ΓSpecIso (.of k)).commRingCatIsoToRingEquiv.symm.bijective).comp
       (HasRingHomProperty.appLE @Smooth f ‹_› ⟨⊤, isAffineOpen_top _⟩ ⟨U, hU⟩ le_top)
   algebraize [φ]
-  obtain ⟨m, hm, hfin, hsep⟩ := Algebra.Smooth.exists_isMaximal_isSeparable k Γ(X, U)
+  obtain ⟨m, hm, hfin, hsep⟩ := TauCeti.Algebra.Smooth.exists_isMaximal_isSeparable k Γ(X, U)
   let := Ideal.Quotient.field m
   refine ⟨Γ(X, U) ⧸ m, inferInstance, inferInstance, hfin, hsep,
     Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk m)) ≫ hU.fromSpec, ?_⟩
