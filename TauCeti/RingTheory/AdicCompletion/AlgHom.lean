@@ -24,7 +24,9 @@ at a prime.
   maps `S ⧸ I ^ n → S ⧸ I ^ m`.
 * `AdicCompletion.mapₐ`: the map of completions induced by an algebra homomorphism, with
   `AdicCompletion.evalₐ_mapₐ` and `AdicCompletion.mapₐ_of`.
-* `AdicCompletion.congrₐ`: the isomorphism of completions induced by an algebra isomorphism.
+* `AdicCompletion.congrₐ`: the isomorphism of completions induced by an algebra isomorphism,
+  with `AdicCompletion.evalₐ_congrₐ`, `AdicCompletion.evalₐ_congrₐ_symm` and
+  `AdicCompletion.congrₐ_of`.
 -/
 
 public section
@@ -84,11 +86,7 @@ isomorphism `AdicCompletion I S ≃ₐ[R] AdicCompletion I' S'`. -/
 noncomputable def congrₐ (e : S ≃ₐ[R] S') (he : I.map e = I') :
     AdicCompletion I S ≃ₐ[R] AdicCompletion I' S' :=
   AlgEquiv.ofAlgHom (mapₐ (e : S →ₐ[R] S') (he ▸ Ideal.le_comap_map))
-    (mapₐ (e.symm : S' →ₐ[R] S) (by
-      subst he
-      intro x hx
-      obtain ⟨y, hy, rfl⟩ := (Ideal.mem_map_of_equiv e x).1 hx
-      simpa using hy))
+    (mapₐ (e.symm : S' →ₐ[R] S) (he ▸ (Ideal.comap_symm (e : S ≃+* S')).ge))
     (AlgHom.ext fun x ↦ ext_evalₐ fun n ↦ by
       obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective (evalₐ I' n x)
       simp [← hy])
@@ -101,5 +99,32 @@ noncomputable def congrₐ (e : S ≃ₐ[R] S') (he : I.map e = I') :
 theorem congrₐ_of (e : S ≃ₐ[R] S') (he : I.map e = I') (x : S) :
     congrₐ e he (of I S x) = of I' S' (e x) :=
   mapₐ_of (e : S →ₐ[R] S') (he ▸ Ideal.le_comap_map) x
+
+/-- Modulo `I' ^ n`, the isomorphism of completions `congrₐ e he` is the map
+`S ⧸ I ^ n → S' ⧸ I' ^ n` induced by `e`. -/
+@[simp]
+theorem evalₐ_congrₐ (e : S ≃ₐ[R] S') (he : I.map e = I') (n : ℕ) (x : AdicCompletion I S) :
+    evalₐ I' n (congrₐ e he x) = Ideal.quotientMap (I' ^ n) (e : S →+* S')
+      ((Ideal.pow_right_mono (he ▸ Ideal.le_comap_map) n).trans (Ideal.le_comap_pow _ n))
+      (evalₐ I n x) :=
+  evalₐ_mapₐ (e : S →ₐ[R] S') (he ▸ Ideal.le_comap_map) n x
+
+/-- Modulo `I ^ n`, the inverse of `congrₐ e he` is the map `S' ⧸ I' ^ n → S ⧸ I ^ n` induced
+by `e.symm`. -/
+@[simp]
+theorem evalₐ_congrₐ_symm (e : S ≃ₐ[R] S') (he : I.map e = I') (n : ℕ)
+    (x : AdicCompletion I' S') :
+    evalₐ I n ((congrₐ e he).symm x) = Ideal.quotientMap (I ^ n) (e.symm : S' →+* S)
+      ((Ideal.pow_right_mono (he ▸ (Ideal.comap_symm (e : S ≃+* S')).ge) n).trans
+        (Ideal.le_comap_pow _ n))
+      (evalₐ I' n x) :=
+  evalₐ_mapₐ (e.symm : S' →ₐ[R] S) (he ▸ (Ideal.comap_symm (e : S ≃+* S')).ge) n x
+
+/-- The inverse of `congrₐ e he` extends `e.symm` along the canonical maps into the
+completions. -/
+@[simp]
+theorem congrₐ_symm_of (e : S ≃ₐ[R] S') (he : I.map e = I') (x : S') :
+    (congrₐ e he).symm (of I' S' x) = of I S (e.symm x) :=
+  mapₐ_of (e.symm : S' →ₐ[R] S) (he ▸ (Ideal.comap_symm (e : S ≃+* S')).ge) x
 
 end AdicCompletion
