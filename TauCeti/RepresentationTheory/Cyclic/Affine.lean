@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-public import Mathlib.Algebra.Group.Action.Basic
+public import Mathlib.Algebra.Group.Action.Hom
 public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Dynamics.BirkhoffSum.Basic
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.Logic.Function.Iterate
 public import TauCeti.RepresentationTheory.Cyclic.Automorphism
@@ -36,10 +37,11 @@ translation. If the linear part has period dividing `m`, then the affine automor
 power the identity exactly when the translation is killed by the `m`-th partial norm, and its order
 then divides `m` (`AddEquiv.affineEquiv_pow_eq_one_iff_of_iterate_eq_id`,
 `AddEquiv.orderOf_affineEquiv_dvd_iff`); without a hypothesis on the linear part the criterion is
-`AddEquiv.affineEquiv_iterate_eq_id_iff`. The iterates then depend only on the exponent modulo `m`,
-and `ZMod m` acts on `T` by them (`AddEquiv.affineAddAction`), with the residue `1` acting by the
-affine automorphism itself (`AddEquiv.affineAddAction_one_vadd`). The affine automorphism has exact
-order `m` exactly when, in addition, every smaller positive iterate differs from the identity
+`AddEquiv.affineEquiv_iterate_eq_id_iff`. The iterates then depend only on the exponent modulo `m`:
+the affine automorphism has `m`-th power the identity, so it is the generator of an action of
+`ZMod m` on `T` by its iterates (`AddEquiv.affineAddAction`), and the residue `1` acts by the affine
+automorphism itself (`AddEquiv.affineAddAction_one_vadd`). The affine automorphism has exact order
+`m` exactly when, in addition, every smaller positive iterate differs from the identity
 (`AddEquiv.orderOf_affineEquiv_eq_iff`), which for an affine automorphism means that each of those
 iterates has a nontrivial linear part or a nonzero partial norm.
 
@@ -50,14 +52,16 @@ iterates has a nontrivial linear part or a nonzero partial norm.
 * `AddEquiv.partialNorm A k t`: the partial norm `∑ i < k, A^i t` of the translation part, that is
   the translation accumulated by `k` iterates.
 * `AddEquiv.affineAddAction`: the action of `ZMod m` on `T` by the iterates of an affine
-  equivalence whose `m`-th iterate is the identity.
+  equivalence whose `m`-th power is the identity.
 
 ## Main results
 
 * `AddEquiv.affineEquiv_iterate_apply`: the `k`-th iterate of the affine equivalence is the
   `k`-th iterate of its linear part plus the `k`-th partial norm of its translation part.
-* `AddEquiv.affineEquiv_iterate_add_period`: an affine equivalence whose `m`-th iterate is the
-  identity has equal iterates at exponents differing by `m`.
+* `AddEquiv.partialNorm_def`: the partial norm as its defining finite sum.
+* `AddEquiv.partialNorm_add`, `AddEquiv.partialNorm_neg`, `AddEquiv.partialNorm_sub`,
+  `AddEquiv.partialNorm_add_exponent`: the partial norm is additive in its translation argument and
+  splits over the exponent.
 * `AddEquiv.cyclicRepresentation_norm_eq_partialNorm`: the norm of the cyclic representation of `A`
   is the partial norm of order `m`.
 * `AddEquiv.affineEquiv_iterate_eq_id_iff`, `AddEquiv.affineEquiv_pow_eq_one_iff`: the affine
@@ -68,11 +72,9 @@ iterates has a nontrivial linear part or a nonzero partial norm.
   criterion needs only the partial norm, and then the order of the affine equivalence divides `m`.
 * `AddEquiv.orderOf_affineEquiv_eq_iff`: the affine equivalence has exact order `m` exactly when
   its `m`-th power is the identity and no smaller positive power is.
-
-## References
-
-* Kenneth S. Brown, *Cohomology of Groups*, Chapter VI, Section 2, for the cyclic norm of a
-  translation part and the periodicity of its partial sums.
+* `AddEquiv.affineAddAction_vadd`, `AddEquiv.affineAddAction_one_vadd`: the residue `k` of `ZMod m`
+  acts by the `k`-th iterate of the affine equivalence, and the residue `1` by the affine
+  equivalence itself.
 -/
 
 public section
@@ -88,14 +90,12 @@ part `t`, sending `x` to `A x + t`.
 
 Its inverse sends `y` to `A⁻¹ (y - t)`. It is an additive homomorphism only when `t = 0`. As an
 affine self-map of the `ℤ`-module `T` it is the affine equivalence with linear part
-`A.toIntLinearEquiv` and base point `t`, which Mathlib provides as `AffineEquiv.ofLinearEquiv`; it
-is recorded here as a permutation of `T` because the iterates, the order and the action of `ZMod m`
-below are properties of that permutation, and `AffineEquiv` carries no group structure. -/
-def affineEquiv (A : T ≃+ T) (t : T) : T ≃ T where
-  toFun x := A x + t
-  invFun y := A.symm (y - t)
-  left_inv x := by simp
-  right_inv y := by simp
+`A.toIntLinearEquiv` and base points `0` and `t` (so `0 ↦ t`), which Mathlib provides as
+`AffineEquiv.ofLinearEquiv`, and it is the element of the group `AffineEquiv` with those data. It is
+recorded here as a permutation of `T`, because the iterates, the order and the action of `ZMod m`
+below are those of the underlying permutation. -/
+def affineEquiv (A : T ≃+ T) (t : T) : T ≃ T :=
+  (A : T ≃ T).trans (Equiv.addRight t)
 
 @[simp]
 theorem affineEquiv_apply (A : T ≃+ T) (t x : T) : affineEquiv A t x = A x + t := by
@@ -104,49 +104,76 @@ theorem affineEquiv_apply (A : T ≃+ T) (t x : T) : affineEquiv A t x = A x + t
 @[simp]
 theorem affineEquiv_symm_apply (A : T ≃+ T) (t y : T) :
     (affineEquiv A t).symm y = A.symm (y - t) := by
-  rw [Equiv.symm_apply_eq, affineEquiv_apply, AddEquiv.apply_symm_apply, sub_add_cancel]
+  simp [affineEquiv, sub_eq_add_neg]
 
 /-! ### The partial norm of a translation part -/
 
 /-- The partial norm `∑ i < k, A^i t` of the translation part `t`: the translation accumulated by
 the first `k` iterates of the affine equivalence with linear part `A` and translation part `t`. -/
 def partialNorm (A : T ≃+ T) (k : ℕ) (t : T) : T :=
-  ∑ i ∈ Finset.range k, (⇑A)^[i] t
+  birkhoffSum (⇑A) id k t
+
+/-- The partial norm is the defining finite sum `∑ i < k, A^i t`. -/
+theorem partialNorm_def (A : T ≃+ T) (k : ℕ) (t : T) :
+    partialNorm A k t = ∑ i ∈ Finset.range k, (⇑A)^[i] t := by
+  simp only [partialNorm, birkhoffSum, id_eq]
 
 @[simp]
 theorem partialNorm_zero (A : T ≃+ T) (t : T) : partialNorm A 0 t = 0 := by
-  simp [partialNorm]
+  simpa only [partialNorm] using birkhoffSum_zero_apply (⇑A) id t
 
 @[simp]
 theorem partialNorm_one (A : T ≃+ T) (t : T) : partialNorm A 1 t = t := by
-  simp [partialNorm]
+  simpa only [partialNorm, id_eq] using birkhoffSum_one_apply (⇑A) id t
+
+/-- The partial norm is additive in its translation argument. -/
+@[simp]
+theorem partialNorm_add (A : T ≃+ T) (k : ℕ) (u v : T) :
+    partialNorm A k (u + v) = partialNorm A k u + partialNorm A k v := by
+  simp only [partialNorm_def, ← Finset.sum_add_distrib, iterate_map_add]
+
+/-- The partial norm is additive in its translation argument, in negative form. -/
+@[simp]
+theorem partialNorm_neg (A : T ≃+ T) (k : ℕ) (u : T) :
+    partialNorm A k (-u) = -partialNorm A k u := by
+  simp only [partialNorm_def, ← Finset.sum_neg_distrib, iterate_map_neg]
+
+/-- The partial norm is additive in its translation argument, in difference form. -/
+@[simp]
+theorem partialNorm_sub (A : T ≃+ T) (k : ℕ) (u v : T) :
+    partialNorm A k (u - v) = partialNorm A k u - partialNorm A k v := by
+  simp only [sub_eq_add_neg, partialNorm_add, partialNorm_neg]
 
 /-- Shifting the linear part through the partial norm: `A (N_{A,k} t) = N_{A,k} (A t)`. -/
 theorem map_partialNorm (A : T ≃+ T) (k : ℕ) (t : T) :
     A (partialNorm A k t) = partialNorm A k (A t) := by
-  rw [partialNorm, partialNorm, map_sum]
-  exact Finset.sum_congr rfl fun i _ => by
-    rw [← Function.iterate_succ_apply' (f := ⇑A) i t,
-      Function.iterate_succ_apply (f := ⇑A) i t]
+  simp only [partialNorm]
+  rw [map_birkhoffSum, ← birkhoffSum_comp_apply]
+  simp only [Function.comp_id, Function.id_comp]
+
+/-- Splitting the exponent of a partial norm: the partial norm of `k + l` iterates is the partial
+norm of `k` iterates plus the `k`-th iterate of the linear part applied to the partial norm of `l`
+iterates, `N_{A,k+l} t = N_{A,k} t + A^k (N_{A,l} t)`. -/
+theorem partialNorm_add_exponent (A : T ≃+ T) (k l : ℕ) (t : T) :
+    partialNorm A (k + l) t = partialNorm A k t + (⇑A)^[k] (partialNorm A l t) := by
+  have hcomm : Function.Commute ((⇑A)^[k]) (partialNorm A l) :=
+    Function.Commute.iterate_left (map_partialNorm A l) k
+  rw [hcomm t]
+  simp only [partialNorm]
+  exact birkhoffSum_add_right_apply (⇑A) id k l t
 
 /-- The partial norm satisfies the recurrence `N_{A,k+1} t = t + A (N_{A,k} t)`: a further iterate
 appends one more translate of the linear part. -/
 theorem partialNorm_succ (A : T ≃+ T) (k : ℕ) (t : T) :
     partialNorm A (k + 1) t = t + A (partialNorm A k t) := by
-  have hshift : partialNorm A (k + 1) t = partialNorm A k (A t) + t := by
-    rw [partialNorm, partialNorm, Finset.sum_range_succ']
-    simp only [Function.iterate_zero, id_eq]
-    congr 1
-  calc partialNorm A (k + 1) t = partialNorm A k (A t) + t := hshift
-    _ = A (partialNorm A k t) + t := by rw [map_partialNorm]
-    _ = t + A (partialNorm A k t) := add_comm _ _
+  rw [Nat.add_comm k 1, partialNorm_add_exponent, partialNorm_one, Function.iterate_one]
 
-/-- The norm of the cyclic representation of a linear part of period dividing `m` is the partial
-norm of order `m` of its translation part. -/
+/-- The norm of the cyclic representation of a linear part `A` of period dividing `m` is the partial
+norm `partialNorm A m` of order `m`. -/
 theorem cyclicRepresentation_norm_eq_partialNorm {m : ℕ} [NeZero m] (A : T ≃+ T)
     (hA : (⇑A)^[m] = id) (x : T) :
     (A.cyclicRepresentation hA).norm x = partialNorm A m x := by
-  rw [cyclicRepresentation_norm_apply, partialNorm]
+  rw [cyclicRepresentation_norm_apply, partialNorm_def]
 
 /-! ### The iterate formula -/
 
@@ -155,30 +182,10 @@ theorem cyclicRepresentation_norm_eq_partialNorm {m : ℕ} [NeZero m] (A : T ≃
 theorem affineEquiv_iterate_apply (A : T ≃+ T) (t x : T) (k : ℕ) :
     (⇑(affineEquiv A t))^[k] x = (⇑A)^[k] x + partialNorm A k t := by
   induction k generalizing x with
-  | zero =>
-    rw [partialNorm_zero, add_zero]
-    rfl
+  | zero => simp only [Function.iterate_zero_apply, partialNorm_zero, add_zero]
   | succ k ih =>
-    calc (⇑(affineEquiv A t))^[Nat.succ k] x
-        = affineEquiv A t ((⇑(affineEquiv A t))^[k] x) :=
-          Function.iterate_succ_apply' (f := ⇑(affineEquiv A t)) k x
-      _ = affineEquiv A t ((⇑A)^[k] x + partialNorm A k t) := by rw [ih]
-      _ = A ((⇑A)^[k] x + partialNorm A k t) + t := affineEquiv_apply A t _
-      _ = A ((⇑A)^[k] x) + A (partialNorm A k t) + t := by rw [map_add]
-      _ = A ((⇑A)^[k] x) + (t + A (partialNorm A k t)) := by abel
-      _ = (⇑A)^[Nat.succ k] x + partialNorm A (Nat.succ k) t := by
-          have h1 : (⇑A)^[Nat.succ k] x = A ((⇑A)^[k] x) :=
-            Function.iterate_succ_apply' (f := ⇑A) k x
-          have h2 : partialNorm A (Nat.succ k) t = t + A (partialNorm A k t) :=
-            partialNorm_succ A k t
-          rw [h1, h2]
-
-/-- An affine equivalence whose `m`-th iterate is the identity has equal iterates at exponents
-differing by `m`. -/
-theorem affineEquiv_iterate_add_period (A : T ≃+ T) (t : T) {m : ℕ}
-    (h : (⇑(affineEquiv A t))^[m] = id) (k : ℕ) :
-    (⇑(affineEquiv A t))^[k + m] = (⇑(affineEquiv A t))^[k] := by
-  rw [Function.iterate_add, h, Function.comp_id]
+    simp only [Function.iterate_succ_apply', ih, affineEquiv_apply, map_add, partialNorm_succ]
+    abel
 
 /-! ### The period criterion -/
 
@@ -191,8 +198,8 @@ theorem affineEquiv_iterate_eq_id_iff (A : T ≃+ T) (t : T) (m : ℕ) :
   · intro h
     have hx : ∀ x : T, (⇑A)^[m] x + partialNorm A m t = x := by
       intro x
-      rw [← affineEquiv_iterate_apply A t x m, congrFun h x]
-      rfl
+      rw [← affineEquiv_iterate_apply A t x m]
+      exact congrFun h x
     have hN : partialNorm A m t = 0 := by
       have := hx 0
       rwa [hzero, zero_add] at this
@@ -251,64 +258,33 @@ section Periodic
 
 variable {m : ℕ} [NeZero m]
 
-/-- The action of `ZMod m` on `T` by the iterates of an affine equivalence whose `m`-th iterate is
-the identity. The residue `k` acts by the `k`-th iterate, which is well defined by the periodicity
-of the iterates; `AddEquiv.affineAddAction_vadd` evaluates it. -/
+/-- The action of `ZMod m` on `T` by the iterates of an affine equivalence whose `m`-th power is
+the identity: the residue `k` acts by the `k`-th iterate, which is well defined because the iterates
+are periodic with period `m`. `AddEquiv.affineAddAction_vadd` evaluates it. -/
 @[instance_reducible]
-def affineAddAction (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
-    (hN : partialNorm A m t = 0) : AddAction (ZMod m) T where
-  toVAdd := ⟨fun k x => (⇑(affineEquiv A t))^[k.val] x⟩
-  zero_vadd x := by
-    -- the goal states the `vadd` field of the structure being defined, so beta-reduction is the
-    -- only way to expose the iterate it contains
-    change (⇑(affineEquiv A t))^[(0 : ZMod m).val] x = x
-    rw [ZMod.val_zero]
-    rfl
-  add_vadd k l x := by
-    -- the goal states the `vadd` field of the structure being defined, so beta-reduction is the
-    -- only way to expose the two iterates it contains
-    change (⇑(affineEquiv A t))^[(k + l).val] x =
-      (⇑(affineEquiv A t))^[k.val] ((⇑(affineEquiv A t))^[l.val] x)
-    have hper : (⇑(affineEquiv A t))^[m] = id :=
-      (affineEquiv_iterate_eq_id_iff A t m).2 ⟨hA, hN⟩
-    -- shifting an exponent by a multiple of the period does not move the iterate
-    have hshift : ∀ i q : ℕ,
-        (⇑(affineEquiv A t))^[i + m * q] = (⇑(affineEquiv A t))^[i] := by
-      intro i q
-      induction q with
-      | zero => rw [Nat.mul_zero, add_zero]
-      | succ q ih =>
-        rw [Nat.mul_succ, ← add_assoc, affineEquiv_iterate_add_period A t hper, ih]
-    rw [ZMod.val_add,
-      show (⇑(affineEquiv A t))^[(k.val + l.val) % m] =
-        (⇑(affineEquiv A t))^[k.val + l.val] by
-        conv_rhs => rw [← Nat.mod_add_div (k.val + l.val) m]
-        rw [hshift]]
-    rw [Function.iterate_add_apply]
+noncomputable def affineAddAction (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
+    (hN : partialNorm A m t = 0) : AddAction (ZMod m) T :=
+  AddAction.compHom T (MonoidHom.toAdditiveRight
+    ((TauCeti.zmodMonoidHomEquiv m (Equiv.Perm T)).symm
+      ⟨affineEquiv A t, (affineEquiv_pow_eq_one_iff A t m).2 ⟨hA, hN⟩⟩))
 
+/-- The residue `k` of `ZMod m` acts on `T` by the `k`-th iterate of the affine equivalence. -/
 @[simp]
 theorem affineAddAction_vadd (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
     (hN : partialNorm A m t = 0) (k : ZMod m) (x : T) :
-    (affineAddAction (m := m) A t hA hN).vadd k x = (⇑(affineEquiv A t))^[k.val] x :=
-  (rfl)
+    letI := affineAddAction (m := m) A t hA hN
+    k +ᵥ x = (⇑(affineEquiv A t))^[k.val] x := by
+  simp only [AddAction.compHom_vadd_def, MonoidHom.coe_toAdditiveRight, Function.comp_apply,
+    TauCeti.zmodMonoidHomEquiv_symm_apply, ofMul_vadd, Equiv.Perm.smul_def, Equiv.Perm.coe_pow]
 
 /-- The residue `1` of `ZMod m` acts by the affine equivalence itself: the action is generated by
 the affine equivalence. -/
 theorem affineAddAction_one_vadd (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
     (hN : partialNorm A m t = 0) (x : T) :
-    (affineAddAction (m := m) A t hA hN).vadd (1 : ZMod m) x = affineEquiv A t x := by
-  rw [affineAddAction_vadd, ZMod.val_one_eq_one_mod]
-  rcases eq_or_ne m 1 with hm1 | hm1
-  · subst hm1
-    rw [Nat.mod_one, Function.iterate_zero, affineEquiv_apply]
-    have hAid : A = AddEquiv.refl T := by
-      ext y
-      simpa using congrFun hA y
-    have ht : t = 0 := by
-      simpa using hN
-    rw [hAid, ht, AddEquiv.refl_apply, add_zero]
-    rfl
-  · rw [Nat.one_mod_eq_one.mpr hm1, Function.iterate_one]
+    letI := affineAddAction (m := m) A t hA hN
+    (1 : ZMod m) +ᵥ x = affineEquiv A t x := by
+  simp only [AddAction.compHom_vadd_def, MonoidHom.coe_toAdditiveRight, Function.comp_apply,
+    TauCeti.zmodMonoidHomEquiv_symm_apply_ofAdd_one, ofMul_vadd, Equiv.Perm.smul_def]
 
 end Periodic
 
