@@ -60,21 +60,24 @@ theorem effectiveActionFunctor_mapAut_stabilizerMulEquivAut (x : X) (g : stabili
         (effectiveStabilizerMap G X x g) := by
   -- Equality transport has identity labels, even when its endpoints have opaque descriptions.
   have hhom {a b : ActionCategory (G ⧸ (toPermHom G X).ker) X} (h : a = b) :
-      (eqToIso h).hom.hom = 1 := by
+      (eqToIso h).hom.hom = (1 : G ⧸ (toPermHom G X).ker) := by
     subst b
-    simp
+    exact ActionCategory.id_hom a
   have hinv {a b : ActionCategory (G ⧸ (toPermHom G X).ker) X} (h : a = b) :
-      (eqToIso h).inv.hom = 1 := by
+      (eqToIso h).inv.hom = (1 : G ⧸ (toPermHom G X).ker) := by
     subst b
-    simp
+    exact ActionCategory.id_hom a
   -- Keep the functor folded while rewriting the bundled automorphism projections.
   ext : 2
   apply Functor.Elements.hom_ext
   rw [Aut.autMulEquivOfIso_apply_asIso, Functor.mapAut_apply_asIso]
   simp only [Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom, ActionCategory.comp_hom,
     hhom, hinv, effectiveActionFunctor_map_hom,
-    ActionCategory.stabilizerMulEquivAut_apply_hom_hom, effectiveStabilizerMap_apply,
-    one_mul, mul_one]
+    ActionCategory.stabilizerMulEquivAut_apply_hom_hom, effectiveStabilizerMap_apply]
+  -- Read the labels in the quotient group before applying its identity laws.
+  change (1 : G ⧸ (toPermHom G X).ker) * QuotientGroup.mk (g : G) *
+    (1 : G ⧸ (toPermHom G X).ker) = QuotientGroup.mk (g : G)
+  simp only [one_mul, mul_one]
 
 /-- Every arrow of the faithful action groupoid lifts, with its source and target fixed. -/
 instance effectiveActionFunctor_full : (effectiveActionFunctor G X).Full where
