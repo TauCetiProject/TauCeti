@@ -58,6 +58,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   and a smaller index of `t`.
 * `CliffordAlgebra.basis_mul_basis_eq_or` and `CliffordAlgebra.basis_mul_self_eq_or`: signed
   multiplication and square laws when the generators square to `±1`.
+* `CliffordAlgebra.basis_mul_basis_comm_or_neg`: basis products commute up to sign when the
+  generators square to `±1`.
 * `CliffordAlgebra.isUnit_basis`: a basis monomial is a unit when its generator squares are units.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul_basis`: the pairing of two basis vectors.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul`: pairing against a basis vector extracts a
@@ -278,6 +280,24 @@ theorem basis_mul_basis_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
       basis Q b s * basis Q b t = -basis Q b (s ∆ t) := by
   rw [basis_mul_basis hb]
   rcases coeff_eq_one_or_neg_one hQ s t with hc | hc <;> rw [hc] <;> simp
+
+/-- When every generator squares to `±1`, two basis-vector products commute or anticommute. -/
+theorem basis_mul_basis_comm_or_neg
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s t : Finset I) :
+    basis Q b s * basis Q b t = basis Q b t * basis Q b s ∨
+      basis Q b s * basis Q b t = -(basis Q b t * basis Q b s) := by
+  rcases basis_mul_basis_eq_or hb hQ s t with hs | hs <;>
+    rcases basis_mul_basis_eq_or hb hQ t s with ht | ht
+  · left
+    rw [hs, ht, symmDiff_comm]
+  · right
+    rw [hs, ht, symmDiff_comm]
+    simp
+  · right
+    rw [hs, ht, symmDiff_comm]
+  · left
+    rw [hs, ht, symmDiff_comm]
 
 /-- When every generator squares to `±1`, each basis vector `e_s` squares to `±1`. -/
 theorem basis_mul_self_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
