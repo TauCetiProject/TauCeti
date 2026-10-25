@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Analysis.Calculus.TransverseIntersection
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import Mathlib.Analysis.Calculus.TangentCone.ProperSpace
 
 /-!
 # Tangent cones of subsets of a manifold, and transverse intersections
@@ -43,6 +44,10 @@ everything in the preferred chart at `y`.
   chart.
 * `IsMIntegralCurveAt.mem_mtangentConeAt`: the velocity of an integral curve lies in the tangent
   cone of every set the curve stays in.
+* `TauCeti.mtangentConeAt_nonempty_of_accPt`: over a proper model space, the tangent cone at an
+  accumulation point of a set contains a nonzero vector.
+* `TauCeti.mfderiv_apply_eq_zero_of_mem_mtangentConeAt`: the differential of a function vanishes on
+  the tangent cone of a set on which the function is constant.
 * `TauCeti.image_mtangentConeAt_eq_tangentConeAt`: read in another chart, the tangent cone is
   carried onto the tangent cone in that chart by the derivative of the transition map.
 * `TauCeti.IsSliceChart.finrank_span_mtangentConeAt`: the tangent space of a flattened set has the
@@ -95,6 +100,43 @@ usual sense. -/
 theorem mtangentConeAt_eq_tangentConeAt (s : Set E) (y : E) :
     mtangentConeAt 𝓘(𝕜, E) s y = tangentConeAt 𝕜 s y := by
   simp [mtangentConeAt_def]
+
+/-- **The tangent cone at a non-isolated point is nontrivial.** If the model space is proper and
+`y` is an accumulation point of `s`, then the tangent cone of `s` at `y` contains a nonzero
+vector. -/
+theorem mtangentConeAt_nonempty_of_accPt [ProperSpace E] {s : Set M} {y : M}
+    (hy : AccPt y (𝓟 s)) : (mtangentConeAt I s y ∩ {0}ᶜ).Nonempty := by
+  refine tangentConeAt_nonempty_of_properSpace (accPt_iff_nhds.2 fun U hU ↦ ?_)
+  obtain ⟨z, ⟨⟨hzs, hzU⟩, hz⟩, hzy⟩ := accPt_iff_nhds.1 hy _
+    (inter_mem (extChartAt_source_mem_nhds (I := I) y) (continuousAt_extChartAt y hU))
+  refine ⟨extChartAt I y z, ⟨hzU, ?_, ?_⟩, fun h ↦ hzy ((extChartAt I y).injOn hzs
+    (mem_extChartAt_source y) h)⟩
+  · rw [mem_preimage, (extChartAt I y).left_inv hzs]
+    exact hz
+  · rw [extChartAt_coe]
+    exact mem_range_self _
+
+/-- **The differential kills the tangent cone of a level set.** If `f` is differentiable at `y`
+and constant on `s`, with value `f y`, then `df_y` vanishes on the tangent cone of `s` at `y`. -/
+theorem mfderiv_apply_eq_zero_of_mem_mtangentConeAt {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : M → F} {s : Set M} {y : M} (hf : MDifferentiableAt I 𝓘(𝕜, F) f y)
+    (hs : s ⊆ f ⁻¹' {f y}) {v : E} (hv : v ∈ mtangentConeAt I s y) :
+    mfderiv I 𝓘(𝕜, F) f y v = 0 := by
+  have hmaps := (((mdifferentiableAt_iff _ _).1 hf).2.hasFDerivWithinAt.mono
+    inter_subset_right).mapsTo_tangent_cone hv
+  -- The coordinate expression of `f` is constant on the image of `s` in the chart.
+  have himage : writtenInExtChartAt I 𝓘(𝕜, F) y f ''
+      ((extChartAt I y).symm ⁻¹' s ∩ range I) ⊆ {f y} := by
+    rintro _ ⟨w, hw, rfl⟩
+    simpa [writtenInExtChartAt, extChartAt_model_space_eq_id] using hs hw.1
+  have hzero : fderivWithin 𝕜 (writtenInExtChartAt I 𝓘(𝕜, F) y f) (range I)
+      (extChartAt I y y) v = 0 := by
+    refine tangentConeAt_subset_zero (fun hacc ↦ ?_) hmaps
+    obtain ⟨z, ⟨-, hz⟩, hzy⟩ := accPt_iff_nhds.1 hacc univ univ_mem
+    exact hzy ((himage hz).trans (by simp [writtenInExtChartAt]))
+  -- `mfderiv` is this derivative read through `tangentSpaceCastModel`, the identity of the models.
+  rw [hf.mfderiv]
+  exact (congrArg (tangentSpaceCastModel 𝓘(𝕜, F) (f y)).symm hzero).trans (map_zero _)
 
 end Defs
 
