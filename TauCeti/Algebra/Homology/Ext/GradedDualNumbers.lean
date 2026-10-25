@@ -110,9 +110,6 @@ private theorem mem_gradedPositiveMulIdeal_one_iff {x : DualNumber k} :
 /-- **The `ε`-periodic graded projective resolution** `⋯ ⟶ A{4} ⟶ A{2} ⟶ A ⟶ S ⟶ 0` of the
 graded residue module, for `ε` in degree two. Every differential is multiplication by `ε`, and the
 `n`th term is `A{2n}` (`TauCeti.dualNumberGradedResolution_termObj`). -/
--- The body is exposed so that the terms are visibly the shifted regular modules `A{2n}`, which is
--- what the Hom computations against them use.
-@[expose]
 def dualNumberGradedResolution :
     GradedProjectiveResolution.{u, u, u, u} (dualNumberIntegerGrade k)
       (dualNumberGradedResidue k).grading where
@@ -129,7 +126,9 @@ def dualNumberGradedResolution :
     have hx' : x ∈ dualNumberIntegerGrade k (p - 2 * (n + 1 : ℕ)) := by
       simpa [sub_eq_add_neg] using hx
     have h := SetLike.GradedMul.mul_mem hx' (eps_mem_dualNumberIntegerGrade_two k)
-    rw [show p - 2 * (n + 1 : ℕ) + 2 = p + 0 + -(2 * (n : ℤ)) by push_cast; ring] at h
+    -- multiplying by `ε` raises the internal degree `p - 2(n + 1)` by two
+    have hdeg : p - 2 * (n + 1 : ℕ) + 2 = p + 0 + -(2 * (n : ℤ)) := by omega
+    rw [hdeg] at h
     simpa using h
   isHomogeneous_π := LinearMap.isHomogeneous_def.2 fun p x hx =>
     (mem_gradedPositiveMulQuotient_piece_iff _).2 ⟨⟨x, by simp⟩, by simpa using hx, rfl⟩
@@ -150,16 +149,27 @@ theorem dualNumberGradedResolution_termObj (n : ℕ) :
   (rfl)
 
 /-- Every differential of the periodic graded resolution is multiplication by `ε`. -/
-@[simp]
-theorem dualNumberGradedResolution_d_apply (n : ℕ) (x : (dualNumberGradedResolution k).X (n + 1)) :
+private theorem dualNumberGradedResolution_d_apply (n : ℕ)
+    (x : (dualNumberGradedResolution k).X (n + 1)) :
     (dualNumberGradedResolution k).d n x = ((ε : DualNumber k) • x : DualNumber k) :=
   mul_comm (G := DualNumber k) x ε
 
-/-- The augmentation of the periodic graded resolution is the quotient map `A ⟶ S`. -/
-@[simp]
-theorem dualNumberGradedResolution_π_apply (x : DualNumber k) :
-    (dualNumberGradedResolution k).π x =
-      gradedPositiveMulQuotientMk (one_mem_dualNumberIntegerGrade_zero k) ⟨x, by simp⟩ :=
+/-- Every differential of the periodic graded resolution, read through
+`TauCeti.dualNumberGradedResolution_termObj` as a map `A{2n + 2} ⟶ A{2n}`, sends `1` to `ε`. -/
+theorem dualNumberGradedResolution_differential_hom_one (n : ℕ) :
+    (eqToHom (dualNumberGradedResolution_termObj k (n + 1)).symm ≫
+        (dualNumberGradedResolution k).differential n ≫
+          eqToHom (dualNumberGradedResolution_termObj k n)).hom 1 = ε :=
+  -- both transports are identities, and the differential is multiplication by `ε`
+  (dualNumberGradedResolution_d_apply k n (1 : DualNumber k)).trans (mul_one (ε : DualNumber k))
+
+/-- The augmentation of the periodic graded resolution, read through
+`TauCeti.dualNumberGradedResolution_termObj` as a map `A ⟶ S`, sends `1` to the class of `1`. -/
+theorem dualNumberGradedResolution_augmentation_hom_one :
+    (eqToHom (dualNumberGradedResolution_termObj k 0).symm ≫
+        (dualNumberGradedResolution k).augmentation).hom 1 =
+      gradedPositiveMulQuotientMk (one_mem_dualNumberIntegerGrade_zero k) ⟨1, by simp⟩ :=
+  -- the transport is an identity, and the augmentation is the quotient map
   (rfl)
 
 /-- **The periodic graded resolution is minimal**: every differential is multiplication by `ε`,
@@ -212,7 +222,8 @@ theorem extDualNumberGradedResidueShiftEquiv_symm_apply (n : ℕ) (j : ℤ)
     (extDualNumberGradedResidueShiftEquiv k n j).symm m =
       (isMinimal_dualNumberGradedResolution k).extLinearEquiv
         (positive_smul_top_shiftObj_dualNumberGradedResidue_eq_bot k j) n
-        ((GradedModuleCat.regularShiftHomEquiv _ _).symm ⟨m, by simp⟩) :=
+        (eqToHom (dualNumberGradedResolution_termObj k n) ≫
+          (GradedModuleCat.regularShiftHomEquiv _ _).symm ⟨m, by simp⟩) :=
   (rfl)
 
 end CommRing
