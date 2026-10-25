@@ -180,9 +180,10 @@ and `ν`, of the `L^p (π)` seminorm of the ground extended distance `fun z ↦ 
 It is `∞` when `μ` and `ν` have no coupling at all. For a jointly measurable ground distance the
 objective at `p = ∞` is the `π`-essential supremum. Mathlib's `MeasureTheory.eLpNorm` makes the
 objective of a coupling `π` equal to `∞` when the ground distance is not almost everywhere
-strongly measurable for `π`. Without joint measurability that depends on `π`: every function is
-almost everywhere constant for a Dirac coupling, whose objective is the distance between its two
-points (`TauCeti.wassersteinEDist_dirac_dirac`, which assumes no measurability). -/
+strongly measurable for `π`. Without joint measurability that depends on `π`: when points are
+measurable, every function is almost everywhere constant for a Dirac coupling, and for `p ≠ 0` its
+objective is the distance between the two points (`TauCeti.wassersteinEDist_dirac_dirac`, which
+assumes no measurability of the distance). -/
 def wassersteinEDist (p : ℝ≥0∞) (μ ν : Measure X) : ℝ≥0∞ :=
   ⨅ (π : Measure (X × X)) (_ : IsCoupling π μ ν), eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π
 
