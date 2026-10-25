@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Basic
+public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 
 /-!
 # Pulling back equivariant groupoid lifts along functors
@@ -238,21 +239,6 @@ lemma pullback_transport {l l' : Λ} (g : l ⟶ l') :
 
 /-! ### The unit and composition isomorphisms of transport -/
 
--- The comparisons of the composite with `ψ × 𝟭` contribute `map₂` of `2`-cells of a locally
--- discrete bicategory, so two composites of them with the same source and target agree.
-
-private lemma map₂_comp_map₂_comp {J : Type*} [Category J] {C : Type*} [Bicategory C]
-    (F : LocallyDiscrete J ⥤ᵖ C) {a b : LocallyDiscrete J} {u₁ u₂ u₃ : a ⟶ b}
-    {c : F.obj a ⟶ F.obj b} (η₁ : u₁ ⟶ u₂) (η₂ : u₂ ⟶ u₃) (η₃ : u₁ ⟶ u₃) (θ : F.map u₃ ⟶ c) :
-    F.map₂ η₁ ≫ F.map₂ η₂ ≫ θ = F.map₂ η₃ ≫ θ := by
-  rw [← F.map₂_comp_assoc, Subsingleton.elim (η₁ ≫ η₂) η₃]
-
-private lemma comp_map₂_comp_map₂ {J : Type*} [Category J] {C : Type*} [Bicategory C]
-    (F : LocallyDiscrete J ⥤ᵖ C) {a b : LocallyDiscrete J} {u₁ u₂ u₃ : a ⟶ b}
-    {c : F.obj a ⟶ F.obj b} (θ : c ⟶ F.map u₁) (η₁ : u₁ ⟶ u₂) (η₂ : u₂ ⟶ u₃) (η₃ : u₁ ⟶ u₃) :
-    (θ ≫ F.map₂ η₁) ≫ F.map₂ η₂ = θ ≫ F.map₂ η₃ := by
-  rw [Category.assoc, ← F.map₂_comp, Subsingleton.elim (η₁ ≫ η₂) η₃]
-
 /-- The unit comparison of the joint functors of the pullback along `ψ` is the unit comparison
 `mapId'` of `L.joint` at `ψ.map (𝟙 l)`. -/
 @[simp]
@@ -261,7 +247,8 @@ lemma pullback_jointMapId (l : Λ) :
       (L.joint.mapId' (ψ.map (𝟙 l) ×ₘ 𝟙 (SingleObj.star H)).toLoc (by rw [ψ.map_id]; rfl)) := by
   ext Y
   exact ((L.pullback ψ).jointMapId_hom_app l Y).trans
-    (congrArg (fun α ↦ Cat.Hom₂.toNatTrans α |>.app Y) (map₂_comp_map₂_comp L.joint _ _ _ _))
+    (congrArg (fun α ↦ Cat.Hom₂.toNatTrans α |>.app Y)
+      (PrelaxFunctor.map₂_comp_map₂_assoc L.joint.toPrelaxFunctor _ _ _ _))
 
 /-- The composition comparisons of the joint functors of the pullback along `ψ` are those of `L`
 along the image of `ψ`. -/
@@ -273,7 +260,8 @@ lemma pullback_jointMapComp {l l' l'' : Λ} (g : l ⟶ l') (h : l' ⟶ l'') (gh 
   ext Y
   exact ((L.pullback ψ).jointMapComp_hom_app g h gh hgh Y).trans
     ((congrArg (fun α ↦ Cat.Hom₂.toNatTrans α |>.app Y)
-      (map₂_comp_map₂_comp L.joint _ _ _ _)).trans (L.jointMapComp_hom_app _ _ _ _ Y).symm)
+      (PrelaxFunctor.map₂_comp_map₂_assoc L.joint.toPrelaxFunctor _ _ _ _)).trans
+        (L.jointMapComp_hom_app _ _ _ _ Y).symm)
 
 /-- The composition isomorphisms of transport for the pullback along `ψ` are those of `L`
 along the image of `ψ`. -/
@@ -310,25 +298,6 @@ lemma pullback_transportId_hom_app (l : Λ) (X : fiber actions (ψ.obj l)) :
 
 /-! ### Commuting transport with the actions -/
 
--- The components of the naturality isomorphisms of a composite of strong transformations into
--- `Cat` whose first factor has identity component and naturality isomorphisms `eqToIso e`.
-
-private lemma vcomp_eqToIso_naturality_hom_app {A B : Cat.{v, w}} {F₁ F₂ : A ⟶ A} {T : B ⟶ B}
-    (e : F₁ ≫ 𝟙 A = 𝟙 A ≫ F₂) (s : A ⟶ B) (ν : F₂ ≫ s ⟶ s ≫ T) (Y : A)
-    (h : F₁.toFunctor.obj Y = F₂.toFunctor.obj Y) :
-    ((α_ F₁ (𝟙 A) s).inv ≫ (eqToIso e).hom ▷ s ≫ (α_ (𝟙 A) F₂ s).hom ≫ 𝟙 A ◁ ν ≫
-        (α_ (𝟙 A) s T).inv).toNatTrans.app Y =
-      s.toFunctor.map (eqToHom h) ≫ ν.toNatTrans.app Y := by
-  simp [eqToHom_map]
-
-private lemma vcomp_eqToIso_naturality_inv_app {A B : Cat.{v, w}} {F₁ F₂ : A ⟶ A} {T : B ⟶ B}
-    (e : F₁ ≫ 𝟙 A = 𝟙 A ≫ F₂) (s : A ⟶ B) (ν : s ≫ T ⟶ F₂ ≫ s) (Y : A)
-    (h : F₂.toFunctor.obj Y = F₁.toFunctor.obj Y) :
-    (((((α_ (𝟙 A) s T).hom ≫ 𝟙 A ◁ ν) ≫ (α_ (𝟙 A) F₂ s).inv) ≫ (eqToIso e).inv ▷ s) ≫
-        (α_ F₁ (𝟙 A) s).hom).toNatTrans.app Y =
-      ν.toNatTrans.app Y ≫ s.toFunctor.map (eqToHom h) := by
-  simp [eqToHom_map]
-
 /-- The naturality isomorphisms of the fiber comparisons of the pullback along `ψ` are those of
 `L` at `ψ l`, after identifying `ψ.map (𝟙 l)` with `𝟙 (ψ l)`. -/
 lemma pullback_comparisonNaturality_hom_app (l : Λ) (a : SingleObj.star H ⟶ SingleObj.star H)
@@ -338,8 +307,17 @@ lemma pullback_comparisonNaturality_hom_app (l : Λ) (a : SingleObj.star H ⟶ S
           (L.joint.map (ψ.map (𝟙 l) ×ₘ a).toLoc).toFunctor.obj Y =
             (L.jointAct (ψ.obj l) a).obj Y)) ≫
         (L.comparisonNaturality (ψ.obj l) a).hom.app Y := by
+  -- The components of the naturality isomorphisms of a composite of strong transformations into
+  -- `Cat` whose first factor has identity components and naturality isomorphisms `eqToIso e`.
+  have h {A B : Cat.{v, w}} {F₁ F₂ : A ⟶ A} {T : B ⟶ B}
+      (e : F₁ ≫ 𝟙 A = 𝟙 A ≫ F₂) (s : A ⟶ B) (ν : F₂ ≫ s ⟶ s ≫ T) (Z : A)
+      (hZ : F₁.toFunctor.obj Z = F₂.toFunctor.obj Z) :
+      ((α_ F₁ (𝟙 A) s).inv ≫ (eqToIso e).hom ▷ s ≫ (α_ (𝟙 A) F₂ s).hom ≫ 𝟙 A ◁ ν ≫
+          (α_ (𝟙 A) s T).inv).toNatTrans.app Z =
+        s.toFunctor.map (eqToHom hZ) ≫ ν.toNatTrans.app Z := by
+    simp [eqToHom_map]
   refine ((L.pullback ψ).comparisonNaturality_hom_app l a Y).trans
-    ((vcomp_eqToIso_naturality_hom_app (F₁ := L.joint.map (ψ.map (𝟙 l) ×ₘ a).toLoc)
+    ((h (F₁ := L.joint.map (ψ.map (𝟙 l) ×ₘ a).toLoc)
       (F₂ := L.joint.map (𝟙 (ψ.obj l) ×ₘ a).toLoc) (by simp)
       ((L.comparison (ψ.obj l)).app ⟨SingleObj.star H⟩)
       ((L.comparison (ψ.obj l)).naturality a.toLoc).hom Y (by rw [ψ.map_id])).trans ?_)
@@ -356,8 +334,16 @@ lemma pullback_comparisonNaturality_inv_app (l : Λ) (a : SingleObj.star H ⟶ S
         (L.fiberEquivalence (ψ.obj l)).functor.map (eqToHom (by rw [ψ.map_id] :
           (L.jointAct (ψ.obj l) a).obj Y =
             (L.joint.map (ψ.map (𝟙 l) ×ₘ a).toLoc).toFunctor.obj Y)) := by
+  -- The inverse form of the computation in `pullback_comparisonNaturality_hom_app`.
+  have h {A B : Cat.{v, w}} {F₁ F₂ : A ⟶ A} {T : B ⟶ B}
+      (e : F₁ ≫ 𝟙 A = 𝟙 A ≫ F₂) (s : A ⟶ B) (ν : s ≫ T ⟶ F₂ ≫ s) (Z : A)
+      (hZ : F₂.toFunctor.obj Z = F₁.toFunctor.obj Z) :
+      (((((α_ (𝟙 A) s T).hom ≫ 𝟙 A ◁ ν) ≫ (α_ (𝟙 A) F₂ s).inv) ≫ (eqToIso e).inv ▷ s) ≫
+          (α_ F₁ (𝟙 A) s).hom).toNatTrans.app Z =
+        ν.toNatTrans.app Z ≫ s.toFunctor.map (eqToHom hZ) := by
+    simp [eqToHom_map]
   refine ((L.pullback ψ).comparisonNaturality_inv_app l a Y).trans
-    ((vcomp_eqToIso_naturality_inv_app (F₁ := L.joint.map (ψ.map (𝟙 l) ×ₘ a).toLoc)
+    ((h (F₁ := L.joint.map (ψ.map (𝟙 l) ×ₘ a).toLoc)
       (F₂ := L.joint.map (𝟙 (ψ.obj l) ×ₘ a).toLoc) (by simp)
       ((L.comparison (ψ.obj l)).app ⟨SingleObj.star H⟩)
       ((L.comparison (ψ.obj l)).naturality a.toLoc).inv Y (by rw [ψ.map_id])).trans ?_)
@@ -397,22 +383,11 @@ lemma pullback_jointActCommIso_hom_app {l l' : Λ} (g : l ⟶ l')
               ((L.jointMap (ψ.map g)).obj Y)) :=
   ((L.pullback ψ).jointActCommIso_hom_app g a Y).trans
     ((congrArg₂ (· ≫ ·) (congrArg (fun α ↦ Cat.Hom₂.toNatTrans α |>.app Y)
-      (comp_map₂_comp_map₂ L.joint _ _ _ _))
+      ((Category.assoc _ _ _).trans
+        (whisker_eq _ (PrelaxFunctor.map₂_comp_map₂ L.joint.toPrelaxFunctor _ _ _))))
       (congrArg (fun α ↦ Cat.Hom₂.toNatTrans α |>.app Y)
-        (map₂_comp_map₂_comp L.joint _ _ _ _))).trans
+        (PrelaxFunctor.map₂_comp_map₂_assoc L.joint.toPrelaxFunctor _ _ _ _))).trans
       (L.mapComp'_inv_comp_mapComp'_hom_app (ψ.map g) _ _ (ψ.map_id l) (ψ.map_id l') a Y))
-
--- The correction terms `eqToHom` of `pullback_comparisonNaturality_inv_app` and
--- `pullback_jointActCommIso_hom_app` cancel across the unit of the fiber comparison.
-private lemma map_map_unitInv_eqToHom {C D C' D' : Type*} [Category C] [Category D]
-    [Category C'] [Category D'] (e : C ≌ D) (G : C ⥤ C') (e' : C' ⥤ D') {A B : C} (h : A = B)
-    {P₁ P₂ : D} (u₁ : P₁ ⟶ P₂) (u₂ : P₂ ⟶ e.functor.obj A) {Q R : C'} (k : G.obj A ⟶ Q)
-    (h' : Q = R) {S : D'} (m : e'.obj Q ⟶ S) :
-    e'.map (G.map (e.inverse.map (u₁ ≫ u₂ ≫ e.functor.map (eqToHom h)) ≫ e.unitInv.app B) ≫
-        G.map (eqToHom h.symm) ≫ k ≫ eqToHom h') ≫ e'.map (eqToHom h'.symm) ≫ m =
-      e'.map (G.map (e.inverse.map (u₁ ≫ u₂) ≫ e.unitInv.app A) ≫ k) ≫ m := by
-  subst h h'
-  simp
 
 /-- The isomorphisms commuting transport with the actions for the pullback along `ψ` are those
 of `L` along the image of `ψ`. -/
@@ -427,6 +402,17 @@ lemma pullback_transportCommIso {l l' : Λ} (g : l ⟶ l')
   -- unfolding the pullback, so they are rewritten at the objects of the goal.
   rw [L.pullback_comparisonNaturality_inv_app ψ l a ((L.fiberEquivalence (ψ.obj l)).inverse.obj X),
     L.pullback_jointActCommIso_hom_app ψ g a ((L.fiberEquivalence (ψ.obj l)).inverse.obj X)]
-  exact map_map_unitInv_eqToHom _ _ _ _ _ _ _ _ _
+  -- The correction terms `eqToHom` of `pullback_comparisonNaturality_inv_app` and
+  -- `pullback_jointActCommIso_hom_app` cancel across the unit of the fiber comparison.
+  have h {C D C' D' : Type _} [Category C] [Category D] [Category C'] [Category D'] (e : C ≌ D)
+      (G : C ⥤ C') (e' : C' ⥤ D') {A B : C} (hAB : A = B) {P₁ P₂ : D} (u₁ : P₁ ⟶ P₂)
+      (u₂ : P₂ ⟶ e.functor.obj A) {Q R : C'} (k : G.obj A ⟶ Q) (hQR : Q = R) {S : D'}
+      (m : e'.obj Q ⟶ S) :
+      e'.map (G.map (e.inverse.map (u₁ ≫ u₂ ≫ e.functor.map (eqToHom hAB)) ≫ e.unitInv.app B) ≫
+          G.map (eqToHom hAB.symm) ≫ k ≫ eqToHom hQR) ≫ e'.map (eqToHom hQR.symm) ≫ m =
+        e'.map (G.map (e.inverse.map (u₁ ≫ u₂) ≫ e.unitInv.app A) ≫ k) ≫ m := by
+    subst hAB hQR
+    simp
+  exact h _ _ _ _ _ _ _ _ _
 
 end TauCeti.EquivariantGroupoidLift
