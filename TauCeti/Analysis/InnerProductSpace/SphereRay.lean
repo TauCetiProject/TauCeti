@@ -34,8 +34,9 @@ of Brouwer's fixed-point theorem from the no-retraction theorem.
 ## Main results
 
 * `TauCeti.norm_add_unitSphereRayTime_smul_sub`: `x + unitSphereRayTime y x • (x - y)` lies on
-  the unit sphere.
-* `TauCeti.unitSphereRayTime_eq_zero`: the time vanishes when `x` lies on the unit sphere.
+  the unit sphere when `‖x‖ ≤ 1` and `x ≠ y`.
+* `TauCeti.unitSphereRayTime_eq_zero`: the time vanishes when `x` lies on the unit sphere and
+  `‖y‖ ≤ 1`.
 * `ContinuousMap.closedBallRayRetraction_apply_of_mem_sphere`: the retraction fixes the unit
   sphere.
 
@@ -80,6 +81,7 @@ theorem unitSphereRayTime_nonneg (y : E) {x : E} (hx : ‖x‖ ≤ 1) : 0 ≤ un
 
 /-- **The ray from `y` through a point `x ≠ y` of the closed unit ball meets the unit sphere at
 time `TauCeti.unitSphereRayTime y x`.** -/
+@[simp]
 theorem norm_add_unitSphereRayTime_smul_sub {x y : E} (hxy : x ≠ y) (hx : ‖x‖ ≤ 1) :
     ‖x + unitSphereRayTime y x • (x - y)‖ = 1 := by
   have hn : ‖x - y‖ ≠ 0 := norm_ne_zero_iff.2 (sub_ne_zero.2 hxy)
@@ -95,8 +97,10 @@ theorem norm_add_unitSphereRayTime_smul_sub {x y : E} (hxy : x ≠ y) (hx : ‖x
     linear_combination hs
   exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 hsq
 
-/-- **A ray from a point of the unit sphere into the closed unit ball leaves the ball at once**:
-when `‖x‖ = 1` and `‖y‖ ≤ 1`, the time `TauCeti.unitSphereRayTime y x` vanishes. -/
+/-- **A ray from a point `x` of the unit sphere pointing away from a point `y` of the closed unit
+ball leaves the ball at once**: when `‖x‖ = 1` and `‖y‖ ≤ 1`, the time
+`TauCeti.unitSphereRayTime y x` vanishes. -/
+@[simp]
 theorem unitSphereRayTime_eq_zero {x y : E} (hx : ‖x‖ = 1) (hy : ‖y‖ ≤ 1) :
     unitSphereRayTime y x = 0 := by
   have ha : 0 ≤ ⟪x, x - y⟫ := by
@@ -107,8 +111,9 @@ theorem unitSphereRayTime_eq_zero {x y : E} (hx : ‖x‖ = 1) (hy : ‖y‖ ≤
 
 end TauCeti
 
-/-- The time at which the ray from `f z` through `g z` meets the unit sphere depends continuously
-on `z` when `f` and `g` are continuous and `g z ≠ f z` everywhere. -/
+/-- The formula `TauCeti.unitSphereRayTime (f z) (g z)` depends continuously on `z` when `f` and
+`g` are continuous and `g z ≠ f z` everywhere. Where moreover `‖g z‖ ≤ 1`, it is the time at which
+the ray from `f z` through `g z` meets the unit sphere. -/
 theorem Continuous.unitSphereRayTime {X : Type*} [TopologicalSpace X] {f g : X → E}
     (hf : Continuous f) (hg : Continuous g) (h : ∀ z, g z ≠ f z) :
     Continuous fun z ↦ TauCeti.unitSphereRayTime (f z) (g z) := by

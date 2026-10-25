@@ -7,8 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.Analysis.InnerProductSpace.SphereRay
-import Mathlib.Algebra.Category.ModuleCat.Abelian
-import Mathlib.Algebra.Category.ModuleCat.Colimits
 
 /-!
 # The no-retraction theorem and Brouwer's fixed-point theorem for the disk
