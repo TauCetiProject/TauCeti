@@ -20,7 +20,8 @@ Let `R` be a Noetherian ring. A finite `R`-module `M` satisfies *Serre's conditi
 local ring `R_p` is regular for every prime `p` of height at most `n` (Stacks, Definition 10.157.1
 (031P)). These are the two halves of Serre's criterion for normality, `(R_1) + (S_2)`, and the
 depth condition `(S_2)` is what lets sections of a module extend across closed subsets of
-codimension at least two.
+codimension at least two. Serre's criterion itself is proved in
+`TauCeti.RingTheory.SerreCondition.Normal`.
 
 Depth is Mathlib's `IsLocalRing.depth` and the dimension of the support is Mathlib's
 `Module.supportDim`. The zero module has depth `⊤` and support dimension `⊥`, so a prime outside
@@ -37,6 +38,10 @@ the support of `M` imposes no condition.
 * `Module.satisfiesSerreS_zero` and `Module.SatisfiesSerreS.mono`: every module satisfies `(S_0)`,
   and `(S_n)` implies `(S_m)` for `m ≤ n`; likewise `Ring.SatisfiesSerreR.mono`, and a regular
   ring satisfies `(R_n)` for every `n` (`IsRegularRing.satisfiesSerreR`).
+* `Module.satisfiesSerreS_self_iff`: a ring satisfies `(S_n)` as a module over itself exactly when
+  `depth R_p ≥ min (n, dim R_p)` for every prime `p`.
+* `Module.SatisfiesSerreS.localization_self` and `Ring.SatisfiesSerreR.localization`: for the ring
+  itself, `(S_n)` and `(R_n)` pass to every localization, whose local rings are local rings of `R`.
 * `Module.forall_satisfiesSerreS_iff_forall_isCohenMacaulay`: a finite module satisfies `(S_n)`
   for every `n` if and only if all of its localizations at primes are Cohen–Macaulay.
 * `Module.satisfiesSerreS_one_iff`: a finite module satisfies `(S_1)` if and only if it has no
@@ -143,6 +148,35 @@ theorem satisfiesSerreS_one_iff [IsNoetherianRing R] [Module.Finite R M] :
     · refine (min_le_left _ _).trans ?_
       exact_mod_cast Order.one_le_iff_ne_zero.2 (mt TauCeti.depth_localizedModule_eq_zero_iff.1 hp)
 
+/-- For the ring itself, Serre's condition `(S_n)` compares the depth of each local ring `R_p` with
+its dimension: `R` satisfies `(S_n)` exactly when `depth R_p ≥ min (n, dim R_p)` for every prime
+`p` of `R`. -/
+theorem satisfiesSerreS_self_iff : SatisfiesSerreS n R R ↔ ∀ (p : Ideal R) [p.IsPrime],
+    min (n : WithBot ℕ∞) (ringKrullDim (Localization.AtPrime p)) ≤
+      (depth (ModuleCat.of (Localization.AtPrime p) (Localization.AtPrime p)) : WithBot ℕ∞) := by
+  refine forall_congr' fun p ↦ forall_congr' fun _ ↦ ?_
+  let e : LocalizedModule p.primeCompl R ≃ₗ[Localization.AtPrime p] Localization.AtPrime p :=
+    (IsLocalizedModule.iso p.primeCompl (Algebra.linearMap R (Localization.AtPrime p))
+      ).extendScalarsOfIsLocalization p.primeCompl _
+  rw [supportDim_eq_of_equiv e, supportDim_self_eq_ringKrullDim, depth_eq_of_linearEquiv e]
+
+/-- Serre's condition `(S_n)` for a Noetherian ring passes to its localizations: the local rings
+of a localization `S` of `R` are local rings of `R`. -/
+theorem SatisfiesSerreS.localization_self [IsNoetherianRing R] (h : SatisfiesSerreS n R R)
+    (T : Submonoid R) (S : Type*) [CommRing S] [Algebra R S] [IsLocalization T S] :
+    SatisfiesSerreS n S S := by
+  have : IsNoetherianRing S := IsLocalization.isNoetherianRing T S ‹_›
+  rw [satisfiesSerreS_self_iff] at h ⊢
+  intro Q _
+  let P := Q.comap (algebraMap R S)
+  have : IsLocalization.AtPrime (Localization.AtPrime Q) P :=
+    IsLocalization.isLocalization_isLocalization_atPrime_isLocalization T _ Q
+  let e : Localization.AtPrime P ≃+* Localization.AtPrime Q :=
+    (IsLocalization.algEquiv P.primeCompl _ _).toRingEquiv
+  rw [← ringKrullDim_eq_of_ringEquiv e,
+    depth_eq_of_ringEquiv e e.toAddEquiv fun r x ↦ map_mul e r x]
+  exact h P
+
 end Module
 
 namespace Ring
@@ -168,6 +202,19 @@ theorem satisfiesSerreR_iff : SatisfiesSerreR n R ↔
 theorem SatisfiesSerreR.mono {m : ℕ} (h : SatisfiesSerreR n R) (hmn : m ≤ n) :
     SatisfiesSerreR m R := fun p hp ↦
   h p (hp.trans (by exact_mod_cast hmn))
+
+/-- Serre's condition `(R_n)` passes to localizations: a prime of a localization `S` of `R` has
+the same height as its contraction to `R`, and the same local ring. -/
+theorem SatisfiesSerreR.localization (h : SatisfiesSerreR n R) (T : Submonoid R) (S : Type*)
+    [CommRing S] [Algebra R S] [IsLocalization T S] : SatisfiesSerreR n S := by
+  rw [satisfiesSerreR_iff] at h ⊢
+  intro Q _ hQ
+  let P := Q.comap (algebraMap R S)
+  have : IsLocalization.AtPrime (Localization.AtPrime Q) P :=
+    IsLocalization.isLocalization_isLocalization_atPrime_isLocalization T _ Q
+  have := h P ((IsLocalization.height_under T Q).trans_le hQ)
+  exact .of_ringEquiv (IsLocalization.algEquiv P.primeCompl (Localization.AtPrime P)
+    (Localization.AtPrime Q)).toRingEquiv
 
 end Ring
 

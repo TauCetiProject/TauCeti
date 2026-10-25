@@ -36,6 +36,11 @@ The regular-sequence transfer lemmas for linear maps live in
   sequence `r₁, …, rₙ` lowers the depth by exactly `n`.
 * `IsLocalRing.depth_hom_ge`: depth at least one or two passes from the target
   module to the module of linear maps (Stacks, Lemma 15.24.10 (0AV5)).
+* `IsLocalRing.depth_eq_of_ringEquiv`: depth is invariant under transport along an isomorphism of
+  Noetherian local rings.
+* `IsLocalRing.mem_span_singleton_of_forall_mul_mem_of_two_le_depth`: in a Noetherian local ring
+  of depth at least two, `𝔪 c ⊆ (b)` for a nonzerodivisor `b` forces `c ∈ (b)`, so the maximal
+  ideal is not an associated prime of `R ⧸ (b)`.
 * `IsLocalRing.depth_le_ringKrullDim_quotient_of_isAssociatedPrime`: the depth of a finite module
   is at most `dim (R ⧸ p)` for every associated prime `p` of the module (Matsumura, Theorem 17.2).
 * `IsLocalRing.depth_eq_zero_iff_nontrivial_linearMap` and
@@ -54,7 +59,7 @@ quotients by regular sequences.
 
 public section
 
-universe u v
+universe u v w
 
 open IsLocalRing RingTheory.Sequence Pointwise
 
@@ -241,6 +246,69 @@ theorem depth_hom_ge {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing
           using bound_le_two))
     exact le_sSup ⟨scalars.take (predecessor + 1), homRegular, prefixMembership,
       by simp [List.length_take, Nat.min_eq_left length]⟩
+
+/-- Depth is invariant under transport along a ring isomorphism: if `e : R ≃+* S` is an
+isomorphism of Noetherian local rings and `f : M ≃+ N` is an additive isomorphism of finite modules
+with `f (r • x) = e r • f x`, then the `R`-module `M` and the `S`-module `N` have the same depth. -/
+theorem depth_eq_of_ringEquiv {R : Type u} {S : Type*} [CommRing R] [CommRing S] [IsLocalRing R]
+    [IsLocalRing S] [IsNoetherianRing R] [IsNoetherianRing S] [Small.{v} R] [Small.{w} S]
+    {M : Type v} {N : Type w} [AddCommGroup M] [AddCommGroup N] [Module R M] [Module S N]
+    [Module.Finite R M] [Module.Finite S N] (e : R ≃+* S) (f : M ≃+ N)
+    (hf : ∀ (r : R) (x : M), f (r • x) = e r • f x) :
+    depth (ModuleCat.of S N) = depth (ModuleCat.of R M) := by
+  cases subsingleton_or_nontrivial M
+  · have : Subsingleton N := f.symm.toEquiv.subsingleton
+    rw [depth_eq_top_of_subsingleton, depth_eq_top_of_subsingleton]
+  have : Nontrivial N := f.symm.toEquiv.nontrivial
+  have hreg (rs : List R) : IsRegular M rs ↔ IsRegular N (rs.map e) :=
+    AddEquiv.isRegular_congr <| List.forall₂_map_right_iff.2 <| List.forall₂_same.2
+      fun r _ x ↦ hf r x
+  have hmem (r : R) : e r ∈ maximalIdeal S ↔ r ∈ maximalIdeal R := by
+    simp only [mem_maximalIdeal, mem_nonunits_iff, isUnit_map_iff]
+  rw [depth_eq_sSup_length_isRegular, depth_eq_sSup_length_isRegular]
+  congr 1
+  ext n
+  constructor
+  · rintro ⟨rs, reg, mem, rfl⟩
+    refine ⟨rs.map e.symm, (hreg _).2 ?_, fun r hr ↦ ?_, by simp⟩
+    · simpa [List.map_map, Function.comp_def] using reg
+    · obtain ⟨s, hs, rfl⟩ := List.mem_map.1 hr
+      exact (hmem _).1 (by simpa using mem s hs)
+  · rintro ⟨rs, reg, mem, rfl⟩
+    refine ⟨rs.map e, (hreg rs).1 reg, fun s hs ↦ ?_, by simp⟩
+    obtain ⟨r, hr, rfl⟩ := List.mem_map.1 hs
+    exact (hmem r).2 (mem r hr)
+
+/-- In a Noetherian local ring `R` of depth at least two, the maximal ideal is not an associated
+prime of `R ⧸ (b)` for a nonzerodivisor `b`: if `𝔪 c ⊆ (b)`, then `c ∈ (b)`. -/
+theorem mem_span_singleton_of_forall_mul_mem_of_two_le_depth {R : Type u} [CommRing R]
+    [IsLocalRing R] [IsNoetherianRing R] (hdepth : 2 ≤ depth (ModuleCat.of R R)) {b c : R}
+    (hb : IsSMulRegular R b) (hc : ∀ z ∈ maximalIdeal R, z * c ∈ Ideal.span {b}) :
+    c ∈ Ideal.span {b} := by
+  by_cases hbm : b ∈ maximalIdeal R
+  swap
+  · rw [Ideal.span_singleton_eq_top.2 (notMem_maximalIdeal.1 hbm)]
+    exact Submodule.mem_top
+  have hspan (x : R) : x ∈ b • (⊤ : Submodule R R) ↔ x ∈ Ideal.span {b} := by
+    rw [← Submodule.ideal_span_singleton_smul, smul_eq_mul, Ideal.mul_top]
+  -- `depth (R ⧸ (b)) + 1 = depth R ≥ 2`, so no nonzero map `R ⧸ 𝔪 → R ⧸ (b)` exists
+  have hdepth' : depth (ModuleCat.of R (QuotSMulTop b R)) ≠ 0 := fun h ↦ by
+    have h1 := depth_quotSMulTop_succ_eq_depth hb hbm
+    rw [h, zero_add] at h1
+    exact absurd (h1 ▸ hdepth) (by decide)
+  have : Subsingleton (R ⧸ maximalIdeal R →ₗ[R] QuotSMulTop b R) :=
+    not_nontrivial_iff_subsingleton.1 (mt depth_eq_zero_iff_nontrivial_linearMap.2 hdepth')
+  -- the map `r ↦ r c` is such a map, and it sends `1` to the class of `c`
+  let g : R ⧸ maximalIdeal R →ₗ[R] QuotSMulTop b R :=
+    (maximalIdeal R).liftQ (LinearMap.toSpanSingleton R _ (Submodule.Quotient.mk c))
+      fun z hz ↦ by
+        rw [LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, ← Submodule.Quotient.mk_smul,
+          Submodule.Quotient.mk_eq_zero, hspan]
+        exact hc z hz
+  have hg : g (Submodule.Quotient.mk 1) = 0 := by
+    rw [Subsingleton.elim g 0, LinearMap.zero_apply]
+  rwa [Submodule.liftQ_apply, LinearMap.toSpanSingleton_apply, one_smul,
+    Submodule.Quotient.mk_eq_zero, hspan] at hg
 
 end IsLocalRing
 
