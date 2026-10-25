@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
 public import TauCeti.GroupTheory.GroupAlgGeom.Domain
+public import Mathlib.Topology.Irreducible
 public import Mathlib.Topology.Separation.Basic
 import Mathlib.GroupTheory.Commutator.Basic
 
@@ -28,10 +29,14 @@ and the closure of a set is the solution set of its ideal of vanishing equations
 nontrivial-image condition makes the empty set algebraic; it can fail even for injective
 coefficient maps when the coefficient group is trivial.
 
+Without any domain hypothesis, the closure of an irreducible set `Y` is still the algebraic set
+`V_H(I_H(Y))`, so every irreducible closed set is algebraic.
+
 ## References
 
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
-  and ideal theory*, J. Algebra 219 (1999), §3.2, Theorem 3 and Lemma 11.
+  and ideal theory*, J. Algebra 219 (1999), §3.2, Theorem 3 and Lemma 11; §3.6,
+  Proposition 10.
 -/
 
 public section
@@ -195,5 +200,50 @@ theorem closure_eq_V_I (hdom : IsGDomain ι) (hcoeff : ∃ g : G, ι g ≠ 1)
     have hYS : Y ⊆ V ι S := hS ▸ @subset_closure (X → H) (zariskiTopology ι X) Y
     have hSI : S ⊆ I ι Y := subset_I_iff.mpr hYS
     simpa only [hS] using (V_antitone ι hSI)
+
+/-- The Zariski closure of an irreducible set is the algebraic set cut out by its ideal. No
+domain hypothesis is needed. -/
+theorem closure_eq_V_I_of_isIrreducible {Y : Set (X → H)}
+    (hY : @IsIrreducible (X → H) (zariskiTopology ι X) Y) :
+    @closure (X → H) (zariskiTopology ι X) Y = V ι (I ι Y) := by
+  let := zariskiTopology ι X
+  refine (closure_minimal (subset_V_I Y) (isClosed_V _)).antisymm fun v hv ↦ ?_
+  let g : Set (Set (X → H)) := {U | ∃ S : Set (GX G X), U = (V ι S)ᶜ}
+  have hopen {U : Set (X → H)} :
+      @IsOpen _ (zariskiTopology ι X) U ↔ TopologicalSpace.GenerateOpen g U := by
+    rw [zariskiTopology_def]
+    rfl
+  -- Every open set missing `Y` misses `V (I Y)`; argue by induction on generated open sets,
+  -- using irreducibility for intersections.
+  have key (U : Set (X → H)) (hU : TopologicalSpace.GenerateOpen g U) :
+      Disjoint U Y → Disjoint U (V ι (I ι Y)) := by
+    induction hU with
+    | basic U hU =>
+      obtain ⟨S, rfl⟩ := hU
+      intro hUY
+      have hYS : Y ⊆ V ι S := by simpa using hUY.subset_compl_left
+      exact Set.disjoint_compl_left_iff_subset.2 (V_antitone ι (subset_I_iff.2 hYS))
+    | univ => exact fun hUY ↦ absurd (Set.univ_disjoint.1 hUY) hY.nonempty.ne_empty
+    | inter U₁ U₂ hU₁ hU₂ ih₁ ih₂ =>
+      intro hUY
+      by_cases h₁ : Disjoint U₁ Y
+      · exact (ih₁ h₁).mono_left Set.inter_subset_left
+      by_cases h₂ : Disjoint U₂ Y
+      · exact (ih₂ h₂).mono_left Set.inter_subset_right
+      rw [Set.not_disjoint_iff_nonempty_inter, Set.inter_comm] at h₁ h₂
+      obtain ⟨w, hwY, hwU⟩ := hY.isPreirreducible U₁ U₂ (hopen.2 hU₁) (hopen.2 hU₂) h₁ h₂
+      exact absurd hUY (Set.not_disjoint_iff.2 ⟨w, hwU, hwY⟩)
+    | sUnion 𝒰 _ ih =>
+      exact fun hUY ↦ Set.disjoint_sUnion_left.2 fun U hU ↦
+        ih U hU (Set.disjoint_sUnion_left.1 hUY U hU)
+  refine mem_closure_iff.2 fun U hU hvU ↦ Set.not_disjoint_iff_nonempty_inter.1 fun hUY ↦ ?_
+  exact Set.disjoint_left.1 (key U (hopen.1 hU) hUY) hvU hv
+
+/-- Every irreducible Zariski closed set is algebraic: it is cut out by its ideal. -/
+theorem V_I_eq_of_isIrreducible_of_isClosed {Y : Set (X → H)}
+    (hY : @IsIrreducible (X → H) (zariskiTopology ι X) Y)
+    (hc : @IsClosed (X → H) (zariskiTopology ι X) Y) : V ι (I ι Y) = Y := by
+  rw [← closure_eq_V_I_of_isIrreducible hY, @closure_eq_iff_isClosed _ (zariskiTopology ι X)]
+  exact hc
 
 end TauCeti.GroupAlgGeom

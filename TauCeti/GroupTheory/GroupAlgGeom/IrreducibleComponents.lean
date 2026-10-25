@@ -18,10 +18,10 @@ descending chain condition on Zariski closed sets: `H` is equationally Noetheria
 Zariski topology on `H^X` is a Noetherian space for every finite type of variables `X`. Over an
 equationally Noetherian group, every subset of `H^X` is in fact Zariski compact.
 
-The closure of an irreducible set `Y` is the algebraic set `V_H(I_H(Y))`, without any domain
-hypothesis on `H`, so every irreducible closed set is algebraic. Hence, over an equationally
-Noetherian group, every closed set `Y ⊆ H^X` is an irredundant finite union `Y₁ ∪ ⋯ ∪ Yₘ` of
-irreducible algebraic sets. The `Yᵢ` are the maximal irreducible subsets of `Y`, so the
+Every irreducible closed set is algebraic
+(`TauCeti.GroupAlgGeom.V_I_eq_of_isIrreducible_of_isClosed`), so over an equationally Noetherian
+group, every closed set `Y ⊆ H^X` is an irredundant finite union `Y₁ ∪ ⋯ ∪ Yₘ` of irreducible
+algebraic sets. The `Yᵢ` are the maximal irreducible subsets of `Y`, so the
 decomposition is unique (`TauCeti.eq_setOf_maximal_isIrreducible_of_isAntichain`).
 
 If the solution set of `S` is covered by those of systems `Tᵢ`, contained in it, the coordinate
@@ -37,8 +37,6 @@ of an algebraic set in the product of the coordinate groups of its components.
 
 * `TauCeti.GroupAlgGeom.isEquationallyNoetherian_iff_noetherianSpace`: `H` is equationally
   Noetherian if and only if the Zariski topology on `H^X` is Noetherian for every finite `X`.
-* `TauCeti.GroupAlgGeom.closure_eq_V_I_of_isIrreducible`: the closure of an irreducible set is
-  the algebraic set of its ideal.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_irreducible_decomposition`: closed sets
   are irredundant finite unions of irreducible algebraic sets.
 * `TauCeti.GroupAlgGeom.CoordGroup.toPi_injective`: the coordinate group embeds in the product of
@@ -117,52 +115,6 @@ theorem isEquationallyNoetherian_iff_noetherianSpace :
   by_contra hvS
   obtain ⟨s, hs, hvs⟩ := Set.mem_iUnion₂.1 (hcover hvS)
   exact hvs (mem_V.2 fun t ht ↦ mem_V.1 hv t (Set.mem_singleton_iff.1 ht ▸ hs))
-
-/-! ### Irreducible closed sets are algebraic -/
-
-/-- The Zariski closure of an irreducible set is the algebraic set cut out by its ideal. No
-domain hypothesis is needed. -/
-theorem closure_eq_V_I_of_isIrreducible {Y : Set (X → H)}
-    (hY : @IsIrreducible (X → H) (zariskiTopology ι X) Y) :
-    @closure (X → H) (zariskiTopology ι X) Y = V ι (I ι Y) := by
-  let := zariskiTopology ι X
-  refine (closure_minimal (subset_V_I Y) (isClosed_V _)).antisymm fun v hv ↦ ?_
-  let g : Set (Set (X → H)) := {U | ∃ S : Set (GX G X), U = (V ι S)ᶜ}
-  have hopen {U : Set (X → H)} : @IsOpen _ (zariskiTopology ι X) U ↔ GenerateOpen g U := by
-    rw [zariskiTopology_def]
-    rfl
-  -- Every open set missing `Y` misses `V (I Y)`; argue by induction on generated open sets,
-  -- using irreducibility for intersections.
-  have key (U : Set (X → H)) (hU : GenerateOpen g U) :
-      Disjoint U Y → Disjoint U (V ι (I ι Y)) := by
-    induction hU with
-    | basic U hU =>
-      obtain ⟨S, rfl⟩ := hU
-      intro hUY
-      have hYS : Y ⊆ V ι S := by simpa using hUY.subset_compl_left
-      exact Set.disjoint_compl_left_iff_subset.2 (V_antitone ι (subset_I_iff.2 hYS))
-    | univ => exact fun hUY ↦ absurd (Set.univ_disjoint.1 hUY) hY.nonempty.ne_empty
-    | inter U₁ U₂ hU₁ hU₂ ih₁ ih₂ =>
-      intro hUY
-      by_cases h₁ : Disjoint U₁ Y
-      · exact (ih₁ h₁).mono_left Set.inter_subset_left
-      by_cases h₂ : Disjoint U₂ Y
-      · exact (ih₂ h₂).mono_left Set.inter_subset_right
-      rw [Set.not_disjoint_iff_nonempty_inter, Set.inter_comm] at h₁ h₂
-      obtain ⟨w, hwY, hwU⟩ := hY.isPreirreducible U₁ U₂ (hopen.2 hU₁) (hopen.2 hU₂) h₁ h₂
-      exact absurd hUY (Set.not_disjoint_iff.2 ⟨w, hwU, hwY⟩)
-    | sUnion 𝒰 _ ih =>
-      exact fun hUY ↦ Set.disjoint_sUnion_left.2 fun U hU ↦
-        ih U hU (Set.disjoint_sUnion_left.1 hUY U hU)
-  refine mem_closure_iff.2 fun U hU hvU ↦ Set.not_disjoint_iff_nonempty_inter.1 fun hUY ↦ ?_
-  exact Set.disjoint_left.1 (key U (hopen.1 hU) hUY) hvU hv
-
-/-- Every irreducible Zariski closed set is algebraic: it is cut out by its ideal. -/
-theorem V_I_eq_of_isIrreducible_of_isClosed {Y : Set (X → H)}
-    (hY : @IsIrreducible (X → H) (zariskiTopology ι X) Y)
-    (hc : @IsClosed (X → H) (zariskiTopology ι X) Y) : V ι (I ι Y) = Y := by
-  rw [← closure_eq_V_I_of_isIrreducible hY, @closure_eq_iff_isClosed _ (zariskiTopology ι X)]
-  exact hc
 
 /-! ### Irreducible components -/
 
