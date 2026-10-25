@@ -43,6 +43,12 @@ The derivative is totalized as usual: at a nondifferentiability point this field
 noncomputable def hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x : V) : V :=
   ω.toBilinForm.toContinuousBilinearMap.inverse (fderiv ℝ H x)
 
+/-- The Hamiltonian vector field is inverse contraction applied to the derivative. -/
+theorem hamiltonianVectorField_def (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
+    ω.hamiltonianVectorField H x =
+      ω.toBilinForm.toContinuousBilinearMap.inverse (fderiv ℝ H x) :=
+  (rfl)
+
 /-- Contraction of the Hamiltonian field is the derivative of the Hamiltonian. -/
 @[simp]
 theorem apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x v : V) :
