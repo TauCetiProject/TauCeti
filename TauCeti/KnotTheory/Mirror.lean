@@ -141,15 +141,21 @@ theorem range_mirror :
 
 end SmoothCircleEmbedding
 
+/-- The reflection defining the mirror image in `S³` fixes the plane of the unknot pointwise. -/
+theorem mirror_reflection_complexToEuclideanFour (w : ℂ) :
+    (ℝ ∙ EuclideanSpace.single (Fin.last 3) (1 : ℝ))ᗮ.reflection (complexToEuclideanFour w) =
+      complexToEuclideanFour w := by
+  refine Submodule.reflection_mem_subspace_eq_self ?_
+  rw [Submodule.mem_orthogonal_singleton_iff_inner_right]
+  simp [EuclideanSpace.inner_single_left]
+
 /-- **The unknot is its own mirror image**: it lies in the hyperplane `x₃ = 0` of `ℝ⁴`, which the
 reflection fixes pointwise. -/
 @[simp]
 theorem SmoothCircleEmbedding.mirror_unknot : unknot.mirror = unknot := by
   refine SmoothEmbedding.ext fun z ↦ Subtype.ext ?_
-  rw [coe_mirror_apply]
-  refine Submodule.reflection_mem_subspace_eq_self ?_
-  rw [Submodule.mem_orthogonal_singleton_iff_inner_right]
-  simp [EuclideanSpace.inner_single_left]
+  rw [coe_mirror_apply, coe_unknot_apply, ← complexToEuclideanFour_apply]
+  exact mirror_reflection_complexToEuclideanFour (z : ℂ)
 
 variable {n : ℕ}
   {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)}
