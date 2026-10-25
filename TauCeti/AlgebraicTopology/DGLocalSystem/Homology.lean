@@ -17,7 +17,11 @@ Let `𝓕` be a DG local system on a pointed space `(B, b)`, a right DG module o
 `H(C_*(Ω_b B; R))`, whose degree-zero part `H₀(Ω_b B; R)` is the group ring `R[π₁(B, b)]`. So the
 fundamental group acts on `H(𝓕)`: this is the homology of `𝓕` as a classical local system, the
 kind of coefficients `H_q(𝓕)` that appear on the second page of the index spectral sequence of a
-twisted complex. The action is on the total homology `H(𝓕)`, the direct sum of the `H_q(𝓕)`.
+twisted complex. The action is on the total homology `H(𝓕)`, the internal direct sum of the
+`H_q(𝓕)` (`TauCeti.IsDGRightModule.isInternal_cohomologyGrading`). The group ring sits in degree
+zero of `H(C_*(Ω_b B; R))`, so the action preserves degrees and restricts to each `H_q(𝓕)`
+(`TauCeti.IsDGRightModule.cohomologyGradingRepresentation`). Through the grading
+bridge `C^{-q} = C_q`, the homological degree `q` is the cohomological degree `-q`.
 
 The degree-zero part enters through the algebra map
 `TauCeti.groupAlgebraToLoopChainCohomology : R[π₁(B, b)] → H(C_*(Ω_b B; R))`, the inverse of
@@ -36,6 +40,8 @@ module `ℳ` with differential `dM`, as in `TauCeti.RankOneLocalSystem.twistedCo
 
 * `TauCeti.IsDGRightModule.cohomologyRepresentation`: the representation of `π₁(B, b)` on the
   homology of a DG local system.
+* `TauCeti.IsDGRightModule.cohomologyGradingRepresentation`: its restriction to the homology in a
+  single degree.
 
 ## References
 
@@ -103,6 +109,30 @@ theorem cohomologyRepresentation_fundamentalGroupHom_inv_apply (γ : MooreLoopSp
           (loopChain_isDGAlgebra B b R).cycles) • x := by
   rw [cohomologyRepresentation_fundamentalGroupHom_inv,
     groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom, cohomologyAction_mk]
+
+/-- The fundamental group preserves the degrees of the homology of a DG local system. -/
+theorem cohomologyRepresentation_apply_mem_cohomologyGrading (g : FundamentalGroup B b) {p : ℤ}
+    {x : hM.Cohomology} (hx : x ∈ hM.cohomologyGrading p) :
+    hM.cohomologyRepresentation g x ∈ hM.cohomologyGrading p := by
+  rw [cohomologyRepresentation_apply]
+  simpa only [add_zero] using hM.cohomologyAction_apply_mem_cohomologyGrading
+    (groupAlgebraToLoopChainCohomology_mem_cohomologyGrading_zero B b R _) hx
+
+/-- **The homology of a DG local system in a single degree** as a representation of the
+fundamental group: the restriction of the representation on `H(𝓕)` to the classes of
+cohomological degree `p`. In the homological grading of the source this is `H_q(𝓕)` for
+`q = -p`. -/
+def cohomologyGradingRepresentation (p : ℤ) :
+    Representation R (FundamentalGroup B b) (hM.cohomologyGrading p) :=
+  hM.cohomologyRepresentation.subrepresentation _ fun g _ ↦
+    hM.cohomologyRepresentation_apply_mem_cohomologyGrading g
+
+/-- A class of degree `p` acts on `H^p(𝓕)` as it does on `H(𝓕)`. -/
+@[simp]
+theorem coe_cohomologyGradingRepresentation_apply (p : ℤ) (g : FundamentalGroup B b)
+    (x : hM.cohomologyGrading p) :
+    (hM.cohomologyGradingRepresentation p g x : hM.Cohomology) = hM.cohomologyRepresentation g x :=
+  (rfl)
 
 end IsDGRightModule
 
