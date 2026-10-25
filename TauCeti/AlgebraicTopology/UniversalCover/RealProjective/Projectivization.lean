@@ -120,6 +120,8 @@ theorem homeomorphProjectivizationPi_mk
         ext i
         exact congrFun h i) := by
   let e := PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin (n + 1) => ℝ)
+  -- The forward map of the composed homeomorphism is definitionally the projectivization
+  -- map for `e` after `toProjectivization`; expose it to use `Projectivization.map_mk`.
   change Projectivization.map e.toLinearMap e.injective (toProjectivization n (mk n x)) = _
   rw [toProjectivization_mk, Projectivization.map_mk]
   rfl
