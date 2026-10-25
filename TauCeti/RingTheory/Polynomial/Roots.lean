@@ -307,6 +307,22 @@ theorem _root_.Polynomial.Monic.rel_roots_iff_exists_prod_X_sub_C {f g : F[X]} (
 
 end Rel
 
+section Inter
+
+variable [IsDomain F] [DecidableEq F]
+
+/-- The size of the multiset intersection of the roots of two polynomials is the sum, over their
+distinct common roots, of the minimum of the two multiplicities. -/
+theorem _root_.Polynomial.card_roots_inter_eq_sum_min_rootMultiplicity (p q : F[X]) :
+    Multiset.card (p.roots ∩ q.roots) =
+      ∑ x ∈ p.roots.toFinset ∩ q.roots.toFinset,
+        min (p.rootMultiplicity x) (q.rootMultiplicity x) := by
+  rw [← Multiset.sum_count_eq_card (s := p.roots.toFinset ∩ q.roots.toFinset)
+    fun x hx => by simpa using Multiset.mem_inter.mp hx]
+  simp [Multiset.count_inter, count_roots]
+
+end Inter
+
 section GCD
 
 variable {K : Type*} [Field K] [DecidableEq K]
@@ -335,16 +351,6 @@ theorem _root_.Polynomial.roots_gcd (p q : K[X]) (hp : p ≠ 0) (hq : q ≠ 0) :
     (EuclideanDomain.gcd p q).roots = p.roots ∩ q.roots := by
   ext x
   simp [count_roots, rootMultiplicity_gcd p q hp hq]
-
-/-- The size of the multiset intersection of the roots of two polynomials is the sum, over their
-distinct common roots, of the minimum of the two multiplicities. -/
-theorem _root_.Polynomial.card_roots_inter_eq_sum_min_rootMultiplicity (p q : K[X]) :
-    Multiset.card (p.roots ∩ q.roots) =
-      ∑ x ∈ p.roots.toFinset ∩ q.roots.toFinset,
-        min (p.rootMultiplicity x) (q.rootMultiplicity x) := by
-  rw [← Multiset.sum_count_eq_card (s := p.roots.toFinset ∩ q.roots.toFinset)
-    fun x hx => by simpa using Multiset.mem_inter.mp hx]
-  simp [Multiset.count_inter, count_roots]
 
 /-- **Multiplicity formula for common roots.** If `p` and `q` are nonzero and `p` splits, then
 the degree of their gcd is the number of their common roots, each counted with the minimum of its
