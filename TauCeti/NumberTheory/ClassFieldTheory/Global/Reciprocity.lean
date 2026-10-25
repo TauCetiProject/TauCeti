@@ -207,10 +207,11 @@ theorem globalArtinMap_eq_of_mk_eq_absoluteArtinMap (ι : L →ₐ[K] SeparableC
       (globalClassFormation K).absoluteArtinMap (globalGroundEquiv K (.ofMul c))) :
     globalArtinMap K L ι (.ofMul c) = .ofMul (Abelianization.of (ι.restrictNormalHom g)) := by
   have hmem : g ∈ (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).ground := by simp
+  -- The layer Artin map is the restriction of the absolute one, evaluated at the class of `g`.
   rw [globalArtinMap_apply, globalArtinEquiv_mk,
     ← (globalClassFormation K).abelianizationRestrict_absoluteArtinMap, ← hg,
-    NormalLayer.abelianizationRestrict_mk _ ⟨g, hmem⟩, MulEquiv.toAdditive_apply_apply,
-    toMul_ofMul, abelianizationCongr_of, layerGalEquiv_mk]
+    NormalLayer.abelianizationRestrict_mk _ ⟨g, hmem⟩]
+  simp
 
 /-- **The global Artin map is compatible in towers**: for a `K`-embedding `f : M → L` of a
 finite Galois extension `M/K` into `L`, restricting the global Artin symbol in `Gal(L/K)^ab` to
@@ -220,17 +221,13 @@ theorem globalArtinMap_comp {M : Type*} [Field M] [NumberField M] [Algebra K M] 
     (Abelianization.map f.restrictNormalHom).toAdditive.comp (globalArtinMap K L ι) =
       globalArtinMap K M (ι.comp f) := by
   refine AddMonoidHom.ext fun c ↦ ?_
+  obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
   -- Represent the absolute Artin symbol of `c` by some `g ∈ G_K`; both symbols restrict `g`.
   obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective
-    ((globalClassFormation K).absoluteArtinMap (globalGroundEquiv K c)).toMul
-  have hg' : Additive.ofMul (g : TopologicalAbelianization (AbsoluteGaloisGroup K)) =
-      (globalClassFormation K).absoluteArtinMap (globalGroundEquiv K (.ofMul c.toMul)) :=
-    congrArg Additive.ofMul hg
-  rw [AddMonoidHom.comp_apply, ← ofMul_toMul c,
-    globalArtinMap_eq_of_mk_eq_absoluteArtinMap K L ι g hg',
-    globalArtinMap_eq_of_mk_eq_absoluteArtinMap K M (ι.comp f) g hg',
-    MonoidHom.toAdditive_apply_apply, toMul_ofMul, Abelianization.map_of,
-    AlgHom.restrictNormalHom_restrictNormalHom]
+    ((globalClassFormation K).absoluteArtinMap (globalGroundEquiv K (.ofMul c))).toMul
+  have hg' := congrArg Additive.ofMul hg
+  simp [globalArtinMap_eq_of_mk_eq_absoluteArtinMap K L ι g hg',
+    globalArtinMap_eq_of_mk_eq_absoluteArtinMap K M (ι.comp f) g hg']
 
 end Galois
 
