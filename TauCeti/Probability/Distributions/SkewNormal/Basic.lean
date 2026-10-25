@@ -189,11 +189,6 @@ theorem hasDerivAt_cdf_gaussianReal_sub_two_mul_owensT_skewNormalPDFReal (hs : 0
   rw [skewNormalPDFReal_of_pos hs, div_eq_mul_one_div _ s]
   exact h
 
-/-- The standardized point `(x - m) / s` tends to `-∞` with `x` when `s > 0`. -/
-private theorem tendsto_div_atBot (hs : 0 < s) (m : ℝ) :
-    Tendsto (fun x => (x - m) / s) atBot atBot :=
-  (tendsto_atBot_add_const_right _ (-m) tendsto_id).atBot_div_const hs
-
 /-- The mass of the skew-normal density below a point is `Φ(y) - 2 * T(y, α)`, with
 `y = (x - m) / s`. -/
 theorem integral_skewNormalPDFReal_Iic (hs : 0 < s) (m α x : ℝ) :
@@ -202,8 +197,8 @@ theorem integral_skewNormalPDFReal_Iic (hs : 0 < s) (m α x : ℝ) :
   rw [integral_Iic_of_hasDerivAt_of_tendsto'
       (fun y _ => hasDerivAt_cdf_gaussianReal_sub_two_mul_owensT_skewNormalPDFReal hs m α y)
       (integrable_skewNormalPDFReal m s α).integrableOn
-      ((tendsto_cdf_gaussianReal_sub_two_mul_owensT_atBot α).comp (tendsto_div_atBot hs m)),
-    sub_zero]
+      ((tendsto_cdf_gaussianReal_sub_two_mul_owensT_atBot α).comp
+        ((tendsto_atBot_add_const_right _ (-m) tendsto_id).atBot_div_const hs)), sub_zero]
 
 /-! ### The measure -/
 
@@ -248,7 +243,8 @@ theorem isProbabilityMeasure_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
     rw [integral_of_hasDerivAt_of_tendsto
       (hasDerivAt_cdf_gaussianReal_sub_two_mul_owensT_skewNormalPDFReal hs m α)
       (integrable_skewNormalPDFReal m s α)
-      ((tendsto_cdf_gaussianReal_sub_two_mul_owensT_atBot α).comp (tendsto_div_atBot hs m))
+      ((tendsto_cdf_gaussianReal_sub_two_mul_owensT_atBot α).comp
+        ((tendsto_atBot_add_const_right _ (-m) tendsto_id).atBot_div_const hs))
       ((tendsto_cdf_gaussianReal_sub_two_mul_owensT_atTop α).comp
         ((tendsto_atTop_add_const_right _ (-m) tendsto_id).atTop_div_const hs)), sub_zero]
   rw [funext (skewNormalPDF_eq_ofReal m s α), ← ofReal_integral_eq_lintegral_ofReal
