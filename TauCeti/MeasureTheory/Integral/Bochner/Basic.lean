@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
 # Additional lemmas for the Bochner integral
@@ -17,6 +18,11 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 This file records general-purpose lemmas for Bochner integrals, including bridges between
 real-valued Bochner integrals and extended-nonnegative Lebesgue integrals, as well as inequalities
 for set and probability integrals.
+
+## Continuous additive maps
+
+* `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
+  between real Banach spaces.
 
 ## Positive parts
 
@@ -35,7 +41,8 @@ for set and probability integrals.
 * `sq_setIntegral_le_measureReal_mul_setIntegral_sq` is Cauchy--Schwarz for a real-valued set
   integral, in squared form.
 * `setIntegral_le_setIntegral_sq_mul_of_eqOn` compares an integral over a set with a weighted
-  integral over a larger set, for a `[0, 1]`-valued weight equal to one on the smaller set.
+  integral over a larger set, for a weight in `[0, 1]` almost everywhere on the larger set and
+  equal to one on the smaller set.
 * The set-integral inequality specializes to the second-moment lower bound for a real-valued
   function on a probability space.
 * `integral_max_sub_sq_le_mul_measureReal` bounds the integral of the squared truncation
@@ -51,6 +58,10 @@ in the seminorm form `eLpNorm (f i - g) 1 μ → 0` (for instance by
 
 The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm`, whose home is
 `Mathlib.MeasureTheory.Integral.Bochner.Basic`, plus continuity of `ENNReal.ofReal` at `0`.
+
+* `tendsto_integral_smul_of_tendsto_lintegral_enorm_sub` turns `L¹(s)` convergence into
+  convergence of integrals against an almost everywhere bounded scalar multiplier vanishing
+  almost everywhere outside `s`.
 
 ## Tail lower bounds
 
@@ -97,6 +108,15 @@ noncomputable section
 open MeasureTheory Filter TopologicalSpace
 
 open scoped ENNReal Function Topology
+
+/-- Integration commutes with a continuous additive map between real Banach spaces. -/
+theorem AddMonoidHom.integral_comp_comm {X E F : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    {μ : Measure X} (T : E →+ F) (hT : Continuous T) {f : X → E} (hf : Integrable f μ) :
+    ∫ x, T (f x) ∂μ = T (∫ x, f x ∂μ) := by
+  simpa only [AddMonoidHom.coe_toRealLinearMap] using
+    (T.toRealLinearMap hT).integral_comp_comm hf
 
 namespace TauCeti
 
@@ -154,23 +174,15 @@ theorem not_integrable_of_eventually_le_atTop {f : ℝ → ℝ} {ε : ℝ} (hε 
 /-- Integrating `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set: if `‖g‖²` and `‖h‖²` are integrable on
 `s`, then `∫_s ‖g + h‖² ≤ 2 ∫_s ‖g‖² + 2 ∫_s ‖h‖²`. -/
 theorem setIntegral_norm_add_sq_le {X F : Type*} [MeasurableSpace X] {μ : Measure X}
-    [NormedAddCommGroup F] {g h : X → F} {s : Set X}
+    [SeminormedAddGroup F] {g h : X → F} {s : Set X}
     (hg : IntegrableOn (fun x => ‖g x‖ ^ 2) s μ) (hh : IntegrableOn (fun x => ‖h x‖ ^ 2) s μ) :
     ∫ x in s, ‖g x + h x‖ ^ 2 ∂μ ≤ 2 * ∫ x in s, ‖g x‖ ^ 2 ∂μ + 2 * ∫ x in s, ‖h x‖ ^ 2 ∂μ := by
-  have h0 : 0 ≤ 2 * ∫ x in s, ‖g x‖ ^ 2 ∂μ + 2 * ∫ x in s, ‖h x‖ ^ 2 ∂μ := by
-    have := setIntegral_nonneg_of_ae_restrict (μ := μ) (s := s) (f := fun x => ‖g x‖ ^ 2)
-      (ae_of_all _ fun _ => by positivity)
-    have := setIntegral_nonneg_of_ae_restrict (μ := μ) (s := s) (f := fun x => ‖h x‖ ^ 2)
-      (ae_of_all _ fun _ => by positivity)
-    positivity
-  by_cases hgh : IntegrableOn (fun x => ‖g x + h x‖ ^ 2) s μ
-  · rw [← integral_const_mul, ← integral_const_mul,
-      ← integral_add (hg.const_mul 2) (hh.const_mul 2)]
-    refine integral_mono hgh ((hg.const_mul 2).add (hh.const_mul 2)) fun x => ?_
-    have := (pow_le_pow_left₀ (norm_nonneg _) (norm_add_le (g x) (h x)) 2).trans add_sq_le
-    simpa only [Pi.add_apply, mul_add] using this
-  · rw [integral_undef hgh]
-    exact h0
+  rw [← integral_const_mul, ← integral_const_mul,
+    ← integral_add (hg.const_mul 2) (hh.const_mul 2)]
+  refine integral_mono_of_nonneg (ae_of_all _ fun x => sq_nonneg _)
+    ((hg.const_mul 2).add (hh.const_mul 2)) (ae_of_all _ fun x => ?_)
+  have := (pow_le_pow_left₀ (norm_nonneg _) (norm_add_le (g x) (h x)) 2).trans add_sq_le
+  simpa only [Pi.add_apply, mul_add] using this
 
 /-- Cauchy--Schwarz for a real-valued set integral over a set of finite measure, in squared form. -/
 theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [MeasurableSpace Ω]
@@ -185,32 +197,23 @@ theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [Measurabl
       Even.convexOn_pow (by norm_num : Even 2)
     have hjensen := hconv.map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
       hS hS_top (ae_of_all _ fun _ => Set.mem_univ _) hf hf_sq
-    rw [setAverage_eq, setAverage_eq] at hjensen
-    simp only [smul_eq_mul] at hjensen
-    have hkey : (μ.real S)⁻¹ ^ 2 * (∫ x in S, f x ∂μ) ^ 2
-        ≤ (μ.real S)⁻¹ * ∫ x in S, f x ^ 2 ∂μ := by
-      calc
-        (μ.real S)⁻¹ ^ 2 * (∫ x in S, f x ∂μ) ^ 2 =
-            ((μ.real S)⁻¹ * ∫ x in S, f x ∂μ) ^ 2 := by ring
-        _ ≤ _ := hjensen
-    calc
-      (∫ x in S, f x ∂μ) ^ 2 =
-          μ.real S ^ 2 * ((μ.real S)⁻¹ ^ 2 * (∫ x in S, f x ∂μ) ^ 2) := by
-            field_simp
-      _ ≤ μ.real S ^ 2 * ((μ.real S)⁻¹ * ∫ x in S, f x ^ 2 ∂μ) :=
-        mul_le_mul_of_nonneg_left hkey (sq_nonneg _)
-      _ = μ.real S * ∫ x in S, f x ^ 2 ∂μ := by field_simp
+    simp only [setAverage_eq, smul_eq_mul, mul_pow] at hjensen
+    have hkey := mul_le_mul_of_nonneg_left hjensen (sq_nonneg (μ.real S))
+    field_simp at hkey
+    exact hkey
 
-/-- A weight `ψ` with values in `[0, 1]` that equals one on a measurable set `t ⊆ s` bounds the
-integral of a nonnegative function over `t` by the `ψ²`-weighted integral over `s`. -/
+/-- A weight `ψ` with values in `[0, 1]` almost everywhere on `s` that equals one on a measurable
+set `t ⊆ s` bounds the integral over `t` of a function nonnegative almost everywhere on `s` by
+its `ψ²`-weighted integral over `s`. -/
 theorem setIntegral_le_setIntegral_sq_mul_of_eqOn {X : Type*} [MeasurableSpace X]
-    {μ : Measure X} {s t : Set X} {f ψ : X → ℝ} (hf : IntegrableOn f s μ) (hf0 : ∀ x, 0 ≤ f x)
-    (hψ : AEStronglyMeasurable ψ (μ.restrict s)) (hψ01 : Set.range ψ ⊆ Set.Icc 0 1)
+    {μ : Measure X} {s t : Set X} {f ψ : X → ℝ} (hf : IntegrableOn f s μ)
+    (hf0 : 0 ≤ᵐ[μ.restrict s] f) (hψ : AEStronglyMeasurable ψ (μ.restrict s))
+    (hψ01 : ∀ᵐ x ∂μ.restrict s, ψ x ∈ Set.Icc 0 1)
     (ht : MeasurableSet t) (hψ1 : Set.EqOn ψ 1 t) (hts : t ⊆ s) :
     ∫ x in t, f x ∂μ ≤ ∫ x in s, ψ x ^ 2 * f x ∂μ := by
   have hint : IntegrableOn (fun x => ψ x ^ 2 * f x) s μ :=
-    hf.bdd_mul (hψ.pow 2) (c := 1) (Eventually.of_forall fun x => by
-      obtain ⟨h0, h1⟩ := hψ01 (Set.mem_range_self x)
+    hf.bdd_mul (hψ.pow 2) (c := 1) (by
+      filter_upwards [hψ01] with x ⟨h0, h1⟩
       rw [Real.norm_eq_abs, abs_pow, abs_of_nonneg h0]
       exact pow_le_one₀ h0 h1)
   calc
@@ -218,7 +221,7 @@ theorem setIntegral_le_setIntegral_sq_mul_of_eqOn {X : Type*} [MeasurableSpace X
       setIntegral_congr_fun ht fun x hx => by rw [hψ1 hx, Pi.one_apply, one_pow, one_mul]
     _ ≤ ∫ x in s, ψ x ^ 2 * f x ∂μ :=
       setIntegral_mono_set hint
-        (Eventually.of_forall fun x => mul_nonneg (sq_nonneg _) (hf0 x)) hts.eventuallyLE
+        (hf0.mono fun x hx => mul_nonneg (sq_nonneg _) hx) hts.eventuallyLE
 
 /-- On a finite measure space where `f ≤ M` almost everywhere, the integral of the squared
 truncation `((f - l)⁺)²` is at most `(M - l)²` times the measure of the upper level set
@@ -258,19 +261,54 @@ theorem ofReal_integral_le_lintegral_ofReal {Ω : Type*} [MeasurableSpace Ω]
     simp
 
 /-- **`L¹` convergence in Bochner form is `eLpNorm _ 1` convergence.** If `∫ ‖f i - g‖ → 0` along
-`l`, with every `f i` and `g` integrable, then `eLpNorm (f i - g) 1 μ → 0`. -/
+`l` and the differences `f i - g` are eventually integrable, then `eLpNorm (f i - g) 1 μ → 0`. -/
 theorem tendsto_eLpNorm_one_of_tendsto_integral_norm_sub {Ω E ι : Type*} [MeasurableSpace Ω]
     [NormedAddCommGroup E] {μ : Measure Ω} {l : Filter ι} {f : ι → Ω → E} {g : Ω → E}
-    (hf : ∀ i, Integrable (f i) μ) (hg : Integrable g μ)
+    (hf : ∀ᶠ i in l, Integrable (f i - g) μ)
     (h : Tendsto (fun i => ∫ ω, ‖f i ω - g ω‖ ∂μ) l (𝓝 0)) :
     Tendsto (fun i => eLpNorm (f i - g) 1 μ) l (𝓝 0) := by
-  have heq : ∀ i, eLpNorm (f i - g) 1 μ = ENNReal.ofReal (∫ ω, ‖f i ω - g ω‖ ∂μ) := by
-    intro i
-    rw [eLpNorm_one_eq_lintegral_enorm ((hf i).sub hg).aestronglyMeasurable,
-      ← ofReal_integral_norm_eq_lintegral_enorm ((hf i).sub hg)]
-    simp [Pi.sub_apply]
-  simp_rw [heq]
-  simpa [Function.comp_def] using (ENNReal.continuous_ofReal.tendsto 0).comp h
+  refine Tendsto.congr' ?_ (by
+    simpa only [ENNReal.ofReal_zero] using (ENNReal.continuous_ofReal.tendsto 0).comp h)
+  filter_upwards [hf] with i hi
+  rw [eLpNorm_one_eq_lintegral_enorm hi.aestronglyMeasurable,
+    ← ofReal_integral_norm_eq_lintegral_enorm hi]
+  simp only [Function.comp_apply, Pi.sub_apply]
+
+/-- If `a i → b` in `L¹(s)`, then the integrals `∫ x, c x • a i x ∂μ` converge to
+`∫ x, c x • b x ∂μ` for an almost everywhere bounded scalar multiplier `c` vanishing
+almost everywhere outside `s`.
+The approximating pairings need only be eventually integrable, and the limiting pairing
+needs only to be almost everywhere strongly measurable. -/
+theorem tendsto_integral_smul_of_tendsto_lintegral_enorm_sub {α 𝕜 F ι : Type*}
+    [MeasurableSpace α] [NormedField 𝕜] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedSpace 𝕜 F] {μ : Measure α} {s : Set α} {l : Filter ι}
+    {c : α → 𝕜} {K : ℝ}
+    (hK : ∀ᵐ x ∂μ, ‖c x‖ ≤ K) (hcsupp : ∀ᵐ x ∂μ, x ∉ s → c x = 0)
+    {a : ι → α → F} {b : α → F} (ha : ∀ᶠ i in l, Integrable (fun x => c x • a i x) μ)
+    (hb : AEStronglyMeasurable (fun x => c x • b x) μ)
+    (hab : Tendsto (fun i => ∫⁻ x in s, ‖a i x - b x‖ₑ ∂μ) l (𝓝 0)) :
+    Tendsto (fun i => ∫ x, c x • a i x ∂μ) l (𝓝 (∫ x, c x • b x ∂μ)) := by
+  refine tendsto_integral_of_L1 (fun x => c x • b x) hb ha ?_
+  have hlim : Tendsto (fun i => ENNReal.ofReal K * ∫⁻ x in s, ‖a i x - b x‖ₑ ∂μ) l
+      (𝓝 0) := by
+    simpa using ENNReal.Tendsto.const_mul (a := ENNReal.ofReal K) hab
+      (Or.inr ENNReal.ofReal_ne_top)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
+    (fun _ => zero_le) fun i => ?_
+  calc ∫⁻ x, ‖c x • a i x - c x • b x‖ₑ ∂μ
+      ≤ ∫⁻ x, s.indicator (fun x => ENNReal.ofReal K * ‖a i x - b x‖ₑ) x ∂μ := by
+        refine lintegral_mono_ae ?_
+        filter_upwards [hK, hcsupp] with x hxK hxsupp
+        rw [← smul_sub]
+        by_cases hxs : x ∈ s
+        · rw [Set.indicator_of_mem hxs, enorm_smul]
+          gcongr
+          simpa only [← ofReal_norm] using ENNReal.ofReal_le_ofReal hxK
+        · simp [Set.indicator_of_notMem hxs, hxsupp hxs]
+    _ ≤ ∫⁻ x in s, ENNReal.ofReal K * ‖a i x - b x‖ₑ ∂μ :=
+        lintegral_indicator_le _ _
+    _ = ENNReal.ofReal K * ∫⁻ x in s, ‖a i x - b x‖ₑ ∂μ :=
+        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
 
 /-- **Averaging against a kernel supported in `[-ε, 0]` samples only `[t, t + ε]`.** If `ψ` is a
 nonnegative probability density with respect to `μ` vanishing outside `[-ε, 0]`, and `F` is antitone

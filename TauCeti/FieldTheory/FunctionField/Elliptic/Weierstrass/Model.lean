@@ -25,7 +25,7 @@ an elliptic function field with exact constant field `k`.  This is the converse 
 Proposition 6.1.2 (`TauCeti.Place.exists_isWeierstrassCoordinates_of_genus_eq_one`).  It contains
 parts (a) and (c) of his Proposition 6.1.3, which treats `y² = f(x)` in characteristic other than
 two, for an arbitrary Weierstrass equation in every characteristic; the different of `F / k(x)`
-(part (b)) is not computed here.
+(part (b)) is computed in `TauCeti.FieldTheory.FunctionField.Elliptic.Weierstrass.Different`.
 
 Together with `TauCeti.Place.IsWeierstrassCoordinates.isElliptic`, it shows that over a perfect
 field, Weierstrass coordinates at a place of degree one of a function field are coordinates on
@@ -57,7 +57,7 @@ namespace TauCeti
 
 open AlgebraicGeometry WeierstrassCurve _root_.Polynomial
 
-open scoped _root_.IntermediateField
+open scoped _root_.IntermediateField _root_.RatFunc
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
@@ -103,6 +103,30 @@ theorem exists_isWeierstrassCoordinates_of_equation (h : (W.baseChange F).toAffi
     ∃ P : Place k F, P.degree = 1 ∧ P.IsWeierstrassCoordinates W x y :=
   ⟨_, by rw [degree_map, degree_infinity], isWeierstrassCoordinates_map_infinity h hx hxy⟩
 
+namespace IsWeierstrassCoordinates
+
+variable {P : Place k F} (h : P.IsWeierstrassCoordinates W x y)
+include h
+
+/-- Under the isomorphism `k(W) ≃ₐ[k] F` induced by Weierstrass coordinates generating `F`, the
+place at infinity of `k(W)` maps to `P`. -/
+theorem map_infinity_functionFieldEquivOfAdjoinEqTop (hxy : k⟮x, y⟯ = ⊤) :
+    (infinity W.toAffine).map
+        (W.toAffine.functionFieldEquivOfAdjoinEqTop h.equation h.transcendental_x hxy) = P :=
+  (isWeierstrassCoordinates_map_infinity h.equation h.transcendental_x
+    hxy).eq_of_isWeierstrassCoordinates h
+
+/-- Under the inverse isomorphism `F ≃ₐ[k] k(W)` induced by Weierstrass coordinates generating `F`,
+`P` maps to the place at infinity of `k(W)`. -/
+@[simp]
+theorem map_symm_functionFieldEquivOfAdjoinEqTop (hxy : k⟮x, y⟯ = ⊤) :
+    P.map (W.toAffine.functionFieldEquivOfAdjoinEqTop h.equation h.transcendental_x hxy).symm =
+      infinity W.toAffine := by
+  rw [← mapEquiv_symm_apply, Equiv.symm_apply_eq, mapEquiv_apply,
+    h.map_infinity_functionFieldEquivOfAdjoinEqTop hxy]
+
+end IsWeierstrassCoordinates
+
 end Place
 
 section Elliptic
@@ -143,6 +167,18 @@ which is therefore the function field of the curve. -/
 theorem genus_eq_one (h : P.IsWeierstrassCoordinates W x y) (hF : IsFunctionField k F)
     (hP : P.degree = 1) : genus k F = 1 :=
   genus_eq_one_of_equation h.equation h.transcendental_x (h.adjoin_eq_top hF hP)
+
+/-- **The partial derivative `2y + a₁x + a₃` is nonzero** in Weierstrass coordinates on an elliptic
+curve. -/
+theorem two_mul_add_ne_zero (h : P.IsWeierstrassCoordinates W x y) :
+    2 * y + algebraMap k F W.a₁ * x + algebraMap k F W.a₃ ≠ 0 :=
+  two_mul_add_ne_zero_of_equation h.equation h.transcendental_x
+
+/-- **An elliptic function field is separable over `k(x)`** in Weierstrass coordinates at a place
+of degree one. -/
+theorem isSeparable_adjoin_x (h : P.IsWeierstrassCoordinates W x y) (hF : IsFunctionField k F)
+    (hP : P.degree = 1) : Algebra.IsSeparable k⟮x⟯ F :=
+  isSeparable_adjoin_x_of_equation h.equation h.transcendental_x (h.adjoin_eq_top hF hP)
 
 end Place.IsWeierstrassCoordinates
 

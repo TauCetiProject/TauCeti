@@ -190,7 +190,7 @@ section BaseChange
 variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
 
 /-- The generator coordinate algebras over `K` are the scalar extensions of those over `k`. -/
-private noncomputable def generatorCoordinateAlgebraBaseChangeIso :
+noncomputable def generatorCoordinateAlgebraBaseChangeIso :
     ∀ j, CommHopfAlgCat.baseChange (K := K) (generatorCoordinateAlgebra n k j) ≅
       generatorCoordinateAlgebra n K j
   | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
@@ -199,7 +199,7 @@ private noncomputable def generatorCoordinateAlgebraBaseChangeIso :
         (G := SplitTorus.characterGroup (Fin n)))
 
 /-- Each generator coordinate map over `K` is the scalar extension of the map over `k`. -/
-private theorem generatorCoordinateMap_baseChange
+theorem generatorCoordinateMap_baseChange
     (j : (Fin n ⊕ Fin n) ⊕ Unit) :
     ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).inv ≫
         CommHopfAlgCat.baseChangeMap (generatorCoordinateMap n hn k j)) ≫

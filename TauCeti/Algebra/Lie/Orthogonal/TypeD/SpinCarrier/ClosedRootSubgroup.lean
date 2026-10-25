@@ -182,7 +182,7 @@ instance isClosedImmersion_rootSubgroup (k : Fin n ⊕ Fin n) :
 
 /-- Every numbered root-subgroup map into the type-`D` full-spin carrier is a monomorphism. -/
 theorem mono_rootSubgroup (k : Fin n ⊕ Fin n) : Mono (rootSubgroup n hn k) :=
-  mono_of_isClosedImmersion_underlying (rootSubgroup n hn k)
+  Grp.mono_of_mono_left (rootSubgroup n hn k)
 
 /-- A numbered type-`D` full-spin root subgroup, bundled as a closed subgroup scheme. -/
 noncomputable def rootSubgroupClosedSubgroup (k : Fin n ⊕ Fin n) :

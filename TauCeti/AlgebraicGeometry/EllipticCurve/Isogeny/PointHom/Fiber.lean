@@ -46,11 +46,6 @@ variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F]
   {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁ W₂) [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
 
-local instance : IsIntegrallyClosed W₁.CoordinateRing := W₁.isIntegrallyClosed_coordinateRing
-local instance : IsIntegrallyClosed W₂.CoordinateRing := W₂.isIntegrallyClosed_coordinateRing
-local instance : IsDedekindDomain W₂.CoordinateRing :=
-  W₂.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- Every fibre of a separable isogeny's class-group point map has cardinality equal to its
 degree over a separably closed field. -/
 @[simp]

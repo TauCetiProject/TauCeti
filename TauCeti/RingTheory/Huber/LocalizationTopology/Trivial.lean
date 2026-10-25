@@ -113,7 +113,7 @@ end Topological
 /-- The trivial rational presentation `({1}, 1)`, whose rational subset is the whole spectrum. -/
 noncomputable def Presentation.trivial [TopologicalSpace A] (P : PairOfDefinition A) :
     Presentation P :=
-  ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩
+  ⟨{1}, 1, hasDenominatorPower_denom_one P ({1} : Finset A) _⟩
 
 /-- The numerator set of the trivial presentation is the singleton containing `1`. -/
 @[simp]

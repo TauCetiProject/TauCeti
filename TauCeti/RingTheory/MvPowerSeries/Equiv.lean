@@ -41,8 +41,7 @@ families of variables with iterated restricted series
 ## Provenance
 
 `PowerSeries.coeff_toMvPowerSeries` is adapted from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, revision `66889eada51a`),
 `EllipticCurves/WeierstrassFormalGroup/Chord.lean`, the private lemma `coeff_rename_single`.
 There it is stated for `MvPowerSeries.rename (fun _ => s)` and only where it is used; here it is
 stated for the `PowerSeries.toMvPowerSeries` spelling of that map, which is Mathlib's, and it
@@ -90,44 +89,36 @@ namespace MvPowerSeries
 
 open Finset
 
-variable (R σ τ : Type*) [CommSemiring R]
+section Semiring
 
-/-- The slices of a power series in `σ ⊕ τ`: the coefficient of `xᵃ` is the power series in `τ`
-whose coefficient of `yᵇ` is the coefficient of `xᵃ yᵇ`. Implementation detail of
-`sumAlgEquiv`. -/
-private def sumFun (f : MvPowerSeries (σ ⊕ τ) R) : MvPowerSeries σ (MvPowerSeries τ R) :=
-  fun a b ↦ coeff (a.sumElim b) f
+variable (R σ τ : Type*) [Semiring R]
 
-/-- Flattening a power series in `σ` over power series in `τ`. Implementation detail of
-`sumAlgEquiv`. -/
-private noncomputable def sumInvFun (g : MvPowerSeries σ (MvPowerSeries τ R)) :
-    MvPowerSeries (σ ⊕ τ) R :=
-  fun c ↦ coeff (c.comapDomain Sum.inr Sum.inr_injective.injOn)
-    (coeff (c.comapDomain Sum.inl Sum.inl_injective.injOn) g)
+/-- Reindexing coefficients by the two parts of a monomial and currying the resulting family.
+Implementation detail of `sumAlgEquiv`. -/
+private noncomputable def sumEquiv :
+    MvPowerSeries (σ ⊕ τ) R ≃ MvPowerSeries σ (MvPowerSeries τ R) :=
+  (Equiv.arrowCongr Finsupp.sumFinsuppEquivProdFinsupp (Equiv.refl R)).trans
+    (Equiv.curry (σ →₀ ℕ) (τ →₀ ℕ) R)
 
 variable {R σ τ}
 
-private theorem coeff_coeff_sumFun (f : MvPowerSeries (σ ⊕ τ) R) (a : σ →₀ ℕ) (b : τ →₀ ℕ) :
-    coeff b (coeff a (sumFun R σ τ f)) = coeff (a.sumElim b) f := (rfl)
+private theorem coeff_coeff_sumEquiv (f : MvPowerSeries (σ ⊕ τ) R) (a : σ →₀ ℕ)
+    (b : τ →₀ ℕ) : coeff b (coeff a (sumEquiv R σ τ f)) = coeff (a.sumElim b) f := (rfl)
 
-private theorem coeff_sumInvFun (g : MvPowerSeries σ (MvPowerSeries τ R)) (c : σ ⊕ τ →₀ ℕ) :
-    coeff c (sumInvFun R σ τ g) = coeff (c.comapDomain Sum.inr Sum.inr_injective.injOn)
-      (coeff (c.comapDomain Sum.inl Sum.inl_injective.injOn) g) := (rfl)
-
-private theorem sumFun_mul (f g : MvPowerSeries (σ ⊕ τ) R) :
-    sumFun R σ τ (f * g) = sumFun R σ τ f * sumFun R σ τ g := by
+private theorem sumEquiv_mul (f g : MvPowerSeries (σ ⊕ τ) R) :
+    sumEquiv R σ τ (f * g) = sumEquiv R σ τ f * sumEquiv R σ τ g := by
   classical
   ext a b
-  simp only [coeff_coeff_sumFun, coeff_mul, map_sum]
+  simp only [coeff_coeff_sumEquiv, coeff_mul, map_sum]
   rw [← Finsupp.image_sumElim_product_antidiagonal, sum_image, sum_product]
   rintro ⟨⟨a₁, a₂⟩, b₁, b₂⟩ - ⟨⟨a₁', a₂'⟩, b₁', b₂'⟩ - h
-  simp only [Prod.mk.injEq] at h
-  have h₁ := congrArg (Finsupp.comapDomain Sum.inl · Sum.inl_injective.injOn) h.1
-  have h₂ := congrArg (Finsupp.comapDomain Sum.inl · Sum.inl_injective.injOn) h.2
-  have h₃ := congrArg (Finsupp.comapDomain Sum.inr · Sum.inr_injective.injOn) h.1
-  have h₄ := congrArg (Finsupp.comapDomain Sum.inr · Sum.inr_injective.injOn) h.2
-  simp only [Finsupp.comapDomain_inl_sumElim, Finsupp.comapDomain_inr_sumElim] at h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₃, h₄]
+  simp only [Prod.mk.injEq, Finsupp.ext_iff, Sum.forall, Finsupp.sumElim_inl,
+    Finsupp.sumElim_inr] at h ⊢
+  tauto
+
+end Semiring
+
+variable {R σ τ : Type*} [CommSemiring R]
 
 variable (R σ τ) in
 /-- **Power series in `σ ⊕ τ` are power series in `σ` over power series in `τ`.** The
@@ -136,26 +127,19 @@ the coefficient of `xᵃ yᵇ` in `f`. This is the power-series analogue of Math
 `MvPolynomial.sumAlgEquiv`. -/
 noncomputable def sumAlgEquiv :
     MvPowerSeries (σ ⊕ τ) R ≃ₐ[R] MvPowerSeries σ (MvPowerSeries τ R) where
-  toFun := sumFun R σ τ
-  invFun := sumInvFun R σ τ
-  left_inv f := by
-    ext c
-    rw [coeff_sumInvFun, coeff_coeff_sumFun, Finsupp.comapDomain_sumElim_comapDomain]
-  right_inv g := by
-    ext a b
-    rw [coeff_coeff_sumFun, coeff_sumInvFun, Finsupp.comapDomain_inl_sumElim,
-      Finsupp.comapDomain_inr_sumElim]
-  map_mul' := sumFun_mul
+  toEquiv := sumEquiv R σ τ
+  map_mul' := sumEquiv_mul
   map_add' f g := by
     ext a b
-    simp [coeff_coeff_sumFun]
+    simp [coeff_coeff_sumEquiv]
   commutes' r := by
     classical
     ext a b
     have h : a.sumElim b = 0 ↔ a = 0 ∧ b = 0 := by
       simp [Finsupp.ext_iff, Sum.forall]
-    simp only [coeff_coeff_sumFun, algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply,
-      coeff_C, h]
+    simp only [Equiv.toFun_as_coe, algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
+    rw [coeff_coeff_sumEquiv]
+    simp only [coeff_C, h]
     by_cases ha : a = 0 <;> by_cases hb : b = 0 <;> simp [ha, hb, coeff_C]
 
 /-- The coefficients of `sumAlgEquiv`: the coefficient of `yᵇ` in the coefficient of `xᵃ` of the
@@ -171,18 +155,13 @@ theorem coeff_sumAlgEquiv_symm (g : MvPowerSeries σ (MvPowerSeries τ R)) (a : 
     (b : τ →₀ ℕ) : coeff (a.sumElim b) ((sumAlgEquiv R σ τ).symm g) = coeff b (coeff a g) := by
   rw [← coeff_coeff_sumAlgEquiv, AlgEquiv.apply_symm_apply]
 
-private theorem sumElim_eq_iff {a a' : σ →₀ ℕ} {b b' : τ →₀ ℕ} :
-    a.sumElim b = a'.sumElim b' ↔ a = a' ∧ b = b' := by
-  simp [Finsupp.ext_iff, Sum.forall]
-
 /-- `sumAlgEquiv` sends a variable of the first family to the corresponding variable. -/
 @[simp]
 theorem sumAlgEquiv_X_inl (i : σ) : sumAlgEquiv R σ τ (X (.inl i)) = X i := by
   classical
   ext a b
   rw [coeff_coeff_sumAlgEquiv, coeff_X, coeff_X, ← Finsupp.sumElim_single_zero]
-  simp only [sumElim_eq_iff]
-  by_cases ha : a = Finsupp.single i 1 <;> simp [ha, coeff_one]
+  split_ifs <;> simp_all [coeff_one, Finsupp.ext_iff, Sum.forall, Finsupp.single_apply]
 
 /-- `sumAlgEquiv` sends a variable of the second family to the corresponding variable, viewed as
 a constant coefficient. -/
@@ -191,8 +170,7 @@ theorem sumAlgEquiv_X_inr (j : τ) : sumAlgEquiv R σ τ (X (.inr j)) = C (X j) 
   classical
   ext a b
   rw [coeff_coeff_sumAlgEquiv, coeff_X, coeff_C, ← Finsupp.sumElim_zero_single]
-  simp only [sumElim_eq_iff]
-  by_cases ha : a = 0 <;> simp [ha, coeff_X]
+  split_ifs <;> simp_all [coeff_X, Finsupp.ext_iff, Sum.forall, Finsupp.single_apply]
 
 /-- The inverse of `sumAlgEquiv` sends a variable to the corresponding variable of the first
 family. -/

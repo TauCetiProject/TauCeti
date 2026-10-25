@@ -27,6 +27,8 @@ Minkowski's second theorem this costs the factor
 ## Main results
 
 * `ZLattice.exists_basis_gauge_le`: the basis of controlled gauge.
+* `ZLattice.exists_basis_gauge_le_max_one_mul`: when the gauges of the `a i` increase, the
+  `j`-th basis vector has gauge at most `max 1 ((j + 1) / 2)` times that of `a j`.
 
 ## Implementation notes
 
@@ -91,6 +93,28 @@ theorem exists_basis_gauge_le [FiniteDimensional ℝ E] (L : Submodule ℤ E) [D
         Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (h i) (gauge_nonneg _)
     _ = (∑ i ∈ Finset.Iic j, gauge B (a i)) / 2 := by
         rw [← Finset.mul_sum]
+        ring
+
+/-- **A lattice basis from an increasing independent family.** If, in
+`ZLattice.exists_basis_gauge_le`, the gauges of `a 0, a 1, …` increase, as they do for vectors
+realizing the successive minima of `L` with respect to `B`, then some `ℤ`-basis `b` of `L` has
+`gauge B (b j) ≤ max 1 ((j + 1) / 2) * gauge B (a j)` for every `j`. -/
+theorem exists_basis_gauge_le_max_one_mul [FiniteDimensional ℝ E] (L : Submodule ℤ E)
+    [DiscreteTopology L] {B : Set E} (hB₀ : Convex ℝ B) (hB₁ : ∀ x ∈ B, -x ∈ B)
+    (hB₂ : Absorbent ℝ B) {n : ℕ} (hn : n = finrank ℝ E) {a : Fin n → E} (haL : ∀ i, a i ∈ L)
+    (ha : LinearIndependent ℝ a) (hmono : Monotone fun i ↦ gauge B (a i)) :
+    ∃ b : Basis (Fin n) ℤ L, ∀ j : Fin n,
+      gauge B (b j : E) ≤ max 1 ((((j : ℕ) : ℝ) + 1) / 2) * gauge B (a j) := by
+  obtain ⟨b, hb⟩ := exists_basis_gauge_le L hB₀ hB₁ hB₂ hn haL ha
+  refine ⟨b, fun j ↦ (hb j).trans ?_⟩
+  rw [max_mul_of_nonneg _ _ (gauge_nonneg _), one_mul]
+  refine max_le_max le_rfl ?_
+  calc (∑ i ∈ Finset.Iic j, gauge B (a i)) / 2 ≤ (∑ _i ∈ Finset.Iic j, gauge B (a j)) / 2 := by
+        gcongr with i hi
+        exact hmono (Finset.mem_Iic.1 hi)
+    _ = ((((j : ℕ) : ℝ) + 1) / 2) * gauge B (a j) := by
+        rw [Finset.sum_const, Fin.card_Iic, nsmul_eq_mul]
+        push_cast
         ring
 
 end ZLattice

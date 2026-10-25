@@ -40,6 +40,8 @@ of singular values give at most the sum of its first `k` terms
 * `LinearMap.kyFanSum`: the Ky Fan `k`-sum of singular values.
 * `LinearMap.norm_sum_inner_le_kyFanSum`: Ky Fan's maximum principle, the upper bound.
 * `LinearMap.exists_orthonormal_sum_inner_eq_kyFanSum`: the leading singular pairs attain it.
+* `LinearMap.norm_sum_inner_add_inner_le_kyFanSum`: the upper bound for families transformed by two
+  pairs of symmetric operators whose squared norms add up to at most the identity.
 * `LinearMap.norm_trace_comp_linearIsometryEquiv_le_kyFanSum`,
   `LinearMap.exists_linearIsometryEquiv_trace_comp_eq_kyFanSum`: for an endomorphism `A` of an
   `n`-dimensional space, `σ₀(A) + ⋯ + σₙ₋₁(A)` is the largest value of `‖tr (A Q)‖` over
@@ -146,52 +148,94 @@ theorem sum_singularValues_mul_le_kyFanSum (A : E →ₗ[𝕜] F) {k : ℕ} {c :
     rw [← h1, Nat.cast_min]
     exact le_min hck hcard
 
-/-- **Ky Fan's maximum principle**, the upper bound: for orthonormal families `(uᵢ)` in `F` and
-`(vᵢ)` in `E` with `k` members, `‖∑ᵢ ⟪uᵢ, A vᵢ⟫‖` is at most the Ky Fan `k`-sum of `A`. -/
-theorem norm_sum_inner_le_kyFanSum {ι : Type*} [Fintype ι] (A : E →ₗ[𝕜] F) {u : ι → F}
-    {v : ι → E} (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) :
-    ‖∑ i, ⟪u i, A (v i)⟫‖ ≤ A.kyFanSum (Fintype.card ι) := by
-  -- The weights the families `v` and `u` place on the `j`-th right and left singular vectors.
-  obtain ⟨a, ha⟩ : ∃ a : Fin (finrank 𝕜 E) → ℝ,
-      a = fun j ↦ ∑ i, ‖⟪A.rightSingularBasis j, v i⟫‖ ^ 2 := ⟨_, rfl⟩
-  obtain ⟨b, hb⟩ : ∃ b : Fin (finrank 𝕜 E) → ℝ,
-      b = fun j ↦ ∑ i, ‖⟪A.leftSingularVector j, u i⟫‖ ^ 2 := ⟨_, rfl⟩
-  -- Bessel's inequality bounds each weight by one.
+/-- **Ky Fan's maximum principle for pairs of contractions.** Let `P₁, Q₁` be symmetric operators
+on `F` with `‖P₁ y‖² + ‖Q₁ y‖² ≤ ‖y‖²` for every `y`, and `P₂, Q₂` symmetric operators on `E` with
+`‖P₂ x‖² + ‖Q₂ x‖² ≤ ‖x‖²` for every `x`. For orthonormal families `(uᵢ)` in `F` and `(vᵢ)` in `E`
+with `k` members, `‖∑ᵢ (⟪P₁ uᵢ, A (P₂ vᵢ)⟫ + ⟪Q₁ uᵢ, A (Q₂ vᵢ)⟫)‖` is at most the Ky Fan `k`-sum of
+`A`.
+
+With `P₁ = P₂ = 1` and `Q₁ = Q₂ = 0` this is Ky Fan's maximum principle
+`LinearMap.norm_sum_inner_le_kyFanSum`. For symmetric `S` on `F` and `T` on `E` with eigenvalues
+`αᵢ` and `βⱼ`, taking `P₁ = sin (τ S)`, `Q₁ = cos (τ S)`, `P₂ = cos (τ T)` and `Q₂ = -sin (τ T)`,
+it bounds sums twisted by the phases `sin (τ (αᵢ - βⱼ))`, without passing to complex scalars. -/
+theorem norm_sum_inner_add_inner_le_kyFanSum {ι : Type*} [Fintype ι] (A : E →ₗ[𝕜] F)
+    {P₁ Q₁ : F →ₗ[𝕜] F} {P₂ Q₂ : E →ₗ[𝕜] E} (hP₁ : P₁.IsSymmetric) (hQ₁ : Q₁.IsSymmetric)
+    (hP₂ : P₂.IsSymmetric) (hQ₂ : Q₂.IsSymmetric) (h₁ : ∀ y, ‖P₁ y‖ ^ 2 + ‖Q₁ y‖ ^ 2 ≤ ‖y‖ ^ 2)
+    (h₂ : ∀ x, ‖P₂ x‖ ^ 2 + ‖Q₂ x‖ ^ 2 ≤ ‖x‖ ^ 2) {u : ι → F} {v : ι → E}
+    (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) :
+    ‖∑ i, (⟪P₁ (u i), A (P₂ (v i))⟫ + ⟪Q₁ (u i), A (Q₂ (v i))⟫)‖ ≤
+      A.kyFanSum (Fintype.card ι) := by
+  -- The weights the pairs `(P₂ vᵢ, Q₂ vᵢ)` and `(P₁ uᵢ, Q₁ uᵢ)` place on the `j`-th right and
+  -- left singular vectors.
+  obtain ⟨a, ha⟩ : ∃ a : Fin (finrank 𝕜 E) → ℝ, a = fun j ↦
+      ∑ i, (‖⟪A.rightSingularBasis j, P₂ (v i)⟫‖ ^ 2 + ‖⟪A.rightSingularBasis j, Q₂ (v i)⟫‖ ^ 2) :=
+    ⟨_, rfl⟩
+  obtain ⟨b, hb⟩ : ∃ b : Fin (finrank 𝕜 E) → ℝ, b = fun j ↦
+      ∑ i, (‖⟪A.leftSingularVector j, P₁ (u i)⟫‖ ^ 2 +
+        ‖⟪A.leftSingularVector j, Q₁ (u i)⟫‖ ^ 2) :=
+    ⟨_, rfl⟩
+  -- Bessel's inequality for `(vᵢ)` and `(uᵢ)` bounds each weight by one.
   have ha1 (j) : a j ≤ 1 := by
-    simpa [ha, norm_inner_symm] using hv.sum_inner_products_le (s := univ) (A.rightSingularBasis j)
+    have hP := hv.sum_inner_products_le (s := univ) (P₂ (A.rightSingularBasis j))
+    have hQ := hv.sum_inner_products_le (s := univ) (Q₂ (A.rightSingularBasis j))
+    have h := h₂ (A.rightSingularBasis j)
+    simp only [OrthonormalBasis.norm_eq_one, one_pow] at h
+    simp only [ha, sum_add_distrib, ← hP₂ _ (v _), ← hQ₂ _ (v _), norm_inner_symm _ (v _)]
+    linarith
   have hb1 (j) : b j ≤ 1 := by
-    have := hu.sum_inner_products_le (s := univ) (A.leftSingularVector j)
-    simp only [norm_inner_symm (u _)] at this
-    rw [hb]
-    exact this.trans (pow_le_one₀ (norm_nonneg _) (A.norm_leftSingularVector_le_one j))
+    have hP := hu.sum_inner_products_le (s := univ) (P₁ (A.leftSingularVector j))
+    have hQ := hu.sum_inner_products_le (s := univ) (Q₁ (A.leftSingularVector j))
+    have h := (h₁ (A.leftSingularVector j)).trans
+      (pow_le_one₀ (norm_nonneg _) (A.norm_leftSingularVector_le_one j))
+    simp only [hb, sum_add_distrib, ← hP₁ _ (u _), ← hQ₁ _ (u _), norm_inner_symm _ (u _)]
+    linarith
   -- Parseval's identity and Bessel's inequality bound the total weights by `card ι`.
-  have hasum : ∑ j, a j = Fintype.card ι := by
+  have hasum : ∑ j, a j ≤ Fintype.card ι := by
     rw [ha, sum_comm]
-    simp [A.rightSingularBasis.sum_sq_norm_inner_right, hv.1]
+    calc _ ≤ ∑ _i : ι, (1 : ℝ) := sum_le_sum fun i _ ↦ by
+          simpa [sum_add_distrib, A.rightSingularBasis.sum_sq_norm_inner_right, hv.1 i] using
+            h₂ (v i)
+      _ = Fintype.card ι := by simp
   have hbsum : ∑ j, b j ≤ Fintype.card ι := by
     rw [hb, sum_comm]
-    calc ∑ i, ∑ j, ‖⟪A.leftSingularVector j, u i⟫‖ ^ 2 ≤ ∑ _i : ι, (1 : ℝ) :=
-          sum_le_sum fun i _ ↦ by
-            simpa [hu.1] using A.sum_norm_inner_leftSingularVector_sq_le (u i)
+    calc _ ≤ ∑ _i : ι, (1 : ℝ) := sum_le_sum fun i _ ↦ by
+          rw [sum_add_distrib]
+          have := h₁ (u i)
+          rw [hu.1 i, one_pow] at this
+          linarith [A.sum_norm_inner_leftSingularVector_sq_le (P₁ (u i)),
+            A.sum_norm_inner_leftSingularVector_sq_le (Q₁ (u i))]
       _ = Fintype.card ι := by simp
   refine le_trans ?_ (A.sum_singularValues_mul_le_kyFanSum (c := fun j ↦ (a j + b j) / 2)
     (fun j ↦ by rw [ha, hb]; positivity) (fun j ↦ by linarith [ha1 j, hb1 j])
     (by rw [← sum_div, sum_add_distrib]; linarith))
   -- Expand `A` in its singular system and bound each coefficient by AM-GM.
-  calc ‖∑ i, ⟪u i, A (v i)⟫‖
+  calc ‖∑ i, (⟪P₁ (u i), A (P₂ (v i))⟫ + ⟪Q₁ (u i), A (Q₂ (v i))⟫)‖
       = ‖∑ j : Fin (finrank 𝕜 E), (A.singularValues j : 𝕜) *
-          ∑ i, ⟪A.rightSingularBasis j, v i⟫ * ⟪u i, A.leftSingularVector j⟫‖ := by
-        simp_rw [A.apply_eq_sum_singularValues_smul, inner_sum, inner_smul_right, mul_sum]
+          ∑ i, (⟪A.rightSingularBasis j, P₂ (v i)⟫ * ⟪P₁ (u i), A.leftSingularVector j⟫ +
+            ⟪A.rightSingularBasis j, Q₂ (v i)⟫ * ⟪Q₁ (u i), A.leftSingularVector j⟫)‖ := by
+        congr 1
+        simp_rw [A.apply_eq_sum_singularValues_smul, inner_sum, inner_smul_right,
+          ← sum_add_distrib, mul_sum]
         rw [sum_comm]
+        exact sum_congr rfl fun j _ ↦ sum_congr rfl fun i _ ↦ by ring
     _ ≤ ∑ j : Fin (finrank 𝕜 E), A.singularValues j * ((a j + b j) / 2) := by
         refine (norm_sum_le _ _).trans (sum_le_sum fun j _ ↦ ?_)
         rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg (A.singularValues_nonneg _)]
         refine mul_le_mul_of_nonneg_left ((norm_sum_le _ _).trans ?_) (A.singularValues_nonneg _)
         simp only [ha, hb, ← sum_add_distrib, sum_div]
-        refine sum_le_sum fun i _ ↦ ?_
-        rw [norm_mul, norm_inner_symm (u i)]
-        nlinarith [two_mul_le_add_sq ‖⟪A.rightSingularBasis j, v i⟫‖
-          ‖⟪A.leftSingularVector j, u i⟫‖]
+        refine sum_le_sum fun i _ ↦ (norm_add_le _ _).trans ?_
+        rw [norm_mul, norm_mul, norm_inner_symm (P₁ (u i)), norm_inner_symm (Q₁ (u i))]
+        nlinarith [two_mul_le_add_sq ‖⟪A.rightSingularBasis j, P₂ (v i)⟫‖
+          ‖⟪A.leftSingularVector j, P₁ (u i)⟫‖, two_mul_le_add_sq
+          ‖⟪A.rightSingularBasis j, Q₂ (v i)⟫‖ ‖⟪A.leftSingularVector j, Q₁ (u i)⟫‖]
+
+/-- **Ky Fan's maximum principle**, the upper bound: for orthonormal families `(uᵢ)` in `F` and
+`(vᵢ)` in `E` with `k` members, `‖∑ᵢ ⟪uᵢ, A vᵢ⟫‖` is at most the Ky Fan `k`-sum of `A`. -/
+theorem norm_sum_inner_le_kyFanSum {ι : Type*} [Fintype ι] (A : E →ₗ[𝕜] F) {u : ι → F}
+    {v : ι → E} (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) :
+    ‖∑ i, ⟪u i, A (v i)⟫‖ ≤ A.kyFanSum (Fintype.card ι) := by
+  simpa using A.norm_sum_inner_add_inner_le_kyFanSum IsSymmetric.one IsSymmetric.zero
+    IsSymmetric.one IsSymmetric.zero (fun y ↦ by simp) (fun x ↦ by simp) hu hv
 
 /-- **Ky Fan's maximum principle**, attainment: the first `k` right singular vectors and the
 corresponding unit left singular vectors, completed where the singular value vanishes, are

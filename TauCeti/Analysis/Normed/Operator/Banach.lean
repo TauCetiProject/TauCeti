@@ -20,7 +20,8 @@ domain. Mathlib only states the composite theorem
 This file isolates the second step, so that other sources of approximate preimages can be fed
 into it. The main application is the case where the closure of the image of every ball contains a
 ball, as happens when the adjoint is bounded below; this is how surjectivity is recovered in the
-closed-range theorem.
+closed-range theorem. The scalar actions need no compatibility with the norms; only additivity
+and continuity of the map enter the argument.
 
 ## Main declarations
 
@@ -28,7 +29,7 @@ closed-range theorem.
   norm with relative error `1 / 2` give exact preimages of controlled norm.
 * `ContinuousLinearMap.exists_preimage_norm_le_of_mem_closure`: if every `y` lies in the closure of
   the image of the closed ball of radius `C * ‖y‖`, then every `y` has a preimage of norm at most
-  `(2 * C + 1) * ‖y‖`.
+  `2 * C * ‖y‖`.
 
 ## References
 
@@ -44,16 +45,16 @@ open Function Metric Set Filter Finset Topology
 
 namespace ContinuousLinearMap
 
-variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] {σ : 𝕜 →+* 𝕜'}
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜' F]
+variable {𝕜 𝕜' : Type*} [Semiring 𝕜] [Semiring 𝕜'] {σ : 𝕜 →+* 𝕜'}
+variable {E : Type*} [SeminormedAddCommGroup E] [Module 𝕜 E] [CompleteSpace E]
+variable {F : Type*} [NormedAddCommGroup F] [Module 𝕜' F]
 
 /-- **Approximate preimages give exact preimages.** If every `y` is within `‖y‖ / 2` of the
 image of a point of norm at most `C * ‖y‖`, then every `y` is the image of a point of norm at
-most `(2 * C + 1) * ‖y‖`. -/
+most `2 * C * ‖y‖`. -/
 theorem exists_preimage_norm_le_of_approx (f : E →SL[σ] F) {C : ℝ}
     (hC : ∀ y, ∃ x, dist (f x) y ≤ 1 / 2 * ‖y‖ ∧ ‖x‖ ≤ C * ‖y‖) (y : F) :
-    ∃ x, f x = y ∧ ‖x‖ ≤ (2 * C + 1) * ‖y‖ := by
+    ∃ x, f x = y ∧ ‖x‖ ≤ 2 * C * ‖y‖ := by
   rcases eq_or_ne y 0 with rfl | hy
   · exact ⟨0, by simp, by simp⟩
   have hC0 : 0 ≤ C := by
@@ -86,17 +87,15 @@ theorem exists_preimage_norm_le_of_approx (f : E →SL[σ] F) {C : ℝ}
       _ = (1 / 2) ^ n * (C * ‖y‖) := by ring
   have sNu : Summable fun n ↦ ‖u n‖ :=
     .of_nonneg_of_le (fun n ↦ norm_nonneg _) ule
-      (Summable.mul_right _ (summable_geometric_of_lt_one (by simp) (by norm_num)))
+      (Summable.mul_right _ summable_geometric_two)
   let x := tsum u
-  have x_ineq : ‖x‖ ≤ (2 * C + 1) * ‖y‖ :=
+  have x_ineq : ‖x‖ ≤ 2 * C * ‖y‖ :=
     calc
       ‖x‖ ≤ ∑' n, ‖u n‖ := norm_tsum_le_tsum_norm sNu
       _ ≤ ∑' n, (1 / 2) ^ n * (C * ‖y‖) :=
         sNu.tsum_le_tsum ule <| Summable.mul_right _ summable_geometric_two
       _ = (∑' n, (1 / 2) ^ n) * (C * ‖y‖) := tsum_mul_right
       _ = 2 * C * ‖y‖ := by rw [tsum_geometric_two, mul_assoc]
-      _ ≤ 2 * C * ‖y‖ + ‖y‖ := le_add_of_nonneg_right (norm_nonneg y)
-      _ = (2 * C + 1) * ‖y‖ := by ring
   have fsumeq : ∀ n : ℕ, f (∑ i ∈ range n, u i) = y - h^[n] y := by
     intro n
     induction n with
@@ -115,11 +114,11 @@ theorem exists_preimage_norm_le_of_approx (f : E →SL[σ] F) {C : ℝ}
   exact ⟨x, by simpa using tendsto_nhds_unique L₁ L₂, x_ineq⟩
 
 /-- **Banach's lemma.** If every `y` lies in the closure of the image of the closed ball of radius
-`C * ‖y‖`, then every `y` has a preimage of norm at most `(2 * C + 1) * ‖y‖`. In particular, the
+`C * ‖y‖`, then every `y` has a preimage of norm at most `2 * C * ‖y‖`. In particular, the
 map is surjective. -/
 theorem exists_preimage_norm_le_of_mem_closure (f : E →SL[σ] F) {C : ℝ}
     (hC : ∀ y, y ∈ closure (f '' closedBall 0 (C * ‖y‖))) (y : F) :
-    ∃ x, f x = y ∧ ‖x‖ ≤ (2 * C + 1) * ‖y‖ := by
+    ∃ x, f x = y ∧ ‖x‖ ≤ 2 * C * ‖y‖ := by
   refine f.exists_preimage_norm_le_of_approx (fun y ↦ ?_) y
   rcases eq_or_ne y 0 with rfl | hy
   · exact ⟨0, by simp, by simp⟩

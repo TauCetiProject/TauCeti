@@ -145,6 +145,28 @@ theorem eventually_mapOrientation_eq_of_eventually (hι : Fintype.card ι = finr
     mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_map_iff_det_mul_pos _ _ _ hι]
   exact hxpos
 
+/-- The fibre orientations read as a fixed orientation `o` of the model fibre in one
+trivialization `e` of the atlas are locally constant when read in any other trivialization `e'`
+of the atlas, provided `ι` has cardinality the rank of the bundle. -/
+theorem eventually_mapOrientation_symm_eq (hι : Fintype.card ι = finrank ℝ F)
+    (e e' : Trivialization F (π F E)) [MemTrivializationAtlas e] [MemTrivializationAtlas e']
+    {b : B} (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) (o : Orientation ℝ F ι) :
+    ∀ᶠ x in 𝓝 b, ∀ (hx : x ∈ e.baseSet) (hx' : x ∈ e'.baseSet),
+      e'.mapOrientation ι hx' ((e.mapOrientation ι hx).symm o) =
+        e'.mapOrientation ι hb' ((e.mapOrientation ι hb).symm o) := by
+  classical
+  -- Extend the family read as `o` in `e` arbitrarily off `e.baseSet`; only its values on
+  -- `e.baseSet` matter.
+  let s : ∀ x, Orientation ℝ (E x) ι := fun x ↦
+    if hx : x ∈ e.baseSet then (e.mapOrientation ι hx).symm o
+    else ((trivializationAt F E x).mapOrientation ι
+      (FiberBundle.mem_baseSet_trivializationAt' x)).symm o
+  have hs (x : B) (hx : x ∈ e.baseSet) : s x = (e.mapOrientation ι hx).symm o := dite_eq_left hx
+  have h := e.eventually_mapOrientation_eq_of_eventually hι e' (o := s) hb hb'
+    (Eventually.of_forall fun x hx ↦ by simp only [hs x hx, hs b hb, Equiv.apply_symm_apply])
+  filter_upwards [h] with x hx hxe hxe'
+  simpa only [hs x hxe, hs b hb] using hx hxe'
+
 end Bundle.Trivialization
 
 namespace TauCeti

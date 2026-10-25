@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
-public import TauCeti.Analysis.InnerProductSpace.SymmetricFunctionalCalculus
+public import TauCeti.Analysis.InnerProductSpace.Symmetric.FunctionalCalculus
 
 /-!
 # Positive square roots and the finite-dimensional operator modulus
@@ -26,6 +26,9 @@ polar decomposition.
 * `LinearMap.IsPositive.sqrt`: the positive square root of a positive endomorphism.
 * `LinearMap.IsPositive.sqrt_sq`: its square is the original endomorphism.
 * `LinearMap.IsPositive.sqrt_unique`: uniqueness among positive square roots.
+* `LinearMap.IsPositive.sqrt_eq_iff`: the positive square root is the positive endomorphism whose
+  square is the original endomorphism.
+* `LinearMap.IsPositive.commute_sqrt`: an endomorphism commuting with `T` commutes with `sqrt T`.
 * `LinearMap.operatorAbs`: the modulus `sqrt (A† A)` of a rectangular linear map.
 * `LinearMap.IsPositive.eq_operatorAbs`: uniqueness among positive square roots of `A† A`.
 * `LinearMap.norm_operatorAbs_apply`: `‖|A|x‖ = ‖Ax‖`.
@@ -76,18 +79,8 @@ theorem sqrt_apply_eigenvectorBasis (hT : T.IsPositive) {n : ℕ}
   hT.sqrt_apply_of_apply_eq_smul (hT.isSymmetric.apply_eigenvectorBasis hn i)
 
 /-- The square root of a positive endomorphism is positive. -/
-theorem sqrt_isPositive (hT : T.IsPositive) : hT.sqrt.IsPositive := by
-  let R := hT.isSymmetric.cfc fun μ ↦ √√μ
-  have hR : R.IsSymmetric := hT.isSymmetric.isSymmetric_cfc _
-  have hsq : R.adjoint ∘ₗ R = hT.sqrt := by
-    rw [hR.adjoint_eq]
-    refine (hT.isSymmetric.eigenvectorBasis rfl).toBasis.ext fun i ↦ ?_
-    rw [OrthonormalBasis.coe_toBasis, comp_apply]
-    simp only [R, hT.isSymmetric.cfc_apply_eigenvectorBasis, map_smul, smul_smul,
-      ← RCLike.ofReal_mul, Real.mul_self_sqrt (Real.sqrt_nonneg _)]
-    exact (hT.sqrt_apply_eigenvectorBasis rfl i).symm
-  rw [← hsq]
-  exact isPositive_adjoint_comp_self R
+theorem sqrt_isPositive (hT : T.IsPositive) : hT.sqrt.IsPositive :=
+  hT.isSymmetric.isPositive_cfc fun _ _ ↦ Real.sqrt_nonneg _
 
 /-- The positive square root is symmetric. -/
 theorem sqrt_isSymmetric (hT : T.IsPositive) : hT.sqrt.IsSymmetric :=
@@ -143,6 +136,30 @@ theorem sqrt_unique (hT : T.IsPositive) (hS : S.IsPositive) (hST : S ∘ₗ S = 
       ((hS.isSymmetric.eigenvalues rfl i ^ 2 : ℝ) : 𝕜) • hS.isSymmetric.eigenvectorBasis rfl i := by
     simp [← hST, hSe, smul_smul, sq]
   simp [hSe, hT.sqrt_apply_of_apply_eq_smul hTe, Real.sqrt_sq (hS.nonneg_eigenvalues rfl i)]
+
+/-- The positive square root is characterized as the positive endomorphism whose square is `T`. -/
+theorem sqrt_eq_iff (hT : T.IsPositive) : hT.sqrt = S ↔ S.IsPositive ∧ S ∘ₗ S = T :=
+  ⟨fun h ↦ h ▸ ⟨hT.sqrt_isPositive, hT.sqrt_sq⟩, fun h ↦ (hT.sqrt_unique h.1 h.2).symm⟩
+
+/-- The positive square root of the zero endomorphism is zero. -/
+@[simp]
+theorem sqrt_zero : (isPositive_zero : (0 : E →ₗ[𝕜] E).IsPositive).sqrt = 0 :=
+  (isPositive_zero.sqrt_unique isPositive_zero (zero_comp 0)).symm
+
+/-- The positive square root of the identity is the identity. -/
+@[simp]
+theorem sqrt_one : (isPositive_one : (1 : E →ₗ[𝕜] E).IsPositive).sqrt = 1 :=
+  (isPositive_one.sqrt_unique isPositive_one (id_comp 1)).symm
+
+/-- The positive square root vanishes exactly when the original endomorphism does. -/
+@[simp]
+theorem sqrt_eq_zero_iff (hT : T.IsPositive) : hT.sqrt = 0 ↔ T = 0 := by
+  rw [sqrt_eq_iff, zero_comp, eq_comm]
+  exact and_iff_right isPositive_zero
+
+/-- Every endomorphism commuting with `T` commutes with its positive square root. -/
+theorem commute_sqrt (hT : T.IsPositive) (hS : Commute S T) : Commute S hT.sqrt :=
+  hT.isSymmetric.commute_cfc hS Real.sqrt
 
 end IsPositive
 

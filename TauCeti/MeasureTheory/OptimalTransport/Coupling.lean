@@ -58,8 +58,10 @@ measures, and the probability case is packaged separately as a subtype of
 * `TauCeti.isCoupling_map_swap_iff` and `TauCeti.isCoupling_map_prodMap_iff` —
   invariance of the relation under the coordinate swap and under measurable equivalences of the
   two factors;
-* `TauCeti.isCoupling_map_prodMk_of_measurePreserving` — two measure-preserving maps out of a
-  common space induce a coupling of their targets;
+* `TauCeti.isCoupling_map_prodMk_of_aemeasurable` and
+  `TauCeti.isCoupling_map_prodMk_of_measurePreserving` — two almost everywhere measurable, in
+  particular two measure-preserving, maps out of a common space induce a coupling of their
+  targets;
 * `MeasureTheory.Measure.isCoupling_diagonalCoupling` — the diagonal coupling couples a measure
   with itself;
 * `TauCeti.isCoupling_toMeasure_iff` — the coupling condition on bundled probability measures,
@@ -266,6 +268,23 @@ theorem measure_univ_prod (hπ : IsCoupling π μ ν) {t : Set Y} (ht : Measurab
     π (univ ×ˢ t) = ν t := by
   rw [univ_prod, ← Measure.snd_apply ht, hπ.snd_eq]
 
+/-- **Transport up to an exceptional set.** If a coupling `π` gives mass at most `δ` to the pairs
+of cost `c` at least `δ`, then it moves every measurable set `s` into the points at cost less than
+`δ` from `s`, up to mass `δ`. -/
+theorem measure_le_of_measure_setOf_le (hπ : IsCoupling π μ ν) {c : X → Y → ℝ≥0∞} {δ : ℝ≥0∞}
+    (h : π {z | δ ≤ c z.1 z.2} ≤ δ) {s : Set X} (hs : MeasurableSet s) :
+    μ s ≤ ν {y | ∃ x ∈ s, c x y < δ} + δ :=
+  calc μ s = π (s ×ˢ univ) := (hπ.measure_prod_univ hs).symm
+    _ ≤ π (Prod.snd ⁻¹' {y | ∃ x ∈ s, c x y < δ} ∪ {z | δ ≤ c z.1 z.2}) := by
+        refine measure_mono fun z hz ↦ ?_
+        rcases lt_or_ge (c z.1 z.2) δ with hlt | hge
+        · exact .inl ⟨z.1, hz.1, hlt⟩
+        · exact .inr hge
+    _ ≤ π (Prod.snd ⁻¹' {y | ∃ x ∈ s, c x y < δ}) + π {z | δ ≤ c z.1 z.2} := measure_union_le _ _
+    _ ≤ ν {y | ∃ x ∈ s, c x y < δ} + δ := by
+        rw [← hπ.snd_eq]
+        exact add_le_add (Measure.le_map_apply measurable_snd.aemeasurable _) h
+
 /-- The source measure of a coupling has the total mass of the coupling. -/
 theorem measure_univ_left (hπ : IsCoupling π μ ν) : μ univ = π univ := by
   rw [← hπ.fst_eq, Measure.fst_univ]
@@ -394,9 +413,10 @@ protected theorem map₀ (hπ : IsCoupling π μ ν) {f : X → X'} {g : Y → Y
         exact congrArg (Measure.map g) hπ.measurePreserving_snd.map_eq
 
 /-- **Rearranging a product of plans.** Exchanging the two middle coordinates of the product of a
-coupling of `μ, ν` and a coupling of `μ', ν'` gives a coupling of `μ ⊗ μ'` and `ν ⊗ ν'`. -/
+coupling of `μ, ν` and an s-finite coupling of `μ', ν'` gives a coupling of `μ ⊗ μ'` and
+`ν ⊗ ν'`. The first plan may be an arbitrary measure. -/
 protected theorem prodProdProdComm {π' : Measure (X' × Y')} {μ' : Measure X'} {ν' : Measure Y'}
-    [SFinite π] [SFinite π'] (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ' ν') :
+    [SFinite π'] (hπ : IsCoupling π μ ν) (hπ' : IsCoupling π' μ' ν') :
     IsCoupling ((π.prod π').map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2)))
       (μ.prod μ') (ν.prod ν') := by
   have hX : Measurable (Prod.map Prod.fst Prod.fst : (X × Y) × X' × Y' → X × X') :=
@@ -416,9 +436,10 @@ protected theorem prodProdProdComm {π' : Measure (X' × Y')} {μ' : Measure X'}
     exact congrArg₂ Measure.prod hπ.snd_eq hπ'.snd_eq
 
 /-- **Running a coupling alongside an independent sample.** If `π` couples `μ` and `ν`, then
-sampling `(x, y) ∼ π` and an independent `z ∼ η` and applying `f (·, z)` and `g (·, z)` to the two
-coordinates couples the pushforwards of `μ ⊗ η` along `f` and of `ν ⊗ η` along `g`. -/
-protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π μ ν) [SFinite π]
+sampling `(x, y) ∼ π` and an independent `z ∼ η` for an s-finite measure `η` and applying
+`f (·, z)` and `g (·, z)` to the two coordinates couples the pushforwards of `μ ⊗ η` along `f`
+and of `ν ⊗ η` along `g`. No s-finiteness assumption on `π` is needed. -/
+protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π μ ν)
     (η : Measure H) [SFinite η] {f : X × H → X'} {g : Y × H → Y'} (hf : Measurable f)
     (hg : Measurable g) :
     IsCoupling ((π.prod η).map fun w ↦ (f (w.1.1, w.2), g (w.1.2, w.2)))
@@ -429,8 +450,9 @@ protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π 
     infer_instance
   have h := (hπ.prodProdProdComm η.isCoupling_diagonalCoupling).map hf hg
   have hprod : π.prod η.diagonalCoupling =
-      (π.prod η).map (Prod.map id fun z ↦ (z, z)) :=
-    ((MeasurePreserving.id π).prod η.measurePreserving_diagonal).map_eq.symm
+      (π.prod η).map (Prod.map id fun z ↦ (z, z)) := by
+    simpa only [Measure.map_id, η.measurePreserving_diagonal.map_eq] using
+      Measure.map_prod_map π η measurable_id η.measurePreserving_diagonal.measurable
   rwa [hprod, Measure.map_map (by fun_prop) (by fun_prop),
     Measure.map_map (by fun_prop) (by fun_prop)] at h
 
@@ -461,13 +483,20 @@ theorem isCoupling_map_prodMap_iff (e : X ≃ᵐ X') (f : Y ≃ᵐ Y') :
     f.symm_comp_self, Prod.map_id, Measure.map_id, e.map_symm_map, f.map_symm_map] using
     h.map e.symm.measurable f.symm.measurable
 
+/-- Two almost everywhere measurable maps `f` and `g` out of a common space `(Ω, γ)`, pushing `γ`
+to `μ` and to `ν`, induce the coupling `(f, g)_# γ` of `μ` and `ν`. -/
+theorem isCoupling_map_prodMk_of_aemeasurable {Ω : Type*} [MeasurableSpace Ω]
+    {γ : Measure Ω} {f : Ω → X} {g : Ω → Y} (hf : AEMeasurable f γ) (hg : AEMeasurable g γ)
+    (hfμ : γ.map f = μ) (hgν : γ.map g = ν) : IsCoupling (γ.map fun w ↦ (f w, g w)) μ ν :=
+  ⟨(Measure.fst_map_prodMk₀ hf hg).trans hfμ, (Measure.snd_map_prodMk₀ hf hg).trans hgν⟩
+
 /-- Two measure-preserving maps `f` and `g` out of a common space `(Ω, γ)` induce the coupling
 `(f, g)_# γ` of their targets. -/
 theorem isCoupling_map_prodMk_of_measurePreserving {Ω : Type*} [MeasurableSpace Ω]
     {γ : Measure Ω} {f : Ω → X} {g : Ω → Y} (hf : MeasurePreserving f γ μ)
     (hg : MeasurePreserving g γ ν) : IsCoupling (γ.map fun w ↦ (f w, g w)) μ ν :=
-  ⟨(Measure.fst_map_prodMk hf.measurable hg.measurable).trans hf.map_eq,
-    (Measure.snd_map_prodMk hf.measurable hg.measurable).trans hg.map_eq⟩
+  isCoupling_map_prodMk_of_aemeasurable hf.measurable.aemeasurable hg.measurable.aemeasurable
+    hf.map_eq hg.map_eq
 
 /-- The zero measure couples the two zero measures. -/
 @[simp]

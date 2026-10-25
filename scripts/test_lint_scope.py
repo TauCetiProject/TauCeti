@@ -11,6 +11,9 @@ import sys
 import tempfile
 import textwrap
 import unittest
+from unittest.mock import patch
+
+import lint_scope_policy as policy_lookup
 
 import yaml
 
@@ -20,13 +23,32 @@ SHA_A, SHA_B = "a" * 40, "b" * 40
 
 FAKE_GH = textwrap.dedent('''\
     #!/usr/bin/env python3
-    import json, os, subprocess, sys
+    import json, os, re, subprocess, sys
     responses = json.load(open(os.environ["FAKE_GH_RESPONSES"]))
     args = sys.argv[1:]
     assert args[0] == "api", args
     path = next(a for a in args[1:] if not a.startswith("-") and a != args[args.index("--jq") + 1]
                 ) if "--jq" in args else next(a for a in args[1:] if not a.startswith("-"))
     path = path.split("?")[0]
+    with open(os.environ["FAKE_GH_CALLS"], "a") as log:
+        log.write(json.dumps(args) + "\\n")
+    if path == "graphql":
+        if "graphql" in responses:
+            data = responses["graphql"]
+        else:
+            query = args[args.index("-f") + 1]
+            numbers = re.findall(r"pr([0-9]+): pullRequest", query)
+            data = {"data": {"repository": {}}}
+            for number in numbers:
+                pr = responses.get(f"repos/o/r/pulls/{number}")
+                if pr and "_error" in pr:
+                    sys.exit(pr["_error"])
+                data["data"]["repository"][f"pr{number}"] = None if pr is None else {
+                    "number": int(number), "headRefName": pr["head"]["ref"],
+                    "labels": {"totalCount": len(pr["labels"]), "nodes": pr["labels"],
+                               "pageInfo": {"hasNextPage": False}}}
+        sys.stdout.write(json.dumps(data))
+        sys.exit(0)
     if path not in responses:
         sys.exit(f"fake gh: no response for {path}")
     if "_error" in responses[path]:
@@ -113,6 +135,7 @@ class LintScopeTest(unittest.TestCase):
             github_env = d / "github_env"
             full_env = {**os.environ, "PATH": f"{gh.parent}:{os.environ['PATH']}",
                         "FAKE_GH_RESPONSES": str(d / "responses.json"),
+                        "FAKE_GH_CALLS": str(d / "gh-calls.jsonl"),
                         "GITHUB_ENV": str(github_env), "RUNNER_TEMP": str(d), "GH_TOKEN": "x", "REPO": "o/r",
                         "SCOPE_REPO": str(checkout), **env}
             command = ["bash", str(SCRIPT), str(d / "scope")]
@@ -135,6 +158,9 @@ class LintScopeTest(unittest.TestCase):
                 github_env.touch()
             out = subprocess.run(command, env=full_env, cwd=d, capture_output=True, text=True)
             self.assertEqual(out.returncode, 0, out.stderr)
+            self.last_stdout, self.last_stderr = out.stdout, out.stderr
+            self.last_calls = [json.loads(line) for line in (d / "gh-calls.jsonl").read_text().splitlines()
+                               ] if (d / "gh-calls.jsonl").exists() else []
             self.assertFalse((d / "executed").exists(), "candidate Git helper ran")
             if (d / "git-env.jsonl").exists():
                 for line in (d / "git-env.jsonl").read_text().splitlines():
@@ -168,6 +194,25 @@ class LintScopeTest(unittest.TestCase):
                                          f("modified", "TauCeti/notes.md")]},
              "repos/o/r/pulls/12": pr()})
         self.assertEqual(modules, ["TauCeti.A.B", "TauCeti.C", "TauCeti.D'"])
+
+    def test_integrated_scope_uses_local_tree_but_raw_github_identity(self):
+        def assemble(checkout, git, base, head, env, responses):
+            # Raw H changed A. Main independently deletes A, and integration T
+            # adds B instead. GitHub only knows raw H, never local synthetic T.
+            git("checkout", "-q", "--detach", base)
+            (checkout / "TauCeti/A.lean").unlink()
+            git("add", "-A")
+            git("commit", "-qm", "main")
+            captured = git("rev-parse", "HEAD")
+            (checkout / "TauCeti/B.lean").write_text("integrated\n")
+            git("add", "-A")
+            git("commit", "-qm", "integration")
+            tested = git("rev-parse", "HEAD")
+            env.update(TESTED_BASE=captured, TESTED_HEAD=tested)
+        modules = self.run_scope(self.PR_ENV,
+            {self.PR_COMPARE: {"files": [f("modified", "TauCeti/A.lean")]},
+             "repos/o/r/pulls/12": pr()}, prepare=assemble)
+        self.assertEqual(modules, ["TauCeti.B"])
 
     def test_no_tauceti_change_lints_nothing(self):
         self.assertEqual(self.run_scope(
@@ -230,7 +275,8 @@ class LintScopeTest(unittest.TestCase):
 
     def test_full_lint_label_and_repair_branch_lint_everything(self):
         files = {self.PR_COMPARE: {"files": [f("modified", "TauCeti/A.lean")]}}
-        for info in (pr(labels=["roadmap/none", "full-lint"]), pr(head_ref="lint-repair/main")):
+        for info in (pr(labels=["roadmap/none", "full-lint"]), pr(head_ref="lint-repair/main"),
+                     pr(labels=["other,full-lint"])):
             with self.subTest(info=info):
                 self.assertIsNone(self.run_scope(
                     self.PR_ENV, dict(files, **{"repos/o/r/pulls/12": info})))
@@ -308,6 +354,45 @@ class LintScopeTest(unittest.TestCase):
                 self.assertIsNone(self.run_scope(
                     env, {endpoint: compare, "repos/o/r/pulls/12": {"_error": "HTTP 503"}},
                     files=[f("added", "TauCeti/A.lean")]))
+
+    def test_maximum_batch_uses_four_policy_requests_and_complete_local_scope(self):
+        for count, expected in ((128, ["TauCeti.X"]), (129, None)):
+            compare = {"total_commits": count, "commits": [
+                {"commit": {"message": f"change (#{n})"}} for n in range(1, count + 1)]}
+            responses = {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare}
+            responses.update({f"repos/o/r/pulls/{n}": pr() for n in range(1, count + 1)})
+            self.assertEqual(self.run_scope(
+                {"EVENT": "repository_dispatch", "BASE": SHA_A, "HEAD": SHA_B},
+                responses, files=[f("added", "TauCeti/X.lean")]), expected)
+            calls = [call for call in self.last_calls if call[1] == "graphql"]
+            self.assertEqual(len(calls), 4 if count == 128 else 0)
+            for call in calls:
+                self.assertLessEqual(call[-1].count("pullRequest(number:"), 32)
+            self.assertFalse(any("/pulls/" in call[1] for call in self.last_calls))
+            if count == 128:
+                self.assertIn("prs=128 requests=4 elapsed_seconds=", self.last_stderr)
+
+    def test_mixed_batch_full_policy_in_later_chunk_and_missing_pr(self):
+        compare = {"total_commits": 65, "commits": [
+            {"commit": {"message": f"change (#{n})"}} for n in range(1, 66)]}
+        for last in (pr(labels=["full-lint"]), pr(head_ref="lint-repair/main"), None):
+            responses = {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare}
+            # Attribution is sorted lexically; #9 is in the final chunk.
+            responses.update({f"repos/o/r/pulls/{n}": pr() for n in range(1, 66) if n != 9})
+            if last is not None:
+                responses["repos/o/r/pulls/9"] = last
+            self.assertIsNone(self.run_scope(
+                {"EVENT": "repository_dispatch", "BASE": SHA_A, "HEAD": SHA_B},
+                responses, files=[f("added", "TauCeti/X.lean")]))
+            self.assertIn("requests=3 elapsed_seconds=", self.last_stderr)
+
+    def test_invalid_graphql_response_selects_full_scope(self):
+        for bad in (None, {}, {"data": {"repository": {"pr12": None}}},
+                    {"errors": [{"message": "unavailable"}], "data": {"repository": {}}}):
+            with self.subTest(bad=bad):
+                self.assertIsNone(self.run_scope(
+                    self.PR_ENV, {self.PR_COMPARE: {"files": []}, "graphql": bad},
+                    files=[f("added", "TauCeti/X.lean")]))
 
     def test_moving_refs_worktree_and_live_pr_metadata_do_not_change_scope(self):
         def move(checkout, git, base, head, env, responses):
@@ -429,7 +514,112 @@ class LintScopeTest(unittest.TestCase):
         self.assertIsNone(self.run_scope({"EVENT": "push", "BASE": "0" * 40, "HEAD": SHA_B}, {}))
 
 
+class PolicyLookupTest(unittest.TestCase):
+    @staticmethod
+    def response(numbers=(12,)):
+        return {"data": {"repository": {f"pr{n}": {
+            "number": n, "headRefName": "feature", "labels": {
+                "totalCount": 1, "nodes": [{"name": "ordinary"}],
+                "pageInfo": {"hasNextPage": False}}} for n in numbers}}}
+
+    def test_partial_and_malformed_metadata_never_narrow_scope(self):
+        def remove(obj, field):
+            obj.pop(field)
+        mutations = [
+            lambda d, p, l: d.update(errors=[{"message": "partial failure"}]),
+            lambda d, p, l: d.update(errors=""),
+            lambda d, p, l: remove(d, "data"),
+            lambda d, p, l: remove(d["data"]["repository"], "pr12"),
+            lambda d, p, l: d["data"].update(repository=None),
+            lambda d, p, l: p.update(number=13),
+            lambda d, p, l: p.update(number=True),
+            lambda d, p, l: p.update(headRefName=None),
+            lambda d, p, l: remove(p, "headRefName"),
+            lambda d, p, l: p.update(labels=None),
+            lambda d, p, l: remove(l, "nodes"),
+            lambda d, p, l: l.update(nodes=[None]),
+            lambda d, p, l: l.update(nodes=[{}]),
+            lambda d, p, l: l.update(nodes=[{"name": None}]),
+            lambda d, p, l: l.update(nodes=[{"name": ""}]),
+            lambda d, p, l: l.update(nodes=[]),
+            lambda d, p, l: l.update(totalCount=2),
+            lambda d, p, l: l.update(totalCount=True),
+            lambda d, p, l: l.update(totalCount=101),
+            lambda d, p, l: l.update(totalCount=-1),
+            lambda d, p, l: l.update(totalCount=2, nodes=[{"name": "x"}, {"name": "x"}]),
+            lambda d, p, l: remove(l, "pageInfo"),
+            lambda d, p, l: l["pageInfo"].update(hasNextPage=True),
+            lambda d, p, l: l["pageInfo"].update(hasNextPage=0),
+        ]
+        for index, mutate in enumerate(mutations):
+            with self.subTest(index=index):
+                data = self.response()
+                pr = data["data"]["repository"]["pr12"]
+                mutate(data, pr, pr["labels"])
+                with self.assertRaises((policy_lookup.FullLint, KeyError, TypeError)):
+                    policy_lookup.validate(data, [12])
+
+    def test_complete_labels_and_exact_policy_names(self):
+        for names in ([], ["not-full-lint", "full-lint-extra"],
+                      [f"label-{n}" for n in range(100)]):
+            data = self.response()
+            data["data"]["repository"]["pr12"]["labels"].update(
+                totalCount=len(names), nodes=[{"name": name} for name in names])
+            policy_lookup.validate(data, [12])
+
+    def test_untrusted_numbers_and_repository_cannot_enter_queries(self):
+        for repo, numbers in (("o/r", "12 12"), ("o/r", "0"), ("o/r", "2147483648"),
+                              ("o/r", "12) { name }"), ("o/r", ""),
+                              ('o/r") { name }', "12"), ("o/r", "1 " * 129)):
+            with self.subTest(repo=repo, numbers=numbers), patch.object(policy_lookup, "request") as req:
+                with self.assertRaises(policy_lookup.FullLint):
+                    policy_lookup.check_policy(repo, numbers)
+                req.assert_not_called()
+
+    def test_total_deadline_stops_before_another_request(self):
+        def response(query, timeout):
+            self.assertEqual(timeout, 15)
+            return self.response(range(1, 33))
+        with patch.object(policy_lookup.time, "monotonic", side_effect=[0, 0, 46, 46]), \
+                patch.object(policy_lookup, "request", side_effect=response) as req:
+            with self.assertRaises(policy_lookup.FullLint):
+                policy_lookup.check_policy("o/r", " ".join(str(n) for n in range(1, 34)))
+            self.assertEqual(req.call_count, 1)
+
+    def test_request_enforces_byte_time_and_error_bounds(self):
+        with tempfile.TemporaryDirectory() as directory:
+            gh = pathlib.Path(directory) / "gh"
+            for source, timeout in (("print('x' * (2 * 1024 * 1024))", 5),
+                                    ("import time; time.sleep(1)", 0.05),
+                                    ("print('{broken json')", 5),
+                                    ("print('{}'); raise SystemExit(1)", 5)):
+                gh.write_text(f"#!{sys.executable}\n{source}\n")
+                gh.chmod(0o755)
+                with self.subTest(source=source), patch.dict(os.environ, {"PATH": directory}):
+                    with self.assertRaises((policy_lookup.FullLint, ValueError,
+                                            subprocess.TimeoutExpired)):
+                        policy_lookup.request("query { repository { name } }", timeout)
+
+    def test_request_command_uses_explicit_repo_in_query(self):
+        query = policy_lookup.query_for("TauCetiProject/TauCeti", [7, 12])
+        self.assertIn('owner: "TauCetiProject", name: "TauCeti"', query)
+        self.assertEqual(query.count("labels(first: 100)"), 2)
+        with patch.object(policy_lookup.subprocess, "run") as run:
+            def complete(args, **kwargs):
+                kwargs["stdout"].write(json.dumps(self.response()).encode())
+                return subprocess.CompletedProcess(args, 0)
+            run.side_effect = complete
+            self.assertEqual(policy_lookup.request(query, 3), self.response())
+            self.assertEqual(run.call_args.args[0], ["gh", "api", "graphql", "-f", f"query={query}"])
+            self.assertEqual(run.call_args.kwargs["timeout"], 3)
+
+
 class PrBuildWiringTest(unittest.TestCase):
+    def test_policy_read_permission_is_present_in_both_workflows(self):
+        for filename in ("ci.yml", "pr-build.yml"):
+            workflow = yaml.safe_load((ROOT / ".github/workflows" / filename).read_text())
+            self.assertEqual(workflow["permissions"]["pull-requests"], "read")
+
     def test_postmerge_scope_has_complete_git_history(self):
         wf = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
         job = next(job for job in wf["jobs"].values() if any(
@@ -481,7 +671,8 @@ class PrBuildWiringTest(unittest.TestCase):
 
     def repair_exemption(self, event, files, env=None, api=None):
         """Run pr-build's empty-repair-PR exemption, extracted from the Scope guard step, with a fake
-        `gh` that prints `api` (or fails when it is None). Returns (repair_pr, routed_to_human)."""
+        metadata helper that prints `api` (or fails when it is None).
+        Returns (repair_pr, routed_to_human)."""
         wf = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
         (job,) = [j for j in wf["jobs"].values()
                   if any("Build exact candidate under bwrap" in s.get("name", "")
@@ -495,15 +686,16 @@ class PrBuildWiringTest(unittest.TestCase):
                       .replace("${{ steps.pr.outputs.num }}", "12"))
         with tempfile.TemporaryDirectory() as d:
             d = pathlib.Path(d)
-            gh = d / "gh"
-            gh.write_text("#!/usr/bin/env bash\n" + ("exit 1\n" if api is None else
-                                                    f"printf '%s\\n' {shlex.quote(api)}\n"))
-            gh.chmod(0o755)
+            helper = d / "github_api.py"
+            helper.write_text("raise SystemExit(1)\n" if api is None else f"print({api!r})\n")
+            lookup = "python3 gate/scripts/github_api.py"
+            self.assertIn(lookup, block)
+            block = block.replace(lookup, f"{shlex.quote(sys.executable)} {shlex.quote(str(helper))}")
             github_env = d / "github_env"
             github_env.write_text("")
             out = subprocess.run(
                 ["bash", "-c", f"set -uo pipefail\nfiles={shlex.quote(files)}\n{block}"],
-                env={**os.environ, "PATH": f"{d}:{os.environ['PATH']}", "GITHUB_ENV": str(github_env),
+                env={**os.environ, "GITHUB_ENV": str(github_env),
                      "PR_HEAD_REF": "", "PR_HEAD_REPO": "", "PR_USER": "", **(env or {})},
                 capture_output=True, text=True)
             self.assertEqual(out.returncode, 0, out.stderr)

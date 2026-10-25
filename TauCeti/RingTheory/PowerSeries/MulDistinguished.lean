@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Ring.MulUnit
+public import TauCeti.Analysis.Normed.Monoid.MulUnit
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+import TauCeti.Analysis.Normed.Ring.MulUnit
 
 /-!
 # Multiplicatively distinguished power series
@@ -23,6 +24,9 @@ a `g` on the left loses no norm, `‖g * q‖ = ‖g‖ * ‖q‖`, and if `q` i
 `k` then `g * q` is distinguished of degree `s + k`. No multiplicativity of the norm of `R` is
 assumed. When the norm of `R` is multiplicative, the extra condition says only that the
 distinguished coefficient is a unit.
+
+Norm-preserving coefficient homomorphisms preserve distinguishedness and multiplicative
+distinguishedness, so these divisor hypotheses survive isometric coefficient extension.
 
 ## Main definitions
 
@@ -42,11 +46,13 @@ distinguished coefficient is a unit.
 * `TauCeti.PowerSeries.isMulDistinguished_monomial` and
   `TauCeti.PowerSeries.isMulDistinguished_X_sub_C`: monomials with multiplicative-unit
   coefficient, and `X - b` for `b` in the closed disc of radius `c`.
+* `TauCeti.PowerSeries.isMulDistinguished_iff_gaussNorm_eq`: a monic polynomial of degree `s` is
+  multiplicatively distinguished of degree `s` at `c` exactly when its Gauss norm is `c ^ s`.
 
 ## References
 
 * F. Martin, *Overconvergent subanalytic subsets in the framework of Berkovich spaces*,
-  J. Eur. Math. Soc. 18 (2016), Definition 1.24 and Lemma 1.26.
+  J. Eur. Math. Soc. 18 (2016), Definitions 1.20 and 1.24, Lemma 1.26 and Corollary 1.28.
 -/
 
 public section
@@ -56,6 +62,17 @@ namespace TauCeti.PowerSeries
 section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {s k : ℕ} {g q : PowerSeries R}
+
+variable {S : Type*} [SeminormedRing S] in
+/-- A norm-preserving coefficient homomorphism preserves distinguishedness, with the same
+radius and degree. Neither completeness nor surjectivity is required. -/
+theorem IsDistinguished.map (hf : IsDistinguished c s g) (φ : R →+* S)
+    (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsDistinguished c s (PowerSeries.map φ g) := by
+  have hn : (PowerSeries.map φ g).gaussNorm norm c = g.gaussNorm norm c := by
+    simp only [PowerSeries.gaussNorm_eq, PowerSeries.coeff_map, hφ]
+  exact ⟨by simpa only [PowerSeries.coeff_map, hφ, hn] using hf.norm_coeff_mul_pow_eq,
+    fun n hn' ↦ by simpa only [PowerSeries.coeff_map, hφ, hn] using
+      hf.norm_coeff_mul_pow_lt n hn'⟩
 
 variable (c s g) in
 /-- `g` is **multiplicatively distinguished of degree `s`** at the radius `c` when it is
@@ -80,6 +97,10 @@ it is distinguished and its coefficient in the distinguished degree is a unit. -
 theorem isMulDistinguished_iff_isUnit [NormMulClass R] :
     IsMulDistinguished c s g ↔ IsDistinguished c s g ∧ IsUnit (g.coeff s) := by
   rw [isMulDistinguished_iff, isNormMulUnit_iff_isUnit]
+
+/-- The coefficient ring of a multiplicatively distinguished series is nontrivial. -/
+theorem IsMulDistinguished.nontrivial (hg : IsMulDistinguished c s g) : Nontrivial R :=
+  nontrivial_of_ne _ _ hg.coeff_ne_zero
 
 /-- The truncation of a multiplicatively distinguished series just past its distinguished degree
 is again multiplicatively distinguished of that degree. -/
@@ -107,9 +128,36 @@ theorem IsMulDistinguished.isDistinguished_mul (hg : IsMulDistinguished c s g)
 
 end SeminormedRing
 
+section SeminormedCommRing
+
+variable {R : Type*} [SeminormedCommRing R] {c : ℝ} {s : ℕ} {g : PowerSeries R}
+
+/-- Right multiplication by the distinguished coefficient scales norms exactly. -/
+theorem IsMulDistinguished.norm_mul_coeff (hg : IsMulDistinguished c s g) (x : R) :
+    ‖x * g.coeff s‖ = ‖x‖ * ‖g.coeff s‖ := by
+  rw [mul_comm x, hg.isNormMulUnit_coeff.norm_mul, mul_comm]
+
+end SeminormedCommRing
+
 section NormedRing
 
 variable {R : Type*} [NormedRing R] {c : ℝ} {s : ℕ} {g q : PowerSeries R}
+
+/-- The norm of the coefficient ring of a multiplicatively distinguished series takes the value
+`1` at `1`, since the distinguished coefficient is a nonzero multiplicative unit. -/
+theorem IsMulDistinguished.normOneClass (hg : IsMulDistinguished c s g) : NormOneClass R :=
+  have := hg.nontrivial
+  ⟨hg.isNormMulUnit_coeff.norm_one⟩
+
+variable {S : Type*} [SeminormedRing S] in
+/-- A norm-preserving coefficient homomorphism preserves multiplicative distinguishedness,
+even without a multiplicative coefficient norm or a surjectivity hypothesis. -/
+theorem IsMulDistinguished.map (hf : IsMulDistinguished c s g) (φ : R →+* S)
+    (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsMulDistinguished c s (PowerSeries.map φ g) := by
+  have : NormOneClass R := hf.normOneClass
+  refine ⟨hf.toIsDistinguished.map φ hφ, ?_⟩
+  rw [PowerSeries.coeff_map]
+  exact hf.isNormMulUnit_coeff.map φ.toMonoidHom hφ
 
 /-- A monomial whose coefficient is a multiplicative unit is multiplicatively distinguished of
 its degree at a positive radius, over a nontrivial ring. -/
@@ -117,6 +165,21 @@ theorem isMulDistinguished_monomial [Nontrivial R] (hc : 0 < c) {a : R} (ha : Is
     (n : ℕ) : IsMulDistinguished c n (PowerSeries.monomial n a) :=
   ⟨isDistinguished_monomial hc ha.isUnit.ne_zero n, by
     rwa [PowerSeries.coeff_monomial_same]⟩
+
+/-- **Weierstrass polynomials at a radius.** Over a norm-one ring, a monic polynomial of degree `s`
+is multiplicatively distinguished of degree `s` at a positive radius `c` exactly when its Gauss
+norm at `c` is `c ^ s`, the weighted norm of its leading term. This is the normalisation of the
+polynomial factor in Weierstrass preparation. Lower coefficients may tie with the leading one, as
+for `X - 1` at the radius `1`. -/
+theorem isMulDistinguished_iff_gaussNorm_eq [NormOneClass R] (hc : 0 < c) {p : Polynomial R}
+    (hp : p.IsMonicOfDegree s) :
+    IsMulDistinguished c s (p : PowerSeries R) ↔ (p : PowerSeries R).gaussNorm norm c = c ^ s := by
+  have hs := hp.coeff_coe_self
+  refine ⟨fun h ↦ by rw [← h.norm_coeff_mul_pow_eq, hs, norm_one, one_mul], fun h ↦
+    ⟨isDistinguished_of_isMonicOfDegree hc hp fun k _ ↦ ?_, by rw [hs]; exact isNormMulUnit_one⟩⟩
+  rw [← h, ← Polynomial.coeff_coe]
+  exact PowerSeries.le_gaussNorm norm c _
+    (hasGaussNorm_of_isRestricted (isRestricted_polynomial p)) k
 
 variable [IsUltrametricDist R]
 

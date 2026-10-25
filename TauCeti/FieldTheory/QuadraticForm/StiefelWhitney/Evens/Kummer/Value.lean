@@ -27,10 +27,7 @@ values `w₀, w₁` of any orthogonal basis of the twisted trace form `Tr_*⟨a�
 (`TauCeti.galoisEvens2_kummerClass_eq_cup_add_cup`), that is
 `w₂(Tr_*⟨a⟩) = N^{Ev}((a)) + (2) ∪ (d)`.
 
-The results hold for `K` and `L` in any universe, except
-`N^{Ev}((1 + t x)) = (2) ∪ (1 − t² d)` (`TauCeti.galoisEvens2_kummerClass_one_add`), which uses
-the Steinberg relation `TauCeti.cup_kummerClass_eq_zero_of_add_eq_one` and so is stated, like it,
-for `K L : Type`.
+The results hold for `K` and `L` in any universe.
 
 ## Main results
 
@@ -39,6 +36,8 @@ for `K L : Type`.
 * `TauCeti.galoisEvens2_kummerClass`: `N^{Ev}((a)) = (Tr a) ∪ (−d · N a) + (2) ∪ (d)` if
   `Tr a ≠ 0`.
 * `TauCeti.galoisEvens2_kummerClass_of_trace_eq_zero`: `N^{Ev}((a)) = (2) ∪ (d)` if `Tr a = 0`.
+* `TauCeti.galoisEvens2_kummerClass_algebraMap_mul`: for `c ∈ Kˣ`,
+  `N^{Ev}((c a)) = N^{Ev}((a)) + (c) ∪ (−d · N a)`.
 * `TauCeti.galoisEvens2_kummerClass_one_add`: `N^{Ev}((1 + t x)) = (2) ∪ (1 − t² d)`.
 * `TauCeti.galoisEvens2_kummerClass_sqrt`: `N^{Ev}((x)) = (2) ∪ (d)`.
 
@@ -178,22 +177,6 @@ private theorem galoisEvens_kummerClass_eq_of_sq_eq (σ : L →ₐ[K] SeparableC
       field_simp
       ring
 
-/-- **The relation `(−t) ∪ (t) = 0`, from a quadratic extension.** Unlike the library's
-`TauCeti.cup_kummerClass_neg_self`, which is stated for `K : Type`, this holds in every universe
-in which `K` has a separable quadratic extension. -/
-private theorem cup_kummerClass_neg_kummerClass_eq_zero (σ : L →ₐ[K] SeparableClosure K)
-    (hdeg : Module.finrank K L = 2) (d : Kˣ) {x : L} (hx : x ∉ Set.range (algebraMap K L))
-    (hx2 : x ^ 2 = algebraMap K L (d : K)) (t : Kˣ) :
-    (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass (-t)) (kummerClass t) =
-      0 := by
-  -- Compute `N^{Ev}((x))` with the orthogonal bases of values `(t, −t)` and `(1, −1)`.
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    exact hx ⟨0, map_zero _⟩
-  have h := (galoisEvens_kummerClass_eq_of_sq_eq σ hdeg d hx hx2 (Units.mk0 x hx0) d hx hx2
-    t).symm.trans (galoisEvens_kummerClass_eq_of_sq_eq σ hdeg d hx hx2 (Units.mk0 x hx0) d hx hx2 1)
-  simpa using h
-
 /-- **The value of the Evens norm on a Kummer class at trace zero** (Kahn, Lemme II.2.1):
 if `Tr a = 0`, then `N^{Ev}((a)) = (2) ∪ (d)`. -/
 theorem galoisEvens2_kummerClass_of_trace_eq_zero (σ : L →ₐ[K] SeparableClosure K)
@@ -269,8 +252,11 @@ theorem galoisEvens2_kummerClass (σ : L →ₐ[K] SeparableClosure K)
             (kummerClass (-(d * N))) := by
       simpa only [kummerCup_squareClass_squareClass] using
         kummerCup_comm K (squareClass (-(d * N))) (squareClass t)
+    have hneg : (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass (-t))
+        (kummerClass t) = 0 := by
+      simpa only [neg_neg] using cup_kummerClass_neg_self (-t)
     simp only [Matrix.cons_val_one, Matrix.cons_val_zero, hmul, map_add, LinearMap.add_apply,
-      cup_kummerClass_neg_kummerClass_eq_zero σ hdeg d hx hx2, add_zero, hcomm]
+      hneg, add_zero, hcomm]
   · fin_cases i
     · simp [ht]
     · have h : (a : L) * (x / a) ^ 2 = (d : K) • (a : L)⁻¹ := by
@@ -281,18 +267,65 @@ theorem galoisEvens2_kummerClass (σ : L →ₐ[K] SeparableClosure K)
         Units.val_inv_eq_inv_val, hN, Units.coe_map]
       ring
 
-end Universe
+/-- **The Evens norm of a Kummer class scaled by a base unit**: for `c ∈ Kˣ` and `a ∈ Lˣ`,
+
+```text
+N^{Ev}((c a)) = N^{Ev}((a)) + (c) ∪ (−d · N a).
+```
+
+If `Tr a = 0`, then `−d · N a` is a square and the correction term vanishes. -/
+theorem galoisEvens2_kummerClass_algebraMap_mul (σ : L →ₐ[K] SeparableClosure K)
+    (hdeg : Module.finrank K L = 2) (d : Kˣ) {x : L} (hx : x ∉ Set.range (algebraMap K L))
+    (hx2 : x ^ 2 = algebraMap K L (d : K)) (c : Kˣ) (a : Lˣ) :
+    galoisEvens K L σ hdeg (kummerClass (Units.map (algebraMap K L : K →* L) c * a)) =
+      galoisEvens K L σ hdeg (kummerClass a) +
+        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass c)
+          (kummerClass (-(d * Units.map (Algebra.norm K : L →* K) a))) := by
+  have : Algebra.IsQuadraticExtension K L := ⟨hdeg⟩
+  set N := Units.map (Algebra.norm K : L →* K) a with hN
+  have htr : Algebra.trace K L (algebraMap K L c * a) = c * Algebra.trace K L (a : L) := by
+    rw [← Algebra.smul_def, map_smul, smul_eq_mul]
+  by_cases ht : Algebra.trace K L (a : L) = 0
+  · -- Write `a = y x`; then `−d · N a = (d y)²`.
+    obtain ⟨y, z, hyz⟩ := Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul
+      K L hx (a : L)
+    obtain rfl : z = 0 := by
+      rw [hyz, Algebra.IsQuadraticExtension.trace_algebraMap_add_algebraMap_mul_of_sq_eq hx hx2,
+        mul_eq_zero] at ht
+      exact ht.resolve_left two_ne_zero
+    have hy : y ≠ 0 := by
+      rintro rfl
+      exact a.ne_zero (by simp [hyz])
+    have hsq : kummerClass (-(d * N)) = 0 := by
+      refine (kummerClass_eq_zero_iff_square K).2 (Subgroup.mem_square.2 ⟨d * Units.mk0 y hy, ?_⟩)
+      ext
+      simp only [hN, Units.val_neg, Units.val_mul, Units.coe_map, hyz,
+        Algebra.IsQuadraticExtension.norm_algebraMap_add_algebraMap_mul_of_sq_eq hx hx2,
+        Units.val_mk0]
+      ring
+    rw [galoisEvens2_kummerClass_of_trace_eq_zero σ hdeg d hx hx2 _ (by simp [htr, ht]),
+      galoisEvens2_kummerClass_of_trace_eq_zero σ hdeg d hx hx2 a ht, hsq, map_zero, add_zero]
+  · -- Both values come from `TauCeti.galoisEvens2_kummerClass`, with `N (c a) = c² N a`.
+    have hNc : Units.map (Algebra.norm K : L →* K) (Units.map (algebraMap K L : K →* L) c * a) =
+        c ^ 2 * N := by
+      ext
+      simp [hN, Algebra.norm_algebraMap, hdeg]
+    have hsq : kummerClass (-(d * (c ^ 2 * N))) = kummerClass (-(d * N)) := by
+      have hc2 : kummerClass (c ^ 2) = 0 :=
+        (kummerClass_eq_zero_iff_square K).2 (Subgroup.mem_square.2 ⟨c, sq _⟩)
+      have hfac : -(d * (c ^ 2 * N)) = -(d * N) * c ^ 2 := by
+        ext
+        simp only [Units.val_neg, Units.val_mul, Units.val_pow_eq_pow_val]
+        ring
+      rw [hfac, kummerClass_mul, hc2, add_zero]
+    rw [galoisEvens2_kummerClass σ hdeg d hx hx2 _ (c * Units.mk0 _ ht) (by simp [htr]),
+      galoisEvens2_kummerClass σ hdeg d hx hx2 a (Units.mk0 _ ht) rfl, hNc, hsq, kummerClass_mul,
+      map_add, LinearMap.add_apply]
+    abel
 
 /-! ### The norm of `1 + t √d` -/
 
-section TypeZero
-
-variable {K : Type} [Field K] [Invertible (2 : K)] {L : Type} [Field L] [Algebra K L]
-  [FiniteDimensional K L] [Algebra.IsSeparable K L] [Invertible (2 : L)]
-
-/-- **The Evens norm of `1 + t √d`:** `N^{Ev}((1 + t x)) = (2) ∪ (1 − t² d)`. This is stated for
-`K : Type`, the universe of the library's Steinberg relation
-`TauCeti.cup_kummerClass_eq_zero_of_add_eq_one`. -/
+/-- **The Evens norm of `1 + t √d`:** `N^{Ev}((1 + t x)) = (2) ∪ (1 − t² d)`. -/
 theorem galoisEvens2_kummerClass_one_add (σ : L →ₐ[K] SeparableClosure K)
     (hdeg : Module.finrank K L = 2) (d : Kˣ) {x : L} (hx : x ∉ Set.range (algebraMap K L))
     (hx2 : x ^ 2 = algebraMap K L (d : K)) (t : K) (ht : 1 - t ^ 2 * (d : K) ≠ 0) (b : Lˣ)
@@ -330,6 +363,6 @@ theorem galoisEvens2_kummerClass_one_add (σ : L →ₐ[K] SeparableClosure K)
   rw [galoisEvens2_kummerClass σ hdeg d hx hx2 b _ htr, hN, ← map_add, hmul]
   simp only [map_add, h21, zero_add]
 
-end TypeZero
+end Universe
 
 end TauCeti

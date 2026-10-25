@@ -43,7 +43,8 @@ range, so the value is a `dite` rather than a plain application.
   backward rotation and conversely.
 * `Fin.finRotate_rev_finRotate_rev`: negation modulo `n`, written as `i ↦ finRotate n i.rev`, is
   an involution.
-* `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`.
+* `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`;
+  `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
@@ -71,6 +72,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.finRotate_succ_eq_succ_succAbove` and `Fin.finRotate_succ_succAbove_of_ne`: the cyclic
   successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
   as used when a new entry is inserted into a cyclic sequence.
+* `Fin.finRotate_castSucc`: the cyclic successor of a non-last index `i.castSucc` is `i.succ`.
 * `Fin.succAbove_adjacent_cases`: the positions `p` of `Fin (n + 1)` cyclically adjacent to
   `p.succAbove i`.
 * `Fin.swap_castSucc_succ_succAbove`: the transposition of `k.castSucc` and `k.succ` exchanges the
@@ -86,6 +88,8 @@ range, so the value is a `dite` rather than a plain application.
   tuple indexed by `Fin ((k + 1) + (l + 1))` after inserting an entry into one of the two blocks.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
+* `Fin.prod_contractNth_castSucc` and `Fin.sum_contractNth_castSucc`: multiplying (adding) two
+  adjacent entries of a tuple does not change the product (sum) of all its entries.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
 * `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`;
   `TauCeti.sub_one_ne_self` and `TauCeti.add_one_ne_sub_one` are the companions for subtraction.
@@ -160,6 +164,22 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
   rw [Fin.partialProd, Fin.val_last]
   rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
 
+/-- The last entry times the preceding partial product is the product of all entries. -/
+theorem last_mul_partialProd {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
+    f (Fin.last n) * Fin.partialProd (Fin.init f) (Fin.last n) = ∏ i, f i := by
+  rw [mul_comm, Fin.partialProd_last, Fin.init_def, ← Fin.prod_univ_castSucc f]
+
+/-- Multiplying two adjacent entries of a tuple does not change the product of all its
+entries. -/
+@[to_additive (attr := simp)
+  /-- Adding two adjacent entries of a tuple does not change the sum of all its entries. -/]
+theorem prod_contractNth_castSucc {M : Type*} [CommMonoid M] {n : ℕ} (j : Fin (n + 1))
+    (g : Fin (n + 2) → M) : ∏ k, Fin.contractNth j.castSucc (· * ·) g k = ∏ k, g k := by
+  have hlast : j.castSucc.succ.succAbove (Fin.last (n + 1)) = Fin.last (n + 2) :=
+    Fin.succAbove_of_le_castSucc _ _ (by simp [Fin.le_def]; omega)
+  rw [← partialProd_last, ← partialProd_last, Fin.partialProd_contractNth, Function.comp_apply,
+    hlast]
+
 /-- A product over `Fin n` of a family equal to `1` beyond `i` is its product over the first
 `i` indices times its value at `i`. -/
 @[to_additive /-- A sum over `Fin n` of a family vanishing beyond `i` is its sum over the
@@ -218,6 +238,13 @@ theorem coe_finRotate_pow {n : ℕ} (k : ℕ) (c : Fin n) :
     have : NeZero n := ⟨Nat.pos_iff_ne_zero.mp c.pos⟩
     rw [pow_succ', Equiv.Perm.mul_apply, finRotate_apply, Fin.val_add, ih, Fin.val_one',
       ← Nat.add_mod, ← add_assoc]
+
+/-- Away from the last index, the cyclic permutation `finRotate n` adds one without wrapping
+around. -/
+theorem coe_finRotate_of_add_one_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
+    (finRotate n i : ℕ) = i + 1 := by
+  have := coe_finRotate_pow 1 i
+  rwa [pow_one, Nat.mod_eq_of_lt h] at this
 
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/
@@ -284,6 +311,10 @@ theorem finRotate_succ_succAbove_of_ne {n : ℕ} {i k : Fin n} (hk : k ≠ i) :
   simp only [succAbove]
   split_ifs <;> simp only [lt_def, val_castSucc, val_succ, coe_finRotate, Fin.ext_iff,
     val_last] at * <;> split_ifs at * <;> omega
+
+/-- The cyclic successor of a non-last index `i.castSucc` of `Fin (n + 1)` is `i.succ`. -/
+theorem finRotate_castSucc {n : ℕ} (i : Fin n) : finRotate (n + 1) i.castSucc = i.succ :=
+  finRotate_of_lt i.isLt
 
 /-- A position `p` of `Fin (n + 1)` cyclically adjacent to `p.succAbove i` is `i.castSucc` or
 `i.succ`, or wraps around: `p` is last and `p.succAbove i` is `0`, or `p` is `0` and

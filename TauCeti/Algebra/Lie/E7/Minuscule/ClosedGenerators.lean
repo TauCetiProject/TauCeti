@@ -181,7 +181,7 @@ noncomputable def baseChangeRootSubgroupClosedSubgroup (k : Fin 7 ⊕ Fin 7) :
 @[simp]
 theorem coe_baseChangeRootSubgroupClosedSubgroup (k : Fin 7 ⊕ Fin 7) :
     (baseChangeRootSubgroupClosedSubgroup A k).1 =
-      letI := mono_of_isClosedImmersion_underlying (baseChangeRootSubgroup A k)
+      letI := Grp.mono_of_mono_left (baseChangeRootSubgroup A k)
       Subobject.mk (baseChangeRootSubgroup A k) :=
   ClosedSubgroupScheme.coe_mk _
 

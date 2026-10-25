@@ -7,7 +7,10 @@ module
 
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.Homotopy.CellAttachment
+public import TauCeti.Topology.CWComplex.Abstract.Trans
+public import TauCeti.Topology.CWComplex.Classical.CWType
 
 /-!
 # Killing the homotopy groups of a space from a given dimension on
@@ -38,6 +41,24 @@ colimit in each dimension with those of a finite stage
 (`TopCat.RelativeCWComplex.surjective_homotopyGroupMap_incl_app`,
 `TopCat.RelativeCWComplex.bijective_homotopyGroupMap`).
 
+When `X` is itself a Hausdorff CW complex with no cells of dimension greater than `n`, this
+relative CW structure, read classically, composes with the CW structure of `X`
+(`TopCat.RelativeCWComplex.cwComplexTrans`): the cells of the tower have dimension greater than
+`n`, so their boundaries meet `X` inside its skeleton below their dimension. So
+`killHomotopyGroups n X x` is then a CW complex (`TauCeti.killHomotopyGroupsCWComplex`), whose
+cells are those of `X` and those of the tower, and in particular it has CW type
+(`TauCeti.cwType_killHomotopyGroups`).
+
+Maps out of the colimit are built in the same way, stage by stage. Every cell of the tower is
+attached along a based map, so a map `f : X ⟶ Z` into a space whose homotopy groups `πₖ(Z, f x)`
+vanish for `k ≥ n` extends over each new cell, and these extensions form a cocone on the tower: `f`
+extends over `killHomotopyGroups n X x`
+(`TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq`). For `n ≥ 2` the extension induces on `π₁` the
+map induced by `f` (`TauCeti.exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv`). In
+particular, for `n = 2` every map from `X` into a `K(H, 1)` space extends over
+`killHomotopyGroups 2 X x`, realizing the same homomorphism of fundamental groups; for a Hausdorff,
+path-connected `X` that space is a `K(π₁(X, x), 1)`.
+
 ## Main definitions
 
 * `TauCeti.killingStage n X x m`: the pointed space after the first `m` steps.
@@ -47,6 +68,9 @@ colimit in each dimension with those of a finite stage
 * `TauCeti.killHomotopyGroupsRelativeCWComplex n X x`: the relative CW structure.
 * `TauCeti.killHomotopyGroupsFundamentalGroupMulEquiv n X x`: for `n ≥ 2`, the isomorphism of
   fundamental groups induced by the inclusion.
+* `TauCeti.killHomotopyGroupsCWComplex n X x hX`: for a Hausdorff CW complex `X` without cells of
+  dimension greater than `n`, the CW structure on the colimit, with its cells described by
+  `TauCeti.killHomotopyGroupsCWComplexCellEquiv`.
 
 ## Main results
 
@@ -56,12 +80,19 @@ colimit in each dimension with those of a finite stage
   on vanish.
 * `TauCeti.isEilenbergMacLaneSpaceOne_killHomotopyGroups`: for `n = 2` and path-connected `X`,
   the colimit is a `K(π₁(X, x), 1)`.
+* `TauCeti.cwType_killHomotopyGroups`: for a Hausdorff CW complex `X` without cells of dimension
+  greater than `n`, the colimit has CW type.
+* `TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq`: maps into a space whose homotopy groups
+  vanish from dimension `n` on extend over the colimit.
+* `TauCeti.exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv`: for `n ≥ 2`, the
+  extension induces the given map on fundamental groups.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 1.B, the construction of a `K(G, 1)` from a presentation complex, and Section 4.1,
-  Corollary 4.12 and Example 4.16 on killing homotopy groups by attaching cells.
+  Corollary 4.12 and Example 4.16 on killing homotopy groups by attaching cells, and Lemma 4.7
+  and Proposition 1B.9 on extending maps over cells into a space without higher homotopy.
 -/
 
 public section
@@ -285,5 +316,158 @@ theorem isEilenbergMacLaneSpaceOne_killHomotopyGroups [T2Space X] [PathConnected
   isEilenbergMacLaneSpaceOne_iff.2
     ⟨.mk inferInstance fun k ↦ subsingleton_homotopyGroup_killHomotopyGroups 2 X x (by omega),
       ⟨(killHomotopyGroupsFundamentalGroupMulEquiv 2 X x one_lt_two).symm⟩⟩
+
+/-! ### The CW structure on the colimit -/
+
+section CWComplex
+
+open Topology Topology.RelCWComplex
+
+variable [T2Space X] [CWComplex (Set.univ : Set X)]
+  (hX : ∀ m, n < m → IsEmpty (cell (Set.univ : Set X) m))
+
+include hX in
+/-- **The colimit of the tower is a CW complex.** If `X` is a Hausdorff CW complex all of whose
+cells have dimension at most `n`, then `TauCeti.killHomotopyGroups n X x` is a CW complex. Its
+`m`-cells are the `m`-cells of `X`, included by `TauCeti.killHomotopyGroupsIncl n X x`, and the
+cells attached at step `m` of the tower, which all have dimension greater than `n`
+(`TauCeti.killHomotopyGroupsCWComplexCellEquiv`). -/
+@[instance_reducible]
+def killHomotopyGroupsCWComplex : CWComplex (Set.univ : Set (killHomotopyGroups n X x)) :=
+  (killHomotopyGroupsRelativeCWComplex n X x).cwComplexTrans hX fun _ hm ↦
+    isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι n X x (Nat.le_of_lt_succ hm)
+
+/-- The `m`-cells of `TauCeti.killHomotopyGroupsCWComplex` are the `m`-cells of `X` together with
+the cells attached at step `m` of the tower. -/
+def killHomotopyGroupsCWComplexCellEquiv (m : ℕ) :
+    @cell _ _ (Set.univ : Set (killHomotopyGroups n X x)) ∅
+      (killHomotopyGroupsCWComplex n X x hX).instRelCWComplex m ≃
+      cell (Set.univ : Set X) m ⊕
+        ((killHomotopyGroupsRelativeCWComplex n X x).attachCells m (not_isMax m)).ι :=
+  TopCat.RelativeCWComplex.cwComplexTransCellEquiv _ _ _ m
+
+/-- The characteristic map of an `m`-cell of `X`, as a cell of
+`TauCeti.killHomotopyGroupsCWComplex`, is its characteristic map in `X` followed by the inclusion
+`TauCeti.killHomotopyGroupsIncl n X x`. -/
+@[simp]
+lemma coe_map_killHomotopyGroupsCWComplexCellEquiv_symm_inl (m : ℕ)
+    (i : cell (Set.univ : Set X) m) :
+    ⇑(@map _ _ (Set.univ : Set (killHomotopyGroups n X x)) ∅
+      (killHomotopyGroupsCWComplex n X x hX).instRelCWComplex m
+        ((killHomotopyGroupsCWComplexCellEquiv n X x hX m).symm (.inl i))) =
+      killHomotopyGroupsIncl n X x ∘ map m i :=
+  TopCat.RelativeCWComplex.coe_map_cwComplexTransCellEquiv_symm_inl _ _ _ m i
+
+/-- The characteristic map of a cell attached at step `m` of the tower, as a cell of
+`TauCeti.killHomotopyGroupsCWComplex`, is the inclusion of the attached disk, read on the closed
+unit ball of the sup norm through the radial homeomorphism `TauCeti.diskHomeomorphClosedBall`. -/
+@[simp]
+lemma map_killHomotopyGroupsCWComplexCellEquiv_symm_inr (m : ℕ)
+    (i : ((killHomotopyGroupsRelativeCWComplex n X x).attachCells m (not_isMax m)).ι)
+    (y : Metric.closedBall (0 : Fin m → ℝ) 1) :
+    @map _ _ (Set.univ : Set (killHomotopyGroups n X x)) ∅
+      (killHomotopyGroupsCWComplex n X x hX).instRelCWComplex m
+        ((killHomotopyGroupsCWComplexCellEquiv n X x hX m).symm (.inr i)) y =
+      (⟨m, not_isMax m, i⟩ : (killHomotopyGroupsRelativeCWComplex n X x).Cells).ι
+        ((diskHomeomorphClosedBall m).symm y) :=
+  TopCat.RelativeCWComplex.map_cwComplexTransCellEquiv_symm_inr _ _ _ m i y
+
+include hX in
+/-- If `X` is a Hausdorff CW complex all of whose cells have dimension at most `n`, then
+`TauCeti.killHomotopyGroups n X x` has CW type. -/
+theorem cwType_killHomotopyGroups : CWType (killHomotopyGroups n X x) :=
+  letI := killHomotopyGroupsCWComplex n X x hX
+  inferInstance
+
+end CWComplex
+
+/-! ### Extending maps over the tower -/
+
+section Extension
+
+variable {n X x} {Z : TopCat.{u}}
+
+/-- At every step of the tower the cells are attached along based maps: the composite of an
+attaching map at the base point `y` with a based map `g : Y ⟶ Z` is null-homotopic when the
+homotopy group of `Z` in the dimension of the attaching spheres vanishes. -/
+private lemma nullhomotopic_killingAttachingMaps_comp {Y : TopCat.{u}} {y : Y} {m : ℕ}
+    (g : Y ⟶ Z) (hZ : ∀ k, m = k + 1 → n ≤ k → Subsingleton (π_ k Z (g y)))
+    (i : (killingAttachingMaps n Y y m).1) :
+    ((killingAttachingMaps n Y y m).2 i ≫ g).hom.Nullhomotopic :=
+  -- At step `0` no cell is attached, so only the successor case remains.
+  match m, i with
+  | k + 1, q => by
+    have : NeZero k := ⟨((NeZero.pos n).trans_le q.2).ne'⟩
+    -- The image of the attaching loop is trivial in `πₖ(Z, g y)`.
+    exact (HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp g rfl q.1).1
+      ((hZ k rfl q.2).elim _ _)
+
+/-- **A based map extends over one step of the tower.** If the homotopy group of `Z` vanishes in
+the dimension of the spheres attached at step `m`, every map `g` out of stage `m` extends over
+stage `m + 1`. -/
+theorem _root_.TopCat.Hom.exists_killingStageIncl_comp_eq {m : ℕ}
+    (g : (killingStage n X x m).1 ⟶ Z)
+    (hZ : ∀ k, m = k + 1 → n ≤ k → Subsingleton (π_ k Z (g (killingStage n X x m).2))) :
+    ∃ g' : (killingStage n X x (m + 1)).1 ⟶ Z, killingStageIncl n X x m ≫ g' = g := by
+  choose F hF using fun i ↦
+    (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).1
+      (nullhomotopic_killingAttachingMaps_comp (m := m) g hZ i)
+  exact ⟨cellAttachmentLift _ g F fun i ↦ (hF i).symm, cellAttachmentIncl_lift _ _ _ _⟩
+
+/-- The extensions of a map `f : X ⟶ Z` over the successive stages of the tower, each extending
+the previous one by `TopCat.Hom.exists_killingStageIncl_comp_eq`. They all send the base point of
+their stage to `f x`. -/
+private def killingStageExtension (f : X ⟶ Z) (hZ : ∀ k, n ≤ k → Subsingleton (π_ k Z (f x))) :
+    (m : ℕ) → {g : (killingStage n X x m).1 ⟶ Z // g (killingStage n X x m).2 = f x}
+  | 0 => ⟨f, rfl⟩
+  | m + 1 =>
+    have hm := (killingStageExtension f hZ m).2
+    have h := (killingStageExtension f hZ m).1.exists_killingStageIncl_comp_eq
+      (by rw [hm]; exact fun k _ ↦ hZ k)
+    ⟨h.choose, by
+      rw [← killingStageIncl_basepoint, ← ConcreteCategory.comp_apply, h.choose_spec, hm]⟩
+
+/-- Each extension in `TauCeti.killingStageExtension` extends the previous one. -/
+private lemma killingStageIncl_comp_killingStageExtension (f : X ⟶ Z)
+    (hZ : ∀ k, n ≤ k → Subsingleton (π_ k Z (f x))) (m : ℕ) :
+    killingStageIncl n X x m ≫ (killingStageExtension f hZ (m + 1)).1 =
+      (killingStageExtension f hZ m).1 :=
+  ((killingStageExtension f hZ m).1.exists_killingStageIncl_comp_eq
+    (by rw [(killingStageExtension f hZ m).2]; exact fun k _ ↦ hZ k)).choose_spec
+
+/-- **Maps into a space without homotopy from dimension `n` on extend over
+`TauCeti.killHomotopyGroups n X x`.** If the homotopy groups `πₖ(Z, f x)` vanish for every
+`k ≥ n`, then `f : X ⟶ Z` extends along the inclusion `X ⟶ killHomotopyGroups n X x`. Only the
+homotopy groups at the base point `f x` enter, because every cell of the tower is attached along
+a based map. -/
+theorem _root_.TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq (f : X ⟶ Z)
+    (hZ : ∀ k, n ≤ k → Subsingleton (π_ k Z (f x))) :
+    ∃ F : killHomotopyGroups n X x ⟶ Z, killHomotopyGroupsIncl n X x ≫ F = f := by
+  -- The extensions over the stages are compatible, so they form a cocone on the tower.
+  let c : Cocone (killingTower n X x) :=
+    ⟨Z, NatTrans.ofSequence (fun m ↦ (killingStageExtension f hZ m).1) fun m ↦ by
+      simp only [killingTower, Functor.ofSequence_map_homOfLE_succ, Functor.const_obj_map]
+      exact (killingStageIncl_comp_killingStageExtension f hZ m).trans (Category.comp_id _).symm⟩
+  exact ⟨colimit.desc _ c, colimit.ι_desc c 0⟩
+
+/-- **The extension realizes the map on fundamental groups.** For `n ≥ 2` and a Hausdorff space
+`X`, if the homotopy groups `πₖ(Z, f x)` vanish for every `k ≥ n`, then `f : X ⟶ Z` extends to a
+based map `F` out of `TauCeti.killHomotopyGroups n X x` that induces on `π₁` the map induced by
+`f`, read through the isomorphism `TauCeti.killHomotopyGroupsFundamentalGroupMulEquiv`. -/
+theorem exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv [T2Space X] (hn : 1 < n)
+    (f : X ⟶ Z) (hZ : ∀ k, n ≤ k → Subsingleton (π_ k Z (f x))) :
+    ∃ (F : killHomotopyGroups n X x ⟶ Z) (hF : F (killHomotopyGroupsIncl n X x x) = f x),
+      (FundamentalGroup.mapOfEq F.hom hF).comp
+          (killHomotopyGroupsFundamentalGroupMulEquiv n X x hn).toMonoidHom =
+        FundamentalGroup.mapOfEq f.hom rfl := by
+  obtain ⟨F, hF⟩ := f.exists_killHomotopyGroupsIncl_comp_eq hZ
+  have hFx : F (killHomotopyGroupsIncl n X x x) = f x := by
+    rw [← ConcreteCategory.comp_apply, hF]
+  refine ⟨F, hFx, MonoidHom.ext fun g ↦ ?_⟩
+  rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    killHomotopyGroupsFundamentalGroupMulEquiv_apply, TauCeti.FundamentalGroup.mapOfEq_comp]
+  exact TauCeti.FundamentalGroup.mapOfEq_congr (congrArg TopCat.Hom.hom hF) _ _ g
+
+end Extension
 
 end TauCeti

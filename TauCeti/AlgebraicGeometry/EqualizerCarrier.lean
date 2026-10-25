@@ -35,6 +35,8 @@ they differ.
   is empty exactly when the image of `y` misses the equalizer of `a` and `b`.
 * `TauCeti.AlgebraicGeometry.isEmpty_equalizer_iff_of_isPullback`: viewing points of a base
   change as points of the original scheme preserves and reflects emptiness of their equalizer.
+* `TauCeti.AlgebraicGeometry.range_equalizer_ι_left_of_left_eq_hom_comp`: the image of the
+  equalizer of a point and the point given by a section is the set where they agree.
 * `TauCeti.AlgebraicGeometry.range_equalizer_ι_left_of_section`: the image of the equalizer of
   two sections is the set of points of the base at which they agree.
 * `TauCeti.AlgebraicGeometry.isEmpty_equalizer_iff_forall_ne`: two sections have empty equalizer
@@ -132,30 +134,44 @@ theorem isEmpty_equalizer_iff_of_isPullback {S' : Scheme.{u}} {X : Over S} {X' Z
       simpa only [v, Over.comp_left, Over.homMk_left, Category.assoc, hx, hy] using hc
     exact Function.isEmpty (equalizer.lift v hv).left
 
+/-- **Where a point meets a section.** Let `x` and `y` be points of a scheme `X` over `S` with
+values in `Z`, where `y` is the point `Z ⟶ S ⟶ X` given by a section `R` of `X`. The image of the
+equalizer of `x` and `y` is the set of points of `Z` at which `x` takes the value of `R`: a section
+induces an isomorphism on residue fields, so `x` and `R` agreeing at a point agree on its residue
+field. -/
+theorem range_equalizer_ι_left_of_left_eq_hom_comp {X : Over S} (x y : Z ⟶ X)
+    (R : 𝟙_ (Over S) ⟶ X) (hy : y.left = Z.hom ≫ R.left) :
+    Set.range (equalizer.ι x y).left = {z | x.left z = R.left (Z.hom z)} := by
+  ext z
+  refine ⟨?_, fun hz ↦ ?_⟩
+  · rintro ⟨w, rfl⟩
+    have h := congrArg (fun k ↦ k.left w) (equalizer.condition x y)
+    simp only [Over.comp_left, Scheme.Hom.comp_apply, hy] at h
+    exact h
+  · -- every field-valued point `t` of `Z` at `z` factors through the equalizer
+    have hR : R.left ≫ X.hom = 𝟙 S := by simp
+    have key {K : Type u} [Field K] (t : Spec (.of K) ⟶ Z.left) (p : Spec (.of K)) (hp : t p = z) :
+        z ∈ Set.range (equalizer.ι x y).left := by
+      have ht : t ≫ x.left = t ≫ y.left := by
+        have h := (eq_comp_comp_iff_of_section hR (t ≫ x.left) p).mpr (by
+          rw [Scheme.Hom.comp_apply, hp, hz, section_apply hR])
+        rw [h, hy]
+        simp
+      let v : Over.mk (t ≫ Z.hom) ⟶ Z := Over.homMk t
+      have hv : v ≫ x = v ≫ y := by
+        ext1
+        simpa [v] using ht
+      refine ⟨(equalizer.lift v hv).left p, ?_⟩
+      rw [← Scheme.Hom.comp_apply, ← Over.comp_left, equalizer.lift_ι]
+      exact hp
+    obtain ⟨p⟩ : Nonempty (Spec (Z.left.residueField z)) := inferInstance
+    exact key (Z.left.fromSpecResidueField z) p (Scheme.fromSpecResidueField_apply z p)
+
 /-- **Where two sections agree.** For sections `Q` and `R` of a scheme `X` over `S`, the image of
 their equalizer is the set of points of `S` at which `Q` and `R` take the same value. -/
 theorem range_equalizer_ι_left_of_section {X : Over S} (Q R : 𝟙_ (Over S) ⟶ X) :
     Set.range (equalizer.ι Q R).left = {s | Q.left s = R.left s} := by
-  ext s
-  refine ⟨?_, fun hs ↦ ?_⟩
-  · rintro ⟨w, rfl⟩
-    have h := congrArg (fun k ↦ k.left w) (equalizer.condition Q R)
-    simp only [Over.comp_left, Scheme.Hom.comp_apply] at h
-    exact h
-  · -- the point `t : Spec κ(s) ⟶ S` factors through the equalizer
-    let t := S.fromSpecResidueField s
-    obtain ⟨p⟩ : Nonempty (Spec (S.residueField s)) := inferInstance
-    have hp : t p = s := Scheme.fromSpecResidueField_apply s p
-    have ht : t ≫ Q.left = t ≫ R.left :=
-      (comp_eq_comp_iff_of_section (f := X.hom) (by simp) (by simp) t p).mpr
-        ((congrArg Q.left hp).trans (hs.trans (congrArg R.left hp).symm))
-    have hy : CartesianMonoidalCategory.toUnit (Over.mk t) ≫ Q =
-        CartesianMonoidalCategory.toUnit (Over.mk t) ≫ R := by
-      ext1
-      simpa using ht
-    refine ⟨(equalizer.lift _ hy).left p, ?_⟩
-    rw [← Scheme.Hom.comp_apply, ← Over.comp_left, equalizer.lift_ι]
-    exact hp
+  simpa using range_equalizer_ι_left_of_left_eq_hom_comp Q R R (by simp)
 
 /-- Two sections `Q` and `R` of a scheme `X` over `S` have empty equalizer exactly when they agree
 at no point of `S`. -/

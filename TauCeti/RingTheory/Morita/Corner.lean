@@ -38,7 +38,10 @@ and `eAe`, in Mathlib's sense (`IsIdempotentElem.moritaEquivalenceCorner`).
 Fullness is the hypothesis that makes the corner ring see every module. It is the hypothesis
 used to reduce a finite-dimensional algebra to a **basic** one: there the idempotent is the sum of
 one primitive idempotent for each isomorphism class of simple modules, which is full and has a
-basic corner ring. That such an idempotent exists is not proved in this file.
+basic corner ring. Such an idempotent exists in every semiperfect ring
+(`TauCeti.IsSemiperfectRing.exists_isIdempotentElem_full_isBasic_corner`), which gives the Morita
+reduction to a basic ring (`TauCeti.IsSemiperfectRing.exists_isBasic_isMoritaEquivalent`); both
+are in `TauCeti.RingTheory.Morita.BasicAlgebra`.
 
 ## Main definitions
 

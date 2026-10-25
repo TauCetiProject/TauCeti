@@ -48,8 +48,8 @@ derivative is nonzero but not surjective, is handled by a Fubini argument on a l
 the source in `TauCeti.Analysis.Calculus.Sard.OutermostStratum`, where the theorem itself is
 assembled; the results here are what that argument runs its induction against.
 
-This is Lane F0 of the analytic Heegaard Floer roadmap, where finite-dimensional Sard is the
-prerequisite for Sard--Smale and hence for every transversality argument downstream.
+The nullity result also yields density of the complement of the image of the vanishing-derivative
+locus; for a one-dimensional target this complement is exactly the set of regular values.
 
 ## Main results
 

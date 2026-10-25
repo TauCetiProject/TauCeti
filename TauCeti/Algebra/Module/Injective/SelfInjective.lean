@@ -122,7 +122,9 @@ theorem exists_eq_sum_mul_of_forall_mul_eq_zero [Module.Injective R R]
     (h : ∀ r : R, (∀ i, r * a i = 0) → r * x = 0) :
     ∃ c : ι → R, x = ∑ i, a i * c i := by
   classical
-  obtain ⟨f, rfl⟩ := exists_linearMap_apply_eq_of_forall_smul_eq_zero (S := R) h
+  obtain ⟨f, rfl⟩ :=
+    (exists_linearMap_apply_eq_iff_forall_smul_eq_zero (S := R) (a := a) (x := x)).2
+      fun r hr => h r fun i => congr_fun hr i
   refine ⟨fun i => f (Pi.single i 1), ?_⟩
   conv_lhs => rw [← Finset.univ_sum_single a, map_sum]
   apply Finset.sum_congr rfl
@@ -137,10 +139,11 @@ theorem exists_eq_sum_mul_of_forall_mul_eq_zero' [Module.Injective Rᵐᵒᵖ R]
     (h : ∀ r : R, (∀ i, a i * r = 0) → x * r = 0) :
     ∃ c : ι → R, x = ∑ i, c i * a i := by
   classical
-  obtain ⟨f, rfl⟩ := exists_linearMap_apply_eq_of_forall_smul_eq_zero (S := Rᵐᵒᵖ) (a := a)
-    (x := x) fun s hs => by
+  obtain ⟨f, rfl⟩ :=
+    (exists_linearMap_apply_eq_iff_forall_smul_eq_zero (S := Rᵐᵒᵖ) (a := a) (x := x)).2
+    fun s hs => by
       simpa [MulOpposite.smul_eq_mul_unop] using
-        h s.unop (by simpa [MulOpposite.smul_eq_mul_unop] using hs)
+        h s.unop (by simpa [MulOpposite.smul_eq_mul_unop] using fun i => congr_fun hs i)
   refine ⟨fun i => f (Pi.single i 1), ?_⟩
   conv_lhs => rw [← Finset.univ_sum_single a, map_sum]
   apply Finset.sum_congr rfl
