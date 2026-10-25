@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 public import TauCeti.RingTheory.Huber.WeightedEval.UniversalProperty
 
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
+
 /-!
 # The universal property of Gauss-normed Tate algebras at power-bounded arguments
 
@@ -28,9 +30,12 @@ is `TauCeti.Huber.IsPowerBounded` for the norm topology: the powers of `bᵢ` st
 
 * `TauCeti.MvPowerSeries.restrictedLift`: the continuous ring homomorphism
   `R⟨X₁, …, Xₖ⟩ →+* S` extending `φ` and sending `Xᵢ` to `bᵢ`.
+* `TauCeti.MvPowerSeries.restrictedRename`: for complete `R` and `f : Fin m → Fin k`, the
+  `R`-algebra map `R⟨X₁, …, Xₘ⟩ →ₐ[R] R⟨X₁, …, Xₖ⟩` sending `Xᵢ` to `X_{f i}`.
 
 ## Main results
 
+* `TauCeti.MvPowerSeries.isPowerBounded_X`: each variable `Xᵢ` is power-bounded.
 * `TauCeti.MvPowerSeries.isRestricted_subring_ringHom_ext_of_continuous`: continuous ring
   homomorphisms out of `R⟨X₁, …, Xₖ⟩` agreeing on constants and variables are equal.
 * `TauCeti.MvPowerSeries.restrictedLift_unique`: `restrictedLift` is the only such continuous
@@ -69,6 +74,15 @@ theorem isRestricted_subring_ringHom_ext_of_continuous {T : Type*} [Semiring T]
     (fun i ↦ by simp [e, hX])
   ext f
   simpa using congr($h (e.symm f))
+
+/-- Each variable `Xᵢ` of the Gauss-normed algebra `R⟨X₁, …, Xₖ⟩` is power-bounded. -/
+theorem isPowerBounded_X (i : Fin k) :
+    IsPowerBounded
+      (⟨X i, isRestricted_X _ i⟩ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) := by
+  -- Transport weighted-variable power-boundedness along the Gauss comparison.
+  rw [← restrictedMvPowerSeriesGaussEquiv_weightedX, isPowerBounded_ringEquiv_iff _
+    continuous_restrictedMvPowerSeriesGaussEquiv continuous_restrictedMvPowerSeriesGaussEquiv_symm]
+  exact isPowerBounded_weightedX_one_weight i
 
 variable {S : Type*} [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S] {φ : R →+* S}
   (hφ : Continuous φ) {b : Fin k → S} (hb : ∀ i, IsPowerBounded (b i))
@@ -116,5 +130,36 @@ theorem existsUnique_continuous_ringHom_isRestricted_subring :
         ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i :=
   ⟨restrictedLift hφ hb, ⟨continuous_restrictedLift hφ hb, restrictedLift_algebraMap hφ hb,
     restrictedLift_X hφ hb⟩, fun _ ⟨hψ, hC, hX⟩ ↦ restrictedLift_unique hφ hb hψ hC hX⟩
+
+section Rename
+
+variable [CompleteSpace R] {m : ℕ}
+
+/-- **Renaming the variables of restricted series.** For a complete ultrametric normed ring `R`
+and `f : Fin m → Fin k`, this is the `R`-algebra map `R⟨X₁, …, Xₘ⟩ → R⟨X₁, …, Xₖ⟩` sending each
+`Xᵢ` to `X_{f i}`, the extension `TauCeti.MvPowerSeries.restrictedLift` of the constant-series
+embedding. The map `f` need not be injective. -/
+noncomputable def restrictedRename (f : Fin m → Fin k) :
+    IsRestricted.subring (R := R) (fun _ : Fin m ↦ 1) →ₐ[R]
+      IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) :=
+  { restrictedLift (φ := algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)))
+      isometry_algebraMap_isRestrictedSubring.continuous
+      (fun i ↦ isPowerBounded_X (f i)) with
+    commutes' := restrictedLift_algebraMap _ _ }
+
+/-- `restrictedRename f` sends each variable `Xᵢ` to `X_{f i}`. -/
+@[simp]
+theorem restrictedRename_X (f : Fin m → Fin k) (i : Fin m) :
+    restrictedRename (R := R) f ⟨X i, isRestricted_X _ i⟩ = ⟨X (f i), isRestricted_X _ (f i)⟩ :=
+  restrictedLift_X isometry_algebraMap_isRestrictedSubring.continuous
+    (fun i ↦ isPowerBounded_X (f i)) i
+
+/-- `restrictedRename f` is continuous. -/
+theorem continuous_restrictedRename (f : Fin m → Fin k) :
+    Continuous (restrictedRename (R := R) f) :=
+  continuous_restrictedLift isometry_algebraMap_isRestrictedSubring.continuous
+    (fun i ↦ isPowerBounded_X (f i))
+
+end Rename
 
 end TauCeti.MvPowerSeries
