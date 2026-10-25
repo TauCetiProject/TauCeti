@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.DFA
-public import Mathlib.Data.ZMod.Defs
+public import Mathlib.Data.ZMod.Basic
 
 /-!
 # Deterministic finite automata with output
@@ -244,6 +244,16 @@ theorem parityDFAO_start : parityDFAO.start = 0 := by
 theorem parityDFAO_output (q : ZMod 2) : parityDFAO.output q = q := by
   simp only [parityDFAO]
   rfl
+
+/-- Reading natural-number digits modulo two adds their sum to the initial parity. -/
+theorem evalFrom_parityDFAO (l : List ℕ) (q : ZMod 2) :
+    parityDFAO.evalFrom q (l.map (Fin.ofNat 2)) = q + l.sum := by
+  induction l generalizing q with
+  | nil => simp only [List.map_nil, DFAO.evalFrom_nil, List.sum_nil, Nat.cast_zero, add_zero]
+  | cons d l ih =>
+    rw [List.map_cons, DFAO.evalFrom_cons]
+    simp only [parityDFAO_step, Fin.val_ofNat, ZMod.natCast_mod, ih,
+      List.sum_cons, Nat.cast_add, add_assoc]
 
 /-! ### Checks -/
 

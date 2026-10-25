@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 public import TauCeti.Computability.AutomaticSequence
-public import Mathlib.Data.ZMod.Basic
 
 /-!
 # The two-state Thue–Morse automaton
@@ -26,15 +25,6 @@ def thueMorse (n : ℕ) : ZMod 2 := (Nat.digits 2 n).sum
 /-- Express Thue–Morse as the parity of the binary digit sum. -/
 theorem thueMorse_def (n : ℕ) : thueMorse n = (Nat.digits 2 n).sum := by
   simp only [thueMorse]
-
-private theorem evalFrom_parityDFAO (l : List ℕ) (q : ZMod 2) :
-    parityDFAO.evalFrom q (l.map (Fin.ofNat 2)) = q + l.sum := by
-  induction l generalizing q with
-  | nil => simp only [List.map_nil, DFAO.evalFrom_nil, List.sum_nil, Nat.cast_zero, add_zero]
-  | cons d l ih =>
-    rw [List.map_cons, DFAO.evalFrom_cons]
-    simp only [parityDFAO_step, Fin.val_ofNat, ZMod.natCast_mod, ih,
-      List.sum_cons, Nat.cast_add, add_assoc]
 
 /-- The two-state automaton computes the actual binary digit-sum parity. -/
 theorem parityDFAO_output_thueMorse (n : ℕ) :
