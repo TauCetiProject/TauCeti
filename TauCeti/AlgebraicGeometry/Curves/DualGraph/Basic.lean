@@ -50,6 +50,9 @@ and semistable when none has negative degree; `TauCeti.DualGraph.IsStable` and
   `TauCeti.DualGraph.isStable_iff_forall_not_isRationalTail_and_not_isRationalBridge`: an
   unmarked graph of arithmetic genus at least two is stable exactly when it has neither rational
   tails nor rational bridges.
+* `TauCeti.DualGraph.isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos`: a vertex of
+  nonpositive log-canonical degree other than the only vertex is a rational tail with at most one
+  marking or an unmarked rational bridge.
 
 ## Implementation notes
 
@@ -164,6 +167,26 @@ theorem toSimpleGraph_connected : G.toSimpleGraph.Connected := by
     · exact hb ▸ ih
     · exact ih.tail (G.toSimpleGraph_adj.mpr ⟨hb, hbc⟩)
 
+variable {G} in
+/-- A connectivity criterion for a graph built on the image of a surjection `φ` from the vertices
+of `G`: it suffices that each edge of `G` is either collapsed by `φ` or carried by `φ` to an edge
+of the new graph, in either orientation. -/
+theorem connected_of_surjective {V E : Type*} {f : E → Fin 2 → V} (φ : G.Vertex → V)
+    (hφ : Function.Surjective φ)
+    (h : ∀ e, φ (G.endpoint e 0) = φ (G.endpoint e 1) ∨
+      ∃ e', (f e' 0 = φ (G.endpoint e 0) ∧ f e' 1 = φ (G.endpoint e 1)) ∨
+        (f e' 0 = φ (G.endpoint e 1) ∧ f e' 1 = φ (G.endpoint e 0))) (x y : V) :
+    Relation.ReflTransGen (fun v w ↦ ∃ e, (f e 0 = v ∧ f e 1 = w) ∨ (f e 0 = w ∧ f e 1 = v))
+      x y := by
+  obtain ⟨x, rfl⟩ := hφ x
+  obtain ⟨y, rfl⟩ := hφ y
+  refine Relation.ReflTransGen.lift' φ (fun a b ⟨e, hab⟩ ↦ ?_) x y (G.connected x y)
+  rcases h e with heq | ⟨e', h'⟩ <;> obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hab
+  · rw [Function.onFun, heq]
+  · rw [Function.onFun, heq]
+  · exact .single ⟨e', h'⟩
+  · exact .single ⟨e', h'.symm⟩
+
 /-- If every edge at `v` is a loop, then `v` is the only vertex: no edge leaves it, and the graph
 is connected. -/
 theorem eq_of_forall_endpoint_zero_eq_iff {v : G.Vertex}
@@ -207,6 +230,11 @@ def valence (v : G.Vertex) : ℕ :=
 lemma valence_def (v : G.Vertex) :
     G.valence v = #{h : G.Edge × Fin 2 | G.endpoint h.1 h.2 = v} :=
   (rfl)
+
+/-- The valence of a vertex is the sum over the edges of the number of their branches at it. -/
+lemma valence_eq_sum (v : G.Vertex) :
+    G.valence v = ∑ e, #{i : Fin 2 | G.endpoint e i = v} := by
+  simp only [valence_def, card_filter, Fintype.sum_prod_type]
 
 /-- The handshake identity: the valences add up to twice the number of edges. -/
 theorem sum_valence : ∑ v, G.valence v = 2 * Fintype.card G.Edge := by
@@ -304,6 +332,11 @@ theorem sum_logCanonicalDegree [Fintype ι] :
   simp only [logCanonicalDegree, sum_add_distrib, sum_sub_distrib, ← mul_sum, sum_const,
     card_univ, nsmul_eq_mul]
   linarith
+
+/-- The log-canonical degree of the only vertex of a graph is `2pₐ - 2 + n`. -/
+theorem logCanonicalDegree_eq_of_forall_eq [Fintype ι] {v : G.Vertex} (h : ∀ w, w = v) :
+    G.logCanonicalDegree v = 2 * G.arithmeticGenus - 2 + Fintype.card ι := by
+  rw [← G.sum_logCanonicalDegree, Fintype.sum_eq_single v fun w hw ↦ absurd (h w) hw]
 
 /-- A vertex has nonpositive log-canonical degree exactly when it is a rational component with at
 most two special points, or a component of genus one with none. -/
@@ -406,23 +439,56 @@ private lemma two_mul_arithmeticGenus_of_valence_eq_zero {v : G.Vertex} (hv : G.
     iff_of_false (G.valence_eq_zero_iff.mp hv e 0) (G.valence_eq_zero_iff.mp hv e 1)
   rw [G.two_mul_arithmeticGenus_of_forall_endpoint_zero_eq_iff h, hv, add_zero]
 
-/-- If a vertex of valence two carries a loop, that loop is the only edge, and twice the
-arithmetic genus is `2 g(v) + 2`. -/
-private lemma two_mul_arithmeticGenus_of_valence_eq_two_of_loop {v : G.Vertex}
-    (hv : G.valence v = 2) {e : G.Edge} (he₀ : G.endpoint e 0 = v) (he₁ : G.endpoint e 1 = v) :
-    2 * G.arithmeticGenus = 2 * G.genus v + 2 := by
-  -- The loop accounts for both half-edges at `v`.
+/-- If a vertex of valence two carries a loop `e`, the loop accounts for both half-edges at the
+vertex: an edge has an endpoint there exactly when it is `e`. -/
+theorem endpoint_eq_iff_eq_of_valence_eq_two {v : G.Vertex} (hv : G.valence v = 2) {e : G.Edge}
+    (he₀ : G.endpoint e 0 = v) (he₁ : G.endpoint e 1 = v) (e' : G.Edge) (i : Fin 2) :
+    G.endpoint e' i = v ↔ e' = e := by
   have hsub : ({(e, 0), (e, 1)} : Finset (G.Edge × Fin 2)) ⊆
       univ.filter fun h ↦ G.endpoint h.1 h.2 = v := by
     intro x hx
     simp only [mem_insert, mem_singleton] at hx
     rcases hx with rfl | rfl <;> simpa
   have hpair := eq_of_subset_of_card_le hsub (by rw [card_pair (by simp)]; exact hv.le)
-  have hloop (e' : G.Edge) (i : Fin 2) : G.endpoint e' i = v ↔ e' = e := by
-    have hmem : (e', i) ∈ univ.filter (fun h : G.Edge × Fin 2 ↦ G.endpoint h.1 h.2 = v) ↔
-        G.endpoint e' i = v := by simp
-    rw [← hmem, ← hpair]
-    fin_cases i <;> simp
+  have hmem : (e', i) ∈ univ.filter (fun h : G.Edge × Fin 2 ↦ G.endpoint h.1 h.2 = v) ↔
+      G.endpoint e' i = v := by simp
+  rw [← hmem, ← hpair]
+  fin_cases i <;> simp
+
+/-- A vertex of nonpositive log-canonical degree in a graph with at least one other vertex is a
+rational tail with at most one marking or an unmarked rational bridge. -/
+theorem isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos [Fintype ι] {v : G.Vertex}
+    (hv : G.logCanonicalDegree v ≤ 0) (hw : ∃ w, w ≠ v) :
+    (G.IsRationalTail v ∧ G.numMarkings v ≤ 1) ∨
+      (G.IsRationalBridge v ∧ ∀ i, G.marking i ≠ v) := by
+  -- If every edge at `v` were a loop, `v` would be the only vertex.
+  have hsingle : ¬ ∀ e, G.endpoint e 0 = v ↔ G.endpoint e 1 = v := fun h ↦
+    have ⟨w, hw⟩ := hw
+    hw (G.eq_of_forall_endpoint_zero_eq_iff h w)
+  have hval₀ : G.valence v ≠ 0 := fun h ↦ hsingle fun e ↦
+    iff_of_false (G.valence_eq_zero_iff.mp h e 0) (G.valence_eq_zero_iff.mp h e 1)
+  rcases G.logCanonicalDegree_nonpos_iff.mp hv with ⟨hg, hval⟩ | ⟨-, hval, -⟩
+  · have : G.valence v ≤ 2 := by omega
+    interval_cases h : G.valence v
+    · exact absurd rfl hval₀
+    · exact .inl ⟨G.isRationalTail_iff.mpr ⟨hg, h⟩, by omega⟩
+    · have hm : ∀ i, G.marking i ≠ v := by
+        have : G.numMarkings v = 0 := by omega
+        simpa [numMarkings_def, filter_eq_empty_iff] using this
+      by_cases hloop : ∃ e, G.endpoint e 0 = v ∧ G.endpoint e 1 = v
+      · obtain ⟨e, he₀, he₁⟩ := hloop
+        have := endpoint_eq_iff_eq_of_valence_eq_two h he₀ he₁
+        exact absurd (fun e' ↦ by rw [this, this]) hsingle
+      · simp only [not_exists, not_and] at hloop
+        exact .inr ⟨G.isRationalBridge_iff.mpr ⟨hg, h, hloop⟩, hm⟩
+  · exact absurd hval hval₀
+
+/-- If a vertex of valence two carries a loop, that loop is the only edge, and twice the
+arithmetic genus is `2 g(v) + 2`. -/
+private lemma two_mul_arithmeticGenus_of_valence_eq_two_of_loop {v : G.Vertex}
+    (hv : G.valence v = 2) {e : G.Edge} (he₀ : G.endpoint e 0 = v) (he₁ : G.endpoint e 1 = v) :
+    2 * G.arithmeticGenus = 2 * G.genus v + 2 := by
+  have hloop := endpoint_eq_iff_eq_of_valence_eq_two hv he₀ he₁
   rw [G.two_mul_arithmeticGenus_of_forall_endpoint_zero_eq_iff fun e' ↦ by rw [hloop, hloop], hv]
 
 /-- An unmarked graph of arithmetic genus at least one is semistable exactly when it has no

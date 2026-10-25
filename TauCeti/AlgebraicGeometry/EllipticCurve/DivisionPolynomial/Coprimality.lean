@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.IsAlgClosed
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Eval
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
 
 /-!
 # Coprimality of the division polynomials `Φₙ` and `ΨSqₙ`
@@ -35,6 +36,8 @@ has `X = Z = 0`, so there was no common factor.
 * `WeierstrassCurve.evalEval_ψ_ne_zero_of_zsmul_ne_zero`: its bivariate form, for `ψₙ`.
 * `WeierstrassCurve.eval_Ψ₂Sq_ne_zero_of_eval_Ψ₃_eq_zero`: `Ψ₂Sq` and `Ψ₃` have no common root, in
   every characteristic.
+* `WeierstrassCurve.isUnit_evalEval_ψ₂_of_eval_Ψ₃_eq_zero`: its form over a commutative ring — on
+  an elliptic curve, `ψ₂(x, y)` is a unit at every point `(x, y)` with `Ψ₃(x) = 0`.
 
 ## Implementation notes
 
@@ -172,5 +175,33 @@ theorem eval_Ψ₂Sq_ne_zero_of_eval_Ψ₃_eq_zero (hΔ : W.Δ ≠ 0) {x : F} (h
   have := congrArg (eval x) hab
   rw [ΨSq_two, Φ_two_eq_X_mul_Ψ₂Sq_sub_Ψ₃] at this
   simp [h, h₂] at this
+
+section CommRing
+
+variable {R : Type*} [CommRing R] {W : WeierstrassCurve R} [W.IsElliptic]
+
+/-- **A root of `Ψ₃` is nowhere a root of `ψ₂`, over a ring.** Let `(x, y)` be a point of an
+elliptic curve `W` over a commutative ring `R` with `Ψ₃(x) = 0`. Then `ψ₂(x, y) = 2y + a₁x + a₃`
+is a unit of `R`. This is the form over a ring of `eval_Ψ₂Sq_ne_zero_of_eval_Ψ₃_eq_zero`;
+geometrically, a point killed by `3` in every fibre is nowhere killed by `2`. -/
+theorem isUnit_evalEval_ψ₂_of_eval_Ψ₃_eq_zero {x y : R} (h : W.toAffine.Equation x y)
+    (hx : W.Ψ₃.eval x = 0) : IsUnit (W.ψ₂.evalEval x y) := by
+  -- otherwise `ψ₂(x, y)` lies in a maximal ideal `m`, and modulo `m` the point is a common root
+  -- of `Ψ₃` and of `Ψ₂Sq`, which agrees with `ψ₂²` on the curve
+  by_contra hu
+  obtain ⟨m, hm, hmem⟩ := exists_max_ideal_of_mem_nonunits hu
+  let π := Ideal.Quotient.mk m
+  let _ : Field (R ⧸ m) := Ideal.Quotient.field m
+  have hΔ : (W.map π).Δ ≠ 0 := by
+    rw [map_Δ]
+    exact (W.isUnit_Δ.map π).ne_zero
+  have h₃ : (W.map π).Ψ₃.eval (π x) = 0 := by
+    rw [map_Ψ₃, eval_map_apply, hx, map_zero]
+  apply (W.map π).eval_Ψ₂Sq_ne_zero_of_eval_Ψ₃_eq_zero hΔ h₃
+  rw [map_Ψ₂Sq, eval_map_apply, ← evalEval_ψ₂_sq W h, map_pow,
+    Ideal.Quotient.eq_zero_iff_mem.mpr hmem]
+  simp
+
+end CommRing
 
 end WeierstrassCurve

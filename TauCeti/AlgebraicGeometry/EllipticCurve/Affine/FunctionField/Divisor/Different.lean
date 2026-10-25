@@ -281,9 +281,6 @@ theorem different_eq_zeros_add_of_two_ne_zero (h2 : (2 : F) ≠ 0) :
 private theorem ord_invariantDifferentialDenom_pos {x y : F} (h : W.Nonsingular x y)
     (hT : -Point.some x y h = Point.some x y h) :
     0 < (pointEquivDegreeOnePlace W (.some x y h)).1.ord (invariantDifferentialDenom W) := by
-  have : IsDedekindDomain W.CoordinateRing :=
-    have := isIntegrallyClosed_coordinateRing W
-    W.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
   -- A point of order two is its own negative, so `y = -y - a₁x - a₃`.
   have hy : W.polynomialY.evalEval x y = 0 := by
     rw [Point.neg_some, Point.some.injEq] at hT

@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 -- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 
@@ -36,13 +37,21 @@ continuous bilinear forms.
 
 * `ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective`: the bilinear form of a
   continuous linear map into the dual is left-separating if and only if the map is injective.
+* `ContinuousLinearMap.isSymm_toBilinForm_iff`: the bilinear form of a continuous linear map into
+  the dual is symmetric if and only if the map takes symmetric values.
 * `ContinuousLinearMap.isInvertible_of_injective` and
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
   space (`ContinuousLinearMap.dual_finrank_eq`).
+* `ContinuousLinearMap.isInvertible_of_separatingLeft`: in finite dimensions, a map into the dual
+  with left-separating bilinear form is invertible.
+* `ContinuousLinearMap.isInvertible_of_pos`: in finite dimensions, a map into the dual that is
+  positive on nonzero diagonal vectors is invertible.
 * `TauCeti.isInvertible_toContinuousBilinearMap_iff_separatingLeft`:
   contraction with a bilinear form is invertible exactly when it is left-separating in
   finite dimensions, identifying covectors with vectors for local contraction equations.
+* `ContinuousLinearMap.isVonNBounded_setOf_lt_one_of_pos`: in finite dimensions, positivity on
+  nonzero diagonal vectors already implies the bounded-unit-set condition.
 * `TauCeti.convex_setOfPred_symm_pos_isVonNBounded`: the continuous bilinear forms on a real
   topological vector space that are symmetric, positive definite and have a von Neumann bounded
   unit set form a convex set; these are the fibrewise conditions of a Riemannian metric.
@@ -64,6 +73,12 @@ theorem _root_.ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective (L :
   rw [LinearMap.separatingLeft_iff_ker_eq_bot, LinearMap.ker_eq_bot]
   exact ⟨fun h v w hvw ↦ h (LinearMap.ext fun u ↦ by simp [hvw]),
     fun h v w hvw ↦ h (ContinuousLinearMap.ext fun u ↦ by simpa using LinearMap.congr_fun hvw u)⟩
+
+/-- The bilinear form of a continuous linear map into the dual space is symmetric exactly when
+the map takes symmetric values. -/
+theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E →L[𝕜] 𝕜} :
+    L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
+  LinearMap.isSymm_def
 
 end
 
@@ -88,6 +103,13 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_surjective
     ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank (V₂ := E →L[𝕜] 𝕜)
       ContinuousLinearMap.dual_finrank_eq.symm (f := (L : E →ₗ[𝕜] E →L[𝕜] 𝕜))).2 hsurj)
 
+/-- In finite dimensions, a continuous linear map into the dual whose bilinear form is
+left-separating is invertible. This is the musical isomorphism of a nondegenerate metric. -/
+theorem _root_.ContinuousLinearMap.isInvertible_of_separatingLeft
+    (hsep : L.toBilinForm.SeparatingLeft) : L.IsInvertible :=
+  ContinuousLinearMap.isInvertible_of_injective
+    ((L.separatingLeft_toBilinForm_iff_injective).1 hsep)
+
 /-- Contraction with a bilinear form on a finite-dimensional space is an invertible
 continuous linear map to the continuous dual exactly when the form is left-separating. -/
 @[simp low]
@@ -104,6 +126,15 @@ theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
     fun hb ↦ _root_.ContinuousLinearMap.isInvertible_of_injective (hsep.mp hb)⟩
 
 end FiniteDimensional
+
+/-- In finite dimensions, a continuous linear map into the dual that is positive on nonzero
+diagonal vectors is invertible. This is the musical isomorphism of a Riemannian metric. -/
+theorem _root_.ContinuousLinearMap.isInvertible_of_pos
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {L : E →L[ℝ] E →L[ℝ] ℝ} (hpos : ∀ v, v ≠ 0 → 0 < L v v) : L.IsInvertible :=
+  ContinuousLinearMap.isInvertible_of_separatingLeft fun v hv ↦ by
+    by_contra hv0
+    exact (hpos v hv0).ne' (hv v)
 
 section Convex
 
@@ -157,6 +188,36 @@ theorem convex_setOfPred_symm_pos_isVonNBounded :
         rw [hab']; nlinarith [nonneg hgp' v, mul_nonneg ha (nonneg hgp v)]) hgb'
 
 end Convex
+
+/-- On a finite-dimensional real normed space, a continuous bilinear form positive on
+nonzero diagonal vectors has a bounded unit sublevel set. Symmetry is not needed. -/
+theorem _root_.ContinuousLinearMap.isVonNBounded_setOf_lt_one_of_pos
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    (b : E →L[ℝ] E →L[ℝ] ℝ) (hb : ∀ v, v ≠ 0 → 0 < b v v) :
+    Bornology.IsVonNBounded ℝ {v : E | b v v < 1} := by
+  have hcont : Continuous (fun v : E ↦ b v v) := b.continuous.clm_apply continuous_id
+  obtain ⟨c, hc, hbound⟩ := (isCompact_sphere (0 : E) 1).exists_forall_le'
+    hcont.continuousOn (fun v hv ↦ hb v (by
+      intro h
+      simp [h] at hv))
+  rw [NormedSpace.isVonNBounded_iff']
+  refine ⟨Real.sqrt c⁻¹, fun v hv ↦ ?_⟩
+  by_cases hv0 : v = 0
+  · simp [hv0]
+  have hn : 0 < ‖v‖ := norm_pos_iff.mpr hv0
+  have hu : ‖v‖⁻¹ • v ∈ Metric.sphere (0 : E) 1 := by
+    simp [norm_smul, hn.ne']
+  have hh := hbound (‖v‖⁻¹ • v) hu
+  have heq : ‖v‖ ^ 2 * b (‖v‖⁻¹ • v) (‖v‖⁻¹ • v) = b v v := by
+    simp only [map_smul, smul_apply, smul_eq_mul]
+    field_simp
+  have hcv : c * ‖v‖ ^ 2 < 1 := by
+    have := mul_le_mul_of_nonneg_left hh (sq_nonneg ‖v‖)
+    rw [heq] at this
+    exact lt_of_le_of_lt (by simpa [mul_comm] using this) hv
+  apply Real.le_sqrt_of_sq_le
+  rw [inv_eq_one_div, le_div_iff₀ hc]
+  linarith
 
 end TauCeti
 

@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The Levi-Civita connection in global linear coordinates
@@ -37,6 +39,10 @@ Christoffel map, which is the input of the coordinate curvature formula of
   first kind for the Levi-Civita connection of a differentiable metric on `F`.
 * `TauCeti.Manifold.leviCivitaConnection_model_space_eq_fderiv_add`: the Levi-Civita connection
   is the flat derivative plus any vector solving the Christoffel formula of the first kind.
+* `TauCeti.Manifold.leviCivitaConnection_model_space_eq_fderiv_add_christoffelSecondKind`: the
+  Levi-Civita connection is the flat derivative plus the Christoffel symbols of the second kind
+  of the metric, as constructed for any nondegenerate metric in
+  `TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic`.
 * `TauCeti.Manifold.leviCivitaConnection_eq_fderiv_model_space`: for the standard metric, the
   Levi-Civita connection is the ordinary Fréchet derivative.
 
@@ -162,6 +168,38 @@ theorem leviCivitaConnection_model_space_eq_fderiv_add
   have h₂ := hγ w
   simp only [map_sub, map_add, sub_apply, add_apply]
   linarith
+
+/-- The Levi-Civita derivative `∇_u V` of a vector field `V` on the model space `F`, for a metric
+given by the field of bilinear forms `g`, is the flat derivative `DV(u)` plus the Christoffel
+symbols of the second kind of `g`: `∇_u V = DV(u) + Γ(u, V)`. Thus the Christoffel symbols of a
+general nondegenerate metric specialize, for a positive-definite one, to those of Mathlib's
+Levi-Civita connection. -/
+theorem leviCivitaConnection_model_space_eq_fderiv_add_christoffelSecondKind
+    (hg : ∀ y (v w : TangentSpace 𝓘(ℝ, F) y), inner ℝ v w =
+      g y (tangentSpaceCastModel 𝓘(ℝ, F) y v) (tangentSpaceCastModel 𝓘(ℝ, F) y w))
+    (hgx : DifferentiableAt ℝ g x) (hV : DifferentiableAt ℝ V x) (u : F) :
+    tangentSpaceCastModel 𝓘(ℝ, F) x
+        (leviCivitaConnection 𝓘(ℝ, F) F V x ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm u)) =
+      fderiv ℝ V x u + christoffelSecondKind g x u (tangentSpaceCastModel 𝓘(ℝ, F) x (V x)) := by
+  -- Read in the model space, the metric is a symmetric positive-definite bilinear form.
+  have hinner (y : F) (a b : F) : g y a b = inner ℝ ((tangentSpaceCastModel 𝓘(ℝ, F) y).symm a)
+      ((tangentSpaceCastModel 𝓘(ℝ, F) y).symm b) := by
+    rw [hg]
+    simp
+  have hcomm (y a b : F) : g y a b = g y b a := by
+    rw [hinner y a b, hinner y b a, real_inner_comm]
+  have hsep : (g x).toBilinForm.SeparatingLeft := fun a ha ↦ by
+    have h := ha a
+    rw [ContinuousLinearMap.toBilinForm_apply, hinner, inner_self_eq_zero] at h
+    simpa using h
+  have hnd : (g x).toBilinForm.Nondegenerate :=
+    LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+      (ContinuousLinearMap.isSymm_toBilinForm_iff.2 (hcomm x)).isRefl |>.2 hsep
+  refine leviCivitaConnection_model_space_eq_fderiv_add hg hgx hV u _ fun w ↦ ?_
+  rw [apply_christoffelSecondKind hnd, christoffelFirstKind_apply,
+    TauCeti.fderiv_apply_apply_comm (Filter.Eventually.of_forall (hcomm ·))
+      (tangentSpaceCastModel 𝓘(ℝ, F) x (V x)) w]
+  ring
 
 /-- For the standard Riemannian metric on a finite-dimensional real inner-product space, the
 Levi-Civita derivative is the ordinary Fréchet derivative. -/

@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
-public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Real
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
 /-!
@@ -32,6 +32,9 @@ class group.
 ## Main definitions
 
 * `TauCeti.GlobalNumberFields.ideleNorm`: the idele norm, a homomorphism to `ℝ≥0ˣ`.
+* `TauCeti.GlobalNumberFields.ideleNormSection`: the continuous section of the idele norm at an
+  infinite place `w`, the idele whose `w`-coordinate is `t ^ (1 / m_w)` and whose other
+  coordinates are `1`.
 
 ## Main results
 
@@ -48,6 +51,8 @@ class group.
   the idele norm is the normalized absolute value at that place.
 * `TauCeti.GlobalNumberFields.continuous_ideleNorm`: the idele norm is continuous, because the
   finite factors are locally constant on the idele group.
+* `TauCeti.GlobalNumberFields.ideleNorm_ideleNormSection`: the section is right inverse to the
+  idele norm.
 * `TauCeti.GlobalNumberFields.ideleNorm_surjective`: every positive real number is an idele norm.
 * `TauCeti.GlobalNumberFields.mixedEmbedding_norm_eq_ideleNorm`: for an idele whose finite part is
   an everywhere-integral unit, its idele norm equals the mixed norm of its infinite part.
@@ -82,6 +87,18 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_unitEmbedding
   Units.ext <| by
     rw [HeightOneSpectrum.coe_ideleFiniteCoord]
     rfl
+
+/-- The distance from one of the coordinate at `v` of a principal idele is measured by the
+`v`-adic valuation of `x - 1`. -/
+theorem IsDedekindDomain.HeightOneSpectrum.valued_ideleFiniteCoord_unitEmbedding_sub_one
+    (v : HeightOneSpectrum R) (x : Kˣ) :
+    Valued.v ((v.ideleFiniteCoord (IdeleGroup.unitEmbedding R K x) :
+        v.adicCompletion K) - 1) = v.valuation K ((x : K) - 1) := by
+  rw [HeightOneSpectrum.ideleFiniteCoord_unitEmbedding, Units.coe_map]
+  simp only [MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe]
+  rw [← map_one (algebraMap K (v.adicCompletion K)), ← map_sub]
+  simp only [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+    Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation']
 
 /-- The infinite coordinate of a principal idele is the image of the global element. -/
 @[simp]
@@ -343,6 +360,30 @@ theorem coe_ideleNorm_ofCompletion (w : InfinitePlace K) (u : w.Completionˣ) :
     simp [w'.ideleInfiniteCoord_ofCompletion_of_ne hw']) (by simp)]
   simp
 
+/-! ### The section at one infinite place -/
+
+variable (K) in
+/-- The continuous section of the idele norm at the infinite place `w`: the idele whose
+`w`-coordinate is the positive real number `t ^ (1 / m_w)` and whose other coordinates are `1`. -/
+def ideleNormSection (w : InfinitePlace K) : ℝ≥0ˣ →ₜ* IdeleGroup (𝓞 K) K where
+  toMonoidHom := (IdeleGroup.ofCompletion (𝓞 K) K w).comp (completionNormSection w)
+  continuous_toFun :=
+    (IdeleGroup.continuous_ofCompletion (𝓞 K) K w).comp (completionNormSection w).continuous
+
+/-- The section of the idele norm at `w` is concentrated at `w`, with coordinate
+`completionNormSection w t`. -/
+theorem ideleNormSection_apply (w : InfinitePlace K) (t : ℝ≥0ˣ) :
+    ideleNormSection K w t = IdeleGroup.ofCompletion (𝓞 K) K w (completionNormSection w t) :=
+  (rfl)
+
+/-- **The section is right inverse to the idele norm.** -/
+@[simp]
+theorem ideleNorm_ideleNormSection (w : InfinitePlace K) (t : ℝ≥0ˣ) :
+    ideleNorm (ideleNormSection K w t) = t :=
+  Units.ext <| NNReal.eq <| by
+    rw [ideleNormSection_apply, coe_ideleNorm_ofCompletion,
+      completionNormalizedAbsValue_completionNormSection]
+
 /-! ### Continuity and surjectivity -/
 
 /-- An idele whose finite coordinates, and those of its inverse, are all integral has finite
@@ -412,14 +453,7 @@ theorem continuous_ideleNorm : Continuous (ideleNorm (K := K)) := by
 /-- The idele norm is surjective: every positive real number is the idele norm of an idele
 concentrated at a single infinite place. -/
 theorem ideleNorm_surjective : Function.Surjective (ideleNorm (K := K)) := by
-  intro t
   obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
-  obtain ⟨x, hx⟩ := exists_completionNormalizedAbsValue_eq w (t : ℝ≥0).coe_nonneg
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    rw [map_zero] at hx
-    exact t.ne_zero (by exact_mod_cast hx.symm)
-  refine ⟨IdeleGroup.ofCompletion (𝓞 K) K w (Units.mk0 x hx0), Units.ext <| NNReal.eq ?_⟩
-  rw [coe_ideleNorm_ofCompletion, Units.val_mk0, hx]
+  exact Function.RightInverse.surjective (ideleNorm_ideleNormSection w)
 
 end TauCeti.GlobalNumberFields

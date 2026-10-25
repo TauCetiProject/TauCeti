@@ -6,18 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.KullbackLeibler.Variational
-public import TauCeti.MeasureTheory.VectorMeasure.Decomposition.Jordan
+public import TauCeti.MeasureTheory.Measure.TotalVariation
 import Mathlib.Probability.Moments.SubGaussian
 
 /-!
 # Pinsker's inequality
 
 Pinsker's inequality bounds total variation by relative entropy, with natural logarithms.
-We use Mathlib's `InformationTheory.klDiv` and `SignedMeasure.totalVariation`.
-The latter has total mass twice the usual total-variation distance for probability measures.
-Thus `totalVariation_sq_le_two_mul_klDiv` states the classical bound
+We use Mathlib's `InformationTheory.klDiv` and total variation distance `etvDist`.
+The latter is the signed-measure norm, twice the usual total-variation distance for probability
+measures. Thus `etvDist_sq_le_two_mul_klDiv` states the classical bound
 `dTV(μ, ν)² ≤ klDiv μ ν / 2`. For finite measures with common mass `M`,
-`totalVariation_sq_le_two_mul_mass_mul_klDiv` gives the rescaled bound
+`etvDist_sq_le_two_mul_mass_mul_klDiv` gives the rescaled bound
 `‖μ - ν‖² ≤ 2 * M * klDiv μ ν`. Both include infinite entropy and require only a measurable
 space; the finite-measure version also covers zero mass.
 
@@ -106,16 +106,15 @@ theorem two_mul_sq_measureReal_sub_le_mul_klDiv [IsFiniteMeasure μ] [IsFiniteMe
       rw [ENNReal.coe_inv hcN, pow_two, mul_assoc, ← mul_assoc (c : ℝ≥0∞) _ (klDiv μ ν),
         ENNReal.mul_inv_cancel hc0 ENNReal.coe_ne_top, one_mul, hc]
 
-/-- **Pinsker's inequality** for finite measures of equal mass, using the canonical signed-measure
-total variation. If their common mass is `M`, this says `‖μ - ν‖² ≤ 2 * M * klDiv μ ν`.
-There is no finiteness assumption on relative entropy. -/
-theorem totalVariation_sq_le_two_mul_mass_mul_klDiv [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+/-- **Pinsker's inequality** for finite measures of equal mass, using Mathlib's total variation
+distance `etvDist`, the signed-measure norm. If their common mass is `M`, this says
+`‖μ - ν‖² ≤ 2 * M * klDiv μ ν`. There is no finiteness assumption on relative entropy. -/
+theorem etvDist_sq_le_two_mul_mass_mul_klDiv [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (hmass : μ univ = ν univ) :
-    (μ.toSignedMeasure - ν.toSignedMeasure).totalVariation univ ^ 2 ≤
-      2 * μ univ * klDiv μ ν := by
+    etvDist μ ν ^ 2 ≤ 2 * μ univ * klDiv μ ν := by
   let C : ℝ≥0∞ := (μ univ * klDiv μ ν / 2) ^ (2 : ℝ)⁻¹
-  have hTV : (μ.toSignedMeasure - ν.toSignedMeasure).totalVariation univ ≤ 2 * C := by
-    apply (Measure.totalVariation_toSignedMeasure_sub_univ_le_two_mul_iff hmass).2
+  have hTV : etvDist μ ν ≤ 2 * C := by
+    apply (etvDist_le_two_mul_iff hmass).2
     intro s hs
     apply tsub_le_iff_left.1
     dsimp [C]
@@ -131,7 +130,7 @@ theorem totalVariation_sq_le_two_mul_mass_mul_klDiv [IsFiniteMeasure μ] [IsFini
         mul_comm] using h
     · simp [tsub_eq_zero_of_le (le_of_not_ge hle)]
   calc
-    (μ.toSignedMeasure - ν.toSignedMeasure).totalVariation univ ^ 2 ≤ (2 * C) ^ 2 := by
+    etvDist μ ν ^ 2 ≤ (2 * C) ^ 2 := by
       gcongr
     _ = 2 * μ univ * klDiv μ ν := by
       dsimp [C]
@@ -145,10 +144,10 @@ theorem totalVariation_sq_le_two_mul_mass_mul_klDiv [IsFiniteMeasure μ] [IsFini
           rw [ENNReal.mul_inv_cancel two_ne_zero ENNReal.ofNat_ne_top, mul_one]
 
 /-- **Pinsker's inequality** for probability measures, with natural logarithms and no
-absolute-continuity assumption. The total variation on the left is twice the usual distance
+absolute-continuity assumption. Mathlib's `etvDist` on the left is twice the usual distance
 `dTV(μ, ν) = sup_s |μ s - ν s|`, so the bound is equivalently `2 * dTV(μ, ν)² ≤ klDiv μ ν`. -/
-theorem totalVariation_sq_le_two_mul_klDiv [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
-    (μ.toSignedMeasure - ν.toSignedMeasure).totalVariation univ ^ 2 ≤ 2 * klDiv μ ν := by
-  simpa using totalVariation_sq_le_two_mul_mass_mul_klDiv (μ := μ) (ν := ν) (by simp)
+theorem etvDist_sq_le_two_mul_klDiv [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    etvDist μ ν ^ 2 ≤ 2 * klDiv μ ν := by
+  simpa using etvDist_sq_le_two_mul_mass_mul_klDiv (μ := μ) (ν := ν) (by simp)
 
 end TauCeti

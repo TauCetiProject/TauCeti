@@ -40,6 +40,8 @@ of square classes whose image in `(W⁄L).M` lies in the image of the local desc
 
 * `WeierstrassCurve.Affine.baseChange_discr_f`: the discriminant of the cubic `f` commutes with
   base change.
+* `WeierstrassCurve.Affine.nonsingular_baseChange_of_aeval_eq_zero`: a root `x` of `f` in `L` gives
+  the point `(x, 0)` of `W⁄L`.
 * `WeierstrassCurve.Affine.localRes_μX` and `WeierstrassCurve.Affine.localRes_comp_μ`: the
   descent map is natural under base change — restricting square classes after the global `μ` is
   applying the local `μ` after the base change of points.
@@ -81,7 +83,8 @@ One declaration is **not** adapted from the source: `localRes_injective_of_surje
 is re-derived here. The source obtains it from its local `Units.modPow.bijective_map`, which is in
 the square-class spelling this repository does not carry, and Mathlib has no `QuotientGroup.map`
 injectivity helper to appeal to instead. `baseChange_discr_f` is the source's lemma of that name
-at its later revision `3bfe124`.
+at its later revision `3bfe124`. `nonsingular_baseChange_of_aeval_eq_zero` is not from the
+source either: it is `WeierstrassCurve.Affine.nonsingular_of_eval_f_eq_zero` over `L`.
 
 This advances `TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (README:813-820), whose
 "Explicit `2`-descent (core, this layer)" bullet names "the local conditions" as the first item
@@ -204,6 +207,14 @@ lemma localRes_injective_of_surjective_algebraMap (h : Function.Surjective (alge
     (by simpa only [powMonoidHom_apply, map_pow] using hw)⟩
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
+
+variable {L} in
+/-- A root `x` of the cubic `f` in the extension field `L` gives the nonsingular point `(x, 0)` of
+the base-changed curve `W⁄L`. -/
+lemma nonsingular_baseChange_of_aeval_eq_zero {x : L} (hx : aeval x W.f = 0) :
+    (W⁄L).toAffine.Nonsingular x 0 :=
+  (W⁄L).toAffine.nonsingular_of_eval_f_eq_zero <| by
+    rw [W.baseChange_f, eval_map_algebraMap, hx]
 
 open scoped Classical in
 /-- The local `2`-descent condition at the extension field `L` of `K` (in the applications,

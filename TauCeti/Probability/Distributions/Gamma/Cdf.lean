@@ -128,6 +128,12 @@ theorem cdf_gammaMeasure_eq (ha : 0 < a) (hr : 0 < r) (x : ℝ) :
     ← lowerIncompleteGamma_eq_integral ha (by positivity), regularizedGamma_eq_div]
   field_simp
 
+/-- A Gamma law of positive shape and rate has positive survival at every finite point. -/
+theorem cdf_gammaMeasure_lt_one (ha : 0 < a) (hr : 0 < r) (x : ℝ) :
+    cdf (gammaMeasure a r) x < 1 := by
+  rw [cdf_gammaMeasure_eq ha hr]
+  exact regularizedGamma_lt_one a (r * x)
+
 /-! ### Consequences -/
 
 /-- The mass a gamma law assigns to a lower half-line, in measure form. -/

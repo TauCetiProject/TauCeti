@@ -19,7 +19,7 @@ and its coefficient functionals are dual to each other: the `i`-th functional ta
 on the `i`-th frame vector and `0` on the others.
 
 It then uses a local frame of the *source* bundle to test smoothness of a section of a bundle of
-continuous linear maps: such a section is `C^n` on an open subset of the two base sets as soon as
+continuous linear maps: such a section is `C^n` on a subset of the two base sets as soon as
 its evaluations on the frame sections are. Read through a trivialization, a continuous linear map
 out of a finite-dimensional space is recovered from its values on a basis by
 `T = ∑ j, (b.coord j).smulRight (T (b j))`, and each summand depends continuously linearly on
@@ -37,6 +37,8 @@ a time.
 * `TauCeti.Manifold.symmL_basis_eq_localFrame` and
   `TauCeti.Manifold.continuousLinearMapAt_localFrame`: a trivialization transports basis vectors
   to its local frame and reads those frame vectors back as basis vectors.
+* `TauCeti.Manifold.contMDiffOn_symm_baseSet`: the section with constant coordinates in a
+  trivialization is smooth on its base set.
 * `TauCeti.Manifold.coordChangeL_toMatrix`: a trivialization coordinate change has the
   change-of-basis matrix between the corresponding local frames.
 * `TauCeti.Manifold.contMDiffOn_hom_of_localFrame`: a section of the bundle of continuous linear
@@ -97,6 +99,13 @@ theorem continuousLinearMapAt_localFrame (hx : x ∈ e.baseSet) (i : ι) :
     e.continuousLinearMapAt 𝕜 x (e.localFrame b i x) = b i := by
   rw [← symmL_basis_eq_localFrame b hx i, e.continuousLinearMapAt_symmL hx]
 
+/-- The section with constant coordinates `v` in a trivialization `e` is `C^n` on the base set of
+`e`. -/
+theorem contMDiffOn_symm_baseSet {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] (v : F) :
+    CMDiff[e.baseSet] n (T% (fun y ↦ e.symm y v)) :=
+  e.contMDiffOn_section_baseSet_iff.2 <| (contMDiffOn_const (c := v)).congr fun y hy ↦ by
+    simp only [e.apply_mk_symm hy]
+
 /-- The matrix of a coordinate change between two vector-bundle trivializations is the
 change-of-basis matrix between the corresponding local frames. -/
 theorem coordChangeL_toMatrix [Fintype ι] [DecidableEq ι]
@@ -123,38 +132,32 @@ variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
   {e' : Trivialization F' (TotalSpace.proj : TotalSpace F' V' → M)} [MemTrivializationAtlas e']
   {n : ℕ∞ω} {u : Set M}
 
-/-- A continuous linear map out of a finite-dimensional space is the sum, over a basis of the
-source, of the `smulRight`s of its values on that basis. -/
-private theorem eq_sum_coord_smulRight [Fintype ι] (T : F →L[𝕜] F') :
-    T = ∑ j, (LinearMap.toContinuousLinearMap (b.coord j)).smulRight (T (b j)) := by
-  classical
-  refine ContinuousLinearMap.coe_injective (b.ext fun j ↦ ?_)
-  simp [Basis.coord_apply, Finsupp.single_apply]
-
-variable [Finite ι] [∀ x, IsTopologicalAddGroup (V' x)] [∀ x, ContinuousSMul 𝕜 (V' x)]
+variable [∀ x, IsTopologicalAddGroup (V' x)] [∀ x, ContinuousSMul 𝕜 (V' x)]
   [ContMDiffVectorBundle n F V I] [ContMDiffVectorBundle n F' V' I]
 
 /-- **A hom-bundle section is tested on a local frame.** A section `A` of the bundle of continuous
-linear maps from `V` to `V'` is `C^n` on an open subset of `e.baseSet ∩ e'.baseSet` as soon as each
+linear maps from `V` to `V'` is `C^n` on a subset of `e.baseSet ∩ e'.baseSet` as soon as each
 of its evaluations `A (e.localFrame b j)` on the local frame of the source bundle is. -/
-theorem contMDiffOn_hom_of_localFrame (hu : IsOpen u)
-    (hu' : u ⊆ e.baseSet ∩ e'.baseSet) {A : Π y : M, V y →L[𝕜] V' y}
+theorem contMDiffOn_hom_of_localFrame (hu : u ⊆ e.baseSet ∩ e'.baseSet)
+    {A : Π y : M, V y →L[𝕜] V' y}
     (hA : ∀ j : ι, ContMDiffOn I (I.prod 𝓘(𝕜, F')) n
       (fun y ↦ TotalSpace.mk' F' y (A y (e.localFrame b j y))) u) :
     ContMDiffOn I (I.prod 𝓘(𝕜, F →L[𝕜] F')) n
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F') y (A y)) u := by
-  cases nonempty_fintype ι
+  classical
+  let := FiniteDimensional.fintypeBasisIndex b
   set eh := e.continuousLinearMap (RingHom.id 𝕜) e' with heh
-  rw [eh.contMDiffOn_section_iff hu hu']
+  apply (eh.contMDiffOn_iff (fun y hy ↦ eh.mem_source.mpr (by simpa [heh] using hu hy))).2
+  refine ⟨contMDiffOn_id, ?_⟩
   -- The `j`-th coordinate of the trivialized section is the trivialized evaluation on the frame.
   have key {y : M} (hy : y ∈ u) (j : ι) :
       (eh ⟨y, A y⟩).2 (b j) = (e' ⟨y, A y (e.localFrame b j y)⟩).2 := by
     simp [heh, Bundle.Trivialization.continuousLinearMap_apply,
-      symmL_basis_eq_localFrame b (hu' hy).1,
-      Bundle.Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e' (hu' hy).2]
+      symmL_basis_eq_localFrame b (hu hy).1,
+      Bundle.Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e' (hu hy).2]
   have hcoord (j : ι) : ContMDiffOn I 𝓘(𝕜, F') n (fun y ↦ (eh ⟨y, A y⟩).2 (b j)) u := by
     refine ContMDiffOn.congr ?_ fun y hy ↦ key hy j
-    exact (e'.contMDiffOn_section_iff hu (hu'.trans inter_subset_right)).1 (hA j)
+    exact ((e'.contMDiffOn_iff (fun y hy ↦ e'.mem_source.mpr (hu hy).2)).1 (hA j)).2
   have hsum : ContMDiffOn I 𝓘(𝕜, F →L[𝕜] F') n
       (fun y ↦ ∑ j, (LinearMap.toContinuousLinearMap (b.coord j)).smulRight
         ((eh ⟨y, A y⟩).2 (b j))) u := by
@@ -162,7 +165,10 @@ theorem contMDiffOn_hom_of_localFrame (hu : IsOpen u)
     exact ContMDiffOn.clm_apply
       (g := fun _ ↦ ContinuousLinearMap.smulRightL 𝕜 F F'
         (LinearMap.toContinuousLinearMap (b.coord j))) contMDiffOn_const (hcoord j)
-  exact hsum.congr fun y _ ↦ eq_sum_coord_smulRight b _
+  apply hsum.congr
+  intro y _
+  refine ContinuousLinearMap.coe_injective (b.ext fun j ↦ ?_)
+  simp [Basis.coord_apply, Finsupp.single_apply]
 
 end Hom
 

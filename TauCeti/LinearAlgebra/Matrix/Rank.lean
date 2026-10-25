@@ -5,16 +5,36 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Fable 5
 -/
 module
 
+public import Mathlib.GroupTheory.GroupAction.ConjAct
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Matrix.ColumnRowPartitioned
+import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 
 /-!
 # Matrix rank
 
-This file records general results relating matrix rank to the corresponding linear maps.
+This file records general results relating matrix rank to the corresponding linear maps,
+minors and change of scalars. In particular, over an integral domain a finite family of
+rows is linearly independent exactly when one of its maximal minors is nonzero, and over a field
+the rank is the largest size of a nonzero minor. Over a star-ordered field, the source of `A`
+splits into the kernel of `A` and the range of its conjugate transpose `Aᴴ`; read in a basis, this
+splits a space into the common kernel and the sum of the ranges of a family of operators that are
+self-adjoint for the Hermitian form making the basis orthonormal.
 
 ## Main results
 
+* `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: over an integral domain, the
+  rows are linearly independent exactly when some maximal minor is nonzero.
+* `Matrix.le_rank_iff_exists_det_submatrix_ne_zero` and
+  `Matrix.rank_le_iff_forall_det_submatrix_eq_zero`: over a field, the rank is at least `p`
+  exactly when some `p × p` minor is nonzero, and at most `p` exactly when every
+  `(p + 1) × (p + 1)` minor vanishes.
+* `Matrix.rank_map`: the rank is unchanged by a homomorphism of fields applied to the entries.
+* `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
+  scalar extension to a domain.
+* `Matrix.linearIndependent_rat_row_iff`: the case of integer matrices extended to `ℚ`.
 * `Matrix.rank_eq_card_iff_vecMul_injective` characterizes full row rank by injectivity of right
   multiplication by the matrix.
 * `Matrix.rank_eq_card_iff_mulVec_injective` characterizes full column rank by injectivity of
@@ -23,15 +43,120 @@ This file records general results relating matrix rank to the corresponding line
   factorization gives a full-column-rank left factor with the same column range.
 * `Matrix.rank_add_rank_le_rank_mul_add_card`: Sylvester's rank inequality
   `rank A + rank B ≤ rank (A * B) + n` for an `m × n` matrix `A` and an `n × o` matrix `B`.
+* `Matrix.rank_conjAct_smul`: conjugation by an invertible matrix preserves the rank.
 * `Matrix.exists_eq_mul_fin_rank`: a rectangular matrix factors through `Fin A.rank`.
 * `Matrix.exists_eq_mul_of_rank_le` and `Matrix.rank_le_iff_exists_eq_mul`: a matrix has rank at
   most `r` exactly when it factors through `Fin r`.
+* `Matrix.isCompl_ker_mulVecLin_range_mulVecLin_conjTranspose`: over a star-ordered field the
+  kernel of `A` and the range of `Aᴴ` are complementary, and
+  `Matrix.isCompl_iInf_ker_mulVecLin_iSup_range_mulVecLin_conjTranspose` is the same for a finite
+  family of matrices.
+* `LinearMap.isCompl_iInf_ker_iSup_range_of_isHermitian_toMatrix`: a finite family of
+  endomorphisms with Hermitian matrices in a common basis splits the space into their common kernel
+  and the sum of their ranges.
 
 -/
 
 public section
 
 namespace Matrix
+
+section LinearIndependent
+
+variable {m n R : Type*} [Fintype m] [DecidableEq m] [Finite n]
+
+/-- The field case of `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: a family
+of independent columns of the size of the row rank exists. -/
+private theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field {K : Type*}
+    [Field K] {A : Matrix m n K} :
+    LinearIndependent K A.row ↔ ∃ e : m ↪ n, (A.submatrix id e).det ≠ 0 := by
+  have : Fintype n := Fintype.ofFinite n
+  refine ⟨fun h ↦ ?_, fun ⟨e, he⟩ ↦ ?_⟩
+  · obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K A.col
+    have : Finite κ := Finite.of_injective a ha
+    have : Fintype κ := Fintype.ofFinite κ
+    have hcard : Fintype.card m = Fintype.card κ := by
+      rw [linearIndependent_iff_card_eq_finrank_span.1 hli, Set.finrank, hspan,
+        ← rank_eq_finrank_span_cols, h.rank_matrix]
+    let e : m ↪ n := (Fintype.equivOfCardEq hcard).toEmbedding.trans ⟨a, ha⟩
+    -- The columns of the square submatrix are the columns `A.col (e j)` (`col_submatrix_eq_comp`).
+    have hcol : LinearIndependent K (A.submatrix id e).col :=
+      hli.comp _ (Fintype.equivOfCardEq hcard).injective
+    exact ⟨e, ((isUnit_iff_isUnit_det _).1 (linearIndependent_col_iff_isUnit.1 hcol)).ne_zero⟩
+  · -- The rows of the square submatrix are the rows of `A` restricted to the columns `e`.
+    exact LinearIndependent.of_comp (LinearMap.funLeft K K e)
+      (linearIndependent_rows_of_det_ne_zero he)
+
+omit [Fintype m] [DecidableEq m] in
+/-- The rows of a matrix over `R` are linearly independent over a domain `S` containing `R`
+exactly when they are linearly independent over `R`. -/
+theorem linearIndependent_map_algebraMap_row_iff {S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] [FaithfulSMul R S] [IsDomain S] {A : Matrix m n R} :
+    LinearIndependent S (A.map (algebraMap R S)).row ↔ LinearIndependent R A.row :=
+  -- The rows of `A.map (algebraMap R S)` are the rows of `A` mapped entrywise (`row_map`).
+  linearIndependent_algebraMap_comp_iff
+
+/-- Over an integral domain, the rows of a matrix are linearly independent exactly when some
+maximal minor is nonzero. -/
+theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero [CommRing R] [IsDomain R]
+    {A : Matrix m n R} :
+    LinearIndependent R A.row ↔ ∃ e : m ↪ n, (A.submatrix id e).det ≠ 0 := by
+  let K := FractionRing R
+  rw [← linearIndependent_map_algebraMap_row_iff (S := K),
+    linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field]
+  simp only [submatrix_map, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
+    map_ne_zero_iff _ (IsFractionRing.injective R K)]
+
+omit [Fintype m] [DecidableEq m] [Finite n] in
+/-- **Rank and minors.** Over a field, a matrix has rank at least `p` exactly when one of its
+`p × p` minors is nonzero. -/
+theorem le_rank_iff_exists_det_submatrix_ne_zero {K : Type*} [Field K] [Finite m] [Fintype n]
+    {A : Matrix m n K} {p : ℕ} :
+    p ≤ A.rank ↔ ∃ (r : Fin p ↪ m) (c : Fin p ↪ n), (A.submatrix r c).det ≠ 0 := by
+  refine ⟨fun hp ↦ ?_, fun ⟨r, c, h⟩ ↦ ?_⟩
+  · -- Choose `p` linearly independent rows, then a nonzero maximal minor among them.
+    obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K A.row
+    have : Finite κ := Finite.of_injective a ha
+    have : Fintype κ := Fintype.ofFinite κ
+    have hcard : A.rank = Fintype.card κ := by
+      rw [linearIndependent_iff_card_eq_finrank_span.1 hli, Set.finrank, hspan,
+        rank_eq_finrank_span_row]
+    let r : Fin p ↪ m :=
+      ((Fin.castLEEmb (hcard ▸ hp)).trans (Fintype.equivFin κ).symm.toEmbedding).trans ⟨a, ha⟩
+    -- The rows of `A.submatrix r id` are the rows `A.row (r i)`.
+    have hr : LinearIndependent K (A.submatrix r id).row :=
+      hli.comp _ (Fin.castLEEmb _ |>.trans (Fintype.equivFin κ).symm.toEmbedding).injective
+    obtain ⟨c, hc⟩ := linearIndependent_row_iff_exists_det_submatrix_ne_zero.1 hr
+    exact ⟨r, c, by rwa [submatrix_submatrix] at hc⟩
+  · classical
+    simpa [rank_of_det_ne_zero h] using rank_submatrix_le A r c
+
+omit [Fintype m] [DecidableEq m] [Finite n] in
+/-- Over a field, a matrix has rank at most `p` exactly when all of its `(p + 1) × (p + 1)` minors
+vanish. -/
+theorem rank_le_iff_forall_det_submatrix_eq_zero {K : Type*} [Field K] [Finite m] [Fintype n]
+    {A : Matrix m n K} {p : ℕ} :
+    A.rank ≤ p ↔ ∀ (r : Fin (p + 1) ↪ m) (c : Fin (p + 1) ↪ n), (A.submatrix r c).det = 0 := by
+  rw [← not_lt, Nat.lt_iff_add_one_le, le_rank_iff_exists_det_submatrix_ne_zero]
+  simp only [not_exists, ne_eq, not_not]
+
+omit [Fintype m] [DecidableEq m] [Finite n] in
+/-- The rank of a matrix over a field is unchanged by applying a homomorphism to another field to
+its entries, since the images of its minors are the minors of its image. -/
+theorem rank_map {K L : Type*} [Field K] [Field L] [Finite m] [Fintype n] (A : Matrix m n K)
+    (φ : K →+* L) : (A.map φ).rank = A.rank :=
+  eq_of_forall_le_iff fun p ↦ by
+    simp only [le_rank_iff_exists_det_submatrix_ne_zero, submatrix_map, ← RingHom.mapMatrix_apply,
+      ← RingHom.map_det, map_ne_zero]
+
+omit [Fintype m] [DecidableEq m] in
+/-- The rows of an integer matrix are linearly independent over `ℚ` exactly when they are linearly
+independent over `ℤ`. -/
+theorem linearIndependent_rat_row_iff {A : Matrix m n ℤ} :
+    LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row ↔ LinearIndependent ℤ A.row :=
+  linearIndependent_map_algebraMap_row_iff
+
+end LinearIndependent
 
 section FullColumnRank
 
@@ -81,6 +206,17 @@ theorem range_left_factor_eq {ι : Type*} [Fintype ι]
     exact hM.trans hL.symm
 
 end ExactRankFactorRange
+
+section Conjugation
+
+/-- Conjugation by an invertible matrix preserves the rank. -/
+@[simp]
+theorem rank_conjAct_smul {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    (g : ConjAct (GL n R)) (A : Matrix n n R) : (g • A).rank = A.rank := by
+  rw [ConjAct.units_smul_def, rank_mul_eq_left_of_isUnit_det _ _ (isUnits_det_units _),
+    rank_mul_eq_right_of_isUnit_det _ _ (isUnits_det_units _)]
+
+end Conjugation
 
 variable {K : Type*} [Field K] {m n : Type*} [Fintype n]
 
@@ -154,4 +290,90 @@ theorem rank_add_rank_le_rank_mul_add_card {o : Type*} [Fintype o] (A : Matrix m
   rw [rank, hB, hrange]
   omega
 
+section StarOrderedField
+
+variable {R : Type*} [Field R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
+  {m n : Type*} [Fintype m] [Fintype n]
+
+/-- **The kernel of a matrix and the range of its conjugate transpose are complementary** over a
+star-ordered field, such as `ℚ`, `ℝ` or `ℂ` (with `ComplexOrder`). Some such hypothesis is
+needed: over `ZMod 2`, the kernel of the `1 × 2` matrix `!![1, 1]` and the range of its transpose
+are both the line spanned by `![1, 1]`. -/
+theorem isCompl_ker_mulVecLin_range_mulVecLin_conjTranspose (A : Matrix m n R) :
+    IsCompl (LinearMap.ker A.mulVecLin) (LinearMap.range Aᴴ.mulVecLin) := by
+  refine (Submodule.isCompl_iff_disjoint _ _ ?_).mpr ?_
+  · have h := A.mulVecLin.finrank_range_add_finrank_ker
+    have hrank : Aᴴ.rank = A.rank := A.rank_conjTranspose
+    rw [rank, rank] at hrank
+    rw [hrank, ← h, add_comm]
+  · refine Submodule.disjoint_def.mpr fun x hx hx' => ?_
+    obtain ⟨y, rfl⟩ := hx'
+    have hy : y ∈ LinearMap.ker (Aᴴᴴ * Aᴴ).mulVecLin := by
+      simpa [conjTranspose_conjTranspose, mulVec_mulVec] using hx
+    rw [ker_mulVecLin_conjTranspose_mul_self] at hy
+    exact hy
+
+/-- **The common kernel of a finite family of matrices and the sum of the ranges of their conjugate
+transposes are complementary** over a star-ordered field. This is
+`Matrix.isCompl_ker_mulVecLin_range_mulVecLin_conjTranspose` for the matrix stacking the family. -/
+theorem isCompl_iInf_ker_mulVecLin_iSup_range_mulVecLin_conjTranspose {ι : Type*} [Finite ι]
+    (A : ι → Matrix m n R) :
+    IsCompl (⨅ i, LinearMap.ker (A i).mulVecLin) (⨆ i, LinearMap.range (A i)ᴴ.mulVecLin) := by
+  classical
+  have := Fintype.ofFinite ι
+  -- Stack the family into one matrix with rows indexed by `ι × m`.
+  let B : Matrix (ι × m) n R := Matrix.of fun p => A p.1 p.2
+  have hker : LinearMap.ker B.mulVecLin = ⨅ i, LinearMap.ker (A i).mulVecLin := by
+    ext x
+    simp [B, Submodule.mem_iInf, funext_iff, mulVec, Prod.forall]
+  -- The conjugate transpose of the stack sums the conjugate transposes of its blocks.
+  have hsum (y : ι × m → R) : Bᴴ *ᵥ y = ∑ i, (A i)ᴴ *ᵥ fun r => y (i, r) := by
+    ext u
+    simp [B, mulVec, dotProduct, Fintype.sum_prod_type]
+  have hrange : LinearMap.range Bᴴ.mulVecLin = ⨆ i, LinearMap.range (A i)ᴴ.mulVecLin := by
+    refine le_antisymm ?_ (iSup_le fun i => ?_)
+    · rintro _ ⟨y, rfl⟩
+      rw [mulVecLin_apply, hsum]
+      exact Submodule.sum_mem _ fun i _ => Submodule.mem_iSup_of_mem i ⟨_, rfl⟩
+    · rintro _ ⟨z, rfl⟩
+      refine ⟨fun p => if p.1 = i then z p.2 else 0, ?_⟩
+      rw [mulVecLin_apply, hsum, Finset.sum_eq_single i
+        (fun j _ hj => by simp only [hj, ite_false]; exact mulVec_zero _) (by simp)]
+      simp
+  rw [← hker, ← hrange]
+  exact B.isCompl_ker_mulVecLin_range_mulVecLin_conjTranspose
+
+end StarOrderedField
+
 end Matrix
+
+open Matrix in
+/-- **Self-adjoint operators split off their common kernel.** Over a star-ordered field, let `f`
+be a finite family of endomorphisms whose matrices in a basis `b` are Hermitian, that is, which are
+self-adjoint for the Hermitian form making `b` orthonormal. Then their common kernel and the sum of
+their ranges are complementary. This is
+`Matrix.isCompl_iInf_ker_mulVecLin_iSup_range_mulVecLin_conjTranspose` read in the basis `b`. -/
+theorem LinearMap.isCompl_iInf_ker_iSup_range_of_isHermitian_toMatrix {R V ι P : Type*} [Field R]
+    [PartialOrder R] [StarRing R] [StarOrderedRing R] [AddCommGroup V] [Module R V] [Fintype ι]
+    [DecidableEq ι] [Finite P] (b : Module.Basis ι R V) (f : P → V →ₗ[R] V)
+    (hf : ∀ p, (LinearMap.toMatrix b b (f p)).IsHermitian) :
+    IsCompl (⨅ p, LinearMap.ker (f p)) (⨆ p, LinearMap.range (f p)) := by
+  let e := Submodule.orderIsoMapComap b.equivFun.symm
+  -- In the coordinates of `b`, each `f p` is multiplication by its matrix.
+  have hcoord (p : P) (x : V) :
+      LinearMap.toMatrix b b (f p) *ᵥ b.equivFun x = b.equivFun (f p x) := by
+    simpa using LinearMap.toMatrix_mulVec_repr b b (f p) x
+  have hker (p : P) :
+      LinearMap.ker (f p) = e (LinearMap.ker (LinearMap.toMatrix b b (f p)).mulVecLin) := by
+    ext x
+    simp [e, Submodule.mem_map_equiv, LinearMap.toMatrix_mulVec_repr]
+  have hrange (p : P) :
+      LinearMap.range (f p) = e (LinearMap.range (LinearMap.toMatrix b b (f p))ᴴ.mulVecLin) := by
+    rw [(hf p).eq]
+    ext x
+    rw [Submodule.orderIsoMapComap_apply, Submodule.mem_map_equiv, LinearEquiv.symm_symm]
+    refine ⟨fun ⟨y, hy⟩ => ⟨b.equivFun y, by rw [mulVecLin_apply, hcoord, hy]⟩,
+      fun ⟨z, hz⟩ => ⟨b.equivFun.symm z, b.equivFun.injective ?_⟩⟩
+    rw [← hcoord, LinearEquiv.apply_symm_apply, ← hz, mulVecLin_apply]
+  simp only [hker, hrange, ← e.map_iInf, ← e.map_iSup]
+  exact e.isCompl (Matrix.isCompl_iInf_ker_mulVecLin_iSup_range_mulVecLin_conjTranspose _)

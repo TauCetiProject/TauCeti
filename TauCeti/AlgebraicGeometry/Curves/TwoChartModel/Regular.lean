@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.FieldTheory.FunctionField.AffineModel.IntegralClosure
 -- Proof-only: regularity of local rings of spectra of regular rings, and codimension bounds.
-import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.Topology.KrullDimension.Basic
 
 /-!

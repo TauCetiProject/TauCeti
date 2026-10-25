@@ -17,6 +17,10 @@ If a finite family enumerates a polynomial's roots with multiplicity, the multip
 at each label depends only on which labels coincide. Consequently an eventually constant
 collision relation gives eventually constant multiplicities, without any continuity or
 splitting assumptions on the polynomial family.
+
+We also count the root zero: it occurs in `f.roots` with multiplicity the order of vanishing
+`f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
+`f.natTrailingDegree` plus the nonzero roots satisfying it.
 -/
 
 public section
@@ -57,3 +61,27 @@ theorem sum_rootMultiplicity_le_natDegree [CommRing R] [IsDomain R] (p : R[X]) (
     _ ≤ p.natDegree := card_roots' p
 
 end TauCeti
+
+namespace Polynomial
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- The root zero occurs in `f.roots` with multiplicity the order of vanishing of `f` at zero. -/
+theorem count_zero_roots [DecidableEq R] (f : R[X]) : f.roots.count 0 = f.natTrailingDegree := by
+  rw [count_roots, rootMultiplicity_eq_natTrailingDegree']
+
+/-- The number of roots satisfying a predicate that holds at zero is the order of vanishing at
+zero plus the number of nonzero roots satisfying it. -/
+theorem card_filter_roots_eq_natTrailingDegree_add [DecidableEq R] (f : R[X]) {q : R → Prop}
+    [DecidablePred q] (hq : q 0) :
+    (f.roots.filter q).card =
+      f.natTrailingDegree + (f.roots.filter fun α => α ≠ 0 ∧ q α).card := by
+  have hsplit : f.roots.filter q =
+      f.roots.filter (· = 0) + f.roots.filter fun α => α ≠ 0 ∧ q α := by
+    rw [← Multiset.filter_add_not (· = 0) (f.roots.filter q), Multiset.filter_filter,
+      Multiset.filter_filter]
+    congr 1
+    exact Multiset.filter_congr fun α _ => ⟨And.left, fun h => ⟨h, h ▸ hq⟩⟩
+  rw [hsplit, Multiset.card_add, Multiset.filter_eq', Multiset.card_replicate, count_zero_roots]
+
+end Polynomial

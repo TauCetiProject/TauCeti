@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.ZMod
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries
+public import TauCeti.Topology.Separation.TypeTags
 
 /-!
 # The graded pieces of the lower `p`-series
@@ -177,7 +178,9 @@ theorem commutatorElement_jacobi_mem_pLowerCentralSeries {i j k : ℕ} {a b c : 
 variable (p G) in
 /-- **The graded piece** `gr_k(G) = λ_k ⧸ λ_{k+1}` of the lower `p`-series, written additively.
 It is an abelian group killed by `p`, hence a `ZMod p`-module; for a prime `p` it is finite when
-`G` is a topologically finitely generated profinite group, and not in general. -/
+`G` is a topologically finitely generated profinite group, and not in general. Since every `λ_k` is
+closed, `gr_k(G)` is Hausdorff, compact when `G` is, and a profinite abelian group when `G` is
+profinite; instance search finds these properties. -/
 abbrev gradedPiece (k : ℕ) : Type u :=
   Additive (pLowerCentralSeries p G k ⧸
     (pLowerCentralSeries p G (k + 1)).subgroupOf (pLowerCentralSeries p G k))

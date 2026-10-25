@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Homotopy.MappingPath.Basic
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Homotopy.HomotopyGroup
+public import TauCeti.Topology.PathSpace.Prepend
 
 /-!
 # Fibres of mapping-path replacements
@@ -18,6 +19,14 @@ literal fibre of the replacement's endpoint map. For a constant map from a point
 this is exactly the native compact-open path space, and hence at equal endpoints
 the native loop space. In particular, this identification does not presume that
 an endpoint fibre is nonempty.
+
+The fibre of the source projection over `b` is the space of paths from `f b` to `k`. It is
+empty exactly when `f b` and `k` lie in different path components
+(`MappingPathFiber.isEmpty_projFiber_iff`). A chosen reference path `α` from `f b` to `k`
+makes it homotopy equivalent to the loop space `Ω K k`
+(`MappingPathFiber.projFiberHomotopyEquivLoopSpace`): a path `γ` is sent to the loop
+`α.symm.trans γ`, and a loop `ℓ` back to the path `α.trans ℓ`. This equivalence depends on `α`;
+no identification independent of a reference path is asserted.
 
 The full based path space is contractible by the shrinking homotopy, whereas its
 endpoint fibres generally are not. No fibration or homotopy exact-sequence theorem
@@ -129,6 +138,38 @@ theorem projFiberHomeomorphPath_apply (b : B) (p : {p : MappingPathFiber f k // 
 @[simp]
 theorem projFiberHomeomorphPath_symm_val_val (b : B) (γ : Path (f b) k) :
     ((projFiberHomeomorphPath f k b).symm γ).val.val = (b, γ.toContinuousMap) := (rfl)
+
+/-- The fibre of the source projection over `b` is nonempty exactly when `f b` is joined to `k`
+by a path. -/
+theorem nonempty_projFiber_iff (b : B) :
+    Nonempty {p : MappingPathFiber f k // proj f k p = b} ↔ Joined (f b) k :=
+  (projFiberHomeomorphPath f k b).toEquiv.nonempty_congr
+
+/-- The fibre of the source projection over `b` is empty exactly when `f b` and `k` lie in
+different path components. -/
+theorem isEmpty_projFiber_iff (b : B) :
+    IsEmpty {p : MappingPathFiber f k // proj f k p = b} ↔ ¬Joined (f b) k := by
+  rw [← nonempty_projFiber_iff, not_nonempty_iff]
+
+/-- A reference path `α` from `f b` to `k` makes the fibre of the source projection over `b`
+homotopy equivalent to the loop space `Ω K k`. A path `γ` from `f b` to `k` is sent to the loop
+`α.symm.trans γ`, and the homotopy inverse sends a loop `ℓ` to the path `α.trans ℓ`. -/
+noncomputable def projFiberHomotopyEquivLoopSpace (b : B) (α : Path (f b) k) :
+    ContinuousMap.HomotopyEquiv {p : MappingPathFiber f k // proj f k p = b} (Ω K k) :=
+  (projFiberHomeomorphPath f k b).toHomotopyEquiv.trans (Path.prependHomotopyEquiv α k).symm
+
+@[simp]
+theorem projFiberHomotopyEquivLoopSpace_apply (b : B) (α : Path (f b) k)
+    (p : {p : MappingPathFiber f k // proj f k p = b}) :
+    projFiberHomotopyEquivLoopSpace f k b α p = α.symm.trans (projFiberHomeomorphPath f k b p) :=
+  Path.prependHomotopyEquiv_symm_apply α _
+
+@[simp]
+theorem projFiberHomotopyEquivLoopSpace_symm_apply (b : B) (α : Path (f b) k) (ℓ : Ω K k) :
+    (projFiberHomotopyEquivLoopSpace f k b α).symm ℓ =
+      (projFiberHomeomorphPath f k b).symm (α.trans ℓ) :=
+  -- Mathlib's `HomotopyEquiv.trans` and `symm` unfold to the composite of the inverse maps.
+  congrArg (projFiberHomeomorphPath f k b).symm (Path.prependHomotopyEquiv_apply α ℓ)
 
 end MappingPathFiber
 

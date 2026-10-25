@@ -142,30 +142,6 @@ theorem dividedPower_mul_mul_dividedPower_mem_orderedKostantSpan (H E F : A) (a 
   | add x y _ _ hx hy => simpa [mul_add, add_mul] using add_mem hx hy
   | neg x _ hx => simpa using neg_mem hx
 
-omit [Algebra ℚ A] in
-/-- Commutation of `H` past `F` expressed as a right-translation by `-2`. -/
-private theorem cartan_mul_f {H F : A} (hhf : H * F - F * H = -(2 • F)) :
-    H * F = F * (H + (-2 : A)) := by
-  have htwo : F * (2 : A) = 2 • F := by simpa using (nsmul_eq_mul' F 2).symm
-  calc
-    H * F = (H * F - F * H) + F * H := (sub_add_cancel _ _).symm
-    _ = -(2 • F) + F * H := by rw [hhf]
-    _ = F * H + -(2 • F) := add_comm _ _
-    _ = F * (H + (-2 : A)) := by
-      rw [mul_add, mul_neg, htwo]
-
-omit [Algebra ℚ A] in
-/-- Commutation of `H` past `E` expressed as a right-translation by `2`. -/
-private theorem cartan_mul_e {H E : A} (hhe : H * E - E * H = 2 • E) :
-    H * E = E * (H + (2 : A)) := by
-  have htwo : E * (2 : A) = 2 • E := by simpa using (nsmul_eq_mul' E 2).symm
-  calc
-    H * E = (H * E - E * H) + E * H := (sub_add_cancel _ _).symm
-    _ = 2 • E + E * H := by rw [hhe]
-    _ = E * H + 2 • E := add_comm _ _
-    _ = E * (H + (2 : A)) := by
-      rw [mul_add, htwo]
-
 private theorem orderedKostantMonomial_mul_mem_orderedKostantSpan {H E F : A}
     (hef : E * F - F * E = H) (hhe : H * E - E * H = 2 • E)
     (hhf : H * F - F * H = -(2 • F)) (a b c d e f : ℕ) :
@@ -180,8 +156,12 @@ private theorem orderedKostantMonomial_mul_mem_orderedKostantSpan {H E F : A}
   rw [hfactor, dividedPower_e_mul_dividedPower_f hef hhe hhf]
   rw [mul_sum, sum_mul, sum_mul]
   -- Show that each summand in the straightening formula is in the ordered span.
-  have hhf' := cartan_mul_f hhf
-  have hhe' := cartan_mul_e hhe
+  have hhf' : H * F = F * (H + (-2 : A)) := by
+    simpa using add_intCast_mul_eq_mul_add_intCast (x := H) (y := F) (c := -2)
+      (by simpa using hhf) 0
+  have hhe' : H * E = E * (H + (2 : A)) := by
+    simpa using add_intCast_mul_eq_mul_add_intCast (x := H) (y := E) (c := 2)
+      (by simpa using hhe) 0
   have hmoveF (k : ℕ) := ringChoose_mul_dividedPower b hhf'
     ((Nat.cast_commute 2 F).neg_left) (d - k)
   have hmoveE (k : ℕ) := dividedPower_mul_ringChoose e hhe' (Nat.cast_commute 2 E) (c - k)

@@ -72,7 +72,7 @@ variable {X : Type*} [PseudoEMetricSpace X] {p : ℝ} {τ : ℝ≥0} {U : ℕ �
 /-- **Discrete Hölder estimate** on one interval: for `s ≤ t`, the `p`-th power of the distance
 between the piecewise constant interpolant at times `s` and `t` is at most
 `((t - s) / τ + 1) ^ (p - 1)` times the sum of the `p`-th powers of the steps taken in between. -/
-private lemma edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {s t : ℝ} (hst : s ≤ t) :
+private lemma edist_ceil_div_rpow_le (hp : 1 ≤ p) {s t : ℝ} (hst : s ≤ t) :
     edist (U ⌈s / τ⌉₊) (U ⌈t / τ⌉₊) ^ p ≤ ENNReal.ofReal ((t - s) / τ + 1) ^ (p - 1) *
       ∑ n ∈ Finset.Ico ⌈s / τ⌉₊ ⌈t / τ⌉₊, edist (U n) (U (n + 1)) ^ p := by
   have hle : ⌈s / τ⌉₊ ≤ ⌈t / τ⌉₊ :=
@@ -87,7 +87,7 @@ private lemma edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {s t : ℝ} (
         gcongr
         rw [Nat.card_Ico, ← ENNReal.ofReal_natCast]
         exact ENNReal.ofReal_le_ofReal
-          (natCast_ceil_div_sub_ceil_div_le (NNReal.coe_pos.2 hτ) hst)
+          (natCast_ceil_div_sub_ceil_div_lt (NNReal.coe_nonneg τ) hst).le
 
 /-- **Discrete Hölder estimate** for a disjoint family of intervals `(sᵢ, tᵢ]` in `[0, T]`: the
 `p`-th power of the sum of the distances between the piecewise constant interpolant at times `sᵢ`
@@ -139,7 +139,7 @@ theorem sum_edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T : ℝ} (hT :
     refine ENNReal.ofReal_le_ofReal ?_
     rw [Finset.card_biUnion hdisj, Nat.cast_sum, Finset.sum_div]
     have := Finset.sum_le_sum fun i hi ↦
-      natCast_ceil_div_sub_ceil_div_le hτr (hst i hi).1
+      (natCast_ceil_div_sub_ceil_div_lt hτr.le (hst i hi).1).le
     simpa [J, Finset.sum_add_distrib] using this
   have hsub : (Finset.range k).biUnion J ⊆ Finset.range ⌈T / τ⌉₊ := by
     intro n hn
@@ -186,7 +186,8 @@ private lemma edist_ceil_div_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T h t : 
   have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
   have hτ' : (τ : ℝ≥0∞) ≠ 0 := by simpa using hτ.ne'
   have hq : 0 ≤ p - 1 := by linarith
-  have hHölder := edist_ceil_div_rpow_le (U := U) hp hτ (le_add_of_nonneg_right (a := t) hh.le)
+  have hHölder := edist_ceil_div_rpow_le (τ := τ) (U := U) hp
+    (le_add_of_nonneg_right (a := t) hh.le)
   rw [add_sub_cancel_left] at hHölder
   -- The steps taken during `(t, t + h]` are those whose window contains `t`.
   have hsum : ∑ n ∈ Finset.Ico ⌈t / τ⌉₊ ⌈(t + h) / τ⌉₊, edist (U n) (U (n + 1)) ^ p =

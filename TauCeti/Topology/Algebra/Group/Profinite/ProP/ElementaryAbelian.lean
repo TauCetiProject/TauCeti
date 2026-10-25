@@ -129,7 +129,6 @@ theorem natCard_H2_of_proPFrattini_eq_bot (hfg : IsTopologicallyFinitelyGenerate
   -- because that quotient is elementary abelian.
   have hRc : IsClosed (R : Set (freeProP p (ULift.{u} (Fin d)))) := isClosed_topologicalClosure _
   have : CompactSpace R := isCompact_iff_compactSpace.mp hRc.isCompact
-  have hK := isClosed_pLowerCentralStep_subgroupOf (p := p) R
   have hrank : topologicalGeneratorRankNat (R ⧸ (pLowerCentralStep p R).subgroupOf R) hQfg =
       d + d.choose 2 :=
     topologicalGeneratorRankNat_eq_of_natCard_eq_pow hQfg

@@ -109,6 +109,11 @@ theorem id_apply (M : DGRightModuleCat.{uR, uA, uM} h) (x : M) : (𝟙 M) x = x 
 theorem comp_apply (f : M ⟶ N) (g : N ⟶ P) (x : M) : (f ≫ g) x = g (f x) :=
   DGRightModuleHom.comp_apply g f x
 
+/-- Categorical composition agrees with composition of unbundled DG-module morphisms. -/
+theorem comp_eq_comp (f : M ⟶ N) (g : N ⟶ P) : f ≫ g = g.comp f := by
+  ext x
+  exact (comp_apply f g x).trans (DGRightModuleHom.comp_apply g f x).symm
+
 instance : AddCommGroup (M ⟶ N) :=
   inferInstanceAs (AddCommGroup (DGRightModuleHom M.isDGRightModule N.isDGRightModule))
 

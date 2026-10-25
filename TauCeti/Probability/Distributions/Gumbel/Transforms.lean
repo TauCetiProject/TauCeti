@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Distributions.Gumbel.Basic
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Probability.Moments.ComplexMGF
-import TauCeti.Probability.Distributions.Gamma.Basic
 import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
 
 /-!
@@ -34,8 +33,8 @@ function is then obtained from the same Gamma formula by analytic continuation.
 
 ## References
 
-* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1, 2nd ed.,
-  Wiley (1994), ch. 21.
+* N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2, 2nd ed.,
+  Wiley (1995), ch. 22.
 -/
 
 public section
@@ -72,7 +71,7 @@ theorem integrable_exp_mul_id_gumbelMeasure_iff (hs : 0 < s) :
     filter_upwards [ae_pos_expMeasure 1] with e he
     exact exp_mul_gumbelMap_eq_rpow he)]
   rw [integrable_const_mul_iff (isUnit_iff_ne_zero.mpr (Real.exp_ne_zero (m * t)))]
-  rw [expMeasure, integrable_rpow_gammaMeasure_iff one_pos one_pos]
+  rw [integrable_rpow_expMeasure_iff one_pos]
   rw [lt_div_iff₀ hs]
   constructor <;> intro h <;> nlinarith
 
@@ -104,9 +103,8 @@ theorem mgf_id_gumbelMeasure (hs : 0 < s) (ht : t < 1 / s) :
   rw [integral_congr_ae (by
     filter_upwards [ae_pos_expMeasure 1] with e he
     exact exp_mul_gumbelMap_eq_rpow he)]
-  rw [integral_const_mul, expMeasure,
-    integral_rpow_gammaMeasure one_pos one_pos (q := -s * t) (by linarith)]
-  simp only [one_rpow, Real.Gamma_one]
+  rw [integral_const_mul, integral_rpow_expMeasure one_pos (q := -s * t) (by linarith)]
+  simp only [one_rpow, div_one]
   congr 2
   ring_nf
 

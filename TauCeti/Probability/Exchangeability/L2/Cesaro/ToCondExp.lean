@@ -116,7 +116,8 @@ theorem Contractable.tendsto_integral_abs_blockAverage_sub_condExp_of_memLp {μ 
         (a - blockAverage (fun i ω => f (X i ω)) fun j : Fin (m + 1) => 0 + (j : ℕ)) 1 μ)
         atTop (𝓝 0) := by
       simp_rw [eLpNorm_sub_comm a]
-      exact TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub hA_int ha_int
+      exact TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub
+        (Eventually.of_forall fun m => (hA_int m).sub ha_int)
         (by simpa [Real.norm_eq_abs] using ha_lim 0)
     -- The limit is tail-measurable, so it is its own conditional expectation.
     have htail_le : tailProcess X ≤ (inferInstance : MeasurableSpace Ω) :=
@@ -169,11 +170,12 @@ theorem Contractable.ae_eq_condExp_tailProcess_of_tendsto_integral_abs {μ : Mea
   exact tendstoInMeasure_ae_unique (f := fun m =>
       blockAverage (fun i ω => f (X i ω)) (k m))
     (tendstoInMeasure_of_tendsto_eLpNorm one_ne_zero
-      (TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub hA_int ha_int
+      (TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub
+        (Eventually.of_forall fun m => (hA_int m).sub ha_int)
         (by simpa [Real.norm_eq_abs] using ha_lim)))
     (tendstoInMeasure_of_tendsto_eLpNorm one_ne_zero
-      (TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub hA_int
-        integrable_condExp (by
+      (TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub
+        (Eventually.of_forall fun m => (hA_int m).sub integrable_condExp) (by
           simpa [Real.norm_eq_abs] using
             hX.tendsto_integral_abs_blockAverage_sub_condExp_of_memLp hX_meas hf hf_L2 k hk)))
 

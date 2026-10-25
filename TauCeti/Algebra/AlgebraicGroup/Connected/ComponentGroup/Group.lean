@@ -149,6 +149,25 @@ theorem rationalKernelPoint_one_component (H : FiniteTypeCommHopfAlgCat.{u, u} k
   rw [← rationalComponentMap_apply]
   exact map_one (rationalComponentMap H)
 
+/-- An idempotent nonzero at the identity is nonzero at every rational point of the
+identity component. -/
+theorem ofConv_ne_zero_of_isIdempotentElem_of_rationalComponentMap_eq_one
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) {a : H} (ha : IsIdempotentElem a)
+    (hε : Bialgebra.counitAlgHom k H a ≠ 0)
+    (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
+    (hg : rationalComponentMap H g = 1) : g.ofConv a ≠ 0 := by
+  have hmem : rationalKernelPoint H g ∈
+      connectedComponent (Bialgebra.augmentationPoint k H : PrimeSpectrum H) := by
+    apply ConnectedComponents.coe_eq_coe'.mp
+    exact (rationalComponentMap_apply H g).symm.trans
+      (hg.trans (rationalKernelPoint_one_component H).symm)
+  have hopen := PrimeSpectrum.isClopen_iff.mpr ⟨a, ha, rfl⟩
+  have hidentity : (Bialgebra.augmentationPoint k H : PrimeSpectrum H) ∈
+      PrimeSpectrum.basicOpen a :=
+    (AlgHom.kernelPoint_mem_basicOpen_iff (Bialgebra.counitAlgHom k H) a).mpr hε
+  exact (AlgHom.kernelPoint_mem_basicOpen_iff g.ofConv a).mp
+    (hopen.connectedComponent_subset hidentity hmem)
+
 /-- The component of a product of rational points is the product of their components. -/
 @[simp]
 theorem rationalKernelPoint_mul_component (H : FiniteTypeCommHopfAlgCat.{u, u} k)

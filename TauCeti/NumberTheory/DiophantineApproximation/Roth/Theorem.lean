@@ -21,6 +21,8 @@ multiplicative height `Height.mulHeight₁` on `ℚ`. Equivalently, there is a c
 with `|ξ - α| ≥ c H(ξ) ^ (-κ)` for every `ξ ∈ ℚ` with `ξ ≠ α`; for irrational `α` this holds for
 every `ξ ∈ ℚ`. The proof is ineffective: it gives neither a bound for the heights of the
 exceptional `ξ` nor a value of `c`. For rational `α` the statement also holds, and is elementary.
+The lower bound extends to complex algebraic `α`, since a non-real `α` stays at distance at least
+`|im α|` from `ℚ`.
 
 As consequences, a real algebraic number is not a Liouville number with any exponent `p > 2`,
 so its irrationality exponent is at most `2`, and exactly `2` if it is irrational.
@@ -48,6 +50,8 @@ The proof assembles the steps of the auxiliary polynomial method. Suppose that i
   of the set of very good rational approximations of a real algebraic number.
 * `IsAlgebraic.exists_pos_mul_mulHeight₁_rpow_neg_le_abs_sub`: Roth's theorem as a lower bound
   for `|ξ - α|`, for `ξ ≠ α`.
+* `IsAlgebraic.exists_pos_mul_mulHeight₁_rpow_neg_le_norm_sub`: the same lower bound for a
+  complex algebraic number `α`.
 * `IsAlgebraic.not_liouvilleWith`: a real algebraic number is not `LiouvilleWith p` for `p > 2`.
 * `IsAlgebraic.irrationalityExponent_le_two`, `IsAlgebraic.irrationalityExponent_eq_two`: the
   irrationality exponent of a real algebraic number is at most `2`, and equal to `2` if the
@@ -246,6 +250,31 @@ theorem _root_.IsAlgebraic.exists_pos_mul_mulHeight₁_rpow_neg_le_abs_sub {α :
   · have hlt : mulHeight₁ ξ ^ (-κ) < |(ξ : ℝ) - α| := lt_of_not_ge fun h ↦ hξ ⟨h, hξα⟩
     rw [rpow_neg hH.le, inv_lt_iff_one_lt_mul₀' hHκ] at hlt
     exact (min_le_right _ _).trans (by linarith)
+
+/-- **Roth's theorem** for a complex algebraic number (Evertse, remarks after Theorem 6.2). If
+`α ∈ ℂ` is algebraic and `κ > 2`, then there is `c > 0` with `c H(ξ) ^ (-κ) ≤ ‖ξ - α‖` for every
+`ξ ∈ ℚ` with `ξ ≠ α`. For real `α` this is
+`IsAlgebraic.exists_pos_mul_mulHeight₁_rpow_neg_le_abs_sub`; a non-real `α` is at distance at
+least `|im α|` from every rational number. -/
+theorem _root_.IsAlgebraic.exists_pos_mul_mulHeight₁_rpow_neg_le_norm_sub {α : ℂ}
+    (hα : IsAlgebraic ℚ α) {κ : ℝ} (hκ : 2 < κ) :
+    ∃ c : ℝ, 0 < c ∧ ∀ ξ : ℚ, (ξ : ℂ) ≠ α → c * mulHeight₁ ξ ^ (-κ) ≤ ‖(ξ : ℂ) - α‖ := by
+  by_cases him : α.im = 0
+  · have hαre : (α.re : ℂ) = α := Complex.ext rfl him.symm
+    have hre : IsAlgebraic ℚ α.re := by
+      rw [← isAlgebraic_algebraMap_iff (algebraMap ℝ ℂ).injective]
+      exact hαre ▸ hα
+    obtain ⟨c, hc, h⟩ := hre.exists_pos_mul_mulHeight₁_rpow_neg_le_abs_sub hκ
+    refine ⟨c, hc, fun ξ hξ ↦ ?_⟩
+    rw [← hαre, ← Complex.ofReal_ratCast, ← Complex.ofReal_sub, Complex.norm_real,
+      Real.norm_eq_abs]
+    exact h ξ fun h' ↦ hξ (by rw [← hαre, ← h', Complex.ofReal_ratCast])
+  · refine ⟨|α.im|, abs_pos.2 him, fun ξ _ ↦ ?_⟩
+    calc |α.im| * mulHeight₁ ξ ^ (-κ) ≤ |α.im| * 1 := by
+          gcongr
+          exact rpow_le_one_of_one_le_of_nonpos (one_le_mulHeight₁ ξ) (by linarith)
+      _ = |((ξ : ℂ) - α).im| := by simp
+      _ ≤ ‖(ξ : ℂ) - α‖ := Complex.abs_im_le_norm _
 
 /-- **Roth's theorem** in terms of Liouville exponents: a real algebraic number is not a
 Liouville number with any exponent `p > 2`. -/

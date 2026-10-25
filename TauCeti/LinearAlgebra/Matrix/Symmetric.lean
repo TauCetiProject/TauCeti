@@ -13,19 +13,27 @@ import Mathlib.Tactic.Ring
 import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 
 /-!
-# Parity of the diagonal of a symmetric integer matrix
+# Quadratic forms and idempotents of symmetric matrices
+
+For a symmetric matrix `A` over a commutative ring, the quadratic form `x ↦ xᵀ A x` satisfies
+the polarization identities `(x ± y)ᵀ A (x ± y) = xᵀ A x + yᵀ A y ± 2 xᵀ A y`.
 
 For a symmetric integer matrix `A` and an integer vector `m`, the quadratic form
 `mᵀ A m = ∑ᵢⱼ mᵢ mⱼ aᵢⱼ` agrees modulo two with `∑ᵢ mᵢ aᵢᵢ`: its off-diagonal part is even
 because the summand is symmetric under swapping the indices, and `mᵢ² ≡ mᵢ` modulo two. In
 particular `∑ᵢ mᵢ aᵢᵢ` is even whenever `mᵀ A m = 0`, for instance whenever `A m = 0`.
 
+A symmetric idempotent matrix fixes each of its rows, since each row is also a column.
+
 ## Main results
 
+* `Matrix.IsSymm.add_dotProduct_mulVec_add` and `Matrix.IsSymm.sub_dotProduct_mulVec_sub`: the
+  polarization identities for a symmetric matrix.
 * `Matrix.IsSymm.even_sum_mul_diag_iff_even_dotProduct_mulVec`: if `A` is a symmetric integer
   matrix then `∑ᵢ mᵢ aᵢᵢ` is even if and only if `mᵀ A m` is.
 * `Matrix.IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero`: if `A` is a symmetric integer
   matrix and `mᵀ A m = 0`, then `∑ᵢ mᵢ aᵢᵢ` is even.
+* `Matrix.IsSymm.mulVec_row_of_isIdempotentElem`: a symmetric idempotent matrix fixes its rows.
 -/
 
 public section
@@ -33,6 +41,22 @@ public section
 namespace Matrix
 
 open Finset
+
+/-- Expanding the quadratic form of a symmetric matrix at a sum. -/
+theorem IsSymm.add_dotProduct_mulVec_add {ι R : Type*} [Fintype ι] [CommSemiring R]
+    {A : Matrix ι ι R} (hA : A.IsSymm) (x y : ι → R) :
+    (x + y) ⬝ᵥ A *ᵥ (x + y) = x ⬝ᵥ A *ᵥ x + y ⬝ᵥ A *ᵥ y + 2 * (x ⬝ᵥ A *ᵥ y) := by
+  rw [mulVec_add, add_dotProduct, dotProduct_add, dotProduct_add,
+    hA.dotProduct_mulVec_comm (x := y) (y := x)]
+  ring
+
+/-- Expanding the quadratic form of a symmetric matrix at a difference. -/
+theorem IsSymm.sub_dotProduct_mulVec_sub {ι R : Type*} [Fintype ι] [CommRing R]
+    {A : Matrix ι ι R} (hA : A.IsSymm) (x y : ι → R) :
+    (x - y) ⬝ᵥ A *ᵥ (x - y) = x ⬝ᵥ A *ᵥ x + y ⬝ᵥ A *ᵥ y - 2 * (x ⬝ᵥ A *ᵥ y) := by
+  rw [sub_eq_add_neg, hA.add_dotProduct_mulVec_add, mulVec_neg, neg_dotProduct, dotProduct_neg,
+    dotProduct_neg, neg_neg]
+  ring
 
 /-- If `A` is a symmetric integer matrix and `m` is an integer vector, then `∑ᵢ mᵢ aᵢᵢ` has the
 same parity as the quadratic form `mᵀ A m`. The individual terms `mᵢ aᵢᵢ` need not be even. -/
@@ -69,5 +93,15 @@ theorem IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero {ι : Type*} [Fint
     {A : Matrix ι ι ℤ} (hA : A.IsSymm) {m : ι → ℤ} (hm : m ⬝ᵥ A *ᵥ m = 0) :
     Even (∑ i, m i * A i i) :=
   (hA.even_sum_mul_diag_iff_even_dotProduct_mulVec m).2 (hm ▸ Even.zero)
+
+/-- A symmetric idempotent matrix fixes each of its rows, since the row `A i` is also the column
+`A *ᵥ Pi.single i 1`. -/
+theorem IsSymm.mulVec_row_of_isIdempotentElem {ι R : Type*} [Fintype ι] [Semiring R]
+    {A : Matrix ι ι R} (hS : A.IsSymm) (hI : IsIdempotentElem A) (i : ι) : A *ᵥ A i = A i := by
+  classical
+  have hcol : A *ᵥ Pi.single i 1 = A i := by
+    ext j
+    rw [mulVec_single_one, col_apply, hS.apply]
+  rw [← hcol, mulVec_mulVec, hI.eq]
 
 end Matrix

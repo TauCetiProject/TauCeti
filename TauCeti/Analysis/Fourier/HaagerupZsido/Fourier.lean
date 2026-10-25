@@ -37,6 +37,8 @@ the two Lorentzians is `TauCeti.HaagerupZsido.integral_weight_mul_mul_inv_sub_in
 
 * `TauCeti.HaagerupZsido.integral_exp_mul_I_mul_reciprocalKernel`: `∫ e^{itx} k(t) dt = 1 / x` for
   `|x| ≥ 1`;
+* `TauCeti.HaagerupZsido.integral_realKernel_mul_sin`: its real form `∫ r(t) sin (x t) dt = 1 / x`
+  for `|x| ≥ 1`;
 * `TauCeti.HaagerupZsido.fourier_reciprocalKernel`: the same identity in Mathlib's normalisation of
   the Fourier transform, `𝓕 k ξ = -1 / (2 π ξ)` for `2 π |ξ| ≥ 1`.
 
@@ -147,6 +149,24 @@ theorem integral_exp_mul_I_mul_reciprocalKernel {x : ℝ} (hx : 1 ≤ |x|) :
           simp [reciprocalKernel_neg]
       _ = (x : ℂ)⁻¹ := by rw [h]; push_cast; ring
   · exact integral_exp_mul_I_mul_reciprocalKernel_of_one_le hx
+
+/-- **The exterior reciprocal sine identity.** For `|x| ≥ 1`, the real Haagerup–Zsidó kernel
+satisfies `∫ r(t) sin (x t) dt = 1 / x`: the real part of
+`TauCeti.HaagerupZsido.integral_exp_mul_I_mul_reciprocalKernel`. Unlike the exponential form, it
+involves only real functions. -/
+theorem integral_realKernel_mul_sin {x : ℝ} (hx : 1 ≤ |x|) :
+    ∫ t, realKernel t * Real.sin (x * t) = x⁻¹ := by
+  have hint : Integrable fun t : ℝ ↦ Complex.exp ((x : ℂ) * t * Complex.I) * reciprocalKernel t :=
+    integrable_reciprocalKernel.bdd_mul (c := 1) (by fun_prop)
+      (.of_forall fun t ↦ by simp [Complex.norm_exp])
+  have h := congrArg Complex.re (integral_exp_mul_I_mul_reciprocalKernel hx)
+  have hre := integral_re hint
+  rw [RCLike.re_to_complex, h, ← Complex.ofReal_inv, Complex.ofReal_re] at hre
+  rw [← hre]
+  refine integral_congr_ae (.of_forall fun t ↦ ?_)
+  have : (x : ℂ) * t * Complex.I = ((x * t : ℝ) : ℂ) * Complex.I := by push_cast; ring
+  simp [this, reciprocalKernel_def, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im,
+    mul_comm]
 
 /-- **The exterior reciprocal identity in Mathlib's Fourier normalisation.** With
 `𝓕 f ξ = ∫ e^{-2πitξ} f(t) dt`, the Haagerup–Zsidó kernel satisfies `𝓕 k ξ = -1 / (2 π ξ)` whenever

@@ -135,15 +135,17 @@ lemma heckeGenExponent_monotone (k : Fin n) : Monotone (heckeGenExponent n k) :=
 
 variable [NeZero n]
 
-include hp
+include hp in
 /-- The k-th generator of pLocalSubring: `T(1,...,1,p,...,p)` with `k+1` entries of `p`. -/
 noncomputable def heckeGen (k : Fin n) : IntegralHeckeRing n :=
   diagElem (heckeGenDiag n p k)
 
+include hp in
 omit hp [NeZero n] in
 /-- Defining equation for the sealed definition `heckeGen`. -/
 lemma heckeGen_def (k : Fin n) : heckeGen n p k = diagElem (heckeGenDiag n p k) := (rfl)
 
+include hp in
 omit hp in
 /-- Each generator lies in the `p`-local subsemiring `R_p`. -/
 lemma heckeGen_mem_pLocalSubring (k : Fin n) : heckeGen n p k ∈ pLocalSubring n p := by
@@ -151,8 +153,6 @@ lemma heckeGen_mem_pLocalSubring (k : Fin n) : heckeGen n p k ∈ pLocalSubring 
     congrArg diagElem (heckeGenDiag_eq_primePowDiag n p k)
   rw [h_eq]
   exact diagElem_primePowDiag_mem_pLocalSubring n p _ (heckeGenExponent_monotone n k)
-
-omit hp
 
 end TGen
 

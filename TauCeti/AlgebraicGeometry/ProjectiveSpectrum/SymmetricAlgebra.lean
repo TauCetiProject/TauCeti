@@ -25,7 +25,8 @@ lines in a finite locally free representation `V`, use `M = V∨`.
 `Proj(Sym M)` a scheme over `Spec R`. Its properness and
 quasi-compactness instances require only `Module.Finite R M`; its Noetherianity instance
 also requires `IsNoetherianRing R`. The chart formula describes this morphism on the
-standard affine charts. Its source is Jacobson whenever `Spec R` is Jacobson.
+standard affine charts, and the standard opens of a spanning family of linear forms cover
+the projective spectrum. Its source is Jacobson whenever `Spec R` is Jacobson.
 
 ## References
 
@@ -81,6 +82,25 @@ theorem awayι_projToSpec {f : SymmetricAlgebra R M} {n : ℕ}
           (Submonoid.powers f)).comp (algebraMap R (homogeneousSubmodule R M 0)))) := by
   rw [projToSpec_def, Proj.awayι_toSpecZero_assoc, ← Spec.map_comp]
   rw [← CommRingCat.ofHom_comp]
+
+/-- The standard opens `D₊(v j)` of a spanning family `v` of linear forms cover the projective
+spectrum of the symmetric algebra. -/
+theorem iSup_basicOpen_ι_eq_top {κ : Type*} (v : κ → M)
+    (hv : Submodule.span R (Set.range v) = ⊤) :
+    ⨆ j, Proj.basicOpen (homogeneousSubmodule R M) (_root_.SymmetricAlgebra.ι R M (v j)) = ⊤ := by
+  refine Proj.iSup_basicOpen_eq_top' _ _ (fun j ↦ ⟨1, ι_mem_homogeneousSubmodule R M _⟩)
+    (top_unique ?_)
+  rintro a -
+  -- The images of `v` generate over `R` because they span the generators `range ι`.
+  have ha : a ∈ Algebra.adjoin R (Set.range fun j ↦ _root_.SymmetricAlgebra.ι R M (v j)) := by
+    rw [← Algebra.adjoin_span, Set.range_comp', ← Submodule.map_span, hv, Submodule.map_top,
+      LinearMap.coe_range, adjoin_range_ι]
+    exact Algebra.mem_top
+  induction ha using Algebra.adjoin_induction with
+  | mem x hx => exact Algebra.subset_adjoin hx
+  | algebraMap r => exact Subalgebra.algebraMap_mem _ (algebraMap R (homogeneousSubmodule R M 0) r)
+  | add x y _ _ hx hy => exact add_mem hx hy
+  | mul x y _ _ hx hy => exact mul_mem hx hy
 
 /-- The projective spectrum of a finite module is proper over the coefficient ring.
 Freeness and projectivity are not required. -/

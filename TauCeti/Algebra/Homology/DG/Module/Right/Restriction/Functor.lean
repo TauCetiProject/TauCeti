@@ -96,6 +96,59 @@ theorem restrictScalarsEquiv_differential (f : DGAlgHom hA hB)
     ((IsDGRightModule.val_restrictScalarsDifferential f x).trans
       (congrArg M.differential (DGRightModule.RestrictScalars.linearEquiv_apply f M x).symm))
 
+/-- The bundled restricted object is the object obtained by bundling the unbundled restriction.
+This is the identity isomorphism; it is named because `restrictScalars` is not exposed, so the
+identification is only visible inside this module. -/
+noncomputable def restrictScalarsObjIso (f : DGAlgHom hA hB)
+    (M : DGRightModuleCat.{uR, uB, uM} hB) :
+    (restrictScalars f).obj M ≅ of (M.isDGRightModule.restrictScalars f) :=
+  Iso.refl _
+
+/-- The canonical restricted-object isomorphism acts by the carrier equivalence. -/
+@[simp]
+theorem restrictScalarsObjIso_hom_apply (f : DGAlgHom hA hB)
+    (M : DGRightModuleCat.{uR, uB, uM} hB) (x : (restrictScalars f).obj M) :
+    (restrictScalarsObjIso f M).hom x =
+      DGRightModule.RestrictScalars.mk (restrictScalarsEquiv f M x) := by
+  apply DGRightModule.RestrictScalars.ext
+  -- Retype the identity morphism at its own endpoints.
+  change ((𝟙 ((restrictScalars f).obj M) : (restrictScalars f).obj M ⟶ _) x).val = _
+  rw [id_apply]
+  exact (DGRightModule.RestrictScalars.linearEquiv_apply f M x).symm
+
+/-- The inverse canonical restricted-object isomorphism inverts the carrier equivalence. -/
+@[simp]
+theorem restrictScalarsObjIso_inv_apply (f : DGAlgHom hA hB)
+    (M : DGRightModuleCat.{uR, uB, uM} hB)
+    (x : of (M.isDGRightModule.restrictScalars f)) :
+    (restrictScalarsObjIso f M).inv x = (restrictScalarsEquiv f M).symm x.val := by
+  apply (restrictScalarsEquiv f M).injective
+  rw [LinearEquiv.apply_symm_apply]
+  have h := restrictScalarsObjIso_hom_apply f M ((restrictScalarsObjIso f M).inv x)
+  rw [← comp_apply, Iso.inv_hom_id, id_apply] at h
+  exact congrArg DGRightModule.RestrictScalars.val h.symm
+
+/-- The canonical restricted-object isomorphisms are natural in the module. -/
+theorem restrictScalarsObjIso_hom_naturality (f : DGAlgHom hA hB)
+    {M N : DGRightModuleCat.{uR, uB, uM} hB} (g : M ⟶ N) :
+    (restrictScalars f).map g ≫ (restrictScalarsObjIso f N).hom =
+      (restrictScalarsObjIso f M).hom ≫ g.restrictScalars f := by
+  apply hom_ext
+  intro x
+  rw [comp_apply, comp_apply, restrictScalarsObjIso_hom_apply, restrictScalarsObjIso_hom_apply]
+  apply DGRightModule.RestrictScalars.ext
+  rw [DGRightModuleHom.val_restrictScalars]
+  exact restrictScalars_map_apply f g x
+
+/-- The inverses of the canonical restricted-object isomorphisms are natural in the module. -/
+theorem restrictScalarsObjIso_inv_naturality (f : DGAlgHom hA hB)
+    {M N : DGRightModuleCat.{uR, uB, uM} hB} (g : M ⟶ N) :
+    (restrictScalarsObjIso f M).inv ≫ (restrictScalars f).map g =
+      g.restrictScalars f ≫ (restrictScalarsObjIso f N).inv := by
+  rw [← cancel_mono (restrictScalarsObjIso f N).hom]
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id,
+    restrictScalarsObjIso_hom_naturality, Iso.inv_hom_id_assoc]
+
 instance (f : DGAlgHom hA hB) : (restrictScalars.{uR, uA, uB, uM} f).Faithful where
   map_injective {M N} g k hgk := by
     apply hom_ext

@@ -417,7 +417,7 @@ theorem isOrientedAtlas_closedBall {k : ℕ∞ω} [NeZero k]
   · intro x
     by_cases hx : φ₀ x = -e₀
     · obtain ⟨r, hr, hr'⟩ := exists_det_eq_one_apply_eq_neg
-        (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := n) ▸ hn) (v := -e₀) (by simp)
+        (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := n) ▸ hn) (-e₀)
       refine ⟨closedBallChart (φ₀.trans r), ⟨φ₀.trans r, ?_, rfl⟩, ?_⟩
       · have : φ₀.symm.trans (φ₀.trans r) = r := by ext; simp
         simp only [S, mem_ofPred_eq, this, hr, zero_lt_one]

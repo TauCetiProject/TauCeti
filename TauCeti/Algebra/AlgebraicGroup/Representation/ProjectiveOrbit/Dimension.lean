@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Scheme
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
-import TauCeti.Topology.KrullDimension.Irreducible
 
 /-!
 # Krull dimension of projective orbits
@@ -17,9 +16,9 @@ underlying set is the orbit, the full image of the projective orbit morphism. Si
 immersion is a homeomorphism onto its image, the orbit scheme and the orbit have the same Krull
 dimension. The orbit has finite Krull dimension because projective space over a field is
 quasi-compact and of finite type. Only finite-dimensionality of the representation is needed
-for the latter. If the spectrum of the group is irreducible, the orbit is a nonempty open part
-of its irreducible closure, so it has the Krull dimension of its closure, and its boundary
-`closure O \ O`, a proper closed subset of the closure, has strictly smaller dimension.
+for the latter. A locally closed subset of a finite-type scheme has the dimension of its
+closure, and its boundary has strictly smaller dimension if the subset is nonempty.
+Thus these orbit dimension statements apply also to disconnected groups.
 
 ## Main declarations
 
@@ -28,7 +27,7 @@ of its irreducible closure, so it has the Krull dimension of its closure, and it
 * `TauCeti.Comodule.topologicalKrullDim_range_projectiveOrbitMap_ne_top`: the orbit has finite
   Krull dimension.
 * `TauCeti.Comodule.topologicalKrullDim_closure_range_projectiveOrbitMap`: the orbit of a line
-  under an irreducible group has the Krull dimension of its closure.
+  has the Krull dimension of its closure.
 * `TauCeti.Comodule.topologicalKrullDim_closure_diff_range_projectiveOrbitMap_lt`: its boundary
   has strictly smaller Krull dimension.
 
@@ -72,34 +71,26 @@ theorem topologicalKrullDim_projectiveOrbitScheme (m : M) (hm : Module.IsUnimodu
   rw [← range_projectiveOrbitι,
     TauCeti.AlgebraicGeometry.topologicalKrullDim_range_of_isPreimmersion]
 
-/-- If the spectrum of the group is irreducible, the orbit of a line has the Krull dimension of
-its closure: it is a nonempty open part of its irreducible closure. -/
-theorem topologicalKrullDim_closure_range_projectiveOrbitMap [IrreducibleSpace (PrimeSpectrum H)]
+/-- The orbit of a line has the Krull dimension of its closure, including for disconnected
+groups. -/
+theorem topologicalKrullDim_closure_range_projectiveOrbitMap
     (m : M) (hm : Module.IsUnimodular k m) :
     topologicalKrullDim (closure (Set.range (projectiveOrbitMap (H := H) m hm))) =
       topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) := by
-  have hO := isLocallyClosed_range_projectiveOrbitMap (H := H) m hm
-  have h := TauCeti.AlgebraicGeometry.topologicalKrullDim_inter_eq_of_locallyOfFiniteType
+  exact TauCeti.AlgebraicGeometry.topologicalKrullDim_closure_of_isLocallyClosed
     (SymmetricAlgebra.projToSpec k (Module.Dual k M))
-    (isIrreducible_range_projectiveOrbitMap m hm).closure isClosed_closure hO.isOpen_coborder
-    ⟨_, subset_closure ⟨AlgHom.kernelPoint (Bialgebra.counitAlgHom k H), rfl⟩,
-      subset_coborder ⟨AlgHom.kernelPoint (Bialgebra.counitAlgHom k H), rfl⟩⟩
-  rwa [Set.inter_comm, coborder_inter_closure, eq_comm] at h
+    (isLocallyClosed_range_projectiveOrbitMap m hm)
 
-/-- If the spectrum of the group is irreducible, the boundary `closure O \ O` of the orbit `O`
-of a line has strictly smaller Krull dimension than `O`. -/
+/-- The boundary `closure O \ O` of the orbit `O` of a line has strictly smaller Krull
+dimension than `O`, including for disconnected groups. -/
 theorem topologicalKrullDim_closure_diff_range_projectiveOrbitMap_lt
-    [IrreducibleSpace (PrimeSpectrum H)] (m : M) (hm : Module.IsUnimodular k m) :
+    (m : M) (hm : Module.IsUnimodular k m) :
     topologicalKrullDim ↥(closure (Set.range (projectiveOrbitMap (H := H) m hm)) \
         Set.range (projectiveOrbitMap (H := H) m hm)) <
       topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) := by
-  have hdim := topologicalKrullDim_closure_range_projectiveOrbitMap (H := H) m hm
-  rw [← hdim]
-  refine (isIrreducible_range_projectiveOrbitMap m hm).closure.topologicalKrullDim_lt
-    (isClosed_closure_diff_range_projectiveOrbitMap m hm)
-    (Set.sdiff_ssubset_left_iff.mpr ?_)
-    (hdim ▸ topologicalKrullDim_range_projectiveOrbitMap_ne_top m hm)
-  exact ⟨_, subset_closure ⟨AlgHom.kernelPoint (Bialgebra.counitAlgHom k H), rfl⟩,
-    AlgHom.kernelPoint (Bialgebra.counitAlgHom k H), rfl⟩
+  exact TauCeti.AlgebraicGeometry.topologicalKrullDim_closure_sdiff_lt_of_isLocallyClosed
+    (SymmetricAlgebra.projToSpec k (Module.Dual k M))
+    (isLocallyClosed_range_projectiveOrbitMap m hm)
+    ⟨_, AlgHom.kernelPoint (Bialgebra.counitAlgHom k H), rfl⟩
 
 end TauCeti.Comodule

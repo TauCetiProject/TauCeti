@@ -65,11 +65,6 @@ theorem mapSemilinear_projModelMulBy_invariantDifferential (n : ℤ) [NeZero n] 
         (W.toAffine.invariantDifferential) := by
   let e := W.projModelFunctionFieldAlgEquiv
   let φ := TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine (NeZero.ne n)
-  have hcancel (ω : KaehlerDifferential K W.toAffine.FunctionField) :
-      KaehlerDifferential.mapSemilinear e.toAlgHom
-        (KaehlerDifferential.mapSemilinear e.symm.toAlgHom ω) = ω := by
-    rw [← KaehlerDifferential.mapSemilinear_comp_apply, AlgEquiv.comp_symm,
-      KaehlerDifferential.mapSemilinear_id_apply]
   -- Unfold only the conjugated pullback, folding the comparison and isogeny into `e` and `φ`.
   -- This exposes the composite required by `mapSemilinear_comp_apply` without unfolding them.
   change KaehlerDifferential.mapSemilinear
@@ -80,7 +75,7 @@ theorem mapSemilinear_projModelMulBy_invariantDifferential (n : ℤ) [NeZero n] 
   conv_lhs =>
     arg 2
     rw [KaehlerDifferential.mapSemilinear_comp_apply]
-  rw [hcancel]
+  rw [KaehlerDifferential.mapSemilinear_apply_symm_apply]
   rw [← TauCeti.Isogeny.pullbackDifferential_apply,
     TauCeti.Isogeny.pullbackDifferential_mulByIntIsogeny_invariantDifferential]
   · exact (KaehlerDifferential.mapSemilinear e.symm.toAlgHom).toAddMonoidHom.map_zsmul n _

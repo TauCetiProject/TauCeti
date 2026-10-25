@@ -145,7 +145,6 @@ finitely generated. -/
 theorem finite_H1ConjInvariants_iff :
     Finite (H1ConjInvariants G (ZMod p) N) ↔
       IsTopologicallyFinitelyGenerated (N ⧸ (pLowerCentralStep p N).subgroupOf N) := by
-  have hK := isClosed_pLowerCentralStep_subgroupOf (p := p) N
   have : CompactSpace N := isCompact_iff_compactSpace.mp hN.isCompact
   have hQ : IsProP p (N ⧸ (pLowerCentralStep p N).subgroupOf N) :=
     (isPGroup_quotient_pLowerCentralStep_subgroupOf N).isProP
@@ -161,7 +160,6 @@ theorem natCard_H1ConjInvariants
     (h : IsTopologicallyFinitelyGenerated (N ⧸ (pLowerCentralStep p N).subgroupOf N)) :
     Nat.card (H1ConjInvariants G (ZMod p) N) =
       p ^ topologicalGeneratorRankNat (N ⧸ (pLowerCentralStep p N).subgroupOf N) h := by
-  have hK := isClosed_pLowerCentralStep_subgroupOf (p := p) N
   have : CompactSpace N := isCompact_iff_compactSpace.mp hN.isCompact
   have hQ : IsProP p (N ⧸ (pLowerCentralStep p N).subgroupOf N) :=
     (isPGroup_quotient_pLowerCentralStep_subgroupOf N).isProP

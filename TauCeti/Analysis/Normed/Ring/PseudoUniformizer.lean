@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Normed
-public import TauCeti.Analysis.Normed.Ring.MulUnit
+public import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
+public import TauCeti.Analysis.Normed.Monoid.MulUnit
+public import TauCeti.Analysis.Normed.Group.Rounding
 
 /-!
 # Multiplicative pseudo-uniformisers of seminormed rings
@@ -29,7 +31,8 @@ scaling law hold more generally for any unit `u` of positive norm with `‖u * x
 whatever the size of `‖u‖`.
 
 The existence of a multiplicative pseudo-uniformiser forces `‖1‖ = 1`, so a Tate ring is
-nonzero. An ultrametric Tate commutative ring is a Tate ring in the topological sense. A
+nonzero, and its powers provide a zero sequence of units (`TauCeti.HasZeroSequenceOfUnits`). An
+ultrametric Tate commutative ring is a Tate ring in the topological sense. A
 seminormed algebra with `‖1‖ = 1` over a normed field has a multiplicative pseudo-uniformiser
 given by any scalar `c` with `0 < ‖c‖ < 1`; in particular nontrivially normed fields are Tate.
 
@@ -48,7 +51,10 @@ given by any scalar `c` with `0 < ‖c‖ < 1`; in particular nontrivially norme
   `‖ϖ ^ n • m‖ = ‖ϖ‖ ^ n * ‖m‖` on modules with contractive action.
 * `TauCeti.NormedRing.PseudoUniformizer.existsUnique_norm_zpow_smul_mem_Ioc`: the shell
   `‖ϖ‖ < ‖ϖ ^ n • m‖ ≤ 1` determines `n` uniquely.
-* `TauCeti.NormedRing.PseudoUniformizer.isPseudoUniformizer` and
+* `TauCeti.NormedRing.PseudoUniformizer.zpowCeil_norm_zpow_smul`: exact scaling survives
+  rounding the norm of the module up to `‖ϖ‖ ^ ℤ ∪ {0}` (`TauCeti.zpowCeil`).
+* `TauCeti.NormedRing.PseudoUniformizer.isPseudoUniformizer`,
+  `TauCeti.NormedRing.IsTate.hasZeroSequenceOfUnits`, and
   `TauCeti.NormedRing.IsTate.isTateRing`: comparison with the topological notions.
 * `TauCeti.NormedRing.PseudoUniformizer.ofAlgebraMap`: small nonzero scalars of a normed field
   are multiplicative pseudo-uniformisers of norm-one algebras.
@@ -84,7 +90,7 @@ theorem norm_units_smul_of_norm_mul (m : M) : ‖(u : R) • m‖ = ‖(u : R)�
   calc ‖(u : R)‖ * ‖m‖ = ‖(u : R)‖ * ‖((u⁻¹ : Rˣ) : R) • (u : R) • m‖ := by simp [smul_smul]
     _ ≤ ‖(u : R)‖ * (‖((u⁻¹ : Rˣ) : R)‖ * ‖(u : R) • m‖) := by gcongr; exact norm_smul_le _ _
     _ = ‖(u : R) • m‖ := by
-        rw [norm_units_inv_of_norm_mul hu0 hu]
+        rw [norm_units_inv_of_norm_mul hu0.ne' hu]
         field_simp
 
 /-- The inverse of a unit of positive norm by which left multiplication scales the norm exactly
@@ -115,7 +121,7 @@ end Module
 /-- An integer power of a unit of positive norm by which left multiplication scales the norm
 exactly has the corresponding power of its norm. -/
 theorem norm_units_zpow_of_norm_mul (n : ℤ) : ‖((u ^ n : Rˣ) : R)‖ = ‖(u : R)‖ ^ n := by
-  simpa [norm_one_of_norm_units_mul hu0 hu] using norm_units_zpow_smul_of_norm_mul hu0 hu n (1 : R)
+  simpa [norm_one_of_norm_mul hu0.ne' hu] using norm_units_zpow_smul_of_norm_mul hu0 hu n (1 : R)
 
 /-- A natural power of a unit of positive norm by which left multiplication scales the norm
 exactly has the corresponding power of its norm. -/
@@ -151,7 +157,7 @@ variable {R : Type*} [SeminormedRing R] (ϖ : PseudoUniformizer R)
 
 include ϖ in
 /-- The existence of a multiplicative pseudo-uniformiser forces `‖1‖ = 1`. -/
-theorem norm_one : ‖(1 : R)‖ = 1 := norm_one_of_norm_units_mul ϖ.norm_pos ϖ.norm_mul
+theorem norm_one : ‖(1 : R)‖ = 1 := norm_one_of_norm_mul ϖ.norm_pos.ne' ϖ.norm_mul
 
 include ϖ in
 /-- A seminormed ring with a multiplicative pseudo-uniformiser satisfies `‖1‖ = 1`. -/
@@ -166,7 +172,7 @@ theorem nontrivial : Nontrivial R :=
 /-- The inverse of a multiplicative pseudo-uniformiser has the inverse norm. -/
 @[simp]
 theorem norm_inv : ‖((ϖ.unit⁻¹ : Rˣ) : R)‖ = ‖(ϖ.unit : R)‖⁻¹ :=
-  norm_units_inv_of_norm_mul ϖ.norm_pos ϖ.norm_mul
+  norm_units_inv_of_norm_mul ϖ.norm_pos.ne' ϖ.norm_mul
 
 section Module
 
@@ -205,6 +211,38 @@ theorem existsUnique_norm_zpow_smul_mem_Ioc {m : M} (hm : ‖m‖ ≠ 0) :
   convert existsUnique_sub_zpow_mem_Ioc hq u q using 2 with n
   simp [← Units.val_lt_val, ← Units.val_le_val, ← NNReal.coe_lt_coe, ← NNReal.coe_le_coe, q, u,
     mul_comm]
+
+/-- Rescale a vector of nonzero norm into a prescribed ball, controlling the inverse scaling
+factor by a constant times the original norm. This is the common shell estimate for global
+operator bounds and quantitative preimage bounds. -/
+theorem exists_zpow_mul_norm_lt {m : M} (hm : ‖m‖ ≠ 0) {δ : ℝ} (k : ℤ)
+    (hδ : ‖(ϖ.unit : R)‖ ^ k < δ) :
+    ∃ n : ℤ, ‖(ϖ.unit : R)‖ ^ n * ‖m‖ < δ ∧
+      (‖(ϖ.unit : R)‖ ^ n)⁻¹ ≤ (‖(ϖ.unit : R)‖ ^ (k + 1))⁻¹ * ‖m‖ := by
+  set r := ‖(ϖ.unit : R)‖
+  have hr0 : 0 < r := ϖ.norm_pos
+  obtain ⟨n, ⟨hn₁, hn₂⟩, -⟩ := ϖ.existsUnique_norm_zpow_smul_mem_Ioc hm
+  rw [ϖ.norm_zpow_smul] at hn₁ hn₂
+  have hpow : r ^ (n + k) = r ^ n * r ^ k := zpow_add₀ hr0.ne' n k
+  refine ⟨n + k, ?_, ?_⟩
+  · calc r ^ (n + k) * ‖m‖ = r ^ k * (r ^ n * ‖m‖) := by rw [hpow]; ring
+         _ ≤ r ^ k * 1 := mul_le_mul_of_nonneg_left hn₂ (zpow_nonneg hr0.le _)
+         _ < δ := by simpa using hδ
+  · apply (inv_le_iff_one_le_mul₀ (zpow_pos hr0 (n + k))).mpr
+    calc 1 = r⁻¹ * r := (inv_mul_cancel₀ hr0.ne').symm
+      _ ≤ r⁻¹ * (r ^ n * ‖m‖) :=
+        mul_le_mul_of_nonneg_left hn₁.le (inv_nonneg.mpr hr0.le)
+      _ = ((r ^ (k + 1))⁻¹ * ‖m‖) * r ^ (n + k) := by
+        rw [hpow, zpow_add_one₀ hr0.ne']
+        field_simp
+
+/-- **Exact scaling of the rounded norm**: after rounding the norm of `M` up to
+`‖ϖ‖ ^ ℤ ∪ {0}`, integer powers of `ϖ` still scale it exactly,
+`zpowCeil ‖ϖ‖ ‖ϖ ^ n • m‖ = ‖ϖ‖ ^ n * zpowCeil ‖ϖ‖ ‖m‖`. -/
+theorem zpowCeil_norm_zpow_smul (n : ℤ) (m : M) :
+    zpowCeil ‖(ϖ.unit : R)‖ ‖((ϖ.unit ^ n : Rˣ) : R) • m‖ =
+      ‖(ϖ.unit : R)‖ ^ n * zpowCeil ‖(ϖ.unit : R)‖ ‖m‖ := by
+  rw [ϖ.norm_zpow_smul, zpowCeil_zpow_mul ϖ.norm_pos ϖ.norm_lt_one]
 
 end Module
 
@@ -263,6 +301,11 @@ variable {R : Type*} [SeminormedRing R]
 /-- A Tate seminormed ring satisfies `‖1‖ = 1`. -/
 instance (priority := 100) normOneClass [IsTate R] : NormOneClass R :=
   (nonempty_pseudoUniformizer (R := R)).some.normOneClass
+
+/-- A Tate seminormed ring admits a zero sequence of units via the powers of any multiplicative
+pseudo-uniformiser. -/
+instance (priority := 100) hasZeroSequenceOfUnits [IsTate R] : HasZeroSequenceOfUnits R :=
+  (nonempty_pseudoUniformizer (R := R)).some.isPseudoUniformizer.hasZeroSequenceOfUnits
 
 /-- **An ultrametric Tate seminormed commutative ring is a Tate ring** in the topological sense:
 its closed unit ball is a ring of definition and a multiplicative pseudo-uniformiser is a

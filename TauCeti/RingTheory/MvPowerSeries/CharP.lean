@@ -7,30 +7,27 @@ module
 
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.RingTheory.Ideal.Span
-public import Mathlib.RingTheory.MvPowerSeries.Order
-import Mathlib.Algebra.MvPolynomial.Coeff
+public import TauCeti.RingTheory.MvPowerSeries.Order
+import Mathlib.Algebra.CharP.Defs
 import Mathlib.Data.Nat.Choose.Factorization
-import Mathlib.Data.Nat.Choose.Sum
-import Mathlib.RingTheory.Coprime.Lemmas
+import TauCeti.RingTheory.MvPowerSeries.Basic
 
 /-!
 # Power series in two variables whose `q`-th power lies in `(X ^ q, Y ^ q)`
 
-Let `f ∈ R⟦X, Y⟧` have zero constant coefficient and linear part `X + Y`, over a commutative ring
-`R`. Since `f = X + Y + (terms of total degree at least two)`, the part of total degree `q` of
+Let `f ∈ R⟦X, Y⟧` have zero constant coefficient and linear part `X + Y`, over a semiring `R`.
+Since all other terms have total degree at least two, the part of total degree `q` of
 `f ^ q` is `(X + Y) ^ q`. No monomial `Xⁱ Y^(q - i)` with `0 < i < q` occurs in an element of
 `(X ^ q, Y ^ q)`, so if `f ^ q` lies in this ideal then every binomial coefficient `q.choose i`
 with `0 < i < q` vanishes in `R`. For `q = p ^ n` with `p` prime and `n ≠ 0`, taking `i = 1` gives
 `p ^ n = 0`, and taking `i = p ^ (n - 1)`, whose binomial coefficient is `p` times an integer prime
-to `p`, then gives `p = 0`.
+to `p`, then gives `p = 0`: the characteristic of `R` divides both coefficients and hence `p`.
 
 This is the coefficient argument behind Katz–Mazur, Lemma 5.3.4, applied to formal group laws in
 `TauCeti.RingTheory.FormalGroup.CharP`.
 
 ## Main results
 
-* `MvPowerSeries.two_le_order_sub_X_add_X`: such an `f` differs from `X + Y` by a series of order
-  at least two.
 * `MvPowerSeries.coeff_single_add_single_pow_eq_choose`: the coefficient of `Xⁱ Y^(q - i)` in
   `f ^ q` is `q.choose i`.
 * `MvPowerSeries.natCast_choose_eq_zero_of_pow_mem_span`: if moreover `f ^ q ∈ (X ^ q, Y ^ q)`,
@@ -49,22 +46,9 @@ open Finsupp
 
 namespace MvPowerSeries
 
-variable {R : Type*} [CommRing R] {f : MvPowerSeries (Fin 2) R}
+variable {R : Type*} {f : MvPowerSeries (Fin 2) R}
 
-/-- A power series in two variables with zero constant coefficient and linear part `X + Y` differs
-from `X + Y` by a series of order at least two. -/
-theorem two_le_order_sub_X_add_X (h₀ : f.constantCoeff = 0)
-    (hX : coeff (single 0 1) f = 1) (hY : coeff (single 1 1) f = 1) :
-    2 ≤ (f - (X 0 + X 1)).order := by
-  refine nat_le_order fun d hd => ?_
-  rw [degree_eq_sum, Fin.sum_univ_two] at hd
-  have hd' : d = single 0 (d 0) + single 1 (d 1) := by
-    ext i
-    fin_cases i <;> simp
-  rw [hd']
-  obtain h | h | h : (d 0 = 0 ∧ d 1 = 0) ∨ (d 0 = 1 ∧ d 1 = 0) ∨ (d 0 = 0 ∧ d 1 = 1) := by
-    lia
-  all_goals simp [h.1, h.2, coeff_X, h₀, hX, hY, single_eq_single_iff]
+variable [Semiring R]
 
 /-- If `f ∈ R⟦X, Y⟧` has zero constant coefficient and linear part `X + Y`, then the part of total
 degree `q` of `f ^ q` is `(X + Y) ^ q`: the coefficient of `Xⁱ Y^(q - i)` in `f ^ q` is
@@ -72,35 +56,16 @@ degree `q` of `f ^ q` is `(X + Y) ^ q`: the coefficient of `Xⁱ Y^(q - i)` in `
 theorem coeff_single_add_single_pow_eq_choose (h₀ : f.constantCoeff = 0)
     (hX : coeff (single 0 1) f = 1) (hY : coeff (single 1 1) f = 1) {q i : ℕ} (hi : i ≤ q) :
     coeff (single 0 i + single 1 (q - i)) (f ^ q) = q.choose i := by
-  set g := f - (X 0 + X 1)
-  have hg : 2 ≤ g.order := two_le_order_sub_X_add_X h₀ hX hY
-  -- Write `f` as `(X + Y) + g` so that `add_pow` expands `f ^ q`; only the term `(X + Y) ^ q`
-  -- contributes in total degree `q`, since every other term has order greater than `q`.
-  rw [show f = X 0 + X 1 + g by simp [g], add_pow, map_sum, Finset.sum_eq_single q]
-  · rw [tsub_self, pow_zero, mul_one, Nat.choose_self, Nat.cast_one, mul_one,
-      ← MvPolynomial.coe_X, ← MvPolynomial.coe_X, ← MvPolynomial.coe_add, ← MvPolynomial.coe_pow,
-      MvPolynomial.coeff_coe, MvPolynomial.coeff_add_pow]
-    simp [hi]
-  · intro k hk hkq
-    replace hkq : k < q := lt_of_le_of_ne (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)) hkq
-    apply coeff_of_lt_order
-    have hL : (k : ℕ∞) ≤ ((X 0 + X 1 : MvPowerSeries (Fin 2) R) ^ k).order :=
-      le_order_pow_of_constantCoeff_eq_zero k (by simp)
-    have hG : (q - k) • (2 : ℕ∞) ≤ (g ^ (q - k)).order :=
-      (nsmul_le_nsmul_right hg (q - k)).trans (le_order_pow (q - k))
-    calc ((single (0 : Fin 2) i + single 1 (q - i)).degree : ℕ∞)
-        = (q : ℕ∞) := by
-          rw [map_add, degree_single, degree_single]
-          exact_mod_cast Nat.add_sub_cancel' hi
-      _ < (k : ℕ∞) + (q - k) • (2 : ℕ∞) := by
-          rw [nsmul_eq_mul]
-          exact_mod_cast (by lia : q < k + (q - k) * 2)
-      _ ≤ _ + _ := add_le_add hL hG
-      _ ≤ _ := le_order_mul
-      _ ≤ _ + _ := le_self_add
-      _ ≤ _ := le_order_mul
-  · intro h
-    exact absurd (Finset.mem_range.mpr (Nat.lt_succ_self q)) h
+  have hpow : homogeneousComponent q (f ^ q) = (X 0 + X 1) ^ q := by
+    simpa only [mul_one, homogeneousComponent_one_eq_X_add_X hX hY] using
+      homogeneousComponent_pow_of_le_order (one_le_order_iff_constCoeff_eq_zero.mpr h₀) q
+  have hd : (single (0 : Fin 2) i + single 1 (q - i)).degree = q := by
+    rw [map_add, degree_single, degree_single]
+    exact Nat.add_sub_cancel' hi
+  have heq := congrArg (coeff (single (0 : Fin 2) i + single 1 (q - i))) hpow
+  rw [coeff_homogeneousComponent, ite_eq_left hd] at heq
+  rw [heq, coeff_X_add_X_pow]
+  simp [hi]
 
 /-- If `f ∈ R⟦X, Y⟧` has zero constant coefficient and linear part `X + Y`, and `f ^ q` lies in
 the ideal `(X ^ q, Y ^ q)`, then the binomial coefficient `q.choose i` vanishes in `R` for every
@@ -111,8 +76,9 @@ theorem natCast_choose_eq_zero_of_pow_mem_span (h₀ : f.constantCoeff = 0)
     (q.choose i : R) = 0 := by
   rw [← coeff_single_add_single_pow_eq_choose h₀ hX hY hiq.le]
   obtain ⟨a, b, hab⟩ := Ideal.mem_span_pair.mp h
-  rw [← hab, map_add, X_pow_dvd_iff.mp (dvd_mul_left _ a) _ (by simpa),
-    X_pow_dvd_iff.mp (dvd_mul_left _ b) _ (by simp; lia), add_zero]
+  rw [← hab, map_add, ← X_pow_mul, ← X_pow_mul,
+    X_pow_dvd_iff.mp (dvd_mul_right _ a) _ (by simpa),
+    X_pow_dvd_iff.mp (dvd_mul_right _ b) _ (by simp; lia), add_zero]
 
 /-- **Katz–Mazur, Lemma 5.3.4.** If `f ∈ R⟦X, Y⟧` has zero constant coefficient and linear part
 `X + Y`, and `f ^ (p ^ n)` lies in the ideal `(X ^ (p ^ n), Y ^ (p ^ n))` for a prime `p` and some
@@ -138,11 +104,11 @@ theorem natCast_eq_zero_of_pow_mem_span (h₀ : f.constantCoeff = 0)
   have hpm : ¬p ∣ c / p := by
     have := Nat.not_dvd_ordCompl (n := c) hp (Nat.choose_pos hlt.le).ne'
     rwa [hc, pow_one] at this
-  obtain ⟨u, v, huv⟩ : IsCoprime ((c / p : ℕ) : R) ((p ^ n : ℕ) : R) :=
-    (((Nat.Prime.coprime_iff_not_dvd hp).mpr hpm).symm.pow_right n).cast
-  rw [← hcm, Nat.cast_mul] at hchoose
-  calc (p : R) = p * (u * ((c / p : ℕ) : R) + v * ((p ^ n : ℕ) : R)) := by rw [huv, mul_one]
-    _ = u * ((p : R) * ((c / p : ℕ) : R)) + v * p * ((p ^ n : ℕ) : R) := by ring
-    _ = 0 := by rw [hchoose, hpow]; ring
+  have hcop : (p ^ n).Coprime (c / p) :=
+    (hp.coprime_iff_not_dvd.mpr hpm).pow_left n
+  rw [ringChar.spec R]
+  apply (hcop.of_dvd_left (ringChar.dvd hpow)).dvd_of_dvd_mul_right
+  rw [hcm]
+  exact ringChar.dvd hchoose
 
 end MvPowerSeries

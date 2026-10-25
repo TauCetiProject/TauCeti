@@ -22,6 +22,7 @@ interval in Peetre's Fredholm criterion.
 
 We obtain the tail positivity from uniformly bounded-below limits of `A` and
 vanishing limits of `A'`. The target need not be finite dimensional or complete.
+The support-restricted coercivity estimate follows by making the interior error vanish.
 These are estimates on classical test paths; extension to Sobolev paths and the
 Fredholm conclusion require further arguments.
 
@@ -88,7 +89,7 @@ theorem exists_nonneg_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
   simp only [Pi.add_apply] at hest
   rw [integral_const_mul, integral_add hiPot hiErr, integral_sub hiA hiCorr,
     integral_const_mul, integral_indicator measurableSet_Icc] at hest
-  rw [integral_norm_deriv_add_sq_eq hA hsym hu hc]
+  rw [integral_norm_deriv_add_sq_eq hA (fun s _ ↦ hsym s) hu hc]
   linarith
 
 -- Convergence of the potential, rather than separate gap estimates for A and A',
@@ -157,5 +158,34 @@ theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq
   obtain ⟨C, hC, hest⟩ :=
     exists_nonneg_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le hA hsym htail
   exact ⟨R, lt_of_lt_of_le zero_lt_one (le_max_left _ _), C, hC, hest⟩
+
+/-- **Coercivity at infinity.** If the symmetric coefficients tend in operator norm to operators
+with a common positive lower bound, and their derivative tends to zero at both ends, then
+`d/ds + A(s)` controls the `L²` value and derivative of every compactly supported `C¹` path
+supported outside one fixed compact interval. In finite dimension, invertible limits supply the
+required lower bound. -/
+theorem exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
+    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
+    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
+    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0)) :
+    ∃ R > 0, ∀ (u : ℝ → E), ContDiff ℝ 1 u → HasCompactSupport u →
+      Function.support u ⊆ {s | R ≤ |s|} →
+      (∫ s, ‖deriv u s‖ ^ 2) + (α ^ 2 / 2) * (∫ s, ‖u s‖ ^ 2) ≤
+        ∫ s, ‖deriv u s + A s (u s)‖ ^ 2 := by
+  obtain ⟨R, hR, C, _, hest⟩ :=
+    exists_pos_nonneg_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
+      hA hsym hα hminus hplus hbot htop hdbot hdtop
+  refine ⟨R, hR, fun u hu hc hs ↦ ?_⟩
+  have hzero : (∫ s in Icc (-R) R, ‖u s‖ ^ 2) = 0 := by
+    rw [integral_Icc_eq_integral_Ioo]
+    apply setIntegral_eq_zero_of_forall_eq_zero
+    intro s hs'
+    have hu0 : u s = 0 := by
+      by_contra h
+      exact (not_le_of_gt (abs_lt.mpr hs')) (hs h)
+    simp [hu0]
+  simpa only [hzero, mul_zero, add_zero] using hest u hu hc
 
 end TauCeti

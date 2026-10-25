@@ -165,6 +165,16 @@ theorem lintegral_weighted {μ : Measure α} {w : α → ℝ≥0} (hw : AEMeasur
     lintegral_withDensity_eq_lintegral_mul_non_measurable₀ _ hw.coe_nnreal_ennreal (by simp)]
   rfl
 
+/-- If reweighting `μ` by `w` gives a positive finite multiple of a probability measure `ν`, then
+`ν` is the weighted law of `μ`. -/
+theorem weighted_eq_of_withDensity_eq_smul {μ ν : Measure α} [IsProbabilityMeasure ν]
+    {w : α → ℝ≥0} {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞)
+    (h : (μ.withDensity fun x => (w x : ℝ≥0∞)) = c • ν) : μ.weighted w = ν := by
+  have hZ : ∫⁻ x, (w x : ℝ≥0∞) ∂μ = c := by
+    rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ, h, smul_apply,
+      measure_univ, smul_eq_mul, mul_one]
+  rw [weighted_def, hZ, h, smul_smul, ENNReal.inv_mul_cancel hc0 hc, one_smul]
+
 /-- Multiplying a weight by a positive constant does not change the weighted law. -/
 theorem weighted_const_smul {μ : Measure α} {w : α → ℝ≥0} {c : ℝ≥0} (hc : c ≠ 0) :
     μ.weighted (c • w) = μ.weighted w := by

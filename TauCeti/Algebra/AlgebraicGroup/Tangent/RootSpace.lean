@@ -45,6 +45,8 @@ which `Φ` is read off.
 
 * `Derivation.isInternal_adjointWeightSpace`: **the Lie algebra of `G` is the internal
   direct sum of its weight submodules.**
+* `Derivation.adjointWeightSpace_mapDomainBialgHom_comp`: restricting along `D(N) → D(M)` for
+  `q : M →* N`, the `n`-weight space is the sum of the `m`-weight spaces with `q m = n`.
 * `Derivation.sup_iSup_adjointWeightSpace_eq_top`: the trivial weight submodule together
   with the submodules indexed by `nontrivialAdjointWeights π` exhaust the Lie algebra.
 * `Derivation.finite_nontrivialAdjointWeights`: **the set of nontrivial adjoint weights is
@@ -62,6 +64,11 @@ which `Φ` is read off.
 * `Derivation.dualCotangentMap_mem_adjointWeightSpace_iff`: the differential of a closed
   immersion `Spec L → Spec H` detects the adjoint weight spaces of a diagonalizable subgroup of
   `Spec L`.
+* `BialgHom.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective`: more generally, an
+  injective differential detects these weight spaces.
+* `BialgHom.map_dualCotangentMap_adjointWeightSpace_of_bijective` and
+  `BialgHom.adjointWeightSpaceEquivOfBijective`: a bijective differential identifies
+  corresponding weight spaces over a commutative base ring.
 * `Derivation.map_dualCotangentMap_adjointWeightSpace` and `Derivation.adjointWeightSpaceEquiv`:
   the differential of an isomorphism carries each weight space onto the corresponding weight
   space for the transported diagonalizable subgroup.
@@ -115,6 +122,45 @@ theorem mem_adjointWeightSpace {π : H →ₐc[R] MonoidAlgebra R M} {α : M}
   letI : Comodule R H (Module.Dual R (Bialgebra.CotangentSpace R H)) :=
     adjointComodule (R := R) (H := H)
   DiagonalizableGroup.mem_weightSpace
+
+/-- Relabelling the character group by an equivalence preserves each adjoint weight space. -/
+theorem adjointWeightSpace_domCongr {N : Type*} [CommGroup N] (e : M ≃* N)
+    (π : H →ₐc[R] MonoidAlgebra R M) (α : M) :
+    adjointWeightSpace ((MonoidAlgebra.domCongrBialgEquiv R R e).toBialgHom.comp π) (e α) =
+      adjointWeightSpace π α := by
+  ext x
+  rw [mem_adjointWeightSpace, mem_adjointWeightSpace]
+  let V := Module.Dual R (Bialgebra.CotangentSpace R H)
+  let E := MonoidAlgebra.domCongrBialgEquiv R R e
+  let T := TensorProduct.congr (LinearEquiv.refl R V) E.toAlgEquiv.toLinearEquiv
+  have hcomp (z : V ⊗[R] H) :
+      T (TensorProduct.map LinearMap.id (π : H →ₗc[R] MonoidAlgebra R M).toLinearMap z) =
+      TensorProduct.map LinearMap.id
+        (E.toBialgHom.comp π : H →ₗc[R] MonoidAlgebra R N).toLinearMap z := by
+    -- TensorProduct.congr acts by the tensor map of the underlying linear equivalences.
+    change TensorProduct.map LinearMap.id E.toAlgEquiv.toLinearMap
+      (TensorProduct.map LinearMap.id (π : H →ₗc[R] MonoidAlgebra R M).toLinearMap z) = _
+    rw [TensorProduct.map_map]
+    rfl
+  have hsingle : T (x ⊗ₜ[R] MonoidAlgebra.single α 1) =
+      x ⊗ₜ[R] MonoidAlgebra.single (e α) 1 := by
+    rw [TensorProduct.congr_tmul, LinearEquiv.refl_apply]
+    congr 1
+    simp only [E, MonoidAlgebra.domCongrBialgEquiv]
+    exact MonoidAlgebra.domCongr_single (R := R) (A := R) e α 1
+  rw [← hcomp, ← hsingle]
+  exact T.injective.eq_iff
+
+/-- **Pushing the characters forward along a homomorphism `q : M →* N` collects adjoint weight
+spaces.** The `n`-weight space for `D(N) → D(M) → G` is the sum of the `m`-weight spaces for
+`D(M) → G` over the characters `m` with `q m = n`. -/
+theorem adjointWeightSpace_mapDomainBialgHom_comp {N : Type*} [CommGroup N]
+    (π : H →ₐc[R] MonoidAlgebra R M) (q : M →* N) (n : N) :
+    adjointWeightSpace ((MonoidAlgebra.mapDomainBialgHom R q).comp π) n =
+      ⨆ m ∈ q ⁻¹' {n}, adjointWeightSpace π m := by
+  simp only [adjointWeightSpace, BialgHom.comp_toCoalgHom]
+  exact DiagonalizableGroup.weightSpace_mapDomainBialgHom_comp _ (π : H →ₗc[R] MonoidAlgebra R M)
+    q n
 
 /-- Membership in an adjoint weight space can be tested on the universal point of the
 diagonalizable group. The universal point acts on a weight vector of weight `alpha` by the
@@ -399,15 +445,54 @@ theorem lie_mem_adjointWeightSpace_mul {π : H →ₐc[R] MonoidAlgebra R M} {α
 
 section Transport
 
-/-! ### Transport along closed immersions and isomorphisms -/
+/-! ### Transport along homomorphisms with injective or bijective differential -/
 
 variable {R H L M : Type u} [CommRing R] [CommRing H] [CommRing L] [HopfAlgebra R H]
   [HopfAlgebra R L] [CommGroup M]
+
+-- Identify the linear map underlying `ofBijective` through its public application lemma.
+private lemma ofBijective_dualCotangentMap_toLinearMap (φ : H →ₐc[R] L)
+    (hφ : Function.Bijective (dualCotangentMap φ)) :
+    (LinearEquiv.ofBijective (dualCotangentMap φ) hφ).toLinearMap = dualCotangentMap φ :=
+  LinearMap.ext fun _ ↦ LinearEquiv.ofBijective_apply ..
 
 variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
   [Module.Projective R (Bialgebra.CotangentSpace R H)]
   [Module.Finite R (Bialgebra.CotangentSpace R L)]
   [Module.Projective R (Bialgebra.CotangentSpace R L)]
+
+/-- The differential of a group homomorphism carries an adjoint weight vector to a vector
+of the same weight, after restricting along the same diagonalizable group in the source. -/
+theorem _root_.BialgHom.dualCotangentMap_mem_adjointWeightSpace (φ : H →ₐc[R] L)
+    (π : L →ₐc[R] MonoidAlgebra R M) (α : M)
+    {y : Module.Dual R (Bialgebra.CotangentSpace R L)}
+    (hy : y ∈ adjointWeightSpace π α) :
+    dualCotangentMap φ y ∈ adjointWeightSpace (π.comp φ) α := by
+  let A := CommAlgCat.of R (MonoidAlgebra R M)
+  have h := congrArg ((dualCotangentMap φ).lTensor A)
+    ((mem_adjointWeightSpace_iff_universalPointAction π α y).mp hy)
+  rw [BialgHom.lTensor_dualCotangentMap_adjointAction, LinearMap.lTensor_tmul,
+    LinearMap.lTensor_tmul] at h
+  apply (mem_adjointWeightSpace_iff_universalPointAction (π.comp φ) α _).mpr
+  simpa only [BialgHom.mapDomain_apply, BialgHom.comp_toAlgHom, A] using h
+
+/-- A homomorphism with injective differential detects adjoint weights for any homomorphism
+from a diagonalizable group into its source. No injectivity of the coordinate map is needed. -/
+theorem _root_.BialgHom.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective (φ : H →ₐc[R] L)
+    (hφ : Function.Injective (dualCotangentMap φ))
+    (π : L →ₐc[R] MonoidAlgebra R M) (α : M)
+    (y : Module.Dual R (Bialgebra.CotangentSpace R L)) :
+    dualCotangentMap φ y ∈ adjointWeightSpace (π.comp φ) α ↔ y ∈ adjointWeightSpace π α := by
+  refine ⟨?_, φ.dualCotangentMap_mem_adjointWeightSpace π α⟩
+  intro hy
+  let A := CommAlgCat.of R (MonoidAlgebra R M)
+  have hinj := Module.Flat.lTensor_preserves_injective_linearMap (M := A)
+    (dualCotangentMap φ) hφ
+  apply (mem_adjointWeightSpace_iff_universalPointAction π α y).mpr
+  apply hinj
+  rw [BialgHom.lTensor_dualCotangentMap_adjointAction]
+  simpa [A] using
+    (mem_adjointWeightSpace_iff_universalPointAction (π.comp φ) α _).mp hy
 
 /-- **The differential of a closed immersion detects adjoint weight spaces.** Let
 `φ : H →ₐc[R] L` be surjective, so that it represents a closed immersion `Spec L → Spec H`, and let
@@ -416,49 +501,77 @@ when its image under the differential of `φ` has weight `α` for the composite 
 theorem dualCotangentMap_mem_adjointWeightSpace_iff (φ : H →ₐc[R] L)
     (hφ : Function.Surjective φ) (π : L →ₐc[R] MonoidAlgebra R M) (α : M)
     (y : Module.Dual R (Bialgebra.CotangentSpace R L)) :
-    dualCotangentMap φ y ∈ adjointWeightSpace (π.comp φ) α ↔ y ∈ adjointWeightSpace π α := by
-  rw [mem_adjointWeightSpace_iff_universalPointAction,
-    mem_adjointWeightSpace_iff_universalPointAction,
-    ← (tangentScalarExtensionEquiv (R := R) (A := H)
-      (B := CommAlgCat.of R (MonoidAlgebra R M))).injective.eq_iff,
-    ← (tangentScalarExtensionEquiv (R := R) (A := L)
-      (B := CommAlgCat.of R (MonoidAlgebra R M))).injective.eq_iff,
-    ← (derivationComp_injective_of_surjective (B := CommAlgCat.of R (MonoidAlgebra R M)) φ
-      hφ).eq_iff,
-    tangentScalarExtensionEquiv_adjointAction, tangentScalarExtensionEquiv_adjointAction,
-    ← LinearMap.lTensor_tmul, ← LinearMap.lTensor_tmul,
-    tangentScalarExtensionEquiv_lTensor_dualCotangentMap,
-    tangentScalarExtensionEquiv_lTensor_dualCotangentMap, derivationComp_adDerivation,
-    BialgHom.comp_toAlgHom, pointInCounitAlgebra_comp]
+    dualCotangentMap φ y ∈ adjointWeightSpace (π.comp φ) α ↔ y ∈ adjointWeightSpace π α :=
+  φ.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective
+    (φ.dualCotangentMap_injective_of_surjective hφ) π α y
+
+/-- A bijective differential carries each adjoint weight space onto the weight space of the
+same character for the composite diagonalizable-group homomorphism. -/
+theorem _root_.BialgHom.map_dualCotangentMap_adjointWeightSpace_of_bijective (φ : H →ₐc[R] L)
+    (hφ : Function.Bijective (dualCotangentMap φ))
+    (π : L →ₐc[R] MonoidAlgebra R M) (α : M) :
+    (adjointWeightSpace π α).map (dualCotangentMap φ) = adjointWeightSpace (π.comp φ) α := by
+  ext x
+  obtain ⟨y, rfl⟩ := hφ.surjective x
+  rw [← ofBijective_dualCotangentMap_toLinearMap φ hφ,
+    Submodule.mem_map_equiv, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
+  exact (φ.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective hφ.injective π α y).symm
+
+/-- A bijective differential preserves nontrivial adjoint weights, indexed by the characters
+of the same diagonalizable group in its source. -/
+theorem _root_.BialgHom.nontrivialAdjointWeights_comp_of_bijective (φ : H →ₐc[R] L)
+    (hφ : Function.Bijective (dualCotangentMap φ)) (π : L →ₐc[R] MonoidAlgebra R M) :
+    nontrivialAdjointWeights (π.comp φ) = nontrivialAdjointWeights π := by
+  ext α
+  rw [mem_nontrivialAdjointWeights, mem_nontrivialAdjointWeights,
+    ← φ.map_dualCotangentMap_adjointWeightSpace_of_bijective hφ,
+    ← ofBijective_dualCotangentMap_toLinearMap φ hφ]
+  exact and_congr_right' (not_congr Submodule.map_eq_bot_iff)
+
+/-- A bijective differential restricts to a linear equivalence of corresponding adjoint
+weight spaces. -/
+noncomputable def _root_.BialgHom.adjointWeightSpaceEquivOfBijective (φ : H →ₐc[R] L)
+    (hφ : Function.Bijective (dualCotangentMap φ)) (π : L →ₐc[R] MonoidAlgebra R M) (α : M) :
+    adjointWeightSpace π α ≃ₗ[R] adjointWeightSpace (π.comp φ) α :=
+  ((LinearEquiv.ofBijective (dualCotangentMap φ) hφ).submoduleMap
+    (adjointWeightSpace π α)).trans
+      (LinearEquiv.ofEq _ _ (by
+        rw [ofBijective_dualCotangentMap_toLinearMap φ hφ]
+        exact φ.map_dualCotangentMap_adjointWeightSpace_of_bijective hφ π α))
+
+/-- The restricted equivalence acts by the differential on weight vectors. -/
+@[simp]
+theorem _root_.BialgHom.coe_adjointWeightSpaceEquivOfBijective_apply (φ : H →ₐc[R] L)
+    (hφ : Function.Bijective (dualCotangentMap φ)) (π : L →ₐc[R] MonoidAlgebra R M)
+    (α : M) (y : adjointWeightSpace π α) :
+    (φ.adjointWeightSpaceEquivOfBijective hφ π α y :
+        Module.Dual R (Bialgebra.CotangentSpace R H)) = dualCotangentMap φ y := by
+  rw [BialgHom.adjointWeightSpaceEquivOfBijective, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.submoduleMap_apply, LinearEquiv.ofBijective_apply]
 
 /-- The differential of a bialgebra equivalence carries each adjoint weight space onto the
 weight space of the same character for the transported diagonalizable subgroup. -/
 theorem map_dualCotangentMap_adjointWeightSpace (e : H ≃ₐc[R] L)
     (π : L →ₐc[R] MonoidAlgebra R M) (α : M) :
     (adjointWeightSpace π α).map (dualCotangentMap (e : H →ₐc[R] L)) =
-      adjointWeightSpace (π.comp (e : H →ₐc[R] L)) α := by
-  ext x
-  obtain ⟨y, rfl⟩ := (dualCotangentEquiv e).surjective x
-  rw [← coe_dualCotangentEquiv, Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply,
-    dualCotangentEquiv_apply, dualCotangentMap_mem_adjointWeightSpace_iff _ e.surjective]
+      adjointWeightSpace (π.comp (e : H →ₐc[R] L)) α :=
+  BialgHom.map_dualCotangentMap_adjointWeightSpace_of_bijective _
+    e.dualCotangentMap_bijective π α
 
 /-- Transport along a bialgebra equivalence preserves the nontrivial adjoint weights. -/
 @[simp]
 theorem nontrivialAdjointWeights_comp_bialgEquiv (e : H ≃ₐc[R] L)
     (π : L →ₐc[R] MonoidAlgebra R M) :
-    nontrivialAdjointWeights (π.comp (e : H →ₐc[R] L)) = nontrivialAdjointWeights π := by
-  ext α
-  rw [mem_nontrivialAdjointWeights, mem_nontrivialAdjointWeights,
-    ← map_dualCotangentMap_adjointWeightSpace e, ← coe_dualCotangentEquiv]
-  exact and_congr_right' (not_congr Submodule.map_eq_bot_iff)
+    nontrivialAdjointWeights (π.comp (e : H →ₐc[R] L)) = nontrivialAdjointWeights π :=
+  BialgHom.nontrivialAdjointWeights_comp_of_bijective _
+    e.dualCotangentMap_bijective π
 
 /-- The differential of a bialgebra equivalence, restricted to an adjoint weight space. -/
 noncomputable def adjointWeightSpaceEquiv (e : H ≃ₐc[R] L) (π : L →ₐc[R] MonoidAlgebra R M)
     (α : M) :
     adjointWeightSpace π α ≃ₗ[R] adjointWeightSpace (π.comp (e : H →ₐc[R] L)) α :=
-  ((dualCotangentEquiv e).submoduleMap (adjointWeightSpace π α)).trans
-    (LinearEquiv.ofEq _ _ (by
-      rw [coe_dualCotangentEquiv, map_dualCotangentMap_adjointWeightSpace]))
+  BialgHom.adjointWeightSpaceEquivOfBijective _
+    e.dualCotangentMap_bijective π α
 
 /-- The weight-space equivalence is the differential of the bialgebra equivalence. -/
 @[simp]
@@ -466,9 +579,26 @@ theorem coe_adjointWeightSpaceEquiv_apply (e : H ≃ₐc[R] L) (π : L →ₐc[R
     (α : M) (y : adjointWeightSpace π α) :
     (adjointWeightSpaceEquiv e π α y : Module.Dual R (Bialgebra.CotangentSpace R H)) =
       dualCotangentMap (e : H →ₐc[R] L) y := by
-  rw [adjointWeightSpaceEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
-    LinearEquiv.submoduleMap_apply, dualCotangentEquiv_apply]
+  exact BialgHom.coe_adjointWeightSpaceEquivOfBijective_apply _ _ π α y
 
 end Transport
+
+/-- A character equivalence into the coefficient-ring universe lets the differential of a
+closed immersion detect adjoint weights without restricting the original character universe. -/
+theorem dualCotangentMap_mem_adjointWeightSpace_iff_of_characterEquiv
+    {R H L N : Type u} {M : Type v} [CommRing R] [CommRing H] [CommRing L]
+    [HopfAlgebra R H] [HopfAlgebra R L] [CommGroup M] [CommGroup N]
+    [Module.Finite R (Bialgebra.CotangentSpace R H)]
+    [Module.Projective R (Bialgebra.CotangentSpace R H)]
+    [Module.Finite R (Bialgebra.CotangentSpace R L)]
+    [Module.Projective R (Bialgebra.CotangentSpace R L)]
+    (e : M ≃* N) (φ : H →ₐc[R] L) (hφ : Function.Surjective φ)
+    (π : L →ₐc[R] MonoidAlgebra R M) (α : M)
+    (x : Module.Dual R (Bialgebra.CotangentSpace R L)) :
+    dualCotangentMap φ x ∈ adjointWeightSpace (π.comp φ) α ↔
+      x ∈ adjointWeightSpace π α := by
+  rw [← adjointWeightSpace_domCongr e π α,
+    ← adjointWeightSpace_domCongr e (π.comp φ) α, ← BialgHom.comp_assoc]
+  exact dualCotangentMap_mem_adjointWeightSpace_iff φ hφ _ _ x
 
 end Derivation

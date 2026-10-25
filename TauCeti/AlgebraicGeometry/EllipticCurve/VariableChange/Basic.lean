@@ -25,7 +25,8 @@ automorphism fixes it) and `map_smul_baseChange_eq` (the conjugate of an isomorp
 changes is again one). Comparing an isomorphism with its conjugate via the last of these is what
 produces the Galois cocycle used by the twist classification. A change of variables over an
 extension descends to the base field exactly when its four coefficients do
-(`VariableChange.mem_range_baseChange_iff`).
+(`VariableChange.mem_range_baseChange_iff`). Conjugation by algebra automorphisms is an action
+(`VariableChange.map_map_algEquiv`).
 
 That cocycle comparison lands on a product `C * [-1]`, whose four components are read off here as
 `mul_negVariableChange_u/_r/_s/_t` rather than by unfolding `VariableChange.mul_def` against the
@@ -61,6 +62,13 @@ FLT's field-level statements to a commutative ring.
 public section
 
 namespace WeierstrassCurve
+
+/-- Conjugating a change of variables by `σ` and then by `τ` is conjugating by `τ * σ`. -/
+lemma VariableChange.map_map_algEquiv {R L : Type*} [CommSemiring R] [CommRing L] [Algebra R L]
+    (C : VariableChange L) (σ τ : L ≃ₐ[R] L) :
+    (C.map (σ : L →+* L)).map (τ : L →+* L) = C.map ((τ * σ : L ≃ₐ[R] L) : L →+* L) := by
+  rw [VariableChange.map_map]
+  exact congrArg C.map (RingHom.ext fun x ↦ (AlgEquiv.mul_apply τ σ x).symm)
 
 variable {R : Type*} [CommRing R] (E : WeierstrassCurve R)
 

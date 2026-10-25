@@ -74,14 +74,8 @@ theorem characterPairing_apply (f₁ f₂ : ClassFunction k G) :
 theorem characterPairing_symm (f₁ f₂ : ClassFunction k G) :
     characterPairing f₁ f₂ = characterPairing f₂ f₁ := by
   rw [characterPairing_apply, characterPairing_apply]
-  have hsum : (∑ g : G, f₁.1 g * f₂.1 g⁻¹) = ∑ g : G, f₂.1 g * f₁.1 g⁻¹ := by
-    calc
-      _ = ∑ g : G, f₁.1 g⁻¹ * f₂.1 (g⁻¹)⁻¹ := by
-        apply Fintype.sum_equiv (Equiv.inv G)
-        intro g
-        simp
-      _ = _ := by simp [mul_comm]
-  rw [hsum]
+  congr 1
+  exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g => by simp [mul_comm]
 
 /-- The bilinear form underlying `characterPairing` is symmetric. -/
 theorem characterPairing_isSymm :
@@ -124,13 +118,7 @@ theorem characterPairing_classIndicator_inv (f : ClassFunction k G) (x : G) :
   congr 1
   calc
     _ = ∑ g : G, if IsConj g x then f.1 g else 0 := by
-      apply Fintype.sum_congr
-      intro g
-      by_cases hg : IsConj g x
-      · have h' := hconj g |>.mpr hg
-        rw [classIndicator_apply, ite_eq_left h', ite_eq_left hg, mul_one]
-      · have h' : ConjClasses.mk g⁻¹ ≠ ConjClasses.mk x⁻¹ := fun h => hg (hconj g |>.mp h)
-        rw [classIndicator_apply, ite_eq_right h', ite_eq_right hg, mul_zero]
+      simp [classIndicator_apply, hconj, mul_ite]
     _ = ∑ g ∈ Finset.univ.filter (fun g => IsConj g x), f.1 g := by
       rw [Finset.sum_filter]
     _ = ∑ _g ∈ Finset.univ.filter (fun g => IsConj g x), f.1 x := by
@@ -187,7 +175,7 @@ theorem characterPairing_ofCharacter_eq_finrank {V W : Type*} [AddCommGroup V] [
   rw [characterPairing_ofCharacter]
   exact Representation.card_inv_mul_sum_char_mul_char_eq_finrank σ ρ
 
-/-- When `σ` admits no nonzero intertwiner into `ρ`, the norm of `χ_ρ - χ_σ` is
+/-- When `σ` admits no nonzero intertwiner into `ρ`, the self-pairing of `χ_ρ - χ_σ` is
 `dim End(ρ) + dim End(σ)`: the cross terms are the dimensions of the intertwiner spaces between
 `ρ` and `σ` in the two directions, which agree by symmetry of the pairing. -/
 theorem characterPairing_ofCharacter_sub_self {V W : Type*} [AddCommGroup V] [Module k V]
@@ -208,9 +196,8 @@ theorem characterPairing_ofCharacter_sub_self {V W : Type*} [AddCommGroup V] [Mo
 open scoped Classical in
 /-- The character pairing of irreducible characters is Kronecker orthonormal. -/
 theorem characterPairing_ofCharacter_orthonormal {V W : Type*} [AddCommGroup V] [Module k V]
-    [FiniteDimensional k V] [AddCommGroup W] [Module k W] [FiniteDimensional k W]
-    [Invertible (Nat.card G : k)] [IsAlgClosed k] (ρ : Representation k G V)
-    (σ : Representation k G W) [ρ.IsIrreducible] [σ.IsIrreducible] :
+    [AddCommGroup W] [Module k W] [Invertible (Nat.card G : k)] [IsAlgClosed k]
+    (ρ : Representation k G V) (σ : Representation k G W) [ρ.IsIrreducible] [σ.IsIrreducible] :
     characterPairing (ofCharacter ρ) (ofCharacter σ) =
       if Nonempty (Representation.Equiv σ ρ) then (1 : k) else 0 := by
   rw [characterPairing_ofCharacter]
@@ -219,7 +206,7 @@ theorem characterPairing_ofCharacter_orthonormal {V W : Type*} [AddCommGroup V] 
 /-- An irreducible character pairs to `1` with itself. -/
 @[simp]
 theorem characterPairing_ofCharacter_self {V : Type*} [AddCommGroup V] [Module k V]
-    [FiniteDimensional k V] [Invertible (Nat.card G : k)] [IsAlgClosed k]
+    [Invertible (Nat.card G : k)] [IsAlgClosed k]
     (ρ : Representation k G V) [ρ.IsIrreducible] :
     characterPairing (ofCharacter ρ) (ofCharacter ρ) = 1 := by
   classical
@@ -232,10 +219,11 @@ Algebraic closure is not needed here: by Schur's lemma the intertwiners between 
 irreducibles already form a subsingleton over any field. -/
 @[simp]
 theorem characterPairing_ofCharacter_eq_zero {V W : Type*} [AddCommGroup V] [Module k V]
-    [FiniteDimensional k V] [AddCommGroup W] [Module k W] [FiniteDimensional k W]
-    [Invertible (Nat.card G : k)] (ρ : Representation k G V)
+    [AddCommGroup W] [Module k W] [Invertible (Nat.card G : k)] (ρ : Representation k G V)
     (σ : Representation k G W) [ρ.IsIrreducible] [σ.IsIrreducible]
     (h : IsEmpty (σ.Equiv ρ)) : characterPairing (ofCharacter ρ) (ofCharacter σ) = 0 := by
+  have := ρ.asModuleEquiv.finiteDimensional
+  have := σ.asModuleEquiv.finiteDimensional
   rw [characterPairing_ofCharacter_eq_finrank ρ σ, Module.finrank_zero_of_subsingleton,
     Nat.cast_zero]
 

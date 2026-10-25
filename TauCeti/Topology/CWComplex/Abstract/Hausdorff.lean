@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Category.TopCat.DisjointOpens
+public import TauCeti.Topology.Category.TopCat.Limits.Basic
 public import TauCeti.Topology.CWComplex.Abstract.ClosedEmbedding
 public import TauCeti.Topology.Separation.Sigma
 
@@ -183,8 +184,6 @@ theorem RelativeCWComplex.t2Space {X Y : TopCat.{u}} {f : X ⟶ Y} (c : Relative
 
 /-- **A CW complex is Hausdorff.** -/
 theorem CWComplex.t2Space {X : TopCat.{u}} (c : CWComplex X) : T2Space X :=
-  have : T2Space (⊥_ TopCat.{u}) :=
-    (TopCat.homeoOfIso TopCat.initialIsoPEmpty).isEmbedding.t2Space
   RelativeCWComplex.t2Space c
 
 end TopCat

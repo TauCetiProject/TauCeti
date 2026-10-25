@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Unramified
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Basic
 public import TauCeti.NumberTheory.NumberField.Kummer.SelmerGroup
 
 /-!
