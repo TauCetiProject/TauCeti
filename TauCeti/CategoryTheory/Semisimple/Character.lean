@@ -9,7 +9,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.CategoryTheory.Semisimple.Rigid
-public import TauCeti.LinearAlgebra.Basis.Basic
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Characters of the Grothendieck ring of a fusion category are ⋆-characters
