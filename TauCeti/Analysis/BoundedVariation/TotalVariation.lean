@@ -302,7 +302,8 @@ theorem HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm [OpensMeasurableS
     {U : E → E →L[ℝ] ℝ} (h : HasWeakFDerivOn μ Ω u U) :
     totalVariationOn μ Ω u ≤ ∫⁻ x in Ω, ‖U x‖ₑ ∂μ := by
   refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
-  rw [h.integral_divergenceCLM_mul_eq_neg_integral φ]
+  simp_rw [← smul_eq_mul (α := ℝ)]
+  rw [h.integral_divergenceCLM_smul_eq_neg_integral φ]
   refine (ENNReal.ofReal_le_ofReal (neg_le_abs _)).trans ?_
   rw [← Real.enorm_eq_ofReal_abs]
   exact φ.enorm_integral_apply_le_setLIntegral_enorm hφ U
@@ -324,7 +325,8 @@ theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L
   -- admissible test vector fields.
   have key (φ : 𝓓(Ω, E)) :
       ∫ x, divergenceCLM φ x * u x ∂μ = ∫ x, U x ((-φ : 𝓓(Ω, E)) x) ∂μ := by
-    rw [h.integral_divergenceCLM_mul_eq_neg_integral φ, ← integral_neg]
+    simp_rw [← smul_eq_mul (α := ℝ)]
+    rw [h.integral_divergenceCLM_smul_eq_neg_integral φ, ← integral_neg]
     simp
   simp_rw [key]
   refine le_antisymm (iSup₂_le fun φ hφ => ?_) (iSup₂_le fun φ hφ => ?_)
