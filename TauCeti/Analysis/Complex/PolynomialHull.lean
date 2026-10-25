@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Degrees
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.MvPolynomial
+import Mathlib.Analysis.Analytic.Polynomial
+import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.Topology.MetricSpace.ProperSpace
 import Mathlib.Topology.Order.Compact
+import TauCeti.Topology.Algebra.MvPolynomial.Nonvanishing
 
 /-!
 # Polynomial hulls and polynomially convex sets in `ℂⁿ`
@@ -36,7 +40,9 @@ The two main results are the following.
   neighbourhoods of the form `P = closedBall 0 R ∩ ⋂ᵢ {|pᵢ| ≤ 1}` for finitely many polynomials
   `pᵢ`, with `K` contained in the open set `ball 0 R ∩ ⋂ᵢ {|pᵢ| < 1} ⊆ P`. The points of the
   compact set `closedBall 0 R \ U` are separated from `K` by polynomials, and finitely many of
-  these separators suffice.
+  these separators suffice. When `K` is nonempty the `pᵢ` can be taken nonconstant, and then
+  this open set is exactly the interior of `P`: by the maximum modulus principle the modulus of a
+  nonconstant polynomial has no local maximum, so the interior of `{|p| ≤ 1}` is `{|p| < 1}`.
 
 ## Main declarations
 
@@ -52,7 +58,9 @@ The two main results are the following.
   (`TauCeti.isCompact_polynomialPolyhedron`) and polynomially convex
   (`TauCeti.isPolynomiallyConvex_polynomialPolyhedron`), and its interior contains
   `ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}`
-  (`TauCeti.ball_inter_biInter_subset_interior_polynomialPolyhedron`).
+  (`TauCeti.ball_inter_biInter_subset_interior_polynomialPolyhedron`), with equality when the
+  radius is nonzero and the polynomials are nonconstant
+  (`TauCeti.interior_polynomialPolyhedron`).
 
 ## Main results
 
@@ -68,6 +76,10 @@ The two main results are the following.
   neighbourhoods of a compact polynomially convex set, and
   `TauCeti.IsPolynomiallyConvex.exists_subset_interior_polynomialPolyhedron`: such a set lies in
   the interior of a polynomial polyhedron inside any given open neighbourhood.
+* `TauCeti.IsPolynomiallyConvex.exists_polynomialPolyhedron_subset_of_nonempty`: for nonempty `K`,
+  the polynomial polyhedron neighbourhoods can be cut out by nonconstant polynomials.
+* `TauCeti.interior_setOf_norm_eval_le`: the interior of `{|p| ≤ c}` is `{|p| < c}` for a
+  nonconstant polynomial `p`.
 
 ## References
 
@@ -78,7 +90,7 @@ The two main results are the following.
 
 public section
 
-open MvPolynomial Metric Set
+open Filter MvPolynomial Metric Set Topology
 
 namespace TauCeti
 
@@ -216,6 +228,26 @@ theorem isPolynomiallyConvex_setOf_norm_eval_le (p : MvPolynomial ι ℂ) (c : �
     IsPolynomiallyConvex {w | ‖eval w p‖ ≤ c} :=
   isPolynomiallyConvex_iff.2 fun _ hz ↦ hz p c fun _ hw ↦ hw
 
+/-- The interior of a sublevel set `{w | |p(w)| ≤ c}` of the modulus of a nonconstant polynomial
+`p` is the strict sublevel set `{w | |p(w)| < c}`. -/
+theorem interior_setOf_norm_eval_le [Finite ι] {p : MvPolynomial ι ℂ} (hp : p.totalDegree ≠ 0)
+    (c : ℝ) : interior {w | ‖eval w p‖ ≤ c} = {w | ‖eval w p‖ < c} := by
+  cases nonempty_fintype ι
+  refine subset_antisymm (fun z hz ↦ ?_) <|
+    interior_maximal (ofPred_subset_ofPred.2 fun _ hw ↦ hw.le) <|
+      isOpen_lt (continuous_eval p).norm continuous_const
+  have hzle : ‖eval z p‖ ≤ c := interior_subset hz
+  refine hzle.lt_of_ne fun hzc ↦ hp ?_
+  -- At a point of the interior where `|p| = c`, the modulus `|p|` has a local maximum, so by the
+  -- maximum modulus principle `p` is constant near that point, hence a constant polynomial.
+  have hmax : IsLocalMax (norm ∘ fun w ↦ eval w p) z :=
+    eventually_of_mem (mem_interior_iff_mem_nhds.1 hz) fun w hw ↦
+      (hw : ‖eval w p‖ ≤ c).trans hzc.ge
+  have hd : ∀ᶠ w in 𝓝 z, DifferentiableAt ℂ (fun w ↦ eval w p) w :=
+    Eventually.of_forall fun w ↦ (AnalyticOnNhd.eval_mvPolynomial p w trivial).differentiableAt
+  rw [eq_C_of_eventually_eval_eq (Complex.eventually_eq_of_isLocalMax_norm hd hmax),
+    totalDegree_C]
+
 /-- Closed balls of `ℂⁿ` for the sup norm, that is, closed polydiscs, are polynomially convex. -/
 theorem isPolynomiallyConvex_closedBall [Fintype ι] (x : ι → ℂ) (r : ℝ) :
     IsPolynomiallyConvex (closedBall x r) := by
@@ -332,6 +364,13 @@ theorem isPolynomiallyConvex_polynomialPolyhedron (R : ℝ) (s : Finset (MvPolyn
   (isPolynomiallyConvex_closedBall 0 R).inter <| isPolynomiallyConvex_iInter fun p ↦
     isPolynomiallyConvex_iInter fun _ ↦ isPolynomiallyConvex_setOf_norm_eval_le p 1
 
+/-- The interior of a polynomial polyhedron `closedBall 0 R ∩ ⋂_{p ∈ s} {|p| ≤ 1}` of nonzero
+radius whose defining polynomials are nonconstant is `ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}`. -/
+theorem interior_polynomialPolyhedron (hR : R ≠ 0) (hs : ∀ p ∈ s, p.totalDegree ≠ 0) :
+    interior (polynomialPolyhedron R s) = ball 0 R ∩ ⋂ p ∈ s, {w | ‖eval w p‖ < 1} := by
+  rw [polynomialPolyhedron, interior_inter, interior_closedBall _ hR, Finset.interior_iInter]
+  exact congrArg _ <| iInter₂_congr fun p hp ↦ interior_setOf_norm_eval_le (hs p hp) 1
+
 end polynomialPolyhedron
 
 /-- **Polynomial polyhedron neighbourhoods.** A compact polynomially convex set `K ⊆ ℂⁿ` with an
@@ -378,5 +417,31 @@ theorem IsPolynomiallyConvex.exists_subset_interior_polynomialPolyhedron [Fintyp
       K ⊆ interior (polynomialPolyhedron R s) ∧ polynomialPolyhedron R s ⊆ U := by
   obtain ⟨R, s, hR, hKs, hsU⟩ := hKc.exists_polynomialPolyhedron_subset hK hU hKU
   exact ⟨R, s, hR, hKs.trans (ball_inter_biInter_subset_interior_polynomialPolyhedron R s), hsU⟩
+
+/-- **Polynomial polyhedron neighbourhoods with nonconstant polynomials.** A nonempty compact
+polynomially convex set `K ⊆ ℂⁿ` with an open neighbourhood `U` has a polynomial polyhedron
+neighbourhood `P = closedBall 0 R ∩ ⋂_{p ∈ s} {|p| ≤ 1}` inside `U`, for a radius `R > 0` and a
+finite set `s` of nonconstant polynomials, such that `K` lies in the open subset
+`ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}` of `P`; this open subset is the interior of `P`
+(`TauCeti.interior_polynomialPolyhedron`). -/
+theorem IsPolynomiallyConvex.exists_polynomialPolyhedron_subset_of_nonempty [Fintype ι]
+    (hKc : IsPolynomiallyConvex K) (hK : IsCompact K) (hKne : K.Nonempty) {U : Set (ι → ℂ)}
+    (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ (R : ℝ) (s : Finset (MvPolynomial ι ℂ)), 0 < R ∧ (∀ p ∈ s, p.totalDegree ≠ 0) ∧
+      K ⊆ ball 0 R ∩ ⋂ p ∈ s, {w | ‖eval w p‖ < 1} ∧ polynomialPolyhedron R s ⊆ U := by
+  obtain ⟨R, s, hR, hKs, hsU⟩ := hKc.exists_polynomialPolyhedron_subset hK hU hKU
+  obtain ⟨k, hk⟩ := hKne
+  -- A constant polynomial of `s` has modulus `< 1` at `k ∈ K`, hence everywhere, so removing the
+  -- constant polynomials from `s` changes neither the polyhedron nor its strict part.
+  refine ⟨R, s.filter (·.totalDegree ≠ 0), hR, fun p hp ↦ (Finset.mem_filter.1 hp).2,
+    fun w hw ↦ ⟨(hKs hw).1, mem_iInter₂.2 fun p hp ↦
+      mem_iInter₂.1 (hKs hw).2 p (Finset.mem_filter.1 hp).1⟩, fun w hw ↦ hsU ?_⟩
+  rw [mem_polynomialPolyhedron_iff] at hw ⊢
+  refine ⟨hw.1, fun p hp ↦ ?_⟩
+  by_cases hpd : p.totalDegree = 0
+  · have hpk : ‖eval k p‖ < 1 := mem_iInter₂.1 (hKs hk).2 p hp
+    rw [totalDegree_eq_zero_iff_eq_C.1 hpd, eval_C] at hpk ⊢
+    exact hpk.le
+  · exact hw.2 p (Finset.mem_filter.2 ⟨hp, hpd⟩)
 
 end TauCeti
