@@ -49,9 +49,10 @@ different underlying integral carriers. A morphism is still a single rational ma
 carrier is the arithmetic source of the base-change models, not an extra component of a morphism.
 
 No finiteness is imposed on the carriers. Deligne's mixed Hodge structures (Théorie de Hodge II,
-2.3.1, and 2.3.8 for rational ones) have a finitely generated integral or finite-dimensional
-rational carrier; they form a full subcategory of this one, and the abelian structure
-(`TauCeti.Hodge.MixedHodgeStructureCat.abelian`) is that of this larger category. -/
+2.3.1) have a finitely generated integral carrier, with morphisms defined over `ℤ`, and his rational
+ones (2.3.8) a finite-dimensional rational carrier. This category has objects his have not, and,
+its morphisms being rational maps, more morphisms between integral structures; the abelian
+structure (`TauCeti.Hodge.MixedHodgeStructureCat.abelian`) is that of this larger category. -/
 structure MixedHodgeStructureCat where
   /-- The integral carrier underlying a mixed Hodge structure. -/
   intCarrier : Type u
