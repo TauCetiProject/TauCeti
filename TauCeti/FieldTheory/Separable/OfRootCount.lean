@@ -24,12 +24,14 @@ phrased with `rootSet` over an extension and with splitting and equality as hypo
 argument supplies none of those: it supplies a lower bound on the number of roots in the field
 itself. This is that form, and it is the shape every root-counting proof of separability ends in.
 
-A numbering of the roots in an extension field by the degree gives the same conclusion, without
-separately assuming that the polynomial splits in that field.
+The same bound can be read on the root set in an extension field. In particular, a numbering of
+those roots by the degree gives the same conclusion, without separately assuming that the
+polynomial splits in that field.
 
 ## Main results
 
 * `Polynomial.separable_of_natDegree_le_card_roots`
+* `Polynomial.separable_of_natDegree_le_card_rootSet`
 * `Polynomial.separable_of_rootSet_equiv_fin`
 -/
 
@@ -54,15 +56,21 @@ theorem separable_of_natDegree_le_card_roots {F : Type*} [Field F] [DecidableEq 
   exact (nodup_roots_iff_of_splits hp (splits_iff_card_roots.mpr hcard)).mp
     (by rw [hroots]; exact p.roots.toFinset.nodup)
 
+/-- A nonzero polynomial with at least its degree in distinct roots in an extension field is
+separable. No separate splitting or monicity hypothesis is needed. -/
+theorem separable_of_natDegree_le_card_rootSet {F E : Type*} [Field F] [Field E] [Algebra F E]
+    {p : F[X]} (hp : p ≠ 0) (h : p.natDegree ≤ Fintype.card (p.rootSet E)) : p.Separable := by
+  classical
+  exact (separable_map (algebraMap F E)).mp
+    (separable_of_natDegree_le_card_roots (map_ne_zero hp)
+      (by simpa [rootSet_def] using h))
+
 /-- A nonzero polynomial is separable if its roots in an extension field can be numbered by its
 degree. No separate splitting or monicity hypothesis is needed. -/
 theorem separable_of_rootSet_equiv_fin {F E : Type*} [Field F] [Field E] [Algebra F E]
     {p : F[X]} {n : ℕ} (hp : p ≠ 0) (hdeg : p.natDegree = n) (e : p.rootSet E ≃ Fin n) :
-    p.Separable := by
-  classical
-  exact (separable_map (algebraMap F E)).mp
-    (separable_of_natDegree_le_card_roots (map_ne_zero hp)
-      (by simpa [rootSet_def, hdeg] using (Fintype.card_congr e).ge))
+    p.Separable :=
+  separable_of_natDegree_le_card_rootSet hp (by simpa [hdeg] using (Fintype.card_congr e).ge)
 
 end Polynomial
 
