@@ -80,7 +80,7 @@ instance isUniversalHomeomorphism_isStableUnderBaseChange :
   infer_instance
 
 /-- A universal homeomorphism induces a homeomorphism before any base change. -/
-theorem Scheme.Hom.isHomeomorph_of_isUniversalHomeomorphism
+theorem IsUniversalHomeomorphism.isHomeomorph
     (f : X ⟶ Y) [IsUniversalHomeomorphism f] : IsHomeomorph f :=
   MorphismProperty.universally_le _ _ IsUniversalHomeomorphism.universally_isHomeomorph
 
@@ -153,8 +153,8 @@ theorem isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surj
 /-- Universal homeomorphisms are integral. -/
 instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : IsIntegralHom f := by
   have : IsAffineHom f := isAffineHom_of_isInducing f
-    (Scheme.Hom.isHomeomorph_of_isUniversalHomeomorphism f).isInducing
-    (Scheme.Hom.isHomeomorph_of_isUniversalHomeomorphism f).isClosedEmbedding.isClosed_range
+    (IsUniversalHomeomorphism.isHomeomorph f).isInducing
+    (IsUniversalHomeomorphism.isHomeomorph f).isClosedEmbedding.isClosed_range
   exact IsIntegralHom.iff_universallyClosed_and_isAffineHom.mpr
     ⟨inferInstance, inferInstance⟩
 
@@ -225,30 +225,30 @@ instance IsUniversalHomeomorphism.of_isIso (f : X ⟶ Y) [IsIso f] :
     ⟨inferInstance, inferInstance, inferInstance⟩
 
 /-- The homeomorphism of underlying spaces induced by a universal homeomorphism of schemes. -/
-noncomputable def Scheme.Hom.homeomorphOfIsUniversalHomeomorphism
+noncomputable def IsUniversalHomeomorphism.homeomorph
     (f : X ⟶ Y) [IsUniversalHomeomorphism f] : X ≃ₜ Y :=
-  (Scheme.Hom.isHomeomorph_of_isUniversalHomeomorphism f).homeomorph f
+  (IsUniversalHomeomorphism.isHomeomorph f).homeomorph f
 
 @[simp]
-theorem Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_apply
+theorem IsUniversalHomeomorphism.homeomorph_apply
     (f : X ⟶ Y) [IsUniversalHomeomorphism f] (x : X) :
-    (Scheme.Hom.homeomorphOfIsUniversalHomeomorphism f) x = f x :=
+    (IsUniversalHomeomorphism.homeomorph f) x = f x :=
   (rfl)
 
 /-- The inverse underlying homeomorphism sends the image of a point back to that point. -/
 @[simp]
-theorem Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_symm_apply_apply
+theorem IsUniversalHomeomorphism.homeomorph_symm_apply_apply
     (f : X ⟶ Y) [IsUniversalHomeomorphism f] (x : X) :
-    (Scheme.Hom.homeomorphOfIsUniversalHomeomorphism f).symm (f x) = x := by
-  simpa only [Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_apply] using
-    (Scheme.Hom.homeomorphOfIsUniversalHomeomorphism f).symm_apply_apply x
+    (IsUniversalHomeomorphism.homeomorph f).symm (f x) = x := by
+  simpa only [IsUniversalHomeomorphism.homeomorph_apply] using
+    (IsUniversalHomeomorphism.homeomorph f).symm_apply_apply x
 
 /-- Mapping the point supplied by the inverse homeomorphism recovers the original point. -/
 @[simp]
-theorem Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_apply_symm_apply
+theorem IsUniversalHomeomorphism.homeomorph_apply_symm_apply
     (f : X ⟶ Y) [IsUniversalHomeomorphism f] (y : Y) :
-    f ((Scheme.Hom.homeomorphOfIsUniversalHomeomorphism f).symm y) = y := by
-  simpa only [Scheme.Hom.homeomorphOfIsUniversalHomeomorphism_apply] using
-    (Scheme.Hom.homeomorphOfIsUniversalHomeomorphism f).apply_symm_apply y
+    f ((IsUniversalHomeomorphism.homeomorph f).symm y) = y := by
+  simpa only [IsUniversalHomeomorphism.homeomorph_apply] using
+    (IsUniversalHomeomorphism.homeomorph f).apply_symm_apply y
 
 end TauCeti.AlgebraicGeometry
