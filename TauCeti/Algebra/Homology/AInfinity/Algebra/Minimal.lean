@@ -18,6 +18,8 @@ algebras, a morphism is a quasi-isomorphism exactly when its linear part is bije
 
 * `TauCeti.AInfinityAlgebra.IsMinimal`: the unary operation vanishes.
 * `TauCeti.AInfinityAlgebra.IsMinimal.cohomologyEquiv`: identification with cohomology.
+* `TauCeti.AInfinityStrictHom.ofMapMTwo`: between minimal algebras without operations above arity
+  two, a degree-preserving linear map preserving `m₂` as a strict morphism.
 
 ## Main results
 
@@ -34,6 +36,8 @@ algebras, a morphism is a quasi-isomorphism exactly when its linear part is bije
   quasi-isomorphism has bijective linear part.
 * `TauCeti.AInfinityHom.isQuasiIso_iff_isIso`: between minimal algebras, the quasi-isomorphisms
   are exactly the `A∞` isomorphisms.
+* `TauCeti.AInfinityHom.linearPart_m_two`: between minimal algebras, the linear part of an `A∞`
+  morphism is multiplicative.
 
 ## References
 
@@ -210,6 +214,51 @@ theorem IsQuasiIso.isIso (hA : AA.IsMinimal) (hB : BB.IsMinimal) {f : AInfinityH
     (hf : f.IsQuasiIso) : f.IsIso :=
   (isQuasiIso_iff_isIso hA hB f).1 hf
 
+/-- Between minimal algebras, the linear part of an `A∞` morphism carries `m₂` to `m₂`: the
+defect of multiplicativity is a boundary, and a minimal algebra has no nonzero boundaries. -/
+theorem linearPart_m_two (hA : AA.IsMinimal) (hB : BB.IsMinimal) (f : AInfinityHom AA BB)
+    (a b : A) : f.linearPart (AA.m 2 ![a, b]) = BB.m 2 ![f.linearPart a, f.linearPart b] := by
+  have hab := f.linearPart_m_two_sub_mem_boundaries (hA.mem_cycles a) (hA.mem_cycles b)
+  rwa [(AInfinityAlgebra.isMinimal_iff_boundaries_eq_bot BB).1 hB, Submodule.mem_bot,
+    sub_eq_zero] at hab
+
 end AInfinityHom
+
+namespace AInfinityStrictHom
+
+variable {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
+
+/-- Between minimal algebras without operations above arity two, a degree-preserving linear map
+which carries `m₂` to `m₂` is a strict morphism. -/
+def ofMapMTwo (hA : AA.IsMinimal) (hB : BB.IsMinimal) (hmA : ∀ n, 3 ≤ n → AA.m n = 0)
+    (hmB : ∀ n, 3 ≤ n → BB.m n = 0) (f : A →ₗ[R] B)
+    (hf : LinearMap.IsHomogeneous f AA.grading.piece BB.grading.piece 0)
+    (hf₂ : ∀ a b, f (AA.m 2 ![a, b]) = BB.m 2 ![f a, f b]) : AInfinityStrictHom AA BB where
+  toLinearMap := f
+  map_mem' ha := by simpa only [add_zero] using hf.map_mem ha
+  map_m' n := by
+    ext x
+    rw [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply]
+    match n with
+    | 0 => simp
+    | 1 => simp [hA.m_one, hB.m_one]
+    | 2 =>
+      obtain ⟨a, b, rfl⟩ : ∃ a b, x = ![a, b] :=
+        ⟨x 0, x 1, funext fun i ↦ by fin_cases i <;> rfl⟩
+      rw [hf₂]
+      congr 1
+      funext i
+      fin_cases i <;> rfl
+    | n + 3 => simp [hmA (n + 3) (by omega), hmB (n + 3) (by omega)]
+
+/-- The strict morphism `ofMapMTwo` has the given underlying map. -/
+@[simp]
+theorem coe_ofMapMTwo (hA : AA.IsMinimal) (hB : BB.IsMinimal) (hmA : ∀ n, 3 ≤ n → AA.m n = 0)
+    (hmB : ∀ n, 3 ≤ n → BB.m n = 0) (f : A →ₗ[R] B)
+    (hf : LinearMap.IsHomogeneous f AA.grading.piece BB.grading.piece 0)
+    (hf₂ : ∀ a b, f (AA.m 2 ![a, b]) = BB.m 2 ![f a, f b]) :
+    ⇑(ofMapMTwo hA hB hmA hmB f hf hf₂) = f := (rfl)
+
+end AInfinityStrictHom
 
 end TauCeti

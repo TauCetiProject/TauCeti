@@ -27,6 +27,8 @@ absolute height; in particular the absolute height is invariant under field embe
 
 * `NumberField.mulHeight_algebraMap`: `H_L(x) = H_K(x) ^ [L : K]`, together with the scalar and
   logarithmic versions.
+* `NumberField.mulHeight₁_natCast`: a positive natural number `n` has height `n ^ [K : ℚ]` over
+  `K`.
 * `NumberField.mulHeight_ringEquiv`: a ring isomorphism of number fields preserves relative height,
   together with the scalar and logarithmic versions.
 * `NumberField.absMulHeight₁_eq_rpow`: for `x` in a number field `K`, the absolute height of `x` is
@@ -134,6 +136,18 @@ theorem logHeight₁_algebraMap (x : K) :
     logHeight₁ (algebraMap K L x) = finrank K L * logHeight₁ x := by
   rw [logHeight₁_eq_log_mulHeight₁, mulHeight₁_algebraMap, Real.log_pow,
     logHeight₁_eq_log_mulHeight₁]
+
+/-- The multiplicative height of a positive natural number `n` over a number field `K` is
+`n ^ [K : ℚ]`. Relative heights are not invariant under extension: over `ℚ(i)` the height of `2`
+is `4`. -/
+theorem mulHeight₁_natCast (n : ℕ) [NeZero n] : mulHeight₁ (n : K) = n ^ finrank ℚ K := by
+  rw [← map_natCast (algebraMap ℚ K), mulHeight₁_algebraMap, Rat.mulHeight₁_natCast]
+
+/-- The logarithmic height of a positive natural number `n` over a number field `K` is
+`[K : ℚ] * log n`. -/
+theorem logHeight₁_natCast (n : ℕ) [NeZero n] :
+    logHeight₁ (n : K) = finrank ℚ K * Real.log n := by
+  rw [logHeight₁_eq_log_mulHeight₁, mulHeight₁_natCast, Real.log_pow]
 
 section RingEquiv
 
@@ -331,12 +345,6 @@ theorem absLogHeight₁_inv (x : F) : absLogHeight₁ x⁻¹ = absLogHeight₁ x
   rw [absLogHeight₁, absMulHeight₁_inv, absLogHeight₁]
 
 end PowInv
-
-/-- The rational number `2` has relative height `2 ^ [K : ℚ]` over a number field `K`; for
-`K = ℚ(i)` this is `4`. Relative heights are not invariant under extension. -/
-example (K : Type*) [Field K] [NumberField K] : mulHeight₁ (2 : K) = 2 ^ finrank ℚ K := by
-  rw [← map_ofNat (algebraMap ℚ K) 2, mulHeight₁_algebraMap, Rat.mulHeight₁_eq_max]
-  norm_num
 
 /-- The absolute height of `2 / 3` is `3`, computed in `ℂ`. -/
 example : absMulHeight₁ ((2 / 3 : ℚ) : ℂ) = 3 := by

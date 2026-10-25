@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import Mathlib.Algebra.Squarefree.Basic
 import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.RingTheory.Polynomial.GaussLemma
+import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
@@ -158,8 +159,8 @@ theorem resultant_ne_zero (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' 
     (hne : b ≠ b') : resultant b b' ≠ 0 := by
   have hinj := IsFractionRing.injective D (FractionRing D)
   have h := Polynomial.resultant_ne_zero _ _ (hB.isCoprime_map (FractionRing D) hb hb' hne)
-  rwa [natDegree_map_eq_of_injective hinj, natDegree_map_eq_of_injective hinj, resultant_map_map,
-    map_ne_zero_iff _ hinj] at h
+  rwa [resultant_map_of_natDegree_eq _ (natDegree_map_eq_of_injective hinj _)
+    (natDegree_map_eq_of_injective hinj _), map_ne_zero_iff _ hinj] at h
 
 end IsSquarefreeBasis
 
