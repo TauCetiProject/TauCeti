@@ -95,13 +95,18 @@ theorem mem_vertexSet_bridgeComponentOf_self (G : Graph α β) (x : V(G)) :
     (x : α) ∈ V((G.bridgeComponentOf x).1) :=
   (G.mem_vertexSet_bridgeComponentOf_iff x).mpr (Reachable.refl (by simp))
 
+/-- A bridge-free component is the component of each of its vertices. -/
+theorem BridgeComponent.eq_bridgeComponentOf (C : G.BridgeComponent) {x : V(G)}
+    (hx : (x : α) ∈ V(C.1)) : C = G.bridgeComponentOf x :=
+  C.eq_connectedComponentOf hx
+
 /-- Every bridge-free component contains an original vertex. -/
 theorem bridgeComponentOf_surjective (G : Graph α β) :
     Function.Surjective G.bridgeComponentOf := by
   intro C
   obtain ⟨x, hx⟩ := C.property.nonempty
   let xG : V(G) := ⟨x, by simpa using C.property.le.vertexSet_mono hx⟩
-  exact ⟨xG, (C.eq_connectedComponentOf hx).symm⟩
+  exact ⟨xG, (C.eq_bridgeComponentOf hx).symm⟩
 
 /-- The bridge forest has one vertex for each component left after deleting all bridges and one
 edge, with its original identity, for each bridge. -/
@@ -150,6 +155,13 @@ theorem IsBridge.isLink_bridgeForest (he : G.IsBridge e) (h : G.IsLink e x y) :
     G.bridgeForest.IsLink e (G.bridgeComponentOf ⟨x, h.left_mem⟩)
       (G.bridgeComponentOf ⟨y, h.right_mem⟩) :=
   ⟨he, x, y, h, rfl, rfl⟩
+
+/-- The ends of a non-bridge link belong to the same bridge-free component. -/
+theorem IsLink.bridgeComponentOf_eq_of_not_isBridge (h : G.IsLink e x y)
+    (he : ¬ G.IsBridge e) :
+    G.bridgeComponentOf ⟨x, h.left_mem⟩ = G.bridgeComponentOf ⟨y, h.right_mem⟩ :=
+  (G.bridgeComponentOf_eq_bridgeComponentOf_iff _ _).mpr
+    (bridgeDeletion_isLink.mpr ⟨h, he⟩).reachable
 
 /-- Deleting all bridges gives a subgraph of the graph obtained by deleting any selected set of
 bridges. -/
@@ -208,11 +220,7 @@ theorem IsLink.bridgeComponentOf_reachable (h : G.IsLink e x y) :
       (G.bridgeComponentOf ⟨y, h.right_mem⟩) := by
   by_cases he : G.IsBridge e
   · exact (he.isLink_bridgeForest h).reachable
-  · have hcomp : G.bridgeComponentOf ⟨x, h.left_mem⟩ =
-        G.bridgeComponentOf ⟨y, h.right_mem⟩ :=
-      (G.bridgeComponentOf_eq_bridgeComponentOf_iff _ _).mpr
-        (bridgeDeletion_isLink.mpr ⟨h, he⟩).reachable
-    rw [hcomp]
+  · rw [h.bridgeComponentOf_eq_of_not_isBridge he]
     exact Reachable.refl (by simp)
 
 /-- The component map sends the endpoints of every original walk to reachable bridge-forest
