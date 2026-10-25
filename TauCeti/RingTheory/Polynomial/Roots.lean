@@ -17,8 +17,8 @@ public import Mathlib.FieldTheory.Separable
 This file records several facts about the roots of a polynomial, either in its coefficient field
 or after base change to a domain `E`.
 
-First, an explicit numbering of the root set of a separable polynomial enumerates its full root
-multiset: separability makes the roots simple, so the multiset is the image of the numbering.
+First, a numbering of the root set by `Fin f.natDegree` enumerates the full root multiset after
+base change. The number of distinct roots exhausts the degree bound, so all roots are simple.
 This lets root-product formulas be expressed as finite products indexed by `Fin f.natDegree`,
 without choosing a global order on the root set.
 
@@ -52,8 +52,8 @@ the number of distinct roots.
 
 * `Polynomial.nodup_roots_of_forall_derivative_eval_ne_zero`: nonvanishing of the derivative at
   every rational root suffices for the rational root multiset to have no repetitions.
-* `Polynomial.Separable.roots_map_eq_map_numbering`: for a separable polynomial, a numbering of
-  its root set enumerates its full root multiset after base change.
+* `Polynomial.roots_map_eq_map_numbering`: a degree-sized numbering of the root set enumerates
+  the full root multiset after base change, without a separability assumption.
 * `Polynomial.rootSet_mul`: the root set of a product of polynomials whose base changes to `E` are
   nonzero is the union of the root sets of the factors.
 * `Polynomial.roots_prod_toFinset`: the distinct roots of a finite product of nonzero polynomials
@@ -111,14 +111,23 @@ theorem _root_.Polynomial.nodup_roots_of_forall_derivative_eval_ne_zero [IsDomai
     omega
   · simp [Multiset.count_eq_zero_of_notMem hx]
 
-/-- A numbering of the root set of a separable polynomial enumerates the whole root multiset:
-separability makes the roots simple, so the multiset is the image of the numbering. -/
-theorem _root_.Polynomial.Separable.roots_map_eq_map_numbering (hsep : f.Separable)
+/-- A numbering of the root set by `Fin f.natDegree` enumerates the whole mapped root multiset.
+No separability or nonvanishing assumption is needed. If base change annihilates `f`, its root
+set is empty, so such a numbering can only exist in degree zero. -/
+theorem _root_.Polynomial.roots_map_eq_map_numbering
     (e : Fin f.natDegree ≃ f.rootSet E) :
     (f.map (algebraMap F E)).roots = Multiset.map (fun i ↦ ((e i : E))) univ.val := by
+  classical
+  have hcard : (f.aroots E).toFinset.card = f.natDegree := by
+    simpa [rootSet_def] using (Fintype.card_congr e).symm
+  have hnodup : (f.aroots E).Nodup :=
+    Multiset.toFinset_card_eq_card_iff_nodup.mp
+      (le_antisymm (Multiset.toFinset_card_le _) (by
+        rw [hcard]
+        exact f.card_roots_map_le_natDegree))
   have hmem : ∀ {a : E}, a ∈ (f.map (algebraMap F E)).roots ↔ a ∈ f.rootSet E := fun {_} ↦
     Polynomial.mem_aroots'.trans Polynomial.mem_rootSet'.symm
-  refine (Multiset.Nodup.ext (nodup_roots hsep.map) ?_).mpr ?_
+  refine (Multiset.Nodup.ext hnodup ?_).mpr ?_
   · exact univ.nodup.map fun i j h ↦ e.injective (Subtype.ext h)
   · intro a
     simp only [Multiset.mem_map, Finset.mem_val, mem_univ, true_and]

@@ -370,7 +370,7 @@ theorem HasGaloisLabel.irreducible_map_discrField_iff (h : HasGaloisLabel f j) (
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
   obtain ⟨e₀⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
   -- Move to the discriminant field inside the splitting field, where the Galois image lives.
-  rw [irreducible_map_discrField_congr hδ (hf.discrSqrt_sq h.separable e₀.symm),
+  rw [irreducible_map_discrField_congr hδ (hf.discrSqrt_sq e₀.symm),
     TauCeti.irreducible_map_discrField_iff hf h.separable hchar
       (h.natDegree_eq ▸ pos_of_transitiveGroupIndex j)]
   obtain ⟨-, -, e, he⟩ := h

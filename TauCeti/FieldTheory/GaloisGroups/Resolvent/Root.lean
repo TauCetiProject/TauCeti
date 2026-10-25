@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.Polynomial.Factors
 
 import Mathlib.FieldTheory.Galois.Infinite
 import TauCeti.FieldTheory.GaloisGroups.Orbits
-import TauCeti.FieldTheory.Separable.OfRootCount
 import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
@@ -103,20 +102,20 @@ private theorem rootEnum_def (e : f.rootSet E ≃ Fin n) :
 
 -- Over `E` the resolvent of `f` is the orbit product at the numbered roots.
 private theorem map_specialize_eq_galResolvent_rootEnum (spec : ResolventSpec n) (hf : f.Monic)
-    (hsep : f.Separable) (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) :
+    (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) :
     (spec.specialize F f).map (algebraMap F E) = galResolvent spec.Φ (rootEnum e) := by
   subst hdeg
   exact spec.map_specialize_eq_galResolvent _ hf rfl
-    (Polynomial.Separable.roots_map_eq_map_numbering hsep e.symm)
+    (Polynomial.roots_map_eq_map_numbering e.symm)
 
 -- The numbering lists all roots of the base-changed polynomial.
-private theorem map_eq_prod_rootEnum (hf : f.Monic) (hsep : f.Separable)
+private theorem map_eq_prod_rootEnum (hf : f.Monic)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) :
     f.map (algebraMap F E) = ∏ i, (X - C (rootEnum e i)) := by
   subst hdeg
   apply Polynomial.eq_prod_X_sub_C_of_monic_of_roots_eq (hf.map _)
   · rw [hf.natDegree_map, Fintype.card_fin]
-  · exact Polynomial.Separable.roots_map_eq_map_numbering hsep e.symm
+  · exact Polynomial.roots_map_eq_map_numbering e.symm
 
 section
 
@@ -182,7 +181,6 @@ theorem exists_isRoot_specialize_of_le [IsGalois F E] (hf : f.Monic)
     (hle : (Gal.galActionHom f E).range.map
       (e.permCongrHom : _ →* Equiv.Perm (Fin n)) ≤ spec.H) :
     ∃ a : F, (spec.specialize F f).IsRoot a := by
-  have hsep := separable_of_rootSet_equiv_fin hf.ne_zero hdeg e
   have hfix : ∀ ϕ : E ≃ₐ[F] E,
       ϕ (MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) spec.Φ)
         = MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) spec.Φ := by
@@ -197,7 +195,7 @@ theorem exists_isRoot_specialize_of_le [IsGalois F E] (hf : f.Monic)
   have hroot : ((spec.specialize F f).map (algebraMap F E)).IsRoot (algebraMap F E a) := by
     rw [spec.specialize_map, ha]
     simpa using spec.isRoot_specialize_eval₂_rename
-      (map_eq_prod_rootEnum hf hsep hdeg e) 1
+      (map_eq_prod_rootEnum hf hdeg e) 1
   rw [Polynomial.IsRoot, Polynomial.eval_map, Polynomial.eval₂_at_apply] at hroot
   exact (map_eq_zero_iff _ (algebraMap F E).injective).1 hroot
 
@@ -233,18 +231,18 @@ private theorem cosetValue_mk (e : f.rootSet E ≃ Fin n) (τ : Equiv.Perm (Fin 
   (rfl)
 
 -- Each value of the orbit is a root of the resolvent.
-private theorem aeval_cosetValue (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
+private theorem aeval_cosetValue (hf : f.Monic) (hdeg : f.natDegree = n)
     (e : f.rootSet E ≃ Fin n) (c : Equiv.Perm (Fin n) ⧸ spec.H) :
     aeval (cosetValue spec e c) (spec.specialize F f) = 0 := by
   induction c using QuotientGroup.induction_on with | H τ => ?_
   rw [aeval_def, eval₂_eq_eval_map, spec.specialize_map]
-  exact spec.isRoot_specialize_eval₂_rename (map_eq_prod_rootEnum hf hsep hdeg e) τ
+  exact spec.isRoot_specialize_eval₂_rename (map_eq_prod_rootEnum hf hdeg e) τ
 
 -- Every root of the resolvent in `E` is a value of the orbit.
-private theorem exists_cosetValue_eq (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
+private theorem exists_cosetValue_eq (hf : f.Monic) (hdeg : f.natDegree = n)
     (e : f.rootSet E ≃ Fin n) {z : E} (hz : aeval z (spec.specialize F f) = 0) :
     ∃ c, cosetValue spec e c = z := by
-  rw [aeval_def, eval₂_eq_eval_map, map_specialize_eq_galResolvent_rootEnum spec hf hsep hdeg e]
+  rw [aeval_def, eval₂_eq_eval_map, map_specialize_eq_galResolvent_rootEnum spec hf hdeg e]
     at hz
   have hmem : z ∈ (galResolvent spec.Φ (rootEnum e)).roots :=
     mem_roots'.2 ⟨(MvPolynomial.monic_galResolvent _ _).ne_zero, hz⟩
@@ -254,10 +252,10 @@ private theorem exists_cosetValue_eq (hf : f.Monic) (hsep : f.Separable) (hdeg :
   exact ⟨τ, cosetValue_mk spec e τ⟩
 
 -- A separable resolvent takes pairwise distinct values on the cosets of `H`.
-private theorem cosetValue_injective (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
+private theorem cosetValue_injective (hf : f.Monic) (hdeg : f.natDegree = n)
     (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable) :
     Function.Injective (cosetValue spec e) := by
-  have hmap := map_specialize_eq_galResolvent_rootEnum spec hf hsep hdeg e
+  have hmap := map_specialize_eq_galResolvent_rootEnum spec hf hdeg e
   have hressep : (galResolvent spec.Φ (rootEnum e)).Separable := hmap ▸ hres.map
   have hinj := Multiset.inj_on_of_nodup_map
     (MvPolynomial.roots_galResolvent spec.Φ (rootEnum e) ▸ nodup_roots hressep)
@@ -307,10 +305,9 @@ theorem exists_le_map_conj_of_isRoot_specialize [Normal F E] (hf : f.Monic)
       (Gal.galActionHom f E).range.map
         (e.permCongrHom : _ →* Equiv.Perm (Fin n))
         ≤ spec.H.map (MulAut.conj τ).toMonoidHom := by
-  have hsep := separable_of_rootSet_equiv_fin hf.ne_zero hdeg e
   have hae : aeval (algebraMap F E a) (spec.specialize F f) = 0 := by
     rw [aeval_def, eval₂_eq_eval_map, eval_map, eval₂_at_apply, ha, map_zero]
-  obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hsep hdeg e hae
+  obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hdeg e hae
   induction c using QuotientGroup.induction_on with | H τ => ?_
   refine ⟨τ, ?_⟩
   rintro π hπ
@@ -321,7 +318,7 @@ theorem exists_le_map_conj_of_isRoot_specialize [Normal F E] (hf : f.Monic)
     rw [← apply_cosetValue spec e ϕ, hc]
     exact ϕ.commutes a
   have hcos :=
-    (cosetValue_injective spec hf hsep hdeg e hres.specializationSeparated hfix).symm
+    (cosetValue_injective spec hf hdeg e hres.specializationSeparated hfix).symm
   rw [MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq] at hcos
   rw [Subgroup.mem_map_equiv]
   simpa only [MulAut.conj_symm_apply, MulEquiv.coe_toMonoidHom, mul_assoc,
@@ -352,8 +349,7 @@ polynomial of degree `n`. No separability of the resolvent is required. -/
 theorem splits_specialize (hf : f.Monic) (hdeg : f.natDegree = n)
     (e : f.rootSet E ≃ Fin n) :
     ((spec.specialize F f).map (algebraMap F E)).Splits := by
-  have hsep := separable_of_rootSet_equiv_fin hf.ne_zero hdeg e
-  rw [map_specialize_eq_galResolvent_rootEnum spec hf hsep hdeg e,
+  rw [map_specialize_eq_galResolvent_rootEnum spec hf hdeg e,
     MvPolynomial.galResolvent_def]
   exact Splits.prod fun _ _ => Splits.X_sub_C _
 
@@ -362,13 +358,12 @@ private noncomputable def cosetValueEquiv (hf : f.Monic)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
     (hres : (spec.specialize F f).Separable) :
     Equiv.Perm (Fin n) ⧸ spec.H ≃ (spec.specialize F f).rootSet E := by
-  have hsep := separable_of_rootSet_equiv_fin hf.ne_zero hdeg e
   exact Equiv.ofBijective
     (fun c => ⟨cosetValue spec e c, mem_rootSet.mpr
-      ⟨(spec.monic_specialize F f).ne_zero, aeval_cosetValue spec hf hsep hdeg e c⟩⟩)
-    ⟨fun _ _ h => cosetValue_injective spec hf hsep hdeg e hres (congrArg Subtype.val h), by
+      ⟨(spec.monic_specialize F f).ne_zero, aeval_cosetValue spec hf hdeg e c⟩⟩)
+    ⟨fun _ _ h => cosetValue_injective spec hf hdeg e hres (congrArg Subtype.val h), by
       intro x
-      obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hsep hdeg e
+      obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hdeg e
         (aeval_eq_zero_of_mem_rootSet x.2)
       exact ⟨c, Subtype.ext hc⟩⟩
 
@@ -389,13 +384,12 @@ private theorem minpoly_cosetValue_eq_iff [Normal F E] (hf : f.Monic)
     minpoly F (cosetValue spec e c) = minpoly F (cosetValue spec e d) ↔
       c ∈ MulAction.orbit ((Gal.galActionHom f E).range.map
         (e.permCongrHom : _ →* Equiv.Perm (Fin n))) d := by
-  have hsep := separable_of_rootSet_equiv_fin hf.ne_zero hdeg e
   constructor
   · intro h
     obtain ⟨ϕ, hϕ⟩ := (Normal.minpoly_eq_iff_mem_orbit E).1 h
     refine MulAction.mem_orbit_iff.2
       ⟨⟨_, Subgroup.mem_map_of_mem _ (MonoidHom.mem_range.2 ⟨Gal.restrict f E ϕ, rfl⟩)⟩,
-        cosetValue_injective spec hf hsep hdeg e hres ?_⟩
+        cosetValue_injective spec hf hdeg e hres ?_⟩
     rw [Subgroup.smul_def]
     exact (apply_cosetValue spec e ϕ d).symm.trans hϕ
   · intro h

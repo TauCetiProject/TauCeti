@@ -584,7 +584,7 @@ theorem isSquare_discr_iff_mem_range {E : Type*} [CommRing E] [IsDomain E] [Alge
   let p : E[X] := ∏ i, (X - C (e i : E))
   have hfmapdeg : (f.map (algebraMap F E)).natDegree = f.natDegree :=
     natDegree_map_eq_of_injective (algebraMap F E).injective f
-  have hroots := hsep.roots_map_eq_map_numbering e
+  have hroots := roots_map_eq_map_numbering e
   have hrootsCard : (f.map (algebraMap F E)).roots.card =
       (f.map (algebraMap F E)).natDegree := by
     rw [hroots, hfmapdeg]
@@ -652,10 +652,10 @@ variable {F : Type*} [CommRing F] {E : Type*} [CommRing E] [IsDomain E] [Algebra
 /-- The defining property: the square of the product of the root differences is the discriminant.
 -/
 @[simp]
-theorem discrSqrt_sq (hf : f.Monic) (hsep : f.Separable)
+theorem discrSqrt_sq (hf : f.Monic)
     (e : Fin f.natDegree ≃ f.rootSet E) :
     discrSqrt e ^ 2 = algebraMap F E f.discr := by
-  rw [hf.discr_eq_prod_roots_sub_sq (hsep.roots_map_eq_map_numbering e), discrSqrt_def,
+  rw [hf.discr_eq_prod_roots_sub_sq (roots_map_eq_map_numbering e), discrSqrt_def,
     ← Finset.prod_pow]
   exact Finset.prod_congr rfl fun i _ ↦ (Finset.prod_pow _ _ _).symm
 
@@ -669,19 +669,19 @@ variable {F : Type*} [Field F] {E : Type*} [CommRing E] [IsDomain E] [Algebra F 
 differences already comes from the base field. No Galois hypothesis is involved: this is the
 elementary half of the discriminant test, and it is the reading of
 `Polynomial.Monic.discrSqrt_sq` in both directions. -/
-theorem isSquare_discr_iff_mem_range (hf : f.Monic) (hsep : f.Separable)
+theorem isSquare_discr_iff_mem_range (hf : f.Monic)
     (e : Fin f.natDegree ≃ f.rootSet E) :
     IsSquare f.discr ↔ discrSqrt e ∈ Set.range (algebraMap F E) := by
   constructor
   · rintro ⟨c, hc⟩
     have hsq : discrSqrt e * discrSqrt e = algebraMap F E c * algebraMap F E c := by
-      rw [← map_mul, ← hc, ← sq, hf.discrSqrt_sq hsep]
+      rw [← map_mul, ← hc, ← sq, hf.discrSqrt_sq]
     rcases mul_self_eq_mul_self_iff.mp hsq with h | h
     · exact ⟨c, h.symm⟩
     · exact ⟨-c, by rw [map_neg, ← h]⟩
   · rintro ⟨c, hc⟩
     refine ⟨c, (algebraMap F E).injective ?_⟩
-    rw [map_mul, hc, ← sq, hf.discrSqrt_sq hsep]
+    rw [map_mul, hc, ← sq, hf.discrSqrt_sq]
 
 end Field
 

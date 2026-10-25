@@ -313,7 +313,7 @@ theorem fixingSubgroup_discrField (hf : f.Monic) (hsep : f.Separable) (hchar : r
     (discrField f E).fixingSubgroup = evenAutSubgroup f E := by
   obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
-  rw [discrField_eq_adjoin_simple (hf.discrSqrt_sq hsep e),
+  rw [discrField_eq_adjoin_simple (hf.discrSqrt_sq e),
     evenAutSubgroup_eq_fixingSubgroup hchar e]
 
 open scoped Classical in
@@ -370,7 +370,7 @@ theorem discrField_eq_bot_iff_range_le_alternatingGroup [IsGalois F E] (hf : f.M
     discrField f E = ⊥ ↔ (Gal.galActionHom f E).range ≤ alternatingGroup (f.rootSet E) := by
   obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
-  rw [discrField_eq_bot_iff (hf.discrSqrt_sq hsep e)]
+  rw [discrField_eq_bot_iff (hf.discrSqrt_sq e)]
   exact hf.isSquare_discr_iff_range_le_alternatingGroup hsep hchar
 
 open scoped Classical in
@@ -382,7 +382,7 @@ theorem finrank_discrField_eq_two_iff [IsGalois F E] (hf : f.Monic) (hsep : f.Se
       ¬ (Gal.galActionHom f E).range ≤ alternatingGroup (f.rootSet E) := by
   obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
-  have hδ := hf.discrSqrt_sq hsep e
+  have hδ := hf.discrSqrt_sq e
   rw [← hf.isSquare_discr_iff_range_le_alternatingGroup (E := E) hsep hchar]
   refine ⟨fun h hsq ↦ ?_, finrank_discrField_eq_two hδ⟩
   rw [← finrank_discrField_eq_one_iff hδ] at hsq
