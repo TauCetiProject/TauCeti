@@ -33,6 +33,8 @@ replaced by any integer matrix with the same rational row space.
 
 * `Matrix.minorGcd_mul_subspaceHeight_span_range_row`: the identity for the row space.
 * `Matrix.minorGcd_mul_subspaceHeight_ker_mulVecLin`: the identity for the kernel.
+* `Matrix.intPoints_ker_mulVecLin`: the integral points of the rational solution space of
+  `A y = 0` are the integral solutions.
 * `Matrix.covolume_intLattice_ker_mulVecLin`: the covolume of the lattice of integral solutions.
 * `Matrix.sqrt_det_div_minorGcd_mul_left` and `Matrix.sqrt_det_div_minorGcd_unit_mul`: the
   quotient `√det (A Aᵀ) / g` is unchanged by `A ↦ B * A` for `det B ≠ 0`, in particular for
@@ -100,6 +102,16 @@ theorem minorGcd_mul_subspaceHeight_ker_mulVecLin (A : Matrix (Fin p) ι ℤ) :
       √((A * Aᵀ).det : ℝ) := by
   rw [← checkedBy_def, checkedBy_eq_euclideanDual_generatedBy, subspaceHeight_euclideanDual,
     generatedBy_eq_span_rows, minorGcd_mul_subspaceHeight_span_range_row]
+
+omit [LinearOrder ι] in
+/-- The integral points of the space of rational solutions of `A y = 0` are the integral solutions
+of `A y = 0`. -/
+theorem intPoints_ker_mulVecLin {m : Type*} (A : Matrix m ι ℤ) :
+    (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).intPoints = LinearMap.ker A.mulVecLin := by
+  ext z
+  have h : A.map ((↑) : ℤ → ℚ) *ᵥ (fun i ↦ (z i : ℚ)) = fun i ↦ ((A *ᵥ z) i : ℚ) :=
+    funext fun i ↦ (RingHom.map_mulVec (Int.castRingHom ℚ) A z i).symm
+  simp [h, funext_iff]
 
 /-- **The covolume of the lattice of integral solutions of `A y = 0`.** For an integer matrix `A`
 with linearly independent rows, the lattice of integral solutions of `A y = 0` has covolume

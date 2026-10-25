@@ -39,6 +39,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   multiplication by the matrix.
 * `Matrix.rank_eq_card_iff_mulVec_injective` characterizes full column rank by injectivity of
   matrix-vector multiplication.
+* `LinearIndependent.finrank_ker_mulVecLin`: rank–nullity for a matrix with linearly independent
+  rows, whose kernel has dimension `#n - #m`.
 * `Matrix.rank_left_factor_eq` and `Matrix.range_left_factor_eq`: an exact-rank
   factorization gives a full-column-rank left factor with the same column range.
 * `Matrix.rank_add_rank_le_rank_mul_add_card`: Sylvester's rank inequality
@@ -229,6 +231,15 @@ theorem rank_eq_card_iff_vecMul_injective (B : Matrix m n K) :
     B.rank = Fintype.card m ↔ Function.Injective B.vecMul := by
   rw [vecMul_injective_iff, rank_eq_finrank_span_row,
     linearIndependent_iff_card_eq_finrank_span, Set.finrank, eq_comm]
+
+/-- Rank–nullity for a matrix with linearly independent rows: the solutions of `A x = 0` form a
+subspace of dimension `#n - #m`. -/
+theorem _root_.LinearIndependent.finrank_ker_mulVecLin {A : Matrix m n K}
+    (hA : LinearIndependent K A.row) :
+    Module.finrank K (LinearMap.ker A.mulVecLin) = Fintype.card n - Fintype.card m := by
+  have h := LinearMap.finrank_range_add_finrank_ker A.mulVecLin
+  rw [← Matrix.rank, hA.rank_matrix, Module.finrank_fintype_fun_eq_card] at h
+  omega
 
 end
 
