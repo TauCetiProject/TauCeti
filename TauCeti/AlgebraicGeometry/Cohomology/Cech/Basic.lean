@@ -175,6 +175,14 @@ private lemma cechComplexPushforwardIso_naturality {M N : X.Modules} (α : M ⟶
 variable [IsAffineHom f] [IsLocallyNoetherian X] (hU : ∀ i, IsAffineOpen (U i))
 
 include hU in
+/-- On a scheme with affine diagonal, the nonempty finite intersections of members of an affine
+family `U` of opens are affine. -/
+private lemma isAffineOpen_finset_inf [IsAffineHom (pullback.diagonal (terminal.from Y))]
+    (s : Finset ι) (hs : s.Nonempty) : IsAffineOpen (s.inf U) := by
+  rw [Finset.inf_eq_iInf]
+  exact IsAffineOpen.biInf _ s.finite_toSet hs fun j _ ↦ hU j
+
+include hU in
 /-- On the cover of `X` by the preimages under the affine morphism `f` of an affine cover `U` of a
 scheme with affine diagonal, a quasi-coherent sheaf has no cohomology in positive degrees on a
 nonempty finite intersection: it is the preimage of an affine open, hence affine. -/
@@ -185,8 +193,8 @@ private lemma subsingleton_cohomologyOn_inf_preimage_succ
   have hW : IsAffineOpen (s.inf fun i ↦ f ⁻¹ᵁ U i) := by
     have h : (s.inf fun i ↦ f ⁻¹ᵁ U i) = f ⁻¹ᵁ s.inf U :=
       (map_finset_inf (Opens.comap f.base.hom) s U).symm
-    rw [h, Finset.inf_eq_iInf]
-    exact (IsAffineOpen.biInf _ s.finite_toSet hs fun j _ ↦ hU j).preimage f
+    rw [h]
+    exact (isAffineOpen_finset_inf U hU s hs).preimage f
   have : IsNoetherianRing Γ(X, s.inf fun i ↦ f ⁻¹ᵁ U i) :=
     IsLocallyNoetherian.component_noetherian ⟨_, hW⟩
   exact subsingleton_cohomologyOn_succ_of_isAffineOpen M hW k
@@ -223,7 +231,8 @@ complex, for the cover `U` of `Y` and for the cover of `X` by the preimages `f�
 def cohomologyPushforwardIsoOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
     AddCommGrpCat.of (Cohomology ((pushforward f).obj M) n) ≅
       AddCommGrpCat.of (Cohomology M n) :=
-  (homologyCechComplexIsoCohomology U hU hcover ((pushforward f).obj M) n).symm ≪≫
+  (homologyCechComplexIsoCohomology U (isAffineOpen_finset_inf U hU) hcover
+      ((pushforward f).obj M) n).symm ≪≫
     HomologicalComplex.homologyMapIso (cechComplexPushforwardIso f U M) n ≪≫
     homologyCechComplexPreimageIsoCohomology f U hU hcover M n
 
@@ -237,8 +246,8 @@ theorem cohomologyPushforwardIsoOfIsAffineHom_naturality {M N : X.Modules} [M.Is
       (cohomologyPushforwardIsoOfIsAffineHom f U hU hcover M n).hom ≫
         (cohomologyFunctor X n).map α := by
   -- each of the three comparisons composing the isomorphism is natural
-  have hY := homologyMap_comp_homologyCechComplexIsoCohomology_hom U hU hcover
-    ((pushforward f).map α) n
+  have hY := homologyMap_comp_homologyCechComplexIsoCohomology_hom U
+    (isAffineOpen_finset_inf U hU) hcover ((pushforward f).map α) n
   have hC := congrArg (HomologicalComplex.homologyMap · n)
     (cechComplexPushforwardIso_naturality f U α)
   have hX := homologyMap_comp_homologyCechComplexPreimageIsoCohomology_hom f U hU hcover α n
