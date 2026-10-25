@@ -193,6 +193,8 @@ theorem stableToHomotopy_commShiftIso (n : ℤ) :
     letI := PeriodicComplex.stableToHomotopyCommShift C 1
     letI := stableToHomotopyCommShift C
     (stableToHomotopy C).commShiftIso n = (by
+      -- Rewrite the opaque comparison's endpoints before elaborating its explicit factors.
+      rw [stableToHomotopy]
       exact (Functor.associator _ _ _).symm ≪≫
         Functor.isoWhiskerRight
           ((stableOnePeriodicComplexEquivalence C).functor.commShiftIso n) _ ≪≫
