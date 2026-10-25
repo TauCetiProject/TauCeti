@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Subgroup.Center
+public import TauCeti.Algebra.Group.CommuteOrNeg
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 public import TauCeti.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -442,49 +443,6 @@ theorem monomialGroupLift_symm_apply_coe (hb : (QuadraticMap.associated Q).IsOrt
     ((monomialGroupLift hb hQ).symm F).1 g = F ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
   (rfl)
 
-private def monomialGroupRel (a x : (CliffordAlgebra Q)ˣ) : Prop :=
-  Commute a x ∨ SemiconjBy a x (-x)
-
-omit [Invertible (2 : R)] in
-private lemma monomialGroupRel_symm {a x : (CliffordAlgebra Q)ˣ} :
-    monomialGroupRel a x → monomialGroupRel x a := by
-  intro h
-  rcases h with h | h
-  · exact Or.inl h.symm
-  · right
-    rw [SemiconjBy]
-    simpa only [neg_mul, mul_neg, neg_neg] using (congrArg Neg.neg h).symm
-
-omit [Invertible (2 : R)] in
-private lemma monomialGroupRel_mul_right {a x y : (CliffordAlgebra Q)ˣ}
-    (hx : monomialGroupRel a x) (hy : monomialGroupRel a y) :
-    monomialGroupRel a (x * y) := by
-  rcases hx with hx | hx <;> rcases hy with hy | hy
-  · exact Or.inl (hx.mul_right hy)
-  · right
-    simpa only [SemiconjBy, mul_assoc, mul_neg] using hx.semiconjBy.mul_right hy
-  · right
-    simpa only [SemiconjBy, mul_assoc, neg_mul] using hx.mul_right (hy.semiconjBy)
-  · left
-    exact (show SemiconjBy a (x * y) (x * y) from by
-      simpa only [SemiconjBy, mul_assoc, neg_mul, mul_neg, neg_neg] using hx.mul_right hy)
-
-omit [Invertible (2 : R)] in
-private lemma monomialGroupRel_inv_right {a x : (CliffordAlgebra Q)ˣ}
-    (hx : monomialGroupRel a x) : monomialGroupRel a x⁻¹ := by
-  rcases hx with hx | hx
-  · exact Or.inl hx.inv_right
-  · right
-    simpa using hx.inv_right
-
-omit [Invertible (2 : R)] in
-private lemma monomialGroupRel_one_left (x : (CliffordAlgebra Q)ˣ) : monomialGroupRel 1 x :=
-  Or.inl (Commute.one_left x)
-
-omit [Invertible (2 : R)] in
-private lemma monomialGroupRel_one_right (x : (CliffordAlgebra Q)ˣ) : monomialGroupRel x 1 :=
-  Or.inl (Commute.one_right x)
-
 omit [Invertible (2 : R)] [LinearOrder I] in
 /-- Any two signed monomials commute or anticommute, without a normalization assumption on their
 generator squares. -/
@@ -495,10 +453,10 @@ lemma monomialGroup_mul_comm_or_neg
       (c : (CliffordAlgebra Q)ˣ) * u = -(u : (CliffordAlgebra Q)ˣ) * c := by
   let S : Set (CliffordAlgebra Q)ˣ := {x | (x : CliffordAlgebra Q) = -1 ∨
     ∃ i, (x : CliffordAlgebra Q) = ι Q (v i)}
-  have hgen : ∀ {x y : (CliffordAlgebra Q)ˣ}, x ∈ S → y ∈ S → monomialGroupRel x y := by
+  have hgen : ∀ {x y : (CliffordAlgebra Q)ˣ}, x ∈ S → y ∈ S → TauCeti.CommuteOrNeg x y := by
     intro x y hx hy
-    change (x : CliffordAlgebra Q) = -1 ∨ ∃ i, (x : CliffordAlgebra Q) = ι Q (v i) at hx
-    change (y : CliffordAlgebra Q) = -1 ∨ ∃ i, (y : CliffordAlgebra Q) = ι Q (v i) at hy
+    dsimp [S] at hx hy
+    unfold TauCeti.CommuteOrNeg
     rcases hx with hx | ⟨i, hx⟩ <;> rcases hy with hy | ⟨j, hy⟩
     · left
       apply Units.ext
@@ -518,22 +476,23 @@ lemma monomialGroup_mul_comm_or_neg
         apply Units.ext
         simpa [hx, hy] using ι_mul_ι_comm_of_isOrtho (hv i j hij)
   have hrel : ∀ {x y : (CliffordAlgebra Q)ˣ}, x ∈ Subgroup.closure S →
-      y ∈ Subgroup.closure S → monomialGroupRel x y := by
+      y ∈ Subgroup.closure S → TauCeti.CommuteOrNeg x y := by
     intro x y hx hy
+    unfold TauCeti.CommuteOrNeg
     induction hy using Subgroup.closure_induction with
     | mem y hy =>
       induction hx using Subgroup.closure_induction with
       | mem x hx => exact hgen hx hy
-      | one => exact monomialGroupRel_one_left y
+      | one => exact TauCeti.CommuteOrNeg.one_left y
       | mul x z hx hz ihx ihz =>
-        exact monomialGroupRel_symm
-          (monomialGroupRel_mul_right (monomialGroupRel_symm ihx)
-            (monomialGroupRel_symm ihz))
-      | inv x hx ih => exact monomialGroupRel_symm (monomialGroupRel_inv_right
-          (monomialGroupRel_symm ih))
-    | one => exact monomialGroupRel_one_right x
-    | mul y z hy hz ihy ihz => exact monomialGroupRel_mul_right ihy ihz
-    | inv y hy ih => exact monomialGroupRel_inv_right ih
+        exact TauCeti.CommuteOrNeg.symm
+          (TauCeti.CommuteOrNeg.mul_right (TauCeti.CommuteOrNeg.symm ihx)
+            (TauCeti.CommuteOrNeg.symm ihz))
+      | inv x hx ih => exact TauCeti.CommuteOrNeg.symm (TauCeti.CommuteOrNeg.inv_right
+          (TauCeti.CommuteOrNeg.symm ih))
+    | one => exact TauCeti.CommuteOrNeg.one_right x
+    | mul y z hy hz ihy ihz => exact TauCeti.CommuteOrNeg.mul_right ihy ihz
+    | inv y hy ih => exact TauCeti.CommuteOrNeg.inv_right ih
   have hc : (c : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := c.property
   have hu : (u : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := u.property
   rcases hrel hc hu with h | h
