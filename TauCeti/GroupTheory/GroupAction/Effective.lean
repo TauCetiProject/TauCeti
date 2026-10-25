@@ -78,7 +78,9 @@ theorem effectiveStabilizerMap_surjective (x : X) :
 @[simp]
 theorem ker_effectiveStabilizerMap (x : X) :
     (effectiveStabilizerMap G X x).ker = (toPermHom G X).ker.subgroupOf (stabilizer G x) := by
-  rw [effectiveStabilizerMap, TauCeti.ker_stabilizerMap, QuotientGroup.ker_mk']
+  simpa only [QuotientGroup.ker_mk'] using
+    (TauCeti.ker_stabilizerMap (QuotientGroup.mk' ((toPermHom G X).ker)) x
+      (quotientKerToPermHom_mk_smul G X · x))
 
 /-- Isotropy of the faithful quotient is the original stabilizer modulo the action kernel. -/
 noncomputable def effectiveStabilizerEquiv (x : X) :
