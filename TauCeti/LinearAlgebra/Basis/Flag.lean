@@ -179,7 +179,6 @@ theorem finrank_inf_flag_succ (i : Fin n) :
   have := Module.Finite.of_basis b
   split_ifs with hi
   · obtain ⟨x, hxW, hxF, hx⟩ := mem_flagPivots.mp hi
-    have hx₀ : x ≠ 0 := by rintro rfl; simp at hx
     have hxF' : x ∉ W ⊓ b.flag i.castSucc := fun h ↦
       hx ((mem_flag_castSucc_iff_of_mem_flag_succ hxF).mp h.2)
     have heq : W ⊓ b.flag i.succ = W ⊓ b.flag i.castSucc ⊔ K ∙ x := by
@@ -192,11 +191,8 @@ theorem finrank_inf_flag_succ (i : Fin n) :
         simp [div_mul_cancel₀ _ hx]
       simpa using add_mem_sup hz (mem_span_singleton.mpr ⟨b.repr y i / b.repr x i, rfl⟩ :
         (b.repr y i / b.repr x i) • x ∈ K ∙ x)
-    have hdisj : W ⊓ b.flag i.castSucc ⊓ K ∙ x = ⊥ :=
-      disjoint_iff.mp ((disjoint_span_singleton' hx₀).mpr hxF')
-    have := finrank_sup_add_finrank_inf_eq (W ⊓ b.flag i.castSucc) (K ∙ x)
-    rw [hdisj, finrank_bot, finrank_span_singleton hx₀, ← heq] at this
-    omega
+    rw [heq]
+    exact finrank_sup_span_singleton hxF'
   · rw [add_zero, le_antisymm
       (le_inf inf_le_left (not_not.mp (mem_flagPivots_iff_not_le.not.mp hi)))
       (inf_le_inf_left _ (b.flag_mono Fin.castSucc_lt_succ.le))]
