@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.Killing
+public import Mathlib.Algebra.Lie.Classical
+public import Mathlib.Algebra.Lie.Semisimple.Defs
 import Mathlib.RingTheory.SimpleModule.Rank
+import TauCeti.Algebra.Lie.Orthogonal.Basic
+import TauCeti.Algebra.Lie.Orthogonal.Killing
 
 /-!
 # The standard module of the split odd orthogonal Lie algebra
@@ -49,11 +52,8 @@ instance isIrreducible_typeB_standard :
         ((LieSubmodule.toSubmodule_eq_bot N).not.mpr hN))
   | inr h =>
     apply isIrreducible_skewAdjointMatricesLieSubalgebra_standard
-    · simp [Matrix.IsSymm, Orthogonal.JB, Orthogonal.JD, Matrix.fromBlocks_transpose]
-    · refine isUnit_iff_exists_inv.mpr
-        ⟨Matrix.fromBlocks ((2 : K)⁻¹ • 1) 0 0 (Orthogonal.JD ι K), ?_⟩
-      simp [Orthogonal.JB, Orthogonal.JD, Matrix.fromBlocks_multiply,
-        Matrix.mul_smul, NeZero.ne (2 : K)]
+    · exact Orthogonal.isSymm_JB
+    · exact Orthogonal.isUnit_JB (isUnit_iff_ne_zero.mpr (NeZero.ne (2 : K)))
     · simp only [Fintype.card_sum, Fintype.card_unit]
       have := Fintype.card_pos_iff.mpr h
       omega
