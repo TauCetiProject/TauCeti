@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gaussian.Continuity
 public import TauCeti.Probability.Distributions.MatrixNormal.Basic
+public import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Weak continuity of matrix normal laws
@@ -44,16 +45,13 @@ theorem continuous_matrixNormalMeasure {ι κ : Type*} [Fintype ι] [Fintype κ]
       {U : Matrix ι ι ℝ // U.PosSemidef} × {V : Matrix κ κ ℝ // V.PosSemidef} ↦
         WithLp.toLp 2 p.1.vec) := by
     apply (PiLp.continuous_toLp 2 _).comp
+    -- `Matrix.vec` is definitionally column stacking: `p.1.vec ij = p.1 ij.2 ij.1`.
     exact continuous_pi fun ij ↦ continuous_fst.matrix_elem ij.2 ij.1
   have hcov : Continuous (fun p : Matrix ι κ ℝ ×
       {U : Matrix ι ι ℝ // U.PosSemidef} × {V : Matrix κ κ ℝ // V.PosSemidef} ↦
         p.2.2.1 ⊗ₖ p.2.1.1) := by
-    apply continuous_matrix
-    intro ij kl
-    exact ((continuous_subtype_val.comp (continuous_snd.comp continuous_snd)).matrix_elem
-      ij.1 kl.1).mul
-        ((continuous_subtype_val.comp (continuous_fst.comp continuous_snd)).matrix_elem
-          ij.2 kl.2)
+    exact (continuous_subtype_val.comp (continuous_snd.comp continuous_snd)).matrix_kronecker
+      (continuous_subtype_val.comp (continuous_fst.comp continuous_snd))
   have hread : Continuous ((TauCeti.matrixVecMeasurableEquiv 2).symm :
       EuclideanSpace ℝ (κ × ι) → Matrix ι κ ℝ) := by
     have h : Continuous (fun x : EuclideanSpace ℝ (κ × ι) ↦
