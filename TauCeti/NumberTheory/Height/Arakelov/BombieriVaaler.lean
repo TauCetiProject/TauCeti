@@ -8,9 +8,10 @@ module
 public import TauCeti.NumberTheory.Height.Arakelov.IntMatrix
 -- Proof-only: Minkowski's second theorem against Vaaler's slice of the cube.
 import TauCeti.NumberTheory.GeometryOfNumbers.SupNormMinima
+import TauCeti.NumberTheory.GeometryOfNumbers.CubeSlice
 
 /-!
-# Independent integral solutions of small sup norm, after Bombieri and Vaaler
+# Integral solutions and kernel bases of bounded sup norm
 
 A subspace `V` of `ℚ^ι` of dimension `k` contains `k` linearly independent integral points
 `z 0, …, z (k - 1)`, each primitive (the gcd of its coordinates is `1`), with
@@ -39,15 +40,30 @@ The lattice of integral points of `V` has covolume `H(V)` in the real span of `V
 `ZLattice.exists_linearIndependent_prod_norm_ofLp_le_covolume`, which combines Minkowski's second
 theorem with Vaaler's cube-slicing theorem.
 
+The integral points of `V` also have a `ℤ`-basis whose product of sup norms is at most
+`k! / 2 ^ (k - 1) * H(V)`. This combines Cassels' basis from the successive minima
+(`Submodule.exists_basis_intPoints_prod_norm_le_prod_successiveMin`) with the cube-slice bound
+(`Submodule.prod_successiveMin_intLattice_le_subspaceHeight`). For the kernel of `A`, the
+arithmetic constant comes from `Matrix.covolume_intLattice_ker_mulVecLin`. The resulting basis
+generates the entire integral kernel. The bound includes `k = 0`, when both sides are one.
+
 ## Main results
 
 * `Submodule.exists_linearIndependent_intPoints_prod_norm_le`: independent primitive integral
   points of `V` whose sup norms have product at most `H(V)`.
 * `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_norm_le`: Bombieri and Vaaler's
   Theorem 2 over `ℤ`, in the sup norm.
+* `TauCeti.exists_basis_intPoints_prod_norm_le`: a basis of all integral points of `V` with
+  product bound `k! / 2 ^ (k - 1) * H(V)`.
+* `TauCeti.exists_basis_ker_mulVecLin_prod_norm_le`: a basis of the entire integral kernel
+  with product bound `k! / 2 ^ (k - 1) * √det (A Aᵀ) / g`.
 
 ## References
 
+* J. W. S. Cassels, *An Introduction to the Geometry of Numbers*, Springer, 1959,
+  Chapter V, Lemma 8.
+* I. Aliev and M. Henk, *Minkowski's successive minima in convex and discrete geometry*,
+  Commun. Math. **31** (2023), 35–59, §6.
 * E. Bombieri and J. Vaaler, *On Siegel's lemma*, Invent. Math. **73** (1983), 11–32,
   Theorem 2.
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press (2006),
@@ -109,6 +125,31 @@ theorem exists_linearIndependent_intPoints_prod_norm_le (V : Submodule ℚ (ι �
 
 end Submodule
 
+namespace TauCeti
+
+open scoped Matrix
+
+variable {ι : Type*} [Fintype ι] [LinearOrder ι]
+
+/-- A rational subspace of dimension `k` has a basis of its integral points whose product of
+sup norms is bounded by `k! / 2 ^ (k - 1)` times its absolute Euclidean height. The basis
+generates all integral points, rather than merely a sublattice of finite index. -/
+theorem exists_basis_intPoints_prod_norm_le (V : Submodule ℚ (ι → ℚ)) :
+    ∃ b : Basis (Fin (finrank ℚ V)) ℤ V.intPoints,
+      ∏ l, ‖(b l : ι → ℤ)‖ ≤
+        (finrank ℚ V).factorial / 2 ^ (finrank ℚ V - 1) * V.subspaceHeight := by
+  obtain ⟨b, hb⟩ := V.exists_basis_intPoints_prod_norm_le_prod_successiveMin
+  have hmin := V.prod_successiveMin_intLattice_le_subspaceHeight
+    Submodule.coe_cubeSlice.ge (fun _ ↦ Submodule.neg_mem_cubeSlice.2)
+  have hle := hb.trans (mul_le_mul_of_nonneg_left hmin (by positivity))
+  have hresult : ∃ b : Basis (Fin (finrank ℝ V.realSpan)) ℤ V.intPoints,
+      ∏ l, ‖(b l : ι → ℤ)‖ ≤
+        (finrank ℝ V.realSpan).factorial / 2 ^ (finrank ℝ V.realSpan - 1) * V.subspaceHeight :=
+    ⟨b, hle⟩
+  rwa [Submodule.finrank_realSpan] at hresult
+
+end TauCeti
+
 namespace Matrix
 
 variable {ι : Type*} [Fintype ι] [LinearOrder ι] {p : ℕ}
@@ -130,9 +171,53 @@ theorem exists_linearIndependent_mulVec_eq_zero_prod_norm_le {A : Matrix (Fin p)
   · have hx := hzV (e.symm l)
     rw [intPoints_ker_mulVecLin, LinearMap.mem_ker, mulVecLin_apply] at hx
     exact hx
-  · rw [← subspaceHeight_ker_mulVecLin hA, e.symm.prod_comp fun l ↦ ‖z l‖]
+  · have hheight := covolume_intLattice_ker_mulVecLin hA
+    rw [Submodule.covolume_intLattice] at hheight
+    rw [← hheight, e.symm.prod_comp fun l ↦ ‖z l‖]
     exact hzle
 
 end Matrix
+
+namespace TauCeti
+
+open scoped Matrix
+
+variable {ι : Type*} [Fintype ι] [LinearOrder ι]
+
+/-- An integer matrix with independent rows has a basis of its entire integral kernel whose
+product of sup norms is at most `k! / 2 ^ (k - 1) * √det (A Aᵀ) / minorGcd A`, where `k` is
+the number of columns minus the number of rows. The conclusion also includes `k = 0`. -/
+theorem exists_basis_ker_mulVecLin_prod_norm_le {p : ℕ} {A : Matrix (Fin p) ι ℤ}
+    (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) :
+    ∃ b : Basis (Fin (Fintype.card ι - p)) ℤ (LinearMap.ker A.mulVecLin),
+      ∏ l, ‖(b l : ι → ℤ)‖ ≤
+        (Fintype.card ι - p).factorial / 2 ^ (Fintype.card ι - p - 1) *
+          √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
+  have hresult := exists_basis_intPoints_prod_norm_le
+    (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin)
+  rw [intPoints_ker_mulVecLin, finrank_ker_mulVecLin_map hA,
+    ← Submodule.covolume_intLattice, Matrix.covolume_intLattice_ker_mulVecLin hA] at hresult
+  simpa only [mul_div_assoc] using hresult
+
+/-- For the row `(0, 0, 1)`, the bound is one and the basis spans the entire coordinate plane.
+The independent vectors `(1, 1, 0)` and `(1, -1, 0)` have the same product of norms but fail
+this spanning requirement. -/
+example : ∃ b : Basis (Fin 2) ℤ (LinearMap.ker (!![(0 : ℤ), 0, 1]).mulVecLin),
+    ∏ l, ‖(b l : Fin 3 → ℤ)‖ ≤ 1 := by
+  have hA : LinearIndependent ℚ ((!![(0 : ℤ), 0, 1]).map ((↑) : ℤ → ℚ)).row := by
+    simp [funext_iff, Fin.forall_fin_succ]
+  have hg : (!![(0 : ℤ), 0, 1]).minorGcd = 1 :=
+    Int.eq_one_of_dvd_one (Matrix.minorGcd_nonneg _) (by
+      convert Matrix.minorGcd_dvd (!![(0 : ℤ), 0, 1])
+        ⟨fun _ ↦ (2 : Fin 3), fun _ _ _ ↦ Subsingleton.elim _ _⟩ using 1; decide)
+  have hd : ((!![(0 : ℤ), 0, 1]) * (!![(0 : ℤ), 0, 1])ᵀ).det = 1 := by
+    rw [Matrix.det_unique]
+    decide
+  have h := exists_basis_ker_mulVecLin_prod_norm_le hA
+  rw [Fintype.card_fin, show 3 - 1 = 2 by decide, hg, hd] at h
+  norm_num at h
+  simpa using h
+
+end TauCeti
 
 end

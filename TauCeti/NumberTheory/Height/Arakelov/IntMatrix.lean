@@ -34,7 +34,6 @@ replaced by any integer matrix with the same rational row space.
 * `Matrix.minorGcd_mul_subspaceHeight_span_range_row`: the identity for the row space.
 * `Matrix.minorGcd_mul_subspaceHeight_ker_mulVecLin`: the identity for the kernel.
 * `TauCeti.finrank_ker_mulVecLin_map`: the dimension of the rational kernel.
-* `TauCeti.subspaceHeight_ker_mulVecLin`: the height of the rational kernel.
 * `Matrix.covolume_intLattice_ker_mulVecLin`: the covolume of the lattice of integral solutions.
 * `Matrix.sqrt_det_div_minorGcd_mul_left` and `Matrix.sqrt_det_div_minorGcd_unit_mul`: the
   quotient `√det (A Aᵀ) / g` is unchanged by `A ↦ B * A` for `det B ≠ 0`, in particular for
@@ -155,14 +154,6 @@ theorem finrank_ker_mulVecLin_map
   rw [← Matrix.rank, hA.rank_matrix, Fintype.card_fin,
     Module.finrank_fintype_fun_eq_card] at h
   omega
-
-/-- The absolute Euclidean height of the rational kernel of an integer matrix with independent
-rows is `√det (A Aᵀ)` divided by the greatest common divisor of its maximal minors. -/
-theorem subspaceHeight_ker_mulVecLin [LinearOrder ι]
-    (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) :
-    (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).subspaceHeight =
-      √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) :=
-  (Submodule.covolume_intLattice _).symm.trans (Matrix.covolume_intLattice_ker_mulVecLin hA)
 
 end TauCeti
 
