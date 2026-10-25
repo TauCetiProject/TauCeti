@@ -148,7 +148,7 @@ theorem exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_adjoinRoot (d : ℤ) (q :
     (X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two).mp (Fact.out)
   have hnsq : ¬ IsSquare ((d : ℤ) : ℚ) := by
     rintro ⟨s, hs⟩
-    exact hnoRoot s (by rw [show s ^ 2 = s * s by ring, ← hq, hs])
+    exact hnoRoot s (by rw [pow_two, ← hq, hs])
   refine ⟨integralSqrt hx, minpoly_integralSqrt hx hnsq, ?_⟩
   have hθx : ((integralSqrt hx : 𝓞 K) : K) = x := algebraMap_integralSqrt hx
   rw [hθx]
