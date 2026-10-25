@@ -25,7 +25,7 @@ public section
 
 namespace TauCeti
 
-open MulAction
+open _root_.MulAction
 
 variable (G X : Type*) [Group G] [MulAction G X] [TopologicalSpace X]
 

@@ -50,15 +50,19 @@ theorem effectiveActionFunctor_map_hom {a b : ActionCategory G X} (f : a ⟶ b) 
     ((effectiveActionFunctor G X).map f).hom =
       (QuotientGroup.mk f.hom : G ⧸ (toPermHom G X).ker) := (rfl)
 
-/-- On isotropy groups, the effective action functor is the stabilizer projection. -/
+/-- On isotropy groups, the effective action functor is the stabilizer projection, after
+transport along its canonical object comparison. -/
 @[simp]
 theorem effectiveActionFunctor_mapAut_stabilizerMulEquivAut (x : X) (g : stabilizer G x) :
-    (effectiveActionFunctor G X).mapAut _ (ActionCategory.stabilizerMulEquivAut G x g) =
+    Aut.autMulEquivOfIso (eqToIso (effectiveActionFunctor_obj G X x))
+      ((effectiveActionFunctor G X).mapAut _ (ActionCategory.stabilizerMulEquivAut G x g)) =
       ActionCategory.stabilizerMulEquivAut (G ⧸ (toPermHom G X).ker) x
         (effectiveStabilizerMap G X x g) := by
+  -- The public object comparison transports between the two automorphism groups.
+  dsimp only [effectiveActionFunctor]
   ext : 2
   apply Functor.Elements.hom_ext
-  rfl
+  simp [Aut.autMulEquivOfIso, Functor.mapAut]
 
 /-- Every arrow of the faithful action groupoid lifts, with its source and target fixed. -/
 instance effectiveActionFunctor_full : (effectiveActionFunctor G X).Full where
