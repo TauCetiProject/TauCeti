@@ -182,9 +182,7 @@ theorem exists_isRoot_specialize_of_le [IsGalois F E] (hf : f.Monic)
     (hle : (Gal.galActionHom f E).range.map
       (e.permCongrHom : _ →* Equiv.Perm (Fin n)) ≤ spec.H) :
     ∃ a : F, (spec.specialize F f).IsRoot a := by
-  have hsep : f.Separable :=
-    (card_rootSet_eq_natDegree_iff_of_splits hf.ne_zero Fact.out).mp
-      (by simpa [hdeg] using Fintype.card_congr e)
+  have hsep := separable_of_rootSet_equiv_fin hf.ne_zero hdeg e
   have hfix : ∀ ϕ : E ≃ₐ[F] E,
       ϕ (MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) spec.Φ)
         = MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) spec.Φ := by
@@ -309,9 +307,7 @@ theorem exists_le_map_conj_of_isRoot_specialize [Normal F E] (hf : f.Monic)
       (Gal.galActionHom f E).range.map
         (e.permCongrHom : _ →* Equiv.Perm (Fin n))
         ≤ spec.H.map (MulAut.conj τ).toMonoidHom := by
-  have hsep : f.Separable :=
-    (card_rootSet_eq_natDegree_iff_of_splits hf.ne_zero Fact.out).mp
-      (by simpa [hdeg] using Fintype.card_congr e)
+  have hsep := separable_of_rootSet_equiv_fin hf.ne_zero hdeg e
   have hae : aeval (algebraMap F E a) (spec.specialize F f) = 0 := by
     rw [aeval_def, eval₂_eq_eval_map, eval_map, eval₂_at_apply, ha, map_zero]
   obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hsep hdeg e hae
@@ -356,10 +352,7 @@ polynomial of degree `n`. No separability of the resolvent is required. -/
 theorem splits_specialize (hf : f.Monic) (hdeg : f.natDegree = n)
     (e : f.rootSet E ≃ Fin n) :
     ((spec.specialize F f).map (algebraMap F E)).Splits := by
-  classical
-  have hsep : f.Separable := (separable_map (algebraMap F E)).mp
-    (separable_of_natDegree_le_card_roots (hf.map _).ne_zero
-      (by simpa [rootSet_def, hdeg] using (Fintype.card_congr e).ge))
+  have hsep := separable_of_rootSet_equiv_fin hf.ne_zero hdeg e
   rw [map_specialize_eq_galResolvent_rootEnum spec hf hsep hdeg e,
     MvPolynomial.galResolvent_def]
   exact Splits.prod fun _ _ => Splits.X_sub_C _
@@ -369,10 +362,7 @@ private noncomputable def cosetValueEquiv (hf : f.Monic)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
     (hres : (spec.specialize F f).Separable) :
     Equiv.Perm (Fin n) ⧸ spec.H ≃ (spec.specialize F f).rootSet E := by
-  classical
-  have hsep : f.Separable := (separable_map (algebraMap F E)).mp
-    (separable_of_natDegree_le_card_roots (hf.map _).ne_zero
-      (by simpa [rootSet_def, hdeg] using (Fintype.card_congr e).ge))
+  have hsep := separable_of_rootSet_equiv_fin hf.ne_zero hdeg e
   exact Equiv.ofBijective
     (fun c => ⟨cosetValue spec e c, mem_rootSet.mpr
       ⟨(spec.monic_specialize F f).ne_zero, aeval_cosetValue spec hf hsep hdeg e c⟩⟩)
@@ -399,9 +389,7 @@ private theorem minpoly_cosetValue_eq_iff [Normal F E] (hf : f.Monic)
     minpoly F (cosetValue spec e c) = minpoly F (cosetValue spec e d) ↔
       c ∈ MulAction.orbit ((Gal.galActionHom f E).range.map
         (e.permCongrHom : _ →* Equiv.Perm (Fin n))) d := by
-  have hsep : f.Separable :=
-    (card_rootSet_eq_natDegree_iff_of_splits hf.ne_zero Fact.out).mp
-      (by simpa [hdeg] using Fintype.card_congr e)
+  have hsep := separable_of_rootSet_equiv_fin hf.ne_zero hdeg e
   constructor
   · intro h
     obtain ⟨ϕ, hϕ⟩ := (Normal.minpoly_eq_iff_mem_orbit E).1 h
