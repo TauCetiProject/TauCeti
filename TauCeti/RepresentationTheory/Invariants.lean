@@ -569,27 +569,30 @@ namespace CategoryTheory.Functor
 
 universe u v u' v'
 
-variable {A : Type u} {B : Type u'} [CommRing A] [CommRing B] {G : Type*} [Group G]
+section Monoid
+
+variable {A : Type u} {B : Type u'} [Ring A] [Ring B] {G : Type*} [Monoid G]
   {M : Type v} [AddCommGroup M] [Module A M] (F : ModuleCat.{v} A ⥤ ModuleCat.{v'} B)
 
 /-- A functor `F : ModuleCat A ⥤ ModuleCat B` carries a representation `σ` of `G` by `A`-linear
-maps on `M` to the representation `g ↦ F(σ g)` of `G` on `F(M)`. This is the representation-level
-form of `CategoryTheory.Functor.mapAction`. -/
+maps on `M` to the representation `g ↦ F(σ g)` of `G` on `F(M)`, through the action
+`CategoryTheory.Functor.mapEnd` of `F` on endomorphisms. This is the representation-level form of
+`CategoryTheory.Functor.mapAction`. -/
 noncomputable def mapRepresentation (σ : Representation A G M) :
-    Representation B G (F.obj (ModuleCat.of A M)) where
-  toFun g := (F.map (ModuleCat.ofHom (σ g))).hom
-  map_one' := by
-    rw [map_one, Module.End.one_eq_id, ModuleCat.ofHom_id, F.map_id, ModuleCat.hom_id,
-      Module.End.one_eq_id]
-  map_mul' g h := by
-    rw [map_mul, Module.End.mul_eq_comp, ModuleCat.ofHom_comp, F.map_comp, ModuleCat.hom_comp,
-      Module.End.mul_eq_comp]
+    Representation B G (F.obj (ModuleCat.of A M)) :=
+  (ModuleCat.endRingEquiv _).toMonoidHom.comp <| (Functor.mapEnd (ModuleCat.of A M) F).comp <|
+    (ModuleCat.endRingEquiv (ModuleCat.of A M)).symm.toMonoidHom.comp σ
 
 /-- The element `g` acts on `F(M)` by `F(σ g)`. -/
 @[simp]
 theorem mapRepresentation_apply (σ : Representation A G M) (g : G) :
     F.mapRepresentation σ g = (F.map (ModuleCat.ofHom (σ g))).hom :=
   (rfl)
+
+end Monoid
+
+variable {A : Type u} {B : Type u'} [CommRing A] [CommRing B] {G : Type*} [Group G]
+  {M : Type v} [AddCommGroup M] [Module A M] (F : ModuleCat.{v} A ⥤ ModuleCat.{v'} B)
 
 variable [Fintype G] [Invertible (Fintype.card G : A)] (σ : Representation A G M)
 
