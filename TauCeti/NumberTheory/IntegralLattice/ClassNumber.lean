@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.IntegralLattice.Genus
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Class
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Proper
 public import Mathlib.SetTheory.Cardinal.Finite
 import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Classes
 
@@ -32,10 +32,16 @@ follows by negating the form. It also computes the class set directly in rank at
 the class number is `1` by the determinant classification
 `TauCeti.IntegralLattice.nonempty_isometry_of_finrank_le_one`.
 
+The proper classes in the genus, `L.properGenusClasses`, are the proper classes lying in the
+classes of the genus, and the proper class number `h⁺(L)` is their number. Each class contains at
+most two proper classes, so `h⁺(L)` is positive exactly when `h(L)` is.
+
 ## Main definitions
 
 * `TauCeti.IntegralLattice.genusClasses`: the classes in the genus of `L`.
 * `TauCeti.IntegralLattice.classNumber`: the class number `h(L)`.
+* `TauCeti.IntegralLattice.properGenusClasses`: the proper classes in the genus of `L`.
+* `TauCeti.IntegralLattice.properClassNumber`: the proper class number `h⁺(L)`.
 
 ## Main results
 
@@ -48,6 +54,8 @@ the class number is `1` by the determinant classification
   classes.
 * `TauCeti.IntegralLattice.classNumber_eq_one_of_finrank_le_one`: in rank at most one the genus is
   a single class.
+* `TauCeti.IntegralLattice.properGenusClasses_finite_iff`: the genus contains finitely many proper
+  classes exactly when it contains finitely many classes.
 
 ## References
 
@@ -201,6 +209,78 @@ theorem IsNegDef.classNumber_pos {L : IntegralLattice V} (hL : L.IsNegDef) :
   classNumber_pos_iff.mpr hL.finite_genusClasses
 
 end ClassNumber
+
+section ProperClassNumber
+
+open ProperIsometryQuotient
+
+/-- The proper classes in the genus of `L`: the proper classes of the lattices in the ambient space
+of `L` which have the same genus as `L`. -/
+def properGenusClasses (L : IntegralLattice V) : Set (ProperIsometryQuotient V) :=
+  toIsometryQuotient ⁻¹' L.genusClasses
+
+/-- A proper class lies in the genus of `L` exactly when the class containing it does. -/
+theorem mem_properGenusClasses_iff {L : IntegralLattice V} {c : ProperIsometryQuotient V} :
+    c ∈ L.properGenusClasses ↔ c.toIsometryQuotient ∈ L.genusClasses :=
+  Iff.rfl
+
+/-- The proper class of `M` lies in the genus of `L` exactly when `M` has the same genus as
+`L`. -/
+@[simp]
+theorem properIsometryClass_mem_properGenusClasses_iff {L M : IntegralLattice V} :
+    M.properIsometryClass ∈ L.properGenusClasses ↔ L.SameGenus M := by
+  rw [mem_properGenusClasses_iff, toIsometryQuotient_properIsometryClass,
+    isometryClass_mem_genusClasses_iff]
+
+/-- Lattices of the same genus have the same proper classes in their genus. -/
+theorem SameGenus.properGenusClasses_eq {L M : IntegralLattice V} (h : L.SameGenus M) :
+    L.properGenusClasses = M.properGenusClasses := by
+  rw [properGenusClasses, properGenusClasses, h.genusClasses_eq]
+
+/-- The classes containing the proper classes in the genus of `L` are the classes in the genus of
+`L`. -/
+@[simp]
+theorem image_toIsometryQuotient_properGenusClasses (L : IntegralLattice V) :
+    toIsometryQuotient '' L.properGenusClasses = L.genusClasses :=
+  Set.image_preimage_eq _ toIsometryQuotient_surjective
+
+/-- The genus of `L` contains finitely many proper classes exactly when it contains finitely many
+classes. -/
+theorem properGenusClasses_finite_iff {L : IntegralLattice V} :
+    L.properGenusClasses.Finite ↔ L.genusClasses.Finite := by
+  refine ⟨fun h ↦ L.image_toIsometryQuotient_properGenusClasses ▸ h.image _, fun h ↦
+    h.preimage' fun c _ ↦ ?_⟩
+  obtain ⟨M, rfl⟩ := isometryClass_surjective c
+  exact finite_fiber_toIsometryQuotient M
+
+/-- The proper class number `h⁺(L)`: the number of proper classes in the genus of `L`. It is `0`
+when the genus contains infinitely many classes. -/
+noncomputable def properClassNumber (L : IntegralLattice V) : ℕ :=
+  Nat.card L.properGenusClasses
+
+/-- The proper class number is the cardinality of the set of proper classes in the genus. -/
+theorem properClassNumber_def (L : IntegralLattice V) :
+    L.properClassNumber = Nat.card L.properGenusClasses :=
+  (rfl)
+
+/-- The proper class number is positive exactly when the genus contains finitely many classes. -/
+theorem properClassNumber_pos_iff {L : IntegralLattice V} :
+    0 < L.properClassNumber ↔ L.genusClasses.Finite := by
+  rw [properClassNumber_def, Nat.card_pos_iff, Set.finite_coe_iff, properGenusClasses_finite_iff]
+  refine and_iff_right ⟨⟨L.properIsometryClass, ?_⟩⟩
+  exact properIsometryClass_mem_properGenusClasses_iff.mpr (SameGenus.refl L)
+
+/-- A positive definite lattice has positive proper class number. -/
+theorem IsPosDef.properClassNumber_pos {L : IntegralLattice V} (hL : L.IsPosDef) :
+    0 < L.properClassNumber :=
+  properClassNumber_pos_iff.mpr hL.finite_genusClasses
+
+/-- A negative definite lattice has positive proper class number. -/
+theorem IsNegDef.properClassNumber_pos {L : IntegralLattice V} (hL : L.IsNegDef) :
+    0 < L.properClassNumber :=
+  properClassNumber_pos_iff.mpr hL.finite_genusClasses
+
+end ProperClassNumber
 
 section RankLeOne
 

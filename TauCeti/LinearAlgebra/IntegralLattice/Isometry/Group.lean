@@ -22,9 +22,11 @@ The self-isometries of an integral lattice `L` form a group `O(L) = Isometry L L
 composition, with `f * g` the isometry `g` followed by `f`, as for `LinearEquiv.automorphismGroup`.
 Restricting a self-isometry to the carrier is a group homomorphism into the automorphism group of
 the carrier, and composing with the determinant gives the **determinant** of a self-isometry, a
-unit of `ℤ`, hence `±1`. Its kernel is the **special isometry group** `SO(L)`, a subgroup of
-index at most two. Negation is a self-isometry of every lattice, the element `-1` of `O(L)`, and
-its determinant is `(-1) ^ rank L`; so `SO(L)` is a proper subgroup in odd rank.
+unit of `ℤ`, hence `±1`; it is also the determinant of the ambient rational linear
+equivalence. Its kernel is the **special isometry group** `SO(L)`, a subgroup of index at most
+two. Negation is a self-isometry of every lattice, the element `-1` of `O(L)`, and its
+determinant is `(-1) ^ rank L`; so `SO(L)` is a proper subgroup in odd rank. Conjugation by an
+isometry `L → M` identifies `O(L)` with `O(M)` and `SO(L)` with `SO(M)`.
 
 A self-isometry is the same as a rational isometry of the ambient form which, together with its
 inverse, preserves the carrier; `toIsometryGroup` and `ofIsometryGroup` pass between the two. The
@@ -48,11 +50,18 @@ subgroup of level `d`, which has finite index for `d ≠ 0`.
   `TauCeti.IntegralLattice.Isometry.ofIsometryGroup`.
 * `TauCeti.IntegralLattice.Isometry.reductionHom`: the action of `O(L)` on `L / d L`, and
   `TauCeti.IntegralLattice.Isometry.congruenceSubgroup`: its kernel.
+* `TauCeti.IntegralLattice.Isometry.conj`: conjugation by an isometry `L → M`, as a group
+  isomorphism `O(L) ≃* O(M)`.
 
 ## Main results
 
 * `TauCeti.IntegralLattice.Isometry.carrierEquivHom_injective`: a self-isometry is determined by
   its restriction to the carrier.
+* `TauCeti.IntegralLattice.Isometry.coe_det_eq_det_toLinearMap`: the determinant of a
+  self-isometry is that of its ambient rational linear equivalence.
+* `TauCeti.IntegralLattice.Isometry.det_conj` and
+  `TauCeti.IntegralLattice.map_conj_specialOrthogonalGroup`: conjugation preserves the determinant
+  and carries `SO(L)` onto `SO(M)`.
 * `TauCeti.IntegralLattice.Isometry.orientation_map_eq_iff` and
   `TauCeti.IntegralLattice.Isometry.orientation_map_eq_neg_iff`: the determinant detects whether
   a self-isometry preserves or reverses the orientation of any finite carrier basis.
@@ -194,6 +203,48 @@ theorem det_neg (L : IntegralLattice V) : det L (neg L) = (-1) ^ Module.finrank 
     simp
   rw [h, LinearMap.det_smul, LinearMap.det_id, mul_one]
 
+/-- The determinant of a self-isometry is the determinant of its ambient rational linear
+equivalence. -/
+theorem coe_det_eq_det_toLinearMap (e : Isometry L L) :
+    ((det L e : ℤ) : ℚ) = LinearMap.det ((e : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) := by
+  rw [coe_det, LinearEquiv.eq_extendOfIsLattice e.carrierEquiv (e : V ≃ₗ[ℚ] V)
+    fun x ↦ (e.coe_carrierEquiv_apply x).symm, LinearEquiv.det_extendOfIsLattice,
+    algebraMap_int_eq, eq_intCast]
+
+section Conj
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W}
+
+/-- Conjugation by an isometry `e : L → M` identifies the isometry groups `O(L)` and `O(M)`: a
+self-isometry `f` of `L` goes to `e ∘ f ∘ e⁻¹`. -/
+def conj (e : Isometry L M) : Isometry L L ≃* Isometry M M where
+  toFun f := (e.symm.trans f).trans e
+  invFun g := (e.trans g).trans e.symm
+  left_inv f := by ext; simp
+  right_inv g := by ext; simp
+  map_mul' f g := by ext; simp
+
+@[simp]
+theorem conj_apply (e : Isometry L M) (f : Isometry L L) (y : W) :
+    conj e f y = e (f (e.symm y)) := by
+  simp [conj]
+
+@[simp]
+theorem conj_symm_apply (e : Isometry L M) (g : Isometry M M) (x : V) :
+    (conj e).symm g x = e.symm (g (e x)) := by
+  simp [conj]
+
+/-- Conjugation by an isometry preserves the determinant. -/
+@[simp]
+theorem det_conj (e : Isometry L M) (f : Isometry L L) : det M (conj e f) = det L f := by
+  have h : (conj e f).carrierEquiv =
+      (e.carrierEquiv.symm.trans f.carrierEquiv).trans e.carrierEquiv := by
+    ext
+    simp
+  rw [det_apply, det_apply, h, LinearEquiv.det_conj]
+
+end Conj
+
 end Isometry
 
 /-- The special isometry group `SO(L)`: the subgroup of the isometry group `O(L) = Isometry L L`
@@ -253,6 +304,30 @@ theorem neg_mem_specialOrthogonalGroup_iff (L : IntegralLattice V) :
     Isometry.neg L ∈ specialOrthogonalGroup L ↔ Even (Module.finrank ℤ L) := by
   rw [mem_specialOrthogonalGroup_iff, Isometry.det_neg, neg_one_pow_eq_one_iff_even]
   exact fun h ↦ by simpa using congrArg Units.val h
+
+section Conj
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W}
+
+/-- Isometric lattices have isometry groups of the same cardinality. -/
+theorem Isometry.natCard_eq (e : Isometry L M) :
+    Nat.card (Isometry L L) = Nat.card (Isometry M M) :=
+  Nat.card_congr (Isometry.conj e).toEquiv
+
+/-- Conjugation by an isometry `e : L → M` carries `SO(L)` onto `SO(M)`. -/
+theorem map_conj_specialOrthogonalGroup (e : Isometry L M) :
+    (specialOrthogonalGroup L).map (Isometry.conj e).toMonoidHom = specialOrthogonalGroup M := by
+  ext g
+  rw [Subgroup.mem_map_equiv, mem_specialOrthogonalGroup_iff, mem_specialOrthogonalGroup_iff,
+    ← Isometry.det_conj e, MulEquiv.apply_symm_apply]
+
+/-- Isometric lattices have special isometry groups of the same cardinality. -/
+theorem Isometry.natCard_specialOrthogonalGroup_eq (e : Isometry L M) :
+    Nat.card (specialOrthogonalGroup L) = Nat.card (specialOrthogonalGroup M) := by
+  rw [← map_conj_specialOrthogonalGroup e,
+    Subgroup.card_map_of_injective (Isometry.conj e).injective]
+
+end Conj
 
 namespace specialOrthogonalGroup
 

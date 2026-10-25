@@ -26,6 +26,8 @@ field.
 
 * `Module.Basis.span_range_extendOfIsLattice`: the span of an extended lattice basis is the
   lattice.
+* `Module.Basis.extendOfIsLattice_repr_coe`: the coordinates of a lattice vector in an extended
+  lattice basis are its coordinates in the lattice basis.
 * `Module.Basis.toAddSubgroup_eq_closure_range_extendOfIsLattice`: the additive
   closure of an extended lattice basis is the lattice's underlying additive subgroup.
 * `TauCeti.Submodule.IsLattice.relIndex_ne_zero`: a full `ℤ`-lattice has finite index in every
@@ -36,6 +38,7 @@ field.
   same finrank.
 * `LinearEquiv.extendOfIsLattice`: extension of an `R`-linear equivalence between
   full submodules to their ambient `K`-vector spaces.
+* `LinearEquiv.det_extendOfIsLattice`: this extension preserves determinants of automorphisms.
 * `Submodule.isBaseChange_subtype`: the inclusion of a free full lattice
   submodule into its ambient vector space over the fraction field is a base change.
 * `Submodule.rationalizationEquiv`: the canonical equivalence from the scalar extension
@@ -86,6 +89,22 @@ theorem _root_.Module.Basis.toAddSubgroup_eq_closure_range_extendOfIsLattice
   apply AddSubgroup.toIntSubmodule.injective
   rw [AddSubgroup.toIntSubmodule_closure, Module.Basis.span_range_extendOfIsLattice,
     Submodule.toIntSubmodule_toAddSubgroup, Submodule.restrictScalars_self]
+
+/-- The coordinates of a lattice vector in an extended lattice basis are its coordinates in the
+lattice basis, mapped to the fraction field. -/
+theorem _root_.Module.Basis.extendOfIsLattice_repr_coe {κ : Type*} {N : Submodule R V}
+    [N.IsLattice K] (b : Basis κ R N) (x : N) (k : κ) :
+    (b.extendOfIsLattice K).repr (x : V) k = algebraMap R K (b.repr x k) := by
+  have h : (Finsupp.lapply k ∘ₗ ((b.extendOfIsLattice K).repr.toLinearMap.restrictScalars R) ∘ₗ
+      N.subtype : N →ₗ[R] K) = Algebra.linearMap R K ∘ₗ Finsupp.lapply k ∘ₗ b.repr.toLinearMap := by
+    refine b.ext fun j ↦ ?_
+    simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearMap.restrictScalars_apply,
+      LinearEquiv.coe_coe, Finsupp.lapply_apply, Basis.repr_self, Algebra.linearMap_apply,
+      ← Basis.extendOfIsLattice_apply K b j]
+    rcases eq_or_ne j k with rfl | hjk
+    · simp
+    · rw [Finsupp.single_eq_of_ne hjk.symm, Finsupp.single_eq_of_ne hjk.symm, map_zero]
+  exact LinearMap.congr_fun h x
 
 /-- The `R`-finrank of a free full lattice in `V` equals the `K`-finrank of the ambient space. -/
 theorem _root_.Submodule.finrank_eq_finrank
@@ -171,6 +190,22 @@ theorem _root_.LinearEquiv.eq_extendOfIsLattice {S : Submodule R V} {T : Submodu
   rw [Basis.extendOfIsLattice_apply]
   exact (h (Module.Free.chooseBasis R S i)).trans
     (LinearEquiv.extendOfIsLattice_apply e (Module.Free.chooseBasis R S i)).symm
+
+/-- Extending a linear automorphism of a free full submodule to the ambient space does not change
+its determinant. -/
+theorem _root_.LinearEquiv.det_extendOfIsLattice {S : Submodule R V} [S.IsLattice K]
+    [Module.Free R S] [Module.Finite R S] (e : S ≃ₗ[R] S) :
+    LinearMap.det (LinearEquiv.extendOfIsLattice e : V →ₗ[K] V) =
+      algebraMap R K (LinearMap.det (e : S →ₗ[R] S)) := by
+  classical
+  let b := Module.Free.chooseBasis R S
+  rw [← LinearMap.det_toMatrix b, ← LinearMap.det_toMatrix (b.extendOfIsLattice K),
+    RingHom.map_det]
+  congr 1
+  ext i j
+  simp only [LinearMap.toMatrix_apply, RingHom.mapMatrix_apply, Matrix.map_apply,
+    Basis.extendOfIsLattice_apply, LinearEquiv.coe_coe, LinearEquiv.extendOfIsLattice_apply,
+    Basis.extendOfIsLattice_repr_coe]
 
 /-- The ambient extension maps the source full submodule onto the target full submodule. -/
 theorem _root_.LinearEquiv.extendOfIsLattice_map {S : Submodule R V} {T : Submodule R W}

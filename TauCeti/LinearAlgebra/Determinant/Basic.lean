@@ -72,6 +72,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for linear maps between free modules of finite rank.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
   dimension at most one.
+* `LinearEquiv.exists_det_eq_neg_one`: a nonzero finite free module has an automorphism of
+  determinant `-1`.
 * `Module.Basis.prod_det_sumElim`: the determinant in a product basis of a family split between
   the two factors is the product of the two determinants.
 * `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
@@ -292,6 +294,28 @@ theorem det_ker_eq_bot_of_finrank_le_one {R V : Type*} [CommRing R] [AddCommGrou
     exact Subsingleton.elim _ _
   · have := SpecialLinearGroup.subsingleton_of_finrank_eq_one (R := R) (V := V) hV
     exact congrArg Subtype.val (Subsingleton.elim (⟨g, hg⟩ : SpecialLinearGroup R V) 1)
+
+/-- A nonzero finite free module has a linear automorphism of determinant `-1`: in a basis, negate
+one coordinate. -/
+theorem exists_det_eq_neg_one {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+    [Module.Free R V] [Module.Finite R V] [Nontrivial V] :
+    ∃ e : V ≃ₗ[R] V, LinearEquiv.det e = -1 := by
+  classical
+  let b := Module.Free.chooseBasis R V
+  obtain ⟨i⟩ := b.index_nonempty
+  let D := Matrix.diagonal (Function.update (1 : Module.Free.ChooseBasisIndex R V → R) i (-1))
+  have hD : D * D = 1 := by
+    rw [Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
+    congr 1
+    ext j
+    rcases eq_or_ne j i with rfl | h <;> simp [*]
+  have hf : Function.Involutive (Matrix.toLin b b D) := fun x ↦ by
+    rw [← LinearMap.comp_apply, ← Matrix.toLin_mul, hD, Matrix.toLin_one, LinearMap.id_apply]
+  refine ⟨LinearEquiv.ofInvolutive _ hf, Units.ext ?_⟩
+  have : ((LinearEquiv.ofInvolutive _ hf : V ≃ₗ[R] V) : V →ₗ[R] V) = Matrix.toLin b b D := (rfl)
+  rw [LinearEquiv.coe_det, this, LinearMap.det_toLin, Matrix.det_diagonal,
+    Finset.prod_update_of_mem (Finset.mem_univ i)]
+  simp
 
 end LinearEquiv
 
