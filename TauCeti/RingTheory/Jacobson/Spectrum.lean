@@ -13,13 +13,13 @@ import TauCeti.RingTheory.Jacobson.MulOpposite
 /-!
 # Spectral characterization of the Jacobson radical
 
-For an algebra over a field, an element `a` lies in the Jacobson radical exactly when every
+For an algebra over a semifield, an element `a` lies in the Jacobson radical exactly when every
 left multiple `b * a` has spectrum contained in `{0}`. In a complex Banach algebra this says
 that the radical consists of the elements all of whose left multiples are quasinilpotent.
 
-For a nonunital algebra, with the radical `TauCeti.nonUnitalJacobson` defined through the
-external unitization, the same holds with the quasispectrum and with `b` ranging over the
-algebra itself rather than over its unitization. The reduction squares a left multiple
+For a nonunital algebra over a field, with the radical `TauCeti.nonUnitalJacobson` defined
+through the external unitization, the same holds with the quasispectrum and with `b` ranging over
+the algebra itself rather than over its unitization. The reduction squares a left multiple
 `x * a` by an element `x` of the unitization: the square is a left multiple of `a` by an
 element of the original algebra.
 
@@ -43,9 +43,9 @@ namespace TauCeti
 
 namespace Ring
 
-variable {𝕜 A : Type*} [Field 𝕜] [Ring A] [Algebra 𝕜 A]
+variable {𝕜 A : Type*} [Semifield 𝕜] [Ring A] [Algebra 𝕜 A]
 
-/-- An element of an algebra over a field lies in the Jacobson radical exactly when every
+/-- An element of an algebra over a semifield lies in the Jacobson radical exactly when every
 left multiple of it has spectrum contained in `{0}`. -/
 theorem mem_jacobson_iff_forall_spectrum_mul_subset_singleton_zero {a : A} :
     a ∈ Ring.jacobson A ↔ ∀ b : A, spectrum 𝕜 (b * a) ⊆ {0} := by
@@ -61,7 +61,7 @@ theorem mem_jacobson_iff_forall_spectrum_mul_subset_singleton_zero {a : A} :
   · have h1 : (1 : 𝕜) ∉ spectrum 𝕜 (-b * a) := fun h1 => one_ne_zero (h (-b) h1)
     simpa [spectrum.notMem_iff, sub_eq_add_neg] using h1
 
-/-- Every element of the Jacobson radical of an algebra over a field has spectrum contained
+/-- Every element of the Jacobson radical of an algebra over a semifield has spectrum contained
 in `{0}`. -/
 theorem spectrum_subset_singleton_zero_of_mem_jacobson {a : A} (ha : a ∈ Ring.jacobson A) :
     spectrum 𝕜 a ⊆ {0} := by
