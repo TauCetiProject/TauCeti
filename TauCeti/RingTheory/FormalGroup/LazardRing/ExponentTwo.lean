@@ -116,6 +116,7 @@ theorem coeff_one_ofExponentTwoCoeffs (a : exponentTwoLogDegrees → R) :
   simp
 
 /-- `X + ∑ aₙ Xⁿ` has no term of degree `2ᵏ` for `k ≥ 1`. -/
+@[simp]
 theorem coeff_two_pow_ofExponentTwoCoeffs (a : exponentTwoLogDegrees → R) {k : ℕ} (hk : 0 < k) :
     PowerSeries.coeff (2 ^ k) (ofExponentTwoCoeffs a).toPowerSeries = 0 := by
   rw [ofExponentTwoCoeffs, PowerSeries.coeff_mk,
