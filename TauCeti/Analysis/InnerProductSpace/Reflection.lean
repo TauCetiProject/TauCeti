@@ -56,8 +56,7 @@ theorem reflection_apply_of_eqOn (K : Submodule 𝕜 E) [K.HasOrthogonalProjecti
   ext v
   constructor
   · rintro ⟨w, hw, rfl⟩
-    change e w ∈ K
-    rw [he hw]
+    rw [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, he hw]
     exact hw
   · intro hv
     exact ⟨v, hv, he hv⟩
