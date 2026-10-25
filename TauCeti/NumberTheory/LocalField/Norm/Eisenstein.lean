@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Eisenstein.Quadratic
-public import TauCeti.NumberTheory.LocalField.Norm.Basic
+public import TauCeti.NumberTheory.LocalField.Norm.Quadratic
 public import TauCeti.RingTheory.Norm.LocalRing
 
 /-!
@@ -94,13 +94,9 @@ theorem exists_norm_eq_iff_of_eisensteinQuadraticBasis
         (c : K) * (B.repr w 1 : K) ^ 2 := norm_eq_eisensteinQuadraticBasis ht hc hω w
   constructor
   · rintro ⟨z, rfl⟩
-    obtain ⟨w, rfl⟩ : ∃ w : 𝒪[L], (w : L) = z :=
-      ⟨⟨z, (Valuation.mem_integer_iff _ _).mpr (valuation_norm_eq_one_iff.mp hb).le⟩, rfl⟩
+    obtain ⟨w, rfl, hunit⟩ := exists_integerRing_eq_and_isUnit_norm hb
     have hu : IsUnit (B.repr w 0) :=
-      (isUnit_norm_iff_eisensteinQuadraticBasis_repr_zero ht hc hω w).mp
-        ((Valuation.Integers.isUnit_iff_valuation_eq_one
-          (Valuation.integer.integers (valuation K))).mpr (by
-            simpa only [Algebra.algebraMap_ofSubsemiring_apply, coe_norm_integerRing] using hb))
+      (isUnit_norm_iff_eisensteinQuadraticBasis_repr_zero ht hc hω w).mp hunit
     obtain ⟨u, hu⟩ := hu
     refine ⟨u, B.repr w 1 * ↑u⁻¹, ?_⟩
     rw [hnorm, ← hu]
@@ -111,11 +107,10 @@ theorem exists_norm_eq_iff_of_eisensteinQuadraticBasis
     have hu0 : (u : K) ≠ 0 := (u.isUnit.map (Subring.subtype 𝒪[K])).ne_zero
     field_simp
   · rintro ⟨u, v, rfl⟩
-    refine ⟨(B.equivFun.symm ![(u : 𝒪[K]), u * v] : 𝒪[L]), ?_⟩
-    rw [hnorm]
-    simp only [← B.equivFun_apply, LinearEquiv.apply_symm_apply, Matrix.cons_val_zero,
-      Matrix.cons_val_one]
-    push_cast
+    apply (B.exists_norm_eq_iff_of_integerRing (eisensteinQuadraticBasis_zero ht hc hω)
+      hb).mpr
+    refine ⟨u, v, Or.inl ?_⟩
+    rw [trace_eisensteinQuadraticBasis_one, norm_eisensteinQuadraticBasis_one]
     ring
 
 end TauCeti
