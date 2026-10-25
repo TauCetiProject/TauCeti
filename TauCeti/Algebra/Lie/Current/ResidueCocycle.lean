@@ -39,6 +39,8 @@ of an invariant symmetric form `κ` is the cocycle attached here to `Φ = -κ`.
 * `TauCeti.CurrentAlgebra.residuePairing`: the residue pairing on formal currents.
 * `TauCeti.CurrentAlgebra.residuePairing_eq_sum`: its finite coefficient formula.
 * `TauCeti.CurrentAlgebra.residuePairing_ofLoop`: its restriction to polynomial currents.
+* `TauCeti.CurrentAlgebra.residuePairing_ofLoop_trunc`: truncating both currents far enough out
+  preserves their pairing.
 * `TauCeti.CurrentAlgebra.residuePairing_eq_zero_of_mem_orderSubmodule`: vanishing on currents of
   orders summing to a positive integer.
 * `TauCeti.CurrentAlgebra.residuePairing_lie`: the 2-cocycle identity for an invariant form.
@@ -225,6 +227,21 @@ theorem residuePairing_ofLoop (Φ : LinearMap.BilinForm R L)
     simp [hm]
   · have hm : m ≠ -n := by omega
     simp [h, hm]
+
+/-- Truncating both currents preserves their residue pairing, provided each cutoff exceeds minus
+the lower order of the other current. -/
+theorem residuePairing_ofLoop_trunc (Φ : LinearMap.BilinForm R L) {M N P Q : ℤ}
+    {u v : currentAlgebra R L} (hu : u ∈ orderSubmodule R L M) (hv : v ∈ orderSubmodule R L N)
+    (hPN : 0 < P + N) (hMQ : 0 < M + Q) :
+    residuePairing R L Φ (ofLoop R L (trunc R L P u)) (ofLoop R L (trunc R L Q v)) =
+      residuePairing R L Φ u v := by
+  have h₁ := residuePairing_eq_zero_of_mem_orderSubmodule R L Φ
+    (ofLoop_trunc_sub_mem_orderSubmodule R L P u) (ofLoop_trunc_mem_orderSubmodule R L Q hv) hPN
+  have h₂ := residuePairing_eq_zero_of_mem_orderSubmodule R L Φ hu
+    (ofLoop_trunc_sub_mem_orderSubmodule R L Q v) hMQ
+  rw [map_sub, LinearMap.sub_apply, sub_eq_zero] at h₁
+  rw [map_sub, sub_eq_zero] at h₂
+  rw [h₁, h₂]
 
 /-- The alternating residue 2-cochain with trivial coefficients attached to a symmetric bilinear
 form on `L`: `(f ⊗ x, g ⊗ y) ↦ Res(f dg) Φ(x, y)`. -/
