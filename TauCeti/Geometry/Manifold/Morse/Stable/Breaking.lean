@@ -47,9 +47,6 @@ ambient space.
 
 ## Main results
 
-* `TauCeti.IsAdaptedPseudoGradient.mem_stableSet_of_forall_mem` and
-  `TauCeti.IsAdaptedPseudoGradient.mem_unstableSet_of_forall_mem`: an orbit trapped in a closed set
-  whose only critical point is `x` converges to `x`.
 * `IsAdaptedPseudoGradient.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet`
   and its time reversal: limits of trajectories break at a critical point.
 * `IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_stableSet_inter_stableSet` and its time
@@ -97,26 +94,6 @@ namespace IsAdaptedPseudoGradient
 
 variable (hX : IsAdaptedPseudoGradient f X)
 include hX
-
-/-- **An orbit trapped near a critical point converges to it.** If the forward orbit of `w` stays
-in a closed set `K` whose only critical point of the Morse function `f` is `x`, then the orbit
-converges to `x`. -/
-theorem mem_stableSet_of_forall_mem (hf : IsMorse 𝓘(ℝ, E) f) {K : Set M} (hK : IsClosed K)
-    (hKx : ∀ z ∈ K, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x) {w : M}
-    (hw : ∀ t, 0 ≤ t → hX.flow t w ∈ K) : w ∈ hX.flow.stableSet x := by
-  obtain ⟨z, hz, hlim⟩ := hX.exists_tendsto_atTop hf w
-  rw [hKx z (hK.mem_of_tendsto hlim (eventually_atTop.2 ⟨0, hw⟩)) hz] at hlim
-  exact Flow.mem_stableSet.2 hlim
-
-/-- **An orbit trapped near a critical point in backward time converges to it.** If the backward
-orbit of `w` stays in a closed set `K` whose only critical point of the Morse function `f` is `x`,
-then the orbit converges to `x` in backward time. -/
-theorem mem_unstableSet_of_forall_mem (hf : IsMorse 𝓘(ℝ, E) f) {K : Set M} (hK : IsClosed K)
-    (hKx : ∀ z ∈ K, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x) {w : M}
-    (hw : ∀ t, t ≤ 0 → hX.flow t w ∈ K) : w ∈ hX.flow.unstableSet x := by
-  obtain ⟨z, hz, hlim⟩ := hX.exists_tendsto_atBot hf w
-  rw [hKx z (hK.mem_of_tendsto hlim (eventually_atBot.2 ⟨0, hw⟩)) hz] at hlim
-  exact Flow.mem_unstableSet.2 hlim
 
 /-- **Limits of trajectories break at a critical point.** Let `x` be a critical point of the Morse
 function `f`, and `S` a set invariant under the flow and disjoint from the stable manifold `W^s(x)`.
