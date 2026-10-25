@@ -33,6 +33,9 @@ containing `0` and any `c`, some `d` has `∏_{a ∈ s} max ‖d‖ ‖a‖ = �
 (`NormedField.exists_prod_map_max_norm_eq_of_isAlgClosed`). For a nonarchimedean norm the left
 side is the Gauss norm at radius `‖d‖` of the polynomial with roots `s`, so `‖d‖` is a radius at
 which that Gauss norm equals `‖c‖`.
+
+A normed field whose norm takes every positive real value is densely normed
+(`DenselyNormedField.ofForallExistsNormEq`).
 -/
 
 public section
@@ -146,6 +149,17 @@ theorem exists_prod_map_max_norm_eq_of_isAlgClosed {𝕜 : Type*} [NormedField �
   exact ⟨d, by rw [hdr]; exact hφr⟩
 
 end NormedField
+
+/-- A normed field whose norm takes every positive real value is densely normed. The underlying
+normed field is the given one, so that over a `NontriviallyNormedField` this structure induces the
+original `NontriviallyNormedField` up to structure eta. -/
+@[expose, instance_reducible]
+def DenselyNormedField.ofForallExistsNormEq {𝕜 : Type*} [h' : NormedField 𝕜]
+    (h : ∀ r : ℝ, 0 < r → ∃ x : 𝕜, ‖x‖ = r) : DenselyNormedField 𝕜 where
+  toNormedField := h'
+  lt_norm_lt r₁ r₂ h₀ hr := by
+    obtain ⟨x, hx⟩ := h ((r₁ + r₂) / 2) (by linarith)
+    exact ⟨x, by linarith, by linarith⟩
 
 namespace TauCeti
 
