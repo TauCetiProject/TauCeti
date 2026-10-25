@@ -179,7 +179,8 @@ theorem equation_iff_sq_eq_cube_of_isSingular (h : W.IsSingular x₁ y₁) {α :
     (hα : α ^ 2 + W.a₁ * α - (3 * x₁ + W.a₂) = 0) (hc : 2 * α + W.a₁ = 0) (x y : R) :
     W.Equation x y ↔ (y - y₁ - α * (x - x₁)) ^ 2 = (x - x₁) ^ 3 := by
   have hβ : W.a₁ + α = -α := by linear_combination hc
-  simpa [hβ, pow_two, sub_eq_add_neg] using equation_iff_mul_eq_cube_of_isSingular h hα x y
+  rw [equation_iff_mul_eq_cube_of_isSingular h hα, hβ]
+  constructor <;> intro hE <;> linear_combination hE
 
 
 /-- For a model singular at the origin, `c₄` is the square of `b₂`, the discriminant of the
