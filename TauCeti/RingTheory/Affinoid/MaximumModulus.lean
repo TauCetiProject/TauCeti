@@ -7,11 +7,12 @@ module
 
 public import TauCeti.RingTheory.Affinoid.SupSeminorm
 
-import Mathlib.Analysis.Normed.Ring.Ultra
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 import Mathlib.RingTheory.Polynomial.RationalRoot
+import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
+import TauCeti.RingTheory.Algebraic.Basic
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.MaximumModulus
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniqueFactorization
 
@@ -58,32 +59,7 @@ namespace TauCeti
 
 open _root_.MvPowerSeries Polynomial
 
-/-- The kernel of an `F`-algebra map into a field algebraic over the field `F` is a maximal
-ideal, since the image is a field. -/
-private theorem isMaximal_ker_of_isAlgebraic {F A E : Type*} [Field F] [CommRing A] [Algebra F A]
-    [Field E] [Algebra F E] [Algebra.IsAlgebraic F E] (ψ : A →ₐ[F] E) :
-    (RingHom.ker ψ).IsMaximal := by
-  let : Field ψ.range := (Subalgebra.isField_of_algebraic ψ.range).toField
-  have hker : RingHom.ker ψ.rangeRestrict = RingHom.ker ψ := by
-    ext a
-    simp [RingHom.mem_ker, Subtype.ext_iff]
-  rw [← hker]
-  exact RingHom.ker_isMaximal_of_surjective _ ψ.rangeRestrict_surjective
-
-variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
-
-/-- Of two consecutive natural numbers, one has norm one in an ultrametric field, since their
-difference does. -/
-private theorem exists_lt_norm_natCast_eq_one (N : ℕ) : ∃ m, N < m ∧ ‖(m : K)‖ = 1 := by
-  by_contra! h
-  have h1 := (IsUltrametricDist.norm_natCast_le_one K (N + 1)).lt_of_ne (h _ (by omega))
-  have h2 := (IsUltrametricDist.norm_natCast_le_one K (N + 2)).lt_of_ne (h _ (by omega))
-  have h3 := IsUltrametricDist.norm_add_le_max ((N + 2 : ℕ) : K) (-((N + 1 : ℕ) : K))
-  rw [norm_neg, show ((N + 2 : ℕ) : K) + -((N + 1 : ℕ) : K) = 1 by push_cast; ring,
-    norm_one] at h3
-  exact (h3.trans_lt (max_lt h2 h1)).false
-
-variable [CompleteSpace K]
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 namespace MvPowerSeries
 
@@ -105,7 +81,8 @@ theorem exists_pointNorm_eq_norm (f : T) : ∃ x : MaximalSpectrum T, pointNorm 
     have h1 (t : Fin n →₀ ℕ) : (t.prod fun _ _ ↦ (1 : ℝ)) = 1 := by simp [Finsupp.prod]
     simp only [Filter.eventually_cofinite, not_lt, one_pow, h1, mul_one] at h
     exact h.subset fun t ht ↦ ht.ge
-  obtain ⟨m, hNm, hm⟩ := exists_lt_norm_natCast_eq_one (K := K) (hD.toFinset.sup Finsupp.degree)
+  obtain ⟨m, hNm, hm⟩ := IsUltrametricDist.exists_lt_norm_natCast_eq_one K
+    (hD.toFinset.sup Finsupp.degree)
   have hfm (t : Fin n →₀ ℕ) (ht : ‖coeff t (f : MvPowerSeries (Fin n) K)‖ = ‖f‖) (i : Fin n) :
       t i < m :=
     (Finsupp.le_degree i t).trans_lt ((Finset.le_sup (hD.mem_toFinset.mpr ht)).trans_lt hNm)
@@ -128,7 +105,7 @@ theorem exists_pointNorm_eq_norm (f : T) : ∃ x : MaximalSpectrum T, pointNorm 
   let ψ : T →ₐ[K] E :=
     { restrictedEval₂ (algebraMap K E) x (fun r ↦ (hφ r).le) hx with
       commutes' := restrictedEval₂_algebraMap _ _ _ _ }
-  refine ⟨⟨RingHom.ker ψ, isMaximal_ker_of_isAlgebraic ψ⟩, ?_⟩
+  refine ⟨⟨RingHom.ker ψ, ψ.ker_isMaximal_of_isAlgebraic⟩, ?_⟩
   rw [pointNorm_eq_spectralNorm (ψ := ψ) le_rfl, ← NormedAlgebra.norm_eq_spectralNorm K]
   exact hfx
 

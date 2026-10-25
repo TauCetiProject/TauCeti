@@ -18,6 +18,8 @@ An algebraic extension of scalars without zero divisors also preserves transcend
 under an injective algebra map into a common overring.
 Dually, every root in `A` of a polynomial over `R` is algebraic over `R`
 (`isAlgebraic_of_mem_aroots`).
+The kernel of an algebra map into a field algebraic over the base field is a maximal ideal
+(`AlgHom.ker_isMaximal_of_isAlgebraic`).
 -/
 
 public section
@@ -28,6 +30,18 @@ open Polynomial
 theorem isAlgebraic_of_mem_aroots {R A : Type*} [CommRing R] [CommRing A] [IsDomain A]
     [Algebra R A] {p : R[X]} {x : A} (hx : x ∈ p.aroots A) : IsAlgebraic R x :=
   ⟨p, fun hp ↦ by simp [hp] at hx, (mem_aroots'.1 hx).2⟩
+
+/-- The kernel of an `F`-algebra map into a field algebraic over the field `F` is a maximal
+ideal, since the image is a field. -/
+theorem AlgHom.ker_isMaximal_of_isAlgebraic {F A E : Type*} [Field F] [CommRing A] [Algebra F A]
+    [Field E] [Algebra F E] [Algebra.IsAlgebraic F E] (ψ : A →ₐ[F] E) :
+    (RingHom.ker ψ).IsMaximal := by
+  let : Field ψ.range := (Subalgebra.isField_of_algebraic ψ.range).toField
+  have hker : RingHom.ker ψ.rangeRestrict = RingHom.ker ψ := by
+    ext a
+    simp [RingHom.mem_ker, Subtype.ext_iff]
+  rw [← hker]
+  exact RingHom.ker_isMaximal_of_surjective _ ψ.rangeRestrict_surjective
 
 namespace Transcendental
 

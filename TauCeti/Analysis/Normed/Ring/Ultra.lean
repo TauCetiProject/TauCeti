@@ -17,10 +17,13 @@ are open additive subgroups. In an ultrametric seminormed ring with `‖1‖ = 1
 ball is an open subring. In an ultrametric normed ring, a finite product of elements each within
 `ε ≤ 1` of `1` is again within `ε` of `1`.
 
-Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized.
+Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. When
+`‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one.
 
 ## Main results
 
+* `IsUltrametricDist.exists_lt_norm_natCast_eq_one`: arbitrarily large natural numbers have norm
+  one in an ultrametric seminormed ring with `‖1‖ = 1`.
 * `IsUltrametricDist.nonarchimedeanRing`: an ultrametric seminormed ring is a nonarchimedean
   ring.
 * `Subring.unitClosedBall`: the closed unit ball of an ultrametric seminormed ring with
@@ -37,6 +40,19 @@ public section
 theorem IsUltrametricDist.norm_intCast_le_norm_one {R : Type*} [SeminormedRing R]
     [IsUltrametricDist R] (z : ℤ) : ‖(z : R)‖ ≤ ‖(1 : R)‖ := by
   simpa using IsUltrametricDist.norm_zsmul_le (1 : R) z
+
+/-- In an ultrametric seminormed ring with `‖1‖ = 1`, arbitrarily large natural numbers have norm
+one: of two consecutive natural numbers, one has norm one, since their difference does. -/
+theorem IsUltrametricDist.exists_lt_norm_natCast_eq_one (R : Type*) [SeminormedRing R]
+    [NormOneClass R] [IsUltrametricDist R] (N : ℕ) : ∃ m, N < m ∧ ‖(m : R)‖ = 1 := by
+  by_contra! h
+  have h1 := (IsUltrametricDist.norm_natCast_le_one R (N + 1)).lt_of_ne (h _ (by omega))
+  have h2 := (IsUltrametricDist.norm_natCast_le_one R (N + 2)).lt_of_ne (h _ (by omega))
+  have h3 := IsUltrametricDist.norm_add_le_max ((N + 2 : ℕ) : R) (-((N + 1 : ℕ) : R))
+  rw [norm_neg, show ((N + 2 : ℕ) : R) + -((N + 1 : ℕ) : R) = 1 by
+    rw [← sub_eq_add_neg, ← Nat.cast_sub (by omega), Nat.add_sub_add_left, Nat.cast_one],
+    norm_one] at h3
+  exact (h3.trans_lt (max_lt h2 h1)).false
 
 /-- **An ultrametric seminormed ring is a nonarchimedean ring.** This is the ring form of
 Mathlib's `IsUltrametricDist.nonarchimedeanAddGroup`: every neighbourhood of zero contains an open

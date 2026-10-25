@@ -8,8 +8,9 @@ module
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 
-import Mathlib.Algebra.Field.GeomSum
 import TauCeti.Analysis.Normed.Group.NullFamily
+import TauCeti.Data.Nat.ModEq
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Maximum modulus for Tate algebras at roots of unity
@@ -46,45 +47,6 @@ public section
 
 namespace MvPowerSeries
 
-/-- The sum of the powers `(ζ ^ e) ^ a` over `a < m` of a primitive `m`-th root of unity is `m` if
-`m` divides `e`, and zero otherwise. -/
-private theorem sum_pow_pow_eq {F : Type*} [Field F] {ζ : F} {m : ℕ} (hζ : IsPrimitiveRoot ζ m)
-    (e : ℕ) :
-    ∑ a : Fin m, (ζ ^ e) ^ (a : ℕ) = if m ∣ e then (m : F) else 0 := by
-  rw [Fin.sum_univ_eq_sum_range (fun a ↦ (ζ ^ e) ^ a)]
-  split_ifs with h
-  · simp [(hζ.pow_eq_one_iff_dvd e).mpr h]
-  · have h1 : ζ ^ e ≠ 1 := fun h' ↦ h ((hζ.pow_eq_one_iff_dvd e).mp h')
-    rw [geom_sum_eq h1, ← pow_mul, mul_comm, pow_mul, hζ.pow_eq_one, one_pow, sub_self,
-      zero_div]
-
-/-- **Orthogonality of characters.** Averaging the monomial `c ∏ᵢ (ζ ^ jᵢ) ^ tᵢ` against the
-character `j ↦ ζ ^ (-⟨j, t₀⟩)` over `j ∈ {0, …, m - 1} ^ k` gives `c m ^ k` if `t ≡ t₀` modulo
-`m`, and zero otherwise. The character is written with the natural exponents `(m - 1) t₀ᵢ`. -/
-private theorem sum_mul_monomial_eq {F : Type*} [Field F] {k m : ℕ} {ζ : F}
-    (hζ : IsPrimitiveRoot ζ m) (t₀ t : Fin k → ℕ) (c : F) :
-    ∑ j : Fin k → Fin m, (∏ i, ζ ^ ((j i : ℕ) * ((m - 1) * t₀ i))) *
-        (c * ∏ i, (ζ ^ (j i : ℕ)) ^ t i) =
-      c * ∏ i, if m ∣ (m - 1) * t₀ i + t i then (m : F) else 0 := by
-  classical
-  simp only [← sum_pow_pow_eq hζ, Fintype.prod_sum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [mul_left_comm, ← Finset.prod_mul_distrib]
-  congr 1
-  refine Finset.prod_congr rfl fun i _ ↦ ?_
-  rw [← pow_mul, ← pow_mul, ← pow_add]
-  ring_nf
-
-/-- Two residues `a, b < m` with `m ∣ (m - 1) a + b` are equal, since `(m - 1) a ≡ -a` modulo
-`m`. -/
-private theorem eq_of_dvd_sub_one_mul_add {m a b : ℕ} (ha : a < m) (hb : b < m)
-    (h : m ∣ (m - 1) * a + b) : b = a := by
-  obtain ⟨q, hq⟩ := h
-  have hab : m * a + b = m * q + a := by
-    rw [← hq, add_right_comm, ← add_one_mul, Nat.sub_add_cancel (by omega)]
-  have := congrArg (· % m) hab
-  simpa [Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] using this
-
 variable {k : ℕ} {R S : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [NormedField S] [IsUltrametricDist S] [CompleteSpace S] (φ : R →+* S)
 
@@ -103,7 +65,13 @@ private theorem hasSum_sum_mul_restrictedEval₂ (hφ : ∀ r, ‖φ r‖ ≤ �
       (∏ i, ζ ^ ((j i : ℕ) * ((m - 1) * t₀ i))) using 1
   funext t
   simp only [TauCeti.Huber.weightedEvalTerm_def]
-  exact (sum_mul_monomial_eq hζ t₀ t _).symm
+  -- Orthogonality of characters, after merging the character with the monomial.
+  rw [← hζ.sum_prod_pow_pow_eq, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [mul_left_comm, ← Finset.prod_mul_distrib]
+  congr 1
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  ring
 
 /-- **Maximum modulus at roots of unity.** Let `φ : R → S` be an isometric ring homomorphism into
 a complete ultrametric normed field containing a primitive `m`-th root of unity `ζ`, where
@@ -171,7 +139,7 @@ theorem exists_norm_restrictedEval₂_eq_norm (hφ : ∀ r, ‖φ r‖ = ‖r‖
     have hzero : g t = 0 := by
       refine mul_eq_zero_of_right _ (Finset.prod_eq_zero (Finset.mem_univ i) ?_)
       rw [ite_eq_right_iff]
-      exact fun h ↦ absurd (eq_of_dvd_sub_one_mul_add (hfm t₀ ht₀ i) (hfm t heq i) h) hi
+      exact fun h ↦ absurd (Nat.eq_of_dvd_sub_one_mul_add (hfm t₀ ht₀ i) (hfm t heq i) h) hi
     simpa [hzero] using hf
   have htotal : ‖∑ j, w j * ev j‖ = ‖f‖ := (hsum.norm_eq_of_forall_norm_lt t₀ hg).trans hgt₀
   -- Some term of the average has norm at least `‖f‖`.
