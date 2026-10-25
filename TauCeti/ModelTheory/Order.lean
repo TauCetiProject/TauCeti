@@ -28,12 +28,16 @@ linear order has a countable model that is not well-ordered. An infinite linear 
 strictly monotone or strictly antitone sequence, so in an ultraproduct over a nonprincipal
 ultrafilter on `ℕ` its shifted copies form a strictly decreasing sequence, and by Łoś's theorem
 the ultraproduct is still a model. A countable elementary substructure containing this sequence,
-given by the downward Löwenheim–Skolem theorem, is the required model.
+given by the downward Löwenheim–Skolem theorem, is the required model. Consequently, for an
+infinite countable well-order `M`, no first-order theory has, among countable structures, exactly
+the copies of `M` as its models.
 
 ## Main results
 
 * `TauCeti.exists_countable_model_not_wellFoundedLT`: every first-order theory of an infinite
   linear order has a countable model that is a linear order but not a well-order.
+* `TauCeti.not_exists_theory_model_iff_nonempty_orderIso`: for an infinite countable well-order
+  `M`, no first-order theory has as countable models exactly the orders isomorphic to `M`.
 -/
 
 public section
@@ -118,5 +122,21 @@ theorem exists_countable_model_not_wellFoundedLT (T : Language.order.Theory) (M 
   · let f : ℕ → S := fun i => ⟨a i, hS (Set.mem_range_self i)⟩
     exact not_strictAnti_of_wellFoundedLT f (strictAnti_nat_of_succ_lt fun i =>
       lt_iff_le_not_ge.mpr (hle i))
+
+/-- **Infinite well-orders are not first-order axiomatizable among countable structures.** For
+an infinite countable well-order `M`, no first-order theory in the language of orders has as its
+countable models, in the universe of `M`, exactly the orders isomorphic to `M`. Contrast
+`TauCeti.exists_sentenceω_realize_iff_nonempty_orderIso` in `TauCeti.ModelTheory.Scott.WellOrder`,
+which gives a single `Lω₁ω` sentence with this property. -/
+theorem not_exists_theory_model_iff_nonempty_orderIso (M : Type w) [LinearOrder M]
+    [WellFoundedLT M] [Infinite M] [Countable M] :
+    ¬ ∃ T : Language.order.Theory, ∀ (N : Type w) [Language.order.Structure N] [LE N]
+      [Language.order.OrderedStructure N] [Countable N], N ⊨ T ↔ Nonempty (M ≃o N) := by
+  rintro ⟨T, hT⟩
+  let := orderStructure M
+  have : M ⊨ T := (hT M).mpr ⟨OrderIso.refl M⟩
+  obtain ⟨N, _, _, _, _, hNT, hwf⟩ := exists_countable_model_not_wellFoundedLT T M
+  obtain ⟨e⟩ := (hT N).mp hNT
+  exact hwf e.symm.toOrderEmbedding.wellFoundedLT
 
 end TauCeti

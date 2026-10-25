@@ -7,7 +7,6 @@ module
 
 public import TauCeti.ModelTheory.Order
 public import TauCeti.ModelTheory.Scott.Isomorphism
-public import Mathlib.Tactic.FinCases
 
 /-!
 # Well-orders of a fixed order type are `Lω₁ω`-definable but not first-order axiomatizable
@@ -20,15 +19,14 @@ well-orders of the order type of `M`.
 For an infinite well-order this cannot be done in first-order logic, even by a theory with
 infinitely many sentences: by `TauCeti.exists_countable_model_not_wellFoundedLT`, every
 first-order theory of an infinite linear order has a countable model that is not well-ordered.
-Hence for an infinite countable well-order `M` no first-order theory has, among countable
-structures, exactly the copies of `M` as its models.
+Hence, by `TauCeti.not_exists_theory_model_iff_nonempty_orderIso`, for an infinite countable
+well-order `M` no first-order theory has, among countable structures, exactly the copies of `M` as
+its models.
 
 ## Main results
 
 * `TauCeti.exists_sentenceω_realize_iff_nonempty_orderIso`: every countable order has an `Lω₁ω`
   sentence true in exactly the countable orders isomorphic to it.
-* `TauCeti.not_exists_theory_model_iff_nonempty_orderIso`: for an infinite countable well-order
-  `M`, no first-order theory has as countable models exactly the orders isomorphic to `M`.
 
 ## References
 
@@ -59,21 +57,5 @@ theorem exists_sentenceω_realize_iff_nonempty_orderIso (M : Type w) [LE M] [Cou
   refine ⟨σ, fun N _ _ _ _ => (hσ N).trans ⟨fun ⟨e⟩ => ?_, fun ⟨e⟩ => ⟨StrongHomClass.toEquiv e⟩⟩⟩
   let := StrongHomClass.toOrderIsoClass Language.order M N (M ≃[Language.order] N)
   exact ⟨OrderIso.ofClass e⟩
-
-/-- **Infinite well-orders are not first-order axiomatizable among countable structures.** For
-an infinite countable well-order `M`, no first-order theory in the language of orders has as its
-countable models, in the universe of `M`, exactly the orders isomorphic to `M`. Contrast
-`TauCeti.exists_sentenceω_realize_iff_nonempty_orderIso`, which gives a single `Lω₁ω` sentence
-with this property. -/
-theorem not_exists_theory_model_iff_nonempty_orderIso (M : Type w) [LinearOrder M]
-    [WellFoundedLT M] [Infinite M] [Countable M] :
-    ¬ ∃ T : Language.order.Theory, ∀ (N : Type w) [Language.order.Structure N] [LE N]
-      [Language.order.OrderedStructure N] [Countable N], N ⊨ T ↔ Nonempty (M ≃o N) := by
-  rintro ⟨T, hT⟩
-  let := orderStructure M
-  have : M ⊨ T := (hT M).mpr ⟨OrderIso.refl M⟩
-  obtain ⟨N, _, _, _, _, hNT, hwf⟩ := exists_countable_model_not_wellFoundedLT T M
-  obtain ⟨e⟩ := (hT N).mp hNT
-  exact hwf e.symm.toOrderEmbedding.wellFoundedLT
 
 end TauCeti
