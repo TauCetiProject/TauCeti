@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.RepresentationNumber
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Dynkin
+public import TauCeti.LinearAlgebra.Matrix.NormTwoShell
+public import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SimplyLaced
 
 /-!
@@ -26,12 +28,13 @@ simple-root coordinates of the root with index `k`
 pairing of the datum becomes the lattice form (`TauCeti.DynkinType.form_rootLatticeRoot`).
 
 The proof is uniform in the type and uses no enumeration of roots.  Every root has norm `2`
-because the pairing of a root with its own coroot is `2`.  Conversely, the norm-`2` vectors are
-reached from the simple roots by simple reflections: if `x = ∑ cᵢ αᵢ` has norm `2`, then
-`2 = ∑ cᵢ (x, αᵢ)`, so some `cᵢ (x, αᵢ)` is positive.  Replacing `x` by `-x` if necessary,
-`cᵢ > 0` and `(x, αᵢ) > 0`; positive definiteness forces `x = αᵢ` or `(x, αᵢ) = 1`, and in the
-latter case `x - αᵢ` has norm `2`, smaller coordinates, and reflects to `x` in `αᵢ`.  Induction on
-`∑ |cᵢ|` concludes.
+because the pairing of a root with its own coroot is `2`.  Conversely, the coordinate vectors of
+the norm-`2` vectors form the norm-two shell `Matrix.normTwoShell` of the Cartan matrix, whose
+vectors have coordinates of one sign (`Matrix.PosDef.nonneg_or_nonpos_of_mem_normTwoShell`).  The
+nonnegative ones are reached from the simple roots by adding simple roots
+(`Matrix.PosDef.normTwoShell_nonneg_induction`), and when `x` and `x + αᵢ` both have norm `2`, the
+pairing `(x, αᵢ)` is `-1`, so `x + αᵢ` is the reflection of `x` in `αᵢ`.  A nonpositive vector is
+the reflection of its negative in itself.
 
 ## Main declarations
 
@@ -63,15 +66,6 @@ namespace TauCeti.DynkinType
 open IntegralLattice _root_.Matrix
 
 variable (t : DynkinType) (ht : t.IsSimplyLaced) (hv : t.Valid)
-
-include ht in
-/-- The integral Cartan form of a simply-laced type is positive definite. -/
-private theorem cartanNorm_pos {w : Fin t.rank → ℤ} (hw : w ≠ 0) :
-    0 < (w ᵥ* t.cartanMatrix) ⬝ᵥ w := by
-  have h := (isPosDef_iff _).mp (t.isPosDef_rootLattice ht) (fun j ↦ (w j : ℚ)) fun h ↦
-    hw (funext fun j ↦ by simpa using congrFun h j)
-  rw [form_rootLattice_intCast] at h
-  exact_mod_cast h
 
 /-- **The root with index `k` as a vector of the root lattice**: the vector whose simple-root
 coordinates are those of the coroot with index `k` in the simple-coroot basis, which by
@@ -129,66 +123,31 @@ theorem rootLatticeRoot_reflectionPerm (k l : Fin t.numRoots) :
   simp [RootPairing.coreflection_apply_coroot]
 
 include ht in
-/-- The integral Cartan norm of `u - eᵢ` is `(u, u) - 2 (u, αᵢ) + 2`. -/
-private theorem cartanNorm_sub_single (u : Fin t.rank → ℤ) (i : Fin t.rank) :
-    ((u - Pi.single i 1) ᵥ* t.cartanMatrix) ⬝ᵥ (u - Pi.single i 1) =
-      (u ᵥ* t.cartanMatrix) ⬝ᵥ u - 2 * (u ᵥ* t.cartanMatrix) i + 2 := by
-  have h : (Pi.single i 1 ᵥ* t.cartanMatrix) ⬝ᵥ u = (u ᵥ* t.cartanMatrix) i := by
-    rw [vecMul_dotProduct_comm ht.isSymm_cartanMatrix, dotProduct_single, mul_one]
-  rw [sub_vecMul, sub_dotProduct, dotProduct_sub, dotProduct_sub, h, dotProduct_single,
-    dotProduct_single, single_one_vecMul, row_apply, cartanMatrix_apply_same]
-  ring
-
-include ht in
-/-- The integral form of the descent: a coordinate vector whose integral Cartan norm is `2` is the
-coordinate vector of a coroot. The induction is on the sum `m` of the absolute values of the
-coordinates. -/
-private theorem exists_coroot_eq_of_cartanNorm_eq_two :
-    ∀ (m : ℕ) (v : Fin t.rank → ℤ), ∑ i, (v i).natAbs = m →
-      (v ᵥ* t.cartanMatrix) ⬝ᵥ v = 2 → ∃ k, (t.simplyConnectedRootDatum hv).coroot k = v := by
+/-- The integral form of the descent: every vector of the norm-two shell of the Cartan matrix is
+the coordinate vector of a coroot. -/
+private theorem exists_coroot_eq_of_mem_normTwoShell {v : Fin t.rank → ℤ}
+    (hv2 : v ∈ t.cartanMatrix.normTwoShell) :
+    ∃ k, (t.simplyConnectedRootDatum hv).coroot k = v := by
   set P := t.simplyConnectedRootDatum hv
-  set C := t.cartanMatrix
-  intro m
-  induction m using Nat.strong_induction_on with
-  | _ m ih =>
-  -- The positive case `uᵢ > 0` and `(u, αᵢ) > 0`: either `u = eᵢ`, or `(u, αᵢ) = 1` and
-  -- `u - eᵢ` is a coroot of smaller size whose simple reflection is `u`.
-  have key (u : Fin t.rank → ℤ) (hum : ∑ i, (u i).natAbs = m) (hu : (u ᵥ* C) ⬝ᵥ u = 2)
-      (i : Fin t.rank) (hui : 0 < u i) (hai : 0 < (u ᵥ* C) i) : ∃ k, P.coroot k = u := by
-    set w := u - Pi.single i 1 with hw
-    have hnorm : (w ᵥ* C) ⬝ᵥ w = 4 - 2 * (u ᵥ* C) i := by
-      rw [hw, t.cartanNorm_sub_single ht, hu]
-      ring
-    by_cases hw0 : w = 0
-    · exact ⟨t.simpleIndex hv i, by rw [coroot_simpleIndex]; exact (sub_eq_zero.mp hw0).symm⟩
-    have hpos : 0 < (w ᵥ* C) ⬝ᵥ w := t.cartanNorm_pos ht hw0
-    have ha : (u ᵥ* C) i = 1 := by omega
-    have hlt : ∑ j, (w j).natAbs < m := by
-      rw [← hum]
-      refine Finset.sum_lt_sum (fun j _ ↦ ?_) ⟨i, Finset.mem_univ _, ?_⟩
-      · by_cases hj : j = i
-        · subst hj; simp [hw]; omega
-        · simp [hw, hj]
-      · simp [hw]; omega
-    obtain ⟨k, hk⟩ := ih _ hlt w rfl (by rw [hnorm, ha]; norm_num)
-    refine ⟨P.reflectionPerm (t.simpleIndex hv i) k, ?_⟩
-    rw [t.coroot_reflectionPerm_simpleIndex hv ht, hk, hw, sub_vecMul, single_one_vecMul,
-      Pi.sub_apply, row_apply, cartanMatrix_apply_same, ha]
-    norm_num
-  intro v hvm hv2
-  -- Some coordinate `vᵢ` has the same sign as `(v, αᵢ)`, since `∑ vᵢ (v, αᵢ) = 2`.
-  obtain ⟨i, -, hi⟩ : ∃ i ∈ Finset.univ, (0 : ℤ) < (v ᵥ* C) i * v i := by
-    refine Finset.exists_lt_of_sum_lt ?_
-    simp only [dotProduct] at hv2
-    rw [Finset.sum_const_zero, hv2]
-    norm_num
-  rcases pos_and_pos_or_neg_and_neg_of_mul_pos hi with ⟨ha, hvi⟩ | ⟨ha, hvi⟩
-  · exact key v hvm hv2 i hvi ha
-  -- The negative case reduces to the positive one for `-v`, and `-(-v)` is the reflection of the
-  -- coroot `-v` in itself.
-  obtain ⟨k, hk⟩ := key (-v) (by simpa using hvm)
-    (by rw [neg_vecMul, neg_dotProduct, dotProduct_neg, neg_neg, hv2]) i (by simpa using hvi)
-    (by simpa [neg_vecMul] using ha)
+  have hB : t.cartanMatrix.PosDef :=
+    TauCeti.Matrix.posDef_map_intCast_iff.mp ht.posDef_map_intCast_cartanMatrix
+  have hoff : ∀ i j, i ≠ j → t.cartanMatrix i j ≤ 0 := fun _ _ ↦ t.cartanMatrix_apply_le_zero_of_ne
+  -- The nonnegative vectors of the shell, by height induction: adding `eᵢ` to a coroot `c` stays
+  -- in the shell exactly when `(c, αᵢ) = -1`, and then `c + eᵢ` is the simple reflection of `c`.
+  have hnonneg (a : Fin t.rank → ℤ) (ha : a ∈ t.cartanMatrix.normTwoShell) (ha0 : 0 ≤ a) :
+      ∃ k, P.coroot k = a := by
+    refine hB.normTwoShell_nonneg_induction (motive := fun a ↦ ∃ k, P.coroot k = a)
+      t.cartanMatrix_apply_same hoff (fun i ↦ ⟨t.simpleIndex hv i, coroot_simpleIndex t hv i⟩)
+      (fun a i ha _ hai ⟨k, hk⟩ ↦ ⟨P.reflectionPerm (t.simpleIndex hv i) k, ?_⟩) ha ha0
+    have hpair := (hB.isHermitian.isSymm.add_mem_normTwoShell_iff ha
+      (single_mem_normTwoShell (t.cartanMatrix_apply_same i))).mp hai
+    rw [dotProduct_mulVec, dotProduct_single, mul_one] at hpair
+    rw [t.coroot_reflectionPerm_simpleIndex hv ht, hk, hpair, neg_one_smul, sub_neg_eq_add]
+  rcases hB.nonneg_or_nonpos_of_mem_normTwoShell
+      (fun i ↦ ⟨1, by rw [t.cartanMatrix_apply_same]; rfl⟩) hoff hv2 with h | h
+  · exact hnonneg v hv2 h
+  -- A nonpositive vector is `-(-v)`, the reflection of the coroot `-v` in itself.
+  obtain ⟨k, hk⟩ := hnonneg (-v) (neg_mem_normTwoShell.mpr hv2) (neg_nonneg.mpr h)
   exact ⟨P.reflectionPerm k k, by
     rw [RootPairing.coroot_reflectionPerm, RootPairing.coreflection_apply_self, hk, neg_neg]⟩
 
@@ -203,7 +162,8 @@ theorem norm_rootLattice_eq_two_iff (x : t.rootLattice ht) :
     have h := t.norm_rootLattice_intCast ht v
     rw [hcast, hx] at h
     exact_mod_cast h.symm
-  obtain ⟨k, hk⟩ := t.exists_coroot_eq_of_cartanNorm_eq_two ht hv _ v rfl hnorm
+  obtain ⟨k, hk⟩ := t.exists_coroot_eq_of_mem_normTwoShell ht hv
+    (mem_normTwoShell.mpr (by rw [dotProduct_mulVec]; exact hnorm))
   refine ⟨k, Subtype.ext (funext fun j ↦ ?_)⟩
   rw [coe_rootLatticeRoot_apply, hk, hv']
 

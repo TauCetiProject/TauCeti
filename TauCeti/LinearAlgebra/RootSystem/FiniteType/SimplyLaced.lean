@@ -31,8 +31,6 @@ matrices are the empty matrix and `A 1`.  The statement for a simply-laced type 
   Cartan matrix is positive definite over `ℚ`.
 * `TauCeti.DynkinType.IsSimplyLaced.posDef_map_intCast_cartanMatrix`: the Cartan matrix of a
   simply-laced Dynkin type is positive definite over `ℚ`.
-* `TauCeti.DynkinType.IsSimplyLaced.isSymm_cartanMatrix`: the Cartan matrix of a simply-laced
-  Dynkin type is symmetric.
 -/
 
 public section
@@ -77,10 +75,5 @@ theorem IsSimplyLaced.posDef_map_intCast_cartanMatrix {t : DynkinType} (ht : t.I
     (t.cartanMatrix.map (Int.cast : ℤ → ℚ)).PosDef :=
   posDef_map_intCast_cartanMatrix_of_isSimplyLaced t
     ((isSimplyLaced_cartanMatrix_iff t).mpr (Or.inl ht))
-
-/-- **The Cartan matrix of a simply-laced Dynkin type is symmetric.** -/
-theorem IsSimplyLaced.isSymm_cartanMatrix {t : DynkinType} (ht : t.IsSimplyLaced) :
-    t.cartanMatrix.IsSymm :=
-  cartanMatrix_isSymm_of_isSimplyLaced ((isSimplyLaced_cartanMatrix_iff t).mpr (Or.inl ht))
 
 end TauCeti.DynkinType
