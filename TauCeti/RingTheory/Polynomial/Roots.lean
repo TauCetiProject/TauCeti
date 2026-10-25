@@ -45,8 +45,9 @@ the same as a pair of enumerations of the roots, indexed by `Fin f.natDegree`, f
 polynomials into linear factors with entries of equal index related by `r`.
 
 Finally, the roots of a polynomial gcd form the multiset intersection of the roots of its
-inputs. In characteristic zero this identifies the degree lost to the gcd with the derivative as
-the number of distinct roots.
+inputs. So when the inputs split, the degree of their gcd counts their common roots, each with
+the minimum of its two multiplicities. In characteristic zero this identifies the degree lost to
+the gcd with the derivative as the number of distinct roots.
 
 ## Main results
 
@@ -81,6 +82,14 @@ the number of distinct roots.
   of their roots with entries of equal index related by `r`.
 * `Polynomial.rootMultiplicity_gcd`: a root's multiplicity in a gcd is the minimum of its
   multiplicities in the two inputs.
+* `Polynomial.card_roots_inter_eq_sum_min_rootMultiplicity`: the common roots counted with
+  multiplicity in the multiset intersection are counted with the minimum of their two
+  multiplicities.
+* `Polynomial.natDegree_gcd_eq_card_roots_inter_of_splits`: the degree of the gcd of two nonzero
+  polynomials, one of them split, is the number of their common roots counted with the minimum
+  of their multiplicities.
+* `Polynomial.natDegree_gcd_eq_card_aroots_inter`: the same count for the common roots in an
+  algebraically closed field of two polynomials over a field `k`, with the gcd taken over `k`.
 * `Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset`: over an
   algebraically closed field of characteristic zero, degree minus the degree of the derivative
   gcd counts distinct roots.
@@ -327,6 +336,25 @@ theorem _root_.Polynomial.roots_gcd (p q : K[X]) (hp : p ≠ 0) (hq : q ≠ 0) :
   ext x
   simp [count_roots, rootMultiplicity_gcd p q hp hq]
 
+/-- The size of the multiset intersection of the roots of two polynomials is the sum, over their
+distinct common roots, of the minimum of the two multiplicities. -/
+theorem _root_.Polynomial.card_roots_inter_eq_sum_min_rootMultiplicity (p q : K[X]) :
+    Multiset.card (p.roots ∩ q.roots) =
+      ∑ x ∈ p.roots.toFinset ∩ q.roots.toFinset,
+        min (p.rootMultiplicity x) (q.rootMultiplicity x) := by
+  rw [← Multiset.sum_count_eq_card (s := p.roots.toFinset ∩ q.roots.toFinset)
+    fun x hx => by simpa using Multiset.mem_inter.mp hx]
+  simp [Multiset.count_inter, count_roots]
+
+/-- **Multiplicity formula for common roots.** If `p` and `q` are nonzero and `p` splits, then
+the degree of their gcd is the number of their common roots, each counted with the minimum of its
+multiplicities in `p` and in `q`. -/
+theorem _root_.Polynomial.natDegree_gcd_eq_card_roots_inter_of_splits {p q : K[X]} (hp : p ≠ 0)
+    (hq : q ≠ 0) (hsplit : p.Splits) :
+    (EuclideanDomain.gcd p q).natDegree = Multiset.card (p.roots ∩ q.roots) := by
+  rw [← roots_gcd p q hp hq]
+  exact (hsplit.of_dvd hp (EuclideanDomain.gcd_dvd_left p q)).natDegree_eq_card_roots
+
 section CharZero
 
 variable [CharZero K]
@@ -373,7 +401,20 @@ end CharZero
 
 section IsAlgClosed
 
-variable [CharZero K] [IsAlgClosed K]
+variable [IsAlgClosed K]
+
+/-- **Multiplicity formula for common roots.** The degree of the gcd of two nonzero polynomials
+over a field `k`, taken over `k`, is the number of their common roots in an algebraically closed
+field `K`, each counted with the minimum of its two multiplicities. -/
+theorem _root_.Polynomial.natDegree_gcd_eq_card_aroots_inter {k : Type*} [Field k]
+    [DecidableEq k] [Algebra k K] {p q : k[X]} (hp : p ≠ 0) (hq : q ≠ 0) :
+    (EuclideanDomain.gcd p q).natDegree = Multiset.card (p.aroots K ∩ q.aroots K) := by
+  have hinj := (algebraMap k K).injective
+  rw [aroots_def, aroots_def, ← natDegree_gcd_eq_card_roots_inter_of_splits
+    ((Polynomial.map_ne_zero_iff hinj).2 hp) ((Polynomial.map_ne_zero_iff hinj).2 hq)
+    (IsAlgClosed.splits _), gcd_map, natDegree_map]
+
+variable [CharZero K]
 
 /-- Over an algebraically closed field of characteristic zero, the number of distinct roots of a
 nonzero polynomial is its degree minus the degree of its gcd with its derivative. -/
