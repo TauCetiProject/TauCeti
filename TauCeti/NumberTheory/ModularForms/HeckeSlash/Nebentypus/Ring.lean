@@ -53,9 +53,10 @@ when its underlying function lies here.
 ## Main results
 
 * `coe_mem_functionCharSpace_iff`: the bridge to `modFormCharSpace`.
-* `slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1`,
-  `slash_mapGL_eq_of_mem_functionCharSpace_of_dvd_sub`: a `χ`-invariant function is invariant under
-  `Γ₁(N)`, so its slash by a matrix of `SL(2, ℤ)` depends only on the lower row modulo `N`.
+* `TauCeti.slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1`,
+  `TauCeti.slash_mapGL_eq_of_mem_functionCharSpace_of_dvd_sub`: a `χ`-invariant function is
+  invariant under `Γ₁(N)`, so its slash by a matrix of `SL(2, ℤ)` depends only on the lower row
+  modulo `N`.
 * `HeckeRing.GL2.twistedHeckeSlashRingLinearMap_single`: the value on a basis element is the
   scaled twisted sum of that double coset. With `map_zero`/`map_add` this determines the map.
 
@@ -118,6 +119,8 @@ lemma coe_mem_functionCharSpace_iff (f : ModularForm ((Gamma1 N).map (mapGL ℝ)
     (⇑f) ∈ functionCharSpace k χ ↔ f ∈ modFormCharSpace k χ :=
   (mem_modFormCharSpace_iff_nebentypus k χ f).symm
 
+namespace TauCeti
+
 variable {k χ} in
 /-- A `χ`-invariant function for `Γ₀(N)` is invariant under `Γ₁(N)`, on which `χ(d_g)` is `1`. -/
 lemma slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1 {f : ℍ → ℂ}
@@ -136,6 +139,8 @@ lemma slash_mapGL_eq_of_mem_functionCharSpace_of_dvd_sub {f : ℍ → ℂ}
   conv_lhs => rw [← inv_mul_cancel_right A B]
   rw [map_mul, SlashAction.slash_mul, slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1 hf
     (mul_inv_mem_Gamma1_iff_dvd_sub.mpr ⟨h10, h11⟩)]
+
+end TauCeti
 
 namespace HeckeRing.GL2
 
