@@ -108,7 +108,7 @@ variable {R S : Type*} [NonAssocRing R] [NonAssocRing S] (b : Basis ι ℤ R)
 /-- The values of a ring homomorphism to a nontrivial ring on an integer basis do not all
 vanish. The basis need not be finite. -/
 theorem ringHom_comp_ne_zero [Nontrivial S] (ψ : R →+* S) : ⇑ψ ∘ ⇑b ≠ 0 := fun h ↦ by
-  have : ψ.toAddMonoidHom.toIntLinearMap = 0 := b.ext fun l ↦ congrFun h l
+  have : ψ.toAddMonoidHom.toIntLinearMap = 0 := b.ext fun l ↦ by simpa using congrFun h l
   simpa using LinearMap.congr_fun this 1
 
 end RingHom
