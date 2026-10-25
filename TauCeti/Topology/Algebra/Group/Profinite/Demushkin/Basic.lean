@@ -71,14 +71,14 @@ section Predicate
 variable (p : ℕ) [Fact p.Prime] (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
 
-/-- **The Demushkin predicate** (Labute, p. 106), for a prime `p` and a profinite group `G`: a
+/-- **The Demushkin predicate** (Labute, p. 106), for a prime `p` and a topological group `G`: a
 pro-`p` group whose `H¹(G, 𝔽_p)` is finite-dimensional, whose `H²(G, 𝔽_p)` is one-dimensional, and
 on which the cup product `H¹(G, 𝔽_p) × H¹(G, 𝔽_p) → H²(G, 𝔽_p)` is nondegenerate on both sides.
 The primality of `p` is a hypothesis of the predicate. Profiniteness is not: no field mentions
 `CompactSpace G` or `TotallyDisconnectedSpace G`, so Lean leaves those section instances out of
 the structure, and the predicate is also defined for topological groups that are not profinite.
-The results about Demushkin groups below assume both, so on profinite groups, its mathematical
-domain, it is Labute's notion. The pro-`p` hypothesis is a field, so that no theorem about
+The presentation results below assume both; on profinite groups, its intended mathematical
+domain, this is Labute's notion. The pro-`p` hypothesis is a field, so that no theorem about
 Demushkin groups applies to a group that satisfies only the cohomological clauses. Finite
 generation is a consequence, `IsDemushkin.isTopologicallyFinitelyGenerated`, and is not assumed. -/
 structure IsDemushkin : Prop where
