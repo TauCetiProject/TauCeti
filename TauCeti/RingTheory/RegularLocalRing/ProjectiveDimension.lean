@@ -9,9 +9,11 @@ public import Mathlib.RingTheory.LocalProperties.ProjectiveDimension
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Ideal.Height
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.Regular.ProjectiveDimension
 import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
+import TauCeti.RingTheory.LocalRing.ProjectiveDimension
 import TauCeti.RingTheory.Regular.ProjectiveDimension
 import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
@@ -22,6 +24,10 @@ import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 Let `R` be a regular ring of finite Krull dimension `d`. Every `R`-module, finitely generated or
 not, has projective dimension at most `d`. For a regular local ring the bound is attained by the
 residue field, so the global dimension of a regular local ring is its Krull dimension.
+
+Conversely (Serre), a Noetherian local ring whose residue field has finite projective dimension
+is regular. Together with the bound above, a Noetherian local ring has finite global dimension
+exactly when it is regular.
 
 ## Main results
 
@@ -34,6 +40,10 @@ residue field, so the global dimension of a regular local ring is its Krull dime
   every module has projective dimension at most `n`.
 * `ModuleCat.projectiveDimension_le_ringKrullDim`: over a regular ring, the
   projective dimension of every module is at most the Krull dimension of the ring.
+* `TauCeti.IsRegularLocalRing.of_hasProjectiveDimensionLE`: a Noetherian local ring whose residue
+  field has finite projective dimension is regular.
+* `TauCeti.isRegularLocalRing_iff_projectiveDimension_ne_top`: a Noetherian local ring is regular
+  exactly when its residue field has finite projective dimension.
 
 ## Proof
 
@@ -47,13 +57,23 @@ regular ring the projective dimension of a finite module is the supremum of thos
 localizations at maximal ideals, and these localizations are regular local rings of dimension at
 most that of the ring.
 
+For the converse, induct on a bound `n` for the projective dimension of the residue field `κ`.
+If `𝔪` is an associated prime of `R`, a finite module of finite projective dimension is free, so
+`κ` is free and `R` is a field. Otherwise prime avoidance gives a nonzerodivisor `x ∈ 𝔪 \ 𝔪²`.
+From `0 → 𝔪 → R → κ → 0`, the projective dimension of `𝔪` is at most `n - 1`. As `x` is regular
+on `𝔪`, the projective dimension of `𝔪 ⧸ x 𝔪` over `R ⧸ (x)` is also at most `n - 1`. The residue
+field of `R ⧸ (x)` is a direct summand of `𝔪 ⧸ x 𝔪`, so `R ⧸ (x)` is regular by induction. Then
+`𝔪` needs at most `dim (R ⧸ (x)) + 1 = dim R` generators.
+
 ## References
 
 * [Stacks Project, Section 10.110](https://stacks.math.columbia.edu/tag/00O7), Rings of finite
-  global dimension: Proposition 10.110.1 (00O7) and Lemma 10.110.8 (00OE).
+  global dimension: Proposition 10.110.1 (00O7), Proposition 10.110.5 (00OC) and
+  Lemma 10.110.8 (00OE).
 * [Stacks Project, Lemma 10.109.12](https://stacks.math.columbia.edu/tag/065T), reducing the
   global dimension to cyclic modules.
-* H. Matsumura, *Commutative Ring Theory*, Section 19 (Regular rings).
+* H. Matsumura, *Commutative Ring Theory*, Section 19 (Regular rings), Theorem 19.2 for the
+  converse.
 -/
 
 public section
@@ -205,5 +225,137 @@ theorem _root_.ModuleCat.projectiveDimension_le_ringKrullDim (M : ModuleCat.{v} 
       exact (projectiveDimension_le_iff M n).mpr (hasProjectiveDimensionLE (h ▸ le_rfl) M)
 
 end IsRegularRing
+
+/-! ### Serre's theorem: finite projective dimension of the residue field -/
+
+namespace IsRegularLocalRing
+
+/-- A Noetherian local ring over which the residue field is projective is a field, hence
+regular. -/
+private theorem of_projective_residueField {R : Type u} [CommRing R] [IsLocalRing R]
+    [IsNoetherianRing R] [Small.{v} R] [Module.Projective R (Shrink.{v} (R ⧸ maximalIdeal R))] :
+    IsRegularLocalRing R := by
+  -- `𝔪` kills the residue field, whose annihilator is zero as it is free and nonzero.
+  have : Module.Finite R (Shrink.{v} (R ⧸ maximalIdeal R)) :=
+    Module.Finite.equiv (Shrink.linearEquiv R _).symm
+  have : Module.Free R (Shrink.{v} (R ⧸ maximalIdeal R)) := Module.free_of_flat_of_isLocalRing
+  have hm : maximalIdeal R = ⊥ := by
+    rw [← (Module.annihilator_eq_bot (M := Shrink.{v} (R ⧸ maximalIdeal R))).mpr inferInstance,
+      (Shrink.linearEquiv R (R ⧸ maximalIdeal R)).annihilator_eq, Ideal.annihilator_quotient]
+  refine of_spanFinrank_maximalIdeal_le R ?_
+  rw [hm, Submodule.spanFinrank_bot, Nat.cast_zero]
+  exact ringKrullDim_nonneg_of_nontrivial
+
+/-- The induction step of Serre's theorem: if the residue field of `R` has projective dimension
+at most `n + 1` and `x ∈ 𝔪 \ 𝔪²` is a nonzerodivisor, then the residue field of `R ⧸ (x)` has
+projective dimension at most `n` over `R ⧸ (x)`. Indeed `𝔪` has projective dimension at most `n`,
+hence so does `𝔪 ⧸ x 𝔪` over `R ⧸ (x)`, and the residue field of `R ⧸ (x)` is a direct summand
+of `𝔪 ⧸ x 𝔪`. -/
+private theorem hasProjectiveDimensionLE_residueField_quotient {R : Type u} [CommRing R]
+    [IsLocalRing R] [Small.{v} R] {n : ℕ} {x : R} (hxm : x ∈ maximalIdeal R)
+    (hx2 : x ∉ maximalIdeal R ^ 2) (hx : x ∈ nonZeroDivisors R) [IsLocalRing (R ⧸ span {x})]
+    [Small.{v} (R ⧸ span {x})]
+    [HasProjectiveDimensionLE (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) (n + 1)] :
+    HasProjectiveDimensionLE (ModuleCat.of (R ⧸ span {x})
+      (Shrink.{v} ((R ⧸ span {x}) ⧸ maximalIdeal (R ⧸ span {x})))) n := by
+  set I := span {x}
+  set q := Ideal.Quotient.mk I
+  -- The sequence `0 → 𝔪 → R → κ → 0` shows that `𝔪` has projective dimension at most `n`.
+  have hS := ModuleCat.shortComplexOfConj_shortExact (Shrink.linearEquiv R (maximalIdeal R))
+    (Shrink.linearEquiv R R) (Shrink.linearEquiv R (R ⧸ maximalIdeal R)) _ _
+    (LinearMap.exact_subtype_mkQ (maximalIdeal R)) (maximalIdeal R).injective_subtype
+    (maximalIdeal R).mkQ_surjective
+  let M : ModuleCat.{v} R := ModuleCat.of R (Shrink.{v} (maximalIdeal R))
+  have : HasProjectiveDimensionLE M n := hS.hasProjectiveDimensionLT_X₁ (n + 1) inferInstance ‹_›
+  -- `x` is regular on `𝔪 ⊆ R`, so `𝔪 ⧸ x 𝔪` has projective dimension at most `n` over `R ⧸ (x)`.
+  have hreg : IsSMulRegular M x :=
+    (Module.Flat.isSMulRegular_of_nonZeroDivisors (M := R) hx).of_injective
+      ((maximalIdeal R).subtype ∘ₗ (Shrink.linearEquiv R (maximalIdeal R)).toLinearMap)
+      ((maximalIdeal R).injective_subtype.comp (Shrink.linearEquiv R _).injective)
+  have := ModuleCat.hasProjectiveDimensionLE_quotient_smul_top hx n M hreg
+  -- The residue field of `R ⧸ (x)` is a retract of `𝔪 ⧸ x 𝔪`.
+  obtain ⟨i, r, hri⟩ := TauCeti.IsLocalRing.exists_comp_eq_id_of_notMem_sq hxm hx2
+  let e₁ : (M ⧸ I • (⊤ : Submodule R M)) ≃ₗ[R ⧸ I]
+      (maximalIdeal R ⧸ I • (⊤ : Submodule R (maximalIdeal R))) :=
+    (Submodule.Quotient.equiv _ _ (Shrink.linearEquiv R (maximalIdeal R)) (by
+      rw [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range])).extendScalarsOfSurjective
+      (Ideal.Quotient.mk_surjective (I := I))
+  let e₂ : Shrink.{v} ((R ⧸ I) ⧸ maximalIdeal (R ⧸ I)) ≃ₗ[R ⧸ I]
+      (R ⧸ I) ⧸ (maximalIdeal R).map q :=
+    (Shrink.linearEquiv (R ⧸ I) _).trans (Submodule.quotEquivOfEq _ _
+      (map_maximalIdeal_of_surjective q Ideal.Quotient.mk_surjective).symm)
+  let ret : Retract (ModuleCat.of (R ⧸ I) (Shrink.{v} ((R ⧸ I) ⧸ maximalIdeal (R ⧸ I))))
+      (ModuleCat.of (R ⧸ I) (M ⧸ I • (⊤ : Submodule R M))) :=
+    { i := ModuleCat.ofHom (e₁.symm.toLinearMap ∘ₗ i ∘ₗ e₂.toLinearMap)
+      r := ModuleCat.ofHom (e₂.symm.toLinearMap ∘ₗ r ∘ₗ e₁.toLinearMap)
+      retract := by
+        ext y
+        simpa using congr(e₂.symm ($hri (e₂ y))) }
+  exact ret.hasProjectiveDimensionLT (n + 1)
+
+/-- The induction proving `TauCeti.IsRegularLocalRing.of_hasProjectiveDimensionLE`, on the bound
+for the projective dimension of the residue field. -/
+private theorem of_hasProjectiveDimensionLE_aux (n : ℕ) :
+    ∀ (R : Type u) [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [Small.{v} R],
+      HasProjectiveDimensionLE (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) n →
+        IsRegularLocalRing R := by
+  induction n with
+  | zero =>
+    intro R _ _ _ _ h
+    have : Projective (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) :=
+      projective_iff_hasProjectiveDimensionLT_one.mpr h
+    have : Module.Projective R (Shrink.{v} (R ⧸ maximalIdeal R)) :=
+      (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))).projective_of_module_projective
+    exact of_projective_residueField
+  | succ n ih =>
+    intro R _ _ _ _ h
+    have : Module.Finite R (Shrink.{v} (R ⧸ maximalIdeal R)) :=
+      Module.Finite.equiv (Shrink.linearEquiv R _).symm
+    by_cases hm : maximalIdeal R ∈ associatedPrimes R R
+    · -- In depth zero the residue field is free, so `R` is a field.
+      have := Module.free_of_hasProjectiveDimensionLE_of_maximalIdeal_mem_associatedPrimes hm
+        (n + 1) (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R)))
+      exact of_projective_residueField
+    -- Otherwise choose a nonzerodivisor `x ∈ 𝔪 \ 𝔪²`; then `R ⧸ (x)` is regular by induction.
+    obtain ⟨x, hxm, hx2, hx⟩ :=
+      TauCeti.IsLocalRing.exists_mem_maximalIdeal_notMem_sq_mem_nonZeroDivisors hm
+    have : Nontrivial (R ⧸ span {x}) := Ideal.Quotient.nontrivial_iff.mpr fun h ↦
+      (maximalIdeal.isMaximal R).ne_top (top_le_iff.mp (h ▸ (span_singleton_le_iff_mem _).mpr hxm))
+    have := IsLocalRing.of_surjective' (Ideal.Quotient.mk (span {x})) Ideal.Quotient.mk_surjective
+    have : Small.{v} (R ⧸ span {x}) := small_of_surjective Ideal.Quotient.mk_surjective
+    have := ih (R ⧸ span {x}) (hasProjectiveDimensionLE_residueField_quotient hxm hx2 hx)
+    -- Finally `𝔪` needs at most `dim (R ⧸ (x)) + 1 = dim R` generators.
+    refine of_spanFinrank_maximalIdeal_le R ?_
+    have hdim := ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors
+      hx hxm
+    rw [← hdim, ← spanFinrank_maximalIdeal (R := R ⧸ span {x}),
+      ← map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective]
+    exact_mod_cast TauCeti.IsLocalRing.spanFinrank_maximalIdeal_le_spanFinrank_map_quotient_add_one
+      (maximalIdeal R).fg_of_isNoetherianRing hxm
+
+variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [Small.{v} R]
+
+/-- **Serre's theorem.** A Noetherian local ring whose residue field has finite projective
+dimension is a regular local ring. Its dimension is then that projective dimension, by
+`TauCeti.IsRegularLocalRing.projectiveDimension_quotient_maximalIdeal_eq_ringKrullDim`. -/
+@[stacks 00OC]
+theorem of_hasProjectiveDimensionLE (n : ℕ)
+    [HasProjectiveDimensionLE (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) n] :
+    IsRegularLocalRing R :=
+  of_hasProjectiveDimensionLE_aux n R ‹_›
+
+end IsRegularLocalRing
+
+/-- **A Noetherian local ring is regular exactly when its residue field has finite projective
+dimension.** -/
+theorem isRegularLocalRing_iff_projectiveDimension_ne_top {R : Type u} [CommRing R]
+    [IsLocalRing R] [IsNoetherianRing R] [Small.{v} R] :
+    IsRegularLocalRing R ↔
+      projectiveDimension (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) ≠ ⊤ := by
+  refine ⟨fun _ ↦ ?_, fun h ↦ ?_⟩
+  · rw [IsRegularLocalRing.projectiveDimension_quotient_maximalIdeal_eq_ringKrullDim]
+    exact ringKrullDim_ne_top
+  · obtain ⟨n, _⟩ := (projectiveDimension_ne_top_iff _).mp h
+    exact IsRegularLocalRing.of_hasProjectiveDimensionLE n
 
 end TauCeti
