@@ -41,7 +41,9 @@ has cohomological degree `2 - n`, and degree `n - 2` for the Adams grading, whic
 of path length. Such deformations include the operation of Liu--Wang's Example 4.7 for affine
 `D₄`; see `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD4`.
 
-Nontriviality of such a deformation modulo `A∞` isomorphism is not addressed here.
+Some of these deformations are trivial modulo `A∞` isomorphism
+(`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Backtrack`) and, when `2` is invertible,
+some are not (`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`).
 
 ## Main definitions
 
@@ -432,6 +434,12 @@ theorem zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_gradi
 theorem zigzagStrictAInfinityAlgebra_m_two_apply (x : Fin 2 → nonisolatedZigzagQuotient k G) :
     (zigzagStrictAInfinityAlgebra k hns).m 2 x = x 0 * x 1 :=
   zigzagLoopAInfinityAlgebra_m_two_apply _ _ x
+
+/-- A loop deformation has the binary operation of the strict zigzag algebra. -/
+theorem zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two :
+    (zigzagLoopAInfinityAlgebra hns c hc).m 2 = (zigzagStrictAInfinityAlgebra k hns).m 2 :=
+  MultilinearMap.ext fun x ↦ by
+    rw [zigzagLoopAInfinityAlgebra_m_two_apply, zigzagStrictAInfinityAlgebra_m_two_apply]
 
 /-- The strict zigzag algebra has no operation besides the product. -/
 theorem zigzagStrictAInfinityAlgebra_m_eq_zero {n : ℕ} (hn : n ≠ 2) :

@@ -77,10 +77,9 @@ not.
 
 Kadeishvili's criterion
 `TauCeti.AInfinityAlgebra.isIntrinsicallyFormal_of_forall_hochschildVanishesAt` therefore does not
-apply to such zigzag algebras. That a nonzero obstruction class gives a minimal
-`A∞` structure which is not `A∞` isomorphic to the strict one is not addressed here: an `A∞`
-isomorphism may have a nonzero quadratic component, which changes the quartic operation by more
-than a coboundary.
+apply to such zigzag algebras. That the corresponding loop deformation is not `A∞` isomorphic to
+the strict zigzag algebra, when `2` is invertible, is proved in
+`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`.
 
 ## Main definitions
 
@@ -521,8 +520,7 @@ theorem hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra
   have hm : ∀ n, 0 < n → n ≤ 3 → (zigzagLoopAInfinityAlgebra hns c hc).m n = (𝒵).m n := by
     intro n hn hn3
     rcases eq_or_ne n 2 with rfl | h₂
-    · ext x
-      rw [zigzagLoopAInfinityAlgebra_m_two_apply, zigzagStrictAInfinityAlgebra_m_two_apply]
+    · exact zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc
     · rw [zigzagLoopAInfinityAlgebra_m_eq_zero _ _ h₂ (by omega),
         zigzagStrictAInfinityAlgebra_m_eq_zero h₂]
   exact AInfinityAlgebra.hochschildDifferential_obstruction isMinimal_zigzagStrictAInfinityAlgebra
