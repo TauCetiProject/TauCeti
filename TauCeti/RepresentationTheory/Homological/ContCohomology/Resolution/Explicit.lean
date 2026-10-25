@@ -32,26 +32,19 @@ these formulas in terms of `π` and `h` through `ofGraded_proj_apply`, `ofGraded
 `gradedCochainComplex_ρ_apply`.
 
 The first step does not involve contractions: a homogeneous `1`- or `2`-cocycle `a` of a discrete
-`X` has the inhomogeneous form `g ↦ a (1, g)`, respectively `(g, h) ↦ a (1, g, g * h)`, and the
-explicit comparisons `TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete` and
-`TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete` carry the class of any explicit cocycle
-of that form to the class of `a`. For the trivial `𝔽₂` coefficients, the corresponding statements
-through the transport `TauCeti.ofDiscreteModule_trivialF2` are
-`TauCeti.ContCohomology.eqToHom_explicitH1AddEquivContinuousCohomology_eq_cochainClass` and its
-degree-two companion.
+`X` has the inhomogeneous form `TopRep.inhomogeneousCocycle1`, respectively
+`TopRep.inhomogeneousCocycle2`, and the explicit comparisons carry its class to the class of `a`
+(`TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_eq_cochainClass` and its degree-two
+companion, in `CohomologyComparison.lean`). This file applies that to the homogeneous cocycle
+obtained from `z` through the comparison with the coinduced resolution.
 
 ## Main definitions
 
-* `TopRep.inhomogeneousCocycle1`, `TopRep.inhomogeneousCocycle2`: the inhomogeneous forms of
-  homogeneous `1`- and `2`-cocycles of a discrete representation.
 * `TopRep.ResolutionContraction.explicitCocycle1`, `TopRep.ResolutionContraction.explicitCocycle2`:
   the explicit inhomogeneous cocycles of an invariant `1`- or `2`-cocycle of a contracted complex.
 
 ## Main results
 
-* `TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_eq_cochainClass` and
-  `TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_eq_cochainClass`: an explicit cocycle
-  and a homogeneous cocycle agreeing at `(1, g)`, respectively `(1, g, g * h)`, have the same class.
 * `TopRep.ResolutionContraction.explicitCocycle1_apply` and
   `TopRep.ResolutionContraction.explicitCocycle2_apply`: the formulas above.
 * `TopRep.ResolutionContraction.explicitH1AddEquivContinuousCohomologyOfDiscrete_explicitCocycle1`
@@ -79,96 +72,13 @@ universe u v
 attribute [local instance] TopRep.distribMulAction
 
 variable {k : Type v} [Ring k] [TopologicalSpace k] {G : Type u} [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G] (X : TopRep.{u} k G) [DiscreteTopology X.V] [ContinuousSMul G X.V]
-
-/-! ### Homogeneous cocycles in inhomogeneous coordinates -/
-
-/-- The continuous inhomogeneous `1`-cocycle `g ↦ a (1, g)` of a homogeneous `1`-cocycle `a` of a
-discrete representation `X`. -/
-noncomputable def inhomogeneousCocycle1 (a : (homogeneousCochains X).X 1)
-    (ha : ((homogeneousCochains X).d 1 2).hom a = 0) : Z1 G X.V :=
-  (cocycleEquiv1 G X.V).symm ((ofDiscreteModuleCocyclesRestrictScalarsIntIso X 1).inv
-    ((homogeneousCochains X).cyclesMkOfEq a 2 (CochainComplex.next ℕ 1) ha))
-
-/-- The inhomogeneous form of a homogeneous `1`-cocycle `a` takes the value `a (1, g)` at `g`. -/
-@[simp]
-theorem inhomogeneousCocycle1_apply (a : (homogeneousCochains X).X 1)
-    (ha : ((homogeneousCochains X).d 1 2).hom a = 0) (g : G) :
-    (X.inhomogeneousCocycle1 a ha : G → X.V) g = a.val 1 g := by
-  rw [inhomogeneousCocycle1, cocycleEquiv1_symm_apply,
-    ← iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply]
-  have key := (ofDiscreteModuleCocyclesRestrictScalarsIntIso X 1).inv_hom_id_apply
-  -- `key` is stated on the carrier of `restrictScalarsInt.obj (cocycles X 1)`, which is the carrier
-  -- of `cocycles X 1` only up to unfolding, so it is rewritten with `erw`.
-  erw [key]
-  rw [HomologicalComplex.iCycles_cyclesMkOfEq]
-
-/-- **Explicit degree-one classes are canonical cochain classes.** If a continuous inhomogeneous
-`1`-cocycle `c` of a discrete `X` is `g ↦ a (1, g)` for a homogeneous `1`-cocycle `a`, the
-degree-one comparison carries the class of `c` to the class of `a`. -/
-theorem explicitH1AddEquivContinuousCohomologyOfDiscrete_eq_cochainClass (c : Z1 G X.V)
-    (a : (homogeneousCochains X).X 1) (ha : ((homogeneousCochains X).d 1 2).hom a = 0)
-    (hca : ∀ g, (c : G → X.V) g = a.val 1 g) :
-    X.explicitH1AddEquivContinuousCohomologyOfDiscrete (c : H1 G X.V) = X.cochainClass 1 a ha := by
-  obtain rfl : c = X.inhomogeneousCocycle1 a ha :=
-    Subtype.ext (funext fun g ↦ (hca g).trans (X.inhomogeneousCocycle1_apply a ha g).symm)
-  rw [explicitH1AddEquivContinuousCohomologyOfDiscrete_apply,
-    explicitH1AddEquivContinuousCohomology_apply, inhomogeneousCocycle1, AddEquiv.apply_symm_apply,
-    ofDiscreteModuleRestrictScalarsIntEquiv_π]
-  have key := (ofDiscreteModuleCocyclesRestrictScalarsIntIso X 1).inv_hom_id_apply
-  -- `key` is stated on the carrier of `restrictScalarsInt.obj (cocycles X 1)`, which is the carrier
-  -- of `cocycles X 1` only up to unfolding, so it is rewritten with `erw`.
-  erw [key]
-  exact (cochainClass_def X 1 a ha).symm
-
-section LocallyCompact
-
-variable [LocallyCompactSpace G]
-
-/-- The continuous inhomogeneous `2`-cocycle `(g, h) ↦ a (1, g, g * h)` of a homogeneous
-`2`-cocycle `a` of a discrete representation `X`. -/
-noncomputable def inhomogeneousCocycle2 (a : (homogeneousCochains X).X 2)
-    (ha : ((homogeneousCochains X).d 2 3).hom a = 0) : Z2 G X.V :=
-  (cocycleEquiv2 G X.V).symm ((ofDiscreteModuleCocyclesRestrictScalarsIntIso X 2).inv
-    ((homogeneousCochains X).cyclesMkOfEq a 3 (CochainComplex.next ℕ 2) ha))
-
-/-- The inhomogeneous form of a homogeneous `2`-cocycle `a` takes the value `a (1, g, g * h)` at
-`(g, h)`. -/
-@[simp]
-theorem inhomogeneousCocycle2_apply (a : (homogeneousCochains X).X 2)
-    (ha : ((homogeneousCochains X).d 2 3).hom a = 0) (g h : G) :
-    (X.inhomogeneousCocycle2 a ha : G × G → X.V) (g, h) = a.val 1 g (g * h) := by
-  rw [inhomogeneousCocycle2, cocycleEquiv2_symm_apply,
-    ← iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_two_apply]
-  have key := (ofDiscreteModuleCocyclesRestrictScalarsIntIso X 2).inv_hom_id_apply
-  -- As in degree one, `key` lives on the carrier of `restrictScalarsInt.obj (cocycles X 2)`.
-  erw [key]
-  rw [HomologicalComplex.iCycles_cyclesMkOfEq]
-
-/-- **Explicit degree-two classes are canonical cochain classes.** If a continuous inhomogeneous
-`2`-cocycle `c` of a discrete `X` is `(g, h) ↦ a (1, g, g * h)` for a homogeneous `2`-cocycle `a`,
-the degree-two comparison carries the class of `c` to the class of `a`. -/
-theorem explicitH2AddEquivContinuousCohomologyOfDiscrete_eq_cochainClass (c : Z2 G X.V)
-    (a : (homogeneousCochains X).X 2) (ha : ((homogeneousCochains X).d 2 3).hom a = 0)
-    (hca : ∀ g h, (c : G × G → X.V) (g, h) = a.val 1 g (g * h)) :
-    X.explicitH2AddEquivContinuousCohomologyOfDiscrete (c : H2 G X.V) = X.cochainClass 2 a ha := by
-  obtain rfl : c = X.inhomogeneousCocycle2 a ha :=
-    Subtype.ext (funext fun p ↦ (hca p.1 p.2).trans (X.inhomogeneousCocycle2_apply a ha _ _).symm)
-  rw [explicitH2AddEquivContinuousCohomologyOfDiscrete_apply,
-    explicitH2AddEquivContinuousCohomology_apply, inhomogeneousCocycle2, AddEquiv.apply_symm_apply,
-    ofDiscreteModuleRestrictScalarsIntEquiv_π]
-  have key := (ofDiscreteModuleCocyclesRestrictScalarsIntIso X 2).inv_hom_id_apply
-  -- As in degree one, `key` lives on the carrier of `restrictScalarsInt.obj (cocycles X 2)`.
-  erw [key]
-  exact (cochainClass_def X 2 a ha).symm
-
-end LocallyCompact
+  [IsTopologicalGroup G] {X : TopRep.{u} k G} [DiscreteTopology X.V] [ContinuousSMul G X.V]
 
 /-! ### Cocycles on contracted complexes -/
 
 namespace ResolutionContraction
 
-variable {X} {J : CochainComplex (TopRep.{u} k G) ℕ} (c : ResolutionContraction.{v, u, u} X J)
+variable {J : CochainComplex (TopRep.{u} k G) ℕ} (c : ResolutionContraction.{v, u, u} X J)
 
 /-- The explicit inhomogeneous `1`-cocycle of an invariant `1`-cocycle `z` of a complex contracted
 onto a discrete `X`: `g ↦ g • proj (g⁻¹ • hom₀ z)` (`explicitCocycle1_apply`). Its class is the
