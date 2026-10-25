@@ -336,15 +336,6 @@ theorem val_le_arrowSum [DecidableEq V] (f : Flow cap s t) {S : Finset V} (hs : 
   calc f.val ≤ cutBound 0 cap S := f.toBoundedFlow.val_le_cutBound hs ht
     _ = arrowSum cap S Sᶜ := cutBound_zero_left cap S
 
-/-- The value of an ordinary flow on the arrows from any vertex set to any other is at most the
-total capacity of all arrows. -/
-theorem arrowSum_le_arrowSum_univ (f : Flow cap s t) (S T : Finset V) :
-    arrowSum f.toFun S T ≤ arrowSum cap univ univ :=
-  calc arrowSum f.toFun S T ≤ arrowSum f.toFun univ univ :=
-        (arrowSum_mono_left f.mem_Icc.1 (subset_univ S) T).trans
-          (arrowSum_mono_right f.mem_Icc.1 univ (subset_univ T))
-    _ ≤ arrowSum cap univ univ := arrowSum_mono f.mem_Icc.2 univ univ
-
 /-- The *augmentation* of an ordinary `s`–`t` flow `f` by an ordinary `s`–`t` flow `r` of its
 residual network: the residual update of `f` by `r`. -/
 def augment (f : Flow cap s t) (r : Flow (residualCapacity 0 cap f.toFun) s t) :
@@ -362,6 +353,16 @@ theorem toBoundedFlow_augment (f : Flow cap s t) (r : Flow (residualCapacity 0 c
 end Flow
 
 end Ordered
+
+/-- The value of an ordinary flow on the arrows from any vertex set to any other is at most the
+total capacity of all arrows. -/
+theorem Flow.arrowSum_le_arrowSum_univ [PartialOrder K] [IsOrderedAddMonoid K]
+    {cap : Assignment Q K} {s t : V} (f : Flow cap s t) (S T : Finset V) :
+    arrowSum f.toFun S T ≤ arrowSum cap univ univ :=
+  calc arrowSum f.toFun S T ≤ arrowSum f.toFun univ univ :=
+        (arrowSum_mono_left f.mem_Icc.1 (subset_univ S) T).trans
+          (arrowSum_mono_right f.mem_Icc.1 univ (subset_univ T))
+    _ ≤ arrowSum cap univ univ := arrowSum_mono f.mem_Icc.2 univ univ
 
 /-- Every ordinary `s`–`t` flow `g` of value at least that of `f` is the augmentation of `f` by an
 ordinary `s`–`t` flow of the residual network of `f`, necessarily of value `g.val - f.val`. -/
