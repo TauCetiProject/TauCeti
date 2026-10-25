@@ -93,22 +93,6 @@ theorem isLocallyConformallyFlat_iff
           (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0 :=
   Iff.rfl
 
-/-- If the installed fibre metric is `g`, vanishing of the curvature tensor of the Levi-Civita
-connection at a point transfers to the metric `g` installed explicitly. This transports flatness
-along an equality of fibre metrics, such as `Bundle.ContMDiffRiemannianMetric.rescale_one`, which
-cannot be rewritten inside the instance-dependent arguments. -/
-private theorem curvatureTensor_eq_zero_of_riemannianBundle_eq
-    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
-    (hg : RiemannianBundle.g = g.toRiemannianMetric) {y : M}
-    (h : (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y = 0) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0 := by
-  obtain ⟨_⟩ := inst
-  subst hg
-  exact h
-
 /-- A flat metric is locally conformally flat, with the constant conformal factor `1`. -/
 theorem isLocallyConformallyFlat_of_curvatureTensor_eq_zero
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
@@ -118,7 +102,8 @@ theorem isLocallyConformallyFlat_of_curvatureTensor_eq_zero
     g.IsLocallyConformallyFlat := fun _ ↦
   ⟨fun _ ↦ 1, contMDiff_const, fun _ ↦ one_pos, Eventually.of_forall fun y ↦
     letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    curvatureTensor_eq_zero_of_riemannianBundle_eq (by rw [rescale_one]; rfl) (h y)⟩
+    (curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq (by rw [rescale_one]; rfl)
+      y).trans (h y)⟩
 
 /-- If `g` is locally conformally flat, then so is every conformal rescaling `h g` of `g`: a
 conformal factor `f` flattening `g` near a point gives the factor `f / h` flattening `h g`. -/
@@ -138,7 +123,7 @@ theorem IsLocallyConformallyFlat.rescale
   exact ⟨fun y ↦ f y / h y, hfh, hfh_pos, hflat.mono fun _ ↦
       letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
-      curvatureTensor_eq_zero_of_riemannianBundle_eq (by rw [heq]; rfl)⟩
+      (curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq (by rw [heq]; rfl) _).trans⟩
 
 /-- A conformal rescaling `h g` of a metric `g` is locally conformally flat exactly when `g` is. -/
 @[simp]
@@ -188,10 +173,11 @@ theorem isLocallyConformallyFlat_rescale_model_space {f : F → ℝ}
     (hf : ContMDiff 𝓘(ℝ, F) 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x) :
     (((riemannianMetricVectorSpace F).ofLE le_top).rescale f hf hf_pos).IsLocallyConformallyFlat :=
   (((riemannianMetricVectorSpace F).ofLE le_top).isLocallyConformallyFlat_of_curvatureTensor_eq_zero
-    fun x ↦ ContMDiffRiemannianMetric.curvatureTensor_eq_zero_of_riemannianBundle_eq
-      -- Mathlib's `RiemannianBundle` instance on the tangent spaces of `F` is defined to be the
-      -- standard metric `riemannianMetricVectorSpace F`.
-      (by rw [ContMDiffRiemannianMetric.toRiemannianMetric_ofLE]; rfl)
-      (curvatureTensor_leviCivitaConnection_model_space x)).rescale hf hf_pos
+    fun x ↦
+      (ContMDiffRiemannianMetric.curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq
+        -- Mathlib's `RiemannianBundle` instance on the tangent spaces of `F` is defined to be
+        -- the standard metric `riemannianMetricVectorSpace F`.
+        (by rw [ContMDiffRiemannianMetric.toRiemannianMetric_ofLE]; rfl) x).trans
+        (curvatureTensor_leviCivitaConnection_model_space x)).rescale hf hf_pos
 
 end TauCeti.Manifold
