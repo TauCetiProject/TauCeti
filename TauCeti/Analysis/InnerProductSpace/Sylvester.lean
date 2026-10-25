@@ -320,10 +320,13 @@ theorem sylvester_sum_eigenvectorBasis (hA : (A : E →ₗ[𝕜] E).IsSymmetric)
   conv_rhs => rw [← (hA.eigenvectorBasis hn).sum_inner_smul_rankOne (hB.eigenvectorBasis hm) C]
   simp only [map_sum, map_smul]
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-  have hij := sub_ne_zero.mpr (hA.eigenvalues_ne_eigenvalues_of_disjoint hB hn hm h i j)
+  have hij : (hA.eigenvalues hn i : 𝕜) - (hB.eigenvalues hm j : 𝕜) ≠ 0 := by
+    exact_mod_cast sub_ne_zero.mpr (hA.eigenvalues_ne_eigenvalues_of_disjoint hB hn hm h i j)
   rw [sylvester_rankOne_of_apply_eq_smul hB (hA.apply_eigenvectorBasis hn i)
-    (hB.apply_eigenvectorBasis hm j), ← RCLike.ofReal_sub, smul_smul, mul_right_comm,
-    ← RCLike.ofReal_mul, inv_mul_cancel₀ hij, RCLike.ofReal_one, one_mul]
+    (hB.apply_eigenvectorBasis hm j), smul_smul]
+  congr 1
+  push_cast
+  field_simp
 
 /-- **Bijectivity of the Sylvester operator.** In finite dimension, if `A` and `B` are symmetric
 and no real eigenvalue of `A` is an eigenvalue of `B`, then for every `C` the Sylvester equation
