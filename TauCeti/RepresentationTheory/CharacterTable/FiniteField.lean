@@ -27,7 +27,7 @@ proper extensions, and splitting can fail. What rules that out is the following 
 which is the whole content of the file.
 
 For any `u : K[G]`, the trace of the matrix `M` of left multiplication by `u` in the group basis
-is `|G|` times the coefficient of `u` at `1` (`TauCeti.trace_leftMulMatrix_monoidAlgebra`), and
+is `|G|` times the coefficient of `u` at `1` (`MonoidAlgebra.trace_leftMulMatrix`), and
 over a finite field
 `Matrix.trace (M ^ |K|) = (Matrix.trace M) ^ |K|` (`FiniteField.trace_pow_card`). Since
 `a ^ |K| = a` in `K`, the coefficient at `1` is unchanged by raising to the `|K|`-th power, once
@@ -82,7 +82,7 @@ theorem coeff_one_pow_card (hG : (Nat.card G : K) ≠ 0) (u : MonoidAlgebra K G)
     rwa [← Nat.card_eq_fintype_card]
   have h := FiniteField.trace_pow_card
     (Algebra.leftMulMatrix (MonoidAlgebra.basis G K) u)
-  rw [← map_pow, trace_leftMulMatrix_monoidAlgebra, trace_leftMulMatrix_monoidAlgebra, mul_pow,
+  rw [← map_pow, MonoidAlgebra.trace_leftMulMatrix, MonoidAlgebra.trace_leftMulMatrix, mul_pow,
     FiniteField.pow_card, FiniteField.pow_card] at h
   exact mul_left_cancel₀ hG' h
 
