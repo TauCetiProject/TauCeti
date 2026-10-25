@@ -310,6 +310,68 @@ theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
   simp only [Nat.card_eq_fintype_card, Fintype.card_prod, Fintype.card_units_int,
     Fintype.card_finset, pow_succ, mul_comm]
 
+private theorem even_of_neg_one_pow_smul_eq_self {n : ℕ} {v : CliffordAlgebra Q}
+    (hneg : (-1 : R) ≠ 1) (hv : IsUnit v) (h : (-1 : R) ^ n • v = v) : Even n := by
+  apply (neg_one_pow_eq_one_iff_even hneg).mp
+  apply algebraMap_injective Q
+  simpa [Algebra.smul_def] using hv.mul_right_cancel (by
+    simpa [Algebra.smul_def] using h)
+
+private theorem basis_comm_monomial_iff [Fintype I] [Nontrivial R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i : I, Q (b i) = 1 ∨ Q (b i) = -1) (s : Finset I) :
+    (∀ i : I, basis Q b s * ι Q (b i) = ι Q (b i) * basis Q b s) ↔
+      s = ∅ ∨ (s = Finset.univ ∧ Odd s.card) := by
+  have hneg : (-1 : R) ≠ 1 := by
+    intro hneg
+    apply Invertible.ne_zero (2 : R)
+    calc
+      (2 : R) = 1 - (-1) := by ring
+      _ = 0 := by rw [hneg]; simp
+  constructor
+  · intro hs
+    by_cases hempty : s = ∅
+    · exact Or.inl hempty
+    · right
+      have hsodd : Odd s.card := by
+        obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hempty
+        have h := hs i
+        rw [basis_mul_ι_of_mem hb hi] at h
+        have hunit : IsUnit (ι Q (b i) * basis Q b s) :=
+          (isUnit_ι_of_isUnit Q (by rcases hQ i with hi | hi <;> simp [hi])).mul
+            (isUnit_basis hb s (fun j hj => by
+              rcases hQ j with hj' | hj' <;> rw [hj'] <;> simp))
+        have heven : Even (s.card - 1) :=
+          even_of_neg_one_pow_smul_eq_self hneg hunit h
+        have hpos : 1 ≤ s.card := by
+          exact Nat.one_le_iff_ne_zero.mpr (by
+            intro hzero
+            exact hempty (Finset.card_eq_zero.mp hzero))
+        have hodd' := heven.add_one
+        simpa [Nat.sub_add_cancel hpos] using hodd'
+      have heq : s = Finset.univ := by
+        apply Finset.eq_univ_of_forall
+        intro i
+        by_contra hi
+        have heven : Even s.card := by
+          have h := hs i
+          rw [basis_mul_ι_of_notMem hb hi] at h
+          have hunit : IsUnit (ι Q (b i) * basis Q b s) :=
+            (isUnit_ι_of_isUnit Q (by rcases hQ i with hi | hi <;> simp [hi])).mul
+              (isUnit_basis hb s (fun j hj => by
+                rcases hQ j with hj' | hj' <;> rw [hj'] <;> simp))
+          exact even_of_neg_one_pow_smul_eq_self hneg hunit h
+        exact (Nat.not_even_iff_odd.mpr hsodd) heven
+      exact ⟨heq, hsodd⟩
+  · rintro (rfl | ⟨rfl, hsodd⟩) i
+    · rw [basis_empty, one_mul, mul_one]
+    · obtain ⟨k, hk⟩ := hsodd
+      have heven : Even ((Finset.univ : Finset I).card - 1) := by
+        refine ⟨k, ?_⟩
+        simp [hk, two_mul]
+      rw [basis_mul_ι_of_mem hb (by simp), heven.neg_one_pow]
+      simp
+
 /-- A signed basis monomial is central in the finite monomial subgroup exactly when its support is
 empty, or when it is the full index set of odd cardinality. This holds over any nontrivial
 commutative coefficient ring in which `2` is invertible. -/
@@ -322,78 +384,6 @@ theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
         ((↑(u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = basis Q b s ∨
           (↑(u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = -basis Q b s) ∧
         (s = ∅ ∨ (s = Finset.univ ∧ Odd s.card)) := by
-  have basis_comm_iff (s : Finset I) :
-      (∀ i : I, basis Q b s * ι Q (b i) = ι Q (b i) * basis Q b s) ↔
-        s = ∅ ∨ (s = Finset.univ ∧ Odd s.card) := by
-    constructor
-    · intro hs
-      by_cases hempty : s = ∅
-      · exact Or.inl hempty
-      · right
-        have hsodd : Odd s.card := by
-          obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hempty
-          have h := hs i
-          rw [basis_mul_ι_of_mem hb hi] at h
-          have hunit : IsUnit (ι Q (b i) * basis Q b s) :=
-            (isUnit_ι_of_isUnit Q (by rcases hQ i with hi | hi <;> simp [hi])).mul
-              (isUnit_basis hb s (fun j hj => by
-                rcases hQ j with hj' | hj' <;> rw [hj'] <;> simp))
-          have hscalar : (-1 : R) ^ (s.card - 1) = 1 := by
-            have hmul : algebraMap R (CliffordAlgebra Q) ((-1 : R) ^ (s.card - 1)) *
-                (ι Q (b i) * basis Q b s) = algebraMap R (CliffordAlgebra Q) 1 *
-                  (ι Q (b i) * basis Q b s) := by
-              simpa [Algebra.smul_def] using h
-            apply algebraMap_injective Q
-            simpa using hunit.mul_right_cancel hmul
-          have hneg : (-1 : R) ≠ 1 := by
-            intro hneg
-            apply Invertible.ne_zero (2 : R)
-            calc
-              (2 : R) = 1 - (-1) := by ring
-              _ = 0 := by rw [hneg]; simp
-          have heven : Even (s.card - 1) :=
-            (neg_one_pow_eq_one_iff_even hneg).mp hscalar
-          have hpos : 1 ≤ s.card := by
-            exact Nat.one_le_iff_ne_zero.mpr (by
-              intro hzero
-              exact hempty (Finset.card_eq_zero.mp hzero))
-          have hodd' := heven.add_one
-          simpa [Nat.sub_add_cancel hpos] using hodd'
-        have heq : s = Finset.univ := by
-          apply Finset.eq_univ_of_forall
-          intro i
-          by_contra hi
-          have heven : Even s.card := by
-            have h := hs i
-            rw [basis_mul_ι_of_notMem hb hi] at h
-            have hunit : IsUnit (ι Q (b i) * basis Q b s) :=
-              (isUnit_ι_of_isUnit Q (by rcases hQ i with hi | hi <;> simp [hi])).mul
-                (isUnit_basis hb s (fun j hj => by
-                  rcases hQ j with hj' | hj' <;> rw [hj'] <;> simp))
-            have hscalar : (-1 : R) ^ s.card = 1 := by
-              have hmul : algebraMap R (CliffordAlgebra Q) ((-1 : R) ^ s.card) *
-                  (ι Q (b i) * basis Q b s) = algebraMap R (CliffordAlgebra Q) 1 *
-                    (ι Q (b i) * basis Q b s) := by
-                simpa [Algebra.smul_def] using h
-              apply algebraMap_injective Q
-              simpa using hunit.mul_right_cancel hmul
-            have hneg : (-1 : R) ≠ 1 := by
-              intro hneg
-              apply Invertible.ne_zero (2 : R)
-              calc
-                (2 : R) = 1 - (-1) := by ring
-                _ = 0 := by rw [hneg]; simp
-            exact (neg_one_pow_eq_one_iff_even hneg).mp hscalar
-          exact (Nat.not_even_iff_odd.mpr hsodd) heven
-        exact ⟨heq, hsodd⟩
-    · rintro (rfl | ⟨rfl, hsodd⟩) i
-      · rw [basis_empty, one_mul, mul_one]
-      · obtain ⟨k, hk⟩ := hsodd
-        have heven : Even ((Finset.univ : Finset I).card - 1) := by
-          refine ⟨k, ?_⟩
-          simp [hk, two_mul]
-        rw [basis_mul_ι_of_mem hb (by simp), heven.neg_one_pow]
-        simp
   have central_comm_of_value (hu : u ∈ Subgroup.center (monomialGroup Q b))
       (s : Finset I) (hs : (↑(u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = basis Q b s ∨
         (↑(u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = -basis Q b s) :
@@ -416,9 +406,9 @@ theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
   constructor
   · intro hu
     obtain ⟨s, hs | hs⟩ := (mem_monomialGroup_iff (b := b) hb hQ).mp u.property
-    · refine ⟨s, Or.inl hs, (basis_comm_iff s).mp ?_⟩
+    · refine ⟨s, Or.inl hs, (basis_comm_monomial_iff hb hQ s).mp ?_⟩
       exact central_comm_of_value hu s (Or.inl hs)
-    · refine ⟨s, Or.inr hs, (basis_comm_iff s).mp ?_⟩
+    · refine ⟨s, Or.inr hs, (basis_comm_monomial_iff hb hQ s).mp ?_⟩
       exact central_comm_of_value hu s (Or.inr hs)
   · rintro ⟨s, hs, hpar⟩
     rw [Subgroup.mem_center_iff]
@@ -435,7 +425,7 @@ theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
             let : Invertible (Q (b i)) := ⟨Q (b i), hsq, hsq⟩
             let := invertibleιOfInvertible Q (b i)
             let gen := unitOfInvertible (ι Q (b i))
-            have hscomm := (basis_comm_iff s).mpr hpar i
+            have hscomm := (basis_comm_monomial_iff hb hQ s).mpr hpar i
             rcases hs with hs | hs
             · simpa [uval, gen, hs, hxi] using hscomm.symm
             · simpa [uval, gen, hs, hxi] using hscomm.symm
