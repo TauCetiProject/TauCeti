@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Free
 public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.Algebra.DualNumber.Grading
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.ModuleResolution
+public import TauCeti.Algebra.Homology.Ext.GradedDualNumbers
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Coeff
 
@@ -37,7 +38,6 @@ of `TauCeti.not_admitsFiniteResolution_dualNumberResidue`.
 
 ## Main definitions
 
-* `TauCeti.dualNumberGradedResidue`: the graded residue field `S = A/(ε)`, the graded head of `A`.
 * `TauCeti.dualNumberGradedProjectiveBasis` and `TauCeti.dualNumberGradedResidueBasis`: the bases
   `[A]` of `K₀^gr(proj A)` and `[S]` of `G₀^gr(mod A)` over `ℤ[q,q⁻¹]`.
 
@@ -93,12 +93,7 @@ private theorem dualNumberIntegerGrade_zero_le_span :
       Submodule.span k (Set.range fun _ : Unit => (1 : DualNumber k)) := by
   rw [Set.range_const, dualNumberIntegerGrade_zero_eq_span_one]
 
-/-! ### The graded residue field and the canonical bases -/
-
-/-- The **graded residue field** `S = k[ε]/(ε)`, concentrated in degree zero: the graded head
-`A / A₊` of the regular module `A`. -/
-abbrev dualNumberGradedResidue : GradedModuleCat.{u} (dualNumberIntegerGrade k) :=
-  gradedPositiveMulQuotient (dualNumberIntegerGrade k) (one_mem_dualNumberIntegerGrade_zero k)
+/-! ### The canonical bases -/
 
 /-- The basis `[A]` of `K₀^gr(proj A)` over `ℤ[q,q⁻¹]`, for the dual numbers `A = k[ε]` with
 `ε` in degree two. -/
