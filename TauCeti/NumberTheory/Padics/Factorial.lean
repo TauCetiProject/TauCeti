@@ -20,6 +20,8 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
 ## Main results
 
 * `TauCeti.tendsto_padic_natCast_factorial`: the factorials tend to zero in `ℚ_[p]`.
+* `TauCeti.padicValNat_factorial_eq_add_sum`: Legendre's formula truncated at level `h`,
+  `v_p(n!) = v_p(⌊n / pʰ⌋!) + ∑_{k = 1}^{h} ⌊n / pᵏ⌋`.
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
 -/
 
@@ -43,6 +45,18 @@ theorem tendsto_padic_natCast_factorial (p : ℕ) [hp : Fact p.Prime] :
   have hnorm := (Padic.norm_int_le_pow_iff_dvd (p := p) (n.factorial : ℤ) k).mpr hd
   simp only [Int.cast_natCast, zpow_neg, zpow_natCast, ← inv_pow] at hnorm
   simpa only [dist_zero_right] using hnorm.trans_lt hk
+
+/-- **Legendre's formula, truncated at level `h`.** The `p`-adic valuation of `n!` exceeds that of
+`⌊n / pʰ⌋!` by `∑_{k = 1}^{h} ⌊n / pᵏ⌋`. -/
+theorem padicValNat_factorial_eq_add_sum (p : ℕ) [Fact p.Prime] (n h : ℕ) :
+    padicValNat p n.factorial =
+      padicValNat p (n / p ^ h).factorial + ∑ k ∈ Finset.range h, n / p ^ (k + 1) := by
+  induction h with
+  | zero => simp
+  | succ h ih =>
+    rw [ih, Finset.sum_range_succ, ← padicValNat_mul_div_factorial (n / p ^ h),
+      padicValNat_factorial_mul, Nat.div_div_eq_div_mul, ← pow_succ]
+    ring
 
 end TauCeti
 
