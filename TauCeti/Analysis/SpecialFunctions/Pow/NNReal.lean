@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -32,6 +33,12 @@ product of three linear factors follow: at infinity the kernel decays like `y ^ 
 three distinct poles the product of the factors `‖z - eᵢ‖ₑ ^ (-1/2)` is controlled by their sum,
 since at most one of them can be large.
 
+A real power `y ↦ y ^ d` on `ℝ≥0∞` is upper semicontinuous from the right uniformly on intervals:
+for `ε ≠ 0`, every `y ∈ [x, z]` satisfies `y ^ d ≤ x ^ d + ε` once `z` is close enough to `x`.
+For `d ≥ 0` this is monotonicity and continuity; for `d < 0` the power is antitone. Enlarging a
+set slightly thus changes its `d`-dimensional diameter sum by little, as in Hausdorff measure
+approximations by open covers.
+
 For a base in `ℝ≥0` greater than one, power comparisons also express rational bounds and
 closed intervals for a reciprocal radius parameter `α / r`.
 
@@ -43,6 +50,8 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.sq_rpow_one_half`: `(x ^ 2) ^ (1 / 2) = x`, with no hypothesis on `x`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
+* `ENNReal.eventually_forall_mem_Icc_rpow_le_add`: `y ^ d ≤ x ^ d + ε` for `y ∈ [x, z]` and `z`
+  near `x`.
 * `ENNReal.ofReal_inv_sqrt_le_enorm_rpow`: `ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹)` for every real `x`.
 * `ENNReal.ofReal_inv_sqrt_le_of_pow_three_le`: `y³ ≤ 2 |d|` gives `1 / √d ≤ √2 y^(-3/2)`.
 * `ENNReal.exists_enorm_sub_rpow_neg_half_mul_le`: for three distinct points `eᵢ`, the product of
@@ -53,7 +62,7 @@ closed intervals for a reciprocal radius parameter `α / r`.
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal Topology
 
 namespace ENNReal
 
@@ -93,6 +102,19 @@ theorem rpow_le_rpow_of_nonpos {x y : ℝ≥0∞} {z : ℝ} (hxy : x ≤ y) (hz 
   obtain ⟨w, hw, rfl⟩ : ∃ w, 0 ≤ w ∧ z = -w := ⟨-z, neg_nonneg.mpr hz, (neg_neg z).symm⟩
   rw [rpow_neg, rpow_neg]
   exact ENNReal.inv_le_inv.mpr (rpow_le_rpow hxy hw)
+
+/-- For `ε ≠ 0`, every `y ∈ [x, z]` satisfies `y ^ d ≤ x ^ d + ε` once `z` is close enough to
+`x`. -/
+theorem eventually_forall_mem_Icc_rpow_le_add (x : ℝ≥0∞) {ε : ℝ≥0∞} (hε : ε ≠ 0) (d : ℝ) :
+    ∀ᶠ z in 𝓝 x, ∀ y ∈ Set.Icc x z, y ^ d ≤ x ^ d + ε := by
+  rcases le_or_gt 0 d with hd | hd
+  · rcases eq_or_ne (x ^ d) ∞ with hx | hx
+    · exact Filter.Eventually.of_forall fun _ _ _ ↦ by simp [hx]
+    filter_upwards [(continuous_rpow_const.tendsto x).eventually_lt_const
+      (ENNReal.lt_add_right hx hε)] with z hz y hy
+    exact (rpow_le_rpow hy.2 hd).trans hz.le
+  · exact Filter.Eventually.of_forall fun _ y hy ↦
+      (rpow_le_rpow_of_nonpos hy.1 hd.le).trans le_self_add
 
 /-- The inverse square root of a real `x` is at most `‖x‖ₑ ^ (-1/2)`, as a value in `ℝ≥0∞`. The two
 agree for `x > 0`; for `x ≤ 0` the left side is `0`. -/

@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Hausdorff
 public import TauCeti.MeasureTheory.Function.Coarea.Eilenberg
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Measure.Regular
 
 /-!
@@ -87,28 +88,17 @@ private theorem content_le_openContent (d : ℝ) (r : ℝ≥0∞) (s : Set X) :
 
 /-- A set of diameter `x < r` can be enlarged to diameter `x + 2 η ≤ r`, for some `η > 0`, while
 changing `x ^ d` by at most `ε`. -/
-private theorem exists_pos_rpow_le {x r ε : ℝ≥0∞} (hx : x ≠ ⊤) (hxr : x < r) (hε : 0 < ε)
-    (d : ℝ) : ∃ η : ℝ≥0, 0 < η ∧ x + 2 * η ≤ r ∧
+private theorem exists_pos_rpow_le {x r ε : ℝ≥0∞} (hxr : x < r) (hε : ε ≠ 0) (d : ℝ) :
+    ∃ η : ℝ≥0, 0 < η ∧ x + 2 * η ≤ r ∧
       ∀ y, x ≤ y → y ≤ x + 2 * η → y ^ d ≤ x ^ d + ε := by
   have hg : Tendsto (fun η : ℝ≥0 ↦ x + 2 * (η : ℝ≥0∞)) (𝓝 0) (𝓝 x) := by
     have hc : Continuous fun η : ℝ≥0 ↦ x + 2 * (η : ℝ≥0∞) := continuous_const.add
       ((ENNReal.continuous_const_mul ENNReal.ofNat_ne_top).comp ENNReal.continuous_coe)
     simpa using hc.tendsto 0
-  have hpow : ∀ᶠ η : ℝ≥0 in 𝓝 0, ∀ y, x ≤ y → y ≤ x + 2 * η → y ^ d ≤ x ^ d + ε := by
-    rcases le_or_gt 0 d with hd | hd
-    · -- For `d ≥ 0` the power is monotone and continuous at the finite value `x`.
-      have hlt : x ^ d < x ^ d + ε :=
-        ENNReal.lt_add_right (ENNReal.rpow_ne_top_of_nonneg hd hx) hε.ne'
-      filter_upwards [((ENNReal.continuous_rpow_const.tendsto x).comp hg).eventually_lt_const hlt]
-        with η hη y _ hy
-      exact (ENNReal.rpow_le_rpow hy hd).trans hη.le
-    · -- For `d < 0` the power is antitone, so enlarging a set does not increase it.
-      refine Eventually.of_forall fun η y hxy _ ↦ le_add_right ?_
-      simpa [ENNReal.rpow_neg] using
-        ENNReal.inv_le_inv.2 (ENNReal.rpow_le_rpow hxy (neg_nonneg.2 hd.le))
-  obtain ⟨η, ⟨hηr, hηd⟩, hη0⟩ := (((hg.eventually_lt_const hxr).and hpow).filter_mono
+  obtain ⟨η, ⟨hηr, hηd⟩, hη0⟩ := (((hg.eventually_lt_const hxr).and
+    (hg.eventually (ENNReal.eventually_forall_mem_Icc_rpow_le_add x hε d))).filter_mono
     nhdsWithin_le_nhds |>.and self_mem_nhdsWithin).exists (f := 𝓝[>] (0 : ℝ≥0))
-  exact ⟨η, hη0, hηr.le, hηd⟩
+  exact ⟨η, hη0, hηr.le, fun y hxy hy ↦ hηd y ⟨hxy, hy⟩⟩
 
 /-- Enlarging the sets of a cover to small open neighbourhoods shows that covers by open sets of
 diameter at most `r` are as efficient as arbitrary covers of diameter at most `r' < r`. -/
@@ -117,8 +107,7 @@ private theorem openContent_le_content (d : ℝ) {r r' : ℝ≥0∞} (hr : r' < 
   refine le_iInf₂ fun t hst ↦ le_iInf fun htr ↦ ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
   obtain ⟨ε', hε'0, hε'⟩ := ENNReal.exists_pos_sum_of_countable (ENNReal.coe_ne_zero.2 hε.ne') ℕ
   choose η hη0 hηr hηd using fun n ↦ exists_pos_rpow_le
-    ((htr n).trans_lt (hr.trans_le le_top)).ne ((htr n).trans_lt hr)
-    (ENNReal.coe_pos.2 (hε'0 n)) d
+    ((htr n).trans_lt hr) (ENNReal.coe_ne_zero.2 (hε'0 n).ne') d
   have hdiam (n : ℕ) : ediam (thickening (η n) (t n)) ≤ ediam (t n) + 2 * η n :=
     ediam_thickening_le _
   calc openContent d r s
