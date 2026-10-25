@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Completeness
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.LinearAlgebra.Isomorphisms
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import Mathlib.Topology.Instances.Matrix
 import Mathlib.Topology.MetricSpace.Contracting
 
 /-!
@@ -48,13 +50,13 @@ open Function
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
 
 /-- Surjectivity onto a finite-dimensional space is an open condition on continuous linear
 maps. -/
-theorem isOpen_setOf_surjective : IsOpen {A : E →L[𝕜] F | Surjective A} := by
+theorem isOpen_setOf_surjective [CompleteSpace 𝕜] : IsOpen {A : E →L[𝕜] F | Surjective A} := by
   rw [Metric.isOpen_iff]
   rintro A (hA : Surjective A)
   obtain ⟨R, hAR⟩ := A.exists_rightInverse_of_surjective (A.range_eq_top_of_surjective hA)
@@ -94,17 +96,29 @@ theorem isOpen_setOf_surjective : IsOpen {A : E →L[𝕜] F | Surjective A} := 
   exact ⟨R y, by simpa using hy⟩
 
 /-- Surjectivity of `M.mulVec` is an open condition on matrices `M` with finitely many rows and
-columns: full row rank is preserved under small perturbations of the entries. -/
+columns: full row rank is preserved under small perturbations of the entries. The field need
+not be complete: a fixed right inverse gives a square matrix with nonzero determinant locally. -/
 theorem isOpen_setOf_mulVec_surjective {m n : Type*} [Finite m] [Fintype n] :
     IsOpen {M : Matrix m n 𝕜 | Surjective M.mulVec} := by
   classical
   cases nonempty_fintype m
-  let Φ : Matrix m n 𝕜 →ₗ[𝕜] (n → 𝕜) →L[𝕜] m → 𝕜 :=
-    LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ Matrix.toLin'.toLinearMap
-  have hΦ (M : Matrix m n 𝕜) : ⇑(Φ M) = M.mulVec := by
-    simp [Φ, Matrix.toLin'_apply', Matrix.coe_mulVecLin]
-  simpa only [Set.preimage_ofPred_eq, hΦ] using
-    isOpen_setOf_surjective.preimage Φ.continuous_of_finiteDimensional
+  rw [isOpen_iff_mem_nhds]
+  intro A hA
+  obtain ⟨R, hAR⟩ := Matrix.mulVec_surjective_iff_exists_right_inverse.mp hA
+  have hcont : Continuous (fun B : Matrix m n 𝕜 ↦ (B * R).det) :=
+    (continuous_id.matrix_mul continuous_const).matrix_det
+  refine mem_nhds_iff.mpr ⟨{B : Matrix m n 𝕜 | (B * R).det ≠ 0}, ?_,
+    isOpen_ne.preimage hcont, ?_⟩
+  · intro B hB
+    have hBR : Surjective (B * R).mulVec :=
+      Matrix.mulVec_surjective_iff_isUnit.mpr
+        ((B * R).isUnit_iff_isUnit_det.mpr (isUnit_iff_ne_zero.mpr hB))
+    intro y
+    obtain ⟨z, hz⟩ := hBR y
+    exact ⟨R.mulVec z, by simpa only [Matrix.mulVec_mulVec] using hz⟩
+  · change (A * R).det ≠ 0
+    rw [hAR, Matrix.det_one]
+    exact one_ne_zero
 
 end TauCeti
 
