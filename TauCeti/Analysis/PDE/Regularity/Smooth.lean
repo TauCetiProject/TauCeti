@@ -131,7 +131,7 @@ theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn [DecidableEq �
 elliptic matrix, let `f` lie in `W^{k,2}` of a neighbourhood of each point of `Ω` for every `k`,
 and let `u ∈ H¹(Ω)` be a weak solution of
 
-`-∂ⱼ(Aⁱʲ ∂ᵢu) = f` in `Ω`,
+`-∂ᵢ(Aⁱʲ ∂ⱼu) = f` in `Ω`,
 
 in the sense that `∫_Ω ⟨∇v, A ∇u⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with no boundary condition
 on `u`. Then `u` agrees almost everywhere on `Ω` with a function smooth on `Ω`. This is the

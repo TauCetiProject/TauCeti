@@ -845,7 +845,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn
 /-- **Interior `H²` regularity for a constant principal coefficient.** Let `A` be a constant,
 uniformly elliptic matrix, let `b, c ∈ L∞(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of
 
-`-∂ⱼ(Aⁱʲ ∂ᵢu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, with `f ∈ L²(Ω)`,
+`-∂ᵢ(Aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, with `f ∈ L²(Ω)`,
 
 in the sense that `∫_Ω (⟨∇v, A ∇u⟩ + ⟨b, ∇u⟩ v + c u v) = ∫_Ω f v` for every
 `v ∈ H¹₀(Ω)`, with no boundary condition on `u`. Then `u ∈ H²_loc(Ω)`: on every open `V`

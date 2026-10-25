@@ -299,7 +299,7 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzWith
     hK.lipschitzOnWith hu t
 
 /-- **The difference quotients of the gradient of a weak solution are uniformly bounded.** For a
-constant, uniformly elliptic `A` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f`,
+constant, uniformly elliptic `A` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ᵢ(Aⁱʲ ∂ⱼu) = f`,
 
 `‖∇Dᵗ u‖_{L²} ≤ ‖w‖ ‖f‖_{L²} / λ`
 
@@ -413,7 +413,7 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipsch
     hK.lipschitzOnWith hu y
 
 /-- **The second-order weak directional derivatives of a whole-space weak solution.** For a
-constant, uniformly elliptic `A` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f`, the
+constant, uniformly elliptic `A` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ᵢ(Aⁱʲ ∂ⱼu) = f`, the
 derivative `∂_y u = ⟪∇u, y⟫` is again weakly differentiable in every direction `w`, with
 
 `‖∂_w ∂_y u‖_{L²} ≤ ‖y‖ ‖w‖ ‖f‖_{L²} / λ`.
@@ -455,7 +455,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_lipschitzWith
       exact ⟨G, hG⟩
 
 /-- **A whole-space weak solution lies in `H²(ℝⁿ)`.** For a constant, uniformly elliptic `A`, a
-weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(ℝⁿ)` is the first-order part of an
+weak solution `u ∈ H¹(ℝⁿ)` of `-∂ᵢ(Aⁱʲ ∂ⱼu) = f` with `f ∈ L²(ℝⁿ)` is the first-order part of an
 element of `W^{2,2}(ℝⁿ)`. This is the constant-coefficient case of
 `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_lipschitzWith`; the quantitative form,
 with the ellipticity constant made explicit, is
