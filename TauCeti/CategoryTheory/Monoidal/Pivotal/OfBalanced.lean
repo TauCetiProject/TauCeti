@@ -45,25 +45,24 @@ the chosen twist. -/
 noncomputable def pivotalOfBalanced [BalancedCategory C] : PivotalCategory C where
   pivotalIso := BalancedCategory.twist ≪≫ drinfeldNatIso
   pivotalIso_isMonoidal :=
-    { unit := (Category.id_comp _).trans
-        ((congrArg (· ≫ _) BalancedCategory.twist_hom_app_unit).trans
-          ((Category.id_comp _).trans
-            ((drinfeldNatIso_hom_app _).trans drinfeldIso_unit_hom)))
+    { unit := by
+        simp only [Iso.trans_hom, NatTrans.comp_app, BalancedCategory.twist_hom_app_unit]
+        -- The identity-functor wrappers obstruct rewriting `id_comp`; chain the equalities
+        -- before passing to the explicit double-dual formula.
+        exact (Category.id_comp _).trans
+          ((Category.id_comp _).trans ((drinfeldNatIso_hom_app _).trans drinfeldIso_unit_hom))
       tensor X Y := by
         simp only [Iso.trans_hom, NatTrans.comp_app, drinfeldNatIso_hom_app]
         -- The identity functor's tensor comparison is the identity. The Drinfeld tensor
         -- identity uses explicit double duals, so compose it before simplifying the wrappers.
         calc
           _ = (BalancedCategory.twist.hom.app X ⊗ₘ BalancedCategory.twist.hom.app Y) ≫
-              (β_ X Y).hom ≫ (β_ Y X).hom ≫ (drinfeldIso (X ⊗ Y)).hom :=
-            (Category.id_comp _).trans
-              ((congrArg (· ≫ _) (BalancedCategory.twist_tensor X Y)).trans
-                ((Category.assoc _ _ _).trans
-                  (congrArg (fun f =>
-                    (BalancedCategory.twist.hom.app X ⊗ₘ BalancedCategory.twist.hom.app Y) ≫ f)
-                    (Category.assoc _ _ _))))
+              (β_ X Y).hom ≫ (β_ Y X).hom ≫ (drinfeldIso (X ⊗ Y)).hom := by
+            exact (Category.id_comp _).trans (BalancedCategory.twist_tensor_assoc X Y _)
           _ = _ := by
             rw [braiding_hom_comp_braiding_hom_comp_drinfeldIso_tensor_hom]
+            -- Rewriting cannot match the functor-valued double duals with the explicit ones
+            -- in `drinfeldIso`, so chain these equalities using `Eq.trans`.
             exact (Category.assoc _ _ _).symm.trans
               (congrArg (· ≫ μ (doubleRightDualFunctor C) X Y)
                 (tensorHom_comp_tensorHom _ _ _ _)) }
@@ -94,6 +93,7 @@ theorem pivotalOfBalanced_balancedOfBraidedPivotal (P : PivotalCategory C) :
   ext X
   simp only [pivotalIso_hom_app, pivotalOfBalanced_pivotalIsoApp_hom,
     balancedOfBraidedPivotal_twist_hom_app, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  -- Unfold `pivotalIsoApp` to identify its component with `P.pivotalIso.hom.app X`.
   rfl
 
 /-- Passing from a twist to its pivotal structure and back recovers the balanced structure. -/
