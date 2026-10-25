@@ -41,8 +41,6 @@ the cohomological `2`-Selmer group with the explicit étale-algebra one.
 
 * `TauCeti.TwoDescent.range_cohomologicalMap_eq_ker_normM`: the image of the cohomological
   `2`-descent map is the kernel of the norm `Aˣ ⧸ (Aˣ)² → Kˣ ⧸ (Kˣ)²`.
-* `TauCeti.TwoDescent.explicitFactor_mk`: the component at a factor of the square class of a unit
-  is the square class of its component.
 
 ## References
 
@@ -136,23 +134,7 @@ private theorem torsionCoeffWeilPairing_descentCocycle [Fintype (W.TorsionCoeff 
   · rw [hS, map_zero, descentRatio_zero hsq h0]
   -- the sum of the points `T` with nontrivial ratio pairs with `S ≠ O` to the product of the
   -- ratios at all `T ∉ {O, S}`, which is the ratio at `S` as all the ratios multiply to `1`
-  set m := descentRatio hsq g
-  have hterm (T : W.TorsionCoeff 2) :
-      W.torsionCoeffWeilPairing 2 h2 (if m T = 0 then 0 else T) S =
-        m T - (if T = 0 then m T else 0) - (if T = S then m T else 0) := by
-    by_cases hT0 : T = 0
-    · simp [hT0, Ne.symm hS]
-    by_cases hTS : T = S
-    · subst hTS
-      rcases eq_or_ne (m T) 0 with h | h <;> simp [h, hS]
-    simp only [hT0, hTS, ↓reduceIte, sub_zero]
-    have : Invertible (2 : K) := (by simpa using h2 : IsUnit (2 : K)).invertible
-    rcases eq_zero_or_eq_mu2NegOne (m T) with h | h
-    · simp [h]
-    · simp only [h, mu2NegOne_ne_zero, ↓reduceIte]
-      exact WeierstrassCurve.torsionCoeffWeilPairing_two_eq_mu2NegOne h2 hT0 hS hTS
-  simp only [descentCocycle, map_sum, AddMonoidHom.finsetSum_apply, hterm, Finset.sum_sub_distrib,
-    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, m, sum_descentRatio hsq hprod,
+  rw [descentCocycle, torsionCoeffWeilPairing_sum_ite W h2 _ hS, sum_descentRatio hsq hprod,
     descentRatio_zero hsq h0, sub_zero, zero_sub]
   exact neg_eq_of_add_eq_zero_right (descentRatio_add_self hsq g S)
 
@@ -271,15 +253,6 @@ private theorem factorCohomologicalMap_descentCocycle [Fintype (W.TorsionCoeff 2
     explicitCoeff1_torsionRes_eq_kummerMap W h2 σ h2p (factorTorsionCharacter W p h2)
     (embeddingTorsionCoeff W p σ) (kummerCoeffMapSymm_factorTorsionCharacter W p σ h2)
     ⟨descentCocycle hsq, descentCocycle_mem_Z1 h2 hsq h0 hprod⟩ ha hz
-
-/-- The component at a factor `p` of the square class of a unit `u` of the étale algebra is the
-square class of the component of `u` in `K[X] ⧸ (p)`. -/
-theorem explicitFactor_mk (p : W.toAffine.f.Factors) (u : W.toAffine.Aˣ) :
-    explicitFactor W p (u : W.toAffine.M) = QuotientGroup.mk (Units.map
-      (AdjoinRoot.projFactor W.toAffine.f_ne_zero W.toAffine.squarefree_f p).toRingHom.toMonoidHom
-        u) := by
-  rw [explicitFactor_apply, AdjoinRoot.modPowEquivPiFactors_mk,
-    QuotientGroup.quotientMulEquivOfEq_mk]
 
 /-- The descent cocycle of square roots `β (σ θ, 0)` of the conjugates `σ (u_p)` of the
 components of a unit `u` of the étale algebra is a class with descent image the square class of

@@ -177,6 +177,16 @@ theorem explicitFactor_apply (p : W.toAffine.f.Factors) (m : W.toAffine.M) :
         (AdjoinRoot.modPowEquivPiFactors W.toAffine.f_ne_zero W.toAffine.squarefree_f 2 m p) :=
   (rfl)
 
+omit [DecidableEq K] in
+/-- The component at a factor `p` of the square class of a unit `u` of the étale algebra is the
+square class of the component of `u` in `K[X] ⧸ (p)`. -/
+theorem explicitFactor_mk (p : W.toAffine.f.Factors) (u : W.toAffine.Aˣ) :
+    explicitFactor W p (u : W.toAffine.M) = QuotientGroup.mk (Units.map
+      (AdjoinRoot.projFactor W.toAffine.f_ne_zero W.toAffine.squarefree_f p).toRingHom.toMonoidHom
+        u) := by
+  rw [explicitFactor_apply, AdjoinRoot.modPowEquivPiFactors_mk,
+    QuotientGroup.quotientMulEquivOfEq_mk]
+
 omit [DecidableEq K] [W.IsElliptic] in
 /-- If `x = θ` in the factor field, the cofactor `f / (X - x)` takes there the value
 `c_T = -W_X(θ, 0)` of the rootwise descent unit at the `2`-torsion point `(θ, 0)`. -/
@@ -456,6 +466,33 @@ private theorem apply_torsionCoeffBaseChange_eq_zero {L : Type*} [Field L] [Alge
   rwa [cocyclesMap1_apply] at hval
 
 omit [DecidableEq K] [W.toAffine.IsCharNeTwoNF] in
+/-- **Pairing with a sum of points of order two.** For a family `m` of square roots of unity
+indexed by `E(Kˢ)[2]`, the sum of the points `T` with `m T ≠ 0` pairs with a nonzero point `S` to
+`∑ T, m T - m O - m S`, as two distinct nonzero points of order two pair to `-1`. -/
+theorem torsionCoeffWeilPairing_sum_ite (h2 : IsUnit ((2 : ℕ) : K))
+    [Fintype (W.TorsionCoeff 2)] (m : W.TorsionCoeff 2 → KummerCoeff K 2)
+    [DecidablePred (m · = 0)] {S : W.TorsionCoeff 2} (hS : S ≠ 0) :
+    W.torsionCoeffWeilPairing 2 h2 (∑ T, if m T = 0 then 0 else T) S =
+      (∑ T, m T) - m 0 - m S := by
+  classical
+  have hterm (T : W.TorsionCoeff 2) :
+      W.torsionCoeffWeilPairing 2 h2 (if m T = 0 then 0 else T) S =
+        m T - (if T = 0 then m T else 0) - (if T = S then m T else 0) := by
+    by_cases hT0 : T = 0
+    · simp [hT0, Ne.symm hS]
+    by_cases hTS : T = S
+    · subst hTS
+      rcases eq_or_ne (m T) 0 with h | h <;> simp [h, hS]
+    simp only [hT0, hTS, ↓reduceIte, sub_zero]
+    have : Invertible (2 : K) := (by simpa using h2 : IsUnit (2 : K)).invertible
+    rcases eq_zero_or_eq_mu2NegOne (m T) with h | h
+    · simp [h]
+    · simp only [h, mu2NegOne_ne_zero, ↓reduceIte]
+      exact WeierstrassCurve.torsionCoeffWeilPairing_two_eq_mu2NegOne h2 hT0 hS hTS
+  simp only [map_sum, AddMonoidHom.finsetSum_apply, hterm, Finset.sum_sub_distrib,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+
+omit [DecidableEq K] [W.toAffine.IsCharNeTwoNF] in
 /-- **A cocycle into `E(Kˢ)[2]` killed on stabilizers is a coboundary.** If `z : G_K → E(Kˢ)[2]`
 is a `1`-cocycle and `e₂(z(g), T) = 0` whenever `g` fixes `T`, then `z` is a `1`-coboundary. -/
 private theorem isCoboundary₁_of_torsionCoeffWeilPairing_eq_zero
@@ -502,22 +539,8 @@ private theorem isCoboundary₁_of_torsionCoeffWeilPairing_eq_zero
     abel
   -- the sum `P` of the `T` with `m T ≠ 0` has `e₂(P, S) = ∑ m - m O - m S` for `S ≠ O`
   let P : W.TorsionCoeff 2 := ∑ T, if m T = 0 then 0 else T
-  have hP {S : W.TorsionCoeff 2} (hS : S ≠ 0) : e P S = (∑ T, m T) - m 0 - m S := by
-    have hterm (T : W.TorsionCoeff 2) : e (if m T = 0 then 0 else T) S =
-        m T - (if T = 0 then m T else 0) - (if T = S then m T else 0) := by
-      by_cases hT0 : T = 0
-      · simp [hT0, Ne.symm hS]
-      by_cases hTS : T = S
-      · subst hTS
-        rcases eq_or_ne (m T) 0 with h | h <;> simp [h, hS, e]
-      simp only [hT0, hTS, ↓reduceIte, sub_zero]
-      have : Invertible (2 : K) := (by simpa using h2 : IsUnit (2 : K)).invertible
-      rcases eq_zero_or_eq_mu2NegOne (m T) with h | h
-      · simp [h]
-      · simp only [h, mu2NegOne_ne_zero, ↓reduceIte]
-        exact WeierstrassCurve.torsionCoeffWeilPairing_two_eq_mu2NegOne h2 hT0 hS hTS
-    simp only [P, map_sum, AddMonoidHom.finsetSum_apply, hterm, Finset.sum_sub_distrib,
-      Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+  have hP {S : W.TorsionCoeff 2} (hS : S ≠ 0) : e P S = (∑ T, m T) - m 0 - m S :=
+    torsionCoeffWeilPairing_sum_ite W h2 m hS
   -- and `z` is the coboundary of `P`, by nondegeneracy of the Weil pairing
   refine ⟨P, fun g ↦ ?_⟩
   rw [← sub_eq_zero, ← neg_sub, neg_eq_zero]
@@ -843,7 +866,7 @@ private theorem rootTorsionCoeff_injective {x y : SeparableClosure K}
 
 omit [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
 /-- The image of the universal root of a factor under an embedding is a root of the cubic. -/
-private theorem aeval_embedding_root_f (p : W.toAffine.f.Factors)
+theorem aeval_embedding_root_f (p : W.toAffine.f.Factors)
     (σ : 𝕃 p →ₐ[K] SeparableClosure K) : aeval (σ (θ p)) W.toAffine.f = 0 := by
   rw [aeval_algHom_apply, AdjoinRoot.aeval_eq, AdjoinRoot.mk_eq_zero.mpr p.dvd, map_zero]
 
@@ -851,6 +874,15 @@ private theorem aeval_embedding_root_f (p : W.toAffine.f.Factors)
 def embeddingTorsionCoeff (p : W.toAffine.f.Factors)
     (σ : 𝕃 p →ₐ[K] SeparableClosure K) : W.TorsionCoeff 2 :=
   rootTorsionCoeff W (aeval_embedding_root_f W p σ)
+
+open scoped Classical in
+/-- The point `(σ θ, 0)` as a point of `E(Kˢ)`. -/
+@[simp]
+theorem coe_embeddingTorsionCoeff (p : W.toAffine.f.Factors) (σ : 𝕃 p →ₐ[K] SeparableClosure K) :
+    (embeddingTorsionCoeff W p σ : W.PointCoeff) = W.pointCoeffEquiv
+      (WeierstrassCurve.Affine.Point.some (σ (θ p)) 0
+        (W.toAffine.nonsingular_baseChange_of_aeval_eq_zero (aeval_embedding_root_f W p σ))) :=
+  coe_rootTorsionCoeff W _
 
 omit [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
 /-- An automorphism of `Kˢ` fixes the image of an embedding of a factor field exactly when it
