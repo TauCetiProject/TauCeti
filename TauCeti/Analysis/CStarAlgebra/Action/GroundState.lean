@@ -231,6 +231,7 @@ theorem isGroundState_iff_norm_apply_mul_entireExtension_le :
   exact hle a c hc z hz
 
 /-- Every state is a ground state of the trivial dynamics. -/
+@[simp]
 theorem isGroundState_trivial_iff :
     (trivial : CStarAction _ A).IsGroundState ω ↔ ‖(ω : A →L[ℂ] ℂ)‖ = 1 := by
   refine ⟨IsGroundState.norm_eq_one, fun hnorm =>
@@ -253,6 +254,7 @@ private theorem IsGroundState.norm_apply_entireExtension_le (hω : α.IsGroundSt
 
 /-- **Ground states are invariant on entire analytic elements.** A ground state `ω` satisfies
 `ω (α_z(b)) = ω b` for every entire analytic `b` and every complex time `z`. -/
+@[simp]
 theorem IsGroundState.apply_entireExtension (hω : α.IsGroundState ω)
     (hb : α.IsEntireAnalytic b) (z : ℂ) : ω (α.entireExtension b z) = ω b := by
   set g : ℂ → ℂ := fun z => ω (α.entireExtension b z) with hg_def
@@ -271,6 +273,7 @@ theorem IsGroundState.apply_entireExtension (hω : α.IsGroundState ω)
 
 /-- **Ground states are invariant.** Every ground state `ω` is invariant under the dynamics:
 `ω (α_t(a)) = ω a`. -/
+@[simp]
 theorem IsGroundState.apply_action (hω : α.IsGroundState ω) (t : Multiplicative ℝ) (a : A) :
     ω (α t a) = ω a := by
   refine congrFun (Continuous.ext_on α.dense_entireAnalytic (f := fun a => ω (α t a))
