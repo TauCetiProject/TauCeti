@@ -19,7 +19,7 @@ import TauCeti.Analysis.Sobolev.Wkp.Leibniz
 Let `a` be a uniformly elliptic coefficient field on `Ω` whose entries are smooth on `Ω`, and let
 `u ∈ H¹(Ω)` be a weak solution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) = f` in `Ω`, with `f ∈ W^{k,2}(Ω)`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`, with `f ∈ W^{k,2}(Ω)`,
 
 meaning `∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with no boundary condition on `u`
 and nothing assumed about `∂Ω`. This file proves that `u ∈ H^{k+2}_loc(Ω)`: on every open `V`
@@ -282,7 +282,7 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn
 /-- **Interior `H^{k+2}` regularity for smooth coefficients.** Let `a` be uniformly elliptic on
 `Ω`, with entries smooth on `Ω`, let `F ∈ W^{k,2}(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) = F` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) = F` in `Ω`,
 
 in the sense that `∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω F v` for every `v ∈ H¹₀(Ω)`, with no boundary condition
 on `u`. Then `u ∈ H^{k+2}_loc(Ω)`: on every open `V` whose closure is compact and contained in

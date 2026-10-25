@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 
 Let `u ∈ H¹(Ω)` be a weak solution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) = -div G` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` in `Ω`,
 
 tested against test functions, with a variable coefficient matrix `a`. On an open `B ⊆ Ω`, freeze
 the coefficients at a constant elliptic matrix `A`, typically `A = a(x₀)` for a centre `x₀`, and
@@ -46,7 +46,7 @@ The coefficient oscillation is measured in the operator norm of the attached bil
 
 ## The argument
 
-Since constants have zero divergence, `u` solves `-∂ⱼ(aⁱʲ ∂ᵢu) = -div (G - c)` on `B` against all
+Since constants have zero divergence, `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = -div (G - c)` on `B` against all
 of `H¹₀(B)` (`TauCeti.PDE.forall_energyFormH1_restrictL_eq_inner`). Adding `-∂ⱼ((A - a)ⁱʲ ∂ᵢu)`
 to both sides, `u` solves the frozen equation
 
@@ -87,7 +87,7 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure]
 
-/-- **Comparison with the frozen problem.** Let `u ∈ H¹(Ω)` solve `-∂ⱼ(aⁱʲ ∂ᵢu) = -div G`
+/-- **Comparison with the frozen problem.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G`
 weakly on `Ω`, tested against test functions, let `B ⊆ Ω` be open, and let `A` be a constant
 matrix, uniformly elliptic with lower constant `λ`, with `‖a(x) - A‖ ≤ ε` for `x ∈ B` in the
 operator norm of the attached bilinear forms. If `w ∈ H¹(B)` has the boundary values of `u`,
@@ -166,7 +166,7 @@ theorem UniformlyEllipticOn.mul_norm_gradient_restrictL_sub_le
         rwa [hx]
     _ = ε * ‖W1p.gradient (W1p.restrictL hB u)‖ + ‖hGc.toLp‖ := add_comm _ _
 
-/-- **The replacement frozen at a centre.** Let `u ∈ H¹(Ω)` solve `-∂ⱼ(aⁱʲ ∂ᵢu) = -div G` weakly
+/-- **The replacement frozen at a centre.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly
 on `Ω ⊆ ℝ^{n+1}`, tested against test functions, let `B ⊆ Ω` be open with `B ⊆ B(x₀, r)`, and let
 `a` be uniformly elliptic with constants `0 < λ ≤ Λ` on a set containing `x₀`. Suppose that on
 `B(x₀, r)` the coefficients are `α`-Hölder with constant `K_a`, in the operator norm of the

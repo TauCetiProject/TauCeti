@@ -15,7 +15,7 @@ import TauCeti.MeasureTheory.Function.LocalRepresentative
 Let `a` be a uniformly elliptic coefficient field on `Ω` whose entries are smooth on `Ω`, and let
 `u ∈ H¹(Ω)` be a weak solution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) = f` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`,
 
 meaning `∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with no boundary condition on `u`.
 If, near every point of `Ω`, `f` lies in `W^{k,2}` for every `k` (as it does when `f` is smooth
@@ -69,7 +69,7 @@ variable {ι : Type*} [Fintype ι] {Omega : Opens (EuclideanSpace ℝ ι)} {A : 
 entries smooth on `Ω`, let `f` lie in `W^{k,2}` of a neighbourhood of each point of `Ω` for every
 `k`, and let `u ∈ H¹(Ω)` be a weak solution of
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) = f` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`,
 
 in the sense that `∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with no boundary condition
 on `u`. Then `u` agrees almost everywhere on `Ω` with a function smooth on `Ω`.
