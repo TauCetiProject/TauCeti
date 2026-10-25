@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Localization.Ideal
 public import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.Data.ZMod.QuotientRing
-import TauCeti.RingTheory.Unramified.Diagonal
+import TauCeti.RingTheory.Unramified.Section.Idempotent
 
 /-!
 # Étale neighbourhoods of a pair
@@ -22,11 +22,15 @@ the henselization of the pair. This file defines their full subcategory and prov
 localization at an element invertible modulo the ideal, under tensor products, and under base
 change along maps of pairs. It also shows that two `R`-algebra maps out of an étale
 neighbourhood agree once `I` generates an ideal of the target inside its Jacobson radical.
+A specified residue section of any étale algebra can be isolated as an étale neighbourhood
+by a single localization (`exists_isNeighbourhood_localization`).
 
 ## References
 
 * [Stacks Project, Tag 0A02](https://stacks.math.columbia.edu/tag/0A02), the construction of the
   henselization of a pair.
+* [Stacks Project, Tag 09XI](https://stacks.math.columbia.edu/tag/09XI), sections of étale
+  algebras over henselian pairs.
 -/
 
 public section
@@ -264,6 +268,66 @@ theorem isNeighbourhood_baseChange {S : Type v} [CommRing S] [Algebra R S] {J : 
   let := hEtale
   exact ⟨inferInstance, reducedMap_bijective_of_le _ hIJ _
     (reducedMap_bijective_baseChange I S B hBij)⟩
+
+/-- A specified section modulo an ideal can be isolated as an étale neighbourhood by inverting
+an element whose value at the section is one. No henselianity assumption is needed. -/
+@[stacks 09XI "the residue section determines an étale neighbourhood"]
+theorem exists_isNeighbourhood_localization (I : Ideal R) {S : Type v} [CommRing S] [Algebra R S]
+    [Algebra.Etale R S] (ψ : S →ₐ[R] R ⧸ I) :
+    ∃ x : S, ψ x = 1 ∧ IsNeighbourhood I (CommAlgCat.of R (Localization.Away x)) := by
+  -- The residue section selects an idempotent component of the closed fibre.
+  let J := I.map (algebraMap R S)
+  have hJψ : J ≤ RingHom.ker ψ := Ideal.map_le_iff_le_comap.mpr fun r hr ↦ by
+    simpa only [Ideal.mem_comap, RingHom.mem_ker, ψ.commutes,
+      Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem] using hr
+  let σ : S ⧸ J →ₐ[R ⧸ I] R ⧸ I :=
+    (Ideal.Quotient.liftₐ J ψ (fun s hs ↦ RingHom.mem_ker.mp (hJψ hs))).extendScalarsOfSurjective
+      Ideal.Quotient.mk_surjective
+  obtain ⟨e, he, hσe, hker⟩ :=
+    Algebra.FormallyUnramified.exists_isIdempotentElem_ker_eq_span (R ⧸ I) (S ⧸ J) σ
+  obtain ⟨x, hx⟩ := Ideal.Quotient.mk_surjective e
+  -- Lift its selector and localize: on the closed fibre this is exactly the section component.
+  let C := Localization.Away x
+  let K := J.map (algebraMap S C)
+  have hK : K = I.map (algebraMap R C) := by
+    simp [K, J, Ideal.map_map, ← IsScalarTower.algebraMap_eq]
+  let : Algebra (R ⧸ I) (C ⧸ K) :=
+    ((algebraMap (S ⧸ J) (C ⧸ K)).comp (algebraMap (R ⧸ I) (S ⧸ J))).toAlgebra
+  have : IsScalarTower (R ⧸ I) (S ⧸ J) (C ⧸ K) :=
+    IsScalarTower.of_algebraMap_eq' rfl
+  have : IsLocalization.Away e (C ⧸ K) := by
+    have hloc : IsLocalization
+        (Algebra.algebraMapSubmonoid (S ⧸ J) (Submonoid.powers x)) (C ⧸ K) := inferInstance
+    simpa only [Algebra.algebraMapSubmonoid, Submonoid.map_powers,
+      Ideal.Quotient.algebraMap_eq, hx] using hloc
+  let : Algebra (S ⧸ J) (R ⧸ I) := σ.toRingHom.toAlgebra
+  have : IsLocalization.Away e (R ⧸ I) :=
+    Algebra.FormallyUnramified.isLocalizationAway_of_ker_eq_span σ he hker
+  have : IsScalarTower (R ⧸ I) (S ⧸ J) (R ⧸ I) :=
+    IsScalarTower.of_algebraMap_eq fun r ↦ (σ.commutes r).symm
+  let φ := (IsLocalization.algEquiv (Submonoid.powers e) (C ⧸ K)
+    (R ⧸ I)).restrictScalars (R ⧸ I)
+  have hbij : Function.Bijective (algebraMap (R ⧸ I) (C ⧸ K)) := by
+    have hφ : ⇑φ.symm = algebraMap (R ⧸ I) (C ⧸ K) := funext φ.symm.commutes
+    rw [← hφ]
+    exact φ.symm.bijective
+  -- Identify the resulting scalar map with the canonical reduced map.
+  have hred : Function.Bijective (reducedMap I C) := by
+    let q := Ideal.quotientEquivAlgOfEq C hK
+    have hcomp : q.toRingEquiv.toRingHom.comp (algebraMap (R ⧸ I) (C ⧸ K)) =
+        reducedMap I C := by
+      apply Ideal.Quotient.ringHom_ext
+      ext r
+      simp only [RingHom.comp_apply, reducedMap_mk]
+      rw [IsScalarTower.algebraMap_apply (R ⧸ I) (S ⧸ J) (C ⧸ K)]
+      simpa only [q, J, K, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+        AlgEquiv.coe_toRingEquiv, Ideal.Quotient.algebraMap_quotient_map_quotient,
+        Ideal.quotientMap_mk, ← IsScalarTower.algebraMap_apply R S C] using
+          Ideal.quotientEquivAlgOfEq_mk C hK (algebraMap R C r)
+    rw [← hcomp]
+    exact q.bijective.comp hbij
+  have hσx : σ (Ideal.Quotient.mk J x) = ψ x := rfl
+  exact ⟨x, by rw [← hσx, hx]; exact hσe, inferInstance, hred⟩
 
 /-- Any two étale neighbourhoods admit maps to a common étale neighbourhood. -/
 theorem exists_common_target (B C : Neighbourhood.{u, v} I) :
