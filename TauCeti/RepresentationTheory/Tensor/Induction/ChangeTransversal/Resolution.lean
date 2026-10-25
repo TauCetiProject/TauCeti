@@ -169,24 +169,32 @@ private theorem resolutionChange_augmentation [LinearOrder (G ⧸ U)]
       PiTensorProduct.map (fun _ : G ⧸ U ↦ A.obj.gradedResolutionAugmentation) ∘ₗ
         (smoothTensorInducedChangeTransversalIso.{u, v, max v w}
           U hU s t A).hom.hom.hom.toLinearMap := by
-    apply PiTensorProduct.ext
-    apply MultilinearMap.ext
-    intro m
-    -- Evaluate the tensor-map composite while retaining the caller's scalar instances.
-    change (resolutionChangeTotal U hU s t A).hom
-      (PiTensorProduct.map (fun _ : G ⧸ U ↦ A.obj.gradedResolutionAugmentation)
-        (PiTensorProduct.tprod R m)) =
-      PiTensorProduct.map (fun _ : G ⧸ U ↦ A.obj.gradedResolutionAugmentation)
-        ((smoothTensorInducedChangeTransversalIso.{u, v, max v w}
-          U hU s t A).hom.hom.hom (PiTensorProduct.tprod R m))
-    rw [PiTensorProduct.map_tprod]
-    erw [resolutionChangeTotal, smoothTensorInducedChangeTransversalIso_hom_apply_tprod,
-      smoothTensorInducedChangeTransversalIso_hom_apply_tprod, PiTensorProduct.map_tprod]
-    congr 1
-    funext i
-    exact ((smoothGradedResolutionFunctor_obj_obj_ρ_apply A _ _).trans
-      (A.obj.gradedResolutionTopRep_ρ_apply _ _)).trans
-        (A.obj.gradedResolutionAugmentation_equivariant _ _).symm
+    have haug : (smoothGradedResolutionAugmentationApp A).hom.hom.toLinearMap =
+        A.obj.gradedResolutionAugmentation :=
+      LinearMap.ext (smoothGradedResolutionAugmentationApp_hom_apply A)
+    have hmap (a : U.LeftTransversal) :
+        ((smoothTensorInductionFunctor R G U hU a).map
+          (smoothGradedResolutionAugmentationApp A)).hom.hom.toLinearMap =
+        PiTensorProduct.map (fun _ : G ⧸ U ↦ A.obj.gradedResolutionAugmentation) := by
+      change (((ofSmoothDiscrete R U).map
+        (smoothGradedResolutionAugmentationApp A)).tensorInduced a).toLinearMap = _
+      rw [Representation.IntertwiningMap.tensorInduced_toLinearMap,
+        ofSmoothDiscrete_map_toLinearMap, haug]
+      rfl
+    have h := congrArg (fun f ↦ f.hom.hom.toLinearMap)
+      (smoothTensorInducedChangeTransversalIso_hom_naturality U hU s t
+        (smoothGradedResolutionAugmentationApp A))
+    erw [ObjectProperty.FullSubcategory.comp_hom,
+      ObjectProperty.FullSubcategory.comp_hom] at h
+    change (smoothTensorInducedChangeTransversalIso U hU s t
+        (smoothGradedResolutionFunctor.obj A)).hom.hom.hom.toLinearMap ∘ₗ
+        ((smoothTensorInductionFunctor R G U hU t).map
+          (smoothGradedResolutionAugmentationApp A)).hom.hom.toLinearMap =
+      ((smoothTensorInductionFunctor R G U hU s).map
+        (smoothGradedResolutionAugmentationApp A)).hom.hom.toLinearMap ∘ₗ
+        (smoothTensorInducedChangeTransversalIso U hU s t A).hom.hom.hom.toLinearMap at h
+    rw [hmap, hmap] at h
+    exact h
   have hx := LinearMap.congr_fun he x
   -- Evaluate linear-map composition before comparing with the restricted augmentation.
   change (resolutionChangeTotal U hU s t A).hom
