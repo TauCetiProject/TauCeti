@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Data.Int.ModEq
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 import Mathlib.Data.Rat.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Polynomial
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.LinearAlgebra.SymplecticGroup
@@ -41,8 +41,6 @@ the Gram matrix `!![2a, b; b, 2c]` of a binary form this is `b² - 4ac ≡ b² (
   diagonal over a field has square determinant.
 * `Matrix.isSquare_det_of_transpose_eq_neg`: a skew-symmetric integer matrix has square
   determinant.
-* `Matrix.reflect_det_X_smul_transpose_add`: `det (X • Sᵀ + S)` is its own reflection at the
-  dimension.
 * `Matrix.four_dvd_neg_one_pow_mul_det_add_transpose_sub_det_sub_transpose`: in dimension `2k`,
   `(-1)^k det (S + Sᵀ) ≡ det (S - Sᵀ)` modulo `4`.
 * `Matrix.IsSymm.neg_one_pow_mul_det_modEq_zero_or_one`: for a symmetric integer matrix `A` of
@@ -113,39 +111,6 @@ section Reflect
 
 variable {R : Type*} [CommRing R]
 
-/-- The polynomial `det (X • Sᵀ + S)` is its own reflection at the dimension: reflecting each
-entry `X * Sⱼᵢ + Sᵢⱼ` at degree one transposes the matrix. -/
-theorem reflect_det_X_smul_transpose_add (S : Matrix ι ι R) :
-    reflect (Fintype.card ι) (det ((X : R[X]) • Sᵀ.map C + S.map C)) =
-      det ((X : R[X]) • Sᵀ.map C + S.map C) := by
-  have hP (i j : ι) : ((X : R[X]) • Sᵀ.map C + S.map C) i j = X * C (S j i) + C (S i j) := by
-    simp
-  have h := reflect_det_sum_eq_of_natDegree_le ((X : R[X]) • Sᵀ.map C + S.map C) (fun _ ↦ 1)
-    fun i j ↦ by rw [hP]; compute_degree
-  rw [Finset.sum_const, Finset.card_univ, smul_eq_mul, mul_one] at h
-  rw [h, ← det_transpose]
-  congr 1
-  refine Matrix.ext fun i j ↦ ?_
-  rw [transpose_apply, of_apply, hP, hP, reflect_add, reflect_C, mul_comm X, reflect_C_mul,
-    ← pow_one X, reflect_monomial, revAt_le le_rfl, Nat.sub_self, pow_zero, mul_one]
-  ring
-
-/-- A sum over `0, …, 2k` of a family that is symmetric under `i ↦ 2k - i`, vanishes at the
-middle index `k` and takes even values, is divisible by `4`: it is twice the sum over `i < k`. -/
-private theorem four_dvd_sum_range (k : ℕ) (h : ℕ → R) (hsym : ∀ i ≤ 2 * k, h (2 * k - i) = h i)
-    (hk : h k = 0) (h2 : ∀ i, 2 ∣ h i) : 4 ∣ ∑ i ∈ Finset.range (2 * k + 1), h i := by
-  rw [show 2 * k + 1 = (k + 1) + k by ring, Finset.sum_range_add, Finset.sum_range_succ, hk,
-    add_zero]
-  have : ∑ x ∈ Finset.range k, h (k + 1 + x) = ∑ x ∈ Finset.range k, h x := by
-    rw [← Finset.sum_range_reflect h k]
-    refine Finset.sum_congr rfl fun x hx ↦ ?_
-    rw [Finset.mem_range] at hx
-    rw [← hsym (k - 1 - x) (by omega)]
-    congr 1
-    omega
-  rw [this, ← two_mul, show (4 : R) = 2 * 2 by norm_num]
-  exact mul_dvd_mul_left 2 (Finset.dvd_sum fun i _ ↦ h2 i)
-
 /-- **`det (S + Sᵀ)` modulo `4`.** For a square matrix `S` of size `2k` over a commutative ring,
 `(-1)^k det (S + Sᵀ) ≡ det (S - Sᵀ)` modulo `4`. -/
 theorem four_dvd_neg_one_pow_mul_det_add_transpose_sub_det_sub_transpose {k : ℕ}
@@ -174,7 +139,8 @@ theorem four_dvd_neg_one_pow_mul_det_add_transpose_sub_det_sub_transpose {k : �
     linear_combination (q.coeff i * (-1) ^ i) * this
   rw [heval, heval, one_smul, neg_one_smul, add_comm, neg_add_eq_sub] at hq
   rw [hq]
-  refine dvd_mul_of_dvd_right (four_dvd_sum_range k _ (fun i hi ↦ ?_) ?_ fun i ↦ ?_) _
+  refine dvd_mul_of_dvd_right
+    (Finset.four_dvd_sum_range_two_mul_add_one k _ (fun i hi ↦ ?_) ?_ fun i ↦ ?_) _
   · rw [hc i hi, neg_one_pow_eq_pow_mod_two, neg_one_pow_eq_pow_mod_two (n := k + i)]
     congr 3
     omega
@@ -211,12 +177,8 @@ theorem IsSymm.neg_one_pow_mul_det_modEq_zero_or_one {A : Matrix ι ι ℤ} (hA 
   obtain ⟨x, hx⟩ := isSquare_det_of_transpose_eq_neg (M := S - Sᵀ) (by simp)
   have h4 := four_dvd_neg_one_pow_mul_det_add_transpose_sub_det_sub_transpose hk S
   rw [hS, hx] at h4
-  rcases Int.even_or_odd x with ⟨y, rfl⟩ | ⟨y, rfl⟩
-  · left
-    exact (Int.modEq_iff_dvd.2 (by simpa using h4)).symm.trans
-      (Int.modEq_iff_dvd.2 ⟨-(y * y), by ring⟩)
-  · right
-    exact (Int.modEq_iff_dvd.2 (by simpa using h4)).symm.trans
-      (Int.modEq_iff_dvd.2 ⟨-(y * y + y), by ring⟩)
+  unfold Int.ModEq
+  rw [← Int.modEq_iff_dvd.2 h4, ← sq, Int.sq_emod_four]
+  omega
 
 end Matrix

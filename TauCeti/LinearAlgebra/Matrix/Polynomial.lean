@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Reverse
+import Mathlib.Tactic.ComputeDegree
 import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Reverse
 
@@ -59,5 +60,21 @@ theorem reflect_det_sum_eq_of_natDegree_le (A : Matrix n n R[X]) (e : n → ℕ)
   refine Finset.sum_congr rfl fun σ _ ↦ ?_
   rw [← C_eq_intCast, reflect_C_mul, reflect_prod _ _ _ fun i _ ↦ h (σ i) i, C_eq_intCast]
   simp only [of_apply]
+
+/-- The polynomial `det (X • Sᵀ + S)` is its own reflection at the dimension: reflecting each
+entry `X * Sⱼᵢ + Sᵢⱼ` at degree one transposes the matrix. -/
+theorem reflect_det_X_smul_transpose_add (S : Matrix n n R) :
+    reflect (Fintype.card n) (det ((X : R[X]) • Sᵀ.map C + S.map C)) =
+      det ((X : R[X]) • Sᵀ.map C + S.map C) := by
+  have hP (i j : n) : ((X : R[X]) • Sᵀ.map C + S.map C) i j = C (S j i) * X + C (S i j) := by
+    simp only [add_apply, smul_apply, transpose_apply, map_apply, smul_eq_mul]
+    ring
+  have h := reflect_det_sum_eq_of_natDegree_le ((X : R[X]) • Sᵀ.map C + S.map C) (fun _ ↦ 1)
+    fun i j ↦ by rw [hP]; compute_degree
+  rw [Finset.sum_const, Finset.card_univ, smul_eq_mul, mul_one] at h
+  rw [h, ← det_transpose]
+  congr 1
+  ext i j
+  simp [hP, reflect_C_mul, add_comm]
 
 end Matrix

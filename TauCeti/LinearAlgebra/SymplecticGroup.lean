@@ -79,9 +79,7 @@ theorem det_J : (J l R).det = 1 := by
   -- `Matrix.det_fromBlocks_one₂₂` evaluates the determinant.
   have hJ : J l R * fromBlocks 1 1 0 1 = fromBlocks 0 (-1) 1 1 := by
     simp [J, fromBlocks_multiply]
-  have h := congrArg det hJ
-  rwa [det_mul, det_fromBlocks_zero₂₁, det_fromBlocks_one₂₂, det_one, mul_one, mul_one,
-    zero_sub, neg_mul, one_mul, neg_neg, det_one] at h
+  simpa [det_fromBlocks_zero₂₁, det_fromBlocks_one₂₂] using congrArg det hJ
 
 omit [Fintype l] in
 /-- `J` is antisymmetric, entrywise: `Jᵀ = -J` read at a pair of indices. -/
