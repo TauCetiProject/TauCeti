@@ -29,7 +29,9 @@ tensor product pairings: in string diagrams, the loop of `f` sits inside the loo
   `TauCeti.ExactPairing.coevaluation_tensorHom_whiskerRight_evaluation`: closing up `f ⊗ₘ g`
   with the tensor product pairings nests the loop of one factor inside the loop of the other;
 * `TauCeti.tensorLeftAdjunction_unit_app` and `TauCeti.tensorLeftAdjunction_counit_app`: the unit
-  and counit of the adjunction associated to an exact pairing.
+  and counit of the adjunction associated to an exact pairing;
+* `TauCeti.ExactPairing.homUnitEquiv`: for an exact pairing of `X` and `Y`, morphisms `X ⟶ 𝟙_ C`
+  correspond to morphisms `𝟙_ C ⟶ Y`.
 -/
 
 public section
@@ -164,5 +166,32 @@ theorem tensorLeftAdjunction_unit_app (Z : C) :
 theorem tensorLeftAdjunction_counit_app (Z : C) :
     (tensorLeftAdjunction D Y).counit.app Z = (α_ Y D Z).inv ≫ ε_ D Y ▷ Z ≫ (λ_ Z).hom := by
   simp [tensorLeftAdjunction, tensorLeftHomEquiv]
+
+namespace ExactPairing
+
+variable (X Y : C) [ExactPairing X Y]
+
+/-- For an exact pairing of `X` and `Y`, morphisms `X ⟶ 𝟙_ C` correspond to morphisms
+`𝟙_ C ⟶ Y`: a functional `φ` on `X` goes to the coevaluation followed by `φ`, and a morphism
+`s : 𝟙_ C ⟶ Y` goes to evaluation against `s`. It is Mathlib's
+`CategoryTheory.tensorRightHomEquiv` with both outer objects the unit, up to the unitors. -/
+def homUnitEquiv : (X ⟶ 𝟙_ C) ≃ (𝟙_ C ⟶ Y) :=
+  ((λ_ X).homCongr (Iso.refl _)).symm.trans
+    ((tensorRightHomEquiv (𝟙_ C) X Y (𝟙_ C)).trans ((Iso.refl _).homCongr (λ_ Y)))
+
+/-- The morphism `𝟙_ C ⟶ Y` of a functional `φ : X ⟶ 𝟙_ C` applies `φ` after the
+coevaluation. -/
+@[simp]
+theorem homUnitEquiv_apply (φ : X ⟶ 𝟙_ C) :
+    homUnitEquiv X Y φ = η_ X Y ≫ φ ▷ Y ≫ (λ_ Y).hom := by
+  simp [homUnitEquiv, tensorRightHomEquiv, unitors_equal, unitors_inv_equal]
+
+/-- The functional `X ⟶ 𝟙_ C` of a morphism `s : 𝟙_ C ⟶ Y` is evaluation against `s`. -/
+@[simp]
+theorem homUnitEquiv_symm_apply (s : 𝟙_ C ⟶ Y) :
+    (homUnitEquiv X Y).symm s = (λ_ X).inv ≫ s ▷ X ≫ ε_ X Y := by
+  simp [homUnitEquiv, tensorRightHomEquiv, unitors_equal, unitors_inv_equal]
+
+end ExactPairing
 
 end TauCeti
