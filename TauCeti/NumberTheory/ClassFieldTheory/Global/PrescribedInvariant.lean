@@ -108,7 +108,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open IsDedekindDomain NumberField ContCohomology
+open IsDedekindDomain _root_.NumberField ContCohomology
 open _root_.ValuativeRel
 open scoped AdicCompletionExtension _root_.IntermediateField
 
