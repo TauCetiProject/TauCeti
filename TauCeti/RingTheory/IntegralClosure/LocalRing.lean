@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.RingTheory.Regular.LinearMap
+import Mathlib.Algebra.GroupWithZero.Action.Regular
 
 /-!
 # Integrally closed reduced local rings are domains
@@ -80,7 +81,7 @@ theorem IsLocalRing.isDomain_of_isIntegrallyClosed {R : Type*} [CommRing R] [IsL
   obtain ⟨b, hbIJ, hb⟩ := J.exists_mem_annihilator_sup_isSMulRegular
   obtain ⟨i, hi, j, hj, hij⟩ := Submodule.mem_sup.1 hbIJ
   have hb0 : b ∈ R⁰ := mem_nonZeroDivisors_iff_left.2 fun z hz ↦
-    hb (show b • z = b • 0 by rw [smul_eq_mul, smul_zero, hz])
+    IsSMulRegular.right_eq_zero_of_smul hb (by rwa [smul_eq_mul])
   -- `z = i / b` is an idempotent of the total ring of fractions, so it is integral over `R`
   have hii : i * i = i * b := by
     rw [← hij, mul_add, hI i hi j hj, add_zero]
