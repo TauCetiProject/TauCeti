@@ -127,7 +127,7 @@ theorem exists_isIdempotentElem_ker_primitiveRootsMap (hn : IsUnit (n : R)) :
   set g := MonoidAlgebra.single (generator n) (1 : R) with hg
   set Ψ := ∏ d ∈ n.properDivisors, cyclotomic d R
   -- `Φ_n(g) Ψ(g) = g ^ n - 1 = 0`.
-  have hg₁ : g ^ n = 1 := single_generator_pow n
+  have hg₁ : g ^ n = 1 := single_generator_pow_eq_one n
   have hΦΨ : aeval g (cyclotomic n R) * aeval g Ψ = 0 := by
     rw [← map_mul, (eq_cyclotomic_iff (Nat.pos_of_ne_zero (NeZero.ne n)) (cyclotomic n R)).mp rfl]
     simp [hg₁]

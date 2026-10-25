@@ -27,7 +27,9 @@ coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure
 
 * `TauCeti.RootsOfUnityGroup.generator_pow_val`: every element of `Multiplicative (ZMod n)` is
   the power of the standard generator given by its `ZMod.val`.
-* `TauCeti.RootsOfUnityGroup.single_generator_pow`: the standard generator of the group algebra
+* `TauCeti.RootsOfUnityGroup.generator_pow_eq_one`: the standard cyclic generator is
+  `n`-torsion.
+* `TauCeti.RootsOfUnityGroup.single_generator_pow_eq_one`: the standard group-algebra generator
   is an `n`th root of unity.
 * `TauCeti.RootsOfUnityGroup.characterMulEquivRootsOfUnity`: the multiplicative equivalence from
   characters `Multiplicative (ZMod n) →* Aˣ` to `rootsOfUnity n A`, given by the value on the
@@ -69,11 +71,16 @@ universe u v
 abbrev generator (n : ℕ) : Multiplicative (ZMod n) :=
   Multiplicative.ofAdd 1
 
+/-- The standard generator of `ℤ/n` is `n`-torsion. -/
+@[simp]
+theorem generator_pow_eq_one (n : ℕ) : generator n ^ n = 1 := by
+  simp [generator, ← ofAdd_nsmul]
+
 /-- The standard group-algebra generator is an `n`th root of unity. -/
 @[simp high] -- Simplify the relation before `MonoidAlgebra.single_pow` expands the power.
-theorem single_generator_pow {R : Type*} [Semiring R] (n : ℕ) :
+theorem single_generator_pow_eq_one {R : Type*} [Semiring R] (n : ℕ) :
     MonoidAlgebra.single (generator n) (1 : R) ^ n = 1 := by
-  simp [generator, ← ofAdd_nsmul, MonoidAlgebra.one_def]
+  rw [MonoidAlgebra.single_pow, one_pow, generator_pow_eq_one, MonoidAlgebra.one_def]
 
 section Characters
 

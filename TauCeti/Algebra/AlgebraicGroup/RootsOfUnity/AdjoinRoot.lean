@@ -39,7 +39,7 @@ noncomputable def adjoinRootEquiv :
     AdjoinRoot (X ^ n - 1 : R[X]) ≃ₐ[R] MonoidAlgebra R (Multiplicative (ZMod n)) :=
   AlgEquiv.ofAlgHom
     (AdjoinRoot.liftAlgHom _ (Algebra.ofId R _) (MonoidAlgebra.single (generator n) 1) (by
-      rw [eval₂_sub, eval₂_X_pow, eval₂_one, single_generator_pow, sub_self]))
+      rw [eval₂_sub, eval₂_X_pow, eval₂_one, single_generator_pow_eq_one, sub_self]))
     ((pointsMulEquiv (R := R) n).symm
       (rootsOfUnity.mkOfPowEq _ (AdjoinRoot.root_X_pow_sub_one_pow n))).ofConv
     (algHom_ext n (by
