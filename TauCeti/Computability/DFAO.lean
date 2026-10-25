@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.DFA
-import Mathlib.Data.ZMod.Defs
+public import Mathlib.Data.ZMod.Defs
 
 /-!
 # Deterministic finite automata with output
@@ -229,10 +229,23 @@ theorem eval_prod {τ : Type x} {Δ' : Type y} (N : DFAO α τ Δ') (x : List α
 
 end DFAO
 
-/-! ### Checks -/
-
 /-- The parity automaton on `Fin 2`, adding the letters in `ZMod 2`. -/
-private def parityDFAO : DFAO (Fin 2) (ZMod 2) (ZMod 2) := ⟨fun s a => s + (a : ℕ), 0, id⟩
+def parityDFAO : DFAO (Fin 2) (ZMod 2) (ZMod 2) := ⟨fun s a => s + (a : ℕ), 0, id⟩
+
+@[simp]
+theorem parityDFAO_step (q : ZMod 2) (d : Fin 2) : parityDFAO.step q d = q + d.val := by
+  simp only [parityDFAO]
+
+@[simp]
+theorem parityDFAO_start : parityDFAO.start = 0 := by
+  simp only [parityDFAO]
+
+@[simp]
+theorem parityDFAO_output (q : ZMod 2) : parityDFAO.output q = q := by
+  simp only [parityDFAO]
+  rfl
+
+/-! ### Checks -/
 
 /-- The parity automaton outputs the parity of the number of ones of a word. -/
 example : parityDFAO.output (parityDFAO.eval [1, 0, 1, 1]) = 1 := by decide
