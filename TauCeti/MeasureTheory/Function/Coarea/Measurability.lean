@@ -69,12 +69,8 @@ theorem LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage {f : X → 
   -- By Eilenberg's inequality, almost every fiber of the null part `A \ S` is null.
   filter_upwards [(hf.mono sdiff_subset).ae_hausdorffMeasure_inter_preimage_eq_zero μ ht hAS]
     with y hy
-  refine le_antisymm (measure_mono (inter_subset_inter_left _ hSA)) ?_
-  calc μH[t] (A ∩ f ⁻¹' {y}) ≤ μH[t] (S ∩ f ⁻¹' {y}) + μH[t] ((A \ S) ∩ f ⁻¹' {y}) := by
-        refine (measure_mono ?_).trans (measure_union_le _ _)
-        rw [← union_inter_distrib_right, union_sdiff_self]
-        exact inter_subset_inter_left _ subset_union_right
-    _ = μH[t] (S ∩ f ⁻¹' {y}) := by rw [hy, add_zero]
+  exact measure_eq_measure_of_null_sdiff (inter_subset_inter_left _ hSA)
+    (by rwa [← inter_sdiff_distrib_right])
 
 /-- **Normalized fiber measures of a Lipschitz map on a Lebesgue measurable set are almost
 everywhere measurable.** Let `f` be Lipschitz on a Lebesgue measurable subset `A` of an
