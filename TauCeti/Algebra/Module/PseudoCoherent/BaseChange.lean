@@ -34,8 +34,7 @@ open LinearMap TensorProduct
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {m : ℕ∞}
 
-/-- Flat extension of scalars preserves `m`-pseudocoherence, including `m = ⊤`.
-The rank of each term of a witnessing finite free resolution is unchanged. -/
+/-- Flat extension of scalars preserves `m`-pseudocoherence, including `m = ⊤`. -/
 theorem baseChange (h : IsPseudoCoherentOver R M m) (S : Type*) [CommRing S] [Algebra R S]
     [Module.Flat R S] : IsPseudoCoherentOver S (S ⊗[R] M) m := by
   classical
