@@ -75,12 +75,15 @@ in `[-⌊B⌋₊, ⌊B⌋₊]` times the number of derivative orders in `[0, ⌊
 theorem lt_two_mul_floor_add_one_mul_floor_div_add_one (s : ℕ) {B : K} (hB : 0 < B) :
     s < (2 * ⌊B⌋₊ + 1) * (⌊(s : K) / B⌋₊ + 1) := by
   have h1 : B < 2 * (⌊B⌋₊ : K) + 1 := by
-    linarith [Nat.lt_floor_add_one B, Nat.cast_nonneg (α := K) ⌊B⌋₊]
+    apply (Nat.lt_floor_add_one B).trans_le
+    rw [two_mul]
+    exact add_le_add (le_add_of_nonneg_left (Nat.cast_nonneg (α := K) ⌊B⌋₊)) le_rfl
   have h2 : (s : K) / B < (⌊(s : K) / B⌋₊ : K) + 1 := Nat.lt_floor_add_one _
-  have h3 : (s : K) < (2 * (⌊B⌋₊ : K) + 1) * ((⌊(s : K) / B⌋₊ : K) + 1) := by
-    calc (s : K) = B * ((s : K) / B) := (mul_div_cancel₀ _ hB.ne').symm
-      _ < (2 * (⌊B⌋₊ : K) + 1) * ((⌊(s : K) / B⌋₊ : K) + 1) :=
-          mul_lt_mul'' h1 h2 hB.le (div_nonneg (Nat.cast_nonneg s) hB.le)
+  have h3 : (s : K) < ((⌊(s : K) / B⌋₊ : K) + 1) * (2 * (⌊B⌋₊ : K) + 1) := by
+    calc (s : K) = ((s : K) / B) * B := (div_mul_cancel₀ _ hB.ne').symm
+      _ < ((⌊(s : K) / B⌋₊ : K) + 1) * (2 * (⌊B⌋₊ : K) + 1) :=
+          mul_lt_mul'' h2 h1 (div_nonneg (Nat.cast_nonneg s) hB.le) hB.le
+  rw [Nat.mul_comm]
   exact_mod_cast h3
 
 end TauCeti
