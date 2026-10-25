@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory
 public import TauCeti.CategoryTheory.Exact.Resolution.Complete.Comparison
+public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Equivalence
 
 /-!
 # The stable category as a homotopy category of complete resolutions
@@ -210,23 +211,23 @@ instance : hE.stableToCompleteResolutionHomotopyCategory.Full where
       (CompleteResolution.liftHomotopy (CompleteResolution.cyclesMap φ) _ _
         (by simp [f₀]) (by simp))
 
-instance : hE.stableToCompleteResolutionHomotopyCategory.Faithful where
-  map_injective {X Y} f₁ f₂ h := by
-    obtain ⟨g₁, rfl⟩ := E.projectiveStableIdeal.quotientFunctor.map_surjective f₁
-    obtain ⟨g₂, rfl⟩ := E.projectiveStableIdeal.quotientFunctor.map_surjective f₂
-    have h' := E.completeResolutionComplex.ι.congr_map h
-    rw [ObjectProperty.ι_map, ObjectProperty.ι_map,
-      stableToCompleteResolutionHomotopyCategory_map_hom,
-      stableToCompleteResolutionHomotopyCategory_map_hom, map_eq, map_eq] at h'
-    have H := Homotopy.equivSubZero (HomotopyCategory.homotopyOfEq _ _ h')
-    have hfac := CompleteResolution.factorsThrough_of_homotopy
-      (f := ((hE.completeResolutionIso X.as).hom ≫ (g₁ - g₂) ≫
-        (hE.completeResolutionIso Y.as).inv))
-      (by simp [Preadditive.comp_sub, Preadditive.sub_comp]) H
-    rw [MorphismIdeal.quotientFunctor_map_eq_iff, mem_projectiveStableIdeal_iff,
-      ← hE.projectiveInjective_eq_isProjective]
-    simpa using (hfac.comp_left (hE.completeResolutionIso X.as).inv).comp_right
-      (hE.completeResolutionIso Y.as).hom
+/-- A morphism whose lift is null-homotopic factors through a projective-injective object, so the
+kernel of the complete-resolution functor is contained in the stable ideal. -/
+theorem kerIdeal_le_projectiveStableIdeal :
+    hE.completeResolutionFunctor.kerIdeal ≤ E.projectiveStableIdeal := by
+  intro X Y f hf
+  rw [Functor.mem_kerIdeal_hom, map_eq] at hf
+  obtain ⟨H⟩ := (HomotopyCategory.quotient_map_eq_zero_iff _).1 hf
+  have hfac := CompleteResolution.factorsThrough_of_homotopy (hE.ι_liftMap_f_zero f) H
+  rw [mem_projectiveStableIdeal_iff, ← hE.projectiveInjective_eq_isProjective]
+  simpa using (hfac.comp_left (hE.completeResolutionIso X).inv).comp_right
+    (hE.completeResolutionIso Y).hom
+
+instance : hE.stableToHomotopyCategory.Faithful :=
+  (MorphismIdeal.faithful_lift_iff _ _ _).2 hE.kerIdeal_le_projectiveStableIdeal
+
+instance : hE.stableToCompleteResolutionHomotopyCategory.Faithful :=
+  Functor.Faithful.of_comp_iso hE.stableToCompleteResolutionHomotopyCategoryCompιIso
 
 instance : hE.stableToCompleteResolutionHomotopyCategory.EssSurj where
   mem_essImage K := by
