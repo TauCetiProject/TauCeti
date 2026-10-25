@@ -36,8 +36,6 @@ of `Φ` and the preferred framing share the meridian, this is the `∞`-surgery 
 
 ## Main definitions
 
-* `TauCeti.IsSolidTorusNeighborhood.exteriorBoundaryInclusion`: the boundary torus of the exterior,
-  parametrized by `S¹ × S¹` through `Φ`.
 * `TauCeti.IsSolidTorusNeighborhood.fillingSlope`: the slope on `∂E` of the meridian of a solid
   torus glued along a homeomorphism `g` of `S¹ × S¹`.
 * `TauCeti.DehnFilling h s Y`: a Dehn filling of the exterior along the slope `s`, inside `Y`.
@@ -70,36 +68,7 @@ namespace TauCeti
 
 namespace IsSolidTorusNeighborhood
 
-variable {X : Type} [TopologicalSpace X] {f : Circle → X} {Φ : SolidTorus → X}
-
-/-- The boundary torus of a solid torus neighbourhood lies in the knot exterior. -/
-theorem apply_boundaryInclusion_mem_knotExterior (h : IsSolidTorusNeighborhood f Φ)
-    (q : Circle × Circle) : Φ (SolidTorus.boundaryInclusion q) ∈ knotExterior (Φ := Φ) := by
-  rw [mem_knotExterior]
-  rintro ⟨p, hp, hpq⟩
-  rw [h.isEmbedding.injective hpq, mem_ofPred_eq, SolidTorus.coe_boundaryInclusion_fst,
-    Circle.norm_coe] at hp
-  exact lt_irrefl _ hp
-
-/-- The boundary torus of the knot exterior, parametrized by `S¹ × S¹` through the solid torus
-neighbourhood: `q ↦ Φ (q.1, q.2)`. -/
-def exteriorBoundaryInclusion (h : IsSolidTorusNeighborhood f Φ) (q : Circle × Circle) :
-    knotExterior (Φ := Φ) :=
-  ⟨Φ (SolidTorus.boundaryInclusion q), h.apply_boundaryInclusion_mem_knotExterior q⟩
-
-/-- The parametrized boundary torus of the exterior is `q ↦ Φ (q.1, q.2)`. -/
-@[simp]
-theorem coe_exteriorBoundaryInclusion_apply (h : IsSolidTorusNeighborhood f Φ)
-    (q : Circle × Circle) :
-    (h.exteriorBoundaryInclusion q : X) = Φ (SolidTorus.boundaryInclusion q) :=
-  (rfl)
-
-/-- The parametrization of the boundary torus of the exterior is injective. -/
-theorem injective_exteriorBoundaryInclusion (h : IsSolidTorusNeighborhood f Φ) :
-    Function.Injective h.exteriorBoundaryInclusion := fun _ _ hq ↦
-  h.isEmbedding_comp_boundaryInclusion.injective (congrArg Subtype.val hq)
-
-variable [T2Space X]
+variable {X : Type} [TopologicalSpace X] [T2Space X] {f : Circle → X} {Φ : SolidTorus → X}
 
 /-- The **filling slope** of a gluing `g` of a solid torus `V = D² × S¹` to the knot exterior, the
 point `q` of the boundary torus of `V` being glued to the point `g q` of the boundary torus of the
@@ -192,7 +161,7 @@ theorem ext {F G : DehnFilling h s Y} (hext : F.exteriorEmbedding = G.exteriorEm
     (hsol : F.solidTorusEmbedding = G.solidTorusEmbedding) : F = G := by
   have hglue : F.gluing = G.gluing := by
     ext1 q
-    refine h.injective_exteriorBoundaryInclusion
+    refine h.exteriorBoundaryInclusion_injective
       (F.isClosedEmbedding_exteriorEmbedding.injective ?_)
     rw [F.exteriorEmbedding_exteriorBoundaryInclusion, hext,
       G.exteriorEmbedding_exteriorBoundaryInclusion, hsol]
@@ -280,7 +249,7 @@ def meridianDehnFilling (h : IsSolidTorusNeighborhood f Φ) :
   solidTorusEmbedding := Φ
   isClosedEmbedding_solidTorusEmbedding := h.isClosedEmbedding
   gluing := Homeomorph.refl _
-  exteriorEmbedding_exteriorBoundaryInclusion _ := (rfl)
+  exteriorEmbedding_exteriorBoundaryInclusion q := h.coe_exteriorBoundaryInclusion_apply q
   range_union_range := by
     rw [Subtype.range_coe, eq_univ_iff_forall]
     intro x
@@ -307,6 +276,12 @@ theorem meridianDehnFilling_exteriorEmbedding (h : IsSolidTorusNeighborhood f Φ
 @[simp]
 theorem meridianDehnFilling_solidTorusEmbedding (h : IsSolidTorusNeighborhood f Φ) :
     h.meridianDehnFilling.solidTorusEmbedding = Φ :=
+  (rfl)
+
+/-- The trivial filling glues the boundary tori by the identity. -/
+@[simp]
+theorem meridianDehnFilling_gluing (h : IsSolidTorusNeighborhood f Φ) :
+    h.meridianDehnFilling.gluing = Homeomorph.refl _ :=
   (rfl)
 
 end IsSolidTorusNeighborhood

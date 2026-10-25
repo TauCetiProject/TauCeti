@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Sphere.HemisphereGraph
 public import TauCeti.LowDimTopology.DehnSurgery.Filling
 public import TauCeti.LowDimTopology.DehnSurgery.SeifertFraming
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Unknot
@@ -27,7 +28,8 @@ framing.
 * **`∞`-surgery gives `S³`.** This is the trivial filling of any knot,
   `TauCeti.IsSolidTorusNeighborhood.meridianDehnFilling`.
 * **`0`-surgery gives `S¹ × S²`** (`TauCeti.unknotZeroDehnFilling`). Write `S² ⊆ ℝ³` as the union
-  of its closed upper and lower hemispheres, each a disc `D²` through `(x₀, x₁, x₂) ↦ x₀ + i x₁`.
+  of its closed upper and lower hemispheres, each a disc `D²` through `(x₀, x₁, x₂) ↦ x₀ + i x₁`
+  (`TauCeti.hemisphereGraph`).
   Then `S¹ × S²` is the union of the solid tori `S¹ × D²₊` and `S¹ × D²₋`, glued along
   `S¹ × S¹` by the identity. The first is the exterior of the unknot, through
   `TauCeti.unknotExteriorHomeomorph`; since that identification exchanges the two circle factors
@@ -71,12 +73,6 @@ variable
     (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1))))
   (h₂ : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 2).obj
     (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1))))
-
-/-- The exterior of the unknot misses the unknot. -/
-private theorem unknotExteriorHomeomorph_symm_notMem_range (p : SolidTorus) :
-    (unknotExteriorHomeomorph.symm p : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∉ range unknot :=
-  fun hp ↦ (mem_knotExterior.mp (unknotExteriorHomeomorph.symm p).2)
-    (isSolidTorusNeighborhood_unknotSolidTorus.range_subset_image hp)
 
 /-- The meridian discs `w ↦ (w, 1)` of the exterior of the unknot, as a map into the knot
 complement. -/
@@ -142,94 +138,16 @@ end Framing
 
 section ZeroSurgery
 
-/-- The point `(Re u, Im u, c √(1 - ‖u‖²))` of `ℝ³`; for `c = 1` and `c = -1` this is the upper and
-the lower hemisphere of `S²` over the closed unit disc. -/
-private def capPoint (c : ℝ) (u : ℂ) : EuclideanSpace ℝ (Fin 3) :=
-  !₂[u.re, u.im, c * √(1 - ‖u‖ ^ 2)]
-
-private theorem capPoint_mem_sphere {c : ℝ} (hc : c ^ 2 = 1) (u : closedBall (0 : ℂ) 1) :
-    capPoint c u ∈ sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 := by
-  have hu : ‖(u : ℂ)‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg _) (mem_closedBall_zero_iff.mp u.2)
-  rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
-    EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three]
-  simp only [capPoint, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, mul_pow, hc, one_mul]
-  rw [Real.sq_sqrt (sub_nonneg.mpr hu), Complex.sq_norm, Complex.normSq_apply]
-  ring
-
-/-- The hemisphere of `S²` over the closed unit disc on the side of the sign `c`. -/
-private def cap {c : ℝ} (hc : c ^ 2 = 1) (u : closedBall (0 : ℂ) 1) :
-    sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 :=
-  ⟨capPoint c u, capPoint_mem_sphere hc u⟩
-
-private theorem continuous_cap {c : ℝ} (hc : c ^ 2 = 1) : Continuous (cap hc) := by
-  refine Continuous.subtype_mk ((PiLp.continuous_toLp 2 _).comp ?_) _
-  fun_prop
-
-/-- The first two coordinates of a point of a hemisphere recover the point of the disc. -/
-private theorem coe_eq_of_cap_eq {c c' : ℝ} {hc : c ^ 2 = 1} {hc' : c' ^ 2 = 1}
-    {u v : closedBall (0 : ℂ) 1} (h : cap hc u = cap hc' v) : u = v := by
-  have hi (i : Fin 3) := congrArg
-    (fun x : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 ↦ (x : EuclideanSpace ℝ (Fin 3)) i) h
-  refine Subtype.ext (Complex.ext ?_ ?_)
-  · simpa [cap, capPoint] using hi 0
-  · simpa [cap, capPoint] using hi 1
-
-/-- The two hemispheres agree on the equator. -/
-private theorem cap_eq_cap_of_norm_eq_one {c c' : ℝ} (hc : c ^ 2 = 1) (hc' : c' ^ 2 = 1)
-    {u : closedBall (0 : ℂ) 1} (hu : ‖(u : ℂ)‖ = 1) : cap hc u = cap hc' u := by
-  ext i
-  fin_cases i <;> simp [cap, capPoint, hu]
-
-/-- The upper and the lower hemisphere meet only over the boundary of the disc. -/
-private theorem norm_eq_one_of_cap_eq {u v : closedBall (0 : ℂ) 1}
-    (h : cap (c := 1) (one_pow 2) u = cap (c := -1) (by norm_num) v) : ‖(v : ℂ)‖ = 1 := by
-  have huv := coe_eq_of_cap_eq h
-  subst huv
-  have h2 :=
-    congrArg (fun x : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 ↦ (x : EuclideanSpace ℝ (Fin 3)) 2) h
-  simp only [cap, capPoint, PiLp.toLp_apply, Matrix.cons_val_two, Matrix.tail_cons,
-    Matrix.head_cons, one_mul, neg_one_mul] at h2
-  have hs : √(1 - ‖(u : ℂ)‖ ^ 2) = 0 := by linarith
-  rw [Real.sqrt_eq_zero', sub_nonpos] at hs
-  exact le_antisymm (mem_closedBall_zero_iff.mp u.2) ((one_le_sq_iff₀ (norm_nonneg _)).mp hs)
-
-/-- Every point of `S²` with nonnegative last coordinate `c x₂` lies on the hemisphere of sign
-`c`, over the point `x₀ + i x₁` of the disc. -/
-private theorem exists_cap_eq {c : ℝ} (hc : c ^ 2 = 1) (x : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)
-    (hx : 0 ≤ c * (x : EuclideanSpace ℝ (Fin 3)) 2) : ∃ u, cap hc u = x := by
-  have hx2 : (x : EuclideanSpace ℝ (Fin 3)) 0 ^ 2 + (x : EuclideanSpace ℝ (Fin 3)) 1 ^ 2 +
-      (x : EuclideanSpace ℝ (Fin 3)) 2 ^ 2 = 1 := by
-    rw [← Fin.sum_univ_three (fun i ↦ (x : EuclideanSpace ℝ (Fin 3)) i ^ 2),
-      ← EuclideanSpace.real_norm_sq_eq, norm_eq_of_mem_sphere x, one_pow]
-  have hnorm : ‖(⟨(x : EuclideanSpace ℝ (Fin 3)) 0, (x : EuclideanSpace ℝ (Fin 3)) 1⟩ : ℂ)‖ ^ 2 =
-      1 - (x : EuclideanSpace ℝ (Fin 3)) 2 ^ 2 := by
-    rw [Complex.sq_norm, Complex.normSq_mk]
-    linarith
-  have hu : ‖(⟨(x : EuclideanSpace ℝ (Fin 3)) 0, (x : EuclideanSpace ℝ (Fin 3)) 1⟩ : ℂ)‖ ≤ 1 :=
-    (sq_le_one_iff₀ (norm_nonneg _)).mp (by rw [hnorm]; nlinarith)
-  refine ⟨⟨_, mem_closedBall_zero_iff.mpr hu⟩, Subtype.ext ?_⟩
-  ext i
-  fin_cases i
-  · simp [cap, capPoint]
-  · simp [cap, capPoint]
-  · simp only [cap, capPoint, Fin.reduceFinMk, PiLp.toLp_apply, Matrix.cons_val_two,
-      Matrix.tail_cons, Matrix.head_cons]
-    rw [hnorm, sub_sub_cancel, Real.sqrt_sq_eq_abs]
-    rcases mul_self_eq_one_iff.mp ((sq c).symm.trans hc) with rfl | rfl
-    · rw [one_mul, abs_of_nonneg (by linarith)]
-    · rw [neg_one_mul, abs_of_nonpos (by linarith), neg_neg]
-
 /-- The solid torus `D² × S¹` carried onto the solid torus `S¹ × D²₊` or `S¹ × D²₋` of `S¹ × S²`,
 according to the sign `c`. -/
 private def capProd {c : ℝ} (hc : c ^ 2 = 1) (p : SolidTorus) :
     Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 :=
-  (p.2, cap hc p.1)
+  (p.2, hemisphereGraph hc p.1)
 
 private theorem isClosedEmbedding_capProd {c : ℝ} (hc : c ^ 2 = 1) :
     IsClosedEmbedding (capProd hc) :=
-  (continuous_snd.prodMk ((continuous_cap hc).comp continuous_fst)).isClosedEmbedding
-    fun _ _ h ↦ Prod.ext (coe_eq_of_cap_eq (hc := hc) (hc' := hc) (congrArg Prod.snd h))
+  (continuous_snd.prodMk ((continuous_hemisphereGraph hc).comp continuous_fst)).isClosedEmbedding
+    fun _ _ h ↦ Prod.ext (eq_of_hemisphereGraph_eq (hc := hc) (hc' := hc) (congrArg Prod.snd h))
       (congrArg Prod.fst h)
 
 /-- **`0`-surgery on the unknot is `S¹ × S²`.** The product `S¹ × S²` is the Dehn filling of the
@@ -256,17 +174,17 @@ def unknotZeroDehnFilling :
         rw [IsSolidTorusNeighborhood.coe_exteriorBoundaryInclusion_apply,
           unknotExteriorHomeomorph_symm_boundaryInclusion, Homeomorph.coe_prodComm])
     rw [Function.comp_apply, hq, Homeomorph.apply_symm_apply]
-    exact Prod.ext rfl (cap_eq_cap_of_norm_eq_one (one_pow 2) (by norm_num) (by simp))
+    exact Prod.ext rfl (hemisphereGraph_eq_of_norm_eq_one (one_pow 2) (by norm_num) (by simp))
   range_union_range := by
     refine eq_univ_of_forall fun y ↦ ?_
     rcases le_total 0 ((y.2 : EuclideanSpace ℝ (Fin 3)) 2) with hy | hy
-    · obtain ⟨u, hu⟩ := exists_cap_eq (c := 1) (one_pow 2) y.2 (by simpa using hy)
+    · obtain ⟨u, hu⟩ := exists_hemisphereGraph_eq (c := 1) (one_pow 2) y.2 (by simpa using hy)
       exact Or.inl ⟨unknotExteriorHomeomorph.symm (u, y.1), by simp [capProd, hu]⟩
-    · obtain ⟨u, hu⟩ := exists_cap_eq (c := -1) (by norm_num) y.2 (by simpa using hy)
+    · obtain ⟨u, hu⟩ := exists_hemisphereGraph_eq (c := -1) (by norm_num) y.2 (by simpa using hy)
       exact Or.inr ⟨(u, y.1), by simp [capProd, hu]⟩
   range_inter_range_subset := by
     rintro _ ⟨⟨x, rfl⟩, ⟨p, hp⟩⟩
-    have hnorm := norm_eq_one_of_cap_eq (congrArg Prod.snd hp).symm
+    have hnorm := norm_eq_one_of_hemisphereGraph_eq (by norm_num) (congrArg Prod.snd hp).symm
     refine ⟨(⟨p.1, mem_sphere_zero_iff_norm.mpr hnorm⟩, p.2), ?_⟩
     rw [Function.comp_apply, ← hp]
     exact congrArg _ (Prod.ext (Subtype.ext (SolidTorus.coe_boundaryInclusion_fst _))
