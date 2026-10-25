@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.RingOfDefinition
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Category.TopCommRingCat
+import TauCeti.RingTheory.Subring.SpanSingleton
 
 /-!
 # Uniform Huber rings
@@ -37,6 +38,8 @@ a nonzero nilpotent element is not uniform.
 * `TauCeti.Huber.IsUniform.nilradical_le_closure_bot`: in a uniform Tate ring every nilpotent
   element lies in the closure of zero.
 * `TauCeti.Huber.IsUniform.isReduced`: a Hausdorff uniform Tate ring is reduced.
+* `TauCeti.Huber.IsUniform.isAdicComplete_span_singleton`: in a complete Hausdorff uniform Huber
+  ring, `A°` is `a`-adically complete for every pseudouniformiser `a ∈ A°`.
 
 Discrete rings are uniform (`TauCeti.Huber.IsUniform.of_discreteTopology`), and so are normed
 division rings, by `TauCeti.Huber.IsUniform.of_normedDivisionRing` in
@@ -164,6 +167,34 @@ theorem IsUniform.isReduced [IsTateRing A] [IsUniform A] [T0Space A] : IsReduced
   exact IsUniform.isReduced_of_isPseudoUniformizer hϖ
 
 end Huber
+
+section Complete
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [CompleteSpace A] [T0Space A] [IsHuberRing A] [IsUniform A]
+
+/-- In a complete Hausdorff uniform Huber ring, `A°` is open and bounded, hence `a`-adically
+complete for every pseudouniformiser `a ∈ A°`. -/
+theorem IsUniform.isAdicComplete_span_singleton (a : powerBoundedSubring A)
+    (ha : IsPseudoUniformizer (a : A)) :
+    IsAdicComplete (Ideal.span {a}) (powerBoundedSubring A) := by
+  have hb := IsUniform.isBounded_powerBoundedSubring (A := A)
+  have ho := isOpen_powerBoundedSubring A
+  have h₁ := PairOfDefinition.ofIsPseudoUniformizer_ringOfDefinition _ ho hb ha a.2
+  have h₂ :=
+    (PairOfDefinition.ofIsPseudoUniformizer _ ho hb ha a.2).isAdicComplete_idealOfDefinition
+  have h₃ := fun x ↦
+    PairOfDefinition.mem_ofIsPseudoUniformizer_idealOfDefinition _ ho hb ha a.2 (x := x)
+  -- the pair of definition `(A°, a A°)` is only known through these lemmas, so forget it
+  obtain ⟨S, J, hS, hJc, hJ⟩ : ∃ (S : Subring A) (J : Ideal S), S = powerBoundedSubring A ∧
+      IsAdicComplete J S ∧ ∀ x : S, x ∈ J ↔ ∃ y ∈ powerBoundedSubring A, (a : A) * y = x :=
+    ⟨_, _, h₁, h₂, h₃⟩
+  subst hS
+  have hJa : J = Ideal.span {a} := Ideal.ext fun x ↦
+    (hJ x).trans ((powerBoundedSubring A).mem_span_singleton_iff a.2).symm
+  exact hJa ▸ hJc
+
+end Complete
 
 end TauCeti.Huber
 

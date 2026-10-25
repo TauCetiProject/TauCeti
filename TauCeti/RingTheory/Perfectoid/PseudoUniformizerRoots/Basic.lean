@@ -37,6 +37,8 @@ structure is equivalent to the choice of a pseudouniformiser
 
 * `TauCeti.Perfectoid.PseudoUniformizerRoots p R`: pseudouniformisers of `R` with compatible
   `p`-power roots whose `p`-th power divides `p` in `R°`.
+* `TauCeti.Perfectoid.PseudoUniformizerRoots.ofPowerBounded`: the structure given by a compatible
+  system of `p`-power roots in `R°`.
 * `TauCeti.Perfectoid.PseudoUniformizerRoots.root`: the root `ϖ ^ (1 / p ^ n)`, and
   `PseudoUniformizerRoots.rootPB`: the same root as an element of `R°`.
 * `TauCeti.Perfectoid.PseudoUniformizerRoots.zpow`: the unit `ϖ ^ (m / p ^ n)` of `R`.
@@ -125,6 +127,29 @@ theorem root_pow (n : ℕ) : ϖ.root n ^ p ^ n = ϖ.root 0 :=
 theorem isPseudoUniformizer_root_zero : IsPseudoUniformizer (ϖ.root 0) :=
   ϖ.isPseudoUniformizer
 
+section OfPowerBounded
+
+variable (ψ : Perfection (powerBoundedSubring R) p)
+  (hψ : IsPseudoUniformizer (Perfection.coeffMonoidHom (powerBoundedSubring R) p 0 ψ : R))
+  (hdvd : Perfection.coeffMonoidHom (powerBoundedSubring R) p 0 ψ ^ p ∣ (p : powerBoundedSubring R))
+
+/-- The pseudouniformiser with compatible roots given by a compatible system `ψ` of `p`-power
+roots in `R°` whose zeroth term is a pseudouniformiser with `p`-th power dividing `p` in `R°`. -/
+def ofPowerBounded : PseudoUniformizerRoots p R where
+  roots := Perfection.mapMonoidHom p
+    ((powerBoundedSubring R).subtype : powerBoundedSubring R →* R) ψ
+  isPseudoUniformizer := hψ
+  pow_dvd := hdvd
+
+/-- The roots of `ofPowerBounded ψ` are the terms of `ψ`. -/
+@[simp]
+theorem root_ofPowerBounded (n : ℕ) :
+    (ofPowerBounded ψ hψ hdvd).root n =
+      (Perfection.coeffMonoidHom (powerBoundedSubring R) p n ψ : R) :=
+  (rfl)
+
+end OfPowerBounded
+
 variable [NeZero p]
 
 /-- **Every root `ϖ ^ (1 / p ^ n)` is a pseudouniformiser**: its `p ^ n`-th power `ϖ` is a
@@ -144,6 +169,15 @@ def rootPB (n : ℕ) : powerBoundedSubring R :=
 /-- The root in `R°` has underlying element the root in `R`. -/
 @[simp, norm_cast]
 theorem coe_rootPB (n : ℕ) : (ϖ.rootPB n : R) = ϖ.root n :=
+  (rfl)
+
+/-- In `R°`, the roots of `ofPowerBounded ψ` are the terms of `ψ`. -/
+@[simp]
+theorem rootPB_ofPowerBounded (ψ : Perfection (powerBoundedSubring R) p)
+    (hψ : IsPseudoUniformizer (Perfection.coeffMonoidHom (powerBoundedSubring R) p 0 ψ : R))
+    (hdvd : Perfection.coeffMonoidHom (powerBoundedSubring R) p 0 ψ ^ p ∣
+      (p : powerBoundedSubring R)) (n : ℕ) :
+    (ofPowerBounded ψ hψ hdvd).rootPB n = Perfection.coeffMonoidHom (powerBoundedSubring R) p n ψ :=
   (rfl)
 
 /-- In `R°`, each root is the `p`-th power of the next one. -/
