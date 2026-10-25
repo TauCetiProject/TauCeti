@@ -43,6 +43,8 @@ of a connection on the tangent bundle.
   its three inputs there.
 * `CovariantDerivative.curvatureOperator_congr_of_eventuallyEq`: curvature agrees at a point
   when its smooth inputs agree in a neighborhood of that point.
+* `CovariantDerivative.curvatureOperator_congr_covariantDerivative`: two connections which agree
+  on differentiable sections have the same curvature on differentiable inputs.
 
 ## References
 
@@ -120,6 +122,24 @@ theorem curvatureOperator_self (X : Π x : M, TangentSpace I x) (σ : Π x : M, 
   rw [curvatureOperator_apply]
   simp
 
+/-- Two connections which agree on every section differentiable at the point of evaluation have
+the same curvature on a section which is differentiable everywhere, at every point where the
+covariant derivatives of that section along the two vector fields are differentiable. A connection
+is unconstrained on sections which are not differentiable, so this is the form in which a
+connection determined by other data, such as a Levi-Civita connection, is compared with an
+explicit one. -/
+theorem curvatureOperator_congr_covariantDerivative {cov' : _root_.CovariantDerivative I F V}
+    (h : ∀ ⦃σ : Π x : M, V x⦄ ⦃y : M⦄, MDiffAt (T% σ) y → cov σ y = cov' σ y)
+    {X Y : Π x : M, TangentSpace I x} {σ : Π x : M, V x} {x : M} (hσ : MDiff (T% σ))
+    (hXσ : MDiffAt (T% (fun y ↦ cov' σ y (X y))) x)
+    (hYσ : MDiffAt (T% (fun y ↦ cov' σ y (Y y))) x) :
+    curvatureOperator cov X Y σ x = curvatureOperator cov' X Y σ x := by
+  have hinner (Z : Π x : M, TangentSpace I x) :
+      (fun y ↦ cov σ y (Z y)) = fun y ↦ cov' σ y (Z y) :=
+    funext fun y ↦ by rw [h (hσ y)]
+  rw [curvatureOperator_apply, curvatureOperator_apply, hinner X, hinner Y, h hYσ, h hXσ,
+    h (hσ x)]
+
 variable [VectorBundle 𝕜 F V]
 
 /-- Curvature vanishes when its first vector-field argument is zero. -/
@@ -182,17 +202,9 @@ theorem contMDiff_curvatureOperator
     CMDiff ∞ (T% (curvatureOperator cov X Y σ)) := by
   have hYσ := cov.contMDiff_apply hY hσ
   have hXσ := cov.contMDiff_apply hX hσ
-  let _ : IsManifold I (minSmoothness ℝ 2) M :=
-    IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) (by simp)
-  let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M :=
-    IsManifold.of_le (m := (∞ : ℕ∞ω) + 1) (n := ∞) (by simp)
-  have hXY : CMDiff ∞ (T% (mlieBracket I X Y)) :=
-    ContDiff.mlieBracket_vectorField (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) hX hY (by
-      rw [minSmoothness_of_isRCLikeNormedField]
-      simp)
   exact ((cov.contMDiff_apply hX hYσ).sub_section
     (cov.contMDiff_apply hY hXσ)).sub_section
-      (cov.contMDiff_apply hXY hσ)
+      (cov.contMDiff_apply (contMDiff_mlieBracket hX hY) hσ)
 
 variable {cov}
   {X X' Y Y' : Π x : M, TangentSpace I x} {σ τ : Π x : M, V x} {f : M → ℝ}

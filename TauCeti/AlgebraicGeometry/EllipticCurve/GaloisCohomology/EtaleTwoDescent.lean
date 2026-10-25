@@ -12,6 +12,10 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.XSubT
 public import TauCeti.RingTheory.AdjoinRoot.Factors
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.EmbeddingIndependence
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
+import TauCeti.FieldTheory.Normal.Embeddings
+import TauCeti.GroupTheory.SpecificGroups.KleinFour
+import TauCeti.RepresentationTheory.Homological.ContCohomology.ProjectionFormula
 
 /-!
 # The cohomological and étale-algebra `2`-descent maps
@@ -54,6 +58,15 @@ shows that restricting to `L` and then applying the descent map of `W⁄L` is th
 the descent map of `W` and then the base change of square classes. This is the compatibility that
 identifies the cohomological local conditions with the explicit local conditions of `2`-descent.
 
+The image of the cohomological descent map satisfies the norm condition of `2`-descent: every
+class has square norm. Through the Kummer isomorphisms, the norm of a factor field
+`K[X] ⧸ (p)` is corestriction from its absolute Galois group, so the norm class of the image of `c`
+is the sum, over the factors, of the corestrictions of the restriction of `c` paired with
+`(θ, 0)`. By the projection formula each term is the cup product of `c`, through the Weil pairing,
+with the corestriction `∑ᵤ u • (σ θ, 0)` of the point `(σ θ, 0)` for an embedding `σ` of the
+factor field into `Kˢ`, that is with the sum of the points `(x, 0)` over the roots `x` of `p`.
+Summed over the factors these run through the three points of order two, whose sum is zero.
+
 ## Main definitions
 
 * `TauCeti.TwoDescent.explicitFactor`: projection of an étale-algebra square class to the power
@@ -89,10 +102,17 @@ identifies the cohomological local conditions with the explicit local conditions
   fields.
 * `TauCeti.TwoDescent.cohomologicalMap_torsionRes`: the cohomological descent map commutes with
   restriction to an extension field and base change of square classes.
+* `TauCeti.TwoDescent.normM_cohomologicalMap` and
+  `TauCeti.TwoDescent.range_cohomologicalMap_le_ker_normM`: the image of the cohomological descent
+  map lies in the kernel of the norm `(K[X] ⧸ (f))ˣ ⧸ squares → Kˣ ⧸ squares`.
 
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], X.1.4.
+* A. Brumer and K. Kramer, *The rank of elliptic curves*, Duke Math. J. 44 (1977), for the
+  `2`-descent through the cubic étale algebra and its norm condition.
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (1.5.3) and the
+  display after (6.2.1), for the projection formula and the norm as corestriction.
 -/
 
 public section
@@ -769,6 +789,322 @@ theorem cohomologicalMap_torsionRes {L : Type*} [Field L] [Algebra K L]
       (W.torsionRes τN 2 c)) (twoTorsionCharacter_congr hg.symm hT hψ _ _ h2q))
 
 end ChangeOfField
+
+/-! ### The norm condition -/
+
+section NormCondition
+
+omit [DecidableEq K]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+open scoped Classical in
+/-- The point `(x, 0)` of `E(Kˢ)[2]` at a root `x` of the `2`-division cubic. -/
+private def rootTorsionCoeff {x : SeparableClosure K} (hx : aeval x W.toAffine.f = 0) :
+    W.TorsionCoeff 2 :=
+  have h : (W.baseChange (SeparableClosure K)).toAffine.Nonsingular x 0 :=
+    W.toAffine.nonsingular_baseChange_of_aeval_eq_zero hx
+  AddEquiv.torsionByCongr W.pointCoeffEquiv 2
+    (⟨WeierstrassCurve.Affine.Point.some x 0 h,
+      WeierstrassCurve.Affine.Point.some_mem_torsionBy_two h
+        (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _)⟩ :
+      AddSubgroup.torsionBy (W.baseChange (SeparableClosure K)).toAffine.Point (2 : ℕ))
+
+open scoped Classical in
+/-- The point `(x, 0)` as a point of `E(Kˢ)`. -/
+private theorem coe_rootTorsionCoeff {x : SeparableClosure K} (hx : aeval x W.toAffine.f = 0) :
+    (rootTorsionCoeff W hx : W.PointCoeff) = W.pointCoeffEquiv
+      (WeierstrassCurve.Affine.Point.some x 0
+        (W.toAffine.nonsingular_baseChange_of_aeval_eq_zero hx)) := by
+  rw [rootTorsionCoeff, AddEquiv.torsionByCongr_apply_coe]
+
+/-- A Galois automorphism moves `(x, 0)` to `(g x, 0)`. -/
+private theorem smul_rootTorsionCoeff (g : AbsoluteGaloisGroup K) {x : SeparableClosure K}
+    (hx : aeval x W.toAffine.f = 0) (hgx : aeval (g x) W.toAffine.f = 0) :
+    g • rootTorsionCoeff W hx = rootTorsionCoeff W hgx := by
+  classical
+  refine Subtype.ext ?_
+  rw [WeierstrassCurve.coe_smul_torsionCoeff, coe_rootTorsionCoeff, coe_rootTorsionCoeff,
+    WeierstrassCurve.smul_pointCoeffEquiv, WeierstrassCurve.Affine.Point.map_some]
+  simp
+
+/-- The points `(x, 0)` and `(y, 0)` agree only for `x = y`. -/
+private theorem rootTorsionCoeff_injective {x y : SeparableClosure K}
+    (hx : aeval x W.toAffine.f = 0) (hy : aeval y W.toAffine.f = 0)
+    (h : rootTorsionCoeff W hx = rootTorsionCoeff W hy) : x = y := by
+  classical
+  have h' := congrArg (fun T : W.TorsionCoeff 2 ↦ W.pointCoeffEquiv.symm (T : W.PointCoeff)) h
+  simp only [coe_rootTorsionCoeff, AddEquiv.symm_apply_apply] at h'
+  exact (WeierstrassCurve.Affine.Point.some.inj h').1
+
+omit [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
+/-- The image of the universal root of a factor under an embedding is a root of the cubic. -/
+private theorem aeval_embedding_root_f (p : W.toAffine.f.Factors)
+    (σ : 𝕃 p →ₐ[K] SeparableClosure K) : aeval (σ (θ p)) W.toAffine.f = 0 := by
+  rw [aeval_algHom_apply, AdjoinRoot.aeval_eq, AdjoinRoot.mk_eq_zero.mpr p.dvd, map_zero]
+
+/-- The point `(σ θ, 0)` of `E(Kˢ)[2]` attached to an embedding `σ` of a factor field. -/
+private def embeddingTorsionCoeff (p : W.toAffine.f.Factors)
+    (σ : 𝕃 p →ₐ[K] SeparableClosure K) : W.TorsionCoeff 2 :=
+  rootTorsionCoeff W (aeval_embedding_root_f W p σ)
+
+omit [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
+/-- An automorphism of `Kˢ` fixes the image of an embedding of a factor field exactly when it
+fixes the image of the universal root. -/
+private theorem mem_fixingSubgroup_fieldRange_iff (p : W.toAffine.f.Factors)
+    (σ : 𝕃 p →ₐ[K] SeparableClosure K) {g : AbsoluteGaloisGroup K} :
+    g ∈ σ.fieldRange.fixingSubgroup ↔ g (σ (θ p)) = σ (θ p) := by
+  rw [← galoisSubgroup_toSubgroup, OpenSubgroup.mem_toSubgroup]
+  exact mem_galoisSubgroup_iff_apply_eq_of_adjoin_eq_top K (𝕃 p) σ AdjoinRoot.adjoinRoot_eq_top
+
+/-- The point `(σ θ, 0)` is fixed by the absolute Galois group of the factor field. -/
+private def embeddingH0 (p : W.toAffine.f.Factors) (σ : 𝕃 p →ₐ[K] SeparableClosure K) :
+    H0 σ.fieldRange.fixingSubgroup (W.TorsionCoeff 2) :=
+  ⟨embeddingTorsionCoeff W p σ, fun g ↦ by
+    have hg := (mem_fixingSubgroup_fieldRange_iff W p σ).1 g.2
+    rw [Subgroup.smul_def, embeddingTorsionCoeff,
+      smul_rootTorsionCoeff W _ _ (hg.symm ▸ aeval_embedding_root_f W p σ)]
+    -- the two points agree since `g` fixes `σ θ`, which `congr` closes from `hg`
+    congr 1⟩
+
+/-- The invariant attached to `σ` is the point `(σ θ, 0)`. -/
+private theorem coe_embeddingH0 (p : W.toAffine.f.Factors) (σ : 𝕃 p →ₐ[K] SeparableClosure K) :
+    (embeddingH0 W p σ : W.TorsionCoeff 2) = embeddingTorsionCoeff W p σ :=
+  (rfl)
+
+/-- **The universal-root character, read in `Kˢ`.** Transported along the identification of
+separable closures attached to an embedding `σ` of a factor field, the character `e₂(·, (θ, 0))`
+of the factor field is the Weil pairing with `(σ θ, 0)`. -/
+private theorem kummerCoeffMapSymm_factorTorsionCharacter (p : W.toAffine.f.Factors)
+    (σ : 𝕃 p →ₐ[K] SeparableClosure K) (h2 : IsUnit ((2 : ℕ) : K)) (S : W.TorsionCoeff 2) :
+    kummerCoeffMapSymm K 2 (𝕃 p) σ (factorTorsionCharacter W p h2
+      (W.torsionCoeffBaseChange
+        (separableClosureAlgEquiv K (𝕃 p) σ : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p))
+        2 S)) =
+      W.torsionCoeffWeilPairing 2 h2 S (embeddingTorsionCoeff W p σ) := by
+  classical
+  set τ := (separableClosureAlgEquiv K (𝕃 p) σ : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p))
+  have h2p : IsUnit ((2 : ℕ) : 𝕃 p) := by simpa only [map_natCast] using h2.map (ι p)
+  -- `τ` carries `(σ θ, 0)` to `(θ, 0)`
+  have hT : (W.baseChange (𝕃 p)).twoTorsionCoeff (factorRoot_nonsingular W p)
+      (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _) =
+      W.torsionCoeffBaseChange τ 2 (embeddingTorsionCoeff W p σ) := by
+    have hτx : τ (σ (θ p)) = algebraMap (𝕃 p) (SeparableClosure (𝕃 p)) (θ p) :=
+      (separableClosureAlgEquiv_apply K (𝕃 p) σ _).trans
+        (separableClosureRingEquiv_symm_apply_eq_algebraMap K (𝕃 p) σ (θ p))
+    refine Subtype.ext ?_
+    rw [WeierstrassCurve.coe_twoTorsionCoeff, WeierstrassCurve.coe_torsionCoeffBaseChange,
+      embeddingTorsionCoeff, coe_rootTorsionCoeff,
+      WeierstrassCurve.pointCoeffBaseChange_pointCoeffEquiv_some,
+      WeierstrassCurve.basePointCoeff_some]
+    simp only [hτx, map_zero]
+  rw [factorTorsionCharacter_def W p h2 h2p, WeierstrassCurve.twoTorsionCharacter_eq_weilPairing,
+    hT, WeierstrassCurve.torsionCoeffWeilPairing_torsionCoeffBaseChange _ h2]
+  exact Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
+    simp [τ, separableClosureAlgEquiv_apply]
+
+/-- **Corestriction of the factorwise descent class** (the projection formula): corestricting the
+factorwise image of `c` from the factor field `K[X] ⧸ (p)`, embedded by `σ`, to `K` is the cup
+product of `c`, through the Weil pairing, with the corestriction `∑ᵤ u • (σ θ, 0)` of the point
+`(σ θ, 0)`. -/
+private theorem kummerCor_factorCohomologicalMap (p : W.toAffine.f.Factors)
+    (σ : 𝕃 p →ₐ[K] SeparableClosure K) (h2 : IsUnit ((2 : ℕ) : K))
+    (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)) :
+    kummerCor K 2 (𝕃 p) σ (.ofAdd (factorCohomologicalMap W p
+        (separableClosureAlgEquiv K (𝕃 p) σ : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p))
+        h2 c)) =
+      .ofAdd (explicitCup10 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2) (W.TorsionCoeff 2)
+        (KummerCoeff K 2) (W.torsionCoeffWeilPairing 2 h2) continuous_of_discreteTopology
+        (W.torsionCoeffWeilPairing_smul 2 h2) c
+        (explicitCor0 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2) σ.fieldRange.fixingSubgroup
+          (embeddingH0 W p σ))) := by
+  have hU := isOpen_fixingSubgroup_fieldRange K (𝕃 p) σ
+  have key : explicitMap1 (AbsoluteGaloisGroup (𝕃 p)) (KummerCoeff (𝕃 p) 2)
+      ↥σ.fieldRange.fixingSubgroup (KummerCoeff K 2)
+      ((absoluteGaloisGroupEquivFixingSubgroup K (𝕃 p) σ).symm :
+        ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup (𝕃 p))
+      (kummerCoeffMapSymm K 2 (𝕃 p) σ) continuous_of_discreteTopology
+      (kummerCoeffMapSymm_smul K 2 (𝕃 p) σ)
+      (factorCohomologicalMap W p
+        (separableClosureAlgEquiv K (𝕃 p) σ : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p))
+        h2 c) =
+      explicitCup10 σ.fieldRange.fixingSubgroup (W.TorsionCoeff 2) (W.TorsionCoeff 2)
+        (KummerCoeff K 2) (W.torsionCoeffWeilPairing 2 h2) continuous_of_discreteTopology
+        (fun g m y ↦ W.torsionCoeffWeilPairing_smul 2 h2 (g : AbsoluteGaloisGroup K) m y)
+        (explicitRes1 _ _ σ.fieldRange.fixingSubgroup c) (embeddingH0 W p σ) := by
+    induction c using QuotientAddGroup.induction_on with
+    | _ z =>
+    simp only [factorCohomologicalMap_apply, WeierstrassCurve.torsionRes_eq_explicitMap1,
+      explicitMap1_mk, explicitCoeff1_mk, explicitRes1_mk, explicitCup10_mk]
+    refine congrArg _ (Subtype.ext (funext fun g ↦ ?_))
+    -- unfold the three nested `cocyclesMap1` applications; `rw`/`simp only [cocyclesMap1_apply]`
+    -- cannot, as the compatibility proof of the inner application is `map_smul` of the underlying
+    -- `MulActionHom` of `factorTorsionCharacter`, which matches its expected type only after
+    -- unfolding `ContinuousMonoidHom.id`, so the rewrite motive is not type-correct
+    refine ((cocyclesMap1_apply ..).trans (congrArg _ ((cocyclesMap1_apply ..).trans
+      (congrArg _ (cocyclesMap1_apply ..))))).trans ?_
+    -- the element of `G_{K[X] ⧸ (p)}` attached to `g` restricts to `g`
+    have hg : absoluteGaloisGroupMap
+        (separableClosureAlgEquiv K (𝕃 p) σ : SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p))
+        (ContinuousMonoidHom.id (AbsoluteGaloisGroup (𝕃 p))
+          (((absoluteGaloisGroupEquivFixingSubgroup K (𝕃 p) σ).symm :
+            ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup (𝕃 p)) g)) = g := by
+      rw [absoluteGaloisGroupMap_separableClosureAlgEquiv]
+      simp
+    rw [hg]
+    refine (kummerCoeffMapSymm_factorTorsionCharacter W p σ h2 _).trans ?_
+    dsimp only
+    rw [cocyclesMap1_apply, (embeddingH0 W p σ).2 g, AddMonoidHom.id_apply,
+      ContinuousMonoidHom.subgroupSubtype_apply, coe_embeddingH0]
+  refine Multiplicative.toAdd.injective ((toAdd_kummerCor K 2 (𝕃 p) σ _).trans ?_)
+  exact (congrArg _ key).trans
+    (explicitCup_projection10_res_left _ _ _ _ _ hU _ _ _ c (embeddingH0 W p σ))
+
+/-- A Galois automorphism moves the point `(σ θ, 0)` to `(g (σ θ), 0)`. -/
+private theorem smul_embeddingTorsionCoeff (g : AbsoluteGaloisGroup K) (p : W.toAffine.f.Factors)
+    (σ : 𝕃 p →ₐ[K] SeparableClosure K) :
+    g • embeddingTorsionCoeff W p σ =
+      embeddingTorsionCoeff W p ((g : SeparableClosure K →ₐ[K] SeparableClosure K).comp σ) :=
+  smul_rootTorsionCoeff W g _ _
+
+/-- The point `(σ θ, 0)` attached to an embedding `σ` of a factor field is nonzero. -/
+private theorem embeddingTorsionCoeff_ne_zero (p : W.toAffine.f.Factors)
+    (σ : 𝕃 p →ₐ[K] SeparableClosure K) : embeddingTorsionCoeff W p σ ≠ 0 := by
+  classical
+  intro h
+  have h' := congrArg (fun T : W.TorsionCoeff 2 ↦ (T : W.PointCoeff)) h
+  simp [embeddingTorsionCoeff, coe_rootTorsionCoeff] at h'
+
+/-- **The embeddings of the factor fields are the nonzero points of order two.** Sending an
+embedding `σ` of the factor field `K[X] ⧸ (p)` into `Kˢ` to the point `(σ θ, 0)` is a bijection
+from the embeddings of all the factor fields onto the nonzero points of `E(Kˢ)[2]`. -/
+private theorem bijective_embeddingTorsionCoeff (h2 : IsUnit ((2 : ℕ) : K)) :
+    Function.Bijective (fun i : Σ p : W.toAffine.f.Factors, 𝕃 p →ₐ[K] SeparableClosure K ↦
+      (⟨embeddingTorsionCoeff W i.1 i.2, embeddingTorsionCoeff_ne_zero W i.1 i.2⟩ :
+        {S : W.TorsionCoeff 2 // S ≠ 0})) := by
+  classical
+  have hroot (p : W.toAffine.f.Factors) (τ : 𝕃 p →ₐ[K] SeparableClosure K) :
+      aeval (τ (θ p)) (p : K[X]) = 0 := by
+    rw [aeval_algHom_apply, AdjoinRoot.aeval_eq, AdjoinRoot.mk_self, map_zero]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨p, τ⟩ ⟨q, τ'⟩ h
+    have hx := rootTorsionCoeff_injective W (aeval_embedding_root_f W p τ)
+      (aeval_embedding_root_f W q τ') (congrArg Subtype.val h)
+    -- distinct factors are coprime, so they have no common root
+    obtain rfl : p = q := by
+      by_contra hpq
+      obtain ⟨a, b, hab⟩ := Polynomial.Factors.isCoprime hpq
+      have := congrArg (aeval (τ (θ p))) hab
+      rw [map_add, map_mul, map_mul, hroot, hx, hroot, map_one] at this
+      simp at this
+    exact Sigma.ext rfl (heq_of_eq (AdjoinRoot.algHom_ext hx))
+  · rintro ⟨S, hS⟩
+    obtain ⟨p, x, hx, h, hS'⟩ := exists_factor_of_ne_zero W h2 hS
+    refine ⟨⟨p, AdjoinRoot.liftAlgHom _ (Algebra.ofId K _) x hx⟩, Subtype.ext (Subtype.ext ?_)⟩
+    simp only [embeddingTorsionCoeff, coe_rootTorsionCoeff, hS']
+    congr 2
+    exact AdjoinRoot.liftAlgHom_root _ _ _ _
+
+/-- The embeddings of the factor fields, identified with the nonzero points of `E(Kˢ)[2]` by
+`σ ↦ (σ θ, 0)`. -/
+private def sigmaEmbeddingEquivNonzeroTorsion (h2 : IsUnit ((2 : ℕ) : K)) :
+    (Σ p : W.toAffine.f.Factors, 𝕃 p →ₐ[K] SeparableClosure K) ≃
+      {S : W.TorsionCoeff 2 // S ≠ 0} :=
+  Equiv.ofBijective _ (bijective_embeddingTorsionCoeff W h2)
+
+/-- **The conjugates of the points `(σ θ, 0)` are the three points of order two.** Over the
+irreducible factors `p` of the `2`-division cubic, with embeddings `σ p` of their factor fields
+into `Kˢ`, the translates `u • (σ p θ, 0)` by representatives `u` of the cosets of the absolute
+Galois groups of the factor fields run through the nonzero points of `E(Kˢ)[2]`, each exactly
+once. So they sum to zero. -/
+private theorem sum_sum_out_smul_embeddingTorsionCoeff [Fintype W.toAffine.f.Factors]
+    (h2 : IsUnit ((2 : ℕ) : K)) (σ : (p : W.toAffine.f.Factors) → 𝕃 p →ₐ[K] SeparableClosure K) :
+    ∑ p, ∑ u : AbsoluteGaloisGroup K ⧸ (σ p).fieldRange.fixingSubgroup,
+      Quotient.out u • embeddingTorsionCoeff W p (σ p) = 0 := by
+  classical
+  have := W.isAddKleinFour_torsionCoeff_two h2
+  have := Fintype.ofFinite (W.TorsionCoeff 2)
+  -- the translates are the points `(τ θ, 0)` over all embeddings `τ` of the factor fields
+  have hsum (p : W.toAffine.f.Factors) :
+      ∑ u : AbsoluteGaloisGroup K ⧸ (σ p).fieldRange.fixingSubgroup,
+        Quotient.out u • embeddingTorsionCoeff W p (σ p) =
+      ∑ τ : 𝕃 p →ₐ[K] SeparableClosure K, embeddingTorsionCoeff W p τ := by
+    refine Fintype.sum_equiv (FieldTheory.fixingSubgroupQuotientEquivAlgHom (σ p)) _ _ fun u ↦ ?_
+    conv_rhs => rw [← QuotientGroup.out_eq' u, FieldTheory.fixingSubgroupQuotientEquivAlgHom_mk]
+    exact smul_embeddingTorsionCoeff W _ p (σ p)
+  simp only [hsum]
+  rw [← Fintype.sum_sigma' (fun p τ ↦ embeddingTorsionCoeff W p τ),
+    Fintype.sum_equiv (sigmaEmbeddingEquivNonzeroTorsion W h2)
+      (fun i ↦ embeddingTorsionCoeff W i.1 i.2) (fun S ↦ (S : W.TorsionCoeff 2))
+      (fun _ ↦ rfl),
+    ← Finset.sum_subtype {S | S ≠ 0} (fun _ ↦ by simp) (fun S ↦ S), Finset.sum_filter_ne_zero]
+  exact IsAddKleinFour.sum_univ_eq_zero
+
+/-- The norm class of a square class of the étale algebra is the product of the norm classes of
+its components at the field factors. -/
+private theorem quotientMulEquivOfEq_normM [Fintype W.toAffine.f.Factors] (m : W.toAffine.M) :
+    QuotientGroup.quotientMulEquivOfEq (powerSubgroup_eq_range_powMonoidHom Kˣ 2).symm
+        (W.toAffine.normM m) =
+      ∏ p, powerClassMap 2 (Algebra.normUnits K) (explicitFactor W p m) := by
+  induction m using QuotientGroup.induction_on with
+  | H u =>
+  simp only [WeierstrassCurve.Affine.normM_mk, QuotientGroup.quotientMulEquivOfEq_mk,
+    explicitFactor_apply, AdjoinRoot.modPowEquivPiFactors_mk, powerClassMap_mk,
+    ← QuotientGroup.mk_prod]
+  refine congrArg QuotientGroup.mk (Units.ext ?_)
+  simpa [Units.coe_prod] using AdjoinRoot.norm_eq_prod_norm_projFactor _ _ (u : W.toAffine.A)
+
+/-- **The cohomological `2`-descent map satisfies the norm condition**: the image of every class
+of `H¹(G_K, E[2])` in the square classes of the étale algebra `K[X] ⧸ (f)` has square norm. -/
+@[simp]
+theorem normM_cohomologicalMap (h2 : IsUnit ((2 : ℕ) : K))
+    (c : Multiplicative (H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2))) :
+    W.toAffine.normM (cohomologicalMap W h2 c) = 1 := by
+  classical
+  have : Finite W.toAffine.f.Factors := Polynomial.Factors.finite W.toAffine.f_ne_zero
+  have := Fintype.ofFinite W.toAffine.f.Factors
+  -- an embedding of each factor field into `Kˢ`
+  have hσ (p : W.toAffine.f.Factors) : Nonempty (𝕃 p →ₐ[K] SeparableClosure K) := by
+    have := AdjoinRoot.isSeparable_of_separable (WeierstrassCurve.Affine.separable_f W.toAffine) p
+    exact ⟨IsSepClosed.lift⟩
+  let σ (p : W.toAffine.f.Factors) : 𝕃 p →ₐ[K] SeparableClosure K := (hσ p).some
+  refine (QuotientGroup.quotientMulEquivOfEq
+    (powerSubgroup_eq_range_powMonoidHom Kˣ 2).symm).injective ?_
+  refine (kummerIso K 2 h2).injective ?_
+  rw [map_one, map_one, quotientMulEquivOfEq_normM, map_prod]
+  -- each factor is the corestriction of the factorwise class, a cup product with `c`
+  have hfac (p : W.toAffine.f.Factors) :
+      kummerIso K 2 h2 (powerClassMap 2 (Algebra.normUnits K)
+        (explicitFactor W p (cohomologicalMap W h2 c))) =
+      .ofAdd (explicitCup10 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2) (W.TorsionCoeff 2)
+        (KummerCoeff K 2) (W.torsionCoeffWeilPairing 2 h2) continuous_of_discreteTopology
+        (W.torsionCoeffWeilPairing_smul 2 h2) c.toAdd
+        (explicitCor0 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2) (σ p).fieldRange.fixingSubgroup
+          (embeddingH0 W p (σ p)))) := by
+    have h2p : IsUnit ((2 : ℕ) : 𝕃 p) := by simpa only [map_natCast] using h2.map (ι p)
+    -- term-mode composition: rewriting here unfolds the factor fields at great cost
+    exact (kummerIso_norm K 2 (𝕃 p) (σ p) h2p _).symm.trans
+      ((congrArg (kummerCor K 2 (𝕃 p) (σ p)) (kummerIso_explicitFactor_cohomologicalMap W p
+        (separableClosureAlgEquiv K (𝕃 p) (σ p) :
+          SeparableClosure K →ₐ[K] SeparableClosure (𝕃 p)) h2 h2p c.toAdd)).trans
+        (kummerCor_factorCohomologicalMap W p (σ p) h2 c.toAdd))
+  -- and the corestricted points sum to zero
+  have hzero : ∑ p, explicitCor0 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)
+      (σ p).fieldRange.fixingSubgroup (embeddingH0 W p (σ p)) = 0 := by
+    refine Subtype.ext ?_
+    simpa [coe_explicitCor0, coe_embeddingH0] using sum_sum_out_smul_embeddingTorsionCoeff W h2 σ
+  refine (Finset.prod_congr rfl fun p _ ↦ hfac p).trans ?_
+  rw [← ofAdd_sum, ← map_sum, hzero, map_zero, ofAdd_zero]
+
+/-- **The image of the cohomological `2`-descent map lies in the kernel of the norm**, the
+subgroup of the square classes of `K[X] ⧸ (f)` in which the explicit `2`-Selmer group is cut out
+by local conditions. -/
+theorem range_cohomologicalMap_le_ker_normM (h2 : IsUnit ((2 : ℕ) : K)) :
+    (cohomologicalMap W h2).range ≤ W.toAffine.normM.ker := by
+  rintro _ ⟨c, rfl⟩
+  exact normM_cohomologicalMap W h2 c
+
+end NormCondition
 
 end TwoDescent
 

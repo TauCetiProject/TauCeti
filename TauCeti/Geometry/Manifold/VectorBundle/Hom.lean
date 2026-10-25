@@ -27,13 +27,48 @@ along a trivialization gives a `C^n` field of bilinear forms over its base set
 (`TauCeti.Manifold.contMDiffOn_trivializationAt_pullbackForm`), and that fibrewise inversion
 preserves smoothness of a hom-bundle section at every point where the section is invertible
 (`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle form of the
-smoothness of inversion of continuous linear maps between Banach spaces.
+smoothness of inversion of continuous linear maps between Banach spaces. A constant bilinear
+pairing between trivial bundles is a smooth hom-bundle section
+(`TauCeti.contMDiff_const_bundlePairing`).
 -/
 
 public section
 
 open Bundle FiberBundle Set
 open scoped ContDiff Manifold Topology
+
+namespace TauCeti
+
+variable {E H M F₁ F₂ F₃ : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [TopologicalSpace M] [ChartedSpace H M] {I : ModelWithCorners ℝ E H}
+  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  [NormedAddCommGroup F₃] [NormedSpace ℝ F₃] {n : WithTop ℕ∞}
+
+/-- A constant bilinear pairing is a smooth section of the hom bundle between trivial
+coefficient bundles. -/
+theorem contMDiff_const_bundlePairing (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
+    ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+        (E := fun z ↦ Trivial M F₁ z →L[ℝ] Trivial M F₂ z →L[ℝ] Trivial M F₃ z) y μ) := by
+  intro x
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨contMDiffAt_id, ?_⟩
+  have heq : (fun y ↦ ContinuousLinearMap.inCoordinates F₁ (Trivial M F₁)
+      (F₂ →L[ℝ] F₃) (fun z ↦ Trivial M F₂ z →L[ℝ] Trivial M F₃ z) x y x y μ) =
+      fun _ ↦ μ := by
+    funext y
+    ext v w
+    rw [inCoordinates_apply_eq₂ (by simp [Trivial.eq_trivialization M F₁])
+      (by simp [Trivial.eq_trivialization M F₂])
+      (by simp [Trivial.eq_trivialization M F₃])]
+    simp [Trivial.eq_trivialization M F₁, Trivial.eq_trivialization M F₂,
+      Trivial.eq_trivialization M F₃]
+  rw [heq]
+  exact contMDiffAt_const
+
+end TauCeti
 
 namespace TauCeti.Manifold
 

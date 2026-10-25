@@ -49,6 +49,8 @@ system.
 
 ## Main results
 
+* `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalToSingular_ofCube_const`: on a point
+  cube the comparison is the inclusion of the point simplex.
 * `TauCeti.LocalCoefficientSystem.twistedCubicalToSingular_ofSubcube`: the image of a subcube.
 * `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalToSingular_pushforward`: compatibility
   with the pushforwards from simply connected spaces.
@@ -241,6 +243,28 @@ theorem normalizedTwistedCubicalToSingular_ofCube {n : ℕ} (c : SingularCube X 
       twistedCubePushforward L c n (cubicalToSingularGen (ULift.{v} ℤ) n) a := by
   rw [NormalizedTwistedCubicalChain.ofCube_apply, normalizedTwistedCubicalToSingular,
     Submodule.liftQ_apply, twistedCubicalToSingular_ofCube]
+
+variable (L) in
+/-- On a point cube, the comparison to simplicial chains is the inclusion of the summand of the
+point simplex. -/
+theorem normalizedTwistedCubicalToSingular_ofCube_const (x : X)
+    (a : L.obj (FundamentalGroupoid.mk x)) :
+    normalizedTwistedCubicalToSingular L 0
+        (NormalizedTwistedCubicalChain.ofCube L (ContinuousMap.const _ x) a) =
+      ιTwistedChainComplex L 0 (ULift.up (TopCat.ofHom (ContinuousMap.const _ x))) a := by
+  -- The coefficient `a` lies in the fibre at `x`, which is the fibre at the origin of the point
+  -- cube only by definition, so the steps are composed as terms rather than rewritten.
+  refine (normalizedTwistedCubicalToSingular_ofCube (L := L) (ContinuousMap.const _ x) a).trans
+    ((twistedCubePushforward_apply (L := L) (ContinuousMap.const _ x) 0 _ a).trans
+      ((congrArg (fun y ↦ twistedPushforward L (cubeToHom (ContinuousMap.const _ x))
+        (cubeModelOrigin 0) 0 y a) (cubicalToSingularGen_zero (k := ULift.{v} ℤ))).trans ?_))
+  rw [twistedPushforward_simplexChain_one (Z := cubeModel.{v} 0)]
+  -- The simplex pushed forward along the point cube is the point simplex, and the transport
+  -- from the origin of the model to itself is trivial.
+  exact ιTwistedChainComplex_congr L
+    ((TopCat.toSSet_map_app_toSSetObj₀Equiv_symm _ _).trans (TopCat.toSSetObj₀Equiv_symm_apply _))
+    (map_pathClass_heq (L := L) (cubeToHom (ContinuousMap.const _ x)).hom
+      (z := cubeModelOrigin 0) (Subsingleton.elim _ _) a)
 
 variable (L) in
 /-- The **comparison chain map** from the normalized cubical chain complex with coefficients in `L`

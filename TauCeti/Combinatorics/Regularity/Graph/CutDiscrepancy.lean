@@ -12,7 +12,7 @@ import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import TauCeti.Combinatorics.SimpleGraph.Density
-import TauCeti.Order.Partition.Finpartition
+public import TauCeti.Order.Partition.Finpartition
 
 /-!
 # Stepped counts and the cut discrepancy of a partition
@@ -37,6 +37,8 @@ Densities include the diagonal blocks: a part `C` is paired with itself, with th
 * `SimpleGraph.steppedCount G P A B`: the number of edges from `A` to `B` predicted by `P`.
 * `SimpleGraph.steppedCount_eq_card_interedges`: the prediction is exact on rectangles whose
   sides are unions of parts.
+* `SimpleGraph.steppedCount_eq_sum_refinementParent`: the prediction of a coarse partition,
+  written over the parts of a refinement.
 * `SimpleGraph.cutDiscrepancy G P`: the maximum deviation of the prediction from the true count.
 * `SimpleGraph.cutDiscrepancy_le_iff` and `SimpleGraph.lt_cutDiscrepancy_iff`: bounds on the cut
   discrepancy are rectangle bounds, and exceeding a bound is witnessed by a rectangle.
@@ -142,6 +144,33 @@ theorem steppedCount_top (A B : Finset V) :
     refine (subset_singleton_iff.1 (Finpartition.parts_top_subset _)).resolve_left ?_
     exact (Finpartition.parts_nonempty_iff.2 (univ_nonempty.ne_empty)).ne_empty
   simp [steppedCount_def, htop]
+
+/-- The stepped prediction of `P`, written over the subtype of parts. -/
+theorem steppedCount_eq_sum_subtype (A B : Finset V) :
+    G.steppedCount P A B = ∑ C : P.parts, ∑ D : P.parts,
+      (G.edgeDensity C.1 D.1 : ℝ) * #(A ∩ C.1) * #(B ∩ D.1) := by
+  rw [steppedCount_def, ← sum_coe_sort P.parts]
+  exact sum_congr rfl fun C _ ↦ (sum_coe_sort _ _).symm
+
+/-- Under a refinement `Q ≤ P`, the prediction of `P` sums, over the pairs of parts of `Q`, the
+edge density between their coarse parents times their trace masses. -/
+theorem steppedCount_eq_sum_refinementParent {Q : Finpartition (univ : Finset V)} (h : Q ≤ P)
+    (A B : Finset V) :
+    G.steppedCount P A B = ∑ C : Q.parts, ∑ D : Q.parts,
+      (G.edgeDensity (Finpartition.refinementParent h C).1
+        (Finpartition.refinementParent h D).1 : ℝ) * #(A ∩ C.1) * #(B ∩ D.1) := by
+  rw [Finpartition.sum_sum_eq_sum_sum_fiber h, steppedCount_eq_sum_subtype]
+  refine sum_congr rfl fun C' _ ↦ sum_congr rfl fun D' _ ↦ ?_
+  -- The trace of `A` on a coarse part is the sum of its traces on the fine parts below it.
+  rw [← Finpartition.sum_card_inter_filter_refinementParent_eq h C' A,
+    ← Finpartition.sum_card_inter_filter_refinementParent_eq h D' B]
+  push_cast
+  rw [mul_assoc, sum_mul_sum, mul_sum]
+  refine sum_congr rfl fun C hC ↦ ?_
+  rw [mul_sum]
+  refine sum_congr rfl fun D hD ↦ ?_
+  rw [(mem_filter.1 hC).2, (mem_filter.1 hD).2]
+  ring
 
 /-! ### The cut discrepancy -/
 

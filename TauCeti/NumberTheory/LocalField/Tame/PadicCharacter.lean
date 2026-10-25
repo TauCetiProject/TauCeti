@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.NumberTheory.LocalField.Tame.Quotient
 public import TauCeti.RingTheory.RootsOfUnity.PadicTateTwist
+import TauCeti.Algebra.CharP.LocalRing
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # The `ℓ`-adic tame character
@@ -29,6 +32,11 @@ It inherits from the tame character:
 * the twist: conjugation by `g ∈ G_K` acts on `ℤ_ℓ(1)` through the action of `g` on the
   `ℓ`-power roots of unity, so that conjugation by an arithmetic Frobenius lift is `x ↦ x ^ q`.
 
+Taken over all `ℓ ≠ p` together, the `ℓ`-adic components identify `ℤ̂^{(p')}(1)` with
+`∏_{ℓ ≠ p} ℤ_ℓ(1)`, and each `ℤ_ℓ(1)` is noncanonically `ℤ_ℓ`, so tame inertia `I_K/P_K` is
+isomorphic, as a topological group, to `∏_{ℓ ≠ p} ℤ_ℓ`. The isomorphism depends on a choice of a
+generator of each `ℤ_ℓ(1)`; the Frobenius twist is not visible in it.
+
 ## Main definitions
 
 * `TauCeti.inertiaPadicTameCharacter K hℓ`: the `ℓ`-adic tame character
@@ -47,6 +55,8 @@ It inherits from the tame character:
   Galois action on `ℤ_ℓ(1)`, for a prime `ℓ`.
 * `TauCeti.IsArithFrobeniusLift.inertiaPadicTameCharacter_conj`: conjugation by an arithmetic
   Frobenius lift raises it to the `q`-th power.
+* `TauCeti.nonempty_continuousMulEquiv_piPadicInt`: tame inertia `I_K/P_K` is isomorphic, as a
+  topological group, to `∏_{ℓ ≠ p} ℤ_ℓ`.
 
 ## References
 
@@ -167,5 +177,43 @@ theorem IsArithFrobeniusLift.inertiaPadicTameCharacter_conj {φ : Gal(AlgebraicC
   have : NeZero ℓ := ⟨ne_zero_of_coprime_ringChar hℓ⟩
   rw [inertiaPadicTameCharacter_apply, inertiaTameCharacter_conj, hφ.smul_eq_pow, map_pow,
     inertiaPadicTameCharacter_apply]
+
+/-! ### Tame inertia as a product of `ℓ`-adic integers -/
+
+variable (K) in
+/-- **Tame inertia is `∏_{ℓ ≠ p} ℤ_ℓ`**: the tame inertia group `I_K/P_K` is isomorphic, as a
+topological group, to the product of the additive groups of `ℓ`-adic integers over the primes `ℓ`
+different from the residue characteristic `p`. Up to a choice of an isomorphism `ℤ_ℓ(1) ≃ ℤ_ℓ` for
+each `ℓ` (`TauCeti.PadicTateTwist.nonempty_continuousAddEquiv`), it is the tame character
+`I_K/P_K ≃ ℤ̂^{(p')}(1)` (`TauCeti.quotientWildInertiaSubgroupEquiv`) followed by the
+decomposition of `ℤ̂^{(p')}(1)` into its `ℓ`-adic components
+(`TauCeti.PrimeToPTateModule.continuousMulEquivPiPadicTateTwist`). -/
+theorem nonempty_continuousMulEquiv_piPadicInt :
+    Nonempty (inertiaSubgroup K ⧸ (wildInertiaSubgroup K).subgroupOf (inertiaSubgroup K) ≃ₜ*
+      Multiplicative (∀ ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ ringChar 𝓀[K]}, ℤ_[ℓ])) := by
+  have hp := CharP.prime_ringChar 𝓀[K]
+  -- `ℓ ^ n` is a unit of `𝒪[K]` for `ℓ ≠ p`, so `K^{alg}` has all `ℓ`-power roots of unity.
+  have hroots (ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ ringChar 𝓀[K]}) (n : ℕ) :
+      HasEnoughRootsOfUnity (AlgebraicClosure K) ((ℓ : ℕ) ^ n) := by
+    have : NeZero (((ℓ : ℕ) ^ n : ℕ) : K) := ⟨natCast_ne_zero_of_isUnit
+      (IsLocalRing.isUnit_natCast_iff_not_dvd.2 (hp.coprime_iff_not_dvd.1
+        (((Nat.coprime_primes ℓ.1.2 hp).2 ℓ.2).pow_left n).symm))⟩
+    infer_instance
+  let φ (ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ ringChar 𝓀[K]}) :
+      PadicTateTwist ℓ (AlgebraicClosure K) ≃ₜ+ ℤ_[ℓ] :=
+    have := hroots ℓ
+    (nonempty_continuousAddEquiv (ℓ : ℕ) (AlgebraicClosure K)).some
+  exact ⟨(quotientWildInertiaSubgroupEquiv K).trans <|
+    (PrimeToPTateModule.continuousMulEquivPiPadicTateTwist _ _).trans <|
+    (PrimeToPTateModule.piPadicTateTwistReindex _ hp).trans <|
+    ({ MulEquiv.piCongrRight fun ℓ ↦ (φ ℓ).toMultiplicative.toMulEquiv with
+      continuous_toFun := continuous_pi fun ℓ ↦
+        (φ ℓ).toMultiplicative.continuous.comp (continuous_apply ℓ)
+      continuous_invFun := continuous_pi fun ℓ ↦
+        (φ ℓ).toMultiplicative.symm.continuous.comp (continuous_apply ℓ) } :
+      (∀ ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ ringChar 𝓀[K]},
+        Multiplicative (PadicTateTwist ℓ (AlgebraicClosure K))) ≃ₜ*
+          ∀ ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ ringChar 𝓀[K]}, Multiplicative ℤ_[ℓ]).trans <|
+    (ContinuousMulEquiv.piMultiplicative _).symm⟩
 
 end TauCeti

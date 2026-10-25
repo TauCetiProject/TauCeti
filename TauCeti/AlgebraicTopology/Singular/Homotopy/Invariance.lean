@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.HomotopyInvariance
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Basic
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Topology.Category.TopPair
@@ -146,3 +147,25 @@ lemma singularHomologyIso_inv (n : ℕ) :
       ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom e.invFun) := (rfl)
 
 end ContinuousMap.HomotopyEquiv
+
+namespace ContinuousMap
+
+open TauCeti
+
+variable (k : Type w) [Ring k] (n : ℕ)
+
+/-- Homotopic continuous maps induce the same map on singular homology. -/
+theorem singularHomologyMap_eq_of_homotopic {Y Z : Type w} [TopologicalSpace Y]
+    [TopologicalSpace Z] {g g' : C(Y, Z)} (H : g.Homotopic g') :
+    singularHomologyMap k n g = singularHomologyMap k n g' :=
+  congrArg ModuleCat.Hom.hom
+    (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
+      (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some (ModuleCat.of k k) n)
+
+/-- A homotopy equivalence induces a bijection on singular homology. -/
+theorem HomotopyEquiv.bijective_singularHomologyMap {Y Z : Type w}
+    [TopologicalSpace Y] [TopologicalSpace Z]
+    (e : ContinuousMap.HomotopyEquiv Y Z) : Function.Bijective (singularHomologyMap k n e.toFun) :=
+  ConcreteCategory.bijective_of_isIso (e.singularHomologyIso (ModuleCat.of k k) n).hom
+
+end ContinuousMap

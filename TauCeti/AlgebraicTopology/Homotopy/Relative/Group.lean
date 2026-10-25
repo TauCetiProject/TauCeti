@@ -18,7 +18,8 @@ when `N` is nonempty, that is in degrees at least two, and a commutative group w
 nontrivial, that is in degrees at least three. It then proves that the induced maps, the boundary
 map `π_{n+1}(X, A, a₀) → π_n(A, a₀)` and the map `π_{n+1}(X, a₀) → π_{n+1}(X, A, a₀)` of the long
 exact sequence are homomorphisms. For `N` empty, `π_1(X, A, a₀)` remains a pointed set, and
-`π_2(X, A, a₀)` receives no commutative structure.
+`π_2(X, A, a₀)` receives no commutative structure; it is commutative when `π_1(A, a₀)` is trivial
+(`TauCeti.RelHomotopyGroup.mul_comm_of_subsingleton`).
 
 The group structure is transported from Mathlib's `HomotopyGroup`. Let `P` be the space
 `TauCeti.BasedTopPair.pathSpace X` of paths in `X` from a point of `A` to `a₀`, with the
@@ -50,6 +51,9 @@ distinguished direction, and in the order of Mathlib's `HomotopyGroup.mul_spec`.
 * `TauCeti.RelHomotopyGroup.mapHom`, `TauCeti.RelHomotopyGroup.boundaryHom`,
   `TauCeti.RelHomotopyGroup.ofHomotopyGroupHom`: the maps of the long exact sequence as
   homomorphisms.
+* `TauCeti.RelHomotopyGroup.mul_comm_of_subsingleton`: `π_{n+1}(X, A, a₀)` is commutative when
+  `π_n(A, a₀)` is trivial; in particular `π_2(X, A, a₀)` is commutative when `A` is simply
+  connected.
 
 ## References
 
@@ -410,6 +414,17 @@ theorem ofHomotopyGroup_mul [Nonempty N]
     (a b : HomotopyGroup (Option N) X.pair.fst (X.pair.map X.basepoint)) :
     (ofHomotopyGroup (a * b) : RelHomotopyGroup N X) = ofHomotopyGroup a * ofHomotopyGroup b :=
   ofHomotopyGroupHom.map_mul a b
+
+/-- **`π_{n+1}(X, A, a₀)` is commutative when `π_n(A, a₀)` is trivial**, for `n ≥ 1`. In degree
+two this says that `π_2(X, A, a₀)` is commutative when `π_1(A, a₀)` is trivial: every relative
+class then comes from the commutative group `π_2(X, a₀)`
+(`TauCeti.RelHomotopyGroup.surjective_ofHomotopyGroup_of_subsingleton`). -/
+theorem mul_comm_of_subsingleton [Nonempty N]
+    (hA : Subsingleton (HomotopyGroup N X.pair.snd X.basepoint)) (a b : RelHomotopyGroup N X) :
+    a * b = b * a := by
+  obtain ⟨a, rfl⟩ := surjective_ofHomotopyGroup_of_subsingleton hA a
+  obtain ⟨b, rfl⟩ := surjective_ofHomotopyGroup_of_subsingleton hA b
+  rw [← ofHomotopyGroup_mul, ← ofHomotopyGroup_mul, mul_comm]
 
 end RelHomotopyGroup
 
