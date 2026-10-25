@@ -55,6 +55,8 @@ a homogeneous cocycle is its class in continuous cohomology
   `gradedCohomologyClass_smul`: the class is linear in the cocycle.
 * `TopRep.ResolutionContraction.gradedCohomologyClass_eq_of_sub_eq_d`: homogeneous cocycles
   differing by the differential of a homogeneous invariant element have the same class.
+* `TopRep.ResolutionContraction.gradedCohomologyClass_map`: a morphism of degree zero commuting
+  with the differentials and carrying one augmentation to the other preserves classes.
 * `TopRep.ResolutionContraction.gradedCohomologyClass_eq_of_ι_eq`: over a locally compact group,
   the class depends on the contraction only through its augmentation.
 * `TopRep.gradedCohomologyClass_gradedResolutionContraction`: on the total coinduced resolution,
@@ -188,6 +190,37 @@ theorem gradedCohomologyClass_eq_of_sub_eq_d {n : ℕ} {z z' : M.V} (hz : z ∈ 
     (gradedCochainComplexι_injective M ℳ hρ d hd hdd (n + 1) (by
       rw [map_sub]
       simpa using hzy))
+
+/-- **A chain map over the identity preserves classes.** Let `F : M ⟶ M'` be a morphism of degree
+zero commuting with the differentials, between graded representations whose complexes are
+contracted onto the same `X` by `c` and `c'`, and suppose `F` carries the augmentation of `c` to
+that of `c'`. Then a homogeneous cocycle `z` of `M` fixed by `G` and its image `F z` have the same
+class in `Hⁿ(G, X)`. -/
+theorem gradedCohomologyClass_map [LocallyCompactSpace G] {M' : TopRep.{max v w} k G}
+    {ℳ' : ℤ → Submodule k M'.V} {hρ' : ∀ n g x, x ∈ ℳ' n → M'.ρ g x ∈ ℳ' n} {d' : M' ⟶ M'}
+    {hd' : TauCeti.LinearMap.IsHomogeneous d'.hom.toLinearMap ℳ' ℳ' 1} {hdd' : d' ≫ d' = 0}
+    (c' : ResolutionContraction X (M'.gradedCochainComplex ℳ' hρ' d' hd' hdd')) (F : M ⟶ M')
+    (hF : TauCeti.LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0) (hFd : d ≫ F = F ≫ d')
+    (hι : ∀ x, F.hom (c.ι.hom x).1 = (c'.ι.hom x).1)
+    {n : ℕ} {z : M.V} (hz : z ∈ ℳ n) (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
+    c'.gradedCohomologyClass (F.hom z)
+        (by have h := hF.map_mem hz; rw [add_zero] at h; exact h)
+        (fun g ↦ by rw [← hom_comm_apply, hinv])
+        (by rw [← comp_apply, ← hFd, comp_apply, hdz, map_zero]) =
+      c.gradedCohomologyClass z hz hinv hdz := by
+  have hf : c.ι ≫ (gradedCochainComplexMap (hρ' := hρ') (hd' := hd') (hdd' := hdd') F hF hFd).f 0 =
+      c'.ι := by
+    refine ConcreteCategory.hom_ext _ _ fun x ↦
+      gradedCochainComplexι_injective M' ℳ' hρ' d' hd' hdd' 0 ?_
+    rw [comp_apply, gradedCochainComplexι_apply, gradedCochainComplexMap_f_apply,
+      gradedCochainComplexι_apply]
+    exact hι x
+  rw [gradedCohomologyClass_def, gradedCohomologyClass_def,
+    ← c.cohomologyClass_map c' _ hf]
+  congr 1
+  refine Subtype.ext (Subtype.ext ?_)
+  rw [ContIntertwiningMap.mapInvariants_apply, gradedCochainComplexMap_f_apply,
+    gradedCochainComplexInvariant_val, gradedCochainComplexInvariant_val]
 
 /-- The class of a sum of homogeneous cocycles is the sum of their classes. -/
 @[simp]
