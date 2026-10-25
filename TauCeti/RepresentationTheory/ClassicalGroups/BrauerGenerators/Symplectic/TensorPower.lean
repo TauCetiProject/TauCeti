@@ -395,10 +395,8 @@ theorem symplecticCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
 
 /-! ### Two arcs -/
 
-/-- Two summands of `TauCeti.symplecticCupCapAt` on disjoint pairs of strands commute: at every
-strand one of the two families `TauCeti.symplecticCupCapStrand` is the identity, and
-`PiTensorProduct.mapMonoidHom` preserves their commutation.
-Nothing here reads an arc through the form, so the two strands of a pair may coincide. -/
+/-- Tensor operators associated with disjoint pairs of strands commute. The strands within
+either pair may coincide. -/
 private theorem commute_map_symplecticCupCapStrand {i j p q : Fin d} (hip : i ≠ p) (hiq : i ≠ q)
     (hjp : j ≠ p) (hjq : j ≠ q) (a b x y a' b' x' y' : Fin n ⊕ Fin n) :
     Commute (PiTensorProduct.map (symplecticCupCapStrand k n d i j a b x y))
