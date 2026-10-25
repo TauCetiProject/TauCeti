@@ -78,7 +78,7 @@ theorem effectiveStabilizerMap_surjective (x : X) :
 @[simp]
 theorem ker_effectiveStabilizerMap (x : X) :
     (effectiveStabilizerMap G X x).ker = (toPermHom G X).ker.subgroupOf (stabilizer G x) := by
-  simpa only [QuotientGroup.ker_mk'] using
+  simpa only [effectiveStabilizerMap, QuotientGroup.ker_mk'] using
     (TauCeti.ker_stabilizerMap (QuotientGroup.mk' ((toPermHom G X).ker)) x
       (quotientKerToPermHom_mk_smul G X · x))
 
