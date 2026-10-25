@@ -64,9 +64,11 @@ theorem integral_norm_fderiv_comp_add_real_smul_one_sq (u : ℂ → V) (a : ℂ)
   simp_rw [fderiv_comp_smul (f := fun w ↦ u (a + w)), fderiv_comp_add_left,
     smul_apply, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
   rw [integral_const_mul, Measure.setIntegral_comp_smul volume
-    (fun z : ℂ ↦ ‖fderiv ℝ u (a + z) 1‖ ^ 2) s hd,
-    Complex.finrank_real_complex, abs_inv, abs_of_nonneg (sq_nonneg d), smul_eq_mul,
-    ← mul_assoc, mul_inv_cancel₀ (pow_ne_zero 2 hd), one_mul]
+    (fun z : ℂ ↦ ‖fderiv ℝ u (a + z) 1‖ ^ 2) s hd]
+  have hcancel (energy : ℝ) : d ^ 2 * (|(d ^ 2)⁻¹| • energy) = energy := by
+    simp only [abs_inv, abs_of_nonneg (sq_nonneg d), smul_eq_mul]
+    field_simp [hd]
+  simp only [Complex.finrank_real_complex, hcancel]
   have htrans := (measurePreserving_add_left volume a).setIntegral_image_emb
     (MeasurableEquiv.addLeft a).measurableEmbedding (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (d • s)
   have hset : (fun z : ℂ ↦ a + z) '' (d • s) = (fun z ↦ a + d • z) '' s :=
