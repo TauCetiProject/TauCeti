@@ -10,9 +10,12 @@ public import Mathlib.RingTheory.Ideal.AssociatedPrime.Basic
 public import Mathlib.RingTheory.LocalRing.Module
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
+import TauCeti.RingTheory.Regular.ProjectiveDimension
 
 /-!
-# Finite projective dimension over a local ring of depth zero
+# Projective dimension over a local ring
 
 Let `R` be a Noetherian local ring whose maximal ideal `𝔪` is an associated prime of `R`, that is,
 of depth zero: some nonzero `s ∈ R` satisfies `𝔪 s = 0`. Then every finite `R`-module of finite
@@ -25,7 +28,10 @@ module, so `κ ⊗ -` preserves injectivity of maps out of flat modules. For a p
 `κ ⊗ K → κ ⊗ F` is therefore injective, and `M` is free by Nakayama's lemma.
 
 This is the base case of Serre's theorem that a Noetherian local ring whose residue field has
-finite projective dimension is regular.
+finite projective dimension is regular. The induction step is a change of rings for the residue
+field: for a nonzerodivisor `x ∈ 𝔪 \ 𝔪²`, the residue field of `R ⧸ (x)` is a direct summand of
+`𝔪 ⧸ x 𝔪`, so a bound `n + 1` for the projective dimension of the residue field of `R` gives the
+bound `n` for that of `R ⧸ (x)`.
 
 ## Main results
 
@@ -33,10 +39,14 @@ finite projective dimension is regular.
   ring of depth zero, `κ ⊗ -` preserves injectivity of linear maps out of flat modules.
 * `Module.free_of_hasProjectiveDimensionLE_of_maximalIdeal_mem_associatedPrimes`: over a
   Noetherian local ring of depth zero, a finite module of finite projective dimension is free.
+* `TauCeti.IsLocalRing.hasProjectiveDimensionLE_residueField_quotient`: for a nonzerodivisor
+  `x ∈ 𝔪 \ 𝔪²`, if the residue field of `R` has projective dimension at most `n + 1`, then the
+  residue field of `R ⧸ (x)` has projective dimension at most `n` over `R ⧸ (x)`.
 
 ## References
 
-* H. Matsumura, *Commutative Ring Theory*, Theorem 19.1 (the Auslander–Buchsbaum formula).
+* H. Matsumura, *Commutative Ring Theory*, Theorem 19.1 (the Auslander–Buchsbaum formula) and
+  the proof of Theorem 19.2.
 -/
 
 public section
@@ -83,3 +93,56 @@ theorem Module.free_of_hasProjectiveDimensionLE_of_maximalIdeal_mem_associatedPr
     exact Module.free_of_lTensor_residueField_injective _ f hf f.exact_subtype_ker_map
       (LinearMap.lTensor_residueField_injective_of_maximalIdeal_mem_associatedPrimes hm
         (LinearMap.ker f).injective_subtype)
+
+namespace TauCeti.IsLocalRing
+
+open Ideal Pointwise
+
+/-- **Change of rings for the residue field.** If the residue field of a local ring `R` has
+projective dimension at most `n + 1` and `x ∈ 𝔪 \ 𝔪²` is a nonzerodivisor, then the residue
+field of `R ⧸ (x)` has projective dimension at most `n` over `R ⧸ (x)`. Indeed `𝔪` has projective
+dimension at most `n`, hence so does `𝔪 ⧸ x 𝔪` over `R ⧸ (x)`, and the residue field of
+`R ⧸ (x)` is a direct summand of `𝔪 ⧸ x 𝔪`. This is the induction step of Serre's theorem. -/
+theorem hasProjectiveDimensionLE_residueField_quotient {R : Type u} [CommRing R]
+    [IsLocalRing R] [Small.{v} R] {n : ℕ} {x : R} (hxm : x ∈ maximalIdeal R)
+    (hx2 : x ∉ maximalIdeal R ^ 2) (hx : x ∈ nonZeroDivisors R) [IsLocalRing (R ⧸ span {x})]
+    [Small.{v} (R ⧸ span {x})]
+    [HasProjectiveDimensionLE (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) (n + 1)] :
+    HasProjectiveDimensionLE (ModuleCat.of (R ⧸ span {x})
+      (Shrink.{v} ((R ⧸ span {x}) ⧸ maximalIdeal (R ⧸ span {x})))) n := by
+  set I := span {x}
+  set q := Ideal.Quotient.mk I
+  -- The sequence `0 → 𝔪 → R → κ → 0` shows that `𝔪` has projective dimension at most `n`.
+  have hS := ModuleCat.shortComplexOfConj_shortExact (Shrink.linearEquiv R (maximalIdeal R))
+    (Shrink.linearEquiv R R) (Shrink.linearEquiv R (R ⧸ maximalIdeal R)) _ _
+    (LinearMap.exact_subtype_mkQ (maximalIdeal R)) (maximalIdeal R).injective_subtype
+    (maximalIdeal R).mkQ_surjective
+  let M : ModuleCat.{v} R := ModuleCat.of R (Shrink.{v} (maximalIdeal R))
+  have : HasProjectiveDimensionLE M n := hS.hasProjectiveDimensionLT_X₁ (n + 1) inferInstance ‹_›
+  -- `x` is regular on `𝔪 ⊆ R`, so `𝔪 ⧸ x 𝔪` has projective dimension at most `n` over `R ⧸ (x)`.
+  have hreg : IsSMulRegular M x :=
+    (Module.Flat.isSMulRegular_of_nonZeroDivisors (M := R) hx).of_injective
+      ((maximalIdeal R).subtype ∘ₗ (Shrink.linearEquiv R (maximalIdeal R)).toLinearMap)
+      ((maximalIdeal R).injective_subtype.comp (Shrink.linearEquiv R _).injective)
+  have := ModuleCat.hasProjectiveDimensionLE_quotient_smul_top hx n M hreg
+  -- The residue field of `R ⧸ (x)` is a retract of `𝔪 ⧸ x 𝔪`.
+  obtain ⟨i, r, hri⟩ := exists_comp_eq_id_of_notMem_sq hxm hx2
+  let e₁ : (M ⧸ I • (⊤ : Submodule R M)) ≃ₗ[R ⧸ I]
+      (maximalIdeal R ⧸ I • (⊤ : Submodule R (maximalIdeal R))) :=
+    (Submodule.Quotient.equiv _ _ (Shrink.linearEquiv R (maximalIdeal R)) (by
+      rw [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range])).extendScalarsOfSurjective
+      (Ideal.Quotient.mk_surjective (I := I))
+  let e₂ : Shrink.{v} ((R ⧸ I) ⧸ maximalIdeal (R ⧸ I)) ≃ₗ[R ⧸ I]
+      (R ⧸ I) ⧸ (maximalIdeal R).map q :=
+    (Shrink.linearEquiv (R ⧸ I) _).trans (Submodule.quotEquivOfEq _ _
+      (map_maximalIdeal_of_surjective q Ideal.Quotient.mk_surjective).symm)
+  let ret : Retract (ModuleCat.of (R ⧸ I) (Shrink.{v} ((R ⧸ I) ⧸ maximalIdeal (R ⧸ I))))
+      (ModuleCat.of (R ⧸ I) (M ⧸ I • (⊤ : Submodule R M))) :=
+    { i := ModuleCat.ofHom (e₁.symm.toLinearMap ∘ₗ i ∘ₗ e₂.toLinearMap)
+      r := ModuleCat.ofHom (e₂.symm.toLinearMap ∘ₗ r ∘ₗ e₁.toLinearMap)
+      retract := by
+        ext y
+        simpa using congr(e₂.symm ($hri (e₂ y))) }
+  exact ret.hasProjectiveDimensionLT (n + 1)
+
+end TauCeti.IsLocalRing

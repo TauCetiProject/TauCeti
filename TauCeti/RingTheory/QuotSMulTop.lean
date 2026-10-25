@@ -29,6 +29,7 @@ short exact sequence `0 → K ⧸ x K → P ⧸ x P → M ⧸ x M → 0`.
 
 ## Main results
 
+* `Ideal.mapQSMulTop_id` and `Ideal.mapQSMulTop_comp`: reduction modulo `I` is functorial.
 * `Ideal.mapQSMulTop_surjective` and `Ideal.mapQSMulTop_exact`: reduction modulo `I` preserves
   surjectivity and exactness at the middle of `M → N → P → 0`.
 * `QuotSMulTop.map_comp_quotEquivOfEq`: for `I = (x)`, the reduction is `QuotSMulTop.map x f`, up
@@ -37,7 +38,7 @@ short exact sequence `0 → K ⧸ x K → P ⧸ x P → M ⧸ x M → 0`.
   first map of a short exact sequence whose last term is `x`-regular.
 -/
 
-@[expose] public section
+public section
 
 open Function Pointwise
 
@@ -55,7 +56,17 @@ noncomputable def mapQSMulTop (I : Ideal R) (f : M →ₗ[R] N) :
 @[simp]
 theorem mapQSMulTop_mk (I : Ideal R) (f : M →ₗ[R] N) (m : M) :
     I.mapQSMulTop f (Submodule.Quotient.mk m) = Submodule.Quotient.mk (f m) :=
-  rfl
+  (rfl)
+
+@[simp]
+theorem mapQSMulTop_id (I : Ideal R) :
+    I.mapQSMulTop (LinearMap.id : M →ₗ[R] M) = LinearMap.id :=
+  LinearMap.ext fun m ↦ Submodule.Quotient.induction_on _ m fun _ ↦ rfl
+
+@[simp]
+theorem mapQSMulTop_comp (I : Ideal R) (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
+    I.mapQSMulTop (g ∘ₗ f) = I.mapQSMulTop g ∘ₗ I.mapQSMulTop f :=
+  LinearMap.ext fun m ↦ Submodule.Quotient.induction_on _ m fun _ ↦ rfl
 
 /-- Reduction modulo an ideal preserves surjectivity. -/
 theorem mapQSMulTop_surjective (I : Ideal R) {g : N →ₗ[R] P} (hg : Surjective g) :

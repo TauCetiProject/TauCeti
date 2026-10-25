@@ -246,53 +246,6 @@ private theorem of_projective_residueField {R : Type u} [CommRing R] [IsLocalRin
   rw [hm, Submodule.spanFinrank_bot, Nat.cast_zero]
   exact ringKrullDim_nonneg_of_nontrivial
 
-/-- The induction step of Serre's theorem: if the residue field of `R` has projective dimension
-at most `n + 1` and `x ∈ 𝔪 \ 𝔪²` is a nonzerodivisor, then the residue field of `R ⧸ (x)` has
-projective dimension at most `n` over `R ⧸ (x)`. Indeed `𝔪` has projective dimension at most `n`,
-hence so does `𝔪 ⧸ x 𝔪` over `R ⧸ (x)`, and the residue field of `R ⧸ (x)` is a direct summand
-of `𝔪 ⧸ x 𝔪`. -/
-private theorem hasProjectiveDimensionLE_residueField_quotient {R : Type u} [CommRing R]
-    [IsLocalRing R] [Small.{v} R] {n : ℕ} {x : R} (hxm : x ∈ maximalIdeal R)
-    (hx2 : x ∉ maximalIdeal R ^ 2) (hx : x ∈ nonZeroDivisors R) [IsLocalRing (R ⧸ span {x})]
-    [Small.{v} (R ⧸ span {x})]
-    [HasProjectiveDimensionLE (ModuleCat.of R (Shrink.{v} (R ⧸ maximalIdeal R))) (n + 1)] :
-    HasProjectiveDimensionLE (ModuleCat.of (R ⧸ span {x})
-      (Shrink.{v} ((R ⧸ span {x}) ⧸ maximalIdeal (R ⧸ span {x})))) n := by
-  set I := span {x}
-  set q := Ideal.Quotient.mk I
-  -- The sequence `0 → 𝔪 → R → κ → 0` shows that `𝔪` has projective dimension at most `n`.
-  have hS := ModuleCat.shortComplexOfConj_shortExact (Shrink.linearEquiv R (maximalIdeal R))
-    (Shrink.linearEquiv R R) (Shrink.linearEquiv R (R ⧸ maximalIdeal R)) _ _
-    (LinearMap.exact_subtype_mkQ (maximalIdeal R)) (maximalIdeal R).injective_subtype
-    (maximalIdeal R).mkQ_surjective
-  let M : ModuleCat.{v} R := ModuleCat.of R (Shrink.{v} (maximalIdeal R))
-  have : HasProjectiveDimensionLE M n := hS.hasProjectiveDimensionLT_X₁ (n + 1) inferInstance ‹_›
-  -- `x` is regular on `𝔪 ⊆ R`, so `𝔪 ⧸ x 𝔪` has projective dimension at most `n` over `R ⧸ (x)`.
-  have hreg : IsSMulRegular M x :=
-    (Module.Flat.isSMulRegular_of_nonZeroDivisors (M := R) hx).of_injective
-      ((maximalIdeal R).subtype ∘ₗ (Shrink.linearEquiv R (maximalIdeal R)).toLinearMap)
-      ((maximalIdeal R).injective_subtype.comp (Shrink.linearEquiv R _).injective)
-  have := ModuleCat.hasProjectiveDimensionLE_quotient_smul_top hx n M hreg
-  -- The residue field of `R ⧸ (x)` is a retract of `𝔪 ⧸ x 𝔪`.
-  obtain ⟨i, r, hri⟩ := TauCeti.IsLocalRing.exists_comp_eq_id_of_notMem_sq hxm hx2
-  let e₁ : (M ⧸ I • (⊤ : Submodule R M)) ≃ₗ[R ⧸ I]
-      (maximalIdeal R ⧸ I • (⊤ : Submodule R (maximalIdeal R))) :=
-    (Submodule.Quotient.equiv _ _ (Shrink.linearEquiv R (maximalIdeal R)) (by
-      rw [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range])).extendScalarsOfSurjective
-      (Ideal.Quotient.mk_surjective (I := I))
-  let e₂ : Shrink.{v} ((R ⧸ I) ⧸ maximalIdeal (R ⧸ I)) ≃ₗ[R ⧸ I]
-      (R ⧸ I) ⧸ (maximalIdeal R).map q :=
-    (Shrink.linearEquiv (R ⧸ I) _).trans (Submodule.quotEquivOfEq _ _
-      (map_maximalIdeal_of_surjective q Ideal.Quotient.mk_surjective).symm)
-  let ret : Retract (ModuleCat.of (R ⧸ I) (Shrink.{v} ((R ⧸ I) ⧸ maximalIdeal (R ⧸ I))))
-      (ModuleCat.of (R ⧸ I) (M ⧸ I • (⊤ : Submodule R M))) :=
-    { i := ModuleCat.ofHom (e₁.symm.toLinearMap ∘ₗ i ∘ₗ e₂.toLinearMap)
-      r := ModuleCat.ofHom (e₂.symm.toLinearMap ∘ₗ r ∘ₗ e₁.toLinearMap)
-      retract := by
-        ext y
-        simpa using congr(e₂.symm ($hri (e₂ y))) }
-  exact ret.hasProjectiveDimensionLT (n + 1)
-
 /-- The induction proving `TauCeti.IsRegularLocalRing.of_hasProjectiveDimensionLE`, on the bound
 for the projective dimension of the residue field. -/
 private theorem of_hasProjectiveDimensionLE_aux (n : ℕ) :
@@ -323,7 +276,8 @@ private theorem of_hasProjectiveDimensionLE_aux (n : ℕ) :
       (maximalIdeal.isMaximal R).ne_top (top_le_iff.mp (h ▸ (span_singleton_le_iff_mem _).mpr hxm))
     have := IsLocalRing.of_surjective' (Ideal.Quotient.mk (span {x})) Ideal.Quotient.mk_surjective
     have : Small.{v} (R ⧸ span {x}) := small_of_surjective Ideal.Quotient.mk_surjective
-    have := ih (R ⧸ span {x}) (hasProjectiveDimensionLE_residueField_quotient hxm hx2 hx)
+    have := ih (R ⧸ span {x})
+      (TauCeti.IsLocalRing.hasProjectiveDimensionLE_residueField_quotient hxm hx2 hx)
     -- Finally `𝔪` needs at most `dim (R ⧸ (x)) + 1 = dim R` generators.
     refine of_spanFinrank_maximalIdeal_le R ?_
     have hdim := ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors
