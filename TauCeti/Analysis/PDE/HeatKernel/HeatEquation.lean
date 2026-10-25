@@ -66,9 +66,7 @@ private theorem exists_abs_laplacian_heatKernel_le (ht : 0 < t) :
     ∃ B, 0 ≤ B ∧ ∀ s, t / 2 < s → s ≤ 2 * t → ∀ y : E,
       |Δ (heatKernel s : E → ℝ) y| ≤ B * heatKernel (2 * (2 * t)) y := by
   have h2t : 0 < 2 * t := by positivity
-  obtain ⟨C, hC⟩ := exists_one_add_norm_pow_mul_heatKernel_le (E := E) h2t 2
-  have hC₀ : 0 ≤ C := (mul_nonneg_iff_of_pos_right (heatKernel_pos (E := E) (by positivity) 0)).1
-    ((mul_nonneg (by positivity) (heatKernel_pos h2t 0).le).trans (hC 0))
+  obtain ⟨C, hC₀, hC⟩ := exists_one_add_norm_pow_mul_heatKernel_le (E := E) h2t 2
   set d : ℝ := (finrank ℝ E : ℝ)
   refine ⟨(1 / t ^ 2 + d / t) * 4 ^ (d / 2) * C, by positivity, fun s hs hs' y => ?_⟩
   have hs₀ : 0 < s := by linarith
@@ -107,14 +105,14 @@ variable [MeasurableSpace E] [BorelSpace E]
 theorem contDiff_heatKernel_convolution (ht : 0 < t) (hg : AEStronglyMeasurable g)
     (hM : ∀ᵐ y, ‖g y‖ ≤ M) : ContDiff ℝ ∞ (heatKernel t ⋆ g) :=
   contDiff_convolution_left_of_dominated (lsmul ℝ ℝ) (contDiff_heatKernel t)
-    (fun k _ => exists_integrable_norm_iteratedFDeriv_heatKernel_add_le ht k) hg hM
+    (fun k _ => exists_integrable_norm_iteratedFDeriv_heatKernel_add_le ht k 1) hg hM
 
 /-- **The Laplacian of a heat convolution.** For `t > 0` and `g` measurable and essentially
 bounded, `Δ (K_t ⋆ g) = ΔK_t ⋆ g`. -/
 theorem laplacian_heatKernel_convolution [CompleteSpace F] (ht : 0 < t)
     (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M) (x : E) :
     Δ (heatKernel t ⋆ g) x = (Δ (heatKernel t : E → ℝ) ⋆ g) x := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le (E := E) ht 2
+  obtain ⟨C, _, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le (E := E) ht 2
   have hD₂ : Integrable (iteratedFDeriv ℝ 2 (heatKernel t : E → ℝ)) :=
     ((integrable_heatKernel (by positivity)).const_mul C).mono'
       ((contDiff_heatKernel t (k := ∞)).continuous_iteratedFDeriv (m := 2)
@@ -130,7 +128,7 @@ theorem laplacian_heatKernel_convolution [CompleteSpace F] (ht : 0 < t)
   dsimp only
   rw [iteratedFDeriv_convolution_left_of_dominated
     (lsmul ℝ ℝ) (N := ⊤) (contDiff_heatKernel t)
-    (fun k _ => exists_integrable_norm_iteratedFDeriv_heatKernel_add_le ht k) hg hM le_top,
+    (fun k _ => exists_integrable_norm_iteratedFDeriv_heatKernel_add_le ht k 1) hg hM le_top,
     ← hΛ, convolution_def, ← integral_comp_comm Λ
       (convolutionExists_of_integrable_of_ae_norm_le _ hD₂ hg hM x), convolution_def]
   congr 1 with y
