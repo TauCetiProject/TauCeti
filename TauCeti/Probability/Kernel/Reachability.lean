@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: AIs@home (Qwen3.8 27B)
 -/
 module
 
@@ -14,8 +14,9 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 For a kernel `κ` on a measurable space, a state `y` is *reachable* from `x` if some power of `κ`
 (including the zeroth) assigns positive mass to `y`, and two states *communicate* if they are
 mutually reachable. This file proves that reachability is reflexive and transitive (the latter via
-the Chapman-Kolmogorov equation on countable spaces with measurable singletons) and that
-communication is an equivalence relation, then bridges both to Mathlib's
+the Chapman-Kolmogorov equation, bounding the integral below by its restriction to a single
+intermediate state) and that communication is an equivalence relation, then bridges both to
+Mathlib's
 `Kernel.IsIrreducible` with respect to the counting measure.
 -/
 
@@ -36,18 +37,23 @@ def Reaches (x y : S) : Prop :=
 def Communicates (x y : S) : Prop :=
     κ.Reaches x y ∧ κ.Reaches y x
 
+/-- `Communicates` unfolds to mutual reachability of the two states. -/
+theorem communicates_def (x y : S) : κ.Communicates x y ↔ κ.Reaches x y ∧ κ.Reaches y x :=
+    Iff.rfl
+
 /-- `Reaches` unfolds to the existence of a power of the kernel assigning positive mass to the
 target state. -/
 theorem reaches_def (x y : S) :
     κ.Reaches x y ↔ ∃ n : ℕ, 0 < (κ ^ n) x {y} := Iff.rfl
 
+/-- The zeroth power of a kernel is the identity kernel: `1 : Kernel S S` is `Kernel.id`. -/
+theorem pow_zero_eq_id : (κ ^ 0 : Kernel S S) = Kernel.id := rfl
+
 /-- Every state reaches itself: the zeroth power of a kernel is the identity kernel, hence the
 Dirac mass at the state. -/
-theorem Reaches.refl [MeasurableSingletonClass S] (x : S) : κ.Reaches x x := by
+@[simp] theorem Reaches.refl (x : S) : κ.Reaches x x := by
   use 0
-  rw [pow_zero]
-  change 0 < (Kernel.id x) {x}
-  rw [Kernel.id_apply, Measure.dirac_apply' _ (measurableSet_singleton x)]
+  rw [pow_zero_eq_id, Kernel.id_apply, Measure.dirac_apply_of_mem (Set.mem_singleton_iff.2 rfl)]
   simp
 
 /-- A positive one-step transition mass implies reachability. -/
@@ -56,8 +62,9 @@ theorem reaches_of_pos (x y : S) (h : 0 < κ x {y}) : κ.Reaches x y := by
   simpa [pow_one] using h
 
 /-- Reachability is transitive: paths of positive mass can be concatenated using the
-Chapman-Kolmogorov equation. -/
-theorem Reaches.trans [Countable S] [MeasurableSingletonClass S] (x y z : S)
+Chapman-Kolmogorov equation, bounding the resulting integral below by its restriction to the
+single intermediate state. -/
+theorem Reaches.trans [MeasurableSingletonClass S] (x y z : S)
     (hxy : κ.Reaches x y) (hyz : κ.Reaches y z) : κ.Reaches x z := by
   obtain ⟨n, hn⟩ := hxy
   obtain ⟨m, hm⟩ := hyz
@@ -65,21 +72,24 @@ theorem Reaches.trans [Countable S] [MeasurableSingletonClass S] (x y z : S)
   have hyz_y : 0 < (κ ^ m) y {z} * (κ ^ n) x {y} := by
     rw [ENNReal.mul_pos_iff]
     exact ⟨hm, hn⟩
-  have hsum : 0 < ∑' b, (κ ^ m) b {z} * (κ ^ n) x {b} :=
-    lt_of_lt_of_le hyz_y (ENNReal.le_tsum (f := fun b => (κ ^ m) b {z} * (κ ^ n) x {b}) (y : S))
-  rw [Kernel.pow_add_apply_eq_lintegral _ n m _ (measurableSet_singleton z), lintegral_countable']
-  exact hsum
+  have hsum : 0 < ∫⁻ b in {y}, (κ ^ m) b {z} ∂((κ ^ n) x) := by
+    rw [lintegral_singleton (f := fun b => (κ ^ m) b {z}) y]
+    exact hyz_y
+  rw [Kernel.pow_add_apply_eq_lintegral _ n m _ (measurableSet_singleton z)]
+  have hsum' : 0 < ∫⁻ b in Set.univ, (κ ^ m) b {z} ∂((κ ^ n) x) :=
+    lt_of_lt_of_le hsum (lintegral_mono_set (Set.subset_univ {y}))
+  exact (Measure.restrict_univ : ((κ ^ n) x).restrict Set.univ = (κ ^ n) x) ▸ hsum'
 
 /-- Every state communicates with itself. -/
-theorem Communicates.refl [MeasurableSingletonClass S] (x : S) : κ.Communicates x x :=
-  ⟨Reaches.refl κ x, Reaches.refl κ x⟩
+@[simp] theorem Communicates.refl (x : S) : κ.Communicates x x :=
+    ⟨Reaches.refl κ x, Reaches.refl κ x⟩
 
 /-- Communication is symmetric. -/
 theorem Communicates.symm (x y : S) (h : κ.Communicates x y) : κ.Communicates y x :=
   ⟨h.2, h.1⟩
 
 /-- Communication is transitive. -/
-theorem Communicates.trans [Countable S] [MeasurableSingletonClass S] (x y z : S)
+theorem Communicates.trans [MeasurableSingletonClass S] (x y z : S)
     (hxy : κ.Communicates x y) (hyz : κ.Communicates y z) : κ.Communicates x z :=
   ⟨Reaches.trans κ x y z hxy.1 hyz.1, Reaches.trans κ z y x hyz.2 hxy.2⟩
 
@@ -89,7 +99,7 @@ theorem communicates_comm (x y : S) : κ.Communicates x y ↔ κ.Communicates y 
   ⟨fun h => h.symm, fun h => h.symm⟩
 
 /-- Communication is an equivalence relation on the state space. -/
-theorem communicates_equivalence [Countable S] [MeasurableSingletonClass S] :
+theorem communicates_equivalence [MeasurableSingletonClass S] :
     Equivalence κ.Communicates := by
   refine ⟨?_, ?_, ?_⟩
   · intro x
