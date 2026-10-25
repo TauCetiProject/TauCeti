@@ -89,7 +89,6 @@ def cochainsIso₄ : (inhomogeneousCochains A).X 4 ≅ ↧(G × G × G × G → 
 /-- The 3rd differential in the complex of inhomogeneous cochains of `A : Rep k G`, as a
 `k`-linear map `Fun(G³, A) → Fun(G⁴, A)`. It sends `(f, (g₁, g₂, g₃, g₄))` to
 `ρ_A(g₁)(f(g₂, g₃, g₄)) - f(g₁g₂, g₃, g₄) + f(g₁, g₂g₃, g₄) - f(g₁, g₂, g₃g₄) + f(g₁, g₂, g₃)`. -/
-@[expose, simps!]
 def d₃₄ : ModuleCat.of k (G × G × G → A) ⟶ ModuleCat.of k (G × G × G × G → A) :=
   ModuleCat.ofHom
   { toFun f g :=
@@ -101,6 +100,17 @@ def d₃₄ : ModuleCat.of k (G × G × G → A) ⟶ ModuleCat.of k (G × G × G
       abel
     map_smul' r x := funext fun g => by
       simp only [Pi.smul_apply, map_smul, RingHom.id_apply, smul_add, smul_sub] }
+
+/-- The five-term formula for `d₃₄`, which stands in for unfolding its definition. The coercion
+is stated at the function-space type, rather than through `ModuleCat.of`, so that `simp` matches
+it after `funext_iff`. -/
+@[simp]
+theorem d₃₄_hom_apply (f : G × G × G → A) (g : G × G × G × G) :
+    DFunLike.coe (F := (G × G × G → A) →ₗ[k] G × G × G × G → A) (d₃₄ A).hom f g =
+      A.ρ g.1 (f (g.2.1, g.2.2.1, g.2.2.2)) - f (g.1 * g.2.1, g.2.2.1, g.2.2.2) +
+        f (g.1, g.2.1 * g.2.2.1, g.2.2.2) - f (g.1, g.2.1, g.2.2.1 * g.2.2.2) +
+        f (g.1, g.2.1, g.2.2.1) :=
+  (rfl)
 
 /-- Let `C(G, A)` denote the complex of inhomogeneous cochains of `A : Rep k G`. This lemma
 says `d₃₄` gives a simpler expression for the 3rd differential: that is, the following
