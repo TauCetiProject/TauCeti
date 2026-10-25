@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.Floor
 public import Mathlib.NumberTheory.LSeries.Basic
+public import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
 public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.StepCorrection
 public import TauCeti.NumberTheory.LSeries.Newman.Tauberian
 
@@ -115,11 +116,6 @@ private theorem norm_floor_exp_le (hbound : ∀ n, 1 ≤ n → ‖a n‖ ≤ M) 
     ‖a ⌊Real.exp t⌋₊‖ ≤ M :=
   hbound _ (Nat.le_floor (by simpa using Real.one_le_exp (mem_Ici.mp ht)))
 
-/-- The cutoffs `log (N + 1)` tend to infinity. -/
-private theorem tendsto_log_natCast_add_one :
-    Tendsto (fun N : ℕ ↦ Real.log (N + 1)) atTop atTop :=
-  Real.tendsto_log_atTop.comp (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
-
 /-- **The Laplace transform of the step function.** For coefficients bounded from `n = 1` on and
 `0 < re z`, the Laplace transform of `t ↦ a ⌊exp t⌋₊` is `LSeries a (z + 1) + stepCorrection a z`.
 -/
@@ -135,7 +131,7 @@ theorem integral_floor_exp_mul_cexp_neg_mul (hbound : ∀ n, 1 ≤ n → ‖a n�
   have hsum := (hL.LSeriesHasSum.add (hasSum_stepCorrection hbound (by linarith))).tendsto_sum_nat
   rw [integral_Ici_eq_integral_Ioi]
   refine tendsto_nhds_unique (intervalIntegral_tendsto_integral_Ioi 0
-    ((integrableOn_Ici_iff_integrableOn_Ioi).mp hint) tendsto_log_natCast_add_one) ?_
+    ((integrableOn_Ici_iff_integrableOn_Ioi).mp hint) (Real.tendsto_log_natCast_add_atTop 1)) ?_
   simp_rw [intervalIntegral_floor_exp_mul_cexp_neg_mul_log_succ]
   exact hsum.comp (tendsto_add_atTop_nat 1)
 
@@ -170,7 +166,7 @@ theorem boundedDirichlet_tendsto_ordered_at_one (hbound : ∀ n, 1 ≤ n → ‖
   -- partial sum of the step correction
   have hcorr := ((hasSum_stepCorrection (z := 0) hbound (by simp)).tendsto_sum_nat).comp
     (tendsto_add_atTop_nat 1)
-  have h := (hnewman.comp tendsto_log_natCast_add_one).sub hcorr
+  have h := (hnewman.comp (Real.tendsto_log_natCast_add_atTop 1)).sub hcorr
   simp only [zero_add, add_sub_cancel_right] at h
   refine h.congr fun N ↦ ?_
   have hN := intervalIntegral_floor_exp_mul_cexp_neg_mul_log_succ a N 0
