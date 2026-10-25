@@ -12,7 +12,7 @@ import Mathlib.Data.Rat.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Polynomial
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.BigOperators.Finset.Range
-import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -21,8 +21,8 @@ import TauCeti.LinearAlgebra.SymplecticGroup
 
 The determinant of a skew-symmetric matrix `M` (`Mᵀ = -M`) with zero diagonal over a field is a
 square: the form `x, y ↦ xᵀ M y` is alternating, so when it is nondegenerate it has a symplectic
-basis, in which its matrix is `J` of determinant `1`, and `det M` is the square of the inverse of
-the determinant of the change of basis. For an integer matrix the diagonal vanishes automatically
+basis, in which its matrix is `J` of determinant `1`, and `det M` is the square of the determinant
+of the change of basis. For an integer matrix the diagonal vanishes automatically
 and the square root, a rational number, is an integer. Over an arbitrary commutative ring the
 statement is Cayley's identity `det M = Pf(M)²`, which needs the Pfaffian and is not proved here.
 
@@ -82,16 +82,10 @@ theorem isSquare_det_of_transpose_eq_neg_of_diag_eq_zero {K : Type*} [Field K]
   have hc : LinearMap.BilinForm.toMatrix c (toBilin' M) = reindex e e (J (Fin m) K) := by
     ext i j
     simp [c, LinearMap.BilinForm.toMatrix_apply, ← hb]
-  have key := LinearMap.BilinForm.toMatrix_mul_basis_toMatrix (Pi.basisFun K ι) c (toBilin' M)
-  rw [hc, LinearMap.BilinForm.toMatrix_basisFun, LinearMap.BilinForm.toMatrix'_toBilin'] at key
-  have hdet := congrArg det key
-  rw [det_mul, det_mul, det_transpose, det_reindex_self, det_J] at hdet
-  have hP : ((Pi.basisFun K ι).toMatrix c).det ≠ 0 := by
-    rintro h0
-    simp [h0] at hdet
-  refine ⟨((Pi.basisFun K ι).toMatrix c).det⁻¹, ?_⟩
-  field_simp
-  linear_combination hdet
+  have hdet := LinearMap.BilinForm.det_toMatrix_eq_det_sq_mul_det c (Pi.basisFun K ι) (toBilin' M)
+  rw [hc, LinearMap.BilinForm.toMatrix_basisFun, LinearMap.BilinForm.toMatrix'_toBilin',
+    det_reindex_self, det_J, mul_one] at hdet
+  exact ⟨(c.toMatrix (Pi.basisFun K ι)).det, hdet.trans (sq _)⟩
 
 /-- **The determinant of a skew-symmetric integer matrix is a square.** -/
 theorem isSquare_det_of_transpose_eq_neg {M : Matrix ι ι ℤ} (hM : Mᵀ = -M) : IsSquare M.det := by
