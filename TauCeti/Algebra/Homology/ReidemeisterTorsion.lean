@@ -10,7 +10,9 @@ import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Ring.NegOnePow
+import TauCeti.Algebra.Homology.HomologySequenceBiprod
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
 public import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Alternating.Append
@@ -62,6 +64,12 @@ degree `j`. To prove it, the boundaries of `C₂` in each degree are given the b
 boundaries of `C₁` followed by lifts of the boundaries of `C₃`, using that the boundaries form a
 short exact sequence `0 → B₁,ⱼ → B₂,ⱼ → B₃,ⱼ → 0` when `C₃` is acyclic.
 
+In particular the torsion of a direct sum `C₁ ⊞ C₃`, based in each degree by the basis of `C₁`
+followed by the basis of `C₃` (`HomologicalComplex.biprodXBasis`), is `ε · τ(C₁) · τ(C₃)` with the
+same sign (`HomologicalComplex.reidemeisterTorsion_biprod`). The biproduct is the middle term of the
+split short exact sequence `0 → C₁ → C₁ ⊞ C₃ → C₃ → 0`, and it is acyclic exactly when both
+summands are, so this holds for all complexes.
+
 The torsion is compatible with scalar extension along a homomorphism of fields `φ : F →+* K`
 (`HomologicalComplex.map_reidemeisterTorsion`): if `D` is a complex over `K` with bases `e i` in
 which the matrices of the differentials are the images under `φ` of those of `C` in the bases
@@ -92,6 +100,7 @@ be compared componentwise along the field homomorphisms between them.
   of the chain basis vectors by units.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_of_shortExact`: the multiplicativity of the
   torsion in a based short exact sequence of acyclic complexes.
+* `HomologicalComplex.reidemeisterTorsion_biprod`: the torsion of a direct sum of based complexes.
 * `HomologicalComplex.map_reidemeisterTorsion`: the torsion of the scalar extension of a based
   complex along a homomorphism of fields is the image of its torsion.
 
@@ -725,6 +734,37 @@ theorem reidemeisterTorsion_eq_mul_of_shortExact {S : ShortComplex (ChainComplex
   rcases Int.units_eq_one_or j.negOnePow with hj | hj <;> simp [hj, ← inv_pow]
 
 end ShortExact
+
+section Biprod
+
+/-! ### Direct sums -/
+
+variable {C₁ C₃ : ChainComplex (ModuleCat F) ℤ} {n₁ n₃ : ℤ → ℕ}
+
+/-- **Torsion of a direct sum.** The torsion of the biproduct `C₁ ⊞ C₃` of two based complexes,
+based in each degree by the basis of `C₁` followed by the basis of `C₃`, is
+`τ(C₁ ⊞ C₃) = ε · τ(C₁) · τ(C₃)`, with the sign `ε = ∏ⱼ (-1) ^ (dim B₃,ⱼ₊₁ · dim B₁,ⱼ)` given by
+the dimensions of the boundaries `Bₖ,ⱼ ⊆ Cₖ,ⱼ`. This holds for all complexes: `C₁ ⊞ C₃` is acyclic
+exactly when `C₁` and `C₃` both are, and both sides are `0` otherwise. -/
+theorem reidemeisterTorsion_biprod (c₁ : ∀ i, Basis (Fin (n₁ i)) F (C₁.X i))
+    (c₃ : ∀ i, Basis (Fin (n₃ i)) F (C₃.X i)) :
+    (C₁ ⊞ C₃).reidemeisterTorsion (fun i ↦ (biprodXBasis (c₁ i) (c₃ i)).reindex finSumFinEquiv) =
+      (∏ᶠ j : ℤ, (-1 : F) ^ (finrank F (LinearMap.range (C₃.d (j + 1 + 1) (j + 1)).hom) *
+        finrank F (LinearMap.range (C₁.d (j + 1) j).hom))) *
+      (C₁.reidemeisterTorsion c₁ * C₃.reidemeisterTorsion c₃) := by
+  by_cases h : C₁.Acyclic ∧ C₃.Acyclic
+  · -- `C₁ ⟶ C₁ ⊞ C₃ ⟶ C₃` is a split short exact sequence with compatible bases.
+    have hsnd (i : ℤ) (x : C₃.X i) :
+        ((Limits.biprod.snd : C₁ ⊞ C₃ ⟶ C₃).f i).hom
+          (((Limits.biprod.inr : C₃ ⟶ C₁ ⊞ C₃).f i).hom x) = x := by
+      rw [← ModuleCat.comp_apply, biprod_inr_snd_f, ModuleCat.id_apply]
+    exact reidemeisterTorsion_eq_mul_of_shortExact
+      (ShortComplex.Splitting.ofHasBinaryBiproduct C₁ C₃).shortExact h.1 h.2 c₁ c₃ _
+      (by simp) (by simp [hsnd])
+  · rw [reidemeisterTorsion_of_not_acyclic _ _ (by rwa [acyclic_biprod_iff])]
+    rcases not_and_or.1 h with h | h <;> simp [reidemeisterTorsion_of_not_acyclic _ _ h]
+
+end Biprod
 
 section ScalarExtension
 
