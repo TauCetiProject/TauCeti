@@ -416,6 +416,15 @@ theorem transportIsometry_apply (L : IntegralLattice V) (e : V ≃ₗ[ℚ] W) (x
   -- `isometryEquivOfCompLinearEquiv B f` has underlying equivalence `f.symm`.
   rfl
 
+/-- The inverse of the canonical isometry to a transported lattice is the inverse ambient
+equivalence. -/
+@[simp]
+theorem transportIsometry_symm_apply (L : IntegralLattice V) (e : V ≃ₗ[ℚ] W) (y : W) :
+    (L.transportIsometry e).symm y = e.symm y := by
+  obtain ⟨x, rfl⟩ := e.surjective y
+  rw [← L.transportIsometry_apply e x, Isometry.symm_apply_apply, transportIsometry_apply,
+    LinearEquiv.symm_apply_apply]
+
 @[simp]
 theorem transport_refl (L : IntegralLattice V) : L.transport (LinearEquiv.refl ℚ V) = L := by
   apply IntegralLattice.ext
