@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Multiset.UnionInter
+public import TauCeti.Data.Multiset.Rel
+public import TauCeti.RingTheory.Polynomial.Vieta
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.FieldTheory.Separable
 
@@ -37,6 +39,11 @@ with `x + t` a root of `f`, so `x ↦ x + t` is a bijection between the two root
 Fifth, if every root of a nonzero polynomial is among a family of points `θ i`, then its roots
 are exactly the `θ i` in which it has positive multiplicity.
 
+Sixth, the roots of a product of linear factors over a finite family are the values of the
+family. For split monic polynomials, a relation `Multiset.Rel r` between the root multisets is
+the same as a pair of enumerations of the roots, indexed by `Fin f.natDegree`, factoring the two
+polynomials into linear factors with entries of equal index related by `r`.
+
 Finally, the roots of a polynomial gcd form the multiset intersection of the roots of its
 inputs. In characteristic zero this identifies the degree lost to the gcd with the derivative as
 the number of distinct roots.
@@ -63,11 +70,23 @@ the number of distinct roots.
 * `Polynomial.separable_comp_X_add_C_iff`: `f(X + t)` is separable exactly when `f` is.
 * `Polynomial.isRoot_iff_of_rootMultiplicity`: if every root of a nonzero polynomial is among
   the `θ i`, then its roots are the `θ i` in which it has positive multiplicity.
+* `Polynomial.roots_prod_X_sub_C_map`: the roots of a product of linear factors over a finite
+  family are the values of the family.
+* `Polynomial.roots_C_mul_prod_X_sub_C`: the roots of a nonzero constant times a product of
+  linear factors over a finite family are the values of the family.
+* `Polynomial.roots_eq_map_of_eq_C_mul_prod_X_sub_C`: the same for a nonzero polynomial presented
+  as its leading coefficient times such a product.
+* `Polynomial.Monic.rel_roots_iff_exists_prod_X_sub_C`: for split monic polynomials, the root
+  multisets are related by `Multiset.Rel r` exactly when the polynomials factor over enumerations
+  of their roots with entries of equal index related by `r`.
 * `Polynomial.rootMultiplicity_gcd`: a root's multiplicity in a gcd is the minimum of its
   multiplicities in the two inputs.
 * `Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset`: over an
   algebraically closed field of characteristic zero, degree minus the degree of the derivative
   gcd counts distinct roots.
+* `Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset`: the same count for
+  the distinct roots in such a field of a polynomial over a field `k`, with the gcd taken over
+  `k`.
 -/
 
 public section
@@ -234,6 +253,51 @@ theorem _root_.Polynomial.isRoot_iff_of_rootMultiplicity {ι : Type*} {p : F[X]}
   · rw [← hi, ← rootMultiplicity_pos hp, hm i]
     exact hpos
 
+section Rel
+
+variable [IsDomain F]
+
+/-- The roots of the product of the linear factors of a finite family are the values of the
+family, with multiplicity. -/
+@[simp]
+theorem _root_.Polynomial.roots_prod_X_sub_C_map {ι : Type*} (s : Finset ι) (x : ι → F) :
+    (∏ i ∈ s, (X - C (x i))).roots = s.val.map x := by
+  simp [roots_prod, X_sub_C_ne_zero, prod_ne_zero_iff]
+
+/-- The roots of a nonzero constant times the product of the linear factors of a finite family are
+the values of the family, with multiplicity. -/
+theorem _root_.Polynomial.roots_C_mul_prod_X_sub_C {ι : Type*} (s : Finset ι) (x : ι → F) {c : F}
+    (hc : c ≠ 0) : (C c * ∏ i ∈ s, (X - C (x i))).roots = s.val.map x := by
+  rw [roots_C_mul _ hc, roots_prod_X_sub_C_map]
+
+/-- The roots of a nonzero polynomial presented as its leading coefficient times the product of the
+linear factors of a finite family are the values of the family, with multiplicity. -/
+theorem _root_.Polynomial.roots_eq_map_of_eq_C_mul_prod_X_sub_C {ι : Type*} {s : Finset ι}
+    {x : ι → F} {p : F[X]} (hp : p ≠ 0) (hpx : p = C p.leadingCoeff * ∏ i ∈ s, (X - C (x i))) :
+    p.roots = s.val.map x := by
+  rw [hpx]
+  exact roots_C_mul_prod_X_sub_C s x (leadingCoeff_ne_zero.2 hp)
+
+/-- **Matching roots as a multiset relation.** For split monic polynomials `f` and `g`, the root
+multisets are related by `Multiset.Rel r` exactly when `f` and `g` are the products of the linear
+factors of enumerations `a` and `b` of their roots, indexed by `Fin f.natDegree`, with
+`r (a i) (b i)` for every `i`. -/
+theorem _root_.Polynomial.Monic.rel_roots_iff_exists_prod_X_sub_C {f g : F[X]} (hf : f.Monic)
+    (hg : g.Monic) (hfs : f.Splits) (hgs : g.Splits) {r : F → F → Prop} :
+    f.roots.Rel r g.roots ↔ ∃ a b : Fin f.natDegree → F,
+      f = ∏ i, (X - C (a i)) ∧ g = ∏ i, (X - C (b i)) ∧ ∀ i, r (a i) (b i) := by
+  refine ⟨fun h => ?_, fun ⟨a, b, hfa, hgb, hab⟩ => ?_⟩
+  · obtain ⟨n, a, b, hfa, hgb, hab⟩ := Multiset.rel_iff_exists_fin.1 h
+    obtain rfl : n = f.natDegree := by simp [hfs.natDegree_eq_card_roots, hfa]
+    exact ⟨a, b, eq_prod_X_sub_C_of_monic_of_roots_eq hf (by simp) hfa,
+      eq_prod_X_sub_C_of_monic_of_roots_eq hg (by simp [hgs.natDegree_eq_card_roots, hgb]) hgb,
+      hab⟩
+  · exact Multiset.rel_iff_exists_fin.2 ⟨_, a, b,
+      (congrArg roots hfa).trans (roots_prod_X_sub_C_map _ a),
+      (congrArg roots hgb).trans (roots_prod_X_sub_C_map _ b), hab⟩
+
+end Rel
+
 section GCD
 
 variable {K : Type*} [Field K] [DecidableEq K]
@@ -318,6 +382,17 @@ theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_t
     p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree = p.roots.toFinset.card :=
   natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits hp
     (IsAlgClosed.splits p)
+
+/-- The number of distinct roots of a nonzero polynomial over a field `k` in an algebraically
+closed field `K` of characteristic zero is its degree minus the degree of its gcd with its
+derivative, both taken over `k`. -/
+theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset
+    {k : Type*} [Field k] [DecidableEq k] [Algebra k K] {p : k[X]} (hp : p ≠ 0) :
+    p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree =
+      (p.aroots K).toFinset.card := by
+  rw [aroots_def, ← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset
+    ((Polynomial.map_ne_zero_iff (algebraMap k K).injective).2 hp), derivative_map, gcd_map,
+    natDegree_map, natDegree_map]
 
 end IsAlgClosed
 

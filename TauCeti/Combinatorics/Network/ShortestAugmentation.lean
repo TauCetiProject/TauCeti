@@ -352,13 +352,11 @@ some cut by `TauCeti.Flow.IsMaximum.exists_val_eq_arrowSum`. -/
 theorem exists_isMaximum_mem (hcap : 0 ≤ cap) (H : AddSubgroup K)
     (hcapH : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H) :
     ∃ f : Flow cap s t, f.IsMaximum ∧ ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ H := by
-  let f₀ : Flow cap s t :=
-    ⟨⟨0, ⟨le_rfl, hcap⟩, fun v _ _ ↦ excessAt_zero v⟩, (excessAt_zero t).ge⟩
-  obtain ⟨g, hg, hgH⟩ := f₀.toBoundedFlow.exists_isMaximum_mem H (fun _ _ _ ↦ H.zero_mem)
-    hcapH fun _ _ _ ↦ H.zero_mem
+  obtain ⟨g, hg, hgH⟩ := (zero hcap : Flow cap s t).toBoundedFlow.exists_isMaximum_mem H
+    (fun _ _ _ ↦ H.zero_mem) hcapH fun _ _ _ ↦ by simp
   have hval : 0 ≤ excessAt g.toFun t := by
     rw [← BoundedFlow.val_def]
-    exact f₀.val_nonneg.trans (BoundedFlow.isMaximum_iff.1 hg _)
+    simpa using BoundedFlow.isMaximum_iff.1 hg (zero hcap).toBoundedFlow
   exact ⟨⟨g, hval⟩, (isMaximum_toBoundedFlow _).1 hg, hgH⟩
 
 /-- For nonnegative capacities, a maximum ordinary flow exists. -/

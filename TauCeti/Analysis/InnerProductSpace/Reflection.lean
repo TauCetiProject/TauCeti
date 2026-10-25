@@ -12,7 +12,8 @@ import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 # Reflections in inner product spaces
 
 For a submodule `K` admitting an orthogonal projection, `Submodule.coe_reflection` expresses the
-reflection across `K`, as a bounded operator, as `2 P_K - 1`.
+reflection across `K`, as a bounded operator, as `2 P_K - 1`, and a linear isometry mapping `K`
+onto itself commutes with that reflection (`Submodule.reflection_apply_of_map_eq`).
 
 The remaining lemmas describe reflection across the hyperplane perpendicular to a vector in a real
 inner product space. They supply the reflection identities used by the half-space Green kernel,
@@ -37,6 +38,43 @@ theorem coe_reflection (K : Submodule 𝕜 E) [K.HasOrthogonalProjection] :
     (K.reflection : E →L[𝕜] E) = 2 • K.starProjection - 1 := by
   ext x
   simp [reflection_apply]
+
+/-- A linear isometry equivalence mapping `K` onto itself commutes with the reflection across
+`K`. -/
+theorem reflection_apply_of_map_eq (K : Submodule 𝕜 E) [K.HasOrthogonalProjection]
+    {e : E ≃ₗᵢ[𝕜] E} (he : K.map (e.toLinearEquiv : E →ₗ[𝕜] E) = K) (x : E) :
+    K.reflection (e x) = e (K.reflection x) := by
+  have h := reflection_map_apply e K (e x)
+  simp only [he, LinearIsometryEquiv.symm_apply_apply] at h
+  exact h
+
+/-- A linear isometry equivalence fixing `K` pointwise commutes with reflection across `K`. -/
+theorem reflection_apply_of_eqOn (K : Submodule 𝕜 E) [K.HasOrthogonalProjection]
+    {e : E ≃ₗᵢ[𝕜] E} (he : Set.EqOn e id K) (x : E) :
+    K.reflection (e x) = e (K.reflection x) := by
+  refine reflection_apply_of_map_eq K ?_ x
+  ext v
+  constructor
+  · rintro ⟨w, hw, rfl⟩
+    rw [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, he hw]
+    exact hw
+  · intro hv
+    exact ⟨v, hv, he hv⟩
+
+/-- A linear isometry equivalence fixing `K` pointwise commutes with reflection across `Kᗮ`. -/
+theorem reflection_orthogonal_apply_of_eqOn (K : Submodule 𝕜 E) [K.HasOrthogonalProjection]
+    {e : E ≃ₗᵢ[𝕜] E} (he : Set.EqOn e id K) (x : E) :
+    Kᗮ.reflection (e x) = e (Kᗮ.reflection x) := by
+  rw [reflection_orthogonal_apply, reflection_apply_of_eqOn K he,
+    reflection_orthogonal_apply, map_neg]
+
+/-- Reflection across `Kᗮ` negates the inner product with any vector in `K`. -/
+theorem inner_reflection_orthogonal_of_mem (K : Submodule 𝕜 E) [K.HasOrthogonalProjection]
+    (x : E) {v : E} (hv : v ∈ K) :
+    inner 𝕜 (Kᗮ.reflection x) v = -inner 𝕜 x v := by
+  conv_lhs => rw [← neg_neg v,
+    ← reflection_mem_subspace_orthogonal_precomplement_eq_neg hv, inner_neg_right,
+    LinearIsometryEquiv.inner_map_map]
 
 end Submodule
 
