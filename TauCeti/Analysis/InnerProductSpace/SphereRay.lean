@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Continuous
 public import Mathlib.Analysis.Normed.Group.BallSphere
-public import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Rays leaving the closed unit ball
