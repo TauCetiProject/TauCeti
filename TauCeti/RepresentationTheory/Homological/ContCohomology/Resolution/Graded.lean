@@ -40,11 +40,16 @@ to contract a tensor power of total resolutions onto the tensor power of the coe
 * `gradedResolutionTopRepMap` bundles coefficient maps, preserving identities, composition,
   and the differential.
 * `TauCeti.smoothGradedResolutionFunctor` packages the smooth total resolution functorially.
-* `TauCeti.smoothGradedResolutionAugmentation` is its natural coefficient augmentation.
+* `TauCeti.smoothGradedResolutionAugmentation` is its natural coefficient augmentation, and
+  `TauCeti.smoothGradedResolutionDifferential` its differential.
 * `gradedResolutionProjection` and `gradedResolutionHomotopy` contract the total resolution:
   `gradedResolutionProjection_augmentation` and
   `gradedResolutionDifferential_gradedResolutionHomotopy_add` are the contraction identities, and
-  both maps are natural in the coefficients.
+  both maps are natural in the coefficients; `gradedResolutionProjection_eq_zero_of_mem` and
+  `gradedResolutionHomotopy_eq_zero_of_mem_zero` say that they vanish in nonzero and in zero
+  degree.
+* `gradedResolutionModule_add_self_eq_zero`: the total resolution of coefficients that are their
+  own additive inverses has the same property.
 
 ## References
 
@@ -101,6 +106,15 @@ theorem gradedResolutionDifferential_lof [DecidableEq ℕ] (n : ℕ) (x : (resol
 theorem gradedResolutionDifferential_sq (x : X.gradedResolutionModule) :
     X.gradedResolutionDifferential (X.gradedResolutionDifferential x) = 0 :=
   (resolutionModuleComplex X).directSumDifferential_sq x
+
+/-- If every coefficient is its own additive inverse, then so is every element of the total
+resolution. -/
+theorem gradedResolutionModule_add_self_eq_zero (hX : ∀ x : X.V, x + x = 0)
+    (z : X.gradedResolutionModule) : z + z = 0 := by
+  induction z using DirectSum.induction_on with
+  | zero => exact add_zero 0
+  | of n F => rw [← map_add, resolutionX_add_self_eq_zero X hX (n + 1) F, map_zero]
+  | add y z hy hz => rw [add_add_add_comm, hy, hz, add_zero]
 
 /-- The integer homogeneous-piece family of the total resolution, zero in negative degrees. -/
 noncomputable def gradedResolutionPiece : ℤ → Submodule R X.gradedResolutionModule :=
@@ -451,6 +465,27 @@ theorem isHomogeneous_gradedResolutionHomotopy :
       X.gradedResolutionPiece (-1) :=
   Homotopy.isHomogeneous_directSumHomotopy (resolutionModuleHomotopy X)
 
+/-- The projection vanishes on every homogeneous piece of nonzero degree. -/
+theorem gradedResolutionProjection_eq_zero_of_mem {p : ℤ} (hp : p ≠ 0)
+    {v : X.gradedResolutionModule} (hv : v ∈ X.gradedResolutionPiece p) :
+    X.gradedResolutionProjection v = 0 := by
+  classical
+  rcases hp.lt_or_gt with hp | hp
+  · rw [X.gradedResolutionPiece_of_neg hp, Submodule.mem_bot] at hv
+    rw [hv, map_zero]
+  · obtain ⟨n, rfl⟩ := Int.eq_succ_of_zero_lt hp
+    rw [← Nat.cast_succ, gradedResolutionPiece_natCast] at hv
+    obtain ⟨F, rfl⟩ := hv
+    exact X.gradedResolutionProjection_lof_succ n F
+
+/-- The contracting homotopy vanishes on the homogeneous piece of degree zero. -/
+theorem gradedResolutionHomotopy_eq_zero_of_mem_zero {v : X.gradedResolutionModule}
+    (hv : v ∈ X.gradedResolutionPiece 0) : X.gradedResolutionHomotopy v = 0 := by
+  classical
+  rw [← Nat.cast_zero, gradedResolutionPiece_natCast] at hv
+  obtain ⟨F, rfl⟩ := hv
+  exact X.gradedResolutionHomotopy_lof_zero F
+
 variable {X} {Y : TopRep.{max v w} R G}
 
 /-- The projection is natural in the coefficients. -/
@@ -521,6 +556,14 @@ theorem gradedResolutionTopRep_ρ_lof [DecidableEq ℕ] (n : ℕ) (g : G)
           ((resolutionX X (n + 1)).ρ g x) := by
   rw [gradedResolutionTopRep_ρ_apply, gradedResolutionRepresentation_lof]
 
+/-- The bundled discrete action preserves the homogeneous pieces. -/
+theorem gradedResolutionTopRep_ρ_mem (n : ℤ) (g : G) (x : X.gradedResolutionModule)
+    (hx : x ∈ X.gradedResolutionPiece n) :
+    X.gradedResolutionTopRep.ρ g x ∈ X.gradedResolutionPiece n := by
+  have h := (X.isHomogeneous_gradedResolutionRepresentation g).map_mem hx
+  rw [add_zero] at h
+  exact h
+
 /-- The total resolution carries the discrete topology. -/
 instance : DiscreteTopology X.gradedResolutionTopRep.V := by
   unfold gradedResolutionTopRep
@@ -538,6 +581,12 @@ noncomputable def gradedResolutionTopRepDifferential :
 theorem gradedResolutionTopRepDifferential_apply (x : X.gradedResolutionModule) :
     X.gradedResolutionTopRepDifferential.hom x = X.gradedResolutionDifferential x :=
   (rfl)
+
+/-- The bundled total differential has degree one. -/
+theorem isHomogeneous_gradedResolutionTopRepDifferential :
+    TauCeti.LinearMap.IsHomogeneous X.gradedResolutionTopRepDifferential.hom.toLinearMap
+      X.gradedResolutionPiece X.gradedResolutionPiece 1 :=
+  X.isHomogeneous_gradedResolutionDifferential
 
 /-- The differential of the bundled discrete resolution squares to zero. -/
 @[simp]
@@ -722,6 +771,16 @@ theorem smoothGradedResolutionFunctor_obj (A : SmoothDiscreteTopRep.{u, v, max v
       ⟨A.obj.gradedResolutionTopRep, A.obj.isSmoothDiscrete_gradedResolutionTopRep A.property⟩ :=
   rfl
 
+/-- The action on the object of the smooth total-resolution functor is the action on the total
+shifted coinduced resolution. -/
+@[simp]
+theorem smoothGradedResolutionFunctor_obj_obj_ρ_apply
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (g : G)
+    (x : ((smoothGradedResolutionFunctor (R := R) (G := G)).obj A).obj.V) :
+    ((smoothGradedResolutionFunctor (R := R) (G := G)).obj A).obj.ρ g x =
+      A.obj.gradedResolutionTopRep.ρ g x :=
+  rfl
+
 /-- The smooth total-resolution functor acts on morphisms by the induced map of total
 resolutions. -/
 @[simp]
@@ -760,6 +819,22 @@ theorem smoothGradedResolutionAugmentationApp_hom_apply
     (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (x : A.obj.V) :
     (smoothGradedResolutionAugmentationApp A).hom.hom x =
       A.obj.gradedResolutionAugmentation x :=
+  (rfl)
+
+/-- The differential of the total shifted coinduced resolution, as an endomorphism of the smooth
+total resolution. -/
+noncomputable def smoothGradedResolutionDifferential
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) :
+    (smoothGradedResolutionFunctor (R := R) (G := G)).obj A ⟶
+      (smoothGradedResolutionFunctor (R := R) (G := G)).obj A :=
+  ObjectProperty.homMk A.obj.gradedResolutionTopRepDifferential
+
+/-- The smooth total-resolution differential acts by the ordinary total differential on
+carriers. -/
+@[simp]
+theorem smoothGradedResolutionDifferential_hom_apply
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (x : A.obj.gradedResolutionModule) :
+    (smoothGradedResolutionDifferential A).hom.hom x = A.obj.gradedResolutionDifferential x :=
   (rfl)
 
 end TauCeti

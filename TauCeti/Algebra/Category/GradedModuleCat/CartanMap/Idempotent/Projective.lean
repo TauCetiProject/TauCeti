@@ -325,7 +325,7 @@ theorem isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalId
         simp only [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
       _ = 𝟙 M.obj := by
         rw [sum_freeIdempotentProjection_inclusion he he₀ hI d, Category.id_comp, hσ]
-  have : IsLocalRing (End M) := isLocalRing_end_of_indecomposable (k := k) hM
+  have : IsLocalRing (End M) := isLocalRing_end_of_indecomposable (R := k) hM
   -- A sum equal to the identity in the local endomorphism ring has an invertible summand.
   have hunit : IsUnit (∑ r : J, ∑ i : I, End.of (α r i ≫ β r i)) := by
     convert isUnit_one (M := End M)

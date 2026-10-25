@@ -8,11 +8,14 @@ module
 public import Mathlib.NumberTheory.Divisors
 
 /-!
-# Divisor sums picking out a shifted index
+# Divisor equivalences and sums picking out a shifted index
 
 For `N ≠ 0`, the divisors `d` of `N` with `a = N + d` (respectively `a = N - d`) are at most one,
 and such a divisor exists exactly when `a - N` divides `N` (respectively `N - a` divides `a`).
 These lemmas evaluate the corresponding indicator sums over `N.divisors`.
+
+`TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the subtype of
+`N.divisors` omitting the unit divisor.
 -/
 
 public section
@@ -64,3 +67,33 @@ theorem sum_divisors_ite_eq_sub {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → 
       rwa [hN', Nat.dvd_add_self_right] at h'
 
 end Nat
+
+namespace TauCeti
+
+variable {N : ℕ} [NeZero N]
+
+/-- Divisors greater than one correspond to positive divisors other than the unit divisor. -/
+def nontrivialDivisorEquiv :
+    {d : ℕ // 1 < d ∧ d ∣ N} ≃
+      {d : N.divisors // d ≠ ⟨1, Nat.one_mem_divisors.mpr (NeZero.ne N)⟩} where
+  toFun d := ⟨⟨d.val, Nat.mem_divisors.mpr ⟨d.property.2, NeZero.ne N⟩⟩,
+    fun h ↦ by have := congrArg Subtype.val h; simp at this; omega⟩
+  invFun d := ⟨d.val.val, by
+    have hdpos := Nat.pos_of_mem_divisors d.val.property
+    have hdne : d.val.val ≠ 1 := fun h ↦ d.property (Subtype.ext h)
+    exact ⟨by omega, Nat.dvd_of_mem_divisors d.val.property⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- The divisor equivalence preserves the underlying natural number. -/
+@[simp]
+theorem nontrivialDivisorEquiv_apply_val (d : {d : ℕ // 1 < d ∧ d ∣ N}) :
+    (nontrivialDivisorEquiv d).val.val = d.val := by rfl
+
+/-- The inverse divisor equivalence preserves the underlying natural number. -/
+@[simp]
+theorem nontrivialDivisorEquiv_symm_apply_val
+    (d : {d : N.divisors // d ≠ ⟨1, Nat.one_mem_divisors.mpr (NeZero.ne N)⟩}) :
+    (nontrivialDivisorEquiv.symm d).val = d.val.val := by rfl
+
+end TauCeti

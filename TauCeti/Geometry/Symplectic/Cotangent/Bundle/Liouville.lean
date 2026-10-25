@@ -142,8 +142,7 @@ variable (I M) in
 bundle projection. It is a smooth one-form on `T*M`, and in every bundle chart it is the linear
 Liouville form `TauCeti.cotangentLiouvilleForm`, that is `Σ pᵢ dqᵢ`. -/
 def liouvilleForm : SmoothForm (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I M) ℝ 1 :=
-  ⟨liouvilleRough I M, mem_smoothForms.mpr
-    ((isSmoothBundleForm_def _ _).mpr isSmoothForm_liouvilleRough.contMDiff)⟩
+  ⟨liouvilleRough I M, isSmoothForm_liouvilleRough.mem_smoothForms⟩
 
 /-- The underlying rough form of `liouvilleForm`. -/
 private theorem coe_liouvilleForm : (liouvilleForm I M).1 = liouvilleRough I M :=

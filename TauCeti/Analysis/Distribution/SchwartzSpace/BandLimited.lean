@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.SchwartzSpace.WeightedPlancherel
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.SpecificLimits.DyadicSum
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.TranslationTail
 
 /-!
@@ -85,10 +86,9 @@ theorem norm_toLp_two_le_of_support_subset_closedBall (f : 𝓢(V, H)) {t M : �
       ENNReal.ofReal (t ^ finrank ℝ V * volume.real (ball (0 : V) 1)) := by
     rw [Measure.addHaar_closedBall _ _ ht, ← ofReal_measureReal,
       ← ENNReal.ofReal_mul (by positivity)]
-  have hle := eLpNorm_le_of_ae_bound (p := 2) (μ := volume.restrict (closedBall (0 : V) t))
-    f.continuous.aestronglyMeasurable (.of_forall hfM)
-  rw [eLpNorm_restrict_eq_of_support_subset f.continuous.aestronglyMeasurable hf,
-    Measure.restrict_apply_univ, hvol, ENNReal.toReal_ofNat,
+  have hle := eLpNorm_le_of_ae_bound_of_support_subset (p := 2) (μ := volume)
+    f.continuous.aestronglyMeasurable hf (.of_forall hfM)
+  rw [hvol, ENNReal.toReal_ofNat,
     ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
     ← ENNReal.ofReal_mul (by positivity)] at hle
   rw [norm_toLp]
@@ -269,18 +269,21 @@ along `b` are bounded by `A t ^ (-k)`,
 
 `∫_{‖x‖ > 2 ‖h‖} ‖𝓕⁻ σ (x - h) - 𝓕⁻ σ x‖ dx ≤ C A min (t ‖h‖, (t ‖h‖) ^ (n/2 - N))`
 
-for every `h ≠ 0`: the smoothness bound is the better one when `t ‖h‖ ≤ 1`, the tail bound when
+for every `h`: the smoothness bound is the better one when `t ‖h‖ ≤ 1`, the tail bound when
 `t ‖h‖ > 1`. -/
 theorem exists_setIntegral_norm_fourierInv_sub_sub_le_of_support_subset {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) {N : ℕ} (hN : finrank ℝ V < 2 * N) :
     ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → 0 ≤ A → support σ ⊆ closedBall 0 t →
-      (∀ k ≤ N, ∀ i ξ, ‖(∂_{b i})^[k] σ ξ‖ ≤ A / t ^ k) → ∀ h, h ≠ 0 →
+      (∀ k ≤ N, ∀ i ξ, ‖(∂_{b i})^[k] σ ξ‖ ≤ A / t ^ k) → ∀ h,
         ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖𝓕⁻ σ (x - h) - 𝓕⁻ σ x‖ ≤
           C * A * min (t * ‖h‖) ((t * ‖h‖) ^ ((finrank ℝ V : ℝ) / 2 - N)) := by
   obtain ⟨C₁, hC₁, hC₁'⟩ := exists_setIntegral_norm_fourierInv_le_of_support_subset (H := H) b hN
   obtain ⟨C₂, hC₂, hC₂'⟩ :=
     exists_integral_norm_fourierInv_add_sub_le_of_support_subset (H := H) b hN
-  refine ⟨max (2 * C₁) C₂, hC₂.trans (le_max_right _ _), fun σ t A ht hA hσ hσk h hh ↦ ?_⟩
+  refine ⟨max (2 * C₁) C₂, hC₂.trans (le_max_right _ _), fun σ t A ht hA hσ hσk h ↦ ?_⟩
+  rcases eq_or_ne h 0 with rfl | hh
+  · simp only [sub_zero, sub_self, norm_zero, integral_zero, mul_zero]
+    positivity
   have hK := (𝓕⁻ σ).integrable (μ := volume)
   rw [mul_min_of_nonneg _ _ (mul_nonneg (hC₂.trans (le_max_right _ _)) hA)]
   refine le_min ?_ ?_
@@ -335,7 +338,7 @@ theorem exists_setIntegral_norm_fourierInv_sum_sub_sub_le {ι : Type*} [Fintype 
   -- Each dyadic piece contributes at most `D A min (2 ^ j ‖h‖, (2 ^ j ‖h‖) ^ (-δ))`.
   have hterm (j : ℤ) (hj : j ∈ s) : ∫ x in S, ‖𝓕⁻ (σ j) (x - h) - 𝓕⁻ (σ j) x‖ ≤
       D * A * min (2 ^ j * ‖h‖) ((2 ^ j * ‖h‖) ^ (-δ)) :=
-    he ▸ hD' (σ j) (zpow_pos two_pos j) hA (hσ j hj) (hσk j hj) h hh
+    he ▸ hD' (σ j) (zpow_pos two_pos j) hA (hσ j hj) (hσk j hj) h
   have hint : ∀ j ∈ s, Integrable (fun x ↦ ‖𝓕⁻ (σ j) (x - h) - 𝓕⁻ (σ j) x‖) (volume.restrict S) :=
     fun j _ ↦ (((𝓕⁻ (σ j)).integrable.comp_sub_right h).sub (𝓕⁻ (σ j)).integrable).norm.restrict
   have hK := (𝓕⁻ (∑ j ∈ s, σ j)).integrable (μ := volume)

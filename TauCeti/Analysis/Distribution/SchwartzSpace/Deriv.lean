@@ -15,14 +15,23 @@ Directional derivatives of a Schwartz function commute, since its second derivat
 On the plane `ℂ`, the Laplacian is the sum of the second derivatives along `1` and `I`.
 
 Applying a continuous real-linear map to the values of a Schwartz function commutes with
-directional differentiation. In particular, real and imaginary parts, and the embedding of
-real-valued functions into complex Schwartz space, commute with differentiation.
+directional differentiation, and hence with the Laplacian. In particular, real and imaginary
+parts, and the embedding of real-valued functions into complex Schwartz space, commute with
+differentiation.
 
 Multiplication by a continuous linear functional `L` satisfies the Leibniz rule
 `∂_v (L f) = L ∂_v f + L v f`, and its iterate
 `∂_v^(k+1) (L f) = L ∂_v^(k+1) f + (k + 1) L v ∂_v^k f`. On the Fourier side, multiplying a symbol
 by `⟪h, ξ⟫` differentiates its kernel along `h`, so these identities control the derivatives of
 the symbol of a differentiated kernel.
+
+Integrating by parts along an orthonormal basis gives Green's identity
+`∫ B(f, Δg) = -∑ᵢ ∫ B(∂_{bᵢ} f, ∂_{bᵢ} g)` for a continuous bilinear map `B`
+(`SchwartzMap.integral_bilinear_laplacian_right_eq_neg_sum`). For the inner product this reads
+`∫ ⟪f, Δf⟫ = -∑ᵢ ‖∂_{bᵢ} f‖₂²` (`SchwartzMap.integral_inner_laplacian_right_self_eq_neg_sum`),
+and for the shifted Laplacian `-Δ + c` it is the energy identity
+`∫ ⟪f, (-Δ + c) f⟫ = ∑ᵢ ‖∂_{bᵢ} f‖₂² + c ‖f‖₂²`
+(`SchwartzMap.integral_inner_neg_laplacian_add_smul_self`).
 -/
 
 public section
@@ -46,6 +55,15 @@ theorem lineDerivOp_postcompCLM (v : E) (L : F →L[ℝ] G) (φ : 𝓢(E, F)) :
     (L.hasFDerivAt.comp x φ.differentiableAt.hasFDerivAt).fderiv]
   simp only [ContinuousLinearMap.comp_apply, SchwartzMap.postcompCLM_apply,
     SchwartzMap.lineDerivOp_apply_eq_fderiv]
+
+open Laplacian in
+/-- The Laplacian commutes with a continuous real-linear map on the values of a Schwartz
+function. -/
+@[simp]
+theorem laplacian_postcompCLM {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [FiniteDimensional ℝ V] (L : F →L[ℝ] G) (φ : 𝓢(V, F)) :
+    Δ (φ.postcompCLM L) = (Δ φ).postcompCLM L := by
+  simp [SchwartzMap.laplacian_eq_sum (stdOrthonormalBasis ℝ V)]
 
 end TauCeti
 
@@ -97,5 +115,54 @@ theorem iterate_lineDerivOp_smulLeftCLM_clm (L : V →L[ℝ] ℝ) (f : 𝓢(V, F
     congr 2
     push_cast
     ring
+
+open MeasureTheory LineDeriv Laplacian in
+/-- **Green's identity on Schwartz space**: for a continuous bilinear map `B` and an orthonormal
+basis `b`, `∫ B(f, Δg) = -∑ᵢ ∫ B(∂_{bᵢ} f, ∂_{bᵢ} g)`. -/
+theorem integral_bilinear_laplacian_right_eq_neg_sum {E F₁ F₂ F₃ ι : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F₁]
+    [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃]
+    [NormedSpace ℝ F₃] [Fintype ι] (b : OrthonormalBasis ι ℝ E) (f : 𝓢(E, F₁)) (g : 𝓢(E, F₂))
+    (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
+    ∫ x, B (f x) (Δ g x) ∂μ = -∑ i, ∫ x, B (∂_{b i} f x) (∂_{b i} g x) ∂μ := by
+  simp_rw [laplacian_eq_sum b, _root_.sum_apply, map_sum]
+  have hint : ∀ i ∈ Finset.univ, Integrable (fun x => B (f x) (∂_{b i} (∂_{b i} g) x)) μ :=
+    fun i _ => (pairing B f (∂_{b i} (∂_{b i} g))).integrable
+  rw [integral_finsetSum _ hint, ← Finset.sum_neg_distrib]
+  exact Finset.sum_congr rfl fun i _ =>
+    integral_bilinear_lineDerivOp_right_eq_neg_left f (∂_{b i} g) B (b i)
+
+open MeasureTheory LineDeriv Laplacian RealInnerProductSpace in
+/-- Green's identity for the `L²` pairing of a Schwartz function with its Laplacian: for an
+orthonormal basis `b`, `∫ ⟪f, Δf⟫ = -∑ᵢ ∫ ‖∂_{bᵢ} f‖²`. -/
+theorem integral_inner_laplacian_right_self_eq_neg_sum {E F ι : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [Fintype ι] (b : OrthonormalBasis ι ℝ E) (f : 𝓢(E, F)) :
+    ∫ x, ⟪f x, Δ f x⟫ ∂μ = -∑ i, ∫ x, ‖∂_{b i} f x‖ ^ 2 ∂μ := by
+  have h : ∫ x, ⟪f x, Δ f x⟫ ∂μ = -∑ i, ∫ x, ⟪∂_{b i} f x, ∂_{b i} f x⟫ ∂μ :=
+    -- `innerSL ℝ u w` unfolds to `⟪u, w⟫`.
+    integral_bilinear_laplacian_right_eq_neg_sum b f f (innerSL ℝ)
+  simpa only [real_inner_self_eq_norm_sq] using h
+
+open MeasureTheory LineDeriv Laplacian RealInnerProductSpace in
+/-- The **energy identity** for the shifted Laplacian `-Δ + c` on Schwartz space: for an
+orthonormal basis `b` and a scalar `c`, `∫ ⟪f, (-Δ + c) f⟫ = ∑ᵢ ∫ ‖∂_{bᵢ} f‖² + c ∫ ‖f‖²`. -/
+theorem integral_inner_neg_laplacian_add_smul_self {E F ι : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [Fintype ι] (b : OrthonormalBasis ι ℝ E) (c : ℝ) (f : 𝓢(E, F)) :
+    ∫ x, ⟪f x, (-Δ f + c • f) x⟫ ∂μ =
+      ∑ i, ∫ x, ‖∂_{b i} f x‖ ^ 2 ∂μ + c * ∫ x, ‖f x‖ ^ 2 ∂μ := by
+  have e : ∀ x, ⟪f x, (-Δ f + c • f) x⟫ = -⟪f x, Δ f x⟫ + c * ‖f x‖ ^ 2 := fun x => by
+    simp [inner_add_right, inner_neg_right, inner_smul_right]
+  simp_rw [e]
+  -- `innerSL ℝ u w` unfolds to `⟪u, w⟫`, so these pairings are the integrands.
+  have hΔ : Integrable (fun x => ⟪f x, Δ f x⟫) μ := (pairing (innerSL ℝ) f (Δ f)).integrable
+  have hf : Integrable (fun x => ⟪f x, f x⟫) μ := (pairing (innerSL ℝ) f f).integrable
+  simp only [real_inner_self_eq_norm_sq] at hf
+  rw [integral_add (by exact hΔ.neg) (hf.const_mul c), integral_neg, integral_const_mul,
+    integral_inner_laplacian_right_self_eq_neg_sum b f, neg_neg]
 
 end SchwartzMap

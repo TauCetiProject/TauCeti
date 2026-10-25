@@ -153,29 +153,16 @@ variable (P b)
 
 omit [P.IsReduced] in
 /-- **A Weyl-group element sending every simple root to a positive root sends every positive root
-to a positive root.** A positive root is built up from simple roots by addition, and the height of
-a sum of two roots is the sum of their heights, so the image again has nonnegative height. This is
-the mirror image of `TauCeti.mapsTo_posRoots_negRoots_of_forall_mem_support`. -/
-theorem mapsTo_posRoots_of_forall_mem_support {w : P.weylGroup}
-    (h : ∀ i ∈ b.support, P.weylGroupToPerm w i ∈ posRoots P b) :
-    MapsTo (P.weylGroupToPerm w) (posRoots P b) (posRoots P b) := by
-  -- Positivity of the image is nonnegativity of its height, which is what the induction adds up.
-  have hpos : ∀ j : ι, P.weylGroupToPerm w j ∈ posRoots P b ↔
-      0 ≤ b.height (P.weylGroupToPerm w j) := fun j ↦ by
-    rw [mem_posRoots, RootPairing.Base.isPos_iff']
-  intro i hi
-  refine (hpos i).mpr ?_
-  refine RootPairing.Base.IsPos.induction_on_add ((mem_posRoots P b i).mp hi)
-    (p := fun j ↦ 0 ≤ b.height (P.weylGroupToPerm w j)) (fun j hj ↦ (hpos j).mp (h j hj))
-    fun j k l hl hj hk ↦ ?_
-  -- The Weyl-group element carries the decomposition `root l = root j + root k` to the images.
-  have himage : P.root (P.weylGroupToPerm w l) =
-      P.root (P.weylGroupToPerm w j) + P.root (P.weylGroupToPerm w k) := by
-    rw [← P.weylGroup_apply_root w l, ← P.weylGroup_apply_root w j, ← P.weylGroup_apply_root w k,
-      hl, smul_add]
-  have hk' := (hpos k).mp (h k hk)
-  rw [b.height_add himage]
-  omega
+to a positive root.** A positive root is built up from simple roots by adding one simple root at a
+time, and a sum of two positive roots is positive. Positivity of the images may be measured against
+a second base `b'`. This is the mirror image of
+`TauCeti.mapsTo_posRoots_negRoots_of_forall_mem_support`. -/
+theorem mapsTo_posRoots_of_forall_mem_support {b' : P.Base} {w : P.weylGroup}
+    (h : ∀ i ∈ b.support, P.weylGroupToPerm w i ∈ posRoots P b') :
+    MapsTo (P.weylGroupToPerm w) (posRoots P b) (posRoots P b') := fun i hi ↦
+  ((mem_posRoots P b i).mp hi).induction_on_add (p := fun j ↦ P.weylGroupToPerm w j ∈ posRoots P b')
+    h fun _ _ _ hk hj hk' ↦ (mem_posRoots P b' _).mpr <| ((mem_posRoots P b' _).mp hj).add
+      ((mem_posRoots P b' _).mp (h _ hk')) (P.root_weylGroupToPerm_eq_add w hk)
 
 /-- A Weyl-group element keeping every simple root positive is the identity. -/
 theorem eq_one_of_forall_mem_support_mem_posRoots {w : P.weylGroup}

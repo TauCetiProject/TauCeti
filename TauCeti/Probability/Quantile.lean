@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Topology.Instances.EReal.Lemmas
 public import TauCeti.MeasureTheory.Function.Monotone
 public import TauCeti.MeasureTheory.Measure.Mod0MeasureIso
 public import TauCeti.Probability.Cdf
@@ -62,8 +63,13 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   increasing where its values lie strictly between `0` and `1`; together they give
   `MeasureTheory.Measure.quantile_lt_iff`, `MeasureTheory.Measure.strictMonoOn_quantile` and
   `MeasureTheory.Measure.continuousOn_quantile`;
+* `MeasureTheory.Measure.quantile_eq_of_cdf_eq` — invert an interior cdf value under strict
+  monotonicity;
 * `MeasureTheory.Measure.quantile_eq_of_le_cdf_iff` — two quantiles agree when their defining cdf
   level sets agree;
+* `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos` and
+  `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one` — the infinite endpoint
+  limits when the cdf is everywhere positive or everywhere less than one, respectively;
 * `MeasureTheory.Measure.quantile_map_abs` — the quantile of the image of a symmetric law under
   absolute value;
 * `MeasureTheory.Measure.le_upperQuantile_iff` and `MeasureTheory.Measure.upperQuantile_lt_iff`
@@ -87,6 +93,9 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.map_quantile_volume_Ioo` — inverse transform sampling: the quantile
   function pushes the uniform law on `Ioo 0 1` forward to the original law, packaged as
   `MeasureTheory.Measure.measurePreserving_quantile`;
+* `MeasureTheory.Measure.setIntegral_quantile_eq_integral` — the average of the quantile function
+  over the levels is the mean, with integrability characterized by
+  `MeasureTheory.Measure.integrableOn_quantile_iff`;
 * `MeasureTheory.Measure.quantile_map_volume_Ioo_ae` — conversely, the law of a monotone function
   of a uniform variable has that function as its quantile function, almost everywhere;
 * `MeasureTheory.Measure.cdf_map_eq_volume_restrict` — the probability integral transform for an
@@ -261,6 +270,26 @@ theorem lt_quantile_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
     x < μ.quantile t ↔ cdf μ x < t := by
   simpa only [not_le] using (quantile_le_iff (x := x) μ h0 h1).not
 
+/-- If the cdf is everywhere positive, quantiles tend to minus infinity as the level decreases
+to zero. -/
+theorem tendsto_quantile_nhdsGT_zero_of_cdf_pos (μ : Measure ℝ)
+    (hpos : ∀ x, 0 < cdf μ x) :
+    Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0) (𝓝 ⊥) := by
+  apply EReal.tendsto_coe_nhds_bot_iff.mpr
+  refine tendsto_atBot.mpr fun b ↦ ?_
+  filter_upwards [Ioo_mem_nhdsGT (hpos b)] with u hu
+  exact (quantile_le_iff μ hu.1 (hu.2.trans_le (cdf_le_one μ b))).mpr hu.2.le
+
+/-- If the cdf is everywhere less than one, quantiles tend to plus infinity as the level increases
+to one. -/
+theorem tendsto_quantile_nhdsLT_one_of_cdf_lt_one (μ : Measure ℝ)
+    (hlt : ∀ x, cdf μ x < 1) :
+    Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[<] 1) (𝓝 ⊤) := by
+  apply EReal.tendsto_coe_nhds_top_iff.mpr
+  refine tendsto_atTop.mpr fun b ↦ ?_
+  filter_upwards [Ioo_mem_nhdsLT (hlt b)] with u hu
+  exact ((lt_quantile_iff μ ((cdf_nonneg μ b).trans_lt hu.1) hu.2).mpr hu.1).le
+
 /-- The quantile function is monotone on the levels where it is the honest generalized
 inverse. -/
 theorem monotoneOn_quantile (μ : Measure ℝ) : MonotoneOn μ.quantile (Ioo 0 1) := by
@@ -312,6 +341,13 @@ theorem quantile_cdf (μ : Measure ℝ) (hmono : StrictMonoOn (cdf μ) (cdf μ �
   have hq : cdf μ (μ.quantile (cdf μ x)) ∈ Ioo 0 1 :=
     ⟨hx.1.trans_le hle, (monotone_cdf μ h.le).trans_lt hx.2⟩
   exact (hmono hq hx h).not_ge hle
+
+/-- A point whose cumulative mass is an interior level is the quantile at that level, when
+its cumulative distribution function is strictly increasing on interior levels. -/
+theorem quantile_eq_of_cdf_eq (μ : Measure ℝ)
+    (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1))
+    (hx : cdf μ x = t) (ht : t ∈ Ioo 0 1) : μ.quantile t = x :=
+  (congrArg μ.quantile hx).symm.trans (quantile_cdf μ hmono (by rw [hx]; exact ht))
 
 /-- The strict form of `MeasureTheory.Measure.quantile_le_iff`, for a law whose cumulative
 distribution function is continuous, and strictly increasing where its values lie strictly between
@@ -648,6 +684,20 @@ interval. -/
 theorem measurePreserving_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     MeasurePreserving μ.quantile (volume.restrict (Ioo (0 : ℝ) 1)) μ :=
   ⟨measurable_quantile μ, map_quantile_volume_Ioo μ⟩
+
+/-- The quantile function of a real probability law is integrable on the levels `Ioo 0 1` exactly
+when the law has a finite first moment. -/
+theorem integrableOn_quantile_iff (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+    IntegrableOn μ.quantile (Ioo 0 1) ↔ Integrable id μ :=
+  (measurePreserving_quantile μ).integrable_comp aestronglyMeasurable_id
+
+/-- **The mean as the average quantile.** By inverse transform sampling, the average over the levels
+`Ioo 0 1` of the quantile function of a real probability law is its mean. Both sides vanish when
+the law has no finite first moment. -/
+theorem setIntegral_quantile_eq_integral (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+    ∫ t in Ioo 0 1, μ.quantile t = ∫ x, x ∂μ := by
+  rw [← integral_map (f := fun x ↦ x) (measurable_quantile μ).aemeasurable
+    aestronglyMeasurable_id, map_quantile_volume_Ioo]
 
 /-- **The quantile of a monotone rearrangement.** The law of `f (U)`, for `U` uniform on the open
 unit interval and `f` monotone there, has quantile function `f` at almost every level: they can

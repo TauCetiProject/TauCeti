@@ -203,6 +203,43 @@ end ContinuousMap
 
 namespace TauCeti
 
+/-- The `Lp` class of a Fourier monomial has modulus one almost everywhere. -/
+theorem ae_norm_fourierLp_eq_one (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
+    ∀ᵐ x ∂haarAddCircle (T := T), ‖fourierLp (T := T) p n x‖ = 1 := by
+  filter_upwards [coeFn_fourierLp (T := T) p n] with x hx
+  rw [hx]
+  exact Circle.norm_coe _
+
+/-- Multiplying an `Lᵖ` function by the bounded Fourier monomial `e_n` multiplies it pointwise
+by `fourier n`, almost everywhere. -/
+theorem coeFn_fourierLp_smul {p : ℝ≥0∞} (n : ℤ)
+    (f : Lp ℂ p (haarAddCircle (T := T))) :
+    ⇑(fourierLp (T := T) ∞ n • f : Lp ℂ p (haarAddCircle (T := T))) =ᵐ[haarAddCircle]
+      fun x ↦ fourier n x * f x := by
+  filter_upwards [Lp.coeFn_lpSMul (r := p) (fourierLp (T := T) ∞ n) f,
+    coeFn_fourierLp (T := T) ∞ n] with x h hn
+  rw [h, Pi.smul_apply', hn, smul_eq_mul]
+
+/-- Multiplying the `L²` Fourier mode `e_n` by the bounded monomial `e_m` gives `e_(m+n)`. -/
+theorem fourierLp_smul_fourierBasis (m n : ℤ) :
+    (fourierLp (T := T) ∞ m • fourierBasis (T := T) n : Lp ℂ 2 (haarAddCircle (T := T))) =
+      fourierBasis (T := T) (m + n) := by
+  apply Lp.ext
+  filter_upwards [coeFn_fourierLp_smul m (fourierBasis (T := T) n),
+    coeFn_fourierLp (T := T) 2 n, coeFn_fourierLp (T := T) 2 (m + n)] with x hx hn hmn
+  rw [hx, coe_fourierBasis, hn, hmn, fourier_add]
+
+/-- Multiplying an `Lᵖ` function successively by the Fourier monomials `e_n` and `e_m` is
+multiplying it by `e_(m + n)`. -/
+theorem fourierLp_smul_fourierLp_smul {p : ℝ≥0∞} (m n : ℤ)
+    (f : Lp ℂ p (haarAddCircle (T := T))) :
+    (fourierLp (T := T) ∞ m • (fourierLp (T := T) ∞ n • f) :
+        Lp ℂ p (haarAddCircle (T := T))) = fourierLp (T := T) ∞ (m + n) • f := by
+  apply Lp.ext
+  filter_upwards [coeFn_fourierLp_smul m (fourierLp (T := T) ∞ n • f),
+    coeFn_fourierLp_smul n f, coeFn_fourierLp_smul (m + n) f] with x h₁ h₂ h₃
+  rw [h₁, h₂, h₃, fourier_add, mul_assoc]
+
 /-- Multiplying an `L²` Fourier mode `e_m` by an essentially bounded function `a` shifts the
 Fourier coefficients of `a` by `m`. -/
 theorem fourierCoeff_smul_fourierBasis (a : Lp ℂ ∞ (haarAddCircle (T := T))) (m n : ℤ) :

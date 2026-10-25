@@ -29,7 +29,8 @@ the universal property `TauCeti.WedgeSum.lift`.
 
 * `TauCeti.WedgeSum`: the wedge sum of a family of pointed spaces, with its wedge point
   `TauCeti.WedgeSum.base` and the inclusions `TauCeti.WedgeSum.incl` of the summands.
-* `TauCeti.WedgeSum.isOpen_iff`: a set is open exactly when its preimage in every summand is.
+* `TauCeti.WedgeSum.isOpen_iff`, `TauCeti.WedgeSum.isClosed_iff`: a set is open (closed)
+  exactly when its preimage in every summand is.
 * `TauCeti.WedgeSum.lift`: the universal property, with `TauCeti.WedgeSum.hom_ext`, and
   `TauCeti.WedgeSum.liftProd`, its form for maps out of `Z × ⋁ᵢ Xᵢ`, which builds homotopies out
   of a wedge sum.
@@ -179,6 +180,10 @@ theorem isQuotientMap_sumElim :
 theorem isOpen_iff {S : Set (WedgeSum x)} : IsOpen S ↔ ∀ i, IsOpen (incl x i ⁻¹' S) := by
   rw [← isQuotientMap_sumElim.isOpen_preimage, isOpen_sum_iff, isOpen_sigma_iff]
   exact and_iff_right (isOpen_discrete _)
+
+/-- A subset of the wedge sum is closed exactly when its preimage in every summand is closed. -/
+theorem isClosed_iff {S : Set (WedgeSum x)} : IsClosed S ↔ ∀ i, IsClosed (incl x i ⁻¹' S) := by
+  simp only [← isOpen_compl_iff, isOpen_iff, preimage_compl]
 
 section Lift
 

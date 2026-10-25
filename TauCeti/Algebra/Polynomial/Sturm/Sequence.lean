@@ -22,6 +22,18 @@ namespace Polynomial
 
 variable {K : Type*} [Field K] [DecidableEq K]
 
+/-- Mapping coefficients through a field homomorphism maps every entry of the signed
+Euclidean remainder sequence, including when either input is zero. -/
+@[simp]
+theorem sturmSeq_map {L : Type*} [Field L] [DecidableEq L]
+    (p q : K[X]) (f : K →+* L) :
+    sturmSeq (p.map f) (q.map f) = (sturmSeq p q).map (Polynomial.map f) := by
+  induction p, q using sturmSeq.induct with
+  | case1 q => simp
+  | case2 p q hp ih =>
+    rw [sturmSeq_cons (map_ne_zero hp), sturmSeq_cons hp, List.map_cons,
+      ← Polynomial.map_neg, ← map_mod, ih]
+
 /-- A nonzero-headed Sturm sequence has its second input as its second entry,
 with zero representing the missing entry of a singleton sequence. -/
 @[simp, grind =]

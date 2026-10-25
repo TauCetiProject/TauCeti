@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Function.Lp.OperatorLocalBound
+import TauCeti.MeasureTheory.Function.Lp.Operator.LocalBound
 
 /-!
 # Singular integral operators map bounded functions to functions of bounded mean oscillation

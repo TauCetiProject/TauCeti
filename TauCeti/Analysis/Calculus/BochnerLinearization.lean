@@ -13,6 +13,9 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import Mathlib.Topology.OpenPartialHomeomorph.IsImage
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.RepresentationTheory.InvariantForm.InnerProduct
+public import TauCeti.Topology.Algebra.GroupAction.GermKernel
+import Mathlib.Analysis.Convex.PathConnected
 import TauCeti.Algebra.BigOperators.Finset.Average
 import TauCeti.Topology.OpenPartialHomeomorph.MulAction
 import TauCeti.RepresentationTheory.Invariants
@@ -70,9 +73,13 @@ identity.
   a finite group action whose conjugated maps have strict derivatives `σ g` for a representation
   `σ`, there is a chart with `G`-invariant domain, centred at the point, with derivative the
   identity, in which `g` acts as `σ g`.
-* `OpenPartialHomeomorph.map_eq_one_iff_eventually_smul_eq`: the derivative representation
-  detects the ineffective kernel. An element of `G` acts as the identity near the fixed point
-  exactly when its derivative there is the identity.
+* `OpenPartialHomeomorph.map_eq_one_iff_mem_germKernel`: the derivative representation
+  detects the ineffective kernel. An element of `G` lies in the germ kernel at the fixed point,
+  that is, acts as the identity near it, exactly when its derivative there is the identity.
+* `OpenPartialHomeomorph.exists_target_eq_sumOfConjugatesInnerSublevel`: over `ℝ`, in finite
+  dimensions, a chart in which `G` acts linearly restricts, inside any neighbourhood of a point it
+  sends to `0`, to an equivariant chart onto an invariant ball of an averaged inner product
+  (`Representation.sumOfConjugatesInnerSublevel`), with invariant preconnected domain.
 
 ## References
 
@@ -450,12 +457,13 @@ theorem exists_equivariant_chart (χ : OpenPartialHomeomorph X E) {x : X} (hxχ 
 
 /-- **The derivative representation detects the ineffective kernel.** In the setting of
 `OpenPartialHomeomorph.exists_equivariant_chart`, an element of `G` acts as the identity near the
-fixed point `x` exactly when its derivative `σ g` at `x`, in the coordinates of `χ`, is the
-identity. -/
-theorem map_eq_one_iff_eventually_smul_eq (χ : OpenPartialHomeomorph X E) {x : X}
+fixed point `x`, that is, lies in the germ kernel `TauCeti.MulAction.germKernel G x`, exactly when
+its derivative `σ g` at `x`, in the coordinates of `χ`, is the identity. -/
+theorem map_eq_one_iff_mem_germKernel (χ : OpenPartialHomeomorph X E) {x : X}
     (hxχ : x ∈ χ.source) (hx : ∀ g : G, g • x = x) (σ : ContRepresentation 𝕜 G E)
     (hσ : ∀ g : G, HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm) (σ g) (χ x)) (g : G) :
-    σ g = 1 ↔ ∀ᶠ y in 𝓝 x, g • y = y := by
+    σ g = 1 ↔ g ∈ TauCeti.MulAction.germKernel G x := by
+  rw [TauCeti.MulAction.mem_germKernel]
   refine ⟨fun h => ?_, fun h => ?_⟩
   · -- the equivariant chart turns `g • y = y` into `σ g (e y) = e y`
     obtain ⟨e, hxe, -, -, he, -⟩ := χ.exists_equivariant_chart hxχ hx σ hσ
@@ -471,5 +479,58 @@ theorem map_eq_one_iff_eventually_smul_eq (χ : OpenPartialHomeomorph X E) {x : 
     exact (hσ g).hasFDerivAt.unique ((hasFDerivAt_id _).congr_of_eventuallyEq hev)
 
 end Linearization
+
+section InvariantBall
+
+variable {G X E : Type*} [Group G] [Fintype G] [TopologicalSpace X] [MulAction G X]
+  [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **Shrinking an equivariant chart to an invariant ball.** Let `e` be a chart centred at `x`,
+with `G`-invariant domain, in which `G` acts linearly through a representation `σ` on a
+finite-dimensional real inner product space. Inside any neighbourhood `s` of `x`, the chart `e`
+restricts to a chart `e'` onto a positive strict sublevel set of the orbit-sum inner product of
+`σ`, an open convex `σ`-invariant neighbourhood of `0`. The restriction `e'` has the same
+underlying map as `e`, and its domain is `G`-invariant and preconnected. -/
+theorem exists_target_eq_sumOfConjugatesInnerSublevel (e : OpenPartialHomeomorph X E)
+    (σ : Representation ℝ G E) {x : X} (hxe : x ∈ e.source) (hex : e x = 0)
+    (he : ∀ g : G, ∀ y ∈ e.source, g • y ∈ e.source ∧ e (g • y) = σ g (e y))
+    {s : Set X} (hs : s ∈ 𝓝 x) :
+    ∃ (e' : OpenPartialHomeomorph X E) (c : ℝ), 0 < c ∧ x ∈ e'.source ∧ ⇑e' = ⇑e ∧
+      e'.source ⊆ e.source ∩ s ∧ e'.target = σ.sumOfConjugatesInnerSublevel c ∧
+      IsPreconnected e'.source ∧
+      ∀ g : G, ∀ y ∈ e'.source, g • y ∈ e'.source ∧ e' (g • y) = σ g (e' y) := by
+  -- Choose an invariant sublevel set `W` among the coordinates of points of `interior s`.
+  have hV : IsOpen (e.target ∩ e.symm ⁻¹' interior s) :=
+    e.isOpen_inter_preimage_symm isOpen_interior
+  have h0 : (0 : E) ∈ e.target ∩ e.symm ⁻¹' interior s := by
+    rw [← hex, mem_inter_iff, mem_preimage, e.left_inv hxe]
+    exact ⟨e.map_source hxe, mem_interior_iff_mem_nhds.2 hs⟩
+  obtain ⟨c, hc, hcV⟩ := σ.exists_pos_sumOfConjugatesInnerSublevel_subset hV h0
+  set W := σ.sumOfConjugatesInnerSublevel c
+  have hW : IsOpen W := σ.isOpen_sumOfConjugatesInnerSublevel c
+  -- Restrict `e` to the points with coordinates in `W`.
+  set e' := (e.symm.restrOpen W hW).symm
+  have hcoe : ⇑e' = ⇑e := rfl
+  have hmem {y : X} : y ∈ e'.source ↔ y ∈ e.source ∧ e y ∈ W := by
+    simp [e']
+  have htarget : e'.target = W := by
+    have hWt : W ⊆ e.target := fun w hw => (hcV hw).1
+    simpa [e'] using hWt
+  refine ⟨e', c, hc, hmem.2 ⟨hxe, hex ▸ ?_⟩, hcoe, fun y hy => ⟨(hmem.1 hy).1, ?_⟩, htarget,
+    ?_, fun g y hy => ?_⟩
+  · simpa [W] using hc
+  · have hyW := (hcV (hmem.1 hy).2).2
+    rw [mem_preimage, e.left_inv (hmem.1 hy).1] at hyW
+    exact interior_subset hyW
+  · rw [← e'.symm_image_target_eq_source, htarget]
+    exact (σ.convex_sumOfConjugatesInnerSublevel c).isPreconnected.image _
+      (e'.continuousOn_symm.mono htarget.ge)
+  · obtain ⟨hgy, hgye⟩ := he g y (hmem.1 hy).1
+    rw [hcoe, hgye]
+    refine ⟨hmem.2 ⟨hgy, ?_⟩, rfl⟩
+    rw [hgye, ← mem_preimage, σ.preimage_sumOfConjugatesInnerSublevel]
+    exact (hmem.1 hy).2
+
+end InvariantBall
 
 end OpenPartialHomeomorph

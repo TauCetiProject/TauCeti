@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Invariants
+public import Mathlib.RepresentationTheory.Subrepresentation
 public import Mathlib.RingTheory.Invariant.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
@@ -20,10 +21,17 @@ polynomial functions on `V`, the starting point of the invariant theory of finit
 
 The induced action preserves the grading of `Sym M` by homogeneous degree. Its fixed points form a
 subalgebra, the *invariant subalgebra* `Sym(M)^G`, which is homogeneous: every homogeneous
-component of an invariant is again invariant. In degree one the invariants are exactly the
-invariant vectors of `M`. For a finite group `G`, `Sym M` is integral over its invariants: an
-element `p` is a root of the monic polynomial `∏ g, (X - g • p)`, whose coefficients are
-invariant (`Algebra.IsInvariant.isIntegral`).
+component of an invariant is again invariant. Restricting the action to a homogeneous
+component `Symⁿ M` gives a representation whose invariants are the degree-`n` part of
+`Sym(M)^G`; these are the pieces whose dimensions form the Hilbert series of the invariant
+subalgebra. In degree one the invariants are exactly the invariant vectors of `M`. For a finite
+group `G`, `Sym M` is integral over its invariants: an element `p` is a root of the monic
+polynomial `∏ g, (X - g • p)`, whose coefficients are invariant
+(`Algebra.IsInvariant.isIntegral`).
+
+Each `ρ g` fixes the invariant subalgebra pointwise, so it is linear over it; this gives the
+representation `Representation.symmetricAlgebraOverInvariants` of `G` on `Sym M` as a module over
+`Sym(M)^G`, whose invariants are `Sym(M)^G` itself.
 
 Since the representation `ρ` is data that instance search cannot infer, the induced action is
 bundled as `Representation.symmetricAlgebraMulSemiringAction` for local use, rather than
@@ -36,6 +44,10 @@ Mathlib's invariant extensions `Algebra.IsInvariant`.
 * `Representation.symmetricAlgebraMulSemiringAction`: the same action, bundled as an action by
   semiring endomorphisms.
 * `Representation.symmetricAlgebraInvariants`: the subalgebra of `Sym M` fixed by every `ρ g`.
+* `Representation.symmetricAlgebraOverInvariants`: the induced action on `Sym M`, as a
+  representation by linear maps over the invariant subalgebra.
+* `Representation.symmetricAlgebraHomogeneous`: the representation of `G` on the degree-`n`
+  homogeneous component `Symⁿ M`.
 
 ## Main results
 
@@ -47,6 +59,13 @@ Mathlib's invariant extensions `Algebra.IsInvariant`.
 * `Representation.toSubmodule_symmetricAlgebraInvariants`: as a submodule, it is the module of
   invariants of the induced representation.
 * `Representation.ι_mem_symmetricAlgebraInvariants_iff`: its degree-one part is `M^G`.
+* `Representation.mem_invariants_symmetricAlgebraOverInvariants_iff`: the invariants of the
+  action over the invariant subalgebra are the invariant subalgebra.
+* `Representation.symmetricAlgebraHomogeneous_apply`: on `Symⁿ M`, `g` acts by the map
+  `homogeneousSubmoduleMapₛₗ (ρ g) n` induced on degree `n`.
+* `Representation.map_subtype_invariants_symmetricAlgebraHomogeneous` and
+  `Representation.finrank_invariants_symmetricAlgebraHomogeneous`: the invariants of `Symⁿ M` are
+  the degree-`n` part of the invariant subalgebra.
 * `Representation.symmetricAlgebraInvariants_eq_fixedPoints` and
   `Representation.isInvariant_symmetricAlgebraInvariants`: it is the fixed subalgebra of the
   bundled action, and `Sym M` is an invariant extension of it in the sense of
@@ -108,6 +127,28 @@ theorem symmetricAlgebra_mem_homogeneousSubmodule (g : G) {n : ℕ} {p : Symmetr
     (hp : p ∈ homogeneousSubmodule R M n) :
     ρ.symmetricAlgebra g p ∈ homogeneousSubmodule R M n :=
   map_mem_homogeneousSubmodule (ρ g) hp
+
+/-- The representation of `G` on the degree-`n` homogeneous component `Symⁿ M` of the symmetric
+algebra: the restriction of `Representation.symmetricAlgebra` to this subrepresentation. -/
+noncomputable def symmetricAlgebraHomogeneous (n : ℕ) :
+    Representation R G (homogeneousSubmodule R M n) :=
+  Subrepresentation.toRepresentation
+    ⟨homogeneousSubmodule R M n, fun g _ ↦ ρ.symmetricAlgebra_mem_homogeneousSubmodule g⟩
+
+/-- The action on `Symⁿ M` is computed in the symmetric algebra by the induced action. -/
+@[simp]
+theorem coe_symmetricAlgebraHomogeneous_apply (n : ℕ) (g : G)
+    (p : homogeneousSubmodule R M n) :
+    (ρ.symmetricAlgebraHomogeneous n g p : SymmetricAlgebra R M) = ρ.symmetricAlgebra g p :=
+  (rfl)
+
+/-- The action of `g` on `Symⁿ M` is the map `homogeneousSubmoduleMapₛₗ (ρ g) n` induced by
+`ρ g` on degree `n`. -/
+theorem symmetricAlgebraHomogeneous_apply (n : ℕ) (g : G) :
+    ρ.symmetricAlgebraHomogeneous n g = homogeneousSubmoduleMapₛₗ (ρ g) n :=
+  LinearMap.ext fun p ↦ Subtype.ext <| by
+    rw [coe_symmetricAlgebraHomogeneous_apply, coe_homogeneousSubmoduleMapₛₗ_apply,
+      SymmetricAlgebra.mapₛₗ_eq_map, symmetricAlgebra_apply, AlgHom.coe_toRingHom]
 
 /-- The induced action commutes with taking homogeneous components. -/
 theorem decompose_symmetricAlgebra (g : G) (p : SymmetricAlgebra R M) (n : ℕ) :
@@ -180,6 +221,28 @@ theorem ι_mem_symmetricAlgebraInvariants_iff (m : M) :
   simp only [mem_symmetricAlgebraInvariants, symmetricAlgebra_ι,
     (ι_injective R M).eq_iff]
 
+/-- The action of `G` on `Sym M` induced by `ρ`, as a representation by linear maps over the
+invariant subalgebra `Sym(M)^G`: each `ρ g` fixes the invariants, so it is linear over them. Its
+underlying maps are those of `Representation.symmetricAlgebra`. -/
+noncomputable def symmetricAlgebraOverInvariants :
+    Representation ρ.symmetricAlgebraInvariants G (SymmetricAlgebra R M) where
+  toFun g :=
+    { toFun := ρ.symmetricAlgebra g
+      map_add' := map_add _
+      map_smul' a p := by
+        -- `g` fixes the invariant factor `a`.
+        have ha := (ρ.mem_symmetricAlgebraInvariants a).1 a.2 g
+        simp only [symmetricAlgebra_apply] at ha ⊢
+        simp only [Subalgebra.smul_def, smul_eq_mul, map_mul, ha, RingHom.id_apply] }
+  map_one' := LinearMap.ext fun p ↦ by simp
+  map_mul' g h := LinearMap.ext fun p ↦ by simp
+
+/-- Over the invariant subalgebra, `g` acts on `Sym M` by `Representation.symmetricAlgebra`. -/
+@[simp]
+theorem symmetricAlgebraOverInvariants_apply (g : G) (p : SymmetricAlgebra R M) :
+    ρ.symmetricAlgebraOverInvariants g p = ρ.symmetricAlgebra g p :=
+  (rfl)
+
 end CommSemiring
 
 section Group
@@ -211,6 +274,41 @@ theorem toSubmodule_symmetricAlgebraInvariants :
     Subalgebra.toSubmodule ρ.symmetricAlgebraInvariants = ρ.symmetricAlgebra.invariants :=
   Submodule.ext fun p ↦
     (ρ.mem_symmetricAlgebraInvariants p).trans (ρ.symmetricAlgebra.mem_invariants p).symm
+
+/-- An element of `Symⁿ M` is an invariant of the degree-`n` representation exactly when it lies
+in the invariant subalgebra. -/
+theorem mem_invariants_symmetricAlgebraHomogeneous_iff {n : ℕ} (p : homogeneousSubmodule R M n) :
+    p ∈ (ρ.symmetricAlgebraHomogeneous n).invariants ↔
+      (p : SymmetricAlgebra R M) ∈ ρ.symmetricAlgebraInvariants := by
+  simp only [mem_invariants, mem_symmetricAlgebraInvariants, Subtype.ext_iff,
+    coe_symmetricAlgebraHomogeneous_apply]
+
+/-- The invariants of the action over the invariant subalgebra are the invariant subalgebra. -/
+theorem mem_invariants_symmetricAlgebraOverInvariants_iff (p : SymmetricAlgebra R M) :
+    p ∈ ρ.symmetricAlgebraOverInvariants.invariants ↔ p ∈ ρ.symmetricAlgebraInvariants := by
+  simp [mem_invariants]
+
+/-- The invariants of the degree-`n` representation are the degree-`n` part of the invariant
+subalgebra. -/
+theorem map_subtype_invariants_symmetricAlgebraHomogeneous (n : ℕ) :
+    (ρ.symmetricAlgebraHomogeneous n).invariants.map (homogeneousSubmodule R M n).subtype =
+      Subalgebra.toSubmodule ρ.symmetricAlgebraInvariants ⊓ homogeneousSubmodule R M n := by
+  ext p
+  simp only [Submodule.mem_map, Submodule.coe_subtype, Submodule.mem_inf,
+    Subalgebra.mem_toSubmodule]
+  constructor
+  · rintro ⟨q, hq, rfl⟩
+    exact ⟨(ρ.mem_invariants_symmetricAlgebraHomogeneous_iff q).1 hq, q.2⟩
+  · rintro ⟨hp, hpn⟩
+    exact ⟨⟨p, hpn⟩, (ρ.mem_invariants_symmetricAlgebraHomogeneous_iff ⟨p, hpn⟩).2 hp, rfl⟩
+
+/-- The invariants of the degree-`n` representation have the dimension of the degree-`n` part of
+the invariant subalgebra. -/
+theorem finrank_invariants_symmetricAlgebraHomogeneous (n : ℕ) :
+    Module.finrank R (ρ.symmetricAlgebraHomogeneous n).invariants =
+      Module.finrank R
+        ↥(Subalgebra.toSubmodule ρ.symmetricAlgebraInvariants ⊓ homogeneousSubmodule R M n) := by
+  rw [← map_subtype_invariants_symmetricAlgebraHomogeneous, Submodule.finrank_map_subtype_eq]
 
 /-- **Integrality over the invariants.** For a finite group, the symmetric algebra is integral
 over the invariant subalgebra: each `p` is a root of the monic orbit polynomial

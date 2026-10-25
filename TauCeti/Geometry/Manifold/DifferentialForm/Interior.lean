@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
+public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 
@@ -18,7 +19,6 @@ Additivity in the field and the form requires `ContinuousAdd` on each fibre, sca
 `ContinuousConstSMul ℝ`, and anticommutation requires `IsTopologicalAddGroup`.
 Pullback commutes with insertion of related fields, also within arbitrary sets.
 These operations provide the algebraic input for Cartan's calculus and contraction of volume forms.
-
 We use Mathlib's `AlternatingMap.curryLeft` and retain continuity of the remaining variables.
 This works for arbitrary topological coefficient fibres without choosing fibre norms. For fixed
 normed coefficients on the model space it agrees with `ContinuousAlternatingMap.curryLeft`, and
@@ -57,6 +57,14 @@ def bundleInterior (X : (x : M) → TangentSpace I x)
 theorem bundleInterior_apply (X : (x : M) → TangentSpace I x)
     (ω : RoughBundleForm I M V (k + 1)) (x : M) (v : Fin k → TangentSpace I x) :
     bundleInterior X ω x v = ω x (Matrix.vecCons (X x) v) := (rfl)
+
+/-- At a point, insertion is the topological continuous currying operation. -/
+theorem bundleInterior_apply_eq_curryLeftTopological
+    [∀ x, ContinuousAdd (V x)] [∀ x, ContinuousConstSMul ℝ (V x)]
+    (X : (x : M) → TangentSpace I x) (ω : RoughBundleForm I M V (k + 1)) (x : M) :
+    bundleInterior X ω x = (ω x).curryLeftTopological (X x) := by
+  ext v
+  simp only [bundleInterior_apply, ContinuousAlternatingMap.curryLeftTopological_apply_apply]
 
 /-- Insertion of the zero field vanishes. -/
 @[simp]
@@ -185,6 +193,10 @@ variable {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
 def RoughForm.interior (X : (x : M) → TangentSpace I x)
     (ω : RoughForm I M F (k + 1)) : RoughForm I M F k :=
   bundleInterior X ω
+
+/-- The fixed-coefficient interior product is the corresponding bundle-valued insertion. -/
+theorem RoughForm.interior_def (X : (x : M) → TangentSpace I x)
+    (ω : RoughForm I M F (k + 1)) : ω.interior X = bundleInterior X ω := (rfl)
 
 /-- Evaluation of the interior product is insertion into the first slot. -/
 @[simp]

@@ -5,9 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
+public import Mathlib.RingTheory.PowerSeries.Restricted
+public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
+public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
+import TauCeti.Algebra.Polynomial.Taylor
 
 /-!
 # Evaluation of power series as infinite sums
@@ -20,9 +25,15 @@ value `0` when the sum does not converge. The algebra `A` need not be commutativ
 Unlike Mathlib's `PowerSeries.aeval`, which evaluates every power series at a topologically
 nilpotent point of a complete linearly topologized algebra, `evalAt` makes sense at every point;
 it is meaningful for series whose coefficients decay fast enough, such as entire series over a
-normed ring (`TauCeti.RingTheory.PowerSeries.Entire.Eval`). This file records the values of
+normed ring (`TauCeti.RingTheory.PowerSeries.Entire.Eval`). This file first records the values of
 `evalAt` that need no convergence hypothesis. In an ultrametric normed algebra, `‖f(b)‖` is
 bounded by the Gauss norm of `f` at every radius `r ≥ ‖b‖` at which that Gauss norm is defined.
+
+In a complete ultrametric normed algebra, a series restricted at a radius `c` can be evaluated at
+every `b` with `‖b‖ ≤ c`: the terms `aₙ • bⁿ` tend to zero, so they are summable, and the Cauchy
+product formula makes evaluation at `b` a ring homomorphism on the restricted series. The algebra
+need not be commutative, so this evaluates restricted series at bounded operators as well as at
+points of complete normed field extensions.
 
 A power series `F = ∑ Fₙ Xⁿ` whose coefficients lie in a ring `A` acted on by `R`, such as a series
 of operators, is instead evaluated at a scalar `a : R`: `PowerSeries.evalScalar F a` is the
@@ -40,10 +51,18 @@ coefficient rings here may have nilpotents.
 ## Main results
 
 * `PowerSeries.evalAt_coe`: on polynomials, `evalAt` is `Polynomial.aeval`.
+* `PowerSeries.evalAt_hasseDeriv_coe`: the value at `a` of a Hasse derivative of a polynomial is a
+  coefficient of its Taylor expansion at `a`.
+* `PowerSeries.evalAt_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - a) ^ m` at `a`.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
 * `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
 * `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
+* `PowerSeries.IsRestricted.hasSum_evalAt`, `PowerSeries.IsRestricted.evalAt_add` and
+  `PowerSeries.IsRestricted.evalAt_mul`: a series restricted at `c` converges at every `b` with
+  `‖b‖ ≤ c` in a complete ultrametric algebra, additively and multiplicatively in the series.
+* `PowerSeries.IsRestricted.evalAtHom`: evaluation at such `b` as a ring homomorphism on the
+  restricted series.
 * `PowerSeries.evalScalar_monomial`, `PowerSeries.evalScalar_at_zero`,
   `PowerSeries.evalScalar_add`: evaluation at a scalar of monomials, at the scalar `0`, and of
   sums.
@@ -81,6 +100,12 @@ theorem evalAt_coe (p : Polynomial R) (b : A) : (p : R⟦X⟧).evalAt b = Polyno
   · intro n hn
     rw [Finset.mem_range, not_lt] at hn
     simp [Polynomial.coeff_eq_zero_of_natDegree_lt hn]
+
+/-- The value at `a` of a Hasse derivative of a polynomial is a coefficient of its Taylor
+expansion at `a`. -/
+theorem evalAt_hasseDeriv_coe [TopologicalSpace R] {a : R} (p : Polynomial R) (j : ℕ) :
+    (hasseDeriv j (p : R⟦X⟧)).evalAt a = (Polynomial.taylor a p).coeff j := by
+  rw [hasseDeriv_coe, evalAt_coe, Polynomial.coe_aeval_eq_eval, Polynomial.taylor_coeff]
 
 /-- The zero series evaluates to zero. -/
 @[simp]
@@ -150,6 +175,15 @@ variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] [TopologicalSpace A]
 @[simp]
 theorem evalAt_neg (f : R⟦X⟧) (b : A) : (-f).evalAt b = -f.evalAt b := by
   simp [evalAt_def, neg_smul, tsum_neg]
+
+/-- The Hasse derivative of order `i` of `(X - a) ^ m` is `1` at `a` if `i = m`, and `0`
+otherwise. -/
+@[simp]
+theorem evalAt_hasseDeriv_X_sub_C_pow [TopologicalSpace R] (a : R) (i m : ℕ) :
+    (hasseDeriv i ((X - C a) ^ m : R⟦X⟧)).evalAt a = if i = m then 1 else 0 := by
+  have hP : ((X - C a) ^ m : R⟦X⟧) = ((Polynomial.X - Polynomial.C a) ^ m : Polynomial R) := by
+    simp
+  rw [hP, evalAt_hasseDeriv_coe, Polynomial.taylor_coeff, Polynomial.eval_hasseDeriv_X_sub_C_pow]
 
 end Ring
 
@@ -274,5 +308,77 @@ theorem norm_evalScalar_le {R A : Type*} [SeminormedRing R] [NormedRing A] [Modu
       (mul_le_mul_of_nonneg_right (norm_pow_le' a n.succ_pos) (norm_nonneg _)).trans (h _)
 
 end Normed
+
+section Restricted
+
+open Filter
+open scoped Topology
+
+variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
+  {c : ℝ} {f g : R⟦X⟧} {b : A}
+
+/-- At a point `b` with `‖b‖ ≤ c`, the terms `aₙ • bⁿ` of a series restricted at the radius `c`
+tend to zero. -/
+theorem IsRestricted.tendsto_smul_pow (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
+    Tendsto (fun n ↦ coeff n f • b ^ n) cofinite (𝓝 0) := by
+  refine squeeze_zero_norm' ?_ ((isRestricted_iff c f).mp hf)
+  -- `‖bⁿ‖ ≤ ‖b‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is set aside
+  filter_upwards [(Set.finite_singleton 0).compl_mem_cofinite] with n hn
+  exact (norm_smul_le _ _).trans <| mul_le_mul_of_nonneg_left
+    ((norm_pow_le' b (Nat.pos_of_ne_zero (Set.mem_compl_singleton_iff.mp hn))).trans
+      (pow_le_pow_left₀ (norm_nonneg b) hb n)) (norm_nonneg _)
+
+variable [IsUltrametricDist A] [CompleteSpace A]
+
+/-- **Evaluation of restricted series.** In a complete ultrametric normed algebra, for a series
+`f = ∑ aₙ Xⁿ` restricted at the radius `c` and a point `b` with `‖b‖ ≤ c`, the series
+`∑ aₙ • bⁿ` converges to `f(b)`. -/
+theorem IsRestricted.hasSum_evalAt (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
+    HasSum (fun n ↦ coeff n f • b ^ n) (f.evalAt b) := by
+  rw [evalAt_def]
+  exact (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+    (hf.tendsto_smul_pow hb)).hasSum
+
+/-- Evaluation at a point of norm at most `c` is additive on series restricted at `c`. -/
+theorem IsRestricted.evalAt_add (hf : f.IsRestricted c) (hg : g.IsRestricted c) (hb : ‖b‖ ≤ c) :
+    (f + g).evalAt b = f.evalAt b + g.evalAt b := by
+  rw [evalAt_def]
+  exact HasSum.tsum_eq
+    (by simpa [add_smul] using (hf.hasSum_evalAt hb).add (hg.hasSum_evalAt hb))
+
+/-- Evaluation at a point of norm at most `c` is multiplicative on series restricted at `c`: this
+is the Cauchy product formula, which holds in a complete ultrametric ring as soon as the terms of
+both series tend to zero. -/
+theorem IsRestricted.evalAt_mul (hf : f.IsRestricted c) (hg : g.IsRestricted c) (hb : ‖b‖ ≤ c) :
+    (f * g).evalAt b = f.evalAt b * g.evalAt b := by
+  rw [evalAt_def, evalAt_def, evalAt_def,
+    (hf.hasSum_evalAt hb).summable.tsum_mul_tsum_eq_tsum_sum_antidiagonal
+      (hg.hasSum_evalAt hb).summable (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+        (tendsto_mul_cofinite_nhds_zero (hf.tendsto_smul_pow hb) (hg.tendsto_smul_pow hb)))]
+  refine tsum_congr fun n ↦ ?_
+  rw [coeff_mul, Finset.sum_smul]
+  refine Finset.sum_congr rfl fun p hp ↦ ?_
+  rw [← Finset.mem_antidiagonal.mp hp, pow_add, smul_mul_smul_comm]
+
+variable [IsUltrametricDist R]
+
+variable (R) in
+/-- **Evaluation of restricted series at `b`** as a ring homomorphism from the series restricted at
+`c` to a complete ultrametric normed algebra, for a point `b` with `‖b‖ ≤ c`. -/
+noncomputable def IsRestricted.evalAtHom (hb : ‖b‖ ≤ c) :
+    IsRestricted.subring (R := R) c →+* A where
+  toFun f := (f : R⟦X⟧).evalAt b
+  map_one' := evalAt_one b
+  map_mul' f g := IsRestricted.evalAt_mul f.2 g.2 hb
+  map_zero' := evalAt_zero b
+  map_add' f g := IsRestricted.evalAt_add f.2 g.2 hb
+
+/-- The evaluation homomorphism at `b` sends a restricted series `f` to `f(b)`. -/
+@[simp]
+theorem IsRestricted.evalAtHom_apply (hb : ‖b‖ ≤ c) (f : IsRestricted.subring (R := R) c) :
+    IsRestricted.evalAtHom R hb f = (f : R⟦X⟧).evalAt b :=
+  (rfl)
+
+end Restricted
 
 end PowerSeries
