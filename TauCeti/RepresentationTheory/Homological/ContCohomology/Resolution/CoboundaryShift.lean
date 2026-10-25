@@ -171,14 +171,16 @@ private theorem isHomogeneous_shift :
       X.gradedResolutionPiece 0 := by
   have hD := X.isHomogeneous_gradedResolutionDifferential
   have hh := isHomogeneous_shiftHomotopyLinear hX m f c
-  refine TauCeti.LinearMap.isHomogeneous_def.2 fun p v hv ↦ ?_
-  have h₁ := hD.map_mem (hh.map_mem hv)
-  have h₂ := hh.map_mem (hD.map_mem hv)
-  rw [neg_add_cancel_right] at h₁
-  rw [add_neg_cancel_right] at h₂
-  rw [add_zero]
-  convert add_mem (add_mem hv h₁) h₂ using 1
-  exact shift_hom_apply hX m f c v
+  have h₁ := neg_add_cancel (1 : ℤ) ▸ hD.comp hh
+  have h₂ := add_neg_cancel (1 : ℤ) ▸ hh.comp hD
+  -- The ascription views the underlying map on the direct sum, the carrier of the discrete total
+  -- resolution (`TopRep.gradedResolutionTopRep_V`).
+  have e : ((shift hX m f c).hom.toLinearMap :
+      X.gradedResolutionModule →ₗ[R] X.gradedResolutionModule) =
+      LinearMap.id + X.gradedResolutionDifferential ∘ₗ shiftHomotopyLinear hX m f c +
+        shiftHomotopyLinear hX m f c ∘ₗ X.gradedResolutionDifferential :=
+    LinearMap.ext (shift_hom_apply hX m f c)
+  exact e ▸ ((TauCeti.LinearMap.isHomogeneous_id _).add h₁).add h₂
 
 end Homotopy
 
