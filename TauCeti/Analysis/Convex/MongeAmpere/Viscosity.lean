@@ -105,7 +105,13 @@ structure IsMongeAmpereViscositySupersolution (Ω : Set E) (u f : E → ℝ) : P
     (fderiv ℝ (∇ φ) x₀).det ≤ f x₀
 
 /-- `u` is a **viscosity solution** of the Monge–Ampère equation `det D²u = f` on `Ω`: it is both a
-viscosity subsolution and a viscosity supersolution. -/
+viscosity subsolution and a viscosity supersolution.
+
+Convexity and continuity of `u` are not part of the predicate. The usual notion, a convex
+viscosity solution, is this predicate together with `ConvexOn ℝ Ω u`, which the results below
+assume. Without it the test-function conditions can hold vacuously: no convex test function
+touches a strictly concave `u` from below, so `u x = 1 - ‖x‖ ^ 2` passes the supersolution test
+for every `f`. -/
 structure IsMongeAmpereViscositySolution (Ω : Set E) (u f : E → ℝ) : Prop
     extends IsMongeAmpereViscositySubsolution Ω u f, IsMongeAmpereViscositySupersolution Ω u f
 
