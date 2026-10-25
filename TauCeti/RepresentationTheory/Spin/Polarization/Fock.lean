@@ -161,6 +161,7 @@ theorem fockAction_ι_one_tmul_mul_self (v : V) :
     Complex.real_smul, mul_one]
 
 /-- In the normalized Fock action a vector of `W` acts by `√2` times exterior multiplication. -/
+@[simp]
 theorem fockAction_ι_coe_W (x : (J.spinPolarizationData hQJ hQ).W) :
     J.fockAction hQJ hQ (ι (Q.baseChange ℂ) (x : ℂ ⊗[ℝ] V)) =
       (Real.sqrt 2 : ℂ) • (J.spinPolarizationData hQJ hQ).wedge x := by
