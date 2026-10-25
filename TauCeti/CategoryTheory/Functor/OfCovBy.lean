@@ -103,7 +103,7 @@ end DecidableEq
 /-- The map `X S ⟶ X T` along `S ⊆ T` obtained by composing the edge maps `f` along a maximal
 chain of covers from `S` to `T`. When the square faces commute, it does not depend on the
 chain, and it is the action of `Functor.ofCovBy` on morphisms. -/
-noncomputable def map {S T : Finset ι} (h : S ⊆ T) : X S ⟶ X T :=
+private noncomputable def map {S T : Finset ι} (h : S ⊆ T) : X S ⟶ X T :=
   open Classical in chain f #(T \ S) S T h rfl
 
 section DecidableEq
@@ -119,7 +119,7 @@ private theorem map_eq_chain {k : ℕ} {S T : Finset ι} (h : S ⊆ T) (hk : #(T
 
 omit [DecidableEq ι] in
 /-- The map along `S ⊆ S` is the identity. -/
-theorem map_id (S : Finset ι) : map f (Subset.refl S) = 𝟙 (X S) := by
+private theorem map_id (S : Finset ι) : map f (Subset.refl S) = 𝟙 (X S) := by
   classical
   rw [map_eq_chain f _ (by simp : #(S \ S) = 0), chain, eqToHom_refl]
 
@@ -168,7 +168,7 @@ private theorem map_eq_comp {S T : Finset ι} (h : S ⊆ T) {a : ι} (ha : a ∈
 
 omit [DecidableEq ι] in
 /-- The maps along `S ⊆ T` and `T ⊆ U` compose to the map along `S ⊆ U`. -/
-theorem map_comp {S T U : Finset ι} (h₁ : S ⊆ T) (h₂ : T ⊆ U) :
+private theorem map_comp {S T U : Finset ι} (h₁ : S ⊆ T) (h₂ : T ⊆ U) :
     map f (h₁.trans h₂) = map f h₁ ≫ map f h₂ := by
   classical
   induction S, h₁ using subset_induction with
@@ -188,7 +188,6 @@ variable {X : Finset ι → C} (f : ∀ ⦃S T : Finset ι⦄, S ⋖ T → (X S 
 /-- The functor `Finset ι ⥤ C` with vertices `X` and edge maps `f` along the covers `S ⋖ T`,
 given that the two routes around every square face `S ⋖ T ⋖ U`, `S ⋖ T' ⋖ U` agree. The map
 along `S ⊆ T` is the composite of the edge maps along any maximal chain from `S` to `T`. -/
-@[expose]
 noncomputable def ofCovBy : Finset ι ⥤ C where
   obj := X
   map φ := OfCovBy.map f (leOfHom φ)
@@ -198,18 +197,22 @@ noncomputable def ofCovBy : Finset ι ⥤ C where
 /-- The vertices of `Functor.ofCovBy f comm` are those prescribed by `X`. -/
 @[simp]
 theorem ofCovBy_obj (S : Finset ι) : (ofCovBy f comm).obj S = X S :=
-  rfl
+  (rfl)
 
 /-- The edge maps of `Functor.ofCovBy f comm` are those prescribed by `f`. -/
 theorem ofCovBy_map_of_covBy {S T : Finset ι} (h : S ⋖ T) (φ : S ⟶ T) :
-    (ofCovBy f comm).map φ = f h := by
+    (ofCovBy f comm).map φ =
+      eqToHom (ofCovBy_obj f comm S) ≫ f h ≫ eqToHom (ofCovBy_obj f comm T).symm := by
   classical
-  exact OfCovBy.map_of_covBy f h
+  change OfCovBy.map f h.le = eqToHom rfl ≫ f h ≫ eqToHom rfl
+  rw [eqToHom_refl, eqToHom_refl, id_comp, comp_id, OfCovBy.map_of_covBy f h]
 
 /-- The edge map of `Functor.ofCovBy f comm` from `S` to `S ∪ {a}`. -/
 @[simp]
 theorem ofCovBy_map_insert [DecidableEq ι] {S : Finset ι} {a : ι} (ha : a ∉ S)
-    (φ : S ⟶ insert a S) : (ofCovBy f comm).map φ = f (covBy_insert ha) :=
+    (φ : S ⟶ insert a S) :
+    (ofCovBy f comm).map φ = eqToHom (ofCovBy_obj f comm S) ≫ f (covBy_insert ha) ≫
+      eqToHom (ofCovBy_obj f comm (insert a S)).symm :=
   ofCovBy_map_of_covBy f comm _ φ
 
 /-- Two functors `Finset ι ⥤ C` with the same vertices and the same edge maps are equal. -/
@@ -238,7 +241,6 @@ variable {F G : Finset ι ⥤ C} (app : ∀ S, F.obj S ⟶ G.obj S)
 
 /-- The natural transformation between functors `Finset ι ⥤ C` with components `app`, which
 need only be natural along the edges `S ⋖ T`. -/
-@[expose]
 def ofCovBy : F ⟶ G where
   app := app
   naturality S T φ := by
@@ -255,7 +257,7 @@ def ofCovBy : F ⟶ G where
 /-- The components of `NatTrans.ofCovBy app naturality` are `app`. -/
 @[simp]
 theorem ofCovBy_app (S : Finset ι) : (ofCovBy app naturality).app S = app S :=
-  rfl
+  (rfl)
 
 end NatTrans
 
