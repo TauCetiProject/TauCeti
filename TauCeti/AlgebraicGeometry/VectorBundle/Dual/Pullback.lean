@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Coherence
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Bidual
+public import TauCeti.AlgebraicGeometry.VectorBundle.Functoriality
 public import TauCeti.AlgebraicGeometry.VectorBundle.InternalHom.Pullback
 
 /-!
@@ -15,7 +17,10 @@ For a finite locally free sheaf `E`, pulling back its dual agrees with taking th
 its pullback. The comparison uses the canonical base-change map for internal Hom and the
 canonical identification of the pullback of the structure sheaf with the structure sheaf.
 The comparison is natural in `E`, so it assembles into a natural isomorphism between
-dualizing then pulling back and pulling back then dualizing.
+dualizing then pulling back and pulling back then dualizing. It is also coherent: along the
+identity it is the identity comparison of pullback, and along a composite `f ≫ g` it is the
+comparison along `g` followed by the comparison along `f`, through the composition comparison of
+pullback (`pullbackDualIso_hom_id` and `pullbackDualIso_hom_comp`).
 
 ## References
 
@@ -34,7 +39,7 @@ universe u
 
 noncomputable section
 
-variable {X Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y)
+variable {X Y Z : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y)
 
 /-- Pulling back a finite locally free sheaf's dual is canonically isomorphic to the dual
 of its pullback. -/
@@ -70,10 +75,6 @@ theorem pullbackDualIso_naturality {F : FiniteLocallyFreeSheaf Y} (g : E ⟶ F) 
     (pullback f).map (dualFunctor.map g.op) ≫ (pullbackDualIso f E).hom =
       (pullbackDualIso f F).hom ≫ dualFunctor.map (X := .op ((pullback f).obj F))
         (Y := .op ((pullback f).obj E)) ((pullback f).map g).op := by
-  have hpre {A B : X.Modules} (e : A = B) :
-      (pre (eqToHom e)).app (𝟙_ X.Modules) = eqToHom (by rw [e]) := by
-    subst e
-    simp only [eqToHom_refl, pre_id, NatTrans.id_app]
   -- Restate dualization by `homMk`, so that the endpoints are syntactically the `dual` objects
   -- of `pullbackDualIso` rather than the definitionally equal `dualFunctor.obj` objects.
   have h : (pullback f).map (ObjectProperty.homMk ((pre g.hom).app (𝟙_ Y.Modules))) ≫
@@ -82,8 +83,8 @@ theorem pullbackDualIso_naturality {F : FiniteLocallyFreeSheaf Y} (g : E ⟶ F) 
         ObjectProperty.homMk ((pre ((pullback f).map g).hom).app (𝟙_ X.Modules)) := by
     apply ObjectProperty.hom_ext
     simp only [ObjectProperty.FullSubcategory.comp_hom, pullback_map_hom,
-      ObjectProperty.homMk_hom, pullbackDualIso_hom_hom, pre_map, NatTrans.comp_app, hpre,
-      eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.assoc]
+      ObjectProperty.homMk_hom, pullbackDualIso_hom_hom, pre_map, NatTrans.comp_app,
+      pre_eqToHom_app, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.assoc]
     rw [pullback_map_pre_app_comp_pullbackIhomComparison_app_assoc, NatTrans.naturality_assoc]
   exact h
 
@@ -104,6 +105,82 @@ theorem pullbackDualNatIso_hom_app (E : (FiniteLocallyFreeSheaf Y)ᵒᵖ) :
 theorem pullbackDualNatIso_inv_app (E : (FiniteLocallyFreeSheaf Y)ᵒᵖ) :
     (pullbackDualNatIso f).inv.app E = (pullbackDualIso f E.unop).inv :=
   (rfl)
+
+/-- Along the identity, the dual pullback comparison is the identity comparison of pullback:
+composed with the dual of the inverse identity comparison of `E`, it is the identity comparison
+of `dual E`. -/
+@[reassoc]
+theorem pullbackDualIso_hom_id (E : FiniteLocallyFreeSheaf X) :
+    (pullbackDualIso (𝟙 X) E).hom ≫ dualFunctor.map ((pullbackId X).inv.app E).op =
+      (pullbackId X).hom.app (dual E) := by
+  -- Restate dualization by `homMk`, as in `pullbackDualIso_naturality`, so that the composite is
+  -- formed between the `dual` objects of `pullbackDualIso`.
+  have h : (pullbackDualIso (𝟙 X) E).hom ≫
+      ObjectProperty.homMk ((pre ((pullbackId X).inv.app E).hom).app (𝟙_ X.Modules)) =
+        (pullbackId X).hom.app (dual E) := by
+    apply ObjectProperty.hom_ext
+    dsimp only [Functor.id_obj]
+    simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
+      pullbackDualIso_hom_hom, pullbackId_inv_app_hom, pullbackId_app_hom_hom,
+      Scheme.Modules.pullbackObjUnitIso_id, Category.assoc, pullbackIhomComparison_id_assoc,
+      pre_map, NatTrans.comp_app, pre_eqToHom_app, eqToHom_trans_assoc, eqToHom_refl,
+      Category.id_comp]
+    rw [← NatTrans.comp_app, ← pre_map, Iso.inv_hom_id_app]
+    simp only [Functor.id_obj, pre_id, NatTrans.id_app, Category.comp_id]
+  exact h
+
+/-- Along a composite `f ≫ g`, the dual pullback comparison is the comparison along `g` followed by
+the comparison along `f`: composed with the dual of the composition comparison of `E`, it is the
+inverse composition comparison of `dual E` followed by the pullback along `f` of the comparison
+along `g` and the comparison along `f`. -/
+@[reassoc]
+theorem pullbackDualIso_hom_comp (g : Y ⟶ Z) (E : FiniteLocallyFreeSheaf Z) :
+    (pullbackDualIso (f ≫ g) E).hom ≫ dualFunctor.map ((pullbackComp f g).hom.app E).op =
+      (pullbackComp f g).inv.app (dual E) ≫ (pullback f).map (pullbackDualIso g E).hom ≫
+        (pullbackDualIso f ((pullback g).obj E)).hom := by
+  -- As in `pullbackDualIso_hom_id`, restate dualization by `homMk`.
+  have h : (pullbackDualIso (f ≫ g) E).hom ≫
+      ObjectProperty.homMk ((pre ((pullbackComp f g).hom.app E).hom).app (𝟙_ X.Modules)) =
+      (pullbackComp f g).inv.app (dual E) ≫ (pullback f).map (pullbackDualIso g E).hom ≫
+        (pullbackDualIso f ((pullback g).obj E)).hom := by
+    apply ObjectProperty.hom_ext
+    dsimp only [Functor.comp_obj]
+    simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
+      pullbackDualIso_hom_hom, pullbackComp_inv_app_hom, pullbackComp_app_hom_hom,
+      pullback_map_hom, Functor.map_comp, eqToHom_map, Category.assoc, pre_map,
+      NatTrans.comp_app, pre_eqToHom_app, eqToHom_trans_assoc, eqToHom_refl,
+      Category.id_comp]
+    -- The comparison along `f` is taken at the sheaf underlying `(pullback g).obj E`. Transport it
+    -- to the module pullback of `E.obj`: the two agree by `pullback_obj_obj`, but `pullback` is not
+    -- exposed, so the equality cannot be used definitionally here.
+    have hM (M : Y.Modules) [M.IsQuasicoherent] (e : M = (Scheme.Modules.pullback g).obj E.obj)
+        {T : X.Modules}
+        (p : (Scheme.Modules.pullback f).obj
+          ((ihom ((Scheme.Modules.pullback g).obj E.obj)).obj (𝟙_ Y.Modules)) =
+            (Scheme.Modules.pullback f).obj ((ihom M).obj (𝟙_ Y.Modules)))
+        (q : (ihom ((Scheme.Modules.pullback f).obj M)).obj (𝟙_ X.Modules) = T) :
+        eqToHom p ≫ (pullbackIhomComparison M f).app (𝟙_ Y.Modules) ≫
+          (ihom ((Scheme.Modules.pullback f).obj M)).map
+            (Scheme.Modules.pullbackObjUnitIso f).hom ≫ eqToHom q =
+        (pullbackIhomComparison ((Scheme.Modules.pullback g).obj E.obj) f).app (𝟙_ Y.Modules) ≫
+          (ihom ((Scheme.Modules.pullback f).obj ((Scheme.Modules.pullback g).obj E.obj))).map
+            (Scheme.Modules.pullbackObjUnitIso f).hom ≫ eqToHom (by rw [← q, e]) := by
+      subst e
+      simp only [eqToHom_refl, Category.id_comp]
+    rw [hM _ (pullback_obj_obj g E)]
+    -- On module pullbacks, combine the internal-Hom coherence `pullbackIhomComparison_comp` with
+    -- the composition coherence `pullbackObjUnitIso_comp` of the structure-sheaf comparison.
+    have hn := (pullbackIhomComparison ((Scheme.Modules.pullback g).obj E.obj) f).naturality
+      (Scheme.Modules.pullbackObjUnitIso g).hom
+    dsimp only [Functor.comp_obj, Functor.comp_map] at hn
+    have hu : (Scheme.Modules.pullback f).map (Scheme.Modules.pullbackObjUnitIso g).hom ≫
+        (Scheme.Modules.pullbackObjUnitIso f).hom =
+          (Scheme.Modules.pullbackComp f g).hom.app (𝟙_ Z.Modules) ≫
+            (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).hom := by
+      rw [← Scheme.Modules.pullbackObjUnitIso_comp, Iso.hom_inv_id_app_assoc]
+    rw [reassoc_of% hn, ← Functor.map_comp_assoc, hu, Functor.map_comp_assoc,
+      pullbackIhomComparison_comp_assoc, Iso.inv_hom_id_app_assoc, ← NatTrans.naturality_assoc]
+  exact h
 
 end
 

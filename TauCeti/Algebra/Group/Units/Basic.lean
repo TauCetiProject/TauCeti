@@ -11,15 +11,18 @@ public import Mathlib.Algebra.Group.Units.Hom
 import Mathlib.Algebra.Group.Commute.Units
 
 /-!
-# Squares and powers of units
+# Units in monoids
 
-This file relates squares in a monoid to squares in its group of units. It also rewrites integer
+This file lifts units in the range of a local monoid homomorphism to units of its source, and
+relates squares in a monoid to squares in its group of units. It also rewrites integer
 powers of products of units as monomials with consecutive natural exponents. These identities
 let bilateral sums over integer powers split into two sums over natural numbers, without
 requiring a zero in the ambient monoid.
 
 ## Main results
 
+* `TauCeti.mem_range_iff_exists_units_map_eq`: a unit lies in the range of a local monoid
+  homomorphism exactly when it is the image of a unit under `Units.map`.
 * `TauCeti.isSquare_units_val_iff`: a unit is a square exactly when its underlying monoid element
   is a square.
 * `Units.val_mul_zpow_natCast_mul`: nonnegative product powers give consecutive monomials.
@@ -29,6 +32,16 @@ requiring a zero in the ambient monoid.
 public section
 
 namespace TauCeti
+
+/-- A unit in the range of a local monoid homomorphism comes from a unit of the source. -/
+theorem mem_range_iff_exists_units_map_eq {M N F : Type*} [Monoid M] [Monoid N]
+    [FunLike F M N] [MonoidHomClass F M N] (f : F) [IsLocalHom f] (u : Nˣ) :
+    (u : N) ∈ Set.range f ↔ ∃ a : Mˣ, Units.map (f : M →* N) a = u := by
+  constructor
+  · rintro ⟨a, ha⟩
+    exact ⟨(IsUnit.of_map f a (ha ▸ u.isUnit)).unit, Units.ext (by simp [ha])⟩
+  · rintro ⟨a, rfl⟩
+    exact ⟨a, rfl⟩
 
 /-- A unit is a square exactly when its underlying monoid element is a square. -/
 @[simp]

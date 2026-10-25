@@ -10,10 +10,11 @@ public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 /-!
 # Relative Maslov index of paths of totally real subspaces
 
-For two paths `Λ`, `Γ` of maximal totally real subspaces with the same endpoints, the Maslov
-phases `t ↦ ρ(Γ t, Λ t)` form a loop in the circle based at `1`. Its degree is the **relative
-Maslov index** `μ(Λ, Γ)`, an integer measuring the relative homotopy class detected by the Maslov
-phases; the crossing-form index for a single path is a further construction.
+In a finite-dimensional complex normed space, for two paths `Λ`, `Γ` of maximal totally real
+subspaces with the same endpoints, the Maslov phases `t ↦ ρ(Γ t, Λ t)` form a loop in the circle
+based at `1`. Its degree is the **relative Maslov index** `μ(Λ, Γ)`, an integer measuring the
+relative homotopy class detected by the Maslov phases; the crossing-form index for a single path
+is a further construction.
 
 The relative index has the formal properties of the Robbin--Salamon Maslov index for paths:
 
@@ -39,7 +40,9 @@ The relative index has the formal properties of the Robbin--Salamon Maslov index
 The paths are given, like loops, by continuous frames of complex-linear automorphisms acting on
 one maximal totally real subspace; reversal (`TauCeti.TotallyRealPath.symm`), catenation
 (`TauCeti.TotallyRealPath.trans`) and the pointwise image under a path of automorphisms
-(`TauCeti.TotallyRealPath.map`) are constructed on such frames.
+(`TauCeti.TotallyRealPath.map`) are constructed on such frames. These basic path constructions
+are defined for complex seminormed spaces; the Maslov phase and index theory below uses
+finite-dimensional complex normed spaces.
 
 The Maslov phase and its loop degree follow McDuff--Salamon, *J-holomorphic Curves and Symplectic
 Topology*, 2nd ed., Appendix C.3. The relative path viewpoint and the naturality, catenation,
@@ -72,10 +75,13 @@ open scoped ComplexConjugate unitInterval
 
 namespace TauCeti
 
-variable (E : Type*) [NormedAddCommGroup E] [NormedSpace ℂ E]
+section
 
-/-- A path of maximal totally real subspaces, given by a continuous family of complex-linear
-changes of frame applied to one maximal totally real subspace. -/
+variable (E : Type*) [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- A path of maximal totally real subspaces of a complex seminormed space, given by a
+continuous family of complex-linear changes of frame applied to one maximal totally real
+subspace. -/
 structure TotallyRealPath where
   /-- The subspace at time `t`. -/
   toFun : I → Submodule ℝ E
@@ -201,7 +207,13 @@ theorem map_apply (Λ : TotallyRealPath E) (B : I → E ≃L[ℂ] E)
     Λ.map B hB t = (Λ t).map (((B t).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) :=
   (rfl)
 
-variable [FiniteDimensional ℂ E]
+end TotallyRealPath
+
+end
+
+namespace TotallyRealPath
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
 
 /-- The Maslov phase along a path, relative to a fixed maximal totally real subspace, is
 continuous. -/
@@ -442,7 +454,9 @@ end TotallyRealPath
 
 namespace TotallyRealLoop
 
-variable {E}
+section
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- A loop of maximal totally real subspaces, read as a path. -/
 def toTotallyRealPath (Λ : TotallyRealLoop E) : TotallyRealPath E :=
@@ -452,7 +466,9 @@ def toTotallyRealPath (Λ : TotallyRealLoop E) : TotallyRealPath E :=
 theorem toTotallyRealPath_apply (Λ : TotallyRealLoop E) (t : I) : Λ.toTotallyRealPath t = Λ t :=
   (rfl)
 
-variable [FiniteDimensional ℂ E]
+end
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
 
 /-- For two loops of maximal totally real subspaces with the same base subspace, the relative
 Maslov index is the difference of their Maslov indices: `μ(Λ, Γ) = μ(Λ) - μ(Γ)`. -/

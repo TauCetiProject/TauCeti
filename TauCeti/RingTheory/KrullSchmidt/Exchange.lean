@@ -43,7 +43,7 @@ explicit complement `S`, rather than deducing one, because that is how it is use
 summand of a second decomposition of `M`, whose other summands supply `S`.
 
 Of `N` the proof needs only that `Module.End A N` is local, so that is the hypothesis; it already
-makes `N` nonzero (`TauCeti.nontrivial_of_isLocalRing_end`) and indecomposable
+makes `N` nonzero (`TauCeti.nontrivial_of_nontrivial_end`) and indecomposable
 (`TauCeti.isIndecomposableModule_of_isLocalRing_end`), and indecomposability is never used.
 
 ## References
@@ -89,7 +89,7 @@ theorem exists_linearEquiv_and_isCompl_biSup_ne
     [IsLocalRing (Module.End A N)] (hNS : IsCompl N S) :
     ∃ i₀ : ι, Nonempty (N ≃ₗ[A] Q i₀) ∧ IsCompl N (⨆ j, ⨆ (_ : j ≠ i₀), Q j) := by
   have _ : Fintype ι := Fintype.ofFinite ι
-  have _ : Nontrivial N := nontrivial_of_isLocalRing_end (A := A)
+  have _ : Nontrivial N := nontrivial_of_nontrivial_end (R := A)
   -- Locality of `Module.End A N` picks out an index whose component is invertible.
   obtain ⟨i₀, -, hunit⟩ : ∃ i₀ ∈ Finset.univ, IsUnit ((N.projectionOnto S hNS ∘ₗ (Q i₀).subtype)
       ∘ₗ (internalProjection hQi hQt i₀).domRestrict N) :=

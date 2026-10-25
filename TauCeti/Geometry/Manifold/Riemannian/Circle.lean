@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-public import TauCeti.Geometry.Manifold.Riemannian.Sphere
+public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!

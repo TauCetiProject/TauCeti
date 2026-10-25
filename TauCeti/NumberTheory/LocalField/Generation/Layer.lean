@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Generation.Quotient
 public import TauCeti.NumberTheory.LocalField.Tame.Layer
-public import TauCeti.NumberTheory.LocalField.ClassModule
+public import TauCeti.NumberTheory.LocalField.ClassModule.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.RelationModule.Extension
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Map
 

@@ -31,6 +31,9 @@ coset attached to an element of the normalizer has to be recognised as a single 
   `DoubleCoset.conj_mem_doubleCoset_conj_iff_of_mem_normalizer`: conjugation by `g` in the
   normalizer carries the right cosets `Γa` and the double cosets `HaK` (`g` normalizing `H` and
   `K`) to the right and double cosets of the conjugate `g⁻¹ag`.
+* `DoubleCoset.doubleCoset_eq_iUnion_rightCosets_conj` and
+  `DoubleCoset.injective_rightCoset_conj`: conjugation preserves right-coset decompositions
+  and distinctness of their cosets.
 -/
 
 public section
@@ -97,5 +100,31 @@ theorem conj_mem_doubleCoset_conj_iff_of_mem_normalizer {H K : Subgroup G}
       _ = g * h * g⁻¹ * a * (g * h' * g⁻¹) := by rw [he]; group
   · rintro ⟨h, hh, h', hh', rfl⟩
     exact ⟨g⁻¹ * h * g, hin H hH h hh, g⁻¹ * h' * g, hin K hK h' hh', by group⟩
+
+/-- Conjugating a right-coset decomposition by an element normalizing both flanks gives a
+right-coset decomposition of the conjugate double coset. -/
+theorem doubleCoset_eq_iUnion_rightCosets_conj {H K : Subgroup G} {a : G}
+    (hH : g ∈ Subgroup.normalizer (H : Set G))
+    (hK : g ∈ Subgroup.normalizer (K : Set G)) {ι : Sort*} (r : ι → G)
+    (hcover : doubleCoset a H K = ⋃ i, op (r i) • (H : Set G)) :
+    doubleCoset (g⁻¹ * a * g) H K = ⋃ i, op (g⁻¹ * r i * g) • (H : Set G) := by
+  ext x
+  have hconj : g⁻¹ * (g * x * g⁻¹) * g = x := by group
+  simp only [Set.mem_iUnion, mem_rightCoset_conj_iff_of_mem_normalizer hH]
+  rw [← Set.mem_iUnion, ← hcover,
+    ← conj_mem_doubleCoset_conj_iff_of_mem_normalizer hH hK a (g * x * g⁻¹), hconj]
+
+/-- Conjugating distinct right cosets by a normalizing element preserves distinctness. -/
+theorem injective_rightCoset_conj {ι : Sort*} (r : ι → G)
+    (hg : g ∈ Subgroup.normalizer (Γ : Set G))
+    (hinj : Function.Injective fun i ↦ op (r i) • (Γ : Set G)) :
+    Function.Injective fun i ↦ op (g⁻¹ * r i * g) • (Γ : Set G) := by
+  intro i j h
+  apply hinj
+  ext x
+  have h' := Set.ext_iff.mp h (g⁻¹ * x * g)
+  rw [mem_rightCoset_conj_iff_of_mem_normalizer hg,
+    mem_rightCoset_conj_iff_of_mem_normalizer hg] at h'
+  simpa [mul_assoc] using h'
 
 end DoubleCoset

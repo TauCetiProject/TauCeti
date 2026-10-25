@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Spin.Exceptional.Six.ExteriorSquare
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 import Mathlib.LinearAlgebra.Basis.SMul
 import Mathlib.Data.Fintype.EquivFin
 
@@ -31,7 +32,7 @@ public section
 
 namespace TauCeti
 
-open Module
+open CliffordAlgebra Module
 
 universe u
 
@@ -95,7 +96,8 @@ theorem spinSixWedgeBasis_inr (i : Fin 3) :
       (fun j ↦ Pi.single ((![![2, 3], ![1, 3], ![1, 2]] : Fin 3 → Fin 2 → Fin 4) i j) 1) := by
   simp [spinSixWedgeBasis_apply, wedgePairSign, wedgePairIndices]
 
-private noncomputable def splitSixBasis : Basis (Fin 3 ⊕ Fin 3) K (SplitEvenSpace K 3) :=
+/-- The standard dual-coordinate and coordinate basis of three split hyperbolic planes. -/
+noncomputable def splitSixBasis : Basis (Fin 3 ⊕ Fin 3) K (SplitEvenSpace K 3) :=
   (Pi.basisFun K (Fin 3)).dualBasis.prod (Pi.basisFun K (Fin 3))
 
 private theorem spinSixWedgeForm_basis (i j : Fin 3 ⊕ Fin 3) :
@@ -189,6 +191,31 @@ theorem spinSixWedgeIsometryEquivPolarSplit_symm_apply_inr (i : Fin 3) :
   -- Bilinear isometry inversion is defined using the underlying linear equivalence.
   exact (spinSixWedgeIsometryEquivPolarSplit K).toLinearEquiv.symm_apply_apply _
 
+omit [Nontrivial K] in
+/-- The first half of the split basis consists of the standard dual-coordinate axes. -/
+@[simp]
+theorem splitSixBasis_inl (i : Fin 3) :
+    splitSixBasis K (Sum.inl i) = ((Pi.basisFun K (Fin 3)).coord i, 0) := by
+  simp [splitSixBasis, Basis.prod_apply]
+
+omit [Nontrivial K] in
+/-- The second half of the split basis consists of the standard coordinate axes. -/
+@[simp]
+theorem splitSixBasis_inr (i : Fin 3) :
+    splitSixBasis K (Sum.inr i) = (0, Pi.single i 1) := by
+  simp [splitSixBasis, Basis.prod_apply, Pi.basisFun_apply]
+
+/-- Transporting the wedge basis gives the existing standard split basis. -/
+@[simp]
+theorem spinSixWedgeBasis_map_eq_splitSixBasis :
+    (spinSixWedgeBasis K).map (spinSixWedgeIsometryEquivPolarSplit K).toLinearEquiv =
+      splitSixBasis K := by
+  ext i : 1
+  rcases i with i | i <;>
+    simp only [Basis.map_apply, LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
+      spinSixWedgeIsometryEquivPolarSplit_apply_inl,
+      spinSixWedgeIsometryEquivPolarSplit_apply_inr, splitSixBasis_inl, splitSixBasis_inr]
+
 variable [Invertible (2 : K)]
 
 /-- The quadratic form whose un-halved polar form is the volume pairing on `⋀²(K⁴)`.
@@ -242,5 +269,23 @@ theorem spinSixWedgeQuadraticIsometryEquivSplit_apply (x : ⋀[K]^2 (Fin 4 → K
 theorem spinSixWedgeQuadraticIsometryEquivSplit_symm_apply (x : SplitEvenSpace K 3) :
     (spinSixWedgeQuadraticIsometryEquivSplit K).symm x =
       (spinSixWedgeIsometryEquivPolarSplit K).symm x := (rfl)
+
+/-- The isometry `spinSixWedgeIsometryEquivPolarSplit K` intertwines the Spin vector action on
+`⋀²(K⁴)`, transported along the induced Spin-group map, with the vector action of
+`splitEvenForm K 3`. -/
+@[simp]
+theorem spinSixWedgeIsometryEquivPolarSplit_spinVectorAction
+    (s : spinGroup (splitEvenForm K 3)) (x : ⋀[K]^2 (Fin 4 → K)) :
+    spinSixWedgeIsometryEquivPolarSplit K
+        (spinVectorAction (spinSixWedgeQuadraticForm K)
+          ((spinSixWedgeQuadraticIsometryEquivSplit K).symm.toIsometry.spinGroupMap s) x) =
+      spinVectorAction (splitEvenForm K 3) s
+        (spinSixWedgeIsometryEquivPolarSplit K x) := by
+  have h := QuadraticMap.IsometryEquiv.apply_spinVectorAction_symm_spinGroupMap
+    (spinSixWedgeQuadraticIsometryEquivSplit K) s x
+  simpa only [QuadraticMap.IsometryEquiv.toIsometry_apply,
+    QuadraticMap.IsometryEquiv.spinGroupEquiv_apply,
+    spinSixWedgeQuadraticIsometryEquivSplit_apply] using h
+
 
 end TauCeti

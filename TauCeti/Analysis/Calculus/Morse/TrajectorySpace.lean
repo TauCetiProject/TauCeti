@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Morse.OrbitSlice
+public import TauCeti.Analysis.Calculus.Morse.Orbit.Slice
 public import TauCeti.Analysis.Calculus.Morse.Transversality
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.Morse.RegularLevel

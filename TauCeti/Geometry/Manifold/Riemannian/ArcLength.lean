@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Energy
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 public import TauCeti.Analysis.Calculus.IntervalIntegral.Inverse
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.MeasureTheory.Integral.MeanInequalities
 
 /-!
 # Arc-length reparametrization of regular Riemannian curves
@@ -32,6 +34,8 @@ results usable without unfolding their construction.
   a parameter set with unique derivatives.
 * `ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin`: the Riemannian length of a
   `C¹` curve over a compact interval is the integral of its speed.
+* `ContMDiffOn.pathELength_le_ofReal_sqrt_energy`: the length `L` and the energy `E` of a `C¹`
+  curve over `[a, b]` satisfy `L ^ 2 ≤ 2 * (b - a) * E`.
 * `TauCeti.Manifold.exists_unit_speed_reparametrization`: a regular curve, `C¹` on an open set
   containing `[a, b]`, has a `C¹`, unit-speed reparametrization on the interval from zero to its
   length.
@@ -41,6 +45,8 @@ results usable without unfolding their construction.
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Proposition 2.49(a).
+* J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton, 1963, §12, for the
+  comparison of length and energy.
 * The proof is adapted from `LeeLib/Ch02/ArcLengthReparametrization.lean` in the Apache-2.0
   [`frenzymath/Poincare-Conjecture`](https://github.com/frenzymath/Poincare-Conjecture)
   repository, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`. This version works at the
@@ -50,7 +56,7 @@ results usable without unfolding their construction.
 public section
 
 open Bundle Filter MeasureTheory Set
-open scoped ContDiff Manifold Topology
+open scoped ContDiff ENNReal Manifold Topology
 
 noncomputable section
 
@@ -96,6 +102,53 @@ theorem _root_.ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWith
   rw [ofReal_norm, curveVelocityWithin_of_mem_nhds hmem, curveVelocity_apply]
   -- both sides are the Riemannian norm at `γ t`; they differ only in how the fibre is presented
   rfl
+
+/-- **Length is controlled by energy.** The Riemannian length `L` of a `C¹` curve over a compact
+interval `[a, b]` inside its parameter set and its energy `E` satisfy `L ^ 2 ≤ 2 * (b - a) * E`.
+This is the Cauchy–Schwarz inequality for the speed `‖γ'‖` on `[a, b]`. -/
+theorem _root_.ContMDiffOn.pathELength_le_ofReal_sqrt_energy {γ : ℝ → M} {s : Set ℝ}
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s) (hs : UniqueMDiffOn 𝓘(ℝ, ℝ) s)
+    {a b : ℝ} (hab : a ≤ b) (hsub : Icc a b ⊆ s) :
+    Manifold.pathELength I γ a b ≤ ENNReal.ofReal √(2 * (b - a) * energy I γ a b) := by
+  set v : ℝ → ℝ := fun t ↦ ‖curveVelocityWithin I γ s t‖
+  have hcont : ContinuousOn v (Icc a b) :=
+    (hγ.continuousOn_norm_curveVelocityWithin hs).mono hsub
+  have hlen : Manifold.pathELength I γ a b = ∫⁻ t in Icc a b, ENNReal.ofReal (v t) := by
+    rw [hγ.pathELength_eq_ofReal_integral_norm_curveVelocityWithin hs hab hsub,
+      intervalIntegral.integral_of_le hab, ← integral_Icc_eq_integral_Ioc,
+      ofReal_integral_eq_lintegral_ofReal (hcont.integrableOn_compact isCompact_Icc)
+        (Eventually.of_forall fun _ ↦ norm_nonneg _)]
+  have hE : 0 ≤ energy I γ a b := energy_nonneg γ hab
+  have hsq :
+      ∫⁻ t in Icc a b, ENNReal.ofReal (v t) ^ (2 : ℝ) = ENNReal.ofReal (2 * energy I γ a b) := by
+    have hpow : ∀ t, ENNReal.ofReal (v t) ^ (2 : ℝ) = ENNReal.ofReal (v t ^ 2) := fun t ↦ by
+      rw [ENNReal.rpow_two, ENNReal.ofReal_pow (norm_nonneg _)]
+    have hint : IntegrableOn (fun t ↦ v t ^ 2) (Icc a b) :=
+      (hcont.pow 2).integrableOn_compact isCompact_Icc
+    simp_rw [hpow]
+    rw [← ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun _ ↦ sq_nonneg _),
+      integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab,
+      energy_eq_integral_curveVelocityWithin (s := s) γ (by rwa [uIcc_of_le hab]),
+      mul_div_cancel₀ _ two_ne_zero]
+  -- Hölder's inequality with exponents `2` and `2` against the constant function `1`
+  calc Manifold.pathELength I γ a b
+      = ∫⁻ t in Icc a b, (fun t ↦ ENNReal.ofReal (v t)) t * (fun _ ↦ (1 : ℝ≥0∞)) t := by
+        simp [hlen]
+    _ ≤ (∫⁻ t in Icc a b, ENNReal.ofReal (v t) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) *
+          (∫⁻ _ in Icc a b, (1 : ℝ≥0∞) ^ (2 : ℝ)) ^ (1 / (2 : ℝ)) :=
+        ENNReal.lintegral_mul_le_Lp_mul_Lq _ Real.HolderConjugate.two_two
+          (hcont.aemeasurable measurableSet_Icc).ennreal_ofReal aemeasurable_const
+    -- the integral of the constant `1` over `[a, b]` is `b - a`
+    _ = ENNReal.ofReal (2 * energy I γ a b) ^ (1 / (2 : ℝ)) *
+          ENNReal.ofReal (b - a) ^ (1 / (2 : ℝ)) := by
+        simp only [hsq, ENNReal.one_rpow, setLIntegral_const, one_mul, Real.volume_Icc]
+    -- the `ENNReal` square roots are coercions of real square roots
+    _ = ENNReal.ofReal (√(2 * energy I γ a b) * √(b - a)) := by
+        rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
+          ENNReal.ofReal_rpow_of_nonneg (sub_nonneg.2 hab) (by norm_num),
+          ← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow, ENNReal.ofReal_mul (by positivity)]
+    _ = ENNReal.ofReal √(2 * (b - a) * energy I γ a b) := by
+        rw [← Real.sqrt_mul (by positivity), mul_right_comm]
 
 /-! ### Unit-speed reparametrization -/
 

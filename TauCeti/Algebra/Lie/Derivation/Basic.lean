@@ -62,8 +62,9 @@ is an additive *group*, so the semiring-level hypotheses under which the Leibniz
 sense do not suffice to make `Der A` one.
 
 The Leibniz rule is preserved by sums and by scalar multiples because the multiplication of `A` is
-`R`-bilinear, and by the commutator because the "second derivative" terms `D (E x) * y` and
-`x * D (E y)` that the composite `D ∘ E` contributes cancel against those of `E ∘ D`.
+`R`-bilinear, and by the commutator because the mixed terms `D x * E y` and `E x * D y` occur
+in the expansions of both `D (E (x * y))` and `E (D (x * y))` and cancel on subtraction. The
+remaining terms give the Leibniz rule for `⁅D, E⁆`.
 
 The Lie bracket of `Module.End R A` is the ring commutator, which Mathlib deliberately keeps out of
 the global instance set (`LieRing.ofAssociativeRing`) because it clashes with the module action; it
@@ -93,9 +94,6 @@ constructions' own `apply` lemmas rather than by unfolding.
 
 ## References
 
-* [Highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md),
-  Layer 8, whose `derivationLieAlgebra` this is: the derivation algebra through which the split
-  octonions and the Albert algebra produce `G₂` and `F₄`.
 * N. Jacobson, *Lie Algebras* (1962), Chapter I, §2, and Chapter VII.
 -/
 

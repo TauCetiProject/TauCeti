@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CompletelyMonotone.Composition
 public import TauCeti.Analysis.CompletelyMonotone.Limits
-public import TauCeti.Analysis.SpecialFunctions.ExpRecovery
+public import TauCeti.Analysis.SpecialFunctions.Exp.Recovery
 
 /-!
 # Bernstein functions are the exponents of completely monotone semigroups

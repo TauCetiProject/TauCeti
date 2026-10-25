@@ -39,6 +39,8 @@ identities for rectangular congruence are in `TauCeti.LinearAlgebra.Matrix.Congr
 * `MeasureTheory.Measure.charFun_map_symmetricCongruenceLinearMap` — the corresponding
   transformation rule for characteristic functions.
 * `Matrix.det_symmetricCongruenceLinearMap` — its determinant is `(det M) ^ (p + 1)`.
+* `Matrix.det_coe_symmetricCongruenceLinearMap_apply` — congruence by a square matrix `M`
+  multiplies the determinant of a symmetric matrix by `(det M) ^ 2`.
 * `Matrix.GeneralLinearGroup.symmetricCongruence` — congruence by an invertible matrix, as a
   continuous linear automorphism.
 * `Matrix.GeneralLinearGroup.map_symmetricCongruence_symmetricLebesgue` — the induced change of
@@ -88,6 +90,28 @@ theorem coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin q) (Fin p) ℝ)
     (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ) =
       M * (A : Matrix (Fin p) (Fin p) ℝ) * Mᵀ :=
   (rfl)
+
+/-- Congruence by a matrix whose `i`-th row vanishes off the column `j` reads the diagonal entry
+`(i, i)` off the diagonal entry `(j, j)`, scaled by the square of the surviving entry. -/
+theorem coe_symmetricCongruenceLinearMap_apply_self_of_apply_eq_zero
+    {M : Matrix (Fin q) (Fin p) ℝ} {i : Fin q} {j : Fin p} (hrow : ∀ a, a ≠ j → M i a = 0)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ) i i =
+      M i j ^ 2 * (A : Matrix (Fin p) (Fin p) ℝ) j j := by
+  rw [coe_symmetricCongruenceLinearMap_apply, Matrix.mul_apply,
+    Fintype.sum_eq_single j fun a ha ↦ by rw [Matrix.transpose_apply, hrow a ha, mul_zero],
+    Matrix.mul_apply, Fintype.sum_eq_single j fun a ha ↦ by rw [hrow a ha, zero_mul],
+    Matrix.transpose_apply]
+  ring
+
+/-- Congruence by a square matrix `M` multiplies the determinant of a symmetric matrix by
+`(det M) ^ 2`, including when `M` is singular. -/
+theorem det_coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin p) (Fin p) ℝ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (symmetricCongruenceLinearMap M A : Matrix (Fin p) (Fin p) ℝ).det =
+      M.det ^ 2 * (A : Matrix (Fin p) (Fin p) ℝ).det := by
+  rw [coe_symmetricCongruenceLinearMap_apply, Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
+  ring
 
 /-- The trace pairing of a congruated symmetric matrix can be evaluated on the source by
 congruating the test matrix with the transpose. -/
@@ -397,8 +421,8 @@ theorem det_symmetricCongruence_apply (C : Matrix.GeneralLinearGroup (Fin p) ℝ
     ((symmetricCongruence C A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
         Matrix (Fin p) (Fin p) ℝ).det =
       Matrix.det (C : Matrix (Fin p) (Fin p) ℝ) ^ 2 * (A : Matrix (Fin p) (Fin p) ℝ).det := by
-  rw [coe_symmetricCongruence_apply, Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
-  ring
+  rw [coe_symmetricCongruence_apply, ← coe_symmetricCongruenceLinearMap_apply]
+  exact det_coe_symmetricCongruenceLinearMap_apply _ A
 
 /-- Congruence by `C` turns the trace against the inverse of the scale `C * Cᵀ` into the plain
 trace: the two copies of `C` cancel against the inverse. -/

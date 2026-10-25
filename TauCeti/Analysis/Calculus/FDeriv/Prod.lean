@@ -29,6 +29,9 @@ result is the canonical linear graph shear.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
+* `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: the derivatives of the two slices
+  of a function on a product are the restrictions of its derivative.
+* `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `x ↦ f (x, u x)`.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
 * `DifferentiableAt.hasFDerivAt_fst_prodMk_of_slices`: the derivative of a graph map from its
@@ -79,6 +82,32 @@ theorem fderiv_comp_fst_add_comp_snd_eq_zero_iff (hφ : DifferentiableAt 𝕜 φ
     rw [h₁, h₂]
     ext <;> simp
 
+/-- The derivative of the first-variable slice `fun x ↦ f (x, b)` is the derivative of `f`
+restricted to the first factor. -/
+theorem fderiv_slice_left {f : E × F → G} (hf : DifferentiableAt 𝕜 f (a, b)) :
+    fderiv 𝕜 (fun x ↦ f (x, b)) a = (fderiv 𝕜 f (a, b)).comp (ContinuousLinearMap.inl 𝕜 E F) :=
+  (hf.hasFDerivAt.comp a (hasFDerivAt_prodMk_left a b)).fderiv
+
+/-- The derivative of the second-variable slice `fun y ↦ f (a, y)` is the derivative of `f`
+restricted to the second factor. -/
+theorem fderiv_slice_right {f : E × F → G} (hf : DifferentiableAt 𝕜 f (a, b)) :
+    fderiv 𝕜 (fun y ↦ f (a, y)) b = (fderiv 𝕜 f (a, b)).comp (ContinuousLinearMap.inr 𝕜 E F) :=
+  (hf.hasFDerivAt.comp b (hasFDerivAt_prodMk_right a b)).fderiv
+
+/-- **The chain rule along a graph.** The derivative of `fun x ↦ f (x, u x)` is the derivative of
+`f` in the first variable plus its derivative in the second variable applied to the derivative
+of `u`. -/
+theorem fderiv_comp_graph_apply {u : E → F} {f : E × F → G} (hu : DifferentiableAt 𝕜 u a)
+    (hf : DifferentiableAt 𝕜 f (a, u a)) (v : E) :
+    fderiv 𝕜 (fun x ↦ f (x, u x)) a v =
+      fderiv 𝕜 f (a, u a) (v, 0) + fderiv 𝕜 (fun y ↦ f (a, y)) (u a) (fderiv 𝕜 u a v) := by
+  have h : HasFDerivAt (fun x ↦ f (x, u x))
+      ((fderiv 𝕜 f (a, u a)).comp ((ContinuousLinearMap.id 𝕜 E).prod (fderiv 𝕜 u a))) a :=
+    hf.hasFDerivAt.comp a ((hasFDerivAt_id a).prodMk hu.hasFDerivAt)
+  rw [h.fderiv, fderiv_slice_right hf, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, ← map_add]
+  simp
+
 /-- Along a differentiable graph through a point where the derivative in the second variable
 vanishes, the derivative of a function on a product equals the derivative of its first-variable
 slice. -/
@@ -87,26 +116,10 @@ theorem _root_.HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_
     (hf : HasFDerivAt f f' (a, u a)) (hu : DifferentiableAt 𝕜 u a)
     (hzero : fderiv 𝕜 (fun y ↦ f (a, y)) (u a) = 0) :
     fderiv 𝕜 (fun x ↦ f (x, u x)) a = fderiv 𝕜 (fun x ↦ f (x, u a)) a := by
-  have hleft := hf.comp a ((hasFDerivAt_id a).prodMk hu.hasFDerivAt)
-  have hright := hf.comp a (hasFDerivAt_prodMk_left (𝕜 := 𝕜) a (u a))
-  have hleftFun : f ∘ (fun x ↦ (id x, u x)) = fun x ↦ f (x, u x) := rfl
-  have hrightFun : f ∘ (fun x ↦ (x, u a)) = fun x ↦ f (x, u a) := rfl
-  rw [hleftFun] at hleft
-  rw [hrightFun] at hright
-  rw [hleft.fderiv, hright.fderiv]
-  apply ContinuousLinearMap.ext
-  intro v
-  have hvertical : f' (0, fderiv 𝕜 u a v) = 0 := by
-    have hslice := hf.comp (u a) (hasFDerivAt_prodMk_right (𝕜 := 𝕜) a (u a))
-    have hsliceZero : f'.comp (ContinuousLinearMap.inr 𝕜 E F) = 0 :=
-      hslice.fderiv.symm.trans hzero
-    simpa using congrArg (fun L : F →L[𝕜] G ↦ L (fderiv 𝕜 u a v)) hsliceZero
-  calc
-    f' (v, fderiv 𝕜 u a v) = f' (v, 0) + f' (0, fderiv 𝕜 u a v) := by
-      rw [← map_add]
-      congr 1
-      ext <;> simp
-    _ = f' (v, 0) := by rw [hvertical, add_zero]
+  ext v
+  rw [fderiv_comp_graph_apply hu hf.differentiableAt v, hzero,
+    fderiv_slice_left hf.differentiableAt]
+  simp
 
 /-- If a differentiable function on a product has horizontal slice derivative `A` and vertical
 slice derivative the identity, then its graph map has derivative the canonical shear by `A`. -/

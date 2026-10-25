@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Extension
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Sobolev.W1p.Density
 
 /-!
 # Extension from bounded Lipschitz domains
@@ -17,6 +18,11 @@ Every bounded Lipschitz domain in `WithLp 2 (ℝ × E)` admits a bounded linear 
 operator. The construction uses a finite smooth partition of unity on the closure of the
 domain, the local graph-reflection extension at boundary points, and zero extension of the
 interior pieces. No differentiability of the boundary graphs is required.
+
+As a consequence, restrictions to `Ω` of test functions on the whole space are dense in
+`W^{1,p}(Ω)` for `p < ∞` (`TauCeti.W1p.denseRange_restrictL_ofTestFunctionₗ_top`). These
+restrictions are smooth up to the boundary, so a bounded operator on `W^{1,p}(Ω)` is determined
+by its values on functions continuous on `closure Ω`.
 
 ## References
 
@@ -31,7 +37,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace Metric
-open scoped ContDiff ENNReal NNReal Gradient Manifold
+open scoped ContDiff ENNReal NNReal Gradient Manifold Distributions
 
 namespace TauCeti
 
@@ -129,5 +135,19 @@ theorem W1p.exists_extensionL_of_isLipschitzDomainWith
   have hone := ρ.sum_eq_one (subset_closure hxΩ)
   rw [finsum_eq_sum_of_fintype] at hone
   rw [hone, one_mul]
+
+/-- **Density of functions smooth up to the boundary.** On a bounded Lipschitz domain and for
+`p < ∞`, the restrictions to `Ω` of test functions on the whole space are dense in
+`W^{1,p}(Ω)`. -/
+theorem W1p.denseRange_restrictL_ofTestFunctionₗ_top (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
+    DenseRange fun φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ) =>
+      W1p.restrictL (le_top : Ω ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p φ) := by
+  obtain ⟨T, hT⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
+  have hsurj : Function.Surjective (W1p.restrictL (p := p) (mu := volume)
+      (le_top : Ω ≤ ⊤)) := fun u => ⟨T u, by simpa using congrArg (· u) hT⟩
+  exact hsurj.denseRange.comp (W1p.denseRange_ofTestFunctionₗ_top hp)
+    (W1p.restrictL le_top).continuous
 
 end TauCeti

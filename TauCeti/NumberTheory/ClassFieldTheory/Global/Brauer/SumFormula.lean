@@ -8,11 +8,12 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.LocalizationKernel
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Compositum
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Splitting
+import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SecondInequality
 import TauCeti.NumberTheory.Cyclotomic.Adjoin
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Torsion
 
 /-!
-# The sum of the local invariants of a Brauer class, from the Hasse principle
+# The sum of the local invariants of a Brauer class
 
 Let `K` be a number field. The global Brauer sequence
 
@@ -22,11 +23,13 @@ Let `K` be a number field. The global Brauer sequence
 
 has zero composite `Br K → ℚ/ℤ` exactly when the local invariants of every global Brauer class
 sum to zero; this is the inclusion of the image of `Br K` in the kernel of the sum, one half of
-exactness in the middle. This file proves that sum formula for every class of `Br K`, assuming the
-Hasse principle, injectivity of `Br E → ⨁_w Br E_w`, for the finite extensions `E` of `K`
-(`sumLocalInv_brLocalization_eq_zero_of_brLocalization_injective`). The Hasse principle itself
-follows from the vanishing of idele-class `H¹`
-(`TauCeti.ClassFieldTheory.brLocalization_injective_of_subsingleton_groupCohomology_one`).
+exactness in the middle. This file proves that sum formula for every class of `Br K`
+(`sumLocalInv_brLocalization_eq_zero`) from the Hasse principle, injectivity of
+`Br E → ⨁_w Br E_w`, over the finite extensions `E` of `K`. The Hasse principle
+(`brLocalization_injective`) follows from the vanishing of idele-class `H¹`
+(`TauCeti.ClassFieldTheory.brLocalization_injective_of_subsingleton_h1_globalFormation`), which
+comes with the second fundamental inequality
+(`TauCeti.ClassFieldTheory.subsingleton_h1_globalFormation`).
 
 The argument is Milne's Lemma 8.6. A Brauer class is torsion, so it is a sum of classes killed by
 powers of primes, and the sum of the local invariants is additive. Let `x` be killed by a power
@@ -41,11 +44,10 @@ the product formula for the local Artin symbols on cyclotomic extensions
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_eq_zero_of_brLocalization_injective`: if
-  the Hasse principle holds over every finite extension of `K`, then the local invariants of
-  every Brauer class of `K` sum to zero.
-* `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_eq_zero_of_subsingleton_h1_globalFormation`:
-  idele-class `H¹`-vanishing over every finite extension of `K` implies the sum formula.
+* `TauCeti.ClassFieldTheory.brLocalization_injective`: the Hasse principle: a Brauer class of `K`
+  with trivial localizations at all places is zero.
+* `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_eq_zero`: the local invariants of every
+  Brauer class of `K` sum to zero.
 
 ## References
 
@@ -95,7 +97,7 @@ private theorem sumLocalInv_brLocalization_eq_zero_of_pow_nsmul_eq_zero
 /-- **The sum formula, from the Hasse principle.** If, for every finite extension `E` of the
 number field `K`, a Brauer class of `E` with trivial localizations at all places is zero, then the
 local invariants of every Brauer class of `K` sum to zero. -/
-theorem sumLocalInv_brLocalization_eq_zero_of_brLocalization_injective
+private theorem sumLocalInv_brLocalization_eq_zero_of_brLocalization_injective
     (h : ∀ (E : Type) [Field E] [NumberField E] [Algebra K E],
       Function.Injective (brLocalization E))
     (x : Br K) : sumLocalInv K (brLocalization K x) = 0 := by
@@ -127,15 +129,18 @@ theorem sumLocalInv_brLocalization_eq_zero_of_brLocalization_injective
     rw [show x = (u * a) • x + (v * b) • x by rw [← add_zsmul, huv, one_zsmul], map_add, map_add,
       ihb (by omega) _ hxb, iha (by omega) _ hxa, add_zero]
 
-/-- **The sum formula, from idele-class `H¹`-vanishing.** If `H¹` vanishes on every layer of
-the idele-class formation over every finite extension of the number field `K`, then the local
-invariants of every Brauer class of `K` sum to zero. -/
-theorem sumLocalInv_brLocalization_eq_zero_of_subsingleton_h1_globalFormation
-    (h : ∀ (E : Type) [Field E] [NumberField E] [Algebra K E]
-      (V : OpenNormalSubgroup (AbsoluteGaloisGroup E)),
-      Subsingleton ((NormalLayer.ofOpenNormal V).H (globalFormation E) 1))
-    (x : Br K) : sumLocalInv K (brLocalization K x) = 0 :=
+/-- **The Hasse principle for the Brauer group** (Albert–Brauer–Hasse–Noether). A Brauer class of
+the number field `K` whose localizations at all places vanish is zero: `Br K → ⨁_v Br K_v` is
+injective. -/
+theorem brLocalization_injective : Function.Injective (brLocalization K) :=
+  brLocalization_injective_of_subsingleton_h1_globalFormation K fun _ ↦
+    subsingleton_h1_globalFormation _
+
+/-- **The sum formula.** The local invariants of every Brauer class of the number field `K` sum
+to zero. -/
+@[simp]
+theorem sumLocalInv_brLocalization_eq_zero (x : Br K) : sumLocalInv K (brLocalization K x) = 0 :=
   sumLocalInv_brLocalization_eq_zero_of_brLocalization_injective K
-    (fun E _ _ _ ↦ brLocalization_injective_of_subsingleton_h1_globalFormation E (h E)) x
+    (fun E _ _ _ ↦ brLocalization_injective E) x
 
 end TauCeti.ClassFieldTheory

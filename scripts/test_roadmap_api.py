@@ -91,6 +91,12 @@ class API(unittest.TestCase):
         self.assertEqual(self.api.stats["workflow-read"]["graphql_points"], 2)
         self.assertEqual(self.api.stats["workflow-read"]["writes"], 0)
 
+    def test_unchanged_write_decisions_are_counted_without_requests(self):
+        rl.apply_label(self.api, "o/r", 1, "roadmap/PDE", {"PDE"}, info()["labels"])
+        self.run.assert_not_called()
+        self.assertEqual(self.api.stats['gh-default']['requests'], 0)
+        self.assertEqual(self.api.stats['gh-default']['skipped_writes'], {'roadmap-label': 1})
+
     def test_graphql_http_200_exhaustion_is_deferred(self):
         self.run.return_value = reply(data={"errors": [{"message": "API rate limit already exceeded"}]},
                                       headers={"X-RateLimit-Remaining": "0", "X-RateLimit-Resource": "graphql"})

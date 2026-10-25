@@ -7,6 +7,9 @@ module
 
 public import Mathlib.ModelTheory.Basic
 public import Mathlib.Basic.Countable.Basic
+public import Mathlib.Basic.Finite.Prod
+public import Mathlib.Basic.Finite.Sigma
+public import Mathlib.Basic.Finite.Sum
 
 /-!
 # Atomic types of finite tuples
@@ -53,6 +56,15 @@ instance [Countable (Σ k, L.Relations k)] : Countable (AtomicIdx L n) := by
   rcases hij with ⟨rfl, h⟩
   cases eq_of_heq h
   simp
+
+/-- A finite relation language has finitely many atomic tests on a finite tuple. -/
+instance [Finite (Σ k, L.Relations k)] : Finite (AtomicIdx L n) := by
+  let f : AtomicIdx L n → (Fin n × Fin n) ⊕ (Σ r : Σ k, L.Relations k, Fin r.1 → Fin n)
+    | .eq i j => .inl (i, j)
+    | .rel r g => .inr ⟨⟨_, r⟩, g⟩
+  apply Finite.of_injective f
+  intro i j hij
+  cases i <;> cases j <;> simp_all [f]
 
 /-- Evaluate an atomic test at a tuple. -/
 def AtomicIdx.Holds : AtomicIdx L n → (Fin n → M) → Prop

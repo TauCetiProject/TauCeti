@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Test functions as elements of `Lp`
@@ -157,8 +158,7 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le {u : 
     exact LinearMap.mkContinuous_norm_le _ hC hf₀
   · set g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 (mu.restrict Omega))).symm (-g')
     have hg : LocallyIntegrableOn g Omega mu :=
-      locallyIntegrableOn_of_locallyIntegrable_restrict
-        ((Lp.memLp g).locallyIntegrable (by norm_num))
+      Lp.locallyIntegrableOn g (by norm_num)
     refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hg, fun phi => ?_⟩
     have hg'phi : g' (T phi) = ℓ phi := by
       simpa [f₀, e, LinearEquiv.ofInjective_apply] using hg'f (e phi)

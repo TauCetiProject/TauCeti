@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 -/
 module
 
@@ -9,7 +9,14 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 
 /-!
-# Adjoints of isometric isomorphisms, of `L²` coordinate projections, and norm bounds
+# Adjoints of linear maps
+
+For bounded operators between complete inner product spaces, the adjoint takes values in the
+orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
+For a continuous linear equivalence between complete inner product spaces, the adjoint is
+bijective (`ContinuousLinearEquiv.adjoint_bijective`).
+For a finite-dimensional linear isometry, the adjoint returns its image vectors to their
+preimages (`LinearIsometry.adjoint_apply_apply`).
 
 Two families of adjoints of linear maps between finite-dimensional inner product spaces:
 
@@ -25,14 +32,59 @@ Finally, a pointwise bound `‖C x‖ ≤ c * ‖x‖` passes to the adjoint
 form for algebraic linear maps, deduced from Mathlib's isometry `ContinuousLinearMap.adjoint`.
 If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 (`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`). The determinant of the adjoint of an
-endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`).
+endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`). For a surjective
+linear map, the orthogonal complement of its kernel has the dimension of the codomain
+(`LinearMap.finrank_orthogonal_ker_of_surjective`).
+
 -/
 
 public section
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+namespace ContinuousLinearMap
+
+open scoped InnerProduct
+
+/-- The adjoint of a bounded operator takes values in the orthogonal complement of its kernel. -/
+theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
+    (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
+  rw [orthogonal_ker]
+  exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+open scoped InnerProduct
+
+/-- The adjoint of a continuous linear equivalence between Hilbert spaces is bijective. -/
+@[simp]
+theorem adjoint_bijective [CompleteSpace E] [CompleteSpace F] (e : E ≃L[𝕜] F) :
+    Function.Bijective ((e : E →L[𝕜] F)†) := by
+  refine Function.bijective_iff_has_inverse.mpr ⟨((e.symm : F →L[𝕜] E)†), ?_, ?_⟩
+  · intro x
+    simp only [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+      e.coe_comp_coe_symm, ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
+  · intro x
+    simp only [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+      e.coe_symm_comp_coe, ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
+
+end ContinuousLinearEquiv
+
+variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+
+namespace LinearIsometry
+
+/-- The adjoint of a linear isometry sends each image vector back to its preimage. -/
+@[simp]
+theorem adjoint_apply_apply (f : E →ₗᵢ[𝕜] F) (x : E) :
+    LinearMap.adjoint f.toLinearMap (f x) = x :=
+  LinearMap.congr_fun (adjoint_comp_self' f) x
+
+end LinearIsometry
 
 namespace LinearIsometryEquiv
 
@@ -69,6 +121,12 @@ theorem adjoint_sndₗ :
 end WithLp
 
 namespace LinearMap
+
+/-- The orthogonal complement of the kernel of a surjective linear map has the dimension of the
+codomain. -/
+theorem finrank_orthogonal_ker_of_surjective (f : E →ₗ[𝕜] F) (hf : Function.Surjective f) :
+    Module.finrank 𝕜 (ker f)ᗮ = Module.finrank 𝕜 F := by
+  rw [orthogonal_ker, finrank_range_adjoint, range_eq_top.mpr hf, finrank_top]
 
 /-- The determinant of the adjoint of an endomorphism is the conjugate of its determinant. -/
 @[simp]

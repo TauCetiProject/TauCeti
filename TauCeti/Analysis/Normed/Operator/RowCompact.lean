@@ -50,10 +50,14 @@ and under limits in operator norm (`ContinuousLinearMap.isRowCompact_of_tendsto`
 
 * `ContinuousLinearMap.isRowCompact_of_norm_matrixCoeff_le`: a null row majorant of the entries
   gives row compactness.
+* `ContinuousLinearMap.isRowCompact_of_apply_single_eq_sum`: columns that are uniformly bounded
+  combinations of finitely many vectors give a row-compact map.
 * `ContinuousLinearMap.ringOpNorm_eq_iSup_rowNorm`: `‖u‖ = ⨆ i, rᵢ(u)` over ultrametric Tate
   scalars.
 * `ContinuousLinearMap.isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp`: row compactness
   is norm convergence of the output truncations.
+* `ContinuousLinearMap.IsRowCompact.tendsto_ringOpNorm_indicatorCLM_comp_sub`: the output
+  truncations of a row-compact map converge to it in operator norm.
 * `ContinuousLinearMap.IsRowCompact.isCompletelyContinuous`: row-compact maps are completely
   continuous.
 
@@ -135,6 +139,24 @@ theorem isRowCompact_of_norm_matrixCoeff_le {u : C₀(J, R) →L[R] C₀(I, R)} 
     (fun i ↦ rowNorm_le_of_forall_le (le_max_right (r i) 0) fun j ↦ (h i j).trans
       (le_max_left _ _)) (by simpa using hr.max (tendsto_const_nhds (x := (0 : ℝ))))⟩
 
+/-- **Bounded finite expansions of the columns give row decay.** If every column
+`u (single j 1)` of `u` is a combination `∑ k, a k • w k` of a fixed finite family `w` with
+coefficients of norm at most `B`, then `u` is row compact: row `i` is bounded by
+`∑ k, B * ‖w k i‖`. -/
+theorem isRowCompact_of_apply_single_eq_sum [DiscreteTopology I] {ι : Type*} [Fintype ι]
+    {u : C₀(J, R) →L[R] C₀(I, R)} (w : ι → C₀(I, R)) {B : ℝ}
+    (h : ∀ j, ∃ a : ι → R, (∀ k, ‖a k‖ ≤ B) ∧
+      u (ZeroAtInftyContinuousMap.single j 1) = ∑ k, a k • w k) :
+    u.IsRowCompact := by
+  refine isRowCompact_of_norm_matrixCoeff_le (r := fun i ↦ ∑ k, B * ‖w k i‖) ?_ fun i j ↦ ?_
+  · simpa using tendsto_finsetSum _ fun k _ ↦ (w k).tendsto_cofinite.norm.const_mul B
+  · obtain ⟨a, ha, hj⟩ := h j
+    calc ‖u.matrixCoeff i j‖ = ‖∑ k, a k * w k i‖ := by
+          simp [matrixCoeff_apply, hj]
+      _ ≤ ∑ k, ‖a k * w k i‖ := norm_sum_le _ _
+      _ ≤ ∑ k, B * ‖w k i‖ := Finset.sum_le_sum fun k _ ↦
+          (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (ha k) (norm_nonneg _))
+
 @[simp]
 theorem isRowCompact_zero : (0 : C₀(J, R) →L[R] C₀(I, R)).IsRowCompact :=
   isRowCompact_of_norm_matrixCoeff_le tendsto_const_nhds fun _ _ ↦ by simp
@@ -191,6 +213,16 @@ theorem norm_matrixCoeff_le_rowNorm (u : C₀(J, R) →L[R] C₀(I, R)) (i : I) 
     ‖u.matrixCoeff i j‖ ≤ u.rowNorm i :=
   norm_matrixCoeff_le_rowNorm_of_le (u.norm_matrixCoeff_le i) j
 
+/-- A row norm is bounded by the operator-norm distance to another map plus its row norm. -/
+theorem rowNorm_le_ringOpNorm_sub_add (u v : C₀(J, R) →L[R] C₀(I, R)) (i : I) :
+    u.rowNorm i ≤ ‖u - v‖ + v.rowNorm i := by
+  refine rowNorm_le_of_forall_le
+    (add_nonneg (ringOpNorm_nonneg _) (v.rowNorm_nonneg i)) fun j ↦ ?_
+  calc ‖u.matrixCoeff i j‖ = ‖(u - v).matrixCoeff i j + v.matrixCoeff i j‖ := by simp
+    _ ≤ ‖u - v‖ + v.rowNorm i :=
+      (norm_add_le _ _).trans (add_le_add ((u - v).norm_matrixCoeff_le i j)
+        (v.norm_matrixCoeff_le_rowNorm i j))
+
 /-- Over Tate scalars, a row norm is at most `C ≥ 0` exactly when every entry of the row is. -/
 theorem rowNorm_le_iff {u : C₀(J, R) →L[R] C₀(I, R)} {i : I} {C : ℝ} (hC : 0 ≤ C) :
     u.rowNorm i ≤ C ↔ ∀ j, ‖u.matrixCoeff i j‖ ≤ C :=
@@ -217,12 +249,8 @@ theorem isRowCompact_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
     fun i ↦ ha.trans_le (u.rowNorm_nonneg i), fun ε hε ↦ ?_⟩)
   obtain ⟨n, hvn, hn⟩ := (hv.and (h.eventually_lt_const (half_pos hε))).exists
   filter_upwards [hvn.tendsto_rowNorm.eventually_lt_const (half_pos hε)] with i hi
-  refine lt_of_le_of_lt (rowNorm_le_of_forall_le (add_nonneg (ringOpNorm_nonneg _)
-    ((v n).rowNorm_nonneg i)) fun j ↦ ?_) (add_halves ε ▸ add_lt_add hn hi)
-  calc ‖u.matrixCoeff i j‖ = ‖(u - v n).matrixCoeff i j + (v n).matrixCoeff i j‖ := by simp
-    _ ≤ ‖u - v n‖ + (v n).rowNorm i :=
-      (norm_add_le _ _).trans (add_le_add ((u - v n).norm_matrixCoeff_le i j)
-        ((v n).norm_matrixCoeff_le_rowNorm i j))
+  exact lt_of_le_of_lt (u.rowNorm_le_ringOpNorm_sub_add (v n) i)
+    (add_halves ε ▸ add_lt_add hn hi)
 
 end Tate
 
@@ -252,6 +280,16 @@ theorem ringOpNorm_eq_iSup_rowNorm (u : C₀(J, R) →L[R] C₀(I, R)) : ‖u‖
     (Real.iSup_nonneg u.rowNorm_nonneg) fun i j ↦ ?_) ?_
   · exact (u.norm_matrixCoeff_le_rowNorm i j).trans (le_ciSup hbdd i)
   · exact Real.iSup_le u.rowNorm_le_ringOpNorm (ringOpNorm_nonneg u)
+
+/-- Over ultrametric Tate scalars, the `i`-th coordinate of `u x` is bounded by the row norm
+`rᵢ(u)` times `‖x‖`. -/
+theorem norm_apply_apply_le_rowNorm_mul (u : C₀(J, R) →L[R] C₀(I, R)) (x : C₀(J, R)) (i : I) :
+    ‖u x i‖ ≤ u.rowNorm i * ‖x‖ := by
+  rw [← (u.hasSum_mul_matrixCoeff x i).tsum_eq, mul_comm]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg (norm_nonneg x) (u.rowNorm_nonneg i)) fun j ↦ (norm_mul_le _ _).trans ?_
+  exact mul_le_mul (norm_coe_le_norm x j) (u.norm_matrixCoeff_le_rowNorm i j) (norm_nonneg _)
+    (norm_nonneg _)
 
 end Ultrametric
 
@@ -285,6 +323,14 @@ theorem sub_indicatorCLM_comp (S : Set I) (u : C₀(J, R) →L[R] C₀(I, R)) :
     u - (indicatorCLM R S).comp u = (indicatorCLM R Sᶜ).comp u := by
   ext x i
   by_cases hi : i ∈ S <;> simp [hi]
+
+/-- Over Tate scalars, the output truncation `π_S ∘ u` to a finite set `S` is row compact: its
+rows outside `S` vanish. -/
+theorem isRowCompact_indicatorCLM_comp [TauCeti.NormedRing.IsTate R] (S : Finset I)
+    (u : C₀(J, R) →L[R] C₀(I, R)) : ((indicatorCLM R (S : Set I)).comp u).IsRowCompact := by
+  refine isRowCompact_iff_tendsto_rowNorm.2 (tendsto_const_nhds.congr' ?_)
+  filter_upwards [S.eventually_cofinite_notMem] with i hi
+  simp [hi]
 
 end SeminormedRing
 
@@ -343,6 +389,14 @@ theorem isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp
     have := ((indicatorCLM R (S : Set I)ᶜ).comp u).rowNorm_le_ringOpNorm i
     rwa [rowNorm_indicatorCLM_comp, Set.indicator_of_mem (by simpa using hiS),
       ← sub_indicatorCLM_comp] at this
+
+/-- Over ultrametric Tate scalars, the output truncations `π_S ∘ u` of a row-compact `u` converge
+to `u` in operator norm as the finite set `S` grows. -/
+theorem IsRowCompact.tendsto_ringOpNorm_indicatorCLM_comp_sub {u : C₀(J, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) :
+    Tendsto (fun S : Finset I ↦ ‖(indicatorCLM R (S : Set I)).comp u - u‖) atTop (𝓝 0) := by
+  simpa only [← neg_sub u, ringOpNorm_neg] using
+    isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp.1 hu
 
 end Truncation
 

@@ -15,7 +15,7 @@ public import TauCeti.Analysis.Sobolev.FiniteMeasure
 Lane D, item 17 of `TauCetiRoadmap/PDE/README.md` asks for the first end-to-end existence
 theorem of the roadmap: for a divergence-form operator
 
-`L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u`
+`L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`
 
 whose energy form is coercive on `H¹₀(Ω)`, the homogeneous Dirichlet problem `L u = f` in `Ω`,
 `u = 0` on `∂Ω`, has a unique weak solution. This file assembles that theorem out of pieces
@@ -103,7 +103,7 @@ the constructed one, so it is available before, and independently of, uniqueness
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound`:
   existence and uniqueness on an arbitrary open domain when the potential absorbs the drift.
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp`:
-  existence and uniqueness for `-∂ⱼ(aⁱʲ ∂ᵢu) + c u = f`, `c ≥ 0`, on a domain of finite measure
+  existence and uniqueness for `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f`, `c ≥ 0`, on a domain of finite measure
   with data `f ∈ Lʳ(Ω)`, `r > max 1 (2n/(n+2))`, which need not be square integrable.
 * `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_slab` and
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_ball`: existence and uniqueness
@@ -177,7 +177,7 @@ theorem norm_dirichletForcing_le (f : Lp ℝ 2 (mu.restrict Omega)) :
 
 /-- **The weak formulation of the homogeneous Dirichlet problem.** `u ∈ H¹₀(Ω)` is a weak
 solution of `L u = f` in `Ω`, `u = 0` on `∂Ω`, for
-`L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u`, when
+`L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`, when
 
 `a(u, v) = ∫_Ω f v` for every test function `v ∈ H¹₀(Ω)`.
 
@@ -447,7 +447,7 @@ nonnegative. For every `f ∈ Lʳ(Ω)` there is exactly one `w ∈ H¹₀(Ω)` w
 
 `a(w, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`,
 
-the weak solution of `-∂ⱼ(aⁱʲ ∂ᵢw) + c w = f` in `Ω`, `w = 0` on `∂Ω`. Unlike
+the weak solution of `-∂ᵢ(aⁱʲ ∂ⱼw) + c w = f` in `Ω`, `w = 0` on `∂Ω`. Unlike
 `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet`, the data need not be square integrable. The
 range `r > max 1 (2n/(n + 2))` is the one in which `v ↦ ∫_Ω f v` is continuous on `H¹₀(Ω)`
 (`TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`). -/
@@ -559,7 +559,7 @@ theorem existsUnique_isWeakSolutionDirichlet_of_subset_slab
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
     (energyFormH1_poincare_constant_pos h.pos hbeta (by linarith) hsmall)
     (fun w => mul_norm_sq_le_energyFormH1_self_of_subset_slab h ha hb hc hb_bound hc_bound
-      hc_nonneg hst hslab w.2) f
+      hc_nonneg hslab w.2) f
 
 /-- **Existence and uniqueness for a domain inside a ball.** For `Ω ⊆ B(z, R) ⊆ ℝ^{n+1}` with a
 uniformly elliptic principal part, a drift bounded by `β`, a bounded nonnegative mass

@@ -22,12 +22,12 @@ the family of windows of exactly one such law, so the two presentations of an ex
 graph agree (`exchangeableGraphLawEquivInfinite`).
 
 Uniqueness holds because a finite measure on `SimpleGraph ℕ` is determined by its windows
-(`measure_ext_of_map_restrictFin`). Existence is Kolmogorov's extension theorem: reading an
-infinite graph through its Boolean edge coordinates `graphCoordEquiv`, the level-`n` marginals
-prescribe a projective family of laws on the finitely many coordinates below any bound, and a
-projective limit on the countable product of the coordinates exists. The extension is exchangeable
-because each window of a relabelled extension is a restriction of a larger window along an
-injection, which the consistency of the marginals controls.
+(`SimpleGraph.measure_ext_of_map_restrictFin`). Existence is Kolmogorov's extension theorem:
+reading an infinite graph through its Boolean edge coordinates `graphCoordEquiv`, the level-`n`
+marginals prescribe a projective family of laws on the finitely many coordinates below any bound,
+and a projective limit on the countable product of the coordinates exists. The extension is
+exchangeable because each window of a relabelled extension is a restriction of a larger window
+along an injection, which the consistency of the marginals controls.
 
 ## Main definitions
 
@@ -214,7 +214,7 @@ private theorem extensionLaw_map_restrictFin (n : ℕ) :
 restriction of a larger window along an injection of labels. -/
 private theorem extensionLaw_map_comap (σ : Equiv.Perm ℕ) :
     L.extensionLaw.map (SimpleGraph.comap ⇑σ) = L.extensionLaw := by
-  refine measure_ext_of_map_restrictFin fun n => ?_
+  refine SimpleGraph.measure_ext_of_map_restrictFin fun n => ?_
   obtain ⟨m, hm⟩ := Finset.exists_nat_subset_range (Finset.univ.image fun i : Fin n => σ i)
   have hlt : ∀ i : Fin n, σ i < m := fun i =>
     Finset.mem_range.1 (hm (Finset.mem_image_of_mem _ (Finset.mem_univ i)))
@@ -289,8 +289,9 @@ def exchangeableGraphLawEquivInfinite : ExchangeableGraphLaw ≃ InfiniteExchang
       prob := fun _ => inferInstance
       consistent := L.map_restrictFin_map_comap }
   left_inv L := ExchangeableGraphLaw.ext fun k => L.extensionLaw_map_restrictFin k
-  right_inv _ := InfiniteExchangeableGraphLaw.ext <| measure_ext_of_map_restrictFin fun n =>
-    ExchangeableGraphLaw.extensionLaw_map_restrictFin _ n
+  right_inv _ := InfiniteExchangeableGraphLaw.ext <|
+    SimpleGraph.measure_ext_of_map_restrictFin fun n =>
+      ExchangeableGraphLaw.extensionLaw_map_restrictFin _ n
 
 /-- **The windows of the extension are the marginals.** The level-`k` window of the infinite law
 attached to an exchangeable graph law is its level-`k` marginal. -/

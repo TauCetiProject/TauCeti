@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Order
 
 /-!
-# Self-multiplication cancellation for formal power series
+# Self-multiplication cancellation and orders under coefficient maps
 
 A formal power series fixed by multiplication with a series of zero constant coefficient is zero:
 if `f = g * f` in `R⟦X⟧` and `constantCoeff g = 0`, then `f = 0`.
@@ -19,10 +19,15 @@ coming from the recurrence and having no constant term.
 
 Multiplication on either side works, and neither form needs commutativity.
 
+An injective map of coefficient semirings preserves the order of a power series: it sends
+nonzero coefficients to nonzero coefficients. Mathlib records only the inequality
+`PowerSeries.le_order_map`.
+
 ## Main results
 
 * `PowerSeries.eq_zero_of_self_eq_mul_self`: `constantCoeff g = 0` and `f = g * f` give `f = 0`.
 * `PowerSeries.eq_zero_of_self_eq_self_mul`: the same for `f = f * g`.
+* `PowerSeries.order_map_of_injective`: injective coefficient maps preserve orders.
 
 ## Provenance
 
@@ -69,5 +74,16 @@ theorem eq_zero_of_self_eq_self_mul {f g : R⟦X⟧} (hg : constantCoeff g = 0) 
   calc f.order + 1 ≤ f.order + g.order := by gcongr
     _ ≤ (f * g).order := le_order_mul f g
     _ = f.order := (congrArg _ h).symm
+
+/-- An injective map of coefficient semirings preserves the order of a power series. -/
+@[simp]
+theorem order_map_of_injective {S : Type*} [Semiring S] {φ : R →+* S}
+    (hφ : Function.Injective φ) (f : R⟦X⟧) : (map φ f).order = f.order := by
+  refine le_antisymm ?_ (le_order_map φ)
+  by_cases hf : f = 0
+  · simp [hf]
+  calc (map φ f).order ≤ f.order.toNat :=
+        order_le _ (by simpa [coeff_map] using (map_ne_zero_iff φ hφ).mpr (coeff_order hf))
+    _ = f.order := ENat.natCast_toNat (order_eq_top.not.mpr hf)
 
 end PowerSeries

@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.Morphisms.Preimmersion
 public import Mathlib.AlgebraicGeometry.Properties
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.RingTheory.KrullDimension.Equidimensional
-public import TauCeti.Topology.KrullDimension.Basic
+public import TauCeti.Topology.KrullDimension.ClosedCover
 
 /-!
 # Krull dimension of schemes and extension of the base field
@@ -45,6 +45,12 @@ has finite Krull dimension: it is covered by finitely many spectra of finitely g
 algebras (`TauCeti.finiteRingKrullDim_of_finiteType`). A preimmersion is a homeomorphism onto
 its image, so it identifies the Krull dimension of its source with that of its image.
 
+A locally closed subset of such a finite-type scheme has the dimension of its closure,
+including for reducible schemes. The boundary of a nonempty locally closed subset has
+strictly smaller dimension: its intersection with each component of the closure is a proper
+closed subset. This supplies the dimension decrease for algebraic orbit boundaries without
+an irreducibility assumption on the group.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_iSup_openCover`: the Krull dimension of a
@@ -66,6 +72,10 @@ its image, so it identifies the Krull dimension of its source with that of its i
 * `TauCeti.AlgebraicGeometry.ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed`: on an
   irreducible scheme locally of finite type over a field, the local ring at a closed point has the
   dimension of the scheme.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_closure_of_isLocallyClosed`: a locally closed
+  subset of a finite-type scheme over a field has the dimension of its closure.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_closure_sdiff_lt_of_isLocallyClosed`: the boundary
+  of a nonempty locally closed subset has strictly smaller dimension than the subset.
 
 ## References
 
@@ -282,6 +292,54 @@ theorem ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed {K : Type u} [Fiel
   rw [ringKrullDim_stalk_eq_coheight, coheight_eq_of_isOpenImmersion, ← idealHeight_eq_coheight,
     height_eq_ringKrullDim_of_isMaximal K, ← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
   exact topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType f g.isOpenEmbedding
+
+/-- A locally closed subset of a finite-type scheme over a field has the dimension of its
+closure. Neither the subset nor its closure needs to be irreducible or nonempty. -/
+theorem topologicalKrullDim_closure_of_isLocallyClosed {K : Type u} [Field K]
+    {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [LocallyOfFiniteType f] [CompactSpace X]
+    {s : Set X} (hs : IsLocallyClosed s) :
+    topologicalKrullDim (closure s) = topologicalKrullDim s := by
+  have : _root_.AlgebraicGeometry.IsNoetherian X :=
+    { __ := LocallyOfFiniteType.isLocallyNoetherian f }
+  refine le_antisymm ?_
+    (IsEmbedding.inclusion (subset_closure (s := s))).isInducing.topologicalKrullDim_le
+  rw [topologicalKrullDim_eq_iSup_irreducibleComponents]
+  refine iSup_le fun C ↦ ?_
+  let Z : Set X := Subtype.val '' C.1
+  have hZ : IsIrreducible Z := C.2.1.image _ continuous_subtype_val.continuousOn
+  have hZc : IsClosed Z := isClosed_closure.isClosedEmbedding_subtypeVal.isClosedMap _
+    (isClosed_of_mem_irreducibleComponents _ C.2)
+  have hd : Dense ((Subtype.val : closure s → X) ⁻¹' s) := by
+    rw [Subtype.dense_iff, Subtype.image_preimage_coe,
+      Set.inter_eq_right.mpr (subset_closure (s := s))]
+  obtain ⟨V, hV, hVne, hVC⟩ :=
+    TopologicalSpace.NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent C.1 C.2
+  obtain ⟨y, hyV, hys⟩ := hd.inter_open_nonempty V hV hVne
+  have hZU : (Z ∩ coborder s).Nonempty :=
+    ⟨y.1, ⟨y, hVC hyV, rfl⟩, subset_coborder hys⟩
+  have hsub : Z ∩ coborder s ⊆ s := by
+    rintro x ⟨⟨z, _, rfl⟩, hx⟩
+    have hz : z.1 ∈ coborder s ∩ closure s := ⟨hx, z.2⟩
+    simpa only [coborder_inter_closure] using hz
+  calc
+    topologicalKrullDim C.1 = topologicalKrullDim Z :=
+      IsEmbedding.subtypeVal.homeomorphImage C.1 |>.isHomeomorph.topologicalKrullDim_eq
+    _ = topologicalKrullDim ↥(Z ∩ coborder s) :=
+      (topologicalKrullDim_inter_eq_of_locallyOfFiniteType f hZ hZc hs.isOpen_coborder hZU).symm
+    _ ≤ topologicalKrullDim s := (IsEmbedding.inclusion hsub).isInducing.topologicalKrullDim_le
+
+/-- The boundary of a nonempty locally closed subset of a finite-type scheme over a field has
+strictly smaller dimension than the subset, including when its closure is reducible. -/
+theorem topologicalKrullDim_closure_sdiff_lt_of_isLocallyClosed {K : Type u} [Field K]
+    {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [LocallyOfFiniteType f] [CompactSpace X]
+    {s : Set X} (hs : IsLocallyClosed s) (hne : s.Nonempty) :
+    topologicalKrullDim ↥(closure s \ s) < topologicalKrullDim s := by
+  have : _root_.AlgebraicGeometry.IsNoetherian X :=
+    { __ := LocallyOfFiniteType.isLocallyNoetherian f }
+  rw [← topologicalKrullDim_closure_of_isLocallyClosed f hs]
+  exact hs.topologicalKrullDim_closure_sdiff_lt hne
+    (ne_top_of_le_ne_top (topologicalKrullDim_ne_top_of_locallyOfFiniteType f)
+      (topologicalKrullDim_subspace_le X (closure s)))
 
 end AlgebraicGeometry
 

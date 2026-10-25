@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import TauCeti.Analysis.InnerProductSpace.Hemisphere
 public import TauCeti.LowDimTopology.Handlebody.Basic
+public import TauCeti.Topology.Maps.OpenQuotient
 
 /-!
 # Heegaard splittings and Heegaard genus
@@ -21,7 +22,8 @@ two subsets `left` and `right` of `M` covering it, each homeomorphic to the stan
 `TauCeti.handlebody genus`, whose intersection is the frontier of each. The definition makes sense
 for any topological space. When `M` is a `3`-manifold without boundary, invariance of domain
 identifies the frontier of each piece with the image of the manifold boundary of the handlebody,
-so the two pieces meet exactly in their common boundary surface. The standard handlebodies are
+so the two pieces meet exactly in their common boundary surface
+(`TauCeti.HeegaardSplitting.coe_mem_right_iff`). The standard handlebodies are
 orientable, so these are the splittings of orientable manifolds.
 
 The Heegaard genus `TauCeti.heegaardGenus M` is defined only under
@@ -35,6 +37,8 @@ has a splitting of genus zero, so its Heegaard genus is zero.
 * `TauCeti.HeegaardSplitting M`: a Heegaard splitting of a space `M`.
 * `TauCeti.HeegaardSplitting.symm`: the splitting with its two sides exchanged.
 * `TauCeti.HeegaardSplitting.transHomeomorph`: transport of a splitting along a homeomorphism.
+* `TauCeti.HeegaardSplitting.ofIsOpenQuotientMap`: the image of a splitting with saturated pieces
+  under an open quotient map, when the images of the pieces are handlebodies.
 * `TauCeti.heegaardGenus M`: the least genus of a Heegaard splitting of `M`.
 * `TauCeti.hemisphereHeegaardSplitting p`: the splitting of the `3`-sphere into the closed
   hemispheres around `p` and `-p`.
@@ -133,6 +137,46 @@ def transHomeomorph (e : M ≃ₜ N) : HeegaardSplitting N where
 @[simp] theorem transHomeomorph_right (e : M ≃ₜ N) :
     (s.transHomeomorph e).right = e '' s.right :=
   (rfl)
+
+section OpenQuotient
+
+variable {π : M → N}
+
+/-- **Heegaard splittings descend along open quotient maps.** If both pieces of a Heegaard
+splitting of `M` are saturated for an open quotient map `π : M → N`, and their images are
+handlebodies of genus `g`, then the images form a Heegaard splitting of `N` of genus `g`. -/
+def ofIsOpenQuotientMap (hπ : IsOpenQuotientMap π) (hl : π ⁻¹' (π '' s.left) = s.left)
+    (hr : π ⁻¹' (π '' s.right) = s.right) (g : ℕ) (el : Nonempty (π '' s.left ≃ₜ handlebody g))
+    (er : Nonempty (π '' s.right ≃ₜ handlebody g)) : HeegaardSplitting N where
+  genus := g
+  left := π '' s.left
+  right := π '' s.right
+  union_eq_univ := by rw [← image_union, s.union_eq_univ, image_univ, hπ.surjective.range_eq]
+  inter_eq_frontier_left := by
+    rw [← image_inter_preimage, hr, hπ.frontier_image_of_preimage_image_eq hl,
+      s.inter_eq_frontier_left]
+  inter_eq_frontier_right := by
+    rw [← image_inter_preimage, hr, hπ.frontier_image_of_preimage_image_eq hr,
+      s.inter_eq_frontier_right]
+  nonempty_homeomorph_left := el
+  nonempty_homeomorph_right := er
+
+@[simp]
+theorem ofIsOpenQuotientMap_genus (hπ : IsOpenQuotientMap π) (hl hr) (g : ℕ) (el er) :
+    (s.ofIsOpenQuotientMap hπ hl hr g el er).genus = g :=
+  (rfl)
+
+@[simp]
+theorem ofIsOpenQuotientMap_left (hπ : IsOpenQuotientMap π) (hl hr) (g : ℕ) (el er) :
+    (s.ofIsOpenQuotientMap hπ hl hr g el er).left = π '' s.left :=
+  (rfl)
+
+@[simp]
+theorem ofIsOpenQuotientMap_right (hπ : IsOpenQuotientMap π) (hl hr) (g : ℕ) (el er) :
+    (s.ofIsOpenQuotientMap hπ hl hr g el er).right = π '' s.right :=
+  (rfl)
+
+end OpenQuotient
 
 end HeegaardSplitting
 
