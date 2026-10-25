@@ -63,7 +63,7 @@ value `1` whenever an argument is `1`.
   (the categories `Vec^ω_G`)
 -/
 
-@[expose] public section
+public section
 
 universe u
 
@@ -89,7 +89,7 @@ def cochainsIso₄ : (inhomogeneousCochains A).X 4 ≅ ↧(G × G × G × G → 
 /-- The 3rd differential in the complex of inhomogeneous cochains of `A : Rep k G`, as a
 `k`-linear map `Fun(G³, A) → Fun(G⁴, A)`. It sends `(f, (g₁, g₂, g₃, g₄))` to
 `ρ_A(g₁)(f(g₂, g₃, g₄)) - f(g₁g₂, g₃, g₄) + f(g₁, g₂g₃, g₄) - f(g₁, g₂, g₃g₄) + f(g₁, g₂, g₃)`. -/
-@[simps!]
+@[expose, simps!]
 def d₃₄ : ModuleCat.of k (G × G × G → A) ⟶ ModuleCat.of k (G × G × G × G → A) :=
   ModuleCat.ofHom
   { toFun f g :=
@@ -213,6 +213,18 @@ def IsMulCocycle₃ (f : G × G × G → M) : Prop :=
 `g, h, j : G`. -/
 def IsMulCoboundary₃ (f : G × G × G → M) : Prop :=
   ∃ x : G × G → M, ∀ g h j : G, g • x (h, j) / x (g * h, j) * x (g, h * j) / x (g, h) = f (g, h, j)
+
+/-- Unfolding lemma for `IsMulCocycle₃`. -/
+theorem isMulCocycle₃_iff (f : G × G × G → M) :
+    IsMulCocycle₃ f ↔ ∀ g h j l : G,
+      f (g * h, j, l) * f (g, h, j * l) = g • f (h, j, l) * f (g, h * j, l) * f (g, h, j) :=
+  Iff.rfl
+
+/-- Unfolding lemma for `IsMulCoboundary₃`. -/
+theorem isMulCoboundary₃_iff (f : G × G × G → M) :
+    IsMulCoboundary₃ f ↔ ∃ x : G × G → M, ∀ g h j : G,
+      g • x (h, j) / x (g * h, j) * x (g, h * j) / x (g, h) = f (g, h, j) :=
+  Iff.rfl
 
 end IsMulCocycle₃
 
