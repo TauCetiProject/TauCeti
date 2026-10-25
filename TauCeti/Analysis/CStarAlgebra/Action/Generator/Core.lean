@@ -43,29 +43,20 @@ theorem generator_gaussianSmear (c : ℝ) (a : α.generator.domain) :
     α.generator ⟨α.gaussianSmear c a,
       (α.isEntireAnalytic_gaussianSmear c a).mem_generator_domain⟩ =
       α.gaussianSmear c (α.generator a) := by
-  let L : A →L[ℂ] A :=
-    ({ toFun := α.gaussianSmear c
-       map_add' := α.gaussianSmear_add c
-       map_smul' := α.gaussianSmear_smul c } : A →ₗ[ℂ] A).mkContinuous 1
-      (fun x => by simpa using α.norm_gaussianSmear_le c x)
-  have hL (t : ℝ≥0) (x : A) :
-      α.toStronglyContinuousGroup.toSemigroup t (L x) =
-        L (α.toStronglyContinuousGroup.toSemigroup t x) := by
-    simpa only [Semigroups.StronglyContinuousGroup.toSemigroup_apply,
-      toStronglyContinuousGroup_apply, L, LinearMap.mkContinuous_apply,
-      LinearMap.coe_mk, AddHom.coe_mk] using
-      α.apply_gaussianSmear c t x
   let D := α.toStronglyContinuousGroup.toSemigroup.complexGenerator
     α.toStronglyContinuousGroup_isComplexLinear
   have hD : α.generator ≤ D := le_of_eq α.generator_def
   obtain ⟨hm, heq⟩ := α.toStronglyContinuousGroup.toSemigroup.complexGenerator_commute
-    α.toStronglyContinuousGroup_isComplexLinear L hL ⟨a, hD.1 a.property⟩
+    α.toStronglyContinuousGroup_isComplexLinear (α.gaussianSmearCLM c)
+      (α.toSemigroup_gaussianSmearCLM c) ⟨a, hD.1 a.property⟩
+  simp only [gaussianSmearCLM_apply] at hm heq
   calc
     α.generator ⟨α.gaussianSmear c a,
         (α.isEntireAnalytic_gaussianSmear c a).mem_generator_domain⟩ =
-        D ⟨L a, hm⟩ := hD.2 rfl
-    _ = L (D ⟨a, hD.1 a.property⟩) := heq
-    _ = α.gaussianSmear c (α.generator a) := congrArg L (hD.2 (x := a) rfl).symm
+        D ⟨α.gaussianSmear c a, hm⟩ := hD.2 rfl
+    _ = α.gaussianSmear c (D ⟨a, hD.1 a.property⟩) := heq
+    _ = α.gaussianSmear c (α.generator a) :=
+      congrArg (α.gaussianSmear c) (hD.2 (x := a) rfl).symm
 
 /-- The Gaussian smearings of a domain element converge in the graph of the generator. -/
 theorem tendsto_gaussianSmear_graph (a : α.generator.domain) :
