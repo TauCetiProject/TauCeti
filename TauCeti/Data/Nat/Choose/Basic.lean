@@ -38,6 +38,8 @@ summation index. The weighted sum is again a single binomial coefficient,
   `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)`.
 * `Nat.sum_range_descFactorial_mul_choose_mul_choose`: Vandermonde's convolution weighted by a
   falling factorial of the summation index.
+* `Nat.add_ascFactorial_mul_multichoose`: a rising factorial absorbed into a multiset
+  coefficient, `(r + k)⁽ᵐ⁾ * multichoose r k = r⁽ᵐ⁾ * multichoose (r + m) k`.
 
 ## References
 
@@ -113,6 +115,23 @@ theorem descFactorial_mul_choose {m i : ℕ} (hmi : m ≤ i) (A : ℕ) :
     i.descFactorial m * A.choose i = A.descFactorial m * (A - m).choose (i - m) := by
   rw [descFactorial_eq_factorial_mul_choose, descFactorial_eq_factorial_mul_choose,
     Nat.mul_assoc, Nat.mul_assoc, Nat.mul_comm (i.choose m) (A.choose i), choose_mul hmi]
+
+/-- **A rising factorial absorbed into a multiset coefficient:**
+`(r + k)⁽ᵐ⁾ * multichoose r k = r⁽ᵐ⁾ * multichoose (r + m) k`, where `n⁽ᵐ⁾` is the rising
+factorial `n.ascFactorial m` and `multichoose r k = C(r + k - 1, k)`.
+
+No hypothesis is needed: for `r = 0` both sides vanish unless `k = m = 0`. -/
+theorem add_ascFactorial_mul_multichoose (r m k : ℕ) :
+    (r + k).ascFactorial m * r.multichoose k = r.ascFactorial m * (r + m).multichoose k := by
+  -- Multiplying by `k !` turns both sides into `r⁽ᵏ⁺ᵐ⁾`, since `k ! * multichoose r k = r⁽ᵏ⁾`.
+  apply Nat.eq_of_mul_eq_mul_left (Nat.factorial_pos k)
+  calc k ! * ((r + k).ascFactorial m * r.multichoose k)
+      = r.ascFactorial k * (r + k).ascFactorial m := by
+        rw [ascFactorial_eq_factorial_mul_choose' r k, multichoose_eq]; ring
+    _ = r.ascFactorial m * (r + m).ascFactorial k := by
+      rw [ascFactorial_mul_ascFactorial, ascFactorial_mul_ascFactorial, Nat.add_comm k m]
+    _ = k ! * (r.ascFactorial m * (r + m).multichoose k) := by
+      rw [ascFactorial_eq_factorial_mul_choose' (r + m) k, multichoose_eq]; ring
 
 /-- **Vandermonde's convolution weighted by a falling factorial of the summation index.**
 

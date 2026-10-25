@@ -47,6 +47,9 @@ determinant-one counterparts over an arbitrary commutative ring.
 * `Matrix.SpecialLinearGroup.commute_transvection` and
   `Matrix.SpecialLinearGroup.commutatorElement_transvection`: the type-A commutator relations for
   determinant-one transvections.
+* `Matrix.SpecialLinearGroup.exists_eq_mul_transvection_of_col_zero_eq`: two determinant-one
+  `2 × 2` matrices with the same first column differ by right multiplication by an upper
+  transvection.
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GLn/SLnTransvection.lean`](https://github.com/CBirkbeck/AINTLIB),
@@ -784,5 +787,41 @@ theorem commutatorElement_transvection
   rw [commutatorElement_def, transvection_mul_transvection_eq_mul_mul hij hjl hil,
     mul_assoc (transvection hjl d) (transvection hij c),
     hxz.eq, ← mul_assoc, mul_inv_cancel_right, hyz.eq, mul_inv_cancel_right]
+
+end Matrix.SpecialLinearGroup
+
+namespace Matrix.SpecialLinearGroup
+
+/-! ### Matrices with the same first column
+
+Two `2 × 2` matrices of determinant one with the same first column differ by right
+multiplication by an upper transvection. Together with Mathlib's `IsCoprime.exists_SL2_col`, this
+identifies `SL₂` modulo its upper unipotent subgroup with the punctured plane through the first
+column. -/
+
+section Column
+
+variable {A : Type*} [CommRing A]
+
+/-- Two `2 × 2` determinant-one matrices with the same first column differ by right
+multiplication by an upper transvection. -/
+theorem exists_eq_mul_transvection_of_col_zero_eq {M N : SpecialLinearGroup (Fin 2) A}
+    (h : (M : Matrix (Fin 2) (Fin 2) A).col 0 = (N : Matrix (Fin 2) (Fin 2) A).col 0) :
+    ∃ t : A, N = M * transvection (zero_ne_one : (0 : Fin 2) ≠ 1) t := by
+  have h0 := congrFun h 0
+  have h1 := congrFun h 1
+  simp only [Matrix.col_apply] at h0 h1
+  have hM := M.det_coe
+  have hN := N.det_coe
+  rw [Matrix.det_fin_two, h0, h1] at hM
+  rw [Matrix.det_fin_two] at hN
+  refine ⟨(M : Matrix (Fin 2) (Fin 2) A) 1 1 * N 0 1 - M 0 1 * N 1 1, ?_⟩
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.mul_apply, Fin.sum_univ_two, transvection_coe, Matrix.one_apply, h0, h1]
+  · linear_combination (-(N : Matrix (Fin 2) (Fin 2) A) 0 1) * hM + (M 0 1) * hN
+  · linear_combination (-(N : Matrix (Fin 2) (Fin 2) A) 1 1) * hM + (M 1 1) * hN
+
+end Column
 
 end Matrix.SpecialLinearGroup

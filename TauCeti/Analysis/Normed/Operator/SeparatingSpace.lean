@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecificLimits.Basic
 public import Mathlib.Order.Filter.EventuallyConst
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # The separating space of a linear map
@@ -33,7 +34,9 @@ Sinclair's stability lemma controls separating spaces along a sequence of compos
 Banach spaces `E n` and `F`, continuous linear maps `R n : E (n + 1) → E n`, and linear maps
 `T n : E n → F` with `T (n + 1) = T n ∘ R n`, the separating spaces of the `T n` form a decreasing
 sequence that is eventually constant. This is the analytic input to the theory of separating
-ideals in automatic continuity.
+ideals in automatic continuity. Applied to continuous linear maps that intertwine `T` up to
+continuous errors, it shows that the closures of the images of the separating space under the
+successive products stabilize.
 
 ## Main definitions
 
@@ -57,14 +60,20 @@ ideals in automatic continuity.
   the composite `W ∘ T` is continuous exactly when `W` kills the separating space of `T`.
 * `LinearMap.separatingSpace_comp`: the separating space of `U ∘ T` is the closure of the
   image under `U` of the separating space of `T`.
+* `LinearMap.map_separatingSpace_le_of_continuous_sub`: a continuous linear map `U` with
+  `U ∘ T - T' ∘ V` continuous for a continuous linear map `V` sends the separating space of
+  `T` into that of `T'`.
 * `LinearMap.exists_norm_le_le_norm_mkQ_apply`: modulo a closed subspace not containing the
   separating space, `T` sends arbitrarily small vectors to arbitrarily large ones.
 * `TauCeti.antitone_separatingSpace`, `TauCeti.eventuallyConst_separatingSpace`: Sinclair's
   stability lemma.
+* `LinearMap.eventuallyConst_topologicalClosure_map_separatingSpace`: stabilization of the
+  closed images of the separating space under successive intertwining products.
 
 ## References
 
-* H. G. Dales, *Banach Algebras and Automatic Continuity*, §5.2.
+* H. G. Dales, *Banach Algebras and Automatic Continuity*, §5.2, in particular the
+  stability lemma 5.2.5.
 * A. M. Sinclair, *Automatic Continuity of Linear Operators*, London Math. Soc. Lecture Note
   Series 21.
 -/
@@ -200,6 +209,21 @@ theorem separatingSpace_add (P : E →L[R] F) :
   rw [mem_separatingSpace_iff_mem_closure, mem_separatingSpace_iff_mem_closure, ← hΨ,
     ← Ψ.preimage_closure, Set.mem_preimage]
   simp [Ψ]
+
+/-- Two linear maps differing by a continuous linear map have the same separating space. -/
+theorem separatingSpace_eq_of_continuous_sub {T₁ T₂ : E →ₗ[R] F} (h : Continuous (T₁ - T₂)) :
+    T₁.separatingSpace = T₂.separatingSpace := by
+  simpa using T₂.separatingSpace_add ⟨T₁ - T₂, h⟩
+
+/-- If `U ∘ T - T' ∘ V` is continuous for continuous linear maps `U` and `V`, then `U` maps the
+separating space of `T` into that of `T'`. Taking `T' = T` and `U`, `V` the left or right
+actions of an algebra on `F` and `E`, this says that the separating space of a map whose
+commutators with the actions are continuous is a submodule. -/
+theorem map_separatingSpace_le_of_continuous_sub (T' : D →ₗ[R] G) (U : F →L[R] G)
+    (V : E →L[R] D) (h : Continuous ((U : F →ₗ[R] G) ∘ₗ T - T' ∘ₗ (V : E →ₗ[R] D))) :
+    T.separatingSpace.map (U : F →ₗ[R] G) ≤ T'.separatingSpace :=
+  (T.map_separatingSpace_le U).trans
+    ((separatingSpace_eq_of_continuous_sub h).trans_le (T'.separatingSpace_comp_le V))
 
 /-- The graph of `T` becomes closed after passing to the quotient by its separating space. -/
 theorem isClosed_graph_mkQ_comp :
@@ -483,3 +507,39 @@ theorem eventuallyConst_separatingSpace [CompleteSpace F] [∀ n, CompleteSpace 
 end Banach
 
 end TauCeti
+
+/-! ### Stability of the images of the separating space -/
+
+namespace LinearMap
+
+section Intertwining
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+/-- **Stability of the images of the separating space.** Let `T : E → F` be a linear map
+between Banach spaces, and let `R n` on `E` and `S n` on `F` be continuous linear maps such that
+each `S n ∘ T - T ∘ R n` is continuous. If `V n = S 0 ∘ ⋯ ∘ S (n - 1)`, then the closures of the
+images of the separating space of `T` under `V n` are eventually constant. -/
+theorem eventuallyConst_topologicalClosure_map_separatingSpace (T : E →ₗ[𝕜] F)
+    (R : ℕ → E →L[𝕜] E) (S : ℕ → F →L[𝕜] F)
+    (hRS : ∀ n, Continuous ((S n : F →ₗ[𝕜] F) ∘ₗ T - T ∘ₗ (R n : E →ₗ[𝕜] E)))
+    {V : ℕ → F →L[𝕜] F} (hV0 : V 0 = ContinuousLinearMap.id 𝕜 F)
+    (hV : ∀ n, V (n + 1) = (V n).comp (S n)) :
+    Filter.EventuallyConst
+      (fun n ↦ (T.separatingSpace.map (V n : F →ₗ[𝕜] F)).topologicalClosure) Filter.atTop := by
+  obtain ⟨U, hU0, hU⟩ : ∃ U : ℕ → E →L[𝕜] E,
+      U 0 = ContinuousLinearMap.id 𝕜 E ∧ ∀ n, U (n + 1) = (U n).comp (R n) :=
+    ⟨fun n ↦ Nat.rec (ContinuousLinearMap.id 𝕜 E) (fun n Un ↦ Un.comp (R n)) n, rfl, fun _ ↦ rfl⟩
+  have hsep : (fun n ↦ (T.separatingSpace.map (V n : F →ₗ[𝕜] F)).topologicalClosure) =
+      fun n ↦ (T ∘ₗ (U n : E →ₗ[𝕜] E)).separatingSpace := funext fun n ↦ by
+    rw [← separatingSpace_comp, separatingSpace_eq_of_continuous_sub
+      (continuous_comp_sub_comp_of_continuous_sub T R S hRS hU0 hU hV0 hV n)]
+  rw [hsep]
+  exact TauCeti.eventuallyConst_separatingSpace (E := fun _ ↦ E) (R := R) fun n ↦ by
+    rw [hU, ContinuousLinearMap.toLinearMap_comp, LinearMap.comp_assoc]
+
+end Intertwining
+
+end LinearMap

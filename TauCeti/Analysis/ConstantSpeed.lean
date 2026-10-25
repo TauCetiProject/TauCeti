@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.ConstantSpeed
+public import TauCeti.Topology.MetricSpace.Arclength.Basic
 public import TauCeti.Geometry.Euclidean.Volume.Measure
 public import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
 
@@ -63,16 +64,6 @@ theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [Topolo
   rw [edist_dist, Real.dist_eq, variationOnFromTo.sub_right hf.locallyBoundedVariationOn ha hx hy,
     ← ENNReal.ofReal_toReal hf]
   exact ENNReal.ofReal_le_ofReal (variationOnFromTo.abs_le_eVariationOn hf)
-
-/-- The natural parameterization of a curve of locally bounded variation has the same trace
-when restricted to the set of cumulative variations from a base point. -/
-@[simp]
-theorem LocallyBoundedVariationOn.image_naturalParameterization {α E : Type*}
-    [LinearOrder α] [TopologicalSpace E] [WeakEMetricSpace E] {f : α → E} {s : Set α}
-    (hf : LocallyBoundedVariationOn f s) {a : α} (ha : a ∈ s) :
-    naturalParameterization f s a '' (variationOnFromTo f s a '' s) = f '' s := by
-  rw [image_image]
-  exact image_congr fun x hx ↦ edist_eq_zero.mp (edist_naturalParameterization_eq_zero hf ha hx)
 
 /-- The image of a curve of locally bounded variation has Hausdorff dimension at most one,
 because its natural parameterization is Lipschitz on a subset of the real line. -/
