@@ -43,6 +43,13 @@ Leray's comparison is natural in the coefficient sheaf.
   between the Čech cohomology of this presheaf for a finite cover with affine intersections and
   `Hⁿ(X, M)`.
 
+## Main statements
+
+* `AlgebraicGeometry.Scheme.Modules.homologyCechComplexLinearEquiv_apply`: its underlying map is
+  Leray's comparison `homologyCechComplexIsoCohomology`.
+* `AlgebraicGeometry.Scheme.Modules.homologyCechComplexLinearEquiv_naturality`: it is natural in
+  the quasi-coherent sheaf.
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Theorem III.4.5.
@@ -181,5 +188,30 @@ def homologyCechComplexLinearEquiv (M : X.Modules) [M.IsQuasicoherent] (n : ℕ)
       s • (homologyCechComplexAddIso U hU hcover M n).hom x
     rw [base_smul_cohomology, cohomology_smul, ← hx]
     exact h
+
+/-- The underlying map of `homologyCechComplexLinearEquiv` is Leray's comparison
+`homologyCechComplexIsoCohomology`, after forgetting the module structure, which commutes with
+taking homology and with forming Čech complexes. -/
+lemma homologyCechComplexLinearEquiv_apply (M : X.Modules) [M.IsQuasicoherent] (n : ℕ)
+    (x : ((cechComplexFunctor U).obj ((sectionsBasePresheafFunctor S).obj M)).homology n) :
+    homologyCechComplexLinearEquiv U hU hcover M n x =
+      (homologyCechComplexIsoCohomology U hU hcover M n).hom
+        (HomologicalComplex.homologyMap
+          ((cechComplexFunctorMapIso U (forget₂ (ModuleCat.{u} S) Ab)).app _ ≪≫
+            (cechComplexFunctor U).mapIso (sectionsBasePresheafCompForget₂Iso S M)).hom n
+          (((((cechComplexFunctor U).obj ((sectionsBasePresheafFunctor S).obj M)).sc
+              n).mapHomologyIso (forget₂ (ModuleCat.{u} S) Ab)).inv x)) := by
+  unfold homologyCechComplexLinearEquiv
+  rfl
+
+/-- `homologyCechComplexLinearEquiv` is natural in the quasi-coherent sheaf. -/
+lemma homologyCechComplexLinearEquiv_naturality {M N : X.Modules} [M.IsQuasicoherent]
+    [N.IsQuasicoherent] (f : M ⟶ N) (n : ℕ)
+    (x : ((cechComplexFunctor U).obj ((sectionsBasePresheafFunctor S).obj M)).homology n) :
+    homologyCechComplexLinearEquiv U hU hcover N n
+        (HomologicalComplex.homologyMap
+          ((cechComplexFunctor U).map ((sectionsBasePresheafFunctor S).map f)) n x) =
+      (cohomologyFunctor X n).map f (homologyCechComplexLinearEquiv U hU hcover M n x) :=
+  ConcreteCategory.congr_hom (homologyCechComplexAddIso_hom_naturality U hU hcover f n) x
 
 end AlgebraicGeometry.Scheme.Modules
