@@ -10,7 +10,6 @@ public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 import TauCeti.FieldTheory.FunctionField.AffineModel.Place
 import TauCeti.FieldTheory.FunctionField.Belyi.Radical
-import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
