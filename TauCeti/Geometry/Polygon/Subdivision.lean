@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Order.Floor.Ring
 public import TauCeti.Geometry.Polygon.DoublePoint
 public import TauCeti.Geometry.Polygon.Simple
 
@@ -220,13 +221,6 @@ private theorem exists_subdivisionTime_eq (hs : s ∈ Ioo (0 : ℝ) 1) (j : Fin 
   · obtain ⟨j', hφ, hpath, hdir⟩ := exists_subdivisionTime_eq_of_ne poly i hs _ hji hu
     exact ⟨j', u, hu, 1, one_pos, hφ, hpath, by rw [hdir, one_smul]⟩
 
-omit [NeZero n] in
-/-- A time in one period `[0, n)` is a time `u ∈ [0, 1)` along some edge `j`. -/
-private theorem exists_eq_natCast_add {t : ℝ} (ht : t ∈ Ico (0 : ℝ) n) :
-    ∃ j : Fin n, ∃ u ∈ Ico (0 : ℝ) 1, t = (j : ℕ) + u :=
-  ⟨⟨⌊t⌋₊, (Nat.floor_lt ht.1).2 ht.2⟩, t - ⌊t⌋₊,
-    ⟨sub_nonneg.2 (Nat.floor_le ht.1), by linarith [Nat.lt_floor_add_one t]⟩, by simp⟩
-
 /-- **Subdividing an edge reparametrizes the boundary.** Subdividing edge `i` of a polygon at an
 interior point changes its boundary parametrization by an increasing change of time `φ`, mapping
 one period `[0, n)` into `[0, n + 1)`. At each time `t` the subdivided polygon runs along an edge
@@ -240,7 +234,7 @@ theorem exists_strictMono_boundaryParam_insertVertex_edgePath (hs : s ∈ Ioo (0
             poly.insertVertex i (poly.edgePath ℝ i s) (edgeIndexAt (n + 1) (φ t)) =
           r • (poly (finRotate n (edgeIndexAt n t)) -ᵥ poly (edgeIndexAt n t)) := by
   refine ⟨subdivisionTime ((i : ℕ) : ℝ) s, strictMono_subdivisionTime _ hs, fun t ht ↦ ?_⟩
-  obtain ⟨j, u, hu, rfl⟩ := exists_eq_natCast_add ht
+  obtain ⟨j, u, hu, rfl⟩ := TauCeti.exists_eq_natCast_add_of_mem_Ico ht
   obtain ⟨j', u', hu', r, hr, hφ, hpath, hdir⟩ := exists_subdivisionTime_eq poly i hs j hu
   rw [hφ, boundaryParam_natCast_add _ _ (Ico_subset_Icc_self hu'),
     poly.boundaryParam_natCast_add j (Ico_subset_Icc_self hu), hpath,
@@ -263,7 +257,7 @@ theorem exists_strictMono_boundaryParam_insertVertex (c : P) :
         poly (finRotate n (edgeIndexAt n t)) -ᵥ poly (edgeIndexAt n t) := by
   have hs : (2⁻¹ : ℝ) ∈ Ioo (0 : ℝ) 1 := by norm_num
   refine ⟨subdivisionTime ((i : ℕ) : ℝ) 2⁻¹, strictMono_subdivisionTime _ hs, fun t ht hti ↦ ?_⟩
-  obtain ⟨j, u, hu, rfl⟩ := exists_eq_natCast_add ht
+  obtain ⟨j, u, hu, rfl⟩ := TauCeti.exists_eq_natCast_add_of_mem_Ico ht
   rw [edgeIndexAt_natCast_add _ hu] at hti ⊢
   obtain ⟨j', hφ, hpath, hdir⟩ := exists_subdivisionTime_eq_of_ne poly i hs c hti hu
   rw [hφ, boundaryParam_natCast_add _ _ (Ico_subset_Icc_self hu),
