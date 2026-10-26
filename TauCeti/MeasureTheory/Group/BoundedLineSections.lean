@@ -8,9 +8,9 @@ module
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.NumberTheory.LocalField.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+import TauCeti.MeasureTheory.Group.LocalFieldScaling
 import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 
 /-!
 # Sets with bounded line sections over a local field are null
@@ -25,9 +25,10 @@ nonarchimedean counterpart of Mathlib's
 
 The argument needs no product structure on the measure, hence no comparison with a product of
 Haar measures on `K` and no second countability of `K`. The scaled integer boxes
-`{x | ϖ ^ k • x ∈ 𝒪[K] ^ ι}`, for a uniformizer `ϖ`, are compact subgroups exhausting `ι → K`,
-and inside each of them the translates of `Z` by the infinitely many vectors `t • v`, `t ∈ 𝒪[K]`
-(after rescaling `v` into the box), cover each point at most `D` times. This is
+`TauCeti.scaledIntegerBox ι ϖ k = {x | ϖ ^ k • x ∈ 𝒪[K] ^ ι}`, for a uniformizer `ϖ`, are
+compact subgroups exhausting `ι → K`, and inside each of them the translates of `Z` by the
+infinitely many vectors `t • v`, `t ∈ 𝒪[K]` (after rescaling `v` into the box), cover each point
+at most `D` times. This is
 `MeasureTheory.Measure.measure_inter_addSubgroup_eq_zero_of_encard_le`.
 
 ## Main results
@@ -38,51 +39,14 @@ and inside each of them the translates of `Z` by the infinitely many vectors `t 
 
 public section
 
-open Set ValuativeRel
+open Set ValuativeRel TauCeti
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
-variable {K : Type*} [Field K] [ValuativeRel K] {ι : Type*}
-
-/-- The scaled integer box `{x | ϖ ^ k • x ∈ 𝒪[K] ^ ι}`, an additive subgroup of `ι → K`. -/
-private noncomputable def scaledIntegerBox (ϖ : K) (k : ℕ) : AddSubgroup (ι → K) :=
-  (AddSubgroup.pi univ fun _ ↦ (𝒪[K]).toAddSubgroup).comap
-    (DistribSMul.toAddMonoidHom (ι → K) (ϖ ^ k))
-
-/-- Membership in a scaled integer box, coordinate by coordinate. -/
-private theorem mem_scaledIntegerBox {ϖ : K} {k : ℕ} {x : ι → K} :
-    x ∈ scaledIntegerBox ϖ k ↔ ∀ i, ϖ ^ k * x i ∈ 𝒪[K] := by
-  simp [scaledIntegerBox, AddSubgroup.mem_pi]
-
-variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-
-/-- A scaled integer box is compact: it is the preimage of `𝒪[K] ^ ι` under a homeomorphism. -/
-private theorem isCompact_scaledIntegerBox {ϖ : K} (hϖ : ϖ ≠ 0) (k : ℕ) :
-    IsCompact (scaledIntegerBox (ι := ι) ϖ k : Set (ι → K)) := by
-  have : (scaledIntegerBox (ι := ι) ϖ k : Set (ι → K)) =
-      Homeomorph.smulOfNeZero (ϖ ^ k) (pow_ne_zero k hϖ) ⁻¹' univ.pi fun _ ↦ (𝒪[K] : Set K) := by
-    ext x
-    simp [mem_scaledIntegerBox]
-  rw [this, Homeomorph.isCompact_preimage]
-  exact isCompact_univ_pi fun _ ↦
-    isCompact_iff_compactSpace.mpr (inferInstanceAs (CompactSpace 𝒪[K]))
-
-/-- For a uniformizer `ϖ` and a finite type `ι`, the scaled integer boxes exhaust `ι → K`: a power
-of `ϖ` clears the denominators of the coordinates of `x`, since `K` is the localization of `𝒪[K]`
-away from `ϖ`. -/
-private theorem exists_mem_scaledIntegerBox [Finite ι] {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ)
-    (x : ι → K) : ∃ k, x ∈ scaledIntegerBox (ϖ : K) k := by
-  have := TauCeti.isLocalizationAway_fractionRing (K := K) hϖ
-  have h (i : ι) : ∀ᶠ k in Filter.atTop, (ϖ : K) ^ k * x i ∈ 𝒪[K] := by
-    obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj ϖ (x i)
-    simp only [Algebra.algebraMap_ofSubsemiring_apply] at ha
-    refine Filter.eventually_atTop.2 ⟨n, fun k hk ↦ ?_⟩
-    rw [← Nat.sub_add_cancel hk, pow_add, mul_assoc, mul_comm _ (x i), ha]
-    exact mul_mem (pow_mem ϖ.2 _) a.2
-  exact (Filter.eventually_all.2 h).exists.imp fun _ ↦ mem_scaledIntegerBox.2
-
-variable [Finite ι] [MeasurableSpace (ι → K)] [BorelSpace (ι → K)]
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] {ι : Type*} [Finite ι] [MeasurableSpace (ι → K)]
+  [BorelSpace (ι → K)]
 
 /-- **Sets with bounded line sections are null.** Let `Z ⊆ ι → K` be measurable, and suppose that
 for some direction `v` and bound `D`, every line `t ↦ x + t • v` meets `Z` in at most `D` points.
@@ -97,8 +61,8 @@ theorem measure_eq_zero_of_encard_setOf_add_smul_mem_le (μ : Measure (ι → K)
   obtain ⟨k₀, hk₀⟩ := exists_mem_scaledIntegerBox hϖ v
   rw [← inter_univ Z, ← iUnion_eq_univ_iff.mpr (exists_mem_scaledIntegerBox hϖ), inter_iUnion]
   refine measure_iUnion_null fun k ↦ μ.measure_inter_addSubgroup_eq_zero_of_encard_le hZ
-    (isCompact_scaledIntegerBox hϖ0 k).isClosed.measurableSet
-    (isCompact_scaledIntegerBox hϖ0 k).measure_lt_top.ne
+    (isCompact_scaledIntegerBox (ι := ι) hϖ0 k).isClosed.measurableSet
+    (isCompact_scaledIntegerBox (ι := ι) hϖ0 k).measure_lt_top.ne
     (w := fun t : 𝒪[K] ↦ ((ϖ : K) ^ k₀ * t) • v) (fun t ↦ ?_) (D := D) fun x ↦ ?_
   · refine mem_scaledIntegerBox.mpr fun i ↦ ?_
     have h : (ϖ : K) ^ k * ((ϖ : K) ^ k₀ * t * v i) =

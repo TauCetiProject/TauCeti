@@ -98,8 +98,7 @@ end Field
 
 end TauCeti
 
-open TauCeti.Polynomial (continuous_resultant_derivative_monicOfCoeff
-  resultant_derivative_monicOfCoeff_eq_zero_iff)
+open TauCeti.Polynomial (continuous_resultant_derivative_monicOfCoeff)
 
 namespace MeasureTheory.Measure
 
@@ -127,8 +126,9 @@ theorem ae_separable_monicOfCoeff (μ : Measure (Fin n → K)) [μ.IsAddLeftInva
   let r (a : Fin (m + 2) → K) : K :=
     resultant (monicOfCoeff a) (derivative (monicOfCoeff a)) (m + 2) (m + 2 - 1)
   have hr : Continuous r := continuous_resultant_derivative_monicOfCoeff
-  have hr0 (a : Fin (m + 2) → K) : r a = 0 ↔ ¬ (monicOfCoeff a).Separable :=
-    resultant_derivative_monicOfCoeff_eq_zero_iff a
+  have hr0 (a : Fin (m + 2) → K) : r a = 0 ↔ ¬ (monicOfCoeff a).Separable := by
+    have h := (monic_monicOfCoeff a).resultant_deriv_eq_zero_iff
+    rwa [natDegree_monicOfCoeff] at h
   have h₁ : μ {a | a 1 = 0} = 0 := by
     refine μ.measure_eq_zero_of_encard_setOf_add_smul_mem_le
       (isClosed_eq (continuous_apply 1) continuous_const).measurableSet (Pi.single 1 1) (D := 1)
