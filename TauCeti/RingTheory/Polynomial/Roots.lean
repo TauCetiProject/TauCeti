@@ -17,29 +17,24 @@ public import Mathlib.FieldTheory.Separable
 This file records several facts about the roots of a polynomial, either in its coefficient field
 or after base change to a domain `E`.
 
-First, an explicit numbering of the root set of a separable polynomial enumerates its full root
-multiset: separability makes the roots simple, so the multiset is the image of the numbering.
-This lets root-product formulas be expressed as finite products indexed by `Fin f.natDegree`,
-without choosing a global order on the root set.
-
-Second, the root set of a product of polynomials whose base changes to `E` are nonzero is the
+First, the root set of a product of polynomials whose base changes to `E` are nonzero is the
 union of the root sets of the factors. This is the lemma that decomposes the roots of a
 polynomial along a factorisation, for instance the roots of a monic integer polynomial along its
 monic irreducible factors. The same holds for the distinct roots of a finite product.
 For a separable product, the root sets of the factors are pairwise disjoint.
 
-Third, dividing a polynomial by the linear factor of a simple root removes exactly that root
+Second, dividing a polynomial by the linear factor of a simple root removes exactly that root
 from the root set. Here `a` only has to be a simple root in `E`: `f a` vanishes and `f' a` does
 not vanish after mapping to `E`, so the map `F → E` need not be injective.
 
-Fourth, translating the variable moves the roots: the roots of `f(X + t)` are the points `x`
+Third, translating the variable moves the roots: the roots of `f(X + t)` are the points `x`
 with `x + t` a root of `f`, so `x ↦ x + t` is a bijection between the two root sets, and
 `f(X + t)` is separable exactly when `f` is.
 
-Fifth, if every root of a nonzero polynomial is among a family of points `θ i`, then its roots
+Fourth, if every root of a nonzero polynomial is among a family of points `θ i`, then its roots
 are exactly the `θ i` in which it has positive multiplicity.
 
-Sixth, the roots of a product of linear factors over a finite family are the values of the
+Fifth, the roots of a product of linear factors over a finite family are the values of the
 family. For split monic polynomials, a relation `Multiset.Rel r` between the root multisets is
 the same as a pair of enumerations of the roots, indexed by `Fin f.natDegree`, factoring the two
 polynomials into linear factors with entries of equal index related by `r`.
@@ -53,8 +48,6 @@ the gcd with the derivative as the number of distinct roots.
 
 * `Polynomial.nodup_roots_of_forall_derivative_eval_ne_zero`: nonvanishing of the derivative at
   every rational root suffices for the rational root multiset to have no repetitions.
-* `Polynomial.Separable.roots_map_eq_map_numbering`: for a separable polynomial, a numbering of
-  its root set enumerates its full root multiset after base change.
 * `Polynomial.rootSet_mul`: the root set of a product of polynomials whose base changes to `E` are
   nonzero is the union of the root sets of the factors.
 * `Polynomial.roots_prod_toFinset`: the distinct roots of a finite product of nonzero polynomials
@@ -119,19 +112,6 @@ theorem _root_.Polynomial.nodup_roots_of_forall_derivative_eval_ne_zero [IsDomai
     rw [count_roots]
     omega
   · simp [Multiset.count_eq_zero_of_notMem hx]
-
-/-- A numbering of the root set of a separable polynomial enumerates the whole root multiset:
-separability makes the roots simple, so the multiset is the image of the numbering. -/
-theorem _root_.Polynomial.Separable.roots_map_eq_map_numbering (hsep : f.Separable)
-    (e : Fin f.natDegree ≃ f.rootSet E) :
-    (f.map (algebraMap F E)).roots = Multiset.map (fun i ↦ ((e i : E))) univ.val := by
-  have hmem : ∀ {a : E}, a ∈ (f.map (algebraMap F E)).roots ↔ a ∈ f.rootSet E := fun {_} ↦
-    Polynomial.mem_aroots'.trans Polynomial.mem_rootSet'.symm
-  refine (Multiset.Nodup.ext (nodup_roots hsep.map) ?_).mpr ?_
-  · exact univ.nodup.map fun i j h ↦ e.injective (Subtype.ext h)
-  · intro a
-    simp only [Multiset.mem_map, Finset.mem_val, mem_univ, true_and]
-    exact ⟨fun ha ↦ ⟨e.symm ⟨a, hmem.mp ha⟩, by simp⟩, fun ⟨i, hi⟩ ↦ hi ▸ hmem.mpr (e i).2⟩
 
 /-- The root set of a product of polynomials is the union of the root sets of the factors,
 provided neither factor vanishes after base change to `E`. -/
