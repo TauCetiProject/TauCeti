@@ -9,7 +9,6 @@ public import TauCeti.Analysis.BoundedVariation.Space
 import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 
 /-!
 # Lipschitz composition of functions of bounded variation
@@ -24,9 +23,9 @@ from smooth inner functions to locally integrable functions. Neither finite vari
 finite volume is required for the inequality. BV membership additionally needs integrability
 of the composite; the condition `g 0 = 0` supplies it on domains of arbitrary volume.
 
-The central formal inputs are `ContDiffBump.totalVariationOn_normed_convolution_le` and
-`TauCeti.totalVariationOn_le_liminf`. Compact localization follows the mollification argument
-in `TauCeti.Analysis.BoundedVariation.Coarea`.
+The central formal inputs are `TauCeti.exists_mollifier_seq_of_isCompact_closure` and
+`TauCeti.totalVariationOn_le_liminf`. The shared compact localization lemma extracts the
+mollification argument from `TauCeti.Analysis.BoundedVariation.Coarea`.
 
 ## References
 
@@ -62,33 +61,11 @@ private theorem totalVariationOn_comp_le_of_isCompact_closure
     (hu : LocallyIntegrableOn u Ω μ) (hg : LipschitzWith C g) {Ω' : Opens E}
     (hc : IsCompact (closure (Ω' : Set E))) (hsub : closure (Ω' : Set E) ⊆ Ω) :
     totalVariationOn μ Ω' (g ∘ u) ≤ C * totalVariationOn μ Ω u := by
-  -- Localize `u` to a compact neighbourhood of `Ω'` before mollifying it.
-  obtain ⟨δ, hδ, hδΩ⟩ := hc.exists_cthickening_subset_open Ω.isOpen hsub
-  set K := cthickening (δ / 2) (closure (Ω' : Set E))
-  have hK : IsCompact K := hc.cthickening
-  have hKΩ : K ⊆ Ω := (cthickening_mono (by linarith) _).trans hδΩ
-  let V : Opens E := ⟨thickening (δ / 2) (closure (Ω' : Set E)), isOpen_thickening⟩
-  have hVK : (V : Set E) ⊆ K := thickening_subset_cthickening _ _
-  have hball (x : E) (hx : x ∈ Ω') : closedBall x (δ / 4) ⊆ V :=
-    (closedBall_subset_ball (by linarith)).trans (ball_subset_thickening (subset_closure hx) _)
-  let u' := K.indicator u
-  have hu'u (x : E) (hx : x ∈ K) : u' x = u x := indicator_of_mem hx u
-  have hu' : LocallyIntegrable u' μ :=
-    ((hu.integrableOn_compact_subset hKΩ hK).integrable_indicator
-      hK.measurableSet).locallyIntegrable
-  let φ : ℕ → ContDiffBump (0 : E) := fun n =>
-    ⟨1 / (n + 2), 1 / (n + 1), by positivity, by gcongr; norm_num⟩
-  have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
-  let w : ℕ → E → ℝ := fun n => (φ n).normed μ ⋆[lsmul ℝ ℝ, μ] u'
-  have hw (n : ℕ) : ContDiff ℝ 1 (w n) :=
-    (φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed hu'
+  obtain ⟨w, hw, hconv, hvar⟩ := exists_mollifier_seq_of_isCompact_closure hu hc hsub
   -- The Lipschitz estimate transports convergence in local `L¹` through `g`.
   have hlim (A : Set E) (hA : IsCompact A) (hAΩ' : A ⊆ Ω') :
       Tendsto (fun n => ∫⁻ x in A, ‖(g ∘ w n) x - (g ∘ u) x‖ₑ ∂μ) atTop (𝓝 0) := by
-    have hAu : EqOn u' u A := fun x hx => hu'u x
-      (self_subset_cthickening _ (subset_closure (hAΩ' hx)))
-    have hlim := (tendsto_setLIntegral_enorm_normed_convolution_sub hφ hu' hA).congr
-      fun n => setLIntegral_congr_fun hA.measurableSet fun x hx => by rw [hAu hx]
+    have hlim := hconv A hA (hAΩ'.trans subset_closure)
     have hscale := ENNReal.Tendsto.const_mul hlim (a := (C : ℝ≥0∞))
       (Or.inr ENNReal.coe_ne_top)
     rw [mul_zero] at hscale
@@ -102,17 +79,11 @@ private theorem totalVariationOn_comp_le_of_isCompact_closure
     (hg.continuous.comp (hw n).continuous).locallyIntegrable.locallyIntegrableOn _
   refine (totalVariationOn_le_liminf
     (.of_forall hli)
-    ((hu.mono_set (subset_closure.trans hsub)).comp_lipschitz hg Ω'.isOpen.isLocallyClosed)
+    ((hu.mono_set (subset_closure.trans hsub)).comp_lipschitz hg)
     hlim).trans (liminf_le_of_frequently_le' (Filter.Eventually.frequently ?_))
-  filter_upwards [hφ.eventually (ge_mem_nhds (show 0 < δ / 4 by positivity))] with n hn
+  filter_upwards [hvar] with n hn
   refine (totalVariationOn_comp_le_of_contDiff (hw n) hg).trans ?_
   gcongr
-  calc totalVariationOn μ Ω' (w n) ≤ totalVariationOn μ V u' :=
-        (φ n).totalVariationOn_normed_convolution_le (hu'.locallyIntegrableOn _)
-          fun x hx => (closedBall_subset_closedBall hn).trans (hball x hx)
-    _ = totalVariationOn μ V u := totalVariationOn_congr_ae <|
-        (ae_restrict_mem V.isOpen.measurableSet).mono fun x hx => hu'u x (hVK hx)
-    _ ≤ totalVariationOn μ Ω u := totalVariationOn_mono fun x hx => hKΩ (hVK hx)
 
 /-- **Lipschitz composition bounds distributional variation.** For locally integrable `u` on an
 open set, `|D(g ∘ u)|(Ω) ≤ C |Du|(Ω)` whenever `g` is `C`-Lipschitz. This includes infinite
