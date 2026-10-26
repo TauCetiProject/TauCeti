@@ -513,13 +513,8 @@ def deckMulEquivIso :
     deck ⇑C.cover.proj ≃* C.toAnalyticBelyiPair.Iso C.toAnalyticBelyiPair :=
   (Deck.conjMulEquiv C.unpuncturedHomeomorphRestrict fun x ↦ Subtype.ext <|
       OnePoint.coe_injective <| (C.toAnalyticBelyiPair.coe_restrict_apply _).trans <| by
-        simp [coe_unpuncturedHomeomorphRestrict]).trans <|
-    (MulEquiv.subgroupCongr
-      (congrArg deck (C.toAnalyticBelyiPair.restrict_toTopBranchedCover rfl))).symm.trans <|
-    (C.toAnalyticBelyiPair.toTopBranchedCover rfl).deckMulEquivDeckRestrict.symm.trans <|
-    (Deck.conjMulEquiv (Homeomorph.refl _)
-      (C.toAnalyticBelyiPair.toTopBranchedCover_π_apply rfl)).symm.trans
-    C.toAnalyticBelyiPair.isoMulEquivDeck.symm
+        simp [coe_unpuncturedHomeomorphRestrict]).trans
+    C.toAnalyticBelyiPair.isoMulEquivDeckRestrict.symm
 
 /-- The automorphism `TauCeti.ConnectedCover.deckMulEquivIso h` of the filled pair is the deck
 transformation `h` on the total space of `C`. -/
@@ -527,10 +522,7 @@ transformation `h` on the total space of `C`. -/
 theorem deckMulEquivIso_apply_incl (h : deck ⇑C.cover.proj) (x : (C.cover : TopCat)) :
     C.deckMulEquivIso h (incl (chart _) x) = incl (chart _) (h • x) := by
   rw [← coe_unpuncturedHomeomorphRestrict, ← coe_unpuncturedHomeomorphRestrict]
-  -- Evaluate the composite one identification at a time, at the point of the unbranched part.
-  refine (congrFun (AnalyticBelyiPair.coe_isoMulEquivDeck_symm_apply _ _) _).trans <|
-    (Deck.conjMulEquiv_symm_apply_coe _ _ _ _).trans <|
-    (TopBranchedCover.coe_deckMulEquivDeckRestrict_symm_apply _ _ _).trans ?_
+  refine (AnalyticBelyiPair.coe_isoMulEquivDeckRestrict_symm_apply _ _ _).trans ?_
   exact congrArg Subtype.val ((Deck.conjMulEquiv_apply_coe _ _ h _).trans
     (congrArg C.unpuncturedHomeomorphRestrict
       (congrArg h.1 (C.unpuncturedHomeomorphRestrict.symm_apply_apply x))))
