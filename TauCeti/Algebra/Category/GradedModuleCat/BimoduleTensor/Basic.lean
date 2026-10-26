@@ -454,19 +454,33 @@ instance : Functor.Additive
     funext M
     exact bimoduleModuleTensorMap_add_right Γ Δ (𝟙 M) f g
 
-instance : ((bimoduleModuleTensor Γ Δ).obj M).Linear k where
+instance : Functor.Linear k
+    (C := GradedModuleCat.{vN} (no_index Δ.piece))
+    (D := GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    ((bimoduleModuleTensor.{vM, vN} Γ Δ).obj M) where
   map_smul f c := bimoduleModuleTensorMap_smul_right Γ Δ c (𝟙 M) f
 
-instance : ((bimoduleModuleTensor Γ Δ).flip.obj N).Linear k where
+instance : Functor.Linear k
+    (C := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece))
+    (D := GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    ((no_index (bimoduleModuleTensor.{vM, vN} Γ Δ).flip).obj N) where
   map_smul f c := bimoduleModuleTensorMap_smul_left Γ Δ c f (𝟙 N)
 
-instance : (bimoduleModuleTensor Γ Δ).Linear k where
+instance : Functor.Linear k
+    (C := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece))
+    (D := GradedModuleCat.{vN} (no_index Δ.piece) ⥤
+      GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    (bimoduleModuleTensor.{vM, vN} Γ Δ) where
   map_smul f c := by
     apply NatTrans.ext
     funext N
     exact bimoduleModuleTensorMap_smul_left Γ Δ c f (𝟙 N)
 
-instance : (bimoduleModuleTensor Γ Δ).flip.Linear k where
+instance : Functor.Linear k
+    (C := GradedModuleCat.{vN} (no_index Δ.piece))
+    (D := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece) ⥤
+      GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    (no_index (bimoduleModuleTensor.{vM, vN} Γ Δ).flip) where
   map_smul f c := by
     apply NatTrans.ext
     funext M
