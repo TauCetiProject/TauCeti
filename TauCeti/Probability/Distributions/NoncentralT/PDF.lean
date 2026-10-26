@@ -104,6 +104,12 @@ private theorem integrable_noncentralT_integrand (hν : 0 < ν) (δ x : ℝ) :
 theorem noncentralTPDFReal_nonneg (ν δ x : ℝ) : 0 ≤ noncentralTPDFReal ν δ x :=
   integral_nonneg fun _ ↦ mul_nonneg (sqrt_nonneg _) (gaussianPDFReal_nonneg _ _ _)
 
+/-- The extended density has the real density as its real value. -/
+@[simp]
+theorem toReal_noncentralTPDF (ν δ x : ℝ) :
+    (noncentralTPDF ν δ x).toReal = noncentralTPDFReal ν δ x :=
+  ENNReal.toReal_ofReal (noncentralTPDFReal_nonneg ν δ x)
+
 /-- For positive degrees, the real density is positive everywhere. -/
 theorem noncentralTPDFReal_pos (hν : 0 < ν) (δ x : ℝ) : 0 < noncentralTPDFReal ν δ x := by
   let _ := isProbabilityMeasure_chiSquaredMeasure hν.le
