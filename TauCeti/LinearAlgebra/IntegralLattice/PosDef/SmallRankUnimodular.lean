@@ -16,7 +16,8 @@ For a positive definite unimodular lattice `L` of rank `n`, Hermite's inequality
 `3 ^ (n choose 2) · (min L)ⁿ ≤ 4 ^ (n choose 2)` bounds the minimum:
 
 * if `1 ≤ n ≤ 5`, then `min L = 1`, since `3 ^ (n choose 2) · 2ⁿ > 4 ^ (n choose 2)`;
-* if `n ≤ 8`, then `min L ≤ 2`, since `3 ^ (n choose 2) · 3ⁿ > 4 ^ (n choose 2)`.
+* if `n ≤ 8`, then `min L ≤ 2`: in rank zero the minimum is zero, and if `1 ≤ n ≤ 8`, then
+  `3 ^ (n choose 2) · 3ⁿ > 4 ^ (n choose 2)`.
 
 Both ranges are the exact ones in which this inequality excludes the next value of the minimum.
 
@@ -24,21 +25,21 @@ Combined with the splitting `L ≅ I_k ⊕ L₀` of the vectors of norm one, the
 that a positive definite unimodular lattice of rank at most five is the standard lattice `Iₙ`.
 Equivalently, a nonzero positive definite unimodular lattice without vectors of norm one has rank
 at least six. The second bound shows that such a lattice of rank at most eight has
-minimum two, so its vectors of norm two exist; in particular an even unimodular lattice of rank
-at most eight has minimum two. These are the first steps of the classification of positive
+minimum two, so its vectors of norm two exist; in particular a nonzero even unimodular lattice of
+rank at most eight has minimum two. These are the first steps of the classification of positive
 definite unimodular lattices of rank at most nine.
 
 ## Main declarations
 
-* `TauCeti.IntegralLattice.IsPosDef.minimum_eq_one_of_isUnimodular`: in rank at most five the
-  minimum is one.
+* `TauCeti.IntegralLattice.IsPosDef.minimum_eq_one_of_isUnimodular`: a nonzero lattice of rank
+  at most five has minimum one.
 * `TauCeti.IntegralLattice.IsPosDef.minimum_le_two_of_isUnimodular`: in rank at most eight the
   minimum is at most two.
 * `TauCeti.IntegralLattice.IsPosDef.six_le_finrank_of_vectorsOfNorm_one_eq_empty`: a nonzero
   positive definite unimodular lattice without vectors of norm one has rank at least six.
 * `TauCeti.IntegralLattice.IsPosDef.minimum_eq_two_of_vectorsOfNorm_one_eq_empty` and
   `TauCeti.IntegralLattice.IsPosDef.minimum_eq_two_of_isUnimodular_of_isEven`: in rank at most
-  eight such a lattice, and in particular an even unimodular lattice, has minimum two.
+  eight such a lattice, and in particular a nonzero even unimodular lattice, has minimum two.
 * `TauCeti.IntegralLattice.IsPosDef.nonempty_isometry_unitLattice_of_isUnimodular`: a positive
   definite unimodular lattice of rank at most five is `Iₙ`.
 
@@ -80,7 +81,7 @@ private theorem minimum_lt_of_four_pow_lt {k : ℕ}
   push_cast at hk'
   omega
 
-/-- **A positive definite unimodular lattice of rank at most five has minimum one.** -/
+/-- **A nonzero positive definite unimodular lattice of rank at most five has minimum one.** -/
 theorem minimum_eq_one_of_isUnimodular [Nontrivial L] (hn : finrank ℤ L ≤ 5) :
     L.minimum = 1 := by
   have h1 : 0 < finrank ℤ L := finrank_pos
@@ -99,22 +100,12 @@ theorem minimum_le_two_of_isUnimodular (hn : finrank ℤ L ≤ 8) : L.minimum �
     interval_cases finrank ℤ L <;> norm_num [Nat.choose_two_right]
   omega
 
-omit hU in
-/-- A nonzero positive definite lattice without vectors of norm one has minimum different from
-one. -/
-private theorem minimum_ne_one_of_vectorsOfNorm_one_eq_empty [Nontrivial L]
-    (h1 : L.vectorsOfNorm 1 = ∅) : L.minimum ≠ 1 := by
-  intro hmin
-  have hne := hL.isPosSemidef.nonempty_vectorsOfNorm_minimum
-  rw [hmin, Nat.cast_one, h1] at hne
-  exact Set.not_nonempty_empty hne
-
 /-- **A nonzero positive definite unimodular lattice without vectors of norm one has rank at least
 six.** -/
 theorem six_le_finrank_of_vectorsOfNorm_one_eq_empty [Nontrivial L]
     (h1 : L.vectorsOfNorm 1 = ∅) : 6 ≤ finrank ℤ L := by
   by_contra! hn
-  exact hL.minimum_ne_one_of_vectorsOfNorm_one_eq_empty h1
+  exact hL.isPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty (n := 1) (by exact_mod_cast h1)
     (hL.minimum_eq_one_of_isUnimodular hU (by omega))
 
 /-- **A nonzero positive definite unimodular lattice of rank at most eight without vectors of norm
@@ -123,7 +114,8 @@ theorem minimum_eq_two_of_vectorsOfNorm_one_eq_empty [Nontrivial L]
     (h1 : L.vectorsOfNorm 1 = ∅) (hn : finrank ℤ L ≤ 8) : L.minimum = 2 := by
   have hle := hL.minimum_le_two_of_isUnimodular hU hn
   have hpos := hL.minimum_pos
-  have hne := hL.minimum_ne_one_of_vectorsOfNorm_one_eq_empty h1
+  have hne :=
+    hL.isPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty (n := 1) (by exact_mod_cast h1)
   omega
 
 /-- **A nonzero even positive definite unimodular lattice of rank at most eight has minimum
