@@ -76,6 +76,7 @@ theorem add_mul_add_sub_one_ediv_two (n k : ℤ) :
 integers. -/
 theorem one_sub_mul_one_sub_sub_one_ediv_two (n : ℤ) :
     (1 - n) * (1 - n - 1) / 2 = n * (n - 1) / 2 := by
-  rw [show (1 - n) * (1 - n - 1) = n * (n - 1) by ring]
+  congr 1
+  ring
 
 end Int

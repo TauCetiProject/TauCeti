@@ -109,11 +109,14 @@ private theorem summable_thetaTerm [CompleteSpace K] (q u : Kˣ) (hq : ‖(q : K
       mul_div_cancel_right₀ _ (norm_ne_zero_iff.mpr (hne n))]
   · refine summable_of_ratio_test_tendsto_lt_one zero_lt_one (.of_forall fun n ↦ hne _)
       ((ht (‖(q : K)‖ ^ 2 / ‖(u : K)‖)).congr fun n ↦ ?_)
+    -- Apply the step law at index `-(n + 2)`. Both indices are then written with the natural
+    -- number `n + 2`, which lets `zpow_natCast` turn `‖q‖ ^ (n + 2)` into a natural power.
+    have hstep : -((n : ℤ) + 2) + 1 = -((n : ℤ) + 1) := by ring
+    have hcast : (n : ℤ) + 2 = ((n + 2 : ℕ) : ℤ) := by push_cast; ring
+    have hidx : -(((n + 1 : ℕ) : ℤ) + 1) = -(((n + 2 : ℕ) : ℤ)) := by push_cast; ring
     have h := congrArg norm (thetaTerm_add_one q u (-((n : ℤ) + 2)))
-    rw [show -((n : ℤ) + 2) + 1 = -((n : ℤ) + 1) by ring, norm_mul, norm_neg, norm_mul,
-      norm_zpow, zpow_neg, show (n : ℤ) + 2 = ((n + 2 : ℕ) : ℤ) by push_cast; ring,
-      zpow_natCast] at h
-    rw [show -(((n + 1 : ℕ) : ℤ) + 1) = -(((n + 2 : ℕ) : ℤ)) by push_cast; ring, h]
+    rw [hstep, norm_mul, norm_neg, norm_mul, norm_zpow, zpow_neg, hcast, zpow_natCast] at h
+    rw [hidx, h]
     have hq₀ : ‖(q : K)‖ ≠ 0 := norm_ne_zero_iff.mpr q.ne_zero
     have hu₀ : ‖(u : K)‖ ≠ 0 := norm_ne_zero_iff.mpr u.ne_zero
     have h₀ : ‖thetaTerm q u (-((n + 2 : ℕ) : ℤ))‖ ≠ 0 := norm_ne_zero_iff.mpr (hne _)
@@ -190,8 +193,8 @@ paired term. -/
 private theorem thetaTerm_add_one_add_thetaTerm_neg (q u : Kˣ) (k : ℕ) :
     thetaTerm q u ((k : ℤ) + 1) + thetaTerm q u (-k) = ((u : K) - 1) * pairTerm q u k := by
   have hT : -(k : ℤ) * (-(k : ℤ) - 1) / 2 = ((k : ℤ) + 1) * k / 2 := by
-    rw [show -(k : ℤ) = 1 - ((k : ℤ) + 1) by ring, Int.one_sub_mul_one_sub_sub_one_ediv_two]
-    ring_nf
+    congr 1
+    ring
   have hgeom := geom_sum_mul (u : K) (2 * k + 1)
   rw [thetaTerm, thetaTerm, pairTerm, hT, add_sub_cancel_right, zpow_neg (-1 : K), ← inv_zpow,
     inv_neg_one, zpow_add₀ (neg_ne_zero.mpr one_ne_zero), zpow_one, zpow_neg, zpow_natCast,
