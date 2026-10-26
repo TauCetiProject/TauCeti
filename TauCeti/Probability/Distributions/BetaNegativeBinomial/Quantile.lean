@@ -56,7 +56,6 @@ theorem quantile_map_cast_betaNegativeBinomialMeasure_eq_zero_iff (hr : 0 ≤ r)
     (quantile_map_cast_betaNegativeBinomialMeasure_eq_iff hr ha hb hu 0)
 
 /-- At shape zero every interior quantile is zero. -/
-@[simp]
 theorem quantile_map_cast_betaNegativeBinomialMeasure_zero (ha : 0 < a) (hb : 0 < b)
     (hu : u ∈ Ioo 0 1) :
     ((betaNegativeBinomialMeasure 0 a b).map (Nat.cast : ℕ → ℝ)).quantile u = 0 := by
