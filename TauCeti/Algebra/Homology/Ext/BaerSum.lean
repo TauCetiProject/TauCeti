@@ -8,8 +8,7 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.ExtClass
 public import Mathlib.Algebra.Homology.ShortComplex.Pullback
 public import Mathlib.Algebra.Homology.ShortComplex.Pushout
-public import TauCeti.Algebra.Homology.ShortComplex.Biproduct
-import TauCeti.CategoryTheory.Exact.KernelCokernelPair
+public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # Baer sums and native extension classes
@@ -32,12 +31,6 @@ open Limits Abelian
 universe w v u
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
-
-/-- A componentwise direct sum of short exact sequences is short exact. -/
-lemma ShortExact.biprod {S T : ShortComplex C} (hS : S.ShortExact) (hT : T.ShortExact) :
-    (TauCeti.shortComplexBiprod S T).ShortExact :=
-  ((TauCeti.IsKernelCokernelPair.of_shortExact hS).biprod
-    (TauCeti.IsKernelCokernelPair.of_shortExact hT)).shortExact
 
 /-- The Baer sum of `S` and `S.X₁ ⟶ E ⟶ S.X₃`, formed by pulling the componentwise
 sum back along the diagonal and then pushing out along the codiagonal.
@@ -66,6 +59,7 @@ variable [HasExt.{w} C]
 
 /-- Pullback of a short exact sequence pulls its extension class back in the first
 variable of `Ext`. -/
+@[simp]
 lemma ShortExact.extClass_pull {S : ShortComplex C} (hS : S.ShortExact)
     {Y : C} (f : Y ⟶ S.X₃) :
     (hS.pull f).extClass = (Ext.mk₀ f).comp hS.extClass (zero_add 1) := by
@@ -75,6 +69,7 @@ lemma ShortExact.extClass_pull {S : ShortComplex C} (hS : S.ShortExact)
 
 /-- Pushout of a short exact sequence pushes its extension class forward in the
 second variable of `Ext`. -/
+@[simp]
 lemma ShortExact.extClass_push {S : ShortComplex C} (hS : S.ShortExact)
     {Y : C} (f : S.X₁ ⟶ Y) :
     (hS.push f).extClass = hS.extClass.comp (Ext.mk₀ f) (add_zero 1) := by
@@ -83,6 +78,7 @@ lemma ShortExact.extClass_push {S : ShortComplex C} (hS : S.ShortExact)
   simpa only [φ, Ext.mk₀_id_comp] using (hS.extClass_naturality (hS.push f) φ).symm
 
 /-- The extension class of a componentwise direct sum is block diagonal. -/
+@[simp]
 lemma ShortExact.extClass_biprod {S T : ShortComplex C}
     (hS : S.ShortExact) (hT : T.ShortExact) :
     (hS.biprod hT).extClass =
@@ -106,6 +102,7 @@ lemma ShortExact.extClass_biprod {S T : ShortComplex C}
 
 /-- The pullback and pushout Baer sum represents addition of the native extension
 classes, in every abelian category with `HasExt`. -/
+@[simp]
 lemma ShortExact.extClass_baerSum {S : ShortComplex C} (hS : S.ShortExact)
     {E : C} {i : S.X₁ ⟶ E} {p : E ⟶ S.X₃} {w : i ≫ p = 0}
     (hT : (ShortComplex.mk i p w).ShortExact) :
