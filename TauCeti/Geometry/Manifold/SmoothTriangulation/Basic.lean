@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 
 import Mathlib.Analysis.Calculus.TangentCone.Real
 import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Data.Finsupp.MapDomain
 
 /-!
 # Smooth triangulations of manifolds
@@ -237,19 +238,15 @@ theorem realizationHomeomorph_trans {κ : Type*} [DecidableEq ι] [DecidableEq �
       _root_.PreAbstractSimplicialComplex.SimplicialMap.realizationHomeomorph_apply]
     exact congrArg f (congrFun (φ.realizationMap_comp_faceInclusion σ) x)
   rw [hfactor]
-  -- In barycentric coordinates, the map of simplices sends the vertex `a` to the vertex `φ a`.
-  refine (h _).comp_linear (Fintype.linearCombination ℝ
-    fun a => Pi.single (φσ a) (1 : ℝ)) (fun x => funext fun b => ?_)
-    (fun v _ hv => funext (Fintype.linearIndependent_iff.mp
-      ((Pi.basisFun ℝ _).linearIndependent.comp φσ hφσ) v ?_))
-  · rw [StandardSimplex.map_apply]
-    simp only [Fintype.linearCombination_apply, Finset.sum_apply, Pi.smul_apply, Pi.single_apply,
-      smul_eq_mul, mul_ite, mul_one, mul_zero]
-    rw [← Finset.sum_coe_sort]
-    exact Finset.sum_congr rfl fun a _ =>
-      if_congr (eq_comm.trans (Subtype.ext_iff : b = φσ a ↔ _).symm) rfl rfl
-  · rw [Fintype.linearCombination_apply] at hv
-    simpa only [comp_apply, Pi.basisFun_apply] using hv
+  -- In barycentric coordinates, the map of simplices extends the coordinates by zero along `φ`.
+  refine (h _).comp_linear (Function.ExtendByZero.linearMap ℝ ℝ φσ) (fun x => funext fun b => ?_)
+    (fun v _ hv => funext fun a => ?_)
+  · obtain ⟨a, ha, hab⟩ := Finset.mem_image.mp b.2
+    obtain rfl : b = φσ ⟨a, ha⟩ := Subtype.ext hab.symm
+    rw [StandardSimplex.map_val, Finsupp.coe_mapDomain_eq_extend hφ,
+      Function.ExtendByZero.linearMap_apply, hφσ.extend_apply, hφ.extend_apply]
+  · simpa only [Function.ExtendByZero.linearMap_apply, hφσ.extend_apply, Pi.zero_apply] using
+      congrFun hv (φσ a)
 
 end IsSmoothTriangulation
 
