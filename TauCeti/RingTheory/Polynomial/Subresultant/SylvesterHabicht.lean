@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Polynomial.Subresultant.Signed
 import TauCeti.Algebra.Polynomial.Coeff.Basic
 import TauCeti.GroupTheory.Perm.Inversion
+import TauCeti.GroupTheory.Perm.SumCongr
 
 /-!
 # The Sylvester–Habicht matrix
@@ -54,6 +55,7 @@ public section
 namespace TauCeti
 
 open Polynomial
+open Equiv.Perm (finSumPerm)
 
 variable {R S : Type*}
 
@@ -113,29 +115,26 @@ theorem _root_.Polynomial.sylvesterHabichtMatrix_map_map [Semiring R] [Semiring 
   ext r c
   induction r using Fin.addCases <;> simp [sylvesterHabichtMatrix, apply_ite f]
 
-/-- The permutation of `Fin (a + b)` reversing the order of the last `b` indices and fixing the
-first `a`. -/
-private def reverseRightBlock (a b : ℕ) : Equiv.Perm (Fin (a + b)) :=
-  finSumFinEquiv.permCongr (Equiv.sumCongr (Equiv.refl _) Fin.revPerm)
-
-private theorem reverseRightBlock_natAdd (a b : ℕ) (l : Fin b) :
-    reverseRightBlock a b (Fin.natAdd a l) = Fin.natAdd a l.rev := by
-  simp [reverseRightBlock, Equiv.permCongr_apply]
-
 private theorem sign_reverseRightBlock (a b : ℕ) :
-    Equiv.Perm.sign (reverseRightBlock a b) = (-1) ^ b.choose 2 := by
-  simp [reverseRightBlock, Equiv.Perm.sign_permCongr, Equiv.Perm.sign_sumCongr, Fin.sign_revPerm]
+    Equiv.Perm.sign (finSumPerm (Equiv.refl (Fin a)) (Fin.revPerm (n := b))) =
+      (-1) ^ b.choose 2 := by
+  have h := Equiv.Perm.sign_eq_sign_of_equiv
+    (finSumPerm (Equiv.refl (Fin a)) (Fin.revPerm (n := b)))
+    (Equiv.Perm.sumCongr (Equiv.refl (Fin a)) Fin.revPerm) finSumFinEquiv.symm
+    (fun x => by simp [Equiv.Perm.finSumPerm_apply])
+  simpa [Fin.sign_revPerm] using h
 
 /-- The permutation relating the column orders of the principal subresultant and
 Sylvester–Habicht matrices has the sign of reversing all `a + b` indices, of reversing the last `b`
 of them, and of swapping the blocks. -/
 private theorem sign_reindexPerm (a b : ℕ) :
-    Equiv.Perm.sign ((finAddFlip.symm.trans (reverseRightBlock a b)).symm.trans
-      ((finCongr (add_comm b a)).trans Fin.revPerm)) =
+    Equiv.Perm.sign ((finAddFlip.symm.trans
+      (finSumPerm (Equiv.refl (Fin a)) Fin.revPerm)).symm.trans
+        ((finCongr (add_comm b a)).trans Fin.revPerm)) =
       (-1) ^ ((a + b).choose 2 + b.choose 2 + a * b) := by
-  have h : (finAddFlip.symm.trans (reverseRightBlock a b)).symm.trans
+  have h : (finAddFlip.symm.trans (finSumPerm (Equiv.refl (Fin a)) Fin.revPerm)).symm.trans
       ((finCongr (add_comm b a)).trans Fin.revPerm) =
-      (reverseRightBlock a b).symm.trans
+      (finSumPerm (Equiv.refl (Fin a)) Fin.revPerm).symm.trans
         ((finAddFlip.trans (finCongr (add_comm b a))).trans Fin.revPerm) :=
     Equiv.ext fun _ => rfl
   rw [h, Equiv.Perm.sign_trans, Equiv.Perm.sign_trans, Equiv.Perm.sign_symm,
@@ -151,27 +150,28 @@ private theorem sylvesterHabichtMatrix_eq_transpose_reindex [Semiring R]
     sylvesterHabichtMatrix p q m n j =
       ((subresultantMatrix p q m n j).reindex
         ((finCongr (add_comm (n - j) (m - j))).trans Fin.revPerm).symm
-        ((finAddFlip.symm.trans (reverseRightBlock (m - j) (n - j))).symm)).transpose := by
+        ((finAddFlip.symm.trans
+          (finSumPerm (Equiv.refl (Fin (m - j))) Fin.revPerm)).symm)).transpose := by
   ext r c
   have hrev : ((Fin.revPerm (finCongr (add_comm (n - j) (m - j)) c)) : ℕ) = c.rev := by
     simp only [Fin.revPerm_apply, Fin.val_rev, finCongr_apply, Fin.val_cast]
     omega
   induction r using Fin.addCases with
   | left l =>
-      have hrow : reverseRightBlock (m - j) (n - j)
+      have hrow : finSumPerm (Equiv.refl (Fin (m - j))) Fin.revPerm
           (finAddFlip.symm (Fin.castAdd (m - j) l)) = Fin.natAdd (m - j) l.rev := by
         rw [show finAddFlip.symm (Fin.castAdd (m - j) l) = Fin.natAdd (m - j) l from
           finAddFlip.symm_apply_eq.mpr (finAddFlip_apply_natAdd l (m - j)).symm,
-          reverseRightBlock_natAdd]
+          Equiv.Perm.finSumPerm_apply_natAdd, Fin.revPerm_apply]
       simp only [Matrix.transpose_apply, Matrix.reindex_apply, Matrix.submatrix_apply,
         Equiv.symm_symm, Equiv.trans_apply, hrow, subresultantMatrix_natAdd,
         sylvesterHabichtMatrix_castAdd, hrev]
   | right l =>
-      have hrow : reverseRightBlock (m - j) (n - j)
+      have hrow : finSumPerm (Equiv.refl (Fin (m - j))) Fin.revPerm
           (finAddFlip.symm (Fin.natAdd (n - j) l)) = Fin.castAdd (n - j) l := by
         rw [show finAddFlip.symm (Fin.natAdd (n - j) l) = Fin.castAdd (n - j) l from
           finAddFlip.symm_apply_eq.mpr (finAddFlip_apply_castAdd l (n - j)).symm]
-        simp [reverseRightBlock, Equiv.permCongr_apply]
+        simp
       simp only [Matrix.transpose_apply, Matrix.reindex_apply, Matrix.submatrix_apply,
         Equiv.symm_symm, Equiv.trans_apply, hrow, subresultantMatrix_castAdd,
         sylvesterHabichtMatrix_natAdd, hrev]
