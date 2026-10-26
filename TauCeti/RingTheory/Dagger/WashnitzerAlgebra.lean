@@ -36,6 +36,7 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   `TauCeti.Dagger.washnitzerAlgebra.ofMvPolynomial`: the inclusion of the polynomials.
 * `TauCeti.Dagger.washnitzerAlgebra.toTate`: the inclusion of `W` into the unit-radius Tate
   algebra.
+* `TauCeti.Dagger.washnitzerAlgebra.renameEquiv`: renaming the variables along an equivalence.
 
 ## Main results
 
@@ -56,6 +57,8 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   overconvergent series is a unit of `W` iff it is a unit of the Tate algebra, iff its constant
   coefficient is nonzero and strictly dominates all others. In Gauss norm form,
   `TauCeti.Dagger.isUnit_washnitzerAlgebra_iff_norm_sub_lt` reads `|f - f(0)| < |f(0)|`.
+  Consequently `1 + c • f` is a unit for all scalars `c` near `0`
+  (`TauCeti.Dagger.washnitzerAlgebra.eventually_isUnit_one_add_smul`).
 * `TauCeti.Dagger.primitive_mem_washnitzerAlgebra` and `TauCeti.Dagger.washnitzerAlgebra.primitive`:
   over a field of characteristic zero, termwise primitives `∑ aᵥ Xᵛ ↦ ∑ aᵥ Xᵛ⁺ᵉⁱ / (νᵢ + 1)` of
   overconvergent series are overconvergent.
@@ -223,6 +226,30 @@ theorem denseRange_toTate : DenseRange (toTate σ R) := by
     (s := fun _ ↦ 2) (fun _ ↦ zero_le_one) fun _ ↦ one_le_two).mono ?_
   rintro _ ⟨f, rfl⟩
   exact ⟨⟨f, 2, one_lt_two, f.2⟩, Subtype.ext (by simp)⟩
+
+/-- A renamed series is overconvergent iff the original one is. -/
+private theorem renameEquiv_mem_iff {τ : Type*} (e : σ ≃ τ) (f : MvPowerSeries σ R) :
+    f ∈ washnitzerAlgebra σ R ↔
+      _root_.MvPowerSeries.renameEquiv R e f ∈ washnitzerAlgebra τ R := by
+  simp only [mem_washnitzerAlgebra]
+  exact exists_congr fun ρ ↦
+    and_congr_right' (isRestricted_renameEquiv_iff e (c := fun _ ↦ ρ)).symm
+
+/-- **Renaming the variables of overconvergent series.** Renaming along an equivalence
+`e : σ ≃ τ` is an `R`-algebra isomorphism `R⟨X_σ⟩† ≃ R⟨X_τ⟩†`. -/
+noncomputable def renameEquiv {τ : Type*} (e : σ ≃ τ) :
+    washnitzerAlgebra σ R ≃ₐ[R] washnitzerAlgebra τ R :=
+  AlgEquiv.ofRingEquiv
+    (f := (_root_.MvPowerSeries.renameEquiv R e).toRingEquiv.restrict _ _ (renameEquiv_mem_iff e))
+    fun r ↦ Subtype.ext (rename_C _ r)
+
+/-- The renaming isomorphism of overconvergent series is `MvPowerSeries.renameEquiv` on the
+underlying series. -/
+@[simp]
+theorem coe_renameEquiv {τ : Type*} (e : σ ≃ τ) (f : washnitzerAlgebra σ R) :
+    (washnitzerAlgebra.renameEquiv e f : MvPowerSeries τ R) =
+      _root_.MvPowerSeries.renameEquiv R e f :=
+  (rfl)
 
 end washnitzerAlgebra
 
@@ -430,6 +457,44 @@ theorem isUnit_washnitzerAlgebra_iff_norm_sub_lt (f : washnitzerAlgebra σ K) :
   rw [isUnit_washnitzerAlgebra_iff, MvPowerSeries.norm_lt_iff,
     ← forall_norm_coeff_sub_C_lt_iff]
   simp [coe_algebraMap_isRestrictedSubring]
+
+/-- **Small perturbations of `1` are units.** Over a complete ultrametric normed field, for every
+overconvergent series `f`, `1 + c • f` is a unit of the Monsky–Washnitzer algebra for all scalars
+`c` near `0`. -/
+theorem washnitzerAlgebra.eventually_isUnit_one_add_smul (f : washnitzerAlgebra σ K) :
+    ∀ᶠ c in 𝓝 (0 : K), IsUnit (1 + c • f) := by
+  -- The coefficients of `f` are bounded by its Gauss norm `C`; take `‖c‖ < (C + 1)⁻¹`.
+  set C := ‖washnitzerAlgebra.toTate σ K f‖
+  have hC : ∀ t, ‖coeff t (f : MvPowerSeries σ K)‖ ≤ C := fun t ↦ by
+    simpa using MvPowerSeries.norm_coeff_le_norm (washnitzerAlgebra.toTate σ K f) t
+  have hC0 : 0 ≤ C := norm_nonneg _
+  filter_upwards [Metric.ball_mem_nhds (0 : K) (inv_pos.2 (by linarith : (0 : ℝ) < C + 1))]
+    with c hc
+  rw [Metric.mem_ball, dist_zero_right] at hc
+  have hcC : ∀ t, ‖c * coeff t (f : MvPowerSeries σ K)‖ < 1 := fun t ↦ by
+    rw [norm_mul]
+    calc ‖c‖ * ‖coeff t (f : MvPowerSeries σ K)‖ ≤ ‖c‖ * C :=
+          mul_le_mul_of_nonneg_left (hC t) (norm_nonneg c)
+      _ < (C + 1)⁻¹ * (C + 1) := by nlinarith [norm_nonneg c]
+      _ = 1 := inv_mul_cancel₀ (by linarith)
+  -- The constant coefficient `1 + c f(0)` has norm `1`, and dominates all others.
+  have h1 : ‖1 + c * constantCoeff (f : MvPowerSeries σ K)‖ = 1 := by
+    have := hcC 0
+    rw [coeff_zero_eq_constantCoeff_apply] at this
+    rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by rw [norm_one]; exact this.ne'),
+      norm_one, max_eq_left this.le]
+  have hcoe : ((1 + c • f : washnitzerAlgebra σ K) : MvPowerSeries σ K) =
+      1 + c • (f : MvPowerSeries σ K) := by
+    rw [Subalgebra.coe_add, Subalgebra.coe_one, Subalgebra.coe_smul]
+  have hconst : constantCoeff (1 + c • (f : MvPowerSeries σ K)) =
+      1 + c * constantCoeff (f : MvPowerSeries σ K) := by
+    rw [map_add, map_one, constantCoeff_smul, smul_eq_mul]
+  refine (isUnit_washnitzerAlgebra_iff _).2 ⟨?_, fun t ht ↦ ?_⟩
+  · rw [hcoe, hconst, ← norm_ne_zero_iff, h1]
+    exact one_ne_zero
+  · classical
+    simp only [hcoe, hconst, h1, map_add, coeff_one, ht, ↓reduceIte, zero_add, coeff_smul]
+    exact hcC t
 
 end Units
 
