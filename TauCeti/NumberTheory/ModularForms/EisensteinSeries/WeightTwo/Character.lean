@@ -26,9 +26,11 @@ Unless `ψ` and `φ` are both trivial the weight has total mass zero
 (`TauCeti.EisensteinSeries.sum_charWeight_eq_zero`), so the weight-two series is the series
 `∑_x w(x) (x₀ z + x₁)⁻²` over integer pairs itself, summed over the translates of a fundamental box
 of residues modulo `N`, with no regularization
-(`TauCeti.EisensteinSeries.hasSum_charG2MF`). For the trivial characters modulo `1` the series
-`∑ (c z + d)⁻²` is not modular and the corrected combination
-`TauCeti.EisensteinSeries.correctedE2` takes its place.
+(`TauCeti.EisensteinSeries.hasSum_charG2MF`). When `ψ` and `φ` are both trivial, at any moduli,
+the series over integer pairs is not modular, and `TauCeti.EisensteinSeries.charG2MF` is instead
+the regularized series of `TauCeti.EisensteinSeries.hasSum_weightedG2`, not the classical
+`G₂^{ψ,φ}` above. At level one, the classical series `∑ (c z + d)⁻²` is replaced by the corrected
+combination `TauCeti.EisensteinSeries.correctedE2`.
 
 The transformation law under `Γ₀(N)` is that of weight `k ≥ 3`, since the slash action on the
 weight-two series changes the weight by the same rule: slashing by `γ ∈ Γ₀(N)` with lower-right
