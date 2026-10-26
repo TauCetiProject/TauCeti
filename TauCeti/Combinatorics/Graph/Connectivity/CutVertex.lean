@@ -182,15 +182,18 @@ theorem isCutVertex_iff_componentCount_lt_componentCount_deleteVerts
 
 /-- Deleting a non-cut vertex cannot increase the number of connected components. -/
 theorem componentCount_deleteVerts_singleton_le_of_not_isCutVertex
-    [Finite G.ConnectedComponent]
     (h : ¬G.IsCutVertex v) :
     (G.deleteVerts {v}).componentCount ≤ G.componentCount := by
   rw [componentCount_def, componentCount_def]
-  have hinj : Function.Injective (G.deleteVertexComponentMap v) := by
-    by_contra hninj
-    exact h (isCutVertex_iff_not_injective_deleteVertexComponentMap.mpr hninj)
-  let _ : Finite (G.deleteVerts {v}).ConnectedComponent :=
-    Finite.of_injective (G.deleteVertexComponentMap v) hinj
-  exact Nat.card_le_card_of_injective (G.deleteVertexComponentMap v) hinj
+  by_cases hfin : Finite (G.deleteVerts {v}).ConnectedComponent
+  · let _ : Finite G.ConnectedComponent :=
+      finite_connectedComponent_of_finite_deleteVerts (G := G) {v}
+    have hinj : Function.Injective (G.deleteVertexComponentMap v) := by
+      by_contra hninj
+      exact h (isCutVertex_iff_not_injective_deleteVertexComponentMap.mpr hninj)
+    exact Nat.card_le_card_of_injective (G.deleteVertexComponentMap v) hinj
+  · have := not_finite_iff_infinite.mp hfin
+    rw [Nat.card_eq_zero_of_infinite]
+    exact Nat.zero_le _
 
 end Graph
