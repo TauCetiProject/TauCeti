@@ -51,6 +51,8 @@ the nebentypus space `M₂(N, ψφ)`, zero unless `ψ(-1) φ(-1) = 1`. Raising b
 * `TauCeti.EisensteinSeries.charG2MFRaise_mem_modFormCharSpace`: `G₂^{ψ,φ,t} ∈ M₂(N, ψφ)`.
 * `TauCeti.EisensteinSeries.qExpansion_charG2MFRaise_coeff`: raising by `t` substitutes
   `q ↦ q^t`.
+* `TauCeti.EisensteinSeries.isSupportedOnDvd_qExpansion_charG2MFRaise`: the `q`-expansion of the
+  raised series is supported on multiples of `t`.
 
 ## References
 
@@ -91,16 +93,10 @@ variable [NeZero N]
 (`hasSum_charG2MF`). -/
 def charG2MF (huv : u * v ∣ N) : ModularForm ((Gamma1 N).map (mapGL ℝ)) 2 :=
   ModularForm.ofSlashInvariant Subgroup.IsArithmetic.isCusp_of_isCusp
-    (weightedG2MF (charWeight N ψ φ)) fun γ hγ ↦ by
-      obtain ⟨g, hg, rfl⟩ := Subgroup.mem_map.mp hγ
-      obtain ⟨hg0, hg1⟩ := mem_Gamma1_iff.mp hg
-      have h1 {m : ℕ} (hm : m ∣ N) : ((g 1 1 : ℤ) : ZMod m) = 1 := by
-        rw [← map_intCast (ZMod.castHom hm (ZMod m)), hg1, map_one]
-      -- `SL_slash`: slashing by `g` is slashing by its image `mapGL ℝ g`
-      have hslash : weightedG2 (charWeight N ψ φ) ∣[(2 : ℤ)] mapGL ℝ g = _ :=
-        (SL_slash _ g).symm.trans (weightedG2_charWeight_slash ψ φ huv hg0)
-      rw [coe_weightedG2MF, hslash, h1 (dvd_of_mul_right_dvd huv),
-        h1 (dvd_of_mul_left_dvd huv), map_one, map_one, one_mul, one_smul]
+    (weightedG2MF (charWeight N ψ φ)) fun _ hγ ↦ by
+      rw [coe_weightedG2MF]
+      exact slash_Gamma1_eq_self_of_slash_Gamma0_eq ψ φ huv
+        (fun _ hg ↦ weightedG2_charWeight_slash ψ φ huv hg) hγ
 
 /-- The weight-two Eisenstein series with character is the weight-two series of
 `charWeight N ψ φ`. -/
@@ -134,16 +130,9 @@ theorem charG2MF_mem_modFormCharSpace (huv : u * v ∣ N) :
     charG2MF ψ φ huv ∈ modFormCharSpace 2
       (ψ.changeLevel (dvd_of_mul_right_dvd huv) *
         φ.changeLevel (dvd_of_mul_left_dvd huv)).toUnitHom := by
-  rw [mem_modFormCharSpace_iff_nebentypus]
-  intro g
-  -- `SL_slash`: slashing by `g` is slashing by its image `mapGL ℝ g`
-  have hslash : weightedG2 (charWeight N ψ φ) ∣[(2 : ℤ)] mapGL ℝ (g : SL(2, ℤ)) = _ :=
-    (SL_slash _ _).symm.trans (weightedG2_charWeight_slash ψ φ huv g.2)
-  rw [coe_charG2MF, hslash, MulChar.coe_toUnitHom, MulChar.coeToFun_mul,
-    Pi.mul_apply, DirichletCharacter.changeLevel_eq_cast_of_dvd,
-    DirichletCharacter.changeLevel_eq_cast_of_dvd]
-  simp [Gamma0Map, ZMod.cast_intCast (dvd_of_mul_right_dvd huv),
-    ZMod.cast_intCast (dvd_of_mul_left_dvd huv)]
+  refine mem_modFormCharSpace_of_slash_Gamma0_eq ψ φ huv _ fun _ hg ↦ ?_
+  rw [coe_charG2MF]
+  exact weightedG2_charWeight_slash ψ φ huv hg
 
 /-- **Parity**: the weight-two Eisenstein series with character vanishes unless
 `ψ(-1) φ(-1) = 1`. -/
@@ -182,6 +171,15 @@ theorem charG2MFRaise_apply (htuv : t * (u * v) ∣ N) (z : ℍ) :
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   rw [charG2MFRaise, ModularForm.levelRaise_apply]
 
+/-- At `t = 1`, the raised series is the series at its natural level `u v` restricted to level
+`N`. -/
+@[simp]
+theorem charG2MFRaise_one (huv : u * v ∣ N) :
+    haveI : NeZero (u * v) := NeZero.of_dvd huv
+    charG2MFRaise ψ φ 1 (by simpa using huv) =
+      ModularForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd huv) (charG2MF ψ φ dvd_rfl) := by
+  rw [charG2MFRaise, ModularForm.levelRaise_one]
+
 /-- **The nebentypus after raising**: at every level `N` divisible by `t u v`,
 `G₂^{ψ,φ,t} ∈ M₂(N, ψφ)`, with both characters raised directly to level `N`. -/
 theorem charG2MFRaise_mem_modFormCharSpace (htuv : t * (u * v) ∣ N) :
@@ -191,16 +189,8 @@ theorem charG2MFRaise_mem_modFormCharSpace (htuv : t * (u * v) ∣ N) :
           ((dvd_mul_left v u).trans ((dvd_mul_left (u * v) t).trans htuv))).toUnitHom := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-  have hchar : (ψ.changeLevel ((dvd_mul_right u v).trans ((dvd_mul_left (u * v) t).trans htuv)) *
-      φ.changeLevel ((dvd_mul_left v u).trans ((dvd_mul_left (u * v) t).trans htuv))).toUnitHom =
-        (ψ.changeLevel (dvd_mul_right u v) * φ.changeLevel (dvd_mul_left v u)).toUnitHom.comp
-          (ZMod.unitsMap ((dvd_mul_left (u * v) t).trans htuv)) := by
-    rw [DirichletCharacter.changeLevel_trans ψ (dvd_mul_right u v)
-        ((dvd_mul_left (u * v) t).trans htuv),
-      DirichletCharacter.changeLevel_trans φ (dvd_mul_left v u)
-        ((dvd_mul_left (u * v) t).trans htuv), ← map_mul,
-      DirichletCharacter.changeLevel_toUnitHom]
-  rw [charG2MFRaise, hchar]
+  rw [charG2MFRaise, DirichletCharacter.changeLevel_trans_mul_toUnitHom ψ φ (dvd_mul_right u v)
+    (dvd_mul_left v u)]
   exact ModularForm.levelRaise_mem_modFormCharSpace_of_dvd htuv _
     (charG2MF_mem_modFormCharSpace (N := u * v) ψ φ dvd_rfl)
 
@@ -240,5 +230,17 @@ theorem qExpansion_charG2MFRaise_coeff (htuv : t * (u * v) ∣ N) (n : ℕ) :
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
     (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _ n
+
+/-- The `q`-expansion of `G₂^{ψ,φ,t}` is supported on the multiples of `t`. -/
+theorem isSupportedOnDvd_qExpansion_charG2MFRaise (htuv : t * (u * v) ∣ N) :
+    haveI : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
+    PowerSeries.IsSupportedOnDvd t (qExpansion 1 (charG2MFRaise ψ φ t htuv)) := by
+  let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
+  let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
+  rw [charG2MFRaise]
+  exact ModularForm.isSupportedOnDvd_qExpansion_levelRaise
+    (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
+    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
+    (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 end TauCeti.EisensteinSeries
