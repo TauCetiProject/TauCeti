@@ -10,10 +10,10 @@ public import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 /-!
 # Dilation invariance of harmonic functions
 
-`TauCeti.Analysis.InnerProductSpace.Laplacian.Basic` records invariance under rigid motions and the
-Laplacian scaling law under affine homotheties. This file transports the homothety bookkeeping to
-harmonicity: under the right-composition `AffineMap.homothety a c`, harmonicity is preserved and
-reflected when `c ≠ 0`.
+This file proves invariance of harmonicity under nonzero dilations `y ↦ c • y`, affine
+normalizations `z ↦ x + c • z`, and homotheties `AffineMap.homothety a c`. For `c ≠ 0`,
+right-composition preserves and reflects harmonicity at corresponding points and on neighbourhoods
+of sets related by preimage.
 
 These lemmas let mean-value, maximum-principle, and Poisson-kernel arguments normalize balls by
 translating and rescaling without reproving the Laplacian calculation each time.
