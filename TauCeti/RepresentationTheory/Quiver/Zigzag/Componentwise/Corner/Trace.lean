@@ -26,10 +26,6 @@ The induced equivalence with the dual is Mathlib's `LinearMap.toPerfPair`.
 * `TauCeti.zigzagAlgebraGradedCornerTracePairing`: the actual multiplication--trace restriction.
 * `TauCeti.zigzagAlgebraGradedCornerTracePairing_isPerfPair`: perfectness in both arguments.
 
-This supplies the complementary internal-degree pairing prerequisite for the required
-graded/Serre identification in
-[ZigzagPreprojective Layer 8](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/ZigzagPreprojective/README.md#layer-8-braid-complexes-and-spherical-twist-comparisons).
-The categorical Serre identification is a subsequent comparison.
 
 This is an internal graded pairing. It does not identify internal degree with cohomological
 degree or assert Serre duality or cohomological sphericity of a projective module.
