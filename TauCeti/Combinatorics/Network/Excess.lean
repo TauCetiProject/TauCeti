@@ -140,6 +140,13 @@ theorem arrowSum_add (f g : Assignment Q K) (S T : Finset V) :
     arrowSum (f + g) S T = arrowSum f S T + arrowSum g S T := by
   simp [arrowSum_def, sum_add_distrib]
 
+theorem arrowSum_sum {ι : Type*} (s : Finset ι) (f : ι → Assignment Q K) (S T : Finset V) :
+    arrowSum (∑ i ∈ s, f i) S T = ∑ i ∈ s, arrowSum (f i) S T := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [sum_insert hi, sum_insert hi, arrowSum_add, ih]
+
 @[simp]
 theorem arrowSum_empty_left (f : Assignment Q K) (T : Finset V) : arrowSum f ∅ T = 0 := by
   simp [arrowSum_def]

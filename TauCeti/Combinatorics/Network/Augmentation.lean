@@ -146,6 +146,23 @@ theorem walkAssignment_mem {S : Type*} [SetLike S K] [AddSubmonoidClass S K] {H 
   rw [walkAssignment_apply]
   exact nsmul_mem hq _
 
+/-- The total value that a walk weighted by `q` brings into `v` is `q` times the number of visits
+of the walk to `v` after its start. -/
+theorem arrowSum_walkAssignment_univ_singleton [Fintype V] [DecidableEq V]
+    [∀ x y, Fintype (Q x y)] {s t : V} (p : ArrowWalk Q s t) (q : K) (v : V) :
+    arrowSum (walkAssignment p q) univ {v} = p.vertices.tail.count v • q := by
+  induction p with
+  | nil => simp
+  | @cons x y p e ih =>
+    rw [walkAssignment_cons, arrowSum_add, ih, arrowSum_def, sum_congr rfl fun _ _ ↦ sum_singleton
+      _ _, sum_sum_single_in]
+    simp only [ArrowWalk.vertices, Quiver.Path.vertices_cons, List.concat_eq_append,
+      List.tail_append_of_ne_nil (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p), List.count_append,
+      List.count_singleton, add_nsmul]
+    rcases eq_or_ne y v with rfl | h
+    · simp [one_nsmul]
+    · simp [h, h.symm]
+
 section Order
 
 variable [PartialOrder K] [IsOrderedAddMonoid K]

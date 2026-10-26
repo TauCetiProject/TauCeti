@@ -57,26 +57,22 @@ variable {d : M →ₗ[S] M} (hhom : LinearMap.IsHomogeneous d G.piece G.piece r
 include hhom in
 /-- The image of `d` inside its kernel is homogeneous for the grading of the kernel. -/
 theorem isHomogeneous_boundariesInKer :
-    SetLike.IsHomogeneous (G.ker hhom).piece (d.boundariesInKer.restrictScalars R) := by
+    SetLike.IsHomogeneous (G.ker hhom).piece d.boundariesInKer := by
   intro p z hz
-  rw [Submodule.restrictScalars_mem, LinearMap.mem_boundariesInKer, coe_decompose_ker]
+  rw [LinearMap.mem_boundariesInKer, coe_decompose_ker]
   exact hhom.isHomogeneous_range p hz
 
 /-- The internal grading of the homology `ker d ⧸ im d` of a homogeneous endomorphism: its
 degree-`p` piece consists of the classes of the cycles of degree `p`. -/
 noncomputable def homology : InternalGrading R (d.homology hd) ι :=
-  ((G.ker hhom).quotient (d.boundariesInKer.restrictScalars R)
-    (G.isHomogeneous_boundariesInKer hhom)).map
-    (Submodule.Quotient.restrictScalarsEquiv R d.boundariesInKer)
+  (G.ker hhom).quotient d.boundariesInKer (G.isHomogeneous_boundariesInKer hhom)
 
 /-- A homology class is homogeneous of degree `p` exactly when it is the class of a cycle of
 degree `p`. -/
 theorem mem_homology_piece_iff {p : ι} {y : d.homology hd} :
     y ∈ (G.homology hhom hd).piece p ↔
       ∃ z : _root_.LinearMap.ker d, (z : M) ∈ G.piece p ∧ d.homologyπ hd z = y := by
-  simp only [homology, map_piece, quotient_piece, Submodule.mem_map, Submodule.mkQ_apply,
-    mem_ker_piece, LinearEquiv.coe_coe, exists_exists_and_eq_and,
-    Submodule.Quotient.restrictScalarsEquiv_mk, LinearMap.homologyπ_apply]
+  simp only [homology, mem_quotient_piece_iff, mem_ker_piece, LinearMap.homologyπ_apply]
 
 /-- The class of a cycle of degree `p` is a homology class of degree `p`. -/
 theorem homologyπ_mem_homology_piece {p : ι} {z : _root_.LinearMap.ker d}

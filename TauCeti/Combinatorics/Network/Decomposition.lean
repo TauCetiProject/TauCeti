@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Group.Submonoid.BigOperators
 public import TauCeti.Combinatorics.Network.Augmentation
+import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.Order.Group.Int
 
 /-!
 # Path–cycle decomposition of nonnegative arrow assignments
@@ -55,6 +57,9 @@ of the flow; for a circulation there are no paths at all.
   `s`–`t` flow, whose paths run from `s` to `t` with total weight the value of the flow.
 * `TauCeti.PathCycleDecomposition.pathAssignment_apply_le_val`: the path components of a
   decomposition of an ordinary flow carry at most its value on every arrow.
+* `TauCeti.Flow.exists_paths_card_eq_val_card_filter_le`: an integer `s`–`t` flow carries a family
+  of `s`–`t` paths, repetitions allowed, with as many members as its value, such that every vertex
+  other than `s` lies on at most as many members as the value entering it.
 
 ## Implementation notes
 
@@ -517,5 +522,57 @@ theorem nonempty_pathCycleDecomposition (hf : 0 ≤ f) : Nonempty (PathCycleDeco
   ⟨D⟩
 
 end Existence
+
+/-- An integer `s`–`t` flow carries a family of directed `s`–`t` paths, repetitions allowed, with
+as many members as its value, such that every vertex `v ≠ s` lies on at most as many members as the
+total value entering `v`. -/
+theorem Flow.exists_paths_card_eq_val_card_filter_le [DecidableEq V] {cap : Assignment Q ℤ}
+    {s t : V} (f : Flow cap s t) :
+    ∃ (k : ℕ) (P : Fin k → ArrowWalk Q s t), (k : ℤ) = f.val ∧ (∀ i, (P i).IsPath) ∧
+      ∀ v, v ≠ s → (#{i | v ∈ (P i).vertices} : ℤ) ≤ arrowSum f.toFun univ {v} := by
+  obtain ⟨D⟩ := nonempty_pathCycleDecomposition (f := f.toFun) fun _ _ e ↦ f.nonneg e
+  -- Every path of the decomposition is a path from `s` to `t`.
+  have hwalk (p : WeightedWalk Q ℤ) (hp : p ∈ D.paths) : ∃ q : ArrowWalk Q s t, q.IsPath ∧
+      walkAssignment q p.weight = p.assignment := by
+    obtain ⟨x, y, w, q⟩ := p
+    obtain rfl : x = s := D.source_eq_of_mem_paths hp
+    obtain rfl : y = t := D.target_eq_of_mem_paths hp
+    exact ⟨w, D.isPath_walk _ hp, (WeightedWalk.assignment_def ⟨_, _, w, q⟩).symm⟩
+  choose W hW hWa using fun i : Fin D.paths.length ↦ hwalk D.paths[(i : ℕ)] (List.getElem_mem _)
+  have hpos (i : Fin D.paths.length) : 0 < D.paths[(i : ℕ)].weight :=
+    D.weight_pos_of_mem_paths _ (List.getElem_mem _)
+  -- Repeat the `i`-th path as often as its weight.
+  let ι := Σ i : Fin D.paths.length, Fin D.paths[(i : ℕ)].weight.toNat
+  let e := Fintype.equivFin ι
+  refine ⟨Fintype.card ι, fun j ↦ W (e.symm j).1, ?_, fun j ↦ hW _, fun v hv ↦ ?_⟩
+  · rw [← D.sum_weight_paths_eq_val, ← Fin.sum_univ_fun_getElem, Fintype.card_sigma]
+    simp only [Fintype.card_fin, Nat.cast_sum]
+    exact sum_congr rfl fun i _ ↦ Int.toNat_of_nonneg (hpos i).le
+  -- The members through `v` are the repetitions of the paths through `v`, each of which brings its
+  -- weight into `v`.
+  let F : Finset (Fin D.paths.length) := {i | v ∈ (W i).vertices}
+  have hcard : #{j | v ∈ (W (e.symm j).1).vertices} = ∑ i ∈ F, D.paths[(i : ℕ)].weight.toNat := by
+    rw [card_equiv e.symm (t := {x : ι | v ∈ (W x.1).vertices}) (by simp), card_eq_sum_ones,
+      sum_filter, Fintype.sum_sigma, sum_filter]
+    exact sum_congr rfl fun i _ ↦ by split_ifs <;> simp
+  have hin (i : Fin D.paths.length) (hi : v ∈ (W i).vertices) :
+      arrowSum D.paths[(i : ℕ)].assignment univ {v} = D.paths[(i : ℕ)].weight := by
+    rw [← hWa, arrowSum_walkAssignment_univ_singleton, ← ArrowWalk.map_target_arrows,
+      List.count_eq_one_of_mem, one_nsmul]
+    · rw [ArrowWalk.map_target_arrows]
+      exact ((ArrowWalk.isPath_def _).1 (hW i)).tail
+    · rw [ArrowWalk.vertices_eq_cons_map_target_arrows, List.mem_cons] at hi
+      exact hi.resolve_left hv
+  rw [hcard, Nat.cast_sum]
+  calc ∑ i ∈ F, (D.paths[(i : ℕ)].weight.toNat : ℤ)
+      = ∑ i ∈ F, arrowSum D.paths[(i : ℕ)].assignment univ {v} :=
+        sum_congr rfl fun i hi ↦ by
+          rw [Int.toNat_of_nonneg (hpos i).le, hin i (mem_filter.1 hi).2]
+    _ ≤ ∑ i : Fin D.paths.length, arrowSum D.paths[(i : ℕ)].assignment univ {v} :=
+        sum_le_sum_of_subset_of_nonneg (filter_subset _ _) fun i _ _ ↦
+          arrowSum_nonneg (D.assignment_nonneg_of_mem_paths (List.getElem_mem _)) _ _
+    _ = arrowSum D.pathAssignment univ {v} := by
+        rw [D.pathAssignment_def, ← Fin.sum_univ_fun_getElem, arrowSum_sum]
+    _ ≤ arrowSum f.toFun univ {v} := arrowSum_mono D.pathAssignment_le _ _
 
 end TauCeti

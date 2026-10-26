@@ -41,6 +41,8 @@ This file supplies general constructions for Lie modules that are missing from M
 * `TauCeti.mem_lieAnnihilator`: membership in `lieAnnihilator R L v` is equivalent to vanishing
   of the Lie action on `v`.
 * `LieAlgebra.ad_eq_toEnd`: the adjoint action is the action `toEnd R L L` of `L` on itself.
+* `LieModule.toEnd_eq_zero_of_isTrivial` and `LieAlgebra.ad_eq_zero_of_isLieAbelian`: on a
+  trivial Lie module, in particular in an abelian Lie algebra, every element acts by zero.
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
 * `LieHom.isNilpotent_ad_of_surjective`: adjoint nilpotence descends along a surjective
   Lie homomorphism.
@@ -97,6 +99,19 @@ itself. Rewriting with this lemma moves results about Lie modules to the adjoint
 theorem LieAlgebra.ad_eq_toEnd (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] :
     LieAlgebra.ad R L = LieModule.toEnd R L L :=
   rfl
+
+/-- On a trivial Lie module every element of the Lie algebra acts by zero. -/
+@[simp]
+theorem LieModule.toEnd_eq_zero_of_isTrivial {R L M : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+    [LieModule.IsTrivial L M] (x : L) : LieModule.toEnd R L M x = 0 :=
+  LinearMap.ext fun m ↦ by rw [LieModule.toEnd_apply_apply, trivial_lie_zero, LinearMap.zero_apply]
+
+/-- In an abelian Lie algebra the adjoint action of every element vanishes. -/
+@[simp]
+theorem LieAlgebra.ad_eq_zero_of_isLieAbelian {R L : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] [IsLieAbelian L] (x : L) : LieAlgebra.ad R L x = 0 :=
+  LieModule.toEnd_eq_zero_of_isTrivial x
 
 namespace TauCeti
 

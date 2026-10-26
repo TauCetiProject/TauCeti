@@ -17,43 +17,37 @@ public import Mathlib.FieldTheory.Separable
 This file records several facts about the roots of a polynomial, either in its coefficient field
 or after base change to a domain `E`.
 
-First, an explicit numbering of the root set of a separable polynomial enumerates its full root
-multiset: separability makes the roots simple, so the multiset is the image of the numbering.
-This lets root-product formulas be expressed as finite products indexed by `Fin f.natDegree`,
-without choosing a global order on the root set.
-
-Second, the root set of a product of polynomials whose base changes to `E` are nonzero is the
+First, the root set of a product of polynomials whose base changes to `E` are nonzero is the
 union of the root sets of the factors. This is the lemma that decomposes the roots of a
 polynomial along a factorisation, for instance the roots of a monic integer polynomial along its
 monic irreducible factors. The same holds for the distinct roots of a finite product.
 For a separable product, the root sets of the factors are pairwise disjoint.
 
-Third, dividing a polynomial by the linear factor of a simple root removes exactly that root
+Second, dividing a polynomial by the linear factor of a simple root removes exactly that root
 from the root set. Here `a` only has to be a simple root in `E`: `f a` vanishes and `f' a` does
 not vanish after mapping to `E`, so the map `F → E` need not be injective.
 
-Fourth, translating the variable moves the roots: the roots of `f(X + t)` are the points `x`
+Third, translating the variable moves the roots: the roots of `f(X + t)` are the points `x`
 with `x + t` a root of `f`, so `x ↦ x + t` is a bijection between the two root sets, and
 `f(X + t)` is separable exactly when `f` is.
 
-Fifth, if every root of a nonzero polynomial is among a family of points `θ i`, then its roots
+Fourth, if every root of a nonzero polynomial is among a family of points `θ i`, then its roots
 are exactly the `θ i` in which it has positive multiplicity.
 
-Sixth, the roots of a product of linear factors over a finite family are the values of the
+Fifth, the roots of a product of linear factors over a finite family are the values of the
 family. For split monic polynomials, a relation `Multiset.Rel r` between the root multisets is
 the same as a pair of enumerations of the roots, indexed by `Fin f.natDegree`, factoring the two
 polynomials into linear factors with entries of equal index related by `r`.
 
 Finally, the roots of a polynomial gcd form the multiset intersection of the roots of its
-inputs. In characteristic zero this identifies the degree lost to the gcd with the derivative as
-the number of distinct roots.
+inputs. So when the inputs split, the degree of their gcd counts their common roots, each with
+the minimum of its two multiplicities. In characteristic zero this identifies the degree lost to
+the gcd with the derivative as the number of distinct roots.
 
 ## Main results
 
 * `Polynomial.nodup_roots_of_forall_derivative_eval_ne_zero`: nonvanishing of the derivative at
   every rational root suffices for the rational root multiset to have no repetitions.
-* `Polynomial.Separable.roots_map_eq_map_numbering`: for a separable polynomial, a numbering of
-  its root set enumerates its full root multiset after base change.
 * `Polynomial.rootSet_mul`: the root set of a product of polynomials whose base changes to `E` are
   nonzero is the union of the root sets of the factors.
 * `Polynomial.roots_prod_toFinset`: the distinct roots of a finite product of nonzero polynomials
@@ -81,9 +75,20 @@ the number of distinct roots.
   of their roots with entries of equal index related by `r`.
 * `Polynomial.rootMultiplicity_gcd`: a root's multiplicity in a gcd is the minimum of its
   multiplicities in the two inputs.
+* `Polynomial.card_roots_inter_eq_sum_min_rootMultiplicity`: the common roots counted with
+  multiplicity in the multiset intersection are counted with the minimum of their two
+  multiplicities.
+* `Polynomial.natDegree_gcd_eq_card_roots_inter_of_splits`: the degree of the gcd of two nonzero
+  polynomials, one of them split, is the number of their common roots counted with the minimum
+  of their multiplicities.
+* `Polynomial.natDegree_gcd_eq_card_aroots_inter`: the same count for the common roots in an
+  algebraically closed field of two polynomials over a field `k`, with the gcd taken over `k`.
 * `Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset`: over an
   algebraically closed field of characteristic zero, degree minus the degree of the derivative
   gcd counts distinct roots.
+* `Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset`: the same count for
+  the distinct roots in such a field of a polynomial over a field `k`, with the gcd taken over
+  `k`.
 -/
 
 public section
@@ -107,19 +112,6 @@ theorem _root_.Polynomial.nodup_roots_of_forall_derivative_eval_ne_zero [IsDomai
     rw [count_roots]
     omega
   · simp [Multiset.count_eq_zero_of_notMem hx]
-
-/-- A numbering of the root set of a separable polynomial enumerates the whole root multiset:
-separability makes the roots simple, so the multiset is the image of the numbering. -/
-theorem _root_.Polynomial.Separable.roots_map_eq_map_numbering (hsep : f.Separable)
-    (e : Fin f.natDegree ≃ f.rootSet E) :
-    (f.map (algebraMap F E)).roots = Multiset.map (fun i ↦ ((e i : E))) univ.val := by
-  have hmem : ∀ {a : E}, a ∈ (f.map (algebraMap F E)).roots ↔ a ∈ f.rootSet E := fun {_} ↦
-    Polynomial.mem_aroots'.trans Polynomial.mem_rootSet'.symm
-  refine (Multiset.Nodup.ext (nodup_roots hsep.map) ?_).mpr ?_
-  · exact univ.nodup.map fun i j h ↦ e.injective (Subtype.ext h)
-  · intro a
-    simp only [Multiset.mem_map, Finset.mem_val, mem_univ, true_and]
-    exact ⟨fun ha ↦ ⟨e.symm ⟨a, hmem.mp ha⟩, by simp⟩, fun ⟨i, hi⟩ ↦ hi ▸ hmem.mpr (e i).2⟩
 
 /-- The root set of a product of polynomials is the union of the root sets of the factors,
 provided neither factor vanishes after base change to `E`. -/
@@ -295,6 +287,22 @@ theorem _root_.Polynomial.Monic.rel_roots_iff_exists_prod_X_sub_C {f g : F[X]} (
 
 end Rel
 
+section Inter
+
+variable [IsDomain F] [DecidableEq F]
+
+/-- The size of the multiset intersection of the roots of two polynomials is the sum, over their
+distinct common roots, of the minimum of the two multiplicities. -/
+theorem _root_.Polynomial.card_roots_inter_eq_sum_min_rootMultiplicity (p q : F[X]) :
+    Multiset.card (p.roots ∩ q.roots) =
+      ∑ x ∈ p.roots.toFinset ∩ q.roots.toFinset,
+        min (p.rootMultiplicity x) (q.rootMultiplicity x) := by
+  rw [← Multiset.sum_count_eq_card (s := p.roots.toFinset ∩ q.roots.toFinset)
+    fun x hx => by simpa using Multiset.mem_inter.mp hx]
+  simp [Multiset.count_inter, count_roots]
+
+end Inter
+
 section GCD
 
 variable {K : Type*} [Field K] [DecidableEq K]
@@ -323,6 +331,15 @@ theorem _root_.Polynomial.roots_gcd (p q : K[X]) (hp : p ≠ 0) (hq : q ≠ 0) :
     (EuclideanDomain.gcd p q).roots = p.roots ∩ q.roots := by
   ext x
   simp [count_roots, rootMultiplicity_gcd p q hp hq]
+
+/-- **Multiplicity formula for common roots.** If `p` and `q` are nonzero and `p` splits, then
+the degree of their gcd is the number of their common roots, each counted with the minimum of its
+multiplicities in `p` and in `q`. -/
+theorem _root_.Polynomial.natDegree_gcd_eq_card_roots_inter_of_splits {p q : K[X]} (hp : p ≠ 0)
+    (hq : q ≠ 0) (hsplit : p.Splits) :
+    (EuclideanDomain.gcd p q).natDegree = Multiset.card (p.roots ∩ q.roots) := by
+  rw [← roots_gcd p q hp hq]
+  exact (hsplit.of_dvd hp (EuclideanDomain.gcd_dvd_left p q)).natDegree_eq_card_roots
 
 section CharZero
 
@@ -370,7 +387,20 @@ end CharZero
 
 section IsAlgClosed
 
-variable [CharZero K] [IsAlgClosed K]
+variable [IsAlgClosed K]
+
+/-- **Multiplicity formula for common roots.** The degree of the gcd of two nonzero polynomials
+over a field `k`, taken over `k`, is the number of their common roots in an algebraically closed
+field `K`, each counted with the minimum of its two multiplicities. -/
+theorem _root_.Polynomial.natDegree_gcd_eq_card_aroots_inter {k : Type*} [Field k]
+    [DecidableEq k] [Algebra k K] {p q : k[X]} (hp : p ≠ 0) (hq : q ≠ 0) :
+    (EuclideanDomain.gcd p q).natDegree = Multiset.card (p.aroots K ∩ q.aroots K) := by
+  have hinj := (algebraMap k K).injective
+  rw [aroots_def, aroots_def, ← natDegree_gcd_eq_card_roots_inter_of_splits
+    ((Polynomial.map_ne_zero_iff hinj).2 hp) ((Polynomial.map_ne_zero_iff hinj).2 hq)
+    (IsAlgClosed.splits _), gcd_map, natDegree_map]
+
+variable [CharZero K]
 
 /-- Over an algebraically closed field of characteristic zero, the number of distinct roots of a
 nonzero polynomial is its degree minus the degree of its gcd with its derivative. -/
@@ -379,6 +409,17 @@ theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_t
     p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree = p.roots.toFinset.card :=
   natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits hp
     (IsAlgClosed.splits p)
+
+/-- The number of distinct roots of a nonzero polynomial over a field `k` in an algebraically
+closed field `K` of characteristic zero is its degree minus the degree of its gcd with its
+derivative, both taken over `k`. -/
+theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset
+    {k : Type*} [Field k] [DecidableEq k] [Algebra k K] {p : k[X]} (hp : p ≠ 0) :
+    p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree =
+      (p.aroots K).toFinset.card := by
+  rw [aroots_def, ← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset
+    ((Polynomial.map_ne_zero_iff (algebraMap k K).injective).2 hp), derivative_map, gcd_map,
+    natDegree_map, natDegree_map]
 
 end IsAlgClosed
 
