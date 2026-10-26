@@ -195,6 +195,33 @@ lemma charRow_def (k : ℕ) (z : ℍ) (c : ℤ) :
   (rfl)
 
 omit [NeZero v] in
+/-- The weights `ψ(a) φ⁻¹(b)` of the Eisenstein series with character have norm at most `1`. -/
+lemma norm_apply_mul_inv_apply_le_one (a : ZMod u) (b : ZMod v) : ‖ψ a * φ⁻¹ b‖ ≤ 1 := by
+  rw [norm_mul]
+  exact (mul_le_mul (DirichletCharacter.norm_le_one _ _) (DirichletCharacter.norm_le_one _ _)
+    (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
+
+/-- **Only the rows `v c` contribute.** Weight the term `(c, d)` of the Eisenstein series by
+`ψ(c / v) φ⁻¹(d)` if `v ∣ c` and by `0` otherwise. The row `a` of the weighted double series
+vanishes unless `v ∣ a`, and its row `v c` is `charRow ψ φ k z c`, so its rows sum to `s` exactly
+when the `charRow ψ φ k z c` do. -/
+lemma hasSum_charRow_iff (k : ℕ) (z : ℍ) {s : ℂ} :
+    HasSum (charRow ψ φ k z) s ↔ HasSum (fun c : ℤ ↦ ∑' d : ℤ,
+      (if (v : ℤ) ∣ c then ψ ((c / v : ℤ) : ZMod u) * φ⁻¹ (d : ZMod v) else 0) *
+        eisSummand k ![c, d] z) s := by
+  have hv : (v : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr (NeZero.ne v)
+  set R : ℤ → ℂ := fun c ↦ ∑' d : ℤ,
+    (if (v : ℤ) ∣ c then ψ ((c / v : ℤ) : ZMod u) * φ⁻¹ (d : ZMod v) else 0) *
+      eisSummand k ![c, d] z with hR
+  have hRv : R ∘ (fun c : ℤ ↦ (v : ℤ) * c) = charRow ψ φ k z := by
+    ext c
+    simp [charRow_def, hR, eisSummand, Int.mul_ediv_cancel_left _ hv, ← tsum_mul_left, mul_assoc]
+  rw [← hRv]
+  refine (mul_right_injective₀ hv).hasSum_iff fun a ha ↦ ?_
+  have hdvd : ¬ (v : ℤ) ∣ a := fun ⟨c, hc⟩ ↦ ha ⟨c, hc.symm⟩
+  simp [hR, hdvd]
+
+omit [NeZero v] in
 /-- Negating the row index `c` multiplies the row sum by `φ⁻¹(-1) (-1)^k`. -/
 private lemma tsum_row_neg (z : ℍ) (c : ℤ) :
     ∑' d : ℤ, φ⁻¹ d * (((v * -c : ℤ) : ℂ) * z + d) ^ (-(k : ℤ)) =
@@ -291,9 +318,8 @@ theorem summable_charRow (hk : 2 ≤ k) (z : ℍ) : Summable (charRow ψ φ k z)
   have hnat : Summable fun n : ℕ ↦ charRow ψ φ k z n := summable_pnat_iff_summable_nat.mp hpnat
   -- the row `-n` is a multiple of the row `n` by a scalar of norm at most one
   refine .of_nat_of_neg hnat ((summable_norm_iff.mpr hnat).of_norm_bounded fun n ↦ ?_)
-  rw [charRow_neg, norm_mul, norm_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow, mul_one]
-  exact mul_le_of_le_one_left (norm_nonneg _) ((mul_le_mul (DirichletCharacter.norm_le_one _ _)
-    (DirichletCharacter.norm_le_one _ _) (norm_nonneg _) zero_le_one).trans_eq (one_mul 1))
+  rw [charRow_neg, norm_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow, mul_one]
+  exact mul_le_of_le_one_left (norm_nonneg _) (norm_apply_mul_inv_apply_le_one ψ φ _ _)
 
 /-- **Parity folding.** Under `ψ(-1) φ(-1) = (-1)^k`, the rows `c` and `-c` of the Eisenstein
 series with character contribute equally. -/
@@ -420,24 +446,10 @@ theorem hasSum_charRow_charEisensteinSeriesMF (hk : 3 ≤ (k : ℤ)) (huv : u * 
     rw [norm_mul]
     refine mul_le_of_le_one_left (norm_nonneg _) ?_
     split_ifs
-    · rw [norm_mul]
-      exact (mul_le_mul (DirichletCharacter.norm_le_one _ _) (DirichletCharacter.norm_le_one _ _)
-        (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
+    · exact norm_apply_mul_inv_apply_le_one ψ φ _ _
     · simp
   have hsum : Summable F := by
     simpa [Function.comp_def, hF] using (finTwoArrowEquiv ℤ).symm.summable_iff.mpr hW
-  -- only the pairs `(v c, d)` contribute
-  have hinj : Function.Injective fun c : ℤ ↦ (v : ℤ) * c :=
-    mul_right_injective₀ (Int.natCast_ne_zero.mpr (NeZero.ne v))
-  have hsupp : Function.support (fun a ↦ ∑' d, F (a, d)) ⊆ Set.range fun c : ℤ ↦ (v : ℤ) * c := by
-    intro a ha
-    by_contra h
-    have hdvd : ¬ (v : ℤ) ∣ a := fun ⟨c, hc⟩ ↦ h ⟨c, hc.symm⟩
-    exact ha (by simp [hF, hdvd])
-  have hT (c : ℤ) : ∑' d, F ((v : ℤ) * c, d) =
-      ψ c * ∑' d : ℤ, φ⁻¹ d * (((v * c : ℤ) : ℂ) * z + d) ^ (-(k : ℤ)) := by
-    simp [hF, eisSummand, Int.mul_ediv_cancel_left _ (Int.natCast_ne_zero.mpr (NeZero.ne v)),
-      ← tsum_mul_left, mul_assoc]
   rw [charEisensteinSeriesMF_apply]
   have hW' := (finTwoArrowEquiv ℤ).symm.tsum_eq fun x : Fin 2 → ℤ ↦
       (if (v : ℤ) ∣ x 0 then ψ ((x 0 / v : ℤ) : ZMod u) * φ⁻¹ (x 1 : ZMod v) else 0) *
@@ -448,8 +460,9 @@ theorem hasSum_charRow_charEisensteinSeriesMF (hk : 3 ≤ (k : ℤ)) (huv : u * 
         ψ ((![p.1, p.2] 0 / v : ℤ) : ZMod u) * φ⁻¹ (![p.1, p.2] 1 : ZMod v) else 0) *
           eisSummand k ![p.1, p.2] z) = ∑' p, F p :=
     tsum_congr fun p ↦ by simp [hF]
-  rw [← hW', hFsum, hsum.tsum_prod, ← hinj.tsum_eq hsupp]
-  exact tsum_congr fun c ↦ (hT c).trans (charRow_def ψ φ k z c).symm
+  rw [← hW', hFsum, hsum.tsum_prod]
+  -- only the pairs `(v c, d)` contribute
+  exact ((hasSum_charRow_iff ψ φ k z).mp (summable_charRow ψ φ (by omega) z).hasSum).tsum_eq
 
 /-- **The `q`-expansion of the Eisenstein series with character.** For characters `ψ` modulo
 `u` and `φ` modulo `v` with `ψ(-1) φ(-1) = (-1)^k`, the constant coefficient of `G_k^{ψ,φ}` is

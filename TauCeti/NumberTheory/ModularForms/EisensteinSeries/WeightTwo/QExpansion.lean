@@ -68,9 +68,7 @@ private lemma summable_charG2_row (z : ℍ) (c : ℤ) :
   rw [norm_mul]
   refine mul_le_of_le_one_left (norm_nonneg _) ?_
   split_ifs
-  · rw [norm_mul]
-    exact (mul_le_mul (DirichletCharacter.norm_le_one _ _) (DirichletCharacter.norm_le_one _ _)
-      (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
+  · exact norm_apply_mul_inv_apply_le_one ψ φ _ _
   · simp
 
 /-- **The weight-two Eisenstein series with character summed along rows**: unless `ψ` and `φ` are
@@ -79,7 +77,6 @@ both trivial, `G₂^{ψ,φ}(z)` is the sum over `c ∈ ℤ` of the absolutely co
 theorem hasSum_charRow_charG2MF (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1) (z : ℍ) :
     HasSum (charRow ψ φ 2 z) (charG2MF ψ φ huv z) := by
   have : NeZero v := NeZero.of_dvd (dvd_of_mul_left_dvd huv)
-  have hv : (v : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr (NeZero.ne v)
   -- the terms of the series and its rows
   set T : ℤ → ℤ → ℂ := fun c d ↦
     (if (v : ℤ) ∣ c then ψ ((c / v : ℤ) : ZMod u) * φ⁻¹ (d : ZMod v) else 0) *
@@ -87,20 +84,9 @@ theorem hasSum_charRow_charG2MF (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1) 
   set R : ℤ → ℂ := fun c ↦ ∑' d, T c d with hR
   have hTs (c : ℤ) : Summable (T c) := summable_charG2_row ψ φ z c
   -- only the rows `v c` contribute, and they are the rows of the statement
-  have hinj : Function.Injective fun c : ℤ ↦ (v : ℤ) * c := mul_right_injective₀ hv
-  have hsupp : Function.support R ⊆ Set.range fun c : ℤ ↦ (v : ℤ) * c := by
-    intro a ha
-    by_contra hc
-    have hdvd : ¬ (v : ℤ) ∣ a := fun ⟨c, hc'⟩ ↦ hc ⟨c, hc'.symm⟩
-    exact ha (by simp [hR, hT, hdvd])
-  have hRv : R ∘ (fun c : ℤ ↦ (v : ℤ) * c) = charRow ψ φ 2 z := by
-    ext c
-    simp [charRow_def, hR, hT, eisSummand, Int.mul_ediv_cancel_left _ hv, ← tsum_mul_left,
-      mul_assoc]
-  rw [← hRv, hinj.hasSum_iff fun x hx ↦ Function.notMem_support.mp fun h' ↦ hx (hsupp h')]
-  have hRs : Summable R := by
-    rw [← hinj.summable_iff fun x hx ↦ Function.notMem_support.mp fun h' ↦ hx (hsupp h'), hRv]
-    exact summable_charRow ψ φ le_rfl z
+  rw [hasSum_charRow_iff]
+  have hRs : Summable R :=
+    ((hasSum_charRow_iff ψ φ 2 z).mp (summable_charRow ψ φ le_rfl z).hasSum).summable
   -- the sums over the boxes, grouped by the first coordinate, are finite sums of rows
   have hbox := hasSum_charG2MF ψ φ huv h z
   rw [← (finTwoArrowEquiv ℤ).symm.hasSum_iff] at hbox
