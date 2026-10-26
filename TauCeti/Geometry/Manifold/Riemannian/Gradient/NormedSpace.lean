@@ -60,20 +60,18 @@ theorem mgradient_eq_gradient {F : Type*} [NormedAddCommGroup F] [InnerProductSp
       rw [mvfderiv_eq_fderiv]
       simp
 
-/-- If the installed fibre metric is the standard one, the manifold gradient has the norm of
-Mathlib's `gradient`. This transports `mgradient_eq_gradient` along an equality of fibre metrics,
-such as `toRiemannianMetric_ofLE`, which cannot be rewritten inside the instance-dependent
-arguments. -/
-theorem norm_mgradient_eq_norm_gradient_of_eq {F : Type*} [NormedAddCommGroup F]
+/-- If the installed fibre metric is the standard one, the manifold gradient is Mathlib's
+`gradient`. This transports `mgradient_eq_gradient` along an equality of fibre metrics, such as
+`toRiemannianMetric_ofLE`, which cannot be rewritten inside the instance-dependent arguments. -/
+theorem mgradient_eq_gradient_of_eq {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
     [inst : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)]
     (hg : RiemannianBundle.g = (riemannianMetricVectorSpace F).toRiemannianMetric)
     (f : F → ℝ) (x : F) :
-    ‖mgradient 𝓘(ℝ, F) f x‖ = ‖gradient f x‖ := by
+    mgradient 𝓘(ℝ, F) f x = gradient f x := by
   obtain ⟨_⟩ := inst
   subst hg
-  rw [← mgradient_eq_gradient]
-  exact norm_tangentSpace_vectorSpace
+  exact mgradient_eq_gradient f x
 
 /-- The gradient of the squared norm in the standard flat metric is the radial vector field.
 

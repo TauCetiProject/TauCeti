@@ -107,10 +107,7 @@ theorem torpedoSlope_nonneg (s : ℝ) : 0 ≤ torpedoSlope s := by
   rcases le_or_gt (-1) s with hs | hs
   · rw [torpedoSlope_of_ge hs]
   · refine mul_nonneg ?_ (sub_nonneg.2 (smoothTransition.le_one _))
-    have hs0 : s < 0 := by linarith
-    have := tanh_strictMono hs0
-    rw [tanh_zero] at this
-    linarith
+    linarith [tanh_neg_iff.2 (by linarith : s < 0)]
 
 /-- The slope is less than `1`, so `1 - v²` is positive. -/
 theorem torpedoSlope_lt_one (s : ℝ) : torpedoSlope s < 1 := by
@@ -129,10 +126,7 @@ theorem antitone_torpedoSlope : Antitone torpedoSlope := by
   rcases le_or_gt (-1) b with hb | hb
   · rw [torpedoSlope_of_ge hb]
     exact torpedoSlope_nonneg a
-  · have hta : tanh b < 0 := by
-      have hb0 : b < 0 := by linarith
-      have := tanh_strictMono hb0
-      rwa [tanh_zero] at this
+  · have hta : tanh b < 0 := tanh_neg_iff.2 (by linarith)
     refine mul_le_mul (neg_le_neg (tanh_strictMono.monotone hab))
       (sub_le_sub_left (smoothTransition.monotone (by linarith)) _)
       (sub_nonneg.2 (smoothTransition.le_one _)) ?_
@@ -287,6 +281,10 @@ theorem torpedoMetric_inner (y : F) (v w : TangentSpace 𝓘(ℝ, F) y) :
       ⟪NormedSpace.fromTangentSpace y v, NormedSpace.fromTangentSpace y w⟫_ℝ := by
   rw [torpedoMetric, ContMDiffRiemannianMetric.rescale_inner,
     ContMDiffRiemannianMetric.ofLE_inner]
+  -- The standard metric `riemannianMetricVectorSpace` has `innerSL ℝ` as its inner product on
+  -- each fibre, and `TangentSpace` is a type synonym for `F` whose canonical identification
+  -- `fromTangentSpace` is the identity, so both sides agree definitionally; this is the same
+  -- transport as in `TauCeti.Manifold.inner_tangentSpace_vectorSpace`.
   rfl
 
 /-- On the ball of radius `e⁻²` the torpedo metric is `(2 R / (1 + ‖y‖²))² ⟪v, w⟫`, the round
@@ -390,8 +388,18 @@ theorem scalarCurvature_torpedoMetric_of_ne_zero {y : F} (hy : y ≠ 0) :
   have hG : (letI : RiemannianBundle (fun z : F ↦ TangentSpace 𝓘(ℝ, F) z) :=
       ⟨((riemannianMetricVectorSpace F).ofLE (le_top : (∞ : WithTop ℕ∞) ≤ ω)).toRiemannianMetric⟩
       ‖Manifold.mgradient 𝓘(ℝ, F) (fun z ↦ torpedoExponent ‖z‖) y‖) =
-      ‖∇ (fun z : F ↦ torpedoExponent ‖z‖) y‖ :=
-    TauCeti.Manifold.norm_mgradient_eq_norm_gradient_of_eq (inst := ⟨_⟩) hm _ _
+      ‖∇ (fun z : F ↦ torpedoExponent ‖z‖) y‖ := by
+    -- The norm of the fibre depends on the installed metric, so generalise it before
+    -- identifying it with the standard one.
+    have key : ∀ I : RiemannianBundle (fun z : F ↦ TangentSpace 𝓘(ℝ, F) z),
+        I.g = (riemannianMetricVectorSpace F).toRiemannianMetric →
+        (letI := I; ‖Manifold.mgradient 𝓘(ℝ, F) (fun z ↦ torpedoExponent ‖z‖) y‖) =
+          ‖∇ (fun z : F ↦ torpedoExponent ‖z‖) y‖ := by
+      rintro ⟨g⟩ hg
+      rw [TauCeti.Manifold.mgradient_eq_gradient_of_eq (inst := ⟨g⟩) hg]
+      subst hg
+      exact norm_tangentSpace_vectorSpace
+    exact key ⟨_⟩ hm
   have hρ : 0 < ‖y‖ := norm_pos_iff.2 hy
   have hexp : (exp (2 * torpedoExponent ‖y‖))⁻¹ =
       exp (-2 * torpedoProfile (log ‖y‖)) * ‖y‖ ^ 2 := by

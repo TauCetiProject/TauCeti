@@ -25,8 +25,8 @@ itself, nor its continuity or smoothness. This file supplies these, together wit
   tangent of a sum is the Möbius sum of the hyperbolic tangents.
 * `Real.tanh_strictMono` and `Real.tanh_lt_tanh_iff` — `Real.tanh` is strictly monotone, so it
   compares two real numbers exactly as they compare, and is positive on the positive reals.
-* `Real.tanh_nonneg`, `Real.continuous_tanh` and `Real.contDiff_tanh` — `Real.tanh` is
-  nonnegative on `[0, ∞)`, continuous and smooth.
+* `Real.tanh_nonneg`, `Real.tanh_neg_iff`, `Real.continuous_tanh` and `Real.contDiff_tanh` —
+  `Real.tanh` is nonnegative on `[0, ∞)`, negative exactly on `(-∞, 0)`, continuous and smooth.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 
 The formula `Real.tanh_add` is the quotient of the other two, both sides carrying the factor
@@ -90,6 +90,10 @@ theorem _root_.Real.tanh_lt_tanh_iff {a b : ℝ} : Real.tanh a < Real.tanh b ↔
 /-- The hyperbolic tangent is nonnegative on the nonnegative reals. -/
 theorem _root_.Real.tanh_nonneg {x : ℝ} (hx : 0 ≤ x) : 0 ≤ Real.tanh x := by
   simpa only [Real.tanh_zero] using Real.tanh_strictMono.monotone hx
+
+/-- The hyperbolic tangent is negative exactly on the negative reals. -/
+theorem _root_.Real.tanh_neg_iff {x : ℝ} : Real.tanh x < 0 ↔ x < 0 := by
+  simpa only [Real.tanh_zero] using @Real.tanh_lt_tanh_iff x 0
 
 /-- The hyperbolic tangent is continuous: it is the quotient of `exp x - exp (-x)` by the
 positive function `exp x + exp (-x)`. -/
