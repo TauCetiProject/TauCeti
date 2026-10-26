@@ -29,12 +29,10 @@ trivialization or a global smooth alternating-bundle instance.
 The fixed-coefficient section and degree-two evaluation adapters generalize the corresponding
 declarations in `TauCeti.Geometry.Manifold.TwoForm.Basic`.
 
-The generic evaluation and smoothness proofs use Mathlib's alternating-map laws
-`ContinuousAlternatingMap.map_eq_zero_of_eq`, `ContinuousAlternatingMap.map_swap`,
-`ContinuousAlternatingMap.ext`, and
-`ContMDiff.continuousAlternatingMap_bundle_apply` from
-`Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap`; the algebraic laws and
-extensionality come from `Mathlib.LinearAlgebra.Alternating.Basic`.
+For degree two, use the ordered-pair evaluation to obtain the value in the fibre over a point.
+The accompanying API provides alternation, extensionality, and `C^n` smoothness after applying
+the form to `C^n` tangent fields; the fixed-coefficient section exposes the same operations in a
+trivial bundle.
 -/
 
 public section
@@ -224,12 +222,13 @@ namespace SmoothBundleForm
 
 variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 
-/-- Evaluation of a smooth bundle-valued two-form on an ordered pair of tangent vectors.
-
-The algebraic and smoothness laws below use the alternating-map APIs
+/- The generic evaluation API follows Mathlib's
+`Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap` declarations
 `ContinuousAlternatingMap.map_eq_zero_of_eq`, `ContinuousAlternatingMap.map_swap`,
-`ContinuousAlternatingMap.ext`, and `ContMDiff.continuousAlternatingMap_bundle_apply` from
-Mathlib's `Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap`. -/
+`ContinuousAlternatingMap.ext`, and `ContMDiff.continuousAlternatingMap_bundle_apply`; its
+algebraic laws use `Mathlib.LinearAlgebra.Alternating.Basic`. -/
+/-- Evaluation of a smooth bundle-valued two-form on an ordered pair of tangent vectors returns
+the value in the fibre over the base point. -/
 def eval₂ (φ : SmoothBundleForm I F V 2) (x : M) (v w : TangentSpace I x) : V x :=
   φ.1 x ![v, w]
 

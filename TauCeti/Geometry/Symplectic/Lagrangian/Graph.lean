@@ -74,19 +74,15 @@ theorem IsNondegenerate.isLagrangianMap_graph_iff
   rw [IsNondegenerate.isLagrangianMap_iff_forall]
   constructor
   · intro h
-    apply Subtype.ext
-    funext x
-    apply ContinuousAlternatingMap.ext
-    intro v
-    have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
-    rw [hv]
-    have hh := (hpoint x).mp (h x) (v 0) (v 1)
-    have hh' : SmoothBundleForm.eval₂
-        (SmoothForm.mpullback φ φ.contMDiff τ).toSmoothBundleForm x (v 0) (v 1) =
-        SmoothBundleForm.eval₂ σ.toSmoothBundleForm x (v 0) (v 1) := by
+    have hbundle : (SmoothForm.mpullback φ φ.contMDiff τ).toSmoothBundleForm =
+        σ.toSmoothBundleForm := by
+      apply SmoothBundleForm.ext
+      intro x v w
       rw [SmoothForm.eval₂_mpullback]
-      exact hh
-    simpa only [SmoothBundleForm.eval₂_apply] using hh'
+      exact (hpoint x).mp (h x) v w
+    apply Subtype.ext
+    exact congrArg
+      (fun q : SmoothBundleForm _ ℝ (Bundle.Trivial M ℝ) 2 => q.1) hbundle
   · intro h x
     apply (hpoint x).mpr
     intro v w
