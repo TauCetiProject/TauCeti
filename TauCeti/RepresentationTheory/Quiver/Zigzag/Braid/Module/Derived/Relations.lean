@@ -131,4 +131,102 @@ theorem zigzagBraidDerivedFunctorBraidIso_hom_app_Qh_obj {i j : V} (h : G.Adj i 
         (zigzagBraidDerivedFunctorTripleQhIso k G j i j).inv.app X := by
   simp [zigzagBraidDerivedFunctorBraidIso]
 
+/-- The forward two-vertex comparison is the second derived functor applied to the first
+lifting component, followed by the second lifting component. -/
+@[simp]
+theorem zigzagBraidDerivedFunctorCompQhIso_hom_app (i j : V)
+    (X : HomotopyCategory (GradedModuleCat.{max u w} (Γ).piece) c) :
+    (zigzagBraidDerivedFunctorCompQhIso k G i j).hom.app X =
+      (zigzagBraidDerivedFunctor k G j).map
+        ((Localization.Lifting.iso
+            (_root_.DerivedCategory.Qh.{z} (C := GradedModuleCat.{max u w} (Γ).piece))
+            (HomotopyCategory.quasiIso (GradedModuleCat.{max u w} (Γ).piece) c)
+            ((zigzagBraidAutoequivalence k G i).functor ⋙ _root_.DerivedCategory.Qh.{z})
+            (zigzagBraidDerivedFunctor k G i)).hom.app X) ≫
+        (Localization.Lifting.iso
+            (_root_.DerivedCategory.Qh.{z} (C := GradedModuleCat.{max u w} (Γ).piece))
+            (HomotopyCategory.quasiIso (GradedModuleCat.{max u w} (Γ).piece) c)
+            ((zigzagBraidAutoequivalence k G j).functor ⋙ _root_.DerivedCategory.Qh.{z})
+            (zigzagBraidDerivedFunctor k G j)).hom.app
+              ((zigzagBraidAutoequivalence k G i).functor.obj X) := by
+  simp [zigzagBraidDerivedFunctorCompQhIso, CatCommSq.iso]
+
+/-- The inverse two-vertex comparison reverses the two single-vertex lifting components. -/
+@[simp]
+theorem zigzagBraidDerivedFunctorCompQhIso_inv_app (i j : V)
+    (X : HomotopyCategory (GradedModuleCat.{max u w} (Γ).piece) c) :
+    (zigzagBraidDerivedFunctorCompQhIso k G i j).inv.app X =
+      (Localization.Lifting.iso
+          (_root_.DerivedCategory.Qh.{z} (C := GradedModuleCat.{max u w} (Γ).piece))
+          (HomotopyCategory.quasiIso (GradedModuleCat.{max u w} (Γ).piece) c)
+          ((zigzagBraidAutoequivalence k G j).functor ⋙ _root_.DerivedCategory.Qh.{z})
+          (zigzagBraidDerivedFunctor k G j)).inv.app
+            ((zigzagBraidAutoequivalence k G i).functor.obj X) ≫
+        (zigzagBraidDerivedFunctor k G j).map
+          ((Localization.Lifting.iso
+              (_root_.DerivedCategory.Qh.{z} (C := GradedModuleCat.{max u w} (Γ).piece))
+              (HomotopyCategory.quasiIso (GradedModuleCat.{max u w} (Γ).piece) c)
+              ((zigzagBraidAutoequivalence k G i).functor ⋙ _root_.DerivedCategory.Qh.{z})
+              (zigzagBraidDerivedFunctor k G i)).inv.app X) := by
+  simp [zigzagBraidDerivedFunctorCompQhIso, CatCommSq.iso]
+
+/-- The forward three-vertex comparison is the iterated whiskering of the three
+single-vertex lifting components, in vertex order. -/
+@[simp]
+theorem zigzagBraidDerivedFunctorTripleQhIso_hom_app (i j l : V)
+    (X : HomotopyCategory (GradedModuleCat.{max u w} (Γ).piece) c) :
+    (zigzagBraidDerivedFunctorTripleQhIso k G i j l).hom.app X =
+      (zigzagBraidDerivedFunctor k G l).map
+        ((zigzagBraidDerivedFunctor k G j).map
+          ((Localization.Lifting.iso
+              (_root_.DerivedCategory.Qh.{z} (C := GradedModuleCat.{max u w} (Γ).piece))
+              (HomotopyCategory.quasiIso (GradedModuleCat.{max u w} (Γ).piece) c)
+              ((zigzagBraidAutoequivalence k G i).functor ⋙ _root_.DerivedCategory.Qh.{z})
+              (zigzagBraidDerivedFunctor k G i)).hom.app X)) ≫
+        (zigzagBraidDerivedFunctor k G l).map
+          ((Localization.Lifting.iso
+              (_root_.DerivedCategory.Qh.{z} (C := GradedModuleCat.{max u w} (Γ).piece))
+              (HomotopyCategory.quasiIso (GradedModuleCat.{max u w} (Γ).piece) c)
+              ((zigzagBraidAutoequivalence k G j).functor ⋙ _root_.DerivedCategory.Qh.{z})
+              (zigzagBraidDerivedFunctor k G j)).hom.app
+                ((zigzagBraidAutoequivalence k G i).functor.obj X)) ≫
+          (Localization.Lifting.iso
+              (_root_.DerivedCategory.Qh.{z} (C := GradedModuleCat.{max u w} (Γ).piece))
+              (HomotopyCategory.quasiIso (GradedModuleCat.{max u w} (Γ).piece) c)
+              ((zigzagBraidAutoequivalence k G l).functor ⋙ _root_.DerivedCategory.Qh.{z})
+              (zigzagBraidDerivedFunctor k G l)).hom.app
+                ((zigzagBraidAutoequivalence k G j).functor.obj
+                  ((zigzagBraidAutoequivalence k G i).functor.obj X)) := by
+  simp [zigzagBraidDerivedFunctorTripleQhIso, CatCommSq.iso, Functor.comp_map]
+
+/-- The inverse three-vertex comparison reverses the iterated single-vertex
+lifting components. -/
+@[simp]
+theorem zigzagBraidDerivedFunctorTripleQhIso_inv_app (i j l : V)
+    (X : HomotopyCategory (GradedModuleCat.{max u w} (Γ).piece) c) :
+    (zigzagBraidDerivedFunctorTripleQhIso k G i j l).inv.app X =
+      (Localization.Lifting.iso
+          (_root_.DerivedCategory.Qh.{z} (C := GradedModuleCat.{max u w} (Γ).piece))
+          (HomotopyCategory.quasiIso (GradedModuleCat.{max u w} (Γ).piece) c)
+          ((zigzagBraidAutoequivalence k G l).functor ⋙ _root_.DerivedCategory.Qh.{z})
+          (zigzagBraidDerivedFunctor k G l)).inv.app
+            ((zigzagBraidAutoequivalence k G j).functor.obj
+              ((zigzagBraidAutoequivalence k G i).functor.obj X)) ≫
+        (zigzagBraidDerivedFunctor k G l).map
+          ((Localization.Lifting.iso
+              (_root_.DerivedCategory.Qh.{z} (C := GradedModuleCat.{max u w} (Γ).piece))
+              (HomotopyCategory.quasiIso (GradedModuleCat.{max u w} (Γ).piece) c)
+              ((zigzagBraidAutoequivalence k G j).functor ⋙ _root_.DerivedCategory.Qh.{z})
+              (zigzagBraidDerivedFunctor k G j)).inv.app
+                ((zigzagBraidAutoequivalence k G i).functor.obj X)) ≫
+          (zigzagBraidDerivedFunctor k G l).map
+            ((zigzagBraidDerivedFunctor k G j).map
+              ((Localization.Lifting.iso
+                  (_root_.DerivedCategory.Qh.{z} (C := GradedModuleCat.{max u w} (Γ).piece))
+                  (HomotopyCategory.quasiIso (GradedModuleCat.{max u w} (Γ).piece) c)
+                  ((zigzagBraidAutoequivalence k G i).functor ⋙ _root_.DerivedCategory.Qh.{z})
+                  (zigzagBraidDerivedFunctor k G i)).inv.app X)) := by
+  simp [zigzagBraidDerivedFunctorTripleQhIso, CatCommSq.iso, Functor.comp_map,
+    Category.assoc]
+
 end TauCeti
