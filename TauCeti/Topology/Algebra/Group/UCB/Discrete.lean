@@ -56,7 +56,6 @@ theorem coe_discreteAlgEquiv_symm (f : G →ᵇ ℝ) :
   (discreteAlgEquiv G).apply_symm_apply f
 
 /-- The discrete identification sends left translation to precomposition by `g⁻¹ * ·`. -/
-@[simp]
 theorem discreteAlgEquiv_leftTranslation (g : G) (f : UCB G) :
     discreteAlgEquiv G (leftTranslation g f) =
       (discreteAlgEquiv G f).compContinuous (ContinuousMap.mulLeft g⁻¹) :=
@@ -71,7 +70,6 @@ theorem discreteAlgEquiv_symm_compContinuous_mulLeft (g : G) (f : G →ᵇ ℝ) 
   simp [coe_leftTranslation]
 
 /-- The discrete identification sends right translation to precomposition by `· * g`. -/
-@[simp]
 theorem discreteAlgEquiv_rightTranslation (g : G) (f : UCB G) :
     discreteAlgEquiv G (rightTranslation g f) =
       (discreteAlgEquiv G f).compContinuous (ContinuousMap.mulRight g) :=
