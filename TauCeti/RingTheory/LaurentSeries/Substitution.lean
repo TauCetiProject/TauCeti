@@ -310,8 +310,9 @@ integer `n`. -/
 @[simp]
 theorem coeff_substAlgHom_C_mul_X {a : K} (ha : a ≠ 0) (f : K⸨X⸩) (n : ℤ) :
     (substAlgHom (φ := C a * X) (by simp) (by simp [ha]) f).coeff n = a ^ n * f.coeff n := by
-  simpa using congrArg (fun g : K⸨X⸩ →ₐ[K] K⸨X⸩ ↦ (g f).coeff n)
-    (rescale_toAlgHom (Units.mk0 a ha)).symm
+  obtain ⟨u, rfl⟩ : ∃ u : Kˣ, (u : K) = a := ⟨Units.mk0 a ha, rfl⟩
+  rw [← rescale_toAlgHom u, AlgEquiv.coe_toAlgHom, coeff_rescale,
+    Units.val_zpow_eq_zpow_val]
 
 /-! ### Naturality in the coefficient field -/
 

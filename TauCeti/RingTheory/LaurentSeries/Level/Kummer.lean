@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.FieldTheory.Kummer.Cyclic
 public import TauCeti.RingTheory.LaurentSeries.Level.Adjoin
-public import TauCeti.RingTheory.LaurentSeries.Substitution
+public import TauCeti.RingTheory.LaurentSeries.Rescale
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
