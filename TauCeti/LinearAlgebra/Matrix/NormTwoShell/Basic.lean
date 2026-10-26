@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.Algebra.Order.Group.PosPart
+import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.LinearAlgebra.Matrix.Gram
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
@@ -107,6 +108,16 @@ theorem single_mem_normTwoShell_iff [DecidableEq I] {i : I} :
 theorem single_mem_normTwoShell [DecidableEq I] {i : I} (hi : B i i = 2) :
     Pi.single i 1 ∈ B.normTwoShell :=
   single_mem_normTwoShell_iff.mpr hi
+
+/-- Diagonal entries equal to two put a basis in the norm-two shell, so the shell spans. -/
+theorem span_normTwoShell_eq_top_of_diagonal_eq_two (B : Matrix I I ℤ)
+    (hdiag : ∀ i, B i i = 2) : Submodule.span ℤ B.normTwoShell = ⊤ := by
+  classical
+  apply top_unique
+  rw [← (Pi.basisFun ℤ I).span_eq]
+  apply Submodule.span_mono
+  rintro _ ⟨i, rfl⟩
+  simpa only [Pi.basisFun_apply] using single_mem_normTwoShell (hdiag i)
 
 /-! ### Symmetric Gram matrices -/
 
