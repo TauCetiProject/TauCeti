@@ -47,13 +47,15 @@ For `c ≠ 0`, the function `y ↦ f (c • y)` is harmonic at `x` iff `f` is ha
 theorem harmonicAt_comp_smul_right_iff (c : ℝ) (hc : c ≠ 0) {f : E → F} {x : E} :
     HarmonicAt (fun y ↦ f (c • y)) x ↔ HarmonicAt f (c • x) := by
   let l : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)
+  have hl : ⇑l = fun y : E ↦ c • y := by
+    funext y
+    simp only [l, ContinuousLinearEquiv.smulLeft_apply_apply, Units.smul_def, Units.val_mk0]
   have hcd : ContDiffAt ℝ 2 (fun y ↦ f (c • y)) x ↔ ContDiffAt ℝ 2 f (c • x) := by
     have h := l.contDiffAt_comp_iff (f := f) (n := 2) (x := l x)
     rw [l.symm_apply_apply] at h
-    simpa only [l, ContinuousLinearEquiv.smulLeft_apply_apply, Units.smul_def, Units.val_mk0,
-      Function.comp_def] using h
-  have hmap : Filter.map (fun y : E ↦ c • y) (𝓝 x) = 𝓝 (c • x) :=
-    (Homeomorph.smulOfNeZero c hc).map_nhds_eq x
+    simpa only [hl, Function.comp_def] using h
+  have hmap : Filter.map (fun y : E ↦ c • y) (𝓝 x) = 𝓝 (c • x) := by
+    simpa only [hl] using l.map_nhds_eq x
   have hlap : (Δ (fun y ↦ f (c • y)) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (c • x)] 0) := by
     rw [laplacian_comp_smul_right, ← hmap]
     simp only [Filter.EventuallyEq, Filter.eventually_map, Pi.zero_apply, smul_eq_zero,
@@ -65,8 +67,9 @@ theorem harmonicOnNhd_comp_smul_right_iff (c : ℝ) (hc : c ≠ 0) {f : E → F}
     HarmonicOnNhd (fun y ↦ f (c • y)) ((fun y ↦ c • y) ⁻¹' s) ↔
       HarmonicOnNhd f s := by
   simp only [HarmonicOnNhd, Set.mem_preimage, harmonicAt_comp_smul_right_iff c hc]
-  exact ((Homeomorph.smulOfNeZero (α := E) c hc).surjective.forall
-    (p := fun y ↦ y ∈ s → HarmonicAt f y)).symm
+  let l : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)
+  simpa only [l, ContinuousLinearEquiv.smulLeft_apply_apply, Units.smul_def, Units.val_mk0] using
+    (l.surjective.forall (p := fun y ↦ y ∈ s → HarmonicAt f y)).symm
 
 /-- **Harmonicity is invariant under the affine normalization `z ↦ x + c • z`** when the scale
 is nonzero.
