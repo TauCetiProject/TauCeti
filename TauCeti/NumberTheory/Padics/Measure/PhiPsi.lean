@@ -210,7 +210,7 @@ theorem psiMeasure_eq_zero_iff_restrictMultiples_eq_zero (μ : D(ℤ_[p], R)) :
     rw [phiMeasure_psiMeasure, h, map_zero]
 
 /-- The unit projector fixes exactly the kernel of psi. -/
-theorem unitRestriction_eq_self_iff_psi_eq_zero (μ : D(ℤ_[p], R)) :
+theorem unitRestriction_eq_self_iff_psiMeasure_eq_zero (μ : D(ℤ_[p], R)) :
     unitRestriction μ = μ ↔ psiMeasure μ = 0 := by
   rw [unitRestriction_eq_self_iff_restrictMultiples_eq_zero,
     psiMeasure_eq_zero_iff_restrictMultiples_eq_zero]

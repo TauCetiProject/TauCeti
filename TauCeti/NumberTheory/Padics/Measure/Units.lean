@@ -43,7 +43,7 @@ def restrictUnits : D(ℤ_[p], R) →ₗ[R] D(ℤ_[p]ˣ, R) :=
     restrictClopen (PadicInt.unitsClopen p)
 
 /-- Unit restriction is clopen restriction followed by transport to the unit group. -/
-theorem restrictUnits_eq_transport (μ : D(ℤ_[p], R)) :
+theorem restrictUnits_def (μ : D(ℤ_[p], R)) :
     restrictUnits μ = arrowCongrLeft (PadicInt.unitsHomeomorphIsUnit p).symm
       (restrictClopen (PadicInt.unitsClopen p) μ) := (rfl)
 
@@ -52,24 +52,22 @@ theorem restrictUnits_eq_transport (μ : D(ℤ_[p], R)) :
 theorem restrictUnits_apply (μ : D(ℤ_[p], R)) (f : C(ℤ_[p]ˣ, R)) :
     restrictUnits μ f = μ (zeroExtendClopen R (PadicInt.unitsClopen p)
       (f.comp (PadicInt.unitsHomeomorphIsUnit p).symm)) := by
-  rw [restrictUnits_eq_transport, arrowCongrLeft_apply, restrictClopen_apply]
+  rw [restrictUnits_def, arrowCongrLeft_apply, restrictClopen_apply]
 
 /-- Restricting the pushforward of a unit-group measure recovers that measure. -/
 @[simp]
-theorem restrictUnits_map_val (ν : D(ℤ_[p]ˣ, R)) :
+theorem restrictUnits_map_unitsVal (ν : D(ℤ_[p]ˣ, R)) :
     restrictUnits (map ⟨Units.val, Units.continuous_val⟩ ν) = ν := by
-  ext f
-  rw [restrictUnits_apply, map_apply]
-  congr 1
-  ext u
-  simp only [comp_apply, coe_mk]
-  rw [zeroExtendClopen_apply_mem _ _ ((PadicInt.mem_unitsClopen p).mpr u.isUnit),
-    comp_apply, ← PadicInt.unitsHomeomorphIsUnit_apply]
-  exact congrArg f ((PadicInt.unitsHomeomorphIsUnit p).symm_apply_apply u)
+  have h : (⟨Units.val, Units.continuous_val⟩ : C(ℤ_[p]ˣ, ℤ_[p])) =
+      (subtypeVal (PadicInt.unitsClopen p : Set ℤ_[p])).comp
+        ⟨PadicInt.unitsHomeomorphIsUnit p, (PadicInt.unitsHomeomorphIsUnit p).continuous⟩ :=
+    ContinuousMap.ext fun u ↦ congrArg Subtype.val (PadicInt.unitsHomeomorphIsUnit_apply p u).symm
+  rw [h, ← map_map, ← coe_arrowCongrLeft, restrictUnits_def, restrictClopen_map_subtype,
+    ← arrowCongrLeft_symm, LinearEquiv.symm_apply_apply]
 
 /-- Including an intrinsic restriction is the ambient unit projector. -/
 @[simp]
-theorem map_val_restrictUnits (μ : D(ℤ_[p], R)) :
+theorem map_unitsVal_restrictUnits (μ : D(ℤ_[p], R)) :
     map ⟨Units.val, Units.continuous_val⟩ (restrictUnits μ) = unitRestriction μ := by
   ext f
   rw [map_apply, restrictUnits_apply, unitRestriction_apply]
@@ -86,19 +84,19 @@ theorem map_val_restrictUnits (μ : D(ℤ_[p], R)) :
 /-- Inclusion of unit-group measures in ambient measures is injective. -/
 theorem map_unitsVal_injective :
     Function.Injective (map ⟨Units.val, Units.continuous_val⟩ : D(ℤ_[p]ˣ, R) → D(ℤ_[p], R)) :=
-  Function.LeftInverse.injective restrictUnits_map_val
+  Function.LeftInverse.injective restrictUnits_map_unitsVal
 
 /-- Restriction keeps a Dirac measure at a unit, with its intrinsic unit-group location. -/
 @[simp]
 theorem restrictUnits_dirac (u : ℤ_[p]ˣ) :
     restrictUnits (dirac R (u : ℤ_[p])) = dirac R u := by
-  simpa only [map_dirac, coe_mk] using restrictUnits_map_val (dirac R u)
+  simpa only [map_dirac, coe_mk] using restrictUnits_map_unitsVal (dirac R u)
 
 /-- Restriction kills a Dirac measure at a nonunit. -/
 @[simp]
-theorem restrictUnits_dirac_nonunit {x : ℤ_[p]} (hx : ¬IsUnit x) :
+theorem restrictUnits_dirac_of_not_isUnit {x : ℤ_[p]} (hx : ¬IsUnit x) :
     restrictUnits (dirac R x) = 0 := by
-  rw [restrictUnits_eq_transport, restrictClopen_dirac_not_mem _ (by simpa using hx), map_zero]
+  rw [restrictUnits_def, restrictClopen_dirac_not_mem _ (by simpa using hx), map_zero]
 
 /-- Pushforward from the unit group has exactly the kernel of psi as its range. -/
 theorem range_map_unitsVal :
@@ -106,12 +104,12 @@ theorem range_map_unitsVal :
       D(ℤ_[p]ˣ, R) →ₗ[R] D(ℤ_[p], R)) = LinearMap.ker psiMeasure := by
   ext μ
   rw [LinearMap.mem_range, LinearMap.mem_ker,
-    ← unitRestriction_eq_self_iff_psi_eq_zero]
+    ← unitRestriction_eq_self_iff_psiMeasure_eq_zero]
   constructor
   · rintro ⟨ν, rfl⟩
-    rw [← map_val_restrictUnits, restrictUnits_map_val]
+    rw [← map_unitsVal_restrictUnits, restrictUnits_map_unitsVal]
   · intro h
-    exact ⟨restrictUnits μ, (map_val_restrictUnits μ).trans h⟩
+    exact ⟨restrictUnits μ, (map_unitsVal_restrictUnits μ).trans h⟩
 
 /-- Measures on the unit group are precisely the ambient measures killed by psi.
 The forward map is pushforward along `Units.val`, and the inverse is intrinsic restriction. -/
@@ -132,13 +130,13 @@ theorem unitsMeasureEquivKerPsi_symm_apply
     unitsMeasureEquivKerPsi.symm μ = restrictUnits (μ : D(ℤ_[p], R)) := by
   have h := congrArg (restrictUnits (R := R))
     (congrArg Subtype.val (unitsMeasureEquivKerPsi.apply_symm_apply μ))
-  simpa only [unitsMeasureEquivKerPsi_apply, restrictUnits_map_val] using h
+  simpa only [unitsMeasureEquivKerPsi_apply, restrictUnits_map_unitsVal] using h
 
 -- Restriction discards the nonunit atom even though its location is nonzero.
 example : restrictUnits (dirac ℤ (1 : ℤ_[3]) + 2 • dirac ℤ (3 : ℤ_[3])) =
     dirac ℤ (1 : ℤ_[3]ˣ) := by
   have h3 : ¬IsUnit (3 : ℤ_[3]) := PadicInt.p_nonunit
-  rw [map_add, map_nsmul, restrictUnits_dirac_nonunit h3, smul_zero, add_zero]
+  rw [map_add, map_nsmul, restrictUnits_dirac_of_not_isUnit h3, smul_zero, add_zero]
   simpa only [Units.val_one] using restrictUnits_dirac (R := ℤ) (1 : ℤ_[3]ˣ)
 
 example : restrictUnits (dirac ℤ (0 : ℤ_[2])) = 0 := by simp
