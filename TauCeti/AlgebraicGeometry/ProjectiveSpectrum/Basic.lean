@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Functor
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
-import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Points of `Proj` through standard charts, and compatibilities of `Proj.map`
@@ -226,9 +225,10 @@ theorem toSpecZero_appLE_basicOpen {f : A} {m : ℕ} (f_deg : f ∈ 𝒜 m) (hm 
     rw [← awayι_toSpecZero 𝒜 f f_deg hm, ← basicOpenIsoSpec_inv_ι]
     simp only [Category.assoc, Iso.hom_inv_id_assoc]
   -- The proof of `⊤ ≤ ⊤` carried by the restriction map has type `⊤ ≤ f ⁻¹ᵁ ⊤` only up to
-  -- unfolding `Scheme.Hom.preimage`, so `Scheme.Hom.appLE_top_top` is applied by unification
-  -- rather than by `rw`.
-  refine (Scheme.Hom.appLE_top_top _ _).trans ?_
+  -- unfolding `Scheme.Hom.preimage`, so `Scheme.Hom.appLE_eq_app` is applied by unification
+  -- rather than by `rw`; the middle term is fixed to `appTop`, whose codomain is `Γ(_, ⊤)`
+  -- rather than `Γ(_, f ⁻¹ᵁ ⊤)`.
+  refine Eq.trans (b := Scheme.Hom.appTop _) (Scheme.Hom.appLE_eq_app _) ?_
   -- The `show` reads `basicOpenToSpec_app_top`, stated for `app ⊤`, through the abbreviation
   -- `appTop`.
   rw [hι, Scheme.Hom.comp_appTop, basicOpenIsoSpec_hom,

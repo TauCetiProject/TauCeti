@@ -12,7 +12,6 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.PolynomialQuotient
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 import Mathlib.Algebra.MvPolynomial.Division
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
-import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Projective plane curves
@@ -168,9 +167,10 @@ theorem chartSectionsEquiv_appLE (i : Fin 3) (a : Γ(Spec (.of R), ⊤)) :
     rw [HomogeneousIdeal.over_proj_quotientGrading, Proj.toSpecCoeff_def]
     refine (Scheme.Hom.appLE_comp_appLE (Proj.toSpecZero _) _ ⊤ ⊤ _ le_top le_top).symm.trans ?_
     rw [Proj.toSpecZero_appLE_basicOpen _ ((ideal hG).mk_X_mem_quotientGrading i) one_pos]
-    -- `Scheme.Hom.appLE_top_top` is applied by unification, as its proof of `⊤ ≤ ⊤` has the
-    -- expected type only up to unfolding `Scheme.Hom.preimage`
-    refine (Scheme.Hom.appLE_top_top _ _ =≫ _).trans ?_
+    -- `Scheme.Hom.appLE_eq_app` is applied by unification, as its proof of `⊤ ≤ ⊤` has the
+    -- expected type only up to unfolding `Scheme.Hom.preimage`; the middle term is fixed to
+    -- `appTop`, whose codomain is `Γ(_, ⊤)` rather than `Γ(_, f ⁻¹ᵁ ⊤)`
+    refine Eq.trans (b := Scheme.Hom.appTop _ ≫ _) (Scheme.Hom.appLE_eq_app _ =≫ _) ?_
     rw [Scheme.ΓSpecIso_naturality_assoc, HomogeneousLocalization.algebraMap_eq_comp]
     simp only [CommRingCat.ofHom_comp, Category.assoc]
   rw [h, CommRingCat.comp_apply, CommRingCat.comp_apply, CommRingCat.ofHom_apply,
