@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Orientation
+public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
@@ -54,3 +55,15 @@ theorem eq_volumeFormL_of_apply_orthonormal (o : Orientation ℝ E (Fin n))
     volumeFormL_apply, o.volumeForm_robust b hb]
 
 end Orientation
+
+namespace Complex
+
+attribute [local instance] Complex.finrank_real_complex_fact
+
+/-- The normalized complex volume form evaluates to one on the basis `(1, I)`. -/
+theorem orientation_volumeFormL_one_I :
+    Complex.orientation.volumeFormL ![1, I] = 1 := by
+  simpa [coe_basisOneI] using
+    Complex.orientation.volumeFormL_apply_orthonormal Complex.orthonormalBasisOneI rfl
+
+end Complex

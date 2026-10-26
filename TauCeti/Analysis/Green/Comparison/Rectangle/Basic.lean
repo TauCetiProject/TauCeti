@@ -181,7 +181,7 @@ theorem integralTopForm_rectangle_areaForm {a b c d : ℝ}
       funext i
       fin_cases i <;> simp [L, Complex.equivRealProdCLM_symm_apply, Complex.coe_basisOneI]
     rw [hv, Complex.coe_basisOneI,
-      complex_orientation_volumeForm_one_I, mul_one]
+      Complex.orientation_volumeFormL_one_I, mul_one]
     rfl
   rw [hcomp] at hi ⊢
   have h := integralTopForm_mpullback_rectangle η hi

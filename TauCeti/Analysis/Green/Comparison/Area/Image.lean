@@ -129,7 +129,7 @@ theorem integralTopForm_mpullback_area_eq_integral_image
         ContinuousLinearEquiv.apply_symm_apply]
       exact e.apply_symm_apply _
     rw [hv, Complex.coe_basisOneI,
-      complex_orientation_volumeForm_one_I, mul_one]
+      Complex.orientation_volumeFormL_one_I, mul_one]
   have hi' : IntegrableTopForm (mpullback I 𝓘(ℝ, E) f' ω) := hpull.symm ▸ hi
   obtain ⟨hgi, hge⟩ := integralTopForm_mpullback_eq_integral_image l b hf'
     (e.symm.injective.comp hinj) F' hF' ho' ω hi'
