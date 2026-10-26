@@ -41,7 +41,7 @@ schemes are compared after base change.
 * `TauCeti.geometricallyReducedCommHopfAlgProperty.of_isGeometricallyReduced`: for finite-type
   commutative Hopf algebras, Mathlib's geometric reducedness implies reducedness after every
   field extension.
-* `TauCeti.CommHopfAlgCat.isGeometricallyReduced_baseChange`: for finite-type commutative Hopf
+* `CommHopfAlgCat.isGeometricallyReduced_baseChange`: for finite-type commutative Hopf
   algebras, Mathlib's geometric reducedness survives every extension of the base field.
 
 ## References
@@ -156,7 +156,7 @@ theorem geometricallyReducedCommHopfAlgProperty.of_isGeometricallyReduced
 
 /-- For a finite-type commutative Hopf algebra, Mathlib's geometric reducedness survives every
 extension `K / k` of the base field, not only algebraic ones. -/
-instance CommHopfAlgCat.isGeometricallyReduced_baseChange
+instance _root_.CommHopfAlgCat.isGeometricallyReduced_baseChange
     {k : Type u} [Field k] (H : CommHopfAlgCat.{u} k) [Algebra.FiniteType k H]
     [Algebra.IsGeometricallyReduced k H] (K : Type u) [Field K] [Algebra k K] :
     Algebra.IsGeometricallyReduced K (CommHopfAlgCat.baseChange (K := K) H) :=
