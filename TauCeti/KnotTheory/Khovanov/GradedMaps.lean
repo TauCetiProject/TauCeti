@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
 public import Mathlib.CategoryTheory.GradedObject.Braiding
 public import TauCeti.KnotTheory.Khovanov.QuantumGrading
+import Mathlib.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.CategoryTheory.GradedObject.MonObj
 
 /-!
@@ -63,6 +64,59 @@ noncomputable def quantumTensor {p q n : ℤ} (h : p + q = n)
     (x : quantumGradedObject R p) (y : quantumGradedObject R q) : quantumTensorObject R n :=
   ιTensorObj (quantumGradedObject R) (quantumGradedObject R) p q n h (x ⊗ₜ[R] y)
 
+-- Run these rules before dependent component normalization changes their carrier presentation.
+/-- The homogeneous tensor vanishes when its left input is zero. -/
+@[simp↓]
+theorem quantumTensor_zero_left {p q n : ℤ} (h : p + q = n)
+    (y : quantumGradedObject R q) : quantumTensor R h 0 y = 0 := by
+  simp only [quantumTensor, TensorProduct.zero_tmul, map_zero]
+
+/-- The homogeneous tensor vanishes when its right input is zero. -/
+@[simp↓]
+theorem quantumTensor_zero_right {p q n : ℤ} (h : p + q = n)
+    (x : quantumGradedObject R p) : quantumTensor R h x 0 = 0 := by
+  simp only [quantumTensor, TensorProduct.tmul_zero, map_zero]
+
+/-- Homogeneous tensors are additive in the left input. -/
+@[simp↓]
+theorem quantumTensor_add_left {p q n : ℤ} (h : p + q = n)
+    (x x' : quantumGradedObject R p) (y : quantumGradedObject R q) :
+    quantumTensor R h (x + x') y = quantumTensor R h x y + quantumTensor R h x' y := by
+  simp only [quantumTensor, TensorProduct.add_tmul, map_add]
+
+/-- Homogeneous tensors are additive in the right input. -/
+@[simp↓]
+theorem quantumTensor_add_right {p q n : ℤ} (h : p + q = n)
+    (x : quantumGradedObject R p) (y y' : quantumGradedObject R q) :
+    quantumTensor R h x (y + y') = quantumTensor R h x y + quantumTensor R h x y' := by
+  simp only [quantumTensor, TensorProduct.tmul_add, map_add]
+
+/-- Homogeneous tensors respect scalar multiplication in the left input. -/
+@[simp↓]
+theorem quantumTensor_smul_left {p q n : ℤ} (h : p + q = n) (r : R)
+    (x : quantumGradedObject R p) (y : quantumGradedObject R q) :
+    quantumTensor R h (r • x) y = r • quantumTensor R h x y := by
+  simp only [quantumTensor, ← TensorProduct.smul_tmul', map_smul]
+
+/-- Homogeneous tensors respect scalar multiplication in the right input. -/
+@[simp↓]
+theorem quantumTensor_smul_right {p q n : ℤ} (h : p + q = n) (r : R)
+    (x : quantumGradedObject R p) (y : quantumGradedObject R q) :
+    quantumTensor R h x (r • y) = r • quantumTensor R h x y := by
+  simp only [quantumTensor, TensorProduct.tmul_smul, map_smul]
+
+/-- Maps from a native quantum tensor component are determined by homogeneous pure tensors. -/
+theorem quantumTensor_hom_ext {n : ℤ} {M : ModuleCat.{u} R}
+    (f g : quantumTensorObject R n ⟶ M)
+    (h : ∀ (p q : ℤ) (hpq : p + q = n)
+      (x : quantumGradedObject R p) (y : quantumGradedObject R q),
+      f (quantumTensor R hpq x y) = g (quantumTensor R hpq x y)) : f = g := by
+  apply tensorObj_ext
+  intro p q hpq
+  apply ModuleCat.MonoidalCategory.tensor_ext
+  intro x y
+  exact h p q hpq x y
+
 /-- Forget the homogeneous decomposition of a native tensor component. -/
 noncomputable def quantumTensorEval (n : ℤ) :
     quantumTensorObject R n ⟶ ModuleCat.of R (R[ε] ⊗[R] R[ε]) :=
@@ -96,16 +150,10 @@ theorem braiding_quantumTensor {p q n : ℤ} (h : p + q = n)
 
 private noncomputable def quantumMulSummand (p q n : ℤ) (h : p + q = n) :
     quantumGradedObject R p ⊗ quantumGradedObject R q ⟶ quantumGradedObject R (n + -1) :=
-  ModuleCat.ofHom <| (LinearMap.mul' R R[ε] ∘ₗ
-    TensorProduct.map (R := R) ((quantumGrading R).piece p).subtype
-      ((quantumGrading R).piece q).subtype).codRestrict _ (by
-    intro z
-    induction z using TensorProduct.inductionOn with
-    | tmul x y =>
-      simpa only [LinearMap.comp_apply, TensorProduct.map_tmul, Submodule.subtype_apply,
-        LinearMap.mul'_apply, ← h, sub_eq_add_neg] using
-        mul_mem_quantumGrading_piece x.property y.property
-    | add x y hx hy => simpa only [map_add] using add_mem hx hy)
+  ModuleCat.ofHom <| Submodule.inclusion (Submodule.mul_le.mpr (by
+    intro x hx y hy
+    simpa only [← h, sub_eq_add_neg] using mul_mem_quantumGrading_piece hx hy)) ∘ₗ
+      Submodule.mulMap' ((quantumGrading R).piece p) ((quantumGrading R).piece q)
 
 /-- Merge has degree `−1`, expressed as a degree-zero map to the categorical shift `[−1]`. -/
 noncomputable def quantumMul : quantumTensorObject R ⟶
@@ -130,6 +178,8 @@ theorem quantumMul_comp_subtype (n : ℤ) :
   apply tensorObj_ext
   intro p q h
   simp only [quantumMul, quantumTensorEval, ι_tensorObjDesc_assoc]
+  apply ModuleCat.MonoidalCategory.tensor_ext
+  intro x y
   rfl
 
 /-- Split has degree `−1`, with its values constructed in the native graded tensor. -/
