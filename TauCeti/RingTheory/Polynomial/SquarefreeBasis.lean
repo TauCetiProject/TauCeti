@@ -63,7 +63,8 @@ following the convention of `Polynomial.rootMultiplicity`.
   the root multiplicities of the specialized `f` are a weighted sum of those of the specialized
   basis members, with weights independent of the specialization and of the root.
 * `Finset.IsSquarefreeBasis.rootMultiplicity_map_eq`: equal basis multiplicities at two
-  specialized points give equal multiplicities for every member of the family.
+  specialized points give equal multiplicities for every member of the family that is nullified
+  by both specializations or by neither.
 
 ## References
 
