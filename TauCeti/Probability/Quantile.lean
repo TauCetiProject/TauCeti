@@ -63,11 +63,15 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   increasing where its values lie strictly between `0` and `1`; together they give
   `MeasureTheory.Measure.quantile_lt_iff`, `MeasureTheory.Measure.strictMonoOn_quantile` and
   `MeasureTheory.Measure.continuousOn_quantile`;
+* `MeasureTheory.Measure.quantile_eq_of_cdf_eq` — invert an interior cdf value under strict
+  monotonicity;
 * `MeasureTheory.Measure.quantile_eq_of_le_cdf_iff` — two quantiles agree when their defining cdf
   level sets agree;
 * `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos` and
   `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one` — the infinite endpoint
   limits when the cdf is everywhere positive or everywhere less than one, respectively;
+* `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos` — the finite lower
+  endpoint limit for a law carried by a right half-line with positive cdf above its endpoint;
 * `MeasureTheory.Measure.quantile_map_abs` — the quantile of the image of a symmetric law under
   absolute value;
 * `MeasureTheory.Measure.le_upperQuantile_iff` and `MeasureTheory.Measure.upperQuantile_lt_iff`
@@ -340,6 +344,13 @@ theorem quantile_cdf (μ : Measure ℝ) (hmono : StrictMonoOn (cdf μ) (cdf μ �
     ⟨hx.1.trans_le hle, (monotone_cdf μ h.le).trans_lt hx.2⟩
   exact (hmono hq hx h).not_ge hle
 
+/-- A point whose cumulative mass is an interior level is the quantile at that level, when
+its cumulative distribution function is strictly increasing on interior levels. -/
+theorem quantile_eq_of_cdf_eq (μ : Measure ℝ)
+    (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1))
+    (hx : cdf μ x = t) (ht : t ∈ Ioo 0 1) : μ.quantile t = x :=
+  (congrArg μ.quantile hx).symm.trans (quantile_cdf μ hmono (by rw [hx]; exact ht))
+
 /-- The strict form of `MeasureTheory.Measure.quantile_le_iff`, for a law whose cumulative
 distribution function is continuous, and strictly increasing where its values lie strictly between
 `0` and `1`. -/
@@ -536,6 +547,20 @@ theorem upperQuantile_mem {μ : Measure ℝ} {s : Set ℝ} {t : ℝ} [IsProbabil
 end Set.OrdConnected
 
 namespace MeasureTheory.Measure
+
+/-- For a law carried by `[c, ∞)` whose cdf is positive above `c`, quantiles tend to `c` as
+the level decreases to zero. An atom at `c` is allowed. -/
+theorem tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos (μ : Measure ℝ)
+    [IsProbabilityMeasure μ] {c : ℝ} (hbound : ∀ᵐ x ∂μ, c ≤ x)
+    (hpos : ∀ x, c < x → 0 < cdf μ x) :
+    Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0) (𝓝 (c : EReal)) := by
+  apply EReal.tendsto_coe.2
+  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
+  · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+    exact ha.trans_le (ordConnected_Ici.quantile_mem hbound hu.1 hu.2)
+  · obtain ⟨x, hcx, hxb⟩ := exists_between hb
+    filter_upwards [Ioo_mem_nhdsGT (hpos x hcx)] with u hu
+    exact ((quantile_le_iff μ hu.1 (hu.2.trans_le (cdf_le_one μ x))).2 hu.2.le).trans_lt hxb
 
 /-- The cumulative distribution function at the upper quantile is exactly the level when the law
 has no atom at the upper quantile. -/

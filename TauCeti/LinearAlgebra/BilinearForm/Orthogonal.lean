@@ -63,8 +63,6 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   remains perfect on a submodule complementary to its orthogonal complement.
 * `LinearMap.BilinForm.orthogonal_orthogonal_of_isCompl`: double orthogonality for an
   orthogonally split submodule over a commutative semiring.
-* `LinearMap.BilinForm.restrict_span_singleton_bijective_of_isUnit`: unit self-pairing makes
-  the cyclic restriction perfect.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_dvd`: a vector whose self-pairing is
   a non-zero-divisor dividing all its pairings splits off.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_isUnit`: a vector with unit
@@ -390,45 +388,6 @@ theorem orthogonal_orthogonal_of_isCompl {R : Type u} {M : Type v}
     have ht't : B t' t = 0 := by simpa [hB.eq_zero hst'] using h
     simp [ht s' hs', ht't]
   simpa [ht0] using hs
-
-/-- Unit self-pairing makes the restricted pairing on the cyclic span perfect. -/
-theorem restrict_span_singleton_bijective_of_isUnit (B : LinearMap.BilinForm R M)
-    (x : M) (hx : IsUnit (B x x)) : Function.Bijective (B.restrict (R ∙ x)) := by
-  obtain ⟨a, ha⟩ := isUnit_iff_exists_inv.mp hx
-  have ha' : a * B x x = 1 := by simpa [mul_comm] using ha
-  let S : Submodule R M := R ∙ x
-  have hxS : x ∈ S := Submodule.mem_span_singleton_self x
-  constructor
-  · intro y z hyz
-    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.mp y.property
-    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp z.property
-    have hval : B (y : M) x = B (z : M) x := by
-      simpa only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using
-        congrArg (fun f : Module.Dual R S ↦ f ⟨x, hxS⟩) hyz
-    rw [← hb, ← hc, map_smul, map_smul, LinearMap.smul_apply, LinearMap.smul_apply] at hval
-    simp only [smul_eq_mul] at hval
-    have hbc : b = c := by
-      calc
-        b = (a * B x x) * b := by rw [ha']; ring
-        _ = a * (b * B x x) := by ring
-        _ = a * (c * B x x) := by rw [hval]
-        _ = c := by calc
-          a * (c * B x x) = c * (a * B x x) := by ring
-          _ = c := by rw [ha', mul_one]
-    apply Subtype.ext
-    rw [← hb, ← hc, hbc]
-  · intro f
-    refine ⟨⟨(a * f ⟨x, hxS⟩) • x, Submodule.smul_mem S _ hxS⟩, ?_⟩
-    ext y
-    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.mp y.property
-    have hy : y = b • (⟨x, hxS⟩ : S) := Subtype.ext hb.symm
-    rw [hy]
-    simp only [LinearMap.BilinForm.restrict_apply]
-    rw [map_smul, map_smul, map_smul]
-    simp only [smul_eq_mul]
-    calc
-      b * (a * f ⟨x, hxS⟩ * B x x) = b * (a * B x x) * f ⟨x, hxS⟩ := by ring
-      _ = b * f ⟨x, hxS⟩ := by rw [ha']; ring
 
 /-- A vector `x` whose self-pairing `B x x` is a non-zero-divisor dividing every pairing `B x y`
 spans an orthogonal direct summand. Over a field this is the condition `B x x ≠ 0`; over a

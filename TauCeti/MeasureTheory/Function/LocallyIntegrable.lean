@@ -22,6 +22,9 @@ For a right-translation-invariant measure on an additive group with continuous a
 local integrability is preserved by translating a function onto any set whose translate stays
 inside the original domain.
 
+On a space with continuous addition and zero, a locally integrable function on an open set agrees
+with a globally integrable one on any compact subset and on all sufficiently small translates of it.
+
 A function locally integrable on a null-measurable set `s`, vanishing almost everywhere on `s` off
 a null-measurable compact `K ⊆ s`, is integrable on the whole space after extension by zero. This
 is the step that turns a local hypothesis plus compact support into a global one. Both sets are
@@ -47,6 +50,8 @@ everywhere there with a function that is locally integrable on the whole space a
 
 * `MeasureTheory.LocallyIntegrableOn.comp_add_right_of_mapsTo`: translation onto a smaller set
   preserves local integrability.
+* `MeasureTheory.LocallyIntegrableOn.exists_integrable_eqOn_add_of_isCompact`: localization to
+  a compact set and its small translates by a globally integrable function.
 * `TauCeti.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by relatively
   compact open subdomains.
 * `MeasureTheory.LocallyIntegrableOn.indicator_of_isClosed`: local integrability of relative
@@ -66,6 +71,8 @@ The characterization uses Mathlib's `exists_open_between_and_isCompact_closure`
 to find relatively compact open neighborhoods of individual points. Extension by zero rests on
 Mathlib's `LocallyIntegrableOn.integrableOn_compact_subset`, which gives integrability on the
 compact support.
+Compact localization adapts Mathlib's `LocallyIntegrable.integrableOn_nhds_isCompact` to
+an open domain and uses `compact_open_separated_add_right` for the translation neighborhood.
 -/
 
 public section
@@ -147,6 +154,42 @@ theorem exists_locallyIntegrable_mem_Icc_ae_eq [IsLocallyFiniteMeasure μ] {u : 
 end TauCeti
 
 namespace MeasureTheory.LocallyIntegrableOn
+
+section CompactLocalization
+
+open Filter Topology
+
+variable {E F : Type*} [MeasurableSpace E] [TopologicalSpace E] [AddZeroClass E]
+  [ContinuousAdd E] [OpensMeasurableSpace E] [TopologicalSpace F]
+  [ESeminormedAddMonoid F] [PseudoMetrizableSpace F]
+  {μ : Measure E} {u : E → F} {s K : Set E}
+
+/-- A function locally integrable on an open set agrees with a globally integrable function
+on each compact subset and on all sufficiently small translates of that subset. -/
+theorem exists_integrable_eqOn_add_of_isCompact (hu : LocallyIntegrableOn u s μ)
+    (hs : IsOpen s) (hK : IsCompact K) (hKs : K ⊆ s) :
+    ∃ w : E → F, Integrable w μ ∧ EqOn w u K ∧
+      ∀ᶠ y in 𝓝 (0 : E), ∀ x ∈ K, w (x + y) = u (x + y) := by
+  obtain ⟨U, hU, hKU, huU⟩ : ∃ U, IsOpen U ∧ K ⊆ U ∧ IntegrableOn u U μ := by
+    refine hK.induction_on ?_ ?_ ?_ ?_
+    · exact ⟨∅, isOpen_empty, Subset.rfl, integrableOn_empty⟩
+    · rintro A B hAB ⟨U, hU, hBU, huU⟩
+      exact ⟨U, hU, hAB.trans hBU, huU⟩
+    · rintro A B ⟨U, hU, hAU, huU⟩ ⟨V, hV, hBV, huV⟩
+      exact ⟨U ∪ V, hU.union hV, union_subset_union hAU hBV, huU.union huV⟩
+    · intro x hx
+      obtain ⟨V, hV, huV⟩ := hu x (hKs hx)
+      rw [hs.nhdsWithin_eq (hKs hx)] at hV
+      obtain ⟨U, hUV, hU, hxU⟩ := mem_nhds_iff.1 hV
+      exact ⟨U, nhdsWithin_le_nhds (hU.mem_nhds hxU),
+        U, hU, Subset.rfl, huV.mono_set hUV⟩
+  refine ⟨U.indicator u, (integrable_indicator_iff hU.measurableSet).2 huU,
+    fun x hx => indicator_of_mem (hKU hx) u, ?_⟩
+  obtain ⟨V, hV, hKV⟩ := compact_open_separated_add_right hK hU hKU
+  filter_upwards [hV] with y hy x hx
+  exact indicator_of_mem (hKV ⟨x, hx, y, hy, rfl⟩) u
+
+end CompactLocalization
 
 variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
 
