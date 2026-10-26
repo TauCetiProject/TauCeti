@@ -22,24 +22,31 @@ Grothendieck group `G₀^gr(mod A)` over the Laurent ring.
 
 This is the spanning half of the simple-class basis of `G₀^gr(mod A)`. Linear independence is
 read off from the idempotent coordinates `TauCeti.gradedIdempotentCoordinate`: if degree-zero
-idempotents `eᵢ` satisfy `gdim(eᵢ • Sⱼ) = δᵢⱼ`, as for the vertex idempotents and vertex simples of
-a basic algebra whose simple modules are one-dimensional, the classes `[Sᵢ]` form a
-`ℤ[q,q⁻¹]`-basis whose coordinates are the idempotent coordinates. This basis is the module-side
-basis of the graded Cartan matrix `TauCeti.gradedCartanMatrix`.
+idempotents `eᵢ` satisfy `gdim(eᵢ • Sⱼ) = 0` for `i ≠ j` and `gdim(eᵢ • Sᵢ) ≠ 0`, the classes
+`[Sᵢ]` form a `ℤ[q,q⁻¹]`-basis, and the `eᵢ`-coordinate is `gdim(eᵢ • Sᵢ)` times the `i`th basis
+coordinate. Over a general field `gdim(eᵢ • Sᵢ)` is the dimension of the division algebra
+`End_A(Sᵢ)`. When `gdim(eᵢ • Sⱼ) = δᵢⱼ`, as for the vertex idempotents and vertex simples of a basic
+algebra whose simple modules are one-dimensional, the basis coordinates are exactly the
+idempotent coordinates. This basis is the module-side basis of the graded Cartan matrix
+`TauCeti.gradedCartanMatrix`.
 
 ## Main definitions
 
 * `TauCeti.IsExhaustiveGradedSimpleFamily`: every simple finite graded module is isomorphic to an
   internal shift of a member of the family.
-* `TauCeti.gradedSimpleClassBasis`: the `ℤ[q,q⁻¹]`-basis of `G₀^gr(mod A)` given by an
-  exhaustive family with Kronecker-delta idempotent coordinates.
+* `TauCeti.gradedSimpleClassBasisOfNeZero`: the `ℤ[q,q⁻¹]`-basis of `G₀^gr(mod A)` given by an
+  exhaustive family with diagonal idempotent coordinates, nonzero on the diagonal.
+* `TauCeti.gradedSimpleClassBasis`: the same basis when the idempotent coordinates are
+  Kronecker deltas.
 
 ## Main results
 
 * `TauCeti.span_range_laurentK0_of_eq_top`: the classes of an exhaustive family span
   `G₀^gr(mod A)` over `ℤ[q,q⁻¹]`.
-* `TauCeti.gradedSimpleClassBasis_repr_apply`: the coordinates in the simple-class basis are the
-  idempotent coordinates.
+* `TauCeti.gradedIdempotentCoordinate_eq_mul_gradedSimpleClassBasisOfNeZero_repr`: the
+  `eᵢ`-coordinate is `gdim(eᵢ • Sᵢ)` times the `i`th coordinate in the simple-class basis.
+* `TauCeti.gradedSimpleClassBasis_repr_apply`: for Kronecker-delta idempotent coordinates, the
+  coordinates in the simple-class basis are the idempotent coordinates.
 
 ## References
 
@@ -159,23 +166,69 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A] [Module.Fi
   {𝒜 : ℤ → Submodule k A} {I : Type uI} (S : I → (gradedFiniteModules 𝒜).FullSubcategory)
   {e : I → A} (he : ∀ i, IsIdempotentElem (e i)) (he₀ : ∀ i, e i ∈ 𝒜 0)
   (hne : Pairwise fun i j => (S j).obj.smulGradedDimension (e i) = 0)
-  (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
+
+section NeZero
+
+variable (hself : ∀ i, (S i).obj.smulGradedDimension (e i) ≠ 0)
   (hS : IsExhaustiveGradedSimpleFamily S)
 
-/-- **The simple-class basis of `G₀^gr(mod A)`** over `ℤ[q,q⁻¹]`. Its basis vector at `i` is the
-class `[Sᵢ]`. The hypotheses say that the degree-zero idempotents `eᵢ` have graded dimensions
-`gdim(eᵢ • Sⱼ) = δᵢⱼ`, and that every simple finite graded module is a shift of some `Sᵢ`. -/
-def gradedSimpleClassBasis :
+/-- **The simple-class basis of `G₀^gr(mod A)`** over `ℤ[q,q⁻¹]`, for idempotent coordinates
+which are diagonal but not necessarily `1` on the diagonal. Its basis vector at `i` is the class
+`[Sᵢ]`. The hypotheses say that the degree-zero idempotents `eᵢ` have graded dimensions
+`gdim(eᵢ • Sⱼ) = 0` for `i ≠ j` and `gdim(eᵢ • Sᵢ) ≠ 0`, and that every simple finite graded
+module is a shift of some `Sᵢ`. Over a field that does not split the simples, `gdim(eᵢ • Sᵢ)` is
+the dimension of the division algebra `End_A(Sᵢ)` rather than `1`. -/
+def gradedSimpleClassBasisOfNeZero :
     Module.Basis I (LaurentPolynomial ℤ) (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :=
   Module.Basis.mk (linearIndependent_laurentK0_of_smulGradedDimension he he₀ S hne hself)
     (span_range_laurentK0_of_eq_top S hS).ge
 
 /-- The basis vector indexed by `i` is the class `[Sᵢ]`. -/
 @[simp]
+theorem gradedSimpleClassBasisOfNeZero_apply (i : I) :
+    gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS i =
+      LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) (S i) :=
+  Module.Basis.mk_apply _ _ i
+
+/-- The idempotent coordinate of `eᵢ` is the `i`th coordinate in the simple-class basis, scaled by
+the diagonal graded dimension `gdim(eᵢ • Sᵢ)`. -/
+theorem gradedIdempotentCoordinate_eq_mul_gradedSimpleClassBasisOfNeZero_repr
+    (x : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) (i : I) :
+    gradedIdempotentCoordinate (he i) (he₀ i) x =
+      (S i).obj.smulGradedDimension (e i) *
+        (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS).repr x i := by
+  classical
+  refine LinearMap.congr_fun ((gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS).ext
+    (f₁ := gradedIdempotentCoordinate (he i) (he₀ i)) (f₂ := (S i).obj.smulGradedDimension (e i) •
+      (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS).coord i) fun j => ?_) x
+  rw [LinearMap.smul_apply, Module.Basis.coord_apply, Module.Basis.repr_self,
+    gradedSimpleClassBasisOfNeZero_apply, gradedIdempotentCoordinate_of, Finsupp.single_apply,
+    smul_eq_mul]
+  split_ifs with hji
+  · subst hji
+    exact (mul_one _).symm
+  · exact (hne (Ne.symm hji)).trans (mul_zero _).symm
+
+end NeZero
+
+variable (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
+  (hS : IsExhaustiveGradedSimpleFamily S)
+
+/-- **The simple-class basis of `G₀^gr(mod A)`** over `ℤ[q,q⁻¹]`. Its basis vector at `i` is the
+class `[Sᵢ]`. The hypotheses say that the degree-zero idempotents `eᵢ` have graded dimensions
+`gdim(eᵢ • Sⱼ) = δᵢⱼ`, and that every simple finite graded module is a shift of some `Sᵢ`. This is
+the case of `TauCeti.gradedSimpleClassBasisOfNeZero` whose coordinates are exactly the idempotent
+coordinates. -/
+def gradedSimpleClassBasis :
+    Module.Basis I (LaurentPolynomial ℤ) (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :=
+  gradedSimpleClassBasisOfNeZero S he he₀ hne (fun i => (hself i).symm ▸ one_ne_zero) hS
+
+/-- The basis vector indexed by `i` is the class `[Sᵢ]`. -/
+@[simp]
 theorem gradedSimpleClassBasis_apply (i : I) :
     gradedSimpleClassBasis S he he₀ hne hself hS i =
       LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) (S i) :=
-  Module.Basis.mk_apply _ _ i
+  gradedSimpleClassBasisOfNeZero_apply _ _ _ _ _ _ i
 
 /-- The `i`th coordinate in the simple-class basis is the idempotent coordinate of `eᵢ`, the graded
 dimension of `eᵢ • M` on the class of `M`. -/
@@ -184,15 +237,8 @@ theorem gradedSimpleClassBasis_repr_apply
     (x : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) (i : I) :
     (gradedSimpleClassBasis S he he₀ hne hself hS).repr x i =
       gradedIdempotentCoordinate (he i) (he₀ i) x := by
-  classical
-  refine LinearMap.congr_fun ((gradedSimpleClassBasis S he he₀ hne hself hS).ext
-    (f₁ := (gradedSimpleClassBasis S he he₀ hne hself hS).coord i) fun j => ?_) x
-  rw [Module.Basis.coord_apply, Module.Basis.repr_self, gradedSimpleClassBasis_apply,
-    gradedIdempotentCoordinate_of, Finsupp.single_apply]
-  split_ifs with hji
-  · subst hji
-    exact (hself j).symm
-  · exact (hne (Ne.symm hji)).symm
+  rw [gradedIdempotentCoordinate_eq_mul_gradedSimpleClassBasisOfNeZero_repr S he he₀ hne
+    (fun i => (hself i).symm ▸ one_ne_zero) hS, hself i, one_mul, gradedSimpleClassBasis]
 
 end Basis
 
