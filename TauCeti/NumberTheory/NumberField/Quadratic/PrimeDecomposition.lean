@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Quadratic.Model
 public import TauCeti.NumberTheory.QuadraticOrder.PrimeIdeal
-public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -32,7 +32,7 @@ The two factors coincide exactly in the ramified case, so together these cover s
 and inert primes. The factorization needs no case distinction at `2`, because Dedekind's criterion
 holds at every `p` in the maximal order. By
 contrast, in the order `ℤ[√d]` of conductor `2` with `d ≡ 1 (mod 4)` the criterion fails at `2`:
-`(2, √d - 1)² ≠ (2)` (`span_two_omega_sub_one_sq_ne_span_two`).
+`(2, √d - 1)² ≠ (2)` (`QuadraticAlgebra.span_two_omega_sub_one_sq_ne_span_two`).
 
 ## Main results
 
@@ -84,12 +84,6 @@ private theorem isMaximal_map_symm_iff (I : Ideal (QuadraticAlgebra ℤ a b)) :
     (I.map e.symm).IsMaximal ↔ I.IsMaximal :=
   Ideal.isMaximal_map_iff_of_bijective _ e.symm.bijective
 
-omit [Fact p.Prime] in
-private theorem absNorm_map_symm (I : Ideal (QuadraticAlgebra ℤ a b)) :
-    Ideal.absNorm (I.map e.symm) = Nat.card (QuadraticAlgebra ℤ a b ⧸ I) := by
-  rw [Ideal.absNorm_eq_natCard]
-  exact Nat.card_congr (Ideal.quotientEquiv I _ e.symm.toRingEquiv rfl).toEquiv.symm
-
 end Transport
 
 /-! ### The case `d ≢ 1 (mod 4)` -/
@@ -123,7 +117,7 @@ include hsf hd4 in
 theorem absNorm_span_natCast_integralSqrt_sub (hr : (p : ℤ) ∣ r ^ 2 - d) :
     Ideal.absNorm (Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
       integralSqrt (omega_sq_eq_algebraMap_int (d := d)) - r}) = p := by
-  rw [← map_ringOfIntegersEquiv_symm_span hsf hd4, absNorm_map_symm]
+  rw [← map_ringOfIntegersEquiv_symm_span hsf hd4, Ideal.absNorm_map_of_ringEquiv_eq_natCard]
   exact card_quotient_span_natCast_omega_sub (by simpa using hr)
 
 omit [Fact (¬ IsSquare d)] in
@@ -221,7 +215,7 @@ include hsf in
 theorem absNorm_span_natCast_halfGen_sub (hr : (p : ℤ) ∣ r ^ 2 - r - (d - 1) / 4) :
     Ideal.absNorm (Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
       halfGen minpoly_integralSqrt_omega hd4 - r}) = p := by
-  rw [← map_ringOfIntegersEquivHalf_symm_span hsf hd4, absNorm_map_symm]
+  rw [← map_ringOfIntegersEquivHalf_symm_span hsf hd4, Ideal.absNorm_map_of_ringEquiv_eq_natCard]
   exact card_quotient_span_natCast_omega_sub (by simpa using hr)
 
 omit [Fact (¬ IsSquare d)] in
@@ -269,21 +263,6 @@ theorem isMaximal_span_natCast_iff_of_mod_four_eq_one :
   rw [← map_symm_span_natCast (ringOfIntegersEquivHalf hsf hd4), isMaximal_map_symm_iff,
     isMaximal_span_natCast_iff]
   simp
-
-omit [Fact (¬ IsSquare d)] [Fact p.Prime] in
-include hd4 in
-/-- **Dedekind's criterion fails at the conductor.** For `d ≡ 1 (mod 4)`, the order `ℤ[√d]` has
-conductor `2` in `ℤ[(1 + √d)/2]`, and Dedekind's criterion fails at `2`: the maximal ideal
-`(2, √d - 1)` above `2` satisfies `(2, √d - 1)² ≠ (2)`. -/
-theorem span_two_omega_sub_one_sq_ne_span_two :
-    Ideal.span {(2 : QuadraticAlgebra ℤ d 0), ω - 1} ^ 2 ≠ Ideal.span {2} := by
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have h := span_natCast_omega_sub_sq_eq_iff (p := 2) (a := d) (b := 0) (r := 1)
-    (by norm_num; omega) (by norm_num)
-  simp only [Nat.cast_ofNat, Int.cast_one] at h
-  rw [Ne, h, not_not]
-  norm_num
-  omega
 
 end ModFourEqOne
 

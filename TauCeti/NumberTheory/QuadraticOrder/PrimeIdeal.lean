@@ -28,9 +28,10 @@ generators, following the Dedekind–Kummer recipe:
   and `f(r) / p` (`span_natCast_omega_sub_mul_span_natCast_omega_sub_eq_iff`). This is the
   quadratic case of Dedekind's criterion, stated as an identity of ideals of the order `ℤ[ω]`
   itself, maximal or not. In the maximal order of a quadratic field it holds at every prime; in
-  `ℤ[√d]` with `d ≡ 1 (mod 4)`, an order of conductor `2`, it fails at `p = 2`;
-* when the criterion holds, every prime of `ℤ[ω]` containing `p` is `𝔭_r` or `𝔭_(b - r)`
-  (`eq_or_eq_of_natCast_mem`); the two coincide (`p` ramifies) exactly when `p ∣ 2r - b`;
+  `ℤ[√d]` with `d ≡ 1 (mod 4)`, an order of conductor `2`, it fails at `p = 2`
+  (`span_two_omega_sub_one_sq_ne_span_two`);
+* every prime of `ℤ[ω]` containing `p` is `𝔭_r` or `𝔭_(b - r)` (`eq_or_eq_of_natCast_mem`),
+  whether or not the criterion holds; the two coincide exactly when `p ∣ 2r - b`;
 * if `f` has no root modulo `p`, then `(p)` itself is maximal, so `p` is inert
   (`isMaximal_span_natCast_iff`), and conversely.
 
@@ -103,14 +104,18 @@ theorem mem_span_natCast_omega_sub_iff (hr : (p : ℤ) ∣ r ^ 2 - b * r - a)
     ZMod.intCast_zmod_eq_zero_iff_dvd]
 
 /-- **The norm of `(p, ω - r)` is `p`.** For a root `r` of `X² - b X - a` modulo `p`, the
-residue ring of `(p, ω - r)` has exactly `p` elements. -/
+residue ring of `(p, ω - r)` is `ℤ/p`, so its `Nat.card` is `p`. For `p ≠ 0` this says that it
+has exactly `p` elements; for `p = 0` the residue ring is `ℤ`, which is infinite. -/
 theorem card_quotient_span_natCast_omega_sub (hr : (p : ℤ) ∣ r ^ 2 - b * r - a) :
     Nat.card (QuadraticAlgebra ℤ a b ⧸
       Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (r : QuadraticAlgebra ℤ a b)}) = p := by
   rw [← ker_evalRoot hr, Nat.card_congr
     (RingHom.quotientKerEquivOfSurjective (evalRoot_surjective hr)).toEquiv, Nat.card_zmod]
 
-/-- **Two roots give the same prime iff they agree modulo `p`.** -/
+/-- **Two roots give the same ideal iff they agree modulo `p`.** For a root `r` of
+`X² - b X - a` modulo `p`, the ideals `(p, ω - s)` and `(p, ω - r)` coincide exactly when
+`s ≡ r (mod p)`. When `p` is prime these ideals are the primes above `p`
+(`isMaximal_span_natCast_omega_sub`). -/
 theorem span_natCast_omega_sub_eq_iff (hr : (p : ℤ) ∣ r ^ 2 - b * r - a) {s : ℤ} :
     Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (s : QuadraticAlgebra ℤ a b)} =
         Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (r : QuadraticAlgebra ℤ a b)} ↔
@@ -127,19 +132,12 @@ theorem span_natCast_omega_sub_eq_iff (hr : (p : ℤ) ∣ r ^ 2 - b * r - a) {s 
   · rintro ⟨k, hk⟩
     have key : ω - (s : QuadraticAlgebra ℤ a b) =
         (k : QuadraticAlgebra ℤ a b) * (p : QuadraticAlgebra ℤ a b) +
-          1 * (ω - (r : QuadraticAlgebra ℤ a b)) := by
+          (ω - (r : QuadraticAlgebra ℤ a b)) := by
       have : ((r - s : ℤ) : QuadraticAlgebra ℤ a b) = ((p * k : ℤ) : QuadraticAlgebra ℤ a b) := by
         rw [hk]
       push_cast at this
       linear_combination this
-    have key' : ω - (r : QuadraticAlgebra ℤ a b) =
-        (-k : QuadraticAlgebra ℤ a b) * (p : QuadraticAlgebra ℤ a b) +
-          1 * (ω - (s : QuadraticAlgebra ℤ a b)) := by
-      linear_combination -1 * key
-    apply le_antisymm <;> rw [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff] <;>
-      refine ⟨Ideal.subset_span (by simp), Ideal.mem_span_pair.mpr ?_⟩
-    · exact ⟨_, _, key.symm⟩
-    · exact ⟨_, _, key'.symm⟩
+    rw [key, Ideal.span_pair_mul_left_add]
 
 /-- The second root: `(ω - r) (ω - (b - r)) = -(r² - b r - a)` in `ℤ[ω]`, written as `-p m` when
 `r² - b r - a = p m`. -/
@@ -200,12 +198,12 @@ theorem span_natCast_omega_sub_mul_span_natCast_omega_sub_eq_iff
   -- The product is always contained in `(p)`: the only product of generators not visibly a
   -- multiple of `p` is `(ω - r)(ω - (b - r)) = -p m`.
   have hle : 𝔭 * 𝔮 ≤ Ideal.span {P} := by
-    refine Ideal.mul_le.mpr fun x hx y hy => ?_
-    obtain ⟨α, β, rfl⟩ := Ideal.mem_span_pair.mp hx
-    obtain ⟨γ, δ, rfl⟩ := Ideal.mem_span_pair.mp hy
-    refine Ideal.mem_span_singleton'.mpr
-      ⟨α * γ * P + α * δ * (ω - R') + β * γ * (ω - R) - β * δ * M, ?_⟩
-    linear_combination -(β * δ) * hkey
+    have hP := Ideal.mem_span_singleton_self P
+    refine (Ideal.span_pair_mul_span_pair P (ω - R) P (ω - R')).le.trans ?_
+    simp only [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff, SetLike.mem_coe]
+    refine ⟨Ideal.mul_mem_right _ _ hP, Ideal.mul_mem_right _ _ hP, Ideal.mul_mem_left _ _ hP, ?_⟩
+    rw [hkey]
+    exact neg_mem (Ideal.mul_mem_right _ _ hP)
   constructor
   · -- If `p ∣ 2r - b` and `p ∣ m`, then `𝔭 = 𝔮` and `𝔭² ≤ p 𝔭`, which cannot contain `p`.
     rintro h ⟨⟨t, ht⟩, hmp⟩
@@ -222,14 +220,13 @@ theorem span_natCast_omega_sub_mul_span_natCast_omega_sub_eq_iff
       rw [hR'eq] at hkey
       linear_combination hkey
     have hle' : 𝔭 * 𝔭 ≤ Ideal.span {P} * 𝔭 := by
-      refine Ideal.mul_le.mpr fun x hx y hy => ?_
-      obtain ⟨α, β, rfl⟩ := Ideal.mem_span_pair.mp hx
-      obtain ⟨γ, δ, rfl⟩ := Ideal.mem_span_pair.mp hy
-      refine Ideal.mem_span_singleton_mul.mpr ⟨α * γ * P + (α * δ + β * γ) * (ω - R) +
-        β * δ * (-(t : QuadraticAlgebra ℤ a b) * (ω - R) - M), ?_, ?_⟩
-      · exact add_mem (add_mem (Ideal.mul_mem_left _ _ hP𝔭) (Ideal.mul_mem_left _ _ hω𝔭))
-          (Ideal.mul_mem_left _ _ (sub_mem (Ideal.mul_mem_left _ _ hω𝔭) hM𝔭))
-      · linear_combination -(β * δ) * hsq'
+      have hP : ∀ x ∈ 𝔭, P * x ∈ Ideal.span {P} * 𝔭 :=
+        fun x hx => Ideal.mul_mem_mul (Ideal.mem_span_singleton_self P) hx
+      refine (Ideal.span_pair_mul_span_pair P (ω - R) P (ω - R)).le.trans ?_
+      simp only [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff, SetLike.mem_coe]
+      refine ⟨hP _ hP𝔭, hP _ hω𝔭, mul_comm P (ω - R) ▸ hP _ hω𝔭, ?_⟩
+      rw [hsq']
+      exact hP _ (sub_mem (Ideal.mul_mem_left _ _ hω𝔭) hM𝔭)
     rw [h𝔮] at h
     obtain ⟨z, hz, hPz⟩ :=
       Ideal.mem_span_singleton_mul.mp (hle' (h ▸ Ideal.mem_span_singleton_self P))
@@ -282,22 +279,45 @@ theorem span_natCast_omega_sub_sq_eq_iff (hr : (p : ℤ) ∣ r ^ 2 - b * r - a)
   rw [sq, h]
   simp [hs]
 
-/-- **The primes above a split or ramified `p`.** If `r` is a root of `X² - b X - a` modulo `p`
-and Dedekind's criterion holds, every prime ideal of `ℤ[ω]` containing `p` is `(p, ω - r)` or
-`(p, ω - (b - r))`. -/
+/-- **Dedekind's criterion fails at the conductor.** For `d ≡ 1 (mod 4)`, the order `ℤ[√d]` has
+conductor `2` in `ℤ[(1 + √d)/2]`, and Dedekind's criterion fails at `2`: the maximal ideal
+`(2, √d - 1)` above `2` satisfies `(2, √d - 1)² ≠ (2)`. -/
+theorem span_two_omega_sub_one_sq_ne_span_two {d : ℤ} (hd4 : d % 4 = 1) :
+    Ideal.span {(2 : QuadraticAlgebra ℤ d 0), ω - 1} ^ 2 ≠ Ideal.span {2} := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have h := span_natCast_omega_sub_sq_eq_iff (p := 2) (a := d) (b := 0) (r := 1)
+    (by norm_num; omega) (by norm_num)
+  simp only [Nat.cast_ofNat, Int.cast_one] at h
+  rw [Ne, h, not_not]
+  norm_num
+  omega
+
+/-- **The primes above a split or ramified `p`.** If `r` is a root of `X² - b X - a` modulo `p`,
+every prime ideal of `ℤ[ω]` containing `p` is `(p, ω - r)` or `(p, ω - (b - r))`. This needs no
+Dedekind criterion, so it also holds at primes dividing the conductor of a nonmaximal order. -/
 theorem eq_or_eq_of_natCast_mem (hr : (p : ℤ) ∣ r ^ 2 - b * r - a)
-    (hD : ¬ ((p : ℤ) ∣ 2 * r - b ∧ (p : ℤ) ^ 2 ∣ r ^ 2 - b * r - a))
     {P : Ideal (QuadraticAlgebra ℤ a b)} [P.IsPrime] (hP : (p : QuadraticAlgebra ℤ a b) ∈ P) :
     P = Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (r : QuadraticAlgebra ℤ a b)} ∨
       P = Ideal.span {(p : QuadraticAlgebra ℤ a b),
         ω - ((b - r : ℤ) : QuadraticAlgebra ℤ a b)} := by
   have hr' : (p : ℤ) ∣ (b - r) ^ 2 - b * (b - r) - a := by
     convert hr using 1; ring
-  have hle := ((span_natCast_omega_sub_mul_span_natCast_omega_sub_eq_iff hr).mpr hD).le.trans
-    ((Ideal.span_singleton_le_iff_mem P).mpr hP)
-  rcases (Ideal.IsPrime.mul_le inferInstance).mp hle with h | h
-  · exact Or.inl ((isMaximal_span_natCast_omega_sub hr).eq_of_le Ideal.IsPrime.ne_top' h).symm
-  · exact Or.inr ((isMaximal_span_natCast_omega_sub hr').eq_of_le Ideal.IsPrime.ne_top' h).symm
+  -- `(ω - r)(ω - (b - r)) = -p m` lies in `P`, so one factor does, and then so does its root ideal.
+  have hle : ∀ s : ℤ, ω - (s : QuadraticAlgebra ℤ a b) ∈ P →
+      Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (s : QuadraticAlgebra ℤ a b)} ≤ P :=
+    fun s hs => by
+      rw [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+      exact ⟨hP, hs⟩
+  obtain ⟨m, hm⟩ := hr
+  have hprod : (ω - (r : QuadraticAlgebra ℤ a b)) *
+      (ω - ((b - r : ℤ) : QuadraticAlgebra ℤ a b)) ∈ P := by
+    rw [omega_sub_mul_omega_sub hm]
+    exact neg_mem (Ideal.mul_mem_right _ P hP)
+  rcases Ideal.IsPrime.mem_or_mem inferInstance hprod with h | h
+  · exact Or.inl ((isMaximal_span_natCast_omega_sub ⟨m, hm⟩).eq_of_le Ideal.IsPrime.ne_top'
+      (hle _ h)).symm
+  · exact Or.inr ((isMaximal_span_natCast_omega_sub hr').eq_of_le Ideal.IsPrime.ne_top'
+      (hle _ h)).symm
 
 /-- **The inert case.** The ideal `(p)` of `ℤ[ω]` is maximal, that is, `p` is inert, exactly when
 `X² - b X - a` has no root modulo `p`. -/
@@ -307,8 +327,8 @@ theorem isMaximal_span_natCast_iff :
   have hmem : ∀ x : QuadraticAlgebra ℤ a b, x ∈ Ideal.span {(p : QuadraticAlgebra ℤ a b)} ↔
       (p : ℤ) ∣ x.re ∧ (p : ℤ) ∣ x.im := by
     intro x
-    rw [Ideal.mem_span_singleton, show (p : QuadraticAlgebra ℤ a b) =
-      algebraMap ℤ _ (p : ℤ) by simp, algebraMap_dvd_iff]
+    rw [Ideal.mem_span_singleton, ← map_natCast (algebraMap ℤ (QuadraticAlgebra ℤ a b)) p,
+      algebraMap_dvd_iff]
   constructor
   · -- A root `r` gives the proper ideal `(p, ω - r) ⊇ (p)`, which `ω - r ∉ (p)` separates.
     intro hmax r hr
