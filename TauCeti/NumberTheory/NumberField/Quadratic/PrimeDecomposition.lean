@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Quadratic.Model
 public import TauCeti.NumberTheory.QuadraticOrder.PrimeIdeal
 public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
-import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Squarefree
 
 /-!
 # Explicit prime ideals of the ring of integers of `ℚ(√d)`
@@ -120,38 +120,6 @@ theorem absNorm_span_natCast_integralSqrt_sub (hr : (p : ℤ) ∣ r ^ 2 - d) :
   rw [← map_ringOfIntegersEquiv_symm_span hsf hd4, Ideal.absNorm_map_of_ringEquiv_eq_natCard]
   exact card_quotient_span_natCast_omega_sub (by simpa using hr)
 
-omit [Fact (¬ IsSquare d)] in
-include hsf hd4 in
-/-- Dedekind's criterion holds for `ℤ[√d]`, `d` squarefree with `d ≢ 1 (mod 4)`, at every prime:
-`p ∣ 2r` and `p² ∣ r² - d` would force `p² ∣ d`, or `p = 2` and `d ≡ r² ≡ 1 (mod 4)`. -/
-private theorem not_dvd_and_sq_dvd_of_mod_four_ne_one :
-    ¬ ((p : ℤ) ∣ 2 * r - 0 ∧ (p : ℤ) ^ 2 ∣ r ^ 2 - 0 * r - d) := by
-  rintro ⟨h2r, hsq⟩
-  have hpr : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
-  simp only [sub_zero, zero_mul] at h2r hsq
-  by_cases hpr' : (p : ℤ) ∣ r
-  · -- `p ∣ r` gives `p² ∣ r²`, hence `p² ∣ d`.
-    have hd : (p : ℤ) * p ∣ d := by
-      have := dvd_sub (pow_dvd_pow_of_dvd hpr' 2) hsq
-      rw [sub_sub_cancel] at this
-      simpa [sq] using this
-    exact hpr.not_isUnit (hsf _ hd)
-  · -- Otherwise `p ∣ 2`, so `p = 2` and `r` is odd, whence `d ≡ r² ≡ 1 (mod 4)`.
-    have h2 : (p : ℤ) ∣ 2 := (hpr.dvd_or_dvd h2r).resolve_right hpr'
-    have hp2 : p = 2 := by
-      have := Int.le_of_dvd two_pos h2
-      have := (Fact.out : p.Prime).two_le
-      omega
-    subst hp2
-    have hodd : r % 2 = 1 := by omega
-    obtain ⟨k, hk⟩ := hsq
-    have : r ^ 2 % 4 = 1 := by
-      have hr' : r = 2 * (r / 2) + 1 := by omega
-      rw [hr']
-      ring_nf
-      omega
-    omega
-
 include hsf hd4 in
 /-- **The factorization of `p` for `d ≢ 1 (mod 4)`.** For a square root `r` of `d` modulo a prime
 `p`, the ideal `p 𝓞 ℚ(√d)` is the product `(p, √d - r) (p, √d + r)` of two maximal ideals of
@@ -165,8 +133,9 @@ theorem span_natCast_integralSqrt_sub_mul_span_natCast_integralSqrt_add
         integralSqrt (omega_sq_eq_algebraMap_int (d := d)) + r} =
       Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))} := by
   have hr' : (p : ℤ) ∣ r ^ 2 - 0 * r - d := by simpa using hr
-  have h := (span_natCast_omega_sub_mul_span_natCast_omega_sub_eq_iff hr').mpr
-    (not_dvd_and_sq_dvd_of_mod_four_ne_one hsf hd4)
+  have h := (span_natCast_omega_sub_mul_span_natCast_omega_sub_eq_iff hr').mpr <| by
+    simpa using TauCeti.Int.not_dvd_two_mul_and_sq_dvd_sq_sub_of_squarefree
+      (Nat.prime_iff_prime_int.mp Fact.out) hsf hd4 r
   have h' := congrArg (Ideal.map (ringOfIntegersEquiv hsf hd4).symm) h
   rw [Ideal.map_mul, map_ringOfIntegersEquiv_symm_span, map_ringOfIntegersEquiv_symm_span,
     map_symm_span_natCast] at h'
@@ -218,23 +187,6 @@ theorem absNorm_span_natCast_halfGen_sub (hr : (p : ℤ) ∣ r ^ 2 - r - (d - 1)
   rw [← map_ringOfIntegersEquivHalf_symm_span hsf hd4, Ideal.absNorm_map_of_ringEquiv_eq_natCard]
   exact card_quotient_span_natCast_omega_sub (by simpa using hr)
 
-omit [Fact (¬ IsSquare d)] in
-include hsf hd4 in
-/-- Dedekind's criterion holds for `ℤ[(1 + √d)/2]`, `d` squarefree with `d ≡ 1 (mod 4)`, at every
-prime: since `4 (r² - r - (d - 1)/4) = (2r - 1)² - d`, `p ∣ 2r - 1` and
-`p² ∣ r² - r - (d - 1)/4` would force `p² ∣ d`. -/
-private theorem not_dvd_and_sq_dvd_of_mod_four_eq_one :
-    ¬ ((p : ℤ) ∣ 2 * r - 1 ∧ (p : ℤ) ^ 2 ∣ r ^ 2 - 1 * r - (d - 1) / 4) := by
-  rintro ⟨⟨t, ht⟩, hsq⟩
-  have hpr : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
-  have h4 : d = (2 * r - 1) ^ 2 - 4 * (r ^ 2 - 1 * r - (d - 1) / 4) := by
-    have : 4 * ((d - 1) / 4) = d - 1 := by omega
-    linear_combination -this
-  have hd : (p : ℤ) * p ∣ d := by
-    rw [h4, ht, ← sq]
-    exact dvd_sub (by rw [mul_pow]; exact dvd_mul_right _ _) (dvd_mul_of_dvd_right hsq _)
-  exact hpr.not_isUnit (hsf _ hd)
-
 include hsf in
 /-- **The factorization of `p` for `d ≡ 1 (mod 4)`.** For a root `r` of `X² - X - (d - 1)/4`
 modulo a prime `p`, the ideal `p 𝓞 ℚ(√d)` is the product `(p, η - r) (p, η - (1 - r))` of two
@@ -248,8 +200,9 @@ theorem span_natCast_halfGen_sub_mul_span_natCast_halfGen_sub
         halfGen minpoly_integralSqrt_omega hd4 - (1 - r : ℤ)} =
       Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))} := by
   have hr' : (p : ℤ) ∣ r ^ 2 - 1 * r - (d - 1) / 4 := by simpa using hr
-  have h := (span_natCast_omega_sub_mul_span_natCast_omega_sub_eq_iff hr').mpr
-    (not_dvd_and_sq_dvd_of_mod_four_eq_one hsf hd4)
+  have h := (span_natCast_omega_sub_mul_span_natCast_omega_sub_eq_iff hr').mpr <| by
+    simpa using TauCeti.Int.not_dvd_two_mul_sub_one_and_sq_dvd_sq_sub_sub_of_squarefree
+      (Nat.prime_iff_prime_int.mp Fact.out) hsf hd4 r
   have h' := congrArg (Ideal.map (ringOfIntegersEquivHalf hsf hd4).symm) h
   rwa [Ideal.map_mul, map_ringOfIntegersEquivHalf_symm_span,
     map_ringOfIntegersEquivHalf_symm_span, map_symm_span_natCast] at h'
