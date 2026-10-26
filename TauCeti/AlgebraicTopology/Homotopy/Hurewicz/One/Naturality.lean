@@ -143,4 +143,15 @@ theorem hurewicz₁_fundamentalGroupMulEquivOfPath {x x' : X} (p : Path x x')
   convert this using 1
   abel
 
+/-- Changing the base point along a path does not change the singular homology class supplied
+by the degree-one Hurewicz isomorphism. -/
+theorem hurewiczHomologyAddEquiv_fundamentalGroupMulEquivOfPath [PathConnectedSpace X]
+    {x x' : X} (p : Path x x') (a : FundamentalGroup X x) :
+    hurewiczHomologyAddEquiv x' (Additive.ofMul (Abelianization.of
+      (FundamentalGroup.fundamentalGroupMulEquivOfPath p a))) =
+      hurewiczHomologyAddEquiv x (Additive.ofMul (Abelianization.of a)) := by
+  simp only [hurewiczHomologyAddEquiv_apply, hurewiczAb_ofMul_of]
+  exact congrArg (fun z ↦ H₁AddEquivHomology X (Multiplicative.toAdd z))
+    (hurewicz₁_fundamentalGroupMulEquivOfPath p a)
+
 end TauCeti.HurewiczOne

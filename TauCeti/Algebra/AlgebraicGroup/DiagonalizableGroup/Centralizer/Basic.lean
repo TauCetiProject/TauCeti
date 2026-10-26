@@ -63,6 +63,8 @@ and contains `D(X)` itself. The main instance is the common kernel `D(X ⧸ S) �
   when the diagonalizable subgroup is central.
 * `BialgHom.centralizerHopfIdeal_comp_le`: the centralizer of a composite `D(Y) → D(X) → G`
   contains the centralizer of `D(X)`.
+* `BialgHom.centralizerHopfIdeal_mapDomainBialgHom_comp_eq_of_leftInverse`: a split injection
+  of character groups preserves the centralizer.
 * `BialgHom.centralizerHopfIdeal_comp_le_kerOfSurjective`: the centralizer of a composite
   `D(Y) → D(X) → G` contains `D(X)`.
 * `BialgHom.centralizerHopfIdeal_mapDomainBialgHom_mk'_comp_anti`: the centralizer of the common
@@ -461,6 +463,25 @@ theorem centralizerHopfIdeal_comp_le (ψ : MonoidAlgebra R X →ₐc[R] MonoidAl
     rw [BialgHom.mapDomain_comp, MonoidHom.comp_apply]
     exact commute_mapValue_mapDomain_of_centralizerHopfIdeal_le_ker π hg φ _
   rwa [hker, HopfIdeal.toIdeal_le_toIdeal] at hg'
+
+/-- A split injective map of character groups does not change the centralizer of a
+composite diagonalizable subgroup. -/
+theorem centralizerHopfIdeal_mapDomainBialgHom_comp_eq_of_leftInverse
+    (f : X →* Y) (g : Y →* X) (hgf : g.comp f = MonoidHom.id X) :
+    centralizerHopfIdeal ((MonoidAlgebra.mapDomainBialgHom R f).comp π) =
+      centralizerHopfIdeal π := by
+  refine le_antisymm (BialgHom.centralizerHopfIdeal_comp_le _ _) ?_
+  have hπ : (MonoidAlgebra.mapDomainBialgHom R g).comp
+      ((MonoidAlgebra.mapDomainBialgHom R f).comp π) = π := by
+    rw [← BialgHom.comp_assoc, ← MonoidAlgebra.mapDomainBialgHom_comp, hgf,
+      MonoidAlgebra.mapDomainBialgHom_id]
+    exact BialgHom.id_comp _
+  calc
+    BialgHom.centralizerHopfIdeal π = BialgHom.centralizerHopfIdeal
+        ((MonoidAlgebra.mapDomainBialgHom R g).comp
+          ((MonoidAlgebra.mapDomainBialgHom R f).comp π)) :=
+      congrArg BialgHom.centralizerHopfIdeal hπ.symm
+    _ ≤ _ := BialgHom.centralizerHopfIdeal_comp_le _ _
 
 /-- **The diagonalizable subgroup `D(X)` lies in the centralizer of any composite
 `D(Y) → D(X) → G`**, being commutative. -/

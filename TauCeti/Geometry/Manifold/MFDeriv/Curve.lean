@@ -70,6 +70,9 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `TauCeti.Manifold.derivWithin_extChartAt_comp_curve` its form for the named velocity.
 * `TauCeti.Manifold.hasDerivWithinAt_derivWithin_extChartAt_comp_curve`: for a `C²` curve, the
   second within-derivative of its moving-chart reading is a genuine derivative of the first one.
+* `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Iic` and
+  `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Ici`: a real curve constant on a closed half-line has
+  zero manifold derivative in the interior of that half-line.
 -/
 
 public section
@@ -562,6 +565,30 @@ theorem hasDerivWithinAt_derivWithin_extChartAt_comp_curve
   have hderiv : ContDiffWithinAt 𝕜 1 (derivWithin (extChartAt I (γ t) ∘ γ) s) s t :=
     hchart.derivWithin hs (by norm_num) ht
   exact hderiv.differentiableWithinAt (by norm_num) |>.hasDerivWithinAt
+
+end TauCeti.Manifold
+
+namespace TauCeti.Manifold
+
+open Set
+
+variable {E H N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace N] [ChartedSpace H N]
+  {γ : ℝ → N} {p : N} {a t : ℝ}
+
+/-- A real curve that is constant on the half-line `Iic a` has zero manifold derivative at every
+time before `a`. -/
+theorem mfderiv_eq_zero_of_eqOn_Iic (h : EqOn γ (fun _ => p) (Iic a)) (ht : t < a) :
+    mfderiv 𝓘(ℝ, ℝ) I γ t = 0 :=
+  ((hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := I) p t).congr_of_eventuallyEq
+    (by filter_upwards [Iio_mem_nhds ht] with s hs using h (mem_Iic.2 hs.le))).mfderiv
+
+/-- A real curve that is constant on the half-line `Ici a` has zero manifold derivative at every
+time after `a`. -/
+theorem mfderiv_eq_zero_of_eqOn_Ici (h : EqOn γ (fun _ => p) (Ici a)) (ht : a < t) :
+    mfderiv 𝓘(ℝ, ℝ) I γ t = 0 :=
+  ((hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := I) p t).congr_of_eventuallyEq
+    (by filter_upwards [Ioi_mem_nhds ht] with s hs using h (mem_Ici.2 hs.le))).mfderiv
 
 end TauCeti.Manifold
 

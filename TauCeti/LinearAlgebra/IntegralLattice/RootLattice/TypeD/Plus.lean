@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
+import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.CosetMinimum
 
 /-!
 # Spinor glue lattices `Dₙ⁺`
@@ -72,37 +73,11 @@ theorem mem_checkerboardPlusCarrier_iff (hn : Even n) (x : Fin n → ℚ) :
     x ∈ (checkerboardPlusCarrier n).1 ↔
       x ∈ (checkerboardLattice n).carrier ∨
         x - checkerboardSpinor n ∈ (checkerboardLattice n).carrier := by
-  rw [checkerboardPlusCarrier,
-    (checkerboardLattice n).mem_intermediateCarrierOfDiscriminantSubgroup_iff]
-  constructor
-  · rintro ⟨hxdual, hx⟩
-    rw [mem_checkerboardSpinorSubgroup_iff n hn] at hx
-    rcases hx with hx | hx
-    · left
-      exact ((checkerboardLattice n).discriminantGroup_mk_eq_zero_iff
-        ⟨x, hxdual⟩).mp hx
-    · right
-      rw [checkerboardSpinorClass_def] at hx
-      exact ((checkerboardLattice n).discriminantGroup_mk_eq_iff
-        ⟨x, hxdual⟩ ⟨checkerboardSpinor n, checkerboardSpinor_mem_dualCarrier⟩).mp hx
-  · rintro (hx | hx)
-    · have hxdual := (checkerboardLattice n).le_dualCarrier hx
-      refine ⟨hxdual, ?_⟩
-      rw [mem_checkerboardSpinorSubgroup_iff n hn]
-      left
-      exact ((checkerboardLattice n).discriminantGroup_mk_eq_zero_iff
-        ⟨x, hxdual⟩).mpr hx
-    · have hxdiff := (checkerboardLattice n).le_dualCarrier hx
-      have hxdual : x ∈ (checkerboardLattice n).dualCarrier := by
-        have hadd := (checkerboardLattice n).dualCarrier.add_mem hxdiff
-          checkerboardSpinor_mem_dualCarrier
-        simpa only [sub_add_cancel] using hadd
-      refine ⟨hxdual, ?_⟩
-      rw [mem_checkerboardSpinorSubgroup_iff n hn]
-      right
-      rw [checkerboardSpinorClass_def]
-      exact ((checkerboardLattice n).discriminantGroup_mk_eq_iff
-        ⟨x, hxdual⟩ ⟨checkerboardSpinor n, checkerboardSpinor_mem_dualCarrier⟩).mpr hx
+  rw [checkerboardPlusCarrier, checkerboardSpinorSubgroup, checkerboardSpinorClass_def]
+  refine (checkerboardLattice n).mem_intermediateCarrierOfDiscriminantSubgroup_zmultiples_iff
+    checkerboardSpinor_mem_dualCarrier ?_ x
+  rw [← checkerboardSpinorClass_def, two_nsmul, ← two_zsmul]
+  exact two_zsmul_checkerboardSpinorClass_of_even n hn
 
 /-- The subgroup recovered from the spinor enlargement is the spinor subgroup. -/
 @[simp]
@@ -244,22 +219,9 @@ theorem mem_checkerboardLattice_carrier_of_mem_vectorsOfNorm_two (hn : 8 ∣ n) 
     checkerboardPlusLattice_carrier n hn ▸ x.2
   rw [mem_checkerboardPlusCarrier_iff n (even_iff_two_dvd.mpr (dvd_trans (by decide) hn))] at hmem
   refine hmem.resolve_right fun hs ↦ ?_
-  -- Every coordinate is an integer plus one half, so its square is at least one quarter.
-  have hquarter (i : Fin n) : 1 / 4 ≤ (x : Fin n → ℚ) i ^ 2 := by
-    obtain ⟨z, hz⟩ := ((mem_checkerboardLattice_carrier_iff _).mp hs).1 i
-    rw [Pi.sub_apply, checkerboardSpinor_apply, sub_eq_iff_eq_add] at hz
-    rw [hz]
-    rcases le_or_gt 0 z with h | h
-    · have h' : (0 : ℚ) ≤ z := by exact_mod_cast h
-      nlinarith
-    · have h' : (z : ℚ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt h
-      nlinarith
-  have hnorm : ∑ i, (x : Fin n → ℚ) i ^ 2 = 2 := by
-    rw [mem_vectorsOfNorm, norm_apply, checkerboardPlusLattice_form,
-      checkerboardLattice_form_apply] at hx
-    simpa only [sq] using hx
-  have hsum := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦ hquarter i
-  rw [hnorm, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
+  rw [checkerboardLattice_carrier] at hs
+  have hbound := div_four_le_checkerboardLattice_form_self_of_sub_checkerboardSpinor_mem hs
+  rw [mem_vectorsOfNorm, norm_apply, checkerboardPlusLattice_form] at hx
   have hn8' : (8 : ℚ) < n := by exact_mod_cast hn8
   linarith
 

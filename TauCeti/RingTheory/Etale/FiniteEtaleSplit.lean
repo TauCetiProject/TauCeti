@@ -58,8 +58,9 @@ there only through sections of faithfully flat covers and roots of separable pol
   every `R`-algebra without nonsplit finite étale covers.
 * `TauCeti.IsFiniteEtaleSplit.pi`, `TauCeti.IsFiniteEtaleSplit.prod`: products of rings without
   nonsplit finite étale covers have none.
-* `TauCeti.isFiniteEtaleSplit_iff_of_isEquivalence`: the condition is invariant under a ring map
-  along which base change `CommAlgCat.FiniteEtale.baseChange` is an equivalence of categories.
+* `TauCeti.isFiniteEtaleSplit_iff_of_full_of_essSurj`: the condition is invariant under a ring
+  map along which base change `CommAlgCat.FiniteEtale.baseChange` is full and essentially
+  surjective (e.g. an equivalence of categories).
 
 ## Implementation notes
 
@@ -435,9 +436,9 @@ theorem IsFiniteEtaleSplit.of_full_baseChange [IsFiniteEtaleSplit R']
   exact ⟨(F.preimage f).hom.hom⟩
 
 /-- Having no nonsplit finite étale covers is invariant under a ring map along which base change
-is an equivalence of categories of finite étale algebras. -/
-theorem isFiniteEtaleSplit_iff_of_isEquivalence
-    [(FiniteEtale.baseChange.{u} R R').IsEquivalence] :
+of finite étale algebras is full and essentially surjective, e.g. an equivalence of categories. -/
+theorem isFiniteEtaleSplit_iff_of_full_of_essSurj
+    [(FiniteEtale.baseChange.{u} R R').Full] [(FiniteEtale.baseChange.{u} R R').EssSurj] :
     IsFiniteEtaleSplit R ↔ IsFiniteEtaleSplit R' :=
   ⟨fun _ ↦ .of_essSurj_baseChange (R := R) R',
     fun _ ↦ .of_full_baseChange R'⟩

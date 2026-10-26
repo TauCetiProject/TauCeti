@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 
 /-!
 # The diagonal split torus of the projective general linear group
@@ -42,6 +43,7 @@ universe u v
 
 noncomputable section
 
+/-- The coordinate weight of the normalized diagonal lift, with its last coordinate zero. -/
 private def diagonalLiftWeight (r : ℕ) (k : Fin (r + 1)) : ULift.{u} (Fin r) → ℤ :=
   fun i ↦ if k = i.down.castSucc then 1 else 0
 
@@ -82,6 +84,19 @@ def diagonalTorusCoordinateMap :
         (SplitTorus.characterGroup (ULift.{u} (Fin r)))).obj :=
   conjugationMap (r + 1) R ≫
     GeneralLinear.weightTorusCoordinateMap (diagonalLiftWeight r)
+
+/-- A projective coordinate whose conjugation coordinate vanishes on upper-triangular
+matrices also vanishes on the normalized diagonal torus. -/
+theorem comap_upperTriangularIdeal_le_ker_diagonalTorusCoordinateMap :
+    Ideal.comap (conjugationMap (r + 1) R).hom.toAlgHom
+        (GeneralLinear.UpperTriangular.definingHopfIdeal R (r + 1)).toIdeal ≤
+      RingHom.ker (diagonalTorusCoordinateMap r R).hom.toAlgHom := by
+  intro x hx
+  exact GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker R (r + 1)
+    (GeneralLinear.weightTorusCoordinateMap (R := R) (diagonalLiftWeight r)).hom.toAlgHom
+    (fun i j hji ↦ by
+      rw [BialgHom.coe_toAlgHom, GeneralLinear.weightTorusCoordinateMap_X]
+      simp [ne_of_gt hji]) hx
 
 private theorem map_genericMatrix_diagonalLift :
     (GeneralLinear.genericMatrix R (r + 1)).map

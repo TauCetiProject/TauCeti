@@ -24,10 +24,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - uses: actions/setup-node@v4
         with:

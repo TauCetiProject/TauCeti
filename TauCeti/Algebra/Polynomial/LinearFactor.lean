@@ -41,6 +41,8 @@ that does not vanish at the root.
   cofactor nonzero at `x`.
 * `Polynomial.rootMultiplicity_add_eq_left_of_dvd`: adding a multiple of a higher power of
   `X - C x` leaves the root multiplicity at `x` unchanged.
+* `Polynomial.rootMultiplicity_neg`: negating a polynomial leaves its root multiplicities
+  unchanged.
 
 ## Provenance
 
@@ -100,6 +102,13 @@ theorem rootMultiplicity_add_eq_left_of_dvd {A : Type*} [Ring A] {p q : A[X]} {a
     exact pow_rootMultiplicity_not_dvd hp a (by simpa using dvd_sub h hq)
   · apply (le_rootMultiplicity_iff hpq).mpr
     exact dvd_add (pow_rootMultiplicity_dvd p a) ((pow_dvd_pow _ (Nat.le_succ _)).trans hq)
+
+/-- Negating a polynomial does not change its root multiplicity at any point. -/
+@[simp]
+theorem rootMultiplicity_neg (p : R[X]) (a : R) :
+    (-p).rootMultiplicity a = p.rootMultiplicity a := by
+  classical
+  simp [rootMultiplicity_eq_multiplicity, multiplicity_neg]
 
 /-- A polynomial of degree at most one has constant nonzero sign on an interval without a root. -/
 theorem eval_mul_pos_of_natDegree_le_one_of_no_roots {R : Type*} [Field R] [LinearOrder R]

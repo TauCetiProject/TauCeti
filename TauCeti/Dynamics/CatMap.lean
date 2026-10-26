@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Symplectic
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
@@ -71,14 +70,8 @@ theorem det_one_sub_catMap : (1 - catMap).det = -1 := by
 
 /-- Every iterate of the cat map is nondegenerate: `det (1 - P ^ n)` is negative for `n ≠ 0`, so
 `1` is not an eigenvalue of `P ^ n`. -/
-theorem det_one_sub_catMap_pow_neg {n : ℕ} (hn : n ≠ 0) : (1 - catMap ^ n).det < 0 := by
-  -- `1 - P ^ n` is the pencil at `r = s = -1`, so `det (1 - P ^ n) = 2 - tr (P ^ n)`; and
-  -- `tr (P ^ n) > 2` since `det P = 1` and `tr P = 3 > 2`.
-  have h := Matrix.det_smul_sub_smul_one_fin_two (catMap ^ n) (-1) (-1)
-  simp only [neg_smul, one_smul, sub_neg_eq_add, neg_add_eq_sub, det_pow, det_catMap,
-    one_pow] at h
-  have := two_lt_trace_pow det_catMap (by decide) hn
-  linarith
+theorem det_one_sub_catMap_pow_neg {n : ℕ} (hn : n ≠ 0) : (1 - catMap ^ n).det < 0 :=
+  det_one_sub_pow_neg_of_two_lt_trace det_catMap (by decide) hn
 
 /-- The coefficient of `t ^ n` in `det (1 - t P) / (1 - t) ^ 2` is `-n` for `n ≠ 0`. This is the
 genus-one case `det (1 - P) (n + 1 - g)` of

@@ -20,7 +20,9 @@ discriminant are basis-independent, although the polynomial depends on the basis
 The intrinsic nonnegative content `binaryContent` and the primitive discriminant
 `binaryDiscriminant` are characterized by computation in any carrier basis. Nondegeneracy gives
 positive content and nonzero primitive discriminant. The latter is zero or one modulo four,
-negative for either definite sign, and positive for an indefinite lattice. A separate integer twist
+negative for either definite sign, and positive for an indefinite lattice. It is not a square when
+the rational norm form is anisotropic, since a square discriminant factors the norm form over `ℚ`.
+A separate integer twist
 of the form multiplies its content by the absolute scalar.
 
 ## References
@@ -293,5 +295,34 @@ theorem binaryDiscriminant_pos_of_isIndefinite (hV : Module.finrank ℚ V = 2)
   rw [BinaryQuadraticForm.discrim_eq_content_sq_mul] at hi
   rw [binaryDiscriminant_eq_discrim_primPart L b hV]
   exact ((mul_pos_iff.mp hi).resolve_right (fun h ↦ (sq_nonneg _).not_gt h.1)).2
+
+
+/-- The primitive discriminant of a rank-two lattice with anisotropic rational norm form is not a
+square: a square discriminant would let the norm form factor over `ℚ` and vanish on a nonzero
+vector. -/
+theorem not_isSquare_binaryDiscriminant_of_anisotropic (hV : Module.finrank ℚ V = 2)
+    (hL : L.norm.Anisotropic) : ¬ IsSquare (L.binaryDiscriminant hV) := by
+  rintro ⟨s, hs⟩
+  let b := Module.finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)
+  let f := L.binaryNormForm b
+  have hdisc : discrim (f.a : ℚ) f.b f.c = (f.content * s : ℚ) * (f.content * s) := by
+    have h := f.discrim_eq_content_sq_mul
+    rw [← L.binaryDiscriminant_eq_discrim_primPart b hV, hs, BinaryQuadraticForm.discrim_def,
+      discrim] at h
+    rw [discrim]
+    exact_mod_cast h.trans (by ring)
+  have hnorm (x y : ℚ) : L.norm (x • b.extendOfIsLattice ℚ 0 + y • b.extendOfIsLattice ℚ 1) =
+      f.a * x ^ 2 + f.b * x * y + f.c * y ^ 2 := by
+    rw [norm_eq_binaryNormForm L b]
+    simp only [map_add, map_smul, Basis.repr_self]
+    simp [f]
+  by_cases ha : (f.a : ℚ) = 0
+  · exact (b.extendOfIsLattice ℚ).ne_zero 0 (hL _ (by simpa [ha] using hnorm 1 0))
+  · obtain ⟨x, hx⟩ : ∃ x : ℚ, f.a * (x * x) + f.b * x + f.c = 0 :=
+      ⟨_, (quadratic_eq_zero_iff ha hdisc _).mpr (Or.inl rfl)⟩
+    have h0 := hL _ ((hnorm x 1).trans (by linear_combination hx))
+    have h1 := congrArg (fun z ↦ (b.extendOfIsLattice ℚ).repr z 1) h0
+    simp only [map_add, map_smul, Basis.repr_self, map_zero] at h1
+    simp at h1
 
 end TauCeti.IntegralLattice

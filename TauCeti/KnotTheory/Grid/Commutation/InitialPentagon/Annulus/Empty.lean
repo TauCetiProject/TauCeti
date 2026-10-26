@@ -55,9 +55,7 @@ theorem rectangle_right_eq_finRotate_left_of_mem_rectangleInitialPentagonSameSid
   have hcount := (G.mem_rectangleInitialPentagonDecompositions C D).1 hmem.1
   have hp := ((G.mem_initialPentagons D.pentagon).1 hcount.2).1
   have hempty : D.first.IsEmpty ∧ D.second.IsEmpty :=
-    ⟨((G.mem_unblockedRectangles D.first).1 hcount.1).1, by
-      simpa only [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween]
-        using hp⟩
+    ⟨((G.mem_unblockedRectangles D.first).1 hcount.1).1, D.underlying_second_isEmpty hp⟩
   exact (D.first.isEmpty_and_isEmpty_iff_right_eq_finRotate_of_left_eq_left
     D.second hmem.2.1.symm).1 hempty
 
@@ -72,9 +70,7 @@ theorem rectangle_top_eq_finRotate_bottom_of_mem_rectangleInitialPentagonOpposit
   have hcount := (G.mem_rectangleInitialPentagonDecompositions C D).1 hmem.1
   have hp := ((G.mem_initialPentagons D.pentagon).1 hcount.2).1
   have hempty : D.first.IsEmpty ∧ D.second.IsEmpty :=
-    ⟨((G.mem_unblockedRectangles D.first).1 hcount.1).1, by
-      simpa only [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween]
-        using hp⟩
+    ⟨((G.mem_unblockedRectangles D.first).1 hcount.1).1, D.underlying_second_isEmpty hp⟩
   exact (D.first.isEmpty_and_isEmpty_iff_top_eq_finRotate_of_left_eq_right
     D.second hmem.2.2.symm).1 hempty
 

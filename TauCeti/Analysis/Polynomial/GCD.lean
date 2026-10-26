@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Polynomial.Subresultant.FirstNonzero
 public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
 import Mathlib.Topology.Instances.Matrix
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # Continuous monic gcds of polynomial families
@@ -21,6 +22,10 @@ one input dividing the other.
 Consequently, every common root at a parameter is approximated by common roots at nearby
 parameters. This supplies the common-root persistence needed to make individual root matchings
 agree for several polynomials; fixed input degrees alone do not ensure persistence.
+
+The number of distinct roots in an algebraically closed characteristic-zero extension is locally
+constant whenever the polynomial degree and the degree of its gcd with its derivative are locally
+constant. This counting result needs no topology on the coefficient or extension fields.
 
 ## References
 
@@ -225,3 +230,27 @@ theorem eventually_exists_common_root_norm_sub_lt
 end CommonRoots
 
 end TauCeti
+
+namespace Polynomial
+
+/-- **Distinct roots from derivative gcd data.** Let `f x` be polynomials over a field `k`,
+with roots counted in an algebraically closed characteristic-zero extension `K`. If their degree
+is fixed near `x₀` and the degree of their gcd with their derivative is locally constant, then
+the number of distinct roots in `K` is locally constant. -/
+theorem eventually_card_aroots_toFinset_eq_of_natDegree_gcd_derivative {B k K : Type*}
+    [TopologicalSpace B] [Field k] [DecidableEq k] [Field K] [DecidableEq K]
+    [Algebra k K] [IsAlgClosed K] [CharZero K] {x₀ : B} {f : B → k[X]} {n : ℕ}
+    (hdeg : ∀ᶠ x in 𝓝 x₀, (f x).degree = n)
+    (hgcd : ∀ᶠ x in 𝓝 x₀, (EuclideanDomain.gcd (f x) (f x).derivative).natDegree =
+      (EuclideanDomain.gcd (f x₀) (f x₀).derivative).natDegree) :
+    ∀ᶠ x in 𝓝 x₀, ((f x).aroots K).toFinset.card = ((f x₀).aroots K).toFinset.card := by
+  have hne {x : B} (hx : (f x).degree = n) : f x ≠ 0 := by
+    rintro h
+    simp [h] at hx
+  have hx₀ := hdeg.self_of_nhds
+  filter_upwards [hdeg, hgcd] with x hx hxg
+  rw [← natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset (K := K) (hne hx),
+    ← natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset (K := K) (hne hx₀), hxg,
+    natDegree_eq_of_degree_eq_some hx, natDegree_eq_of_degree_eq_some hx₀]
+
+end Polynomial

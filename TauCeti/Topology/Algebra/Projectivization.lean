@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.RCLike.Lemmas
+public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Projectivization.Basic
 public import TauCeti.Topology.Algebra.ConstMulAction
 
@@ -28,6 +29,11 @@ line meets the unit sphere, so for finite-dimensional `V` the projective space i
 image of a compact sphere and is compact. Second countability passes to `ℙ K V` along the open
 quotient map.
 
+Finally, over a field with continuous multiplication and inversion, the standard affine charts
+`Projectivization.affineChart i` of `ℙ K (Fin (n + 1) → K)` are homeomorphisms from the open sets
+`U_i = {[v] | v i ≠ 0}` onto the affine space `Fin n → K`. These charts form the standard atlas
+of projective space.
+
 ## Main results
 
 * `Projectivization.instTopologicalSpace`: the quotient topology on `ℙ K V`.
@@ -47,6 +53,9 @@ quotient map.
 * `Projectivization.instCompactSpace`: `ℙ 𝕜 V` is compact for a finite-dimensional normed space
   `V` over `ℝ` or `ℂ`.
 * `Projectivization.instSecondCountableTopology`: `ℙ K V` is second countable when `V` is.
+* `Projectivization.isOpen_affineOpen`: the standard affine opens are open.
+* `Projectivization.affineOpenPartialHomeomorph`: the standard affine chart as an open partial
+  homeomorphism from `U_i` onto `Fin n → K`.
 
 The topology and its quotient-map API (`instTopologicalSpace` through `isOpenQuotientMap_mk'`)
 follow Zayn Blore's Mathlib pull request
@@ -194,5 +203,78 @@ instance instCompactSpace [FiniteDimensional 𝕜 V] : CompactSpace (ℙ 𝕜 V)
   exact ⟨⟨v, mem_sphere_zero_iff_norm.2 hv⟩, rfl⟩
 
 end RCLike
+
+/-! ### The standard affine charts -/
+
+section AffineOpen
+
+variable {K : Type*} [DivisionRing K] [TopologicalSpace K] [T1Space K] {ι : Type*}
+
+/-- The standard affine open of projective space, where a given homogeneous coordinate is
+nonzero, is open. -/
+theorem isOpen_affineOpen (i : ι) : IsOpen (affineOpen (K := K) i) := by
+  rw [← isQuotientMap_mk'.isOpen_preimage]
+  have : mk' K ⁻¹' affineOpen i = (fun v : {v : ι → K // v ≠ 0} ↦ v.1 i) ⁻¹' {0}ᶜ := by
+    ext v
+    simp [mk'_eq_mk]
+  rw [this]
+  exact isOpen_compl_singleton.preimage ((continuous_apply i).comp continuous_subtype_val)
+
+end AffineOpen
+
+section AffineChart
+
+variable {K : Type*} [Field K] [TopologicalSpace K] {n : ℕ}
+
+/-- The inverse `z ↦ [Fin.insertNth i 1 z]` of the standard affine chart is continuous. -/
+theorem continuous_affineChart_symm (i : Fin (n + 1)) :
+    Continuous (affineChart (K := K) i).symm := by
+  rw [funext (affineChart_symm_apply i)]
+  exact continuous_mk ((continuous_const (y := (1 : K))).finInsertNth (A := fun _ ↦ K) i
+    continuous_id) _
+
+variable [ContinuousMul K] [ContinuousInv₀ K] [T1Space K]
+
+/-- The standard affine chart of projective space is continuous on its domain. -/
+theorem continuousOn_affineChart (i : Fin (n + 1)) :
+    ContinuousOn (affineChart (K := K) i) (affineOpen i) := by
+  refine (isOpen_affineOpen i).continuousOn_iff.2 fun x hx ↦ ?_
+  obtain ⟨v, rfl⟩ := isOpenQuotientMap_mk'.surjective x
+  rw [mk'_eq_mk, mk_mem_affineOpen_iff] at hx
+  -- Composed with the quotient map, the chart is a family of ratios of coordinates.
+  have hchart : affineChart i ∘ mk' K = fun v : {v : Fin (n + 1) → K // v ≠ 0} ↦
+      fun j ↦ v.1 (i.succAbove j) / v.1 i :=
+    funext fun v ↦ affineChart_mk i v.1 v.2
+  have hcoord (j : Fin (n + 1)) : Continuous fun v : {v : Fin (n + 1) → K // v ≠ 0} ↦ v.1 j :=
+    (continuous_apply j).comp continuous_subtype_val
+  rw [← isOpenQuotientMap_mk'.continuousAt_comp_iff, hchart]
+  exact continuousAt_pi.2 fun j ↦ (hcoord _).continuousAt.div₀ (hcoord i).continuousAt hx
+
+/-- The standard affine chart of projective space at the coordinate `i`, as an open partial
+homeomorphism from the affine open `U_i = {[v] | v i ≠ 0}` onto `Fin n → K`. -/
+noncomputable def affineOpenPartialHomeomorph (i : Fin (n + 1)) :
+    OpenPartialHomeomorph (ℙ K (Fin (n + 1) → K)) (Fin n → K) where
+  toPartialEquiv := affineChart i
+  open_source := by simpa using isOpen_affineOpen i
+  open_target := by simp
+  continuousOn_toFun := by simpa using continuousOn_affineChart i
+  continuousOn_invFun := (continuous_affineChart_symm i).continuousOn
+
+@[simp]
+theorem affineOpenPartialHomeomorph_toPartialEquiv (i : Fin (n + 1)) :
+    (affineOpenPartialHomeomorph (K := K) i).toPartialEquiv = affineChart i :=
+  (rfl)
+
+@[simp]
+theorem coe_affineOpenPartialHomeomorph (i : Fin (n + 1)) :
+    ⇑(affineOpenPartialHomeomorph (K := K) i) = affineChart i :=
+  (rfl)
+
+@[simp]
+theorem coe_affineOpenPartialHomeomorph_symm (i : Fin (n + 1)) :
+    ⇑(affineOpenPartialHomeomorph (K := K) i).symm = (affineChart i).symm :=
+  (rfl)
+
+end AffineChart
 
 end Projectivization

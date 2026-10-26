@@ -17,7 +17,8 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 An essentially bounded complex function `a` acts on `L²` by pointwise multiplication.  This file
 bundles that action as `MeasureTheory.Lp.multiplicationOperator a` and records its algebraic,
 adjoint, and norm properties.  In particular, on a sigma-finite measure space the operator norm on
-`L²` with values in any nontrivial space is exactly the `L∞` norm of the symbol.
+`L²` with values in any nontrivial space is exactly the `L∞` norm of the symbol, and a symbol of
+modulus one almost everywhere preserves the `L²` norm.
 
 The construction is Mathlib's Hölder map for scalar multiplication with one exponent equal to
 infinity.  The resulting operator is the ambient multiplication operator compressed in the
@@ -98,6 +99,25 @@ theorem multiplicationOperator_comp_multiplicationOperator (a b : Lp ℂ ∞ μ)
     coeFn_lpSMul (r := ∞) a b] with x ha hb hab hsmul
   simp only [comp_apply, ha, hb, hab, hsmul, Pi.smul_apply', smul_eq_mul]
   rw [smul_smul]
+
+/-- Multiplication operators commute with each other. -/
+theorem commute_multiplicationOperator (a b : Lp ℂ ∞ μ) :
+    Commute (multiplicationOperator (E := E) a) (multiplicationOperator b) := by
+  refine (commute_iff_eq _ _).2 (ContinuousLinearMap.ext fun f ↦ Lp.ext ?_)
+  filter_upwards [multiplicationOperator_ae a (multiplicationOperator b f),
+    multiplicationOperator_ae b f, multiplicationOperator_ae b (multiplicationOperator a f),
+    multiplicationOperator_ae a f] with x hab hb hba ha
+  simp only [mul_apply_eq_comp, hab, hb, hba, ha, smul_smul, mul_comm]
+
+/-- Multiplication by a symbol of modulus one almost everywhere preserves the `L²` norm. -/
+theorem norm_multiplicationOperator_apply_of_ae_norm_eq_one {u : Lp ℂ ∞ μ}
+    (hu : ∀ᵐ x ∂μ, ‖u x‖ = 1) (f : Lp E 2 μ) :
+    ‖multiplicationOperator u f‖ = ‖f‖ := by
+  have h : ∀ᵐ x ∂μ, ‖multiplicationOperator u f x‖ = ‖f x‖ := by
+    filter_upwards [multiplicationOperator_ae u f, hu] with x hx hux
+    rw [hx, norm_smul, hux, one_mul]
+  exact le_antisymm (Lp.norm_le_norm_of_ae_le (h.mono fun _ hx ↦ hx.le))
+    (Lp.norm_le_norm_of_ae_le (h.mono fun _ hx ↦ hx.ge))
 
 /-- A symbol equal almost everywhere to a constant acts by scalar multiplication. -/
 theorem multiplicationOperator_of_ae_eq_const {a : Lp ℂ ∞ μ} {c : ℂ}

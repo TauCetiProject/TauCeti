@@ -152,9 +152,7 @@ theorem isNullChain_unitDiscRadialChain (hζ : ‖ζ‖ = 1) :
     have hw' := norm_sub_sq_le hζ hwb (inner_eq_of_mem_unitDiscChord hζ hw).ge
     have hzw : ‖z - w‖ < ε :=
       lt_of_pow_lt_pow_left₀ 2 hε.le (by linarith [norm_sub_sq_le_two_mul z w ζ])
-    refine lt_of_le_of_lt (div_le_self (norm_nonneg _) ?_) hzw
-    rw [Real.one_le_sqrt]
-    nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]
+    exact (chordal_le_norm_sub z w).trans_lt hzw
 
 /-- The prime end of the unit disc at a point `ζ` of the unit circle, represented by the radial
 chain of chords perpendicular to `ζ`. -/

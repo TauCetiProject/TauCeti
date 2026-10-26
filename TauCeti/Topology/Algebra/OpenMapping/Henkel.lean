@@ -91,7 +91,8 @@ its composite with `f` is.
 The quotient conclusion needs `f` continuous everywhere, but that is not an extra hypothesis: an
 additive homomorphism out of a topological group is continuous as soon as it is continuous at `0`
 (`continuous_of_continuousAt_zero`), so `hfc` is the same assumption the open-mapping theorem
-makes. This is the shape Wedhorn's strict morphisms will use. -/
+makes. This is the form behind `TauCeti.Huber.IsTateRing.isModuleTopology`, which pins down the
+topology of a finite module over a Tate ring. -/
 theorem HasZeroSequenceOfUnits.isQuotientMap {F : Type*} [FunLike F M N]
     [MulActionHomClass F A M N] [AddMonoidHomClass F M N] (f : F) (hf : Function.Surjective f)
     (hfc : ContinuousAt (f : M → N) 0) (hc : ∀ x : M, ContinuousAt (fun a : A ↦ a • x) 0) :
