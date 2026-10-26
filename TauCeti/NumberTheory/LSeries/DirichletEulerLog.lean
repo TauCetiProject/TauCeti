@@ -25,7 +25,8 @@ continue the logarithm holomorphically to an open neighbourhood of that closed h
 its exponential equal to `L(χ, s)`. The continuation is
 `TauCeti.exists_differentiableOn_eqOn_exp_comp_le_re`, which patches local branches of the
 logarithm on discs centred on the line `re s = 1`; it asserts nothing about a strip of uniform
-width, and it is not the principal logarithm of `L(χ, s)`.
+width, and the continued logarithm is not asserted to be (and need not be) the principal logarithm
+of `L(χ, s)`.
 
 The continued logarithm has the shape of the hypotheses of a bounded Tauberian theorem for
 Dirichlet series at `s = 1`: coefficients bounded by `1`, an absolutely convergent `L`-series for
