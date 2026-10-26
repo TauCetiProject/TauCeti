@@ -38,7 +38,7 @@ rotation.
 
 * `CliffordAlgebra.bivector_lie_ι`: its commutator action on a generator is the
   infinitesimal rotation determined by `QuadraticMap.polar`.
-* `CliffordAlgebra.map_bivector_lie_ι`: any algebra homomorphism `f` out of the
+* `CliffordAlgebra.map_bivector_lie_ι`: any ring homomorphism `f` out of the
   Clifford algebra satisfies `⁅f (bivector Q a b), f (ι Q x)⁆ =
   f (ι Q (QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b))`.
 * `CliffordAlgebra.ι_mul_ι_eq_bivector_add`: the product of two generators is
@@ -334,18 +334,18 @@ theorem bivector_lie_ι (a b x : M) :
   rw [h]
   exact invOf_smul_smul (2 : R) _
 
-/-- Any algebra homomorphism `f` out of a Clifford algebra carries the normalized
+/-- Any ring homomorphism `f` out of a Clifford algebra carries the normalized
 bivector commutator identity to the corresponding commutator in its target algebra:
 `⁅f (bivector Q a b), f (ι Q x)⁆ =
   f (ι Q (QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b))`. -/
 @[grind =]
-theorem map_bivector_lie_ι {A : Type*} [Ring A] [Algebra R A]
-    (f : CliffordAlgebra Q →ₐ[R] A) (a b x : M) :
+theorem map_bivector_lie_ι {A : Type*} [Ring A] {F : Type*}
+    [FunLike F (CliffordAlgebra Q) A] [RingHomClass F (CliffordAlgebra Q) A]
+    (f : F) (a b x : M) :
     ⁅f (bivector Q a b), f (ι Q x)⁆ =
       f (ι Q (QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b)) := by
-  have h := f.toLieHom.map_lie (bivector Q a b) (ι Q x)
-  rw [bivector_lie_ι] at h
-  simpa only [AlgHom.toLieHom_apply] using h.symm
+  rw [Ring.lie_def, ← map_mul, ← map_mul, ← map_sub]
+  rw [← Ring.lie_def, bivector_lie_ι]
 
 end CommRing
 
