@@ -138,6 +138,13 @@ theorem coe_ratModelCarrierEquiv (hL : IsIntegral L) (x : L) :
     (ratModelCarrierEquiv hL x : ℚ ⊗[ℤ] L) = 1 ⊗ₜ[ℤ] x :=
   TauCeti.IntegralLattice.ofIntegralForm.coe_carrierEquiv_apply _ _ _
 
+/-- The inverse carrier identification recovers a lattice vector from its unit pure tensor. -/
+@[simp]
+theorem ratModelCarrierEquiv_symm_tmul (hL : IsIntegral L) (x : L)
+    (h : (1 : ℚ) ⊗ₜ[ℤ] x ∈ (ratModel hL).carrier) :
+    (ratModelCarrierEquiv hL).symm ⟨1 ⊗ₜ[ℤ] x, h⟩ = x :=
+  TauCeti.IntegralLattice.ofIntegralForm.carrierEquiv_symm_tmul _ _ _ _
+
 /-- The carrier identification carries the integer-valued inner product of `L` to the integral
 form of the rational model. -/
 @[simp]
