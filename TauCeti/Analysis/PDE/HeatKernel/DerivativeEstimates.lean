@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 public import TauCeti.Analysis.PDE.HeatKernel.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Scale-invariant estimates for the derivatives of the heat kernel
