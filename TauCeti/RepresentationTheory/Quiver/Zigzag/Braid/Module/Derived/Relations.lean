@@ -108,7 +108,8 @@ def zigzagBraidDerivedFunctorBraidIso {i j : V} (h : G.Adj i j) :
         _root_.DerivedCategory.Qh.{z} ≪≫
       (zigzagBraidDerivedFunctorTripleQhIso k G j i j).symm)
 
-/-- On a homotopy image, the descended commuting map is the original map conjugated by `Qh`. -/
+/-- On a homotopy image, the descended commuting component is the `Qh`-image of the
+homotopy component transported by the two-vertex word-comparison isomorphisms. -/
 @[simp]
 theorem zigzagBraidDerivedFunctorCommIso_hom_app_Qh_obj {i j : V} (hij : i ≠ j)
     (hadj : ¬ G.Adj i j) (X : HomotopyCategory (GradedModuleCat.{max u w} (Γ).piece) c) :
@@ -120,7 +121,8 @@ theorem zigzagBraidDerivedFunctorCommIso_hom_app_Qh_obj {i j : V} (hij : i ≠ j
         (zigzagBraidDerivedFunctorCompQhIso k G j i).inv.app X := by
   simp [zigzagBraidDerivedFunctorCommIso]
 
-/-- On a homotopy image, the descended braid map is the original map conjugated by `Qh`. -/
+/-- On a homotopy image, the descended braid component is the `Qh`-image of the
+homotopy component transported by the three-vertex word-comparison isomorphisms. -/
 @[simp]
 theorem zigzagBraidDerivedFunctorBraidIso_hom_app_Qh_obj {i j : V} (h : G.Adj i j)
     (X : HomotopyCategory (GradedModuleCat.{max u w} (Γ).piece) c) :
