@@ -104,11 +104,15 @@ theorem integral_prod_descFactorial_negativeMultinomialMeasure {r p₀ : ℝ}
   rw [Finset.prod_div_distrib, Finset.prod_pow_eq_pow_sum]
   field_simp [(Real.Gamma_pos_of_pos hr).ne', hp₀.ne']
 
-/-- Every ordinary mixed natural moment is finite, including the invalid zero-measure branches. -/
-theorem integrable_prod_pow_negativeMultinomialMeasure (r p₀ : ℝ)
+open scoped Classical in
+private theorem prod_pow_moments (r p₀ : ℝ)
     (p : ι → ℝ≥0) (n : ι → ℕ) :
     Integrable (fun k : ι → ℕ => ∏ i, (k i : ℝ) ^ n i)
-      (negativeMultinomialMeasure r p₀ p) := by
+      (negativeMultinomialMeasure r p₀ p) ∧
+      ∫ k : ι → ℕ, ∏ i, (k i : ℝ) ^ n i ∂negativeMultinomialMeasure r p₀ p =
+        ∑ j : (∀ i, Fin (n i + 1)), (∏ i, (Nat.stirlingSecond (n i) (j i) : ℝ)) *
+          ∫ k : ι → ℕ, ∏ i, ((k i).descFactorial (j i) : ℝ)
+            ∂negativeMultinomialMeasure r p₀ p := by
   classical
   have hexpand (k : ι → ℕ) :
       ∏ i, (k i : ℝ) ^ n i = ∑ j : (∀ i, Fin (n i + 1)),
@@ -119,9 +123,19 @@ theorem integrable_prod_pow_negativeMultinomialMeasure (r p₀ : ℝ)
     rw [Fintype.prod_sum]
     simp only [Finset.prod_mul_distrib]
   simp_rw [hexpand]
-  exact integrable_finsetSum _ fun j _ =>
+  have hint (j : ∀ i, Fin (n i + 1)) :=
     (integrable_prod_descFactorial_negativeMultinomialMeasure r p₀ p
-      (fun i => j i)).const_mul _
+      (fun i => j i)).const_mul (∏ i, (Nat.stirlingSecond (n i) (j i) : ℝ))
+  refine ⟨integrable_finsetSum _ (fun j _ => hint j), ?_⟩
+  rw [integral_finsetSum _ (fun j _ => hint j)]
+  simp_rw [integral_const_mul]
+
+/-- Every ordinary mixed natural moment is finite, including the invalid zero-measure branches. -/
+theorem integrable_prod_pow_negativeMultinomialMeasure (r p₀ : ℝ)
+    (p : ι → ℝ≥0) (n : ι → ℕ) :
+    Integrable (fun k : ι → ℕ => ∏ i, (k i : ℝ) ^ n i)
+      (negativeMultinomialMeasure r p₀ p) :=
+  (prod_pow_moments r p₀ p n).1
 
 open scoped Classical in
 /-- Ordinary mixed moments are finite Stirling sums of the explicit mixed factorial moments.
@@ -133,19 +147,7 @@ theorem integral_prod_pow_negativeMultinomialMeasure {r p₀ : ℝ}
       ∑ j : (∀ i, Fin (n i + 1)), (∏ i, (Nat.stirlingSecond (n i) (j i) : ℝ)) *
         ((∏ l ∈ Finset.range (∑ i, (j i : ℕ)), (r + l)) *
           ∏ i, ((p i : ℝ) / p₀) ^ (j i : ℕ)) := by
-  classical
-  have hexpand (k : ι → ℕ) :
-      ∏ i, (k i : ℝ) ^ n i = ∑ j : (∀ i, Fin (n i + 1)),
-        (∏ i, (Nat.stirlingSecond (n i) (j i) : ℝ)) *
-          ∏ i, ((k i).descFactorial (j i) : ℝ) := by
-    simp_rw [← Nat.cast_pow, Nat.pow_eq_sum_stirlingSecond_mul_descFactorial,
-      Nat.cast_sum, Nat.cast_mul, ← Fin.sum_univ_eq_sum_range]
-    rw [Fintype.prod_sum]
-    simp only [Finset.prod_mul_distrib]
-  simp_rw [hexpand]
-  rw [integral_finsetSum _ (fun j _ =>
-    (integrable_prod_descFactorial_negativeMultinomialMeasure r p₀ p
-      (fun i => j i)).const_mul _)]
-  simp_rw [integral_const_mul, integral_prod_descFactorial_negativeMultinomialMeasure hr hp₀ hp]
+  rw [(prod_pow_moments r p₀ p n).2]
+  simp_rw [integral_prod_descFactorial_negativeMultinomialMeasure hr hp₀ hp]
 
 end TauCeti.Probability
