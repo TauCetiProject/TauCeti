@@ -257,44 +257,16 @@ private theorem wordValue_def (g : G) (i : G ⧸ U.toSubgroup) :
 omit [IsTopologicalGroup G] in
 private theorem wordValue_one (g : G) :
     wordValue U hU s hs α g (QuotientGroup.mk 1) = evensB1 U.toSubgroup s α g := by
-  classical
-  have hw : (wordCoord U hU s hs g (QuotientGroup.mk 1) : G) =
-      lWord U.toSubgroup (U.toSubgroup.indexTwoTransversal s) (QuotientGroup.mk 1) g := by
-    simp only [wordCoord, Subgroup.monomialHom_left, twoTransversal_rep]
-  by_cases hg : g ∈ U
-  · rw [evensB1_of_mem hg, evensExtend_of_mem hg]
-    exact congrArg (fun x : U.toSubgroup ↦ Multiplicative.toAdd (α x))
-      (Subtype.ext (hw.trans (lWord_indexTwoTransversal_mk_one_of_mem s hg)))
-  · have hgs : g * s ∈ U :=
-      (Subgroup.mul_mem_iff_of_index_two hU).2 (iff_of_false hg hs)
-    rw [evensB1_of_notMem hg, evensExtend_of_mem hgs]
-    exact congrArg (fun x : U.toSubgroup ↦ Multiplicative.toAdd (α x))
-      (Subtype.ext (hw.trans (lWord_indexTwoTransversal_mk_one_of_notMem hU hs hg)))
+  rw [← evensExtend_lWord_mk_one hU hs,
+    evensExtend_of_mem (lWord_mem _ _ (Subgroup.indexTwoTransversal_mk hU hs) _ _)]
+  simp only [wordValue, wordCoord, Subgroup.monomialHom_left, twoTransversal_rep]
 
 omit [IsTopologicalGroup G] in
 private theorem wordValue_s (g : G) :
     wordValue U hU s hs α g (QuotientGroup.mk s) = evensBs U.toSubgroup s α g := by
-  classical
-  have hw : (wordCoord U hU s hs g (QuotientGroup.mk s) : G) =
-      lWord U.toSubgroup (U.toSubgroup.indexTwoTransversal s) (QuotientGroup.mk s) g := by
-    simp only [wordCoord, Subgroup.monomialHom_left, twoTransversal_rep]
-  rw [evensBs_apply]
-  by_cases hg : g ∈ U
-  · have hsg : s⁻¹ * g ∉ U := by
-      intro hsg
-      exact hs (U.toSubgroup.inv_mem_iff.mp
-        (by simpa using U.toSubgroup.mul_mem hsg (U.toSubgroup.inv_mem hg)))
-    have hsgs : s⁻¹ * g * s ∈ U :=
-      (Subgroup.normal_of_index_eq_two hU).conj_mem' g hg s
-    rw [evensB1_of_notMem hsg, evensExtend_of_mem hsgs]
-    exact congrArg (fun x : U.toSubgroup ↦ Multiplicative.toAdd (α x))
-      (Subtype.ext (hw.trans (lWord_indexTwoTransversal_mk_of_mem hU hs hg)))
-  · have hsg : s⁻¹ * g ∈ U :=
-      (Subgroup.mul_mem_iff_of_index_two hU).2
-        (iff_of_false (mt U.toSubgroup.inv_mem_iff.mp hs) hg)
-    rw [evensB1_of_mem hsg, evensExtend_of_mem hsg]
-    exact congrArg (fun x : U.toSubgroup ↦ Multiplicative.toAdd (α x))
-      (Subtype.ext (hw.trans (lWord_indexTwoTransversal_mk_of_notMem hU hs hg)))
+  rw [← evensExtend_lWord_mk hU hs,
+    evensExtend_of_mem (lWord_mem _ _ (Subgroup.indexTwoTransversal_mk hU hs) _ _)]
+  simp only [wordValue, wordCoord, Subgroup.monomialHom_left, twoTransversal_rep]
 
 omit [IsTopologicalGroup G] in
 private theorem wordValue_inv (g : G) (i : G ⧸ U.toSubgroup) :
