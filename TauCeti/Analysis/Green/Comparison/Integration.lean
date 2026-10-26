@@ -66,7 +66,7 @@ theorem chartIntegral_model_manifoldAreaForm (f : ℂ → ℝ) (c : ℂ) :
     _root_.Orientation.signBasis_orientation Complex.basisOneI
   rw [ho]
   simp_rw [signedInChartAt_fun_smul_manifoldAreaForm, Complex.coe_basisOneI,
-    Orientation.volumeFormL_apply, complexAreaForm_one_I, mul_one]
+    Orientation.volumeFormL_apply, complex_orientation_volumeForm_one_I, mul_one]
   simp only [Units.val_one, Int.cast_one, one_mul, basisOneI_addHaar]
 
 /-- Genuine compactly supported planar coefficient integrability gives intrinsic top-form
@@ -89,7 +89,8 @@ theorem _root_.HasCompactSupport.integrableTopForm_fun_smul_manifoldAreaForm {f 
     have he := Complex.basisOneI.integrable_apply_basis_iff b
       (fun z ↦ f z • Complex.orientation.volumeFormL)
     simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-      Complex.coe_basisOneI, Orientation.volumeFormL_apply, complexAreaForm_one_I, mul_one,
+      Complex.coe_basisOneI, Orientation.volumeFormL_apply,
+      complex_orientation_volumeForm_one_I, mul_one,
       basisOneI_addHaar] at he
     simpa only [Orientation.volumeFormL_apply] using he.mpr hf
 

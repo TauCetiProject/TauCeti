@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Green.Comparison.Area.Basic
 public import TauCeti.Analysis.Green.DifferentialForm
-public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
+public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
 /-!
 # The planar exterior derivative as an actual area form
@@ -44,7 +44,7 @@ theorem _root_.DifferentiableAt.mextDeriv_manifoldOneForm_eq_smul_area {P Q : â„
       ContinuousAlternatingMap.smul_apply,
       ContinuousAlternatingMap.apply_eq_det_mul (Ï‰ := Complex.orientation.volumeFormL)
         (b := Complex.basisOneI), hc, Complex.coe_basisOneI, Orientation.volumeFormL_apply,
-        complexAreaForm_one_I, mul_one,
+        complex_orientation_volumeForm_one_I, mul_one,
       smul_eq_mul]
     ring
   ext v

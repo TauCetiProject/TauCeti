@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
-public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
+public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
 /-!
 # Continuous oriented volume forms
@@ -42,26 +42,13 @@ theorem volumeFormL_robust (o : Orientation ℝ E (Fin n))
   rw [volumeFormL_apply, o.volumeForm_robust b hb]
   exact b.toBasis.det_self
 
-/-- The volume form has absolute value one on every orthonormal basis. -/
-theorem abs_volumeFormL_apply_of_orthonormal (o : Orientation ℝ E (Fin n))
-    (b : OrthonormalBasis (Fin n) ℝ E) :
-    |o.volumeFormL b| = 1 := by
-  rw [volumeFormL_apply]
-  exact o.abs_volumeForm_apply_of_orthonormal b
-
-/-- The volume form is negative on an oppositely oriented orthonormal basis. -/
-theorem volumeFormL_robust_neg (o : Orientation ℝ E (Fin n))
-    (b : OrthonormalBasis (Fin n) ℝ E) (hb : b.toBasis.orientation ≠ o) :
-    o.volumeFormL b = -1 := by
-  rw [volumeFormL_apply, o.volumeForm_robust_neg b hb, neg_apply]
-  simpa only [OrthonormalBasis.coe_toBasis] using congrArg Neg.neg b.toBasis.det_self
-
 /-- A top form taking value one on an oriented orthonormal basis is the volume form. -/
 theorem eq_volumeFormL_of_apply_orthonormal (o : Orientation ℝ E (Fin n))
     (ω : E [⋀^Fin n]→L[ℝ] ℝ) (b : OrthonormalBasis (Fin n) ℝ E)
     (hb : b.toBasis.orientation = o) (hω : ω b = 1) :
     ω = o.volumeFormL := by
-  have hω' : ω b.toBasis = 1 := by simpa using hω
+  have hω' : ω b.toBasis = 1 := by
+    simpa only [OrthonormalBasis.coe_toBasis] using hω
   ext v
   rw [ContinuousAlternatingMap.apply_eq_det_mul ω b.toBasis, hω', mul_one,
     volumeFormL_apply, o.volumeForm_robust b hb]

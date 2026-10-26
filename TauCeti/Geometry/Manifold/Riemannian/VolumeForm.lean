@@ -58,6 +58,7 @@ theorem riemannianVolumeForm_eq
   simp only [riemannianVolumeForm]
 
 /-- Evaluation of the Riemannian volume form is Mathlib's oriented volume form. -/
+@[simp]
 theorem riemannianVolumeForm_apply
     (o : Manifold.Orientation I M (Fin m)) (x : M)
     (v : Fin m → TangentSpace I x) :
@@ -68,6 +69,7 @@ theorem riemannianVolumeForm_apply
   simp [riemannianVolumeForm]
 
 /-- The volume form takes value `1` on a positively oriented orthonormal tangent basis. -/
+@[simp]
 theorem riemannianVolumeForm_apply_orthonormal
     (o : Manifold.Orientation I M (Fin m)) (x : M)
     (b : OrthonormalBasis (Fin m) ℝ (TangentSpace I x))
@@ -84,7 +86,8 @@ theorem abs_riemannianVolumeForm_apply_orthonormal
     |riemannianVolumeForm o x b| = 1 := by
   let := o.fact_finrank_tangentSpace x
   rw [riemannianVolumeForm_eq]
-  exact Orientation.abs_volumeFormL_apply_of_orthonormal _ b
+  rw [Orientation.volumeFormL_apply]
+  exact (Manifold.Orientation.orientationAt o x).abs_volumeForm_apply_of_orthonormal b
 
 /-- The Riemannian volume form is negative on an oppositely oriented orthonormal basis. -/
 theorem riemannianVolumeForm_apply_orthonormal_of_opposite
@@ -94,7 +97,9 @@ theorem riemannianVolumeForm_apply_orthonormal_of_opposite
     riemannianVolumeForm o x b = -1 := by
   let := o.fact_finrank_tangentSpace x
   rw [riemannianVolumeForm_eq]
-  exact Orientation.volumeFormL_robust_neg _ b hb
+  rw [Orientation.volumeFormL_apply]
+  rw [(Manifold.Orientation.orientationAt o x).volumeForm_robust_neg b hb, neg_apply]
+  simpa only [OrthonormalBasis.coe_toBasis] using congrArg Neg.neg b.toBasis.det_self
 
 /-- A top form taking value one on an oriented orthonormal basis is the Riemannian volume form. -/
 theorem eq_riemannianVolumeForm_of_apply_orthonormal
