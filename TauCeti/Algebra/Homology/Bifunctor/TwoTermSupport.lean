@@ -156,12 +156,6 @@ private abbrev total (K : CochainComplex C₁ ℤ)
     CochainComplex C₂ ℤ ⥤ CochainComplex D ℤ :=
   dsimp% only [Functor.mapBifunctorLeft] F.mapBifunctorLeft c c K
 
-private theorem supportTotalIndex (a j : ℤ) :
-    ComplexShape.π c c c (a, j + -a) = j := by
-  -- Cochain π is integer addition; expose its definition before the arithmetic solver.
-  change a + (j + -a) = j
-  omega
-
 private abbrev row (A : C₁) : CochainComplex C₂ ℤ ⥤ CochainComplex D ℤ :=
   ((F).obj A).mapHomologicalComplex c
 
@@ -196,11 +190,11 @@ private theorem singleX_inv_d (A : C₁) (a : ℤ)
     [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c a).obj A) N F c]
     (N : CochainComplex C₂ ℤ)
     (j j' : ℤ) :
-    (F.singleX A a N (j + -a) j (supportTotalIndex _ _)).inv ≫
+    (F.singleX A a N (j + -a) j (add_neg_cancel_comm_assoc _ _)).inv ≫
         (mapBifunctor ((single C₁ c a).obj A) N (F) c).d j j' =
       (((F.row A).obj N)⟦-a⟧).d j j' ≫
         (F.singleX A a N (j' + -a) j'
-          (supportTotalIndex _ _)).inv := by
+          (add_neg_cancel_comm_assoc _ _)).inv := by
   by_cases hjj' : (c).Rel j j'
   · have hqq' : (c).Rel (j + -a) (j' + -a) := by
       -- Cochain shape relations mean successor equality, including the shifted indices.
@@ -215,7 +209,7 @@ private theorem singleX_inv_d (A : C₁) (a : ℤ)
     -- Cochain totalization has vertical sign (-1)^a; a shift by -a has the same sign.
     have hε : ComplexShape.ε₂ c c c (a, j + -a) = a.negOnePow := rfl
     have hd₂ := mapBifunctor.d₂_eq ((single C₁ c a).obj A) N
-      (F) c a hqq' j' (supportTotalIndex a j')
+      (F) c a hqq' j' (add_neg_cancel_comm_assoc a j')
     rw [singleX_inv, singleX_inv]
     simp only [Category.assoc, mapBifunctor.d_eq, Preadditive.comp_add,
       mapBifunctor.ι_D₁, mapBifunctor.ι_D₂, hd₁, comp_zero, zero_add,
@@ -235,7 +229,7 @@ private def singleRowIso (A : C₁) (a : ℤ)
     (C₂ := (F.total
       ((single C₁ c a).obj A)).obj N)
     (fun j ↦ (F.singleX A a N (j + -a) j
-      (supportTotalIndex _ _)).symm)
+      (add_neg_cancel_comm_assoc _ _)).symm)
     (fun j j' _ ↦ F.singleX_inv_d A a N j j')).symm
 
 private theorem singleRowIso_inv_f (A : C₁) (a : ℤ)
@@ -244,8 +238,8 @@ private theorem singleRowIso_inv_f (A : C₁) (a : ℤ)
     (F.singleRowIso A a N).inv.f j =
       ((F).map (singleObjXSelf c a A).inv).app (N.X (j + -a)) ≫
         ιMapBifunctor ((single C₁ c a).obj A) N (F) c a (j + -a) j
-          (supportTotalIndex _ _) := by
-  exact F.singleX_inv A a N (j + -a) j (supportTotalIndex a j)
+          (add_neg_cancel_comm_assoc _ _) := by
+  exact F.singleX_inv A a N (j + -a) j (add_neg_cancel_comm_assoc a j)
 
 private def mapBifunctorSingleRowNatIsoCore (A : C₁) (a : ℤ)
     [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c a).obj A) N F c] :
@@ -266,7 +260,7 @@ private def mapBifunctorSingleRowNatIsoCore (A : C₁) (a : ℤ)
     simp only [singleRowIso_inv_f, Category.assoc, CochainComplex.shiftFunctor_map_f',
       Functor.mapHomologicalComplex_map_f]
     have hm := ι_mapBifunctorMap (𝟙 ((single C₁ c a).obj A)) f
-      (F) c a (j + -a) j (supportTotalIndex a j)
+      (F) c a (j + -a) j (add_neg_cancel_comm_assoc a j)
     simp only [HomologicalComplex.id_f] at hm
     rw [(F).map_id, NatTrans.id_app, id_comp] at hm
     rw [hm, ← NatTrans.naturality_assoc])
@@ -360,9 +354,6 @@ def mapTwoTermSupport :
       have h' : s.ι ≫ s.π = 0 := h
       rw [← mapBifunctorLeftMap_comp, h', mapBifunctorLeftMap_zero])
 
-private theorem row_index {a q j : ℤ} (h : a + q = j) : q = j + -a := by
-  omega
-
 section Biproducts
 
 variable [HasBinaryBiproducts D]
@@ -372,18 +363,18 @@ private def twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
       ((F).obj s.B).obj (N.X (j + -s.b)) ⊞ ((F).obj s.A).obj
         (N.X (j + -s.a)) :=
   mapBifunctorTwoSummandIso s.K N (F) c s.b (j + -s.b) s.a (j + -s.a) j
-    (supportTotalIndex _ _)
-    (supportTotalIndex _ _)
+    (add_neg_cancel_comm_assoc _ _)
+    (add_neg_cancel_comm_assoc _ _)
     (by intro h; exact s.ne (congrArg _root_.Prod.fst h))
     (fun p q hpq hne ↦ by
       have hp₀ : p ≠ s.a := by
         intro hp
         subst p
-        exact hne (Or.inr ⟨rfl, row_index hpq⟩)
+        exact hne (Or.inr ⟨rfl, by simpa only [sub_eq_add_neg] using (eq_sub_of_add_eq' hpq)⟩)
       have hp₁ : p ≠ s.b := by
         intro hp
         subst p
-        exact hne (Or.inl ⟨rfl, row_index hpq⟩)
+        exact hne (Or.inl ⟨rfl, by simpa only [sub_eq_add_neg] using (eq_sub_of_add_eq' hpq)⟩)
       exact ((F).flip.obj (N.X q)).map_isZero (s.support p hp₀ hp₁)) ≪≫
     biprod.mapIso (((F).mapIso s.high).app (N.X (j + -s.b)))
       (((F).mapIso s.low).app (N.X (j + -s.a)))
@@ -393,7 +384,7 @@ omit [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c s.b).obj 
   [HasZeroObject C₁] in
 private theorem twoSummandX_ι_high (N : CochainComplex C₂ ℤ) (j : ℤ) :
     ιMapBifunctor s.K N (F) c s.b (j + -s.b) j
-        (supportTotalIndex s.b j) ≫ (F.twoSummandX s N j).hom =
+        (add_neg_cancel_comm_assoc s.b j) ≫ (F.twoSummandX s N j).hom =
       ((F).map s.high.hom).app (N.X (j + -s.b)) ≫ biprod.inl := by
   dsimp only [twoSummandX, Iso.trans_hom, biprod.mapIso, Functor.mapIso, Iso.app]
   rw [ι_mapBifunctorTwoSummandIso_hom_left_assoc, biprod.inl_map]
@@ -403,7 +394,7 @@ omit [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c s.b).obj 
   [HasZeroObject C₁] in
 private theorem twoSummandX_ι_low (N : CochainComplex C₂ ℤ) (j : ℤ) :
     ιMapBifunctor s.K N (F) c s.a (j + -s.a) j
-        (supportTotalIndex s.a j) ≫ (F.twoSummandX s N j).hom =
+        (add_neg_cancel_comm_assoc s.a j) ≫ (F.twoSummandX s N j).hom =
       ((F).map s.low.hom).app (N.X (j + -s.a)) ≫ biprod.inr := by
   dsimp only [twoSummandX, Iso.trans_hom, biprod.mapIso, Functor.mapIso, Iso.app]
   rw [ι_mapBifunctorTwoSummandIso_hom_right_assoc, biprod.inr_map]
@@ -412,20 +403,20 @@ private theorem twoSummandX_ι_low (N : CochainComplex C₂ ℤ) (j : ℤ) :
 private theorem supportι_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
     (((F.mapTwoTermSupport s).f.app N).f j) ≫ (F.twoSummandX s N j).hom =
       (F.singleX s.B s.b N (j + -s.b) j
-        (supportTotalIndex _ _)).hom ≫ biprod.inl := by
+        (add_neg_cancel_comm_assoc _ _)).hom ≫ biprod.inl := by
   -- Reduce ShortComplex.map and evaluation of the curried totalization functor
   -- to mapBifunctorMap, exposing the support inclusion for its component formula.
   simp only [mapTwoTermSupport, mapBifunctorLeftMap_app]
   change (mapBifunctorMap (TwoTermSupport.ι s) (𝟙 N) (F) c).f j ≫
       (F.twoSummandX s N j).hom =
     (F.singleX s.B s.b N (j + -s.b) j
-      (supportTotalIndex s.b j)).hom ≫ biprod.inl
+      (add_neg_cancel_comm_assoc s.b j)).hom ≫ biprod.inl
   apply (cancel_epi (F.singleX s.B s.b N (j + -s.b) j
-    (supportTotalIndex _ _)).inv).1
+    (add_neg_cancel_comm_assoc _ _)).inv).1
   simp only [Iso.inv_hom_id_assoc]
   rw [singleX_inv, Category.assoc]
   have hm := ι_mapBifunctorMap (TwoTermSupport.ι s) (𝟙 N) (F)
-    c s.b (j + -s.b) j (supportTotalIndex s.b j)
+    c s.b (j + -s.b) j (add_neg_cancel_comm_assoc s.b j)
   simp only [HomologicalComplex.id_f] at hm
   rw [((F).obj (s.K.X s.b)).map_id, id_comp] at hm
   rw [reassoc_of% hm, twoSummandX_ι_high]
@@ -435,24 +426,25 @@ private theorem supportι_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
 private theorem supportπ_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
     (((F.mapTwoTermSupport s).g.app N).f j) ≫
         (F.singleX s.A s.a N (j + -s.a) j
-          (supportTotalIndex _ _)).hom =
+          (add_neg_cancel_comm_assoc _ _)).hom =
       (F.twoSummandX s N j).hom ≫ biprod.snd := by
   -- Reduce ShortComplex.map and evaluation of the curried totalization functor
   -- to mapBifunctorMap, exposing the support projection for its component formula.
   simp only [mapTwoTermSupport, mapBifunctorLeftMap_app]
   change (mapBifunctorMap (TwoTermSupport.π s) (𝟙 N) (F) c).f j ≫
       (F.singleX s.A s.a N (j + -s.a) j
-        (supportTotalIndex s.a j)).hom =
+        (add_neg_cancel_comm_assoc s.a j)).hom =
     (F.twoSummandX s N j).hom ≫ biprod.snd
   apply (cancel_mono (F.singleX s.A s.a N (j + -s.a) j
-    (supportTotalIndex s.a j)).inv).1
+    (add_neg_cancel_comm_assoc s.a j)).inv).1
   simp only [Category.assoc, Iso.hom_inv_id, comp_id]
   rw [singleX_inv]
   apply mapBifunctor.hom_ext (K₁ := s.K) (K₂ := N) (F := F) («c» := c)
   intro p q hpq
   by_cases hp₀ : p = s.a
   · subst p
-    obtain rfl : q = j + -s.a := row_index hpq
+    obtain rfl : q = j + -s.a := by
+      simpa only [sub_eq_add_neg] using (eq_sub_of_add_eq' hpq)
     have hm := ι_mapBifunctorMap (TwoTermSupport.π s) (𝟙 N) (F)
       c s.a (j + -s.a) j hpq
     simp only [HomologicalComplex.id_f] at hm
@@ -463,7 +455,8 @@ private theorem supportπ_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
       biprod.inr_snd_assoc]
   · by_cases hp₁ : p = s.b
     · subst p
-      obtain rfl : q = j + -s.b := row_index hpq
+      obtain rfl : q = j + -s.b := by
+        simpa only [sub_eq_add_neg] using (eq_sub_of_add_eq' hpq)
       have hπ : (TwoTermSupport.π s).f s.b = 0 :=
         (isZero_single_obj_X c s.a s.A s.b s.ne.symm).eq_of_tgt _ _
       have hm := ι_mapBifunctorMap (TwoTermSupport.π s) (𝟙 N) (F)
@@ -487,10 +480,10 @@ def mapTwoTermSupportDegreewiseIso (N : CochainComplex C₂ ℤ)
         biprod.snd (by simp) :=
   ShortComplex.isoMk
     (F.singleX s.B s.b N (j + -s.b) j
-      (supportTotalIndex _ _))
+      (add_neg_cancel_comm_assoc _ _))
     (F.twoSummandX s N j)
     (F.singleX s.A s.a N (j + -s.a) j
-      (supportTotalIndex _ _))
+      (add_neg_cancel_comm_assoc _ _))
     (F.supportι_twoSummandX s N j).symm (F.supportπ_twoSummandX s N j).symm
 
 /-- The mapped support sequence has its canonical splitting in each cochain degree. -/
