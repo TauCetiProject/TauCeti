@@ -46,7 +46,7 @@ instance faithfullyFlat_of_isLocalRing :
 
 /-- Completing a Noetherian local target detects flatness over any base ring.
 The base is unchanged, and need not be local or Noetherian. -/
-theorem flat_iff :
+theorem flat_iff_of_isLocalRing :
     Module.Flat R (AdicCompletion (IsLocalRing.maximalIdeal S) S) ↔ Module.Flat R S :=
   (Module.Flat.iff_of_faithfullyFlat R S _).symm
 
