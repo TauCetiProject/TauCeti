@@ -13,19 +13,25 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 
 Let `A = ⨁ᵢ 𝒜 i` be an `ℕ`-graded commutative ring and `n ∈ ℤ`. The *twisting sheaf* `𝒪(n)` on
 `Proj A` is the sheaf of `𝒪_{Proj A}`-modules associated with the shifted graded module `A(n)`,
-`A(n)ᵢ = A_{n + i}`. Following the construction of the structure sheaf of `Proj` in Mathlib
-(`AlgebraicGeometry.Proj.structureSheaf`), we realise it concretely: a section of `𝒪(n)` over an
-open `U` is a dependent function sending each point `x ∈ U` to an element of the localization
-`A_x` of `A` at the homogeneous prime `x`, which is locally a fraction `r / s` with `r` and `s`
-homogeneous, `s` invertible nearby, and `deg r = deg s + n`. For `n = 0` this recovers the
-structure sheaf (`AlgebraicGeometry.Proj.unitIsoTwistingSheafZero`).
+`A(n)ᵢ = A_{n + i}`. We realise it concretely: a section of `𝒪(n)` over an open `U` is a
+dependent function sending each point `x ∈ U` to an element of the localization `A_x` of `A` at
+the homogeneous prime `x`, which is locally a fraction `r / s` with `r` and `s` homogeneous, `s`
+invertible nearby, and `deg r = deg s + n`. For `n = 0` this recovers the structure sheaf
+(`AlgebraicGeometry.Proj.unitIsoTwistingSheafZero`).
 
-The twisting sheaves are the input of the graded map `A → ⨁ₙ Γ(Proj A, 𝒪(n))` sending a
-homogeneous element `r` of degree `j` to the global section `r / 1` of `𝒪(j)`
-(`AlgebraicGeometry.Proj.toTwistingSheaf`), and of the multiplication maps
-`𝒪(m) × 𝒪(n) → 𝒪(m + n)` (`AlgebraicGeometry.Proj.twistingSheaf.mul`), which underlie
-`𝒪(n) ≅ 𝒪(1)^{⊗ n}` when `A` is generated in degree one. The twisting sheaves of a relative `Proj`
-restrict to these sheaves on its charts `Proj A(U)`.
+The construction is adapted from Mathlib's
+`Mathlib/AlgebraicGeometry/ProjectiveSpectrum/StructureSheaf.lean` (Jujian Zhang), which builds the
+structure sheaf `AlgebraicGeometry.Proj.structureSheaf` through the same sequence `IsFraction`,
+`isFractionPrelocal`, `isLocallyFraction`, a presheaf of abelian groups and its comparison with
+the sheaf of types. The passage to a presheaf of modules via `PresheafOfModules.ofPresheaf`
+follows `AlgebraicGeometry.StructureSheaf.moduleStructurePresheaf` in Mathlib's
+`Mathlib/AlgebraicGeometry/StructureSheaf.lean` (Johan Commelin, Kim Morrison, Andrew Yang).
+
+We also define the components `A_j → Γ(U, 𝒪(j))`, `r ↦ r / 1`, of the graded map
+`A → ⨁ₙ Γ(Proj A, 𝒪(n))` (`AlgebraicGeometry.Proj.toTwistingSheaf`), and, over each open `U`,
+the `Γ(U, 𝒪)`-bilinear multiplication `Γ(U, 𝒪(m)) × Γ(U, 𝒪(n)) → Γ(U, 𝒪(m + n))` of sections,
+compatible with restriction (`AlgebraicGeometry.Proj.twistingSheaf.mul`); these are the
+ingredients of `𝒪(n) ≅ 𝒪(1)^{⊗ n}` when `A` is generated in degree one.
 
 ## Main definitions
 
@@ -115,7 +121,9 @@ theorem isLocallyFraction_add {n : ℤ} {U : Opens (ProjectiveSpectrum.top 𝒜)
     fun y ↦ ?_⟩
   refine (congrArg₂ (· + ·) (wa ⟨y.1, y.2.1⟩) (wb ⟨y.1, y.2.2⟩)).trans ?_
   rw [Localization.add_mk, add_comm]
-  rfl
+  -- both sides now have the same numerator, and the denominators `⟨sa, _⟩ * ⟨sb, _⟩` and
+  -- `⟨sa * sb, _⟩` agree by `Submonoid.mk_mul_mk`, which `congr 1` closes
+  congr 1
 
 theorem isLocallyFraction_neg {n : ℤ} {U : Opens (ProjectiveSpectrum.top 𝒜)}
     {f : ∀ x : U, Localizations 𝒜 x.1} (hf : (isLocallyFraction 𝒜 n).pred f) :
@@ -294,6 +302,31 @@ theorem res_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ 𝒜
       const h r s hr hs V (iVU.le.trans hU) :=
   (rfl)
 
+@[simp]
+theorem const_zero {i j : ℕ} (h : (j : ℤ) = i + n) (s : A) (hr : (0 : A) ∈ 𝒜 j) (hs : s ∈ 𝒜 i)
+    (hU : U ≤ basicOpen 𝒜 s) : const h 0 s hr hs U hU = 0 :=
+  ext fun _ ↦ Localization.mk_zero _
+
+@[simp]
+theorem neg_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ 𝒜 j) (hs : s ∈ 𝒜 i)
+    (hU : U ≤ basicOpen 𝒜 s) : -const h r s hr hs U hU = const h (-r) s (neg_mem hr) hs U hU :=
+  ext fun _ ↦ Localization.neg_mk _ _
+
+/-- Sections `r / s` and `r' / s` with the same denominator add up to `(r + r') / s`. -/
+@[simp]
+theorem const_add {i j : ℕ} (h : (j : ℤ) = i + n) (r r' s : A) (hr : r ∈ 𝒜 j) (hr' : r' ∈ 𝒜 j)
+    (hs : s ∈ 𝒜 i) (hU : U ≤ basicOpen 𝒜 s) :
+    const h r s hr hs U hU + const h r' s hr' hs U hU =
+      const h (r + r') s (add_mem hr hr') hs U hU :=
+  ext fun _ ↦ Localization.add_mk_self _ _ _
+
+/-- The sections `r / s` and `r' / s'` agree if `s' * r = s * r'`. -/
+theorem const_ext {i j i' j' : ℕ} {h : (j : ℤ) = i + n} {h' : (j' : ℤ) = i' + n} {r s r' s' : A}
+    {hr : r ∈ 𝒜 j} {hs : s ∈ 𝒜 i} {hr' : r' ∈ 𝒜 j'} {hs' : s' ∈ 𝒜 i'} {hU : U ≤ basicOpen 𝒜 s}
+    {hU' : U ≤ basicOpen 𝒜 s'} (e : s' * r = s * r') :
+    const h r s hr hs U hU = const h' r' s' hr' hs' U hU' :=
+  ext fun _ ↦ Localization.mk_eq_mk_iff.2 (Localization.r_of_eq e)
+
 /-- Every section of `𝒪(n)` is locally of the form `r / s`. -/
 theorem exists_const (s : Γ(twistingSheaf 𝒜 n, U)) (x : Proj 𝒜) (hx : x ∈ U) :
     ∃ (V : (Proj 𝒜).Opens) (_ : x ∈ V) (iVU : V ⟶ U) (i j : ℕ) (h : (j : ℤ) = i + n)
@@ -318,6 +351,19 @@ def mul (m n : ℤ) :
 theorem mul_apply {m : ℤ} (s : Γ(twistingSheaf 𝒜 m, U)) (t : Γ(twistingSheaf 𝒜 n, U)) (x : U) :
     (mul 𝒜 U m n s t).1 x = s.1 x * t.1 x :=
   (rfl)
+
+/-- The multiplication of sections of twisting sheaves is associative, pointwise in the
+localizations. -/
+theorem mul_assoc_apply {l m : ℤ} (s : Γ(twistingSheaf 𝒜 l, U)) (t : Γ(twistingSheaf 𝒜 m, U))
+    (u : Γ(twistingSheaf 𝒜 n, U)) (x : U) :
+    (mul 𝒜 U (l + m) n (mul 𝒜 U l m s t) u).1 x = (mul 𝒜 U l (m + n) s (mul 𝒜 U m n t u)).1 x :=
+  mul_assoc _ _ _
+
+/-- The multiplication of sections of twisting sheaves is commutative, pointwise in the
+localizations. -/
+theorem mul_comm_apply {m : ℤ} (s : Γ(twistingSheaf 𝒜 m, U)) (t : Γ(twistingSheaf 𝒜 n, U))
+    (x : U) : (mul 𝒜 U m n s t).1 x = (mul 𝒜 U n m t s).1 x :=
+  mul_comm _ _
 
 /-- The multiplication of sections of twisting sheaves commutes with restriction. -/
 @[simp]
@@ -355,6 +401,11 @@ def toTwistingSheaf {j : ℕ} (h : (j : ℤ) = n) (U : (Proj 𝒜).Opens) :
   map_zero' := twistingSheaf.ext fun _ ↦ Localization.mk_zero _
   map_add' r r' := twistingSheaf.ext fun _ ↦ (Localization.add_mk_self _ _ _).symm
 
+theorem toTwistingSheaf_eq_const {j : ℕ} (h : (j : ℤ) = n) (U : (Proj 𝒜).Opens) (r : 𝒜 j) :
+    toTwistingSheaf 𝒜 h U r = twistingSheaf.const (i := 0) (by omega) (r : A) 1 r.2
+      SetLike.GradedOne.one_mem U (by simp [basicOpen_one]) :=
+  (rfl)
+
 @[simp]
 theorem toTwistingSheaf_apply_apply {j : ℕ} (h : (j : ℤ) = n) (U : (Proj 𝒜).Opens) (r : 𝒜 j)
     (x : U) : (toTwistingSheaf 𝒜 h U r).1 x = Localization.mk (r : A) 1 :=
@@ -367,7 +418,8 @@ theorem res_toTwistingSheaf {j : ℕ} (h : (j : ℤ) = n) (i : V ⟶ U) (r : �
       toTwistingSheaf 𝒜 h V r :=
   (rfl)
 
-/-- The map `A → ⨁ₙ Γ(U, 𝒪(n))` is multiplicative. -/
+/-- The sections `r / 1` are multiplicative: the product of `r / 1` and `r' / 1` is
+`(r * r') / 1`. -/
 @[simp]
 theorem mul_toTwistingSheaf {m : ℤ} {i j : ℕ} (hi : (i : ℤ) = m) (hj : (j : ℤ) = n)
     (U : (Proj 𝒜).Opens) (r : 𝒜 i) (r' : 𝒜 j) :
@@ -397,6 +449,13 @@ def sectionsLinearEquivTwistingSheafZero (U : (Proj 𝒜).Opens) :
 @[simp]
 theorem sectionsLinearEquivTwistingSheafZero_apply_apply (U : (Proj 𝒜).Opens) (a : Γ(Proj 𝒜, U))
     (x : U) : (sectionsLinearEquivTwistingSheafZero 𝒜 U a).1 x = (a.1 x).val :=
+  (rfl)
+
+/-- Multiplying by the section of `𝒪(0)` corresponding to a section `a` of the structure sheaf
+is the scalar multiplication by `a`, pointwise in the localizations. -/
+theorem mul_sectionsLinearEquivTwistingSheafZero_apply (a : Γ(Proj 𝒜, U))
+    (t : Γ(twistingSheaf 𝒜 n, U)) (x : U) :
+    (mul 𝒜 U 0 n (sectionsLinearEquivTwistingSheafZero 𝒜 U a) t).1 x = (a • t).1 x :=
   (rfl)
 
 variable (𝒜) in
