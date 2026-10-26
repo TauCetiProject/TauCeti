@@ -318,7 +318,7 @@ variable [AddMonoid H] {N : H →+ ℝ}
 /-- The coefficient at `h` of a triple product `a * b * c` is the sum of
 `a.coeff u * b.coeff v * c.coeff w` over the finitely many triples of support exponents with
 `u + v + w = h`. -/
-private theorem coeff_mul_mul_eq_sum [NonUnitalSemiring R] (a b c : NovikovSeries R H N) (h : H) :
+theorem coeff_mul_mul_eq_sum [NonUnitalSemiring R] (a b c : NovikovSeries R H N) (h : H) :
     (a * b * c).coeff h = ∑ t ∈ (finite_setOf_add_add_eq a b c h).toFinset,
       a.coeff t.1 * b.coeff t.2.1 * c.coeff t.2.2 := by
   classical

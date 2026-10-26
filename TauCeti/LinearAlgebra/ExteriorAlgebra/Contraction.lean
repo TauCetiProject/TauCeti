@@ -50,6 +50,14 @@ In degree at least the rank, contraction loses no information: if `d m = 1` and
 zero once their degrees add up to the rank, and in rank at most four a two-form `x` satisfies
 `x ∧ x = 2 x ∧ m ∧ (d ⌋ x)`. This is the algebra behind the splitting of a two-form on a product
 `ℝ × Y` along the unit normal of the factor `Y`.
+
+On `M × R`, with `e = (0, 1)`, every element `z` of the exterior algebra splits as `a + e ∧ b`,
+where `a` and `b` are the images in `⋀ M` of `z` and of its contraction by the second coordinate
+(`ExteriorAlgebra.map_inl_map_fst_add_ι_inr_mul_contractLeft_snd`). This is the
+decomposition `⋀ᵏ⁺¹ (M × R) ≅ ⋀ᵏ⁺¹ M ⊕ e ∧ ⋀ᵏ M` used to adjoin one element to a Koszul complex.
+In this splitting, the contraction by `φ + x · snd` acts as `d(a + e ∧ b) = (d a + x b) - e ∧ d b`
+(`ExteriorAlgebra.map_fst_contractLeft_coprod`,
+`ExteriorAlgebra.contractLeft_map_fst_contractLeft_snd`).
 -/
 
 public section
@@ -564,3 +572,103 @@ theorem mul_self_eq_two_smul_mul_ι_mul_contractLeft {d : Module.Dual R M} {m : 
   abel
 
 end TauCeti.ExteriorAlgebra
+
+namespace ExteriorAlgebra
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-! ### Splitting off a free coordinate -/
+
+/-- **Splitting off a free coordinate.** In the exterior algebra of `M × R`, with `e = (0, 1)`,
+every element `z` is `a + e ∧ b`, where `a` is the image of `z` under `⋀ M × R → ⋀ M → ⋀ (M × R)`
+and `b` is the image of the contraction of `z` by the second coordinate. -/
+theorem map_inl_map_fst_add_ι_inr_mul_contractLeft_snd (z : ExteriorAlgebra R (M × R)) :
+    map (LinearMap.inl R M R) (map (LinearMap.fst R M R) z) +
+        ι R (LinearMap.inr R M R 1) * map (LinearMap.inl R M R) (map (LinearMap.fst R M R)
+          (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R) z)) =
+      z := by
+  induction z using CliffordAlgebra.left_induction with
+  | algebraMap r => simp [contractLeft_algebraMap]
+  | add z₁ z₂ h₁ h₂ =>
+    simp only [map_add, mul_add]
+    conv_rhs => rw [← h₁, ← h₂]
+    abel
+  | ι_mul z m ih =>
+    -- Write `m = (m₁, 0) + m₂ e`; then `e ∧ e = 0` and `(m₁, 0) ∧ e = -(e ∧ (m₁, 0))`.
+    have hm : ι R m = ι R (LinearMap.inl R M R m.1) + m.2 • ι R (LinearMap.inr R M R 1) := by
+      rw [← map_smul, ← map_add]; congr 1; ext <;> simp
+    have he := ι_sq_zero (R := R) (LinearMap.inr R M R (1 : R))
+    have hc := eq_neg_of_add_eq_zero_right <|
+      ι_add_mul_swap (R := R) (LinearMap.inr R M R (1 : R)) (LinearMap.inl R M R m.1)
+    -- `left_induction` states the step with `CliffordAlgebra.ι 0`, which is `ι R` by definition.
+    change _ = ι R m * z
+    rw [contractLeft_ι_mul]
+    simp only [map_mul, map_sub, map_smul, map_apply_ι]
+    conv_rhs => rw [← ih, hm]
+    simp only [add_mul, mul_add, mul_sub, smul_mul_assoc, mul_smul_comm, ← mul_assoc, he, hc,
+      smul_zero, add_zero, neg_mul, LinearMap.fst_apply, LinearMap.snd_apply]
+    abel
+
+/-! ### Contractions on `M × R` in the splitting `a + e ∧ b` -/
+
+/-- The contraction by `φ.coprod ψ` on the image of `⋀ M` in `⋀ (M × N)` is the contraction
+by `φ`. -/
+theorem contractLeft_coprod_map_inl {N : Type*} [AddCommGroup N] [Module R N]
+    (φ : Module.Dual R M) (ψ : Module.Dual R N) (w : ExteriorAlgebra R M) :
+    contractLeft (Q := (0 : QuadraticForm R (M × N))) (φ.coprod ψ)
+        (map (LinearMap.inl R M N) w) =
+      map (LinearMap.inl R M N) (contractLeft (Q := (0 : QuadraticForm R M)) φ w) := by
+  rw [contractLeft_map, LinearMap.coprod_inl]
+
+/-- The contraction by `φ + x · snd` on `e ∧ w`, with `e = (0, 1)`: `d(e ∧ w) = x w - e ∧ d w`. -/
+theorem contractLeft_coprod_ι_inr_mul (φ : Module.Dual R M) (x : R)
+    (w : ExteriorAlgebra R (M × R)) :
+    contractLeft (Q := (0 : QuadraticForm R (M × R)))
+        (φ.coprod (LinearMap.toSpanSingleton R R x)) (ι R (LinearMap.inr R M R 1) * w) =
+        x • w - ι R (LinearMap.inr R M R 1) *
+          contractLeft (Q := (0 : QuadraticForm R (M × R)))
+            (φ.coprod (LinearMap.toSpanSingleton R R x)) w := by
+  rw [contractLeft_ι_mul]
+  simp
+
+/-- Projection onto the first factor retracts the induced map of exterior algebras. -/
+theorem leftInverse_map_fst_map_inl {N : Type*} [AddCommGroup N] [Module R N] :
+    Function.LeftInverse (map (LinearMap.fst R M N)) (map (LinearMap.inl R M N)) :=
+  leftInverse_map_iff.2 fun _ ↦ rfl
+
+/-- The `⋀ M`-component of the contraction by `φ + x · snd`: writing `z = a + e ∧ b` as in
+`map_inl_map_fst_add_ι_inr_mul_contractLeft_snd`, the `⋀ M`-component of `d z` is `d a + x b`. -/
+theorem map_fst_contractLeft_coprod (φ : Module.Dual R M) (x : R)
+    (z : ExteriorAlgebra R (M × R)) :
+    map (LinearMap.fst R M R)
+        (contractLeft (Q := (0 : QuadraticForm R (M × R)))
+          (φ.coprod (LinearMap.toSpanSingleton R R x)) z) =
+      contractLeft (Q := (0 : QuadraticForm R M)) φ (map (LinearMap.fst R M R) z) +
+        x • map (LinearMap.fst R M R)
+          (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R) z) := by
+  conv_lhs => rw [← map_inl_map_fst_add_ι_inr_mul_contractLeft_snd z]
+  rw [map_add, contractLeft_coprod_map_inl, contractLeft_coprod_ι_inr_mul,
+    contractLeft_coprod_map_inl]
+  simp only [LinearMap.coe_inr, map_add, map_sub, map_smul, map_mul, map_apply_ι,
+    LinearMap.fst_apply, map_zero, zero_mul, sub_zero]
+  rw [leftInverse_map_fst_map_inl, leftInverse_map_fst_map_inl]
+
+/-- The `e`-component of the contraction by `φ + x · snd`: writing `z = a + e ∧ b` as in
+`map_inl_map_fst_add_ι_inr_mul_contractLeft_snd`, the contraction `d b` is minus the
+`e`-component of `d z`. -/
+theorem contractLeft_map_fst_contractLeft_snd (φ : Module.Dual R M) (x : R)
+    (z : ExteriorAlgebra R (M × R)) :
+    contractLeft (Q := (0 : QuadraticForm R M)) φ (map (LinearMap.fst R M R)
+        (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R) z)) =
+      -map (LinearMap.fst R M R)
+        (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R)
+          (contractLeft (Q := (0 : QuadraticForm R (M × R)))
+            (φ.coprod (LinearMap.toSpanSingleton R R x)) z)) := by
+  have hD := map_inl_map_fst_add_ι_inr_mul_contractLeft_snd
+    (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R) z)
+  rw [contractLeft_contractLeft, map_zero, map_zero, mul_zero, add_zero] at hD
+  rw [← leftInverse_map_fst_map_inl (R := R) (M := M) (N := R) (contractLeft _ _),
+    ← contractLeft_coprod_map_inl φ (LinearMap.toSpanSingleton R R x),
+    hD, contractLeft_comm, map_neg]
+
+end ExteriorAlgebra

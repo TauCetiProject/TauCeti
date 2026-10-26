@@ -510,6 +510,13 @@ end AddCommGroup
 
 namespace Assignment
 
+/-- Subtracting a subgroup-valued reference preserves membership on each arrow. -/
+theorem sub_apply_mem_iff [AddGroup K] {M : Type*} [SetLike M K]
+    [AddSubgroupClass M K] {H : M} {f h : Assignment Q K} {x y : V} (e : Q x y)
+    (hh : h e ∈ H) : (f - h) e ∈ H ↔ f e ∈ H := by
+  simpa only [Pi.sub_apply, sub_eq_add_neg] using
+    add_mem_cancel_right (y := f e) (neg_mem hh)
+
 section Algebra
 
 variable {L F : Type*} [FunLike F K L]

@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.Group
+public import Mathlib.Dynamics.Flow
+public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.Quotient.Descent
 public import TauCeti.Topology.MappingTorus.Basic
@@ -33,6 +34,13 @@ of `t`. It is `C^n`, and for each real `t` the map `x ↦ [t, x]` is an injectiv
 onto the fibre over the class of `t`. Two choices of the lift `t` differ by an integer `k`, and the
 corresponding inclusions differ by `φ ^ k`.
 
+Translating the real coordinate, `[t, x] ↦ [t + s, x]`, is the suspension flow
+`TauCeti.SmoothMappingTorus.flow φ`, a complete flow on `Y_φ` that is jointly `C^n` in time and
+space when `M` is a locally compact Hausdorff `C^n` manifold. It covers the rotation of the
+circle, and its time-one map returns the fibre at height `t` to itself by `φ`. So its closed orbits
+are those through the periodic points of `φ`, and the orbit through a point of least period `d`
+has least period `d`.
+
 Tau Ceti's topological mapping torus `TauCeti.MappingTorus` of a homeomorphism `ψ` identifies
 `(ψ x, t + 1)` with `(x, t)`. The smooth mapping torus of `φ` is homeomorphic to the topological
 mapping torus of `φ⁻¹` (`TauCeti.SmoothMappingTorus.homeomorphMappingTorus`), compatibly with the
@@ -45,6 +53,8 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
 * `TauCeti.SmoothMappingTorus φ`: the orbit space of this action, the smooth mapping torus.
 * `TauCeti.SmoothMappingTorus.mk φ t x`: the class of `(t, x)`.
 * `TauCeti.SmoothMappingTorus.proj φ`: the projection to the circle `UnitAddCircle`.
+* `TauCeti.SmoothMappingTorus.flow φ`: the suspension flow `[t, x] ↦ [t + s, x]`.
+* `TauCeti.SmoothMappingTorus.flowDiffeomorph φ s`: its time-`s` map, as a diffeomorphism.
 * `TauCeti.SmoothMappingTorus.homeomorphMappingTorus φ`: the homeomorphism with the topological
   mapping torus of `φ⁻¹`.
 
@@ -60,6 +70,13 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
   points of `ℝ × M` have the same class.
 * `TauCeti.SmoothMappingTorus.contMDiff_proj`, `TauCeti.SmoothMappingTorus.range_mk`: the
   projection is `C^n`, and its fibres are the images of the fibre inclusions.
+* `TauCeti.SmoothMappingTorus.flow_one_mk`: the time-one map of the suspension flow is `φ` on
+  each fibre.
+* `TauCeti.SmoothMappingTorus.isFixedPt_flow_mk_iff`: `[t, x]` is fixed by the time-`s` map
+  exactly when `s` is an integer `k` and `x` is a fixed point of `φ ^ k`.
+* `TauCeti.SmoothMappingTorus.isFixedPt_flow_mk_iff_mem_zmultiples`: the periods of the orbit
+  through `[t, x]` are the integer multiples of the minimal period of `x` under `φ`.
+* `TauCeti.SmoothMappingTorus.contMDiff_uncurry_flow`: the suspension flow is jointly `C^n`.
 
 ## References
 
@@ -338,6 +355,140 @@ theorem contMDiff_proj [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] :
     ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (proj φ) :=
   (contMDiff_orbitRelQuotientLift_iff le_rfl).2
     ((AddCircle.contMDiff_coe 1 n).comp (contMDiff_fst.comp (contMDiff_ofProd_symm φ n)))
+
+/-! ### The suspension flow -/
+
+/-- The time-`s` map `[t, x] ↦ [t + s, x]` of the suspension flow, before it is bundled as a
+flow. -/
+private def translate (s : ℝ) : SmoothMappingTorus φ → SmoothMappingTorus φ :=
+  MulAction.orbitRelQuotientLift
+    (fun z ↦ mk φ (((ofProd φ).symm z).1 + s) ((ofProd φ).symm z).2) fun k z ↦ by
+      rw [ofProd_symm_smul, add_right_comm, mk_add_intCast]
+      simp
+
+/-- The time-`s` map sends `[t, x]` to `[t + s, x]`. -/
+private theorem translate_mk (s t : ℝ) (x : M) : translate φ s (mk φ t x) = mk φ (t + s) x := by
+  rw [translate, mk, MulAction.orbitRelQuotientLift_mk, Equiv.symm_apply_apply]
+
+/-- The suspension flow of `φ` on its mapping torus: the time-`s` map translates the real
+coordinate, `[t, x] ↦ [t + s, x]` (`TauCeti.SmoothMappingTorus.flow_mk`). It covers the rotation
+of the circle by `s` (`TauCeti.SmoothMappingTorus.proj_flow`), and its time-one map returns each
+fibre to itself by `φ` (`TauCeti.SmoothMappingTorus.flow_one_mk`). -/
+def flow : Flow ℝ (SmoothMappingTorus φ) where
+  toFun := translate φ
+  cont' := by
+    -- `ℝ × Y_φ` is the open quotient of `ℝ × Cover φ`, where the flow is a translation.
+    refine (IsOpenQuotientMap.id.prodMap (MulAction.isOpenQuotientMap_quotientMk
+      (Γ := Multiplicative ℤ) (T := Cover φ))).continuous_comp_iff.1 ?_
+    refine ((continuous_uncurry_mk φ).comp
+      ((((continuous_ofProd_symm φ).fst.comp continuous_snd).add continuous_fst).prodMk
+        ((continuous_ofProd_symm φ).snd.comp continuous_snd))).congr fun ⟨s, w⟩ ↦ ?_
+    obtain ⟨⟨t, x⟩, rfl⟩ := (ofProd φ).surjective w
+    exact (translate_mk φ s t x).symm
+  map_add' s₁ s₂ z := by
+    obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
+    simp only [Function.uncurry_apply_pair, translate_mk, add_assoc, add_comm s₂]
+  map_zero' z := by
+    obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
+    simp only [Function.uncurry_apply_pair, translate_mk, add_zero]
+
+/-- The suspension flow translates the real coordinate: `[t, x] ↦ [t + s, x]`. -/
+@[simp]
+theorem flow_mk (s t : ℝ) (x : M) : flow φ s (mk φ t x) = mk φ (t + s) x :=
+  translate_mk φ s t x
+
+/-- The suspension flow covers the rotation of the circle: it moves the projection by `s`. -/
+@[simp]
+theorem proj_flow (s : ℝ) (z : SmoothMappingTorus φ) : proj φ (flow φ s z) = proj φ z + s := by
+  obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
+  simp
+
+/-- The time-`k` map of the suspension flow, for an integer `k`, returns each fibre to itself
+by `φ ^ k`. -/
+theorem flow_intCast_mk (k : ℤ) (t : ℝ) (x : M) : flow φ k (mk φ t x) = mk φ t ((φ ^ k) x) := by
+  simp
+
+/-- The time-one map of the suspension flow returns each fibre to itself by `φ`: it is the first
+return map of the flow to the fibre at height `t`. -/
+theorem flow_one_mk (t : ℝ) (x : M) : flow φ 1 (mk φ t x) = mk φ t (φ x) := by
+  simp
+
+/-- A point `[t, x]` is fixed by the time-`s` map of the suspension flow exactly when `s` is an
+integer `k` and `x` is a fixed point of `φ ^ k`. So the closed orbits of the flow are those
+through the periodic points of `φ`, with integer periods. -/
+theorem isFixedPt_flow_mk_iff {s t : ℝ} {x : M} :
+    Function.IsFixedPt (flow φ s) (mk φ t x) ↔
+      ∃ k : ℤ, s = k ∧ Function.IsFixedPt (φ ^ k) x := by
+  rw [Function.IsFixedPt, flow_mk, mk_eq_mk_iff]
+  refine exists_congr fun k ↦ and_congr (add_right_inj t) ?_
+  rw [Function.IsFixedPt, zpow_neg, eq_comm, Diffeomorph.inv_apply]
+  exact ⟨fun h ↦ by rw [← h, Diffeomorph.apply_symm_apply, h],
+    fun h ↦ by rw [← h, Diffeomorph.symm_apply_apply, h]⟩
+
+/-- The periods of the orbit of the suspension flow through `[t, x]` are the integer multiples of
+the minimal period of `x` under `φ`. So the orbit through a periodic point of least period `d` is
+closed with least period `d`, and the orbit through a point that is not periodic is not closed. -/
+theorem isFixedPt_flow_mk_iff_mem_zmultiples {s t : ℝ} {x : M} :
+    Function.IsFixedPt (flow φ s) (mk φ t x) ↔
+      s ∈ AddSubgroup.zmultiples (Function.minimalPeriod φ x : ℝ) := by
+  have h := φ.isFixedPt_zpow_iff_minimalPeriod_dvd x
+  rw [isFixedPt_flow_mk_iff, AddSubgroup.mem_zmultiples_iff]
+  constructor
+  · rintro ⟨k, rfl, hk⟩
+    obtain ⟨m, rfl⟩ := (h k).1 hk
+    exact ⟨m, by push_cast; ring⟩
+  · rintro ⟨m, rfl⟩
+    exact ⟨m * Function.minimalPeriod φ x, by push_cast; ring, (h _).2 (dvd_mul_left _ _)⟩
+
+section Manifold
+
+variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M]
+
+/-- The suspension flow is jointly `C^n` in time and space. -/
+theorem contMDiff_uncurry_flow :
+    ContMDiff (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (𝓘(ℝ).prod I) n (Function.uncurry (flow φ)) := by
+  -- Precomposed with the quotient map `ℝ × M → Y_φ` in the second factor, the flow is
+  -- `(s, t, x) ↦ [t + s, x]`.
+  rw [← (isLocalDiffeomorph_uncurry_mk φ).contMDiff_comp_prodMap_iff (uncurry_mk_surjective φ)
+    le_rfl]
+  have h : Function.uncurry (flow φ) ∘ Prod.map id (Function.uncurry (mk φ)) =
+      Function.uncurry (mk φ) ∘ fun p : ℝ × ℝ × M ↦ (p.2.1 + p.1, p.2.2) := by
+    funext ⟨s, t, x⟩
+    simp
+  rw [h]
+  exact (contMDiff_uncurry_mk φ).comp
+    (((contMDiff_fst.comp contMDiff_snd).add contMDiff_fst).prodMk
+      (contMDiff_snd.comp contMDiff_snd))
+
+/-- Each time-`s` map of the suspension flow is `C^n`. -/
+theorem contMDiff_flow (s : ℝ) : ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) n (flow φ s) :=
+  (contMDiff_uncurry_flow φ).comp (contMDiff_const.prodMk contMDiff_id)
+
+/-- The time-`s` map of the suspension flow, as a `C^n` diffeomorphism of the mapping torus with
+inverse the time-`(-s)` map. -/
+def flowDiffeomorph (s : ℝ) :
+    SmoothMappingTorus φ ≃ₘ^n⟮𝓘(ℝ).prod I, 𝓘(ℝ).prod I⟯ SmoothMappingTorus φ where
+  toEquiv := ((flow φ).toHomeomorph s).toEquiv
+  contMDiff_toFun := contMDiff_flow φ s
+  contMDiff_invFun := contMDiff_flow φ (-s)
+
+/-- The diffeomorphism `flowDiffeomorph φ s` is the time-`s` map of the suspension flow. -/
+@[simp]
+theorem coe_flowDiffeomorph (s : ℝ) : ⇑(flowDiffeomorph φ s) = flow φ s := (rfl)
+
+/-- The inverse of the time-`s` map of the suspension flow is its time-`(-s)` map. -/
+@[simp]
+theorem flowDiffeomorph_symm (s : ℝ) : (flowDiffeomorph φ s).symm = flowDiffeomorph φ (-s) :=
+  Diffeomorph.ext fun _ ↦ (rfl)
+
+/-- Composing the time-`s` and time-`r` maps of the suspension flow gives its time-`(r + s)`
+map. -/
+@[simp]
+theorem flowDiffeomorph_trans (s r : ℝ) :
+    (flowDiffeomorph φ s).trans (flowDiffeomorph φ r) = flowDiffeomorph φ (r + s) :=
+  Diffeomorph.ext fun z ↦ ((flow φ).map_add r s z).symm
+
+end Manifold
 
 /-! ### Comparison with the topological mapping torus -/
 
