@@ -103,6 +103,8 @@ of adeles, which only uses that these components are natural in `E` and send `x 
   the corresponding equation at an infinite place.
 * `exists_ideleCoeffComponent_ideleCoeffOfIntermediateField_eq`: the embeddings reading a chosen
   finite-place coordinate can be chosen simultaneously for all ideles of a finite subextension.
+* `exists_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField_eq`: the corresponding
+  statement at an infinite place.
 * `TauCeti.ClassFieldTheory.finite_setOfPred_ideleBrLocalization_ne_zero`: a class has nonzero
   localization at only finitely many finite places.
 * `TauCeti.ClassFieldTheory.ideleLocalization_principalIdele`: on principal idele classes the
@@ -543,6 +545,31 @@ theorem toMul_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField_eq_map_i
   rw [h]
   simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,
     GlobalNumberFields.infiniteSemilocalEquiv_infiniteAdeleSemilocalHom, Pi.evalAlgHom_apply]
+
+open scoped NumberField.LiesOver in
+/-- Every infinite completion coordinate of an idele of a finite subextension is a coordinate of
+the corresponding idele of `Kˢ`, along suitable embeddings of separable closures. The subextension
+need not be normal over `K`, and the embeddings work simultaneously for all its ideles. -/
+theorem exists_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField_eq
+    {E : IntermediateField K (SeparableClosure K)} [NumberField E]
+    (u : InfinitePlace E) [u.LiesOver w] :
+    ∃ (τ' : u.Completion →ₐ[w.Completion] SeparableClosure w.Completion)
+      (τ : SeparableClosure K →ₐ[K] SeparableClosure w.Completion),
+      ∀ a : IdeleGroup (𝓞 E) E,
+      (ideleCoeffInfiniteComponent τ (ideleCoeffOfIntermediateField K E (.ofMul a))).toMul =
+        Units.map (τ' : u.Completion →* _) (u.ideleInfiniteCoord a) := by
+  have : CharZero w.Completion :=
+    charZero_of_injective_algebraMap (algebraMap K w.Completion).injective
+  let τ' : u.Completion →ₐ[w.Completion] SeparableClosure w.Completion := IsSepClosed.lift
+  let φ : E →ₐ[K] SeparableClosure w.Completion :=
+    (τ'.restrictScalars K).comp (IsScalarTower.toAlgHom K E u.Completion)
+  obtain ⟨τ, hτ⟩ := IsSepClosed.surjective_domRestrict_of_isSeparable (K := K)
+    E (E := SeparableClosure K) (M := SeparableClosure w.Completion) φ
+  refine ⟨τ', τ, fun a ↦
+    toMul_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField_eq_map_ideleInfiniteCoord
+      u τ' τ ?_ a⟩
+  intro x
+  exact congrArg (fun ψ : E →ₐ[K] _ ↦ ψ x) hτ
 
 /-- **Changing the embedding by an automorphism** `h` of `Kˢ` precomposes the coordinate at `w`
 with the action of `h` on the ideles. -/
