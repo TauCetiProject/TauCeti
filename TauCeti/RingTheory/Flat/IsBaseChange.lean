@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.Basic
-public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 import Mathlib.Algebra.FiveLemma
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
@@ -31,15 +30,11 @@ covers whose overlaps are only partially controlled:
 * if `h₂` is a base change and the induced map `S ⊗[R] M₃ → N₃` is only injective, then `h₁` is
   still a base change.
 
-Finally, the map induced on a finite product is injective as soon as each factor induces an
-injective map.
-
 ## Main results
 
 * `LinearMap.liftBaseChange_injective_of_isBaseChange`: injectivity of `S ⊗[R] M₁ → N₁`.
 * `IsBaseChange.of_left_exact_of_injective`: the variant of `IsBaseChange.of_left_exact` with an
   injective right base-change map.
-* `LinearMap.liftBaseChange_pi_injective`: injectivity on finite products.
 -/
 
 public section
@@ -56,14 +51,6 @@ variable {M₁ M₂ M₃ N₁ N₂ N₃ : Type*} [AddCommGroup M₁] [AddCommGro
   [IsScalarTower R S N₁] [IsScalarTower R S N₂] [IsScalarTower R S N₃]
   {h₁ : M₁ →ₗ[R] N₁} {h₂ : M₂ →ₗ[R] N₂} {h₃ : M₃ →ₗ[R] N₃}
   {f : M₁ →ₗ[R] M₂} {g : M₂ →ₗ[R] M₃} {f' : N₁ →ₗ[S] N₂} {g' : N₂ →ₗ[S] N₃}
-
-/-- The base change of `f` followed by the map induced by `h₂` is the map induced by `h₁` followed
-by `f'`. -/
-private lemma LinearMap.liftBaseChange_comp_baseChange
-    (comm : h₂.comp f = (f'.restrictScalars R).comp h₁) :
-    (h₂.liftBaseChange S).comp (f.baseChange S) = f'.comp (h₁.liftBaseChange S) := by
-  ext m
-  simpa using congr($comm m)
 
 /-- Let `S` be flat over `R` and let `f : M₁ → M₂` be injective. If `h₂ : M₂ → N₂` is a base change
 and `h₂ ∘ f = f' ∘ h₁`, then the map `S ⊗[R] M₁ → N₁` induced by `h₁` is injective. -/
@@ -102,21 +89,3 @@ theorem IsBaseChange.of_left_exact_of_injective [Module.Flat R S]
   exact IsBaseChange.of_equiv (LinearEquiv.ofBijective (h₁.liftBaseChange S) hb) fun x ↦ by simp
 
 end LeftExact
-
-/-- The map `S ⊗[R] (∀ i, M i) → ∀ i, N i` induced by a finite product of maps `f i : M i → N i` is
-injective if each `S ⊗[R] M i → N i` is. -/
-theorem LinearMap.liftBaseChange_pi_injective {ι : Type*} [Finite ι] {M N : ι → Type*}
-    [∀ i, AddCommGroup (M i)] [∀ i, AddCommGroup (N i)] [∀ i, Module R (M i)]
-    [∀ i, Module R (N i)] [∀ i, Module S (N i)] [∀ i, IsScalarTower R S (N i)]
-    (f : ∀ i, M i →ₗ[R] N i) (hf : ∀ i, Function.Injective ((f i).liftBaseChange S)) :
-    Function.Injective ((LinearMap.pi fun i ↦ f i ∘ₗ LinearMap.proj i).liftBaseChange S) := by
-  classical
-  cases nonempty_fintype ι
-  have h : (LinearMap.pi fun i ↦ f i ∘ₗ LinearMap.proj i).liftBaseChange S =
-      (LinearMap.pi fun i ↦ (f i).liftBaseChange S ∘ₗ LinearMap.proj i) ∘ₗ
-        (TensorProduct.piRight R S S M).toLinearMap := by
-    ext x i
-    simp
-  rw [h, LinearMap.coe_comp]
-  exact Function.Injective.comp (fun _ _ hxy ↦ funext fun i ↦ hf i (congrFun hxy i))
-    (TensorProduct.piRight R S S M).injective

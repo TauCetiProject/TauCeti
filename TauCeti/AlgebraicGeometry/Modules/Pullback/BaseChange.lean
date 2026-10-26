@@ -11,8 +11,8 @@ public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Sections
 public import Mathlib.Topology.QuasiSeparated
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
-import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 import TauCeti.RingTheory.Flat.IsBaseChange
+import TauCeti.RingTheory.TensorProduct.IsBaseChange
 /-!
 # Base change of quasicoherent sections
 
@@ -302,110 +302,6 @@ theorem isBaseChange_pullbackSections [M.IsQuasicoherent]
     Algebra.IsPushout.cancelBaseChange_symm_tmul, map_one]
   exact g.pullbackSectionsEquiv_one_tmul M hU (hU.preimage g) s
 end AlgebraicGeometry.Scheme.Hom
-
-namespace AlgebraicGeometry.Scheme.Modules
-
-section Restriction
-
-variable (T : Type u) [CommRing T] {Z : Scheme.{u}} [Z.Over (Spec (.of T))] (N : Z.Modules)
-  {W : Z.Opens} {ι : Type*} (V : ι → Z.Opens)
-
-/-- The restrictions of the sections over `W` to a family of opens `V i ≤ W`, linear over the
-base ring `T`, for any action of `T` on the sections over `W` through functions and for the action
-through functions on the sections over each `V i`. -/
-private def sectionsRestrictPiBaseLinear (hV : ∀ i, V i ≤ W) :
-    letI : Algebra T Γ(Z, W) := ((Z.baseRingToStructurePresheaf T).app (op W)).hom.toAlgebra
-    ∀ [Module T Γ(N, W)] [IsScalarTower T Γ(Z, W) Γ(N, W)],
-      letI := fun i ↦ sectionsBaseModule T N (V i)
-      Γ(N, W) →ₗ[T] ∀ i, Γ(N, V i) := by
-  letI : Algebra T Γ(Z, W) := ((Z.baseRingToStructurePresheaf T).app (op W)).hom.toAlgebra
-  intro _ _
-  letI := fun i ↦ sectionsBaseModule T N (V i)
-  exact
-    { toFun s i := N.presheaf.map (homOfLE (hV i)).op s
-      map_add' _ _ := funext fun _ ↦ map_add _ _ _
-      map_smul' t s := funext fun i ↦ by
-        rw [← IsScalarTower.algebraMap_smul Γ(Z, W) t s, RingHom.id_apply]
-        exact presheaf_map_baseRingToStructurePresheaf_smul T N (homOfLE (hV i)) t s }
-
-private lemma sectionsRestrictPiBaseLinear_apply (hV : ∀ i, V i ≤ W) :
-    letI : Algebra T Γ(Z, W) := ((Z.baseRingToStructurePresheaf T).app (op W)).hom.toAlgebra
-    ∀ [Module T Γ(N, W)] [IsScalarTower T Γ(Z, W) Γ(N, W)] (s : Γ(N, W)) (i : ι),
-      sectionsRestrictPiBaseLinear T N V hV s i = N.presheaf.map (homOfLE (hV i)).op s := by
-  intro _ _ _ _
-  rfl
-
-/-- A section over `W` is determined by its restrictions to a family of opens covering `W`. -/
-private lemma sectionsRestrictPiBaseLinear_injective (hV : ∀ i, V i ≤ W) (hW : W ≤ ⨆ i, V i) :
-    letI : Algebra T Γ(Z, W) := ((Z.baseRingToStructurePresheaf T).app (op W)).hom.toAlgebra
-    ∀ [Module T Γ(N, W)] [IsScalarTower T Γ(Z, W) Γ(N, W)],
-      Function.Injective (sectionsRestrictPiBaseLinear T N V hV) := by
-  intro _ _ s t h
-  exact TopCat.Sheaf.eq_of_locally_eq' (⟨N.presheaf, N.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat Z)
-    V W (fun i ↦ homOfLE (hV i)) hW s t fun i ↦ congrFun h i
-
-variable {κ : Type*} (W' : κ → Z.Opens) (a b : κ → ι) (ha : ∀ p, W' p ≤ V (a p))
-  (hb : ∀ p, W' p ≤ V (b p))
-
-/-- The differences `s (a p)|_{W' p} - s (b p)|_{W' p}` of the restrictions of a family of sections
-over the `V i` to opens `W' p ≤ V (a p) ⊓ V (b p)`, linear over the base ring `T` acting through
-functions. -/
-private def sectionsDiffPiBaseLinear :
-    letI := fun i ↦ sectionsBaseModule T N (V i)
-    letI := fun p ↦ sectionsBaseModule T N (W' p)
-    (∀ i, Γ(N, V i)) →ₗ[T] ∀ p, Γ(N, W' p) :=
-  letI := fun i ↦ sectionsBaseModule T N (V i)
-  letI := fun p ↦ sectionsBaseModule T N (W' p)
-  LinearMap.pi fun p ↦
-    (((sectionsBasePresheafFunctor T).obj N).map (homOfLE (ha p)).op).hom ∘ₗ
-        LinearMap.proj (R := T) (φ := fun i ↦ ((sectionsBasePresheafFunctor T).obj N).obj
-          (op (V i))) (a p) -
-      (((sectionsBasePresheafFunctor T).obj N).map (homOfLE (hb p)).op).hom ∘ₗ
-        LinearMap.proj (R := T) (φ := fun i ↦ ((sectionsBasePresheafFunctor T).obj N).obj
-          (op (V i))) (b p)
-
-private lemma sectionsDiffPiBaseLinear_apply (s : ∀ i, Γ(N, V i)) (p : κ) :
-    sectionsDiffPiBaseLinear T N V W' a b ha hb s p =
-      N.presheaf.map (homOfLE (ha p)).op (s (a p)) -
-        N.presheaf.map (homOfLE (hb p)).op (s (b p)) :=
-  rfl
-
-/-- Families of sections over the `V i` whose restrictions agree on the opens `W' p` are exactly the
-restrictions of the sections over `W`, when the `V i` cover `W` and every pairwise intersection
-`V i ⊓ V j` lies in some `W' p` with `a p = i` and `b p = j`. -/
-private lemma exact_sectionsRestrictPiBaseLinear (hV : ∀ i, V i ≤ W) (hW : W ≤ ⨆ i, V i)
-    (hab : ∀ i j, ∃ p, a p = i ∧ b p = j ∧ V i ⊓ V j ≤ W' p) :
-    letI : Algebra T Γ(Z, W) := ((Z.baseRingToStructurePresheaf T).app (op W)).hom.toAlgebra
-    ∀ [Module T Γ(N, W)] [IsScalarTower T Γ(Z, W) Γ(N, W)],
-      Function.Exact (sectionsRestrictPiBaseLinear T N V hV)
-        (sectionsDiffPiBaseLinear T N V W' a b ha hb) := by
-  intro _ _ x
-  let F : TopCat.Sheaf AddCommGrpCat Z := ⟨N.presheaf, N.isSheaf⟩
-  constructor
-  · intro h
-    have hc : TopCat.Presheaf.IsCompatible F.obj V x := fun i j ↦ by
-      obtain ⟨p, rfl, rfl, hp⟩ := hab i j
-      have h' := congrFun h p
-      rw [sectionsDiffPiBaseLinear_apply, Pi.zero_apply, sub_eq_zero] at h'
-      have := congrArg (N.presheaf.map (homOfLE hp).op) h'
-      rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← Functor.map_comp,
-        ← Functor.map_comp] at this
-      -- Both sides restrict to `V (a p) ⊓ V (b p)`; morphisms between opens are unique.
-      exact this
-    obtain ⟨z, hz, -⟩ := F.existsUnique_gluing' V W (fun i ↦ homOfLE (hV i)) hW x hc
-    exact ⟨z, funext hz⟩
-  · rintro ⟨z, rfl⟩
-    funext p
-    rw [sectionsDiffPiBaseLinear_apply, sectionsRestrictPiBaseLinear_apply,
-      sectionsRestrictPiBaseLinear_apply, Pi.zero_apply, sub_eq_zero,
-      ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← Functor.map_comp,
-      ← Functor.map_comp]
-    -- Both sides restrict `z` to `W' p`; morphisms between opens are unique.
-    rfl
-
-end Restriction
-
-end AlgebraicGeometry.Scheme.Modules
 
 namespace AlgebraicGeometry.Scheme.Hom
 
