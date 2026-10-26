@@ -618,9 +618,10 @@ residue form of the unimodular rescaling of `N j`.
 
 If moreover the neighbouring constituents `N (j - 1)` and `N (j + 1)` are even at their own scales
 (the first condition is vacuous for `j = 0`), then the self-pairings `B x x` of these vectors agree
-with those of their projections modulo `π ^ (j + 2)`. At `π = 2` this says that the quadratic
-residue form `x ↦ 2 ^ (-j - 1) B x x` modulo `2` of a constituent between two constituents of type
-II is also pulled back from that constituent. -/
+with those of their projections modulo `π ^ (j + 2)`. At `π = 2` this says that for a constituent
+of type II between two constituents of type II, the quadratic residue form
+`x ↦ 2 ^ (-j - 1) B x x` modulo `2` is also pulled back from that constituent. In general the
+self-pairings need not be divisible by `π ^ (j + 1)`; only their differences are controlled. -/
 theorem IsJordanSplitting.exists_pow_succ_dvd_sub (h : B.IsJordanSplitting π N)
     (hπ : π ∈ nonZeroDivisors R) (j : ℕ) :
     ∃ f : M →ₗ[R] N j, (∀ x : N j, f x = x) ∧ (∀ x y : M, (∀ z, π ^ j ∣ B x z) →
