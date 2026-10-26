@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Translation
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.InvariantTheory
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Equivariance
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Descent
-import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ClosedPoints
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 import Mathlib.RingTheory.FiniteStability
@@ -117,18 +116,6 @@ theorem flat_coinvariants_of_surjective_comap [IsAlgClosed k]
       rw [hb, AlgebraicGeometry.Spec.map_apply]
       exact hg
   exact (HasRingHomProperty.Spec_iff (P := @Flat)).mp hflat
-
-/-- Linear reductivity of a closed subgroup survives every extension `K / k` of the base field:
-the quotient by the scalar-extended Hopf ideal is the scalar extension of the quotient
-coalgebra. -/
-theorem isLinearlyReductive_quotient_baseChangeHopfIdeal (K : Type u) [Field K] [Algebra k K]
-    (hI : Coalgebra.IsLinearlyReductive.{u, u, u} k (H ⧸ I.toIdeal)) :
-    Coalgebra.IsLinearlyReductive.{u, u, u} K
-      (CommHopfAlgCat.baseChange (K := K) H ⧸
-        (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I).toIdeal) :=
-  (Coalgebra.isLinearlyReductive_iff_of_coalgEquiv K
-    (CommHopfAlgCat.ofIso (CommHopfAlgCat.quotientBaseChangeIso (K := K) I)).toCoalgEquiv).mpr
-    (Coalgebra.IsLinearlyReductive.baseChange K hI)
 
 /-- The coordinate algebra of a geometrically reduced finite-type affine group over
 any field is faithfully flat over the invariants of a linearly reductive closed subgroup.

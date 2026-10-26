@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Coinvariants
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
-import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
 # Base change of affine homogeneous quotients
@@ -31,17 +29,13 @@ G_K/N_K ≅ Spec (K ⊗[k] O(G)^N).
 
 The quotient map sends a point `g : K ⊗[k] H → A` of `G_K` to its restriction
 `g ∘ (K ⊗ (B ↪ H))`. Morphisms from `Spec (K ⊗[k] B)` to an fppf sheaf over `K` are therefore
-exactly the natural maps from `G_K` invariant under right multiplication by `N_K`. In
-characteristic zero every affine group of finite type is smooth and every reductive group is
-linearly reductive, so the representability statement applies to every reductive closed subgroup.
+exactly the natural maps from `G_K` invariant under right multiplication by `N_K`.
 
 The field `K` need not be algebraic over `k`; the comparison of invariant algebras is
 `TauCeti.CommHopfAlgCat.coinvariantsBaseChangeEquiv`, which holds for every flat extension.
 
 ## Main declarations
 
-* `TauCeti.HopfIdeal.isIso_fppfHomogeneousQuotientToCoinvariantsPoints_baseChangeHopfIdeal`:
-  the quotient of the scalar-extended groups is represented by its own invariants.
 * `TauCeti.HopfIdeal.fppfHomogeneousQuotientBaseChangeIso`: **the identification
   `G_K/N_K ≅ Spec (K ⊗[k] O(G)^N)`**.
 * `TauCeti.HopfIdeal.fppfHomogeneousQuotientBaseChangeIso_hom_app_projection`: the quotient map
@@ -50,8 +44,6 @@ The field `K` need not be algebraic over `k`; the comparison of invariant algebr
   `HopfIdeal.fppfHomogeneousQuotientProjection_comp_fppfHomogeneousQuotientBaseChangeIso_hom`.
 * `TauCeti.HopfIdeal.baseChangeCoinvariantsPointsHomEquiv`: the universal property of
   `Spec (K ⊗[k] O(G)^N)` as the quotient `G_K/N_K`.
-* `HopfIdeal.isIso_fppfHomogeneousQuotientToCoinvariantsPoints_baseChangeHopfIdeal_of_reductive`:
-  the characteristic-zero form for reductive subgroups.
 
 ## References
 
@@ -73,27 +65,6 @@ universe u
 variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{u} k}
   [Algebra.FiniteType k H] [Algebra.IsGeometricallyReduced k H] (I : HopfIdeal k H)
   (K : Type u) [Field K] [Algebra k K]
-
-/-- Geometric reducedness of a finite-type affine group survives every extension of the base
-field, not only algebraic ones. -/
-private theorem isGeometricallyReduced_baseChange :
-    Algebra.IsGeometricallyReduced K (CommHopfAlgCat.baseChange (K := K) H) :=
-  ((geometricallyReducedCommHopfAlgProperty.of_isGeometricallyReduced H).baseChange
-    K).isGeometricallyReduced
-
-attribute [local instance] isGeometricallyReduced_baseChange
-
-/-- **Base change of the affine homogeneous quotient, representability.** For a linearly
-reductive closed subgroup `N` of a geometrically reduced affine group `G` of finite type over a
-field `k`, and any field extension `K / k`, restriction to invariant functions identifies the
-quotient `G_K/N_K` of the scalar-extended groups with the sheaf of points of the spectrum of its
-invariants. -/
-theorem isIso_fppfHomogeneousQuotientToCoinvariantsPoints_baseChangeHopfIdeal
-    (hlr : Coalgebra.IsLinearlyReductive.{u, u, u} k (H ⧸ I.toIdeal)) :
-    IsIso (fppfHomogeneousQuotientToCoinvariantsPoints
-      (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I)) :=
-  isIso_fppfHomogeneousQuotientToCoinvariantsPoints_of_isLinearlyReductive _
-    (I.isLinearlyReductive_quotient_baseChangeHopfIdeal K hlr)
 
 /-- **The affine homogeneous quotient commutes with extension of the base field.** For a linearly
 reductive closed subgroup `N` of a geometrically reduced affine group `G` of finite type over a
@@ -200,19 +171,5 @@ theorem baseChangeCoinvariantsPointsHomEquiv_symm_apply
   (I.baseChangeCoinvariantsPointsHomEquiv_apply K hlr F _).symm.trans
     (congrArg Subtype.val ((I.baseChangeCoinvariantsPointsHomEquiv K hlr F).apply_symm_apply
       ⟨f, hf⟩))
-
-omit [Algebra.FiniteType k H] [Algebra.IsGeometricallyReduced k H] in
-/-- **Base change of Matsushima's quotient, in characteristic zero.** For a reductive closed
-subgroup `N` of an affine group `G` of finite type over a field `k` of characteristic zero, and any
-field extension `K / k`, restriction to invariant functions identifies the quotient `G_K/N_K` with
-the sheaf of points of the spectrum of its invariants. -/
-theorem isIso_fppfHomogeneousQuotientToCoinvariantsPoints_baseChangeHopfIdeal_of_reductive
-    [CharZero k] {H : FiniteTypeCommHopfAlgCat.{u, u} k} (I : HopfIdeal k H)
-    (hred : reductiveCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.quotient H I)) :
-    IsIso (fppfHomogeneousQuotientToCoinvariantsPoints
-      (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (H := H.obj) I)) := by
-  have : IsReduced H := HopfAlgebra.isReduced_of_charZero k H
-  exact isIso_fppfHomogeneousQuotientToCoinvariantsPoints_baseChangeHopfIdeal I K
-    ((linearlyReductiveCommHopfAlgProperty_iff k _).mp hred.linearlyReductive)
 
 end TauCeti.HopfIdeal
