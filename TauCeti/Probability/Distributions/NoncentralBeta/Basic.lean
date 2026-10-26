@@ -307,6 +307,19 @@ theorem nullSingletonClass_noncentralBetaMeasure (ha : 0 < a) (b : ℝ) (l : ℝ
     NullSingletonClass (noncentralBetaMeasure a b l) :=
   ⟨fun x ↦ absolutelyContinuous_noncentralBetaMeasure ha b l (measure_singleton x)⟩
 
+/-- Every noncentral Beta law gives zero mass to each nonzero point; only first shape zero has an
+atom, and it sits at zero. -/
+theorem noncentralBetaMeasure_singleton_of_ne_zero {x : ℝ} (hx : x ≠ 0) (a b : ℝ) (l : ℝ≥0) :
+    noncentralBetaMeasure a b l {x} = 0 := by
+  by_cases h : 0 ≤ a ∧ 0 < b
+  · rw [noncentralBetaMeasure_apply h.1 h.2, ENNReal.tsum_eq_zero]
+    intro j
+    rcases (add_nonneg h.1 j.cast_nonneg).eq_or_lt' with hj | hj
+    · simp [hj, hx.symm]
+    · rw [noncentralBetaComponent_of_pos hj, betaMeasure_eq_withDensity_ofReal]
+      simp [withDensity_absolutelyContinuous _ _ (measure_singleton x)]
+  · simp [noncentralBetaMeasure_of_not h]
+
 /-- Every valid law other than the Dirac law at `a = l = 0` dominates a positive-weight Beta
 component with positive first shape. -/
 theorem exists_smul_betaMeasure_le_noncentralBetaMeasure (ha : 0 ≤ a) (hb : 0 < b)
