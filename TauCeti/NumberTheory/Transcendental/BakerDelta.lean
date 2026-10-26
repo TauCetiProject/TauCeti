@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Binomial
 import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.Data.Nat.Choose.Bounds
 import TauCeti.Analysis.Polynomial.L1Norm
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Baker's binomial polynomials
@@ -69,28 +70,17 @@ open scoped Nat
 
 namespace TauCeti
 
-/-- `Δ(X; k) = multichoose (X + 1) k` is the rising factorial of length `k` started at `X + 1`,
-normalized by `k!`. -/
-private theorem multichoose_X_add_one_eq (k : ℕ) :
-    Ring.multichoose (X + 1 : ℚ[X]) k =
-      C ((k ! : ℚ)⁻¹) * (ascPochhammer ℚ k).comp (X + 1) := by
-  have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer (X + 1 : ℚ[X]) k
-  rw [ascPochhammer_smeval_eq_eval, ← ascPochhammer_map (algebraMap ℚ ℚ[X]),
-    eval_map_algebraMap, ← comp_eq_aeval] at h
-  rw [← h, nsmul_eq_mul, ← C_eq_natCast, ← mul_assoc, ← C_mul,
-    inv_mul_cancel₀ (by positivity), C_1, one_mul]
-
-/-- The product recursion: `Δ(X; k + 1) = Δ(X; k) (X / (k + 1) + 1)`. -/
+/-- The product recursion: `Δ(X; k + 1) = Δ(X; k) (X / (k + 1) + 1)`, the case `r = X + 1` of
+`TauCeti.Ring.add_one_nsmul_multichoose_add_one`. -/
 private theorem multichoose_X_add_one_succ (k : ℕ) :
     Ring.multichoose (X + 1 : ℚ[X]) (k + 1) =
       Ring.multichoose (X + 1 : ℚ[X]) k * (C ((k + 1 : ℚ)⁻¹) * X + 1) := by
-  have hk : ((k : ℚ) + 1) ≠ 0 := by positivity
-  have h : C ((k + 1 : ℚ)⁻¹) * (C (k : ℚ) + 1) = 1 := by
-    rw [← C_1, ← C_add, ← C_mul, inv_mul_cancel₀ hk, C_1]
-  rw [multichoose_X_add_one_eq, multichoose_X_add_one_eq, ascPochhammer_succ_right, mul_comp,
-    add_comp, X_comp, ← C_eq_natCast, C_comp, Nat.factorial_succ, Nat.cast_mul, Nat.cast_succ,
-    mul_inv, C_mul]
-  linear_combination (C ((k ! : ℚ)⁻¹) * (ascPochhammer ℚ k).comp (X + 1)) * h
+  have h : C ((k + 1 : ℚ)⁻¹) * ((k : ℚ[X]) + 1) = 1 := by
+    simpa using congrArg C (inv_mul_cancel₀ (by positivity : (k + 1 : ℚ) ≠ 0))
+  rw [← nsmul_right_inj k.succ_ne_zero, TauCeti.Ring.add_one_nsmul_multichoose_add_one,
+    nsmul_eq_mul]
+  push_cast
+  linear_combination -(Ring.multichoose (X + 1 : ℚ[X]) k * X) * h
 
 /-- `Δ(L X; k)` has integral coefficients when each of `1, …, k` divides `L`: it is the product of
 the integral linear polynomials `1 + (L / j) X` for `1 ≤ j ≤ k`. -/
@@ -102,13 +92,11 @@ private theorem multichoose_X_add_one_comp_C_mul_X_mem_lifts {k : ℕ} {L : ℤ}
   | zero => simp
   | succ k ih =>
     obtain ⟨c, hc⟩ := hL (k + 1) (by simp)
-    have hk : ((k : ℚ) + 1) ≠ 0 := by positivity
     have hlin : (C ((k + 1 : ℚ)⁻¹) * X + 1).comp (C (L : ℚ) * X) =
         C (Int.castRingHom ℚ c) * X + 1 := by
-      simp only [add_comp, mul_comp, C_comp, X_comp, one_comp, ← mul_assoc, ← C_mul, hc,
-        eq_intCast]
-      push_cast
-      rw [inv_mul_cancel_left₀ hk]
+      have hc' : C ((k + 1 : ℚ)⁻¹) * (L : ℚ[X]) = c := by
+        simpa using congrArg C (show (k + 1 : ℚ)⁻¹ * L = c by rw [hc]; push_cast; field_simp)
+      simp [← mul_assoc, hc']
     rw [multichoose_X_add_one_succ, mul_comp, hlin]
     refine mul_mem (ih fun j hj => hL j ?_) (add_mem (mul_mem (C_mem_lifts _ c) (X_mem_lifts _))
       (one_mem _))
