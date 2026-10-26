@@ -54,16 +54,6 @@ lemma mapBifunctorMap_comp {K₁ L₁ M₁ : HomologicalComplex C₁ c₁}
   ext
   simp [NatTrans.naturality_assoc]
 
-end HomologicalComplex
-
-namespace CategoryTheory.Functor
-
-open HomologicalComplex
-
-variable [HasZeroMorphisms C₁] [HasZeroMorphisms C₂] [Preadditive D]
-  (F : C₁ ⥤ C₂ ⥤ D) [F.PreservesZeroMorphisms] [∀ X, (F.obj X).PreservesZeroMorphisms]
-  (c : ComplexShape J) [DecidableEq J] [TotalComplexShape c₁ c₂ c]
-
 /-- Totalization sends a zero morphism in the left argument to zero. -/
 @[simp]
 theorem mapBifunctorMap_zero_left (K L : HomologicalComplex C₁ c₁)
@@ -89,7 +79,9 @@ theorem mapBifunctorMap_zero_right {K L : HomologicalComplex C₁ c₁} (f : K �
   intro p q hpq
   simp only [ι_mapBifunctorMap, zero_f, Functor.map_zero, comp_zero, zero_comp]
 
-end CategoryTheory.Functor
+
+end HomologicalComplex
+
 
 namespace CategoryTheory.Functor
 
@@ -130,7 +122,7 @@ theorem mapBifunctorLeft_map (K : HomologicalComplex C₁ c₁)
 instance mapBifunctorLeft_preservesZeroMorphisms (K : HomologicalComplex C₁ c₁)
     [∀ N : HomologicalComplex C₂ c₂, HasMapBifunctor K N F c] :
     (F.mapBifunctorLeft c₂ c K).PreservesZeroMorphisms where
-  map_zero N N' := F.mapBifunctorMap_zero_right c (𝟙 K) N N'
+  map_zero N N' := HomologicalComplex.mapBifunctorMap_zero_right F c (𝟙 K) N N'
 
 /-- A map of the chosen left complexes induces a natural map of their totalizations. -/
 def mapBifunctorLeftMap {K L : HomologicalComplex C₁ c₁} (f : K ⟶ L)
@@ -174,7 +166,7 @@ theorem mapBifunctorLeftMap_zero (K L : HomologicalComplex C₁ c₁)
   apply NatTrans.ext
   funext N
   simp only [mapBifunctorLeftMap_app]
-  exact F.mapBifunctorMap_zero_left c K L (𝟙 N)
+  exact HomologicalComplex.mapBifunctorMap_zero_left F c K L (𝟙 N)
 
 variable [∀ (K : HomologicalComplex C₁ c₁) (N : HomologicalComplex C₂ c₂),
   HasMapBifunctor K N F c]
@@ -191,6 +183,6 @@ instance map₂HomologicalComplex_preservesZeroMorphisms :
   map_zero K L := by
     apply NatTrans.ext
     funext N
-    exact F.mapBifunctorMap_zero_left c K L (𝟙 N)
+    exact HomologicalComplex.mapBifunctorMap_zero_left F c K L (𝟙 N)
 
 end CategoryTheory.Functor
