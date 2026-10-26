@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Trace
-public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+import TauCeti.LinearAlgebra.PerfectPairing.Span
 
 /-!
 # Perfect trace pairings between signed graded corners
@@ -70,47 +70,12 @@ private theorem trace_dual_spans_bijective (U W : Submodule k Z) (b : ZigzagBasi
     (hU : U = k ∙ zigzagAlgebraBasis k G b)
     (hW : W = k ∙ zigzagAlgebraBasis k G (zigzagDualIndex G b)) :
     Function.Bijective ((T).compl₁₂ U.subtype W.subtype) := by
-  classical
-  let x₀ : U := ⟨zigzagAlgebraBasis k G b, by
-    rw [hU]
-    exact Submodule.mem_span_singleton_self _⟩
-  let y₀ : W := ⟨zigzagAlgebraBasis k G (zigzagDualIndex G b), by
-    rw [hW]
-    exact Submodule.mem_span_singleton_self _⟩
-  let p := (T).compl₁₂ U.subtype W.subtype
-  have hx (x : U) : ∃ a : k, x = a • x₀ := by
-    have hx' : (x : Z) ∈ k ∙ zigzagAlgebraBasis k G b := by
-      rw [← hU]
-      exact x.property
-    obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp hx'
-    exact ⟨a, Subtype.ext ha.symm⟩
-  have hy (y : W) : ∃ a : k, y = a • y₀ := by
-    have hy' : (y : Z) ∈ k ∙ zigzagAlgebraBasis k G (zigzagDualIndex G b) := by
-      rw [← hW]
-      exact y.property
-    obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp hy'
-    exact ⟨a, Subtype.ext ha.symm⟩
-  have hunit : p x₀ y₀ = 1 := by
-    -- Restriction and composition leave subtype/linear-map coercions; the Gram formula uses
-    -- the corresponding product of the two ambient basis vectors.
-    change zigzagAlgebraTrace k G
-      (zigzagAlgebraBasis k G b * zigzagAlgebraBasis k G (zigzagDualIndex G b)) = 1
-    rw [zigzagAlgebraTrace_zigzagAlgebraBasis_mul]
-    simp
-  -- Name the same restricted bilinear map used in the spanning calculations above.
-  change Function.Bijective p
-  constructor
-  · intro x y hxy
-    obtain ⟨a, rfl⟩ := hx x
-    obtain ⟨b, rfl⟩ := hx y
-    have hab := DFunLike.congr_fun hxy y₀
-    have hab' : a = b := by
-      simpa only [map_smul, LinearMap.smul_apply, hunit, smul_eq_mul, mul_one] using hab
-    rw [hab']
-  · intro f
-    refine ⟨f y₀ • x₀, LinearMap.ext fun y ↦ ?_⟩
-    obtain ⟨a, rfl⟩ := hy y
-    simp only [map_smul, LinearMap.smul_apply, hunit, smul_eq_mul, mul_one]
+  rw [hU, hW]
+  apply LinearMap.compl₁₂_span_singleton_bijective_of_isUnit
+  -- The generator pairing is the ambient multiplication--trace Gram entry.
+  rw [LinearMap.compr₂_apply, LinearMap.mul_apply',
+    zigzagAlgebraTrace_zigzagAlgebraBasis_mul, ite_eq_left rfl]
+  exact isUnit_one
 
 private theorem trace_dual_spans_isPerfPair (U W : Submodule k Z) (b : ZigzagBasisIndex G)
     (hU : U = k ∙ zigzagAlgebraBasis k G b)

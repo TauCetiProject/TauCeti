@@ -133,6 +133,17 @@ namespace SmoothBundleForm
 
 variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 
+/-- Two smooth bundle-valued forms are equal when they agree on every tangent tuple. -/
+-- The proof uses Mathlib's `ContinuousAlternatingMap.ext` for the underlying alternating maps.
+@[ext]
+theorem ext {φ ψ : SmoothBundleForm I F V k}
+    (h : ∀ x v, φ.1 x v = ψ.1 x v) : φ = ψ := by
+  apply Subtype.ext
+  funext x
+  apply ContinuousAlternatingMap.ext
+  intro v
+  exact h x v
+
 /-- The smooth section underlying a smooth bundle-valued differential form. -/
 def toContMDiffSection (φ : SmoothBundleForm I F V k) :
     ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
@@ -276,19 +287,6 @@ theorem eval₂_swap (φ : SmoothBundleForm I F V 2) (x : M)
   calc
     φ.eval₂ x v w = - -φ.eval₂ x v w := by simp
     _ = -φ.eval₂ x w v := by rw [h']
-
-/-- A bundle-valued smooth two-form is determined by its values on ordered pairs. -/
-@[ext]
-theorem ext {φ ψ : SmoothBundleForm I F V 2}
-    (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) :
-    φ = ψ := by
-  apply Subtype.ext
-  funext x
-  apply ContinuousAlternatingMap.ext
-  intro v
-  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
-  rw [hv]
-  simpa [eval₂] using h x (v 0) (v 1)
 
 @[simp]
 theorem eval₂_apply (φ : SmoothBundleForm I F V 2) (x : M)

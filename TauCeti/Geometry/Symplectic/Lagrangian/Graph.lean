@@ -77,9 +77,12 @@ theorem IsNondegenerate.isLagrangianMap_graph_iff
     have hbundle : (SmoothForm.mpullback φ φ.contMDiff τ).toSmoothBundleForm =
         σ.toSmoothBundleForm := by
       apply SmoothBundleForm.ext
-      intro x v w
+      intro x v
+      have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+      rw [hv]
+      rw [← SmoothBundleForm.eval₂_apply, ← SmoothBundleForm.eval₂_apply]
       rw [SmoothForm.eval₂_mpullback]
-      exact (hpoint x).mp (h x) v w
+      exact (hpoint x).mp (h x) (v 0) (v 1)
     apply Subtype.ext
     exact congrArg
       (fun q : SmoothBundleForm _ ℝ (Bundle.Trivial M ℝ) 2 => q.1) hbundle
