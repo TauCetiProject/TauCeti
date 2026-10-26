@@ -43,6 +43,16 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι]
 
+private theorem integral_prod_descFactorial_pi_poissonMeasure_mul_toNNReal_ae
+    (r p₀ : ℝ) (p : ι → ℝ≥0) (n : ι → ℕ) :
+    (fun x : ℝ => ∫ k : ι → ℕ, ∏ i, ((k i).descFactorial (n i) : ℝ)
+      ∂Measure.pi (fun i => poissonMeasure (p i * x.toNNReal))) =ᵐ[gammaMeasure r p₀]
+      fun x => (∏ i, (p i : ℝ) ^ n i) * x ^ (∑ i, n i) := by
+  simp_rw [integral_prod_descFactorial_pi_poissonMeasure, NNReal.coe_mul, mul_pow,
+    Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum]
+  filter_upwards [ae_pos_gammaMeasure r p₀] with x hx
+  simp only [Real.coe_toNNReal _ hx.le]
+
 /-- Every mixed falling-factorial moment is finite, including the invalid zero-measure branches. -/
 theorem integrable_prod_descFactorial_negativeMultinomialMeasure (r p₀ : ℝ)
     (p : ι → ℝ≥0) (n : ι → ℕ) :
@@ -61,13 +71,10 @@ theorem integrable_prod_descFactorial_negativeMultinomialMeasure (r p₀ : ℝ)
     (.of_discrete)).2 ⟨?_, ?_⟩
   · exact Filter.Eventually.of_forall fun x =>
       integrable_prod_descFactorial_pi_poissonMeasure (fun i => p i * x.toNNReal) n
-  · simp_rw [Real.norm_of_nonneg (Finset.prod_nonneg fun _ _ => Nat.cast_nonneg _),
-      integral_prod_descFactorial_pi_poissonMeasure]
-    simp_rw [NNReal.coe_mul, mul_pow, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum]
-    refine ((integrable_pow_gammaMeasure hr hp₀ (∑ i, n i)).const_mul
-      (∏ i, (p i : ℝ) ^ n i)).congr ?_
-    filter_upwards [ae_pos_gammaMeasure r p₀] with x hx
-    simp only [Real.coe_toNNReal _ hx.le]
+  · simp_rw [Real.norm_of_nonneg (Finset.prod_nonneg fun _ _ => Nat.cast_nonneg _)]
+    exact ((integrable_pow_gammaMeasure hr hp₀ (∑ i, n i)).const_mul
+      (∏ i, (p i : ℝ) ^ n i)).congr
+        (integral_prod_descFactorial_pi_poissonMeasure_mul_toNNReal_ae r p₀ p n).symm
 
 /-- The mixed factorial moment of total order `N` is the rising factorial of `r` of order `N`
 times the product of the category-to-success weight ratios to their respective orders. -/
@@ -92,13 +99,9 @@ theorem integral_prod_descFactorial_negativeMultinomialMeasure {r p₀ : ℝ}
   have hint := integrable_prod_descFactorial_negativeMultinomialMeasure r p₀ p n
   rw [negativeMultinomialMeasure_of_pos hr hp₀ hp] at hint ⊢
   rw [Measure.integral_bind (measurable_pi_poissonMeasure_mul_toNNReal p).aemeasurable hint]
-  simp_rw [integral_prod_descFactorial_pi_poissonMeasure, NNReal.coe_mul, mul_pow,
-    Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum]
-  have hpow : (fun x : ℝ => (x.toNNReal : ℝ) ^ (∑ i, n i)) =ᵐ[gammaMeasure r p₀]
-      fun x => x ^ (∑ i, n i) := by
-    filter_upwards [ae_pos_gammaMeasure r p₀] with x hx
-    simp only [Real.coe_toNNReal _ hx.le]
-  rw [integral_const_mul, integral_congr_ae hpow, integral_pow_gammaMeasure hr hp₀]
+  rw [integral_congr_ae
+    (integral_prod_descFactorial_pi_poissonMeasure_mul_toNNReal_ae r p₀ p n),
+    integral_const_mul, integral_pow_gammaMeasure hr hp₀]
   rw [← Real.prod_range_add_mul_Gamma hr (∑ i, n i)]
   simp_rw [div_pow]
   rw [Finset.prod_div_distrib, Finset.prod_pow_eq_pow_sum]
