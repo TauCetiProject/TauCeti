@@ -918,7 +918,8 @@ theorem coe_isoMulEquivDeckRestrict_symm_apply (ψ : deck P.restrict)
   -- Evaluate the composite one identification at a time.
   (congrFun (P.coe_isoMulEquivDeck_symm_apply _) _).trans <|
     (Deck.conjMulEquiv_symm_apply_coe _ _ _ _).trans <|
-      (TopBranchedCover.coe_deckMulEquivDeckRestrict_symm_apply _ _ _).trans (rfl)
+      (TopBranchedCover.coe_deckMulEquivDeckRestrict_symm_apply _ _ _).trans <|
+        congrArg (fun f => (DFunLike.coe f x : P.X)) (MulEquiv.subgroupCongr_symm_apply _ ψ)
 
 end Deck
 
