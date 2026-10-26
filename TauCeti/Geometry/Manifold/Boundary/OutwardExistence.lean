@@ -75,7 +75,7 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
 
 /-- Every smooth finite-dimensional Hausdorff sigma-compact half-space manifold has a smooth field
 pointing outward along its boundary. -/
-theorem exists_isOutwardPointing :
+theorem exists_isOutwardPointingField :
     ∃ v : (x : M) → TangentSpace (𝓡∂ (n + 1)) x,
       IsOutwardPointingField v := by
   let v₀ : EuclideanSpace ℝ (Fin (n + 1)) := -EuclideanSpace.single 0 1
