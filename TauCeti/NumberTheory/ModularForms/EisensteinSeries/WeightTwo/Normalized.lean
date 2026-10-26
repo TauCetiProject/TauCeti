@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.DirichletCharacter.LValues
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.QExpansion
-import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.GaussSum
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
@@ -90,8 +89,9 @@ private lemma normalizedCharG2_scale_ne_zero [NeZero v] (hφ : φ.IsPrimitive) :
     (-8 * π ^ 2 / v ^ 2 * gaussSum φ⁻¹ stdAddChar : ℂ) ≠ 0 := by
   have hφinv : (φ⁻¹).IsPrimitive := by
     rwa [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
-  refine mul_ne_zero (div_ne_zero ?_ (pow_ne_zero _ (Nat.cast_ne_zero.mpr (NeZero.ne v))))
-    (DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hφinv (isPrimitive_stdAddChar v))
+  have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
+  refine mul_ne_zero (div_ne_zero ?_ (pow_ne_zero _ hv))
+    (DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hφinv (isPrimitive_stdAddChar v))
   simp [Real.pi_ne_zero]
 
 /-- **The positive coefficients of `E₂^{ψ,φ}`** are the twisted divisor sums
@@ -117,6 +117,8 @@ theorem qExpansion_normalizedCharG2MF_coeff_one (huv : u * v ∣ N) (h : ψ ≠ 
 
 /-- **The constant coefficient of `E₂^{ψ,φ}`** is `-B₂,φ / 4` when the first modulus is one, and
 zero otherwise. Primitivity is needed only for the second character. -/
+-- Rewrite before simplification turns the zeroth coefficient into a constant coefficient.
+@[simp↓]
 theorem qExpansion_normalizedCharG2MF_coeff_zero (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1)
     (hpar : ψ (-1) * φ (-1) = 1) (hφ : φ.IsPrimitive) :
     haveI : NeZero v := NeZero.of_dvd (dvd_of_mul_left_dvd huv)
@@ -134,8 +136,9 @@ theorem qExpansion_normalizedCharG2MF_coeff_zero (huv : u * v ∣ N) (h : ψ ≠
     have hφpar : φ (-1) = 1 := by
       simpa only [hψ, one_mul] using hpar
     rw [hψ, one_mul, inv_mul_eq_iff_eq_mul₀ (normalizedCharG2_scale_ne_zero φ hφ)]
+    have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
     have hτ : gaussSum φ stdAddChar ≠ 0 :=
-      DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hφ (isPrimitive_stdAddChar v)
+      DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hφ (isPrimitive_stdAddChar v)
     apply mul_left_cancel₀ hτ
     -- the row sum is a generalized Bernoulli number, and `g(φ) g(φ⁻¹) = φ(-1) v = v`
     have hB := φ.gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli hφ le_rfl
@@ -145,7 +148,6 @@ theorem qExpansion_normalizedCharG2MF_coeff_zero (huv : u * v ∣ N) (h : ψ ≠
     rw [ZMod.card, hφpar, one_mul] at hprod
     push_cast [Nat.factorial_two] at hB
     rw [hB]
-    have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
     calc
       _ = (2 * π * I) ^ 2 * -φ.generalizedBernoulli 2 / (2 * v) := by
         field_simp
@@ -292,6 +294,8 @@ theorem qExpansion_normalizedCharG2MFRaise_coeff_self (htuv : t * (u * v) ∣ N)
 
 /-- **The constant coefficient of `E₂^{ψ,φ,t}`** is that of `E₂^{ψ,φ}`: `-B₂,φ / 4` when the
 first modulus is one, and zero otherwise. -/
+-- Rewrite before the level-raise q-expansion is expanded.
+@[simp↓]
 theorem qExpansion_normalizedCharG2MFRaise_coeff_zero (htuv : t * (u * v) ∣ N)
     (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1) (hφ : φ.IsPrimitive) :
     haveI : NeZero v :=
