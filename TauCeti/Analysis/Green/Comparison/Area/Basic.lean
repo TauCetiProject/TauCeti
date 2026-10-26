@@ -32,7 +32,6 @@ namespace TauCeti.Green
 attribute [local instance] Complex.finrank_real_complex_fact
 
 /-- The normalized volume coefficient in the actual positive complex basis is one. -/
-@[simp]
 theorem complex_orientation_volumeForm_one_I :
     Complex.orientation.volumeFormL ![1, Complex.I] = 1 := by
   simpa [Complex.coe_basisOneI] using
