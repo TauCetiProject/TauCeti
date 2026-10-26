@@ -52,7 +52,7 @@ namespace TauCeti
 namespace PermutationTriple
 
 /-- The twenty-six ordered cycle data realized by connected degree-four permutation triples. -/
-@[expose] def degreeFourCycleData : Finset (Multiset ℕ × Multiset ℕ × Multiset ℕ) :=
+def degreeFourCycleData : Finset (Multiset ℕ × Multiset ℕ × Multiset ℕ) :=
   {({1, 1, 1, 1}, {4}, {4}),
     ({2, 1, 1}, {2, 2}, {4}), ({2, 1, 1}, {3, 1}, {4}),
     ({2, 1, 1}, {4}, {2, 2}), ({2, 1, 1}, {4}, {3, 1}),
@@ -143,6 +143,12 @@ theorem cycleData_mem_degreeFourCycleData (t : ConnectedTriple 4) :
     t.1.cycleData ∈ degreeFourCycleData := by
   rw [← image_cycleData_four]
   exact Finset.mem_image_of_mem _ (Finset.mem_univ t)
+
+/-- In the degree-four table, the cycle data whose first two partitions are both `[4]` have third
+partition `[1, 1, 1, 1]`, `[2, 2]` or `[3, 1]`. -/
+theorem four_four_mem_degreeFourCycleData_iff {m : Multiset ℕ} :
+    ({4}, {4}, m) ∈ degreeFourCycleData ↔ m = {1, 1, 1, 1} ∨ m = {2, 2} ∨ m = {3, 1} := by
+  simp [degreeFourCycleData]
 
 private theorem equivalent_of_cycleData_eq_two :
     ∀ t t' : ConnectedTriple 2, t.1.cycleData = t'.1.cycleData → Equivalent t.1 t'.1 := by

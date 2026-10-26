@@ -616,15 +616,10 @@ theorem cycleData_monodromyTriple_superellipticProj :
   have hmem : t.cycleData ∈ PermutationTriple.degreeFourCycleData :=
     PermutationTriple.cycleData_mem_degreeFourCycleData
       ⟨_, isConnected_monodromyTriple_superellipticProj ν⟩
-  rw [hcd] at hmem
-  simp only [PermutationTriple.degreeFourCycleData, Multiset.insert_eq_cons, Finset.mem_insert,
-    Prod.mk.injEq, Multiset.singleton_eq_cons_iff, OfNat.ofNat_ne_one, Multiset.cons_ne_zero,
-    and_self, true_and, false_and, Nat.reduceEqDiff, Multiset.singleton_ne_zero, Nat.succ_ne_self,
-    and_false, Finset.mem_singleton, false_or] at hmem
+  rw [hcd, PermutationTriple.four_four_mem_degreeFourCycleData_iff] at hmem
   obtain h | h | h := hmem
   · simp [h] at hcount
   · rw [hcd, h]
-    rfl
   · simp [h] at hcount
 
 /-- **The monodromy triple of the superelliptic curve is the Euclidean torus triple**, up to
