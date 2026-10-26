@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.ConstantSpeed
 public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
-public import TauCeti.Analysis.Green.Examples.CurveArea.SignedArea
+public import TauCeti.Analysis.Green.Examples.CurveArea.RectifiableSignedArea
 import TauCeti.Analysis.ODE.ScalarLinear
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
@@ -45,6 +45,13 @@ inequality `4π |signedArea γ a b| ≤ L²`
 exactly for constant curves and circles traversed once
 (`HasConstantSpeedOnWith.eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff`).
 
+Passing to the natural parameterization gives the isoperimetric inequality
+`4π |rectifiableSignedArea γ a b| ≤ L²` for every continuous closed plane curve, where `L` is its
+total variation and `TauCeti.rectifiableSignedArea` is the geometric signed area
+(`TauCeti.four_pi_mul_abs_rectifiableSignedArea_le`). No absolute continuity of the parameter is
+assumed. Equality holds exactly when the curve traverses a circle once, uniformly in arclength,
+or is constant (`TauCeti.eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_iff`).
+
 The proof is Fourier-analytic and works directly at absolutely continuous regularity. Writing
 `c n` for the Fourier coefficients of `γ` on `[a, b]`, Parseval's identity applied to `γ`, to
 `γ'` and to `γ' - (2πi / (b - a)) γ` gives the classical formula
@@ -67,6 +74,9 @@ and `± 1`, both the inequality and its equality cases follow, since a continuou
   `HasConstantSpeedOnWith.eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff`: the
   isoperimetric inequality in terms of length for constant-speed closed curves, and its equality
   case.
+* `TauCeti.four_pi_mul_abs_rectifiableSignedArea_le`,
+  `TauCeti.eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_iff`: the isoperimetric
+  inequality for continuous closed curves of bounded variation, and its equality case.
 
 ## References
 
@@ -398,5 +408,74 @@ theorem _root_.HasConstantSpeedOnWith.eVariationOn_toReal_sq_eq_four_pi_mul_abs_
   exact mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff hab hAC hderiv hγab hL2
 
 end ConstantSpeed
+
+section Rectifiable
+
+variable {γ : ℝ → ℂ}
+
+/-- **The isoperimetric inequality for rectifiable closed curves.** A continuous closed plane
+curve on `[a, b]` has geometric signed area at most `L² / (4π)` in absolute value, where `L` is
+its length, the total variation of the curve on `[a, b]`. The parameter need not be absolutely
+continuous; for a curve of infinite length both sides are zero by convention. -/
+theorem four_pi_mul_abs_rectifiableSignedArea_le (hcont : ContinuousOn γ (Icc a b))
+    (hγab : γ a = γ b) :
+    4 * π * |rectifiableSignedArea γ a b| ≤ (eVariationOn γ (Icc a b)).toReal ^ 2 := by
+  by_cases hγ : BoundedVariationOn γ (Icc a b)
+  swap
+  · simp [rectifiableSignedArea_of_not_boundedVariationOn hγ]
+  rcases lt_or_ge b a with hba | hab
+  · simp [rectifiableSignedArea_of_lt hba]
+  have h := (hγ.hasUnitSpeedOn_naturalParameterization hcont
+    hab).four_pi_mul_abs_signedArea_le_eVariationOn_toReal_sq ENNReal.toReal_nonneg
+    (by rw [hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.2 hab),
+      hγ.naturalParameterization_toReal_eVariationOn hab, hγab])
+  rwa [hγ.eVariationOn_naturalParameterization hcont hab,
+    ← rectifiableSignedArea_eq_signedArea_naturalParameterization] at h
+
+/-- **Equality in the isoperimetric inequality for rectifiable closed curves.** For a continuous
+closed plane curve of bounded variation on `[a, b]` with length `L`, the equality
+`L² = 4π |rectifiableSignedArea γ a b|` holds exactly when, for some center `c` and some `w`, the
+curve is `c + w exp(± 2π i s(t) / L)`, where `s(t)` is the length of the curve on `[a, t]`. That
+is, the curve traverses a circle once, uniformly in arclength and in either orientation, or is
+constant. The parameter itself need not be absolutely continuous or of constant speed. -/
+theorem eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_iff
+    (hγ : BoundedVariationOn γ (Icc a b)) (hcont : ContinuousOn γ (Icc a b)) (hγab : γ a = γ b) :
+    (eVariationOn γ (Icc a b)).toReal ^ 2 = 4 * π * |rectifiableSignedArea γ a b| ↔
+      ∃ c w : ℂ,
+        (∀ t ∈ Icc a b, γ t = c + w * exp (2 * π * I * variationOnFromTo γ (Icc a b) a t /
+          (eVariationOn γ (Icc a b)).toReal)) ∨
+        ∀ t ∈ Icc a b, γ t = c + w * exp (-(2 * π * I * variationOnFromTo γ (Icc a b) a t /
+          (eVariationOn γ (Icc a b)).toReal)) := by
+  rcases lt_or_ge b a with hba | hab
+  · simp [Icc_eq_empty_of_lt hba, rectifiableSignedArea_of_lt hba]
+  -- Conditions on the natural parameterization `η` over the length interval `[0, L]` transfer to
+  -- the curve, since `η ∘ s = γ` on `[a, b]` for the cumulative variation `s`, which maps `[a, b]`
+  -- onto `[0, L]`.
+  have htransfer (F : ℝ → ℂ) :
+      (∀ u ∈ Icc 0 (eVariationOn γ (Icc a b)).toReal,
+          naturalParameterization γ (Icc a b) a u = F u) ↔
+        ∀ t ∈ Icc a b, γ t = F (variationOnFromTo γ (Icc a b) a t) := by
+    rw [← hγ.image_variationOnFromTo_Icc hcont hab, forall_mem_image]
+    refine forall₂_congr fun t ht ↦ ?_
+    rw [hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo
+      (left_mem_Icc.2 hab) ht]
+  rw [rectifiableSignedArea_eq_signedArea_naturalParameterization]
+  rcases (ENNReal.toReal_nonneg : 0 ≤ (eVariationOn γ (Icc a b)).toReal).eq_or_lt with hL0 | hLpos
+  · -- A curve of length zero is constant, and both sides hold.
+    have hvar0 : eVariationOn γ (Icc a b) = 0 :=
+      ((ENNReal.toReal_eq_zero_iff _).1 hL0.symm).resolve_right hγ
+    refine iff_of_true (by simp [← hL0]) ⟨γ a, 0, Or.inl fun t ht ↦ ?_⟩
+    rw [zero_mul, add_zero]
+    exact edist_eq_zero.1 ((eVariationOn.eq_zero_iff γ).1 hvar0 t ht a (left_mem_Icc.2 hab))
+  have key := (hγ.hasUnitSpeedOn_naturalParameterization hcont
+    hab).eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff hLpos
+    (by rw [hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.2 hab),
+      hγ.naturalParameterization_toReal_eVariationOn hab, hγab])
+  rw [hγ.eVariationOn_naturalParameterization hcont hab] at key
+  rw [key]
+  simp only [Complex.ofReal_zero, sub_zero]
+  exact exists₂_congr fun c w ↦ or_congr (htransfer _) (htransfer _)
+
+end Rectifiable
 
 end TauCeti
