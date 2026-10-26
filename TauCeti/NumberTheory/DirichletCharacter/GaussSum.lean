@@ -100,6 +100,17 @@ theorem gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive
         _ = _ := by rw [hsign, one_mul]
     _ = _ := by rw [hprod]
 
+/-- In characteristic zero, the Gauss sum of a primitive Dirichlet character against a
+primitive additive character is nonzero. -/
+theorem gaussSum_ne_zero_of_isPrimitive
+    {R : Type*} [CommRing R] [IsDomain R] [CharZero R] {n : ℕ} [NeZero n]
+    {χ : DirichletCharacter R n} (hχ : IsPrimitive χ)
+    {e : AddChar (ZMod n) R} (he : e.IsPrimitive) :
+    gaussSum χ e ≠ 0 := by
+  have hprod := gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive hχ he
+  rw [ZMod.card] at hprod
+  exact left_ne_zero_of_mul (hprod ▸ Nat.cast_ne_zero.mpr (NeZero.ne n))
+
 /-- The square of the Gauss sum of a primitive quadratic Dirichlet character is its value at
 `-1` times the level. -/
 theorem gaussSum_sq_of_isPrimitive_of_isQuadratic
