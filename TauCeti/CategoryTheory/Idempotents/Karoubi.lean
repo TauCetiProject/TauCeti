@@ -11,16 +11,17 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import Mathlib.CategoryTheory.Retract
 
 /-!
-# Squares, biproducts and retracts in the idempotent completion
+# Limits, biproducts and retracts in the idempotent completion
 
-* `CategoryTheory.IsPushout.map_toKaroubi`, `CategoryTheory.IsPullback.map_toKaroubi`: the
-  embedding `toKaroubi` preserves pushout and pullback squares.
+* The embedding `toKaroubi` preserves all limits and colimits.
 * `HasFiniteBiproducts (Karoubi C)` and `HasBinaryBiproducts (Karoubi C)` for a preadditive
   category `C` with a zero object and binary biproducts.
+* `CategoryTheory.Idempotents.Karoubi.exists_span_retract`: if `i` is a retract of the image of
+  `a : A ⟶ B` under `toKaroubi`, then for every `h` out of the source of `i` the span `(i, h)` is a
+  retract of the image of a span `(a, k)`; `exists_cospan_retract` is the dual.
 * `CategoryTheory.Idempotents.Karoubi.exists_retractArrow_comp_of_retracts`: if `i` and `j` are
   retracts of the images of `a` and `b` under `toKaroubi`, then `i ≫ j` is a retract of the image
-  of `(a ⊞ 𝟙) ≫ θ ≫ (𝟙 ⊞ b)` for an isomorphism `θ`, the involution exchanging the two copies of
-  the middle object.
+  of `(a ⊞ 𝟙) ≫ θ ≫ (𝟙 ⊞ b)` for some isomorphism `θ`.
 -/
 
 public section
@@ -29,59 +30,79 @@ namespace CategoryTheory
 
 open Limits Idempotents
 
-universe v u
+universe w w' v u
 
 variable {C : Type u} [Category.{v} C]
 
-/-- The functor `toKaroubi` preserves pushout squares: a morphism out of a formal direct factor is a
-morphism of `C` compatible with the idempotent, and the induced morphism inherits that
-compatibility by uniqueness. -/
-theorem IsPushout.map_toKaroubi {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {k : Y ⟶ Z}
-    (sq : IsPushout f g h k) :
-    IsPushout ((toKaroubi C).map f) ((toKaroubi C).map g) ((toKaroubi C).map h)
-      ((toKaroubi C).map k) := by
-  have w : (toKaroubi C).map f ≫ (toKaroubi C).map h =
-      (toKaroubi C).map g ≫ (toKaroubi C).map k := by
-    rw [← Functor.map_comp, sq.w, Functor.map_comp]
-  have hs (s : PushoutCocone ((toKaroubi C).map f) ((toKaroubi C).map g)) :
-      f ≫ s.inl.f = g ≫ s.inr.f := by
-    simpa using congrArg Karoubi.Hom.f s.condition
-  refine IsPushout.of_isColimit (PushoutCocone.IsColimit.mk w
-    (fun s ↦ ⟨sq.desc s.inl.f s.inr.f (hs s), ?_⟩) (fun s ↦ ?_) (fun s ↦ ?_) (fun s m h₁ h₂ ↦ ?_))
-  · simp only [toKaroubi_obj_p]
-    exact sq.hom_ext (by simp) (by simp)
-  · ext
-    simp
-  · ext
-    simp
-  · ext
-    refine sq.hom_ext ?_ ?_
-    · simpa using congrArg Karoubi.Hom.f h₁
-    · simpa using congrArg Karoubi.Hom.f h₂
+namespace Idempotents
 
-/-- The functor `toKaroubi` preserves pullback squares. -/
-theorem IsPullback.map_toKaroubi {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {k : Y ⟶ Z}
-    (sq : IsPullback f g h k) :
-    IsPullback ((toKaroubi C).map f) ((toKaroubi C).map g) ((toKaroubi C).map h)
-      ((toKaroubi C).map k) := by
-  have w : (toKaroubi C).map f ≫ (toKaroubi C).map h =
-      (toKaroubi C).map g ≫ (toKaroubi C).map k := by
-    rw [← Functor.map_comp, sq.w, Functor.map_comp]
-  have hs (s : PullbackCone ((toKaroubi C).map h) ((toKaroubi C).map k)) :
-      s.fst.f ≫ h = s.snd.f ≫ k := by
-    simpa using congrArg Karoubi.Hom.f s.condition
-  refine IsPullback.of_isLimit (PullbackCone.IsLimit.mk w
-    (fun s ↦ ⟨sq.lift s.fst.f s.snd.f (hs s), ?_⟩) (fun s ↦ ?_) (fun s ↦ ?_) (fun s m h₁ h₂ ↦ ?_))
-  · simp only [toKaroubi_obj_p]
-    exact sq.hom_ext (by simp) (by simp)
-  · ext
+/-- The embedding `toKaroubi` preserves all limits. -/
+instance {J : Type*} [Category J] (K : J ⥤ C) : PreservesLimit K (toKaroubi C) where
+  preserves {c} hc := ⟨{
+    lift s := ⟨hc.lift ⟨s.pt.X,
+        { app j := (s.π.app j).f
+          naturality j j' f := by simpa using (congrArg Karoubi.Hom.f (s.w f)).symm }⟩,
+      -- The lift is compatible with the idempotent of `s.pt` by uniqueness.
+      by simpa using hc.hom_ext fun j ↦ by simp⟩
+    fac s j := by
+      ext
+      simp
+    uniq s m hm := by
+      ext
+      exact hc.hom_ext fun j ↦ by simpa using congrArg Karoubi.Hom.f (hm j) }⟩
+
+/-- The embedding `toKaroubi` preserves all colimits. -/
+instance {J : Type*} [Category J] (K : J ⥤ C) : PreservesColimit K (toKaroubi C) where
+  preserves {c} hc := ⟨{
+    desc s := ⟨hc.desc ⟨s.pt.X,
+        { app j := (s.ι.app j).f
+          naturality j j' f := by simpa using congrArg Karoubi.Hom.f (s.w f) }⟩,
+      -- The descent is compatible with the idempotent of `s.pt` by uniqueness.
+      by simpa using hc.hom_ext fun j ↦ by simp⟩
+    fac s j := by
+      ext
+      simp
+    uniq s m hm := by
+      ext
+      exact hc.hom_ext fun j ↦ by simpa using congrArg Karoubi.Hom.f (hm j) }⟩
+
+instance {J : Type*} [Category J] : PreservesLimitsOfShape J (toKaroubi C) where
+
+instance {J : Type*} [Category J] : PreservesColimitsOfShape J (toKaroubi C) where
+
+instance : PreservesLimitsOfSize.{w, w'} (toKaroubi C) where
+
+instance : PreservesColimitsOfSize.{w, w'} (toKaroubi C) where
+
+end Idempotents
+
+/-- If `i` is a retract of the image of `a : A ⟶ B` under `toKaroubi`, then for every
+`h : P ⟶ P'` there is `k : A ⟶ P'.X` such that the span `(i, h)` is a retract of the image of the
+span `(a, k)`, with `P'` a retract of `P'.X` by `Karoubi.decompId`. -/
+theorem Idempotents.Karoubi.exists_span_retract {P Q P' : Karoubi C} {i : P ⟶ Q} {A B : C}
+    {a : A ⟶ B} (r : RetractArrow i ((toKaroubi C).map a)) (h : P ⟶ P') :
+    ∃ k : A ⟶ P'.X, h ≫ Karoubi.decompId_i P' = r.i.left ≫ (toKaroubi C).map k ∧
+      (toKaroubi C).map k ≫ Karoubi.decompId_p P' = r.r.left ≫ h := by
+  have hk : (toKaroubi C).map (r.r.left ≫ h ≫ Karoubi.decompId_i P').f =
+      r.r.left ≫ h ≫ Karoubi.decompId_i P' := by
+    ext
     simp
-  · ext
+  refine ⟨_, by rw [hk]; simp, ?_⟩
+  rw [hk, Category.assoc, Category.assoc, ← Karoubi.decompId, Category.comp_id]
+
+/-- If `p` is a retract of the image of `d : B ⟶ D` under `toKaroubi`, then for every
+`h : P' ⟶ P` there is `k : P'.X ⟶ D` such that the cospan `(p, h)` is a retract of the image of
+the cospan `(d, k)`. This is dual to `Karoubi.exists_span_retract`. -/
+theorem Idempotents.Karoubi.exists_cospan_retract {Q P P' : Karoubi C} {p : Q ⟶ P} {B D : C}
+    {d : B ⟶ D} (r : RetractArrow p ((toKaroubi C).map d)) (h : P' ⟶ P) :
+    ∃ k : P'.X ⟶ D, Karoubi.decompId_i P' ≫ (toKaroubi C).map k = h ≫ r.i.right ∧
+      Karoubi.decompId_p P' ≫ h = (toKaroubi C).map k ≫ r.r.right := by
+  have hk : (toKaroubi C).map (Karoubi.decompId_p P' ≫ h ≫ r.i.right).f =
+      Karoubi.decompId_p P' ≫ h ≫ r.i.right := by
+    ext
     simp
-  · ext
-    refine sq.hom_ext ?_ ?_
-    · simpa using congrArg Karoubi.Hom.f h₁
-    · simpa using congrArg Karoubi.Hom.f h₂
+  refine ⟨_, ?_, by rw [hk]; simp⟩
+  rw [hk, ← Category.assoc, ← Karoubi.decompId, Category.id_comp]
 
 variable [Preadditive C]
 
@@ -101,9 +122,9 @@ end Biproducts
 
 variable [HasBinaryBiproducts C]
 
-/-- The composition step, with the two retractions spelled out. The middle object `Q` is a retract
-of both `B` and `B'`; the involution `θ` of `B ⊞ B'` exchanges these two copies of `Q` and is the
-identity on their complements, so `i ≫ j` is a retract of the image of `(a ⊞ 𝟙) ≫ θ ≫ (𝟙 ⊞ b)`. -/
+/-- Let `i : P ⟶ Q` and `j : Q ⟶ R` be retracts of the images under `toKaroubi` of `a : A ⟶ B`
+and `b : B' ⟶ C'`, with the retractions given explicitly. Then for some isomorphism `θ` of
+`B ⊞ B'`, the composite `i ≫ j` is a retract of the image of `(a ⊞ 𝟙) ≫ θ ≫ (𝟙 ⊞ b)`. -/
 theorem Idempotents.Karoubi.exists_retractArrow_comp_of_retracts {P Q R : Karoubi C} (i : P ⟶ Q)
     (j : Q ⟶ R) {A B B' C' : C} {a : A ⟶ B} {b : B' ⟶ C'} (iP : P ⟶ (toKaroubi C).obj A)
     (rP : (toKaroubi C).obj A ⟶ P)
@@ -124,6 +145,7 @@ theorem Idempotents.Karoubi.exists_retractArrow_comp_of_retracts {P Q R : Karoub
   have wrf : rP.f ≫ i.f = a ≫ rQ.f := by simpa using congrArg Karoubi.Hom.f wr
   have wjf : jQ.f ≫ b = j.f ≫ jR.f := by simpa using congrArg Karoubi.Hom.f wj
   have wjf' : sQ.f ≫ j.f = b ≫ sR.f := by simpa using congrArg Karoubi.Hom.f wj'
+  -- `θ` is the involution exchanging the copy of `Q` in `B` with the copy in `B'`.
   let θ : B ⊞ B' ⟶ B ⊞ B' :=
     biprod.desc (biprod.lift (𝟙 B - (rQ.f ≫ iQ.f : B ⟶ B)) (rQ.f ≫ jQ.f : B ⟶ B'))
       (biprod.lift (sQ.f ≫ iQ.f : B' ⟶ B) (𝟙 B' - (sQ.f ≫ jQ.f : B' ⟶ B')))
