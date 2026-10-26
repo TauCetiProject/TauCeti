@@ -90,6 +90,19 @@ theorem homogeneousSubmodule_induction {d : ℕ}
   | add x y _ _ hx hy => exact add x y _ _ hx hy
   | smul r x _ hx => exact smul r x _ hx
 
+/-- Linear maps from a homogeneous piece agree if they agree on every product of
+divided-power generators of the prescribed total degree. -/
+theorem homogeneousSubmodule_ext {d : ℕ}
+    {f g : homogeneousSubmodule (R := R) (M := M) d →ₗ[R] N}
+    (h : ∀ (l : List (ℕ × M)) (hl : (l.map Prod.fst).sum = d),
+      f ⟨(l.map fun nm ↦ dp R nm.1 nm.2).prod, hl ▸ prod_dp_mem_homogeneousSubmodule l⟩ =
+        g ⟨(l.map fun nm ↦ dp R nm.1 nm.2).prod, hl ▸ prod_dp_mem_homogeneousSubmodule l⟩) :
+    f = g := by
+  apply (Submodule.linearMap_eq_iff_of_eq_span f g
+    (S := homogeneousGenerators (R := R) (M := M) d) rfl).2
+  rintro ⟨_, l, hl, rfl⟩
+  exact h l hl
+
 /-- The generator `dp R d m` is homogeneous of degree `d`. -/
 theorem dp_mem_homogeneousSubmodule (d : ℕ) (m : M) :
     dp R d m ∈ homogeneousSubmodule (R := R) (M := M) d := by
@@ -133,10 +146,19 @@ instance instGradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule (R := R) 
   one_mem := one_mem_homogeneousSubmodule (R := R) (M := M)
   mul_mem _ _ := mul_mem_homogeneousSubmodule
 
-/-- The functorial map on divided power algebras preserves every homogeneous piece. -/
-theorem map_mem_homogeneousSubmodule (f : M →ₗ[R] N) {d : ℕ} {x : DividedPowerAlgebra R M}
+/-- A finite product of divided-power generators belongs to the homogeneous piece of its
+total degree. -/
+theorem prod_dp_mem_homogeneousSubmodule_of_sum_eq {ι : Type*} [Fintype ι] {d : ℕ}
+    (m : ι → M) (k : ι → ℕ) (hk : ∑ j, k j = d) :
+    ∏ j, dp R (k j) (m j) ∈ homogeneousSubmodule (R := R) (M := M) d :=
+  hk ▸ SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
+
+/-- The functorial map on divided power algebras preserves every homogeneous piece, including
+when it changes the base ring to an `R`-algebra `S`. -/
+theorem map_mem_homogeneousSubmodule {S : Type*} [CommSemiring S] [Algebra R S] [Module S N]
+    [IsScalarTower R S N] (f : M →ₗ[R] N) {d : ℕ} {x : DividedPowerAlgebra R M}
     (hx : x ∈ homogeneousSubmodule (R := R) (M := M) d) :
-    map R f x ∈ homogeneousSubmodule (R := R) (M := N) d := by
+    map S f x ∈ homogeneousSubmodule (R := S) (M := N) d := by
   induction hx using Submodule.span_induction with
   | mem x hx =>
       obtain ⟨l, hl, rfl⟩ := hx
@@ -153,18 +175,18 @@ theorem map_mem_homogeneousSubmodule (f : M →ₗ[R] N) {d : ℕ} {x : DividedP
               rw [ih]
         exact hdegrees.trans hl
       · have hproducts :
-            ((l.map fun nm ↦ dp R nm.1 nm.2).map (map R f)).prod =
-              ((l.map fun nm ↦ (nm.1, f nm.2)).map fun nm ↦ dp R nm.1 nm.2).prod := by
+            ((l.map fun nm ↦ dp R nm.1 nm.2).map (map S f)).prod =
+              ((l.map fun nm ↦ (nm.1, f nm.2)).map fun nm ↦ dp S nm.1 nm.2).prod := by
           clear hl
           induction l with
           | nil => rfl
           | cons nm l ih =>
               simp only [List.map_cons, List.prod_cons]
               rw [map_apply_dp, ih]
-        exact (map_list_prod (map R f) _).trans hproducts
+        exact (map_list_prod (map S f) _).trans hproducts
   | zero => simp
   | add x y _ _ hx hy => simpa using Submodule.add_mem _ hx hy
-  | smul r x _ hx => simpa using Submodule.smul_mem _ r hx
+  | smul r x _ hx => simpa using Submodule.smul_of_tower_mem _ r hx
 
 /-- A linear map induces a linear map between homogeneous pieces of the same degree. -/
 def mapHomogeneousSubmodule (f : M →ₗ[R] N) (d : ℕ) :

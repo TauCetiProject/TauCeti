@@ -34,6 +34,9 @@ linear-independence theorem for the constant terms at all cusps.
 
 ## Main results
 
+* `TauCeti.EisensteinSeries.CharIndex.eq_of_changeLevel_eq`: an index is determined by its
+  raising parameter and its two characters raised to level `N`; the moduli alone are determined
+  by the raised characters (`u_eq_of_changeLevel_eq`, `v_eq_of_changeLevel_eq`).
 * `TauCeti.EisensteinSeries.CharIndex.form_mem_modFormCharSpace`: every indexed series belongs
   to the character space prescribed by its induced nebentypus.
 * `TauCeti.EisensteinSeries.CharIndex.qExpansion_form_coeff`: the positive Fourier coefficients
@@ -115,6 +118,38 @@ theorem nebentypus_def :
   by
     unfold nebentypus
     congr
+
+/-- The modulus of the first character of an index is the conductor of its raise to level `N`,
+so indices whose first characters agree after raising have the same first modulus. -/
+theorem u_eq_of_changeLevel_eq [NeZero N] {a b : CharIndex N k}
+    (hpsi : a.psi.changeLevel a.u_dvd = b.psi.changeLevel b.u_dvd) : a.u = b.u := by
+  have h := congrArg DirichletCharacter.conductor hpsi
+  rwa [DirichletCharacter.conductor_changeLevel, DirichletCharacter.conductor_changeLevel,
+    a.psi_primitive, b.psi_primitive] at h
+
+/-- The modulus of the second character of an index is the conductor of its raise to level `N`,
+so indices whose second characters agree after raising have the same second modulus. -/
+theorem v_eq_of_changeLevel_eq [NeZero N] {a b : CharIndex N k}
+    (hphi : a.phi.changeLevel a.v_dvd = b.phi.changeLevel b.v_dvd) : a.v = b.v := by
+  have h := congrArg DirichletCharacter.conductor hphi
+  rwa [DirichletCharacter.conductor_changeLevel, DirichletCharacter.conductor_changeLevel,
+    a.phi_primitive, b.phi_primitive] at h
+
+/-- Two indices with the same raising parameter whose characters agree after raising to level
+`N` are equal: a primitive character is determined by its raise, its modulus being the
+conductor of the raise. -/
+theorem eq_of_changeLevel_eq [NeZero N] {a b : CharIndex N k} (ht : a.t = b.t)
+    (hpsi : a.psi.changeLevel a.u_dvd = b.psi.changeLevel b.u_dvd)
+    (hphi : a.phi.changeLevel a.v_dvd = b.phi.changeLevel b.v_dvd) : a = b := by
+  have hu := u_eq_of_changeLevel_eq hpsi
+  have hv := v_eq_of_changeLevel_eq hphi
+  obtain ⟨u, v, t, psi, phi, _, _, _, _⟩ := a
+  obtain ⟨u', v', t', psi', phi', _, _, _, _⟩ := b
+  dsimp only at hu hv ht hpsi hphi
+  subst hu hv ht
+  obtain rfl := DirichletCharacter.changeLevel_injective _ hpsi
+  obtain rfl := DirichletCharacter.changeLevel_injective _ hphi
+  rfl
 
 /-- The normalized raised character Eisenstein series attached to an index. -/
 def form [NeZero N] (hk : 3 ≤ (k : ℤ)) :

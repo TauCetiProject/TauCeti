@@ -102,9 +102,9 @@ theorem measure_exists_lt_norm_sub_le [Norm E] [Sub E]
           ENNReal.ofReal_natCast, ENNReal.ofReal_natCast]
 
 omit [Fintype m] [Fintype n] in
-/-- The event that some entry of a random matrix deviates from a fixed matrix by more than `η` is
-measurable when every entry is measurable. -/
-theorem measurableSet_exists_lt_norm_sub [SeminormedAddGroup E] [Finite m] [Finite n]
+/-- For countable row and column index types, the event that some entry of a random matrix deviates
+from a fixed matrix by more than `η` is measurable when every entry is measurable. -/
+theorem measurableSet_exists_lt_norm_sub [SeminormedAddGroup E] [Countable m] [Countable n]
     [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableSub E]
     (hS : ∀ k l, Measurable fun ω ↦ S ω k l) (η : ℝ) :
     MeasurableSet {ω | ∃ k l, η < ‖S ω k l - A k l‖} := by

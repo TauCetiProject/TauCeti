@@ -22,7 +22,8 @@ composite of the induced group homs, and the identity to the identity, which is 
 congruence on a whole matrix be reduced along a further ring map in one step rather than entry
 by entry. Basic coordinate descriptions for `SL₂` and its image under `mapGL` are also
 recorded here for downstream matrix computations, together with what the determinant says about
-a matrix with a prescribed bottom row `(N, p)`: it is the Bézout relation `m p - n N = 1`.
+a matrix with a prescribed bottom row `(c, d)`: it is the Bézout relation `a d - b c = 1` for
+the top row `(a, b)`.
 
 `mem_center_iff_eq_one_or_eq_neg_one` pins down `±I` itself, which is what the base-change
 statement moves around:
@@ -56,11 +57,13 @@ proof is independent of the source's.
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
-  coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any ring.
+  coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
+  nonassociative ring.
 * `Matrix.SpecialLinearGroup.coe_mapGL_fin_two`: the entrywise matrix of `mapGL S` on `SL₂(R)`,
   with `coe_mapGL_int_rat_fin_two` its `ℤ`-to-`ℚ` specialization.
-* `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(N, p)` gives the
-  Bézout relation `m p - n N = 1`.
+* `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
+  `SL₂(R)` matrix over a commutative ring gives the Bézout relation `a d - b c = 1` for its top
+  row `(a, b)`.
 * `Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin`: the center of `SL(Fin n, A)` is
   `rootsOfUnity n A` when `0 < n`.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`: the centre of `SL₂` is
@@ -136,8 +139,8 @@ lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :
     g 0 0 * g 1 1 - g 0 1 * g 1 0 = 1 := by
   simpa only [Matrix.det_fin_two] using g.det_coe
 
-/-- The determinant-one identity for an element of `SL₂(ℤ)`, cast to any ring. -/
-lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [Ring R] (g : SL(2, ℤ)) :
+/-- The determinant-one identity for an element of `SL₂(ℤ)`, cast to any nonassociative ring. -/
+lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [NonAssocRing R] (g : SL(2, ℤ)) :
     ((g 0 0 : ℤ) : R) * (g 1 1 : ℤ) - (g 0 1 : ℤ) * (g 1 0 : ℤ) = 1 := by
   exact_mod_cast congrArg (Int.cast : ℤ → R) g.fin_two_mul_sub_mul_eq_one
 
@@ -158,10 +161,10 @@ lemma coe_mapGL_int_rat_fin_two (σ : SL(2, ℤ)) :
         ((σ 1 0 : ℤ) : ℚ), ((σ 1 1 : ℤ) : ℚ)] := by
   simpa only [eq_intCast] using coe_mapGL_fin_two (S := ℚ) σ
 
-/-- **The bottom row of an `SL₂(ℤ)` matrix is a Bézout relation.** If it is `(N, p)`, then the
-top row `(m, n)` satisfies `m p - n N = 1`. -/
-lemma mul_sub_mul_eq_one_of_lowerRow {N p : ℕ} {σ : SL(2, ℤ)} (hσ10 : σ 1 0 = (N : ℤ))
-    (hσ11 : σ 1 1 = (p : ℤ)) : σ 0 0 * (p : ℤ) - σ 0 1 * (N : ℤ) = 1 := by
+/-- The top row `(a, b)` of an `SL₂(R)` matrix with bottom row `(c, d)` satisfies the Bézout
+relation `a d - b c = 1`. -/
+lemma mul_sub_mul_eq_one_of_lowerRow {R : Type*} [CommRing R] {c d : R} {σ : SL(2, R)}
+    (hσ10 : σ 1 0 = c) (hσ11 : σ 1 1 = d) : σ 0 0 * d - σ 0 1 * c = 1 := by
   simpa only [hσ10, hσ11] using fin_two_mul_sub_mul_eq_one σ
 
 /-- For `0 < n`, the center of `SL(Fin n, A)` is the group of `n`th roots of unity. -/

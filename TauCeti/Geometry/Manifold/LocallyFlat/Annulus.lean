@@ -118,17 +118,12 @@ complementary model, for any charted-space structure on the sphere and every non
 theorem isLocallyFlat_smul_coe_sphere {F : Type*} [TopologicalSpace F]
     [ChartedSpace F (sphere (0 : E) 1)] {c : ℝ} (hc : c ≠ 0) :
     IsLocallyFlat F ℝ (fun u : sphere (0 : E) 1 => c • (u : E)) := by
-  let polar : sphere (0 : E) 1 × ℝ ≃ₜ {x : E | 0 < ‖x‖} :=
-    ((Homeomorph.refl _).prodCongr Real.expOrderIso.toHomeomorph).trans
-      (homeomorphUnitSphereProdOfNormPos E).symm
-  have hopen : IsOpenEmbedding (Subtype.val ∘ polar) :=
-    (isOpen_lt continuous_const continuous_norm).isOpenEmbedding_subtypeVal.comp
-      polar.isOpenEmbedding
+  have hopen := Real.isOpenEmbedding_exp.smul_coe_sphere (E := E) Real.exp_pos
   have hflat := (isLocallyFlat_prodMkLeft (F := F) (F' := ℝ)).isOpenEmbedding_comp hopen
     |>.homeomorph_comp (Homeomorph.smulOfNeZero c hc)
   convert hflat using 1
   ext u
-  simp [polar]
+  simp
 
 /-- **Two concentric round spheres in a real seminormed space cobound an annulus:** for
 `0 < r < R`, the spheres of radii `R` and `r` cobound the closed annulus `{x | r ≤ ‖x‖ ≤ R}`,

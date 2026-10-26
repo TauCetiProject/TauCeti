@@ -101,6 +101,13 @@ def labelingQuantumDegree (l : ι → Bool) : ℤ :=
 theorem labelingQuantumDegree_def (l : ι → Bool) :
     labelingQuantumDegree ι l = ∑ i, bif l i then -1 else 1 := (rfl)
 
+/-- Complementary labellings have opposite quantum degrees. -/
+@[simp]
+theorem labelingQuantumDegree_not (l : ι → Bool) :
+    labelingQuantumDegree ι (fun i ↦ !l i) = -labelingQuantumDegree ι l := by
+  rw [labelingQuantumDegree_def, labelingQuantumDegree_def, ← Finset.sum_neg_distrib]
+  exact Finset.sum_congr rfl fun i _ ↦ by cases l i <;> rfl
+
 /-- The quantum degree of a labelling is the number of circles minus twice the number of
 `X`-labels. -/
 theorem labelingQuantumDegree_eq (l : ι → Bool) :
