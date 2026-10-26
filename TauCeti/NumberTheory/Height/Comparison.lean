@@ -32,6 +32,9 @@ open Polynomial
 
 namespace TauCeti
 
+local instance : RingHomIsometric (Int.castRingHom ℂ) where
+  norm_map := by simp [Int.norm_eq_abs]
+
 variable {F : Type*} [Field F] [CharZero F]
 
 /-- The rational minimal polynomial has the same degree as the primitive minimal polynomial
@@ -46,7 +49,7 @@ theorem naiveHeight_le_choose_natDegree_div_two_mul_mahlerMeasure (x : F) :
     naiveHeight x ≤
       (minpoly ℚ x).natDegree.choose ((minpoly ℚ x).natDegree / 2) * mahlerMeasure x := by
   rw [naiveHeight_def, mahlerMeasure_def,
-    ← supNorm_map _ (Int.castRingHom ℂ) (fun n ↦ by simp [Int.norm_eq_abs]),
+    ← supNorm_map _ (Int.castRingHom ℂ),
     ← natDegree_map_primitiveMinpoly x]
   exact supNorm_le_choose_natDegree_div_two_mul_mahlerMeasure _
 
@@ -65,7 +68,7 @@ times the square root of one plus the degree of its rational minimal polynomial.
 theorem mahlerMeasure_le_sqrt_natDegree_add_one_mul_naiveHeight (x : F) :
     mahlerMeasure x ≤ Real.sqrt ((minpoly ℚ x).natDegree + 1) * naiveHeight x := by
   rw [naiveHeight_def, mahlerMeasure_def,
-    ← supNorm_map _ (Int.castRingHom ℂ) (fun n ↦ by simp [Int.norm_eq_abs]),
+    ← supNorm_map _ (Int.castRingHom ℂ),
     ← natDegree_map_primitiveMinpoly x]
   exact mahlerMeasure_le_sqrt_natDegree_add_one_mul_supNorm _
 
