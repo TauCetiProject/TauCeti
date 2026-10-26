@@ -117,16 +117,22 @@ into its filled cover. -/
 @[simp]
 theorem β_superelliptic_incl (q : superellipticCurve) :
     superelliptic.β (incl (FilledCover.chart _) q) =
-      (((q : ThricePuncturedSphere × ℂ).1 : ℂ) : OnePoint ℂ) :=
-  (congrFun superellipticConnectedCover.coe_β_toAnalyticBelyiPair _).trans
-    ((FilledCover.fillMap_incl _ q).trans ((toOnePoint_apply (superellipticProj q)).trans
-      (congrArg (fun t : ThricePuncturedSphere ↦ ((t : ℂ) : OnePoint ℂ))
-        (superellipticProj_apply q))))
+      (((q : ThricePuncturedSphere × ℂ).1 : ℂ) : OnePoint ℂ) := by
+  simp only [superelliptic, ConnectedCover.coe_β_toAnalyticBelyiPair]
+  -- `simp` cannot use `FilledCover.fillMap_incl` itself: `q` lives in `superellipticCurve`, not
+  -- syntactically in the total space of the cover.
+  exact (FilledCover.fillMap_incl superellipticProj q).trans (by simp)
 
 /-- **The Belyi map of the superelliptic curve has degree `4`.** -/
 @[simp]
 theorem degree_β_superelliptic : degree superelliptic.β = 4 :=
   superellipticConnectedCover.degree_toAnalyticBelyiPair
+
+/-- A numbering of the fibre of the superelliptic curve over `1/2` is by `Fin 4`. -/
+private theorem eq_four_of_restrict_preimage_singleton_equiv {n : ℕ}
+    (ν : superelliptic.restrict ⁻¹' {basePt} ≃ Fin n) : n = 4 :=
+  (superelliptic.degree_β_eq_of_restrict_preimage_singleton_equiv ν).symm.trans
+    degree_β_superelliptic
 
 /-- The cycle data of the monodromy triple of the superelliptic curve are `[4], [4], [2, 2]`, for
 any numbering of its fibre over `1/2`: these are the cycle data of the cover, computed from the
@@ -134,9 +140,7 @@ equation in `TauCeti.ThricePuncturedSphere.cycleData_monodromyTriple_superellipt
 theorem cycleData_monodromyTriple_superelliptic {n : ℕ}
     (ν : superelliptic.restrict ⁻¹' {basePt} ≃ Fin n) :
     (superelliptic.isCoveringMap_restrict.monodromyTriple ν).cycleData = ({4}, {4}, {2, 2}) := by
-  obtain rfl : n = 4 :=
-    (superelliptic.degree_β_eq_of_restrict_preimage_singleton_equiv ν).symm.trans
-      degree_β_superelliptic
+  obtain rfl := eq_four_of_restrict_preimage_singleton_equiv ν
   obtain ⟨ν'⟩ := superellipticConnectedCover.nonempty_equiv_fin
   exact (cycleData_eq_of_equivalent (IsoClass.mk_eq_mk_iff.1
       (superellipticConnectedCover.isoClass_monodromyTriple_toAnalyticBelyiPair ν ν'))).trans
@@ -193,9 +197,7 @@ with lengths the local multiplicities `[4], [4], [2, 2]`, so its Euler character
 theorem genus_monodromyTriple_superelliptic {n : ℕ}
     (ν : superelliptic.restrict ⁻¹' {basePt} ≃ Fin n) :
     (superelliptic.isCoveringMap_restrict.monodromyTriple ν).genus = 1 := by
-  obtain rfl : n = 4 :=
-    (superelliptic.degree_β_eq_of_restrict_preimage_singleton_equiv ν).symm.trans
-      degree_β_superelliptic
+  obtain rfl := eq_four_of_restrict_preimage_singleton_equiv ν
   rw [genus_def, eulerChar_eq_cycleCounts, cycleCounts_eq_card_cycleData,
     cycleData_monodromyTriple_superelliptic]
   norm_num
@@ -230,9 +232,7 @@ numbering of its fibre over `1/2`. -/
 theorem isRegular_monodromyTriple_superelliptic {n : ℕ}
     (ν : superelliptic.restrict ⁻¹' {basePt} ≃ Fin n) :
     (superelliptic.isCoveringMap_restrict.monodromyTriple ν).IsRegular := by
-  obtain rfl : n = 4 :=
-    (superelliptic.degree_β_eq_of_restrict_preimage_singleton_equiv ν).symm.trans
-      degree_β_superelliptic
+  obtain rfl := eq_four_of_restrict_preimage_singleton_equiv ν
   exact (isRegular_monodromyTriple_iff_natCard_iso ν).2 natCard_iso_superelliptic
 
 /-- **The monodromy triple of the superelliptic curve is the torus triple**, up to relabelling,

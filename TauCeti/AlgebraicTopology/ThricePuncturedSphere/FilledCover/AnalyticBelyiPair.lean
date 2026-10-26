@@ -513,8 +513,7 @@ def deckMulEquivIso :
     deck ⇑C.cover.proj ≃* C.toAnalyticBelyiPair.Iso C.toAnalyticBelyiPair :=
   (Deck.conjMulEquiv C.unpuncturedHomeomorphRestrict fun x ↦ Subtype.ext <|
       OnePoint.coe_injective <| (C.toAnalyticBelyiPair.coe_restrict_apply _).trans <| by
-        rw [coe_unpuncturedHomeomorphRestrict, coe_β_toAnalyticBelyiPair, fillMap_incl,
-          toOnePoint_apply]).trans <|
+        simp [coe_unpuncturedHomeomorphRestrict]).trans <|
     (MulEquiv.subgroupCongr
       (congrArg deck (C.toAnalyticBelyiPair.restrict_toTopBranchedCover rfl))).symm.trans <|
     (C.toAnalyticBelyiPair.toTopBranchedCover rfl).deckMulEquivDeckRestrict.symm.trans <|
