@@ -31,6 +31,7 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   `Matrix.rank_le_iff_forall_det_submatrix_eq_zero`: over a field, the rank is at least `p`
   exactly when some `p × p` minor is nonzero, and at most `p` exactly when every
   `(p + 1) × (p + 1)` minor vanishes.
+* `Matrix.rank_map`: the rank is unchanged by a homomorphism of fields applied to the entries.
 * `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
   scalar extension to a domain.
 * `Matrix.linearIndependent_rat_row_iff`: the case of integer matrices extended to `ℚ`.
@@ -138,6 +139,15 @@ theorem rank_le_iff_forall_det_submatrix_eq_zero {K : Type*} [Field K] [Finite m
     A.rank ≤ p ↔ ∀ (r : Fin (p + 1) ↪ m) (c : Fin (p + 1) ↪ n), (A.submatrix r c).det = 0 := by
   rw [← not_lt, Nat.lt_iff_add_one_le, le_rank_iff_exists_det_submatrix_ne_zero]
   simp only [not_exists, ne_eq, not_not]
+
+omit [Fintype m] [DecidableEq m] [Finite n] in
+/-- The rank of a matrix over a field is unchanged by applying a homomorphism to another field to
+its entries, since the images of its minors are the minors of its image. -/
+theorem rank_map {K L : Type*} [Field K] [Field L] [Finite m] [Fintype n] (A : Matrix m n K)
+    (φ : K →+* L) : (A.map φ).rank = A.rank :=
+  eq_of_forall_le_iff fun p ↦ by
+    simp only [le_rank_iff_exists_det_submatrix_ne_zero, submatrix_map, ← RingHom.mapMatrix_apply,
+      ← RingHom.map_det, map_ne_zero]
 
 omit [Fintype m] [DecidableEq m] in
 /-- The rows of an integer matrix are linearly independent over `ℚ` exactly when they are linearly

@@ -47,6 +47,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
   order `n` is a primitive `2n`-th root of unity.
 * `IsPrimitiveRoot.sq_eq_neg_one`: a primitive fourth root of unity squares to `-1`.
+* `IsPrimitiveRoot.sum_pow_pow_eq` and `IsPrimitiveRoot.sum_prod_pow_pow_eq`: orthogonality of
+  the characters `a ↦ (ζ ^ e) ^ a` of `ℤ ⧸ m`, in one and in several variables.
 * `HasEnoughRootsOfUnity.of_injective`: a domain receiving an injective homomorphism from a
   commutative monoid with enough `n`-th roots of unity has enough `n`-th roots of unity.
 * `HasEnoughRootsOfUnity.primitiveRoots_nonempty` and
@@ -127,6 +129,26 @@ of `-1`: its square is a primitive square root of unity. -/
 theorem _root_.IsPrimitiveRoot.sq_eq_neg_one [NoZeroDivisors R] {ζ : R}
     (hζ : IsPrimitiveRoot ζ 4) : ζ ^ 2 = -1 :=
   (hζ.pow (by norm_num) (by norm_num : 4 = 2 * 2)).eq_neg_one_of_two_right
+
+/-- **Orthogonality of characters.** In a domain, the sum of the powers `(ζ ^ e) ^ a` over `a < m`
+of a primitive `m`-th root of unity `ζ` is `m` if `m` divides `e`, and zero otherwise. -/
+theorem _root_.IsPrimitiveRoot.sum_pow_pow_eq [IsDomain R] {ζ : R} {m : ℕ}
+    (hζ : IsPrimitiveRoot ζ m) (e : ℕ) :
+    ∑ a : Fin m, (ζ ^ e) ^ (a : ℕ) = if m ∣ e then (m : R) else 0 := by
+  rw [Fin.sum_univ_eq_sum_range (fun a ↦ (ζ ^ e) ^ a)]
+  split_ifs with h
+  · simp [(hζ.pow_eq_one_iff_dvd e).mpr h]
+  · have h1 : ζ ^ e - 1 ≠ 0 := sub_ne_zero.mpr fun h' ↦ h ((hζ.pow_eq_one_iff_dvd e).mp h')
+    refine (mul_eq_zero.mp ?_).resolve_left h1
+    rw [mul_geom_sum, ← pow_mul, mul_comm, pow_mul, hζ.pow_eq_one, one_pow, sub_self]
+
+/-- **Orthogonality of characters in several variables.** In a domain, the sum of
+`∏ᵢ (ζ ^ eᵢ) ^ jᵢ` over `j ∈ {0, …, m - 1} ^ ι`, for a primitive `m`-th root of unity `ζ`, is the
+product over `i` of `m` if `m` divides `eᵢ`, and zero otherwise. -/
+theorem _root_.IsPrimitiveRoot.sum_prod_pow_pow_eq [IsDomain R] {ι : Type*} [Fintype ι]
+    [DecidableEq ι] {ζ : R} {m : ℕ} (hζ : IsPrimitiveRoot ζ m) (e : ι → ℕ) :
+    ∑ j : ι → Fin m, ∏ i, (ζ ^ e i) ^ (j i : ℕ) = ∏ i, if m ∣ e i then (m : R) else 0 := by
+  simp only [← hζ.sum_pow_pow_eq, Fintype.prod_sum]
 
 /-- A domain receiving an injective monoid homomorphism from a commutative monoid with enough
 `n`-th roots of unity has enough `n`-th roots of unity: the image of a primitive root is primitive,

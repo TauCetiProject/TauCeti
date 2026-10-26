@@ -49,7 +49,10 @@ tangent space as the ambient group. This is the infinitesimal input to Cartier's
 * `TauCeti.Bialgebra.eq_leftInvariantDerivation`: a left-invariant derivation is determined
   by its value at the identity.
 * `BialgHom.map_leftInvariantDerivation`: invariant derivations intertwine a
-  bialgebra morphism and its tangent map.
+  bialgebra morphism and its tangent map. The same holds for their iterates; local nilpotence
+  descends through surjective coordinate maps and is reflected by injective ones.
+* `BialgEquiv.exists_iterate_leftInvariantDerivation_eq_zero_iff`: local nilpotence
+  is invariant under a bialgebra isomorphism.
 * `Derivation.apply_eq_zero_of_isNilpotent`: in characteristic zero, tangent vectors at the
   identity vanish on nilpotent functions.
 * `TauCeti.Bialgebra.nilradical_le_augmentationIdeal_sq`: over a field of characteristic zero,
@@ -231,7 +234,56 @@ theorem map_leftInvariantDerivation {K : Type*} [CommRing K] [_root_.Bialgebra R
   simpa only [CoalgHom.toComoduleHom_apply, BialgHom.toCoalgHom_apply] using
     f.toCoalgHom.toComoduleHom.map_differential d h
 
+/-- Iterated invariant vector fields intertwine a bialgebra morphism and its differential. -/
+@[simp]
+theorem map_iterate_leftInvariantDerivation {K : Type*} [CommRing K] [Bialgebra R K]
+    (f : H →ₐc[R] K) (d : Derivation R K (CounitAlgebra R K R)) (n : ℕ) (h : H) :
+    f ((leftInvariantDerivation (derivationComp f d))^[n] h) =
+      (leftInvariantDerivation d)^[n] (f h) :=
+  Function.Semiconj.iterate_right (f.map_leftInvariantDerivation d) n h
+
+/-- An injective coordinate map reflects local nilpotence of related invariant vector fields.
+Geometrically, this transports local nilpotence along a schematically dominant morphism. -/
+theorem exists_iterate_leftInvariantDerivation_eq_zero_of_injective
+    {K : Type*} [CommRing K] [Bialgebra R K] (f : H →ₐc[R] K)
+    (hf : Function.Injective f) (d : Derivation R K (CounitAlgebra R K R))
+    (hd : ∀ x, ∃ n, (leftInvariantDerivation d)^[n] x = 0) :
+    ∀ x, ∃ n, (leftInvariantDerivation (derivationComp f d))^[n] x = 0 := by
+  intro x
+  obtain ⟨n, hn⟩ := hd (f x)
+  exact ⟨n, hf (by rw [map_iterate_leftInvariantDerivation, hn, map_zero])⟩
+
+/-- Local nilpotence descends through a surjective coordinate map. In particular it restricts
+to a closed subgroup whenever the tangent vector comes from that subgroup. -/
+theorem exists_iterate_leftInvariantDerivation_eq_zero_of_surjective
+    {K : Type*} [CommRing K] [Bialgebra R K] (f : H →ₐc[R] K)
+    (hf : Function.Surjective f) (d : Derivation R K (CounitAlgebra R K R))
+    (hd : ∀ x, ∃ n, (leftInvariantDerivation (derivationComp f d))^[n] x = 0) :
+    ∀ x, ∃ n, (leftInvariantDerivation d)^[n] x = 0 := by
+  intro x
+  obtain ⟨y, rfl⟩ := hf x
+  obtain ⟨n, hn⟩ := hd y
+  exact ⟨n, by rw [← map_iterate_leftInvariantDerivation, hn, map_zero]⟩
+
 end BialgHom
+
+namespace BialgEquiv
+
+open TauCeti TauCeti.Bialgebra
+
+variable {R H K : Type*} [CommRing R] [CommRing H] [CommRing K]
+  [Bialgebra R H] [Bialgebra R K]
+
+/-- A change of Hopf coordinates preserves and reflects local nilpotence of the invariant
+vector field. Neither smoothness nor an antipode is required. -/
+theorem exists_iterate_leftInvariantDerivation_eq_zero_iff (e : H ≃ₐc[R] K)
+    (d : Derivation R K (CounitAlgebra R K R)) :
+    (∀ x, ∃ n, (leftInvariantDerivation (derivationComp e.toBialgHom d))^[n] x = 0) ↔
+      ∀ x, ∃ n, (leftInvariantDerivation d)^[n] x = 0 :=
+  ⟨e.toBialgHom.exists_iterate_leftInvariantDerivation_eq_zero_of_surjective e.surjective d,
+    e.toBialgHom.exists_iterate_leftInvariantDerivation_eq_zero_of_injective e.injective d⟩
+
+end BialgEquiv
 
 namespace Derivation
 

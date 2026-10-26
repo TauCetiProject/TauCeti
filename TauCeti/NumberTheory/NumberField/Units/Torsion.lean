@@ -36,6 +36,8 @@ degree, to every field with a real place, in particular to the real quadratic fi
   torsion unit is `1` or `-1`.
 * `TauCeti.NumberField.Units.torsionOrder_eq_two_of_isReal`: with a real place, the torsion
   order is `2`.
+* `TauCeti.NumberField.Units.torsion_eq_one_or_neg_one_of_torsionOrder_eq_two`: with torsion
+  order `2`, every torsion unit is `1` or `-1`.
 -/
 
 public section
@@ -102,5 +104,15 @@ theorem torsionOrder_eq_two_of_isReal {w : InfinitePlace K} (hw : w.IsReal) :
     by simp [← Subtype.coe_ne_coe], Finset.ext fun x ↦ ⟨fun _ ↦ ?_, fun _ ↦ Finset.mem_univ _⟩⟩)
   rw [Finset.mem_insert, Finset.mem_singleton, ← Subtype.val_inj, ← Subtype.val_inj]
   exact torsion_eq_one_or_neg_one_of_isReal hw x
+
+omit [NumberField K] in
+/-- In a number field with torsion order `2`, every torsion unit is `1` or `-1`. -/
+theorem torsion_eq_one_or_neg_one_of_torsionOrder_eq_two (h : torsionOrder K = 2)
+    (x : torsion K) : (x : (𝓞 K)ˣ) = 1 ∨ (x : (𝓞 K)ˣ) = -1 := by
+  have hx : ((x : (𝓞 K)ˣ) : 𝓞 K) * ((x : (𝓞 K)ˣ) : 𝓞 K) = 1 := by
+    rw [← Units.val_mul, ← sq, ← h, pow_torsionOrder_eq_one K x.2, Units.val_one]
+  rcases mul_self_eq_one_iff.mp hx with hx | hx
+  · exact .inl (Units.ext hx)
+  · exact .inr (Units.ext hx)
 
 end TauCeti.NumberField.Units

@@ -94,31 +94,21 @@ of `𝒜`, as a strict morphism from `ℋ` to the cohomology `A∞` algebra of `
 identifies a minimal algebra with vanishing higher operations with its cohomology. -/
 noncomputable def toCohomology (h : 𝒜.IsMinimal) (hℋ : ℋ.IsMinimal)
     (hm : ∀ n, 3 ≤ n → ℋ.m n = 0) (hG : 𝒜.grading = ℋ.grading) (h₂ : 𝒜.m 2 = ℋ.m 2) :
-    AInfinityStrictHom ℋ 𝒜.cohomologyAInfinityAlgebra where
-  toLinearMap := h.cohomologyEquiv.toLinearMap
-  map_mem' hx := by
-    rw [← hG] at hx
-    simpa only [add_zero, cohomologyAInfinityAlgebra_grading] using
-      h.isHomogeneous_cohomologyEquiv.map_mem hx
-  map_m' n := by
-    ext x
-    rw [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply]
-    match n with
-    | 0 => simp
-    | 1 => simp [hℋ.m_one]
-    | 2 =>
+    AInfinityStrictHom ℋ 𝒜.cohomologyAInfinityAlgebra :=
+  .ofMapMTwo hℋ 𝒜.isMinimal_cohomologyAInfinityAlgebra hm
+    (fun _ ↦ 𝒜.cohomologyAInfinityAlgebra_m_of_three_le) h.cohomologyEquiv.toLinearMap
+    (by rw [← hG, cohomologyAInfinityAlgebra_grading]; exact h.isHomogeneous_cohomologyEquiv)
+    fun a b ↦ by
       rw [cohomologyAInfinityAlgebra_m_two_apply, ← h₂]
-      obtain ⟨a, b, rfl⟩ : ∃ a b, x = ![a, b] :=
-        ⟨x 0, x 1, funext fun i ↦ by fin_cases i <;> rfl⟩
       exact h.cohomologyEquiv_m_two a b
-    | n + 3 => simp [hm (n + 3) (by omega)]
 
 /-- The strict morphism `toCohomology` is the identification of a minimal algebra with its
 cohomology. -/
 @[simp]
 theorem coe_toCohomology (h : 𝒜.IsMinimal) (hℋ : ℋ.IsMinimal) (hm : ∀ n, 3 ≤ n → ℋ.m n = 0)
     (hG : 𝒜.grading = ℋ.grading) (h₂ : 𝒜.m 2 = ℋ.m 2) :
-    ⇑(h.toCohomology hℋ hm hG h₂) = h.cohomologyEquiv := (rfl)
+    ⇑(h.toCohomology hℋ hm hG h₂) = h.cohomologyEquiv := by
+  rw [toCohomology, AInfinityStrictHom.coe_ofMapMTwo, LinearEquiv.coe_coe]
 
 /-- The strict morphism `toCohomology` is bijective. -/
 theorem bijective_toCohomology (h : 𝒜.IsMinimal) (hℋ : ℋ.IsMinimal)

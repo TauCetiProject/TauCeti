@@ -25,6 +25,10 @@ this for products of probability measures (`MeasureTheory.Measure.infinitePi_map
 the factors are σ-finite. It regroups the coordinates of a product of products, for instance when
 an orthonormal basis is chosen in each factor of a Euclidean product.
 
+**Fibrewise maps.** Grouping coordinates along a finite map and applying a measure-preserving
+map to each fibre gives the product of the fibre laws. In particular, sums over disjoint fibres
+remain independent, so distribution-specific aggregation reduces to the law of each fibre sum.
+
 **Reading off a pair of coordinates.** The evaluation map `x ↦ (x a, x b)` at two distinct indices
 pushes `Measure.pi μ` forward to `μ a ⊗ μ b`: distinct coordinates of a product measure are
 independent, and each single coordinate has law `μ a` (Mathlib's `measurePreserving_eval`). This
@@ -75,6 +79,8 @@ finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
   embedding is measure preserving;
 * `TauCeti.measurePreserving_piCurry` — currying a product measure over a sigma type is measure
   preserving;
+* `TauCeti.measurePreserving_pi_fiberwise` — applying measure-preserving maps to disjoint fibres
+  gives the product of their laws;
 * `TauCeti.measurePreserving_eval_pair` — reading off two distinct coordinates is measure
   preserving;
 * `TauCeti.measurePreserving_piSplitAt` — separating the coordinate `i₀` from the rest is
@@ -151,6 +157,31 @@ theorem measurePreserving_piCurry {ι : Type*} {κ : ι → Type*} [Fintype ι] 
   rw [MeasurableEquiv.map_apply, MeasurableEquiv.coe_piCurry_symm, hpre, Measure.pi_pi,
     ← Finset.univ_sigma_univ, Finset.prod_sigma]
   exact Finset.prod_congr rfl fun i _ => Measure.pi_pi _ _
+
+/-- Applying a measure-preserving map to each fibre of a finite coordinate map gives the product
+of the fibre laws. The coordinate measures and the fibre laws need only be σ-finite. -/
+theorem measurePreserving_pi_fiberwise {ι κ : Type*} [Fintype ι] [Fintype κ]
+    [DecidableEq κ] {α : ι → Type*} {β : κ → Type*}
+    [∀ i, MeasurableSpace (α i)] [∀ j, MeasurableSpace (β j)]
+    (f : ι → κ) (μ : ∀ i, Measure (α i)) (ν : ∀ j, Measure (β j))
+    [∀ i, SigmaFinite (μ i)] [∀ j, SigmaFinite (ν j)]
+    {g : ∀ j, (∀ i : {i // f i = j}, α i) → β j}
+    (hg : ∀ j, MeasurePreserving (g j) (Measure.pi fun i : {i // f i = j} => μ i) (ν j)) :
+    MeasurePreserving (fun x j => g j (fun i => x i)) (Measure.pi μ) (Measure.pi ν) := by
+  -- Reindex the coordinates by their fibres, then curry the product.
+  have h₁ : MeasurePreserving
+      (fun (x : ∀ i, α i) (p : (j : κ) × {i // f i = j}) => x p.2)
+      (Measure.pi μ) (Measure.pi fun p : (j : κ) × {i // f i = j} => μ p.2) := by
+    have h := (measurePreserving_piCongrLeft μ (Equiv.sigmaFiberEquiv f)).symm
+      (MeasurableEquiv.piCongrLeft α (Equiv.sigmaFiberEquiv f))
+    have hfun : ⇑(MeasurableEquiv.piCongrLeft α (Equiv.sigmaFiberEquiv f)).symm =
+        fun (x : ∀ i, α i) (p : (j : κ) × {i // f i = j}) => x p.2 := by
+      funext x p
+      exact Equiv.piCongrLeft_symm_apply α (Equiv.sigmaFiberEquiv f) x p
+    rw [hfun] at h
+    exact h
+  exact ((measurePreserving_pi _ _ hg).comp
+    (measurePreserving_piCurry fun (j : κ) (i : {i // f i = j}) => μ i)).comp h₁
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
   [∀ i, MeasurableSpace (α i)]

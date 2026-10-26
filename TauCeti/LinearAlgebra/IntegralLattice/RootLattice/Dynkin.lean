@@ -107,6 +107,14 @@ theorem norm_rootLattice_intCast (v : Fin t.rank → ℤ) :
     (t.rootLattice ht).norm (fun j ↦ (v j : ℚ)) = (((v ᵥ* t.cartanMatrix) ⬝ᵥ v : ℤ) : ℚ) :=
   norm_ofGramMatrix_basisFun_intCast _ _ v
 
+/-- The rational form of two integer vectors of the root lattice is their integral Cartan form
+`uᵀ (cartanMatrix t) w`. -/
+theorem form_rootLattice_intCast (u w : Fin t.rank → ℤ) :
+    (t.rootLattice ht).form (fun j ↦ (u j : ℚ)) (fun j ↦ (w j : ℚ)) =
+      (((u ᵥ* t.cartanMatrix) ⬝ᵥ w : ℤ) : ℚ) := by
+  rw [rootLattice_form_apply, ← dotProduct_mulVec]
+  simp [dotProduct, mulVec]
+
 /-- The simple roots, as a `ℤ`-basis of the root lattice. -/
 noncomputable def simpleRootBasis : Module.Basis (Fin t.rank) ℤ (t.rootLattice ht) :=
   ofGramMatrix.basis _ _ _

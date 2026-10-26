@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Normed.Module.Trace
-import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
 # The divergence of a test vector field
@@ -16,8 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Trace
 For an open set `Ω` of a finite-dimensional real normed space `E`, a test vector field
 `φ ∈ 𝓓(Ω, E)` has divergence `div φ = tr (Dφ)`, which is again a test function on `Ω`. This file
 packages the divergence as a continuous linear map `𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ)`, in the style of
-Mathlib's `TestFunction.fderivCLM`, and, when `E` is an inner product space, expands it in an
-orthonormal basis.
+Mathlib's `TestFunction.fderivCLM`, and expands it in the coordinates of any finite basis.
 
 The divergence of test vector fields is the operator dual to the distributional gradient: the
 total variation of a function and the perimeter of a set are suprema of the pairings
@@ -31,8 +29,10 @@ total variation of a function and the perimeter of a set are suprema of the pair
   field from `Ω'` to a larger open set `Ω`.
 * `TestFunction.divergenceCLM_postcompCLM_toSpanSingleton`: the divergence of the vector field
   `φ v` is the directional derivative `∂_v φ`.
-* `TestFunction.divergenceCLM_apply_eq_sum`: in an orthonormal basis `b`, it is the sum of the
-  derivatives of the components `⟪b i, φ⟫` in the directions `b i`.
+* `TestFunction.divergenceCLM_apply_eq_deriv`: on the real line, the divergence of a test
+  function is its derivative.
+* `TestFunction.divergenceCLM_apply_eq_sum`: in a basis `b`, it is the sum of the derivatives of
+  the coordinate functions `b.repr (φ ·) i` in the directions `b i`.
 * `TauCeti.divergenceCLM_translateTestFunction`: the divergence of a translated test vector field
   is the translate of its divergence.
 * `TauCeti.trace_fderiv_smul` and `TauCeti.trace_fderiv_smul_const`: the Leibniz rule
@@ -45,7 +45,7 @@ public section
 namespace TestFunction
 
 open LineDeriv TopologicalSpace
-open scoped ContDiff Distributions InnerProductSpace
+open scoped ContDiff Distributions
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω Ω' : Opens E}
@@ -84,24 +84,28 @@ theorem divergenceCLM_postcompCLM_toSpanSingleton (φ : 𝓓(Ω, ℝ)) (v : E) :
     lineDerivCLM_apply_of_le le_top, hφ.lineDeriv_eq_fderiv]
   exact LinearMap.trace_smulRight _ _
 
-section InnerProductSpace
+/-- On the real line, a test function is a test vector field whose divergence is its
+derivative. -/
+theorem divergenceCLM_apply_eq_deriv {Ω : Opens ℝ} (φ : 𝓓(Ω, ℝ)) (x : ℝ) :
+    divergenceCLM φ x = deriv φ x := by
+  have hφ : postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (1 : ℝ)) φ = φ := by
+    ext; simp
+  conv_lhs => rw [← hφ]
+  rw [divergenceCLM_postcompCLM_toSpanSingleton, lineDerivOp_one_apply_eq_deriv]
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {Ω : Opens E}
-
-/-- **The divergence in an orthonormal basis**: `div φ = ∑ i, ∂_{b i} ⟪b i, φ⟫`. -/
-theorem divergenceCLM_apply_eq_sum {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+/-- **The divergence in a basis**: `div φ = ∑ i, ∂_{b i} (b.repr (φ ·) i)`. -/
+theorem divergenceCLM_apply_eq_sum {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ E)
     (φ : 𝓓(Ω, E)) (x : E) :
-    divergenceCLM φ x = ∑ i, lineDeriv ℝ (fun y => ⟪b i, φ y⟫_ℝ) x (b i) := by
-  have hφ : DifferentiableAt ℝ (φ : E → E) x := φ.contDiff.differentiable (by simp) x
-  rw [divergenceCLM_apply, LinearMap.trace_eq_sum_inner _ b]
+    divergenceCLM φ x = ∑ i, lineDeriv ℝ (fun y => b.repr (φ y) i) x (b i) := by
+  classical
+  rw [divergenceCLM_apply, LinearMap.trace_eq_matrix_trace ℝ b, Matrix.trace]
   refine Finset.sum_congr rfl fun i _ => ?_
-  have hd : HasFDerivAt (fun y => ⟪b i, φ y⟫_ℝ) ((innerSL ℝ (b i)).comp (fderiv ℝ φ x)) x :=
-    (innerSL ℝ (b i)).hasFDerivAt.comp x hφ.hasFDerivAt
-  rw [hd.hasLineDerivAt (b i) |>.lineDeriv]
-  simp
-
-end InnerProductSpace
+  have hd : HasFDerivAt (fun y => b.repr (φ y) i)
+      ((LinearMap.toContinuousLinearMap (b.coord i)).comp (fderiv ℝ (φ : E → E) x)) x :=
+    (LinearMap.toContinuousLinearMap (b.coord i)).hasFDerivAt.comp x
+      (φ.contDiff.differentiable (by simp) x).hasFDerivAt
+  rw [(hd.hasLineDerivAt (b i)).lineDeriv]
+  simp [LinearMap.toMatrix_apply]
 
 end TestFunction
 

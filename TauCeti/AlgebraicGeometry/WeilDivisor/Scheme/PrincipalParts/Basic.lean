@@ -128,6 +128,47 @@ function field by the stalk of `𝒪_X(D)` at `x`. -/
 abbrev PrincipalPart (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) : Type u :=
   X.functionField ⧸ stalkSubmodule D x
 
+/-- Enlarging a divisor enlarges its stalk submodule in the function field. -/
+lemma stalkSubmodule_mono (h : D ≤ E) (x : CodimensionOnePoint X) :
+    stalkSubmodule D x ≤ stalkSubmodule E x := by
+  intro f hf
+  exact mem_stalkSubmodule.mpr <|
+    (mem_stalkSubmodule.mp hf).imp id (le_trans (neg_le_neg (WeilDivisor.coeff_le_coeff h x)))
+
+/-- The quotient map on principal parts induced by an inclusion of divisors. -/
+def principalPartMapOfLE (h : D ≤ E) (x : CodimensionOnePoint X) :
+    PrincipalPart D x →ₗ[X.presheaf.stalk (x : X)] PrincipalPart E x :=
+  Submodule.factor (stalkSubmodule_mono h x)
+
+/-- The map of local principal parts preserves the representing rational function. -/
+@[simp]
+lemma principalPartMapOfLE_mk (h : D ≤ E) (x : CodimensionOnePoint X)
+    (f : X.functionField) :
+    principalPartMapOfLE h x (Submodule.Quotient.mk f) = Submodule.Quotient.mk f :=
+  Submodule.factor_mk (stalkSubmodule_mono h x) f
+
+/-- The local principal-parts map attached to a reflexive divisor inequality is the identity. -/
+@[simp]
+lemma principalPartMapOfLE_refl (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) :
+    principalPartMapOfLE (le_refl D) x = LinearMap.id :=
+  Submodule.mapQ_id _ (stalkSubmodule_mono (le_refl D) x)
+
+/-- Local principal-parts maps compose along a chain of divisor inequalities. -/
+@[simp]
+lemma principalPartMapOfLE_comp {D E F : SchemeWeilDivisor X} (h : D ≤ E) (h' : E ≤ F)
+    (x : CodimensionOnePoint X) :
+    (principalPartMapOfLE h' x).comp (principalPartMapOfLE h x) =
+      principalPartMapOfLE (h.trans h') x :=
+  Submodule.factor_comp (stalkSubmodule_mono h x) (stalkSubmodule_mono h' x)
+
+/-- Successive local principal-parts maps agree with the direct map on every quotient class. -/
+@[simp]
+lemma principalPartMapOfLE_comp_apply {D E F : SchemeWeilDivisor X} (h : D ≤ E) (h' : E ≤ F)
+    (x : CodimensionOnePoint X) (q : PrincipalPart D x) :
+    principalPartMapOfLE h' x (principalPartMapOfLE h x q) =
+      principalPartMapOfLE (h.trans h') x q :=
+  Submodule.factor_comp_apply (stalkSubmodule_mono h x) (stalkSubmodule_mono h' x) q
+
 /-- The finitely supported families of principal parts of `D` at the codimension-one points of
 `U`. -/
 abbrev principalPartsSections (D : SchemeWeilDivisor X) (U : X.Opens) :=
