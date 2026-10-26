@@ -38,6 +38,7 @@ namespace TauCeti.Probability
 variable {m l r : ℝ}
 
 /-- Every natural power about any real point is integrable, including at invalid rates. -/
+@[simp]
 theorem integrable_pow_sub_asymmetricLaplaceMeasure (m l r c : ℝ) (n : ℕ) :
     Integrable (fun x ↦ (x - c) ^ n) (asymmetricLaplaceMeasure m l r) := by
   by_cases hl : 0 < l
@@ -54,6 +55,7 @@ theorem integrable_pow_sub_asymmetricLaplaceMeasure (m l r c : ℝ) (n : ℕ) :
   · simp [asymmetricLaplaceMeasure_of_nonpos_left (not_lt.mp hl)]
 
 /-- Every natural raw moment of an asymmetric Laplace law is integrable, for all parameters. -/
+@[simp]
 theorem integrable_pow_asymmetricLaplaceMeasure (m l r : ℝ) (n : ℕ) :
     Integrable (fun x ↦ x ^ n) (asymmetricLaplaceMeasure m l r) := by
   simpa only [sub_zero] using integrable_pow_sub_asymmetricLaplaceMeasure m l r 0 n
