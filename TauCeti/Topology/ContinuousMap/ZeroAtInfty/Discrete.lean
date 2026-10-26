@@ -11,6 +11,8 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Analysis.Normed.Group.Indicator
 public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 public import TauCeti.Algebra.Module.LinearMap.FiniteRank
+public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+public import Mathlib.LinearAlgebra.StdBasis
 
 /-!
 # The model space `C₀(I, E)` on a discrete index
@@ -39,6 +41,10 @@ This file develops the coordinate structure of `C₀(I, E)`:
 * `ZeroAtInftyContinuousMap.dense_setOf_finite_support` and
   `ZeroAtInftyContinuousMap.dense_span_single_one`: finitely supported families are dense, and
   the coordinate vectors `single i 1` span a dense submodule of `C₀(I, R)`;
+* `ZeroAtInftyContinuousMap.linearIndependent_single_one`: the coordinate vectors `single i 1`
+  are linearly independent, so over a ring with the strong rank condition a finitely generated
+  submodule contains only finitely many of them
+  (`ZeroAtInftyContinuousMap.finite_setOf_single_one_mem`);
 * `ZeroAtInftyContinuousMap.continuousLinearMap_ext`: continuous linear maps out of `C₀(I, E)`
   are determined by their values on coordinate vectors;
 * `ZeroAtInftyContinuousMap.indicatorCLM R S`: the coordinate projection `f ↦ S.indicator f`
@@ -276,6 +282,21 @@ theorem dense_span_single_one :
     Dense (Submodule.span R (Set.range fun i : I ↦ single i (1 : R)) : Set C₀(I, R)) :=
   fun f ↦ mem_closure_of_tendsto (hasSum_smul_single_one f) <| Eventually.of_forall fun _ ↦
     Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+
+/-- The unit vectors `single i 1` of `C₀(I, R)` are linearly independent. -/
+theorem linearIndependent_single_one : LinearIndependent R fun i : I ↦ single i (1 : R) := by
+  let f : C₀(I, R) →ₗ[R] I → R := { toFun := (⇑), map_add' := coe_add, map_smul' := coe_smul }
+  exact .of_comp f (by simpa [f, Function.comp_def] using Pi.linearIndependent_single_one I R)
+
+/-- Over a ring with the strong rank condition, a finitely generated submodule of `C₀(I, R)`
+contains only finitely many of the unit vectors `single i 1`. -/
+theorem finite_setOf_single_one_mem [StrongRankCondition R] {Q : Submodule R C₀(I, R)}
+    (hQ : Q.FG) : {i | single i (1 : R) ∈ Q}.Finite := by
+  obtain ⟨s, rfl⟩ := hQ
+  have := (linearIndependent_single_one.comp _ Subtype.val_injective).finite_of_le_span_finite _
+    (s : Set C₀(I, R)) <| Set.range_subset_iff.2
+      fun i : {i | single i (1 : R) ∈ Submodule.span R s} ↦ i.2
+  exact Set.toFinite _
 
 /-- Continuous linear maps out of `C₀(I, R)` agreeing on the unit vectors `single i 1` are
 equal. -/

@@ -22,7 +22,7 @@ unit. This is Deligne's theorem. It is what makes a point of exact order `n` of 
 an `n`-torsion point, and the kernel of an isogeny of degree `n` a subgroup killed by `n`.
 
 The affine case is `TauCeti.AlgHom.convPow_eq_one_of_rankAtStalk`, stated for a commutative and
-cocommutative Hopf algebra which is finite projective of constant rank. Over `Spec R`, the
+cocommutative Hopf algebra which is finite flat of constant stalk rank. Over `Spec R`, the
 group scheme `G` is the Hopf spectrum of its coordinate Hopf algebra
 (`TauCeti.FiniteLocallyFreeCommAffineGroupSchemeCat.hopfSpecCoordinateHopfAlgebraIso`), whose
 local rank is the rank of `G` (`finrank_eq_rankAtStalk_coordinateHopfAlgebra`), and Mathlib's
@@ -35,7 +35,7 @@ powers in the groups of points.
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.Spec.pow_eq_one_of_rankAtStalk`: the Hopf spectrum of a commutative
-  and cocommutative Hopf algebra which is finite projective of constant rank `n` is killed by `n`.
+  and cocommutative Hopf algebra which is finite flat of constant stalk rank `n` is killed by `n`.
 * `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.pow_eq_one_of_finrank`: a finite locally
   free commutative group scheme of constant rank `n` is killed by `n`.
 * `TauCeti.GroupScheme.pow_eq_one_of_finrank_of_mono`: a finite locally free subgroup of constant
@@ -60,11 +60,11 @@ namespace TauCeti.AlgebraicGeometry
 namespace Spec
 
 /-- Every point of the Hopf spectrum of a commutative and cocommutative Hopf algebra which is
-finite projective of constant rank `n` is killed by `n`: for every scheme `X` over `Spec R` and
+finite flat of constant stalk rank `n` is killed by `n`: for every scheme `X` over `Spec R` and
 every `x : X ⟶ Spec H` over `Spec R`, the `n`-th power of `x` in the group of `X`-valued points is
 the unit. -/
 theorem pow_eq_one_of_rankAtStalk {R H : Type u} [CommRing R] [CommRing H] [HopfAlgebra R H]
-    [Coalgebra.IsCocomm R H] [Module.Finite R H] [Module.Projective R H] {n : ℕ}
+    [Coalgebra.IsCocomm R H] [Module.Finite R H] [Module.Flat R H] {n : ℕ}
     (hn : ∀ p, Module.rankAtStalk (R := R) H p = n) {X : Over (Spec (CommRingCat.of R))}
     (x : X ⟶ (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) : x ^ n = 1 := by
   -- It suffices to treat the universal point, the identity of `Spec H`.

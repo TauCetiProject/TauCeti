@@ -15,7 +15,8 @@ import Mathlib.Tactic.Linarith
 For `γ = [a,b;c,d]` in `SL₂(ℤ)`, the conjugate `γ Tʲ γ⁻¹` depends only on the first
 column `(a,c)`. Its lower-left entry is `-j c²`. This calculation describes the
 translations fixing the rational cusp `γ ∞` and turns congruence-subgroup membership
-into a divisibility condition on the translation exponent.
+into a divisibility condition on the translation exponent. An element of `SL₂(ℤ)` with
+vanishing lower-left entry, that is one fixing `∞` itself, is a signed translation `±Tʲ`.
 
 ## References
 
@@ -42,5 +43,22 @@ theorem _root_.Matrix.SpecialLinearGroup.coe_conj_T_zpow (γ : SL(2, ℤ)) (j : 
     simp [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_inv,
       ModularGroup.coe_T_zpow, adjugate_fin_two, mul_apply, Fin.sum_univ_two] <;>
     ring_nf <;> nlinarith [hdet]
+
+/-- An element of `SL₂(ℤ)` with vanishing lower-left entry fixes the cusp `∞`, so it is a
+translation up to sign: `Tᵇ` when its diagonal entries are `1`, and `-T⁻ᵇ` when they are `-1`,
+where `b` is its upper-right entry. Adapted from the proof of
+`ModularGroup.exists_eq_T_zpow_of_c_eq_zero` in Mathlib. -/
+theorem ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero {g : SL(2, ℤ)}
+    (hc : g 1 0 = 0) :
+    g = ModularGroup.T ^ g 0 1 ∨ g = -ModularGroup.T ^ (-g 0 1) := by
+  have had : g 0 0 * g 1 1 = 1 := by
+    simpa only [det_fin_two, hc, mul_zero, sub_zero] using g.det_coe
+  rcases Int.eq_one_or_neg_one_of_mul_eq_one' had with ⟨ha, hd⟩ | ⟨ha, hd⟩
+  · left
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [ha, hc, hd, ModularGroup.coe_T_zpow]
+  · right
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [ha, hc, hd, ModularGroup.coe_T_zpow]
 
 end TauCeti

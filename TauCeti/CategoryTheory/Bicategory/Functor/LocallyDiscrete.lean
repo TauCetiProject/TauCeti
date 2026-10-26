@@ -31,4 +31,12 @@ lemma map₂_eq_eqToHom {B C : Type*} [Bicategory B] [IsLocallyDiscrete B] [Bica
   rw [Subsingleton.elim η (𝟙 f)]
   simp
 
+/-- A prelax functor out of a locally discrete bicategory sends a composite of two `2`-morphisms
+to the image of any `2`-morphism with the same source and target. -/
+@[reassoc]
+lemma map₂_comp_map₂ {B C : Type*} [Bicategory B] [IsLocallyDiscrete B] [Bicategory C]
+    (F : PrelaxFunctor B C) {a b : B} {f g h : a ⟶ b} (η : f ⟶ g) (θ : g ⟶ h) (ι : f ⟶ h) :
+    F.map₂ η ≫ F.map₂ θ = F.map₂ ι := by
+  simp [map₂_eq_eqToHom]
+
 end CategoryTheory.PrelaxFunctor

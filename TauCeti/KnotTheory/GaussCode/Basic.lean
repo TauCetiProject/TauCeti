@@ -151,6 +151,18 @@ theorem over_partner_ne {D : BasedOrientedGaussCode n} (i : Fin (2 * n)) :
   rw [D.over_partner]
   exact Bool.not_ne_self _
 
+/-- Two codes whose visits meet a common crossing in the same pairs have the same signs of the
+crossings met at every visit once they have them at the over visits: an under visit meets the same
+crossing as its partner, which is over. -/
+private theorem sign_visit_eq_of_over {D E : BasedOrientedGaussCode n}
+    (hvisit : ∀ i j, D.visit i = D.visit j ↔ E.visit i = E.visit j)
+    (hsign : ∀ i, D.over i = true → D.sign (D.visit i) = E.sign (E.visit i)) (i : Fin (2 * n)) :
+    D.sign (D.visit i) = E.sign (E.visit i) := by
+  cases hi : D.over i
+  · have hp : D.over (D.partner.val i) = true := by rw [D.over_partner, hi, Bool.not_false]
+    rw [← D.visit_partner, hsign _ hp, (hvisit _ i).1 (D.visit_partner i)]
+  · exact hsign i hi
+
 /-!
 ### Visits and crossing data
 -/
@@ -495,6 +507,85 @@ def relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) : BasedOriented
 @[simp] theorem relabel_refl (D : BasedOrientedGaussCode n) :
     D.relabel (Equiv.refl (Fin n)) = D := by
   apply ext <;> funext i <;> simp
+
+/-- Two Gauss codes differ only by a relabelling of their crossings when the same pairs of visits
+belong to a common crossing, and the codes have the same over/under data and the same signs of the
+crossings met at each over visit. -/
+theorem exists_relabel_eq_of_visit_eq_visit_iff {D E : BasedOrientedGaussCode n}
+    (hvisit : ∀ i j, D.visit i = D.visit j ↔ E.visit i = E.visit j) (hover : D.over = E.over)
+    (hsign : ∀ i, D.over i = true → D.sign (D.visit i) = E.sign (E.visit i)) :
+    ∃ e, D.relabel e = E := by
+  replace hsign := sign_visit_eq_of_over hvisit hsign
+  -- Read the labels of `D` through those of `E`; this is injective, hence a permutation.
+  let f : Fin n → Fin n := fun c ↦ E.visit (Function.surjInv D.visit_surjective c)
+  have hf (i : Fin (2 * n)) : f (D.visit i) = E.visit i :=
+    (hvisit _ _).1 (Function.surjInv_eq D.visit_surjective _)
+  have hinj : Function.Injective f := fun c c' h ↦ by
+    obtain ⟨i, rfl⟩ := D.visit_surjective c
+    obtain ⟨j, rfl⟩ := D.visit_surjective c'
+    rw [hf, hf] at h
+    exact (hvisit i j).2 h
+  let e := Equiv.ofBijective f hinj.bijective_of_finite
+  refine ⟨e, ext (funext fun i ↦ hf i) hover (funext fun c ↦ ?_)⟩
+  obtain ⟨i, rfl⟩ := E.visit_surjective c
+  rw [sign_relabel, ← hsign, ← hf i]
+  exact congrArg D.sign (e.symm_apply_apply (D.visit i))
+
+/-- The form of `TauCeti.BasedOrientedGaussCode.exists_relabel_eq_of_visit_eq_visit_iff` for codes
+whose numbers of crossings are equal but not definitionally so: after identifying their visits by
+`Fin.cast`, the codes, paired with their numbers of crossings, differ only by a relabelling of the
+crossings. -/
+theorem exists_sigma_mk_eq_relabel_of_visit_eq_visit_iff {m : ℕ} (h : n = m)
+    {D : BasedOrientedGaussCode n} {E : BasedOrientedGaussCode m}
+    (hvisit : ∀ i j, D.visit i = D.visit j ↔
+      E.visit (Fin.cast (congrArg (2 * ·) h) i) = E.visit (Fin.cast (congrArg (2 * ·) h) j))
+    (hover : ∀ i, D.over i = E.over (Fin.cast (congrArg (2 * ·) h) i))
+    (hsign : ∀ i, D.over i = true →
+      D.sign (D.visit i) = E.sign (E.visit (Fin.cast (congrArg (2 * ·) h) i))) :
+    ∃ e, (⟨m, E⟩ : Σ n, BasedOrientedGaussCode n) = ⟨n, D.relabel e⟩ := by
+  subst h
+  simp only [Fin.cast_eq_self] at hvisit hover hsign
+  obtain ⟨e, he⟩ := exists_relabel_eq_of_visit_eq_visit_iff hvisit (funext hover) hsign
+  exact ⟨e, by rw [he]⟩
+
+/-- A Gauss code is determined by the relative order of the crossing labels of its visits, its
+over/under data, and the signs of the crossings met at its over visits: two codes whose labels
+compare in the same way at every pair of visits have the same labels. -/
+theorem ext_of_visit_lt_visit_iff {D E : BasedOrientedGaussCode n}
+    (hvisit : ∀ i j, D.visit i < D.visit j ↔ E.visit i < E.visit j) (hover : D.over = E.over)
+    (hsign : ∀ i, D.over i = true → D.sign (D.visit i) = E.sign (E.visit i)) : D = E := by
+  have heq (i j : Fin (2 * n)) : D.visit i = D.visit j ↔ E.visit i = E.visit j := by
+    simp only [le_antisymm_iff, ← not_lt, hvisit]
+  obtain ⟨e, he⟩ := exists_relabel_eq_of_visit_eq_visit_iff heq hover hsign
+  have hv (i : Fin (2 * n)) : e (D.visit i) = E.visit i :=
+    congrArg (fun C ↦ C.visit i) he
+  -- The label permutation preserves order, so it is the identity on `Fin n`.
+  have hmono : StrictMono e := by
+    intro c c' h
+    obtain ⟨i, rfl⟩ := D.visit_surjective c
+    obtain ⟨j, rfl⟩ := D.visit_surjective c'
+    rw [hv, hv]
+    exact (hvisit i j).1 h
+  have hid : (e : Fin n → Fin n) = id :=
+    hmono.range_inj_of_wellFoundedLT strictMono_id |>.1 (by simp)
+  have heid : e = Equiv.refl (Fin n) := Equiv.ext (congrFun hid)
+  simpa only [heid, relabel_refl] using he
+
+/-- The form of `TauCeti.BasedOrientedGaussCode.ext_of_visit_lt_visit_iff` for codes whose
+numbers of crossings are equal but not definitionally so, such as codes read off from two
+presentations of one diagram: the codes, paired with their numbers of crossings, are equal when
+they satisfy its hypotheses after identifying their visits by `Fin.cast`. -/
+theorem sigma_mk_eq_of_visit_lt_visit_iff {m : ℕ} (h : n = m) {D : BasedOrientedGaussCode n}
+    {E : BasedOrientedGaussCode m}
+    (hvisit : ∀ i j, D.visit i < D.visit j ↔
+      E.visit (Fin.cast (congrArg (2 * ·) h) i) < E.visit (Fin.cast (congrArg (2 * ·) h) j))
+    (hover : ∀ i, D.over i = E.over (Fin.cast (congrArg (2 * ·) h) i))
+    (hsign : ∀ i, D.over i = true →
+      D.sign (D.visit i) = E.sign (E.visit (Fin.cast (congrArg (2 * ·) h) i))) :
+    (⟨n, D⟩ : Σ n, BasedOrientedGaussCode n) = ⟨m, E⟩ := by
+  subst h
+  simp only [Fin.cast_eq_self] at hvisit hover hsign
+  rw [ext_of_visit_lt_visit_iff hvisit (funext hover) hsign]
 
 /-- The crossing-free based oriented Gauss code, representing the unknot diagram. -/
 def empty : BasedOrientedGaussCode 0 where

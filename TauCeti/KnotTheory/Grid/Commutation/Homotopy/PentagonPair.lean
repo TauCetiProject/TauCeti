@@ -179,11 +179,11 @@ private theorem returning_pentagon_pair_iff
       | .inr P, .inr _ => P.right = c
       | _, _ => False := by
   -- Keep the reverse diagram's marking data while identifying its three geometric parameters.
-  rcases Cr with ⟨column, turn, opposite, hne, hnon, hOa, hXa, hOb, hXb⟩
+  rcases Cr with ⟨⟨column, turn, hne⟩, opposite, hnon, hOa, hXa, hOb, hXb⟩
   simp only at hcolumn hturn hopposite
   subst column turn opposite
   let Cr : ColumnCommutationData (G.swapColumns a b) :=
-    ⟨a, C.oppositeTurnRow, C.turnRow, hne, hnon, hOa, hXa, hOb, hXb⟩
+    ⟨⟨a, C.oppositeTurnRow, hne⟩, C.turnRow, hnon, hOa, hXa, hOb, hXb⟩
   rcases D with ⟨m, P, Q⟩
   cases P with
   | inl P =>
@@ -200,7 +200,7 @@ private theorem returning_pentagon_pair_iff
         refine ⟨⟨h.1, G.disjoint_returning_pentagon_markings C P Q h
           G.X C.X_column_below C.X_next_above⟩, ⟨h.2, ?_⟩⟩
         exact (G.swapColumns a b).disjoint_returning_pentagon_markings
-          ⟨a, C.oppositeTurnRow, C.turnRow, hne, hnon, hOa, hXa, hOb, hXb⟩
+          ⟨⟨a, C.oppositeTurnRow, hne⟩, C.turnRow, hnon, hOa, hXa, hOb, hXb⟩
           Q P h.symm _ hXa hXb
     | inr Q =>
       -- Opposite-side turns would force both distinct turn rows into one thin horizontal annulus.
@@ -226,7 +226,7 @@ private theorem returning_pentagon_pair_iff
         refine ⟨⟨h.1, G.disjoint_returning_initialPentagon_markings C P Q h
           G.X C.X_column_below C.X_next_above⟩, ⟨h.2, ?_⟩⟩
         exact (G.swapColumns a b).disjoint_returning_initialPentagon_markings
-          ⟨a, C.oppositeTurnRow, C.turnRow, hne, hnon, hOa, hXa, hOb, hXb⟩
+          ⟨⟨a, C.oppositeTurnRow, hne⟩, C.turnRow, hnon, hOa, hXa, hOb, hXb⟩
           Q P h.symm _ hXa hXb
 
 /-- A counted returning pentagon pair has two terminal-side turns and occupies column `a`,
@@ -256,11 +256,11 @@ private theorem returning_pentagon_pair_weight_eq_one
       (G.swapColumns a b).commutationPentagonWeight Cr R D.second = 1 := by
   have hshape := (G.returning_pentagon_pair_iff C Cr hcolumn hturn hopposite D).mp hD
   -- In either surviving vertical annulus, every polynomial factor is one because no O is covered.
-  rcases Cr with ⟨column, turn, opposite, hne, hnon, hOa, hXa, hOb, hXb⟩
+  rcases Cr with ⟨⟨column, turn, hne⟩, opposite, hnon, hOa, hXa, hOb, hXb⟩
   simp only at hcolumn hturn hopposite
   subst column turn opposite
   let Cr : ColumnCommutationData (G.swapColumns a b) :=
-    ⟨a, C.oppositeTurnRow, C.turnRow, hne, hnon, hOa, hXa, hOb, hXb⟩
+    ⟨⟨a, C.oppositeTurnRow, hne⟩, C.turnRow, hnon, hOa, hXa, hOb, hXb⟩
   rcases D with ⟨m, P, Q⟩
   cases P with
   | inl P =>

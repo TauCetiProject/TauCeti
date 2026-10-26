@@ -41,7 +41,8 @@ degrees. This grading is used by tensor products of differential graded objects.
 * `TauCeti.InternalGrading.piTensorProduct_ext`: linear maps from a finite tensor product agree
   when they agree on pure tensors of homogeneous elements.
 * `TauCeti.LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
-* `TauCeti.InternalGrading.isHomogeneous_assoc_symm`: reassociation preserves total degree.
+* `TauCeti.InternalGrading.isHomogeneous_assoc` and
+  `TauCeti.InternalGrading.isHomogeneous_assoc_symm`: reassociation preserves total degree.
 * `TauCeti.InternalGrading.koszulTwist_tensorProduct`: the Koszul twist of the total grading is
   the tensor product of the Koszul twists of the factors.
 
@@ -183,6 +184,14 @@ theorem isHomogeneous_assoc_symm {P : Type w'} [AddCommMonoid P] [Module R P]
   have hdeg : n + 0 = p + r + (n - p - r) := by ring
   rw [hdeg]
   exact tmul_mem_tensorProduct _ _ (tmul_mem_tensorProduct G H hx hy) hu
+
+/-- Reassociating a triple tensor product preserves total degree. -/
+theorem isHomogeneous_assoc {P : Type w'} [AddCommMonoid P] [Module R P]
+    (G : InternalGrading R M) (H : InternalGrading R N) (K : InternalGrading R P) :
+    LinearMap.IsHomogeneous (TensorProduct.assoc R M N P).toLinearMap
+      ((G.tensorProduct H).tensorProduct K).piece (G.tensorProduct (H.tensorProduct K)).piece
+      0 := by
+  exact (isHomogeneous_assoc_symm G H K).linearEquiv_symm
 
 end Internal
 

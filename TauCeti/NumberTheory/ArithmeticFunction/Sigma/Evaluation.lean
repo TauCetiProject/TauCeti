@@ -14,7 +14,7 @@ import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 The integral divisor-sum series converges at a parameter of norm less than one in a complete
 non-archimedean seminormed ring. Its value is the sum of its evaluated coefficients.
-When the target is normed and commutative with `‖1‖ = 1`, `evalIntSeries_divisorSumSeries`
+When the target is normed and commutative, `evalIntSeries_divisorSumSeries`
 identifies evaluation of the formal series `divisorSumSeries k` under `evalIntSeries` with its
 analytic value `divisorSumAt k q`.
 -/
@@ -54,7 +54,7 @@ theorem map_divisorSumAt {L : Type*} [NormedRing L] (f : K →+* L) (hf : Contin
   simp
 
 /-- Evaluating the integral divisor-sum series gives its convergent analytic value. -/
-@[simp] theorem evalIntSeries_divisorSumSeries {K : Type*} [NormedCommRing K] [NormOneClass K]
+@[simp] theorem evalIntSeries_divisorSumSeries {K : Type*} [NormedCommRing K]
     [CompleteSpace K] [IsUltrametricDist K] (k : ℕ) (q : K) (hq : ‖q‖ < 1) :
     evalIntSeries q hq (divisorSumSeries k) = divisorSumAt k q := by
   simp only [evalIntSeries_apply, coeff_divisorSumSeries, divisorSumAt_def]

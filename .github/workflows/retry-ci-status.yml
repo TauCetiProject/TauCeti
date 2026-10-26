@@ -27,6 +27,7 @@ jobs:
       - namespace-features:github.run-id=${{ github.run_id }}
     timeout-minutes: 75
     env:
+      CI_STATUS_MERGE_BACKEND: ${{ vars.MERGE_BACKEND || 'queue' }}
       CI_STATUS_SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
       CI_STATUS_SOURCE_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
       CI_STATUS_MAX_WAIT: '3700'
@@ -41,10 +42,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared reporting tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
 
       - name: Discover retained intents from this exact original run
@@ -97,7 +98,7 @@ jobs:
       - name: Prepare scoped CI reporting credentials
         if: steps.intents.outputs.present == 'true'
         id: credentials
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           workflow-token: ${{ github.token }}
           owner: ${{ github.repository_owner }}

@@ -80,13 +80,7 @@ theorem contMDiff_analyticZeroConeHomeomorph_symm (n : ℕ∞ω) :
     rw [contMDiff_pi_module_iff]
     intro j
     let m : IntegralCharacter N := e.symm (Finsupp.single j 1)
-    have hm : ∀ σ : (ofCone hi (isToricCone_bot i)).cones,
-        m ∈ dualSemigroup (ofCone hi (isToricCone_bot i)).lattice σ.1 := by
-      intro σ
-      have hσ : σ.1 = (⊥ : PointedCone ℝ V) :=
-        le_bot_iff.mp ((mem_ofCone_cones hi (isToricCone_bot i)).mp σ.2).le
-      rw [hσ]
-      simp
+    have hm := mem_dualSemigroup_ofCone_bot hi m
     refine ((ofCone hi (isToricCone_bot i)).contMDiff_analyticCharacter h₀ m hm n).congr
       fun x ↦ ?_
     have hx := (analyticZeroConeHomeomorph hi).apply_symm_apply x

@@ -35,7 +35,7 @@ module of a finite `p`-group. That corollary is
 `Representation.IsIrreducible.eq_trivial_of_forall_pow_expChar_pow_eq_one` in
 `TauCeti/RepresentationTheory/Unipotent/PowerOrder.lean`, stated for a finite-dimensional
 representation of any group; an irreducible representation of a finite group is
-finite-dimensional (`Representation.IsIrreducible.finiteDimensional`).
+finite-dimensional (Mathlib's instance on `ρ.asModule`, read back on `V` along `ρ.asModuleEquiv`).
 
 A finite normal `p`-subgroup of an arbitrary group acts trivially on every irreducible
 representation in characteristic `p`: its nonzero invariant subspace is stable under the

@@ -78,16 +78,10 @@ theorem isSubmodular_pairCutCapacity [Fintype V] [DecidableEq V] [AddCommMonoid 
   rw [← sum_add_distrib, ← sum_add_distrib]
   apply sum_le_sum
   intro p _
+  simp only [Finset.coe_union, Finset.coe_inter]
+  apply p.ite_crosses_union_add_ite_crosses_inter_le (c p) ?_ S T
   induction p using Sym2.inductionOn with
-  | _ x y =>
-    by_cases hxy : x = y
-    · subst y
-      simp only [Sym2.not_crosses_diag, ↓reduceIte, add_zero, le_refl]
-    have hp := hc x y hxy
-    have hpp := add_nonneg hp hp
-    by_cases hxS : x ∈ S <;> by_cases hxT : x ∈ T <;>
-      by_cases hyS : y ∈ S <;> by_cases hyT : y ∈ T <;>
-      simp_all
+  | _ x y => simpa using hc x y
 
 /-- The cut function of weights nonnegative on pairs of distinct vertices is symmetric submodular.
 Diagonal weights are unrestricted. -/

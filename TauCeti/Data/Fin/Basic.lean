@@ -43,7 +43,8 @@ range, so the value is a `dite` rather than a plain application.
   backward rotation and conversely.
 * `Fin.finRotate_rev_finRotate_rev`: negation modulo `n`, written as `i ↦ finRotate n i.rev`, is
   an involution.
-* `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`.
+* `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`;
+  `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
@@ -163,6 +164,11 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
   rw [Fin.partialProd, Fin.val_last]
   rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
 
+/-- The last entry times the preceding partial product is the product of all entries. -/
+theorem last_mul_partialProd {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
+    f (Fin.last n) * Fin.partialProd (Fin.init f) (Fin.last n) = ∏ i, f i := by
+  rw [mul_comm, Fin.partialProd_last, Fin.init_def, ← Fin.prod_univ_castSucc f]
+
 /-- Multiplying two adjacent entries of a tuple does not change the product of all its
 entries. -/
 @[to_additive (attr := simp)
@@ -232,6 +238,13 @@ theorem coe_finRotate_pow {n : ℕ} (k : ℕ) (c : Fin n) :
     have : NeZero n := ⟨Nat.pos_iff_ne_zero.mp c.pos⟩
     rw [pow_succ', Equiv.Perm.mul_apply, finRotate_apply, Fin.val_add, ih, Fin.val_one',
       ← Nat.add_mod, ← add_assoc]
+
+/-- Away from the last index, the cyclic permutation `finRotate n` adds one without wrapping
+around. -/
+theorem coe_finRotate_of_add_one_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
+    (finRotate n i : ℕ) = i + 1 := by
+  have := coe_finRotate_pow 1 i
+  rwa [pow_one, Nat.mod_eq_of_lt h] at this
 
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/
