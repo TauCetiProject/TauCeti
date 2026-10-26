@@ -64,44 +64,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {f : M → ℝ} {x : M}
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
-/-- On the source of the preferred chart at `x`, the derivative of `extChartAt I x` sends the
-extension `FiberBundle.extend E w` of a tangent vector `w` at `x` back to `w`. -/
-private theorem mfderiv_extChartAt_extend {y : M} (w : TangentSpace I x)
-    (hy : y ∈ (chartAt H x).source) :
-    mfderiv I 𝓘(ℝ, E) (extChartAt I x) y (FiberBundle.extend E w y) = w := by
-  set t := trivializationAt E (TangentSpace I) x
-  have hyt : y ∈ t.baseSet := by simpa [t] using hy
-  -- `FiberBundle.extend E w` is the inverse trivialization at `x` applied to the coordinate of `w`.
-  have hext : FiberBundle.extend E w y = t.symmL ℝ y (t ⟨x, w⟩).2 := by
-    rw [Trivialization.symmL_apply (R := ℝ) t hyt]
-    rfl
-  rw [← TangentBundle.continuousLinearMapAt_trivializationAt hy, hext]
-  exact (t.continuousLinearMapAt_symmL hyt _).trans
-    ((t.continuousLinearMapAt_apply_of_mem (R := ℝ)
-      (FiberBundle.mem_baseSet_trivializationAt' x) w).symm.trans
-      (continuousLinearMapAt_trivializationAt_self x w))
-
-omit [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
-/-- Near `x`, the derivative of a `C¹` function `f` along the extension of a tangent vector `w`
-at `x` is the derivative of the coordinate expression of `f` along `w`, read through the
-preferred chart. -/
-private theorem mvfderiv_extend_eventuallyEq (hf : ContMDiffAt I 𝓘(ℝ) 1 f x)
-    (w : TangentSpace I x) :
-    (fun y ↦ mvfderiv I f y (FiberBundle.extend E w y)) =ᶠ[𝓝 x]
-      (fun z ↦ fderiv ℝ (f ∘ (extChartAt I x).symm) z w) ∘ extChartAt I x := by
-  have hdF : ∀ᶠ y in 𝓝 x,
-      DifferentiableAt ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x y) :=
-    (continuousAt_extChartAt x).eventually
-      ((hf.contDiffAt_comp_extChartAt_symm.eventually (by simp)).mono
-        fun z hz ↦ hz.differentiableAt (by simp))
-  filter_upwards [chart_source_mem_nhds H x, hdF] with y hy hdy
-  rw [Function.comp_apply, mvfderiv_apply_eq_mfderiv_apply,
-    mfderiv_eq_fderiv_comp_mfderiv_extChartAt (by simpa using hy) hdy]
-  exact congrArg _ (mfderiv_extChartAt_extend w hy)
-
 /-- At a critical point `x` of a `C²` function `f` on a boundaryless Riemannian manifold, the
 Riemannian Hessian of `f` is the critical Hessian `TauCeti.criticalHessian`, the second Fréchet
 derivative of the coordinate expression `f ∘ (extChartAt I x).symm` at the chart image of `x`. -/
