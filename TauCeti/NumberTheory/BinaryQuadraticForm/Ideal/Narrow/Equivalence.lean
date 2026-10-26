@@ -5,9 +5,8 @@ Authors: Wentao Li
 -/
 module
 
-public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.NarrowClass
+public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Narrow.Class
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Normalization
-public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Class
 public import TauCeti.NumberTheory.BinaryQuadraticForm.PositiveRepresentative
 
 /-!
