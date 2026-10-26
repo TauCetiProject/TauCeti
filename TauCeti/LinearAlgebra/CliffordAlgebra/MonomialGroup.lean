@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Subgroup.Center
+public import TauCeti.Algebra.Group.CommuteOrNeg
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 public import TauCeti.RingTheory.Ideal.Operations
@@ -58,6 +59,9 @@ modules are the representations of `G` in which `ε` acts by `-1`.
   when its value is `e_s` or `-e_s` for some finite index set `s`.
 * `CliffordAlgebra.mem_center_monomialGroup_iff`: a signed basis monomial is central exactly when
   its support is empty or is the full odd-cardinality index set.
+* `CliffordAlgebra.monomialGroup_commuteOrNeg`: signed monomials commute or anticommute.
+* `CliffordAlgebra.monomialGroup_val_eq_or_neg_of_isConj`: conjugation changes a signed monomial by
+  at most its central sign.
 * `CliffordAlgebra.neg_one_mem_center_monomialGroup`: `ε = -1` is central.
 * `CliffordAlgebra.natCard_monomialGroup`: **the order** is `2 ^ (n + 1)` over a nontrivial
   ring in which `2` is invertible.
@@ -528,5 +532,70 @@ theorem monomialGroupLift_symm_apply_coe (hb : (QuadraticMap.associated Q).IsOrt
     (F : CliffordAlgebra Q →ₐ[R] A) (g : monomialGroup Q b) :
     ((monomialGroupLift hb hQ).symm F).1 g = F ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
   (rfl)
+
+omit [Invertible (2 : R)] [LinearOrder I] in
+/-- Any two signed monomials commute or anticommute, without a normalization assumption on their
+generator squares. -/
+lemma monomialGroup_commuteOrNeg
+    (v : I → M) (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
+    (c u : monomialGroup Q v) :
+    TauCeti.CommuteOrNeg (c : (CliffordAlgebra Q)ˣ) u := by
+  let S : Set (CliffordAlgebra Q)ˣ := {x | (x : CliffordAlgebra Q) = -1 ∨
+    ∃ i, (x : CliffordAlgebra Q) = ι Q (v i)}
+  have hgen : ∀ x ∈ S, ∀ y ∈ S, TauCeti.CommuteOrNeg x y := by
+    intro x hx y hy
+    dsimp [S] at hx hy
+    rcases hx with hx | ⟨i, hx⟩ <;> rcases hy with hy | ⟨j, hy⟩
+    · apply TauCeti.CommuteOrNeg.of_commute
+      apply Units.ext
+      simp [hx, hy]
+    · apply TauCeti.CommuteOrNeg.of_commute
+      apply Units.ext
+      simp [hx, hy]
+    · apply TauCeti.CommuteOrNeg.of_commute
+      apply Units.ext
+      simp [hx, hy]
+    · by_cases hij : i = j
+      · subst j
+        apply TauCeti.CommuteOrNeg.of_commute
+        apply Units.ext
+        simp [hx, hy]
+      · apply TauCeti.CommuteOrNeg.of_semiconjBy
+        apply Units.ext
+        simpa [hx, hy] using ι_mul_ι_comm_of_isOrtho (hv i j hij)
+  have hmonomial : monomialGroup Q v = Subgroup.closure S := by
+    simpa only [S] using (monomialGroup_def (Q := Q) v)
+  have hc : (c : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := by
+    rw [← hmonomial]
+    exact c.property
+  have hu : (u : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := by
+    rw [← hmonomial]
+    exact u.property
+  exact TauCeti.CommuteOrNeg.of_mem_closure hgen hc hu
+
+omit [Invertible (2 : R)] [LinearOrder I] in
+/-- Every conjugate of a signed Clifford monomial is itself or its negative. -/
+lemma monomialGroup_val_eq_or_neg_of_isConj
+    (v : I → M) (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
+    {u w : monomialGroup Q v} (h : IsConj u w) :
+  (w : (CliffordAlgebra Q)ˣ) = (u : (CliffordAlgebra Q)ˣ) ∨
+      (w : (CliffordAlgebra Q)ˣ) = -(u : (CliffordAlgebra Q)ˣ) := by
+  obtain ⟨c, hc⟩ := isConj_iff.mp h
+  have hmul := congrArg (fun z : monomialGroup Q v => (z : (CliffordAlgebra Q)ˣ) * c) hc
+  have hcv : (c : (CliffordAlgebra Q)ˣ) * u = (w : (CliffordAlgebra Q)ˣ) * c := by
+    simpa [mul_assoc] using hmul
+  have hcu := monomialGroup_commuteOrNeg v hv c u
+  rcases TauCeti.CommuteOrNeg.out hcu with hcu | hcu
+  · left
+    have hcancel : (w : (CliffordAlgebra Q)ˣ) * c = (u : (CliffordAlgebra Q)ˣ) * c :=
+      hcv.symm.trans hcu.eq
+    exact mul_right_cancel_iff.mp hcancel
+  · right
+    have hcancel : (w : (CliffordAlgebra Q)ˣ) * c = (-(u : (CliffordAlgebra Q)ˣ)) * c := by
+      calc
+        (w : (CliffordAlgebra Q)ˣ) * c = (c : (CliffordAlgebra Q)ˣ) * u := hcv.symm
+        _ = (-(u : (CliffordAlgebra Q)ˣ)) * c := hcu.eq
+    exact mul_right_cancel_iff.mp hcancel
+
 
 end CliffordAlgebra
