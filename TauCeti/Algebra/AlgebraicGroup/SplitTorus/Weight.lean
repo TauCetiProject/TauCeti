@@ -71,6 +71,12 @@ theorem toAdd_weightCharacter (μ : σ → ℤ) (j : σ) :
     Multiplicative.toAdd (weightCharacter μ) j = μ j := by
   simp [weightCharacter]
 
+/-- The character of an exponent vector is trivial exactly when the exponent vector is zero. -/
+@[simp]
+theorem weightCharacter_eq_one_iff {μ : σ → ℤ} : weightCharacter μ = 1 ↔ μ = 0 := by
+  rw [weightCharacter, ofAdd_eq_one, ← Finsupp.equivFunOnFinite_symm_coe 0, Finsupp.coe_zero,
+    Equiv.apply_eq_iff_eq]
+
 omit [Algebra R A] in
 /-- Evaluating a split-torus weight under a multiplicative character gives the corresponding
 monomial in the free-abelian coordinates of that character. -/

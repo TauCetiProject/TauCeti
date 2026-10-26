@@ -55,13 +55,13 @@ instance : IsGalois ℚ_[2] DyadicCyclotomicEight :=
   IsCyclotomicExtension.isGalois {8} ℚ_[2] DyadicCyclotomicEight
 
 instance : ValuativeRel DyadicCyclotomicEight :=
-  finiteExtensionValuativeRel ℚ_[2] DyadicCyclotomicEight
+  algebraicExtensionValuativeRel ℚ_[2] DyadicCyclotomicEight
 
 instance : TopologicalSpace DyadicCyclotomicEight :=
-  finiteExtensionNormedFieldTopology ℚ_[2] DyadicCyclotomicEight
+  algebraicExtensionNormedFieldTopology ℚ_[2] DyadicCyclotomicEight
 
 instance : ValuativeExtension ℚ_[2] DyadicCyclotomicEight :=
-  finiteExtension_valuativeExtension ℚ_[2] DyadicCyclotomicEight
+  algebraicExtension_valuativeExtension ℚ_[2] DyadicCyclotomicEight
 
 instance : IsNonarchimedeanLocalField DyadicCyclotomicEight :=
   finiteExtension_isNonarchimedeanLocalField ℚ_[2] DyadicCyclotomicEight

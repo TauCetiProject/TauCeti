@@ -42,6 +42,8 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   bijection from the open unit disc onto the open upper half-plane.
 * `TauCeti.bijOn_sub_I_div_add_I_im_nonneg`: the transform is a bijection from the closed upper
   half-plane onto the closed unit disc minus `1`.
+* `TauCeti.bijOn_I_mul_one_add_div_one_sub_closedBall_sdiff`: its inverse is a bijection from the
+  closed unit disc minus `1` onto the closed upper half-plane.
 * `TauCeti.differentiableOn_sub_I_div_add_I`: the transform is holomorphic away from its pole.
 * `TauCeti.differentiableOn_sub_I_div_add_I_im_nonneg`: in particular, it is holomorphic on a
   neighbourhood of the closed upper half-plane.
@@ -51,6 +53,9 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.I_mul_one_add_sub_I_div_add_I_div_one_sub`: the inverse identity.
 * `TauCeti.boundaryCayley`: the boundary Cayley map from `ℝ` to `Circle`.
 * `TauCeti.tendsto_sub_I_div_add_I_cobounded`: the transform tends to `1` at infinity.
+* `TauCeti.tendsto_I_mul_one_add_div_one_sub_nhdsNE_one`: its inverse tends to infinity at `1`,
+  within the closed upper half-plane when approached from the closed disc
+  (`TauCeti.tendsto_I_mul_one_add_div_one_sub_nhdsWithin_closedBall_sdiff_one`).
 
 ## References
 
@@ -208,6 +213,14 @@ theorem bijOn_sub_I_div_add_I_im_nonneg :
     rw [mem_ofPred_eq, ← norm_sub_I_div_add_I_le_one_iff hne, heq]
     exact mem_closedBall_zero_iff.mp hw.1
 
+/-- **The inverse Cayley transform on the closed disc.** The map `w ↦ i (1 + w) / (1 - w)` is a
+bijection from the closed unit disc with the point `1` removed onto the closed upper half-plane;
+it inverts `z ↦ (z - i) / (z + i)`. -/
+theorem bijOn_I_mul_one_add_div_one_sub_closedBall_sdiff :
+    BijOn (fun w : ℂ => I * (1 + w) / (1 - w)) (closedBall 0 1 \ {1}) {z | 0 ≤ z.im} :=
+  bijOn_sub_I_div_add_I_im_nonneg.symm ⟨fun _ hw => (sub_I_div_add_I_inverse hw.2).2,
+    fun _ hz => I_mul_one_add_sub_I_div_add_I_div_one_sub (add_I_ne_zero_of_im_nonneg hz)⟩
+
 /-- The Cayley transform is complex differentiable away from its pole at `-i`. -/
 theorem differentiableOn_sub_I_div_add_I :
     DifferentiableOn ℂ (fun z : ℂ => (z - I) / (z + I)) {z | z + I ≠ 0} :=
@@ -261,29 +274,42 @@ theorem tendsto_sub_I_div_add_I_cobounded :
   field_simp
   ring
 
+/-- The inverse Cayley transform tends to infinity as the disc variable tends to its pole `1`. -/
+theorem tendsto_I_mul_one_add_div_one_sub_nhdsNE_one :
+    Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) (𝓝[≠] 1) (cobounded ℂ) := by
+  have hzero : Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[≠] 1) (𝓝[≠] 0) := by
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
+    · simpa using (tendsto_const_nhds.sub (tendsto_id.mono_left nhdsWithin_le_nhds) :
+        Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[≠] 1) (𝓝 (1 - 1)))
+    · exact eventually_nhdsWithin_of_forall fun ζ hζ => sub_ne_zero.mpr (Ne.symm hζ)
+  refine ((tendsto_sub_const_cobounded I).comp
+    ((tendsto_mul_left_cobounded (mul_ne_zero two_ne_zero I_ne_zero)).comp
+      (tendsto_inv₀_nhdsNE_zero.comp hzero))).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with ζ hζ
+  have hne : 1 - ζ ≠ 0 := sub_ne_zero.mpr (Ne.symm hζ)
+  dsimp only [Function.comp_def]
+  field_simp
+  ring
+
 /-- The inverse Cayley transform tends to infinity within the upper half-plane as the disc
 variable tends to the omitted boundary point `1`. -/
 theorem tendsto_I_mul_one_add_div_one_sub_nhdsWithin_one :
     Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) (𝓝[ball 0 1] 1)
-      (cobounded ℂ ⊓ 𝓟 UpperHalfPlane.upperHalfPlaneSet) := by
-  have hzero : Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[ball 0 1] 1) (𝓝[≠] 0) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
-    · simpa using (tendsto_const_nhds.sub
-        (tendsto_id.mono_left nhdsWithin_le_nhds) :
-        Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[ball 0 1] 1) (𝓝 (1 - 1)))
-    · exact eventually_nhdsWithin_of_forall fun ζ hζ =>
-        sub_ne_zero.mpr (ne_of_mem_ball_of_norm_eq_one hζ norm_one).symm
-  have hlim := (tendsto_sub_const_cobounded I).comp
-    ((tendsto_mul_left_cobounded (mul_ne_zero two_ne_zero I_ne_zero)).comp
-      (tendsto_inv₀_nhdsNE_zero.comp hzero))
-  refine tendsto_inf.mpr ⟨hlim.congr' ?_, ?_⟩
-  · filter_upwards [self_mem_nhdsWithin] with ζ hζ
-    have hne := sub_ne_zero.mpr (ne_of_mem_ball_of_norm_eq_one hζ norm_one).symm
-    dsimp only [Function.comp_def]
-    field_simp
-    ring
-  · exact tendsto_principal.mpr (eventually_nhdsWithin_of_forall fun ζ hζ =>
-      bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hζ)
+      (cobounded ℂ ⊓ 𝓟 UpperHalfPlane.upperHalfPlaneSet) :=
+  tendsto_inf.mpr ⟨tendsto_I_mul_one_add_div_one_sub_nhdsNE_one.mono_left
+      (nhdsWithin_mono _ fun _ hζ => ne_of_mem_ball_of_norm_eq_one hζ norm_one),
+    tendsto_principal.mpr (eventually_nhdsWithin_of_forall fun _ hζ =>
+      bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hζ)⟩
+
+/-- The inverse Cayley transform tends to infinity within the closed upper half-plane as the
+variable tends to the omitted boundary point `1` within the closed disc. -/
+theorem tendsto_I_mul_one_add_div_one_sub_nhdsWithin_closedBall_sdiff_one :
+    Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) (𝓝[closedBall 0 1 \ {1}] 1)
+      (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) :=
+  tendsto_inf.mpr ⟨tendsto_I_mul_one_add_div_one_sub_nhdsNE_one.mono_left
+      (nhdsWithin_mono _ fun _ hζ => hζ.2),
+    tendsto_principal.mpr (eventually_nhdsWithin_of_forall fun _ hζ =>
+      bijOn_I_mul_one_add_div_one_sub_closedBall_sdiff.mapsTo hζ)⟩
 
 /-- The boundary Cayley map from the real line to the unit circle, sending
 `x` to `(x - i) / (x + i)`. -/

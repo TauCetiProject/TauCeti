@@ -45,7 +45,7 @@ independently pinned simply connected group scheme.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 17.
 
 The argument follows the positive short-root type-`G₂` subgroup in
-`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.BorelCandidate`; the weight basis of the
+`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel.Candidate`; the weight basis of the
 twenty-six-dimensional module is already ordered so that raising never increases the index, so no
 reordering is needed.
 -/
@@ -100,10 +100,10 @@ theorem upperTriangular_le_definingIdeal :
       toConv (AlgHom.id (ZMod 2) _)
     have h := isUpperTriangular_rootSubgroupPoints_inl i _
       (AdditiveGroup.gaPointsMulEquiv (R := ZMod 2) q)
-    have hq : (CommHopfAlgCat.mapPointsFunctor (PrimeField.generator (.inl (.inl i)))).app _ q =
+    have hq : (CommHopfAlgCat.Hom.mapPointsFunctor (PrimeField.generator (.inl (.inl i)))).app _ q =
         toConv (PrimeField.generator (.inl (.inl i))).hom.toAlgHom := by
       apply WithConv.ofConv_injective
-      exact AlgHom.ext fun x ↦ CommHopfAlgCat.mapPointsFunctor_app_apply_apply _ _ q x
+      exact AlgHom.ext fun x ↦ CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply _ _ q x
     rw [coe_rootSubgroupPoints_gaPointsMulEquiv, hq, GeneralLinear.pointsMulEquiv_apply] at h
     exact h
   · apply GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker_of_isUpperTriangular
@@ -114,10 +114,10 @@ theorem upperTriangular_le_definingIdeal :
           (SplitTorus.characterGroup (Fin 4))).obj) :=
       toConv (AlgHom.id (ZMod 2) _)
     have h := isUpperTriangular_weightTorusPoints _ (SplitTorus.pointsMulEquiv q)
-    have hq : (CommHopfAlgCat.mapPointsFunctor (PrimeField.generator (.inr ()))).app _ q =
+    have hq : (CommHopfAlgCat.Hom.mapPointsFunctor (PrimeField.generator (.inr ()))).app _ q =
         toConv (PrimeField.generator (.inr ())).hom.toAlgHom := by
       apply WithConv.ofConv_injective
-      exact AlgHom.ext fun x ↦ CommHopfAlgCat.mapPointsFunctor_app_apply_apply _ _ q x
+      exact AlgHom.ext fun x ↦ CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply _ _ q x
     rw [coe_weightTorusPoints_pointsMulEquiv, hq, GeneralLinear.pointsMulEquiv_apply] at h
     exact h
 
@@ -160,7 +160,7 @@ theorem isBorelCandidate_positiveDefiningIdeal :
   -- The quotient is the positive subgroup's coordinate algebra.
   let e : (FiniteTypeCommHopfAlgCat.quotient finiteTypeCoordinateHopfAlgebra
         positiveDefiningIdeal).obj ≅ Positive.coordinateHopfAlgebra :=
-    CommHopfAlgCat.quotientKerOfSurjectiveIso positiveRestriction
+    CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso positiveRestriction
       (CommHopfAlgCat.quotientMapOfLe_surjective _ _)
   refine HopfIdeal.IsBorelCandidate.mk ?_ ?_ ?_
   · exact (smoothCommHopfAlgProperty (ZMod 2)).prop_of_iso e.symm

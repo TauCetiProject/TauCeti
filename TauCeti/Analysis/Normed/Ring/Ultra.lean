@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
+public import TauCeti.Algebra.Order.BigOperators.ProdSubProd
 
 /-!
 # The closed unit ball and products of elements close to one in ultrametric normed rings
@@ -16,16 +17,44 @@ are open additive subgroups. In an ultrametric seminormed ring with `‖1‖ = 1
 ball is an open subring. In an ultrametric normed ring, a finite product of elements each within
 `ε ≤ 1` of `1` is again within `ε` of `1`.
 
+Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. When
+`‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one.
+
 ## Main results
 
+* `IsUltrametricDist.exists_lt_norm_natCast_eq_one`: arbitrarily large natural numbers have norm
+  one in an ultrametric seminormed ring with `‖1‖ = 1`.
 * `IsUltrametricDist.nonarchimedeanRing`: an ultrametric seminormed ring is a nonarchimedean
   ring.
 * `Subring.unitClosedBall`: the closed unit ball of an ultrametric seminormed ring with
   `‖1‖ = 1`, an open subring.
+* `TauCeti.norm_one_sub_of_norm_lt_one`: subtracting an element of norm less than one from one
+  leaves the norm equal to one.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
+* `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
 -/
 
 public section
+
+/-- Integer casts in an ultrametric seminormed ring have norm at most the norm of one. -/
+theorem IsUltrametricDist.norm_intCast_le_norm_one {R : Type*} [SeminormedRing R]
+    [IsUltrametricDist R] (z : ℤ) : ‖(z : R)‖ ≤ ‖(1 : R)‖ := by
+  simpa using IsUltrametricDist.norm_zsmul_le (1 : R) z
+
+/-- In an ultrametric seminormed ring with `‖1‖ = 1`, arbitrarily large natural numbers have norm
+one: of two consecutive natural numbers, one has norm one, since their difference does. -/
+theorem IsUltrametricDist.exists_lt_norm_natCast_eq_one (R : Type*) [SeminormedRing R]
+    [NormOneClass R] [IsUltrametricDist R] (N : ℕ) : ∃ m, N < m ∧ ‖(m : R)‖ = 1 := by
+  by_contra! h
+  have h1 := (IsUltrametricDist.norm_natCast_le_one R (N + 1)).lt_of_ne (h _ (by omega))
+  have h2 := (IsUltrametricDist.norm_natCast_le_one R (N + 2)).lt_of_ne (h _ (by omega))
+  have h3 := IsUltrametricDist.norm_add_le_max ((N + 2 : ℕ) : R) (-((N + 1 : ℕ) : R))
+  have hsum : ((N + 2 : ℕ) : R) + -((N + 1 : ℕ) : R) = 1 := by
+    push_cast
+    abel_nf
+    norm_num
+  rw [norm_neg, hsum, norm_one] at h3
+  exact (h3.trans_lt (max_lt h2 h1)).false
 
 /-- **An ultrametric seminormed ring is a nonarchimedean ring.** This is the ring form of
 Mathlib's `IsUltrametricDist.nonarchimedeanAddGroup`: every neighbourhood of zero contains an open
@@ -66,6 +95,14 @@ end UnitClosedBall
 
 namespace TauCeti
 
+/-- An element strictly smaller than one does not change the norm of one when subtracted. -/
+@[simp]
+theorem norm_one_sub_of_norm_lt_one {R : Type*} [SeminormedRing R] [NormOneClass R]
+    [IsUltrametricDist R] {x : R} (hx : ‖x‖ < 1) : ‖1 - x‖ = 1 := by
+  rw [sub_eq_add_neg, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm]
+  · simp [hx.le]
+  · exact ne_of_gt (by simpa using hx)
+
 /-- In an ultrametric normed ring, if `a` and `b` are both within `ε ≤ 1` of `1`, so is
 `a * b`. -/
 theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass R]
@@ -91,5 +128,44 @@ theorem norm_prod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [NormOneClass
     rw [Finset.prod_insert hj]
     exact norm_mul_sub_one_lt hε (hf j (Finset.mem_insert_self j s))
       (ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
+
+/-- If two finite families are bounded by `M` and differ by at most `ε` in each coordinate,
+their products differ by at most `ε * M ^ (s.card - 1)`. The exponent uses natural subtraction,
+so the statement includes the empty product and `M = 0`. -/
+theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R] [NormOneClass R]
+    [IsUltrametricDist R] {s : Finset ι} {f g : ι → R} {M ε : ℝ} (hM : 0 ≤ M) (hε : 0 ≤ ε)
+    (hf : ∀ i ∈ s, ‖f i‖ ≤ M) (hg : ∀ i ∈ s, ‖g i‖ ≤ M)
+    (hfg : ∀ i ∈ s, ‖f i - g i‖ ≤ ε) :
+    ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ ε * M ^ (s.card - 1) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [hε]
+  | insert a s ha ih =>
+    rcases s.eq_empty_or_nonempty with rfl | hs
+    · simpa using hfg a (by simp)
+    have hprod : ‖∏ i ∈ s, f i‖ ≤ M ^ s.card := by
+      calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := norm_prod_le_prod_norm s f
+        _ ≤ ∏ _i ∈ s, M := Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _)
+          fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)
+        _ = M ^ s.card := Finset.prod_const _
+    have htail := ih (fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
+      (fun i hi ↦ hg i (Finset.mem_insert_of_mem hi))
+      (fun i hi ↦ hfg i (Finset.mem_insert_of_mem hi))
+    rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.card_insert_of_notMem ha,
+      Nat.add_sub_cancel]
+    calc ‖f a * ∏ i ∈ s, f i - g a * ∏ i ∈ s, g i‖ =
+          ‖(f a - g a) * ∏ i ∈ s, f i + g a * (∏ i ∈ s, f i - ∏ i ∈ s, g i)‖ := by
+            congr 1
+            ring
+      _ ≤ max (‖f a - g a‖ * ‖∏ i ∈ s, f i‖)
+          (‖g a‖ * ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖) :=
+        (IsUltrametricDist.norm_add_le_max _ _).trans
+          (max_le_max (norm_mul_le _ _) (norm_mul_le _ _))
+      _ ≤ max (ε * M ^ s.card) (M * (ε * M ^ (s.card - 1))) :=
+        max_le_max (mul_le_mul (hfg a (by simp)) hprod (norm_nonneg _) hε)
+          (mul_le_mul (hg a (by simp)) htail (norm_nonneg _) hM)
+      _ = ε * M ^ s.card := by
+        have hcard : s.card - 1 + 1 = s.card := Nat.sub_add_cancel (Finset.card_pos.mpr hs)
+        rw [mul_left_comm M ε, ← pow_succ', hcard, max_self]
 
 end TauCeti

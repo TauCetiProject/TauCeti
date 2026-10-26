@@ -28,8 +28,10 @@ the degenerate direction `α = 0`, where it is all of `ℕ` as soon as `μ` is a
 
 * `TauCeti.finite_setOf_genWeightSpace_add_nsmul_ne_bot`: for `α ≠ 0` the `α`-string above `μ` is
   finite.  This is the finiteness the Freudenthal recursion's inner sum rests on.
-* `TauCeti.exists_genWeightSpace_add_nsmul_eq_bot_of_le`: the string terminates -- past some `N`,
-  no `μ + j • α` is a weight.
+* `TauCeti.exists_genWeightSpace_add_nsmul_eq_bot_of_le` and
+  `TauCeti.exists_genWeightSpace_add_zsmul_eq_bot_of_le_natAbs`: the one-sided and two-sided
+  strings terminate -- past some `N`, no `μ + j • α` (nor `μ + i • α` with `N ≤ i.natAbs`) is a
+  weight.
 * `TauCeti.sum_finrank_genWeightSpace_weightString_le`: the multiplicities along the string add
   up to at most `Module.finrank K M`, because distinct members of the string are distinct weights
   and the weight spaces of `M` are independent.
@@ -156,6 +158,23 @@ theorem exists_genWeightSpace_add_nsmul_eq_bot_of_le {alpha : Dual K H} (halpha 
   simp only [id_eq] at hle
   omega
 
+/-- **The two-sided string terminates**: past a uniform bound, no `μ + i • α` (`i : ℤ`) is a
+weight. -/
+theorem exists_genWeightSpace_add_zsmul_eq_bot_of_le_natAbs {alpha : Dual K H}
+    (halpha : alpha ≠ 0) (mu : Dual K H) :
+    ∃ N : ℕ, ∀ i : ℤ, N ≤ i.natAbs →
+      genWeightSpace M ((mu + i • alpha : Dual K H) : H → K) = ⊥ := by
+  obtain ⟨N₁, hN₁⟩ := exists_genWeightSpace_add_nsmul_eq_bot_of_le (M := M) halpha mu
+  obtain ⟨N₂, hN₂⟩ :=
+    exists_genWeightSpace_add_nsmul_eq_bot_of_le (M := M) (neg_ne_zero.mpr halpha) mu
+  refine ⟨max N₁ N₂, fun i hi ↦ ?_⟩
+  rcases le_or_gt 0 i with h | h
+  · obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = (j : ℤ) := ⟨i.toNat, by omega⟩
+    rw [natCast_zsmul]
+    exact hN₁ j (by omega)
+  · obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = -(j : ℤ) := ⟨(-i).toNat, by omega⟩
+    simpa only [neg_zsmul, natCast_zsmul, smul_neg] using hN₂ j (by omega)
+
 /-- The string is contained in an initial segment of `ℕ`. -/
 theorem weightString_subset_range {alpha : Dual K H} (halpha : alpha ≠ 0) (mu : Dual K H) :
     weightString M halpha mu ⊆ Finset.range ((weightString M halpha mu).sup id + 1) := by
@@ -208,7 +227,13 @@ theorem sum_weightString_eq_sum_of_subset {A : Type*} [AddCommMonoid A] {alpha :
   by_contra h
   exact hj ((mem_weightString_iff halpha mu).mpr h)
 
-omit [CharZero K] [FiniteDimensional K M] in
+end WeightString
+
+section Zero
+
+variable {K : Type u} {H : Type v} {M : Type w} [CommRing K] [LieRing H] [LieAlgebra K H]
+  [LieRing.IsNilpotent H] [AddCommGroup M] [Module K M] [LieRingModule H M] [LieModule K H M]
+
 /-- **The hypothesis `α ≠ 0` cannot be dropped**: in the degenerate direction `α = 0` every `j`
 translates `μ` to itself, so the string above a weight is all of `ℕ`. -/
 theorem infinite_setOf_genWeightSpace_add_nsmul_zero_ne_bot (mu : Dual K H)
@@ -221,6 +246,6 @@ theorem infinite_setOf_genWeightSpace_add_nsmul_zero_ne_bot (mu : Dual K H)
   rw [huniv]
   exact Set.infinite_univ
 
-end WeightString
+end Zero
 
 end TauCeti

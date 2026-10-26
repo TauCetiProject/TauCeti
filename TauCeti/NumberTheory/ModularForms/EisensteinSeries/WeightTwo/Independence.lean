@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.Divisors
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
@@ -24,6 +25,8 @@ weight-two Eisenstein series with cusp constant-term data.
 * `qExpansion_coeff_correctedE2AtLevel`: the coefficients of each restricted series.
 * `linearIndependent_correctedE2AtLevel`: independence of this family over all nontrivial
   divisor levels `d` of `N`.
+* `finrank_span_correctedE2AtLevel`: the corrected span has dimension `τ(N) - 1` at every
+  nonzero level.
 
 ## References
 
@@ -40,14 +43,14 @@ namespace TauCeti.EisensteinSeries
 /-- The corrected weight-two Eisenstein series of level `d`, restricted to `Γ₀(N)`. -/
 def correctedE2AtLevel (N : ℕ) (d : {d : ℕ // 1 < d ∧ d ∣ N}) :
     ModularForm ((Gamma0 N).map (mapGL ℝ)) 2 :=
-  ModularForm.ofLe (Subgroup.map_mono
+  ModularForm.restrict (Subgroup.map_mono
     (CongruenceSubgroup.Gamma0_le_Gamma0_of_dvd d.2.2)) (@correctedE2 d.val ⟨by omega⟩)
 
 /-- Evaluating a corrected series after restricting its level gives the original series. -/
 @[simp]
 theorem correctedE2AtLevel_apply (N : ℕ) (d : {d : ℕ // 1 < d ∧ d ∣ N}) (z : ℍ) :
     correctedE2AtLevel N d z = @correctedE2 d.val ⟨by omega⟩ z := by
-  simp only [correctedE2AtLevel, ModularForm.coe_ofLe]
+  simp only [correctedE2AtLevel, ModularForm.coe_restrict]
 
 /-- The q-expansion coefficients of the corrected series restricted from `Γ₀(d)` to `Γ₀(N)`. -/
 @[simp]
@@ -57,7 +60,7 @@ theorem qExpansion_coeff_correctedE2AtLevel (N : ℕ)
     if n = 0 then 1 - (d.val : ℂ) else
         -24 * ((σ 1 n : ℂ) -
           if d.val ∣ n then d.val * (σ 1 (n / d.val) : ℂ) else 0) := by
-  simpa only [correctedE2AtLevel, ModularForm.coe_ofLe] using
+  simpa only [correctedE2AtLevel, ModularForm.coe_restrict] using
     @qExpansion_coeff_correctedE2 d.val ⟨by omega⟩ n
 
 private lemma coeff_sum_eq_zero (N : ℕ) (s : Finset {d : ℕ // 1 < d ∧ d ∣ N})
@@ -163,5 +166,15 @@ theorem linearIndependent_correctedE2AtLevel (N : ℕ) :
   have hscale : (24 : ℂ) * (m.val : ℂ) ≠ 0 :=
     mul_ne_zero (by norm_num) (Nat.cast_ne_zero.mpr hmpos)
   exact (mul_ne_zero hgm hscale) hcorrection
+
+/-- The corrected weight-two Eisenstein span has dimension `τ(N) - 1`, at any nonzero level. -/
+theorem finrank_span_correctedE2AtLevel {N : ℕ} [NeZero N] :
+    Module.finrank ℂ (Submodule.span ℂ (Set.range (correctedE2AtLevel N))) =
+      N.divisors.card - 1 := by
+  classical
+  let _ := Fintype.ofEquiv _ (nontrivialDivisorEquiv (N := N)).symm
+  rw [finrank_span_eq_card (linearIndependent_correctedE2AtLevel N),
+    Fintype.card_congr (nontrivialDivisorEquiv (N := N))]
+  simp
 
 end TauCeti.EisensteinSeries

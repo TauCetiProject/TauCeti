@@ -12,15 +12,19 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Topology.Order.ProjIcc
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Topology.Order.Interval
 
 /-!
 # Primitives of integrable functions on the line
 
-Three facts about the primitive `t ↦ ∫ s in t₀..t, f s` of a vector-valued function `f`, which are
+Facts about the primitive `t ↦ ∫ s in t₀..t, f s` of a vector-valued function `f`, which are
 used to identify weak derivatives on an interval with ordinary primitives.
 
+* `TauCeti.intervalIntegral.exists_continuous_primitive_Icc`: a continuous integrand on a closed
+  interval has a globally continuous primitive with the prescribed derivative there and the
+  expected increments between points of the interval.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_locallyIntegrableOn`: if `f` is
   only locally integrable on an open interval, its primitive based at a point of the interval is
   continuous on the interval.
@@ -79,6 +83,32 @@ theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
     ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
 
 variable [CompleteSpace E]
+
+/-- A continuous integrand on a nonempty closed interval has a globally continuous primitive
+whose derivative agrees with the integrand throughout that interval, including its endpoints.
+The primitive increments are the oriented integrals between points of the interval. -/
+theorem exists_continuous_primitive_Icc (hab : a ≤ b) (hf : ContinuousOn f (Icc a b)) :
+    ∃ F : ℝ → E, Continuous F ∧ (∀ x ∈ Icc a b, HasDerivAt F (f x) x) ∧
+      ∀ x ∈ Icc a b, ∀ y ∈ Icc a b, F y - F x = ∫ z in x..y, f z := by
+  -- Holding endpoint values constant gives a continuous integrand on the whole line.
+  let g : ℝ → E := fun x ↦ f (projIcc a b hab x)
+  have hg : Continuous g := hf.domRestrict.comp continuous_projIcc
+  have hgf : EqOn g f (Icc a b) := by
+    intro x hx
+    simp only [g, projIcc_of_mem hab hx]
+  let F : ℝ → E := fun t ↦ ∫ x in a..t, g x
+  refine ⟨F, (_root_.intervalIntegral.differentiable_integral_of_continuous hg).continuous,
+    ?_, ?_⟩
+  · intro x hx
+    rw [← hgf hx]
+    exact _root_.intervalIntegral.integral_hasDerivAt_right (hg.intervalIntegrable a x)
+      hg.aestronglyMeasurable.stronglyMeasurableAtFilter hg.continuousAt
+  · intro x hx y hy
+    calc
+      F y - F x = ∫ z in x..y, g z :=
+        _root_.intervalIntegral.integral_interval_sub_left
+          (hg.intervalIntegrable a y) (hg.intervalIntegrable a x)
+      _ = _ := _root_.intervalIntegral.integral_congr (hgf.mono (uIcc_subset_Icc hx hy))
 
 /-- **Integration by parts against a primitive.** For `a ≤ b`, `f` integrable on `[a, b]` and a
 `C¹` function `φ : ℝ → ℝ`,

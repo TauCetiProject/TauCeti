@@ -30,9 +30,8 @@ direction; the results here let downstream finite-decomposition arguments use th
 
 ## Provenance
 
-This is routine API around the Hungerbühler--Wasem generalized winding number from the contour
-integration roadmap; no formal source is vendored. It combines the existing Tau Ceti translation
-and scaling invariance lemmas.
+This is routine API around the Hungerbühler--Wasem generalized winding number; no formal source is
+vendored. It combines the Tau Ceti translation and scaling invariance lemmas.
 -/
 
 public section

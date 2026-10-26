@@ -9,7 +9,7 @@ import Mathlib.Tactic.NoncommRing
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 import TauCeti.Algebra.Lie.Derivation.Basic
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 
 /-!
 # The quadratic elements of a Clifford algebra as a Lie subalgebra
@@ -159,7 +159,7 @@ theorem lie_bivector_bivector (a b c d : M) :
   lie_bivector_of_lie_ι Q (bivector_lie_ι Q a b c) (bivector_lie_ι Q a b d)
 
 /-- The set of Clifford bivectors of `Q`, indexed by pairs of vectors. -/
-private def bivectorSet : Set (CliffordAlgebra Q) :=
+private noncomputable def bivectorSet : Set (CliffordAlgebra Q) :=
   Set.range fun p : M × M => bivector Q p.1 p.2
 
 private theorem bivector_mem_span (a b : M) :

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.AsAlgebraHom
 public import TauCeti.RepresentationTheory.QuasiIdempotent
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Comparison
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Idempotent
@@ -42,6 +43,12 @@ conjugates of `g`.
   the sum of the coefficients of `c_t` over the conjugates `σ g σ⁻¹`.
 * `TauCeti.YoungTableau.sum_char_spechtSubrepresentation_smul`: pairing `χ^μ` with a class
   function is `f^μ` times pairing `c_t` with it.
+* `Representation.factorial_mul_finrank_range_asAlgebraHom_youngSymmetrizerOver`: for a
+  finite-dimensional representation `M` of `Sₙ` in characteristic zero,
+  `n! · dim (c_t M) = ∑_σ χ^μ(σ) χ_M(σ)`, since the action of `c_t` is a scaled projection.
+* `Nat.Partition.youngSymmetrizer_mul_self`: the Young symmetrizer `c_μ` of a partition satisfies
+  `c_μ² = (n! / f^μ) c_μ`.
+* `Nat.Partition.finrank_span_youngSymmetrizer`: `dim (k[Sₙ] c_μ) = f^μ`.
 
 ## References
 
@@ -116,3 +123,75 @@ theorem sum_char_spechtSubrepresentation_smul (t : YoungTableau μ) {M : Type*} 
 end YoungTableau
 
 end TauCeti
+
+namespace Nat.Partition
+
+open Module TauCeti
+
+variable {d : ℕ} (μ : d.Partition) (k : Type*)
+
+/-- **The Young symmetrizer is quasi-idempotent**: `c_μ² = (d! / f^μ) c_μ`, where `f^μ` is the
+dimension of the Specht module `S^μ`. -/
+theorem youngSymmetrizer_mul_self [CommSemiring k] [Algebra ℚ k] :
+    μ.youngSymmetrizer k * μ.youngSymmetrizer k =
+      algebraMap ℚ k ((d.factorial : ℚ) / finrank ℚ (spechtModule μ)) • μ.youngSymmetrizer k := by
+  have hd : ((YoungDiagram.ofPartition μ).card.factorial : ℚ) = d.factorial := by
+    rw [YoungDiagram.card_ofPartition]
+  rw [youngSymmetrizer_def, ← map_mul, YoungTableau.youngSymmetrizerOver_sq, map_smul,
+    YoungTableau.finrank_spechtIdeal_eq_spechtSubrepresentation, hd]
+
+/-- **The left ideal `k[S_d] c_μ` has the dimension `f^μ` of the Specht module.** Its character
+at the identity, multiplied by `d! / f^μ`, is `d!` times the coefficient `1` of the identity in
+`c_μ` (`Representation.mul_char_ofModule'_span_singleton`). -/
+theorem finrank_span_youngSymmetrizer [Field k] [CharZero k] :
+    finrank k (Ideal.span {μ.youngSymmetrizer k} : Ideal (MonoidAlgebra k (Equiv.Perm (Fin d)))) =
+      finrank ℚ (spechtModule μ) := by
+  have hf : (finrank ℚ (spechtModule μ) : k) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (finrank_spechtModule_pos μ).ne'
+  have hd : (d.factorial : k) ≠ 0 := Nat.cast_ne_zero.mpr d.factorial_ne_zero
+  have h := Representation.mul_char_ofModule'_span_singleton (μ.youngSymmetrizer_mul_self k) 1
+  simp only [inv_one, mul_one, inv_mul_cancel, youngSymmetrizer_coeff_one, Finset.sum_const,
+    Finset.card_univ, Fintype.card_perm, Fintype.card_fin, nsmul_eq_mul, Representation.char_one,
+    map_div₀, map_natCast] at h
+  apply Nat.cast_injective (R := k)
+  field_simp at h
+  linear_combination h
+
+end Nat.Partition
+
+namespace Representation
+
+open Module TauCeti
+
+variable {k : Type*} [Field k] [CharZero k] {M : Type*} [AddCommGroup M] [Module k M]
+
+/-- **The dimension of the image of the Young symmetrizer of a tableau**, through the Specht
+character: for a tableau `t` of shape `μ` and a finite-dimensional representation `M` of
+`S_{|μ|}`, `|μ|! · dim (c_t M) = ∑_σ χ^μ(σ) χ_M(σ)`. -/
+theorem factorial_mul_finrank_range_asAlgebraHom_youngSymmetrizerOver
+    [FiniteDimensional k M] {D : YoungDiagram} (t : YoungTableau D)
+    (ρ : Representation k (Equiv.Perm (Fin D.card)) M) :
+    (D.card.factorial : k) * finrank k (LinearMap.range
+        (ρ.asAlgebraHom (YoungTableau.youngSymmetrizerOver k t))) =
+      ∑ σ, (spechtSubrepresentation D).toRepresentation.character σ • ρ.character σ := by
+  have hf : (finrank ℚ (spechtSubrepresentation D).toSubmodule : ℚ) ≠ 0 := by
+    rw [← YoungTableau.finrank_spechtIdeal_eq_spechtSubrepresentation t]
+    exact_mod_cast (YoungTableau.finrank_spechtIdeal_pos t).ne'
+  set f : ℚ := (finrank ℚ (spechtSubrepresentation D).toSubmodule : ℚ)
+  -- the action of `c_t` squares to `(|μ|! / f) • c_t`, so its trace is that scalar times its rank
+  have hsq : ρ.asAlgebraHom (YoungTableau.youngSymmetrizerOver k t) *
+      ρ.asAlgebraHom (YoungTableau.youngSymmetrizerOver k t) =
+        algebraMap ℚ k ((D.card.factorial : ℚ) / f) •
+          ρ.asAlgebraHom (YoungTableau.youngSymmetrizerOver k t) := by
+    rw [← map_mul, YoungTableau.youngSymmetrizerOver_sq, map_smul,
+      YoungTableau.finrank_spechtIdeal_eq_spechtSubrepresentation]
+  have htrace := TauCeti.LinearMap.trace_eq_mul_finrank_range hsq
+  -- the same trace is the pairing of the coefficients of `c_t` with the character of `M`
+  have hsum : LinearMap.trace k M (ρ.asAlgebraHom (YoungTableau.youngSymmetrizerOver k t)) =
+      ∑ σ, (YoungTableau.youngSymmetrizer t).coeff σ • ρ.character σ := by
+    simp_rw [asAlgebraHom_eq_sum, map_sum, map_smul, YoungTableau.youngSymmetrizerOver_coeff,
+      algebraMap_smul, character]
+  rw [YoungTableau.sum_char_spechtSubrepresentation_smul t ρ.character fun g σ => ρ.char_conj g σ,
+    ← hsum, htrace, Algebra.smul_def, ← mul_assoc, ← map_mul, mul_div_cancel₀ _ hf, map_natCast]
+
+end Representation

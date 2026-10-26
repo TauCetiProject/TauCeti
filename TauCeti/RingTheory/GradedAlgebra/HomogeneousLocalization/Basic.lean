@@ -28,9 +28,14 @@ localization is.
 ## Main definitions
 
 * `HomogeneousLocalization.Away.mkLinearMap`: the linear numerator map for a fixed denominator.
+* `HomogeneousLocalization.Away.promoteNumerator`: raising a numerator to a larger power of the
+  denominator.
 * `HomogeneousLocalization.Away.lift`: the ring homomorphism `A_{(f)} →+* R` induced by `φ`.
 
 ## Main results
+
+* `HomogeneousLocalization.Away.mkLinearMap_promoteNumerator`: raising numerator and denominator
+  by the same power does not change a homogeneous fraction.
 
 * `HomogeneousLocalization.Away.lift_mk`: `lift` sends `a / fⁿ` to `φ a * ((φ f)ⁿ)⁻¹`.
 * `HomogeneousLocalization.Away.lift_algebraMap`: `lift` restricts to `φ` on the degree-zero
@@ -39,10 +44,17 @@ localization is.
   `awayMap` from `A_{(f)}` to `A_{(fg)}`.
 * `HomogeneousLocalization.Away.lift_comp_map`: `lift` is compatible with the map induced by a
   graded ring homomorphism.
+* `HomogeneousLocalization.Away.map_surjective`: a surjective graded ring homomorphism induces
+  surjections of homogeneous localizations at homogeneous elements.
+* `HomogeneousLocalization.Away.map_surjective_of_grade_subset_range`: for `ℕ`-graded rings,
+  surjectivity onto the elements of positive degree suffices at homogeneous elements of positive
+  degree.
 * `HomogeneousLocalization.Away.lift_eq_of_forall_mem`: rescaling the homogeneous coordinates,
   so that `ψ a = cⁿ φ a` on the degree-`n` part, does not change `lift`.
 * `HomogeneousLocalization.awayMap_injective`: the restriction `awayMap` from `A_{(f)}` to
   `A_{(fg)}` is injective when `g` is a nonzerodivisor of `A`.
+* `HomogeneousLocalization.awayMap_algebraMap`: the restriction `awayMap` respects the
+  coefficients of a graded algebra.
 * `HomogeneousLocalization.isReduced`: a homogeneous localization is reduced whenever the
   corresponding localization is, in particular for any reduced graded ring.
 
@@ -129,6 +141,43 @@ theorem Away.lift_comp_map (φ : B →+* R) (F : 𝒜 →+*ᵍ ℬ) {s : A} (hs 
   congr 1
   refine IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ ?_)
   simp [IsLocalization.Away.lift_eq, IsLocalization.Away.map]
+
+/-- A surjective graded ring homomorphism `F` induces a surjection `A_{(s)} →+* B_{(F s)}` for
+every homogeneous `s`: a fraction `b / F(s)ⁿ` with `b` of degree `n • d` is the image of
+`a / sⁿ`, where `a` is the degree-`n • d` component of any preimage of `b`. -/
+theorem Away.map_surjective {F : 𝒜 →+*ᵍ ℬ} (hF : Function.Surjective F) {s : A} {d : ι}
+    (hs : s ∈ 𝒜 d) : Function.Surjective (Away.map F s) := by
+  intro z
+  obtain ⟨n, b, hb, rfl⟩ := Away.mk_surjective ℬ (Graded.map_mem F hs) z
+  obtain ⟨a, rfl⟩ := hF b
+  refine ⟨Away.mk 𝒜 hs n (DirectSum.decompose 𝒜 a (n • d)) (SetLike.coe_mem _), ?_⟩
+  rw [Away.map_mk]
+  congr 1
+  rw [GradedRingHom.map_directSumDecompose, DirectSum.decompose_of_mem_same ℬ hb]
+
+/-- A graded ring homomorphism `F` of `ℕ`-graded rings whose image contains every homogeneous
+element of positive degree induces a surjection `A_{(s)} →+* B_{(F s)}` for every `s` homogeneous
+of positive degree. The degree-zero part of `B` need not lie in the image: a fraction
+`b / F(s)ⁿ` is also `b F(s) / F(s)ⁿ⁺¹`, whose numerator has positive degree. -/
+theorem Away.map_surjective_of_grade_subset_range {𝒜 : ℕ → σ} {ℬ : ℕ → τ} [GradedRing 𝒜]
+    [GradedRing ℬ] {F : 𝒜 →+*ᵍ ℬ} (hF : ∀ i, 0 < i → (ℬ i : Set B) ⊆ Set.range F) {s : A}
+    {d : ℕ} (hs : s ∈ 𝒜 d) (hd : 0 < d) : Function.Surjective (Away.map F s) := by
+  intro z
+  obtain ⟨n, b, hb, rfl⟩ := Away.mk_surjective ℬ (Graded.map_mem F hs) z
+  have hb' : b * F s ∈ ℬ ((n + 1) • d) := by
+    rw [succ_nsmul]
+    exact SetLike.mul_mem_graded hb (Graded.map_mem F hs)
+  obtain ⟨a, ha⟩ := hF _ (by rw [smul_eq_mul]; positivity) hb'
+  -- `b / F(s)ⁿ = b F(s) / F(s)ⁿ⁺¹`
+  have hz : Away.mk ℬ (Graded.map_mem F hs) n b hb =
+      Away.mk ℬ (Graded.map_mem F hs) (n + 1) (b * F s) hb' := by
+    apply val_injective
+    rw [Away.val_mk, Away.val_mk, Localization.mk_eq_mk_iff, Localization.r_iff_exists]
+    exact ⟨1, by simp only [OneMemClass.coe_one, one_mul, pow_succ]; ring⟩
+  refine ⟨Away.mk 𝒜 hs (n + 1) (DirectSum.decompose 𝒜 a ((n + 1) • d)) (SetLike.coe_mem _), ?_⟩
+  rw [hz, Away.map_mk]
+  congr 1
+  rw [GradedRingHom.map_directSumDecompose, ha, DirectSum.decompose_of_mem_same ℬ hb']
 
 /-- Rescaling homogeneous coordinates does not change `Away.lift`: if `ψ a = cⁿ φ a` for every
 `a` of degree `n`, then `φ` and `ψ` induce the same homomorphism `A_{(f)} →+* R`. -/
@@ -229,6 +278,12 @@ instance isScalarTower :
 
 variable {𝒜}
 
+/-- The restriction `awayMap` from `A_{(f)}` to `A_{(fg)}` respects coefficients. -/
+@[simp]
+theorem awayMap_algebraMap {e : ι} {f g x : A} (hg : g ∈ 𝒜 e) (hx : x = f * g) (r : R) :
+    awayMap 𝒜 hg hx (algebraMap R (Away 𝒜 f) r) = algebraMap R (Away 𝒜 x) r := by
+  simp only [algebraMap_eq_comp, RingHom.comp_apply, awayMap_fromZeroRingHom]
+
 /-- Fractions with a fixed homogeneous denominator depend linearly on the numerator. -/
 noncomputable def Away.mkLinearMap {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ) :
     𝒜 (n • d) →ₗ[R] Away 𝒜 f where
@@ -246,5 +301,44 @@ noncomputable def Away.mkLinearMap {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ
 @[simp]
 theorem Away.mkLinearMap_apply {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ)
     (a : 𝒜 (n • d)) : Away.mkLinearMap (𝒜 := 𝒜) hf n a = Away.mk 𝒜 hf n a a.2 := (rfl)
+
+/-- Raise the denominator of a homogeneous fraction without changing the fraction. -/
+def Away.promoteNumerator {f : A} {d : ι} (hf : f ∈ 𝒜 d)
+    (n N : ℕ) (hnN : n ≤ N) : 𝒜 (n • d) →ₗ[R] 𝒜 (N • d) where
+  toFun a := ⟨(a : A) * f ^ (N - n), by
+    have h := SetLike.mul_mem_graded a.2 (SetLike.pow_mem_graded (N - n) hf)
+    convert h using 1
+    rw [← add_nsmul, Nat.add_sub_of_le hnN]⟩
+  map_add' a b := by
+    apply Subtype.ext
+    exact add_mul (a : A) b (f ^ (N - n))
+  map_smul' r a := by
+    apply Subtype.ext
+    simp only [Submodule.coe_smul, RingHom.id_apply, Algebra.smul_mul_assoc]
+
+/-- Raising a numerator multiplies it by the added power of the denominator. -/
+@[simp]
+theorem Away.coe_promoteNumerator {f : A} {d : ι} (hf : f ∈ 𝒜 d)
+    (n N : ℕ) (hnN : n ≤ N) (a : 𝒜 (n • d)) :
+    (Away.promoteNumerator hf n N hnN a : A) = a * f ^ (N - n) := (rfl)
+
+/-- Raising a numerator and its denominator by the same power does not change a homogeneous
+fraction. -/
+theorem Away.mkLinearMap_promoteNumerator {f : A} {d : ι} (hf : f ∈ 𝒜 d)
+    (n N : ℕ) (hnN : n ≤ N) (a : 𝒜 (n • d)) :
+    Away.mkLinearMap hf N (Away.promoteNumerator hf n N hnN a) =
+      Away.mkLinearMap hf n a := by
+  apply val_injective
+  simp only [Away.mkLinearMap_apply, Away.val_mk, Away.coe_promoteNumerator]
+  let b : Submonoid.powers f := ⟨f ^ n, ⟨n, rfl⟩⟩
+  let c : Submonoid.powers f := ⟨f ^ (N - n), ⟨N - n, rfl⟩⟩
+  have hbc : b * c = ⟨f ^ N, ⟨N, rfl⟩⟩ := by
+    apply Subtype.ext
+    simp only [b, c, Submonoid.coe_mul, ← pow_add, Nat.add_sub_of_le hnN]
+  rw [← hbc]
+  have hcancel := IsLocalization.mk'_cancel
+    (S := Localization (Submonoid.powers f)) (a : A) b c
+  rw [← Localization.mk_eq_mk'_apply, ← Localization.mk_eq_mk'_apply] at hcancel
+  convert hcancel using 1
 
 end HomogeneousLocalization

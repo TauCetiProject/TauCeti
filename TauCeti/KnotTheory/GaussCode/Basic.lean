@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Enumerative.PerfectMatching
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Data.Finset.Sort
 import TauCeti.GroupTheory.Perm.Basic
 import Mathlib.Data.Fin.Rev
 import Mathlib.Data.Fintype.Prod
@@ -29,6 +30,11 @@ operations needed by those developments: relabelling crossings, mirroring, rever
 the writhe, and the crossing-free witness. `FramedBasedOrientedGaussCode` adds the integer framing
 coefficient relative to the Seifert framing, while `BasedUnorientedGaussCode` quotients by
 orientation reversal; their projections respectively forget framing and orientation.
+
+A traversal whose visits are the elements of a finite linearly ordered set, paired by a perfect
+matching and decorated with over/under data and signs, determines a based code,
+`BasedOrientedGaussCode.ofPerfectMatching`, with crossings numbered in the order of their first
+visits. This is how the code of a concrete diagram, such as a projected polygonal knot, is built.
 
 The conventions follow Lickorish, *An Introduction to Knot Theory*, Chapter 1: `over i = true`
 means that the traversal passes over at visit `i`, and a positive crossing contributes `+1` to the
@@ -145,6 +151,18 @@ theorem over_partner_ne {D : BasedOrientedGaussCode n} (i : Fin (2 * n)) :
   rw [D.over_partner]
   exact Bool.not_ne_self _
 
+/-- Two codes whose visits meet a common crossing in the same pairs have the same signs of the
+crossings met at every visit once they have them at the over visits: an under visit meets the same
+crossing as its partner, which is over. -/
+private theorem sign_visit_eq_of_over {D E : BasedOrientedGaussCode n}
+    (hvisit : ∀ i j, D.visit i = D.visit j ↔ E.visit i = E.visit j)
+    (hsign : ∀ i, D.over i = true → D.sign (D.visit i) = E.sign (E.visit i)) (i : Fin (2 * n)) :
+    D.sign (D.visit i) = E.sign (E.visit i) := by
+  cases hi : D.over i
+  · have hp : D.over (D.partner.val i) = true := by rw [D.over_partner, hi, Bool.not_false]
+    rw [← D.visit_partner, hsign _ hp, (hvisit _ i).1 (D.visit_partner i)]
+  · exact hsign i hi
+
 /-!
 ### Visits and crossing data
 -/
@@ -181,6 +199,125 @@ noncomputable def visitDataEquiv (D : BasedOrientedGaussCode n) : Fin (2 * n) �
 theorem visitDataEquiv_apply (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
     D.visitDataEquiv i = (D.visit i, D.over i) := by
   rw [visitDataEquiv, Equiv.ofBijective_apply, D.visitData_apply]
+
+/-!
+### Gauss codes of ordered traversals
+-/
+
+section OfPerfectMatching
+
+variable {α : Type*} [LinearOrder α] [Fintype α] {m : ℕ}
+
+/-- The visits of a matched finite linear order that come before their partner. -/
+private def leadingVisits (p : PerfectMatching α) : Finset α :=
+  {a | a < p.val a}
+
+private theorem mem_leadingVisits {p : PerfectMatching α} {a : α} :
+    a ∈ leadingVisits p ↔ a < p.val a := by
+  simp [leadingVisits]
+
+private theorem min_mem_leadingVisits (p : PerfectMatching α) (a : α) :
+    min a (p.val a) ∈ leadingVisits p := by
+  rw [mem_leadingVisits]
+  rcases lt_or_gt_of_ne (p.apply_ne a).symm with h | h
+  · rwa [min_eq_left h.le]
+  · rwa [min_eq_right h.le, p.apply_apply]
+
+private theorem card_leadingVisits (p : PerfectMatching α) (hα : Fintype.card α = 2 * m) :
+    (leadingVisits p).card = m := by
+  have hcompl : (leadingVisits p)ᶜ = (leadingVisits p).map p.val.toEmbedding := by
+    ext a
+    have hsymm : p.val.symm a = p.val a := (Equiv.symm_apply_eq _).2 (p.apply_apply a).symm
+    simp only [Finset.mem_compl, mem_leadingVisits, not_lt, Finset.mem_map_equiv, hsymm,
+      p.apply_apply]
+    exact le_iff_lt_or_eq.trans (or_iff_left (p.apply_ne a))
+  have h := Finset.card_add_card_compl (leadingVisits p)
+  rw [hcompl, Finset.card_map] at h
+  omega
+
+/-- The leading visits, enumerated in increasing order. -/
+private def leadingVisitsOrderIso (p : PerfectMatching α) (hα : Fintype.card α = 2 * m) :
+    Fin m ≃o leadingVisits p :=
+  (leadingVisits p).orderIsoOfFin (card_leadingVisits p hα)
+
+/-- The crossing label of a visit: the rank of the earlier visit of its pair among all earlier
+visits. -/
+private def pairLabel (p : PerfectMatching α) (hα : Fintype.card α = 2 * m) (a : α) : Fin m :=
+  (leadingVisitsOrderIso p hα).symm ⟨min a (p.val a), min_mem_leadingVisits p a⟩
+
+private theorem pairLabel_eq_pairLabel_iff (p : PerfectMatching α)
+    (hα : Fintype.card α = 2 * m) (a b : α) :
+    pairLabel p hα a = pairLabel p hα b ↔ b = a ∨ b = p.val a := by
+  rw [pairLabel, pairLabel, (leadingVisitsOrderIso p hα).symm.injective.eq_iff, Subtype.mk.injEq]
+  constructor
+  · intro h
+    rcases min_choice a (p.val a) with ha | ha <;> rcases min_choice b (p.val b) with hb | hb <;>
+      rw [ha, hb] at h
+    · exact .inl h.symm
+    · exact .inr (by rw [h, p.apply_apply])
+    · exact .inr h.symm
+    · exact .inl (p.val.injective h).symm
+  · rintro (rfl | rfl)
+    · rfl
+    · rw [p.apply_apply, min_comm]
+
+/-- The based oriented Gauss code of a traversal whose visits are the elements of a finite linear
+order `α` of cardinality `2 * m`, met in increasing order. The two visits of each crossing are
+paired by a perfect matching `p`, the over/under status of a visit is `over`, with exactly one
+visit of each pair over, and the sign of a crossing is `sign` at the earlier of its two visits.
+Crossings are labelled by `Fin m` in the order of their first visits. -/
+noncomputable def ofPerfectMatching (hα : Fintype.card α = 2 * m) (p : PerfectMatching α)
+    (over : α → Bool) (hover : ∀ a, over (p.val a) = !over a) (sign : α → ℤˣ) :
+    BasedOrientedGaussCode m where
+  visit i := pairLabel p hα (Fintype.orderIsoFinOfCardEq α hα i)
+  over i := over (Fintype.orderIsoFinOfCardEq α hα i)
+  sign c := sign (leadingVisitsOrderIso p hα c)
+  partner := PerfectMatching.congr (Fintype.orderIsoFinOfCardEq α hα).symm.toEquiv p
+  visit_eq_iff i j := by
+    rw [pairLabel_eq_pairLabel_iff, PerfectMatching.congr_val_apply,
+      (Fintype.orderIsoFinOfCardEq α hα).injective.eq_iff]
+    simp [OrderIso.eq_symm_apply]
+  over_partner i := by
+    simp [hover]
+
+variable (hα : Fintype.card α = 2 * m) (p : PerfectMatching α) (over : α → Bool)
+  (hover : ∀ a, over (p.val a) = !over a) (sign : α → ℤˣ)
+
+/-- The `i`-th visit of `ofPerfectMatching` is over exactly when the `i`-th element is. -/
+@[simp]
+theorem ofPerfectMatching_over (i : Fin (2 * m)) :
+    (ofPerfectMatching hα p over hover sign).over i = over (Fintype.orderIsoFinOfCardEq α hα i) :=
+  (rfl)
+
+/-- The partner of the `i`-th visit of `ofPerfectMatching` is the visit at the partner of the
+`i`-th element. -/
+@[simp]
+theorem orderIsoFinOfCardEq_ofPerfectMatching_partner (i : Fin (2 * m)) :
+    Fintype.orderIsoFinOfCardEq α hα ((ofPerfectMatching hα p over hover sign).partner.val i) =
+      p.val (Fintype.orderIsoFinOfCardEq α hα i) := by
+  simp [ofPerfectMatching]
+
+/-- **Crossings are numbered in the order of their first visits.** The crossing met at the `i`-th
+visit of `ofPerfectMatching` has a smaller label than the one met at the `j`-th visit exactly when
+the earlier visit of the first pair comes before the earlier visit of the second. -/
+theorem ofPerfectMatching_visit_lt_visit_iff (i j : Fin (2 * m)) :
+    (ofPerfectMatching hα p over hover sign).visit i <
+        (ofPerfectMatching hα p over hover sign).visit j ↔
+      min (Fintype.orderIsoFinOfCardEq α hα i) (p.val (Fintype.orderIsoFinOfCardEq α hα i)) <
+        min (Fintype.orderIsoFinOfCardEq α hα j) (p.val (Fintype.orderIsoFinOfCardEq α hα j)) := by
+  simp only [ofPerfectMatching, pairLabel, OrderIso.lt_iff_lt, Subtype.mk_lt_mk]
+
+/-- When `sign` takes the same value at the two visits of each pair, the sign of the crossing met
+at the `i`-th visit of `ofPerfectMatching` is `sign` at the `i`-th element. -/
+theorem ofPerfectMatching_sign_visit (hsign : ∀ a, sign (p.val a) = sign a) (i : Fin (2 * m)) :
+    (ofPerfectMatching hα p over hover sign).sign
+        ((ofPerfectMatching hα p over hover sign).visit i) =
+      sign (Fintype.orderIsoFinOfCardEq α hα i) := by
+  simp only [ofPerfectMatching, pairLabel, OrderIso.apply_symm_apply]
+  set a := Fintype.orderIsoFinOfCardEq α hα i
+  rcases min_choice a (p.val a) with h | h <;> simp only [h, hsign]
+
+end OfPerfectMatching
 
 /-- The writhe is the sum of the signs of all crossings. -/
 def writhe (D : BasedOrientedGaussCode n) : ℤ :=
@@ -370,6 +507,85 @@ def relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) : BasedOriented
 @[simp] theorem relabel_refl (D : BasedOrientedGaussCode n) :
     D.relabel (Equiv.refl (Fin n)) = D := by
   apply ext <;> funext i <;> simp
+
+/-- Two Gauss codes differ only by a relabelling of their crossings when the same pairs of visits
+belong to a common crossing, and the codes have the same over/under data and the same signs of the
+crossings met at each over visit. -/
+theorem exists_relabel_eq_of_visit_eq_visit_iff {D E : BasedOrientedGaussCode n}
+    (hvisit : ∀ i j, D.visit i = D.visit j ↔ E.visit i = E.visit j) (hover : D.over = E.over)
+    (hsign : ∀ i, D.over i = true → D.sign (D.visit i) = E.sign (E.visit i)) :
+    ∃ e, D.relabel e = E := by
+  replace hsign := sign_visit_eq_of_over hvisit hsign
+  -- Read the labels of `D` through those of `E`; this is injective, hence a permutation.
+  let f : Fin n → Fin n := fun c ↦ E.visit (Function.surjInv D.visit_surjective c)
+  have hf (i : Fin (2 * n)) : f (D.visit i) = E.visit i :=
+    (hvisit _ _).1 (Function.surjInv_eq D.visit_surjective _)
+  have hinj : Function.Injective f := fun c c' h ↦ by
+    obtain ⟨i, rfl⟩ := D.visit_surjective c
+    obtain ⟨j, rfl⟩ := D.visit_surjective c'
+    rw [hf, hf] at h
+    exact (hvisit i j).2 h
+  let e := Equiv.ofBijective f hinj.bijective_of_finite
+  refine ⟨e, ext (funext fun i ↦ hf i) hover (funext fun c ↦ ?_)⟩
+  obtain ⟨i, rfl⟩ := E.visit_surjective c
+  rw [sign_relabel, ← hsign, ← hf i]
+  exact congrArg D.sign (e.symm_apply_apply (D.visit i))
+
+/-- The form of `TauCeti.BasedOrientedGaussCode.exists_relabel_eq_of_visit_eq_visit_iff` for codes
+whose numbers of crossings are equal but not definitionally so: after identifying their visits by
+`Fin.cast`, the codes, paired with their numbers of crossings, differ only by a relabelling of the
+crossings. -/
+theorem exists_sigma_mk_eq_relabel_of_visit_eq_visit_iff {m : ℕ} (h : n = m)
+    {D : BasedOrientedGaussCode n} {E : BasedOrientedGaussCode m}
+    (hvisit : ∀ i j, D.visit i = D.visit j ↔
+      E.visit (Fin.cast (congrArg (2 * ·) h) i) = E.visit (Fin.cast (congrArg (2 * ·) h) j))
+    (hover : ∀ i, D.over i = E.over (Fin.cast (congrArg (2 * ·) h) i))
+    (hsign : ∀ i, D.over i = true →
+      D.sign (D.visit i) = E.sign (E.visit (Fin.cast (congrArg (2 * ·) h) i))) :
+    ∃ e, (⟨m, E⟩ : Σ n, BasedOrientedGaussCode n) = ⟨n, D.relabel e⟩ := by
+  subst h
+  simp only [Fin.cast_eq_self] at hvisit hover hsign
+  obtain ⟨e, he⟩ := exists_relabel_eq_of_visit_eq_visit_iff hvisit (funext hover) hsign
+  exact ⟨e, by rw [he]⟩
+
+/-- A Gauss code is determined by the relative order of the crossing labels of its visits, its
+over/under data, and the signs of the crossings met at its over visits: two codes whose labels
+compare in the same way at every pair of visits have the same labels. -/
+theorem ext_of_visit_lt_visit_iff {D E : BasedOrientedGaussCode n}
+    (hvisit : ∀ i j, D.visit i < D.visit j ↔ E.visit i < E.visit j) (hover : D.over = E.over)
+    (hsign : ∀ i, D.over i = true → D.sign (D.visit i) = E.sign (E.visit i)) : D = E := by
+  have heq (i j : Fin (2 * n)) : D.visit i = D.visit j ↔ E.visit i = E.visit j := by
+    simp only [le_antisymm_iff, ← not_lt, hvisit]
+  obtain ⟨e, he⟩ := exists_relabel_eq_of_visit_eq_visit_iff heq hover hsign
+  have hv (i : Fin (2 * n)) : e (D.visit i) = E.visit i :=
+    congrArg (fun C ↦ C.visit i) he
+  -- The label permutation preserves order, so it is the identity on `Fin n`.
+  have hmono : StrictMono e := by
+    intro c c' h
+    obtain ⟨i, rfl⟩ := D.visit_surjective c
+    obtain ⟨j, rfl⟩ := D.visit_surjective c'
+    rw [hv, hv]
+    exact (hvisit i j).1 h
+  have hid : (e : Fin n → Fin n) = id :=
+    hmono.range_inj_of_wellFoundedLT strictMono_id |>.1 (by simp)
+  have heid : e = Equiv.refl (Fin n) := Equiv.ext (congrFun hid)
+  simpa only [heid, relabel_refl] using he
+
+/-- The form of `TauCeti.BasedOrientedGaussCode.ext_of_visit_lt_visit_iff` for codes whose
+numbers of crossings are equal but not definitionally so, such as codes read off from two
+presentations of one diagram: the codes, paired with their numbers of crossings, are equal when
+they satisfy its hypotheses after identifying their visits by `Fin.cast`. -/
+theorem sigma_mk_eq_of_visit_lt_visit_iff {m : ℕ} (h : n = m) {D : BasedOrientedGaussCode n}
+    {E : BasedOrientedGaussCode m}
+    (hvisit : ∀ i j, D.visit i < D.visit j ↔
+      E.visit (Fin.cast (congrArg (2 * ·) h) i) < E.visit (Fin.cast (congrArg (2 * ·) h) j))
+    (hover : ∀ i, D.over i = E.over (Fin.cast (congrArg (2 * ·) h) i))
+    (hsign : ∀ i, D.over i = true →
+      D.sign (D.visit i) = E.sign (E.visit (Fin.cast (congrArg (2 * ·) h) i))) :
+    (⟨n, D⟩ : Σ n, BasedOrientedGaussCode n) = ⟨m, E⟩ := by
+  subst h
+  simp only [Fin.cast_eq_self] at hvisit hover hsign
+  rw [ext_of_visit_lt_visit_iff hvisit (funext hover) hsign]
 
 /-- The crossing-free based oriented Gauss code, representing the unknot diagram. -/
 def empty : BasedOrientedGaussCode 0 where

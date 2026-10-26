@@ -14,15 +14,18 @@ An odd right-linear homotopy has a closed boundary `dN ∘ k + k ∘ dM`. Its cl
 existing curved homotopy category is zero, and two closed maps have the same class precisely
 when their difference is such a boundary. The construction reuses the zero-cocycle equivalence
 and square-zero Hom differential of curved modules of the same curvature.
+An object is zero in this quotient exactly when its identity admits a contraction.
 
 ## References
 
 * L. Positselski, *Differential graded Koszul duality: an introductory survey*, Section 6.2.
+* The Tau Ceti contributors, `TauCeti.Algebra.Homology.Curved.Frobenius`: the contractibility
+  characterization follows the corresponding componentwise split construction.
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory CategoryTheory.Limits
 
 namespace TauCeti.CurvedDGRightModuleCat
 
@@ -96,5 +99,34 @@ theorem quotient_map_eq_iff_exists_homotopy
         (dgHomLinearEquivCochains M N 0 (dgClosedHom R g)).1) x =
           N.differential (k.1 x) + k.1 (M.differential x)) ↔ _
   simp only [LinearMap.sub_apply, ← closedHom_eq]
+
+/-- A curved module is zero in the homotopy category exactly when it admits a contraction. -/
+theorem isZero_homotopy_iff_exists_contraction (P : CurvedDGRightModuleCat.{u, u, u} h) :
+    IsZero (DGHomotopyCategory.of R P) ↔
+      ∃ k : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading) (ℳN := P.grading) (-1),
+        ∀ x : P, P.differential (k.1 x) + k.1 (P.differential x) = x := by
+  constructor
+  · intro hP
+    have hz : (dgClosedToHomotopy R).map
+        (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P)) = 0 := by
+      rw [CategoryTheory.Functor.map_id]
+      exact hP.eq_of_src _ _
+    rw [dgClosedToHomotopy_map_eq_zero_iff, mem_dgBoundaries_iff] at hz
+    obtain ⟨k, hk⟩ := hz
+    refine ⟨k, fun x ↦ ?_⟩
+    have hx := hk x
+    erw [← closedHom_eq, closedHom_id] at hx
+    exact hx.symm
+  · rintro ⟨k, hk⟩
+    have hid : closedHomotopyBoundary k =
+        𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P) := by
+      apply closedHom_ext
+      intro x
+      rw [closedHom_closedHomotopyBoundary_apply, closedHom_id]
+      exact hk x
+    apply (IsZero.iff_id_eq_zero _).mpr
+    have hz : (dgClosedToHomotopy R).map (closedHomotopyBoundary k) = 0 := by simp
+    rw [hid, CategoryTheory.Functor.map_id] at hz
+    exact hz
 
 end TauCeti.CurvedDGRightModuleCat

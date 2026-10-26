@@ -25,7 +25,7 @@ Smooth relative curves satisfy the same criterion: their singular subscheme is e
 
 ## Main result
 
-* `AtWorstNodalOfRelativeDimensionOne.of_smooth`: smooth morphisms of relative dimension one
+* `AffineAtWorstNodalOfRelativeDimensionOne.of_smooth`: smooth morphisms of relative dimension one
   over an affine base are at worst nodal.
 
 ## References
@@ -47,7 +47,7 @@ variable {R : Type u} [CommRing R] {X : Scheme.{u}}
 
 /-- The scheme-theoretic nodal-curve criterion over an affine base: the morphism is syntomic
 of relative dimension one, and its singular subscheme is unramified over the base. -/
-def AtWorstNodalOfRelativeDimensionOne (f : X ⟶ Spec (.of R)) : Prop :=
+def AffineAtWorstNodalOfRelativeDimensionOne (f : X ⟶ Spec (.of R)) : Prop :=
   ∃ h : SyntomicOfRelativeDimension 1 f,
     letI : SyntomicOfRelativeDimension 1 f := h
     Unramified
@@ -58,8 +58,8 @@ def AtWorstNodalOfRelativeDimensionOne (f : X ⟶ Spec (.of R)) : Prop :=
 
 /-- A relative curve is at worst nodal exactly when it is syntomic of relative dimension one
 and its singular subscheme is unramified over the base. -/
-theorem AtWorstNodalOfRelativeDimensionOne_iff {f : X ⟶ Spec (.of R)} :
-    AtWorstNodalOfRelativeDimensionOne f ↔
+theorem affineAtWorstNodalOfRelativeDimensionOne_iff {f : X ⟶ Spec (.of R)} :
+    AffineAtWorstNodalOfRelativeDimensionOne f ↔
       ∃ h : SyntomicOfRelativeDimension 1 f,
         letI : SyntomicOfRelativeDimension 1 f := h
         Unramified
@@ -71,7 +71,7 @@ theorem AtWorstNodalOfRelativeDimensionOne_iff {f : X ⟶ Spec (.of R)} :
 
 /-- Construct a nodal relative curve from syntomicity and unramifiedness of its
 singular subscheme. -/
-theorem AtWorstNodalOfRelativeDimensionOne.mk {f : X ⟶ Spec (.of R)}
+theorem AffineAtWorstNodalOfRelativeDimensionOne.mk {f : X ⟶ Spec (.of R)}
     (hf : SyntomicOfRelativeDimension 1 f)
     (hs : letI : SyntomicOfRelativeDimension 1 f := hf
       Unramified
@@ -79,17 +79,17 @@ theorem AtWorstNodalOfRelativeDimensionOne.mk {f : X ⟶ Spec (.of R)}
           (SyntomicOfRelativeDimension.flat 1 f)
           (SyntomicOfRelativeDimension.locallyOfFinitePresentation 1 f)
           (PureRelativeDimension.of_syntomicOfRelativeDimension f)).subschemeι ≫ f)) :
-    AtWorstNodalOfRelativeDimensionOne f :=
+    AffineAtWorstNodalOfRelativeDimensionOne f :=
   ⟨hf, hs⟩
 
 /-- A nodal relative curve is syntomic of relative dimension one. -/
-theorem AtWorstNodalOfRelativeDimensionOne.syntomic
-    {f : X ⟶ Spec (.of R)} (h : AtWorstNodalOfRelativeDimensionOne f) :
+theorem AffineAtWorstNodalOfRelativeDimensionOne.syntomic
+    {f : X ⟶ Spec (.of R)} (h : AffineAtWorstNodalOfRelativeDimensionOne f) :
     SyntomicOfRelativeDimension 1 f := h.choose
 
 /-- The singular subscheme of a nodal relative curve is unramified over the base. -/
-theorem AtWorstNodalOfRelativeDimensionOne.unramified_singularLocus
-    {f : X ⟶ Spec (.of R)} (h : AtWorstNodalOfRelativeDimensionOne f) :
+theorem AffineAtWorstNodalOfRelativeDimensionOne.unramified_singularLocus
+    {f : X ⟶ Spec (.of R)} (h : AffineAtWorstNodalOfRelativeDimensionOne f) :
     letI : SyntomicOfRelativeDimension 1 f := h.syntomic
     Unramified
       ((@Scheme.singularLocus R _ X ⟨f⟩
@@ -99,14 +99,14 @@ theorem AtWorstNodalOfRelativeDimensionOne.unramified_singularLocus
   h.choose_spec
 
 /-- Nodal relative curves remain nodal after extension of the base ring. -/
-theorem AtWorstNodalOfRelativeDimensionOne.of_isPullback
+theorem AffineAtWorstNodalOfRelativeDimensionOne.of_isPullback
     {R' : Type u} [CommRing R'] [Algebra R R']
     [X.Over (Spec (.of R))] {X' : Scheme.{u}} [X'.Over (Spec (.of R'))]
     {g : X' ⟶ X}
     (H : IsPullback g (X' ↘ Spec (.of R')) (X ↘ Spec (.of R))
       (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
-    (h : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R))) :
-    AtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of R')) := by
+    (h : AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R))) :
+    AffineAtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of R')) := by
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := h.syntomic
   have hf' : SyntomicOfRelativeDimension 1 (X' ↘ Spec (.of R')) :=
     MorphismProperty.of_isPullback (P := @SyntomicOfRelativeDimension 1) H inferInstance
@@ -142,16 +142,16 @@ private theorem smooth_unramified_singularLocus
 /-- A smooth morphism of relative dimension one over an affine base is at worst nodal. Its
 relative singular subscheme is empty, so the singular-locus condition in the nodal criterion
 holds automatically. -/
-theorem AtWorstNodalOfRelativeDimensionOne.of_smooth
+theorem AffineAtWorstNodalOfRelativeDimensionOne.of_smooth
     [X.Over (Spec (.of R))]
     [SmoothOfRelativeDimension 1 (X ↘ Spec (.of R))] :
-    AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) := by
+    AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) := by
   refine ⟨inferInstance, ?_⟩
   exact smooth_unramified_singularLocus (R := R) (X := X)
 
 /-- The local model `xy = a` is a nodal relative curve over `Spec R`. -/
-theorem _root_.TauCeti.NodeAlgebra.atWorstNodalOfRelativeDimensionOne (a : R) :
-    AtWorstNodalOfRelativeDimensionOne
+theorem _root_.TauCeti.NodeAlgebra.affineAtWorstNodalOfRelativeDimensionOne (a : R) :
+    AffineAtWorstNodalOfRelativeDimensionOne
       (Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))) := by
   let f : Spec (.of (NodeAlgebra R a)) ⟶ Spec (.of R) :=
     Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))

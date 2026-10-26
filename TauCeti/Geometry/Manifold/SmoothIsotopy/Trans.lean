@@ -74,6 +74,15 @@ private theorem contMDiff_concatMotion (F : SmoothIsotopy f₀ f₁)
   classical
   have htime : Continuous (fun p : unitInterval × M => (p.1 : ℝ)) :=
     continuous_subtype_val.comp continuous_fst
+  have hpw : concatMotion F G = Set.piecewise {p : unitInterval × M | (p.1 : ℝ) ≤ 1 / 2}
+      (F ∘ fun p => (firstTime p.1, p.2)) (G ∘ fun p => (secondTime p.1, p.2)) := by
+    funext p
+    by_cases hp : (p.1 : ℝ) ≤ 1 / 2
+    · rw [Set.piecewise_eq_of_mem _ _ _ (by exact hp)]
+      exact ite_eq_left hp
+    · rw [Set.piecewise_eq_of_notMem _ _ _ (by exact hp)]
+      exact ite_eq_right hp
+  rw [hpw]
   apply (F.contMDiff.comp
     (((contMDiff_firstTime hn).comp contMDiff_fst).prodMk contMDiff_snd)).piecewise
     (G.contMDiff.comp
@@ -131,6 +140,15 @@ theorem trans_apply_of_mem_Icc (F : SmoothIsotopy f₀ f₁) (G : SmoothIsotopy 
   have hsecond : (⟨Real.smoothTransition (4 * t - 3), Real.smoothTransition.nonneg _,
       Real.smoothTransition.le_one _⟩ : unitInterval) = 0 := secondTime_eq_zero ht.2
   simp only [trans_apply, hfirst, hsecond, apply_one, apply_zero, ite_self]
+
+/-- At each source point, the concatenation only takes values that one of the two isotopies takes
+at that point. -/
+theorem trans_apply_mem (F : SmoothIsotopy f₀ f₁) (G : SmoothIsotopy f₁ f₂) (hn : n ≤ ∞)
+    {x : M} {s : Set N} (hF : ∀ t, F (t, x) ∈ s) (hG : ∀ t, G (t, x) ∈ s) (t : unitInterval) :
+    F.trans G hn (t, x) ∈ s := by
+  rw [trans_apply]
+  split_ifs
+  exacts [hF _, hG _]
 
 end TauCeti.SmoothIsotopy
 

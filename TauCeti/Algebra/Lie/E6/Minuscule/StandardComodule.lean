@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.E6.Minuscule.BaseChange
 import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
 import TauCeti.Algebra.Lie.E6.Minuscule.PointsFunctor
+import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Raising
 
 /-!
 # The standard representation of the type-E6 minuscule carrier
@@ -97,7 +98,9 @@ theorem piScalarRight_comp_endOfPoint
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R 27) (baseChangeDefiningIdeal R)
           (CommAlgCat.of R A) g).ofConv := by
-    exact congrArg WithConv.ofConv (mapPointsFunctor_coordinateMap_app R g)
+    have he := congrArg WithConv.ofConv (mapPointsFunctor_coordinateMap_app R g)
+    erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at he
+    exact he
   rw [hpoint]
   exact GeneralLinear.piScalarRight_comp_endOfPoint R 27 _
 
@@ -114,7 +117,7 @@ theorem mulVec_mem
           (CommAlgCat.of R R) g) : Matrix (Fin 27) (Fin 27) R) *ᵥ w ∈ N := by
   have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R 27
     (coordinateMap R).hom N g hw
-  have hpoint : AlgHom.mapDomain (coordinateMap R).hom g = _ :=
+  have hpoint : BialgHom.mapDomain (coordinateMap R).hom g = _ :=
     mapPointsFunctor_coordinateMap_app R g
   rwa [hpoint] at h
 
@@ -196,24 +199,13 @@ theorem torusCorestrict_eq_ofWeights :
     coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
     GeneralLinear.hom_weightTorusBaseChangeCoordinateMap, weightTable_weight]
 
-private theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
+/-- Distinct minuscule weight vectors have distinct characters of the weight torus. -/
+theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
   intro a b h
   apply DynkinType.e6MinusculeWeight_injective
   funext i
   simpa only [minusculeCharacter, SplitTorus.toAdd_weightCharacter] using
     congrArg (fun χ : Multiplicative (Fin 6 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
-
-private theorem positiveRoot_mulVec_single_sub (i : Fin 6) (a : Fin 27)
-    (ha : DynkinType.e6MinusculeWeight a i = -1) :
-    (((rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd 1) :
-        Matrix.GeneralLinearGroup (Fin 27) k) : Matrix (Fin 27) (Fin 27) k) *ᵥ
-          Pi.single a 1) - Pi.single a 1 =
-      Pi.single (DynkinType.e6MinusculeReflection i a) 1 := by
-  rw [coe_rootSubgroupPoints_inl, Matrix.add_mulVec, Matrix.one_mulVec,
-    Matrix.smul_mulVec]
-  simp only [toAdd_ofAdd, one_smul]
-  rw [Matrix.mulVec_single_one, weightTable.raisingMatrix_map_col]
-  simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
 
 private theorem negativeRoot_mulVec_single_sub (i : Fin 6) (a : Fin 27)
     (ha : DynkinType.e6MinusculeWeight a i = 1) :
@@ -239,8 +231,10 @@ private theorem single_reflection_mem
   rcases DynkinType.e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with
     hneg | hzero | hpos
   · have hact := hroot (.inl i) _ ha
-    have hsub := N.sub_mem hact ha
-    rwa [positiveRoot_mulVec_single_sub k i a hneg] at hsub
+    rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, one_smul] at hact
+    simpa only [weightTable_reflection] using
+      weightTable.single_reflection_mem_of_mulVec_mem N i a
+        (by simpa only [weightTable_weight] using hneg) ha hact
   · rw [(DynkinType.e6MinusculeReflection_eq_self_iff i a).2 hzero]
     exact ha
   · have hact := hroot (.inr i) _ ha

@@ -20,6 +20,8 @@ individual members.
   bounded lattice is complemented by the supremum of the other members.
 * `iSupIndep.isCompl_biSup_ne`: a member of an independent family spanning a complete lattice is
   complemented by the supremum of the other members.
+* `iSupIndep.sum_elim`: in a modular lattice, two independent families with disjoint suprema
+  combine into an independent family indexed by the sum type.
 -/
 
 public section
@@ -41,3 +43,17 @@ theorem iSupIndep.isCompl_biSup_ne {ι L : Type*} [CompleteLattice L] {f : ι �
   disjoint := hind i
   codisjoint := codisjoint_iff.2 <| by
     rw [← iSup_split_single, htop]
+
+/-- In a complete modular lattice, two independent families whose suprema are disjoint combine into
+an independent family indexed by the sum of their index types. -/
+theorem iSupIndep.sum_elim {ι κ L : Type*} [CompleteLattice L] [IsModularLattice L] {f : ι → L}
+    {g : κ → L} (hf : iSupIndep f) (hg : iSupIndep g) (hfg : Disjoint (⨆ i, f i) (⨆ j, g j)) :
+    iSupIndep (Sum.elim f g) := by
+  rw [iSupIndep_def]
+  rintro (i | j) <;> simp only [iSup_sum, Sum.elim_inl, Sum.elim_inr, ne_eq, Sum.inl.injEq,
+    Sum.inr.injEq, reduceCtorEq, not_false_eq_true, iSup_pos]
+  · refine (hf i).disjoint_sup_right_of_disjoint_sup_left (hfg.mono_left ?_)
+    exact sup_le (le_iSup f i) (iSup₂_le fun i' _ ↦ le_iSup f i')
+  · rw [sup_comm]
+    refine (hg j).disjoint_sup_right_of_disjoint_sup_left (hfg.symm.mono_left ?_)
+    exact sup_le (le_iSup g j) (iSup₂_le fun j' _ ↦ le_iSup g j')

@@ -39,10 +39,14 @@ maximal ideal.
 * `TauCeti.LinearMap.trace_mul_eq_mul_trace_restrict_range`: if `c * c = a • c` and `f` commutes
   with `c`, then `trace (c * f) = a * trace (f|range c)`. Taking `c` to be the action of a
   quasi-idempotent of a group algebra computes the character of its image.
+* `TauCeti.LinearMap.trace_sub_mul_eq_mul_trace_restrict_ker`: the kernel counterpart,
+  `tr ((a - c) f) = a tr (f | ker c)`, valid also when `a = 0`.
 * `TauCeti.LinearMap.trace_eq_mul_finrank_range`: if `f * f = a • f`, then
   `trace f = a * finrank (range f)`, the case `f = 1` of the previous statement.
 * `LinearMap.trace_eq_finrank_range_of_isIdempotentElem`: over a local ring, the trace of
   an idempotent endomorphism of a finite free module is the rank of its range.
+* `Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero`: over a field of characteristic zero, an
+  idempotent matrix of trace zero is zero.
 * `TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one`: for an involution `σ`,
   `2 dim ker (1 + σ) = dim M - tr σ`, applying the above to `f = 1 + σ`, whose square is `2 f`.
 * `TauCeti.LinearMap.three_mul_finrank_ker_one_add_add_sq_of_pow_three_eq_one`: for `υ ^ 3 = 1`,
@@ -90,6 +94,27 @@ theorem LinearMap.trace_mul_eq_mul_trace_restrict_range {c f : Module.End K M} {
     have htrace := _root_.LinearMap.trace_restrict_eq_of_forall_mem _ (a⁻¹ • c * f) hmem
     rw [hres, smul_mul_assoc, map_smul, smul_eq_mul] at htrace
     rw [htrace, ← mul_assoc, mul_inv_cancel₀ ha, one_mul]
+
+/-- **The trace on the kernel of an essentially idempotent endomorphism.** If `c² = a c`
+and `f` commutes with `c`, then `tr ((a - c) f) = a tr (f | ker c)`. -/
+theorem LinearMap.trace_sub_mul_eq_mul_trace_restrict_ker {c f : Module.End K M} {a : K}
+    (hc : c * c = a • c) (hcf : Commute c f)
+    (hf : ∀ x ∈ _root_.LinearMap.ker c, f x ∈ _root_.LinearMap.ker c :=
+      fun x hx ↦ by
+        rw [_root_.LinearMap.mem_ker] at hx ⊢
+        rw [← Module.End.mul_apply, hcf.eq, Module.End.mul_apply, hx, map_zero]) :
+    _root_.LinearMap.trace K M ((a • 1 - c) * f) =
+      a * _root_.LinearMap.trace K (_root_.LinearMap.ker c) (f.restrict hf) := by
+  have hmem : ∀ x, ((a • 1 - c) * f) x ∈ _root_.LinearMap.ker c := by
+    intro x
+    have hcx := congrArg (fun L : Module.End K M ↦ L (f x)) hc
+    simpa [Module.End.mul_apply] using sub_eq_zero.mpr hcx.symm
+  have hres : ((a • 1 - c) * f).restrict (fun x _ ↦ hmem x) = a • f.restrict hf := by
+    ext x
+    simp [Module.End.mul_apply, _root_.LinearMap.mem_ker.mp (hf x x.2)]
+  have h := _root_.LinearMap.trace_restrict_eq_of_forall_mem _ ((a • 1 - c) * f) hmem
+  rw [hres, map_smul, smul_eq_mul] at h
+  exact h.symm
 
 /-- **The trace of an essentially idempotent endomorphism.** If the square of `f` is `a • f`,
 then the trace of `f` is `a` times the dimension of the range of `f`.
@@ -168,3 +193,18 @@ theorem trace_eq_finrank_range_of_isIdempotentElem {f : Module.End A N}
   exact (LinearMap.IsIdempotentElem.isProj_range f hf).trace
 
 end LinearMap
+
+namespace Matrix
+
+/-- Over a field of characteristic zero, an idempotent matrix of trace zero is zero: the trace of
+an idempotent is the dimension of its range. This is the matrix form of
+`LinearMap.IsIdempotentElem.eq_zero_of_trace_eq_zero`. -/
+theorem IsIdempotentElem.eq_zero_of_trace_eq_zero {ι K : Type*} [Fintype ι] [Field K] [CharZero K]
+    {A : Matrix ι ι K} (hA : IsIdempotentElem A) (htr : A.trace = 0) : A = 0 := by
+  classical
+  refine toLinAlgEquiv'.injective ?_
+  rw [map_zero]
+  exact LinearMap.IsIdempotentElem.eq_zero_of_trace_eq_zero (hA.map toLinAlgEquiv')
+    ((trace_toLin'_eq A).trans htr)
+
+end Matrix

@@ -212,7 +212,7 @@ lemma coe_cuspFormOfSmulSlashScaleGL (l N : ℕ) [NeZero l] [NeZero N] (hlN : l 
     ⇑(cuspFormOfSmulSlashScaleGL l N hlN k χ hχ f g hgχ hg hT) = f :=
   -- deliberately `(rfl)` rather than `rfl`: `cuspFormOfSmulSlashScaleGL` is not `@[expose]`, so
   -- the parentheses opt out of exporting the definitional equality, which this lemma itself
-  -- replaces downstream. Same convention as `ModularForm.coe_ofLe` in `Basic.lean`.
+  -- replaces downstream. Same convention as `ModularForm.coe_ofSlashInvariant` in `Basic.lean`.
   (rfl)
 
 end TauCeti

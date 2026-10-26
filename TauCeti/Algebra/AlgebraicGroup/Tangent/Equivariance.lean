@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Adjoint
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Representation
 
 /-!
 # Equivariance of the differential for the adjoint action
@@ -27,6 +26,8 @@ intertwining identity for the adjoint representations.
 ## Main declarations
 
 * `TauCeti.derivationComp_adDerivation`: the differential intertwines the adjoint action.
+* `BialgHom.lTensor_dualCotangentMap_adjointAction`: the same equivariance on scalar
+  extensions of cotangent duals.
 
 ## References
 
@@ -84,12 +85,17 @@ theorem derivationComp_adDerivation (φ : A' →ₐc[R] A)
     (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
     derivationComp (B := B) φ (Derivation.adDerivation B g d) =
       Derivation.adDerivation B
-        (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g)
+        (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g)
         (derivationComp (B := B) φ d) := by
   have mapDomain_inv :
-      (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g)⁻¹ =
-        AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ (g⁻¹) :=
-    ((AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ).map_inv g).symm
+      (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g)⁻¹ =
+        BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ (g⁻¹) :=
+    ((BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ).map_inv g).symm
+  have mapDomain_toLinearMap :
+      (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R A' B) φ g).ofConv.toLinearMap =
+        g.ofConv.toLinearMap.comp φ.toLinearMap := by
+    ext x
+    exact BialgHom.mapDomain_apply_apply (A := Bialgebra.CounitAlgebra R A' B) φ g x
   apply Derivation.ext
   intro a
   apply (Bialgebra.CounitAlgebra.algEquivSelf R A' B).injective
@@ -98,7 +104,41 @@ theorem derivationComp_adDerivation (φ : A' →ₐc[R] A)
     Bialgebra.CounitAlgebra.algEquivSelf_apply,
     Bialgebra.CounitAlgebra.algEquivSelf_apply, convTriple_comp_apply,
     mapDomain_inv, derivationComp_toLinearMap]
-  simp only [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_toLinearMap]
+  rw [mapDomain_toLinearMap]
+  simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_toLinearMap]
   rfl
 
 end TauCeti
+
+namespace BialgHom
+
+open TauCeti WithConv Derivation
+open scoped TensorProduct
+
+universe u
+
+variable {R H K : Type u} [CommRing R] [CommRing H] [CommRing K]
+  [HopfAlgebra R H] [HopfAlgebra R K]
+  [Module.Finite R (Bialgebra.CotangentSpace R H)]
+  [Module.Projective R (Bialgebra.CotangentSpace R H)]
+  [Module.Finite R (Bialgebra.CotangentSpace R K)]
+  [Module.Projective R (Bialgebra.CotangentSpace R K)]
+
+/-- Scalar extension of the differential intertwines the adjoint actions on cotangent duals.
+This is equivariance of the differential over every coefficient algebra. -/
+theorem lTensor_dualCotangentMap_adjointAction (φ : H →ₐc[R] K)
+    (A : CommAlgCat.{u} R) (g : WithConv (K →ₐ[R] A))
+    (x : A ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R K)) :
+    (dualCotangentMap φ).lTensor A ((adjointAction A g).val x) =
+      (adjointAction A (BialgHom.mapDomain φ g)).val
+        ((dualCotangentMap φ).lTensor A x) := by
+  apply (tangentScalarExtensionEquiv (R := R) (A := H) (B := A)).injective
+  rw [tangentScalarExtensionEquiv_lTensor_dualCotangentMap,
+    tangentScalarExtensionEquiv_adjointAction, derivationComp_adDerivation,
+    tangentScalarExtensionEquiv_adjointAction,
+    tangentScalarExtensionEquiv_lTensor_dualCotangentMap]
+  congr 1
+  simpa only [BialgHom.mapDomain_apply, toConv_ofConv] using
+    (pointInCounitAlgebra_comp A φ g.ofConv).symm
+
+end BialgHom

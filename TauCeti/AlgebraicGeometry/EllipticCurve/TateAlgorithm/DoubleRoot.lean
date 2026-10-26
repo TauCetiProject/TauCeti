@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
 /-!

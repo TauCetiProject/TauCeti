@@ -89,8 +89,8 @@ characteristic `ℓ`: for finitely generated torsion-free `G`-modules `V` and `W
 not be isomorphic. -/
 theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charP
     [Fact ℓ.Prime] [CharP k ℓ] (V W : Type u)
-    [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [IsAddTorsionFree V]
-    [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [IsAddTorsionFree W]
+    [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [HasUniqueDiv V]
+    [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [HasUniqueDiv W]
     (h : Nonempty ((Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G V)).Equiv
       (Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G W)))) :
     reductionK0 k (Representation.ofDistribMulAction ℤ G V) =
@@ -134,8 +134,8 @@ variable (k G : Type u) [Field k] [Monoid G]
 classes `[k ⊗_ℤ V]` and `[k ⊗_ℤ W]` in `G₀(k[G])` agree. In characteristic zero the reductions are
 isomorphic; in characteristic `ℓ` they need not be. -/
 theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat (V W : Type u)
-    [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [IsAddTorsionFree V]
-    [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [IsAddTorsionFree W]
+    [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [HasUniqueDiv V]
+    [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [HasUniqueDiv W]
     (h : Nonempty ((Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G V)).Equiv
       (Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G W)))) :
     reductionK0 k (Representation.ofDistribMulAction ℤ G V) =

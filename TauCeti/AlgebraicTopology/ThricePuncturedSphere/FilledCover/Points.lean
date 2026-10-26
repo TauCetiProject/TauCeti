@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoodComponents
 public import TauCeti.Combinatorics.PermutationTriple.CycleData
 
+import TauCeti.Topology.Covering.Finite
+
 /-!
 # Points of the filled cover
 
@@ -17,7 +19,10 @@ component-cycle equivalences identify the
 number of added points with the sum of the three full cycle counts of its monodromy triple.
 
 These are the new points in the compactification of a finite cover. Their puncture labels
-determine where the extended map sends them.
+determine where the extended map sends them. A homeomorphism over the thrice-punctured sphere
+transports these added points by its induced bijections on connected components, preserving
+puncture labels and respecting identities, inverses, and composition. The component bijections
+use Mathlib's `Topology.IsCoinducing.connectedComponentsHomeomorph`.
 
 ## References
 
@@ -70,6 +75,45 @@ theorem equivSum_overOne (c) : equivSum p (overOne p c) = Sum.inr (Sum.inl c) :=
 
 @[simp]
 theorem equivSum_overInf (c) : equivSum p (overInf p c) = Sum.inr (Sum.inr c) := (rfl)
+
+/-- The added points as pairs `⟨q, c⟩` of a puncture `q` and a connected component `c` of
+`p ⁻¹' D_q*`, so that the three punctures can be handled by one argument. -/
+def sigmaEquiv : FilledPoint p ≃ Σ q : Puncture, ConnectedComponents (p ⁻¹' q.neighborhood) :=
+  (equivSum p).trans
+    { toFun
+        | .inl c => ⟨.zero, c⟩
+        | .inr (.inl c) => ⟨.one, c⟩
+        | .inr (.inr c) => ⟨.inf, c⟩
+      invFun
+        | ⟨.zero, c⟩ => .inl c
+        | ⟨.one, c⟩ => .inr (.inl c)
+        | ⟨.inf, c⟩ => .inr (.inr c)
+      left_inv := by rintro (c | c | c) <;> rfl
+      right_inv := by rintro ⟨_ | _ | _, c⟩ <;> rfl }
+
+@[simp]
+theorem sigmaEquiv_overZero (c) : sigmaEquiv p (overZero p c) = ⟨.zero, c⟩ := by
+  simp [sigmaEquiv]
+
+@[simp]
+theorem sigmaEquiv_overOne (c) : sigmaEquiv p (overOne p c) = ⟨.one, c⟩ := by
+  simp [sigmaEquiv]
+
+@[simp]
+theorem sigmaEquiv_overInf (c) : sigmaEquiv p (overInf p c) = ⟨.inf, c⟩ := by
+  simp [sigmaEquiv]
+
+@[simp]
+theorem sigmaEquiv_symm_zero (c) : (sigmaEquiv p).symm ⟨.zero, c⟩ = overZero p c := by
+  rfl
+
+@[simp]
+theorem sigmaEquiv_symm_one (c) : (sigmaEquiv p).symm ⟨.one, c⟩ = overOne p c := by
+  rfl
+
+@[simp]
+theorem sigmaEquiv_symm_inf (c) : (sigmaEquiv p).symm ⟨.inf, c⟩ = overInf p c := by
+  rfl
 
 theorem overZero_injective : Function.Injective (overZero p) := Sum.inl_injective
 
@@ -142,6 +186,115 @@ theorem puncture_eq_two_iff (y : FilledPoint p) :
   · rintro ⟨c, rfl⟩
     simp
 
+section Transport
+
+open Function
+
+variable {p} {F G : Type*} [TopologicalSpace F] [TopologicalSpace G]
+  {p' : F → ThricePuncturedSphere} {p'' : G → ThricePuncturedSphere}
+
+/-- Restrict an isomorphism over the sphere to the preimage of a standard punctured
+neighbourhood. -/
+def neighborhoodCongr (h : E ≃ₜ F) (hh : p' ∘ h = p) (q : Puncture) :
+    (p ⁻¹' q.neighborhood) ≃ₜ (p' ⁻¹' q.neighborhood) :=
+  h.subtype fun x ↦ by simp only [mem_preimage, ← congr_fun hh x, comp_apply]
+
+@[simp]
+theorem coe_neighborhoodCongr_apply (h : E ≃ₜ F) (hh : p' ∘ h = p) (q : Puncture)
+    (x : p ⁻¹' q.neighborhood) : (neighborhoodCongr h hh q x : F) = h x :=
+  (rfl)
+
+@[simp]
+theorem coe_neighborhoodCongr_symm_apply (h : E ≃ₜ F) (hh : p' ∘ h = p) (q : Puncture)
+    (y : p' ⁻¹' q.neighborhood) : ((neighborhoodCongr h hh q).symm y : E) = h.symm y :=
+  (rfl)
+
+/-- An isomorphism over the sphere transports added points by its induced bijection on
+components over each puncture. -/
+def congr (h : E ≃ₜ F) (hh : p' ∘ h = p) : FilledPoint p ≃ FilledPoint p' :=
+  (sigmaEquiv p).trans <| (Equiv.sigmaCongrRight fun q ↦
+    ((neighborhoodCongr h hh q).isQuotientMap.isCoinducing.connectedComponentsHomeomorph
+      fun y ↦ by
+        convert (isConnected_singleton (x := (neighborhoodCongr h hh q).symm y)) using 1
+        ext x
+        exact (neighborhoodCongr h hh q).eq_symm_apply.symm).toEquiv).trans (sigmaEquiv p').symm
+
+/-- The puncture and component of a transported point. -/
+@[simp]
+theorem sigmaEquiv_congr (h : E ≃ₜ F) (hh : p' ∘ h = p) (i : FilledPoint p) :
+    sigmaEquiv p' (congr h hh i) =
+      ⟨(sigmaEquiv p i).1,
+        (neighborhoodCongr h hh (sigmaEquiv p i).1).continuous.connectedComponentsMap
+          (sigmaEquiv p i).2⟩ := by
+  simp [congr, Topology.IsCoinducing.connectedComponentsHomeomorph]
+
+/-- On a component represented by a point, transport is represented by the image point. -/
+@[simp]
+theorem congr_sigmaEquiv_symm_mk (h : E ≃ₜ F) (hh : p' ∘ h = p) (q : Puncture)
+    (x : p ⁻¹' q.neighborhood) :
+    congr h hh ((sigmaEquiv p).symm ⟨q, ConnectedComponents.mk x⟩) =
+      (sigmaEquiv p').symm ⟨q, ConnectedComponents.mk (neighborhoodCongr h hh q x)⟩ := by
+  apply (sigmaEquiv p').injective
+  rw [sigmaEquiv_congr, Equiv.apply_symm_apply]
+  simp only [Equiv.apply_symm_apply, Continuous.connectedComponentsMap_mk]
+
+/-- Transport does not change the puncture label. -/
+@[simp]
+theorem puncture_congr (h : E ≃ₜ F) (hh : p' ∘ h = p) (i : FilledPoint p) :
+    puncture p' (congr h hh i) = puncture p i := by
+  obtain ⟨⟨q, c⟩, rfl⟩ := (sigmaEquiv p).symm.surjective i
+  obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
+  have hi := congr_sigmaEquiv_symm_mk h hh q x
+  rw [hi]
+  cases q with
+  | zero =>
+    simp only [sigmaEquiv_symm_zero]
+    exact (puncture_overZero _ _).trans (puncture_overZero _ _).symm
+  | one =>
+    simp only [sigmaEquiv_symm_one]
+    exact (puncture_overOne _ _).trans (puncture_overOne _ _).symm
+  | inf =>
+    simp only [sigmaEquiv_symm_inf]
+    exact (puncture_overInf _ _).trans (puncture_overInf _ _).symm
+
+/-- Identity isomorphisms fix every added point. -/
+@[simp]
+theorem congr_refl : congr (Homeomorph.refl E) (p := p) (by simp) = Equiv.refl _ := by
+  ext i
+  obtain ⟨⟨q, c⟩, rfl⟩ := (sigmaEquiv p).symm.surjective i
+  obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
+  rw [congr_sigmaEquiv_symm_mk]
+  rfl
+
+/-- Transport along a composite is the composite of the two transports. -/
+theorem congr_trans (h : E ≃ₜ F) (hh : p' ∘ h = p) (k : F ≃ₜ G)
+    (hk : p'' ∘ k = p') :
+    congr (h.trans k) (by funext x; exact (congr_fun hk (h x)).trans (congr_fun hh x)) =
+      (congr h hh).trans (congr k hk) := by
+  ext i
+  obtain ⟨⟨q, c⟩, rfl⟩ := (sigmaEquiv p).symm.surjective i
+  obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
+  simp only [Equiv.trans_apply, congr_sigmaEquiv_symm_mk]
+  rfl
+
+/-- Transport along the inverse isomorphism reverses transport. -/
+@[simp]
+theorem symm_congr (h : E ≃ₜ F) (hh : p' ∘ h = p) :
+    (congr h hh).symm =
+      congr h.symm (by funext y; simpa using (congr_fun hh (h.symm y)).symm) := by
+  symm
+  ext i
+  apply (congr h hh).injective
+  obtain ⟨⟨q, c⟩, rfl⟩ := (sigmaEquiv p').symm.surjective i
+  obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
+  simp only [congr_sigmaEquiv_symm_mk, Equiv.apply_symm_apply]
+  congr 2
+  congr 1
+  apply Subtype.ext
+  simp
+
+end Transport
+
 variable {n : ℕ}
 
 /-- A numbered finite cover has only finitely many added points. -/
@@ -181,5 +334,70 @@ theorem natCard_eq_cycleCounts :
   omega
 
 end FilledPoint
+
+open Equiv.Perm FilledPoint
+
+namespace FilledCover
+
+variable {p}
+
+/-- **The added points are the cycles of the monodromy.** For a cover whose fibre over `1/2` is
+numbered by `ν`, the components of `p ⁻¹' D_q*` over the punctures `0`, `1` and `∞`, which are
+the points added in `FilledCover p`, are the cycles of `σ0`, `σ1` and `σinf` respectively
+(`IsCoveringMap.sameCycleQuotientσ0EquivConnectedComponents` and its analogues). -/
+def indexEquiv (hp : IsCoveringMap p) {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) :
+    FilledPoint p ≃ Quotient (SameCycle.setoid (hp.monodromyTriple ν).σ0) ⊕
+      Quotient (SameCycle.setoid (hp.monodromyTriple ν).σ1) ⊕
+        Quotient (SameCycle.setoid (hp.monodromyTriple ν).σinf) :=
+  (equivSum p).trans <| (hp.sameCycleQuotientσ0EquivConnectedComponents ν).symm.sumCongr <|
+    (hp.sameCycleQuotientσ1EquivConnectedComponents ν).symm.sumCongr
+      (hp.sameCycleQuotientσinfEquivConnectedComponents ν).symm
+
+@[simp]
+theorem indexEquiv_overZero (hp : IsCoveringMap p) {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (c) :
+    indexEquiv hp ν (overZero p c) =
+      .inl ((hp.sameCycleQuotientσ0EquivConnectedComponents ν).symm c) := by
+  simp [indexEquiv]
+
+@[simp]
+theorem indexEquiv_overOne (hp : IsCoveringMap p) {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (c) :
+    indexEquiv hp ν (overOne p c) =
+      .inr (.inl ((hp.sameCycleQuotientσ1EquivConnectedComponents ν).symm c)) := by
+  simp [indexEquiv]
+
+@[simp]
+theorem indexEquiv_overInf (hp : IsCoveringMap p) {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (c) :
+    indexEquiv hp ν (overInf p c) =
+      .inr (.inr ((hp.sameCycleQuotientσinfEquivConnectedComponents ν).symm c)) := by
+  simp [indexEquiv]
+
+@[simp]
+theorem indexEquiv_symm_inl (hp : IsCoveringMap p) {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (a) :
+    (indexEquiv hp ν).symm (.inl a) =
+      overZero p (hp.sameCycleQuotientσ0EquivConnectedComponents ν a) := by
+  rw [Equiv.symm_apply_eq, indexEquiv_overZero, Equiv.symm_apply_apply]
+
+@[simp]
+theorem indexEquiv_symm_inr_inl (hp : IsCoveringMap p) {n : ℕ}
+    (ν : p ⁻¹' {basePt} ≃ Fin n) (a) :
+    (indexEquiv hp ν).symm (.inr (.inl a)) =
+      overOne p (hp.sameCycleQuotientσ1EquivConnectedComponents ν a) := by
+  rw [Equiv.symm_apply_eq, indexEquiv_overOne, Equiv.symm_apply_apply]
+
+@[simp]
+theorem indexEquiv_symm_inr_inr (hp : IsCoveringMap p) {n : ℕ}
+    (ν : p ⁻¹' {basePt} ≃ Fin n) (a) :
+    (indexEquiv hp ν).symm (.inr (.inr a)) =
+      overInf p (hp.sameCycleQuotientσinfEquivConnectedComponents ν a) := by
+  rw [Equiv.symm_apply_eq, indexEquiv_overInf, Equiv.symm_apply_apply]
+
+/-- **A finite cover has finitely many added points.** This is `FilledPoint.finite`, applied to a
+numbering of the fibre over `1/2`, which is finite as soon as one fibre is. -/
+theorem finite_filledPoint (hp : IsCoveringMap p) {z₀ : ThricePuncturedSphere}
+    (hfin : Finite (p ⁻¹' {z₀})) : Finite (FilledPoint p) :=
+  have := finite_fiber_of_finite_fiber hp hfin basePt
+  FilledPoint.finite p hp (Finite.equivFin _)
+
+end FilledCover
 
 end TauCeti

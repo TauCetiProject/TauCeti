@@ -20,11 +20,17 @@ This file records general-purpose facts about open subsets of schemes.
   structure-sheaf sections along the affine chart `Spec Γ(X, U)`.
 * `AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id` identifies the restriction maps of a scheme
   endomorphism equal to the identity.
+* `AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le`: a condition on the restrictions of a
+  section over `V` to all affine opens inside `V` is inherited by its restriction to any smaller
+  open.
 * `AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens`: sections over the affine opens,
   compatible with restriction, glue to a unique global section.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self` and
   `AlgebraicGeometry.Scheme.Hom.appLE_ΓSpecIso_hom_naturality` compute the global sections of
   affine charts `Spec R ⟶ X` and their precomposites with `Spec.map φ`.
+* `AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top`: for affine opens `V ≤ U`,
+  the restrictions of the functions on `U` whose basic open lies in `V` generate the unit ideal of
+  `Γ(X, V)`.
 -/
 
 open TopologicalSpace AlgebraicGeometry
@@ -50,6 +56,16 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id {f : X ⟶ X}
   subst hf
   rw [Scheme.Hom.appLE, Scheme.Hom.id_app]
   exact (Category.id_comp _).trans (X.presheaf.map_id _)
+
+/-- A condition imposed on the restrictions of a section `b` over `V` to all affine opens inside `V`
+is inherited by the restriction of `b` to any smaller open `V'`. -/
+theorem _root_.AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le {V V' : X.Opens}
+    (hV'V : V' ≤ V) {b : Γ(X, V)} {P : ∀ W : X.affineOpens, Γ(X, W) → Prop}
+    (h : ∀ (W : X.affineOpens) (hWV : W.1 ≤ V), P W (X.presheaf.map (homOfLE hWV).op b))
+    (W : X.affineOpens) (hWV' : W.1 ≤ V') :
+    P W (X.presheaf.map (homOfLE hWV').op (X.presheaf.map (homOfLE hV'V).op b)) := by
+  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp]
+  exact h W (hWV'.trans hV'V)
 
 /-- **Sections glue along the affine opens.** A family of sections `s U ∈ Γ(X, U)`, one over each
 affine open `U` of `X`, compatible with restriction from an affine open to a smaller one, consists
@@ -103,6 +119,18 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self (hU : IsAffine
   rw [Scheme.Hom.appLE, hU.fromSpec_app_self, Category.assoc, ← Functor.map_comp]
   exact (congrArg _ ((congrArg _ (Subsingleton.elim _ _)).trans
     ((Spec Γ(X, U)).presheaf.map_id _))).trans (Category.comp_id _)
+
+/-- For affine opens `V ≤ U`, the restrictions to `V` of the functions on `U` whose basic open lies
+in `V` generate the unit ideal of `Γ(X, V)`. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top {V : X.Opens}
+    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hVU : V ≤ U) :
+    Ideal.span {g : Γ(X, V) | ∃ f : Γ(X, U), X.basicOpen f ≤ V ∧
+      X.presheaf.map (homOfLE hVU).op f = g} = ⊤ := by
+  refine (hV.self_le_iSup_basicOpen_iff).mp fun x hx ↦ ?_
+  obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hx⟩ (hVU hx)
+  refine Opens.mem_iSup.mpr ⟨⟨_, f, hfV, rfl⟩, ?_⟩
+  rw [Scheme.basicOpen_res]
+  exact ⟨hx, hxf⟩
 
 /-- Global sections of an affine chart `f : Spec R ⟶ Y` are natural in `R`: precomposing `f` with
 `Spec.map φ` turns the induced map `Γ(Y, V) ⟶ R` into its composite with `φ`. -/

@@ -302,7 +302,7 @@ theorem connectedComponent_one (hN : IsClosed (N : Set G)) :
     have hy' : y ∈ ⋂ U : OpenNormalSubgroup G,
         (QuotientGroup.mk : G → G ⧸ N) '' (U : Set G) :=
       Set.mem_iInter.mpr fun U =>
-        IsClopen.connectedComponent_subset (isClopen_image_mk U.toOpenSubgroup)
+        IsClopen.connectedComponent_subset (OpenSubgroup.isClopen_image_mk U.toOpenSubgroup)
         ⟨1, U.one_mem', QuotientGroup.mk_one N⟩ hy
     rw [key, himg] at hy'
     exact hy'

@@ -402,7 +402,8 @@ theorem isGlDominantIntegral_glHalfStaircase_sub_single {F : Type*} [Field F] [C
   · subst i
     subst j
     omega
-  all_goals simp [hi, hj] <;> ring
+  all_goals simp [hi, hj]
+  all_goals ring
 
 /-- **No entry of the staircase weight is an integer.** Together with
 `TauCeti.isGlDominantIntegral_glStaircase` this pins the difference between dominance for `gl n`

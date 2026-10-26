@@ -137,9 +137,7 @@ private theorem tangentCoordinate_surjective :
     rw [derivationMulEquivTangentKer_symm_apply]
   rw [tangentCoordinate_apply, hd]
   have hval : q.ofConv (LaurentPolynomial.T 1) = (g : DualNumber C) := by
-    rw [← unitOfPoint_val (R := R) (A := DualNumber C)]
-    exact congrArg Units.val
-      ((pointsMulEquiv (R := R) (A := DualNumber C)).apply_symm_apply g)
+    simp [q, pointsMulEquiv_symm_apply, ofConv_toConv]
   rw [hval]
   simp only [g, infinitesimalUnit, IsUnit.unit_spec, snd_add, snd_inl, snd_inr, zero_add, c]
   exact (CounitAlgebra.algEquivSelf R H B).apply_symm_apply b

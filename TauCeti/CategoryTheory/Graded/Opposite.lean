@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Opposite
+public import Mathlib.Basic.Opposite
 public import TauCeti.CategoryTheory.Graded.TotalHom
 
 /-!
@@ -160,7 +160,7 @@ theorem reverseOperation_apply {n : ℕ}
 `Cᵒᵖ`, read backwards, is a composable string of `C` between the same endpoints. -/
 theorem IsPathCompatible.reverse {n : ℕ}
     {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)}
-    (hf : IsPathCompatible f) : IsPathCompatible (reverseOperation f) where
+    (hf : IsPathCompatible id f) : IsPathCompatible id (reverseOperation f) where
   mem_range_homInclusion X x := by
     rcases n with _ | n
     · obtain ⟨y, hy⟩ := hf.mem_range_homInclusion (fun _ ↦ unop (X 0)) fun i ↦ i.elim0
@@ -176,6 +176,7 @@ theorem IsPathCompatible.reverse {n : ℕ}
       rw [reverseOperation_apply]
       simp only [opTotalHomEquiv_symm_homInclusion]
       rw [← hy, opTotalHomEquiv_homInclusion]
+      rfl
   eq_zero_of_ne s t x i j hij hne := by
     rw [reverseOperation_apply]
     simp only [opTotalHomEquiv_symm_homInclusion]

@@ -133,7 +133,7 @@ theorem IsProPSylow.eq_of_le (hP : IsProPSylow p P) (hQ : IsProP p Q) (hPQ : P â
         Q.map (QuotientGroup.mk' U.toSubgroup) := by
       rw [hP.toSylow_coe]
       exact Subgroup.map_mono hPQ
-    have hmax := (hP.toSylow U).is_maximal' (hQ.isPGroup_map_mk' U) hle
+    have hmax := (hP.toSylow U).maximal_isPGroup.eq_of_ge (hQ.isPGroup_map_mk' U) hle
     rwa [hP.toSylow_coe] at hmax
   calc Q â‰¤ (Q.map (QuotientGroup.mk' U.toSubgroup)).comap (QuotientGroup.mk' U.toSubgroup) :=
         Subgroup.le_comap_map _ _

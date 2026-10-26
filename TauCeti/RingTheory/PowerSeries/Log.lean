@@ -172,7 +172,7 @@ theorem derivative_mk_inv_smul (s : ℕ → A) :
 `∑ sₙ₊₁ Xⁿ` is its logarithmic derivative, that is, when `(∑ sₙ₊₁ Xⁿ) * f = f'`. -/
 theorem logOf_eq_mk_iff {f : A⟦X⟧} (hf : constantCoeff f = 1) (s : ℕ → A) :
     logOf f = (mk fun n ↦ (n : ℚ)⁻¹ • s n) ↔ (mk fun n ↦ s (n + 1)) * f = d⁄dX f := by
-  have : IsAddTorsionFree A := IsAddTorsionFree.of_module_rat A
+  have : HasUniqueDiv A := .of_module_rat A
   have hunit : IsUnit f := isUnit_iff_constantCoeff.mpr (hf ▸ isUnit_one)
   rw [← logDeriv_mul f hf]
   refine ⟨fun h ↦ by rw [logDeriv, h, derivative_mk_inv_smul], fun h ↦ ?_⟩
@@ -217,7 +217,7 @@ theorem logOf_inj {f g : A⟦X⟧} (hf : constantCoeff f = 1) (hg : constantCoef
 have constant coefficient one. -/
 theorem logOf_mul {f g : A⟦X⟧} (hf : constantCoeff f = 1) (hg : constantCoeff g = 1) :
     logOf (f * g) = logOf f + logOf g := by
-  have : IsAddTorsionFree A := IsAddTorsionFree.of_module_rat A
+  have : HasUniqueDiv A := .of_module_rat A
   have hfg : constantCoeff (f * g) = 1 := by rw [map_mul, hf, hg, one_mul]
   have hunit : IsUnit (f * g) := isUnit_iff_constantCoeff.mpr (hfg ▸ isUnit_one)
   refine derivative.ext ?_ ?_

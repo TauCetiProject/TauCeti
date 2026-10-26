@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.GradedCochainComplex
 public import TauCeti.Algebra.Homology.DG.Module.Right.Cohomology
 public import TauCeti.Algebra.Homology.DG.Module.Right.DGCategory
 public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Complex
-public import TauCeti.CategoryTheory.DG.Functor
+public import TauCeti.CategoryTheory.DG.Functor.Basic
 public import TauCeti.CategoryTheory.DG.QuasiEquivalence
 public import TauCeti.CategoryTheory.DG.SingleObj
 

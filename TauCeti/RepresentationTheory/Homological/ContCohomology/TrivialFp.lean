@@ -316,18 +316,33 @@ coefficient morphism along the quotient map. This pins the coefficient identific
 inflation. -/
 theorem trivialFpQuotientToInvariantsIso_hom_comp_quotientToInvariantsι :
     (TopRep.resFunctor
-          (ContinuousMonoidHom.quotientMk N : G →* G ⧸ N)).map
+          (Subgroup.quotientMkContinuousMonoidHom N : G →* G ⧸ N)).map
         (trivialFpQuotientToInvariantsIso p G N).hom ≫
-      TopRep.quotientToInvariantsι (trivialFp p G) N =
-        eqToHom (res_trivialFp_hom p (ContinuousMonoidHom.quotientMk N)) := by
+      (eqToHom (congrArg (fun ψ =>
+        TopRep.res ψ (TopRep.quotientToInvariants (trivialFp p G) N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫
+      TopRep.quotientToInvariantsι (trivialFp p G) N) =
+        eqToHom (res_trivialFp_hom p (Subgroup.quotientMkContinuousMonoidHom N)) := by
   ext x
+  -- Expose only application of the underlying linear maps in the coerced composite.
+  -- This lets eqToHom_hom_apply remove the restriction transport before the coefficient
+  -- isomorphism computation; the outer morphism coercions otherwise hide this pattern.
+  change (TopRep.quotientToInvariantsι (trivialFp p G) N).hom
+      ((eqToHom (congrArg (fun ψ =>
+        TopRep.res ψ (TopRep.quotientToInvariants (trivialFp p G) N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N))).hom
+        (((trivialFpQuotientToInvariantsIso p G N).hom).hom x)) =
+    (eqToHom (res_trivialFp_hom p (Subgroup.quotientMkContinuousMonoidHom N))).hom x
+  rw [TopRep.eqToHom_hom_apply (congrArg (fun ψ =>
+    TopRep.res ψ (TopRep.quotientToInvariants (trivialFp p G) N))
+    (Subgroup.coe_quotientMkContinuousMonoidHom N))]
   apply (trivialFpEquiv p G).injective
   -- The restricted composite has the same carrier as the quotient coefficient object.
   change trivialFpEquiv p G
       ((((trivialFpQuotientToInvariantsIso p G N).hom x :
         ((trivialFp p G).ρ.restrict N.subtype).invariants) : (trivialFp p G).V)) =
     trivialFpEquiv p G (eqToHom
-      (res_trivialFp_hom p (ContinuousMonoidHom.quotientMk N)) x)
+      (res_trivialFp_hom p (Subgroup.quotientMkContinuousMonoidHom N)) x)
   rw [
     trivialFpEquiv_trivialFpQuotientToInvariantsIso_hom_apply,
     trivialFpEquiv_eqToHom_res_trivialFp_hom]
@@ -338,15 +353,18 @@ theorem coeffMap_trivialFpQuotientToInvariantsIso_hom_comp_infl (n : ℕ) :
     TauCeti.ContinuousCohomology.coeffMap
           (trivialFpQuotientToInvariantsIso p G N).hom n ≫
         TauCeti.ContinuousCohomology.infl N (trivialFp p G) n =
-      cohomFpMap p (ContinuousMonoidHom.quotientMk N) n := by
+      cohomFpMap p (Subgroup.quotientMkContinuousMonoidHom N) n := by
   rw [TauCeti.ContinuousCohomology.coeffMap_def,
     TauCeti.ContinuousCohomology.infl_def, cohomFpMap_def]
   refine (_root_.ContinuousCohomology.map_comp
     (X := trivialFp p (G ⧸ N))
     (Y := TopRep.quotientToInvariants (trivialFp p G) N) (Z := trivialFp p G)
-    (ContinuousMonoidHom.id (G ⧸ N)) (ContinuousMonoidHom.quotientMk N)
+    (ContinuousMonoidHom.id (G ⧸ N)) (Subgroup.quotientMkContinuousMonoidHom N)
     (trivialFpQuotientToInvariantsIso p G N).hom
-    (TopRep.quotientToInvariantsι (trivialFp p G) N) n).symm.trans ?_
+    (eqToHom (congrArg (fun ψ =>
+        TopRep.res ψ (TopRep.quotientToInvariants (trivialFp p G) N))
+        (Subgroup.coe_quotientMkContinuousMonoidHom N)) ≫
+      TopRep.quotientToInvariantsι (trivialFp p G) N) n).symm.trans ?_
   exact TauCeti.ContinuousCohomology.map_congr rfl
     (heq_of_eq (trivialFpQuotientToInvariantsIso_hom_comp_quotientToInvariantsι p N)) n
 

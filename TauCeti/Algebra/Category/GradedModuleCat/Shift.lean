@@ -13,7 +13,10 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Basic
 The integer powers of the grading-shift autoequivalence agree, up to natural isomorphism, with
 the explicit internal shifts `M{d}`. This comparison lets graded Hom computations made using
 the pieces `(M{d})ₚ = M_{p-d}` enter graded Ext and Euler characteristics, which use powers of
-an autoequivalence. No finiteness or projectivity assumptions are required.
+an autoequivalence. No finiteness or projectivity assumptions are required. After forgetting the
+grading, every power of the shift becomes the identity functor on underlying modules
+(`TauCeti.GradedModuleCat.shiftPowCompToModuleCatIso`), identifying the underlying module of
+`M{d}` with that of `M`.
 
 ## References
 
@@ -109,5 +112,32 @@ theorem homShiftPowEquiv_symm_apply (P M : GradedModuleCat.{v} 𝒜) (d : ℤ)
     (homShiftPowEquiv 𝒜 P M d).symm f = f ≫ (shiftPowIso 𝒜 d).inv.app M := by
   rw [homShiftPowEquiv]
   exact (Linear.homCongr_symm_apply k _ _ f).trans (by simp)
+
+/-- Forgetting the grading identifies every integer power of the grading shift with the
+identity functor on underlying modules. -/
+def shiftPowCompToModuleCatIso (j : ℤ) :
+    ((shift 𝒜) ^ j).functor ⋙ toModuleCat ≅ toModuleCat.{v} (𝒜 := 𝒜) :=
+  Functor.isoWhiskerRight (shiftPowIso 𝒜 j) toModuleCat ≪≫ shiftFunctorCompToModuleCatIso j
+
+/-- The components of `shiftPowCompToModuleCatIso` are the underlying maps of the components of
+`shiftPowIso`. -/
+@[simp]
+theorem shiftPowCompToModuleCatIso_hom_app_hom (j : ℤ) (M : GradedModuleCat.{v} 𝒜) :
+    ((shiftPowCompToModuleCatIso 𝒜 j).hom.app M).hom = ((shiftPowIso 𝒜 j).hom.app M).hom := by
+  rw [shiftPowCompToModuleCatIso, Iso.trans_hom, NatTrans.comp_app, ModuleCat.hom_comp,
+    shiftFunctorCompToModuleCatIso_hom_app_hom]
+  -- `LinearMap.id_comp` does not match syntactically: the identity is typed on the shifted
+  -- carrier, whose module instances are those of `M` only up to unfolding `shiftObj`.
+  rfl
+
+/-- The inverse components of `shiftPowCompToModuleCatIso` are the underlying maps of the
+inverse components of `shiftPowIso`. -/
+@[simp]
+theorem shiftPowCompToModuleCatIso_inv_app_hom (j : ℤ) (M : GradedModuleCat.{v} 𝒜) :
+    ((shiftPowCompToModuleCatIso 𝒜 j).inv.app M).hom = ((shiftPowIso 𝒜 j).inv.app M).hom := by
+  rw [shiftPowCompToModuleCatIso, Iso.trans_inv, NatTrans.comp_app, ModuleCat.hom_comp,
+    shiftFunctorCompToModuleCatIso_inv_app_hom]
+  -- As above, `LinearMap.comp_id` does not match the identity on the shifted carrier.
+  rfl
 
 end TauCeti.GradedModuleCat

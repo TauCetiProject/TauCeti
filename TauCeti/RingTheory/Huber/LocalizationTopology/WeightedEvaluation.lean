@@ -101,12 +101,12 @@ end Weight
 
 section Nonarchimedean
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
+variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
 section PolynomialEvaluation
 
-variable (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
-  (hW : IsWeightFamily (rationalWeight T s))
+variable [NonarchimedeanRing A] (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+  [IsLocalization.Away s S] (hW : IsWeightFamily (rationalWeight T s))
 
 /-- **The evaluation `X ↦ 1/s` of polynomials**, read on the subring of polynomials inside
 `A⟨X⟩_{T ∪ {s}}`. It lands in `A[1/s]` itself; its completion is
@@ -138,9 +138,8 @@ end PolynomialEvaluation
 namespace PairOfDefinition
 
 variable (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
-  [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
+  [IsLocalization.Away s S]
 
-omit [NonarchimedeanRing A] in
 /-- A product of `n` elements of `T ∪ {s}`, divided by `sⁿ`, lies in the ring of definition
 `D = A₀[T/s]` of `A[1/s]`. -/
 theorem algebraMap_mul_invSelf_pow_mem_locSubring {n : ℕ} {t : A}
@@ -167,7 +166,8 @@ theorem algebraMap_mul_invSelf_pow_mem_locSubring {n : ℕ} {t : A}
 
 /-! ### The completed evaluation -/
 
-variable (hW : IsWeightFamily (rationalWeight T s))
+variable [NonarchimedeanRing A] (hden : HasDenominatorPower P T s S)
+  (hW : IsWeightFamily (rationalWeight T s))
 
 /-- The weighted monomials `t · (1/s)ⁿ`, `t ∈ (T ∪ {s})ⁿ`, form a bounded subset of `A⟨T/s⟩`.
 This is the hypothesis of the universal property of `A⟨X⟩_{T ∪ {s}}`. -/

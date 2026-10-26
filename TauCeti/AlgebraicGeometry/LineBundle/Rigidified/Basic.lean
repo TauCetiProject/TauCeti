@@ -120,6 +120,16 @@ def pullbackRigidification (w : s' ≫ h = g ≫ s) (L : Y.Modules)
     ((Scheme.Modules.pullbackComp g s).app L).symm ≪≫ (Scheme.Modules.pullback g).mapIso α ≪≫
       Scheme.Modules.pullbackObjUnitIso g
 
+/-- The pulled-back trivialization `pullbackRigidification w L α`, as a composite of the
+composition isomorphisms of pullback with the pullback of `α` along `g`. -/
+lemma pullbackRigidification_hom (w : s' ≫ h = g ≫ s) (L : Y.Modules)
+    (α : (Scheme.Modules.pullback s).obj L ≅ 𝟙_ T.Modules) :
+    (pullbackRigidification w L α).hom =
+      (Scheme.Modules.pullbackComp s' h).hom.app L ≫ (Scheme.Modules.pullbackCongr w).hom.app L ≫
+        (Scheme.Modules.pullbackComp g s).inv.app L ≫ (Scheme.Modules.pullback g).map α.hom ≫
+          (Scheme.Modules.pullbackObjUnitIso g).hom :=
+  (rfl)
+
 /-- The trivializations obtained by pullback are natural in the line bundle: a morphism `e`
 carrying `α` to `β` pulls back to a morphism carrying the pulled-back trivializations to each
 other. -/

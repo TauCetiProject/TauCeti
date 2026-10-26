@@ -18,7 +18,10 @@ The **total module** of a graded linear quiver is the external direct sum
 strings of morphisms are conveniently encoded as multilinear operations on the total module
 which respect the decomposition into hom modules: a string `aₙ, …, a₁` with
 `aᵢ : Xᵢ₋₁ ⟶ Xᵢ` is sent to a morphism `X₀ ⟶ Xₙ`, and a string that is not composable is sent
-to zero.  This is the predicate `TauCeti.GradedLinearQuiver.IsPathCompatible`.  It lets the
+to zero.  This is the predicate `TauCeti.GradedLinearQuiver.IsPathCompatible` along the identity
+of objects.  Along a map of objects `φ : C → C'`, the same predicate describes operations from the
+total module of `C` to that of `C'` sending a composable string to a morphism `φ X₀ ⟶ φ Xₙ`, such
+as the components of an `A∞` functor with object map `φ`.  It lets the
 structure on a many-object quiver be stated as structure on a single graded module, the
 many-object analogue of an algebra over the product of copies of the ground ring indexed by the
 objects.
@@ -34,8 +37,9 @@ statements that use it.
 * `TauCeti.GradedLinearQuiver.totalGrading`: its degreewise grading.
 * `TauCeti.GradedLinearQuiver.homInclusion` and `TauCeti.GradedLinearQuiver.homProjection`: the
   inclusion and projection of the hom module of a pair of objects.
-* `TauCeti.GradedLinearQuiver.IsPathCompatible`: a multilinear operation on the total module
-  sending composable strings to the hom module of their endpoints and other strings to zero.
+* `TauCeti.GradedLinearQuiver.IsPathCompatible`: a multilinear operation between total modules
+  sending composable strings to the hom module between the images of their endpoints along a map
+  of objects, and other strings to zero.
 
 ## Main results
 
@@ -46,11 +50,14 @@ statements that use it.
   its elements of a given degree, from the hom modules.
 * `TauCeti.GradedLinearQuiver.homInclusion_homProjection_of_mem_range`: an element of the image
   of a hom module is recovered from its component there.
+* `TauCeti.GradedLinearQuiver.multilinearMap_apply_mem_of_mem_totalGrading_piece`: on elements of
+  given degrees, a multilinear map out of the total module takes values in a submodule when it
+  does so on morphisms of those degrees, each in a single hom module.
 * `TauCeti.GradedLinearQuiver.multilinearMap_apply_mem`: a multilinear map of positive arity out
   of the total module takes values in a submodule when it does so on composable strings and
   vanishes on the other strings.
-* `TauCeti.GradedLinearQuiver.IsPathCompatible.ext`: a path-compatible operation is determined
-  by its values on composable strings.
+* `TauCeti.GradedLinearQuiver.IsPathCompatible.ext`: a path-compatible operation of positive arity
+  is determined by its values on composable strings.
 * `TauCeti.GradedLinearQuiver.isPathCompatible_of_homogeneous`: path compatibility can be tested
   on homogeneous morphisms.
 
@@ -65,7 +72,7 @@ open scoped DirectSum
 
 namespace TauCeti.GradedLinearQuiver
 
-universe u v w
+universe u u' v v' w
 
 variable (R : Type w) [CommRing R] (C : Type u) [GradedLinearQuiver.{u, v, w} R C]
 
@@ -192,22 +199,72 @@ theorem homInclusion_mem_totalGrading_piece_iff {X Y : C} (n : ℤ) (f : homModu
   · rw [homProjection_homInclusion_of_ne hXY]
     exact zero_mem _
 
-/-- A multilinear operation on the total module of morphisms is **path-compatible** when it is an
-operation on composable strings of morphisms.  Inputs are ordered `aₙ, …, a₁` with
-`aᵢ : Xᵢ₋₁ ⟶ Xᵢ`, as for `TauCeti.GradedLinearQuiver.PathOperation`: the `i`-th input of a string
-`X : Fin (n + 1) → C` runs from `X (n - 1 - i)` to `X (n - i)`.  A path-compatible operation sends
-such a composable string to a morphism `X₀ ⟶ Xₙ`, and sends every string of morphisms which is
-not composable to zero.
+/-- The inclusion of a hom module into the total module of morphisms preserves degrees. -/
+theorem isHomogeneous_homInclusion (X Y : C) :
+    LinearMap.IsHomogeneous (homInclusion (R := R) X Y) (grading (R := R) X Y).piece
+      (totalGrading R C).piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro p f hf
+  rwa [add_zero, homInclusion_mem_totalGrading_piece_iff]
 
-Since a multilinear map on a direct sum is determined by its values on the summands, a
-path-compatible operation is determined by its values on composable strings. -/
-structure IsPathCompatible {n : ℕ}
-    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)) : Prop where
-  /-- A composable string is sent to a morphism between the endpoints of the string. -/
+/-- The Koszul twist of the total module of morphisms acts on each hom module by its own Koszul
+twist. -/
+@[simp]
+theorem koszulTwist_homInclusion (q : ℤ) (X Y : C) (f : homModule (R := R) X Y) :
+    (totalGrading R C).koszulTwist q (homInclusion X Y f) =
+      homInclusion X Y ((grading (R := R) X Y).koszulTwist q f) := by
+  simpa using LinearMap.congr_fun ((isHomogeneous_homInclusion X Y).koszulTwist_comp q) f
+
+/-- The Koszul twist of the total module of morphisms preserves each hom module. -/
+theorem koszulTwist_mem_range_homInclusion (q : ℤ) {X Y : C} {u : TotalHom R C}
+    (hu : u ∈ LinearMap.range (homInclusion (R := R) X Y)) :
+    (totalGrading R C).koszulTwist q u ∈ LinearMap.range (homInclusion (R := R) X Y) := by
+  obtain ⟨f, rfl⟩ := hu
+  rw [koszulTwist_homInclusion]
+  exact LinearMap.mem_range_self _ _
+
+/-- **Multilinear maps on homogeneous elements are controlled by homogeneous morphisms.** A
+multilinear map out of the total module of morphisms sends every tuple of elements of degrees `d`
+into a submodule `S` as soon as it does so on every tuple of morphisms of degrees `d`, each lying
+in a single hom module. -/
+theorem multilinearMap_apply_mem_of_mem_totalGrading_piece {M : Type*} [AddCommMonoid M]
+    [Module R M] {n : ℕ} {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) M}
+    {S : Submodule R M} {d : Fin n → ℤ}
+    (h : ∀ (s t : Fin n → C) (x : ∀ i, homModule (R := R) (s i) (t i)),
+      (∀ i, x i ∈ (grading (R := R) (s i) (t i)).piece (d i)) →
+        f (fun i ↦ homInclusion (s i) (t i) (x i)) ∈ S)
+    {y : Fin n → TotalHom R C} (hy : ∀ i, y i ∈ (totalGrading R C).piece (d i)) : f y ∈ S := by
+  classical
+  have e : y = fun i ↦ ∑ p ∈ (y i).support, homInclusion p.1 p.2 (homProjection p.1 p.2 (y i)) :=
+    funext fun i ↦ by
+      simp only [homProjection_apply, homInclusion_eq_lof, DirectSum.lof_eq_of,
+        DirectSum.sum_support_of]
+  rw [e, MultilinearMap.map_sum_finset]
+  exact Submodule.sum_mem _ fun p _ ↦
+    h (fun i ↦ (p i).1) (fun i ↦ (p i).2) _ fun i ↦ homProjection_mem_piece (hy i) _ _
+
+/-- A multilinear operation from the total module of morphisms of `C` to that of `C'` is
+**path-compatible along** a map of objects `φ : C → C'` when it is an operation on composable
+strings of morphisms.  Inputs are ordered `aₙ, …, a₁` with `aᵢ : Xᵢ₋₁ ⟶ Xᵢ`, as for
+`TauCeti.GradedLinearQuiver.PathOperation`: the `i`-th input of a string `X : Fin (n + 1) → C`
+runs from `X (n - 1 - i)` to `X (n - i)`.  A path-compatible operation sends such a composable
+string to a morphism `φ X₀ ⟶ φ Xₙ`, and sends every string of morphisms which is not composable
+to zero.
+
+The operations of an `A∞` category on `C` are the path-compatible operations along `id`, and the
+components of an `A∞` functor are path-compatible along its object map.  Since a multilinear map on
+a direct sum is determined by its values on the summands, a path-compatible operation of positive
+arity is determined by its values on composable strings (`IsPathCompatible.ext`).  In arity zero
+there may be no composable string to constrain the operation: when `C` is empty, every nullary
+operation is path-compatible. -/
+structure IsPathCompatible {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] (φ : C → C')
+    {n : ℕ} (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')) : Prop where
+  /-- A composable string is sent to a morphism between the images of the endpoints of the
+  string. -/
   mem_range_homInclusion (X : Fin (n + 1) → C)
       (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
     f (fun i ↦ homInclusion _ _ (x i)) ∈
-      LinearMap.range (homInclusion (R := R) (X 0) (X (Fin.last n)))
+      LinearMap.range (homInclusion (R := R) (φ (X 0)) (φ (X (Fin.last n))))
   /-- A string in which the target of the `j`-th morphism is not the source of the `i`-th, for
   `j = i + 1`, is sent to zero. -/
   eq_zero_of_ne (s t : Fin n → C) (x : ∀ i, homModule (R := R) (s i) (t i)) (i j : Fin n)
@@ -253,34 +310,33 @@ theorem multilinearMap_apply_mem {M : Type*} [AddCommGroup M] [Module R M] {n : 
     rw [h₀ s t x j.castSucc j.succ (by simp) hj]
     exact zero_mem S
 
-/-- **Path-compatible operations are determined by their values on composable strings.** -/
-theorem IsPathCompatible.ext {n : ℕ}
-    {f g : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)}
-    (hf : IsPathCompatible f) (hg : IsPathCompatible g)
-    (h : ∀ (X : Fin (n + 1) → C)
-      (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)),
+/-- **Path-compatible operations are determined by their values on composable strings.**  The
+arity is positive: an operation of arity zero is a single element, which no composable string
+constrains when `C` has no objects. -/
+theorem IsPathCompatible.ext {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'}
+    {n : ℕ} {f g : MultilinearMap R (fun _ : Fin (n + 1) ↦ TotalHom R C) (TotalHom R C')}
+    (hf : IsPathCompatible φ f) (hg : IsPathCompatible φ g)
+    (h : ∀ (X : Fin (n + 2) → C)
+      (x : ∀ i : Fin (n + 1), homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)),
         f (fun i ↦ homInclusion _ _ (x i)) = g fun i ↦ homInclusion _ _ (x i)) :
     f = g := by
-  rcases n with _ | n
-  · refine MultilinearMap.ext fun x ↦ ?_
-    rcases isEmpty_or_nonempty C with hC | ⟨⟨c⟩⟩
-    · exact totalHom_ext fun X ↦ isEmptyElim X
-    · obtain rfl : x = fun i ↦ homInclusion c c i.elim0 := Subsingleton.elim _ _
-      exact h (fun _ ↦ c) fun i ↦ i.elim0
   refine MultilinearMap.ext fun y ↦ sub_eq_zero.1 <| (Submodule.mem_bot R).1 <|
     multilinearMap_apply_mem (f := f - g) (fun X x ↦ by simp [h X x]) (fun s t x i j hij hne ↦ ?_) y
   simp [hf.eq_zero_of_ne s t x i j hij hne, hg.eq_zero_of_ne s t x i j hij hne]
 
-/-- A path-compatible operation sends a string of morphisms in which the target of each morphism
-is the source of the one before it to a morphism from the source `a` of its last morphism to the
-target `b` of its first.  This is `IsPathCompatible.mem_range_homInclusion` for a string presented
-by the sources and targets of its morphisms rather than by its objects. -/
-theorem IsPathCompatible.mem_range_homInclusion_of_chain {n : ℕ}
-    {f : MultilinearMap R (fun _ : Fin (n + 1) ↦ TotalHom R C) (TotalHom R C)}
-    (hf : IsPathCompatible f) (s t : Fin (n + 1) → C) (x : ∀ i, homModule (R := R) (s i) (t i))
+/-- A path-compatible operation along `φ` sends a string of morphisms in which the target of each
+morphism is the source of the one before it to a morphism from the image `φ a` of the source `a`
+of its last morphism to the image `φ b` of the target `b` of its first.  This is
+`IsPathCompatible.mem_range_homInclusion` for a string presented by the sources and targets of its
+morphisms rather than by its objects. -/
+theorem IsPathCompatible.mem_range_homInclusion_of_chain {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'} {n : ℕ}
+    {f : MultilinearMap R (fun _ : Fin (n + 1) ↦ TotalHom R C) (TotalHom R C')}
+    (hf : IsPathCompatible φ f) (s t : Fin (n + 1) → C) (x : ∀ i, homModule (R := R) (s i) (t i))
     (hst : ∀ j : Fin n, t j.succ = s j.castSucc) {a b : C} (ha : s (Fin.last n) = a)
     (hb : t 0 = b) :
-    f (fun i ↦ homInclusion (s i) (t i) (x i)) ∈ LinearMap.range (homInclusion (R := R) a b) := by
+    f (fun i ↦ homInclusion (s i) (t i) (x i)) ∈
+      LinearMap.range (homInclusion (R := R) (φ a) (φ b)) := by
   subst ha hb
   obtain ⟨X, rfl, rfl⟩ := exists_eq_of_chain s t hst
   beta_reduce
@@ -288,17 +344,17 @@ theorem IsPathCompatible.mem_range_homInclusion_of_chain {n : ℕ}
   exact hf.mem_range_homInclusion X x
 
 /-- **Path compatibility can be tested on homogeneous morphisms.** -/
-theorem isPathCompatible_of_homogeneous {n : ℕ}
-    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)}
+theorem isPathCompatible_of_homogeneous {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C']
+    {φ : C → C'} {n : ℕ} {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
     (mem_range : ∀ (X : Fin (n + 1) → C)
       (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) (d : Fin n → ℤ),
       (∀ i, x i ∈ (grading (R := R) (X i.rev.castSucc) (X i.rev.succ)).piece (d i)) →
         f (fun i ↦ homInclusion _ _ (x i)) ∈
-          LinearMap.range (homInclusion (R := R) (X 0) (X (Fin.last n))))
+          LinearMap.range (homInclusion (R := R) (φ (X 0)) (φ (X (Fin.last n)))))
     (eq_zero : ∀ (s t : Fin n → C) (x : ∀ i, homModule (R := R) (s i) (t i)) (d : Fin n → ℤ),
       (∀ i, x i ∈ (grading (R := R) (s i) (t i)).piece (d i)) → ∀ i j : Fin n,
         (j : ℕ) = i + 1 → t j ≠ s i → f (fun k ↦ homInclusion (s k) (t k) (x k)) = 0) :
-    IsPathCompatible f where
+    IsPathCompatible φ f where
   mem_range_homInclusion X x :=
     InternalGrading.multilinearMap_apply_mem
       (fun i ↦ grading (R := R) (X i.rev.castSucc) (X i.rev.succ))
@@ -309,5 +365,19 @@ theorem isPathCompatible_of_homogeneous {n : ℕ}
       (fun k ↦ grading (R := R) (s k) (t k))
       (f := f.compLinearMap fun k ↦ homInclusion (s k) (t k))
       (fun d x hx ↦ (Submodule.mem_bot R).2 (eq_zero s t x d hx i j hij hne)) x
+
+/-- Twisting the inputs of a path-compatible operation by Koszul twists of the total grading
+leaves it path-compatible, since the twists act on each hom module separately. -/
+theorem IsPathCompatible.compLinearMap_koszulTwist {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'} {n : ℕ}
+    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
+    (hf : IsPathCompatible φ f) (q : Fin n → ℤ) :
+    IsPathCompatible φ (f.compLinearMap fun i ↦ (totalGrading R C).koszulTwist (q i)) where
+  mem_range_homInclusion X x := by
+    simpa only [MultilinearMap.compLinearMap_apply, koszulTwist_homInclusion] using
+      hf.mem_range_homInclusion X fun i ↦ (grading (R := R) _ _).koszulTwist (q i) (x i)
+  eq_zero_of_ne s t x i j hij hne := by
+    simpa only [MultilinearMap.compLinearMap_apply, koszulTwist_homInclusion] using
+      hf.eq_zero_of_ne s t (fun k ↦ (grading (R := R) _ _).koszulTwist (q k) (x k)) i j hij hne
 
 end TauCeti.GradedLinearQuiver

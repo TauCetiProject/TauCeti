@@ -32,7 +32,8 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {M : Type v} [AddGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M] [CompactSpace G] [TotallyDisconnectedSpace G]
 
-/-- A continuous function from a profinite group to a discrete module descends below any
+omit [TotallyDisconnectedSpace G] in
+/-- A continuous function from a compact topological group to a discrete module descends below any
 prescribed open normal subgroup to a continuous function on a finite quotient, with values fixed
 by that subgroup. -/
 theorem exists_openNormalSubgroup_descendContinuous (U : OpenNormalSubgroup G)
@@ -44,7 +45,8 @@ theorem exists_openNormalSubgroup_descendContinuous (U : OpenNormalSubgroup G)
   have hopen : IsOpen (rightTranslationStabilizer b : Set G) :=
     isOpen_rightTranslationStabilizer hloc
   obtain ⟨W, hW⟩ :=
-    ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hopen
+    IsTopologicalGroup.exist_openNormalSubgroup_sub_clopen_nhds_of_one
+      ⟨(⟨rightTranslationStabilizer b, hopen⟩ : OpenSubgroup G).isClosed, hopen⟩
       (rightTranslationStabilizer b).one_mem
   obtain ⟨A, hA⟩ :=
     hloc.range_finite.exists_openNormalSubgroup_smul_eq_self (G := G)

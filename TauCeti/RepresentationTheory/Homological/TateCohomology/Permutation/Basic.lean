@@ -115,10 +115,10 @@ theorem subsingleton_tateCohomology_negOne_ofMulAction_of_isSMulRegular
 
 /-- Degree `-1` Tate cohomology of a permutation module vanishes over a coefficient ring without
 additive torsion. -/
-instance subsingleton_tateCohomology_negOne_ofMulAction [IsAddTorsionFree R] :
+instance subsingleton_tateCohomology_negOne_ofMulAction [HasUniqueDiv R] :
     Subsingleton (tateCohomology (Rep.ofMulAction R G X) (-1)) :=
   subsingleton_tateCohomology_negOne_ofMulAction_of_isSMulRegular
-    (.nat_of_isAddTorsionFree Fintype.card_ne_zero)
+    (.nat_of_hasUniqueDiv Fintype.card_ne_zero)
 
 /-- The coefficient of a norm at an orbit representative is divisible by the order of its
 stabilizer. -/

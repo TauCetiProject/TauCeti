@@ -39,6 +39,8 @@ such a table finite.
 
 ## Main results
 
+* `WeierstrassCurve.IsMinimalPairNF.of_forall_le`: the minimal-pair condition need only be
+  checked at the primes `ℓ` with `ℓ⁴ ≤ gcd (a₄, a₆)`.
 * `WeierstrassCurve.exists_minimalPairModel`: every elliptic curve over `ℚ` has a minimal-pair
   model.
 * `WeierstrassCurve.minimalPairModel_unique`: any two minimal-pair models of `E` have the same
@@ -182,6 +184,22 @@ theorem IsMinimalPairNF.of_forall_not_dvd [W.IsShortNF]
     (h : ∀ ℓ : ℕ, ℓ.Prime → ¬ ((ℓ : ℤ) ^ 4 ∣ W.a₄ ∧ (ℓ : ℤ) ^ 6 ∣ W.a₆)) :
     IsMinimalPairNF W :=
   ⟨inferInstance, h⟩
+
+/-- **The minimal-pair condition is a finite check.** A prime `ℓ` with `ℓ⁴ ∣ a₄` and `ℓ⁶ ∣ a₆` has
+`ℓ⁴ ∣ gcd (a₄, a₆)`, so once `gcd (a₄, a₆)` is nonzero and less than `(b + 1)⁴` it suffices to check
+the primes `ℓ ≤ b`. -/
+theorem IsMinimalPairNF.of_forall_le [W.IsShortNF] (b : ℕ) (hg : Int.gcd W.a₄ W.a₆ ≠ 0)
+    (hb : Int.gcd W.a₄ W.a₆ < (b + 1) ^ 4)
+    (h : ∀ ℓ ≤ b, ℓ.Prime → ¬ ((ℓ : ℤ) ^ 4 ∣ W.a₄ ∧ (ℓ : ℤ) ^ 6 ∣ W.a₆)) :
+    IsMinimalPairNF W := by
+  refine .of_forall_not_dvd fun ℓ hℓ hdvd ↦ h ℓ (not_lt.1 fun hlt ↦ ?_) hℓ hdvd
+  have h₄ : ((ℓ ^ 4 : ℕ) : ℤ) ∣ (Int.gcd W.a₄ W.a₆ : ℤ) := by
+    push_cast
+    exact Int.dvd_coe_gcd hdvd.1 ((pow_dvd_pow _ (by norm_num)).trans hdvd.2)
+  have := Nat.le_of_dvd (Nat.pos_of_ne_zero hg) (Int.natCast_dvd_natCast.1 h₄)
+  have hbound : b + 1 ≤ ℓ := hlt
+  have := Nat.pow_le_pow_left hbound 4
+  omega
 
 /-- **The only integers `x` with `x⁴ ∣ a₄` and `x⁶ ∣ a₆` for a minimal pair are `±1`.** This is
 the form in which the minimal-pair condition is consumed: it rules out every scaling of the

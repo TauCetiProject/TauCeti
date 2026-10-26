@@ -244,6 +244,13 @@ theorem zigzagAlgebraIntegerGrade_ofNat (d : ℕ) :
     zigzagAlgebraIntegerGrade k G d = zigzagAlgebraGrade k G d :=
   Graded.extendByZero_natCast _ d
 
+/-- The vertex idempotent is homogeneous of degree zero in the signed grading. -/
+theorem zigzagAlgebraBasis_inl_mem_integerGrade_zero (i : V) :
+    zigzagAlgebraBasis k G (.inl i) ∈ zigzagAlgebraIntegerGrade k G 0 := by
+  simpa only [Int.natCast_zero] using
+    (zigzagAlgebraIntegerGrade_ofNat k G 0).ge
+      (zigzagAlgebraBasis_inl_mem_grade_zero k G i)
+
 /-- The integer extension of the componentwise grading vanishes in negative degrees. -/
 theorem zigzagAlgebraIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
     zigzagAlgebraIntegerGrade k G d = ⊥ :=

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Units.Regulator
+public import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
 /-!
 # Certifying a generator of the units modulo torsion in rank one
@@ -16,7 +16,7 @@ logarithmic embedding and torsion subgroup. It turns the generation condition us
 rank-one regulator formula into a minimality test on units.
 
 The criterion makes the abstract generation condition testable through logarithmic norms.
-The placewise comparison in `Units.Regulator` expresses these norms as weighted logarithms
+The placewise comparison in `Units.Regulator.Basic` expresses these norms as weighted logarithms
 at a chosen infinite place.
 
 ## Main results

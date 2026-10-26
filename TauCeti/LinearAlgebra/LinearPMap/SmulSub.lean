@@ -15,7 +15,7 @@ For a partial linear map `A : E →ₗ.[R] E` and a scalar `c`, the shift `x ↦
 linear map from the domain of `A` to `E`.  Bundling it (`LinearPMap.smulSub`) gives access to the
 `LinearMap` API, in particular to its range as a submodule, for arguments about resolvents,
 deficiency shifts and dissipativity, where surjectivity or density of this range is the question.
-Up to sign it is the scalar shift `TauCeti.LinearPMap.subScalar A c = A - c • 1` of
+Up to sign it is the scalar shift `LinearPMap.subScalar A c = A - c • 1` of
 `TauCeti.LinearAlgebra.LinearPMap.Shift`, regarded as a linear map on the domain
 (`smulSub_apply_eq_neg_subScalar`), so results about the range of either form transfer to the
 other.
@@ -25,6 +25,8 @@ other.
 * `LinearPMap.smulSub`: the bundled shift `x ↦ c • x - A x` on the domain of `A`.
 * `LinearPMap.smulSub_apply` and `LinearPMap.coe_range_smulSub`: its values and its range.
 * `LinearPMap.smulSub_apply_eq_neg_subScalar`: `smulSub c A` is `-(subScalar A c)` pointwise.
+* `LinearPMap.exists_linearMap_inverse_smul_sub`: a bijective shift has a linear two-sided inverse
+  `E → E` with values in the domain of `A`.
 -/
 
 public section
@@ -45,15 +47,33 @@ theorem smulSub_apply (c : R) (A : E →ₗ.[R] E) (x : A.domain) :
 /-- The bundled shift `c • x - A x` is the negative of the scalar shift `subScalar A c = A - c • 1`
 of the same domain, pointwise. -/
 theorem smulSub_apply_eq_neg_subScalar (c : R) (A : E →ₗ.[R] E) (x : A.domain) :
-    A.smulSub c x = -TauCeti.LinearPMap.subScalar A c
-      ⟨x, (TauCeti.LinearPMap.subScalar_domain A c).symm ▸ x.property⟩ := by
-  rw [A.smulSub_apply, TauCeti.LinearPMap.subScalar_apply, neg_sub]
+    A.smulSub c x = -subScalar A c
+      ⟨x, (subScalar_domain A c).symm ▸ x.property⟩ := by
+  rw [A.smulSub_apply, subScalar_apply, neg_sub]
 
 /-- The range of the bundled shift is the range of the shift. -/
 theorem coe_range_smulSub (c : R) (A : E →ₗ.[R] E) :
     ((A.smulSub c).range : Set E) = Set.range (fun x : A.domain => c • (x : E) - A x) := by
   ext y
   simp only [SetLike.mem_coe, LinearMap.mem_range, smulSub_apply, Set.mem_range]
+
+/-- A bijective shift `x ↦ c • x - A x` has a linear two-sided inverse `J : E →ₗ[R] E` taking
+values in the domain of `A`. -/
+theorem exists_linearMap_inverse_smul_sub {A : E →ₗ.[R] E} {c : R}
+    (h : Function.Bijective fun x : A.domain => c • (x : E) - A x) :
+    ∃ (J : E →ₗ[R] E) (hJ : ∀ y, J y ∈ A.domain),
+      (∀ y, c • J y - A ⟨J y, hJ y⟩ = y) ∧ ∀ x : A.domain, J (c • (x : E) - A x) = x := by
+  have hfun : ⇑(A.smulSub c) = fun x : A.domain => c • (x : E) - A x := funext (smulSub_apply c A)
+  let e := LinearEquiv.ofBijective (A.smulSub c) (hfun ▸ h)
+  let J : E →ₗ[R] E := A.domain.subtype ∘ₗ e.symm.toLinearMap
+  have hJ (y : E) : J y = (e.symm y : E) := by
+    simp only [J, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Submodule.subtype_apply]
+  refine ⟨J, fun y => hJ y ▸ (e.symm y).property, fun y => ?_, fun x => ?_⟩
+  · have hx : (⟨J y, hJ y ▸ (e.symm y).property⟩ : A.domain) = e.symm y := Subtype.ext (hJ y)
+    rw [hx, hJ, ← smulSub_apply]
+    exact e.apply_symm_apply y
+  · rw [hJ, ← smulSub_apply]
+    exact congrArg Subtype.val (e.symm_apply_apply x)
 
 end LinearPMap
 

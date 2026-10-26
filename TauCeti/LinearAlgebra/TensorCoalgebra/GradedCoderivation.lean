@@ -72,6 +72,8 @@ by `isHomogeneous_gradedCoderiv` and `IsGradedCoderivation.isHomogeneous`.
   tensor words commutes with the letterwise twist up to the sign given by its degree.
 * `TauCeti.ReducedTensorWords.IsGradedCoderivation.isCoderivation_comp_self`: a graded coderivation
   anticommuting with its letterwise Koszul twist has an ordinary coderivation as its square.
+* `TauCeti.ReducedTensorWords.IsGradedCoderivation.comp_sub_smul_comp`: the graded commutator of
+  homogeneous graded coderivations is a graded coderivation.
 * `TauCeti.ReducedTensorWords.isHomogeneous_gradedCoderiv`: if `F` raises degrees by `r` then so
   does `gradedCoderiv G F q`, independently of the twist parameter.
 * `TauCeti.ReducedTensorWords.gradedCoderivEquivTaylor`: the `q`-twisted coderivations form a
@@ -1126,6 +1128,92 @@ theorem ReducedTensorWords.gradedCoderivEquivTaylor_symm_apply (G : InternalGrad
         (isGradedCoderivation_gradedCoderiv G F q)⟩ :=
   by rfl
 
+/-- The graded Taylor expansion is additive in the Taylor map. -/
+@[simp]
+theorem ReducedTensorWords.gradedCoderiv_add (G : InternalGrading R M)
+    (F₁ F₂ : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
+    gradedCoderiv G (F₁ + F₂) q = gradedCoderiv G F₁ q + gradedCoderiv G F₂ q :=
+  congrArg Subtype.val (map_add (gradedCoderivEquivTaylor G q).symm F₁ F₂)
+
+/-- The graded Taylor expansion is `R`-linear in the Taylor map. -/
+@[simp]
+theorem ReducedTensorWords.gradedCoderiv_smul (G : InternalGrading R M) (c : R)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
+    gradedCoderiv G (c • F) q = c • gradedCoderiv G F q :=
+  congrArg Subtype.val (map_smul (gradedCoderivEquivTaylor G q).symm c F)
+
 end GradedCoderiv
+
+/-! ### Graded commutators of graded coderivations -/
+
+section Commutator
+
+variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
+  {G : InternalGrading R M}
+
+/-- The co-Leibniz identity of a graded coderivation, with both terms written through
+`TensorProduct.map`. -/
+private theorem ReducedTensorWords.IsGradedCoderivation.deconcatenation_comp_eq {q : ℤ}
+    {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
+    (hb : IsGradedCoderivation G q b) :
+    deconcatenation R M ∘ₗ b =
+      (TensorProduct.map b LinearMap.id +
+        TensorProduct.map (ReducedTensorWords.map (R := R) (G.koszulTwist q)) b) ∘ₗ
+          deconcatenation R M := by
+  rw [isGradedCoderivation_iff.mp hb, LinearMap.add_comp, LinearMap.rTensor_def,
+    LinearMap.lTensor_comp_rTensor]
+
+/-- Deconcatenation after a composite of two graded coderivations: the four terms of the
+expansion of the product of the two co-Leibniz rules. -/
+private theorem ReducedTensorWords.IsGradedCoderivation.deconcatenation_comp_comp_eq {p q : ℤ}
+    {b₁ b₂ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
+    (hb₁ : IsGradedCoderivation G p b₁) (hb₂ : IsGradedCoderivation G q b₂) :
+    deconcatenation R M ∘ₗ b₁ ∘ₗ b₂ =
+      (TensorProduct.map (b₁ ∘ₗ b₂) LinearMap.id +
+        TensorProduct.map (b₁ ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist q)) b₂ +
+        TensorProduct.map (ReducedTensorWords.map (R := R) (G.koszulTwist p) ∘ₗ b₂) b₁ +
+        TensorProduct.map (ReducedTensorWords.map (R := R) (G.koszulTwist (p + q)))
+          (b₁ ∘ₗ b₂)) ∘ₗ deconcatenation R M := by
+  rw [← LinearMap.comp_assoc, hb₁.deconcatenation_comp_eq, LinearMap.comp_assoc,
+    hb₂.deconcatenation_comp_eq, ← LinearMap.comp_assoc, ← G.koszulTwist_comp,
+    ReducedTensorWords.map_comp]
+  congr 1
+  simp only [LinearMap.add_comp, LinearMap.comp_add, ← TensorProduct.map_comp, LinearMap.id_comp,
+    LinearMap.comp_id]
+  abel
+
+/-- **The graded commutator of graded coderivations is a graded coderivation.**  If `b₁` and `b₂`
+are graded coderivations of twist parameters `p` and `q`, homogeneous of the degrees `p` and `q`,
+then `b₁ ∘ b₂ - (-1)^(p * q) • b₂ ∘ b₁` is a graded coderivation of twist parameter `p + q`. -/
+theorem ReducedTensorWords.IsGradedCoderivation.comp_sub_smul_comp {p q : ℤ}
+    {b₁ b₂ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
+    (hb₁ : IsGradedCoderivation G p b₁)
+    (hh₁ : LinearMap.IsHomogeneous b₁ (gradedPiece G) (gradedPiece G) p)
+    (hb₂ : IsGradedCoderivation G q b₂)
+    (hh₂ : LinearMap.IsHomogeneous b₂ (gradedPiece G) (gradedPiece G) q) :
+    IsGradedCoderivation G (p + q) (b₁ ∘ₗ b₂ - negOnePowCast R (p * q) • (b₂ ∘ₗ b₁)) := by
+  -- Cache the additive group instances of `T` and `T ⊗ T`: without them, instance synthesis fails
+  -- to find the additive group structure on linear maps into `T ⊗ T`.
+  let : AddCommGroup (ReducedTensorWords R M) := inferInstance
+  let : AddCommGroup (ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) := inferInstance
+  rw [isGradedCoderivation_iff, LinearMap.comp_sub, LinearMap.comp_smul,
+    hb₁.deconcatenation_comp_comp_eq hb₂, hb₂.deconcatenation_comp_comp_eq hb₁, add_comm q p,
+    hh₂.map_koszulTwist_comp p, hh₁.map_koszulTwist_comp q, ← negOnePowCast_eq_intCast,
+    ← negOnePowCast_eq_intCast, mul_comm q p, LinearMap.rTensor_def,
+    LinearMap.lTensor_comp_rTensor]
+  let B := TensorProduct.mapBilinear (RingHom.id R) (ReducedTensorWords R M)
+    (ReducedTensorWords R M) (ReducedTensorWords R M) (ReducedTensorWords R M)
+  have hl (f g h : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) :
+      TensorProduct.map (f - g) h = TensorProduct.map f h - TensorProduct.map g h :=
+    B.map_sub₂ f g h
+  have hr (f g h : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) :
+      TensorProduct.map h (f - g) = TensorProduct.map h f - TensorProduct.map h g :=
+    (B h).map_sub f g
+  simp only [hl, hr, TensorProduct.map_smul_left, TensorProduct.map_smul_right,
+    LinearMap.sub_comp, LinearMap.add_comp, LinearMap.smul_comp, smul_add, smul_smul,
+    ← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul, one_smul]
+  abel
+
+end Commutator
 
 end TauCeti

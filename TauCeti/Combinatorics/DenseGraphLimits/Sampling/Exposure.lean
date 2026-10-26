@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Finite
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Oscillation
-public import TauCeti.Probability.Distributions.Uniform
+public import TauCeti.Probability.Distributions.Uniform.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 
 /-!

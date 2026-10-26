@@ -212,9 +212,9 @@ theorem _root_.LieDerivation.apply_mem_nilradical_of_mem_radical (D : LieDerivat
   have hsurj : Function.Surjective (π.comp (inl (lineHom D))) := by
     intro s
     have hs : s ∈ (derivedSeries K E 1).map π := by
-      rw [LieIdeal.derivedSeries_map_eq 1 (radical K E).mkQ_surjective, hperf]
+      rw [LieIdeal.derivedSeries_map_eq 1 (radical K E).surjective_mkQ, hperf]
       exact LieSubmodule.mem_top s
-    obtain ⟨⟨e, he⟩, rfl⟩ := LieIdeal.mem_map_of_surjective (radical K E).mkQ_surjective hs
+    obtain ⟨⟨e, he⟩, rfl⟩ := LieIdeal.mem_map_of_surjective (radical K E).surjective_mkQ hs
     exact ⟨e.left, by rw [LieHom.comp_apply, ← hder e he]⟩
   -- ... which has trivial radical, so the radical of `L` lies in the radical of `E`.
   have hrad : inl (lineHom D) x ∈ radical K E := by
@@ -223,7 +223,7 @@ theorem _root_.LieDerivation.apply_mem_nilradical_of_mem_radical (D : LieDerivat
       HasTrivialRadical.eq_bot_of_isSolvable _
     have hmem := LieIdeal.mem_map (f := π.comp (inl (lineHom D))) hx
     rw [hbot, LieSubmodule.mem_bot, LieHom.comp_apply, ← LieHom.mem_ker,
-      LieIdeal.ker_mkQ] at hmem
+      LieIdeal.mkQ_ker] at hmem
     exact hmem
   exact apply_mem_nilradical_of_lie_mem D x (LieAlgebra.nilradical K E)
     (LieAlgebra.lie_radical_le_nilradical K E

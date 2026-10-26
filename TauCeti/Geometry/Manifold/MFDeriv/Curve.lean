@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 
 /-!
 # Differentiating along a curve in a manifold
@@ -67,6 +68,11 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   centred at the current point differentiates it to the velocity itself, with
   `TauCeti.Manifold.hasDerivAt_extChartAt_comp_curve` its unrestricted case and
   `TauCeti.Manifold.derivWithin_extChartAt_comp_curve` its form for the named velocity.
+* `TauCeti.Manifold.hasDerivWithinAt_derivWithin_extChartAt_comp_curve`: for a `C²` curve, the
+  second within-derivative of its moving-chart reading is a genuine derivative of the first one.
+* `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Iic` and
+  `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Ici`: a real curve constant on a closed half-line has
+  zero manifold derivative in the interior of that half-line.
 -/
 
 public section
@@ -545,6 +551,44 @@ theorem derivWithin_extChartAt_comp_curve (hγ : MDifferentiableWithinAt 𝓘(�
     derivWithin (extChartAt I (γ t) ∘ γ) s t = curveVelocityWithin I γ s t :=
   (hasDerivWithinAt_extChartAt_comp_curve
     (hasMFDerivWithinAt_curveVelocityWithin hγ)).derivWithin hs
+
+omit [IsManifold I 1 M] in
+/-- For a `C²` manifold-valued curve, the second within-derivative of its moving-chart reading is
+a genuine derivative of the first within-derivative.  This is the regularity needed to read a
+second-order equation in moving coordinates without either `derivWithin` taking its junk value. -/
+theorem hasDerivWithinAt_derivWithin_extChartAt_comp_curve
+    (hγ : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I 2 γ s t) (hs : UniqueDiffOn 𝕜 s) (ht : t ∈ s) :
+    HasDerivWithinAt (derivWithin (extChartAt I (γ t) ∘ γ) s)
+      (derivWithin (derivWithin (extChartAt I (γ t) ∘ γ) s) s t) s t := by
+  have hchart : ContDiffWithinAt 𝕜 2 (extChartAt I (γ t) ∘ γ) s t :=
+    ((contMDiffWithinAt_iff_target.mp hγ).2).contDiffWithinAt
+  have hderiv : ContDiffWithinAt 𝕜 1 (derivWithin (extChartAt I (γ t) ∘ γ) s) s t :=
+    hchart.derivWithin hs (by norm_num) ht
+  exact hderiv.differentiableWithinAt (by norm_num) |>.hasDerivWithinAt
+
+end TauCeti.Manifold
+
+namespace TauCeti.Manifold
+
+open Set
+
+variable {E H N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace N] [ChartedSpace H N]
+  {γ : ℝ → N} {p : N} {a t : ℝ}
+
+/-- A real curve that is constant on the half-line `Iic a` has zero manifold derivative at every
+time before `a`. -/
+theorem mfderiv_eq_zero_of_eqOn_Iic (h : EqOn γ (fun _ => p) (Iic a)) (ht : t < a) :
+    mfderiv 𝓘(ℝ, ℝ) I γ t = 0 :=
+  ((hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := I) p t).congr_of_eventuallyEq
+    (by filter_upwards [Iio_mem_nhds ht] with s hs using h (mem_Iic.2 hs.le))).mfderiv
+
+/-- A real curve that is constant on the half-line `Ici a` has zero manifold derivative at every
+time after `a`. -/
+theorem mfderiv_eq_zero_of_eqOn_Ici (h : EqOn γ (fun _ => p) (Ici a)) (ht : a < t) :
+    mfderiv 𝓘(ℝ, ℝ) I γ t = 0 :=
+  ((hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := I) p t).congr_of_eventuallyEq
+    (by filter_upwards [Ioi_mem_nhds ht] with s hs using h (mem_Ici.2 hs.le))).mfderiv
 
 end TauCeti.Manifold
 

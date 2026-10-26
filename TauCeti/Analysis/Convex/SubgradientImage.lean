@@ -307,7 +307,8 @@ theorem eventually_biUnion_subset_of_tendstoLocallyUniformlyOn {ι : Type*} {l :
     rw [this]
     refine ContinuousOn.preimage_isClosed_of_isClosed ?_ (hK.isClosed.prod isClosed_univ)
       isClosed_Iic
-    exact ((hu.mono hKΩ).comp continuousOn_fst fun p hp => hp.1).add
+    exact ((hu.mono hKΩ).comp continuousOn_fst
+      fun p (hp : p ∈ K ×ˢ univ) => hp.1).add
       ((continuous_const.sub continuous_fst).inner continuous_snd).continuousOn
   have hempty : Disjoint (K ×ˢ (closedBall (0 : E) R \ V)) (⋂ i, Z i) := by
     refine disjoint_left.2 ?_

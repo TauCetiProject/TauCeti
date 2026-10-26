@@ -28,7 +28,9 @@ spaces obeys: a root vector shifts it by the corresponding root.
   weight spaces it is spanned by is. `TauCeti.genWeightSpaceSpan_mono` is the resulting monotonicity
   in the indexing set.
 * `TauCeti.genWeightSpaceSpan_eq_iSup` exhibits the span as a supremum, so that a member can be
-  taken apart by `LieSubmodule.iSup_induction` without unfolding the definition.
+  taken apart by `LieSubmodule.iSup_induction` without unfolding the definition, and
+  `TauCeti.disjoint_genWeightSpace_genWeightSpaceSpan_ne` says that any weight space meets the span
+  of the other weight spaces trivially.
 * `TauCeti.lie_mem_genWeightSpaceSpan`: for a nilpotent subalgebra `H` of a Lie algebra `L` acting
   on `M`, a vector in the root space of `α` carries the span of a set `S` of weight spaces into the
   span of any set containing `α + S`.
@@ -81,6 +83,15 @@ theorem genWeightSpaceSpan_le_iff {S : Set (H → R)} {N : LieSubmodule R H M} :
     genWeightSpaceSpan H M S ≤ N ↔ ∀ chi ∈ S, genWeightSpace M chi ≤ N :=
   ⟨fun h _ hchi => (genWeightSpace_le_genWeightSpaceSpan hchi).trans h,
     fun h => iSup_le fun chi => h chi chi.2⟩
+
+variable (H M) in
+/-- **A weight space is disjoint from the span of the other weight spaces**, the weight spaces of a
+module being independent. -/
+theorem disjoint_genWeightSpace_genWeightSpaceSpan_ne [IsDomain R] [Module.IsTorsionFree R M]
+    (chi : H → R) :
+    Disjoint (genWeightSpace M chi) (genWeightSpaceSpan H M {psi | psi ≠ chi}) :=
+  (iSupIndep_genWeightSpace R H M chi).mono_right
+    (genWeightSpaceSpan_le_iff.mpr fun _ hpsi => le_iSup₂_of_le _ hpsi le_rfl)
 
 variable (H M) in
 /-- The span of the weight spaces indexed by `S`, written as the supremum of those weight spaces,

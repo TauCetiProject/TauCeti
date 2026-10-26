@@ -515,6 +515,17 @@ theorem taylor_of_tprod (𝒜 : AInfinityAlgebra R A) (n : {n : ℕ // 0 < n}) (
   rw [𝒜.taylor_isSuspension.taylor_eq (AInfinity.isSuspension_suspensionTaylor _ _),
     AInfinity.suspensionTaylor_of_tprod]
 
+/-- A vanishing operation has vanishing suspended Taylor component. -/
+theorem taylor_comp_of_eq_zero_of_m_eq_zero (𝒜 : AInfinityAlgebra R A)
+    (n : {n : ℕ // 0 < n}) (hn : 𝒜.m n.1 = 0) :
+    𝒜.taylor ∘ₗ ReducedTensorWords.of R A n = 0 := by
+  apply PiTensorProduct.ext
+  apply MultilinearMap.ext
+  intro x
+  simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply]
+  rw [taylor_of_tprod, hn]
+  rfl
+
 /-- On a two-letter word the Taylor map is the binary operation, with the suspension sign carried
 by the degree-one Koszul twist of the first letter. -/
 theorem taylor_of_two (𝒜 : AInfinityAlgebra R A) (a b : A) :

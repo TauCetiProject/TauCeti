@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.NonDiscrete.Basic
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Transvection
-import TauCeti.Topology.Algebra.Group.Subgroup
+import TauCeti.Topology.Discrete
 import TauCeti.Topology.Algebra.RestrictedProduct.ContinuousRng
 import TauCeti.NumberTheory.Padics.Factorial
 
@@ -51,9 +51,6 @@ theorem tendsto_finiteAdelicSpinDiagonal_spinTransvection_factorial
   let g := spinTransvection hQ hu huw
   have hlocal (p : Nat.Primes) : Tendsto (fun n : ℕ ↦
       spinGroupBaseChange (A := ℚ_[p]) Q (g ^ n.factorial)) atTop (𝓝 1) := by
-    -- Use the invertibility witness fixed by the scalar-extension theorem.
-    let : Invertible (2 : ℚ_[p]) :=
-      (Invertible.map (algebraMap ℚ ℚ_[p]) 2).copy 2 (map_ofNat _ _).symm
     let : TopologicalSpace (ℚ_[p] ⊗[ℚ] V) := moduleTopology ℚ_[p] _
     let up : ℚ_[p] ⊗[ℚ] V := 1 ⊗ₜ[ℚ] u
     let wp : ℚ_[p] ⊗[ℚ] V := 1 ⊗ₜ[ℚ] w
@@ -103,10 +100,12 @@ theorem not_discreteTopology_range_finiteAdelicSpinDiagonal_of_transvection
     rw [← Nat.cast_smul_eq_nsmul ℚ, (ℚ ∙ u).smul_mem_iff
       (by exact_mod_cast n.factorial_ne_zero)] at hn
     exact hw hn
-  exact U.finiteAdelicSpinDiagonal.not_discreteTopology_range_of_tendsto_one
-    (U.tendsto_finiteAdelicSpinDiagonal_spinTransvection_factorial hQ hu huw)
-    (Eventually.of_forall fun n ↦
-      (map_ne_one_iff _ U.finiteAdelicSpinDiagonal_injective).mpr (hne n))
+  intro hD
+  exact (U.tendsto_finiteAdelicSpinDiagonal_spinTransvection_factorial hQ hu huw).not_isDiscrete
+    U.finiteAdelicSpinDiagonal.range.one_mem
+    (Eventually.of_forall fun n ↦ MonoidHom.mem_range.mpr ⟨g ^ n.factorial, rfl⟩)
+    (Frequently.of_forall fun n ↦
+      (map_ne_one_iff _ U.finiteAdelicSpinDiagonal_injective).mpr (hne n)) ⟨hD⟩
 
 /-- For a nondegenerate isotropic rational quadratic space of dimension at least three, the
 rational Spin diagonal is not discrete in the finite adeles. -/

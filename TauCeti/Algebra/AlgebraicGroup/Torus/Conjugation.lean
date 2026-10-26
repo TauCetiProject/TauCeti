@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.EssentialImage
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
+import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
 
 /-!
 # Conjugation of maximal tori
@@ -85,15 +86,7 @@ theorem exists_eq_conjugate_of_isMaximalTorus_of_split
       (FiniteTypeCommHopfAlgCat.quotient
         ⟨_root_.CommHopfAlgCat.of k H, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩ I)) :
     ∃ g : WithConv (H →ₐ[k] k), I = D.conjugate g := by
-  obtain ⟨m, ⟨e⟩⟩ := (splitTorusCommHopfAlgProperty_iff k _).mp hsplit
-  have hspan : DiagonalizableGroup.groupLikeSpannedProperty k
-      (FiniteTypeCommHopfAlgCat.quotient
-        ⟨_root_.CommHopfAlgCat.of k H, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
-        I) :=
-    (DiagonalizableGroup.groupLikeSpannedProperty k).prop_of_iso e
-      ((DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mpr
-        (MonoidAlgebra.groupLikeSetSpan_eq_top (R := k) _))
-  obtain ⟨g, hg⟩ := hcontain hspan
+  obtain ⟨g, hg⟩ := hcontain (hsplit.groupLikeSpanned k _)
   have hDg := (isMaximalTorus_iff k _ _).mp (hD.conjugate g)
   exact ⟨g, le_antisymm (((isMaximalTorus_iff k _ _).mp hI).2 _ hDg.1 hg) hg⟩
 

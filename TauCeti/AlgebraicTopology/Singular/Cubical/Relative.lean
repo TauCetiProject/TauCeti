@@ -100,6 +100,45 @@ namespace RelativeCubicalChain
 
 variable (X) (A : Set X)
 
+/-- Reindex relative chains along an equality of dimensions. -/
+def cast {n m : ℕ} (h : n = m) :
+    RelativeCubicalChain X A R n →ₗ[R] RelativeCubicalChain X A R m := by
+  subst h
+  exact LinearMap.id
+
+@[simp]
+theorem cast_mk {n m : ℕ} (h : n = m) (g : NormalizedCubicalChain X R n) :
+    cast X R A h (Submodule.Quotient.mk g) =
+      Submodule.Quotient.mk (NormalizedCubicalChain.cast R h g) := by
+  subst h
+  simp [cast]
+
+@[simp]
+theorem cast_rfl {n : ℕ} (g : RelativeCubicalChain X A R n) : cast X R A rfl g = g :=
+  (rfl)
+
+/-- Successive reindexings compose. -/
+@[simp]
+theorem cast_cast {n m k : ℕ} (h : n = m) (h' : m = k)
+    (g : RelativeCubicalChain X A R n) :
+    cast X R A h' (cast X R A h g) = cast X R A (h.trans h') g := by
+  subst h
+  subst h'
+  rfl
+
+/-- Reindexing is injective. -/
+theorem cast_injective {n m : ℕ} (h : n = m) :
+    Function.Injective (cast X R A h) := fun a b hab ↦ by
+  simpa using congrArg (cast X R A h.symm) hab
+
+variable {X R A} in
+/-- Equal after reindexing implies heterogeneously equal. -/
+theorem heq_of_cast_eq {n m : ℕ} (h : n = m) {x : RelativeCubicalChain X A R n}
+    {y : RelativeCubicalChain X A R m} (hxy : cast X R A h x = y) : HEq x y := by
+  subst h
+  rw [cast_rfl] at hxy
+  exact heq_of_eq hxy
+
 /-- The boundary of relative chains, induced by the boundary of the chains of `X`. -/
 def boundary (n : ℕ) : RelativeCubicalChain X A R (n + 1) →ₗ[R] RelativeCubicalChain X A R n :=
   Submodule.mapQ _ _ (NormalizedCubicalChain.boundary X R n)
@@ -110,6 +149,13 @@ theorem boundary_mk {n : ℕ} (g : NormalizedCubicalChain X R (n + 1)) :
     boundary X R A n (Submodule.Quotient.mk g) =
       Submodule.Quotient.mk (NormalizedCubicalChain.boundary X R n g) :=
   Submodule.mapQ_apply _ _ _ g
+
+/-- Reindexing commutes with the relative boundary. -/
+theorem boundary_cast {n m : ℕ} (h : n = m) (g : RelativeCubicalChain X A R (n + 1)) :
+    boundary X R A m (cast X R A (congrArg Nat.succ h) g) =
+      cast X R A h (boundary X R A n g) := by
+  subst h
+  simp
 
 /-- The boundary of a boundary vanishes. -/
 theorem boundary_boundary (n : ℕ) : boundary X R A n ∘ₗ boundary X R A (n + 1) = 0 := by
@@ -133,6 +179,13 @@ theorem map_mk (f : C(X, Y)) (hf : Set.MapsTo f A B) {n : ℕ} (g : NormalizedCu
     map R f hf n (Submodule.Quotient.mk g) =
       Submodule.Quotient.mk (NormalizedCubicalChain.map R f n g) :=
   Submodule.mapQ_apply _ _ _ g
+
+/-- Reindexing commutes with maps of relative chains. -/
+theorem map_cast (f : C(X, Y)) (hf : Set.MapsTo f A B) {n m : ℕ} (h : n = m)
+    (g : RelativeCubicalChain X A R n) :
+    map R f hf m (cast X R A h g) = cast Y R B h (map R f hf n g) := by
+  subst h
+  simp
 
 @[simp]
 theorem map_id (n : ℕ) : map R (ContinuousMap.id X) (Set.mapsTo_id A) n = LinearMap.id := by

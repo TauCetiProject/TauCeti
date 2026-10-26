@@ -118,7 +118,7 @@ private theorem pointsMulEquiv_mapPointsFunctor_generator_inr_mem (A : Type) [Co
     (p : HopfAlgebra.points (R := ZMod 2) (H := generatorCodomain (.inr ()))
       (CommAlgCat.of (ZMod 2) A)) :
     GeneralLinear.pointsMulEquiv 26
-        ((CommHopfAlgCat.mapPointsFunctor (generator (.inr ()))).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inr ()))).app
           (CommAlgCat.of (ZMod 2) A) p) ∈
       GeneralLinear.generatedPointsSubgroup 26 (fun k ↦ generator (.inl k)) A := by
   have hC : Subgroup.closure (⋃ k, Set.range (rootSubgroupPoints k A)) ≤

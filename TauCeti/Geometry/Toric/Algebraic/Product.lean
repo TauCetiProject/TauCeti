@@ -16,7 +16,10 @@ public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Product
 The affine scheme of a product cone is the fibre product over `Spec ℂ` of the affine schemes
 of the factors. Its coordinate ring is their tensor product: a tensor of two monomials becomes
 the monomial of the sum of the two pulled-back characters. The two projections agree with
-the toric morphisms induced by the lattice projections.
+the toric morphisms induced by the lattice projections, so these toric morphisms exhibit the
+affine scheme of a product cone, and in particular the dense torus of a product lattice, as a
+fibre product (`TauCeti.Toric.isPullback_affineToricSchemeMap_fst_snd` and
+`TauCeti.Toric.isPullback_affineToricSchemeMap_fst_snd_bot`).
 
 The construction uses `dualSemigroupProdEquiv`, `TauCeti.MonoidAlgebra.prodTensorBialgEquiv`,
 and `AlgebraicGeometry.pullbackSpecIso`. No regularity, rationality,
@@ -217,6 +220,56 @@ theorem affineToricSchemeProdIso_inv_snd :
             (Set.mapsTo_snd_prod (s := (σ : Set V)) (t := (τ : Set V')))) =
       pullback.snd _ _ := by
   rw [← affineToricSchemeProdIso_hom_snd, Iso.inv_hom_id_assoc]
+
+/-- The toric morphisms of the two lattice projections exhibit the affine toric scheme of a product
+cone as the fibre product of the factor affine toric schemes over `Spec ℂ`. -/
+theorem isPullback_affineToricSchemeMap_fst_snd :
+    IsPullback
+      (affineToricSchemeMap (σ := σ.prod τ) (τ := σ)
+        (hi.prod hi') hi (AddMonoidHom.fst N N') (LinearMap.fst ℝ V V')
+        (fun n ↦ by simp) (by
+          simpa only [LinearMap.coe_fst, Submodule.prod_coe] using
+            (Set.mapsTo_fst_prod (s := (σ : Set V)) (t := (τ : Set V')))))
+      (affineToricSchemeMap (σ := σ.prod τ) (τ := τ)
+        (hi.prod hi') hi' (AddMonoidHom.snd N N') (LinearMap.snd ℝ V V')
+        (fun n ↦ by simp) (by
+          simpa only [LinearMap.coe_snd, Submodule.prod_coe] using
+            (Set.mapsTo_snd_prod (s := (σ : Set V)) (t := (τ : Set V')))))
+      (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ))))
+      (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi' τ)))) :=
+  IsPullback.of_iso_pullback
+    ⟨by rw [← affineToricSchemeProdIso_hom_fst, ← affineToricSchemeProdIso_hom_snd,
+      Category.assoc, Category.assoc, pullback.condition]⟩
+    (affineToricSchemeProdIso hi hi' σ τ) (affineToricSchemeProdIso_hom_fst hi hi' σ τ)
+    (affineToricSchemeProdIso_hom_snd hi hi' σ τ)
+
+/-- The toric morphisms of the two lattice projections exhibit the dense torus of a product
+lattice as the fibre product of the dense tori of the factors over `Spec ℂ`. -/
+theorem isPullback_affineToricSchemeMap_fst_snd_bot :
+    IsPullback
+      (affineToricSchemeMap (σ := ⊥) (τ := ⊥) (hi.prod hi') hi (AddMonoidHom.fst N N')
+        (LinearMap.fst ℝ V V') (fun n ↦ by simp) (by simp [Set.MapsTo]))
+      (affineToricSchemeMap (σ := ⊥) (τ := ⊥) (hi.prod hi') hi' (AddMonoidHom.snd N N')
+        (LinearMap.snd ℝ V V') (fun n ↦ by simp) (by simp [Set.MapsTo]))
+      (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))))
+      (Spec.map (CommRingCat.ofHom
+        (algebraMap ℂ (affineCoordinateRing hi' (⊥ : PointedCone ℝ V'))))) := by
+  -- The zero cone of the product is the product of the zero cones, up to a cone equality.
+  have key : ∀ ξ : PointedCone ℝ (V × V'), (⊥ : PointedCone ℝ V).prod ⊥ = ξ →
+      ∀ (h₁ : Set.MapsTo (LinearMap.fst ℝ V V') ξ (⊥ : PointedCone ℝ V))
+        (h₂ : Set.MapsTo (LinearMap.snd ℝ V V') ξ (⊥ : PointedCone ℝ V')),
+      IsPullback
+        (affineToricSchemeMap (σ := ξ) (τ := ⊥) (hi.prod hi') hi (AddMonoidHom.fst N N')
+          (LinearMap.fst ℝ V V') (fun n ↦ by simp) h₁)
+        (affineToricSchemeMap (σ := ξ) (τ := ⊥) (hi.prod hi') hi' (AddMonoidHom.snd N N')
+          (LinearMap.snd ℝ V V') (fun n ↦ by simp) h₂)
+        (Spec.map (CommRingCat.ofHom
+          (algebraMap ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))))
+        (Spec.map (CommRingCat.ofHom
+          (algebraMap ℂ (affineCoordinateRing hi' (⊥ : PointedCone ℝ V'))))) := by
+    rintro ξ rfl h₁ h₂
+    exact isPullback_affineToricSchemeMap_fst_snd hi hi' ⊥ ⊥
+  exact key ⊥ Submodule.prod_bot _ _
 
 end Scheme
 

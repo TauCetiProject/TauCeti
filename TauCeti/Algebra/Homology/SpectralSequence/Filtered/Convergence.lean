@@ -53,13 +53,13 @@ noncomputable def filtrationAbutmentIso (n : ℤ) :
 lemma isZero_filtrationAbutmentFiltration {a : ℤ} (ha : F a = ⊥) (n : ℤ) :
     IsZero ((spectralObject (filtrationFunctor F hF)).abutmentFiltration a n) :=
   Abelian.SpectralObject.isZero_abutmentFiltration _
-    (isZero_spectralObject_H_bot F hF a n (isZero_homology_of_eq_bot F ha n))
+    (isZero_spectralObject_H_bot F hF a n ((F a).isZero_homology_of_eq_bot ha n))
 
 /-- The `b`th piece of the filtration of `H^n(K)` is everything when `F_b = ⊤`. -/
 lemma isIso_filtrationAbutmentFiltrationι {b : ℤ} (hb : F b = ⊤) (n : ℤ) :
     IsIso ((spectralObject (filtrationFunctor F hF)).abutmentFiltrationι b n) :=
   Abelian.SpectralObject.isIso_abutmentFiltrationι _
-    (isZero_spectralObject_H_top F hF b n (isZero_homology_cokernel_of_eq_top F hb n))
+    (isZero_spectralObject_H_top F hF b n ((F b).isZero_homology_cokernel_of_eq_top hb n))
 
 /-- **Strong convergence for a finite filtration.** If `F_a = ⊥` and `F_b = ⊤`, then on every page
 `r ≥ 2` with `q - r + 2 ≤ a` and `b ≤ q + r - 1`, the object at `pq = (p, q)` is the graded piece

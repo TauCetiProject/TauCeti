@@ -39,6 +39,6 @@ theorem _root_.IsPrimitiveRoot.exists_isPrimitiveRoot_of_isSepClosed (K : Type*)
   have := hζ.neZero'
   have : NeZero (n : K) := .of_map (algebraMap K M) (neZero := by rwa [map_natCast])
   have : NeZero (n : E) := .nat_of_injective (algebraMap K E).injective
-  exact HasEnoughRootsOfUnity.exists_primitiveRoot E n
+  exact HasEnoughRootsOfUnity.exists_isPrimitiveRoot E n
 
 end TauCeti

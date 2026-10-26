@@ -6,20 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Charts
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback
+public import TauCeti.Geometry.Manifold.DifferentialForm.Support
 public import TauCeti.Geometry.Manifold.Measure
-public import Mathlib.Geometry.Euclidean.Volume.Measure
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Boundary restriction and null sets on manifolds
 
 This file supplies the measure-theoretic and differential-form interfaces needed at the boundary of
-an oriented manifold with boundary.  A manifold null set is defined chartwise, without installing a
-measurable structure on the manifold.  For the Euclidean half-space model, its boundary is null
-because every extended chart sends boundary points into the coordinate hyperplane.  Rough forms on a
-manifold with boundary restrict to the boundary manifold by pulling back along the subtype
-inclusion.
+an oriented manifold with boundary. The imported manifold measure API defines null sets chartwise
+and proves boundary nullness
+for finite-dimensional models with corners. Rough forms on a manifold with boundary restrict to the
+boundary manifold by pulling back along the subtype inclusion.
 -/
 
 public section
@@ -50,34 +47,77 @@ theorem boundaryRestriction_apply (φ : RoughForm (𝓡∂ (n + 1)) M F j)
       (𝓡∂ (n + 1)) Subtype.val x (v i)) := by
   simp [boundaryRestriction]
 
-/-- The boundary of a finite-dimensional half-space manifold is a chartwise null set. -/
-theorem isNullSet_boundary :
-    IsNullSet (𝓡∂ (n + 1)) ((𝓡∂ (n + 1)).boundary M) := by
-  rw [isNullSet_iff]
-  intro x μ hμ
-  let s : Submodule ℝ (EuclideanSpace ℝ (Fin (n + 1))) := euclideanHalfSpaceBoundary n
-  have hs : s ≠ ⊤ := by
-    intro h
-    have hm : (EuclideanSpace.single 0 1 : EuclideanSpace ℝ (Fin (n + 1))) ∈ s := by
-      rw [h]
-      trivial
-    -- Unfold the local abbreviation so the coordinate-hyperplane witness can be tested.
-    change (EuclideanSpace.single 0 1 : EuclideanSpace ℝ (Fin (n + 1))) ∈
-      euclideanHalfSpaceBoundary n at hm
-    rw [mem_euclideanHalfSpaceBoundary] at hm
-    norm_num [Pi.single_apply] at hm
-  refine measure_mono_null ?_ (_root_.MeasureTheory.Measure.addHaar_submodule μ s hs)
-  rintro y ⟨z, hz, rfl⟩
-  -- The measure bound is stated for the local hyperplane abbreviation `s`.
-  change (extChartAt (𝓡∂ (n + 1)) x z) ∈ euclideanHalfSpaceBoundary n
-  rw [mem_euclideanHalfSpaceBoundary]
-  have hzsource : z ∈ (chartAt (EuclideanHalfSpace (n + 1)) x).source := by
-    simpa only [extChartAt_source] using hz.2
-  have hboundary :=
-    (ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range (I := 𝓡∂ (n + 1))
-      one_ne_zero (IsManifold.chart_mem_maximalAtlas x) hzsource).1 hz.1
-  rw [frontier_range_modelWithCornersEuclideanHalfSpace,
-    modelWithCornersEuclideanHalfSpace_toFun] at hboundary
-  simpa [extChartAt, OpenPartialHomeomorph.extend_coe] using hboundary.symm
+/-- Boundary restriction is the ordinary manifold pullback along boundary inclusion. -/
+theorem boundaryRestriction_eq_mpullback (φ : RoughForm (𝓡∂ (n + 1)) M F j) :
+    boundaryRestriction φ =
+      mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) Subtype.val φ := (rfl)
+
+/-- Boundary restriction preserves the zero form. -/
+@[simp]
+theorem boundaryRestriction_zero :
+    boundaryRestriction (0 : RoughForm (𝓡∂ (n + 1)) M F j) = 0 :=
+  mpullback_zero _
+
+/-- Boundary restriction preserves addition. -/
+@[simp]
+theorem boundaryRestriction_add [ContinuousAdd F]
+    (φ ψ : RoughForm (𝓡∂ (n + 1)) M F j) :
+    boundaryRestriction (φ + ψ) = boundaryRestriction φ + boundaryRestriction ψ :=
+  mpullback_add _ φ ψ
+
+/-- Boundary restriction commutes with finite sums. -/
+theorem boundaryRestriction_sum [ContinuousAdd F] {ι : Type*}
+    (φ : ι → RoughForm (𝓡∂ (n + 1)) M F j) (s : Finset ι) :
+    boundaryRestriction (∑ i ∈ s, φ i) = ∑ i ∈ s, boundaryRestriction (φ i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      boundaryRestriction_add, ih]
+
+section Support
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- Restriction to the boundary cannot add support outside the ambient support. -/
+theorem tsupport_boundaryRestriction_subset (φ : RoughForm (𝓡∂ (n + 1)) M F j) :
+    _root_.tsupport (α := (EuclideanSpace ℝ (Fin n)) [⋀^Fin j]→L[ℝ] F)
+        (boundaryRestriction φ) ⊆
+      Subtype.val ⁻¹' _root_.tsupport
+        (α := (EuclideanSpace ℝ (Fin (n + 1))) [⋀^Fin j]→L[ℝ] F) φ :=
+  RoughForm.tsupport_mpullback_subset_preimage continuous_subtype_val φ
+
+/-- Restriction of a compactly supported form to the closed boundary remains compactly supported. -/
+theorem isCompact_tsupport_boundaryRestriction {φ : RoughForm (𝓡∂ (n + 1)) M F j}
+    (hc : IsCompact (_root_.tsupport (α := (EuclideanSpace ℝ (Fin (n + 1))) [⋀^Fin _]→L[ℝ] F) φ))
+    : IsCompact (_root_.tsupport (α := (EuclideanSpace ℝ (Fin n)) [⋀^Fin j]→L[ℝ] F)
+        (boundaryRestriction φ)) :=
+  RoughForm.isCompact_tsupport_mpullback
+    (((𝓡∂ (n + 1)).isClosed_boundary one_ne_zero).isClosedEmbedding_subtypeVal.isProperMap) hc
+
+/-- Support in an ambient chart restricts to support in its induced boundary chart. -/
+theorem tsupport_boundaryRestriction_subset_source {φ : RoughForm (𝓡∂ (n + 1)) M F j}
+    (α : (𝓡∂ (n + 1)).boundary M)
+    (hs : (_root_.tsupport (α := (EuclideanSpace ℝ (Fin (n + 1))) [⋀^Fin _]→L[ℝ] F) φ)
+      ⊆ (extChartAt (𝓡∂ (n + 1)) (α : M)).source) :
+    (_root_.tsupport (α := (EuclideanSpace ℝ (Fin n)) [⋀^Fin _]→L[ℝ] F) (boundaryRestriction φ)) ⊆
+      (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) α).source := by
+  intro x hx
+  have hm := hs (tsupport_boundaryRestriction_subset φ hx)
+  simpa only [extChartAt_source, boundaryChartedSpace_chartAt_source, mem_preimage] using hm
+
+/-- A form supported away from the boundary has zero boundary restriction. -/
+theorem boundaryRestriction_eq_zero_of_disjoint {φ : RoughForm (𝓡∂ (n + 1)) M F j}
+    (hd : Disjoint (_root_.tsupport (α := (EuclideanSpace ℝ (Fin (n + 1))) [⋀^Fin _]→L[ℝ] F) φ)
+      ((𝓡∂ (n + 1)).boundary M)) : boundaryRestriction φ = 0 := by
+  funext x
+  ext v
+  rw [boundaryRestriction_apply,
+    _root_.image_eq_zero_of_notMem_tsupport
+      (α := (EuclideanSpace ℝ (Fin (n + 1))) [⋀^Fin j]→L[ℝ] F)
+      (fun hm ↦ Set.disjoint_left.mp hd hm x.property)]
+  rfl
+
+end Support
 
 end TauCeti

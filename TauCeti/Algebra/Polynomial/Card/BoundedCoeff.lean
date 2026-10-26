@@ -43,6 +43,9 @@ finiteness only inline, inside `Polynomial.bUnion_roots_finite`, rather than exp
 * `TauCeti.Polynomial.ncard_natDegree_le_coeff_mem_le`: at most `#U ^ (d + 1)` polynomials of
   degree `≤ d` with every coefficient in a finite set `U`.
 * `TauCeti.Polynomial.finite_setOf_natDegree_le_coeff_mem`: that family is finite.
+* `TauCeti.Polynomial.ncard_natDegree_le_coeff_mem_pi_le`,
+  `TauCeti.Polynomial.finite_setOf_natDegree_le_coeff_mem_pi`: the coefficient-dependent version,
+  at most `∏ᵢ #(s i)` polynomials of degree `≤ d` whose `i`-th coefficient lies in `s i`.
 * `TauCeti.Polynomial.ncard_natDegree_le_abs_intCoeff_le`: at most `(2 * B + 1) ^ (d + 1)`
   integer polynomials of degree `≤ d` with every coefficient bounded by `B` in absolute value.
 * `TauCeti.Polynomial.finite_setOf_natDegree_le_abs_intCoeff_le`: that family is finite.
@@ -97,6 +100,32 @@ theorem finite_setOf_natDegree_le_coeff_mem (d : ℕ) {U : Set R} (hU : U.Finite
   · refine Set.image_subset_iff.2 fun f hf => ?_
     exact fun i _ => hf.2 i
   · exact (coeff_injOn_natDegree_le d).mono fun f hf => hf.1
+
+/-- The polynomials of degree at most `d` whose `i`-th coefficient lies in a finite set `s i`
+number at most `∏ᵢ #(s i)`: the coefficient map injects them into `Fintype.piFinset s`. Unlike
+`TauCeti.Polynomial.ncard_natDegree_le_coeff_mem_le`, the allowed values may depend on the
+coefficient, for instance to fix the leading coefficient of a monic polynomial. -/
+theorem ncard_natDegree_le_coeff_mem_pi_le (d : ℕ) (s : Fin (d + 1) → Finset R) :
+    {f : R[X] | f.natDegree ≤ d ∧ ∀ i : Fin (d + 1), f.coeff i ∈ s i}.ncard ≤
+      ∏ i, (s i).card := by
+  classical
+  rw [← Fintype.card_piFinset s, ← Set.ncard_coe_finset]
+  refine Set.ncard_le_ncard_of_injOn (fun f i => f.coeff i) (fun f hf => ?_) ?_
+    (Finset.finite_toSet _)
+  · rw [Finset.mem_coe, Fintype.mem_piFinset]
+    exact hf.2
+  · exact (coeff_injOn_natDegree_le d).mono fun f hf => hf.1
+
+/-- The polynomials of degree at most `d` whose `i`-th coefficient lies in a finite set `s i` form
+a finite set: the coefficient map injects them into `Fintype.piFinset s`. -/
+theorem finite_setOf_natDegree_le_coeff_mem_pi (d : ℕ) (s : Fin (d + 1) → Finset R) :
+    {f : R[X] | f.natDegree ≤ d ∧ ∀ i : Fin (d + 1), f.coeff i ∈ s i}.Finite := by
+  classical
+  refine Set.Finite.of_finite_image ((Fintype.piFinset s).finite_toSet.subset ?_)
+    ((coeff_injOn_natDegree_le d).mono fun f hf => hf.1)
+  refine Set.image_subset_iff.2 fun f hf => ?_
+  rw [Set.mem_preimage, Finset.mem_coe, Fintype.mem_piFinset]
+  exact hf.2
 
 /-- Bounding an integer coefficient by `B` in absolute value is membership in the interval
 `[-B, B]`, so the two spellings of the bounded-degree, bounded-coefficient family agree. -/

@@ -14,7 +14,9 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Grading
 /-!
 # The augmentation endpoint of the signless preprojective Koszul complex
 
-The signless preprojective algebra augments onto the product of the coefficient rings at its
+The signless relation ideal lies in the square of the arrow ideal, so over a nontrivial ring the
+vertex idempotents and the arrows survive in the signless preprojective algebra. The signless
+preprojective algebra augments onto the product of the coefficient rings at its
 vertices. In the right vertex projective `e_v Π`, the kernel of the vertex coefficient is
 exactly the image of the incoming-arrow map `(z_b) ↦ ∑ b z_b`. Every scalar occurs as a vertex
 coefficient, so the cokernel of this map is one copy of the coefficient ring, not an unspecified
@@ -76,6 +78,24 @@ to the signless preprojective algebra. -/
 theorem signlessPreprojectiveIdeal_le_arrowIdeal :
     (signlessPreprojectiveIdeal k R).asIdeal ≤ arrowIdeal k R :=
   (signlessPreprojectiveIdeal_le_arrowIdeal_sq k).trans (Ideal.pow_le_self two_ne_zero)
+
+/-- **Vertex idempotents survive in the signless preprojective algebra** over a nontrivial ring:
+the relation ideal lies in the arrow ideal, which contains no vertex idempotent. -/
+theorem signlessPreprojectiveMk_vertexIdempotent_ne_zero [Nontrivial k] (i : R) :
+    π (vertexIdempotent k i) ≠ 0 := by
+  rw [Ne, signlessPreprojectiveMk_eq_zero_iff, ← TwoSidedIdeal.mem_asIdeal]
+  exact fun h => vertexIdempotent_notMem_arrowIdeal (k := k) _
+    (signlessPreprojectiveIdeal_le_arrowIdeal k h)
+
+/-- **Arrows survive in the signless preprojective algebra** over a nontrivial ring: the relation
+ideal lies in the square of the arrow ideal, which contains no path of length one. -/
+theorem signlessPreprojectiveMk_ofArrow_ne_zero [Nontrivial k] {i j : R} (b : i ⟶ j) :
+    π (ofArrow b) ≠ 0 := by
+  rw [Ne, signlessPreprojectiveMk_eq_zero_iff, ← TwoSidedIdeal.mem_asIdeal]
+  intro h
+  have h2 := signlessPreprojectiveIdeal_le_arrowIdeal_sq k h
+  rw [ofArrow_eq_ofPath, ofPath_mem_arrowIdeal_pow_iff, Path.length_toPath] at h2
+  omega
 
 /-- The augmentation of the signless preprojective algebra onto its vertex coefficients. -/
 noncomputable def signlessPreprojectiveAugmentation : Π →ₐ[k] (R → k) :=

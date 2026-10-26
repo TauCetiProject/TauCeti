@@ -10,7 +10,6 @@ public import Mathlib.Topology.Separation.Hausdorff
 public import Mathlib.Topology.Compactness.Compact
 public import TauCeti.Dynamics.Flow.Stable
 import Mathlib.Topology.Order.MonotoneConvergence
-import TauCeti.Topology.Connected.TotallyDisconnected
 import TauCeti.Topology.OmegaLimit
 
 /-!
@@ -147,15 +146,7 @@ theorem exists_tendsto_atTop_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg
   -- hence every cluster point lies in `C`.
   have hsub : {z | MapClusterPt z atTop γ} ⊆ C := fun z hz ↦
     hrest z fun t ↦ (hval _ (mapClusterPt_atTop_flow hz t)).trans (hval z hz).symm
-  obtain ⟨p, -, hp⟩ := isCompact_univ.exists_mapClusterPt (f := atTop) (u := γ)
-    (by simp)
-  have hconn : IsPreconnected {z | MapClusterPt z atTop γ} :=
-    TauCeti.isPreconnected_setOf_mapClusterPt_atTop (a := 0) isCompact_univ hγc.continuousOn
-      (mapsTo_univ _ _)
-  -- A finite preconnected set is a single point.
-  have hone : ∀ z ∈ univ, MapClusterPt z atTop γ → z = p := fun z _ hz ↦
-    (hC.subset hsub).isTotallyDisconnected _ subset_rfl hconn hz hp
-  exact ⟨p, hsub hp, isCompact_univ.tendsto_nhds_of_unique_mapClusterPt
-    (Eventually.of_forall fun _ ↦ mem_univ _) hone⟩
+  exact TauCeti.exists_tendsto_atTop_of_setOf_mapClusterPt_subset (a := 0) isCompact_univ
+    hγc.continuousOn (mapsTo_univ _ _) hC hsub
 
 end Flow

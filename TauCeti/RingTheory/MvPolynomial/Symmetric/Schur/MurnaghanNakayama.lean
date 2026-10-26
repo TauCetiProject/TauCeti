@@ -149,11 +149,7 @@ theorem psum_mul_diagramSchurPoly {N : ℕ} (ν : YoungDiagram) {r : ℕ} (hr : 
     simpa [map_diagramSchurPoly, psum, map_sum] using h
   by_cases hν : ν.colLen 0 ≤ N
   · -- Cancel the staircase alternant, whose exponents are pairwise distinct.
-    have hδ : Function.Injective fun j : Fin N => N - 1 - (j : ℕ) := fun i j h => by
-      have := i.isLt
-      have := j.isLt
-      exact Fin.ext (by simp only at h; omega)
-    refine mul_right_cancel₀ (alternant_ne_zero_of_injective hδ) ?_
+    refine mul_right_cancel₀ (alternant_ne_zero_of_injective (injective_staircase N)) ?_
     rw [mul_assoc, diagramSchurPoly_mul_alternant N ν hν,
       psum_mul_alternant_betaNumber ν hν hr, sum_mul, ← filter_filter, sum_filter]
     refine sum_congr rfl fun μ _ => ?_

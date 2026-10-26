@@ -13,7 +13,8 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 Restriction along an open immersion has a left adjoint, given by sheafifying the corresponding
 presheaf pullback along the functor taking an open to its image. It therefore preserves limits,
 in addition to preserving colimits by Mathlib's restriction--pushforward adjunction. In
-particular, ambient kernels can be computed after restriction to an open subscheme.
+particular, ambient kernels can be computed after restriction to an open subscheme. Pullback
+along an open immersion also preserves limits, since it is naturally isomorphic to restriction.
 
 The adjunction is Mathlib's `SheafOfModules.PullbackConstruction.adjunction`; the underlying
 presheaf right adjoint is `PresheafOfModules.instIsRightAdjointPushforward`.
@@ -52,3 +53,16 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.restrictFunctorAdditive
   (AlgebraicGeometry.Scheme.Modules.restrictFunctor f).additive_of_preserves_binary_products
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+open CategoryTheory Limits
+
+/-- Pullback along an open immersion preserves limits, since it is restriction. -/
+noncomputable instance
+    _root_.AlgebraicGeometry.Scheme.Hom.preservesLimits_pullback_of_isOpenImmersion
+    {X Y : Scheme.{u}} (f : X ⟶ Y) [IsOpenImmersion f] :
+    PreservesLimits (pullback f) :=
+  preservesLimits_of_natIso (restrictFunctorIsoPullback f)
+
+end AlgebraicGeometry.Scheme.Modules

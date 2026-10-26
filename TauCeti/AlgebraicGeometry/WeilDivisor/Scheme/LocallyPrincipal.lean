@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Sheaf
 import Mathlib.Tactic.Abel
-import TauCeti.Topology.KrullDimension
+import TauCeti.Topology.KrullDimension.Basic
 
 /-!
 # Locally principal Weil divisors on a scheme
@@ -162,7 +162,7 @@ lemma isLocallyPrincipal_neg {D : SchemeWeilDivisor X} :
 /-- The additive subgroup of locally principal Weil divisors on `X`. -/
 def locallyPrincipalSubgroup (X : Scheme.{u}) [IsIntegral X] [IsLocallyNoetherian X] :
     AddSubgroup (SchemeWeilDivisor X) where
-  carrier := IsLocallyPrincipal
+  carrier := {D | IsLocallyPrincipal D}
   zero_mem' := isLocallyPrincipal_zero
   add_mem' := IsLocallyPrincipal.add
   neg_mem' := IsLocallyPrincipal.neg

@@ -175,7 +175,8 @@ private theorem lie_differenceRootGenerator_negSumRootGenerator
   ext (a | a) (b | b)
   all_goals
     simp [Matrix.fromBlocks, Matrix.transpose_single, Matrix.single_apply,
-      Matrix.mul_sub, Matrix.sub_mul, hjk, hjk.symm] <;> ring
+      Matrix.mul_sub, Matrix.sub_mul, hjk, hjk.symm]
+  all_goals ring
 
 private theorem reverseDifferenceRootGenerator_mem_lieSpan
     (n : ℕ) (hn : 4 ≤ n) (i j : Fin n) (hij : i < j) :

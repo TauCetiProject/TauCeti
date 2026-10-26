@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RingTheory.SimpleModule.Basic
+public import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # The underlying module of a subrepresentation
@@ -50,6 +50,10 @@ being additive and preserving both summands, supplies the equivariance.  Being a
 `Submodule.prodEquivOfIsCompl`, it asks for the coefficients to be a ring and the module to be a
 group, as that construction does.
 
+The subrepresentations whose underlying submodule is finitely generated form a join-semilattice
+(`Subrepresentation.instSemilatticeSupFG`), as the finitely generated submodules do in Mathlib, so
+they can index a filtered colimit.
+
 Restriction along a surjective monoid homomorphism identifies the lattices of invariant
 submodules, keeping the underlying submodule in both directions. In particular it preserves
 irreducibility, as does restriction along a monoid isomorphism.
@@ -81,6 +85,7 @@ irreducibility, as does restriction along a monoid isomorphism.
 * `Subrepresentation.asModuleEquivAsSubmodule`
 * `Subrepresentation.isSimpleModule_asSubmodule_iff`
 * `Subrepresentation.equivProdOfIsCompl`
+* `Subrepresentation.instSemilatticeSupFG`
 -/
 
 public section
@@ -205,15 +210,8 @@ theorem coe_toRepresentation_asAlgebraHom_apply {k H V : Type*} [CommSemiring k]
     [AddCommMonoid V] [Module k V] {σ : Representation k H V} (S : Subrepresentation σ)
     (a : MonoidAlgebra k H) (x : S.toSubmodule) :
     ((S.toRepresentation.asAlgebraHom a x : S.toSubmodule) : V) =
-      σ.asAlgebraHom a (x : V) := by
-  induction a using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add a b ha hb =>
-      simpa only [map_add, LinearMap.add_apply, Submodule.coe_add] using
-        congrArg₂ (fun u v => u + v) ha hb
-  | single g r =>
-      simp only [Representation.asAlgebraHom_single]
-      congr 1
+      σ.asAlgebraHom a (x : V) :=
+  S.subtype.apply_asAlgebraHom a x
 
 section AsSubmoduleEquiv
 
@@ -222,43 +220,53 @@ open scoped MonoidAlgebra
 variable {A G W : Type*} [CommSemiring A] [Monoid G] [AddCommMonoid W] [Module A W]
   {ρ : Representation A G W}
 
+/-- The module inclusion attached to `σ.subtype`, corestricted to its image submodule. -/
+private noncomputable def asModuleSubtype (σ : Subrepresentation ρ) :
+    σ.toRepresentation.asModule →ₗ[A[G]] σ.asSubmodule :=
+  (Representation.IntertwiningMap.equivLinearMapAsModule _ _ σ.subtype).codRestrict
+    σ.asSubmodule (fun x =>
+      (mem_asSubmodule_iff (v := (σ.toRepresentation.asModuleEquiv x : W))).mpr
+        (σ.toRepresentation.asModuleEquiv x).2)
+
+/-- The corestricted inclusion evaluates through the two representation/module identifications. -/
+private theorem coe_asModuleSubtype_apply (σ : Subrepresentation ρ)
+    (x : σ.toRepresentation.asModule) :
+    (asModuleSubtype σ x).1 = ρ.asModuleEquiv.symm (σ.toRepresentation.asModuleEquiv x).1 :=
+  (LinearMap.codRestrict_apply _ _ x).trans
+    (Representation.IntertwiningMap.equivLinearMapAsModule_apply σ.subtype x)
+
 /-- **The module carried by a subrepresentation is canonically its associated submodule.**
-The equivalence identifies both with the same invariant subset of the ambient representation. -/
+The equivalence identifies both with the same invariant subset of the ambient representation.
+Its linear map is the corestriction of the module map attached to `σ.subtype` by
+`Representation.IntertwiningMap.equivLinearMapAsModule`. -/
 noncomputable def asModuleEquivAsSubmodule (σ : Subrepresentation ρ) :
-    σ.toRepresentation.asModule ≃ₗ[A[G]] σ.asSubmodule where
-  toFun x := ⟨(_root_.Representation.asModuleEquiv ρ).symm
-      (σ.toRepresentation.asModuleEquiv x : W),
-    (Subrepresentation.mem_asSubmodule_iff
-      (v := (σ.toRepresentation.asModuleEquiv x : W))).mpr
-        (σ.toRepresentation.asModuleEquiv x).2⟩
-  invFun x := σ.toRepresentation.asModuleEquiv.symm
-    ⟨_root_.Representation.asModuleEquiv ρ x.1,
-      (Subrepresentation.mem_asSubmodule_iff
-        (v := _root_.Representation.asModuleEquiv ρ x.1)).mp x.2⟩
-  left_inv x := by rfl
-  right_inv x := by rfl
-  map_add' x y := by rfl
-  map_smul' a x := by
-    apply Subtype.ext
-    apply (_root_.Representation.asModuleEquiv ρ).injective
-    simp only [LinearEquiv.apply_symm_apply, RingHom.id_apply,
-      _root_.Representation.asModuleEquiv_map_smul]
-    exact coe_toRepresentation_asAlgebraHom_apply σ a
-      (σ.toRepresentation.asModuleEquiv x)
+    σ.toRepresentation.asModule ≃ₗ[A[G]] σ.asSubmodule :=
+  LinearEquiv.ofBijective (asModuleSubtype σ)
+    ⟨fun x y h => σ.toRepresentation.asModuleEquiv.injective <| Subtype.ext <|
+      ρ.asModuleEquiv.symm.injective <| (coe_asModuleSubtype_apply σ x).symm.trans
+        ((congrArg Subtype.val h).trans (coe_asModuleSubtype_apply σ y)), fun x =>
+      ⟨σ.toRepresentation.asModuleEquiv.symm
+        ⟨ρ.asModuleEquiv x.1, (mem_asSubmodule_iff (v := ρ.asModuleEquiv x.1)).mp x.2⟩,
+        Subtype.ext <| by
+          rw [coe_asModuleSubtype_apply, LinearEquiv.apply_symm_apply]
+          exact ρ.asModuleEquiv.symm_apply_apply x.1⟩⟩
 
 @[simp]
 theorem coe_asModuleEquivAsSubmodule_apply (σ : Subrepresentation ρ)
     (x : σ.toRepresentation.asModule) :
     (σ.asModuleEquivAsSubmodule x).1 =
-      (σ.toRepresentation.asModuleEquiv x).1 :=
-  (rfl)
+      (σ.toRepresentation.asModuleEquiv x).1 := by
+  refine (congrArg Subtype.val (LinearEquiv.ofBijective_apply _
+    (hf := σ.asModuleEquivAsSubmodule.bijective) x)).trans ?_
+  exact coe_asModuleSubtype_apply σ x
 
 @[simp]
 theorem coe_asModuleEquivAsSubmodule_symm_apply (σ : Subrepresentation ρ)
     (x : σ.asSubmodule) :
     (σ.asModuleEquivAsSubmodule.symm x).1 =
-      _root_.Representation.asModuleEquiv ρ x.1 :=
-  (rfl)
+      _root_.Representation.asModuleEquiv ρ x.1 := by
+  exact (coe_asModuleEquivAsSubmodule_apply σ (σ.asModuleEquivAsSubmodule.symm x)).symm.trans
+    (congrArg Subtype.val (σ.asModuleEquivAsSubmodule.apply_symm_apply x))
 
 end AsSubmoduleEquiv
 
@@ -318,6 +326,23 @@ theorem equivProdOfIsCompl_symm_apply {ρ₁ ρ₂ : Subrepresentation ρ} (h : 
   (rfl)
 
 end Splitting
+
+section FG
+
+variable {A G W : Type*} [Semiring A] [Monoid G] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G W}
+
+/-- The finitely generated subrepresentations form a join-semilattice: the join of two of them,
+taken in `Subrepresentation ρ`, carries the sum of two finitely generated submodules. This is the
+counterpart of Mathlib's instance on `{P : Submodule A W // P.FG}`, and it makes the finitely
+generated subrepresentations a directed index category. -/
+instance instSemilatticeSupFG : SemilatticeSup {σ : Subrepresentation ρ // σ.toSubmodule.FG} :=
+  Subtype.semilatticeSup fun _ _ h₁ h₂ ↦ h₁.sup h₂
+
+instance instInhabitedFG : Inhabited {σ : Subrepresentation ρ // σ.toSubmodule.FG} :=
+  ⟨⟨⊥, Submodule.fg_bot⟩⟩
+
+end FG
 
 end Subrepresentation
 

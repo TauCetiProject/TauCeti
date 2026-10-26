@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 
 /-!
 # The cup product on continuous cohomology

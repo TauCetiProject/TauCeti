@@ -353,13 +353,13 @@ theorem mkQuotient_comp_geckRootSubgroupToBaseChangeCoordinateMap
 
 /-- The factored root-subgroup map sends an additive point to the numbered Geck root-subgroup
 matrix with the same parameter. -/
--- Normalize the point before `AlgHom.mapDomain_apply` unfolds the inner map.
+-- Normalize the point before `BialgHom.mapDomain_apply` unfolds the inner map.
 @[simp↓]
 theorem pointToGeneralLinear_mapDomain_geckRootSubgroupToBaseChangeCoordinateMap
     (i : Fin t.rank ⊕ Fin t.rank) (B : CommAlgCat.{w} A)
     (q : HopfAlgebra.points (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
     GeneralLinear.pointToGeneralLinear (t.geckDim ht)
-        (AlgHom.mapDomain
+        (BialgHom.mapDomain
           (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
             (t.geckBaseChangeDefiningIdeal ht A)).hom
           (WithConv.toConv
@@ -377,6 +377,8 @@ theorem pointToGeneralLinear_mapDomain_geckRootSubgroupToBaseChangeCoordinateMap
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A (t.geckDefiningIdeal_def ht) i B q
       using 1
   congr 1
+  erw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
 
 /-- Under the Geck coordinate isomorphism, the factored `i`th root-subgroup map is the
 scalar extension of its integral coordinate map. -/
@@ -458,6 +460,17 @@ theorem geckWeightTorusIntegralCoordinateMap_def :
         (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) := by
   rw [geckWeightTorusIntegralCoordinateMap]
   simp
+
+/-- Composing the quotient morphism of the Geck carrier with the integral Geck weight-torus map
+recovers the general-linear weight torus of the Geck coordinate weights. -/
+@[simp]
+theorem mkQuotient_comp_geckWeightTorusIntegralCoordinateMap :
+    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
+          (t.geckDefiningIdeal ht) ≫
+        t.geckWeightTorusIntegralCoordinateMap ht =
+      GeneralLinear.weightTorusCoordinateMap (t.geckWeightFin ht) := by
+  rw [geckWeightTorusIntegralCoordinateMap_def]
+  exact mkQuotient_comp_kostantWeightTorusToralCoordinateMap _ _ _ _ _ _ _ _
 
 /-- The base-changed Geck weight-torus coordinate map factored through the transported Geck
 carrier. -/

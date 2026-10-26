@@ -80,7 +80,7 @@ private noncomputable def primaryComponentMulEquivSylow
   invFun x := Multiplicative.ofAdd ⟨Multiplicative.toAdd x.1, by
     rw [AddCommGroup.mem_primaryComponent]
     obtain ⟨k, hk⟩ :=
-      (default : Sylow p.1 (Multiplicative A)).isPGroup'.exists_pow_pow_eq_one x
+      (default : Sylow p.1 (Multiplicative A)).isPGroup.exists_pow_pow_eq_one x
     exact ⟨k, by
       have hk' := congrArg (fun y : (default : Sylow p.1 (Multiplicative A)) ↦
         Multiplicative.toAdd y.1) hk

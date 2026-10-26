@@ -71,7 +71,7 @@ theorem splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal :
         weightTorusDefiningIdeal) := by
   exact (splitTorusCommHopfAlgProperty (ZMod 3)).prop_of_iso
     (ObjectProperty.isoMk _
-      (CommHopfAlgCat.quotientKerOfSurjectiveIso weightTorusCoordinateMap
+      (CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso weightTorusCoordinateMap
         weightTorusCoordinateMap_surjective)).symm
     (SplitTorus.splitTorus_coordinateRing (ZMod 3) (Fin 2))
 
@@ -110,35 +110,8 @@ theorem map_quotientPointsSubgroup_baseChangeHopfIdeal_weightTorusDefiningIdeal 
         (weightTorusPoints k).range := by
   rw [← map_quotientPointsSubgroup_weightTorusDefiningIdeal k]
   ext g
-  simp only [Subgroup.mem_map_equiv]
-  -- Expose the composite point equivalence so that membership uses the generic restriction
-  -- criterion for scalar-extended Hopf ideals, rather than a new tensor-product argument.
-  change (baseChangePointsEquiv k).symm g ∈
-    CommHopfAlgCat.quotientPointsSubgroup _ _ _ ↔
-      (pointsMulEquiv (CommAlgCat.of (ZMod 3) k)).symm g ∈
-        CommHopfAlgCat.quotientPointsSubgroup _ _ _
-  have h := CommHopfAlgCat.mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff
-    (K := k) (CommAlgCat.of k k) weightTorusDefiningIdeal ((baseChangePointsEquiv k).symm g)
-  -- Compare evaluations to avoid identifying presentations of the restricted algebra.
-  have hval (x : carrierAlgebra) :
-      (CommHopfAlgCat.baseChangePointsMulEquiv (K := k) (CommAlgCat.of k k)
-        carrierAlgebra ((baseChangePointsEquiv k).symm g)).ofConv x =
-      ((pointsMulEquiv (CommAlgCat.of (ZMod 3) k)).symm g).ofConv x := by
-    rw [CommHopfAlgCat.baseChangePointsMulEquiv_apply_apply
-      (CommAlgCat.of k k) carrierAlgebra ((baseChangePointsEquiv k).symm g) x]
-    simp only [baseChangePointsEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
-      AlgHom.baseChangePointsMulEquiv_apply_tmul, one_smul]
-  constructor
-  · intro hg
-    have hz := (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mp (h.mp hg)
-    apply (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr
-    intro x hx
-    exact (hval x).symm.trans (hz x hx)
-  · intro hg
-    apply h.mpr
-    apply (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr
-    intro x hx
-    exact (hval x).trans ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mp hg x hx)
+  simp only [Subgroup.mem_map_equiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm]
+  exact (CommHopfAlgCat.mem_quotientPointsSubgroup_iff_baseChangePointsMulEquiv_mem _ _).symm
 
 end Extension
 
@@ -305,17 +278,17 @@ theorem pointsMulEquiv_mapDomain_splitMaximalTorusCoordinateMap
       (H := (DiagonalizableGroup.coordinateRing (ZMod 3)
         (SplitTorus.characterGroup (ULift.{0} (Fin 2)))).obj) (CommAlgCat.of (ZMod 3) A)) :
     pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
-        (AlgHom.mapDomain splitMaximalTorusCoordinateMap.hom q) =
+        (BialgHom.mapDomain splitMaximalTorusCoordinateMap.hom q) =
       weightTorusPoints A (fun i ↦ SplitTorus.pointsMulEquiv q (ULift.up i)) := by
-  rw [splitMaximalTorusCoordinateMap, CommHopfAlgCat.hom_comp, AlgHom.mapDomain_comp,
-    MonoidHom.comp_apply, AlgHom.mapDomain_apply,
-    ← CommHopfAlgCat.mapPointsFunctor_app_apply,
+  rw [splitMaximalTorusCoordinateMap, CommHopfAlgCat.hom_comp, BialgHom.mapDomain_comp,
+    MonoidHom.comp_apply, BialgHom.mapDomain_apply,
+    ← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     pointsMulEquiv_commonKernelLift_weightTorus]
   congr 1
   funext i
   ext
   rw [SplitTorus.pointsMulEquiv_apply_coe, SplitTorus.pointsMulEquiv_apply_coe,
-    AlgHom.mapDomain_apply, WithConv.ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+    BialgHom.mapDomain_apply, WithConv.ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
     weightTorusCoordinateIso_hom_single, weightTorusCharacterEquiv_ofAdd_single]
 
 private theorem ker_splitMaximalTorusCoordinateMap :

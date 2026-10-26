@@ -52,6 +52,9 @@ functoriality needed for the overlap and cocycle maps in fan gluing.
   `TauCeti.Toric.IsLatticeRational.range_faceAffineToricSchemeMap_inf`: the image of the affine
   toric scheme of a face is a basic open set; for faces of a lattice-rational cone the image of
   their intersection is the intersection of their images.
+* `TauCeti.Toric.preimage_range_faceAffineToricSchemeMap_inf_ker`: the inverse image, under the
+  affine toric morphism of a cone map, of the open subscheme of the face cut out by a character is
+  the open subscheme of the face cut out by the pulled-back character.
 * `TauCeti.Toric.Fan.affineToricChart`, `TauCeti.Toric.Fan.affineToricOverlap`,
   `TauCeti.Toric.Fan.affineToricOverlapLeft` and `TauCeti.Toric.Fan.affineToricOverlapRight`: the
   affine toric charts of a fan and the two maps from their pairwise overlap; these maps are open
@@ -256,6 +259,30 @@ theorem range_faceAffineToricSchemeMap (hi : IsIntegralLattice i) (hσ : σ.FG)
       (PrimeSpectrum.basicOpen (MonoidAlgebra.single (ofAdd m) (1 : ℂ)) :
         Set (PrimeSpectrum (affineCoordinateRing hi σ))) :=
   range_faceAffineToricSchemeMap_of_eq hi hσ _ m rfl
+
+/-- Let a compatible map of lattices carry a finitely generated cone `σ` into a finitely generated
+cone `ρ`, and let `m` be a character in the dual semigroup of `ρ`. The inverse image of the open
+subscheme of the face `ρ ⊓ ker m` is the open subscheme of the face of `σ` cut out by the
+pullback of `m`. -/
+theorem preimage_range_faceAffineToricSchemeMap_inf_ker {N N' : Type u} {V' : Type*}
+    [AddCommGroup N] [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+    {i : N →+ V} {i' : N' →+ V'} {ρ : PointedCone ℝ V'}
+    (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i') (f : N →+ N') (g : V →ₗ[ℝ] V')
+    (hfg : ∀ n, g (i n) = i' (f n)) (hσρ : Set.MapsTo g σ ρ) (hσ : σ.FG) (hρ : ρ.FG)
+    (m : dualSemigroup hi' ρ) :
+    affineToricSchemeMap hi hi' f g hfg hσρ ⁻¹'
+        Set.range (faceAffineToricSchemeMap hi'
+          (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi' m).1 m.2))) =
+      Set.range (faceAffineToricSchemeMap hi
+        (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi _).1
+          (dualSemigroupMap hi hi' f g hfg hσρ m).2))) := by
+  ext x
+  rw [Set.mem_preimage, range_faceAffineToricSchemeMap hi' hρ m,
+    range_faceAffineToricSchemeMap hi hσ, affineToricSchemeMap_def, Spec.map_apply]
+  -- Both sides say that a monomial lies outside the prime ideal of `x`; the monomials agree.
+  exact not_congr <| iff_of_eq <|
+    congrArg (· ∈ PrimeSpectrum.asIdeal (R := affineCoordinateRing hi σ) x)
+      (affineCoordinateRingMap_single hi hi' f g hfg hσρ m 1)
 
 namespace IsLatticeRational
 

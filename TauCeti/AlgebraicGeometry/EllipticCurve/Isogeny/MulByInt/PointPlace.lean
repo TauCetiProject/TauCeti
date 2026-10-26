@@ -93,13 +93,6 @@ namespace TauCeti.Isogeny
 
 variable {F : Type*} [Field F] [DecidableEq F] (W : WeierstrassCurve F) [W.IsElliptic]
 
-/-- Ellipticity already makes the coordinate ring integrally closed, hence a Dedekind domain.
-Deriving it here as a `local instance` — the pattern `Affine/FunctionField/PointPlace.lean` uses —
-keeps the assumption out of the exported signatures instead of making every caller supply it. -/
-local instance : IsDedekindDomain W.toAffine.CoordinateRing :=
-  have := WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing W.toAffine
-  W.toAffine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 omit [DecidableEq F] [W.IsElliptic] in
 /-- **Clearing the denominator of a coordinate difference.** A pulled-back coordinate is a quotient
 of coordinate-ring classes; subtracting a constant keeps the denominator and shifts the numerator by

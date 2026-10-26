@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.Topology.Algebra.Ring.Subring
 
+import TauCeti.RingTheory.Huber.RingOfDefinition
+
 /-!
 # Huber pairs
 
@@ -41,6 +43,9 @@ explicit.
   `TauCeti.Huber.Pair.Hom.id_comp`, `TauCeti.Huber.Pair.Hom.comp_id`).
 * `TauCeti.Huber.Pair.isRingOfIntegralElements_integralClosure`: the integral closure of an open
   subring contained in the power-bounded subring is a ring of integral elements.
+* `TauCeti.Huber.plusClosure`, `TauCeti.Huber.isRingOfIntegralElements_plusClosure` and
+  `TauCeti.Huber.plusClosure_le`: the smallest ring of integral elements containing a set of
+  power-bounded elements, the integral closure of the subring it generates together with `A°°`.
 * `TauCeti.Huber.Pair.quotient`: the quotient Huber pair, whose plus ring is the integral closure
   of the image of the original plus ring.
 * `TauCeti.Huber.Pair.Hom.quotientLift`: the universal factorisation of a morphism annihilating
@@ -70,7 +75,7 @@ open Filter Topology
 
 namespace TauCeti.Huber
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
 /-- A subring `A⁺` of a nonarchimedean ring is a *ring of integral elements* if it is open,
 integrally closed in `A`, and contained in the power-bounded subring `A°`. -/
@@ -82,14 +87,12 @@ structure IsRingOfIntegralElements [NonarchimedeanRing A] (Aplus : Subring A) : 
   /-- Every element of `A⁺` is power-bounded. -/
   le_powerBoundedSubring : Aplus ≤ powerBoundedSubring A
 
-omit [IsTopologicalRing A] in
 /-- Every element of a ring of integral elements is power-bounded: the field
 `IsRingOfIntegralElements.le_powerBoundedSubring` read elementwise. -/
 theorem IsRingOfIntegralElements.isPowerBounded_of_mem [NonarchimedeanRing A] {Aplus : Subring A}
     (h : IsRingOfIntegralElements Aplus) ⦃a : A⦄ (ha : a ∈ Aplus) : IsPowerBounded a :=
   mem_powerBoundedSubring.mp (h.le_powerBoundedSubring ha)
 
-omit [IsTopologicalRing A] in
 /-- Wedhorn: an open integrally closed subring contains every topologically nilpotent element.
 
 Neither power-boundedness nor a nonarchimedean topology plays any part, so this is stated for an
@@ -104,7 +107,6 @@ theorem mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn {Aplus : Subring
   obtain ⟨y, hy⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow hn hpow
   exact hy ▸ y.2
 
-omit [IsTopologicalRing A] in
 /-- `A°° ⊆ A⁺` for every ring of integral elements. -/
 theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [NonarchimedeanRing A]
     {Aplus : Subring A} (h : IsRingOfIntegralElements Aplus) {a : A}
@@ -112,7 +114,6 @@ theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [Nonarchimedean
   have := h.isIntegrallyClosedIn
   mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn h.isOpen ha
 
-omit [IsTopologicalRing A] in
 /-- An isomorphism of topological rings carries a ring of integral elements onto a ring of
 integral elements. -/
 theorem IsRingOfIntegralElements.map {B : Type*} [CommRing B] [TopologicalSpace B]
@@ -134,7 +135,7 @@ theorem IsRingOfIntegralElements.map {B : Type*} [CommRing B] [TopologicalSpace 
     rw [← map_powerBoundedSubring e he he']
     exact (Subring.gc_map_comap _).monotone_l h.le_powerBoundedSubring
 
-variable (A) in
+variable (A) [IsTopologicalRing A] in
 /-- A *Huber pair* `(A, A⁺)`: a Huber ring together with a ring of integral elements. Only the
 noncanonical subring `A⁺` is stored; the Huber structure on `A` is a parameter. -/
 structure Pair [IsHuberRing A] where
@@ -144,6 +145,10 @@ structure Pair [IsHuberRing A] where
   isRingOfIntegralElements : IsRingOfIntegralElements plus
 
 namespace Pair
+
+section
+
+variable [IsTopologicalRing A]
 
 /-- Two Huber pairs on the same Huber ring agree as soon as their rings of integral elements
 do: `A⁺` is the only data a Huber pair carries. -/
@@ -237,7 +242,8 @@ def powerBounded : Pair A where
 @[simp]
 theorem powerBounded_plus : (powerBounded A).plus = powerBoundedSubring A := (rfl)
 
-omit [IsTopologicalRing A] in
+end
+
 /-- The integral closure of an open subring contained in `powerBoundedSubring` is a ring of
 integral elements. -/
 theorem isRingOfIntegralElements_integralClosure [NonarchimedeanRing A] {R : Subring A}
@@ -250,6 +256,9 @@ theorem isRingOfIntegralElements_integralClosure [NonarchimedeanRing A] {R : Sub
   le_powerBoundedSubring := Subring.integralClosure_subring_le_iff.mpr hpb
 
 section Quotient
+
+variable [IsTopologicalRing A] [IsHuberRing A]
+  {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
 
 /-- The quotient of a Huber pair by `J` (Wedhorn Definition 7.22). Its plus ring is the
 integral closure of the image of the original plus ring in the quotient. -/
@@ -364,5 +373,58 @@ theorem Hom.isOpen_map_quotientLift {S : Pair A} {T : Pair B} (J : Ideal A) (f :
 end Quotient
 
 end Pair
+
+section PlusClosure
+
+/-- **The smallest ring of integral elements containing `X`** (Wedhorn, Remark 7.15(2)): the
+integral closure in `A` of the subring generated by `X` and the topologically nilpotent elements.
+For `X ⊆ A°` in a Huber ring it is a ring of integral elements
+(`TauCeti.Huber.isRingOfIntegralElements_plusClosure`), and it lies in every ring of integral
+elements containing `X` (`TauCeti.Huber.plusClosure_le`). For `X = ∅` it is the smallest ring of
+integral elements of `A`. -/
+noncomputable def plusClosure (X : Set A) : Subring A :=
+  (integralClosure (Subring.closure (X ∪ {a | IsTopologicallyNilpotent a})) A).toSubring
+
+/-- The defining equation of `plusClosure`, whose body is not exposed. -/
+theorem plusClosure_def (X : Set A) :
+    plusClosure X =
+      (integralClosure (Subring.closure (X ∪ {a | IsTopologicallyNilpotent a})) A).toSubring :=
+  (rfl)
+
+private theorem closure_le_plusClosure (X : Set A) :
+    Subring.closure (X ∪ {a | IsTopologicallyNilpotent a}) ≤ plusClosure X := fun a ha ↦
+  (integralClosure (Subring.closure (X ∪ {a | IsTopologicallyNilpotent a})) A).algebraMap_mem
+    ⟨a, ha⟩
+
+/-- `X ⊆ plusClosure X`. -/
+theorem subset_plusClosure (X : Set A) : X ⊆ plusClosure X := fun _ ha ↦
+  closure_le_plusClosure X (Subring.subset_closure (Or.inl ha))
+
+/-- `A°° ⊆ plusClosure X`. -/
+theorem mem_plusClosure_of_isTopologicallyNilpotent (X : Set A) {a : A}
+    (ha : IsTopologicallyNilpotent a) : a ∈ plusClosure X :=
+  closure_le_plusClosure X (Subring.subset_closure (Or.inr ha))
+
+/-- **`plusClosure X` lies in every open subring integrally closed in `A` containing `X`**, in
+particular in every ring of integral elements containing `X`: such a subring contains `A°°`. -/
+theorem plusClosure_le {X : Set A} {S : Subring A} (hopen : IsOpen (S : Set A))
+    [IsIntegrallyClosedIn S A] (hX : X ⊆ S) : plusClosure X ≤ S :=
+  Subring.integralClosure_subring_le_iff.mpr <| Subring.closure_le.mpr <|
+    Set.union_subset hX fun _ ha ↦ mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn hopen ha
+
+/-- **For `X ⊆ A°` in a Huber ring, `plusClosure X` is a ring of integral elements** (Wedhorn,
+Remark 7.15(2)): the subring generated by `X` and `A°°` is open, since `A°°` is, and consists of
+power-bounded elements, so its integral closure is a ring of integral elements. -/
+theorem isRingOfIntegralElements_plusClosure [IsTopologicalRing A] [IsHuberRing A] {X : Set A}
+    (hX : X ⊆ powerBoundedSubring A) : IsRingOfIntegralElements (plusClosure X) := by
+  refine Pair.isRingOfIntegralElements_integralClosure
+    ((Subring.closure _).toAddSubgroup.isOpen_of_mem_nhds (g := 0) ?_)
+    (Subring.closure_le.mpr (Set.union_subset hX
+      fun _ ha ↦ mem_powerBoundedSubring.mpr (IsPowerBounded.of_isTopologicallyNilpotent ha)))
+  exact Filter.mem_of_superset
+    (isOpen_setOf_isTopologicallyNilpotent.mem_nhds IsTopologicallyNilpotent.zero)
+    fun _ ha ↦ Subring.subset_closure (Or.inr ha)
+
+end PlusClosure
 
 end TauCeti.Huber

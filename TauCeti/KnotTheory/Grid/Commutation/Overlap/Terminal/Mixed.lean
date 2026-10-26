@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Mixed.RightLeft
+public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Mixed.RightLeft.Basic
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Terminal.Sum
 
 /-!
@@ -171,9 +171,9 @@ private noncomputable def rightLeftSelfRecut (D : GridRectanglePentagonDecomposi
     GridRectanglePentagonDecomposition a s x z where
   middle := (D.recutOfIsEmpty (D.hasOneCommonSide_of_right_eq_left hcommon hother)
     hrectangle hpentagon).middle
-  rectangle := (D.recutOfIsEmpty (D.hasOneCommonSide_of_right_eq_left hcommon hother)
+  first := (D.recutOfIsEmpty (D.hasOneCommonSide_of_right_eq_left hcommon hother)
     hrectangle hpentagon).first
-  pentagon := GridPentagonBetween.ofRightEq
+  second := GridPentagonBetween.ofRightEq
     (D.recutOfIsEmpty (D.hasOneCommonSide_of_right_eq_left hcommon hother)
       hrectangle hpentagon).second
     (D.rightLeftSelfRecut_geometry hcommon hother hrectangle hpentagon hturn).2.1
@@ -190,14 +190,14 @@ private theorem rightLeftSelfRecut_toRectangleDecomposition
       D.recutOfIsEmpty (D.hasOneCommonSide_of_right_eq_left hcommon hother)
         hrectangle hpentagon := by
   apply GridRectangleDecomposition.ext <;>
-    simp [rightLeftSelfRecut,
+    simp [rightLeftSelfRecut, GridRectanglePentagonDecomposition.pentagon,
       (D.rightLeftSelfRecut_geometry hcommon hother hrectangle hpentagon hturn).2.1]
 
 end TauCeti.GridRectanglePentagonDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- A counted mixed `right = left` overlap with one common side whose turn row lies outside the
 rows from the rectangle's top to the pentagon's top is a terminal self-pair: its recut is a

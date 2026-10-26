@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fin.SuccPredOrder
+public import Mathlib.Order.SuccPred.Fin
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Datum
 public import TauCeti.RepresentationTheory.Spin.Weight

@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.RingTheory.Finiteness.Ideal
+public import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Powers of the ideal defining an adic topology
@@ -26,6 +27,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
 
 ## Main results
 
+* `IsAdic.comap` : an adic topology transports along an inducing ring equivalence, without
+  separate assumptions that either ring has continuous operations.
 * `IsAdic.isOpen_pow` : in a ring whose topology is `I`-adic, every power of `I` is open.
 * `IsAdic.isClosed_pow` : in a ring whose topology is `I`-adic, every power of `I` is closed —
   an open additive subgroup of a topological group being closed.
@@ -40,8 +43,16 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   `IsAdic` counterpart of `Ideal.isLinearTopology`.
 * `IsAdic.continuous_of_map_le_radical` : a ring homomorphism from an `I`-adic ring to a `J`-adic
   ring is continuous when it carries the finitely generated ideal `I` into the radical of `J`.
+* `IsAdic.continuous_iff_map_le_radical` and
+  `IsAdic.continuous_iff_forall_isTopologicallyNilpotent` : when the source topology has some
+  finitely generated ideal of definition, continuity can be tested on any ideals of definition,
+  without requiring completeness or finite generation of the tested ideals.
 * `IsAdic.of_radical_eq` and `Ideal.adicTopology_eq_of_radical_eq` : finitely generated ideals
   with the same radical define the same adic topology.
+* `IsAdic.isAdic_iff_isOpen_and_exists_pow_le` : an ideal of definition is characterized by
+  openness and containment of one of its powers in a fixed ideal of definition.
+* `IsAdic.radical_eq`, `IsAdic.le_radical`, and `IsAdic.radical` : ideals of definition have
+  the same radical, and a finitely generated radical is the largest ideal of definition.
 
 ## Provenance
 
@@ -51,6 +62,9 @@ Apache-2.0) at commit `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`, file
 among that development's Mathlib-bound material. That file describes its contents as the
 `IsAdic` counterparts of `Ideal.isLinearTopology` and `WithIdeal.isTopologicallyNilpotent_of_mem`,
 which is the reading taken here.
+
+The ideal-of-definition criterion and the results about radicals additionally follow
+A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §§7.1.4–7.1.7.
 -/
 
 public section
@@ -63,6 +77,26 @@ variable {R : Type*} [CommRing R] [TopologicalSpace R] {I : Ideal R}
 theorem isOpen_pow (hI : IsAdic I) (n : ℕ) : IsOpen ((I ^ n : Ideal R) : Set R) :=
   letI := I.adicTopology
   hI ▸ (I.openAddSubgroup n).isOpen
+
+/-- An adic topology transports along a ring equivalence that is an inducing map.
+
+Neither ring needs an explicit topological-ring assumption: the adic topology makes the target
+of the equivalence a topological ring, and the inducing map transports continuity to its source. -/
+theorem comap {S : Type*} [CommRing S] [TopologicalSpace S] (hI : IsAdic I)
+    (e : S ≃+* R) (he : Topology.IsInducing e) : IsAdic (I.comap e) := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  have : IsTopologicalRing S := IsTopologicalSemiring.toIsTopologicalRing
+    { toContinuousAdd := he.continuousAdd e, toContinuousMul := he.continuousMul e }
+  have hset (n : ℕ) : ((I.comap e ^ n : Ideal S) : Set S) =
+      e ⁻¹' ((I ^ n : Ideal R) : Set R) := by
+    rw [← Ideal.comap_pow_of_ringEquiv, Ideal.coe_comap]
+  refine isAdic_iff.mpr ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
+  · rw [hset]
+    exact (hI.isOpen_pow n).preimage he.continuous
+  · rw [he.nhds_eq_comap (0 : S), map_zero, Filter.mem_comap] at hs
+    obtain ⟨t, ht, hts⟩ := hs
+    obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp ht
+    exact ⟨n, by rw [hset]; exact fun b hb ↦ hts (hn hb)⟩
 
 /-- In a ring whose topology is the `I`-adic one, every power of `I` is closed: it is an open
 additive subgroup, and an open subgroup of a topological group is closed. -/
@@ -103,6 +137,52 @@ theorem isTopologicallyNilpotent_iff_mem_radical (hI : IsAdic I) {a : R} :
     rw [← Nat.add_sub_of_le hm, pow_add, pow_mul]
     exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hn k)
 
+/-- Ideals defining the same adic topology have the same radical: both radicals consist of
+the topologically nilpotent elements. -/
+theorem radical_eq {J : Ideal R} (hI : IsAdic I) (hJ : IsAdic J) :
+    I.radical = J.radical := by
+  ext a
+  exact hI.isTopologicallyNilpotent_iff_mem_radical.symm.trans
+    hJ.isTopologicallyNilpotent_iff_mem_radical
+
+/-- Every ideal of definition is contained in the radical of any other ideal of definition. -/
+theorem le_radical {J : Ideal R} (hI : IsAdic I) (hJ : IsAdic J) : I ≤ J.radical := by
+  rw [← hI.radical_eq hJ]
+  exact Ideal.le_radical
+
+/-- An ideal defines the `I`-adic topology exactly when it is open and some power lies in `I`.
+No finite generation hypothesis is needed (EGA I, Ch. 0, 7.1.4). -/
+theorem isAdic_iff_isOpen_and_exists_pow_le {J : Ideal R} (hI : IsAdic I) :
+    IsAdic J ↔ IsOpen (J : Set R) ∧ ∃ n : ℕ, J ^ n ≤ I := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  constructor
+  · intro hJ
+    refine ⟨by simpa using hJ.isOpen_pow 1, ?_⟩
+    obtain ⟨n, -, hn⟩ := hJ.hasBasis_nhds_zero.mem_iff.mp
+      ((by simpa using hI.isOpen_pow 1 : IsOpen (I : Set R)).mem_nhds I.zero_mem)
+    exact ⟨n, hn⟩
+  · rintro ⟨hJ, k, hk⟩
+    obtain ⟨m, -, hm⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (hJ.mem_nhds J.zero_mem)
+    rw [isAdic_iff]
+    constructor
+    · intro n
+      refine Submodule.isOpen_mono ?_ (hI.isOpen_pow (m * n))
+      rw [pow_mul]
+      exact Ideal.pow_right_mono hm n
+    · intro s hs
+      obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp hs
+      refine ⟨k * n, subset_trans ?_ hn⟩
+      rw [pow_mul]
+      exact Ideal.pow_right_mono hk n
+
+/-- The radical of an ideal of definition is again an ideal of definition whenever that
+radical is finitely generated, in particular over a noetherian ring (EGA I, Ch. 0, 7.1.7). -/
+theorem radical (hI : IsAdic I) (hfg : I.radical.FG) : IsAdic I.radical := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  apply hI.isAdic_iff_isOpen_and_exists_pow_le.mpr
+  exact ⟨Submodule.isOpen_mono Ideal.le_radical (by simpa using hI.isOpen_pow 1),
+    Ideal.exists_pow_le_of_le_radical_of_fg le_rfl hfg⟩
+
 /-- A ring whose topology is the `I`-adic one is linearly topologized: the powers of `I` form a
 neighbourhood basis of zero consisting of ideals. This is the `IsAdic` counterpart of
 `Ideal.isLinearTopology`. -/
@@ -126,6 +206,40 @@ theorem continuous_of_map_le_radical {S : Type*} [CommRing S] [TopologicalSpace 
   have hmem : f x ∈ (I ^ (k * n)).map f := Ideal.mem_map_of_mem f hx
   rw [Ideal.map_pow, pow_mul] at hmem
   exact Ideal.pow_right_mono hk n hmem
+
+/-- A continuous ring homomorphism carries an ideal of definition into the radical of every
+ideal of definition of its target. Unlike the converse, this needs no finite generation. -/
+theorem map_le_radical_of_continuous {S : Type*} [CommRing S] [TopologicalSpace S]
+    {J : Ideal S} (hI : IsAdic I) (hJ : IsAdic J) {f : R →+* S} (hf : Continuous f) :
+    I.map f ≤ J.radical := by
+  rw [Ideal.map_le_iff_le_comap]
+  intro x hx
+  exact hJ.isTopologicallyNilpotent_iff_mem_radical.mp
+    ((hI.isTopologicallyNilpotent_of_mem hx).map hf)
+
+/-- Continuity can be tested on arbitrary ideals of definition, provided some finitely
+generated ideal defines the source topology. The tested ideals need not be finitely generated,
+and neither ring needs to be complete. -/
+theorem continuous_iff_map_le_radical {S : Type*} [CommRing S] [TopologicalSpace S]
+    {J : Ideal S} {K : Ideal R} (hI : IsAdic I) (hJ : IsAdic J) (hK : IsAdic K)
+    (hKfg : K.FG) {f : R →+* S} : Continuous f ↔ I.map f ≤ J.radical := by
+  refine ⟨hI.map_le_radical_of_continuous hJ, fun hf ↦ ?_⟩
+  apply hK.continuous_of_map_le_radical hJ hKfg
+  calc
+    K.map f ≤ K.radical.map f := Ideal.map_mono Ideal.le_radical
+    _ = I.radical.map f := congrArg (Ideal.map f) (hK.radical_eq hI)
+    _ ≤ (I.map f).radical := Ideal.map_radical_le f
+    _ ≤ J.radical := Ideal.radical_le_radical_iff.mpr hf
+
+/-- When the source topology has a finitely generated ideal of definition, a ring homomorphism
+is continuous exactly when it sends every element of any ideal of definition to a
+topologically nilpotent element. Neither ring needs to be complete. -/
+theorem continuous_iff_forall_isTopologicallyNilpotent {S : Type*} [CommRing S]
+    [TopologicalSpace S] {J : Ideal S} {K : Ideal R} (hI : IsAdic I) (hJ : IsAdic J)
+    (hK : IsAdic K) (hKfg : K.FG) {f : R →+* S} :
+    Continuous f ↔ ∀ a ∈ I, IsTopologicallyNilpotent (f a) := by
+  rw [hI.continuous_iff_map_le_radical hJ hK hKfg, Ideal.map_le_iff_le_comap]
+  simp only [IsConcreteLE.le_iff, Ideal.mem_comap, hJ.isTopologicallyNilpotent_iff_mem_radical]
 
 /-- A ring whose topology is the `I`-adic one is also `J`-adic for every finitely generated ideal
 `J` with the same radical as the finitely generated ideal `I`: each power of either ideal contains

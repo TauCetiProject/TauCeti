@@ -48,13 +48,17 @@ The dot-action versions follow by applying these to the `ρ`-shift `x = λ + ρ`
 
 ## Main results
 
-* `TauCeti.eq_one_of_smul_eq_self_of_forall_coroot'_eq_natCast_add_one`: **the Weyl group acts
-  freely on the strictly dominant integral weights**, with
-  `TauCeti.dotAction_injective_of_dominantIntegral` the dot-action form at a dominant integral
-  weight.
-* `TauCeti.sub_weylGroup_smul_mem_posRootCone_of_dominantIntegral`: **the Weyl orbit of a dominant
-  integral weight lies below it in the positive root cone**, with
-  `TauCeti.sub_dotAction_mem_posRootCone_of_dominantIntegral` the dot-action form.
+* `TauCeti.eq_one_of_smul_eq_self_of_forall_coroot'_eq_natCast_add_one` and
+  `TauCeti.eq_one_of_forall_coroot'_smul_eq_natCast_of_forall_coroot'_eq_natCast_add_one`:
+  **the Weyl group acts freely on the strictly dominant integral weights**, and no nontrivial
+  Weyl-group element carries a strictly dominant integral weight even to a weakly dominant integral
+  weight; `TauCeti.dotAction_injective_of_dominantIntegral` is the dot-action form at a dominant
+  integral weight.
+* `TauCeti.sub_weylGroup_smul_mem_posRootCone_of_dominantIntegral` and
+  `TauCeti.weylGroup_smul_eq_self_of_dominantIntegral`: **the Weyl orbit of a dominant integral
+  weight lies below it in the positive root cone**, so a dominant integral weight is the unique
+  dominant integral weight in its Weyl orbit;
+  `TauCeti.sub_dotAction_mem_posRootCone_of_dominantIntegral` is the dot-action form.
 * `TauCeti.coeff_weylNumerator_self_of_dominantIntegral`: **`N(λ)` has coefficient `1` at `λ`**,
   and `TauCeti.coeff_weylNumerator_eq_zero_of_dominantIntegral_of_ne`: **coefficient `0` at every
   other dominant integral weight**, with
@@ -194,6 +198,39 @@ theorem sub_weylGroup_smul_mem_posRootCone_of_dominantIntegral
     rw [hstep]
     exact add_mem (ih _ hlt v rfl)
       (nsmul_mem (root_mem_posRootCone_of_mem_posRoots P b hvpos) m)
+
+/-- **A dominant integral weight is the only dominant integral weight in its Weyl orbit**: if both
+`x` and `w • x` take natural values on every simple coroot, then `w • x = x`, because each lies
+below the other in the pointed positive root cone. -/
+theorem weylGroup_smul_eq_self_of_dominantIntegral {w : P.weylGroup}
+    (hx : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i x = (n : R))
+    (hwx : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i (w • x) = (n : R)) :
+    w • x = x := by
+  have hdown : x - w • x ∈ posRootCone P b :=
+    sub_weylGroup_smul_mem_posRootCone_of_dominantIntegral hx w
+  have hup : w • x - x ∈ posRootCone P b := by
+    simpa only [inv_smul_smul] using
+      sub_weylGroup_smul_mem_posRootCone_of_dominantIntegral hwx w⁻¹
+  exact sub_eq_zero.mp (eq_zero_of_add_eq_zero_of_mem_posRootCone P b hup hdown (by abel))
+
+/-- **No nontrivial Weyl-group element carries a strictly dominant integral weight to a dominant
+integral weight**: if every simple coroot takes a value in `1 + ℕ` on `x` and a value in `ℕ` on
+`w • x`, then `w = 1`.
+
+Even a weak dominance condition on the image `w • x` suffices: `x` itself is dominant integral, so
+`TauCeti.weylGroup_smul_eq_self_of_dominantIntegral` forces `w • x = x`, and freeness on strictly
+dominant integral weights (`TauCeti.eq_one_of_smul_eq_self_of_forall_coroot'_eq_natCast_add_one`)
+then forces `w = 1`. -/
+theorem eq_one_of_forall_coroot'_smul_eq_natCast_of_forall_coroot'_eq_natCast_add_one
+    [P.flip.IsReduced] {w : P.weylGroup}
+    (hx : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i x = (n : R) + 1)
+    (hwx : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i (w • x) = (n : R)) :
+    w = 1 := by
+  have hx' : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i x = (n : R) := fun i hi ↦ by
+    obtain ⟨n, hn⟩ := hx i hi
+    exact ⟨n + 1, by rw [hn]; push_cast; ring⟩
+  exact eq_one_of_smul_eq_self_of_forall_coroot'_eq_natCast_add_one hx
+    (weylGroup_smul_eq_self_of_dominantIntegral hx' hwx)
 
 /-! ### The dot action -/
 

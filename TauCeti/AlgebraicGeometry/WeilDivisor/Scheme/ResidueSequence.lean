@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Cohomology.Skyscraper
 public import TauCeti.AlgebraicGeometry.Scheme.Regular
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Germ
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Space
 import Mathlib.Topology.Sheaves.LocallySurjective
 
 /-!
@@ -246,6 +247,19 @@ lemma skyscraperResidueFieldEquiv_toSkyscraperResidueField_app
       X.residue y r :=
   skyscraperResidueFieldEquiv_residueApp hg hy t hr
 
+/-- On global sections of a divisor sheaf, the residue linear map is the global-sections map
+of the residue morphism, followed by the canonical identification with the residue field. -/
+lemma residueMap_sheafι_app
+    (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff D y + 1)
+    (s : Γ(sheaf (D + WeilDivisor.ofPoint y), ⊤)) :
+    residueMap D y g.ne_zero hg
+        ⟨Scheme.Modules.Hom.app (sheafι _) ⊤ s, sheafι_app_mem _ ⊤ s⟩ =
+      Scheme.skyscraperResidueFieldEquiv (y : X) (by simp)
+        (Scheme.Modules.Hom.app (toSkyscraperResidueField g hg) ⊤ s) := by
+  obtain ⟨r, hr⟩ := exists_algebraMap_eq_mul hg (by simp) (sheafι_app_mem _ ⊤ s)
+  rw [residueMap_eq_residue g.ne_zero hg _ hr,
+    skyscraperResidueFieldEquiv_toSkyscraperResidueField_app hg (by simp) s hr]
+
 /-- **The kernel of `𝒪_X(D + y) ⟶ κ(y)_y` is `𝒪_X(D)`**, on sections: a section of
 `𝒪_X(D + y)` is sent to zero exactly when it is a section of `𝒪_X(D)`. -/
 @[simp]
@@ -291,6 +305,14 @@ def residueShortComplex (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff 
     ShortComplex X.Modules :=
   ShortComplex.mk (sheafHomOfLE (WeilDivisor.le_add_ofPoint D y)) (toSkyscraperResidueField g hg)
     (sheafHomOfLE_toSkyscraperResidueField hg)
+
+/-- The residue sequence has the actual divisor-sheaf inclusion and residue morphism as its
+arrows. This equation also identifies its dependent source and target objects. -/
+lemma residueShortComplex_def
+    (hg : X.ord (g : X.functionField) y = WeilDivisor.coeff D y + 1) :
+    residueShortComplex g hg =
+      ShortComplex.mk (sheafHomOfLE (WeilDivisor.le_add_ofPoint D y))
+        (toSkyscraperResidueField g hg) (sheafHomOfLE_toSkyscraperResidueField hg) := (rfl)
 
 @[simp]
 lemma residueShortComplex_X₁
@@ -397,8 +419,6 @@ theorem epi_toSkyscraperResidueField (hclosed : IsClosed ({(y : X)} : Set X))
       have hyV : (y : X) ∉ V := fun h ↦ (Opens.mem_inf.mp h).2 rfl
       have := Scheme.subsingleton_skyscraperResidueField (y : X) hyV
       exact ⟨V, inf_le_left, ⟨0, @Subsingleton.elim _ this _ _⟩, ⟨hz, hzy⟩⟩
-  have : (Scheme.Modules.toSheaf X).Faithful :=
-    inferInstanceAs (_root_.SheafOfModules.toSheaf X.ringCatSheaf).Faithful
   exact (Scheme.Modules.toSheaf X).epi_of_epi_map hepi
 
 /-- **The residue sequence** `0 ⟶ 𝒪_X(D) ⟶ 𝒪_X(D + y) ⟶ κ(y)_y ⟶ 0` at a closed codimension-one

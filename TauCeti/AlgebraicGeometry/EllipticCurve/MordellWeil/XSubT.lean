@@ -62,6 +62,8 @@ what makes the corrected element a unit. Both branches are packaged in `μX`, an
 * `WeierstrassCurve.Affine.normM`, `WeierstrassCurve.Affine.range_μ_le_ker_normM`: the norm map
   on square classes, and **the norm condition on the image of the descent map** — every square
   class in the image of `μ` has square norm. This is what the `2`-descent tests a class against.
+* `WeierstrassCurve.Affine.normM_neg_one`: the class of `-1` has norm class that of `-1`, since
+  `W.A` has odd degree.
 * `WeierstrassCurve.Affine.discr_f` and `WeierstrassCurve.Affine.Δ_eq_sixteen_mul_discr_f`: the
   discriminant of the cubic `f`, and `Δ = 16 · disc f`.
 * `WeierstrassCurve.Affine.norm_mk_derivative_f`: the norm of `f'(T)` is `-disc f`.
@@ -110,6 +112,7 @@ its later revision `3bfe124`; `norm_mk_derivative_f` and `discr_f_eq_mul_sq_of_e
 that revision's `norm_mk_derivative_f` (`SelmerGroup.lean`, there assuming `3 ≠ 0`) and
 `discr_f_eq_discr_fCofactor_mul_sq` (`WeakMordellWeil.lean`, there through a discriminant
 formula for products; here with the cofactor's discriminant written out and proved directly).
+`normM_neg_one` is that revision's lemma of the same name (`SelmerGroup.lean`).
 -/
 
 public section
@@ -210,6 +213,14 @@ Not a `simp` lemma: the default `simp` set already reduces `negY` through the no
 values of `a₁` and `a₃`. -/
 lemma negY_of_isCharNeTwoNF [W.IsCharNeTwoNF] (x y : R) : W.negY x y = -y := by
   rw [negY, a₁_of_isCharNeTwoNF, a₃_of_isCharNeTwoNF]
+  ring
+
+/-- In a normal form for characteristic `≠ 2`, `polynomialY` vanishes at every `(x, 0)`; at a point
+of the curve this is the condition for `(x, 0)` to have order dividing two. -/
+@[simp]
+lemma evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF [W.IsCharNeTwoNF] (x : R) :
+    W.polynomialY.evalEval x 0 = 0 := by
+  rw [evalEval_polynomialY, a₁_of_isCharNeTwoNF, a₃_of_isCharNeTwoNF]
   ring
 
 /-- At a point of `W`, a nonzero value of `f x` forces the `y`-coordinate to be nonzero. -/
@@ -331,7 +342,7 @@ variable {K : Type*} [CommRing K] [Nontrivial K] (W : Affine K)
 
 lemma ringChar_ne_two [W.IsElliptic] [W.IsCharNeTwoNF] : ringChar K ≠ 2 := by
   have h := W.isUnit_Δ.ne_zero
-  contrapose! h
+  contrapose h
   have h2 : (2 : K) = 0 := by
     have := ringChar.Nat.cast_ringChar (R := K)
     rw [h] at this
@@ -1052,6 +1063,18 @@ lemma normM_mk (u : W.Aˣ) :
     W.normM (u : W.M) =
       (Units.map (Algebra.norm K : W.A →* K) u : Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) := by
   simp [normM]
+
+omit [W.IsCharNeTwoNF] [DecidableEq K] [W.IsElliptic] in
+/-- The norm class of the class of `-1` is the class of `-1`: the étale algebra `W.A` has odd
+degree `3` over `K`. -/
+lemma normM_neg_one : W.normM (QuotientGroup.mk (-1 : W.Aˣ)) = QuotientGroup.mk (-1 : Kˣ) := by
+  rw [normM_mk]
+  congr 1
+  ext
+  rw [Units.coe_map, Units.val_neg, Units.val_one, Units.val_neg, Units.val_one,
+    ← map_one (algebraMap K W.A), ← map_neg, Algebra.norm_algebraMap,
+    (AdjoinRoot.powerBasis W.f_ne_zero).finrank, AdjoinRoot.powerBasis_dim, natDegree_f]
+  norm_num
 
 omit [DecidableEq K] in
 /-- **Every value of `μX` has trivial norm class.** On the branch where `f x ≠ 0` the norm of

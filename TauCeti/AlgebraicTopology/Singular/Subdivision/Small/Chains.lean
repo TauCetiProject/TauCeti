@@ -239,7 +239,7 @@ theorem exists_iterate_singularSubdivision_factor_small (hU : ∀ i, IsOpen (U i
       ∃ f : R ⟶ ((X.smallSingularSubcomplex U : SSet).chainComplex R).X k,
         f ≫ (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f k =
           (TopCat.toSSet.obj X).ιChainComplex σ ≫
-            ((CategoryTheory.End.of (singularSubdivisionChainMap R X)) ^ n).f k := by
+            ((CategoryTheory.End.of (singularSubdivisionChainMap R X)) ^ n).asHom.f k := by
   obtain ⟨n₀, hn₀⟩ := ContinuousMap.exists_forall_mem_support_subdivision_iterate_range_subset
     (X.toSSetObjEquiv _ σ) hU hcov k
   refine ⟨n₀, fun n hn ↦ ?_⟩

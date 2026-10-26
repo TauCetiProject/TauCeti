@@ -43,6 +43,8 @@ group, for `V ≤ W`:
 
 public section
 
+open Subgroup (quotientSubgroupOfEquivMap)
+
 namespace TauCeti
 
 open ContCohomology
@@ -107,7 +109,7 @@ private theorem abelianizationProPClass_of_sylow (hp : p.Prime)
   let _ : Finite (W.map (QuotientGroup.mk' V)) := Subtype.finite
   let _ : Finite (W ⧸ V.subgroupOf W) := Finite.of_equiv _ eWV.symm.toEquiv
   have hpWV : IsPGroup p (W ⧸ V.subgroupOf W) :=
-    (hmap ▸ P.isPGroup' : IsPGroup p (W.map (QuotientGroup.mk' V))).of_equiv
+    (hmap ▸ P.isPGroup : IsPGroup p (W.map (QuotientGroup.mk' V))).of_equiv
       eWV.toMulEquiv.symm
   obtain ⟨hsubP, htargetGen, hcardP⟩ := abelianizationProP_map_of_subgroupOf h hV hVW
     fun hdimW ↦ by

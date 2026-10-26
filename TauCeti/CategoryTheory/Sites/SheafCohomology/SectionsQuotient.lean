@@ -83,6 +83,27 @@ lemma mayerVietorisSectionClass_apply (s : F.obj.obj (op S.X₁)) :
   simp only [mayerVietorisSectionClass, AddMonoidHom.comp_apply,
     cohomologyPresheafZeroIso_inv_app_apply]
 
+/-- The connecting class of an overlap section is natural in the coefficient sheaf. -/
+lemma mayerVietorisSectionClass_naturality
+    {G : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}} (f : F ⟶ G)
+    (s : F.obj.obj (op S.X₁)) :
+    (((_root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor J 1).map f).app (op S.X₄))
+        (mayerVietorisSectionClass S F s) =
+      mayerVietorisSectionClass S G (f.hom.app (op S.X₁) s) := by
+  have hzero := cohomologyZeroSectionsEquiv_naturality_right f S.X₁
+    ((cohomologyZeroSectionsEquiv F S.X₁).symm s)
+  simp only [AddEquiv.apply_symm_apply] at hzero
+  rw [mayerVietorisSectionClass_apply, mayerVietorisSectionClass_apply,
+    ← hzero, AddEquiv.symm_apply_apply]
+  -- The coefficient maps of `H'` are Ext postcomposition; the connecting map is
+  -- precomposition by the extension class of the Mayer–Vietoris square.
+  change (S.shortComplex_shortExact.extClass.comp
+    ((cohomologyZeroSectionsEquiv F S.X₁).symm s) rfl).comp
+      (Abelian.Ext.mk₀ f) rfl =
+    S.shortComplex_shortExact.extClass.comp
+      (((cohomologyZeroSectionsEquiv F S.X₁).symm s).comp (Abelian.Ext.mk₀ f) rfl) rfl
+  exact Abelian.Ext.comp_assoc _ _ _ rfl rfl rfl
+
 private lemma difference_eq_fromBiprod
     (x₂ : F.H' 0 S.X₂) (x₃ : F.H' 0 S.X₃) :
     mayerVietorisSectionsDifference S F

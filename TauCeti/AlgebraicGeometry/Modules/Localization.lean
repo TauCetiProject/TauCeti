@@ -33,6 +33,8 @@ this module extends that affine result to arbitrary schemes.
   `Γ(M, U) ⟶ Γ(M, X.basicOpen f)` as a `Γ(X, U)`-linear map;
 * `AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestrict`: for quasi-coherent
   `M` and affine `U`, this restriction map is the localization at the powers of `f`.
+* `AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_map`: for quasi-coherent `M` and affine
+  `U`, a section over `X.basicOpen f` times a power of `f` extends to `U`.
 
 ## References
 
@@ -111,6 +113,18 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.fromSpecSectionsEquiv_apply (hU : 
         rw [Scheme.Hom.image_top_eq_opensRange, hU.opensRange_fromSpec])).op x) :=
   (rfl)
 
+/-- The affine-chart identification of sections commutes with maps of module sheaves. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.Hom.fromSpecSectionsEquiv_naturality
+    {N : X.Modules} (f : M ⟶ N) (hU : IsAffineOpen U) (x : Γ(M, U)) :
+    ((Scheme.Modules.restrictFunctor hU.fromSpec).map f).app ⊤
+        (M.fromSpecSectionsEquiv hU x) =
+      N.fromSpecSectionsEquiv hU (f.app U x) := by
+  rw [Scheme.Modules.fromSpecSectionsEquiv_apply,
+    Scheme.Modules.fromSpecSectionsEquiv_apply]
+  -- The restriction functor and its section isomorphism only change scalar structures.
+  -- Their underlying maps are the components of `f` on the image open.
+  exact PresheafOfModules.naturality_apply f.val _ x
+
 open Scheme.Modules in
 /-- The sections of a quasi-coherent `𝒪_X`-module over the basic open `X.basicOpen f` of an
 affine open `U` are the localization of its sections over `U` at the powers of `f`. -/
@@ -172,6 +186,25 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestr
   rw [he, IsLocalizedModule.comp_iff_of_bijective_left,
     IsLocalizedModule.comp_iff_of_bijective_right]
   exacts [hφ, he₁, he₂]
+
+open Scheme.Modules in
+/-- **Sections over a basic open extend after multiplication by a power of the function.** For a
+quasi-coherent `𝒪_X`-module `M`, an affine open `U` and `f ∈ Γ(X, U)`, every section `x` of `M`
+over the basic open `V = X.basicOpen f` has some `f ^ n • x` equal to the restriction of a
+section over `U`. The open `V` is arbitrary up to the equality `X.basicOpen f = V`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_map [M.IsQuasicoherent]
+    (hU : IsAffineOpen U) (f : Γ(X, U)) {V : X.Opens} (hV : X.basicOpen f = V) (hVU : V ≤ U)
+    (x : Γ(M, V)) : ∃ (n : ℕ) (y : Γ(M, U)),
+      X.presheaf.map (homOfLE hVU).op f ^ n • x = M.presheaf.map (homOfLE hVU).op y := by
+  subst hV
+  have := M.isLocalizedModule_basicOpenRestrict hU f
+  obtain ⟨⟨y, _, n, rfl⟩, hy⟩ :=
+    IsLocalizedModule.surj (Submonoid.powers f) (M.basicOpenRestrict f) x
+  -- `f ^ n` acts on sections over `X.basicOpen f` through its restriction
+  simp only [Submonoid.smul_def] at hy
+  rw [← IsScalarTower.algebraMap_smul Γ(X, X.basicOpen f), map_pow,
+    basicOpenRestrict_apply] at hy
+  exact ⟨n, y, hy⟩
 
 end
 

@@ -47,6 +47,10 @@ and `nonneg_of_discrim_le_zero` then propagates the conclusion to every `(x, y)`
   `0 < a`.
 * `Int.discrim_emod_four`: `discrim a b c % 4 = b % 2`, so an integral discriminant is `0` or `1`
   modulo `4`.
+* `TauCeti.not_dvd_two_mul_mul_add_of_not_dvd_discrim`: a root modulo `p` of a quadratic whose
+  discriminant is not divisible by `p` is simple, that is `p ∤ 2 a x + b`;
+  `TauCeti.not_dvd_two_mul_add_of_not_dvd_sq_add_four_mul` is the case of the monic quadratic
+  `x² + b x − c`.
 
 The two `Int.discrim_le_zero_…` results are proved from a common lemma in which `x` runs over an
 arithmetic progression rather than all of `ℤ`. Only one `x` is ever used — the member of the
@@ -320,3 +324,28 @@ division by `4`, so it is `0` or `1` modulo `4`. -/
 @[simp]
 theorem Int.discrim_emod_four (a b c : ℤ) : discrim a b c % 4 = b % 2 := by
   rw [discrim, mul_assoc, Int.sub_mul_emod_self_left, Int.sq_emod_four]
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R]
+
+/-- A root modulo `p` of a quadratic whose discriminant is not divisible by `p` is simple: the
+derivative `2 a x + b` is not divisible by `p`, since
+`(2 a x + b)² = 4 a (a x² + b x + c) + discrim a b c`. -/
+theorem not_dvd_two_mul_mul_add_of_not_dvd_discrim {p a b c x : R}
+    (hd : ¬ p ∣ discrim a b c) (hx : p ∣ a * (x * x) + b * x + c) : ¬ p ∣ 2 * a * x + b :=
+  fun h ↦ hd <| by
+    rw [show discrim a b c = (2 * a * x + b) ^ 2 - 4 * a * (a * (x * x) + b * x + c) by
+      rw [discrim]; ring]
+    exact dvd_sub (dvd_pow h two_ne_zero) (hx.mul_left _)
+
+/-- A root modulo `p` of the monic quadratic `x² + b x − c` is simple when `p ∤ b² + 4 c`: the
+derivative `2 x + b` is not divisible by `p`. This is
+`TauCeti.not_dvd_two_mul_mul_add_of_not_dvd_discrim` for the monic quadratic, whose discriminant
+is `b² + 4 c`. -/
+theorem not_dvd_two_mul_add_of_not_dvd_sq_add_four_mul {p b c x : R} (hd : ¬ p ∣ b ^ 2 + 4 * c)
+    (hx : p ∣ x ^ 2 + b * x - c) : ¬ p ∣ 2 * x + b := by
+  simpa using not_dvd_two_mul_mul_add_of_not_dvd_discrim (a := 1) (c := -c)
+    (by rwa [discrim, mul_neg, sub_neg_eq_add, mul_one]) (by rwa [one_mul, ← sq, ← sub_eq_add_neg])
+
+end TauCeti

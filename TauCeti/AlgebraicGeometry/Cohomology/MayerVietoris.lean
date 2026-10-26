@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.MayerVietoris
+public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.Topology.Sheaves.MayerVietoris
 
 /-!
@@ -36,7 +37,8 @@ together with the vanishing it gives when `U` and `V` cover `X`.
   uniform positive-degree acyclicity hypotheses;
 * `Scheme.Modules.subsingleton_cohomology_of_two_le_of_isAffineOpen` applies affine-open
   acyclicity when `U`, `V`, and `U ⊓ V` are affine, while the `_of_isAffineHom` variant obtains
-  the intersection hypothesis from an affine diagonal.
+  the intersection hypothesis from an affine diagonal, and the `_of_isProper` variant supplies
+  the required finiteness and separation hypotheses for a proper scheme over a field.
 
 These statements are the shape in which Mayer-Vietoris is used on a curve. The general theorem
 accepts arbitrary coefficients and explicit acyclicity hypotheses. For quasi-coherent
@@ -202,6 +204,20 @@ theorem subsingleton_cohomology_of_two_le_of_isAffineOpen_of_isAffineHom
     [M.IsQuasicoherent] {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V)
     (hUV : U ⊔ V = ⊤) (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) :=
   subsingleton_cohomology_of_two_le_of_isAffineOpen M hU hV (hU.inf hV) hUV n hn
+
+variable {k : Type u} [Field k] [X.Over (Spec (.of k))]
+
+/-- A proper scheme over a field which is covered by two affine opens has no quasi-coherent
+cohomology in degrees at least two. -/
+theorem subsingleton_cohomology_of_two_le_of_isProper [IsProper (X ↘ Spec (.of k))]
+    (hcover : ∃ U V : X.Opens, IsAffineOpen U ∧ IsAffineOpen V ∧ U ⊔ V = ⊤) (M : X.Modules)
+    [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) := by
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have : IsSeparated (terminal.from X) := by
+    rw [← terminal.comp_from (X ↘ Spec (.of k))]
+    infer_instance
+  obtain ⟨U, V, hU, hV, hUV⟩ := hcover
+  exact subsingleton_cohomology_of_two_le_of_isAffineOpen_of_isAffineHom M hU hV hUV n hn
 
 end
 

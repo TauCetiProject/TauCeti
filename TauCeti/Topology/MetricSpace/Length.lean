@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.StrictConvexBetween
 public import Mathlib.Analysis.Normed.Affine.AddTorsor
 public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
@@ -59,6 +60,9 @@ already has length `edist x y`, by `eVariationOn.edist_le`.
   path connected.
 * `TauCeti.instIsGeodesicSpace` — a real seminormed space is a geodesic space, its geodesic
   segments being the affine ones (`TauCeti.isGeodesicSegment_lineMap`).
+* `TauCeti.IsGeodesicSegment.eq_lineMap` — in a strictly convex real normed torsor the affine
+  segment is the only geodesic segment, so geodesic segments are unique in every metric space that
+  embeds isometrically in one (`TauCeti.IsGeodesicSegment.eqOn_of_isometry`).
 -/
 
 public section
@@ -319,6 +323,37 @@ theorem IsGeodesicSegment.comp_isometry {Y : Type*} [PseudoMetricSpace Y] {f : X
     simp only [Function.comp_apply, hf.dist_eq]
     exact h.dist_eq s hs t ht
 
+/-- Being a geodesic segment depends only on the values of the curve on `[0, 1]`. -/
+theorem IsGeodesicSegment.congr {γ' : ℝ → X} (h : IsGeodesicSegment γ x y)
+    (h' : EqOn γ' γ (Icc 0 1)) : IsGeodesicSegment γ' x y where
+  source := by rw [h' (left_mem_Icc.2 zero_le_one), h.source]
+  target := by rw [h' (right_mem_Icc.2 zero_le_one), h.target]
+  dist_eq s hs t ht := by rw [h' hs, h' ht, h.dist_eq s hs t ht]
+
+/-- A curve from `x` to `y` whose pieces obey the affine bound
+`dist (γ s) (γ t) ≤ (t - s) * dist x y` for `0 ≤ s ≤ t ≤ 1` is a geodesic segment: the triangle
+inequality along `0 ≤ s ≤ t ≤ 1` turns each bound into an equality. -/
+theorem isGeodesicSegment_of_dist_le (h0 : γ 0 = x) (h1 : γ 1 = y)
+    (h : ∀ s ∈ Icc (0 : ℝ) 1, ∀ t ∈ Icc (0 : ℝ) 1, s ≤ t →
+      dist (γ s) (γ t) ≤ (t - s) * dist x y) :
+    IsGeodesicSegment γ x y where
+  source := h0
+  target := h1
+  dist_eq s hs t ht := by
+    wlog hst : s ≤ t generalizing s t
+    · rw [dist_comm, abs_sub_comm]
+      exact this t ht s hs (le_of_not_ge hst)
+    have h0I : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.2 zero_le_one
+    have h1I : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
+    have htri : dist x y ≤ dist (γ 0) (γ s) + dist (γ s) (γ t) + dist (γ t) (γ 1) := by
+      rw [← h0, ← h1]
+      exact dist_triangle4 _ _ _ _
+    have h0s := h 0 h0I s hs hs.1
+    have ht1 := h t ht 1 h1I ht.2
+    have hst' := h s hs t ht hst
+    rw [abs_of_nonpos (sub_nonpos.2 hst), neg_sub]
+    linarith
+
 /-- No piece of a geodesic segment is longer than the affine bound its parametrisation predicts.
 The reverse inequality is `eVariationOn.edist_le`, so the two together identify the length of
 every piece. -/
@@ -395,6 +430,27 @@ theorem IsGeodesicSpace.of_normedAddTorsor {V P : Type*} [SeminormedAddCommGroup
 instance instIsGeodesicSpace {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] :
     IsGeodesicSpace E :=
   IsGeodesicSpace.of_normedAddTorsor (V := E)
+
+/-- **Geodesic segments of a strictly convex space are affine.** In a strictly convex real normed
+torsor, the point at time `t ∈ [0, 1]` of a geodesic segment from `x` to `y` is
+`AffineMap.lineMap x y t`. Without strict convexity this fails: in `ℝ²` with the sup norm, the
+curve running first diagonally and then vertically is a geodesic segment from `(0, 0)` to
+`(1, 2)`. -/
+theorem IsGeodesicSegment.eq_lineMap {V P : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [StrictConvexSpace ℝ V] [MetricSpace P] [NormedAddTorsor V P] {γ : ℝ → P} {x y : P}
+    (h : IsGeodesicSegment γ x y) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
+    γ t = AffineMap.lineMap x y t :=
+  eq_lineMap_of_dist_eq_mul_of_dist_eq_mul (h.dist_source_apply ht) (h.dist_apply_target ht)
+
+/-- **Uniqueness of geodesic segments.** In a metric space that embeds isometrically in a strictly
+convex real normed torsor, two geodesic segments with the same endpoints agree on `[0, 1]`: their
+images are both the affine segment between the images of the endpoints. -/
+theorem IsGeodesicSegment.eqOn_of_isometry {X V P : Type*} [MetricSpace X] [NormedAddCommGroup V]
+    [NormedSpace ℝ V] [StrictConvexSpace ℝ V] [MetricSpace P] [NormedAddTorsor V P] {f : X → P}
+    (hf : Isometry f) {γ γ' : ℝ → X} {x y : X} (h : IsGeodesicSegment γ x y)
+    (h' : IsGeodesicSegment γ' x y) : EqOn γ γ' (Icc 0 1) := fun _ ht ↦
+  hf.injective <|
+    ((h.comp_isometry hf).eq_lineMap ht).trans ((h'.comp_isometry hf).eq_lineMap ht).symm
 
 /-- The instance chain reaches the length-space condition: `ℝ` is a length space because it is a
 geodesic space. -/

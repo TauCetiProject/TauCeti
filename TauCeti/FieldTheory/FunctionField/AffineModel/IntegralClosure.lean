@@ -44,6 +44,10 @@ The places missing from the finite chart are the poles of `x`, of which there ar
   `TauCeti.finiteType_holomorphyRing_setOf_mem`: the same two properties for `R_x` presented as
   the holomorphy ring of the places at which `x` is regular, the form in which it is a chart of
   the scheme of `F` in `TauCeti/AlgebraicGeometry/Curves/TwoChartModel/`.
+* `TauCeti.isDedekindDomain_holomorphyRing_compl` and `TauCeti.finiteType_holomorphyRing_compl`:
+  the ring of functions regular outside a finite nonempty set `T` of places is a finitely generated
+  Dedekind domain, since it is `R_x` for a function `x` whose pole set is `T`
+  (`TauCeti.exists_setOf_mem_integers_eq_compl`).
 * `TauCeti.restrictScalars_integralClosure_adjoin_eq_holomorphyRing` and
   `TauCeti.mem_integralClosure_adjoin_iff`: a function lies in `R_x` exactly when it is regular at
   every place at which `x` is regular.
@@ -208,6 +212,35 @@ theorem finiteType_holomorphyRing_setOf_mem (hF : IsFunctionField k F)
   exact finiteType_integralClosure_adjoin hx
 
 end Model
+
+/-! ### Functions regular outside a finite set of places -/
+
+/-- A function whose pole set is a nonempty set of places is transcendental over `k`. -/
+private theorem transcendental_of_setOf_mem_integers_eq_compl {T : Set (Place k F)}
+    (hne : T.Nonempty) {x : F} (hx : {P : Place k F | x ∈ P.integers} = Tᶜ) :
+    Transcendental k x := by
+  obtain ⟨P, hP⟩ := hne
+  have hxP : x ∉ P.integers := fun h ↦ (Set.ext_iff.mp hx P).mp h hP
+  exact P.transcendental_of_ord_ne_zero fun h ↦
+    hxP (P.mem_integers_iff_ord_nonneg.mpr h.ge)
+
+/-- **The ring of functions regular outside a finite nonempty set `T` of places is a Dedekind
+domain**: it is the affine model `R_x` of a function `x` whose pole set is `T`. -/
+theorem isDedekindDomain_holomorphyRing_compl (hF : IsFunctionField k F) {T : Set (Place k F)}
+    (hT : T.Finite) (hne : T.Nonempty) : IsDedekindDomain (holomorphyRing Tᶜ) := by
+  obtain ⟨x, hx⟩ := exists_setOf_mem_integers_eq_compl hF hT
+  rw [← hx]
+  exact isDedekindDomain_holomorphyRing_setOf_mem hF
+    (transcendental_of_setOf_mem_integers_eq_compl hne hx)
+
+/-- **The ring of functions regular outside a finite nonempty set `T` of places is a finitely
+generated `k`-algebra**: it is the affine model `R_x` of a function `x` whose pole set is `T`. -/
+theorem finiteType_holomorphyRing_compl (hF : IsFunctionField k F) {T : Set (Place k F)}
+    (hT : T.Finite) (hne : T.Nonempty) : Algebra.FiniteType k (holomorphyRing Tᶜ) := by
+  obtain ⟨x, hx⟩ := exists_setOf_mem_integers_eq_compl hF hT
+  rw [← hx]
+  exact finiteType_holomorphyRing_setOf_mem hF
+    (transcendental_of_setOf_mem_integers_eq_compl hne hx)
 
 /-! ### Places and height one primes of `R_x` -/
 

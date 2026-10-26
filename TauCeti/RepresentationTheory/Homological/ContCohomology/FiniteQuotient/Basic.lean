@@ -180,8 +180,8 @@ theorem continuousFiniteQuotientMap_comp (hWV : W ≤ V) (hVU : V ≤ U) :
 the transition map `G ⧸ V → G ⧸ U` after `G → G ⧸ V`. -/
 @[simp]
 theorem continuousFiniteQuotientMap_comp_quotientMk (hVU : V ≤ U) :
-    (continuousFiniteQuotientMap G hVU).comp (ContinuousMonoidHom.quotientMk V.toSubgroup) =
-      ContinuousMonoidHom.quotientMk U.toSubgroup := by
+    (continuousFiniteQuotientMap G hVU).comp (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) =
+      Subgroup.quotientMkContinuousMonoidHom U.toSubgroup := by
   ext g
   simp
 

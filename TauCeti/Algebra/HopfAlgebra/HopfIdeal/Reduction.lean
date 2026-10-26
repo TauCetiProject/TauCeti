@@ -57,7 +57,7 @@ noncomputable def reduction
   ofIdeal (nilradical H)
     (fun {x} hx ↦ by
       let q : H →ₐ[R] H ⧸ nilradical H := Ideal.Quotient.mkₐ R (nilradical H)
-      have hker := ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
+      have hker := AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
         (Ideal.Quotient.mkₐ_surjective R (nilradical H))
         (Ideal.Quotient.mkₐ_surjective R (nilradical H))
       simp only [AlgHom.ker_coe, q, Ideal.Quotient.mkₐ_ker] at hker

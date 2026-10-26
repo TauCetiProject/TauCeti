@@ -10,21 +10,33 @@ module
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.RingTheory.Coprime.Basic
+-- `Fin.prod_castLE_dvd_prod_of_injective`, used only inside proofs below.
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
-# Divisibility of matrix entries under multiplication
+# Divisibility of matrix entries and minors under multiplication
 
 A common divisor of the entries of a matrix survives multiplication on either side: every
 entry of `P * A * Q` is an `S`-combination of entries of `A`, so anything dividing all of
 those divides all of these.
 
-Nothing here needs invertibility, a square shape, or a diagonal target — only that the
-products are conformable — so the statements are at `NonUnitalCommSemiring` and rectangular.
-No multiplicative identity is involved; multiplication is used both associatively and
-commutatively.
+Nothing in the entrywise statements needs invertibility, a square shape, or a diagonal target —
+only that the products are conformable — so they are at `NonUnitalCommSemiring` and
+rectangular. No multiplicative identity is involved; multiplication is used both associatively
+and commutatively.
 
-The Smith-normal-form theory consumes both, but neither has a Smith-normal-form hypothesis
-and neither should require importing that theory to reach.
+The same holds one level up, for the `k × k` minors over a commutative ring: each minor of
+`P * A * Q` is an `R`-combination of minors of `A`. Applied to `diagonal c₁ * Q * diagonal c₂`
+with `c₁`, `c₂` divisibility chains, whose `k × k` minors are all divisible by the products of
+the first `k` entries of `c₁` and of `c₂`, this bounds the leading invariant factors of a product
+of two matrices from below by those of the factors.
+
+The Smith-normal-form theory consumes these statements, but none has a Smith-normal-form
+hypothesis and none should require importing that theory to reach.
+
+The minor statements generalize the leading-minor expansion by which the AINTLIB
+`LeanModularForms` project (Chris Birkbeck, `LeanModularForms/HeckeRIngs/GLn/DiagonalCosets.lean`)
+proves the uniqueness of the Smith normal form, from one diagonal factor to two.
 
 ## Main results
 
@@ -35,6 +47,15 @@ and neither should require importing that theory to reach.
 * `Matrix.forall_dvd_apply_iff_of_mul_eq_mul`: if `W * B = A * W`, then an element coprime to
   `det W` divides every entry of `A` exactly when it divides every entry of `B` — `A` and `B`
   are conjugate after inverting `det W`.
+* `Matrix.det_mul_eq_sum_prod_mul_det_submatrix`: the expansion of `det (A * B)` for a
+  rectangular middle factor, as a sum over maps into the middle index type.
+* `Matrix.dvd_det_submatrix_mul_mul`: a common divisor of the minors of `A` divides every
+  minor of `P * A * Q` of the same size.
+* `Matrix.prod_castLE_mul_prod_castLE_dvd_det_submatrix_diagonal_mul_diagonal`: the minors of
+  `diagonal c₁ * Q * diagonal c₂` for divisibility chains `c₁`, `c₂`.
+* `Matrix.prod_castLE_mul_prod_castLE_dvd_of_mul_diagonal_mul_diagonal_mul_eq`: if
+  `P * diagonal c₁ * Q * diagonal c₂ * S = diagonal d`, then the product of the first `k`
+  entries of `d` is divisible by those of `c₁` and `c₂`.
 -/
 
 public section
@@ -79,5 +100,118 @@ theorem forall_dvd_apply_iff_of_mul_eq_mul {R : Type*} [CommRing R] [Fintype n] 
     have hij := dvd_mul_mul_apply hB W W.adjugate i j
     rw [h, mul_assoc, mul_adjugate, Matrix.mul_smul, mul_one, smul_apply, smul_eq_mul] at hij
     exact he.dvd_of_dvd_mul_left hij
+
+/-! ### Divisibility of minors
+
+The square analogue of the entrywise statements above: a common divisor of the `k × k` minors
+of `A` divides every `k × k` minor of `P * A * Q`. Entries are the `1 × 1` minors. -/
+
+section Minor
+
+variable {ι R : Type*} [CommRing R]
+
+/-- **The determinant of a product through a rectangular middle factor.** For `A : ι × m` and
+`B : m × ι`, the determinant of `A * B` is the sum, over all maps `f : ι → m`, of
+`∏ i, A i (f i)` times the minor of `B` on the rows `f`. This is multilinearity of the
+determinant in the rows of `A * B`; collecting the terms by the image of `f` gives the
+Cauchy–Binet formula. -/
+theorem det_mul_eq_sum_prod_mul_det_submatrix [Fintype ι] [DecidableEq ι] [Fintype m]
+    (A : Matrix ι m R) (B : Matrix m ι R) :
+    (A * B).det = ∑ f : ι → m, (∏ i, A i (f i)) * (B.submatrix f id).det := by
+  have hrows : (A * B : ι → ι → R) = fun i ↦ ∑ j, A i j • (B j : ι → R) := by
+    ext i k
+    simp [Matrix.mul_apply, Finset.sum_apply]
+  have hsum := (detRowAlternating (R := R) (n := ι)).toMultilinearMap.map_sum
+    (fun i j ↦ A i j • (B j : ι → R))
+  simp only [AlternatingMap.coe_multilinearMap, MultilinearMap.map_smul_univ] at hsum
+  rw [det, hrows, hsum]
+  refine Finset.sum_congr rfl fun f _ ↦ ?_
+  rw [smul_eq_mul, det]
+  -- `B.submatrix f id` is the matrix whose rows are the `B (f i)`
+  congr 2
+
+/-- **A common divisor of the minors survives left multiplication.** If `c` divides every
+`ι`-minor of `B`, then it divides every `ι`-minor of `A * B`, since each such minor is an
+`R`-combination of minors of `B`. -/
+theorem dvd_det_submatrix_mul_left [Fintype ι] [DecidableEq ι] [Fintype m]
+    {B : Matrix m n R} {c : R} (hc : ∀ (f : ι → m) (g : ι → n), c ∣ (B.submatrix f g).det)
+    (A : Matrix l m R) (f : ι → l) (g : ι → n) : c ∣ ((A * B).submatrix f g).det := by
+  rw [submatrix_mul A B f id g Function.bijective_id, det_mul_eq_sum_prod_mul_det_submatrix]
+  exact Finset.dvd_sum fun r _ ↦ (hc r g).mul_left _
+
+/-- **A common divisor of the minors survives two-sided multiplication.** If `c` divides every
+`ι`-minor of `A`, then it divides every `ι`-minor of `P * A * Q`, since each such minor is an
+`R`-combination of minors of `A`. -/
+theorem dvd_det_submatrix_mul_mul [Fintype ι] [DecidableEq ι] [Fintype m] [Fintype n]
+    {A : Matrix m n R} {c : R} (hc : ∀ (f : ι → m) (g : ι → n), c ∣ (A.submatrix f g).det)
+    (P : Matrix l m R) (Q : Matrix n o R) (f : ι → l) (g : ι → o) :
+    c ∣ ((P * A * Q).submatrix f g).det := by
+  -- the right factor is handled by transposing it into a left factor
+  have hAQ : ∀ (f' : ι → m) (g' : ι → o), c ∣ ((A * Q).submatrix f' g').det := by
+    intro f' g'
+    rw [← det_transpose, transpose_submatrix, transpose_mul]
+    exact dvd_det_submatrix_mul_left
+      (fun g'' f'' ↦ by rw [← transpose_submatrix, det_transpose]; exact hc f'' g'') _ g' f'
+  rw [Matrix.mul_assoc]
+  exact dvd_det_submatrix_mul_left hAQ P f g
+
+end Minor
+
+/-! ### Minors of diagonal matrices with chained entries -/
+
+section ChainMinor
+
+variable {R : Type*} [CommRing R] {n : ℕ}
+
+/-- **Minors of a matrix scaled on both sides by divisibility chains.** If `c₁` and `c₂` are
+divisibility chains, every `k × k` minor of `diagonal c₁ * Q * diagonal c₂` is divisible by the
+product of the first `k` entries of `c₁` times the product of the first `k` entries of `c₂`. -/
+theorem prod_castLE_mul_prod_castLE_dvd_det_submatrix_diagonal_mul_diagonal
+    {c₁ c₂ : Fin n → R} (hc₁ : ∀ ⦃i j : Fin n⦄, i ≤ j → c₁ i ∣ c₁ j)
+    (hc₂ : ∀ ⦃i j : Fin n⦄, i ≤ j → c₂ i ∣ c₂ j) (Q : Matrix (Fin n) (Fin n) R) {k : ℕ}
+    (hk : k ≤ n) (f g : Fin k → Fin n) :
+    (∏ j : Fin k, c₁ (Fin.castLE hk j)) * ∏ j : Fin k, c₂ (Fin.castLE hk j) ∣
+      ((diagonal c₁ * Q * diagonal c₂).submatrix f g).det := by
+  -- a repeated row or column makes the minor vanish
+  by_cases hf : Function.Injective f
+  swap
+  · obtain ⟨i₁, i₂, hfeq, hne⟩ := Function.not_injective_iff.mp hf
+    rw [det_zero_of_row_eq hne (by ext j; simp [hfeq])]
+    exact dvd_zero _
+  by_cases hg : Function.Injective g
+  swap
+  · obtain ⟨j₁, j₂, hgeq, hne⟩ := Function.not_injective_iff.mp hg
+    rw [det_zero_of_column_eq hne (fun i ↦ by simp [hgeq])]
+    exact dvd_zero _
+  have hsub : (diagonal c₁ * Q * diagonal c₂).submatrix f g =
+      diagonal (c₁ ∘ f) * Q.submatrix f g * diagonal (c₂ ∘ g) := by
+    ext i j
+    simp [diagonal_mul, mul_diagonal]
+  rw [hsub, det_mul, det_mul, det_diagonal, det_diagonal, mul_right_comm]
+  exact dvd_mul_of_dvd_left (mul_dvd_mul (Fin.prod_castLE_dvd_prod_of_injective hc₁ hk hf)
+    (Fin.prod_castLE_dvd_prod_of_injective hc₂ hk hg)) _
+
+/-- **The leading invariant factors of a product of two diagonal matrices.** If
+`P * diagonal c₁ * Q * diagonal c₂ * S = diagonal d` with `c₁`, `c₂` divisibility chains, then
+for every `k ≤ n` the product of the first `k` entries of `d` is divisible by the product of
+the first `k` entries of `c₁` times that of `c₂`. For `P`, `Q`, `S` invertible this says that
+the leading `k` invariant factors of the product of two matrices are divisible by those of
+the factors. -/
+theorem prod_castLE_mul_prod_castLE_dvd_of_mul_diagonal_mul_diagonal_mul_eq
+    {c₁ c₂ d : Fin n → R} (hc₁ : ∀ ⦃i j : Fin n⦄, i ≤ j → c₁ i ∣ c₁ j)
+    (hc₂ : ∀ ⦃i j : Fin n⦄, i ≤ j → c₂ i ∣ c₂ j) (P Q S : Matrix (Fin n) (Fin n) R)
+    (h : P * diagonal c₁ * Q * diagonal c₂ * S = diagonal d) {k : ℕ} (hk : k ≤ n) :
+    (∏ j : Fin k, c₁ (Fin.castLE hk j)) * ∏ j : Fin k, c₂ (Fin.castLE hk j) ∣
+      ∏ j : Fin k, d (Fin.castLE hk j) := by
+  have hd : ∏ j : Fin k, d (Fin.castLE hk j) =
+      ((diagonal d).submatrix (Fin.castLE hk) (Fin.castLE hk)).det := by
+    rw [submatrix_diagonal _ _ (Fin.castLE_injective hk), det_diagonal]
+    simp only [Function.comp_apply]
+  rw [hd, ← h]
+  simpa only [Matrix.mul_assoc] using dvd_det_submatrix_mul_mul
+    (prod_castLE_mul_prod_castLE_dvd_det_submatrix_diagonal_mul_diagonal hc₁ hc₂ Q hk) P S
+    (Fin.castLE hk) (Fin.castLE hk)
+
+end ChainMinor
 
 end Matrix

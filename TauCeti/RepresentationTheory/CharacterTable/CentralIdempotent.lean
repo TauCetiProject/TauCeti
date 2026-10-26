@@ -230,7 +230,7 @@ end Product
 
 section Scalar
 
-variable [Fintype G] [FiniteDimensional k V] [FiniteDimensional k W] [IsAlgClosed k]
+variable [Fintype G] [FiniteDimensional k W] [IsAlgClosed k]
 variable [Invertible (Nat.card G : k)] [ρ.IsIrreducible] [σ.IsIrreducible]
 
 open scoped Classical in

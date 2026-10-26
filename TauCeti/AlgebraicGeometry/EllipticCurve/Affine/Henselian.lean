@@ -6,8 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
+public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
 public import Mathlib.RingTheory.Henselian
 import Mathlib.Tactic.ComputeDegree
+-- Proof-only: finite-field norms supply points on the residue conic.
+import Mathlib.FieldTheory.Finite.GaloisField
+import Mathlib.RingTheory.QuadraticAlgebra
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
+import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
+-- Proof-only: Hensel's lemma for a polynomial that is not monic.
+import TauCeti.RingTheory.Henselian.Basic
 
 /-!
 # Hensel's lemma for Weierstrass equations
@@ -17,14 +27,39 @@ Let `R` be a Henselian local ring with residue field `k`, and let `W` be a Weier
 point of `W`. This is Hensel's lemma applied to the Weierstrass equation in whichever variable has
 a nonvanishing partial derivative at the point of `W_k`.
 
+The singular point of `W_k` lifts too, when it is a node at the origin: if `a₃, a₄ ∈ 𝔪` and `b₂` is
+a unit, then the two partial derivatives of the Weierstrass polynomial vanish at some `(r, t) ∈ 𝔪²`,
+and the translation `x ↦ x + r`, `y ↦ y + t` makes `a₃ = a₄ = 0`. The two conditions combine to
+`6 r² + b₂ r + b₄ = 0`, a quadratic with unit linear coefficient `b₂`, which Hensel's lemma solves;
+then `t` is read off from either condition, as `2` or `a₁` is a unit. When `b₂` is a unit, a root
+modulo `𝔪` of the tangent quadratic `T² + a₁ T − a₂`, whose discriminant is `b₂`, is simple, so it
+lifts to a root in `R`: the tangent directions of a split node lift with it.
+
+For a finite residue field and a nonsplit tangent quadratic, a discriminant that is a unit times
+a square gives a solution with both coordinates in the maximal ideal. The centred case reduces
+to a residue conic, whose points are obtained from surjectivity of the finite-field norm; the
+general case follows by the translation above.
+
 ## Main results
 
 * `WeierstrassCurve.Affine.exists_nonsingular_residue_eq`: over a Henselian local ring, every
   nonsingular point of the reduced curve is the residue of a nonsingular point.
+* `WeierstrassCurve.exists_translate_a₃_eq_zero_and_a₄_eq_zero`: over a Henselian local ring, if
+  `a₃, a₄ ∈ 𝔪` and `b₂` is a unit, a translation by an element of `𝔪²` makes `a₃ = a₄ = 0`.
+* `WeierstrassCurve.exists_tangentQuadratic_eq_zero`: over a Henselian local ring, if `b₂` is a
+  unit, a root modulo `𝔪` of the tangent quadratic lifts to a root.
+* `WeierstrassCurve.associated_a₆_Δ_of_a₃_eq_zero_of_a₄_eq_zero`: over a local ring, on a centred
+  node with `b₂` a unit, `a₆` and `Δ` are associated.
+
+* `WeierstrassCurve.exists_equation_mem_maximalIdeal_of_a₃_eq_zero_of_a₄_eq_zero`: the centred
+  nonsplit equation with even discriminant order has a solution in the maximal ideal.
+* `WeierstrassCurve.exists_equation_mem_maximalIdeal_of_tangentQuadratic_no_roots`: the same
+  lifting result for the uncentred equation.
 
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VII.2.1.
+* J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151, IV.9.
 -/
 
 public section
@@ -95,5 +130,177 @@ theorem exists_nonsingular_residue_eq {x₀ y₀ : R}
     ring
 
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+/-- **Centring at a singular point of the reduction.** Over a Henselian local ring, if `a₃` and
+`a₄` lie in the maximal ideal and `b₂` is a unit, then for some `r, t ∈ 𝔪` the translation
+`x ↦ x + r`, `y ↦ y + t` makes `a₃ = a₄ = 0`: `(r, t)` is a critical point of the Weierstrass
+polynomial. -/
+theorem exists_translate_a₃_eq_zero_and_a₄_eq_zero {R : Type*} [CommRing R]
+    [HenselianLocalRing R] (W : WeierstrassCurve R) (h₃ : W.a₃ ∈ maximalIdeal R)
+    (h₄ : W.a₄ ∈ maximalIdeal R) (hb₂ : IsUnit W.b₂) :
+    ∃ r t : R, r ∈ maximalIdeal R ∧ t ∈ maximalIdeal R ∧
+      (VariableChange.mk 1 r 0 t • W).a₃ = 0 ∧ (VariableChange.mk 1 r 0 t • W).a₄ = 0 := by
+  have h0 {a : R} (ha : a ∈ maximalIdeal R) : residue R a = 0 := (residue_eq_zero_iff _).2 ha
+  simp only [variableChange_a₃, variableChange_a₄, inv_one, Units.val_one, one_pow, one_mul]
+  -- `a₁` times the first condition plus `2` times the second is `6 r² + b₂ r + b₄ = 0`
+  have hb₄ : W.b₄ ∈ maximalIdeal R := (residue_eq_zero_iff _).1 (by simp [b₄, h0 h₃, h0 h₄])
+  obtain ⟨r, hr, hr𝔪⟩ := Polynomial.exists_isRoot_sub_mem (J := maximalIdeal R)
+    (C 6 * X ^ 2 + C W.b₂ * X + C W.b₄) (a₀ := 0) (by simpa using hb₄)
+    (by simpa using hb₂.map (Ideal.Quotient.mk (maximalIdeal R)))
+  have hr' : 6 * r ^ 2 + W.b₂ * r + W.b₄ = 0 := by simpa using hr.eq_zero
+  rw [b₂, b₄] at hr'
+  rw [sub_zero] at hr𝔪
+  by_cases h2 : IsUnit (2 : R)
+  · -- solve the first condition for `t`
+    obtain ⟨i, hi⟩ := h2.exists_right_inv
+    have e₃ : W.a₃ + W.a₁ * r + 2 * (-(W.a₃ + W.a₁ * r) * i) = 0 := by
+      linear_combination (-(W.a₃ + W.a₁ * r)) * hi
+    refine ⟨r, -(W.a₃ + W.a₁ * r) * i, hr𝔪,
+      (residue_eq_zero_iff _).1 (by simp [h0 h₃, h0 hr𝔪]), by linear_combination e₃, ?_⟩
+    refine h2.mul_right_eq_zero.1 ?_
+    linear_combination hr' - W.a₁ * e₃
+  · -- `2 ∈ 𝔪`, so `a₁² ≡ b₂` is a unit; solve the second condition for `t`
+    have h2𝔪 : (2 : R) ∈ maximalIdeal R := (mem_maximalIdeal _).2 h2
+    have ha₁ : IsUnit W.a₁ := by
+      have hsq : W.a₁ ^ 2 = W.b₂ - 2 * (2 * W.a₂) := by rw [b₂]; ring
+      rw [← residue_ne_zero_iff_isUnit] at hb₂ ⊢
+      refine fun ha0 ↦ hb₂ ?_
+      have := congrArg (residue R) hsq
+      rw [map_pow, ha0, map_sub, h0 ((maximalIdeal R).mul_mem_right _ h2𝔪)] at this
+      simpa using this.symm
+    obtain ⟨j, hj⟩ := ha₁.exists_right_inv
+    have e₄ : W.a₄ + 2 * W.a₂ * r - W.a₁ * ((W.a₄ + 2 * W.a₂ * r + 3 * r ^ 2) * j) +
+        3 * r ^ 2 = 0 := by
+      linear_combination (-(W.a₄ + 2 * W.a₂ * r + 3 * r ^ 2)) * hj
+    refine ⟨r, (W.a₄ + 2 * W.a₂ * r + 3 * r ^ 2) * j, hr𝔪,
+      (residue_eq_zero_iff _).1 (by simp [h0 h₄, h0 hr𝔪]), ?_, by linear_combination e₄⟩
+    refine ha₁.mul_right_eq_zero.1 ?_
+    linear_combination hr' - 2 * e₄
+
+/-- **The tangent directions of a node lift.** Over a Henselian local ring, if `b₂` is a unit, a
+root `t₀` modulo the maximal ideal of the tangent quadratic `T² + a₁ T − a₂` lifts to a root `α`
+with `α ≡ t₀`. The root is simple: the derivative `2 t₀ + a₁` squares to `b₂` modulo the maximal
+ideal. -/
+theorem exists_tangentQuadratic_eq_zero {R : Type*} [CommRing R] [HenselianLocalRing R]
+    (W : WeierstrassCurve R) (hb₂ : IsUnit W.b₂) {t₀ : R}
+    (ht₀ : t₀ ^ 2 + W.a₁ * t₀ - W.a₂ ∈ maximalIdeal R) :
+    ∃ α : R, α ^ 2 + W.a₁ * α - W.a₂ = 0 ∧ α - t₀ ∈ maximalIdeal R := by
+  have h0 := (residue_eq_zero_iff _).2 ht₀
+  simp only [map_sub, map_add, map_mul, map_pow] at h0
+  obtain ⟨α, hα, hαt⟩ := HenselianLocalRing.is_henselian (X ^ 2 + C W.a₁ * X - C W.a₂)
+    (by monicity!) t₀
+    (by
+      rw [← residue_eq_zero_iff]
+      simpa using h0)
+    (by
+      -- `(2 t₀ + a₁)² = 4 (t₀² + a₁ t₀ - a₂) + b₂`, a unit modulo the maximal ideal
+      have hd : (derivative (X ^ 2 + C W.a₁ * X - C W.a₂)).eval t₀ = 2 * t₀ + W.a₁ := by
+        simp [one_add_one_eq_two]
+      have hb := (residue_ne_zero_iff_isUnit _).2 hb₂
+      simp only [b₂, map_add, map_mul, map_pow, map_ofNat] at hb
+      rw [hd, ← residue_ne_zero_iff_isUnit]
+      intro h1
+      simp only [map_add, map_mul, map_ofNat] at h1
+      apply hb
+      linear_combination (2 * residue R t₀ + residue R W.a₁) * h1 - 4 * h0)
+  exact ⟨α, by simpa using hα.eq_zero, hαt⟩
+
+/-- **On a centred node, `a₆` and `Δ` are associated.** Over a local ring, if `a₃ = a₄ = 0`,
+`a₆ ∈ 𝔪` and `b₂` is a unit, then `Δ = -a₆ (b₂³ + 432 a₆)` with the second factor a unit. -/
+theorem associated_a₆_Δ_of_a₃_eq_zero_of_a₄_eq_zero {R : Type*} [CommRing R] [IsLocalRing R]
+    {W : WeierstrassCurve R} (h₃ : W.a₃ = 0) (h₄ : W.a₄ = 0) (h₆ : W.a₆ ∈ maximalIdeal R)
+    (hb₂ : IsUnit W.b₂) : Associated W.a₆ W.Δ := by
+  have hw : IsUnit (W.b₂ ^ 3 + 432 * W.a₆) := by
+    rw [← residue_ne_zero_iff_isUnit]
+    simpa [(residue_eq_zero_iff _).2 h₆] using (residue_ne_zero_iff_isUnit _).2 hb₂
+  refine ⟨-hw.unit, ?_⟩
+  rw [Δ_eq_of_a₃_eq_zero_of_a₄_eq_zero h₃ h₄, Units.val_neg, IsUnit.unit_spec]
+  ring
+
+/-- Over a Henselian local ring with finite residue field, suppose `a₃ = a₄ = 0`, `a₆ ∈ 𝔪`,
+`b₂` is a unit, and the tangent quadratic has no residue-field root. If the discriminant is
+associated to a square, the Weierstrass equation has a solution with both coordinates in `𝔪`. -/
+theorem exists_equation_mem_maximalIdeal_of_a₃_eq_zero_of_a₄_eq_zero {R : Type*}
+    [CommRing R] [HenselianLocalRing R] [Finite (ResidueField R)] (W : WeierstrassCurve R)
+    (h₃ : W.a₃ = 0) (h₄ : W.a₄ = 0) (h₆ : W.a₆ ∈ maximalIdeal R) (hb₂ : IsUnit W.b₂)
+    (hroot : ∀ t : ResidueField R, t ^ 2 + residue R W.a₁ * t - residue R W.a₂ ≠ 0) {z : R}
+    (hΔ : Associated (z ^ 2) W.Δ) :
+    ∃ x y : R, x ∈ maximalIdeal R ∧ y ∈ maximalIdeal R ∧ W.toAffine.Equation x y := by
+  -- `a₆` is associated to `Δ`, so `a₆ = z² A` with `A` a unit, and `z ∈ 𝔪`
+  obtain ⟨u, hu⟩ := hΔ.trans (associated_a₆_Δ_of_a₃_eq_zero_of_a₄_eq_zero h₃ h₄ h₆ hb₂).symm
+  set A : R := ↑u
+  have hA : W.a₆ = z ^ 2 * A := hu.symm
+  have hz : z ∈ maximalIdeal R :=
+    (maximalIdeal.isMaximal R).isPrime.mem_of_pow_mem 2 <|
+      (Ideal.mul_unit_mem_iff_mem _ u.isUnit).1 (hu ▸ h₆)
+  -- the residue conic `Y² + a₁ X Y − a₂ X² = A` has a point, given by the norm of the quadratic
+  -- extension of the residue field generated by a root of `T² − a₁ T − a₂`, and it lifts
+  have : Fact (∀ r : ResidueField R, r ^ 2 ≠ residue R W.a₂ + residue R W.a₁ * r) :=
+    ⟨fun r hr ↦ hroot (-r) (by linear_combination hr)⟩
+  have : Finite (QuadraticAlgebra (ResidueField R) (residue R W.a₂) (residue R W.a₁)) :=
+    Module.finite_of_finite (ResidueField R)
+  -- The algebra structure is pinned to the quadratic algebra's own: instance search would build one
+  -- through `ResidueField.algebraOfIsIntegral`, which is not reducibly the same.
+  obtain ⟨q, hq⟩ := @FiniteField.norm_surjective (ResidueField R)
+    (QuadraticAlgebra (ResidueField R) (residue R W.a₂) (residue R W.a₁)) _ _
+    QuadraticAlgebra.instAlgebra _ (residue R A)
+  rw [Algebra.norm_quadraticAlgebra_apply, QuadraticAlgebra.norm_def] at hq
+  obtain ⟨X₀, hX₀⟩ := residue_surjective q.im
+  obtain ⟨Y₀, hY₀⟩ := residue_surjective q.re
+  obtain ⟨X, Y, hXY, -, -⟩ := TauCeti.HenselianLocalRing.exists_conic_eq
+    (A := A) (X₀ := X₀) (Y₀ := Y₀) (by rwa [← b₂]) hz
+    u.isUnit (by
+      refine (residue_eq_zero_iff _).1 ?_
+      simp only [map_sub, map_add, map_mul, map_pow, (residue_eq_zero_iff _).2 hz, hX₀, hY₀]
+      linear_combination hq)
+  refine ⟨z * X, z * Y, (maximalIdeal R).mul_mem_right _ hz, (maximalIdeal R).mul_mem_right _ hz,
+    ?_⟩
+  rw [Affine.equation_iff]
+  linear_combination z ^ 2 * hXY + z * Y * h₃ - z * X * h₄ - hA
+
+/-- **A nonsplit node of even order has a solution reducing to it.** Over a Henselian local ring
+with finite residue field, let the reduction of `W` be singular at the origin, `a₃, a₄, a₆ ∈ 𝔪`,
+with a tangent quadratic `T² + a₁ T − a₂` that has no root in the residue field, so that the
+singular point is a node without rational tangent directions. If `Δ` is a unit times a square,
+then some solution `(x, y)` of `W` has `x, y ∈ 𝔪`. This is a converse, for the normal form at the
+origin, of `WeierstrassCurve.exists_associated_sq_Δ_of_isSingular`. -/
+theorem exists_equation_mem_maximalIdeal_of_tangentQuadratic_no_roots {R : Type*} [CommRing R]
+    [HenselianLocalRing R] [Finite (ResidueField R)] (W : WeierstrassCurve R)
+    (h₃ : W.a₃ ∈ maximalIdeal R) (h₄ : W.a₄ ∈ maximalIdeal R) (h₆ : W.a₆ ∈ maximalIdeal R)
+    (hroot : ∀ t : ResidueField R, t ^ 2 + residue R W.a₁ * t - residue R W.a₂ ≠ 0) {z : R}
+    (hΔ : Associated (z ^ 2) W.Δ) :
+    ∃ x y : R, x ∈ maximalIdeal R ∧ y ∈ maximalIdeal R ∧ W.toAffine.Equation x y := by
+  have h0 {a : R} (ha : a ∈ maximalIdeal R) : residue R a = 0 := (residue_eq_zero_iff _).2 ha
+  -- `b₂` is a unit, since otherwise the tangent quadratic has a double root in the perfect
+  -- residue field
+  have hb₂ : IsUnit W.b₂ := by
+    by_contra hb
+    obtain ⟨s, -, hs⟩ :=
+      TauCeti.IsLocalRing.exists_add_two_mul_mem_maximalIdeal_and_sub_mul_sub_sq_mem_maximalIdeal
+        (a := W.a₁) (b := W.a₂) (by simpa only [b₂] using (mem_maximalIdeal _).2 hb)
+    refine hroot (residue R s) ?_
+    have hs0 := h0 hs
+    simp only [map_sub, map_mul, map_pow] at hs0
+    linear_combination -hs0
+  -- translate the critical point `(r, t)` to the origin, which keeps the residues of `a₁`, `a₂`,
+  -- `a₆` and `b₂`, and solve the centred equation
+  obtain ⟨r, t, hr, ht, h₃', h₄'⟩ := W.exists_translate_a₃_eq_zero_and_a₄_eq_zero h₃ h₄ hb₂
+  obtain ⟨x, y, hx, hy, hE⟩ :=
+    (VariableChange.mk 1 r 0 t • W).exists_equation_mem_maximalIdeal_of_a₃_eq_zero_of_a₄_eq_zero
+      h₃' h₄' ((residue_eq_zero_iff _).1 (by simp [variableChange_a₆, h0 hr, h0 ht, h0 h₆]))
+      (by
+        rw [← residue_ne_zero_iff_isUnit]
+        simpa [variableChange_b₂, h0 hr] using (residue_ne_zero_iff_isUnit _).2 hb₂)
+      (fun s ↦ by
+        have ha₂ : residue R (VariableChange.mk 1 r 0 t • W).a₂ = residue R W.a₂ := by
+          simp [variableChange_a₂, h0 hr]
+        simpa [variableChange_a₁, ha₂] using hroot s)
+      (by rwa [variableChange_translate_Δ])
+  refine ⟨x + r, y + t, add_mem hx hr, add_mem hy ht, ?_⟩
+  simpa using (Affine.variableChange_equation W (VariableChange.mk 1 r 0 t) x y).2 hE
+
+end WeierstrassCurve
 
 end

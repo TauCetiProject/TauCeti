@@ -70,30 +70,23 @@ public section
 
 open _root_.ContRepresentation
 
-open MeasureTheory TauCeti TauCeti.ContRepresentation
+open MeasureTheory TauCeti
 open scoped InnerProductSpace MonoidAlgebra
 
 namespace ContRepresentation
 
 section IsotypicProjection
 
-variable {k G V : Type*} [RCLike k] [IsAlgClosed k] [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V]
+variable {k G V : Type*} [RCLike k] [Group G] [TopologicalSpace G]
 
 /-! ### The kernel, the projector, and the matching blocks -/
 
-section Normed
+section Kernel
 
-variable [NormedSpace k V] [NormedSpace ℝ V] [SMulCommClass ℝ k V] [FiniteDimensional k V]
 variable {W W' : Type*}
   [NormedAddCommGroup W] [NormedSpace k W] [FiniteDimensional k W]
   [NormedAddCommGroup W'] [NormedSpace k W'] [FiniteDimensional k W']
 
-local instance instCompleteSpaceIsotypicProjectionNormed : CompleteSpace V :=
-  FiniteDimensional.complete k V
-
-omit [IsAlgClosed k] [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
 /-- The normalized conjugate-character kernel `dim(sigma) · conj(character sigma)` of a
 finite-dimensional continuous representation `sigma`. When `sigma` is irreducible, integrating this
 kernel on a finite-dimensional unitary representation cuts out its isotypic component of type
@@ -102,7 +95,6 @@ noncomputable def isotypicKernel (sigma : ContRepresentation k G W) (hsigma : Co
     C(G, k) :=
   (Module.finrank k W : k) • star (character sigma hsigma)
 
-omit [IsAlgClosed k] [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
 /-- The value of the isotypic kernel. -/
 @[simp]
 theorem isotypicKernel_apply (sigma : ContRepresentation k G W) (hsigma : Continuous sigma)
@@ -111,7 +103,6 @@ theorem isotypicKernel_apply (sigma : ContRepresentation k G W) (hsigma : Contin
       (Module.finrank k W : k) * star (character sigma hsigma g) := by
   simp only [isotypicKernel, ContinuousMap.smul_apply, ContinuousMap.star_apply, smul_eq_mul]
 
-omit [IsAlgClosed k] [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
 -- Not `@[simp]`: `isotypicKernel_apply` above already rewrites the left-hand side to
 -- `↑(Module.finrank k W) * star (character sigma hsigma (h * g * h⁻¹))`, and the character is then
 -- unfolded further, so the attribute would be a `simpNF` violation ("Left-hand side simplifies …
@@ -124,7 +115,6 @@ theorem isotypicKernel_conj (sigma : ContRepresentation k G W) (hsigma : Continu
   simp only [isotypicKernel_apply]
   rw [character_conj]
 
-omit [IsAlgClosed k] [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
 /-- **Equivalent representations have the same normalized character kernel.** The kernel sees
 `sigma` only through its isomorphism type. -/
 theorem isotypicKernel_eq_of_equiv {sigma : ContRepresentation k G W} (hsigma : Continuous sigma)
@@ -136,9 +126,22 @@ theorem isotypicKernel_eq_of_equiv {sigma : ContRepresentation k G W} (hsigma : 
   simp only [isotypicKernel_apply, coe_character, hdim]
   rw [Representation.char_iso e]
 
-variable (rho : ContRepresentation k G V) (hrho : Continuous rho)
+end Kernel
 
-include hrho
+variable [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V]
+
+section Normed
+
+variable [NormedSpace k V] [NormedSpace ℝ V] [SMulCommClass ℝ k V] [FiniteDimensional k V]
+variable {W W' : Type*}
+  [NormedAddCommGroup W] [NormedSpace k W] [FiniteDimensional k W]
+  [NormedAddCommGroup W'] [NormedSpace k W'] [FiniteDimensional k W']
+
+local instance instCompleteSpaceIsotypicProjectionNormed : CompleteSpace V :=
+  FiniteDimensional.complete k V
+
+variable (rho : ContRepresentation k G V) (hrho : Continuous rho)
 
 /-- **The normalized character operator.** This is the action on `rho` of
 `dim(sigma) · conj(character sigma)`, packaged as a continuous self-intertwiner. When `sigma` is
@@ -149,7 +152,6 @@ noncomputable def isotypicProjector (sigma : ContRepresentation k G W)
   __ := integratedOperator rho hrho (isotypicKernel sigma hsigma)
   isIntertwining' := integratedOperator_comp rho hrho (isotypicKernel_conj sigma hsigma)
 
-omit [IsAlgClosed k] in
 /-- The continuous linear map underlying the isotypic projector is the integrated action of the
 normalized conjugate-character kernel. -/
 @[simp]
@@ -159,7 +161,6 @@ theorem toContinuousLinearMap_isotypicProjector (sigma : ContRepresentation k G 
       integratedOperator rho hrho (isotypicKernel sigma hsigma) :=
   (rfl)
 
-omit [IsAlgClosed k] in
 /-- The defining integral formula for the isotypic projector. -/
 theorem isotypicProjector_apply (sigma : ContRepresentation k G W) (hsigma : Continuous sigma)
     (v : V) :
@@ -172,7 +173,6 @@ theorem isotypicProjector_apply (sigma : ContRepresentation k G W) (hsigma : Con
       rw [toContinuousLinearMap_isotypicProjector]
     _ = _ := integratedOperator_apply rho hrho _ v
 
-omit [IsAlgClosed k] in
 /-- **Equivalent representations have the same isotypic projector.** The projector sees `sigma`
 only through its isomorphism type. -/
 theorem isotypicProjector_eq_of_equiv {sigma : ContRepresentation k G W}
@@ -182,7 +182,6 @@ theorem isotypicProjector_eq_of_equiv {sigma : ContRepresentation k G W}
   ext v
   simp only [toContinuousLinearMap_isotypicProjector, isotypicKernel_eq_of_equiv hsigma htau e]
 
-omit [IsAlgClosed k] in
 /-- **The isotypic projector is computed blockwise.** On an invariant subspace `tau` of `rho` the
 projector is the integrated action of the same kernel on the restricted representation, read back
 through the inclusion; this is naturality of integration applied to the inclusion of `tau`. -/
@@ -221,7 +220,7 @@ end Normed
 
 section AmbientInnerProduct
 
-variable [InnerProductSpace k V] [NormedSpace ℝ V] [SMulCommClass ℝ k V]
+variable [IsAlgClosed k] [InnerProductSpace k V] [NormedSpace ℝ V] [SMulCommClass ℝ k V]
   [FiniteDimensional k V]
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace k W] [FiniteDimensional k W]
 
@@ -229,8 +228,6 @@ local instance instCompleteSpaceIsotypicProjectionAmbient : CompleteSpace V :=
   FiniteDimensional.complete k V
 
 variable (rho : ContRepresentation k G V) (hrho : Continuous rho)
-
-include hrho
 
 /-- **The isotypic projector is the identity on every equivalent irreducible block.** -/
 theorem isotypicProjector_apply_subtype_of_equiv (hunitary : IsUnitary rho)
@@ -314,9 +311,6 @@ variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace k W] [NormedSpace
   [SMulCommClass ℝ k W] [FiniteDimensional k W]
 variable (rho : ContRepresentation k G V) (hrho : Continuous rho)
 
-include hrho
-
-omit [IsAlgClosed k] in
 private theorem isotypicProjector_apply_subtype_of_not_equiv_of_isUnitary
     (sigma : ContRepresentation k G W) (hsigma : Continuous sigma) (hunitary : IsUnitary sigma)
     (hirr : Representation.IsIrreducible sigma.toRepresentation)
@@ -358,9 +352,6 @@ section NormedSelected
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace k W] [FiniteDimensional k W]
 variable (rho : ContRepresentation k G V) (hrho : Continuous rho)
 
-include hrho
-
-omit [IsAlgClosed k] in
 /-- **The isotypic projector vanishes on every inequivalent irreducible block.** -/
 theorem isotypicProjector_apply_subtype_of_not_equiv
     (sigma : ContRepresentation k G W) (hsigma : Continuous sigma)
@@ -391,6 +382,8 @@ theorem isotypicProjector_apply_subtype_of_not_equiv
   rw [isotypicProjector_eq_of_equiv rho hrho hsigma hsigma' hequiv]
   exact isotypicProjector_apply_subtype_of_not_equiv_of_isUnitary rho hrho sigma' hsigma'
     hunitary hirr' htau hne' v
+
+variable [IsAlgClosed k]
 
 /-- **The character projector cuts out the isotypic component.** Its range is exactly Mathlib's
 sum of the simple `k[G]`-submodules isomorphic to the selected irreducible. -/

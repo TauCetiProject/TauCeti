@@ -112,7 +112,7 @@ theorem isTamelyRamified_of_adjoin_eq_top_of_pow_eq {n : ℕ} (hn : ¬ ringChar 
     rw [← finrank_top', ← hβE, adjoin.finrank (.of_finite E β)]
     refine (natDegree_le_of_dvd (minpoly.dvd E β hroot)
       (X_pow_sub_C_ne_zero (Nat.pos_of_ne_zero fun h ↦ hn0 (by simp [hne, h])) _)).trans ?_
-    exact natDegree_X_pow_sub_C.le
+    exact (natDegree_X_pow_sub_C _).le
   have hle : ramificationIndex E L ≤ e' :=
     (Nat.le_of_dvd Module.finrank_pos
       (Dvd.intro _ (ramificationIndex_mul_inertiaDegree E L))).trans hfin

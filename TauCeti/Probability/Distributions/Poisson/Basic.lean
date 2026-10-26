@@ -18,9 +18,13 @@ analytic API of the real-valued Poisson law. For a rate
 `exp (r * (exp t - 1))`, cumulant-generating function `r * (exp t - 1)`, and both mean and
 variance equal to `r`.
 
+The zero-rate law is recorded explicitly as the point mass at zero.
+
 The series calculation for the probability-generating function follows the calculation of
 `ProbabilityTheory.charFun_map_cast_poissonMeasure` in Mathlib; the moment-generating function is
-its value at `exp t`. The moment formulas are then obtained by differentiating the
+its value at `exp t`. The same series, together with the factorial-moment series
+`∑ k, exp (-r) r ^ k / k! * k.descFactorial n = r ^ n`, is also stated as a `HasSum`, the form in
+which Poisson mixtures consume it. The moment formulas are then obtained by differentiating the
 moment-generating function.
 -/
 
@@ -31,25 +35,68 @@ open scoped NNReal Nat
 
 namespace TauCeti.Probability
 
+/-- A Poisson law of rate zero is concentrated at zero. -/
+@[simp]
+theorem poissonMeasure_zero : poissonMeasure 0 = Measure.dirac 0 := by
+  apply Measure.ext_of_singleton
+  intro n
+  cases n <;> simp [poissonMeasure_singleton]
+
+/-- The probability-generating series of a Poisson law: weighted by the Poisson masses, the powers
+`z ^ k` sum to `exp ((z - 1) * r)`. -/
+theorem hasSum_pow_poissonMeasure (r : ℝ≥0) (z : ℝ) :
+    HasSum (fun k : ℕ ↦ Real.exp (-r) * (r : ℝ) ^ k / k ! * z ^ k)
+      (Real.exp ((z - 1) * r)) := by
+  convert (NormedSpace.expSeries_div_hasSum_exp ((r : ℝ) * z)).mul_left (Real.exp (-r)) using 1
+  · funext k
+    rw [mul_pow]
+    ring
+  · rw [← Real.exp_eq_exp_ℝ, ← Real.exp_add]
+    ring_nf
+
+/-- The factorial moments of a Poisson law as a weighted series: weighted by the Poisson masses,
+the falling factorials `k.descFactorial n` sum to `r ^ n`. -/
+theorem hasSum_descFactorial_poissonMeasure (r : ℝ≥0) (n : ℕ) :
+    HasSum (fun k : ℕ ↦ Real.exp (-r) * (r : ℝ) ^ k / k ! * (k.descFactorial n : ℝ))
+      ((r : ℝ) ^ n) := by
+  -- The terms below `n` vanish; shifting the index by `n` leaves `r ^ n` times the Poisson masses.
+  rw [← hasSum_nat_add_iff' n]
+  have hlow : ∑ k ∈ Finset.range n,
+      Real.exp (-r) * (r : ℝ) ^ k / k ! * (k.descFactorial n : ℝ) = 0 :=
+    Finset.sum_eq_zero fun k hk ↦ by
+      rw [Nat.descFactorial_eq_zero_iff_lt.mpr (Finset.mem_range.mp hk)]
+      simp
+  rw [hlow, sub_zero]
+  convert (hasSum_one_poissonMeasure r).mul_left ((r : ℝ) ^ n) using 1
+  · funext k
+    have hfac : ((k + n) ! : ℝ) = k ! * ((k + n).descFactorial n : ℝ) := by
+      rw [← Nat.factorial_mul_descFactorial (Nat.le_add_left n k), Nat.add_sub_cancel]
+      push_cast
+      ring
+    have hk : (k ! : ℝ) ≠ 0 := by positivity
+    have hd : ((k + n).descFactorial n : ℝ) ≠ 0 := by
+      exact_mod_cast (Nat.descFactorial_eq_zero_iff_lt.not.mpr (by omega))
+    rw [hfac, pow_add]
+    field_simp
+  · rw [mul_one]
+
+/-- The lower integral of a nonnegative observable against a Poisson law is the weighted sum of its
+values, whenever that sum converges. -/
+theorem lintegral_ofReal_poissonMeasure {f : ℕ → ℝ} (hf : 0 ≤ f) (r : ℝ≥0) {a : ℝ}
+    (ha : HasSum (fun k ↦ exp (-(r : ℝ)) * (r : ℝ) ^ k / k ! * f k) a) :
+    ∫⁻ k, ENNReal.ofReal (f k) ∂poissonMeasure r = ENNReal.ofReal a := by
+  rw [lintegral_countable', ← ha.tsum_eq,
+    ENNReal.ofReal_tsum_of_nonneg (fun k ↦ mul_nonneg (by positivity) (hf k)) ha.summable]
+  refine tsum_congr fun k ↦ ?_
+  rw [poissonMeasure_singleton, mul_comm, ENNReal.ofReal_mul (by positivity)]
+
 /-- The probability-generating function of a Poisson distribution. -/
 @[simp]
 theorem pgf_poissonMeasure (r : ℝ≥0) (t : ℝ) :
     pgf id (poissonMeasure r) t = Real.exp ((r : ℝ) * (t - 1)) := by
   rw [pgf_def, integral_poissonMeasure]
   simp only [smul_eq_mul, id_eq]
-  calc
-    ∑' n : ℕ, (Real.exp (-r) * (r : ℝ) ^ n / n.factorial) * t ^ n =
-        Real.exp (-r) * ∑' n : ℕ, (((r : ℝ) * t) ^ n / n.factorial) := by
-      rw [← tsum_mul_left]
-      congr with n
-      rw [mul_pow]
-      ring
-    _ = Real.exp (-r) * Real.exp ((r : ℝ) * t) := by
-      rw [(NormedSpace.expSeries_div_hasSum_exp ((r : ℝ) * t)).tsum_eq, Real.exp_eq_exp_ℝ]
-    _ = Real.exp ((r : ℝ) * (t - 1)) := by
-      rw [← Real.exp_add]
-      congr 1
-      ring
+  rw [(hasSum_pow_poissonMeasure r t).tsum_eq, mul_comm]
 
 /-- The moment-generating function of a real-valued Poisson law of rate `r` is
 `t ↦ exp (r * (exp t - 1))`. -/
@@ -137,6 +184,28 @@ theorem variance_id_map_cast_poissonMeasure (r : ℝ≥0) :
   rw [integral_sq_map_cast_poissonMeasure,
     integral_id_map_cast_poissonMeasure]
   ring
+
+/-- Every nonnegative real power of the native Poisson count is integrable. -/
+theorem integrable_natCast_rpow_poissonMeasure (r : ℝ≥0) {p : ℝ} (hp : 0 ≤ p) :
+    Integrable (fun n : ℕ ↦ (n : ℝ) ^ p) (poissonMeasure r) := by
+  have h := integrable_rpow_of_mem_interior_integrableExpSet
+    (X := fun x : ℝ ↦ x) (μ := Po(ℝ, r)) (by simp) hp
+  simpa only [Function.comp_def] using
+    (integrable_map_measure (f := (Nat.cast : ℕ → ℝ)) (by fun_prop) (by fun_prop)).1 h
+
+/-- The mean of the native Poisson count is its rate. -/
+@[simp]
+theorem integral_natCast_poissonMeasure (r : ℝ≥0) :
+    ∫ n : ℕ, (n : ℝ) ∂poissonMeasure r = r := by
+  have h := integral_id_map_cast_poissonMeasure r
+  rwa [integral_map (by fun_prop) (by fun_prop)] at h
+
+/-- The variance of the native Poisson count is its rate. -/
+@[simp]
+theorem variance_natCast_poissonMeasure (r : ℝ≥0) :
+    variance (fun n : ℕ ↦ (n : ℝ)) (poissonMeasure r) = r := by
+  have h := variance_id_map_cast_poissonMeasure r
+  rwa [variance_map (by fun_prop) (by fun_prop), Function.id_comp] at h
 
 /-- A real random variable with Poisson law has expectation equal to the rate. -/
 theorem integral_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]

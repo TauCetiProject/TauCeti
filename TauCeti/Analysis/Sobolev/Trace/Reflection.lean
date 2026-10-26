@@ -46,6 +46,11 @@ Dominated convergence then passes to the limit.
 * `TauCeti.normalCutoff`: the smooth cutoff `σ(c (x.fst - a) - 1)` of the normal coordinate,
   supported a positive distance inside the half-space, with the common bound
   `TauCeti.exists_normalCutoff_bound` on it and its gradient.
+* `TauCeti.tendsto_integral_normalCutoff_mul` and
+  `TauCeti.tendsto_integral_mul_fderiv_normalCutoff_apply`: the two limits behind integration by
+  parts up to the boundary. Multiplying by the cutoffs does not change integrals over the
+  half-space in the limit, and the error from differentiating them vanishes against a function
+  that is zero on the boundary.
 * `TauCeti.HasWeakFDerivOn.add_comp_normalReflection`: the even reflection of a weakly
   differentiable function on the half-space is weakly differentiable on the whole space.
 
@@ -360,10 +365,10 @@ section HalfSpace
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- Multiplying by the boundary cutoffs does not change the limit of an integral over the
-half-space. -/
-private theorem tendsto_integral_cutoff_mul {a : ℝ} {F : WithLp 2 (ℝ × E) → ℝ}
-    (hF : Integrable F) (hF0 : ∀ x, ¬ a < x.fst → F x = 0) :
+/-- Multiplying by the boundary cutoffs of slope `n + 1` does not change, in the limit `n → ∞`,
+the integral of an integrable function vanishing off the half-space. -/
+theorem tendsto_integral_normalCutoff_mul {a : ℝ} {F : WithLp 2 (ℝ × E) → ℝ}
+    (hF : Integrable F) (hF0 : ∀ x ∉ normalHalfSpace (E := E) a, F x = 0) :
     Tendsto (fun n : ℕ => ∫ x, normalCutoff a ((n : ℝ) + 1) x * F x) atTop (𝓝 (∫ x, F x)) := by
   refine tendsto_integral_of_dominated_convergence (fun x => ‖F x‖)
     (fun n => (contDiff_normalCutoff a _).continuous.aestronglyMeasurable.mul hF.1) hF.norm
@@ -374,18 +379,24 @@ private theorem tendsto_integral_cutoff_mul {a : ℝ} {F : WithLp 2 (ℝ × E) �
   · by_cases hx : a < x.fst
     · exact tendsto_const_nhds.congr' <|
         (eventually_normalCutoff_eq_one hx).mono fun n hn => by simp [hn]
-    · simp [hF0 x hx]
+    · simp [hF0 x (by simpa using hx)]
 
 /-- The error term created by differentiating the cutoff in the normal direction tends to zero
 when `χ` vanishes on the boundary hyperplane: there `|χ| ≤ M (x.fst - a)`, which compensates the
 size of the derivative of the cutoff. -/
 private theorem tendsto_integral_mul_deriv_cutoff {a : ℝ} {w : WithLp 2 (ℝ × E) → ℝ}
-    (hw : LocallyIntegrable w) (hw0 : ∀ x, ¬ a < x.fst → w x = 0)
+    (hw : LocallyIntegrable w)
     {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
     (hχa : ∀ y : E, χ (WithLp.toLp 2 (a, y)) = 0) (c : ℝ) :
     Tendsto (fun n : ℕ => ∫ x, χ x *
       (deriv Real.smoothTransition (cutoffArg a n x) * (((n : ℝ) + 1) * c)) * w x)
       atTop (𝓝 0) := by
+  have hneg (n : ℕ) (x : WithLp 2 (ℝ × E)) (hx : ¬ a < x.fst) :
+      cutoffArg a n x < 0 := by
+    have hmul : ((n : ℝ) + 1) * (x.fst - a) ≤ 0 :=
+      mul_nonpos_of_nonneg_of_nonpos (by positivity) (sub_nonpos.2 (le_of_not_gt hx))
+    dsimp only [cutoffArg]
+    linarith
   have hdst : Continuous (deriv Real.smoothTransition) :=
     (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hdst.continuousOn
@@ -417,7 +428,7 @@ private theorem tendsto_integral_mul_deriv_cutoff {a : ℝ} {w : WithLp 2 (ℝ �
     · simpa [image_eq_zero_of_notMem_tsupport hxK] using hb0
     by_cases hxa : a < x.fst
     swap
-    · simpa [hw0 x hxa] using hb0
+    · simpa [Real.smoothTransition.deriv_of_neg (hneg n x hxa)] using hb0
     by_cases hs : 1 < cutoffArg a n x
     · simpa [Real.smoothTransition.deriv_of_one_lt hs] using hb0
     push Not at hs
@@ -438,11 +449,30 @@ private theorem tendsto_integral_mul_deriv_cutoff {a : ℝ} {w : WithLp 2 (ℝ �
       _ ≤ C * M * |c| * |w x| * 2 := by gcongr
       _ = 2 * (C * M * |c|) * |w x| := by ring
   -- Pointwise limit: inside the half-space the cutoff argument eventually exceeds `1`, where the
-  -- derivative of `smoothTransition` vanishes; outside it `w` vanishes.
+  -- derivative of `smoothTransition` vanishes; outside it the cutoff argument is negative.
   · by_cases hxa : a < x.fst
     · exact tendsto_const_nhds.congr' <| (eventually_lt_cutoffArg hxa 1).mono fun n hn => by
         simp [Real.smoothTransition.deriv_of_one_lt hn]
-    · simp [hw0 x hxa]
+    · exact tendsto_const_nhds.congr fun n => by
+        simp [Real.smoothTransition.deriv_of_neg (hneg n x hxa)]
+
+/-- **The boundary-layer error vanishes in the limit.** Let `G` be a locally integrable vector
+field, and let `χ` be smooth with compact support and vanishing on the
+boundary hyperplane `{a} × E`. Then `∫ χ ⟪∇η_n, G⟫ → 0` as `n → ∞`, where `η_n` is the boundary
+cutoff of slope `n + 1`, even though `∇η_n` grows like `n` on the boundary layer. -/
+theorem tendsto_integral_mul_fderiv_normalCutoff_apply {a : ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} (hG : LocallyIntegrable G)
+    {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    (hχa : ∀ y : E, χ (WithLp.toLp 2 (a, y)) = 0) :
+    Tendsto (fun n : ℕ => ∫ x, χ x * fderiv ℝ (normalCutoff a ((n : ℝ) + 1)) x (G x)) atTop
+      (𝓝 0) := by
+  have hGfst : LocallyIntegrable fun x => (G x).fst := locallyIntegrableOn_univ.1 <|
+    (WithLp.fstL 2 ℝ ℝ E).locallyIntegrableOn_comp (hG.locallyIntegrableOn univ)
+  refine (tendsto_integral_mul_deriv_cutoff hGfst hχ hχc hχa 1).congr fun n =>
+      integral_congr_ae (Eventually.of_forall fun x => ?_)
+  simp only [(hasFDerivAt_normalCutoff a _ x).fderiv, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
+    WithLp.fstL_apply, cutoffArg]
+  ring
 
 /-- **Integration by parts up to the boundary.** Let `w` have weak derivative `w'` in the
 direction `v` on the half-space, both vanishing off it and locally integrable on the whole space.
@@ -492,12 +522,14 @@ private theorem integral_fderiv_mul_eq_neg_of_halfSpace {a : ℝ} {v : WithLp 2 
     · funext x; simp only [hD]; ring
     · congr 1; funext x; ring
   -- Pass to the limit `n → ∞` in each of the three integrals.
-  have h1 := tendsto_integral_cutoff_mul (a := a) hint1 (fun x hx => by simp [hw0 x hx])
-  have h3 := tendsto_integral_cutoff_mul (a := a) hint3 (fun x hx => by simp [hw'0 x hx])
+  have h1 := tendsto_integral_normalCutoff_mul (a := a) hint1
+    (fun x hx => by simp [hw0 x (by simpa using hx)])
+  have h3 := tendsto_integral_normalCutoff_mul (a := a) hint3
+    (fun x hx => by simp [hw'0 x (by simpa using hx)])
   have h2 : Tendsto (fun n : ℕ => ∫ x, χ x * D n x * w x) atTop (𝓝 0) := by
     rcases hv with hv | hv
     · simp [hD, hv]
-    · exact tendsto_integral_mul_deriv_cutoff hw hw0 hχ hχc hv v.fst
+    · exact tendsto_integral_mul_deriv_cutoff hw hχ hχc hv v.fst
   have hlim := h1.add h2
   rw [add_zero] at hlim
   exact tendsto_nhds_unique (hlim.congr key) h3.neg

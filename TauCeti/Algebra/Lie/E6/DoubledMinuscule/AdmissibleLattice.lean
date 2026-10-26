@@ -242,7 +242,7 @@ theorem isSl2Triple_rep_serreRootGenerator (i : Fin 6) :
 /-! ## The admissible coordinate lattice -/
 
 /-- The coordinate `ℤ`-lattice in the rational doubled minuscule module. -/
-def lattice : Submodule ℤ ((Fin 27 ⊕ Fin 27) → ℚ) :=
+noncomputable def lattice : Submodule ℤ ((Fin 27 ⊕ Fin 27) → ℚ) :=
   TauCeti.coordinateLattice (Fin 27 ⊕ Fin 27)
 
 /-- A vector belongs to the doubled minuscule lattice exactly when every coordinate is integral. -/

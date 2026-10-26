@@ -92,7 +92,7 @@ noncomputable def coordinateIso (T : SplitMaximalTorus R H r) :
     FiniteTypeCommHopfAlgCat.quotient (FiniteTypeCommHopfAlgCat.of R H) T.definingIdeal ≅
       DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (ULift.{u} (Fin r))) :=
   ObjectProperty.isoMk _
-    (CommHopfAlgCat.quotientKerOfSurjectiveIso T.coordinateMap T.surjective)
+    (CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso T.coordinateMap T.surjective)
 
 /-- The quotient presentation recovers restriction to the torus. -/
 @[simp]
@@ -100,7 +100,7 @@ theorem mkQuotient_comp_coordinateIso_hom (T : SplitMaximalTorus R H r) :
     FiniteTypeCommHopfAlgCat.mkQuotient (FiniteTypeCommHopfAlgCat.of R H) T.definingIdeal ≫
         T.coordinateIso.hom =
       ObjectProperty.homMk T.coordinateMap :=
-  ObjectProperty.hom_ext _ (CommHopfAlgCat.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
+  ObjectProperty.hom_ext _ (CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
 
 /-- The closed subgroup defined by the chosen torus is a split torus over the base ring. -/
 theorem splitTorus_quotient (T : SplitMaximalTorus R H r) :
@@ -146,6 +146,13 @@ noncomputable def comapOfIso (T : SplitMaximalTorus R L r) (e : H ≅ L) :
 theorem comapOfIso_coordinateMap (T : SplitMaximalTorus R L r) (e : H ≅ L) :
     (T.comapOfIso e).coordinateMap = e.hom ≫ T.coordinateMap :=
   (rfl)
+
+/-- The coordinate map of a transported torus is restriction along the bialgebra equivalence
+underlying the isomorphism. -/
+theorem hom_comapOfIso_coordinateMap (T : SplitMaximalTorus R L r) (e : H ≅ L) :
+    (T.comapOfIso e).coordinateMap.hom =
+      T.coordinateMap.hom.comp (CommHopfAlgCat.ofIso e : H →ₐc[R] L) := by
+  rw [comapOfIso_coordinateMap, CommHopfAlgCat.hom_comp, CommHopfAlgCat.coe_ofIso]
 
 /-- The defining ideal of the transported torus is the pullback of the original defining ideal
 along `e`. -/

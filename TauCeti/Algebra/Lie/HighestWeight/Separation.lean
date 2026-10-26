@@ -96,10 +96,6 @@ in the cone. A nonnegative rational plus a positive one is nonzero.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §6.3, where
   the separation is the engine of Weyl's theorem, and §13.4 and §22.3, where the comparison of
   `⟨lam + ρ, lam + ρ⟩` with `⟨mu + ρ, mu + ρ⟩` is the input of Freudenthal's recursion.
-
-This is the "the eigenvalue separates the trivial module from nontrivial irreducibles" step of
-Layer 5 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, together with the
-nonvanishing that Layer 7's "Freudenthal's multiplicity formula" needs to be read as a recursion.
 -/
 
 public section

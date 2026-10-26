@@ -270,7 +270,7 @@ theorem groupSchemePointsMulEquiv_groupSchemeMap {G H : FGCommGrpCat.{u}} (f : G
   change AlgebraicGeometry.Spec.mapMulEquiv.symm
       ((p ≫ (groupSchemeMap R f).hom.hom) ≫
         (groupSchemeIsoSpec (R := R) G).hom) =
-    (CommHopfAlgCat.mapPointsFunctor (coordinateMap R f).hom).app
+    (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R f).hom).app
       (CommAlgCat.of R A)
         (AlgebraicGeometry.Spec.mapMulEquiv.symm
           (p ≫ (groupSchemeIsoSpec (R := R) H).hom))

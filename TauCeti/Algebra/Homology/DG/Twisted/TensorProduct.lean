@@ -56,14 +56,15 @@ universe uR uA uM uP
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
-  {P : Type uP} [Fintype P] {ind : P → ℤ}
-  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {dA : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 dA}
+  {P : Type uP} {ind : P → ℤ}
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
   {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
-  {dM : M →ₗ[R] M} (m : P → P → A)
 
 namespace BalancedTensorProduct
 
+variable [Fintype P] {dA : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 dA} {dM : M →ₗ[R] M}
+  (m : P → P → A) in
 /-- **The twisted differential is the tensor differential of `ℳ` with `K_m`**: under
 `α ⊗ g ↦ fun y ↦ α · g y`, the differential of the balanced tensor product of the right module
 `(ℳ, dM)` with the complex `K_m = (P → A, twistedDifferential m 𝒜 dA)` of free left modules is the
@@ -121,17 +122,17 @@ local instance instGradedSMulOppositeOfDecompositionTwisted :
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
-omit [Fintype P] in
 local instance instGradedSMulOfDecompositionTwistedTotalGrading [Finite P] : SetLike.GradedSMul 𝒜
     (InternalGrading.ofDecomposition (twistedTotalGrading 𝒜 ind)).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
+variable [Fintype P]
+
 /-- The total-degree grading of `M ⊗_A K_m`, with `K_m` graded by `twistedTotalGrading 𝒜 ind`. -/
 local notation "twistedGrading" => grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
   (InternalGrading.ofDecomposition (twistedTotalGrading 𝒜 ind))
 
-omit m in
 /-- `piRight` carries a tensor of total degree `n` to a function of total degree `n`. -/
 theorem piRight_mem_twistedTotalGrading {n : ℤ} {z : BalancedTensorProduct R A M (P → A)}
     (hz : z ∈ (twistedGrading).piece n) :
@@ -144,16 +145,11 @@ theorem piRight_mem_twistedTotalGrading {n : ℤ} {z : BalancedTensorProduct R A
     mem_twistedTotalGrading_iff]
   intro y
   rw [mem_twistedTotalGrading_iff] at hg
-  have hop : op (g y) ∈ (InternalGrading.ofDecomposition 𝒜).opposite.piece (n - q + ind y) :=
-    ((InternalGrading.ofDecomposition 𝒜).op_mem_opposite_piece_iff _ _).2
-      (by simpa only [InternalGrading.ofDecomposition_piece] using hg y)
-  have := SetLike.GradedSMul.smul_mem hop hβ
-  rw [vadd_eq_add] at this
-  -- `op (g y) • β` has degree `(n - q + ind y) + q`, which is `n + ind y`.
+  -- `op (g y) • β` has degree `q + (n - q + ind y)`, which is `n + ind y`.
+  have := op_smul_mem_of_mem_graded (hg y) hβ
   convert this using 2
   ring
 
-omit m in
 /-- The inverse of `piRight` carries a function of total degree `n` to a tensor of total
 degree `n`. -/
 theorem piRight_symm_mem_grading {n : ℤ} {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
@@ -177,7 +173,6 @@ theorem piRight_symm_mem_grading {n : ℤ} {f : P → M} (hf : f ∈ twistedTota
     (by simpa only [InternalGrading.ofDecomposition_piece] using hsingle)
   simpa only [add_neg_cancel_right] using this
 
-omit m in
 /-- **`piRight` carries the total degree of `M ⊗_A K_m` onto the total grading of `P → M`.** -/
 theorem map_grading_piece_eq_twistedTotalGrading (n : ℤ) :
     ((twistedGrading).piece n).map (piRight R A M P).toLinearMap =

@@ -159,7 +159,7 @@ theorem IsJordanCurve.isJordanDomain_filledHull_sdiff_of_locally_eq_line {C : Se
     (hC : IsJordanCurve C) {p v : ℂ} (hr : 0 < r)
     (hline : ∀ z ∈ ball p r, z ∈ C ↔ (v * (z - p)).im = 0) :
     IsJordanDomain (filledHull C \ C) := by
-  obtain ⟨x, hx⟩ := hC.nonempty_filledHull_sdiff_of_locally_eq_line hr hline
+  obtain ⟨x, hx⟩ := hC.nonempty_filledHull_sdiff
   have hU := hC.filledHull_sdiff_eq_connectedComponentIn_of_locally_eq_line hr v hline hx
   refine ⟨?_, ?_, (isBounded_filledHull.mpr hC.isCompact.isBounded).subset sdiff_subset, ?_⟩
   · rw [hU]

@@ -45,6 +45,9 @@ exchanges the vertical vector with its image.
 * `TauCeti.UpperHalfSpace.tangentSpaceCastModel_mfderiv_inversion`: the differential of an
   inversion is a positive multiple of a reflection.
 * `TauCeti.UpperHalfSpace.inversion_mul_self`: inversions are involutions.
+* `TauCeti.UpperHalfSpace.inversion_eq_similarity_mul_inversion_mul_similarity`: every inversion
+  is the horizontal translation by `-a`, then the unit inversion about the origin, then the
+  scaling by `R ^ 2` about the origin, then the horizontal translation by `a`.
 * `TauCeti.UpperHalfSpace.exists_eq_similarity_or_exists_eq_inversion_mul_similarity`: every
   isometry of the upper half-space model with finite-dimensional `E` is a similarity or an
   inversion composed with a similarity.
@@ -201,6 +204,33 @@ theorem inversion_mul_self (a : E) (R : ℝ) (hR : R ≠ 0) :
 @[simp]
 theorem inversion_inv (a : E) (R : ℝ) (hR : R ≠ 0) : (inversion a R hR)⁻¹ = inversion a R hR :=
   inv_eq_of_mul_eq_one_left (inversion_mul_self a R hR)
+
+/-- The inversion in the sphere of radius `|R|` about `(a, 0)` is the composite of the horizontal
+translation by `-a`, the inversion in the unit sphere about the origin, the scaling by `R ^ 2`
+about the origin, and the horizontal translation by `a`, in that order. -/
+theorem inversion_eq_similarity_mul_inversion_mul_similarity (a : E) (R : ℝ) (hR : R ≠ 0) :
+    inversion a R hR =
+      similarity (R ^ 2) (sq_pos_of_ne_zero hR) (.refl ℝ E) a * inversion 0 1 one_ne_zero *
+        similarity 1 one_pos (.refl ℝ E) (-a) := by
+  ext q
+  -- Translate the centre `(a, 0)` to the origin and scale the radius `R` to `1`.
+  have h := (AffineIsometryEquiv.constVAdd ℝ (WithLp 2 (E × ℝ))
+    (WithLp.toLp 2 (a, 0))).toAffineIsometry.map_inversion 0 (R * 1)
+      ((q : WithLp 2 (E × ℝ)) - WithLp.toLp 2 (a, 0))
+  rw [EuclideanGeometry.inversion_mul, mul_one] at h
+  simp only [AffineIsometryEquiv.coe_toAffineIsometry, AffineIsometryEquiv.coe_constVAdd,
+    vadd_eq_add, add_zero, add_sub_cancel, AffineMap.homothety_apply, vsub_eq_sub,
+    sub_zero] at h
+  -- The first translation moves `q` to `q - (a, 0)`.
+  have hq : (similarity 1 one_pos (.refl ℝ E) (-a) q : WithLp 2 (E × ℝ)) =
+      (q : WithLp 2 (E × ℝ)) - WithLp.toLp 2 (a, 0) :=
+    (WithLp.ext_iff 2).2 (Prod.ext (by simp [sub_eq_add_neg]) (by simp))
+  -- Normalize the composite to the unit inversion of `q - (a, 0)`.
+  simp only [RiemannianIsometry.mul_apply, coe_inversion_apply, coe_similarity_apply (R ^ 2),
+    ← snd_coe, hq, Prod.mk_zero_zero, WithLp.toLp_zero]
+  -- Apply the Euclidean transport identity and compare coordinates.
+  rw [← h]
+  exact (WithLp.ext_iff 2).2 (Prod.ext (by simp [add_comm]) (by simp))
 
 section Classification
 

@@ -173,8 +173,7 @@ section Invariant
 
 variable {M : Type*} [AddCommGroup M] [Module R M] [LieRingModule L M] {B C : BilinForm R M}
 
-omit [LieAlgebra R L]
-
+omit [LieAlgebra R L] in
 /-- The flip of an invariant bilinear form is invariant: invariance is the equation
 `B ⁅x, y⁆ z = -B y ⁅x, z⁆`, and reading it with the roles of `y` and `z` exchanged is the same
 equation for the flip. -/
@@ -183,11 +182,13 @@ theorem lieInvariant_flip (hB : B.lieInvariant L) :
   simp only [LinearMap.flip_apply]
   rw [hB x z y, neg_neg]
 
+omit [LieAlgebra R L] in
 /-- Invariance is preserved by sums, the two invariance equations adding termwise. -/
 theorem lieInvariant_add (hB : B.lieInvariant L) (hC : C.lieInvariant L) :
     (B + C).lieInvariant L := fun x y z => by
   simp only [LinearMap.add_apply, hB x y z, hC x y z, neg_add]
 
+omit [LieAlgebra R L] in
 /-- The polar form of the quadratic form `y ↦ B y y` of an invariant `B` is again invariant: it is
 `B + B.flip`, and both summands are. -/
 theorem lieInvariant_polarBilin (hB : B.lieInvariant L) :

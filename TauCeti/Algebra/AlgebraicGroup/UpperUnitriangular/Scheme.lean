@@ -120,7 +120,7 @@ noncomputable def coordinateMap :
 
 /-- Precomposition by `coordinateMap` is the upper-unitriangular inclusion on points. -/
 theorem mapPointsFunctor_coordinateMap :
-    (CommHopfAlgCat.mapPointsFunctor.{u, u, u} (coordinateMap R n) :
+    (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u} (coordinateMap R n) :
       HopfAlgebra.pointsFunctor (R := R) (H := coordinateHopfAlgebra R (Fin n)) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := GeneralLinear.coordinateHopfAlgebra R n)) =
       inclusionPointsMap.{u, u} (R := R) n :=
@@ -133,7 +133,7 @@ theorem mapPointsFunctor_coordinateMap_app (A : CommAlgCat.{u} R)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R (Fin n)) A) :
     toConv (f.ofConv.comp ↑(CommHopfAlgCat.Hom.hom (coordinateMap R n))) =
       inclusionPoints (R := R) n f := by
-  rw [← CommHopfAlgCat.mapPointsFunctor_app_apply, mapPointsFunctor_coordinateMap]
+  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, mapPointsFunctor_coordinateMap]
   rfl
 
 private theorem pointsMulEquiv_id_apply (i j : Fin n) :
@@ -379,11 +379,12 @@ private theorem groupSchemePointMulEquiv_comp_inclusion
     groupSchemePointMulEquiv (Fin n) A q ≫ (inclusion R n).hom.hom =
       GeneralLinear.groupSchemePointMulEquiv n A (inclusionPoints (R := R) n q) := by
   rw [inclusion_def, ← mapPointsFunctor_coordinateMap_app R n (CommAlgCat.of R A) q]
-  exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
-    (R := R) A (GeneralLinear.groupScheme_def R n) (groupScheme_def R (Fin n))
-      (GeneralLinear.groupSchemePointMulEquiv n A) (groupSchemePointMulEquiv (Fin n) A)
-      (GeneralLinear.groupSchemePointMulEquiv_apply_left n A)
-      (groupSchemePointMulEquiv_apply_left (Fin n) A) (coordinateMap R n) q
+  simpa only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] using
+    (CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+      (R := R) A (GeneralLinear.groupScheme_def R n) (groupScheme_def R (Fin n))
+        (GeneralLinear.groupSchemePointMulEquiv n A) (groupSchemePointMulEquiv (Fin n) A)
+        (GeneralLinear.groupSchemePointMulEquiv_apply_left n A)
+        (groupSchemePointMulEquiv_apply_left (Fin n) A) (coordinateMap R n) q)
 
 /-- Composing a scheme-valued point with `U_n ⟶ GL_n` is ordinary subgroup inclusion on
 matrices. -/

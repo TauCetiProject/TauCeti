@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.QuotientGroup.Map
+public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
 # Generating tuples in quotients by open normal subgroups
@@ -16,8 +17,11 @@ with separately continuous multiplication, the set of tuples indexed by a finite
 generate the quotient by an open normal subgroup is closed. Generation descends along quotient
 maps for arbitrary index types.
 
-For compact groups these quotients are finite. These facts let compactness produce a tuple
-that works in every finite quotient when each quotient has a generating tuple of that length.
+For compact groups these quotients are finite, and compactness produces a single tuple that
+generates every quotient by an open normal subgroup containing a fixed subgroup `N`, as soon as
+each such quotient has a generating tuple indexed by the same finite type
+(`TauCeti.iInter_generatingTuples_nonempty`). No compatibility between the generating tuples of
+different quotients is needed.
 -/
 
 public section
@@ -70,5 +74,34 @@ theorem generatingTuples_mono (ι : Type*) {U U' : OpenNormalSubgroup G}
     (h : U' ≤ U) : generatingTuples ι U' ⊆ generatingTuples ι U :=
   fun _ hx ↦ (mem_generatingTuples ι U _).mpr
     (QuotientGroup.closure_range_quotient_mk_eq_top_of_le h ((mem_generatingTuples ι U' _).mp hx))
+
+/-- Some tuple of the group generates the quotient by an open normal subgroup exactly when the
+quotient has a generating tuple with the same index type. -/
+@[simp]
+theorem generatingTuples_nonempty_iff (ι : Type*) (U : OpenNormalSubgroup G) :
+    (generatingTuples ι U).Nonempty ↔
+      ∃ x : ι → G ⧸ U.toSubgroup, Subgroup.closure (Set.range x) = ⊤ := by
+  refine ⟨fun ⟨x, hx⟩ ↦ ⟨fun i ↦ x i, (mem_generatingTuples ι U x).mp hx⟩,
+    fun ⟨x, hx⟩ ↦ ?_⟩
+  choose y hy using fun i ↦ QuotientGroup.mk_surjective (x i)
+  have hyx : (fun i ↦ (y i : G ⧸ U.toSubgroup)) = x := funext hy
+  exact ⟨y, by rwa [mem_generatingTuples, hyx]⟩
+
+/-- **Compactness.** In a compact group, suppose that every quotient by an open normal subgroup
+containing `N` has a generating tuple indexed by the finite type `ι`. Then a single `ι`-tuple of
+the group generates all of these quotients at once. -/
+theorem iInter_generatingTuples_nonempty [CompactSpace G] [SeparatelyContinuousMul G]
+    (ι : Type*) [Finite ι] (N : Subgroup G)
+    (h : ∀ U : OpenNormalSubgroup G, N ≤ U.toSubgroup → (generatingTuples ι U).Nonempty) :
+    (⋂ U : {U : OpenNormalSubgroup G // N ≤ U.toSubgroup}, generatingTuples ι U.1).Nonempty := by
+  -- The admissible `U` are directed downwards, and `generatingTuples` is monotone in `U`.
+  have : Nonempty {U : OpenNormalSubgroup G // N ≤ U.toSubgroup} :=
+    ⟨⟨openNormalSubgroupTop G,
+      (le_top (a := N)).trans_eq (openNormalSubgroupTop_toSubgroup G).symm⟩⟩
+  exact IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed _
+    (fun U V ↦ ⟨⟨U.1 ⊓ V.1, le_inf U.2 V.2⟩, generatingTuples_mono ι inf_le_left,
+      generatingTuples_mono ι inf_le_right⟩)
+    (fun U ↦ h U.1 U.2) (fun U ↦ (isClosed_generatingTuples ι U.1).isCompact)
+    (fun U ↦ isClosed_generatingTuples ι U.1)
 
 end TauCeti

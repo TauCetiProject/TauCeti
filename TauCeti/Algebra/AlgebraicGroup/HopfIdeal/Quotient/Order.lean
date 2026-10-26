@@ -35,6 +35,8 @@ schemes. It uses the quotient universal property from
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory WithConv
 
 namespace TauCeti
@@ -51,37 +53,39 @@ quotient-points inclusions.
 Starting with a point of `H ⧸ J`, mapping it to a point of `H ⧸ I` and then including into
 ambient `H`-points gives the same ambient point as the direct inclusion from `H ⧸ J`. -/
 @[simp]
-lemma quotientPointsHom_mapPointsFunctor_quotientMapOfLe_app
+lemma _root_.CommHopfAlgCat.quotientPointsHom_mapPointsFunctor_quotientMapOfLe_app
     (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
     (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := quotient H J) A) :
-    quotientPointsHom H I A ((mapPointsFunctor (quotientMapOfLe H hIJ)).app A f) =
+    quotientPointsHom H I A ((CommHopfAlgCat.Hom.mapPointsFunctor (quotientMapOfLe H hIJ)).app A
+      f) =
       quotientPointsHom H J A f := by
   apply WithConv.ofConv_injective
   ext h
-  erw [quotientPointsHom_apply_apply, mapPointsFunctor_app_apply_apply,
+  erw [quotientPointsHom_apply_apply, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply,
     quotientMapOfLe_mk, quotientPointsHom_apply_apply]
 
 /-- The pointwise form of
 `CommHopfAlgCat.quotientPointsHom_mapPointsFunctor_quotientMapOfLe_app`. -/
 @[simp]
-lemma quotientPointsHom_mapPointsFunctor_quotientMapOfLe_app_apply
+lemma _root_.CommHopfAlgCat.quotientPointsHom_mapPointsFunctor_quotientMapOfLe_app_apply
     (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
     (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := quotient H J) A) (h : H) :
-    (quotientPointsHom H I A ((mapPointsFunctor (quotientMapOfLe H hIJ)).app A f)).ofConv h =
+    (quotientPointsHom H I A ((CommHopfAlgCat.Hom.mapPointsFunctor (quotientMapOfLe H hIJ)).app A
+      f)).ofConv h =
       f.ofConv (Ideal.Quotient.mkₐ R J.toIdeal h) := by
   rw [quotientPointsHom_mapPointsFunctor_quotientMapOfLe_app, quotientPointsHom_apply_apply]
 
 /-- Under the quotient-point subgroup isomorphisms, the points map induced by
 `quotientMapOfLe` is exactly the subgroup inclusion attached to `I ≤ J`. -/
 @[simp]
-lemma quotientPointsSubgroupIso_hom_mapPointsFunctor_quotientMapOfLe_app
+lemma _root_.CommHopfAlgCat.quotientPointsSubgroupIso_hom_mapPointsFunctor_quotientMapOfLe_app
     (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
     (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := quotient H J) A) :
     (quotientPointsSubgroupIso H I A).hom
-        ((mapPointsFunctor (quotientMapOfLe H hIJ)).app A f) =
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (quotientMapOfLe H hIJ)).app A f) =
       Subgroup.inclusion (quotientPointsSubgroup_le_of_le H hIJ A)
         ((quotientPointsSubgroupIso H J A).hom f) := by
   apply Subtype.ext

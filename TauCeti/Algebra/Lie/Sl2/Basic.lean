@@ -65,6 +65,8 @@ that composes to zero is already zero.
 * `TauCeti.lieHomOfSl2Basis`: from a basis obeying the `sl₂` relations, three elements of another
   Lie algebra obeying the same relations determine a homomorphism, sending the basis to them
   (`TauCeti.lieHomOfSl2Basis_apply`).
+* `TauCeti.lieHom_ext_slFinTwo`: a Lie algebra homomorphism out of `sl (Fin 2) K` is determined by
+  its values at `E` and `F`.
 * `TauCeti.linearIndependent_isSl2Triple`: the three elements of an `sl₂` triple are linearly
   independent, being eigenvectors of `ad h` for the eigenvalues `2`, `-2` and `0`, and
   `TauCeti.basisOfIsSl2Triple`: a generating `sl₂` triple, as a basis of the Lie algebra it
@@ -352,6 +354,21 @@ theorem lieHomOfSl2Basis_apply (b : Basis (Fin 3) K L)
     (hhe : ⁅H, E⁆ = (2 : K) • E) (hhf : ⁅H, F⁆ = -((2 : K) • F)) (i : Fin 3) :
     lieHomOfSl2Basis b hb_ef hb_he hb_hf E F H hef hhe hhf (b i) = ![E, F, H] i :=
   Basis.constr_basis b K ![E, F, H] i
+
+/-- A Lie algebra homomorphism out of `sl (Fin 2) K` is determined by its values at the raising
+element `E = E₀₁` and the lowering element `F = E₁₀`: the Cartan element is `⁅E, F⁆`, and the
+three span. -/
+@[ext]
+theorem lieHom_ext_slFinTwo {φ ψ : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ L}
+    (he : φ (SpecialLinear.single 0 1 zero_ne_one 1) = ψ (SpecialLinear.single 0 1 zero_ne_one 1))
+    (hf : φ (SpecialLinear.single 1 0 one_ne_zero 1) = ψ (SpecialLinear.single 1 0 one_ne_zero 1)) :
+    φ = ψ := by
+  have hh : φ (SpecialLinear.singleSubSingle 0 1 1) = ψ (SpecialLinear.singleSubSingle 0 1 1) := by
+    rw [← lie_single_single_eq_singleSubSingle zero_ne_one (1 : K), LieHom.map_lie,
+      LieHom.map_lie, he, hf]
+  have hlin : (φ : SpecialLinear.sl (Fin 2) K →ₗ[K] L) = ψ :=
+    Module.Basis.ext (slFinTwoBasis K) fun i ↦ by fin_cases i <;> simpa
+  exact LieHom.ext fun x ↦ LinearMap.congr_fun hlin x
 
 end Presentation
 

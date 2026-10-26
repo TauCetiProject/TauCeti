@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+public import TauCeti.Algebra.Homology.HomologicalComplex.ProjectiveDimension
 public import Mathlib.Algebra.Category.ModuleCat.Projective
+public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Braiding
 public import TauCeti.CategoryTheory.Monoidal.Tor
 
@@ -18,7 +21,11 @@ suppose that the cycles `Z_q(L)` and the quotients `L_q / Z_q(L)` are projective
 projective modules over a principal ideal domain
 (`HomologicalComplex.free_cycles_of_isPrincipalIdealRing` and
 `HomologicalComplex.free_cokernel_iCycles_of_isPrincipalIdealRing`), for instance for singular
-chains with integer coefficients.  Then the **Künneth sequence**
+chains with integer coefficients. More generally, both projectivity hypotheses are found by
+instance search for a complex of projective modules when every module has projective dimension
+at most one (`HomologicalComplex.projective_cycles_of_hasProjectiveDimensionLE_one` and
+`HomologicalComplex.projective_cokernel_iCycles_of_hasProjectiveDimensionLE_one`). Then the
+**Künneth sequence**
 
 `0 ⟶ ⨁_{p + q = m + 1} Hₚ(K) ⊗ H_q(L) ⟶ Hₘ₊₁(K ⊗ L) ⟶ ⨁_{p + q = m} Tor₁(Hₚ(K), H_q(L)) ⟶ 0`
 
@@ -32,7 +39,15 @@ presentation `0 ⟶ H_{q+1}(L / Z(L)) ⟶ H_q(Z(L)) ⟶ H_q(L) ⟶ 0`
 (`HomologicalComplex.homologyPresentation`).  It is characterized by its composite with the
 monomorphism `HomologicalComplex.homologyTorToHomologyQuotient` into `Hₘ₊₁(K ⊗ (L / Z(L)))`
 (`HomologicalComplex.homologyToTor_comp_homologyTorToHomologyQuotient` and
-`HomologicalComplex.homologyToTor_unique`).
+`HomologicalComplex.homologyToTor_unique`).  It is natural in both complexes
+(`HomologicalComplex.homologyToTor_naturality`), as is the Künneth map, so the Künneth sequence is
+natural in `K` and `L`: chain maps induce morphisms of Künneth short complexes
+(`HomologicalComplex.homologyKunnethShortComplexMap`).
+
+If the cycles of `K` split off its terms as well, for instance when `K` is also a complex of
+projective modules over a principal ideal domain, the Künneth map is a split monomorphism and the
+sequence splits (`HomologicalComplex.homologyKunnethShortComplexSplitting`).  The splitting is
+built from chosen splittings of the cycles and need not be natural in `K` and `L`.
 
 ## Main definitions and results
 
@@ -46,6 +61,12 @@ monomorphism `HomologicalComplex.homologyTorToHomologyQuotient` into `Hₘ₊₁
 * `HomologicalComplex.homologyKunnethShortComplex`: the Künneth short complex.
 * `HomologicalComplex.mono_homologyKunneth`: the Künneth map is a monomorphism in every degree.
 * `HomologicalComplex.homologyKunnethShortComplex_shortExact`: **the Künneth short exact sequence**.
+* `HomologicalComplex.homologyTorToHomologyQuotient_naturality` and
+  `HomologicalComplex.homologyToTor_naturality`: naturality in both complexes.
+* `HomologicalComplex.homologyKunnethShortComplexMap`: the morphism of Künneth short complexes
+  induced by a pair of chain maps.
+* `HomologicalComplex.homologyKunnethShortComplexSplitting`: its splitting when the cycles of `K`
+  split off as well.
 
 ## References
 
@@ -131,8 +152,8 @@ abbrev homologyTor (m : ℕ) : ModuleCat.{u} R :=
 /-- Sums over the finitely many pairs `(p, q)` with `p + q = m` are exact. -/
 private instance (m : ℕ) : HasExactColimitsOfShape
     (Discrete ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {m})) (ModuleCat.{u} R) :=
-  have := ((Finset.antidiagonal m).finite_toSet.subset fun x (hx : x.1 + x.2 = m) ↦
-    by simpa using hx).to_subtype
+  have := ((Finset.antidiagonal m).finite_toSet.subset
+    (t := (fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {m}) fun x hx ↦ by simpa using hx).to_subtype
   @hasExactColimitsOfShape_discrete_finite _ _ _ Abelian.hasFiniteBiproducts _ _
 
 /-- The map `⨁ Hₚ(K) ⊗ H_{q+1}(L / Z(L)) ⟶ ⨁ Hₚ(K) ⊗ H_q(Z(L))` of degree `m` induced by the
@@ -252,11 +273,6 @@ variable [∀ q, Projective (cokernel (L.iCycles q))]
 the cycles split off `L`. -/
 private lemma shortExact_tensorLeft_cycles :
     (tensorLeftShortComplex K L.cyclesComplexShortComplex).ShortExact :=
-  have (q : ℕ) : IsSplitMono (L.iCycles q) :=
-    have hS : (ShortComplex.mk (L.iCycles q) (cokernel.π (L.iCycles q))
-        (cokernel.condition _)).ShortExact :=
-      { exact := ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel _) }
-    .mk' ⟨hS.splittingOfProjective.r, hS.splittingOfProjective.f_r⟩
   shortExact_tensorLeftShortComplex K L.cyclesComplexShortComplex_shortExact
 
 /-- The connecting morphism of `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))`, read through the Künneth
@@ -342,7 +358,8 @@ private lemma tensorδ_exact_homologyKunneth (n : ℕ) :
 
 /-- **The Künneth map is a monomorphism** when the cycles and the quotients `L_q / Z_q(L)` of `L`
 are projective, for instance for a complex `L` of projective modules over a principal ideal
-domain. -/
+domain.  No hypothesis is imposed on `K`; compare `HomologicalComplex.isSplitMono_homologyKunneth`,
+which assumes that the cycles of both complexes split off and gives a split monomorphism. -/
 theorem mono_homologyKunneth (n : ℕ) : Mono (homologyKunneth K L n) := by
   have hc := (tensorπ_exact K L n).gIsCokernel
   have hm := (tensorδ_exact_homologyKunneth K L n).mono_cokernelDesc
@@ -350,14 +367,10 @@ theorem mono_homologyKunneth (n : ℕ) : Mono (homologyKunneth K L n) := by
   have : cokernel.desc (tensorδ K L n) (tensorπ K L n ≫ homologyKunneth K L n)
       (by rw [← Category.assoc, tensorδ_comp_tensorπ, zero_comp]) =
       (IsColimit.coconePointUniqueUpToIso (cokernelIsCokernel _) hc).hom ≫
-        homologyKunneth K L n := by
-    have h := IsColimit.comp_coconePointUniqueUpToIso_hom (cokernelIsCokernel (tensorδ K L n)) hc
-      WalkingParallelPair.one
-    dsimp at h
-    refine coequalizer.hom_ext ?_
-    simp [reassoc_of% h]
-  rw [this] at hm
-  exact (mono_comp_iff_of_isIso _ _).1 hm
+        homologyKunneth K L n :=
+    (IsColimit.coconePointUniqueUpToIso_hom_desc _ hc).symm.trans
+      (_ ≫= Cofork.IsColimit.hom_ext hc ((Cofork.IsColimit.π_desc hc).trans (by simp)))
+  simpa only [this, mono_comp_iff_of_isIso] using hm
 
 /-- The summand inclusion `Tor₁(Hₚ(K), H_q(L)) ⟶ Hₚ(K) ⊗ H_{q+1}(L / Z(L))`, identifying `Tor₁`
 with the kernel of `Hₚ(K) ⊗ H_{q+1}(L / Z(L)) ⟶ Hₚ(K) ⊗ H_q(Z(L))` through the projective
@@ -511,6 +524,156 @@ lemma homologyKunneth_comp_homologyToTor (m : ℕ) :
   rw [← cancel_mono (torToTensor K L m), Category.assoc, homologyToTor_comp_torToTensor,
     homologyKunneth_comp_toTensorQuotient, zero_comp]
 
+section Naturality
+
+/-
+The map `HomologicalComplex.homologyToTor` is characterized by its composite with the
+monomorphism `HomologicalComplex.homologyTorToHomologyQuotient`, so its naturality reduces to that
+of `homologyTorToHomologyQuotient`.  A chain map `ψ : L ⟶ L'` induces a morphism of cycle
+sequences (`HomologicalComplex.cyclesComplexShortComplexMap`), hence a morphism of the projective
+presentations `HomologicalComplex.homologyPresentation`, and the identification of `Tor₁` with a
+kernel is natural in such morphisms and in the first variable
+(`CategoryTheory.ShortComplex.ShortExact.Tor_obj_map_comp_torOneIsoKernel_hom` and
+`CategoryTheory.ShortComplex.ShortExact.Tor_map_app_comp_torOneIsoKernel_hom`).
+-/
+
+variable {K L} {K' L' : ChainComplex (ModuleCat.{u} R) ℕ}
+  [∀ q, Projective (cokernel (L'.iCycles q))] [∀ q, Projective (L'.cycles q)]
+  (φ : K ⟶ K') (ψ : L ⟶ L')
+
+omit [∀ q, Projective (cokernel (L.iCycles q))] [∀ q, Projective (L.cycles q)]
+  [∀ q, Projective (cokernel (L'.iCycles q))] [∀ q, Projective (L'.cycles q)] in
+/-- The morphism of presentations `homologyPresentation L q ⟶ homologyPresentation L' q` induced
+by `ψ`. -/
+@[simps]
+private def homologyPresentationMap (q : ℕ) :
+    L.homologyPresentation q ⟶ L'.homologyPresentation q where
+  τ₁ := homologyMap (cyclesComplexShortComplexMap ψ).τ₃ (q + 1)
+  τ₂ := homologyMap (cyclesComplexShortComplexMap ψ).τ₁ q
+  τ₃ := homologyMap ψ q
+  comm₁₂ := (HomologySequence.δ_naturality (cyclesComplexShortComplexMap ψ)
+    L.cyclesComplexShortComplex_shortExact L'.cyclesComplexShortComplex_shortExact (q + 1) q
+    (by simp)).symm
+  comm₂₃ := by
+    dsimp
+    rw [← homologyMap_comp_assoc, (cyclesComplexShortComplexMap ψ).comm₁₂, homologyMap_comp_assoc,
+      homologyMap_comp_eqToHom ψ L.cyclesComplexShortComplex_X₂ L'.cyclesComplexShortComplex_X₂ _
+        (cyclesComplexShortComplexMap_τ₂ ψ), Category.assoc]
+
+/-- The inclusion `torι` is natural. -/
+private lemma torι_naturality (x : ℕ × ℕ) :
+    ((Tor (ModuleCat.{u} R) 1).map (homologyMap φ x.1)).app (L.homology x.2) ≫
+        ((Tor (ModuleCat.{u} R) 1).obj (K'.homology x.1)).map (homologyMap ψ x.2) ≫
+          torι K' L' x =
+      torι K L x ≫
+        (homologyMap φ x.1 ⊗ₘ homologyMap (cyclesComplexShortComplexMap ψ).τ₃ (x.2 + 1)) := by
+  have h := (L'.homologyPresentation_shortExact x.2).Tor_obj_map_comp_torOneIsoKernel_hom
+    (hS := L.homologyPresentation_shortExact x.2) (K'.homology x.1) (homologyPresentationMap ψ x.2)
+  rw [← homologyPresentationMap_τ₃ ψ x.2]
+  simp only [torι, Category.assoc]
+  rw [reassoc_of% h]
+  refine ((L.homologyPresentation_shortExact x.2).Tor_map_app_comp_torOneIsoKernel_hom_assoc
+    (homologyMap φ x.1) _).trans ?_
+  simp [tensorHom_def]
+
+/-- On the summand `Tor₁(Hₚ(K), H_q(L))`, `torToTensor` is the inclusion `torι`. -/
+@[reassoc]
+private lemma ι_torToTensor (p q m : ℕ) (h : p + q = m) :
+    GradedObject.ιMapBifunctorMapObj (Tor (ModuleCat.{u} R) 1) (fun x ↦ x.1 + x.2)
+        (fun p ↦ K.homology p) (fun q ↦ L.homology q) p q m h ≫ torToTensor K L m =
+      torι K L (p, q) ≫ GradedObject.Monoidal.ιTensorObj (fun p ↦ K.homology p)
+        (fun q ↦ L.cyclesComplexShortComplex.X₃.homology (q + 1)) p q m h := by
+  -- `erw`: the components of `mapMap` are morphisms of the graded category, whose hom types are
+  -- those of `ModuleCat R` only up to unfolding
+  erw [GradedObject.ι_mapMap]
+  rfl
+
+/-- The inclusion `torToTensor` is natural. -/
+@[reassoc]
+private lemma torToTensor_naturality (m : ℕ) :
+    GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) 1) (fun x ↦ x.1 + x.2)
+        (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q) m ≫ torToTensor K' L' m =
+      torToTensor K L m ≫ GradedObject.Monoidal.tensorHom (fun p ↦ homologyMap φ p)
+        (fun q ↦ homologyMap (cyclesComplexShortComplexMap ψ).τ₃ (q + 1)) m := by
+  refine GradedObject.mapBifunctorMapObj_ext _ _ fun p q h ↦ ?_
+  rw [GradedObject.ι_mapBifunctorMapMap_assoc, ι_torToTensor, ι_torToTensor_assoc,
+    GradedObject.Monoidal.ι_tensorHom, reassoc_of% torι_naturality φ ψ (p, q)]
+
+omit [∀ q, Projective (L.cycles q)] [∀ q, Projective (L'.cycles q)] in
+/-- The identification `quotientIso` is natural. -/
+@[reassoc]
+private lemma quotientIso_hom_naturality (n : ℕ) :
+    (quotientIso K L n).hom ≫ GradedObject.Monoidal.tensorHom (fun p ↦ homologyMap φ p)
+        (fun q ↦ homologyMap (cyclesComplexShortComplexMap ψ).τ₃ (q + 1)) n =
+      homologyMap (tensorHom φ (cyclesComplexShortComplexMap ψ).τ₃) (n + 1) ≫
+        (quotientIso K' L' n).hom := by
+  rw [← cancel_epi (homologyKunneth K L.cyclesComplexShortComplex.X₃ (n + 1)),
+    ← homologyKunneth_naturality_assoc]
+  simp only [quotientIso, Iso.trans_hom, Iso.symm_hom, asIso_inv, asIso_hom, Category.assoc,
+    IsIso.hom_inv_id_assoc]
+  refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
+  match q, h with
+  | 0, _ =>
+    -- the summand `Hₚ(K) ⊗ H₀(L / Z(L))` vanishes
+    exact ((tensorLeft (K.homology p)).map_isZero
+      L.isZero_homology_cyclesComplexShortComplex_X₃_zero).eq_of_src _ _
+  | q + 1, h =>
+    simp only [GradedObject.Monoidal.ι_tensorObjSuccIso_inv_assoc,
+      GradedObject.Monoidal.ι_tensorHom_assoc, GradedObject.Monoidal.ι_tensorHom]
+    simp [homologySign, -tensorHom_id]
+
+/-- **Naturality of the inclusion characterizing `HomologicalComplex.homologyToTor`**: for chain
+maps `φ : K ⟶ K'` and `ψ : L ⟶ L'`, the inclusion
+`⨁ Tor₁(Hₚ(K), H_q(L)) ⟶ Hₘ₊₁(K ⊗ (L / Z(L)))` commutes with the maps induced by `φ` and `ψ`. -/
+@[reassoc]
+lemma homologyTorToHomologyQuotient_naturality (m : ℕ) :
+    GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) 1) (fun x ↦ x.1 + x.2)
+        (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q) m ≫
+      homologyTorToHomologyQuotient K' L' m =
+    homologyTorToHomologyQuotient K L m ≫
+      homologyMap (tensorHom φ (cyclesComplexShortComplexMap ψ).τ₃) (m + 1) := by
+  rw [homologyTorToHomologyQuotient, homologyTorToHomologyQuotient, torToTensor_naturality_assoc,
+    Category.assoc]
+  congr 1
+  rw [Iso.eq_inv_comp, quotientIso_hom_naturality_assoc, Iso.hom_inv_id, Category.comp_id]
+
+omit [∀ q, Projective (cokernel (L.iCycles q))] [∀ q, Projective (L.cycles q)]
+  [∀ q, Projective (cokernel (L'.iCycles q))] [∀ q, Projective (L'.cycles q)] in
+/-- Tensoring the projections `L ⟶ L / Z(L)` and `L' ⟶ L' / Z(L')` with `K` and `K'` commutes with
+the maps induced by `φ` and `ψ`. -/
+@[reassoc]
+private lemma tensorHom_id_g_comp_tensorHom :
+    tensorHom (𝟙 K) L.cyclesComplexShortComplex.g ≫
+        tensorHom φ (cyclesComplexShortComplexMap ψ).τ₃ =
+      tensorHom φ (cyclesComplexShortComplexMap ψ).τ₂ ≫
+        tensorHom (𝟙 K') L'.cyclesComplexShortComplex.g := by
+  rw [← mapBifunctorMap_comp, ← mapBifunctorMap_comp, Category.id_comp, Category.comp_id,
+    (cyclesComplexShortComplexMap ψ).comm₂₃]
+
+/-- **Naturality of the Künneth short exact sequence**: the map
+`HomologicalComplex.homologyToTor` to `⨁_{p + q = m} Tor₁(Hₚ(K), H_q(L))` is natural in both
+complexes.  Together with the naturality of the Künneth map
+(`HomologicalComplex.homologyKunneth_naturality`), this makes the Künneth short exact sequence
+natural in `K` and `L` (`HomologicalComplex.homologyKunnethShortComplexMap`). -/
+@[reassoc]
+theorem homologyToTor_naturality (m : ℕ) :
+    homologyMap (tensorHom φ ψ) (m + 1) ≫ homologyToTor K' L' m =
+      homologyToTor K L m ≫ GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) 1)
+        (fun x ↦ x.1 + x.2) (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q) m := by
+  apply (cancel_mono (homologyTorToHomologyQuotient K' L' m)).1
+  -- both sides are now maps `Hₘ₊₁(K ⊗ L) ⟶ Hₘ₊₁(K' ⊗ (L' / Z(L')))`; by the characterization of
+  -- `homologyToTor` and the naturality of `homologyTorToHomologyQuotient`, it remains to commute
+  -- `φ ⊗ ψ` with the maps induced by the projections `L ⟶ L / Z(L)` and `L' ⟶ L' / Z(L')`
+  simp only [Category.assoc, homologyToTor_comp_homologyTorToHomologyQuotient,
+    homologyTorToHomologyQuotient_naturality,
+    homologyToTor_comp_homologyTorToHomologyQuotient_assoc]
+  -- move `φ ⊗ ψ` past the identification of the middle terms, then past the projections
+  simp only [← eqToHom_comp_homologyMap_tensorHom_assoc φ ψ L.cyclesComplexShortComplex_X₂
+      L'.cyclesComplexShortComplex_X₂ _ (cyclesComplexShortComplexMap_τ₂ ψ) (m + 1),
+    ← homologyMap_comp, tensorHom_id_g_comp_tensorHom]
+
+end Naturality
+
 /-- In the long exact homology sequence of `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))`, the piece
 `Hₘ₊₁(K ⊗ L) ⟶ Hₘ₊₁(K ⊗ (L / Z(L))) ⟶ Hₘ(K ⊗ Z(L))`, read through the Künneth isomorphisms. -/
 private lemma toTensorQuotient_exact (m : ℕ) :
@@ -523,11 +686,37 @@ private lemma toTensorQuotient_exact (m : ℕ) :
     (by simp [toTensorQuotient]) (quotientIso_hom_comp_tensorδ K L m))).1
     ((shortExact_tensorLeft_cycles K L).homology_exact₃ (m + 1) m (by simp))
 
+/-- In the long exact homology sequence of `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))`, the piece
+`Hₘ₊₁(K ⊗ Z(L)) ⟶ Hₘ₊₁(K ⊗ L) ⟶ Hₘ₊₁(K ⊗ (L / Z(L)))`, read through the Künneth maps: its first
+term becomes its quotient `⨁_{p + q = m + 1} Hₚ(K) ⊗ H_q(L)` and its first map the Künneth map. -/
+private lemma homologyKunneth_exact_toTensorQuotient (m : ℕ) :
+    (ShortComplex.mk _ _ (homologyKunneth_comp_toTensorQuotient K L m)).Exact :=
+  -- the comparison maps from the long exact sequence are an epimorphism and two isomorphisms;
+  -- these instances are supplied explicitly because synthesizing them is slow
+  (@ShortComplex.exact_iff_of_epi_of_isIso_of_mono _ _ _ _ _ (ShortComplex.Hom.mk
+    (S₂ := ShortComplex.mk _ _ (homologyKunneth_comp_toTensorQuotient K L m))
+    (inv (homologyKunneth K L.cyclesComplexShortComplex.X₁ (m + 1)) ≫ tensorπ K L (m + 1))
+    (middleIso K L (m + 1)).hom (quotientIso K L m).hom
+    ((Category.assoc _ _ _).trans (inv_homologyKunneth_comp_tensorπ K L (m + 1)))
+    (by simp [toTensorQuotient])) (epi_comp _ _) (Iso.isIso_hom _) (IsIso.mono_of_iso _)).1
+    ((shortExact_tensorLeft_cycles K L).homology_exact₂ (m + 1))
+
 /-- The Künneth short complex
 `⨁_{p + q = m + 1} Hₚ(K) ⊗ H_q(L) ⟶ Hₘ₊₁(K ⊗ L) ⟶ ⨁_{p + q = m} Tor₁(Hₚ(K), H_q(L))`, formed by
 the Künneth map and `HomologicalComplex.homologyToTor`. -/
 abbrev homologyKunnethShortComplex (m : ℕ) : ShortComplex (ModuleCat.{u} R) :=
   ShortComplex.mk _ _ (homologyKunneth_comp_homologyToTor K L m)
+
+/-- The second map `HomologicalComplex.homologyToTor` of the Künneth short complex is an
+epimorphism. -/
+private lemma epi_homologyToTor (m : ℕ) : Epi (homologyToTor K L m) := by
+  -- `homologyToTor` is the lift of `toTensorQuotient` to the kernel `torToTensor` of `tensorδ`,
+  -- an epimorphism since `toTensorQuotient` and `tensorδ` are exact (`toTensorQuotient_exact`)
+  have := (toTensorQuotient_exact K L m).epi_kernelLift
+  rw [homologyToTor, ← IsLimit.lift_comp_conePointUniqueUpToIso_hom (kernelIsKernel _)]
+  -- `kernel.lift` abbreviates this `(kernelIsKernel _).lift` of a `KernelFork`, so the
+  -- epimorphism instance from `epi_kernelLift` applies by definitional equality.
+  infer_instance
 
 /-- **The Künneth short exact sequence.**  Let `K` and `L` be chain complexes of modules over a
 commutative ring, indexed by `ℕ`, such that the cycles `Z_q(L)` and the quotients `L_q / Z_q(L)`
@@ -540,40 +729,79 @@ is exact, the first map being the Künneth map and the second `HomologicalComple
 -/
 theorem homologyKunnethShortComplex_shortExact (m : ℕ) :
     (homologyKunnethShortComplex K L m).ShortExact where
-  exact := by
-    -- the sequence with `⨁ Tor₁(Hₚ(K), H_q(L))` replaced by `⨁ Hₚ(K) ⊗ H_{q+1}(L / Z(L))` is the
-    -- middle of the long exact homology sequence of `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))`
-    refine (ShortComplex.exact_iff_of_epi_of_isIso_of_mono (ShortComplex.Hom.mk
-      (S₁ := ShortComplex.mk _ _ (homologyKunneth_comp_homologyToTor K L m))
-      (S₂ := ShortComplex.mk _ _ (homologyKunneth_comp_toTensorQuotient K L m))
-      (𝟙 _) (𝟙 _) (torToTensor K L m) (by simp)
-      (by simp [homologyToTor_comp_torToTensor]))).2 ?_
-    exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono (ShortComplex.Hom.mk
-      (S₁ := ShortComplex.mk
-        (homologyMap (tensorLeftShortComplex K L.cyclesComplexShortComplex).f (m + 1))
-        (homologyMap (tensorLeftShortComplex K L.cyclesComplexShortComplex).g (m + 1))
-        (by rw [← homologyMap_comp, ShortComplex.zero, homologyMap_zero]))
-      (S₂ := ShortComplex.mk _ _ (homologyKunneth_comp_toTensorQuotient K L m))
-      (inv (homologyKunneth K L.cyclesComplexShortComplex.X₁ (m + 1)) ≫ tensorπ K L (m + 1))
-      (middleIso K L (m + 1)).hom (quotientIso K L m).hom
-      (inv_homologyKunneth_comp_tensorπ K L (m + 1)) (by simp [toTensorQuotient]))).1
-      ((shortExact_tensorLeft_cycles K L).homology_exact₂ (m + 1))
+  -- the sequence with `⨁ Tor₁(Hₚ(K), H_q(L))` replaced by `⨁ Hₚ(K) ⊗ H_{q+1}(L / Z(L))` is exact
+  -- by the long exact homology sequence of `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))`
+  exact := (ShortComplex.exact_iff_of_epi_of_isIso_of_mono (ShortComplex.Hom.mk
+    (S₁ := homologyKunnethShortComplex K L m)
+    (S₂ := ShortComplex.mk _ _ (homologyKunneth_comp_toTensorQuotient K L m))
+    (𝟙 _) (𝟙 _) (torToTensor K L m) (by simp)
+    (by simp [homologyToTor_comp_torToTensor]))).2 (homologyKunneth_exact_toTensorQuotient K L m)
   mono_f := mono_homologyKunneth K L (m + 1)
-  epi_g := by
-    -- `homologyToTor` is the map to the kernel of `tensorδ`, which is an epimorphism by the
-    -- exactness of `toTensorQuotient_exact`
-    have := (toTensorQuotient_exact K L m).epi_kernelLift
-    let e := IsLimit.conePointUniqueUpToIso (kernelIsKernel (tensorδ K L m)) (torIsKernel K L m)
-    have h : kernel.lift _ _ (toTensorQuotient_comp_tensorδ K L m) ≫ e.hom =
-        homologyToTor K L m := by
-      rw [← cancel_mono (torToTensor K L m), homologyToTor_comp_torToTensor, Category.assoc]
-      have := IsLimit.conePointUniqueUpToIso_hom_comp (kernelIsKernel (tensorδ K L m))
-        (torIsKernel K L m) WalkingParallelPair.zero
-      dsimp at this
-      simp [e, this]
-    dsimp
-    rw [← h]
-    exact epi_comp _ _
+  epi_g := epi_homologyToTor K L m
+
+section ShortComplexMap
+
+variable {K L} {K' L' : ChainComplex (ModuleCat.{u} R) ℕ}
+  [∀ q, Projective (cokernel (L'.iCycles q))] [∀ q, Projective (L'.cycles q)]
+  (φ : K ⟶ K') (ψ : L ⟶ L')
+
+/-- The morphism of Künneth short complexes induced by chain maps `φ : K ⟶ K'` and `ψ : L ⟶ L'`:
+the maps `Hₚ(φ) ⊗ H_q(ψ)` on `⨁ Hₚ(K) ⊗ H_q(L)`, the map induced by `φ ⊗ ψ` on `Hₘ₊₁(K ⊗ L)` and
+`Tor₁(Hₚ(φ), H_q(ψ))` on `⨁ Tor₁(Hₚ(K), H_q(L))`.  Together with
+`HomologicalComplex.homologyKunnethShortComplex_shortExact` this makes the Künneth short exact
+sequence natural in both complexes. -/
+def homologyKunnethShortComplexMap (m : ℕ) :
+    homologyKunnethShortComplex K L m ⟶ homologyKunnethShortComplex K' L' m where
+  τ₁ := GradedObject.Monoidal.tensorHom (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q) (m + 1)
+  τ₂ := homologyMap (tensorHom φ ψ) (m + 1)
+  τ₃ := GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) 1) (fun x ↦ x.1 + x.2)
+    (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q) m
+  comm₁₂ := homologyKunneth_naturality φ ψ (m + 1)
+  comm₂₃ := homologyToTor_naturality φ ψ m
+
+/-- On `⨁ Hₚ(K) ⊗ H_q(L)`, the morphism of Künneth short complexes is `Hₚ(φ) ⊗ H_q(ψ)`. -/
+@[simp]
+lemma homologyKunnethShortComplexMap_τ₁ (m : ℕ) :
+    (homologyKunnethShortComplexMap φ ψ m).τ₁ =
+      GradedObject.Monoidal.tensorHom (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q)
+        (m + 1) :=
+  (rfl)
+
+/-- On `Hₘ₊₁(K ⊗ L)`, the morphism of Künneth short complexes is the map induced by `φ ⊗ ψ`. -/
+@[simp]
+lemma homologyKunnethShortComplexMap_τ₂ (m : ℕ) :
+    (homologyKunnethShortComplexMap φ ψ m).τ₂ = homologyMap (tensorHom φ ψ) (m + 1) :=
+  (rfl)
+
+/-- On `⨁ Tor₁(Hₚ(K), H_q(L))`, the morphism of Künneth short complexes is
+`Tor₁(Hₚ(φ), H_q(ψ))`. -/
+@[simp]
+lemma homologyKunnethShortComplexMap_τ₃ (m : ℕ) :
+    (homologyKunnethShortComplexMap φ ψ m).τ₃ =
+      GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) 1) (fun x ↦ x.1 + x.2)
+        (fun p ↦ homologyMap φ p) (fun q ↦ homologyMap ψ q) m :=
+  (rfl)
+
+end ShortComplexMap
+
+variable [∀ p, IsSplitMono (K.iCycles p)]
+
+/-- **The Künneth short exact sequence splits** when, in addition, the cycles of `K` split off its
+terms; for instance for complexes `K` and `L` of projective modules over a principal ideal domain.
+The splitting comes from a retraction of the Künneth map
+(`HomologicalComplex.isSplitMono_homologyKunneth`) built from chosen splittings of the cycles, so
+it need not be natural in `K` and `L`. -/
+def homologyKunnethShortComplexSplitting (m : ℕ) : (homologyKunnethShortComplex K L m).Splitting :=
+  have := isSplitMono_homologyKunneth K L (m + 1)
+  .ofExactOfRetraction _ (homologyKunnethShortComplex_shortExact K L m).exact
+    (retraction (homologyKunneth K L (m + 1))) (IsSplitMono.id _)
+    (homologyKunnethShortComplex_shortExact K L m).epi_g
+
+/-- The retraction of the Künneth splitting is the chosen retraction of the Künneth map. -/
+@[simp] lemma homologyKunnethShortComplexSplitting_r (m : ℕ) :
+    (homologyKunnethShortComplexSplitting K L m).r =
+      retraction (homologyKunneth K L (m + 1)) (hf := isSplitMono_homologyKunneth K L (m + 1)) :=
+  (rfl)
 
 end Kunneth
 

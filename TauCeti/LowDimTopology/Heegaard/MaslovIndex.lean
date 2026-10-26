@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.Rat
+public import Mathlib.InformationTheory.Hamming
 public import TauCeti.LowDimTopology.Heegaard.Domain
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Fin
@@ -20,8 +21,10 @@ Lipshitz's index formula computes the expected dimension of the moduli space of 
 disks in a Whitney class `φ` from its domain `D` alone:
 `μ(φ) = e(D) + n_x(D) + n_y(D)`. This file defines the right-hand side for the abstract region
 incidence data `TauCeti.HeegaardRegionSystem` and proves that it is additive under juxtaposition
-of domains, a property needed for a relative grading once independence of the choice of domain is
-established.
+of domains. In a singly pointed diagram satisfying the Euler normalization, this additivity,
+the Maslov index two of the whole surface, and vanishing Maslov index on periodic domains make
+the relative grading `μ(D) - 2 n_z(D)` independent of the choice of domain
+(`TauCeti.LowDimTopology.Heegaard.RelativeGrading`).
 
 Every intersection point `p` is a corner of four regions (with repetition): the regions on the
 two sides of the `α`-arc ending at `p` and of the `α`-arc starting at `p`. The *point measure*
@@ -59,6 +62,13 @@ number of `∂D ∩ α` with `∂E ∩ β`, computed once along the `α`-curves 
   under juxtaposition.
 * `TauCeti.HeegaardRegionSystem.IsDomainBetween.maslovIndex_self_eq`: a domain whose boundary is
   a sum of whole curves has the same Maslov index at any two generators joined by a domain.
+* `TauCeti.HeegaardRegionSystem.maslovIndex_one`: the Maslov index of the whole surface is
+  `∑ χ(R) - #(α ∩ β) + 2n`, so it is two for a closed surface of genus `n`
+  (`TauCeti.HeegaardRegionSystem.maslovIndex_one_eq_two`).
+* `TauCeti.HeegaardRegionSystem.IsDomainBetween.eulerMeasure_add_half_hammingDist_le_maslovIndex`:
+  a nonnegative domain from `x` to `y` has a corner at the points of `x` and of `y` on every
+  `α`-curve where they differ, so its Maslov index is at least its Euler measure plus half the
+  number of such curves.
 
 ## References
 
@@ -137,6 +147,18 @@ def generatorPointMeasure (x : H.Generator) : (Region → ℤ) →+ ℚ where
 theorem generatorPointMeasure_apply (x : H.Generator) (D : Region → ℤ) :
     H.generatorPointMeasure x D = ∑ i, H.pointMeasure D (H.point x i) :=
   (rfl)
+
+/-- The whole surface has multiplicity one at all four corners of every point. -/
+@[simp]
+theorem pointMeasure_one : H.pointMeasure 1 = 1 := by
+  ext p
+  simp only [pointMeasure_apply, Pi.one_apply, Int.cast_one]
+  norm_num
+
+/-- The point measure of the whole surface at a generator is the number of its points. -/
+theorem generatorPointMeasure_one (x : H.Generator) : H.generatorPointMeasure x 1 = n := by
+  simp only [generatorPointMeasure_apply, pointMeasure_one, Pi.one_apply, sum_const, card_univ,
+    Fintype.card_fin, nsmul_eq_mul, mul_one]
 
 /-- The point measure of a generator is the pairing of its `0`-chain with the point
 measures. -/
@@ -287,6 +309,13 @@ theorem eulerMeasure_eq_sub_sum_pointMeasure (χ : Region → ℤ) (D : Region �
   · exact sum_congr rfl fun r _ => mul_comm _ _
   · exact sum_congr rfl fun r _ => by ring
 
+/-- The Euler measure of the whole surface is `∑ χ(R) - #(α ∩ β)`, the Euler characteristic of
+the surface assembled from the regions, the arcs and the intersection points. -/
+theorem eulerMeasure_one (χ : Region → ℤ) :
+    H.eulerMeasure χ 1 = ∑ r, (χ r : ℚ) - Fintype.card Point := by
+  simp only [eulerMeasure_eq_sub_sum_pointMeasure, pointMeasure_one, Pi.one_apply, Int.cast_one,
+    mul_one, sum_const, card_univ, nsmul_eq_mul]
+
 /-- The combinatorial Maslov index `μ(D) = e(D) + n_x(D) + n_y(D)` of a domain `D` from the
 generator `x` to the generator `y`, for the Euler characteristics `χ` of the regions. -/
 def maslovIndex (χ : Region → ℤ) (x y : H.Generator) : (Region → ℤ) →+ ℚ :=
@@ -297,6 +326,12 @@ theorem maslovIndex_apply (χ : Region → ℤ) (x y : H.Generator) (D : Region 
     H.maslovIndex χ x y D =
       H.eulerMeasure χ D + H.generatorPointMeasure x D + H.generatorPointMeasure y D :=
   (rfl)
+
+/-- The Maslov index of the whole surface is `∑ χ(R) - #(α ∩ β) + 2n`, at any two generators. -/
+theorem maslovIndex_one (χ : Region → ℤ) (x y : H.Generator) :
+    H.maslovIndex χ x y 1 = ∑ r, (χ r : ℚ) - Fintype.card Point + 2 * n := by
+  rw [maslovIndex_apply, eulerMeasure_one, generatorPointMeasure_one, generatorPointMeasure_one]
+  ring
 
 /-- Reversing a domain negates its Maslov index. -/
 theorem maslovIndex_neg (χ : Region → ℤ) (x y : H.Generator) (D : Region → ℤ) :
@@ -322,7 +357,100 @@ theorem IsDomainBetween.maslovIndex_self_eq (χ : Region → ℤ) {P : Region �
     H.maslovIndex χ x x P = H.maslovIndex χ y y P := by
   simp [hD.generatorPointMeasure_eq hP]
 
+/-- If every periodic domain has Maslov index zero at `x`, then the same holds at every generator
+`y` joined to `x` by a domain. -/
+theorem IsDomainBetween.forall_mem_periodicDomains_maslovIndex_eq_zero (χ : Region → ℤ)
+    (hD : H.IsDomainBetween x y D) (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) :
+    ∀ P ∈ H.periodicDomains, H.maslovIndex χ y y P = 0 := fun P hPmem => by
+  rw [← hD.maslovIndex_self_eq χ (isDomainBetween_self_iff.mpr hPmem).1, hP P hPmem]
+
+/-- When the region Euler characteristics `χ` are those of a closed surface of genus `n`, that is
+`∑ χ(R) - #(α ∩ β) = 2 - 2n`, the whole surface has Maslov index two. -/
+theorem maslovIndex_one_eq_two {χ : Region → ℤ}
+    (hχ : ∑ r, χ r - Fintype.card Point = 2 - 2 * (n : ℤ)) (x y : H.Generator) :
+    H.maslovIndex χ x y 1 = 2 := by
+  have hχ' : ∑ r, (χ r : ℚ) - Fintype.card Point = 2 - 2 * n := by exact_mod_cast hχ
+  rw [maslovIndex_one]
+  linarith
+
 end EulerMeasure
+
+section NonnegDomain
+
+variable {H} {x y : H.Generator} {D : Region → ℤ}
+
+variable (H) in
+/-- At an intersection point, the boundary of the `α`-part of a nonnegative domain is bounded by
+the sum of the multiplicities at the four corners there, that is, by four times the point
+measure. -/
+theorem abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure (hD : 0 ≤ D) (p : Point) :
+    |(H.alphaArcBoundary (H.alphaBoundary D) p : ℚ)| ≤ 4 * H.pointMeasure D p := by
+  have h₁ : (0 : ℚ) ≤ D (H.alphaLeft (H.alphaNext.symm p)) := by exact_mod_cast hD _
+  have h₂ : (0 : ℚ) ≤ D (H.alphaRight (H.alphaNext.symm p)) := by exact_mod_cast hD _
+  have h₃ : (0 : ℚ) ≤ D (H.alphaLeft p) := by exact_mod_cast hD _
+  have h₄ : (0 : ℚ) ≤ D (H.alphaRight p) := by exact_mod_cast hD _
+  simp only [alphaArcBoundary_apply, alphaBoundary_apply, pointMeasure_apply, Int.cast_sub]
+  rw [abs_le]
+  constructor <;> linarith
+
+variable (H) in
+/-- The point measure of a nonnegative domain is nonnegative. -/
+theorem pointMeasure_nonneg (hD : 0 ≤ D) (p : Point) : 0 ≤ H.pointMeasure D p := by
+  have := H.abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure hD p
+  linarith [abs_nonneg (H.alphaArcBoundary (H.alphaBoundary D) p : ℚ)]
+
+variable (H) in
+/-- The point measure of a nonnegative domain at a generator is nonnegative. -/
+theorem generatorPointMeasure_nonneg (hD : 0 ≤ D) (x : H.Generator) :
+    0 ≤ H.generatorPointMeasure x D := by
+  rw [generatorPointMeasure_apply]
+  exact sum_nonneg fun i _ => H.pointMeasure_nonneg hD _
+
+variable [DecidableEq Point]
+
+/-- If the boundary of the `α`-part of a nonnegative domain `D` has coefficient `±1` at the
+point of `w` on every `α`-curve where `x` and `y` differ, then each such curve contributes at least
+`1 / 4` to `n_w(D)`. -/
+private theorem hammingDist_le_four_mul_generatorPointMeasure_of_abs_eq_one (hD0 : 0 ≤ D)
+    (w : H.Generator) (hw : ∀ i, H.point x i ≠ H.point y i →
+      |(H.alphaArcBoundary (H.alphaBoundary D) (H.point w i) : ℚ)| = 1) :
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure w D := by
+  rw [hammingDist, generatorPointMeasure_apply, mul_sum, card_filter, Nat.cast_sum]
+  refine sum_le_sum fun i _ => ?_
+  split_ifs with hi
+  · simpa using (hw i hi).ge.trans
+      (H.abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure hD0 (H.point w i))
+  · simpa using H.pointMeasure_nonneg hD0 (H.point w i)
+
+/-- For a nonnegative domain `D` from `x` to `y`, every `α`-curve on which `x` and `y` differ
+contributes at least `1 / 4` to `n_x(D)`. -/
+theorem IsDomainBetween.hammingDist_le_four_mul_generatorPointMeasure_left
+    (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure x D :=
+  hammingDist_le_four_mul_generatorPointMeasure_of_abs_eq_one hD0 x fun _ hi => by
+    rw [hD.alphaArcBoundary_alphaBoundary_point_left hi]; simp
+
+/-- For a nonnegative domain `D` from `x` to `y`, every `α`-curve on which `x` and `y` differ
+contributes at least `1 / 4` to `n_y(D)`. -/
+theorem IsDomainBetween.hammingDist_le_four_mul_generatorPointMeasure_right
+    (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure y D :=
+  hammingDist_le_four_mul_generatorPointMeasure_of_abs_eq_one hD0 y fun _ hi => by
+    rw [hD.alphaArcBoundary_alphaBoundary_point_right hi]; simp
+
+variable [Fintype Point] [DecidableEq Region] [Fintype Region]
+
+/-- The Maslov index of a nonnegative domain from `x` to `y` is at least its Euler measure plus
+half the number of `α`-curves on which `x` and `y` differ. -/
+theorem IsDomainBetween.eulerMeasure_add_half_hammingDist_le_maslovIndex (χ : Region → ℤ)
+    (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
+    H.eulerMeasure χ D + hammingDist (H.point x) (H.point y) / 2 ≤ H.maslovIndex χ x y D := by
+  have hx := hD.hammingDist_le_four_mul_generatorPointMeasure_left hD0
+  have hy := hD.hammingDist_le_four_mul_generatorPointMeasure_right hD0
+  rw [maslovIndex_apply]
+  linarith
+
+end NonnegDomain
 
 end HeegaardRegionSystem
 

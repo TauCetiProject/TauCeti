@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Rat.Star
+public import Mathlib.Algebra.Order.Star.Rat
 public import Mathlib.LinearAlgebra.Matrix.PosDef
+public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
+import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
 /-!
 # Signature and definiteness of integral lattices
@@ -21,9 +23,10 @@ and `sigNeg`; the null index is the dimension of the kernel of the bilinear form
 Positive- and negative-semidefiniteness are expressed using Mathlib's bilinear-form predicates.
 The characteristic theorems relate every predicate both to the signature and to the usual
 elementwise inequalities. In particular, an indefinite lattice has vectors of both signs, and a
-degenerate lattice has a nonzero vector in its radical. The final section proves that an
-integral-lattice isometry transports the radical and preserves all three inertia indices and every
-definiteness predicate.
+degenerate lattice has a nonzero vector in its radical. The final sections prove that an isometry
+of the rational forms, which need not carry one carrier onto the other, already transports the
+radical and preserves all three inertia indices, and that an integral-lattice isometry moreover
+preserves every definiteness predicate.
 
 ## References
 
@@ -37,6 +40,15 @@ definiteness predicate.
 * `TauCeti.IntegralLattice.IsPosSemidef` and related definiteness predicates.
 * `TauCeti.IntegralLattice.isPosDef_ofGramMatrix_iff`: a lattice presented by a Gram matrix is
   positive definite exactly when the matrix is, read over `ℚ`.
+* `TauCeti.IntegralLattice.determinant_eq_neg_one_pow_sigNeg_mul_discriminant`: the sign of the
+  determinant is `(-1) ^ n₋`.
+* `TauCeti.IntegralLattice.finrank_eq_of_signature_eq`: equal signatures force equal ranks, and
+  `TauCeti.IntegralLattice.IsPosDef.signature_eq`: a positive definite lattice of rank `n` has
+  signature `(n, 0, 0)`.
+* `TauCeti.IntegralLattice.IsIndefinite.exists_carrier_pos_and_neg`: an indefinite lattice has
+  lattice vectors of positive and of negative norm.
+* `TauCeti.IntegralLattice.signature_eq_of_equivalent`: lattices with isometric rational forms
+  have the same signature.
 * `TauCeti.IntegralLattice.Isometry.map_radical` and the `Isometry.sigPos_eq`, `sigNull_eq`, and
   `sigNeg_eq` theorems: isometry invariance of the signature.
 -/
@@ -88,6 +100,71 @@ theorem signature_sum_eq_finrank :
     (Q := L.form.toQuadraticMap)
   rw [L.radical_toQuadraticMap] at h
   simpa only [sigPos, sigNull, sigNeg, add_comm, add_left_comm, add_assoc] using h
+
+/-- Integral lattices with equal signatures have equal ranks. -/
+theorem finrank_eq_of_signature_eq {M : IntegralLattice W} (h : L.signature = M.signature) :
+    Module.finrank ℤ L = Module.finrank ℤ M := by
+  rw [L.finrank_carrier, M.finrank_carrier, ← L.signature_sum_eq_finrank,
+    ← M.signature_sum_eq_finrank]
+  exact congrArg (fun s : ℕ × ℕ × ℕ ↦ s.1 + s.2.1 + s.2.2) h
+
+/-- **The sign of the determinant is `(-1) ^ n₋`.** The signed determinant of an integral lattice
+is its discriminant times `(-1)` to the negative index of inertia: in an orthogonal rational basis
+the Gram matrix is diagonal with exactly `n₋` negative entries, and a change of basis multiplies
+the determinant by a positive square. A degenerate lattice has determinant and discriminant `0`. -/
+theorem determinant_eq_neg_one_pow_sigNeg_mul_discriminant :
+    L.determinant = (-1) ^ L.sigNeg * L.discriminant := by
+  classical
+  have := L.finiteDimensional
+  by_cases hnd : L.form.Nondegenerate
+  swap
+  · have h0 : L.determinant = 0 := not_ne_iff.mp (mt L.determinant_ne_zero_iff.mp hnd)
+    simp [discriminant_def, h0]
+  -- Compare a lattice basis with an orthogonal basis `v` of the rational form.
+  obtain ⟨v, hv⟩ := LinearMap.BilinForm.exists_orthogonal_basis
+    (LinearMap.BilinForm.isSymm_iff.mp L.isSymm)
+  let e := (Module.Free.chooseBasis ℤ L).reindex (L.rationalBasis.indexEquiv v)
+  let b := e.extendOfIsLattice ℚ
+  set d : Fin (Module.finrank ℚ V) → ℚ := fun i ↦ L.form (v i) (v i)
+  have hd : ∀ i, d i ≠ 0 := hv.not_isOrtho_basis_self_of_separatingLeft hnd.1
+  have hdiag : LinearMap.BilinForm.toMatrix v L.form = Matrix.diagonal d := by
+    ext i j
+    rw [LinearMap.BilinForm.toMatrix_apply, Matrix.diagonal_apply]
+    split_ifs with h
+    · rw [h]
+    · exact hv h
+  -- Sylvester's law of inertia counts the negative diagonal entries.
+  have hneg : L.sigNeg = (Finset.univ.filter fun i ↦ d i < 0).card := by
+    have hQ : (QuadraticMap.associated (R := ℚ) L.form.toQuadraticMap).IsOrthoᵢ v := by
+      rwa [QuadraticMap.associated_left_inverse ℚ fun x y ↦ L.isSymm.eq x y]
+    rw [sigNeg, QuadraticForm.sigNeg_of_equiv_weightedSumSquares
+      ⟨QuadraticForm.isometryEquivWeightedSumSquares _ v hQ⟩,
+      Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
+    rfl
+  have hdet : (L.determinant : ℚ) * (b.toMatrix v).det ^ 2 = ∏ i, d i := by
+    rw [← Matrix.det_diagonal, ← hdiag, ← LinearMap.BilinForm.toMatrix_mul_basis_toMatrix b,
+      Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose, L.determinant_eq_gramDet e,
+      intCast_gramDet]
+    ring
+  -- The sign of `∏ i, d i` is `(-1) ^ L.sigNeg`, and `(b.toMatrix v).det ^ 2` is positive.
+  have habs : ∏ i, |d i| = (-1) ^ L.sigNeg * ∏ i, d i := by
+    have hsign : (-1 : ℚ) ^ (Finset.univ.filter fun i ↦ d i < 0).card =
+        ∏ i, if d i < 0 then -1 else 1 := by
+      rw [Finset.prod_ite, Finset.prod_const, Finset.prod_const_one, mul_one]
+    rw [hneg, hsign, ← Finset.prod_mul_distrib]
+    refine Finset.prod_congr rfl fun i _ ↦ ?_
+    split_ifs with h
+    · rw [abs_of_neg h]; ring
+    · rw [abs_of_nonneg (not_lt.mp h)]; ring
+  have hpos : (0 : ℚ) < (-1) ^ L.sigNeg * L.determinant := by
+    have h := Finset.prod_pos fun i (_ : i ∈ Finset.univ) ↦ abs_pos.mpr (hd i)
+    rw [habs, ← hdet, ← mul_assoc] at h
+    exact pos_of_mul_pos_left h (sq_nonneg _)
+  have hpos' : 0 < (-1) ^ L.sigNeg * L.determinant := by exact_mod_cast hpos
+  have h1 : |L.determinant| = (-1) ^ L.sigNeg * L.determinant := by
+    rw [← abs_of_pos hpos', abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul]
+  rw [discriminant_def, Int.natCast_natAbs, h1, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg,
+    one_pow, one_mul]
 
 /-- An integral lattice is positive-definite when its quadratic form is positive on every nonzero
 vector. -/
@@ -190,6 +267,13 @@ theorem isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero :
   exact LinearMap.BilinForm.posDef_toQuadraticMap_iff_finrank_ker_eq_zero_and_sigNeg_eq_zero
     L.form L.isSymm
 
+/-- A positive definite lattice has signature `(n, 0, 0)`, where `n` is its rank. -/
+theorem IsPosDef.signature_eq (hLp : L.IsPosDef) : L.signature = (Module.finrank ℤ L, 0, 0) := by
+  obtain ⟨h0, hneg⟩ := L.isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero.mp hLp
+  have hsum := L.signature_sum_eq_finrank
+  rw [h0, hneg, add_zero, add_zero, ← L.finrank_carrier] at hsum
+  simp only [signature, hsum, h0, hneg]
+
 /-- Negative-definiteness is negative-semidefiniteness together with nondegeneracy. -/
 @[grind =]
 theorem isNegDef_iff_isNegSemidef_and_nondegenerate :
@@ -248,6 +332,60 @@ theorem isIndefinite_iff_exists_pos_and_exists_neg :
   simp only [not_forall, not_le]
   exact and_comm
 
+variable {L} in
+/-- An indefinite lattice has lattice vectors of positive and of negative norm. -/
+theorem IsIndefinite.exists_carrier_pos_and_neg (hL : L.IsIndefinite) :
+    ∃ x y : L, 0 < L.form x x ∧ L.form y y < 0 := by
+  obtain ⟨⟨p, hp⟩, ⟨q, hq⟩⟩ := L.isIndefinite_iff_exists_pos_and_exists_neg.mp hL
+  obtain ⟨s, hs, hsp⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier p
+  obtain ⟨t, ht, htq⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier q
+  have hscale (r : ℤ) (z : V) : L.form (r • z) (r • z) = (r : ℚ) ^ 2 * L.form z z := by
+    simp only [← Int.cast_smul_eq_zsmul ℚ, map_smul, LinearMap.smul_apply, smul_eq_mul]
+    ring
+  refine ⟨⟨s • p, hsp⟩, ⟨t • q, htq⟩, ?_, ?_⟩
+  · rw [hscale]
+    exact mul_pos (by positivity) hp
+  · rw [hscale]
+    exact mul_neg_of_pos_of_neg (by positivity) hq
+
+section Equivalent
+
+/-! ### Invariance under isometry of the rational forms
+
+The signature only depends on the rational quadratic space `(V, B)`, not on the carrier: an
+isometry of the rational forms, which need not carry one carrier onto the other, already preserves
+the radical and all three indices. -/
+
+variable {L} {M : IntegralLattice W}
+
+/-- An isometry of the rational forms of two lattices maps the radical of one onto the radical of
+the other. -/
+theorem map_radical_of_isometryEquiv (f : L.form.IsometryEquiv M.form) :
+    L.radical.map (f : V ≃ₗ[ℚ] W).toLinearMap = M.radical := by
+  rw [radical, radical]
+  exact f.map_ker
+
+/-- Lattices with isometric rational forms have the same positive index. -/
+theorem sigPos_eq_of_equivalent (h : L.form.Equivalent M.form) : L.sigPos = M.sigPos :=
+  h.toQuadraticMap.sigPos_eq
+
+/-- Lattices with isometric rational forms have the same null index. -/
+theorem sigNull_eq_of_equivalent (h : L.form.Equivalent M.form) : L.sigNull = M.sigNull := by
+  rw [sigNull, sigNull, ← L.radical_toQuadraticMap, ← M.radical_toQuadraticMap]
+  exact h.toQuadraticMap.rank_radical_eq
+
+/-- Lattices with isometric rational forms have the same negative index. -/
+theorem sigNeg_eq_of_equivalent (h : L.form.Equivalent M.form) : L.sigNeg = M.sigNeg :=
+  h.toQuadraticMap.sigNeg_eq
+
+/-- **Lattices with isometric rational forms have the same signature.** -/
+theorem signature_eq_of_equivalent (h : L.form.Equivalent M.form) :
+    L.signature = M.signature := by
+  rw [signature, signature, sigPos_eq_of_equivalent h, sigNull_eq_of_equivalent h,
+    sigNeg_eq_of_equivalent h]
+
+end Equivalent
+
 namespace Isometry
 
 variable {L : IntegralLattice V} {M : IntegralLattice W}
@@ -255,35 +393,24 @@ variable {L : IntegralLattice V} {M : IntegralLattice W}
 /-- An integral-lattice isometry maps the source radical onto the target radical. -/
 @[simp]
 theorem map_radical (e : Isometry L M) :
-    L.radical.map (e : V ≃ₗ[ℚ] W).toLinearMap = M.radical := by
-  rw [← L.radical_toQuadraticMap, ← M.radical_toQuadraticMap,
-    ← L.norm_def, ← M.norm_def]
-  simpa only [e.normIsometryEquiv_toLinearEquiv] using e.normIsometryEquiv.map_radical
+    L.radical.map (e : V ≃ₗ[ℚ] W).toLinearMap = M.radical :=
+  map_radical_of_isometryEquiv e.toIsometryEquiv
 
 /-- Isometric integral lattices have the same positive index. -/
-theorem sigPos_eq (e : Isometry L M) : L.sigPos = M.sigPos := by
-  have := L.finiteDimensional
-  have := M.finiteDimensional
-  rw [sigPos, sigPos, ← L.norm_def, ← M.norm_def]
-  exact QuadraticMap.Equivalent.sigPos_eq ⟨e.normIsometryEquiv⟩
+theorem sigPos_eq (e : Isometry L M) : L.sigPos = M.sigPos :=
+  sigPos_eq_of_equivalent ⟨e.toIsometryEquiv⟩
 
 /-- Isometric integral lattices have the same null index. -/
-theorem sigNull_eq (e : Isometry L M) : L.sigNull = M.sigNull := by
-  have := L.finiteDimensional
-  have := M.finiteDimensional
-  rw [sigNull, sigNull, ← e.map_radical]
-  exact (LinearEquiv.finrank_map_eq (e : V ≃ₗ[ℚ] W) L.radical).symm
+theorem sigNull_eq (e : Isometry L M) : L.sigNull = M.sigNull :=
+  sigNull_eq_of_equivalent ⟨e.toIsometryEquiv⟩
 
 /-- Isometric integral lattices have the same negative index. -/
-theorem sigNeg_eq (e : Isometry L M) : L.sigNeg = M.sigNeg := by
-  have := L.finiteDimensional
-  have := M.finiteDimensional
-  rw [sigNeg, sigNeg, ← L.norm_def, ← M.norm_def]
-  exact QuadraticMap.Equivalent.sigNeg_eq ⟨e.normIsometryEquiv⟩
+theorem sigNeg_eq (e : Isometry L M) : L.sigNeg = M.sigNeg :=
+  sigNeg_eq_of_equivalent ⟨e.toIsometryEquiv⟩
 
 /-- Isometric integral lattices have the same signature. -/
-theorem signature_eq (e : Isometry L M) : L.signature = M.signature := by
-  rw [signature, signature, e.sigPos_eq, e.sigNull_eq, e.sigNeg_eq]
+theorem signature_eq (e : Isometry L M) : L.signature = M.signature :=
+  signature_eq_of_equivalent ⟨e.toIsometryEquiv⟩
 
 /-- Nondegeneracy of the ambient form is invariant under integral-lattice isometry. -/
 theorem form_nondegenerate_iff (e : Isometry L M) :

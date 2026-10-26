@@ -35,6 +35,11 @@ degree-zero cocycles are exactly `TauCeti.DGRightModuleHom`.
 * `TauCeti.dgRightModuleHomLinearEquivZeroCocycles`: the linear identification of DG morphisms
   with closed degree-zero cochains.
 
+## Main results
+
+* `TauCeti.iSupIndep_dgRightModuleCochains`: right-module maps of distinct degrees are
+  independent, so the finite sums of homogeneous maps form their internal direct sum.
+
 ## Implementation notes
 
 `dgRightModuleHomComplex` is exposed because the component types of its public differential
@@ -238,6 +243,30 @@ theorem differential_comp_self (p : ℤ) :
     hN.sq_zero, hM.sq_zero, map_zero, sub_zero, Submodule.coe_zero, LinearMap.zero_apply]
 
 end dgRightModuleCochains
+
+/-- **Right-module maps of distinct degrees are independent.**  A finite sum of right-module maps
+of pairwise distinct degrees vanishes only if each summand does: on an element of degree `q`, the
+summand of degree `p` takes values of degree `q + p`. -/
+theorem iSupIndep_dgRightModuleCochains :
+    iSupIndep (dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN)) := by
+  classical
+  refine (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).2 fun s v hv hsum j hj ↦ ?_
+  refine LinearMap.ext fun x ↦ ?_
+  induction x using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => rw [map_zero, LinearMap.zero_apply]
+  | add x y hx hy => simp only [map_add, hx, hy, LinearMap.zero_apply, add_zero]
+  | @homogeneous q x =>
+    obtain ⟨x, hx⟩ := x
+    have hmem (i : ℤ) (hi : i ∈ s) : v i x ∈ ℳN (q + i) :=
+      (dgRightModuleCochains.mem_iff.1 (hv i hi)).map_mem hx
+    have h0 : ∑ i ∈ s, v i x = 0 := by
+      rw [← LinearMap.sum_apply, hsum, LinearMap.zero_apply]
+    have key := congrArg (fun y : N ↦ (decompose ℳN y (q + j) : N)) h0
+    simp only [decompose_sum, decompose_zero, DirectSum.sum_apply, zero_apply,
+      ZeroMemClass.coe_zero, Submodule.coe_sum] at key
+    rw [Finset.sum_eq_single j (fun i hi hij ↦ decompose_of_mem_ne ℳN (hmem i hi)
+      (by omega)) (fun h ↦ absurd hj h), decompose_of_mem_same ℳN (hmem j hj)] at key
+    rw [key, LinearMap.zero_apply]
 
 /-- The Hom complex between two differential graded right modules.  Its degree-`p` term consists
 of the right-module linear maps raising internal degree by `p`, and its differential is the graded

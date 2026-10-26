@@ -26,6 +26,8 @@ Only the second measure needs to be s-finite.
   almost-everywhere strongly measurable, function;
 * `TauCeti.eLpNorm_prod_eq_eLpNorm_eLpNorm` — the `Lᵖ(μ ⊗ ν)` seminorm of `f` is the `Lᵖ(μ)`
   seminorm of its section seminorms.
+* `TauCeti.eLpNorm_prod_smul` — the `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y` is the product
+  of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`.
 -/
 
 public section
@@ -36,19 +38,30 @@ open Filter MeasureTheory
 open scoped ENNReal NNReal Topology
 
 variable {α β ε : Type*} [MeasurableSpace α] [MeasurableSpace β] [TopologicalSpace ε]
-  [ContinuousENorm ε] {μ : Measure α} {ν : Measure β} {p : ℝ≥0∞}
+  {μ : Measure α} {ν : Measure β} {p : ℝ≥0∞}
 
 namespace TauCeti
 
+/-
+The unconditional formulation below is adapted from Harald Husum and Claude Opus 5.5's
+generalization audit, commit f0e7fac60832894e7feb09497ff5c956dcc7f7f4.
+-/
+
 /-- The `L^∞` seminorm only sees the null sets of the measure, so it does not change when an
 s-finite measure is replaced by the equivalent finite measure `Measure.toFinite`. -/
-theorem eLpNorm_exponent_top_toFinite [SFinite ν] {g : β → ε} (hg : AEStronglyMeasurable g ν) :
+@[simp]
+theorem eLpNorm_exponent_top_toFinite [ENorm ε] [SFinite ν] (g : β → ε) :
     eLpNorm g ∞ ν.toFinite = eLpNorm g ∞ ν := by
-  rw [eLpNorm_exponent_top hg, eLpNorm_exponent_top
-    (hg.mono_ac (toFinite_absolutelyContinuous ν))]
-  simp only [eLpNormEssSup, essSup, ae_toFinite]
+  by_cases hg : AEStronglyMeasurable g ν
+  · rw [eLpNorm_exponent_top hg, eLpNorm_exponent_top
+      (hg.mono_ac (toFinite_absolutelyContinuous ν))]
+    simp only [eLpNormEssSup, essSup, ae_toFinite]
+  · rw [eLpNorm_of_not_aestronglyMeasurable hg, eLpNorm_of_not_aestronglyMeasurable
+      fun h ↦ hg (h.mono_ac (absolutelyContinuous_toFinite ν))]
 
 end TauCeti
+
+variable [ContinuousENorm ε]
 
 /-- For a measurable `g : α × β → ℝ≥0∞` and an s-finite `ν`, the section seminorms
 `x ↦ ‖g (x, ·)‖_{Lᵖ(ν)}` form a measurable function, for every exponent including `p = ∞`. -/
@@ -69,7 +82,7 @@ theorem Measurable.eLpNorm_prod_right [SFinite ν] {g : α × β → ℝ≥0∞}
   -- At `p = ∞`, pass to the equivalent finite measure and take the limit of the finite exponents.
   have heq : (fun x ↦ eLpNorm (fun y ↦ g (x, y)) ∞ ν) =
       fun x ↦ eLpNorm (fun y ↦ g (x, y)) ∞ ν.toFinite :=
-    funext fun x ↦ (TauCeti.eLpNorm_exponent_top_toFinite (hsec x).aestronglyMeasurable).symm
+    funext fun x ↦ (TauCeti.eLpNorm_exponent_top_toFinite _).symm
   rw [heq]
   have hseq : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ≥0)) atTop atTop :=
     tendsto_atTop_mono (fun _ ↦ le_self_add) tendsto_natCast_atTop_atTop
@@ -160,5 +173,24 @@ theorem eLpNorm_prod_eq_eLpNorm_eLpNorm [SFinite ν] {f : α × β → ε}
   refine lintegral_congr fun x ↦ ?_
   rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp (hsec x)]
   simp only [enorm_eq_self, one_div, ENNReal.rpow_inv_rpow hr]
+
+/-- **The `Lᵖ` seminorm of a tensor product.** The `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y`
+is the product of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`, for every
+exponent, including `p = ∞`. The scalar action need only be continuous and satisfy
+`‖c • v‖ₑ = ‖c‖ₑ * ‖v‖ₑ`. -/
+theorem eLpNorm_prod_smul [SFinite ν] {𝕜 : Type*} [TopologicalSpace 𝕜] [ContinuousENorm 𝕜]
+    [SMul 𝕜 ε] [ContinuousSMul 𝕜 ε] [ENormSMulClass 𝕜 ε]
+    {f : α → 𝕜} {g : β → ε} (hf : AEStronglyMeasurable f μ)
+    (hg : AEStronglyMeasurable g ν) :
+    eLpNorm (fun z : α × β ↦ f z.1 • g z.2) p (μ.prod ν) = eLpNorm f p μ * eLpNorm g p ν := by
+  rw [eLpNorm_prod_eq_eLpNorm_eLpNorm (f := fun z : α × β ↦ f z.1 • g z.2)
+    (hf.comp_fst.smul hg.comp_snd)]
+  -- Each section is a constant multiple of `g`.
+  have hsec (x : α) : eLpNorm (fun y ↦ f x • g y) p ν = ‖f x‖ₑ * eLpNorm g p ν := by
+    rw [← eLpNorm_enorm _ (hg.fun_const_smul (f x))]
+    simp_rw [enorm_smul]
+    rw [eLpNorm_const_mul_ennreal hg.enorm.aestronglyMeasurable, eLpNorm_enorm _ hg]
+  simp_rw [hsec, mul_comm _ (eLpNorm g p ν)]
+  rw [eLpNorm_const_mul_ennreal hf.enorm.aestronglyMeasurable, eLpNorm_enorm _ hf, mul_comm]
 
 end TauCeti

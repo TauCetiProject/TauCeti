@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Decomposition
 
@@ -67,20 +66,13 @@ section HyperbolicPair
 variable {V : Type v} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
   {W : Submodule K V} {w f : V}
 
-private theorem mem_orthogonal_span_pair_iff_polar {v : V} :
-    v ∈ LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {w, f}) ↔
-      polar Q w v = 0 ∧ polar Q f v = 0 := by
-  simp only [LinearMap.BilinForm.mem_orthogonal_span_pair_iff, polarBilin_apply_apply]
-
 /-- Subtracting `polar Q f v • w` moves `v ∈ W` into `U`. -/
 private theorem sub_polar_smul_mem_orthogonal_span_pair (hTI : Q.IsTotallyIsotropic W)
     (hwW : w ∈ W) (hwf : polar Q w f = 1) {v : V} (hv : v ∈ W) :
     v - polar Q f v • w ∈
       LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {w, f}) := by
-  rw [mem_orthogonal_span_pair_iff_polar, polar_sub_right, polar_smul_right, polar_sub_right,
-    polar_smul_right, polar_self, hTI.apply_eq_zero hwW, hTI.polar_eq_zero hwW hv,
-    polar_comm Q f w, hwf]
-  simp
+  simp [LinearMap.BilinForm.orthogonal, polar_sub_right, polar_smul_right, polar_self,
+    hTI.apply_eq_zero hwW, hTI.polar_eq_zero hwW hv, polar_comm Q f w, hwf]
 
 /-- The vectors of `W` orthogonal to `w` and `f` form, inside `U`, a subspace of dimension one
 less than `W`. -/
@@ -104,8 +96,9 @@ private theorem finrank_comap_orthogonal_span_pair_add_one [FiniteDimensional K 
     rintro _ ⟨hy, hyU, -⟩
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
     have hc : c = 0 := by
-      simpa [polar_smul_right, polar_comm Q f w, hwf] using
-        (mem_orthogonal_span_pair_iff_polar.mp hyU).2
+      obtain ⟨-, hfc⟩ : polar Q w (c • w) = 0 ∧ polar Q f (c • w) = 0 := by
+        simpa [U, LinearMap.BilinForm.orthogonal] using hyU
+      simpa [polar_smul_right, polar_comm Q f w, hwf] using hfc
     rw [hc, zero_smul]
     exact Submodule.zero_mem _
   have h := Submodule.finrank_sup_add_finrank_inf_eq (K ∙ w) (U ⊓ W)
@@ -130,9 +123,11 @@ private theorem maximal_comap_orthogonal_span_pair (hW : Maximal Q.IsTotallyIsot
     obtain ⟨y, hy, z, hz, rfl⟩ := Submodule.mem_sup.mp hv
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
     obtain ⟨s, hs, rfl⟩ := Submodule.mem_map.mp hz
+    obtain ⟨hws, -⟩ : polar Q w s = 0 ∧ polar Q f s = 0 := by
+      simpa [U, LinearMap.BilinForm.orthogonal] using s.2
     rw [QuadraticMap.map_add Q, Q.map_smul, hTI.apply_eq_zero hwW,
       (isTotallyIsotropic_restrict_iff.mp hT).apply_eq_zero (Submodule.mem_map_of_mem hs),
-      polar_smul_left, Submodule.subtype_apply, (mem_orthogonal_span_pair_iff_polar.mp s.2).1]
+      polar_smul_left, Submodule.subtype_apply, hws]
     simp
   have hWle : W ≤ (K ∙ w) ⊔ T.map U.subtype := by
     intro v hv

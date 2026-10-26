@@ -62,7 +62,7 @@ variable {ι : Type*} [LinearOrder ι] (b : Module.Basis ι ℚ M)
 
 /-- The coordinate `ℤ`-lattice in an exterior algebra, spanned by the exterior basis attached to
 `b`. -/
-def integralLattice : Submodule ℤ (_root_.ExteriorAlgebra ℚ M) :=
+noncomputable def integralLattice : Submodule ℤ (_root_.ExteriorAlgebra ℚ M) :=
   Submodule.span ℤ (Set.range b.ExteriorAlgebra)
 
 /-- The coordinate integral lattice is the `ℤ`-span of the exterior basis, which is the form in

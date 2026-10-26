@@ -161,6 +161,6 @@ theorem det_tristramLevineForm_trefoilSeifertMatrix_ne_zero_iff (ω : Circle)
     push_cast at hre
     linear_combination hre
   rw [heval, ne_eq, Complex.ofReal_eq_zero]
-  constructor <;> contrapose! <;> intro h <;> linarith
+  constructor <;> contrapose <;> intro h <;> linarith
 
 end TauCeti.KnotTheory

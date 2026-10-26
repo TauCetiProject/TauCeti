@@ -5,8 +5,7 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.RepresentationTheory.Rep.Res
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Basic
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 
 /-!
 # Restrictions of a finite normal layer, and its finite quotient system
@@ -93,6 +92,10 @@ how Tate's theorem is used downstream.
   compose along a tower of restrictions.
 * `TauCeti.ClassFieldTheory.LayerRestriction.groundLevelEquiv_cohomologyRes_zero_apply`: in degree
   zero, restriction of cohomology is the ground-level inclusion.
+* `TauCeti.ClassFieldTheory.LayerRestriction.exists_refinement`: a refinement of a layer restricts
+  to a refinement of each of its restrictions.
+* `TauCeti.ClassFieldTheory.LayerRestriction.cohomologyInfl_comp_cohomologyRes`: restriction to an
+  intermediate ground field commutes with inflation to a larger top field.
 * `TauCeti.ClassFieldTheory.NormalLayer.relativeDegree_subgroupLayerRestriction`: the relative
   degree of a tower `K ≤ H` inside the finite quotient system is the relative index of `K` in `H`.
 * `TauCeti.ClassFieldTheory.NormalLayer.subgroupLayer_subgroupLayer`: the layer of a subgroup of
@@ -441,6 +444,55 @@ theorem groundLevelEquiv_cohomologyRes_zero_apply (T : LayerRestriction small bi
   have h := groupCohomology.map_H0Iso_hom_f_apply T.galHom (T.repIso F).inv x
   exact (congrArg Subtype.val h).trans (T.repIso_inv_apply_coe F _)
 
+/-! ### Restriction and refinement -/
+
+section Refinement
+
+variable {small' big' : NormalLayer G}
+
+/-- **A refinement of a layer restricts to a refinement of its restriction.** In field notation,
+for `F ⊆ E ⊆ K ⊆ L` with `K/F` and `L/F` Galois, the layer `L/E` refines `K/E` and is a
+restriction of `L/F`. -/
+theorem exists_refinement (R : LayerRestriction small big) (T : LayerRefinement big big') :
+    ∃ small' : NormalLayer G, LayerRefinement small small' ∧ LayerRestriction small' big' := by
+  refine ⟨{ ground := small.ground
+            top := big'.top
+            top_le_ground := T.top_le.trans (R.same_top ▸ small.top_le_ground)
+            normal := ⟨fun v hv u ↦ Subgroup.mem_subgroupOf.2 ?_⟩ },
+    ⟨rfl, T.top_le.trans R.same_top.ge⟩, ⟨rfl, R.ground_le.trans T.same_ground.le⟩⟩
+  exact big'.conj_mem_top (T.same_ground ▸ R.ground_le u.2) (Subgroup.mem_subgroupOf.1 hv)
+
+/-- **Restriction commutes with inflation.** For layers `K/F`, `K/E`, `L/F` and `L/E` related by
+the restrictions `R`, `R'` and the refinements `T`, `T'`, inflating from `K/F` to `L/F` and then
+restricting to `L/E` is restricting to `K/E` and then inflating to `L/E`. -/
+@[reassoc, elementwise]
+theorem cohomologyInfl_comp_cohomologyRes (R : LayerRestriction small big)
+    (R' : LayerRestriction small' big') (T : LayerRefinement big big')
+    (T' : LayerRefinement small small') (F : Formation G) (n : ℕ) :
+    T.cohomologyInfl F n ≫ R'.cohomologyRes F n =
+      R.cohomologyRes F n ≫ T'.cohomologyInfl F n := by
+  rw [LayerRefinement.cohomologyInfl_def, LayerRefinement.cohomologyInfl_def, cohomologyRes_def,
+    cohomologyRes_def]
+  have h₁ := groupCohomology.map_comp T.galHom R'.galHom (T.repHom F) (R'.repIso F).inv n
+  have h₂ := groupCohomology.map_comp R.galHom T'.galHom (R.repIso F).inv (T'.repHom F) n
+  refine h₁.symm.trans (Eq.trans ?_ h₂)
+  refine groupCohomology.map_congr ?_ ?_ n
+  · refine MonoidHom.ext fun γ ↦ ?_
+    induction γ using QuotientGroup.induction_on with
+    | H w =>
+      rw [MonoidHom.comp_apply, MonoidHom.comp_apply, galHom_mk, LayerRefinement.galHom_mk,
+        LayerRefinement.galHom_mk, galHom_mk]
+      exact congrArg QuotientGroup.mk (Subtype.ext rfl)
+  -- Both composites read an element of `A^V` in `A^{V'}`, moving no element of the ambient module.
+  refine LinearMap.ext fun x ↦ Subtype.ext ?_
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
+    Rep.resMap_hom_toLinearMap, LinearMap.coe_comp,
+    Representation.IntertwiningMap.coe_toLinearMap, Function.comp_apply]
+  exact ((R'.repIso_inv_apply_coe F _).trans (T.repHom_hom_apply_coe F x)).trans
+    ((T'.repHom_hom_apply_coe F _).trans (R.repIso_inv_apply_coe F x)).symm
+
+end Refinement
+
 end LayerRestriction
 
 /-! ### The finite quotient system -/
@@ -662,6 +714,56 @@ theorem subgroupLayer_range_galHom {small : NormalLayer G} (T : LayerRestriction
   rw [mem_subgroupGround]
   exact ⟨fun ⟨hg, hmem⟩ ↦ (T.mk_mem_range_galHom_iff ⟨g, hg⟩).1 hmem,
     fun hg ↦ ⟨T.ground_toSubgroup_le hg, (T.mk_mem_range_galHom_iff _).2 hg⟩⟩
+
+/-! ### The layer of a quotient of the Galois group -/
+
+variable (N : Subgroup L.Gal) [N.Normal]
+
+/-- The **layer of a quotient** `(U ⧸ V) ⧸ N` of the Galois group by a normal subgroup `N`: the
+finite normal layer `W ◁ U` with the same ground subgroup whose top subgroup is the preimage `W`
+of `N`. In field notation it is the subextension `K^N / F` of `K / F`, which `L` refines
+(`NormalLayer.quotientRefinement`). -/
+def quotientLayer : NormalLayer G where
+  ground := L.ground
+  top := (L.subgroupLayer N).ground
+  top_le_ground := OpenSubgroup.toSubgroup_le.1 (L.subgroupGround_le_ground N)
+  normal := by
+    rw [ground_subgroupLayer, subgroupGround_eq_map_comap, ← Subgroup.comap_subtype,
+      Subgroup.comap_map_eq_self_of_injective (Subgroup.subtype_injective _)]
+    exact Subgroup.Normal.comap inferInstance _
+
+/-- The layer of a quotient has the ground subgroup of the layer it comes from. -/
+@[simp]
+theorem ground_quotientLayer : (L.quotientLayer N).ground = L.ground :=
+  (rfl)
+
+/-- The top subgroup of the layer of `(U ⧸ V) ⧸ N` is the preimage of `N`. -/
+@[simp]
+theorem top_quotientLayer : (L.quotientLayer N).top.toSubgroup = L.subgroupGround N :=
+  L.ground_subgroupLayer N
+
+/-- **A layer refines the layer of each quotient of its Galois group:** it has the same ground
+field and a bigger top field. -/
+theorem quotientRefinement : LayerRefinement (L.quotientLayer N) L :=
+  ⟨rfl, OpenSubgroup.toSubgroup_le.1 (L.top_le_subgroupGround N)⟩
+
+/-- The homomorphism of Galois groups of the refinement `L` of the layer of `(U ⧸ V) ⧸ N` has
+kernel `N`. -/
+@[simp]
+theorem ker_galHom_quotientRefinement : (L.quotientRefinement N).galHom.ker = N := by
+  ext γ
+  induction γ using QuotientGroup.induction_on with
+  | H w =>
+    rw [MonoidHom.mem_ker, LayerRefinement.galHom_mk_eq_one_iff, ← OpenSubgroup.mem_toSubgroup,
+      top_quotientLayer, mem_subgroupGround]
+    exact ⟨fun ⟨_, hmem⟩ ↦ hmem, fun hmem ↦ ⟨w.2, hmem⟩⟩
+
+/-- **The degree of the layer of `(U ⧸ V) ⧸ N` is the index of `N`.** -/
+theorem degree_quotientLayer : (L.quotientLayer N).degree = N.index := by
+  rw [degree_eq_relIndex, top_quotientLayer, ground_quotientLayer, Subgroup.relIndex,
+    ← Subgroup.comap_subtype, subgroupGround_eq_map_comap,
+    Subgroup.comap_map_eq_self_of_injective (Subgroup.subtype_injective _)]
+  exact Subgroup.index_comap_of_surjective _ (QuotientGroup.mk'_surjective L.relativeTop)
 
 end NormalLayer
 

@@ -46,13 +46,14 @@ of its maximal graded submodules, so `Sᵢ = A eᵢ / A₊eᵢ` is the graded he
 * `TauCeti.gradedPositiveMulQuotientMk_eq_zero_iff`: the kernel of `Ae ⟶ Ae / A₊e` is `A₊e`.
 * `TauCeti.mem_gradedPositiveMulQuotient_piece_iff`: the degree-`p` piece of `Ae / A₊e` consists
   of the classes of the degree-`p` elements of `Ae`.
+* `TauCeti.decompose_eq_zero_of_mem_gradedPositiveMulIdeal`: over a nonnegatively graded algebra,
+  the elements of `A₊e` have no component in degrees `≤ 0`.
 * `TauCeti.gradedPositiveMulQuotientLift_gradedPositiveMulQuotientMk`,
   `TauCeti.gradedPositiveMulQuotientLift_unique`: the universal property of `Ae / A₊e`.
 * `TauCeti.smulGradedDimension_gradedIdempotentHead`: the graded dimension of `eⱼ • Sᵢ` is `δᵢⱼ`.
 * `TauCeti.simple_gradedIdempotentHead`: each graded head `Sᵢ` is a simple graded module.
 * `TauCeti.isExhaustiveGradedSimpleFamily_gradedIdempotentHead`: every simple finite graded module
   is isomorphic to a shift of some `Sᵢ`.
-
 ## References
 
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3, for graded modules
@@ -112,10 +113,6 @@ private theorem positiveMulIdeal_le (e : A) :
   rintro _ ⟨p, -, x, -, rfl⟩
   exact Ideal.mul_mem_left _ x (Ideal.subset_span rfl)
 
-private theorem isHomogeneous_span_singleton (he₀ : e ∈ 𝒜 0) :
-    (Ideal.span {e} : Ideal A).IsHomogeneous 𝒜 :=
-  Ideal.homogeneous_span 𝒜 _ fun _ hx => ⟨0, (Set.mem_singleton_iff.1 hx) ▸ he₀⟩
-
 private theorem isHomogeneous_positiveMulIdeal (he₀ : e ∈ 𝒜 0) :
     (gradedPositiveMulIdeal 𝒜 e).IsHomogeneous 𝒜 :=
   Ideal.homogeneous_span 𝒜 _ fun _ ⟨p, _, _, hx, hy⟩ =>
@@ -124,7 +121,8 @@ private theorem isHomogeneous_positiveMulIdeal (he₀ : e ∈ 𝒜 0) :
 /-- The inclusion `A₊e ⟶ Ae` of graded modules. -/
 private def positiveMulIdealInclusion (he₀ : e ∈ 𝒜 0) :
     GradedModuleCat.ofIdeal 𝒜 (gradedPositiveMulIdeal 𝒜 e) (isHomogeneous_positiveMulIdeal 𝒜 he₀) ⟶
-      GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e}) (isHomogeneous_span_singleton 𝒜 he₀) :=
+      GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e})
+        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀⟩) :=
   GradedModuleCat.ofHom (Submodule.inclusion (positiveMulIdeal_le 𝒜 e)) <|
     LinearMap.isHomogeneous_def.2 fun p x hx => by
       rw [GradedModuleCat.mem_ofIdeal_piece_iff] at hx ⊢
@@ -186,7 +184,8 @@ theorem mem_gradedPositiveMulQuotient_piece_iff (he₀ : e ∈ 𝒜 0) {p : ℤ}
       ∃ x : (Ideal.span {e} : Ideal A), (x : A) ∈ 𝒜 p ∧ gradedPositiveMulQuotientMk he₀ x = y := by
   refine (GradedModuleCat.mem_cokernelGrading_piece_iff (positiveMulIdealInclusion 𝒜 he₀)).trans
     (exists_congr fun x => and_congr ?_ Iff.rfl)
-  exact GradedModuleCat.mem_ofIdeal_piece_iff (isHomogeneous_span_singleton 𝒜 he₀)
+  exact GradedModuleCat.mem_ofIdeal_piece_iff
+    (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀⟩)
 
 /-- **The map `Ae / A₊e ⟶ M` sending the class of `x` to `x m`**, for an element `m` of an
 `A`-module `M` killed by `A₊e`. -/
@@ -240,7 +239,7 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
 include hneg in
 /-- In a nonnegatively graded algebra, every element of `A₊e` has vanishing components in all
 degrees `q ≤ 0`. -/
-private theorem decompose_eq_zero_of_mem_gradedPositiveMulIdeal {f : A} (hf₀ : f ∈ 𝒜 0) {y : A}
+theorem decompose_eq_zero_of_mem_gradedPositiveMulIdeal {f : A} (hf₀ : f ∈ 𝒜 0) {y : A}
     (hy : y ∈ gradedPositiveMulIdeal 𝒜 f) {q : ℤ} (hq : q ≤ 0) : (decompose 𝒜 y q : A) = 0 := by
   induction hy using Submodule.span_induction generalizing q with
   | mem y hy =>
@@ -282,7 +281,7 @@ private theorem mem_gradedPositiveMulIdeal_of_decompose_eq_zero {f : A} (hf : Is
 omit [GradedAlgebra 𝒜] in
 include he hspan in
 /-- A degree-zero element of `A eᵢ` is a scalar multiple of `eᵢ`. -/
-private theorem exists_eq_smul_of_mem_zero {i : I} {x : A} (hx : x ∈ 𝒜 0)
+theorem exists_eq_smul_of_mem_zero {i : I} {x : A} (hx : x ∈ 𝒜 0)
     (hxi : x ∈ (Ideal.span {e i} : Ideal A)) : ∃ c : k, x = c • e i := by
   classical
   have hmul : ∀ y ∈ Submodule.span k (Set.range e), ∃ c : k, y * e i = c • e i := by
@@ -317,7 +316,7 @@ private theorem exists_eq_smul_headGenerator (i : I) (y : gradedPositiveMulQuoti
     ∃ c : k, y = c • headGenerator e he₀ i := by
   obtain ⟨x, rfl⟩ := gradedPositiveMulQuotientMk_surjective (he₀ i) y
   have hx₀ : (decompose 𝒜 (x : A) 0 : A) ∈ (Ideal.span {e i} : Ideal A) :=
-    isHomogeneous_span_singleton 𝒜 (he₀ i) 0 x.2
+    Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩ 0 x.2
   obtain ⟨c, hc⟩ := exists_eq_smul_of_mem_zero he hspan (decompose 𝒜 (x : A) 0).2 hx₀
   refine ⟨c, ?_⟩
   rw [headGenerator, ← LinearMap.map_smul_of_tower, ← sub_eq_zero, ← map_sub,

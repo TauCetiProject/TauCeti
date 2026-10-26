@@ -24,7 +24,8 @@ definition. In particular, no bimultiplicativity is asserted over an arbitrary f
 that property needs a local norm-index theorem.
 
 The symbol factors through square classes, so its value can be computed from any unit
-representatives.
+representatives. Inverting either parameter preserves its square class and hence the symbol,
+as expressed by `TauCeti.hilbertSymbol_inv_left` and `TauCeti.hilbertSymbol_inv_right`.
 
 ## References
 
@@ -156,6 +157,22 @@ theorem hilbertSymbol_congr_sq (a a' b b' : Kˣ)
     simp [pow_two, div_eq_mul_inv, mul_assoc, mul_left_comm]
   rw [ha', hb', hilbertSymbol_mul_sq_left, hilbertSymbol_mul_sq_right]
 
+/-- Inverting the first argument does not change the Hilbert symbol. -/
+@[simp]
+theorem hilbertSymbol_inv_left (a b : Kˣ) :
+    hilbertSymbol a⁻¹ b = hilbertSymbol a b := by
+  apply hilbertSymbol_congr_sq
+  · simpa only [inv_mul_cancel] using (IsSquare.one : IsSquare (1 : Kˣ))
+  · exact IsSquare.mul_self b
+
+/-- Inverting the second argument does not change the Hilbert symbol. -/
+@[simp]
+theorem hilbertSymbol_inv_right (a b : Kˣ) :
+    hilbertSymbol a b⁻¹ = hilbertSymbol a b := by
+  apply hilbertSymbol_congr_sq
+  · exact IsSquare.mul_self a
+  · simpa only [inv_mul_cancel] using (IsSquare.one : IsSquare (1 : Kˣ))
+
 /-- The Hilbert symbol is invariant under a ring isomorphism of fields: the norm equation
 `b = x² - a y²` is solvable over `K` exactly when its image is solvable over `L`. -/
 @[simp]
@@ -203,6 +220,12 @@ theorem hilbertSymbol_eq_one_iff_nonempty_algEquiv_matrix (a b : Kˣ) :
       Nonempty (ℍ[K,(a : K),(b : K)] ≃ₐ[K] Matrix (Fin 2) (Fin 2) K) := by
   rw [hilbertSymbol_eq_one_iff,
     QuaternionAlgebra.nonempty_algEquiv_matrix_iff_exists_eq_sq_sub_mul_sq]
+
+/-- The negative sign is equivalent to `ℍ[K,a,b]` being a division algebra. -/
+theorem hilbertSymbol_eq_neg_one_iff_forall_isUnit (a b : Kˣ) :
+    hilbertSymbol a b = -1 ↔ ∀ x : ℍ[K,(a : K),(b : K)], x ≠ 0 → IsUnit x := by
+  rw [← Int.units_ne_iff_eq_neg, Ne, hilbertSymbol_eq_one_iff_nonempty_algEquiv_matrix,
+    QuaternionAlgebra.nonempty_algEquiv_matrix_iff_not_forall_isUnit, not_not]
 
 /-- The positive sign is equivalent to isotropy of the ternary form `⟨1,-a,-b⟩`. -/
 theorem hilbertSymbol_eq_one_iff_not_anisotropic_weightedSumSquares (a b : Kˣ) :

@@ -137,6 +137,29 @@ theorem dotProduct_intersection_mulVec_eq_zero_iff (x : T.Component → ℤ) :
     rw [Pi.smul_apply, smul_eq_mul, div_mul_eq_mul_div, eq_div_iff (hm i₀).ne']
     linear_combination -hj
 
+/-- If an equivalence identifies the intersection matrix with a scalar multiple of a matrix
+having an integral null vector `y`, and `y i₀ = 1`, then the multiplicities are `y` times the
+multiplicity at `i₀`. This determines multiplicities from the affine Cartan marks. -/
+theorem multiplicity_eq_mul_of_equiv_intersection {I : Type*} [Fintype I]
+    (e : I ≃ T.Component) (A : Matrix I I ℤ) (c : ℤ)
+    (hmatrix : ∀ i j, T.intersection (e i) (e j) = c * A i j)
+    (y : I → ℤ) (hy : A *ᵥ y = 0) (i₀ : I) (hi₀ : y i₀ = 1) (i : I) :
+    (T.multiplicity (e i) : ℤ) = y i * T.multiplicity (e i₀) := by
+  classical
+  have hmatrix' : T.intersection.submatrix e e = c • A := by
+    ext i j
+    exact hmatrix i j
+  have hkernel' : (T.intersection *ᵥ (y ∘ e.symm)) ∘ e = 0 := by
+    rw [← submatrix_mulVec_equiv, hmatrix', smul_mulVec, hy, smul_zero]
+  have hkernel : T.intersection *ᵥ (y ∘ e.symm) = 0 := by
+    ext v
+    simpa only [Function.comp_apply, e.apply_symm_apply, Pi.zero_apply] using
+      congrFun hkernel' (e.symm v)
+  have h := (T.dotProduct_intersection_mulVec_eq_zero_iff (y ∘ e.symm)).mp
+    (by rw [hkernel]; simp) (e i) (e i₀)
+  simp only [Function.comp_apply, e.symm_apply_apply, hi₀, mul_one] at h
+  exact h.symm.trans (mul_comm _ _)
+
 /-- The intersection form of a numerical type is negative definite on the vectors vanishing at
 some component, that is, on the vectors supported on a proper subset of the components. -/
 theorem dotProduct_intersection_mulVec_neg {x : T.Component → ℤ} (hx : x ≠ 0) {i : T.Component}

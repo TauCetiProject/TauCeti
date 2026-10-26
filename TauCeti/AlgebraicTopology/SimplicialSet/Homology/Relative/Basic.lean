@@ -21,7 +21,9 @@ forms a natural transformation `SSetPair.homologyδNatTrans`.
 It also records that the quotient maps from ambient to relative chains and homology are natural in
 the pair: they commute with morphisms of simplicial-set pairs. The short exact sequence of chain
 complexes of a pair is split in each degree, because the map `C(X) ⟶ C(Y)` is induced by the
-injection of the `n`-simplices of `X` into those of `Y`. A morphism of pairs which is a
+injection of the `n`-simplices of `X` into those of `Y`; so the relative chains are a retract of
+the ambient chains (`SSetPair.chainComplexXRetract`), and are projective when those are
+(`SSetPair.projective_chainComplex_X`). A morphism of pairs which is a
 quasi-isomorphism on subcomplexes and ambient simplicial sets is a quasi-isomorphism on relative
 chains (`SSetPair.quasiIso_chainComplexMap`), hence induces isomorphisms on relative homology.
 
@@ -90,6 +92,27 @@ instance (R : C) (P : SSetPair.{w}) (n : ℕ) : IsSplitMono ((SSet.chainComplexM
   TauCeti.isSplitMono_sigmaMap' (fun _ ↦ R) (P.hom.app (op ⦋n⦌))
 
 variable {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A]
+
+/-- The relative chains `Cₙ(Y, X; R)` of a pair `X ⟶ Y` of simplicial sets are a retract of the
+ambient chains `Cₙ(Y; R)`: the degree-`n` sequence `0 ⟶ Cₙ(X) ⟶ Cₙ(Y) ⟶ Cₙ(Y, X) ⟶ 0` is short
+exact with split first map, so the quotient map to the relative chains has a section. -/
+noncomputable def chainComplexXRetract (R : A) (P : SSetPair.{w}) (n : ℕ) :
+    Retract ((P.chainComplex R).X n) ((P.right.chainComplex R).X n) :=
+  have hS := P.shortExact_chainComplexShortComplex R
+  have := hS.epi_g
+  have : (HomologicalComplex.eval A (ComplexShape.down ℕ) n).PreservesHomology := {}
+  let e := ShortComplex.Splitting.ofExactOfRetraction _
+    (hS.exact.map (HomologicalComplex.eval A _ n))
+    (retraction ((SSet.chainComplexMap P.hom R).f n))
+    (IsSplitMono.id ((SSet.chainComplexMap P.hom R).f n))
+    (inferInstance : Epi ((P.chainComplexπ R).f n))
+  ⟨e.s, (P.chainComplexπ R).f n, e.s_g⟩
+
+/-- The relative chains `Cₙ(Y, X; R)` of a pair of simplicial sets are projective whenever the
+ambient chains `Cₙ(Y; R)` are, for instance for chains with coefficients in a projective module. -/
+instance projective_chainComplex_X (R : A) (P : SSetPair.{w}) (n : ℕ)
+    [Projective ((P.right.chainComplex R).X n)] : Projective ((P.chainComplex R).X n) :=
+  (chainComplexXRetract R P n).projective
 
 /-- The connecting morphism of the long exact sequence of a pair of simplicial sets is natural:
 for a morphism of pairs `f : P ⟶ P'`, the square formed by the connecting morphisms

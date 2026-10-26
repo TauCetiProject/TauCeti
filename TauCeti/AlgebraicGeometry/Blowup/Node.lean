@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
-public import TauCeti.AlgebraicGeometry.Curves.Node.Locality
+public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
 public import TauCeti.RingTheory.Node.Blowup
-public import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.RegularLocalRing.Node
 
 /-!
@@ -257,7 +257,7 @@ any nonzerodivisor `π` in a commutative ring: the three charts are the nodal re
 `uv = π^n` and `xt = π`. -/
 theorem atWorstNodalOfRelativeDimensionOne_blowup (hπ : π ∈ nonZeroDivisors R) :
     AtWorstNodalOfRelativeDimensionOne (blowupToSpec π n) := by
-  refine AtWorstNodalOfRelativeDimensionOne.of_openCover (blowupOpenCover n hπ) fun j ↦ ?_
+  refine IsZariskiLocalAtSource.of_openCover (blowupOpenCover n hπ) fun j ↦ ?_
   rw [blowupOpenCover_f_blowupToSpec n hπ j]
   exact atWorstNodalOfRelativeDimensionOne _
 

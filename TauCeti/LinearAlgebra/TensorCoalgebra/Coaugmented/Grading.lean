@@ -156,6 +156,17 @@ theorem koszulTwist_grading (G : InternalGrading R M) (q : ℤ) :
   rw [InternalGrading.koszulTwist_apply_of_mem _ hx]
   exact (map_koszulTwist_apply_of_mem G (by simpa only [grading_piece] using hx) q).symm
 
+/-- Twisting every letter of a block twists exactly that block of the ambient tuple. -/
+theorem map_koszulTwist_subword (G : InternalGrading R M) (q : ℤ) {n : ℕ} (x : Fin n → M)
+    (a b : ℕ) :
+    map (G.koszulTwist q) (subword R x a b) = subword R (G.twistedTuple q x a b) a b := by
+  rw [map_subword]
+  by_cases h : a + b ≤ n
+  · refine subword_congr R _ _ h h fun i hi ↦ ?_
+    rw [InternalGrading.twistedTuple_apply_of_mem_Ico _ _ _ _ _ _
+      ⟨by dsimp only; omega, by dsimp only; omega⟩]
+  · rw [subword_eq_zero_of_lt_add R _ (by omega), subword_eq_zero_of_lt_add R _ (by omega)]
+
 /-- Deconcatenation preserves total cohomological degree: the degrees of the two cut halves
 add to the degree of the original word. -/
 theorem isHomogeneous_deconcatenation (G : InternalGrading R M) :
@@ -196,7 +207,7 @@ section CounitComponent
 
 universe uN
 
-variable {N : Type uN} [AddCommGroup N] [Module R N]
+variable {N : Type uN} [AddCommMonoid N] [Module R N]
 
 /-- Applying the tensor-coalgebra counit to the tensor-word factor preserves total degree for
 the tensor-product grading of `N ⊗ Tᶜ(M)`: only the degree-zero part of the tensor word
@@ -230,6 +241,33 @@ theorem isHomogeneous_rid_comp_lTensor_counit (G : InternalGrading R N)
       rw [counit_eq_counit, counit_eq_zero_of_mem_gradedPiece H hy' hzero, zero_smul]
       exact zero_mem _
   simpa only [add_zero, Submodule.mem_comap] using hle hz
+
+/-- Applying the tensor-coalgebra counit to the tensor-word factor preserves total degree for
+the tensor-product grading of `Tᶜ(M) ⊗ N`: only the degree-zero part of the tensor word
+survives. -/
+theorem isHomogeneous_lid_comp_rTensor_counit (H : InternalGrading R M)
+    (G : InternalGrading R N) :
+    LinearMap.IsHomogeneous
+      ((TensorProduct.lid R N).toLinearMap ∘ₗ
+        (Coalgebra.counit (R := R) (A := TensorWords R M)).rTensor N)
+      ((grading H).tensorProduct G).piece G.piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro p z hz
+  rw [add_zero]
+  refine InternalGrading.tensorProduct_piece_le (grading H) G
+    (C := (G.piece p).comap ((TensorProduct.lid R N).toLinearMap ∘ₗ
+      (Coalgebra.counit (R := R) (A := TensorWords R M)).rTensor N))
+    (fun r y hy x hx ↦ ?_) hz
+  rw [Submodule.mem_comap, LinearMap.comp_apply, LinearMap.rTensor_tmul, LinearEquiv.coe_coe,
+    TensorProduct.lid_tmul]
+  by_cases hzero : r = 0
+  · subst hzero
+    rw [sub_zero] at hx
+    exact Submodule.smul_mem _ _ hx
+  · have hy' : y ∈ gradedPiece H r := by
+      simpa only [grading_piece] using hy
+    rw [counit_eq_counit, counit_eq_zero_of_mem_gradedPiece H hy' hzero, zero_smul]
+    exact zero_mem _
 
 end CounitComponent
 

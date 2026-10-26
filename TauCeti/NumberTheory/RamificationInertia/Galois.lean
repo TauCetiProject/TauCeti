@@ -52,6 +52,8 @@ transitivity.
 * `Ideal.ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot`,
   `Ideal.ncard_primesOver_eq_natCard_iff_forall_stabilizer_eq_bot`: the same count is maximal
   exactly when the decomposition groups above the prime are trivial.
+* `Ideal.forall_stabilizer_le_normalCore_iff`: the decomposition groups above a prime all lie in
+  a subgroup exactly when they all lie in its normal core.
 * `Ideal.stabilizer_eq_bot_iff_ramificationIdxIn_eq_one_and_inertiaDegIn_eq_one`: a decomposition
   group is trivial exactly when `e = f = 1`.
 * `Ideal.card_inertia_eq_ramificationIdx`: the un-`In` form of the inertia count.
@@ -128,6 +130,26 @@ theorem ncard_primesOver_eq_natCard_iff_forall_stabilizer_eq_bot [FaithfulSMul A
     fun h ↦ (ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot G P Q).2 (h Q ⟨‹_›, ‹_›⟩)⟩
 
 end Stabilizer
+
+section Conjugation
+
+open MulAction
+
+variable {A B G : Type*} [CommSemiring A] [Semiring B] [Algebra A B] [Group G]
+  [MulSemiringAction G B] [SMulCommClass G A B]
+
+/-- **Decomposition groups and the normal core.** If `G` acts on `B` by `A`-algebra
+automorphisms, then the decomposition groups of the primes of `B` above an ideal `p` of `A` all
+lie in a subgroup `H` exactly when they all lie in the normal core of `H`. This holds because
+the decomposition group of `σ • Q` is the conjugate of that of `Q` by `σ`. -/
+theorem forall_stabilizer_le_normalCore_iff (p : Ideal A) (H : Subgroup G) :
+    (∀ Q ∈ p.primesOver B, stabilizer G Q ≤ H.normalCore) ↔
+      ∀ Q ∈ p.primesOver B, stabilizer G Q ≤ H := by
+  refine ⟨fun h Q hQ ↦ (h Q hQ).trans H.normalCore_le, fun h Q ⟨_, _⟩ g hg σ ↦ ?_⟩
+  refine h (σ • Q) ⟨inferInstance, inferInstance⟩ ?_
+  rw [mem_stabilizer_iff, mul_smul, mul_smul, inv_smul_smul, mem_stabilizer_iff.1 hg]
+
+end Conjugation
 
 /-- **The decomposition group is trivial exactly when `e = f = 1`.** In a finite flat Galois
 extension of domains, the decomposition group of a prime `Q` over `P` is trivial exactly when the

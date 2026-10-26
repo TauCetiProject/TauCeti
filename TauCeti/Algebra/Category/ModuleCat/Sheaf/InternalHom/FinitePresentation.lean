@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.InternalHom.FiniteType
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Over
-import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 
 /-!
 # The internal-Hom stalk comparison for finitely presented sources

@@ -40,6 +40,8 @@ open scoped TensorProduct
 
 namespace TauCeti
 
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
+
 universe u v
 
 /-- **Geometric reducedness is preserved by extension of the base field.** -/
@@ -55,8 +57,8 @@ theorem geometricallyReducedCommHopfAlgProperty.baseChange
   let _ : IsScalarTower k K L := IsScalarTower.of_algebraMap_eq' rfl
   let _ := hH L
   exact isReduced_of_injective
-    (Algebra.TensorProduct.baseChangeTowerRingEquiv k K H L).toRingHom
-    (Algebra.TensorProduct.baseChangeTowerRingEquiv k K H L).injective
+    (Algebra.TensorProduct.baseChangeTowerRightAlgEquiv k K H L).toRingHom
+    (Algebra.TensorProduct.baseChangeTowerRightAlgEquiv k K H L).injective
 
 /-- **Geometric reducedness descends from an extension of the base field.**
 

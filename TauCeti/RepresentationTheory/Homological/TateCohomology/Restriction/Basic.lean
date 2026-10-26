@@ -179,7 +179,7 @@ private theorem h0_res_le :
     (range M.ρ.norm).submoduleOf M.ρ.invariants ≤
       Submodule.comap
         (Submodule.inclusion
-          (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H)))
+          (M.ρ.invariants_le_invariants_comp H.subtype))
         ((range (Rep.res H.subtype M).ρ.norm).submoduleOf (Rep.res H.subtype M).ρ.invariants) :=
   fun _ hx => Representation.range_norm_le_range_norm_comp_subtype (H := H) hx
 
@@ -210,7 +210,7 @@ same element, viewed as an `H`-invariant element. -/
 theorem H0π_comp_H0Res :
     H0π M ≫ H0Res M H =
       ModuleCat.ofHom (Submodule.inclusion
-        (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H))) ≫
+        (M.ρ.invariants_le_invariants_comp H.subtype)) ≫
         H0π (Rep.res H.subtype M) := by
   rw [H0Res]
   exact ModuleCat.comp_conj_mapQ _ _ (H0π_comp_H0IsoNormQuotient_hom _)

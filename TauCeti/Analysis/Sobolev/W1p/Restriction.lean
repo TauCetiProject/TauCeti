@@ -145,9 +145,7 @@ private theorem Sobolev1JetLp.restrictL_mem_w1pSubmodule (hU : U ≤ Omega)
     rw [hJg, hug, hJu]
   refine ((W1p.hasWeakFDerivOn u).mono hU).congr_ae hvalue.symm |>.congr_ae_deriv ?_
   filter_upwards [hgradient] with x hx
-  apply ContinuousLinearMap.ext
-  intro v
-  rw [Sobolev1JetLp.candidateWeakFDeriv_apply, innerSL_apply_apply, real_inner_comm, hx]
+  rw [Sobolev1JetLp.candidateWeakFDeriv_def, hx]
 
 /-- **Restriction of first-order Sobolev functions.**  If `U ⊆ Ω`, this is the continuous
 linear map `W^{1,p}(Ω) → W^{1,p}(U)` obtained by restricting both the value and weak gradient.
@@ -253,7 +251,7 @@ theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
     exact hSfin.lt_top
   have hF : Continuous fun f : Lp ℝ p (mu.restrict (U : Set E)) =>
       ∫ y in S, f y ∂(mu.restrict (U : Set E)) :=
-    (Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (mu := mu.restrict (U : Set E)) (p := p) S
+    (Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (μ := mu.restrict (U : Set E)) (p := p) S
       hSlt).continuous.congr fun f => Set.setIntegralLp_apply (𝕜 := ℝ) S hSlt f
   simp only [hEq]
   exact continuous_const.mul

@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Trivia
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Character
 
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Pairing
-import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.ConnectingMap
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.ConnectingMap.Basic
 import TauCeti.RepresentationTheory.Homological.ContCohomology.ConnectingMapComparison
 
 /-!

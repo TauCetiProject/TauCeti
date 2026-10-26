@@ -11,6 +11,7 @@ module
 public import Mathlib.Algebra.Azumaya.Defs
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.Algebra.TensorProduct.Module
 
 /-!
 # An algebra as a module over `B ⊗[K] Aᵐᵒᵖ`
@@ -37,10 +38,12 @@ instance.
 
 * `TauCeti.Bimodule f`: the type synonym, with its `B ⊗[K] Aᵐᵒᵖ`-module structure.
 * `TauCeti.Bimodule.of f : A ≃ₗ[K] Bimodule f`: the identification with `A` as a `K`-module, the
-  only route between the two types that the interface offers.
+  canonical identification of the two carriers over the coefficient semiring.
 * `TauCeti.Bimodule.toEnd f`: the action, as a `K`-algebra homomorphism into `Module.End K A`. It
   is Mathlib's `AlgHom.mulLeftRight` restricted along `f` on the left factor, so for
   `f = AlgHom.id K A` it is `AlgHom.mulLeftRight K A` itself.
+* `TauCeti.Bimodule.rightLinearEquiv f`: the identification with the regular right `A`-module,
+  expressed as a linear equivalence over `Aᵐᵒᵖ`. In particular, this right module is free.
 
 A `B ⊗[K] Aᵐᵒᵖ`-linear map `Bimodule f →ₗ Bimodule g`, transported along `of`, is determined by its
 value `u` at `1`, and that value intertwines `f` and `g`:
@@ -149,6 +152,29 @@ instance : IsScalarTower K (B ⊗[K] Aᵐᵒᵖ) (Bimodule f) where
     rw [← (of f).apply_symm_apply x, smul_def, smul_def, map_smul (toEnd f),
       LinearMap.smul_apply, map_smul (of f)]
 
+/-- The left `B`-action on `Bimodule f`, obtained by restricting the enveloping-algebra action. -/
+noncomputable instance moduleLeft : Module B (Bimodule f) :=
+  Algebra.TensorProduct.moduleLeft (k := K) (A := B) (B := Aᵐᵒᵖ) (Bimodule f)
+
+/-- The right `A`-action on `Bimodule f`, obtained by restricting the enveloping-algebra action. -/
+noncomputable instance moduleRight : Module Aᵐᵒᵖ (Bimodule f) :=
+  Algebra.TensorProduct.moduleRight (k := K) (A := B) (B := Aᵐᵒᵖ) (Bimodule f)
+
+/-- The restricted left `B`-action on `Bimodule f` respects the ground-ring action. -/
+noncomputable instance moduleScalarTowerLeft : IsScalarTower K B (Bimodule f) :=
+  Algebra.TensorProduct.moduleLeftIsScalarTower
+    (k := K) (A := B) (B := Aᵐᵒᵖ) (Bimodule f)
+
+/-- The restricted right `A`-action on `Bimodule f` respects the ground-ring action. -/
+noncomputable instance moduleScalarTowerRight : IsScalarTower K Aᵐᵒᵖ (Bimodule f) :=
+  Algebra.TensorProduct.moduleRightIsScalarTower
+    (k := K) (A := B) (B := Aᵐᵒᵖ) (Bimodule f)
+
+/-- The restricted left and right actions on `Bimodule f` commute. -/
+noncomputable instance moduleSMulCommClass : SMulCommClass B Aᵐᵒᵖ (Bimodule f) :=
+  Algebra.TensorProduct.moduleSMulCommClass
+    (k := K) (A := B) (B := Aᵐᵒᵖ) (Bimodule f)
+
 instance [Module.Finite K A] : Module.Finite K (Bimodule f) :=
   inferInstanceAs (Module.Finite K A)
 
@@ -165,6 +191,31 @@ is `x ↦ f b * x * a`. -/
 theorem symm_smul (b : B) (a : Aᵐᵒᵖ) (y : Bimodule f) :
     (of f).symm ((b ⊗ₜ a : B ⊗[K] Aᵐᵒᵖ) • y) = f b * (of f).symm y * a.unop :=
   toEnd_tmul_apply f b a ((of f).symm y)
+
+/-- The canonical right action on `Bimodule f` is the regular right `A`-module. -/
+noncomputable def rightLinearEquiv : Bimodule f ≃ₗ[Aᵐᵒᵖ] Aᵐᵒᵖ where
+  toFun m := MulOpposite.op ((of f).symm m)
+  invFun a := of f (MulOpposite.unop a)
+  left_inv m := by simp
+  right_inv a := by simp
+  map_add' m n := by simp only [map_add, MulOpposite.op_add]
+  map_smul' a m := by
+    simp only [RingHom.id_apply, Algebra.TensorProduct.smul_moduleRight,
+      symm_smul, map_one, one_mul, MulOpposite.op_mul, MulOpposite.op_unop, smul_eq_mul]
+
+/-- The regular-right-module identification sends a bimodule element to its opposite. -/
+@[simp]
+theorem rightLinearEquiv_apply (m : Bimodule f) :
+    rightLinearEquiv f m = MulOpposite.op ((of f).symm m) := (rfl)
+
+/-- The inverse regular-right-module identification is the canonical carrier map. -/
+@[simp]
+theorem rightLinearEquiv_symm_apply (a : Aᵐᵒᵖ) :
+    (rightLinearEquiv f).symm a = of f (MulOpposite.unop a) := (rfl)
+
+/-- A homomorphism-induced bimodule is free for its canonical right action. -/
+instance moduleFreeRight : Module.Free Aᵐᵒᵖ (Bimodule f) :=
+  Module.Free.of_equiv (rightLinearEquiv f).symm
 
 section Map
 

@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.CommutativeAlgebra.MatrixFactorization.BaseChange
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.BaseChange.Basic
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Polynomial.Basic
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction

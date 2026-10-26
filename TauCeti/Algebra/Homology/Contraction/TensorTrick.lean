@@ -120,7 +120,7 @@ private theorem slot_cross_eq_zero (hdτ : d ∘ₗ τ + τ ∘ₗ d = 0) (hhτ 
       simpa [slotFamily_apply, hgt] using hhτ
     · have hi' : i.val ≠ j := fun h ↦ hi (Fin.ext h)
       simp only [slotFamily_apply]
-      split_ifs <;> first | omega | exact hτP | exact hdP | simp
+      split_ifs <;> first | omega | simp
 
 /-- On the diagonal, `D H + H D` contributes one step of the telescope from `(i p)^{⊗ n}` to the
 identity. -/
@@ -150,7 +150,7 @@ private theorem slot_diag_eq (hττ : τ ∘ₗ τ = LinearMap.id)
       | (have hi' : i.val ≠ p := fun h ↦ hi (Fin.ext h)
          rw [Function.update_of_ne hi]
          simp only [slotFamily_apply]
-         split_ifs <;> first | omega | exact hττ | simp)
+         split_ifs <;> first | omega | simp)
   · have hi' : i.val ≠ p := fun h ↦ hi (Fin.ext h)
     simp only [slotFamily_apply]
     split_ifs <;> first | omega | simp

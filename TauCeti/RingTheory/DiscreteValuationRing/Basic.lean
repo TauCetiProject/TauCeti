@@ -36,6 +36,15 @@ namespace TauCeti.IsDiscreteValuationRing
 
 variable {S : Type*} [CommRing S] [IsDomain S] [_root_.IsDiscreteValuationRing S]
 
+/-- Cancelling a uniformizer power from membership in the next maximal-ideal power leaves
+the coefficient in the maximal ideal. -/
+theorem mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ {ϖ c : S} {n : ℕ}
+    (hϖ : Irreducible ϖ) (h : c * ϖ ^ n ∈ maximalIdeal S ^ (n + 1)) :
+    c ∈ maximalIdeal S := by
+  rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton, pow_succ',
+    mul_dvd_mul_iff_right (pow_ne_zero n hϖ.ne_zero)] at h
+  rwa [hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
+
 /-- Membership in a power of the maximal ideal of a discrete valuation ring, read on the additive
 valuation. -/
 theorem mem_maximalIdeal_pow_iff_le_addVal {n : ℕ} {x : S} :

@@ -63,8 +63,8 @@ theorem germ_germSection (U : Opens X) (s : ToType (F.obj (Opposite.op U))) (x :
   (rfl)
 
 /-- The open set in the étalé space swept out by the germs of a section. -/
-def sectionRange (F : X.Presheaf C) (U : Opens X) (s : ToType (F.obj (Opposite.op U))) :
-    Set F.EtaleSpace :=
+noncomputable def sectionRange (F : X.Presheaf C) (U : Opens X)
+    (s : ToType (F.obj (Opposite.op U))) : Set F.EtaleSpace :=
   Set.range (germSection F U s)
 
 /-- Membership in the range of a germ section means being the germ of that section at the

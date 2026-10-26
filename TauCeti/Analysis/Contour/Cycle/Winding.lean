@@ -8,9 +8,10 @@ module
 public import TauCeti.Analysis.Contour.Cycle.Basic
 public import TauCeti.Analysis.Contour.Winding.UnboundedComponent
 import TauCeti.Analysis.Contour.Winding.Integer
+import Mathlib.Topology.Algebra.Support
 
 /-!
-# Winding numbers of contour cycles off their trace
+# Winding numbers and trace-zero weights of contour cycles
 
 The generalized winding number of a contour cycle is defined at every point by additive extension
 from its closed piecewise-`C¹` generators. Away from the cycle's trace, every generator is in the
@@ -24,6 +25,9 @@ the cycle, and hence vanishes on every unbounded connected component of the comp
 
 ## Main results
 
+* `TauCeti.Contour.Cycle.windingWeight` is the real index set to zero on the trace;
+  `hasCompactSupport_windingWeight` and `indicator_windingWeight_eq_self` characterize its
+  support and its restriction to a null-homology domain.
 * `TauCeti.Contour.Cycle.windingNumber_eq_integral_of_not_mem_trace` identifies the winding number
   off the trace with the normalized ordinary cycle integral of the Cauchy kernel.
 * `TauCeti.Contour.Cycle.exists_int_windingNumber_of_not_mem_trace` proves integer-valuedness off
@@ -241,6 +245,48 @@ theorem windingNumber_eq_zero_of_unbounded_component {C : Cycle} {z : ℂ}
   obtain ⟨z', hz'_comp, hz'_notK⟩ := Set.not_subset.mp hnot_subset
   have hz'_zero : windingNumber z' C = 0 := (hK_good hz'_notK).2
   exact (windingNumber_eq_of_mem_connectedComponentIn hz'_comp).symm.trans hz'_zero
+
+/-- The real cycle index off its trace, and zero on the trace. -/
+def windingWeight (C : Contour.Cycle) : ℂ → ℝ :=
+  (trace C)ᶜ.indicator (fun z ↦ (windingNumber z C).re)
+
+/-- The canonical cycle weight vanishes on the trace. -/
+@[simp]
+theorem windingWeight_eq_zero_of_mem (C : Contour.Cycle) {z : ℂ} (hz : z ∈ trace C) :
+    C.windingWeight z = 0 :=
+  indicator_of_notMem (not_not.mpr hz) _
+
+/-- Off the trace, the weight is the real part of the existing cycle index. -/
+@[simp]
+theorem windingWeight_eq_of_notMem (C : Contour.Cycle) {z : ℂ} (hz : z ∉ trace C) :
+    C.windingWeight z = (windingNumber z C).re :=
+  indicator_of_mem hz _
+
+/-- The actual real cycle index, set to zero on its trace, has compact support. -/
+theorem hasCompactSupport_windingWeight (C : Contour.Cycle) :
+    HasCompactSupport C.windingWeight := by
+  obtain ⟨K, hK, hz⟩ := Filter.mem_cocompact.mp
+    (Contour.Cycle.windingNumber_eventually_zero_cocompact C)
+  apply HasCompactSupport.of_support_subset_isCompact hK
+  intro z hnonzero
+  by_contra hzK
+  have he : C.windingWeight z = 0 := by
+    rw [C.windingWeight_eq_of_notMem (hz hzK).1, (hz hzK).2, Complex.zero_re]
+  exact Function.mem_support.mp hnonzero he
+
+/-- The actual trace-zero cycle weight agrees with its restriction to a domain in which
+the cycle is null-homologous. -/
+theorem indicator_windingWeight_eq_self (C : Contour.Cycle) {U : Set ℂ}
+    (hindex : Contour.Cycle.IsNullHomologous C U) :
+    U.indicator C.windingWeight = C.windingWeight := by
+  ext z
+  by_cases hz : z ∈ U
+  · exact indicator_of_mem hz _
+  · rw [indicator_of_notMem hz]
+    by_cases ht : z ∈ trace C
+    · rw [C.windingWeight_eq_zero_of_mem ht]
+    · rw [C.windingWeight_eq_of_notMem ht,
+        Contour.Cycle.isNullHomologous_iff.mp hindex z hz, Complex.zero_re]
 
 end TauCeti.Contour.Cycle
 

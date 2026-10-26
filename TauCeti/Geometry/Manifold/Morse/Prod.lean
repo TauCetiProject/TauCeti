@@ -119,8 +119,8 @@ which is Morse on a set has a differentiable coordinate expression at every poin
 critical point of the sum has both components critical. -/
 theorem IsMorseOn.comp_fst_add_comp_snd {s : Set M} {t : Set N} (hf : IsMorseOn I f s)
     (hg : IsMorseOn I' g t) : IsMorseOn (I.prod I') (f ∘ Prod.fst + g ∘ Prod.snd) (s ×ˢ t) := by
-  refine isMorseOn_iff.2 ⟨(hf.contMDiffOn.comp contMDiffOn_fst fun p hp ↦ hp.1).add
-    (hg.contMDiffOn.comp contMDiffOn_snd fun p hp ↦ hp.2), ?_⟩
+  refine isMorseOn_iff.2 ⟨(hf.contMDiffOn.comp contMDiffOn_fst fun _ hp ↦ (Set.mem_prod.1 hp).1).add
+    (hg.contMDiffOn.comp contMDiffOn_snd fun _ hp ↦ (Set.mem_prod.1 hp).2), ?_⟩
   rintro ⟨x, y⟩ ⟨hx, hy⟩ hcrit
   rw [comp_fst_add_comp_snd_comp_extChartAt_prod_symm] at hcrit
   simp only [extChartAt_prod, PartialEquiv.prod_coe] at hcrit

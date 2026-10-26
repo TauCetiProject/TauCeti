@@ -34,7 +34,14 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   specialisation, from `L N / p` to `N / p`.
 * `DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough`: a factorisation of
   `MulChar.ofUnitHom χ` through `d`, read back on unit homomorphisms as `χ = χ₀ ∘ unitsMap`.
-* `DirichletCharacter.even_changeLevel_iff`: changing the level preserves parity.
+* `DirichletCharacter.factorsThroughEquiv`: the characters at level `N` factoring through
+  `d ∣ N` correspond to the characters modulo `d`.
+* `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
+  at naturals prime to the new level.
+* `DirichletCharacter.changeLevel_trans_mul_toUnitHom`: raising a product of characters through an
+  intermediate level, read on unit homomorphisms.
+* `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`:
+  changing the level preserves the value at `-1`, hence parity.
 * `DirichletCharacter.conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply`: a primitivity
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
@@ -167,13 +174,58 @@ theorem exists_eq_comp_unitsMap_of_factorsThrough {R : Type*} [CommMonoidWithZer
   rw [changeLevel_toUnitHom] at h
   simpa using h
 
+/-- **Characters factoring through a divisor.** For `d ∣ N`, the Dirichlet characters at level
+`N` which factor through `d` are exactly the raises of the characters modulo `d`:
+`FactorsThrough.χ₀` and `changeLevel` are inverse bijections. -/
+noncomputable def factorsThroughEquiv {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
+    [NeZero N] (h : d ∣ N) :
+    {χ : DirichletCharacter R N // χ.FactorsThrough d} ≃ DirichletCharacter R d where
+  toFun χ := χ.2.χ₀
+  invFun ψ := ⟨changeLevel h ψ, changeLevel_factorsThrough ψ h⟩
+  left_inv χ := Subtype.ext χ.2.eq_changeLevel.symm
+  right_inv ψ := (changeLevel_injective h (changeLevel_factorsThrough ψ h).eq_changeLevel).symm
+
+/-- `factorsThroughEquiv` sends a character to the character modulo `d` it factors through. -/
+@[simp]
+theorem factorsThroughEquiv_apply {R : Type*} [CommMonoidWithZero R] {N d : ℕ} [NeZero N]
+    (h : d ∣ N) (χ : {χ : DirichletCharacter R N // χ.FactorsThrough d}) :
+    factorsThroughEquiv h χ = χ.2.χ₀ :=
+  (rfl)
+
+/-- The inverse of `factorsThroughEquiv` raises a character modulo `d` to level `N`. -/
+@[simp]
+theorem coe_factorsThroughEquiv_symm_apply {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
+    [NeZero N] (h : d ∣ N) (ψ : DirichletCharacter R d) :
+    ((factorsThroughEquiv h).symm ψ : DirichletCharacter R N) = changeLevel h ψ :=
+  (rfl)
+
+/-- Raising the level of a Dirichlet character does not change its value at a natural number
+prime to the new level. -/
+theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
+    (χ : DirichletCharacter R d) {m : ℕ} (hm : m.Coprime n) : changeLevel h χ m = χ m := by
+  simpa using changeLevel_eq_cast_of_dvd' χ h (a := (m : ℤ)) (Nat.isCoprime_iff_coprime.mpr hm)
+
+/-- **Raising a product through an intermediate level.** If `a ∣ m`, `b ∣ m` and `m ∣ n`, the
+product of `χ₁` and `χ₂` raised directly to level `n` is, on units, their product raised to
+level `m` composed with the reduction `(ZMod n)ˣ → (ZMod m)ˣ`. -/
+theorem changeLevel_trans_mul_toUnitHom {R : Type*} [CommMonoidWithZero R] {a b m n : ℕ}
+    (χ₁ : DirichletCharacter R a) (χ₂ : DirichletCharacter R b) (h₁ : a ∣ m) (h₂ : b ∣ m)
+    (h : m ∣ n) :
+    (changeLevel (h₁.trans h) χ₁ * changeLevel (h₂.trans h) χ₂).toUnitHom =
+      (changeLevel h₁ χ₁ * changeLevel h₂ χ₂).toUnitHom.comp (ZMod.unitsMap h) := by
+  rw [changeLevel_trans χ₁ h₁ h, changeLevel_trans χ₂ h₂ h, ← map_mul, changeLevel_toUnitHom]
+
+/-- Raising the level of a Dirichlet character does not change its value at `-1`. -/
+@[simp]
+theorem changeLevel_apply_neg_one {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
+    (χ : DirichletCharacter R d) : changeLevel h χ (-1) = χ (-1) := by
+  simpa using changeLevel_eq_cast_of_dvd' χ h (a := -1) (IsCoprime.neg_left isCoprime_one_left)
+
 /-- **Changing the level preserves parity**: the value at `-1` of a Dirichlet character is the
 value at `-1` of its lift to any multiple level. -/
 @[simp]
 theorem even_changeLevel_iff {S : Type*} [CommRing S] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter S d) : (changeLevel h χ).Even ↔ χ.Even := by
-  have hneg := changeLevel_eq_cast_of_dvd' χ h (a := -1) (IsCoprime.neg_left isCoprime_one_left)
-  simp only [Int.cast_neg, Int.cast_one] at hneg
-  rw [Even, Even, hneg]
+  rw [Even, Even, changeLevel_apply_neg_one]
 
 end DirichletCharacter

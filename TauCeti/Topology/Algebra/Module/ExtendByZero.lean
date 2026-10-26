@@ -28,7 +28,7 @@ variable {ι κ : Type*} (R : Type*) [Semiring R] [TopologicalSpace R] (e : ι �
 
 /-- Extension by zero as a continuous linear map between product spaces of coordinates. -/
 noncomputable def continuousLinearMap : (ι → R) →L[R] (κ → R) :=
-  { linearMap R e with
+  { linearMap R R e with
     cont := by
       classical
       have h : Continuous (fun x : ι → R => Function.extend e x 0) := by

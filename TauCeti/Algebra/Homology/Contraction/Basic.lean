@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.QuasiIso
-public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex
+public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 
 /-!
 # Contractions of cochain complexes and their normalization

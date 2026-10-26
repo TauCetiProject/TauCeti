@@ -8,9 +8,9 @@ module
 public import TauCeti.GroupTheory.GroupExtension.Cohomology
 public import TauCeti.GroupTheory.GroupAction.Character
 public import Mathlib.GroupTheory.Abelianization.Defs
-import Mathlib.GroupTheory.Abelianization.Finite
-import Mathlib.GroupTheory.FiniteAbelian.Duality
-import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+public import Mathlib.GroupTheory.FiniteAbelian.Duality
+public import Mathlib.GroupTheory.Divisible
+import Mathlib.Algebra.Category.Grp.Injective
 
 /-!
 # Characters of factor-set extensions
@@ -25,8 +25,10 @@ The class vanishes exactly when the character extends to the whole extension.
 Consequently, if the kernel lies in the commutator subgroup, transgression is
 injective. Conversely, when characters into the coefficient group separate the kernel's
 image in the abelianization, injectivity forces the kernel into the commutator subgroup. In
-particular, for finite extensions over an algebraically closed field of characteristic zero,
-the injectivity of transgression detects exactly the stem extensions. These are the
+particular, for units of a commutative monoid that are divisible, such as those of an
+algebraically closed field, injectivity detects containment of the kernel in the commutator
+subgroup when the finite kernel has enough roots of unity.
+For central extensions, this is exactly the stem condition. These are the
 character-theoretic criteria used to identify the kernel of a representation group with the
 dual of the factor-set class group.
 
@@ -36,6 +38,8 @@ on the kernel need not be trivial, provided its characters are equivariant.
 ## References
 
 * G. Karpilovsky, *Projective Representations of Finite Groups* (1985), Chapters 2–3.
+* Mathlib's `Module.Baer.of_divisible` and `Module.Baer.extension_property_addMonoidHom`
+  extend characters from the kernel image in the abelianization.
 -/
 
 public section
@@ -130,7 +134,7 @@ theorem characterTransgression_injective_of_range_inl_le_commutator
   apply Additive.toMul.injective
   apply Subtype.ext
   ext a
-  have hmem := Abelianization.commutator_subset_ker ψ (hstem ⟨a, rfl⟩)
+  have hmem := Abelianization.commutator_le_ker ψ (hstem ⟨a, rfl⟩)
   have hval := DFunLike.congr_fun hψ a
   have hdiv : χ.toMul.val a / χ'.toMul.val a = 1 := hval.symm.trans hmem
   exact div_eq_one.mp hdiv
@@ -175,26 +179,39 @@ theorem characterTransgression_injective_iff_range_inl_le_commutator_of_separate
     simpa [χ] using this
   exact hψ haone
 
-variable {k : Type} [Field k] [IsAlgClosed k]
-
-/-- The trivial multiplicative action of `G` on the units of `k`. -/
-local instance : MulDistribMulAction G kˣ :=
-  MulDistribMulAction.compHom kˣ (1 : G →* MulAut kˣ)
-
 omit hA in
-/-- Over an algebraically closed field of characteristic zero, character transgression is
-injective exactly for finite stem factor-set extensions. -/
-theorem characterTransgression_injective_iff_range_inl_le_commutator_of_isAlgClosed
-    [CharZero k] (α : FactorSet G M) [Finite α.Extension] :
+/-- Character transgression into the units of a commutative monoid `k` with trivial action is
+injective exactly when the extension kernel lies in the commutator subgroup, provided `kˣ` is
+divisible and the finite kernel has enough roots of unity in `k`. This applies over any
+algebraically closed field: the ambient extension need not be finite, and the characteristic may
+divide the order of the quotient. For central extensions, this detects the stem condition. -/
+theorem characterTransgression_injective_iff_range_inl_le_commutator_of_rootableBy
+    {k : Type} [CommMonoid k] [MulDistribMulAction G kˣ] (hk : ∀ (g : G) (a : kˣ), g • a = a)
+    [RootableBy kˣ ℕ] [Finite M] [HasEnoughRootsOfUnity k (Monoid.exponent M)] :
     Function.Injective (α.characterTransgression (A := kˣ)) ↔
       (inl α).range ≤ commutator α.Extension := by
-  let _ : NeZero ((Monoid.exponent (Abelianization α.Extension) : ℕ) : k) :=
-    ⟨Nat.cast_ne_zero.mpr (Monoid.exponent_ne_zero_of_finite)⟩
-  apply characterTransgression_injective_iff_range_inl_le_commutator_of_separates α
-    (fun _ _ ↦ rfl)
+  apply characterTransgression_injective_iff_range_inl_le_commutator_of_separates α hk
   intro a hx
-  exact CommGroup.exists_apply_ne_one_of_hasEnoughRootsOfUnity
-    (Abelianization α.Extension) k hx
+  -- Only the image of the kernel needs enough roots; the whole abelianization may have
+  -- torsion at the characteristic. Divisibility extends a character of that image.
+  let f : M →* Abelianization α.Extension := Abelianization.of.comp (inl α)
+  let : Finite f.range := Finite.of_surjective f.rangeRestrict f.rangeRestrict_surjective
+  have : HasEnoughRootsOfUnity k (Monoid.exponent f.range) :=
+    HasEnoughRootsOfUnity.of_dvd k
+      (MonoidHom.exponent_dvd f.rangeRestrict_surjective)
+  obtain ⟨χ, hχ⟩ := CommGroup.exists_apply_ne_one_of_hasEnoughRootsOfUnity f.range k
+    (a := f.rangeRestrict a) (fun h ↦ hx (congrArg Subtype.val h))
+  let : DivisibleBy (Additive kˣ) ℕ :=
+    divisibleByOfSMulRightSurj _ _ fun {n} hn a ↦ by
+      obtain ⟨b, hb⟩ := RootableBy.surjective_pow kˣ ℕ hn a.toMul
+      exact ⟨Additive.ofMul b, congrArg Additive.ofMul hb⟩
+  let : DivisibleBy (Additive kˣ) ℤ := AddGroup.divisibleByIntOfDivisibleByNat _
+  obtain ⟨ψ, hψ⟩ := (Module.Baer.of_divisible (Additive kˣ)).extension_property_addMonoidHom
+    f.range.subtype.toAdditive Subtype.coe_injective χ.toAdditive
+  refine ⟨AddMonoidHom.toMultiplicativeLeft ψ, ?_⟩
+  intro h
+  have heq := DFunLike.congr_fun hψ (Additive.ofMul (f.rangeRestrict a))
+  exact hχ (Additive.ofMul.injective (heq.symm.trans (congrArg Additive.ofMul h)))
 
 end StemCriterion
 

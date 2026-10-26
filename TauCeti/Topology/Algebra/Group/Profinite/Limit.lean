@@ -9,6 +9,7 @@ public import Mathlib.Topology.Compactness.Compact
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 import Mathlib.Topology.Algebra.ProperAction.Basic
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Profinite groups: the finite-quotient limit description

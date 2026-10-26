@@ -55,7 +55,7 @@ theorem toGL_counitPointsMulEquiv
       Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) :
     Matrix.SpecialLinearGroup.toGL (counitPointsMulEquiv n g) =
       GeneralLinear.counitPointsMulEquiv n
-        (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R
+        (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R
           (GeneralLinear.coordinateHopfAlgebra R n) B) (coordinateMap R n).hom g) := by
   rw [counitPointsMulEquiv, MulEquiv.trans_apply]
   rw [GeneralLinear.counitPointsMulEquiv_eq_pointsMulEquiv]
@@ -69,8 +69,8 @@ theorem toGL_counitPointsMulEquiv
   -- application of the transported ambient point so `mapDomain_apply_apply` can rewrite it.
   change _ = Bialgebra.CounitAlgebra.algEquivSelf R
     (GeneralLinear.coordinateHopfAlgebra R n) B
-      (AlgHom.mapDomain (coordinateMap R n).hom g x)
-  rw [AlgHom.mapDomain_apply_apply, Bialgebra.CounitAlgebra.algEquivSelf_apply]
+      (BialgHom.mapDomain (coordinateMap R n).hom g x)
+  rw [BialgHom.mapDomain_apply_apply, Bialgebra.CounitAlgebra.algEquivSelf_apply]
   rw [CommHopfAlgCat.hom_mkQuotient]
   exact (Bialgebra.CounitAlgebra.algEquivSelf_apply
     (R := R) (A := GeneralLinear.coordinateHopfAlgebra R n) (B := B)

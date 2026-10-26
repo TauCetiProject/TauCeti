@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Basic
+import TauCeti.GroupTheory.Perm.FinThree.Basic
 
 /-!
 # The anharmonic self-homeomorphisms of the thrice-punctured sphere
@@ -51,6 +52,8 @@ transformation of the Riemann sphere `OnePoint ℂ`, that is, with the action of
 * `TauCeti.ThricePuncturedSphere.mob01GL`, `TauCeti.ThricePuncturedSphere.mob1InfGL`: the
   matrices of the two generators.
 
+* `Equiv.Perm.anharmonic`: the six maps indexed by their puncture permutations.
+
 ## Main results
 
 * `coe_mob1Inf`, `coe_mob0Inf`, `coe_mobRot`, `coe_mobRotInv`: the formulas.
@@ -60,6 +63,8 @@ transformation of the Riemann sphere `OnePoint ℂ`, that is, with the action of
 * `toOnePoint_mob01`, `toOnePoint_mob1Inf`, `toOnePoint_mob0Inf`, `toOnePoint_mobRot`,
   `toOnePoint_mobRotInv`: each map is the restriction of the Möbius action of a product of
   `mob01GL` and `mob1InfGL`.
+
+* `Equiv.Perm.anharmonic_mul`: composition agrees with multiplication of puncture permutations.
 
 ## References
 
@@ -331,3 +336,93 @@ theorem toOnePoint_mob0Inf (z : ThricePuncturedSphere) :
 end ThricePuncturedSphere
 
 end TauCeti
+
+/-! ### Indexing by puncture permutations -/
+
+namespace Equiv.Perm
+
+open TauCeti TauCeti.ThricePuncturedSphere
+
+/-- The anharmonic self-homeomorphism whose puncture permutation is `ρ`, with `0, 1, ∞`
+numbered by `0, 1, 2 : Fin 3`. In particular the cycle `0 ↦ 1 ↦ 2 ↦ 0` gives `mobRot`. -/
+noncomputable def anharmonic (ρ : Equiv.Perm (Fin 3)) :
+    ThricePuncturedSphere ≃ₜ ThricePuncturedSphere :=
+  match ρ 0, ρ 1 with
+  | 1, 0 => mob01
+  | 0, 2 => mob1Inf
+  | 2, 1 => mob0Inf
+  | 1, 2 => mobRot
+  | 2, 0 => mobRotInv
+  | _, _ => Homeomorph.refl _
+
+/-- The identity puncture permutation indexes the identity homeomorphism. -/
+@[simp] theorem anharmonic_one : anharmonic 1 = Homeomorph.refl _ := (rfl)
+
+/-- The transposition of `0` and `1` indexes `mob01`. -/
+@[simp] theorem anharmonic_swap_zero_one : anharmonic (Equiv.swap 0 1) = mob01 := (rfl)
+
+/-- The transposition of `1` and `∞` indexes `mob1Inf`. -/
+@[simp] theorem anharmonic_swap_one_two : anharmonic (Equiv.swap 1 2) = mob1Inf := (rfl)
+
+/-- The transposition of `0` and `∞` indexes `mob0Inf`. -/
+@[simp] theorem anharmonic_swap_zero_two : anharmonic (Equiv.swap 0 2) = mob0Inf := (rfl)
+
+/-- The cycle `0 ↦ 1 ↦ ∞ ↦ 0` indexes `mobRot`. -/
+@[simp] theorem anharmonic_finRotate : anharmonic (finRotate 3) = mobRot := (rfl)
+
+/-- The cycle `0 ↦ ∞ ↦ 1 ↦ 0` indexes `mobRotInv`. -/
+@[simp] theorem anharmonic_finRotate_inv : anharmonic (finRotate 3)⁻¹ = mobRotInv := (rfl)
+
+/-- Left multiplication by the transposition of `0` and `1` composes with `mob01`. -/
+private theorem anharmonic_swap_zero_one_mul (τ : Equiv.Perm (Fin 3)) :
+    anharmonic (Equiv.swap 0 1 * τ) = (anharmonic τ).trans mob01 := by
+  rcases fin_three_cases τ with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    apply Homeomorph.ext <;> intro z
+  · rfl
+  · exact (mob01_mob01 z).symm
+  · rfl
+  · have h : swap (0 : Fin 3) 1 * swap 0 2 = (finRotate 3)⁻¹ := by decide
+    rw [h, anharmonic_finRotate_inv, Homeomorph.trans_apply, anharmonic_swap_zero_two,
+      ← mob01_mob1Inf_mob01, mob01_mob01, mobRotInv_apply]
+  · have h : swap (0 : Fin 3) 1 * finRotate 3 = swap 1 2 := by decide
+    rw [h, anharmonic_swap_one_two, Homeomorph.trans_apply, anharmonic_finRotate,
+      mobRot_apply, mob01_mob01]
+  · rfl
+
+/-- Left multiplication by the transposition of `1` and `∞` composes with `mob1Inf`. -/
+private theorem anharmonic_swap_one_two_mul (τ : Equiv.Perm (Fin 3)) :
+    anharmonic (Equiv.swap 1 2 * τ) = (anharmonic τ).trans mob1Inf := by
+  rcases fin_three_cases τ with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    apply Homeomorph.ext <;> intro z
+  · rfl
+  · rfl
+  · exact (mob1Inf_mob1Inf z).symm
+  · have h : swap (1 : Fin 3) 2 * swap 0 2 = finRotate 3 := by decide
+    rw [h, anharmonic_finRotate, Homeomorph.trans_apply, anharmonic_swap_zero_two,
+      ← mob1Inf_mob01_mob1Inf, mob1Inf_mob1Inf, mobRot_apply]
+  · exact (mob1Inf_mob01_mob1Inf z).symm
+  · have h : swap (1 : Fin 3) 2 * (finRotate 3)⁻¹ = swap 0 1 := by decide
+    rw [h, anharmonic_swap_zero_one, Homeomorph.trans_apply, anharmonic_finRotate_inv,
+      mobRotInv_apply, mob1Inf_mob1Inf]
+
+/-- Composition of anharmonic maps agrees with composition of puncture permutations. -/
+theorem anharmonic_mul (ρ τ : Equiv.Perm (Fin 3)) :
+    anharmonic (ρ * τ) = (anharmonic τ).trans (anharmonic ρ) := by
+  have hst : Equiv.swap (0 : Fin 3) 1 * Equiv.swap 1 2 = finRotate 3 := by decide
+  have hts : Equiv.swap (1 : Fin 3) 2 * Equiv.swap 0 1 = (finRotate 3)⁻¹ := by decide
+  have hsts : Equiv.swap (0 : Fin 3) 1 * (Equiv.swap 1 2 * Equiv.swap 0 1) =
+      Equiv.swap 0 2 := by decide
+  rcases fin_three_cases ρ with rfl | rfl | rfl | rfl | rfl | rfl
+  · rw [one_mul, anharmonic_one]
+    rfl
+  · exact anharmonic_swap_zero_one_mul τ
+  · exact anharmonic_swap_one_two_mul τ
+  · rw [← hsts, mul_assoc, mul_assoc, anharmonic_swap_zero_one_mul,
+      anharmonic_swap_one_two_mul, anharmonic_swap_zero_one_mul]
+    rfl
+  · rw [← hst, mul_assoc, anharmonic_swap_zero_one_mul, anharmonic_swap_one_two_mul]
+    rfl
+  · rw [← hts, mul_assoc, anharmonic_swap_one_two_mul, anharmonic_swap_zero_one_mul]
+    rfl
+
+end Equiv.Perm

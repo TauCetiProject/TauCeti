@@ -79,7 +79,7 @@ theorem IsProperFractionalIdeal.isUnit_of_finrank_eq_two (hK : Module.finrank �
   obtain ⟨α, β, hα, hspan, hmem⟩ := exists_eq_lattice_of_finrank_eq_two hK hI₀
   -- `τ = β / α` satisfies `τ² = c + d τ` over `ℚ`; clear denominators primitively.
   obtain ⟨c, d, hcd⟩ := hspan (β ^ 2 / α)
-  obtain ⟨a, b, e, hb, he, u, v, w, huvw⟩ := Rat.exists_primitive_common_denominator d c
+  obtain ⟨a, b, e, -, hb, he, u, v, w, huvw⟩ := Rat.exists_primitive_common_denominator d c
   have hrel : β ^ 2 = c * α ^ 2 + d * α * β := by
     rw [Rat.smul_def, Rat.smul_def] at hcd
     field_simp at hcd

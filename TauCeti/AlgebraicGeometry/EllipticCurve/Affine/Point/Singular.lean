@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Algebra.Module.Torsion.Basic
 public import TauCeti.Algebra.Module.Torsion.Int
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.RingTheory.RootsOfUnity.Basic
+-- Proof-only: an algebraic closure, over which the singular point has rational tangent slopes.
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+-- Proof-only: points carried along a field homomorphism.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 
 /-!
 # The nonsingular points of a singular Weierstrass curve
@@ -44,11 +47,12 @@ When the tangent quadratic has no root in `F`, the singular point is a nonsplit 
 imperfect field of characteristic `2`, a cusp whose tangent is not defined over `F`. The group of
 nonsingular points is then a twisted form of `Fˣ` or of `F`, and these cases are not treated here.
 
-As a consequence, for `n` invertible in `F` the `n`-torsion of the nonsingular points has at most
-`n` elements (`WeierstrassCurve.Affine.Point.natCard_torsionBy_le_of_isSingular`), since `F` has
-no such torsion and `Fˣ` has at most `n` roots of unity of order dividing `n`. Over an
-algebraically closed field this holds for every Weierstrass curve with vanishing discriminant
-(`WeierstrassCurve.Affine.Point.natCard_torsionBy_le_of_Δ_eq_zero`). In the proof of the criterion
+As a consequence, for `n` invertible in `F` the number of `n`-torsion points among the nonsingular
+points divides `n` (`WeierstrassCurve.Affine.Point.natCard_torsionBy_dvd_of_isSingular`), since `F`
+has no such torsion and the `n`-th roots of unity in `Fˣ` form a cyclic group of order dividing
+`n`. Passing to an algebraic closure, where every singular point has rational tangent slopes, this
+holds for every Weierstrass curve with vanishing discriminant over any field
+(`WeierstrassCurve.Affine.Point.natCard_torsionBy_dvd_of_Δ_eq_zero`). In the proof of the criterion
 of Néron, Ogg and Shafarevich (Silverman VII.7.1) this bound, applied to the reduced curve,
 excludes bad reduction when the torsion of order prime to the residue characteristic is unramified.
 
@@ -65,10 +69,11 @@ excludes bad reduction when the torsion of order prime to the residue characteri
   `WeierstrassCurve.Affine.Point.val_toMul_nodeAddEquiv_some`: the coordinate formulas.
 * `WeierstrassCurve.Affine.Point.cuspAddEquiv_symm_of_ne_zero` and
   `WeierstrassCurve.Affine.Point.nodeAddEquiv_symm_of_ne_one`: the points with a given parameter.
-* `WeierstrassCurve.Affine.Point.natCard_torsionBy_le_of_isSingular`: when the tangent slopes at a
-  singular point lie in `F`, the `n`-torsion has at most `n` elements for `n` invertible in `F`.
-* `WeierstrassCurve.Affine.Point.natCard_torsionBy_le_of_Δ_eq_zero`: the same bound over an
-  algebraically closed field whenever `Δ = 0`.
+* `WeierstrassCurve.Affine.Point.natCard_torsionBy_dvd_of_isSingular`: when the tangent slopes at
+  a singular point lie in `F`, the number of `n`-torsion points divides `n`, for `n` invertible in
+  `F`.
+* `WeierstrassCurve.Affine.Point.natCard_torsionBy_dvd_of_Δ_eq_zero`: the same divisibility over
+  any field whenever `Δ = 0`.
 
 ## References
 
@@ -131,21 +136,13 @@ private theorem cusp_coeffs : W.a₁ = -2 * α ∧ W.a₂ = -α ^ 2 ∧ W.a₃ =
   exact ⟨by linear_combination hc, by linear_combination -hα + α * hc, h3, h4⟩
 
 include h0 hα hc in
-/-- At a cusp with tangent `y = α x` the equation reads `(y - α x)² = x³`. -/
-private theorem equation_iff_cusp {x y : F} :
-    W.toAffine.Equation x y ↔ (y - α * x) ^ 2 = x ^ 3 := by
-  rw [equation_iff_of_isSingular_zero h0]
-  constructor <;> intro h
-  · linear_combination h - (x * y - α * x ^ 2) * hc - x ^ 2 * hα
-  · linear_combination h + (x * y - α * x ^ 2) * hc + x ^ 2 * hα
-
-include h0 hα hc in
 /-- A nonsingular point of a cusp is `(1 / t², 1 / t³ + α / t²)` for `t = x / (y - α x)`. -/
 private theorem cusp_param {x y : F} (h : W.toAffine.Nonsingular x y) :
     y - α * x ≠ 0 ∧ x = 1 / (x / (y - α * x)) ^ 2 ∧
       y = 1 / (x / (y - α * x)) ^ 3 + α / (x / (y - α * x)) ^ 2 := by
   have hx := ne_zero_of_isSingular_zero h0 h
-  have he := (equation_iff_cusp h0 hα hc).1 h.1
+  have he : (y - α * x) ^ 2 = x ^ 3 := by
+    simpa using (equation_iff_sq_eq_cube_of_isSingular h0 (by simpa using hα) hc x y).1 h.1
   have hu : y - α * x ≠ 0 := fun hu ↦ hx <| by
     rw [hu, zero_pow two_ne_zero] at he
     exact pow_eq_zero_iff three_ne_zero |>.1 he.symm
@@ -158,7 +155,8 @@ private theorem cusp_param {x y : F} (h : W.toAffine.Nonsingular x y) :
 include h0 hα hc in
 private theorem cusp_nonsingular {t : F} (ht : t ≠ 0) :
     W.toAffine.Nonsingular (1 / t ^ 2) (1 / t ^ 3 + α / t ^ 2) :=
-  nonsingular_of_isSingular_zero h0 ((equation_iff_cusp h0 hα hc).2 (by field_simp; ring))
+  nonsingular_of_isSingular_zero h0
+    ((equation_iff_sq_eq_cube_of_isSingular h0 (by simpa using hα) hc _ _).2 (by field_simp; ring))
     (by simpa using ht)
 
 /-- The parameter `t = x / (y - α x)` of a point of a cusp, with the point at infinity at `0`. -/
@@ -293,16 +291,6 @@ private theorem node_coeffs : W.a₂ = α ^ 2 + W.a₁ * α ∧ W.a₃ = 0 ∧ W
   obtain ⟨-, h4, h3⟩ := (isSingular_zero _).1 h0
   exact ⟨by linear_combination -hα, h3, h4⟩
 
-include h0 hα in
-/-- At a node with tangents `y = α x` and `y = -(a₁ + α) x` the equation reads
-`(y - α x) (y + (a₁ + α) x) = x³`. -/
-private theorem equation_iff_node {x y : F} :
-    W.toAffine.Equation x y ↔ (y - α * x) * (y + (W.a₁ + α) * x) = x ^ 3 := by
-  rw [equation_iff_of_isSingular_zero h0]
-  constructor <;> intro h
-  · linear_combination h - x ^ 2 * hα
-  · linear_combination h + x ^ 2 * hα
-
 include h0 hα hn in
 /-- A nonsingular point of a split node is `(D² s / (s - 1)², -D³ s² / (s - 1)³ + α x)` for
 `D = 2 α + a₁` and `s = (y - α x) / (y + (a₁ + α) x) ≠ 1`. -/
@@ -316,7 +304,8 @@ private theorem node_param {x y : F} (h : W.toAffine.Nonsingular x y) :
         α * ((2 * α + W.a₁) ^ 2 * ((y - α * x) / (y + (W.a₁ + α) * x)) /
           ((y - α * x) / (y + (W.a₁ + α) * x) - 1) ^ 2) := by
   have hx := ne_zero_of_isSingular_zero h0 h
-  have he := (equation_iff_node h0 hα).1 h.1
+  have he : (y - α * x) * (y + (W.a₁ + α) * x) = x ^ 3 := by
+    simpa using (equation_iff_mul_eq_cube_of_isSingular h0 (by simpa using hα) x y).1 h.1
   have hu : y - α * x ≠ 0 := fun hu ↦ hx <| by
     rw [hu, zero_mul] at he
     exact pow_eq_zero_iff three_ne_zero |>.1 he.symm
@@ -340,7 +329,8 @@ include h0 hα hn in
 private theorem node_nonsingular {s : F} (hs₀ : s ≠ 0) (hs : s - 1 ≠ 0) :
     W.toAffine.Nonsingular ((2 * α + W.a₁) ^ 2 * s / (s - 1) ^ 2)
       (-(2 * α + W.a₁) ^ 3 * s ^ 2 / (s - 1) ^ 3 + α * ((2 * α + W.a₁) ^ 2 * s / (s - 1) ^ 2)) :=
-  nonsingular_of_isSingular_zero h0 ((equation_iff_node h0 hα).2 (by field_simp; ring))
+  nonsingular_of_isSingular_zero h0
+    ((equation_iff_mul_eq_cube_of_isSingular h0 (by simpa using hα) _ _).2 (by field_simp; ring))
     (div_ne_zero (mul_ne_zero (pow_ne_zero 2 hn) hs₀) (pow_ne_zero 2 hs))
 
 /-- The parameter `s = (y - α x) / (y + (a₁ + α) x)` of a point of a split node, with the point at
@@ -637,38 +627,44 @@ theorem nodeAddEquiv_symm_of_ne_one (h : W.toAffine.IsSingular x₀ y₀)
   exact ⟨rfl, rfl⟩
 
 /-- **Torsion at a singular point with rational tangents.** If `(x₀, y₀)` is a singular point of
-`W` at which the tangent slopes lie in `F`, then for `n` invertible in `F` the `n`-torsion of the
-nonsingular points has at most `n` elements: it is trivial at a cusp, and a subgroup of the `n`-th
-roots of unity at a split node. -/
-theorem natCard_torsionBy_le_of_isSingular (h : W.toAffine.IsSingular x₀ y₀)
+`W` at which the tangent slopes lie in `F`, then for `n` invertible in `F` the number of `n`-torsion
+points divides `n`: the `n`-torsion is trivial at a cusp, and a subgroup of the `n`-th roots of
+unity at a split node. -/
+theorem natCard_torsionBy_dvd_of_isSingular (h : W.toAffine.IsSingular x₀ y₀)
     (hα : α ^ 2 + W.a₁ * α - (3 * x₀ + W.a₂) = 0) {n : ℕ} (hn : (n : F) ≠ 0) :
-    Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) ≤ n := by
-  have hn0 : n ≠ 0 := by rintro rfl; exact hn Nat.cast_zero
+    Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) ∣ n := by
   by_cases hc : 2 * α + W.a₁ = 0
   · rw [Nat.card_congr ((cuspAddEquiv h hα hc).torsionByCongr n).toEquiv]
     have := TauCeti.subsingleton_torsionBy_of_injective_zsmul (V := F) n fun a b hab ↦ by
       simpa [hn] using hab
     rw [Nat.card_of_subsingleton (0 : AddSubgroup.torsionBy F n)]
-    exact Nat.one_le_iff_ne_zero.2 hn0
-  · have : NeZero n := ⟨hn0⟩
-    -- the `n`-torsion of `Additive Fˣ` is the group of `n`-th roots of unity
+    exact one_dvd n
+  · -- the `n`-torsion of `Additive Fˣ` is the group of `n`-th roots of unity
     calc Nat.card (AddSubgroup.torsionBy W.toAffine.Point n)
         = Nat.card (Submodule.torsionBy ℤ (Additive Fˣ) n) :=
           Nat.card_congr ((nodeAddEquiv h hα hc).torsionByCongr n).toEquiv
       _ = Nat.card (rootsOfUnity n F) :=
           (Nat.card_congr (TauCeti.torsionByUnitsEquivRootsOfUnity n).toEquiv).trans
             (Nat.card_congr Additive.toMul)
-      _ ≤ n := card_rootsOfUnity F n
+      _ ∣ n := TauCeti.card_rootsOfUnity_dvd n
 
-/-- **Torsion of a singular cubic over an algebraically closed field.** If `Δ = 0`, then for `n`
-invertible in `F` the `n`-torsion of the nonsingular points has at most `n` elements. In particular
-it is not `(ℤ / n)²` for `n > 1`, unlike the `n`-torsion of an elliptic curve. -/
-theorem natCard_torsionBy_le_of_Δ_eq_zero [IsAlgClosed F] (hΔ : W.Δ = 0) {n : ℕ}
-    (hn : (n : F) ≠ 0) : Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) ≤ n := by
-  obtain ⟨x₀, y₀, h⟩ := exists_isSingular_of_Δ_eq_zero W.toAffine hΔ
-  obtain ⟨α, hα⟩ := IsAlgClosed.exists_root (C 1 * X ^ 2 + C W.a₁ * X + C (-(3 * x₀ + W.a₂)))
+/-- **Torsion of a singular cubic.** If `Δ = 0`, then for `n` invertible in `F` the number of
+`n`-torsion points among the nonsingular points divides `n`. In particular the `n`-torsion is not
+`(ℤ / n)²` for `n > 1`, unlike the `n`-torsion of an elliptic curve. -/
+theorem natCard_torsionBy_dvd_of_Δ_eq_zero (hΔ : W.Δ = 0) {n : ℕ} (hn : (n : F) ≠ 0) :
+    Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) ∣ n := by
+  classical
+  -- over an algebraic closure the curve has a singular point with rational tangent slopes
+  let f := algebraMap F (AlgebraicClosure F)
+  obtain ⟨x₀, y₀, h⟩ := exists_isSingular_of_Δ_eq_zero (W.map f).toAffine
+    (by rw [map_Δ, hΔ, _root_.map_zero])
+  obtain ⟨α, hα⟩ := IsAlgClosed.exists_root
+    (C 1 * X ^ 2 + C (W.map f).a₁ * X + C (-(3 * x₀ + (W.map f).a₂)))
     (by rw [degree_quadratic one_ne_zero]; decide)
-  exact natCard_torsionBy_le_of_isSingular h (α := α) (by simpa [sub_eq_add_neg] using hα) hn
+  have hK := natCard_torsionBy_dvd_of_isSingular h (α := α) (by simpa [sub_eq_add_neg] using hα)
+    (n := n) (by rwa [← map_natCast f, _root_.map_ne_zero])
+  exact (AddSubgroup.card_dvd_of_injective (W.torsionMapAlong f n)
+    (W.torsionMapAlong_injective f n)).trans hK
 
 end Point
 

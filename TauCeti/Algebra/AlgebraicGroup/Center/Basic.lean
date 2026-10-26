@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 import Mathlib.LinearAlgebra.TensorProduct.Basis
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 
 /-!
@@ -49,6 +49,8 @@ ideal, so the represented closed subgroup is canonical.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory TensorProduct WithConv
 
 namespace TauCeti.CommHopfAlgCat
@@ -61,7 +63,7 @@ variable {k : Type u} [Field k]
 variable {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
 
 /-- The index type of the vector-space basis used to extract center equations. -/
-private abbrev centerBasisIndex := Module.Basis.ofVectorSpaceIndex k H
+private noncomputable abbrev centerBasisIndex := Module.Basis.ofVectorSpaceIndex k H
 
 private noncomputable instance :
     DecidableEq (centerBasisIndex (k := k) (H := H)) :=
@@ -139,8 +141,7 @@ private theorem tensorMap_comul_eq_convMul
           (Algebra.TensorProduct.includeLeft (R := k) (S := k) (A := A) (B := H)) g *
         toConv (Algebra.TensorProduct.includeRight (R := k) (A := A) (B := H)) := by
   rw [Bialgebra.toConv_comp_comulAlgHom]
-  simp only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    Bialgebra.TensorProduct.includeRight_toAlgHom, AlgHom.mapValue_apply]
+  simp only [AlgHom.mapValue_apply]
   rw [Algebra.TensorProduct.map_comp_includeLeft,
     Algebra.TensorProduct.map_comp_includeRight, AlgHom.comp_id]
 
@@ -230,15 +231,15 @@ private theorem centerCoefficientIdeal_antipode_mem {x : H}
     (centerCoefficientIdeal_le_ker_iff_isCentralPoint g⁻¹).2 hginv
   have hxzero := RingHom.mem_ker.mp (hle hx)
   have hxzero' : g⁻¹ x = 0 := hxzero
-  rw [AlgHom.convInv_apply] at hxzero'
+  rw [WithConv.algHom_inv_apply] at hxzero'
   exact Ideal.Quotient.eq_zero_iff_mem.mp hxzero'
 
 private theorem centerCoefficientIdeal_comul_mem {x : H}
     (hx : x ∈ centerCoefficientIdeal (k := k) (H := H)) :
     Coalgebra.comul (R := k) x ∈
-      HopfIdeal.leftTensorIdeal (R := k) (H := H)
+      Ideal.leftTensorIdeal (R := k) (B := H)
           (centerCoefficientIdeal (k := k) (H := H)) ⊔
-        HopfIdeal.rightTensorIdeal (R := k) (H := H)
+        Ideal.rightTensorIdeal (R := k) (A := H)
           (centerCoefficientIdeal (k := k) (H := H)) := by
   let I := centerCoefficientIdeal (k := k) (H := H)
   let Q := H ⧸ I
@@ -273,11 +274,11 @@ private theorem centerCoefficientIdeal_comul_mem {x : H}
     rw [AlgHom.convMul_apply, hproduct] at hconvzero
     exact hconvzero
   have hker : RingHom.ker (Algebra.TensorProduct.map q q).toRingHom =
-      HopfIdeal.leftTensorIdeal (R := k) (H := H) I ⊔
-        HopfIdeal.rightTensorIdeal (R := k) (H := H) I := by
+      Ideal.leftTensorIdeal (R := k) (B := H) I ⊔
+        Ideal.rightTensorIdeal (R := k) (A := H) I := by
     have hqker : RingHom.ker q = I := Ideal.Quotient.mkₐ_ker k I
     simpa only [AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, hqker] using
-      HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
+      AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
         (Ideal.Quotient.mkₐ_surjective k I) (Ideal.Quotient.mkₐ_surjective k I)
   rw [← hker, RingHom.mem_ker]
   exact hmapzero

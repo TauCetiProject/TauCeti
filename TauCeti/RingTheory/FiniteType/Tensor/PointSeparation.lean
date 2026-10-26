@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.RingTheory.FiniteType.PointSeparation
-public import TauCeti.LinearAlgebra.TensorProduct.Basis
+public import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
 # Point separation after tensoring
@@ -31,11 +31,12 @@ theorem tensor_eq_of_forall_map_algHom_eq
     (h : ∀ p : B →ₐ[k] K,
       TensorProduct.map p.toLinearMap LinearMap.id x =
         TensorProduct.map p.toLinearMap LinearMap.id y) : x = y := by
-  apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
-  intro φ
-  apply eq_of_forall_algHom_apply_eq (k := k) (K := K)
+  apply sub_eq_zero.mp
+  apply tensor_eq_zero_of_forall_rTensor_eq_zero
+    (fun p : B →ₐ[k] K ↦ p.toLinearMap)
+    (fun b hb ↦ eq_of_forall_algHom_apply_eq (k := k) (K := K)
+      fun p ↦ (hb p).trans (map_zero p).symm)
   intro p
-  simpa only [LinearMap.tensorComponent_map, LinearMap.comp_id,
-    AlgHom.toLinearMap_apply] using congrArg (LinearMap.tensorComponent φ) (h p)
+  simpa only [LinearMap.rTensor_def, map_sub, sub_eq_zero] using h p
 
 end TauCeti

@@ -7,11 +7,14 @@ module
 
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.LocalRing.Module
+import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Complementary submodules under restriction, quotients and products
 
-Three ways complementarity of a pair of submodules survives a construction.
+Complementarity under restriction, quotients and products, and finite free complements over
+local rings.
 
 **Restriction to a subspace.** Mathlib's `Submodule.isCompl_comap_subtype_of_isCompl_of_le`
 restricts a complementary pair to a subspace that contains one of the two. This file records the
@@ -28,6 +31,9 @@ opposedness of filtrations induced on a graded piece is checked in the ambient m
 factor by factor, and it is used that way for the doubled totally real modules in
 `TauCeti/LinearAlgebra/TotallyReal/Basic.lean`.
 
+A complement in a finite flat module over a local ring is finite free
+(`Submodule.finite_free_of_isCompl`). In particular this applies to finite free ambient modules.
+
 ## Main results
 
 * `TauCeti.Submodule.isCompl_comap_subtype`: a disjoint pair of submodules whose intersections with
@@ -35,6 +41,8 @@ factor by factor, and it is used that way for the doubled totally real modules i
 * `Submodule.isCompl_map_mkQ_iff`: complementarity of images in a quotient, read in the
   ambient module.
 * `IsCompl.prod`: a product of complementary pairs is complementary.
+* `Submodule.finite_free_of_isCompl`: a direct summand of a finite flat module over a local ring
+  is finite free.
 -/
 
 public section
@@ -89,3 +97,17 @@ theorem _root_.IsCompl.prod (hL : IsCompl L₁ L₂) (hM : IsCompl M₁ M₂) :
 end Prod
 
 end TauCeti
+
+namespace Submodule
+
+/-- A direct summand of a finite flat module over a local ring is finite free. -/
+theorem finite_free_of_isCompl {R M : Type*} [CommRing R] [IsLocalRing R]
+    [AddCommGroup M] [Module R M] [Module.Finite R M] [Module.Flat R M]
+    (S : Submodule R M) {T : Submodule R M} (h : IsCompl S T) :
+    Module.Finite R S ∧ Module.Free R S := by
+  have : Module.Finite R S := .equiv (Submodule.quotientEquivOfIsCompl _ _ h.symm)
+  have : Module.Flat R S := Module.Flat.of_retract S.subtype
+    (S.projectionOnto T h) (by ext; simp)
+  exact ⟨inferInstance, Module.free_of_flat_of_isLocalRing⟩
+
+end Submodule

@@ -76,7 +76,7 @@ theorem comap_subtype (h : IsHodgeBigrading hℚ hℂ WQ F I) {U : Submodule ℚ
     have hUC : rationalToComplexSubmodule hℚ hℂ U =
         ⨆ pq : ℤ × ℤ, rationalToComplexSubmodule hℚ hℂ U ⊓ I pq :=
       le_antisymm hU (iSup_le fun _ ↦ inf_le_left)
-    have := TauCeti.iSupIndep.iSup₂_inf_iSup_eq_iSup₂
+    have := iSupIndep.iSup₂_inf_iSup_eq_iSup₂
       (B := fun pq ↦ rationalToComplexSubmodule hℚ hℂ U ⊓ I pq) h.iSupIndep
       (fun _ ↦ inf_le_right) P
     rwa [← hUC] at this

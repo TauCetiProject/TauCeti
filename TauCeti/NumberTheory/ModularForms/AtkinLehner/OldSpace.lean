@@ -40,10 +40,10 @@ old subspace, without imposing a nebentypus condition.
 
 ## Main results
 
-* `TauCeti.Nat.IsExactDivisor.ofLe_atkinLehnerOperatorCusp_mem_cuspFormsOld`,
-  `TauCeti.Nat.IsExactDivisor.ofLe_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsOld`: for a cusp
-  form on `Γ₀(N)` that is old at level `Γ₁(N)`, its image under `W_Q` (resp. `𝒲_Q`) is again
-  old.
+* `TauCeti.Nat.IsExactDivisor.restrict_atkinLehnerOperatorCusp_mem_cuspFormsOld`,
+  `TauCeti.Nat.IsExactDivisor.restrict_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsOld`: for a
+  cusp form on `Γ₀(N)` that is old at level `Γ₁(N)`, its image under `W_Q` (resp. `𝒲_Q`) is
+  again old.
 * `TauCeti.atkinLehnerOperatorGamma1Cusp_mem_cuspFormsOld`: for an arbitrary cusp form on
   `Γ₁(N)`, its image under any choice of the operator `W_Q` is old whenever it is old.
 
@@ -76,36 +76,36 @@ variable {M d : ℕ}
 /-- `W_Q` carries a level-raise `V_d g` of a cusp form `g` on `Γ₀(M)`, `M` a proper divisor of
 `N`, to an old form, once `Q`, `N`, `M` and `d` factor as in
 `Nat.IsExactDivisor.atkinLehnerOperatorCusp_levelRaise`. -/
-private lemma ofLe_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld [NeZero N] [NeZero d]
+private lemma restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld [NeZero N] [NeZero d]
     {Q₁ M' d₁ e₁ d₂ e₂ : ℕ} (h : Q ∥ N) (h₁ : Q₁ ∥ M) (hQ : Q = d₁ * e₁ * Q₁)
     (hN : N = Q * (d₂ * e₂ * M')) (hM : M = Q₁ * M') (hd : d = d₁ * d₂) (hMN : M ≠ N)
     (hdM : d * M ∣ N) (g : CuspForm ((Gamma0 M).map (mapGL ℝ)) k) :
-    CuspForm.ofLe (Gamma1_map_le_Gamma0_map N)
+    CuspForm.restrict (Gamma1_map_le_Gamma0_map N)
         (h.atkinLehnerOperatorCusp k
           (CuspForm.levelRaise d (Gamma0_map_le_conjAct_scaleGL_of_dvd hdM) g)) ∈
       cuspFormsOld N k := by
   have heM : e₁ * d₂ * M ∣ N := ⟨d₁ * e₂, by rw [hN, hQ, hM]; ring⟩
   have : NeZero (e₁ * d₂) := NeZero.of_dvd (dvd_of_mul_right_dvd heM)
   rw [h.atkinLehnerOperatorCusp_levelRaise h₁ hQ hN hM hd rfl]
-  have hof : CuspForm.ofLe (Gamma1_map_le_Gamma0_map N)
+  have hof : CuspForm.restrict (Gamma1_map_le_Gamma0_map N)
       (CuspForm.levelRaise (e₁ * d₂) (Gamma0_map_le_conjAct_scaleGL_of_dvd heM)
         (h₁.atkinLehnerOperatorCusp k g)) =
       CuspForm.levelRaise (e₁ * d₂) (Gamma1_map_le_conjAct_scaleGL_of_dvd heM)
-        (CuspForm.ofLe (Gamma1_map_le_Gamma0_map M) (h₁.atkinLehnerOperatorCusp k g)) :=
+        (CuspForm.restrict (Gamma1_map_le_Gamma0_map M) (h₁.atkinLehnerOperatorCusp k g)) :=
     CuspForm.ext fun τ ↦ by simp
-  rw [← CuspForm.ofLeₗ_apply, map_smul, CuspForm.ofLeₗ_apply, hof]
+  rw [← CuspForm.restrictₗ_apply k ℂ, map_smul, CuspForm.restrictₗ_apply, hof]
   exact Submodule.smul_mem _ _ (levelRaise_mem_cuspFormsOld heM hMN k _)
 
 /-- **The Atkin–Lehner operator preserves the old subspace at trivial nebentypus.** For a cusp
 form `f` on `Γ₀(N)` whose restriction to `Γ₁(N)` is old, the restriction of `W_Q f` is again
 old, for every exact divisor `Q ∥ N`. -/
-theorem Nat.IsExactDivisor.ofLe_atkinLehnerOperatorCusp_mem_cuspFormsOld [NeZero N] (h : Q ∥ N)
+theorem Nat.IsExactDivisor.restrict_atkinLehnerOperatorCusp_mem_cuspFormsOld [NeZero N] (h : Q ∥ N)
     {f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k}
-    (hf : CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f ∈ cuspFormsOld N k) :
-    CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) (h.atkinLehnerOperatorCusp k f) ∈
+    (hf : CuspForm.restrict (Gamma1_map_le_Gamma0_map N) f ∈ cuspFormsOld N k) :
+    CuspForm.restrict (Gamma1_map_le_Gamma0_map N) (h.atkinLehnerOperatorCusp k f) ∈
       cuspFormsOld N k := by
   -- the composite `F ↦ W_Q (∑ᵤ ⟨u⟩ F)`, read back at level `Γ₁(N)`, preserves oldness
-  let T := CuspForm.ofLeₗ (k := k) (Gamma1_map_le_Gamma0_map N) ∘ₗ h.atkinLehnerOperatorCusp k ∘ₗ
+  let T := CuspForm.restrictₗ k ℂ (Gamma1_map_le_Gamma0_map N) ∘ₗ h.atkinLehnerOperatorCusp k ∘ₗ
     cuspFormTraceGamma0 N k
   have hT : cuspFormsOld N k ≤ (cuspFormsOld N k).comap T := by
     refine cuspFormsOld_le_of_prime fun p L hp hpL d hd g ↦ ?_
@@ -118,7 +118,7 @@ theorem Nat.IsExactDivisor.ofLe_atkinLehnerOperatorCusp_mem_cuspFormsOld [NeZero
       simpa [hR, Nat.mul_div_cancel_left R h.pos] using h.coprime
     -- the diamond sum of `V_d g` is `V_d` of a cusp form `g₀` on `Γ₀(L)`
     obtain ⟨g₀, hg₀⟩ : ∑ u : (ZMod N)ˣ, diamondOpCusp k (ZMod.unitsMap hLN u) g ∈
-        LinearMap.range (CuspForm.ofLeₗ (k := k) (Gamma1_map_le_Gamma0_map L)) := by
+        LinearMap.range (CuspForm.restrictₗ k ℂ (Gamma1_map_le_Gamma0_map L)) := by
       rw [← cuspFormCharSpace_one_eq_range]
       exact sum_diamondOpCusp_mem_cuspFormCharSpace_one (ZMod.unitsMap_surjective hLN) g
     have hdvd : d * L ∣ N := by
@@ -126,11 +126,11 @@ theorem Nat.IsExactDivisor.ofLe_atkinLehnerOperatorCusp_mem_cuspFormsOld [NeZero
       exacts [⟨p, by rw [← hpL]; ring⟩, ⟨1, by rw [← hpL, mul_one]⟩]
     have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hdvd)
     have hsum := cuspFormTraceGamma0_levelRaise hLN hdvd g g₀ (by
-      simpa only [CuspForm.ofLeₗ_apply] using hg₀)
+      simpa only [CuspForm.restrictₗ_apply] using hg₀)
     -- the goal is stated through the `have`-bound divisibility of `cuspFormsOld_le_of_prime`
     change CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) g ∈ _
     rw [Submodule.mem_comap, LinearMap.comp_apply, LinearMap.comp_apply, hsum,
-      CuspForm.ofLeₗ_apply]
+      CuspForm.restrictₗ_apply]
     by_cases hpQ : p ∣ Q
     · -- `p ∣ Q`: the level-raise trades `V₁` and `V_p`, and `W_Q` becomes `W_{Q / p}`
       obtain ⟨Q₁, hQ₁⟩ := hpQ
@@ -140,10 +140,10 @@ theorem Nat.IsExactDivisor.ofLe_atkinLehnerOperatorCusp_mem_cuspFormsOld [NeZero
         rw [hL, Nat.mul_div_cancel_left R hQ₁0]
         exact Nat.Coprime.coprime_dvd_left ⟨p, by rw [hQ₁, mul_comm]⟩ hQR⟩
       rcases hd with hd | hd
-      · exact ofLe_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := 1) (e₁ := p)
+      · exact restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := 1) (e₁ := p)
           (d₂ := 1) (e₂ := 1) h h₁ (by rw [hQ₁]; ring) (by rw [hR]; ring) hL (by rw [hd])
           hLN' hdvd g₀
-      · exact ofLe_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := p) (e₁ := 1)
+      · exact restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := p) (e₁ := 1)
           (d₂ := 1) (e₂ := 1) h h₁ (by rw [hQ₁]; ring) (by rw [hR]; ring) hL (by rw [hd, mul_one])
           hLN' hdvd g₀
     · -- `p ∤ Q`: `W_Q` commutes with both `V₁` and `V_p`
@@ -155,29 +155,29 @@ theorem Nat.IsExactDivisor.ofLe_atkinLehnerOperatorCusp_mem_cuspFormsOld [NeZero
         refine Nat.Coprime.coprime_dvd_right (Dvd.intro_left p rfl) ?_
         simpa [hN', Nat.mul_div_cancel_left _ h.pos] using h.coprime⟩
       rcases hd with hd | hd
-      · exact ofLe_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := 1) (e₁ := 1)
+      · exact restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := 1) (e₁ := 1)
           (d₂ := 1) (e₂ := p) h h₁ (by ring) (by rw [hN']; ring) hR' (by rw [hd]) hLN' hdvd g₀
-      · exact ofLe_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := 1) (e₁ := 1)
+      · exact restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld (d₁ := 1) (e₁ := 1)
           (d₂ := p) (e₂ := 1) h h₁ (by ring) (by rw [hN']; ring) hR' (by rw [hd, one_mul])
           hLN' hdvd g₀
   -- on the restriction of `f`, the diamond sum is multiplication by `#(ZMod N)ˣ`
   have := hT hf
   rw [Submodule.mem_comap, LinearMap.comp_apply, LinearMap.comp_apply,
-    cuspFormTraceGamma0_ofLe, map_smul, map_smul,
-    CuspForm.ofLeₗ_apply] at this
+    cuspFormTraceGamma0_restrict, map_smul, map_smul,
+    CuspForm.restrictₗ_apply] at this
   exact (Submodule.smul_mem_iff _ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)).1 this
 
 /-- **The normalized Atkin–Lehner operator preserves the old subspace at trivial nebentypus.**
 For a cusp form `f` on `Γ₀(N)` whose restriction to `Γ₁(N)` is old, the restriction of `𝒲_Q f`
 is again old, `𝒲_Q` being a scalar multiple of `W_Q`. -/
-theorem Nat.IsExactDivisor.ofLe_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsOld [NeZero N]
+theorem Nat.IsExactDivisor.restrict_normalizedAtkinLehnerOperatorCusp_mem_cuspFormsOld [NeZero N]
     (h : Q ∥ N) {f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k}
-    (hf : CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) f ∈ cuspFormsOld N k) :
-    CuspForm.ofLe (Gamma1_map_le_Gamma0_map N) (h.normalizedAtkinLehnerOperatorCusp k f) ∈
+    (hf : CuspForm.restrict (Gamma1_map_le_Gamma0_map N) f ∈ cuspFormsOld N k) :
+    CuspForm.restrict (Gamma1_map_le_Gamma0_map N) (h.normalizedAtkinLehnerOperatorCusp k f) ∈
       cuspFormsOld N k := by
-  rw [h.normalizedAtkinLehnerOperatorCusp_def, LinearMap.smul_apply, ← CuspForm.ofLeₗ_apply,
-    map_smul, CuspForm.ofLeₗ_apply]
-  exact Submodule.smul_mem _ _ (h.ofLe_atkinLehnerOperatorCusp_mem_cuspFormsOld hf)
+  rw [h.normalizedAtkinLehnerOperatorCusp_def, LinearMap.smul_apply, ← CuspForm.restrictₗ_apply k ℂ,
+    map_smul, CuspForm.restrictₗ_apply]
+  exact Submodule.smul_mem _ _ (h.restrict_atkinLehnerOperatorCusp_mem_cuspFormsOld hf)
 
 /-! ### Stability on `Γ₁(N)` -/
 

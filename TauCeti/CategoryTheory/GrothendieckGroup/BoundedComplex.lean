@@ -8,9 +8,8 @@ module
 public import TauCeti.Algebra.Homology.Contractible
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
+public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
-public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
-public import Mathlib.Algebra.Ring.NegOnePow
 
 /-!
 # The Euler characteristic of a bounded complex in split `K₀`
@@ -92,15 +91,10 @@ theorem sum_negOnePow_obj_X_eq_of_isZero {s t : Finset ℤ} (hs : ∀ n, n ∉ s
     (ht : ∀ n, n ∉ t → IsZero (K.X n)) :
     ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.X n) =
       ∑ n ∈ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) := by
-  have h₁ : ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.X n) =
-      ∑ n ∈ s ∪ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) :=
-    Finset.sum_subset Finset.subset_union_left fun n _ hn => by
-      rw [v.obj_eq_zero_of_isZero (hs n hn), smul_zero]
-  have h₂ : ∑ n ∈ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) =
-      ∑ n ∈ s ∪ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) :=
-    Finset.sum_subset Finset.subset_union_right fun n _ hn => by
-      rw [v.obj_eq_zero_of_isZero (ht n hn), smul_zero]
-  rw [h₁, h₂]
+  simpa only [TauCeti.finiteEulerSum_def] using
+    TauCeti.finiteEulerSum_eq_of_eq_zero (fun n ↦ v.obj (K.X n))
+      (fun n hn ↦ v.obj_eq_zero_of_isZero (hs n hn))
+      (fun n hn ↦ v.obj_eq_zero_of_isZero (ht n hn))
 
 end Range
 
@@ -112,13 +106,15 @@ theorem sum_negOnePow_obj_X_shift (K : CochainComplex C ℤ) (m : ℤ) (s : Fins
     ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj ((K⟦m⟧).X n) =
       (m.negOnePow : ℤ) •
         ∑ n ∈ s.map (Equiv.addRight m).toEmbedding, ((n.negOnePow : ℤ)) • v.obj (K.X n) := by
-  rw [Finset.sum_map, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun n _ => ?_
-  rw [v.map_iso (eqToIso (CochainComplex.shiftFunctor_obj_X' K m n))]
-  simp only [Equiv.coe_toEmbedding, Equiv.coe_addRight, Int.negOnePow_add,
-    Units.val_mul, smul_smul]
-  rw [mul_left_comm, ← Units.val_mul, Int.units_mul_self]
-  simp
+  calc
+    _ = TauCeti.finiteEulerSum (fun n ↦ v.obj (K.X (n + m))) s := by
+      rw [TauCeti.finiteEulerSum_def]
+      apply Finset.sum_congr rfl
+      intro n _
+      rw [v.map_iso (eqToIso (CochainComplex.shiftFunctor_obj_X' K m n))]
+    _ = _ := by
+      simpa only [TauCeti.finiteEulerSum_def] using
+        TauCeti.finiteEulerSum_reindex_add (fun n ↦ v.obj (K.X n)) m s
 
 section MappingCone
 

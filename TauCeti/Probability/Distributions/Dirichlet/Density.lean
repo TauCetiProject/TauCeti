@@ -698,14 +698,34 @@ private theorem map_dirichletUnchart_source {a : ι → ℝ} (ha : ∀ i, 0 < a 
   filter_upwards [ae_restrict_mem (measurableSet_dirichletUnchartSource i₀)] with z hz
   exact dirichletUnchart_density ha i₀ hz
 
-/-- On the strictly positive orthant, coordinate normalization is the chart applied to the chart
-coordinates of the split vector. -/
-private theorem dirichletNormalize_eq_dirichletChart (i₀ : ι) {x : ι → ℝ} (hx : ∀ i, 0 < x i) :
+/-- Reading the total and normalized chart coordinates of independent unit-rate Gamma variables
+gives the product of the Gamma law of the total and the Dirichlet chart density. -/
+theorem map_dirichletChartCoords_prod_gammaMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i)
+    (i₀ : ι) :
+    ((gammaMeasure (a i₀) 1).prod
+      (Measure.pi fun j : {i // i ≠ i₀} ↦ gammaMeasure (a j) 1)).map
+        (dirichletChartCoords i₀) =
+      (gammaMeasure (∑ i, a i) 1).prod
+        ((volume : Measure ({i // i ≠ i₀} → ℝ)).withDensity (dirichletChartPDF a i₀)) := by
+  rw [← map_dirichletUnchart_source ha i₀,
+    Measure.map_map (measurable_dirichletChartCoords i₀) (measurable_dirichletUnchart i₀),
+    ← withDensity_dirichletSourcePDF a i₀]
+  calc
+    _ = Measure.map id
+        ((volume.restrict (dirichletUnchartSource i₀)).withDensity (dirichletSourcePDF a i₀)) := by
+      apply Measure.map_congr
+      filter_upwards [(withDensity_absolutelyContinuous _ _).ae_le
+        (ae_restrict_mem (measurableSet_dirichletUnchartSource i₀))] with z hz
+      exact dirichletChartCoords_dirichletUnchart hz
+    _ = _ := Measure.map_id
+
+/-- For a vector with nonzero total, normalization is the chart applied to the chart coordinates
+of the split vector. -/
+theorem dirichletNormalize_eq_dirichletChart (i₀ : ι) {x : ι → ℝ} (hx : ∑ i, x i ≠ 0) :
     dirichletNormalize x
       = dirichletChart i₀ (dirichletChartCoords i₀ (x i₀, fun j : {i // i ≠ i₀} ↦ x j)).2 := by
   have hT : x i₀ + ∑ j : {i // i ≠ i₀}, x j = ∑ i, x i :=
     (Fintype.sum_eq_add_sum_subtype_ne x i₀).symm
-  have hTpos : 0 < ∑ i, x i := Finset.sum_pos (fun i _ ↦ hx i) ⟨i₀, Finset.mem_univ i₀⟩
   ext i
   rw [dirichletNormalize_apply]
   by_cases h : i = i₀
@@ -717,6 +737,19 @@ private theorem dirichletNormalize_eq_dirichletChart (i₀ : ι) {x : ι → ℝ
     linarith
   · rw [dirichletChart_apply_of_ne i₀ _ h]
     simp only [dirichletChartCoords_snd_apply, hT]
+
+/-- Almost surely for independent Gamma coordinates, normalization and summation agree with
+reconstructing the proportions and total from the split chart coordinates. -/
+theorem ae_dirichletNormalize_sum_eq_dirichletChart (a r : ι → ℝ) (i₀ : ι) :
+    (fun x ↦ (dirichletNormalize x, ∑ i, x i)) =ᵐ[Measure.pi fun i ↦ gammaMeasure (a i) (r i)]
+      (fun z ↦ (dirichletChart i₀ z.2, z.1)) ∘ dirichletChartCoords i₀ ∘
+        ⇑(Equiv.piSplitAt i₀ fun _ : ι ↦ ℝ) := by
+  have : Nonempty ι := ⟨i₀⟩
+  filter_upwards [ae_pos_sum_pi_gammaMeasure a r] with x hx
+  apply Prod.ext
+  · exact dirichletNormalize_eq_dirichletChart i₀ hx.ne'
+  · simp [Function.comp_apply, Equiv.piSplitAt_apply,
+      ← Fintype.sum_eq_add_sum_subtype_ne (fun i ↦ x i) i₀]
 
 /-- **The Dirichlet law has a density in the chart that drops the coordinate `i₀`.**  It is the
 image, under the chart, of Lebesgue measure on the remaining coordinates weighted by
@@ -734,38 +767,32 @@ theorem dirichletMeasure_eq_map_withDensity_dirichletChartPDF {a : ι → ℝ} (
   have hA : 0 < ∑ i, a i := Finset.sum_pos (fun i _ ↦ ha i) ⟨i₀, Finset.mem_univ i₀⟩
   have : IsProbabilityMeasure (gammaMeasure (∑ i, a i) 1) :=
     isProbabilityMeasure_gammaMeasure hA one_pos
-  have hchart : Measurable (dirichletChart i₀ ∘ Prod.snd ∘ dirichletChartCoords i₀) :=
-    measurable_dirichletChart.comp (measurable_snd.comp (measurable_dirichletChartCoords i₀))
-  have hsplit : Measurable ⇑(Equiv.piSplitAt i₀ fun _ : ι ↦ ℝ) :=
-    (measurePreserving_piSplitAt (fun i ↦ gammaMeasure (a i) 1) i₀).measurable
-  have hM : ∀ᵐ z ∂((volume.restrict (dirichletUnchartSource i₀)).withDensity
-      (dirichletSourcePDF a i₀)), z ∈ dirichletUnchartSource i₀ :=
-    (withDensity_absolutelyContinuous _ _).ae_le
-      (ae_restrict_mem (measurableSet_dirichletUnchartSource i₀))
+  have hchart : Measurable (dirichletChart i₀ ∘
+      (Prod.snd : ℝ × ({i // i ≠ i₀} → ℝ) → _)) :=
+    measurable_dirichletChart.comp measurable_snd
+  have hsplit := measurePreserving_piSplitAt (fun i ↦ gammaMeasure (a i) 1) i₀
   calc dirichletMeasure a
       = (Measure.pi fun i ↦ gammaMeasure (a i) 1).map
-          ((dirichletChart i₀ ∘ Prod.snd ∘ dirichletChartCoords i₀) ∘
+          (((dirichletChart i₀ ∘ Prod.snd) ∘ dirichletChartCoords i₀) ∘
             ⇑(Equiv.piSplitAt i₀ fun _ : ι ↦ ℝ)) := by
         rw [dirichletMeasure_of_pos ha]
         refine Measure.map_congr ?_
-        filter_upwards [ae_pos_pi_gammaMeasure a fun _ ↦ (1 : ℝ)] with x hx
-        exact dirichletNormalize_eq_dirichletChart i₀ hx
+        exact (ae_dirichletNormalize_sum_eq_dirichletChart a (fun _ ↦ 1) i₀).mono
+          fun _ hx ↦ congrArg Prod.fst hx
     _ = ((gammaMeasure (a i₀) 1).prod
           (Measure.pi fun j : {i // i ≠ i₀} ↦ gammaMeasure (a j) 1)).map
-          (dirichletChart i₀ ∘ Prod.snd ∘ dirichletChartCoords i₀) := by
-        rw [← Measure.map_map hchart hsplit,
-          (measurePreserving_piSplitAt (fun i ↦ gammaMeasure (a i) 1) i₀).map_eq]
-    _ = ((volume.restrict (dirichletUnchartSource i₀)).withDensity
-          (dirichletSourcePDF a i₀)).map (dirichletChart i₀ ∘ Prod.snd) := by
-        rw [← map_dirichletUnchart_source ha i₀,
-          Measure.map_map hchart (measurable_dirichletUnchart i₀)]
-        refine Measure.map_congr ?_
-        filter_upwards [hM] with z hz
-        simp only [Function.comp_apply, dirichletChartCoords_dirichletUnchart hz]
+          ((dirichletChart i₀ ∘ Prod.snd) ∘ dirichletChartCoords i₀) := by
+        rw [← Measure.map_map (hchart.comp (measurable_dirichletChartCoords i₀)) hsplit.measurable,
+          hsplit.map_eq]
+    _ = ((gammaMeasure (∑ i, a i) 1).prod
+          ((volume : Measure ({i // i ≠ i₀} → ℝ)).withDensity (dirichletChartPDF a i₀))).map
+          (dirichletChart i₀ ∘ Prod.snd) := by
+        rw [← Measure.map_map hchart (measurable_dirichletChartCoords i₀),
+          map_dirichletChartCoords_prod_gammaMeasure ha i₀]
     _ = ((volume : Measure ({i // i ≠ i₀} → ℝ)).withDensity (dirichletChartPDF a i₀)).map
           (dirichletChart i₀) := by
         rw [← Measure.map_map measurable_dirichletChart measurable_snd,
-          withDensity_dirichletSourcePDF a i₀, Measure.map_snd_prod, measure_univ, one_smul]
+          Measure.map_snd_prod, measure_univ, one_smul]
 
 /-- The chart density integrates to one against Lebesgue measure on the coordinates away from
 `i₀`: the chart carries the whole Dirichlet mass. -/
@@ -778,6 +805,15 @@ theorem lintegral_dirichletChartPDF_eq_one {a : ι → ℝ} (ha : ∀ i, 0 < a i
     Measure.map_apply measurable_dirichletChart MeasurableSet.univ, preimage_univ,
     withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h
   exact h
+
+/-- The real chart density of a Dirichlet law with positive shapes is integrable. -/
+theorem integrable_dirichletChartPDFReal {a : ι → ℝ} (ha : ∀ i, 0 < a i) (i₀ : ι) :
+    Integrable (dirichletChartPDFReal a i₀) := by
+  refine ⟨(measurable_dirichletChartPDFReal a i₀).aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal
+    (ae_of_all _ (dirichletChartPDFReal_nonneg ha i₀))]
+  simpa only [← dirichletChartPDF_eq_ofReal, lintegral_dirichletChartPDF_eq_one ha i₀] using
+    (ENNReal.one_lt_top : (1 : ℝ≥0∞) < ∞)
 
 end Probability
 

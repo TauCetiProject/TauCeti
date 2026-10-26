@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.RingTheory.QuotSMulTop
+public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # Cokernels commute with tensor products, heterobasically
@@ -32,6 +33,10 @@ generated over `A` as soon as `M ⧸ rM` is finitely generated over `R`
 that `A ⊗[ℤ] M` only depends on `M ⧸ ℓM`, and is finitely generated when `M ⧸ ℓM` is finite
 (`TauCeti.finite_baseChange_of_finite_quotSMulTop`), even when `M` is not finitely generated.
 
+For a map of modules over a commutative ring, the same right exactness identifies scalar
+extension of its cokernel with the cokernel of its scalar extension. This is the module form of
+Stacks Project, Lemma 10.12.10, [Tag 00DF](https://stacks.math.columbia.edu/tag/00DF).
+
 The heterobasic version is what identifies the base change of a module presented by generators
 and relations over a noncommutative algebra `A` with the module presented by the base-changed
 relations, for instance the rationalisation of a module over an integral group ring `ℤ_p[G]`.
@@ -40,12 +45,17 @@ relations, for instance the rationalisation of a module over an integral group r
 
 * `TensorProduct.AlgebraTensorModule.quotientRangeTensorEquiv`: the `A`-linear
   isomorphism `(M ⧸ range f) ⊗[R] N ≃ₗ[A] (M ⊗[R] N) ⧸ range (f ⊗ 𝟙 N)`.
+* `LinearMap.cokernelBaseChangeEquiv`: the `S`-linear isomorphism
+  `S ⊗[R] cokernel f ≃ₗ[S] cokernel (S ⊗[R] f)`.
 
 ## Main results
 
 * `TensorProduct.exists_one_tmul_eq`: every element of `(R ⧸ I) ⊗ M` is `1 ⊗ x`.
 * `TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq`: `1 ⊗ x` vanishes in
   `(R ⧸ (r)) ⊗ M` exactly when `x` is a multiple of `r`.
+* `LinearMap.exact_lTensor_quotient_span_singleton`: if `a : M → N` and `b : N → M` compose in
+  both orders to multiplication by `r`, and `r` is regular on `M`, then the reductions of `b` and
+  `a` modulo `r` form an exact pair.
 * `TensorProduct.AlgebraTensorModule.ker_rTensor_mkQ`: the kernel of the tensored
   quotient map `mkQ ⊗ 𝟙 N` is the range of `f ⊗ 𝟙 N`.
 * `TensorProduct.AlgebraTensorModule.rTensor_mkQ_surjective`: the tensored quotient map
@@ -84,9 +94,53 @@ theorem one_tmul_eq_zero_iff_exists_smul_eq (r : R) (x : M) :
 
 end TensorProduct
 
+namespace LinearMap
+
+open TensorProduct
+
+/-- **Reductions of a factorization of a regular scalar are exact.** Let `a : M → N` and
+`b : N → M` satisfy `a ∘ b = r • id` and `b ∘ a = r • id`, with `r` regular on `M`. Then the
+reductions `(R ⧸ (r)) ⊗ b` and `(R ⧸ (r)) ⊗ a` form an exact pair: if `a x ∈ rN`, say
+`a x = r • n`, then `r • b n = b (a x) = r • x`, so `x = b n`. -/
+theorem exact_lTensor_quotient_span_singleton {R M N : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] {r : R} (a : M →ₗ[R] N) (b : N →ₗ[R] M)
+    (hab : a ∘ₗ b = r • LinearMap.id) (hba : b ∘ₗ a = r • LinearMap.id) (hr : IsSMulRegular M r) :
+    Function.Exact (b.lTensor (R ⧸ Ideal.span {r})) (a.lTensor (R ⧸ Ideal.span {r})) := by
+  intro y
+  obtain ⟨x, rfl⟩ := exists_one_tmul_eq _ y
+  rw [lTensor_tmul, one_tmul_eq_zero_iff_exists_smul_eq]
+  constructor
+  · rintro ⟨n, hn⟩
+    refine ⟨1 ⊗ₜ n, ?_⟩
+    rw [lTensor_tmul, hr (show r • b n = r • x by
+      simpa [← map_smul, hn] using LinearMap.congr_fun hba x)]
+  · rintro ⟨z, hz⟩
+    obtain ⟨n, rfl⟩ := exists_one_tmul_eq _ z
+    rw [lTensor_tmul, ← sub_eq_zero, ← tmul_sub, one_tmul_eq_zero_iff_exists_smul_eq] at hz
+    obtain ⟨m, hm⟩ := hz
+    refine ⟨n - a m, ?_⟩
+    rw [smul_sub, ← map_smul, hm, map_sub, ← LinearMap.comp_apply, hab]
+    simp
+
+end LinearMap
+
 namespace TensorProduct.AlgebraTensorModule
 
 open LinearMap
+
+section Surjective
+
+variable {R A M N : Type*} [CommSemiring R] [Ring A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
+  [AddCommMonoid N] [Module R N]
+
+/-- The tensored quotient map `mkQ ⊗ 𝟙 N` is surjective. -/
+theorem rTensor_mkQ_surjective (p : Submodule A M) :
+    Function.Surjective (AlgebraTensorModule.rTensor R N p.mkQ) := by
+  rw [AlgebraTensorModule.coe_rTensor]
+  exact rTensor_surjective N (Submodule.mkQ_surjective p)
+
+end Surjective
 
 variable {R A M M' N : Type*} [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
@@ -106,13 +160,6 @@ theorem ker_rTensor_mkQ (f : M' →ₗ[A] M) :
   ext x
   rw [SetLike.ext_iff] at h
   simpa only [mem_ker, mem_range, AlgebraTensorModule.coe_rTensor] using h x
-
-omit [Module A M'] [IsScalarTower R A M'] in
-/-- The tensored quotient map `mkQ ⊗ 𝟙 N` is surjective. -/
-theorem rTensor_mkQ_surjective (p : Submodule A M) :
-    Function.Surjective (AlgebraTensorModule.rTensor R N p.mkQ) := by
-  rw [AlgebraTensorModule.coe_rTensor]
-  exact rTensor_surjective N (Submodule.mkQ_surjective p)
 
 /-- **Cokernels commute with tensor products.** For an `A`-linear map `f : M' → M` and an
 `R`-module `N`, the base change `(M ⧸ range f) ⊗[R] N` of the cokernel of `f` is the cokernel of
@@ -139,6 +186,54 @@ theorem quotientRangeTensorEquiv_symm_mk_tmul (f : M' →ₗ[A] M) (x : M) (n : 
 
 end TensorProduct.AlgebraTensorModule
 
+namespace LinearMap
+
+open TensorProduct
+
+variable {R S M N : Type*} [CommRing R] [CommRing S] [Algebra R S]
+  [AddCommMonoid M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- **Cokernels commute with scalar extension.** The scalar extension of the cokernel of an
+`R`-linear map is canonically the cokernel of its scalar extension. No flatness hypothesis is
+needed. -/
+noncomputable def cokernelBaseChangeEquiv (f : M →ₗ[R] N) :
+    S ⊗[R] (N ⧸ range f) ≃ₗ[S] (S ⊗[R] N) ⧸ range (f.baseChange S) :=
+  TensorProduct.AlgebraTensorModule.tensorQuotientEquiv S R S (range f) ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ (by
+      rw [← baseChange_range, Submodule.baseChange]
+      ext x
+      constructor <;> rintro ⟨y, rfl⟩ <;> exact ⟨y, rfl⟩)
+
+/-- The cokernel base-change equivalence sends a pure tensor represented by `n` to the class of
+the corresponding pure tensor. -/
+@[simp]
+theorem cokernelBaseChangeEquiv_tmul (f : M →ₗ[R] N) (s : S) (n : N) :
+    f.cokernelBaseChangeEquiv (S := S) (s ⊗ₜ[R] Submodule.Quotient.mk n) =
+      Submodule.Quotient.mk (s ⊗ₜ[R] n) := by
+  rw [cokernelBaseChangeEquiv, LinearEquiv.trans_apply,
+    TensorProduct.AlgebraTensorModule.tensorQuotientEquiv_apply_tmul,
+    Submodule.quotEquivOfEq_mk]
+
+/-- The inverse cokernel base-change equivalence sends the class of a pure tensor to the pure
+tensor represented by its class. -/
+@[simp]
+theorem cokernelBaseChangeEquiv_symm_mk_tmul (f : M →ₗ[R] N) (s : S) (n : N) :
+    (f.cokernelBaseChangeEquiv (S := S)).symm (Submodule.Quotient.mk (s ⊗ₜ[R] n)) =
+      s ⊗ₜ[R] Submodule.Quotient.mk n := by
+  rw [LinearEquiv.symm_apply_eq]
+  simp
+
+/-- The cokernel base-change equivalence intertwines the base-changed quotient map with the
+quotient map of the base-changed linear map. -/
+theorem cokernel_baseChange_square (f : M →ₗ[R] N) :
+    (f.cokernelBaseChangeEquiv (S := S) :
+      S ⊗[R] (N ⧸ range f) →ₗ[S] (S ⊗[R] N) ⧸ range (f.baseChange S)) ∘ₗ
+        (range f).mkQ.baseChange S = (range (f.baseChange S)).mkQ := by
+  ext n
+  simp
+
+end LinearMap
+
 namespace Submodule
 
 variable {R M : Type*} (A : Type*) [CommRing R] [AddCommGroup M] [Module R M] [Ring A]
@@ -151,7 +246,7 @@ theorem baseChange_eq_top_iff_subsingleton (p : Submodule R M) :
   -- `A ⊗ p → A ⊗ M → A ⊗ (M ⧸ p) → 0` is exact, and the first map has range `p.baseChange A`
   have hexact := lTensor_exact A (LinearMap.exact_subtype_mkQ p) p.mkQ_surjective
   have hrange (x : A ⊗[R] M) : x ∈ p.baseChange A ↔ x ∈ LinearMap.range (p.subtype.lTensor A) := by
-    simp [baseChange, LinearMap.baseChange_eq_ltensor]
+    simp [baseChange, LinearMap.baseChange_eq_lTensor]
   refine ⟨fun h ↦ ⟨fun y z ↦ ?_⟩, fun _ ↦ eq_top_iff.mpr fun x _ ↦
     (hrange x).mpr ((hexact x).mp (Subsingleton.elim _ _))⟩
   obtain ⟨y, rfl⟩ := LinearMap.lTensor_surjective A p.mkQ_surjective y
@@ -177,19 +272,10 @@ theorem baseChange_mkQ_bijective {r : R} (hr : algebraMap R A r = 0) :
     ext a v
     obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.2
     simp [← hw, smul_tmul', Algebra.smul_def, hr]
-  have hbot : range (lTensor A p.subtype) = ⊥ := range_eq_bot.mpr hzero
-  let e₀ := lTensor.equiv A (exact_subtype_mkQ p) (Submodule.mkQ_surjective p)
-  -- Mathlib states no computation rule for `lTensor.equiv` itself (only for its inverse, via
-  -- `lTensor.inverse_apply`); its forward map is by definition `lTensor.toFun`, the descent
-  -- of `lTensor A p.mkQ` to the quotient, so this holds by `rfl`.
-  have he₀ (y : A ⊗[R] M) : e₀ (Submodule.Quotient.mk y) = lTensor A p.mkQ y := rfl
-  let e : (A ⊗[R] M) ≃ₗ[R] A ⊗[R] QuotSMulTop r M :=
-    (range (lTensor A p.subtype)).quotEquivOfEqBot hbot |>.symm.trans e₀
-  have he : e.toLinearMap = lTensor A p.mkQ := LinearMap.ext fun y ↦ by
-    simp only [e, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-      Submodule.quotEquivOfEqBot_symm_apply, he₀]
-  rw [baseChange_eq_ltensor, ← he]
-  exact e.bijective
+  rw [baseChange_eq_lTensor]
+  exact ⟨(injective_iff_eq_zero_of_exact
+    (lTensor_exact A (exact_subtype_mkQ p) p.mkQ_surjective)).mpr hzero,
+    lTensor_surjective A p.mkQ_surjective⟩
 
 /-- **Finiteness of a base change killing a scalar.** If `r : R` maps to `0` in the `R`-algebra
 `A` and `M ⧸ rM` is finitely generated over `R`, then `A ⊗[R] M` is finitely generated over `A`:

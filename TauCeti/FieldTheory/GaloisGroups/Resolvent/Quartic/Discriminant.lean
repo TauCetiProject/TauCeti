@@ -36,6 +36,8 @@ identity and separability results. All these statements hold over an arbitrary c
   resolvent have equal discriminants.
 * `TauCeti.separable_quarticD4Spec_specialize_iff`: the quartic is separable exactly when its
   specialized resolvent is.
+* `TauCeti.resolventSeparationEvidence_quarticD4Spec_iff`: a monic quartic of degree four has
+  separation evidence exactly when it is separable.
 * `TauCeti.discr_resolventCubic`: a depressed quartic and its resolvent cubic have equal
   discriminants.
 * `TauCeti.separable_resolventCubic_iff`: the quartic is separable exactly when its resolvent is.
@@ -80,6 +82,14 @@ theorem separable_quarticD4Spec_specialize_iff {f : R[X]} (hmonic : f.Monic)
   nontriviality R
   rw [← (quarticD4Spec.monic_specialize R f).isUnit_discr_iff,
     ← hmonic.isUnit_discr_iff, discr_quarticD4Spec_specialize hmonic hf]
+
+/-- For a monic quartic of degree four, separability of the quartic itself is exactly the
+separation evidence needed to use the `D₄` resolvent criterion. -/
+theorem resolventSeparationEvidence_quarticD4Spec_iff {F : Type*} [Field F] {f : F[X]}
+    (hmonic : f.Monic) (hf : f.natDegree = 4) :
+    ResolventSeparationEvidence quarticD4Spec f ↔ f.Separable :=
+  ResolventSeparationEvidence.iff_separable_specialize.trans
+    (separable_quarticD4Spec_specialize_iff hmonic hf)
 
 /-- A depressed quartic and its resolvent cubic have the same discriminant. -/
 theorem discr_resolventCubic (p q r : R) :

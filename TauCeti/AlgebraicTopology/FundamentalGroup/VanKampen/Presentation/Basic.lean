@@ -93,6 +93,7 @@ lemma vanKampenRelations_le_ker :
   -- The inclusion's image of the basepoint reduces only at default transparency.
   erw [MonoidHom.mem_ker, map_mul, map_inv,
     vanKampenLift_apply_inl, vanKampenLift_apply_inr, mul_inv_eq_one]
+  obtain ⟨g⟩ := g
   induction g using Path.Homotopic.Quotient.ind with
   | mk γ => rfl
 
@@ -159,10 +160,10 @@ lemma vanKampenQuotientEquiv_symm_map_left (hCover : interior A ∪ interior B =
     (hA : IsPathConnected A) (hB : IsPathConnected B) (hAB : IsPathConnected (A ∩ B))
     (g : FundamentalGroup A ⟨x, hxA⟩) :
     (vanKampenQuotientEquiv hxA hxB hCover hA hB hAB).symm
-        (Path.Homotopic.Quotient.map g (ContinuousMap.subtypeVal A)) =
+        (FundamentalGroup.map (ContinuousMap.subtypeVal A) ⟨x, hxA⟩ g) =
       QuotientGroup.mk (Coprod.inl g) := by
   apply (MulEquiv.symm_apply_eq _).2
-  rw [vanKampenQuotientEquiv_mk, vanKampenLift_apply_inl, FundamentalGroup.map_apply]
+  rw [vanKampenQuotientEquiv_mk, vanKampenLift_apply_inl]
 
 /-- The inverse presentation map sends a loop from the right cover member to its right
 free-product generator modulo the intersection relations. -/
@@ -171,10 +172,10 @@ lemma vanKampenQuotientEquiv_symm_map_right (hCover : interior A ∪ interior B 
     (hA : IsPathConnected A) (hB : IsPathConnected B) (hAB : IsPathConnected (A ∩ B))
     (g : FundamentalGroup B ⟨x, hxB⟩) :
     (vanKampenQuotientEquiv hxA hxB hCover hA hB hAB).symm
-        (Path.Homotopic.Quotient.map g (ContinuousMap.subtypeVal B)) =
+        (FundamentalGroup.map (ContinuousMap.subtypeVal B) ⟨x, hxB⟩ g) =
       QuotientGroup.mk (Coprod.inr g) := by
   apply (MulEquiv.symm_apply_eq _).2
-  rw [vanKampenQuotientEquiv_mk, vanKampenLift_apply_inr, FundamentalGroup.map_apply]
+  rw [vanKampenQuotientEquiv_mk, vanKampenLift_apply_inr]
 
 section Wide
 
@@ -227,9 +228,11 @@ lemma vanKampenWideRelations_le_ker :
   -- transparency. Each composite `C → U k → X` is the inclusion of `C`, so both sides are the
   -- image of `g` under `C → X`, and only their ambient types are spelled differently.
   erw [MonoidHom.mem_ker, map_mul, map_inv, vanKampenWideLift_of, vanKampenWideLift_of,
-    mul_inv_eq_one, FundamentalGroup.map_apply, FundamentalGroup.map_apply,
-    FundamentalGroup.map_apply, FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.map_comp,
-    ← Path.Homotopic.Quotient.map_comp]
+    mul_inv_eq_one]
+  refine CategoryTheory.End.ext ?_
+  erw [FundamentalGroup.map_apply_asHom, FundamentalGroup.map_apply_asHom,
+    FundamentalGroup.map_apply_asHom, FundamentalGroup.map_apply_asHom,
+    ← Path.Homotopic.Quotient.map_comp, ← Path.Homotopic.Quotient.map_comp]
   simp only [ContinuousMap.subtypeVal_comp_inclusion]
   rfl
 
@@ -300,12 +303,12 @@ lemma vanKampenWideQuotientEquiv_symm_map (hU : ∀ y, ∃ i, U i ∈ 𝓝 y)
     (g : FundamentalGroup (U i) ⟨x, hCU i hx⟩) :
     (vanKampenWideQuotientEquiv (U := U) (C := C) (x := x) (hCU := hCU) (hx := hx)
         hU hUp hC hUC).symm
-        (Path.Homotopic.Quotient.map g (ContinuousMap.subtypeVal (U i))) =
+        (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hCU i hx⟩ g) =
       QuotientGroup.mk (Monoid.CoprodI.of
         (M := fun i ↦ FundamentalGroup (U i) ⟨x, hCU i hx⟩) g) := by
   apply (MulEquiv.symm_apply_eq _).2
   rw [vanKampenWideQuotientEquiv_mk (U := U) (C := C) (x := x) (hCU := hCU) (hx := hx),
-    vanKampenWideLift_of, FundamentalGroup.map_apply]
+    vanKampenWideLift_of]
 
 end Wide
 

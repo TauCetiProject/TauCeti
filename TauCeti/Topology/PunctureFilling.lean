@@ -19,7 +19,16 @@ to `E` one new point `center φ i` for each `i`, and glues the unit disc `𝔻 =
 `center φ i` and every other point `w` to `φ i w`. The underlying type is the sum `E ⊕ ι`, and the
 topology is the final topology of the inclusion of `E` and of the discs `disc φ i`, so that a map
 out of the filling is continuous exactly when its restrictions to `E` and to every filled disc are
-(`PunctureFilling.continuous_iff`).
+(`PunctureFilling.continuous_iff`). Concretely, the map `PunctureFilling.extend g c` which is
+`g : E → Y` on `E` and `c i` at the added point `center φ i` is continuous exactly when `g` is
+continuous, each `g ∘ φ i` is continuous, and converges to `c i` along the end of the corresponding
+punctured disc, that is, at the points `φ i w` as `w → 0`
+(`PunctureFilling.continuous_extend_iff`). This is how a map out of `E` is extended over the filled
+punctures. In particular a continuous map `f : E → E'` with each `f ∘ φ i` continuous and carrying
+the end of each punctured disc `φ i` into the end of `φ' (σ i)` induces a continuous map of
+fillings (`PunctureFilling.continuous_map`), and when all the charts `φ i` and `φ' j` are
+continuous, a homeomorphism of spaces matching up the ends of the punctured discs extends to a
+homeomorphism of their fillings (`PunctureFilling.congr`).
 
 This is how a finite cover of a punctured surface is compactified: each component of the preimage
 of a punctured disc about a puncture is itself a punctured disc, and the filling adds its missing
@@ -41,6 +50,11 @@ countable.
   (`TauCeti.PunctureFilling.denseRange_incl`).
 * `TauCeti.PunctureFilling.nhds_center`, `TauCeti.PunctureFilling.hasBasis_nhds_center`: the
   neighbourhoods of an added point.
+* `TauCeti.PunctureFilling.extend`, `TauCeti.PunctureFilling.continuous_extend_iff`: maps out of
+  the filling and their continuity.
+* `TauCeti.PunctureFilling.map`, `TauCeti.PunctureFilling.continuous_map`,
+  `TauCeti.PunctureFilling.congr`: the maps and homeomorphisms of fillings induced by maps
+  carrying ends to ends.
 * `TauCeti.PunctureFilling.isDiscrete_range_center`: the added points are isolated from one
   another.
 * `TauCeti.PunctureFilling.t2Space`, `TauCeti.PunctureFilling.compactSpace`,
@@ -238,6 +252,96 @@ theorem incl_preimage_image_disc (i : ι) (W : Set 𝔻) :
   · rintro ⟨w, hw, rfl⟩
     exact ⟨_, hw, disc_inclusion i w⟩
 
+/-! ### Maps out of the puncture filling -/
+
+section Extend
+
+variable {Y : Type*}
+
+/-- The map out of the puncture filling which is `g` on `E` and sends the added point
+`center φ i` to `c i`. Every map out of the filling is of this form
+(`PunctureFilling.extend_comp_incl_center`), and it is continuous exactly when `g` and each
+`g ∘ φ i` are continuous and `g` converges to `c i` along the end of each punctured disc `φ i`
+(`PunctureFilling.continuous_extend_iff`). -/
+def extend (g : E → Y) (c : ι → Y) (y : PunctureFilling φ) : Y :=
+  y.toSum.elim g c
+
+@[simp]
+theorem extend_incl (g : E → Y) (c : ι → Y) (x : E) : extend g c (incl φ x) = g x :=
+  (rfl)
+
+@[simp]
+theorem extend_center (g : E → Y) (c : ι → Y) (i : ι) : extend g c (center φ i) = c i :=
+  (rfl)
+
+@[simp]
+theorem extend_comp_incl (g : E → Y) (c : ι → Y) : extend g c ∘ incl φ = g :=
+  (rfl)
+
+@[simp]
+theorem extend_comp_center (g : E → Y) (c : ι → Y) : extend g c ∘ center φ = c :=
+  (rfl)
+
+/-- Every map out of the puncture filling is the extension of its restriction to `E` by its values
+at the added points. -/
+@[simp]
+theorem extend_comp_incl_center (F : PunctureFilling φ → Y) :
+    extend (F ∘ incl φ) (F ∘ center φ) = F := by
+  ext y
+  induction y using PunctureFilling.induction <;> rfl
+
+/-- The values of a map out of the puncture filling are those it takes on `E` and at the added
+points. -/
+@[simp]
+theorem range_extend (g : E → Y) (c : ι → Y) :
+    range (extend (φ := φ) g c) = range g ∪ range c := by
+  refine Subset.antisymm ?_ (union_subset ?_ ?_)
+  · rintro _ ⟨y, rfl⟩
+    induction y using PunctureFilling.induction with
+    | incl x => exact Or.inl (mem_range_self x)
+    | center i => exact Or.inr (mem_range_self i)
+  · exact extend_comp_incl (φ := φ) g c ▸ range_comp_subset_range _ _
+  · exact extend_comp_center (φ := φ) g c ▸ range_comp_subset_range _ _
+
+end Extend
+
+section Map
+
+variable {E' ι' ι'' E'' : Type*} {φ' : ι' → 𝔻* → E'} {φ'' : ι'' → 𝔻* → E''}
+
+/-- The map of puncture fillings which is `f : E → E'` on `E` and sends the added point
+`center φ i` to `center φ' (σ i)`. It is continuous when `f` and every `f ∘ φ i` are continuous
+and `f` carries the end of each punctured disc `φ i` into the end of `φ' (σ i)`
+(`PunctureFilling.continuous_map`). -/
+protected def map (f : E → E') (σ : ι → ι') : PunctureFilling φ → PunctureFilling φ' :=
+  extend (incl φ' ∘ f) (center φ' ∘ σ)
+
+@[simp]
+theorem map_incl (f : E → E') (σ : ι → ι') (x : E) :
+    PunctureFilling.map (φ' := φ') f σ (incl φ x) = incl φ' (f x) :=
+  (rfl)
+
+@[simp]
+theorem map_center (f : E → E') (σ : ι → ι') (i : ι) :
+    PunctureFilling.map (φ' := φ') f σ (center φ i) = center φ' (σ i) :=
+  (rfl)
+
+/-- The map of puncture fillings induced by identity maps is the identity. -/
+@[simp]
+protected theorem map_id : PunctureFilling.map (φ := φ) (φ' := φ) id id = id := by
+  ext y
+  induction y using PunctureFilling.induction <;> rfl
+
+/-- The map of puncture fillings induced by composites is the composite of the induced maps. -/
+@[simp]
+protected theorem map_map (f : E → E') (σ : ι → ι') (f' : E' → E'') (σ' : ι' → ι'')
+    (y : PunctureFilling φ) :
+    PunctureFilling.map (φ' := φ'') f' σ' (PunctureFilling.map (φ' := φ') f σ y) =
+      PunctureFilling.map (f' ∘ f) (σ' ∘ σ) y := by
+  induction y using PunctureFilling.induction <;> rfl
+
+end Map
+
 variable [TopologicalSpace E]
 
 /-! ### The topology -/
@@ -279,14 +383,18 @@ theorem isClosed_range_center : IsClosed (range (center φ)) := by
   rw [← isOpen_compl_iff, compl_range_center]
   exact isOpen_range_incl
 
+/-- The punctured unit disc is an open subspace of the unit disc. -/
+private theorem isOpenEmbedding_inclusion_puncture :
+    IsOpenEmbedding (inclusion (sdiff_subset : ball (0 : ℂ) 1 \ {0} ⊆ ball 0 1)) :=
+  .inclusion _ <| (isOpen_ball.sdiff isClosed_singleton).preimage continuous_subtype_val
+
 /-- If the punctured discs `φ i` are continuous, `E` is an open subspace of its puncture
 filling. -/
 theorem isOpenEmbedding_incl (hφ : ∀ i, Continuous (φ i)) : IsOpenEmbedding (incl φ) := by
   refine .of_continuous_injective_isOpenMap continuous_incl incl_injective fun U hU =>
     isOpen_iff.2 ⟨by rwa [incl_injective.preimage_image], fun i => ?_⟩
   rw [disc_preimage_image_incl]
-  exact (IsOpenEmbedding.inclusion _ <| (isOpen_ball.sdiff isClosed_singleton).preimage
-    continuous_subtype_val).isOpenMap _ (hU.preimage (hφ i))
+  exact isOpenEmbedding_inclusion_puncture.isOpenMap _ (hU.preimage (hφ i))
 
 /-- If the punctured discs `φ j` are continuous and `φ i` is an open embedding, the `i`-th filled
 disc is an open subspace of the puncture filling. -/
@@ -311,8 +419,7 @@ theorem isOpenEmbedding_disc (hφ : ∀ j, Continuous (φ j)) {i : ι} (hi : IsO
     rw [disc_zero, disc_eq_center_iff] at hw
     exact hk hw.2.symm
   rw [h, disc_preimage_image_incl]
-  exact (IsOpenEmbedding.inclusion _ <| (isOpen_ball.sdiff isClosed_singleton).preimage
-    continuous_subtype_val).isOpenMap _ (hincl.preimage (hφ k))
+  exact isOpenEmbedding_inclusion_puncture.isOpenMap _ (hincl.preimage (hφ k))
 
 /-- `E` is dense in its puncture filling: every added point is a limit of points of `E`. -/
 theorem denseRange_incl : DenseRange (incl φ) := by
@@ -334,6 +441,23 @@ theorem denseRange_incl : DenseRange (incl φ) := by
 
 /-! ### Neighbourhoods -/
 
+omit [TopologicalSpace E] in
+/-- The punctured neighbourhoods of the centre of the `i`-th filled disc are carried onto the end
+of the punctured disc `φ i`, the filter of points `φ i w` with `w` near `0`. -/
+theorem map_disc_nhdsNE (i : ι) :
+    map (disc φ i) (𝓝[≠] 0) = map (incl φ ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) := by
+  have hrange : range (inclusion (sdiff_subset : ball (0 : ℂ) 1 \ {0} ⊆ ball 0 1)) = {0}ᶜ := by
+    ext z
+    simp [range_inclusion, ← unitBall.coe_eq_zero]
+  rw [nhdsWithin, ← hrange, ← map_comap, map_map, nhds_subtype, comap_comap]
+  exact congrArg₂ map (funext (disc_inclusion i)) rfl
+
+/-- The end of the `i`-th punctured disc converges to the added point `center φ i`. -/
+theorem tendsto_incl_comp_nhds_center (i : ι) :
+    Tendsto (incl φ ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) (𝓝 (center φ i)) := by
+  rw [Tendsto, ← map_disc_nhdsNE, ← disc_zero]
+  exact (map_mono nhdsWithin_le_nhds).trans ((continuous_disc i).tendsto 0)
+
 /-- If the punctured discs are continuous, the neighbourhoods of a point of `E` in the puncture
 filling are its neighbourhoods in `E`. -/
 theorem nhds_incl (hφ : ∀ i, Continuous (φ i)) (x : E) :
@@ -345,14 +469,8 @@ the image of the end of `φ i`, the filter of points `φ i w` with `w` near `0`.
 theorem nhds_center (hφ : ∀ j, Continuous (φ j)) {i : ι} (hi : IsOpenEmbedding (φ i)) :
     𝓝 (center φ i) =
       pure (center φ i) ⊔ map (incl φ ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) := by
-  have hrange : range (inclusion (sdiff_subset : ball (0 : ℂ) 1 \ {0} ⊆ ball 0 1)) = {0}ᶜ := by
-    ext z
-    simp [range_inclusion, ← unitBall.coe_eq_zero]
-  have hpunct : map (disc φ i) (𝓝[≠] 0) = map (incl φ ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) := by
-    rw [nhdsWithin, ← hrange, ← map_comap, map_map, nhds_subtype, comap_comap]
-    exact congrArg₂ map (funext (disc_inclusion i)) rfl
   rw [← disc_zero, ← (isOpenEmbedding_disc hφ hi).map_nhds_eq, ← pure_sup_nhdsNE, map_sup,
-    map_pure, hpunct]
+    map_pure, map_disc_nhdsNE]
 
 /-- **The neighbourhoods of an added point.** The images under `disc φ i` of the discs of radius
 `r > 0` form a basis of the neighbourhoods of `center φ i`. -/
@@ -385,6 +503,121 @@ theorem isDiscrete_range_center : IsDiscrete (range (center φ)) := by
       exact hy ⟨j, fun h => hj (congrArg _ h), rfl⟩
     · rintro rfl
       exact ⟨fun ⟨j, hj, h⟩ => hj (center_injective h), i, rfl⟩
+
+/-! ### Continuity of maps out of the puncture filling -/
+
+section Extend
+
+variable {Y : Type*} [TopologicalSpace Y]
+
+omit [TopologicalSpace E] [TopologicalSpace Y] in
+/-- Near the centre of the `i`-th filled disc, the extension of `g` is `g` along the end of the
+punctured disc `φ i`. -/
+private theorem tendsto_extend_comp_disc_nhdsNE_iff {g : E → Y} {c : ι → Y} {i : ι}
+    {l : Filter Y} :
+    Tendsto (extend g c ∘ disc φ i) (𝓝[≠] 0) l ↔
+      Tendsto (g ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) l := by
+  rw [← tendsto_map'_iff, map_disc_nhdsNE, tendsto_map'_iff, ← Function.comp_assoc,
+    extend_comp_incl]
+
+/-- **Continuity of a map out of the puncture filling.** The extension of `g : E → Y` by the values
+`c i` at the added points is continuous exactly when `g` and each composite `g ∘ φ i` are
+continuous, and `g` converges to `c i` along the end of each punctured disc `φ i`. -/
+theorem continuous_extend_iff {g : E → Y} {c : ι → Y} :
+    Continuous (extend (φ := φ) g c) ↔
+      Continuous g ∧ ∀ i, Continuous (g ∘ φ i) ∧
+        Tendsto (g ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) (𝓝 (c i)) := by
+  rw [continuous_iff, extend_comp_incl]
+  refine and_congr_right fun _ => forall_congr' fun i => ?_
+  -- Continuity of the `i`-th filled disc at its centre is convergence along the end of `φ i`.
+  have h0 : ContinuousAt (extend g c ∘ disc φ i) 0 ↔
+      Tendsto (g ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) (𝓝 (c i)) := by
+    rw [← continuousWithinAt_compl_self, ContinuousWithinAt, Function.comp_apply, disc_zero,
+      extend_center, tendsto_extend_comp_disc_nhdsNE_iff]
+  rw [← h0]
+  -- Away from the centre, the filled disc is the continuous map `g ∘ φ i`.
+  constructor
+  · intro h
+    refine ⟨?_, h.continuousAt⟩
+    have hcomp : (extend g c ∘ disc φ i) ∘ inclusion sdiff_subset = g ∘ φ i :=
+      funext fun w => by simp
+    rw [← hcomp]
+    exact h.comp (continuous_inclusion _)
+  · rintro ⟨hcomp, h⟩
+    refine continuous_iff_continuousAt.2 fun z => ?_
+    by_cases hz : z = 0
+    · rwa [hz]
+    obtain ⟨w, rfl⟩ : ∃ w, inclusion sdiff_subset w = z := ⟨puncture hz, rfl⟩
+    have heq : (extend g c ∘ disc φ i) ∘ inclusion sdiff_subset = g ∘ φ i :=
+      funext fun w => by simp
+    rw [← isOpenEmbedding_inclusion_puncture.continuousAt_iff, heq]
+    exact hcomp.continuousAt
+
+end Extend
+
+section Map
+
+variable {E' ι' : Type*} [TopologicalSpace E'] {φ' : ι' → 𝔻* → E'}
+
+/-- **Functoriality of the puncture filling.** The map of puncture fillings induced by a continuous
+`f : E → E'` and a reindexing `σ : ι → ι'` is continuous if each `f ∘ φ i` is continuous and `f`
+carries the end of each punctured disc `φ i` into the end of `φ' (σ i)`. -/
+theorem continuous_map {f : E → E'} (hf : Continuous f) (hcomp : ∀ i, Continuous (f ∘ φ i))
+    {σ : ι → ι'}
+    (hend : ∀ i, Tendsto (f ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0))
+      (map (φ' (σ i)) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)))) :
+    Continuous (PunctureFilling.map (φ := φ) (φ' := φ') f σ) :=
+  continuous_extend_iff.2 ⟨continuous_incl.comp hf, fun i =>
+    ⟨continuous_incl.comp (hcomp i),
+      (tendsto_map'_iff.2 (tendsto_incl_comp_nhds_center (σ i))).comp (hend i)⟩⟩
+
+/-- **Functoriality of the puncture filling in homeomorphisms.** Suppose that all the charts
+`φ i` and `φ' j` are continuous (`hφ`, `hφ'`). A homeomorphism `e : E ≃ₜ E'` and a bijection
+`σ : ι ≃ ι'` such that `e` carries the end of each punctured disc `φ i` onto the end of
+`φ' (σ i)` induce a homeomorphism of the puncture fillings, which is `e` on `E` and sends the added
+point `center φ i` to `center φ' (σ i)`. -/
+protected def congr (hφ : ∀ i, Continuous (φ i)) (hφ' : ∀ i, Continuous (φ' i)) (e : E ≃ₜ E')
+    (σ : ι ≃ ι')
+    (hend : ∀ i, map (e ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) =
+      map (φ' (σ i)) (comap ((↑) : 𝔻* → ℂ) (𝓝 0))) :
+    PunctureFilling φ ≃ₜ PunctureFilling φ' where
+  toFun := PunctureFilling.map e σ
+  invFun := PunctureFilling.map e.symm σ.symm
+  left_inv y := by induction y using PunctureFilling.induction <;> simp
+  right_inv y := by induction y using PunctureFilling.induction <;> simp
+  continuous_toFun := continuous_map e.continuous (fun i => e.continuous.comp (hφ i)) fun i =>
+    (hend i).le
+  continuous_invFun := continuous_map e.symm.continuous
+      (fun j => e.symm.continuous.comp (hφ' j)) fun j => by
+    have h := hend (σ.symm j)
+    rw [σ.apply_symm_apply, ← map_map] at h
+    rw [Tendsto, ← map_map, ← h, map_map, e.symm_comp_self, map_id]
+
+variable (hφ : ∀ i, Continuous (φ i)) (hφ' : ∀ i, Continuous (φ' i)) (e : E ≃ₜ E') (σ : ι ≃ ι')
+  (hend : ∀ i, map (e ∘ φ i) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)) =
+    map (φ' (σ i)) (comap ((↑) : 𝔻* → ℂ) (𝓝 0)))
+
+@[simp]
+theorem congr_apply_incl (x : E) :
+    PunctureFilling.congr hφ hφ' e σ hend (incl φ x) = incl φ' (e x) :=
+  (rfl)
+
+@[simp]
+theorem congr_apply_center (i : ι) :
+    PunctureFilling.congr hφ hφ' e σ hend (center φ i) = center φ' (σ i) :=
+  (rfl)
+
+@[simp]
+theorem congr_symm_apply_incl (x : E') :
+    (PunctureFilling.congr hφ hφ' e σ hend).symm (incl φ' x) = incl φ (e.symm x) :=
+  (rfl)
+
+@[simp]
+theorem congr_symm_apply_center (i : ι') :
+    (PunctureFilling.congr hφ hφ' e σ hend).symm (center φ' i) = center φ (σ.symm i) :=
+  (rfl)
+
+end Map
 
 /-! ### Separation, compactness, connectedness and countability -/
 

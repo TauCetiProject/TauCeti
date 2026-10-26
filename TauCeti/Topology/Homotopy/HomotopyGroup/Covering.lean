@@ -72,8 +72,10 @@ the forward implication lifts the homotopy, using that both generalized loops ta
 @[simp]
 theorem map_homotopic_iff [Nonempty N] (hp : IsCoveringMap p) {F G : Ω^ N E e} :
     _root_.GenLoop.Homotopic (map ⟨p, hp.continuous⟩ rfl F) (map ⟨p, hp.continuous⟩ rfl G) ↔
-      _root_.GenLoop.Homotopic F G :=
-  (hp.homotopicRel_iff_comp (f₀ := (F : C(I^N, E))) (f₁ := (G : C(I^N, E)))
+      _root_.GenLoop.Homotopic F G := by
+  unfold _root_.GenLoop.Homotopic
+  rw [_root_.GenLoop.coe_map, _root_.GenLoop.coe_map]
+  exact (hp.homotopicRel_iff_comp (f₀ := (F : C(I^N, E))) (f₁ := (G : C(I^N, E)))
     ⟨0, TauCeti.zero_mem_cubeBoundary,
       (_root_.GenLoop.boundary F 0 TauCeti.zero_mem_cubeBoundary).trans
         (_root_.GenLoop.boundary G 0 TauCeti.zero_mem_cubeBoundary).symm⟩).symm
@@ -124,7 +126,7 @@ theorem map_surjective [Nontrivial N] (hp : IsCoveringMap p) (f : Ω^ N X (p e))
       p (F y) = p (QRel (Cube.splitAt i y)) := congr_arg p (hF_apply y)
       _ = q (Cube.splitAt i y) := congrFun hQ (Cube.splitAt i y)
       _ = f y := congr_arg f (Homeomorph.symm_apply_apply (Cube.splitAt i) y)
-  exact ⟨F, _root_.GenLoop.ext _ _ hpF⟩
+  exact ⟨F, _root_.GenLoop.ext _ _ fun y => (_root_.GenLoop.map_apply _ _ F y).trans (hpF y)⟩
 
 end GenLoop
 

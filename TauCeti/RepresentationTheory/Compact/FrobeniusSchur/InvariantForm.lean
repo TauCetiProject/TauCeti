@@ -86,7 +86,7 @@ open _root_.ContRepresentation
 
 open LinearMap (BilinForm)
 
-open Module TauCeti TauCeti.ContRepresentation
+open Module TauCeti
 
 namespace ContRepresentation
 

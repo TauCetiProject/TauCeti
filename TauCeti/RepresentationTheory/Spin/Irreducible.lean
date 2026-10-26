@@ -172,7 +172,7 @@ private theorem spinGroupRepresentation_apply {K : Type u} [Field K]
 
 /-- The same, with the even element spelled out in the coordinates the half-spin lemmas of
 `TauCeti/RepresentationTheory/Spin/HalfSpin/Basic.lean` are stated in. Only the coercion lemma
-`TauCeti.coe_spinGroupToEven_apply` is used, not the definition of the inclusion. -/
+`CliffordAlgebra.coe_spinGroupToEven_apply` is used, not the definition of the inclusion. -/
 private theorem spinGroupRepresentation_apply_mk {K : Type u} [Field K]
     {V : Type v} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
     {M : Type*} [AddCommGroup M] [Module K M]
@@ -189,7 +189,7 @@ private noncomputable def spinGroupAlgebraHom {K : Type u} [Field K]
 /-- The range of the Spin-group inclusion, with its values spelled out as the subtype elements
 `⟨g, _⟩` that `Submodule.span_range_subtype_eq_top_iff` consumes. As for
 `TauCeti.spinGroupRepresentation_apply_mk`, only the coercion lemma
-`TauCeti.coe_spinGroupToEven_apply` is used, not the definition of the inclusion. -/
+`CliffordAlgebra.coe_spinGroupToEven_apply` is used, not the definition of the inclusion. -/
 private theorem range_spinGroupToEven {K : Type u} [Field K]
     {V : Type v} [AddCommGroup V] [Module K V] (Q : QuadraticForm K V) :
     Set.range ⇑(spinGroupToEven Q) =

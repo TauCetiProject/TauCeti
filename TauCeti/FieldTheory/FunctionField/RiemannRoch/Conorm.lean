@@ -11,9 +11,19 @@ public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Basic
 /-!
 # Riemann–Roch spaces under extension of function fields
 
-For a finite extension of function fields, the functions in `L(D)` are exactly those
-functions from the smaller field whose images belong to `L(Con D)`. This gives the
+For an algebraic extension of function fields with finite restriction fibres, the functions in
+`L(D)` are exactly those functions from the smaller field whose images belong to `L(Con D)`.
+This gives the
 intersection of `L(Con D)` with the smaller field as a submodule equality.
+
+More generally, along any integral extension, finite or not, `f` lies in `L(D)` exactly when its
+image lies in `L(D')` for any divisor `D'` of `F'` with the coefficients `e(P' ∣ P) · D(P)` of a
+conorm (`TauCeti.mem_riemannRochSpace_algebraMap_iff_of_coeff_eq`). Multiples of a pole divisor
+are an example: a function `f` of `F` lies in `L(n (z)_∞)` exactly when its image lies in
+`L(n (z)_∞)` computed in `F'` (`TauCeti.mem_riemannRochSpace_nsmul_poles_map_iff`), with no
+conorm needed, because both pole divisors are read off from the orders of `z`. For `F' = F`
+this says that `L(n (z)_∞)` does not change when the constants `k` are enlarged to an algebraic
+extension inside `F` (`TauCeti.restrictScalars_riemannRochSpace_nsmul_poles`).
 
 Multiplying a basis of `L(A)` by an `F`-linearly independent family of `r` functions in `L(C)`
 gives `r ℓ(A) ≤ [k' : k] ℓ(Con A + C)`
@@ -37,16 +47,17 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-variable [Algebra.IsIntegral k k'] [FiniteDimensional F F']
+variable [Algebra.IsIntegral k k']
 
-/-- A function from `F` belongs to `L(D)` precisely when its image in `F'` belongs to the
-Riemann–Roch space of the conorm of `D`. -/
--- This equivalence is for targeted rewriting: `simpNF` rejects it as a simp lemma because
--- simplification unfolds Riemann–Roch membership on the left-hand side.
-theorem mem_riemannRochSpace_conorm_iff (hF' : IsFunctionField k' F')
-    (D : Divisor k F) (f : F) :
-    algebraMap F F' f ∈ riemannRochSpace (Divisor.conorm k' F' D) ↔
-      f ∈ riemannRochSpace D := by
+/-- **Riemann–Roch membership descends along integral extensions**: let `D'` be a divisor of
+`F'` whose coefficient at each place `P'` is `e(P' ∣ P) · D(P)` for a divisor `D` of `F`, where
+`P` is the place below `P'`. Then a function `f` of `F` lies in `L(D)` precisely when its image in
+`F'` lies in `L(D')`. The extensions `F' / F` and `k' / k` need only be integral, not finite. -/
+theorem mem_riemannRochSpace_algebraMap_iff_of_coeff_eq [Algebra.IsIntegral F F']
+    (hF' : IsFunctionField k' F') {D : Divisor k F} {D' : Divisor k' F'}
+    (hD : ∀ P' : Place k' F',
+      D'.coeff P' = Place.ramificationIdx F P' * D.coeff (P'.restrict k F)) (f : F) :
+    algebraMap F F' f ∈ riemannRochSpace D' ↔ f ∈ riemannRochSpace D := by
   rcases eq_or_ne f 0 with rfl | hf
   · simp
   have hf' : algebraMap F F' f ≠ 0 := by
@@ -58,14 +69,60 @@ theorem mem_riemannRochSpace_conorm_iff (hF' : IsFunctionField k' F')
     obtain ⟨P', hP'⟩ := Place.restrict_surjective (k := k) (F := F) hF' P
     dsimp only at hP'
     have hbound := h P'
-    rw [Divisor.coeff_conorm, Place.ord_algebraMap_restrict k F P'] at hbound
+    rw [hD, Place.ord_algebraMap_restrict k F P'] at hbound
     rw [hP'] at hbound
     have he : (0 : ℤ) < Place.ramificationIdx F P' := by
       exact_mod_cast Place.ramificationIdx_pos F P'
     nlinarith
   · intro h P'
-    rw [Divisor.coeff_conorm, Place.ord_algebraMap_restrict k F P']
+    rw [hD, Place.ord_algebraMap_restrict k F P']
+    have he : (0 : ℤ) < Place.ramificationIdx F P' := by
+      exact_mod_cast Place.ramificationIdx_pos F P'
     nlinarith [h (P'.restrict k F)]
+
+/-- **Pole bounds descend along integral extensions**: a function `f` of `F` lies in
+`L(n (z)_∞)` precisely when its image in `F'` lies in the Riemann–Roch space of `n` times the pole
+divisor of the image of `z`. The extensions `F' / F` and `k' / k` need only be integral, not
+finite. -/
+theorem mem_riemannRochSpace_nsmul_poles_map_iff [Algebra.IsIntegral F F']
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (n : ℕ) (z : Fˣ) (f : F) :
+    algebraMap F F' f ∈
+        riemannRochSpace (n • Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)) ↔
+      f ∈ riemannRochSpace (n • Divisor.poles hF z) := by
+  -- at a place `P'` over `P` the pole order of `z` scales by `e(P' ∣ P) ≥ 0`
+  refine mem_riemannRochSpace_algebraMap_iff_of_coeff_eq hF' (fun P' ↦ ?_) f
+  simp only [WeilDivisor.coeff_nsmul, Divisor.coeff_poles, Units.coe_map,
+    MonoidHom.coe_ofClass, Place.ord_algebraMap_restrict k F]
+  have hmax := mul_max_of_nonneg (-(P'.restrict k F).ord (z : F)) 0
+    (Nat.cast_nonneg (α := ℤ) (Place.ramificationIdx F P'))
+  rw [mul_zero, mul_neg] at hmax
+  rw [← hmax]
+  ring
+
+/-- **Enlarging the constants does not change `L(n (z)_∞)`**: for an algebraic extension `k'` of
+`k` inside `F`, for instance the full constant field `algebraicClosure k F`, the Riemann–Roch space
+of `n` times the pole divisor of `z`, computed over `k'`, is the one computed over `k`. -/
+theorem restrictScalars_riemannRochSpace_nsmul_poles [Algebra k' F] [IsScalarTower k k' F]
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F) (n : ℕ) (z : Fˣ) :
+    (riemannRochSpace (n • Divisor.poles hF' z)).restrictScalars k =
+      riemannRochSpace (n • Divisor.poles hF z) := by
+  ext f
+  simpa using mem_riemannRochSpace_nsmul_poles_map_iff (F' := F) hF hF' n z f
+
+section FiniteFibres
+
+variable [Algebra.IsIntegral F F']
+variable [∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
+
+/-- A function from `F` belongs to `L(D)` precisely when its image in `F'` belongs to the
+Riemann–Roch space of the conorm of `D`. -/
+-- This equivalence is for targeted rewriting: `simpNF` rejects it as a simp lemma because
+-- simplification unfolds Riemann–Roch membership on the left-hand side.
+theorem mem_riemannRochSpace_conorm_iff (hF' : IsFunctionField k' F')
+    (D : Divisor k F) (f : F) :
+    algebraMap F F' f ∈ riemannRochSpace (Divisor.conorm k' F' D) ↔
+      f ∈ riemannRochSpace D :=
+  mem_riemannRochSpace_algebraMap_iff_of_coeff_eq hF' (Divisor.coeff_conorm k' F' D) f
 
 /-- The intersection of `L(Con D)` with the image of `F` is `L(D)`, expressed as a
 `k`-submodule equality. This form can be used without unfolding either Riemann–Roch space. -/
@@ -77,6 +134,10 @@ theorem riemannRochSpace_conorm_comap (hF' : IsFunctionField k' F')
         riemannRochSpace D := by
   ext f
   exact mem_riemannRochSpace_conorm_iff hF' D f
+
+end FiniteFibres
+
+variable [FiniteDimensional F F']
 
 /-- An `F`-linearly independent family of `r` functions in `L(C)` multiplies the dimension of
 the Riemann–Roch space of any divisor `A` of `F`: `r ℓ(A) ≤ [k' : k] ℓ(Con A + C)`, where `ℓ(A)`

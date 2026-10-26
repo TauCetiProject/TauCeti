@@ -350,7 +350,8 @@ theorem exists_eLpNorm_edist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabili
     (hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp_top (u 0) μ).1 hμ
   -- the tail sets decrease to the empty set, so their contribution vanishes
   set A : ℕ → Set X := fun n ↦ {x | n ≤ idx x} with hA_def
-  have hA_meas : ∀ n, MeasurableSet (A n) := fun n ↦ hidx_meas MeasurableSet.of_discrete
+  have hA_meas : ∀ n, MeasurableSet (A n) := fun n ↦
+    hidx_meas (t := {k | n ≤ k}) MeasurableSet.of_discrete
   have hA_tendsto : Tendsto (fun n ↦ ∫⁻ y, (A n).indicator (fun z ↦ f z ^ p.toReal) y ∂μ)
       atTop (𝓝 0) := by
     have hlim : ∀ᵐ y ∂μ,

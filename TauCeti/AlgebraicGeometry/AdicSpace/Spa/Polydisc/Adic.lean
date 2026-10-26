@@ -131,6 +131,23 @@ noncomputable def closedPolydiscBasicOpen
   spaBasicOpen (powerBoundedSubring _) T s
 
 omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
+/-- The sections on a basic open of the closed polydisc are the presentation limit over that
+rational subset of its adic spectrum. -/
+@[simp]
+theorem closedPolydiscBasicOpen_sections
+    (T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
+      isWeightFamily_one_weight))
+    (s : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
+      isWeightFamily_one_weight) :
+    (closedPolydiscPreAdicSpace k P).toPresheafedSpace.presheaf.obj
+        (Opposite.op (closedPolydiscBasicOpen k P T s)) =
+      presentationLimit
+        (P := P.weighted (T := fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight)
+        (powerBoundedSubring _) (spaBasicOpen (powerBoundedSubring _) T s) := by
+  simp only [closedPolydiscPreAdicSpace, closedPolydiscBasicOpen, presentationLimitPreAdicSpace]
+  exact presentationLimitPresheaf_obj _ _ _
+
+omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
 /-- A rational open of the closed polydisc whose numerators span an open ideal is an open
 affinoid subspace. -/
 theorem closedPolydiscBasicOpen_mem_affinoidOpens

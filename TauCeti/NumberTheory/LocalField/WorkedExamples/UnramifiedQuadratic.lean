@@ -97,13 +97,13 @@ instance : CharZero UnramifiedQuadratic :=
   charZero_of_injective_algebraMap (algebraMap ℚ_[2] UnramifiedQuadratic).injective
 
 instance : ValuativeRel UnramifiedQuadratic :=
-  finiteExtensionValuativeRel ℚ_[2] UnramifiedQuadratic
+  algebraicExtensionValuativeRel ℚ_[2] UnramifiedQuadratic
 
 instance : TopologicalSpace UnramifiedQuadratic :=
-  finiteExtensionNormedFieldTopology ℚ_[2] UnramifiedQuadratic
+  algebraicExtensionNormedFieldTopology ℚ_[2] UnramifiedQuadratic
 
 instance : ValuativeExtension ℚ_[2] UnramifiedQuadratic :=
-  finiteExtension_valuativeExtension ℚ_[2] UnramifiedQuadratic
+  algebraicExtension_valuativeExtension ℚ_[2] UnramifiedQuadratic
 
 instance : IsNonarchimedeanLocalField UnramifiedQuadratic :=
   finiteExtension_isNonarchimedeanLocalField ℚ_[2] UnramifiedQuadratic

@@ -218,7 +218,7 @@ theorem countable_not_hasDerivAt_toReal_moreauYosida {y : ℝ → X} {a b : ℝ}
       (-(edist x (y r)).toReal ^ 2 / (2 * r ^ 2)) r}.Countable := by
   have hfin (r) (hr : r ∈ Ioo a b) :=
     moreauYosida_ne_top_and_ne_bot (Ioo_subset_Icc_self hr) ha' hb'
-  refine ((monotoneOn_toReal_edist (fun r hr ↦ ha.trans_lt hr.1) hy
+  refine ((monotoneOn_toReal_edist (fun r (hr : r ∈ Ioo a b) ↦ ha.trans_lt hr.1) hy
     hfin).countable_not_continuousWithinAt).mono fun r hr' ↦ ?_
   obtain ⟨hr, hd⟩ := hr'
   refine ⟨hr, fun hc ↦ hd ?_⟩

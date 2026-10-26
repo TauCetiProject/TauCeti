@@ -35,6 +35,10 @@ transfer through a supplied Morita equivalence.
 an `(A,B)`-bimodule tensored over `B` with a left `B`-module is a left `A`-module.
 Both constructions are linear in each variable.
 
+`GradedBimoduleCat` is the category of graded bimodules of a graded algebra with an
+internal grading, and `GradedModuleCat.bimoduleTensor` is the balanced bimodule tensor of
+that setting.
+
 ## References
 
 * B. Keller, *Deriving DG categories*, Section 6.1.
@@ -72,7 +76,7 @@ local instance (M : GradedModuleCat.{v} (Γ.tensorProduct Δ.opposite).piece) :
     SMulCommClass A Bᵐᵒᵖ M :=
   TauCeti.Algebra.TensorProduct.moduleSMulCommClass (k := k) (A := A) (B := Bᵐᵒᵖ) M
 
-local instance [SetLike.GradedOne Δ.piece]
+local instance leftGradedSMul [SetLike.GradedOne Δ.piece]
     (M : GradedModuleCat.{v} (Γ.tensorProduct Δ.opposite).piece) :
     SetLike.GradedSMul Γ.piece M.grading.piece where
   smul_mem {p q} {a m} ha hm := by
@@ -130,6 +134,44 @@ noncomputable def bimoduleModuleTensorMk :
 theorem bimoduleModuleTensorMk_apply (m : M) (n : N) :
     bimoduleModuleTensorMk Γ Δ M N m n = bimoduleModuleTensorTmul Γ Δ M N m n :=
   BalancedTensorProduct.mk_apply k B m n
+
+/-- Forgetting the output grading identifies the left-module tensor carrier with the
+balanced quotient. -/
+noncomputable def bimoduleModuleTensorUnderlyingEquiv :
+    bimoduleModuleTensorObj Γ Δ M N ≃ₗ[k] BalancedTensorProduct k B M N :=
+  LinearEquiv.refl k T
+
+@[simp]
+theorem bimoduleModuleTensorUnderlyingEquiv_tmul (m : M) (n : N) :
+    bimoduleModuleTensorUnderlyingEquiv Γ Δ M N (bimoduleModuleTensorTmul Γ Δ M N m n) =
+      BalancedTensorProduct.tmul k B m n := (rfl)
+
+@[simp]
+theorem bimoduleModuleTensorUnderlyingEquiv_symm_tmul (m : M) (n : N) :
+    (bimoduleModuleTensorUnderlyingEquiv Γ Δ M N).symm (BalancedTensorProduct.tmul k B m n) =
+      bimoduleModuleTensorTmul Γ Δ M N m n := (rfl)
+
+/-- The carrier identification preserves the output left action. -/
+theorem bimoduleModuleTensorUnderlyingEquiv_smul (a : A)
+    (z : bimoduleModuleTensorObj Γ Δ M N) :
+    bimoduleModuleTensorUnderlyingEquiv Γ Δ M N (a • z) =
+      a • bimoduleModuleTensorUnderlyingEquiv Γ Δ M N z := (rfl)
+
+/-- The carrier identification preserves membership in each internal degree piece. -/
+theorem bimoduleModuleTensorUnderlyingEquiv_mem_iff {p : ℤ}
+    {z : bimoduleModuleTensorObj Γ Δ M N} :
+    bimoduleModuleTensorUnderlyingEquiv Γ Δ M N z ∈
+        (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p ↔
+      z ∈ (bimoduleModuleTensorObj Γ Δ M N).grading.piece p := Iff.rfl
+
+/-- The left-module tensor carrier identification is homogeneous of degree zero. -/
+theorem bimoduleModuleTensorUnderlyingEquiv_isHomogeneous :
+    LinearMap.IsHomogeneous (bimoduleModuleTensorUnderlyingEquiv Γ Δ M N).toLinearMap
+      (bimoduleModuleTensorObj Γ Δ M N).grading.piece
+      (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun r x hx ↦ by
+    rw [add_zero]
+    exact (bimoduleModuleTensorUnderlyingEquiv_mem_iff Γ Δ M N).2 hx
 
 /-- Balancing transfers the right action on the bimodule to the left module. -/
 theorem bimoduleModuleTensorTmul_balance (b : B) (m : M) (n : N) :
@@ -335,7 +377,8 @@ theorem bimoduleModuleTensorMap_smul_right (c : k) (f : M ⟶ M') (g : N ⟶ N')
   exact BalancedTensorProduct.tmul_smul k B _ _ _
 
 /-- Balanced tensor action of graded bimodules on graded left modules. -/
-@[implicit_reducible]
+-- Expose the object assignment so action maps and associator components have computed types.
+@[expose, implicit_reducible]
 noncomputable def bimoduleModuleTensor :
     GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece ⥤
       GradedModuleCat.{vN} Δ.piece ⥤ GradedModuleCat.{max vM vN} Γ.piece where
@@ -377,37 +420,67 @@ theorem bimoduleModuleTensor_map_app (f : M ⟶ M') :
         bimoduleModuleTensorMap Γ Δ f (𝟙 N) ≫
         eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M') (N := N)).symm := (rfl)
 
-instance : ((bimoduleModuleTensor Γ Δ).obj M).Additive where
+-- Grading projections may compute for concrete gradings, so do not index on them.
+instance : Functor.Additive
+    (C := GradedModuleCat.{vN} (no_index Δ.piece))
+    (D := GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    ((bimoduleModuleTensor.{vM, vN} Γ Δ).obj M) where
   map_add := bimoduleModuleTensorMap_add_right Γ Δ (𝟙 M) _ _
 
-instance : ((bimoduleModuleTensor Γ Δ).flip.obj N).Additive where
+-- Grading-dependent flipped functors must also stay out of the instance index.
+instance : Functor.Additive
+    (C := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece))
+    (D := GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    ((no_index (bimoduleModuleTensor.{vM, vN} Γ Δ).flip).obj N) where
   map_add := bimoduleModuleTensorMap_add_left Γ Δ _ _ (𝟙 N)
 
-instance : (bimoduleModuleTensor Γ Δ).Additive where
+instance : Functor.Additive
+    (C := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece))
+    (D := GradedModuleCat.{vN} (no_index Δ.piece) ⥤
+      GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    (bimoduleModuleTensor.{vM, vN} Γ Δ) where
   map_add {X Y f g} := by
     apply NatTrans.ext
     funext N
     exact bimoduleModuleTensorMap_add_left Γ Δ f g (𝟙 N)
 
-instance : (bimoduleModuleTensor Γ Δ).flip.Additive where
+instance : Functor.Additive
+    (C := GradedModuleCat.{vN} (no_index Δ.piece))
+    (D := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece) ⥤
+      GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    (no_index (bimoduleModuleTensor.{vM, vN} Γ Δ).flip) where
   map_add {X Y f g} := by
     apply NatTrans.ext
     funext M
     exact bimoduleModuleTensorMap_add_right Γ Δ (𝟙 M) f g
 
-instance : ((bimoduleModuleTensor Γ Δ).obj M).Linear k where
+instance : Functor.Linear k
+    (C := GradedModuleCat.{vN} (no_index Δ.piece))
+    (D := GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    ((bimoduleModuleTensor.{vM, vN} Γ Δ).obj M) where
   map_smul f c := bimoduleModuleTensorMap_smul_right Γ Δ c (𝟙 M) f
 
-instance : ((bimoduleModuleTensor Γ Δ).flip.obj N).Linear k where
+instance : Functor.Linear k
+    (C := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece))
+    (D := GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    ((no_index (bimoduleModuleTensor.{vM, vN} Γ Δ).flip).obj N) where
   map_smul f c := bimoduleModuleTensorMap_smul_left Γ Δ c f (𝟙 N)
 
-instance : (bimoduleModuleTensor Γ Δ).Linear k where
+instance : Functor.Linear k
+    (C := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece))
+    (D := GradedModuleCat.{vN} (no_index Δ.piece) ⥤
+      GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    (bimoduleModuleTensor.{vM, vN} Γ Δ) where
   map_smul f c := by
     apply NatTrans.ext
     funext N
     exact bimoduleModuleTensorMap_smul_left Γ Δ c f (𝟙 N)
 
-instance : (bimoduleModuleTensor Γ Δ).flip.Linear k where
+instance : Functor.Linear k
+    (C := GradedModuleCat.{vN} (no_index Δ.piece))
+    (D := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece) ⥤
+      GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    (no_index (bimoduleModuleTensor.{vM, vN} Γ Δ).flip) where
   map_smul f c := by
     apply NatTrans.ext
     funext M
@@ -494,6 +567,22 @@ theorem bimoduleTensorUnderlyingEquiv_tmul (m : M) (n : N) :
 theorem bimoduleTensorUnderlyingEquiv_symm_tmul (m : M) (n : N) :
     (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).symm (BalancedTensorProduct.tmul k B m n) =
       bimoduleTensorTmul Γ Δ Θ M N m n := (rfl)
+
+/-- The bimodule carrier identification preserves every internal degree piece. -/
+theorem bimoduleTensorUnderlyingEquiv_mem_iff {p : ℤ}
+    {z : bimoduleTensorObj Γ Δ Θ M N} :
+    bimoduleTensorUnderlyingEquiv Γ Δ Θ M N z ∈
+        (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p ↔
+      z ∈ (bimoduleTensorObj Γ Δ Θ M N).grading.piece p := Iff.rfl
+
+/-- The bimodule tensor carrier identification is homogeneous of degree zero. -/
+theorem bimoduleTensorUnderlyingEquiv_isHomogeneous :
+    LinearMap.IsHomogeneous (bimoduleTensorUnderlyingEquiv Γ Δ Θ M N).toLinearMap
+      (bimoduleTensorObj Γ Δ Θ M N).grading.piece
+      (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun r x hx ↦ by
+    rw [add_zero]
+    exact (bimoduleTensorUnderlyingEquiv_mem_iff Γ Δ Θ M N).2 hx
 
 @[simp]
 theorem bimoduleTensorTmul_zero_left (n : N) :
@@ -904,3 +993,15 @@ instance : (bimoduleTensor Γ Δ Θ).flip.Linear k where
 end Tensor
 
 end TauCeti.GradedModuleCat
+
+namespace TauCeti
+
+universe w uA
+
+/-- The category of graded bimodules over the graded algebra `A` with internal grading `Ξ`:
+the graded modules over the enveloping grading `Ξ.tensorProduct Ξ.opposite`. -/
+abbrev GradedBimoduleCat (k : Type w) [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+    (Ξ : InternalGrading k A) :=
+  GradedModuleCat.{max uA w} (Ξ.tensorProduct Ξ.opposite).piece
+
+end TauCeti

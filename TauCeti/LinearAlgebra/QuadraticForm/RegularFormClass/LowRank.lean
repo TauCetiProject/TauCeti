@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Quaternion.AlgEquiv
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Decomposition
 
 /-!

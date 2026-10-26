@@ -352,6 +352,30 @@ lemma homologyMap_comp_singularHomologyπ (n : ℕ) :
   rw [← toSSetPair_obj_hom]
   exact (toSSetPair.obj P).homologyMap_hom_homologyπ R n
 
+variable {P P'} in
+/-- The map from ambient to relative singular homology is natural in maps of pairs. -/
+@[simp, reassoc]
+lemma singularHomologyπ_naturality (n : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n ≫ P'.singularHomologyπ R n =
+      P.singularHomologyπ R n ≫ TopPair.singularHomologyMap f R n :=
+  SSetPair.homologyπ_naturality (toSSetPair.map f) R n
+
+variable {P P'} in
+/-- If `f` is a map of pairs which is an isomorphism on the ambient spaces, the map from ambient to
+relative singular homology of its target is an isomorphism as soon as its composite with the map
+induced by `f` on relative homology is. -/
+lemma isIso_singularHomologyπ_of_isIso_comp [IsIso (Hom.fst f)] {n : ℕ}
+    (h : IsIso (P.singularHomologyπ R n ≫ TopPair.singularHomologyMap f R n)) :
+    IsIso (P'.singularHomologyπ R n) := by
+  have : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) := by
+    rw [← TauCeti.singularHomologyFunctor_obj_map]
+    exact Functor.map_isIso _ (Hom.fst f)
+  have : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n ≫
+      P'.singularHomologyπ R n) := by
+    rw [singularHomologyπ_naturality]
+    exact h
+  exact IsIso.of_isIso_comp_left (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) _
+
 end Homology
 
 section LongExactSequence
@@ -391,6 +415,27 @@ lemma singularHomology_exact_space (n : ℕ) :
 lemma singularHomology_exact_relative (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (P.singularHomologyπ_comp_singularHomologyδ R n m h)).Exact :=
   (toSSetPair.obj P).homology_exact₃ R n m h
+
+/-- If `Hₙ₊₁(X, A)` vanishes, the inclusion of the subspace induces a monomorphism
+`Hₙ(A) ⟶ Hₙ(X)`. -/
+lemma mono_homologyMap_map_of_isZero {n : ℕ} (h : IsZero (P.singularHomology R (n + 1))) :
+    Mono (SSet.homologyMap (TopCat.toSSet.map P.map) R n) :=
+  (P.singularHomology_exact_subspace R (n + 1) n).mono_g (h.eq_of_src _ _)
+
+/-- If `Hₙ(X, A)` vanishes, the inclusion of the subspace induces an epimorphism
+`Hₙ(A) ⟶ Hₙ(X)`. -/
+lemma epi_homologyMap_map_of_isZero {n : ℕ} (h : IsZero (P.singularHomology R n)) :
+    Epi (SSet.homologyMap (TopCat.toSSet.map P.map) R n) :=
+  (P.singularHomology_exact_space R n).epi_f (h.eq_of_tgt _ _)
+
+/-- If `Hₙ₊₁(X, A)` and `Hₙ(X, A)` vanish, the inclusion of the subspace induces an isomorphism
+`Hₙ(A) ≅ Hₙ(X)`. -/
+lemma isIso_homologyMap_map_of_isZero {n : ℕ} (h₁ : IsZero (P.singularHomology R (n + 1)))
+    (h₀ : IsZero (P.singularHomology R n)) :
+    IsIso (SSet.homologyMap (TopCat.toSSet.map P.map) R n) :=
+  have := P.mono_homologyMap_map_of_isZero R h₁
+  have := P.epi_homologyMap_map_of_isZero R h₀
+  isIso_of_mono_of_epi _
 
 /-- The connecting morphism of the long exact sequence of a topological pair is natural: for a
 map of pairs `f : (X, A) ⟶ (X', A')`, following `Hₙ(X, A) ⟶ Hₘ(A)` by the map induced by `f` on

@@ -176,13 +176,13 @@ theorem coe_neg (f : DiscreteCoind G U A) : ⇑(-f) = -⇑f := rfl
 theorem coe_sub (f f' : DiscreteCoind G U A) : ⇑(f - f') = ⇑f - ⇑f' := rfl
 
 /-- The zero is pointwise, so that Mathlib's `sum_apply` applies. -/
-instance : IsZeroApply (DiscreteCoind G U A) G A where
+instance : IsZeroApply (DiscreteCoind G U A) where
 
 /-- The addition is pointwise, so that Mathlib's `sum_apply` applies. -/
-instance : IsAddApply (DiscreteCoind G U A) G A where
+instance : IsAddApply (DiscreteCoind G U A) where
 
 /-- The `ℕ`-action is pointwise, so that Mathlib's `FunLike.coe_smul` and `smul_apply` apply. -/
-instance : IsSMulApply ℕ (DiscreteCoind G U A) G A where
+instance : IsSMulApply ℕ (DiscreteCoind G U A) where
 
 /-- A natural number killing `A` kills `Coind_U^G A`. -/
 theorem nsmul_eq_zero {n : ℕ} (hA : ∀ a : A, n • a = 0) (f : DiscreteCoind G U A) : n • f = 0 :=

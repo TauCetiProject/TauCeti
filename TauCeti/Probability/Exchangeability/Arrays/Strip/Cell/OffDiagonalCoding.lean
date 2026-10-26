@@ -35,9 +35,10 @@ off-diagonal unordered pairs, coded here.
 
 Every visible ordered pair has the same joint law with its square context, so Mathlib's canonical
 conditional distribution gives **one** kernel for all of them
-(`JointlyExchangeable.condDistrib_offDiagonalPairSquareContext_eq` in `Cell/JointPair.lean`, where
-the square context `offDiagonalPairSquareContext` is defined). Combined with the conditional
-independence of distinct pairs given the crossing strips and the diagonal, the pair layer becomes a
+(`JointlyExchangeable.condDistrib_offDiagonalPairSquareContext_eq` in `Cell/JointPair.lean`).
+The square context `offDiagonalPairSquareContext` is defined in
+`Probability/Process/Array/Context.lean`. Combined with the conditional independence of distinct
+pairs given the crossing strips and the diagonal, the pair layer becomes a
 genuine coding: a single measurable function of a square context and a uniform variable generates
 every off-diagonal pair at once, each from its own context and its own fresh uniform variable,
 jointly with the crossing strips and the diagonal. This is the jointly exchangeable counterpart of
@@ -66,10 +67,6 @@ strips and the diagonal changes nothing in law (`TauCeti.MeasureTheory.Measure.m
 * `TauCeti.Probability.JointlyExchangeable.exists_common_offDiagonalArray_coding` — the same coding
   function generates all visible off-diagonal pairs at once, from i.i.d. uniform variables indexed
   by the visible unordered pairs.
-* `TauCeti.Probability.offDiagonalPairSquareContextOfStripsAndDiagonal` — reads the square context
-  of a pair off the crossing strips and the diagonal alone, so that an assembly generating those
-  first can feed the pair coding.
-
 ## References
 
 * D. Aldous, "Representations for partially exchangeable arrays of random variables",
@@ -87,74 +84,11 @@ namespace TauCeti.Probability
 
 variable {α : Type*} [MeasurableSpace α]
 
-/-! ## Reading the square context off the crossing strips and the diagonal -/
+/-! ## Reconstructing the square support from its context -/
 
 section Context
 
 variable (e : ℕ → ℕ) (i j : ℕ)
-
-/-- The square context of `(i, j)` read off the crossing strips and the diagonal: every position
-the context looks at lies in a hidden row, in a hidden column, or on the diagonal. -/
-def offDiagonalPairSquareContextOfStripsAndDiagonal
-    (y : (((Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2} :
-      Set (ℕ × ℕ))) → α) :
-    ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) × (α × α) :=
-  ((((fun q => y ⟨(e q.1, e q.2),
-        Set.mem_union_left _ (Set.mem_union_right _ ⟨Set.mem_range_self q.1, Set.mem_univ _⟩)⟩,
-      fun b => y ⟨(i, e b),
-        Set.mem_union_left _ (Set.mem_union_left _ ⟨Set.mem_univ _, Set.mem_range_self b⟩)⟩),
-      fun a => y ⟨(e a, j),
-        Set.mem_union_left _ (Set.mem_union_right _ ⟨Set.mem_range_self a, Set.mem_univ _⟩)⟩),
-    ((fun q => y ⟨(e q.1, e q.2),
-        Set.mem_union_left _ (Set.mem_union_right _ ⟨Set.mem_range_self q.1, Set.mem_univ _⟩)⟩,
-      fun b => y ⟨(j, e b),
-        Set.mem_union_left _ (Set.mem_union_left _ ⟨Set.mem_univ _, Set.mem_range_self b⟩)⟩),
-      fun a => y ⟨(e a, i),
-        Set.mem_union_left _ (Set.mem_union_right _ ⟨Set.mem_range_self a, Set.mem_univ _⟩)⟩)),
-    (y ⟨(i, i), Set.mem_union_right _ (Set.mem_ofPred.2 rfl)⟩,
-      y ⟨(j, j), Set.mem_union_right _ (Set.mem_ofPred.2 rfl)⟩))
-
-/-- Reading the square context off the crossing strips and the diagonal is measurable. -/
-theorem measurable_offDiagonalPairSquareContextOfStripsAndDiagonal :
-    Measurable (offDiagonalPairSquareContextOfStripsAndDiagonal (α := α) e i j) :=
-  ((((Measurable.of_eval fun _ => measurable_pi_apply _).prodMk
-      (Measurable.of_eval fun _ => measurable_pi_apply _)).prodMk
-        (Measurable.of_eval fun _ => measurable_pi_apply _)).prodMk
-    (((Measurable.of_eval fun _ => measurable_pi_apply _).prodMk
-      (Measurable.of_eval fun _ => measurable_pi_apply _)).prodMk
-        (Measurable.of_eval fun _ => measurable_pi_apply _))).prodMk
-    ((measurable_pi_apply _).prodMk (measurable_pi_apply _))
-
-omit [MeasurableSpace α] in
-/-- Reading the square context off the crossing strips and the diagonal of an array recovers its
-square context: this is how a coding of the strips and the diagonal feeds the pair coding. -/
-@[simp]
-theorem offDiagonalPairSquareContextOfStripsAndDiagonal_comp_domRestrict :
-    offDiagonalPairSquareContextOfStripsAndDiagonal (α := α) e i j ∘
-        ((Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2} :
-          Set (ℕ × ℕ)).domRestrict =
-      offDiagonalPairSquareContext e i j := by
-  funext x
-  refine Prod.ext (Prod.ext ?_ ?_) ?_
-  · simp only [Function.comp_apply, offDiagonalPairSquareContext_fst, offDiagonalPairContext_fst]
-    refine Prod.ext (Prod.ext (funext fun q => ?_) (funext fun b => ?_)) (funext fun a => ?_) <;>
-      simp [offDiagonalPairSquareContextOfStripsAndDiagonal]
-  · simp only [Function.comp_apply, offDiagonalPairSquareContext_fst, offDiagonalPairContext_snd]
-    refine Prod.ext (Prod.ext (funext fun q => ?_) (funext fun b => ?_)) (funext fun a => ?_) <;>
-      simp [offDiagonalPairSquareContextOfStripsAndDiagonal]
-  · simp only [Function.comp_apply, offDiagonalPairSquareContext_snd]
-    rfl
-
-omit [MeasurableSpace α] in
-/-- Reading the square context of the reversed pair off the crossing strips and the diagonal swaps
-both the two directed contexts and the two diagonal entries. -/
-theorem offDiagonalPairSquareContextOfStripsAndDiagonal_swap
-    (y : (((Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2} :
-      Set (ℕ × ℕ))) → α) :
-    offDiagonalPairSquareContextOfStripsAndDiagonal e j i y =
-      Prod.map Prod.swap Prod.swap (offDiagonalPairSquareContextOfStripsAndDiagonal e i j y) :=
-  (rfl)
-
 variable (hij : i ≠ j) (hi : i ∉ Set.range e) (hj : j ∉ Set.range e)
 
 /-- The entries of the square spanned by the hidden vertices and `i`, `j`, other than the pair

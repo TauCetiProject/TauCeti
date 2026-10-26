@@ -28,6 +28,7 @@ moves points of `G` that are not defined over the base, such as the tautological
 
 ## Main definitions
 
+* `TauCeti.rightTranslation x`: right translation by a global point, as an isomorphism.
 * `TauCeti.leftTranslation x`: left translation by `x`, as an isomorphism `G ≅ G`.
 * `TauCeti.leftTranslationProd φ`: left translation by a point `φ : Y ⟶ G`, as an isomorphism
   `G ⊗ Y ≅ G ⊗ Y`.
@@ -53,19 +54,13 @@ universe u v
 
 variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C] {G : C} [GrpObj G]
 
-/-- Translating by `x` and then by `y` is translating by `y * x`. -/
-private theorem translate_comp_translate (x y : 𝟙_ C ⟶ G) :
-    ((toUnit G ≫ x) * 𝟙 G) ≫ ((toUnit G ≫ y) * 𝟙 G) = (toUnit G ≫ (y * x)) * 𝟙 G := by
-  rw [MonObj.comp_mul, comp_toUnit_assoc, Category.comp_id, ← _root_.mul_assoc,
-    ← MonObj.comp_mul]
-
 /-- **Left translation** `y ↦ x * y` on a group object `G` by a global point `x : 𝟙_ C ⟶ G`, as an
 automorphism of `G`. Its inverse is the translation by `x⁻¹`. -/
 noncomputable def leftTranslation (x : 𝟙_ C ⟶ G) : G ≅ G where
   hom := (toUnit G ≫ x) * 𝟙 G
   inv := (toUnit G ≫ x⁻¹) * 𝟙 G
-  hom_inv_id := by simp [translate_comp_translate]
-  inv_hom_id := by simp [translate_comp_translate]
+  hom_inv_id := by simp [MonObj.comp_mul, GrpObj.comp_inv, ← _root_.mul_assoc]
+  inv_hom_id := by simp [MonObj.comp_mul, GrpObj.comp_inv, ← _root_.mul_assoc]
 
 /-- Translation by `x` is the product of the constant point `x` and the identity of `G`. -/
 theorem leftTranslation_hom (x : 𝟙_ C ⟶ G) : (leftTranslation x).hom = (toUnit G ≫ x) * 𝟙 G :=
@@ -80,14 +75,35 @@ theorem leftTranslation_inv (x : 𝟙_ C ⟶ G) : (leftTranslation x).inv = (lef
 @[reassoc (attr := simp)]
 theorem comp_leftTranslation_hom {Y : C} (f : Y ⟶ G) (x : 𝟙_ C ⟶ G) :
     f ≫ (leftTranslation x).hom = (toUnit Y ≫ x) * f := by
-  rw [leftTranslation_hom, MonObj.comp_mul, comp_toUnit_assoc, Category.comp_id]
+  simp [leftTranslation_hom, MonObj.comp_mul]
 
 /-- A homomorphism of group objects `i : H ⟶ G` intertwines translation by a point `x` of `H` with
 translation by its image `x ≫ i`. -/
 theorem leftTranslation_hom_comp {H : C} [GrpObj H] (i : H ⟶ G) [IsMonHom i] (x : 𝟙_ C ⟶ H) :
     (leftTranslation x).hom ≫ i = i ≫ (leftTranslation (x ≫ i)).hom := by
-  rw [leftTranslation_hom, MonObj.mul_comp, Category.assoc, Category.id_comp,
-    comp_leftTranslation_hom]
+  simp [leftTranslation_hom, MonObj.mul_comp, MonObj.comp_mul]
+
+/-- Right translation `y ↦ y * x` by a global group point, with inverse given by `x⁻¹`. -/
+noncomputable def rightTranslation (x : 𝟙_ C ⟶ G) : G ≅ G where
+  hom := 𝟙 G * (toUnit G ≫ x)
+  inv := 𝟙 G * (toUnit G ≫ x⁻¹)
+  hom_inv_id := by simp [MonObj.comp_mul, _root_.mul_assoc, GrpObj.comp_inv]
+  inv_hom_id := by simp [MonObj.comp_mul, _root_.mul_assoc, GrpObj.comp_inv]
+
+/-- The morphism underlying right translation is right multiplication by the constant point. -/
+theorem rightTranslation_hom (x : 𝟙_ C ⟶ G) :
+    (rightTranslation x).hom = 𝟙 G * (toUnit G ≫ x) := (rfl)
+
+/-- The inverse of right translation is right translation by the inverse point. -/
+@[simp]
+theorem rightTranslation_inv (x : 𝟙_ C ⟶ G) :
+    (rightTranslation x).inv = (rightTranslation x⁻¹).hom := (rfl)
+
+/-- Right translation acts on every test-object point by right multiplication. -/
+@[reassoc (attr := simp)]
+theorem comp_rightTranslation_hom {Y : C} (f : Y ⟶ G) (x : 𝟙_ C ⟶ G) :
+    f ≫ (rightTranslation x).hom = f * (toUnit Y ≫ x) := by
+  simp [rightTranslation_hom, MonObj.comp_mul]
 
 /-! ### Translation by a point with values in an object -/
 

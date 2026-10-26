@@ -38,7 +38,9 @@ semialgebraic sets under projection.
 
 To apply these results to a concrete ordered field such as `ℝ`, install the structures
 `FirstOrder.Ring.compatibleRingOfRing ℝ` and `FirstOrder.Language.orderStructure ℝ`; the
-`OrderedStructure` hypothesis then holds by `⟨fun _ => Iff.rfl⟩`.
+`OrderedStructure` hypothesis is then found by the instances
+`FirstOrder.Language.orderedStructure_orderStructure` and
+`FirstOrder.Language.orderedStructure_sum` of `TauCeti.ModelTheory.Order`.
 
 ## References
 
@@ -68,7 +70,8 @@ theorem isSemialgebraic_setOf_realize {φ : (Language.ring.sum Language.order).B
   induction hφ with
   | falsum =>
     convert isSemialgebraic_empty (σ := α ⊕ Fin n) (R := R)
-    exact Set.eq_empty_of_forall_notMem fun _ h => realize_bot.1 h
+    simp only [Set.mem_eq_mem, Set.notMem_empty, iff_false]
+    exact fun h ↦ realize_bot.1 h
   | of_isAtomic h =>
     cases h with
     | equal t₁ t₂ =>

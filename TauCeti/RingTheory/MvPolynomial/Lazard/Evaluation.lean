@@ -43,7 +43,8 @@ of `p` at `a`, and the Lazard evaluation is that coefficient (`lazardExponent_eq
 
 ## Main results
 
-* `MvPolynomial.lazardEval_ne_zero`: the Lazard evaluation of a nonzero polynomial is nonzero.
+* `MvPolynomial.lazardEval_ne_zero`, `MvPolynomial.lazardEval_eq_zero_iff`: the Lazard evaluation
+  of a nonzero polynomial is nonzero.
 * `MvPolynomial.lazardEval_eq_eval`, `MvPolynomial.lazardExponent_eq_zero_iff`: where `p` does
   not vanish, Lazard evaluation is ordinary evaluation, and these are exactly the points where
   no power is removed.
@@ -53,6 +54,9 @@ of `p` at `a`, and the Lazard evaluation is that coefficient (`lazardExponent_eq
   of `p` at `a`, and the Lazard evaluation is that Taylor coefficient.
 * `MvPolynomial.lazardEval_mul`, `MvPolynomial.lazardExponent_mul`: without zero divisors, Lazard
   evaluation is multiplicative and the removed exponents add.
+* `MvPolynomial.lazardEval_add_of_lazardValuation_lt`,
+  `MvPolynomial.lazardExponent_add_of_lazardValuation_lt`: a summand of strictly smaller Lazard
+  valuation determines the Lazard evaluation and the removed exponents of a sum.
 
 ## References
 
@@ -151,6 +155,12 @@ theorem lazardEval_ne_zero {p : MvPolynomial (Fin n) S} (hp : p ≠ 0) (a : Fin 
     rw [lazardEval_fin_succ]
     exact ih (Polynomial.eval_divByMonic_pow_rootMultiplicity_ne_zero _ (by simpa using hp)) _
 
+/-- The Lazard evaluation of `p` vanishes exactly when `p` does. -/
+@[simp]
+theorem lazardEval_eq_zero_iff {p : MvPolynomial (Fin n) S} (a : Fin n → S) :
+    p.lazardEval a = 0 ↔ p = 0 :=
+  ⟨not_imp_not.1 fun hp ↦ lazardEval_ne_zero hp a, fun hp ↦ hp ▸ lazardEval_zero a⟩
+
 /-- The Lazard evaluation of `p` at `a` is the Taylor coefficient of `p` at `a` whose exponent is
 the vector of removed exponents. -/
 theorem coeff_taylor_lazardExponent (p : MvPolynomial (Fin n) S) (a : Fin n → S) :
@@ -243,6 +253,30 @@ theorem lazardExponent_eq_zero_iff {p : MvPolynomial (Fin n) S} (hp : p ≠ 0) {
   refine ⟨fun h ↦ ?_, lazardExponent_eq_zero_of_eval_ne_zero⟩
   rw [← constantCoeff_taylor, constantCoeff_eq, ← h, coeff_taylor_lazardExponent]
   exact lazardEval_ne_zero hp a
+
+/-- If `p` has strictly smaller Lazard valuation at `a` than `q`, then Lazard evaluation removes
+the same powers from `p + q` as from `p`. -/
+theorem lazardExponent_add_of_lazardValuation_lt {p q : MvPolynomial (Fin n) S} {a : Fin n → S}
+    (h : p.lazardValuation a < q.lazardValuation a) :
+    (p + q).lazardExponent a = p.lazardExponent a := by
+  have hp : p ≠ 0 := by simpa using h.ne_top
+  have hv := lazardValuation_add_of_lt h
+  have hpq : p + q ≠ 0 := by
+    rw [Ne, ← lazardValuation_eq_top_iff (a := a), hv]
+    exact h.ne_top
+  rw [lazardValuation_eq_lazardExponent hpq, lazardValuation_eq_lazardExponent hp] at hv
+  exact toLex.injective (WithTop.coe_injective hv)
+
+/-- If `p` has strictly smaller Lazard valuation at `a` than `q`, then `p + q` has the Lazard
+evaluation of `p` at `a`. -/
+theorem lazardEval_add_of_lazardValuation_lt {p q : MvPolynomial (Fin n) S} {a : Fin n → S}
+    (h : p.lazardValuation a < q.lazardValuation a) :
+    (p + q).lazardEval a = p.lazardEval a := by
+  have hp : p ≠ 0 := by simpa using h.ne_top
+  have hq : (taylor a q).coeff (p.lazardExponent a) = 0 :=
+    coeff_taylor_eq_zero_of_lt_lazardValuation (by rwa [← lazardValuation_eq_lazardExponent hp])
+  rw [← coeff_taylor_lazardExponent, lazardExponent_add_of_lazardValuation_lt h]
+  simp [hq, coeff_taylor_lazardExponent]
 
 /-- Lazard evaluation removes exactly one power of `Xᵢ - aᵢ` from `Xᵢ - aᵢ`. -/
 @[simp]

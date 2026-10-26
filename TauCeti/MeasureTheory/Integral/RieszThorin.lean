@@ -10,7 +10,7 @@ import Mathlib.Analysis.Complex.Hadamard
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
-import TauCeti.MeasureTheory.Function.SimpleFunc
+import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 
 /-!
 # The Riesz–Thorin interpolation theorem
@@ -313,7 +313,7 @@ private theorem norm_integral_mul_le_of_eLpNorm_le_one (T : SimpleFunc α ℂ �
     ‖∫ y, T u y * v y ∂ν‖ ≤ M := by
   have h : ‖∫ y, T u y * v y ∂ν‖ₑ ≤ M := by
     calc ‖∫ y, T u y * v y ∂ν‖ₑ ≤ eLpNorm (T u) t ν * eLpNorm v t' ν :=
-          enorm_integral_mul_le (T u).aestronglyMeasurable v.aestronglyMeasurable
+          enorm_integral_mul_le
       _ ≤ (M * eLpNorm u s μ) * 1 := by gcongr; exact hT u
       _ ≤ M * 1 * 1 := by gcongr
       _ = M := by simp

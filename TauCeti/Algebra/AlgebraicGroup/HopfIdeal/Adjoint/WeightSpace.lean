@@ -54,7 +54,7 @@ include hπ
 private theorem ambientCounitPoint_weightTorus {B : Type*} [CommRing B] [Algebra R B]
     (s : WithConv (MonoidAlgebra R (Multiplicative (σ →₀ ℤ)) →ₐ[R] B)) :
     GeneralLinear.counitPointsMulEquiv n
-      (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R
+      (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R
         (GeneralLinear.coordinateHopfAlgebra R n) B)
         (Bialgebra.Quotient.mkBialgHom I.toIdeal)
         (Derivation.pointInCounitAlgebra
@@ -67,7 +67,7 @@ private theorem ambientCounitPoint_weightTorus {B : Type*} [CommRing B] [Algebra
       AlgHom.mapValue
           (Bialgebra.CounitAlgebra.algEquivSelf R
             (GeneralLinear.coordinateHopfAlgebra R n) B).toAlgHom
-          (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R
+          (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R
             (GeneralLinear.coordinateHopfAlgebra R n) B)
             (Bialgebra.Quotient.mkBialgHom I.toIdeal)
             (Derivation.pointInCounitAlgebra
@@ -79,7 +79,7 @@ private theorem ambientCounitPoint_weightTorus {B : Type*} [CommRing B] [Algebra
     rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
     -- `mapDomain` returns the ambient-indexed counit algebra, while the point uses
     -- the quotient-indexed one. The application rules erase these coefficient indexings.
-    erw [Bialgebra.CounitAlgebra.algEquivSelf_apply, AlgHom.mapDomain_apply_apply,
+    erw [Bialgebra.CounitAlgebra.algEquivSelf_apply, BialgHom.mapDomain_apply_apply,
       Derivation.pointInCounitAlgebra_apply]
     rw [ofConv_toConv, AlgHom.comp_apply]
     exact congrArg s.ofConv (BialgHom.congr_fun hπ x)
@@ -87,7 +87,7 @@ private theorem ambientCounitPoint_weightTorus {B : Type*} [CommRing B] [Algebra
   have hdiag := GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap w
     (CommAlgCat.of R B) s
   -- The categorical point uses `CommAlgCat.of R B`; expose its algebra-hom presentation.
-  erw [CommHopfAlgCat.mapPointsFunctor_app_apply] at hdiag
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hdiag
   simpa only [SplitTorus.charOfPoint_weightCharacter] using hdiag
 
 /-- A weight-torus point scales each entry of the ambient tangent matrix of a closed

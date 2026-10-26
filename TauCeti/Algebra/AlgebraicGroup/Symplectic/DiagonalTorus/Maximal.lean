@@ -71,7 +71,7 @@ private theorem diagonalTorusDefiningIdeal_eq_ker :
 theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} R) :
     CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R m)
         (diagonalTorusDefiningIdeal R m) A =
-      ((CommHopfAlgCat.mapPointsFunctor
+      ((CommHopfAlgCat.Hom.mapPointsFunctor
         (diagonalTorusCoordinateMap (R := R) (m := m))).app A).hom.range := by
   rw [diagonalTorusDefiningIdeal_eq_ker]
   exact HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A

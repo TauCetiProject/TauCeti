@@ -76,7 +76,7 @@ theorem cyclotomicSymbol_norm_fixes (p : ℕ) [Fact p.Prime] (m : ℕ) [NeZero m
   -- The cyclotomic field `E = ℚ(μ_m)` and its subfield `K = E ∩ M`.
   set E := IntermediateField.adjoin ℚ {z : AlgebraicClosure ℚ_[p] | z ^ m = 1}
   have : IsCyclotomicExtension {m} ℚ E :=
-    (HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure ℚ_[p]) m).choose_spec
+    (HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure ℚ_[p]) m).choose_spec
       |>.isCyclotomicExtension_adjoin_nth_roots
   have : NumberField E := IsCyclotomicExtension.numberField {m} ℚ E
   have : IsAbelianGalois ℚ E := IsCyclotomicExtension.isAbelianGalois {m} ℚ E

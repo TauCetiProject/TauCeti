@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Algebra.Frobenius.Field
+public import TauCeti.Algebra.Algebra.Frobenius.DivisionRing
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.RingTheory.Trace.Basic

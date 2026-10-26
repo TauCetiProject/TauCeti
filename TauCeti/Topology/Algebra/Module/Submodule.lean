@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Basic
+public import Mathlib.Algebra.Module.Submodule.Lattice
 
 /-!
 # A submodule of a topological module is a topological module
@@ -35,6 +36,8 @@ So there are exactly two gaps, and they are what this file fills:
   ambient module rather than a topological group structure.
 * `Submodule.continuousConstSMul`: each scalar acts continuously on `↥p`, with no topology on the
   scalars.
+* `AddSubgroup.discreteTopology_toIntSubmodule`: the `ℤ`-submodule of a discrete additive
+  subgroup is discrete, so that a discrete subgroup can be fed to the `ℤ`-lattice API.
 -/
 
 public section
@@ -56,3 +59,10 @@ instance continuousConstSMul [ContinuousConstSMul A M] (p : Submodule A M) :
   Topology.IsInducing.subtypeVal.continuousConstSMul id rfl
 
 end Submodule
+
+/-- **The `ℤ`-submodule of a discrete additive subgroup is discrete**: the two carry the same
+subspace topology. -/
+instance AddSubgroup.discreteTopology_toIntSubmodule {M : Type*} [AddCommGroup M]
+    [TopologicalSpace M] (H : AddSubgroup M) [DiscreteTopology H] :
+    DiscreteTopology H.toIntSubmodule :=
+  inferInstanceAs (DiscreteTopology H)

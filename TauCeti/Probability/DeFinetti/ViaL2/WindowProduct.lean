@@ -17,7 +17,7 @@ indicators over **pairwise disjoint** windows converge in `L¹`, simultaneously,
 the corresponding directing-measure evaluations:
 
 ```text
-∫ |∏ i, blockAverage 𝟙_{B i} (window (n+1) i) - ∏ i, (directingMeasure ω).real (B i)| dμ → 0.
+∫ |∏ i, blockAverage 𝟙_{B i} (window (n+1) i) - ∏ i, (tailConditionalMeasure ω).real (B i)| dμ → 0.
 ```
 
 The selections are `disjointWindow i`, so factor `i` occupies `[(i+1)(n+1), (i+2)(n+1))`. Distinct
@@ -71,29 +71,24 @@ theorem tendsto_integral_abs_prod_blockAverage_indicator_sub_prod_directingMeasu
     Tendsto (fun n => ∫ ω,
         |(∏ i : Fin m, blockAverage (fun c ω => (B i).indicator (fun _ => (1 : ℝ)) (X c ω))
             (k i n) ω)
-          - ∏ i : Fin m, (directingMeasure μ X ω).real (B i)| ∂μ) atTop (𝓝 0) := by
+          - ∏ i : Fin m, (tailConditionalMeasure μ X ω).real (B i)| ∂μ) atTop (𝓝 0) := by
   classical
   set F : Fin m → ℕ → Ω → ℝ := fun i n =>
     blockAverage (fun c ω => (B i).indicator (fun _ => (1 : ℝ)) (X c ω)) (k i n) with hF
-  set g : Fin m → Ω → ℝ := fun i ω => (directingMeasure μ X ω).real (B i) with hg
+  set g : Fin m → Ω → ℝ := fun i ω => (tailConditionalMeasure μ X ω).real (B i) with hg
   have hind : ∀ i c, Measurable fun ω => (B i).indicator (fun _ => (1 : ℝ)) (X c ω) := fun i c =>
     (measurable_const.indicator (hB i)).comp (hX_meas c)
   have hind0 : ∀ i c ω, 0 ≤ (B i).indicator (fun _ => (1 : ℝ)) (X c ω) :=
     fun _ _ _ => Set.indicator_apply_nonneg fun _ => zero_le_one
   have hind1 : ∀ i c ω, (B i).indicator (fun _ => (1 : ℝ)) (X c ω) ≤ 1 :=
     fun _ _ _ => Set.indicator_apply_le' (fun _ => le_rfl) fun _ => zero_le_one
-  have hF_meas : ∀ i n, Measurable (F i n) := by
-    intro i n
-    have hrw : F i n = fun ω => ((n + 1 : ℕ) : ℝ)⁻¹ * ∑ j : Fin (n + 1),
-        (B i).indicator (fun _ => (1 : ℝ)) (X (k i n j) ω) :=
-      funext fun ω => blockAverage_apply _ ω
-    rw [hrw]
-    exact measurable_const.mul (Finset.measurable_sum _ fun j _ => hind i _)
+  have hF_meas : ∀ i n, Measurable (F i n) :=
+    fun i n => measurable_blockAverage (k i n) fun _ => hind i _
   have hF_le : ∀ i n ω, ‖F i n ω‖ ≤ 1 := fun i n ω => by
     rw [hF, Real.norm_of_nonneg (blockAverage_nonneg fun j => hind0 i (k i n j) ω)]
     exact blockAverage_le_one fun j => hind1 i (k i n j) ω
   have hg_meas : ∀ i, Measurable (g i) := fun i =>
-    (measurable_directingMeasure_coe (tailProcess_le_ambient 0 fun c _ => hX_meas c)
+    (measurable_tailConditionalMeasure_coe (tailProcess_le_ambient 0 fun c _ => hX_meas c)
       (hB i)).ennreal_toReal
   have hg_le : ∀ i ω, ‖g i ω‖ ≤ 1 := fun i ω => by
     rw [hg, Real.norm_of_nonneg measureReal_nonneg]; exact measureReal_le_one
@@ -121,7 +116,7 @@ theorem tendsto_integral_abs_prod_blockAverage_indicator_disjointWindow_sub_prod
     Tendsto (fun n => ∫ ω,
         |(∏ i : Fin m, blockAverage (fun c ω => (B i).indicator (fun _ => (1 : ℝ)) (X c ω))
             (disjointWindow (i : ℕ) n) ω)
-          - ∏ i : Fin m, (directingMeasure μ X ω).real (B i)| ∂μ) atTop (𝓝 0) :=
+          - ∏ i : Fin m, (tailConditionalMeasure μ X ω).real (B i)| ∂μ) atTop (𝓝 0) :=
   hX.tendsto_integral_abs_prod_blockAverage_indicator_sub_prod_directingMeasure hX_meas B hB
     (fun i => disjointWindow (i : ℕ)) fun i => disjointWindow_eventually_injective (i : ℕ)
 

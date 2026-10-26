@@ -10,8 +10,6 @@ module
 public import TauCeti.Probability.Exchangeability.PathSpace.Exchangeable.Ergodic
 public import TauCeti.Probability.Exchangeability.PathSpace.Law.ZeroOne
 public import TauCeti.MeasureTheory.Group.ErgodicExtreme
--- Non-public: exchangeable path laws are shift-preserving.
-import TauCeti.Probability.Exchangeability.PathSpace.Exchangeable.ToContractable
 
 /-!
 # Extreme exchangeable laws
@@ -28,16 +26,11 @@ exchangeable σ-algebra (`exchangeableSigma_trivial_iff_ergodicSMul`); and, for 
 state space, triviality is the i.i.d. property (`exchangeableSigma_trivial_iff_iid`). The
 implication from i.i.d. to extreme needs no standard Borel hypothesis.
 
-The one-sided shift ergodicity of an i.i.d. law, `ergodic_shift_infinitePi_const`, is recorded
-here as well: shift-invariant events are exchangeable events, so the Hewitt–Savage zero-one law
-applies.
-
 ## Main results
 
 * `exchangeableProbabilityMeasures`, with its membership and convexity lemmas, and
   `exchangeableProbabilityMeasures_eq` — the exchangeable probability laws are the invariant
   probability laws of the finitary action.
-* `ergodic_shift_infinitePi_const` — an i.i.d. product law is ergodic for the one-sided shift.
 * `infinitePi_mem_extremePoints_exchangeable` — an i.i.d. product law is an extreme exchangeable
   law, over an arbitrary measurable space.
 * `exchangeable_extreme_iff_iid` — the extreme exchangeable probability laws are exactly the
@@ -92,25 +85,6 @@ theorem exchangeableProbabilityMeasures_eq :
 theorem convex_exchangeableProbabilityMeasures :
     Convex ℝ≥0∞ (exchangeableProbabilityMeasures α) := by
   rw [exchangeableProbabilityMeasures_eq]; exact convex_invariantMeasuresOfMeasureUnivEq
-
-/-- An i.i.d. infinite product law is ergodic for the one-sided shift.
-
-The shift-invariant σ-algebra is contained in the exchangeable σ-algebra, and the coordinate
-process is independent and identically distributed under the product law, so Hewitt–Savage makes
-every shift-invariant event null or conull. -/
-theorem ergodic_shift_infinitePi_const (P : ProbabilityMeasure α) :
-    Ergodic (shift α) (Measure.infinitePi fun _ : ℕ => (P : Measure α)) := by
-  have hexchLaw : ExchangeableLaw (Measure.infinitePi fun _ : ℕ => (P : Measure α)) :=
-    exchangeableLaw_infinitePi_const P
-  refine Ergodic.of_preimage_eq hexchLaw.contractableLaw.measurePreserving_shift ?_
-  intro s hs hs_shift
-  have hs_inv : MeasurableSet[MeasurableSpace.invariants (shift α)] s := ⟨hs, hs_shift⟩
-  have hzeroOne := exchangeableSigma_trivial_of_infinitePi P
-    (invariants_shift_le_exchangeableSigma (α := α) s hs_inv)
-  refine eventuallyEmptyOrUniv_iff.2 ?_
-  rcases hzeroOne with hzero | hone
-  · exact Or.inr (ae_iff.mpr (by simpa using hzero))
-  · exact Or.inl ((_root_.MeasureTheory.mem_ae_iff_prob_eq_one hs).2 hone)
 
 /-- **An i.i.d. law is an extreme exchangeable law.** The infinite product is ergodic for the
 finitary permutation action, hence extreme among its invariant probability laws, which are the

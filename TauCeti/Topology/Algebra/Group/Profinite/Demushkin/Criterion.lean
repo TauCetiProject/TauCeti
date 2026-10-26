@@ -82,7 +82,7 @@ include hr in
 that of `F`, because `⟪r⟫ ≤ Φ(F)`. -/
 private theorem dualMap_bijective :
     Function.Bijective (((e : presentedProP p X {r} →ₜ* G).comp
-      (ContinuousMonoidHom.quotientMk
+      (Subgroup.quotientMkContinuousMonoidHom
         (normalClosure {r}).topologicalClosure)).continuousZModDualMap (n := p)) := by
   rw [ContinuousMonoidHom.continuousZModDualMap_comp, LinearMap.coe_comp]
   exact (continuousZModDualMap_quotientMk_bijective
@@ -103,10 +103,10 @@ theorem cupFp_eq_zero_iff_degreeOneForm_eq_zero (a b : cohomFp p G 1) :
     cupFp p G a b = 0 ↔
       degreeOneForm (gradedMk p (freeProP p X) 1
           ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩)
-        (((e : presentedProP p X {r} →ₜ* G).comp (ContinuousMonoidHom.quotientMk
+        (((e : presentedProP p X {r} →ₜ* G).comp (Subgroup.quotientMkContinuousMonoidHom
           (normalClosure {r}).topologicalClosure)).continuousZModDualMap
             (cohomFpLinearEquivContinuousZModDual p G a))
-        (((e : presentedProP p X {r} →ₜ* G).comp (ContinuousMonoidHom.quotientMk
+        (((e : presentedProP p X {r} →ₜ* G).comp (Subgroup.quotientMkContinuousMonoidHom
           (normalClosure {r}).topologicalClosure)).continuousZModDualMap
             (cohomFpLinearEquivContinuousZModDual p G b)) = 0 := by
   rw [← map_eq_zero_iff _ (relatorFunctional_injective (isClosed_topologicalClosure _)

@@ -137,7 +137,8 @@ theorem monodromy_isFiberwisePretransitive [LocallyPathConnectedSpace X]
   let _ : LocallyPathConnectedSpace (p : TopCat) :=
     p.isCoveringMap_proj.isLocalHomeomorph.locallyPathConnectedSpace
   let _ : PathConnectedSpace (p : TopCat) := PathConnectedSpace.of_locallyPathConnectedSpace
-  exact IsCoveringMap.exists_monodromy_eq p.isCoveringMap_proj e e'
+  obtain ⟨γ, hγ⟩ := IsCoveringMap.exists_monodromy_eq p.isCoveringMap_proj e e'
+  exact ⟨γ.asHom, hγ⟩
 
 /-- The fundamental group at `x₀` acts pretransitively on the fibre of a connected covering space
 over `x₀`; the fibre may be empty, when the base is disconnected.

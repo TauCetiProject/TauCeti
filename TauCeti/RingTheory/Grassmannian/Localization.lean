@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.Flat.Localization
 public import Mathlib.RingTheory.LocalProperties.FinitePresentation
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
+public import TauCeti.Algebra.Module.LocalizedModule.Submodule
+public import TauCeti.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.RingTheory.Grassmannian.Basic
 
 /-!
@@ -115,7 +117,8 @@ section Glue
 /-! Throughout, the image of `x ∈ A ⊗[R] M` in `B r ⊗[R] M` is written as the base change
 `(IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x` of the structure map. As a function
 this is the `A`-linear map `AlgebraTensorModule.rTensor R M (Algebra.linearMap A (B r))`
-(`TensorProduct.AlgebraTensorModule.coe_rTensor`), which is how its `A`-linearity is used. -/
+(`TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply`), which is how its `A`-linearity is
+used. -/
 
 variable {A : Type w} [CommRing A] [Algebra R A] {s : Set A}
   {B : s → Type w} [∀ r, CommRing (B r)] [∀ r, Algebra R (B r)] [∀ r, Algebra A (B r)]
@@ -130,15 +133,7 @@ private theorem mem_glueSubmodule_iff {x : A ⊗[R] M} :
     x ∈ glueSubmodule N ↔
       ∀ r : s, (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x ∈ (N r).toSubmodule := by
   simp only [glueSubmodule, Submodule.mem_iInf, Submodule.mem_comap,
-    Submodule.restrictScalars_mem, AlgebraTensorModule.coe_rTensor]
-  -- the coercion of `Algebra.linearMap A (B r)` to an `R`-linear map is the structure map
-  rfl
-
-/-- The image of `a • x` in `B r ⊗[R] M` is `a •` the image of `x`. -/
-private theorem rTensor_smul (r : s) (a : A) (x : A ⊗[R] M) :
-    (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M (a • x) =
-      a • (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x :=
-  (AlgebraTensorModule.rTensor R M (Algebra.linearMap A (B r))).map_smul a x
+    Submodule.restrictScalars_mem, AlgebraTensorModule.rTensor_linearMap_apply]
 
 variable [∀ r : s, IsLocalization.Away r.1 (B r)]
 
@@ -172,7 +167,7 @@ private theorem exists_pow_smul_rTensor_mem
     rTensor_mem_map_iff (Algebra.algebraMapSubmonoid (B r') (.powers r.1))] at hx'
   obtain ⟨_, ⟨_, ⟨n, rfl⟩, rfl⟩, hn⟩ := hx'
   refine ⟨n, ?_⟩
-  rwa [rTensor_smul, ← algebraMap_smul (B r')]
+  rwa [AlgHom.rTensor_toLinearMap_apply_smul, IsScalarTower.toAlgHom_apply]
 
 /-- Under the compatibility hypothesis, the image of `x` in `B r ⊗[R] M` lies in `N r` exactly
 when some power of `r` moves `x` into `glueSubmodule N`. -/
@@ -194,10 +189,11 @@ private theorem rTensor_mem_iff_exists_pow_smul_mem (hs : Ideal.span s = ⊤)
       (((N r'').toSubmodule.restrictScalars A).comap
         (AlgebraTensorModule.rTensor R M (Algebra.linearMap A (B r'')))) _ ht _ fun r' ↦ ?_
     refine exists_pow_smul_rTensor_mem N hN (r := ⟨r'.1, hts r'.2⟩) ?_ r''
-    rw [← Nat.sub_add_cancel (hn₀ r'), pow_add, mul_smul, rTensor_smul]
-    exact Submodule.smul_of_tower_mem _ _ (hn r')
+    rw [← Nat.sub_add_cancel (hn₀ r'), pow_add, mul_smul, AlgHom.rTensor_toLinearMap_apply_smul]
+    exact Submodule.smul_mem _ _ (hn r')
   · have := (mem_glueSubmodule_iff N).mp hn r
-    rw [rTensor_smul] at this
+    rw [AlgHom.rTensor_toLinearMap_apply_smul, IsScalarTower.toAlgHom_apply,
+      algebraMap_smul] at this
     exact (IsLocalization.smul_mem_iff (S := .powers r.1) (s := ⟨r.1 ^ n, n, rfl⟩)).mp this
 
 /-- Under the compatibility hypothesis, the base change of `glueSubmodule N` to `B r` is `N r`. -/
@@ -210,12 +206,8 @@ private theorem ker_baseChangeMkQ_glueSubmodule (hs : Ideal.span s = ⊤)
   ext z
   -- write `z = g x / t`; membership of `z` in a `B r`-submodule is membership of `g x`
   obtain ⟨⟨x, t⟩, rfl⟩ := IsLocalizedModule.mk'_surjective (.powers r.1) g z
-  have key (K : Submodule (B r) (B r ⊗[R] M)) :
-      Function.uncurry (IsLocalizedModule.mk' g) (x, t) ∈ K ↔ g x ∈ K := by
-    rw [← IsLocalization.smul_mem_iff (s := t), Function.uncurry_apply_pair,
-      IsLocalizedModule.mk'_cancel']
-  -- `g x` is the image of `x` in `B r ⊗[R] M` (`TensorProduct.AlgebraTensorModule.coe_rTensor`)
-  rw [key, key, show g x = (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x from rfl,
+  rw [Function.uncurry_apply_pair, IsLocalizedModule.mk'_mem_iff, IsLocalizedModule.mk'_mem_iff,
+    AlgebraTensorModule.rTensor_linearMap_apply,
     rTensor_mem_ker_baseChangeMkQ_iff (.powers r.1), rTensor_mem_iff_exists_pow_smul_mem N hs hN]
   simp [Submonoid.mem_powers_iff]
 

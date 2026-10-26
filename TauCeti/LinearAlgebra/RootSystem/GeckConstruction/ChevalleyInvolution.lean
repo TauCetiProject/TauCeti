@@ -7,6 +7,7 @@ module
 
 import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.LinearAlgebra.RootSystem.GeckConstruction.Basic
+import TauCeti.Algebra.Lie.Subalgebra.Automorphism
 
 /-!
 # The Chevalley involution of Geck's Lie algebra
@@ -76,9 +77,9 @@ noncomputable section
 universe u v w
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type*}
-  [Fintype ι] [CommRing R] [IsDomain R] [CharZero R]
+  [CommRing R] [CharZero R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {P : RootPairing ι R M N} [P.IsCrystallographic] (b : P.Base)
+  {P : RootPairing ι R M N} (b : P.Base)
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 /-- Classical decidable equality on the index type, used only inside this file to form the
@@ -98,7 +99,6 @@ private def geckHeightSign : b.support ⊕ ι → R
 private def geckHeightMatrix : Matrix (b.support ⊕ ι) (b.support ⊕ ι) R :=
   diagonal (geckHeightSign b)
 
-omit [Fintype ι] [IsDomain R] [P.IsCrystallographic] in
 private theorem geckHeightSign_mul_self (i : b.support ⊕ ι) :
     geckHeightSign b i * geckHeightSign b i = 1 := by
   cases i with
@@ -111,12 +111,10 @@ private theorem geckHeightSign_mul_self (i : b.support ⊕ ι) :
       · rw [Int.negOnePow_odd _ hi]
         simp
 
-omit [Fintype ι] [IsDomain R] [P.IsCrystallographic] in
 private theorem geckHeightSign_simple (i : b.support) :
     geckHeightSign b (.inr i) = -1 := by
   simp [geckHeightSign, b.height_one_of_mem_support i.property]
 
-omit [Fintype ι] [IsDomain R] [P.IsCrystallographic] in
 private theorem geckHeightSign_neg_simple (i : b.support) :
     let _ := P.indexNeg
     geckHeightSign b (.inr (-i : ι)) = -1 := by
@@ -125,7 +123,6 @@ private theorem geckHeightSign_neg_simple (i : b.support) :
   rw [b.height_reflectionPerm_self, b.height_one_of_mem_support i.property]
   norm_num
 
-omit [Fintype ι] [IsDomain R] [P.IsCrystallographic] in
 private theorem geckHeightSign_mul_eq_neg_one_of_add {i : b.support} {j k : ι}
     (hjk : P.root j = P.root i + P.root k) :
     geckHeightSign b (.inr j) * geckHeightSign b (.inr k) = -1 := by
@@ -134,7 +131,6 @@ private theorem geckHeightSign_mul_eq_neg_one_of_add {i : b.support} {j k : ι}
   norm_num [Int.coe_negOnePow]
   simpa [geckHeightSign] using geckHeightSign_mul_self b (.inr k)
 
-omit [Fintype ι] [IsDomain R] [P.IsCrystallographic] in
 private theorem geckHeightSign_mul_eq_neg_one_of_sub {i : b.support} {j k : ι}
     (hjk : P.root j = P.root k - P.root i) :
     geckHeightSign b (.inr j) * geckHeightSign b (.inr k) = -1 := by
@@ -143,12 +139,21 @@ private theorem geckHeightSign_mul_eq_neg_one_of_sub {i : b.support} {j k : ι}
   norm_num [Int.coe_negOnePow]
   simpa [geckHeightSign] using geckHeightSign_mul_self b (.inr k)
 
-omit [IsDomain R] [P.IsCrystallographic] in
+variable [Fintype ι]
+
 private theorem geckHeightMatrix_mul_self :
     geckHeightMatrix b * geckHeightMatrix b = 1 := by
   rw [geckHeightMatrix, diagonal_mul_diagonal]
   ext i j
   simp [geckHeightSign_mul_self]
+
+private theorem geckHeightMatrix_conj_self (x : Matrix (b.support ⊕ ι) (b.support ⊕ ι) R) :
+    geckHeightMatrix b * (geckHeightMatrix b * x * geckHeightMatrix b) * geckHeightMatrix b = x :=
+  calc
+    geckHeightMatrix b * (geckHeightMatrix b * x * geckHeightMatrix b) * geckHeightMatrix b =
+        (geckHeightMatrix b * geckHeightMatrix b) * x *
+          (geckHeightMatrix b * geckHeightMatrix b) := by noncomm_ring
+    _ = x := by rw [geckHeightMatrix_mul_self]; simp
 
 /-- Conjugation by the height-parity matrix. This is kept private; the public construction is its
 composition with Geck's opposition involution. -/
@@ -165,22 +170,9 @@ private def geckHeightConj :
     nth_rw 2 [← one_mul x]
     simp only [← geckHeightMatrix_mul_self b]
     noncomm_ring
-  left_inv x := by
-    calc
-      geckHeightMatrix b * (geckHeightMatrix b * x * geckHeightMatrix b) *
-          geckHeightMatrix b =
-          (geckHeightMatrix b * geckHeightMatrix b) * x *
-            (geckHeightMatrix b * geckHeightMatrix b) := by noncomm_ring
-      _ = x := by rw [geckHeightMatrix_mul_self]; simp
-  right_inv x := by
-    calc
-      geckHeightMatrix b * (geckHeightMatrix b * x * geckHeightMatrix b) *
-          geckHeightMatrix b =
-          (geckHeightMatrix b * geckHeightMatrix b) * x *
-            (geckHeightMatrix b * geckHeightMatrix b) := by noncomm_ring
-      _ = x := by rw [geckHeightMatrix_mul_self]; simp
+  left_inv := geckHeightMatrix_conj_self b
+  right_inv := geckHeightMatrix_conj_self b
 
-omit [IsDomain R] [P.IsCrystallographic] in
 private theorem geckHeightConj_apply (A : Matrix (b.support ⊕ ι) (b.support ⊕ ι) R)
     (i j : b.support ⊕ ι) :
     geckHeightConj b A i j = geckHeightSign b i * A i j * geckHeightSign b j := by
@@ -190,7 +182,8 @@ private theorem geckHeightConj_apply (A : Matrix (b.support ⊕ ι) (b.support �
     _ = geckHeightSign b i * A i j * geckHeightSign b j := by
       simp [geckHeightMatrix]
 
-omit [IsDomain R] in
+variable [P.IsCrystallographic]
+
 private theorem geckHeightConj_h (i : b.support) :
     geckHeightConj b (h i) = h i := by
   let d : b.support ⊕ ι → R :=
@@ -209,6 +202,8 @@ private theorem geckHeightConj_h (i : b.support) :
       _ = d j := by rw [geckHeightSign_mul_self]; simp
   · rw [Matrix.diagonal_apply_ne _ hjk]
     simp
+
+variable [IsDomain R]
 
 private theorem geckHeightConj_e (i : b.support) :
     geckHeightConj b (e i) = -e i := by
@@ -291,14 +286,9 @@ private theorem geckHeightConj_mem_lieAlgebra {x : Matrix (b.support ⊕ ι) (b.
       exact LieSubalgebra.lie_mem _ hx hy
 
 private theorem geckHeightConj_map_lieAlgebra :
-    (lieAlgebra b).map (geckHeightConj b) = lieAlgebra b := by
-  ext x
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact geckHeightConj_mem_lieAlgebra b hy
-  · intro hx
-    refine ⟨geckHeightConj b x, geckHeightConj_mem_lieAlgebra b hx, ?_⟩
-    exact (geckHeightConj b).apply_symm_apply x
+    (lieAlgebra b).map (geckHeightConj b) = lieAlgebra b :=
+  LieSubalgebra.map_eq_self_of_involutive (geckHeightConj b) (geckHeightMatrix_conj_self b)
+    fun _ ↦ geckHeightConj_mem_lieAlgebra b
 
 private def geckHeightInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
   (geckHeightConj b).ofSubalgebras _ _ (geckHeightConj_map_lieAlgebra b)
@@ -306,14 +296,13 @@ private def geckHeightInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
 /-! ## The signed Chevalley involution -/
 
 private theorem geckOpposition_map_lieAlgebra :
-    (lieAlgebra b).map (ωConj b) = lieAlgebra b := by
-  ext x
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact ωConj_mem_of_mem hy
-  · intro hx
-    refine ⟨ωConj b x, ωConj_mem_of_mem hx, ?_⟩
-    exact (ωConj b).apply_symm_apply x
+    (lieAlgebra b).map (ωConj b) = lieAlgebra b :=
+  LieSubalgebra.map_eq_self_of_involutive (ωConj b)
+    (fun x ↦
+      calc
+        ωConj b (ωConj b x) = ω b * (ω b * x * ω b) * ω b := rfl
+        _ = x := by simp only [← mul_assoc, ω_mul_ω, one_mul]; simp [mul_assoc])
+    fun _ ↦ ωConj_mem_of_mem
 
 private def geckOppositionInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
   (ωConj b).ofSubalgebras _ _ (geckOpposition_map_lieAlgebra b)
@@ -375,7 +364,7 @@ private theorem geckOppositionInvolution_f (i : b.support) :
 /-- The Chevalley involution of Geck's matrix Lie algebra. It is the composition of the opposition
 involution with the height-parity involution, and therefore sends the simple generators by
 `hᵢ ↦ -hᵢ`, `eᵢ ↦ -fᵢ`, and `fᵢ ↦ -eᵢ`. -/
-noncomputable def geckChevalleyInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
+def geckChevalleyInvolution : lieAlgebra b ≃ₗ⁅R⁆ lieAlgebra b :=
   (geckOppositionInvolution b).trans (geckHeightInvolution b)
 
 /-- The Chevalley involution sends a simple Cartan generator to its negative. -/

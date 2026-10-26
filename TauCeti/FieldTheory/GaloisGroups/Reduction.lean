@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.GroupTheory.GroupAction.Jordan
-public import TauCeti.FieldTheory.GaloisGroups.CycleTypes
+public import TauCeti.FieldTheory.GaloisGroups.CycleTypes.Basic
 public import TauCeti.NumberTheory.NumberField.Frobenius.CycleType
 import Mathlib.Algebra.Polynomial.Eval.Irreducible
 import Mathlib.Tactic.ComputeDegree

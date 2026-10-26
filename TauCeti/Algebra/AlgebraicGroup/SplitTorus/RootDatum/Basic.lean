@@ -140,6 +140,10 @@ noncomputable def coordinateRoot (i j : σ) : σ →₀ ℤ := by
   classical
   exact Finsupp.single i 1 - Finsupp.single j 1
 
+/-- A coordinate root is the difference of the two coordinate basis vectors. -/
+theorem coordinateRoot_def (i j : σ) :
+    coordinateRoot i j = Finsupp.single i 1 - Finsupp.single j 1 := (rfl)
+
 /-- The cocharacter-lattice vector `e_i - e_j`, defined for any two coordinates. -/
 noncomputable def coordinateCoroot (i j : σ) : σ → ℤ :=
   ⇑(coordinateRoot i j)

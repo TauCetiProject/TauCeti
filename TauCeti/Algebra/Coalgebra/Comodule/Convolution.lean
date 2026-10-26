@@ -36,12 +36,9 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 @[simp]
 theorem coactComponent_counit :
     coactComponent (M := M) (Coalgebra.counit (R := R) (A := C)) = LinearMap.id := by
-  have h : LinearMap.tensorComponent (M := M) (Coalgebra.counit (R := R) (A := C)) =
-      (TensorProduct.rid R M).toLinearMap ∘ₗ Coalgebra.counit.lTensor M := by
-    ext m c
-    simp
   ext m
-  rw [coactComponent_apply, h, LinearMap.comp_apply, lTensor_counit_coact]
+  rw [coactComponent_apply, LinearMap.tensorComponent_def, LinearMap.comp_apply,
+    lTensor_counit_coact]
   simp
 
 /-- The convolution algebra on the linear dual of the coalgebra acts by contraction of
@@ -51,10 +48,7 @@ noncomputable def convolutionAction : WithConv (C →ₗ[R] R) →ₐ[R] Module.
   map_zero' := by ext m; simp [coactComponent_apply]
   map_add' f g := by
     ext m
-    simp only [coactComponent_apply, ofConv_add, LinearMap.add_apply]
-    induction coact (R := R) (C := C) m using TensorProduct.inductionOn with
-    | add x y hx hy => simp_all only [map_add]; ac_rfl
-    | tmul m c => simp [add_smul]
+    simp [coactComponent_apply]
   map_one' := by
     ext m
     have h : (1 : WithConv (C →ₗ[R] R)).ofConv = Coalgebra.counit := by
@@ -64,26 +58,20 @@ noncomputable def convolutionAction : WithConv (C →ₗ[R] R) →ₐ[R] Module.
     rfl
   map_mul' f g := by
     ext m
-    rw [Module.End.mul_apply, coactComponent_coactComponent, coactComponent_apply]
-    have h : pairCoeff f.ofConv g.ofConv ∘ₗ Coalgebra.comul = (f * g).ofConv := by
-      rw [LinearMap.convMul_def]
-      have hp : pairCoeff f.ofConv g.ofConv =
-          LinearMap.mul' R R ∘ₗ TensorProduct.map f.ofConv g.ofConv := by
-        ext c d
-        simp
-      rw [hp, LinearMap.comp_assoc]
-    exact (LinearMap.congr_fun
-      (tensorPairComponent_comp_lTensor_comul (M := M) h) (coact m)).symm
+    rw [Module.End.mul_apply, coactComponent_coactComponent]
+    have hp : f.ofConv ∘ₗ LinearMap.tensorComponent g.ofConv =
+        LinearMap.mul' R R ∘ₗ TensorProduct.map f.ofConv g.ofConv := by
+      ext c d
+      simp [mul_comm]
+    rw [← LinearMap.comp_assoc, hp, LinearMap.convMul_def, LinearMap.comp_assoc]
   commutes' r := by
     ext m
-    rw [coactComponent_apply]
-    have h : LinearMap.tensorComponent (M := M)
-        (algebraMap R (WithConv (C →ₗ[R] R)) r).ofConv =
-        r • LinearMap.tensorComponent (M := M) (Coalgebra.counit (R := R)) := by
-      ext m c
-      simp [smul_smul]
-    rw [h, LinearMap.smul_apply]
-    rw [← coactComponent_apply, coactComponent_counit]
+    have h : (algebraMap R (WithConv (C →ₗ[R] R)) r).ofConv =
+        r • Coalgebra.counit (R := R) := by
+      ext c
+      simp
+    rw [coactComponent_apply, h, map_smul, LinearMap.smul_apply,
+      ← coactComponent_apply, coactComponent_counit]
     rfl
 
 /-- Evaluating the convolution action contracts the coaction against the underlying functional. -/

@@ -7,7 +7,7 @@ module
 
 -- Public: dissociation and array-tail σ-algebras appear in theorem statements here.
 public import TauCeti.Probability.Exchangeability.Arrays.Dissociated
-public import TauCeti.Probability.Exchangeability.Arrays.Tail
+public import TauCeti.Probability.Process.Array.Diagonal
 -- Non-public: the zero-one law for a self-independent event is used only inside a proof.
 import Mathlib.Probability.Independence.ZeroOne
 import TauCeti.Probability.Martingale.Convergence

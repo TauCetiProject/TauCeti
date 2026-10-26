@@ -44,6 +44,8 @@ closed field is a maximal order in a quaternion algebra, which is not commutativ
 
 * `WeierstrassCurve.mul_comm_of_isOrdinary`: the endomorphisms of an ordinary elliptic curve
   commute.
+* `TauCeti.OrdinaryEnd`: the ordinary endomorphism ring with its commutative ring structure.
+* `TauCeti.OrdinaryEnd.ringEquiv`: its identification with the original endomorphisms.
 
 ## References
 
@@ -121,5 +123,40 @@ theorem mul_comm_of_isOrdinary (hW : W.IsOrdinary p) (f g : Hom W.toAffine W.toA
   exact mul_comm_of_nsmul_eq_zero (W := W.baseChange Ω) hQ hQ₀ _ _
 
 end WeierstrassCurve
+
+noncomputable section
+
+namespace TauCeti
+
+variable {F : Type*} [Field F] {p : ℕ} [ExpChar F p]
+variable {W : WeierstrassCurve F} [W.IsElliptic]
+
+/-- The endomorphism ring of an ordinary elliptic curve, with its commutative ring structure.
+The type synonym keeps this structure separate from general, possibly noncommutative,
+endomorphism rings. -/
+def OrdinaryEnd (_hW : W.IsOrdinary p) : Type _ := Hom W.toAffine W.toAffine
+
+namespace OrdinaryEnd
+
+variable (hW : W.IsOrdinary p)
+
+instance : CommRing (OrdinaryEnd hW) where
+  toRing := inferInstanceAs (Ring (Hom W.toAffine W.toAffine))
+  mul_comm := by
+    dsimp only [OrdinaryEnd]
+    exact WeierstrassCurve.mul_comm_of_isOrdinary hW
+
+instance : IsDomain (OrdinaryEnd hW) :=
+  inferInstanceAs (IsDomain (Hom W.toAffine W.toAffine))
+
+instance : CharZero (OrdinaryEnd hW) :=
+  inferInstanceAs (CharZero (Hom W.toAffine W.toAffine))
+
+/-- The ordinary commutative ring has exactly the original endomorphisms and operations. -/
+def ringEquiv : OrdinaryEnd hW ≃+* Hom W.toAffine W.toAffine := RingEquiv.refl _
+
+end OrdinaryEnd
+
+end TauCeti
 
 end

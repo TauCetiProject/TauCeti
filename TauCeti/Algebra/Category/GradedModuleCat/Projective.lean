@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
-public import TauCeti.Algebra.Module.GradedModule.DegreeZeroPart
+public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
 
 /-!
 # Projective objects in the category of graded modules
@@ -19,6 +20,10 @@ without changing its composite with the given graded epimorphism.
 This makes projective terms in graded module resolutions into categorical projectives, so the
 categorical Ext-vanishing and projective Euler-evaluation theorems apply to them. The coefficient
 ring need not be a field, and no finite-generation or boundedness hypothesis is imposed.
+
+Underlying projectivity after restriction along a ring homomorphism is invariant under graded
+isomorphisms, and holds for a zero graded module. These statements use the explicit restricted
+action, so they also apply to either factor of a tensor-product algebra.
 
 ## References
 
@@ -36,7 +41,31 @@ open CategoryTheory
 universe v uk uA
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} [DirectSum.Decomposition 𝒜]
+  {𝒜 : ℤ → Submodule k A}
+
+/-- A graded isomorphism transports projectivity of the underlying modules restricted along
+any ring homomorphism. -/
+theorem projective_restrictScalars_of_iso {R : Type*} [Ring R] (φ : R →+* A)
+    {M N : GradedModuleCat.{v} 𝒜} (f : M ≅ N)
+    (hN : letI := Module.compHom N φ; Module.Projective R N) :
+    letI := Module.compHom M φ; Module.Projective R M := by
+  let := Module.compHom M φ
+  let := Module.compHom N φ
+  -- The scalar-restriction functor retains N's carrier and its Module.compHom action.
+  let : Module.Projective R ((ModuleCat.restrictScalars φ).obj (toModuleCat.obj N)) := hN
+  exact Module.Projective.of_equiv'
+    (((ModuleCat.restrictScalars φ).mapIso (toModuleCat.mapIso f)).toLinearEquiv.symm)
+
+/-- The underlying module of a zero graded module is projective after any restriction of
+scalars. -/
+theorem projective_restrictScalars_of_isZero {R : Type*} [Ring R] (φ : R →+* A)
+    (M : GradedModuleCat.{v} 𝒜) (hM : Limits.IsZero M) :
+    letI := Module.compHom M φ; Module.Projective R M := by
+  let := Module.compHom M φ
+  let : Subsingleton M := ModuleCat.subsingleton_of_isZero (toModuleCat.map_isZero hM)
+  infer_instance
+
+variable [DirectSum.Decomposition 𝒜]
 
 /-- An ungraded-projective module is a projective object of the graded module category.
 Taking the degree-zero part of an ungraded lift produces the required graded lift. -/
@@ -45,11 +74,11 @@ instance projective_of_module_projective (P : GradedModuleCat.{v} 𝒜)
   refine ⟨fun X E hE => ?_⟩
   obtain ⟨f, hf⟩ := Module.projective_lifting_property E.hom X.hom
     ((epi_iff_surjective E).mp hE)
-  refine ⟨ofHom (P.grading.degreeZeroPart _ 𝒜 f)
-    (P.grading.isHomogeneous_degreeZeroPart _ 𝒜 f), hom_ext ?_⟩
+  refine ⟨ofHom (P.grading.homogeneousPartOfGradedSMul _ 𝒜 f 0)
+    (P.grading.isHomogeneous_homogeneousPartOfGradedSMul _ 𝒜 f 0), hom_ext ?_⟩
   simp only [hom_comp]
-  exact (P.grading.comp_degreeZeroPart _ 𝒜 _ f E.isHomogeneous).trans
-    ((congrArg (P.grading.degreeZeroPart _ 𝒜) hf).trans
-      ((P.grading.degreeZeroPart_eq_self_iff _ 𝒜 X.hom).mpr X.isHomogeneous))
+  simpa using (P.grading.comp_homogeneousPartOfGradedSMul _ 𝒜 _ f 0 E.isHomogeneous).trans
+    ((congrArg (fun f ↦ P.grading.homogeneousPartOfGradedSMul _ 𝒜 f 0) hf).trans
+      (P.grading.homogeneousPartOfGradedSMul_eq_self _ 𝒜 X.hom 0 X.isHomogeneous))
 
 end TauCeti.GradedModuleCat

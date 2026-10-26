@@ -88,7 +88,7 @@ many times — at most one per centre — so those times carry no length. This i
 sufficient condition for `tendsto_intervalIntegral_excisionIndicator`'s hypothesis. -/
 theorem measure_setOf_mem_eq_zero_of_injOn {γ : ℝ → ℂ} {a b : ℝ} (hγ : InjOn γ (Icc a b))
     (S : Finset ℂ) : volume {t ∈ Icc a b | γ t ∈ S} = 0 :=
-  (Set.Finite.of_injOn (fun _ ht => ht.2) (hγ.mono fun _ ht => ht.1)
+  (Set.Finite.of_injOn (fun _ ht => by exact ht.2) (hγ.mono fun _ ht => by exact ht.1)
     S.finite_toSet).measure_zero volume
 
 /-- **The excised parameter set shrinks to nothing.** Deleting from `[a, b]` the times at which

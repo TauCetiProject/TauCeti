@@ -72,7 +72,7 @@ theorem of_sub_algebraMap_dvd_algebraMap_add_of_range (hG : IsProP p G)
   have := χ.isClosed_ker
   have : IsMulCommutative (G ⧸ χ.toMonoidHom.ker) :=
     Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
-      (Abelianization.commutator_subset_ker _)
+      (Abelianization.commutator_le_ker _)
   let κ : (G ⧸ χ.toMonoidHom.ker) →ₜ* ℤ_[p]ˣ :=
     { toMonoidHom := QuotientGroup.kerLift χ.toMonoidHom
       continuous_toFun := (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr χ.continuous }

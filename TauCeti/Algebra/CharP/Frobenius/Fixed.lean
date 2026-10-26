@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.CharP.Frobenius
 public import Mathlib.Algebra.Field.Subfield.Basic
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.Dynamics.PeriodicPts.Defs
 
 /-!
 # The subring and subfield fixed by an iterated Frobenius
@@ -42,6 +43,8 @@ and the subfield ones about an arbitrary field of exponential characteristic `p`
 * `TauCeti.frobeniusFixedSubring_le_of_dvd` and `TauCeti.frobeniusFixedSubfield_le_of_dvd`: the
   fixed subrings and subfields grow along divisibility of the exponent, the inclusion
   `𝔽_{p ^ m} ⊆ 𝔽_{p ^ k}` in the motivating case.
+* `TauCeti.frobeniusFixedSubring_inf` and `TauCeti.frobeniusFixedSubfield_inf`: the intersection
+  of the fixed structures at exponents `m` and `n` is the one at `m.gcd n`.
 * `TauCeti.map_le_frobeniusFixedSubring`: a ring homomorphism carries fixed elements to fixed
   elements.
 
@@ -113,6 +116,24 @@ theorem frobeniusFixedSubring_le_of_dvd {m k : ℕ} (h : m ∣ k) :
   exact mem_frobeniusFixedSubring_mul_iff_iterate_eq.mpr
     (Function.iterate_fixed (RingHom.mem_eqLocus.mp ha) c)
 
+/-- The intersection of two Frobenius-fixed subrings is the fixed subring at the gcd of their
+exponents. This also holds for zero exponents and does not require Frobenius to be injective. -/
+@[simp]
+theorem frobeniusFixedSubring_inf (m n : ℕ) :
+    frobeniusFixedSubring A p m ⊓ frobeniusFixedSubring A p n =
+      frobeniusFixedSubring A p (m.gcd n) := by
+  refine le_antisymm ?_ (le_inf (frobeniusFixedSubring_le_of_dvd (Nat.gcd_dvd_left m n))
+    (frobeniusFixedSubring_le_of_dvd (Nat.gcd_dvd_right m n)))
+  rintro a ⟨hm, hn⟩
+  have hm' : Function.IsPeriodicPt (frobenius A p) m a := by
+    simpa only [Function.IsPeriodicPt, Function.IsFixedPt, iterate_frobenius] using
+      (mem_frobeniusFixedSubring.mp hm)
+  have hn' : Function.IsPeriodicPt (frobenius A p) n a := by
+    simpa only [Function.IsPeriodicPt, Function.IsFixedPt, iterate_frobenius] using
+      (mem_frobeniusFixedSubring.mp hn)
+  apply mem_frobeniusFixedSubring.mpr
+  simpa only [Function.IsPeriodicPt, Function.IsFixedPt, iterate_frobenius] using hm'.gcd hn'
+
 variable {B : Type*} [CommRing B] [ExpChar B p]
 
 /-- A ring homomorphism commutes with the Frobenius, so it carries elements fixed by the
@@ -175,6 +196,17 @@ theorem frobeniusFixedSubfield_le_of_dvd {m k : ℕ} (h : m ∣ k) :
   rw [← SetLike.coe_subset_coe, ← Subfield.coe_toSubring, ← Subfield.coe_toSubring,
     toSubring_frobeniusFixedSubfield, toSubring_frobeniusFixedSubfield, SetLike.coe_subset_coe]
   exact frobeniusFixedSubring_le_of_dvd h
+
+/-- The intersection of two Frobenius-fixed subfields is the fixed subfield at the gcd of their
+exponents. -/
+@[simp]
+theorem frobeniusFixedSubfield_inf (m n : ℕ) :
+    frobeniusFixedSubfield K p m ⊓ frobeniusFixedSubfield K p n =
+      frobeniusFixedSubfield K p (m.gcd n) := by
+  ext a
+  rw [Subfield.mem_inf]
+  simp only [← Subfield.mem_toSubring, toSubring_frobeniusFixedSubfield]
+  rw [← Subring.mem_inf, frobeniusFixedSubring_inf]
 
 end Field
 

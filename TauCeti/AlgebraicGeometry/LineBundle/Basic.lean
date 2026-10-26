@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Properties
@@ -116,6 +116,12 @@ namespace InvertibleSheaf
 
 instance (L : InvertibleSheaf X) : SheafOfModules.isInvertible X L.obj :=
   L.property
+
+/-- The underlying sheaf of a line bundle is quasicoherent. -/
+instance isQuasicoherent_obj (L : InvertibleSheaf X) : L.obj.IsQuasicoherent :=
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
+  let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
+  inferInstanceAs F.IsQuasicoherent
 
 /-- The invertible sheaf given by the free sheaf on an indexing type with exactly one element. -/
 def free (X : Scheme.{u}) (I : Type u) [Nonempty I] [Subsingleton I] :

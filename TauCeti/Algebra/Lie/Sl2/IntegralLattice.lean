@@ -172,7 +172,7 @@ theorem ringChoose_diag_apply [Algebra ℚ K]
   have heq : k.factorial • ((Ring.choose (diag K n) k : Module.End K (Sl2Std K n)) v i) =
       k.factorial • (Ring.choose weight k * v i) := by
     rw [← hop', smeval_diag_apply, hscalar']
-  have : IsAddTorsionFree K := .of_module_rat K
+  have : HasUniqueDiv K := .of_module_rat K
   exact (nsmul_right_inj (Nat.factorial_ne_zero k)).mp heq
 
 /-- The enveloping-algebra representation on the standard module `V(n)`: the general
@@ -229,7 +229,7 @@ variable (n : ℕ)
 
 A vector belongs to this submodule exactly when each of its coordinates is an integer viewed in
 `ℚ`; see `mem_integralLattice_iff`. -/
-def integralLattice : Submodule ℤ (Sl2Std ℚ n) :=
+noncomputable def integralLattice : Submodule ℤ (Sl2Std ℚ n) :=
   TauCeti.coordinateLattice (Fin (n + 1))
 
 /-- A vector belongs to the standard integral lattice exactly when all its coordinates are

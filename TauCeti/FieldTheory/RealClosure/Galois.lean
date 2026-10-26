@@ -44,7 +44,7 @@ theorem isPGroup_two_algEquiv : IsPGroup 2 (E ≃ₐ[R] E) := by
     apply Subgroup.index_eq_one.mp
     rw [← hindex]
     exact finrank_eq_one_of_odd hodd
-  have hP := P.isPGroup'
+  have hP := P.isPGroup
   rw [htop] at hP
   exact hP.of_equiv Subgroup.topEquiv
 

@@ -11,7 +11,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Additive
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Discriminant
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Multiplicity
 
@@ -870,7 +870,7 @@ theorem IsTateTerminal.eq_of_smul (hϖ : Irreducible ϖ) {C : VariableChange R}
   -- The test determines the symbol, except for the indices of `Iₙ` and `Iₙ*`.
   rcases s with (_ | n) | _ | _ | _ | (_ | n) | _ | _ | _ <;>
     rcases s' with (_ | m) | _ | _ | _ | (_ | m) | _ | _ | _ <;>
-    simp [chainIndex] at hj <;> first | rfl | skip
+    simp [chainIndex] at hj <;> try rfl
   · -- At `Iₙ` the index is the valuation of `Δ`, which changes by a unit.
     have hu : addVal R ((↑C.u⁻¹ : R) ^ 12) = 0 := by simp
     have e := h'.addVal_Δ_eq hϖ

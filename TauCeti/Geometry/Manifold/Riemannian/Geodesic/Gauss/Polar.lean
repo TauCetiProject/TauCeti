@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.EDistComparison
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff

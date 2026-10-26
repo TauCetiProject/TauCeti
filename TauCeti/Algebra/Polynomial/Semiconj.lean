@@ -109,7 +109,7 @@ theorem _root_.Polynomial.pow_mul_smeval_eq_smeval_mul_pow
   simpa only [sub_add_cancel] using
     (p.smeval_mul_pow_eq_pow_mul_smeval hshift hc n).symm
 
-attribute [local instance] BinomialRing.toIsAddTorsionFree
+attribute [local instance] BinomialRing.toHasUniqueDiv
 
 /-- A generalized binomial coefficient in `a` can be moved to the right across `x ^ n` by
 shifting its argument by `n • c`. -/

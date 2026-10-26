@@ -83,7 +83,7 @@ is monodromy on the fibre of `p`. -/
 theorem profiniteCompletion_etaFn_smul (g : FundamentalGroup X x₀)
     (p : FiniteCoveringSpace X) (e : (fiberFunctor x₀).obj p) :
     ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of (FundamentalGroup X x₀)) g • e =
-      ConcreteCategory.hom (((fiberActionFintypeCatEquivalence x₀).functor.obj p).ρ g) e :=
+      ConcreteCategory.hom (((fiberActionFintypeCatEquivalence x₀).functor.obj p).ρ g).asHom e :=
   TauCeti.ProfiniteCompletion.etaFn_smul (FundamentalGroup X x₀)
     ((fiberActionFintypeCatEquivalence x₀).functor.obj p) g e
 
@@ -105,7 +105,7 @@ fibre by the canonical extended action. -/
 theorem profiniteCompletionAutFiberFunctorMulEquiv_hom_app_apply
     (g : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of (FundamentalGroup X x₀)))
     (p : FiniteCoveringSpace X) (e : (fiberFunctor x₀).obj p) :
-    (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).hom.app p e = g • e :=
+    (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).asIso.hom.app p e = g • e :=
   PreGaloisCategory.toAut_hom_app_apply
     (F := fiberFunctor x₀)
     (G := ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of (FundamentalGroup X x₀))) g e
@@ -116,16 +116,16 @@ the inverse element on every finite fibre. -/
 theorem profiniteCompletionAutFiberFunctorMulEquiv_inv_app_apply
     (g : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of (FundamentalGroup X x₀)))
     (p : FiniteCoveringSpace X) (e : (fiberFunctor x₀).obj p) :
-    (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).inv.app p e = g⁻¹ • e := by
+    (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).asIso.inv.app p e = g⁻¹ • e := by
   have hg := profiniteCompletionAutFiberFunctorMulEquiv_hom_app_apply
-    (x₀ := x₀) g p ((profiniteCompletionAutFiberFunctorMulEquiv x₀ g).inv.app p e)
+    (x₀ := x₀) g p ((profiniteCompletionAutFiberFunctorMulEquiv x₀ g).asIso.inv.app p e)
   have hi := FintypeCat.inv_hom_id_apply
-    ((profiniteCompletionAutFiberFunctorMulEquiv x₀ g).app p) e
+    ((profiniteCompletionAutFiberFunctorMulEquiv x₀ g).asIso.app p) e
   calc
-    (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).inv.app p e =
-        g⁻¹ • (g • (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).inv.app p e) := by simp
-    _ = g⁻¹ • (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).hom.app p
-        ((profiniteCompletionAutFiberFunctorMulEquiv x₀ g).inv.app p e) :=
+    (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).asIso.inv.app p e =
+        g⁻¹ • (g • (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).asIso.inv.app p e) := by simp
+    _ = g⁻¹ • (profiniteCompletionAutFiberFunctorMulEquiv x₀ g).asIso.hom.app p
+        ((profiniteCompletionAutFiberFunctorMulEquiv x₀ g).asIso.inv.app p e) :=
       congrArg (g⁻¹ • ·) hg.symm
     _ = g⁻¹ • e := congrArg (g⁻¹ • ·) hi
 
@@ -135,11 +135,11 @@ theorem existsUnique_profiniteCompletion_smul_eq (η : Aut (fiberFunctor x₀)) 
     ∃! g : ProfiniteGrp.ProfiniteCompletion.completion
         (GrpCat.of (FundamentalGroup X x₀)),
       ∀ (p : FiniteCoveringSpace X) (e : (fiberFunctor x₀).obj p),
-        g • e = η.hom.app p e := by
+        g • e = η.asIso.hom.app p e := by
   refine ⟨(profiniteCompletionAutFiberFunctorMulEquiv x₀).symm η, fun p e => ?_, fun g hg => ?_⟩
   · rw [← profiniteCompletionAutFiberFunctorMulEquiv_hom_app_apply, MulEquiv.apply_symm_apply]
   · refine (profiniteCompletionAutFiberFunctorMulEquiv x₀).injective
-      (Aut.ext (NatTrans.ext (funext fun p => ?_)))
+      (Aut.ext (Iso.ext (NatTrans.ext (funext fun p => ?_))))
     ext e
     rw [MulEquiv.apply_symm_apply]
     exact (profiniteCompletionAutFiberFunctorMulEquiv_hom_app_apply

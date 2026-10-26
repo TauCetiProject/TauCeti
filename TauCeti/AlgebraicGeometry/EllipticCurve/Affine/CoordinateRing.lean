@@ -49,17 +49,19 @@ characteristic two that polynomial is the square `(a₁X + a₃)²`.
 * `WeierstrassCurve.Affine.CoordinateRing.mul_conj`: `x * conj x` is the norm of `x`.
 * `WeierstrassCurve.Affine.CoordinateRing.add_negPolynomial_smul_basis`: the expanded
   conjugation formula computes the trace on the basis `{1, Y}`.
+* `WeierstrassCurve.Affine.isIntegralClosure_coordinateRing`: the coordinate ring of an elliptic
+  curve over a field is the integral closure of `F[X]` in the function field.
 * `WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing`: the coordinate ring of an
   elliptic curve over a field is integrally closed.
 * `WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed`: an integrally
-  closed coordinate ring is a Dedekind domain — so an elliptic curve's is, by
-  `isIntegrallyClosed_coordinateRing`.
+  closed coordinate ring is a Dedekind domain.
+* `WeierstrassCurve.Affine.isDedekindDomain_coordinateRing`: the coordinate ring of an elliptic
+  curve over a field is a Dedekind domain.
 
-The integral closedness is the seeded milestone `isIntegrallyClosed_coordinateRing` of
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 1, where it is named as the normality input to
-the induced map on points `Isogeny.toPointHom`; the Dedekind statement is the "worthwhile lemma"
-that Layer 0 asks for, on which the identification of the affine places with the maximal ideals of
-the coordinate ring rests.
+The three statements about an elliptic curve are instances, so `[W.IsElliptic]` alone supplies
+them. Integral closedness is the normality input to the induced map on points
+`Isogeny.toPointHom`, and the Dedekind property is what identifies the affine places of the
+function field with the maximal ideals of the coordinate ring.
 
 ## Provenance
 
@@ -512,16 +514,26 @@ private theorem exists_algebraMap_eq
   simp only [smul, ← CoordinateRing.mk_C_eq_algebraMap, map_mul]
   ring1
 
+variable {W} in
+/-- **The coordinate ring of an elliptic curve is the integral closure of `F[X]` in its function
+field.** An element of `F(W)` integral over `F[X]` lies in `F[W]`, and conversely every element of
+`F[W]` is integral over `F[X]`, since `F[W]` is a finite `F[X]`-module. -/
+instance isIntegralClosure_coordinateRing [W.IsElliptic] :
+    IsIntegralClosure W.CoordinateRing F[X] W.FunctionField where
+  algebraMap_injective := FaithfulSMul.algebraMap_injective _ _
+  isIntegral_iff :=
+    ⟨exists_algebraMap_eq W, by
+      rintro ⟨b, rfl⟩
+      exact (Algebra.IsIntegral.isIntegral b).algebraMap⟩
+
+variable {W} in
 /-- **The coordinate ring of an elliptic curve is integrally closed.** This is the normality half
 of the statement that it is a Dedekind domain, and the input that the induced map on points of an
 isogeny consumes. -/
-theorem isIntegrallyClosed_coordinateRing
-    [W.IsElliptic] : IsIntegrallyClosed W.CoordinateRing := by
-  have : Algebra.IsIntegral F[X] W.CoordinateRing := Algebra.IsIntegral.of_finite _ _
-  have : IsIntegrallyClosedIn W.CoordinateRing W.FunctionField :=
-    isIntegrallyClosedIn_iff.mpr ⟨FaithfulSMul.algebraMap_injective _ _,
-      fun hx => exists_algebraMap_eq W (isIntegral_trans _ hx)⟩
-  exact IsIntegrallyClosed.of_isIntegrallyClosedIn W.CoordinateRing W.FunctionField
+instance isIntegrallyClosed_coordinateRing [W.IsElliptic] : IsIntegrallyClosed W.CoordinateRing :=
+  have := IsIntegrallyClosedIn.of_isIntegralClosure F[X] (A := W.CoordinateRing)
+    (B := W.FunctionField)
+  IsIntegrallyClosed.of_isIntegrallyClosedIn W.CoordinateRing W.FunctionField
 
 /-- **An integrally closed coordinate ring is a Dedekind domain.** -/
 theorem isDedekindDomain_coordinateRing_of_isIntegrallyClosed
@@ -530,6 +542,11 @@ theorem isDedekindDomain_coordinateRing_of_isIntegrallyClosed
   -- ring is module-finite and hence integral, so normality is all that is assumed
   have : Algebra.IsIntegral F[X] W.CoordinateRing := Algebra.IsIntegral.of_finite _ _
   exact { __ := Ring.DimensionLEOne.of_isIntegral F[X] W.CoordinateRing }
+
+variable {W} in
+/-- **The coordinate ring of an elliptic curve is a Dedekind domain.** -/
+instance isDedekindDomain_coordinateRing [W.IsElliptic] : IsDedekindDomain W.CoordinateRing :=
+  isDedekindDomain_coordinateRing_of_isIntegrallyClosed W
 
 end IntegrallyClosed
 

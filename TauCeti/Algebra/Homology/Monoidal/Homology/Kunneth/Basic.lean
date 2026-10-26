@@ -46,6 +46,12 @@ projective.  In particular, a complex of free modules over a principal ideal dom
 homology is of this kind, since its cycles split off
 (`HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`).
 
+When only the cycles of `K` and `L` split off, as for complexes of free modules over a principal
+ideal domain, the Künneth map is still a split monomorphism
+(`HomologicalComplex.isSplitMono_homologyKunneth`): by naturality it is split by the map induced
+by the projections onto the complexes of homology objects, which induce isomorphisms on homology
+(`HomologicalComplex.isIso_homologyMap_toHomologyComplex`).  This retraction need not be natural.
+
 When only one factor has zero differentials, the Künneth map is still an isomorphism provided that
 factor has flat terms (`HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat`), here for
 complexes of modules indexed by `ℕ` and an arbitrary second factor `L`.  Since the terms of `K`
@@ -70,6 +76,8 @@ identifies `Hₙ(K ⊗ L)` with a cokernel, which is `⨁ Kₚ ⊗ H_q(L)` by ri
 * `HomologicalComplex.isIso_homologyKunneth_of_isSplitMono_of_isSplitEpi`: the Künneth theorem
   for complexes of modules over a commutative ring whose cycles and homology split off, for
   instance complexes of vector spaces over a field.
+* `HomologicalComplex.isSplitMono_homologyKunneth`: the Künneth map is a split monomorphism for
+  complexes of modules whose cycles split off.
 * `HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat`: the Künneth theorem when one
   complex of modules has zero differentials and flat terms.
 
@@ -267,6 +275,39 @@ instance isIso_homologyKunneth_of_isSplitMono_of_isSplitEpi : IsIso (homologyKun
   exact isIso_homologyKunneth_of_homotopyEquiv_of_d_eq_zero n eK eL hK' hL'
 
 end Split
+
+section SplitMono
+
+universe u
+
+variable {R : Type u} [CommRing R] {I : Type*} [Small.{u} I] [AddMonoid I] {c : ComplexShape I}
+  [c.TensorSigns] [DecidableEq I] (K L : HomologicalComplex (ModuleCat.{u} R) c) (n : I)
+  [∀ i, IsSplitMono (K.iCycles i)] [∀ i, IsSplitMono (L.iCycles i)]
+
+/-- **The Künneth map is a split monomorphism** for complexes `K` and `L` of modules over a
+commutative ring whose cycles split off their terms, for instance complexes of projective modules
+over a principal ideal domain (`HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`).
+A retraction is induced by the projections `K ⟶ H(K)` and `L ⟶ H(L)` onto the complexes of
+homology objects (`HomologicalComplex.toHomologyComplex`), which depend on the chosen splittings of
+the cycles, so it need not be natural in `K` and `L`. -/
+theorem isSplitMono_homologyKunneth : IsSplitMono (homologyKunneth K L n) := by
+  have := isIso_homologyKunneth_of_d_eq_zero n (K := K.homologyComplex) (L := L.homologyComplex)
+    (by simp) (by simp)
+  have : IsIso (GradedObject.Monoidal.tensorHom (fun p ↦ homologyMap K.toHomologyComplex p)
+      (fun q ↦ homologyMap L.toHomologyComplex q)) :=
+    (GradedObject.Monoidal.tensorIso
+      (GradedObject.isoMk _ _ fun p ↦ asIso (homologyMap K.toHomologyComplex p))
+      (GradedObject.isoMk _ _ fun q ↦ asIso (homologyMap L.toHomologyComplex q))).isIso_hom
+  -- by naturality, the Künneth map of `K` and `L` followed by the map induced by the projections
+  -- is the isomorphism induced on homology objects followed by the Künneth map of the complexes
+  -- of homology objects, also an isomorphism
+  exact .mk' ⟨homologyMap (tensorHom K.toHomologyComplex L.toHomologyComplex) n ≫
+    inv (homologyKunneth K.homologyComplex L.homologyComplex n) ≫
+      inv (GradedObject.Monoidal.tensorHom (fun p ↦ homologyMap K.toHomologyComplex p)
+        (fun q ↦ homologyMap L.toHomologyComplex q) n), by
+    rw [← homologyKunneth_naturality_assoc, IsIso.hom_inv_id_assoc, IsIso.hom_inv_id]⟩
+
+end SplitMono
 
 section EqToHom
 

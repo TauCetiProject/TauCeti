@@ -23,22 +23,26 @@ the extended comodule is obtained from the original one by scalar extension. Its
 polynomial therefore remains a power of `X - 1`, and the faithful-representation criterion
 detects unipotence of every geometric point of the base-changed group.
 
-## Main declaration
+## Main declarations
 
 * `TauCeti.smoothUnipotentCommHopfAlgProperty.baseChange`: smooth geometric unipotence is
   preserved by arbitrary field extension.
+* `TauCeti.smoothUnipotentCommHopfAlgProperty.of_baseChange_of_surjective`: it is reflected
+  by surjective maps of ground fields.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 14.5.
 * A. Borel, *Linear Algebraic Groups*, Section 15.4.
 
-This supplies scalar-extension preservation for the unipotent radical.
+This supplies scalar-extension preservation for the unipotent radical. Descent along a
+surjective field map uses inverse scalar extension, as in
+`TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed`.
 -/
 
 public section
 
-open Module WithConv
+open CategoryTheory Module WithConv
 open scoped TensorProduct
 
 namespace TauCeti
@@ -105,6 +109,27 @@ theorem baseChange (H : FiniteTypeCommHopfAlgCat.{u, u} k)
   apply (HopfAlgebra.isUnipotentPoint_iff_isUnipotent_pointsAction_of_isFaithful
     MK (Comodule.IsFaithful.baseChange (K := K) hM) g).2
   exact Comodule.isUnipotent_pointsAction_of_coefficientMatrix_charpoly_eq g bK hCK
+
+/-- Smooth geometric unipotence descends along a surjective map of ground fields.
+Such an extension only changes the presentation of the base field. -/
+theorem of_baseChange_of_surjective (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (h : Function.Surjective (algebraMap k K))
+    (hH : smoothUnipotentCommHopfAlgProperty K
+      (FiniteTypeCommHopfAlgCat.baseChange (K := K) H)) :
+    smoothUnipotentCommHopfAlgProperty k H := by
+  let e : k ≃ₐ[k] K := AlgEquiv.ofBijective (Algebra.ofId k K)
+    ⟨(algebraMap k K).injective, h⟩
+  let _ : Algebra K k := e.symm.toRingHom.toAlgebra
+  let _ : IsScalarTower k K k :=
+    IsScalarTower.of_algebraMap_eq fun x ↦ (e.symm.commutes x).symm
+  let j : FiniteTypeCommHopfAlgCat.baseChange (K := k) H ≅ H :=
+    ObjectProperty.isoMk _
+      (_root_.CommHopfAlgCat.isoMk (_root_.Bialgebra.TensorProduct.lid k H.obj))
+  let i : FiniteTypeCommHopfAlgCat.baseChange (K := k)
+      (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) ≅ H :=
+    ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso k k H.obj) ≪≫ j
+  exact (smoothUnipotentCommHopfAlgProperty k).prop_of_iso i
+    (hH.baseChange (FiniteTypeCommHopfAlgCat.baseChange (K := K) H))
 
 end smoothUnipotentCommHopfAlgProperty
 

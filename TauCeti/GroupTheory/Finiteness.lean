@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Finiteness
+public import Mathlib.GroupTheory.Torsion
+import Mathlib.GroupTheory.FiniteAbelian.Basic
 
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.RingTheory.Noetherian.Basic
@@ -17,9 +19,14 @@ import Mathlib.RingTheory.PrincipalIdealDomain
 Mathlib has a substantial theory of finitely generated commutative groups in
 `Mathlib/GroupTheory/FiniteAbelian/Basic.lean` — the structure theorem, `finite_of_fg_isMulTorsion`,
 and `Subgroup.finiteIndex_range_powMonoidHom_of_fg`, which is the finiteness of `G ⧸ Gⁿ`. Three
-closure properties it does not carry are collected here.
+closure properties it does not carry are collected here, together with finiteness of the torsion
+subgroup.
 
 ## Main results
+
+* `TauCeti.CommGroup.finite_torsion_of_fg` and `TauCeti.AddCommGroup.finite_torsion_of_fg`: the
+  torsion subgroup of a finitely generated abelian group is finite, using Mathlib's
+  `CommGroup.finite_of_fg_isMulTorsion`.
 
 * `AddSubgroup.fg_of_addCommGroup` and `Subgroup.fg_of_commGroup`: a subgroup of a finitely
   generated commutative group is finitely generated. The argument is Noetherianity of `ℤ`, so the
@@ -164,5 +171,17 @@ theorem Group.fg_of_fg_ker_of_fg_range {G H : Type*} [Group G] [Group H] (φ : G
     exact (Group.fg_iff_subgroup_fg _).mp ‹Group.FG φ.ker›
   -- `Group.FG G` is finite generation of `(⊤ : Subgroup G)`
   exact Group.fg_def.mpr (Subgroup.fg_of_fg_map_of_fg_inf_ker φ h₁ h₂)
+
+namespace TauCeti
+
+/-- The torsion subgroup of a finitely generated abelian group is finite. -/
+@[to_additive TauCeti.AddCommGroup.finite_torsion_of_fg
+  /-- The torsion subgroup of a finitely generated additive abelian group is finite. -/]
+theorem CommGroup.finite_torsion_of_fg (G : Type*) [CommGroup G] [Group.FG G] :
+    Finite (_root_.CommGroup.torsion G) :=
+  _root_.CommGroup.finite_of_fg_isMulTorsion _ fun P ↦
+    (_root_.CommGroup.torsion G).subtype_injective.isOfFinOrder_iff.mp P.property
+
+end TauCeti
 
 end

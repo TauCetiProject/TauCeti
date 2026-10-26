@@ -5,18 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Flasque
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
-public import TauCeti.Topology.Sheaves.Flasque
+public import TauCeti.Topology.Sheaves.Flasque.Basic
 
 /-!
 # Flasque sheaves of modules and the cohomology of rational functions
 
 A sheaf of modules on a scheme is flasque when its underlying abelian presheaf is, that is, when
-all of its restriction maps are surjective. `TauCeti/Topology/Sheaves/Flasque.lean` proves that a
-flasque abelian sheaf has no higher cohomology; this file transports that statement to the
+all of its restriction maps are surjective. `TauCeti/Topology/Sheaves/Flasque/Basic.lean` proves
+that a flasque abelian sheaf has no higher cohomology; this file transports that statement to the
 cohomology `Hⁿ(X, M)` of `TauCeti/AlgebraicGeometry/Cohomology/Basic.lean` and applies it to the
 sheaf `𝒦_X` of rational functions on an irreducible scheme.
+
+Injective objects in the category of module sheaves are flasque by
+`SheafOfModules.isFlasque_of_injective`. Thus the vanishing instances here also apply to
+module-injective coefficients, including the terms of module-injective resolutions.
 
 The sheaf `𝒦_X` is constant with value the function field on nonempty open subsets and zero on
 the empty one, so it is flasque. Consequently, for every short exact sequence
@@ -74,6 +79,13 @@ namespace Scheme.Modules
 
 variable {X : Scheme.{u}}
 
+/-- Injective scheme modules are flasque. This delegate keeps instance synthesis on the
+scheme-module presentation of the underlying presheaf. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFlasque_of_injective
+    (M : X.Modules) [hM : Injective M] : M.presheaf.IsFlasque := by
+  have : @Injective (_root_.SheafOfModules.{u} X.ringCatSheaf) _ M := hM
+  exact _root_.SheafOfModules.isFlasque_of_injective M
+
 /-- A flasque sheaf of modules has vanishing cohomology over every open subset in every positive
 degree. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque
@@ -104,18 +116,13 @@ connecting map `H^{n₀}(X, M₃) ⟶ H^{n₁}(X, M₁)` is surjective. -/
 theorem cohomologyδ_surjective_of_isFlasque (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     Function.Surjective (cohomologyδ hS n₀ n₁ h) := by
   subst h
-  intro x
-  exact (exact_cohomologyδ_cohomologyMap hS n₀ (n₀ + 1) rfl x).mp
-    (Subsingleton.elim _ _)
+  exact cohomologyδ_surjective hS n₀ (n₀ + 1) rfl inferInstance
 
 /-- If the middle term of a short exact sequence of sheaves of modules is flasque, then the
 connecting map `Hⁿ⁺¹(X, M₃) ⟶ Hⁿ⁺²(X, M₁)` is injective. -/
 theorem cohomologyδ_injective_of_isFlasque (n : ℕ) :
-    Function.Injective (cohomologyδ hS (n + 1) (n + 2) rfl) := by
-  rw [injective_iff_map_eq_zero]
-  intro x hx
-  obtain ⟨y, rfl⟩ := (exact_cohomologyMap_cohomologyδ hS (n + 1) (n + 2) rfl x).mp hx
-  rw [Subsingleton.elim y 0, map_zero]
+    Function.Injective (cohomologyδ hS (n + 1) (n + 2) rfl) :=
+  (cohomologyδ_bijective hS (n + 1) (n + 2) rfl inferInstance inferInstance).1
 
 end ShortExact
 

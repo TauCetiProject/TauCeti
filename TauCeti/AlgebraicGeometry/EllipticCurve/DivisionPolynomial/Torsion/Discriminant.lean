@@ -84,8 +84,8 @@ Ported from J. Xu and D. K. Angdinata's
 project (`README:1072`), verified by blob hash, so the citations hold at either.
 
 Two further declarations of that source file land elsewhere. `addOrderOf_ne_two_of_kappa_ne_zero`
-(`:279`) is ported **into `ZSMul.lean`**, beside the `evalEval_ψ_eq_zero_of_zsmul_eq_zero` its
-proof consumes, and strengthened twice on the way. It is **generalised**: the source states it
+(`:279`) is ported **into `ZSMul.lean`**, beside `evalEval_ψ_eq_zero_of_zsmul_eq_zero`, and
+strengthened twice on the way. It is **generalised**: the source states it
 over the fraction field of a PID at integral coordinates, but nothing in the argument sees the base
 ring, so it is stated over the point's own field and the transport across `algebraMap` happens
 here, at the call site. And it is **an equivalence**,

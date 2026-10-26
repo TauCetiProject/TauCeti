@@ -17,6 +17,9 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 -- `Subrepresentation`, whose weight spaces are the traces of the ambient ones.
 public import Mathlib.RepresentationTheory.Subrepresentation
+-- A tuple is determined by its sums over the initial segments, which is why a highest weight is
+-- unique.
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # Weights of the diagonal torus of the general linear group
@@ -64,15 +67,20 @@ The definitions themselves need only a commutative ring, and are stated there.
 * `TauCeti.map_weightSpace_le_of_commute`: **an operator commuting with the torus action preserves
   every weight space**, so when the ambient representation is the internal direct sum of its weight
   spaces, a subrepresentation the operator cuts out inherits that decomposition.
-* `Representation.IntertwiningMap.apply_mem_weightSpace` and
-  `Representation.IntertwiningMap.map_weightSpace_le`: **an equivariant map carries each weight
-  space into the weight space of the same weight**, whence
-  `Representation.IntertwiningMap.iSup_weightSpace_eq_top_of_surjective`: weight spaces spanning a
-  representation also span any equivariant quotient.
 * `Subrepresentation.weightSpace_toRepresentation`: **the weight spaces of a
   subrepresentation are the traces of the ambient ones**, with
   `Subrepresentation.weightSpace_toRepresentation_eq_bot_iff` giving the criterion for a weight
   not to occur in the subrepresentation.
+* `Representation.IntertwiningMap.apply_mem_weightSpace`,
+  `Representation.IntertwiningMap.map_weightSpace_le` and `Representation.Equiv.map_weightSpace`:
+  **intertwining maps preserve weights**, and an equivalence of representations matches their
+  weight spaces, so that the weights of a representation are an isomorphism invariant
+  (`Representation.Equiv.weightSpace_eq_bot_iff`). Weight spaces spanning a representation
+  therefore also span any equivariant quotient
+  (`Representation.IntertwiningMap.iSup_weightSpace_eq_top_of_surjective`).
+* `TauCeti.eq_of_forall_sum_filter_lt_le` and
+  `Representation.Equiv.eq_of_forall_sum_filter_lt_le`: the dominance order on integer weights is
+  antisymmetric, and hence a highest weight is an isomorphism invariant.
 
 ## Implementation notes
 
@@ -199,16 +207,15 @@ variable {k : Type u} [CommRing k] {n : ℕ}
 variable {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
 variable {ρ : Representation k (GL (Fin n) k) V} {σ : Representation k (GL (Fin n) k) W}
 
-/-- **An equivariant map preserves weight spaces.**  A weight vector is an eigenvector of every
-`ρ (diagGL t)`, and an equivariant map sends it to an eigenvector of `σ (diagGL t)` for the same
-eigenvalue. -/
+/-- **An equivariant map preserves weight vectors**: it commutes with every torus element, so it
+carries a joint eigenvector of the torus to a joint eigenvector with the same eigenvalues. -/
 theorem apply_mem_weightSpace (f : IntertwiningMap ρ σ) {l : Fin n → ℤ} {v : V}
     (hv : v ∈ weightSpace ρ l) : f v ∈ weightSpace σ l := by
   rw [mem_weightSpace_iff]
   intro t
   rw [← f.isIntertwining, apply_of_mem_weightSpace hv, map_smul]
 
-/-- **An equivariant map carries each weight space into the weight space of the same weight.** -/
+/-- **An intertwining map carries each weight space into the weight space of the same weight.** -/
 theorem map_weightSpace_le (f : IntertwiningMap ρ σ) (l : Fin n → ℤ) :
     (weightSpace ρ l).map f.toLinearMap ≤ weightSpace σ l := by
   rintro _ ⟨v, hv, rfl⟩
@@ -227,6 +234,63 @@ theorem iSup_weightSpace_eq_top_of_surjective (f : IntertwiningMap ρ σ)
     _ ≤ ⨆ l : Fin n → ℤ, weightSpace σ l := iSup_mono f.map_weightSpace_le
 
 end Representation.IntertwiningMap
+
+namespace TauCeti
+
+/-- **The dominance order on integer vectors is antisymmetric**: two vectors each of whose partial
+sums `∑_{j < m}` bounds the other's agree, since a vector is determined by those sums
+(`TauCeti.eq_of_forall_sum_filter_lt_eq`). -/
+theorem eq_of_forall_sum_filter_lt_le {n : ℕ} {a b : Fin n → ℤ}
+    (hab : ∀ m : ℕ, ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j ≤
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j)
+    (hba : ∀ m : ℕ, ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j ≤
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j) :
+    a = b :=
+  eq_of_forall_sum_filter_lt_eq fun m => le_antisymm (hab m) (hba m)
+
+end TauCeti
+
+namespace Representation.Equiv
+
+open TauCeti
+
+variable {k : Type u} [CommRing k] {n : ℕ}
+variable {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
+variable {ρ : Representation k (GL (Fin n) k) V} {σ : Representation k (GL (Fin n) k) W}
+
+/-- **An equivalence of representations of `GL n k` carries each weight space onto the weight
+space of the same weight**, so isomorphic representations have the same weights, with the same
+multiplicities. -/
+theorem map_weightSpace (e : ρ.Equiv σ) (l : Fin n → ℤ) :
+    (weightSpace ρ l).map (e.toLinearEquiv : V →ₗ[k] W) = weightSpace σ l := by
+  refine le_antisymm (e.toIntertwiningMap.map_weightSpace_le l) fun w hw => ?_
+  refine ⟨e.symm w, e.symm.toIntertwiningMap.map_weightSpace_le l ⟨w, hw, rfl⟩, ?_⟩
+  exact e.apply_symm_apply w
+
+/-- **Isomorphic representations of `GL n k` have the same weights**: a weight space of one
+vanishes exactly when the corresponding weight space of the other does. -/
+theorem weightSpace_eq_bot_iff (e : ρ.Equiv σ) (l : Fin n → ℤ) :
+    weightSpace ρ l = ⊥ ↔ weightSpace σ l = ⊥ := by
+  rw [← e.map_weightSpace l, Submodule.map_eq_bot_iff]
+
+/-- **A highest weight is an isomorphism invariant.** If the weight `a` occurs in `ρ` and dominates
+every weight of `ρ`, and `b` plays the same role for `σ`, then a representation equivalence
+`e : ρ ≃ σ` forces `a = b`. -/
+theorem eq_of_forall_sum_filter_lt_le (e : ρ.Equiv σ) {a b : Fin n → ℤ}
+    (ha : weightSpace ρ a ≠ ⊥)
+    (hρ : ∀ l, weightSpace ρ l ≠ ⊥ → ∀ m : ℕ,
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j ≤
+        ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j)
+    (hb : weightSpace σ b ≠ ⊥)
+    (hσ : ∀ l, weightSpace σ l ≠ ⊥ → ∀ m : ℕ,
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l j ≤
+        ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j) :
+    a = b :=
+  TauCeti.eq_of_forall_sum_filter_lt_le
+    (hσ a ((e.weightSpace_eq_bot_iff a).not.mp ha))
+    (hρ b ((e.weightSpace_eq_bot_iff b).not.mpr hb))
+
+end Representation.Equiv
 
 namespace TauCeti
 

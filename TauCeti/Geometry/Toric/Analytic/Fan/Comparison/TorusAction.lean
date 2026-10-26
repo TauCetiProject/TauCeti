@@ -298,7 +298,7 @@ theorem character_torusι (m : IntegralCharacter N)
 variable (Φ) in
 /-- The torus orbit of a cone `σ` in the complex points of the toric scheme: the image of the
 stratum of the top face of `σ` in the affine chart of `σ`. -/
-def coneOrbit (σ : Φ.cones) : Set Φ.AlgebraicComplexPoint :=
+noncomputable def coneOrbit (σ : Φ.cones) : Set Φ.AlgebraicComplexPoint :=
   ofAffinePoint σ '' affineConeOrbit Φ.lattice (⊤ : σ.1.Face)
 
 theorem coneOrbit_def (σ : Φ.cones) :
@@ -322,7 +322,7 @@ theorem smul_mem_coneOrbit {σ : Φ.cones} (t : ComplexTorus N)
 variable (Φ) in
 /-- The boundary component indexed by a ray in the complex points of the toric scheme: the closure
 of the torus orbit of that ray. -/
-def boundaryComponent (ρ : Φ.Ray) : Set Φ.AlgebraicComplexPoint :=
+noncomputable def boundaryComponent (ρ : Φ.Ray) : Set Φ.AlgebraicComplexPoint :=
   closure (coneOrbit Φ ρ.toCone)
 
 theorem boundaryComponent_def (ρ : Φ.Ray) :

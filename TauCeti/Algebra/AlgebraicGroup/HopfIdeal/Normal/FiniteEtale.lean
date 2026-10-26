@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Center.BaseChange
@@ -69,7 +69,7 @@ private theorem conjugate_basePoint_eq (hI : I.IsNormal)
   let _ := CommHopfAlgCat.quotientPointsSubgroup_normal H I hI (CommAlgCat.of k H)
   have hp : p ∈ CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k H) :=
     Subgroup.Normal.conj_mem (H :=
-      CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k H)) inferInstance tH htH generic
+      CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k H)) tH htH generic
   let q := (CommHopfAlgCat.liftQuotientPoint H I (CommAlgCat.of k H) p
     ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff H I (CommAlgCat.of k H) p).mp hp)).ofConv
   have hq (x : H) : q (Ideal.Quotient.mkₐ k I.toIdeal x) = p.ofConv x := by
@@ -102,7 +102,7 @@ theorem IsNormal.isCentral_of_finite_of_isReduced [IsReduced (CommHopfAlgCat.quo
     (hI : I.IsNormal) : I.IsCentral := by
   rw [isCentral_iff_conjugation_sub_mem]
   intro x
-  rw [← ker_tensorProduct_map_quotient_id I.toIdeal, RingHom.mem_ker, map_sub, sub_eq_zero]
+  rw [← Ideal.ker_tensorProduct_map_quotient_id I.toIdeal, RingHom.mem_ker, map_sub, sub_eq_zero]
   apply tensor_eq_of_forall_map_algHom_eq (K := k)
   intro t
   apply (TensorProduct.lid k H).injective

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.RingTheory.Etale.Field
 public import Mathlib.RingTheory.Smooth.AdicCompletion
+public import TauCeti.RingTheory.Smooth.Field
 
 /-!
 # Coefficient fields of complete local rings
@@ -25,6 +27,12 @@ Without separability the section need not exist over `k`: in `𝔽_p(s)[[T]]`, v
 `𝔽_p(u)`-algebra through `u ↦ s ^ p + T`, a section would send `s` to a `p`-th root of `s ^ p + T`,
 and there is none, since every `p`-th power in `𝔽_p(s)[[T]]` is a power series in `T ^ p`.
 
+Over a perfect field `k` every residue field is formally smooth
+(`TauCeti.formallySmooth_of_perfectField`), so a `k`-algebra section always exists, although it
+need no longer be unique. Applied to the prime field, this is Cohen's theorem that a complete local
+ring containing a field has a coefficient field (`TauCeti.exists_residueFieldSection`). Such a
+coefficient field need not contain the image of the given field.
+
 In the theory of algebraic function fields this is the device that turns the completion of the
 function field at a place with residue field `F_P` into a field of Laurent series over `F_P`, and
 so gives `F_P`-valued expansion coefficients and residues at places that are not rational.
@@ -38,6 +46,8 @@ so gives `F_P`-valued expansion coefficients and residues at places that are not
 
 * `TauCeti.residue_residueFieldSection`: it is a section of reduction.
 * `TauCeti.eq_residueFieldSection`: it is the only `k`-algebra section of reduction.
+* `TauCeti.exists_residueFieldSection`: **Cohen's theorem**, a complete local ring containing a
+  field has a coefficient field.
 
 ## References
 
@@ -51,6 +61,8 @@ public section
 namespace TauCeti
 
 open IsLocalRing
+
+section FormallySmooth
 
 variable (k R : Type*) [CommRing k] [CommRing R] [IsLocalRing R] [Algebra k R]
   [IsAdicComplete (maximalIdeal R) R]
@@ -85,5 +97,24 @@ theorem eq_residueFieldSection [Algebra.FormallySmooth k (ResidueField R)]
   -- As above, `residue R` is the quotient map `Ideal.Quotient.mk (maximalIdeal R)`.
   exact Algebra.FormallyUnramified.ext_of_iInf _ hI fun a ↦
     (hs a).trans (residue_residueFieldSection k R a).symm
+
+end FormallySmooth
+
+variable (k R : Type*) [Field k] [CommRing R] [IsLocalRing R] [Algebra k R]
+  [IsAdicComplete (maximalIdeal R) R]
+
+include k in
+/-- **Cohen's theorem: a complete local ring containing a field has a coefficient field.** If the
+complete local ring `R` is an algebra over some field `k`, then reduction `R → ResidueField R` has
+a ring homomorphism section. When `k` is perfect, `TauCeti.residueFieldSection k R` is even a
+`k`-algebra section. In general a `k`-linear section need not exist. -/
+theorem exists_residueFieldSection :
+    ∃ s : ResidueField R →+* R, ∀ a, residue R (s a) = a := by
+  obtain _ | ⟨p, hp, hpk⟩ := CharP.exists' k
+  · -- in characteristic zero `k` is perfect
+    exact ⟨residueFieldSection k R, residue_residueFieldSection k R⟩
+  · -- in characteristic `p`, use the perfect prime field `𝔽_p`
+    let : Algebra (ZMod p) R := ((algebraMap k R).comp (ZMod.castHom dvd_rfl k)).toAlgebra
+    exact ⟨residueFieldSection (ZMod p) R, residue_residueFieldSection (ZMod p) R⟩
 
 end TauCeti

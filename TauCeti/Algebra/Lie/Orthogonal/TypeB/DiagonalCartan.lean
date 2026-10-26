@@ -25,6 +25,9 @@ subalgebra, proves that it is abelian and self-normalizing, and gives its coordi
 dual coordinates. The regularity of `2` is needed only for self-normalization: it distinguishes
 the two opposite coordinate weights.
 
+The coordinate-value map only needs zero and negation. Constructing the ambient diagonal matrix
+also needs decidable equality on the index type; neither construction needs a finite index type.
+
 ## Main definitions
 
 * `TauCeti.typeBDiagonalCartan`: the diagonal Cartan subalgebra of
@@ -46,8 +49,7 @@ the two opposite coordinate weights.
 
 The construction follows Fulton--Harris, *Representation Theory*, Lecture 20. Its declaration
 order and coordinate API follow `TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan` and the type-D
-analogue in [TauCeti#4356](https://github.com/TauCetiProject/TauCeti/pull/4356). This is the
-split type-`B` Cartan prerequisite for Layer 5 of the Spin-representations roadmap.
+analogue in [TauCeti#4356](https://github.com/TauCetiProject/TauCeti/pull/4356).
 -/
 
 public section
@@ -60,43 +62,64 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 universe u
 
-variable {K : Type u} [CommRing K]
-variable {ι : Type*} [DecidableEq ι] [Fintype ι]
-
 /-! ### The diagonal matrices of type B -/
+
+section Elementary
+
+variable {K : Type u} {ι : Type*}
+
+section ZeroNeg
+
+variable [Zero K] [Neg K]
 
 /-- The weight of a coordinate in the standard type-`B` module: zero on the middle coordinate,
 `d i` on the first copy of `ι`, and `-d i` on the second. -/
 def typeBDiagonalValue (d : ι → K) : Unit ⊕ ι ⊕ ι → K :=
   Sum.elim 0 (Sum.elim d (-d))
 
-omit [DecidableEq ι] [Fintype ι] in
 @[simp]
 theorem typeBDiagonalValue_inl (d : ι → K) (i : Unit) :
     typeBDiagonalValue d (.inl i) = 0 :=
   (rfl)
 
-omit [DecidableEq ι] [Fintype ι] in
 @[simp]
 theorem typeBDiagonalValue_inr_inl (d : ι → K) (i : ι) :
     typeBDiagonalValue d (.inr (.inl i)) = d i :=
   (rfl)
 
-omit [DecidableEq ι] [Fintype ι] in
 @[simp]
 theorem typeBDiagonalValue_inr_inr (d : ι → K) (i : ι) :
     typeBDiagonalValue d (.inr (.inr i)) = -d i :=
   (rfl)
 
+variable [DecidableEq ι]
+
 /-- The ambient matrix `diag(0, d, -d)` in the split type-`B` model. -/
 def typeBDiagonalMatrix (d : ι → K) : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K :=
   diagonal (typeBDiagonalValue d)
 
-omit [Fintype ι] in
 @[simp]
 theorem typeBDiagonalMatrix_apply (d : ι → K) (i j : Unit ⊕ ι ⊕ ι) :
     typeBDiagonalMatrix d i j = if i = j then typeBDiagonalValue d i else 0 :=
   (rfl)
+
+end ZeroNeg
+
+section NegZeroClass
+
+variable [NegZeroClass K] [DecidableEq ι]
+
+/-- The type-`B` diagonal matrix of zero coordinates is zero. -/
+@[simp]
+theorem typeBDiagonalMatrix_zero : typeBDiagonalMatrix (0 : ι → K) = 0 := by
+  ext (a | (a | a)) b <;> simp
+
+end NegZeroClass
+
+end Elementary
+
+variable {K : Type u} [CommRing K]
+variable {ι : Type*} [DecidableEq ι] [Fintype ι]
 
 /-- Every `diag(0, d, -d)` lies in the ambient diagonal Cartan subalgebra of matrices. -/
 theorem typeBDiagonalMatrix_mem_diagonalCartan (d : ι → K) :
@@ -143,13 +166,6 @@ theorem typeBDiagonalMatrix_mem_typeB (d : ι → K) :
           LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply, Matrix.one_apply, h]
     · simp [typeBDiagonalMatrix, typeBDiagonalValue,
         LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply, Matrix.one_apply]
-
-omit [Fintype ι] in
-/-- The type-`B` diagonal matrix of zero coordinates is zero. -/
-@[simp]
-theorem typeBDiagonalMatrix_zero : typeBDiagonalMatrix (0 : ι → K) = 0 := by
-  ext a b
-  simp [typeBDiagonalMatrix, typeBDiagonalValue]
 
 /-! ### The Cartan subalgebra and its coordinates -/
 

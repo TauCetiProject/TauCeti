@@ -103,7 +103,8 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
 * `TauCeti.explicitIso_kummerMap`: the explicit and canonical Kummer maps agree under the
   degree-one comparison isomorphism.
 * `TauCeti.explicitMap1_kummerMap`: pullback along an arbitrary field extension carries the
-  Kummer class of a unit to the Kummer class of its image.
+  Kummer class of a unit to the Kummer class of its image, and `TauCeti.explicitMap1_kummerIso` is
+  the same statement on power classes.
 * `TauCeti.kummerIso_res`: the Kummer isomorphism is natural for restriction along a field
   extension, restriction corresponding to the map of power classes `Kˣ ⧸ (Kˣ)ⁿ → Lˣ ⧸ (Lˣ)ⁿ`;
   `TauCeti.kummerRes_kummerMap` is the same statement on units.
@@ -168,6 +169,13 @@ theorem kummerCoeffIncl_kummerCocycle
   Additive.toMul.injective <| by
     rw [toMul_kummerCoeffIncl, toMul_kummerCocycle, toMul_sub, Additive.toMul_smul,
       toMul_ofMul, div_eq_mul_inv]
+
+/-- **The Kummer cocycle vanishes exactly at the automorphisms fixing the chosen root.** -/
+@[simp]
+theorem kummerCocycle_eq_zero_iff
+    (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a)
+    (g : AbsoluteGaloisGroup K) : kummerCocycle hα g = 0 ↔ g • α = α := by
+  rw [← toMul_eq_one, ← OneMemClass.coe_eq_one, toMul_kummerCocycle, mul_inv_eq_one]
 
 /-- **The Kummer ratio `g ↦ g α / α` is a continuous `1`-cocycle** with values in `μₙ`. -/
 theorem kummerCocycle_mem_Z1
@@ -500,10 +508,10 @@ explicit Kummer class of a unit to its canonical continuous-cohomology class. -/
 theorem explicitIso_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
     Multiplicative.toAdd (kummerMapCanonical K n hn a) =
       explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
-        (KummerCoeff K n) (Multiplicative.toAdd (kummerMap K n hn a)) := by
-  rw [kummerMapCanonical, AddMonoidHom.toMultiplicativeRight_apply_apply, toAdd_ofAdd,
-    AddMonoidHom.comp_apply, AddMonoidHom.toMultiplicativeRight_symm_apply_apply, toMul_ofMul,
-    AddEquiv.coe_toAddMonoidHom]
+        (KummerCoeff K n) (Multiplicative.toAdd (kummerMap K n hn a)) :=
+  -- The defining equation of `kummerMapCanonical`, which is `kummerMap` followed by the
+  -- comparison isomorphism. Not a `rw` chain: each `rw` step re-checks a large motive.
+  (rfl)
 
 /-! ### Transport to another coefficient model -/
 
@@ -588,7 +596,7 @@ theorem kummerCoeffMap_smul (g : AbsoluteGaloisGroup L) (x : KummerCoeff K n) :
           AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) g • x) =
       g • kummerCoeffMap K n L σ x :=
   Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
-    simp [Subgroup.smul_def]
+    simp [Subgroup.smul_def, -map_smul]
 
 /-- **Restriction on the Kummer `H¹` along a `K`-embedding `σ : L →ₐ[K] Kˢ`**,
 `H¹(G_K, μₙ) → H¹(G_L, μₙ)`: restriction to the subgroup `Gal(Kˢ/σ(L)) ≤ G_K` fixing `σ(L)`,
@@ -634,9 +642,21 @@ theorem units_map_separableClosureRingEquiv_symm_pow
   ext
   simp [← IsScalarTower.algebraMap_apply]
 
+variable {K n L} in
+/-- **Transporting an `n`th root of a conjugate to `Lˢ`**: if `α ∈ Kˢ` is an `n`th root of `σ b`
+for `b ∈ Lˣ`, its image under the inverse of the identification
+`separableClosureRingEquiv K L σ : Lˢ ≃+* Kˢ` is an `n`th root of `b`. -/
+theorem units_map_separableClosureRingEquiv_symm_pow_eq {b : Lˣ}
+    (hα : (α : SeparableClosure K) ^ n = σ b) :
+    Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom α ^ n =
+      Units.map (algebraMap L (SeparableClosure L)).toMonoidHom b := by
+  ext
+  simp [← map_pow, hα]
+
 /-- **Restriction of a Kummer cocycle class**: restricting the class of `g ↦ g α / α` to `G_L`
-gives the class of `h ↦ h β / β` for the image `β ∈ Lˢ` of the root `α` under the
-identification of separable closures. -/
+gives the class of `h ↦ h β / β`, where `β ∈ Lˢ`, the image of the root `α` under the
+identification of separable closures, is an `n`th root of the image of `a` in `Lˣ`. The form for
+Kummer classes of units, with `n` invertible in `K`, is `TauCeti.kummerRes_kummerMap`. -/
 @[simp]
 theorem kummerRes_kummerCocycleClass
     (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
@@ -644,11 +664,11 @@ theorem kummerRes_kummerCocycleClass
       Multiplicative.ofAdd
         (kummerCocycleClass (units_map_separableClosureRingEquiv_symm_pow σ hα)) := by
   refine Multiplicative.toAdd.injective ?_
-  rw [toAdd_kummerRes, toAdd_ofAdd, toAdd_ofAdd, kummerCocycleClass, H1pi,
-    QuotientAddGroup.mk'_apply, explicitRes1_mk, explicitMap1_mk, kummerCocycleClass, H1pi,
-    QuotientAddGroup.mk'_apply]
+  -- `simp only` rather than `rw`: each `rw` step re-type-checks its motive over this large goal.
+  simp only [toAdd_kummerRes, toAdd_ofAdd, kummerCocycleClass_def, H1pi, QuotientAddGroup.mk'_apply,
+    explicitRes1_mk, explicitMap1_mk]
   congr 1
-  refine Subtype.ext (funext fun g => Additive.toMul.injective (Subtype.ext (Units.ext ?_)))
+  refine Subtype.ext <| funext fun g => Additive.toMul.injective <| Subtype.ext <| Units.ext ?_
   simp [cocyclesMap1_apply]
 
 /-- **Restriction of Kummer classes along a field extension**: for a `K`-embedding
@@ -741,6 +761,19 @@ theorem explicitMap1_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
   obtain ⟨α, hα⟩ := exists_pow_eq_units_map hn a
   rw [kummerMap_eq_kummerCocycleClass hn hα, explicitMap1_kummerCocycleClass n τ hα,
     ← kummerMap_eq_kummerCocycleClass hnL]
+
+/-- **The Kummer isomorphism is natural for pullback along an arbitrary field extension**:
+pullback along `τ : Kˢ → Lˢ` corresponds under the Kummer isomorphisms to the map of power classes
+`Kˣ ⧸ (Kˣ)ⁿ → Lˣ ⧸ (Lˣ)ⁿ` induced by `K → L`. -/
+theorem explicitMap1_kummerIso (hn : IsUnit (n : K)) (x : powerClassQuotient Kˣ n) :
+    explicitMap1 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
+      (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
+      continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ)
+      (kummerIso K n hn x).toAdd =
+        (kummerIso L n (by simpa using hn.map (algebraMap K L))
+          (powerClassMap n (Units.map (algebraMap K L : K →* L)) x)).toAdd := by
+  induction x using QuotientGroup.induction_on with
+  | H a => rw [kummerIso_mk, powerClassMap_mk, kummerIso_mk, explicitMap1_kummerMap]
 
 end BaseChange
 
@@ -879,16 +912,17 @@ theorem unitsCoeffMapSymm_coe_baseUnitsEquivInvariants (b : Lˣ) :
 variable [FiniteDimensional K L]
 
 /-- **Degree-zero corestriction on the invariants of `(Kˢ)ˣ` is the norm of `L/K`** (NSW, Ch. I
-§5): corestriction from `Gal(Kˢ/σ(L))` is the sum over a transversal, which on `σ b` is the
-product of the conjugates of `σ b`, that is the image of `N_{L/K} b`. -/
+§5): corestriction from `Gal(Kˢ/σ(L))` to `G_K` sends the invariant `σ b` of a unit `b ∈ Lˣ` to the
+image of `N_{L/K} b`. -/
 theorem explicitCor0_embeddedUnitsInvariants (b : Lˣ) :
     explicitCor0 (AbsoluteGaloisGroup K) (UnitsCoeff K) σ.fieldRange.fixingSubgroup
         (embeddedUnitsInvariants K L σ b) =
       baseUnitsEquivInvariants K (Additive.ofMul (Algebra.normUnits K b)) := by
-  refine Subtype.ext (Additive.toMul.injective (Units.ext ?_))
-  rw [toMul_coe_baseUnitsEquivInvariants]
-  simpa [coe_explicitCor0, toMul_sum] using
-    (algebraMap_norm_eq_prod_transversal K L σ Quotient.out Quotient.out_eq (b : L)).symm
+  refine Subtype.ext <| Additive.toMul.injective <| Units.ext ?_
+  -- corestriction is the sum over a transversal, which on `σ b` is the product of its conjugates
+  simp only [coe_explicitCor0, toMul_sum, Additive.toMul_smul, AlgEquiv.smul_units_def]
+  -- and that product is the image of `N_{L/K} b`
+  simpa using (algebraMap_norm_eq_prod_transversal K L σ Quotient.out Quotient.out_eq (b : L)).symm
 
 /-- **Corestriction on the Kummer `H¹` along a `K`-embedding `σ : L →ₐ[K] Kˢ` of a finite
 extension**, `H¹(G_L, μₙ) → H¹(G_K, μₙ)`: the transport along
@@ -931,25 +965,18 @@ theorem kummerCor_kummerMap (hn : IsUnit (n : L)) (b : Lˣ) :
     kummerCor K n L σ (kummerMap L n hn b) =
       kummerMap K n (isUnit_natCast_of_isUnit_natCast (algebraMap K L) hn)
         (Algebra.normUnits K b) := by
-  have hnK : IsUnit (n : K) := isUnit_natCast_of_isUnit_natCast (algebraMap K L) hn
   refine Multiplicative.toAdd.injective ?_
-  rw [toAdd_kummerCor, kummerMap_apply, kummerMap_apply, toAdd_ofAdd, toAdd_ofAdd,
-    (kummerShortExact L n hn).explicitDelta0_naturality
-      ((kummerShortExact K n hnK).restrict σ.fieldRange.fixingSubgroup)
+  -- naturality of `δ⁰` along the transport to `Gal(Kˢ/σ(L))`, then `cor ∘ δ⁰ = δ⁰ ∘ cor⁰` and
+  -- `cor⁰ = N_{L/K}`; `simp`, not `rw`: each `rw` step re-type-checks its motive over this goal
+  simp [toAdd_kummerCor, (kummerShortExact L n hn).explicitDelta0_naturality
+      ((kummerShortExact K n (isUnit_natCast_of_isUnit_natCast (algebraMap K L) hn)).restrict
+        σ.fieldRange.fixingSubgroup)
       ((absoluteGaloisGroupEquivFixingSubgroup K L σ).symm :
         ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup L)
       (kummerCoeffMapSymm K n L σ) (unitsCoeffMapSymm K L σ) (unitsCoeffMapSymm K L σ)
-      (kummerCoeffMapSymm_smul K n L σ) (unitsCoeffMapSymm_smul K L σ)
-      (fun a => by
-        rw [kummerShortExact_incl, DiscreteShortExact.restrict_incl, kummerShortExact_incl]
-        exact unitsCoeffMapSymm_kummerCoeffIncl K n L σ a)
-      (fun y => by
-        rw [kummerShortExact_proj, DiscreteShortExact.restrict_proj, kummerShortExact_proj]
-        exact unitsCoeffMapSymm_unitsCoeffPow K n L σ y)
+      (kummerCoeffMapSymm_smul K n L σ) (unitsCoeffMapSymm_smul K L σ) (by simp) (by simp)
       (baseUnitsEquivInvariants L (Additive.ofMul b)) (embeddedUnitsInvariants K L σ b)
       (unitsCoeffMapSymm_coe_baseUnitsEquivInvariants K L σ b).symm,
-    (kummerShortExact K n hnK).explicitCor_delta0 σ.fieldRange.fixingSubgroup
-      (isOpen_fixingSubgroup_fieldRange K L σ),
     explicitCor0_embeddedUnitsInvariants]
 
 /-- **The norm square of the Kummer isomorphism** (NSW, the display after (6.2.1)): for a

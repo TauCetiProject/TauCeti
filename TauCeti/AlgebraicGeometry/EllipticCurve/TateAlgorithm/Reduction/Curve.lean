@@ -47,6 +47,9 @@ The exponent never exceeds `v(Δ_min)`, so it vanishes at every prime of good re
 * `WeierstrassCurve.reductionSymbol_eq_I_iff`, `WeierstrassCurve.reductionSymbol_eq_I_zero_iff`,
   `WeierstrassCurve.exists_reductionSymbol_eq_I_add_one_iff` and
   `WeierstrassCurve.forall_reductionSymbol_ne_I_iff`: the symbol detects the reduction type.
+* `WeierstrassCurve.reductionSymbol_eq_I_zero_of_hasGoodReduction` and
+  `WeierstrassCurve.reductionSymbol_eq_I_of_hasMultiplicativeReduction`: direct simp evaluations
+  of the symbol under good or multiplicative reduction hypotheses on the curve.
 * `WeierstrassCurve.natCast_algorithmicOggExponent`: the exponent is `v(Δ_min) − m + 1`.
 * `WeierstrassCurve.algorithmicOggExponent_eq_zero_iff`,
   `WeierstrassCurve.algorithmicOggExponent_eq_one_iff` and
@@ -177,6 +180,25 @@ theorem reductionSymbol_eq_I_zero_iff (W : WeierstrassCurve K) [W.IsElliptic] :
     W.reductionSymbol R = .I 0 ↔ (W.minimal R).HasGoodReduction R := by
   rw [reductionSymbol_eq_I_iff, localMinimalDiscriminantValuation_eq_zero_iff]
   exact ⟨And.right, fun h ↦ ⟨fun ha ↦ ha.not_hasGoodReduction R h, h⟩⟩
+
+/-- Tate's canonical output is `I₀` for an equation with good reduction. -/
+@[simp]
+theorem reductionSymbol_eq_I_zero_of_hasGoodReduction (W : WeierstrassCurve K) [W.IsElliptic]
+    [W.HasGoodReduction R] : W.reductionSymbol R = TauCeti.ReductionSymbol.I 0 := by
+  exact (reductionSymbol_eq_I_zero_iff W).2
+    ((inferInstance : W.HasGoodReduction R).hasGoodReduction_minimal R)
+
+/-- Tate's canonical output at multiplicative reduction has index equal to the
+minimal-discriminant valuation. -/
+@[simp]
+theorem reductionSymbol_eq_I_of_hasMultiplicativeReduction (W : WeierstrassCurve K)
+    [W.IsElliptic] [W.HasMultiplicativeReduction R] :
+    W.reductionSymbol R = TauCeti.ReductionSymbol.I (W.localMinimalDiscriminantValuation R) := by
+  refine (reductionSymbol_eq_I_iff W _).2 ⟨?_, rfl⟩
+  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
+  rw [hasAdditiveReduction_iff_of_isMinimal_smul (R := R) C hC]
+  exact (inferInstance : W.HasMultiplicativeReduction R).not_hasAdditiveReduction R
+
 
 /-- **The reduction symbol is `Iₙ` with `n ≥ 1` exactly at multiplicative reduction.** -/
 @[simp]

@@ -84,6 +84,12 @@ theorem IsGoodPrime.separable_specialize {spec : ResolventSpec n}
   exact ((spec.monic_specialize ℤ f).separable_map_zmod_iff_not_dvd_discr p).mpr
     ((TauCeti.isGoodPrime_iff _ p).mp h.resolvent)
 
+/-- A jointly good prime supplies separation evidence for the reduced specialization. -/
+theorem IsGoodPrime.resolventSeparationEvidence {spec : ResolventSpec n}
+    (h : spec.IsGoodPrime f p) [Fact p.Prime] :
+    ResolventSeparationEvidence spec (f.map (Int.castRingHom (ZMod p))) :=
+  ⟨h.separable_specialize⟩
+
 /-- For a monic polynomial, joint goodness is exactly separability of the reduction and of
 the resolvent specialized at that reduction. -/
 theorem isGoodPrime_iff_separable (hf : f.Monic) (p : ℕ) [Fact p.Prime] :
@@ -110,7 +116,7 @@ theorem IsGoodPrime.exists_isRoot_map_specialize_iff {spec : ResolventSpec n}
           (e.permCongrHom : _ →* Equiv.Perm (Fin n)) ≤
             spec.H.map (MulAut.conj τ).toMonoidHom := by
   rw [spec.specialize_map]
-  exact spec.exists_isRoot_specialize_iff_exists_le_map_conj (hf.map _) (h.separable_map hf)
-    ((hf.natDegree_map _).trans hdeg) e h.separable_specialize
+  exact spec.exists_isRoot_specialize_iff_exists_le_map_conj (hf.map _)
+    ((hf.natDegree_map _).trans hdeg) e h.resolventSeparationEvidence
 
 end TauCeti.ResolventSpec

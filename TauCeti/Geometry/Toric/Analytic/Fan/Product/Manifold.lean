@@ -156,8 +156,8 @@ theorem contMDiff_analyticProdHomeomorph_symm (n : ℕ∞ω) :
         𝓘(ℂ, (Fin _ → ℂ) × (Fin l' → ℂ))) n
       (fun q : Φ.analyticRealization hΦ × Ψ.analyticRealization hΨ ↦
         (P.symm q.1, Q.symm q.2)) (P.target ×ˢ Q.target) :=
-    (P.symm.contMDiffOn.comp contMDiffOn_fst fun _ hz ↦ hz.1).prodMk
-      (Q.symm.contMDiffOn.comp contMDiffOn_snd fun _ hz ↦ hz.2)
+    (P.symm.contMDiffOn.comp contMDiffOn_fst fun _ (hz : _ ∈ P.target ×ˢ Q.target) ↦ hz.1).prodMk
+      (Q.symm.contMDiffOn.comp contMDiffOn_snd fun _ (hz : _ ∈ P.target ×ˢ Q.target) ↦ hz.2)
   have hlocal := (Φ.contMDiff_productChart Ψ hΦ hΨ σ τ hB hC κ κ' n).comp_contMDiffOn hsymm
   have hmem : P.target ×ˢ Q.target ∈ 𝓝 p :=
     (P.open_target.prod Q.open_target).mem_nhds ⟨hP ▸ ⟨a, ha⟩, hQ ▸ ⟨b, hb⟩⟩
@@ -166,14 +166,10 @@ theorem contMDiff_analyticProdHomeomorph_symm (n : ℕ∞ω) :
   filter_upwards [hmem] with z hz
   obtain ⟨x, hx⟩ := hP ▸ hz.1
   obtain ⟨y, hy⟩ := hQ ▸ hz.2
-  have hPx : P.symm (Φ.analyticAffineChartι hΦ σ x) = x := by
-    rw [← Φ.analyticAffineChartPartialDiffeomorph_apply hΦ σ hB κ g n x]
-    exact P.left_inv ((Φ.analyticAffineChartPartialDiffeomorph_source hΦ σ hB κ g n).symm ▸
-      mem_univ x)
-  have hQy : Q.symm (Ψ.analyticAffineChartι hΨ τ y) = y := by
-    rw [← Ψ.analyticAffineChartPartialDiffeomorph_apply hΨ τ hC κ' g' n y]
-    exact Q.left_inv ((Ψ.analyticAffineChartPartialDiffeomorph_source hΨ τ hC κ' g' n).symm ▸
-      mem_univ y)
+  have hPx : P.symm (Φ.analyticAffineChartι hΦ σ x) = x :=
+    Φ.analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι hΦ σ hB κ g n x
+  have hQy : Q.symm (Ψ.analyticAffineChartι hΨ τ y) = y :=
+    Ψ.analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι hΨ τ hC κ' g' n y
   rw [← Prod.eta z, ← hx, ← hy]
   simp only [Function.comp_apply, hPx, hQy, analyticProdHomeomorph_symm_analyticAffineChartι,
     coe_analyticAffineChartProdHomeomorph_symm]

@@ -79,6 +79,14 @@ lemma ofSubsetMap_comp (h : Set.MapsTo (g ≫ g') B B'') :
     ofSubsetMap (g ≫ g') h = ofSubsetMap g hB ≫ ofSubsetMap g' hB' := by
   ext : 2 <;> rfl
 
+variable {g g'} in
+/-- Two maps of pairs induced by continuous maps compose to the map induced by any continuous map
+equal to their composite. -/
+lemma ofSubsetMap_comp_ofSubsetMap_of_comp_eq {g'' : X ⟶ Z} (h : Set.MapsTo g'' B B'')
+    (hg : g ≫ g' = g'') : ofSubsetMap g hB ≫ ofSubsetMap g' hB' = ofSubsetMap g'' h := by
+  subst hg
+  exact (ofSubsetMap_comp _ _ _ _ _).symm
+
 /-- A homeomorphism `e : X ≃ₜ Y` carrying `B` onto `B'` induces an isomorphism of pairs
 `(X, B) ≅ (Y, B')`. -/
 def ofSubsetIso (e : X ≃ₜ Y) (h : ∀ x, x ∈ B ↔ e x ∈ B') : ofSubset B ≅ ofSubset B' where

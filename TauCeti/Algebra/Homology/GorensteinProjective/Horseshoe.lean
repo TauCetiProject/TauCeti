@@ -70,12 +70,9 @@ theorem IsGorensteinProjective.exists_copresentation_horseshoe
   let TX := ShortComplex.mk iX pX hX
   -- The same pushout has a split row with quotient `S.X₃` and a row with cokernel `KX`.
   let sq := IsPushout.of_hasPushout iX S.f
-  have hsplit := E.conflation_cobaseChange
-    ((ExactStructure.abelian_conflation S).mpr hS) sq.flip
+  have hsplit' := shortExact_cobaseChange hS sq.flip
   have hmiddle := E.conflation_cobaseChange
     ((ExactStructure.abelian_conflation TX).mpr hTX) sq
-  rw [cobaseChange_def] at hsplit
-  have hsplit' := (ExactStructure.abelian_conflation _).mp hsplit
   obtain ⟨r, hr⟩ := IsGorensteinProjective.exists_extend
     (S := ShortComplex.mk (pushout.inl iX S.f) (cobaseChangeπ S sq.flip) (by simp))
     hN hsplit' PX (𝟙 PX)

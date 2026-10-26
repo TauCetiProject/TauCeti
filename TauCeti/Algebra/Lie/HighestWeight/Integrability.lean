@@ -147,8 +147,8 @@ theorem isHighestWeightVector_pow_toEnd_of_lieSpan_eq_top_of_ne_zero
       Weight.toLinear_apply, Weight.coe_neg, Pi.neg_apply, nsmul_eq_mul, Nat.cast_add,
       Nat.cast_one]
     ring
-  have : IsAddTorsionFree (Dual K H) := IsAddTorsionFree.of_isTorsionFree K _
-  have : IsAddTorsionFree H := IsAddTorsionFree.of_isTorsionFree K _
+  have : HasUniqueDiv (Dual K H) := .of_isTorsionFree K _
+  have : HasUniqueDiv H := .of_isTorsionFree K _
   refine isHighestWeightVector_of_forall_rootSpace hw hcartan fun j hj x hx => ?_
   rcases eq_or_ne j i with rfl | hji
   · exact lie_pow_toEnd_eq_zero_of_isHighestWeightVector hv
@@ -183,7 +183,7 @@ theorem isHighestWeightVector_pow_toEnd_of_lieSpan_eq_top_of_ne_zero
 /-- A weight is not obtained from itself by subtracting a positive multiple of a root. -/
 private theorem ne_sub_nsmul_root (lam : Dual K H) (i : H.root) (n : ℕ) :
     lam ≠ lam - (n + 1) • (IsKilling.rootSystem H).root i := fun heq => by
-  have : IsAddTorsionFree (Dual K H) := IsAddTorsionFree.of_isTorsionFree K _
+  have : HasUniqueDiv (Dual K H) := .of_isTorsionFree K _
   exact (IsKilling.rootSystem H).ne_zero i
     ((nsmul_eq_zero_iff_right n.succ_ne_zero).mp (sub_eq_self.mp heq.symm))
 

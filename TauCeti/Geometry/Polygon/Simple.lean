@@ -41,6 +41,7 @@ no vertices is vacuously simple and has empty boundary, so the results about the
 * `Polygon.IsSimple`: the edges are nondegenerate, and distinct edges meet only at the common
   vertex of consecutive edges.
 * `Polygon.boundaryParam`: the periodic map `ℝ → P` running along edge `i` on `[i, i + 1]`.
+* `Polygon.edgeIndexAt`: the edge along which the boundary parametrization runs at a given time.
 * `Polygon.boundaryParamCircle`: the induced map from the circle `AddCircle n` to `P`.
 * `TauCeti.SimplePolygon`: a simple polygon bundled with its number of vertices, the polygonal
   presentation of a knot when `P = ℝ³`.
@@ -52,10 +53,18 @@ no vertices is vacuously simple and has empty boundary, so the results about the
 ## Main results
 
 * `Polygon.isSimple_rotate_iff`: relabelling the vertices cyclically keeps a polygon simple.
-* `Polygon.IsSimple.three_le`: a simple polygon over an ordered field has at least three vertices.
-* `Polygon.range_boundaryParam`: the parametrization runs over the whole boundary.
+* `Polygon.IsSimple.three_le`: a nonempty simple polygon over a densely ordered ring acting
+  torsion freely has at least three vertices.
+* `Polygon.IsSimple.subsingleton_edgeSet_inter`: two distinct edges of such a simple polygon have
+  at most one common point.
+* `Polygon.range_boundaryParam` and `Polygon.boundaryParam_mem_boundary`: the parametrization runs
+  over the whole boundary, and stays on it.
+* `Polygon.edgeIndexAt_natCast_add` and `Polygon.periodic_edgeIndexAt`: the edge index is `i` on
+  `[i, i + 1)`, and has period `n`.
 * `Polygon.IsSimple.boundaryParam_eq_boundaryParam_iff`: for a simple polygon, two parameters
   give the same point exactly when they agree modulo `n`.
+* `Polygon.exists_mem_Ico_boundaryParam_eq` and `Polygon.IsSimple.injOn_boundaryParam`: every
+  boundary point is reached at a time in `[0, n)`, and for a simple polygon at only one.
 * `Polygon.IsSimple.isClosedEmbedding_boundaryParamCircle`: a simple real polygon is a closed
   embedding of the circle.
 * `Polygon.IsSimple.isJordanCurve_boundary`: the boundary of a simple real polygon is a Jordan
@@ -128,32 +137,51 @@ end IsSimple
 
 section ThreeLE
 
-variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V] [Module R V]
-  [AddTorsor V P] {poly : Polygon P n}
+variable [Ring R] [LinearOrder R] [IsStrictOrderedRing R] [DenselyOrdered R]
+  [AddCommGroup V] [Module R V] [Module.IsTorsionFree R V] [AddTorsor V P] {poly : Polygon P n}
 
-/-- **A simple polygon has at least three vertices.** A polygon with one vertex has a degenerate
-edge, and the two edges of a polygon with two vertices overlap. -/
+/-- **A nonempty simple polygon has at least three vertices.** Over a densely ordered ring
+acting torsion freely, a polygon with one vertex has a degenerate edge, and the two edges of a
+polygon with two vertices share a point other than their end points. -/
 theorem IsSimple.three_le [NeZero n] (h : poly.IsSimple R) : 3 ≤ n := by
   have h2 := h.hasNondegenerateEdges.two_le
   by_contra hn
   obtain rfl : n = 2 := by omega
   have h01 : poly 0 ≠ poly 1 := h.hasNondegenerateEdges 0
-  have hhalf : (2⁻¹ : R) ∈ Icc (0 : R) 1 := ⟨by positivity, by norm_num⟩
+  obtain ⟨s, hs0, hs1⟩ := exists_between (zero_lt_one : (0 : R) < 1)
   have hrot0 : finRotate 2 0 = 1 := by simp [finRotate_apply]
   have hrot1 : finRotate 2 1 = 0 := by simp [finRotate_apply]
-  have hm0 : AffineMap.lineMap (poly 0) (poly 1) (2⁻¹ : R) ∈ poly.edgeSet R 0 := by
+  have hm0 : AffineMap.lineMap (poly 0) (poly 1) s ∈ poly.edgeSet R 0 := by
     rw [edgeSet, hrot0]
-    exact ⟨2⁻¹, hhalf, rfl⟩
-  have hm1 : AffineMap.lineMap (poly 0) (poly 1) (2⁻¹ : R) ∈ poly.edgeSet R 1 := by
+    exact ⟨s, ⟨hs0.le, hs1.le⟩, rfl⟩
+  have hm1 : AffineMap.lineMap (poly 0) (poly 1) s ∈ poly.edgeSet R 1 := by
     rw [edgeSet, hrot1, affineSegment_comm]
-    exact ⟨2⁻¹, hhalf, rfl⟩
+    exact ⟨s, ⟨hs0.le, hs1.le⟩, rfl⟩
   rcases h.eq_vertex_of_mem_edgeSet Fin.zero_ne_one hm0 hm1 with ⟨-, hx⟩ | ⟨-, hx⟩
   · rcases AffineMap.lineMap_eq_right_iff.1 hx with h' | h'
     · exact h01 h'
-    · norm_num at h'
+    · exact hs1.ne h'
   · rcases AffineMap.lineMap_eq_left_iff.1 hx with h' | h'
     · exact h01 h'
-    · norm_num at h'
+    · exact hs0.ne' h'
+
+/-- **Two distinct edges of a simple polygon share at most one point**, the common vertex when
+they are consecutive. Over a densely ordered ring acting torsion freely, a simple polygon has at
+least three vertices, so two edges cannot be consecutive in both orders. -/
+theorem IsSimple.subsingleton_edgeSet_inter (h : poly.IsSimple R) {i j : Fin n} (hij : i ≠ j) :
+    (poly.edgeSet R i ∩ poly.edgeSet R j).Subsingleton := by
+  have : NeZero n := ⟨i.pos.ne'⟩
+  have hrot : finRotate n (finRotate n i) ≠ i := by
+    obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by have := h.three_le; omega⟩
+    rw [finRotate_apply, finRotate_apply, add_assoc, ne_eq, add_eq_left, Fin.ext_iff]
+    simp [Fin.val_add, Nat.mod_eq_of_lt (show 2 < m + 3 by omega)]
+  rintro x ⟨hxi, hxj⟩ y ⟨hyi, hyj⟩
+  rcases h.eq_vertex_of_mem_edgeSet hij hxi hxj with ⟨hji, rfl⟩ | ⟨hij', rfl⟩ <;>
+    rcases h.eq_vertex_of_mem_edgeSet hij hyi hyj with ⟨hji', rfl⟩ | ⟨hij'', rfl⟩
+  · rfl
+  · exact (hrot (hji ▸ hij''.symm)).elim
+  · exact (hrot (hji' ▸ hij'.symm)).elim
+  · rfl
 
 end ThreeLE
 
@@ -194,6 +222,36 @@ integer `i` read modulo `n`. -/
 noncomputable def boundaryParam (t : ℝ) : P :=
   poly.edgePath ℝ (vertexIndex n ⌊t⌋) (Int.fract t)
 
+variable (n) in
+/-- The edge along which the boundary parametrization of a polygon with `n` vertices runs at time
+`t`: the edge starting at vertex `⌊t⌋ mod n`. -/
+noncomputable def edgeIndexAt (t : ℝ) : Fin n :=
+  vertexIndex n ⌊t⌋
+
+/-- At time `t` the boundary parametrization is at parameter `Int.fract t` along the edge
+`edgeIndexAt n t`. -/
+theorem boundaryParam_eq_edgePath_edgeIndexAt (t : ℝ) :
+    poly.boundaryParam t = poly.edgePath ℝ (edgeIndexAt n t) (Int.fract t) :=
+  (rfl)
+
+/-- On `[i, i + 1)` the boundary parametrization runs along edge `i`. -/
+theorem edgeIndexAt_natCast_add (i : Fin n) {s : ℝ} (hs : s ∈ Ico (0 : ℝ) 1) :
+    edgeIndexAt n ((i : ℕ) + s) = i := by
+  rw [edgeIndexAt, Int.floor_natCast_add, Int.floor_eq_zero_iff.2 hs, add_zero, vertexIndex_natCast]
+
+/-- At time `i` the boundary parametrization starts along edge `i`. -/
+@[simp]
+theorem edgeIndexAt_natCast (i : Fin n) : edgeIndexAt n (i : ℕ) = i := by
+  simpa using edgeIndexAt_natCast_add i (s := 0) ⟨le_rfl, zero_lt_one⟩
+
+/-- The edge index has period `n`. -/
+theorem periodic_edgeIndexAt : Periodic (edgeIndexAt n) n := fun t => by
+  rw [edgeIndexAt, edgeIndexAt, Int.floor_add_natCast, vertexIndex_add_natCast_self]
+
+/-- One unit of time later, the boundary parametrization runs along the next edge. -/
+theorem edgeIndexAt_add_one (t : ℝ) : edgeIndexAt n (t + 1) = finRotate n (edgeIndexAt n t) := by
+  rw [edgeIndexAt, edgeIndexAt, Int.floor_add_one, vertexIndex_add_one]
+
 /-- On `[k, k + 1]` the boundary parametrization runs along the edge starting at vertex `k mod n`,
 including at the right end point, where the next edge starts at the same vertex. -/
 theorem boundaryParam_eq_edgePath (k : ℤ) {t : ℝ} (ht : t ∈ Icc (k : ℝ) (k + 1)) :
@@ -224,7 +282,16 @@ theorem periodic_boundaryParam : Periodic poly.boundaryParam n := fun t => by
   rw [boundaryParam, boundaryParam, Int.floor_add_natCast, Int.fract_add_natCast,
     vertexIndex_add_natCast_self]
 
+/-- The cyclic relabelling `poly.rotate` starts at vertex `1` of `poly`: its boundary
+parametrization is that of `poly`, one unit of time later. -/
+@[simp]
+theorem boundaryParam_rotate (t : ℝ) :
+    poly.rotate.boundaryParam t = poly.boundaryParam (t + 1) := by
+  rw [boundaryParam_eq_edgePath_edgeIndexAt, boundaryParam_eq_edgePath_edgeIndexAt, edgePath_rotate,
+    edgeIndexAt_add_one, Int.fract_add_one]
+
 /-- The boundary parametrization runs over the whole boundary of the polygon. -/
+@[simp]
 theorem range_boundaryParam : range poly.boundaryParam = poly.boundary ℝ := by
   refine Subset.antisymm ?_ fun x hx => ?_
   · rintro _ ⟨t, rfl⟩
@@ -236,6 +303,11 @@ theorem range_boundaryParam : range poly.boundaryParam = poly.boundary ℝ := by
     obtain ⟨s, hs, rfl⟩ := hi
     exact mem_range.2 ⟨_, poly.boundaryParam_natCast_add i hs⟩
 
+/-- The boundary parametrization stays on the boundary of the polygon. -/
+theorem boundaryParam_mem_boundary (t : ℝ) : poly.boundaryParam t ∈ poly.boundary ℝ := by
+  rw [← poly.range_boundaryParam]
+  exact mem_range_self t
+
 /-- The boundary parametrization induces a map from the circle `AddCircle n`, of length the number
 of vertices. -/
 noncomputable def boundaryParamCircle : AddCircle (n : ℝ) → P :=
@@ -246,6 +318,7 @@ theorem boundaryParamCircle_coe (t : ℝ) : poly.boundaryParamCircle t = poly.bo
   poly.periodic_boundaryParam.lift_coe t
 
 /-- The circle parametrization runs over the whole boundary of the polygon. -/
+@[simp]
 theorem range_boundaryParamCircle : range poly.boundaryParamCircle = poly.boundary ℝ := by
   rw [← poly.range_boundaryParam, ← QuotientAddGroup.mk_surjective.range_comp]
   exact congrArg range (funext poly.boundaryParamCircle_coe)
@@ -283,6 +356,25 @@ theorem IsSimple.boundaryParam_eq_boundaryParam_iff (h : poly.IsSimple ℝ) {s t
       exact absurd hx (edgePath_ne_finRotate h.hasNondegenerateEdges _ (Int.fract_lt_one s))
     · rw [hst, hi, boundaryParam] at hx
       exact absurd hx (edgePath_ne_finRotate h.hasNondegenerateEdges _ (Int.fract_lt_one t))
+
+/-- For a simple polygon, the boundary parametrization is injective on one period `[0, n)`. -/
+theorem IsSimple.injOn_boundaryParam (h : poly.IsSimple ℝ) :
+    InjOn poly.boundaryParam (Ico 0 n) := by
+  have : Fact (0 < (n : ℝ)) := ⟨mod_cast (NeZero.pos n)⟩
+  intro s hs t ht hst
+  rw [h.boundaryParam_eq_boundaryParam_iff] at hst
+  exact (AddCircle.coe_eq_coe_iff_of_mem_Ico (a := 0) (by simpa using hs) (by simpa using ht)).1 hst
+
+/-- Every point of the boundary of a polygon is reached by the boundary parametrization at some
+time in one period `[0, n)`. -/
+theorem exists_mem_Ico_boundaryParam_eq {x : P} (hx : x ∈ poly.boundary ℝ) :
+    ∃ t ∈ Ico (0 : ℝ) n, poly.boundaryParam t = x := by
+  rw [← range_boundaryParam] at hx
+  obtain ⟨u, rfl⟩ := hx
+  have hn : (0 : ℝ) < n := mod_cast NeZero.pos n
+  refine ⟨toIcoMod hn 0 u, by simpa using toIcoMod_mem_Ico hn 0 u, ?_⟩
+  rw [← sub_sub_cancel u (toIcoMod hn 0 u), self_sub_toIcoMod]
+  exact poly.periodic_boundaryParam.sub_zsmul_eq _
 
 /-- The circle parametrization of a simple polygon is injective. -/
 theorem IsSimple.boundaryParamCircle_injective (h : poly.IsSimple ℝ) :
@@ -427,7 +519,7 @@ theorem IsSimple.exists_mem_nhds_inter_boundary_eq [T2Space P] (h : poly.IsSimpl
   obtain ⟨j, hj⟩ := mem_iUnion.1 hy
   by_cases hzj : z ∈ poly.edgeSet ℝ j
   · exact ⟨hyC, hsub j hzj hj⟩
-  · exact absurd (mem_biUnion (x := j) hzj hj) hyC
+  · exact absurd (mem_iUnion₂_of_mem (i := j) hzj hj) hyC
 
 end Topology
 
@@ -542,6 +634,7 @@ theorem realize_toCircle (t : ℝ) :
     Homeomorph.symm_apply_apply, Polygon.boundaryParamCircle_coe]
 
 /-- The realization runs over the whole boundary of the polygon. -/
+@[simp]
 theorem range_realize : range p.realize = p.toPolygon.boundary ℝ := by
   rw [realize, (Homeomorph.surjective _).range_comp, Polygon.range_boundaryParamCircle]
 

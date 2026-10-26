@@ -37,6 +37,9 @@ and vanish off a set of finite measure, and the extremal function `|h| ^ (q - 2)
 where `h` is large and outside a spanning set of a σ-finite measure. This is the form needed to
 prove that an operator defined on `L²` maps `L² ∩ Lᵖ` into `L^q` by duality.
 
+The integral Hölder bounds apply to arbitrary functions, using the convention that `eLpNorm`
+is `∞` outside the almost everywhere strongly measurable functions.
+
 ## Main declarations
 
 * `TauCeti.eLpNorm_le_eLpNorm_rpow`: if `‖u‖ ≤ ‖f‖ ^ r`, then `‖u‖_s ≤ ‖f‖_p ^ r` when
@@ -89,29 +92,26 @@ theorem eLpNorm_le_eLpNorm_rpow {f : α → E} {u : α → F} {p s : ℝ≥0∞}
 
 /-- **Hölder's inequality** for the integral of a product: `‖∫ u v‖ ≤ ‖u‖_p ‖v‖_q` for Hölder
 conjugate exponents `p` and `q`. -/
-theorem enorm_integral_mul_le {𝕜 : Type*} [NormedRing 𝕜] [NormedSpace ℝ 𝕜] {p q : ℝ≥0∞}
-    [p.HolderConjugate q] {u v : α → 𝕜} (hu : AEStronglyMeasurable u μ)
-    (hv : AEStronglyMeasurable v μ) :
+theorem enorm_integral_mul_le {𝕜 : Type*} [NonUnitalNormedRing 𝕜] [NormedSpace ℝ 𝕜]
+    {p q : ℝ≥0∞} [p.HolderConjugate q] {u v : α → 𝕜} :
     ‖∫ x, u x * v x ∂μ‖ₑ ≤ eLpNorm u p μ * eLpNorm v q μ := by
-  calc ‖∫ x, u x * v x ∂μ‖ₑ ≤ ∫⁻ x, ‖u x * v x‖ₑ ∂μ := enorm_integral_le_lintegral_enorm _
-    _ = eLpNorm (fun x => u x * v x) 1 μ := (eLpNorm_one_eq_lintegral_enorm (hu.mul hv)).symm
-    _ ≤ (1 : ℝ≥0) * eLpNorm u p μ * eLpNorm v q μ :=
-        eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm (· * ·) 1 continuous_mul hu hv
-          (ae_of_all _ fun x => by simpa using norm_mul_le (u x) (v x))
-    _ = eLpNorm u p μ * eLpNorm v q μ := by simp
+  calc ‖∫ x, u x * v x ∂μ‖ₑ ≤ eLpNorm (fun x => u x * v x) 1 μ :=
+        (enorm_integral_le_lintegral_enorm _).trans lintegral_enorm_le_eLpNorm_one
+    _ ≤ eLpNorm u p μ * eLpNorm v q μ := by
+        simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm_of_pos (· * ·) 1 continuous_mul
+          (ae_of_all _ fun x => by simpa using norm_mul_le (u x) (v x)) zero_lt_one
 
 /-- **Hölder's inequality** for the integral of an inner product: `‖∫ ⟪u, v⟫‖ ≤ ‖u‖_p ‖v‖_q` for
 Hölder conjugate exponents `p` and `q`. -/
 theorem enorm_integral_inner_le {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H]
-    [InnerProductSpace 𝕜 H] {p q : ℝ≥0∞} [p.HolderConjugate q] {u v : α → H}
-    (hu : AEStronglyMeasurable u μ) (hv : AEStronglyMeasurable v μ) :
+    [InnerProductSpace 𝕜 H] {p q : ℝ≥0∞} [p.HolderConjugate q] {u v : α → H} :
     ‖∫ x, ⟪u x, v x⟫_𝕜 ∂μ‖ₑ ≤ eLpNorm u p μ * eLpNorm v q μ := by
-  calc ‖∫ x, ⟪u x, v x⟫_𝕜 ∂μ‖ₑ ≤ ∫⁻ x, ‖⟪u x, v x⟫_𝕜‖ₑ ∂μ := enorm_integral_le_lintegral_enorm _
-    _ = eLpNorm (fun x => ⟪u x, v x⟫_𝕜) 1 μ := (eLpNorm_one_eq_lintegral_enorm (hu.inner hv)).symm
-    _ ≤ (1 : ℝ≥0) * eLpNorm u p μ * eLpNorm v q μ :=
-        eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm (fun a b => ⟪a, b⟫_𝕜) 1 continuous_inner hu hv
-          (ae_of_all _ fun x => by simpa using norm_inner_le_norm (u x) (v x))
-    _ = eLpNorm u p μ * eLpNorm v q μ := by simp
+  calc ‖∫ x, ⟪u x, v x⟫_𝕜 ∂μ‖ₑ ≤ eLpNorm (fun x => ⟪u x, v x⟫_𝕜) 1 μ :=
+        (enorm_integral_le_lintegral_enorm _).trans lintegral_enorm_le_eLpNorm_one
+    _ ≤ eLpNorm u p μ * eLpNorm v q μ := by
+        simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm_of_pos (fun a b => ⟪a, b⟫_𝕜) 1
+          continuous_inner (ae_of_all _ fun x => by simpa using norm_inner_le_norm (u x) (v x))
+          zero_lt_one
 
 end TauCeti
 
@@ -187,8 +187,7 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top {q q' : ℝ�
       _ ≤ C * eLpNorm g q' μ + eLpNorm (h - ⇑φ) q μ * eLpNorm g q' μ := by
           gcongr
           · exact hC g hgmem
-          · exact enorm_integral_mul_le (hh.aestronglyMeasurable.sub φ.aestronglyMeasurable)
-              g.aestronglyMeasurable
+          · exact enorm_integral_mul_le
       _ ≤ (C + ε / 2) * X ^ (r - 1) := by
           rw [← add_mul]
           gcongr
@@ -342,9 +341,9 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : T
         ring_nf
     · simp [hg_def, hu_def, Set.indicator_of_notMem hx, Real.zero_rpow (by linarith : r ≠ 0)]
   have hu_supp : ∀ x, x ∉ spanningSets μ N → u x = 0 := fun x hx =>
-    Set.indicator_of_notMem (fun h => hx h.1) _
+    Set.indicator_of_notMem (fun h => hx (Set.mem_of_mem_inter_left h)) _
   have hg_supp : ∀ x, x ∉ spanningSets μ N → g x = 0 := fun x hx =>
-    Set.indicator_of_notMem (fun h => hx h.1) _
+    Set.indicator_of_notMem (fun h => hx (Set.mem_of_mem_inter_left h)) _
   have hum : StronglyMeasurable u := hh'.indicator (hSm N)
   have hgm : AEStronglyMeasurable g μ := by
     refine (StronglyMeasurable.indicator ?_ (hSm N)).aestronglyMeasurable

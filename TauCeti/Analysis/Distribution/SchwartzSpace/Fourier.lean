@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
+public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
 
 /-!
@@ -28,11 +28,16 @@ so the Laplacian controls the whole Hessian of `u` in `L²`. This is the `p = 2`
 Calderón–Zygmund estimate `‖D²u‖_{Lᵖ} ≤ C ‖Δu‖_{Lᵖ}`, and the `L²` input to elliptic regularity
 for the Laplacian on `ℝⁿ`.
 
+Fourier multipliers are additive in their symbol and commute with the Laplacian.
+
 For the inverse Fourier transform, iterating Mathlib's `SchwartzMap.fourierInv_lineDerivOp_eq`
 gives `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`, and Mathlib's `norm_fourier_toL2_eq` gives
 Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
 
 ## Main declarations
+
+* `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
+* `SchwartzMap.fourierMultiplierCLM_laplacian`: Fourier multipliers commute with the Laplacian.
 
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
@@ -60,6 +65,38 @@ namespace SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F]
+
+section FourierMultiplier
+
+variable {𝕜 : Type*} [RCLike 𝕜] [NormedSpace ℂ F] [NormedSpace 𝕜 F]
+  [SMulCommClass ℂ 𝕜 F]
+
+/-- Fourier multipliers are additive in the symbol. -/
+theorem fourierMultiplierCLM_add {g₁ g₂ : E → 𝕜} (hg₁ : g₁.HasTemperateGrowth)
+    (hg₂ : g₂.HasTemperateGrowth) :
+    fourierMultiplierCLM F (g₁ + g₂) = fourierMultiplierCLM F g₁ + fourierMultiplierCLM F g₂ := by
+  ext1 f
+  simp [fourierMultiplierCLM_apply, smulLeftCLM_add hg₁ hg₂]
+
+variable [CompleteSpace F]
+
+/-- Fourier multipliers commute with the Laplacian. -/
+theorem fourierMultiplierCLM_laplacian {g : E → 𝕜} (hg : g.HasTemperateGrowth) (f : 𝓢(E, F)) :
+    fourierMultiplierCLM F g (Δ f) = Δ (fourierMultiplierCLM F g f) := by
+  have hn : (fun ξ : E ↦ ‖ξ‖ ^ 2).HasTemperateGrowth := by fun_prop
+  -- Commute the two symbols before transporting the identity through the Laplacian formula.
+  have hcomm : fourierMultiplierCLM F g
+      (fourierMultiplierCLM F (fun ξ : E ↦ ‖ξ‖ ^ 2) f) =
+      fourierMultiplierCLM F (fun ξ : E ↦ ‖ξ‖ ^ 2) (fourierMultiplierCLM F g f) := by
+    have hn𝕜 : (fun ξ : E ↦ RCLike.ofReal (K := 𝕜) (‖ξ‖ ^ 2)).HasTemperateGrowth := by
+      fun_prop
+    simp only [← fourierMultiplierCLM_ofReal 𝕜 hn]
+    simp only [fourierMultiplierCLM_fourierMultiplierCLM_apply hg hn𝕜,
+      fourierMultiplierCLM_fourierMultiplierCLM_apply hn𝕜 hg, mul_comm g]
+  simpa only [laplacian_eq_fourierMultiplierCLM, ContinuousLinearMap.map_smul_of_tower]
+    using congrArg (fun q ↦ -((2 * π) ^ 2) • q) hcomm
+
+end FourierMultiplier
 
 section normed
 

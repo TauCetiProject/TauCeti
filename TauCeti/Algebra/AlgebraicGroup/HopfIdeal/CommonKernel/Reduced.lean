@@ -32,6 +32,8 @@ In that setting reducedness also makes the generated subgroup scheme smooth.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open scoped TensorProduct
 
 namespace TauCeti.CommHopfAlgCat

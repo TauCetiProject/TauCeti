@@ -126,7 +126,7 @@ theorem eventually_rootsOfUnity_invariant_nhds_of_nhdsNE {E : Type*} {f : ℂ �
 variable (m) in
 /-- The open disc of radius `r` about `0`, as a set invariant under the `m`-th roots of
 unity. -/
-def rootsOfUnityBall (r : ℝ) : SubMulAction (rootsOfUnity m ℂ) ℂ where
+noncomputable def rootsOfUnityBall (r : ℝ) : SubMulAction (rootsOfUnity m ℂ) ℂ where
   carrier := Metric.ball 0 r
   smul_mem' ζ u hu := by
     rw [Metric.mem_ball, dist_zero_right] at hu ⊢

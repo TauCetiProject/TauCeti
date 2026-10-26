@@ -21,7 +21,8 @@ by grid pigeonhole alone — no Haar measure, no convex-body theorem, no covolum
 sit *upstream* of Mathlib's `ZLattice`/`MeasureTheory.Group.GeometryOfNumbers` machinery
 rather than consuming it.
 
-* **Packing** (`finite_and_ncard_le_of_subset_box_of_separated`): a subset of `box r c` whose
+* **Packing** (`finite_and_ncard_le_of_subset_box_of_separated`,
+  `addSubgroup_inter_box_finite_and_ncard_le_of_separated`): a subset of `box r c` whose
   distinct points are `ε`-separated in some coordinate is finite, with at most
   `(4·c/ε) ^ (2·#ι)` points.
 
@@ -58,8 +59,6 @@ doubling bounds are migrated.
 
 public section
 
-attribute [local instance] Classical.propDecidable
-
 namespace TauCeti.GeometryOfNumbers
 
 variable {ι : Type*}
@@ -80,8 +79,6 @@ theorem box_mono {r : ι → ℝ} (hr : ∀ i, 0 ≤ r i) {c c' : ℝ} (h : c �
   fun _ hx i => (hx i).trans (by have := hr i; nlinarith)
 
 section Packing
-
-variable [Fintype ι]
 
 /-- Grid pigeonhole, axis bound: the cell index of a coordinate lying in the box is one of
 the `⌊2√2·c/ε⌋ + 1` admissible values. -/
@@ -104,26 +101,6 @@ private theorem cell_index_mem {c ε : ℝ} (hε : 0 < ε) {ri : ℝ} (hri : 0 <
   rw [div_lt_iff₀ hδ]
   push_cast
   linarith [(abs_le.mp ht).2]
-
-/-- Grid pigeonhole, cell-side bound: two coordinates in the same cell differ by less than
-the cell side `ε·ri/√2`. -/
-private theorem cell_index_diff {c ε : ℝ} (hε : 0 < ε) {ri : ℝ} (hri : 0 < ri) {a b : ℝ}
-    (h : ⌊(a + c * ri) / (ε * ri / Real.sqrt 2)⌋ = ⌊(b + c * ri) / (ε * ri / Real.sqrt 2)⌋) :
-    |a - b| < ε * ri / Real.sqrt 2 := by
-  have hsqrt2 : (0 : ℝ) < Real.sqrt 2 := Real.sqrt_pos.2 (by norm_num)
-  have hδ : 0 < ε * ri / Real.sqrt 2 := div_pos (mul_pos hε hri) hsqrt2
-  set q := ε * ri / Real.sqrt 2
-  have ha := Int.floor_le ((a + c * ri) / q)
-  have ha' := Int.lt_floor_add_one ((a + c * ri) / q)
-  have hb := Int.floor_le ((b + c * ri) / q)
-  have hb' := Int.lt_floor_add_one ((b + c * ri) / q)
-  rw [h] at ha ha'
-  have hsub : (a + c * ri) / q - (b + c * ri) / q = (a - b) / q := by ring
-  have hlt : (a - b) / q < 1 := by rw [← hsub]; linarith
-  have hgt : -1 < (a - b) / q := by rw [← hsub]; linarith
-  rw [abs_lt]
-  exact ⟨by have := (lt_div_iff₀ hδ).mp hgt; linarith,
-    by have := (div_lt_iff₀ hδ).mp hlt; linarith⟩
 
 /-- A complex number whose real and imaginary parts are each `< d` in absolute value has
 norm `< d·√2`. -/
@@ -158,7 +135,6 @@ private noncomputable def cellIndexMap (r : ι → ℝ) (c ε : ℝ) : (ι → �
   fun x i => (⌊((x i).re + c * r i) / (ε * r i / Real.sqrt 2)⌋,
     ⌊((x i).im + c * r i) / (ε * r i / Real.sqrt 2)⌋)
 
-omit [Fintype ι] in
 /-- The cell-index map is injective on a set whose distinct points are `ε`-separated in some
 coordinate: two points sharing every cell index would differ by less than the cell diameter
 `ε·rᵢ` in that coordinate, contradicting the separation. -/
@@ -169,24 +145,28 @@ private theorem injOn_cellIndexMap_of_separated (r : ι → ℝ) (hr : ∀ i, 0 
   by_contra hne
   obtain ⟨i, hi⟩ := hsep x hx y hy hne
   simp only [cellIndexMap, funext_iff, Prod.ext_iff] at hxy
-  have hdnn : (0 : ℝ) ≤ ε * r i / Real.sqrt 2 :=
-    div_nonneg (mul_nonneg hε.le (hr i).le) (Real.sqrt_nonneg 2)
-  have hre : |(x i).re - (y i).re| < ε * r i / Real.sqrt 2 :=
-    cell_index_diff hε (hr i) (hxy i).1
-  have him : |(x i).im - (y i).im| < ε * r i / Real.sqrt 2 :=
-    cell_index_diff hε (hr i) (hxy i).2
+  have hδ : 0 < ε * r i / Real.sqrt 2 :=
+    div_pos (mul_pos hε (hr i)) (Real.sqrt_pos.2 (by norm_num))
+  have hre : |(x i).re - (y i).re| < ε * r i / Real.sqrt 2 := by
+    simpa [← sub_div, add_sub_add_right_eq_sub, abs_div, abs_of_pos hδ, div_lt_iff₀ hδ] using
+      Int.abs_sub_lt_one_of_floor_eq_floor (hxy i).1
+  have him : |(x i).im - (y i).im| < ε * r i / Real.sqrt 2 := by
+    simpa [← sub_div, add_sub_add_right_eq_sub, abs_div, abs_of_pos hδ, div_lt_iff₀ hδ] using
+      Int.abs_sub_lt_one_of_floor_eq_floor (hxy i).2
   have hlt : ‖x i - y i‖ < (ε * r i / Real.sqrt 2) * Real.sqrt 2 :=
-    norm_lt_of_re_im_bound hdnn (by rwa [Complex.sub_re]) (by rwa [Complex.sub_im])
+    norm_lt_of_re_im_bound hδ.le (by rwa [Complex.sub_re]) (by rwa [Complex.sub_im])
   rw [div_mul_cancel₀ _ (by positivity : Real.sqrt 2 ≠ 0)] at hlt
   linarith
 
-/-- **Grid pigeonhole / packing.** A subset of the polydisc `box r c` whose distinct points
-are `ε`-separated in some coordinate (relative to `r`) is finite, of cardinality at most
-`(4·c/ε) ^ (2·#ι)`. -/
+variable [Fintype ι]
+
+/-- A subset of the polydisc `box r c` whose distinct points are `ε`-separated in some
+coordinate (relative to `r`) is finite, of cardinality at most `(4·c/ε) ^ (2·#ι)`. -/
 theorem finite_and_ncard_le_of_subset_box_of_separated (r : ι → ℝ) (hr : ∀ i, 0 < r i)
     {c ε : ℝ} (hε : 0 < ε) (hεc : ε ≤ c) {S : Set (ι → ℂ)} (hS : S ⊆ box r c)
     (hsep : ∀ x ∈ S, ∀ y ∈ S, x ≠ y → ∃ i, ε * r i < ‖x i - y i‖) :
     S.Finite ∧ (S.ncard : ℝ) ≤ (4 * c / ε) ^ (2 * Fintype.card ι) := by
+  classical
   -- The cell map sends a point to its tuple of cell indices — `⌊((x i).re + c·r i)/δ i⌋` and
   -- the analogous imaginary part, with cell side `δ i = ε·r i/√2` — landing in
   -- `ι → Icc 0 ⌊2√2·c/ε⌋ × Icc 0 ⌊2√2·c/ε⌋` and is injective on the separated set, because two
@@ -227,9 +207,8 @@ theorem finite_and_ncard_le_of_subset_box_of_separated (r : ι → ℝ) (hr : �
   push_cast
   exact pow_le_pow_left₀ (by positivity) haxis _
 
-/-- **Lattice points in the box.** If every nonzero element of `Λ` escapes the small polydisc
-`box r ρ` in some coordinate, then `Λ ∩ box r 2` is finite of cardinality at most
-`(8/ρ) ^ (2·#ι)`. -/
+/-- If every nonzero element of `Λ` escapes the small polydisc `box r ρ` in some coordinate,
+then `Λ ∩ box r 2` is finite of cardinality at most `(8/ρ) ^ (2·#ι)`. -/
 theorem addSubgroup_inter_box_finite_and_ncard_le_of_separated (r : ι → ℝ) (hr : ∀ i, 0 < r i)
     (Λ : AddSubgroup (ι → ℂ)) {ρ : ℝ} (hρ0 : 0 < ρ) (hρ2 : ρ ≤ 2)
     (hsep : ∀ x ∈ Λ, x ≠ 0 → ∃ i, ρ * r i < ‖x i‖) : ((Λ : Set (ι → ℂ)) ∩ box r 2).Finite ∧
@@ -247,18 +226,6 @@ end Packing
 
 section Doubling
 
-variable [Fintype ι]
-
-/-- Two reals lying in the same half-open floor-cell of positive width `q` (i.e.
-`⌊a / q⌋ = ⌊b / q⌋`) differ by at most `q`. -/
-private theorem abs_sub_le_of_floor_eq {a b q : ℝ} (hq : 0 < q) (h : ⌊a / q⌋ = ⌊b / q⌋) :
-    |a - b| ≤ q := by
-  rw [Int.floor_eq_iff] at h
-  rw [abs_le]
-  refine ⟨?_, ?_⟩ <;>
-    nlinarith [h.1, h.2, Int.floor_le (b / q), Int.lt_floor_add_one (b / q), hq,
-      mul_div_cancel₀ a hq.ne', mul_div_cancel₀ b hq.ne']
-
 /-- If two complex numbers share their coarse cell (side `2·ri/3`) in both the real and the
 imaginary part, their distance is at most `ri`. -/
 private theorem norm_sub_le_of_coarseCell_eq {ri : ℝ} (hri : 0 < ri) {z w : ℂ}
@@ -266,8 +233,12 @@ private theorem norm_sub_le_of_coarseCell_eq {ri : ℝ} (hri : 0 < ri) {z w : �
     (him : ⌊z.im / (2 * ri / 3)⌋ = ⌊w.im / (2 * ri / 3)⌋) :
     ‖z - w‖ ≤ ri := by
   have hpos : (0 : ℝ) < 2 * ri / 3 := by positivity
-  have hre' : |z.re - w.re| ≤ 2 * ri / 3 := abs_sub_le_of_floor_eq hpos hre
-  have him' : |z.im - w.im| ≤ 2 * ri / 3 := abs_sub_le_of_floor_eq hpos him
+  have hre' : |z.re - w.re| ≤ 2 * ri / 3 := by
+    simpa [← sub_div, abs_div, abs_of_pos hpos, div_le_iff₀ hpos] using
+      (Int.abs_sub_lt_one_of_floor_eq_floor hre).le
+  have him' : |z.im - w.im| ≤ 2 * ri / 3 := by
+    simpa [← sub_div, abs_div, abs_of_pos hpos, div_le_iff₀ hpos] using
+      (Int.abs_sub_lt_one_of_floor_eq_floor him).le
   have hnorm : ‖z - w‖ ^ 2 ≤ ri ^ 2 := by
     rw [Complex.sq_norm, Complex.normSq_apply, Complex.sub_re, Complex.sub_im]
     nlinarith [abs_le.mp hre', abs_le.mp him']
@@ -283,13 +254,11 @@ private theorem coarseCell_mem_Icc {ri : ℝ} (hri : 0 < ri) {t : ℝ} (ht : |t|
   · rw [le_div_iff₀ hpos]; push_cast; nlinarith [abs_le.mp ht]
   · rw [div_lt_iff₀ hpos]; push_cast; nlinarith [abs_le.mp ht]
 
-omit [Fintype ι] in
 /-- The coarse cell index of `x` for the grid of side `2·r i/3`: per coordinate, the pair of
 floor indices of the real and imaginary parts. -/
 private noncomputable def coarseCellMap (r : ι → ℝ) (x : ι → ℂ) : ι → ℤ × ℤ :=
   fun i => (⌊(x i).re / (2 * r i / 3)⌋, ⌊(x i).im / (2 * r i / 3)⌋)
 
-omit [Fintype ι] in
 /-- Two points sharing every coarse cell `coarseCellMap r` differ by at most `r i` in each
 coordinate, so their difference lies in `box r 1`. -/
 private theorem sub_mem_box_one_of_coarseCellMap_eq {r : ι → ℝ} (hr : ∀ i, 0 < r i) {y x : ι → ℂ}
@@ -314,6 +283,9 @@ private theorem card_filter_le_of_sub_mem {G : Type*} [AddGroup G] {σ : Type*} 
         ((Finset.mem_filter.1 (Finset.mem_coe.1 hy)).2.trans hx₀.2.symm))
       (fun a _ c _ hac => by simpa using congrArg (· + x₀) hac)
 
+variable [Fintype ι]
+
+open scoped Classical in
 /-- If `s` is contained in `box r 2`, its image under `coarseCellMap r` has at most `49 ^ #ι`
 elements: each coordinate part lands in the 7 cells `Icc (-3) 3`, so `7² = 49` cells per
 coordinate and `49 ^ #ι` overall. -/
@@ -337,13 +309,13 @@ private theorem card_image_coarseCellMap_le {r : ι → ℝ} (hr : ∀ i, 0 < r 
       Finset.card_product, hcard7]
   exact hTeq ▸ Finset.card_le_card himage
 
-/-- **Doubling.** Assuming `Λ ∩ box r 2` is finite, counting lattice points in the double box
-loses at most `49 ^ #ι` against the unit box:
-`#(Λ ∩ box r 2) ≤ 49 ^ #ι · #(Λ ∩ box r 1)`. -/
+/-- Assuming `Λ ∩ box r 2` is finite, counting lattice points in the double box loses at
+most `49 ^ #ι` against the unit box: `#(Λ ∩ box r 2) ≤ 49 ^ #ι · #(Λ ∩ box r 1)`. -/
 theorem ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (r : ι → ℝ) (hr : ∀ i, 0 < r i)
     (Λ : AddSubgroup (ι → ℂ)) (hfin : ((Λ : Set (ι → ℂ)) ∩ box r 2).Finite) :
     (((Λ : Set (ι → ℂ)) ∩ box r 2).ncard : ℝ) ≤
       49 ^ Fintype.card ι * ((Λ : Set (ι → ℂ)) ∩ box r 1).ncard := by
+  classical
   set A : Set (ι → ℂ) := (Λ : Set (ι → ℂ)) ∩ box r 2
   set B : Set (ι → ℂ) := (Λ : Set (ι → ℂ)) ∩ box r 1
   have hBfin : B.Finite :=

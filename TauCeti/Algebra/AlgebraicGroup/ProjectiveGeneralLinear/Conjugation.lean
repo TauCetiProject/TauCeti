@@ -100,6 +100,15 @@ theorem toMatrix_mulLeft_comp_mulRight (X Y : Matrix (Fin n) (Fin n) S) :
   simp [LinearMap.toMatrix_apply, conjugationMatrix_apply, Matrix.mul_apply, Matrix.single_apply,
     ite_and, Finset.sum_ite_eq]
 
+/-- In the matrix-unit basis, the conjugation matrix acts by left and right multiplication. -/
+@[simp]
+theorem toLinAlgEquiv_conjugationMatrix (X Y : Matrix (Fin n) (Fin n) S) :
+    Matrix.toLinAlgEquiv (matrixUnitBasis n S) (conjugationMatrix X Y) =
+      LinearMap.mulLeft S X ∘ₗ LinearMap.mulRight S Y := by
+  rw [← toMatrix_mulLeft_comp_mulRight]
+  -- `toMatrixAlgEquiv b` has the same underlying map as `LinearMap.toMatrix b b`.
+  exact Matrix.toLinAlgEquiv_toMatrixAlgEquiv (matrixUnitBasis n S) _
+
 /-- The conjugation matrix of the identity is the identity. -/
 @[simp]
 theorem conjugationMatrix_one : conjugationMatrix (1 : Matrix (Fin n) (Fin n) S) 1 = 1 := by
@@ -294,11 +303,11 @@ field: by the Skolem–Noether theorem, every such point of `PGLₙ` comes from 
 theorem mapPointsFunctor_conjugationMap_app_surjective {R : Type u} [CommRing R] (K : Type w)
     [CommRing K] [IsLocalRing K] [Algebra R K] :
     Function.Surjective
-      ((CommHopfAlgCat.mapPointsFunctor (conjugationMap n R)).app (CommAlgCat.of R K)) := by
+      ((CommHopfAlgCat.Hom.mapPointsFunctor (conjugationMap n R)).app (CommAlgCat.of R K)) := by
   intro q
   obtain ⟨G, hG⟩ := Matrix.GeneralLinearGroup.innerAut_surjective K (pointsMulEquiv n R _ q)
   refine ⟨(GeneralLinear.pointsMulEquiv n).symm G, (pointsMulEquiv n R _).injective ?_⟩
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply, pointsMulEquiv_conjugationMap,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, pointsMulEquiv_conjugationMap,
     MulEquiv.apply_symm_apply, hG]
 
 end Kernel

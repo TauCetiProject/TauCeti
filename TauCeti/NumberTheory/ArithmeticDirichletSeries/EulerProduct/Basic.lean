@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.LFunction
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Basic
-public import TauCeti.RingTheory.DedekindDomain.Ideal
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 
@@ -51,11 +51,11 @@ no analytic convergence hypothesis enters.
 "Supported on `S`" is spelled `Ideal.IsPrimeTo · Sᶜ`: no prime *outside* `S` divides the ideal.
 That predicate, and the splitting `Ideal.IsPrimeTo.exists_eq_pow_mul` of an ideal into a prime
 power times a cofactor together with its uniqueness `Ideal.eq_and_eq_of_pow_mul_eq_pow_mul`, live
-in `TauCeti/RingTheory/DedekindDomain/Ideal.lean`, since nothing in them is specific to a number
-field. Uniqueness is what makes the induction work: it is why exactly one summand of the ideal
-convolution survives at each ideal. The multiplicativity of `f` over a prime-power factorization,
-`TauCeti.IdealArithmeticFunction.IsMultiplicative.map_prod_pow`, likewise lives with the predicate
-it elaborates, in `TauCeti/NumberTheory/ArithmeticDirichletSeries/Basic.lean`.
+in `TauCeti/RingTheory/DedekindDomain/Ideal/Basic.lean`, since nothing in them is specific to
+a number field. Uniqueness is what makes the induction work: it is why exactly one summand of the
+ideal convolution survives at each ideal. The multiplicativity of `f` over a prime-power
+factorization, `TauCeti.IdealArithmeticFunction.IsMultiplicative.map_prod_pow`, likewise lives
+with the predicate it elaborates, in `TauCeti/NumberTheory/ArithmeticDirichletSeries/Basic.lean`.
 
 `TauCeti.MultiplicativeIdealWeight.restrictAway` is the opposite regime and is not a substitute:
 it restricts *away from* a **finite** set of primes and stays inside the bundled weight carrier. A
@@ -179,6 +179,15 @@ theorem constantCoeff_localPowerSeries (f : IdealArithmeticFunction K)
   rw [coeff_localPowerSeries]
   exact congrArg f (Subtype.ext (pow_zero P.asIdeal))
 
+omit [NumberField K] in
+/-- Conjugating ideal coefficients conjugates the coefficients of every local power series. -/
+@[simp]
+theorem localPowerSeries_star (f : IdealArithmeticFunction K)
+    (P : HeightOneSpectrum (𝓞 K)) :
+    (star f).localPowerSeries P = (f.localPowerSeries P).map (starRingEnd ℂ) := by
+  ext n
+  simp
+
 /-- The canonical local arithmetic factor at `P`, obtained by substituting `N(P)⁻ˢ` into the
 formal prime-power series through Mathlib's `ArithmeticFunction.ofPowerSeries`. -/
 noncomputable def localArithmeticFactor (f : IdealArithmeticFunction K)
@@ -212,6 +221,16 @@ theorem localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq (f : IdealArith
   rw [localArithmeticFactor, ArithmeticFunction.ofPowerSeries_apply
     (NumberField.HeightOneSpectrum.one_lt_absNorm P),
     Function.extend_apply' _ _ _ (by simpa using hm), Pi.zero_apply]
+
+/-- The local arithmetic factor of a conjugate ideal function has conjugate values. -/
+@[simp]
+theorem localArithmeticFactor_star_apply (f : IdealArithmeticFunction K)
+    (P : HeightOneSpectrum (𝓞 K)) (n : ℕ) :
+    (star f).localArithmeticFactor P n = star (f.localArithmeticFactor P n) := by
+  by_cases hn : ∃ e : ℕ, Ideal.absNorm P.asIdeal ^ e = n
+  · obtain ⟨e, rfl⟩ := hn
+    simp
+  · simp [localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq _ P hn]
 
 /-- A nonzero value of a local arithmetic factor is supported on a power of the prime-ideal
 norm. -/

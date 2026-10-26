@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.StrictConvexBetween
 public import Mathlib.Analysis.InnerProductSpace.Convex
 public import Mathlib.Geometry.Euclidean.Triangle
 public import TauCeti.Analysis.Convex.Midpoint
+public import TauCeti.Topology.MetricSpace.CATZero
 public import TauCeti.Topology.MetricSpace.Length
 
 /-!
@@ -43,7 +44,11 @@ second geodesic segment shows that geodesics cannot branch.
   `(1 - t) d(z, x)² + t d(z, y)² - t (1 - t) d(x, y)² ≤ d(z, γ t)²`.
 * `TauCeti.IsGeodesicSegment.eqOn_of_apply_eq` — geodesics do not branch: two geodesic segments
   from the same point that meet at a positive time agree from then on.
-* `TauCeti.IsCBBZeroSpace.of_isometryEquiv` — the condition is invariant under isometries.
+* `TauCeti.IsCBBZeroSpace.of_isometry` and `TauCeti.IsCBBZeroSpace.of_isometryEquiv` — a geodesic
+  space embedding isometrically in a CBB(0) space is CBB(0); in particular the condition is
+  invariant under isometries.
+* `TauCeti.IsGeodesicSegment.dist_sq_eq` — in a space that is both CAT(0) and CBB(0), the
+  comparison with Euclidean triangles is an equality.
 * `TauCeti.IsCBBZeroSpace.of_normedAddTorsor` and `TauCeti.instIsCBBZeroSpace` — real inner product
   spaces, and Euclidean affine spaces over them, are CBB(0).
 * `TauCeti.not_isCBBZeroSpace_real_prod` — the plane `ℝ × ℝ` with its sup metric is a geodesic
@@ -109,14 +114,34 @@ theorem IsGeodesicSegment.le_dist_sq (hγ : IsGeodesicSegment γ x y) (z : X) {t
   simp only [smul_eq_mul, mul_zero, mul_one, zero_add, hγ.source, hγ.target] at h
   linear_combination h
 
+/-- A geodesic space that embeds isometrically in a CBB(0) space is CBB(0): the reverse CN
+inequality only involves distances, and an isometry sends midpoints to midpoints. The embedding
+need not be onto; the geodesics of `Y` are assumed. -/
+theorem IsCBBZeroSpace.of_isometry {Y : Type*} [PseudoMetricSpace Y] [IsGeodesicSpace Y]
+    {f : Y → X} (hf : Isometry f) : IsCBBZeroSpace Y where
+  toIsGeodesicSpace := ‹_›
+  le_dist_sq_of_dist_eq_half {x y m} hx hy z := by
+    simpa only [hf.dist_eq] using IsCBBZeroSpace.le_dist_sq_of_dist_eq_half (x := f x)
+      (y := f y) (m := f m) (by simpa only [hf.dist_eq] using hx)
+      (by simpa only [hf.dist_eq] using hy) (f z)
+
 /-- A space isometric to a CBB(0) space is CBB(0). -/
 theorem IsCBBZeroSpace.of_isometryEquiv {Y : Type*} [PseudoMetricSpace Y] (e : X ≃ᵢ Y) :
-    IsCBBZeroSpace Y where
-  toIsGeodesicSpace := IsGeodesicSpace.of_isometryEquiv e
-  le_dist_sq_of_dist_eq_half {x y m} hx hy z := by
-    simpa only [e.symm.dist_eq] using IsCBBZeroSpace.le_dist_sq_of_dist_eq_half (x := e.symm x)
-      (y := e.symm y) (m := e.symm m) (by simpa only [e.symm.dist_eq] using hx)
-      (by simpa only [e.symm.dist_eq] using hy) (e.symm z)
+    IsCBBZeroSpace Y :=
+  have := IsGeodesicSpace.of_isometryEquiv e
+  of_isometry e.symm.isometry
+
+/-- **Flat comparison along a geodesic segment.** In a space that is both CAT(0) and CBB(0) the two
+comparison inequalities `TauCeti.IsGeodesicSegment.dist_sq_le` and
+`TauCeti.IsGeodesicSegment.le_dist_sq` meet: if `γ` is a geodesic segment from `x` to `y`, then
+for every `z` and `t ∈ [0, 1]`,
+`d(z, γ t)² = (1 - t) d(z, x)² + t d(z, y)² - t (1 - t) d(x, y)²`, exactly as in a Euclidean
+space. -/
+theorem IsGeodesicSegment.dist_sq_eq [IsCATZeroSpace X] (hγ : IsGeodesicSegment γ x y) (z : X)
+    {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
+    dist z (γ t) ^ 2 =
+      (1 - t) * dist z x ^ 2 + t * dist z y ^ 2 - t * (1 - t) * dist x y ^ 2 :=
+  le_antisymm (hγ.dist_sq_le z ht) (hγ.le_dist_sq z ht)
 
 end PseudoMetricSpace
 

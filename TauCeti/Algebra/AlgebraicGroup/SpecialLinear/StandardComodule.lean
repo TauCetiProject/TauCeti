@@ -28,6 +28,11 @@ theory.
 ## Main declarations
 
 * `TauCeti.SpecialLinear.standardComodule`: the standard `O(SL_n)`-comodule on `R^n`.
+* `TauCeti.SpecialLinear.coefficientMatrix_basisFun`: its coefficient matrix is the generic
+  matrix of `SL_n`; `map_antipode_coefficientMatrix` identifies its antipode with the adjugate,
+  and `antipode_coefficientMatrix_zero_zero` and its siblings spell this out for `SL₂`.
+* `TauCeti.SpecialLinear.ofConv_coefficientMatrix`: a point evaluates the coefficient matrix to
+  its matrix.
 * `TauCeti.SpecialLinear.isFaithful_standardComodule`: the standard representation is faithful.
 * `TauCeti.SpecialLinear.mulVec_mem`: a standard subcomodule is stable under every determinant-one
   matrix.
@@ -87,6 +92,64 @@ theorem standardComodule_coact :
   rw [Comodule.corestrictCoact_apply, LinearMap.comp_apply,
     GeneralLinear.standardComodule_coact]
 
+/-- The coefficient matrix of the standard comodule of `SL_n` is the image of the generic matrix
+of `GL_n` in `O(SL_n)`. -/
+theorem coefficientMatrix_basisFun :
+    Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n)) =
+      (GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom := by
+  rw [standardComodule, Comodule.coefficientMatrix_corestrict,
+    GeneralLinear.coefficientMatrix_basisFun]
+  ext i j
+  simp [BialgHom.toCoalgHom_apply]
+
+/-- The coefficient matrix of the standard comodule of `SL_n` has determinant one. -/
+theorem det_coefficientMatrix_basisFun :
+    (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))).det =
+      1 := by
+  rw [coefficientMatrix_basisFun, det_map_genericMatrix_coordinateMap]
+
+/-- In `O(SL_n)` the antipode of the coefficient matrix of the standard comodule is its adjugate:
+the inverse of a determinant-one matrix. -/
+theorem map_antipode_coefficientMatrix :
+    (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))).map
+        (HopfAlgebra.antipode R) =
+      (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n)
+        (Pi.basisFun R (Fin n))).adjugate := by
+  rw [← Matrix.inv_eq_left_inv (Comodule.map_antipode_mul_coefficientMatrix _), Matrix.inv_def,
+    det_coefficientMatrix_basisFun, Ring.inverse_one, one_smul]
+
+/-- In `O(SL₂)` the antipode sends the coordinate `a` of `[[a, b], [c, d]]` to `d`. -/
+theorem antipode_coefficientMatrix_zero_zero :
+    HopfAlgebra.antipode R
+        (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 0 0) =
+      Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 1 1 := by
+  simpa [Matrix.adjugate_fin_two] using
+    congrFun (congrFun (map_antipode_coefficientMatrix R 2) 0) 0
+
+/-- In `O(SL₂)` the antipode sends the coordinate `b` of `[[a, b], [c, d]]` to `-b`. -/
+theorem antipode_coefficientMatrix_zero_one :
+    HopfAlgebra.antipode R
+        (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 0 1) =
+      -Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 0 1 := by
+  simpa [Matrix.adjugate_fin_two] using
+    congrFun (congrFun (map_antipode_coefficientMatrix R 2) 0) 1
+
+/-- In `O(SL₂)` the antipode sends the coordinate `c` of `[[a, b], [c, d]]` to `-c`. -/
+theorem antipode_coefficientMatrix_one_zero :
+    HopfAlgebra.antipode R
+        (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 1 0) =
+      -Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 1 0 := by
+  simpa [Matrix.adjugate_fin_two] using
+    congrFun (congrFun (map_antipode_coefficientMatrix R 2) 1) 0
+
+/-- In `O(SL₂)` the antipode sends the coordinate `d` of `[[a, b], [c, d]]` to `a`. -/
+theorem antipode_coefficientMatrix_one_one :
+    HopfAlgebra.antipode R
+        (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 1 1) =
+      Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2) (Pi.basisFun R (Fin 2)) 0 0 := by
+  simpa [Matrix.adjugate_fin_two] using
+    congrFun (congrFun (map_antipode_coefficientMatrix R 2) 1) 1
+
 /-- **The standard comodule of `SL_n` is faithful.** -/
 theorem isFaithful_standardComodule :
     Comodule.IsFaithful (k := R) (H := coordinateHopfAlgebra R n) (V := Fin n → R) := by
@@ -128,6 +191,18 @@ theorem piScalarRight_comp_endOfPoint
   rw [← hmatrix]
   exact GeneralLinear.piScalarRight_comp_endOfPoint R n q
 
+variable {R n} in
+/-- A point of `SL_n` takes the coefficient matrix of the standard comodule to its matrix. -/
+theorem ofConv_coefficientMatrix (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A))
+    (i j : Fin n) :
+    g.ofConv (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n)
+        (Pi.basisFun R (Fin n)) i j) =
+      (pointsMulEquiv (R := R) (A := A) n g : Matrix (Fin n) (Fin n) A) i j := by
+  rw [← Matrix.SpecialLinearGroup.coe_GL_coe_matrix, ← pointsMulEquiv_toGL,
+    coefficientMatrix_basisFun, GeneralLinear.pointsMulEquiv_apply,
+    GeneralLinear.pointToGeneralLinear_apply, CommHopfAlgCat.quotientPointsHom_apply_apply]
+  simp
+
 end PointAction
 
 -- `@[simp]` would fail `simpNF`: the left-hand side already simplifies via
@@ -140,10 +215,10 @@ theorem basePointsRepresentation_eq_mulVec
       ((pointsMulEquiv (R := R) (A := R) n g : Matrix (Fin n) (Fin n) R) *ᵥ v) := by
   rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R n).hom g,
     GeneralLinear.basePointsRepresentation_eq_mulVec]
-  have hg : AlgHom.mapDomain (coordinateMap R n).hom g =
+  have hg : BialgHom.mapDomain (coordinateMap R n).hom g =
       CommHopfAlgCat.quotientPointsHom (GeneralLinear.coordinateHopfAlgebra R n)
         (definingHopfIdeal R n) (CommAlgCat.of R R) g := by
-    rw [AlgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
+    rw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
   rw [hg, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_toGL]
   rfl
 
@@ -175,11 +250,11 @@ theorem mulVec_mem (N : Subcomodule R (coordinateHopfAlgebra R n) (Fin n → R))
   rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R n).hom q,
     GeneralLinear.basePointsRepresentation_eq_mulVec] at h
   have hpoint :
-      AlgHom.mapDomain (coordinateMap R n).hom q =
+      BialgHom.mapDomain (coordinateMap R n).hom q =
         CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
           (CommAlgCat.of R R) q := by
-    rw [AlgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
+    rw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply]
   rw [hpoint, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_toGL,
     MulEquiv.apply_symm_apply] at h
   exact h

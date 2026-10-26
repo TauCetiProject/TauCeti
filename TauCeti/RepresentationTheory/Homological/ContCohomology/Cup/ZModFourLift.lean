@@ -292,7 +292,11 @@ theorem forall_exists_zmodFourReduction_eq_iff_of_topologicalAbelianization
   -- The projection `G → G^{ab} ≅ A`, kept opaque so that rewriting does not unfold it.
   obtain ⟨π, hπ_apply⟩ : ∃ π : G →ₜ* A, ∀ g, π g = e (g : TopologicalAbelianization G) :=
     ⟨(e : TopologicalAbelianization G →ₜ* A).comp
-      (ContinuousMonoidHom.quotientMk (commutator G).topologicalClosure), fun g ↦ rfl⟩
+      (Subgroup.quotientMkContinuousMonoidHom (commutator G).topologicalClosure), fun g ↦ by
+        -- Evaluate the bundled composite so the public quotient-projection evaluation lemma is
+        -- visible; the opaque projection is not unfolded.
+        change e (Subgroup.quotientMkContinuousMonoidHom (commutator G).topologicalClosure g) = _
+        rw [Subgroup.quotientMkContinuousMonoidHom_apply]⟩
   have hsurj : Function.Surjective π := fun a ↦ by
     obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective (e.symm a)
     exact ⟨g, by rw [hπ_apply, hg, ContinuousMulEquiv.apply_symm_apply]⟩

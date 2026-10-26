@@ -41,9 +41,10 @@ theorem surjective_iff_kernelHopfIdeal_eq_augmentation (f : H ⟶ K)
     Function.Surjective f.hom ↔ kernelHopfIdeal f = HopfIdeal.augmentation R K := by
   refine ⟨kernelHopfIdeal_eq_augmentation_of_surjective f, fun hker ↦ ?_⟩
   have hinj (A : CommAlgCat.{v} R) :
-      Function.Injective ((mapPointsFunctor f).app A) := by
+      Function.Injective ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A) := by
     rw [injective_iff_map_eq_one]
     intro g hg
+    erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hg
     have hmem := (mapPointsFunctor_app_eq_one_iff f A g).mp hg
     rw [hker] at hmem
     exact eq_one_of_mem_quotientPointsSubgroup_augmentation K A hmem
@@ -58,10 +59,12 @@ theorem surjective_iff_kernelHopfIdeal_eq_augmentation (f : H ⟶ K)
       change h.hom (algebraMap R K r) = g.hom (algebraMap R K r)
       rw [← f.hom.toAlgHom.commutes r]
       exact he.symm⟩
-    have he : (mapPointsFunctor f).app (CommAlgCat.of R A) (toConv g') =
-        (mapPointsFunctor f).app (CommAlgCat.of R A) (toConv h') := by
+    have he : (CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of R A) (toConv g') =
+        (CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of R A) (toConv h') := by
       apply WithConv.ofConv_injective
       ext x
+      erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply,
+        CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply]
       exact RingHom.congr_fun (congrArg CommRingCat.Hom.hom hgh) x
     have he' := congrArg WithConv.ofConv (hinj (CommAlgCat.of R A) he)
     exact CommRingCat.hom_ext (congrArg AlgHom.toRingHom he')⟩

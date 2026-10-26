@@ -33,16 +33,13 @@ coatom statement runs the same way along the projection `LieSubmodule.Quotient.m
   generates the whole module.
 * `TauCeti.lieSpan_singleton_eq_top_of_lieSpan_eq`: the generator of a cyclic Lie submodule
   generates that submodule, read as a Lie module in its own right.
-* `TauCeti.eq_top_of_mem_of_lieSpan_singleton_eq_top`: a Lie submodule containing a generator of
-  the ambient module is the whole module.
+* `TauCeti.eq_top_of_mem_of_lieSpan_singleton_eq_top` and
+  `TauCeti.notMem_iff_ne_top_of_lieSpan_eq_top`: a Lie submodule of a
+  cyclic Lie module is proper if and only if it misses the generator.
+* `TauCeti.lieSpan_mk_eq_top_of_lieSpan_eq_top`: the image of a generator of a cyclic Lie module
+  generates the quotient.
 * `TauCeti.isIrreducible_quotient_iff_isCoatom`: the quotient of a Lie module by a Lie submodule is
   irreducible exactly when that submodule is a coatom of the lattice of Lie submodules.
-
-## References
-
-This supports Layer 0 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, where
-`TauCeti/Algebra/Lie/Sl2/Decomposition.lean` decomposes a finite-dimensional `sl₂`-module into
-irreducibles by decomposing its lattice of Lie submodules into atoms.
 -/
 
 public section
@@ -85,6 +82,15 @@ theorem eq_top_of_mem_of_lieSpan_singleton_eq_top {N : LieSubmodule R L M} {m : 
   rw [← hgen]
   exact LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr hm)
 
+/-- In a cyclic Lie module, a Lie submodule is proper exactly when it misses the generator. -/
+theorem notMem_iff_ne_top_of_lieSpan_eq_top
+    {v : M} (hgen : LieSubmodule.lieSpan R L {v} = ⊤) {N : LieSubmodule R L M} : v ∉ N ↔ N ≠ ⊤ := by
+  constructor
+  · rintro hvN rfl
+    exact hvN trivial
+  · intro hN hvN
+    exact hN (eq_top_of_mem_of_lieSpan_singleton_eq_top hvN hgen)
+
 /-- **The irreducible Lie submodules are the atoms.** A Lie submodule `N` of `M` is irreducible as
 a Lie module exactly when it is an atom of `LieSubmodule R L M`, that is, when `N ≠ ⊥` and the only
 Lie submodule of `M` strictly below `N` is `⊥`. -/
@@ -110,6 +116,20 @@ theorem isIrreducible_iff_isAtom (N : LieSubmodule R L M) :
     exact Subtype.ext (by simpa using hmem)
 
 variable [LieAlgebra R L] [LieModule R L M]
+
+/-- The image of a generator of a cyclic Lie module generates the quotient. -/
+theorem lieSpan_mk_eq_top_of_lieSpan_eq_top {v : M} (hgen : LieSubmodule.lieSpan R L {v} = ⊤)
+    (N : LieSubmodule R L M) :
+    LieSubmodule.lieSpan R L {LieSubmodule.Quotient.mk' N v} = ⊤ := by
+  have hcomap : LieSubmodule.lieSpan R L {v}
+      ≤ (LieSubmodule.lieSpan R L {LieSubmodule.Quotient.mk' N v}).comap
+        (LieSubmodule.Quotient.mk' N) :=
+    LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr
+      (LieSubmodule.mem_comap.mpr (LieSubmodule.subset_lieSpan rfl)))
+  refine eq_top_iff.mpr fun q _ => ?_
+  obtain ⟨m, rfl⟩ := LieSubmodule.Quotient.surjective_mk' N q
+  have hm : m ∈ LieSubmodule.lieSpan R L {v} := by rw [hgen]; trivial
+  exact hcomap hm
 
 /-- **The quotient by a Lie submodule is irreducible exactly when that submodule is a coatom.**
 A Lie submodule of `M ⧸ N` pulls back along the projection to a Lie submodule of `M` containing

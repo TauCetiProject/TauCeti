@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Localization
+public import TauCeti.AlgebraicGeometry.Modules.Tilde.Presheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExteriorPower.Basic
 
 /-!
@@ -41,14 +42,8 @@ variable {R : CommRingCat.{u}}
 private abbrev exteriorPresheaf (M : ModuleCat.{u} R) (n : ℕ) :=
   (PresheafOfModulesOfCommRing.exteriorPower (R := (Spec R).presheaf) n).obj (tilde M).val
 
-private abbrev specPresheaf (P : PresheafOfModules.{u} (Spec R).ringCatSheaf.obj) :
-    (Spec R).Opensᵒᵖ ⥤ ModuleCat.{u} R :=
-  (PresheafOfModules.forgetToPresheafModuleCat (.op ⊤)
-    (Limits.initialOpOfTerminal Limits.isTerminalTop)).obj P ⋙
-    ModuleCat.restrictScalars (Scheme.ΓSpecIso R).inv.hom
-
 private def exteriorToOpen (M : ModuleCat.{u} R) (n : ℕ) (U : (Spec R).Opens) :
-    M.exteriorPower n ⟶ (specPresheaf (exteriorPresheaf M n)).obj (.op U) := by
+    M.exteriorPower n ⟶ (specPresheafFunctor.obj (exteriorPresheaf M n)).obj (.op U) := by
   let N := PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U)
   let A := (Spec R).presheaf.obj (.op U)
   let : Module A N := N.isModule
@@ -56,7 +51,7 @@ private def exteriorToOpen (M : ModuleCat.{u} R) (n : ℕ) (U : (Spec R).Opens) 
   let NT : @IsScalarTower R A N _ N.isModule.toSMul NR.toSMul :=
     IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   let φ : M →ₗ[R] N := (tilde.toOpen M U).hom
-  let E := (specPresheaf (exteriorPresheaf M n)).obj (.op U)
+  let E := (specPresheafFunctor.obj (exteriorPresheaf M n)).obj (.op U)
   let AE : Module A E := (⋀[A]^n N).module
   let : @IsScalarTower R A E _ AE.toSMul
       E.isModule.toSMul := by
@@ -86,7 +81,7 @@ private lemma exteriorToOpen_mk (M : ModuleCat.{u} R) (n : ℕ) (U : (Spec R).Op
 
 private lemma exteriorToOpen_res (M : ModuleCat.{u} R) (n : ℕ)
     {U V : (Spec R).Opens} (i : V ⟶ U) :
-    exteriorToOpen M n U ≫ (specPresheaf (exteriorPresheaf M n)).map i.op =
+    exteriorToOpen M n U ≫ (specPresheafFunctor.obj (exteriorPresheaf M n)).map i.op =
       exteriorToOpen M n V := by
   apply ModuleCat.exteriorPower.hom_ext
   ext m
@@ -114,7 +109,7 @@ private instance exteriorToOpen_isLocalized (M : ModuleCat.{u} R) (n : ℕ) (f :
   let φ : M →ₗ[R] N := (tilde.toOpen M U).hom
   let : IsLocalizedModule (.powers f) φ := inferInstanceAs
     (IsLocalizedModule (.powers f) (tilde.toOpen M (PrimeSpectrum.basicOpen f)).hom)
-  let E := (specPresheaf (exteriorPresheaf M n)).obj (.op U)
+  let E := (specPresheafFunctor.obj (exteriorPresheaf M n)).obj (.op U)
   let AE : Module A E := (⋀[A]^n N).module
   let ET : @IsScalarTower R A E _ AE.toSMul E.isModule.toSMul :=
     IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
@@ -123,7 +118,7 @@ private instance exteriorToOpen_isLocalized (M : ModuleCat.{u} R) (n : ℕ) (f :
     (exteriorToOpen M n U).hom (exteriorToOpen_mk M n U)
 
 private def exteriorBasicIso (M : ModuleCat.{u} R) (n : ℕ) (f : R) :
-    (specPresheaf (exteriorPresheaf M n)).obj (.op (PrimeSpectrum.basicOpen f)) ≅
+    (specPresheafFunctor.obj (exteriorPresheaf M n)).obj (.op (PrimeSpectrum.basicOpen f)) ≅
       (modulesSpecToSheaf.obj (tilde (M.exteriorPower n))).obj.obj
         (.op (PrimeSpectrum.basicOpen f)) :=
   (IsLocalizedModule.linearEquiv (.powers f)
@@ -142,7 +137,7 @@ private lemma exteriorBasicIso_comp (M : ModuleCat.{u} R) (n : ℕ) (f : R) :
 
 private def exteriorBasisComparison (M : ModuleCat.{u} R) (n : ℕ) :
     (inducedFunctor (PrimeSpectrum.basicOpen (R := R))).op ⋙
-        specPresheaf (exteriorPresheaf M n) ⟶
+        specPresheafFunctor.obj (exteriorPresheaf M n) ⟶
       (inducedFunctor (PrimeSpectrum.basicOpen (R := R))).op ⋙
         (modulesSpecToSheaf.obj (tilde (M.exteriorPower n))).obj where
   app f := (exteriorBasicIso M n f.unop).hom
@@ -158,7 +153,7 @@ private def exteriorBasisComparison (M : ModuleCat.{u} R) (n : ℕ) :
         f.unop i.unop.hom.le
     · -- Convert composition of linear maps to composition in `ModuleCat`.
       change (exteriorToOpen M n (PrimeSpectrum.basicOpen f.unop) ≫
-        (specPresheaf (exteriorPresheaf M n)).map
+        (specPresheafFunctor.obj (exteriorPresheaf M n)).map
           ((inducedFunctor (PrimeSpectrum.basicOpen (R := R))).op.map i) ≫
         (exteriorBasicIso M n g.unop).hom).hom =
         (exteriorToOpen M n (PrimeSpectrum.basicOpen f.unop) ≫
@@ -170,7 +165,7 @@ private def exteriorBasisComparison (M : ModuleCat.{u} R) (n : ℕ) :
       exact congrArg ModuleCat.Hom.hom (tilde.toOpen_res (M.exteriorPower n) _ _ i.unop.hom).symm
 
 private def exteriorComparisonR (M : ModuleCat.{u} R) (n : ℕ) :
-    specPresheaf (exteriorPresheaf M n) ⟶
+    specPresheafFunctor.obj (exteriorPresheaf M n) ⟶
       (modulesSpecToSheaf.obj (tilde (M.exteriorPower n))).obj :=
   TopCat.Sheaf.restrictHomEquivHom _ _ PrimeSpectrum.isBasis_basic_opens
     (exteriorBasisComparison M n)
@@ -215,7 +210,8 @@ private def exteriorComparison (M : ModuleCat.{u} R) (n : ℕ) :
       let : IsLocalization (.powers f) A := inferInstanceAs
         (IsLocalization (.powers f)
           ((Spec.structureSheaf R).presheaf.obj (.op (PrimeSpectrum.basicOpen f))))
-      let E := (specPresheaf (exteriorPresheaf M n)).obj (.op (PrimeSpectrum.basicOpen f))
+      let E := (specPresheafFunctor.obj (exteriorPresheaf M n)).obj
+        (.op (PrimeSpectrum.basicOpen f))
       let F := (modulesSpecToSheaf.obj (tilde (M.exteriorPower n))).obj.obj
         (.op (PrimeSpectrum.basicOpen f))
       let EA : Module A E := ((exteriorPresheaf M n).obj (.op (PrimeSpectrum.basicOpen f))).isModule
@@ -237,16 +233,10 @@ private lemma exteriorComparison_basic_bijective (M : ModuleCat.{u} R) (n : ℕ)
 
 private def exteriorToOpenNatTrans (M : ModuleCat.{u} R) (n : ℕ) :
     (Functor.const (Spec R).Opensᵒᵖ).obj (M.exteriorPower n) ⟶
-      specPresheaf (exteriorPresheaf M n) where
+      specPresheafFunctor.obj (exteriorPresheaf M n) where
   app U := exteriorToOpen M n U.unop
   naturality _ _ i :=
     (Category.id_comp _).trans (exteriorToOpen_res M n i.unop).symm
-
-private def tildeToOpenNatTrans (M : ModuleCat.{u} R) :
-    (Functor.const (Spec R).Opensᵒᵖ).obj M ⟶ (modulesSpecToSheaf.obj (tilde M)).obj where
-  app U := tilde.toOpen M U.unop
-  naturality _ _ i :=
-    (Category.id_comp _).trans (tilde.toOpen_res M _ _ i.unop).symm
 
 private lemma exteriorComparisonR_comp_toOpen (M : ModuleCat.{u} R) (n : ℕ) :
     exteriorToOpenNatTrans M n ≫ exteriorComparisonR M n =
@@ -256,7 +246,7 @@ private lemma exteriorComparisonR_comp_toOpen (M : ModuleCat.{u} R) (n : ℕ) :
   -- These components are the two maps on basic opens used to define the comparison.
   change exteriorToOpen M n (PrimeSpectrum.basicOpen f) ≫
     (exteriorComparisonR M n).app (.op (PrimeSpectrum.basicOpen f)) = _
-  rw [exteriorComparisonR_app_basic]
+  rw [exteriorComparisonR_app_basic, tildeToOpenNatTrans_app]
   exact exteriorBasicIso_comp M n f
 
 private instance exteriorComparison_locallyInjective (M : ModuleCat.{u} R) (n : ℕ) :
@@ -289,19 +279,13 @@ private instance exteriorComparison_locallySurjective (M : ModuleCat.{u} R) (n :
 private lemma exteriorComparisonR_toOpen (M : ModuleCat.{u} R) (n : ℕ)
     (U : (Spec R).Opens) :
     exteriorToOpen M n U ≫ (exteriorComparisonR M n).app (.op U) =
-      tilde.toOpen (M.exteriorPower n) U :=
-  congrArg (fun α ↦ α.app (.op U)) (exteriorComparisonR_comp_toOpen M n)
-
-private def specPresheafMap {P Q : PresheafOfModules.{u} (Spec R).ringCatSheaf.obj}
-    (φ : P ⟶ Q) : specPresheaf P ⟶ specPresheaf Q :=
-  Functor.whiskerRight
-    ((PresheafOfModules.forgetToPresheafModuleCat (.op ⊤)
-      (Limits.initialOpOfTerminal Limits.isTerminalTop)).map φ)
-    (ModuleCat.restrictScalars (Scheme.ΓSpecIso R).inv.hom)
+      tilde.toOpen (M.exteriorPower n) U := by
+  simpa only [NatTrans.comp_app, exteriorToOpenNatTrans, tildeToOpenNatTrans_app] using
+    congrArg (fun α ↦ α.app (.op U)) (exteriorComparisonR_comp_toOpen M n)
 
 private lemma exteriorToOpen_map (n : ℕ) {M N : ModuleCat.{u} R} (φ : M ⟶ N)
     (U : (Spec R).Opens) :
-    exteriorToOpen M n U ≫ (specPresheafMap
+    exteriorToOpen M n U ≫ (specPresheafFunctor.map
       ((PresheafOfModulesOfCommRing.exteriorPower (R := (Spec R).presheaf) n).map
         (tilde.map φ).val)).app (.op U) =
       ModuleCat.exteriorPower.map φ n ≫ exteriorToOpen N n U := by
@@ -325,7 +309,7 @@ private lemma exteriorToOpen_map (n : ℕ) {M N : ModuleCat.{u} R} (φ : M ⟶ N
     (M := PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde N).val (.op U))) hm
 
 private lemma exteriorComparisonR_naturality (n : ℕ) {M N : ModuleCat.{u} R} (φ : M ⟶ N) :
-    specPresheafMap ((PresheafOfModulesOfCommRing.exteriorPower
+    specPresheafFunctor.map ((PresheafOfModulesOfCommRing.exteriorPower
       (R := (Spec R).presheaf) n).map (tilde.map φ).val) ≫ exteriorComparisonR N n =
       exteriorComparisonR M n ≫ (modulesSpecToSheaf.map (tilde.map
         (ModuleCat.exteriorPower.map φ n))).hom := by
@@ -333,7 +317,7 @@ private lemma exteriorComparisonR_naturality (n : ℕ) {M N : ModuleCat.{u} R} (
   intro f
   simp only [NatTrans.comp_app]
   have h : exteriorToOpen M n (PrimeSpectrum.basicOpen f) ≫
-      (specPresheafMap ((PresheafOfModulesOfCommRing.exteriorPower
+      (specPresheafFunctor.map ((PresheafOfModulesOfCommRing.exteriorPower
         (R := (Spec R).presheaf) n).map (tilde.map φ).val)).app
           (.op (PrimeSpectrum.basicOpen f)) ≫
         (exteriorComparisonR N n).app (.op (PrimeSpectrum.basicOpen f)) =
@@ -438,7 +422,8 @@ theorem tildeExteriorPowerIso_inv_toOpen_mk (n : ℕ) (M : ModuleCat.{u} R)
   have hw := ConcreteCategory.congr_hom
     (congrArg (fun α ↦ α.app (.op U)) (exteriorComparisonR_comp_toOpen M n))
     (ModuleCat.exteriorPower.mk m)
-  dsimp only [exteriorToOpenNatTrans, tildeToOpenNatTrans] at hw
+  rw [tildeToOpenNatTrans_app] at hw
+  dsimp only [exteriorToOpenNatTrans] at hw
   simp only [NatTrans.comp_app, ModuleCat.comp_apply] at hw
   exact h.trans ((congrArg ((exteriorComparisonR M n).app (.op U))
     (exteriorToOpen_mk M n U m)).symm.trans hw)

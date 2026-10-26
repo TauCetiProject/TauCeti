@@ -247,10 +247,10 @@ theorem globalInvariants_weightedSumSquares_one_self_neg {K : Type*} [Field K] [
     rcases (map_ne_zero (InfinitePlace.embedding_of_isReal w.2)).mpr a.ne_zero |>.lt_or_gt with
       ha | ha
     · convert Set.ncard_pair (a := (0 : Fin 3)) (b := 2) (by decide)
-      ext i
+      rename_i i
       fin_cases i <;> simp [ha, ha.not_gt]
     · convert Set.ncard_pair (a := (0 : Fin 3)) (b := 1) (by decide)
-      ext i
+      rename_i i
       fin_cases i <;> simp [ha, ha.not_gt]
 
 end TauCeti.NumberField.QuadraticForm

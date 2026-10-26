@@ -39,6 +39,8 @@ finite fibres, which is what makes it a finite covering with a transfer on singu
   the quotient by the whole group is a covering map.
 * `IsQuotientCoveringMap.finite_fiber`: the quotient covering map of a finite group has finite
   fibres.
+* `IsQuotientCoveringMap.image_smul_set`: the quotient covering map has the same image on a set
+  and on its translates.
 
 ## Implementation notes
 
@@ -204,5 +206,11 @@ theorem _root_.IsQuotientCoveringMap.finite_fiber [Finite G] (hq : IsQuotientCov
     (x : X) : Finite ↥(q ⁻¹' {x}) := by
   obtain ⟨e, rfl⟩ := hq.surjective x
   exact Finite.of_equiv G (hq.fiberEquivGroup ⟨e, rfl⟩).symm
+
+/-- The quotient covering map has the same image on a set and on each of its translates. -/
+theorem _root_.IsQuotientCoveringMap.image_smul_set (hq : IsQuotientCoveringMap q G) (g : G)
+    (s : Set E) : q '' (g • s) = q '' s := by
+  rw [← Set.image_smul, Set.image_image]
+  simp_rw [hq.map_smul]
 
 end TauCeti

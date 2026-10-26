@@ -261,7 +261,6 @@ lemma subgroupFiberOrbitQuotientEquiv_refl (H : Subgroup (deck p))
 
 /-- Subgroup fibre-orbit quotient equivalences compose as the underlying over-base
 homeomorphisms compose, with subgroup maps rewritten along conjugation composition. -/
-@[simp]
 lemma subgroupFiberOrbitQuotientEquiv_trans (h : E ≃ₜ F) (k : F ≃ₜ G)
     (hpq : ∀ e, q (h e) = p e) (hqr : ∀ f, r (k f) = q f) (H : Subgroup (deck p))
     (x : SubgroupFiberOrbitQuotient H b) :

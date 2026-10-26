@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # The map of a matrix on Euclidean space
@@ -74,6 +76,19 @@ theorem rank_coe_toEuclideanCLM (A : Matrix ι ι 𝕜) :
   rw [LinearMap.rank, coe_toEuclideanCLM_eq_toEuclideanLin, ← Module.finrank_eq_rank,
     rank_eq_finrank_range_toEuclideanLin]
 
+/-- The continuous linear map of a matrix acts as its Euclidean linear map. -/
+@[simp]
+theorem toEuclideanCLM_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace 𝕜 ι) :
+    toEuclideanCLM (𝕜 := 𝕜) A x = toEuclideanLin A x := by
+  rw [← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
+
+/-- The determinant of a diagonal continuous linear map is the product of its diagonal entries. -/
+@[simp]
+theorem det_toEuclideanCLM_diagonal (d : ι → 𝕜) :
+    (toEuclideanCLM (𝕜 := 𝕜) (diagonal d)).det = ∏ i, d i := by
+  rw [ContinuousLinearMap.det, coe_toEuclideanCLM_eq_toEuclideanLin,
+    LinearMap.det_toLpLin, det_diagonal]
+
 section Invertible
 
 /-- **The continuous linear equivalence of an invertible matrix** on Euclidean space, defined
@@ -90,14 +105,14 @@ noncomputable def toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) :
 theorem toEuclideanCLE_apply (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) (x : EuclideanSpace 𝕜 ι) :
     A.toEuclideanCLE hA x = A.toEuclideanLin x := by
   rw [toEuclideanCLE, ContinuousLinearMap.toContinuousLinearEquivOfDetNeZero_apply,
-    ← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
+    toEuclideanCLM_apply]
 
 /-- The inverse of the equivalence is the map of the inverse matrix. -/
 @[simp]
 theorem toEuclideanCLE_symm_apply (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0)
     (y : EuclideanSpace 𝕜 ι) : (A.toEuclideanCLE hA).symm y = A⁻¹.toEuclideanLin y := by
   rw [ContinuousLinearEquiv.symm_apply_eq, toEuclideanCLE_apply]
-  simp only [← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
+  simp only [← toEuclideanCLM_apply]
   rw [← mul_apply_eq_comp, ← map_mul, mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr hA), map_one,
     one_apply_eq_self]
 
@@ -110,5 +125,30 @@ theorem det_toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) :
   rw [hcoe, LinearMap.det_toLpLin]
 
 end Invertible
+
+end Matrix
+
+namespace Matrix
+
+open scoped InnerProductSpace
+
+/-- The coordinate vector formed from the projections of the columns of `A` onto `ν`
+satisfies `⟪m, ν⟫ ‖ν‖² = ν ⬝ᵥ A ν`. -/
+theorem inner_sum_smul_basisFun_mul_norm_sq {ι : Type*} [Fintype ι]
+    (A : Matrix ι ι ℝ) {ν : EuclideanSpace ℝ ι} (hν : ν ≠ 0) :
+    ⟪∑ j, (⟪WithLp.toLp 2 (Aᵀ j), ν⟫_ℝ / ‖ν‖ ^ 2) • EuclideanSpace.basisFun ι ℝ j, ν⟫_ℝ *
+      ‖ν‖ ^ 2 = ν.ofLp ⬝ᵥ A *ᵥ ν.ofLp := by
+  classical
+  have hN : ‖ν‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hν)
+  have hcol : ∀ j, ⟪WithLp.toLp 2 (Aᵀ j), ν⟫_ℝ = ∑ i, A i j * ν.ofLp i := fun j => by
+    simp [PiLp.inner_apply, mul_comm]
+  have hs : ∀ j, ⟪WithLp.toLp 2 (Aᵀ j), ν⟫_ℝ / ‖ν‖ ^ 2 * ν.ofLp j * ‖ν‖ ^ 2 =
+      (∑ i, A i j * ν.ofLp i) * ν.ofLp j := fun j => by
+    rw [hcol]
+    field_simp
+  simp only [sum_inner, real_inner_smul_left, EuclideanSpace.basisFun_inner, Finset.sum_mul, hs]
+  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
 end Matrix

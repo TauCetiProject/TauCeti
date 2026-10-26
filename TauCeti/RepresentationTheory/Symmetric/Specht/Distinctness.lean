@@ -99,7 +99,7 @@ private theorem transportedColumnAntisymmetrizer_single_eq_zero
       (MonoidAlgebra.single q (1 : ℚ)) = MonoidAlgebra.single q 1 := by
     rw [Representation.ofMulAction_single, hfix]
   -- the permutation module is a `ℚ`-vector space, so doubling is injective on it
-  have : IsAddTorsionFree (permutationModule (shapePartition m)) := .of_module_rat _
+  have : HasUniqueDiv (permutationModule (shapePartition m)) := .of_module_rat _
   exact Representation.asAlgebraHom_eq_zero_of_mul_single_eq_neg
     (nsmul_right_injective two_ne_zero) _ hfix'
     (transportedColumnAntisymmetrizer_mul_single_swap e t hxy hcol)

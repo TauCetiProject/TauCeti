@@ -71,7 +71,7 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 /-- The set consisting of a weight-indexed family `x` and all coroots, regarded as elements of the
 ambient Lie algebra. When `x` is a normalized system (such as `IsSl2System x`), its zero-weight
 value vanishes alongside the zero coroot. -/
-def rootCorootGenerators (x : Weight K H L → L) : Set L :=
+noncomputable def rootCorootGenerators (x : Weight K H L → L) : Set L :=
   Set.range x ∪ Set.range fun α : Weight K H L => (coroot α : L)
 
 omit [CharZero K] [LieModule.IsTriangularizable K H L] in
@@ -83,7 +83,7 @@ theorem mem_rootCorootGenerators_iff {x : Weight K H L → L} {v : L} :
   rw [rootCorootGenerators, Set.mem_union, Set.mem_range, Set.mem_range]
 
 /-- The integral span of a weight-indexed family `x` and all coroots in the ambient Lie algebra. -/
-def rootCorootSpan (x : Weight K H L → L) : Submodule ℤ L :=
+noncomputable def rootCorootSpan (x : Weight K H L → L) : Submodule ℤ L :=
   Submodule.span ℤ (rootCorootGenerators x)
 
 omit [CharZero K] [LieModule.IsTriangularizable K H L] in

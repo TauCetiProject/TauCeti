@@ -19,8 +19,9 @@ as a group-scheme morphism, including its parameters over rings with nilpotents.
 
 The character change uses `Symplectic.characterEquiv`, and the represented
 morphisms use `GeneralLinear.weightCharacterMap` and `Symplectic.diagonalTorus`.
-The ambient comparison identifies the coordinate maps on matrix entries, then cancels
-the closed symplectic inclusion.
+The public ambient comparison `diagonalTorusCoordinateMap_comp_symplecticCharacters`
+identifies the coordinate maps on matrix entries, using the public character map. The
+scheme comparison then cancels the closed symplectic inclusion.
 
 ## References
 
@@ -143,10 +144,15 @@ theorem schemePointsMulEquiv_symplecticTorusIso
 
 /- Coordinate-map argument adapted from TauCetiProject/TauCeti#15715 (Codex):
 https://github.com/TauCetiProject/TauCeti/pull/15715 -/
-private theorem diagonalTorusCoordinateMap_comp_symplecticCharacters :
+/-- On ambient matrix coordinates, the classical type-C characters written in fundamental-weight
+coordinates recover the carrier weight-torus map. -/
+theorem diagonalTorusCoordinateMap_comp_symplecticCharacters :
     Symplectic.coordinateMap ℤ (n + 1) ≫
         Symplectic.diagonalTorusCoordinateMap ≫
-        (DiagonalizableGroup.coordinateMap ℤ (symplecticCharacterIso n).hom).hom =
+        (DiagonalizableGroup.coordinateMap ℤ
+          (FGCommGrpCat.ofHom
+            (GeneralLinear.weightCharacterMap
+              (fun i : Fin (n + 1) => DynkinType.TypeC.weight (n + 1) i)))).hom =
       GeneralLinear.weightTorusCoordinateMap (basisWeight n) := by
   rw [← Category.assoc, Symplectic.coordinateMap_comp_diagonalTorusCoordinateMap]
   apply _root_.CommHopfAlgCat.hom_ext
@@ -158,18 +164,21 @@ private theorem diagonalTorusCoordinateMap_comp_symplecticCharacters :
   · subst j
     -- The full-subcategory morphism and its bialgebra projection are definitionally equal.
     change FiniteTypeCommHopfAlgCat.toBialgHom
-      (DiagonalizableGroup.coordinateMap ℤ (symplecticCharacterIso n).hom) _ = _
+      (DiagonalizableGroup.coordinateMap ℤ
+          (FGCommGrpCat.ofHom
+            (GeneralLinear.weightCharacterMap
+              (fun i : Fin (n + 1) => DynkinType.TypeC.weight (n + 1) i)))) _ = _
     rw [DiagonalizableGroup.toBialgHom_coordinateMap, MonoidAlgebra.mapDomainBialgHom_single]
     congr 1
     obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i
     · simp only [finSumFinEquiv_apply_left, finSumFinEquiv_symm_apply_castAdd,
         Symplectic.diagonalTorusWeight_inl, basisWeight_apply, weight_inl,
-        Finsupp.equivFunOnFinite_symm_coe, symplecticCharacterIso,
+        Finsupp.equivFunOnFinite_symm_coe,
         FGCommGrpCat.toMonoidHom_ofHom]
       exact GeneralLinear.weightCharacterMap_ofAdd_single _ i
     · simp only [finSumFinEquiv_apply_right, finSumFinEquiv_symm_apply_natAdd,
         Symplectic.diagonalTorusWeight_inr, basisWeight_apply, weight_inr,
-        Finsupp.equivFunOnFinite_symm_coe, symplecticCharacterIso,
+        Finsupp.equivFunOnFinite_symm_coe,
         FGCommGrpCat.toMonoidHom_ofHom]
       rw [ofAdd_neg, map_inv,
         GeneralLinear.weightCharacterMap_ofAdd_single, ← ofAdd_neg]
@@ -191,8 +200,7 @@ theorem weightTorus_comp_symplecticIso_hom :
     Symplectic.inclusion_def]
   rw [← diagonalTorusCoordinateMap_comp_symplecticCharacters]
   simp [GeneralLinear.hopfIdealInclusion_def, Symplectic.coordinateMap_def,
-    CommHopfAlgCat.quotientSpecι_def, op_comp, Functor.map_comp, Category.assoc,
-    symplecticCharacterIso]
+    CommHopfAlgCat.quotientSpecι_def, op_comp, Functor.map_comp, Category.assoc]
 
 end
 

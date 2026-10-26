@@ -56,7 +56,7 @@ local notation "K" => kostantForm (L := L)
 /-- The module structure on the tensor square of the Kostant form definitionally
 aligned with its algebra structure; both canonical instances have the same action,
 but iterated tensor maps must use one consistently. -/
-local instance kostantTensorModule (e : I → L) (h : J → L) :
+noncomputable local instance kostantTensorModule (e : I → L) (h : J → L) :
     Module ℤ (K e h ⊗[ℤ] K e h) := Algebra.toModule
 
 /-! ## Faithful scalar extension for three tensor factors -/
@@ -76,10 +76,10 @@ private theorem kostantTripleMap_tmul (e : I → L) (h : J → L)
 
 private theorem kostantTripleMap_injective (e : I → L) (h : J → L) :
     Function.Injective (kostantTripleMap e h) := by
-  let : IsAddTorsionFree U := .of_module_rat U
-  let : IsAddTorsionFree (U ⊗[ℚ] U) := .of_module_rat (U ⊗[ℚ] U)
-  let : IsAddTorsionFree (K e h) :=
-    Function.Injective.isAddTorsionFree (K e h).subtype.toAddMonoidHom
+  let : HasUniqueDiv U := .of_module_rat U
+  let : HasUniqueDiv (U ⊗[ℚ] U) := .of_module_rat (U ⊗[ℚ] U)
+  let : HasUniqueDiv (K e h) :=
+    Function.Injective.hasUniqueDiv (K e h).subtype.toAddMonoidHom
       (K e h).subtype_injective
   let : Module.Flat ℤ (K e h) := inferInstance
   let f : K e h →ₗ[ℤ] U := (K e h).subtype.toIntAlgHom.toLinearMap

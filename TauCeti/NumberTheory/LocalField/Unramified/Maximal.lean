@@ -50,9 +50,13 @@ Frobenius corresponding to `1`.
   polynomials `X^{q^f} − X` for `f ≠ 0`.
 * `TauCeti.mem_maximalUnramifiedExtension_of_pow_eq_one`: `K^{ur}` contains the roots of unity of
   order prime to the residue characteristic.
+* `TauCeti.mem_maximalUnramifiedExtension_of_sq_eq_neg_three`: for `p ≠ 3`, the square roots of
+  `-3` are unramified.
 * `TauCeti.mem_maximalUnramifiedExtension_of_pow_eq`: for `p ∤ m`, the `m`-th roots of a unit of
   `𝒪[K]` are unramified.
 * `TauCeti.isGalois_maximalUnramifiedExtension`: `K^{ur}` is Galois over `K`.
+* `AlgHom.map_maximalUnramifiedExtension_le`: for an extension `L/K` of local fields, a
+  `K`-algebra map from an extension of `K` to an extension of `L` sends `K^{ur}` into `L^{ur}`.
 * `IntermediateField.le_maximalUnramifiedExtension_iff`: for `Ω` separably closed, a finite
   intermediate field lies in `K^{ur}` exactly when it is unramified over `K`.
 * `TauCeti.maximalUnramifiedFrobenius_apply_of_pow_natCard_pow_eq_self`,
@@ -160,7 +164,7 @@ theorem maximalUnramifiedExtension_eq_adjoin :
   simp only [Set.mem_iUnion, Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero]
   -- `X^{q^0} − X` is zero, so it has no roots.
   exact ⟨fun ⟨f, hne, hx⟩ ↦ ⟨f, fun hf ↦ hne (by simp [hf]), hx⟩,
-    fun ⟨f, hf, hx⟩ ↦ ⟨f, FiniteField.X_pow_card_pow_sub_X_ne_zero _ hf Finite.one_lt_card, hx⟩⟩
+    fun ⟨f, hf, hx⟩ ↦ ⟨f, X_pow_sub_X_ne_zero (Nat.one_lt_pow hf Finite.one_lt_card), hx⟩⟩
 
 variable {K Ω} in
 /-- **Roots of unity of order prime to `p` are unramified.** If the residue characteristic of `K`
@@ -180,6 +184,30 @@ theorem mem_maximalUnramifiedExtension_of_pow_eq_one {n : ℕ} (hn : ¬ ringChar
   rw [maximalUnramifiedExtension_eq_adjoin]
   exact subset_adjoin _ _ ⟨n.totient, (Nat.totient_pos.2 (Nat.pos_of_ne_zero hn0)).ne',
     pow_pow_totient_eq_self hq hζ⟩
+
+variable {K Ω} in
+/-- **Square roots of `-3` are unramified** when the residue characteristic of `K` is not `3`: such
+a square root `w` is `2 ζ + 1` for the cube root of unity `ζ = (w - 1) / 2`, and it is `1` when
+`2 = 0` in `Ω`. -/
+theorem mem_maximalUnramifiedExtension_of_sq_eq_neg_three (h3 : ¬ ringChar 𝓀[K] ∣ 3) {w : Ω}
+    (hw : w ^ 2 = -3) : w ∈ maximalUnramifiedExtension K Ω := by
+  by_cases h2 : (2 : Ω) = 0
+  · -- In characteristic `2`, `(w - 1) ^ 2 = 0`, so `w = 1`.
+    have h : (w - 1) ^ 2 = 0 := by linear_combination hw - (w + 1) * h2
+    rw [sub_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 h)]
+    exact one_mem _
+  set ζ : Ω := (w - 1) / 2
+  have hζ : ζ ^ 3 = 1 := by
+    simp only [ζ]
+    field_simp
+    linear_combination (w - 3) * hw
+  have hw' : w = 2 * ζ + 1 := by
+    simp only [ζ]
+    field_simp
+    ring
+  rw [hw']
+  exact add_mem (mul_mem (by simp) (mem_maximalUnramifiedExtension_of_pow_eq_one h3 hζ))
+    (one_mem _)
 
 variable {K Ω} in
 /-- **Radicals of units are unramified.** If the residue characteristic of `K` does not divide `m`,
@@ -231,6 +259,23 @@ theorem _root_.IntermediateField.le_maximalUnramifiedExtension (E : Intermediate
     [ValuativeRel E] [TopologicalSpace E] [IsNonarchimedeanLocalField E] [ValuativeExtension K E]
     [IsUnramified K E] : E ≤ maximalUnramifiedExtension K Ω :=
   E.eq_unramifiedExtension_finrank ▸ unramifiedExtension_le_maximalUnramifiedExtension K Ω _
+
+variable {K Ω} in
+/-- **Unramified elements stay unramified in an extension.** For an extension `L/K` of
+nonarchimedean local fields and a `K`-algebra map `τ : Ω → Ω'` into an extension `Ω'` of `L`, the
+image of `K^{ur}` lies in `L^{ur}`. -/
+theorem _root_.AlgHom.map_maximalUnramifiedExtension_le {L : Type*} [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+    {Ω' : Type*} [Field Ω'] [Algebra K Ω'] [Algebra L Ω'] [IsScalarTower K L Ω']
+    (τ : Ω →ₐ[K] Ω') :
+    (maximalUnramifiedExtension K Ω).map τ ≤
+      (maximalUnramifiedExtension L Ω').restrictScalars K := by
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨f, -, hx⟩ := mem_maximalUnramifiedExtension_iff.1 hx
+  -- `τ` carries `K_f` into `K_f ⊆ L_f ⊆ L^{ur}` inside `Ω'`.
+  exact unramifiedExtension_le_maximalUnramifiedExtension L Ω' f
+    (unramifiedExtension_le_restrictScalars_unramifiedExtension (K := K) L f
+      (map_unramifiedExtension_le f τ ⟨x, hx, rfl⟩))
 
 /-- Two `K`-embeddings of `K_f` agreeing on the roots of `X^{q^f} − X` are equal. -/
 private theorem algHom_ext_unramifiedExtension {f : ℕ} {A : Type*} [Field A] [Algebra K A]

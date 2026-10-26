@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Ginzburg.Basic
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.CyclicDerivative
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Cyclic.Derivative
 
 /-!
 # The three-dimensional Ginzburg differential graded algebra of a quiver with potential
@@ -59,8 +59,8 @@ which vanishes by the local cyclic identity
 * `TauCeti.isDGAlgebra_ginzburgThreeDifferential`: **the three-dimensional Ginzburg differential
   graded algebra** `Γ₃(Q, W)`, with `TauCeti.ginzburgThreeDifferential_mul` and
   `TauCeti.ginzburgThreeDifferential_sq_zero` its Leibniz rule and vanishing square.
-* `TauCeti.ginzburgThreeDifferential_add_mul_sub_mul`: the differential only depends on the
-  potential up to cyclic equivalence.
+* `TauCeti.ginzburgThreeDifferential_eq_of_cyclicQuotient_eq`: the differential only depends on
+  the cyclic class of the potential.
 
 ## References
 
@@ -380,23 +380,37 @@ theorem ginzburgThreeDifferential_sq_zero (x : pathAlgebra k (GinzburgQuiver Q))
     ginzburgThreeDifferential k W (ginzburgThreeDifferential k W x) = 0 :=
   (isDGAlgebra_ginzburgThreeDifferential k W).sq_zero x
 
-/-- **The three-dimensional Ginzburg differential only depends on the potential up to cyclic
-equivalence**: adding a commutator `x y - y x` to `W` does not change it. -/
-theorem ginzburgThreeDifferential_add_mul_sub_mul (x y : pathAlgebra k Q) :
-    ginzburgThreeDifferential k (W + (x * y - y * x)) = ginzburgThreeDifferential k W := by
+/-- **The three-dimensional Ginzburg differential only depends on the cyclic class of the
+potential**: two representatives with the same image in `kQ / [kQ, kQ]` define the same
+differential. -/
+theorem ginzburgThreeDifferential_eq_of_cyclicQuotient_eq
+    {W' : pathAlgebra k Q}
+    (h : (commutatorSubmodule k (pathAlgebra k Q)).mkQ W =
+      (commutatorSubmodule k (pathAlgebra k Q)).mkQ W') :
+    ginzburgThreeDifferential k W = ginzburgThreeDifferential k W' := by
   have hrel : ∀ {i j : Q} (e : GinzburgHom Q i j),
-      ginzburgThreeArrowRelator k (W + (x * y - y * x)) e = ginzburgThreeArrowRelator k W e := by
+      ginzburgThreeArrowRelator k W e = ginzburgThreeArrowRelator k W' e := by
     intro i j e
     rcases e with (a | a) | i
     · rw [ginzburgThreeArrowRelator_double_inl, ginzburgThreeArrowRelator_double_inl]
-    · rw [ginzburgThreeArrowRelator_double_inr, ginzburgThreeArrowRelator_double_inr, map_add,
-        map_sub, cyclicDerivative_mul_comm, sub_self, add_zero]
+    · rw [ginzburgThreeArrowRelator_double_inr, ginzburgThreeArrowRelator_double_inr]
+      apply congrArg (ginzburgOriginalMap k)
+      simpa only [Submodule.mkQ_apply, cyclicDerivativeCyclicQuotient_mk] using
+        congrArg (cyclicDerivativeCyclicQuotient a) h
     · rw [ginzburgThreeArrowRelator_loop, ginzburgThreeArrowRelator_loop]
   exact (liftDerivation_unique k ginzburgThreeDegree _
     (vertexIdempotent_mul_ginzburgThreeArrowRelator k _)
-    (ginzburgThreeArrowRelator_mul_vertexIdempotent k _) (ginzburgThreeDifferential k W)
-    (ginzburgThreeDifferential_vertexIdempotent k W) (ginzburgThreeDifferential_mul k W)
-    fun e => (ginzburgThreeDifferential_ofArrow k W e).trans (hrel e).symm).symm
+    (ginzburgThreeArrowRelator_mul_vertexIdempotent k _) (ginzburgThreeDifferential k W')
+    (ginzburgThreeDifferential_vertexIdempotent k W') (ginzburgThreeDifferential_mul k W')
+    fun e => (ginzburgThreeDifferential_ofArrow k W' e).trans (hrel e).symm).symm
+
+/-- Adding a single commutator `x y - y x` to a potential does not change its three-dimensional
+Ginzburg differential. -/
+theorem ginzburgThreeDifferential_add_mul_sub_mul (x y : pathAlgebra k Q) :
+    ginzburgThreeDifferential k (W + (x * y - y * x)) = ginzburgThreeDifferential k W := by
+  apply ginzburgThreeDifferential_eq_of_cyclicQuotient_eq k
+  apply (Submodule.Quotient.eq (commutatorSubmodule k (pathAlgebra k Q))).2
+  simpa only [add_sub_cancel_left] using mul_sub_mul_mem_commutatorSubmodule k _ x y
 
 end Differential
 

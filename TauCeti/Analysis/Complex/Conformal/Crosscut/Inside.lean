@@ -52,8 +52,9 @@ conformal maps, so this is new Lean formalization rather than a temporary shim.
 * `TauCeti.image_inter_ball_subset_filledHull_of_diam_lt_of_isPreconnected_sdiff_singleton`
   — diameter selection: when the enclosing set is narrower than the far side, the near side is
   enclosed.
-  Consumes the disjunction above; `IsJordanCurve.isPathConnected_sdiff_singleton` discharges the
-  preconnectedness hypothesis in the intended application.
+  Consumes the disjunction above; in the intended application the enclosing set of
+  `TauCeti.exists_isCompact_superset_image_ball_inter_sphere_diam_le` satisfies the
+  preconnectedness hypothesis.
 * `TauCeti.image_inter_ball_subset_filledHull_of_frontier_subset` — the enclosure hypothesis is
   implied by the boundary-piece hypothesis of `Conformal/CutDiameter.lean`.
 
@@ -310,9 +311,9 @@ enclosed.** This consumes the disjunction
 `TauCeti.image_inter_ball_subset_filledHull_or_image_sdiff_closedBall_subset_filledHull` by
 excluding the far-side case: trapping the far side inside `K` gives
 `diam (f '' (U \ closedBall ζ ρ)) ≤ diam K`, contradicting the hypothesis. The plane-separation
-input `p ∈ closure (filledHull K \ K)` is replaced by preconnectedness of `K \ {f z₀}`, which is
-discharged by
-`IsJordanCurve.isPathConnected_sdiff_singleton` in the intended application. -/
+input `p ∈ closure (filledHull K \ K)` is replaced by preconnectedness of `K \ {f z₀}`, which the
+enclosing set of `TauCeti.exists_isCompact_superset_image_ball_inter_sphere_diam_le` satisfies in
+the intended application. -/
 theorem
     image_inter_ball_subset_filledHull_of_diam_lt_of_isPreconnected_sdiff_singleton
     {U : Set ℂ}

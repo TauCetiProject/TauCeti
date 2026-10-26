@@ -409,10 +409,9 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
   have hex₂ : IsIntegrallyClosedIn k F₂ :=
     (IsScalarTower.toAlgHom k F₂ F).isIntegrallyClosedIn (algebraMap F₂ F).injective hex
   have : Algebra.IsSeparable k k' := Algebra.IsAlgebraic.isSeparable_of_perfectField
-  have : PerfectField k' := Algebra.IsAlgebraic.perfectField k
   have : FiniteDimensional F F' := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  have hex' : IsIntegrallyClosedIn k' F' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex h
+  have hex' : IsIntegrallyClosedIn k' F' := hex.of_constantCompositum_eq_top h
   -- The algebra structures making `F₁ ⊆ F₁ · k' ⊆ F'` and `F₂ ⊆ F₂ · k' ⊆ F'` towers over `k`.
   let : Algebra F₁ F' := ((algebraMap F F').comp (algebraMap F₁ F)).toAlgebra
   let : Algebra F₂ F' := ((algebraMap F F').comp (algebraMap F₂ F)).toAlgebra
@@ -426,16 +425,12 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
       ← IsScalarTower.algebraMap_apply k F F']
   set F₁' := constantCompositum F₁ k' F'
   set F₂' := constantCompositum F₂ k' F'
-  let : Algebra k' F₁' := ((algebraMap k' F').codRestrict F₁'
-    (algebraMap_mem_constantCompositum F₁ k' F')).toAlgebra
-  let : Algebra k' F₂' := ((algebraMap k' F').codRestrict F₂'
-    (algebraMap_mem_constantCompositum F₂ k' F')).toAlgebra
-  have : IsScalarTower k' F₁' F' := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k' F₂' F' := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k k' F₁' := IsScalarTower.of_algebraMap_eq fun c ↦
-    Subtype.ext (IsScalarTower.algebraMap_apply k k' F' c)
-  have : IsScalarTower k k' F₂' := IsScalarTower.of_algebraMap_eq fun c ↦
-    Subtype.ext (IsScalarTower.algebraMap_apply k k' F' c)
+  let : Algebra k' F₁' := constantCompositumAlgebra F₁ k' F'
+  let : Algebra k' F₂' := constantCompositumAlgebra F₂ k' F'
+  have : IsScalarTower k' F₁' F' := isScalarTower_constantCompositum F₁ k' F'
+  have : IsScalarTower k' F₂' F' := isScalarTower_constantCompositum F₂ k' F'
+  have : IsScalarTower k k' F₁' := isScalarTower_base_constantCompositum k F₁ k' F'
+  have : IsScalarTower k k' F₂' := isScalarTower_base_constantCompositum k F₂ k' F'
   -- The composita `F₁ · k'` and `F₂ · k'` inside `F'` have the genera and degrees of `F₁`, `F₂`.
   obtain ⟨-, hF₁', _, _, hn₁, hg₁⟩ := constantCompositum_subfield (F₁ := F₁) hF hex h
   obtain ⟨hcc₂, hF₂', _, _, hn₂, hg₂⟩ := constantCompositum_subfield (F₁ := F₂) hF hex h

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
+public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 public import TauCeti.FieldTheory.FunctionField.Elliptic.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Map
 
@@ -30,6 +31,10 @@ The relation is recorded as the affine equation of a Weierstrass curve `W` over 
 `F` along the base change `W.baseChange F`, so that Mathlib's Weierstrass-curve API (variable
 changes, the discriminant) applies to it.
 
+The Weierstrass place `P` is the unique pole of `x`. Away from characteristic two,
+`2y + a₁x + a₃` has pole divisor `3P`; in the normal form with `a₁ = a₃ = 0`, its orders,
+principal divisor and zero divisor agree with those of `y`.
+
 ## Main definitions
 
 * `TauCeti.Place.IsWeierstrassCoordinates`: `x` and `y` have pole divisors `2P` and `3P` and
@@ -48,6 +53,12 @@ changes, the discriminant) applies to it.
   (Stichtenoth, Proposition 6.1.2).
 * `TauCeti.IsEllipticFunctionField.exists_isWeierstrassCoordinates`: the same for an elliptic
   function field, at some place of degree one.
+
+* `TauCeti.Place.IsWeierstrassCoordinates.eq_of_isWeierstrassCoordinates`: the Weierstrass
+  place is unique. The lemmas `ord_two_mul_add` and `poles_two_mul_add` give order `-3` at `P`
+  and pole divisor `3P` away from characteristic two; `ord_two_mul_add_eq_ord_y`,
+  `principal_two_mul_add_eq_principal_y` and `zeros_two_mul_add_eq_zeros_y` identify the
+  corresponding data with those of `y` in normal form.
 
 ## References
 
@@ -157,6 +168,105 @@ theorem map {F' : Type*} [Field F'] [Algebra k F'] (e : F ≃ₐ[k] F') :
     rw [mapEquiv_apply, ord_map_apply]
     exact h.ord_y_nonneg R fun hR ↦ hQ (by rw [mapEquiv_apply, hR])
   equation := h.equation.baseChange e.toAlgHom
+
+/-- **The place of Weierstrass coordinates is unique**: `P` is the only pole of `x`, so any two
+places at which `x` is the first Weierstrass coordinate are equal. -/
+theorem eq_of_isWeierstrassCoordinates {P' : Place k F} {W' : WeierstrassCurve k} {y' : F}
+    (h' : P'.IsWeierstrassCoordinates W' x y') : P = P' := by
+  by_contra hne
+  have := h.ord_x_nonneg P' (Ne.symm hne)
+  rw [h'.ord_x] at this
+  omega
+
+/-- `2y + a₁x + a₃` is regular away from `P`. -/
+theorem ord_two_mul_add_nonneg {Q : Place k F} (hQ : Q ≠ P) :
+    0 ≤ Q.ord (2 * y + algebraMap k F W.a₁ * x + algebraMap k F W.a₃) := by
+  rw [← Q.mem_integers_iff_ord_nonneg]
+  have hx : x ∈ Q.integers := Q.mem_integers_iff_ord_nonneg.mpr (h.ord_x_nonneg Q hQ)
+  have hy : y ∈ Q.integers := Q.mem_integers_iff_ord_nonneg.mpr (h.ord_y_nonneg Q hQ)
+  have hc (c : k) : algebraMap k F c ∈ Q.integers := Q.algebraMap_mem_integers c
+  refine add_mem (add_mem (mul_mem ?_ hy) (mul_mem (hc _) hx)) (hc _)
+  simp
+
+/-- **`2y + a₁x + a₃` has a pole of order three at `P`** away from characteristic two: `2y` has a
+pole of order three and `a₁x + a₃` has order at least `-2`. -/
+theorem ord_two_mul_add (h2 : (2 : k) ≠ 0) :
+    P.ord (2 * y + algebraMap k F W.a₁ * x + algebraMap k F W.a₃) = -3 := by
+  have h2F : (2 : F) = algebraMap k F 2 := (map_ofNat (algebraMap k F) 2).symm
+  have h2' : (2 : F) ≠ 0 := by rwa [h2F, map_ne_zero]
+  have hord2y : P.ord (2 * y) = -3 := by
+    rw [P.ord_mul h2' h.y_ne_zero, h2F, P.ord_algebraMap, h.ord_y, zero_add]
+  rw [add_assoc]
+  set g := algebraMap k F W.a₁ * x + algebraMap k F W.a₃
+  rcases eq_or_ne g 0 with hg | hg
+  · rw [hg, add_zero, hord2y]
+  have hg_ge : -2 ≤ P.ord g := by
+    refine le_trans ?_ (P.min_ord_le_ord_add hg)
+    rw [P.ord_algebraMap, le_inf_iff]
+    refine ⟨?_, by decide⟩
+    rcases eq_or_ne W.a₁ 0 with ha₁ | ha₁
+    · simp [ha₁]
+    · rw [P.ord_mul ((map_ne_zero _).mpr ha₁) h.x_ne_zero, P.ord_algebraMap, h.ord_x, zero_add]
+  rw [P.ord_add_eq_min_of_ord_ne (mul_ne_zero h2' h.y_ne_zero) hg (by omega)]
+  omega
+
+section TwoNeZero
+
+variable (hF : IsFunctionField k F) (h2 : (2 : k) ≠ 0)
+include h2
+
+/-- Away from characteristic two, `2y + a₁x + a₃` is nonzero because it has a triple pole at `P`. -/
+theorem two_mul_add_ne_zero_of_two_ne_zero :
+    2 * y + algebraMap k F W.a₁ * x + algebraMap k F W.a₃ ≠ 0 := fun h0 ↦ by
+  simpa [h0] using h.ord_two_mul_add h2
+
+/-- **The pole divisor of `2y + a₁x + a₃` is `3P`** away from characteristic two. -/
+theorem poles_two_mul_add :
+    Divisor.poles hF
+        (Units.mk0 (2 * y + algebraMap k F W.a₁ * x + algebraMap k F W.a₃)
+          (h.two_mul_add_ne_zero_of_two_ne_zero h2)) =
+      (3 : ℤ) • WeilDivisor.ofPoint P :=
+  Divisor.poles_eq_natCast_zsmul_ofPoint_of_ord_eq_neg hF (n := 3)
+    (h.ord_two_mul_add h2) (fun _ ↦ h.ord_two_mul_add_nonneg)
+
+section CharNeTwoNF
+
+variable [W.IsCharNeTwoNF]
+
+/-- In the characteristic-not-two normal form `y² = x³ + a₂x² + a₄x + a₆`, the partial derivative
+`2y + a₁x + a₃` has the same order as `y` at every place. -/
+theorem ord_two_mul_add_eq_ord_y (Q : Place k F) :
+    Q.ord (2 * y + algebraMap k F W.a₁ * x + algebraMap k F W.a₃) = Q.ord y := by
+  have h2F : (2 : F) = algebraMap k F 2 := (map_ofNat (algebraMap k F) 2).symm
+  have h2' : (2 : F) ≠ 0 := by rwa [h2F, map_ne_zero]
+  rw [W.a₁_of_isCharNeTwoNF, W.a₃_of_isCharNeTwoNF, map_zero, zero_mul, add_zero, add_zero,
+    Q.ord_mul h2' h.y_ne_zero, h2F, Q.ord_algebraMap, zero_add]
+
+/-- In the characteristic-not-two normal form, `2y + a₁x + a₃` and `y` have the same principal
+divisor. -/
+theorem principal_two_mul_add_eq_principal_y :
+    Divisor.principal hF
+        (Units.mk0 (2 * y + algebraMap k F W.a₁ * x + algebraMap k F W.a₃)
+          (h.two_mul_add_ne_zero_of_two_ne_zero h2)) =
+      Divisor.principal hF (Units.mk0 y h.y_ne_zero) := by
+  ext Q
+  rw [Divisor.coeff_principal, Divisor.coeff_principal, Units.val_mk0, Units.val_mk0,
+    h.ord_two_mul_add_eq_ord_y h2 Q]
+
+/-- In the characteristic-not-two normal form, `2y + a₁x + a₃` and `y` have the same zero
+divisor. -/
+theorem zeros_two_mul_add_eq_zeros_y :
+    Divisor.zeros hF
+        (Units.mk0 (2 * y + algebraMap k F W.a₁ * x + algebraMap k F W.a₃)
+          (h.two_mul_add_ne_zero_of_two_ne_zero h2)) =
+      Divisor.zeros hF (Units.mk0 y h.y_ne_zero) := by
+  ext Q
+  rw [Divisor.coeff_zeros, Divisor.coeff_zeros, Units.val_mk0, Units.val_mk0,
+    h.ord_two_mul_add_eq_ord_y h2 Q]
+
+end CharNeTwoNF
+
+end TwoNeZero
 
 end IsWeierstrassCoordinates
 

@@ -28,9 +28,11 @@ sign reads off the closed half-planes via `mem_closure_leftHalfPlane_geodesicBet
 `mem_closure_rightHalfPlane_geodesicBetween_iff`.
 Three consequences used for polygons: orientation is cyclically invariant
 (`mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane`: if `C` is left of `A → B` then `A` is
-left of `B → C`), unoriented angles add when the middle geodesic lies between the outer two
-(`interiorAngle_add`), and the angular order of two points on the left of `A → B` is read off
-the side of the geodesic through the first (`toReal_orientedAngle_lt_iff`).
+left of `B → C`, and `notMem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane`: two points are
+not each left of the geodesic from a third towards the other), unoriented angles add when the
+middle geodesic lies between the outer two (`interiorAngle_add`), and the angular order of two
+points on the left of `A → B` is read off the side of the geodesic through the first
+(`toReal_orientedAngle_lt_iff`).
 
 Source: Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 10 (2010), Corollary 5.2
 p. 18 (Möbius transformations preserve angles and orientation). The sign–side correspondence and
@@ -308,6 +310,19 @@ theorem rightHalfPlane_geodesicBetween_swap {z w : ℍ} (hzw : z ≠ w) :
     rightHalfPlane (geodesicBetween w z) = leftHalfPlane (geodesicBetween z w) := by
   rw [geodesicBetween_swap hzw, rightHalfPlane_mul_pslS, leftHalfPlane_mul_dilation]
 
+/-- The geodesic from an earlier to a later point of a line has the same left half-plane as the
+line. -/
+theorem leftHalfPlane_geodesicBetween_geodesicLine_of_lt (g : PSL(2, ℝ)) {s t : ℝ} (hst : s < t) :
+    leftHalfPlane (geodesicBetween (geodesicLine g s) (geodesicLine g t)) = leftHalfPlane g := by
+  rw [geodesicBetween_geodesicLine_of_lt g hst, leftHalfPlane_mul_dilation]
+
+/-- The geodesic from an earlier to a later point of a line has the same right half-plane as the
+line. -/
+theorem rightHalfPlane_geodesicBetween_geodesicLine_of_lt (g : PSL(2, ℝ)) {s t : ℝ}
+    (hst : s < t) :
+    rightHalfPlane (geodesicBetween (geodesicLine g s) (geodesicLine g t)) = rightHalfPlane g := by
+  rw [geodesicBetween_geodesicLine_of_lt g hst, rightHalfPlane_mul_dilation]
+
 /-- A point of an open left half-plane is not on the bounding line. -/
 theorem notMem_range_geodesicLine_of_mem_leftHalfPlane {g : PSL(2, ℝ)} {z : ℍ}
     (hz : z ∈ leftHalfPlane g) : z ∉ Set.range (geodesicLine g) :=
@@ -348,6 +363,24 @@ theorem mem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane {A B C : ℍ} (
     (notMem_range_geodesicLine_of_mem_leftHalfPlane hB)
   rw [← leftHalfPlane_geodesicBetween_swap hCB.symm]
   exact mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane hAC hB
+
+/-- Two points `x` and `y` cannot each lie to the left of the geodesic from a third point `v`
+towards the other. -/
+theorem notMem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane {v x y : ℍ} (hvx : v ≠ x)
+    (hvy : v ≠ y) (hy : y ∈ leftHalfPlane (geodesicBetween v x)) :
+    x ∉ leftHalfPlane (geodesicBetween v y) := fun hx ↦ by
+  have h := (orientedAngle_sign_eq_one_iff hvx).2 hx
+  rw [orientedAngle_rev, Real.Angle.sign_neg, (orientedAngle_sign_eq_one_iff hvy).2 hy] at h
+  exact absurd h (by decide)
+
+/-- Two points `x` and `y` cannot each lie to the right of the geodesic from a third point `v`
+towards the other. -/
+theorem notMem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane {v x y : ℍ} (hvx : v ≠ x)
+    (hvy : v ≠ y) (hy : y ∈ rightHalfPlane (geodesicBetween v x)) :
+    x ∉ rightHalfPlane (geodesicBetween v y) := fun hx ↦ by
+  have h := (orientedAngle_sign_eq_neg_one_iff hvx).2 hx
+  rw [orientedAngle_rev, Real.Angle.sign_neg, (orientedAngle_sign_eq_neg_one_iff hvy).2 hy] at h
+  exact absurd h (by decide)
 
 /-! ### Additivity of unoriented angles and the angular order -/
 

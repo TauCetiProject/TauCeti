@@ -39,7 +39,9 @@ almost-everywhere differentiability hypotheses. The Euclidean quadratic cost sat
 twist condition since `Dₓ c (x, y) = x - y` up to the Riesz identification. Differentiable,
 strictly convex displacement costs `c (x, y) = h (x - y)` also fit when `h` is nonnegative,
 its sections are differentiable at contact partners, and the potential is differentiable
-`μ`-almost everywhere; then `Dₓ c (x, y) = D h (x - y)`.
+`μ`-almost everywhere; then `Dₓ c (x, y) = D h (x - y)`. For strictly convex `h` that need not be
+differentiable, `TauCeti.subsingleton_setOf_mem_contactSet_of_strictConvexOn` replaces `D h` by
+the subgradients of `h`.
 
 The potential `φ` is extended-real valued, as the `c`-concave potentials of
 `TauCeti.cTransformSymm` are. It is differentiated through `EReal.toReal`, and the statements
@@ -56,12 +58,15 @@ of `φ` is a hypothesis, to be supplied by a Rademacher-type theorem for the pot
 
 ## Main statements
 
+* `TauCeti.isLocalMin_sub_toReal_of_mem_contactSet` — at a contact point `(x, y)`, the function
+  `x' ↦ c (x', y) - φ x'` has a local minimum at `x`;
 * `TauCeti.hasFDerivAt_eq_of_mem_contactSet` — the first-order condition `D φ (x) = Dₓ c (x, y)`
   at a contact point, and `TauCeti.fderiv_eq_of_mem_contactSet` its `fderiv` form;
 * `TauCeti.subsingleton_setOf_mem_contactSet` — under the twist condition, a point where the
   potential is differentiable has at most one contact partner;
-* `TauCeti.fderiv_norm_sub_sq_div_two_injective` — the quadratic cost `‖x - y‖ ^ 2 / 2` on a
-  real inner product space is twisted;
+* `TauCeti.fderiv_norm_sub_sq_div_two` and `TauCeti.fderiv_norm_sub_sq_div_two_injective` — the
+  quadratic cost `‖x - y‖ ^ 2 / 2` on a real inner product space has `x`-derivative
+  `⟪x - y, ·⟫`, and is therefore twisted;
 * `TauCeti.ae_subsingleton_setOf_mem_contactSet` — the contact fibres are almost all
   subsingletons when the potential is differentiable almost everywhere;
 * `TauCeti.IsDualCertificate.ae_exists_condKernel_eq_dirac` — optimal couplings have almost
@@ -88,10 +93,34 @@ open scoped Topology ENNReal
 
 namespace TauCeti
 
+/-! ### The first-order condition at a contact point -/
+
+section Topological
+
+variable {X Y : Type*} [TopologicalSpace X] {c : X × Y → ℝ} {φ : X → EReal} {ψ : Y → EReal}
+  {x : X} {y : Y}
+
+/-- **Contact points minimise the cost minus the potential.** If the dual constraint
+`φ x' + ψ y ≤ c (x', y)` holds for `x'` near `x` and is an equality at `x`, and `φ` does not take
+the value `⊥` near `x`, then `x' ↦ c (x', y) - (φ x').toReal` has a local minimum at `x`. -/
+theorem isLocalMin_sub_toReal_of_mem_contactSet
+    (hfeas : ∀ᶠ x' in 𝓝 x, φ x' + ψ y ≤ (c (x', y) : EReal))
+    (hfin : ∀ᶠ x' in 𝓝 x, φ x' ≠ ⊥) (hxy : (x, y) ∈ contactSet c φ ψ) :
+    IsLocalMin (fun x' ↦ c (x', y) - (φ x').toReal) x := by
+  obtain ⟨a, b, ha, hb, hab⟩ := exists_coe_of_mem_contactSet hxy
+  filter_upwards [hfeas, hfin] with x' hle hbot
+  have htop : φ x' ≠ ⊤ := by
+    rintro h
+    rw [h, hb, EReal.top_add_coe] at hle
+    exact EReal.coe_ne_top _ (top_le_iff.1 hle)
+  rw [hb, ← EReal.coe_toReal htop hbot, ← EReal.coe_add, EReal.coe_le_coe_iff] at hle
+  rw [ha, EReal.toReal_coe]
+  linarith
+
+end Topological
+
 variable {E Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {c : E × Y → ℝ} {φ : E → EReal} {ψ : Y → EReal} {x : E} {y : Y}
-
-/-! ### The first-order condition at a contact point -/
 
 /-- **The first-order condition at a contact point.** If the dual constraint
 `φ x' + ψ y ≤ c (x', y)` holds for `x'` near `x` and is an equality at `x`, then the derivative
@@ -101,18 +130,9 @@ theorem hasFDerivAt_eq_of_mem_contactSet {φ' c' : E →L[ℝ] ℝ}
     (hfeas : ∀ᶠ x' in 𝓝 x, φ x' + ψ y ≤ (c (x', y) : EReal))
     (hfin : ∀ᶠ x' in 𝓝 x, φ x' ≠ ⊥) (hxy : (x, y) ∈ contactSet c φ ψ)
     (hφ : HasFDerivAt (fun x' ↦ (φ x').toReal) φ' x)
-    (hc : HasFDerivAt (fun x' ↦ c (x', y)) c' x) : φ' = c' := by
-  obtain ⟨a, b, ha, hb, hab⟩ := exists_coe_of_mem_contactSet hxy
-  have hmin : IsLocalMin (fun x' ↦ c (x', y) - (φ x').toReal) x := by
-    filter_upwards [hfeas, hfin] with x' hle hbot
-    have htop : φ x' ≠ ⊤ := by
-      rintro h
-      rw [h, hb, EReal.top_add_coe] at hle
-      exact EReal.coe_ne_top _ (top_le_iff.1 hle)
-    rw [hb, ← EReal.coe_toReal htop hbot, ← EReal.coe_add, EReal.coe_le_coe_iff] at hle
-    rw [ha, EReal.toReal_coe]
-    linarith
-  exact (sub_eq_zero.1 (hmin.hasFDerivAt_eq_zero (hc.sub hφ))).symm
+    (hc : HasFDerivAt (fun x' ↦ c (x', y)) c' x) : φ' = c' :=
+  (sub_eq_zero.1 ((isLocalMin_sub_toReal_of_mem_contactSet hfeas hfin hxy).hasFDerivAt_eq_zero
+    (hc.sub hφ))).symm
 
 /-- The `fderiv` form of `TauCeti.hasFDerivAt_eq_of_mem_contactSet`: at a contact point, the
 derivative of the potential is the `x`-derivative of the cost. -/
@@ -143,19 +163,23 @@ theorem subsingleton_setOf_mem_contactSet
   exact (fderiv_eq_of_mem_contactSet (hfeas y₁) hfin h₁ hφ (hc y₁ h₁)).symm.trans
     (fderiv_eq_of_mem_contactSet (hfeas y₂) hfin h₂ hφ (hc y₂ h₂))
 
+/-- On a real inner product space, the `x`-derivative of the quadratic cost `‖x - y‖ ^ 2 / 2` at
+`x` is `⟪x - y, ·⟫`. -/
+theorem fderiv_norm_sub_sq_div_two {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (x y : F) : fderiv ℝ (fun x' ↦ ‖x' - y‖ ^ 2 / 2) x = innerSL ℝ (x - y) := by
+  simp_rw [div_eq_mul_inv]
+  refine (HasFDerivAt.mul_const (HasFDerivAt.norm_sq ((hasFDerivAt_id x).sub_const y))
+    2⁻¹).fderiv.trans ?_
+  ext v
+  simp
+
 /-- **The quadratic cost is twisted.** On a real inner product space, the `x`-derivative of the
 cost `‖x - y‖ ^ 2 / 2` at `x` is `⟪x - y, ·⟫`, which determines `y`. -/
 theorem fderiv_norm_sub_sq_div_two_injective {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] (x : F) :
     Function.Injective fun y : F ↦ fderiv ℝ (fun x' ↦ ‖x' - y‖ ^ 2 / 2) x := by
-  have hderiv (y : F) : fderiv ℝ (fun x' ↦ ‖x' - y‖ ^ 2 / 2) x = innerSL ℝ (x - y) := by
-    simp_rw [div_eq_mul_inv]
-    refine (HasFDerivAt.mul_const (HasFDerivAt.norm_sq ((hasFDerivAt_id x).sub_const y))
-      2⁻¹).fderiv.trans ?_
-    ext v
-    simp
   intro y₁ y₂ h
-  simpa only [hderiv, innerSL_inj, sub_right_inj] using h
+  simpa only [fderiv_norm_sub_sq_div_two, innerSL_inj, sub_right_inj] using h
 
 variable [MeasurableSpace E] {μ : Measure E}
 

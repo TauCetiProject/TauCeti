@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Topology.Iso
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Zero
 public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExactCochains
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExactCochains.Basic
 
 /-!
 # The long exact sequence of continuous cohomology in every degree
@@ -112,7 +112,7 @@ noncomputable def delta (n : ℕ) :
   TopModuleCat.ofHom
     ⟨(((S.continuousCochainsShortExact.X₃.sc n).mapHomologyIso
           (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ))).inv ≫
-        S.continuousCochainsShortExact_shortExact.δ n (n + 1) rfl ≫
+        S.continuousCochainsShortExact_shortExact_moduleCat.δ n (n + 1) rfl ≫
           ((S.continuousCochainsShortExact.X₁.sc (n + 1)).mapHomologyIso
             (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ))).hom).hom,
       -- The expected type presents the source through Mathlib's homology data rather than as
@@ -127,7 +127,7 @@ theorem forget₂_map_delta (n : ℕ) :
     (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map (S.delta n) =
       ((S.continuousCochainsShortExact.X₃.sc n).mapHomologyIso
           (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ))).inv ≫
-        S.continuousCochainsShortExact_shortExact.δ n (n + 1) rfl ≫
+        S.continuousCochainsShortExact_shortExact_moduleCat.δ n (n + 1) rfl ≫
           ((S.continuousCochainsShortExact.X₁.sc (n + 1)).mapHomologyIso
             (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ))).hom := by
   -- The `rfl` tactic checks the definitional unfolding once; the term `(rfl)` checks it twice,
@@ -151,7 +151,7 @@ theorem delta_apply (n : ℕ) (z₃ : cocycles (ofDiscreteModule ℤ G C) n)
     (S.delta n).hom (π (ofDiscreteModule ℤ G C) n z₃) =
       π (ofDiscreteModule ℤ G A) (n + 1) z₁ := by
   let F := forget₂ (TopModuleCat.{u} ℤ) (ModuleCat.{u} ℤ)
-  let hS := S.continuousCochainsShortExact_shortExact
+  let hS := S.continuousCochainsShortExact_shortExact_moduleCat
   -- `δ` is computed on the forgotten complexes `F K`. A cycle `z` of a complex `K` of topological
   -- modules becomes the cycle `(mapCyclesIso F).inv z` of `F K`: it is the cycle built from the
   -- same cochain, and its class is the class of `z` under `mapHomologyIso`.
@@ -192,6 +192,42 @@ theorem delta_apply (n : ℕ) (z₃ : cocycles (ofDiscreteModule ℤ G C) n)
   exact (congrArg _ (hclass _ n z₃).symm).trans
     (Iso.hom_inv_id_apply ((S.continuousCochainsShortExact.X₃.sc n).mapHomologyIso F) _)
 
+omit [CompactSpace G] in
+/-- The data `TauCeti.ContCohomology.DiscreteShortExact.delta_apply` computes the connecting map
+from: a lift `x₂` of the cocycle `z` to `B`, and a cocycle `z₁` on `A` whose image is `d x₂`. -/
+theorem exists_delta_witness [LocallyCompactSpace G] (m : ℕ)
+    (z : cocycles (ofDiscreteModule ℤ G C) m) :
+    ∃ (x₂ : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G B)).X m)
+      (z₁ : cocycles (ofDiscreteModule ℤ G A) (m + 1)),
+      (S.continuousCochainsShortExact.g.f m).hom x₂ =
+          (TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles m z ∧
+        (S.continuousCochainsShortExact.f.f (m + 1)).hom
+            ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).iCycles (m + 1) z₁) =
+          ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G B)).d m (m + 1)).hom x₂ := by
+  obtain ⟨x₂, hx₂⟩ := S.continuousCochainsShortExact_g_surjective m
+    ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles m z)
+  have hg : (S.continuousCochainsShortExact.g.f (m + 1)).hom
+      ((S.continuousCochainsShortExact.X₂.d m (m + 1)).hom x₂) = 0 := by
+    rw [← ConcreteCategory.comp_apply, ← S.continuousCochainsShortExact.g.comm,
+      ConcreteCategory.comp_apply, hx₂]
+    exact ConcreteCategory.congr_hom
+      ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles_d m (m + 1)) z
+  obtain ⟨w, hw⟩ := (S.continuousCochainsShortExact_exact (m + 1) _).1 hg
+  have hdw : ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).d (m + 1) (m + 1 + 1)).hom w
+      = 0 := by
+    have h₁ := ConcreteCategory.congr_hom
+      (S.continuousCochainsShortExact.f.comm (m + 1) (m + 1 + 1)) w
+    have h₂ := ConcreteCategory.congr_hom
+      (S.continuousCochainsShortExact.X₂.d_comp_d m (m + 1) (m + 1 + 1)) x₂
+    simp only [ConcreteCategory.comp_apply] at h₁ h₂
+    rw [hw] at h₁
+    apply S.continuousCochainsShortExact_f_injective (m + 1 + 1)
+    exact h₁.symm.trans (h₂.trans (_root_.map_zero _).symm)
+  refine ⟨x₂, (TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).cyclesMkOfEq w (m + 1 + 1)
+    (CochainComplex.next ℕ (m + 1)) hdw, hx₂, ?_⟩
+  exact (congrArg (S.continuousCochainsShortExact.f.f (m + 1)).hom
+    (HomologicalComplex.iCycles_cyclesMkOfEq _ _ _ _ _)).trans hw
+
 /-- **The connecting map is an isomorphism when the middle term is acyclic in the two adjacent
 degrees**: if `Hⁿ(G, B)` and `Hⁿ⁺¹(G, B)` vanish, then `δ : Hⁿ(G, C) ⟶ Hⁿ⁺¹(G, A)` is an
 isomorphism of topological modules. This is the snake-lemma statement
@@ -213,7 +249,8 @@ theorem isIso_delta (n : ℕ) [Subsingleton (continuousCohomology n (ofDiscreteM
     -- the objects of the composite match the ends of the two `mapHomologyIso`s only after
     -- unfolding, which instance resolution does not do, so the instances are given by hand
     exact IsIso.comp_isIso' (Iso.isIso_inv _) (IsIso.comp_isIso'
-      (S.continuousCochainsShortExact_shortExact.isIso_δ n (n + 1) rfl (hzero n) (hzero (n + 1)))
+      (S.continuousCochainsShortExact_shortExact_moduleCat.isIso_δ n (n + 1) rfl
+        (hzero n) (hzero (n + 1)))
       (Iso.isIso_hom _))
   exact TopModuleCat.isIso_of_isIso_forget₂_map _
 
@@ -224,7 +261,7 @@ theorem longExact_exact₁ (n : ℕ) :
       (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) (n + 1)) :=
   TopModuleCat.exact_of_forget₂_map_eq (S.forget₂_map_delta n) (forget₂_map_coeffMap _ _)
     ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-      (S.continuousCochainsShortExact_shortExact.homology_exact₁ n (n + 1) rfl))
+      (S.continuousCochainsShortExact_shortExact_moduleCat.homology_exact₁ n (n + 1) rfl))
 
 omit [CompactSpace G] in
 /-- **Exactness at `Hⁿ(G, B)`**: the image of the coefficient map induced by `A → B` is the
@@ -235,7 +272,7 @@ theorem longExact_exact₂ [LocallyCompactSpace G] (n : ℕ) :
       (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) n) :=
   TopModuleCat.exact_of_forget₂_map_eq (forget₂_map_coeffMap _ _) (forget₂_map_coeffMap _ _)
     ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-      (S.continuousCochainsShortExact_shortExact.homology_exact₂ n))
+      (S.continuousCochainsShortExact_shortExact_moduleCat.homology_exact₂ n))
 
 /-- **Exactness at `Hⁿ(G, C)`**: the image of the coefficient map induced by `B → C` is the
 kernel of the connecting map `Hⁿ(G, C) ⟶ Hⁿ⁺¹(G, A)`. -/
@@ -244,7 +281,7 @@ theorem longExact_exact₃ (n : ℕ) :
       (S.delta n) :=
   TopModuleCat.exact_of_forget₂_map_eq (forget₂_map_coeffMap _ _) (S.forget₂_map_delta n)
     ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-      (S.continuousCochainsShortExact_shortExact.homology_exact₃ n (n + 1) rfl))
+      (S.continuousCochainsShortExact_shortExact_moduleCat.homology_exact₃ n (n + 1) rfl))
 
 /-- The connecting map kills the image of `Hⁿ(G, B) → Hⁿ(G, C)`. -/
 @[reassoc (attr := simp)]
@@ -372,8 +409,8 @@ theorem delta_map (T : DiscreteShortExact H A' B' C') (φ : H →ₜ* G)
   -- Three commuting squares in `ModuleCat ℤ`: the snake-lemma naturality in the middle, and the
   -- compatible-pair maps read through `mapHomologyIso` on either side (`forget₂_map_map`).
   have h := HomologicalComplex.HomologySequence.δ_naturality Φ
-    S.continuousCochainsShortExact_shortExact T.continuousCochainsShortExact_shortExact n (n + 1)
-    rfl
+    S.continuousCochainsShortExact_shortExact_moduleCat
+    T.continuousCochainsShortExact_shortExact_moduleCat n (n + 1) rfl
   have h₁ := (Iso.eq_inv_comp _).1 (forget₂_map_map φ
     (ofDiscreteModulePair (φ : H →* G) fA.toIntLinearMap hA) (n + 1))
   have h₃ := (Iso.eq_comp_inv _).2 ((Category.assoc _ _ _).trans

@@ -29,7 +29,7 @@ open Finset InnerProductSpace Module
 namespace TauCeti
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-variable {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι] [WellFoundedLT ι]
+variable {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι]
 
 /-- The Gram-Schmidt process does not change the coefficient of a basis vector along itself:
 `gramSchmidt 𝕜 b i` differs from `b i` by a combination of the strictly earlier `gramSchmidt`

@@ -20,7 +20,11 @@ the quantity in which perturbation bounds for spectral subspaces are stated.
 The main result is the sharp identity
 `‖P_U - P_V‖ = max ‖P_{Vᗮ} P_U‖ ‖P_{Uᗮ} P_V‖`, with no completeness or dimension hypothesis.
 It reduces gap estimates to estimates of the two directed gaps, and identifies the gap as a
-measure of how far each subspace sticks out of the other.
+measure of how far each subspace sticks out of the other. When `U` and `V` are finite-dimensional
+of the same dimension, the two directed gaps coincide, so the gap is the single directed gap
+`‖P_{Vᗮ} P_U‖`: the largest principal sine from `U` to `V`. This holds in an arbitrary ambient
+inner product space, and fails without the dimension hypothesis, for instance for a line inside a
+plane.
 
 ## Main definitions
 
@@ -32,6 +36,16 @@ measure of how far each subspace sticks out of the other.
 * `Submodule.projectionGap_comm`: the gap is symmetric.
 * `Submodule.directedProjectionGap_le_projectionGap`: each directed gap is at most the gap.
 * `Submodule.projectionGap_eq_max`: the gap is the larger of the two directed gaps.
+* `Submodule.directedProjectionGap_le_iff`: the directed gap from `U` to `V` is the least
+  `s ≥ 0` with `‖P_{Vᗮ} u‖ ≤ s ‖u‖` for every `u ∈ U`.
+* `Submodule.disjoint_orthogonal_of_directedProjectionGap_lt_one`: if the directed gap from `U`
+  to `V` is less than `1`, then `U ⊓ Vᗮ = ⊥`.
+* `Submodule.directedProjectionGap_le_directedProjectionGap_of_finrank_le`: for
+  finite-dimensional subspaces, the directed gap from the lower-dimensional one is at most the
+  directed gap from the other.
+* `Submodule.directedProjectionGap_comm_of_finrank_eq` and
+  `Submodule.projectionGap_eq_directedProjectionGap_of_finrank_eq`: for finite-dimensional
+  subspaces of equal dimension the two directed gaps agree, and the gap equals either of them.
 * `Submodule.directedProjectionGap_eq_zero_iff`: the directed gap from `U` to `V` vanishes
   exactly when `U ≤ V`; consequently `Submodule.projectionGap_eq_zero_iff`.
 
@@ -40,6 +54,7 @@ measure of how far each subspace sticks out of the other.
 * T. Kato, *Perturbation Theory for Linear Operators*, Springer (1995), §I.6.8.
 * C. Davis, W. M. Kahan, *The rotation of eigenvectors by a perturbation. III*,
   SIAM J. Numer. Anal. **7** (1970).
+* G. W. Stewart, J.-G. Sun, *Matrix Perturbation Theory*, Academic Press (1990), §I.5.
 -/
 
 public section
@@ -185,5 +200,60 @@ theorem projectionGap_eq_zero_iff : projectionGap U V = 0 ↔ U = V := by
       le_antisymm (h ▸ le_max_right _ _) (directedProjectionGap_nonneg V U)⟩
   · rintro ⟨h₁, h₂⟩
     rw [h₁, h₂, max_self]
+
+/-- For `s ≥ 0`, the directed gap from `U` to `V` is at most `s` exactly when every vector of `U`
+has its component orthogonal to `V` bounded by `s` times its norm. -/
+theorem directedProjectionGap_le_iff {s : ℝ} (hs : 0 ≤ s) :
+    directedProjectionGap U V ≤ s ↔ ∀ u ∈ U, ‖Vᗮ.starProjection u‖ ≤ s * ‖u‖ := by
+  rw [directedProjectionGap, opNorm_le_iff hs]
+  refine ⟨fun h u hu => ?_, fun h x => ?_⟩
+  · simpa [starProjection_eq_self_iff.mpr hu] using h u
+  · exact (h _ (U.starProjection_apply_mem x)).trans
+      (mul_le_mul_of_nonneg_left (U.norm_starProjection_apply_le x) hs)
+
+/-- If the directed gap `‖P_{Vᗮ} P_U‖` from `U` to `V` is less than `1`, then no nonzero vector of
+`U` is orthogonal to `V`. -/
+theorem disjoint_orthogonal_of_directedProjectionGap_lt_one (h : directedProjectionGap U V < 1) :
+    Disjoint U Vᗮ := by
+  refine disjoint_def.2 fun x hxU hxV ↦ ?_
+  -- `x = P_{Vᗮ} x`, so `‖x‖ ≤ s ‖x‖` with `s < 1`.
+  have hx := (directedProjectionGap_le_iff U V (directedProjectionGap_nonneg U V)).1 le_rfl x hxU
+  rw [starProjection_eq_self_iff.2 hxV] at hx
+  exact norm_eq_zero.1 <| le_antisymm (by nlinarith [norm_nonneg x]) (norm_nonneg x)
+
+/-- For finite-dimensional subspaces with `dim V ≤ dim U`, the directed gap from `V` to `U` is at
+most the directed gap from `U` to `V`: `‖P_{Uᗮ} P_V‖ ≤ ‖P_{Vᗮ} P_U‖`. -/
+theorem directedProjectionGap_le_directedProjectionGap_of_finrank_le [FiniteDimensional 𝕜 U]
+    [FiniteDimensional 𝕜 V] (h : Module.finrank 𝕜 V ≤ Module.finrank 𝕜 U) :
+    directedProjectionGap V U ≤ directedProjectionGap U V := by
+  -- By the Pythagorean theorem, `‖P_{Vᗮ} u‖ ≤ s ‖u‖` is `(1 - s²) ‖u‖² ≤ ‖P_V u‖²`.
+  set s := directedProjectionGap U V
+  have hs : 0 ≤ s := directedProjectionGap_nonneg U V
+  have hU : ∀ u ∈ U, (1 - s ^ 2) * ‖u‖ ^ 2 ≤ ‖V.starProjection u‖ ^ 2 := fun u hu => by
+    have h₁ := (directedProjectionGap_le_iff U V hs).mp le_rfl u hu
+    have h₂ := norm_sq_eq_add_norm_sq_starProjection u V
+    nlinarith [norm_nonneg (Vᗮ.starProjection u), norm_nonneg u]
+  refine (directedProjectionGap_le_iff V U hs).mpr fun v hv => ?_
+  have h₁ := mul_norm_sq_le_norm_starProjection_sq_of_finrank_le U V h hU hv
+  have h₂ := norm_sq_eq_add_norm_sq_starProjection v U
+  have : ‖Uᗮ.starProjection v‖ ^ 2 ≤ (s * ‖v‖) ^ 2 := by nlinarith
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp this
+
+/-- For finite-dimensional subspaces of equal dimension, the directed gap from `U` to `V` equals
+the directed gap from `V` to `U`: `‖P_{Vᗮ} P_U‖ = ‖P_{Uᗮ} P_V‖`. The ambient space is arbitrary.
+Without the dimension hypothesis this fails: for a line `U` inside a plane `V` the first gap is
+`0` and the second is `1`. -/
+theorem directedProjectionGap_comm_of_finrank_eq [FiniteDimensional 𝕜 U]
+    [FiniteDimensional 𝕜 V] (h : Module.finrank 𝕜 U = Module.finrank 𝕜 V) :
+    directedProjectionGap U V = directedProjectionGap V U :=
+  le_antisymm (directedProjectionGap_le_directedProjectionGap_of_finrank_le V U h.le)
+    (directedProjectionGap_le_directedProjectionGap_of_finrank_le U V h.ge)
+
+/-- **The equal-rank sine identity**: for finite-dimensional subspaces of equal dimension, the
+gap is the directed gap, `‖P_U - P_V‖ = ‖P_{Vᗮ} P_U‖`. -/
+theorem projectionGap_eq_directedProjectionGap_of_finrank_eq [FiniteDimensional 𝕜 U]
+    [FiniteDimensional 𝕜 V] (h : Module.finrank 𝕜 U = Module.finrank 𝕜 V) :
+    projectionGap U V = directedProjectionGap U V := by
+  rw [projectionGap_eq_max, directedProjectionGap_comm_of_finrank_eq U V h, max_self]
 
 end Submodule
