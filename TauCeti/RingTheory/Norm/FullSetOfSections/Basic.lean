@@ -71,6 +71,8 @@ In the remaining results, `B` is free of finite rank over `A`.
 
 * `TauCeti.IsFullSetOfSections.norm_eq_prod`: the norm of a function on `Spec B` is the product
   of its values at a full set of sections.
+* `TauCeti.IsFullSetOfSections.charpoly_eq_prod`: without base change, the characteristic
+  polynomial of multiplication by `b : B` is `∏ i, (X - sᵢ(b))`.
 * `TauCeti.isFullSetOfSections_iff_norm_eq_prod`: the reduction to the universal case
   (Katz–Mazur, proof of 1.9.1). For a basis `b` of `B` indexed by `κ`, `s` is a full set of
   sections if and only if the norm form factors into linear forms,
@@ -178,9 +180,9 @@ private theorem IsFullSetOfSections.norm_eq_of_free (h : IsFullSetOfSections s) 
   norm_eq_prod_of_generic ((Module.Free.chooseBasis A B).reindex (Fintype.equivFin _))
     ((h _ _).trans (Finset.prod_congr rfl fun _ _ ↦ AlgHom.sectionBaseChange_sum_tmul _ _ _ _)) T f
 
--- Compute the characteristic polynomial over a base where the algebra is free. This supplies
--- the criterion in the base universe and, after arbitrary base change, the finite-flat identity.
-private theorem IsFullSetOfSections.charpoly_eq_of_free (h : IsFullSetOfSections s) (b : B) :
+/-- Without base change, the characteristic polynomial of multiplication by `b` on `B` is
+`∏ i, (X - sᵢ(b))` for a full set of sections `s`. -/
+theorem IsFullSetOfSections.charpoly_eq_prod (h : IsFullSetOfSections s) (b : B) :
     (Algebra.lmul A B b).charpoly = ∏ i, (Polynomial.X - Polynomial.C (s i b)) := by
   -- Conjugate by `lid` to present multiplication on `B` as multiplication on `A ⊗[A] B`,
   -- where `charpoly_lmul_eq_norm` and the full-set norm formula apply.
@@ -292,7 +294,7 @@ theorem isFullSetOfSections_iff_charpoly [Module.Finite A B] :
       [Module.Free T (T ⊗[A] B)] (f : T ⊗[A] B),
       (Algebra.lmul T (T ⊗[A] B) f).charpoly =
         ∏ i, (Polynomial.X - Polynomial.C ((s i).sectionBaseChange T f)) := by
-  refine ⟨fun h T _ _ _ f ↦ (h.baseChange_of_univ T).charpoly_eq_of_free f, fun h ↦ ?_⟩
+  refine ⟨fun h T _ _ _ f ↦ (h.baseChange_of_univ T).charpoly_eq_prod f, fun h ↦ ?_⟩
   intro T _ _ _ f
   rcases subsingleton_or_nontrivial T with _ | _
   · exact Subsingleton.elim _ _
@@ -337,7 +339,7 @@ theorem IsFullSetOfSections.charpoly_eq (h : IsFullSetOfSections s) (T : Type w)
     [Algebra A T] [Module.Free T (T ⊗[A] B)] (f : T ⊗[A] B) :
     (Algebra.lmul T (T ⊗[A] B) f).charpoly =
       ∏ i, (Polynomial.X - Polynomial.C ((s i).sectionBaseChange T f)) :=
-  (h.baseChange T).charpoly_eq_of_free f
+  (h.baseChange T).charpoly_eq_prod f
 
 /-- Being a full set of sections of a finite flat algebra descends along an injective ring
 map `A → T`, in particular along a faithfully flat one. -/
