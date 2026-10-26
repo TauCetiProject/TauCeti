@@ -72,8 +72,8 @@ torus triple `TauCeti.PermutationTriple.torusTriple`.
   triple is regular.
 * `TauCeti.ThricePuncturedSphere.cycleData_monodromyTriple_superellipticProj`: its cycle data are
   `[4], [4], [2, 2]`.
-* `TauCeti.ThricePuncturedSphere.isoClass_monodromyTriple_superellipticProj`: its monodromy
-  triple is isomorphic to the torus triple.
+* `TauCeti.ThricePuncturedSphere.isoClass_monodromyTriple_superellipticProj_eq_torusTriple`: its
+  monodromy triple is isomorphic to the torus triple.
 
 ## References
 
@@ -625,7 +625,8 @@ theorem cycleData_monodromyTriple_superellipticProj :
 /-- **The monodromy triple of the superelliptic curve is the Euclidean torus triple**, up to
 relabelling: both are connected of degree four with cycle data `[4], [4], [2, 2]`, which classify
 connected triples in degree four. -/
-theorem isoClass_monodromyTriple_superellipticProj (ν : superellipticProj ⁻¹' {basePt} ≃ Fin 4) :
+theorem isoClass_monodromyTriple_superellipticProj_eq_torusTriple
+    (ν : superellipticProj ⁻¹' {basePt} ≃ Fin 4) :
     PermutationTriple.IsoClass.mk (isCoveringMap_superellipticProj.monodromyTriple ν) =
       PermutationTriple.IsoClass.mk PermutationTriple.torusTriple := by
   rw [PermutationTriple.IsoClass.mk_eq_mk_iff]
