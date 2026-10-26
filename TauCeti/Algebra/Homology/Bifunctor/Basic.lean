@@ -173,7 +173,7 @@ theorem mapBifunctorLeftMap_zero (K L : HomologicalComplex C₁ c₁)
     F.mapBifunctorLeftMap c₂ c (0 : K ⟶ L) = 0 := by
   apply NatTrans.ext
   funext N
-  change mapBifunctorMap (0 : K ⟶ L) (𝟙 N) F c = 0
+  simp only [mapBifunctorLeftMap_app]
   exact F.mapBifunctorMap_zero_left c K L (𝟙 N)
 
 variable [∀ (K : HomologicalComplex C₁ c₁) (N : HomologicalComplex C₂ c₂),

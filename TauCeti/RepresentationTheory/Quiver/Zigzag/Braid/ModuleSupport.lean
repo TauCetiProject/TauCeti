@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Module.Coproducts
 public import TauCeti.Algebra.Homology.Bifunctor.TwoTermSupport
-public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Basic
 
 /-!
