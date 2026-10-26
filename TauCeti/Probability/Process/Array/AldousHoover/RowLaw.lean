@@ -220,13 +220,24 @@ private theorem map_splitNoise_noiseMeasure :
   have h₂ : Measurable f₂ := MeasurableEquiv.measurable _
   have h₃ : Measurable f₃ :=
     (measurable_pi_apply _).prodMk (Measurable.of_eval fun _ => measurable_pi_apply _)
+  -- Each step maps a product of uniform laws to a product of uniform laws.
+  have e₁ : (noiseMeasure Axis (ℕ × ℕ)).map f₁ =
+      Measure.infinitePi fun _ => (volume : Measure I) := by
+    rw [hnoise, Measure.map_infinitePi_infinitePi_of_inj noiseIndexEquiv.symm.injective]
+  have e₂ : (Measure.infinitePi fun _ : Option ℕ × Option ℕ => (volume : Measure I)).map f₂ =
+      Measure.infinitePi fun _ => ρ :=
+    Measure.infinitePi_map_curry fun _ _ => (volume : Measure I)
+  have e₃ : (Measure.infinitePi fun _ : Option ℕ => ρ).map f₃ =
+      ρ.prod (Measure.infinitePi fun _ : ℕ => ρ) :=
+    TauCeti.MeasureTheory.Measure.infinitePi_map_none_some _
+  have e₄ : (ρ.prod (Measure.infinitePi fun _ : ℕ => ρ)).map f₄ =
+      ((volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).prod
+        (Measure.infinitePi fun _ : ℕ =>
+          (volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))) := by
+    rw [← Measure.map_prod_map _ _ hs hs', Measure.infinitePi_map_pi _ fun _ => hs, hρs]
   have hcomp : splitNoise = f₄ ∘ f₃ ∘ f₂ ∘ f₁ := rfl
   rw [hcomp, ← Measure.map_map (hs.prodMap hs') (h₃.comp (h₂.comp h₁)),
-    ← Measure.map_map h₃ (h₂.comp h₁), ← Measure.map_map h₂ h₁, hnoise,
-    Measure.map_infinitePi_infinitePi_of_inj noiseIndexEquiv.symm.injective,
-    Measure.infinitePi_map_curry (fun _ _ => (volume : Measure I)),
-    TauCeti.MeasureTheory.Measure.infinitePi_map_none_some, ← hρ,
-    ← Measure.map_prod_map _ _ hs hs', Measure.infinitePi_map_pi _ fun _ => hs, hρs]
+    ← Measure.map_map h₃ (h₂.comp h₁), ← Measure.map_map h₂ h₁, e₁, e₂, e₃, e₄]
 
 /-! ## The rows of a separate coding -/
 
