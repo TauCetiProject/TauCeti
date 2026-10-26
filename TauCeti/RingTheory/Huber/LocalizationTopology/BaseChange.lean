@@ -738,6 +738,7 @@ theorem continuous_completionLocCompletionEquiv_symm :
 
 /-- The inverse of the isomorphism `A⟨T/s⟩ ≃+* Â⟨T'/s⟩` carries the structure map of `Â⟨T'/s⟩`
 to the extension across `Â` of the structure map of `A⟨T/s⟩`. -/
+@[simp]
 theorem completionLocCompletionEquiv_symm_comp_toCompletionLoc :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
@@ -750,6 +751,32 @@ theorem completionLocCompletionEquiv_symm_comp_toCompletionLoc :
       Completion.extensionHom _ (continuous_toCompletionLoc P T s S hden) :=
   (existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P T s S hden P' T' s' S'
     hden' hs hT').choose_spec.1.2
+
+/-- **The inverse of `A⟨T/s⟩ ≃+* Â⟨T'/s⟩` on the image of `Â`**: it sends the image of `a ∈ Â` to
+the extension across `Â` of the structure map of `A⟨T/s⟩`, evaluated at `a`. This is the pointwise
+form of `completionLocCompletionEquiv_symm_comp_toCompletionLoc`, stated through `algebraMap`
+since `simp` rewrites `toCompletionLoc` that way (`toCompletionLoc_apply`). -/
+@[simp]
+theorem completionLocCompletionEquiv_symm_algebraMap (a : Completion A) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    (completionLocCompletionEquiv P T s S hden P' T' s' S' hden' hs hT hT').symm
+        (algebraMap (Completion A) S' a : Completion S') =
+      Completion.extensionHom _ (continuous_toCompletionLoc P T s S hden) a := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P' T' s' S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  rw [← toCompletionLoc_apply P' T' s' S' hden']
+  exact RingHom.congr_fun
+    (completionLocCompletionEquiv_symm_comp_toCompletionLoc P T s S hden P' T' s' S' hden' hs hT
+      hT') a
 
 end Completion
 
