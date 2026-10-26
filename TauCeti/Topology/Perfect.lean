@@ -19,7 +19,7 @@ perfect.
 
 ## Main results
 
-* `perfectSpace_pi`: a product of infinitely many nontrivial spaces is a perfect space.
+* `TauCeti.perfectSpace_pi`: a product of infinitely many nontrivial spaces is a perfect space.
 
 ## References
 
@@ -35,9 +35,10 @@ open Set Topology
 
 universe u v
 
-/-- **A product of infinitely many nontrivial spaces is perfect.** A neighbourhood of a point
-constrains only finitely many coordinates; changing a coordinate outside them gives a different
-point in the neighbourhood. -/
+namespace TauCeti
+
+/-- **A product of infinitely many nontrivial spaces is perfect**, with no separation assumption on
+the factors. In particular Cantor space `ℕ → Bool` and Baire space `ℕ → ℕ` are perfect. -/
 instance perfectSpace_pi {ι : Type u} {π : ι → Type v} [∀ i, TopologicalSpace (π i)]
     [Infinite ι] [∀ i, Nontrivial (π i)] : PerfectSpace (∀ i, π i) := by
   classical
@@ -50,3 +51,5 @@ instance perfectSpace_pi {ι : Type u} {π : ι → Type v} [∀ i, TopologicalS
   · rw [Function.update_of_ne fun h : i = n => hn (h ▸ hi)]
     exact mem_of_mem_nhds (hV i)
   · simpa using congrFun h n
+
+end TauCeti
