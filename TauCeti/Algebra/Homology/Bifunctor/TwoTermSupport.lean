@@ -295,6 +295,7 @@ theorem mapBifunctorSingleRowNatIso_inv_app_f (A : C₁) (a : ℤ)
     ((F.mapBifunctorSingleRowNatIso A a).inv.app N).f j =
       (F.map (singleObjXSelf c a A).inv).app (N.X (j + -a)) ≫
         ιMapBifunctor ((single C₁ c a).obj A) N F c a (j + -a) j
+          -- For cochain up ℤ, ComplexShape.π is addition of the two integer indices.
           (by change a + (j + -a) = j; omega) := by
   exact F.singleRowIso_inv_f A a N j
 
@@ -304,6 +305,7 @@ theorem ι_mapBifunctorSingleRowNatIso_hom_app_f (A : C₁) (a : ℤ)
     [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c a).obj A) N F c]
     (N : CochainComplex C₂ ℤ) (j : ℤ) :
     ιMapBifunctor ((single C₁ c a).obj A) N F c a (j + -a) j
+        -- For cochain up ℤ, ComplexShape.π is addition of the two integer indices.
         (by change a + (j + -a) = j; omega) ≫
         ((F.mapBifunctorSingleRowNatIso A a).hom.app N).f j =
       (F.map (singleObjXSelf c a A).hom).app (N.X (j + -a)) := by
@@ -321,6 +323,7 @@ theorem mapBifunctorSingleRowZeroNatIso_inv_app_f (A : C₁)
     ((F.mapBifunctorSingleRowZeroNatIso A).inv.app N).f j =
       (F.map (singleObjXSelf c 0 A).inv).app (N.X j) ≫
         ιMapBifunctor ((single C₁ c 0).obj A) N F c 0 j j
+          -- For cochain up ℤ, ComplexShape.π is addition of the two integer indices.
           (by change (0 : ℤ) + j = j; omega) := by
   -- Splitting the integer index makes the zero-shift index transport reflexive.
   cases j <;> simp [mapBifunctorSingleRowZeroNatIso, mapBifunctorSingleRowNatIso_inv_app_f,
@@ -332,6 +335,7 @@ theorem ι_mapBifunctorSingleRowZeroNatIso_hom_app_f (A : C₁)
     [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c 0).obj A) N F c]
     (N : CochainComplex C₂ ℤ) (j : ℤ) :
     ιMapBifunctor ((single C₁ c 0).obj A) N F c 0 j j
+        -- For cochain up ℤ, ComplexShape.π is addition of the two integer indices.
         (by change (0 : ℤ) + j = j; omega) ≫
         ((F.mapBifunctorSingleRowZeroNatIso A).hom.app N).f j =
       (F.map (singleObjXSelf c 0 A).hom).app (N.X j) := by
