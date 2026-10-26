@@ -58,6 +58,8 @@ used to build `ratModelMap` from `LinearMap.liftBaseChange` and to prove it inje
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
+* @sqrt-of-2, [Tau Ceti PR #20950](https://github.com/TauCetiProject/TauCeti/pull/20950), an
+  earlier formalization of this rational model whose approach is adapted here.
 -/
 
 public section
@@ -90,9 +92,9 @@ theorem ratModelMap_tmul (L : Submodule ℤ E) (q : ℚ) (x : L) :
 
 variable {L : Submodule ℤ E} [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 
-/-- The canonical map `ℚ ⊗[ℤ] L → E` of a full lattice is injective: a `ℤ`-basis of `L` is
-`ℝ`-linearly independent, hence `ℚ`-linearly independent. -/
+/-- The canonical map `ℚ ⊗[ℤ] L → E` of a full lattice is injective. -/
 theorem ratModelMap_injective : Function.Injective (ratModelMap L) := by
+  -- A `ℤ`-basis of `L` is `ℝ`-linearly independent, hence `ℚ`-linearly independent.
   have := ZLattice.module_free ℝ L
   have := ZLattice.module_finite ℝ L
   let b := Free.chooseBasis ℤ L
