@@ -144,6 +144,10 @@ private noncomputable def quadraticHomEquiv (M N : GradedModuleCat.{v} G.piece) 
       ((Functor.FullyFaithful.ofFullyFaithful F).homEquiv.trans
         ((Iso.homCongr (quadraticModuleEquiv G M).toModuleIso.symm
           (quadraticModuleEquiv G N).toModuleIso.symm).trans _root_.ModuleCat.homEquiv))
+  -- ModuleCat.homEquiv supplies ofHom/Hom.hom; the fully faithful homEquiv supplies F.map.
+  -- Iso.homCongr for the reversed toModuleIso values precomposes by quadraticModuleEquiv G M
+  -- and postcomposes by (quadraticModuleEquiv G N).symm, the same conjugation as quadraticHomMap.
+  -- Thus the bare equivalence and the R-linear map have definitionally equal forward functions.
   exact LinearEquiv.ofBijective (quadraticHomMap G M N) e.bijective
 
 private theorem quadraticHomEquiv_apply (M N : GradedModuleCat.{v} G.piece)
