@@ -69,7 +69,6 @@ theorem riemannianVolumeForm_apply
   simp [riemannianVolumeForm]
 
 /-- The volume form takes value `1` on a positively oriented orthonormal tangent basis. -/
-@[simp]
 theorem riemannianVolumeForm_apply_orthonormal
     (o : Manifold.Orientation I M (Fin m)) (x : M)
     (b : OrthonormalBasis (Fin m) ℝ (TangentSpace I x))
