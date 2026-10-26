@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.IsBaseChange
+public import TauCeti.RingTheory.Adjoin.EqLocus
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.Basic
 public import TauCeti.RingTheory.IsTensorProduct.Pushout
 
@@ -144,22 +145,6 @@ private theorem diff_apply
     diff ht a = algebraMap A B a - t a :=
   rfl
 
--- The images of the invariants of `A` and of `R'` are invariants of `A'`; this needs no flatness.
-omit [IsPushout A A' B B'] in
-private theorem adjoin_le_eqLocus
-    (ht₁ : t'.comp (algebraMap A A') = (algebraMap B B').comp t)
-    (ht₂ : t'.comp (algebraMap R' A') = (algebraMap A' B').comp (algebraMap R' A')) {x : A'}
-    (hx : x ∈ adjoin R' (algebraMap A A' '' (algebraMap A B).eqLocus t)) :
-    x ∈ (algebraMap A' B').eqLocus t' := by
-  induction hx using adjoin_induction with
-  | mem x hx =>
-    obtain ⟨a, ha, rfl⟩ := hx
-    rw [mem_eqLocus, ← RingHom.comp_apply t', ht₁, RingHom.comp_apply, ← mem_eqLocus.mp ha,
-      ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]
-  | algebraMap r => exact (congr($ht₂ r)).symm
-  | add x y _ _ hx hy => exact add_mem hx hy
-  | mul x y _ _ hx hy => exact mul_mem hx hy
-
 /-- **Invariants commute with flat base change.** Let `Spec B ⇉ Spec A`, given by
 `s = algebraMap A B` and `t`, agree on `R`, and let `A' = R' ⊗[R] A`, `B' = A' ⊗[A] B` and
 `t' : A' →+* B'` be the base change along a flat map `R → R'`. Then the invariants
@@ -223,7 +208,10 @@ theorem eqLocus_eq_adjoin_of_isPushout [Module.Flat R R']
     | tmul a => exact subset_adjoin ⟨a, sub_eq_zero.mp a.2, rfl⟩
     | smul r n hn => exact Subalgebra.smul_mem _ hn r
     | add n₁ n₂ h₁ h₂ => exact Subalgebra.add_mem _ h₁ h₂
-  · exact adjoin_le_eqLocus ht₁ ht₂ hx
+  · -- the images of the invariants of `A` and of `R'` are invariants of `A'`
+    refine adjoin_image_eqLocus_subset (ψ := algebraMap B B') ?_ ht₁ ht₂.symm hx
+    ext a
+    simp only [RingHom.comp_apply, ← IsScalarTower.algebraMap_apply]
 
 /-- **The ring of invariants commutes with flat base change.** If `R` is the ring of invariants
 of `Spec B ⇉ Spec A`, that is, the invariants `{a : s a = t a}` are the image of `R`, then after
