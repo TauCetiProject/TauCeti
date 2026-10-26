@@ -17,7 +17,7 @@ centralizer `ker (ad x)` in `𝔤` has minimal dimension. By Cartier's theorem t
 centralizer `C_G(x)` is smooth with Lie algebra `ker (ad x)`, so `dim C_G(x) = dim ker (ad x)`
 (`TauCeti.ringKrullDim_quotient_centralizerHopfIdeal`). Hence the regular elements are exactly
 the elements whose group centralizer `C_G(x)` has minimal dimension
-(`TauCeti.isCentralizerRegular_iff_forall_ringKrullDim_le`). Dimensions are Krull dimensions of
+(`Module.Dual.isCentralizerRegular_iff_forall_ringKrullDim_le`). Dimensions are Krull dimensions of
 coordinate rings.
 
 In positive characteristic a centralizer can be nonreduced, its Lie algebra can be larger than its
@@ -25,8 +25,8 @@ dimension, and the two notions need not agree; the comparison is stated in chara
 
 ## Main results
 
-* `TauCeti.isCentralizerRegular_iff_forall_ringKrullDim_le`: in characteristic zero, `x ∈ 𝔤` is
-  regular exactly when `C_G(x)` has minimal dimension among the centralizers `C_G(y)`.
+* `Module.Dual.isCentralizerRegular_iff_forall_ringKrullDim_le`: in characteristic zero,
+  `x ∈ 𝔤` is regular exactly when `C_G(x)` has minimal dimension among the centralizers `C_G(y)`.
 
 ## References
 
@@ -36,7 +36,9 @@ dimension, and the two notions need not agree; the comparison is stated in chara
 
 public section
 
-namespace TauCeti
+open TauCeti
+
+namespace Module.Dual
 
 universe u
 
@@ -56,4 +58,4 @@ theorem isCentralizerRegular_iff_forall_ringKrullDim_le
   simp only [LieAlgebra.isCentralizerRegular_iff_forall_finrank_ker_le,
     ringKrullDim_quotient_centralizerHopfIdeal, Nat.cast_le]
 
-end TauCeti
+end Module.Dual
