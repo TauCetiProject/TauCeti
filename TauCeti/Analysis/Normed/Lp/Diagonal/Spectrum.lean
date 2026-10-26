@@ -81,8 +81,8 @@ private lemma isUnit_algebraMap_sub_diagonalCLM (d : ℓ^∞(ι, 𝕜)) {c : �
     rw [← mul_assoc, inv_mul_cancel₀ (hne j), one_mul]
 
 /-- A scalar in the closure of the coefficient range is not a unit of the algebra after
-subtracting the diagonal operator: an attained coefficient gives an eigenvector, and an
-unattained one gives unit approximate eigenvectors, so `algebraMap 𝕜 _ c - diagonalCLM d` has no
+subtracting the diagonal operator: the coordinate vectors at a sequence of coefficients tending
+to that scalar are unit approximate eigenvectors, so `algebraMap 𝕜 _ c - diagonalCLM d` has no
 left inverse. -/
 private lemma not_isUnit_algebraMap_sub_diagonalCLM_of_mem_closure (d : ℓ^∞(ι, 𝕜)) {c : 𝕜}
     (hc : c ∈ closure (Set.range d)) :
@@ -95,53 +95,35 @@ private lemma not_isUnit_algebraMap_sub_diagonalCLM_of_mem_closure (d : ℓ^∞(
       diagonalCLM (p := p) d) y) = y := by
     intro y
     rw [← mul_apply_eq_comp, hg, one_apply_eq_self]
-  by_cases hmem : c ∈ Set.range d
-  · -- an attained coefficient gives a nontrivial kernel vector
-    obtain ⟨i, hi⟩ := hmem
-    have hker : (algebraMap 𝕜 (ℓ^p(ι, 𝕜) →L[𝕜] ℓ^p(ι, 𝕜)) c -
-        diagonalCLM (p := p) d) (lp.single (E := fun _ : ι => 𝕜) p i 1) = 0 := by
-      simp only [sub_apply, ContinuousLinearMap.algebraMap_apply, diagonalCLM_single,
-        ← lp.single_smul, smul_eq_mul, mul_one, hi, sub_self]
-    have hsingle : lp.single (E := fun _ : ι => 𝕜) p i (1 : 𝕜) ≠ 0 := by
-      intro h0
-      have h1 : ‖lp.single (E := fun _ : ι => 𝕜) p i (1 : 𝕜)‖ = 1 := by
-        rw [lp.norm_single hp, norm_one]
-      rw [h0] at h1
-      simp at h1
-    have hzero : lp.single (E := fun _ : ι => 𝕜) p i (1 : 𝕜) = 0 := by
-      have h := hgu (lp.single (E := fun _ : ι => 𝕜) p i 1)
-      rw [hker, g.map_zero] at h
-      exact h.symm
-    exact hsingle hzero
-  · -- an unattained point of the closure is a limit of unit approximate eigenvectors
-    have hlim : ∀ k : ℕ, ∃ i, ‖c - d i‖ < 1 / ((k : ℝ) + 1) := by
-      intro k
-      have hpos : (0 : ℝ) < 1 / ((k : ℝ) + 1) := by positivity
-      obtain ⟨y, hy, hdist⟩ := Metric.mem_closure_iff.mp hc (1 / ((k : ℝ) + 1)) hpos
-      obtain ⟨i, hi⟩ := hy
-      exact ⟨i, by rw [hi, ← dist_eq_norm]; exact hdist⟩
-    choose n hn using hlim
-    have hnorm : Tendsto (fun k => ‖c - d (n k)‖) atTop (𝓝 0) := by
-      refine squeeze_zero (f := fun k => ‖c - d (n k)‖)
-        (g := fun k => 1 / ((k : ℝ) + 1)) (fun k => norm_nonneg _) (fun k => (hn k).le) ?_
-      simpa using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
-    have hxe : ∀ k, (algebraMap 𝕜 (ℓ^p(ι, 𝕜) →L[𝕜] ℓ^p(ι, 𝕜)) c -
-        diagonalCLM (p := p) d) (lp.single (E := fun _ : ι => 𝕜) p (n k) 1) =
-          lp.single (E := fun _ : ι => 𝕜) p (n k) (c - d (n k)) := by
-      intro k
-      simp only [sub_apply, ContinuousLinearMap.algebraMap_apply, diagonalCLM_single,
-        ← lp.single_smul, smul_eq_mul, ← lp.single_sub, mul_one]
-    have hbound : ∀ k, (1 : ℝ) ≤ ‖g‖ * ‖c - d (n k)‖ := by
-      intro k
-      have hle := g.le_opNorm ((algebraMap 𝕜 (ℓ^p(ι, 𝕜) →L[𝕜] ℓ^p(ι, 𝕜)) c -
-        diagonalCLM (p := p) d) (lp.single (E := fun _ : ι => 𝕜) p (n k) 1))
-      rw [hgu (lp.single (E := fun _ : ι => 𝕜) p (n k) 1), hxe k, lp.norm_single hp,
-        lp.norm_single hp, norm_one] at hle
-      exact hle
-    have hcontra : (1 : ℝ) ≤ 0 := by
-      refine ge_of_tendsto (x := atTop) ?_ (Eventually.of_forall hbound)
-      simpa using tendsto_const_nhds.mul hnorm
-    linarith
+  -- every point of the closure is a limit of unit approximate eigenvectors
+  have hlim : ∀ k : ℕ, ∃ i, ‖c - d i‖ < 1 / ((k : ℝ) + 1) := by
+    intro k
+    have hpos : (0 : ℝ) < 1 / ((k : ℝ) + 1) := by positivity
+    obtain ⟨y, hy, hdist⟩ := Metric.mem_closure_iff.mp hc (1 / ((k : ℝ) + 1)) hpos
+    obtain ⟨i, hi⟩ := hy
+    exact ⟨i, by rw [hi, ← dist_eq_norm]; exact hdist⟩
+  choose n hn using hlim
+  have hnorm : Tendsto (fun k => ‖c - d (n k)‖) atTop (𝓝 0) := by
+    refine squeeze_zero (f := fun k => ‖c - d (n k)‖)
+      (g := fun k => 1 / ((k : ℝ) + 1)) (fun k => norm_nonneg _) (fun k => (hn k).le) ?_
+    simpa using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
+  have hxe : ∀ k, (algebraMap 𝕜 (ℓ^p(ι, 𝕜) →L[𝕜] ℓ^p(ι, 𝕜)) c -
+      diagonalCLM (p := p) d) (lp.single (E := fun _ : ι => 𝕜) p (n k) 1) =
+        lp.single (E := fun _ : ι => 𝕜) p (n k) (c - d (n k)) := by
+    intro k
+    simp only [sub_apply, ContinuousLinearMap.algebraMap_apply, diagonalCLM_single,
+      ← lp.single_smul, smul_eq_mul, ← lp.single_sub, mul_one]
+  have hbound : ∀ k, (1 : ℝ) ≤ ‖g‖ * ‖c - d (n k)‖ := by
+    intro k
+    have hle := g.le_opNorm ((algebraMap 𝕜 (ℓ^p(ι, 𝕜) →L[𝕜] ℓ^p(ι, 𝕜)) c -
+      diagonalCLM (p := p) d) (lp.single (E := fun _ : ι => 𝕜) p (n k) 1))
+    rw [hgu (lp.single (E := fun _ : ι => 𝕜) p (n k) 1), hxe k, lp.norm_single hp,
+      lp.norm_single hp, norm_one] at hle
+    exact hle
+  have hcontra : (1 : ℝ) ≤ 0 := by
+    refine ge_of_tendsto (x := atTop) ?_ (Eventually.of_forall hbound)
+    simpa using tendsto_const_nhds.mul hnorm
+  linarith
 
 /-- A scalar lies in the spectrum of a bounded diagonal operator exactly when it lies in the
 closure of the set of coefficients. -/
