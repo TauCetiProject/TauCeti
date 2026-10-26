@@ -89,6 +89,35 @@ theorem derivCurvature_apply (x : M) (v : TangentSpace I x) (Y Z σ : Π y : M, 
 
 omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+variable (cov) in
+/-- `derivCurvature` vanishes in the zero direction. -/
+@[simp]
+theorem derivCurvature_zero (x : M) (Y Z σ : Π y : M, TangentSpace I y) :
+    derivCurvature cov x 0 Y Z σ = 0 := by
+  simp [derivCurvature]
+
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+variable (cov) in
+/-- `derivCurvature` is additive in the direction of differentiation. -/
+theorem derivCurvature_add (x : M) (v w : TangentSpace I x) (Y Z σ : Π y : M, TangentSpace I y) :
+    derivCurvature cov x (v + w) Y Z σ =
+      derivCurvature cov x v Y Z σ + derivCurvature cov x w Y Z σ := by
+  simp only [derivCurvature, map_add, LinearMap.add_apply]
+  abel
+
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+variable (cov) in
+/-- `derivCurvature` is homogeneous in the direction of differentiation. -/
+@[simp]
+theorem derivCurvature_smul (x : M) (a : ℝ) (v : TangentSpace I x)
+    (Y Z σ : Π y : M, TangentSpace I y) :
+    derivCurvature cov x (a • v) Y Z σ = a • derivCurvature cov x v Y Z σ := by
+  simp only [derivCurvature, map_smul, LinearMap.smul_apply, smul_sub]
+
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- The second Bianchi identity, written with `derivCurvature`. -/
 theorem derivCurvature_cyclic_eq_zero (ht : cov.torsion = 0)
     {X Y Z σ : Π y : M, TangentSpace I y} (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y))
