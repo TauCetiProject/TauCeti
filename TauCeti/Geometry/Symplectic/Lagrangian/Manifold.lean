@@ -169,13 +169,10 @@ theorem isIsotropicMap_iff_mpullback_eq_zero [IsManifold J ∞ N] (hf : ContMDif
   · intro h
     have hbundle : (SmoothForm.mpullback f hf σ) =
         (0 : SmoothForm J N ℝ 2) := by
-      apply SmoothBundleForm.ext
-      intro x v
-      have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
-      rw [hv]
-      rw [← SmoothBundleForm.eval₂_apply, ← SmoothBundleForm.eval₂_apply]
+      apply SmoothBundleForm.ext_eval₂
+      intro x v w
       rw [SmoothForm.eval₂_mpullback]
-      simpa using h x (v 0) (v 1)
+      simpa using h x v w
     exact hbundle
   · intro h x v w
     have heq := congrArg

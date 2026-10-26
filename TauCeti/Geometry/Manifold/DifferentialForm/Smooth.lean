@@ -270,6 +270,15 @@ theorem eval₂_apply (φ : SmoothBundleForm I F V 2) (x : M)
     φ.eval₂ x v w = φ.1 x ![v, w] :=
   by simp [eval₂]
 
+/-- Two smooth bundle-valued two-forms are equal when their ordered-pair evaluations agree. -/
+theorem ext_eval₂ {φ ψ : SmoothBundleForm I F V 2}
+    (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) : φ = ψ := by
+  apply ext
+  intro x v
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+  rw [hv]
+  simpa [eval₂] using h x (v 0) (v 1)
+
 section Evaluation
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
