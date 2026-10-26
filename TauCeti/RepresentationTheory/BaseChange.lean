@@ -35,8 +35,10 @@ import TauCeti.RepresentationTheory.FDRep.Basic
 # Base change of representations
 
 This file extends a representation's scalars to a possibly noncommutative algebra by base-changing
-each linear endomorphism. A nonzero common fixed vector after scalar extension to a base-field
-algebra descends to a nonzero common fixed vector over the base field.
+each linear endomorphism. A nonzero common fixed vector after scalar extension to an algebra free
+over the base semiring descends to a nonzero common fixed vector over that semiring. Freeness is
+inferred automatically for ring algebras over a field. For a semiring algebra `A` over a field `K`,
+first install `let : AddCommGroup A := Module.addCommMonoidToAddCommGroup K`.
 
 Two invariants survive the extension unchanged. The **character** is the trace of a linear map, and
 the trace of a base-changed endomorphism is the image of the trace
@@ -247,28 +249,31 @@ theorem _root_.Representation.coe_invariantsBaseChangeEquiv [Finite G]
 
 end Invariants
 
-variable {K : Type u} {L : Type v} [Field K] [Semiring L] [Algebra K L]
-variable [AddCommGroup V] [Module K V]
+variable {R : Type u} {A : Type v} [CommSemiring R] [Semiring A] [Algebra R A]
+variable [Module.Free R A] [AddCommMonoid V] [Module R V]
 
-/-- A nonzero common fixed vector after scalar extension to a base-field algebra descends to a
-nonzero common fixed vector over the base field. Neither commutativity nor nontriviality of the
-coefficient algebra is needed. -/
+/-- A nonzero common fixed vector after scalar extension to an algebra free over the base
+semiring descends to a nonzero common fixed vector over the base semiring. Neither commutativity
+nor nontriviality of the coefficient algebra is needed.
+
+Freeness is inferred automatically for ring algebras over a field. For a semiring algebra `A` over
+a field `K`, first install
+`let : AddCommGroup A := Module.addCommMonoidToAddCommGroup K`. -/
 theorem _root_.Representation.exists_common_fixed_vector_of_baseChange
-    (ρ : _root_.Representation K G V) {w : L ⊗[K] V} (hw : w ≠ 0)
-    (hfixed : ∀ g, _root_.Representation.baseChange L ρ g w = w) :
+    (ρ : _root_.Representation R G V) {w : A ⊗[R] V} (hw : w ≠ 0)
+    (hfixed : ∀ g, _root_.Representation.baseChange A ρ g w = w) :
     ∃ v : V, v ≠ 0 ∧ ∀ g, ρ g v = v := by
   classical
-  -- A module over the base field has its canonical additive group structure, even when the
-  -- coefficient algebra is presented as a semiring.
-  let : AddCommGroup L := Module.addCommMonoidToAddCommGroup K
-  let b := Module.Free.chooseBasis K L
+  let b := Module.Free.chooseBasis R A
   let e := TensorProduct.equivFinsuppOfBasisLeft b (N := V)
   have he : e w ≠ 0 := fun h ↦ hw (e.map_eq_zero_iff.mp h)
   obtain ⟨i, hi⟩ := Finsupp.ne_iff.mp he
   simp only [Finsupp.coe_zero, Pi.zero_apply] at hi
   refine ⟨e w i, hi, fun g ↦ ?_⟩
   rw [← Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply]
-  exact congrArg (fun x ↦ e x i) (hfixed g)
+  have h := hfixed g
+  rw [_root_.Representation.baseChange_apply, LinearMap.baseChange_eq_lTensor] at h
+  exact congrArg (fun x ↦ e x i) h
 
 end
 
