@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.RingTheory.HahnSeries.Twist
+public import TauCeti.RingTheory.LaurentSeries.Ramified
 
 /-!
 # Rescaling formal Laurent series
@@ -18,6 +18,9 @@ for every integer `n`, and extends `PowerSeries.rescale` on power series.
 The construction is the twist `HahnSeries.twistEquiv` by the character `n ↦ a ^ n`.
 This makes rescaling available without a fraction field or a field of coefficients.
 
+Rescaling an expanded series `f (X ^ d)` by `a` is expansion of the series rescaled by
+`a ^ d`. Consequently, rescaling by a `d`-th root of unity fixes every expanded series.
+
 ## Main definitions
 
 * `TauCeti.LaurentSeries.rescale`: rescaling by units, as a homomorphism to the algebra
@@ -28,12 +31,15 @@ This makes rescaling available without a fraction field or a field of coefficien
 * `TauCeti.LaurentSeries.coeff_rescale`: rescaling multiplies coefficients by powers of `a`.
 * `TauCeti.LaurentSeries.rescale_single`: rescaling a monomial.
 * `TauCeti.LaurentSeries.rescale_coe`: compatibility with rescaling power series.
+* `TauCeti.LaurentSeries.rescale_expand`: compatibility with exponent expansion `X ↦ X ^ d`.
+* `TauCeti.LaurentSeries.rescale_expand_of_pow_eq_one`: rescaling by a `d`-th root of unity
+  fixes the image of expansion by `d`.
 -/
 
 public section
 
 open scoped LaurentSeries PowerSeries
-open HahnSeries
+open HahnSeries LaurentSeries
 
 namespace TauCeti.LaurentSeries
 
@@ -83,5 +89,21 @@ theorem rescale_coe (a : Rˣ) (f : R⟦X⟧) :
   · simp
   · rw [PowerSeries.coeff_rescale, ← Units.val_pow_eq_pow_val,
       ← zpow_natCast, Int.natAbs_of_nonneg (not_lt.mp hn)]
+
+/-- Rescaling an expanded series by `a` is expanding the series rescaled by `a ^ d`:
+`f ((a X) ^ d) = (f (a ^ d X)) (X ^ d)`. -/
+theorem rescale_expand (a : Rˣ) (d : ℕ+) (f : R⸨X⸩) :
+    rescale a (expand R d f) = expand R d (rescale (a ^ (d : ℕ)) f) := by
+  ext n
+  rw [coeff_rescale]
+  by_cases hn : (d : ℤ) ∣ n
+  · obtain ⟨k, rfl⟩ := hn
+    rw [coeff_expand_mul, coeff_expand_mul, coeff_rescale, zpow_mul, zpow_natCast]
+  · rw [coeff_expand_of_not_dvd d f hn, coeff_expand_of_not_dvd d _ hn, mul_zero]
+
+/-- Rescaling by a `d`-th root of unity fixes every series expanded by `X ↦ X ^ d`. -/
+theorem rescale_expand_of_pow_eq_one {a : Rˣ} {d : ℕ+} (ha : a ^ (d : ℕ) = 1) (f : R⸨X⸩) :
+    rescale a (expand R d f) = expand R d f := by
+  rw [rescale_expand, ha, map_one, AlgEquiv.one_apply]
 
 end TauCeti.LaurentSeries

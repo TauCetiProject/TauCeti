@@ -42,8 +42,6 @@ algebraically closed of characteristic zero.
 
 ## Main results
 
-* `TauCeti.LaurentSeries.rescale_expand`: rescaling commutes with expansion `X ↦ X ^ d` up to
-  raising the scalar to the `d`-th power.
 * `TauCeti.LaurentSeries.Level.kummer_parameter`: the Kummer automorphism attached to `η` sends
   `u` to `η u`.
 * `TauCeti.LaurentSeries.Level.isSplittingField` and `TauCeti.LaurentSeries.Level.isGalois`: with
@@ -67,22 +65,6 @@ open scoped LaurentSeries
 namespace TauCeti.LaurentSeries
 
 variable {K : Type*} [Field K]
-
-/-- Rescaling an expanded series by `a` is expanding the series rescaled by `a ^ d`:
-`f ((a X) ^ d) = (f (a ^ d X)) (X ^ d)`. -/
-theorem rescale_expand (a : Kˣ) (d : ℕ+) (f : K⸨X⸩) :
-    rescale a (expand K d f) = expand K d (rescale (a ^ (d : ℕ)) f) := by
-  ext n
-  rw [coeff_rescale]
-  by_cases hn : (d : ℤ) ∣ n
-  · obtain ⟨k, rfl⟩ := hn
-    rw [coeff_expand_mul, coeff_expand_mul, coeff_rescale, zpow_mul, zpow_natCast]
-  · rw [coeff_expand_of_not_dvd d f hn, coeff_expand_of_not_dvd d _ hn, mul_zero]
-
-/-- Rescaling by a `d`-th root of unity fixes every series expanded by `X ↦ X ^ d`. -/
-theorem rescale_expand_of_pow_eq_one {a : Kˣ} {d : ℕ+} (ha : a ^ (d : ℕ) = 1) (f : K⸨X⸩) :
-    rescale a (expand K d f) = expand K d f := by
-  rw [rescale_expand, ha, map_one, AlgEquiv.one_apply]
 
 namespace Level
 
