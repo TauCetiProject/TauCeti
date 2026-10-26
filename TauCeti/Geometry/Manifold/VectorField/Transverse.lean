@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Level
+import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
 # Vector fields transverse to a map
@@ -26,6 +29,13 @@ inclusion of the level exactly when `df(Z) ≠ 0` at every point of the level
 hypersurfaces of symplectic geometry (energy levels, boundaries of domains, cosphere bundles) is
 checked in practice.
 
+A vector field crossing a level of `f` in the direction of increasing `f`, `df(Z) > 0`, leaves the
+sublevel set there: along its integral curves `f` increases, so every point of the level is a limit
+of points where `f` is larger (`TauCeti.mem_closure_setOf_lt_of_mvfderiv_pos`). Hence the frontier
+of the sublevel set `{f ≤ c}` is exactly the level `f⁻¹(c)` when `df(Z) > 0` along it
+(`TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`). This identifies the boundary of a domain whose
+boundary is crossed outwards by a vector field, as for Liouville domains.
+
 ## Main definitions
 
 * `TauCeti.IsTransverseAlong`: `Z (ι s)` is outside the range of `dι_s` for every `s`.
@@ -34,6 +44,8 @@ checked in practice.
 
 * `TauCeti.isTransverseAlong_coe_scalarRegularLevel_iff`: transversality along a regular level is
   the nonvanishing of `df(Z)` on the level.
+* `TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`: the frontier of a sublevel set whose level is
+  crossed outwards by a vector field is the level.
 
 ## References
 
@@ -43,8 +55,8 @@ checked in practice.
 
 public section
 
-open Module
-open scoped Manifold
+open Filter Module Set
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -69,6 +81,46 @@ theorem isTransverseAlong_iff {Z : (x : M) → TangentSpace I x} {ι : S → M} 
 theorem IsTransverseAlong.ne_zero {Z : (x : M) → TangentSpace I x} {ι : S → M}
     (h : IsTransverseAlong J Z ι) (s : S) : Z (ι s) ≠ 0 :=
   fun h0 ↦ h s (h0 ▸ Submodule.zero_mem _)
+
+/-! ### Vector fields crossing a level outwards -/
+
+section Crossing
+
+variable [CompleteSpace E] [I.Boundaryless] [IsManifold I 1 M]
+
+/-- **A vector field increasing a function leaves its sublevel set.** If a `C¹` vector field `Z` on
+a boundaryless manifold satisfies `df_x(Z x) > 0` at a point `x` where `f` is differentiable, then
+`x` lies in the closure of the set `{y | f x < f y}`: the integral curve of `Z` through `x` enters
+this set immediately after time `0`. -/
+theorem mem_closure_setOf_lt_of_mvfderiv_pos {Z : (x : M) → TangentSpace I x} {f : M → ℝ} {x : M}
+    (hZ : ContMDiffAt I I.tangent 1 (T% Z) x) (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hpos : 0 < mvfderiv I f x (Z x)) : x ∈ closure {y | f x < f y} := by
+  obtain ⟨γ, rfl, hγ⟩ := exists_isMIntegralCurveAt_of_contMDiffAt_boundaryless 0 hZ
+  have hγ' := hγ.self_of_nhds
+  -- Along the integral curve, `f` has derivative `df_x(Z x) > 0` at time `0`.
+  have hd : HasDerivAt (f ∘ γ) (mvfderiv I f (γ 0) (Z (γ 0))) 0 :=
+    Manifold.hasDerivAt_comp_curve hf hγ'
+  have hlt : ∀ᶠ t in 𝓝[>] (0 : ℝ), f (γ 0) < f (γ t) := by
+    filter_upwards [(hd.tendsto_slope.mono_left (nhdsGT_le_nhdsNE 0)).eventually
+      (lt_mem_nhds hpos), self_mem_nhdsWithin] with t ht ht0
+    exact (slope_pos_iff_of_le (Set.mem_Ioi.1 ht0).le).1 ht
+  exact mem_closure_of_tendsto (hγ'.continuousAt.tendsto.mono_left nhdsWithin_le_nhds) hlt
+
+/-- **The frontier of a sublevel set crossed outwards by a vector field.** Let `f` be continuous,
+and differentiable at the points of the level `f⁻¹(c)`, and let `Z` be a vector field, `C¹` along
+the level, with `df(Z) > 0` there. Then the frontier of the sublevel set `{f ≤ c}` is exactly the
+level `f⁻¹(c)`. -/
+theorem frontier_setOf_le_eq_of_mvfderiv_pos {Z : (x : M) → TangentSpace I x} {f : M → ℝ}
+    {c : ℝ} (hfc : Continuous f) (hZ : ∀ x, f x = c → ContMDiffAt I I.tangent 1 (T% Z) x)
+    (hf : ∀ x, f x = c → MDifferentiableAt I 𝓘(ℝ) f x)
+    (hpos : ∀ x, f x = c → 0 < mvfderiv I f x (Z x)) :
+    frontier {x | f x ≤ c} = {x | f x = c} := by
+  refine (frontier_le_subset_eq hfc continuous_const).antisymm fun x (hx : f x = c) ↦ ?_
+  rw [frontier_eq_closure_inter_closure]
+  exact ⟨subset_closure hx.le, closure_mono (fun y hy ↦ by simpa [← hx] using hy)
+    (mem_closure_setOf_lt_of_mvfderiv_pos (hZ x hx) (hf x hx) (hpos x hx))⟩
+
+end Crossing
 
 variable {f : M → ℝ} {c : ℝ} [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I 1 M]
   (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x) (hreg : IsRegularValue I 𝓘(ℝ) f c)
