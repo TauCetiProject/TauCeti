@@ -13,6 +13,7 @@ import TauCeti.NumberTheory.ClassFieldTheory.Global.CorestrictionLocalization
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.Sequence
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Input
 import TauCeti.NumberTheory.ClassFieldTheory.Global.PrimeDegreeDecomposition
+import TauCeti.NumberTheory.Cyclotomic.FixingSubgroup
 import TauCeti.NumberTheory.LocalField.Unramified.Existence
 import TauCeti.NumberTheory.NumberField.FinitePlace
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
@@ -242,23 +243,6 @@ private theorem sumLocalInv_ideleLocalization_characterCarryCocycle_placeIdele {
   conv_lhs => rw [ideleLocalization_characterCarryCocycle_placeIdele hE w π χ hχ]
   exact sumLocalInv_single K v _
 
-omit [NumberField K] in
-/-- The kernel of a character of `(ℤ / m)ˣ` read on the action of `G_K` on a primitive `m`-th
-root of unity is open: it contains the fixing subgroup of `K(ζ)`. -/
-private theorem isOpen_ker_comp_autToPow {m : ℕ} [NeZero m] {ζ : SeparableClosure K}
-    (hζ : IsPrimitiveRoot ζ m) (ψ : Additive (ZMod m)ˣ →+ AddCircle (1 : ℚ)) :
-    IsOpen ((ψ.comp (hζ.autToPow K).toAdditive).ker :
-      Set (Additive (AbsoluteGaloisGroup K))) := by
-  have : FiniteDimensional K K⟮ζ⟯ :=
-    IntermediateField.adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral ζ)
-  refine AddSubgroup.isOpen_mono (H₁ := Subgroup.toAddSubgroup K⟮ζ⟯.fixingSubgroup)
-    (fun g hg ↦ ?_) (K⟮ζ⟯.fixingSubgroup_isOpen.preimage continuous_toMul)
-  have hu : hζ.autToPow K g.toMul = 1 := (hζ.autToPow_eq_one_iff g.toMul).2 <|
-    (IntermediateField.mem_fixingSubgroup_iff _ _).1 hg ζ
-      (IntermediateField.mem_adjoin_simple_self K ζ)
-  rw [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, hu,
-    ofMul_one, map_zero]
-
 /-- **A class of `H²(G_K, I_{Kˢ})` localizing to the invariant `1 / n` at `v` and to `0` at every
 other place**: the carry class of a cyclotomic character and of an idele of `K` concentrated at
 `v`, read in the ideles of a finite Galois subextension `E` equal to `K`. -/
@@ -280,7 +264,7 @@ private theorem exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux {E : 
   -- The global character: `ψ` of the action of `G_K` on `ζ`, with open kernel.
   let χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ) := ψ.comp (hζ.autToPow K).toAdditive
   have hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))) :=
-    isOpen_ker_comp_autToPow hζ ψ
+    hζ.isOpen_ker_comp_autToPow ψ
   -- An embedding `τ : Kˢ → K_vˢ` along which the idele has coordinate `π` at `v`.
   -- `cases` rather than `obtain`, which exceeds the heartbeat budget here (as does stating this
   -- for the subextension `⊥` itself rather than a variable `E = ⊥`).
@@ -1107,7 +1091,7 @@ private theorem exists_ideleLocalization_eq_pi_single_aux {E : Ω}
         ((1 / addOrderOf (Additive.ofMul (-1 : (ZMod 4)ˣ)) : ℚ) : AddCircle (1 : ℚ)) :=
     CharacterModule.exists_apply_eq_inv_addOrderOf _ (hneg.trans_ne (by decide))
   set χ := ψ.comp (hζ.autToPow K).toAdditive with hχ_def
-  have hχ := isOpen_ker_comp_autToPow hζ ψ
+  have hχ := hζ.isOpen_ker_comp_autToPow (K := K) ψ
   refine ⟨characterCarryCocycle χ hχ a, DFinsupp.ext fun v ↦ ?_, fun u' hu' ↦ ?_, ?_⟩
   · -- At a finite place the component of `a` is `1`.
     obtain ⟨v', hv'⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 E) v
