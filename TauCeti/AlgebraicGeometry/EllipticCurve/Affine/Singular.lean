@@ -170,20 +170,25 @@ theorem equation_iff_mul_eq_cube_of_isSingular (h : W.IsSingular x₁ y₁) {α 
     (hα : α ^ 2 + W.a₁ * α - (3 * x₁ + W.a₂) = 0) (x y : R) :
     W.Equation x y ↔ (y - y₁ - α * (x - x₁)) *
       (y - y₁ + (W.a₁ + α) * (x - x₁)) = (x - x₁) ^ 3 := by
-  -- The expansion at the singular point has vanishing constant and linear coefficients.
-  let V : Affine R :=
-    { a₁ := W.a₁, a₂ := 3 * x₁ + W.a₂, a₃ := 0, a₄ := 0, a₆ := 0 }
-  have h₁ : V.a₁ = -(α + -(W.a₁ + α)) := by dsimp [V]; ring
-  have h₂ : V.a₂ = -(α * -(W.a₁ + α)) := by dsimp [V]; linear_combination -hα
-  have hV := V.equation_iff_mul h₁ h₂ (by simp only [V]) (by simp only [V])
-    (x - x₁) (y - y₁)
-  -- Expose this model's coefficients before comparing the polynomial equations by algebra.
-  rw [equation_iff] at hV
-  dsimp only [V] at hV
-  rw [equation_iff_of_isSingular h]
-  constructor <;> intro hE
-  · linear_combination (hV.mp (by linear_combination hE))
-  · linear_combination (hV.mpr (by linear_combination hE))
+  -- Translate the singular point to the origin and factor along the two tangent slopes.
+  let V : Affine R := (VariableChange.mk 1 x₁ 0 y₁ • W).toAffine
+  let β : R := -(W.a₁ + α)
+  have h₁ : V.a₁ = -(α + β) := by
+    simp only [V, β, variableChange_a₁, inv_one, Units.val_one, one_mul, mul_zero, add_zero]
+    ring
+  have h₂ : V.a₂ = -(α * β) := by
+    simp only [V, β, variableChange_a₂, inv_one, Units.val_one, one_pow, one_mul,
+      zero_mul, zero_pow two_ne_zero, sub_zero]
+    linear_combination -hα
+  have h₃ : V.a₃ = 0 := (variableChange_translate_a₃ W x₁ y₁).trans h.2.2
+  have h₄ : V.a₄ = 0 := by rw [variableChange_translate_a₄, h.2.1, neg_zero]
+  have h₆ : V.a₆ = 0 := variableChange_translate_a₆_of_equation W h.1
+  have hE : W.Equation x y ↔ V.Equation (x - x₁) (y - y₁) := by
+    simpa only [Units.val_one, one_pow, one_mul, mul_zero, zero_mul, add_zero,
+      sub_add_cancel] using
+      variableChange_equation W (VariableChange.mk 1 x₁ 0 y₁) (x - x₁) (y - y₁)
+  rw [hE, V.equation_iff_mul h₁ h₂ h₃ h₄, h₆, add_zero]
+  simp only [β, neg_mul, sub_neg_eq_add]
 
 /-- If `α` is a double root of the tangent quadratic at a singular point `(x₁, y₁)`, the equation
 reads `(y - y₁ - α (x - x₁))² = (x - x₁)³`. -/
