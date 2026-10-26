@@ -317,51 +317,49 @@ theorem isSmoothForm (φ : SmoothForm I M F k) : IsSmoothForm I ∞ φ.1 :=
   (isSmoothForm_def ∞ φ.1).mpr φ.contMDiff
 
 /-- Transporting a smooth form across an equality of degrees. -/
-def castDegree {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n m : ℕ} (h : n = m) :
+def cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n m : ℕ} (h : n = m) :
     SmoothForm I M F n ≃ₗ[ℝ] SmoothForm I M F m := by
   subst m
   exact LinearEquiv.refl ℝ _
 
 /-- Evaluating a smooth form after transporting its degree across an equality. -/
-@[simp]
-theorem castDegree_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+theorem cast_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) (x : M)
     (v : Fin m → TangentSpace I x) :
-    (castDegree h α : RoughForm I M F m) x v = α.1 x (v ∘ Fin.cast h) := by
+    (cast h α : RoughForm I M F m) x v = α.1 x (v ∘ Fin.cast h) := by
   cases h
   rfl
 
 /-- Evaluating the underlying rough form of a degree transport evaluates transported vectors. -/
 @[simp]
-theorem coe_castDegree {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+theorem coe_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) (x : M) :
-    (castDegree h α : RoughForm I M F m) x =
+    (cast h α : RoughForm I M F m) x =
       (fun v ↦ α.1 x (v ∘ Fin.cast h)) := by
   funext v
-  exact castDegree_apply h α x v
+  exact cast_apply h α x v
 
 /-- Transporting across reflexivity leaves a smooth form unchanged. -/
 @[simp]
-theorem castDegree_rfl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {n : ℕ} (α : SmoothForm I M F n) : castDegree rfl α = α := by
+theorem cast_rfl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : ℕ} (α : SmoothForm I M F n) : cast rfl α = α := by
   rfl
 
 /-- Successive degree transports collapse to the transport along their composite equality. -/
-@[simp]
-theorem castDegree_castDegree {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+theorem cast_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m o : ℕ} (h : n = m) (h' : m = o)
     (α : SmoothForm I M F n) :
-    castDegree h' (castDegree h α) = castDegree (h.trans h') α := by
+    cast h' (cast h α) = cast (h.trans h') α := by
   cases h
   cases h'
   rfl
 
 /-- Inverting a degree transport gives the transport along the inverse equality. -/
 @[simp]
-theorem castDegree_symm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+theorem cast_symm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m : ℕ} (h : n = m) :
-    (castDegree (I := I) (M := M) (F := F) h).symm =
-      castDegree (I := I) (M := M) (F := F) h.symm := by
+    (cast (I := I) (M := M) (F := F) h).symm =
+      cast (I := I) (M := M) (F := F) h.symm := by
   cases h
   rfl
 

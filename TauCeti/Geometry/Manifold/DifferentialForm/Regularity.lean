@@ -433,11 +433,11 @@ namespace SmoothForm
 
 /-- The exterior derivative commutes with transport across an equality of degrees. -/
 @[simp]
-theorem mextDerivₗ_castDegree [IsManifold I 2 M]
+theorem mextDerivₗ_cast [IsManifold I 2 M]
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) :
-    mextDerivₗ I m (SmoothForm.castDegree h α) =
-      SmoothForm.castDegree (congrArg (fun q : ℕ ↦ q + 1) h) (mextDerivₗ I n α) := by
+    mextDerivₗ I m (SmoothForm.cast h α) =
+      SmoothForm.cast (congrArg (fun q : ℕ ↦ q + 1) h) (mextDerivₗ I n α) := by
   cases h
   simp
 
