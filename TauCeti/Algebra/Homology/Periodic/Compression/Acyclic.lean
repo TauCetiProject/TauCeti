@@ -14,9 +14,11 @@ public import TauCeti.Algebra.Homology.ShortComplex.Preadditive
 
 In a preadditive category with homology, a strictly bounded cochain complex `K` is acyclic exactly
 when its `n`-periodic compression `Δₙ K` is acyclic
-(`TauCeti.PeriodicComplex.compression_acyclic_iff`). Reflection of acyclicity
-(`TauCeti.PeriodicComplex.acyclic_of_compression_acyclic`) requires only zero morphisms, a
-compression, and homology of `K` in every degree. For a strictly bounded `K`, the homology of
+(`TauCeti.PeriodicComplex.compression_acyclic_iff`). Exactness of the compression at the residue
+of `i` implies exactness of `K` at `i`, assuming only zero morphisms, a compression, and homology
+of `K` at `i` (`TauCeti.PeriodicComplex.exactAt_of_compression_exactAt`). Reflection of acyclicity
+follows degreewise (`TauCeti.PeriodicComplex.acyclic_of_compression_acyclic`).
+For a strictly bounded `K`, the homology of
 `Δₙ K` in residue `r` is the direct sum of the homology objects of `K` in the degrees congruent to
 `r`; we do not construct this decomposition, but only the finite sum decomposition of the identity
 of the short complex of `Δₙ K` at `r` through the short complexes of `K` that it rests on. The
@@ -86,15 +88,14 @@ private lemma compressionScι_compressionScπ (i : ℤ) :
   · exact ιCompressionOrZero_πCompression n K _ _ rfl
   · exact ιCompressionOrZero_πCompression n K _ _ (by rw [Int.cast_add, Int.cast_one])
 
-/-- A cochain complex with homology in every degree is acyclic when its `n`-periodic
-compression is acyclic. This holds in any category with zero morphisms. -/
-theorem acyclic_of_compression_acyclic [∀ i, K.HasHomology i]
-    (h : (compression n K).Acyclic) : K.Acyclic := by
-  intro i
+/-- A cochain complex with homology at `i` is exact there when its `n`-periodic compression
+is exact at the residue of `i`. This holds in any category with zero morphisms. -/
+theorem exactAt_of_compression_exactAt (i : ℤ) [K.HasHomology i]
+    (h : (compression n K).ExactAt (i : ZMod n)) : K.ExactAt i := by
   have : (complexSc K i).HasHomology :=
     ShortComplex.hasHomology_of_iso (K.isoSc' (i - 1) i (i + 1) (by simp) (by simp))
   have hE : (compressionSc n K i).Exact :=
-    (HomologicalComplex.exactAt_iff' _ _ _ _ (by simp) (by simp)).mp (h _)
+    (HomologicalComplex.exactAt_iff' _ _ _ _ (by simp) (by simp)).mp h
   have := hE.hasHomology
   rw [HomologicalComplex.exactAt_iff_isZero_homology_sc' _ (i - 1) i (i + 1) (by simp) (by simp),
     IsZero.iff_id_eq_zero]
@@ -104,6 +105,12 @@ theorem acyclic_of_compression_acyclic [∀ i, K.HasHomology i]
   rw [ShortComplex.homologyMap_comp, ShortComplex.homologyMap_id,
     hZ.eq_of_tgt (ShortComplex.homologyMap (compressionScι n K i i)) 0, zero_comp] at this
   exact this.symm
+
+/-- A cochain complex with homology in every degree is acyclic when its `n`-periodic
+compression is acyclic. This holds in any category with zero morphisms. -/
+theorem acyclic_of_compression_acyclic [∀ i, K.HasHomology i]
+    (h : (compression n K).Acyclic) : K.Acyclic :=
+  fun i ↦ exactAt_of_compression_exactAt n K i (h _)
 
 end HasZeroMorphisms
 
