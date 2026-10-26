@@ -125,8 +125,8 @@ namespace LinearMap
 section LinearFamily
 
 variable {K V M N ι : Type*} [Field K] [AddCommGroup V] [Module K V] [AddCommGroup M]
-  [Module K M] [AddCommGroup N] [Module K N] [Finite ι] (b : Module.Basis ι K V)
-  (φ : V →ₗ[K] M →ₗ[K] N)
+  [Module K M] [AddCommGroup N] [Module K N] [Finite ι] (φ : V →ₗ[K] M →ₗ[K] N)
+  (b : Module.Basis ι K V)
 
 /-- The minors of the matrices of a linear family of linear maps are polynomials in the
 coordinates of the parameter: for bases `bM` and `bN` and row and column selections `r` and `c`,
@@ -161,15 +161,15 @@ theorem finrank_range_le_of_mem_zeroLocus_vanishingIdeal {S : Set V} {p : ℕ}
   classical
   let bM := Module.finBasis K M
   let bN := Module.finBasis K N
-  rw [← Matrix.rank_toMatrix bM bN, Matrix.rank_le_iff_forall_det_submatrix_eq_zero]
+  rw [← (φ x).rank_toMatrix bM bN, Matrix.rank_le_iff_forall_det_submatrix_eq_zero]
   intro r c
-  obtain ⟨q, hq⟩ := exists_eval_eq_det_submatrix b φ bM bN r c
+  obtain ⟨q, hq⟩ := exists_eval_eq_det_submatrix φ b bM bN r c
   rw [← hq]
   refine mem_zeroLocus_iff.1 hx q (mem_vanishingIdeal_iff.2 ?_)
   rintro - ⟨y, hy, rfl⟩
   rw [aeval_eq_eval, hq]
   exact Matrix.rank_le_iff_forall_det_submatrix_eq_zero.1
-    ((Matrix.rank_toMatrix bM bN _).trans_le (hS y hy)) r c
+    (((φ y).rank_toMatrix bM bN).trans_le (hS y hy)) r c
 
 /-- **A nonempty rank lower bound locus is Zariski dense.** Over an infinite field, if some member
 of a linear family `φ` of linear maps has rank at least `p`, then the only polynomial vanishing on
@@ -180,11 +180,11 @@ theorem vanishingIdeal_setOfPred_le_finrank_range_eq_bot [Infinite K] {p : ℕ} 
   classical
   let bM := Module.finBasis K M
   let bN := Module.finBasis K N
-  rw [← Matrix.rank_toMatrix bM bN, Matrix.le_rank_iff_exists_det_submatrix_ne_zero] at hx₀
+  rw [← (φ x₀).rank_toMatrix bM bN, Matrix.le_rank_iff_exists_det_submatrix_ne_zero] at hx₀
   obtain ⟨r, c, hrc⟩ := hx₀
   -- A nonzero minor `q` at `x₀`. Wherever `q` does not vanish the rank is at least `p`, so every
   -- `f` vanishing on the locus has `f * q = 0` at every point.
-  obtain ⟨q, hq⟩ := exists_eval_eq_det_submatrix b φ bM bN r c
+  obtain ⟨q, hq⟩ := exists_eval_eq_det_submatrix φ b bM bN r c
   have hq0 : q ≠ 0 := by
     rintro rfl
     exact hrc (by rw [← hq, map_zero])
@@ -194,7 +194,7 @@ theorem vanishingIdeal_setOfPred_le_finrank_range_eq_bot [Infinite K] {p : ℕ} 
   rw [map_mul, map_zero, mul_eq_zero, or_iff_not_imp_right, hq]
   intro hx
   have hmem : x ∈ {x | p ≤ Module.finrank K (range (φ x))} := by
-    rw [Set.mem_ofPred_eq, ← Matrix.rank_toMatrix bM bN,
+    rw [Set.mem_ofPred_eq, ← (φ x).rank_toMatrix bM bN,
       Matrix.le_rank_iff_exists_det_submatrix_ne_zero]
     exact ⟨r, c, hx⟩
   simpa using mem_vanishingIdeal_iff.1 hf _ ⟨x, hmem, rfl⟩
