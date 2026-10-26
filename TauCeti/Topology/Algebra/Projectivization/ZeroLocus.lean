@@ -137,11 +137,9 @@ theorem isClosed_complexProjectiveIncidence (d : ι → ℕ) :
     IsClosed (complexProjectiveIncidence N d) := by
   rw [← (IsOpenQuotientMap.id.prodMap
     Projectivization.isOpenQuotientMap_mk').isQuotientMap.isClosed_preimage]
-  have hZ := (isClosed_setOf_forall_eval_eq_zero_homogeneousSubmodule
-    (σ := Fin N) (R := ℂ) d).preimage (show Continuous
-      (fun x : (∀ i, homogeneousSubmodule (Fin N) ℂ (d i)) ×
-        {v : Fin N → ℂ // v ≠ 0} ↦ (x.1, x.2.1)) by fun_prop)
-  convert hZ using 1
+  convert (isClosed_setOf_forall_eval_eq_zero_homogeneousSubmodule
+    (σ := Fin N) (R := ℂ) d).preimage
+      (continuous_fst.prodMk (continuous_subtype_val.comp' continuous_snd)) using 1
   ext ⟨c, v⟩
   simp only [Set.mem_preimage, Prod.map_apply, id_eq, Projectivization.mk'_eq_mk,
     mk_mem_complexProjectiveIncidence_iff, Set.mem_ofPred_eq]
@@ -201,16 +199,13 @@ theorem isClosed_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :
       {v : Fin N → ℂ // v ≠ 0} ↦ jacobiMatrixAt (fun i ↦ (x.1 i : MvPolynomial (Fin N) ℂ)) x.2.1 :=
     (continuous_jacobiMatrixAt_homogeneousSubmodule d).comp
       (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
-  have hZ := (isClosed_setOf_forall_eval_eq_zero_homogeneousSubmodule
-    (σ := Fin N) (R := ℂ) d).preimage (show Continuous
-      (fun x : (∀ i, homogeneousSubmodule (Fin N) ℂ (d i)) ×
-        {v : Fin N → ℂ // v ≠ 0} ↦ (x.1, x.2.1)) by fun_prop)
-  convert hZ.inter
+  convert ((isClosed_complexProjectiveIncidence d).preimage
+      (continuous_id.prodMap Projectivization.isOpenQuotientMap_mk'.continuous)).inter
     (isOpen_setOf_mulVec_surjective.preimage hJ).isClosed_compl using 1
   ext ⟨c, v⟩
   simp only [Set.mem_preimage, Prod.map_apply, id_eq, Projectivization.mk'_eq_mk,
-    mk_mem_complexProjectiveBadRankLocus_iff, Set.mem_inter_iff, Set.mem_ofPred_eq,
-    Set.mem_compl_iff]
+    mk_mem_complexProjectiveBadRankLocus_iff, mk_mem_complexProjectiveIncidence_iff,
+    Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_compl_iff]
 
 /-- The projection of the bad-rank locus to the coefficient space is closed. -/
 theorem isClosed_image_fst_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :

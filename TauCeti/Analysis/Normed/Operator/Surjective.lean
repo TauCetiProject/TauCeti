@@ -116,9 +116,7 @@ theorem isOpen_setOf_mulVec_surjective {m n : Type*} [Finite m] [Fintype n] :
     intro y
     obtain ⟨z, hz⟩ := hBR y
     exact ⟨R.mulVec z, by simpa only [Matrix.mulVec_mulVec] using hz⟩
-  · change (A * R).det ≠ 0
-    rw [hAR, Matrix.det_one]
-    exact one_ne_zero
+  · simpa only [Set.mem_ofPred_eq, hAR, Matrix.det_one] using (one_ne_zero : (1 : 𝕜) ≠ 0)
 
 end TauCeti
 
