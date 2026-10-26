@@ -326,12 +326,12 @@ theorem toRepresentation_ofCharacter_one :
     (ofCharacter (1 : Γ →ₜ* Aˣ)).toRepresentation = Representation.trivial A Γ A :=
   Representation.ofLinearCharacter_one
 
-/-- **Two character lines are isomorphic exactly when the characters agree.** An isomorphism `e`
-of lines is multiplication by `e 1`, so equivariance at `1` reads `e (χ g) = e (ψ g)`. -/
+/-- **Two character lines are isomorphic exactly when the characters agree.** -/
 @[simp]
 theorem nonempty_iso_ofCharacter_iff (χ ψ : Γ →ₜ* Aˣ) :
     Nonempty (Iso (ofCharacter χ) (ofCharacter ψ)) ↔ χ = ψ := by
   refine ⟨fun ⟨e⟩ => ContinuousMonoidHom.ext fun g => Units.ext ?_, fun h => h ▸ ⟨.refl _⟩⟩
+  -- Equivariance at `1` gives `e (χ g) = ψ g * e 1`, and linearity gives `e (ψ g) = ψ g * e 1`.
   apply EquivLike.injective e
   have hψ : e (ψ g : A) = ψ g * e 1 := by simpa using map_smul e (ψ g : A) (1 : A)
   simpa [hψ] using e.isIntertwining g 1
@@ -347,9 +347,7 @@ variable (B : Type*) [Ring B] [TopologicalSpace B] [IsTopologicalSemiring B] [Al
   [ContinuousSMul A B] [TopologicalSpace (B ⊗[A] M)] [IsModuleTopology B (B ⊗[A] M)]
 
 /-- The base change of a jointly continuous action on a finite module is jointly continuous for
-the module topology on `B ⊗[A] M`. A finite generating family `m` of `M` presents `B ⊗[A] M` as
-the open quotient `b ↦ ∑ i, b i • (1 ⊗ m i)` of `Bⁿ`, and through that quotient the action is
-`(g, b) ↦ ∑ i, b i • (1 ⊗ ρ g (m i))`. -/
+the module topology on `B ⊗[A] M`. -/
 private theorem continuous_baseChange_action (ρ : ContinuousRep Γ A M) :
     Continuous fun p : Γ × (B ⊗[A] M) =>
       Representation.baseChange B ρ.toRepresentation p.1 p.2 := by
@@ -361,7 +359,9 @@ private theorem continuous_baseChange_action (ρ : ContinuousRep Γ A M) :
       map_add' := TensorProduct.tmul_add 1
       map_smul' a x := by simp [TensorProduct.tmul_smul, algebraMap_smul] }
   have hι : Continuous ι := IsModuleTopology.continuous_of_linearMapₛₗ (continuous_algebraMap A B) ι
-  -- The presentation of `B ⊗[A] M` as an open quotient of `Bⁿ`.
+  -- A finite generating family `m` of `M` presents `B ⊗[A] M` as the open quotient
+  -- `b ↦ ∑ i, b i • (1 ⊗ m i)` of `Bⁿ`; through that quotient the action is
+  -- `(g, b) ↦ ∑ i, b i • (1 ⊗ ρ g (m i))`.
   let q := Fintype.linearCombination B fun i => (1 : B) ⊗ₜ[A] m i
   have hq : IsOpenQuotientMap q := by
     refine IsModuleTopology.isOpenQuotientMap_of_surjective (LinearMap.range_eq_top.mp ?_)
