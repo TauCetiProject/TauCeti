@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Orientation
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
-public import TauCeti.Topology.FiberBundle.Extension
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
@@ -17,8 +15,9 @@ A smooth finite-dimensional Hausdorff sigma-compact manifold with boundary admit
 tangent field that points outward at every boundary point. Such a field supplies the outward
 direction at the boundary; its negative, or backward flow, gives the inward direction used to
 push boundary data into the manifold and is a standard input for collar and Stokes-type
-constructions. The existence statement is the smooth version of J. M. Lee, *Introduction to
-Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Proposition 15.33.
+constructions. This adapts the outward normal construction of J. M. Lee, *Introduction to Smooth
+Manifolds*, 2nd ed., Springer GTM 218 (2013), Proposition 15.33, with a global extension and
+convex gluing.
 -/
 
 public section
@@ -50,21 +49,33 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
     hxy
     (g y)]
   have hext : tangentCoordChange (𝓡∂ (n + 1)) y x y (g y) = v₀ := by
-    have hybase : y ∈ (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
-        (TangentSpace (𝓡∂ (n + 1))) (x : M)).baseSet := by
-      simpa using hy
     have hvalue : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
         (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨(x : M), v₀⟩).2 = v₀ := by
-      rw [TangentBundle.trivializationAt_apply_tangentCoordChange]
-      rw [tangentCoordChange_self (x := (x : M)) (mem_extChartAt_source (I := 𝓡∂ (n + 1)) (x : M))]
-    rw [← TangentBundle.trivializationAt_apply_tangentCoordChange]
-    exact (FiberBundle.trivializationAt_extend_apply hybase v₀).trans hvalue
+      rw [TangentBundle.trivializationAt_apply]
+      change tangentCoordChange (𝓡∂ (n + 1)) (x : M) (x : M) (x : M) v₀ = v₀
+      rw [tangentCoordChange_self (x := (x : M))
+        (mem_extChartAt_source (I := 𝓡∂ (n + 1)) (x : M))]
+    have hcoord : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+        (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨y, g y⟩).2 = v₀ := by
+      have hcoord' : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+          (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨y, g y⟩).2 =
+          (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+            (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨(x : M), v₀⟩).2 := by
+        simp only [g, FiberBundle.extend]
+        rwa [Trivialization.apply_mk_symm]
+      exact hcoord'.trans hvalue
+    have hrel : tangentCoordChange (𝓡∂ (n + 1)) y x y (g y) =
+        (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+          (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨y, g y⟩).2 := by
+      rw [TangentBundle.trivializationAt_apply, tangentCoordChange_def]
+      simp only [extChartAt]
+    exact hrel.trans hcoord
   rw [hext]
   simp [v₀]
 
 /-- Every smooth finite-dimensional Hausdorff sigma-compact half-space manifold has a smooth field
 pointing outward along its boundary. -/
-theorem exists_isOutwardPointingField :
+theorem exists_isOutwardPointing :
     ∃ v : (x : M) → TangentSpace (𝓡∂ (n + 1)) x,
       IsOutwardPointingField v := by
   let v₀ : EuclideanSpace ℝ (Fin (n + 1)) := -EuclideanSpace.single 0 1
@@ -106,6 +117,6 @@ theorem exists_isOutwardPointingField :
         exact (hy hby).elim
   obtain ⟨s, hs⟩ := exists_contMDiffSection_forall_mem_convex_of_local
     (𝓡∂ (n + 1)) (TangentSpace (𝓡∂ (n + 1))) t ht hloc
-  exact ⟨s, IsOutwardPointingField.intro s.contMDiff fun y hy ↦ hs y hy⟩
+  exact ⟨s, .intro s.contMDiff fun y hy ↦ hs y hy⟩
 
 end TauCeti
