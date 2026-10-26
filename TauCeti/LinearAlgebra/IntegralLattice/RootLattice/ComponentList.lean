@@ -42,6 +42,10 @@ An ADE component is `TauCeti.DynkinType.Component`, a valid simply-laced Dynkin 
 * `TauCeti.DynkinType.Component`: an ADE component, with its root lattice and glue alphabet.
 * `TauCeti.DynkinType.componentAlphabet`: the glue alphabet of an ordered component list.
 * `TauCeti.DynkinType.componentSumLattice`: the orthogonal sum of the component root lattices.
+* `TauCeti.DynkinType.componentSumLattice_nil`, `componentSumLattice_cons`,
+  `TauCeti.DynkinType.Component.rootLattice_eq`, `emptyComponentSum_eq`, `componentAlphabet_nil`,
+  `componentAlphabet_cons`: the defining equations of these constructions, which record their values
+  on the underlying lattices and alphabets.
 * `TauCeti.DynkinType.componentDiscriminantIsometry`: the induced isometry of discriminant forms.
 * `TauCeti.DynkinType.ComponentIsometry`, `componentSumIsometry`, `componentAlphabetIsometry`:
   componentwise isometries of two component lists and their two induced isometries.
@@ -78,6 +82,10 @@ namespace Component
 /-- The positive root lattice of a component, on its simple-root coordinate space. -/
 @[expose] noncomputable def rootLattice (c : Component) : IntegralLattice (Fin c.rank → ℚ) :=
   c.1.rootLattice c.2.2
+
+/-- The root lattice of a component is the root lattice of its underlying Dynkin type. -/
+theorem rootLattice_eq (c : Component) : c.rootLattice = c.1.rootLattice c.2.2 :=
+  (rfl)
 
 /-- The root lattice of a component is even. -/
 theorem isEven_rootLattice (c : Component) : c.rootLattice.IsEven :=
@@ -132,8 +140,13 @@ instance subsingleton_componentSumAmbient_nil : Subsingleton (componentSumAmbien
 
 /-- The orthogonal sum of the empty component list: the zero lattice on the empty coordinate
 space. -/
-@[expose] noncomputable def emptyComponentSum : IntegralLattice (Fin 0 → ℚ) :=
+noncomputable def emptyComponentSum : IntegralLattice (Fin 0 → ℚ) :=
   IntegralLattice.ofGramMatrix (Pi.basisFun ℚ (Fin 0)) 0 Matrix.isSymm_zero
+
+/-- The empty component sum is the lattice of the zero Gram matrix on the empty coordinate space. -/
+theorem emptyComponentSum_eq :
+    emptyComponentSum = IntegralLattice.ofGramMatrix (Pi.basisFun ℚ (Fin 0)) 0 Matrix.isSymm_zero :=
+  (rfl)
 
 /-- The orthogonal sum of an ordered component list: the iterated orthogonal sum of the component
 root lattices, with the zero lattice for the empty list. -/
@@ -141,6 +154,16 @@ root lattices, with the zero lattice for the empty list. -/
     (l : List Component) → IntegralLattice (componentSumAmbient l)
   | [] => emptyComponentSum
   | c :: cs => c.rootLattice.orthogonalSum (componentSumLattice cs)
+
+/-- The orthogonal sum of the empty component list is the empty component sum. -/
+theorem componentSumLattice_nil : componentSumLattice [] = emptyComponentSum :=
+  (rfl)
+
+/-- The orthogonal sum of a component list starting with `c` is the orthogonal sum of the root
+lattice of `c` with the orthogonal sum of the rest of the list. -/
+theorem componentSumLattice_cons (c : Component) (cs : List Component) :
+    componentSumLattice (c :: cs) = c.rootLattice.orthogonalSum (componentSumLattice cs) :=
+  (rfl)
 
 /-- The orthogonal sum of a component list is even. -/
 theorem isEven_componentSumLattice : (l : List Component) → (componentSumLattice l).IsEven
