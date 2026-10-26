@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.BigOperators.Ring.Int
+public import TauCeti.Algebra.Module.Torsion.Int
 public import TauCeti.LinearAlgebra.WeightedCycle.Family.Basic
 public import TauCeti.LinearAlgebra.Pi
 
@@ -16,6 +17,8 @@ The monodromy signs partition the cycles over the integers. Positive cycles
 contribute one scalar coordinate; negative cycles contribute the full
 `2`-torsion submodule. This partition is unchanged in characteristic two,
 where the two integer signs have the same image in the coefficient ring.
+Over the integers, negative coordinates vanish, and the positive cycles give
+an explicit basis of the fixed submodule.
 -/
 
 public section
@@ -157,5 +160,93 @@ theorem fixedEquivSignedFamily_symm_apply [Fintype J] (b : Module.Basis ι A V)
     exact congrArg (fun c : A ↦ c • b (e ⟨j.val, i⟩))
       (fixedEquivSignedFamily_symm_repr_neg b e ε hε f h t
         ((negativeIndexEquiv ε hε) j) i)
+
+section Integral
+
+variable [Finite J]
+variable (b : Module.Basis ι ℤ V) (e : (Σ j, Fin (n j + 1)) ≃ ι)
+  (ε : ∀ j, Fin (n j + 1) → ℤ) (hε : ∀ j i, ε j i = 1 ∨ ε j i = -1)
+  (f : V →ₗ[ℤ] V)
+  (h : ∀ j i, f (b (e ⟨j, i⟩)) = ε j i • b (e ⟨j, finRotate (n j + 1) i⟩))
+
+/-- Integral fixed vectors are determined by the initial coefficients on positive cycles. -/
+noncomputable def fixedEquivPositiveSignedFamily :
+    f.fixedSubmodule ≃ₗ[ℤ] ({j // (∏ i, ε j i) = 1} → ℤ) := by
+  letI : Subsingleton (Submodule.torsionBy ℤ ℤ 2) := TauCeti.subsingleton_torsionBy_int 2 ℤ
+  letI := uniqueOfSubsingleton (0 : Submodule.torsionBy ℤ ℤ 2)
+  exact (b.fixedEquivSignedFamily e ε hε f h).trans LinearEquiv.prodUnique
+
+/-- Positive integral fixed coordinates read the original initial basis coefficients. -/
+@[simp]
+theorem fixedEquivPositiveSignedFamily_apply (v : f.fixedSubmodule)
+    (j : {j // (∏ i, ε j i) = 1}) :
+    b.fixedEquivPositiveSignedFamily e ε hε f h v j = b.repr v.val (e ⟨j.val, 0⟩) := by
+  exact b.fixedEquivSignedFamily_apply_pos e ε hε f h v j
+
+/-- The inverse positive-coordinate map has zero negative coordinates. -/
+theorem fixedEquivPositiveSignedFamily_symm (t : {j // (∏ i, ε j i) = 1} → ℤ) :
+    (b.fixedEquivPositiveSignedFamily e ε hε f h).symm t =
+      (b.fixedEquivSignedFamily e ε hε f h).symm (t, 0) := by
+  rfl
+
+/-- An integral positive-cycle basis of the actual fixed submodule. -/
+noncomputable def fixedBasisSignedFamily :
+    Module.Basis {j // (∏ i, ε j i) = 1} ℤ f.fixedSubmodule :=
+  Module.Basis.ofEquivFun (b.fixedEquivPositiveSignedFamily e ε hε f h)
+
+/-- Coordinates in the integral fixed basis are the original initial coefficients. -/
+@[simp]
+theorem fixedBasisSignedFamily_repr (v : f.fixedSubmodule)
+    (j : {j // (∏ i, ε j i) = 1}) :
+    (b.fixedBasisSignedFamily e ε hε f h).repr v j = b.repr v.val (e ⟨j.val, 0⟩) := by
+  simp [fixedBasisSignedFamily]
+
+/-- The positive coordinate equivalence is the coordinate map of the integral fixed basis. -/
+@[simp]
+theorem fixedBasisSignedFamily_equivFun :
+    (b.fixedBasisSignedFamily e ε hε f h).equivFun =
+      b.fixedEquivPositiveSignedFamily e ε hε f h := by
+  simp [fixedBasisSignedFamily]
+
+include hε h in
+/-- A negative-cycle initial coefficient of an integral fixed vector is zero. -/
+theorem fixedSignedFamily_repr_neg (v : f.fixedSubmodule)
+    (j : {j // (∏ i, ε j i) = -1}) :
+    b.repr v.val (e ⟨j.val, 0⟩) = 0 := by
+  let : Subsingleton (Submodule.torsionBy ℤ ℤ 2) := TauCeti.subsingleton_torsionBy_int 2 ℤ
+  rw [← b.fixedEquivSignedFamily_apply_neg e ε hε f h v j]
+  exact congrArg Subtype.val (Subsingleton.elim _ 0)
+
+/-- The integral fixed basis vector has the prescribed prefix coefficients on positive cycles. -/
+@[simp]
+theorem fixedBasisSignedFamily_repr_pos [DecidableEq {j // (∏ i, ε j i) = 1}]
+    (j k : {j // (∏ i, ε j i) = 1}) (i : Fin (n k.val + 1)) :
+    b.repr (b.fixedBasisSignedFamily e ε hε f h j).val (e ⟨k.val, i⟩) =
+      Fin.partialProd (Fin.init (ε k.val)) i * (if j = k then 1 else 0) := by
+  simp only [fixedBasisSignedFamily, Module.Basis.coe_ofEquivFun,
+    fixedEquivPositiveSignedFamily_symm]
+  by_cases hj : j = k <;> simp [hj]
+
+/-- Every coefficient on a negative cycle of an integral fixed basis vector vanishes. -/
+@[simp]
+theorem fixedBasisSignedFamily_repr_neg
+    (j : {j // (∏ i, ε j i) = 1}) (k : {j // (∏ i, ε j i) = -1})
+    (i : Fin (n k.val + 1)) :
+    b.repr (b.fixedBasisSignedFamily e ε hε f h j).val (e ⟨k.val, i⟩) = 0 := by
+  classical
+  simp only [fixedBasisSignedFamily, Module.Basis.coe_ofEquivFun,
+    fixedEquivPositiveSignedFamily_symm]
+  simp
+
+/-- Each integral fixed basis vector is the signed prefix sum along its positive cycle. -/
+theorem fixedBasisSignedFamily_apply (j : {j // (∏ i, ε j i) = 1}) :
+    (b.fixedBasisSignedFamily e ε hε f h j).val =
+      ∑ i, Fin.partialProd (Fin.init (ε j.val)) i • b (e ⟨j.val, i⟩) := by
+  classical
+  let := Fintype.ofFinite J
+  simp [fixedBasisSignedFamily, Module.Basis.coe_ofEquivFun,
+    fixedEquivPositiveSignedFamily_symm, fixedEquivSignedFamily_symm_apply, Pi.single_apply]
+
+end Integral
 
 end Module.Basis
