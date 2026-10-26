@@ -47,17 +47,6 @@ theorem typeAGraphLieEquiv_apply (X : Matrix (Fin (r + 1)) (Fin (r + 1)) A) :
   simp only [typeAGraphLieEquiv, LieEquiv.trans_apply, negTransposeLieEquiv_apply,
     lieConj_apply, mul_neg, neg_mul]
 
-private theorem typeAGraphConjugator_inv_eq_transpose :
-    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)⁻¹ =
-      (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)ᵀ := by
-  have h := congrArg
-    (fun g : GeneralLinearGroup (Fin (r + 1)) A ↦
-      (g : Matrix (Fin (r + 1)) (Fin (r + 1)) A))
-    (inverseTranspose_typeAGraphConjugator (A := A) r)
-  rw [GeneralLinearGroup.coe_inverseTranspose] at h
-  simpa only [transpose_transpose, GeneralLinearGroup.coe_inv] using
-    congrArg Matrix.transpose h
-
 /-- The graph automorphism reverses both indices and applies the alternating signs. -/
 @[simp]
 theorem typeAGraphLieEquiv_apply_apply
