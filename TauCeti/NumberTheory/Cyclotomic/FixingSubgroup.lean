@@ -79,7 +79,7 @@ theorem IsPrimitiveRoot.isOpen_ker_autToPow {K M : Type*} [Field K] [Field M] [A
 contains the open kernel of the cyclotomic character (`IsPrimitiveRoot.isOpen_ker_autToPow`). Use
 it to feed such a character to constructions that require a continuous character of `Gal(M/K)`. -/
 theorem IsPrimitiveRoot.isOpen_ker_comp_autToPow {K M A : Type*} [Field K] [Field M]
-    [Algebra K M] [AddGroup A] {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m)
+    [Algebra K M] [AddZeroClass A] {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m)
     (ψ : Additive (ZMod m)ˣ →+ A) :
     IsOpen ((ψ.comp (hζ.autToPow K).toAdditive).ker : Set (Additive Gal(M/K))) := by
   refine AddSubgroup.isOpen_mono (H₁ := Subgroup.toAddSubgroup (hζ.autToPow K).ker)
