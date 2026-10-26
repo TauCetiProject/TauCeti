@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import TauCeti.Algebra.Homology.Bifunctor.Support
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
+public import TauCeti.Algebra.Homology.ShortComplex.Splitting
 import Mathlib.CategoryTheory.Linear.Basic
 
 /-!
@@ -452,14 +453,6 @@ def reframedShortComplexDegreewiseSplitting
         (reframedShortComplexIso F s u₁ u₃)))
 
 
-private theorem splitting_f_isoBinaryBiproduct (S : ShortComplex D) (h : S.Splitting) :
-    S.f ≫ h.isoBinaryBiproduct.hom = biprod.inl := by
-  apply biprod.hom_ext <;> simp [ShortComplex.Splitting.isoBinaryBiproduct]
-
-private theorem splitting_isoBinaryBiproduct_hom_snd (S : ShortComplex D) (h : S.Splitting) :
-    h.isoBinaryBiproduct.hom ≫ biprod.snd = S.g := by
-  simp [ShortComplex.Splitting.isoBinaryBiproduct]
-
 /-- The reframed totalization term is the biproduct of its two public endpoint terms. -/
 def reframedShortComplexDegreewiseIso
     {E₁ E₃ : CochainComplex C₂ ℤ ⥤ CochainComplex D ℤ}
@@ -482,9 +475,7 @@ theorem reframedShortComplex_f_degreewiseIso_hom
     (N : CochainComplex C₂ ℤ) (j : ℤ) :
     (((reframedShortComplex F s u₁ u₃).f.app N).f j) ≫
         (reframedShortComplexDegreewiseIso F s u₁ u₃ N j).hom = biprod.inl := by
-  exact splitting_f_isoBinaryBiproduct
-    (((reframedShortComplex F s u₁ u₃).map ((evaluation _ _).obj N)).map (eval D c j))
-    (reframedShortComplexDegreewiseSplitting F s u₁ u₃ N j)
+  exact (reframedShortComplexDegreewiseSplitting F s u₁ u₃ N j).f_isoBinaryBiproduct_hom
 
 /-- The reframed projection is the second projection under its degreewise comparison. -/
 @[reassoc (attr := simp)]
@@ -496,8 +487,6 @@ theorem reframedShortComplex_degreewiseIso_hom_snd
     (N : CochainComplex C₂ ℤ) (j : ℤ) :
     (reframedShortComplexDegreewiseIso F s u₁ u₃ N j).hom ≫ biprod.snd =
       (((reframedShortComplex F s u₁ u₃).g.app N).f j) := by
-  exact splitting_isoBinaryBiproduct_hom_snd
-    (((reframedShortComplex F s u₁ u₃).map ((evaluation _ _).obj N)).map (eval D c j))
-    (reframedShortComplexDegreewiseSplitting F s u₁ u₃ N j)
+  exact (reframedShortComplexDegreewiseSplitting F s u₁ u₃ N j).isoBinaryBiproduct_hom_snd
 
 end HomologicalComplex.BifunctorSupport
