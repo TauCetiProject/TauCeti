@@ -75,6 +75,8 @@ theorem mul_chartGenerator_apply (m : ℤ) (x : U) :
   simp only [mul_apply, chartGenerator_apply, Localization.mk_mul]
   apply Localization.mk_eq_mk_iff.mpr
   apply Localization.r_of_eq
+  -- Here `change` reduces the denominator subtype projections and `Submonoid.mul`,
+  -- exposing the cross-multiplied equality in `A` for the exponent calculation.
   change f ^ (-(m + n)).toNat * (f ^ m.toNat * f ^ n.toNat) =
     (f ^ (-m).toNat * f ^ (-n).toNat) * f ^ (m + n).toNat
   simp only [← pow_add]
