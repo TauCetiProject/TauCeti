@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.LaurentSeries.Derivative
+public import TauCeti.RingTheory.LaurentSeries.Rescale
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 public import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -38,8 +39,6 @@ substitution of the image of `φ` into the image of `f`.
   `K⸨X⸩ →ₐ[K] K⸨X⸩`.
 * `TauCeti.LaurentSeries.substAlgEquiv`: the substitution automorphism `f ↦ f (φ)` of a formal
   coordinate `φ`.
-* `TauCeti.LaurentSeries.rescale`: the linear substitutions `f (X) ↦ f (a X)`, for units `a` of
-  `K`, as a homomorphism from `Kˣ` to the `K`-algebra automorphisms of `K⸨X⸩`.
 
 ## Main results
 
@@ -62,8 +61,9 @@ substitution of the image of `φ` into the image of `f`.
   `HahnSeries.embDomainRingHom` along `n ↦ e * n`, with coefficient formulas
   `TauCeti.LaurentSeries.coeff_substAlgHom_X_pow_mul` and
   `TauCeti.LaurentSeries.coeff_substAlgHom_X_pow_of_not_dvd`.
-* `TauCeti.LaurentSeries.coeff_substAlgHom_C_mul_X`, `TauCeti.LaurentSeries.coeff_rescale`: the
-  substitution `X ↦ a X` multiplies the coefficient of `Xⁿ` by `a ^ n`, for every integer `n`.
+* `TauCeti.LaurentSeries.rescale_toAlgHom`: unit rescaling agrees with substitution `X ↦ a X`.
+* `TauCeti.LaurentSeries.coeff_substAlgHom_C_mul_X`: the substitution `X ↦ a X` multiplies
+  the coefficient of `Xⁿ` by `a ^ n`, for every integer `n`.
 -/
 
 public section
@@ -298,99 +298,20 @@ theorem coeff_substAlgHom_X_pow_of_not_dvd {e : ℕ} (he : e ≠ 0) (f : K⸨X�
   rw [← AlgHom.coe_toRingHom, substAlgHom_X_pow he]
   exact embDomain_of_notMem_range fun ⟨k, hk⟩ ↦ hn ⟨k, hk.symm⟩
 
-/-- Substituting `X ↦ a X` sends the monomial `c Xⁿ` to `a ^ n c Xⁿ`. -/
-private theorem substAlgHom_C_mul_X_single {a : K} (ha : a ≠ 0) (n : ℤ) (c : K) :
-    substAlgHom (φ := C a * X) (by simp) (by simp [ha]) (single n c) = single n (a ^ n * c) := by
-  -- `(a X) ^ n = a ^ n X ^ n`
-  rw [substAlgHom_single, PowerSeries.coe_mul, mul_zpow]
-  simp [← map_zpow₀, ← RatFunc.single_zpow, ← single_zero_mul_eq_smul, -HahnSeries.C_apply,
-    HahnSeries.C_mul_eq_smul, mul_comm]
-
-/-- On power series, `PowerSeries.rescale a` multiplies the Laurent coefficient of `Xⁿ` by `a ^ n`,
-for every integer `n`. -/
-private theorem coeff_coe_rescale (a : K) (g : K⟦X⟧) (n : ℤ) :
-    ((PowerSeries.rescale a g : K⟦X⟧) : K⸨X⸩).coeff n = a ^ n * (g : K⸨X⸩).coeff n := by
-  rw [PowerSeries.coeff_coe, PowerSeries.coeff_coe]
-  split_ifs with h
-  · rw [mul_zero]
-  · rw [PowerSeries.coeff_rescale, ← zpow_natCast, Int.natAbs_of_nonneg (not_lt.mp h)]
-
-/-- On power series, substituting `X ↦ a X` multiplies the coefficient of `Xⁿ` by `a ^ n`. -/
-private theorem coeff_substAlgHom_C_mul_X_coe {a : K} (ha : a ≠ 0) (g : K⟦X⟧) (n : ℤ) :
-    (substAlgHom (φ := C a * X) (by simp) (by simp [ha]) (g : K⸨X⸩)).coeff n =
-      a ^ n * (g : K⸨X⸩).coeff n := by
-  rw [substAlgHom_coe, ← smul_eq_C_mul, ← rescale_eq_subst, coeff_coe_rescale]
+/-- Rescaling by `a` is the substitution `X ↦ a X`, so it inherits, for instance, continuity and
+the chain rule from `substAlgHom`. -/
+theorem rescale_toAlgHom (a : Kˣ) :
+    (rescale a : K⸨X⸩ →ₐ[K] K⸨X⸩) = substAlgHom (φ := C (a : K) * X) (by simp) (by simp) := by
+  refine AlgHom.toRingHom_injective (IsFractionRing.ringHom_ext (A := K⟦X⟧) fun f ↦ ?_)
+  simp [rescale_coe, substAlgHom_coe, ← smul_eq_C_mul, ← rescale_eq_subst]
 
 /-- Substituting `X ↦ a X`, for `a ≠ 0`, multiplies the coefficient of `Xⁿ` by `a ^ n`, for every
 integer `n`. -/
 @[simp]
 theorem coeff_substAlgHom_C_mul_X {a : K} (ha : a ≠ 0) (f : K⸨X⸩) (n : ℤ) :
     (substAlgHom (φ := C a * X) (by simp) (by simp [ha]) f).coeff n = a ^ n * f.coeff n := by
-  -- write `f = X ^ N * f₊` with `f₊` a power series
-  rw [← f.single_order_mul_powerSeriesPart, map_mul, substAlgHom_C_mul_X_single ha,
-    coeff_single_mul, coeff_single_mul, coeff_substAlgHom_C_mul_X_coe ha]
-  simp [← mul_assoc, ← zpow_add₀ ha]
-
-/-- The substitution `X ↦ a X` for a unit `a`. -/
-private noncomputable abbrev rescaleAlgHom (a : Kˣ) : K⸨X⸩ →ₐ[K] K⸨X⸩ :=
-  substAlgHom (φ := C (a : K) * X) (by simp) (by simp)
-
-private theorem coeff_rescaleAlgHom (a : Kˣ) (f : K⸨X⸩) (n : ℤ) :
-    (rescaleAlgHom a f).coeff n = (a : K) ^ n * f.coeff n :=
-  coeff_substAlgHom_C_mul_X a.ne_zero f n
-
-private theorem rescaleAlgHom_mul_apply (a b : Kˣ) (f : K⸨X⸩) :
-    rescaleAlgHom (a * b) f = rescaleAlgHom a (rescaleAlgHom b f) := by
-  ext n
-  rw [coeff_rescaleAlgHom, coeff_rescaleAlgHom, coeff_rescaleAlgHom, Units.val_mul, mul_zpow,
-    mul_assoc]
-
-private theorem rescaleAlgHom_one_apply (f : K⸨X⸩) : rescaleAlgHom 1 f = f := by
-  ext n
-  rw [coeff_rescaleAlgHom, Units.val_one, one_zpow, one_mul]
-
-/-- The rescaling `f (X) ↦ f (a X)` of Laurent series by a unit `a`, as a `K`-algebra
-automorphism. It multiplies the coefficient of `Xⁿ` by `a ^ n`, and the automorphisms for `a` and
-`b` compose to the one for `a * b`. -/
-noncomputable def rescale : Kˣ →* (K⸨X⸩ ≃ₐ[K] K⸨X⸩) where
-  toFun a := AlgEquiv.ofAlgHom (rescaleAlgHom a) (rescaleAlgHom a⁻¹)
-    (AlgHom.ext fun f ↦ by
-      rw [AlgHom.comp_apply, ← rescaleAlgHom_mul_apply, mul_inv_cancel, rescaleAlgHom_one_apply,
-        AlgHom.id_apply])
-    (AlgHom.ext fun f ↦ by
-      rw [AlgHom.comp_apply, ← rescaleAlgHom_mul_apply, inv_mul_cancel, rescaleAlgHom_one_apply,
-        AlgHom.id_apply])
-  map_one' := AlgEquiv.ext rescaleAlgHom_one_apply
-  map_mul' a b := AlgEquiv.ext (rescaleAlgHom_mul_apply a b)
-
-/-- Rescaling by `a` multiplies the coefficient of `Xⁿ` by `a ^ n`. -/
-@[simp]
-theorem coeff_rescale (a : Kˣ) (f : K⸨X⸩) (n : ℤ) :
-    (rescale a f).coeff n = (a : K) ^ n * f.coeff n :=
-  coeff_rescaleAlgHom a f n
-
-/-- Rescaling by `a` is the substitution `X ↦ a X`, so it inherits, for instance, continuity and
-the chain rule from `substAlgHom`. -/
-theorem rescale_toAlgHom (a : Kˣ) :
-    (rescale a : K⸨X⸩ →ₐ[K] K⸨X⸩) = substAlgHom (φ := C (a : K) * X) (by simp) (by simp) := by
-  ext f n
-  rw [AlgEquiv.coe_toAlgHom, coeff_rescale, coeff_substAlgHom_C_mul_X a.ne_zero]
-
-/-- Rescaling sends the monomial `c Xⁿ` to `a ^ n c Xⁿ`. -/
-@[simp]
-theorem rescale_single (a : Kˣ) (n : ℤ) (c : K) :
-    rescale a (single n c) = single n ((a : K) ^ n * c) := by
-  ext m
-  rcases eq_or_ne m n with rfl | h
-  · simp
-  · simp [coeff_single_of_ne h]
-
-/-- On power series, rescaling Laurent series is `PowerSeries.rescale`. -/
-@[simp]
-theorem rescale_coe (a : Kˣ) (f : K⟦X⟧) :
-    rescale a (f : K⸨X⸩) = ((PowerSeries.rescale (a : K) f : K⟦X⟧) : K⸨X⸩) := by
-  ext n
-  rw [coeff_rescale, coeff_coe_rescale]
+  simpa using congrArg (fun g : K⸨X⸩ →ₐ[K] K⸨X⸩ ↦ (g f).coeff n)
+    (rescale_toAlgHom (Units.mk0 a ha)).symm
 
 /-! ### Naturality in the coefficient field -/
 

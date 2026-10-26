@@ -76,8 +76,7 @@ theorem rescale_expand (a : Kˣ) (d : ℕ+) (f : K⸨X⸩) :
   rw [coeff_rescale]
   by_cases hn : (d : ℤ) ∣ n
   · obtain ⟨k, rfl⟩ := hn
-    rw [coeff_expand_mul, coeff_expand_mul, coeff_rescale, zpow_mul, zpow_natCast,
-      Units.val_pow_eq_pow_val]
+    rw [coeff_expand_mul, coeff_expand_mul, coeff_rescale, zpow_mul, zpow_natCast]
   · rw [coeff_expand_of_not_dvd d f hn, coeff_expand_of_not_dvd d _ hn, mul_zero]
 
 /-- Rescaling by a `d`-th root of unity fixes every series expanded by `X ↦ X ^ d`. -/
@@ -246,7 +245,8 @@ theorem coeff_levelKummer (η : rootsOfUnity d K) (x : level K d) (k : ℤ) :
       ((η : Kˣ) : K) ^ k * ((x : puiseuxField K) : HahnSeries ℚ K).coeff ((k : ℚ) / d) := by
   obtain ⟨f, hf⟩ : ∃ f, levelEmbedding K d f = x := (mem_level_iff K d x).mp x.2
   rw [coe_levelKummer_of_coe_eq η hf.symm, ← hf, coe_levelEmbedding, coe_levelEmbedding,
-    coeff_ramifiedEmbedding_intCast_div, coeff_ramifiedEmbedding_intCast_div, coeff_rescale]
+    coeff_ramifiedEmbedding_intCast_div, coeff_ramifiedEmbedding_intCast_div, coeff_rescale,
+    Units.val_zpow_eq_zpow_val]
 
 /-- **Restriction of Kummer automorphisms.** For `n ∣ m`, the Kummer automorphism of level `m`
 attached to `η` restricts on level `n` to the Kummer automorphism attached to `η ^ (m / n)`. -/
