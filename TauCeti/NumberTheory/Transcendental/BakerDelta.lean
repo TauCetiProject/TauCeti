@@ -82,6 +82,12 @@ private theorem multichoose_X_add_one_succ (k : ℕ) :
   push_cast
   linear_combination -(Ring.multichoose (X + 1 : ℚ[X]) k * X) * h
 
+/-- Composition with `q` is the binomial-ring specialisation `X ↦ q`: `Δ(q; n)` is
+`Ring.multichoose (q + 1) n`. -/
+private theorem multichoose_X_add_one_comp (q : ℚ[X]) (n : ℕ) :
+    (Ring.multichoose (X + 1 : ℚ[X]) n).comp q = Ring.multichoose (q + 1) n := by
+  simpa using Ring.map_multichoose (compRingHom q) (X + 1) n
+
 /-- `Δ(L X; k)` has integral coefficients when each of `1, …, k` divides `L`: it is the product of
 the integral linear polynomials `1 + (L / j) X` for `1 ≤ j ≤ k`. -/
 private theorem multichoose_X_add_one_comp_C_mul_X_mem_lifts {k : ℕ} {L : ℤ}
@@ -125,12 +131,9 @@ theorem multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts {k : ℕ} {L : ℤ}
             (Ring.multichoose (X + 1 : ℚ[X]) k).comp
               (C ((a + 1 : ℤ) : ℚ) + C (L : ℚ) * X) := by
       intro a
-      have hcomp (q : ℚ[X]) (n : ℕ) :
-          (Ring.multichoose (X + 1 : ℚ[X]) n).comp q = Ring.multichoose (q + 1) n := by
-        simpa using Ring.map_multichoose (compRingHom q) (X + 1) n
-      rw [hcomp, hcomp, hcomp, Int.cast_add, Int.cast_one, C_add, C_1,
-        add_right_comm _ (1 : ℚ[X])]
-      exact Ring.multichoose_succ_succ _ k
+      convert Ring.multichoose_succ_succ (C (a : ℚ) + C (L : ℚ) * X + 1) k using 2 <;>
+        simp only [multichoose_X_add_one_comp, Int.cast_add, Int.cast_one, map_add, map_one] <;>
+        congr 1 <;> ring
     induction a using Int.induction_on with
     | zero => simpa [← lifts_iff_liftsRing] using multichoose_X_add_one_comp_C_mul_X_mem_lifts hL
     | succ n hn =>
@@ -172,6 +175,12 @@ theorem lcm_pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast
     (L := ((Finset.Icc 1 k).lcm id : ℕ)) (fun j hj => Int.natCast_dvd_natCast.mpr
       (Finset.dvd_lcm (f := id) hj)) l m x
 
+/-- The coefficient length of a linear polynomial `c X + d` is at most `‖c‖ + ‖d‖`. -/
+private theorem l1Norm_C_mul_X_add_C_le {R : Type*} [SeminormedRing R] (c d : R) :
+    (C c * X + C d).l1Norm ≤ ‖c‖ + ‖d‖ := by
+  rw [C_mul_X_eq_monomial]
+  simpa [l1Norm_monomial, l1Norm_C] using l1Norm_add_le (monomial 1 c) (C d)
+
 /-- The coefficient length of the translate `Δ(X + x; k)` is at most `(n + k + 1 choose k)`
 whenever `|x| ≤ n`. -/
 private theorem l1Norm_taylor_multichoose_X_add_one_le {x : ℚ} {n : ℕ} (hx : |x| ≤ n)
@@ -180,34 +189,33 @@ private theorem l1Norm_taylor_multichoose_X_add_one_le {x : ℚ} {n : ℕ} (hx :
   induction k with
   | zero => simp
   | succ k ih =>
-    have hk : (0 : ℚ) < (k : ℚ) + 1 := by positivity
     -- The new linear factor is `X / (k + 1) + (x / (k + 1) + 1)`.
     have hlin : taylor x (C ((k + 1 : ℚ)⁻¹) * X + 1) =
         C ((k + 1 : ℚ)⁻¹) * X + C ((k + 1 : ℚ)⁻¹ * x + 1) := by
       rw [map_add, taylor_mul, taylor_C, taylor_X, taylor_one, C_add, C_mul, C_1]
       ring
     have hlin' : (taylor x (C ((k + 1 : ℚ)⁻¹) * X + 1)).l1Norm ≤ ((n + k + 2 : ℝ)) / (k + 1) := by
-      have hk' : (0 : ℝ) < (k : ℝ) + 1 := by positivity
-      have hx' : |(x : ℝ)| ≤ n := by exact_mod_cast hx
-      rw [hlin, C_mul_X_eq_monomial]
-      refine (l1Norm_add_le _ _).trans ?_
-      rw [l1Norm_monomial, l1Norm_C, ← Rat.norm_cast_real, ← Rat.norm_cast_real,
-        Real.norm_eq_abs, Real.norm_eq_abs]
-      push_cast
-      have h1 : |((k : ℝ) + 1)⁻¹ * x + 1| ≤ ((k : ℝ) + 1)⁻¹ * n + 1 := by
-        refine (abs_add_le _ _).trans ?_
-        rw [abs_mul, abs_of_pos (inv_pos.mpr hk'), abs_one]
-        gcongr
-      rw [abs_of_pos (inv_pos.mpr hk')]
-      calc ((k : ℝ) + 1)⁻¹ + |((k : ℝ) + 1)⁻¹ * x + 1|
-          ≤ ((k : ℝ) + 1)⁻¹ + (((k : ℝ) + 1)⁻¹ * n + 1) := by gcongr
+      have hx' : ‖x‖ ≤ n := by
+        simp only [← Rat.norm_cast_real, Real.norm_eq_abs]
+        exact_mod_cast hx
+      have hc : ‖(k + 1 : ℚ)⁻¹‖ = ((k : ℝ) + 1)⁻¹ := by
+        simp only [← Rat.norm_cast_real, Real.norm_eq_abs]
+        push_cast
+        exact abs_of_pos (by positivity)
+      rw [hlin]
+      calc (C ((k + 1 : ℚ)⁻¹) * X + C ((k + 1 : ℚ)⁻¹ * x + 1)).l1Norm
+          ≤ ‖(k + 1 : ℚ)⁻¹‖ + (‖(k + 1 : ℚ)⁻¹‖ * ‖x‖ + 1) := by
+            refine (l1Norm_C_mul_X_add_C_le _ _).trans ?_
+            gcongr
+            exact (norm_add_le _ _).trans (by rw [norm_mul, norm_one])
+        _ ≤ ((k : ℝ) + 1)⁻¹ + (((k : ℝ) + 1)⁻¹ * n + 1) := by rw [hc]; gcongr
         _ = (n + k + 2) / (k + 1) := by field_simp; ring
     have hchoose : ((n + (k + 1) + 1).choose (k + 1) : ℝ) * (k + 1) =
         ((n + k + 1).choose k : ℝ) * (n + k + 2) := by
-      have := Nat.add_one_mul_choose_eq (n + k + 1) k
-      rw [show n + (k + 1) + 1 = n + k + 1 + 1 by ring]
-      exact_mod_cast (by linarith [this] : ((n + k + 1 + 1).choose (k + 1)) * (k + 1) =
-        (n + k + 1).choose k * (n + k + 2))
+      have := congrArg (Nat.cast : ℕ → ℝ) (Nat.add_one_mul_choose_eq (n + k + 1) k)
+      rw [show n + (k + 1) + 1 = n + k + 1 + 1 by omega]
+      push_cast at this ⊢
+      linarith
     rw [multichoose_X_add_one_succ, taylor_mul]
     refine (l1Norm_mul_le _ _).trans ?_
     calc (taylor x (Ring.multichoose (X + 1 : ℚ[X]) k)).l1Norm *
@@ -223,14 +231,15 @@ private theorem l1Norm_taylor_multichoose_X_add_one_le {x : ℚ} {n : ℕ} (hx :
 theorem abs_eval_hasseDeriv_multichoose_X_add_one_pow_le {x : ℚ} {n : ℕ} (hx : |x| ≤ n)
     (k l m : ℕ) :
     |(hasseDeriv m (Ring.multichoose (X + 1 : ℚ[X]) k ^ l)).eval x| ≤ 2 ^ (l * (n + k + 1)) := by
-  have h : ((|(hasseDeriv m (Ring.multichoose (X + 1 : ℚ[X]) k ^ l)).eval x| : ℚ) : ℝ) ≤
+  have h : ‖(hasseDeriv m (Ring.multichoose (X + 1 : ℚ[X]) k ^ l)).eval x‖ ≤
       2 ^ (l * (n + k + 1)) := by
-    rw [Rat.cast_abs, ← Real.norm_eq_abs, Rat.norm_cast_real, ← taylor_coeff, taylor_pow]
+    rw [← taylor_coeff, taylor_pow]
     refine (norm_coeff_le_l1Norm _ m).trans ((l1Norm_pow_le _ l).trans ?_)
     rw [pow_mul']
     refine pow_le_pow_left₀ (l1Norm_nonneg _) ?_ l
     exact (l1Norm_taylor_multichoose_X_add_one_le hx k).trans
       (by exact_mod_cast Nat.choose_le_two_pow _ _)
-  exact_mod_cast h
+  rw [← Rat.cast_le (K := ℝ)]
+  simpa [← Rat.norm_cast_real, Real.norm_eq_abs] using h
 
 end TauCeti
