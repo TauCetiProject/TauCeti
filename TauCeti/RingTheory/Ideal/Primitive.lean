@@ -120,7 +120,7 @@ theorem mem_jacobson_iff_forall_mem_isPrimitive {a : R} :
   rfl
 
 /-- Zero Jacobson radical means that primitive ideals separate nonzero elements. -/
-theorem jacobson_eq_bot_iff_exists_isPrimitive :
+theorem jacobson_eq_bot_iff_forall_ne_zero_exists_isPrimitive_notMem :
     Ring.jacobson R = ⊥ ↔
       ∀ a : R, a ≠ 0 → ∃ I : Ideal R, I.IsPrimitive ∧ a ∉ I := by
   simp only [Submodule.eq_bot_iff, mem_jacobson_iff_forall_mem_isPrimitive]
