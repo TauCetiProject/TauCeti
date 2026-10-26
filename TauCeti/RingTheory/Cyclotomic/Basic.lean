@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+public import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Computable
 
 /-!
@@ -512,9 +512,7 @@ theorem reduce_eq_sum (p : ℕ) (r : ZMod p) (x : Cyclotomic e) :
 /-- Reduction at an `e`-th primitive root in a prime field is a ring homomorphism. -/
 noncomputable def reduceRingHom (p : ℕ) [Fact p.Prime] [NeZero e]
     (r : ZMod p) (hr : IsPrimitiveRoot r e) : Cyclotomic e →+* ZMod p :=
-  evalRingHom (Int.castRingHom (ZMod p)) r <| by
-    rw [← eval_map, map_cyclotomic]
-    exact hr.isRoot_cyclotomic (NeZero.pos e)
+  evalRingHom (Int.castRingHom (ZMod p)) r (hr.eval₂_cyclotomic _)
 
 -- Not `@[simp]`: `reduce p r` is multiplicative only when `r` is a root of the cyclotomic
 -- polynomial, so it has no `simp` API of its own, and rewriting `reduceRingHom` to it would stop
@@ -567,16 +565,10 @@ theorem conj_complexRoot_eq_pow_sub_one :
   rw [← pow_succ', Nat.sub_add_cancel (NeZero.pos e)]
   exact isPrimitiveRoot_complexRoot.pow_eq_one
 
-/-- The distinguished complex root annihilates the integral cyclotomic polynomial. -/
-theorem eval₂_cyclotomic_complexRoot [NeZero e] :
-    (cyclotomic e ℤ).eval₂ (Int.castRingHom ℂ) (complexRoot e) = 0 := by
-  rw [← eval_map, map_cyclotomic]
-  exact (isPrimitiveRoot_complexRoot (e := e)).isRoot_cyclotomic (NeZero.pos e)
-
 /-- The pinned embedding of exact cyclotomic integers into `ℂ`, sending `ζ` to
 `exp (2πi/e)`. -/
 noncomputable def complexEmbedding [NeZero e] : Cyclotomic e →+* ℂ :=
-  evalRingHom (Int.castRingHom ℂ) (complexRoot e) eval₂_cyclotomic_complexRoot
+  evalRingHom (Int.castRingHom ℂ) (complexRoot e) (isPrimitiveRoot_complexRoot.eval₂_cyclotomic _)
 
 /-- The pinned embedding evaluates the canonical polynomial representative at `exp (2πi/e)`. -/
 theorem complexEmbedding_apply [NeZero e] (x : Cyclotomic e) :

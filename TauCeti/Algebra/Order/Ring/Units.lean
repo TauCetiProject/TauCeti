@@ -34,6 +34,12 @@ public section
 
 namespace Units
 
+/-- The underlying set of positive units is the preimage of the positive interval under `val`. -/
+@[simp]
+theorem coe_posSubgroup (R : Type*) [Semiring R] [LinearOrder R] [IsStrictOrderedRing R] :
+    (Units.posSubgroup R : Set Rˣ) = Units.val ⁻¹' Set.Ioi (0 : R) :=
+  (rfl)
+
 /-- The positive units of a linearly ordered ring form an index-`2`, hence finite-index,
 subgroup. -/
 instance instFiniteIndexPosSubgroup (R : Type*) [Ring R] [LinearOrder R] [IsStrictOrderedRing R] :

@@ -71,6 +71,8 @@ of a curvature form, its self-dual part and its Chern–Weil density.
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_neg_one`: in an even positive middle degree
   the self-dual and anti-self-dual forms each make up half of `⋀ᵏ V`. In dimension four, `Λ⁺` and
   `Λ⁻` have dimension three.
+* `Orientation.hodgeStar_coe_of_mem_eigenspace_one`: forms in the `1`-eigenspace of `⋆` are
+  self-dual, `⋆x = x`.
 * `TauCeti.inner_ιMulti_two_eq_inner_ιInv_contractLeft`: on two-forms, wedging with `u` is adjoint
   to contracting with `⟪u, ·⟫`, `⟪u ∧ w, b⟫ = ⟪w, u ⌟ b⟫`.
 * `Orientation.inner_ιMulti_ιInv_contractLeft_add_hodgeStar`: for a unit vector `s` in dimension
@@ -305,6 +307,13 @@ theorem two_mul_finrank_eigenspace_hodgeStar_neg_one {k : ℕ} (hk : Even k) (hk
     2 * finrank ℝ (Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) (-1)) =
       n.choose k :=
   o.two_mul_finrank_eigenspace_hodgeStar hk hk₀ hkk (by norm_num)
+
+/-- A form in the `1`-eigenspace of the Hodge star is self-dual: `⋆x = x`. -/
+@[simp]
+theorem hodgeStar_coe_of_mem_eigenspace_one {k : ℕ} (hkk : k + k = finrank ℝ V)
+    (x : Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) 1) :
+    o.hodgeStar hkk x = x := by
+  simpa using Module.End.mem_eigenspace_iff.1 x.2
 
 /-! ### Two-forms split along a unit vector -/
 

@@ -16,6 +16,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
+import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 
 /-!
 # The isometry group of a bilinear form
@@ -309,15 +310,8 @@ variable (A : Type*) [CommSemiring A] [Algebra R A]
 /-- Base change along an `R`-algebra `A` carries an isometry of `B` to an isometry of the
 base-changed form. -/
 theorem IsIsometry.baseChange (hf : IsIsometry B f) :
-    IsIsometry (LinearMap.BilinForm.baseChange A B) (f.baseChange A) := by
-  rw [isIsometry_iff]
-  intro x y
-  induction x using TensorProduct.inductionOn with
-  | add x₁ x₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-  | tmul a m =>
-      induction y using TensorProduct.inductionOn with
-      | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-      | tmul a' m' => simp [hf.apply m m']
+    IsIsometry (LinearMap.BilinForm.baseChange A B) (f.baseChange A) :=
+  isIsometry_iff.mpr (LinearMap.BilinForm.baseChange_baseChange_baseChange (A := A) hf.apply)
 
 /-- Base change along an `R`-algebra `A` is a group homomorphism
 `Aut(M, B) →* Aut(A ⊗[R] M, B_A)`. For `R = ℤ` and `A = ℂ` this is the action of the arithmetic

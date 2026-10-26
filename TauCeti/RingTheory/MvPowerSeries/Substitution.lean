@@ -7,6 +7,9 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.RingTheory.PowerSeries.Substitution
+-- Proof-only: coefficients of three-variable polynomials, and quotients by an ideal.
+import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.Algebra.MvPolynomial.Fin.Three
 
 /-!
 # Evaluating a substitution over coefficients that need not be discrete
@@ -57,11 +60,33 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   without constant term preserves the constant coefficient.
 * `MvPowerSeries.hasSubst_finTwo` : two substitutable series form a substitution family `![x, y]`
   for the two variables indexed by `Fin 2`.
+* `MvPowerSeries.eval₂_subst_finTwo` : evaluating `G(x, y)` is evaluating `G` at the values of
+  `x` and `y`.
 * `MvPowerSeries.powerSeriesSubst_subst_finTwo_eq_add` : a series `g` with
   `g(G(X, Y)) = g(X) + g(Y)` satisfies `g(G(x, y)) = g(x) + g(y)` for substitutable `x, y`.
 * `MvPowerSeries.finTwo_X_eq_X` : the pair `![X 0, X 1]` is the family of variables `X`.
 * `MvPowerSeries.coeff_subst_X_zero`, `MvPowerSeries.coeff_subst_zero_X` : the coefficients of
   `f(X, 0)` and `f(0, Y)` are the coefficients of the pure powers of `X` and of `Y` in `f(X, Y)`.
+* `MvPowerSeries.coeff_subst_X_one_X_zero` : the coefficients of `f(Y, X)`.
+* `MvPowerSeries.coeff_subst_X_add_X_X`, `MvPowerSeries.coeff_subst_X_X_add_X`,
+  `MvPowerSeries.coeff_subst_X_zero_X_one`, `MvPowerSeries.coeff_subst_X_one_X_two` : the
+  coefficients of `g(X + Y, Z)`, `g(X, Y + Z)`, `g(X, Y)` and `g(Y, Z)` for a two-variable series
+  `g`, the four terms of the additive 2-cocycle identity.
+* `MvPowerSeries.coeff_subst_coe_pair` : the coefficients of a two-variable series with two
+  polynomials substituted into it.
+* `MvPowerSeries.coeff_subst_X_add_X_X_of_ne`, `MvPowerSeries.coeff_subst_X_X_of_ne` : the
+  coefficients of `g(Xₐ + X_b, X_c)` and `g(Xₐ, X_c)` for distinct variables `a`, `b`, `c`.
+* `MvPowerSeries.subst_coe_eq_coe_aeval` : substituting polynomials into a polynomial is
+  evaluating it.
+* `MvPowerSeries.subst_coe_pair_eq_coe_aeval` : the same for a two-variable polynomial and a
+  pair of polynomials.
+* `MvPowerSeries.coeff_subst_mem_span` : the coefficients of `f(a)` lie in the ideal generated
+  by the coefficients of `f`.
+* `MvPowerSeries.subst_eq_subst_of_coeff_mem` : if the coefficients of `f` annihilate an ideal `J`,
+  then `f(a) = f(b)` for families `a` and `b` that agree modulo `J`.
+* `MvPowerSeries.subst_X_add_X_add_eq` : if the coefficients of `G` pairwise multiply to zero, then
+  `(X + Y + G)(u', v') = u' + v' + G(u, v)` for pairs `(u', v')` and `(u, v)` that agree modulo
+  them.
 
 ## Separating multivariable parameters
 
@@ -331,7 +356,226 @@ theorem coeff_subst_zero_X (f : MvPowerSeries (Fin 2) O) (n : ℕ) :
       simp [Finsupp.prod_fintype, hd₀, PowerSeries.coeff_X_pow, this]
     · simp [Finsupp.prod_fintype, hd₀]
 
+/-- Swapping the variables of a two-variable series `f(X, Y)`: the coefficient of `XⁱYʲ` in
+`f(Y, X)` is the coefficient of `XʲYⁱ` in `f`. -/
+theorem coeff_subst_X_one_X_zero (f : MvPowerSeries (Fin 2) O) (d : Fin 2 →₀ ℕ) :
+    coeff d (f.subst ![X 1, X 0]) =
+      coeff (Finsupp.single 0 (d 1) + Finsupp.single 1 (d 0)) f := by
+  -- Substituting `![X 1, X 0]` is renaming the variables along the swap of `0` and `1`.
+  have hX : ![(X 1 : MvPowerSeries (Fin 2) O), X 0] = X ∘ (Equiv.swap 0 1).toEmbedding := by
+    funext s
+    fin_cases s <;> simp
+  have hd : (Finsupp.single (0 : Fin 2) (d 1) + Finsupp.single 1 (d 0)).embDomain
+      (Equiv.swap (0 : Fin 2) 1).toEmbedding = d := by
+    ext i
+    fin_cases i <;> simp
+  rw [hX, ← rename_eq_subst, ← coeff_embDomain_rename _ f, hd]
+
 end FinTwo
+
+section FinThree
+
+/-!
+### Two-variable series substituted into three variables
+
+The coefficient of `XⁱYʲZᵏ` in each of `g(X + Y, Z)`, `g(X, Y + Z)`, `g(X, Y)` and `g(Y, Z)`, for a
+two-variable series `g`. These are the power-series analogues of
+`MvPolynomial.coeff_aeval_X_add_X_X` and its companions, and turn the additive 2-cocycle identity
+`g(X, Y) + g(X + Y, Z) = g(X, Y + Z) + g(Y, Z)` into linear equations on the coefficients of `g`.
+-/
+
+open Finsupp
+
+variable {O : Type*} [CommRing O]
+
+/-- Substituting two polynomials into a two-variable series, coefficientwise. -/
+theorem coeff_subst_coe_pair (g : MvPowerSeries (Fin 2) O) (u v : MvPolynomial τ O)
+    (huv : HasSubst ![(u : MvPowerSeries τ O), v]) (e : τ →₀ ℕ) :
+    coeff e (g.subst ![(u : MvPowerSeries τ O), v]) =
+      ∑ᶠ d : Fin 2 →₀ ℕ, coeff d g * (u ^ d 0 * v ^ d 1).coeff e := by
+  rw [coeff_subst huv]
+  refine finsum_congr fun d ↦ ?_
+  simp [Finsupp.prod_fintype, ← MvPolynomial.coe_pow, ← MvPolynomial.coe_mul,
+    MvPolynomial.coeff_coe]
+
+/-- The coefficients of `g(Xₐ + X_b, X_c)`, for distinct variables `a`, `b`, `c`. -/
+theorem coeff_subst_X_add_X_X_of_ne {a b c : Fin 3} (hab : a ≠ b) (hac : a ≠ c)
+    (hbc : b ≠ c) (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
+    coeff d (g.subst ![X a + X b, X c]) =
+      (d a + d b).choose (d a) * coeff (single 0 (d a + d b) + single 1 (d c)) g := by
+  simp only [← MvPolynomial.coe_X, ← MvPolynomial.coe_add]
+  rw [coeff_subst_coe_pair _ _ _ (hasSubst_of_constantCoeff_zero fun s ↦ by
+    fin_cases s <;> simp), finsum_eq_single _ (single 0 (d a + d b) + single 1 (d c))]
+  · rw [MvPolynomial.coeff_add_pow_mul_X_pow_fin_three hab hac hbc]
+    simp [mul_comm]
+  · intro e he
+    rw [MvPolynomial.coeff_add_pow_mul_X_pow_fin_three hab hac hbc, ite_eq_right, mul_zero]
+    rintro ⟨h₁, h₂⟩
+    exact he (by ext i; fin_cases i <;> simp [h₁, h₂])
+
+/-- The coefficients of `g(Xₐ, X_c)`, for distinct variables `a`, `b`, `c`. -/
+theorem coeff_subst_X_X_of_ne {a b c : Fin 3} (hab : a ≠ b) (hac : a ≠ c) (hbc : b ≠ c)
+    (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
+    coeff d (g.subst ![(X a : MvPowerSeries (Fin 3) O), X c]) =
+      if d b = 0 then coeff (single 0 (d a) + single 1 (d c)) g else 0 := by
+  -- Substituting `![X a, X c]` is renaming the variables along the embedding `![a, c]`.
+  have he : Function.Injective ![a, c] := fun i j h ↦ by
+    fin_cases i <;> fin_cases j <;> simp_all [eq_comm]
+  let e : Fin 2 ↪ Fin 3 := ⟨![a, c], he⟩
+  have hX : ![(X a : MvPowerSeries (Fin 3) O), X c] = X ∘ e := by
+    funext s
+    fin_cases s <;> simp [e]
+  have hb : b ∉ Set.range e := by
+    rintro ⟨i, hi⟩
+    fin_cases i
+    exacts [hab hi, hbc hi.symm]
+  rw [hX, ← rename_eq_subst]
+  split_ifs with hd
+  · have hd' : (single (0 : Fin 2) (d a) + single 1 (d c)).embDomain e = d := by
+      ext i
+      obtain rfl | rfl | rfl : i = a ∨ i = b ∨ i = c := by omega
+      · exact (embDomain_apply_self e _ 0).trans (by simp)
+      · rw [embDomain_of_notMem_range e _ _ hb, hd]
+      · exact (embDomain_apply_self e _ 1).trans (by simp)
+    rw [← coeff_embDomain_rename e g, hd']
+  · exact coeff_rename_eq_zero e g fun ⟨x, hx⟩ ↦ hd (hx ▸ mapDomain_of_notMem_range x b hb)
+
+/-- The coefficient of `XⁱYʲZᵏ` in `g(X + Y, Z)` is `(i + j).choose i` times that of `Xⁱ⁺ʲYᵏ`
+in `g`. -/
+theorem coeff_subst_X_add_X_X (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
+    coeff d (g.subst ![X 0 + X 1, X 2]) =
+      (d 0 + d 1).choose (d 0) * coeff (single 0 (d 0 + d 1) + single 1 (d 2)) g :=
+  coeff_subst_X_add_X_X_of_ne (by decide) (by decide) (by decide) g d
+
+/-- The coefficient of `XⁱYʲZᵏ` in `g(X, Y + Z)` is `(j + k).choose j` times that of `XⁱYʲ⁺ᵏ`
+in `g`. -/
+theorem coeff_subst_X_X_add_X (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
+    coeff d (g.subst ![X 0, X 1 + X 2]) =
+      (d 1 + d 2).choose (d 1) * coeff (single 0 (d 0) + single 1 (d 1 + d 2)) g := by
+  -- `g(X, Y + Z)` is `g(Y, X)` evaluated at `(Y + Z, X)`.
+  have hb : HasSubst ![(X 1 + X 2 : MvPowerSeries (Fin 3) O), X 0] :=
+    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
+  have h : g.subst ![(X 0 : MvPowerSeries (Fin 3) O), X 1 + X 2] =
+      (g.subst ![(X 1 : MvPowerSeries (Fin 2) O), X 0]).subst ![X 1 + X 2, X 0] := by
+    rw [subst_comp_subst_apply HasSubst.X_X hb]
+    congr 1
+    funext s
+    fin_cases s <;> simp [subst_X hb]
+  rw [h, coeff_subst_X_add_X_X_of_ne (by decide) (by decide) (by decide),
+    coeff_subst_X_one_X_zero]
+  simp
+
+/-- The coefficient of `XⁱYʲZᵏ` in `g(X, Y)` is that of `XⁱYʲ` in `g` if `k = 0`, and `0`
+otherwise. -/
+theorem coeff_subst_X_zero_X_one (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
+    coeff d (g.subst ![(X 0 : MvPowerSeries (Fin 3) O), X 1]) =
+      if d 2 = 0 then coeff (single 0 (d 0) + single 1 (d 1)) g else 0 :=
+  coeff_subst_X_X_of_ne (b := 2) (by decide) (by decide) (by decide) g d
+
+/-- The coefficient of `XⁱYʲZᵏ` in `g(Y, Z)` is that of `XʲYᵏ` in `g` if `i = 0`, and `0`
+otherwise. -/
+theorem coeff_subst_X_one_X_two (g : MvPowerSeries (Fin 2) O) (d : Fin 3 →₀ ℕ) :
+    coeff d (g.subst ![(X 1 : MvPowerSeries (Fin 3) O), X 2]) =
+      if d 0 = 0 then coeff (single 0 (d 1) + single 1 (d 2)) g else 0 :=
+  coeff_subst_X_X_of_ne (b := 0) (by decide) (by decide) (by decide) g d
+
+end FinThree
+
+section CoeffMem
+
+variable {O : Type*} [CommRing O]
+
+/-- Substituting polynomials into a polynomial, both viewed as power series, is evaluating the
+polynomial. -/
+theorem subst_coe_eq_coe_aeval (p : MvPolynomial σ O) (q : σ → MvPolynomial τ O) :
+    (p : MvPowerSeries σ O).subst (fun s ↦ (q s : MvPowerSeries τ O)) =
+      ((MvPolynomial.aeval q p : MvPolynomial τ O) : MvPowerSeries τ O) := by
+  rw [subst_coe]
+  simpa using (DFunLike.congr_fun
+    (MvPolynomial.comp_aeval (R := O) q (MvPolynomial.coeToMvPowerSeries.algHom O)) p).symm
+
+/-- Substituting two polynomials into a two-variable polynomial, all viewed as power series, is
+evaluating the polynomial. -/
+theorem subst_coe_pair_eq_coe_aeval (p : MvPolynomial (Fin 2) O) (u v : MvPolynomial τ O) :
+    (p : MvPowerSeries (Fin 2) O).subst ![(u : MvPowerSeries τ O), v] =
+      ((MvPolynomial.aeval ![u, v] p : MvPolynomial τ O) : MvPowerSeries τ O) := by
+  rw [← subst_coe_eq_coe_aeval]
+  congr 1
+  funext s
+  fin_cases s <;> simp
+
+/-- The coefficients of a substitution into `f` lie in the ideal generated by the coefficients
+of `f`. -/
+theorem coeff_subst_mem_span {f : MvPowerSeries σ O} {a : σ → MvPowerSeries τ O}
+    (ha : HasSubst a) (e : τ →₀ ℕ) :
+    coeff e (f.subst a) ∈ Ideal.span (Set.range fun d ↦ coeff d f) := by
+  rw [← Ideal.Quotient.eq_zero_iff_mem, ← coeff_map, map_subst ha]
+  have : map (Ideal.Quotient.mk (Ideal.span (Set.range fun d ↦ coeff d f))) f = 0 :=
+    ext fun d ↦ by simp
+  rw [this, ← coe_substAlgHom (ha.map _), map_zero, map_zero]
+
+/-- Substitution is insensitive to an ideal annihilated by the coefficients of the series: if the
+coefficients of `f` kill the ideal `J` and the families `a` and `b` agree modulo `J`
+coefficientwise, then `f(a) = f(b)`. For instance, `f(a + b') = f(a)` when the coefficients of
+`f` and of `b'` all lie in an ideal of square zero. -/
+theorem subst_eq_subst_of_coeff_mem {a b : σ → MvPowerSeries τ O} (ha : HasSubst a)
+    (hb : HasSubst b) {J : Ideal O} (hab : ∀ s e, coeff e (a s - b s) ∈ J)
+    {f : MvPowerSeries σ O} (hf : ∀ d, ∀ x ∈ J, coeff d f * x = 0) :
+    subst a f = subst b f := by
+  ext e
+  rw [coeff_subst ha, coeff_subst hb]
+  refine finsum_congr fun d ↦ ?_
+  -- Modulo `J` the two families agree, hence so do the monomials `aᵈ` and `bᵈ`.
+  have hmap : ∀ s, map (Ideal.Quotient.mk J) (a s) = map (Ideal.Quotient.mk J) (b s) :=
+    fun s ↦ ext fun e ↦ by
+      simpa [coeff_map, Ideal.Quotient.eq] using hab s e
+  have hd : coeff e (d.prod fun s n ↦ a s ^ n) - coeff e (d.prod fun s n ↦ b s ^ n) ∈ J := by
+    rw [← Ideal.Quotient.eq, ← coeff_map, ← coeff_map,
+      map_finsuppProd (MvPowerSeries.map (Ideal.Quotient.mk J)),
+      map_finsuppProd (MvPowerSeries.map (Ideal.Quotient.mk J))]
+    simp only [map_pow, hmap]
+  rw [smul_eq_mul, smul_eq_mul, ← sub_eq_zero, ← mul_sub]
+  exact hf d _ hd
+
+/-- For `F = X + Y + G` with the coefficients of `G` pairwise multiplying to zero, substituting
+into `F` a pair `(u', v')` that agrees with `(u, v)` modulo the coefficients of `G` gives
+`u' + v' + G(u, v)`. -/
+theorem subst_X_add_X_add_eq {G : MvPowerSeries (Fin 2) O}
+    (hG : ∀ d e, coeff d G * coeff e G = 0) {u v u' v' : MvPowerSeries τ O}
+    (h' : HasSubst ![u', v']) (h : HasSubst ![u, v])
+    (hu : ∀ e, coeff e (u' - u) ∈ Ideal.span (Set.range fun d ↦ coeff d G))
+    (hv : ∀ e, coeff e (v' - v) ∈ Ideal.span (Set.range fun d ↦ coeff d G)) :
+    (X 0 + X 1 + G).subst ![u', v'] = u' + v' + G.subst ![u, v] := by
+  rw [subst_add h', subst_add h', subst_X h', subst_X h', subst_eq_subst_of_coeff_mem
+    (J := Ideal.span (Set.range fun d ↦ coeff d G)) h' h ?_ fun d ↦ Submodule.mem_annihilator.1
+      ((Submodule.mem_annihilator_span _ _).2 fun ⟨_, e, rfl⟩ ↦ hG d e)]
+  · simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  · intro s e
+    fin_cases s
+    · simpa using hu e
+    · simpa using hv e
+
+end CoeffMem
+
+section EvalFinTwo
+
+variable {O : Type*} [CommRing O] [UniformSpace O] [DiscreteUniformity O]
+variable {T : Type*} [CommRing T] [Algebra O T] [UniformSpace T] [IsUniformAddGroup T]
+    [IsTopologicalRing T] [IsLinearTopology T T] [T2Space T] [CompleteSpace T]
+
+/-- Evaluating a substitution `G(x, y)` at `b` is evaluating `G` at the values of `x` and `y` at
+`b`. This is `MvPowerSeries.eval₂_subst` for a substitution family `![x, y]`, as for evaluating a
+formal group law at a pair of points. -/
+theorem eval₂_subst_finTwo {x y : MvPowerSeries σ O} (hx : PowerSeries.HasSubst x)
+    (hy : PowerSeries.HasSubst y) {b : σ → T} (hb : HasEval b) (G : MvPowerSeries (Fin 2) O) :
+    eval₂ (algebraMap O T) b (subst ![x, y] G) =
+      eval₂ (algebraMap O T) ![eval₂ (algebraMap O T) b x, eval₂ (algebraMap O T) b y] G := by
+  rw [eval₂_subst (hasSubst_finTwo hx hy) hb]
+  congr 1
+  funext s
+  fin_cases s <;> rfl
+
+end EvalFinTwo
 
 end MvPowerSeries
 

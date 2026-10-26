@@ -32,7 +32,10 @@ so it is a normal subgroup, and in general it is a locally constant function of 
 its order. This is the statement that the ineffective kernel of a local action chart `[U/G]` of an
 orbifold acts trivially on the whole connected chart: an element acting trivially near one point
 acts trivially everywhere, so the ineffective part of the isotropy is the same at every point of
-the chart.
+the chart. For a finite group the stabilizer equals the germ kernel on a dense open set
+(`TauCeti.MulAction.dense_setOf_stabilizer_eq_germKernel`), so on a connected chart the stabilizer
+is the kernel of the action at a dense open set of points: generically, the isotropy of `[U/G]` is
+exactly its ineffective kernel.
 
 The proof is Bochner linearization (`OpenPartialHomeomorph.exists_equivariant_chart`), which on a
 manifold gives a chart at a common fixed point of a finite group acting by `C¹` maps in which the
@@ -62,6 +65,8 @@ two origins is smooth, has order two, and is the identity off the origins, but n
   maps is the same at all points of a preconnected set.
 * `TauCeti.germKernel_eq_ker`, `TauCeti.normal_germKernel`: on a preconnected manifold, the germ
   kernel at every point is the kernel of the action, so it is normal.
+* `TauCeti.dense_setOf_stabilizer_eq_ker_of_contMDiff`: for a finite group acting by `C¹` maps on a
+  preconnected manifold, the stabilizer is the kernel of the action on a dense open set of points.
 * `TauCeti.isLocallyConstant_germKernel`, `TauCeti.isLocallyConstant_card_germKernel`: the germ
   kernel of a torsion group acting by `C¹` maps, and its order, are locally constant.
 
@@ -207,6 +212,18 @@ theorem normal_germKernel [T2Space M] [PreconnectedSpace M]
     (germKernel G x).Normal := by
   rw [germKernel_eq_ker hsmooth hG x]
   infer_instance
+
+/-- **The principal part of a finite smooth action.** For a finite group acting by `C¹` maps on a
+preconnected Hausdorff manifold without boundary, the points whose stabilizer is the kernel of the
+action form a dense set. The action need not be faithful: elements acting trivially are retained
+in every stabilizer, and generically they are the only ones. The set is also open, by
+`TauCeti.isOpen_setOf_stabilizer_eq_ker`. -/
+theorem dense_setOf_stabilizer_eq_ker_of_contMDiff [Finite G] [T2Space M] [PreconnectedSpace M]
+    (hsmooth : ∀ g : G, ContMDiff I I 1 fun x : M ↦ g • x) :
+    Dense {x : M | stabilizer G x = (toPermHom G M).ker} := by
+  have : ContinuousConstSMul G M := ⟨fun g ↦ (hsmooth g).continuous⟩
+  simpa only [germKernel_eq_ker hsmooth isMulTorsion_of_finite] using
+    dense_setOf_stabilizer_eq_germKernel (G := G) (X := M)
 
 /-- For a torsion group acting by `C¹` maps on a Hausdorff manifold without boundary, the germ
 kernel is a locally constant function of the point: it is constant on connected components, which

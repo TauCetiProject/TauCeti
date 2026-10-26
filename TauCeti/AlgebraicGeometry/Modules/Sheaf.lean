@@ -110,6 +110,14 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv_symm_apply {M 
   rw [Scheme.Modules.sectionsLinearEquiv]
   rfl
 
+variable {X} in
+/-- A morphism of `𝒪_X`-modules acts on sections over `U` as its underlying morphism of presheaves
+of modules does. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.Hom.app_apply {M N : X.Modules} (φ : M ⟶ N)
+    (U : X.Opens) (x : Γ(M, U)) :
+    φ.app U x = φ.val.app (Opposite.op U) x :=
+  (rfl)
+
 /-- The forgetful functor from `𝒪_X`-modules to sheaves of abelian groups on `X`.
 
 This is `SheafOfModules.toSheaf` for the sheaf of rings `X.ringCatSheaf`, packaged so that the

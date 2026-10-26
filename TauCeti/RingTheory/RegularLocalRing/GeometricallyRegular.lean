@@ -42,6 +42,10 @@ is a field, hence regular, but `L ⊗[k] L` is not reduced, so `L` is not geomet
   inseparable extension of `k`.
 * `TauCeti.Excellence.geometricallyRegular_iff_isSeparable`: a finite purely inseparable extension
   is geometrically regular exactly when it is separable, that is, trivial.
+* `TauCeti.Excellence.geometricallyRegular_tensorProduct_iff_of_bijective`: geometric regularity
+  is unchanged by base change along an isomorphism of fields `k → K`.
+* `TauCeti.Excellence.GeometricallyRegular.of_isLocalization`: a localization of a field is
+  geometrically regular.
 * `TauCeti.Excellence.not_geometricallyRegular_trivSqZeroExt`: the dual numbers `k[ε]/(ε²)` are
   not geometrically regular.
 
@@ -139,6 +143,46 @@ theorem not_geometricallyRegular_trivSqZeroExt (k : Type u) [Field k] :
   have hε : IsNilpotent (TrivSqZeroExt.inr 1 : TrivSqZeroExt k k) :=
     ⟨2, by rw [pow_two, TrivSqZeroExt.inr_mul_inr]⟩
   simpa using congrArg TrivSqZeroExt.snd hε.eq_zero
+
+/-- Geometric regularity does not see an isomorphism of base fields: if `algebraMap k K` is
+bijective, then `K ⊗[k] B` is geometrically regular over `K` if and only if `B` is geometrically
+regular over `k`. -/
+theorem geometricallyRegular_tensorProduct_iff_of_bijective {k K : Type u} [Field k] [Field K]
+    [Algebra k K] (h : Function.Bijective (algebraMap k K)) (B : Type v) [CommRing B]
+    [Algebra k B] : GeometricallyRegular K (K ⊗[k] B) ↔ GeometricallyRegular k B := by
+  let e : k ≃ₐ[k] K := AlgEquiv.ofBijective (Algebra.ofId k K) h
+  let φ : K ⊗[k] B ≃ₐ[k] B :=
+    (Algebra.TensorProduct.congr e.symm AlgEquiv.refl).trans (Algebra.TensorProduct.lid k B)
+  refine ⟨fun hK ↦ ⟨?_, fun L _ _ _ _ ↦ ?_⟩, fun hk ↦ ⟨?_, fun L _ _ _ _ ↦ ?_⟩⟩
+  · have := hK.isNoetherianRing
+    exact isNoetherianRing_of_ringEquiv _ φ.toRingEquiv
+  · -- Make `L` a `K`-algebra through `K ≃ k`, and cancel the base change along `k → K`.
+    let : Algebra K L := ((algebraMap k L).comp e.symm.toRingHom).toAlgebra
+    have : IsScalarTower k K L := .of_algebraMap_eq fun x ↦
+      congrArg (algebraMap k L) (e.symm_apply_apply x).symm
+    have : Module.Finite K L := .of_restrictScalars_finite k K L
+    have : IsPurelyInseparable K L := .tower_top k K L
+    exact .of_ringEquiv (Algebra.TensorProduct.cancelBaseChange k K K L B).toRingEquiv
+  · have := hk.isNoetherianRing
+    exact isNoetherianRing_of_ringEquiv _ φ.symm.toRingEquiv
+  · let : Algebra k L := ((algebraMap K L).comp (algebraMap k K)).toAlgebra
+    have : IsScalarTower k K L := .of_algebraMap_eq fun _ ↦ rfl
+    have : Module.Finite k K := .of_surjective (Algebra.linearMap k K) h.2
+    have : Module.Finite k L := .trans K L
+    have : IsPurelyInseparable k K := e.isPurelyInseparable
+    have : IsPurelyInseparable k L := .trans k K L
+    exact .of_ringEquiv (Algebra.TensorProduct.cancelBaseChange k K K L B).symm.toRingEquiv
+
+/-- A localization of a field `k` is geometrically regular over `k`: it is either zero or `k`
+itself, and in both cases smooth over `k`. -/
+theorem GeometricallyRegular.of_isLocalization {k : Type u} [Field k] (M : Submonoid k)
+    (B : Type v) [CommRing B] [Algebra k B] [IsLocalization M B] : GeometricallyRegular k B := by
+  by_cases h0 : (0 : k) ∈ M
+  · have := IsLocalization.subsingleton (S := B) h0
+    infer_instance
+  · have : Algebra.Smooth k B := .of_equiv <| IsLocalization.atUnits k M (S := B) fun x hx ↦
+      (isUnit_iff_ne_zero.mpr fun h ↦ h0 (h ▸ hx))
+    infer_instance
 
 /-! ### Checks -/
 

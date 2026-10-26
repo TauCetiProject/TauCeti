@@ -15,7 +15,7 @@ public import TauCeti.Analysis.Normed.Module.Trace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
@@ -33,7 +33,8 @@ trace formula makes the relationship between the Laplacian and the Hessian expli
 laws include the Leibniz rule and the chain rule `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a
 real function `h`, with its special case `Δ (log f) = Δ f / f - |grad f|² / f²`. On a
 finite-dimensional inner-product space, the operator agrees with Mathlib's
-flat Laplacian.
+flat Laplacian. The Hessian conventions follow Lee, *Introduction to Riemannian Manifolds*,
+Chapter 3.
 
 -/
 
@@ -153,20 +154,22 @@ variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [Charte
 /-- The Hessian applied to a vector field and a differentiable vector field is the directional
 derivative of the directional derivative of `f`, minus the derivative in the covariant derivative
 direction. -/
-theorem hessian_apply_eq_mvfderiv_sub [IsManifold I ∞ M]
+theorem hessian_apply_eq_mvfderiv_sub [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M)
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (x : M) (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (V W : (y : M) → TangentSpace I y)
     (hW : MDiffAt (T% W) x) :
     hessian I f x (V x) (W x) =
       mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
         mvfderiv I f x ((CovariantDerivative.leviCivitaConnection I M W) x (V x)) := by
-  let _ : IsManifold I (∞ + 1) M := by
-    simpa using (inferInstance : IsManifold I ∞ M)
-  have hG : ContMDiff I I.tangent ∞
-      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) :=
-    contMDiff_mgradient hf
+  let _ : IsManifold I (1 + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
+  have hG : ContMDiffAt I I.tangent 1
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x := by
+    simpa only [one_add_one_eq_two] using
+      (contMDiffAt_mgradient (I := I) (f := f) (x := x) (n := 1)
+        (by simpa only [one_add_one_eq_two] using hf))
   have hG' : MDiffAt (T% (mgradient I f)) x := hG.mdifferentiableAt (by simp)
   have hinner :=
     (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
@@ -188,26 +191,26 @@ theorem hessian_apply_eq_mvfderiv_sub [IsManifold I ∞ M]
   rw [hessian_def]
   linarith
 
-/-- The Hessian of a smooth function is symmetric for the Levi–Civita connection. -/
-theorem hessian_symm [IsManifold I ∞ M]
+/-- The Hessian of a twice continuously differentiable function is symmetric for the
+Levi–Civita connection. -/
+theorem hessian_symm [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) (v w : TangentSpace I x) :
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (x : M) (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (v w : TangentSpace I x) :
     hessian I f x v w = hessian I f x w v := by
   let V : (y : M) → TangentSpace I y := FiberBundle.extend E v
   let W : (y : M) → TangentSpace I y := FiberBundle.extend E w
   have hV : MDiffAt (T% V) x := FiberBundle.mdifferentiableAt_extend I E v
   have hW : MDiffAt (T% W) x := FiberBundle.mdifferentiableAt_extend I E w
-  let _ : IsManifold I (∞ + 1) M := by
-    simpa using (inferInstance : IsManifold I ∞ M)
-  have hessianVW := hessian_apply_eq_mvfderiv_sub hf x V W hW
-  have hessianWV := hessian_apply_eq_mvfderiv_sub hf x W V hV
-  have hmin : minSmoothness ℝ 2 ≤ (∞ : ℕ∞ω) := by simp
+  have hessianVW := hessian_apply_eq_mvfderiv_sub x hf V W hW
+  have hessianWV := hessian_apply_eq_mvfderiv_sub x hf W V hV
+  have hmin : minSmoothness ℝ 2 ≤ (2 : ℕ∞ω) := by simp
   let _ : IsManifold I (minSmoothness ℝ 2) M :=
-    IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) hmin
+    IsManifold.of_le (m := minSmoothness ℝ 2) (n := 2) hmin
   -- The mixed-derivative identity and torsion-freeness identify the remaining bracket term.
   have hbracket := mvfderiv_mlieBracket (I := I) (𝕜 := ℝ) (F := ℝ)
-    hf.contMDiffAt (by simp) hV hW
+    (n := (2 : ℕ∞ω)) hf (by simp) hV hW
   have hzero :
       (CovariantDerivative.leviCivitaConnection I M).torsion x (V x) (W x) = 0 := by
     rw [CovariantDerivative.torsion_leviCivitaConnection_eq_zero I]
@@ -649,61 +652,39 @@ theorem hessian_eq_iteratedFDeriv_model_space
         _ = _ := (iteratedFDeriv_two_apply f x
           ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w]).symm
 
-private noncomputable def tangentSpaceToModelLinearIsometryEquiv
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] (x : F) :
-    TangentSpace 𝓘(ℝ, F) x ≃ₗᵢ[ℝ] F :=
-  (NormedSpace.fromTangentSpace x).toLinearEquiv.isometryOfInner
-    (fun v w : TangentSpace 𝓘(ℝ, F) x ↦ by
-      simpa using (inner_tangentSpace_vectorSpace v w).symm)
-
-private theorem tangentSpaceToModelLinearIsometryEquiv_apply
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] (x : F)
-    (v : TangentSpace 𝓘(ℝ, F) x) :
-    tangentSpaceToModelLinearIsometryEquiv x v = NormedSpace.fromTangentSpace x v := by
-  change (tangentSpaceToModelLinearIsometryEquiv x).toLinearEquiv v = _
-  rw [show (tangentSpaceToModelLinearIsometryEquiv x).toLinearEquiv =
-      (NormedSpace.fromTangentSpace x).toLinearEquiv by
-    exact LinearEquiv.isometryOfInner_toLinearEquiv _ _]
-  simp only [ContinuousLinearEquiv.coe_toLinearEquiv]
-
-private theorem tangentSpaceToModelLinearIsometryEquiv_symm_apply
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] (x : F) (u : F) :
-    (tangentSpaceToModelLinearIsometryEquiv x).symm u =
-      (NormedSpace.fromTangentSpace x).symm u := by
-  change (tangentSpaceToModelLinearIsometryEquiv x).toLinearEquiv.symm u = _
-  rw [show (tangentSpaceToModelLinearIsometryEquiv x).toLinearEquiv =
-      (NormedSpace.fromTangentSpace x).toLinearEquiv by
-    exact LinearEquiv.isometryOfInner_toLinearEquiv _ _]
-  exact (NormedSpace.fromTangentSpace x).symm_apply_apply u
-
-private def tangentSpaceStdOrthonormalBasis
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [FiniteDimensional ℝ F] (x : F) :
-    OrthonormalBasis (Fin (Module.finrank ℝ F)) ℝ (TangentSpace (modelWithCornersSelf ℝ F) x) :=
-  (stdOrthonormalBasis ℝ F).map (tangentSpaceToModelLinearIsometryEquiv x).symm
-
-private theorem fromTangentSpace_tangentSpaceStdOrthonormalBasis_apply
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [FiniteDimensional ℝ F] (x : F) (i : Fin (Module.finrank ℝ F)) :
-    NormedSpace.fromTangentSpace x (tangentSpaceStdOrthonormalBasis x i) =
-      stdOrthonormalBasis ℝ F i := by
-  rw [tangentSpaceStdOrthonormalBasis, OrthonormalBasis.map_apply,
-    tangentSpaceToModelLinearIsometryEquiv_symm_apply]
-  exact (NormedSpace.fromTangentSpace x).apply_symm_apply _
-
-/-- The Laplace–Beltrami operator of the standard Riemannian metric is Mathlib's flat Laplacian.
-This fixes the sign convention as `Δ = div ∘ grad`. -/
-theorem laplaceBeltrami_eq_laplacian
+/-- At a point `x` where `∇ f` is differentiable, the Laplace–Beltrami operator of the standard
+Riemannian metric equals Mathlib's flat Laplacian `Δ f`. This fixes the sign convention as
+`Δ = div ∘ grad`. -/
+theorem laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
     {f : F → ℝ} {x : F} (hgrad : DifferentiableAt ℝ (∇ f) x) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) f x = Δ f x := by
-  rw [laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) f x
-      (tangentSpaceStdOrthonormalBasis x),
+  let e : TangentSpace (modelWithCornersSelf ℝ F) x ≃ₗᵢ[ℝ] F :=
+    (NormedSpace.fromTangentSpace x).toLinearEquiv.isometryOfInner
+      inner_tangentSpace_vectorSpace
+  let b := (stdOrthonormalBasis ℝ F).map e.symm
+  rw [laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) f x b,
     InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f (stdOrthonormalBasis ℝ F)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simpa only [fromTangentSpace_tangentSpaceStdOrthonormalBasis_apply] using
-    hessian_eq_iteratedFDeriv_model_space hgrad (tangentSpaceStdOrthonormalBasis x i)
-      (tangentSpaceStdOrthonormalBasis x i)
+  have he (u : F) : NormedSpace.fromTangentSpace x (e.symm u) = u := by
+    -- Expose the inverse `LinearEquiv` carried by the isometry equivalence.
+    change (NormedSpace.fromTangentSpace x) (e.toLinearEquiv.symm u) = u
+    rw [show e.toLinearEquiv = (NormedSpace.fromTangentSpace x).toLinearEquiv by
+      dsimp [e]
+      exact LinearEquiv.isometryOfInner_toLinearEquiv _ _]
+    exact (NormedSpace.fromTangentSpace x).apply_symm_apply u
+  simpa only [b, OrthonormalBasis.map_apply, he] using
+    hessian_eq_iteratedFDeriv_model_space hgrad (b i) (b i)
+
+/-- For a function `f` with `ContDiff ℝ 2 f` on a finite-dimensional real inner product space,
+the Laplace--Beltrami operator of the standard metric equals Mathlib's flat Laplacian `Δ f` at
+every point (convention `Δ = div ∘ grad`). -/
+theorem laplaceBeltrami_eq_laplacian
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    {f : F → ℝ} (hf : ContDiff ℝ 2 f) (x : F) :
+    laplaceBeltrami (modelWithCornersSelf ℝ F) f x = Δ f x := by
+  apply laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient
+  exact (hf.gradient_right (m := 1) (by norm_num)).differentiable (by norm_num) x
 
 /-! ### The squared norm -/
 
@@ -730,10 +711,8 @@ theorem hessian_norm_sq_model_space
     [FiniteDimensional ℝ F] (x : F) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x =
       2 * Module.finrank ℝ F := by
-  rw [laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) _ x
-    (tangentSpaceStdOrthonormalBasis x)]
-  simp only [hessian_norm_sq_model_space,
-    fromTangentSpace_tangentSpaceStdOrthonormalBasis_apply]
-  rw [← Finset.mul_sum, (stdOrthonormalBasis ℝ F).sum_inner_self, Fintype.card_fin]
+  rw [laplaceBeltrami_eq_laplacian
+    (contDiff_norm_sq ℝ (E := F) (n := 2)) x]
+  exact TauCeti.laplacian_norm_sq x
 
 end TauCeti.Manifold

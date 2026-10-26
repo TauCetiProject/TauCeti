@@ -9,16 +9,17 @@ public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 public import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
-public import TauCeti.Algebra.CharP.Two
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import TauCeti.LinearAlgebra.PiTensorProduct.Basic
 public import TauCeti.LinearAlgebra.PiTensorProduct.Map
+import Mathlib.Data.ZMod.Defs
 
 /-!
 # Slot sums on tensor powers and contractions in characteristic two
 
-Let `M` be a module over a commutative ring `R` of characteristic two, with an endomorphism `d`,
-and let `ι` be a finite index type. The **slot sum** of `d` is the endomorphism of the indexed
-tensor power `⨂[R] _ : ι, M` that applies `d` in one tensor factor at a time and adds the results:
+Let `M` be a module over a commutative ring `R`, with an endomorphism `d`, and let `ι` be a finite
+index type. The **slot sum** of `d` is the endomorphism of the indexed tensor power
+`⨂[R] _ : ι, M` that applies `d` in one tensor factor at a time and adds the results:
 
 ```text
 D (⨂ₜ i, m i) = ∑ i, m₁ ⊗ ⋯ ⊗ d (m i) ⊗ ⋯ ⊗ mₗ.
@@ -33,6 +34,12 @@ it squares to zero when `d` does (`TauCeti.PiTensorProduct.slotSum_comp_slotSum`
 makes the tensor power of a complex a complex on which a symmetric group, and hence a wreath
 product, acts without signs.
 
+Characteristic two is needed only of the module, not of the scalars: the identities below assume
+that every element of `M` is its own additive inverse, which holds over a ring of characteristic two
+(`TauCeti.add_self_eq_zero_of_charTwo`) and also, for instance, for a module of `𝔽₂`-valued
+cochains regarded over `ℤ`. A tensor power with at least one factor then inherits the property
+(`PiTensorProduct.add_self_eq_zero`), so terms appearing twice cancel.
+
 A contraction also passes to the tensor power. If `h` is a homotopy with `d h + h d = 1 - e`, where
 `e` commutes with `d` (typically `e = ι ∘ π` for an augmentation `ι` and a retraction `π`), then for
 a linear order on `ι` the **slot homotopy**
@@ -42,10 +49,10 @@ H = ∑ i, e ⊗ ⋯ ⊗ e ⊗ h ⊗ 1 ⊗ ⋯ ⊗ 1        (`e` before the slot
 ```
 
 satisfies `D H + H D = 1 - e ⊗ ⋯ ⊗ e` (`TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`):
-cross terms appear twice and cancel in characteristic two, and the diagonal terms telescope. This
-is the sign-free, characteristic-two form of the tensor trick, whose Koszul-signed version on
-words of every length is formalized in `TauCeti/Algebra/Homology/Contraction/TensorTrick.lean`. The
-homotopy depends on the ordering, but it need not be equivariant for anything.
+cross terms appear twice and cancel, and the diagonal terms telescope. This is the sign-free,
+characteristic-two form of the tensor trick, whose Koszul-signed version on words of every length
+is formalized in `TauCeti/Algebra/Homology/Contraction/TensorTrick.lean`. The homotopy depends on
+the ordering, but it need not be equivariant for anything.
 
 Finally, a grading `ℳ` of `M` induces the total-degree grading of the tensor power
 (`TauCeti.PiTensorProduct.totalDegreePiece`), spanned by pure tensors of homogeneous factors whose
@@ -68,14 +75,15 @@ representing cocycle in the tensor-induced resolution.
 
 ## Main results
 
-* `TauCeti.PiTensorProduct.slotSum_comp_slotSum`: in characteristic two, the slot sum of a
-  square-zero endomorphism squares to zero.
-* `TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`: in characteristic two, the slot
-  homotopy contracts the tensor power, `D H + H D = 1 - e ⊗ ⋯ ⊗ e`.
+* `TauCeti.PiTensorProduct.slotSum_comp_slotSum`: if every element of `M` is its own additive
+  inverse, the slot sum of a square-zero endomorphism squares to zero.
+* `TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`: if every element of `M` is its own
+  additive inverse, the slot homotopy contracts the tensor power, `D H + H D = 1 - e ⊗ ⋯ ⊗ e`.
 * `TauCeti.PiTensorProduct.slotSum_comp_map` and `TauCeti.PiTensorProduct.slotSum_comp_reindex`:
   the slot sum commutes with factorwise maps and with reindexing.
 * `TauCeti.PiTensorProduct.isHomogeneous_slotSum`, `TauCeti.PiTensorProduct.isHomogeneous_map`,
-  `TauCeti.PiTensorProduct.isHomogeneous_map_update` and
+  `TauCeti.PiTensorProduct.isHomogeneous_map_update`,
+  `TauCeti.PiTensorProduct.isHomogeneous_reindex` and
   `TauCeti.PiTensorProduct.isHomogeneous_slotHomotopy`: the degrees of these maps for the
   total-degree grading.
 * `TauCeti.PiTensorProduct.map_mem_totalDegreePiece_zero`,
@@ -174,8 +182,9 @@ theorem slotSum_comp_reindex [Fintype κ] [DecidableEq κ] (f : Module.End R M) 
 
 /-- In characteristic two, **the slot sum of a square-zero endomorphism squares to zero**. Applying
 `f` twice in one factor gives zero, and applying it in two distinct factors gives the same term in
-either order, so these terms cancel in pairs. -/
-theorem slotSum_comp_slotSum [CharP R 2] {f : Module.End R M} (hf : f ∘ₗ f = 0) :
+either order, so these terms cancel in pairs. Characteristic two is asked only of `M`: every
+element of `M` is its own additive inverse. -/
+theorem slotSum_comp_slotSum (hM : ∀ m : M, m + m = 0) {f : Module.End R M} (hf : f ∘ₗ f = 0) :
     slotSum ι f ∘ₗ slotSum ι f = 0 := by
   ext m
   simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, slotSum_tprod, map_sum,
@@ -184,7 +193,8 @@ theorem slotSum_comp_slotSum [CharP R 2] {f : Module.End R M} (hf : f ∘ₗ f =
   · simp only [update_self, update_idem]
     rw [← LinearMap.comp_apply, hf, LinearMap.zero_apply, MultilinearMap.map_update_zero]
   · simp only [update_of_ne hij.symm, update_of_ne hij]
-    rw [update_comm hij, add_self_eq_zero_of_charTwo R]
+    have : Nonempty ι := ⟨i⟩
+    rw [update_comm hij, PiTensorProduct.add_self_eq_zero _ hM]
 
 end SlotSum
 
@@ -231,6 +241,18 @@ theorem isHomogeneous_map {𝒩 : A → Submodule R N} {g : ι → N →ₗ[R] M
   rintro p m hm rfl
   rw [Submodule.mem_comap, PiTensorProduct.map_tprod, ← Finset.sum_add_distrib]
   exact tprod_mem_totalDegreePiece fun i ↦ (hg i).map_mem (hm i)
+
+/-- Reindexing the tensor factors along an equivalence preserves the total degree. -/
+theorem isHomogeneous_reindex [Fintype κ] (σ : ι ≃ κ) :
+    LinearMap.IsHomogeneous (PiTensorProduct.reindex R (fun _ ↦ M) σ).toLinearMap
+      (totalDegreePiece ι ℳ) (totalDegreePiece κ ℳ) 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro n x hx
+  refine (totalDegreePiece_le_iff (P := (totalDegreePiece κ ℳ (n + 0)).comap _).2 ?_) hx
+  rintro p m hm rfl
+  rw [Submodule.mem_comap, LinearEquiv.coe_coe, PiTensorProduct.reindex_tprod, add_zero,
+    ← σ.symm.sum_comp p]
+  exact tprod_mem_totalDegreePiece fun k ↦ hm (σ.symm k)
 
 /-- A factorwise map of degree zero in every factor but one, where it has degree `a`, shifts the
 total degree by `a`. -/
@@ -352,9 +374,9 @@ variable [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι] [LinearOrder ι
 
 omit [Fintype ι] in
 /-- Off the diagonal, applying `d` in the slot `k` commutes with the summand of the slot homotopy
-at another slot `i`, since `d` commutes with `e`; so in characteristic two the two composites
-cancel. -/
-private theorem slotSum_slotHomotopy_cross [CharP R 2] {d e h : Module.End R M}
+at another slot `i`, since `d` commutes with `e`; so when every element of `M` is its own additive
+inverse the two composites cancel. -/
+private theorem slotSum_slotHomotopy_cross (hM : ∀ m : M, m + m = 0) {d e h : Module.End R M}
     (hde : d ∘ₗ e = e ∘ₗ d) {i k : ι} (hki : k ≠ i) :
     PiTensorProduct.map (update (fun _ ↦ LinearMap.id) k d) *
         PiTensorProduct.map (update (fun j ↦ if j < i then e else LinearMap.id) i h) +
@@ -362,7 +384,7 @@ private theorem slotSum_slotHomotopy_cross [CharP R 2] {d e h : Module.End R M}
         PiTensorProduct.map (update (fun _ ↦ LinearMap.id) k d) = 0 := by
   rw [← PiTensorProduct.map_mul, ← PiTensorProduct.map_mul]
   refine (congrArg (· + _) (congrArg PiTensorProduct.map (funext fun j ↦ ?_))).trans
-    (add_self_eq_zero_of_charTwo R _)
+    (LinearMap.ext fun x ↦ have : Nonempty ι := ⟨i⟩; PiTensorProduct.add_self_eq_zero _ hM)
   rcases eq_or_ne j k with rfl | hjk
   · simp only [update_self, update_of_ne hki]
     split_ifs
@@ -391,8 +413,9 @@ private theorem slotSum_slotHomotopy_diag {d e h : Module.End R M}
 
 /-- In characteristic two, **the slot homotopy contracts the tensor power**: if `h` is a homotopy
 from the identity to an endomorphism `e` commuting with `d`, in the sense `d h + h d = 1 - e`,
-then `D H + H D = 1 - e ⊗ ⋯ ⊗ e` for the slot sum `D` of `d` and the slot homotopy `H`. -/
-theorem slotSum_comp_slotHomotopy_add [CharP R 2] {d e h : Module.End R M}
+then `D H + H D = 1 - e ⊗ ⋯ ⊗ e` for the slot sum `D` of `d` and the slot homotopy `H`.
+Characteristic two is asked only of `M`: every element of `M` is its own additive inverse. -/
+theorem slotSum_comp_slotHomotopy_add (hM : ∀ m : M, m + m = 0) {d e h : Module.End R M}
     (hde : d ∘ₗ e = e ∘ₗ d) (hdh : d ∘ₗ h + h ∘ₗ d = LinearMap.id - e) :
     slotSum ι d ∘ₗ slotHomotopy ι e h + slotHomotopy ι e h ∘ₗ slotSum ι d =
       LinearMap.id - PiTensorProduct.map fun _ ↦ e := by
@@ -401,7 +424,7 @@ theorem slotSum_comp_slotHomotopy_add [CharP R 2] {d e h : Module.End R M}
     Finset.sum_mul_sum, Finset.sum_mul_sum, Finset.sum_comm (s := Finset.univ) (t := Finset.univ),
     ← Finset.sum_add_distrib]
   rw [Finset.sum_congr rfl fun i _ ↦ (Finset.sum_add_distrib.symm.trans
-    (Finset.sum_eq_single i (fun k _ hki ↦ slotSum_slotHomotopy_cross hde hki) (by simp))).trans
+    (Finset.sum_eq_single i (fun k _ hki ↦ slotSum_slotHomotopy_cross hM hde hki) (by simp))).trans
       (slotSum_slotHomotopy_diag hdh i)]
   -- The telescope of the diagonal terms, with `e` before the slot and the identity after it.
   have htel := (PiTensorProduct.mapMultilinear R (fun _ : ι ↦ M) (fun _ ↦ M)).map_sub_map_piecewise
@@ -420,5 +443,12 @@ theorem slotSum_comp_slotHomotopy_add [CharP R 2] {d e h : Module.End R M}
   · simp [hj.ne, hj.ne', hj.not_gt]
 
 end Ring
+
+/-! The scalars need not have characteristic two. Over `ℤ`, the slot sum of a square-zero
+endomorphism of a module of `𝔽₂`-vectors squares to zero, since the vectors are their own
+additive inverses. -/
+example (f : Module.End ℤ (ZMod 2 × ZMod 2)) (hf : f ∘ₗ f = 0) :
+    slotSum (Fin 3) f ∘ₗ slotSum (Fin 3) f = 0 :=
+  slotSum_comp_slotSum (by decide) hf
 
 end TauCeti.PiTensorProduct

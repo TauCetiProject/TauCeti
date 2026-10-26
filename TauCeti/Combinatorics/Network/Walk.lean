@@ -37,6 +37,8 @@ capacity; for residual capacities these are augmenting walks.
 * `TauCeti.ArrowWalk Q s t`: directed walks from `s` to `t` along the arrow family `Q`.
 * `TauCeti.ArrowWalk.arrows`: the arrows traversed by a walk, in order.
 * `TauCeti.ArrowWalk.IsPath` and `TauCeti.ArrowWalk.IsCycle`: directed paths and cycles.
+* `TauCeti.Assignment.IsAcyclic`: arrow assignments whose positive support contains no directed
+  cycle.
 * `TauCeti.ArrowWalk.bottleneck`: the least capacity along a walk that traverses an arrow.
 * `TauCeti.PositiveReachable c s t`: some walk from `s` to `t` traverses only arrows of positive
   capacity for `c`.
@@ -57,6 +59,8 @@ capacity; for residual capacities these are augmenting walks.
   positive reachability is witnessed by a path, and is the reflexive transitive closure of being
   joined by an arrow of positive capacity; `TauCeti.exists_isCycle_iff_transGen` is the
   counterpart for cycles.
+* `TauCeti.Assignment.isAcyclic_iff_forall_not_transGen`: an assignment is acyclic exactly when
+  no vertex reaches itself in one or more steps along arrows of positive value.
 * `TauCeti.positiveReachable_iff_nonempty_arrowWalk`: positive reachability is reachability along
   the arrow family `TauCeti.PositiveHom c` of arrows of positive capacity.
 * `TauCeti.PositiveReachable.mem_of_mem`: a vertex set that no arrow of positive capacity leaves
@@ -147,6 +151,12 @@ theorem map_target_arrows {s t : V} (p : ArrowWalk Q s t) :
       List.concat_eq_append, List.map_singleton]
     rw [List.tail_append_of_ne_nil (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p)]
 
+/-- The vertices of a walk are its source followed by the targets of its arrows. -/
+theorem vertices_eq_cons_map_target_arrows {s t : V} (p : ArrowWalk Q s t) :
+    p.vertices = s :: p.arrows.map (fun a ↦ a.2.1) := by
+  rw [map_target_arrows]
+  exact List.eq_cons_of_mem_head? (@Quiver.Path.vertices_head? V ⟨Q⟩ s t p)
+
 /-- A walk whose vertices after the first are distinct traverses no arrow twice. -/
 theorem nodup_arrows_of_nodup_tail {s t : V} {p : ArrowWalk Q s t}
     (hp : p.vertices.tail.Nodup) : p.arrows.Nodup :=
@@ -185,6 +195,10 @@ theorem isCycle_loop {s : V} (e : Q s s) : ((nil s).cons e).IsCycle := by
 /-- A cycle traverses every arrow at most once. -/
 theorem IsCycle.nodup_arrows {s : V} {c : ArrowWalk Q s s} (hc : c.IsCycle) : c.arrows.Nodup :=
   nodup_arrows_of_nodup_tail hc.2
+
+/-- A cycle traverses at least one arrow. -/
+theorem IsCycle.arrows_ne_nil {s : V} {c : ArrowWalk Q s s} (hc : c.IsCycle) : c.arrows ≠ [] :=
+  fun h ↦ hc.1.ne' (arrows_eq_nil_iff.1 h)
 
 /-- An initial segment of a path is a path. -/
 theorem IsPath.of_comp_left {s t x : V} {p : ArrowWalk Q s t} {p' : ArrowWalk Q t x}
@@ -395,6 +409,26 @@ theorem exists_isCycle_iff_transGen {v : V} :
     rcases ha with ha | rfl
     exacts [hp a ha, he]
 
+namespace Assignment
+
+/-- An arrow assignment is *acyclic* when no directed cycle traverses only arrows of positive
+value. -/
+def IsAcyclic (f : Assignment Q K) : Prop :=
+  ∀ ⦃v : V⦄ (c : ArrowWalk Q v v), c.IsCycle → ¬∀ a ∈ c.arrows, 0 < f a.2.2
+
+theorem isAcyclic_def (f : Assignment Q K) :
+    f.IsAcyclic ↔ ∀ ⦃v : V⦄ (c : ArrowWalk Q v v), c.IsCycle → ¬∀ a ∈ c.arrows, 0 < f a.2.2 :=
+  Iff.rfl
+
+/-- An assignment is acyclic exactly when no vertex reaches itself in one or more steps along
+arrows of positive value. -/
+theorem isAcyclic_iff_forall_not_transGen (f : Assignment Q K) :
+    f.IsAcyclic ↔ ∀ v, ¬Relation.TransGen (fun v w ↦ ∃ e : Q v w, 0 < f e) v v := by
+  simp only [← exists_isCycle_iff_transGen, not_exists, not_and]
+  exact ⟨fun h v c ↦ h c, fun h v c ↦ h v c⟩
+
+end Assignment
+
 variable (c) in
 /-- The arrows of positive capacity for `c`, retaining their identities: the arrow family of the
 part of `Q` along which positive reachability travels. -/
@@ -436,12 +470,12 @@ open Relation in
 /-- If no vertex reaches itself along positive arrows and some arrow is positive, there is a
 positive path between distinct vertices, with no positive arrow entering its initial vertex and no
 positive arrow leaving its final vertex. -/
-lemma exists_isPath_of_acyclic {K : Type w} [Zero K] [LinearOrder K] [Finite V]
-    {f : Assignment Q K} (hf : 0 ≤ f)
-    (hacyc : ∀ v, ¬ TransGen (fun v w ↦ ∃ e : Q v w, 0 < f e) v v) {x y : V} (e : Q x y)
+lemma exists_isPath_of_isAcyclic {K : Type w} [Zero K] [LinearOrder K] [Finite V]
+    {f : Assignment Q K} (hf : 0 ≤ f) (hacyc : f.IsAcyclic) {x y : V} (e : Q x y)
     (he : 0 < f e) :
     ∃ (s t : V) (p : ArrowWalk Q s t), p.IsPath ∧ s ≠ t ∧ (∀ a ∈ p.arrows, 0 < f a.2.2) ∧
       (∀ w (e : Q w s), f e = 0) ∧ ∀ w (e : Q t w), f e = 0 := by
+  rw [Assignment.isAcyclic_iff_forall_not_transGen] at hacyc
   set R : V → V → Prop := fun v w ↦ ∃ e : Q v w, 0 < f e
   have : IsTrans V (TransGen R) := ⟨fun _ _ _ ↦ TransGen.trans⟩
   have : IsTrans V (flip (TransGen R)) := ⟨fun _ _ _ h₁ h₂ ↦ TransGen.trans h₂ h₁⟩

@@ -60,6 +60,22 @@ theorem Matrix.GeneralLinearGroup.map_aeval_expSMulHom
   simp only [toAdd_ofAdd, RingHom.coe_coe, Polynomial.aeval_X,
     RingHom.mapMatrix_apply, Matrix.map_map, Function.comp_def, Polynomial.aeval_C]
 
+/-- The linear coefficient of the polynomial exponential `exp(tX)` is `X`. -/
+theorem Matrix.coeff_one_exp_X_smul_C_mapMatrix
+    {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [Algebra ℚ R]
+    {X : Matrix ι ι R} (hX : IsNilpotent X) (i j : ι) :
+    (IsNilpotent.exp ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) i j).coeff 1 =
+      X i j := by
+  obtain ⟨k, hk⟩ := hX
+  have hk' : ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) ^ (k + 2) = 0 := by
+    rw [smul_pow, ← map_pow, pow_add X, hk, zero_mul, map_zero, smul_zero]
+  rw [IsNilpotent.exp_eq_sum hk', Matrix.sum_apply, Polynomial.finsetSum_coeff,
+    Finset.sum_eq_single_of_mem 1 (by simp) fun m _ hm ↦ ?_]
+  · simp
+  · obtain h | rfl : 1 < m ∨ m = 0 := by omega
+    · simp [smul_pow, Polynomial.coeff_X_pow_mul', h.not_ge]
+    · by_cases hij : i = j <;> simp [hij, Polynomial.coeff_one]
+
 namespace TauCeti.GeneralLinear
 
 universe u v
@@ -106,6 +122,16 @@ theorem aeval_comp_nilpotentOneParameterCoordinateMap (hX : IsNilpotent X) (t : 
   rw [nilpotentOneParameterCoordinateMap, toConv_comp_generalLinearToPoint_ofConv,
     Matrix.GeneralLinearGroup.map_aeval_expSMulHom hX t, toConv_ofConv]
   simp only [Algebra.algebraMap_self, RingHom.mapMatrix_id, RingHom.id_apply]
+
+/-- The polynomial curve `t ↦ exp(tX)` passes through the identity at `t = 0`. -/
+theorem aeval_zero_comp_nilpotentOneParameterCoordinateMap (hX : IsNilpotent X) :
+    (Polynomial.aeval (0 : R)).comp (nilpotentOneParameterCoordinateMap n hX) =
+      Bialgebra.counitAlgHom R (coordinateHopfAlgebra R n) := by
+  rw [aeval_comp_nilpotentOneParameterCoordinateMap, ofAdd_zero, map_one,
+    ← pointsMulEquiv_symm_apply, map_one]
+  ext x
+  rw [AlgHom.convOne_apply, Bialgebra.counitAlgHom_apply, Algebra.algebraMap_self,
+    RingHom.id_apply]
 
 section ClosedSubgroup
 

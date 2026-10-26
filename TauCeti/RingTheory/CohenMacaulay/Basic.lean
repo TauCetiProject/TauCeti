@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 public import Mathlib.RingTheory.KrullDimension.Field
 public import Mathlib.RingTheory.Ideal.AssociatedPrime.Localization
 public import TauCeti.RingTheory.Depth
+import TauCeti.RingTheory.KrullDimension.Module
 
 /-!
 # Cohen–Macaulay modules over a local ring
@@ -171,13 +172,9 @@ theorem IsCohenMacaulay.associatedPrimes_eq_minimalPrimes (h : IsCohenMacaulay R
     (supportDim_eq_ringKrullDim_quotient_annihilator R M ▸
       ringKrullDim_le_of_surjective _ (Ideal.Quotient.factor_surjective hann))
   rw [h.ringKrullDim_quotient_eq_supportDim hp] at hle
-  obtain ⟨d, hd⟩ := WithBot.ne_bot_iff_exists.1 (supportDim_ne_bot_of_nontrivial R M)
-  have hd_top : d ≠ ⊤ := by
-    rintro rfl
-    exact (hd ▸ (supportDim_le_ringKrullDim R M).trans_lt ringKrullDim_lt_top).ne rfl
-  rw [← hd, ← WithBot.coe_one, ← WithBot.coe_add, WithBot.coe_le_coe,
-    ENat.add_one_le_iff hd_top] at hle
-  exact hle.false
+  obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := R) (M := M)
+  rw [hk] at hle
+  exact absurd (by exact_mod_cast hle : k + 1 ≤ k) (Nat.not_succ_le_self k)
 
 end Module
 

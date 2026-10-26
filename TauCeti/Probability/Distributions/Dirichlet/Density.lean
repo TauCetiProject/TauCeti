@@ -806,6 +806,15 @@ theorem lintegral_dirichletChartPDF_eq_one {a : ι → ℝ} (ha : ∀ i, 0 < a i
     withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h
   exact h
 
+/-- The real chart density of a Dirichlet law with positive shapes is integrable. -/
+theorem integrable_dirichletChartPDFReal {a : ι → ℝ} (ha : ∀ i, 0 < a i) (i₀ : ι) :
+    Integrable (dirichletChartPDFReal a i₀) := by
+  refine ⟨(measurable_dirichletChartPDFReal a i₀).aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal
+    (ae_of_all _ (dirichletChartPDFReal_nonneg ha i₀))]
+  simpa only [← dirichletChartPDF_eq_ofReal, lintegral_dirichletChartPDF_eq_one ha i₀] using
+    (ENNReal.one_lt_top : (1 : ℝ≥0∞) < ∞)
+
 end Probability
 
 end TauCeti

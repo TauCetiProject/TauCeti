@@ -69,7 +69,7 @@ theorem integral_norm_windingWeight_sub_le_cauchyPotential (hab : a ≤ b)
     ∫ t in Ioc a b, truncatedCauchyKernel (2 * R) (z - ρ t) * deriv ρ t
   have hP {ρ : ℝ → ℂ} (hρ : AbsolutelyContinuousOnInterval ρ a b) : Integrable (P ρ) := by
     exact (integrable_truncatedCauchyKernel (2 * R)).integral_comp_sub_mul
-      (hρ.aemeasurable_restrict_Ioc hab) (hρ.integrableOn_deriv_Ioc hab)
+      hρ.aemeasurable_restrict_Ioc hρ.integrableOn_deriv_Ioc
   have hW := ((hδ.integrable_windingWeight hδclosed).sub
     (hγ.integrable_windingWeight hγclosed)).norm
   have hright := ((hP hδ).sub (hP hγ)).norm.const_mul
@@ -117,8 +117,8 @@ theorem integral_abs_windingWeight_le (hab : a ≤ b)
           deriv γ t‖ := by
     simpa only [windingWeight_const, sub_zero, Real.norm_eq_abs, deriv_const,
       mul_zero, integral_zero] using hW
-  have hγm := hγ.aemeasurable_restrict_Ioc hab
-  have hv := hγ.integrableOn_deriv_Ioc hab
+  have hγm := hγ.aemeasurable_restrict_Ioc (μ := volume)
+  have hv := hγ.integrableOn_deriv_Ioc
   have hP := (integrable_truncatedCauchyKernel (2 * R)).integral_norm_kernel_potential_sub_le
     hγm hγm hv
     (integrable_zero ℝ ℂ (volume.restrict (Ioc a b)))

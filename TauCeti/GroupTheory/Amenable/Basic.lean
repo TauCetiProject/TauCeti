@@ -108,13 +108,20 @@ theorem map_map (ψ : H →ₜ* K) (φ : G →ₜ* H) (m : Mean G) :
     (m.map φ).map ψ = m.map (ψ.comp φ) :=
   ext fun f => by simp [UCB.compRightAlgHom_comp]
 
+/-- The pushforward of a left-invariant mean along a continuous homomorphism `φ` is invariant under
+left translation by the elements `φ g` of the range of `φ`. -/
+theorem IsLeftInvariant.map_apply_leftTranslation {m : Mean G} (hm : m.IsLeftInvariant)
+    (φ : G →ₜ* H) (g : G) (f : UCB H) :
+    m.map φ (UCB.leftTranslation (φ g) f) = m.map φ f := by
+  rw [map_apply, map_apply, UCB.compRightAlgHom_leftTranslation, hm]
+
 /-- The pushforward of a left-invariant mean along a surjective continuous homomorphism is left
 invariant. -/
 theorem IsLeftInvariant.map {m : Mean G} (hm : m.IsLeftInvariant) {φ : G →ₜ* H}
     (hφ : Function.Surjective φ) : (m.map φ).IsLeftInvariant := by
   intro h f
   obtain ⟨g, rfl⟩ := hφ h
-  rw [map_apply, map_apply, UCB.compRightAlgHom_leftTranslation, hm]
+  exact hm.map_apply_leftTranslation φ g f
 
 end Mean
 

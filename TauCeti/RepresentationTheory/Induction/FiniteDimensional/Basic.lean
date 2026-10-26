@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.FiniteIndex
 public import TauCeti.CategoryTheory.Linear.Endomorphism
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Induction.Basic
+import TauCeti.RepresentationTheory.FiniteIndex
 
 /-!
 # Finite-dimensional induced representations
@@ -215,6 +216,25 @@ theorem indSubtypeEquivPi_apply [S.FiniteIndex] (A : Rep.{max w u} k S)
   let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
   rw [indSubtypeEquivPi]
   rfl
+
+/-- The coset model of induction sends the generator `⟦g ⊗ a⟧` to Mathlib's auxiliary function
+supported on the right coset of `g`, evaluated at the chosen representatives.
+
+Not a `simp` lemma: like `TauCeti.indToCoind_mk`, it exposes a decidability instance and Mathlib's
+auxiliary function, so it is kept for explicit rewriting. -/
+theorem indSubtypeEquivPi_mk [S.FiniteIndex] [DecidableRel (QuotientGroup.rightRel S)]
+    (A : Rep.{max w u} k S) (g : G) (a : A) (q : Quotient (QuotientGroup.rightRel S)) :
+    indSubtypeEquivPi A (Representation.IndV.mk S.subtype A.ρ g a) q =
+      _root_.Rep.indToCoindAux A g a q.out := by
+  obtain rfl : ‹DecidableRel (QuotientGroup.rightRel S)› = Classical.decRel _ :=
+    Subsingleton.elim _ _
+  let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
+  rw [indSubtypeEquivPi_apply]
+  -- Pass to the underlying linear map to use Mathlib's comparison-map equation.
+  change (((Rep.indCoindIso.{w, u, v} A).hom.hom.toLinearMap
+    (Representation.IndV.mk S.subtype A.ρ g a))).1 q.out = _
+  rw [_root_.Rep.indCoindIso_hom_hom_toLinearMap]
+  exact congrFun (TauCeti.indToCoind_mk g a) q.out
 
 /-- The inverse coset model of induction extends by `S`-equivariance and then transports back
 along `Rep.indCoindIso`.

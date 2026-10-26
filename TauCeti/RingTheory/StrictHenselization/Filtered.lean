@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.StrictHenselization.Neighbourhood
 public import TauCeti.RingTheory.Unramified.Diagonal
 public import Mathlib.CategoryTheory.Filtered.Basic
-public import Mathlib.RingTheory.Localization.Away.Basic
 
 /-!
 # Filtered pointed étale neighbourhoods
@@ -72,7 +71,6 @@ private theorem parallel_equalization {first second : Neighbourhood R Ω}
   let point := second.obj.hom.hom
   let diagonal := Algebra.TensorProduct.productMap leftMap rightMap
   let : Algebra.Etale R first.obj.left := (isPointedNeighbourhood_iff R Ω _).mp first.property
-  let : Algebra.Etale R second.obj.left := (isPointedNeighbourhood_iff R Ω _).mp second.property
   obtain ⟨idem, hidem, hkernel⟩ :=
     TauCeti.Algebra.FormallyUnramified.exists_isIdempotentElem_ker_lmul_eq_span R first.obj.left
   have hagree : point.comp leftMap = point.comp rightMap := by
@@ -89,29 +87,14 @@ private theorem parallel_equalization {first second : Neighbourhood R Ω}
   have hunit : IsUnit (point (1 - diagonal idem)) := by
     rw [map_sub, map_one, hzero, sub_zero]
     exact isUnit_one
-  let localized := Localization.Away (1 - diagonal idem)
-  let lifted : localized →ₐ[R] ULift.{u} Ω :=
-    IsLocalization.Away.liftAlgHom (1 - diagonal idem) hunit
-  let target : Neighbourhood R Ω :=
-    ⟨Over.mk (CommAlgCat.ofHom lifted),
-      (isPointedNeighbourhood_iff R Ω _).mpr
-        (inferInstanceAs (Algebra.Etale R localized))⟩
-  let refinementMap : second.obj.left →ₐ[R] localized :=
-    IsScalarTower.toAlgHom R second.obj.left localized
-  have hrefines : CommAlgCat.ofHom refinementMap ≫ CommAlgCat.ofHom lifted =
-      second.obj.hom := by
-    apply CommAlgCat.hom_ext
-    apply AlgHom.ext
-    intro element
-    exact IsLocalization.Away.lift_eq (S := localized) _ hunit element
-  refine ⟨target, ObjectProperty.homMk (Over.homMk
-    (CommAlgCat.ofHom refinementMap) hrefines), ?_⟩
+  obtain ⟨target, refinement, hunit⟩ :=
+    Neighbourhood.exists_refinement_isUnit R Ω second (1 - diagonal idem) hunit
+  refine ⟨target, refinement, ?_⟩
   apply ObjectProperty.hom_ext
   apply Over.OverMorphism.ext
   apply CommAlgCat.hom_ext
   exact TauCeti.Algebra.FormallyUnramified.comp_eq_comp_of_isUnit_one_sub_productMap
-    hidem hkernel.le leftMap rightMap refinementMap
-    (IsLocalization.Away.algebraMap_isUnit _)
+    hidem hkernel.le leftMap rightMap refinement.hom.left.hom hunit
 
 /-- The pointed étale neighbourhood category is filtered. -/
 @[stacks 04GW "the category is filtered"]
