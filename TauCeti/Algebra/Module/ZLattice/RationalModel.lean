@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.ZLattice.Determinant
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Covolume
 public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # The rational model of an integral lattice in a real inner product space
@@ -90,18 +91,11 @@ theorem ratModelMap_tmul (L : Submodule ℤ E) (q : ℚ) (x : L) :
   rw [ratModelMap, LinearMap.restrictScalars_apply, LinearMap.liftBaseChange_tmul]
   exact (IsScalarTower.algebraMap_smul ℝ q (x : E)).symm
 
-variable {L : Submodule ℤ E} [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
+/-- The canonical map `ℚ ⊗[ℤ] L → E` is injective. -/
+theorem ratModelMap_injective {L : Submodule ℤ E} : Function.Injective (ratModelMap L) :=
+  L.subtype.liftBaseChange_injective (K := ℚ) (nonZeroDivisors ℤ) L.injective_subtype
 
-/-- The canonical map `ℚ ⊗[ℤ] L → E` of a full lattice is injective. -/
-theorem ratModelMap_injective : Function.Injective (ratModelMap L) := by
-  -- A `ℤ`-basis of `L` is `ℝ`-linearly independent, hence `ℚ`-linearly independent.
-  have := ZLattice.module_free ℝ L
-  have := ZLattice.module_finite ℝ L
-  let b := Free.chooseBasis ℤ L
-  refine (LinearMap.liftBaseChange_injective_iff L.subtype b).mpr ?_
-  convert (b.ofZLatticeBasis ℝ L).linearIndependent.restrict_scalars' ℚ using 1
-  funext i
-  exact (b.ofZLatticeBasis_apply ℝ L i).symm
+variable {L : Submodule ℤ E} [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 
 /-- The **rational model** of an integral full lattice `L`: the integral lattice in `ℚ ⊗[ℤ] L`
 obtained by rationalizing the integer-valued inner product of `L`. -/
