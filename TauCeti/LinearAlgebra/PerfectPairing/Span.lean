@@ -13,9 +13,6 @@ public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 A bilinear pairing whose value on two generators is a unit identifies the span of the first
 generator with the dual of the span of the second. The ambient modules may be different, and
 the coefficient ring need only be a commutative semiring.
-
-The coefficient comparison and explicit functional preimage generalize the cyclic self-pairing
-argument formerly in `TauCeti.LinearAlgebra.BilinearForm.Orthogonal`.
 -/
 
 public section
