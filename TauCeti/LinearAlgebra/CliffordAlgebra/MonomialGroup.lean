@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.Subgroup.Center
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
-import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 import TauCeti.Algebra.Module.Basic
 public import TauCeti.RingTheory.Ideal.Operations
