@@ -39,6 +39,8 @@ Borel measurable structure on the scalar field.
   of its values at the vertices.
 * `EuclideanSpace.consEquivL`: splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with
   `𝕜 × 𝕜ⁿ`.
+* `EuclideanSpace.finTwoEquivProd`: the two coordinates identify `𝕜²` isometrically with the `L²`
+  product `WithLp 2 (𝕜 × 𝕜)`.
 -/
 
 public section
@@ -160,6 +162,39 @@ theorem consEquivL_symm_apply_fst {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1
 theorem consEquivL_symm_apply_snd {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) (i : Fin n) :
     ((consEquivL 𝕜 n).symm x).2 i = x i.succ := by
   simp [consEquivL_symm_apply, Fin.tail]
+
+variable (𝕜) in
+/-- The two coordinates identify `𝕜²` with the `L²` product `WithLp 2 (𝕜 × 𝕜)`, as a linear
+isometry equivalence `x ↦ (x 0, x 1)`. -/
+def finTwoEquivProd : EuclideanSpace 𝕜 (Fin 2) ≃ₗᵢ[𝕜] WithLp 2 (𝕜 × 𝕜) where
+  toFun x := WithLp.toLp 2 (x 0, x 1)
+  invFun p := WithLp.toLp 2 ![p.fst, p.snd]
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv x := by
+    ext k
+    fin_cases k <;> rfl
+  right_inv _ := rfl
+  norm_map' x := by
+    -- `simp` does not unfold the coercion of the linear equivalence under construction, so state
+    -- its value `WithLp.toLp 2 (x 0, x 1)` first.
+    change ‖WithLp.toLp 2 (x 0, x 1)‖ = ‖x‖
+    simp [WithLp.prod_norm_eq_of_L2, EuclideanSpace.norm_eq, Fin.sum_univ_two]
+
+@[simp]
+theorem finTwoEquivProd_apply_fst (x : EuclideanSpace 𝕜 (Fin 2)) :
+    (finTwoEquivProd 𝕜 x).fst = x 0 :=
+  (rfl)
+
+@[simp]
+theorem finTwoEquivProd_apply_snd (x : EuclideanSpace 𝕜 (Fin 2)) :
+    (finTwoEquivProd 𝕜 x).snd = x 1 :=
+  (rfl)
+
+@[simp]
+theorem finTwoEquivProd_symm_apply (p : WithLp 2 (𝕜 × 𝕜)) :
+    (finTwoEquivProd 𝕜).symm p = WithLp.toLp 2 ![p.fst, p.snd] :=
+  (rfl)
 
 end EuclideanSpace
 

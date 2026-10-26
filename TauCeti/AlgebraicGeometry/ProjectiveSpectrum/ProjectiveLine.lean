@@ -16,7 +16,7 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricBaseChange
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
-public import TauCeti.RingTheory.Localization.Away
+public import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
 # The projective line over a commutative ring
@@ -227,20 +227,9 @@ theorem awayι_over (i : Fin 2) :
   rw [SymmetricAlgebra.over_eq_projToSpec, SymmetricAlgebra.awayι_projToSpec]
 
 /-- **The standard charts `D₊(Xᵢ)` cover the projective line.** -/
-theorem iSup_basicOpen_coord_eq_top : ⨆ i, Proj.basicOpen 𝒜 (coord R i) = ⊤ := by
-  refine Proj.iSup_basicOpen_eq_top' 𝒜 _ (fun i ↦ ⟨1, coord_mem R i⟩) (top_unique ?_)
-  -- the homogeneous coordinates generate the symmetric algebra
-  rintro a -
-  induction a using _root_.SymmetricAlgebra.induction with
-  | algebraMap r =>
-    exact Subalgebra.algebraMap_mem _ (algebraMap R (𝒜 0) r)
-  | ι m =>
-    rw [ι_eq_smul_coord_add_smul_coord R 0 m, Algebra.smul_def, Algebra.smul_def]
-    refine add_mem (mul_mem ?_ (Algebra.subset_adjoin ⟨0, rfl⟩))
-      (mul_mem ?_ (Algebra.subset_adjoin ⟨Fin.rev 0, rfl⟩)) <;>
-    exact Subalgebra.algebraMap_mem _ (algebraMap R (𝒜 0) _)
-  | mul a b ha hb => exact mul_mem ha hb
-  | add a b ha hb => exact add_mem ha hb
+theorem iSup_basicOpen_coord_eq_top : ⨆ i, Proj.basicOpen 𝒜 (coord R i) = ⊤ :=
+  SymmetricAlgebra.iSup_basicOpen_ι_eq_top R (Fin 2 → R) (fun i ↦ Pi.single i 1) (by
+    rw [← funext (Pi.basisFun_apply R (Fin 2)), (Pi.basisFun R (Fin 2)).span_eq])
 
 /-- **The two standard charts cover the projective line.** -/
 theorem exists_eq_awayι (p : projectiveLine R) : ∃ i q, awayι R i q = p := by

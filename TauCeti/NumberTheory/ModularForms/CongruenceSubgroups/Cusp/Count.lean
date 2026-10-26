@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import Mathlib.Data.ZMod.Units
 import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Nat.Squarefree
 import TauCeti.Data.Int.GCD
 import TauCeti.Data.ZMod.Units
 
@@ -163,6 +164,24 @@ theorem gamma0CuspLabel_eq_iff_exists_dvd (γ γ' : SL(2, ℤ)) :
     rw [← hg]
     exact Int.gcd_dvd_mul_sub_mul_of_dvd_mul_sub_mul_add_mul
       (Int.gcd_pos_of_ne_zero_right _ (by exact_mod_cast NeZero.ne N)).ne' hN (hc _) (hg ▸ hc _) h
+
+/-- At squarefree level, two cusp labels agree exactly when their denominator gcds agree. -/
+theorem gamma0CuspLabel_eq_iff_gcd_eq_of_squarefree (hN : Squarefree N) (γ γ' : SL(2, ℤ)) :
+    gamma0CuspLabel N γ = gamma0CuspLabel N γ' ↔
+      Int.gcd (γ 1 0) N = Int.gcd (γ' 1 0) N := by
+  have hmod (g : N.divisors) : Nat.gcd g.val (N / g.val) = 1 := by
+    apply Nat.coprime_iff_gcd_eq_one.mp
+    apply Nat.coprime_of_squarefree_mul
+    rwa [Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors g.property)]
+  let : ∀ g : N.divisors, Subsingleton (ZMod (Nat.gcd g.val (N / g.val)))ˣ := fun g ↦ by
+    rw [hmod g]
+    infer_instance
+  constructor
+  · intro h
+    simpa only [coe_gamma0CuspLabel_fst] using congrArg (fun x ↦ (x.1 : ℕ)) h
+  · intro h
+    apply Sigma.fst_injective
+    exact Subtype.ext (by simpa only [coe_gamma0CuspLabel_fst] using h)
 
 /-- Every divisor `g` of `N` and every unit modulo `gcd(g, N / g)` is a label: that of a matrix
 with bottom row `(g, d)`. -/

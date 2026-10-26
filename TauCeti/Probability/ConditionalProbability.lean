@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.ConditionalProbability
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Interval
 
 /-!
@@ -23,7 +24,9 @@ variable valued in a `Fintype`; this file extends it to countable value spaces w
 singletons, where the finite sum of measures becomes `MeasureTheory.Measure.sum`. Fibres of mass
 zero contribute nothing, so no positivity hypothesis on the fibres is needed.
 
-Conditioning on almost-everywhere equal events gives equal conditional measures.
+Conditioning on almost-everywhere equal events gives equal conditional measures, and a function
+bounded on a measurable event is integrable for the conditional measure on it. A measurable map
+that scales measure by a constant factor carries conditional measures to conditional measures.
 Conditional measures on intervals agree across endpoint conventions whenever the relevant
 endpoint atoms vanish. These identities apply to any partially ordered measurable space,
 including atomless laws and atomic laws with null endpoints.
@@ -32,6 +35,8 @@ including atomless laws and atomic laws with null endpoints.
 
 * `ProbabilityTheory.sum_meas_smul_cond_fiber_of_countable`
 * `ProbabilityTheory.cond_congr_ae`
+* `ProbabilityTheory.integrable_cond_of_norm_le`
+* `ProbabilityTheory.map_cond_preimage`
 * `MeasureTheory.Measure.cond_Icc_eq_cond_Ioc`, `MeasureTheory.Measure.cond_Ioo_eq_cond_Ioc`,
   `MeasureTheory.Measure.cond_Ico_eq_cond_Ioc`
 -/
@@ -48,6 +53,27 @@ variable {Ω β : Type*} [MeasurableSpace Ω] [MeasurableSpace β]
 theorem cond_congr_ae {μ : Measure Ω} {s t : Set Ω} (h : s =ᵐ[μ] t) :
     μ[|s] = μ[|t] := by
   rw [cond, cond, measure_congr h, Measure.restrict_congr_set h]
+
+/-- A function whose norm is bounded on a measurable event `s` is integrable for the conditional
+measure `μ[|s]`. For instance, a point drawn uniformly from a bounded Borel set of a normed space
+has integrable position. -/
+theorem integrable_cond_of_norm_le {E : Type*} [NormedAddCommGroup E] {μ : Measure Ω}
+    {s : Set Ω} {f : Ω → E} (hs : MeasurableSet s) (hf : AEStronglyMeasurable f μ[|s]) {C : ℝ}
+    (hC : ∀ x ∈ s, ‖f x‖ ≤ C) : Integrable f μ[|s] :=
+  Integrable.of_bound hf C ((ae_cond_mem hs).mono hC)
+
+/-- A measurable map that scales measure by a constant factor transports conditional measures:
+if `μ (f ⁻¹' A) = k * ν A` for every measurable `A`, with `k ≠ 0` finite, then `f` carries `μ`
+conditioned on `f ⁻¹' t` to `ν` conditioned on `t`. Translations and linear isometries of a
+Euclidean space (with `k = 1`) and nonzero dilations are the typical examples. -/
+theorem map_cond_preimage {μ : Measure Ω} {ν : Measure β} {f : Ω → β} (hf : Measurable f)
+    {k : ENNReal} (hk₀ : k ≠ 0) (hk : k ≠ ⊤) (h : ∀ A, MeasurableSet A → μ (f ⁻¹' A) = k * ν A)
+    {t : Set β} (ht : MeasurableSet t) :
+    (μ[|f ⁻¹' t]).map f = ν[|t] := by
+  ext A hA
+  rw [Measure.map_apply hf hA, cond_apply' (hf hA), cond_apply' hA, ← preimage_inter,
+    h _ ht, h _ (ht.inter hA), ENNReal.mul_inv (.inl hk₀) (.inl hk), mul_mul_mul_comm,
+    ENNReal.inv_mul_cancel hk₀ hk, one_mul]
 
 /-- The **law of total probability** for a random variable with countably many values: a finite
 measure `μ` is the sum of its conditional measures on the fibres of a measurable `f`, each weighted

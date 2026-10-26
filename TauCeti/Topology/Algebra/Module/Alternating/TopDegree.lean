@@ -15,7 +15,7 @@ Top-degree scalar-valued continuous alternating forms over a commutative ring ar
 by their basis coefficient. Pullback by a continuous linear endomorphism multiplies that
 coefficient by its determinant. Above the top degree, continuous alternating maps on a
 finite-dimensional space over a division ring vanish. No compatibility between the topology and
-the module structure is required.
+the module structure is required for those statements.
 -/
 
 public section

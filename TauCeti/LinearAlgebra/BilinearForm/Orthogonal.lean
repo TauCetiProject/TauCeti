@@ -63,8 +63,6 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   remains perfect on a submodule complementary to its orthogonal complement.
 * `LinearMap.BilinForm.orthogonal_orthogonal_of_isCompl`: double orthogonality for an
   orthogonally split submodule over a commutative semiring.
-* `LinearMap.BilinForm.restrict_span_singleton_bijective_of_isUnit`: unit self-pairing makes
-  the cyclic restriction perfect.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_dvd`: a vector whose self-pairing is
   a non-zero-divisor dividing all its pairings splits off.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_isUnit`: a vector with unit
@@ -391,45 +389,6 @@ theorem orthogonal_orthogonal_of_isCompl {R : Type u} {M : Type v}
     simp [ht s' hs', ht't]
   simpa [ht0] using hs
 
-/-- Unit self-pairing makes the restricted pairing on the cyclic span perfect. -/
-theorem restrict_span_singleton_bijective_of_isUnit (B : LinearMap.BilinForm R M)
-    (x : M) (hx : IsUnit (B x x)) : Function.Bijective (B.restrict (R ∙ x)) := by
-  obtain ⟨a, ha⟩ := isUnit_iff_exists_inv.mp hx
-  have ha' : a * B x x = 1 := by simpa [mul_comm] using ha
-  let S : Submodule R M := R ∙ x
-  have hxS : x ∈ S := Submodule.mem_span_singleton_self x
-  constructor
-  · intro y z hyz
-    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.mp y.property
-    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp z.property
-    have hval : B (y : M) x = B (z : M) x := by
-      simpa only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using
-        congrArg (fun f : Module.Dual R S ↦ f ⟨x, hxS⟩) hyz
-    rw [← hb, ← hc, map_smul, map_smul, LinearMap.smul_apply, LinearMap.smul_apply] at hval
-    simp only [smul_eq_mul] at hval
-    have hbc : b = c := by
-      calc
-        b = (a * B x x) * b := by rw [ha']; ring
-        _ = a * (b * B x x) := by ring
-        _ = a * (c * B x x) := by rw [hval]
-        _ = c := by calc
-          a * (c * B x x) = c * (a * B x x) := by ring
-          _ = c := by rw [ha', mul_one]
-    apply Subtype.ext
-    rw [← hb, ← hc, hbc]
-  · intro f
-    refine ⟨⟨(a * f ⟨x, hxS⟩) • x, Submodule.smul_mem S _ hxS⟩, ?_⟩
-    ext y
-    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.mp y.property
-    have hy : y = b • (⟨x, hxS⟩ : S) := Subtype.ext hb.symm
-    rw [hy]
-    simp only [LinearMap.BilinForm.restrict_apply]
-    rw [map_smul, map_smul, map_smul]
-    simp only [smul_eq_mul]
-    calc
-      b * (a * f ⟨x, hxS⟩ * B x x) = b * (a * B x x) * f ⟨x, hxS⟩ := by ring
-      _ = b * f ⟨x, hxS⟩ := by rw [ha']; ring
-
 /-- A vector `x` whose self-pairing `B x x` is a non-zero-divisor dividing every pairing `B x y`
 spans an orthogonal direct summand. Over a field this is the condition `B x x ≠ 0`; over a
 valuation ring it says that `B x x` has minimal valuation among the pairings of `x`. -/
@@ -495,6 +454,24 @@ theorem isCompl_span_singleton_orthogonal_of_isUnit
     (B : LinearMap.BilinForm R M) (x : M) (hx : IsUnit (B x x)) :
     IsCompl (R ∙ x) (B.orthogonal (R ∙ x)) :=
   B.isCompl_span_singleton_orthogonal_of_dvd hx.mem_nonZeroDivisors fun _ ↦ hx.dvd
+
+/-- Adjoining a vector `x` with unit self-pairing to an orthogonal basis `t` of its orthogonal
+complement with unit self-pairings gives an orthogonal basis of the whole module with unit
+self-pairings, for a reflexive form. Its diagonal is `B x x` followed by the diagonal of `t`. -/
+theorem IsRefl.exists_orthogonal_basis_isUnit_apply_self_eq_cons {B : LinearMap.BilinForm R M}
+    (hB : B.IsRefl) {x : M} (hx : IsUnit (B x x)) {d : ℕ}
+    {t : Basis (Fin d) R (B.orthogonal (R ∙ x))}
+    (ht : (B.restrict (B.orthogonal (R ∙ x))).iIsOrtho t) (htu : ∀ i, IsUnit (B (t i) (t i))) :
+    ∃ c : Basis (Fin (d + 1)) R M, B.iIsOrtho c ∧ (∀ i, IsUnit (B (c i) (c i))) ∧
+      ∀ i, B (c i) (c i) = (Fin.cons (B x x) fun j ↦ B (t j) (t j) : Fin (d + 1) → R) i := by
+  obtain ⟨c, hc, hc0, hcs⟩ := hB.exists_orthogonal_basis_of_orthogonal_span_singleton
+    hx.mem_nonZeroDivisors (fun _ ↦ hx.dvd) ht
+  have hcd (i : Fin (d + 1)) :
+      B (c i) (c i) = (Fin.cons (B x x) fun j ↦ B (t j) (t j) : Fin (d + 1) → R) i :=
+    Fin.cases (by rw [hc0, Fin.cons_zero]) (fun j ↦ by rw [hcs, Fin.cons_succ]) i
+  refine ⟨c, hc, fun i ↦ ?_, hcd⟩
+  rw [hcd]
+  exact Fin.cases hx htu i
 
 end LinearMap.BilinForm
 

@@ -139,6 +139,14 @@ theorem circleBasis_repr_tprod [Fintype ι] (x : ι → R[ε]) (l : ι → Bool)
     (circleBasis R ι).repr (tprod R x) l = ∏ i, (labelBasis R).repr (x i) (l i) :=
   Basis.piTensorProduct_repr_tprod_apply _ x l
 
+/-- Reindexing circle factors transports their labellings along the inverse bijection. -/
+@[simp↓]
+theorem reindex_circleBasis {σ τ : Type*} [Finite σ] [Finite τ] (e : σ ≃ τ)
+    (l : σ → Bool) :
+    reindex R (fun _ ↦ R[ε]) e (circleBasis R σ l) =
+      circleBasis R τ (l ∘ e.symm) := by
+  simp only [circleBasis_apply, reindex_tprod, Function.comp_apply]
+
 section Merge
 
 variable {σ τ : Type*} [Fintype σ] [DecidableEq τ]

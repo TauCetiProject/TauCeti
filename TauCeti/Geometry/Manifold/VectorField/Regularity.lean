@@ -26,6 +26,9 @@ manifold differential of a function to tangent vectors whose base point varies.
   tangent bundle is `C^m` when `m + 1 ≤ n`.
 * `ContMDiffOn.contMDiffOn_mvfderiv_apply`: the derivative of a `C^n` function along a `C^m`
   vector field is `C^m` on an open set, when `m + 1 ≤ n`.
+* `ContMDiffOn.contMDiffOn_mvfderiv_snd_apply`: the partial derivative in the second variable of
+  a `C^n` function on a product, along a `C^m` family of tangent vectors, is jointly `C^m` on an
+  open set, when `m + 1 ≤ n`.
 * `ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_apply`: the lifted directional derivative
   `z ↦ (f z, df_z ξ)` of a `C^n` map from an open subset of a normed space into a manifold is
   `C^m` into the tangent bundle, when `m + 1 ≤ n`.
@@ -153,6 +156,41 @@ theorem ContMDiffOn.contMDiffOn_mvfderiv_apply {f : M → F} {s : Set M}
       = mfderivWithin I 𝓘(𝕜, F) f s y (A y) := by
     exact tangentMapWithin_snd
   rw [hval, mfderivWithin_of_isOpen hs hy, mvfderiv_apply_eq_mfderiv_apply]
+
+section Partial
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
+
+/-- The partial derivative in the second variable of a `C^n` function on a product, applied to a
+`C^m` family of tangent vectors, is jointly `C^m` on an open set, when `m + 1 ≤ n`. For a
+parameter manifold `N`, this is the joint regularity of the derivative along `M` of a family of
+functions on `M`, as the parameter varies. -/
+theorem ContMDiffOn.contMDiffOn_mvfderiv_snd_apply {f : N × M → F} {W : Set (N × M)}
+    {A : Π q : N × M, TangentSpace I q.2}
+    (hf : ContMDiffOn (J.prod I) 𝓘(𝕜, F) n f W) (hW : IsOpen W)
+    (hA : ContMDiffOn (J.prod I) I.tangent m
+      (fun q ↦ (TotalSpace.mk' E q.2 (A q) : TangentBundle I M)) W)
+    (hmn : m + 1 ≤ n) :
+    ContMDiffOn (J.prod I) 𝓘(𝕜, F) m (fun q ↦ mvfderiv I (fun y ↦ f (q.1, y)) q.2 (A q)) W := by
+  -- The tangent vector `(0, A q)` to the product, which has no component along `N`.
+  have hlift : ContMDiffOn (J.prod I) (J.prod I).tangent m
+      (fun q ↦ (equivTangentBundleProd J N I M).symm (⟨q.1, 0⟩, ⟨q.2, A q⟩)) W :=
+    contMDiff_equivTangentBundleProd_symm.comp_contMDiffOn
+      ((contMDiff_tangentBundle_mk_zero contMDiff_fst).contMDiffOn.prodMk hA)
+  refine (hf.contMDiffOn_mvfderiv_apply hW hlift hmn).congr fun q hq ↦ ?_
+  have hfq : MDifferentiableAt (J.prod I) 𝓘(𝕜, F) f q :=
+    ((hf q hq).contMDiffAt (hW.mem_nhds hq)).mdifferentiableAt
+      (ne_of_gt (lt_of_lt_of_le (by simp) hmn))
+  -- Differentiate `f` along the slice `y ↦ (q.1, y)`, whose differential is `inr`. The composite
+  -- is `fun y ↦ f (q.1, y)` and `inr v` is `(0, v)`, both by definition.
+  have h := mvfderiv_comp_apply (g := f) (f := fun y : M ↦ (q.1, y)) q.2 hfq
+    (mdifferentiableAt_const.prodMk mdifferentiableAt_id) (A q)
+  rw [mfderiv_prod_right] at h
+  exact h
+
+end Partial
 
 /-- **The lifted directional derivative of a `C^(m+1)` map is `C^m`.** If `f` is `C^n` on an open
 set `U` of a normed space and `m + 1 ≤ n`, then for every fixed direction `ξ` the map

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Perfect
-public import TauCeti.RingTheory.Huber.Uniform
+public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
+public import TauCeti.RingTheory.Huber.Prod
 public import TauCeti.RingTheory.Ideal.Quotient.Frobenius
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
@@ -47,13 +47,13 @@ surjectivity of `Φ` has to be checked (`TauCeti.Perfectoid.IsPerfectoidTateRing
   reduced.
 * `TauCeti.Perfectoid.IsPerfectoidTateRing.of_ringEquiv`: the notion is invariant under
   isomorphisms of topological rings.
-* `TauCeti.Perfectoid.IsPerfectoidTateRing.of_perfectRing`: a uniform perfect Tate ring of
-  characteristic `p` is perfectoid.
+* `TauCeti.Perfectoid.IsPerfectoidTateRing.prod`: a product of perfectoid Tate rings is perfectoid,
+  and `TauCeti.Perfectoid.isPerfectoidTateRing_prod_iff`: conversely, so are its factors.
 * `TauCeti.Perfectoid.isPerfectoidTateRing_of_subsingleton`: the zero ring is.
 
 ## References
 
-* P. Scholze, *Étale cohomology of diamonds*, Definition 3.1 and Remarks 3.2–3.3.
+* P. Scholze, *Étale cohomology of diamonds*, Definition 3.1, Remarks 3.2–3.3 and Example 3.4.
 * P. Scholze, *Perfectoid spaces*, Definition 5.1 and Proposition 5.8.
 * B. Bhatt, M. Morrow, P. Scholze, *Integral p-adic Hodge theory*, §3.2.
 -/
@@ -140,18 +140,6 @@ theorem IsPerfectoidTateRing.of_forall_exists_pow_eq [NeZero p] [IsUniform R]
   rw [hx, sub_self]
   exact dvd_zero _
 
-/-- **A uniform perfect Tate ring of characteristic `p` is perfectoid** (Scholze, *Étale cohomology
-of diamonds*, Proposition 3.5): every pseudouniformiser works, `ϖ ^ p ∣ p = 0` being automatic,
-and Frobenius is bijective. -/
-theorem IsPerfectoidTateRing.of_perfectRing [Fact p.Prime] [CharP R p] [PerfectRing R p]
-    [IsUniform R] : IsPerfectoidTateRing p R := by
-  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := R)
-  have hp : (p : powerBoundedSubring R) = 0 := Subtype.ext (CharP.cast_eq_zero R p)
-  exact .of_forall_exists_pow_eq ⟨ϖ, mem_powerBoundedSubring.mpr
-    (IsPowerBounded.of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent)⟩ hϖ
-    (hp ▸ dvd_zero _) fun x ↦
-      (surjective_frobenius R p x).imp fun _ h ↦ by rwa [frobenius_def] at h
-
 /-- **Perfectoid Tate rings transport along isomorphisms of topological rings.** -/
 theorem IsPerfectoidTateRing.of_ringEquiv {S : Type*} [CommRing S] [UniformSpace S]
     [IsUniformAddGroup S] [IsTopologicalRing S] [IsTateRing S] [CompleteSpace S] [T2Space S]
@@ -170,6 +158,67 @@ theorem IsPerfectoidTateRing.of_ringEquiv {S : Type*} [CommRing S] [UniformSpace
   · simpa using map_dvd f (hi (f.symm y) (by simpa using map_dvd f.symm hy))
 
 end Definition
+
+section Prod
+
+variable {p : ℕ} {R S : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R]
+  [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T2Space R] [CommRing S] [UniformSpace S]
+  [IsUniformAddGroup S] [IsTopologicalRing S] [IsTateRing S] [CompleteSpace S] [T2Space S]
+
+/-- The first factor of a perfectoid product is perfectoid: the first component of a
+pseudouniformiser of `R × S` witnessing the perfectoid condition witnesses it for `R`. -/
+private theorem IsPerfectoidTateRing.of_prod_left [IsPerfectoidTateRing p (R × S)] :
+    IsPerfectoidTateRing p R := by
+  have := IsPerfectoidTateRing.isUniform p (R := R × S)
+  have : IsUniform R := (isUniform_prod_iff.mp ‹_›).1
+  obtain ⟨ϖ, hϖ, h, hs, hi⟩ := IsPerfectoidTateRing.exists_pseudoUniformizer (p := p) (R := R × S)
+  refine ⟨IsUniform.isBounded_powerBoundedSubring, (powerBoundedSubringProdEquiv R S ϖ).1, ?_, ?_,
+    fun x ↦ ?_, fun y hy ↦ ?_⟩
+  · simpa using (isPseudoUniformizer_prod_iff.mp hϖ).1
+  · simpa using (dvd_iff_powerBoundedSubringProdEquiv.mp h).1
+  · obtain ⟨y, hy⟩ := hs ((powerBoundedSubringProdEquiv R S).symm (x, 0))
+    exact ⟨(powerBoundedSubringProdEquiv R S y).1,
+      by simpa using (dvd_iff_powerBoundedSubringProdEquiv.mp hy).1⟩
+  · -- test the injectivity condition of `R × S` on `(y, 0)`
+    have hdvd : ϖ ^ p ∣ ((powerBoundedSubringProdEquiv R S).symm (y, 0)) ^ p :=
+      dvd_iff_powerBoundedSubringProdEquiv.mpr ⟨by simpa using hy,
+        by simpa using pow_dvd_pow_of_dvd (dvd_zero (powerBoundedSubringProdEquiv R S ϖ).2) p⟩
+    simpa using (dvd_iff_powerBoundedSubringProdEquiv.mp (hi _ hdvd)).1
+
+/-- **A product of perfectoid Tate rings is perfectoid**: if `ϖ_R` and `ϖ_S` witness the perfectoid
+condition for `R` and `S`, then `(ϖ_R, ϖ_S)` witnesses it for `R × S`, because `(R × S)° = R° × S°`
+and divisibility in it is componentwise (Scholze, *Étale cohomology of diamonds*, Example 3.4). -/
+instance IsPerfectoidTateRing.prod [IsPerfectoidTateRing p R] [IsPerfectoidTateRing p S] :
+    IsPerfectoidTateRing p (R × S) := by
+  have := IsPerfectoidTateRing.isUniform p (R := R)
+  have := IsPerfectoidTateRing.isUniform p (R := S)
+  obtain ⟨ϖ, hϖ, h, hs, hi⟩ := IsPerfectoidTateRing.exists_pseudoUniformizer (p := p) (R := R)
+  obtain ⟨ϖ', hϖ', h', hs', hi'⟩ :=
+    IsPerfectoidTateRing.exists_pseudoUniformizer (p := p) (R := S)
+  refine ⟨IsUniform.isBounded_powerBoundedSubring, (powerBoundedSubringProdEquiv R S).symm (ϖ, ϖ'),
+    ?_, ?_, fun x ↦ ?_, fun y hy ↦ ?_⟩
+  · exact isPseudoUniformizer_prod_iff.mpr ⟨by simpa using hϖ, by simpa using hϖ'⟩
+  · exact dvd_iff_powerBoundedSubringProdEquiv.mpr ⟨by simpa using h, by simpa using h'⟩
+  · obtain ⟨y, hy⟩ := hs (powerBoundedSubringProdEquiv R S x).1
+    obtain ⟨y', hy'⟩ := hs' (powerBoundedSubringProdEquiv R S x).2
+    exact ⟨(powerBoundedSubringProdEquiv R S).symm (y, y'),
+      dvd_iff_powerBoundedSubringProdEquiv.mpr ⟨by simpa using hy, by simpa using hy'⟩⟩
+  · obtain ⟨hy, hy'⟩ := dvd_iff_powerBoundedSubringProdEquiv.mp hy
+    exact dvd_iff_powerBoundedSubringProdEquiv.mpr
+      ⟨by simpa using hi _ (by simpa using hy), by simpa using hi' _ (by simpa using hy')⟩
+
+/-- **A product is perfectoid exactly when both factors are**: for complete Hausdorff Tate rings
+`R` and `S`, `R × S` is a perfectoid Tate ring exactly when `R` and `S` are. -/
+@[simp]
+theorem isPerfectoidTateRing_prod_iff :
+    IsPerfectoidTateRing p (R × S) ↔ IsPerfectoidTateRing p R ∧ IsPerfectoidTateRing p S := by
+  -- the second factor is handled by swapping the factors, an isomorphism of topological rings
+  refine ⟨fun _ ↦ ⟨.of_prod_left (S := S), ?_⟩, fun ⟨_, _⟩ ↦ inferInstance⟩
+  have : IsPerfectoidTateRing p (S × R) :=
+    .of_ringEquiv (RingEquiv.prodComm (R := R) (S := S)) continuous_swap continuous_swap
+  exact .of_prod_left (S := R)
+
+end Prod
 
 section Examples
 
