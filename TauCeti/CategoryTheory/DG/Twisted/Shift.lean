@@ -266,16 +266,14 @@ private theorem dgComp_fromShift_toShift' (n : ℤ) {m : ℤ} (h : n + -n = m) :
 private theorem dgComp_toShift_fromShift_assoc' (n : ℤ) {q m m' : ℤ} (x : DGHom R q P Z)
     (h : n + q = m) (h' : -n + m = m') :
     dgComp R (toShift P n) (dgComp R (fromShift P n) x h) h' = castDeg R (by omega) x := by
-  subst h h'
-  rw [← dgComp_assoc R _ _ x (neg_add_cancel n) rfl (by omega), dgComp_toShift_fromShift,
-    dgId_dgComp_eq_castDeg]
+  obtain rfl : m' = q := by omega
+  simpa only [castDeg_self] using dgComp_toShift_fromShift_assoc P n x h h'
 
 private theorem dgComp_fromShift_toShift_assoc' (n : ℤ) {q m m' : ℤ}
     (x : DGHom R q ((shiftFunctor R n).obj P) Z) (h : -n + q = m) (h' : n + m = m') :
     dgComp R (fromShift P n) (dgComp R (toShift P n) x h) h' = castDeg R (by omega) x := by
-  subst h h'
-  rw [← dgComp_assoc R _ _ x (add_neg_cancel n) rfl (by omega), dgComp_fromShift_toShift,
-    dgId_dgComp_eq_castDeg]
+  obtain rfl : m' = q := by omega
+  simpa only [castDeg_self] using dgComp_fromShift_toShift_assoc P n x h h'
 
 private theorem toShift_dgComp_dgMap (n : ℤ) (f : DGHom R 0 P Q) {m : ℤ} (h : -n + 0 = m) :
     dgComp R (toShift P n) ((shiftFunctor R n).dgMap 0 f) h =
