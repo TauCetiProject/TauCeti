@@ -64,7 +64,7 @@ private theorem poisson_exponential_integral_eq_ae (r p₀ : ℝ) (p : ι → �
 shape; at shape zero every parameter is allowed. The equivalence includes divergence at the
 boundary of the positive-shape domain. -/
 @[simp]
-theorem integrable_exp_sum_mul_natCast_negativeMultinomialMeasure_iff {r p₀ : ℝ}
+theorem integrable_exp_mul_sum_mul_natCast_negativeMultinomialMeasure_iff {r p₀ : ℝ}
     (hr : 0 ≤ r) (hp₀ : 0 < p₀) {p : ι → ℝ≥0}
     (hp : p₀ + ∑ i, (p i : ℝ) = 1) (θ : ι → ℝ) (t : ℝ) :
     Integrable (fun k : ι → ℕ => Real.exp (t * ∑ i, θ i * (k i : ℝ)))
@@ -80,7 +80,7 @@ theorem integrable_exp_sum_mul_natCast_negativeMultinomialMeasure_iff {r p₀ : 
   have hcomponent : ∀ x : ℝ, Integrable
       (fun k : ι → ℕ => Real.exp (t * ∑ i, θ i * (k i : ℝ)))
       (Measure.pi fun i => poissonMeasure (p i * Real.toNNReal x)) :=
-    fun x => integrable_exp_sum_mul_natCast_pi_poissonMeasure _ θ t
+    fun x => integrable_exp_mul_sum_mul_natCast_pi_poissonMeasure _ θ t
   simp only [Real.norm_of_nonneg (Real.exp_pos _).le, ae_of_all _ hcomponent,
     true_and, hr.ne', false_or]
   rw [integrable_congr (poisson_exponential_integral_eq_ae r p₀ p θ t)]
@@ -100,7 +100,7 @@ theorem integrableExpSet_sum_mul_natCast_negativeMultinomialMeasure {r p₀ : �
       (negativeMultinomialMeasure r p₀ p) =
         {t | r = 0 ∨ ∑ i, (p i : ℝ) * Real.exp (t * θ i) < 1} := by
   ext t
-  exact integrable_exp_sum_mul_natCast_negativeMultinomialMeasure_iff hr hp₀ hp θ t
+  exact integrable_exp_mul_sum_mul_natCast_negativeMultinomialMeasure_iff hr hp₀ hp θ t
 
 /-- The directional moment generating function on its exact domain. At shape zero the formula
 is one even when the displayed denominator vanishes. -/
@@ -116,7 +116,7 @@ theorem mgf_sum_mul_natCast_negativeMultinomialMeasure {r p₀ : ℝ}
   rcases hr.eq_or_lt with rfl | hr
   · simp [negativeMultinomialMeasure_zero hp₀ hp, mgf]
   have ht' := ht.resolve_left hr.ne'
-  have hint := (integrable_exp_sum_mul_natCast_negativeMultinomialMeasure_iff
+  have hint := (integrable_exp_mul_sum_mul_natCast_negativeMultinomialMeasure_iff
     hr.le hp₀ hp θ t).mpr ht
   rw [negativeMultinomialMeasure_of_pos hr hp₀ hp] at hint ⊢
   rw [mgf, Measure.integral_bind

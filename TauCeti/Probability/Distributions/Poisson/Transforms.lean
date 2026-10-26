@@ -44,7 +44,7 @@ theorem mgf_sum_mul_natCast_pi_poissonMeasure (r : ι → ℝ≥0) (θ : ι → 
       pgf_poissonMeasure (r i) (Real.exp (t * θ i))
 
 /-- Every directional exponential of independent Poisson counts is integrable. -/
-theorem integrable_exp_sum_mul_natCast_pi_poissonMeasure (r : ι → ℝ≥0) (θ : ι → ℝ)
+theorem integrable_exp_mul_sum_mul_natCast_pi_poissonMeasure (r : ι → ℝ≥0) (θ : ι → ℝ)
     (t : ℝ) :
     Integrable (fun k : ι → ℕ => Real.exp (t * ∑ i, θ i * (k i : ℝ)))
       (Measure.pi fun i => poissonMeasure (r i)) := by
@@ -57,7 +57,7 @@ theorem integrableExpSet_sum_mul_natCast_pi_poissonMeasure (r : ι → ℝ≥0) 
     integrableExpSet (fun k : ι → ℕ => ∑ i, θ i * (k i : ℝ))
       (Measure.pi fun i => poissonMeasure (r i)) = Set.univ := by
   ext t
-  simpa [integrableExpSet] using integrable_exp_sum_mul_natCast_pi_poissonMeasure r θ t
+  simpa [integrableExpSet] using integrable_exp_mul_sum_mul_natCast_pi_poissonMeasure r θ t
 
 /-- The directional cumulant generating function of independent Poisson counts. -/
 @[simp]
