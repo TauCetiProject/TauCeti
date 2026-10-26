@@ -371,9 +371,16 @@ theorem localizationUniform_idealImage [IsTopologicalRing A] (P : PairOfDefiniti
   have hJ : (localizationUniform P T s S hden).idealOfDefinition = (locIdeal P T s S).comap e :=
     Ideal.ext fun _ ↦ mem_localizationUniform_idealOfDefinition P T s S hden
   ext x
-  simp only [mem_idealImage, hJ, ← Ideal.map_symm, ← Ideal.map_pow, Ideal.mem_map_of_equiv,
+  simp only [mem_idealImage, hJ, ← Ideal.comap_pow_of_ringEquiv, Ideal.mem_comap,
     mem_locIdealImage_iff]
-  simp [e]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨e y, hy, RingEquiv.coe_subringCongr_apply _ _⟩
+  · rintro ⟨y, hy, rfl⟩
+    refine ⟨e.symm y, ?_, ?_⟩
+    · simpa only [e.apply_symm_apply] using hy
+    · exact RingEquiv.coe_subringCongr_apply
+        (localizationUniform_ringOfDefinition P T s S hden).symm y
 
 /-- **Correcting an approximation from `Aₛ` by an element of `A`.** If `y ∈ Aₛ` lies within
 `completionIdealImage m` of `x ∈ A⟨T/s⟩`, and the image of `a ∈ A` differs from `y` by an element of

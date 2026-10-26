@@ -60,14 +60,17 @@ theorem eulerDegree_pullback_of_two_affine_opens [IsLocallyNoetherian X]
     obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_pullback H M hU hV hInter hUV
     have : Module.Free k (Scheme.Modules.Cohomology M 1) := Module.Free.of_divisionRing _ _
     rw [← e.finrank_eq, Module.finrank_baseChange]
+  have : CompactSpace X := ⟨by
+    rw [← TopologicalSpace.Opens.coe_top, ← hUV, TopologicalSpace.Opens.coe_sup]
+    exact hU.isCompact.union hV.isCompact⟩
   let e : (Scheme.Modules.pullback g).obj (trivial X).obj ≅ (trivial Y).obj :=
     (Scheme.Modules.pullback g).mapIso (trivialObjIsoUnit X) ≪≫
       Scheme.Modules.pullbackObjUnitIso g ≪≫ (trivialObjIsoUnit Y).symm
   have hTrivial (i : ℕ) := Scheme.Modules.finrank_cohomology_congr K e i
   rw [eulerDegree_eq_finrank_sub, eulerDegree_eq_finrank_sub, pullback_obj_obj,
     ← hTrivial 0, ← hTrivial 1,
-    finrank_cohomology_zero_pullback_eq_of_isPullback H L.obj hU hV hInter hUV, hOne L.obj,
-    finrank_cohomology_zero_pullback_eq_of_isPullback H (trivial X).obj hU hV hInter hUV,
+    finrank_cohomology_zero_pullback_eq_of_isPullback H L.obj, hOne L.obj,
+    finrank_cohomology_zero_pullback_eq_of_isPullback H (trivial X).obj,
     hOne (trivial X).obj]
 
 include H in
