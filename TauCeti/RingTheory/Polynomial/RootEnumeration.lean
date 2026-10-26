@@ -36,12 +36,21 @@ whose size is the degree of the image of `f` in `L`. Reading Vieta's formulas th
 enumeration expresses the elementary symmetric polynomials evaluated at `x` through the
 coefficients of `f`.
 
+A numbering of the distinct root set by `Fin f.natDegree` is already a root enumeration: its
+entries exhaust the root-count bound, so no multiplicity can exceed one. This also gives the
+mapped polynomial as its leading coefficient times the product of its numbered linear factors,
+including annihilating base change in degree zero.
+
 ## Main definitions
 
 * `Polynomial.IsRootEnumeration f x`: `x` lists the roots of `f` in `L`, with multiplicity.
 
 ## Main results
 
+* `Polynomial.roots_map_eq_map_numbering`: a degree-sized numbering of the root set enumerates
+  the full mapped root multiset, without a separability assumption.
+* `Polynomial.map_eq_C_mul_prod_numbering`: the corresponding factorization retaining the
+  leading coefficient.
 * `Polynomial.IsRootEnumeration.splits`: an enumeration with at least as many entries as the
   degree of the image of `f` in `L` makes `f` split in `L`.
 * `Polynomial.exists_isRootEnumeration_iff_splits`: a polynomial has an enumeration indexed by a
@@ -142,6 +151,43 @@ theorem map [CommRing M] [IsDomain M] [Algebra R M] (hx : IsRootEnumeration f x)
     Multiset.map_map, RingHom.coe_coe]
 
 end IsRootEnumeration
+
+/-- A numbering of the root set by `Fin f.natDegree` enumerates the whole mapped root multiset.
+No separability or nonvanishing assumption is needed. If base change annihilates `f`, its root
+set is empty, so such a numbering can only exist in degree zero. -/
+theorem roots_map_eq_map_numbering
+    (e : Fin f.natDegree ≃ f.rootSet L) :
+    (f.map (algebraMap R L)).roots = Multiset.map (fun i ↦ ((e i : L))) univ.val := by
+  classical
+  have hcard : (f.aroots L).toFinset.card = f.natDegree := by
+    simpa [rootSet_def] using (Fintype.card_congr e).symm
+  have hnodup : (f.aroots L).Nodup :=
+    Multiset.toFinset_card_eq_card_iff_nodup.mp
+      (le_antisymm (Multiset.toFinset_card_le _) (by
+        rw [hcard]
+        exact f.card_roots_map_le_natDegree))
+  have hmem : ∀ {a : L}, a ∈ (f.map (algebraMap R L)).roots ↔ a ∈ f.rootSet L := fun {_} ↦
+    Polynomial.mem_aroots'.trans Polynomial.mem_rootSet'.symm
+  refine (Multiset.Nodup.ext hnodup ?_).mpr ?_
+  · exact univ.nodup.map fun i j h ↦ e.injective (Subtype.ext h)
+  · intro a
+    simp only [Multiset.mem_map, Finset.mem_val, mem_univ, true_and]
+    exact ⟨fun ha ↦ ⟨e.symm ⟨a, hmem.mp ha⟩, by simp⟩, fun ⟨i, hi⟩ ↦ hi ▸ hmem.mpr (e i).2⟩
+
+/-- A degree-sized numbering of the root set gives the factorization of the mapped polynomial,
+with its leading coefficient retained. This includes polynomials annihilated by base change. -/
+theorem map_eq_C_mul_prod_numbering
+    (e : Fin f.natDegree ≃ f.rootSet L) :
+    f.map (algebraMap R L) =
+      C (algebraMap R L f.leadingCoeff) * ∏ i, (X - C (e i : L)) := by
+  classical
+  have hroots : IsRootEnumeration f (fun i ↦ (e i : L)) :=
+    isRootEnumeration_iff.mpr (roots_map_eq_map_numbering e)
+  have hbound : (f.map (algebraMap R L)).natDegree ≤ Fintype.card (Fin f.natDegree) := by
+    simpa using (natDegree_map_le (f := algebraMap R L) (p := f))
+  have hdeg : (f.map (algebraMap R L)).natDegree = f.natDegree := by
+    simpa using hroots.natDegree_map_eq_card hbound
+  simpa only [leadingCoeff, coeff_map, hdeg] using hroots.eq_C_mul_prod_X_sub_C hbound
 
 /-- **Root enumerations exist exactly for split polynomials.** If the image of `f` in `L` has
 degree `Fintype.card ι`, then `f` has a root enumeration in `L` indexed by `ι` if and only if `f`

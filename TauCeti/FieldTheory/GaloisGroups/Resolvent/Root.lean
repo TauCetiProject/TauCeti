@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.Polynomial.Factors
 
 import Mathlib.FieldTheory.Galois.Infinite
 import TauCeti.FieldTheory.GaloisGroups.Orbits
-import TauCeti.RingTheory.Polynomial.Roots
+import TauCeti.RingTheory.Polynomial.RootEnumeration
 
 /-!
 # Roots and factors of a resolvent over the base field

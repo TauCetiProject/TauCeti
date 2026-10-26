@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Multiset.UnionInter
 public import TauCeti.Data.Multiset.Rel
-import TauCeti.RingTheory.Polynomial.RootEnumeration
 public import TauCeti.RingTheory.Polynomial.Vieta
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.FieldTheory.Separable
@@ -18,30 +17,24 @@ public import Mathlib.FieldTheory.Separable
 This file records several facts about the roots of a polynomial, either in its coefficient field
 or after base change to a domain `E`.
 
-First, a numbering of the root set by `Fin f.natDegree` enumerates the full root multiset after
-base change. The number of distinct roots exhausts the degree bound, so all roots are simple.
-This lets root-product formulas be expressed as finite products indexed by `Fin f.natDegree`,
-without choosing a global order on the root set. Retaining the leading coefficient gives the
-factorization of the mapped polynomial, including annihilating base change in degree zero.
-
-Second, the root set of a product of polynomials whose base changes to `E` are nonzero is the
+First, the root set of a product of polynomials whose base changes to `E` are nonzero is the
 union of the root sets of the factors. This is the lemma that decomposes the roots of a
 polynomial along a factorisation, for instance the roots of a monic integer polynomial along its
 monic irreducible factors. The same holds for the distinct roots of a finite product.
 For a separable product, the root sets of the factors are pairwise disjoint.
 
-Third, dividing a polynomial by the linear factor of a simple root removes exactly that root
+Second, dividing a polynomial by the linear factor of a simple root removes exactly that root
 from the root set. Here `a` only has to be a simple root in `E`: `f a` vanishes and `f' a` does
 not vanish after mapping to `E`, so the map `F → E` need not be injective.
 
-Fourth, translating the variable moves the roots: the roots of `f(X + t)` are the points `x`
+Third, translating the variable moves the roots: the roots of `f(X + t)` are the points `x`
 with `x + t` a root of `f`, so `x ↦ x + t` is a bijection between the two root sets, and
 `f(X + t)` is separable exactly when `f` is.
 
-Fifth, if every root of a nonzero polynomial is among a family of points `θ i`, then its roots
+Fourth, if every root of a nonzero polynomial is among a family of points `θ i`, then its roots
 are exactly the `θ i` in which it has positive multiplicity.
 
-Sixth, the roots of a product of linear factors over a finite family are the values of the
+Fifth, the roots of a product of linear factors over a finite family are the values of the
 family. For split monic polynomials, a relation `Multiset.Rel r` between the root multisets is
 the same as a pair of enumerations of the roots, indexed by `Fin f.natDegree`, factoring the two
 polynomials into linear factors with entries of equal index related by `r`.
@@ -55,10 +48,6 @@ the gcd with the derivative as the number of distinct roots.
 
 * `Polynomial.nodup_roots_of_forall_derivative_eval_ne_zero`: nonvanishing of the derivative at
   every rational root suffices for the rational root multiset to have no repetitions.
-* `Polynomial.roots_map_eq_map_numbering`: a degree-sized numbering of the root set enumerates
-  the full root multiset after base change, without a separability assumption.
-* `Polynomial.map_eq_C_mul_prod_numbering`: a degree-sized root numbering factors the mapped
-  polynomial as its leading coefficient times the product of the numbered linear factors.
 * `Polynomial.rootSet_mul`: the root set of a product of polynomials whose base changes to `E` are
   nonzero is the union of the root sets of the factors.
 * `Polynomial.roots_prod_toFinset`: the distinct roots of a finite product of nonzero polynomials
@@ -123,43 +112,6 @@ theorem _root_.Polynomial.nodup_roots_of_forall_derivative_eval_ne_zero [IsDomai
     rw [count_roots]
     omega
   · simp [Multiset.count_eq_zero_of_notMem hx]
-
-/-- A numbering of the root set by `Fin f.natDegree` enumerates the whole mapped root multiset.
-No separability or nonvanishing assumption is needed. If base change annihilates `f`, its root
-set is empty, so such a numbering can only exist in degree zero. -/
-theorem _root_.Polynomial.roots_map_eq_map_numbering
-    (e : Fin f.natDegree ≃ f.rootSet E) :
-    (f.map (algebraMap F E)).roots = Multiset.map (fun i ↦ ((e i : E))) univ.val := by
-  classical
-  have hcard : (f.aroots E).toFinset.card = f.natDegree := by
-    simpa [rootSet_def] using (Fintype.card_congr e).symm
-  have hnodup : (f.aroots E).Nodup :=
-    Multiset.toFinset_card_eq_card_iff_nodup.mp
-      (le_antisymm (Multiset.toFinset_card_le _) (by
-        rw [hcard]
-        exact f.card_roots_map_le_natDegree))
-  have hmem : ∀ {a : E}, a ∈ (f.map (algebraMap F E)).roots ↔ a ∈ f.rootSet E := fun {_} ↦
-    Polynomial.mem_aroots'.trans Polynomial.mem_rootSet'.symm
-  refine (Multiset.Nodup.ext hnodup ?_).mpr ?_
-  · exact univ.nodup.map fun i j h ↦ e.injective (Subtype.ext h)
-  · intro a
-    simp only [Multiset.mem_map, Finset.mem_val, mem_univ, true_and]
-    exact ⟨fun ha ↦ ⟨e.symm ⟨a, hmem.mp ha⟩, by simp⟩, fun ⟨i, hi⟩ ↦ hi ▸ hmem.mpr (e i).2⟩
-
-/-- A degree-sized numbering of the root set gives the factorization of the mapped polynomial,
-with its leading coefficient retained. This includes polynomials annihilated by base change. -/
-theorem _root_.Polynomial.map_eq_C_mul_prod_numbering
-    (e : Fin f.natDegree ≃ f.rootSet E) :
-    f.map (algebraMap F E) =
-      C (algebraMap F E f.leadingCoeff) * ∏ i, (X - C (e i : E)) := by
-  classical
-  have hroots : IsRootEnumeration f (fun i ↦ (e i : E)) :=
-    isRootEnumeration_iff.mpr (roots_map_eq_map_numbering e)
-  have hbound : (f.map (algebraMap F E)).natDegree ≤ Fintype.card (Fin f.natDegree) := by
-    simpa using (natDegree_map_le (f := algebraMap F E) (p := f))
-  have hdeg : (f.map (algebraMap F E)).natDegree = f.natDegree := by
-    simpa using hroots.natDegree_map_eq_card hbound
-  simpa only [leadingCoeff, coeff_map, hdeg] using hroots.eq_C_mul_prod_X_sub_C hbound
 
 /-- The root set of a product of polynomials is the union of the root sets of the factors,
 provided neither factor vanishes after base change to `E`. -/
