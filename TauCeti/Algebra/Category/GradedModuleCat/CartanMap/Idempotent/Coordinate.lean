@@ -142,8 +142,9 @@ theorem gradedIdempotentCoordinate_of (he : IsIdempotentElem e) (he₀ : e ∈ �
 /-- **Classes with diagonal idempotent coordinates are linearly independent.** If the graded
 dimension of `eᵢ • Sⱼ` is nonzero for `i = j` and `0` otherwise, the classes of the finite graded
 modules `Sⱼ` are linearly independent over `ℤ[q,q⁻¹]`. The diagonal graded dimensions need not
-be `1`: if `Sᵢ` is the head of `A eᵢ`, then `eᵢ • Sᵢ ≅ Hom_A(A eᵢ, Sᵢ) ≅ End_A(Sᵢ)`, a division
-algebra of dimension greater than one over a field that does not split `Sᵢ`. -/
+be `1`: if `Sᵢ` is the head of `A eᵢ` concentrated in degree zero, then
+`eᵢ • Sᵢ ≅ Hom_A(A eᵢ, Sᵢ) ≅ End_A(Sᵢ)`, a division algebra of dimension greater than one over a
+field that does not split `Sᵢ`. -/
 theorem linearIndependent_laurentK0_of_smulGradedDimension {I : Type*} {e : I → A}
     (he : ∀ i, IsIdempotentElem (e i)) (he₀ : ∀ i, e i ∈ 𝒜 0)
     (S : I → (gradedFiniteModules 𝒜).FullSubcategory)

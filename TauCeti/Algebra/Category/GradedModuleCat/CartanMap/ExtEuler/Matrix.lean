@@ -27,8 +27,9 @@ q-antilinear in its first argument, `Cᴴ * E` is the matrix of the projective/m
 If the projective basis consists of the classes `[A eᵢ]` of degree-zero idempotents `eᵢ`, and the
 module basis consists of classes `[Sⱼ]` with `gdim(eᵢ • Sⱼ) = 0` for `i ≠ j`, then the
 projective/module pairing matrix is diagonal with entries `gdim(eᵢ • Sᵢ)`, so
-`Cᴴ * E = diagonal (fun i ↦ gdim(eᵢ • Sᵢ))`. Over a general field, for `Sᵢ` the head of `A eᵢ`,
-this entry is the dimension of the division algebra `End_A(Sᵢ)`, as in the ungraded identity
+`Cᴴ * E = diagonal (fun i ↦ gdim(eᵢ • Sᵢ))`. Over a general field, for `Sᵢ` the head of `A eᵢ`
+concentrated in degree zero, this entry is the constant `dim_k End_A(Sᵢ)`, the dimension of a
+division algebra, as in the ungraded identity
 `TauCeti.cartanMatrix_transpose_mul_extEulerMatrix_eq_diagonal`. If every finite graded module has a
 finite graded-projective resolution, the graded Cartan matrix is invertible
 (`TauCeti.isUnit_det_gradedCartanMatrix_of_le_admitsFiniteResolution`), and therefore
@@ -192,8 +193,8 @@ include he₀ hne hbP hbM in
 /-- **The classes `[A eᵢ]` and `[Sⱼ]` pair diagonally under the q-Euler form**: if
 `gdim(eᵢ • Sⱼ) = 0` for `i ≠ j`, then in a projective basis of classes `[A eᵢ]` and a module basis
 of classes `[Sⱼ]`, the matrix of the projective/module q-Euler form is diagonal with entries
-`gdim(eᵢ • Sᵢ)`. Over a general field this entry is the dimension of `End_A(Sᵢ)` when `Sᵢ` is the
-head of `A eᵢ`, so it need not be `1`. -/
+`gdim(eᵢ • Sᵢ)`. Over a general field this entry is the constant `dim_k End_A(Sᵢ)` when `Sᵢ` is
+the head of `A eᵢ` concentrated in degree zero, so it need not be `1`. -/
 theorem gradedExtEulerMatrix_eq_diagonal_smulGradedDimension :
     gradedExtEulerMatrix (GradedModuleCat.shift 𝒜) (gradedFiniteProjectiveModules 𝒜)
         (gradedFiniteModules 𝒜) isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
