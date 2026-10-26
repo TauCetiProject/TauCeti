@@ -235,35 +235,29 @@ theorem eval₂_apply (φ : SmoothBundleForm I F V 2) (x : M)
   by simp [eval₂]
 
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
-@[simp]
 theorem eval₂_self (φ : SmoothBundleForm I F V 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
   simpa only [eval₂_apply] using (φ.1 x).map_eq_zero_of_eq ![v, v] (by simp) Fin.zero_ne_one
 
-@[simp]
 theorem eval₂_zero (x : M) (v w : TangentSpace I x) :
     (0 : SmoothBundleForm I F V 2).eval₂ x v w = 0 := by
   simp [eval₂]
 
-@[simp]
 theorem eval₂_add (φ ψ : SmoothBundleForm I F V 2) (x : M)
     (v w : TangentSpace I x) :
     (φ + ψ).eval₂ x v w = φ.eval₂ x v w + ψ.eval₂ x v w := by
   simp [eval₂]
 
-@[simp]
 theorem eval₂_neg (φ : SmoothBundleForm I F V 2) (x : M)
     (v w : TangentSpace I x) :
     (-φ).eval₂ x v w = -φ.eval₂ x v w := by
   simp [eval₂]
 
-@[simp]
 theorem eval₂_sub (φ ψ : SmoothBundleForm I F V 2) (x : M)
     (v w : TangentSpace I x) :
     (φ - ψ).eval₂ x v w = φ.eval₂ x v w - ψ.eval₂ x v w := by
   simp [eval₂]
 
-@[simp]
 theorem eval₂_smul (c : ℝ) (φ : SmoothBundleForm I F V 2) (x : M)
     (v w : TangentSpace I x) :
     (c • φ).eval₂ x v w = c • φ.eval₂ x v w := by
@@ -618,30 +612,25 @@ theorem eval₂_apply (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x)
     φ.eval₂ x v w = φ.1 x ![v, w] := by
   exact SmoothBundleForm.eval₂_apply φ x v w
 
-@[simp]
 theorem eval₂_zero (x : M) (v w : TangentSpace I x) :
     (0 : SmoothForm I M F 2).eval₂ x v w = 0 :=
   SmoothBundleForm.eval₂_zero x v w
 
-@[simp]
 theorem eval₂_add (φ ψ : SmoothForm I M F 2) (x : M)
     (v w : TangentSpace I x) :
     (φ + ψ).eval₂ x v w = φ.eval₂ x v w + ψ.eval₂ x v w :=
   SmoothBundleForm.eval₂_add φ ψ x v w
 
-@[simp]
 theorem eval₂_neg (φ : SmoothForm I M F 2) (x : M)
     (v w : TangentSpace I x) :
     (-φ).eval₂ x v w = -φ.eval₂ x v w :=
   SmoothBundleForm.eval₂_neg φ x v w
 
-@[simp]
 theorem eval₂_sub (φ ψ : SmoothForm I M F 2) (x : M)
     (v w : TangentSpace I x) :
     (φ - ψ).eval₂ x v w = φ.eval₂ x v w - ψ.eval₂ x v w :=
   SmoothBundleForm.eval₂_sub φ ψ x v w
 
-@[simp]
 theorem eval₂_smul (c : ℝ) (φ : SmoothForm I M F 2) (x : M)
     (v w : TangentSpace I x) :
     (c • φ).eval₂ x v w = c • φ.eval₂ x v w :=
@@ -694,7 +683,6 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
-@[simp]
 theorem eval₂_self (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
   exact SmoothBundleForm.eval₂_self φ x v
