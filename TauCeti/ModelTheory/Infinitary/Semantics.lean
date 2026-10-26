@@ -41,11 +41,19 @@ finitary formulas.
   `Mathlib/ModelTheory/Infinitary/Semantics.lean` in `leanprover-community/mathlib4#42758`
   (Apache 2.0) at commit `2264c2c872bb642ab519aa2288d53110f07af37d`.
 * Divergences from these sources: realization laws for the added binary connectives
-  (`realize_inf`, `realize_sup`, `realize_iff`); `Realize`, `FormulaInf.Realize` and
+  (`realize_inf`, `realize_sup`, `realize_iff`); `FormulaInf.Realize` and
   `SentenceInf.Realize` are not exposed, with the simp bridges `FormulaInf.realize_def` and
   `SentenceInf.realize_def` (at priority `low`, so default-priority facts stated at the formula or
   sentence level are tried first) in their place; `realize_alls` and `realize_exs` are stated for
   bounded realization at the empty valuation of the bound-variable slots, their simp-normal form.
+
+## Implementation notes
+
+`BoundedFormulaInf.Realize` is exposed, as in the sources. Its pattern-matching definition
+compiles through an auxiliary matcher, which is named `BoundedFormulaInf.Realize.match_1` only
+when the body is exposed (otherwise the matcher gets a private, module-specific name). Exposing
+it keeps that name stable, so that a downstream restatement of the same definition can be
+compared with this one constant by constant.
 -/
 
 public section
@@ -62,6 +70,7 @@ namespace BoundedFormulaInf
 
 /-- Realization of an infinitary bounded formula in a structure, given valuations of the free
 and bound variables. One recursion serves every carrier. -/
+@[expose]
 def Realize {M : Type w} [L.Structure M] :
     ∀ {n}, L.BoundedFormulaInf ι α n → (α → M) → (Fin n → M) → Prop
   | _, .falsum, _, _ => False
