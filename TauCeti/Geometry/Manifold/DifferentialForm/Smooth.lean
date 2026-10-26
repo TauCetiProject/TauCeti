@@ -28,6 +28,13 @@ trivialization or a global smooth alternating-bundle instance.
 
 The fixed-coefficient section and degree-two evaluation adapters generalize the corresponding
 declarations in `TauCeti.Geometry.Manifold.TwoForm.Basic`.
+
+The generic evaluation and smoothness proofs use Mathlib's alternating-map laws
+`ContinuousAlternatingMap.map_eq_zero_of_eq`, `ContinuousAlternatingMap.map_swap`,
+`ContinuousAlternatingMap.ext`, and
+`ContMDiff.continuousAlternatingMap_bundle_apply` from
+`Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap`; the algebraic laws and
+extensionality come from `Mathlib.LinearAlgebra.Alternating.Basic`.
 -/
 
 public section
@@ -228,9 +235,39 @@ theorem eval₂_apply (φ : SmoothBundleForm I F V 2) (x : M)
   by simp [eval₂]
 
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
+@[simp]
 theorem eval₂_self (φ : SmoothBundleForm I F V 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
   simpa only [eval₂_apply] using (φ.1 x).map_eq_zero_of_eq ![v, v] (by simp) Fin.zero_ne_one
+
+@[simp]
+theorem eval₂_zero (x : M) (v w : TangentSpace I x) :
+    (0 : SmoothBundleForm I F V 2).eval₂ x v w = 0 := by
+  simp [eval₂]
+
+@[simp]
+theorem eval₂_add (φ ψ : SmoothBundleForm I F V 2) (x : M)
+    (v w : TangentSpace I x) :
+    (φ + ψ).eval₂ x v w = φ.eval₂ x v w + ψ.eval₂ x v w := by
+  simp [eval₂]
+
+@[simp]
+theorem eval₂_neg (φ : SmoothBundleForm I F V 2) (x : M)
+    (v w : TangentSpace I x) :
+    (-φ).eval₂ x v w = -φ.eval₂ x v w := by
+  simp [eval₂]
+
+@[simp]
+theorem eval₂_sub (φ ψ : SmoothBundleForm I F V 2) (x : M)
+    (v w : TangentSpace I x) :
+    (φ - ψ).eval₂ x v w = φ.eval₂ x v w - ψ.eval₂ x v w := by
+  simp [eval₂]
+
+@[simp]
+theorem eval₂_smul (c : ℝ) (φ : SmoothBundleForm I F V 2) (x : M)
+    (v w : TangentSpace I x) :
+    (c • φ).eval₂ x v w = c • φ.eval₂ x v w := by
+  simp [eval₂]
 
 /-- Swapping the inputs of a bundle-valued two-form negates its value. -/
 theorem eval₂_swap (φ : SmoothBundleForm I F V 2) (x : M)
@@ -265,7 +302,8 @@ section Evaluation
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
 
-/-- Evaluating a smooth bundle-valued two-form on two smooth tangent fields is smooth. -/
+/-- Evaluating a smooth bundle-valued two-form on two `C^n` tangent fields along a `C^n` map is
+`C^n`. -/
 theorem contMDiff_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
     (φ : SmoothBundleForm I F V 2) {b : N → M}
     {U W : ∀ y : N, TangentSpace I (b y)}
@@ -580,104 +618,57 @@ theorem eval₂_apply (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x)
     φ.eval₂ x v w = φ.1 x ![v, w] := by
   exact SmoothBundleForm.eval₂_apply φ x v w
 
+@[simp]
+theorem eval₂_zero (x : M) (v w : TangentSpace I x) :
+    (0 : SmoothForm I M F 2).eval₂ x v w = 0 :=
+  SmoothBundleForm.eval₂_zero x v w
+
+@[simp]
+theorem eval₂_add (φ ψ : SmoothForm I M F 2) (x : M)
+    (v w : TangentSpace I x) :
+    (φ + ψ).eval₂ x v w = φ.eval₂ x v w + ψ.eval₂ x v w :=
+  SmoothBundleForm.eval₂_add φ ψ x v w
+
+@[simp]
+theorem eval₂_neg (φ : SmoothForm I M F 2) (x : M)
+    (v w : TangentSpace I x) :
+    (-φ).eval₂ x v w = -φ.eval₂ x v w :=
+  SmoothBundleForm.eval₂_neg φ x v w
+
+@[simp]
+theorem eval₂_sub (φ ψ : SmoothForm I M F 2) (x : M)
+    (v w : TangentSpace I x) :
+    (φ - ψ).eval₂ x v w = φ.eval₂ x v w - ψ.eval₂ x v w :=
+  SmoothBundleForm.eval₂_sub φ ψ x v w
+
+@[simp]
+theorem eval₂_smul (c : ℝ) (φ : SmoothForm I M F 2) (x : M)
+    (v w : TangentSpace I x) :
+    (c • φ).eval₂ x v w = c • φ.eval₂ x v w :=
+  SmoothBundleForm.eval₂_smul c φ x v w
+
 
 section Evaluation
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
 
-/-- Evaluation in tangent coordinates agrees with the alternating-bundle coordinate chart.
+/-- Evaluating a smooth degree-two form on two `C^n` tangent fields along a `C^n` map is `C^n`.
 
-This is the chartwise transport used by `contMDiff_apply`: the target tangent vectors are first
-sent through the tangent-bundle trivialization, and the form is then read in the corresponding
-alternating-map coordinates. -/
-private theorem eval₂_eq_inCoordinates
-    (form : SmoothForm I M F 2) {x y : M}
-    (hy : y ∈ (trivializationAt E (TangentSpace I) x).baseSet)
-    (v w : TangentSpace I y) :
-    SmoothForm.eval₂ form y v w =
-      ContinuousAlternatingMap.inCoordinates E F
-        (B₁ := M) (B₂ := M) (E₁ := TangentSpace I) (E₂ := Bundle.Trivial M F)
-        x y x y ((SmoothForm.toContMDiffSection form) y)
-        ![(trivializationAt E (TangentSpace I) x ⟨y, v⟩).2,
-          (trivializationAt E (TangentSpace I) x ⟨y, w⟩).2] := by
-  let e := trivializationAt E (TangentSpace I) x
-  rw [ContinuousAlternatingMap.inCoordinates_eq (F₁ := E) (F₂ := F)
-    (B₁ := M) (B₂ := M) (E₁ := TangentSpace I) (E₂ := Bundle.Trivial M F)
-    hy (by simp)]
-  have hv : e.symm y (e ⟨y, v⟩).2 = v := by
-    rw [← e.symmL_apply (R := ℝ) hy]
-    simpa [e.coe_linearMapAt_of_mem (R := ℝ) hy] using
-      (e.symmL_continuousLinearMapAt (R := ℝ) hy v)
-  have hw : e.symm y (e ⟨y, w⟩).2 = w := by
-    rw [← e.symmL_apply (R := ℝ) hy]
-    simpa [e.coe_linearMapAt_of_mem (R := ℝ) hy] using
-      (e.symmL_continuousLinearMapAt (R := ℝ) hy w)
-  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, SmoothForm.eval₂_apply]
-  simp only [Trivial.fiberBundle_trivializationAt',
-    Trivial.continuousLinearEquivAt_trivialization, ContinuousLinearEquiv.coe_refl,
-    SmoothForm.toContMDiffSection_apply, ContinuousLinearEquiv.coe_coe,
-    Trivialization.continuousLinearEquivAt_symm_apply,
-    ContinuousLinearMap.compContinuousAlternatingMap_coe, ContinuousLinearMap.coe_id',
-    Function.comp_apply, id_eq]
-  congr 1
-  funext i
-  fin_cases i
-  · simpa [Function.comp_apply] using hv.symm
-  · convert hw.symm using 1 <;> rfl
-
-/-- Evaluating a smooth degree-two form on two smooth tangent fields along a smooth map is smooth.
-
-This result holds for arbitrary normed coefficient spaces and the regularity required by the
-smooth-form carrier. -/
-lemma contMDiff_apply {n : ℕ∞ω} [IsManifold I (n + 1) M] [ENat.LEInfty n]
+This is the trivial-bundle specialization of `SmoothBundleForm.contMDiff_eval₂`. -/
+lemma contMDiff_apply {n : WithTop ℕ∞} [ENat.LEInfty n]
     (form : SmoothForm I M F 2)
     {b : N → M}
     {V W : ∀ y : N, TangentSpace I (b y)}
     (hV : ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (V y)))
     (hW : ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (W y))) :
     ContMDiff I' 𝓘(ℝ, F) n (fun y ↦ SmoothForm.eval₂ form (b y) (V y) (W y)) := by
-  have hb : ContMDiff I' I n b := fun y ↦ by
-    have hy := hV y
-    rw [← contMDiffWithinAt_univ] at hy ⊢
-    exact (contMDiffWithinAt_totalSpace.mp hy).1
-  have hform := (form.toContMDiffSection.contMDiff.of_le ENat.LEInfty.out).comp hb
-  have hform' : ContMDiff I' (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F)) n
-      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F)
-        (E := fun x ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] F) (b y)
-        (form.toContMDiffSection (b y))) := by
-    convert hform using 1
-    funext y
-    rfl
+  have h := SmoothBundleForm.contMDiff_eval₂ (I := I) (F := F)
+    (V := Bundle.Trivial M F) form hV hW
   intro y₀
-  let e := trivializationAt E (TangentSpace I) (b y₀)
-  have he : b y₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) (b y₀)
-  let _ : ContMDiffVectorBundle n E (TangentSpace I) I :=
-    TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := n)
-  have hV' := (e.contMDiffAt_iff (f := fun y ↦ TotalSpace.mk' E (b y) (V y))
-    (FiberBundle.mem_trivializationAt_proj_source (x := ⟨b y₀, V y₀⟩))).mp (hV y₀)
-  have hW' := (e.contMDiffAt_iff (f := fun y ↦ TotalSpace.mk' E (b y) (W y))
-    (FiberBundle.mem_trivializationAt_proj_source (x := ⟨b y₀, W y₀⟩))).mp (hW y₀)
-  have hf := (contMDiffAt_continuousAlternatingMap_bundle (IM := I') (IB := I) (n := n)
-    (f := fun y : N ↦
-      (Bundle.TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F)
-        (E := fun x ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] F) (b y)
-        (form.toContMDiffSection (b y))))
-    ).mp (hform' y₀)
-  have happly := (hf.2.continuousAlternatingMap_apply
-    (f := fun i : Fin 2 ↦ Fin.cases
-      (fun y ↦ (e ⟨b y, V y⟩).2)
-      (fun _ ↦ fun y ↦ (e ⟨b y, W y⟩).2) i)
-    (fun i ↦ by
-    fin_cases i
-    · exact hV'.2
-    · exact hW'.2))
-  refine happly.congr_of_eventuallyEq ?_
-  filter_upwards [(hb y₀).continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds he)] with y hy
-  rw [eval₂_eq_inCoordinates form hy (V y) (W y)]
-  congr 1
-  funext i
-  fin_cases i <;> rfl
+  have hy := h y₀
+  have hy' := (Bundle.contMDiffAt_totalSpace (IM := I') (IB := I) (n := n)).mp hy
+  simpa [Bundle.Trivial.eq_trivialization, SmoothForm.eval₂, SmoothBundleForm.eval₂] using hy'.2
 
 end Evaluation
 
@@ -703,6 +694,7 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
+@[simp]
 theorem eval₂_self (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
   exact SmoothBundleForm.eval₂_self φ x v
