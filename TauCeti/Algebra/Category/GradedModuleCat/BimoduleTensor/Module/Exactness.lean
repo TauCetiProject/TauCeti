@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.RingTheory.Finiteness.Projective
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic
-import TauCeti.LinearAlgebra.Dual.FiniteProjective
 import TauCeti.LinearAlgebra.Dual.Opposite
 import TauCeti.LinearAlgebra.TensorProduct.Balanced.DualHom
 
@@ -46,14 +45,6 @@ variable {k : Type uk} {A : Type uA} {B : Type uB}
 attribute [local instance] instModuleMulOppositeCarrierTensorProduct
   instIsScalarTowerMulOppositeCarrierTensorProduct
 
-private theorem rightDual_finite_projective
-    (M : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece)
-    [Module.Finite Bᵐᵒᵖ M] [Module.Projective Bᵐᵒᵖ M] :
-    Module.Finite B (M →ₗ[Bᵐᵒᵖ] B) ∧ Module.Projective B (M →ₗ[Bᵐᵒᵖ] B) :=
-  ⟨Module.Finite.of_surjective (opDualCodomainEquiv B M).symm.toLinearMap
-    (opDualCodomainEquiv B M).symm.surjective,
-    Module.Projective.of_equiv (opDualCodomainEquiv B M).symm⟩
-
 variable [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece]
 
 /-- The underlying tensor carrier is Hom from the opposite dual of a finite projective
@@ -64,8 +55,6 @@ def bimoduleModuleTensorHomEquiv
     (N : GradedModuleCat.{vN} Δ.piece) :
     GradedModuleCat.bimoduleModuleTensorObj Γ Δ M N ≃ₗ[k]
       ((M →ₗ[Bᵐᵒᵖ] B) →ₗ[B] N) := by
-  let : Module.Finite B (M →ₗ[Bᵐᵒᵖ] B) := (rightDual_finite_projective Γ Δ M).1
-  let : Module.Projective B (M →ₗ[Bᵐᵒᵖ] B) := (rightDual_finite_projective Γ Δ M).2
   exact (GradedModuleCat.bimoduleModuleTensorUnderlyingEquiv Γ Δ M N).trans
     ((BalancedTensorProduct.congr ((unopDualEvalEquiv B M).restrictScalars k)
       (LinearEquiv.refl k N)
@@ -81,8 +70,6 @@ theorem bimoduleModuleTensorHomEquiv_tmul
     bimoduleModuleTensorHomEquiv Γ Δ M N
         (GradedModuleCat.bimoduleModuleTensorTmul Γ Δ M N m n) p =
       p m • n := by
-  let : Module.Finite B (M →ₗ[Bᵐᵒᵖ] B) := (rightDual_finite_projective Γ Δ M).1
-  let : Module.Projective B (M →ₗ[Bᵐᵒᵖ] B) := (rightDual_finite_projective Γ Δ M).2
   have hc := BalancedTensorProduct.congr_tmul
     ((unopDualEvalEquiv B M).restrictScalars k) (LinearEquiv.refl k N)
     (fun a m ↦ (unopDualEvalEquiv B M).map_smul (op a) m) (fun _ _ ↦ rfl) m n
@@ -103,33 +90,25 @@ theorem bimoduleModuleTensorHomEquiv_naturality
     (f.hom.compRight k).comp (bimoduleModuleTensorHomEquiv Γ Δ M N).toLinearMap =
       (bimoduleModuleTensorHomEquiv Γ Δ M N').toLinearMap.comp
         ((((GradedModuleCat.bimoduleModuleTensor Γ Δ).obj M).map f).hom.restrictScalars k) := by
-  apply LinearMap.ext
-  intro z
+  apply (LinearMap.cancel_right
+    (g := (GradedModuleCat.bimoduleModuleTensorUnderlyingEquiv Γ Δ M N).symm.toLinearMap)
+    (GradedModuleCat.bimoduleModuleTensorUnderlyingEquiv Γ Δ M N).symm.surjective).mp
+  apply BalancedTensorProduct.hom_ext
+  intro m n
   apply LinearMap.ext
   intro p
-  -- Expose LinearMap.comp, compRight, restrictScalars and LinearEquiv.toLinearMap
-  -- as applications before induction on the underlying balanced tensor carrier.
-  change f.hom (bimoduleModuleTensorHomEquiv Γ Δ M N z p) =
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+    GradedModuleCat.bimoduleModuleTensorUnderlyingEquiv_symm_tmul]
+  -- The curried functor uses bimoduleModuleTensorMap with the identity in the bimodule
+  -- variable. Expose that map and the linear-map coercions for its pure-tensor equation.
+  change f.hom (bimoduleModuleTensorHomEquiv Γ Δ M N
+    (GradedModuleCat.bimoduleModuleTensorTmul Γ Δ M N m n) p) =
     bimoduleModuleTensorHomEquiv Γ Δ M N'
-      ((((GradedModuleCat.bimoduleModuleTensor Γ Δ).obj M).map f).hom z) p
-  obtain ⟨t, rfl⟩ :=
-    (GradedModuleCat.bimoduleModuleTensorUnderlyingEquiv Γ Δ M N).symm.surjective z
-  induction t using BalancedTensorProduct.induction_on with
-  | ht m n =>
-    simp only [GradedModuleCat.bimoduleModuleTensorUnderlyingEquiv_symm_tmul]
-    -- The curried bimoduleModuleTensor functor defines this map using
-    -- bimoduleModuleTensorMap with the identity in the bimodule variable.
-    -- Expose that representation to apply its named pure-tensor computation.
-    change f.hom (bimoduleModuleTensorHomEquiv Γ Δ M N
-      (GradedModuleCat.bimoduleModuleTensorTmul Γ Δ M N m n) p) =
-      bimoduleModuleTensorHomEquiv Γ Δ M N'
-        ((GradedModuleCat.bimoduleModuleTensorMap Γ Δ (𝟙 M) f).hom
-          (GradedModuleCat.bimoduleModuleTensorTmul Γ Δ M N m n)) p
-    rw [GradedModuleCat.bimoduleModuleTensorMap_tmul, GradedModuleCat.hom_id,
-      LinearMap.id_apply, bimoduleModuleTensorHomEquiv_tmul, bimoduleModuleTensorHomEquiv_tmul]
-    exact f.hom.map_smul _ _
-  | ha x y hx hy =>
-    simpa only [map_add, LinearMap.add_apply] using congrArg₂ (· + ·) hx hy
+      ((GradedModuleCat.bimoduleModuleTensorMap Γ Δ (𝟙 M) f).hom
+        (GradedModuleCat.bimoduleModuleTensorTmul Γ Δ M N m n)) p
+  rw [GradedModuleCat.bimoduleModuleTensorMap_tmul, GradedModuleCat.hom_id,
+    LinearMap.id_apply, bimoduleModuleTensorHomEquiv_tmul, bimoduleModuleTensorHomEquiv_tmul]
+  exact f.hom.map_smul _ _
 
 /-- A graded bimodule finite projective over the balancing algebra on the right acts
 by a functor preserving homology of graded left modules. -/
@@ -138,7 +117,6 @@ theorem bimoduleModuleTensor_preservesHomology
     [Module.Finite Bᵐᵒᵖ M] [Module.Projective Bᵐᵒᵖ M] :
     ((GradedModuleCat.bimoduleModuleTensor.{vM, vN} Γ Δ).obj M).PreservesHomology := by
   let P := M →ₗ[Bᵐᵒᵖ] B
-  let : Module.Projective B P := (rightDual_finite_projective Γ Δ M).2
   apply Functor.preservesHomology_of_map_exact
     ((GradedModuleCat.bimoduleModuleTensor.{vM, vN} Γ Δ).obj M)
   intro S hS

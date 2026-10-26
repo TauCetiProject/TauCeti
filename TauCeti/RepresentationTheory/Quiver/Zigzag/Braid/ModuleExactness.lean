@@ -5,19 +5,21 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Exactness
+public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Module.Exactness
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.RightProjective
 import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.RepresentationTheory.Quiver.Zigzag.Dimension
 
 /-!
 # Exactness of the fixed-term zigzag bimodule tensor actions
 
-The vertex ideals are cyclic over the zigzag algebra, which is finite free over the
-coefficient ring. Their tensor factorization makes the actual vertex bimodule finite
-over that ring and hence finite over the algebra on the right. Together with the
+The vertex ideals are cyclic over the zigzag algebra. Its canonical finiteness instance
+and their tensor factorization make the actual vertex bimodule finite over the coefficient
+ring and hence over the algebra on the right. The regular bimodule is finite directly
+through its canonical equivalence with the regular right module. Together with the
 established right projectivity, the general finite-projective graded tensor theorem
-then proves homology preservation for the actual vertex bimodule, the regular
-bimodule, and internal shifts of the vertex bimodule.
+proves homology preservation for the actual vertex bimodule, the regular bimodule,
+and internal shifts of the vertex bimodule.
 
 This is a fixed-term tensor result. Preservation of quasi-isomorphisms by the totalized
 braid complexes, localization and derived action transfer require further steps.
@@ -55,12 +57,6 @@ private local instance rightTower
   TauCeti.Algebra.TensorProduct.moduleRightIsScalarTower (k := k) (A := Z) (B := Zᵐᵒᵖ) M
 
 private theorem vertex_finite_k (i : V) : Module.Finite k (U i) := by
-  classical
-  let : Fintype V := Fintype.ofFinite V
-  let : Fintype (ZigzagBasisIndex G) := inferInstance
-  let : Module.Finite k Z := Module.Finite.of_basis (zigzagAlgebraBasis k G)
-  let : Module.Finite k Zᵐᵒᵖ :=
-    Module.Finite.equiv (MulOpposite.opLinearEquiv k : Z ≃ₗ[k] Zᵐᵒᵖ)
   let : Module.Finite k (L i) := Module.Finite.trans Z (L i)
   let : Module.Finite k (R i) := Module.Finite.trans Zᵐᵒᵖ (R i)
   exact Module.Finite.equiv (zigzagBraidBimoduleRightFactorsEquiv k G i).symm
@@ -79,16 +75,10 @@ theorem preservesHomology_zigzagGradedBraidBimoduleTensor (i : V) :
 theorem preservesHomology_zigzagGradedBimoduleTensor :
     ((GradedModuleCat.bimoduleModuleTensor.{max u w, v} Γ Γ).obj
       (zigzagGradedBimodule k G)).PreservesHomology := by
-  classical
-  let : Fintype V := Fintype.ofFinite V
-  let : Fintype (ZigzagBasisIndex G) := inferInstance
-  let : Module.Finite k Z := Module.Finite.of_basis (zigzagAlgebraBasis k G)
-  let : Module.Finite k (zigzagGradedBimodule k G) :=
-    Module.Finite.equiv (Bimodule.of (AlgHom.id k Z))
   let : Module.Projective Zᵐᵒᵖ (zigzagGradedBimodule k G) :=
     inferInstanceAs (Module.Projective Zᵐᵒᵖ (Bimodule (AlgHom.id k Z)))
   let : Module.Finite Zᵐᵒᵖ (zigzagGradedBimodule k G) :=
-    Module.Finite.of_restrictScalars_finite k Zᵐᵒᵖ (zigzagGradedBimodule k G)
+    Module.Finite.equiv (Bimodule.rightLinearEquiv (AlgHom.id k Z)).symm
   exact GradedModuleCat.bimoduleModuleTensor_preservesHomology.{max u w, v} Γ Γ
     (zigzagGradedBimodule k G)
 
