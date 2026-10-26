@@ -98,6 +98,30 @@ theorem mapCoeffs_add (u v : C₀(J, R) →L[R] C₀(I, R)) (f : R →+* S)
   simp
 
 @[simp]
+theorem mapCoeffs_neg (u : C₀(J, R) →L[R] C₀(I, R)) (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (-u).mapCoeffs f hf = -u.mapCoeffs f hf := by
+  apply matrixCoeff_injective
+  ext i j
+  simp
+
+@[simp]
+theorem mapCoeffs_sub (u v : C₀(J, R) →L[R] C₀(I, R)) (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (u - v).mapCoeffs f hf = u.mapCoeffs f hf - v.mapCoeffs f hf := by
+  apply matrixCoeff_injective
+  ext i j
+  simp
+
+@[simp]
+theorem mapCoeffs_sum {ι : Type*} (s : Finset ι) (u : ι → C₀(J, R) →L[R] C₀(I, R))
+    (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (∑ k ∈ s, u k).mapCoeffs f hf = ∑ k ∈ s, (u k).mapCoeffs f hf := by
+  apply matrixCoeff_injective
+  ext i j
+  simp [Matrix.sum_apply]
+
+@[simp]
 theorem mapCoeffs_smul (u : C₀(J, R) →L[R] C₀(I, R)) (f : R →+* S)
     (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (r : R) :
     (r • u).mapCoeffs f hf = f r • u.mapCoeffs f hf := by
