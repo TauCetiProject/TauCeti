@@ -21,27 +21,30 @@ values of countably many sentences.
 
 ## Main results
 
-* `Set.exists_countable_exceptions_of_splits`: outside one countable set, every `P i` is
+* `TauCeti.exists_countable_exceptions_of_splits`: outside one countable set, every `P i` is
   constant.
-* `Set.countable_range_of_splits`: a map that depends only on the truth values of the `P i` has
-  countable range.
-* `Set.constant_off_countable_of_splits`: on an uncountable type, a map whose values are separated
-  by countably many tests, each with a countable side along the map, is constant off a countable
-  set.
+* `TauCeti.countable_range_of_splits`: a map that depends only on the truth values of the `P i`
+  has countable range.
+* `TauCeti.constant_off_countable_of_splits`: on a nonempty type, such a map is constant off a
+  countable set; `TauCeti.constant_off_countable_of_separating_splits` is the case of a map whose
+  values are separated by countably many tests.
 
 ## References
 
 * Ported from `cameronfreer/infinitary-logic` at commit
   `518a366cba97b1ae8c4dc64a297a396939bc3e0b`, `InfinitaryLogic/Descriptive/CountableSplits.lean`.
-* Divergences from that source: the results are in the `Set` namespace; uncountability of the
-  domain is the instance `[Uncountable X]` rather than the hypothesis `¬ Countable X`.
+* Divergences from that source: the constancy result is stated for any map determined by the
+  predicates, with the separating-tests form as a corollary, and assumes only that the domain is
+  nonempty rather than uncountable.
 -/
 
 public section
 
 universe u v w
 
-namespace Set
+namespace TauCeti
+
+open Set
 
 variable {X : Type u} {ι : Type v} [Countable ι]
 
@@ -88,21 +91,30 @@ theorem countable_range_of_splits {Y : Type w} {P : ι → X → Prop} (g : X �
     rintro _ ⟨x, rfl⟩
     exact ⟨x, h x, rfl⟩
 
-/-- **Constant off a countable set.** On an uncountable type, a map whose values are separated by
-countably many tests, each with a countable truth side along the map, agrees with one of its
+/-- **Constant off a countable set.** On a nonempty type, a map that depends only on the truth
+values of countably many predicates, each with a countable truth side, agrees with one of its
 values outside a countable set. -/
-theorem constant_off_countable_of_splits [Uncountable X] {Y : Type w} (f : X → Y)
+theorem constant_off_countable_of_splits [Nonempty X] {Y : Type w} {P : ι → X → Prop}
+    (g : X → Y) (hg : ∀ x y, (∀ i, P i x ↔ P i y) → g x = g y)
+    (hsplit : ∀ i, {x | P i x}.Countable ∨ {x | ¬ P i x}.Countable) :
+    ∃ x₀, {x | g x ≠ g x₀}.Countable := by
+  obtain ⟨N, hN, hconst⟩ := exists_countable_exceptions_of_splits hsplit
+  by_cases h : ∃ x₀, x₀ ∉ N
+  · obtain ⟨x₀, hx₀⟩ := h
+    refine ⟨x₀, hN.mono fun x hx => ?_⟩
+    by_contra hxN
+    exact hx (hg _ _ (hconst x hxN x₀ hx₀))
+  · -- every point is exceptional, so the whole type is countable
+    push Not at h
+    exact ⟨Classical.arbitrary X, hN.mono fun x _ => h x⟩
+
+/-- **Constant off a countable set, separating tests.** On a nonempty type, a map whose values are
+separated by countably many tests, each with a countable truth side along the map, agrees with
+one of its values outside a countable set. -/
+theorem constant_off_countable_of_separating_splits [Nonempty X] {Y : Type w} (f : X → Y)
     (test : ι → Y → Prop) (hsep : ∀ y z, (∀ i, test i y ↔ test i z) → y = z)
     (hsplit : ∀ i, {x | test i (f x)}.Countable ∨ {x | ¬ test i (f x)}.Countable) :
-    ∃ x₀, {x | f x ≠ f x₀}.Countable := by
-  obtain ⟨N, hN, hconst⟩ := exists_countable_exceptions_of_splits hsplit
-  -- the exceptional set is countable, so some point lies outside it
-  obtain ⟨x₀, hx₀⟩ : ∃ x₀, x₀ ∉ N := by
-    by_contra h
-    push Not at h
-    exact not_countable_univ (hN.mono fun x _ => h x)
-  refine ⟨x₀, hN.mono fun x hx => ?_⟩
-  by_contra hxN
-  exact hx (hsep _ _ (hconst x hxN x₀ hx₀))
+    ∃ x₀, {x | f x ≠ f x₀}.Countable :=
+  constant_off_countable_of_splits f (fun _ _ h => hsep _ _ h) hsplit
 
-end Set
+end TauCeti
