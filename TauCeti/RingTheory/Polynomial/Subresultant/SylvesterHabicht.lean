@@ -115,15 +115,6 @@ theorem _root_.Polynomial.sylvesterHabichtMatrix_map_map [Semiring R] [Semiring 
   ext r c
   induction r using Fin.addCases <;> simp [sylvesterHabichtMatrix, apply_ite f]
 
-private theorem sign_reverseRightBlock (a b : ℕ) :
-    Equiv.Perm.sign (finSumPerm (Equiv.refl (Fin a)) (Fin.revPerm (n := b))) =
-      (-1) ^ b.choose 2 := by
-  have h := Equiv.Perm.sign_eq_sign_of_equiv
-    (finSumPerm (Equiv.refl (Fin a)) (Fin.revPerm (n := b)))
-    (Equiv.Perm.sumCongr (Equiv.refl (Fin a)) Fin.revPerm) finSumFinEquiv.symm
-    (fun x => by simp [Equiv.Perm.finSumPerm_apply])
-  simpa [Fin.sign_revPerm] using h
-
 /-- The permutation relating the column orders of the principal subresultant and
 Sylvester–Habicht matrices has the sign of reversing all `a + b` indices, of reversing the last `b`
 of them, and of swapping the blocks. -/
@@ -138,8 +129,8 @@ private theorem sign_reindexPerm (a b : ℕ) :
         ((finAddFlip.trans (finCongr (add_comm b a))).trans Fin.revPerm) :=
     Equiv.ext fun _ => rfl
   rw [h, Equiv.Perm.sign_trans, Equiv.Perm.sign_trans, Equiv.Perm.sign_symm,
-    sign_reverseRightBlock, sign_finAddFlip_trans_finCongr, Fin.sign_revPerm, ← pow_add,
-    ← pow_add]
+    Equiv.Perm.sign_finSumPerm, Equiv.Perm.sign_refl, one_mul, sign_finAddFlip_trans_finCongr,
+    Fin.sign_revPerm, Fin.sign_revPerm, ← pow_add, ← pow_add]
   congr 1
   ring
 
