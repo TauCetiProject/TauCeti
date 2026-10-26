@@ -42,6 +42,10 @@ capacity; for residual capacities these are augmenting walks.
 * `TauCeti.ArrowWalk.bottleneck`: the least capacity along a walk that traverses an arrow.
 * `TauCeti.PositiveReachable c s t`: some walk from `s` to `t` traverses only arrows of positive
   capacity for `c`.
+* `TauCeti.ReachableAvoiding Q X s t`: some walk from `s` to `t` visits no vertex of `X`, so `t`
+  stays reachable from `s` after deleting the vertices of `X`.
+* `TauCeti.ArrowWalk.InternallyDisjoint`: two walks from `s` to `t` sharing no vertex other than
+  `s` and `t`.
 
 ## Main results
 
@@ -493,5 +497,106 @@ lemma exists_isPath_of_isAcyclic {K : Type w} [Zero K] [LinearOrder K] [Finite V
     exact hmin w (ReflTransGen.head ⟨e', h⟩ hs) (.single ⟨e', h⟩)
   · refine le_antisymm (not_lt.1 fun h ↦ ?_) (hf _ _ e')
     exact hmax w (ht.tail ⟨e', h⟩) (.single ⟨e', h⟩)
+
+/-! ### Reachability avoiding a vertex set -/
+
+section ReachableAvoiding
+
+variable {X Y : Set V} {s t x : V}
+
+/-- A walk between distinct vertices `s` and `t`, with no arrow from `s` to `t`, visits a vertex
+other than `s` and `t`. -/
+theorem ArrowWalk.exists_mem_vertices_ne_ne (hst : s ≠ t) (hadj : IsEmpty (Q s t))
+    (p : ArrowWalk Q s t) : ∃ v ∈ p.vertices, v ≠ s ∧ v ≠ t := by
+  suffices h : ∀ {x : V} (p : ArrowWalk Q s x), x = t → ∃ v ∈ p.vertices, v ≠ s ∧ v ≠ t from
+    h p rfl
+  intro x p
+  induction p with
+  | nil => exact fun h ↦ absurd h hst
+  | @cons y z q e ih =>
+    intro hz
+    subst z
+    have hmem {v : V} (hv : v ∈ ArrowWalk.vertices (Q := Q) q) :
+        v ∈ (ArrowWalk.cons q e).vertices := by
+      simp [ArrowWalk.vertices, Quiver.Path.vertices_cons, hv]
+    by_cases hys : y = s
+    · subst hys
+      exact isEmptyElim e
+    by_cases hyt : y = t
+    · obtain ⟨v, hv, h⟩ := ih hyt
+      exact ⟨v, hmem hv, h⟩
+    · exact ⟨y, hmem (@Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ q), hys, hyt⟩
+
+variable (Q) in
+/-- The vertex `t` is *reachable from `s` avoiding `X`* when some walk from `s` to `t` visits no
+vertex of `X`: reachability after deleting the vertices of `X`. In particular neither endpoint lies
+in `X`. -/
+def ReachableAvoiding (X : Set V) (s t : V) : Prop :=
+  ∃ p : ArrowWalk Q s t, ∀ v ∈ p.vertices, v ∉ X
+
+theorem reachableAvoiding_def :
+    ReachableAvoiding Q X s t ↔ ∃ p : ArrowWalk Q s t, ∀ v ∈ p.vertices, v ∉ X :=
+  Iff.rfl
+
+theorem ReachableAvoiding.source_notMem (h : ReachableAvoiding Q X s t) : s ∉ X :=
+  let ⟨p, hp⟩ := h
+  hp s (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ p)
+
+theorem ReachableAvoiding.target_notMem (h : ReachableAvoiding Q X s t) : t ∉ X :=
+  let ⟨p, hp⟩ := h
+  hp t (@Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p)
+
+theorem ReachableAvoiding.refl (hs : s ∉ X) : ReachableAvoiding Q X s s :=
+  ⟨ArrowWalk.nil s, by simpa [ArrowWalk.vertices] using hs⟩
+
+@[simp]
+theorem reachableAvoiding_self_iff : ReachableAvoiding Q X s s ↔ s ∉ X :=
+  ⟨ReachableAvoiding.source_notMem, ReachableAvoiding.refl⟩
+
+@[trans]
+theorem ReachableAvoiding.trans (h : ReachableAvoiding Q X s t) (h' : ReachableAvoiding Q X t x) :
+    ReachableAvoiding Q X s x := by
+  obtain ⟨p, hp⟩ := h
+  obtain ⟨p', hp'⟩ := h'
+  refine ⟨p.comp p', fun v hv ↦ ?_⟩
+  rw [ArrowWalk.vertices, @Quiver.Path.vertices_comp V ⟨Q⟩, List.mem_append] at hv
+  exact hv.elim (fun hv ↦ hp v (List.mem_of_mem_dropLast hv)) (hp' v)
+
+/-- Avoiding fewer vertices preserves reachability. -/
+theorem ReachableAvoiding.mono (hXY : X ⊆ Y) (h : ReachableAvoiding Q Y s t) :
+    ReachableAvoiding Q X s t :=
+  let ⟨p, hp⟩ := h
+  ⟨p, fun v hv hvX ↦ hp v hv (hXY hvX)⟩
+
+/-- Avoiding no vertices, reachability is the existence of a walk. -/
+@[simp]
+theorem reachableAvoiding_empty_iff :
+    ReachableAvoiding Q ∅ s t ↔ Nonempty (ArrowWalk Q s t) := by
+  simp [reachableAvoiding_def]
+
+end ReachableAvoiding
+
+/-! ### Internally disjoint walks -/
+
+section InternallyDisjoint
+
+variable {s t : V} {p q : ArrowWalk Q s t}
+
+/-- Two walks from `s` to `t` are *internally disjoint* when they share no vertex other than `s`
+and `t`. -/
+def ArrowWalk.InternallyDisjoint (p q : ArrowWalk Q s t) : Prop :=
+  ∀ v ∈ p.vertices, v ∈ q.vertices → v = s ∨ v = t
+
+theorem ArrowWalk.internallyDisjoint_def :
+    p.InternallyDisjoint q ↔ ∀ v ∈ p.vertices, v ∈ q.vertices → v = s ∨ v = t :=
+  Iff.rfl
+
+theorem ArrowWalk.InternallyDisjoint.symm (h : p.InternallyDisjoint q) : q.InternallyDisjoint p :=
+  fun v hq hp ↦ h v hp hq
+
+theorem ArrowWalk.internallyDisjoint_comm : p.InternallyDisjoint q ↔ q.InternallyDisjoint p :=
+  ⟨.symm, .symm⟩
+
+end InternallyDisjoint
 
 end TauCeti

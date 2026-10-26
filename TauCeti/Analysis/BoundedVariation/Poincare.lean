@@ -55,8 +55,8 @@ inequality. Its indicator case is the relative isoperimetric inequality
 (`TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex`) integrates the
 Riesz potential estimate over `A` and bounds the Riesz kernel on `A` by its value on a ball of the
 same measure. It passes to `u` through mollifications on convex open sets with compact closures in
-`Ω`, which converge in `L¹` and do not increase the variation
-(`TauCeti.exists_seq_contDiff_tendsto_setLIntegral_enorm_sub_totalVariationOn_le`), and through an
+`Ω`, which converge in `L¹` and eventually do not increase the variation
+(`TauCeti.exists_mollifier_seq_of_isCompact_closure`), and through an
 exhaustion of `Ω` by such sets
 (`TauCeti.exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq`).
 
@@ -279,25 +279,25 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_closure_subset {U T : Se
   have hUb : Bornology.IsBounded U := hUK.isBounded.subset subset_closure
   have hUfin : μ U ≠ ∞ := hUb.measure_lt_top.ne
   have huK : IntegrableOn u (closure U) μ := hu.integrableOn_compact_subset hUΩ hUK
-  -- Smooth functions `v n` converging to `u` in `L¹(closure U)`, with variation on `U` at most
-  -- `|Du|(Ω)`. The `L¹(closure U)` distance from `v n` to `u` is `e n`.
-  obtain ⟨v, hv, he, hvar⟩ :=
-    exists_seq_contDiff_tendsto_setLIntegral_enorm_sub_totalVariationOn_le hu hUK hUΩ
+  -- `C¹` functions `v n` converging to `u` in `L¹(closure U)`, with variation on `U` eventually at
+  -- most `|Du|(Ω)`. The `L¹(closure U)` distance from `v n` to `u` is `e n`.
+  obtain ⟨v, hv, hconv, hvar⟩ :=
+    exists_mollifier_seq_of_isCompact_closure (Ω' := ⟨U, hU⟩) hu hUK hUΩ
+  have he := hconv (closure U) hUK Subset.rfl
   set e : ℕ → ℝ≥0∞ := fun n => ∫⁻ x in closure U, ‖v n x - u x‖ₑ ∂μ
   set M : ℝ≥0∞ := μ U / μ T
   have hM : M ≠ ∞ := ENNReal.div_ne_top hUfin hT₀
-  -- The inequality holds for `u` up to an error `(1 + M) e n`.
-  have hbound (n : ℕ) : ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ ≤
-      e n + M * e n + C * totalVariationOn μ Ω u := by
-    have hv1 : ContDiff ℝ 1 (v n) := (hv n).of_le (by norm_cast)
+  -- Once the variation bound holds, the inequality holds for `u` up to an error `(1 + M) e n`.
+  have hbound (n : ℕ) (hvn : totalVariationOn μ ⟨U, hU⟩ (v n) ≤ totalVariationOn μ Ω u) :
+      ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ ≤ e n + M * e n + C * totalVariationOn μ Ω u := by
     -- The smooth inequality for `v n` on `U`, whose variation there is at most `|Du|(Ω)`.
     have hvA : ∫⁻ x in A, ‖v n x - ⨍ y in T, v n y ∂μ‖ₑ ∂μ ≤ C * totalVariationOn μ Ω u := by
       refine (setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex hU hUc hUb
-        hv1.contDiffOn hT hT₀ hA).trans (mul_le_mul_right ?_ _)
-      have hL := (hv1.locallyLipschitz.locallyLipschitzOn (s := U)
+        (hv n).contDiffOn hT hT₀ hA).trans (mul_le_mul_right ?_ _)
+      have hL := ((hv n).locallyLipschitz.locallyLipschitzOn (s := U)
         ).totalVariationOn_eq_setLIntegral_enorm_fderiv (μ := μ) (Ω := ⟨U, hU⟩)
       rw [Opens.coe_mk] at hL
-      exact hL ▸ hvar ⟨U, hU⟩ subset_closure n
+      exact hL ▸ hvn
     -- The means over `T` differ by at most `e n / μ(T)`.
     have hab : ‖(⨍ y in T, v n y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ ≤ e n / μ T := by
       have hTK : T ⊆ closure U := hT.trans subset_closure
@@ -334,7 +334,7 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_closure_subset {U T : Se
   have hlim : Tendsto (fun n => e n + M * e n + C * totalVariationOn μ Ω u) atTop
       (𝓝 (0 + M * 0 + C * totalVariationOn μ Ω u)) :=
     (he.add (ENNReal.Tendsto.const_mul he (Or.inr hM))).add tendsto_const_nhds
-  simpa using ge_of_tendsto hlim (.of_forall hbound)
+  simpa using ge_of_tendsto hlim (hvar.mono hbound)
 
 /-- The inequality for a measurable `S`, from the inequality on an exhaustion of `Ω` by convex
 open sets with compact closures in `Ω`. -/

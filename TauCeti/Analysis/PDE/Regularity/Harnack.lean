@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Measure.OpenPos
 
 Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `0 < λ ≤ Λ`. This file
 proves, in every dimension `n ≥ 1`, the two Harnack inequalities of Moser for the divergence-form
-equation `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, with no regularity of the coefficients beyond measurability.
+equation `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`, with no regularity of the coefficients beyond measurability.
 
 * The **weak Harnack inequality**: if `u ∈ H¹(Ω)` is a weak supersolution, `a(u, v) ≥ 0` for
   every nonnegative `v ∈ H¹₀(Ω)`, and `u ≥ 0` almost everywhere, then for every exponent `s > 0`
@@ -169,7 +169,7 @@ private theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos [None
 are an exponent `p₀ ∈ (0, 2]` and a constant `C > 0`, depending only on `λ`, `Λ`, the dimension
 and the normalization of the additive Haar measure `mu`, with the following property. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a
-nonnegative weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every
+nonnegative weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every
 nonnegative `v ∈ H¹₀(Ω)`. Then on every ball with `B(x₀, 8√n r) ⊆ Ω`,
 
 `(⨍_{B(x₀, 2r)} u^{p₀})^{1/p₀} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`.
@@ -274,7 +274,7 @@ with `(n - 2) s < n`, that is `s < n/(n - 2)` when `n ≥ 3` and `s` arbitrary w
 is `C > 0`, depending only on `λ`, `Λ`, `s`, the dimension and the normalization of the additive
 Haar measure `mu`, with the following property. Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a nonnegative weak supersolution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Then on every ball
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Then on every ball
 with `B(x₀, 8√n r) ⊆ Ω`,
 
 `(⨍_{B(x₀, r)} u^s)^{1/s} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`,
@@ -318,7 +318,7 @@ theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] {s : ℝ} 
 /-- **Moser's Harnack inequality.** Let `n ≥ 1` be the dimension. There is `C > 0`, depending
 only on `λ`, `Λ`, the dimension and the normalization of the additive Haar measure `mu`, with the
 following property. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`,
-and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, that is `a(u, v) = 0` for every
+and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`, that is `a(u, v) = 0` for every
 `v ∈ H¹₀(Ω)`, with `u ≥ 0` almost everywhere. Then on every ball with `B(x₀, 16√n r) ⊆ Ω`,
 
 `u(y) ≤ C u(x)` for almost every `x, y ∈ B(x₀, r)`,

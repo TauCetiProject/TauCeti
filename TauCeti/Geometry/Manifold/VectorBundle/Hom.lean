@@ -113,7 +113,7 @@ theorem contMDiff_hom_iff (A : Π x : M, V x →L[ℝ] W x) :
       ρ.contMDiff.contMDiffOn.smul_section_of_tsupport e.open_baseSet
         (hρ.trans inter_subset_left) (e.contMDiffOn_localFrame_baseSet ∞ b j)
     have hlocal := contMDiffOn_hom_of_localFrame (I := I) (e := e) (e' := e') b
-      (fun y hy ↦ (hu hy).2) (A := A) (fun j ↦
+      (f := fun y ↦ y) contMDiffOn_id (fun y hy ↦ (hu hy).2) (A := A) (fun j ↦
         ((hA _ (htest j)).contMDiffOn).congr (fun y hy ↦ by
           dsimp only [Pi.smul_apply']
           simp only [(hu hy).1, Pi.one_apply, one_smul]))

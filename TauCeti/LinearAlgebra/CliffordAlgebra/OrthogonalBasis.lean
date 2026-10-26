@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Basic
+public import TauCeti.Algebra.Group.CommuteOrNeg
 -- Private: the product, reversal and exterior-basis lemmas below are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
@@ -58,6 +59,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   and a smaller index of `t`.
 * `CliffordAlgebra.basis_mul_basis_eq_or` and `CliffordAlgebra.basis_mul_self_eq_or`: signed
   multiplication and square laws when the generators square to `±1`.
+* `CliffordAlgebra.basis_commuteOrNeg`: basis products commute up to sign for every
+  orthogonal basis.
 * `CliffordAlgebra.isUnit_basis`: a basis monomial is a unit when its generator squares are units.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul_basis`: the pairing of two basis vectors.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul`: pairing against a basis vector extracts a
@@ -278,6 +281,33 @@ theorem basis_mul_basis_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
       basis Q b s * basis Q b t = -basis Q b (s ∆ t) := by
   rw [basis_mul_basis hb]
   rcases coeff_eq_one_or_neg_one hQ s t with hc | hc <;> rw [hc] <;> simp
+
+/-- For an orthogonal basis, two basis-vector products commute or anticommute. -/
+theorem basis_commuteOrNeg
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s t : Finset I) :
+    TauCeti.CommuteOrNeg (basis Q b s) (basis Q b t) := by
+  rcases neg_one_pow_eq_or R (∑ i ∈ s, (t.filter (· < i)).card) with hs | hs <;>
+    rcases neg_one_pow_eq_or R (∑ i ∈ t, (s.filter (· < i)).card) with ht | ht
+  · apply TauCeti.CommuteOrNeg.of_commute
+    rw [Commute, SemiconjBy]
+    rw [basis_mul_basis hb, basis_mul_basis hb]
+    rw [hs, ht, symmDiff_comm]
+    simp [Finset.inter_comm]
+  · apply TauCeti.CommuteOrNeg.of_semiconjBy
+    rw [SemiconjBy, neg_mul]
+    rw [basis_mul_basis hb, basis_mul_basis hb]
+    rw [hs, ht, symmDiff_comm]
+    simp [Finset.inter_comm]
+  · apply TauCeti.CommuteOrNeg.of_semiconjBy
+    rw [SemiconjBy, neg_mul]
+    rw [basis_mul_basis hb, basis_mul_basis hb]
+    rw [hs, ht, symmDiff_comm]
+    simp [Finset.inter_comm]
+  · apply TauCeti.CommuteOrNeg.of_commute
+    rw [Commute, SemiconjBy]
+    rw [basis_mul_basis hb, basis_mul_basis hb]
+    rw [hs, ht, symmDiff_comm]
+    simp [Finset.inter_comm]
 
 /-- When every generator squares to `±1`, each basis vector `e_s` squares to `±1`. -/
 theorem basis_mul_self_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)

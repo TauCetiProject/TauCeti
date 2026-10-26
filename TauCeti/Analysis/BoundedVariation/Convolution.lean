@@ -42,9 +42,8 @@ use an additive Haar measure, against which the normalized bumps have integral o
 * `ContDiffBump.totalVariationOn_normed_convolution_le`: mollification by a normalized bump of outer
   radius `r` does not increase variation from `Ω` to any open set whose closed `r`-neighbourhood
   lies in `Ω`.
-* `TauCeti.exists_seq_contDiff_tendsto_setLIntegral_enorm_sub_totalVariationOn_le`: near a
-  compact subset `K` of `Ω`, a locally integrable function is the `L¹(K)` limit of smooth
-  functions whose variations on open subsets of `K` are at most `|Du|(Ω)`.
+* `TauCeti.exists_mollifier_seq_of_isCompact_closure`: local smooth approximation with an
+  eventual variation bound on an open set whose closure is a compact subset of the domain.
 * `TauCeti.tendsto_totalVariationOn_normed_convolution`: on the whole space, the variations of
   mollifications with shrinking radii converge to the variation of the function.
 * `TauCeti.tendsto_lintegral_enorm_fderiv_normed_convolution`: the same limit written as the
@@ -64,7 +63,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory Filter Metric Set TopologicalSpace TestFunction ContinuousLinearMap
-open scoped ENNReal Convolution Topology ContDiff
+open scoped ENNReal Convolution Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} {Ω Ω' : Opens E} {u ρ : E → ℝ}
@@ -120,49 +119,47 @@ theorem _root_.ContDiffBump.totalVariationOn_normed_convolution_le (φ : ContDif
       rw [φ.tsupport_normed_eq, mem_closedBall_zero_iff] at ht
       simpa [dist_eq_norm] using ht
 
-/-- **Interior smooth approximation with controlled variation.** If `u` is locally integrable on
-`Ω` and `K ⊆ Ω` is compact, there are smooth functions `v n` converging to `u` in `L¹(K)` whose
-variation on every open set contained in `K` is at most `|Du|(Ω)`. They are mollifications, by
-bumps of shrinking radii, of the restriction of `u` to a compact neighbourhood of `K` in `Ω`. -/
-theorem exists_seq_contDiff_tendsto_setLIntegral_enorm_sub_totalVariationOn_le
-    (hu : LocallyIntegrableOn u Ω μ) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
-    ∃ v : ℕ → E → ℝ, (∀ n, ContDiff ℝ ∞ (v n)) ∧
-      Tendsto (fun n => ∫⁻ x in K, ‖v n x - u x‖ₑ ∂μ) atTop (𝓝 0) ∧
-      ∀ U : Opens E, (U : Set E) ⊆ K → ∀ n,
-        totalVariationOn μ U (v n) ≤ totalVariationOn μ Ω u := by
-  -- The restriction `w` of `u` to a compact `δ`-neighbourhood `L` of `K` inside `Ω` is integrable
-  -- and has the same variation as `u` on the open `δ`-neighbourhood `V` of `K`.
-  obtain ⟨δ, hδ, hLΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
-  set L := cthickening δ K
-  have hL : IsCompact L := hK.cthickening
-  set w := L.indicator u
-  have hw : Integrable w μ :=
-    (hu.integrableOn_compact_subset hLΩ hL).integrable_indicator hL.measurableSet
-  have hwu (x : E) (hx : x ∈ L) : w x = u x := indicator_of_mem hx u
-  let V : Opens E := ⟨thickening δ K, isOpen_thickening⟩
-  have hVL : (V : Set E) ⊆ L := thickening_subset_cthickening δ K
-  have hvarw : totalVariationOn μ V w ≤ totalVariationOn μ Ω u := by
-    rw [totalVariationOn_congr_ae ((ae_restrict_iff' V.isOpen.measurableSet).2
-      (ae_of_all _ fun x hx => hwu x (hVL hx)))]
-    exact totalVariationOn_mono (hVL.trans hLΩ)
-  -- Mollify `w` with normalized bumps of outer radius `δ / (n + 2) < δ`.
+/-- On an open set with compact closure inside `Ω`, a locally integrable function admits
+`C¹` approximations converging in `L¹` on each compact subset of that closure, with variation
+eventually bounded by its variation on `Ω`. The construction localizes the function to a compact
+neighbourhood before mollifying it, as in the scalar coarea proof. -/
+theorem exists_mollifier_seq_of_isCompact_closure (hu : LocallyIntegrableOn u Ω μ)
+    (hc : IsCompact (closure (Ω' : Set E))) (hsub : closure (Ω' : Set E) ⊆ Ω) :
+    ∃ w : ℕ → E → ℝ, (∀ n, ContDiff ℝ 1 (w n)) ∧
+      (∀ A : Set E, IsCompact A → A ⊆ closure (Ω' : Set E) →
+        Tendsto (fun n => ∫⁻ x in A, ‖w n x - u x‖ₑ ∂μ) atTop (𝓝 0)) ∧
+      ∀ᶠ n in atTop, totalVariationOn μ Ω' (w n) ≤ totalVariationOn μ Ω u := by
+  obtain ⟨δ, hδ, hδΩ⟩ := hc.exists_cthickening_subset_open Ω.isOpen hsub
+  set K := cthickening (δ / 2) (closure (Ω' : Set E))
+  have hK : IsCompact K := hc.cthickening
+  have hKΩ : K ⊆ Ω := (cthickening_mono (by linarith) _).trans hδΩ
+  let V : Opens E := ⟨thickening (δ / 2) (closure (Ω' : Set E)), isOpen_thickening⟩
+  have hVK : (V : Set E) ⊆ K := thickening_subset_cthickening _ _
+  have hball (x : E) (hx : x ∈ Ω') : closedBall x (δ / 4) ⊆ V :=
+    (closedBall_subset_ball (by linarith)).trans (ball_subset_thickening (subset_closure hx) _)
+  let u' := K.indicator u
+  have hu'u (x : E) (hx : x ∈ K) : u' x = u x := indicator_of_mem hx u
+  have hu' : LocallyIntegrable u' μ :=
+    ((hu.integrableOn_compact_subset hKΩ hK).integrable_indicator
+      hK.measurableSet).locallyIntegrable
   let φ : ℕ → ContDiffBump (0 : E) := fun n =>
-    ⟨δ / (2 * (n + 2)), δ / (n + 2), by positivity, by
-      apply div_lt_div_of_pos_left hδ (by positivity)
-      linarith⟩
-  have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) := by
-    have h := (tendsto_const_div_atTop_nhds_zero_nat δ).comp (tendsto_add_atTop_nat 2)
-    simpa [φ, Function.comp_def] using h
-  refine ⟨fun n => (φ n).normed μ ⋆[lsmul ℝ ℝ, μ] w, fun n =>
-    (φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed
-      hw.locallyIntegrable, ?_, fun U hUK n => ?_⟩
-  · refine (tendsto_setLIntegral_enorm_normed_convolution_sub hφ hw.locallyIntegrable hK).congr
-      fun n => setLIntegral_congr_fun hK.measurableSet fun x hx => ?_
-    rw [hwu x (self_subset_cthickening K hx)]
-  · refine ((φ n).totalVariationOn_normed_convolution_le
-      (hw.locallyIntegrable.locallyIntegrableOn _) fun x hx => ?_).trans hvarw
-    have hlt : (φ n).rOut < δ := div_lt_self hδ (by linarith)
-    exact (closedBall_subset_ball hlt).trans (ball_subset_thickening (hUK hx) δ)
+    ⟨1 / (n + 2), 1 / (n + 1), by positivity, by gcongr; norm_num⟩
+  have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
+  let w : ℕ → E → ℝ := fun n => (φ n).normed μ ⋆[lsmul ℝ ℝ, μ] u'
+  have hw (n : ℕ) : ContDiff ℝ 1 (w n) :=
+    (φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed hu'
+  refine ⟨w, hw, ?_, ?_⟩
+  · intro A hA hAΩ'
+    exact (tendsto_setLIntegral_enorm_normed_convolution_sub hφ hu' hA).congr fun n =>
+      setLIntegral_congr_fun hA.measurableSet fun x hx => by
+        rw [hu'u x (self_subset_cthickening _ (hAΩ' hx))]
+  filter_upwards [hφ.eventually (ge_mem_nhds (show 0 < δ / 4 by positivity))] with n hn
+  calc totalVariationOn μ Ω' (w n) ≤ totalVariationOn μ V u' :=
+        (φ n).totalVariationOn_normed_convolution_le (hu'.locallyIntegrableOn _)
+          fun x hx => (closedBall_subset_closedBall hn).trans (hball x hx)
+    _ = totalVariationOn μ V u := totalVariationOn_congr_ae <|
+        (ae_restrict_mem V.isOpen.measurableSet).mono fun x hx => hu'u x (hVK hx)
+    _ ≤ totalVariationOn μ Ω u := totalVariationOn_mono fun x hx => hKΩ (hVK hx)
 
 /-- **Mollification approximates the variation on the whole space.** For a locally integrable
 function `u` and normalized smooth bumps `φ i` whose outer radii tend to zero, the variations of

@@ -38,9 +38,8 @@ The formula holds for every function locally integrable on `Ω`
   `P({u > t}; Ω)` by the variations of these locally Lipschitz functions, and Fatou's lemma and
   Tonelli's theorem integrate the bound over `t`.
 * For a general locally integrable `u`, the reverse inequality is first proved on open sets `Ω'`
-  with compact closure in `Ω`. There the mollifications of `u`, whose variations on `Ω'` are at
-  most `|Du|(Ω)` (`TauCeti.exists_seq_contDiff_tendsto_setLIntegral_enorm_sub_totalVariationOn_le`),
-  satisfy it by the previous step. Since
+  with compact closure in `Ω`. There the mollifications of `u` satisfy it by the previous step and
+  the convolution estimate `ContDiffBump.totalVariationOn_normed_convolution_le`. Since
   `∫_ℝ μ (({w > t} ∆ {u > t}) ∩ K) dt = ∫_K |w - u|`, along a subsequence their superlevel sets
   converge locally in measure to those of `u` at almost every level. Lower semicontinuity of the
   perimeter and Fatou's lemma then pass the inequality to `u`. An exhaustion of `Ω`, inner
@@ -326,21 +325,14 @@ private theorem lintegral_perimeter_le_of_isCompact_closure (hum : Measurable u)
   -- convolution estimate. Along a subsequence their superlevel sets converge locally in measure to
   -- those of `u` at almost every level, so lower semicontinuity of the perimeter and Fatou's lemma
   -- pass the inequality to `u`.
-  -- Smooth functions `w n` converging to `u` in `L¹(closure Ω')`, whose variations on `Ω'` are
-  -- at most `|Du|(Ω)`.
-  set K := closure (Ω' : Set E)
-  obtain ⟨w, hw, hlim, hvarw⟩ :=
-    exists_seq_contDiff_tendsto_setLIntegral_enorm_sub_totalVariationOn_le hu hc hsub
-  -- By the coarea formula for `w n`, its level integral on `Ω'` is at most `|Du|(Ω)`.
-  have hvar (n : ℕ) : ∫⁻ t, perimeter μ Ω' {x | t < w n x} ≤ totalVariationOn μ Ω u := by
-    have hL := ((hw n).of_le (by norm_cast)).locallyLipschitz.locallyLipschitzOn (s := Ω')
-    rw [hL.lintegral_perimeter_eq_setLIntegral_enorm_fderiv,
-      ← hL.totalVariationOn_eq_setLIntegral_enorm_fderiv]
-    exact hvarw Ω' subset_closure n
-  -- Along a subsequence, the superlevel sets of `w (ns j)` converge in measure on `K` to those
-  -- of `u` at almost every level `t`.
-  obtain ⟨ns, -, hae⟩ := (μ.restrict K).exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt
-    (fun n => (hw n).continuous.aemeasurable) hum.aemeasurable hlim
+  obtain ⟨w, hw, hconv, hvar⟩ := exists_mollifier_seq_of_isCompact_closure hu hc hsub
+  -- Along a subsequence, the superlevel sets converge in measure on `closure Ω'` at almost
+  -- every level. The variation bound holds eventually along this subsequence as well.
+  obtain ⟨ns, hns, hae⟩ :=
+    (μ.restrict (closure (Ω' : Set E))).exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt
+      (fun n => (hw n).continuous.aemeasurable) hum.aemeasurable
+      (hconv _ hc Subset.rfl)
+  have hsmall := hns.tendsto_atTop.eventually hvar
   -- At such levels, lower semicontinuity bounds `P({u > t}; Ω')`.
   have hlsc : ∀ᵐ t, perimeter μ Ω' {x | t < u x} ≤
       liminf (fun j => perimeter μ Ω' {x | t < w (ns j) x}) atTop := by
@@ -350,7 +342,7 @@ private theorem lintegral_perimeter_le_of_isCompact_closure (hum : Measurable u)
       (measurableSet_lt measurable_const hum).nullMeasurableSet fun K' _ hK' => ?_
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ht (fun _ => zero_le)
       fun j => ?_
-    rw [Measure.restrict_apply' hc.measurableSet]
+    rw [Measure.restrict_apply' isClosed_closure.measurableSet]
     exact measure_mono (inter_subset_inter_right _ (hK'.trans subset_closure))
   calc ∫⁻ t, perimeter μ Ω' {x | t < u x}
       ≤ ∫⁻ t, liminf (fun j => perimeter μ Ω' {x | t < w (ns j) x}) atTop :=
@@ -359,7 +351,10 @@ private theorem lintegral_perimeter_le_of_isCompact_closure (hum : Measurable u)
         lintegral_liminf_le' fun j =>
           (measurable_perimeter_setOf_lt (hw (ns j)).continuous.aemeasurable).aemeasurable
     _ ≤ totalVariationOn μ Ω u :=
-        (liminf_le_liminf (.of_forall fun j => hvar (ns j))).trans_eq (liminf_const _)
+        (liminf_le_liminf (hsmall.mono fun j hj => by
+          have hL := (hw (ns j)).locallyLipschitz.locallyLipschitzOn (s := Ω')
+          rwa [hL.lintegral_perimeter_eq_setLIntegral_enorm_fderiv,
+            ← hL.totalVariationOn_eq_setLIntegral_enorm_fderiv])).trans_eq (liminf_const _)
 
 /-- **The coarea formula for total variation.** For `u` locally integrable on `Ω`, against an
 additive Haar measure, the total variation of `u` is the integral of the perimeters of its
