@@ -158,7 +158,7 @@ theorem pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast {k :
   have h := pow_mem (multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts hL x) l
   have e : (Ring.multichoose (X + 1 : ℚ[X]) k).comp (C (x : ℚ) + C (L : ℚ) * X) ^ l =
       (taylor (x : ℚ) (Ring.multichoose (X + 1 : ℚ[X]) k ^ l)).comp (C (L : ℚ) * X) := by
-    rw [taylor_apply, comp_assoc, add_comp, X_comp, C_comp, add_comm (C (L : ℚ) * X), pow_comp]
+    simp [taylor_apply, comp_assoc, add_comm]
   rw [e, lifts_iff_coeff_lifts] at h
   obtain ⟨z, hz⟩ := h m
   rw [comp_C_mul_X_coeff, taylor_coeff, eq_intCast] at hz
@@ -192,7 +192,7 @@ private theorem l1Norm_taylor_multichoose_X_add_one_le {x : ℚ} {n : ℕ} (hx :
     -- The new linear factor is `X / (k + 1) + (x / (k + 1) + 1)`.
     have hlin : taylor x (C ((k + 1 : ℚ)⁻¹) * X + 1) =
         C ((k + 1 : ℚ)⁻¹) * X + C ((k + 1 : ℚ)⁻¹ * x + 1) := by
-      rw [map_add, taylor_mul, taylor_C, taylor_X, taylor_one, C_add, C_mul, C_1]
+      simp
       ring
     have hlin' : (taylor x (C ((k + 1 : ℚ)⁻¹) * X + 1)).l1Norm ≤ ((n + k + 2 : ℝ)) / (k + 1) := by
       have hx' : ‖x‖ ≤ n := by
