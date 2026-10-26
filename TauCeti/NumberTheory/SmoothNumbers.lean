@@ -39,12 +39,12 @@ theorem forall_padicValRat_eq_zero_iff_mem_factoredNumbers {S : Finset ℕ} {q :
     fun ⟨⟨_, hnum⟩, ⟨_, hden⟩⟩ p hp hpS ↦ ?_⟩
   · have : Fact p.Prime := ⟨hp⟩
     by_contra hpS
-    exact ((padicValRat_eq_zero_iff hq).1 (h p hp hpS)).1 hpq
+    exact ((padicValRat.eq_zero_iff hq).1 (h p hp hpS)).1 hpq
   · have : Fact p.Prime := ⟨hp⟩
     by_contra hpS
-    exact ((padicValRat_eq_zero_iff hq).1 (h p hp hpS)).2 hpq
+    exact ((padicValRat.eq_zero_iff hq).1 (h p hp hpS)).2 hpq
   · have : Fact p.Prime := ⟨hp⟩
-    rw [padicValRat_eq_zero_iff hq]
+    rw [padicValRat.eq_zero_iff hq]
     exact ⟨fun hd ↦ hpS (hnum ⟨hp, hd, hn⟩), fun hd ↦ hpS (hden ⟨hp, hd, q.den_ne_zero⟩)⟩
 
 /-- If `S` consists of primes, an `S`-factored number `n` is the product of the prime powers

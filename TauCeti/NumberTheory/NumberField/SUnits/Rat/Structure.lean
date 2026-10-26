@@ -75,7 +75,10 @@ theorem mem_sUnits_rat_iff_num_den {x : ℚˣ} :
   simp only [Finset.mem_coe] at h
   exact h.trans (forall_padicValRat_eq_zero_iff_mem_factoredNumbers x.ne_zero)
 
-private instance : Finite {v : HeightOneSpectrum (𝓞 ℚ) | (primesEquiv v : ℕ) ∈ S} :=
+/-- Only finitely many height-one primes of `𝓞 ℚ` correspond to rational primes in a finite set
+`S`, so the rational `S`-units are those of a finite set of places. -/
+instance finite_setOf_primesEquiv_mem :
+    Finite {v : HeightOneSpectrum (𝓞 ℚ) | (primesEquiv v : ℕ) ∈ S} :=
   (S.finite_toSet.preimage
     (Subtype.val_injective.comp (primesEquiv (R := 𝓞 ℚ)).injective).injOn).to_subtype
 

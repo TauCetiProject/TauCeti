@@ -14,17 +14,17 @@ This file characterises when the `p`-adic valuation of a nonzero rational number
 
 ## Main results
 
-* `TauCeti.padicValRat_eq_zero_iff`: a nonzero rational number has `p`-adic valuation zero
+* `padicValRat.eq_zero_iff`: a nonzero rational number has `p`-adic valuation zero
   exactly when `p` divides neither its numerator nor its denominator.
 -/
 
 public section
 
-namespace TauCeti
+namespace padicValRat
 
 /-- A nonzero rational number has `p`-adic valuation zero exactly when the prime `p` divides
 neither its numerator nor its denominator. -/
-theorem padicValRat_eq_zero_iff {p : ℕ} [hp : Fact p.Prime] {q : ℚ} (hq : q ≠ 0) :
+theorem eq_zero_iff {p : ℕ} [hp : Fact p.Prime] {q : ℚ} (hq : q ≠ 0) :
     padicValRat p q = 0 ↔ ¬ p ∣ q.num.natAbs ∧ ¬ p ∣ q.den := by
   have hnum : padicValInt p q.num = 0 ↔ ¬ p ∣ q.num.natAbs := by
     simp [padicValInt, padicValNat.eq_zero_iff, hp.out.ne_one, hq]
@@ -33,4 +33,4 @@ theorem padicValRat_eq_zero_iff {p : ℕ} [hp : Fact p.Prime] {q : ℚ} (hq : q 
   rw [padicValRat_def, ← hnum, ← hden]
   rcases Rat.num_or_den_zero_padicVal q hp.out with h | h <;> simp [h]
 
-end TauCeti
+end padicValRat
