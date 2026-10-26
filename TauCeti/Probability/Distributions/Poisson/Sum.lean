@@ -49,7 +49,9 @@ theorem pi_poissonMeasure_conv_pi_poissonMeasure [Fintype ι] (r s : ι → ℝ�
   have hsum : (fun z : ι → ℕ × ℕ =>
       (MeasurableEquiv.arrowProdEquivProdArrow ℕ ℕ ι z).1 +
         (MeasurableEquiv.arrowProdEquivProdArrow ℕ ℕ ι z).2) =
-      (fun z i => (z i).1 + (z i).2) := rfl
+      (fun z i => (z i).1 + (z i).2) := by
+    funext z i
+    simp [MeasurableEquiv.arrowProdEquivProdArrow, Equiv.arrowProdEquivProdArrow]
   rw [Function.comp_def, hsum,
     Measure.pi_map_pi (f := fun _ (z : ℕ × ℕ) => z.1 + z.2) (fun _ => (by fun_prop))]
   exact congrArg Measure.pi (funext fun i => poissonMeasure_conv_poissonMeasure (r i) (s i))

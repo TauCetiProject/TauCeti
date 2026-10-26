@@ -73,7 +73,8 @@ private theorem negativeMultinomialMeasure_conv_of_pos {r s p₀ : ℝ}
     negativeMultinomialMeasure_of_pos hs hp₀ hp,
     negativeMultinomialMeasure_of_pos (add_pos hr hs) hp₀ hp]
   calc
-    _ = (K ∘ₘ gammaMeasure r p₀) ∗ (K ∘ₘ gammaMeasure s p₀) := rfl
+    _ = (K ∘ₘ gammaMeasure r p₀) ∗ (K ∘ₘ gammaMeasure s p₀) := by
+      simp only [← hK]
     _ = ((gammaMeasure r p₀).prod (gammaMeasure s p₀)).bind
         (fun z => K (z.1 + z.2)) := hmix
     _ = ((gammaMeasure r p₀) ∗ (gammaMeasure s p₀)).bind K := by
@@ -108,16 +109,23 @@ namespace ProbabilityTheory.IndepFun
 open TauCeti.Probability
 
 /-- The sum of independent negative-multinomial count vectors at fixed weights has the sum
-of their nonnegative shapes, including the shape-zero and zero-category-weight boundaries. -/
+of their nonnegative shapes, including the shape-zero and zero-category-weight boundaries.
+Invalid weights are allowed; the specified laws are then zero. -/
 theorem hasLaw_add_negativeMultinomialMeasure {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι]
     {P : Measure Ω} {X Y : Ω → ι → ℕ} {r s p₀ : ℝ} {p : ι → ℝ≥0}
     (hXY : IndepFun X Y P) (hX : HasLaw X (negativeMultinomialMeasure r p₀ p) P)
     (hY : HasLaw Y (negativeMultinomialMeasure s p₀ p) P)
-    (hr : 0 ≤ r) (hs : 0 ≤ s) (hp₀ : 0 < p₀)
-    (hp : p₀ + ∑ i, (p i : ℝ) = 1) :
+    (hr : 0 ≤ r) (hs : 0 ≤ s) :
     HasLaw (X + Y) (negativeMultinomialMeasure (r + s) p₀ p) P := by
-  let _ := isProbabilityMeasure_negativeMultinomialMeasure hr hp₀ hp
-  let _ := isProbabilityMeasure_negativeMultinomialMeasure hs hp₀ hp
+  have hfinite {t : ℝ} (ht : 0 ≤ t) :
+      IsFiniteMeasure (negativeMultinomialMeasure t p₀ p) := by
+    by_cases hp : 0 < p₀ ∧ p₀ + ∑ i, (p i : ℝ) = 1
+    · have := isProbabilityMeasure_negativeMultinomialMeasure ht hp.1 hp.2
+      infer_instance
+    · rw [negativeMultinomialMeasure_eq_zero_of_invalid (by tauto)]
+      infer_instance
+  let _ := hfinite hr
+  let _ := hfinite hs
   simpa only [negativeMultinomialMeasure_conv_negativeMultinomialMeasure hr hs] using
     hXY.hasLaw_add hX hY
 
