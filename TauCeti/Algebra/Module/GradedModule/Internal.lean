@@ -661,6 +661,30 @@ theorem negOnePow_quadraticExponent_add (p q : ℤ) :
   rw [quadraticExponent_add, Int.negOnePow_add, Int.negOnePow_add]
   ac_rfl
 
+/-- The product of three quadratic signs reduces to the bilinear Koszul sign. -/
+theorem negOnePow_quadraticExponent_cancel (p r : ℤ) :
+    (quadraticExponent p).negOnePow *
+        (quadraticExponent r).negOnePow *
+        (quadraticExponent (r + p)).negOnePow = (p * r).negOnePow := by
+  rw [negOnePow_quadraticExponent_add]
+  calc
+    _ = (r * p).negOnePow *
+        ((quadraticExponent p).negOnePow *
+          (quadraticExponent p).negOnePow) *
+        ((quadraticExponent r).negOnePow *
+          (quadraticExponent r).negOnePow) := by ac_rfl
+    _ = (p * r).negOnePow := by rw [Int.units_mul_self, Int.units_mul_self, mul_one, mul_one,
+      mul_comm r p]
+
+/-- The quadratic signs of two negated degrees multiply with the Koszul composition sign. -/
+theorem negOnePow_quadraticExponent_neg_add (s t : ℤ) :
+    (quadraticExponent (-t)).negOnePow *
+        (quadraticExponent (-s)).negOnePow =
+      (s * t).negOnePow * (quadraticExponent (-(t + s))).negOnePow := by
+  rw [neg_add, negOnePow_quadraticExponent_add, neg_mul_neg,
+    mul_comm t s]
+  rw [← mul_assoc, ← mul_assoc, Int.units_mul_self, one_mul]
+
 /-- The quadratic twist multiplies the degree-`p` component by `(-1) ^ (p choose 2)`.
 
 Transporting the ordinary opposite multiplication through this involution produces the
