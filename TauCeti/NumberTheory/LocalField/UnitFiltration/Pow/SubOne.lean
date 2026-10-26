@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
-public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
@@ -72,7 +72,7 @@ theorem mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one {i : �
   have h : (x : K) - 1 ≠ 0 := sub_ne_zero.mpr fun h ↦ hx (Units.ext h)
   have hϖ := normalizedValuation_irreducible hπ
   rw [mem_unitFiltration_iff_valuation_sub_one_le hi hπ,
-    show (x : K) - 1 = (Units.mk0 _ h : K) from rfl, normalizedValuationWithZero_coe,
+    ← Units.val_mk0 h, normalizedValuationWithZero_coe,
     ← ofAdd_toAdd (normalizedValuation K _), ← WithZero.exp_eq_coe_ofAdd, WithZero.log_exp,
     le_toAdd_normalizedValuation_iff_valuation_le_zpow hϖ]
   simp
@@ -139,13 +139,12 @@ theorem log_normalizedValuationWithZero_zpow_sub_one_le {x : Kˣ} {M i : ℕ} (h
   have hid : (i : ℤ) ≤ d :=
     (mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one hi0 hM1).mp hM
   by_cases hb1 : x ^ b = 1
-  · rw [hb1, Units.val_one, sub_self, map_zero, WithZero.log_zero]
+  · simp only [hb1, Units.val_one, sub_self, map_zero, WithZero.log_zero]
     omega
   -- The exact formula at `γ`: `v_K(γ ^ |b| - 1) = d + v_K(|b|)`.
   have hγn := log_normalizedValuationWithZero_pow_sub_one hb hi hM hM1
   have hγn1 : γ ^ b.natAbs ≠ 1 := fun h ↦ by
-    rw [← Units.val_pow_eq_pow_val, h, Units.val_one, sub_self, map_zero,
-      WithZero.log_zero] at hγn
+    simp [← Units.val_pow_eq_pow_val, h] at hγn
     omega
   -- If `x ^ b` were deeper than `d + v_K(|b|)`, so would be `γ ^ |b| = (x ^ b) ^ (± M)`.
   by_contra hlt
@@ -172,16 +171,14 @@ theorem log_normalizedValuationWithZero_zpow_sub_one_nonpos {x : Kˣ}
     WithZero.log (normalizedValuationWithZero K ((x : K) ^ b - 1)) ≤ 0 := by
   by_contra! hpos
   have hb1 : x ^ b ≠ 1 := fun h ↦ by
-    rw [← Units.val_zpow_eq_zpow_val, h, Units.val_one, sub_self, map_zero,
-      WithZero.log_zero] at hpos
-    exact hpos.false
+    simp [← Units.val_zpow_eq_zpow_val, h] at hpos
   have hmem : x ^ b ∈ unitFiltration K 1 :=
     (mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one one_ne_zero hb1).mpr
       (by rw [Units.val_zpow_eq_zpow_val]; exact_mod_cast hpos)
   have hval := (mem_unitFiltration_zero _).mp (unitFiltration_antitone (Nat.zero_le 1) hmem)
-  rw [← normalizedValuation_eq_one_iff, map_zpow, ← toAdd_eq_zero, toAdd_zpow, smul_eq_mul,
-    mul_eq_zero, toAdd_eq_zero, normalizedValuation_eq_one_iff, ← mem_unitFiltration_zero] at hval
-  exact hval.elim hb hx
+  rw [← normalizedValuation_eq_one_iff, map_zpow] at hval
+  exact hx <| (mem_unitFiltration_zero x).mpr <|
+    (normalizedValuation_eq_one_iff x).mp (by simpa [hb] using hval)
 
 /-- Writing `p` for the residue characteristic, the normalized valuation of a natural number `n`
 is at most `v_K(p) / log p * log n`, because `v_K(n) = v_p(n) v_K(p)` and `p ^ v_p(n) ≤ n`. -/
@@ -198,9 +195,9 @@ theorem natCastValuation_le_div_log_mul_log {n : ℕ} (hn : (n : K) ≠ 0)
     rw [← Real.log_pow]
     exact Real.log_le_log (pow_pos (by exact_mod_cast hp'.pos) _)
       (by exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero hn0) pow_padicValNat_dvd)
-  rw [natCastValuation_eq_padicValNat_mul K hn hp, div_mul_eq_mul_div, le_div_iff₀ hlogp,
-    Nat.cast_mul, mul_comm (padicValNat _ n : ℝ), mul_assoc]
-  exact mul_le_mul_of_nonneg_left hv (Nat.cast_nonneg _)
+  rw [natCastValuation_eq_padicValNat_mul K hn hp, div_mul_eq_mul_div, le_div_iff₀ hlogp]
+  push_cast
+  nlinarith [(Nat.cast_nonneg (natCastValuation K (ringChar 𝓀[K]) hp) : (0 : ℝ) ≤ _)]
 
 /-- The values `v_K(α ^ b - 1)` of a root of unity `α` are bounded above: `α ^ b` takes only the
 finitely many values `α ^ r` with `0 ≤ r < M`. -/
@@ -245,7 +242,7 @@ theorem exists_log_normalizedValuationWithZero_zpow_sub_one_le [CharZero K] (α 
       normalizedValuationWithZero_coe, normalizedValuation_neg, map_one]
     simp
   set a := Units.mk0 α hα
-  have ha : (a : K) = α := rfl
+  have ha : (a : K) = α := Units.val_mk0 hα
   by_cases ha0 : a ∈ unitFiltration K 0
   swap
   · refine ⟨0, fun b hb ↦ ?_⟩
