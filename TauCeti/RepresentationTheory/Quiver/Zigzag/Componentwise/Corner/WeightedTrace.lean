@@ -11,8 +11,8 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Tr
 # Unit-weighted trace pairings between graded corners
 
 A unit at each vertex scales the trace pairing on the corresponding graded corner without
-changing its perfectness. If the weights at adjacent vertices are negatives of one another,
-these pairings satisfy graded cyclicity in complementary internal degrees `d` and `2 - d`.
+changing its perfectness. Graded cyclicity in complementary internal degrees `d` and `2 - d`
+only requires opposite weights at the selected endpoints when they are adjacent.
 The sign is `(-1) ^ (d * (2 - d))`: the degree-one reverse-arrow pairing is antisymmetric,
 while the degree-zero/degree-two vertex-volume pairings are symmetric. Alternating weights
 on a path supply the edge condition, also in characteristic two.
@@ -66,9 +66,9 @@ instance zigzagAlgebraGradedCornerWeightedTracePairing_isPerfPair
 /-- Opposite edge weights give graded cyclicity. The reverse order is expressed in the ambient
 algebra, so both factors retain their original signed graded corner types. -/
 theorem zigzagAlgebraGradedCornerWeightedTracePairing_flip
-    (c : V → kˣ)
-    (hc : ∀ ⦃i j : V⦄, G.Adj i j → (c j : k) = -(c i : k))
-    (i j : V) (d : ℤ) (x : C i j d) (y : C j i (2 - d)) :
+    (c : V → kˣ) (i j : V)
+    (hc : G.Adj i j → (c j : k) = -(c i : k))
+    (d : ℤ) (x : C i j d) (y : C j i (2 - d)) :
     zigzagAlgebraGradedCornerWeightedTracePairing k G c i j d x y =
       (d * (2 - d)).negOnePow •
         ((c j : k) * zigzagAlgebraTrace k G ((y : Z) * (x : Z))) := by
@@ -93,7 +93,9 @@ theorem zigzagAlgebraGradedCornerWeightedTracePairing_flip
       · subst d
         rw [show (1 : ℤ) * (2 - 1) = 1 by decide, Int.negOnePow_one]
         simp only [Units.neg_smul, one_smul]
-        rw [hc hadj, neg_mul, zigzagAlgebraTrace_mul_comm]
+        have hci : (c i : k) = -(c j : k) := by
+          rw [hc hadj.symm, neg_neg]
+        rw [hci, neg_mul, zigzagAlgebraTrace_mul_comm]
       · have hx : (x : Z) = 0 := by
           have hx := x.property
           simpa only [cornerSubmodule_zigzagAlgebra_inf_integerGrade_of_adj k G hadj,
