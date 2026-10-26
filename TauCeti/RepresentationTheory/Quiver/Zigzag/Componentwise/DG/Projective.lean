@@ -318,6 +318,76 @@ theorem zigzagAlgebraProjectiveDGHomEquivCorner_shifted_comp
     LinearEquiv.apply_symm_apply]
   exact (coe_zigzagAlgebraGradedProjectiveHomEquivCorner_comp k G i j l s t f g).symm
 
+/-!
+## Cohomology of the vertex Hom complexes
+
+These concrete zero-differential calculations supply a prerequisite to the graded/Serre
+identification in ZigzagPreprojective/README.md, Layer 8, fourth target. The degree here is
+that of the chosen path-graded DG model; no comparison with an ordinary derived category
+or Serre duality is asserted.
+-/
+
+/-- Every homogeneous morphism between the zero-DG vertex inputs is closed. -/
+-- Normalize before the enrichment exposes its concrete Hom-complex data.
+@[simp↓]
+theorem zigzagAlgebraProjectiveDGHom_differential
+    (i j : V) (n : ℤ) (f : DGHom k n (D i) (D j)) :
+    dgDifferential k n f = 0 := by
+  let : Module (GradedOpposite Γ)ᵐᵒᵖ (P i) := (D i).moduleOp
+  let : Module (GradedOpposite Γ)ᵐᵒᵖ (P j) := (D j).moduleOp
+  let : IsScalarTower k (GradedOpposite Γ)ᵐᵒᵖ (P i) := (D i).scalarTower
+  let : IsScalarTower k (GradedOpposite Γ)ᵐᵒᵖ (P j) := (D j).scalarTower
+  let := (D i).gradedSMul
+  let := (D j).gradedSMul
+  apply (DGRightModuleCat.dgHomLinearEquivCochains (D i) (D j) (n + 1)).injective
+  rw [DGRightModuleCat.dgDifferential_eq, map_zero]
+  apply Subtype.ext
+  apply LinearMap.ext
+  intro x
+  rw [dgRightModuleCochains.differential_apply,
+    zigzagAlgebraProjectiveDGRightModule_differential k G j,
+    zigzagAlgebraProjectiveDGRightModule_differential k G i]
+  simp only [Submodule.coe_zero, LinearMap.zero_apply, map_zero, smul_zero, sub_zero]
+
+/-- The actual enriched Hom complex between two vertex inputs has zero differentials. -/
+@[simp]
+theorem zigzagAlgebraProjectiveDGHomComplex_d (i j : V) (p q : ℤ) :
+    (dgHomComplex k (D i) (D j)).d p q = 0 := by
+  by_cases h : p + 1 = q
+  · subst q
+    apply ModuleCat.hom_ext
+    ext f
+    change dgDifferential k p f = 0
+    exact zigzagAlgebraProjectiveDGHom_differential k G i j p f
+  · exact (dgHomComplex k (D i) (D j)).shape p q h
+
+/-- Canonical cohomology in path degree `-s` identifies with the graded vertex corner. -/
+def zigzagAlgebraProjectiveHomologyEquivCorner (i j : V) (s : ℤ) :
+    (dgHomComplex k (D i) (D j)).homology (-s) ≃ₗ[k] ↥(C i j (-s)) :=
+  (((dgHomComplex k (D i) (D j)).isoHomologyπ (-s - 1) (-s) (by simp)
+      (zigzagAlgebraProjectiveDGHomComplex_d k G i j (-s - 1) (-s))).symm ≪≫
+    (dgHomComplex k (D i) (D j)).iCyclesIso (-s) (-s + 1) (by simp)
+      (zigzagAlgebraProjectiveDGHomComplex_d k G i j (-s) (-s + 1))).toLinearEquiv.trans
+        (L i j s)
+
+/-- The corner of a canonical cohomology class is the corner of its representing cycle. -/
+@[simp]
+theorem zigzagAlgebraProjectiveHomologyEquivCorner_homologyπ
+    (i j : V) (s : ℤ) (z : (dgHomComplex k (D i) (D j)).cycles (-s)) :
+    zigzagAlgebraProjectiveHomologyEquivCorner k G i j s
+        (((dgHomComplex k (D i) (D j)).homologyπ (-s)).hom z) =
+      L i j s (((dgHomComplex k (D i) (D j)).iCycles (-s)).hom z) := by
+  let Kij := dgHomComplex k (D i) (D j)
+  let eπ := Kij.isoHomologyπ (-s - 1) (-s) (by simp)
+    (zigzagAlgebraProjectiveDGHomComplex_d k G i j (-s - 1) (-s))
+  have heπ : eπ.inv.hom (eπ.hom.hom z) = z := by
+    simpa only [ModuleCat.comp_apply, ModuleCat.id_apply] using
+      congrArg (fun f : Kij.cycles (-s) ⟶ Kij.cycles (-s) ↦ f.hom z) eπ.hom_inv_id
+  simpa only [zigzagAlgebraProjectiveHomologyEquivCorner, LinearEquiv.trans_apply,
+    Iso.toLinearEquiv_apply, Iso.trans_hom, Iso.symm_hom, ModuleCat.comp_apply,
+    HomologicalComplex.iCyclesIso_hom, eπ, HomologicalComplex.isoHomologyπ_hom, Kij] using
+      congrArg (fun z' : Kij.cycles (-s) ↦ L i j s ((Kij.iCycles (-s)).hom z')) heπ
+
 end Enriched
 
 end TauCeti
