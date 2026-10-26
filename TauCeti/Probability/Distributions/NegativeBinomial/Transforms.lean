@@ -93,7 +93,9 @@ theorem cgf_id_map_cast_negativeBinomialMeasure
       log (Real.rpow (p / (1 - (1 - p) * exp t)) r) := by
   rw [cgf, mgf_id_map_cast_negativeBinomialMeasure hr hp hp1 ht]
 
-private lemma zero_mem_interior_integrableExpSet {r p : ℝ}
+/-- Zero lies in the interior of the exponential-integrability domain of the real cast of a
+positive-shape negative-binomial law, so all its natural moments are finite. -/
+theorem zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure {r p : ℝ}
     (hr : 0 < r) (hp : 0 < p) (hp1 : p ≤ 1) :
     0 ∈ interior (integrableExpSet id
       ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ))) := by
@@ -145,7 +147,7 @@ private theorem integral_id_map_cast_negativeBinomialMeasure_of_pos
     ∫ x, x ∂((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
       r * (1 - p) / p := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
-  have hzero := zero_mem_interior_integrableExpSet hr hp hp1
+  have hzero := zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1
   calc
     ∫ x, x ∂((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
         deriv (cgf id ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ))) 0 := by
@@ -174,7 +176,7 @@ private theorem variance_id_map_cast_negativeBinomialMeasure_of_pos
     variance id ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
       r * (1 - p) / p ^ 2 := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
-  have hzero := zero_mem_interior_integrableExpSet hr hp hp1
+  have hzero := zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1
   calc
     variance id ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =
         iteratedDeriv 2
