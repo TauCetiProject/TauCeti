@@ -37,8 +37,6 @@ for every fixed `α`, a constant `C` with
 
 ## Main results
 
-* `TauCeti.mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one`: for `x ≠ 1` and
-  `i ≠ 0`, membership in `U(K,i)` is the inequality `i ≤ v_K(x - 1)`.
 * `TauCeti.log_normalizedValuationWithZero_pow_sub_one`: the exact formula
   `v_K(x ^ n - 1) = v_K(x - 1) + v_K(n)` for a deep unit `x ≠ 1`.
 * `TauCeti.log_normalizedValuationWithZero_zpow_sub_one_le`: if `x ^ M ≠ 1` lies in a deep
@@ -61,21 +59,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-
-/-- For `x ≠ 1` and a positive depth `i`, membership of `x` in the unit filtration step `U(K,i)`
-is the inequality `i ≤ v_K(x - 1)` on the normalized valuation of `x - 1`. -/
-theorem mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one {i : ℕ} (hi : i ≠ 0)
-    {x : Kˣ} (hx : x ≠ 1) :
-    x ∈ unitFiltration K i ↔
-      (i : ℤ) ≤ WithZero.log (normalizedValuationWithZero K ((x : K) - 1)) := by
-  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  have h : (x : K) - 1 ≠ 0 := sub_ne_zero.mpr fun h ↦ hx (Units.ext h)
-  have hϖ := normalizedValuation_irreducible hπ
-  rw [mem_unitFiltration_iff_valuation_sub_one_le hi hπ,
-    ← Units.val_mk0 h, normalizedValuationWithZero_coe,
-    ← ofAdd_toAdd (normalizedValuation K _), ← WithZero.exp_eq_coe_ofAdd, WithZero.log_exp,
-    le_toAdd_normalizedValuation_iff_valuation_le_zpow hϖ]
-  simp
 
 /-- **The valuation of `x ^ n - 1` for a deep unit.** For `(n : K) ≠ 0`, a depth `i` with
 `v_K(p) < (p - 1) * i` for every prime `p ∣ n`, and `x ∈ U(K,i)` with `x ≠ 1`,
@@ -179,25 +162,6 @@ theorem log_normalizedValuationWithZero_zpow_sub_one_nonpos {x : Kˣ}
   rw [← normalizedValuation_eq_one_iff, map_zpow] at hval
   exact hx <| (mem_unitFiltration_zero x).mpr <|
     (normalizedValuation_eq_one_iff x).mp (by simpa [hb] using hval)
-
-/-- Writing `p` for the residue characteristic, the normalized valuation of a natural number `n`
-is at most `v_K(p) / log p * log n`, because `v_K(n) = v_p(n) v_K(p)` and `p ^ v_p(n) ≤ n`. -/
-theorem natCastValuation_le_div_log_mul_log {n : ℕ} (hn : (n : K) ≠ 0)
-    (hp : (ringChar 𝓀[K] : K) ≠ 0) :
-    (natCastValuation K n hn : ℝ) ≤
-      natCastValuation K (ringChar 𝓀[K]) hp / Real.log (ringChar 𝓀[K]) * Real.log n := by
-  have hp' : (ringChar 𝓀[K]).Prime := CharP.char_is_prime 𝓀[K] _
-  have hn0 : n ≠ 0 := by
-    rintro rfl
-    simp at hn
-  have hlogp : 0 < Real.log (ringChar 𝓀[K]) := Real.log_pos (by exact_mod_cast hp'.one_lt)
-  have hv : (padicValNat (ringChar 𝓀[K]) n : ℝ) * Real.log (ringChar 𝓀[K]) ≤ Real.log n := by
-    rw [← Real.log_pow]
-    exact Real.log_le_log (pow_pos (by exact_mod_cast hp'.pos) _)
-      (by exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero hn0) pow_padicValNat_dvd)
-  rw [natCastValuation_eq_padicValNat_mul K hn hp, div_mul_eq_mul_div, le_div_iff₀ hlogp]
-  push_cast
-  nlinarith [(Nat.cast_nonneg (natCastValuation K (ringChar 𝓀[K]) hp) : (0 : ℝ) ≤ _)]
 
 /-- The values `v_K(α ^ b - 1)` of a root of unity `α` are bounded above: `α ^ b` takes only the
 finitely many values `α ^ r` with `0 ≤ r < M`. -/
