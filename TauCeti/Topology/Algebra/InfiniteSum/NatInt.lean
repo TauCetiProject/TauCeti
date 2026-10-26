@@ -13,8 +13,9 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Ring
 # Reindexing infinite sums between the integers and natural numbers
 
 This file supplements Mathlib's results on infinite sums over `ℕ` and `ℤ` with a reindexing
-lemma for an integer-indexed family whose support is bounded below, and with the splitting of a
-summable integer-indexed family into its residue classes modulo `M`.
+lemma for an integer-indexed family whose support is bounded below, with the splitting of a
+summable integer-indexed family into its residue classes modulo `M`, and with the grouping of an
+integer-indexed sum into blocks of `M` consecutive terms.
 
 ## Main results
 
@@ -89,9 +90,9 @@ theorem HasSum.sum_fin_mul_add {E : Type*} [AddCommMonoid E] [TopologicalSpace E
   refine ((Int.divModEquiv M).symm.hasSum_iff.mpr hf).prod_fiberwise fun q ↦ ?_
   simpa [Function.comp_def] using hasSum_fintype fun r : Fin M ↦ f (q * M + r)
 
-/-- **A sum over the integers grouped by residues modulo `N`**: if `f` has sum `s`, then so does
-the family `y ↦ ∑_a f (a - N y)`, where `a` runs over the least nonnegative representatives of the
-residues modulo `N`. -/
+/-- **A sum over the integers grouped into blocks of `N` consecutive terms**: if `f` has sum `s`,
+then so does the family of block sums `y ↦ ∑_a f (a - N y)`, where `a` runs over the least
+nonnegative representatives of the residues modulo `N`. -/
 theorem HasSum.sum_zmod_val_sub {E : Type*} [AddCommMonoid E] [TopologicalSpace E]
     [ContinuousAdd E] [RegularSpace E] {f : ℤ → E} {s : E} (hf : HasSum f s) (N : ℕ)
     [NeZero N] : HasSum (fun y : ℤ ↦ ∑ a : ZMod N, f ((a.val : ℤ) - N * y)) s := by
