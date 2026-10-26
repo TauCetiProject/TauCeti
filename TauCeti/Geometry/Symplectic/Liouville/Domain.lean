@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Liouville.ContactType
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Liouville domains
@@ -121,14 +122,15 @@ theorem exists_isRestrictedContactType [I.Boundaryless] [FiniteDimensional ℝ E
   have hf1 : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x := fun x hx ↦ (hf x hx).1.of_le (by simp)
   -- The positive number `df(Z)` is a nonzero value of the differential of `f`.
   have hreg : IsRegularValue I 𝓘(ℝ) f c := isRegularValue_iff.2 fun x hx ↦
-    isRegularPoint_iff_mvfderiv_ne_zero.2 fun h0 ↦ (hf x hx).2.ne' (by rw [h0]; rfl)
+    isRegularPoint_iff_mvfderiv_ne_zero.2 fun h0 ↦ (hf x hx).2.ne' (by simp [h0])
   refine ⟨f, c, hf1, hreg, rfl, frontier_setOf_le_eq_of_mvfderiv_pos hfc
-    (fun x hx ↦ (hf x hx).1.mdifferentiableAt (by simp))
     (fun x hx ↦ (hf x hx).2), ?_⟩
   let := scalarRegularLevelChartedSpace hf1 hreg
   -- `mvfderiv` is `mfderiv` read in `ℝ`, so `df(Z) > 0` is transversality to the level.
   exact isRestrictedContactType_iff.2 ⟨h.mextDeriv_eq, Z, hZ, hZα,
-    (isTransverseAlong_coe_scalarRegularLevel_iff hf1 hreg).2 fun x hx ↦ (hf x hx).2.ne'⟩
+    (isTransverseAlong_coe_scalarRegularLevel_iff hf1 hreg).2 fun x hx ↦ by
+      rw [← mvfderiv_apply_eq_mfderiv_apply]
+      exact (hf x hx).2.ne'⟩
 
 end IsLiouvilleDomain
 

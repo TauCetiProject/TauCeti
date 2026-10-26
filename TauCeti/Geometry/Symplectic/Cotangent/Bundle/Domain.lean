@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Codisc
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.EulerField
 public import TauCeti.Geometry.Symplectic.Liouville.Domain
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # The unit codisc bundle is a Liouville domain
@@ -75,9 +76,9 @@ theorem isLiouvilleDomain_codiscBundle [CompactSpace M] :
         ⟨contMDiffAt_norm_snd_of_mem_cosphereBundle z hz, ?_⟩⟩
     · rw [NegMemClass.coe_neg, symplecticForm_interior_vectorBundleEulerField]
     · -- `mvfderiv` is `mfderiv` read in `ℝ`, and the norm of covectors sends `p ∂_p` to `‖p‖`.
-      have h := mfderiv_norm_snd_vectorBundleEulerField (snd_ne_zero_of_mem_cosphereBundle hz)
-      rw [mem_cosphereBundle.1 hz] at h
-      exact h ▸ one_pos
+      rw [mvfderiv_apply_eq_mfderiv_apply,
+        mfderiv_norm_snd_vectorBundleEulerField (snd_ne_zero_of_mem_cosphereBundle hz)]
+      exact (mem_cosphereBundle.1 hz).symm ▸ one_pos
 
 end CotangentBundle
 
