@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.Idempotents.Biproducts
 public import Mathlib.CategoryTheory.Limits.Constructions.FiniteProductsOfBinaryProducts
-public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import Mathlib.CategoryTheory.Retract
 
 /-!
@@ -122,10 +121,8 @@ end Biproducts
 
 variable [HasBinaryBiproducts C]
 
-/-- Let `i : P ⟶ Q` and `j : Q ⟶ R` be retracts of the images under `toKaroubi` of `a : A ⟶ B`
-and `b : B' ⟶ C'`, with the retractions given explicitly. Then for some isomorphism `θ` of
-`B ⊞ B'`, the composite `i ≫ j` is a retract of the image of `(a ⊞ 𝟙) ≫ θ ≫ (𝟙 ⊞ b)`. -/
-theorem Idempotents.Karoubi.exists_retractArrow_comp_of_retracts {P Q R : Karoubi C} (i : P ⟶ Q)
+/-- `Karoubi.exists_retractArrow_comp_of_retracts`, with the retractions spelled out. -/
+private theorem exists_retractArrow_comp_aux {P Q R : Karoubi C} (i : P ⟶ Q)
     (j : Q ⟶ R) {A B B' C' : C} {a : A ⟶ B} {b : B' ⟶ C'} (iP : P ⟶ (toKaroubi C).obj A)
     (rP : (toKaroubi C).obj A ⟶ P)
     (iQ : Q ⟶ (toKaroubi C).obj B) (rQ : (toKaroubi C).obj B ⟶ Q)
@@ -166,5 +163,17 @@ theorem Idempotents.Karoubi.exists_retractArrow_comp_of_retracts {P Q R : Karoub
     · simp [θ, ← wjf', reassoc_of% hQf', reassoc_of% wrf]
     · simp [θ, Preadditive.sub_comp, ← wjf', reassoc_of% hQf']
   · ext <;> simp [hPf, hRf]
+
+/-- Let `i : P ⟶ Q` and `j : Q ⟶ R` be retracts of the images under `toKaroubi` of `a : A ⟶ B`
+and `b : B' ⟶ C'`. Then for some isomorphism `θ` of `B ⊞ B'`, the composite `i ≫ j` is a retract
+of the image of `(a ⊞ 𝟙) ≫ θ ≫ (𝟙 ⊞ b)`. -/
+theorem Idempotents.Karoubi.exists_retractArrow_comp_of_retracts {P Q R : Karoubi C}
+    {i : P ⟶ Q} {j : Q ⟶ R} {A B B' C' : C} {a : A ⟶ B} {b : B' ⟶ C'}
+    (ri : RetractArrow i ((toKaroubi C).map a)) (rj : RetractArrow j ((toKaroubi C).map b)) :
+    ∃ θ : B ⊞ B' ⟶ B ⊞ B', IsIso θ ∧
+      Nonempty (RetractArrow (i ≫ j) ((toKaroubi C).map (biprod.map a (𝟙 B') ≫ θ ≫
+        biprod.map (𝟙 B) b))) :=
+  exists_retractArrow_comp_aux i j _ _ _ _ _ _ _ _ ri.retract_left ri.retract_right
+    rj.retract_left rj.retract_right ri.i_w ri.r_w rj.i_w rj.r_w
 
 end CategoryTheory

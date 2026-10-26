@@ -208,8 +208,7 @@ private theorem karoubiConflations_isInflation_comp {P Q R : Karoubi C} {i : P �
     E.karoubiConflations.IsInflation (i ≫ j) := by
   obtain ⟨_, B, _, ha, ⟨hi⟩⟩ := (E.karoubiConflations_isInflation_iff i).mp hi
   obtain ⟨_, _, _, hb, ⟨hj⟩⟩ := (E.karoubiConflations_isInflation_iff j).mp hj
-  obtain ⟨θ, _, ⟨h⟩⟩ := Karoubi.exists_retractArrow_comp_of_retracts i j _ _ _ _ _ _ _ _
-    hi.retract_left hi.retract_right hj.retract_left hj.retract_right hi.i_w hi.r_w hj.i_w hj.r_w
+  obtain ⟨θ, _, ⟨h⟩⟩ := Karoubi.exists_retractArrow_comp_of_retracts hi hj
   exact E.karoubiConflations_isInflation_of_retract
     (E.isInflation_comp _ _ (E.isInflation_biprod_id ha _)
       (E.isInflation_comp _ _ (E.inflations.of_isIso θ) (E.isInflation_id_biprod hb B))) h
@@ -220,8 +219,7 @@ private theorem karoubiConflations_isDeflation_comp {P Q R : Karoubi C} {p : P �
     E.karoubiConflations.IsDeflation (p ≫ q) := by
   obtain ⟨_, B, _, hd, ⟨hp⟩⟩ := (E.karoubiConflations_isDeflation_iff p).mp hp
   obtain ⟨_, _, _, hd', ⟨hq⟩⟩ := (E.karoubiConflations_isDeflation_iff q).mp hq
-  obtain ⟨θ, _, ⟨h⟩⟩ := Karoubi.exists_retractArrow_comp_of_retracts p q _ _ _ _ _ _ _ _
-    hp.retract_left hp.retract_right hq.retract_left hq.retract_right hp.i_w hp.r_w hq.i_w hq.r_w
+  obtain ⟨θ, _, ⟨h⟩⟩ := Karoubi.exists_retractArrow_comp_of_retracts hp hq
   exact E.karoubiConflations_isDeflation_of_retract
     (E.isDeflation_comp _ _ (E.isDeflation_biprod_id hd _)
       (E.isDeflation_comp _ _ (E.deflations.of_isIso θ) (E.isDeflation_id_biprod hd' B))) h
@@ -296,18 +294,21 @@ def karoubi : ExactStructure (Karoubi C) where
     ⟨fun sq hg ↦ E.karoubiConflations_isDeflation_of_isPullback sq hg⟩
 
 /-- The conflations of `E.karoubi` are the retracts of images of conflations of `E`. -/
+@[simp]
 theorem karoubi_conflation_iff (S : ShortComplex (Karoubi C)) :
     E.karoubi.Conflation S ↔
       ∃ T : ShortComplex C, E.Conflation T ∧ Nonempty (Retract S (T.map (toKaroubi C))) :=
   Iff.rfl
 
 /-- The inflations of `E.karoubi` are the retracts of images of inflations of `E`. -/
+@[simp]
 theorem karoubi_isInflation_iff {P Q : Karoubi C} (f : P ⟶ Q) :
     E.karoubi.IsInflation f ↔ ∃ (A B : C) (a : A ⟶ B),
       E.IsInflation a ∧ Nonempty (RetractArrow f ((toKaroubi C).map a)) :=
   E.karoubiConflations_isInflation_iff f
 
 /-- The deflations of `E.karoubi` are the retracts of images of deflations of `E`. -/
+@[simp]
 theorem karoubi_isDeflation_iff {Q R : Karoubi C} (g : Q ⟶ R) :
     E.karoubi.IsDeflation g ↔ ∃ (B D : C) (d : B ⟶ D),
       E.IsDeflation d ∧ Nonempty (RetractArrow g ((toKaroubi C).map d)) :=
