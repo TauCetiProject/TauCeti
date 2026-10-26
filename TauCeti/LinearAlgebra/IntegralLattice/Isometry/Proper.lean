@@ -48,6 +48,10 @@ In rank zero every isometry is proper, and the class of `L` is a single proper c
   exactly when both factors are proper or both are improper.
 * `TauCeti.IntegralLattice.properIsometryClass_eq_properIsometryClass_iff_of_index_eq_two`: when
   `L` has an improper self-isometry, the proper class of `L` is its class.
+* `TauCeti.IntegralLattice.preimage_toIsometryQuotient_eq_pair` and
+  `TauCeti.IntegralLattice.properIsometryClass_transport_eq_iff`: the proper classes in the class
+  of `L` are those of `L` and of its transport along an orientation-reversing equivalence, and
+  these agree exactly when `L` has an improper self-isometry.
 * `TauCeti.IntegralLattice.natCard_preimage_toIsometryQuotient_mul_index`: in positive rank, the
   number of proper classes in the class of `L`, times `[O(L) : SO(L)]`, is `2`.
 * `TauCeti.IntegralLattice.preimage_toIsometryQuotient_eq_singleton_of_index_eq_two` and
@@ -105,6 +109,7 @@ theorem isProper_refl (L : IntegralLattice V) : (refl L).IsProper :=
 
 /-- A composite of isometries is proper exactly when both factors are proper or both are
 improper. -/
+@[simp]
 theorem isProper_trans_iff (e : Isometry L M) (f : Isometry M N) :
     (e.trans f).IsProper ↔ (e.IsProper ↔ f.IsProper) := by
   have h : ((e.trans f : Isometry L N) : V ≃ₗ[ℚ] V) =
@@ -155,12 +160,20 @@ theorem isProper_iff_mem_specialOrthogonalGroup (e : Isometry L L) :
 
 /-- The canonical isometry to a transported lattice is proper exactly when the ambient
 equivalence has positive determinant. -/
+@[simp]
 theorem isProper_transportIsometry_iff (L : IntegralLattice V) (g : V ≃ₗ[ℚ] V) :
     (L.transportIsometry g).IsProper ↔ 0 < (LinearEquiv.det g : ℚ) := by
   have h : ((L.transportIsometry g : Isometry L (L.transport g)) : V ≃ₗ[ℚ] V) = g := by
     ext x
     exact transportIsometry_apply L g x
   rw [isProper_iff, h]
+
+/-- The canonical isometry to a transported lattice is improper exactly when the ambient
+equivalence has negative determinant. -/
+theorem not_isProper_transportIsometry_iff (L : IntegralLattice V) (g : V ≃ₗ[ℚ] V) :
+    ¬ (L.transportIsometry g).IsProper ↔ (LinearEquiv.det g : ℚ) < 0 := by
+  rw [isProper_transportIsometry_iff, not_lt]
+  exact (Units.ne_zero _).le_iff_lt
 
 end IsProper
 
@@ -207,6 +220,18 @@ theorem properIsometryClass_surjective :
     Function.Surjective (properIsometryClass : IntegralLattice V → ProperIsometryQuotient V) :=
   Quotient.mk_surjective
 
+/-- The proper class of the chosen representative of a proper class is that proper class. -/
+@[simp]
+theorem properIsometryClass_out (c : ProperIsometryQuotient V) : c.out.properIsometryClass = c :=
+  Quotient.out_eq c
+
+/-- A proper isometry between the chosen representatives of two proper classes shows that the
+proper classes are equal. -/
+theorem ProperIsometryQuotient.eq_of_isProper_out {c d : ProperIsometryQuotient V}
+    {e : Isometry c.out d.out} (he : e.IsProper) : c = d := by
+  rw [← properIsometryClass_out c, ← properIsometryClass_out d]
+  exact he.properIsometryClass_eq
+
 /-- The class containing a proper class. -/
 def ProperIsometryQuotient.toIsometryQuotient :
     ProperIsometryQuotient V → IsometryQuotient V :=
@@ -251,15 +276,14 @@ theorem preimage_toIsometryQuotient_eq_singleton_of_index_eq_two {L : IntegralLa
   simp only [Set.mem_preimage, toIsometryQuotient_properIsometryClass, Set.mem_singleton_iff]
   rw [eq_comm, ← properIsometryClass_eq_properIsometryClass_iff_of_index_eq_two h, eq_comm]
 
-/-- In positive rank the proper classes in the class of `L` are the proper class of `L` and the
-proper class of its transport along any orientation-reversing equivalence. -/
-private theorem preimage_toIsometryQuotient_eq_pair {L : IntegralLattice V} {g : V ≃ₗ[ℚ] V}
+/-- **A class consists of the proper classes of `L` and of a reversed copy.** The proper classes
+in the class of `L` are the proper class of `L` and the proper class of its transport along any
+orientation-reversing equivalence `g` of `V` (one exists exactly in positive rank). -/
+theorem preimage_toIsometryQuotient_eq_pair {L : IntegralLattice V} {g : V ≃ₗ[ℚ] V}
     (hg : (LinearEquiv.det g : ℚ) < 0) :
     toIsometryQuotient ⁻¹' {L.isometryClass} =
       {L.properIsometryClass, (L.transport g).properIsometryClass} := by
-  have ht : ¬ (L.transportIsometry g).IsProper := by
-    rw [isProper_transportIsometry_iff, not_lt]
-    exact hg.le
+  have ht := (not_isProper_transportIsometry_iff L g).mpr hg
   ext c
   obtain ⟨M, rfl⟩ := properIsometryClass_surjective c
   simp only [Set.mem_preimage, toIsometryQuotient_properIsometryClass, Set.mem_singleton_iff,
@@ -275,15 +299,13 @@ private theorem preimage_toIsometryQuotient_eq_pair {L : IntegralLattice V} {g :
     · simpa using congrArg toIsometryQuotient h
     · simpa [(L.transportIsometry g).isometryClass_eq] using congrArg toIsometryQuotient h
 
-/-- In positive rank, the proper class of `L` and that of its transport along an
-orientation-reversing equivalence agree exactly when `L` has an improper self-isometry. -/
-private theorem properIsometryClass_transport_eq_iff {L : IntegralLattice V} {g : V ≃ₗ[ℚ] V}
+/-- The proper class of `L` and that of its transport along an orientation-reversing equivalence
+agree exactly when `L` has an improper self-isometry. -/
+theorem properIsometryClass_transport_eq_iff {L : IntegralLattice V} {g : V ≃ₗ[ℚ] V}
     (hg : (LinearEquiv.det g : ℚ) < 0) :
     L.properIsometryClass = (L.transport g).properIsometryClass ↔
       (specialOrthogonalGroup L).index = 2 := by
-  have ht : ¬ (L.transportIsometry g).IsProper := by
-    rw [isProper_transportIsometry_iff, not_lt]
-    exact hg.le
+  have ht := (not_isProper_transportIsometry_iff L g).mpr hg
   rw [index_specialOrthogonalGroup_eq_two_iff, properIsometryClass_eq_properIsometryClass_iff]
   constructor
   · rintro ⟨e, he⟩

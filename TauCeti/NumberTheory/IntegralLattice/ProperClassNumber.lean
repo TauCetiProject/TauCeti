@@ -93,6 +93,10 @@ theorem properIsometryClass_mem_genusProperClasses (L : IntegralLattice V) :
     L.properIsometryClass ∈ L.genusProperClasses :=
   properIsometryClass_mem_genusProperClasses_iff.mpr (SameGenus.refl L)
 
+/-- The genus of `L` contains a proper class. -/
+theorem genusProperClasses_nonempty (L : IntegralLattice V) : L.genusProperClasses.Nonempty :=
+  ⟨_, L.properIsometryClass_mem_genusProperClasses⟩
+
 /-- Every class in the genus of `L` contains a proper class of the genus. -/
 @[simp]
 theorem image_toIsometryQuotient_genusProperClasses (L : IntegralLattice V) :
@@ -158,7 +162,7 @@ theorem properClassNumber_def (L : IntegralLattice V) :
 theorem properClassNumber_pos_iff {L : IntegralLattice V} :
     0 < L.properClassNumber ↔ L.genusClasses.Finite := by
   rw [properClassNumber_def, Nat.card_pos_iff, Set.finite_coe_iff, finite_genusProperClasses_iff]
-  exact and_iff_right ⟨⟨_, L.properIsometryClass_mem_genusProperClasses⟩⟩
+  exact and_iff_right L.genusProperClasses_nonempty.to_subtype
 
 /-- **The proper class number is an invariant of the genus.** Lattices of the same genus have the
 same proper class number, even when they live in different ambient spaces. -/
@@ -182,6 +186,12 @@ theorem IsPosDef.properClassNumber_pos {L : IntegralLattice V} (hL : L.IsPosDef)
 theorem IsNegDef.properClassNumber_pos {L : IntegralLattice V} (hL : L.IsNegDef) :
     0 < L.properClassNumber :=
   properClassNumber_pos_iff.mpr hL.finite_genusClasses
+
+/-- Twice the class number of a genus with finitely many classes, as a sum over its classes. -/
+private theorem two_mul_classNumber_eq_sum {L : IntegralLattice V} (hL : L.genusClasses.Finite) :
+    2 * L.classNumber = ∑ _c ∈ hL.toFinset, 2 := by
+  rw [Finset.sum_const, smul_eq_mul, mul_comm, classNumber_def, Nat.card_coe_set_eq,
+    Set.ncard_eq_toFinset_card _ hL]
 
 /-- The proper class number counts, class by class, the proper classes in the genus. -/
 theorem properClassNumber_eq_sum {L : IntegralLattice V} (hL : L.genusClasses.Finite) :
@@ -209,9 +219,8 @@ theorem properClassNumber_add_card_eq_two_mul_classNumber {L : IntegralLattice V
     L.properClassNumber +
         (hL.toFinset.filter fun c ↦ (specialOrthogonalGroup c.out).index = 2).card =
       2 * L.classNumber := by
-  rw [properClassNumber_eq_sum hL, Finset.card_filter, ← Finset.sum_add_distrib, classNumber_def,
-    Nat.card_coe_set_eq, Set.ncard_eq_toFinset_card _ hL, mul_comm, ← smul_eq_mul,
-    ← Finset.sum_const]
+  rw [properClassNumber_eq_sum hL, Finset.card_filter, ← Finset.sum_add_distrib,
+    two_mul_classNumber_eq_sum hL]
   refine Finset.sum_congr rfl fun c _ ↦ ?_
   have h := natCard_preimage_toIsometryQuotient_mul_index c.out hV
   rw [isometryClass_out] at h
@@ -234,8 +243,7 @@ theorem classNumber_le_properClassNumber (L : IntegralLattice V) :
 theorem properClassNumber_le_two_mul_classNumber (L : IntegralLattice V) :
     L.properClassNumber ≤ 2 * L.classNumber := by
   by_cases hL : L.genusClasses.Finite
-  · rw [properClassNumber_eq_sum hL, classNumber_def, Nat.card_coe_set_eq,
-      Set.ncard_eq_toFinset_card _ hL, mul_comm, ← smul_eq_mul, ← Finset.sum_const]
+  · rw [properClassNumber_eq_sum hL, two_mul_classNumber_eq_sum hL]
     exact Finset.sum_le_sum fun c _ ↦ natCard_preimage_toIsometryQuotient_le_two c
   · rw [properClassNumber_def, Set.Infinite.card_eq_zero (mt finite_genusProperClasses_iff.mp hL)]
     exact Nat.zero_le _
