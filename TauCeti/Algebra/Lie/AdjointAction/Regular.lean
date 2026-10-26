@@ -56,10 +56,10 @@ isomorphisms, hence by the adjoint action, and by nonzero scalars. In finite dim
   nonzero scalars.
 * `LieAlgebra.isCentralizerRegular_zero_iff`: in finite dimension, `0` is regular exactly when `L`
   is abelian.
-* `LieAlgebra.not_isCentralizerRegular_of_mem_zeroLocus_vanishingIdeal`: the nonregular elements
-  form a Zariski-closed set.
-* `LieAlgebra.vanishingIdeal_setOfPred_isCentralizerRegular_eq_bot`: over an infinite field the
-  regular elements are Zariski dense.
+* `Module.Basis.not_isCentralizerRegular_of_mem_zeroLocus_vanishingIdeal`: the nonregular
+  elements form a Zariski-closed set.
+* `Module.Basis.vanishingIdeal_setOfPred_isCentralizerRegular_eq_bot`: over an infinite field
+  the regular elements are Zariski dense.
 
 ## References
 
@@ -175,11 +175,18 @@ theorem isCentralizerRegular_of_isLieAbelian [IsLieAbelian L] (x : L) :
     IsCentralizerRegular K x := fun y ↦ by
   rw [ad_eq_zero_of_isLieAbelian, ad_eq_zero_of_isLieAbelian]
 
+end LieAlgebra
+
 /-! ### Zariski openness and density -/
 
-section Zariski
+namespace Module.Basis
 
-variable {ι : Type*} [Finite ι] (b : Basis ι K L)
+open LieAlgebra
+
+variable {K : Type*} {L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+  {ι : Type*} [Finite ι] (b : Basis ι K L)
+
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- **The nonregular elements form a Zariski-closed set.** If no element of a set `S` is regular,
 then no `x` whose coordinates lie in the common zero locus of the polynomials vanishing on the
@@ -220,9 +227,7 @@ theorem vanishingIdeal_setOfPred_isCentralizerRegular_eq_bot [Infinite K] :
   rw [hset]
   exact (ad K L).toLinearMap.vanishingIdeal_setOfPred_le_finrank_range_eq_bot b le_rfl
 
-end Zariski
-
-end LieAlgebra
+end Module.Basis
 
 /-! ### Invariance under Lie algebra isomorphisms -/
 
