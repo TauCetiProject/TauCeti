@@ -58,6 +58,11 @@ noncomputable def barycentricSubdivisionLinearMap (K : AbstractSimplicialComplex
     (Face K →₀ ℝ) →ₗ[ℝ] (ι →₀ ℝ) :=
   Finsupp.linearCombination ℝ (faceBarycenter K)
 
+/-- The barycentric-subdivision linear map is the linear combination of face barycenters. -/
+theorem barycentricSubdivisionLinearMap_eq_linearCombination (K : AbstractSimplicialComplex ι) :
+    barycentricSubdivisionLinearMap K = Finsupp.linearCombination ℝ (faceBarycenter K) :=
+  (rfl)
+
 @[simp]
 theorem barycentricSubdivisionLinearMap_single (K : AbstractSimplicialComplex ι)
     (σ : Face K) :
@@ -73,7 +78,9 @@ theorem barycentricSubdivisionLinearMap_apply (K : AbstractSimplicialComplex ι)
     Finset.sum_apply']
   simp only [Finsupp.smul_apply, smul_eq_mul, faceBarycenter_apply]
 
-private theorem barycentricSubdivisionLinearMap_mem_closedSimplex
+/-- A combination of the barycenters of a family of faces of `σ` with weights in the standard
+simplex lies in the closed simplex of `σ`. -/
+theorem barycentricSubdivisionLinearMap_mem_closedSimplex
     (K : AbstractSimplicialComplex ι) {ρ : Finset (Face K)} (σ : Face K)
     (x : StandardSimplex ρ) (hρσ : ∀ τ ∈ ρ, τ ≤ σ) :
     barycentricSubdivisionLinearMap K x.1 ∈
