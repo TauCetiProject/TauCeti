@@ -133,13 +133,8 @@ theorem barycentricSubdivisionFaceMap_apply (K : AbstractSimplicialComplex ι)
 theorem continuous_barycentricSubdivisionFaceMap (K : AbstractSimplicialComplex ι)
     {ρ : Finset (Face K)} (σ : Face K) (hρσ : ∀ τ ∈ ρ, τ ≤ σ) :
     Continuous (barycentricSubdivisionFaceMap K σ hρσ) := by
-  apply continuous_induced_rng.mpr
-  change Continuous
-    (fun x : StandardSimplex ρ => (barycentricSubdivisionFaceMap K σ hρσ x : ι → ℝ))
-  refine continuous_pi fun v => ?_
-  rw [show (fun x : StandardSimplex ρ => (barycentricSubdivisionFaceMap K σ hρσ x : ι → ℝ) v) =
-      fun x => ∑ τ ∈ ρ, x.1 τ * faceBarycenter K τ v from
-    funext (barycentricSubdivisionFaceMap_apply K σ hρσ · v)]
+  refine continuous_induced_rng.mpr (continuous_pi fun v => ?_)
+  simp only [Function.comp_apply, barycentricSubdivisionFaceMap_apply]
   apply continuous_finsetSum
   intro τ _
   have hcoe : Continuous (fun x : StandardSimplex ρ => (x.1 : Face K → ℝ)) :=
