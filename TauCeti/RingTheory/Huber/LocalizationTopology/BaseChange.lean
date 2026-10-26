@@ -69,9 +69,10 @@ continuous inverse. So a rational localisation of `A` depends only on the comple
   spectra.
 * `TauCeti.Huber.PairOfDefinition.completionLocPairMap_comp_toCompletionLocHom`: the morphism of
   pairs is compatible with the structure morphisms.
-* `PairOfDefinition.existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom`: the
-  extension `Â → A⟨T/s⟩` of the structure map extends uniquely and continuously to
-  `Â⟨T'/s⟩ → A⟨T/s⟩` when the numerators of `Â` come from those of `A`.
+* `existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom` (in
+  `TauCeti.Huber.PairOfDefinition`): the extension `Â → A⟨T/s⟩` of the structure map extends
+  uniquely and continuously to `Â⟨T'/s⟩ → A⟨T/s⟩` when the numerators of `Â` come from those of
+  `A`.
 * `TauCeti.Huber.PairOfDefinition.completionLocMap_id`,
   `TauCeti.Huber.PairOfDefinition.completionLocMap_comp_completionLocMap` and their analogues
   `completionLocPairMap_id`, `completionLocPairMap_comp_completionLocPairMap` for morphisms of
@@ -556,9 +557,8 @@ include hs in
 /-- **Descent of `Â⟨T'/s⟩` to `A⟨T/s⟩`.** Let `Â` be the completion of `A`, and let the
 numerators `T'` of a rational localisation of `Â` be images of numerators in `T`. The extension
 `Â → A⟨T/s⟩` of the structure map of `A⟨T/s⟩` extends in exactly one continuous way along the
-structure map `Â → Â⟨T'/s⟩`: the image of `s` is a unit of `A⟨T/s⟩`, and the image of each
-`t/s`, for `t ∈ T`, is power-bounded there. Only the pairs of definition `P` of `A` and `P'` of
-`Â` enter, and they are arbitrary. -/
+structure map `Â → Â⟨T'/s⟩`. The pairs of definition `P` of `A` and `P'` of `Â` are
+arbitrary. -/
 theorem existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom
     (hT' : ∀ t ∈ T', ∃ t₀ ∈ T, (t₀ : Completion A) = t) :
     letI := locUniformSpace P T s S hden
@@ -577,6 +577,8 @@ theorem existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom
   have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
   have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
   have _ := isHuberRing_completion_locTopology P T s S hden
+  -- By the universal property of `Â⟨T'/s⟩`, it suffices that the image of `s` is a unit of
+  -- `A⟨T/s⟩` and that the image of each `t/s`, for `t ∈ T`, is power-bounded there.
   have hc := continuous_toCompletionLoc P T s S hden
   have hu := isUnit_toCompletionLoc_of_dvd P T s S hden (dvd_refl s)
   have hs' : IsUnit (Completion.extensionHom _ hc s') := by
