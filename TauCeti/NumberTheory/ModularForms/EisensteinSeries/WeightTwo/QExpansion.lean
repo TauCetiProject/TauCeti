@@ -56,20 +56,6 @@ namespace TauCeti.EisensteinSeries
 
 variable {u v N : ℕ} [NeZero N] (ψ : DirichletCharacter ℂ u) (φ : DirichletCharacter ℂ v)
 
-/-- A sum over the integers, grouped by residues modulo `N` with the least nonnegative
-representatives `a`: `y ↦ ∑_a f(a - N y)`. -/
-private lemma hasSum_sum_zmod_val_sub {f : ℤ → ℂ} {s : ℂ} (hf : HasSum f s) :
-    HasSum (fun y : ℤ ↦ ∑ a : ZMod N, f ((a.val : ℤ) - N * y)) s := by
-  have hbij : Function.Bijective fun r : Fin N ↦ ((r : ℕ) : ZMod N) :=
-    (Fintype.bijective_iff_surjective_and_card _).mpr
-      ⟨fun j ↦ ⟨⟨j.val, j.val_lt⟩, by simp⟩, by simp [ZMod.card]⟩
-  refine ((Equiv.neg ℤ).hasSum_iff.mpr (hf.sum_fin_mul_add N)).congr_fun fun y ↦ ?_
-  rw [Function.comp_apply, Equiv.neg_apply,
-    ← Fintype.sum_bijective _ hbij (fun r : Fin N ↦ _) _ fun _ ↦ rfl]
-  refine Finset.sum_congr rfl fun r _ ↦ ?_
-  rw [ZMod.val_cast_of_lt r.isLt]
-  ring_nf
-
 /-- Each row of the weight-two series with character converges absolutely. -/
 private lemma summable_charG2_row (z : ℍ) (c : ℤ) :
     Summable fun d : ℤ ↦
@@ -121,7 +107,7 @@ theorem hasSum_charRow_charG2MF (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1) 
   have hfib : HasSum (fun y : ℤ ↦ ∑ a : ZMod N, R ((a.val : ℤ) - N * y))
       (charG2MF ψ φ huv z) := by
     refine hbox.prod_fiberwise fun y₀ ↦ ?_
-    refine (hasSum_sum fun a₀ _ ↦ hasSum_sum_zmod_val_sub (N := N) (hTs _).hasSum).congr_fun
+    refine (hasSum_sum fun a₀ _ ↦ (hTs _).hasSum.sum_zmod_val_sub N).congr_fun
       fun y₁ ↦ ?_
     rw [Function.comp_apply, ← (finTwoArrowEquiv (ZMod N)).symm.sum_comp, Fintype.sum_prod_type]
     refine Finset.sum_congr rfl fun a₀ _ ↦ Finset.sum_congr rfl fun a₁ _ ↦ ?_
@@ -132,7 +118,7 @@ theorem hasSum_charRow_charG2MF (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1) 
       fin_cases i <;> simp
     rw [hfun]
     simp [hT]
-  exact (hasSum_sum_zmod_val_sub hRs.hasSum).unique hfib ▸ hRs.hasSum
+  exact (hRs.hasSum.sum_zmod_val_sub N).unique hfib ▸ hRs.hasSum
 
 /-- **The `q`-expansion of the weight-two Eisenstein series with character.** For characters `ψ`
 modulo `u` and `φ` modulo `v`, not both trivial, with `ψ(-1) φ(-1) = 1`, the constant coefficient

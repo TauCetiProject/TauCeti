@@ -320,8 +320,8 @@ for `Γ₁(N)` whose value at every `z` is the sum over `c ∈ ℤ` of the rows
 `ψ(0) ∑_{d ∈ ℤ} φ⁻¹(d) d^(-k)`, and for `n ≥ 1` its `n`-th coefficient is
 `2 (-2πi)^k / ((k-1)! v^k) ∑_{c m = n} ψ(c) φ̂(m) m^(k-1)`, where
 `φ̂(m) = ∑_{r mod v} φ⁻¹(r) e^(2πi r m / v)`. This applies to the Eisenstein series with character
-in weight `k ≥ 3`, where the double series converges absolutely, and in weight two, where it
-converges only when summed by rows. -/
+in weight `k ≥ 3`, where the double series converges absolutely, and in weight two, where the
+double series is not absolutely convergent and this theorem uses its iterated sum along rows. -/
 theorem qExpansion_coeff_of_apply_eq_tsum_charRow (hk : 2 ≤ k)
     (hpar : ψ (-1) * φ (-1) = (-1) ^ k) {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hf : ∀ z : ℍ, f z = ∑' c : ℤ, charRow ψ φ k z c)

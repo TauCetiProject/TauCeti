@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Ring
 
@@ -24,6 +25,8 @@ summable integer-indexed family into its residue classes modulo `M`.
   `r < M` of its sums over the classes `qM + r`.
 * `HasSum.sum_fin_mul_add`: a family on `ℤ` has the same sum as its sums over the blocks
   `qM + r`, `r < M`.
+* `HasSum.sum_zmod_val_sub`: the same, with the blocks `a - N y` indexed by the least
+  nonnegative representatives `a` of the residues modulo `N`.
 -/
 
 public section
@@ -85,3 +88,19 @@ theorem HasSum.sum_fin_mul_add {E : Type*} [AddCommMonoid E] [TopologicalSpace E
     [NeZero M] : HasSum (fun q : ℤ ↦ ∑ r : Fin M, f (q * M + r)) s := by
   refine ((Int.divModEquiv M).symm.hasSum_iff.mpr hf).prod_fiberwise fun q ↦ ?_
   simpa [Function.comp_def] using hasSum_fintype fun r : Fin M ↦ f (q * M + r)
+
+/-- **A sum over the integers grouped by residues modulo `N`**: if `f` has sum `s`, then so does
+the family `y ↦ ∑_a f (a - N y)`, where `a` runs over the least nonnegative representatives of the
+residues modulo `N`. -/
+theorem HasSum.sum_zmod_val_sub {E : Type*} [AddCommMonoid E] [TopologicalSpace E]
+    [ContinuousAdd E] [RegularSpace E] {f : ℤ → E} {s : E} (hf : HasSum f s) (N : ℕ)
+    [NeZero N] : HasSum (fun y : ℤ ↦ ∑ a : ZMod N, f ((a.val : ℤ) - N * y)) s := by
+  have hbij : Function.Bijective fun r : Fin N ↦ ((r : ℕ) : ZMod N) :=
+    (Fintype.bijective_iff_surjective_and_card _).mpr
+      ⟨fun j ↦ ⟨⟨j.val, j.val_lt⟩, by simp⟩, by simp [ZMod.card]⟩
+  refine ((Equiv.neg ℤ).hasSum_iff.mpr (hf.sum_fin_mul_add N)).congr_fun fun y ↦ ?_
+  rw [Function.comp_apply, Equiv.neg_apply,
+    ← Fintype.sum_bijective _ hbij (fun r : Fin N ↦ _) _ fun _ ↦ rfl]
+  refine Finset.sum_congr rfl fun r _ ↦ ?_
+  rw [ZMod.val_cast_of_lt r.isLt]
+  rw [sub_eq_neg_add, neg_mul, mul_comm]
