@@ -106,14 +106,15 @@ private theorem map_specialize_eq_galResolvent_rootEnum (spec : ResolventSpec n)
     (spec.specialize F f).map (algebraMap F E) = galResolvent spec.Φ (rootEnum e) := by
   subst hdeg
   exact spec.map_specialize_eq_galResolvent _ hf rfl
-    (Polynomial.roots_map_eq_map_numbering e.symm)
+    (Polynomial.isRootEnumeration_iff.mp (Polynomial.isRootEnumeration_numbering e.symm))
 
 -- The numbering lists all roots of the base-changed polynomial.
 private theorem map_eq_prod_rootEnum (hf : f.Monic)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) :
     f.map (algebraMap F E) = ∏ i, (X - C (rootEnum e i)) := by
   subst hdeg
-  simpa [hf.leadingCoeff, rootEnum] using Polynomial.map_eq_C_mul_prod_numbering e.symm
+  simpa [hf.leadingCoeff, rootEnum] using
+    (Polynomial.isRootEnumeration_numbering e.symm).map_eq_C_mul_prod_X_sub_C
 
 section
 

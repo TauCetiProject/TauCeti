@@ -231,6 +231,49 @@ theorem discr_map_of_natDegree_eq {f : R[X]} (φ : R →+* S)
   congr 1
   exact sylvesterDeriv_map φ hdeg
 
+section Nonmonic
+
+variable {F : Type*} [CommRing F] [IsDomain F] {f : F[X]}
+
+/-- Over an integral domain, scaling a polynomial of degree `n` by a nonzero constant `a`
+scales its discriminant by `a ^ (2 * n - 2)`. -/
+theorem _root_.TauCeti.discr_C_mul (a : F) (ha : a ≠ 0) :
+    (C a * f).discr = a ^ (2 * f.natDegree - 2) * f.discr := by
+  by_cases hdeg : f.natDegree = 0
+  · rw [eq_C_of_natDegree_eq_zero hdeg]
+    rw [← C_mul, discr_C]
+    simp
+  have hf0 : f ≠ 0 := by
+    rintro rfl
+    simp at hdeg
+  have hpos : 0 < f.degree :=
+    natDegree_pos_iff_degree_pos.mp (Nat.pos_of_ne_zero hdeg)
+  have hscaleddeg : (C a * f).natDegree = f.natDegree := natDegree_C_mul ha
+  have hscaledpos : 0 < (C a * f).degree := by
+    rw [degree_C_mul ha]
+    exact hpos
+  have hfres := resultant_deriv hpos
+  have hscaledres := resultant_deriv hscaledpos
+  rw [derivative_C_mul, resultant_C_mul_left, resultant_C_mul_right,
+    hscaleddeg, hfres, leadingCoeff_mul, leadingCoeff_C] at hscaledres
+  apply mul_left_cancel₀ (a := a * f.leadingCoeff)
+    (mul_ne_zero ha (leadingCoeff_ne_zero.mpr hf0))
+  calc
+    a * f.leadingCoeff * (C a * f).discr =
+        a ^ (f.natDegree - 1) * a ^ f.natDegree *
+          (f.leadingCoeff * f.discr) := by
+            apply mul_left_cancel₀ (a := (-1 : F) ^ (f.natDegree * (f.natDegree - 1) / 2))
+              (pow_ne_zero _ (by simp))
+            simpa only [mul_assoc, mul_left_comm, mul_comm] using hscaledres.symm
+    _ = a * f.leadingCoeff *
+        (a ^ (2 * f.natDegree - 2) * f.discr) := by
+          rw [← pow_add]
+          have hn : f.natDegree - 1 + f.natDegree = 1 + (2 * f.natDegree - 2) := by omega
+          rw [hn, pow_add, pow_one]
+          ring
+
+end Nonmonic
+
 namespace Monic
 
 /-- Base change of the discriminant along a ring morphism, for a monic polynomial. Monicity
@@ -453,6 +496,63 @@ theorem discr_prod_X_sub_C_eq_sq {n : ℕ} (r : Fin n → R) :
   rw [discr_prod_X_sub_C, ← Finset.prod_pow]
   exact Finset.prod_congr rfl fun i _ ↦ Finset.prod_pow _ 2 _
 
+section RootEnumeration
+
+variable {R L : Type*} [CommRing R] [CommRing L] [IsDomain L] [Algebra R L] {f : R[X]}
+
+/-- The discriminant is the product of squared root differences, weighted by the leading
+coefficient. A degree-sized root enumeration may repeat roots and includes zero and annihilating
+base change in degree zero. -/
+theorem discr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq {r : Fin f.natDegree → L}
+    (hr : IsRootEnumeration f r) :
+    algebraMap R L f.discr = algebraMap R L f.leadingCoeff ^ (2 * f.natDegree - 2) *
+      ∏ i, ∏ j ∈ Ioi i, (r i - r j) ^ 2 := by
+  classical
+  by_cases hzero : f.map (algebraMap R L) = 0
+  · have hfdeg : f.natDegree = 0 := by simpa [hzero] using hr.natDegree_map.symm
+    have hdiscr : f.discr = 1 := by rw [eq_C_of_natDegree_eq_zero hfdeg, discr_C]
+    have : IsEmpty (Fin f.natDegree) := by simp [hfdeg]
+    simp [hdiscr, hfdeg, Finset.prod_of_isEmpty]
+  · have hnonzero : algebraMap R L f.leadingCoeff ≠ 0 := by
+      rw [← hr.leadingCoeff_map]
+      exact leadingCoeff_ne_zero.mpr hzero
+    have hpdeg : (∏ i, (X - C (r i))).natDegree = f.natDegree := by simp
+    rw [← discr_map_of_natDegree_eq (algebraMap R L) hr.natDegree_map,
+      hr.map_eq_C_mul_prod_X_sub_C,
+      TauCeti.discr_C_mul _ hnonzero, hpdeg, discr_prod_X_sub_C]
+
+end RootEnumeration
+
+namespace Monic
+
+variable {R : Type*} [CommRing R]
+
+/-- **The root-product formula for a monic polynomial.** Number the roots of a monic `f` over an
+extension `L`, with multiplicity, as `r : Fin f.natDegree → L`. Then the discriminant of `f` is
+the square of the Vandermonde-like product of the differences of the roots. Numbering the whole
+root multiset by `Fin f.natDegree` already says that `f` splits over `L`, so no splitting
+hypothesis appears. -/
+theorem discr_eq_prod_roots_sub_sq {L : Type*} [CommRing L] [IsDomain L]
+    [Algebra R L] {f : R[X]} (hf : f.Monic) {r : Fin f.natDegree → L}
+    (hr : (f.map (algebraMap R L)).roots = univ.val.map r) :
+    algebraMap R L f.discr = ∏ i, ∏ j ∈ Ioi i, (r i - r j) ^ 2 := by
+  simpa [hf.leadingCoeff] using
+    discr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq (isRootEnumeration_iff.mpr hr)
+
+/-- The root-product formula for a monic polynomial that splits after base change, written against
+a numbering `r : Fin n → L` of the root multiset with arbitrary cardinality `n`. -/
+private theorem discr_eq_prod_roots_sub_sq_of_splits {L : Type*}
+    [CommRing L] [IsDomain L] [Algebra R L] {f : R[X]} (hf : f.Monic)
+    (hs : (f.map (algebraMap R L)).Splits) {n : ℕ} {r : Fin n → L}
+    (hr : (f.map (algebraMap R L)).roots = univ.val.map r) :
+    algebraMap R L f.discr = ∏ i, ∏ j ∈ Ioi i, (r i - r j) ^ 2 := by
+  have hn : n = f.natDegree := by
+    simpa [← hs.natDegree_eq_card_roots, hf.natDegree_map] using
+      (congrArg Multiset.card hr).symm
+  subst n
+  exact hf.discr_eq_prod_roots_sub_sq hr
+
+end Monic
 
 end Polynomial
 
@@ -503,126 +603,6 @@ theorem discrSqrt_ne_zero (e : Fin f.natDegree ≃ f.rootSet E) :
 
 end Domain
 
-section Nonmonic
-
-variable {F : Type*} [CommRing F] [IsDomain F] {f : F[X]}
-
-/-- Over an integral domain, scaling a polynomial of degree `n` by a nonzero constant `a`
-scales its discriminant by `a ^ (2 * n - 2)`. -/
-theorem discr_C_mul (a : F) (ha : a ≠ 0) :
-    (C a * f).discr = a ^ (2 * f.natDegree - 2) * f.discr := by
-  by_cases hdeg : f.natDegree = 0
-  · rw [eq_C_of_natDegree_eq_zero hdeg]
-    rw [← C_mul, discr_C]
-    simp
-  have hf0 : f ≠ 0 := by
-    rintro rfl
-    simp at hdeg
-  have hpos : 0 < f.degree :=
-    natDegree_pos_iff_degree_pos.mp (Nat.pos_of_ne_zero hdeg)
-  have hscaleddeg : (C a * f).natDegree = f.natDegree := natDegree_C_mul ha
-  have hscaledpos : 0 < (C a * f).degree := by
-    rw [degree_C_mul ha]
-    exact hpos
-  have hfres := resultant_deriv hpos
-  have hscaledres := resultant_deriv hscaledpos
-  rw [derivative_C_mul, resultant_C_mul_left, resultant_C_mul_right,
-    hscaleddeg, hfres, leadingCoeff_mul, leadingCoeff_C] at hscaledres
-  apply mul_left_cancel₀ (a := a * f.leadingCoeff)
-    (mul_ne_zero ha (leadingCoeff_ne_zero.mpr hf0))
-  calc
-    a * f.leadingCoeff * (C a * f).discr =
-        a ^ (f.natDegree - 1) * a ^ f.natDegree *
-          (f.leadingCoeff * f.discr) := by
-            apply mul_left_cancel₀ (a := (-1 : F) ^ (f.natDegree * (f.natDegree - 1) / 2))
-              (pow_ne_zero _ (by simp))
-            simpa only [mul_assoc, mul_left_comm, mul_comm] using hscaledres.symm
-    _ = a * f.leadingCoeff *
-        (a ^ (2 * f.natDegree - 2) * f.discr) := by
-          rw [← pow_add]
-          have hn : f.natDegree - 1 + f.natDegree = 1 + (2 * f.natDegree - 2) := by omega
-          rw [hn, pow_add, pow_one]
-          ring
-
-end Nonmonic
-
-end DiscrSqrt
-
-end TauCeti
-
-namespace Polynomial
-
-section RootEnumeration
-
-variable {R L : Type*} [CommRing R] [CommRing L] [IsDomain L] [Algebra R L] {f : R[X]}
-
-/-- The discriminant is the product of squared root differences, weighted by the leading
-coefficient. A degree-sized root enumeration may repeat roots and includes zero and annihilating
-base change in degree zero. -/
-theorem discr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq {r : Fin f.natDegree → L}
-    (hr : IsRootEnumeration f r) :
-    algebraMap R L f.discr = algebraMap R L f.leadingCoeff ^ (2 * f.natDegree - 2) *
-      ∏ i, ∏ j ∈ Ioi i, (r i - r j) ^ 2 := by
-  classical
-  have hbound : (f.map (algebraMap R L)).natDegree ≤ Fintype.card (Fin f.natDegree) := by
-    simpa using (natDegree_map_le (f := algebraMap R L) (p := f))
-  have hdeg : (f.map (algebraMap R L)).natDegree = f.natDegree := by
-    simpa using hr.natDegree_map_eq_card hbound
-  have hlc : (f.map (algebraMap R L)).leadingCoeff = algebraMap R L f.leadingCoeff := by
-    simp only [leadingCoeff, coeff_map, hdeg]
-  by_cases hzero : f.map (algebraMap R L) = 0
-  · have hfdeg : f.natDegree = 0 := by simpa [hzero] using hdeg.symm
-    have hdiscr : f.discr = 1 := by rw [eq_C_of_natDegree_eq_zero hfdeg, discr_C]
-    have : IsEmpty (Fin f.natDegree) := by simp [hfdeg]
-    simp [hdiscr, hfdeg, Finset.prod_of_isEmpty]
-  · have hnonzero : algebraMap R L f.leadingCoeff ≠ 0 := by
-      rw [← hlc]
-      exact leadingCoeff_ne_zero.mpr hzero
-    have hfac := hr.eq_C_mul_prod_X_sub_C hbound
-    rw [hlc] at hfac
-    have hpdeg : (∏ i, (X - C (r i))).natDegree = f.natDegree := by simp
-    rw [← discr_map_of_natDegree_eq (algebraMap R L) hdeg, hfac,
-      TauCeti.discr_C_mul _ hnonzero, hpdeg, discr_prod_X_sub_C]
-
-end RootEnumeration
-
-namespace Monic
-
-variable {R : Type*} [CommRing R]
-
-/-- **The root-product formula for a monic polynomial.** Number the roots of a monic `f` over an
-extension `L`, with multiplicity, as `r : Fin f.natDegree → L`. Then the discriminant of `f` is
-the square of the Vandermonde-like product of the differences of the roots. Numbering the whole
-root multiset by `Fin f.natDegree` already says that `f` splits over `L`, so no splitting
-hypothesis appears. -/
-theorem discr_eq_prod_roots_sub_sq {L : Type*} [CommRing L] [IsDomain L]
-    [Algebra R L] {f : R[X]} (hf : f.Monic) {r : Fin f.natDegree → L}
-    (hr : (f.map (algebraMap R L)).roots = univ.val.map r) :
-    algebraMap R L f.discr = ∏ i, ∏ j ∈ Ioi i, (r i - r j) ^ 2 := by
-  simpa [hf.leadingCoeff] using
-    discr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq (isRootEnumeration_iff.mpr hr)
-
-/-- The root-product formula for a monic polynomial that splits after base change, written against
-a numbering `r : Fin n → L` of the root multiset with arbitrary cardinality `n`. -/
-private theorem discr_eq_prod_roots_sub_sq_of_splits {L : Type*}
-    [CommRing L] [IsDomain L] [Algebra R L] {f : R[X]} (hf : f.Monic)
-    (hs : (f.map (algebraMap R L)).Splits) {n : ℕ} {r : Fin n → L}
-    (hr : (f.map (algebraMap R L)).roots = univ.val.map r) :
-    algebraMap R L f.discr = ∏ i, ∏ j ∈ Ioi i, (r i - r j) ^ 2 := by
-  have hn : n = f.natDegree := by
-    simpa [← hs.natDegree_eq_card_roots, hf.natDegree_map] using
-      (congrArg Multiset.card hr).symm
-  subst n
-  exact hf.discr_eq_prod_roots_sub_sq hr
-
-end Monic
-
-end Polynomial
-
-namespace TauCeti
-
-section DiscrSqrt
-
 section Numbering
 
 variable {F E : Type*} [CommRing F] [CommRing E] [IsDomain E] [Algebra F E] {f : F[X]}
@@ -635,7 +615,7 @@ theorem algebraMap_discr_eq_leadingCoeff_pow_mul_discrSqrt_sq
       algebraMap F E f.leadingCoeff ^ (2 * f.natDegree - 2) * discrSqrt e ^ 2 := by
   simpa only [discrSqrt_def, Finset.prod_pow] using
     discr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq
-      (isRootEnumeration_iff.mpr (roots_map_eq_map_numbering e))
+      (isRootEnumeration_numbering e)
 
 /-- Multiplying the root-difference product by the indicated power of the leading coefficient
 gives a square root of the discriminant, without a monicity hypothesis. -/
