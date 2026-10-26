@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.JacobiSum.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 public import Mathlib.NumberTheory.MulChar.Lemmas
-public import TauCeti.RingTheory.RootsOfUnity.Basic
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 
 /-!
 # The Jacobi sum of a quartic character
@@ -57,7 +57,7 @@ omit [Fintype F] [IsDomain R] in
 private theorem apply_inv_two_mul_apply_one_sub_inv_two {χ : MulChar F R} (hχ : χ ^ 4 = 1)
     (h2 : (2 : F) ≠ 0) (hF : IsSquare (-1 : F)) : χ 2⁻¹ * χ (1 - 2⁻¹) = χ (-1) := by
   obtain ⟨j, hj⟩ := hF
-  have hj4 : (1 + j) ^ 4 = -4 := by linear_combination (j ^ 2 + 4 * j + 5) * hj.symm
+  have hj4 := one_add_pow_four_of_sq_eq_neg_one (by linear_combination -hj : j ^ 2 = -1)
   have hj0 : 1 + j ≠ 0 := by
     intro h
     rw [h] at hj4
@@ -130,7 +130,7 @@ theorem one_add_pow_three_dvd_apply_neg_one_mul_jacobiSum_add_one {χ : MulChar 
   have hsq := hι.sq_eq_neg_one
   obtain ⟨c, hc⟩ := one_add_pow_three_dvd_sum_erase_inv_two hχ hι h2
   obtain ⟨d, hd⟩ : (1 + ι) ^ 3 ∣ (4 : R) :=
-    Dvd.intro (-(1 + ι)) (by linear_combination -(ι ^ 2 + 4 * ι + 5) * hsq)
+    Dvd.intro (-(1 + ι)) (by linear_combination -one_add_pow_four_of_sq_eq_neg_one hsq)
   have hneg : χ (-1) * χ (-1) = 1 := by rw [← map_mul, neg_one_mul, neg_neg, map_one]
   rw [hJ, hc]
   push_cast
