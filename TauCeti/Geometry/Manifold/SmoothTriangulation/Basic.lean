@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Instances.Icc
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 
 import Mathlib.Analysis.Calculus.TangentCone.Real
+import TauCeti.Analysis.Convex.StdSimplex
 
 /-!
 # Smooth triangulations of manifolds
@@ -308,15 +309,9 @@ theorem exists_contMDiff_not_isSmoothTriangulation_trans :
       one_ne_zero).hasMFDerivAt.comp_hasMFDerivWithinAt _ hFt₀).hasFDerivWithinAt
   -- The edge direction from `i₀` to `i₁` is tangent to the simplex at `i₀`, so both derivatives
   -- agree on it.
-  have hseg : segment ℝ (⇑t₀.weights) (⇑t₁.weights) ⊆ S := by
-    rw [segment_subset_iff]
-    intro a b ha hb hab
-    rw [show S = _ from Convexity.StdSimplex.range_toFun_comp_weights]
-    refine ⟨mem_iInter.mpr fun i => ?_, ?_⟩
-    · exact add_nonneg (mul_nonneg ha (t₀.weights_nonneg i)) (mul_nonneg hb (t₁.weights_nonneg i))
-    · simp only [mem_ofPred_eq, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-      rw [Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum, t₀.total_of_fintype,
-        t₁.total_of_fintype, mul_one, mul_one, hab]
+  have hseg : segment ℝ (⇑t₀.weights) (⇑t₁.weights) ⊆ S :=
+    (Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ σ.1).segment_subset ⟨t₀, rfl⟩
+      ⟨t₁, rfl⟩
   have hcone : ⇑t₁.weights - ⇑t₀.weights ∈ tangentConeAt ℝ S t₀.weights :=
     mem_tangentConeAt_of_segment_subset hseg
   have hv : L (⇑t₁.weights - ⇑t₀.weights) = 0 :=
