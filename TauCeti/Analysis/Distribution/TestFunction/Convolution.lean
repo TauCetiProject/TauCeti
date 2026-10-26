@@ -49,8 +49,13 @@ def mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaarMeasure] (ρ : Cont
   hasCompactSupport' := ρ.hasCompactSupport_normed.convolution _ φ.hasCompactSupport
   tsupport_subset' := (ρ.tsupport_normed_convolution_subset (g := (φ : E → F))).trans h
 
-/-- Evaluation of a mollified test function is the usual normalized-bump convolution. -/
+/-- A mollified test function is the usual normalized-bump convolution. -/
 @[simp]
+theorem coe_mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaarMeasure] (ρ : ContDiffBump (0 : E))
+    (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E)) :
+    ⇑(mollify φ μ ρ h) = ρ.normed μ ⋆[lsmul ℝ ℝ, μ] (φ : E → F) := (rfl)
+
+/-- Evaluation of a mollified test function is the usual normalized-bump convolution. -/
 theorem mollify_apply (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaarMeasure] (ρ : ContDiffBump (0 : E))
     (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E)) (x : E) :
     mollify φ μ ρ h x = (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] (φ : E → F)) x := (rfl)
@@ -90,9 +95,14 @@ theorem iteratedFDeriv_mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaar
     (ρ : ContDiffBump (0 : E))
     (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E)) (n : ℕ) :
     iteratedFDeriv ℝ n (mollify φ μ ρ h : E → F) =
-      ρ.normed μ ⋆[lsmul ℝ ℝ, μ] iteratedFDeriv ℝ n (φ : E → F) :=
+      ρ.normed μ ⋆[lsmul ℝ ℝ, μ] iteratedFDeriv ℝ n (φ : E → F) := by
   -- The bilinear map induced by scalar multiplication is again scalar multiplication.
-  φ.hasCompactSupport.iteratedFDeriv_convolution_right (lsmul ℝ ℝ)
+  have hL : (compContinuousMultilinearMapL ℝ (fun _ : Fin n => E) F F).comp (lsmul ℝ ℝ) =
+      lsmul ℝ ℝ := by
+    ext a m
+    simp
+  rw [coe_mollify, ← hL]
+  exact φ.hasCompactSupport.iteratedFDeriv_convolution_right (lsmul ℝ ℝ)
     ρ.continuous_normed.locallyIntegrable φ.contDiff (by simp)
 
 variable [CompleteSpace F]
@@ -141,7 +151,7 @@ private theorem tendsto_mollify_of_support_subset {ι : Type*} {l : Filter ι}
     simp only [coe_ofSupportedIn, hφKcoe]
 
 /-- Shrinking normalized bumps approximate a test function in its LF topology whenever
-each mollification has support inside the domain. -/
+the closed `rOut`-enlargement of `tsupport φ` stays inside `Ω` for every index. -/
 theorem tendsto_mollify {ι : Type*} {l : Filter ι} (φ : 𝓓(Ω, F))
     (μ : Measure E) [μ.IsAddHaarMeasure]
     {ρ : ι → ContDiffBump (0 : E)} (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0))

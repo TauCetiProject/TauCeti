@@ -11,9 +11,13 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 # Uniform approximation by normalized bumps
 
 Convolution with normalized smooth bumps whose radii tend to zero converges uniformly to
-any uniformly continuous Banach-valued function. This strengthens Mathlib's pointwise
-`ContDiffBump.convolution_tendsto_right_of_continuous` and allows simultaneous approximation
-of the derivatives of a compactly supported smooth function.
+any uniformly continuous Banach-valued function. For uniformly continuous functions, this
+upgrades the pointwise convergence of Mathlib's
+`ContDiffBump.convolution_tendsto_right_of_continuous` to uniform convergence, and allows
+simultaneous approximation of the derivatives of a compactly supported smooth function.
+
+The file also bounds the topological support of `ρ.normed μ ⋆ g` by the Minkowski sum
+`closedBall 0 ρ.rOut + tsupport g`.
 -/
 
 public section

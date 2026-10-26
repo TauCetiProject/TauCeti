@@ -127,29 +127,31 @@ theorem continuous_convolution_right_of_dominated (hf : AEStronglyMeasurable f �
 
 end
 
-variable [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [MeasurableSpace G] {μ : Measure G} {N : ℕ∞} (L : E →L[ℝ] E' →L[ℝ] F)
+section RCLike
+
+variable {𝕜 : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedSpace 𝕜 F] [MeasurableSpace G] {μ : Measure G} {N : ℕ∞} (L : E →L[𝕜] E' →L[𝕜] F)
 
 /-- The common induction for iterated convolution derivatives, given each first derivative. -/
 private theorem iteratedFDeriv_convolution_right_of_hasFDerivAt
-    [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G]
     (hderiv : ∀ (n : ℕ), (n + 1 : ℕ) ≤ N → ∀ x,
-      HasFDerivAt (𝕜 := ℝ)
-        (f ⋆[(compContinuousMultilinearMapL ℝ (fun _ : Fin n => G) E' F).comp L, μ]
-          iteratedFDeriv ℝ n g)
-        (convolution (𝕜 := ℝ) f (fderiv ℝ (iteratedFDeriv ℝ n g))
-          (((compContinuousMultilinearMapL ℝ (fun _ : Fin n => G) E' F).comp L).precompR G)
+      HasFDerivAt (𝕜 := 𝕜)
+        (f ⋆[(compContinuousMultilinearMapL 𝕜 (fun _ : Fin n => G) E' F).comp L, μ]
+          iteratedFDeriv 𝕜 n g)
+        (convolution (𝕜 := 𝕜) f (fderiv 𝕜 (iteratedFDeriv 𝕜 n g))
+          (((compContinuousMultilinearMapL 𝕜 (fun _ : Fin n => G) E' F).comp L).precompR G)
           μ x) x)
     {n : ℕ} (hn : n ≤ N) :
-    iteratedFDeriv ℝ n (f ⋆[L, μ] g) =
-      f ⋆[(compContinuousMultilinearMapL ℝ (fun _ : Fin n => G) E' F).comp L, μ]
-        iteratedFDeriv ℝ n g := by
+    iteratedFDeriv 𝕜 n (f ⋆[L, μ] g) =
+      f ⋆[(compContinuousMultilinearMapL 𝕜 (fun _ : Fin n => G) E' F).comp L, μ]
+        iteratedFDeriv 𝕜 n g := by
   induction n with
   | zero =>
     funext x
     simp only [iteratedFDeriv_zero_eq_comp, Function.comp_apply, convolution_def]
-    refine ((continuousMultilinearCurryFin0 ℝ G F).symm.toContinuousLinearEquiv.integral_comp_comm
+    refine ((continuousMultilinearCurryFin0 𝕜 G F).symm.toContinuousLinearEquiv.integral_comp_comm
       _).symm.trans (integral_congr_ae (ae_of_all _ fun t => ?_))
     ext m
     rfl
@@ -159,10 +161,10 @@ private theorem iteratedFDeriv_convolution_right_of_hasFDerivAt
     rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, ih hn',
       (hderiv n hn x).fderiv,
       convolution_def, convolution_def]
-    refine (ContinuousLinearEquiv.integral_comp_comm (𝕜 := ℝ) (μ := μ)
-      (E := G →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : Fin n => G) F)
-      (F := ContinuousMultilinearMap ℝ (fun _ : Fin (n + 1) => G) F)
-      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) => G)
+    refine (ContinuousLinearEquiv.integral_comp_comm (𝕜 := 𝕜) (μ := μ)
+      (E := G →L[𝕜] ContinuousMultilinearMap 𝕜 (fun _ : Fin n => G) F)
+      (F := ContinuousMultilinearMap 𝕜 (fun _ : Fin (n + 1) => G) F)
+      (continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (n + 1) => G)
         F).symm.toContinuousLinearEquiv _).symm.trans
       (integral_congr_ae (ae_of_all _ fun t => ?_))
     ext m
@@ -171,6 +173,28 @@ private theorem iteratedFDeriv_convolution_right_of_hasFDerivAt
       Function.comp_apply, ContinuousLinearMap.comp_apply,
       compContinuousMultilinearMapL_apply, ContinuousLinearMap.precompR_apply,
       ContinuousLinearMap.compL_apply, ContinuousLinearMap.compContinuousMultilinearMap_coe]
+
+variable [NormedAddCommGroup G] [NormedSpace 𝕜 G] [BorelSpace G] [SFinite μ]
+  [μ.IsAddLeftInvariant]
+
+/-- For a compactly supported `C^N` factor `g`, the `n`-th convolution derivative for
+`n ≤ N` is computed on `g`. The other factor need only be locally integrable. -/
+theorem _root_.HasCompactSupport.iteratedFDeriv_convolution_right (hcg : HasCompactSupport g)
+    (hf : LocallyIntegrable f μ) (hg : ContDiff 𝕜 N g) {n : ℕ} (hn : n ≤ N) :
+    iteratedFDeriv 𝕜 n (f ⋆[L, μ] g) =
+      f ⋆[(compContinuousMultilinearMapL 𝕜 (fun _ : Fin n => G) E' F).comp L, μ]
+        iteratedFDeriv 𝕜 n g := by
+  apply iteratedFDeriv_convolution_right_of_hasFDerivAt L _ hn
+  intro n hn x
+  have hgn : ContDiff 𝕜 1 (iteratedFDeriv 𝕜 n g) :=
+    hg.iteratedFDeriv_right (by rw [add_comm]; exact_mod_cast hn)
+  exact (hcg.iteratedFDeriv n).hasFDerivAt_convolution_right _ hf hgn x
+
+end RCLike
+
+variable [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [MeasurableSpace G] {μ : Measure G} {N : ℕ∞} (L : E →L[ℝ] E' →L[ℝ] F)
 
 section
 
@@ -270,19 +294,6 @@ theorem _root_.HasCompactSupport.fderiv_convolution_right_apply (hcg : HasCompac
     fderiv ℝ (f ⋆[L, μ] g) x v = (f ⋆[L, μ] fun y => fderiv ℝ g y v) x := by
   rw [(hcg.hasFDerivAt_convolution_right L hf hg x).fderiv,
     convolution_precompR_apply L hf (hcg.fderiv (𝕜 := ℝ)) (hg.continuous_fderiv one_ne_zero) x v]
-
-/-- For a compactly supported `C^N` factor `g`, the `n`-th convolution derivative for
-`n ≤ N` is computed on `g`. The other factor need only be locally integrable. -/
-theorem _root_.HasCompactSupport.iteratedFDeriv_convolution_right (hcg : HasCompactSupport g)
-    (hf : LocallyIntegrable f μ) (hg : ContDiff ℝ N g) {n : ℕ} (hn : n ≤ N) :
-    iteratedFDeriv ℝ n (f ⋆[L, μ] g) =
-      f ⋆[(compContinuousMultilinearMapL ℝ (fun _ : Fin n => G) E' F).comp L, μ]
-        iteratedFDeriv ℝ n g := by
-  apply iteratedFDeriv_convolution_right_of_hasFDerivAt L _ hn
-  intro n hn x
-  have hgn : ContDiff ℝ 1 (iteratedFDeriv ℝ n g) :=
-    hg.iteratedFDeriv_right (by rw [add_comm]; exact_mod_cast hn)
-  exact (hcg.iteratedFDeriv n).hasFDerivAt_convolution_right _ hf hgn x
 
 section Mollifier
 
