@@ -141,18 +141,12 @@ theorem isEven_componentSumLattice : (l : List Component) → (componentSumLatti
       ⟨c.isEven_rootLattice, isEven_componentSumLattice cs⟩
 
 /-- The orthogonal sum of a component list is nondegenerate. -/
-private theorem nondegenerate_componentSumLattice : (l : List Component) →
+instance isNondegenerate_componentSumLattice : (l : List Component) →
     (componentSumLattice l).IsNondegenerate
   | [] => ⟨⟨fun x _ => Subsingleton.elim x 0, fun x _ => Subsingleton.elim x 0⟩⟩
   | c :: cs =>
-    ⟨(IntegralLattice.nondegenerate_orthogonalSum_iff c.rootLattice
-        (componentSumLattice cs)).mpr
-      ⟨(c.rootLattice).form_nondegenerate,
-        (nondegenerate_componentSumLattice cs).nondegenerate⟩⟩
-
-instance isNondegenerate_componentSumLattice : (l : List Component) →
-    (componentSumLattice l).IsNondegenerate :=
-  nondegenerate_componentSumLattice
+    letI : (componentSumLattice cs).IsNondegenerate := isNondegenerate_componentSumLattice cs
+    inferInstanceAs ((c.rootLattice.orthogonalSum (componentSumLattice cs)).IsNondegenerate)
 
 /-- The dependent coordinate product of the component glue alphabets along an ordered component
 list: the finite quadratic module of glue words, with one label per component. -/
@@ -178,11 +172,8 @@ theorem componentAlphabet_cons (c : Component) (cs : List Component) :
 /-- The discriminant group of the empty component sum is trivial. -/
 instance subsingleton_discriminantGroup_empty :
     Subsingleton (componentSumLattice []).DiscriminantGroup :=
-  ⟨fun a b => by
-    induction a using Submodule.Quotient.induction_on with
-    | _ x =>
-      induction b using Submodule.Quotient.induction_on with
-      | _ y => exact congrArg Submodule.Quotient.mk (Subtype.ext (Subsingleton.elim _ _))⟩
+  inferInstanceAs (Subsingleton ((componentSumLattice []).dualCarrier ⧸
+    (componentSumLattice []).carrierInDual))
 
 /-- The discriminant quadratic module of the empty component sum is trivial. -/
 instance subsingleton_discriminantQuadraticModule_empty :
@@ -211,6 +202,7 @@ noncomputable def componentDiscriminantIsometry :
 /-- The component-list isometry on a glue word: the component isometry applies to the leading
 label, the component-list isometry to the remaining word, and the pair of discriminant classes is
 transported to the orthogonal sum. -/
+@[simp]
 theorem componentDiscriminantIsometry_cons (c : Component) (cs : List Component)
     (x₁ : c.glueAlphabet) (x₂ : componentAlphabet cs) :
     componentDiscriminantIsometry (c :: cs) (x₁, x₂) =
@@ -221,91 +213,13 @@ theorem componentDiscriminantIsometry_cons (c : Component) (cs : List Component)
 
 end TauCeti.DynkinType
 
-/-! ## Naturality of the orthogonal-sum discriminant isometry
+/-! ## Naturality of the component-list discriminant isometry
 
 The list-level naturality statements below are pointwise, so their induction step needs the
-orthogonal-sum discriminant isometry to be natural in its two arguments.  The two lemmas here are
-the form of that naturality the induction consumes: how the dual carriers split, and how a
-discriminant class of an orthogonal sum is transported by the orthogonal sum of two isometries.
+orthogonal-sum discriminant isometry to be natural in its two arguments.  That naturality is
+general integral-lattice infrastructure and is proved with the orthogonal-sum operations, in
+`TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Operations`.
 -/
-
-universe u v w x
-
-namespace TauCeti.IntegralLattice
-
-variable {V : Type u} {W : Type v} {X : Type w} {Y : Type x}
-variable [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
-variable [AddCommGroup X] [Module ℚ X] [AddCommGroup Y] [Module ℚ Y]
-
-/-- The dual-carrier equivalence of an orthogonal sum of isometries splits into the two component
-equivalences, through the product equivalence of the dual carriers. -/
-private theorem orthogonalSumDualCarrierEquiv_dualCarrierEquiv
-    {L : IntegralLattice V} {M : IntegralLattice W}
-    {L' : IntegralLattice X} {M' : IntegralLattice Y}
-    (f : Isometry L L') (g : Isometry M M') (z : (L.orthogonalSum M).dualCarrier) :
-    L'.orthogonalSumDualCarrierEquiv M' ((f.orthogonalSum g).dualCarrierEquiv z) =
-      (f.dualCarrierEquiv (L.orthogonalSumDualCarrierEquiv M z).1,
-        g.dualCarrierEquiv (L.orthogonalSumDualCarrierEquiv M z).2) := by
-  apply Prod.ext <;> apply Subtype.ext <;>
-    simp only [orthogonalSumDualCarrierEquiv_apply, Isometry.coe_dualCarrierEquiv_apply,
-      Isometry.orthogonalSum_apply]
-
-/-- The orthogonal product of two glue alphabets is transported by the product of the two label
-maps. -/
-private theorem quadraticProd_apply {A B A' B' : FiniteQuadraticModule}
-    (e₁ : FiniteQuadraticModule.Isometry A A') (e₂ : FiniteQuadraticModule.Isometry B B')
-    (x : A) (y : B) :
-    (QuadraticMap.IsometryEquiv.prod e₁ e₂ (x, y) : A'.carrier × B'.carrier) = (e₁ x, e₂ y) :=
-  (rfl)
-
-/-- **The orthogonal-sum discriminant isometry is natural in its two arguments.**  Transporting a
-discriminant class of an orthogonal sum along the orthogonal sum of two isometries is the same as
-transporting its two component classes along the two isometries. -/
-private theorem discriminantQuadraticIsometryOrthogonalSum_orthogonalSum
-    {L : IntegralLattice V} {M : IntegralLattice W}
-    {L' : IntegralLattice X} {M' : IntegralLattice Y}
-    [L.IsNondegenerate] [M.IsNondegenerate] [L'.IsNondegenerate] [M'.IsNondegenerate]
-    (f : Isometry L L') (g : Isometry M M') (hL : L.IsEven) (hM : M.IsEven)
-    (c : (L.orthogonalSum M).DiscriminantGroup) :
-    (discriminantQuadraticIsometryOrthogonalSum L' M'
-        (f.isEven_iff.mp hL) (g.isEven_iff.mp hM))
-        ((f.orthogonalSum g).discriminantQuadraticIsometry
-          ((isEven_orthogonalSum_iff L M).mpr ⟨hL, hM⟩) c) =
-      (f.discriminantQuadraticIsometry hL
-          ((discriminantQuadraticIsometryOrthogonalSum L M hL hM) c).1,
-        g.discriminantQuadraticIsometry hM
-          ((discriminantQuadraticIsometryOrthogonalSum L M hL hM) c).2) := by
-  induction c using Submodule.Quotient.induction_on with
-  | _ z =>
-    rw [Isometry.discriminantQuadraticIsometry_mk,
-      discriminantQuadraticIsometryOrthogonalSum_apply,
-      discriminantGroupOrthogonalSumEquiv_mk,
-      orthogonalSumDualCarrierEquiv_dualCarrierEquiv,
-      discriminantQuadraticIsometryOrthogonalSum_apply,
-      discriminantGroupOrthogonalSumEquiv_mk]
-    simp only [Isometry.discriminantQuadraticIsometry_apply, Isometry.discriminantGroupEquiv_mk]
-    rfl
-
-/-- The inverse form of the orthogonal-sum naturality: transporting a pair of component classes
-into the orthogonal sum commutes with transporting the class along the orthogonal sum of the two
-isometries. -/
-private theorem discriminantQuadraticIsometryOrthogonalSum_symm_apply
-    {L : IntegralLattice V} {M : IntegralLattice W}
-    {L' : IntegralLattice X} {M' : IntegralLattice Y}
-    [L.IsNondegenerate] [M.IsNondegenerate] [L'.IsNondegenerate] [M'.IsNondegenerate]
-    (f : Isometry L L') (g : Isometry M M') (hL : L.IsEven) (hM : M.IsEven)
-    (hL' : L'.IsEven) (hM' : M'.IsEven) (hLM : (L.orthogonalSum M).IsEven)
-    (x : L.DiscriminantGroup) (y : M.DiscriminantGroup) :
-    (f.orthogonalSum g).discriminantQuadraticIsometry hLM
-        ((discriminantQuadraticIsometryOrthogonalSum L M hL hM).symm (x, y)) =
-      (discriminantQuadraticIsometryOrthogonalSum L' M' hL' hM').symm
-        (f.discriminantQuadraticIsometry hL x, g.discriminantQuadraticIsometry hM y) := by
-  have h := discriminantQuadraticIsometryOrthogonalSum_orthogonalSum f g hL hM
-    ((discriminantQuadraticIsometryOrthogonalSum L M hL hM).symm (x, y))
-  rw [QuadraticMap.IsometryEquiv.apply_symm_apply] at h
-  exact ((QuadraticMap.IsometryEquiv.symm_apply_eq _).mpr h.symm).symm
-
-end TauCeti.IntegralLattice
 
 namespace TauCeti.DynkinType
 
@@ -359,16 +273,23 @@ inductive ComponentIsometry : List Component → List Component → Type
       (componentAlphabetIsometry rest)
 
 /-- The alphabet isometry of a componentwise isometry acts componentwise on glue words. -/
+@[simp]
 theorem componentAlphabetIsometry_cons {c d : Component} {cs ds : List Component}
     (f : IntegralLattice.Isometry c.rootLattice d.rootLattice) (rest : ComponentIsometry cs ds)
     (x₁ : c.glueAlphabet) (x₂ : componentAlphabet cs) :
     componentAlphabetIsometry (.cons f rest) (x₁, x₂) =
       (componentGlueAlphabetIsometry f x₁, componentAlphabetIsometry rest x₂) :=
-  IntegralLattice.quadraticProd_apply _ _ _ _
+  FiniteQuadraticModule.Isometry.prod_apply (componentGlueAlphabetIsometry f)
+    (componentAlphabetIsometry rest) x₁ x₂
 
-/-- The induction step of `componentDiscriminantIsometry_natural`, stated with the isometry of the
-component sum in unfolded form and with the induction hypothesis passed explicitly. -/
-theorem componentDiscriminantIsometry_natural_cons {c d : Component} {cs ds : List Component}
+/-- **Naturality of the component-list discriminant isometry passes to an adjoined component.**  If
+the component-list discriminant isometry is natural for the tails `cs` and `ds`, then it is natural
+for the lists obtained by adjoining components `c` and `d` that are related by a root-lattice
+isometry: a glue word `(x₁, x₂)` of `c :: cs` is transported by the component glue isometry on the
+leading label and the tail isometry on the remaining word.  This is the induction step of
+`componentDiscriminantIsometry_natural`. -/
+private theorem componentDiscriminantIsometry_natural_cons {c d : Component}
+    {cs ds : List Component}
     (f : IntegralLattice.Isometry c.rootLattice d.rootLattice) (rest : ComponentIsometry cs ds)
     (ih : ∀ w : componentAlphabet cs,
       (componentSumIsometry rest).discriminantQuadraticIsometry (isEven_componentSumLattice cs)
