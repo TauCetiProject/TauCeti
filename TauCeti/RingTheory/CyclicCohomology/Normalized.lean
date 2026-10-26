@@ -34,8 +34,8 @@ namespace TauCeti
 
 section Normalized
 
-variable (R A M : Type*) [CommSemiring R] [AddCommMonoid A] [One A] [Module R A]
-  [AddCommMonoid M] [Module R M]
+variable (R A M : Type*) [Semiring R] [AddCommMonoid A] [One A] [Module R A]
+  [AddCommMonoid M] [Module R M] [SMulCommClass R R M]
 
 /-- Hochschild cochains which vanish when a noninitial argument is the unit. -/
 def normalizedHochschildCochains (n : ℕ) :
@@ -62,7 +62,7 @@ theorem normalizedHochschildCochains_zero : normalizedHochschildCochains R A M 0
 
 /-- Applying a linear map to the values preserves normalization. -/
 theorem _root_.LinearMap.compMultilinearMap_mem_normalizedHochschildCochains
-    {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N)
+    {N : Type*} [AddCommMonoid N] [Module R N] [SMulCommClass R R N] (f : M →ₗ[R] N)
     {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M n) :
     f.compMultilinearMap φ ∈ normalizedHochschildCochains R A N n := by
@@ -90,8 +90,9 @@ end Normalized
 
 section Hochschild
 
-variable {R A M : Type*} [CommSemiring R] [NonAssocSemiring A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M] {n : ℕ}
+variable {R A M : Type*} [Semiring R] [NonAssocSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  [SMulCommClass R R M] {n : ℕ}
 
 omit [IsScalarTower R A A] [SMulCommClass R A A] in
 private theorem normalized_face_eq_zero
@@ -140,8 +141,8 @@ end Hochschild
 
 section Connes
 
-variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [One A] [Module R A]
-  [AddCommGroup M] [Module R M] {n : ℕ}
+variable {R A M : Type*} [Semiring R] [AddCommMonoid A] [One A] [Module R A]
+  [AddCommGroup M] [Module R M] [SMulCommClass R R M] {n : ℕ}
 
 /-- On normalized cochains Connes' operator is the cyclic norm of unit insertion. -/
 theorem connesB_eq_cyclicNorm_barContraction_of_normalized
@@ -210,8 +211,9 @@ end Connes
 
 section Operators
 
-variable (R A M : Type*) [CommSemiring R] [NonAssocSemiring A] [Module R A]
+variable (R A M : Type*) [Semiring R] [NonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  [SMulCommClass R R M]
 
 /-- The Hochschild coboundary restricted to normalized cochains. -/
 def normalizedHochschildCoboundary (n : ℕ) :
@@ -257,8 +259,9 @@ end Operators
 
 section Associative
 
-variable {R A M : Type*} [CommSemiring R] [Semiring A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M] {n : ℕ}
+variable {R A M : Type*} [Semiring R] [Semiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  [SMulCommClass R R M] {n : ℕ}
 
 /-- The normalized Hochschild coboundary squares to zero. -/
 @[simp]
