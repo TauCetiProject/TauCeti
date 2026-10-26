@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Idempotents.Biproducts
-public import Mathlib.CategoryTheory.Limits.Constructions.FiniteProductsOfBinaryProducts
 public import TauCeti.CategoryTheory.Exact.Biproduct
 public import TauCeti.CategoryTheory.Exact.Functor
+public import TauCeti.CategoryTheory.Idempotents.Karoubi
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Retract
 
 /-!
 # The idempotent completion of an exact category
@@ -28,15 +28,15 @@ short complexes, of the images of conflations of `E` under `toKaroubi`.
   are the retracts, in the arrow category, of images of inflations (deflations) of `E`.
 * `TauCeti.ExactStructure.isConflationExact_toKaroubi`: the embedding `toKaroubi` is exact.
 * `TauCeti.IsKernelCokernelPair.map_toKaroubi`: `toKaroubi` preserves kernel–cokernel pairs.
-* `TauCeti.isPushout_map_toKaroubi`, `TauCeti.isPullback_map_toKaroubi`: `toKaroubi` preserves
-  pushout and pullback squares.
 
 ## Implementation notes
 
 A retract of the image of an inflation `a` is an inflation: its cokernel is the image of the
-idempotent induced on the cokernel of `a`. Composition uses the involution of `B ⊞ B'` exchanging
-two copies of a common retract, and (co)base change uses that a retract of a pushout square is a
-pushout square after splitting one idempotent. No complements of short complexes are formed.
+idempotent induced on the cokernel of `a`. Composition uses
+`CategoryTheory.Idempotents.Karoubi.exists_retractArrow_comp_of_retracts`, and (co)base change
+uses `CategoryTheory.IsPushout.nonempty_retractArrow_of_retract` and
+`CategoryTheory.IsPushout.hasPushout_of_retract` with their pullback duals. No complements of
+short complexes are formed.
 
 ## References
 
@@ -54,176 +54,6 @@ universe v u
 
 variable {C : Type u} [Category.{v} C]
 
-/-- The functor `toKaroubi` preserves pushout squares: a morphism out of a formal direct factor is a
-morphism of `C` compatible with the idempotent, and the induced morphism inherits that
-compatibility by uniqueness. -/
-theorem isPushout_map_toKaroubi {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {k : Y ⟶ Z}
-    (sq : IsPushout f g h k) :
-    IsPushout ((toKaroubi C).map f) ((toKaroubi C).map g) ((toKaroubi C).map h)
-      ((toKaroubi C).map k) := by
-  have w : (toKaroubi C).map f ≫ (toKaroubi C).map h =
-      (toKaroubi C).map g ≫ (toKaroubi C).map k := by
-    rw [← Functor.map_comp, sq.w, Functor.map_comp]
-  have hs (s : PushoutCocone ((toKaroubi C).map f) ((toKaroubi C).map g)) :
-      f ≫ s.inl.f = g ≫ s.inr.f := by
-    simpa using congrArg Karoubi.Hom.f s.condition
-  refine IsPushout.of_isColimit (PushoutCocone.IsColimit.mk w
-    (fun s ↦ ⟨sq.desc s.inl.f s.inr.f (hs s), ?_⟩) (fun s ↦ ?_) (fun s ↦ ?_) (fun s m h₁ h₂ ↦ ?_))
-  · simp only [toKaroubi_obj_p]
-    exact sq.hom_ext (by simp) (by simp)
-  · ext
-    simp
-  · ext
-    simp
-  · ext
-    refine sq.hom_ext ?_ ?_
-    · simpa using congrArg Karoubi.Hom.f h₁
-    · simpa using congrArg Karoubi.Hom.f h₂
-
-/-- The functor `toKaroubi` preserves pullback squares. -/
-theorem isPullback_map_toKaroubi {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {k : Y ⟶ Z}
-    (sq : IsPullback f g h k) :
-    IsPullback ((toKaroubi C).map f) ((toKaroubi C).map g) ((toKaroubi C).map h)
-      ((toKaroubi C).map k) := by
-  have w : (toKaroubi C).map f ≫ (toKaroubi C).map h =
-      (toKaroubi C).map g ≫ (toKaroubi C).map k := by
-    rw [← Functor.map_comp, sq.w, Functor.map_comp]
-  have hs (s : PullbackCone ((toKaroubi C).map h) ((toKaroubi C).map k)) :
-      s.fst.f ≫ h = s.snd.f ≫ k := by
-    simpa using congrArg Karoubi.Hom.f s.condition
-  refine IsPullback.of_isLimit (PullbackCone.IsLimit.mk w
-    (fun s ↦ ⟨sq.lift s.fst.f s.snd.f (hs s), ?_⟩) (fun s ↦ ?_) (fun s ↦ ?_) (fun s m h₁ h₂ ↦ ?_))
-  · simp only [toKaroubi_obj_p]
-    exact sq.hom_ext (by simp) (by simp)
-  · ext
-    simp
-  · ext
-    simp
-  · ext
-    refine sq.hom_ext ?_ ?_
-    · simpa using congrArg Karoubi.Hom.f h₁
-    · simpa using congrArg Karoubi.Hom.f h₂
-
-section RetractSquares
-
-variable {D : Type*} [Category D] {P Q P' A B X W : D} {i : P ⟶ Q} {h : P ⟶ P'} {a : A ⟶ B}
-  {k : A ⟶ X} {k' : B ⟶ W} {a' : X ⟶ W} (iP : P ⟶ A) (rP : A ⟶ P) (iQ : Q ⟶ B) (rQ : B ⟶ Q)
-  (iP' : P' ⟶ X) (rP' : X ⟶ P')
-
-/-- Let the span `Q ← P → P'` be a retract of the span `B ← A → X`. Then the second leg of any
-pushout of the small span is a retract of the second leg of any pushout of the big span. -/
-private theorem retractArrow_of_isPushout {Z : D} {h'' : Q ⟶ Z} {i'' : P' ⟶ Z}
-    (sq : IsPushout i h h'' i'') (big : IsPushout a k k' a') (hQ : iQ ≫ rQ = 𝟙 Q)
-    (hP' : iP' ≫ rP' = 𝟙 P') (wi : i ≫ iQ = iP ≫ a) (wr : a ≫ rQ = rP ≫ i)
-    (wk : h ≫ iP' = iP ≫ k) (wk' : k ≫ rP' = rP ≫ h) :
-    Nonempty (RetractArrow i'' a') := by
-  let φ : Z ⟶ W := sq.desc (iQ ≫ k') (iP' ≫ a') (by rw [reassoc_of% wi, big.w, reassoc_of% wk])
-  let ψ : W ⟶ Z := big.desc (rQ ≫ h'') (rP' ≫ i'') (by rw [reassoc_of% wr, sq.w, reassoc_of% wk'])
-  refine ⟨⟨Arrow.homMk iP' φ (by simp [φ]), Arrow.homMk rP' ψ (by simp [ψ]), ?_⟩⟩
-  refine Arrow.hom_ext _ _ (by simpa using hP') ?_
-  simp only [Arrow.comp_right, Arrow.homMk_right, Arrow.id_right]
-  exact sq.hom_ext (by simp [φ, ψ, reassoc_of% hQ]) (by simp [φ, ψ, reassoc_of% hP'])
-
-/-- Let the span `Q ← P → P'` be a retract of the span `B ← A → X`, in an idempotent complete
-category. If the big span has a pushout, so does the small one: it is the image of the idempotent
-induced on the big pushout. -/
-private theorem hasPushout_of_retract [IsIdempotentComplete D] (big : IsPushout a k k' a')
-    (hQ : iQ ≫ rQ = 𝟙 Q) (hP' : iP' ≫ rP' = 𝟙 P') (wi : i ≫ iQ = iP ≫ a)
-    (wr : a ≫ rQ = rP ≫ i) (wk : h ≫ iP' = iP ≫ k) (wk' : k ≫ rP' = rP ≫ h) :
-    HasPushout i h := by
-  let e : W ⟶ W := big.desc (rQ ≫ iQ ≫ k') (rP' ≫ iP' ≫ a')
-    (by rw [reassoc_of% wr, reassoc_of% wi, big.w, reassoc_of% wk', reassoc_of% wk])
-  have he₁ : k' ≫ e = rQ ≫ iQ ≫ k' := big.inl_desc _ _ _
-  have he₂ : a' ≫ e = rP' ≫ iP' ≫ a' := big.inr_desc _ _ _
-  have he : e ≫ e = e :=
-    big.hom_ext (by rw [reassoc_of% he₁, he₁, reassoc_of% hQ]) (by rw [reassoc_of% he₂, he₂,
-      reassoc_of% hP'])
-  obtain ⟨Z, iZ, rZ, h₁, h₂⟩ := IsIdempotentComplete.idempotents_split W e he
-  have hk : k' ≫ rZ = rQ ≫ iQ ≫ k' ≫ rZ := by
-    rw [← reassoc_of% he₁, ← h₂, Category.assoc, h₁, Category.comp_id]
-  have ha : a' ≫ rZ = rP' ≫ iP' ≫ a' ≫ rZ := by
-    rw [← reassoc_of% he₂, ← h₂, Category.assoc, h₁, Category.comp_id]
-  have w : i ≫ iQ ≫ k' ≫ rZ = h ≫ iP' ≫ a' ≫ rZ := by
-    rw [reassoc_of% wi, reassoc_of% wk, reassoc_of% big.w]
-  have hs (s : PushoutCocone i h) : a ≫ rQ ≫ s.inl = k ≫ rP' ≫ s.inr := by
-    rw [reassoc_of% wr, s.condition, reassoc_of% wk']
-  refine (IsPushout.of_isColimit (PushoutCocone.IsColimit.mk w
-    (fun s ↦ iZ ≫ big.desc (rQ ≫ s.inl) (rP' ≫ s.inr) (hs s)) (fun s ↦ ?_) (fun s ↦ ?_)
-    (fun s m h₁' h₂' ↦ ?_))).hasPushout
-  · simp only [Category.assoc]
-    rw [← Category.assoc rZ, h₂, reassoc_of% he₁, big.inl_desc]
-    simp [reassoc_of% hQ]
-  · simp only [Category.assoc]
-    rw [← Category.assoc rZ, h₂, reassoc_of% he₂, big.inr_desc]
-    simp [reassoc_of% hP']
-  · rw [← Category.id_comp m, ← h₁, Category.assoc]
-    congr 1
-    refine big.hom_ext ?_ ?_
-    · rw [big.inl_desc, reassoc_of% hk, ← h₁']
-      simp only [Category.assoc]
-    · rw [big.inr_desc, reassoc_of% ha, ← h₂']
-      simp only [Category.assoc]
-
-/-- Let the cospan `Q → P ← P'` be a retract of the cospan `B → A ← X`. Then the second leg of any
-pullback of the small cospan is a retract of the second leg of any pullback of the big cospan. -/
-private theorem retractArrow_of_isPullback {Z : D} {i : Q ⟶ P} {h : P' ⟶ P} {h'' : Z ⟶ Q}
-    {i'' : Z ⟶ P'} {a : B ⟶ A} {k : X ⟶ A} {k' : W ⟶ B} {a' : W ⟶ X}
-    (sq : IsPullback h'' i'' i h) (big : IsPullback k' a' a k) (hQ : iQ ≫ rQ = 𝟙 Q)
-    (hP' : iP' ≫ rP' = 𝟙 P') (wi : iQ ≫ a = i ≫ iP) (wr : rQ ≫ i = a ≫ rP)
-    (wk : iP' ≫ k = h ≫ iP) (wk' : rP' ≫ h = k ≫ rP) :
-    Nonempty (RetractArrow i'' a') := by
-  let φ : Z ⟶ W := big.lift (h'' ≫ iQ) (i'' ≫ iP') (by rw [Category.assoc, Category.assoc, wi,
-    wk, reassoc_of% sq.w])
-  let ψ : W ⟶ Z := sq.lift (k' ≫ rQ) (a' ≫ rP') (by rw [Category.assoc, Category.assoc, wr, wk',
-    reassoc_of% big.w])
-  refine ⟨⟨Arrow.homMk φ iP' (by simp [φ]), Arrow.homMk ψ rP' (by simp [ψ]), ?_⟩⟩
-  refine Arrow.hom_ext _ _ ?_ (by simpa using hP')
-  simp only [Arrow.comp_left, Arrow.homMk_left, Arrow.id_left]
-  exact sq.hom_ext (by simp [φ, ψ, hQ]) (by simp [φ, ψ, hP'])
-
-/-- Let the cospan `Q → P ← P'` be a retract of the cospan `B → A ← X`, in an idempotent complete
-category. If the big cospan has a pullback, so does the small one. -/
-private theorem hasPullback_of_retract [IsIdempotentComplete D] {i : Q ⟶ P} {h : P' ⟶ P}
-    {a : B ⟶ A} {k : X ⟶ A} {k' : W ⟶ B} {a' : W ⟶ X} (big : IsPullback k' a' a k)
-    (hQ : iQ ≫ rQ = 𝟙 Q) (hP' : iP' ≫ rP' = 𝟙 P') (wi : iQ ≫ a = i ≫ iP)
-    (wr : rQ ≫ i = a ≫ rP) (wk : iP' ≫ k = h ≫ iP) (wk' : rP' ≫ h = k ≫ rP) :
-    HasPullback i h := by
-  let e : W ⟶ W := big.lift (k' ≫ rQ ≫ iQ) (a' ≫ rP' ≫ iP')
-    (by simp only [Category.assoc]
-        rw [wi, reassoc_of% wr, wk, reassoc_of% wk', reassoc_of% big.w])
-  have he₁ : e ≫ k' = k' ≫ rQ ≫ iQ := big.lift_fst _ _ _
-  have he₂ : e ≫ a' = a' ≫ rP' ≫ iP' := big.lift_snd _ _ _
-  have he : e ≫ e = e :=
-    big.hom_ext (by rw [Category.assoc, he₁, reassoc_of% he₁, reassoc_of% hQ])
-      (by rw [Category.assoc, he₂, reassoc_of% he₂, reassoc_of% hP'])
-  obtain ⟨Z, iZ, rZ, h₁, h₂⟩ := IsIdempotentComplete.idempotents_split W e he
-  have hk : iZ ≫ k' = iZ ≫ k' ≫ rQ ≫ iQ := by
-    rw [← he₁, ← h₂]
-    simp [reassoc_of% h₁]
-  have ha : iZ ≫ a' = iZ ≫ a' ≫ rP' ≫ iP' := by
-    rw [← he₂, ← h₂]
-    simp [reassoc_of% h₁]
-  have w : (iZ ≫ k' ≫ rQ) ≫ i = (iZ ≫ a' ≫ rP') ≫ h := by
-    rw [Category.assoc, Category.assoc, Category.assoc, Category.assoc, wr, wk',
-      reassoc_of% big.w]
-  have hs (s : PullbackCone i h) : (s.fst ≫ iQ) ≫ a = (s.snd ≫ iP') ≫ k := by
-    rw [Category.assoc, Category.assoc, wi, wk, reassoc_of% s.condition]
-  refine (IsPullback.of_isLimit (PullbackCone.IsLimit.mk w
-    (fun s ↦ big.lift (s.fst ≫ iQ) (s.snd ≫ iP') (hs s) ≫ rZ) (fun s ↦ ?_) (fun s ↦ ?_)
-    (fun s m h₁' h₂' ↦ ?_))).hasPullback
-  · rw [Category.assoc, reassoc_of% h₂, reassoc_of% he₁, big.lift_fst_assoc]
-    simp [hQ]
-  · rw [Category.assoc, reassoc_of% h₂, reassoc_of% he₂, big.lift_snd_assoc]
-    simp [hP']
-  · rw [← Category.comp_id m, ← h₁, ← Category.assoc]
-    congr 1
-    refine big.hom_ext ?_ ?_
-    · rw [big.lift_fst, Category.assoc, hk, ← h₁']
-      simp only [Category.assoc]
-    · rw [big.lift_snd, Category.assoc, ha, ← h₂']
-      simp only [Category.assoc]
-
-end RetractSquares
 
 variable [Preadditive C]
 
@@ -261,62 +91,9 @@ theorem map_toKaroubi {S : ShortComplex C} (h : IsKernelCokernelPair S) :
 
 end IsKernelCokernelPair
 
-variable [HasBinaryBiproducts C] in
-/-- The composition step, with the two retractions spelled out. The middle object `Q` is a retract
-of both `B` and `B'`; the involution `θ` of `B ⊞ B'` exchanges these two copies of `Q` and is the
-identity on their complements, so `i ≫ j` is a retract of the image of `(a ⊞ 𝟙) ≫ θ ≫ (𝟙 ⊞ b)`. -/
-private theorem exists_retractArrow_comp_of_retracts {P Q R : Karoubi C} (i : P ⟶ Q)
-    (j : Q ⟶ R) {A B B' C' : C} {a : A ⟶ B} {b : B' ⟶ C'} (iP : P ⟶ (toKaroubi C).obj A)
-    (rP : (toKaroubi C).obj A ⟶ P)
-    (iQ : Q ⟶ (toKaroubi C).obj B) (rQ : (toKaroubi C).obj B ⟶ Q)
-    (jQ : Q ⟶ (toKaroubi C).obj B') (sQ : (toKaroubi C).obj B' ⟶ Q)
-    (jR : R ⟶ (toKaroubi C).obj C') (sR : (toKaroubi C).obj C' ⟶ R)
-    (hP : iP ≫ rP = 𝟙 P) (hQ : iQ ≫ rQ = 𝟙 Q) (hQ' : jQ ≫ sQ = 𝟙 Q) (hR : jR ≫ sR = 𝟙 R)
-    (wi : iP ≫ (toKaroubi C).map a = i ≫ iQ) (wr : rP ≫ i = (toKaroubi C).map a ≫ rQ)
-    (wj : jQ ≫ (toKaroubi C).map b = j ≫ jR) (wj' : sQ ≫ j = (toKaroubi C).map b ≫ sR) :
-    ∃ θ : B ⊞ B' ⟶ B ⊞ B', IsIso θ ∧
-      Nonempty (RetractArrow (i ≫ j) ((toKaroubi C).map (biprod.map a (𝟙 B') ≫ θ ≫
-        biprod.map (𝟙 B) b))) := by
-  have hPf : iP.f ≫ rP.f = P.p := by simpa using congrArg Karoubi.Hom.f hP
-  have hQf : iQ.f ≫ rQ.f = Q.p := by simpa using congrArg Karoubi.Hom.f hQ
-  have hRf : jR.f ≫ sR.f = R.p := by simpa using congrArg Karoubi.Hom.f hR
-  have hQf' : jQ.f ≫ sQ.f = Q.p := by simpa using congrArg Karoubi.Hom.f hQ'
-  have wif : iP.f ≫ a = i.f ≫ iQ.f := by simpa using congrArg Karoubi.Hom.f wi
-  have wrf : rP.f ≫ i.f = a ≫ rQ.f := by simpa using congrArg Karoubi.Hom.f wr
-  have wjf : jQ.f ≫ b = j.f ≫ jR.f := by simpa using congrArg Karoubi.Hom.f wj
-  have wjf' : sQ.f ≫ j.f = b ≫ sR.f := by simpa using congrArg Karoubi.Hom.f wj'
-  let θ : B ⊞ B' ⟶ B ⊞ B' :=
-    biprod.desc (biprod.lift (𝟙 B - (rQ.f ≫ iQ.f : B ⟶ B)) (rQ.f ≫ jQ.f : B ⟶ B'))
-      (biprod.lift (sQ.f ≫ iQ.f : B' ⟶ B) (𝟙 B' - (sQ.f ≫ jQ.f : B' ⟶ B')))
-  have hθ : θ ≫ θ = 𝟙 _ := by
-    ext <;> simp [θ, Preadditive.comp_sub, Preadditive.sub_comp, reassoc_of% hQf,
-      reassoc_of% hQf']
-  refine ⟨θ, ⟨θ, hθ, hθ⟩, ⟨
-    Arrow.homMk (iP ≫ (toKaroubi C).map biprod.inl) (jR ≫ (toKaroubi C).map biprod.inr) ?_,
-    Arrow.homMk ((toKaroubi C).map biprod.fst ≫ rP) ((toKaroubi C).map biprod.snd ≫ sR) ?_, ?_⟩⟩
-  · refine Karoubi.hom_ext _ _ ?_
-    simp only [Karoubi.comp_f, toKaroubi_map_f, Arrow.mk_hom]
-    refine biprod.hom_ext _ _ ?_ ?_
-    · simp [θ, reassoc_of% wif, Preadditive.comp_sub, reassoc_of% hQf]
-    · simp [θ, reassoc_of% wif, reassoc_of% hQf, wjf]
-  · refine Karoubi.hom_ext _ _ ?_
-    simp only [Karoubi.comp_f, toKaroubi_map_f, Arrow.mk_hom]
-    refine biprod.hom_ext' _ _ ?_ ?_
-    · simp [θ, ← wjf', reassoc_of% hQf', reassoc_of% wrf]
-    · simp [θ, Preadditive.sub_comp, ← wjf', reassoc_of% hQf']
-  · ext <;> simp [hPf, hRf]
-
 namespace ExactStructure
 
 variable [HasZeroObject C] [HasBinaryBiproducts C]
-
-/-- The idempotent completion of an additive category has finite biproducts. -/
-instance : HasFiniteBiproducts (Karoubi C) :=
-  have : HasFiniteProducts C := hasFiniteProducts_of_has_binary_and_terminal
-  have : HasFiniteBiproducts C := HasFiniteBiproducts.of_hasFiniteProducts
-  Karoubi.karoubi_hasFiniteBiproducts
-
-instance : HasBinaryBiproducts (Karoubi C) := hasBinaryBiproducts_of_finite_biproducts _
 
 variable (E : ExactStructure C)
 
@@ -374,9 +151,7 @@ private theorem karoubiConflations_isInflation_of_retract {P Q : Karoubi C} {f :
         comm₁₂ := wr.symm
         comm₂₃ := by
           simp only [ShortComplex.map_g]
-          rw [show h.r.right ≫ h.i.right ≫ (toKaroubi C).map d ≫ rR =
-              ((toKaroubi C).map d ≫ eD) ≫ rR by rw [heD]; simp only [Category.assoc],
-            ← h₂, Category.assoc, Category.assoc, h₁, Category.comp_id] }
+          rw [← reassoc_of% heD, ← h₂, Category.assoc, h₁, Category.comp_id] }
   · ext <;> simp [h₁]
 
 /-- An inflation of the idempotent completion is a retract of the image of an inflation of `E`. -/
@@ -484,11 +259,11 @@ private theorem karoubiConflations_isInflation_comp {P Q R : Karoubi C} {i : P �
     E.karoubiConflations.IsInflation (i ≫ j) := by
   obtain ⟨_, B, _, ha, ⟨hi⟩⟩ := (E.karoubiConflations_isInflation_iff i).mp hi
   obtain ⟨_, _, _, hb, ⟨hj⟩⟩ := (E.karoubiConflations_isInflation_iff j).mp hj
-  obtain ⟨θ, _, ⟨h⟩⟩ := exists_retractArrow_comp_of_retracts i j _ _ _ _ _ _ _ _
+  obtain ⟨θ, _, ⟨h⟩⟩ := Karoubi.exists_retractArrow_comp_of_retracts i j _ _ _ _ _ _ _ _
     hi.retract_left hi.retract_right hj.retract_left hj.retract_right hi.i_w hi.r_w hj.i_w hj.r_w
   exact E.karoubiConflations_isInflation_of_retract
     (E.isInflation_comp _ _ (E.isInflation_biprod_id ha _)
-      (E.isInflation_comp _ _ (E.isInflation_of_isIso θ) (E.isInflation_id_biprod hb B))) h
+      (E.isInflation_comp _ _ (E.inflations.of_isIso θ) (E.isInflation_id_biprod hb B))) h
 
 /-- Deflations of the idempotent completion are closed under composition. -/
 private theorem karoubiConflations_isDeflation_comp {P Q R : Karoubi C} {p : P ⟶ Q} {q : Q ⟶ R}
@@ -496,11 +271,11 @@ private theorem karoubiConflations_isDeflation_comp {P Q R : Karoubi C} {p : P �
     E.karoubiConflations.IsDeflation (p ≫ q) := by
   obtain ⟨_, B, _, hd, ⟨hp⟩⟩ := (E.karoubiConflations_isDeflation_iff p).mp hp
   obtain ⟨_, _, _, hd', ⟨hq⟩⟩ := (E.karoubiConflations_isDeflation_iff q).mp hq
-  obtain ⟨θ, _, ⟨h⟩⟩ := exists_retractArrow_comp_of_retracts p q _ _ _ _ _ _ _ _
+  obtain ⟨θ, _, ⟨h⟩⟩ := Karoubi.exists_retractArrow_comp_of_retracts p q _ _ _ _ _ _ _ _
     hp.retract_left hp.retract_right hq.retract_left hq.retract_right hp.i_w hp.r_w hq.i_w hq.r_w
   exact E.karoubiConflations_isDeflation_of_retract
     (E.isDeflation_comp _ _ (E.isDeflation_biprod_id hd _)
-      (E.isDeflation_comp _ _ (E.isDeflation_of_isIso θ) (E.isDeflation_id_biprod hd' B))) h
+      (E.isDeflation_comp _ _ (E.deflations.of_isIso θ) (E.isDeflation_id_biprod hd' B))) h
 
 /-- Pushouts of inflations of the idempotent completion exist. If `i` is a retract of the image of
 an inflation `a : A ⟶ B` of `E`, the span `(i, h)` is a retract of the image of the span `(a, k)`,
@@ -513,8 +288,8 @@ private theorem karoubiConflations_hasPushout {P Q P' : Karoubi C} {i : P ⟶ Q}
     ext
     simp [k]
   have : HasPushout a k := E.hasPushouts_inflations.hasPushout k ha
-  exact hasPushout_of_retract r.i.left r.r.left r.i.right r.r.right (Karoubi.decompId_i P')
-    (Karoubi.decompId_p P') (isPushout_map_toKaroubi (IsPushout.of_hasPushout a k))
+  exact (IsPushout.of_hasPushout a k).map_toKaroubi.hasPushout_of_retract (iP := r.i.left)
+    (rP := r.r.left) (iP' := Karoubi.decompId_i P') (rP' := Karoubi.decompId_p P')
     r.retract_right (Karoubi.decompId P').symm r.i_w.symm r.r_w.symm (by rw [hk]; simp)
     (by rw [hk, Category.assoc, Category.assoc, ← Karoubi.decompId, Category.comp_id])
 
@@ -531,8 +306,8 @@ private theorem karoubiConflations_isInflation_of_isPushout {P Q P' Z : Karoubi 
     simp [k]
   have : HasPushout a k := E.hasPushouts_inflations.hasPushout k ha
   have hpo := IsPushout.of_hasPushout a k
-  obtain ⟨r'⟩ := retractArrow_of_isPushout r.i.left r.r.left r.i.right r.r.right
-    (Karoubi.decompId_i P') (Karoubi.decompId_p P') sq.flip (isPushout_map_toKaroubi hpo)
+  obtain ⟨r'⟩ := sq.flip.nonempty_retractArrow_of_retract hpo.map_toKaroubi (iP := r.i.left)
+    (rP := r.r.left) (iP' := Karoubi.decompId_i P') (rP' := Karoubi.decompId_p P')
     r.retract_right (Karoubi.decompId P').symm r.i_w.symm r.r_w.symm (by rw [hk]; simp)
     (by rw [hk, Category.assoc, Category.assoc, ← Karoubi.decompId, Category.comp_id])
   exact E.karoubiConflations_isInflation_of_retract
@@ -548,8 +323,8 @@ private theorem karoubiConflations_hasPullback {Q P P' : Karoubi C} {p : Q ⟶ P
     ext
     simp [k]
   have : HasPullback d k := E.hasPullbacks_deflations.hasPullback k hd
-  exact hasPullback_of_retract r.i.right r.r.right r.i.left r.r.left (Karoubi.decompId_i P')
-    (Karoubi.decompId_p P') (isPullback_map_toKaroubi (IsPullback.of_hasPullback d k))
+  exact (IsPullback.of_hasPullback d k).map_toKaroubi.hasPullback_of_retract (iP := r.i.right)
+    (rP := r.r.right) (iP' := Karoubi.decompId_i P') (rP' := Karoubi.decompId_p P')
     r.retract_left (Karoubi.decompId P').symm r.i_w r.r_w
     (by rw [hk, ← Category.assoc, ← Karoubi.decompId, Category.id_comp]) (by rw [hk]; simp)
 
@@ -565,8 +340,8 @@ private theorem karoubiConflations_isDeflation_of_isPullback {Q P P' Z : Karoubi
     simp [k]
   have : HasPullback d k := E.hasPullbacks_deflations.hasPullback k hd
   have hpb := IsPullback.of_hasPullback d k
-  obtain ⟨r'⟩ := retractArrow_of_isPullback r.i.right r.r.right r.i.left r.r.left
-    (Karoubi.decompId_i P') (Karoubi.decompId_p P') sq (isPullback_map_toKaroubi hpb)
+  obtain ⟨r'⟩ := sq.nonempty_retractArrow_of_retract hpb.map_toKaroubi (iP := r.i.right)
+    (rP := r.r.right) (iP' := Karoubi.decompId_i P') (rP' := Karoubi.decompId_p P')
     r.retract_left (Karoubi.decompId P').symm r.i_w r.r_w
     (by rw [hk, ← Category.assoc, ← Karoubi.decompId, Category.id_comp]) (by rw [hk]; simp)
   exact E.karoubiConflations_isDeflation_of_retract

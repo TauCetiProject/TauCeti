@@ -474,20 +474,6 @@ theorem conflation_id_zero (E : ExactStructure C) (X : C) :
     E.Conflation (ShortComplex.mk (𝟙 X) (0 : X ⟶ (0 : C)) (by simp)) :=
   E.conflation_of_splitting { r := 𝟙 X, s := 0 }
 
-/-- An isomorphism is an inflation: it is the first map of the conflation `X ⟶ Y ⟶ 0`, split by
-its inverse. -/
-theorem isInflation_of_isIso (E : ExactStructure C) {X Y : C} (φ : X ⟶ Y) [IsIso φ] :
-    E.IsInflation φ :=
-  (ConflationClass.isInflation_iff _ φ).mpr
-    ⟨0, 0, by simp, E.conflation_of_splitting { r := inv φ, s := 0 }⟩
-
-/-- An isomorphism is a deflation: it is the second map of the conflation `0 ⟶ X ⟶ Y`, split by
-its inverse. -/
-theorem isDeflation_of_isIso (E : ExactStructure C) {X Y : C} (φ : X ⟶ Y) [IsIso φ] :
-    E.IsDeflation φ :=
-  (ConflationClass.isDeflation_iff _ φ).mpr
-    ⟨0, 0, by simp, E.conflation_of_splitting { r := 0, s := inv φ }⟩
-
 /-- A conflation of the split exact structure is a conflation of every exact structure. -/
 theorem conflation_of_split_conflation (E : ExactStructure C) {S : ShortComplex C}
     (hS : (ExactStructure.split C).Conflation S) : E.Conflation S :=
