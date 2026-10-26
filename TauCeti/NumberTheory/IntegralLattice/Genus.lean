@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Operations
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import Mathlib.Data.Nat.PrimeFin
 import Mathlib.Data.Int.Associated
+import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
@@ -42,6 +44,7 @@ localizations alone.
 ## Main results
 
 * `TauCeti.IntegralLattice.SameGenus.determinant_eq`: the genus determines the signed determinant.
+* `TauCeti.IntegralLattice.SameGenus.isEven_iff`: lattices in one genus are even together.
 * `TauCeti.IntegralLattice.SameGenus.completedRationalForm_equivalent`: lattices in one genus have
   isometric completed rational spaces at every prime.
 * `TauCeti.IntegralLattice.sameGenus_iff_localIntegralForm_equivalent_primeFactors`: for equal
@@ -127,6 +130,13 @@ theorem isPosDef_iff (h : L.SameGenus M) : L.IsPosDef ↔ M.IsPosDef := by
 theorem isNegDef_iff (h : L.SameGenus M) : L.IsNegDef ↔ M.IsNegDef := by
   rw [M.isNegDef_iff_sigPos_eq_zero_and_sigNull_eq_zero,
     L.isNegDef_iff_sigPos_eq_zero_and_sigNull_eq_zero, h.sigPos_eq, h.sigNull_eq]
+
+/-- **Evenness is a genus invariant.** Lattices in one genus have isometric dyadic localizations,
+and a lattice is even exactly when its dyadic localization is. -/
+theorem isEven_iff (h : L.SameGenus M) : L.IsEven ↔ M.IsEven := by
+  rw [isEven_iff_forall_two_dvd_localIntegralForm_apply_self,
+    isEven_iff_forall_two_dvd_localIntegralForm_apply_self]
+  exact (h.localIntegralForm_equivalent 2).forall_two_dvd_apply_self_iff
 
 /-- Every integral lattice belongs to its own genus. -/
 @[refl, simp]

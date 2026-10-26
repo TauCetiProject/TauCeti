@@ -59,13 +59,6 @@ namespace LinearMap.BilinForm
 variable {M N : Type*} [AddCommGroup M] [Module ℤ_[2] M] [AddCommGroup N] [Module ℤ_[2] N]
   {B : BilinForm ℤ_[2] M} {C : BilinForm ℤ_[2] N}
 
-/-- A form over `ℤ_[2]` that is not even represents a unit. -/
-private theorem exists_isUnit_apply_self_of_not_forall_two_dvd (h : ¬∀ x, (2 : ℤ_[2]) ∣ B x x) :
-    ∃ x, IsUnit (B x x) := by
-  push Not at h
-  obtain ⟨x, hx⟩ := h
-  exact ⟨x, by_contra fun hu ↦ hx (by simpa using PadicInt.not_isUnit_iff_dvd.mp hu)⟩
-
 /-- **Classification of unimodular forms over `ℤ_[2]`.** Let `B` and `C` be symmetric forms over
 `ℤ_[2]` with unit Gram determinants in bases of the same size, and let `w` and `w'` be
 characteristic vectors for `B` and `C`. Then `B` and `C` are isometric exactly when

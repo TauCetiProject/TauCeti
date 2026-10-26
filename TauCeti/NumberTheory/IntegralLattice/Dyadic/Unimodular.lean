@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Basic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 import TauCeti.LinearAlgebra.BilinearForm.Even.Basic
+import TauCeti.NumberTheory.IntegralLattice.Localization.Characteristic
 import TauCeti.NumberTheory.Padics.BilinearForm.Unimodular
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -23,8 +24,11 @@ such forms are classified by their rank, their type (even or odd), their determi
 and their oddity, the norm of a characteristic vector modulo `8`
 (`LinearMap.BilinForm.IsSymm.equivalent_iff_two_dvd_iff_and_isSquare_det_mul_det_and_eight_dvd`).
 This file transfers that classification to lattices: evenness of a lattice is evenness of its
-dyadic localization, and characteristic vectors of the lattice stay characteristic after
-localization, so the invariants can be read off the lattice itself. For even lattices the oddity
+dyadic localization
+(`TauCeti.IntegralLattice.isEven_iff_forall_two_dvd_localIntegralForm_apply_self`), and
+characteristic vectors of the lattice stay characteristic after localization
+(`TauCeti.IntegralLattice.IsCharacteristicVector.isCharacteristic_localIntegralForm`), so the
+invariants can be read off the lattice itself. For even lattices the oddity
 is automatically `0`, and the localizations are classified by rank and determinant square class,
 as at odd primes (`TauCeti.IntegralLattice.localIntegralForm_equivalent_iff`). The oddity cannot
 be dropped: the lattices `⟨1, 1⟩` and `⟨3, 3⟩` are odd, with the same rank and square determinants,
@@ -36,10 +40,6 @@ orthogonally after localization.
 
 ## Main results
 
-* `TauCeti.IntegralLattice.isEven_iff_forall_two_dvd_localIntegralForm_apply_self`: a lattice is
-  even exactly when its dyadic localization is.
-* `TauCeti.IntegralLattice.IsCharacteristicVector.isCharacteristic_localIntegralForm`: a
-  characteristic vector of a lattice is characteristic for its dyadic localization.
 * `TauCeti.IntegralLattice.IsEven.even_finrank_of_isUnit_determinant`: an even lattice of odd
   determinant has even rank.
 * `TauCeti.IntegralLattice.exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm`: an even
@@ -65,32 +65,6 @@ namespace TauCeti.IntegralLattice
 open Module
 
 variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
-
-/-- **Evenness is detected by the dyadic localization.** A lattice is even exactly when every value
-`B(x, x)` of its localized integral form at `2` is divisible by `2` in `ℤ_[2]`. -/
-theorem isEven_iff_forall_two_dvd_localIntegralForm_apply_self (L : IntegralLattice V) :
-    L.IsEven ↔ ∀ x : L.LocalCarrier 2, (2 : ℤ_[2]) ∣ L.localIntegralForm 2 x x := by
-  simp only [L.isEven_iff_localNormIdeal_le_span_two, LinearMap.BilinForm.normIdeal_le_iff,
-    Ideal.mem_span_singleton]
-
-/-- **The dyadic localization of an even lattice is even.** Every value `B(x, x)` of the localized
-integral form of an even lattice at `2` is divisible by `2` in `ℤ_[2]`. -/
-theorem IsEven.two_dvd_localIntegralForm_apply_self {L : IntegralLattice V} (heven : L.IsEven)
-    (x : L.LocalCarrier 2) : (2 : ℤ_[2]) ∣ L.localIntegralForm 2 x x :=
-  L.isEven_iff_forall_two_dvd_localIntegralForm_apply_self.mp heven x
-
-/-- **Integral characteristic vectors stay characteristic at `2`.** If `w` is a characteristic
-vector of `L`, then `1 ⊗ w` is a characteristic vector of the dyadic localization of `L`. -/
-theorem IsCharacteristicVector.isCharacteristic_localIntegralForm {L : IntegralLattice V} {w : L}
-    (hw : L.IsCharacteristicVector w) :
-    (L.localIntegralForm 2).IsCharacteristic ((1 : ℤ_[2]) ⊗ₜ w) := by
-  let b := Module.finBasis ℤ L
-  refine ((L.isSymm_localIntegralForm 2).isCharacteristic_iff_forall_basis
-    PadicInt.two_dvd_sq_sub_self (b.baseChange ℤ_[2])).mpr fun i ↦ ?_
-  have h := LinearMap.BilinForm.isCharacteristic_iff.mp
-    ((L.isCharacteristicVector_iff_isCharacteristic w).mp hw) (b i)
-  simpa only [Basis.baseChange_apply, localIntegralForm_tmul, one_mul, Int.cast_sub,
-    Int.cast_ofNat] using Int.cast_dvd_cast (α := ℤ_[2]) _ _ h
 
 /-- **An even lattice of odd determinant has even rank.** Its dyadic localization is a perfect
 pairing whose self-pairings are all divisible by `2`, and such a form has even rank. -/
