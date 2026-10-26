@@ -76,11 +76,11 @@ loop rule because those four relations are the whole multiplication table of `B�
 noncomputable def liftTwo (x y : A) (hx : x * x = 1) (hy : y * y = δ • y) (hxy : x * y = y)
     (hyx : y * x = y) : BrauerAlgebra R δ 2 →ₐ[R] A :=
   lift (fun D => if D = capCup 0 1 then y else if D = permToBrauer (Equiv.swap 0 1) then x else 1)
-    (by simp [permToBrauer_one_ne_permToBrauer_swap])
+    (by simp)
     (fun D₁ D₂ => by
       rcases D₁.eq_permToBrauer_one_or_eq_permToBrauer_swap_or_eq_capCup with rfl | rfl | rfl <;>
         rcases D₂.eq_permToBrauer_one_or_eq_permToBrauer_swap_or_eq_capCup with rfl | rfl | rfl <;>
-          simp [permToBrauer_one_ne_permToBrauer_swap, hx, hy, hxy, hyx])
+          simp [hx, hy, hxy, hyx])
 
 @[simp]
 theorem liftTwo_of_permToBrauer_swap (x y : A) (hx : x * x = 1) (hy : y * y = δ • y)

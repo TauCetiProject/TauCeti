@@ -83,6 +83,7 @@ end BrauerDiagram
 /-! ### Two strands -/
 
 /-- The identity diagram and the crossing are different. -/
+@[simp]
 theorem permToBrauer_one_ne_permToBrauer_swap :
     permToBrauer (1 : Equiv.Perm (Fin 2)) ≠ permToBrauer (Equiv.swap 0 1) := fun h =>
   absurd (permToBrauer_injective 2 h) (by decide)
