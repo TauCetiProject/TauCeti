@@ -48,7 +48,8 @@ essential supremum exceeds `c`.
 * `TauCeti.exists_isCoupling_gromovWassersteinDistortion_eq_of_standardBorelSpace` — the same
   conclusion on standard Borel carriers, through a compatible Polish topology on each;
 * `TauCeti.exists_isCoupling_gromovWassersteinDistortion_dist_eq` — the specialization of the
-  Polish theorem to metric-measure spaces, whose kernels are the distance functions.
+  Polish theorem to distance kernels on pseudometric spaces with Polish topologies; the chosen
+  distances need not be complete.
 
 ## References
 
