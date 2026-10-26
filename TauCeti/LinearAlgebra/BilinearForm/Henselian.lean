@@ -166,7 +166,7 @@ theorem IsJordanSplitting.equivalent_restrict_of_equivalent [Module.Free R M] [M
   have hC's : C'.IsSymm := ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors hπj).mp (by
     rw [hC'app, hC'app, hB'.eq])⟩
   -- The projection to `S j` carries `C'` to `C` modulo `π`.
-  obtain ⟨f, -, hf⟩ := hS.exists_pow_succ_dvd_sub (mem_nonZeroDivisors_of_ne_zero hπ) j
+  obtain ⟨f, -, hf, -⟩ := hS.exists_pow_succ_dvd_sub (mem_nonZeroDivisors_of_ne_zero hπ) j
   have hdvd (x : S' j) (z : M) : π ^ j ∣ B (ε.symm x) z := by
     rw [← hε, ε.apply_symm_apply]
     exact hS'.pow_dvd_apply x.2 (ε z)
