@@ -75,6 +75,7 @@ theorem sign_eq_neg_one_pow_card_inversion (σ : Equiv.Perm (Fin n)) :
 
 /-- Reversing the order of `Fin n` has sign `(-1) ^ n.choose 2`: every pair of indices is an
 inversion. -/
+@[simp]
 theorem _root_.Fin.sign_revPerm (n : ℕ) :
     Equiv.Perm.sign (Fin.revPerm : Equiv.Perm (Fin n)) = (-1) ^ n.choose 2 := by
   have h : (Finset.univ.filter fun p : Fin n × Fin n =>
