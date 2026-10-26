@@ -174,6 +174,12 @@ def sectionsAddSubgroup (n : ℤ) (U : Opens (ProjectiveSpectrum.top 𝒜)) :
   add_mem' := isLocallyFraction_add
   neg_mem' := isLocallyFraction_neg
 
+/-- Membership in the section subgroup is the local-fraction predicate. -/
+theorem mem_sectionsAddSubgroup_iff {n : ℤ} {U : Opens (ProjectiveSpectrum.top 𝒜)}
+    (f : ∀ x : U, Localizations 𝒜 x.1) :
+    f ∈ sectionsAddSubgroup 𝒜 n U ↔ (isLocallyFraction 𝒜 n).pred f :=
+  (Iff.rfl)
+
 /-- Sections of the structure sheaf of `Proj` act on local fractions of degree `n` pointwise,
 through the inclusions `A_{(x)} → A_x` of the homogeneous localizations. -/
 instance sectionsAddSubgroup.smul (n : ℤ) (U : Opens (ProjectiveSpectrum.top 𝒜)) :
@@ -450,6 +456,14 @@ def sectionsLinearEquivTwistingSheafZero (U : (Proj 𝒜).Opens) :
 theorem sectionsLinearEquivTwistingSheafZero_apply_apply (U : (Proj 𝒜).Opens) (a : Γ(Proj 𝒜, U))
     (x : U) : (sectionsLinearEquivTwistingSheafZero 𝒜 U a).1 x = (a.1 x).val :=
   (rfl)
+
+/-- The inverse of the degree-zero comparison preserves the value in each localization. -/
+@[simp]
+theorem sectionsLinearEquivTwistingSheafZero_symm_apply_val (U : (Proj 𝒜).Opens)
+    (s : Γ(twistingSheaf 𝒜 0, U)) (x : U) :
+    (((sectionsLinearEquivTwistingSheafZero 𝒜 U).symm s).1 x).val = s.1 x := by
+  exact congrArg (fun t : Γ(twistingSheaf 𝒜 0, U) ↦ t.1 x)
+    ((sectionsLinearEquivTwistingSheafZero 𝒜 U).apply_symm_apply s)
 
 /-- Multiplying by the section of `𝒪(0)` corresponding to a section `a` of the structure sheaf
 is the scalar multiplication by `a`, pointwise in the localizations. -/
