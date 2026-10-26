@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import Mathlib.NumberTheory.SmoothNumbers
+public import TauCeti.NumberTheory.Padics.PadicValRat
 
 /-!
 # `S`-factored numbers and `p`-adic valuations
@@ -14,8 +14,6 @@ public import Mathlib.NumberTheory.SmoothNumbers
 Mathlib's `Nat.factoredNumbers S` is the set of positive integers all of whose prime factors lie
 in the finite set `S`. This file describes these numbers through `p`-adic valuations:
 
-* `TauCeti.padicValRat_eq_zero_iff`: a nonzero rational number has `p`-adic valuation zero
-  exactly when `p` divides neither its numerator nor its denominator;
 * `TauCeti.forall_padicValRat_eq_zero_iff_mem_factoredNumbers`: a nonzero rational number has
   `p`-adic valuation zero at every prime `p ∉ S` exactly when its numerator (in absolute value)
   and its denominator are `S`-factored;
@@ -28,17 +26,6 @@ These are the arithmetic inputs for describing the rational `S`-units.
 public section
 
 namespace TauCeti
-
-/-- A nonzero rational number has `p`-adic valuation zero exactly when the prime `p` divides
-neither its numerator nor its denominator. -/
-theorem padicValRat_eq_zero_iff {p : ℕ} [hp : Fact p.Prime] {q : ℚ} (hq : q ≠ 0) :
-    padicValRat p q = 0 ↔ ¬ p ∣ q.num.natAbs ∧ ¬ p ∣ q.den := by
-  have hnum : padicValInt p q.num = 0 ↔ ¬ p ∣ q.num.natAbs := by
-    simp [padicValInt, padicValNat.eq_zero_iff, hp.out.ne_one, hq]
-  have hden : padicValNat p q.den = 0 ↔ ¬ p ∣ q.den := by
-    simp [padicValNat.eq_zero_iff, hp.out.ne_one]
-  rw [padicValRat_def, ← hnum, ← hden]
-  rcases Rat.num_or_den_zero_padicVal q hp.out with h | h <;> simp [h]
 
 /-- A nonzero rational number has `p`-adic valuation zero at every prime `p ∉ S` exactly when the
 absolute value of its numerator and its denominator are `S`-factored. -/
