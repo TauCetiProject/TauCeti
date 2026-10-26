@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.RingTheory.FormalGroup.BaseChange
 public import TauCeti.RingTheory.MvPowerSeries.Rescale
+-- Proof-only: the coefficients after swapping the variables.
+import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Rescaling a formal group law
@@ -100,23 +102,6 @@ private theorem assoc_of_smul_eq_rescale (F : FormalGroup R) {g : MvPowerSeries 
   simp only [Matrix.smul_cons, Matrix.smul_empty]
   exact F.assoc' (hX 0) (hX 1) (hX 2)
 
-/-- Commutativity transfers from `f` to `g` along `s • g = f(s X, s Y)` when `s` is a
-nonzerodivisor. -/
-private theorem comm_of_smul_eq_rescale (F : FormalGroup R) [F.IsComm]
-    {g : MvPowerSeries (Fin 2) R} {s : R} (hs : IsLeftRegular s)
-    (h : s • g = rescale (fun _ ↦ s) F.toPowerSeries) : g = g.subst ![X 1, X 0] := by
-  have hX (i : Fin 2) : PowerSeries.HasSubst (s • X i : MvPowerSeries (Fin 2) R) :=
-    PowerSeries.HasSubst.of_constantCoeff_zero (by simp)
-  have hreg : IsSMulRegular (MvPowerSeries (Fin 2) R) s := .pi fun _ ↦ hs.isSMulRegular
-  -- `IsSMulRegular` is injectivity of `s • ·`, so it suffices to compare both sides times `s`.
-  refine hreg (?_ : s • _ = s • _)
-  rw [smul_subst_of_smul_eq_rescale h HasSubst.X_X, h, rescale_eq_subst]
-  simp only [Matrix.smul_cons, Matrix.smul_empty]
-  rw [F.comm' (hX 1) (hX 0)]
-  congr 1
-  funext i
-  fin_cases i <;> simp
-
 /-- The rescaling of `F` by the polynomial variable, over `R[s]`. -/
 private def rescaleGeneric (F : FormalGroup R) : FormalGroup (Polynomial R) where
   toPowerSeries := rescaleSeries (F.map Polynomial.C).toPowerSeries Polynomial.X
@@ -125,10 +110,6 @@ private def rescaleGeneric (F : FormalGroup R) : FormalGroup (Polynomial R) wher
   lin_coeff_Y := by simp [coeff_rescaleSeries, F.lin_coeff_Y]
   assoc := assoc_of_smul_eq_rescale (F.map Polynomial.C) Polynomial.isRegular_X.left
     (constantCoeff_rescaleSeries (F.map Polynomial.C).zero_constantCoeff _)
-    (smul_rescaleSeries (F.map Polynomial.C).zero_constantCoeff _)
-
-private instance (F : FormalGroup R) [F.IsComm] : (rescaleGeneric F).IsComm where
-  comm := comm_of_smul_eq_rescale (F.map Polynomial.C) Polynomial.isRegular_X.left
     (smul_rescaleSeries (F.map Polynomial.C).zero_constantCoeff _)
 
 /-- Evaluating the generic rescaling at `s` gives the series of coefficients rescaled by `s`. -/
@@ -167,8 +148,12 @@ theorem smul_rescale :
 /-- The rescaling of a commutative formal group law is commutative. -/
 instance [F.IsComm] : (F.rescale s).IsComm where
   comm := by
-    have h := (isComm_map (rescaleGeneric F) (Polynomial.evalRingHom s)).comm
-    rwa [map_rescaleGeneric] at h
+    ext d
+    have h := congrArg (coeff d) (IsComm.comm (F := F))
+    simp only [coeff_subst_X_one_X_zero] at h ⊢
+    simp only [coeff_rescale, ← h]
+    congr 2
+    simp [Finsupp.degree_eq_sum, Fin.sum_univ_two, add_comm]
 
 /-- Rescaling commutes with base change: `(F^s).map f = (F.map f)^(f s)`. -/
 @[simp]

@@ -77,6 +77,8 @@ Summed over the factors these run through the three points of order two, whose s
   Weil-pairing character attached to its universal root.
 * `TauCeti.TwoDescent.cohomologicalMap`: the cohomological `2`-descent map
   `H¹(G_K, E[2]) → (K[X] ⧸ (f))ˣ ⧸ squares`.
+* `TauCeti.TwoDescent.embeddingTorsionCoeff`: the point `(σ θ, 0)` of `E(Kˢ)[2]` attached to an
+  embedding `σ` of a factor field into `Kˢ`.
 
 ## Main results
 
@@ -102,6 +104,8 @@ Summed over the factors these run through the three points of order two, whose s
   fields.
 * `TauCeti.TwoDescent.cohomologicalMap_torsionRes`: the cohomological descent map commutes with
   restriction to an extension field and base change of square classes.
+* `TauCeti.TwoDescent.bijective_embeddingTorsionCoeff`: the points `(σ θ, 0)` are the nonzero
+  points of `E(Kˢ)[2]`, each attained by exactly one embedding of one factor field.
 * `TauCeti.TwoDescent.normM_cohomologicalMap` and
   `TauCeti.TwoDescent.range_cohomologicalMap_le_ker_normM`: the image of the cohomological descent
   map lies in the kernel of the norm `(K[X] ⧸ (f))ˣ ⧸ squares → Kˣ ⧸ squares`.
@@ -172,6 +176,16 @@ theorem explicitFactor_apply (p : W.toAffine.f.Factors) (m : W.toAffine.M) :
         (powerSubgroup_eq_range_powMonoidHom (𝕃 p)ˣ 2).symm
         (AdjoinRoot.modPowEquivPiFactors W.toAffine.f_ne_zero W.toAffine.squarefree_f 2 m p) :=
   (rfl)
+
+omit [DecidableEq K] in
+/-- The component at a factor `p` of the square class of a unit `u` of the étale algebra is the
+square class of the component of `u` in `K[X] ⧸ (p)`. -/
+theorem explicitFactor_mk (p : W.toAffine.f.Factors) (u : W.toAffine.Aˣ) :
+    explicitFactor W p (u : W.toAffine.M) = QuotientGroup.mk (Units.map
+      (AdjoinRoot.projFactor W.toAffine.f_ne_zero W.toAffine.squarefree_f p).toRingHom.toMonoidHom
+        u) := by
+  rw [explicitFactor_apply, AdjoinRoot.modPowEquivPiFactors_mk,
+    QuotientGroup.quotientMulEquivOfEq_mk]
 
 omit [DecidableEq K] [W.IsElliptic] in
 /-- If `x = θ` in the factor field, the cofactor `f / (X - x)` takes there the value
@@ -498,22 +512,8 @@ private theorem isCoboundary₁_of_torsionCoeffWeilPairing_eq_zero
     abel
   -- the sum `P` of the `T` with `m T ≠ 0` has `e₂(P, S) = ∑ m - m O - m S` for `S ≠ O`
   let P : W.TorsionCoeff 2 := ∑ T, if m T = 0 then 0 else T
-  have hP {S : W.TorsionCoeff 2} (hS : S ≠ 0) : e P S = (∑ T, m T) - m 0 - m S := by
-    have hterm (T : W.TorsionCoeff 2) : e (if m T = 0 then 0 else T) S =
-        m T - (if T = 0 then m T else 0) - (if T = S then m T else 0) := by
-      by_cases hT0 : T = 0
-      · simp [hT0, Ne.symm hS]
-      by_cases hTS : T = S
-      · subst hTS
-        rcases eq_or_ne (m T) 0 with h | h <;> simp [h, hS, e]
-      simp only [hT0, hTS, ↓reduceIte, sub_zero]
-      have : Invertible (2 : K) := (by simpa using h2 : IsUnit (2 : K)).invertible
-      rcases eq_zero_or_eq_mu2NegOne (m T) with h | h
-      · simp [h]
-      · simp only [h, mu2NegOne_ne_zero, ↓reduceIte]
-        exact WeierstrassCurve.torsionCoeffWeilPairing_two_eq_mu2NegOne h2 hT0 hS hTS
-    simp only [P, map_sum, AddMonoidHom.finsetSum_apply, hterm, Finset.sum_sub_distrib,
-      Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+  have hP {S : W.TorsionCoeff 2} (hS : S ≠ 0) : e P S = (∑ T, m T) - m 0 - m S :=
+    W.torsionCoeffWeilPairing_sum_ite h2 m hS
   -- and `z` is the coboundary of `P`, by nondegeneracy of the Weil pairing
   refine ⟨P, fun g ↦ ?_⟩
   rw [← sub_eq_zero, ← neg_sub, neg_eq_zero]
@@ -839,14 +839,23 @@ private theorem rootTorsionCoeff_injective {x y : SeparableClosure K}
 
 omit [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
 /-- The image of the universal root of a factor under an embedding is a root of the cubic. -/
-private theorem aeval_embedding_root_f (p : W.toAffine.f.Factors)
+theorem aeval_embedding_root_f (p : W.toAffine.f.Factors)
     (σ : 𝕃 p →ₐ[K] SeparableClosure K) : aeval (σ (θ p)) W.toAffine.f = 0 := by
   rw [aeval_algHom_apply, AdjoinRoot.aeval_eq, AdjoinRoot.mk_eq_zero.mpr p.dvd, map_zero]
 
 /-- The point `(σ θ, 0)` of `E(Kˢ)[2]` attached to an embedding `σ` of a factor field. -/
-private def embeddingTorsionCoeff (p : W.toAffine.f.Factors)
+def embeddingTorsionCoeff (p : W.toAffine.f.Factors)
     (σ : 𝕃 p →ₐ[K] SeparableClosure K) : W.TorsionCoeff 2 :=
   rootTorsionCoeff W (aeval_embedding_root_f W p σ)
+
+open scoped Classical in
+/-- The point `(σ θ, 0)` as a point of `E(Kˢ)`. -/
+@[simp]
+theorem coe_embeddingTorsionCoeff (p : W.toAffine.f.Factors) (σ : 𝕃 p →ₐ[K] SeparableClosure K) :
+    (embeddingTorsionCoeff W p σ : W.PointCoeff) = W.pointCoeffEquiv
+      (WeierstrassCurve.Affine.Point.some (σ (θ p)) 0
+        (W.toAffine.nonsingular_baseChange_of_aeval_eq_zero (aeval_embedding_root_f W p σ))) :=
+  coe_rootTorsionCoeff W _
 
 omit [W.IsElliptic] [W.toAffine.IsCharNeTwoNF] in
 /-- An automorphism of `Kˢ` fixes the image of an embedding of a factor field exactly when it
@@ -875,7 +884,7 @@ private theorem coe_embeddingH0 (p : W.toAffine.f.Factors) (σ : 𝕃 p →ₐ[K
 /-- **The universal-root character, read in `Kˢ`.** Transported along the identification of
 separable closures attached to an embedding `σ` of a factor field, the character `e₂(·, (θ, 0))`
 of the factor field is the Weil pairing with `(σ θ, 0)`. -/
-private theorem kummerCoeffMapSymm_factorTorsionCharacter (p : W.toAffine.f.Factors)
+theorem kummerCoeffMapSymm_factorTorsionCharacter (p : W.toAffine.f.Factors)
     (σ : 𝕃 p →ₐ[K] SeparableClosure K) (h2 : IsUnit ((2 : ℕ) : K)) (S : W.TorsionCoeff 2) :
     kummerCoeffMapSymm K 2 (𝕃 p) σ (factorTorsionCharacter W p h2
       (W.torsionCoeffBaseChange
@@ -961,14 +970,14 @@ private theorem kummerCor_factorCohomologicalMap (p : W.toAffine.f.Factors)
     (explicitCup_projection10_res_left _ _ _ _ _ hU _ _ _ c (embeddingH0 W p σ))
 
 /-- A Galois automorphism moves the point `(σ θ, 0)` to `(g (σ θ), 0)`. -/
-private theorem smul_embeddingTorsionCoeff (g : AbsoluteGaloisGroup K) (p : W.toAffine.f.Factors)
+theorem smul_embeddingTorsionCoeff (g : AbsoluteGaloisGroup K) (p : W.toAffine.f.Factors)
     (σ : 𝕃 p →ₐ[K] SeparableClosure K) :
     g • embeddingTorsionCoeff W p σ =
       embeddingTorsionCoeff W p ((g : SeparableClosure K →ₐ[K] SeparableClosure K).comp σ) :=
   smul_rootTorsionCoeff W g _ _
 
 /-- The point `(σ θ, 0)` attached to an embedding `σ` of a factor field is nonzero. -/
-private theorem embeddingTorsionCoeff_ne_zero (p : W.toAffine.f.Factors)
+theorem embeddingTorsionCoeff_ne_zero (p : W.toAffine.f.Factors)
     (σ : 𝕃 p →ₐ[K] SeparableClosure K) : embeddingTorsionCoeff W p σ ≠ 0 := by
   classical
   intro h
@@ -978,7 +987,7 @@ private theorem embeddingTorsionCoeff_ne_zero (p : W.toAffine.f.Factors)
 /-- **The embeddings of the factor fields are the nonzero points of order two.** Sending an
 embedding `σ` of the factor field `K[X] ⧸ (p)` into `Kˢ` to the point `(σ θ, 0)` is a bijection
 from the embeddings of all the factor fields onto the nonzero points of `E(Kˢ)[2]`. -/
-private theorem bijective_embeddingTorsionCoeff (h2 : IsUnit ((2 : ℕ) : K)) :
+theorem bijective_embeddingTorsionCoeff (h2 : IsUnit ((2 : ℕ) : K)) :
     Function.Bijective (fun i : Σ p : W.toAffine.f.Factors, 𝕃 p →ₐ[K] SeparableClosure K ↦
       (⟨embeddingTorsionCoeff W i.1 i.2, embeddingTorsionCoeff_ne_zero W i.1 i.2⟩ :
         {S : W.TorsionCoeff 2 // S ≠ 0})) := by

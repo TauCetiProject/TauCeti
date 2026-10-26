@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Matrix.ColumnRowPartitioned
+import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 
 /-!
@@ -44,6 +45,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 * `Matrix.rank_add_rank_le_rank_mul_add_card`: Sylvester's rank inequality
   `rank A + rank B ≤ rank (A * B) + n` for an `m × n` matrix `A` and an `n × o` matrix `B`.
 * `Matrix.rank_toMatrix`: the rank of the matrix of a linear map is the dimension of its range.
+* `Matrix.natCard_range_mulVec_eq_pow_rank`: the column space of a matrix over a field `K` has
+  `|K| ^ rank` elements.
 * `Matrix.rank_conjAct_smul`: conjugation by an invertible matrix preserves the rank.
 * `Matrix.exists_eq_mul_fin_rank`: a rectangular matrix factors through `Fin A.rank`.
 * `Matrix.exists_eq_mul_of_rank_le` and `Matrix.rank_le_iff_exists_eq_mul`: a matrix has rank at
@@ -243,6 +246,13 @@ theorem rank_eq_card_iff_vecMul_injective (B : Matrix m n K) :
     linearIndependent_iff_card_eq_finrank_span, Set.finrank, eq_comm]
 
 end
+
+/-- The column space of a matrix over a field `K` has `|K| ^ rank` elements. Over an infinite
+field both sides are `0` unless the rank is `0`. -/
+theorem natCard_range_mulVec_eq_pow_rank (A : Matrix m n K) :
+    Nat.card (Set.range A.mulVec) = Nat.card K ^ A.rank := by
+  rw [rank, ← Module.natCard_eq_pow_finrank, ← coe_mulVecLin, ← LinearMap.coe_range,
+    SetLike.coe_sort_coe]
 
 /-- Every matrix with finitely many columns over a field factors through a space whose dimension
 is its rank. The factorization also applies to a rank-zero matrix, with inner index type `Fin 0`. -/

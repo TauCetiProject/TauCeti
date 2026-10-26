@@ -121,7 +121,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open IsDedekindDomain NumberField ContCohomology
+open IsDedekindDomain _root_.NumberField ContCohomology
 open scoped TensorProduct
 
 variable {K : Type} [Field K] [NumberField K] {v : HeightOneSpectrum (𝓞 K)}
