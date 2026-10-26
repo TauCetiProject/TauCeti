@@ -136,10 +136,10 @@ when `n = 1`.** Here `π ∈ 𝔪_R \ 𝔪_R²` for a regular local ring `R`, an
 theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalIdeal R)
     (hπ2 : π ∉ maximalIdeal R ^ 2) (n : ℕ)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-      (NodeAlgebra.mk (π ^ n)).toRingHom).IsPrime] :
+      (NodeAlgebra.mk (π ^ n))).IsPrime] :
     IsRegularLocalRing (Localization.AtPrime
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-        (NodeAlgebra.mk (π ^ n)).toRingHom)) ↔ n = 1 := by
+        (NodeAlgebra.mk (π ^ n)))) ↔ n = 1 := by
   rw [← isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff hπ hπ2 n, ← C_pow]
   constructor
   · intro h
@@ -163,10 +163,10 @@ exactly when `n = 1`.** For a uniformizer `π` of a discrete valuation ring `R`,
 theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff_of_irreducible
     (hπ : Irreducible π) (n : ℕ)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-      (NodeAlgebra.mk (π ^ n)).toRingHom).IsPrime] :
+      (NodeAlgebra.mk (π ^ n))).IsPrime] :
     IsRegularLocalRing (Localization.AtPrime
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-        (NodeAlgebra.mk (π ^ n)).toRingHom)) ↔ n = 1 := by
+        (NodeAlgebra.mk (π ^ n)))) ↔ n = 1 := by
   have hm := (IsDiscreteValuationRing.irreducible_iff_uniformizer π).mp hπ
   refine isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff
     (hm ▸ mem_span_singleton_self π) (fun h ↦ hπ.not_isUnit ?_) n
@@ -210,7 +210,7 @@ containing both coordinates is the origin, the image of `(π, x, y)`. -/
 private theorem map_eq_of_coord_mem (hπ : Irreducible π) (P : Ideal (NodeAlgebra R (π ^ 1)))
     [P.IsPrime] (h : ∀ i, coord (π ^ 1) i ∈ P) :
     ((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-      (NodeAlgebra.mk (π ^ 1)).toRingHom = P := by
+      (NodeAlgebra.mk (π ^ 1)) = P := by
   set 𝔪 := (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)
   set q := (NodeAlgebra.mk (π ^ 1)).toRingHom
   have hle : 𝔪.map q ≤ P := by

@@ -46,10 +46,10 @@ the base maximal ideal and the two coordinates has dimension one more than the b
 The primality hypothesis excludes the absent point when `n = 0`. -/
 theorem ringKrullDim_localization_quotient_X_mul_X_sub_C_pow (hπ : π ∈ maximalIdeal R) (n : ℕ)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-      (NodeAlgebra.mk (π ^ n)).toRingHom).IsPrime] :
+      (NodeAlgebra.mk (π ^ n))).IsPrime] :
     ringKrullDim (Localization.AtPrime
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-        (NodeAlgebra.mk (π ^ n)).toRingHom)) = ringKrullDim R + 1 := by
+        (NodeAlgebra.mk (π ^ n)))) = ringKrullDim R + 1 := by
   let B := Localization.AtPrime ((maximalIdeal R).comap
     (constantCoeff : MvPolynomial (Fin 2) R →+* R))
   let f := algebraMap (MvPolynomial (Fin 2) R) B (X 0 * X 1 - C (π ^ n))
@@ -88,17 +88,17 @@ theorem spanFinrank_maximalIdeal_localization_quotient_X_mul_X_sub_C_pow
     (hπ : π ∈ maximalIdeal R) (n : ℕ)
     (hn : 2 ≤ n)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-      (NodeAlgebra.mk (π ^ n)).toRingHom).IsPrime] :
+      (NodeAlgebra.mk (π ^ n))).IsPrime] :
     (maximalIdeal (Localization.AtPrime
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-        (NodeAlgebra.mk (π ^ n)).toRingHom))).spanFinrank =
+        (NodeAlgebra.mk (π ^ n))))).spanFinrank =
       ringKrullDim R + 2 := by
   let B := Localization.AtPrime ((maximalIdeal R).comap
     (constantCoeff : MvPolynomial (Fin 2) R →+* R))
   let f := algebraMap (MvPolynomial (Fin 2) R) B (X 0 * X 1 - C (π ^ n))
   let A := Localization.AtPrime
     (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-      (NodeAlgebra.mk (π ^ n)).toRingHom)
+      (NodeAlgebra.mk (π ^ n)))
   let e : A ≃+* (B ⧸ span {f}) := localizationQuotientXMulXSubCPowEquiv hπ n
   have : IsLocalRing (B ⧸ span {f}) := e.isLocalRing
   have hX (i : Fin 2) : algebraMap (MvPolynomial (Fin 2) R) B (X i) ∈ maximalIdeal B :=
@@ -137,10 +137,10 @@ and both coordinates has Krull dimension two. -/
 theorem ringKrullDim_localization_quotient_X_mul_X_sub_C_pow_of_isDiscreteValuationRing
     (hπ : π ∈ maximalIdeal R) (n : ℕ)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-      (NodeAlgebra.mk (π ^ n)).toRingHom).IsPrime] :
+      (NodeAlgebra.mk (π ^ n))).IsPrime] :
     ringKrullDim (Localization.AtPrime
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-        (NodeAlgebra.mk (π ^ n)).toRingHom)) = 2 := by
+        (NodeAlgebra.mk (π ^ n)))) = 2 := by
   rw [ringKrullDim_localization_quotient_X_mul_X_sub_C_pow hπ n,
     IsDiscreteValuationRing.ringKrullDim_eq_one]
   norm_num
@@ -150,10 +150,10 @@ needs exactly three generators. -/
 theorem spanFinrank_maximalIdeal_localization_quotient_X_mul_X_sub_C_pow_of_isDiscreteValuationRing
     (hπ : π ∈ maximalIdeal R) (n : ℕ) (hn : 2 ≤ n)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-      (NodeAlgebra.mk (π ^ n)).toRingHom).IsPrime] :
+      (NodeAlgebra.mk (π ^ n))).IsPrime] :
     (maximalIdeal (Localization.AtPrime
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-        (NodeAlgebra.mk (π ^ n)).toRingHom))).spanFinrank = 3 := by
+        (NodeAlgebra.mk (π ^ n))))).spanFinrank = 3 := by
   have h := spanFinrank_maximalIdeal_localization_quotient_X_mul_X_sub_C_pow hπ n hn
   rw [IsDiscreteValuationRing.ringKrullDim_eq_one] at h
   exact_mod_cast h
