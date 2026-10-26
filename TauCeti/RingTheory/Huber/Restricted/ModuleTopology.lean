@@ -177,11 +177,11 @@ theorem hasBasis_nhds_zero_restrictedMvPowerSeriesSubmodule :
   rw [isUniformInducing_restrictedMvPowerSeriesSubmodule_coefficients.isInducing.nhds_eq_comap]
   refine ((UniformFun.hasBasis_nhds (Fin k →₀ ℕ) M
     (UniformFun.ofFun (0 : (Fin k →₀ ℕ) → M))).comap _).to_hasBasis ?_ ?_
+  -- Membership in a pulled-back uniform-function entourage is coefficientwise membership.
   · intro V hV
-    exact ⟨{m | (0, m) ∈ V}, (nhds_basis_uniformity' (uniformity M).basis_sets).mem_of_mem hV,
-      fun _ hf s ↦ hf s⟩
+    exact ⟨{m | (0, m) ∈ V}, mem_nhds_left 0 hV, fun _ hf s ↦ hf s⟩
   · intro U hU
-    obtain ⟨V, hV, hVU⟩ := (nhds_basis_uniformity' (uniformity M).basis_sets).mem_iff.mp hU
+    obtain ⟨V, hV, hVU⟩ := UniformSpace.mem_nhds_iff.mp hU
     exact ⟨V, hV, fun _ hf s ↦ hVU (hf s)⟩
 
 end Uniform
