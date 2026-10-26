@@ -34,10 +34,9 @@ attribute [local instance] Complex.finrank_real_complex_fact
 /-- The normalized volume coefficient in the actual positive complex basis is one. -/
 @[simp]
 theorem complex_orientation_volumeForm_one_I :
-    Complex.orientation.volumeForm ![1, Complex.I] = 1 := by
-  rw [← Complex.coe_basisOneI]
-  rw [Complex.orientation.volumeForm_robust Complex.orthonormalBasisOneI rfl]
-  exact Complex.orthonormalBasisOneI.toBasis.det_self
+    Complex.orientation.volumeFormL ![1, Complex.I] = 1 := by
+  simpa [Complex.coe_basisOneI] using
+    Complex.orientation.volumeFormL_apply_orthonormal Complex.orthonormalBasisOneI rfl
 
 /-- The canonical complex volume form transported to the actual tangent fibers. -/
 def manifoldAreaForm : RoughForm 𝓘(ℝ, ℂ) ℂ ℝ 2 := fun z ↦
@@ -73,7 +72,7 @@ theorem inChartAt_fun_smul_manifoldAreaForm (f : ℂ → ℝ) (c z : ℂ) :
     rw [RoughForm.inChartAt_modelSpace]
     rfl
   rw [he, ContinuousAlternatingMap.smul_apply, smul_eq_mul, Complex.coe_basisOneI,
-    Orientation.volumeFormL_apply, complex_orientation_volumeForm_one_I, mul_one]
+    complex_orientation_volumeForm_one_I, mul_one]
 
 /-- The actual normalized coordinate top-form integral agrees with ordinary planar area. -/
 theorem integral_manifoldAreaForm_coefficient (f : ℂ → ℝ) (c : ℂ) :

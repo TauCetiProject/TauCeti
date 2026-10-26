@@ -180,7 +180,7 @@ theorem integralTopForm_rectangle_areaForm {a b c d : ℝ}
     have hv : (fun i : Fin 2 ↦ L (![(1, 0), (0, 1)] i)) = Complex.basisOneI := by
       funext i
       fin_cases i <;> simp [L, Complex.equivRealProdCLM_symm_apply, Complex.coe_basisOneI]
-    rw [hv, Complex.coe_basisOneI, Orientation.volumeFormL_apply,
+    rw [hv, Complex.coe_basisOneI,
       complex_orientation_volumeForm_one_I, mul_one]
     rfl
   rw [hcomp] at hi ⊢

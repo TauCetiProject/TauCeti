@@ -43,7 +43,7 @@ theorem _root_.DifferentiableAt.mextDeriv_manifoldOneForm_eq_smul_area {P Q : �
     rw [ContinuousAlternatingMap.apply_eq_det_mul (ω := ω) (b := Complex.basisOneI),
       ContinuousAlternatingMap.smul_apply,
       ContinuousAlternatingMap.apply_eq_det_mul (ω := Complex.orientation.volumeFormL)
-        (b := Complex.basisOneI), hc, Complex.coe_basisOneI, Orientation.volumeFormL_apply,
+        (b := Complex.basisOneI), hc, Complex.coe_basisOneI,
         complex_orientation_volumeForm_one_I, mul_one,
       smul_eq_mul]
     ring
