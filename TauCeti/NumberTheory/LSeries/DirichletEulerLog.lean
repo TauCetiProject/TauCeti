@@ -31,9 +31,7 @@ The continued logarithm has the shape of the hypotheses of a bounded Tauberian t
 Dirichlet series at `s = 1`: coefficients bounded by `1`, an absolutely convergent `L`-series for
 `1 < re s`, and a holomorphic extension to an open neighbourhood of `1 ≤ re s`.
 
-The nonvanishing input is Mathlib's `DirichletCharacter.LFunction_ne_zero_of_one_le_re`, and the
-Euler-product logarithm for `1 < re s` is Mathlib's
-`DirichletCharacter.eulerProduct_log_eq_LSeries`.
+The nonvanishing input is Mathlib's `DirichletCharacter.LFunction_ne_zero_of_one_le_re`.
 
 ## Main results
 
@@ -79,8 +77,8 @@ theorem eulerLogCoeff_eq_zero_of_not_isPrimePow {n : ℕ} (hn : ¬IsPrimePow n) 
     χ.eulerLogCoeff n = 0 := by
   simp [eulerLogCoeff, vonMangoldt_eq_zero_iff.mpr hn]
 
-/-- At a prime power `p ^ k` with `k ≠ 0`, the coefficient is `χ p ^ k / k`, the `k`-th term of
-the Taylor series of `-log (1 - χ p * p ^ (-s))` at `s = 0`. -/
+/-- At a prime power `p ^ k` with `k ≠ 0`, the coefficient is `χ p ^ k / k`, the coefficient of
+`p ^ (-k s)` in the expansion `-log (1 - χ p * p ^ (-s)) = ∑ₖ χ p ^ k / k * p ^ (-k s)`. -/
 theorem eulerLogCoeff_prime_pow {p : ℕ} (hp : p.Prime) {k : ℕ} (hk : k ≠ 0) :
     χ.eulerLogCoeff (p ^ k) = χ p ^ k / k := by
   have hlog : (Real.log p : ℂ) ≠ 0 := mod_cast hp.log_ne_zero
