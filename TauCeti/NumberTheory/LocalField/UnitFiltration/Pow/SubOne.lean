@@ -171,19 +171,12 @@ private theorem bddAbove_range_log_normalizedValuationWithZero_zpow_sub_one {α 
   have hα : α ≠ 0 := by
     rintro rfl
     simp [zero_pow hM0] at hαM
-  have hαM' : Units.mk0 α hα ^ M = 1 := Units.ext (by simpa using hαM)
-  refine ((Finset.range M).image fun r : ℕ ↦
-    WithZero.log (normalizedValuationWithZero K (α ^ r - 1))).bddAbove.mono ?_
+  have hu : IsOfFinOrder (Units.mk0 α hα) :=
+    isOfFinOrder_iff_pow_eq_one.mpr ⟨M, Nat.pos_of_ne_zero hM0, Units.ext (by simpa using hαM)⟩
+  refine ((hu.powers_eq_zpowers ▸ hu.finite_powers).image fun u : Kˣ ↦
+    WithZero.log (normalizedValuationWithZero K (u - 1))).bddAbove.mono ?_
   rintro _ ⟨b, rfl⟩
-  have hr0 : 0 ≤ b % M := Int.emod_nonneg b (by exact_mod_cast hM0)
-  have hrM : b % M < M := Int.emod_lt_of_pos b (by exact_mod_cast Nat.pos_of_ne_zero hM0)
-  have hαb : α ^ b = α ^ (b % M).toNat := by
-    have := congrArg Units.val (zpow_eq_zpow_emod' b hαM')
-    rw [Units.val_zpow_eq_zpow_val, Units.val_zpow_eq_zpow_val, Units.val_mk0] at this
-    rw [this, ← zpow_natCast, Int.toNat_of_nonneg hr0]
-  dsimp only
-  rw [hαb]
-  exact Finset.mem_coe.mpr (Finset.mem_image_of_mem _ (Finset.mem_range.mpr (by omega)))
+  exact ⟨_, Subgroup.zpow_mem_zpowers _ b, by simp⟩
 
 /-- **The one-factor estimate.** Let `K` be a nonarchimedean local field of characteristic zero,
 that is, a finite extension of `ℚ_[p]`. For every fixed `α ∈ K` there is a constant `C`,
@@ -202,7 +195,7 @@ theorem exists_log_normalizedValuationWithZero_zpow_sub_one_le [CharZero K] (α 
     have hb0 : b ≠ 0 := by
       rintro rfl
       simp at hb
-    rw [zero_zpow b hb0, zero_sub, show (-1 : K) = ((-1 : Kˣ) : K) by simp,
+    rw [zero_zpow b hb0, zero_sub, ← Units.val_one, ← Units.val_neg,
       normalizedValuationWithZero_coe, normalizedValuation_neg, map_one]
     simp
   set a := Units.mk0 α hα
