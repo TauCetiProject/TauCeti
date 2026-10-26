@@ -28,8 +28,6 @@ homology of manifolds.
   equivalence, with the radial projection as homotopy inverse
   (`StarConvex.coe_complSphereHomotopyEquiv_apply`,
   `StarConvex.coe_complSphereHomotopyEquiv_symm_apply`).
-* `TauCeti.complRadialProjection`: the radial projection `Kᶜ → sphere p r`, the restriction of
-  `TauCeti.radialProjectionToSphere`.
 * `StarConvex.complRadialHomotopy`: the straight-line deformation from the radial projection to
   the identity of `Kᶜ`.
 
@@ -73,31 +71,7 @@ theorem add_smul_sub_mem_compl (hK : StarConvex ℝ p K) (hKr : K ⊆ ball p r) 
     exact (le_abs_self c |> (mul_le_mul_of_nonneg_right · hd.le) |> hr.trans |>
       not_lt.mpr) hlt
 
-end StarConvex
-
-namespace TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Set E} {p : E} {r : ℝ}
-
-/-- Radial projection from `Kᶜ` to the sphere `sphere p r`, for `p ∈ K` and `r > 0`: the
-restriction of `TauCeti.radialProjectionToSphere` along `Kᶜ ⊆ univ ∖ {p}`. -/
-def complRadialProjection (hp : p ∈ K) (hr : 0 < r) : C(↥Kᶜ, sphere p r) :=
-  (radialProjectionToSphere (V := univ) hr).comp
-    (ContinuousMap.inclusion fun _ hz ↦ ⟨mem_univ _, fun h ↦ hz (mem_singleton_iff.1 h ▸ hp)⟩)
-
-/-- The radial projection onto `sphere p r` is `z ↦ p + (r / ‖z - p‖) • (z - p)`. -/
-@[simp]
-theorem coe_complRadialProjection_apply (hp : p ∈ K) (hr : 0 < r) (z : ↥Kᶜ) :
-    (complRadialProjection hp hr z : E) = p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
-  coe_radialProjectionToSphere_apply _ _
-
-end TauCeti
-
-namespace StarConvex
-
 open TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Set E} {p : E} {r : ℝ}
 
 /-- The straight-line homotopy from the radial projection onto `sphere p r` to the identity of
 `Kᶜ`, for `K` star-convex about `p ∈ K` and contained in `ball p r`. -/
