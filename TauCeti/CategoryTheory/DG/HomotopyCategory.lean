@@ -697,7 +697,8 @@ in the homotopy category. -/
 theorem homOf_comp_eq_id_of_dgComp_eq_dgId {X Y : C} {f : DGHom R 0 X Y} {g : DGHom R 0 Y X}
     (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R Y X) (e : dgComp R f g (add_zero 0) = dgId R X) :
     homOf R f hf ≫ homOf R g hg = 𝟙 (of R X) :=
-  homOf_comp_eq_homOf_of_dgComp_eq R hf hg _ e
+  (homOf_comp_eq_homOf_of_dgComp_eq R hf hg
+    ((mem_dgCycles R).mpr (dgDifferential_dgId R X)) e).trans (homOf_dgId R X)
 
 /-- If the differential of a degree-minus-one morphism `k` is minus the composite of `f` and `g`,
 then the composite of `f` and `g` vanishes in the homotopy category. -/
