@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.NumberTheory.SmoothNumbers
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
-import TauCeti.NumberTheory.NumberField.SUnits.Rat
+import TauCeti.NumberTheory.NumberField.SUnits.Rat.Basic
 
 /-!
 # Rational `S`-units
