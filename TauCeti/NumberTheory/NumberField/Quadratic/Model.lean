@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
 public import Mathlib.RingTheory.QuadraticAlgebra
 public import TauCeti.NumberTheory.NumberField.Quadratic.ComplexEmbedding
 public import TauCeti.NumberTheory.NumberField.IntegralSqrt
-public import TauCeti.NumberTheory.QuadraticOrder.Basic
+public import TauCeti.NumberTheory.QuadraticOrder.Field
 
 /-!
 # The ring of integers of the model `ℚ(√d)`
@@ -371,26 +371,9 @@ generator `(d + √d)/2` differs from `(1 + √d)/2` by the integer `(d - 1)/2`.
 theorem toSubalgebra_eq_integralClosure_of_mod_four_eq_one [Fact (¬ IsSquare d)]
     (hsf : Squarefree d) (hd4 : d % 4 = 1) :
     toSubalgebra d (Or.inr hd4) = integralClosure ℤ (QuadraticAlgebra ℚ (d : ℚ) 0) := by
-  have h2 : ((d : ℚ) - 1) / 2 = (((d - 1) / 2 : ℤ) : ℚ) := by
-    rw [Int.cast_div (by omega) (by norm_num)]
-    push_cast
-    ring
-  ext x
-  rw [mem_toSubalgebra_iff, mem_integralClosure_iff,
-    QuadraticAlgebra.isIntegral_iff_of_mod_four_eq_one hsf hd4]
-  constructor
-  · rintro ⟨m, n, rfl⟩
-    refine ⟨⟨m + n * ((d - 1) / 2), ?_⟩, ⟨n, ?_⟩⟩
-    · simp [zsmul_eq_mul, ← h2]
-      ring
-    · simp [zsmul_eq_mul]
-      ring
-  · rintro ⟨⟨m, hm⟩, ⟨n, hn⟩⟩
-    refine ⟨m - n * ((d - 1) / 2), n, ?_⟩
-    ext
-    · simp [zsmul_eq_mul, ← h2]
-      linear_combination hm + hn / 2
-    · simp [zsmul_eq_mul]
-      linear_combination hn / 2
+  have h := congrArg GlobalNumberFields.NumberFieldOrder.toSubalgebra
+    ((numberFieldOrder_eq_maximal_iff d (Or.inr hd4)).mpr
+      (Int.isFundamentalDiscr_iff_squarefree.mpr (Or.inl ⟨hd4, hsf⟩)))
+  simpa [GlobalNumberFields.maximalNumberFieldOrder_toSubalgebra] using h
 
 end TauCeti.QuadraticOrder
