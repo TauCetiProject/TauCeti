@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Basic
+public import TauCeti.Algebra.Group.CommuteOrNeg
 -- Private: the product, reversal and exterior-basis lemmas below are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
@@ -284,21 +285,27 @@ theorem basis_mul_basis_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
 /-- For an orthogonal basis, two basis-vector products commute or anticommute. -/
 theorem basis_mul_basis_comm_or_neg
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s t : Finset I) :
-    basis Q b s * basis Q b t = basis Q b t * basis Q b s ∨
-      basis Q b s * basis Q b t = -(basis Q b t * basis Q b s) := by
-  rw [basis_mul_basis hb, basis_mul_basis hb]
+    TauCeti.CommuteOrNeg (basis Q b s) (basis Q b t) := by
   rcases neg_one_pow_eq_or R (∑ i ∈ s, (t.filter (· < i)).card) with hs | hs <;>
     rcases neg_one_pow_eq_or R (∑ i ∈ t, (s.filter (· < i)).card) with ht | ht
-  · left
+  · apply TauCeti.CommuteOrNeg.of_commute
+    rw [Commute, SemiconjBy]
+    rw [basis_mul_basis hb, basis_mul_basis hb]
     rw [hs, ht, symmDiff_comm]
     simp [Finset.inter_comm]
-  · right
+  · apply TauCeti.CommuteOrNeg.of_semiconjBy
+    rw [SemiconjBy, neg_mul]
+    rw [basis_mul_basis hb, basis_mul_basis hb]
     rw [hs, ht, symmDiff_comm]
     simp [Finset.inter_comm]
-  · right
+  · apply TauCeti.CommuteOrNeg.of_semiconjBy
+    rw [SemiconjBy, neg_mul]
+    rw [basis_mul_basis hb, basis_mul_basis hb]
     rw [hs, ht, symmDiff_comm]
     simp [Finset.inter_comm]
-  · left
+  · apply TauCeti.CommuteOrNeg.of_commute
+    rw [Commute, SemiconjBy]
+    rw [basis_mul_basis hb, basis_mul_basis hb]
     rw [hs, ht, symmDiff_comm]
     simp [Finset.inter_comm]
 

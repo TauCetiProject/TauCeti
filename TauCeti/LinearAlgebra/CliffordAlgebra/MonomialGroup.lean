@@ -56,7 +56,7 @@ modules are the representations of `G` in which `ε` acts by `-1`.
 
 * `CliffordAlgebra.mem_monomialGroup_iff`: **the normal form**: a unit lies in the group exactly
   when its value is `e_s` or `-e_s` for some finite index set `s`.
-* `CliffordAlgebra.monomialGroup_mul_comm_or_neg`: signed monomials commute or anticommute.
+* `CliffordAlgebra.monomialGroup_commuteOrNeg`: signed monomials commute or anticommute.
 * `CliffordAlgebra.monomialGroup_val_eq_or_neg_of_isConj`: conjugation changes a signed monomial by
   at most its central sign.
 * `CliffordAlgebra.neg_one_mem_center_monomialGroup`: `ε = -1` is central.
@@ -446,7 +446,7 @@ theorem monomialGroupLift_symm_apply_coe (hb : (QuadraticMap.associated Q).IsOrt
 omit [Invertible (2 : R)] [LinearOrder I] in
 /-- Any two signed monomials commute or anticommute, without a normalization assumption on their
 generator squares. -/
-lemma monomialGroup_mul_comm_or_neg
+lemma monomialGroup_commuteOrNeg
     (v : I → M) (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
     (c u : monomialGroup Q v) :
     TauCeti.CommuteOrNeg (c : (CliffordAlgebra Q)ˣ) u := by
@@ -494,7 +494,7 @@ lemma monomialGroup_val_eq_or_neg_of_isConj
   have hmul := congrArg (fun z : monomialGroup Q v => (z : (CliffordAlgebra Q)ˣ) * c) hc
   have hcv : (c : (CliffordAlgebra Q)ˣ) * u = (w : (CliffordAlgebra Q)ˣ) * c := by
     simpa [mul_assoc] using hmul
-  have hcu := monomialGroup_mul_comm_or_neg v hv c u
+  have hcu := monomialGroup_commuteOrNeg v hv c u
   rcases TauCeti.CommuteOrNeg.out hcu with hcu | hcu
   · left
     have hcancel : (w : (CliffordAlgebra Q)ˣ) * c = (u : (CliffordAlgebra Q)ˣ) * c :=
