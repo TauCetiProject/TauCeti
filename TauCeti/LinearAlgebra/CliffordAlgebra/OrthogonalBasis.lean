@@ -59,7 +59,7 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   and a smaller index of `t`.
 * `CliffordAlgebra.basis_mul_basis_eq_or` and `CliffordAlgebra.basis_mul_self_eq_or`: signed
   multiplication and square laws when the generators square to `±1`.
-* `CliffordAlgebra.basis_mul_basis_comm_or_neg`: basis products commute up to sign for every
+* `CliffordAlgebra.basis_commuteOrNeg`: basis products commute up to sign for every
   orthogonal basis.
 * `CliffordAlgebra.isUnit_basis`: a basis monomial is a unit when its generator squares are units.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul_basis`: the pairing of two basis vectors.
@@ -283,7 +283,7 @@ theorem basis_mul_basis_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
   rcases coeff_eq_one_or_neg_one hQ s t with hc | hc <;> rw [hc] <;> simp
 
 /-- For an orthogonal basis, two basis-vector products commute or anticommute. -/
-theorem basis_mul_basis_comm_or_neg
+theorem basis_commuteOrNeg
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s t : Finset I) :
     TauCeti.CommuteOrNeg (basis Q b s) (basis Q b t) := by
   rcases neg_one_pow_eq_or R (∑ i ∈ s, (t.filter (· < i)).card) with hs | hs <;>
