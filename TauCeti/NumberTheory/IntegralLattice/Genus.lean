@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Operations
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import Mathlib.Data.Nat.PrimeFin
 import Mathlib.Data.Int.Associated
+import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers

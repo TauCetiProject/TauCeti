@@ -14,7 +14,6 @@ import TauCeti.LinearAlgebra.BilinearForm.Even.Basic
 import TauCeti.NumberTheory.IntegralLattice.Localization.Characteristic
 import TauCeti.NumberTheory.Padics.BilinearForm.Unimodular
 import TauCeti.NumberTheory.Padics.PadicIntegers
-import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Lattices unimodular at `2`
@@ -143,8 +142,9 @@ theorem localIntegralForm_two_equivalent_iff_of_isCharacteristicVector (L : Inte
         IsSquare ((L.determinant : ℤ_[2]) * (M.determinant : ℤ_[2])) ∧
         L.integralNorm w ≡ M.integralNorm w' [ZMOD 8] := by
   -- `8 = 2 ^ 3` divides an integer in `ℤ_[2]` exactly when it divides it in `ℤ`.
-  have h8 := PadicInt.pow_p_dvd_int_iff (p := 2) 3 (M.integralForm w' w' - L.integralForm w w)
-  norm_num at h8
+  have h8 : (8 : ℤ_[2]) ∣ ((M.integralForm w' w' : ℤ) : ℤ_[2]) - (L.integralForm w w : ℤ) ↔
+      (8 : ℤ) ∣ M.integralForm w' w' - L.integralForm w w := by
+    exact_mod_cast PadicInt.pow_p_dvd_int_iff (p := 2) 3 (M.integralForm w' w' - L.integralForm w w)
   rw [L.localIntegralForm_two_equivalent_iff M hL hM hw.isCharacteristic_localIntegralForm
     hw'.isCharacteristic_localIntegralForm, Int.modEq_iff_dvd, L.integralNorm_apply,
     M.integralNorm_apply, ← h8]
