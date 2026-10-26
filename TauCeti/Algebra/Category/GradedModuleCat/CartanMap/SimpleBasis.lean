@@ -24,8 +24,9 @@ This is the spanning half of the simple-class basis of `G₀^gr(mod A)`. Linear 
 read off from the idempotent coordinates `TauCeti.gradedIdempotentCoordinate`: if degree-zero
 idempotents `eᵢ` satisfy `gdim(eᵢ • Sⱼ) = 0` for `i ≠ j` and `gdim(eᵢ • Sᵢ) ≠ 0`, the classes
 `[Sᵢ]` form a `ℤ[q,q⁻¹]`-basis, and the `eᵢ`-coordinate is `gdim(eᵢ • Sᵢ)` times the `i`th basis
-coordinate. Over a general field, if `Sᵢ` is the head of `A eᵢ` and is concentrated in degree
-zero, then `gdim(eᵢ • Sᵢ)` is the constant `dim_k End_A(Sᵢ)`, the dimension of a division algebra.
+coordinate. Over a general field, if `Sᵢ` is the simple head of `A eᵢ` (for instance, `eᵢ` a
+primitive idempotent of a finite-dimensional algebra) and is concentrated in degree zero, then
+`gdim(eᵢ • Sᵢ)` is the constant `dim_k End_A(Sᵢ)`, the dimension of a division algebra by Schur.
 When `gdim(eᵢ • Sⱼ) = δᵢⱼ`, as for the vertex idempotents and vertex simples of a basic
 algebra whose simple modules are one-dimensional, the basis coordinates are exactly the
 idempotent coordinates. This basis is the module-side basis of the graded Cartan matrix
@@ -177,9 +178,10 @@ variable (hself : ∀ i, (S i).obj.smulGradedDimension (e i) ≠ 0)
 which are diagonal but not necessarily `1` on the diagonal. Its basis vector at `i` is the class
 `[Sᵢ]`. The hypotheses say that the degree-zero idempotents `eᵢ` have graded dimensions
 `gdim(eᵢ • Sⱼ) = 0` for `i ≠ j` and `gdim(eᵢ • Sᵢ) ≠ 0`, and that every simple finite graded
-module is a shift of some `Sᵢ`. If `Sᵢ` is the head of `A eᵢ` and is concentrated in degree zero,
-then `gdim(eᵢ • Sᵢ)` is the constant `dim_k End_A(Sᵢ)`, which need not be `1` over a field that
-does not split the simples. -/
+module is a shift of some `Sᵢ`. If `Sᵢ` is the simple head of `A eᵢ` (for instance, `eᵢ` a
+primitive idempotent of a finite-dimensional algebra) and is concentrated in degree zero, then
+`gdim(eᵢ • Sᵢ)` is the constant `dim_k End_A(Sᵢ)`, which need not be `1` over a field that does not
+split the simples. -/
 def gradedSimpleClassBasisOfNeZero :
     Module.Basis I (LaurentPolynomial ℤ) (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :=
   Module.Basis.mk (linearIndependent_laurentK0_of_smulGradedDimension he he₀ S hne hself)
