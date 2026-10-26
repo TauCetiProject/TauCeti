@@ -171,12 +171,19 @@ theorem equation_iff_mul_eq_cube_of_isSingular (h : W.IsSingular x₁ y₁) {α 
     W.Equation x y ↔ (y - y₁ - α * (x - x₁)) *
       (y - y₁ + (W.a₁ + α) * (x - x₁)) = (x - x₁) ^ 3 := by
   -- The expansion at the singular point has vanishing constant and linear coefficients.
-  let V : Affine R := ⟨W.a₁, 3 * x₁ + W.a₂, 0, 0, 0⟩
+  let V : Affine R :=
+    { a₁ := W.a₁, a₂ := 3 * x₁ + W.a₂, a₃ := 0, a₄ := 0, a₆ := 0 }
   have h₁ : V.a₁ = -(α + -(W.a₁ + α)) := by dsimp [V]; ring
   have h₂ : V.a₂ = -(α * -(W.a₁ + α)) := by dsimp [V]; linear_combination -hα
-  have hV := V.equation_iff_mul h₁ h₂ rfl rfl (x - x₁) (y - y₁)
+  have hV := V.equation_iff_mul h₁ h₂ (by simp only [V]) (by simp only [V])
+    (x - x₁) (y - y₁)
+  -- Expose this model's coefficients before comparing the polynomial equations by algebra.
+  rw [equation_iff] at hV
+  dsimp only [V] at hV
   rw [equation_iff_of_isSingular h]
-  simpa only [equation_iff, V, zero_mul, add_zero, neg_mul, sub_neg_eq_add] using hV
+  constructor <;> intro hE
+  · linear_combination (hV.mp (by linear_combination hE))
+  · linear_combination (hV.mpr (by linear_combination hE))
 
 /-- If `α` is a double root of the tangent quadratic at a singular point `(x₁, y₁)`, the equation
 reads `(y - y₁ - α (x - x₁))² = (x - x₁)³`. -/
