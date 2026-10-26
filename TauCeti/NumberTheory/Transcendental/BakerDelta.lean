@@ -175,12 +175,6 @@ theorem lcm_pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast
     (L := ((Finset.Icc 1 k).lcm id : ℕ)) (fun j hj => Int.natCast_dvd_natCast.mpr
       (Finset.dvd_lcm (f := id) hj)) l m x
 
-/-- The coefficient length of a linear polynomial `c X + d` is at most `‖c‖ + ‖d‖`. -/
-private theorem l1Norm_C_mul_X_add_C_le {R : Type*} [SeminormedRing R] (c d : R) :
-    (C c * X + C d).l1Norm ≤ ‖c‖ + ‖d‖ := by
-  rw [C_mul_X_eq_monomial]
-  simpa [l1Norm_monomial, l1Norm_C] using l1Norm_add_le (monomial 1 c) (C d)
-
 /-- The coefficient length of the translate `Δ(X + x; k)` is at most `(n + k + 1 choose k)`
 whenever `|x| ≤ n`. -/
 private theorem l1Norm_taylor_multichoose_X_add_one_le {x : ℚ} {n : ℕ} (hx : |x| ≤ n)
