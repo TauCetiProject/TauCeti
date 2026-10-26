@@ -47,6 +47,8 @@ vectors of norm one forces `#ι = #κ` and `N ≅ N'`.
   norm one.
 * `TauCeti.IntegralLattice.IsPosDef.two_mul_finrank_unitNormSubmodule`: `2k` is the number of
   vectors of norm one.
+* `TauCeti.IntegralLattice.IsPosDef.nonempty_isometry_unitLattice_of_unitNormSubmodule_eq_top`:
+  a positive definite lattice spanned by its vectors of norm one is `I_n`.
 * `TauCeti.IntegralLattice.Isometry.unitNormComplement`: isometric lattices have isometric
   complements.
 * `TauCeti.IntegralLattice.nonempty_isometry_of_isometry_orthogonalSum_unitLattice` and
@@ -397,6 +399,29 @@ theorem finrank_unitNormSubmodule_add_finrank_unitNormComplement :
     finrank ℤ L.unitNormSubmodule + finrank ℤ L.unitNormComplement = finrank ℤ L := by
   rw [← hL.unitNormDecomposition.finrank_carrier_eq, finrank_orthogonalSum,
     finrank_unitLattice, Fintype.card_fin]
+
+/-- A positive definite lattice is spanned by its vectors of norm one exactly when the complement
+of the unit-norm sublattice is zero. -/
+theorem unitNormSubmodule_eq_top_iff :
+    L.unitNormSubmodule = ⊤ ↔ Subsingleton L.unitNormComplement := by
+  have h := L.isCompl_orthogonal_of_restrict_bijective _
+    hL.bijective_integralForm_restrict_unitNormSubmodule
+  rw [← L.unitNormComplementEquiv.subsingleton_congr, Submodule.subsingleton_iff_eq_bot]
+  exact ⟨fun hS ↦ top_disjoint.1 (hS ▸ h.disjoint), fun hT ↦ codisjoint_bot.1 (hT ▸ h.codisjoint)⟩
+
+/-- **A positive definite lattice spanned by its vectors of norm one is the standard lattice**
+`I_n`, with `n` its rank. -/
+theorem nonempty_isometry_unitLattice_of_unitNormSubmodule_eq_top
+    (htop : L.unitNormSubmodule = ⊤) :
+    Nonempty (Isometry (unitLattice (Fin (finrank ℤ L))) L) := by
+  classical
+  have hk : finrank ℤ L.unitNormSubmodule = finrank ℤ L := by rw [htop, finrank_top]
+  let b : Basis (Fin (finrank ℤ L)) ℤ L :=
+    (hL.unitNormBasis.map (LinearEquiv.ofTop _ htop)).reindex (finCongr hk)
+  refine ⟨Isometry.ofGramMatrixEq (unitLatticeBasis _) b ?_⟩
+  rw [gramMatrix_unitLatticeBasis]
+  ext i j
+  simp [b, integralForm_unitNormBasis, Matrix.one_apply]
 
 end IsPosDef
 
