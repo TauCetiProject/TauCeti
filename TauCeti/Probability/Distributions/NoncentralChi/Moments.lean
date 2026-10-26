@@ -93,12 +93,13 @@ theorem hasSum_integral_pow_noncentralChiMeasure (hk : 0 ≤ k) (hs : 0 < s) (n 
     poissonMeasure_real_singleton]
   simp only [NNReal.coe_div, NNReal.coe_pow, NNReal.coe_ofNat, neg_div]
   congr 1
+  have hj0 : 0 ≤ k + 2 * (j : ℝ) := by positivity
   by_cases hn : n = 0
   · subst n
-    let _ := isProbabilityMeasure_chiMeasure (by positivity : 0 ≤ k + 2 * (j : ℝ)) hs
+    let _ := isProbabilityMeasure_chiMeasure hj0 hs
     simp
   · rw [ite_eq_right hn]
-    rcases (show 0 ≤ k + 2 * (j : ℝ) by positivity).eq_or_lt' with hj | hj
+    rcases hj0.eq_or_lt' with hj | hj
     · rw [hj, chiMeasure_zero hs]
       simp [hn]
     · exact (integral_pow_chiMeasure hj hs n).symm
