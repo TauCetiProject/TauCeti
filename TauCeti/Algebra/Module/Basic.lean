@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Action.Units
+public import Mathlib.Algebra.Group.Invertible.Defs
+public import Mathlib.Algebra.Group.Even
 public import Mathlib.Algebra.Module.Defs
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
@@ -28,6 +30,22 @@ Reidemeister move.
 public section
 
 namespace TauCeti
+
+/- If `(-1) ^ n • v = v` for nonzero `v` and invertible `2`, then `n` is even. -/
+theorem even_of_neg_one_pow_smul_eq_self {R N : Type*} [Ring R] [AddCommGroup N] [Module R N]
+    [Invertible (2 : R)] {n : ℕ} {v : N} (hv : v ≠ 0)
+    (h : (-1 : R) ^ n • v = v) : Even n := by
+  rcases Nat.even_or_odd n with hn | hn
+  · exact hn
+  · exfalso
+    have hneg : -v = v := by simpa [hn.neg_one_pow] using h
+    have htwo : (2 : R) • v = 0 := by
+      rw [← one_add_one_eq_two, add_smul]
+      simp only [one_smul]
+      calc
+        v + v = -v + v := by rw [hneg]
+        _ = 0 := neg_add_cancel _
+    exact hv ((isUnit_of_invertible (2 : R)).smul_eq_zero.mp htwo)
 
 /-- If `u` is a unit, then `x = u • y + (1 - u) • x` forces `x = y`. -/
 theorem _root_.IsUnit.eq_of_eq_smul_add_one_sub_smul {R M : Type*} [Ring R] [AddCommGroup M]

@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Subgroup.Center
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.Algebra.Module.Basic
 public import TauCeti.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
@@ -318,12 +319,6 @@ private theorem basis_comm_monomial_iff [Fintype I] [Nontrivial R]
     (hQ : ∀ i : I, Q (b i) = 1 ∨ Q (b i) = -1) (s : Finset I) :
     (∀ i : I, basis Q b s * ι Q (b i) = ι Q (b i) * basis Q b s) ↔
       s = ∅ ∨ (s = Finset.univ ∧ Odd s.card) := by
-  have hneg : (-1 : R) ≠ 1 := by
-    intro hneg
-    apply Invertible.ne_zero (2 : R)
-    calc
-      (2 : R) = 1 - (-1) := by ring
-      _ = 0 := by rw [hneg]; simp
   have hunit (i : I) : IsUnit (ι Q (b i) * basis Q b s) :=
     (isUnit_ι_of_isUnit Q (by rcases hQ i with hi | hi <;> simp [hi])).mul
       (isUnit_basis hb s (fun j hj => by
@@ -338,7 +333,7 @@ private theorem basis_comm_monomial_iff [Fintype I] [Nontrivial R]
         have h := hs i
         rw [basis_mul_ι_of_mem hb hi] at h
         have heven : Even (s.card - 1) :=
-          even_of_neg_one_pow_smul_eq_self hneg (hunit i) h
+          TauCeti.even_of_neg_one_pow_smul_eq_self (hunit i).ne_zero h
         have hpos : 1 ≤ s.card := by
           exact Nat.one_le_iff_ne_zero.mpr (by
             intro hzero
@@ -352,7 +347,7 @@ private theorem basis_comm_monomial_iff [Fintype I] [Nontrivial R]
         have heven : Even s.card := by
           have h := hs i
           rw [basis_mul_ι_of_notMem hb hi] at h
-          exact even_of_neg_one_pow_smul_eq_self hneg (hunit i) h
+          exact TauCeti.even_of_neg_one_pow_smul_eq_self (hunit i).ne_zero h
         exact (Nat.not_even_iff_odd.mpr hsodd) heven
       exact ⟨heq, hsodd⟩
   · rintro (rfl | ⟨rfl, hsodd⟩) i
@@ -365,8 +360,8 @@ private theorem basis_comm_monomial_iff [Fintype I] [Nontrivial R]
       simp
 
 /-- A signed basis monomial is central in the finite monomial subgroup exactly when its support is
-empty, or when it is the full index set of odd cardinality. This holds over any nontrivial
-commutative coefficient ring in which `2` is invertible. -/
+empty, or when it is the full index set of odd cardinality, for an orthogonal basis whose vectors
+square to `±1` over a nontrivial commutative ring in which `2` is invertible. -/
 @[simp]
 theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
