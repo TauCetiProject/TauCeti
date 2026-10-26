@@ -44,7 +44,7 @@ identity `CovariantDerivative.covariantDerivative_curvatureOperator_cyclic_eq_ze
 ## Main results
 
 * `CovariantDerivative.mfderiv_eq_zero_of_ricciTensor_eq_smul_inner`: if `Ric = a g` and
-  `n ≠ 2`, then `da` vanishes wherever `a` is differentiable.
+  `n ≠ 2`, then `da` vanishes at every point.
 * `CovariantDerivative.eq_of_ricciTensor_eq_smul_inner`: **Einstein's constancy theorem**; on a
   preconnected manifold of positive dimension other than two, `Ric = a g` forces `a` to be
   constant.
@@ -377,13 +377,16 @@ private theorem IsMetricCompatible.finrank_sub_two_mul_mvfderiv_eq_zero
   linarith
 
 /-- **Einstein's constancy theorem**, local form. Let a metric-compatible torsion-free connection
-have Ricci tensor `Ric = a g` for a function `a`, in dimension other than two. Then `da` vanishes
-wherever `a` is differentiable. -/
+have Ricci tensor `Ric = a g` for a function `a`, in dimension other than two. Then `da`
+vanishes at every point. -/
 theorem mfderiv_eq_zero_of_ricciTensor_eq_smul_inner
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     (ht : cov.torsion = 0) (hdim : Module.finrank ℝ E ≠ 2) {a : M → ℝ}
-    (ha : ∀ y, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) {x : M}
-    (hax : MDifferentiableAt I 𝓘(ℝ) a x) : mfderiv I 𝓘(ℝ) a x = 0 := by
+    (ha : ∀ y, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) (x : M) :
+    mfderiv I 𝓘(ℝ) a x = 0 := by
+  by_cases hax : MDifferentiableAt I 𝓘(ℝ) a x
+  swap
+  · exact mfderiv_zero_of_not_mdifferentiableAt hax
   have h2 : ((Module.finrank ℝ E : ℝ) - 2) ≠ 0 := by
     rw [sub_ne_zero]
     exact_mod_cast hdim
@@ -411,6 +414,6 @@ theorem eq_of_ricciTensor_eq_smul_inner [PreconnectedSpace M]
     rw [haeq]
     exact (cov.contMDiff_scalarCurvature.div_const _).mdifferentiable (by simp)
   exact had.apply_eq_of_mfderiv_eq_zero (fun z ↦
-    mfderiv_eq_zero_of_ricciTensor_eq_smul_inner hcov ht hdim ha (had z)) x y
+    mfderiv_eq_zero_of_ricciTensor_eq_smul_inner hcov ht hdim ha z) x y
 
 end CovariantDerivative
