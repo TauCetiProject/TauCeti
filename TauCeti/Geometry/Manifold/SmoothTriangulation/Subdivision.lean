@@ -67,30 +67,25 @@ theorem barycentricSubdivisionRealizationHomeomorph_trans {K : AbstractSimplicia
   have hρ := PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp ρ.2
   obtain ⟨σ, -, hσmax⟩ := hρ.2.exists_isGreatest ρ.1.finite_toSet hρ.1
   -- The canonical homeomorphism maps the simplex `ρ` into the greatest face `σ` of the chain.
-  let φ : StandardSimplex ρ.1 → StandardSimplex σ.1 := fun x =>
-    ⟨barycentricSubdivisionLinearMap K x.1,
-      barycentricSubdivisionLinearMap_mem_closedSimplex K σ x hσmax⟩
+  let φ := barycentricSubdivisionFaceMap K σ hσmax
   have hfactor : (barycentricSubdivisionRealizationHomeomorph K).trans f ∘ faceInclusion _ ρ =
       (f ∘ faceInclusion K σ) ∘ φ := by
     funext x
     simp only [comp_apply, Homeomorph.trans_apply,
       barycentricSubdivisionRealizationHomeomorph_apply]
     congr 1
-    exact Subtype.ext (by simp [φ])
+    exact Subtype.ext (by simp [φ, barycentricSubdivisionFaceMap_val K σ hσmax x])
   rw [hfactor]
   -- In barycentric coordinates, `φ` is the linear map sending the vertex `τ` of `ρ` to the
   -- barycenter of `τ`.
   refine (isSmoothTriangulation_iff.mp h σ).comp_linear (Fintype.linearCombination ℝ
     fun (τ : ρ.1) (b : σ.1) => faceBarycenter K τ b) (fun x => funext fun b => ?_)
     (fun v _ hv => ?_)
-  · have hsupp : x.1 ∈ Finsupp.supported ℝ ℝ (ρ.1 : Set (Face K)) :=
-      (Finsupp.mem_supported ℝ x.1).mpr (StandardSimplex.support_subset x)
-    simp only [φ, Fintype.linearCombination_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
-    rw [barycentricSubdivisionLinearMap_eq_linearCombination,
-      Finsupp.linearCombination_apply_of_mem_supported ℝ hsupp, Finset.sum_apply']
+  · simp only [Fintype.linearCombination_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
     -- The vertices of the subdivision are the faces of `K` read as a precomplex, which is the
     -- same subtype as `Face K`; `exact` identifies the two index sets of the sums.
-    exact (Finset.sum_coe_sort _ fun τ => x.1 τ * faceBarycenter K τ b).symm
+    exact (barycentricSubdivisionFaceMap_apply K σ hσmax x b).trans
+      (Finset.sum_coe_sort _ fun τ => x.1 τ * faceBarycenter K τ b).symm
   · -- A linear relation among the barycenters of the chain `ρ` is trivial.
     funext τ
     refine Fintype.linearIndependent_iff.mp (linearIndepOn_faceBarycenter K hρ.2) v ?_ τ

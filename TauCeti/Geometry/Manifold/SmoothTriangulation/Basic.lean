@@ -247,7 +247,7 @@ theorem realizationHomeomorph_trans {κ : Type*} [DecidableEq ι] [DecidableEq �
       smul_eq_mul, mul_ite, mul_one, mul_zero]
     rw [← Finset.sum_coe_sort]
     exact Finset.sum_congr rfl fun a _ =>
-      if_congr (eq_comm.trans (Subtype.ext_iff (a1 := b) (a2 := φσ a)).symm) rfl rfl
+      if_congr (eq_comm.trans (Subtype.ext_iff : b = φσ a ↔ _).symm) rfl rfl
   · rw [Fintype.linearCombination_apply] at hv
     simpa only [comp_apply, Pi.basisFun_apply] using hv
 
