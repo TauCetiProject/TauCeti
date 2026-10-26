@@ -26,10 +26,12 @@ is homogeneous of degree `l.length`, which is Mathlib's
 degree of each factor read off `CliffordAlgebra.ι_mem_evenOdd_one`. Reading it off by the parity of
 the length is what matters downstream.
 
-Once `2` is invertible, the two graded pieces are the eigenspaces of the grade involution: the
-even part is its fixed space and the odd part its `-1`-eigenspace. Mathlib proves one implication
-of each (`CliffordAlgebra.involute_eq_of_mem_even`, `CliffordAlgebra.involute_eq_of_mem_odd`) and
-leaves the converses as a TODO; they are recorded here. This is the form in which the grading is
+The grade involution acts on the graded piece of parity `p` by the sign `(-1) ^ p`, combining
+Mathlib's `CliffordAlgebra.involute_eq_of_mem_even` and `CliffordAlgebra.involute_eq_of_mem_odd`
+into one statement indexed by the parity. Once `2` is invertible, the two graded pieces are the
+eigenspaces of the grade involution: the even part is its fixed space and the odd part its
+`-1`-eigenspace. Mathlib proves one implication of each (the two lemmas above) and leaves the
+converses as a TODO; they are recorded here. This is the form in which the grading is
 transported along maps commuting with the involution, such as extension of scalars.
 
 The coordinate basis of an exterior algebra is homogeneous for this grading: the basis vector
@@ -48,6 +50,8 @@ belongs to the grading API independently of any spin representation.
   of degree `n`, and `CliffordAlgebra.prod_map_ι_mem_evenOdd_zero_of_even_length` and
   `CliffordAlgebra.prod_map_ι_mem_evenOdd_one_of_odd_length` read that off in the even and the odd
   case.
+* `CliffordAlgebra.involute_eq_uzpow_smul_of_mem_evenOdd`: the grade involution acts on the graded
+  piece of parity `p` by `(-1) ^ p`.
 * `CliffordAlgebra.involute_eq_self_iff` and `CliffordAlgebra.involute_eq_neg_iff`: with `2`
   invertible, the even and odd parts are the `±1`-eigenspaces of the grade involution.
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
@@ -117,6 +121,13 @@ section Involute
 private theorem exists_add_eq (x : CliffordAlgebra Q) :
     ∃ e ∈ evenOdd Q 0, ∃ o ∈ evenOdd Q 1, e + o = x :=
   Submodule.mem_sup.mp ((evenOdd_isCompl Q).sup_eq_top ▸ Submodule.mem_top)
+
+/-- **The grade involution acts on the graded piece of parity `p` by the sign `(-1) ^ p`.** -/
+theorem involute_eq_uzpow_smul_of_mem_evenOdd {p : ZMod 2} {x : CliffordAlgebra Q}
+    (hx : x ∈ evenOdd Q p) : involute x = ((-1 : ℤˣ) ^ p) • x := by
+  obtain rfl | rfl : p = 0 ∨ p = 1 := by clear hx; revert p; decide
+  · rw [involute_eq_of_mem_even hx, uzpow_zero, one_smul]
+  · rw [involute_eq_of_mem_odd hx, uzpow_one, Units.neg_smul, one_smul]
 
 variable [Invertible (2 : R)]
 

@@ -26,7 +26,7 @@ derivative `u' ∈ L²(a, b; V*)` satisfying the equation for almost every `t`. 
 `TauCeti.HasWeakLineDerivOn.exists_continuousOn_ae_eq_of_gelfandDual`, `ι ∘ u` then has a
 representative `w` continuous on `[a, b]`, which gives meaning to the initial value `w a`.
 
-For `L = -∂ⱼ(aⁱʲ(x, t) ∂ᵢ ·) + …` on a domain `Ω`, the triple is `H¹₀(Ω) ↪ L²(Ω) ↪ H⁻¹(Ω)` and
+For `L = -∂ᵢ(aⁱʲ(x, t) ∂ⱼ ·) + …` on a domain `Ω`, the triple is `H¹₀(Ω) ↪ L²(Ω) ↪ H⁻¹(Ω)` and
 `A(t)` is the energy form of `L` at time `t`.
 
 Assume that `A(t)` satisfies **Gårding's inequality** `α ‖v‖² - β ‖ι v‖² ≤ A(t) v v` for some
