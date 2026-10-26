@@ -118,6 +118,18 @@ theorem flat_coinvariants_of_surjective_comap [IsAlgClosed k]
       exact hg
   exact (HasRingHomProperty.Spec_iff (P := @Flat)).mp hflat
 
+/-- Linear reductivity of a closed subgroup survives every extension `K / k` of the base field:
+the quotient by the scalar-extended Hopf ideal is the scalar extension of the quotient
+coalgebra. -/
+theorem isLinearlyReductive_quotient_baseChangeHopfIdeal (K : Type u) [Field K] [Algebra k K]
+    (hI : Coalgebra.IsLinearlyReductive.{u, u, u} k (H ⧸ I.toIdeal)) :
+    Coalgebra.IsLinearlyReductive.{u, u, u} K
+      (CommHopfAlgCat.baseChange (K := K) H ⧸
+        (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I).toIdeal) :=
+  (Coalgebra.isLinearlyReductive_iff_of_coalgEquiv K
+    (CommHopfAlgCat.ofIso (CommHopfAlgCat.quotientBaseChangeIso (K := K) I)).toCoalgEquiv).mpr
+    (Coalgebra.IsLinearlyReductive.baseChange K hI)
+
 /-- The coordinate algebra of a geometrically reduced finite-type affine group over
 any field is faithfully flat over the invariants of a linearly reductive closed subgroup.
 The subgroup need not be normal, smooth, or connected. -/
@@ -128,11 +140,7 @@ theorem faithfullyFlat_coinvariants_of_isLinearlyReductive
   let K := AlgebraicClosure k
   let J := CommHopfAlgCat.baseChangeHopfIdeal (K := K) I
   apply (CommHopfAlgCat.faithfullyFlat_coinvariants_baseChange_iff (S := K) I).mp
-  have hJ : Coalgebra.IsLinearlyReductive K
-      (CommHopfAlgCat.baseChange (K := K) H ⧸ J.toIdeal) := by
-    exact (Coalgebra.isLinearlyReductive_iff_of_coalgEquiv K
-      (CommHopfAlgCat.ofIso (CommHopfAlgCat.quotientBaseChangeIso (K := K) I)).toCoalgEquiv).mpr
-      (Coalgebra.IsLinearlyReductive.baseChange K hI)
+  have hJ := I.isLinearlyReductive_quotient_baseChangeHopfIdeal K hI
   let : Algebra.FiniteType K J.coinvariants :=
     J.finiteType_coinvariants_of_isLinearlyReductive hJ
   have hsurj := J.surjective_comap_coinvariants_of_isLinearlyReductive hJ
