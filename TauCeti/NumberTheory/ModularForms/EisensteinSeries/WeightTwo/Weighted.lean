@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Weighted
-import Mathlib.Analysis.Complex.LocallyUniformLimit
+import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 
 /-!
 # Weight-two Eisenstein series weighted by a function of residues
@@ -27,10 +27,10 @@ where the right side is an absolutely convergent lattice sum. Accordingly, for a
 `G₂^W(z) = N⁻² ∑_a W(a) ℘((a₀ z + a₁) / N; ℤ z + ℤ)`
 
 (`TauCeti.EisensteinSeries.weightedG2`), with `a₀, a₁` the least nonnegative representatives. It
-is the series `∑_y ∑_a W(a) ((ã - N y)₀ z + (ã - N y)₁)⁻²` regularized by subtracting the mean of
-`W` times `N⁻² G₂` (`TauCeti.EisensteinSeries.hasSum_weightedG2`); when `W` has total mass zero,
-as for the weights of Eisenstein series with a nontrivial character, no regularization occurs
-(`TauCeti.EisensteinSeries.hasSum_weightedG2_of_sum_eq_zero`).
+is the series `∑_y ∑_a W(a) ((ã - N y)₀ z + (ã - N y)₁)⁻²` regularized by subtracting the total
+mass `∑_a W(a)` times `N⁻² G₂` (`TauCeti.EisensteinSeries.hasSum_weightedG2`); when `W` has total
+mass zero, as for the weights of Eisenstein series with a nontrivial character, no regularization
+occurs (`TauCeti.EisensteinSeries.hasSum_weightedG2_of_sum_eq_zero`).
 
 As in weight `k ≥ 3`, slashing by `γ ∈ SL(2, ℤ)` replaces the weight by `a ↦ W (a γ⁻¹)`
 (`TauCeti.EisensteinSeries.weightedG2_slash_apply`): the lattice of `γ z` is `(c z + d)⁻¹` times
@@ -87,6 +87,11 @@ lemma weightedG2_def (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
     weightedG2 W z =
       ((N : ℂ) ^ 2)⁻¹ * ∑ a, W a * ℘[z.periodPair] (((a 0).val * (z : ℂ) + (a 1).val) / N) :=
   (rfl)
+
+/-- The series is linear in the weight: the zero weight. -/
+lemma weightedG2_zero : weightedG2 (0 : (Fin 2 → ZMod N) → ℂ) = 0 := by
+  ext z
+  simp [weightedG2]
 
 /-- The series is linear in the weight: sums. -/
 lemma weightedG2_add (W W' : (Fin 2 → ZMod N) → ℂ) :
@@ -215,28 +220,6 @@ private lemma weierstrassP_divisionPoint_smul (γ : SL(2, ℤ)) (a : Fin 2 → Z
   rw [divisionPoint_smul, weierstrassP_periodPair_smul, weierstrassP_divisionPoint_eq,
     intCast_comp_vecMul, intCast_comp_lift]
 
-/-- Right multiplication by the reduction of `γ ∈ SL(2, ℤ)` permutes the residue pairs. -/
-private def vecMulEquiv (γ : SL(2, ℤ)) : (Fin 2 → ZMod N) ≃ (Fin 2 → ZMod N) where
-  toFun a := a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N))
-  invFun a := a ᵥ* (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N))
-  left_inv a := by
-    simp only [Matrix.vecMul_vecMul]
-    rw [← Matrix.SpecialLinearGroup.coe_mul, ← map_mul, mul_inv_cancel, map_one,
-      Matrix.SpecialLinearGroup.coe_one, Matrix.vecMul_one]
-  right_inv a := by
-    simp only [Matrix.vecMul_vecMul]
-    rw [← Matrix.SpecialLinearGroup.coe_mul, ← map_mul, inv_mul_cancel, map_one,
-      Matrix.SpecialLinearGroup.coe_one, Matrix.vecMul_one]
-
-omit [NeZero N] in
-private lemma vecMulEquiv_apply (γ : SL(2, ℤ)) (a : Fin 2 → ZMod N) :
-    vecMulEquiv γ a = a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) := (rfl)
-
-omit [NeZero N] in
-private lemma vecMulEquiv_symm_apply (γ : SL(2, ℤ)) (a : Fin 2 → ZMod N) :
-    (vecMulEquiv γ).symm a =
-      a ᵥ* (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) := (rfl)
-
 /-- **The slash action on a weighted weight-two series.** Slashing by `γ ∈ SL(2, ℤ)` replaces the
 weight `W` by `a ↦ W (a γ⁻¹)`. -/
 theorem weightedG2_slash_apply (W : (Fin 2 → ZMod N) → ℂ) (γ : SL(2, ℤ)) :
@@ -251,8 +234,19 @@ theorem weightedG2_slash_apply (W : (Fin 2 → ZMod N) → ℂ) (γ : SL(2, ℤ)
         Matrix (Fin 2) (Fin 2) (ZMod N))) * ℘[z.periodPair] (divisionPoint N (lift a) z) := by
     rw [Finset.mul_sum]
     -- reindex the residues by `a ↦ a γ`
-    refine Fintype.sum_equiv (vecMulEquiv γ) _ _ fun a ↦ ?_
-    rw [← vecMulEquiv_symm_apply, Equiv.symm_apply_apply, vecMulEquiv_apply]
+    have h₁ : (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) *
+        ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) = 1 := by
+      rw [← Matrix.SpecialLinearGroup.coe_mul, ← map_mul, inv_mul_cancel, map_one,
+        Matrix.SpecialLinearGroup.coe_one]
+    have h₂ : ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) *
+        (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) = 1 := by
+      rw [← Matrix.SpecialLinearGroup.coe_mul, ← map_mul, mul_inv_cancel, map_one,
+        Matrix.SpecialLinearGroup.coe_one]
+    refine Fintype.sum_equiv (Matrix.toLinearEquivRight'OfInv h₁ h₂).toEquiv _ _ fun a ↦ ?_
+    have he : (Matrix.toLinearEquivRight'OfInv h₁ h₂).toEquiv a =
+        a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) :=
+      funext fun i ↦ by simp
+    simp only [he, Matrix.vecMul_vecMul, h₂, Matrix.vecMul_one]
     ring
   rw [hsum, _root_.zpow_neg, zpow_ofNat]
   field_simp
@@ -312,21 +306,12 @@ private lemma tendstoLocallyUniformly_weierstrassP_divisionPoint (b : Fin 2 → 
 
 /-- Each division value of `℘` is holomorphic on `ℍ`. -/
 private lemma mdifferentiable_weierstrassP_divisionPoint (b : Fin 2 → ℤ) :
-    MDiff (fun z : ℍ ↦ ℘[z.periodPair] (divisionPoint N b z)) := by
-  rw [UpperHalfPlane.mdifferentiable_iff]
-  have hloc : TendstoLocallyUniformlyOn (fun s : Finset (Fin 2 → ℤ) ↦
-      ↑ₕ(fun z : ℍ ↦ ∑ y ∈ s, ((N : ℂ) ^ 2 * eisSummand 2 (b - N • y) z - eisSummand 2 y z)))
-        (↑ₕ(fun z : ℍ ↦ ℘[z.periodPair] (divisionPoint N b z))) atTop {z : ℂ | 0 < z.im} := by
-    rw [← upperHalfPlaneSet, ← range_coe, ← image_univ]
-    apply TendstoLocallyUniformlyOn.comp (s := ⊤) _ _ _
-      (OpenPartialHomeomorph.continuousOn_symm _)
-    · simp only [Set.top_eq_univ, tendstoLocallyUniformlyOn_univ]
-      exact tendstoLocallyUniformly_weierstrassP_divisionPoint b
-    · simp only [Topology.IsOpenEmbedding.toOpenPartialHomeomorph_target, Set.top_eq_univ,
-        mapsTo_range_iff, Set.mem_univ, forall_const]
-  exact hloc.differentiableOn (Eventually.of_forall fun s ↦ DifferentiableOn.fun_sum
-    fun y _ ↦ ((eisSummand_extension_differentiableOn 2 _).const_mul _).sub
-      (eisSummand_extension_differentiableOn 2 y)) isOpen_upperHalfPlaneSet
+    MDiff (fun z : ℍ ↦ ℘[z.periodPair] (divisionPoint N b z)) :=
+  TauCeti.UpperHalfPlane.mdifferentiable_of_tendstoLocallyUniformly
+    (tendstoLocallyUniformly_weierstrassP_divisionPoint b) (Eventually.of_forall fun _ ↦
+      UpperHalfPlane.mdifferentiable_iff.mpr (DifferentiableOn.fun_sum fun y _ ↦
+        ((eisSummand_extension_differentiableOn 2 _).const_mul _).sub
+          (eisSummand_extension_differentiableOn 2 y)))
 
 /-- **The weighted weight-two series is holomorphic on `ℍ`.** -/
 theorem weightedG2_mdifferentiable (W : (Fin 2 → ZMod N) → ℂ) : MDiff (weightedG2 W) := by
@@ -344,57 +329,22 @@ theorem weightedG2_mdifferentiable (W : (Fin 2 → ZMod N) → ℂ) : MDiff (wei
 
 /-! ### Boundedness at infinity -/
 
-/-- A row `P(w) = ∑_n (w + n)⁻²` of the lattice series. -/
-private def rowSum (w : ℂ) : ℂ := ∑' n : ℤ, 1 / (w + n) ^ 2
-
-/-- The rows are even functions. -/
-private lemma rowSum_neg (w : ℂ) : rowSum (-w) = rowSum w := by
-  rw [rowSum, rowSum, ← (Equiv.neg ℤ).tsum_eq]
-  refine tsum_congr fun n ↦ ?_
-  simp only [Equiv.neg_apply, Int.cast_neg]
-  ring
-
 /-- The decay constant of the rows with `|Im w| ≥ 1 / N`. -/
-private def rowConst (N : ℕ) : ℝ := 4 * π ^ 2 / (1 - Real.exp (-2 * π / N)) ^ 2
+private def rowConst (N : ℕ) : ℝ := 4 * π ^ 2 / (1 - Real.exp (-2 * π * (1 / N))) ^ 2
 
 private lemma rowConst_nonneg (N : ℕ) : 0 ≤ rowConst N := by
   unfold rowConst
   positivity
 
-/-- The rows decay like `e^(-2π |Im w|)` once `|Im w| ≥ 1 / N`. -/
-private lemma norm_rowSum_le (w : ℂ) (hw : 1 / (N : ℝ) ≤ |w.im|) :
-    ‖rowSum w‖ ≤ rowConst N * Real.exp (-2 * π * |w.im|) := by
-  have hN : (0 : ℝ) < N := Nat.cast_pos.mpr (NeZero.pos N)
-  have hθ : Real.exp (-2 * π / N) < 1 :=
-    Real.exp_lt_one_iff.mpr (div_neg_of_neg_of_pos (by linarith [Real.pi_pos]) hN)
-  -- reduce to `0 < Im w` by evenness
-  wlog hpos : 0 < w.im generalizing w
-  · have hne : w.im ≠ 0 := by
-      intro h
-      rw [h, abs_zero] at hw
-      exact absurd hw (not_le.mpr (by positivity))
-    have := this (-w) (by simpa using hw) (by simpa using lt_of_le_of_ne (not_lt.mp hpos) hne)
-    rwa [rowSum_neg, Complex.neg_im, abs_neg] at this
-  rw [abs_of_pos hpos] at hw ⊢
-  have hq : ‖cexp (2 * π * Complex.I * w)‖ = Real.exp (-2 * π * w.im) := by
-    rw [Complex.norm_exp]
-    congr 1
-    simp
-  have h := norm_tsum_one_div_add_sq_le ⟨w, hpos⟩
-  simp only [hq] at h
-  have hle : Real.exp (-2 * π * w.im) ≤ Real.exp (-2 * π / N) := by
-    rw [Real.exp_le_exp, div_eq_mul_inv, mul_le_mul_left_of_neg (by linarith [Real.pi_pos])]
-    rwa [one_div] at hw
-  refine h.trans ?_
-  rw [rowConst, div_mul_eq_mul_div, mul_div_assoc, mul_div_assoc]
-  gcongr
-
 /-- The row bound in the form used along the lattice: `e^(-2π |Im w|) ≤ e^(-2π (|m| - 1))`. -/
 private lemma norm_rowSum_le_of_le (w : ℂ) {m : ℤ} (hw : 1 / (N : ℝ) ≤ |w.im|)
     (hm : |(m : ℝ)| - 1 ≤ |w.im|) :
-    ‖rowSum w‖ ≤ rowConst N * Real.exp (-2 * π * (|(m : ℝ)| - 1)) :=
-  (norm_rowSum_le w hw).trans (mul_le_mul_of_nonneg_left
-    (Real.exp_le_exp.mpr (by nlinarith [Real.pi_pos])) (rowConst_nonneg N))
+    ‖rowSum w‖ ≤ rowConst N * Real.exp (-2 * π * (|(m : ℝ)| - 1)) := by
+  have hN : (0 : ℝ) < 1 / N := one_div_pos.mpr (Nat.cast_pos.mpr (NeZero.pos N))
+  have hK := rowConst_nonneg N
+  rw [rowConst] at hK ⊢
+  exact (norm_rowSum_le_of_le_abs_im hN hw).trans (mul_le_mul_of_nonneg_left
+    (Real.exp_le_exp.mpr (by nlinarith [Real.pi_pos])) hK)
 
 /-- The rows `P(m z)`, `m ≠ 0`, of the lattice series, on `1 ≤ Im z`. -/
 private lemma norm_rowSum_intCast_mul_le {m : ℤ} (hm : m ≠ 0) {z : ℍ} (hz : 1 ≤ z.im) :
@@ -559,6 +509,11 @@ def weightedG2MF (W : (Fin 2 → ZMod N) → ℂ) : ModularForm Γ(N) 2 where
 
 @[simp]
 lemma coe_weightedG2MF (W : (Fin 2 → ZMod N) → ℂ) : ⇑(weightedG2MF W) = weightedG2 W := (rfl)
+
+@[simp]
+lemma weightedG2MF_zero : weightedG2MF (0 : (Fin 2 → ZMod N) → ℂ) = 0 := by
+  ext z
+  exact congrFun weightedG2_zero z
 
 @[simp]
 lemma weightedG2MF_add (W W' : (Fin 2 → ZMod N) → ℂ) :

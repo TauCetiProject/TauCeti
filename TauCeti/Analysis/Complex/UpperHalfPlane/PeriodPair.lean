@@ -21,8 +21,9 @@ forms:
 * under `γ ∈ SL(2, ℤ)` the lattice of `γ z` is `(c z + d)⁻¹ (ℤ z + ℤ)`, so
   `℘(x / (c z + d); ℤ γz + ℤ) = (c z + d)² ℘(x; ℤ z + ℤ)`;
 * summing first along the rows `y₀ = m`,
-  `℘(x; ℤ z + ℤ) = ∑_m (P(x - m z) - P(m z))` with `P(w) = ∑_n (w + n)⁻²`, and `P(w)` decays like
-  `e^(-2π Im w)` as `Im w → ∞` (`UpperHalfPlane.norm_tsum_one_div_add_sq_le`).
+  `℘(x; ℤ z + ℤ) = ∑_m (P(x - m z) - P(m z))` with `P(w) = ∑_n (w + n)⁻²`
+  (`UpperHalfPlane.rowSum`), and `P(w)` decays like `e^(-2π |Im w|)` as `|Im w| → ∞`
+  (`UpperHalfPlane.norm_rowSum_le`, `UpperHalfPlane.norm_rowSum_le_of_le_abs_im`).
 
 These are the inputs that make the values of `℘` at the `N`-division points of `ℤ z + ℤ` weight-two
 modular forms of level `Γ(N)`.
@@ -30,6 +31,7 @@ modular forms of level `Γ(N)`.
 ## Main definitions
 
 * `UpperHalfPlane.periodPair`: the period pair `(z, 1)`.
+* `UpperHalfPlane.rowSum`: a row `∑_n (w + n)⁻²` of the lattice series.
 
 ## Main results
 
@@ -38,7 +40,8 @@ modular forms of level `Γ(N)`.
   of `z`.
 * `UpperHalfPlane.weierstrassP_periodPair_smul`: the modular transformation law.
 * `UpperHalfPlane.hasSum_weierstrassP_periodPair_rows`: the sum along rows.
-* `UpperHalfPlane.norm_tsum_one_div_add_sq_le`: the exponential decay of the rows.
+* `UpperHalfPlane.norm_rowSum_le`, `UpperHalfPlane.norm_rowSum_le_of_le_abs_im`: the exponential
+  decay of the rows.
 -/
 
 public section
@@ -98,13 +101,8 @@ lemma intCast_mul_smul_add_intCast (γ : SL(2, ℤ)) (z : ℍ) (y : Fin 2 → �
     (y 0 : ℂ) * ↑(γ • z) + y 1 =
       (((y ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) 0 : ℂ) * z +
         (y ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) 1) / denom γ z := by
-  have hD := denom_ne_zero γ z
-  rw [ModularGroup.denom_apply] at hD ⊢
-  rw [coe_specialLinearGroup_apply]
-  simp only [algebraMap_int_eq, eq_intCast, Complex.ofReal_intCast]
-  rw [eq_div_iff hD, add_mul, mul_assoc, div_mul_cancel₀ _ hD]
-  simp only [vecMul, dotProduct, Fin.sum_univ_two, Int.cast_add, Int.cast_mul]
-  ring
+  simpa [EisensteinSeries.eisSummand, div_eq_inv_mul] using
+    EisensteinSeries.eisSummand_SL2_apply (-1) y γ z
 
 /-- **The modular transformation of `℘`.** For `γ ∈ SL(2, ℤ)` the lattice of `γ z` is
 `(c z + d)⁻¹ (ℤ z + ℤ)`, so `℘(x / (c z + d); ℤ γz + ℤ) = (c z + d)² ℘(x; ℤ z + ℤ)`. -/
@@ -126,37 +124,46 @@ theorem weierstrassP_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (x : ℂ) :
   rw [← sub_div, div_pow, div_pow, one_div_div, one_div_div]
   ring
 
+/-- A row `P(w) = ∑_n (w + n)⁻²` of the lattice series of `ℤ z + ℤ`: the row `y₀ = m` of
+`℘(x; ℤ z + ℤ)` is `P(x - m z) - P(m z)`. -/
+def rowSum (w : ℂ) : ℂ := ∑' n : ℤ, 1 / (w + n) ^ 2
+
+lemma rowSum_def (w : ℂ) : rowSum w = ∑' n : ℤ, 1 / (w + n) ^ 2 := (rfl)
+
 /-- The rows `∑_n (w + n)⁻²` of the lattice series are absolutely convergent. -/
-private lemma summable_one_div_add_intCast_sq (w : ℂ) :
+lemma summable_one_div_add_intCast_sq (w : ℂ) :
     Summable fun n : ℤ ↦ 1 / (w + n) ^ 2 := by
   simpa [one_div] using EisensteinSeries.linear_right_summable w 1 (k := 2) le_rfl
+
+/-- The row `∑_n (w + n)⁻²` converges to `rowSum w`. -/
+lemma hasSum_rowSum (w : ℂ) : HasSum (fun n : ℤ ↦ 1 / (w + n) ^ 2) (rowSum w) := by
+  rw [rowSum_def]
+  exact (summable_one_div_add_intCast_sq w).hasSum
+
+/-- The rows are even functions. -/
+lemma rowSum_neg (w : ℂ) : rowSum (-w) = rowSum w := by
+  rw [rowSum_def, rowSum_def, ← (Equiv.neg ℤ).tsum_eq]
+  refine tsum_congr fun n ↦ ?_
+  simp only [Equiv.neg_apply, Int.cast_neg]
+  ring
 
 /-- **The Weierstrass function of `ℤ z + ℤ` summed along rows**:
 `℘(x; ℤ z + ℤ) = ∑_m (∑_n (x - m z + n)⁻² - ∑_n (m z + n)⁻²)`. -/
 theorem hasSum_weierstrassP_periodPair_rows (z : ℍ) (x : ℂ) :
-    HasSum (fun m : ℤ ↦ ∑' n : ℤ, 1 / (x - m * z + n) ^ 2 - ∑' n : ℤ, 1 / ((m : ℂ) * z + n) ^ 2)
-      (℘[z.periodPair] x) := by
+    HasSum (fun m : ℤ ↦ rowSum (x - m * z) - rowSum (m * z)) (℘[z.periodPair] x) := by
   have h := hasSum_weierstrassP_periodPair z x
   rw [← (finTwoArrowEquiv ℤ).symm.hasSum_iff] at h
   refine h.prod_fiberwise fun m ↦ ?_
-  have hrow : ∑' n : ℤ, 1 / (x - m * z + n) ^ 2 = ∑' n : ℤ, 1 / (x - (m * z + n)) ^ 2 := by
-    rw [← (Equiv.neg ℤ).tsum_eq]
-    refine tsum_congr fun n ↦ ?_
-    simp only [Equiv.neg_apply, Int.cast_neg]
-    ring_nf
-  rw [hrow]
-  have h₁ : Summable fun n : ℤ ↦ 1 / (x - (m * z + n)) ^ 2 := by
-    have := (summable_one_div_add_intCast_sq (x - m * z)).comp_injective neg_injective
-    refine this.congr fun n ↦ ?_
-    simp only [Function.comp_apply, Int.cast_neg]
-    ring_nf
-  simpa [Function.comp_def] using
-    h₁.hasSum.sub (summable_one_div_add_intCast_sq ((m : ℂ) * z)).hasSum
+  have h₁ : HasSum (fun n : ℤ ↦ 1 / (x - (m * z + n)) ^ 2) (rowSum (x - m * z)) := by
+    rw [← rowSum_neg]
+    convert hasSum_rowSum (-(x - m * z)) using 2 with n
+    ring
+  simpa [Function.comp_def] using h₁.sub (hasSum_rowSum ((m : ℂ) * z))
 
 /-- **The rows decay exponentially**: for `w` in the upper half-plane and `q = e^(2π i w)`,
 `‖∑_n (w + n)⁻²‖ ≤ 4 π² ‖q‖ / (1 - ‖q‖)²`. -/
-theorem norm_tsum_one_div_add_sq_le (w : ℍ) :
-    ‖∑' n : ℤ, 1 / ((w : ℂ) + n) ^ 2‖ ≤
+theorem norm_rowSum_le (w : ℍ) :
+    ‖rowSum w‖ ≤
       4 * π ^ 2 * ‖cexp (2 * π * Complex.I * w)‖ /
         (1 - ‖cexp (2 * π * Complex.I * w)‖) ^ 2 := by
   have H := EisensteinSeries.qExpansion_identity (k := 1) le_rfl w
@@ -169,8 +176,37 @@ theorem norm_tsum_one_div_add_sq_le (w : ℍ) :
   have h2 : ‖(-2 * π * Complex.I : ℂ)‖ ^ 2 = 4 * π ^ 2 := by
     simp [abs_of_pos Real.pi_pos]
     ring
-  rw [H, tsum_coe_mul_geometric_of_norm_lt_one hq, norm_mul, norm_div, norm_pow, norm_pow, h2,
-    mul_div_assoc]
+  rw [rowSum_def, H, tsum_coe_mul_geometric_of_norm_lt_one hq, norm_mul, norm_div, norm_pow,
+    norm_pow, h2, mul_div_assoc]
+  gcongr
+
+/-- **The rows decay exponentially away from the real axis**: if `0 < t ≤ |Im w|`, then
+`‖∑_n (w + n)⁻²‖ ≤ 4 π² e^(-2π |Im w|) / (1 - e^(-2π t))²`. -/
+theorem norm_rowSum_le_of_le_abs_im {w : ℂ} {t : ℝ} (ht : 0 < t) (hw : t ≤ |w.im|) :
+    ‖rowSum w‖ ≤ 4 * π ^ 2 / (1 - Real.exp (-2 * π * t)) ^ 2 * Real.exp (-2 * π * |w.im|) := by
+  have hθ : Real.exp (-2 * π * t) < 1 :=
+    Real.exp_lt_one_iff.mpr (by nlinarith [Real.pi_pos])
+  -- reduce to `0 < Im w` by evenness
+  wlog hpos : 0 < w.im generalizing w
+  · have hne : w.im ≠ 0 := by
+      intro h
+      rw [h, abs_zero] at hw
+      linarith
+    have := this (w := -w) (by simpa using hw)
+      (by simpa using lt_of_le_of_ne (not_lt.mp hpos) hne)
+    rwa [rowSum_neg, Complex.neg_im, abs_neg] at this
+  rw [abs_of_pos hpos] at hw ⊢
+  have hq : ‖cexp (2 * π * Complex.I * w)‖ = Real.exp (-2 * π * w.im) := by
+    rw [Complex.norm_exp]
+    congr 1
+    simp
+  have h := norm_rowSum_le (UpperHalfPlane.mk w hpos)
+  simp only [hq] at h
+  have hle : Real.exp (-2 * π * w.im) ≤ Real.exp (-2 * π * t) := by
+    rw [Real.exp_le_exp]
+    nlinarith [Real.pi_pos]
+  refine h.trans ?_
+  rw [div_mul_eq_mul_div, mul_div_assoc, mul_div_assoc]
   gcongr
 
 end UpperHalfPlane
