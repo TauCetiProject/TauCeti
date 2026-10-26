@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Algebra.Spectrum
 public import Mathlib.Topology.Metrizable.Basic
-public import TauCeti.Analysis.Normed.Lp.Diagonal
+public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
 
 /-!
 # The spectrum of a bounded diagonal operator
@@ -27,16 +27,16 @@ Consequently every nonempty compact subset `K` of `ℂ` is the spectrum of a bou
 
 The resolvent coordinate formula
 `((algebraMap 𝕜 _ c - lp.diagonalCLM d) x) i = (c - d i) * x i` is
-`lp.algebraMap_sub_diagonalCLM_apply`, which lives in `TauCeti.Analysis.Normed.Lp.Diagonal`.
+`lp.algebraMap_sub_diagonalCLM_apply`, which lives in `TauCeti.Analysis.Normed.Lp.Diagonal.Basic`.
 
 ## References
 
 * The diagonal-operator spectrum is the standard worked example of a resolvent: at a scalar
-  outside the coefficient range the inverse is the diagonal operator of the reciprocal
-  coefficients.
+  outside the closure of the coefficient range the inverse is the diagonal operator of the
+  reciprocal coefficients.
 * The compact-realisation step chooses its dense sequence with Mathlib's
-  `IsCompact.exists_countable_dense_subset` and `Set.Countable.exists_eq_range`, and uses
-  `lp.diagonalCLM` from `TauCeti.Analysis.Normed.Lp.Diagonal`.
+  `IsCompact.exists_countable_dense_subset`, and `Set.Countable.exists_eq_range` turns that
+  countable dense set into an `ℕ`-indexed sequence.
 -/
 
 public section
