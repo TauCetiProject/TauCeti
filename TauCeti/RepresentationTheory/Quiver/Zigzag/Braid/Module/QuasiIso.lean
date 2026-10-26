@@ -15,16 +15,10 @@ import TauCeti.Algebra.Homology.HomologySequenceLemmas
 /-!
 # Quasi-isomorphisms under the two zigzag braid tensor actions
 
-Compare the positive and inverse support sequences along a quasi-isomorphism of module
-complexes. The fixed-term tensor functors preserve homology, and cohomological shifts
-preserve quasi-isomorphisms. The outer maps of each comparison are therefore
-quasi-isomorphisms. The existing middle-map theorem for short exact sequences proves
-the same for the actual totalized tensor map.
-
-The localizer morphisms below record the input for descending these two functors to
-the derived category. Compatibility with the existing homotopy autoequivalences,
-descent of their inverse and braid isomorphisms, and supplied-equivalence transfer
-require further steps.
+Tensoring with either the positive or inverse braid complex preserves quasi-isomorphisms
+between arbitrary unbounded cochain complexes of graded zigzag modules. Each tensor functor
+defines a morphism of the quasi-isomorphism localizer, hence induces a functor between any
+supplied localizations, including chosen derived categories.
 -/
 
 public section
@@ -53,6 +47,9 @@ theorem quasiIso_zigzagBraidTensor_map (i : V)
     QuasiIso (((Functor.map₂CochainComplex
       (GradedModuleCat.bimoduleModuleTensor.{max u w, max v u w} Γ Γ)).obj
         (zigzagBraidComplex k G i)).map f) := by
+  -- Evaluate the support sequence along f. Fixed-term tensor functors preserve homology,
+  -- and shifts preserve quasi-isomorphisms, so the two outer comparison maps are
+  -- quasi-isomorphisms. The short-exact middle-map theorem then handles the totalized map.
   let S := zigzagBraidTensorSupportSequence.{u, v, w} k G i
   let φ := S.mapNatTrans ((evaluation _ _).map f)
   have hK := (zigzagBraidTensorSupportSequence_shortExact.{u, v, w} k G i).map_of_exact
@@ -61,17 +58,26 @@ theorem quasiIso_zigzagBraidTensor_map (i : V)
     ((evaluation _ _).obj L)
   suffices h : QuasiIso φ.τ₂ by
     dsimp only [φ, ShortComplex.mapNatTrans, S] at h
+    -- The comparison φ.τ₂ evaluates S.X₂ along f. Component/evaluation equations alone
+    -- leave HasHomology arguments indexed by the evaluated short-complex endpoints.
+    -- Reset the whole QuasiIso type so the public X₂ rewrite has a well-typed motive.
     change QuasiIso ((zigzagBraidTensorSupportSequence.{u, v, w} k G i).X₂.map f) at h
     rw [zigzagBraidTensorSupportSequence_X₂.{u, v, w} k G i] at h
     exact h
   apply HomologySequence.quasiIso_τ₂ φ hK hL
   · dsimp only [φ, ShortComplex.mapNatTrans, S]
+    -- The comparison φ.τ₁ evaluates S.X₁ along f. Component/evaluation equations alone
+    -- leave HasHomology arguments indexed by the evaluated short-complex endpoints.
+    -- Reset the whole QuasiIso type so the public X₁ rewrite has a well-typed motive.
     change QuasiIso ((zigzagBraidTensorSupportSequence.{u, v, w} k G i).X₁.map f)
     rw [zigzagBraidTensorSupportSequence_X₁.{u, v, w} k G i]
     let : ((tensor.{u, v, w} k G).obj (zigzagGradedBimodule k G)).PreservesHomology :=
       preservesHomology_zigzagGradedBimoduleTensor.{u, max v u w, w} k G
     infer_instance
   · dsimp only [φ, ShortComplex.mapNatTrans, S]
+    -- The comparison φ.τ₃ evaluates S.X₃ along f. Component/evaluation equations alone
+    -- leave HasHomology arguments indexed by the evaluated short-complex endpoints.
+    -- Reset the whole QuasiIso type so the public X₃ rewrite has a well-typed motive.
     change QuasiIso ((zigzagBraidTensorSupportSequence.{u, v, w} k G i).X₃.map f)
     rw [zigzagBraidTensorSupportSequence_X₃.{u, v, w} k G i]
     let : ((tensor.{u, v, w} k G).obj
@@ -87,6 +93,7 @@ theorem quasiIso_zigzagBraidInverseTensor_map (i : V)
     QuasiIso (((Functor.map₂CochainComplex
       (GradedModuleCat.bimoduleModuleTensor.{max u w, max v u w} Γ Γ)).obj
         (zigzagBraidInverseComplex k G i)).map f) := by
+  -- Use the inverse support sequence with the same outer-to-middle comparison.
   let S := zigzagBraidInverseTensorSupportSequence.{u, v, w} k G i
   let φ := S.mapNatTrans ((evaluation _ _).map f)
   have hK :=
@@ -97,11 +104,17 @@ theorem quasiIso_zigzagBraidInverseTensor_map (i : V)
       ((evaluation _ _).obj L)
   suffices h : QuasiIso φ.τ₂ by
     dsimp only [φ, ShortComplex.mapNatTrans, S] at h
+    -- The comparison φ.τ₂ evaluates S.X₂ along f. Component/evaluation equations alone
+    -- leave HasHomology arguments indexed by the evaluated short-complex endpoints.
+    -- Reset the whole QuasiIso type so the public X₂ rewrite has a well-typed motive.
     change QuasiIso ((zigzagBraidInverseTensorSupportSequence.{u, v, w} k G i).X₂.map f) at h
     rw [zigzagBraidInverseTensorSupportSequence_X₂.{u, v, w} k G i] at h
     exact h
   apply HomologySequence.quasiIso_τ₂ φ hK hL
   · dsimp only [φ, ShortComplex.mapNatTrans, S]
+    -- The comparison φ.τ₁ evaluates S.X₁ along f. Component/evaluation equations alone
+    -- leave HasHomology arguments indexed by the evaluated short-complex endpoints.
+    -- Reset the whole QuasiIso type so the public X₁ rewrite has a well-typed motive.
     change QuasiIso ((zigzagBraidInverseTensorSupportSequence.{u, v, w} k G i).X₁.map f)
     rw [zigzagBraidInverseTensorSupportSequence_X₁.{u, v, w} k G i]
     let : ((tensor.{u, v, w} k G).obj ((GradedModuleCat.shiftFunctor (-2)).obj
@@ -110,6 +123,9 @@ theorem quasiIso_zigzagBraidInverseTensor_map (i : V)
     simp only [Functor.comp_map]
     infer_instance
   · dsimp only [φ, ShortComplex.mapNatTrans, S]
+    -- The comparison φ.τ₃ evaluates S.X₃ along f. Component/evaluation equations alone
+    -- leave HasHomology arguments indexed by the evaluated short-complex endpoints.
+    -- Reset the whole QuasiIso type so the public X₃ rewrite has a well-typed motive.
     change QuasiIso ((zigzagBraidInverseTensorSupportSequence.{u, v, w} k G i).X₃.map f)
     rw [zigzagBraidInverseTensorSupportSequence_X₃.{u, v, w} k G i]
     let : ((tensor.{u, v, w} k G).obj (zigzagGradedBimodule k G)).PreservesHomology :=
