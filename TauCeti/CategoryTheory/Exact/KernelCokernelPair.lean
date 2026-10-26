@@ -179,40 +179,40 @@ theorem of_iso (h : IsKernelCokernelPair S₁) (e : S₁ ≅ S₂) : IsKernelCok
 /-- A retract of a kernel–cokernel pair, in the category of short complexes, is a kernel–cokernel
 pair. A morphism into `S₁.X₂` killed by `S₁.g` is pushed into `S₂.X₂`, lifted through the kernel
 `S₂.f`, and pulled back by the retraction; dually for the cokernel. -/
-theorem of_retract (h : IsKernelCokernelPair S₂) (e : Retract S₁ S₂) : IsKernelCokernelPair S₁ where
-  nonempty_fIsKernel := by
-    have := h.mono_f
-    have : IsSplitMono e.i.τ₁ :=
-      ⟨⟨e.r.τ₁, by rw [← ShortComplex.comp_τ₁, e.retract, ShortComplex.id_τ₁]⟩⟩
-    have : Mono S₁.f := by
-      have hm : Mono (e.i.τ₁ ≫ S₂.f) := mono_comp _ _
-      rw [e.i.comm₁₂] at hm
-      exact mono_of_mono S₁.f e.i.τ₂
-    refine ⟨KernelFork.IsLimit.ofι _ _
-      (fun k hk ↦ h.lift (k ≫ e.i.τ₂) (by rw [Category.assoc, e.i.comm₂₃, reassoc_of% hk,
-        zero_comp]) ≫ e.r.τ₁) (fun k hk ↦ ?_) (fun k hk l hl ↦ ?_)⟩
-    · have hr : e.i.τ₂ ≫ e.r.τ₂ = 𝟙 _ := by
-        rw [← ShortComplex.comp_τ₂, e.retract, ShortComplex.id_τ₂]
-      rw [Category.assoc, e.r.comm₁₂, h.lift_f_assoc, Category.assoc, hr, Category.comp_id]
-    · rw [← cancel_mono S₁.f, hl, Category.assoc, e.r.comm₁₂, h.lift_f_assoc,
-        Category.assoc, ← ShortComplex.comp_τ₂, e.retract, ShortComplex.id_τ₂, Category.comp_id]
-  nonempty_gIsCokernel := by
-    have := h.epi_g
-    have : IsSplitEpi e.r.τ₃ :=
-      ⟨⟨e.i.τ₃, by rw [← ShortComplex.comp_τ₃, e.retract, ShortComplex.id_τ₃]⟩⟩
-    have : Epi S₁.g := by
-      have he : Epi (S₂.g ≫ e.r.τ₃) := epi_comp _ _
-      rw [← e.r.comm₂₃] at he
-      exact epi_of_epi e.r.τ₂ S₁.g
-    refine ⟨CokernelCofork.IsColimit.ofπ _ _
-      (fun k hk ↦ e.i.τ₃ ≫ h.desc (e.r.τ₂ ≫ k) (by rw [← Category.assoc, ← e.r.comm₁₂,
-        Category.assoc, hk, comp_zero])) (fun k hk ↦ ?_) (fun k hk l hl ↦ ?_)⟩
-    · have hi : e.i.τ₂ ≫ e.r.τ₂ = 𝟙 _ := by
-        rw [← ShortComplex.comp_τ₂, e.retract, ShortComplex.id_τ₂]
-      rw [← Category.assoc, ← e.i.comm₂₃, Category.assoc, h.g_desc, ← Category.assoc, hi,
-        Category.id_comp]
-    · rw [← cancel_epi S₁.g, hl, ← Category.assoc, ← e.i.comm₂₃, Category.assoc, h.g_desc,
-        ← Category.assoc, ← ShortComplex.comp_τ₂, e.retract, ShortComplex.id_τ₂, Category.id_comp]
+theorem of_retract (h : IsKernelCokernelPair S₂) (e : Retract S₁ S₂) :
+    IsKernelCokernelPair S₁ := by
+  have h₁ : e.i.τ₁ ≫ e.r.τ₁ = 𝟙 _ := by rw [← ShortComplex.comp_τ₁, e.retract, ShortComplex.id_τ₁]
+  have h₂ : e.i.τ₂ ≫ e.r.τ₂ = 𝟙 _ := by rw [← ShortComplex.comp_τ₂, e.retract, ShortComplex.id_τ₂]
+  have h₃ : e.i.τ₃ ≫ e.r.τ₃ = 𝟙 _ := by rw [← ShortComplex.comp_τ₃, e.retract, ShortComplex.id_τ₃]
+  have := h.mono_f
+  have := h.epi_g
+  have : IsSplitMono e.i.τ₁ := ⟨⟨e.r.τ₁, h₁⟩⟩
+  have : IsSplitEpi e.r.τ₃ := ⟨⟨e.i.τ₃, h₃⟩⟩
+  have : Mono S₁.f := by
+    have : Mono (S₁.f ≫ e.i.τ₂) := by rw [← e.i.comm₁₂]; exact mono_comp _ _
+    exact mono_of_mono S₁.f e.i.τ₂
+  have : Epi S₁.g := by
+    have : Epi (e.r.τ₂ ≫ S₁.g) := by rw [e.r.comm₂₃]; exact epi_comp _ _
+    exact epi_of_epi e.r.τ₂ S₁.g
+  -- A morphism killed by `S₁.g` is pushed into `S₂.X₂`, lifted through `S₂.f` and retracted.
+  have hk {W : C} {k : W ⟶ S₁.X₂} (hk : k ≫ S₁.g = 0) : (k ≫ e.i.τ₂) ≫ S₂.g = 0 := by
+    rw [Category.assoc, e.i.comm₂₃, reassoc_of% hk, zero_comp]
+  have lift_f {W : C} (k : W ⟶ S₁.X₂) (hk' : k ≫ S₁.g = 0) :
+      (h.lift _ (hk hk') ≫ e.r.τ₁) ≫ S₁.f = k := by
+    rw [Category.assoc, e.r.comm₁₂, h.lift_f_assoc, Category.assoc, h₂, Category.comp_id]
+  -- Dually, a morphism killed by `S₁.f` is retracted, descended through `S₂.g` and pushed back.
+  have hd {W : C} {k : S₁.X₂ ⟶ W} (hk : S₁.f ≫ k = 0) : S₂.f ≫ e.r.τ₂ ≫ k = 0 := by
+    rw [← Category.assoc, ← e.r.comm₁₂, Category.assoc, hk, comp_zero]
+  have g_desc {W : C} (k : S₁.X₂ ⟶ W) (hk' : S₁.f ≫ k = 0) :
+      S₁.g ≫ e.i.τ₃ ≫ h.desc _ (hd hk') = k := by
+    rw [← Category.assoc, ← e.i.comm₂₃, Category.assoc, h.g_desc, ← Category.assoc, h₂,
+      Category.id_comp]
+  exact
+    { nonempty_fIsKernel := ⟨KernelFork.IsLimit.ofι _ _ (fun k hk' ↦ h.lift _ (hk hk') ≫ e.r.τ₁)
+        lift_f (fun k hk' l hl ↦ by rw [← cancel_mono S₁.f, hl, lift_f k hk'])⟩
+      nonempty_gIsCokernel := ⟨CokernelCofork.IsColimit.ofπ _ _
+        (fun k hk' ↦ e.i.τ₃ ≫ h.desc _ (hd hk')) g_desc
+        (fun k hk' l hl ↦ by rw [← cancel_epi S₁.g, hl, g_desc k hk'])⟩ }
 
 /-- A functor preserving zero morphisms and the two relevant (co)limits — for instance an
 equivalence, or an exact functor between abelian categories — carries kernel–cokernel pairs to
