@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Topology.Algebra.Support
 
 /-!
 # Translation of test functions
@@ -47,20 +48,8 @@ def translateTestFunction (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, F)) :
         phi.hasCompactSupport.comp_homeomorph (Homeomorph.addRight (-h)),
     by
       intro y hy
-      have hy' : y + -h ∈ tsupport (phi : E → F) := by
-        have hfun : (fun z => phi (z - h)) =
-            (phi : E → F) ∘ (Homeomorph.addRight (-h) : E → E) := by
-          funext z
-          simp only [Function.comp_apply, sub_eq_add_neg]
-          apply congrArg phi
-          rfl
-        have hycomp : y ∈ tsupport
-            ((phi : E → F) ∘ (Homeomorph.addRight (-h) : E → E)) := by
-          rw [← hfun]
-          exact hy
-        rw [tsupport_comp_eq_preimage] at hycomp
-        exact hycomp
-      simpa only [sub_eq_add_neg, neg_add_cancel_right] using hVO (phi.tsupport_subset hy')⟩
+      rw [tsupport_comp_sub_right] at hy
+      simpa using hVO (phi.tsupport_subset hy)⟩
 
 /-- Translating a test function evaluates it at the oppositely translated point. -/
 @[simp]

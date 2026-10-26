@@ -59,6 +59,8 @@ class of the Killing form.
 * `TauCeti.LieAlgebra.LoopAlgebra.residuePairing_single_tmul`: the residue pairing on modes.
 * `TauCeti.LieAlgebra.LoopAlgebra.residuePairing_one_tmul`: the residue pairing vanishes when its
   first argument is a constant loop.
+* `TauCeti.LieAlgebra.LoopAlgebra.single_add_tmul_mem_span_lie`: for a perfect Lie algebra, every
+  mode `x_{a + b}` is a linear combination of brackets `⁅y_a, z_b⁆`.
 * `TauCeti.LieAlgebra.LoopAlgebra.exists_eq_smul_twoCocycleOfBilinear_iff`: **a 2-cocycle is a
   multiple of the residue cocycle if and only if it vanishes on constant loops**, for a form `Ψ`
   spanning the invariant forms and nonzero on some bracket.
@@ -126,6 +128,31 @@ theorem residuePairing_one_tmul (Φ : LinearMap.BilinForm R L) (x : L) (a : loop
   · rw [Finsupp.single_eq_of_ne (neg_ne_zero.mpr h), map_zero, LinearMap.zero_apply, smul_zero]
 
 end ResiduePairingConstant
+
+section Perfect
+
+variable {R A L : Type*} [CommRing R] [AddCommMonoid A] [LieRing L] [LieAlgebra R L]
+
+/-- **Modes of a perfect Lie algebra are sums of brackets of modes.** If `L` is perfect, then for
+all exponents `a` and `b` every mode `x_{a + b}` is a linear combination of brackets
+`⁅y_a, z_b⁆` of modes `y_a = t^a ⊗ y` and `z_b = t^b ⊗ z`. -/
+theorem single_add_tmul_mem_span_lie (hL : derivedSeries R L 1 = ⊤) (a b : A) (x : L) :
+    (AddMonoidAlgebra.single (a + b) 1 ⊗ₜ x : loopAlgebra R A L) ∈ Submodule.span R
+      {u | ∃ y z : L, ⁅(AddMonoidAlgebra.single a 1 ⊗ₜ y : loopAlgebra R A L),
+        AddMonoidAlgebra.single b 1 ⊗ₜ z⁆ = u} := by
+  have hx : x ∈ Submodule.span R {u | ∃ y z : L, ⁅y, z⁆ = u} := by
+    rw [← coe_derivedSeries_one_eq, LieIdeal.toLieSubalgebra_toSubmodule, hL]
+    exact Submodule.mem_top
+  induction hx using Submodule.span_induction with
+  | mem u hu =>
+    obtain ⟨y, z, rfl⟩ := hu
+    refine Submodule.subset_span ⟨y, z, ?_⟩
+    rw [ExtendScalars.bracket_tmul, AddMonoidAlgebra.single_mul_single, mul_one]
+  | zero => simp
+  | add u v _ _ hu hv => simpa only [TensorProduct.tmul_add] using Submodule.add_mem _ hu hv
+  | smul r u _ hu => simpa only [TensorProduct.tmul_smul] using Submodule.smul_mem _ r hu
+
+end Perfect
 
 section ModeBlocks
 

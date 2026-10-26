@@ -22,7 +22,9 @@ This connects signed Euclidean remainder sequences to Cauchy indices, so
 coefficient formulas for the sequences can compute indices and Tarski queries.
 In particular, one Euclidean step changes the whole-line index of `q / p` only
 by the contribution of the leading coefficients of `p` and `q`
-(`Polynomial.cauchyIndex_univ_eq_add_cauchyIndex_neg_mod`).
+(`Polynomial.cauchyIndex_univ_eq_add_cauchyIndex_neg_mod`), and the Tarski query
+`TaQ(q, p)` is the drop in variations at infinity of the Sturm sequence of `p` and
+`p' * q` (`Polynomial.tarskiQuery_eq_signVariationsAtBot_sub_signVariationsAtTop`).
 
 ## References
 
@@ -158,6 +160,16 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_univ (p q : R[X]) :
   rw [hindex, cauchyIndex_Ioo_aux p q hab
     (fun r hr hz => (hRA r hr a hz).not_gt haA)
     (fun r hr hz => (hRB r hr b hz).not_gt hBb), hA a haA, hB b hBb]
+
+/-- **Sturm–Tarski on the whole line.** The Tarski query of `q` at the distinct roots of `p` is
+the drop in sign variations from `-∞` to `+∞` of the Sturm sequence of `p` and `p' * q`. No
+squarefreeness assumption is needed. For `p = 0` both sides are zero. -/
+theorem _root_.Polynomial.tarskiQuery_eq_signVariationsAtBot_sub_signVariationsAtTop
+    (p q : R[X]) :
+    tarskiQuery p q =
+      (signVariationsAtBot (sturmSeq p (derivative p * q)) : ℤ) -
+        signVariationsAtTop (sturmSeq p (derivative p * q)) := by
+  rw [← cauchyIndex_derivative_mul_univ, cauchyIndex_eq_sub_signVariations_univ]
 
 /-- The Euclidean recurrence for the whole-line Cauchy index. Passing from `q / p` to
 `-(p % q) / q` changes the index by `sign p.leadingCoeff * sign q.leadingCoeff` when the degrees

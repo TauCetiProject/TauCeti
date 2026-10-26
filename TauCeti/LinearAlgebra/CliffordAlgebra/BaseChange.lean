@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
+import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 
 /-!
 # Clifford involutions, the even part, and extension of scalars
@@ -19,7 +20,10 @@ commutes with the grade involution and with Clifford conjugation, and it preserv
 subalgebra. These are the compatibilities needed to transport twisted-conjugation actions and the
 Lipschitz, Pin, and Spin subgroups along scalar extensions. It also transports isomorphisms of
 the coefficient algebra, such as complex conjugation of `ℂ` over `ℝ`, to the Clifford algebra after
-extension of scalars.
+extension of scalars. Finally, on the tensor carrier `A ⊗[R] Cℓ(M, Q)` of Mathlib's
+`CliffordAlgebra.equivBaseChange`, it records the inverse-map forms of Mathlib's involution and
+reversal laws for `CliffordAlgebra.toBaseChange`, and identifies the `ℤ/2`-grading of
+`Cℓ(A ⊗ M, Q_A)` with the scalar extension of the grading of `Cℓ(M, Q)`.
 
 ## Main results
 
@@ -34,6 +38,16 @@ extension of scalars.
 * `CliffordAlgebra.baseChangeCongr` is the isomorphism `Cℓ(A ⊗ M) ≃ Cℓ(B ⊗ M)` induced by an
   isomorphism of coefficient algebras `A ≃ₐ[R] B`; `CliffordAlgebra.baseChangeCongr_unique`
   characterizes it, and it commutes with the grade involution, reversal and Clifford conjugation.
+* `CliffordAlgebra.ofBaseChange_map_involute` and `CliffordAlgebra.ofBaseChange_map_reverse`:
+  under `CliffordAlgebra.ofBaseChange`, the grade involution and reversal of the right tensor
+  factor become those of `Cℓ(A ⊗ M, Q_A)`.
+* `CliffordAlgebra.mem_baseChange_evenOdd_zero_iff` and
+  `CliffordAlgebra.mem_baseChange_evenOdd_one_iff`: on the tensor carrier, the scalar extensions
+  of the even and odd parts are the `±1`-eigenspaces of the grade involution of the right factor.
+* `CliffordAlgebra.toBaseChange_mem_baseChange_evenOdd_iff` and
+  `CliffordAlgebra.ofBaseChange_mem_evenOdd_iff`: `CliffordAlgebra.equivBaseChange` and its
+  inverse match the parity-`i` part of `Cℓ(A ⊗ M, Q_A)` with the scalar extension of the
+  parity-`i` part of `Cℓ(M, Q)`.
 -/
 
 public section
@@ -311,5 +325,104 @@ theorem baseChangeCongr_star (x : CliffordAlgebra (Q.baseChange A)) :
   simp only [star_def, baseChangeCongr_reverse, baseChangeCongr_involute]
 
 end Congr
+
+/-! ### The tensor carrier: inverse-map forms and the grading -/
+
+section TensorCarrier
+
+variable (Q : QuadraticForm R M)
+
+/-- The inverse-map form of Mathlib's `CliffordAlgebra.toBaseChange_involute`: on the tensor
+carrier `A ⊗[R] Cℓ(M, Q)`, the grade involution acts on the right factor only. -/
+theorem ofBaseChange_map_involute (x : A ⊗[R] CliffordAlgebra Q) :
+    ofBaseChange A Q (TensorProduct.map LinearMap.id involute.toLinearMap x) =
+      involute (ofBaseChange A Q x) := by
+  conv_lhs => rw [← toBaseChange_ofBaseChange A Q x, ← toBaseChange_involute,
+    ofBaseChange_toBaseChange]
+
+/-- The inverse-map form of Mathlib's `CliffordAlgebra.toBaseChange_reverse`: on the tensor
+carrier `A ⊗[R] Cℓ(M, Q)`, reversal acts on the right factor only. -/
+theorem ofBaseChange_map_reverse (x : A ⊗[R] CliffordAlgebra Q) :
+    ofBaseChange A Q (TensorProduct.map LinearMap.id reverse x) =
+      reverse (ofBaseChange A Q x) := by
+  conv_lhs => rw [← toBaseChange_ofBaseChange A Q x, ← toBaseChange_reverse,
+    ofBaseChange_toBaseChange]
+
+variable {Q}
+
+/-- The averaging projections `z ↦ ⅟2 • (z ± involute z)` of the tensor carrier land in the scalar
+extensions of the even and odd parts respectively. -/
+private theorem invOf_two_smul_add_sub_map_involute_mem (z : A ⊗[R] CliffordAlgebra Q) :
+    (⅟2 : R) • (z + TensorProduct.map LinearMap.id involute.toLinearMap z) ∈
+        (evenOdd Q 0).baseChange A ∧
+      (⅟2 : R) • (z - TensorProduct.map LinearMap.id involute.toLinearMap z) ∈
+        (evenOdd Q 1).baseChange A := by
+  induction z using TensorProduct.inductionOn with
+  | tmul a c =>
+    simp only [TensorProduct.map_tmul, LinearMap.id_apply, ← TensorProduct.tmul_add,
+      ← TensorProduct.tmul_sub, ← TensorProduct.tmul_smul]
+    refine ⟨Submodule.tmul_mem_baseChange_of_mem a (involute_eq_self_iff.mp ?_),
+      Submodule.tmul_mem_baseChange_of_mem a (involute_eq_neg_iff.mp ?_)⟩
+    · simp [add_comm]
+    · simp [smul_sub]
+  | add z w hz hw =>
+    rw [map_add, add_add_add_comm, add_sub_add_comm, smul_add, smul_add (⅟2 : R) (z - _)]
+    exact ⟨add_mem hz.1 hw.1, add_mem hz.2 hw.2⟩
+
+/-- **The even part of the tensor carrier is the fixed space of the grade involution**: an element
+of `A ⊗[R] Cℓ(M, Q)` lies in the scalar extension of the even part exactly when the grade
+involution of the right factor fixes it. -/
+theorem mem_baseChange_evenOdd_zero_iff {y : A ⊗[R] CliffordAlgebra Q} :
+    y ∈ (evenOdd Q 0).baseChange A ↔
+      TensorProduct.map LinearMap.id involute.toLinearMap y = y := by
+  refine ⟨?_, fun hy => ?_⟩
+  · intro hy
+    obtain ⟨t, rfl⟩ := Submodule.toBaseChange_surjective' A _ hy
+    clear hy
+    induction t using TensorProduct.inductionOn with
+    | tmul a c => simp [involute_eq_of_mem_even c.2]
+    | add s t hs ht => simp only [map_add, Submodule.coe_add, hs, ht]
+  · simpa [hy, ← two_smul R y, smul_smul] using (invOf_two_smul_add_sub_map_involute_mem y).1
+
+/-- **The odd part of the tensor carrier is the `-1`-eigenspace of the grade involution**: an
+element of `A ⊗[R] Cℓ(M, Q)` lies in the scalar extension of the odd part exactly when the grade
+involution of the right factor negates it. -/
+theorem mem_baseChange_evenOdd_one_iff {y : A ⊗[R] CliffordAlgebra Q} :
+    y ∈ (evenOdd Q 1).baseChange A ↔
+      TensorProduct.map LinearMap.id involute.toLinearMap y = -y := by
+  refine ⟨?_, fun hy => ?_⟩
+  · intro hy
+    obtain ⟨t, rfl⟩ := Submodule.toBaseChange_surjective' A _ hy
+    clear hy
+    induction t using TensorProduct.inductionOn with
+    | tmul a c => simp [involute_eq_of_mem_odd c.2, TensorProduct.tmul_neg]
+    | add s t hs ht => simp only [map_add, Submodule.coe_add, hs, ht, neg_add]
+  · simpa [hy, ← two_smul R y, smul_smul] using (invOf_two_smul_add_sub_map_involute_mem y).2
+
+/-- **The `ℤ/2`-grading is compatible with extension of scalars**: an element of `Cℓ(A ⊗ M, Q_A)`
+is homogeneous of parity `i` exactly when its image under `CliffordAlgebra.toBaseChange` lies in
+the scalar extension of the parity-`i` part of `Cℓ(M, Q)`. -/
+@[simp]
+theorem toBaseChange_mem_baseChange_evenOdd_iff {x : CliffordAlgebra (Q.baseChange A)}
+    {i : ZMod 2} :
+    toBaseChange A Q x ∈ (evenOdd Q i).baseChange A ↔ x ∈ evenOdd (Q.baseChange A) i := by
+  let : Invertible (2 : A) := (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+  have hinj : Function.Injective (toBaseChange A Q) :=
+    Function.LeftInverse.injective (ofBaseChange_toBaseChange A Q)
+  rcases (by decide : ∀ c : ZMod 2, c = 0 ∨ c = 1) i with rfl | rfl
+  · rw [mem_baseChange_evenOdd_zero_iff, ← toBaseChange_involute, hinj.eq_iff,
+      involute_eq_self_iff]
+  · rw [mem_baseChange_evenOdd_one_iff, ← toBaseChange_involute, ← map_neg, hinj.eq_iff,
+      involute_eq_neg_iff]
+
+/-- **The `ℤ/2`-grading is compatible with extension of scalars**, in the direction of
+`CliffordAlgebra.ofBaseChange`: it maps the scalar extension of the parity-`i` part of `Cℓ(M, Q)`
+exactly onto the parity-`i` part of `Cℓ(A ⊗ M, Q_A)`. -/
+@[simp]
+theorem ofBaseChange_mem_evenOdd_iff {y : A ⊗[R] CliffordAlgebra Q} {i : ZMod 2} :
+    ofBaseChange A Q y ∈ evenOdd (Q.baseChange A) i ↔ y ∈ (evenOdd Q i).baseChange A := by
+  rw [← toBaseChange_mem_baseChange_evenOdd_iff, toBaseChange_ofBaseChange]
+
+end TensorCarrier
 
 end CliffordAlgebra

@@ -28,6 +28,9 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self` and
   `AlgebraicGeometry.Scheme.Hom.appLE_ΓSpecIso_hom_naturality` compute the global sections of
   affine charts `Spec R ⟶ X` and their precomposites with `Spec.map φ`.
+* `AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top`: for affine opens `V ≤ U`,
+  the restrictions of the functions on `U` whose basic open lies in `V` generate the unit ideal of
+  `Γ(X, V)`.
 -/
 
 open TopologicalSpace AlgebraicGeometry
@@ -116,6 +119,18 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self (hU : IsAffine
   rw [Scheme.Hom.appLE, hU.fromSpec_app_self, Category.assoc, ← Functor.map_comp]
   exact (congrArg _ ((congrArg _ (Subsingleton.elim _ _)).trans
     ((Spec Γ(X, U)).presheaf.map_id _))).trans (Category.comp_id _)
+
+/-- For affine opens `V ≤ U`, the restrictions to `V` of the functions on `U` whose basic open lies
+in `V` generate the unit ideal of `Γ(X, V)`. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top {V : X.Opens}
+    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hVU : V ≤ U) :
+    Ideal.span {g : Γ(X, V) | ∃ f : Γ(X, U), X.basicOpen f ≤ V ∧
+      X.presheaf.map (homOfLE hVU).op f = g} = ⊤ := by
+  refine (hV.self_le_iSup_basicOpen_iff).mp fun x hx ↦ ?_
+  obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hx⟩ (hVU hx)
+  refine Opens.mem_iSup.mpr ⟨⟨_, f, hfV, rfl⟩, ?_⟩
+  rw [Scheme.basicOpen_res]
+  exact ⟨hx, hxf⟩
 
 /-- Global sections of an affine chart `f : Spec R ⟶ Y` are natural in `R`: precomposing `f` with
 `Spec.map φ` turns the induced map `Γ(Y, V) ⟶ R` into its composite with `φ`. -/
