@@ -646,6 +646,7 @@ theorem eval₂_swap (φ : SmoothForm I M F 2) (x : M)
 theorem ext {φ ψ : SmoothForm I M F 2}
     (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) :
     φ = ψ := by
+  -- `smoothForms` unfolds to `smoothBundleForms` for the trivial bundle here.
   apply SmoothBundleForm.ext (I := I) (F := F) (V := Bundle.Trivial M F)
   intro x v
   have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
