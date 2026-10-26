@@ -19,7 +19,7 @@ that its graph is a smooth section of the alternating bundle.  The corresponding
 provides the bundled carrier `SmoothBundleForm`; fixed coefficients are the `SmoothForm`
 specialization.  These carriers are the input for smooth wedge products and pullbacks.
 
-The degree-two adapters below evaluate smooth forms on ordered pairs and expose real-valued fibres
+The degree-two evaluation API below evaluates forms on ordered pairs and exposes real-valued fibres
 as alternating bilinear forms.
 
 Smoothness is expressed through the total-space charts of the topological alternating bundle.  The
@@ -409,14 +409,14 @@ theorem IsSmoothForm.of_le [IsManifold I 1 M] {m n : WithTop ℕ∞} {φ : Rough
   (isSmoothForm_def m φ).mpr (hφ.contMDiff.of_le hmn)
 
 /-- The submodule of smooth fixed-coefficient `F`-valued rough forms. -/
-def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
+abbrev smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
     [NormedAddCommGroup F] [NormedSpace ℝ F] (k : ℕ) :
     Submodule ℝ (RoughForm I M F k) :=
   smoothBundleForms (I := I) F (Bundle.Trivial M F) k
 
 /-- Membership in `smoothForms` is smoothness of the fixed-coefficient form as a section. -/
-@[simp] theorem mem_smoothForms {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+theorem mem_smoothForms {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 1 M] {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} {φ : RoughForm I M F k} :
     φ ∈ smoothForms I M F k ↔
@@ -442,11 +442,6 @@ variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 theorem isSmoothBundleForm (φ : SmoothForm I M F k) :
     IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (n := ∞) φ.1 :=
   mem_smoothForms.mp φ.2
-
-/-- The canonical bundle-valued view of a fixed-coefficient smooth form. -/
-abbrev toSmoothBundleForm (φ : SmoothForm I M F k) :
-    SmoothBundleForm I F (Bundle.Trivial M F) k :=
-  ⟨φ.1, mem_smoothBundleForms.mpr φ.isSmoothBundleForm⟩
 
 /-- The section underlying a smooth form is smooth. -/
 theorem contMDiff (φ : SmoothForm I M F k) :
@@ -623,12 +618,12 @@ lemma contMDiff_apply {n : WithTop ℕ∞} [ENat.LEInfty n]
     (hV : ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (V y)))
     (hW : ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (W y))) :
     ContMDiff I' 𝓘(ℝ, F) n
-      (fun y ↦ SmoothBundleForm.eval₂
-        form.toSmoothBundleForm
+      (fun y ↦ SmoothBundleForm.eval₂ (V := Bundle.Trivial M F)
+        form
         (b y) (V y) (W y)) := by
   have h := SmoothBundleForm.contMDiff_eval₂ (I := I) (F := F)
     (V := Bundle.Trivial M F)
-      form.toSmoothBundleForm hV hW
+      form hV hW
   intro y₀
   have hy := h y₀
   have hy' := (Bundle.contMDiffAt_totalSpace (IM := I') (IB := I) (n := n)).mp hy
@@ -647,7 +642,7 @@ def bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
 
 @[simp]
 theorem bilinFormAt_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpace I x) :
-    φ.bilinFormAt x v w = SmoothBundleForm.eval₂ φ.toSmoothBundleForm x v w :=
+    φ.bilinFormAt x v w = SmoothBundleForm.eval₂ (V := Bundle.Trivial M ℝ) φ x v w :=
   by simp [bilinFormAt, SmoothBundleForm.eval₂]
 
 /-- The bilinear form represented by a degree-two smooth form is alternating. -/
@@ -673,7 +668,7 @@ theorem altAt_apply (φ : SmoothForm I M F k) (x : M) (v : Fin k → E) :
 
 /-- The degree-two alternating-map view evaluated on a tuple agrees with ordered-pair evaluation. -/
 theorem altAt_apply_eval₂ (φ : SmoothForm I M F 2) (x : M) (v : Fin 2 → E) :
-    φ.altAt x v = SmoothBundleForm.eval₂ φ.toSmoothBundleForm x (v 0) (v 1) := by
+    φ.altAt x v = SmoothBundleForm.eval₂ (V := Bundle.Trivial M F) φ x (v 0) (v 1) := by
   have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [hv]
   simp only [altAt, SmoothBundleForm.eval₂]

@@ -79,7 +79,7 @@ alternating form this one-sided condition implies the corresponding condition on
 lemma isNondegenerate_iff_separatingLeft :
     form.IsNondegenerate ↔
       ∀ (x : M) (v : TangentSpace I x),
-        (∀ w, SmoothBundleForm.eval₂ form.toSmoothBundleForm x v w = 0) → v = 0 := by
+        (∀ w, SmoothBundleForm.eval₂ form x v w = 0) → v = 0 := by
   constructor
   · intro h x v hv
     apply (h x).1 v
@@ -112,7 +112,7 @@ def IsNondegenerate.symplecticFormAt (h : form.IsNondegenerate) (x : M) :
 @[simp]
 lemma IsNondegenerate.symplecticFormAt_apply (h : form.IsNondegenerate) (x : M)
     (v w : TangentSpace I x) :
-    h.symplecticFormAt x v w = SmoothBundleForm.eval₂ form.toSmoothBundleForm x v w :=
+    h.symplecticFormAt x v w = SmoothBundleForm.eval₂ form x v w :=
   SmoothForm.bilinFormAt_apply form x v w
 
 section Transport
@@ -142,7 +142,7 @@ end Transport
 `form_x(v, J_x v) > 0` for every nonzero tangent vector. -/
 def Tames (form : SmoothTwoForm I M) (J : SmoothAlmostComplexStructure I M) : Prop :=
   ∀ (x : M) (v : TangentSpace I x),
-    v ≠ 0 → 0 < SmoothBundleForm.eval₂ form.toSmoothBundleForm x v (J x v)
+    v ≠ 0 → 0 < SmoothBundleForm.eval₂ form x v (J x v)
 
 /-- Manifold-level tameness is the pointwise linear tameness condition once nondegeneracy has
 identified each tangent-space form as a `SymplecticForm`. -/
@@ -165,13 +165,13 @@ lemma Tames.isNondegenerate (h : form.Tames J) : form.IsNondegenerate := by
 structure in both tangent arguments leaves the form unchanged. -/
 def Invariant (form : SmoothTwoForm I M) (J : SmoothAlmostComplexStructure I M) : Prop :=
   ∀ (x : M) (v w : TangentSpace I x),
-    SmoothBundleForm.eval₂ form.toSmoothBundleForm x (J x v) (J x w) =
-      SmoothBundleForm.eval₂ form.toSmoothBundleForm x v w
+    SmoothBundleForm.eval₂ form x (J x v) (J x w) =
+      SmoothBundleForm.eval₂ form x v w
 
 /-- Apply invariance at a point and two tangent vectors. -/
 lemma Invariant.apply (h : form.Invariant J) (x : M) (v w : TangentSpace I x) :
-    SmoothBundleForm.eval₂ form.toSmoothBundleForm x (J x v) (J x w) =
-      SmoothBundleForm.eval₂ form.toSmoothBundleForm x v w :=
+    SmoothBundleForm.eval₂ form x (J x v) (J x w) =
+      SmoothBundleForm.eval₂ form x v w :=
   h x v w
 
 /-- Manifold-level invariance is the pointwise linear invariance condition once nondegeneracy has
@@ -229,10 +229,10 @@ def constSmooth (omegaForm : SymplecticForm V) :
 /-- A constant smooth symplectic form evaluates as its defining algebraic form. -/
 @[simp]
 lemma constSmooth_apply (omegaForm : SymplecticForm V) (x v w : V) :
-    SmoothBundleForm.eval₂ omegaForm.constSmooth.toSmoothBundleForm x v w = omegaForm v w := by
+    SmoothBundleForm.eval₂ omegaForm.constSmooth x v w = omegaForm v w := by
   -- `const_model_apply` is stated in the model-space tangent coordinates, so
   -- convert the two model vectors to the corresponding tangent vectors explicitly.
-  change SmoothBundleForm.eval₂ omegaForm.constSmooth.toSmoothBundleForm x
+  change SmoothBundleForm.eval₂ omegaForm.constSmooth x
       ((NormedSpace.fromTangentSpace x).symm v)
       ((NormedSpace.fromTangentSpace x).symm w) = omegaForm v w
   exact (SmoothTwoForm.const_model_apply omegaForm.toBilinForm.toContinuousBilinearMap
@@ -242,7 +242,7 @@ lemma constSmooth_apply (omegaForm : SymplecticForm V) (x v w : V) :
 evaluating a constant smooth symplectic form is evaluating its defining bilinear form. -/
 lemma fromTangentSpace_constSmooth_apply (omegaForm : SymplecticForm V) (x : V)
     (v w : TangentSpace 𝓘(ℝ, V) x) :
-    SmoothBundleForm.eval₂ omegaForm.constSmooth.toSmoothBundleForm x v w =
+    SmoothBundleForm.eval₂ omegaForm.constSmooth x v w =
       omegaForm (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
   exact (SmoothTwoForm.const_apply omegaForm.toBilinForm.toContinuousBilinearMap
     omegaForm.isAlt x v w).trans (by rfl)

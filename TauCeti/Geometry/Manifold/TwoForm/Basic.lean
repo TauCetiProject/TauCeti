@@ -61,7 +61,7 @@ theorem const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x : V)
     (v w : TangentSpace (modelWithCornersSelf ℝ V) x) :
     SmoothBundleForm.eval₂
-      (const B).toSmoothBundleForm x v w =
+      (const B) x v w =
       B (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
   rw [SmoothBundleForm.eval₂_apply]
   change (const B).1 x ![v, w] = _
@@ -83,7 +83,7 @@ theorem const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 theorem const_model_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x v w : V) :
     SmoothBundleForm.eval₂
-      (const B).toSmoothBundleForm x
+      (const B) x
       ((NormedSpace.fromTangentSpace x).symm v)
       ((NormedSpace.fromTangentSpace x).symm w) = B v w := by
   simpa only [ContinuousLinearEquiv.apply_symm_apply] using

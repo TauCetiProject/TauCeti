@@ -51,9 +51,9 @@ theorem IsNondegenerate.isLagrangianMap_graph_iff
   have hpoint (x : M) :
       ((hσ.twistedProd hτ).symplecticFormAt (x, φ x)).IsLagrangian
           (LinearMap.range (mfderiv I (I.prod J) (fun y ↦ (y, φ y)) x).toLinearMap) ↔
-        ∀ v w, SmoothBundleForm.eval₂ τ.toSmoothBundleForm (φ x)
+        ∀ v w, SmoothBundleForm.eval₂ τ (φ x)
           (mfderiv I J φ x v) (mfderiv I J φ x w) =
-          SmoothBundleForm.eval₂ σ.toSmoothBundleForm x v w := by
+          SmoothBundleForm.eval₂ σ x v w := by
     rw [← SymplecticForm.isLagrangian_map_transport_iff
       (e := (Manifold.tangentSpaceProdEquiv (I := I) (J := J) (x, φ x)).toLinearEquiv),
       IsNondegenerate.symplecticFormAt_twistedProd hσ hτ,
@@ -74,8 +74,8 @@ theorem IsNondegenerate.isLagrangianMap_graph_iff
   rw [IsNondegenerate.isLagrangianMap_iff_forall]
   constructor
   · intro h
-    have hbundle : (SmoothForm.mpullback φ φ.contMDiff τ).toSmoothBundleForm =
-        σ.toSmoothBundleForm := by
+    have hbundle : (SmoothForm.mpullback φ φ.contMDiff τ) =
+        σ := by
       apply SmoothBundleForm.ext
       intro x v
       have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
@@ -83,9 +83,7 @@ theorem IsNondegenerate.isLagrangianMap_graph_iff
       rw [← SmoothBundleForm.eval₂_apply, ← SmoothBundleForm.eval₂_apply]
       rw [SmoothForm.eval₂_mpullback]
       exact (hpoint x).mp (h x) (v 0) (v 1)
-    apply Subtype.ext
-    exact congrArg
-      (fun q : SmoothBundleForm _ ℝ (Bundle.Trivial M ℝ) 2 => q.1) hbundle
+    exact hbundle
   · intro h x
     apply (hpoint x).mpr
     intro v w

@@ -65,11 +65,11 @@ theorem twistedProd_apply (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N)
 /-- Evaluation of the twisted product on two product tangent vectors. -/
 theorem eval₂_twistedProd (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N)
     (p : M × N) (v w : TangentSpace (I.prod J) p) :
-    SmoothBundleForm.eval₂ (twistedProd σ τ).toSmoothBundleForm p v w =
-      SmoothBundleForm.eval₂ σ.toSmoothBundleForm p.1
+    SmoothBundleForm.eval₂ (twistedProd σ τ) p v w =
+      SmoothBundleForm.eval₂ σ p.1
         (Manifold.tangentSpaceProdEquiv p v).1
         (Manifold.tangentSpaceProdEquiv p w).1 -
-      SmoothBundleForm.eval₂ τ.toSmoothBundleForm p.2
+      SmoothBundleForm.eval₂ τ p.2
         (Manifold.tangentSpaceProdEquiv p v).2
         (Manifold.tangentSpaceProdEquiv p w).2 := by
   rw [SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply,

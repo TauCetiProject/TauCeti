@@ -117,18 +117,18 @@ For a compatible pair `(form, J)`, this is `g(F ∂s, F ∂s) + g(F ∂t, F ∂t
 `g(v, w) = form x v (J x w)`. -/
 def stdComplexLineEnergyDensity (form : SmoothTwoForm I M) (J : SmoothAlmostComplexStructure I M)
     (x : M) (F : (ℝ × ℝ) →ₗ[ℝ] TangentSpace I x) : ℝ :=
-  SmoothBundleForm.eval₂ form.toSmoothBundleForm x (F stdComplexLineReal)
+  SmoothBundleForm.eval₂ form x (F stdComplexLineReal)
       (J x (F stdComplexLineReal)) +
-    SmoothBundleForm.eval₂ form.toSmoothBundleForm x (F stdComplexLineImag)
+    SmoothBundleForm.eval₂ form x (F stdComplexLineImag)
       (J x (F stdComplexLineImag))
 
 /-- Unfolding the definition of standard complex-line energy density on a manifold. -/
 lemma stdComplexLineEnergyDensity_def (form : SmoothTwoForm I M)
     (J : SmoothAlmostComplexStructure I M) (x : M) (F : (ℝ × ℝ) →ₗ[ℝ] TangentSpace I x) :
     form.stdComplexLineEnergyDensity J x F =
-      SmoothBundleForm.eval₂ form.toSmoothBundleForm x (F stdComplexLineReal)
+      SmoothBundleForm.eval₂ form x (F stdComplexLineReal)
           (J x (F stdComplexLineReal)) +
-        SmoothBundleForm.eval₂ form.toSmoothBundleForm x (F stdComplexLineImag)
+        SmoothBundleForm.eval₂ form x (F stdComplexLineImag)
           (J x (F stdComplexLineImag)) :=
   (rfl)
 
@@ -141,7 +141,7 @@ lemma stdComplexLineEnergyDensity_zero (form : SmoothTwoForm I M)
     form.stdComplexLineEnergyDensity J x 0 = 0 := by
   rw [stdComplexLineEnergyDensity_def]
   simp only [LinearMap.zero_apply]
-  have hz := SmoothBundleForm.eval₂_self form.toSmoothBundleForm x (0 : TangentSpace I x)
+  have hz := SmoothBundleForm.eval₂_self form x (0 : TangentSpace I x)
   simp only [(J.toEndomorphism x).map_zero, hz, add_zero]
 
 
@@ -224,7 +224,7 @@ lemma stdComplexLineEnergyDensity_eq_two_mul_twoForm
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (J.almostComplexStructureAt x) F) :
     form.stdComplexLineEnergyDensity J x F =
-      2 * SmoothBundleForm.eval₂ form.toSmoothBundleForm x (F stdComplexLineReal)
+      2 * SmoothBundleForm.eval₂ form x (F stdComplexLineReal)
         (F stdComplexLineImag) := by
   rw [SmoothTwoForm.stdComplexLineEnergyDensity_def]
   have himag : F stdComplexLineImag = J x (F stdComplexLineReal) := by
@@ -234,16 +234,16 @@ lemma stdComplexLineEnergyDensity_eq_two_mul_twoForm
     rw [himag, J.apply_apply]
   rw [← himag, hreal]
   have hneg_right :
-      SmoothBundleForm.eval₂ form.toSmoothBundleForm x (F stdComplexLineImag)
+      SmoothBundleForm.eval₂ form x (F stdComplexLineImag)
           (-F stdComplexLineReal) =
-        -SmoothBundleForm.eval₂ form.toSmoothBundleForm x (F stdComplexLineImag)
+        -SmoothBundleForm.eval₂ form x (F stdComplexLineImag)
           (F stdComplexLineReal) := by
     simpa only [SmoothForm.bilinFormAt_apply] using
       (form.bilinFormAt x).neg_right (F stdComplexLineImag) (F stdComplexLineReal)
   have halt :
-      -SmoothBundleForm.eval₂ form.toSmoothBundleForm x (F stdComplexLineImag)
+      -SmoothBundleForm.eval₂ form x (F stdComplexLineImag)
           (F stdComplexLineReal) =
-        SmoothBundleForm.eval₂ form.toSmoothBundleForm x (F stdComplexLineReal)
+        SmoothBundleForm.eval₂ form x (F stdComplexLineReal)
           (F stdComplexLineImag) := by
     simpa only [SmoothForm.bilinFormAt_apply] using
       (LinearMap.IsAlt.neg (SmoothForm.isAlt_bilinFormAt form x)
@@ -264,7 +264,7 @@ lemma mfderiv_stdComplexLineEnergyDensity_eq_two_mul_twoForm
     (hu : IsPseudoholomorphicAt (SmoothAlmostComplexStructure.product ℝ) J u z) :
     form.stdComplexLineEnergyDensity J (u z)
         (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z).toLinearMap =
-      2 * SmoothBundleForm.eval₂ form.toSmoothBundleForm (u z)
+      2 * SmoothBundleForm.eval₂ form (u z)
         (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)
         (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag) := by
   have hz : (SmoothAlmostComplexStructure.product ℝ).almostComplexStructureAt z =
@@ -292,7 +292,7 @@ lemma mfderivWithin_stdComplexLineEnergyDensity_eq_two_mul_twoForm
     (hs : UniqueMDiffWithinAt (modelWithCornersSelf ℝ (ℝ × ℝ)) s z) :
     form.stdComplexLineEnergyDensity J (u z)
         (mfderivWithin (modelWithCornersSelf ℝ (ℝ × ℝ)) I u s z).toLinearMap =
-      2 * SmoothBundleForm.eval₂ form.toSmoothBundleForm (u z)
+      2 * SmoothBundleForm.eval₂ form (u z)
         (mfderivWithin (modelWithCornersSelf ℝ (ℝ × ℝ)) I u s z stdComplexLineReal)
         (mfderivWithin (modelWithCornersSelf ℝ (ℝ × ℝ)) I u s z stdComplexLineImag) := by
   have hz : (SmoothAlmostComplexStructure.product ℝ).almostComplexStructureAt z =
@@ -318,9 +318,9 @@ $$e(F) - 2 \omega_x(F \partial_s, F \partial_t) =
 lemma Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm (hinv : form.Invariant J)
     (x : M) (F : (ℝ × ℝ) →ₗ[ℝ] TangentSpace I x) :
     form.stdComplexLineEnergyDensity J x F -
-        2 * SmoothBundleForm.eval₂ form.toSmoothBundleForm x (F stdComplexLineReal)
+        2 * SmoothBundleForm.eval₂ form x (F stdComplexLineReal)
           (F stdComplexLineImag) =
-      SmoothBundleForm.eval₂ form.toSmoothBundleForm x
+      SmoothBundleForm.eval₂ form x
         (F stdComplexLineReal + J x (F stdComplexLineImag))
         (J x (F stdComplexLineReal + J x (F stdComplexLineImag))) := by
   rw [stdComplexLineEnergyDensity_def]
@@ -335,26 +335,26 @@ lemma Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm (hinv : form.Inv
   let v := F stdComplexLineReal
   let w := F stdComplexLineImag
   have h_right :
-      SmoothBundleForm.eval₂ form.toSmoothBundleForm x (v + J x w) (J x v - w) =
-        SmoothBundleForm.eval₂ form.toSmoothBundleForm x (v + J x w) (J x v) -
-          SmoothBundleForm.eval₂ form.toSmoothBundleForm x (v + J x w) w :=
+      SmoothBundleForm.eval₂ form x (v + J x w) (J x v - w) =
+        SmoothBundleForm.eval₂ form x (v + J x w) (J x v) -
+          SmoothBundleForm.eval₂ form x (v + J x w) w :=
     by simpa only [SmoothForm.bilinFormAt_apply] using
       (form.bilinFormAt x).sub_right (v + J x w) (J x v) w
   have h_left1 :
-      SmoothBundleForm.eval₂ form.toSmoothBundleForm x (v + J x w) (J x v) =
-        SmoothBundleForm.eval₂ form.toSmoothBundleForm x v (J x v) +
-          SmoothBundleForm.eval₂ form.toSmoothBundleForm x (J x w) (J x v) :=
+      SmoothBundleForm.eval₂ form x (v + J x w) (J x v) =
+        SmoothBundleForm.eval₂ form x v (J x v) +
+          SmoothBundleForm.eval₂ form x (J x w) (J x v) :=
     by simpa only [SmoothForm.bilinFormAt_apply] using
       (form.bilinFormAt x).add_left v (J x w) (J x v)
   have h_left2 :
-      SmoothBundleForm.eval₂ form.toSmoothBundleForm x (v + J x w) w =
-        SmoothBundleForm.eval₂ form.toSmoothBundleForm x v w +
-          SmoothBundleForm.eval₂ form.toSmoothBundleForm x (J x w) w :=
+      SmoothBundleForm.eval₂ form x (v + J x w) w =
+        SmoothBundleForm.eval₂ form x v w +
+          SmoothBundleForm.eval₂ form x (J x w) w :=
     by simpa only [SmoothForm.bilinFormAt_apply] using
       (form.bilinFormAt x).add_left v (J x w) w
   have hinv_step :
-      SmoothBundleForm.eval₂ form.toSmoothBundleForm x (J x w) (J x v) =
-        SmoothBundleForm.eval₂ form.toSmoothBundleForm x w v :=
+      SmoothBundleForm.eval₂ form x (J x w) (J x v) =
+        SmoothBundleForm.eval₂ form x w v :=
     hinv.apply x w v
   have halt1 := congrArg Neg.neg <|
     LinearMap.IsAlt.neg (SmoothForm.isAlt_bilinFormAt form x) v w
@@ -367,7 +367,7 @@ lemma Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm (hinv : form.Inv
 area density of any real-linear map into a tangent fiber is at most its standard energy density. -/
 lemma Compatible.two_mul_twoForm_le_stdComplexLineEnergyDensity (hcompat : form.Compatible J)
     (x : M) (F : (ℝ × ℝ) →ₗ[ℝ] TangentSpace I x) :
-    2 * SmoothBundleForm.eval₂ form.toSmoothBundleForm x (F stdComplexLineReal)
+    2 * SmoothBundleForm.eval₂ form x (F stdComplexLineReal)
       (F stdComplexLineImag) ≤
       form.stdComplexLineEnergyDensity J x F := by
   rw [hcompat.isNondegenerate.stdComplexLineEnergyDensity_eq J x F]
@@ -381,7 +381,7 @@ respect to `AlmostComplexStructure.product ℝ` and `J.almostComplexStructureAt 
 lemma Compatible.stdComplexLineEnergyDensity_eq_two_mul_twoForm_iff (hcompat : form.Compatible J)
     (x : M) (F : (ℝ × ℝ) →ₗ[ℝ] TangentSpace I x) :
     form.stdComplexLineEnergyDensity J x F =
-        2 * SmoothBundleForm.eval₂ form.toSmoothBundleForm x (F stdComplexLineReal)
+        2 * SmoothBundleForm.eval₂ form x (F stdComplexLineReal)
           (F stdComplexLineImag) ↔
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J.almostComplexStructureAt x) F := by
   rw [hcompat.isNondegenerate.stdComplexLineEnergyDensity_eq J x F]
@@ -462,7 +462,7 @@ lemma Compatible.lintegral_twoForm_le_stdComplexLineEnergy (hcompat : form.Compa
     (u : ℝ × ℝ → M) (du : ∀ z, (ℝ × ℝ) →ₗ[ℝ] TangentSpace I (u z))
     (μ : Measure (ℝ × ℝ)) :
     (∫⁻ z, ENNReal.ofReal
-      (SmoothBundleForm.eval₂ form.toSmoothBundleForm (u z)
+      (SmoothBundleForm.eval₂ form (u z)
         (du z stdComplexLineReal) (du z stdComplexLineImag)) ∂μ) ≤
       form.stdComplexLineEnergy J u du μ := by
   rw [stdComplexLineEnergy_def]
@@ -483,7 +483,7 @@ lemma stdComplexLineEnergy_eq_lintegral_twoForm
       (J.almostComplexStructureAt (u z)) (du z)) :
     form.stdComplexLineEnergy J u du μ =
       ∫⁻ z, ENNReal.ofReal
-        (SmoothBundleForm.eval₂ form.toSmoothBundleForm (u z) (du z stdComplexLineReal)
+        (SmoothBundleForm.eval₂ form (u z) (du z stdComplexLineReal)
           (du z stdComplexLineImag)) ∂μ := by
   rw [stdComplexLineEnergy_def]
   apply lintegral_congr_ae
@@ -500,7 +500,7 @@ lemma mfderiv_stdComplexLineEnergy_eq_lintegral_twoForm
     form.stdComplexLineEnergy J u
         (fun z ↦ (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z).toLinearMap) μ =
       ∫⁻ z, ENNReal.ofReal
-        (SmoothBundleForm.eval₂ form.toSmoothBundleForm (u z)
+        (SmoothBundleForm.eval₂ form (u z)
           (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)
           (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag)) ∂μ := by
   apply stdComplexLineEnergy_eq_lintegral_twoForm

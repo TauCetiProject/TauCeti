@@ -140,7 +140,7 @@ theorem isLagrangianMap_iff_forall :
 theorem isIsotropicMap_iff :
     hσ.IsIsotropicMap J f ↔
       ∀ x (v w : TangentSpace J x),
-        SmoothBundleForm.eval₂ σ.toSmoothBundleForm (f x)
+        SmoothBundleForm.eval₂ σ (f x)
             (mfderiv J I f x v) (mfderiv J I f x w) = 0 := by
   refine forall_congr' fun x ↦ ?_
   simp only [SymplecticForm.isIsotropic_iff, LinearMap.mem_range, forall_exists_index,
@@ -167,8 +167,8 @@ theorem isIsotropicMap_iff_mpullback_eq_zero [IsManifold J ∞ N] (hf : ContMDif
   rw [isIsotropicMap_iff]
   constructor
   · intro h
-    have hbundle : (SmoothForm.mpullback f hf σ).toSmoothBundleForm =
-        (0 : SmoothForm J N ℝ 2).toSmoothBundleForm := by
+    have hbundle : (SmoothForm.mpullback f hf σ) =
+        (0 : SmoothForm J N ℝ 2) := by
       apply SmoothBundleForm.ext
       intro x v
       have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
@@ -176,13 +176,11 @@ theorem isIsotropicMap_iff_mpullback_eq_zero [IsManifold J ∞ N] (hf : ContMDif
       rw [← SmoothBundleForm.eval₂_apply, ← SmoothBundleForm.eval₂_apply]
       rw [SmoothForm.eval₂_mpullback]
       simpa using h x (v 0) (v 1)
-    apply Subtype.ext
-    exact congrArg
-      (fun q : SmoothBundleForm J ℝ (Bundle.Trivial N ℝ) 2 => q.1) hbundle
+    exact hbundle
   · intro h x v w
     have heq := congrArg
       (fun φ : SmoothForm J N ℝ 2 =>
-        SmoothBundleForm.eval₂ φ.toSmoothBundleForm x v w) h
+        SmoothBundleForm.eval₂ φ x v w) h
     have htuple : (fun i : Fin 2 ↦ mfderiv J I f x (![v, w] i)) =
         ![mfderiv J I f x v, mfderiv J I f x w] := by
       funext i

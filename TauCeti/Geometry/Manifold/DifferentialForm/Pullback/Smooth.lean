@@ -198,9 +198,9 @@ theorem mpullback_apply (f : M → M') (hf : ContMDiff I I' ∞ f)
 theorem eval₂_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f)
     (φ : SmoothForm I' M' F 2) (x : M) (v w : TangentSpace I x) :
     SmoothBundleForm.eval₂
-        (mpullback f hf φ).toSmoothBundleForm x v w =
+        (mpullback f hf φ) x v w =
       SmoothBundleForm.eval₂
-        φ.toSmoothBundleForm
+        φ
         (f x) (mfderiv I I' f x v) (mfderiv I I' f x w) := by
   rw [SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply]
   change (mpullback f hf φ).1 x ![v, w] =

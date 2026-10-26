@@ -271,7 +271,7 @@ theorem symplecticForm_apply (z : CotangentBundle I M)
 `z`, is the linear form `TauCeti.strongDualCotangentSymplecticForm`. -/
 theorem eval₂_symplecticForm (z : CotangentBundle I M)
     (v w : TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
-    SmoothBundleForm.eval₂ (symplecticForm I M).toSmoothBundleForm z v w =
+    SmoothBundleForm.eval₂ (symplecticForm I M) z v w =
       strongDualCotangentSymplecticForm (V := E) v w := by
   simp
 
