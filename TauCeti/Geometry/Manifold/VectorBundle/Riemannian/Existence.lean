@@ -17,9 +17,10 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 
 Every `C^n` real vector bundle with finite-dimensional fibres over a σ-compact Hausdorff smooth
 manifold modelled on a finite-dimensional space carries a `C^n` Riemannian metric
-(`TauCeti.nonempty_contMDiffRiemannianMetric`). In particular, such a manifold carries a `C^n`
-Riemannian metric on its tangent bundle. Here `n` ranges over `ℕ∞`: the metric is built with smooth
-partitions of unity, so the analytic case is not covered.
+(`TauCeti.nonempty_contMDiffRiemannianMetric`). In particular, a σ-compact Hausdorff smooth
+manifold modelled on a finite-dimensional space carries a smooth (`C^∞`) Riemannian metric on its
+tangent bundle (`TauCeti.nonempty_contMDiffRiemannianMetric_tangentBundle`). Here `n` ranges over
+`ℕ∞`: the metric is built with smooth partitions of unity, so the analytic case is not covered.
 
 The proof is the classical one. Over the base set of a trivialization `e`, pulling back a fixed
 inner product on the model fibre along `e` gives a local metric. The fibrewise conditions on a
@@ -37,6 +38,9 @@ parts, and it gives the exponential maps, distances and volumes built from a met
 * `TauCeti.nonempty_contMDiffRiemannianMetric`: a `C^n` vector bundle with finite-dimensional
   fibres over a σ-compact Hausdorff smooth manifold modelled on a finite-dimensional space has a
   `C^n` Riemannian metric.
+* `TauCeti.nonempty_contMDiffRiemannianMetric_tangentBundle`: a σ-compact Hausdorff smooth
+  manifold modelled on a finite-dimensional space has a smooth (`C^∞`) Riemannian metric on its
+  tangent bundle.
 
 ## References
 
@@ -109,8 +113,9 @@ theorem nonempty_contMDiffRiemannianMetric [∀ b, ContinuousConstSMul ℝ (E b)
         simpa using (sq_lt_one_iff₀ (norm_nonneg _)).mp hv
   exact ⟨⟨s, fun b ↦ (hs b).1, fun b ↦ (hs b).2.1, fun b ↦ (hs b).2.2, s.contMDiff⟩⟩
 
-/-- **Existence of a Riemannian metric on a manifold.** A finite-dimensional smooth manifold
-admits a smooth Riemannian metric on its tangent bundle. -/
+/-- **Existence of a Riemannian metric on a manifold.** A σ-compact Hausdorff smooth manifold
+modelled on a finite-dimensional space admits a smooth (`C^∞`) Riemannian metric on its tangent
+bundle. -/
 theorem nonempty_contMDiffRiemannianMetric_tangentBundle
     {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
