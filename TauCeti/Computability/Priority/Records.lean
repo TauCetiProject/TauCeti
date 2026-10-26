@@ -28,8 +28,8 @@ the list, a position of higher priority than the attending requirement.
 * `TauCeti.Priority.Update`: a priority together with the record to install there.
 * `TauCeti.Priority.update`: the guarded update of a list of records.
 * `TauCeti.Priority.run`: the records after `n` stages of a schedule of updates.
-* `TauCeti.Priority.attentionStages`: the stages `s + 1` at which requirement `e` receives
-  attention, `s` ranging over the stages whose scheduled update has priority `e`.
+* `TauCeti.Priority.attentionStages`: for a priority schedule `ℕ → Option ℕ`, the run indices
+  `s + 1` after which an update of priority `e`, scheduled at stage `s`, has been applied.
 
 ## Main results
 
@@ -56,8 +56,9 @@ stabilization stage. Stabilization of a record is not satisfaction of its requir
   `FiniteInjuryAudit.lean`.
 * Divergences from that source: records are a plain `List` rather than a wrapper structure;
   truncation of lower-priority records is called a reset (initialization), not an injury;
-  attention is counted by the set `attentionStages` of stages, and local finiteness is stated as
-  finiteness of these sets; the separate goodness predicate is not included.
+  attention is counted by the sets `attentionStages` of a priority schedule `ℕ → Option ℕ`, and
+  local finiteness is stated as finiteness of these sets; the separate goodness predicate is not
+  included.
 -/
 
 public section
@@ -87,11 +88,13 @@ theorem update_of_le {s : List α} {u : Update α} (h : u.prio ≤ s.length) :
   ite_eq_left h
 
 /-- Out of range, an update changes nothing. -/
+@[simp]
 theorem update_of_lt {s : List α} {u : Update α} (h : s.length < u.prio) : update s u = s :=
   ite_eq_right (Nat.not_le.2 h)
 
 /-- **Locality.** An update at priority `e` leaves every record of strictly higher priority
 unchanged. -/
+@[simp]
 theorem getElem?_update_of_lt (s : List α) (u : Update α) {i : ℕ} (h : i < u.prio) :
     (update s u)[i]? = s[i]? := by
   rcases Nat.lt_or_ge s.length u.prio with hlt | hle
@@ -99,12 +102,14 @@ theorem getElem?_update_of_lt (s : List α) (u : Update α) {i : ℕ} (h : i < u
   · rw [update_of_le hle, List.getElem?_append_left (by simp; omega), List.getElem?_take_of_lt h]
 
 /-- An update in range installs its record at its own priority. -/
+@[simp]
 theorem getElem?_update_self {s : List α} {u : Update α} (h : u.prio ≤ s.length) :
     (update s u)[u.prio]? = some u.value := by
   rw [update_of_le h, List.getElem?_append_right (by simp)]
   simp [Nat.min_eq_left h]
 
 /-- **Reset.** An update in range resets every record of strictly lower priority. -/
+@[simp]
 theorem getElem?_update_of_gt {s : List α} {u : Update α} (h : u.prio ≤ s.length) {i : ℕ}
     (hi : u.prio < i) : (update s u)[i]? = none := by
   rw [update_of_le h, List.getElem?_eq_none]
@@ -112,6 +117,7 @@ theorem getElem?_update_of_gt {s : List α} {u : Update α} (h : u.prio ≤ s.le
   omega
 
 /-- An update at priority `e` keeps the first `n ≤ e` records. -/
+@[simp]
 theorem take_update_of_le (s : List α) (u : Update α) {n : ℕ} (h : n ≤ u.prio) :
     (update s u).take n = s.take n := by
   refine List.ext_getElem? fun i => ?_
@@ -122,8 +128,8 @@ theorem take_update_of_le (s : List α) (u : Update α) {n : ℕ} (h : n ≤ u.p
 
 /-! ### Runs -/
 
-/-- The records after `n` stages: starting from `init`, at each stage `s` the scheduled update
-`sched s`, if any, is applied. -/
+/-- The records after `n` stages: starting from `init`, at each stage `s < n` the update `sched s`
+scheduled at that stage, if any, is applied. -/
 def run (init : List α) (sched : ℕ → Option (Update α)) : ℕ → List α
   | 0 => init
   | n + 1 => match sched n with
@@ -141,48 +147,56 @@ theorem run_succ (init : List α) (sched : ℕ → Option (Update α)) (n : ℕ)
   cases sched n <;> rfl
 
 /-- A stage with no scheduled update leaves the records unchanged. -/
+@[simp]
 theorem run_succ_of_eq_none {init : List α} {sched : ℕ → Option (Update α)} {n : ℕ}
     (h : sched n = none) : run init sched (n + 1) = run init sched n := by
   rw [run, h]
 
 /-- A stage with a scheduled update applies it. -/
+@[simp]
 theorem run_succ_of_eq_some {init : List α} {sched : ℕ → Option (Update α)} {n : ℕ}
     {u : Update α} (h : sched n = some u) :
     run init sched (n + 1) = update (run init sched n) u := by
   rw [run, h]
 
-/-! ### Attention and stabilization -/
+/-! ### Attention and stabilization
 
-/-- The stages `s + 1` at which requirement `e` receives attention: those `s` whose scheduled
-update has priority `e`. -/
-def attentionStages (sched : ℕ → Option (Update α)) (e : ℕ) : Set ℕ :=
-  {t | ∃ s u, t = s + 1 ∧ sched s = some u ∧ u.prio = e}
+A priority schedule `action : ℕ → Option ℕ` records which requirement, if any, receives attention
+at each stage. The update scheduled at stage `s` has been applied in the records `run init sched
+(s + 1)`, so attention is counted by these run indices `s + 1`. A schedule of updates gives the
+priority schedule `fun s => (sched s).map Update.prio`. -/
+
+/-- The run indices `s + 1` after which an update of priority `e`, scheduled at stage `s`, has
+been applied. -/
+def attentionStages (action : ℕ → Option ℕ) (e : ℕ) : Set ℕ :=
+  {t | ∃ s, t = s + 1 ∧ action s = some e}
 
 /-- Membership in `attentionStages`. -/
-theorem mem_attentionStages {sched : ℕ → Option (Update α)} {e t : ℕ} :
-    t ∈ attentionStages sched e ↔ ∃ s u, t = s + 1 ∧ sched s = some u ∧ u.prio = e :=
+@[simp]
+theorem mem_attentionStages {action : ℕ → Option ℕ} {e t : ℕ} :
+    t ∈ attentionStages action e ↔ ∃ s, t = s + 1 ∧ action s = some e :=
   Iff.rfl
 
 /-- **Priority induction.** If each requirement receives attention finitely often whenever every
 higher-priority requirement does, then every requirement receives attention finitely often. -/
-theorem all_attention_finite_of_local (sched : ℕ → Option (Update α))
-    (hlocal : ∀ e, (∀ i, i < e → (attentionStages sched i).Finite) →
-      (attentionStages sched e).Finite) (e : ℕ) :
-    (attentionStages sched e).Finite := by
+theorem all_attention_finite_of_local (action : ℕ → Option ℕ)
+    (hlocal : ∀ e, (∀ i, i < e → (attentionStages action i).Finite) →
+      (attentionStages action e).Finite) (e : ℕ) :
+    (attentionStages action e).Finite := by
   induction e using Nat.strong_induction_on with
   | _ e ih => exact hlocal e ih
 
-/-- If requirements `0, …, e` each receive attention finitely often, then from some stage on no
-update of priority at most `e` is scheduled. -/
-theorem exists_forall_lt_prio_of_finite {sched : ℕ → Option (Update α)} {e : ℕ}
-    (h : ∀ i, i ≤ e → (attentionStages sched i).Finite) :
-    ∃ N, ∀ s, N ≤ s → ∀ u, sched s = some u → e < u.prio := by
-  have hfin : (⋃ i ∈ Set.Iic e, attentionStages sched i).Finite :=
+/-- If requirements `0, …, e` each receive attention finitely often, then from some stage on every
+requirement receiving attention has priority beyond `e`. -/
+theorem exists_forall_lt_of_finite {action : ℕ → Option ℕ} {e : ℕ}
+    (h : ∀ i, i ≤ e → (attentionStages action i).Finite) :
+    ∃ N, ∀ s, N ≤ s → ∀ i, action s = some i → e < i := by
+  have hfin : (⋃ i ∈ Set.Iic e, attentionStages action i).Finite :=
     (Set.finite_Iic e).biUnion fun i hi => h i hi
   obtain ⟨B, hB⟩ := hfin.bddAbove
-  refine ⟨B, fun s hs u hu => Nat.lt_of_not_le fun hle => ?_⟩
-  have hmem : s + 1 ∈ ⋃ i ∈ Set.Iic e, attentionStages sched i :=
-    Set.mem_biUnion (x := u.prio) hle ⟨s, u, rfl, hu, rfl⟩
+  refine ⟨B, fun s hs i hi => Nat.lt_of_not_le fun hle => ?_⟩
+  have hmem : s + 1 ∈ ⋃ i ∈ Set.Iic e, attentionStages action i :=
+    Set.mem_biUnion (x := i) hle ⟨s, rfl, hi⟩
   have := hB hmem
   omega
 
@@ -201,12 +215,13 @@ theorem getElem?_run_eq_of_forall_lt_prio {init : List α} {sched : ℕ → Opti
 /-- **Stabilization.** If each requirement receives attention finitely often whenever every
 higher-priority requirement does, then every record eventually stops changing. -/
 theorem exists_forall_getElem?_run_eq_of_local (init : List α) (sched : ℕ → Option (Update α))
-    (hlocal : ∀ e, (∀ i, i < e → (attentionStages sched i).Finite) →
-      (attentionStages sched e).Finite) (e : ℕ) :
+    (hlocal : ∀ e, (∀ i, i < e → (attentionStages (fun s => (sched s).map Update.prio) i).Finite) →
+      (attentionStages (fun s => (sched s).map Update.prio) e).Finite) (e : ℕ) :
     ∃ N, ∀ n, N ≤ n → (run init sched n)[e]? = (run init sched N)[e]? := by
-  obtain ⟨N, hN⟩ := exists_forall_lt_prio_of_finite
-    fun i _ => all_attention_finite_of_local sched hlocal i
-  exact ⟨N, fun n hn => getElem?_run_eq_of_forall_lt_prio hN hn⟩
+  obtain ⟨N, hN⟩ := exists_forall_lt_of_finite
+    fun i _ => all_attention_finite_of_local _ hlocal i
+  exact ⟨N, fun n hn => getElem?_run_eq_of_forall_lt_prio
+    (fun s hs u hu => hN s hs u.prio (by simp [hu])) hn⟩
 
 end Priority
 

@@ -21,6 +21,10 @@ only:
 * local finiteness without global silence: when requirement `e` receives attention exactly at
   stage `e`, some requirement receives attention at every stage and the records grow without
   bound, yet every record settles.
+
+Requirement `e` attends at stage `n` when the update scheduled at stage `n` has priority `e`; it
+has then been applied in the records `run init sched (n + 1)`, and `attentionStages` records the
+run index `n + 1`.
 -/
 
 open TauCeti.Priority
@@ -41,20 +45,19 @@ example :
       else if n = 2 then some ⟨0, 9⟩ else if n = 3 then some ⟨1, 5⟩ else none
     run [] sched 2 = [7, 8] ∧ run [] sched 3 = [9] ∧ run [] sched 4 = [9, 5] := by
   intro sched
-  simp [sched, run_succ, update_of_le]
+  simp [sched, update_of_le]
 
--- When requirement `e` attends exactly at stage `e`, every requirement attends finitely often ...
-example (e : ℕ) : (attentionStages (fun n => some (⟨n, n⟩ : Update ℕ)) e).Finite := by
-  refine (Set.finite_singleton (e + 1)).subset fun t ht => ?_
-  obtain ⟨s, u, rfl, hu, rfl⟩ := mem_attentionStages.1 ht
-  cases hu
-  rfl
+-- When requirement `e` attends exactly at stage `e`, its update has been applied after run index
+-- `e + 1` only, so every requirement attends finitely often ...
+example (e : ℕ) : attentionStages (fun n => some n) e = {e + 1} := by
+  ext t
+  simp [eq_comm]
 
 -- ... but the records grow without bound ...
 example (n : ℕ) : run [] (fun n => some (⟨n, n⟩ : Update ℕ)) n = List.range n := by
   induction n with
   | zero => simp
-  | succ n ih => simp [run_succ, ih, update_of_le, List.range_succ]
+  | succ n ih => simp [ih, update_of_le, List.range_succ]
 
 -- ... and each record settles.
 example (e : ℕ) : ∃ N, ∀ n, N ≤ n →
@@ -62,6 +65,5 @@ example (e : ℕ) : ∃ N, ∀ n, N ≤ n →
       (run [] (fun n => some (⟨n, n⟩ : Update ℕ)) N)[e]? :=
   exists_forall_getElem?_run_eq_of_local _ _ (fun e _ => by
     refine (Set.finite_singleton (e + 1)).subset fun t ht => ?_
-    obtain ⟨s, u, rfl, hu, rfl⟩ := mem_attentionStages.1 ht
-    cases hu
-    rfl) e
+    obtain ⟨s, rfl, hs⟩ := mem_attentionStages.1 ht
+    simp_all) e
