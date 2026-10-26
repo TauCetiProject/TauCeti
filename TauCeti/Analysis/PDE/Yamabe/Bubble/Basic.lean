@@ -53,8 +53,9 @@ local models for the test functions of the Yamabe problem.
   power of a bubble, and its form as a rescaled translate of a Japanese bracket power.
 * `TauCeti.Yamabe.bubble_rpow_four_div_finrank_sub_two`: the conformal factor
   `U_{t,b} ^ (4 / (n - 2))` of a bubble.
-* `TauCeti.Yamabe.hasGradientAt_bubble`, `TauCeti.Yamabe.norm_fderiv_bubble_sq`: the gradient of
-  a bubble and the square of the norm of its differential.
+* `TauCeti.Yamabe.hasGradientAt_bubble`, `TauCeti.Yamabe.norm_fderiv_bubble`,
+  `TauCeti.Yamabe.norm_fderiv_bubble_sq`: the gradient of a bubble and the norm and squared norm
+  of its differential.
 * `TauCeti.Yamabe.laplacian_div_add_norm_sub_sq_rpow`: the Laplacian of an arbitrary real power
   of the bubble profile `y ↦ 2 t / (t² + ‖y - b‖²)`.
 * `TauCeti.Yamabe.laplacian_bubble`: `Δ U_{t,b} = -(n (n - 2) / 4) U_{t,b} ^ (pₙ - 1)`.
@@ -213,6 +214,16 @@ theorem gradient_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
     ∇ (bubble t b) x =
       -(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b) :=
   (hasGradientAt_bubble ht b x).gradient
+
+/-- The exact norm of the first differential, including the dimensions below two. -/
+theorem norm_fderiv_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
+    ‖fderiv ℝ (bubble t b) x‖ =
+      |(finrank ℝ E : ℝ) - 2| * bubble t b x * ‖x - b‖ /
+        (t ^ 2 + ‖x - b‖ ^ 2) := by
+  rw [(hasGradientAt_bubble ht b x).hasFDerivAt.fderiv, LinearIsometryEquiv.norm_map,
+    norm_smul, norm_neg, Real.norm_eq_abs, abs_mul, abs_div,
+    abs_of_pos (bubble_pos ht b x), abs_of_pos (by positivity : 0 < t ^ 2 + ‖x - b‖ ^ 2)]
+  ring
 
 /-- The squared norm of the differential of a bubble is the radial function
 `((n - 2) / (2 t)) ² ‖x - b‖² (2 t / (t² + ‖x - b‖²)) ^ n`. -/
