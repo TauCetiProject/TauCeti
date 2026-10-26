@@ -117,7 +117,7 @@ theorem homologyMap_hurewiczHomologyAddEquiv_mapOfEq [PathConnectedSpace X]
       hurewiczHomologyAddEquiv y (Additive.ofMul (Abelianization.map
         (FundamentalGroup.mapOfEq f.hom h) a.toMul)) := by
   subst h
-  rw [TauCeti.FundamentalGroup.mapOfEq_rfl, homologyMap_hurewiczHomologyAddEquiv]
+  rw [FundamentalGroup.mapOfEq_rfl, homologyMap_hurewiczHomologyAddEquiv]
 
 /-- **Independence of the base point**: the Hurewicz map is invariant under the change of base
 point along a path. -/

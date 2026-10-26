@@ -145,7 +145,7 @@ theorem _root_.StarConvex.fundamentalGroupMulEquivInt_sphereLoop (hV : StarConve
       Multiplicative.ofAdd 1 := by
   rw [StarConvex.fundamentalGroupMulEquivInt_def, MulEquiv.trans_apply,
     ← StarConvex.sphereFundamentalGroupMulEquiv_apply, MulEquiv.symm_apply_apply,
-    MulEquiv.trans_apply, TauCeti.FundamentalGroup.homeomorphMulEquiv_apply,
+    MulEquiv.trans_apply, FundamentalGroup.homeomorphMulEquiv_apply,
     FundamentalGroup.mapOfEq_apply, ← Path.Homotopic.Quotient.mk_map,
     ← Path.Homotopic.Quotient.mk_cast]
   -- Transported to `Circle`, the loop is `Circle.expLoop`, up to the basepoint equation

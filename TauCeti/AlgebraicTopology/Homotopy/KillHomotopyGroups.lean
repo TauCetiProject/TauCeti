@@ -465,8 +465,8 @@ theorem exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv [T2Space 
     rw [← ConcreteCategory.comp_apply, hF]
   refine ⟨F, hFx, MonoidHom.ext fun g ↦ ?_⟩
   rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    killHomotopyGroupsFundamentalGroupMulEquiv_apply, TauCeti.FundamentalGroup.mapOfEq_comp]
-  exact TauCeti.FundamentalGroup.mapOfEq_congr (congrArg TopCat.Hom.hom hF) _ _ g
+    killHomotopyGroupsFundamentalGroupMulEquiv_apply, FundamentalGroup.mapOfEq_comp]
+  exact FundamentalGroup.mapOfEq_congr (congrArg TopCat.Hom.hom hF) _ _ g
 
 end Extension
 

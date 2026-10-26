@@ -23,7 +23,7 @@ The forward and inverse application lemmas characterize these equivalences as
 `HomotopyGroup.map` for `e` and `e.symm`, respectively.
 
 Transporting a homotopy-group computation across a homeomorphism is the dimension-`N` analogue of
-`TauCeti.FundamentalGroup.homeomorphMulEquiv`.
+`FundamentalGroup.homeomorphMulEquiv`.
 
 ## Main declarations
 

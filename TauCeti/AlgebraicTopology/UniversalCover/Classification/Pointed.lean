@@ -91,7 +91,7 @@ theorem _root_.IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le
     (hle : (mapOfEq ⟨p, hp⟩ hpe).range ≤ (mapOfEq ⟨q, hq.continuous⟩ hqf).range) :
     ∃! g : C(E, F), g e₀ = f₀ ∧ q ∘ g = p := by
   subst hpe
-  rw [TauCeti.FundamentalGroup.mapOfEq_rfl] at hle
+  rw [FundamentalGroup.mapOfEq_rfl] at hle
   exact hq.existsUnique_continuousMap_lifts_of_range_le (f := ⟨p, hp⟩) hqf hle
 
 /-- A map of pointed covers over `X` exists exactly when the subgroup recovered by the source is
@@ -111,8 +111,8 @@ theorem _root_.IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le
       exact congrFun hcomp e
     rintro _ ⟨γ, rfl⟩
     refine ⟨mapOfEq g hg γ, ?_⟩
-    rw [TauCeti.FundamentalGroup.mapOfEq_comp ⟨q, hq.continuous⟩ g hg hqf]
-    exact TauCeti.FundamentalGroup.mapOfEq_congr hfg _ _ γ
+    rw [FundamentalGroup.mapOfEq_comp ⟨q, hq.continuous⟩ g hg hqf]
+    exact FundamentalGroup.mapOfEq_congr hfg _ _ γ
   · intro hle
     exact (IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hq hp hpe hqf hle).exists
 
