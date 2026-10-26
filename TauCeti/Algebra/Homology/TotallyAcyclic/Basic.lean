@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+public import TauCeti.Algebra.Homology.HomologySequenceBiprod
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
 public import TauCeti.LinearAlgebra.Exact
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
@@ -190,17 +191,7 @@ theorem biprod (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) :
     have := hP.projective n
     have := hQ.projective n
     exact Projective.of_iso (HomologicalComplex.biprodXIso P Q n).symm inferInstance
-  acyclic n := by
-    rw [HomologicalComplex.exactAt_iff_isZero_homology]
-    let F := HomologicalComplex.homologyFunctor
-      (ModuleCat.{v} A) (ComplexShape.up ℤ) n
-    let _ : PreservesFiniteBiproducts F := Functor.preservesFiniteBiproductsOfAdditive F
-    let _ : PreservesBiproductsOfShape WalkingPair F := inferInstance
-    let _ : PreservesBinaryBiproducts F :=
-      preservesBinaryBiproducts_of_preservesBiproducts F
-    refine IsZero.of_iso ?_ (F.mapBiprod P Q)
-    rw [biprod_isZero_iff]
-    exact ⟨(hP.acyclic n).isZero_homology, (hQ.acyclic n).isZero_homology⟩
+  acyclic n := (HomologicalComplex.exactAt_biprod_iff P Q n).2 ⟨hP.acyclic n, hQ.acyclic n⟩
   exact_dual i j k hij hjk := by
     let δP (p q : ℤ) := LinearMap.lcomp Aᵐᵒᵖ A (P.d p q).hom
     let δQ (p q : ℤ) := LinearMap.lcomp Aᵐᵒᵖ A (Q.d p q).hom

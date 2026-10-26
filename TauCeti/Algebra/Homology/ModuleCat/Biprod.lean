@@ -102,28 +102,36 @@ noncomputable def biprodXBasis (b : Module.Basis κ R (K.X i)) (b' : Module.Basi
     Module.Basis (κ ⊕ σ) R ((K ⊞ L).X i) :=
   (b.prod b').map (biprodXIso K L i ≪≫ ModuleCat.biprodIsoProd _ _).toLinearEquiv.symm
 
+variable (K L i) in
+/-- Under the identification `biprodXIso K L i ≪≫ ModuleCat.biprodIsoProd _ _` of `(K ⊞ L).X i`
+with the product module `K.X i × L.X i`, the first biproduct inclusion is `LinearMap.inl`. -/
+theorem inl_f_comp_biprodXIso_trans_biprodIsoProd_hom :
+    (biprod.inl : K ⟶ K ⊞ L).f i ≫ (biprodXIso K L i ≪≫ ModuleCat.biprodIsoProd _ _).hom =
+      ModuleCat.ofHom (LinearMap.inl R _ _) := by
+  simp [← inl_biprodXIso_inv]
+
+variable (K L i) in
+/-- Under the identification `biprodXIso K L i ≪≫ ModuleCat.biprodIsoProd _ _` of `(K ⊞ L).X i`
+with the product module `K.X i × L.X i`, the second biproduct inclusion is `LinearMap.inr`. -/
+theorem inr_f_comp_biprodXIso_trans_biprodIsoProd_hom :
+    (biprod.inr : L ⟶ K ⊞ L).f i ≫ (biprodXIso K L i ≪≫ ModuleCat.biprodIsoProd _ _).hom =
+      ModuleCat.ofHom (LinearMap.inr R _ _) := by
+  simp [← inr_biprodXIso_inv]
+
 variable (b : Module.Basis κ R (K.X i)) (b' : Module.Basis σ R (L.X i))
 
 @[simp]
 theorem biprodXBasis_inl (k : κ) :
     biprodXBasis b b' (.inl k) = ((biprod.inl : K ⟶ K ⊞ L).f i).hom (b k) := by
-  have h : ((biprod.inl : K ⟶ K ⊞ L).f i ≫ (biprodXIso K L i ≪≫ ModuleCat.biprodIsoProd _ _).hom) =
-      ModuleCat.ofHom (LinearMap.inl R _ _) := by
-    rw [← inl_biprodXIso_inv, Iso.trans_hom, Category.assoc, Iso.inv_hom_id_assoc,
-      ModuleCat.inl_comp_biprodIsoProd_hom]
   rw [biprodXBasis, Module.Basis.map_apply, LinearEquiv.symm_apply_eq, Iso.toLinearEquiv_apply,
-    ← ModuleCat.comp_apply, h]
+    ← ModuleCat.comp_apply, inl_f_comp_biprodXIso_trans_biprodIsoProd_hom]
   simp
 
 @[simp]
 theorem biprodXBasis_inr (k : σ) :
     biprodXBasis b b' (.inr k) = ((biprod.inr : L ⟶ K ⊞ L).f i).hom (b' k) := by
-  have h : ((biprod.inr : L ⟶ K ⊞ L).f i ≫ (biprodXIso K L i ≪≫ ModuleCat.biprodIsoProd _ _).hom) =
-      ModuleCat.ofHom (LinearMap.inr R _ _) := by
-    rw [← inr_biprodXIso_inv, Iso.trans_hom, Category.assoc, Iso.inv_hom_id_assoc,
-      ModuleCat.inr_comp_biprodIsoProd_hom]
   rw [biprodXBasis, Module.Basis.map_apply, LinearEquiv.symm_apply_eq, Iso.toLinearEquiv_apply,
-    ← ModuleCat.comp_apply, h]
+    ← ModuleCat.comp_apply, inr_f_comp_biprodXIso_trans_biprodIsoProd_hom]
   simp
 
 end Basis
