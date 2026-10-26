@@ -59,16 +59,8 @@ private theorem analyticOnNhd_inverseGaussianComplexMGF (hμ : 0 < μ) (hlam : 0
       Complex.ofReal_im, zero_mul, sub_zero] using sub_pos.mpr hmul
   have hslit : 1 - ((2 * μ ^ 2 / lam : ℝ) : ℂ) * z ∈ Complex.slitPlane :=
     Complex.mem_slitPlane_iff.mpr (Or.inl hre)
-  have harg : DifferentiableAt ℂ
-      (fun w : ℂ ↦ 1 - ((2 * μ ^ 2 / lam : ℝ) : ℂ) * w) z := by
-    fun_prop
-  have hsqrt : DifferentiableAt ℂ
-      (fun w : ℂ ↦ Complex.sqrt (1 - ((2 * μ ^ 2 / lam : ℝ) : ℂ) * w)) z := by
-    fun_prop (disch := assumption)
   unfold inverseGaussianComplexMGF
-  exact (Complex.differentiableAt_exp.comp z
-    ((differentiableAt_const (c := ((lam / μ : ℝ) : ℂ))).mul
-      ((differentiableAt_const (c := (1 : ℂ))).sub hsqrt))).differentiableWithinAt
+  fun_prop (disch := assumption)
 
 private theorem inverseGaussianComplexMGF_ofReal (hμ : 0 < μ) (hlam : 0 < lam)
     {t : ℝ} (ht : t < lam / (2 * μ ^ 2)) :
@@ -79,9 +71,12 @@ private theorem inverseGaussianComplexMGF_ofReal (hμ : 0 < μ) (hlam : 0 < lam)
     have hlt : 2 * μ ^ 2 * t < lam := by
       simpa only [mul_comm] using (lt_div_iff₀ hden).mp ht
     exact sub_nonneg.mpr ((div_le_one hlam).mpr hlt.le)
+  have harg : (1 : ℂ) - ((2 * μ ^ 2 / lam : ℝ) : ℂ) * t =
+      ((1 - 2 * μ ^ 2 * t / lam : ℝ) : ℂ) := by
+    push_cast
+    ring
   unfold inverseGaussianComplexMGF
-  rw [show (1 : ℂ) - ((2 * μ ^ 2 / lam : ℝ) : ℂ) * t =
-      ((1 - 2 * μ ^ 2 * t / lam : ℝ) : ℂ) by push_cast; ring]
+  rw [harg]
   have hsqrt : Complex.sqrt ((1 - 2 * μ ^ 2 * t / lam : ℝ) : ℂ) =
       (√(1 - 2 * μ ^ 2 * t / lam) : ℂ) := by
     rw [Complex.sqrt_of_nonneg (by exact_mod_cast hnonneg)]
