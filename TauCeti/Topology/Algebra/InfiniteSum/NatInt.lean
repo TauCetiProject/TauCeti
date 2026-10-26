@@ -22,6 +22,8 @@ summable integer-indexed family into its residue classes modulo `M`.
   their sum.
 * `TauCeti.tsum_int_eq_sum_fin_tsum`: a summable family on `ℤ` sums to the sum over the residues
   `r < M` of its sums over the classes `qM + r`.
+* `HasSum.sum_fin_mul_add`: a family on `ℤ` has the same sum as its sums over the blocks
+  `qM + r`, `r < M`.
 -/
 
 public section
@@ -75,3 +77,11 @@ theorem tsum_int_eq_sum_fin_tsum {E : Type*} [AddCommGroup E] [UniformSpace E]
   simpa [NeZero.ne M] using h
 
 end TauCeti
+
+/-- **A sum over the integers grouped into blocks of `M` consecutive terms**: if `f` has sum `s`,
+then so does the family of block sums `q ↦ ∑_{r < M} f (q * M + r)`. -/
+theorem HasSum.sum_fin_mul_add {E : Type*} [AddCommMonoid E] [TopologicalSpace E]
+    [ContinuousAdd E] [RegularSpace E] {f : ℤ → E} {s : E} (hf : HasSum f s) (M : ℕ)
+    [NeZero M] : HasSum (fun q : ℤ ↦ ∑ r : Fin M, f (q * M + r)) s := by
+  refine ((Int.divModEquiv M).symm.hasSum_iff.mpr hf).prod_fiberwise fun q ↦ ?_
+  simpa [Function.comp_def] using hasSum_fintype fun r : Fin M ↦ f (q * M + r)
