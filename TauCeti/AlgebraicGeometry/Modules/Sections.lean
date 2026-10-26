@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
 /-!
 # Local sections as modules over global functions
@@ -23,6 +24,13 @@ maps are `R`-linear: this is the presheaf of `R`-modules
 is the presheaf of sections (`Scheme.Modules.sectionsBasePresheafCompForget₂Iso`), and
 multiplication by `r : R` on it is induced by multiplication by the global function `r`
 (`Scheme.Modules.sectionsBasePresheafFunctor_map_globalSectionsSmul`).
+
+For a family of opens `V i` covering `W`, restriction to the cover
+(`Scheme.Modules.sectionsRestrictPiBaseLinear`) and the differences of restrictions to opens
+containing the pairwise intersections (`Scheme.Modules.sectionsDiffPiBaseLinear`) are `R`-linear.
+By the sheaf condition the first is injective and its image is the kernel of the second
+(`Scheme.Modules.sectionsRestrictPiBaseLinear_injective`,
+`Scheme.Modules.exact_sectionsRestrictPiBaseLinear`).
 -/
 
 public section
@@ -182,6 +190,109 @@ lemma sectionsBasePresheafFunctor_map_globalSectionsSmul (M : X.Modules) (s : R)
     (X.baseRingToStructurePresheaf R).app (op W.unop) s • x
   rw [globalSectionsSmul_app, Scheme.baseRingToStructurePresheaf_app]
   rfl
+
+section Restriction
+
+variable (M : X.Modules) {W : X.Opens} {ι : Type*} (V : ι → X.Opens)
+
+/-- The restrictions of the sections over `W` to a family of opens `V i ≤ W`, linear over the
+base ring `R`, for any action of `R` on the sections over `W` through functions and for the action
+through functions on the sections over each `V i`. -/
+def sectionsRestrictPiBaseLinear (hV : ∀ i, V i ≤ W) :
+    letI : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W)).hom.toAlgebra
+    ∀ [Module R Γ(M, W)] [IsScalarTower R Γ(X, W) Γ(M, W)],
+      letI := fun i ↦ sectionsBaseModule R M (V i)
+      Γ(M, W) →ₗ[R] ∀ i, Γ(M, V i) := by
+  letI : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W)).hom.toAlgebra
+  intro _ _
+  letI := fun i ↦ sectionsBaseModule R M (V i)
+  exact
+    { toFun s i := M.presheaf.map (homOfLE (hV i)).op s
+      map_add' _ _ := funext fun _ ↦ map_add _ _ _
+      map_smul' t s := funext fun i ↦ by
+        rw [← IsScalarTower.algebraMap_smul Γ(X, W) t s, RingHom.id_apply]
+        exact presheaf_map_baseRingToStructurePresheaf_smul R M (homOfLE (hV i)) t s }
+
+/-- The components of `sectionsRestrictPiBaseLinear` are the restriction maps. -/
+@[simp]
+lemma sectionsRestrictPiBaseLinear_apply (hV : ∀ i, V i ≤ W) :
+    letI : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W)).hom.toAlgebra
+    ∀ [Module R Γ(M, W)] [IsScalarTower R Γ(X, W) Γ(M, W)] (s : Γ(M, W)) (i : ι),
+      sectionsRestrictPiBaseLinear R M V hV s i = M.presheaf.map (homOfLE (hV i)).op s := by
+  intro _ _ _ _
+  rfl
+
+/-- A section over `W` is determined by its restrictions to a family of opens covering `W`. -/
+lemma sectionsRestrictPiBaseLinear_injective (hV : ∀ i, V i ≤ W) (hW : W ≤ ⨆ i, V i) :
+    letI : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W)).hom.toAlgebra
+    ∀ [Module R Γ(M, W)] [IsScalarTower R Γ(X, W) Γ(M, W)],
+      Function.Injective (sectionsRestrictPiBaseLinear R M V hV) := by
+  intro _ _ s t h
+  exact TopCat.Sheaf.eq_of_locally_eq' (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+    V W (fun i ↦ homOfLE (hV i)) hW s t fun i ↦ congrFun h i
+
+variable {κ : Type*} (W' : κ → X.Opens) (a b : κ → ι) (ha : ∀ p, W' p ≤ V (a p))
+  (hb : ∀ p, W' p ≤ V (b p))
+
+/-- The differences `s (a p)|_{W' p} - s (b p)|_{W' p}` of the restrictions of a family of sections
+over the `V i` to opens `W' p ≤ V (a p) ⊓ V (b p)`, linear over the base ring `R` acting through
+functions. -/
+def sectionsDiffPiBaseLinear :
+    letI := fun i ↦ sectionsBaseModule R M (V i)
+    letI := fun p ↦ sectionsBaseModule R M (W' p)
+    (∀ i, Γ(M, V i)) →ₗ[R] ∀ p, Γ(M, W' p) :=
+  letI := fun i ↦ sectionsBaseModule R M (V i)
+  letI := fun p ↦ sectionsBaseModule R M (W' p)
+  LinearMap.pi fun p ↦
+    (((sectionsBasePresheafFunctor R).obj M).map (homOfLE (ha p)).op).hom ∘ₗ
+        LinearMap.proj (R := R) (φ := fun i ↦ ((sectionsBasePresheafFunctor R).obj M).obj
+          (op (V i))) (a p) -
+      (((sectionsBasePresheafFunctor R).obj M).map (homOfLE (hb p)).op).hom ∘ₗ
+        LinearMap.proj (R := R) (φ := fun i ↦ ((sectionsBasePresheafFunctor R).obj M).obj
+          (op (V i))) (b p)
+
+/-- The components of `sectionsDiffPiBaseLinear` are differences of restrictions. -/
+@[simp]
+lemma sectionsDiffPiBaseLinear_apply (s : ∀ i, Γ(M, V i)) (p : κ) :
+    sectionsDiffPiBaseLinear R M V W' a b ha hb s p =
+      M.presheaf.map (homOfLE (ha p)).op (s (a p)) -
+        M.presheaf.map (homOfLE (hb p)).op (s (b p)) := by
+  rfl
+
+/-- Families of sections over the `V i` whose restrictions agree on the opens `W' p` are exactly the
+restrictions of the sections over `W`, when the `V i` cover `W` and every pairwise intersection
+`V i ⊓ V j` lies in some `W' p` with `a p = i` and `b p = j`. -/
+lemma exact_sectionsRestrictPiBaseLinear (hV : ∀ i, V i ≤ W) (hW : W ≤ ⨆ i, V i)
+    (hab : ∀ i j, ∃ p, a p = i ∧ b p = j ∧ V i ⊓ V j ≤ W' p) :
+    letI : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W)).hom.toAlgebra
+    ∀ [Module R Γ(M, W)] [IsScalarTower R Γ(X, W) Γ(M, W)],
+      Function.Exact (sectionsRestrictPiBaseLinear R M V hV)
+        (sectionsDiffPiBaseLinear R M V W' a b ha hb) := by
+  intro _ _ x
+  let F : TopCat.Sheaf AddCommGrpCat X := ⟨M.presheaf, M.isSheaf⟩
+  constructor
+  · intro h
+    have hc : TopCat.Presheaf.IsCompatible F.obj V x := fun i j ↦ by
+      obtain ⟨p, rfl, rfl, hp⟩ := hab i j
+      have h' := congrFun h p
+      rw [sectionsDiffPiBaseLinear_apply, Pi.zero_apply, sub_eq_zero] at h'
+      have := congrArg (M.presheaf.map (homOfLE hp).op) h'
+      rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← Functor.map_comp,
+        ← Functor.map_comp] at this
+      -- Both sides restrict to `V (a p) ⊓ V (b p)`; morphisms between opens are unique.
+      exact this
+    obtain ⟨z, hz, -⟩ := F.existsUnique_gluing' V W (fun i ↦ homOfLE (hV i)) hW x hc
+    exact ⟨z, funext hz⟩
+  · rintro ⟨z, rfl⟩
+    funext p
+    rw [sectionsDiffPiBaseLinear_apply, sectionsRestrictPiBaseLinear_apply,
+      sectionsRestrictPiBaseLinear_apply, Pi.zero_apply, sub_eq_zero,
+      ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← Functor.map_comp,
+      ← Functor.map_comp]
+    -- Both sides restrict `z` to `W' p`; morphisms between opens are unique.
+    rfl
+
+end Restriction
 
 end
 
