@@ -109,4 +109,17 @@ theorem nonempty_contMDiffRiemannianMetric [∀ b, ContinuousConstSMul ℝ (E b)
         simpa using (sq_lt_one_iff₀ (norm_nonneg _)).mp hv
   exact ⟨⟨s, fun b ↦ (hs b).1, fun b ↦ (hs b).2.1, fun b ↦ (hs b).2.2, s.contMDiff⟩⟩
 
+/-- **Existence of a Riemannian metric on a manifold.** A finite-dimensional smooth manifold
+admits a smooth Riemannian metric on its tangent bundle. -/
+theorem nonempty_contMDiffRiemannianMetric_tangentBundle
+    {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+    [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M] :
+    Nonempty (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) := by
+  let _ : IsManifold I (∞ + 1) M := by
+    simpa using (inferInstance : IsManifold I ∞ M)
+  let _ : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  exact nonempty_contMDiffRiemannianMetric
+
 end TauCeti
