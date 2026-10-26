@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.PermutationTriple.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.Algebra.Group.Subgroup.Finite
+public import Mathlib.GroupTheory.Perm.Support
 
 /-!
 # Regular permutation triples
@@ -35,6 +36,8 @@ Counting then turns both characterisations into equalities of orders with the de
 
 * `TauCeti.PermutationTriple.isRegular_iff_isCancelSMul`: a triple is regular exactly when it is
   connected and its monodromy group acts freely on the sheets.
+* `TauCeti.PermutationTriple.IsRegular.support_eq_univ_of_mem_monodromyGroup`: in a regular
+  triple, a nontrivial element of the monodromy group moves every sheet.
 * `TauCeti.PermutationTriple.isRegular_iff_card_monodromyGroup`: a triple is regular exactly when
   it is connected and its monodromy group has order the degree.
 * `TauCeti.PermutationTriple.isRegular_iff_card_automorphismGroup`: a triple is regular exactly
@@ -90,6 +93,17 @@ theorem IsRegular.isCancelSMul (ht : t.IsRegular) : IsCancelSMul t.monodromyGrou
   have hτi : (τ : Perm (Fin n)) i = j := hτ
   rw [← hτi, ← Perm.mul_apply, commute_of_mem τ.2 g.2, Perm.mul_apply, hgi]
   rfl
+
+/-- In a regular triple, an element of the monodromy group other than the identity moves every
+sheet, since the monodromy group acts freely. -/
+theorem IsRegular.support_eq_univ_of_mem_monodromyGroup (ht : t.IsRegular) {σ : Perm (Fin n)}
+    (hσ : σ ∈ t.monodromyGroup) (hne : σ ≠ 1) : σ.support = Finset.univ := by
+  have := ht.isCancelSMul
+  refine Finset.eq_univ_of_forall fun i => Perm.mem_support.2 fun hi => hne ?_
+  have hg : (⟨σ, hσ⟩ : t.monodromyGroup) • i = (1 : t.monodromyGroup) • i := by
+    rw [one_smul, Subgroup.smul_def, Perm.smul_def]
+    exact hi
+  exact congrArg Subtype.val (IsCancelSMul.right_cancel _ _ i hg)
 
 /-- A connected triple whose monodromy group acts freely on the sheets is regular: the
 monodromy group is then in bijection with the sheets, and right multiplications are

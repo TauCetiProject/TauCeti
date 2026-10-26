@@ -52,7 +52,7 @@ namespace TauCeti
 namespace PermutationTriple
 
 /-- The twenty-six ordered cycle data realized by connected degree-four permutation triples. -/
-def degreeFourCycleData : Finset (Multiset ℕ × Multiset ℕ × Multiset ℕ) :=
+@[expose] def degreeFourCycleData : Finset (Multiset ℕ × Multiset ℕ × Multiset ℕ) :=
   {({1, 1, 1, 1}, {4}, {4}),
     ({2, 1, 1}, {2, 2}, {4}), ({2, 1, 1}, {3, 1}, {4}),
     ({2, 1, 1}, {4}, {2, 2}), ({2, 1, 1}, {4}, {3, 1}),

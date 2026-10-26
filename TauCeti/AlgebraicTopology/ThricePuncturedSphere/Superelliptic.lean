@@ -47,8 +47,8 @@ torus triple `TauCeti.PermutationTriple.torusTriple`.
   cover is path connected. Its deck group is then the group of fourth roots of unity, of order the
   degree, and the monodromy triple is regular.
 * **The torus triple.** In a regular triple a nontrivial element of the monodromy group has no
-  fixed point, and `σinf` is even, being the inverse of the product of two `4`-cycles. So `σinf`
-  is a product of two disjoint transpositions, the cycle data are `[4], [4], [2, 2]`, and these
+  fixed point. Among the cycle data of connected triples of degree four with `σ0` and `σ1` both
+  `4`-cycles, the only one with `σinf` fixed-point-free is `[4], [4], [2, 2]`, and these cycle data
   determine the torus triple among connected triples of degree four.
 
 ## Main declarations
@@ -363,30 +363,20 @@ theorem isPathConnected_superellipticProj_preimage_puncturedNeighborhoodOne :
     IsPathConnected (superellipticProj ⁻¹' puncturedNeighborhoodOne) :=
   range_chartOne ▸ isPathConnected_range_of_puncturedDisc continuous_chartOne
 
-/-- If the cycles of `σ` are the components of a path-connected set, then `σ` has a single
-cycle. -/
-private theorem sameCycle_of_isPathConnected {X : Type*} [TopologicalSpace X] {S : Set X}
-    {n : ℕ} {σ : Perm (Fin n)} (e : Quotient (SameCycle.setoid σ) ≃ ConnectedComponents S)
-    (hS : IsPathConnected S) (i j : Fin n) : σ.SameCycle i j :=
-  have := isPathConnected_iff_pathConnectedSpace.1 hS
-  Quotient.exact (e.injective (Subsingleton.elim _ _))
-
 variable {n : ℕ} (ν : superellipticProj ⁻¹' {basePt} ≃ Fin n)
 
 /-- The monodromy at `0` of the superelliptic curve is a single cycle, since the components of the
 preimage of the punctured disc about `0` are the cycles of `σ0`. -/
 private theorem sameCycle_monodromyTriple_superellipticProj_σ0 (i j : Fin n) :
     (isCoveringMap_superellipticProj.monodromyTriple ν).σ0.SameCycle i j :=
-  sameCycle_of_isPathConnected
-    (isCoveringMap_superellipticProj.sameCycleQuotientσ0EquivConnectedComponents ν)
+  isCoveringMap_superellipticProj.sameCycle_monodromyTriple_σ0_of_isPathConnected ν
     isPathConnected_superellipticProj_preimage_puncturedNeighborhoodZero i j
 
 /-- The monodromy at `1` of the superelliptic curve is a single cycle, since the components of the
 preimage of the punctured disc about `1` are the cycles of `σ1`. -/
 private theorem sameCycle_monodromyTriple_superellipticProj_σ1 (i j : Fin n) :
     (isCoveringMap_superellipticProj.monodromyTriple ν).σ1.SameCycle i j :=
-  sameCycle_of_isPathConnected
-    (isCoveringMap_superellipticProj.sameCycleQuotientσ1EquivConnectedComponents ν)
+  isCoveringMap_superellipticProj.sameCycle_monodromyTriple_σ1_of_isPathConnected ν
     isPathConnected_superellipticProj_preimage_puncturedNeighborhoodOne i j
 
 /-! ### At most two sheets over the punctured neighbourhood of `∞` -/
@@ -591,42 +581,11 @@ theorem isRegular_monodromyTriple_superellipticProj :
 
 /-! ### The monodromy triple is the torus triple -/
 
-/-- A `4`-cycle is an odd permutation. -/
-private theorem sign_eq_neg_one_of_fullCycleType_eq_four {σ : Perm (Fin 4)}
-    (h : fullCycleType σ = {4}) : sign σ = -1 := by
-  rw [sign_of_cycleType, ← filter_fullCycleType_eq_cycleType, h]
-  decide
-
-/-- A fixed-point-free permutation of four points with at most two cycles, other than a `4`-cycle,
-is a product of two disjoint transpositions. -/
-private theorem fullCycleType_eq_two_two {σ : Perm (Fin 4)} (hle : orbitCount σ ≤ 2)
-    (hsupp : σ.support = Finset.univ) (h4 : fullCycleType σ ≠ {4}) :
-    fullCycleType σ = {2, 2} := by
-  have hsum := sum_fullCycleType σ
-  have hcount := count_one_fullCycleType σ
-  rw [Fintype.card_fin] at hsum
-  rw [hsupp, Finset.card_univ, Fintype.card_fin, Nat.sub_self] at hcount
-  rw [orbitCount_eq_card_parts_partition, ← fullCycleType_def] at hle
-  interval_cases hcard : Multiset.card (fullCycleType σ)
-  · rw [Multiset.card_eq_zero.1 hcard, Multiset.sum_zero] at hsum
-    norm_num at hsum
-  · obtain ⟨a, ha⟩ := Multiset.card_eq_one.1 hcard
-    rw [ha, Multiset.sum_singleton] at hsum
-    exact absurd (ha.trans (by rw [hsum])) h4
-  · obtain ⟨a, b, hab⟩ := Multiset.card_eq_two.1 hcard
-    have ha := pos_of_mem_fullCycleType (σ := σ) (n := a) (by simp [hab])
-    have hb := pos_of_mem_fullCycleType (σ := σ) (n := b) (by simp [hab])
-    rw [hab, Multiset.insert_eq_cons, Multiset.sum_cons, Multiset.sum_singleton] at hsum
-    rw [hab, Multiset.insert_eq_cons, Multiset.count_cons, Multiset.count_singleton] at hcount
-    have ha1 : a ≠ 1 := fun h ↦ by simp [h] at hcount
-    have hb1 : b ≠ 1 := fun h ↦ by simp [h] at hcount
-    obtain ⟨rfl, rfl⟩ : a = 2 ∧ b = 2 := by omega
-    exact hab
-
 /-- **The cycle data of the superelliptic curve are `[4], [4], [2, 2]`.** Over `0` and `1` there is
 one sheet, so `σ0` and `σ1` are `4`-cycles. Over `∞` there are at most two sheets, so `σinf` is not
-the identity, and in a regular triple a nontrivial monodromy element has no fixed point. Finally
-`σinf` is not a `4`-cycle, which would be odd while `σinf⁻¹ = σ1 σ0` is even. -/
+the identity, and in a regular triple a nontrivial monodromy element has no fixed point. Among
+connected triples of degree four with `σ0` and `σ1` both `4`-cycles, `σinf` has cycle type
+`[1, 1, 1, 1]`, `[2, 2]` or `[3, 1]`, and only `[2, 2]` has no fixed point. -/
 theorem cycleData_monodromyTriple_superellipticProj :
     (isCoveringMap_superellipticProj.monodromyTriple ν).cycleData = ({4}, {4}, {2, 2}) := by
   obtain rfl := eq_four_of_superellipticProj_preimage_equiv ν
@@ -640,26 +599,33 @@ theorem cycleData_monodromyTriple_superellipticProj :
   have hle : orbitCount t.σinf ≤ 2 := orbitCount_monodromyTriple_superellipticProj_σinf_le ν
   -- `σinf` moves every point: it is not the identity, which has four cycles, and the monodromy
   -- group of a regular triple acts freely
-  have hsupp : t.σinf.support = Finset.univ := by
-    have hne : t.σinf ≠ 1 := fun h ↦ by
-      rw [h, orbitCount_one, Nat.card_fin] at hle
-      norm_num at hle
-    have := (isRegular_monodromyTriple_superellipticProj ν).isCancelSMul
-    refine Finset.eq_univ_of_forall fun i ↦ mem_support.2 fun hi ↦ hne ?_
-    have hg : (⟨t.σinf, t.σinf_mem_monodromyGroup⟩ : t.monodromyGroup) • i =
-        (1 : t.monodromyGroup) • i := hi
-    exact congrArg Subtype.val (IsCancelSMul.right_cancel _ _ i hg)
-  -- `σinf` is even, so it is not a `4`-cycle
-  have h4 : fullCycleType t.σinf ≠ {4} := fun h ↦ by
-    have hsign := congrArg sign t.σ1_mul_σ0_eq_σinf_inv
-    rw [map_mul, map_inv, sign_eq_neg_one_of_fullCycleType_eq_four h0,
-      sign_eq_neg_one_of_fullCycleType_eq_four h1,
-      sign_eq_neg_one_of_fullCycleType_eq_four h] at hsign
-    exact absurd hsign (by decide)
-  rw [Prod.ext_iff, Prod.ext_iff, PermutationTriple.cycleData_σ0, PermutationTriple.cycleData_σ1,
-    PermutationTriple.cycleData_σinf, ← fullCycleType_def, ← fullCycleType_def,
-    ← fullCycleType_def]
-  exact ⟨h0, h1, fullCycleType_eq_two_two hle hsupp h4⟩
+  have hsupp : t.σinf.support = Finset.univ :=
+    (isRegular_monodromyTriple_superellipticProj ν).support_eq_univ_of_mem_monodromyGroup
+      t.σinf_mem_monodromyGroup fun h ↦ by
+        rw [h, orbitCount_one, Nat.card_fin] at hle
+        norm_num at hle
+  have hcount := count_one_fullCycleType t.σinf
+  rw [hsupp, Finset.card_univ, Fintype.card_fin, Nat.sub_self] at hcount
+  have hcd : t.cycleData = ({4}, {4}, fullCycleType t.σinf) := by
+    rw [Prod.ext_iff, Prod.ext_iff, PermutationTriple.cycleData_σ0, PermutationTriple.cycleData_σ1,
+      PermutationTriple.cycleData_σinf, ← fullCycleType_def, ← fullCycleType_def,
+      ← fullCycleType_def]
+    exact ⟨h0, h1, rfl⟩
+  -- among connected triples of degree four with `σ0` and `σ1` both `4`-cycles, `σinf` has cycle
+  -- type `[1, 1, 1, 1]`, `[2, 2]` or `[3, 1]`, and only `[2, 2]` has no fixed point
+  have hmem : t.cycleData ∈ PermutationTriple.degreeFourCycleData :=
+    PermutationTriple.cycleData_mem_degreeFourCycleData
+      ⟨_, isConnected_monodromyTriple_superellipticProj ν⟩
+  rw [hcd] at hmem
+  simp only [PermutationTriple.degreeFourCycleData, Multiset.insert_eq_cons, Finset.mem_insert,
+    Prod.mk.injEq, Multiset.singleton_eq_cons_iff, OfNat.ofNat_ne_one, Multiset.cons_ne_zero,
+    and_self, true_and, false_and, Nat.reduceEqDiff, Multiset.singleton_ne_zero, Nat.succ_ne_self,
+    and_false, Finset.mem_singleton, false_or] at hmem
+  obtain h | h | h := hmem
+  · simp [h] at hcount
+  · rw [hcd, h]
+    rfl
+  · simp [h] at hcount
 
 /-- **The monodromy triple of the superelliptic curve is the Euclidean torus triple**, up to
 relabelling: both are connected of degree four with cycle data `[4], [4], [2, 2]`, which classify
