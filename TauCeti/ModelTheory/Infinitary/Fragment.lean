@@ -70,19 +70,19 @@ structure Fragment where
   /-- The formulas of the fragment, tagged by their number of bound-variable slots. -/
   toSet : Set (Σ n, L.BoundedFormulaω Empty n)
   /-- The antecedent of a member implication is a member. -/
-  imp_left_mem {n : ℕ} {φ ψ : L.BoundedFormulaω Empty n} :
+  imp_left_mem' {n : ℕ} {φ ψ : L.BoundedFormulaω Empty n} :
     (⟨n, φ.imp ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ toSet → ⟨n, φ⟩ ∈ toSet
   /-- The consequent of a member implication is a member. -/
-  imp_right_mem {n : ℕ} {φ ψ : L.BoundedFormulaω Empty n} :
+  imp_right_mem' {n : ℕ} {φ ψ : L.BoundedFormulaω Empty n} :
     (⟨n, φ.imp ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ toSet → ⟨n, ψ⟩ ∈ toSet
   /-- The body of a member universal quantification is a member. -/
-  all_mem {n : ℕ} {φ : L.BoundedFormulaω Empty (n + 1)} :
+  all_mem' {n : ℕ} {φ : L.BoundedFormulaω Empty (n + 1)} :
     (⟨n, φ.all⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ toSet → ⟨n + 1, φ⟩ ∈ toSet
   /-- Every conjunct of a member countable conjunction is a member. -/
-  iInf_mem {n : ℕ} {φs : ℕ → L.BoundedFormulaω Empty n} :
+  iInf_mem' {n : ℕ} {φs : ℕ → L.BoundedFormulaω Empty n} :
     (⟨n, .iInf φs⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ toSet → ∀ k, ⟨n, φs k⟩ ∈ toSet
   /-- Every disjunct of a member countable disjunction is a member. -/
-  iSup_mem {n : ℕ} {φs : ℕ → L.BoundedFormulaω Empty n} :
+  iSup_mem' {n : ℕ} {φs : ℕ → L.BoundedFormulaω Empty n} :
     (⟨n, .iSup φs⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ toSet → ∀ k, ⟨n, φs k⟩ ∈ toSet
 
 variable {L}
@@ -110,6 +110,33 @@ theorem mem_toSet {A : Fragment L} {p : Σ n, L.BoundedFormulaω Empty n} : p �
 theorem ext {A B : Fragment L} (h : ∀ p, p ∈ A ↔ p ∈ B) : A = B :=
   SetLike.ext h
 
+/-! ### Closure under components -/
+
+/-- The antecedent of a member implication is a member. -/
+theorem imp_left_mem (A : Fragment L) {n : ℕ} {φ ψ : L.BoundedFormulaω Empty n}
+    (h : (⟨n, φ.imp ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) : ⟨n, φ⟩ ∈ A :=
+  A.imp_left_mem' h
+
+/-- The consequent of a member implication is a member. -/
+theorem imp_right_mem (A : Fragment L) {n : ℕ} {φ ψ : L.BoundedFormulaω Empty n}
+    (h : (⟨n, φ.imp ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) : ⟨n, ψ⟩ ∈ A :=
+  A.imp_right_mem' h
+
+/-- The body of a member universal quantification is a member. -/
+theorem all_mem (A : Fragment L) {n : ℕ} {φ : L.BoundedFormulaω Empty (n + 1)}
+    (h : (⟨n, φ.all⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) : ⟨n + 1, φ⟩ ∈ A :=
+  A.all_mem' h
+
+/-- Every conjunct of a member countable conjunction is a member. -/
+theorem iInf_mem (A : Fragment L) {n : ℕ} {φs : ℕ → L.BoundedFormulaω Empty n}
+    (h : (⟨n, .iInf φs⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) (k : ℕ) : ⟨n, φs k⟩ ∈ A :=
+  A.iInf_mem' h k
+
+/-- Every disjunct of a member countable disjunction is a member. -/
+theorem iSup_mem (A : Fragment L) {n : ℕ} {φs : ℕ → L.BoundedFormulaω Empty n}
+    (h : (⟨n, .iSup φs⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) (k : ℕ) : ⟨n, φs k⟩ ∈ A :=
+  A.iSup_mem' h k
+
 /-! ### The complete lattice of fragments -/
 
 /-- Fragments are ordered by inclusion of their underlying sets. -/
@@ -120,11 +147,11 @@ instance : PartialOrder (Fragment L) :=
 instance : InfSet (Fragment L) where
   sInf 𝒜 :=
     { toSet := ⋂ A ∈ 𝒜, (A : Set (Σ n, L.BoundedFormulaω Empty n))
-      imp_left_mem h := Set.mem_iInter₂.2 fun A hA => A.imp_left_mem (Set.mem_iInter₂.1 h A hA)
-      imp_right_mem h := Set.mem_iInter₂.2 fun A hA => A.imp_right_mem (Set.mem_iInter₂.1 h A hA)
-      all_mem h := Set.mem_iInter₂.2 fun A hA => A.all_mem (Set.mem_iInter₂.1 h A hA)
-      iInf_mem h k := Set.mem_iInter₂.2 fun A hA => A.iInf_mem (Set.mem_iInter₂.1 h A hA) k
-      iSup_mem h k := Set.mem_iInter₂.2 fun A hA => A.iSup_mem (Set.mem_iInter₂.1 h A hA) k }
+      imp_left_mem' h := Set.mem_iInter₂.2 fun A hA => A.imp_left_mem' (Set.mem_iInter₂.1 h A hA)
+      imp_right_mem' h := Set.mem_iInter₂.2 fun A hA => A.imp_right_mem' (Set.mem_iInter₂.1 h A hA)
+      all_mem' h := Set.mem_iInter₂.2 fun A hA => A.all_mem' (Set.mem_iInter₂.1 h A hA)
+      iInf_mem' h k := Set.mem_iInter₂.2 fun A hA => A.iInf_mem' (Set.mem_iInter₂.1 h A hA) k
+      iSup_mem' h k := Set.mem_iInter₂.2 fun A hA => A.iSup_mem' (Set.mem_iInter₂.1 h A hA) k }
 
 /-- The underlying set of the meet of a family of fragments is the intersection. -/
 @[simp, norm_cast]
@@ -197,11 +224,11 @@ inductive GeneratedFrom (S : Set (Σ n, L.BoundedFormulaω Empty n)) :
 steps. -/
 def generated (S : Set (Σ n, L.BoundedFormulaω Empty n)) : Fragment L where
   toSet := {p | GeneratedFrom S p}
-  imp_left_mem h := .imp_left h
-  imp_right_mem h := .imp_right h
-  all_mem h := .all_body h
-  iInf_mem h k := .iInf_comp k h
-  iSup_mem h k := .iSup_comp k h
+  imp_left_mem' h := .imp_left h
+  imp_right_mem' h := .imp_right h
+  all_mem' h := .all_body h
+  iInf_mem' h k := .iInf_comp k h
+  iSup_mem' h k := .iSup_comp k h
 
 /-- Membership in the generated fragment is reachability by component steps. -/
 @[simp]
@@ -313,10 +340,19 @@ theorem generated_countable {S : Set (Σ n, L.BoundedFormulaω Empty n)} (hS : S
 def ofSentence (φ : L.Sentenceω) : Fragment L :=
   generated {⟨0, φ⟩}
 
+/-- The fragment of a sentence is the fragment generated by the sentence. -/
+theorem ofSentence_def (φ : L.Sentenceω) : ofSentence φ = generated {⟨0, φ⟩} :=
+  (rfl)
+
+/-- The fragment of a sentence lies below a fragment exactly when the sentence belongs to it. -/
+theorem ofSentence_le_iff {φ : L.Sentenceω} {A : Fragment L} :
+    ofSentence φ ≤ A ↔ (⟨0, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
+  rw [ofSentence_def, generated_le_iff, Set.singleton_subset_iff, SetLike.mem_coe]
+
 /-- A sentence belongs to the fragment it generates. -/
 theorem mem_ofSentence (φ : L.Sentenceω) :
     (⟨0, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ ofSentence φ :=
-  subset_generated _ rfl
+  ofSentence_le_iff.1 le_rfl
 
 /-- The fragment generated by a sentence is countable, over any language. -/
 theorem ofSentence_countable (φ : L.Sentenceω) :
@@ -327,10 +363,31 @@ theorem ofSentence_countable (φ : L.Sentenceω) :
 def ofTheory (T : Set L.Sentenceω) : Fragment L :=
   generated ((fun φ => ⟨0, φ⟩) '' T)
 
+/-- The fragment of a set of sentences is the fragment generated by its sentences. -/
+theorem ofTheory_def (T : Set L.Sentenceω) : ofTheory T = generated ((fun φ => ⟨0, φ⟩) '' T) :=
+  (rfl)
+
+/-- The fragment of a set of sentences lies below a fragment exactly when each of the sentences
+belongs to it. -/
+theorem ofTheory_le_iff {T : Set L.Sentenceω} {A : Fragment L} :
+    ofTheory T ≤ A ↔ ∀ φ ∈ T, (⟨0, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
+  rw [ofTheory_def, generated_le_iff, Set.image_subset_iff]
+  -- membership in a preimage is membership of the image point
+  exact Iff.rfl
+
 /-- Every sentence of a set belongs to the fragment it generates. -/
 theorem mem_ofTheory {T : Set L.Sentenceω} {φ : L.Sentenceω} (h : φ ∈ T) :
     (⟨0, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ ofTheory T :=
-  subset_generated _ ⟨φ, h, rfl⟩
+  ofTheory_le_iff.1 le_rfl φ h
+
+/-- The fragment of a set of sentences is monotone in the set. -/
+theorem ofTheory_mono {T T' : Set L.Sentenceω} (h : T ⊆ T') : ofTheory T ≤ ofTheory T' :=
+  ofTheory_le_iff.2 fun _ hφ => mem_ofTheory (h hφ)
+
+/-- The fragment of a single sentence, as a set of sentences, is the fragment of the sentence. -/
+@[simp]
+theorem ofTheory_singleton (φ : L.Sentenceω) : ofTheory {φ} = ofSentence φ := by
+  rw [ofTheory_def, ofSentence_def, Set.image_singleton]
 
 /-- A countable set of sentences generates a countable fragment, over any language. -/
 theorem ofTheory_countable {T : Set L.Sentenceω} (hT : T.Countable) :
