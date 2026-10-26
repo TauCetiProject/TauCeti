@@ -36,10 +36,13 @@ degrees. This grading is used by tensor products of differential graded objects.
 * `TauCeti.InternalGrading.tensorProduct_piece_eq_iSup`: the degree-`n` piece is the sum over
   `G.piece p ⊗ H.piece (n - p)`.
 * `TauCeti.InternalGrading.tmul_mem_tensorProduct`: degrees add on pure tensors.
+* `TauCeti.InternalGrading.tensorProduct_piece_le`: a submodule containing every homogeneous pure
+  tensor of total degree `n` contains the degree-`n` piece.
 * `TauCeti.InternalGrading.piTensorProduct_ext`: linear maps from a finite tensor product agree
   when they agree on pure tensors of homogeneous elements.
 * `TauCeti.LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
-* `TauCeti.InternalGrading.isHomogeneous_assoc_symm`: reassociation preserves total degree.
+* `TauCeti.InternalGrading.isHomogeneous_assoc` and
+  `TauCeti.InternalGrading.isHomogeneous_assoc_symm`: reassociation preserves total degree.
 * `TauCeti.InternalGrading.koszulTwist_tensorProduct`: the Koszul twist of the total grading is
   the tensor product of the Koszul twists of the factors.
 
@@ -152,6 +155,15 @@ theorem tmul_mem_tensorProduct (G : InternalGrading R M) (H : InternalGrading R 
   simpa only [add_sub_cancel_left, TensorProduct.mk_apply] using
     Submodule.apply_mem_map₂ (TensorProduct.mk R M N) hx hy
 
+/-- A submodule containing every pure tensor of homogeneous elements of total degree `n` contains
+the whole degree-`n` piece of the tensor-product grading. -/
+theorem tensorProduct_piece_le (G : InternalGrading R M) (H : InternalGrading R N) {n : ℤ}
+    {C : Submodule R (M ⊗[R] N)}
+    (h : ∀ p : ℤ, ∀ x ∈ G.piece p, ∀ y ∈ H.piece (n - p), x ⊗ₜ[R] y ∈ C) :
+    (G.tensorProduct H).piece n ≤ C := by
+  rw [tensorProduct_piece_eq_iSup]
+  exact iSup_le fun p ↦ Submodule.map₂_le.2 fun x hx y hy ↦ h p x hx y hy
+
 /-- Reassociating a triple tensor product preserves total degree. -/
 theorem isHomogeneous_assoc_symm {P : Type w'} [AddCommMonoid P] [Module R P]
     (G : InternalGrading R M) (H : InternalGrading R N) (K : InternalGrading R P) :
@@ -160,19 +172,26 @@ theorem isHomogeneous_assoc_symm {P : Type w'} [AddCommMonoid P] [Module R P]
       0 := by
   rw [LinearMap.isHomogeneous_def]
   intro n z hz
-  rw [tensorProduct_piece_eq_iSup] at hz
-  refine (iSup_le fun p ↦ Submodule.map₂_le.mpr fun x hx t ht ↦ ?_ :
-    _ ≤ (((G.tensorProduct H).tensorProduct K).piece (n + 0)).comap
-      (TensorProduct.assoc R M N P).symm.toLinearMap) hz
-  rw [tensorProduct_piece_eq_iSup] at ht
-  refine (iSup_le fun r ↦ Submodule.map₂_le.mpr fun y hy u hu ↦ ?_ :
-    _ ≤ (((G.tensorProduct H).tensorProduct K).piece (n + 0)).comap
-      ((TensorProduct.assoc R M N P).symm.toLinearMap ∘ₗ TensorProduct.mk R M (N ⊗[R] P) x)) ht
-  rw [Submodule.mem_comap, LinearMap.comp_apply, TensorProduct.mk_apply, TensorProduct.mk_apply,
-    LinearEquiv.coe_coe, TensorProduct.assoc_symm_tmul]
+  refine G.tensorProduct_piece_le (H.tensorProduct K)
+    (C := (((G.tensorProduct H).tensorProduct K).piece (n + 0)).comap
+      (TensorProduct.assoc R M N P).symm.toLinearMap) (fun p x hx t ht ↦ ?_) hz
+  refine H.tensorProduct_piece_le K
+    (C := (((G.tensorProduct H).tensorProduct K).piece (n + 0)).comap
+      ((TensorProduct.assoc R M N P).symm.toLinearMap ∘ₗ TensorProduct.mk R M (N ⊗[R] P) x))
+    (fun r y hy u hu ↦ ?_) ht
+  rw [Submodule.mem_comap, LinearMap.comp_apply, TensorProduct.mk_apply, LinearEquiv.coe_coe,
+    TensorProduct.assoc_symm_tmul]
   have hdeg : n + 0 = p + r + (n - p - r) := by ring
   rw [hdeg]
   exact tmul_mem_tensorProduct _ _ (tmul_mem_tensorProduct G H hx hy) hu
+
+/-- Reassociating a triple tensor product preserves total degree. -/
+theorem isHomogeneous_assoc {P : Type w'} [AddCommMonoid P] [Module R P]
+    (G : InternalGrading R M) (H : InternalGrading R N) (K : InternalGrading R P) :
+    LinearMap.IsHomogeneous (TensorProduct.assoc R M N P).toLinearMap
+      ((G.tensorProduct H).tensorProduct K).piece (G.tensorProduct (H.tensorProduct K)).piece
+      0 := by
+  exact (isHomogeneous_assoc_symm G H K).linearEquiv_symm
 
 end Internal
 

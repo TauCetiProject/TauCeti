@@ -119,14 +119,7 @@ theorem finite_morseBrokenTrajectorySet_of_isCompact_sublevel
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
     (hM : HasNondegenerateCriticalPointsOn f univ)
     (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c})
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤)
+    (htr : IsMorseSmale f hf)
     (p r : MorseCriticalPoint f) :
     (morseBrokenTrajectorySet hf p r).Finite := by
   have hfd : Differentiable ℝ f := hfs.differentiable (by norm_num)
@@ -153,14 +146,7 @@ section Boundary
 variable (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
   (hM : HasNondegenerateCriticalPointsOn f univ)
   (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c})
-  (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-    IsNondegenerateCriticalPoint f b →
-    z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-    z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-    Submodule.span ℝ (tangentConeAt ℝ
-        (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-      Submodule.span ℝ (tangentConeAt ℝ
-        (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤)
+  (htr : IsMorseSmale f hf)
 
 /-- For critical points of consecutive index, the boundary coefficient is the cardinality of the
 middle-level trajectory slice modulo two. No comparison of critical values is needed: when the

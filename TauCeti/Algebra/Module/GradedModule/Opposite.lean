@@ -218,6 +218,49 @@ theorem op_smul_mem_of_mem_graded {e : ℤ} {a : A} (ha : a ∈ 𝒜 e) {q : ℤ
   have := SetLike.GradedSMul.smul_mem hop hα
   rwa [vadd_eq_add, add_comm] at this
 
+/-- An element of degree zero of the algebra preserves the degrees of the module. -/
+theorem op_smul_mem_of_mem_zero {a : A} (ha : a ∈ 𝒜 0) {k : ℤ} {x : M} (hx : x ∈ ℳ k) :
+    op a • x ∈ ℳ k := by
+  simpa using op_smul_mem_of_mem_graded ha hx
+
 end GradedSMul
+
+section Koszul
+
+variable {R : Type u} {A : Type v} {M : Type w}
+  [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
+  [SMulCommClass R Aᵐᵒᵖ M] {𝒜 : ℤ → Submodule R A} [DirectSum.Decomposition 𝒜]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+
+/-- The right action of an element of degree zero commutes with the Koszul sign. -/
+theorem koszulTwist_one_op_smul_of_mem_zero {a : A} (ha : a ∈ 𝒜 0) {k : ℤ} {x : M}
+    (hx : x ∈ ℳ k) :
+    (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (op a • x) =
+      op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x := by
+  rw [InternalGrading.koszulTwist_one_apply_of_mem _ (e := k)
+      (by rw [InternalGrading.ofDecomposition_piece]; exact op_smul_mem_of_mem_zero ha hx),
+    InternalGrading.koszulTwist_one_apply_of_mem _ (e := k)
+      (by rwa [InternalGrading.ofDecomposition_piece]), smul_comm]
+
+omit [SMulCommClass R Aᵐᵒᵖ M] in
+/-- The right action of an element of degree zero, twisted by the Koszul sign, preserves each
+piece of the module. -/
+theorem op_smul_koszulTwist_mem_of_mem_zero {a : A} (ha : a ∈ 𝒜 0) {k : ℤ} {x : M}
+    (hx : x ∈ ℳ k) :
+    op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x ∈ ℳ k :=
+  op_smul_mem_of_mem_zero ha (InternalGrading.koszulTwist_mem_ofDecomposition ℳ hx 1)
+
+/-- Two successive twisted right actions of elements of degree zero act by their product, in the
+order of the algebra: the Koszul signs cancel. -/
+theorem op_smul_koszulTwist_op_smul_koszulTwist {a b : A} (ha : a ∈ 𝒜 0) {k : ℤ} {x : M}
+    (hx : x ∈ ℳ k) :
+    op b • (InternalGrading.ofDecomposition ℳ).koszulTwist 1
+      (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x) = op (a * b) • x := by
+  rw [koszulTwist_one_op_smul_of_mem_zero ha
+      (InternalGrading.koszulTwist_mem_ofDecomposition ℳ hx 1),
+    InternalGrading.koszulTwist_koszulTwist, smul_smul, ← op_mul]
+
+end Koszul
 
 end TauCeti

@@ -97,10 +97,10 @@ theorem covariance_bind (hK : Measurable K)
     integral_congr_ae hcov]
   simp only [Pi.mul_apply] at hprod hmeans ⊢
   have hXY : (∫ x, X x * Y x ∂μ.bind K) = ∫ a, ∫ x, X x * Y x ∂K a ∂μ :=
-    Measure.integral_bind hK (hX.integrable_mul hY)
+    Measure.integral_bind hK.aemeasurable (hX.integrable_mul hY)
   rw [integral_sub hprod hmeans, hXY,
-    Measure.integral_bind hK (hX.integrable one_le_two),
-    Measure.integral_bind hK (hY.integrable one_le_two)]
+    Measure.integral_bind hK.aemeasurable (hX.integrable one_le_two),
+    Measure.integral_bind hK.aemeasurable (hY.integrable one_le_two)]
   ring
 
 /-- **Law of total variance**: a probability mixture's variance is its expected component

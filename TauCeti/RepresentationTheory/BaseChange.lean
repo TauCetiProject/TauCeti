@@ -29,7 +29,7 @@ import TauCeti.Algebra.Category.FGModuleCat.Basic
 -- Non-public: the bundling lemmas `FDRep.character_of` and `FDRep.character_ρ`, the projection
 -- lemmas `FDRep.hom_hom_hom_comm`, `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`, and the isomorphism
 -- constructor `LinearEquiv.toFDRepIso` are used only inside proofs and definition bodies.
-import TauCeti.RepresentationTheory.FDRep
+import TauCeti.RepresentationTheory.FDRep.Basic
 
 /-!
 # Base change of representations

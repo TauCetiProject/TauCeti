@@ -20,6 +20,8 @@ The normal-subgroup theorems apply because the derived subgroup is smooth and ge
 connected by `Derived.Geometric`. No perfectness or characteristic hypothesis is needed.
 Reductivity of the derived subgroup is a step toward its semisimplicity; the reductive result
 here does not assert triviality of its radical or equality with the ambient group.
+Semisimplicity is `TauCeti.reductiveCommHopfAlgProperty.semisimple_derived` in
+`TauCeti.Algebra.AlgebraicGroup.Derived.Semisimple`.
 
 ## References
 

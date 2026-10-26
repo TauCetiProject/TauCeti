@@ -16,6 +16,11 @@ into bundle coordinates wherever the intermediate trivialization is valid. This 
 allows regularity of pullbacks to be checked on fixed model fibres, without choosing norms
 on the original fibres.
 
+In degree one, the identification `ContinuousAlternatingMap.ofSubsingleton` of linear maps with
+alternating maps of one variable also commutes with passing into coordinates, with no base-set
+hypothesis. This compares regularity of degree-one forms with regularity of sections of the
+bundle of fibrewise linear maps.
+
 The coordinate maps are Mathlib's `ContinuousAlternatingMap.inCoordinates` and
 `ContinuousLinearMap.inCoordinates`.
 -/
@@ -52,5 +57,15 @@ theorem inCoordinates_compContinuousLinearMap {x₀ x : B₁} {y₀ y : B₂} {z
     compContinuousLinearMap_apply, ContinuousLinearMap.compContinuousAlternatingMap_coe,
     Function.comp_def, ContinuousLinearMap.coe_comp]
   simp only [Trivialization.symmL_continuousLinearMapAt _ hy]
+
+/-- Coordinates of a fibrewise linear map, viewed as an alternating map of one variable, are the
+coordinates of the linear map, viewed in the same way. -/
+@[simp]
+theorem inCoordinates_ofSubsingleton [Subsingleton ι] (i : ι) {x₀ x : B₁} {y₀ y : B₂}
+    (φ : V₁ x →L[𝕜] V₂ y) :
+    inCoordinates F₁ F₂ x₀ x y₀ y (ofSubsingleton 𝕜 (V₁ x) (V₂ y) i φ) =
+      ofSubsingleton 𝕜 F₁ F₂ i (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ x₀ x y₀ y φ) := by
+  ext v
+  simp [inCoordinates, ContinuousLinearMap.inCoordinates]
 
 end ContinuousAlternatingMap

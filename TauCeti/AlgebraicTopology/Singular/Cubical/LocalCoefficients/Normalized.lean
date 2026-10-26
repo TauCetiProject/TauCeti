@@ -208,6 +208,13 @@ theorem ofCube_eq_zero {n : ℕ} {c : SingularCube X n} (hc : IsDegenerate c)
   rw [ofCube_apply, Submodule.Quotient.mk_eq_zero]
   exact TwistedCubicalChain.ofCube_mem_degenerate hc a
 
+/-- The classes of equal cubes agree on heterogeneously equal coefficients. -/
+theorem ofCube_congr {n : ℕ} {c c' : SingularCube X n} (h : c = c')
+    {a : L.obj (FundamentalGroupoid.mk (c 0))} {a' : L.obj (FundamentalGroupoid.mk (c' 0))}
+    (ha : a ≍ a') : ofCube L c a = ofCube L c' a' := by
+  subst h
+  rw [eq_of_heq ha]
+
 /-- Two linear maps out of the normalized chains agree as soon as they agree on every cube. -/
 @[ext]
 theorem hom_ext {n : ℕ} {N : Type*} [AddCommGroup N] [Module R N]

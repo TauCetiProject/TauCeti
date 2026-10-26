@@ -21,7 +21,10 @@ many components, for instance when the module is Noetherian, composing with
 Maps from a simple module `S` into `M` land in its `S`-isotypic component. Restricting the
 codomain therefore gives an equivalence of hom spaces, without any semisimplicity or
 finiteness assumption on `M`. A map from a simple module into an isotypic module of a different
-type is zero (`IsIsotypicOfType.linearMap_eq_zero`).
+type is zero (`IsIsotypicOfType.linearMap_eq_zero`). The isotypic components of pairwise
+non-isomorphic simple modules are independent (`TauCeti.iSupIndep_isotypicComponent`); this is the
+indexed form of Mathlib's `sSupIndep_isotypicComponents`, allowing types that do not occur in the
+module.
 
 ## Main definitions
 
@@ -150,3 +153,35 @@ theorem linearEquivIsotypicComponents_apply_of_mem {c : isotypicComponents R M} 
   linearEquivIsotypicComponents_apply_coe ⟨x, hx⟩
 
 end TauCeti.IsSemisimpleModule
+
+namespace TauCeti
+
+variable (R M : Type*) [Ring R] [AddCommGroup M] [Module R M]
+
+/-- The isotypic components of a family of pairwise non-isomorphic simple modules are
+independent. -/
+theorem iSupIndep_isotypicComponent {κ : Type*} (S : κ → Type*) [∀ j, AddCommGroup (S j)]
+    [∀ j, Module R (S j)] [∀ j, IsSimpleModule R (S j)]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[R] S j) → i = j) :
+    iSupIndep fun j => isotypicComponent R M (S j) := by
+  -- Restricted to the nonzero components, the family is an injective reindexing of
+  -- `isotypicComponents R M`.
+  have hmem (j : κ) (hj : isotypicComponent R M (S j) ≠ ⊥) :
+      isotypicComponent R M (S j) ∈ isotypicComponents R M := by
+    obtain ⟨N, hN, _⟩ := (IsSemisimpleModule.eq_bot_or_exists_simple_le _).resolve_left hj
+    obtain ⟨e⟩ := isIsotypicOfType_submodule_iff.mp
+      (IsIsotypicOfType.isotypicComponent R M (S j)) N hN
+    exact ⟨N, ‹_›, e.isotypicComponent_eq.symm⟩
+  rw [← iSupIndep_ne_bot]
+  refine ((sSupIndep_iff _).mp (sSupIndep_isotypicComponents R M)).comp
+    (f := fun j : {j // isotypicComponent R M (S j) ≠ ⊥} => ⟨_, hmem j.1 j.2⟩) ?_
+  intro ⟨i, hi⟩ ⟨j, _⟩ hij
+  -- A simple submodule of the common component is a copy of both `S i` and `S j`.
+  obtain ⟨N, hN, _⟩ := (IsSemisimpleModule.eq_bot_or_exists_simple_le _).resolve_left hi
+  obtain ⟨e⟩ := isIsotypicOfType_submodule_iff.mp
+    (IsIsotypicOfType.isotypicComponent R M (S i)) N hN
+  obtain ⟨e'⟩ := isIsotypicOfType_submodule_iff.mp
+    (IsIsotypicOfType.isotypicComponent R M (S j)) N (hN.trans (congrArg Subtype.val hij).le)
+  exact Subtype.ext (hS i j ⟨e.symm.trans e'⟩)
+
+end TauCeti

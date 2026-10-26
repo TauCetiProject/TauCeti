@@ -66,7 +66,7 @@ private theorem derivative_commutes (Φ : Isom J Sol) {ε : ℝ}
     let A := fun v : P => tangentSpaceCastModel J (Φ p)
       (mfderiv J J Φ p ((tangentSpaceCastModel J p).symm v))
     ε • A (u.1, -u.2.1, 0) = ((A u).1, -(A u).2.1, 0) := by
-  have h := Φ.mfderiv_leviCivitaConnection_mpullback
+  have h := Φ.isLocalRiemannianIsometry.mfderiv_leviCivitaConnection_mpullback
     (mdifferentiableAt_constantField (0, 0, 1) (Φ p))
     ((tangentSpaceCastModel J p).symm u)
   rw [mpullback_vertical Φ hd,

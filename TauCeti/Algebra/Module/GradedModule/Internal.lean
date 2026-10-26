@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
+public import Mathlib.Algebra.Module.ULift
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.RingTheory.Binomial
 public import Mathlib.RingTheory.Finiteness.Basic
@@ -244,6 +245,11 @@ theorem apply_mem_map_piece_iff (G : InternalGrading R M ι) (e : M ≃ₗ[R] N)
     e x ∈ (G.map e).piece p ↔ x ∈ G.piece p := by
   simp
 
+/-- Membership in a grading transported to a universe lift is checked after lowering. -/
+theorem mem_map_ulift_piece_iff (G : InternalGrading R M ι) (p : ι) (x : ULift.{w} M) :
+    x ∈ (G.map (ULift.moduleEquiv : ULift.{w} M ≃ₗ[R] M).symm).piece p ↔ x.down ∈ G.piece p := by
+  rw [mem_map_piece_iff, LinearEquiv.symm_symm, ULift.moduleEquiv_apply]
+
 /-- The equivalence used to transport a grading is homogeneous of degree zero. -/
 theorem isHomogeneous_map [AddMonoid ι] (G : InternalGrading R M ι) (e : M ≃ₗ[R] N) :
     TauCeti.LinearMap.IsHomogeneous e.toLinearMap G.piece (G.map e).piece 0 := by
@@ -467,6 +473,15 @@ theorem InternalGrading.koszulTwist_mem_piece (G : InternalGrading R M) {x : M} 
   rw [InternalGrading.koszulTwist_apply_of_mem G hx q]
   exact Submodule.smul_mem _ _ hx
 
+/-- The Koszul twist of the grading of a decomposition `ℳ` preserves each piece `ℳ k`. -/
+theorem InternalGrading.koszulTwist_mem_ofDecomposition (ℳ : ℤ → Submodule R M)
+    [DirectSum.Decomposition ℳ] {x : M} {k : ℤ} (hx : x ∈ ℳ k) (q : ℤ) :
+    koszulTwist (InternalGrading.ofDecomposition ℳ) q x ∈ ℳ k := by
+  have hx' : x ∈ (InternalGrading.ofDecomposition ℳ).piece k := by
+    rwa [InternalGrading.ofDecomposition_piece]
+  have := koszulTwist_mem_piece _ hx' q
+  rwa [InternalGrading.ofDecomposition_piece] at this
+
 /-- The Koszul twist of parameter zero is the identity. -/
 @[simp]
 theorem InternalGrading.koszulTwist_zero (G : InternalGrading R M) :
@@ -571,6 +586,18 @@ theorem InternalGrading.twistedTuple_apply (G : InternalGrading R M) (q : ℤ) {
   split_ifs with h
   · exact twistedTuple_apply_of_mem_Ico G q x a p i h
   · exact twistedTuple_apply_of_not_mem_Ico G q x a p i h
+
+/-- Two twistings of the same tuple agree at an index lying in both twisted intervals or in
+neither. -/
+theorem InternalGrading.twistedTuple_apply_eq_twistedTuple_apply (G : InternalGrading R M)
+    (q : ℤ) {n : ℕ} (x : Fin n → M) {a p a' p' : ℕ} (i : Fin n)
+    (h : a ≤ i.val ∧ i.val < a + p ↔ a' ≤ i.val ∧ i.val < a' + p') :
+    twistedTuple G q x a p i = twistedTuple G q x a' p' i := by
+  by_cases hi : a ≤ i.val ∧ i.val < a + p
+  · rw [twistedTuple_apply_of_mem_Ico G q x a p i hi,
+      twistedTuple_apply_of_mem_Ico G q x a' p' i (h.1 hi)]
+  · rw [twistedTuple_apply_of_not_mem_Ico G q x a p i hi,
+      twistedTuple_apply_of_not_mem_Ico G q x a' p' i (mt h.2 hi)]
 
 /-- A degree-zero homogeneous linear map commutes with twisting a consecutive block of a tuple. -/
 theorem LinearMap.IsHomogeneous.twistedTuple_map {N : Type w} [AddCommMonoid N] [Module R N]

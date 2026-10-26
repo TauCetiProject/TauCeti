@@ -126,14 +126,6 @@ theorem steinerSymmetrization_univ (e : E) (he : ‖e‖ = 1) :
   ext x
   simp [steinerSymmetrization, ENNReal.top_div_of_ne_top (by norm_num : (2 : ℝ≥0∞) ≠ ∞)]
 
-/-- Moving the base point along the direction does not change the length of a line section. -/
-theorem volume_lineSection_add_smul (e : E) (s : Set E) (x : E) (c : ℝ) :
-    volume {t : ℝ | x + c • e + t • e ∈ s} = volume {t : ℝ | x + t • e ∈ s} := by
-  have h : {t : ℝ | x + c • e + t • e ∈ s} = (fun t ↦ t + c) ⁻¹' {t : ℝ | x + t • e ∈ s} := by
-    ext t
-    simp [add_smul, add_assoc, add_comm (t • e)]
-  rw [h, measure_preimage_add_right]
-
 /-- Coordinate-free membership in a Steiner symmetral: the longitudinal coordinate `⟪e, x⟫`
 lies in the centered interval whose length is that of the line section through `x`. -/
 theorem mem_steinerSymmetrization_iff (e : E) (he : ‖e‖ = 1) (s : Set E) (x : E) :
@@ -238,13 +230,13 @@ theorem convex_steinerSymmetrization (e : E) (he : ‖e‖ = 1) {s : Set E}
         rw [← mul_div_assoc, ← mul_div_assoc, ← ENNReal.add_div]
         exact ENNReal.div_le_div_right hlength 2
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] [BorelSpace E]
 
-/-- Borel sets have Borel Steiner symmetrals. -/
+/-- Borel sets have Borel Steiner symmetrals, without a finite-dimensionality assumption. -/
 theorem measurableSet_steinerSymmetrization (e : E) (he : ‖e‖ = 1) {s : Set E}
     (hs : MeasurableSet s) : MeasurableSet (steinerSymmetrization e he s) := by
   have hm := measurable_measure_prodMk_left (ν := (volume : Measure ℝ))
-    (hs.preimage (measurePreserving_orthogonalLineEquiv e he).measurable)
+    (hs.preimage (orthogonalLineEquiv e he).continuous.measurable)
   have hlength : Measurable (fun y : (ℝ ∙ e)ᗮ ↦ volume {t : ℝ | (y : E) + t • e ∈ s}) := by
     have hsection (y : (ℝ ∙ e)ᗮ) :
         Prod.mk y ⁻¹' (orthogonalLineEquiv e he) ⁻¹' s =
@@ -255,6 +247,8 @@ theorem measurableSet_steinerSymmetrization (e : E) (he : ‖e‖ = 1) {s : Set 
   exact measurableSet_lt
     (((orthogonalLineEquiv e he).symm.continuous.measurable.snd).edist measurable_const)
     ((hlength.comp ((orthogonalLineEquiv e he).symm.continuous.measurable.fst)).div_const 2)
+
+variable [FiniteDimensional ℝ E]
 
 /-- Replacing the input by an a.e. equal set changes the symmetral only on a null set. -/
 theorem steinerSymmetrization_ae_eq (e : E) (he : ‖e‖ = 1) {s u : Set E}

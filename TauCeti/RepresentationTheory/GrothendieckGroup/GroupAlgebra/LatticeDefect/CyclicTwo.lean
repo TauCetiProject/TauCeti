@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CyclicTwo
+public import TauCeti.RepresentationTheory.Cyclic.Two
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.PGroup
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Basic
 

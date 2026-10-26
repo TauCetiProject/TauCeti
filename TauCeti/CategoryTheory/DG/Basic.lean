@@ -52,6 +52,8 @@ category; that category and its quotient by homotopy are not built here.
 * `TauCeti.dgDifferential_dgId`: the identity is a cycle.
 * `TauCeti.dgDifferential_eq_zero_of_dgComp_eq_dgId`: a two-sided inverse of a cycle is a cycle.
 * `TauCeti.castDeg`: transport a homogeneous morphism along an equality of degrees.
+* `TauCeti.castDeg_dgId_dgComp` and `TauCeti.dgComp_castDeg_dgId`: a degree transport of the
+  identity is still a unit for composition.
 
 ## References
 
@@ -116,6 +118,13 @@ theorem castDeg_def {X Y : C} {p p' : ℤ} (hp : p = p') :
 theorem castDeg_self {X Y : C} {p : ℤ} (hp : p = p) (f : DGHom R p X Y) :
     castDeg R hp f = f := by
   simp [castDeg]
+
+/-- Two successive degree transports are a single degree transport. -/
+@[simp]
+theorem castDeg_castDeg {X Y : C} {p p' p'' : ℤ} (hp : p = p') (hp' : p' = p'')
+    (f : DGHom R p X Y) : castDeg R hp' (castDeg R hp f) = castDeg R (hp.trans hp') f := by
+  subst hp hp'
+  simp
 
 /-- Degree transport commutes with a differential between arbitrary equal indices. -/
 theorem d_castDeg {X Y : C} {a b a' b' : ℤ} (h : a = b) (h' : a' = b')
@@ -398,6 +407,36 @@ theorem dgComp_dgId {X Y : C} {p : ℤ} (f : DGHom R p X Y) :
     Function.comp_apply, ModuleCat.MonoidalCategory.rightUnitor_inv_apply,
     ModuleCat.MonoidalCategory.whiskerLeft_apply, ModuleCat.hom_id, LinearMap.id_coe,
     id_eq] using key
+
+/-- A degree transport of the identity is a cycle, for the differential between arbitrary
+indices. -/
+@[simp]
+theorem d_castDeg_dgId (X : C) {a b : ℤ} (ha : 0 = a) :
+    ((dgHomComplex R X X).d a b).hom (castDeg R ha (dgId R X)) = 0 := by
+  subst ha
+  rw [castDeg_self]
+  by_cases hb : 0 + 1 = b
+  · subst hb
+    exact dgDifferential_dgId R X
+  · rw [(dgHomComplex R X X).shape _ _ hb]
+    rfl
+
+/-- A degree transport of the identity is a left unit for composition, up to degree transport. -/
+@[simp]
+theorem castDeg_dgId_dgComp {X Y : C} {a q n : ℤ} (ha : 0 = a) (g : DGHom R q X Y)
+    (h : a + q = n) : dgComp R (castDeg R ha (dgId R X)) g h = castDeg R (by omega) g := by
+  subst ha
+  obtain rfl : n = q := by omega
+  rw [castDeg_self, castDeg_self, dgId_dgComp]
+
+/-- A degree transport of the identity is a right unit for composition, up to degree
+transport. -/
+@[simp]
+theorem dgComp_castDeg_dgId {X Y : C} {a p n : ℤ} (ha : 0 = a) (f : DGHom R p X Y)
+    (h : p + a = n) : dgComp R f (castDeg R ha (dgId R Y)) h = castDeg R (by omega) f := by
+  subst ha
+  obtain rfl : n = p := by omega
+  rw [castDeg_self, castDeg_self, dgComp_dgId]
 
 /-- **A two-sided inverse of a closed morphism is closed**: if `f : X ⟶ Y` of degree `p` is a
 cycle and `g : Y ⟶ X` of degree `q` is inverse to it on both sides, then `g` is a cycle. -/

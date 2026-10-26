@@ -20,10 +20,11 @@ closed unit disc. For coprime polynomials `f` and `g` this file shows that
 X(f/g) = {x : x(f) ≤ x(g)}
 ```
 
-is a finite union of *holed discs*, closed discs with finitely many open discs removed:
+is a finite union of *holed discs* `TauCeti.ValuationSpectrum.holedDisc`, closed discs with
+finitely many open discs removed:
 
 ```text
-X(f/g) = ⋃_{(a, c, H) ∈ P} D(a, |c|) ∩ ⋂_{(b, d) ∈ H} {x : x(d) ≤ x(T - b)}
+X(f/g) = ⋃_{(a, c, H) ∈ P} D(a, |c|) ∖ ⋃_{(b, d) ∈ H} D⁻(b, |d|)
 ```
 
 for a finite set `P` of triples. Classically these are the rational lemniscates
@@ -37,7 +38,8 @@ nonzero constant among the `fᵢ`
 (`TauCeti.ValuationSpectrum.mem_spaRationalFamily_iff_exists_polynomial`). The constant forces
 `x(g) ≠ 0`, so the subset is the intersection of the domains `X(fᵢ/g)`, and in each of them the
 common factor `gcd(fᵢ, g)` can be cancelled. Finite intersections of finite unions of holed discs
-are again finite unions of holed discs, since two closed discs meet in a closed disc or not at all.
+are again finite unions of holed discs (`TauCeti.ValuationSpectrum.IsHoledDiscUnion.inter`), since
+two closed discs meet in a closed disc or not at all.
 
 Coprimality cannot be dropped: for `f = T` and `g = c T` with `0 < ‖c‖ < 1`, the domain `X(f/g)`
 is the zero locus of `T`, while every nonempty holed disc contains a Gauss point, at which `T` does
@@ -45,7 +47,7 @@ not vanish.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.exists_finset_setOf_vle_eq_iUnion_closedSubdisc_inter_iInter`: for
+* `TauCeti.ValuationSpectrum.exists_finset_setOf_vle_eq_iUnion_holedDisc`: for
   coprime `f` and `g`, the domain `X(f/g)` is a finite union of holed discs.
 * `TauCeti.ValuationSpectrum.exists_finset_eq_iUnion_holedDisc_of_mem_spaRationalFamily`: every
   rational subset of `X` is a finite union of holed discs `TauCeti.ValuationSpectrum.holedDisc`.
@@ -78,75 +80,12 @@ namespace TauCeti.ValuationSpectrum
 
 open TauCeti.Huber
 
-variable {K : Type*} [NormedField K] [NonarchimedeanRing K]
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
 
 local notation "T" => weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0
 local notation "C" => weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight
 local notation "𝒯" K => weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K))
   isWeightFamily_one_weight
-
-/-! ### Finite unions of holed discs -/
-
-/-- A subset of the closed unit disc is a finite union of holed discs
-`D(a, |c|) ∩ ⋂_{(b, d) ∈ H} {x : x(d) ≤ x(T - b)}`. -/
-private def IsHoledDiscUnion (S : Set (closedPolydisc 1 K)) : Prop :=
-  ∃ P : Finset (K × K × Finset (K × K)), S = ⋃ p ∈ P, closedSubdisc p.1 p.2.1 ∩
-    ⋂ q ∈ p.2.2, {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (C q.2) (T - C q.1)}
-
-private theorem isHoledDiscUnion_empty : IsHoledDiscUnion (∅ : Set (closedPolydisc 1 K)) :=
-  ⟨∅, by simp⟩
-
-private theorem isHoledDiscUnion_univ : IsHoledDiscUnion (Set.univ : Set (closedPolydisc 1 K)) :=
-  ⟨{(0, 1, ∅)}, by simp⟩
-
-private theorem isHoledDiscUnion_biUnion {ι : Type*} (s : Finset ι)
-    {S : ι → Set (closedPolydisc 1 K)} (hS : ∀ i ∈ s, IsHoledDiscUnion (S i)) :
-    IsHoledDiscUnion (⋃ i ∈ s, S i) := by
-  classical
-  choose! P hP using hS
-  exact ⟨s.biUnion P, by rw [Finset.set_biUnion_biUnion]; exact Set.iUnion₂_congr hP⟩
-
-private theorem IsHoledDiscUnion.inter_hole {S : Set (closedPolydisc 1 K)}
-    (hS : IsHoledDiscUnion S) (b d : K) :
-    IsHoledDiscUnion (S ∩ {x | x.1.toValuativeRel.vle (C d) (T - C b)}) := by
-  classical
-  obtain ⟨P, rfl⟩ := hS
-  refine ⟨P.image fun p ↦ (p.1, p.2.1, insert (b, d) p.2.2), ?_⟩
-  rw [Finset.set_biUnion_finset_image, Set.iUnion₂_inter]
-  refine Set.iUnion₂_congr fun p _ ↦ ?_
-  rw [Finset.set_biInter_insert, Set.inter_left_comm, Set.inter_comm]
-
-private theorem IsHoledDiscUnion.inter_biInter_hole {ι : Type*} {S : Set (closedPolydisc 1 K)}
-    (hS : IsHoledDiscUnion S) (s : Finset ι) (b d : ι → K) :
-    IsHoledDiscUnion (S ∩ ⋂ i ∈ s, {x | x.1.toValuativeRel.vle (C (d i)) (T - C (b i))}) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using hS
-  | insert i s _ ih =>
-    rw [Finset.set_biInter_insert, ← Set.inter_assoc, Set.inter_right_comm]
-    exact ih.inter_hole (b i) (d i)
-
-variable [IsUltrametricDist K]
-
-private theorem IsHoledDiscUnion.inter_closedSubdisc {S : Set (closedPolydisc 1 K)}
-    (hS : IsHoledDiscUnion S) (a c : K) : IsHoledDiscUnion (S ∩ closedSubdisc a c) := by
-  classical
-  obtain ⟨P, rfl⟩ := hS
-  choose e r h using fun p : K × K × Finset (K × K) ↦
-    exists_closedSubdisc_inter_closedSubdisc_eq p.1 a p.2.1 c
-  refine ⟨P.image fun p ↦ (e p, r p, p.2.2), ?_⟩
-  rw [Finset.set_biUnion_finset_image, Set.iUnion₂_inter]
-  exact Set.iUnion₂_congr fun p _ ↦ by rw [← h p, Set.inter_right_comm]
-
-private theorem IsHoledDiscUnion.inter_biInter_closedSubdisc {ι : Type*}
-    {S : Set (closedPolydisc 1 K)} (hS : IsHoledDiscUnion S) (s : Finset ι) (a c : ι → K) :
-    IsHoledDiscUnion (S ∩ ⋂ i ∈ s, closedSubdisc (a i) (c i)) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using hS
-  | insert i s _ ih =>
-    rw [Finset.set_biInter_insert, ← Set.inter_assoc, Set.inter_right_comm]
-    exact ih.inter_closedSubdisc (a i) (c i)
 
 /-! ### Cells of the closed disc relative to a finite set of centres -/
 
@@ -172,7 +111,8 @@ private theorem mem_cell {Z : Finset K} {γ δ : K} {x : closedPolydisc 1 K} :
 private theorem isHoledDiscUnion_cell (Z : Finset K) (γ δ : K) :
     IsHoledDiscUnion (cell Z γ δ) := by
   rw [cell, ← Set.univ_inter (⋂ α ∈ Z, _)]
-  exact ((isHoledDiscUnion_univ.inter_biInter_hole Z (fun α ↦ α) (fun α ↦ γ - α)).inter_hole
+  exact ((isHoledDiscUnion_univ.inter_biInter_setOf_vle Z (fun α ↦ α)
+    (fun α ↦ γ - α)).inter_setOf_vle
     γ (γ - δ)).inter_biInter_closedSubdisc _ (fun _ ↦ γ) (fun α ↦ γ - α)
 
 /-- **The cells cover the closed disc**: take `γ ∈ Z` minimising `α ↦ x(T - α)`, then `δ ∈ Z`
@@ -234,10 +174,8 @@ private theorem valuation_eval₂RingHom_eq_pow_mul_of_mem_cell {Z : Finset K} {
       (p.roots.filter fun α ↦ ¬ ‖γ - α‖ ≤ ‖γ - δ‖).map fun α ↦ x.1.valuation (C (γ - α)) :=
     Multiset.map_congr rfl fun α hα ↦ ite_eq_right (Multiset.mem_filter.mp hα).2
   conv_lhs => rw [← Multiset.filter_add_not (fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) p.roots]
-  rw [Multiset.map_add, Multiset.prod_add, h₁, h₂, Multiset.map_const', Multiset.prod_replicate,
-    map_mul, map_mul, map_multiset_prod, map_multiset_prod, Multiset.map_map, Multiset.map_map,
-    mul_left_comm]
-  simp only [Function.comp_def]
+  rw [Multiset.map_add, Multiset.prod_add, h₁, h₂]
+  simp [map_multiset_prod, mul_left_comm (x.1.valuation (C p.leadingCoeff))]
 
 /-- **At a point of the cell with `x(T - γ) = 0`**, `δ = γ` and `γ` is not a root of both of two
 coprime polynomials, so one of the two root counts of
@@ -281,6 +219,29 @@ private theorem vle_iff_of_mem_cell [IsAlgClosed K] {Z : Finset K} {γ δ : K}
     valuation_eval₂RingHom_eq_pow_mul_of_mem_cell hx IsAlgClosed.card_roots_eq_natDegree hZf,
     valuation_eval₂RingHom_eq_pow_mul_of_mem_cell hx IsAlgClosed.card_roots_eq_natDegree hZg]
 
+/-- **Comparing `x(T - γ)ʲ x(a)` with `x(T - γ)ᵏ x(b)`** for `j < k` and `ρ ^ (k - j) = a / b`
+is comparing `x(ρ)` with `x(T - γ)`, at a point with `x(T - γ) ≠ 0`: write `x(a) = x(ρ)ᵏ⁻ʲ x(b)`,
+then cancel `x(T - γ)ʲ` and `x(b)` and compare `(k - j)`-th powers. -/
+private theorem valuation_pow_mul_le_iff {x : closedPolydisc 1 K} {γ ρ a b : K} {j k : ℕ}
+    (hjk : j < k) (hb : b ≠ 0) (hρ : ρ ^ (k - j) = a / b)
+    (h0 : x.1.valuation (T - C γ) ≠ 0) :
+    (x.1.valuation (T - C γ) ^ j * x.1.valuation (C a) ≤
+        x.1.valuation (T - C γ) ^ k * x.1.valuation (C b) ↔
+      x.1.valuation (C ρ) ≤ x.1.valuation (T - C γ)) ∧
+    (x.1.valuation (T - C γ) ^ k * x.1.valuation (C b) ≤
+        x.1.valuation (T - C γ) ^ j * x.1.valuation (C a) ↔
+      x.1.valuation (T - C γ) ≤ x.1.valuation (C ρ)) := by
+  obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hjk.le
+  rw [Nat.add_sub_cancel_left] at hρ
+  have ha : x.1.valuation (C a) = x.1.valuation (C ρ) ^ l * x.1.valuation (C b) := by
+    rw [← map_pow, ← map_pow, ← map_mul, ← map_mul, hρ, div_mul_cancel₀ _ hb]
+  have hb' : 0 < x.1.valuation (C b) :=
+    zero_lt_iff.mpr ((closedPolydisc_valuation_weightedC_eq_zero_iff x b).not.mpr hb)
+  rw [ha, pow_add, mul_assoc]
+  constructor <;>
+  rw [mul_le_mul_iff_right₀ (pow_pos (zero_lt_iff.mpr h0) _), mul_le_mul_iff_left₀ hb',
+    pow_le_pow_iff_left₀ zero_le zero_le (by omega)]
+
 /-- **On each cell, `X(f/g)` is a finite union of holed discs.** On the cell of `(γ, δ)`, the
 inequality `x(T - γ)ᵐ x(c) ≤ x(T - γ)ⁿ x(e)` of
 `valuation_eval₂RingHom_eq_pow_mul_of_mem_cell` holds everywhere or nowhere if `m = n`, and
@@ -299,11 +260,6 @@ private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g 
     refine mul_ne_zero (Polynomial.leadingCoeff_ne_zero.mpr hg) (Multiset.prod_ne_zero fun h ↦ ?_)
     obtain ⟨α, hα, h0⟩ := Multiset.mem_map.mp h
     exact Multiset.of_mem_filter hα (by rw [h0, norm_zero]; exact norm_nonneg _)
-  -- cancel the common factor `x(T - γ)ʲ` and a nonzero constant, then compare `k`-th powers
-  have cancel {Γ : Type _} [LinearOrderedCommGroupWithZero Γ] {b r s a : Γ} {k : ℕ} (hb : b ≠ 0)
-      (ha : a ≠ 0) (hk : k ≠ 0) : b * (r ^ k * a) ≤ b * (s ^ k * a) ↔ r ≤ s := by
-    rw [mul_le_mul_iff_right₀ (zero_lt_iff.mpr hb), mul_le_mul_iff_left₀ (zero_lt_iff.mpr ha),
-      pow_le_pow_iff_left₀ zero_le zero_le hk]
   -- it suffices to describe the inequality `x(T - γ)ᵐ x(c) ≤ x(T - γ)ⁿ x(e)` on the cell
   have key (H : Set (closedPolydisc 1 K)) (hH : IsHoledDiscUnion (cell Z γ δ ∩ H))
       (hiff : ∀ x ∈ cell Z γ δ, x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
@@ -318,20 +274,18 @@ private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g 
   rcases lt_trichotomy m n with hmn | hmn | hmn
   · -- `m < n`: the inequality says `x(ρ) ≤ x(T - γ)` for `ρ ^ (n - m) = c / e`
     obtain ⟨ρ, hρ⟩ := IsAlgClosed.exists_pow_nat_eq (c / e) (Nat.sub_pos_of_lt hmn)
-    refine key _ (hcell.inter_hole γ ρ) fun x hx ↦ ?_
-    have hρe : x.1.valuation (C ρ) ^ (n - m) * x.1.valuation (C e) = x.1.valuation (C c) := by
-      rw [← map_pow, ← map_pow, ← map_mul, ← map_mul, hρ, div_mul_cancel₀ _ he]
-    have he' : x.1.valuation (C e) ≠ 0 :=
-      (closedPolydisc_valuation_weightedC_eq_zero_iff x e).not.mpr he
-    rw [Set.mem_ofPred_eq, ← valuation_le_iff, ← hρe, ← Nat.add_sub_cancel' hmn.le]
+    refine key _ (hcell.inter_setOf_vle γ ρ) fun x hx ↦ ?_
+    rw [Set.mem_ofPred_eq, ← valuation_le_iff]
     by_cases h0 : x.1.valuation (T - C γ) = 0
-    · have hm : m = 0 := (card_filter_eq_zero_or_of_mem_cell hx h0 hfg).resolve_right
+    · -- here `m = 0` by coprimality, and `x(c) = 0 ↔ x(ρ) = 0`
+      have hm : m = 0 := (card_filter_eq_zero_or_of_mem_cell hx h0 hfg).resolve_right
         (by omega)
-      simp only [h0, hm, pow_zero, one_mul, zero_add, Nat.sub_zero,
-        zero_pow (Nat.pos_iff_ne_zero.mp (hm ▸ hmn)), zero_mul, le_zero_iff, mul_eq_zero, he',
-        or_false, pow_eq_zero_iff (Nat.pos_iff_ne_zero.mp (hm ▸ hmn))]
-    · rw [pow_add, mul_assoc, Nat.add_sub_cancel_left]
-      exact cancel (pow_ne_zero _ h0) he' (by omega)
+      rw [hm, Nat.sub_zero] at hρ
+      have hρc : ρ = 0 ↔ c = 0 := by
+        rw [← pow_eq_zero_iff (by omega : n ≠ 0), hρ, div_eq_zero_iff, or_iff_left he]
+      simp [h0, hm, zero_pow (by omega : n ≠ 0),
+        closedPolydisc_valuation_weightedC_eq_zero_iff, hρc]
+    · exact (valuation_pow_mul_le_iff hmn he hρ h0).1
   · -- `m = n`: the inequality says `‖c‖ ≤ ‖e‖`, independently of the point
     have hiff (x) (hx : x ∈ cell Z γ δ) : x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
         x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ ‖c‖ ≤ ‖e‖ := by
@@ -352,38 +306,31 @@ private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g 
       simp [hc]
     obtain ⟨ρ, hρ⟩ := IsAlgClosed.exists_pow_nat_eq (e / c) (Nat.sub_pos_of_lt hmn)
     refine key _ (hcell.inter_closedSubdisc γ ρ) fun x hx ↦ ?_
-    have hρc : x.1.valuation (C ρ) ^ (m - n) * x.1.valuation (C c) = x.1.valuation (C e) := by
-      rw [← map_pow, ← map_pow, ← map_mul, ← map_mul, hρ, div_mul_cancel₀ _ hc]
-    have hc' : x.1.valuation (C c) ≠ 0 :=
-      (closedPolydisc_valuation_weightedC_eq_zero_iff x c).not.mpr hc
     have hρ0 : ρ ≠ 0 := by
       rintro rfl
       rw [zero_pow (by omega), eq_comm, div_eq_zero_iff] at hρ
       exact hρ.elim he hc
     rw [mem_closedSubdisc, ← valuation_le_iff, and_iff_left (by
-      rwa [← map_zero C, closedPolydisc_vle_weightedC_iff, norm_zero, not_le, norm_pos_iff]),
-      ← hρc, ← Nat.add_sub_cancel' hmn.le]
+      rwa [← map_zero C, closedPolydisc_vle_weightedC_iff, norm_zero, not_le, norm_pos_iff])]
     by_cases h0 : x.1.valuation (T - C γ) = 0
-    · simp only [h0, zero_le, zero_pow (by omega : n + (m - n) ≠ 0), zero_mul]
-    · rw [pow_add, mul_assoc, Nat.add_sub_cancel_left]
-      exact cancel (pow_ne_zero _ h0) hc' (by omega)
+    · simp only [h0, zero_le, zero_pow (by omega : m ≠ 0), zero_mul]
+    · exact (valuation_pow_mul_le_iff hmn hc hρ h0).2
 
 /-- **The domain `{x : x(f) ≤ x(g)}` of two coprime polynomials is a finite union of holed
 discs.** Let `K` be algebraically closed and `f`, `g` coprime polynomials over `K`. Then there is
 a finite set `P` of triples `(a, c, H)`, with `H` a finite set of pairs `(b, d)`, such that a point
 of the closed unit disc satisfies `x(f) ≤ x(g)` exactly when, for some `(a, c, H) ∈ P`, it lies in
-the closed disc `D(a, |c|)` and satisfies `x(d) ≤ x(T - b)` for every `(b, d) ∈ H`, that is, lies
-outside the open disc of radius `‖d‖` about `b`. -/
-theorem exists_finset_setOf_vle_eq_iUnion_closedSubdisc_inter_iInter [IsAlgClosed K]
+the holed disc `D(a, |c|) ∖ ⋃_{(b, d) ∈ H} D⁻(b, |d|)`. -/
+theorem exists_finset_setOf_vle_eq_iUnion_holedDisc [IsAlgClosed K]
     {f g : Polynomial K} (hfg : IsCoprime f g) :
     ∃ P : Finset (K × K × Finset (K × K)),
       {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T f)
         (Polynomial.eval₂RingHom C T g)} =
-        ⋃ p ∈ P, closedSubdisc p.1 p.2.1 ∩
-          ⋂ q ∈ p.2.2, {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (C q.2) (T - C q.1)} := by
+        ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2) := by
   classical
   suffices h : IsHoledDiscUnion {x : closedPolydisc 1 K | x.1.toValuativeRel.vle
-      (Polynomial.eval₂RingHom C T f) (Polynomial.eval₂RingHom C T g)} from h
+      (Polynomial.eval₂RingHom C T f) (Polynomial.eval₂RingHom C T g)} from
+    isHoledDiscUnion_iff.mp h
   rcases eq_or_ne g 0 with rfl | hg
   · -- `f` is a unit, hence a nonzero constant, and no point has `x(f) ≤ 0`
     obtain ⟨u, hu, rfl⟩ := Polynomial.isUnit_iff.mp (isCoprime_zero_right.mp hfg)
@@ -412,26 +359,6 @@ theorem exists_finset_setOf_vle_eq_iUnion_closedSubdisc_inter_iInter [IsAlgClose
     isHoledDiscUnion_cell_inter hfg hg hZf hZg γ δ
 
 /-! ### Rational subsets of the closed disc -/
-
-private theorem IsHoledDiscUnion.inter {S S' : Set (closedPolydisc 1 K)} (hS : IsHoledDiscUnion S)
-    (hS' : IsHoledDiscUnion S') : IsHoledDiscUnion (S ∩ S') := by
-  classical
-  obtain ⟨P, rfl⟩ := hS'
-  rw [Set.inter_iUnion₂]
-  refine isHoledDiscUnion_biUnion P fun p _ ↦ ?_
-  rw [← Set.inter_assoc]
-  exact (hS.inter_closedSubdisc p.1 p.2.1).inter_biInter_hole p.2.2 Prod.fst Prod.snd
-
-private theorem isHoledDiscUnion_biInter {ι : Type*} (s : Finset ι)
-    {S : ι → Set (closedPolydisc 1 K)} (hS : ∀ i ∈ s, IsHoledDiscUnion (S i)) :
-    IsHoledDiscUnion (⋂ i ∈ s, S i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using isHoledDiscUnion_univ
-  | insert i s _ ih =>
-    rw [Finset.set_biInter_insert]
-    exact (hS i (Finset.mem_insert_self i s)).inter
-      (ih fun j hj ↦ hS j (Finset.mem_insert_of_mem hj))
 
 omit [IsUltrametricDist K] in
 /-- Cancelling `gcd(g, p)` does not change the inequality `x(g) ≤ x(p)` at a point where
@@ -499,11 +426,7 @@ theorem exists_finset_eq_iUnion_holedDisc_of_mem_spaRationalFamily
     ∃ P : Finset (K × K × Finset (K × K)),
       U = ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q : p.2.2 ↦ q.1.2) := by
   classical
-  suffices h : IsHoledDiscUnion U by
-    obtain ⟨P, hP⟩ := h
-    refine ⟨P, hP.trans (Set.iUnion₂_congr fun p _ ↦ ?_)⟩
-    ext x
-    simp
+  suffices h : IsHoledDiscUnion U from isHoledDiscUnion_iff.mp h
   -- present `U` by polynomials, with a unit constant `c` among the numerators
   obtain ⟨G, p, c, hc, hcG, hV⟩ := (mem_spaRationalFamily_iff_exists_polynomial _).mp hU
   have hU' : U = {x : closedPolydisc 1 K | (∀ g ∈ G, x.1.toValuativeRel.vle
@@ -523,7 +446,7 @@ theorem exists_finset_eq_iUnion_holedDisc_of_mem_spaRationalFamily
     exact Set.eq_empty_of_forall_notMem fun x hx ↦ hx.2 (x.1.toValuativeRel.vle_refl 0)
   -- after cancelling common factors, each inequality is between coprime polynomials
   rw [hU', setOf_forall_vle_eq_iInter_div_gcd hc.ne_zero hcG hp]
-  exact isHoledDiscUnion_biInter G fun g _ ↦
-    exists_finset_setOf_vle_eq_iUnion_closedSubdisc_inter_iInter (isCoprime_div_gcd_div_gcd hp)
+  exact isHoledDiscUnion_biInter G fun g _ ↦ isHoledDiscUnion_iff.mpr
+    (exists_finset_setOf_vle_eq_iUnion_holedDisc (isCoprime_div_gcd_div_gcd hp))
 
 end TauCeti.ValuationSpectrum

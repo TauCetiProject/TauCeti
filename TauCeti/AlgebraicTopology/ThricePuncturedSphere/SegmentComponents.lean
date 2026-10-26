@@ -85,6 +85,43 @@ theorem basePt_mem_unitSegment : basePt ∈ unitSegment := by
   simp only [mem_unitSegment, coe_basePt]
   norm_num
 
+/-- In the coordinate `z ↦ 2 * z` of `D₀*`, the segment `(0, 1)` is the positive real axis. -/
+theorem mem_unitSegment_iff_coord_zero (z : ThricePuncturedSphere)
+    (hz : z ∈ Puncture.zero.neighborhood) :
+    z ∈ unitSegment ↔ (Puncture.zero.coord ⟨z, hz⟩ : ℂ).im = 0 ∧
+      0 < (Puncture.zero.coord ⟨z, hz⟩ : ℂ).re := by
+  have hre : (z : ℂ).re < 1 := by
+    have : ‖(z : ℂ)‖ < 1 / 2 := by simpa using hz
+    linarith [Complex.re_le_norm (z : ℂ)]
+  have him2 : (2 * (z : ℂ)).im = 2 * (z : ℂ).im := by simp
+  have hre2 : (2 * (z : ℂ)).re = 2 * (z : ℂ).re := by simp
+  rw [mem_unitSegment, Puncture.coe_coord_zero, him2, hre2]
+  constructor
+  · rintro ⟨h0, h1, -⟩
+    exact ⟨by rw [h0, mul_zero], by linarith⟩
+  · rintro ⟨h0, h1⟩
+    exact ⟨by linarith, by linarith, hre⟩
+
+/-- In the coordinate `z ↦ 2 * (1 - z)` of `D₁*`, the segment `(0, 1)` is the positive real
+axis. -/
+theorem mem_unitSegment_iff_coord_one (z : ThricePuncturedSphere)
+    (hz : z ∈ Puncture.one.neighborhood) :
+    z ∈ unitSegment ↔ (Puncture.one.coord ⟨z, hz⟩ : ℂ).im = 0 ∧
+      0 < (Puncture.one.coord ⟨z, hz⟩ : ℂ).re := by
+  have hre : 0 < (z : ℂ).re := by
+    have : ‖(z : ℂ) - 1‖ < 1 / 2 := by simpa using hz
+    have := Complex.abs_re_le_norm ((z : ℂ) - 1)
+    rw [Complex.sub_re, Complex.one_re] at this
+    linarith [neg_abs_le ((z : ℂ).re - 1)]
+  have him2 : (2 * (1 - (z : ℂ))).im = -(2 * (z : ℂ).im) := by simp
+  have hre2 : (2 * (1 - (z : ℂ))).re = 2 * (1 - (z : ℂ).re) := by simp
+  rw [mem_unitSegment, Puncture.coe_coord_one, him2, hre2]
+  constructor
+  · rintro ⟨h0, -, h1⟩
+    exact ⟨by rw [h0, mul_zero, neg_zero], by linarith⟩
+  · rintro ⟨h0, h1⟩
+    exact ⟨by linarith, hre, by linarith⟩
+
 /-- A set of `ℂ` lying in the strip `0 < re z < 1` contains neither puncture, so it is the image
 of its preimage in the thrice-punctured sphere. -/
 private theorem image_coe_preimage_coe {T : Set ℂ} (hT : ∀ w ∈ T, 0 < w.re ∧ w.re < 1) :

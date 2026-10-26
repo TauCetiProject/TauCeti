@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Compact.Haar
+public import TauCeti.RepresentationTheory.Continuous.LeftRegular
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 public import Mathlib.MeasureTheory.Function.L2Space
@@ -52,9 +53,10 @@ Right translation on `Lp` is definitionally Mathlib's `DomMulAct` action of `G�
 action; its multiplicativity law is proved instead via Mathlib's `compMeasurePreserving_comp_apply`
 and right-multiplication associativity, since the two composed `Lp.compMeasurePreservingₗᵢ` do not
 unify with the `DomMulAct` action definitionally. Left translation is written with an inverse, so
-no such `DomMulAct` action is available for it and its identity law goes through
-`Lp.compMeasurePreserving_id_apply` after normalizing `fun x => (1 : G)⁻¹ * x` to the identity.
-Strong continuity of both is Mathlib's `Continuous.compMeasurePreservingLp`.
+no such `DomMulAct` action is available for it; it is the specialization of the left regular
+representation `MeasureTheory.Measure.leftRegular` of an arbitrary left-invariant measure, from
+which its unitarity and strong continuity are inherited. Strong continuity of both is Mathlib's
+`Continuous.compMeasurePreservingLp`.
 
 The bodies of both representations are not exposed: `TauCeti.rightRegularLp_apply` and
 `TauCeti.leftRegularLp_apply` are the interface through which a downstream file transfers a
@@ -144,25 +146,12 @@ variable (𝕜 G) in
 `f ↦ (x ↦ f (g⁻¹ * x))`. The inverse makes this a representation rather than an
 antirepresentation.
 
-As for `TauCeti.rightRegularLp`, only strong continuity is asserted; operator-norm continuity is
-not needed and generally fails for infinite compact groups. -/
+This is the general left regular representation `MeasureTheory.Measure.leftRegular` for normalized
+Haar measure and scalar coefficients. As for `TauCeti.rightRegularLp`, only strong continuity is
+asserted; operator-norm continuity is not needed and generally fails for infinite compact
+groups. -/
 noncomputable def leftRegularLp : ContRepresentation 𝕜 G (Lp 𝕜 2 (haarProb G)) :=
-  .ofMonoidHom
-    { toFun g := (Lp.compMeasurePreservingₗᵢ 𝕜 (g⁻¹ * ·)
-        (measurePreserving_mul_left (haarProb G) g⁻¹)).toContinuousLinearMap
-      map_one' := ContinuousLinearMap.ext fun f => by
-        simp only [one_apply_eq_self, LinearIsometry.coe_toContinuousLinearMap,
-          Lp.compMeasurePreservingₗᵢ_apply, inv_one, one_mul, ← Function.id_def]
-        exact Lp.compMeasurePreserving_id_apply f
-      map_mul' g h := ContinuousLinearMap.ext fun f => by
-        have hfun : (fun x : G => (g * h)⁻¹ * x) =
-            (fun x : G => h⁻¹ * x) ∘ (fun x : G => g⁻¹ * x) := by
-          funext x
-          simp only [Function.comp_apply, mul_inv_rev, mul_assoc]
-        simp only [mul_apply_eq_comp, hfun]
-        exact Lp.compMeasurePreserving_comp_apply f
-          (measurePreserving_mul_left (haarProb G) h⁻¹)
-          (measurePreserving_mul_left (haarProb G) g⁻¹) }
+  (haarProb G).leftRegular 𝕜 𝕜 2
 
 /-- **Left translation on `L²(G)`, unfolded to the underlying `Lp.compMeasurePreserving`.** As for
 `TauCeti.rightRegularLp_apply`, the body of `leftRegularLp` is not exposed, so this is the lemma
@@ -170,13 +159,12 @@ that moves a statement between the representation and its raw `Lp.compMeasurePre
 theorem leftRegularLp_apply (g : G) (f : Lp 𝕜 2 (haarProb G)) :
     leftRegularLp 𝕜 G g f =
       Lp.compMeasurePreserving (g⁻¹ * ·) (measurePreserving_mul_left (haarProb G) g⁻¹) f :=
-  (rfl)
+  (haarProb G).leftRegular_apply 2 g f
 
 /-- Left translation on `L²(G)` is represented by left translation of functions. -/
 theorem coeFn_leftRegularLp (g : G) (f : Lp 𝕜 2 (haarProb G)) :
-    leftRegularLp 𝕜 G g f =ᵐ[haarProb G] fun x => f (g⁻¹ * x) := by
-  rw [leftRegularLp_apply]
-  exact Lp.coeFn_compMeasurePreserving f _
+    leftRegularLp 𝕜 G g f =ᵐ[haarProb G] fun x => f (g⁻¹ * x) :=
+  (haarProb G).coeFn_leftRegular 2 g f
 
 /-- **On a continuous function, the left regular representation is left translation by the
 inverse.** -/
@@ -191,21 +179,14 @@ theorem leftRegularLp_toLp (F : C(G, 𝕜)) (g : G) :
 variable (𝕜 G) in
 /-- **The left regular representation is unitary**, because left translation preserves normalized
 Haar measure. -/
-theorem isUnitary_leftRegularLp : ContRepresentation.IsUnitary (leftRegularLp 𝕜 G) := by
-  rw [ContRepresentation.isUnitary_iff_norm_map]
-  intro g f
-  rw [leftRegularLp_apply]
-  exact Lp.norm_compMeasurePreserving f _
+theorem isUnitary_leftRegularLp : ContRepresentation.IsUnitary (leftRegularLp 𝕜 G) :=
+  (haarProb G).isUnitary_leftRegular
 
 /-- **The left regular representation is strongly continuous:** every orbit map `g ↦ g · f` is
 continuous. -/
 theorem continuous_leftRegularLp_apply (f : Lp 𝕜 2 (haarProb G)) :
-    Continuous fun g : G => leftRegularLp 𝕜 G g f := by
-  have hg : Continuous fun g : G => ContinuousMap.mulLeft (X := G) g⁻¹ :=
-    (ContinuousMap.curry
-      ⟨fun p : G × G => p.1⁻¹ * p.2, continuous_fst.inv.mul continuous_snd⟩).continuous
-  simp only [leftRegularLp_apply]
-  exact continuous_const.compMeasurePreservingLp hg _ (by simp)
+    Continuous fun g : G => leftRegularLp 𝕜 G g f :=
+  (haarProb G).continuous_leftRegular_apply 2 ENNReal.ofNat_ne_top f
 
 end CompactGroup
 

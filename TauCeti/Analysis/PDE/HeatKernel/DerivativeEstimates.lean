@@ -84,7 +84,7 @@ all `t > 0` and all `x`. -/
 theorem exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel (m : ℕ) :
     ∃ C, ∀ t, 0 < t → ∀ x : E,
       ‖iteratedFDeriv ℝ m (heatKernel t) x‖ ≤ C * t ^ (-(m : ℝ) / 2) * heatKernel (2 * t) x := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le (E := E) one_pos m
+  obtain ⟨C, -, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le (E := E) one_pos m
   simp only [mul_one] at hC
   refine ⟨C, fun t ht x => ?_⟩
   rw [iteratedFDeriv_heatKernel_eq_smul_iteratedFDeriv_heatKernel_one ht, norm_smul,
@@ -115,7 +115,7 @@ the time, with `‖x‖^α K_t(x) ≤ C t^(α/2) K_{2t}(x)` for all `t > 0` and 
 theorem exists_norm_rpow_mul_heatKernel_le {α : ℝ} (hα : 0 ≤ α) :
     ∃ C, ∀ t, 0 < t → ∀ x : E,
       ‖x‖ ^ α * heatKernel t x ≤ C * t ^ (α / 2) * heatKernel (2 * t) x := by
-  obtain ⟨C, hC⟩ := exists_one_add_norm_pow_mul_heatKernel_le (E := E) one_pos ⌈α⌉₊
+  obtain ⟨C, -, hC⟩ := exists_one_add_norm_pow_mul_heatKernel_le (E := E) one_pos ⌈α⌉₊
   simp only [mul_one] at hC
   refine ⟨C, fun t ht x => ?_⟩
   set y : E := (√t)⁻¹ • x

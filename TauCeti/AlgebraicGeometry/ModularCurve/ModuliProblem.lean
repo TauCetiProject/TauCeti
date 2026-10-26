@@ -201,6 +201,24 @@ theorem hasProperty_congr (D' : P.RelRepData) (W : MorphismProperty Scheme.{u}) 
   let e := (D.representableBy X).uniqueUpToIso (D'.representableBy X)
   rw [← Over.w e.hom, W.cancel_left_of_respectsIso]
 
+/-- Transport relative-representability data along an isomorphism of moduli problems. -/
+noncomputable def ofIso (D : P.RelRepData) (e : P ≅ Q) : Q.RelRepData where
+  rep X := D.rep X
+  representableBy X :=
+    (D.representableBy X).ofIso (Functor.isoWhiskerLeft X.baseChangeFunctor.op e)
+
+@[simp]
+theorem ofIso_rep (D : P.RelRepData) (e : P ≅ Q) (X : EllObj B) :
+    (D.ofIso e).rep X = D.rep X :=
+  (rfl)
+
+/-- Isomorphic moduli problems have the same isomorphism-invariant properties of representing
+morphisms. -/
+theorem hasProperty_iff_of_iso (D : P.RelRepData) (D' : Q.RelRepData) (e : P ≅ Q)
+    (W : MorphismProperty Scheme.{u}) [W.RespectsIso] :
+    D.HasProperty W ↔ D'.HasProperty W :=
+  (D.ofIso e).hasProperty_congr D' W
+
 /-- **Surjectivity over `Ell/B`.** A relatively representable moduli problem `𝒫` is surjective
 over `Ell/B`, that is, every representing morphism `𝒫_{E/S} ⟶ S` is surjective, exactly when every
 point `s` of the base of every object `(E/S)` lies in the image of a scheme `T` over `S` such that

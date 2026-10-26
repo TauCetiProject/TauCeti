@@ -121,6 +121,12 @@ jobs:
       # publish a static tree with no pipeline-health.json at all, DELETING the live endpoint
       # that the rest of this change exists to keep fresh. Restoring the last published set
       # first makes "keep the previous one" true for the generated data too.
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          project-directory: .
       - name: Restore the last published data assets
         uses: actions/cache/restore@v4
         with:
@@ -487,6 +493,12 @@ jobs:
       # the generators did when they ran in this job. A miss is survivable rather than fatal: the
       # checkout above already carries the committed fallbacks, so the site still builds and
       # deploys, and report-data-freshness is what makes the run red about it.
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          project-directory: .
       - name: Lay down the generated data
         id: site-data
         continue-on-error: true

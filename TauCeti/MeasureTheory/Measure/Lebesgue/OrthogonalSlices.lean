@@ -19,10 +19,14 @@ of a Lebesgue-measurable set is the integral of the lengths of its parallel line
 Replacing a set by a volume-a.e. equal representative changes almost every section only
 on a one-dimensional null set. This permits line-section arguments for measurable sets
 without choosing a Borel representative permanently.
+The length of a line section is independent of its base point along the line, in any real module.
 
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
 `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
-of the corresponding part of the set. Hyperplane sections of bounded sets have finite volume.
+of the corresponding part of the set. Hyperplane sections of bounded sets have finite volume,
+and hyperplane sections through interior points have positive volume. The heights of interior
+points form an open set, and a set has positive volume at any open set of heights containing the
+height of an interior point.
 
 More generally, for any subspace `K`, Tonelli's theorem splits Lebesgue integrals over `E` along
 the orthogonal decomposition `E = Kᗮ ⊕ K` (`Submodule.lintegral_eq_lintegral_lintegral_add`),
@@ -39,6 +43,15 @@ open MeasureTheory Set
 open scoped ENNReal RealInnerProductSpace
 
 namespace TauCeti
+
+/-- Moving the base point along the direction does not change the length of a line section. -/
+theorem volume_lineSection_add_smul {E : Type*} [AddCommMonoid E] [Module ℝ E]
+    (e : E) (s : Set E) (x : E) (c : ℝ) :
+    volume {t : ℝ | x + c • e + t • e ∈ s} = volume {t : ℝ | x + t • e ∈ s} := by
+  have h : {t : ℝ | x + c • e + t • e ∈ s} = (fun t ↦ t + c) ⁻¹' {t : ℝ | x + t • e ∈ s} := by
+    ext t
+    simp [add_smul, add_assoc, add_comm (t • e)]
+  rw [h, measure_preimage_add_right]
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -170,6 +183,38 @@ theorem _root_.Bornology.IsBounded.volume_hyperplaneSection_lt_top {s : Set E}
     volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} < ∞ :=
   ((Isometry.of_dist_eq fun y z : (ℝ ∙ e)ᗮ ↦ by
     simp [dist_add_right, Subtype.dist_eq]).antilipschitzWith.isBounded_preimage hs).measure_lt_top
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The heights along a unit vector of the interior points of a set form an open set. -/
+theorem isOpen_image_inner_interior {e : E} (he : ‖e‖ = 1) (s : Set E) :
+    IsOpen ((fun x ↦ ⟪e, x⟫) '' interior s) := by
+  refine (innerₛₗ ℝ e).isOpenMap_of_finiteDimensional (fun t ↦ ⟨t • e, ?_⟩) _ isOpen_interior
+  simp [he]
+
+/-- The hyperplane section along a unit vector through an interior point of a set has positive
+volume. -/
+theorem volume_hyperplaneSection_pos (e : E) (he : ‖e‖ = 1) {s : Set E} {c : ℝ}
+    (hc : c ∈ (fun x ↦ ⟪e, x⟫) '' interior s) :
+    0 < volume {y : (ℝ ∙ e)ᗮ | (y : E) + c • e ∈ s} := by
+  obtain ⟨x, hx, rfl⟩ := hc
+  dsimp only
+  -- The transverse coordinate of `x` lies in the open preimage of the interior of `s`.
+  have hU : IsOpen {y : (ℝ ∙ e)ᗮ | (y : E) + ⟪e, x⟫ • e ∈ interior s} :=
+    isOpen_interior.preimage (continuous_subtype_val.add continuous_const)
+  refine (hU.measure_pos volume ⟨((orthogonalLineEquiv e he).symm x).1, ?_⟩).trans_le
+    (measure_mono fun y (hy : (y : E) + ⟪e, x⟫ • e ∈ interior s) ↦
+      (interior_subset hy : (y : E) + ⟪e, x⟫ • e ∈ s))
+  simpa [orthogonalLineEquiv_symm_fst] using hx
+
+/-- If an interior point of `s` lies at a height along `e` in the open set `I`, then `s` has
+positive volume at heights in `I`. -/
+theorem volume_sep_inner_mem_pos {e : E} {s : Set E} {I : Set ℝ} (hI : IsOpen I)
+    (h : ∃ x ∈ interior s, ⟪e, x⟫ ∈ I) : 0 < volume {x ∈ s | ⟪e, x⟫ ∈ I} := by
+  obtain ⟨x, hx, hxI⟩ := h
+  have hU : IsOpen (interior s ∩ (fun x ↦ ⟪e, x⟫) ⁻¹' I) :=
+    isOpen_interior.inter (hI.preimage (continuous_const.inner continuous_id))
+  exact (hU.measure_pos volume ⟨x, hx, hxI⟩).trans_le
+    (measure_mono fun y hy ↦ ⟨interior_subset hy.1, hy.2⟩)
 
 /-- Cavalieri's formula for the part of a Lebesgue-measurable set at heights in a Borel set `I`
 along a unit vector `e`. -/

@@ -45,6 +45,9 @@ in question, then the `G`-order of that point's stabiliser is `Nat.card f.ker` t
 `H`-order. Taking `f` to be a quotient map gives the projective case, where the divisor is the
 subgroup quotiented out.
 
+Over a single point the stabiliser also counts the group elements carrying a base point into a
+subset of its orbit: each target point is reached by exactly one coset of the stabiliser.
+
 Finally, a group of prime order acting on its own finite subsets by translation has trivial
 stabilisers away from the two fixed points `∅` and `univ`: a stabiliser is a subgroup, so it is
 trivial or everything, and a subset fixed by every translation is empty or everything.
@@ -62,6 +65,8 @@ normality of it is equivalent to freeness of the action of the image.
   with `TauCeti.card_stabilizer_smul` the translate-presented corollary.
 * `TauCeti.cardStabilizerOnOrbit`: that order as a function on the orbit space, with
   `TauCeti.cardStabilizerOnOrbit_mk` its evaluation lemma.
+* `TauCeti.natCard_smul_mem_eq_natCard_mul_natCard_stabilizer`: the elements carrying a base point
+  into a subset `S` of its orbit number `|S|` times the order of its stabiliser.
 * `TauCeti.card_stabilizer_congr`: the stabiliser order is preserved by a map carrying one action
   to another along a group isomorphism, if it separates the point from its translates.
 * `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientCongr`: the orbit-space equivalence
@@ -371,6 +376,27 @@ theorem card_stabilizer_coset_eq_card_stabilizer_inv_smul (H : Subgroup G) (p : 
     simp [mul_assoc]
   · exact Subtype.ext (Subtype.ext (by simp [mul_assoc]))
   · exact Subtype.ext (Subtype.ext (by simp [mul_assoc]))
+
+open _root_.MulAction in
+/-- **Counting group elements by where they send a point.** If every point of `S` lies in the
+orbit of `b`, then the elements `g` with `g • b ∈ S` number `|S|` times the order of the
+stabilizer of `b`: over each point of `S` they form a coset of that stabilizer. -/
+theorem natCard_smul_mem_eq_natCard_mul_natCard_stabilizer (b : α) {S : Set α}
+    (hS : S ⊆ orbit G b) :
+    Nat.card {g : G // g • b ∈ S} = Nat.card S * Nat.card (stabilizer G b) := by
+  -- The orbit-stabilizer decomposition `G ≃ orbit G b × stabilizer G b` has orbit component
+  -- `g • b`, the coset of `g` read through `orbitEquivQuotientStabilizer`.
+  have hfst (g : G) : (((orbitProdStabilizerEquivGroup G b).symm g).1 : α) = g • b :=
+    orbitEquivQuotientStabilizer_symm_apply G b g
+  calc Nat.card {g : G // g • b ∈ S}
+      = Nat.card {p : orbit G b × stabilizer G b // (p.1 : α) ∈ S} :=
+        Nat.card_congr ((orbitProdStabilizerEquivGroup G b).symm.subtypeEquiv fun g ↦ by
+          rw [hfst])
+    _ = Nat.card ({o : orbit G b // (o : α) ∈ S} × stabilizer G b) :=
+        Nat.card_congr
+          (Equiv.prodSubtypeFstEquivSubtypeProd (p := fun o : orbit G b ↦ (o : α) ∈ S))
+    _ = Nat.card S * Nat.card (stabilizer G b) := by
+        rw [Nat.card_prod, Nat.card_congr (Equiv.subtypeSubtypeEquivSubtype fun hx ↦ hS hx)]
 
 section PrimeCard
 

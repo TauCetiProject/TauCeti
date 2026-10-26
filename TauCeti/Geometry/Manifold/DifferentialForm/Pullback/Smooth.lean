@@ -21,7 +21,8 @@ The relative theorem uses derivatives within the source set, so it applies at bo
 corner points. No invertibility, finite dimensionality, or completeness is required.
 
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
-Its underlying rough form is the existing `TauCeti.mpullback`.
+Its underlying rough form is the existing `TauCeti.mpullback`. Pullback along a smooth map with a
+smooth right inverse, such as a vector bundle projection, is injective.
 
 In tangent coordinates, pullback precomposes the form's coordinates with those of Mathlib's
 `mfderivWithin`, via `ContinuousAlternatingMap.compContinuousLinearMap`. This expresses
@@ -193,6 +194,15 @@ theorem mpullback_apply (f : M → M') (hf : ContMDiff I I' ∞ f)
     (mpullback f hf φ).1 x v = φ.1 (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
   rw [coe_mpullback, TauCeti.mpullback_apply]
 
+/-- Evaluation of the smooth pullback of a two-form on a pair of tangent vectors. -/
+theorem eval₂_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f)
+    (φ : SmoothForm I' M' F 2) (x : M) (v w : TangentSpace I x) :
+    (mpullback f hf φ).eval₂ x v w = φ.eval₂ (f x) (mfderiv I I' f x v) (mfderiv I I' f x w) := by
+  rw [eval₂_apply, eval₂_apply, mpullback_apply]
+  congr 1
+  ext i
+  fin_cases i <;> rfl
+
 /-- Pullback by the identity is the identity linear map. -/
 @[simp]
 theorem mpullback_id :
@@ -214,6 +224,24 @@ theorem mpullback_comp (f : M → M') (g : M' → M'')
   apply Subtype.ext
   simp only [coe_mpullback, LinearMap.comp_apply]
   exact TauCeti.mpullback_comp (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)) φ.1
+
+/-- Pullback along a smooth map with a smooth right inverse is injective. -/
+theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}
+    (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I' I ∞ g) (hfg : Function.RightInverse g f) :
+    Function.Injective (mpullback (F := F) (k := k) f hf) := by
+  refine Function.LeftInverse.injective (g := mpullback g hg) fun φ ↦ ?_
+  rw [← LinearMap.comp_apply, ← mpullback_comp]
+  simp only [hfg.comp_eq_id, mpullback_id, LinearMap.id_apply]
+
+/-- Pullback along the projection of a smooth vector bundle is injective: the zero section is a
+smooth right inverse of the projection. -/
+theorem mpullback_proj_injective {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+    {V : M → Type*} [TopologicalSpace (TotalSpace F' V)] [∀ x, AddCommMonoid (V x)]
+    [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F' V]
+    [VectorBundle ℝ F' V] [IsManifold (I.prod 𝓘(ℝ, F')) 1 (TotalSpace F' V)] :
+    Function.Injective
+      (mpullback (I := I.prod 𝓘(ℝ, F')) (I' := I) (F := F) (k := k) (π F' V) (contMDiff_proj V)) :=
+  mpullback_injective_of_rightInverse _ (contMDiff_zeroSection ℝ V) fun _ ↦ rfl
 
 variable {F₁ F₂ F₃ : Type*}
   [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
