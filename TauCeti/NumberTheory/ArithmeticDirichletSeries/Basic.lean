@@ -355,7 +355,7 @@ theorem zeroExtend_map (e : K ≃+* L) (f : IdealArithmeticFunction K) (I : Idea
 @[simp]
 theorem map_id (f : IdealArithmeticFunction K) : map (RingEquiv.refl K) f = f :=
   zeroExtend_injective <| funext fun I ↦ by
-    rw [zeroExtend_map, Ideal.comap_mapRingEquiv_refl]
+    rw [zeroExtend_map, RingOfIntegers.mapRingEquiv_refl, Ideal.comap_mapRingEquiv_refl]
 
 /-- **Transport is functorial**: transporting along `e` and then along `e'` is the same as
 transporting along `e.trans e'`. -/

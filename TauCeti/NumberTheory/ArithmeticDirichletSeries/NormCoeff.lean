@@ -187,11 +187,9 @@ theorem normCoeff_map {L : Type*} [Field L] [NumberField L] (e : K ≃+* L)
   · simpa [mem_normFiber, Ideal.absNorm_comap_of_ringEquiv] using (mem_normFiber L).1 ha
   · simpa [mem_normFiber, Ideal.absNorm_comap_of_ringEquiv] using (mem_normFiber K).1 ha
   · ext
-    simp [Ideal.comap_mapRingEquiv_trans, RingEquiv.symm_trans_self,
-      Ideal.comap_mapRingEquiv_refl]
+    simp [Ideal.comap_mapRingEquiv_trans, RingEquiv.symm_trans_self]
   · ext
-    simp [Ideal.comap_mapRingEquiv_trans, RingEquiv.self_trans_symm,
-      Ideal.comap_mapRingEquiv_refl]
+    simp [Ideal.comap_mapRingEquiv_trans, RingEquiv.self_trans_symm]
   · rw [IdealArithmeticFunction.map_apply, ← IdealArithmeticFunction.zeroExtend_coe f]
 
 /-- **Absence of cancellation inside norm fibres**, for a nonnegative ideal arithmetic function:

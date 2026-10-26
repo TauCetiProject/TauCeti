@@ -19,22 +19,42 @@ on nonzero ideals.
 
 ## Main results
 
-* `NumberField.RingOfIntegers.mapRingEquiv_refl_apply`,
-  `NumberField.RingOfIntegers.mapRingEquiv_trans_apply`: functoriality on elements.
+* `NumberField.RingOfIntegers.mapRingEquiv_refl`, `NumberField.RingOfIntegers.mapRingEquiv_symm`,
+  `NumberField.RingOfIntegers.mapRingEquiv_trans`: the restriction to the rings of integers
+  respects the identity, inverses and compositions of isomorphisms of fields.
+* `NumberField.RingOfIntegers.mapRingEquiv_trans_apply`: functoriality on elements.
 * `Ideal.comap_mapRingEquiv_refl`, `Ideal.comap_mapRingEquiv_trans`: functoriality on ideals.
 * `Ideal.comap_mapRingEquiv_eq_bot_iff`: the pullback is the zero ideal only for the zero ideal.
 -/
 
 public section
 
-namespace NumberField.RingOfIntegers
-
 variable {K L M : Type*} [Field K] [Field L] [Field M]
 
-/-- The identity isomorphism of fields restricts to the identity on integers. -/
+namespace NumberField.RingOfIntegers
+
+/-- The identity isomorphism of fields restricts to the identity isomorphism of the ring of
+integers. -/
 @[simp]
-theorem mapRingEquiv_refl_apply (x : 𝓞 K) : mapRingEquiv (RingEquiv.refl K) x = x :=
-  RingOfIntegers.ext rfl
+theorem mapRingEquiv_refl :
+    mapRingEquiv (RingEquiv.refl K) = RingEquiv.refl (𝓞 K) := by
+  ext z
+  simp
+
+/-- Restricting a ring isomorphism of fields to the rings of integers respects
+inverses: the inverse of the restriction is the restriction of the inverse. -/
+@[simp]
+theorem mapRingEquiv_symm (e : K ≃+* L) :
+    (mapRingEquiv e).symm = mapRingEquiv e.symm := by
+  ext x
+  simp only [mapRingEquiv_apply, mapRingEquiv_symm_apply]
+
+/-- Restricting a ring isomorphism of fields to the rings of integers respects
+composition: the restriction of a composition is the composition of the restrictions. -/
+theorem mapRingEquiv_trans (e : K ≃+* L) (f : L ≃+* M) :
+    mapRingEquiv (e.trans f) = (mapRingEquiv e).trans (mapRingEquiv f) := by
+  ext x
+  simp only [mapRingEquiv_apply, RingEquiv.trans_apply]
 
 /-- Restricting to integers is compatible with composing isomorphisms of fields. -/
 @[simp]
@@ -53,9 +73,9 @@ variable {K L M : Type*} [Field K] [Field L] [Field M]
 /-- Pulling back along the identity isomorphism is the identity on ideals. -/
 @[simp]
 theorem comap_mapRingEquiv_refl (I : Ideal (𝓞 K)) :
-    Ideal.comap (RingOfIntegers.mapRingEquiv (RingEquiv.refl K)) I = I := by
+    Ideal.comap (RingEquiv.refl (𝓞 K)) I = I := by
   ext x
-  rw [Ideal.mem_comap, RingOfIntegers.mapRingEquiv_refl_apply]
+  simp [Ideal.mem_comap]
 
 /-- Pulling back along `e` and then `e'` is pulling back along `e.trans e'`. -/
 @[simp]
