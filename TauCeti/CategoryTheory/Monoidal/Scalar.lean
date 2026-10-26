@@ -7,6 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 public import Mathlib.CategoryTheory.Monoidal.CoherenceLemmas
+public import Mathlib.CategoryTheory.Monoidal.Linear
+public import TauCeti.CategoryTheory.Preadditive.Schur
 
 /-!
 # Scalars in a monoidal category
@@ -21,14 +23,17 @@ particular scalars commute with each other (`TauCeti.scalar_comm`).
 A scalar `a` acts on every object `Y` in two ways, from the left as
 `(λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom` and from the right as `(ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom`. The two
 actions need not agree in a general monoidal category, but they do in a braided one
-(`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom`).
+(`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom`). They also agree in a linear one
+over an algebraically closed field whose unit is simple with finite-dimensional endomorphisms,
+where every scalar is a multiple of the identity
+(`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple`).
 -/
 
 public section
 
 open CategoryTheory MonoidalCategory
 
-universe v u
+universe w v u
 
 namespace TauCeti
 
@@ -71,5 +76,15 @@ theorem leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom [BraidedCategory C]
   -- The braiding `𝟙_ C ⊗ Y ≅ Y ⊗ 𝟙_ C` is natural and identifies the two unitors.
   rw [← braiding_rightUnitor, BraidedCategory.braiding_naturality_left_assoc,
     leftUnitor_inv_braiding_assoc]
+
+/-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically
+closed field, a scalar acts on every object in the same way from the left and from the right. -/
+theorem leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple (k : Type w) [Field k]
+    [IsAlgClosed k] [Preadditive C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
+    [Limits.HasKernels C] [Simple (𝟙_ C)] [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
+    (a : 𝟙_ C ⟶ 𝟙_ C) (Y : C) :
+    (λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom = (ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom := by
+  obtain ⟨c, rfl⟩ := endomorphism_simple_eq_smul_id k a
+  simp
 
 end TauCeti

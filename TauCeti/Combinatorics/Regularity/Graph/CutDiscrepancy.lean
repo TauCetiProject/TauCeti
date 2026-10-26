@@ -37,6 +37,8 @@ Densities include the diagonal blocks: a part `C` is paired with itself, with th
 * `SimpleGraph.steppedCount G P A B`: the number of edges from `A` to `B` predicted by `P`.
 * `SimpleGraph.steppedCount_eq_card_interedges`: the prediction is exact on rectangles whose
   sides are unions of parts.
+* `SimpleGraph.steppedCount_eq_sum_edgeDensity_part`: the prediction as a sum, over pairs of
+  vertices, of the edge densities between their parts.
 * `SimpleGraph.steppedCount_eq_sum_refinementParent`: the prediction of a coarse partition,
   written over the parts of a refinement.
 * `SimpleGraph.cutDiscrepancy G P`: the maximum deviation of the prediction from the true count.
@@ -151,6 +153,24 @@ theorem steppedCount_eq_sum_subtype (A B : Finset V) :
       (G.edgeDensity C.1 D.1 : ℝ) * #(A ∩ C.1) * #(B ∩ D.1) := by
   rw [steppedCount_def, ← sum_coe_sort P.parts]
   exact sum_congr rfl fun C _ ↦ (sum_coe_sort _ _).symm
+
+/-- The stepped prediction of `P` as a sum over pairs of vertices: each pair `(x, y) ∈ A × B`
+contributes the edge density between the parts of `x` and `y`. -/
+theorem steppedCount_eq_sum_edgeDensity_part (A B : Finset V) :
+    G.steppedCount P A B = ∑ x ∈ A, ∑ y ∈ B, (G.edgeDensity (P.part x) (P.part y) : ℝ) := by
+  -- Group first the points of `B`, then those of `A`, by the parts containing them.
+  calc G.steppedCount P A B
+      = ∑ D ∈ P.parts, ∑ C ∈ P.parts, #(A ∩ C) • ((#(B ∩ D) : ℝ) * G.edgeDensity C D) := by
+        rw [steppedCount_def, sum_comm]
+        exact sum_congr rfl fun D _ ↦ sum_congr rfl fun C _ ↦ by rw [nsmul_eq_mul]; ring
+    _ = ∑ D ∈ P.parts, ∑ x ∈ A, (#(B ∩ D) : ℝ) * G.edgeDensity (P.part x) D :=
+        sum_congr rfl fun D _ ↦ (P.sum_apply_part_of_subset (subset_univ A)
+          fun C ↦ (#(B ∩ D) : ℝ) * G.edgeDensity C D).symm
+    _ = ∑ x ∈ A, ∑ y ∈ B, (G.edgeDensity (P.part x) (P.part y) : ℝ) := by
+        rw [sum_comm]
+        refine sum_congr rfl fun x _ ↦ ?_
+        rw [P.sum_apply_part_of_subset (subset_univ B) fun D ↦ (G.edgeDensity (P.part x) D : ℝ)]
+        simp_rw [nsmul_eq_mul]
 
 /-- Under a refinement `Q ≤ P`, the prediction of `P` sums, over the pairs of parts of `Q`, the
 edge density between their coarse parents times their trace masses. -/

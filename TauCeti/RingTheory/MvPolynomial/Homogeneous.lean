@@ -30,7 +30,9 @@ by `d`. `TauCeti.eval_coe_homogeneousSubmodule_eq_sum` restates the expansion of
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
 `TauCeti.sum_smul_X_pow_mem_homogeneousSubmodule`: the `n`-th power of a linear form is
-homogeneous of degree `n`.
+homogeneous of degree `n`. Conversely, `MvPolynomial.homogeneousComponent_one_eq_sum` writes the
+degree-one component of a polynomial in finitely many variables as the linear form
+`∑ i, c i • X i` whose coefficients `c i` are the coefficients of the variables `X i`.
 -/
 
 public section
@@ -171,7 +173,34 @@ end TauCeti
 
 namespace MvPolynomial
 
-variable {σ R : Type*} [CommRing R]
+variable {σ R : Type*}
+
+section CommSemiring
+
+variable [CommSemiring R]
+
+/-- The degree-one component of a polynomial in finitely many variables is the linear form whose
+coefficient of `X i` is the coefficient of `X i` in the polynomial. -/
+theorem homogeneousComponent_one_eq_sum [Fintype σ] (φ : MvPolynomial σ R) :
+    homogeneousComponent 1 φ = ∑ i, φ.coeff (Finsupp.single i 1) • X i := by
+  classical
+  ext d
+  simp only [coeff_homogeneousComponent, coeff_sum, coeff_smul, coeff_X, smul_eq_mul, mul_ite,
+    mul_one, mul_zero]
+  split_ifs with hd
+  · obtain ⟨i, rfl⟩ := (Finsupp.sum_eq_one_iff d).1 <| by
+      rw [Finsupp.sum, ← Finsupp.degree_apply]
+      exact hd
+    simp [Finsupp.single_left_inj one_ne_zero]
+  · refine (Finset.sum_eq_zero fun i _ ↦ ite_eq_right ?_).symm
+    rintro rfl
+    simp at hd
+
+end CommSemiring
+
+section CommRing
+
+variable [CommRing R]
 
 /-- The coefficient of `X ^ k` in a product of linear factors `X - C Ψ`, whose constant terms `Ψ`
 are all homogeneous of degree `m`, is homogeneous of degree `m * (s.card - k)`. -/
@@ -210,6 +239,8 @@ theorem isHomogeneous_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι)
           omega
         rw [Polynomial.coeff_eq_zero_of_natDegree_lt hlt, zero_mul]
         exact isHomogeneous_zero σ R _
+
+end CommRing
 
 end MvPolynomial
 

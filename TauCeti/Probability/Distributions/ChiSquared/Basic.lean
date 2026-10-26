@@ -251,6 +251,12 @@ theorem ae_pos_chiSquaredMeasure {k : ℝ} (hk : 0 < k) :
   rw [chiSquaredMeasure_eq_gammaMeasure hk]
   exact ae_pos_gammaMeasure _ _
 
+/-- For a chi-squared variable `V` with `k > 0` degrees of freedom, the normalized square root
+`√(V / k)`, the denominator of Student-type ratios, is positive almost surely. -/
+theorem ae_pos_sqrt_div_chiSquaredMeasure {k : ℝ} (hk : 0 < k) :
+    ∀ᵐ x ∂chiSquaredMeasure k, 0 < √(x / k) :=
+  (ae_pos_chiSquaredMeasure hk).mono fun _ hx ↦ sqrt_pos.2 (div_pos hx hk)
+
 /-- Every chi-squared measure is carried by the nonnegative half-line, including its Dirac
 and invalid zero-measure cases. -/
 theorem ae_nonneg_chiSquaredMeasure (k : ℝ) :

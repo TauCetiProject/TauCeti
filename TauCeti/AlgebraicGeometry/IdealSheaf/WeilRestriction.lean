@@ -98,7 +98,7 @@ noncomputable def weilRestriction (I : Y.IdealSheafData) : S.IdealSheafData wher
         Γ(Y, g ⁻¹ᵁ S.basicOpen f) :=
       ((CommRingCat.isPushout_iff_isPushout).1 hpush).symm
     have := g.projective_app U
-    have key := Algebra.IsPushout.minorsIdeal_one_restrictScalars_map (A := Γ(S, U))
+    have key := Ideal.minorsIdeal_one_restrictScalars_map (A := Γ(S, U))
       (A' := Γ(S, S.basicOpen f)) (B' := Γ(Y, g ⁻¹ᵁ S.basicOpen f))
       (I.ideal ⟨g ⁻¹ᵁ U, U.2.preimage g⟩)
     simp only [RingHom.algebraMap_toAlgebra] at key

@@ -587,6 +587,18 @@ theorem InternalGrading.twistedTuple_apply (G : InternalGrading R M) (q : ℤ) {
   · exact twistedTuple_apply_of_mem_Ico G q x a p i h
   · exact twistedTuple_apply_of_not_mem_Ico G q x a p i h
 
+/-- Two twistings of the same tuple agree at an index lying in both twisted intervals or in
+neither. -/
+theorem InternalGrading.twistedTuple_apply_eq_twistedTuple_apply (G : InternalGrading R M)
+    (q : ℤ) {n : ℕ} (x : Fin n → M) {a p a' p' : ℕ} (i : Fin n)
+    (h : a ≤ i.val ∧ i.val < a + p ↔ a' ≤ i.val ∧ i.val < a' + p') :
+    twistedTuple G q x a p i = twistedTuple G q x a' p' i := by
+  by_cases hi : a ≤ i.val ∧ i.val < a + p
+  · rw [twistedTuple_apply_of_mem_Ico G q x a p i hi,
+      twistedTuple_apply_of_mem_Ico G q x a' p' i (h.1 hi)]
+  · rw [twistedTuple_apply_of_not_mem_Ico G q x a p i hi,
+      twistedTuple_apply_of_not_mem_Ico G q x a' p' i (mt h.2 hi)]
+
 /-- A degree-zero homogeneous linear map commutes with twisting a consecutive block of a tuple. -/
 theorem LinearMap.IsHomogeneous.twistedTuple_map {N : Type w} [AddCommMonoid N] [Module R N]
     {G : InternalGrading R M} {H : InternalGrading R N} {f : M →ₗ[R] N}

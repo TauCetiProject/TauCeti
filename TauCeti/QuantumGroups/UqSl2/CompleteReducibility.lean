@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.QuantumGroups.UqSl2.Casimir
+public import TauCeti.QuantumGroups.UqSl2.Casimir.Basic
 public import TauCeti.QuantumGroups.UqSl2.HighestWeight
 public import TauCeti.QuantumGroups.UqSl2.LadderModule
 public import Mathlib.RingTheory.SimpleModule.Basic
@@ -70,18 +70,7 @@ private theorem exists_eq_casimirScalar_of_highest_weight_vector [FiniteDimensio
     {v : V} (hv : v ∈ weightSpace q V μ) (hv0 : v ≠ 0) (he : e q • v = 0) :
     ∃ (m : ℕ) (ε : ℤˣ), μ = ε * q ^ m ∧ c = casimirScalar q (ε * q ^ m) := by
   obtain ⟨m, ε, rfl, -, -⟩ := exists_eq_sign_mul_pow_of_highest_weight_vector hq hv hv0 he
-  refine ⟨m, ε, rfl, ?_⟩
-  obtain ⟨n, hn⟩ := mem_casimirBlock_iff.mp (hc ▸ Submodule.mem_top : v ∈ casimirBlock q V c)
-  -- `v` is an eigenvector of `Ω - c` with eigenvalue `casimirScalar q (ε q^m) - c`.
-  have h1 : (Algebra.lsmul ℂ ℂ V (casimir q - algebraMap ℂ (UqSl2 q) c)).HasEigenvector
-      (casimirScalar q (ε * q ^ m) - c) v := by
-    refine Module.End.hasEigenvector_iff.mpr ⟨Module.End.mem_eigenspace_iff.mpr ?_, hv0⟩
-    simp only [Algebra.lsmul_coe]
-    rw [sub_smul, algebraMap_smul, casimir_smul_of_e_smul_eq_zero hv he, sub_smul]
-  have h2 := h1.pow_apply n
-  simp only [← map_pow, Algebra.lsmul_coe] at h2
-  rw [hn, eq_comm, smul_eq_zero] at h2
-  exact (sub_eq_zero.mp (pow_eq_zero_iff'.mp (h2.resolve_right hv0)).1).symm
+  exact ⟨m, ε, rfl, (casimirScalar_eq_of_mem_casimirBlock hv he (hc ▸ Submodule.mem_top) hv0).symm⟩
 
 /-! ### The top generalized weight space -/
 
@@ -313,9 +302,6 @@ theorem isSemisimpleModule_of_finiteDimensional [FiniteDimensional ℂ V]
   -- Each Casimir block is semisimple, and the Casimir blocks span the module.
   refine isSemisimpleModule_of_isSemisimpleModule_submodule' (p := casimirBlock q V) (fun c => ?_)
     iSup_casimirBlock_eq_top
-  have : FiniteDimensional ℂ (casimirBlock q V c) :=
-    Module.Finite.of_injective ((casimirBlock q V c).subtype.restrictScalars ℂ)
-      Subtype.val_injective
   exact isSemisimpleModule_of_casimirBlock_eq_top hq (casimirBlock_casimirBlock_eq_top c)
 
 end TauCeti.UqSl2

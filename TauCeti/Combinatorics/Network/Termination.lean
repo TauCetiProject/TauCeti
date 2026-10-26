@@ -143,10 +143,9 @@ flow has all its arrow values in `zmultiples d`. -/
 theorem exists_isMaximum_of_mem_zmultiples (hst : s ≠ t) (hd : 0 < d) (hcap₀ : 0 ≤ cap)
     (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ zmultiples d) :
     ∃ f : Flow cap s t, f.IsMaximum ∧ ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d := by
-  let f₀ : Flow cap s t :=
-    ⟨⟨0, ⟨le_rfl, hcap₀⟩, fun v _ _ ↦ excessAt_zero v⟩, (excessAt_zero t).ge⟩
   obtain ⟨f, -, hf⟩ :=
-    exists_reflTransGen_augmentsTo_isMaximum hst hd hcap (f := f₀) fun _ _ _ ↦ zero_mem _
+    exists_reflTransGen_augmentsTo_isMaximum hst hd hcap (f := zero hcap₀)
+      fun _ _ _ ↦ by simp
   exact ⟨f, hf⟩
 
 /-- **Max-flow/min-cut for capacities in a cyclic subgroup.** For nonnegative capacities in

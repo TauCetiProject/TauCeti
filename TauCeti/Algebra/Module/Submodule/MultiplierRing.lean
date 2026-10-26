@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Finiteness.Defs
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import TauCeti.Algebra.Ring.Subgroup
+
+import Mathlib.LinearAlgebra.Matrix.Charpoly.LinearMap
 
 /-!
 # The multiplier ring of a submodule of an algebra
@@ -26,6 +30,8 @@ lattice in a finite algebra over a Huber ring yields a pair of definition.
 * `Submodule.coe_map_pow_subset`: if `1 ∈ M`, the powers of the extension `J = I B₀` satisfy
   `Jⁿ ⊆ Iⁿ • M`.
 * `Submodule.smul_subset_coe_map_pow`: if `Iʲ • M ⊆ B₀`, then `I^(n + j) • M ⊆ Jⁿ`.
+* `Submodule.isIntegral_of_mem_multiplierRing`: if `M` is finitely generated and contains `1`,
+  every element of `B₀` is integral over `R`.
 -/
 
 public section
@@ -100,5 +106,30 @@ theorem smul_subset_coe_map_pow {M : Submodule R B} {I : Ideal R} {j : ℕ}
     · rw [Subring.coe_mul, coe_toMultiplierRing, smul_one_mul]
   · rintro _ _ ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩
     exact ⟨x + y, Ideal.add_mem _ hx hy, rfl⟩
+
+/-- **The multiplier ring of a finitely generated submodule containing `1` is integral.** If `M`
+is a finitely generated `R`-submodule of `B` with `1 ∈ M`, every `b ∈ B` with `b M ⊆ M` is
+integral over `R`: by Cayley–Hamilton, multiplication by `b` on `M` satisfies a monic polynomial,
+and evaluating at `1` shows that `b` satisfies it too. -/
+theorem isIntegral_of_mem_multiplierRing {M : Submodule R B} (hM : M.FG) (h1 : (1 : B) ∈ M)
+    {b : B} (hb : b ∈ M.toAddSubgroup.multiplierRing) : IsIntegral R b := by
+  have : Module.Finite R M := Module.Finite.iff_fg.mpr hM
+  let f : Module.End R M :=
+    (LinearMap.mulLeft R b).restrict fun m hm ↦ AddSubgroup.mem_multiplierRing.mp hb m hm
+  have hpow (n : ℕ) (v : M) : ((f ^ n) v : B) = b ^ n * v := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      rw [pow_succ', Module.End.mul_apply, pow_succ', mul_assoc, ← ih]
+      exact LinearMap.coe_restrict_apply _ _
+  obtain ⟨p, hp, hpf⟩ := LinearMap.exists_monic_and_aeval_eq_zero R f
+  refine ⟨p, hp, ?_⟩
+  -- evaluating a polynomial in `f` at `1 ∈ M` is evaluating it at `b`
+  have heval (q : Polynomial R) : ((Polynomial.aeval f q) ⟨1, h1⟩ : B) =
+      Polynomial.aeval b q := by
+    induction q using Polynomial.induction_on' with
+    | add p q hp hq => simp only [map_add, LinearMap.add_apply, Submodule.coe_add, hp, hq]
+    | monomial n a => simp [Polynomial.aeval_monomial, hpow, Algebra.smul_def]
+  rw [← Polynomial.aeval_def, ← heval, hpf, LinearMap.zero_apply, Submodule.coe_zero]
 
 end Submodule
