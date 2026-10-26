@@ -313,14 +313,6 @@ theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
   simp only [Nat.card_eq_fintype_card, Fintype.card_prod, Fintype.card_units_int,
     Fintype.card_finset, pow_succ, mul_comm]
 
-private theorem even_of_neg_one_pow_smul_eq_self {n : ℕ} {v : CliffordAlgebra Q}
-    (hneg : (-1 : R) ≠ 1) (hv : IsUnit v) (h : (-1 : R) ^ n • v = v) : Even n := by
-  apply (neg_one_pow_eq_one_iff_even hneg).mp
-  apply algebraMap_injective Q
-  have hmul : algebraMap R (CliffordAlgebra Q) ((-1 : R) ^ n) * v = v := by
-    simpa only [Algebra.smul_def] using h
-  exact hv.mul_right_cancel (by simpa only [map_one, one_mul] using hmul)
-
 private theorem basis_comm_monomial_iff [Fintype I] [Nontrivial R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i : I, Q (b i) = 1 ∨ Q (b i) = -1) (s : Finset I) :
@@ -415,20 +407,16 @@ theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
       rcases hs with hs | hs
       · have hu' : (u : (CliffordAlgebra Q)ˣ) = (1 : (CliffordAlgebra Q)ˣ) := by
           apply Units.ext
-          change ((u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = (1 : CliffordAlgebra Q)
-          simpa only [basis_empty] using hs
+          simpa only [basis_empty, Units.val_one] using hs
         have hu : u = (1 : monomialGroup Q b) := Subtype.ext hu'
         rw [hu, mul_one, one_mul]
       · have hu' : (u : (CliffordAlgebra Q)ˣ) = (-1 : (CliffordAlgebra Q)ˣ) := by
           apply Units.ext
-          change ((u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = (-1 : CliffordAlgebra Q)
-          simpa only [basis_empty] using hs
+          simpa only [basis_empty, Units.val_neg, Units.val_one] using hs
         have hu : u = (⟨-1, neg_one_mem_monomialGroup b⟩ : monomialGroup Q b) :=
           Subtype.ext hu'
-        rw [hu]
-        apply Subtype.ext
-        apply Units.ext
-        simp
+        simpa only [hu] using
+          (Subgroup.mem_center_iff.mp (neg_one_mem_center_monomialGroup b) g)
     · let l := ((Finset.univ : Finset I).sort (· ≤ ·)).map b
       have hl : l.Pairwise Q.IsOrtho := by
         dsimp [l]
@@ -440,7 +428,6 @@ theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
         rw [← b.span_eq]
         apply Submodule.span_mono
         rintro x ⟨i, rfl⟩
-        change b i ∈ l
         dsimp [l]
         exact List.mem_map.mpr ⟨i, (Finset.mem_sort _).2 (Finset.mem_univ i), rfl⟩
       have hodd' : Odd l.length := by
@@ -457,13 +444,11 @@ theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
       intro g
       apply Subtype.ext
       apply Units.ext
-      change ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
-          ((u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
-        ((u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
-          ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)
       rcases hs with hs | hs
-      · simpa [hs] using hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)
-      · rw [hs, mul_neg, neg_mul, hcomm_basis]
+      · simpa only [Subgroup.coe_mul, Units.val_mul, hs] using
+          hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)
+      · simpa only [Subgroup.coe_mul, Units.val_mul, hs, mul_neg, neg_mul] using
+          congrArg Neg.neg (hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))
 
 
 /-! ### The Clifford algebra as a quotient of the group algebra -/

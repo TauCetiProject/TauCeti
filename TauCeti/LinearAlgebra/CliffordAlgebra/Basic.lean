@@ -43,6 +43,19 @@ theorem algebraMap_injective (Q : QuadraticForm R M) [Invertible (2 : R)] :
   rwa [equivExterior_algebraMap, equivExterior_algebraMap,
     ExteriorAlgebra.algebraMap_inj M] at h
 
+/-- An invertible Clifford element fixed by scalar multiplication by `(-1) ^ n` has even degree.
+
+The conclusion follows by mapping the scalar action through the faithful scalar embedding and
+cancelling the invertible element. -/
+theorem even_of_neg_one_pow_smul_eq_self {Q : QuadraticForm R M} [Invertible (2 : R)]
+    {n : ℕ} {v : CliffordAlgebra Q}
+    (hneg : (-1 : R) ≠ 1) (hv : IsUnit v) (h : (-1 : R) ^ n • v = v) : Even n := by
+  apply (neg_one_pow_eq_one_iff_even hneg).mp
+  apply algebraMap_injective Q
+  have hmul : algebraMap R (CliffordAlgebra Q) ((-1 : R) ^ n) * v = v := by
+    simpa only [Algebra.smul_def] using h
+  exact hv.mul_right_cancel (by simpa only [map_one, one_mul] using hmul)
+
 /-- The scalar action on a Clifford algebra is faithful when `2` is invertible. With this
 instance, Mathlib's scalar `iff` lemmas apply directly. -/
 instance faithfulSMul (Q : QuadraticForm R M) [Invertible (2 : R)] :
