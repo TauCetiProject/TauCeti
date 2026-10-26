@@ -58,7 +58,8 @@ noncomputable section
 variable (X : Scheme.{u})
 
 -- Exposed so that points of `𝕍(E)` are visibly points of `Spec_X (Sym E^∨)`, to which the
--- universal property `relativeSpecSymmetricAlgebraPullbackHomEquiv` applies.
+-- universal property `relativeSpecSymmetricAlgebraPullbackHomEquiv` applies, and so that
+-- `totalSpaceScheme_map` can be stated without transport along `totalSpaceScheme_obj`.
 /-- The geometric total space `𝕍(E) = Spec_X (Sym E^∨)` of a finite locally free sheaf `E`, as a
 covariant functor to affine schemes over `X`: the dual `E^∨ = 𝓗om(E, 𝒪_X)`, viewed as a
 quasicoherent sheaf, followed by the relative spectrum of its symmetric algebra. -/

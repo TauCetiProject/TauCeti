@@ -112,9 +112,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv_symm_comp
     (s : 𝟙_ X.Modules ⟶ M) (b : M ⟶ N) :
     (Scheme.Modules.dualHomUnitEquiv N).symm (s ≫ b) =
       (pre b).app (𝟙_ X.Modules) ≫ (Scheme.Modules.dualHomUnitEquiv M).symm s := by
-  rw [Scheme.Modules.dualHomUnitEquiv_symm_apply, Scheme.Modules.dualHomUnitEquiv_symm_apply,
-    comp_whiskerRight, Category.assoc, ← id_tensor_pre_app_comp_ev, ← whisker_exchange_assoc,
-    leftUnitor_inv_naturality_assoc]
+  simp [← id_tensor_pre_app_comp_ev, ← whisker_exchange_assoc]
 
 /-- The section of a functional precomposed with the dual of `b : M ⟶ N` is the image under `b`
 of the section of the functional. -/
