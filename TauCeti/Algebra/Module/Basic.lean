@@ -31,7 +31,7 @@ public section
 
 namespace TauCeti
 
-/- If `(-1) ^ n • v = v` for nonzero `v` and invertible `2`, then `n` is even. -/
+/-- If `(-1) ^ n • v = v` for nonzero `v` and invertible `2`, then `n` is even. -/
 theorem even_of_neg_one_pow_smul_eq_self {R N : Type*} [Ring R] [AddCommGroup N] [Module R N]
     [Invertible (2 : R)] {n : ℕ} {v : N} (hv : v ≠ 0)
     (h : (-1 : R) ^ n • v = v) : Even n := by
