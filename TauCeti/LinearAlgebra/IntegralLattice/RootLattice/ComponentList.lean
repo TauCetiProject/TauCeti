@@ -45,6 +45,11 @@ An ADE component is `TauCeti.DynkinType.Component`, a valid simply-laced Dynkin 
 * `TauCeti.DynkinType.componentDiscriminantIsometry`: the induced isometry of discriminant forms.
 * `TauCeti.DynkinType.ComponentIsometry`, `componentSumIsometry`, `componentAlphabetIsometry`:
   componentwise isometries of two component lists and their two induced isometries.
+* `TauCeti.DynkinType.Component.glueAlphabetIsometry_apply`, `componentSumIsometry_nil`,
+  `componentSumIsometry_cons`, `componentAlphabetIsometry_cons`,
+  `glueAlphabetIsometry_componentGlueAlphabetIsometry`: the evaluation laws that characterise these
+  isometries on glue labels and on component vectors, so that downstream proofs do not unfold their
+  constructions.
 * `TauCeti.DynkinType.componentDiscriminantIsometry_natural`: naturality of the component-list
   discriminant isometry under those componentwise isometries.
 
@@ -87,10 +92,16 @@ instance isNondegenerate_rootLattice (c : Component) : c.rootLattice.IsNondegene
   c.1.glueAlphabet c.2.2
 
 /-- The glue alphabet of a component is the discriminant quadratic module of its root lattice. -/
-@[expose] noncomputable def glueAlphabetIsometry (c : Component) :
+noncomputable def glueAlphabetIsometry (c : Component) :
     FiniteQuadraticModule.Isometry c.glueAlphabet
       (c.rootLattice.discriminantQuadraticModule c.isEven_rootLattice) :=
   c.1.glueAlphabetIsometry c.2.1 c.2.2
+
+/-- The glue isometry of a component acts as the glue isometry of its underlying Dynkin type. -/
+@[simp]
+theorem glueAlphabetIsometry_apply (c : Component) (x : c.glueAlphabet) :
+    c.glueAlphabetIsometry x = c.1.glueAlphabetIsometry c.2.1 c.2.2 x :=
+  (rfl)
 
 end Component
 
@@ -224,7 +235,7 @@ general integral-lattice infrastructure and is proved with the orthogonal-sum op
 namespace TauCeti.DynkinType
 
 /-- The alphabet-level isometry induced by an isometry of a single component's root lattice. -/
-@[expose] noncomputable def componentGlueAlphabetIsometry {c d : Component}
+noncomputable def componentGlueAlphabetIsometry {c d : Component}
     (f : IntegralLattice.Isometry c.rootLattice d.rootLattice) :
     FiniteQuadraticModule.Isometry c.glueAlphabet d.glueAlphabet :=
   c.glueAlphabetIsometry.trans
@@ -255,14 +266,30 @@ inductive ComponentIsometry : List Component → List Component → Type
       (rest : ComponentIsometry cs ds) : ComponentIsometry (c :: cs) (d :: ds)
 
 /-- The isometry of component sums induced by a componentwise isometry of the component lists. -/
-@[expose] noncomputable def componentSumIsometry :
+noncomputable def componentSumIsometry :
     {l₁ l₂ : List Component} → ComponentIsometry l₁ l₂ →
       IntegralLattice.Isometry (componentSumLattice l₁) (componentSumLattice l₂)
   | _, _, .nil => IntegralLattice.Isometry.refl _
   | _, _, .cons f rest => f.orthogonalSum (componentSumIsometry rest)
 
+/-- The sum isometry of the empty componentwise isometry is the identity on the empty component
+sum. -/
+@[simp]
+theorem componentSumIsometry_nil (x : componentSumAmbient []) :
+    componentSumIsometry ComponentIsometry.nil x = x :=
+  IntegralLattice.Isometry.refl_apply _ x
+
+/-- The sum isometry of an adjoined component isometry acts componentwise on the leading component
+and on the remaining component sum. -/
+@[simp]
+theorem componentSumIsometry_cons {c d : Component} {cs ds : List Component}
+    (f : IntegralLattice.Isometry c.rootLattice d.rootLattice) (rest : ComponentIsometry cs ds)
+    (x₁ : Fin c.rank → ℚ) (x₂ : componentSumAmbient cs) :
+    componentSumIsometry (.cons f rest) (x₁, x₂) = (f x₁, componentSumIsometry rest x₂) :=
+  IntegralLattice.Isometry.orthogonalSum_apply f (componentSumIsometry rest) (x₁, x₂)
+
 /-- The isometry of glue alphabets induced by a componentwise isometry of the component lists. -/
-@[expose] noncomputable def componentAlphabetIsometry :
+noncomputable def componentAlphabetIsometry :
     {l₁ l₂ : List Component} → ComponentIsometry l₁ l₂ →
       FiniteQuadraticModule.Isometry (componentAlphabet l₁) (componentAlphabet l₂)
   | _, _, .nil =>
