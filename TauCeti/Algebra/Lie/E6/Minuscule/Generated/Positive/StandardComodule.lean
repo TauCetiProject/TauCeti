@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Positive.Basic
 public import TauCeti.Algebra.Lie.E6.Minuscule.StandardComodule
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule.Quotient
+import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Raising
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.StandardComodule
 
@@ -17,8 +19,7 @@ import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.StandardCom
 The subcomodules of the positive subgroup's 27-dimensional representation over a field
 are precisely the coordinate spans closed under the six raising operators. The weight torus
 separates the coordinate lines, while a raising operator sends a weight vector at a negative
-simple-root coordinate to its reflected weight vector. This classification is the flag
-input for testing maximality of the positive subgroup among connected solvable subgroups.
+simple-root coordinate to its reflected weight vector.
 
 The coordinate-span criterion works over every nontrivial commutative ring. The assertion
 that every invariant subspace is a coordinate span uses a field. No algebraic closure or
@@ -85,10 +86,11 @@ private theorem rootPoint_matrix (i : Fin 6) (A : CommAlgCat.{u} R)
         Matrix.GeneralLinearGroup (Fin 27) A) := by
   rw [generator_inl, generatorCoordinateMap_inl,
     ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap]
-  simpa only [BialgHom.mapDomain_apply, CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom,
-    AlgHom.comp_assoc] using
+  have h :=
     pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints
       R (.inl i) A q
+  rw [BialgHom.mapDomain_apply, ofConv_toConv] at h
+  simpa only [CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom, AlgHom.comp_assoc] using h
 
 /-- Every positive subcomodule is stable under each raising-root point. -/
 theorem rootSubgroupPoints_mulVec_mem
@@ -97,20 +99,12 @@ theorem rootSubgroupPoints_mulVec_mem
     ((rootSubgroupPoints (.inl i) R t : Matrix.GeneralLinearGroup (Fin 27) R) :
       Matrix (Fin 27) (Fin 27) R) *ᵥ v ∈ N := by
   let q := (AdditiveGroup.gaPointsMulEquiv (R := R) (A := R)).symm t
-  let f := CommHopfAlgCat.commonKernelLift (generator R) (.inl i)
-  have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R 27
-    (CommHopfAlgCat.mkQuotient _ (definingIdeal R)).hom N
-    (toConv (q.ofConv.comp f.hom.toAlgHom)) hv
-  have hcomp : BialgHom.mapDomain (CommHopfAlgCat.mkQuotient _ (definingIdeal R)).hom
-      (toConv (q.ofConv.comp f.hom.toAlgHom)) =
-      toConv (q.ofConv.comp (generator R (.inl i)).hom.toAlgHom) := by
-    apply WithConv.ext
-    ext x
-    simp only [BialgHom.mapDomain_apply_apply, AlgHom.comp_apply]
-    exact congrArg (fun g ↦ q.ofConv (g.hom x))
-      (CommHopfAlgCat.mkQuotient_comp_commonKernelLift (generator R) (.inl i))
-  rw [hcomp, rootPoint_matrix R i (CommAlgCat.of R R) q, MulEquiv.apply_symm_apply] at h
-  exact h
+  have h := GeneralLinear.quotientStandardComodule_mulVec_mem R 27
+    (definingIdeal R) (generator R (.inl i))
+    (by simpa only [generator_inl] using
+      ((le_definingIdeal_iff R (definingIdeal R)).mp le_rfl).1 i) N q hv
+  simpa only [rootPoint_matrix R i (CommAlgCat.of R R) q,
+    q, MulEquiv.apply_symm_apply] using h
 
 /-- A subcomodule containing a weight vector contains every vector obtained by one raising step. -/
 theorem single_reflection_mem
@@ -119,11 +113,10 @@ theorem single_reflection_mem
     (hv : Pi.single a (1 : R) ∈ N) :
     Pi.single (e6MinusculeReflection i a) (1 : R) ∈ N := by
   have h := rootSubgroupPoints_mulVec_mem R N i (Multiplicative.ofAdd 1) hv
-  rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, one_smul, Matrix.add_mulVec,
-    Matrix.one_mulVec, Matrix.mulVec_single_one, weightTable.raisingMatrix_map_col] at h
-  rw [← Subcomodule.mem_toSubmodule]
-  simpa only [weightTable_weight, weightTable_reflection, ha, ↓reduceIte,
-    add_sub_cancel_left] using N.toSubmodule.sub_mem h hv
+  rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, one_smul] at h
+  simpa only [weightTable_reflection, Subcomodule.mem_toSubmodule] using
+    weightTable.single_reflection_mem_of_mulVec_mem N.toSubmodule i a
+      (by simpa only [weightTable_weight] using ha) hv h
 
 variable {R}
 

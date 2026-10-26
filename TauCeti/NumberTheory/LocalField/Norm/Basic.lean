@@ -322,6 +322,18 @@ theorem valuation_norm_eq_one_iff {z : L} :
     Units.val_mk0] at h
 
 omit [FiniteDimensional K L] in
+/-- An element whose field norm has valuation zero lifts to an integer with unit norm. -/
+theorem exists_integerRing_eq_and_isUnit_norm {z : L}
+    (hz : valuation K (Algebra.norm K z) = 1) :
+    ∃ w : 𝒪[L], (w : L) = z ∧ IsUnit (Algebra.norm 𝒪[K] w) := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  let w : 𝒪[L] :=
+    ⟨z, (Valuation.mem_integer_iff _ _).mpr (valuation_norm_eq_one_iff.mp hz).le⟩
+  refine ⟨w, rfl, (Valuation.Integers.isUnit_iff_valuation_eq_one
+    (Valuation.integer.integers (valuation K))).mpr ?_⟩
+  simpa only [Algebra.algebraMap_ofSubsemiring_apply, coe_norm_integerRing] using hz
+
+omit [FiniteDimensional K L] in
 variable (L) in
 /-- **The norm carries `U(L, e(L/K) i)` into `U(K, i)`.** A unit of `𝒪[L]` congruent to `1` modulo
 `𝓂[L]^(e i) = 𝓂[K]^i 𝒪[L]` has norm congruent to `1` modulo `𝓂[K]^i`, because the norm commutes

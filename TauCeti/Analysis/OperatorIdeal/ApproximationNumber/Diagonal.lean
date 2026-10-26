@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Lp.Diagonal
+public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
 
 /-!
