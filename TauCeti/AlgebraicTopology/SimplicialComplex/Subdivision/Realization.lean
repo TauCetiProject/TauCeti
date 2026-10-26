@@ -41,6 +41,7 @@ The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear To
 * `AbstractSimplicialComplex.barycentricSubdivisionLinearMap_apply`: the coordinates of a linear
   combination of face barycenters.
 * `AbstractSimplicialComplex.barycentricSubdivisionFaceMap_apply`: the coordinates of the face map.
+* `AbstractSimplicialComplex.continuous_barycentricSubdivisionFaceMap`: the face map is continuous.
 -/
 
 public section
@@ -128,6 +129,23 @@ theorem barycentricSubdivisionFaceMap_apply (K : AbstractSimplicialComplex ι)
     Finsupp.linearCombination_apply_of_mem_supported ℝ hsupp]
   simp only [Finset.sum_apply', Finsupp.smul_apply, smul_eq_mul]
 
+/-- The barycentric-subdivision face map is continuous. -/
+theorem continuous_barycentricSubdivisionFaceMap (K : AbstractSimplicialComplex ι)
+    {ρ : Finset (Face K)} (σ : Face K) (hρσ : ∀ τ ∈ ρ, τ ≤ σ) :
+    Continuous (barycentricSubdivisionFaceMap K σ hρσ) := by
+  apply continuous_induced_rng.mpr
+  change Continuous
+    (fun x : StandardSimplex ρ => (barycentricSubdivisionFaceMap K σ hρσ x : ι → ℝ))
+  refine continuous_pi fun v => ?_
+  rw [show (fun x : StandardSimplex ρ => (barycentricSubdivisionFaceMap K σ hρσ x : ι → ℝ) v) =
+      fun x => ∑ τ ∈ ρ, x.1 τ * faceBarycenter K τ v from
+    funext (barycentricSubdivisionFaceMap_apply K σ hρσ · v)]
+  apply continuous_finsetSum
+  intro τ _
+  have hcoe : Continuous (fun x : StandardSimplex ρ => (x.1 : Face K → ℝ)) :=
+    continuous_induced_dom
+  exact ((continuous_apply τ).comp hcoe).mul continuous_const
+
 private theorem barycentricSubdivisionLinearMap_mem (K : AbstractSimplicialComplex ι)
     (x : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
       K.toPreAbstractSimplicialComplex)) :
@@ -181,18 +199,6 @@ theorem continuous_barycentricSubdivisionRealizationMap (K : AbstractSimplicialC
   have hρ := TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp ρ.2
   obtain ⟨σ, _, hσmax⟩ := hρ.2.exists_isGreatest ρ.1.finite_toSet hρ.1
   let toFace := barycentricSubdivisionFaceMap K σ hσmax
-  have hlinear : Continuous (fun x : StandardSimplex ρ.1 => (toFace x : ι → ℝ)) := by
-    apply continuous_pi
-    intro v
-    rw [show (fun x : StandardSimplex ρ.1 => (toFace x : ι → ℝ) v) =
-        fun x => ∑ τ ∈ ρ.1, x.1 τ * faceBarycenter K τ v from
-      funext (barycentricSubdivisionFaceMap_apply K σ hσmax · v)]
-    apply continuous_finsetSum
-    intro τ _
-    have hcoe : Continuous (fun x : StandardSimplex ρ.1 => (x.1 : Face K → ℝ)) :=
-      continuous_induced_dom
-    exact ((continuous_apply τ).comp hcoe).mul continuous_const
-  have htoFace : Continuous toFace := continuous_induced_rng.mpr hlinear
   have hfactor :
       barycentricSubdivisionRealizationMap K ∘ faceInclusion _ ρ =
         faceInclusion K ⟨σ.1, σ.2⟩ ∘ toFace := by
@@ -202,6 +208,7 @@ theorem continuous_barycentricSubdivisionRealizationMap (K : AbstractSimplicialC
       toFace]
     exact (barycentricSubdivisionFaceMap_val K σ hσmax x).symm
   rw [hfactor]
-  exact (continuous_faceInclusion K ⟨σ.1, σ.2⟩).comp htoFace
+  exact (continuous_faceInclusion K ⟨σ.1, σ.2⟩).comp
+    (continuous_barycentricSubdivisionFaceMap K σ hσmax)
 
 end AbstractSimplicialComplex
