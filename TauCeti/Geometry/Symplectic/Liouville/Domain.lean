@@ -123,7 +123,7 @@ theorem exists_isRestrictedContactType [I.Boundaryless] [FiniteDimensional ℝ E
   have hreg : IsRegularValue I 𝓘(ℝ) f c := isRegularValue_iff.2 fun x hx ↦
     isRegularPoint_iff_mvfderiv_ne_zero.2 fun h0 ↦ (hf x hx).2.ne' (by rw [h0]; rfl)
   refine ⟨f, c, hf1, hreg, rfl, frontier_setOf_le_eq_of_mvfderiv_pos hfc
-    (fun x _ ↦ (hZ x).of_le (by simp)) (fun x hx ↦ (hf x hx).1.mdifferentiableAt (by simp))
+    (fun x hx ↦ (hf x hx).1.mdifferentiableAt (by simp))
     (fun x hx ↦ (hf x hx).2), ?_⟩
   let := scalarRegularLevelChartedSpace hf1 hreg
   -- `mvfderiv` is `mfderiv` read in `ℝ`, so `df(Z) > 0` is transversality to the level.

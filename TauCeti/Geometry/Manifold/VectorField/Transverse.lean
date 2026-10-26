@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Level
 import Mathlib.Analysis.Calculus.Deriv.Slope
-import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
-import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
 # Vector fields transverse to a map
@@ -30,9 +28,10 @@ hypersurfaces of symplectic geometry (energy levels, boundaries of domains, cosp
 checked in practice.
 
 A vector field crossing a level of `f` in the direction of increasing `f`, `df(Z) > 0`, leaves the
-sublevel set there: along its integral curves `f` increases, so every point of the level is a limit
-of points where `f` is larger (`TauCeti.mem_closure_setOf_lt_of_mvfderiv_pos`). Hence the frontier
-of the sublevel set `{f ≤ c}` is exactly the level `f⁻¹(c)` when `df(Z) > 0` along it
+sublevel set there: along the straight line in a chart in the direction of `Z`, `f` increases, so
+every point of the level is a limit of points where `f` is larger
+(`TauCeti.mem_closure_setOf_lt_of_mvfderiv_pos`). Hence the frontier of the sublevel set `{f ≤ c}`
+is exactly the level `f⁻¹(c)` when `df(Z) > 0` along it
 (`TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`). This identifies the boundary of a domain whose
 boundary is crossed outwards by a vector field, as for Liouville domains.
 
@@ -86,39 +85,47 @@ theorem IsTransverseAlong.ne_zero {Z : (x : M) → TangentSpace I x} {ι : S →
 
 section Crossing
 
-variable [CompleteSpace E] [I.Boundaryless] [IsManifold I 1 M]
+variable [I.Boundaryless]
 
-/-- **A vector field increasing a function leaves its sublevel set.** If a `C¹` vector field `Z` on
-a boundaryless manifold satisfies `df_x(Z x) > 0` at a point `x` where `f` is differentiable, then
-`x` lies in the closure of the set `{y | f x < f y}`: the integral curve of `Z` through `x` enters
-this set immediately after time `0`. -/
-theorem mem_closure_setOf_lt_of_mvfderiv_pos {Z : (x : M) → TangentSpace I x} {f : M → ℝ} {x : M}
-    (hZ : ContMDiffAt I I.tangent 1 (T% Z) x) (hf : MDifferentiableAt I 𝓘(ℝ) f x)
-    (hpos : 0 < mvfderiv I f x (Z x)) : x ∈ closure {y | f x < f y} := by
-  obtain ⟨γ, rfl, hγ⟩ := exists_isMIntegralCurveAt_of_contMDiffAt_boundaryless 0 hZ
-  have hγ' := hγ.self_of_nhds
-  -- Along the integral curve, `f` has derivative `df_x(Z x) > 0` at time `0`.
-  have hd : HasDerivAt (f ∘ γ) (mvfderiv I f (γ 0) (Z (γ 0))) 0 :=
-    Manifold.hasDerivAt_comp_curve hf hγ'
-  have hlt : ∀ᶠ t in 𝓝[>] (0 : ℝ), f (γ 0) < f (γ t) := by
+/-- **A direction increasing a function leaves its sublevel set.** If a tangent vector `v` at a
+point `x` of a boundaryless manifold satisfies `df_x(v) > 0`, where `f` is differentiable at `x`,
+then `x` lies in the closure of the set `{y | f x < f y}`: the straight line through `x` in
+direction `v`, read in the extended chart at `x`, enters this set immediately after time `0`. -/
+theorem mem_closure_setOf_lt_of_mvfderiv_pos {f : M → ℝ} {x : M} {v : TangentSpace I x}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hpos : 0 < mvfderiv I f x v) :
+    x ∈ closure {y | f x < f y} := by
+  set w : E := tangentSpaceCastModel I x v
+  set γ : ℝ → M := fun t ↦ (extChartAt I x).symm (extChartAt I x x + t • w)
+  have hγ0 : γ 0 = x := by simp [γ]
+  -- `f ∘ γ` is `f` written in the extended charts, composed with a line of velocity `w`; the chart
+  -- of `ℝ` is the identity, so its derivative at `0` is `df_x(v)` by definition.
+  have hd : HasDerivAt (f ∘ γ) (mvfderiv I f x v) 0 := by
+    have h := hf.hasMFDerivAt.2
+    rw [I.range_eq_univ, hasFDerivWithinAt_univ] at h
+    have hl : HasDerivAt (fun t : ℝ ↦ extChartAt I x x + t • w) w 0 := by
+      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const w).const_add (extChartAt I x x)
+    exact h.comp_hasDerivAt_of_eq (0 : ℝ) hl (by simp)
+  have hlt : ∀ᶠ t in 𝓝[>] (0 : ℝ), f x < f (γ t) := by
     filter_upwards [(hd.tendsto_slope.mono_left (nhdsGT_le_nhdsNE 0)).eventually
       (lt_mem_nhds hpos), self_mem_nhdsWithin] with t ht ht0
-    exact (slope_pos_iff_of_le (Set.mem_Ioi.1 ht0).le).1 ht
-  exact mem_closure_of_tendsto (hγ'.continuousAt.tendsto.mono_left nhdsWithin_le_nhds) hlt
+    simpa [hγ0] using (slope_pos_iff_of_le (Set.mem_Ioi.1 ht0).le).1 ht
+  have hγc : ContinuousAt γ 0 := by
+    refine ContinuousAt.comp (f := fun t : ℝ ↦ extChartAt I x x + t • w) ?_ (by fun_prop)
+    simpa using continuousAt_extChartAt_symm (I := I) x
+  exact mem_closure_of_tendsto (hγ0 ▸ hγc.tendsto.mono_left nhdsWithin_le_nhds) hlt
 
 /-- **The frontier of a sublevel set crossed outwards by a vector field.** Let `f` be continuous,
-and differentiable at the points of the level `f⁻¹(c)`, and let `Z` be a vector field, `C¹` along
-the level, with `df(Z) > 0` there. Then the frontier of the sublevel set `{f ≤ c}` is exactly the
+and differentiable at the points of the level `f⁻¹(c)`, and let `Z` be a vector field with
+`df(Z) > 0` along the level. Then the frontier of the sublevel set `{f ≤ c}` is exactly the
 level `f⁻¹(c)`. -/
 theorem frontier_setOf_le_eq_of_mvfderiv_pos {Z : (x : M) → TangentSpace I x} {f : M → ℝ}
-    {c : ℝ} (hfc : Continuous f) (hZ : ∀ x, f x = c → ContMDiffAt I I.tangent 1 (T% Z) x)
-    (hf : ∀ x, f x = c → MDifferentiableAt I 𝓘(ℝ) f x)
+    {c : ℝ} (hfc : Continuous f) (hf : ∀ x, f x = c → MDifferentiableAt I 𝓘(ℝ) f x)
     (hpos : ∀ x, f x = c → 0 < mvfderiv I f x (Z x)) :
     frontier {x | f x ≤ c} = {x | f x = c} := by
   refine (frontier_le_subset_eq hfc continuous_const).antisymm fun x (hx : f x = c) ↦ ?_
   rw [frontier_eq_closure_inter_closure]
   exact ⟨subset_closure hx.le, closure_mono (fun y hy ↦ by simpa [← hx] using hy)
-    (mem_closure_setOf_lt_of_mvfderiv_pos (hZ x hx) (hf x hx) (hpos x hx))⟩
+    (mem_closure_setOf_lt_of_mvfderiv_pos (hf x hx) (hpos x hx))⟩
 
 end Crossing
 
