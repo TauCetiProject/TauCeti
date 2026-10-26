@@ -348,17 +348,7 @@ restriction to `K^{t}` induces an isomorphism of topological groups `G_K / P_K �
 -/
 def tameQuotientEquivMaximalTameExtension :
     tameQuotient K ≃ₜ* Gal(maximalTameExtension K (AlgebraicClosure K)/K) :=
-  -- Specify both carriers: the fixing subgroup uses the automorphism group instances, while the
-  -- tame quotient uses the derived absolute Galois group instances.
-  ((show Field.absoluteGaloisGroup K ≃ₜ* Gal(AlgebraicClosure K/K) from
-      ContinuousMulEquiv.refl _).quotientCongr
-    (wildInertiaSubgroup K) (maximalTameExtension K (AlgebraicClosure K)).fixingSubgroup
-    (by
-      -- `change` exposes the identity homomorphism underlying `ContinuousMulEquiv.refl`.
-      change (wildInertiaSubgroup K).map (MonoidHom.id _) = _
-      rw [Subgroup.map_id]
-      exact wildInertiaSubgroup_def K)).trans
-    (absoluteGaloisGroupQuotientEquiv K (maximalTameExtension K (AlgebraicClosure K)))
+  absoluteGaloisGroupQuotientEquivOfEq (wildInertiaSubgroup_def K)
 
 variable {K} in
 /-- Identifying the tame quotient with `Gal(K^{t}/K)` carries the class of `σ` to its restriction
@@ -367,11 +357,8 @@ to `K^{t}`. -/
 theorem tameQuotientEquivMaximalTameExtension_toTameQuotient (σ : Field.absoluteGaloisGroup K) :
     tameQuotientEquivMaximalTameExtension K (toTameQuotient K σ) =
       AlgEquiv.restrictNormalHom (maximalTameExtension K (AlgebraicClosure K)) σ := by
-  rw [toTameQuotient_apply, tameQuotientEquivMaximalTameExtension,
-    ContinuousMulEquiv.trans_apply, ContinuousMulEquiv.quotientCongr_mk
-      (show Field.absoluteGaloisGroup K ≃ₜ* Gal(AlgebraicClosure K/K) from
-        ContinuousMulEquiv.refl _)]
-  exact absoluteGaloisGroupQuotientEquiv_mk σ
+  rw [toTameQuotient_apply]
+  exact absoluteGaloisGroupQuotientEquivOfEq_mk _ σ
 
 variable {K} in
 /-- The inverse identification of `Gal(K^{t}/K)` with the tame quotient sends the restriction of
@@ -382,9 +369,9 @@ theorem tameQuotientEquivMaximalTameExtension_symm_restrictNormalHom
     (σ : Field.absoluteGaloisGroup K) :
     (tameQuotientEquivMaximalTameExtension K).symm
         (AlgEquiv.restrictNormalHom (maximalTameExtension K (AlgebraicClosure K)) σ) =
-      toTameQuotient K σ :=
-  (tameQuotientEquivMaximalTameExtension K).symm_apply_eq.2
-    (tameQuotientEquivMaximalTameExtension_toTameQuotient σ).symm
+      toTameQuotient K σ := by
+  rw [toTameQuotient_apply]
+  exact absoluteGaloisGroupQuotientEquivOfEq_symm_restrictNormalHom _ σ
 
 /-- **Tame inertia is the Galois group of `K^{t}/K^{ur}`**: identifying the tame quotient with
 `Gal(K^{t}/K)` carries tame inertia `I_K / P_K` onto the subgroup of automorphisms of `K^{t}`

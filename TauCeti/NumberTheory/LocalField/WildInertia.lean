@@ -712,7 +712,7 @@ theorem exists_mem_wildInertiaSubgroup_restrictNormal_eq {τ : Gal(L/K)}
 in the maximal tamely ramified extension `K^{t}` exactly when `L/K` is tamely ramified. -/
 private theorem le_maximalTameExtension_iff_of_isGalois :
     L ≤ maximalTameExtension K (AlgebraicClosure K) ↔ IsTamelyRamified K L := by
-  set T := maximalTameExtension K (AlgebraicClosure K)
+  set T := maximalTameExtension K (AlgebraicClosure K) with hT
   -- `P_K` fixes `L` exactly when its image `G_1(L/K)` in `Gal(L/K)` is trivial.
   have hfix : T.fixingSubgroup ≤ L.fixingSubgroup ↔ IsTamelyRamified K L := by
     rw [← lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified,
@@ -723,8 +723,7 @@ private theorem le_maximalTameExtension_iff_of_isGalois :
     exact (Subgroup.map_eq_bot_iff _).symm
   rw [← hfix]
   refine ⟨fun h ↦ fixingSubgroup_antitone h, fun h ↦ ?_⟩
-  rw [show T = _ from maximalTameExtension_eq_fixedField_inf_separableClosure K,
-    wildInertiaSubgroup_def]
+  rw [hT, maximalTameExtension_eq_fixedField_inf_separableClosure K, wildInertiaSubgroup_def]
   exact le_inf ((le_fixedField_iff_le_fixingSubgroup _ _).2 h) (le_separableClosure _ _ L)
 
 omit [IsGalois K L] in
