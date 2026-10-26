@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.OfAssociative
+import Mathlib.Algebra.Lie.OfAssociative
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 public import TauCeti.RepresentationTheory.Spin.Polarization.CliffordAction
 
@@ -14,17 +14,16 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.CliffordAction
 
 The Fock action of a polarized Clifford algebra is an algebra homomorphism into endomorphisms.
 This file records the resulting commutator formula for a normalized Clifford bivector acting on
-a vector generator. It is the coordinate-free bridge from the Clifford commutator calculation to
-the creation, contraction, and parity operators on the spinor module.
+a vector generator, obtained by transporting the generic algebra-map identity through `spinAction`.
 
 The formula is independent of finite-dimensionality, nondegeneracy, and a choice of basis.
 
 ## References
 
-* `CliffordAlgebra.bivector_lie_ι` in
-  `TauCeti/LinearAlgebra/CliffordAlgebra/Bivector/Basic.lean` supplies the Clifford commutator.
-* `AlgHom.toLieHom` and `LieHom.map_lie` from `Mathlib.Algebra.Lie.OfAssociative` transport that
-  identity through the algebra action. -/
+* `CliffordAlgebra.map_bivector_lie_ι` in
+  `TauCeti/LinearAlgebra/CliffordAlgebra/Bivector/Basic.lean` transports the Clifford commutator
+  through any algebra homomorphism.
+* `TauCeti.spinAction_bivector_lie_ι` specializes that identity to the Fock action. -/
 
 public section
 
@@ -40,14 +39,13 @@ variable {K : Type u} [CommRing K] [Invertible (2 : K)]
   {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V}
 
-/-- The Fock action carries the normalized Clifford bivector bracket on a vector generator to the
-commutator of the corresponding creation, contraction, and parity operators. -/
+/-- The commutator of the Fock operators of a normalized Clifford bivector and a vector generator is
+the Fock operator of the infinitesimal rotation
+`polar Q b x • a - polar Q a x • b` of `x`. -/
 @[grind =]
 theorem spinAction_bivector_lie_ι (P : SpinPolarizationData Q) (a b x : V) :
     ⁅spinAction Q P (bivector Q a b), spinAction Q P (ι Q x)⁆ =
       spinAction Q P (ι Q (polar Q b x • a - polar Q a x • b)) := by
-  have h := (spinAction Q P).toLieHom.map_lie (bivector Q a b) (ι Q x)
-  rw [bivector_lie_ι] at h
-  simpa only [AlgHom.toLieHom_apply] using h.symm
+  exact CliffordAlgebra.map_bivector_lie_ι Q (spinAction Q P) a b x
 
 end TauCeti

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Tactic.NoncommRing
 import Mathlib.Data.Fin.Tuple.Reflection
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
@@ -64,6 +65,8 @@ public section
 universe u v
 
 namespace CliffordAlgebra
+
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 section CommRing
 
@@ -327,6 +330,16 @@ theorem bivector_lie_ι (a b x : M) :
             abel
   rw [h]
   exact invOf_smul_smul (2 : R) _
+
+/-- Any algebra homomorphism out of a Clifford algebra carries the normalized bivector commutator
+identity to the corresponding commutator in its target algebra. -/
+theorem map_bivector_lie_ι {A : Type*} [Ring A] [Algebra R A]
+    (f : CliffordAlgebra Q →ₐ[R] A) (a b x : M) :
+    ⁅f (bivector Q a b), f (ι Q x)⁆ =
+      f (ι Q (QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b)) := by
+  have h := f.toLieHom.map_lie (bivector Q a b) (ι Q x)
+  rw [bivector_lie_ι] at h
+  simpa only [AlgHom.toLieHom_apply] using h.symm
 
 end CommRing
 
