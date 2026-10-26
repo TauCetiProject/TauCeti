@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Height.NumberField
-public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
+public import TauCeti.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.NumberTheory.SmoothNumbers
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
-import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
-import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
+import TauCeti.NumberTheory.NumberField.SUnits.Rat
 
 /-!
 # Rational `S`-units
@@ -23,9 +22,6 @@ every prime outside `S`. This file makes the group explicit.
 
 ## Main results
 
-* `Rat.HeightOneSpectrum.valuation_eq_one_iff_padicValRat_eq_zero`: a nonzero rational number is
-  a unit at a height-one prime `v` exactly when its `p`-adic valuation vanishes, for `p` the prime
-  corresponding to `v`.
 * `TauCeti.mem_sUnits_rat_iff_num_den`: `x ∈ U_S` iff `|num x|` and `den x` have all their prime
   factors in `S`.
 * `TauCeti.mem_sUnits_rat_iff_eq_sign_mul_prod`: if `S` consists of primes, `x ∈ U_S` iff
@@ -49,21 +45,6 @@ The sign, product and height descriptions need `S` to consist of primes: for `S 
 public section
 
 open IsDedekindDomain NumberField
-
-namespace Rat.HeightOneSpectrum
-
-variable {R : Type*} [CommRing R] [Algebra R ℚ] [IsIntegralClosure R ℤ ℚ] [IsDedekindDomain R]
-  [IsFractionRing R ℚ]
-
-/-- A nonzero rational number is a unit at the height-one prime `v` exactly when its `p`-adic
-valuation vanishes, for `p` the rational prime corresponding to `v`. -/
-theorem valuation_eq_one_iff_padicValRat_eq_zero (v : HeightOneSpectrum R) {x : ℚ}
-    (hx : x ≠ 0) : v.valuation ℚ x = 1 ↔ padicValRat (primesEquiv v) x = 0 := by
-  have : Fact (primesEquiv v : ℕ).Prime := ⟨(primesEquiv v).2⟩
-  rw [(valuation_equiv_padicValuation v).eq_one_iff_eq_one]
-  simp [Rat.padicValuation, hx]
-
-end Rat.HeightOneSpectrum
 
 namespace TauCeti
 
@@ -94,13 +75,14 @@ theorem mem_sUnits_rat_iff_num_den {x : ℚˣ} :
   simp only [Finset.mem_coe] at h
   exact h.trans (forall_padicValRat_eq_zero_iff_mem_factoredNumbers x.ne_zero)
 
+private instance : Finite {v : HeightOneSpectrum (𝓞 ℚ) | (primesEquiv v : ℕ) ∈ S} :=
+  (S.finite_toSet.preimage
+    (Subtype.val_injective.comp (primesEquiv (R := 𝓞 ℚ)).injective).injOn).to_subtype
+
 /-- **The rational `S`-units are finitely generated.** This holds for every finite set `S` of
 natural numbers; only the primes in `S` contribute. -/
 theorem sUnits_rat_fg :
     Group.FG (Set.unit {v : HeightOneSpectrum (𝓞 ℚ) | (primesEquiv v : ℕ) ∈ S} ℚ) :=
-  have : Finite {v : HeightOneSpectrum (𝓞 ℚ) | (primesEquiv v : ℕ) ∈ S} :=
-    (S.finite_toSet.preimage
-      (Subtype.val_injective.comp (primesEquiv (R := 𝓞 ℚ)).injective).injOn).to_subtype
   inferInstance
 
 private theorem intCast_mem_sUnits_rat (ε : ℤˣ) :
@@ -258,23 +240,12 @@ include hS in
 theorem finrank_sUnits_rat :
     Module.finrank ℤ (Additive (Set.unit {v : HeightOneSpectrum (𝓞 ℚ) |
       (primesEquiv v : ℕ) ∈ S} ℚ)) = S.card := by
-  let e := (sUnitsRatMulEquiv hS).toAdditive.trans ((AddEquiv.prodAdditive _ _).trans
-    ((AddEquiv.refl _).prodCongr (AddEquiv.additiveMultiplicative _)))
-  let π := LinearMap.snd ℤ (Additive ℤˣ) (S → ℤ)
-  have hker : Module.rank ℤ (LinearMap.ker π) = 0 := by
-    refine Module.IsTorsion.rank_eq_zero fun x ↦
-      ⟨⟨2, mem_nonZeroDivisors_of_ne_zero two_ne_zero⟩, ?_⟩
-    have hx : (x : Additive ℤˣ × (S → ℤ)).2 = 0 := LinearMap.mem_ker.1 x.2
-    refine Subtype.ext (Prod.ext ?_ ?_)
-    · simp only [Submonoid.smul_def, Submodule.coe_smul, Prod.smul_fst,
-        ZeroMemClass.coe_zero, Prod.fst_zero]
-      rw [← ofMul_toMul (x : Additive ℤˣ × (S → ℤ)).1, ← ofMul_zpow, zpow_two, ← sq,
-        Int.units_sq, ofMul_one]
-    · simp [hx]
-  have h := LinearMap.rank_range_add_rank_ker π
-  rw [LinearMap.range_eq_top.2 LinearMap.snd_surjective, rank_top, hker, add_zero,
-    rank_fun', Fintype.card_coe] at h
-  rw [e.toIntLinearEquiv.finrank_eq, Module.finrank, ← h, Cardinal.toNat_natCast]
+  rw [NumberField.SUnit.finrank_unit_rat, ← Nat.card_eq_finsetCard]
+  calc Nat.card {v : HeightOneSpectrum (𝓞 ℚ) | (primesEquiv v : ℕ) ∈ S}
+      = Nat.card {p : Nat.Primes // (p : ℕ) ∈ S} :=
+        Nat.card_congr (primesEquiv.subtypeEquiv fun _ ↦ Iff.rfl)
+    _ = Nat.card S :=
+        Nat.card_congr ⟨fun p ↦ ⟨p.1, p.2⟩, fun p ↦ ⟨⟨p, hS p p.2⟩, p.2⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
 
 include hS in
 /-- **The height of a rational `S`-unit.** If `S` consists of primes and `x` is an `S`-unit,
