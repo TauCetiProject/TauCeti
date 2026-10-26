@@ -124,12 +124,8 @@ theorem comp (h : IsSimplexImmersion I n g) {φ : M → N} (hφ : ContMDiff I J 
   obtain ⟨F, hFg, hF, hF'⟩ := h
   refine ⟨φ ∘ F, fun x => by simp [hFg], hφ.comp_contMDiffOn hF, fun t => ?_⟩
   obtain ⟨F', hFt, hinj⟩ := hF' t
-  -- An injective `mfderiv` forces differentiability: otherwise it is `0`, so `E` is trivial.
-  have hφt : MDifferentiableAt I J φ (F t.weights) := by
-    by_contra hd
-    have : Subsingleton E := ⟨fun a b => hφ' (F t.weights) <| by
-      rw [mfderiv_zero_of_not_mdifferentiableAt hd]; rfl⟩
-    exact hd (mdifferentiable_of_subsingleton _)
+  have hφt : MDifferentiableAt I J φ (F t.weights) :=
+    mdifferentiableAt_of_mfderiv_injective (hφ' (F t.weights))
   refine ⟨(mfderiv I J φ (F t.weights)).comp F', hφt.hasMFDerivAt.comp_hasMFDerivWithinAt _ hFt,
     fun v hv hv0 => hinj v hv (hφ' (F t.weights) ?_)⟩
   exact hv0.trans (map_zero _).symm
