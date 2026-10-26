@@ -165,4 +165,42 @@ theorem spinSixSpecialLinearToIsometryGroup_apply
   simp [spinSixSpecialLinearToIsometryGroup,
     LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv, Representation.asGroupHom_apply]
 
+/-! ### Pure-wedge action formulas
+
+The all-elements vector comparison uses the decomposable bivectors as its generator-level
+coordinates.  Keep the action equation in a composition form so later proofs can instantiate it
+without unfolding the exterior-power representation.
+-/
+
+/-- The exterior-square isometry acts on a pure bivector by applying the standard `SL₄` action to
+each vector. -/
+theorem spinSixSpecialLinearToIsometryGroup_comp_ιMulti
+    (g : Matrix.SpecialLinearGroup (Fin 4) K) :
+    (spinSixSpecialLinearToIsometryGroup K g).1 ∘ exteriorPower.ιMulti K 2 =
+      exteriorPower.ιMulti K 2 ∘
+        ((g : Matrix (Fin 4) (Fin 4) K).mulVecLin ∘ ·) := by
+  funext u
+  simp only [Function.comp_apply]
+  rw [spinSixSpecialLinearToIsometryGroup_apply, Representation.exteriorPower_apply,
+    exteriorPower.map_apply_ιMulti, stdSLRep_apply]
+
+/-- A special-linear transvection acts on a pure bivector by applying the corresponding matrix
+transvection to both factors. -/
+theorem spinSixSpecialLinearToIsometryGroup_transvection_ιMulti
+    {i j : Fin 4} (hij : i ≠ j) (c : K) (u v : Fin 4 → K) :
+    (spinSixSpecialLinearToIsometryGroup K
+      (Matrix.SpecialLinearGroup.transvection hij c)).1
+      (exteriorPower.ιMulti K 2 ![u, v]) =
+      exteriorPower.ιMulti K 2
+        ![Matrix.mulVec (Matrix.transvection i j c) u,
+          Matrix.mulVec (Matrix.transvection i j c) v] := by
+  rw [spinSixSpecialLinearToIsometryGroup_apply, Representation.exteriorPower_apply_ιMulti]
+  apply congrArg (exteriorPower.ιMulti K 2)
+  funext k
+  fin_cases k
+  · rw [Function.comp_apply, stdSLRep_apply_apply]
+    simp [Matrix.SpecialLinearGroup.transvection_coe, Matrix.transvection]
+  · rw [Function.comp_apply, stdSLRep_apply_apply]
+    simp [Matrix.SpecialLinearGroup.transvection_coe, Matrix.transvection]
+
 end TauCeti
