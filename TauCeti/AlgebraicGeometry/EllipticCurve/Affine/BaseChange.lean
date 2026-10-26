@@ -51,12 +51,8 @@ commutative ring: it is a formal `map` identity and uses nothing about `R` beyon
 structure. -/
 @[simp]
 lemma baseChange_self : (W⁄R).toAffine = W := by
-  -- `WeierstrassCurve.baseChange` (Weierstrass.lean:236) is a plain `def` and Mathlib exposes no
-  -- unfolding lemma for it, so this one definitional step cannot be replaced by an API rewrite.
-  -- It must be `change` rather than `show`: the step rewrites the goal rather than restating it,
-  -- which is exactly what `linter.style.show` requires. Everything after it is a named rewrite.
-  change W.map (algebraMap R R) = W
-  rw [show algebraMap R R = RingHom.id R from Algebra.algebraMap_self]
+  unfold Affine.baseChange WeierstrassCurve.baseChange
+  rw [Algebra.algebraMap_self]
   exact W.map_id
 
 variable {A : Type*} [CommRing A] [Algebra R A]

@@ -72,13 +72,9 @@ variable {K : Type*} [Field K] [Algebra F K]
 theorem pullbackDifferential_baseChangeFrobenius_invariantDifferential :
     (baseChangeFrobenius K W).pullbackDifferential
       (invariantDifferential (W⁄K).toAffine) = 0 := by
-  rw [baseChangeFrobenius_def]
-  -- The transfer lemma uses `W.map`; rewriting does not unfold the semireducible base change
-  -- in the differential's type, so present that type explicitly.
-  change ((frobeniusIsogeny W).map (algebraMap F K)).pullbackDifferential
-    (invariantDifferential (W.map (algebraMap F K))) = 0
-  simpa only [pullbackDifferential_frobeniusIsogeny, LinearMap.zero_apply, map_zero] using
-    (mapDifferential_pullback_invariantDifferential (frobeniusIsogeny W) (algebraMap F K)).symm
+  have := mapDifferential_pullback_invariantDifferential (frobeniusIsogeny W) (algebraMap F K)
+  rwa [pullbackDifferential_frobeniusIsogeny, LinearMap.zero_apply, map_zero,
+    ← baseChangeFrobenius_def, Eq.comm] at this
 
 end TauCeti.Isogeny
 
