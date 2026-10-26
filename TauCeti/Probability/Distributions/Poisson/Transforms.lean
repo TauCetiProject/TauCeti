@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Poisson.Basic
-import Mathlib.MeasureTheory.Integral.Pi
+import TauCeti.Probability.Moments.Pi
 
 /-!
 # Directional transforms of independent Poisson counts
@@ -38,13 +38,18 @@ theorem mgf_sum_mul_natCast_pi_poissonMeasure (r : ι → ℝ≥0) (θ : ι → 
       (Measure.pi fun i => poissonMeasure (r i)) t =
         Real.exp (∑ i, (r i : ℝ) * (Real.exp (t * θ i) - 1)) := by
   classical
-  simp only [mgf, Finset.mul_sum, ← mul_assoc, Real.exp_sum]
-  rw [integral_fintype_prod_eq_prod (fun i (k : ℕ) => Real.exp (t * θ i * (k : ℝ)))]
-  have hfactor (i : ι) :
-      (∫ k : ℕ, Real.exp (t * θ i * (k : ℝ)) ∂poissonMeasure (r i)) =
-        Real.exp ((r i : ℝ) * (Real.exp (t * θ i) - 1)) := by
-    simpa only [pgf_exp, mgf, id_eq] using pgf_poissonMeasure (r i) (Real.exp (t * θ i))
-  simp_rw [hfactor]
+  rw [TauCeti.mgf_sum_pi (fun i (k : ℕ) => θ i * (k : ℝ)) t, Real.exp_sum]
+  exact Finset.prod_congr rfl fun i _ => by
+    simpa only [pgf_exp, mgf, id_eq, mul_assoc] using
+      pgf_poissonMeasure (r i) (Real.exp (t * θ i))
+
+/-- Every directional exponential of independent Poisson counts is integrable. -/
+theorem integrable_exp_sum_mul_natCast_pi_poissonMeasure (r : ι → ℝ≥0) (θ : ι → ℝ)
+    (t : ℝ) :
+    Integrable (fun k : ι → ℕ => Real.exp (t * ∑ i, θ i * (k i : ℝ)))
+      (Measure.pi fun i => poissonMeasure (r i)) := by
+  rw [← mgf_pos_iff, mgf_sum_mul_natCast_pi_poissonMeasure]
+  exact Real.exp_pos _
 
 /-- Every real linear combination of independent Poisson counts has full exponential domain. -/
 @[simp]
@@ -52,8 +57,14 @@ theorem integrableExpSet_sum_mul_natCast_pi_poissonMeasure (r : ι → ℝ≥0) 
     integrableExpSet (fun k : ι → ℕ => ∑ i, θ i * (k i : ℝ))
       (Measure.pi fun i => poissonMeasure (r i)) = Set.univ := by
   ext t
-  simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
-  rw [← mgf_pos_iff, mgf_sum_mul_natCast_pi_poissonMeasure]
-  exact Real.exp_pos _
+  simpa [integrableExpSet] using integrable_exp_sum_mul_natCast_pi_poissonMeasure r θ t
+
+/-- The directional cumulant generating function of independent Poisson counts. -/
+@[simp]
+theorem cgf_sum_mul_natCast_pi_poissonMeasure (r : ι → ℝ≥0) (θ : ι → ℝ) (t : ℝ) :
+    cgf (fun k : ι → ℕ => ∑ i, θ i * (k i : ℝ))
+      (Measure.pi fun i => poissonMeasure (r i)) t =
+        ∑ i, (r i : ℝ) * (Real.exp (t * θ i) - 1) := by
+  rw [cgf, mgf_sum_mul_natCast_pi_poissonMeasure, Real.log_exp]
 
 end TauCeti.Probability

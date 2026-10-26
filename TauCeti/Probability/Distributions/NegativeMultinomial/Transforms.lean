@@ -39,6 +39,13 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι]
 
+private theorem negativeMultinomial_exponential_rate_eq {p₀ : ℝ} {p : ι → ℝ≥0}
+    (hp : p₀ + ∑ i, (p i : ℝ) = 1) (θ : ι → ℝ) (t : ℝ) :
+    (∑ i, (p i : ℝ) * (Real.exp (t * θ i) - 1)) =
+      (∑ i, (p i : ℝ) * Real.exp (t * θ i)) - (1 - p₀) := by
+  simp only [mul_sub, mul_one, Finset.sum_sub_distrib]
+  linarith
+
 private theorem poisson_exponential_integral_eq_ae (r p₀ : ℝ) (p : ι → ℝ≥0)
     (θ : ι → ℝ) (t : ℝ) :
     (fun x : ℝ => ∫ k : ι → ℕ, Real.exp (t * ∑ i, θ i * (k i : ℝ))
@@ -72,19 +79,16 @@ theorem integrable_exp_sum_mul_natCast_negativeMultinomialMeasure_iff {r p₀ : 
       (.of_discrete)]
   have hcomponent : ∀ x : ℝ, Integrable
       (fun k : ι → ℕ => Real.exp (t * ∑ i, θ i * (k i : ℝ)))
-      (Measure.pi fun i => poissonMeasure (p i * Real.toNNReal x)) := by
-    intro x
-    exact Set.eq_univ_iff_forall.mp
-      (integrableExpSet_sum_mul_natCast_pi_poissonMeasure _ θ) t
+      (Measure.pi fun i => poissonMeasure (p i * Real.toNNReal x)) :=
+    fun x => integrable_exp_sum_mul_natCast_pi_poissonMeasure _ θ t
   simp only [Real.norm_of_nonneg (Real.exp_pos _).le, ae_of_all _ hcomponent,
     true_and, hr.ne', false_or]
   rw [integrable_congr (poisson_exponential_integral_eq_ae r p₀ p θ t)]
-  have hgamma := congrArg (fun s : Set ℝ =>
-    (∑ i, (p i : ℝ) * (Real.exp (t * θ i) - 1)) ∈ s)
-      (integrableExpSet_id_gammaMeasure hr hp₀)
+  have hgamma := Set.ext_iff.mp (integrableExpSet_id_gammaMeasure hr hp₀)
+    (∑ i, (p i : ℝ) * (Real.exp (t * θ i) - 1))
+  -- Express exponential-domain membership as integrability of the exponential itself.
   simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_Iio, id_eq] at hgamma
-  rw [hgamma]
-  simp only [mul_sub, mul_one, Finset.sum_sub_distrib]
+  rw [hgamma, negativeMultinomial_exponential_rate_eq hp θ t]
   constructor <;> intro ht <;> linarith
 
 /-- The exact directional exponential-integrability domain, with the full shape-zero domain. -/
@@ -119,16 +123,16 @@ theorem mgf_sum_mul_natCast_negativeMultinomialMeasure {r p₀ : ℝ}
     (measurable_pi_poissonMeasure_mul_toNNReal p).aemeasurable hint,
     integral_congr_ae (poisson_exponential_integral_eq_ae r p₀ p θ t)]
   have hrate : (∑ i, (p i : ℝ) * (Real.exp (t * θ i) - 1)) < p₀ := by
-    simp only [mul_sub, mul_one, Finset.sum_sub_distrib]
+    rw [negativeMultinomial_exponential_rate_eq hp θ t]
     linarith
   have hmgf := mgf_id_gammaMeasure hr hp₀ hrate
   simp only [mgf, id_eq] at hmgf
   rw [hmgf]
   have hbase : 1 - (∑ i, (p i : ℝ) * (Real.exp (t * θ i) - 1)) / p₀ =
       (1 - ∑ i, (p i : ℝ) * Real.exp (t * θ i)) / p₀ := by
-    simp only [mul_sub, mul_one, Finset.sum_sub_distrib]
+    rw [negativeMultinomial_exponential_rate_eq hp θ t]
     field_simp
-    linarith
+    ring
   rw [hbase, Real.rpow_neg (by positivity), ← Real.inv_rpow (by positivity)]
   simp only [inv_div]
 
