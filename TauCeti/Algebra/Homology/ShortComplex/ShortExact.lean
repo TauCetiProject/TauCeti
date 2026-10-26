@@ -10,13 +10,16 @@ public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.DiagramLemmas.KernelCokernelComp
 public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.CategoryTheory.Subobject.Limits
+public import TauCeti.Algebra.Homology.ShortComplex.Biproduct
+import TauCeti.CategoryTheory.Exact.KernelCokernelPair
 
 /-!
 # Short exact kernel and cokernel sequences
 
 This file records that the canonical kernel sequence of an epimorphism and the canonical cokernel
 sequence of a monomorphism are short exact, and that a short complex of functors with values in
-an abelian category is short exact as soon as it is short exact objectwise.
+an abelian category is short exact as soon as it is short exact objectwise. Componentwise binary
+direct sums also preserve short exactness.
 
 ## Main statements
 
@@ -38,6 +41,8 @@ an abelian category is short exact as soon as it is short exact objectwise.
   `0 ⟶ X₁ ⟶ X₂ ⟶ X₃` gives the short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ image (X₂ ⟶ X₃) ⟶ 0`.
 * `CategoryTheory.ShortComplex.shortExact_image_ι_cokernel_π`: the sequence
   `0 ⟶ image g ⟶ Y ⟶ cokernel g ⟶ 0` of a morphism `g : X ⟶ Y` is short exact.
+* `CategoryTheory.ShortComplex.ShortExact.biprod`: a componentwise binary direct sum of short
+  exact sequences is short exact.
 * `CategoryTheory.ShortComplex.ShortExact.of_isColimit_cokernelCofork`: the cokernel of a morphism
   of short exact sequences whose third component is a monomorphism is short exact; the source
   only needs to be exact with an epimorphic second map.
@@ -195,6 +200,12 @@ namespace CategoryTheory.ShortComplex
 open Limits
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
+
+/-- A componentwise direct sum of short exact sequences is short exact. -/
+lemma ShortExact.biprod {S T : ShortComplex C} (hS : S.ShortExact) (hT : T.ShortExact) :
+    (TauCeti.shortComplexBiprod S T).ShortExact :=
+  ((TauCeti.IsKernelCokernelPair.of_shortExact hS).biprod
+    (TauCeti.IsKernelCokernelPair.of_shortExact hT)).shortExact
 
 /-- **Short exactness of functors is checked objectwise.** A short complex of functors with values
 in an abelian category is short exact if it becomes short exact after evaluation at every object.
