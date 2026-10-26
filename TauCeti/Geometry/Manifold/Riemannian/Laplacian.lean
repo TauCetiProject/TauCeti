@@ -735,16 +735,24 @@ theorem hessian_norm_sq_model_space
     laplaceBeltrami (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x =
         ∑ i, hessian (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x (b i) (b i) :=
       laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) _ x b
-    _ = ∑ i, iteratedFDeriv ℝ 2 (fun y : F ↦ ‖y‖ ^ 2) x
-          ![stdOrthonormalBasis ℝ F i, stdOrthonormalBasis ℝ F i] := by
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      simpa only [b, OrthonormalBasis.map_apply, he] using
-        hessian_eq_iteratedFDeriv_model_space
-          (TauCeti.differentiable_gradient_norm_sq (E := F)).differentiableAt
-          (b i) (b i)
-    _ = Δ (fun y : F ↦ ‖y‖ ^ 2) x := by
-      rw [congrFun (InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis
-        (fun y : F ↦ ‖y‖ ^ 2) (stdOrthonormalBasis ℝ F)) x]
-    _ = 2 * Module.finrank ℝ F := TauCeti.laplacian_norm_sq x
+    _ = ∑ i, 2 * inner ℝ (NormedSpace.fromTangentSpace x (b i))
+          (NormedSpace.fromTangentSpace x (b i)) := by
+      apply Finset.sum_congr rfl
+      intro i hi
+      exact hessian_norm_sq_model_space x (b i) (b i)
+    _ = 2 * Module.finrank ℝ F := by
+      calc
+        ∑ i, 2 * inner ℝ (NormedSpace.fromTangentSpace x (b i))
+            (NormedSpace.fromTangentSpace x (b i)) =
+            2 * ∑ i, inner ℝ (stdOrthonormalBasis ℝ F i)
+              (stdOrthonormalBasis ℝ F i) := by
+          rw [← Finset.mul_sum]
+          refine congrArg (fun s : ℝ => 2 * s) ?_
+          apply Finset.sum_congr rfl
+          intro i hi
+          simp only [b, OrthonormalBasis.map_apply, he]
+        _ = 2 * Module.finrank ℝ F := by
+          rw [(stdOrthonormalBasis ℝ F).sum_inner_self]
+          simp
 
 end TauCeti.Manifold
