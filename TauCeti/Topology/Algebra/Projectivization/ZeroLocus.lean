@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Maps.Proper.Basic
-public import TauCeti.Analysis.Normed.Operator.Surjective
+public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
 public import TauCeti.LinearAlgebra.Projectivization.ZeroLocus
 public import TauCeti.RingTheory.MvPolynomial.Jacobian
 public import TauCeti.Topology.Algebra.MvPolynomial.HomogeneousSubmodule
@@ -201,7 +201,7 @@ theorem isClosed_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :
       (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
   convert ((isClosed_complexProjectiveIncidence d).preimage
       (continuous_id.prodMap Projectivization.isOpenQuotientMap_mk'.continuous)).inter
-    (isOpen_setOf_mulVec_surjective.preimage hJ).isClosed_compl using 1
+    (Matrix.isOpen_setOfPred_mulVec_surjective.preimage hJ).isClosed_compl using 1
   ext ⟨c, v⟩
   simp only [Set.mem_preimage, Prod.map_apply, id_eq, Projectivization.mk'_eq_mk,
     mk_mem_complexProjectiveBadRankLocus_iff, mk_mem_complexProjectiveIncidence_iff,

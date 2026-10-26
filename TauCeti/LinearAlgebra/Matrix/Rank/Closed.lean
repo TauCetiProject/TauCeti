@@ -29,6 +29,7 @@ Mathlib's `MvPolynomial.zeroLocus` and `MvPolynomial.vanishingIdeal`.
   `j`-th power, holding on a set of matrices holds on its Zariski closure.
 * `Matrix.isClosed_setOfPred_rank_le` and `Matrix.isClosed_setOfPred_rank_pow_le`: the matrices of
   rank at most `r`, and the square matrices `Z` with `rank (Z ^ j) ≤ r`, form closed sets.
+* `Matrix.isOpen_setOfPred_mulVec_surjective`: full row rank is an open condition on matrices.
 -/
 
 public section
@@ -93,6 +94,24 @@ theorem isClosed_setOfPred_rank_le {m : Type*} [Finite m] (r : ℕ) :
   have huncurry : Continuous (Function.uncurry : Matrix m n K → m × n → K) :=
     continuous_pi fun p ↦ continuous_id.matrix_elem p.1 p.2
   exact mem_closure_image huncurry.continuousAt hY
+
+omit [DecidableEq n] in
+/-- Over a field with continuous ring operations and closed points, surjectivity of `A.mulVec` is
+an open condition on matrices `A` with finitely many rows: full row rank is the complement of the
+closed condition `rank A ≤ card m - 1`. -/
+theorem isOpen_setOfPred_mulVec_surjective {m : Type*} [Finite m] :
+    IsOpen {A : Matrix m n K | Function.Surjective A.mulVec} := by
+  cases nonempty_fintype m
+  rcases isEmpty_or_nonempty m with hm | hm
+  · convert isOpen_univ using 1
+    exact Set.eq_univ_of_forall fun A ↦ (mulVec A).surjective_to_subsingleton
+  · convert (isClosed_setOfPred_rank_le (m := m) (n := n) (K := K)
+      (Fintype.card m - 1)).isOpen_compl using 1
+    ext A
+    have hle := A.rank_le_card_height
+    have hpos := Fintype.card_pos (α := m)
+    simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, mulVec_surjective_iff_rank_eq_card]
+    omega
 
 /-- Over a field with continuous ring operations and closed points, the matrices `Z` with
 `rank (Z ^ j) ≤ r` form a closed set. -/

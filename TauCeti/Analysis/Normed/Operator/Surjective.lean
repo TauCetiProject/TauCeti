@@ -9,8 +9,6 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Completeness
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.LinearAlgebra.Isomorphisms
-public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-public import Mathlib.Topology.Instances.Matrix
 import Mathlib.Topology.MetricSpace.Contracting
 
 /-!
@@ -35,8 +33,6 @@ locus of such maps inside `E →L[𝕜] F`, not of any one of them.
 
 * `TauCeti.isOpen_setOf_surjective`: surjectivity onto a finite-dimensional space is an open
   condition on continuous linear maps.
-* `TauCeti.isOpen_setOf_mulVec_surjective`: in particular, full row rank is an open condition on
-  matrices.
 * `LinearMap.surjective_add_of_norm_le`: a surjective linear map into a Banach space stays
   surjective under a perturbation bounded by `θ < 1` times the map.
 * `TauCeti.surjective_of_norm_sub_apply_le`: an additive endomorphism of a complete normed
@@ -50,13 +46,13 @@ open Function
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
 
 /-- Surjectivity onto a finite-dimensional space is an open condition on continuous linear
 maps. -/
-theorem isOpen_setOf_surjective [CompleteSpace 𝕜] : IsOpen {A : E →L[𝕜] F | Surjective A} := by
+theorem isOpen_setOf_surjective : IsOpen {A : E →L[𝕜] F | Surjective A} := by
   rw [Metric.isOpen_iff]
   rintro A (hA : Surjective A)
   obtain ⟨R, hAR⟩ := A.exists_rightInverse_of_surjective (A.range_eq_top_of_surjective hA)
@@ -94,29 +90,6 @@ theorem isOpen_setOf_surjective [CompleteSpace 𝕜] : IsOpen {A : E →L[𝕜] 
   intro w
   obtain ⟨y, hy⟩ := LinearMap.injective_iff_surjective.1 hinj w
   exact ⟨R y, by simpa using hy⟩
-
-/-- Surjectivity of `M.mulVec` is an open condition on matrices `M` with finitely many rows and
-columns: full row rank is preserved under small perturbations of the entries. The field need
-not be complete: a fixed right inverse gives a square matrix with nonzero determinant locally. -/
-theorem isOpen_setOf_mulVec_surjective {m n : Type*} [Finite m] [Fintype n] :
-    IsOpen {M : Matrix m n 𝕜 | Surjective M.mulVec} := by
-  classical
-  cases nonempty_fintype m
-  rw [isOpen_iff_mem_nhds]
-  intro A hA
-  obtain ⟨R, hAR⟩ := Matrix.mulVec_surjective_iff_exists_right_inverse.mp hA
-  have hcont : Continuous (fun B : Matrix m n 𝕜 ↦ (B * R).det) :=
-    (continuous_id.matrix_mul continuous_const).matrix_det
-  refine mem_nhds_iff.mpr ⟨{B : Matrix m n 𝕜 | (B * R).det ≠ 0}, ?_,
-    isOpen_ne.preimage hcont, ?_⟩
-  · intro B hB
-    have hBR : Surjective (B * R).mulVec :=
-      Matrix.mulVec_surjective_iff_isUnit.mpr
-        ((B * R).isUnit_iff_isUnit_det.mpr (isUnit_iff_ne_zero.mpr hB))
-    intro y
-    obtain ⟨z, hz⟩ := hBR y
-    exact ⟨R.mulVec z, by simpa only [Matrix.mulVec_mulVec] using hz⟩
-  · simpa only [Set.mem_ofPred_eq, hAR, Matrix.det_one] using (one_ne_zero : (1 : 𝕜) ≠ 0)
 
 end TauCeti
 
