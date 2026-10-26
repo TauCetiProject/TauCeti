@@ -22,8 +22,9 @@ forms:
   `℘(x / (c z + d); ℤ γz + ℤ) = (c z + d)² ℘(x; ℤ z + ℤ)`;
 * summing first along the rows `y₀ = m`,
   `℘(x; ℤ z + ℤ) = ∑_m (P(x - m z) - P(m z))` with `P(w) = ∑_n (w + n)⁻²`
-  (`UpperHalfPlane.rowSum`), and `P(w)` decays like `e^(-2π |Im w|)` as `|Im w| → ∞`
-  (`UpperHalfPlane.norm_rowSum_le`, `UpperHalfPlane.norm_rowSum_le_of_le_abs_im`).
+  (`TauCeti.UpperHalfPlane.rowSum`), and `P(w)` decays like `e^(-2π |Im w|)` as `|Im w| → ∞`
+  (`TauCeti.UpperHalfPlane.norm_rowSum_le`,
+  `TauCeti.UpperHalfPlane.norm_rowSum_le_of_le_abs_im`).
 
 These are the inputs that make the values of `℘` at the `N`-division points of `ℤ z + ℤ` weight-two
 modular forms of level `Γ(N)`.
@@ -31,7 +32,7 @@ modular forms of level `Γ(N)`.
 ## Main definitions
 
 * `UpperHalfPlane.periodPair`: the period pair `(z, 1)`.
-* `UpperHalfPlane.rowSum`: a row `∑_n (w + n)⁻²` of the lattice series.
+* `TauCeti.UpperHalfPlane.rowSum`: a row `∑_n (w + n)⁻²` of the lattice series.
 
 ## Main results
 
@@ -40,15 +41,15 @@ modular forms of level `Γ(N)`.
   of `z`.
 * `UpperHalfPlane.weierstrassP_periodPair_smul`: the modular transformation law.
 * `UpperHalfPlane.hasSum_weierstrassP_periodPair_rows`: the sum along rows.
-* `UpperHalfPlane.norm_rowSum_le`, `UpperHalfPlane.norm_rowSum_le_of_le_abs_im`: the exponential
-  decay of the rows.
+* `TauCeti.UpperHalfPlane.norm_rowSum_le`, `TauCeti.UpperHalfPlane.norm_rowSum_le_of_le_abs_im`:
+  the exponential decay of the rows.
 -/
 
 public section
 
 noncomputable section
 
-open Complex PeriodPair Matrix
+open Complex PeriodPair Matrix UpperHalfPlane
 open scoped MatrixGroups Real
 
 namespace UpperHalfPlane
@@ -124,6 +125,10 @@ theorem weierstrassP_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (x : ℂ) :
   rw [← sub_div, div_pow, div_pow, one_div_div, one_div_div]
   ring
 
+end UpperHalfPlane
+
+namespace TauCeti.UpperHalfPlane
+
 /-- A row `P(w) = ∑_n (w + n)⁻²` of the lattice series of `ℤ z + ℤ`: the row `y₀ = m` of
 `℘(x; ℤ z + ℤ)` is `P(x - m z) - P(m z)`. -/
 def rowSum (w : ℂ) : ℂ := ∑' n : ℤ, 1 / (w + n) ^ 2
@@ -146,19 +151,6 @@ lemma rowSum_neg (w : ℂ) : rowSum (-w) = rowSum w := by
   refine tsum_congr fun n ↦ ?_
   simp only [Equiv.neg_apply, Int.cast_neg]
   ring
-
-/-- **The Weierstrass function of `ℤ z + ℤ` summed along rows**:
-`℘(x; ℤ z + ℤ) = ∑_m (∑_n (x - m z + n)⁻² - ∑_n (m z + n)⁻²)`. -/
-theorem hasSum_weierstrassP_periodPair_rows (z : ℍ) (x : ℂ) :
-    HasSum (fun m : ℤ ↦ rowSum (x - m * z) - rowSum (m * z)) (℘[z.periodPair] x) := by
-  have h := hasSum_weierstrassP_periodPair z x
-  rw [← (finTwoArrowEquiv ℤ).symm.hasSum_iff] at h
-  refine h.prod_fiberwise fun m ↦ ?_
-  have h₁ : HasSum (fun n : ℤ ↦ 1 / (x - (m * z + n)) ^ 2) (rowSum (x - m * z)) := by
-    rw [← rowSum_neg]
-    convert hasSum_rowSum (-(x - m * z)) using 2 with n
-    ring
-  simpa [Function.comp_def] using h₁.sub (hasSum_rowSum ((m : ℂ) * z))
 
 /-- **The rows decay exponentially**: for `w` in the upper half-plane and `q = e^(2π i w)`,
 `‖∑_n (w + n)⁻²‖ ≤ 4 π² ‖q‖ / (1 - ‖q‖)²`. -/
@@ -208,5 +200,24 @@ theorem norm_rowSum_le_of_le_abs_im {w : ℂ} {t : ℝ} (ht : 0 < t) (hw : t ≤
   refine h.trans ?_
   rw [div_mul_eq_mul_div, mul_div_assoc, mul_div_assoc]
   gcongr
+
+end TauCeti.UpperHalfPlane
+
+namespace UpperHalfPlane
+
+open TauCeti.UpperHalfPlane
+
+/-- **The Weierstrass function of `ℤ z + ℤ` summed along rows**:
+`℘(x; ℤ z + ℤ) = ∑_m (∑_n (x - m z + n)⁻² - ∑_n (m z + n)⁻²)`. -/
+theorem hasSum_weierstrassP_periodPair_rows (z : ℍ) (x : ℂ) :
+    HasSum (fun m : ℤ ↦ rowSum (x - m * z) - rowSum (m * z)) (℘[z.periodPair] x) := by
+  have h := hasSum_weierstrassP_periodPair z x
+  rw [← (finTwoArrowEquiv ℤ).symm.hasSum_iff] at h
+  refine h.prod_fiberwise fun m ↦ ?_
+  have h₁ : HasSum (fun n : ℤ ↦ 1 / (x - (m * z + n)) ^ 2) (rowSum (x - m * z)) := by
+    rw [← rowSum_neg]
+    convert hasSum_rowSum (-(x - m * z)) using 2 with n
+    ring
+  simpa [Function.comp_def] using h₁.sub (hasSum_rowSum ((m : ℂ) * z))
 
 end UpperHalfPlane

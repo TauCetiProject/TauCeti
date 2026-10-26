@@ -70,6 +70,7 @@ noncomputable section
 
 open ModularForm UpperHalfPlane Matrix CongruenceSubgroup Complex Filter Set PeriodPair
 open EisensteinSeries
+open TauCeti.UpperHalfPlane (rowSum norm_rowSum_le_of_le_abs_im)
 
 open scoped MatrixGroups Topology Manifold Real
 
