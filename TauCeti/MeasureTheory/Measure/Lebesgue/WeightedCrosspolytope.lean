@@ -48,17 +48,12 @@ theorem volume_weighted_crosspolytope {ι E : Type*} [Fintype ι] [DecidableEq �
   let w : ι → ℝˣ := fun i => (Units.mk0 (a i) (ha i).ne')⁻¹
   let c := b.unitsSMul w
   let A := o.toBasis.equiv c (Equiv.refl ι)
-  have hA : c.repr.toLinearMap.comp A.toLinearMap = o.toBasis.repr.toLinearMap := by
-    apply o.toBasis.ext
-    intro j
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
-    exact (congrArg c.repr (o.toBasis.equiv_apply j c (Equiv.refl ι))).trans
-      ((c.repr_self j).trans (o.toBasis.repr_self j).symm)
   have hcoord (x : E) (i : ι) :
       o.toBasis.repr (A.symm x) i = a i * b.repr x i := by
-    have h := congrArg (fun f : E →ₗ[ℝ] (ι →₀ ℝ) => f (A.symm x) i) hA
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, A.apply_symm_apply] at h
-    rw [← h]
+    dsimp only [A]
+    rw [Basis.equiv_symm]
+    simp only [Basis.equiv, Equiv.refl_symm, Basis.reindex_refl, LinearEquiv.trans_apply,
+      LinearEquiv.apply_symm_apply]
     simp [c, w, Units.smul_def]
   have himage : A '' (o.toBasis.equivFun ⁻¹' TauCeti.l1Ball ι) =
       {x : E | ∑ i, a i * |b.repr x i| ≤ 1} := by
@@ -86,12 +81,11 @@ theorem volume_weighted_crosspolytope {ι E : Type*} [Fintype ι] [DecidableEq �
         volume (o.toBasis.equivFun ⁻¹' TauCeti.l1Ball ι) :=
       volume.addHaar_image_linearMap A.toLinearMap _
     _ = _ := by
-      rw [hvol, TauCeti.volume_l1Ball, hdet,
-        abs_mul, Finset.prod_inv_distrib, abs_inv,
-        abs_of_pos (Finset.prod_pos fun i _ => ha i)]
-      rw [← ENNReal.ofReal_mul (mul_nonneg
-        (inv_nonneg.mpr (Finset.prod_pos fun i _ => ha i).le) (abs_nonneg _))]
+      rw [hvol, TauCeti.volume_l1Ball, hdet]
+      rw [← ENNReal.ofReal_mul (by positivity)]
       congr 1
+      rw [abs_mul, abs_of_pos (Finset.prod_pos fun i _ => inv_pos.mpr (ha i)),
+        Finset.prod_inv_distrib]
       ring
 
 end OrthonormalBasis
