@@ -124,6 +124,17 @@ private theorem numberFieldOrder_ne_maximal_of_not_isFundamentalDiscr (D : ℤ)
     exact numberFieldOrder_ne_maximal_of_not_isFundamentalDiscr D hD hfund hmax
   · exact numberFieldOrder_eq_maximal_of_isFundamentalDiscr D hD
 
+/-- **The order `ℤ[(d + √d)/2]` is the ring of integers for `d ≡ 1 (mod 4)`.** For squarefree
+`d ≡ 1 (mod 4)`, the order `TauCeti.QuadraticOrder.toSubalgebra d` of the model `ℚ(√d)` is the
+integral closure of `ℤ`. -/
+theorem toSubalgebra_eq_integralClosure_of_mod_four_eq_one {d : ℤ} [Fact (¬ IsSquare d)]
+    (hsf : Squarefree d) (hd4 : d % 4 = 1) :
+    toSubalgebra d (Or.inr hd4) = integralClosure ℤ (QuadraticAlgebra ℚ (d : ℚ) 0) := by
+  have h := congrArg GlobalNumberFields.NumberFieldOrder.toSubalgebra
+    ((numberFieldOrder_eq_maximal_iff d (Or.inr hd4)).mpr
+      (Int.isFundamentalDiscr_iff_squarefree.mpr (Or.inl ⟨hd4, hsf⟩)))
+  simpa [GlobalNumberFields.maximalNumberFieldOrder_toSubalgebra] using h
+
 end TauCeti.QuadraticOrder
 
 

@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
 public import Mathlib.RingTheory.QuadraticAlgebra
 public import TauCeti.NumberTheory.NumberField.Quadratic.ComplexEmbedding
 public import TauCeti.NumberTheory.NumberField.IntegralSqrt
-public import TauCeti.NumberTheory.QuadraticOrder.Field
 
 /-!
 # The ring of integers of the model `ℚ(√d)`
@@ -50,8 +49,6 @@ the lattice `ℤ + ℤ √(-d) i`, respectively `ℤ + ℤ (1 + √(-d) i)/2`.
   of the model satisfies the hypotheses of the intrinsic quadratic API, and
   `ringOfIntegersEquiv_symm_omega`, `ringOfIntegersEquivHalf_symm_omega` identify the generators
   of the integral models with `NumberField.integralSqrt` and `NumberField.halfGen`.
-* `TauCeti.QuadraticOrder.toSubalgebra_eq_integralClosure_of_mod_four_eq_one`: for `d ≡ 1 (mod 4)`
-  the order `ℤ[(d + √d)/2]` of `QuadraticOrder` is the ring of integers.
 
 ## References
 
@@ -359,21 +356,3 @@ theorem discr_eq_of_mod_four_eq_one : NumberField.discr (QuadraticAlgebra ℚ (d
 end ModFourEqOne
 
 end QuadraticAlgebra
-
-namespace TauCeti.QuadraticOrder
-
-variable {d : ℤ}
-
-/-- **The order `ℤ[(d + √d)/2]` is the ring of integers for `d ≡ 1 (mod 4)`.** For squarefree
-`d ≡ 1 (mod 4)`, the order `TauCeti.QuadraticOrder.toSubalgebra d` of the model `ℚ(√d)` is the
-integral closure of `ℤ`, that is, the image of `QuadraticAlgebra.ringOfIntegersEquivHalf`: its
-generator `(d + √d)/2` differs from `(1 + √d)/2` by the integer `(d - 1)/2`. -/
-theorem toSubalgebra_eq_integralClosure_of_mod_four_eq_one [Fact (¬ IsSquare d)]
-    (hsf : Squarefree d) (hd4 : d % 4 = 1) :
-    toSubalgebra d (Or.inr hd4) = integralClosure ℤ (QuadraticAlgebra ℚ (d : ℚ) 0) := by
-  have h := congrArg GlobalNumberFields.NumberFieldOrder.toSubalgebra
-    ((numberFieldOrder_eq_maximal_iff d (Or.inr hd4)).mpr
-      (Int.isFundamentalDiscr_iff_squarefree.mpr (Or.inl ⟨hd4, hsf⟩)))
-  simpa [GlobalNumberFields.maximalNumberFieldOrder_toSubalgebra] using h
-
-end TauCeti.QuadraticOrder
