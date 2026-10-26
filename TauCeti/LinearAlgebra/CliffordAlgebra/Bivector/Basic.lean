@@ -333,6 +333,7 @@ theorem bivector_lie_ι (a b x : M) :
 
 /-- Any algebra homomorphism out of a Clifford algebra carries the normalized bivector commutator
 identity to the corresponding commutator in its target algebra. -/
+@[grind =]
 theorem map_bivector_lie_ι {A : Type*} [Ring A] [Algebra R A]
     (f : CliffordAlgebra Q →ₐ[R] A) (a b x : M) :
     ⁅f (bivector Q a b), f (ι Q x)⁆ =
