@@ -76,9 +76,10 @@ private theorem exists_mem_scaledIntegerBox [Finite ι] {ϖ : 𝒪[K]} (hϖ : Ir
   have := TauCeti.isLocalizationAway_fractionRing (K := K) hϖ
   have h (i : ι) : ∀ᶠ k in Filter.atTop, (ϖ : K) ^ k * x i ∈ 𝒪[K] := by
     obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj ϖ (x i)
+    simp only [Algebra.algebraMap_ofSubsemiring_apply] at ha
     refine Filter.eventually_atTop.2 ⟨n, fun k hk ↦ ?_⟩
-    rw [← Nat.sub_add_cancel hk, pow_add, mul_assoc, mul_comm _ (x i)]
-    exact mul_mem (pow_mem ϖ.2 _) (ha ▸ a.2)
+    rw [← Nat.sub_add_cancel hk, pow_add, mul_assoc, mul_comm _ (x i), ha]
+    exact mul_mem (pow_mem ϖ.2 _) a.2
   exact (Filter.eventually_all.2 h).exists.imp fun _ ↦ mem_scaledIntegerBox.2
 
 variable [Finite ι] [MeasurableSpace (ι → K)] [BorelSpace (ι → K)]
