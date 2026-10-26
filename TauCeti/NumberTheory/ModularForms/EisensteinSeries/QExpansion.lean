@@ -53,6 +53,8 @@ The coefficient-identification argument follows Mathlib's
 * `TauCeti.EisensteinSeries.qExpansion_coeff_of_apply_eq_tsum_charRow`,
   `TauCeti.EisensteinSeries.qExpansion_coeff_of_apply_eq_tsum_charRow_of_isPrimitive`: the
   coefficients of a modular form of weight `k ≥ 2` which is the sum of these rows.
+* `TauCeti.EisensteinSeries.hasSum_charRow_charEisensteinSeriesMF`: for `k ≥ 3`, `G_k^{ψ,φ}` is
+  the sum of its rows.
 * `TauCeti.EisensteinSeries.qExpansion_charEisensteinSeriesMF_coeff`: the coefficients of
   `G_k^{ψ,φ}`.
 * `TauCeti.EisensteinSeries.qExpansion_charEisensteinSeriesMF_coeff_of_isPrimitive`: for
@@ -181,8 +183,9 @@ variable {u v N : ℕ} [NeZero v] [NeZero N] (ψ : DirichletCharacter ℂ u)
 omit [NeZero v] in
 /-- The row `c` of the Eisenstein series with character `G_k^{ψ,φ}`, weighted by `ψ(c)`:
 `ψ(c) ∑_{d ∈ ℤ} φ⁻¹(d) (c v z + d)^(-k)`. For `k ≥ 2` the rows are summable
-(`summable_charRow`), and `G_k^{ψ,φ}(z)` is their sum, also in weight two where the double series
-does not converge absolutely. -/
+(`summable_charRow`), and `G_k^{ψ,φ}(z)` is their sum: for `k ≥ 3` when `u v ∣ N`
+(`hasSum_charRow_charEisensteinSeriesMF`), and for `k = 2`, where the double series does not
+converge absolutely, when `ψ` and `φ` are not both trivial (`hasSum_charRow_charG2MF`). -/
 def charRow (k : ℕ) (z : ℍ) (c : ℤ) : ℂ :=
   ψ c * ∑' d : ℤ, φ⁻¹ d * (((v * c : ℤ) : ℂ) * z + d) ^ (-(k : ℤ))
 
@@ -207,6 +210,21 @@ private lemma tsum_row_neg (z : ℍ) (c : ℤ) :
     rw [← inv_pow]
     norm_num
   rw [h1]
+  ring
+
+omit [NeZero v] in
+/-- The row `c = 0` is `ψ(0) ∑_{d ∈ ℤ} φ⁻¹(d) d^(-k)`. -/
+@[simp]
+lemma charRow_zero (k : ℕ) (z : ℍ) :
+    charRow ψ φ k z 0 = ψ 0 * ∑' d : ℤ, φ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) := by
+  simp [charRow_def]
+
+omit [NeZero v] in
+/-- Negating the row index `c` multiplies the row by `ψ(-1) φ⁻¹(-1) (-1)^k`. -/
+lemma charRow_neg (z : ℍ) (c : ℤ) :
+    charRow ψ φ k z (-c) = ψ (-1) * φ⁻¹ (-1) * (-1) ^ k * charRow ψ φ k z c := by
+  rw [charRow_def, charRow_def, tsum_row_neg φ z, Int.cast_neg, ← neg_one_mul (c : ZMod u),
+    map_mul]
   ring
 
 /-- The row sum at `c ≥ 1`, by the Lipschitz formula along residue classes modulo `v`. -/
@@ -273,15 +291,9 @@ theorem summable_charRow (hk : 2 ≤ k) (z : ℍ) : Summable (charRow ψ φ k z)
   have hnat : Summable fun n : ℕ ↦ charRow ψ φ k z n := summable_pnat_iff_summable_nat.mp hpnat
   -- the row `-n` is a multiple of the row `n` by a scalar of norm at most one
   refine .of_nat_of_neg hnat ((summable_norm_iff.mpr hnat).of_norm_bounded fun n ↦ ?_)
-  rw [charRow_def, charRow_def, tsum_row_neg φ z, Int.cast_neg,
-    ← neg_one_mul ((n : ℤ) : ZMod u), map_mul]
-  calc _ = ‖ψ (-1)‖ * ‖φ⁻¹ (-1)‖ *
-        ‖ψ (n : ℤ) * ∑' d : ℤ, φ⁻¹ d * (((v * n : ℤ) : ℂ) * z + d) ^ (-(k : ℤ))‖ := by
-        simp only [norm_mul, norm_pow, norm_neg, norm_one, one_pow, mul_one]
-        ring
-    _ ≤ 1 * 1 * ‖ψ (n : ℤ) * ∑' d : ℤ, φ⁻¹ d * (((v * n : ℤ) : ℂ) * z + d) ^ (-(k : ℤ))‖ := by
-        gcongr <;> exact DirichletCharacter.norm_le_one _ _
-    _ = _ := by rw [one_mul, one_mul]
+  rw [charRow_neg, norm_mul, norm_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow, mul_one]
+  exact mul_le_of_le_one_left (norm_nonneg _) ((mul_le_mul (DirichletCharacter.norm_le_one _ _)
+    (DirichletCharacter.norm_le_one _ _) (norm_nonneg _) zero_le_one).trans_eq (one_mul 1))
 
 /-- **Parity folding.** Under `ψ(-1) φ(-1) = (-1)^k`, the rows `c` and `-c` of the Eisenstein
 series with character contribute equally. -/
@@ -300,15 +312,11 @@ private lemma tsum_charRow_eq_add_tsum_pnat (hk : 2 ≤ k) (hpar : ψ (-1) * φ 
     intro c
     have hsq : ((-1 : ℂ) ^ k) ^ 2 = 1 := by
       rw [sq, ← mul_pow, neg_one_mul, neg_neg, one_pow]
-    rw [charRow_def, charRow_def, tsum_row_neg φ z c, Int.cast_neg, ← neg_one_mul (c : ZMod u),
-      map_mul, hφ]
-    linear_combination
-      (ψ c * (∑' d : ℤ, φ⁻¹ d * (((v * c : ℤ) : ℂ) * z + d) ^ (-(k : ℤ))) * (-1) ^ k) * hpar +
-        (ψ c * ∑' d : ℤ, φ⁻¹ d * (((v * c : ℤ) : ℂ) * z + d) ^ (-(k : ℤ))) * hsq
+    rw [charRow_neg, hφ]
+    linear_combination (charRow ψ φ k z c * (-1) ^ k) * hpar + charRow ψ φ k z c * hsq
   rw [tsum_int_eq_zero_add_two_mul_tsum_pnat heven (summable_charRow ψ φ hk z),
     tsum_congr (charRow_pnat ψ φ hk z), tsum_mul_left]
-  simp only [charRow_def, Int.cast_zero, mul_zero, zero_mul, zero_add, nsmul_eq_mul, Nat.cast_ofNat,
-    add_right_inj]
+  simp only [charRow_zero, nsmul_eq_mul, Nat.cast_ofNat, add_right_inj]
   ring
 
 /-! ### The `q`-expansion -/
@@ -395,11 +403,12 @@ theorem qExpansion_coeff_of_apply_eq_tsum_charRow_of_isPrimitive (hk : 2 ≤ k)
 
 /-! ### The Eisenstein series with character in weight `k ≥ 3` -/
 
-/-- The Eisenstein series with character as an iterated series: the pairs `(v c, d)` with `c` and
-`d` integers. -/
-private lemma charEisensteinSeriesMF_apply_eq_tsum_tsum (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N)
-    (z : ℍ) :
-    charEisensteinSeriesMF ψ φ hk huv z = ∑' c : ℤ, charRow ψ φ k z c := by
+/-- **The Eisenstein series with character summed along rows.** For `k ≥ 3`, `G_k^{ψ,φ}(z)` is the
+sum over `c ∈ ℤ` of the rows `ψ(c) ∑_{d ∈ ℤ} φ⁻¹(d) (c v z + d)^(-k)`: only the pairs `(v c, d)`
+contribute to the absolutely convergent double series. -/
+theorem hasSum_charRow_charEisensteinSeriesMF (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N) (z : ℍ) :
+    HasSum (charRow ψ φ k z) (charEisensteinSeriesMF ψ φ hk huv z) := by
+  convert (summable_charRow ψ φ (k := k) (by omega) z).hasSum using 1
   set F : ℤ × ℤ → ℂ := fun p ↦
     (if (v : ℤ) ∣ p.1 then ψ ((p.1 / v : ℤ) : ZMod u) * φ⁻¹ (p.2 : ZMod v) else 0) *
       eisSummand k ![p.1, p.2] z with hF
@@ -457,7 +466,7 @@ theorem qExpansion_charEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ)) (huv : u 
         ∑ x ∈ n.divisorsAntidiagonal,
           ψ x.1 * 𝓕 ⇑(φ⁻¹) (-(x.2 : ZMod v)) * (x.2 : ℂ) ^ (k - 1) :=
   qExpansion_coeff_of_apply_eq_tsum_charRow ψ φ (by omega) hpar
-    (charEisensteinSeriesMF_apply_eq_tsum_tsum ψ φ hk huv) n
+    (fun z ↦ (hasSum_charRow_charEisensteinSeriesMF ψ φ hk huv z).tsum_eq.symm) n
 
 /-- **The `q`-expansion of the Eisenstein series with character, for primitive `φ`.** Then the
 Fourier transform of `φ⁻¹` is a multiple of `φ` by the Gauss sum `g(φ⁻¹)`, and for `n ≥ 1` the
@@ -471,7 +480,7 @@ theorem qExpansion_charEisensteinSeriesMF_coeff_of_isPrimitive (hk : 3 ≤ (k : 
       2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * gaussSum φ⁻¹ stdAddChar *
         DirichletCharacter.twistedDivisorSum (k - 1) ψ φ n :=
   qExpansion_coeff_of_apply_eq_tsum_charRow_of_isPrimitive ψ φ (by omega) hpar hφ
-    (charEisensteinSeriesMF_apply_eq_tsum_tsum ψ φ hk huv) hn
+    (fun z ↦ (hasSum_charRow_charEisensteinSeriesMF ψ φ hk huv z).tsum_eq.symm) hn
 
 end Character
 
