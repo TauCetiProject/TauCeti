@@ -8,12 +8,14 @@ module
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 public import Mathlib.RingTheory.Etale.Basic
+public import Mathlib.RingTheory.Localization.Away.Basic
 
 /-!
 # Pointed étale neighbourhoods
 
 Étale algebras with a map to a fixed commutative algebra form the indexing category for strict
-henselization.
+henselization. Localizing a neighbourhood at an element whose point is a unit gives a
+refinement in which that element is a unit.
 
 For `R : Type u` and `Ω : Type v`, source algebras live in `Type (max u v)`.
 The target is lifted to this universe, so the base algebra and tensor-product refinements belong
@@ -69,5 +71,27 @@ theorem Neighbourhood.ext (first second : Neighbourhood R Ω)
           have hhom : firstHom = secondHom := CommAlgCat.hom_ext hmap
           cases hhom
           rfl
+
+/-- A stage element whose point is a unit becomes a unit in a further pointed étale
+neighbourhood, obtained by localizing at that element. -/
+theorem Neighbourhood.exists_refinement_isUnit (B : Neighbourhood R Ω) (b : B.obj.left)
+    (hpoint : IsUnit (B.obj.hom.hom b)) :
+    ∃ (target : Neighbourhood R Ω) (refinement : B ⟶ target),
+      IsUnit (refinement.hom.left.hom b) := by
+  have hetale : Algebra.Etale R B.obj.left := (isPointedNeighbourhood_iff R Ω _).mp B.property
+  let localized := Localization.Away b
+  let lifted : localized →ₐ[R] ULift.{u} Ω := IsLocalization.Away.liftAlgHom b hpoint
+  let target : Neighbourhood R Ω :=
+    ⟨Over.mk (CommAlgCat.ofHom lifted),
+      (isPointedNeighbourhood_iff R Ω _).mpr (inferInstanceAs (Algebra.Etale R localized))⟩
+  let refinementMap : B.obj.left →ₐ[R] localized :=
+    IsScalarTower.toAlgHom R B.obj.left localized
+  have hrefines : CommAlgCat.ofHom refinementMap ≫ CommAlgCat.ofHom lifted = B.obj.hom := by
+    apply CommAlgCat.hom_ext
+    apply AlgHom.ext
+    intro element
+    exact IsLocalization.Away.lift_eq (S := localized) b hpoint element
+  exact ⟨target, ObjectProperty.homMk (Over.homMk (CommAlgCat.ofHom refinementMap) hrefines),
+    IsLocalization.Away.algebraMap_isUnit (S := localized) b⟩
 
 end TauCeti.StrictHenselization

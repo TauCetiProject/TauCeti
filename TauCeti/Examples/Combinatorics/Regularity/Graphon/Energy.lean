@@ -22,6 +22,12 @@ public bridge `SimpleGraph.graphonPartitionEnergy_finiteGraphGraphon`.
   `|A||B| / m²` on unequal parts.
 * The part of the lifted partition containing a point, selected by its canonical index, is the
   union of the cells over the part of `P` containing that point's cell.
+* On a nonempty finite vertex type, the canonical equivalence with `Fin (Fintype.card V)` gives the
+  comparison through `SimpleGraph.graphonPartitionEnergy_finiteGraphGraphon_comap_symm`.
+* Relabelling along a rotation of `Fin 3` moves the parts of a partition the expected way, which
+  fixes the direction of the relabelling.
+* For the empty host both energies vanish: a partition of the empty vertex set has no parts, and
+  the graphon of a graph on `Fin 0` is the zero graphon.
 -/
 
 open Finset MeasureTheory
@@ -87,6 +93,52 @@ example {m : ℕ} [NeZero m] (P : Finpartition (univ : Finset (Fin m))) (x : uni
     (P.cellPartition.indexedPartition.index x : Set unitInterval) =
       TauCeti.unitInterval.cellFin m ⁻¹'
         (P.part (TauCeti.unitInterval.cellFin m x) : Set (Fin m)) := by
+  simp
+
+-- On a nonempty finite vertex type, the canonical equivalence with `Fin (Fintype.card V)` gives
+-- the comparison.
+example {V : Type*} [Fintype V] [DecidableEq V] [Nonempty V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] (P : Finpartition (univ : Finset V)) :
+    haveI : NeZero (Fintype.card V) := ⟨Fintype.card_ne_zero⟩
+    graphonPartitionEnergy volume
+        ((P.copy (image_univ_equiv (Fintype.equivFin V).symm).symm).comap
+          (Fintype.equivFin V).symm).cellPartition
+        (Finpartition.measurableSet_of_mem_cellPartition _)
+        (finiteGraphGraphon (G.comap (Fintype.equivFin V).symm)) =
+      G.weightedEnergy P :=
+  G.graphonPartitionEnergy_finiteGraphGraphon_comap_symm _ P
+
+-- Relabelling along the rotation `0 ↦ 1 ↦ 2 ↦ 0` carries the part `{1, 2}` of the partition
+-- `{0}, {1, 2}` to the part `{2, 0}`, the part through `0`. Pulling back along the rotation instead
+-- of its inverse would give `{0, 1}`.
+example :
+    let P : Finpartition (univ : Finset (Fin 3)) :=
+      { parts := {{0}, {1, 2}}
+        supIndep := (Finset.supIndep_pair (by decide)).2 (by decide)
+        sup_parts := by decide
+        bot_notMem := by decide }
+    ((P.copy (image_univ_equiv (finRotate 3).symm).symm).comap (finRotate 3).symm).part 0 =
+      {0, 2} := by
+  intro P
+  -- the part of `P` through `2` is `{1, 2}`
+  have h2 : (P.copy (image_univ_equiv (finRotate 3).symm).symm).part 2 = {1, 2} :=
+    Finpartition.part_eq_of_mem _ (by simp [P]) (by decide)
+  have hrot : (finRotate 3).symm 0 = 2 := by decide
+  rw [Finpartition.part_comap (mem_univ _), hrot, h2]
+  decide
+
+-- The empty host: a partition of the empty vertex set has no parts, so the weighted energy is `0`.
+example (G : SimpleGraph (Fin 0)) [DecidableRel G.Adj] (P : Finpartition (univ : Finset (Fin 0))) :
+    G.weightedEnergy P = 0 := by
+  have hP : P.parts = ∅ := Finpartition.parts_eq_empty_iff.2 (by simp)
+  simp [SimpleGraph.weightedEnergy_def, hP]
+
+-- The empty host: the graphon of a graph on `Fin 0` is the zero graphon, whose partition energy
+-- vanishes over every measurable partition of the unit interval. No cell map to `Fin 0` is used.
+example (G : SimpleGraph (Fin 0)) (Q : Finpartition (Set.univ : Set unitInterval))
+    (hQ : ∀ p ∈ Q.parts, MeasurableSet p) :
+    graphonPartitionEnergy volume Q hQ (finiteGraphGraphon G) = 0 := by
+  rw [finiteGraphGraphon_eq_const_zero, graphonPartitionEnergy_eq_sum]
   simp
 
 end TauCeti.DenseGraphLimits

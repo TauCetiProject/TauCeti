@@ -40,6 +40,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
+* `MvPowerSeries.norm_coeff_le_norm` and `MvPowerSeries.exists_norm_coeff_eq_norm`: at unit
+  polyradius the norm is the largest coefficient norm, and it is attained.
 * `MvPowerSeries.norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le`: a constant coefficient
   dominating every other weighted coefficient attains the Gauss norm.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
@@ -234,6 +236,17 @@ theorem norm_lt_iff {f : IsRestricted.subring (R := R) c} {r : ℝ} :
   obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
   rw [norm_eq_gaussNorm, ← ht]
   exact h t
+
+/-- At unit polyradius every coefficient norm is bounded by the Gauss norm. -/
+theorem norm_coeff_le_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
+    ‖coeff t (f : MvPowerSeries σ R)‖ ≤ ‖f‖ := by
+  simpa using norm_coeff_mul_prod_le f t
+
+/-- At unit polyradius a restricted series has a coefficient whose norm is its Gauss norm. -/
+theorem exists_norm_coeff_eq_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
+    ∃ t, ‖coeff t (f : MvPowerSeries σ R)‖ = ‖f‖ := by
+  obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
+  exact ⟨t, by simpa [AchievesGaussNorm, ← norm_eq_gaussNorm] using ht⟩
 
 /-- The norm of a restricted monomial is its weighted coefficient norm. -/
 @[simp]
