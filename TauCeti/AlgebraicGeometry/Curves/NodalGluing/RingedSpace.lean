@@ -69,7 +69,7 @@ theorem sheafedSpace_map_apply {U V : (Opens (GluedCurve d))ᵒᵖ} (h : U ⟶ V
 -- equalities can be composed without unfolding sheaf projections in the descent proofs.
 -- Composite evaluation formulas stay out of simp: their left sides reduce by hom_comp.
 /-- Restricting after a section map evaluates that map at the included point upstairs. -/
-theorem sheafedSpace_comp_map_apply {R : CommRingCat}
+private theorem sheafedSpace_comp_map_apply {R : CommRingCat}
     {U V : (Opens (GluedCurve d))ᵒᵖ} (f : R ⟶ (sheafedSpace I d).presheaf.obj U)
     (h : U ⟶ V) (g : R)
     (x : (Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj V.unop) :
@@ -127,36 +127,39 @@ def pullbackSection (e : Iso I ω d d') (U : Opens (GluedCurve d')) :
     ⟨e.gluedCurveHomeomorph, e.gluedCurveHomeomorph.continuous⟩)).obj U
   let W := (Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj V
   let W' := (Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).obj U
-  let f : W → W' := fun x ↦ ⟨e x.1, by
-    -- Membership in these iterated categorical preimages is membership downstairs.
-    have hx : e.gluedCurveHomeomorph (Quotient.mk _ x.1) ∈ U := x.2
-    dsimp only [W']
-    rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
-    exact hx⟩
-  have hf : ContMDiff I I ω f :=
-    (TauCeti.ContMDiff.subtypeVal_comp_iff W' f).mp
-      (e.toDiffeomorph.contMDiff.comp contMDiff_subtype_val)
-  refine
-    { toFun := fun g ↦ (quotientSheafSectionsEquiv I (gluedRelSetoid d) V).symm
-        ⟨ofContMDiff (fun x ↦ (quotientSheafSectionsEquiv I (gluedRelSetoid d') U g).1
-          (f x)) ((contMDiff _).comp hf), ?_⟩
-      map_one' := ?_
-      map_mul' := ?_
-      map_zero' := ?_
-      map_add' := ?_ }
-  · rw [mem_quotientSectionSubring]
-    intro x y hx hy hxy
-    simp only [ofContMDiff_apply]
-    exact ((mem_quotientSectionSubring I _ U _).mp
-      (quotientSheafSectionsEquiv I (gluedRelSetoid d') U g).2) (e x) (e y) _ _
-      ((gluedRelSetoid_r d' _ _).mpr
-        ((e.gluedRel_apply_iff x y).mpr ((gluedRelSetoid_r d _ _).mp hxy)))
-  all_goals
-    intros
-    apply quotientSheaf_ext
-    intro x
-    simp only [map_one, map_mul, map_zero, map_add, RingEquiv.apply_symm_apply]
-    simp [ofContMDiff_apply]
+  have hW : W = (Opens.map (TopCat.ofHom
+      ⟨e, e.toDiffeomorph.contMDiff.continuous⟩)).obj W' := by
+    ext x
+    exact (congrArg (fun z ↦ z ∈ U) (e.gluedCurveHomeomorph_mk x)).to_iff
+  let p := ((holomorphicStructureSheaf I (Σ i, X i)).obj.map (eqToHom hW).op).hom.comp
+    ((precomp I _ e e.toDiffeomorph.contMDiff (op W')).comp
+      ((quotientSheafι I (gluedRelSetoid d')).hom.app (op U)).hom)
+  have hp (g) (x : W) : p g x =
+      (quotientSheafSectionsEquiv I (gluedRelSetoid d') U g).1
+        ⟨e x.1, by
+          rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
+          exact x.2⟩ :=
+    (map_apply _ _ _).trans
+      (precomp_apply I _ e e.toDiffeomorph.contMDiff
+        (op ((Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).obj U))
+        (((quotientSheafι I (gluedRelSetoid d')).hom.app (op U)).hom g)
+        ⟨x.1, by
+          exact (congrArg (fun z ↦ z ∈ U) (e.gluedCurveHomeomorph_mk x.1)).to_iff.mp x.2⟩
+        |>.trans (congrArg (fun f ↦ f ⟨e x.1, by
+          rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
+          exact x.2⟩) (quotientSheafι_app_apply I _ U g)))
+  exact (quotientSheafSectionsEquiv I (gluedRelSetoid d) V).symm.toRingHom.comp
+    (p.codRestrict (quotientSectionSubring I (gluedRelSetoid d) V) (by
+      intro g
+      rw [mem_quotientSectionSubring]
+      intro x y hx hy hxy
+      have hm := ((mem_quotientSectionSubring I _ U _).mp
+        (quotientSheafSectionsEquiv I (gluedRelSetoid d') U g).2) (e x) (e y)
+        ((congrArg (fun z ↦ z ∈ U) (e.gluedCurveHomeomorph_mk x)).to_iff.mp hx)
+        ((congrArg (fun z ↦ z ∈ U) (e.gluedCurveHomeomorph_mk y)).to_iff.mp hy)
+        ((gluedRelSetoid_r d' _ _).mpr
+          ((e.gluedRel_apply_iff x y).mpr ((gluedRelSetoid_r d _ _).mp hxy)))
+      exact (hp g ⟨x, hx⟩).trans (hm.trans (hp g ⟨y, hy⟩).symm)))
 
 /-- Pullback evaluates by precomposition on the normalization. -/
 @[simp]
@@ -170,12 +173,21 @@ theorem pullbackSection_apply (e : Iso I ω d d') (U : Opens (GluedCurve d'))
         ⟨e x.1, by
           rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
           exact x.2⟩ := by
-  dsimp only [pullbackSection, RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk]
-  rw [RingEquiv.apply_symm_apply]
-  exact ofContMDiff_apply _ _ _
+  dsimp only [pullbackSection, RingHom.comp_apply, RingHom.codRestrict_apply]
+  simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    RingEquiv.apply_symm_apply, RingHom.codRestrict_apply]
+  exact (map_apply _ _ _).trans
+      (precomp_apply I _ e e.toDiffeomorph.contMDiff
+        (op ((Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).obj U))
+        (((quotientSheafι I (gluedRelSetoid d')).hom.app (op U)).hom g)
+        ⟨x.1, by
+          exact (congrArg (fun z ↦ z ∈ U) (e.gluedCurveHomeomorph_mk x.1)).to_iff.mp x.2⟩
+        |>.trans (congrArg (fun f ↦ f ⟨e x.1, by
+          rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
+          exact x.2⟩) (quotientSheafι_app_apply I _ U g)))
 
 /-- Pullback after a section map evaluates the map at the image on the normalization. -/
-theorem pullbackSection_comp_apply (e : Iso I ω d d') (U : Opens (GluedCurve d'))
+private theorem pullbackSection_comp_apply (e : Iso I ω d d') (U : Opens (GluedCurve d'))
     {R : CommRingCat} (f : R ⟶ (sheafedSpace I d').presheaf.obj (op U)) (g : R)
     (x : (Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj
       ((Opens.map (TopCat.ofHom
@@ -199,15 +211,49 @@ abbrev sheafedSpaceHom (e : Iso I ω d d') : sheafedSpace I d ⟶ sheafedSpace I
             intro U V h
             apply sheafedSpace_sectionMap_ext
             intro g x
+            let p := (quotientSheafι I (gluedRelSetoid d')).hom ≫
+              Functor.whiskerLeft (Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).op
+                (homOfContMDiff I _ e e.toDiffeomorph.contMDiff).hom
+            have hx : e x.1 ∈
+                (Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).obj V.unop := by
+              rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
+              exact x.2
+            have hp (A : (Opens (GluedCurve d'))ᵒᵖ) (a)
+                (y : (Opens.map (TopCat.ofHom
+                  ⟨e, e.toDiffeomorph.contMDiff.continuous⟩)).obj
+                    ((Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).obj A.unop)) :
+                toFun I _ _ ((p.app A).hom a) y =
+                  (quotientSheafSectionsEquiv I (gluedRelSetoid d') A.unop a).1
+                    ⟨e y.1, y.2⟩ := by
+              have ha := congrArg
+                (fun k ↦ ((quotientSheafι I (gluedRelSetoid d')).hom.app A) ≫ k)
+                (homOfContMDiff_app I _ e e.toDiffeomorph.contMDiff
+                  ((Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).op.obj A))
+              exact (congrArg (fun k ↦ toFun I _ _ (k.hom a) y) ha).trans
+                ((precomp_apply I _ e e.toDiffeomorph.contMDiff _
+                (((quotientSheafι I (gluedRelSetoid d')).hom.app A).hom a) y).trans
+                  (congrArg (fun f ↦ f ⟨e y.1, y.2⟩)
+                    (quotientSheafι_app_apply I _ A.unop a)))
+            have hn := congrArg (fun k ↦ toFun I _
+              (op ((Opens.map (TopCat.ofHom
+                ⟨e, e.toDiffeomorph.contMDiff.continuous⟩)).obj
+                  ((Opens.map (TopCat.quotientMk (gluedRelSetoid d'))).obj V.unop)))
+              (k.hom g) ⟨x.1, hx⟩) (p.naturality h)
             exact (pullbackSection_comp_apply e V.unop _ g x).trans
-              ((sheafedSpace_map_apply I d' h g _).trans
-                ((pullbackSection_apply e U.unop g _).symm.trans
-                  (sheafedSpace_comp_map_apply I d _ _ g x).symm)) } }
+              ((hp V _ ⟨x.1, hx⟩).symm.trans (hn.trans
+                ((map_apply _ _ _).trans ((hp U g _).trans
+                  ((pullbackSection_apply e U.unop g _).symm.trans
+                    (sheafedSpace_comp_map_apply I d _ _ g x).symm))))) } }
 
 /-- The map on sections in ringed descent is normalization pullback. -/
 @[simp]
 theorem sheafedSpaceHom_app (e : Iso I ω d d') (U : Opens (GluedCurve d')) :
     e.sheafedSpaceHom.hom.c.app (op U) = CommRingCat.ofHom (e.pullbackSection U) := (rfl)
+
+-- Existing projection simp rules already normalize this formula.
+/-- The descended map on points is the quotient homeomorphism. -/
+theorem sheafedSpaceHom_hom_base_apply (e : Iso I ω d d') (z : GluedCurve d) :
+    e.sheafedSpaceHom.hom.base z = e.gluedCurveHomeomorph z := (rfl)
 
 -- Keep base equalities opaque: the sectionwise extensionality theorem transports along
 -- them, and expanding their proofs forces elaboration through the quotient's ring structures.
@@ -274,6 +320,27 @@ theorem sheafedSpaceIso_hom (e : Iso I ω d d') :
 theorem sheafedSpaceIso_inv (e : Iso I ω d d') :
     e.sheafedSpaceIso.inv = e.symm.sheafedSpaceHom := (rfl)
 
+/-- Reversing normalization reverses its descended sheafed-space isomorphism. -/
+@[simp]
+theorem sheafedSpaceIso_symm (e : Iso I ω d d') :
+    e.symm.sheafedSpaceIso = e.sheafedSpaceIso.symm := by
+  apply CategoryTheory.Iso.ext
+  rfl
+
+/-- Descent of the identity is the identity sheafed-space isomorphism. -/
+@[simp]
+theorem sheafedSpaceIso_refl :
+    (Iso.refl I ω d).sheafedSpaceIso = CategoryTheory.Iso.refl (sheafedSpace I d) := by
+  apply CategoryTheory.Iso.ext
+  exact sheafedSpaceHom_refl
+
+/-- Sheafed-space descent preserves composition of normalization isomorphisms. -/
+@[simp]
+theorem sheafedSpaceIso_trans (e : Iso I ω d d') (e' : Iso I ω d' d'') :
+    (e.trans e').sheafedSpaceIso = e.sheafedSpaceIso ≪≫ e'.sheafedSpaceIso := by
+  apply CategoryTheory.Iso.ext
+  exact sheafedSpaceHom_trans e e'
+
 variable [Finite Flag] [Finite Flag'] [∀ i, T2Space (X i)] [∀ i, T2Space (X' i)]
 
 /-- Ringed descent is an isomorphism of locally ringed spaces: its maps on stalks are local,
@@ -285,6 +352,11 @@ def locallyRingedSpaceIso (e : Iso I ω d d') : locallyRingedSpace I d ≅ local
 @[simp]
 theorem locallyRingedSpaceIso_hom_toHom (e : Iso I ω d d') :
     e.locallyRingedSpaceIso.hom.toHom = e.sheafedSpaceHom.hom := (rfl)
+
+-- Existing projection simp rules already normalize this formula.
+/-- The descended locally ringed map on points is the quotient homeomorphism. -/
+theorem locallyRingedSpaceIso_hom_base_apply (e : Iso I ω d d') (z : GluedCurve d) :
+    e.locallyRingedSpaceIso.hom.base z = e.gluedCurveHomeomorph z := (rfl)
 
 /-- The inverse locally ringed map is induced by the inverse normalization isomorphism. -/
 @[simp]
