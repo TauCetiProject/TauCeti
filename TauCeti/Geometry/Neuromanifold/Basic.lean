@@ -1,0 +1,197 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Data.Set.Restrict
+public import Mathlib.Order.Setoid.Basic
+
+/-!
+# Realized functions and parameter fibres
+
+A supplied realization map `f : W → X → Y` describes a fixed parametric model without
+prescribing an architecture representation. Its neuromanifold `realizedFunctions f` is the
+set of functions realized by its parameters; `parametrization f` corestricts the realization
+map to this set. Equality here means equality at every input, with no topology, regularity,
+or manifold structure assumed.
+
+The fibres and the kernel setoid describe parameter redundancy. Their quotient is equivalent
+to the realized-function type, and maps constant on fibres factor uniquely through the
+parametrization. Reparametrization, restriction of parameters, and composition on inputs or
+outputs interact with these constructions through the ordinary set-image APIs.
+
+The definitions follow Marchetti–Shahverdi–Mereta–Trager–Kohn,
+*Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,
+[arXiv:2501.18915v2](https://arxiv.org/abs/2501.18915v2), Definition 3.1 and §4.3.
+The elementary comparison and factorization results below are consequences of these
+definitions, rather than additional results attributed to that paper. The constructions use
+Mathlib's `Set.rangeFactorization`, `Setoid.ker`, and `Setoid.quotientKerEquivRange`.
+-/
+
+public section
+
+namespace TauCeti.Neuromanifold
+
+universe u v w z
+
+variable {W : Type u} {X : Type v} {Y : Type w}
+
+/-- The neuromanifold of a supplied realization map: its set of realized functions. -/
+def realizedFunctions (f : W → X → Y) : Set (X → Y) := Set.range f
+
+/-- The realized functions form the ordinary range of the supplied realization map. -/
+theorem realizedFunctions_def (f : W → X → Y) : realizedFunctions f = Set.range f := (rfl)
+
+/-- A function is realized exactly when it has a parameter witness. -/
+@[simp] theorem mem_realizedFunctions (f : W → X → Y) (g : X → Y) :
+    g ∈ realizedFunctions f ↔ ∃ w, f w = g := Iff.rfl
+
+/-- The realization map with codomain restricted to its neuromanifold. -/
+def parametrization (f : W → X → Y) : W → realizedFunctions f :=
+  Set.rangeFactorization f
+
+/-- Forgetting membership in the neuromanifold recovers the supplied realization map. -/
+@[simp] theorem parametrization_coe (f : W → X → Y) (w : W) :
+    (parametrization f w : X → Y) = f w := (rfl)
+
+/-- Every realized function is represented by a parameter. -/
+@[simp] theorem parametrization_surjective (f : W → X → Y) :
+    Function.Surjective (parametrization f) := Set.rangeFactorization_surjective
+
+/-- The parameters that realize a specified ambient function. -/
+def fiber (f : W → X → Y) (g : X → Y) : Set W := f ⁻¹' {g}
+
+/-- Membership in a realization fibre is equality of the whole realized function. -/
+@[simp] theorem mem_fiber (f : W → X → Y) (g : X → Y) (w : W) :
+    w ∈ fiber f g ↔ f w = g := Iff.rfl
+
+/-- A realization fibre is nonempty exactly over a realized function. -/
+@[simp] theorem fiber_nonempty_iff (f : W → X → Y) (g : X → Y) :
+    (fiber f g).Nonempty ↔ g ∈ realizedFunctions f := Set.preimage_singleton_nonempty
+
+/-- Distinct ambient functions have disjoint parameter fibres. -/
+theorem disjoint_fiber (f : W → X → Y) {g h : X → Y} (hne : g ≠ h) :
+    Disjoint (fiber f g) (fiber f h) :=
+  (Set.disjoint_singleton.mpr hne).preimage f
+
+/-- Two parameters are equivalent when they realize the same function. -/
+def parameterSetoid (f : W → X → Y) : Setoid W := Setoid.ker f
+
+/-- Parameter equivalence is equality of realized functions. -/
+@[simp] theorem parameterSetoid_iff (f : W → X → Y) (w v : W) :
+    parameterSetoid f w v ↔ f w = f v := Iff.rfl
+
+/-- The fibre over a realized function is the equivalence class of its parameter. -/
+theorem fiber_eq_class (f : W → X → Y) (w : W) :
+    fiber f (f w) = {v | parameterSetoid f v w} := (rfl)
+
+/-- Parameters modulo realization equality are equivalent to realized functions.
+This is a set equivalence and makes no assertion about quotient topologies. -/
+noncomputable def quotientEquiv (f : W → X → Y) :
+    Quotient (parameterSetoid f) ≃ realizedFunctions f := Setoid.quotientKerEquivRange f
+
+/-- The quotient comparison sends a parameter class to its realized function. -/
+@[simp] theorem quotientEquiv_mk (f : W → X → Y) (w : W) :
+    quotientEquiv f (Quotient.mk (parameterSetoid f) w) = parametrization f w := by
+  apply Subtype.ext
+  rfl
+
+/-- The inverse quotient comparison recovers the class of a realizing parameter. -/
+@[simp] theorem quotientEquiv_symm_parametrization (f : W → X → Y) (w : W) :
+    (quotientEquiv f).symm (parametrization f w) = Quotient.mk (parameterSetoid f) w := by
+  apply (quotientEquiv f).injective
+  simp
+
+/-- A map factors uniquely through realized functions exactly when it is constant on
+each realization fibre. No inhabitedness of the parameter or target type is needed. -/
+theorem existsUnique_factor_iff {Z : Type z} (f : W → X → Y) (h : W → Z) :
+    (∃! k : realizedFunctions f → Z, k ∘ parametrization f = h) ↔
+      h.FactorsThrough f := by
+  constructor
+  · rintro ⟨k, hk, -⟩ w v hwv
+    rw [← congrFun hk w, ← congrFun hk v]
+    exact congrArg k (Subtype.ext hwv)
+  · intro hh
+    refine ⟨h ∘ Set.rangeSplitting f, ?_, ?_⟩
+    · funext w
+      exact hh (Set.apply_rangeSplitting f (Set.rangeFactorization f w))
+    · intro k hk
+      funext g
+      obtain ⟨w, rfl⟩ := parametrization_surjective f g
+      exact (congrFun hk w).trans
+        (hh (Set.apply_rangeSplitting f (Set.rangeFactorization f w))).symm
+
+/-- Reparametrizing cannot create functions outside the original neuromanifold. -/
+theorem realizedFunctions_comp_subset {W' : Type*} (f : W → X → Y) (r : W' → W) :
+    realizedFunctions (f ∘ r) ⊆ realizedFunctions f := Set.range_comp_subset_range r f
+
+/-- A surjective reparametrization preserves the neuromanifold. -/
+theorem realizedFunctions_comp_of_surjective {W' : Type*} (f : W → X → Y)
+    {r : W' → W} (hr : Function.Surjective r) :
+    realizedFunctions (f ∘ r) = realizedFunctions f := hr.range_comp f
+
+/-- Reparametrization pulls a realization fibre back along the parameter map. -/
+theorem fiber_comp {W' : Type*} (f : W → X → Y) (r : W' → W) (g : X → Y) :
+    fiber (f ∘ r) g = r ⁻¹' fiber f g := Set.preimage_comp
+
+/-- Equivalence of new parameters is equivalence of their images under reparametrization. -/
+theorem parameterSetoid_comp_iff {W' : Type*} (f : W → X → Y)
+    (r : W' → W) (w v : W') :
+    parameterSetoid (f ∘ r) w v ↔ parameterSetoid f (r w) (r v) := Iff.rfl
+
+/-- An equivalence of parameter spaces restricts to an equivalence of realization fibres. -/
+def fiberEquiv {W' : Type*} (f : W → X → Y) (e : W' ≃ W) (g : X → Y) :
+    fiber (f ∘ e) g ≃ fiber f g := e.subtypeEquiv fun _ => Iff.rfl
+
+/-- The fibre equivalence acts on parameters by the original parameter equivalence. -/
+@[simp] theorem fiberEquiv_coe {W' : Type*} (f : W → X → Y) (e : W' ≃ W)
+    (g : X → Y) (w : fiber (f ∘ e) g) : (fiberEquiv f e g w : W) = e w := (rfl)
+
+/-- The inverse fibre equivalence acts by the inverse parameter equivalence. -/
+@[simp] theorem fiberEquiv_symm_coe {W' : Type*} (f : W → X → Y) (e : W' ≃ W)
+    (g : X → Y) (w : fiber f g) : ((fiberEquiv f e g).symm w : W') = e.symm w := (rfl)
+
+/-- Restricting the parameters to a subtype realizes exactly the image of that set.
+This formula also applies to the empty parameter set. -/
+theorem realizedFunctions_domRestrict (f : W → X → Y) (s : Set W) :
+    realizedFunctions (s.domRestrict f) = f '' s := Set.range_domRestrict f s
+
+/-- A model with an empty parameter type realizes no functions. -/
+@[simp] theorem realizedFunctions_empty [IsEmpty W] (f : W → X → Y) :
+    realizedFunctions f = ∅ := Set.range_eq_empty f
+
+/-- A model with a unique parameter realizes just the function at that parameter. -/
+theorem realizedFunctions_unique [Unique W] (f : W → X → Y) :
+    realizedFunctions f = {f default} := Set.range_unique
+
+/-- All parameters of a subsingleton parameter type realize the same function. -/
+theorem fiber_eq_univ [Subsingleton W] (f : W → X → Y) (w : W) :
+    fiber f (f w) = Set.univ := by
+  ext v
+  simp [Subsingleton.elim v w]
+
+/-- Postcomposition sends precisely the realized functions to the new neuromanifold. -/
+theorem realizedFunctions_postcomp {Z : Type z} (f : W → X → Y) (h : Y → Z) :
+    realizedFunctions (fun w => h ∘ f w) = (fun g => h ∘ g) '' realizedFunctions f :=
+  Set.range_comp (fun g => h ∘ g) f
+
+/-- An injective output map preserves and reflects parameter equivalence. -/
+theorem parameterSetoid_postcomp_iff {Z : Type z} (f : W → X → Y) {h : Y → Z}
+    (hh : Function.Injective h) (w v : W) :
+    parameterSetoid (fun w => h ∘ f w) w v ↔ parameterSetoid f w v :=
+  hh.comp_left.eq_iff
+
+/-- Precomposition sends precisely the realized functions to the new neuromanifold. -/
+theorem realizedFunctions_precomp {X' : Type*} (f : W → X → Y) (a : X' → X) :
+    realizedFunctions (fun w => f w ∘ a) = (fun g => g ∘ a) '' realizedFunctions f :=
+  Set.range_comp (fun g => g ∘ a) f
+
+/-- A surjective input map preserves and reflects parameter equivalence. -/
+theorem parameterSetoid_precomp_iff {X' : Type*} (f : W → X → Y) {a : X' → X}
+    (ha : Function.Surjective a) (w v : W) :
+    parameterSetoid (fun w => f w ∘ a) w v ↔ parameterSetoid f w v :=
+  ha.injective_comp_right.eq_iff
+
+end TauCeti.Neuromanifold
