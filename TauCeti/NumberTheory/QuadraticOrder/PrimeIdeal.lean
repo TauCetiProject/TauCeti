@@ -96,6 +96,7 @@ private theorem ker_evalRoot (hr : (p : ℤ) ∣ r ^ 2 - b * r - a) :
 /-- **Membership in `(p, ω - r)`.** For a root `r` of `X² - b X - a` modulo `p`, an element
 `x` of `ℤ[ω]` lies in `(p, ω - r)` exactly when `p ∣ x.re + x.im r`, that is, when `x` vanishes
 under `ω ↦ r` modulo `p`. -/
+@[simp]
 theorem mem_span_natCast_omega_sub_iff (hr : (p : ℤ) ∣ r ^ 2 - b * r - a)
     {x : QuadraticAlgebra ℤ a b} :
     x ∈ Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (r : QuadraticAlgebra ℤ a b)} ↔
@@ -106,6 +107,7 @@ theorem mem_span_natCast_omega_sub_iff (hr : (p : ℤ) ∣ r ^ 2 - b * r - a)
 /-- **The norm of `(p, ω - r)` is `p`.** For a root `r` of `X² - b X - a` modulo `p`, the
 residue ring of `(p, ω - r)` is `ℤ/p`, so its `Nat.card` is `p`. For `p ≠ 0` this says that it
 has exactly `p` elements; for `p = 0` the residue ring is `ℤ`, which is infinite. -/
+@[simp]
 theorem card_quotient_span_natCast_omega_sub (hr : (p : ℤ) ∣ r ^ 2 - b * r - a) :
     Nat.card (QuadraticAlgebra ℤ a b ⧸
       Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (r : QuadraticAlgebra ℤ a b)}) = p := by

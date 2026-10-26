@@ -114,6 +114,7 @@ theorem isMaximal_span_natCast_integralSqrt_sub (hr : (p : ℤ) ∣ r ^ 2 - d) :
 omit [Fact p.Prime] in
 include hsf hd4 in
 /-- **The norm of `(p, √d - r)` is `p`.** -/
+@[simp]
 theorem absNorm_span_natCast_integralSqrt_sub (hr : (p : ℤ) ∣ r ^ 2 - d) :
     Ideal.absNorm (Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
       integralSqrt (omega_sq_eq_algebraMap_int (d := d)) - r}) = p := by
@@ -181,6 +182,7 @@ theorem isMaximal_span_natCast_halfGen_sub (hr : (p : ℤ) ∣ r ^ 2 - r - (d - 
 omit [Fact p.Prime] in
 include hsf in
 /-- **The norm of `(p, η - r)` is `p`.** -/
+@[simp]
 theorem absNorm_span_natCast_halfGen_sub (hr : (p : ℤ) ∣ r ^ 2 - r - (d - 1) / 4) :
     Ideal.absNorm (Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
       halfGen minpoly_integralSqrt_omega hd4 - r}) = p := by
