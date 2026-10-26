@@ -36,6 +36,9 @@ compactness nor closedness of `K` carries any measurability with it. (Absent a s
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
 
+Lipschitz postcomposition preserves local integrability on locally closed sets, without a
+condition on the value of the outer map at zero.
+
 An `Lᵖ` function for a locally finite restriction of a measure to a set, with `1 ≤ p`, is locally
 integrable on that set.
 
@@ -300,3 +303,26 @@ theorem ContinuousOn.memLp_restrict_of_subset_isCompact {f : X → E} {K s : Set
     ((ae_restrict_iff' hs).2 (ae_of_all _ fun x hx => hC x (hsK hx)))
 
 end ContinuousOn
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+variable {X A B : Type*} [MeasurableSpace X] [TopologicalSpace X]
+  [LocallyCompactSpace X]
+  [NormedAddCommGroup A] [NormedAddCommGroup B]
+  {μ : Measure X} [IsFiniteMeasureOnCompacts μ] {s : Set X} {u : X → A}
+  {g : A → B} {C : NNReal}
+
+/-- Lipschitz postcomposition preserves local integrability on a locally closed set.
+No condition on the value of the outer map at zero is needed locally. -/
+theorem comp_lipschitz (hu : LocallyIntegrableOn u s μ) (hg : LipschitzWith C g)
+    (hs : IsLocallyClosed s) : LocallyIntegrableOn (g ∘ u) s μ := by
+  rw [locallyIntegrableOn_iff hs] at hu ⊢
+  intro K hKs hK
+  have huK := hu K hKs hK
+  have : IsFiniteMeasure (μ.restrict K) := isFiniteMeasure_restrict.mpr hK.measure_lt_top.ne
+  refine ((huK.norm.const_mul (C : ℝ)).add (integrable_const ‖g 0‖)).mono'
+    (hg.continuous.comp_aestronglyMeasurable huK.aestronglyMeasurable) (.of_forall fun x => ?_)
+  calc ‖g (u x)‖ ≤ ‖g (u x) - g 0‖ + ‖g 0‖ := norm_le_norm_sub_add _ _
+    _ ≤ C * ‖u x‖ + ‖g 0‖ := add_le_add (by simpa using hg.norm_sub_le (u x) 0) le_rfl
+
+end MeasureTheory.LocallyIntegrableOn
