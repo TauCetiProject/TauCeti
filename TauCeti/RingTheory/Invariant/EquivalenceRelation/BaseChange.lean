@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.Basic
-public import TauCeti.RingTheory.IsTensorProduct.EqLocus
 public import TauCeti.RingTheory.IsTensorProduct.Pushout
 
 /-!
