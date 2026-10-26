@@ -60,9 +60,12 @@ theorem const_eq {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 theorem const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x : V)
     (v w : TangentSpace (modelWithCornersSelf ℝ V) x) :
-    SmoothForm.eval₂ (const B) x v w =
+    SmoothBundleForm.eval₂
+      (const B).toSmoothBundleForm x v w =
       B (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
-  rw [const_eq, SmoothForm.eval₂_apply, SmoothForm.const_apply]
+  rw [SmoothBundleForm.eval₂_apply]
+  change (const B).1 x ![v, w] = _
+  rw [const_eq, SmoothForm.const_apply]
   simp only [ContinuousAlternatingMap.smul_apply]
   rw [ContinuousAlternatingMap.alternatizeBilinCLM_apply]
   have hAlt : LinearMap.IsAlt B.toBilinForm := fun z ↦ by
@@ -79,7 +82,9 @@ theorem const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 /-- The model-space evaluation of a constant smooth two-form. -/
 theorem const_model_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x v w : V) :
-    SmoothForm.eval₂ (const B) x ((NormedSpace.fromTangentSpace x).symm v)
+    SmoothBundleForm.eval₂
+      (const B).toSmoothBundleForm x
+      ((NormedSpace.fromTangentSpace x).symm v)
       ((NormedSpace.fromTangentSpace x).symm w) = B v w := by
   simpa only [ContinuousLinearEquiv.apply_symm_apply] using
     (const_apply B hB x ((NormedSpace.fromTangentSpace x).symm v)
