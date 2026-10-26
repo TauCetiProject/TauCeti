@@ -26,6 +26,11 @@ Use `realizedFunctions_def` with Mathlib's `Set.range_comp_subset_range`,
 `Set.range_unique`, and `Set.range_comp` for these range computations.
 Likewise, `fiber_def` exposes the singleton preimage for `Set.preimage_singleton_nonempty`
 and `Set.preimage_comp`.
+For cancellation of output or input composition, first rewrite parameter equivalence with
+`parameterSetoid_iff`. For an injective output map `h` with proof `hh`, use
+`hh.comp_left.eq_iff`; for a surjective input map `a` with proof `ha`, use
+`ha.injective_comp_right.eq_iff`. These use the public characterization, so they also apply
+from modules importing this one.
 
 The definitions follow Marchetti–Shahverdi–Mereta–Trager–Kohn,
 *Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,
@@ -149,17 +154,5 @@ theorem fiber_eq_univ [Subsingleton W] (f : W → X → Y) (w : W) :
     fiber f (f w) = Set.univ := by
   ext v
   simp [Subsingleton.elim v w]
-
-/-- An injective output map preserves and reflects parameter equivalence. -/
-theorem parameterSetoid_postcomp_iff {Z : Type z} (f : W → X → Y) {h : Y → Z}
-    (hh : Function.Injective h) (w v : W) :
-    parameterSetoid (fun w => h ∘ f w) w v ↔ parameterSetoid f w v :=
-  hh.comp_left.eq_iff
-
-/-- A surjective input map preserves and reflects parameter equivalence. -/
-theorem parameterSetoid_precomp_iff {X' : Type*} (f : W → X → Y) {a : X' → X}
-    (ha : Function.Surjective a) (w v : W) :
-    parameterSetoid (fun w => f w ∘ a) w v ↔ parameterSetoid f w v :=
-  ha.injective_comp_right.eq_iff
 
 end TauCeti.Neuromanifold
