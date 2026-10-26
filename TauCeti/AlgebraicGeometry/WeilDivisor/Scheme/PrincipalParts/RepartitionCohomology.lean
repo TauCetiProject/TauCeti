@@ -169,6 +169,16 @@ lemma repartitionToCohomologyOne_apply (D : SchemeWeilDivisor X)
   by
     rw [repartitionToCohomologyOne, LinearMap.comp_apply]
 
+/-- The actual map on first sheaf cohomology induced by `𝒪(D) ⟶ 𝒪(E)` preserves the
+repartition representing a class. -/
+lemma repartitionToCohomologyOne_naturality {D E : SchemeWeilDivisor X} (h : D ≤ E)
+    (a : repartitionSpace k X.functionField) :
+    Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE h) 1
+        (repartitionToCohomologyOne hex hdim D a) =
+      repartitionToCohomologyOne hex hdim E a := by
+  rw [repartitionToCohomologyOne_apply, repartitionToCohomologyOne_apply,
+    principalPartsBoundary_naturality, repartitionToPrincipalParts_naturality]
+
 /-- Every first cohomology class is represented by a repartition. -/
 theorem repartitionToCohomologyOne_surjective (D : SchemeWeilDivisor X) :
     Function.Surjective (repartitionToCohomologyOne hex hdim D) :=
