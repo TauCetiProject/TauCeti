@@ -17,7 +17,7 @@ continuity of the additive map is not required.
 
 The decomposition uses Mathlib's `SmoothPartitionOfUnity.exists_isSubordinate`, applied to the
 compact support. This is the partition-of-unity localization of distributions described in
-Hörmander, *The Analysis of Linear Partial Differential Operators I*, §2.1.
+Hörmander, *The Analysis of Linear Partial Differential Operators I*, §2.2 (Localization).
 -/
 
 public section
@@ -56,7 +56,7 @@ theorem exists_sum_subordinate (φ : 𝓓^{n}(Ω, F)) {ι : Type*} (U : ι → S
   by_cases hx : x ∈ tsupport φ
   · have hsum : ∑ i : s, ρ i x = 1 := by
       simpa only [finsum_eq_sum_of_fintype] using ρ.sum_eq_one hx
-    exact (Finset.sum_smul ..).symm.trans (by rw [hsum, one_smul])
+    simp only [ψ, coe_mk, ← Finset.sum_smul, hsum, one_smul]
   · simp [ψ, image_eq_zero_of_notMem_tsupport hx]
 
 end TestFunction

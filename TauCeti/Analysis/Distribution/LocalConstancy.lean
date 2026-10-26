@@ -24,8 +24,8 @@ constancy proofs: establishing the local constant formulas is a separate analyti
 
 ## References
 
-* Hörmander, *The Analysis of Linear Partial Differential Operators I*, §2.1: localization of
-  distributions by partitions of unity.
+* Hörmander, *The Analysis of Linear Partial Differential Operators I*, §2.2 (Localization),
+  Theorem 2.2.4: piecing together compatible local distributions.
 -/
 
 public section
