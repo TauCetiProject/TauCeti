@@ -107,11 +107,11 @@ theorem isClosed_range_pow (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
 
 /-- The spectral operator `1 - a • u` as a continuous linear automorphism of the
 complementary summand `ker E`, identified with every stabilised range by `range_pow_eq_ker`.
-Its inverse is the restriction of the witness supplied by `IsRieszProjection.exists_inverse`. -/
+Its inverse is the restriction of the complementary inverse `IsRieszProjection.inverse`. -/
 noncomputable def equivKer (hE : IsRieszProjection u a h E) : E.ker ≃L[R] E.ker :=
   ContinuousLinearEquiv.equivOfInverse
     ((1 - a • u).restrict (fun _ hx ↦ hE.mapsTo_ker_one_sub_smul hx))
-    (hE.exists_inverse.choose.restrict (fun _ hx ↦ hE.mapsTo_ker_inverse hx))
+    (hE.inverse.restrict (fun _ hx ↦ hE.mapsTo_ker_inverse hx))
     (fun x ↦ Subtype.ext (hE.inverse_one_sub_smul_apply x.property))
     (fun x ↦ Subtype.ext (hE.one_sub_smul_apply_inverse x.property))
 
@@ -121,10 +121,16 @@ theorem coe_equivKer_apply (hE : IsRieszProjection u a h E) (x : E.ker) :
     (hE.equivKer x : C₀(I, R)) = (1 - a • u) x :=
   (rfl)
 
-/-- The inverse complementary automorphism acts by the chosen complementary inverse. -/
-theorem coe_equivKer_symm_apply (hE : IsRieszProjection u a h E) (x : E.ker) :
-    (hE.equivKer.symm x : C₀(I, R)) = hE.exists_inverse.choose x :=
-  (rfl)
+/-- The inverse complementary automorphism acts by any operator `w` with
+`(1 - a • u) * w = 1 - E` and `E * w = 0`, for instance by `IsRieszProjection.inverse`. -/
+theorem coe_equivKer_symm_apply (hE : IsRieszProjection u a h E)
+    {w : C₀(I, R) →L[R] C₀(I, R)} (hw : (1 - a • u) * w = 1 - E) (hEw : E * w = 0)
+    (x : E.ker) : (hE.equivKer.symm x : C₀(I, R)) = w x := by
+  have hx : E x = 0 := LinearMap.mem_ker.mp x.property
+  have hwx : w x ∈ E.ker := LinearMap.mem_ker.mpr congr($hEw x)
+  rw [hE.equivKer.symm_apply_eq.mpr (Subtype.ext ?_ : x = hE.equivKer ⟨w x, hwx⟩)]
+  simpa only [coe_equivKer_apply, mul_apply_eq_comp, sub_apply, one_apply_eq_self, hx,
+    sub_zero] using congr($hw x).symm
 
 variable [DiscreteTopology I] [DecidableEq I] [IsUltrametricDist R]
 

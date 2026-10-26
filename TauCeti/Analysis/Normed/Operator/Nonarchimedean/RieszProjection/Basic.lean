@@ -46,6 +46,8 @@ nilpotents and need not be Noetherian; over a ring the range need not be free.
 
 * `ContinuousLinearMap.IsRieszProjection`: the finite spectral projector of `u` at `a` of order
   `h`.
+* `ContinuousLinearMap.IsRieszProjection.inverse`: the inverse of `C` on the complementary
+  summand, extended by zero.
 * `ContinuousLinearMap.rieszProjection`: the explicit projector `1 - (C b) ^ h`.
 
 ## Main results
@@ -148,31 +150,65 @@ theorem mapsTo_range_one_sub_smul (hE : IsRieszProjection u a h E) :
   simpa only [sub_apply, one_apply_eq_self, smul_apply, SetLike.mem_coe] using
     E.range.sub_mem hx (E.range.smul_mem a (hE.mapsTo_range hx))
 
+/-- The **complementary inverse** of a Riesz projection: the inverse of `1 - a • u` on the
+complementary summand `range (1 - E)`, extended by zero on `range E`, chosen from
+`IsRieszProjection.exists_inverse`. -/
+noncomputable def inverse (hE : IsRieszProjection u a h E) : C₀(I, R) →L[R] C₀(I, R) :=
+  hE.exists_inverse.choose
+
+/-- The complementary inverse is a right inverse of `1 - a • u` up to `1 - E`. -/
+theorem one_sub_smul_mul_inverse (hE : IsRieszProjection u a h E) :
+    (1 - a • u) * hE.inverse = 1 - E := by
+  obtain ⟨hw, -, -, -, -⟩ := hE.exists_inverse.choose_spec
+  exact hw
+
+/-- The complementary inverse is a left inverse of `1 - a • u` up to `1 - E`. -/
+theorem inverse_mul_one_sub_smul (hE : IsRieszProjection u a h E) :
+    hE.inverse * (1 - a • u) = 1 - E := by
+  obtain ⟨-, hw, -, -, -⟩ := hE.exists_inverse.choose_spec
+  exact hw
+
+/-- The complementary inverse takes values in the kernel of the Riesz projection. -/
+theorem mul_inverse_eq_zero (hE : IsRieszProjection u a h E) : E * hE.inverse = 0 := by
+  obtain ⟨-, -, hw, -, -⟩ := hE.exists_inverse.choose_spec
+  exact hw
+
+/-- The complementary inverse vanishes on the range of the Riesz projection. -/
+theorem inverse_mul_eq_zero (hE : IsRieszProjection u a h E) : hE.inverse * E = 0 := by
+  obtain ⟨-, -, -, hw, -⟩ := hE.exists_inverse.choose_spec
+  exact hw
+
+/-- The complementary inverse is an operator-norm limit of polynomials in the operator. -/
+theorem inverse_mem_closure_adjoin (hE : IsRieszProjection u a h E) :
+    hE.inverse ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
+  obtain ⟨-, -, -, -, hw⟩ := hE.exists_inverse.choose_spec
+  exact hw
+
 /-- The complementary inverse preserves the kernel of the Riesz projection. -/
 theorem mapsTo_ker_inverse (hE : IsRieszProjection u a h E) :
-    Set.MapsTo hE.exists_inverse.choose E.ker E.ker := by
+    Set.MapsTo hE.inverse E.ker E.ker := by
   intro x _
   apply LinearMap.mem_ker.mpr
   simpa only [coe_coe, mul_apply_eq_comp, zero_apply] using
-    congr($(hE.exists_inverse.choose_spec.2.2.1) x)
+    congr($(hE.mul_inverse_eq_zero) x)
 
 /-- On the complementary summand, the complementary inverse is a left inverse of the
 spectral operator. -/
 theorem inverse_one_sub_smul_apply (hE : IsRieszProjection u a h E)
     {x : C₀(I, R)} (hx : x ∈ E.ker) :
-    hE.exists_inverse.choose ((1 - a • u) x) = x := by
+    hE.inverse ((1 - a • u) x) = x := by
   have hx' : E x = 0 := LinearMap.mem_ker.mp hx
   simpa only [mul_apply_eq_comp, sub_apply, one_apply_eq_self, hx', sub_zero] using
-    congr($(hE.exists_inverse.choose_spec.2.1) x)
+    congr($(hE.inverse_mul_one_sub_smul) x)
 
 /-- On the complementary summand, the complementary inverse is a right inverse of the
 spectral operator. -/
 theorem one_sub_smul_apply_inverse (hE : IsRieszProjection u a h E)
     {x : C₀(I, R)} (hx : x ∈ E.ker) :
-    (1 - a • u) (hE.exists_inverse.choose x) = x := by
+    (1 - a • u) (hE.inverse x) = x := by
   have hx' : E x = 0 := LinearMap.mem_ker.mp hx
   simpa only [mul_apply_eq_comp, sub_apply, one_apply_eq_self, hx', sub_zero] using
-    congr($(hE.exists_inverse.choose_spec.1) x)
+    congr($(hE.one_sub_smul_mul_inverse) x)
 
 /-- **The range of a Riesz projection is the generalised eigenspace** `ker (1 - a • u) ^ h`. -/
 theorem range_eq_ker (hE : IsRieszProjection u a h E) :
