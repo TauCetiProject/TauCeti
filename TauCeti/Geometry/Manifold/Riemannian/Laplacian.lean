@@ -16,6 +16,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
@@ -649,11 +650,38 @@ theorem hessian_eq_iteratedFDeriv_model_space
         _ = _ := (iteratedFDeriv_two_apply f x
           ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w]).symm
 
+private noncomputable def tangentSpaceToModelLinearIsometryEquiv
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] (x : F) :
+    TangentSpace 𝓘(ℝ, F) x ≃ₗᵢ[ℝ] F :=
+  (NormedSpace.fromTangentSpace x).toLinearEquiv.isometryOfInner
+    (fun v w : TangentSpace 𝓘(ℝ, F) x ↦ by
+      simpa using (inner_tangentSpace_vectorSpace v w).symm)
+
+private theorem tangentSpaceToModelLinearIsometryEquiv_apply
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] (x : F)
+    (v : TangentSpace 𝓘(ℝ, F) x) :
+    tangentSpaceToModelLinearIsometryEquiv x v = NormedSpace.fromTangentSpace x v := by
+  change (tangentSpaceToModelLinearIsometryEquiv x).toLinearEquiv v = _
+  rw [show (tangentSpaceToModelLinearIsometryEquiv x).toLinearEquiv =
+      (NormedSpace.fromTangentSpace x).toLinearEquiv by
+    exact LinearEquiv.isometryOfInner_toLinearEquiv _ _]
+  simp only [ContinuousLinearEquiv.coe_toLinearEquiv]
+
+private theorem tangentSpaceToModelLinearIsometryEquiv_symm_apply
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] (x : F) (u : F) :
+    (tangentSpaceToModelLinearIsometryEquiv x).symm u =
+      (NormedSpace.fromTangentSpace x).symm u := by
+  change (tangentSpaceToModelLinearIsometryEquiv x).toLinearEquiv.symm u = _
+  rw [show (tangentSpaceToModelLinearIsometryEquiv x).toLinearEquiv =
+      (NormedSpace.fromTangentSpace x).toLinearEquiv by
+    exact LinearEquiv.isometryOfInner_toLinearEquiv _ _]
+  exact (NormedSpace.fromTangentSpace x).symm_apply_apply u
+
 private def tangentSpaceStdOrthonormalBasis
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
     [FiniteDimensional ℝ F] (x : F) :
     OrthonormalBasis (Fin (Module.finrank ℝ F)) ℝ (TangentSpace (modelWithCornersSelf ℝ F) x) :=
-  (stdOrthonormalBasis ℝ F).map (tangentSpaceToModelIsometry x).symm
+  (stdOrthonormalBasis ℝ F).map (tangentSpaceToModelLinearIsometryEquiv x).symm
 
 private theorem fromTangentSpace_tangentSpaceStdOrthonormalBasis_apply
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -661,7 +689,7 @@ private theorem fromTangentSpace_tangentSpaceStdOrthonormalBasis_apply
     NormedSpace.fromTangentSpace x (tangentSpaceStdOrthonormalBasis x i) =
       stdOrthonormalBasis ℝ F i := by
   rw [tangentSpaceStdOrthonormalBasis, OrthonormalBasis.map_apply,
-    tangentSpaceToModelIsometry_symm_apply]
+    tangentSpaceToModelLinearIsometryEquiv_symm_apply]
   exact (NormedSpace.fromTangentSpace x).apply_symm_apply _
 
 /-- The Laplace–Beltrami operator of the standard Riemannian metric is Mathlib's flat Laplacian.
@@ -680,7 +708,10 @@ theorem laplaceBeltrami_eq_laplacian
 
 /-! ### The squared norm -/
 
-/-- The flat Riemannian Hessian of the squared norm is twice the inner product. -/
+/-- The flat Riemannian Hessian of the squared norm is twice the inner product.
+
+This follows `TauCeti.fderiv_fderiv_norm_sq_apply` through
+`hessian_eq_iteratedFDeriv_model_space`. -/
 @[simp]
 theorem hessian_norm_sq_model_space
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -700,9 +731,10 @@ theorem hessian_norm_sq_model_space
     [FiniteDimensional ℝ F] (x : F) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x =
       2 * Module.finrank ℝ F := by
-  rw [laplaceBeltrami_eq_laplacian]
-  · exact TauCeti.laplacian_norm_sq x
-  · exact (((contDiff_norm_sq ℝ (E := F) (n := 2)).gradient_right (m := 1)
-      (by norm_num)).differentiable (by norm_num)) x
+  rw [laplaceBeltrami_eq_sum_hessian (modelWithCornersSelf ℝ F) _ x
+    (tangentSpaceStdOrthonormalBasis x)]
+  simp only [hessian_norm_sq_model_space,
+    fromTangentSpace_tangentSpaceStdOrthonormalBasis_apply]
+  rw [← Finset.mul_sum, (stdOrthonormalBasis ℝ F).sum_inner_self, Fintype.card_fin]
 
 end TauCeti.Manifold

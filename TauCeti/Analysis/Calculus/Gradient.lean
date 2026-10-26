@@ -173,16 +173,22 @@ theorem gradient_norm_sq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace �
     [CompleteSpace E] (y : E) : ∇ (fun y : E => ‖y‖ ^ 2) y = (2 : ℝ) • y := by
   simpa using gradient_mul_norm_sq_add (E := E) 2 0 y
 
+/-- Over `ℝ`, the gradient of a quadratic norm expression is differentiable. -/
+@[fun_prop]
+theorem differentiable_gradient_mul_norm_sq_add {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] (a c : ℝ) :
+    Differentiable ℝ (∇ fun y : E => a / 2 * ‖y‖ ^ 2 + c) := by
+  rw [show (∇ fun y : E => a / 2 * ‖y‖ ^ 2 + c) = fun y => a • y by
+    funext y
+    exact gradient_mul_norm_sq_add a c y]
+  fun_prop
+
 /-- Over `ℝ`, the gradient of the squared norm is differentiable. -/
+@[fun_prop]
 theorem differentiable_gradient_norm_sq {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] [CompleteSpace E] :
   Differentiable ℝ (∇ fun y : E => ‖y‖ ^ 2) := by
-  -- `fun_prop` needs the gradient rewritten as a function; the pointwise simp theorem
-  -- cannot rewrite under this function-valued goal without first exposing that equality.
-  rw [show (∇ fun y : E => ‖y‖ ^ 2) = fun y => (2 : ℝ) • y by
-    funext y
-    exact gradient_norm_sq y]
-  fun_prop
+  simpa using differentiable_gradient_mul_norm_sq_add (E := E) 2 0
 
 /-- **The Hessian is symmetric.** If a real function `f` is differentiable near `x` and its
 gradient has derivative `H` at `x`, then `H` is a symmetric operator:
