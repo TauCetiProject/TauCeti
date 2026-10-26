@@ -298,6 +298,13 @@ theorem restrictedRescaleExpand_X (i : σ) :
         (⟨X i, isRestricted_X r i⟩ : IsRestricted.subring (R := R) r) ^ p := by
   simp [restrictedRescaleExpand]
 
+/-- The map `restrictedRescaleExpand` is injective. -/
+theorem restrictedRescaleExpand_injective :
+    Function.Injective (restrictedRescaleExpand (R := R) p hp u hu hr) := by
+  simpa only [restrictedRescaleExpand, AlgHom.coe_comp, AlgEquiv.coe_toAlgHom] using
+    (restrictedExpand_injective (r := r) p hp fun _ ↦ rfl).comp
+      (restrictedRescaleEquiv u hu hr).injective
+
 variable [∀ i, Fact (0 < r i)]
 
 /-- The polyradii `r ^ p` are positive. -/
@@ -315,11 +322,6 @@ theorem norm_restrictedRescaleExpand
 theorem isometry_restrictedRescaleExpand :
     Isometry (restrictedRescaleExpand (R := R) p hp u hu hr) :=
   AddMonoidHomClass.isometry_iff_norm _ |>.mpr (norm_restrictedRescaleExpand p hp u hu hr)
-
-/-- The map `restrictedRescaleExpand` is injective. -/
-theorem restrictedRescaleExpand_injective :
-    Function.Injective (restrictedRescaleExpand (R := R) p hp u hu hr) :=
-  (isometry_restrictedRescaleExpand p hp u hu hr).injective
 
 /-- **The restricted series at `r` are finite over the unit Tate algebra** through
 `Y i ↦ u i * X i ^ p`, in finitely many variables. -/
