@@ -50,7 +50,7 @@ noncomputable def riemannianVolumeForm (o : Manifold.Orientation I M (Fin m)) :
   (Manifold.Orientation.orientationAt o x).volumeFormL
 
 /-- Unfolding the Riemannian volume form at a point exposes its oriented fibre form. -/
-theorem riemannianVolumeForm_eq
+theorem riemannianVolumeForm_def
     (o : Manifold.Orientation I M (Fin m)) (x : M) :
     riemannianVolumeForm o x =
       (letI := o.fact_finrank_tangentSpace x
@@ -75,8 +75,8 @@ theorem riemannianVolumeForm_apply_orthonormal
     (hb : b.toBasis.orientation = Manifold.Orientation.orientationAt o x) :
     riemannianVolumeForm o x b = 1 := by
   let := o.fact_finrank_tangentSpace x
-  rw [riemannianVolumeForm_eq]
-  exact Orientation.volumeFormL_robust _ b hb
+  rw [riemannianVolumeForm_def]
+  exact Orientation.volumeFormL_apply_orthonormal _ b hb
 
 /-- The Riemannian volume form has absolute value one on every orthonormal basis. -/
 theorem abs_riemannianVolumeForm_apply_orthonormal
@@ -84,7 +84,7 @@ theorem abs_riemannianVolumeForm_apply_orthonormal
     (b : OrthonormalBasis (Fin m) ℝ (TangentSpace I x)) :
     |riemannianVolumeForm o x b| = 1 := by
   let := o.fact_finrank_tangentSpace x
-  rw [riemannianVolumeForm_eq]
+  rw [riemannianVolumeForm_def]
   rw [Orientation.volumeFormL_apply]
   exact (Manifold.Orientation.orientationAt o x).abs_volumeForm_apply_of_orthonormal b
 
@@ -95,7 +95,7 @@ theorem riemannianVolumeForm_apply_orthonormal_of_opposite
     (hb : b.toBasis.orientation ≠ Manifold.Orientation.orientationAt o x) :
     riemannianVolumeForm o x b = -1 := by
   let := o.fact_finrank_tangentSpace x
-  rw [riemannianVolumeForm_eq]
+  rw [riemannianVolumeForm_def]
   rw [Orientation.volumeFormL_apply]
   rw [(Manifold.Orientation.orientationAt o x).volumeForm_robust_neg b hb, neg_apply]
   simpa only [OrthonormalBasis.coe_toBasis] using congrArg Neg.neg b.toBasis.det_self
@@ -109,7 +109,7 @@ theorem eq_riemannianVolumeForm_of_apply_orthonormal
     (hω : ω b = 1) :
     ω = riemannianVolumeForm o x := by
   let := o.fact_finrank_tangentSpace x
-  rw [riemannianVolumeForm_eq]
+  rw [riemannianVolumeForm_def]
   exact Orientation.eq_volumeFormL_of_apply_orthonormal _ ω b hb hω
 
 end TauCeti

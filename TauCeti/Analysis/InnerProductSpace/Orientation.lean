@@ -36,7 +36,7 @@ theorem volumeFormL_apply (o : Orientation ℝ E (Fin n)) (v : Fin n → E) :
     o.volumeFormL v = o.volumeForm v := (rfl)
 
 /-- `volumeFormL` evaluates to one on a positively oriented orthonormal basis. -/
-theorem volumeFormL_robust (o : Orientation ℝ E (Fin n))
+theorem volumeFormL_apply_orthonormal (o : Orientation ℝ E (Fin n))
     (b : OrthonormalBasis (Fin n) ℝ E) (hb : b.toBasis.orientation = o) :
     o.volumeFormL b = 1 := by
   rw [volumeFormL_apply, o.volumeForm_robust b hb]
