@@ -651,8 +651,9 @@ theorem hessian_eq_iteratedFDeriv_model_space
         _ = _ := (iteratedFDeriv_two_apply f x
           ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w]).symm
 
-/-- The Laplace–Beltrami operator of the standard Riemannian metric is Mathlib's flat Laplacian.
-This fixes the sign convention as `Δ = div ∘ grad`. -/
+/-- At a point `x` where `∇ f` is differentiable, the Laplace–Beltrami operator of the standard
+Riemannian metric equals Mathlib's flat Laplacian `Δ f`. This fixes the sign convention as
+`Δ = div ∘ grad`. -/
 theorem laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
     {f : F → ℝ} {x : F} (hgrad : DifferentiableAt ℝ (∇ f) x) :
