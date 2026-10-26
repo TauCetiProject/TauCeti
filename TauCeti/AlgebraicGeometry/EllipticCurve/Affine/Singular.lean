@@ -12,6 +12,8 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 import Mathlib.Algebra.CharP.Two
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
+-- Proof-only: factorization of the equation in coordinates centered at a singular point.
+import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
@@ -168,10 +170,13 @@ theorem equation_iff_mul_eq_cube_of_isSingular (h : W.IsSingular x₁ y₁) {α 
     (hα : α ^ 2 + W.a₁ * α - (3 * x₁ + W.a₂) = 0) (x y : R) :
     W.Equation x y ↔ (y - y₁ - α * (x - x₁)) *
       (y - y₁ + (W.a₁ + α) * (x - x₁)) = (x - x₁) ^ 3 := by
+  -- The expansion at the singular point has vanishing constant and linear coefficients.
+  let V : Affine R := ⟨W.a₁, 3 * x₁ + W.a₂, 0, 0, 0⟩
+  have h₁ : V.a₁ = -(α + -(W.a₁ + α)) := by dsimp [V]; ring
+  have h₂ : V.a₂ = -(α * -(W.a₁ + α)) := by dsimp [V]; linear_combination -hα
+  have hV := V.equation_iff_mul h₁ h₂ rfl rfl (x - x₁) (y - y₁)
   rw [equation_iff_of_isSingular h]
-  constructor <;> intro hE
-  · linear_combination hE - (x - x₁) ^ 2 * hα
-  · linear_combination hE + (x - x₁) ^ 2 * hα
+  simpa only [equation_iff, V, zero_mul, add_zero, neg_mul, sub_neg_eq_add] using hV
 
 /-- If `α` is a double root of the tangent quadratic at a singular point `(x₁, y₁)`, the equation
 reads `(y - y₁ - α (x - x₁))² = (x - x₁)³`. -/
