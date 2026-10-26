@@ -42,6 +42,7 @@ variable {K : Type u} [CommRing K] [Invertible (2 : K)]
 
 /-- The Fock action carries the normalized Clifford bivector bracket on a vector generator to the
 commutator of the corresponding creation, contraction, and parity operators. -/
+@[simp, grind =]
 theorem spinAction_bivector_lie_ι (P : SpinPolarizationData Q) (a b x : V) :
     ⁅spinAction Q P (bivector Q a b), spinAction Q P (ι Q x)⁆ =
       spinAction Q P (ι Q (polar Q b x • a - polar Q a x • b)) := by
