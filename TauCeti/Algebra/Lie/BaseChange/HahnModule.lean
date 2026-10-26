@@ -61,14 +61,11 @@ def tensorProductLieHom : HahnSeries Γ R ⊗[R] L →ₗ⁅HahnSeries Γ R⁆ H
   map_lie' {z w} := by
     simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom]
     induction z using TensorProduct.inductionOn with
-    | add z z' hz hz' => rw [add_lie, map_add, hz, hz', map_add, add_lie]
+    | add z z' hz hz' => simp [hz, hz']
     | tmul f x =>
       induction w using TensorProduct.inductionOn with
-      | add w w' hw hw' => rw [lie_add, map_add, hw, hw', map_add, lie_add]
-      | tmul g y =>
-        rw [LieAlgebra.ExtendScalars.bracket_tmul, tensorProductToHahnModule_tmul,
-          tensorProductToHahnModule_tmul, tensorProductToHahnModule_tmul, smul_lie, lie_smul,
-          single_lie_single, zero_add, mul_smul]
+      | add w w' hw hw' => simp [hw, hw']
+      | tmul g y => simp [single_lie_single, mul_smul, smul_comm f g]
 
 /-- The Lie algebra morphism is the scalar-extension map. -/
 @[simp]
