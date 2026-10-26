@@ -473,8 +473,14 @@ lemma monomialGroup_mul_comm_or_neg
       · apply TauCeti.CommuteOrNeg.of_semiconjBy
         apply Units.ext
         simpa [hx, hy] using ι_mul_ι_comm_of_isOrtho (hv i j hij)
-  have hc : (c : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := c.property
-  have hu : (u : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := u.property
+  have hmonomial : monomialGroup Q v = Subgroup.closure S := by
+    simpa only [S] using (monomialGroup_def (Q := Q) v)
+  have hc : (c : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := by
+    rw [← hmonomial]
+    exact c.property
+  have hu : (u : (CliffordAlgebra Q)ˣ) ∈ Subgroup.closure S := by
+    rw [← hmonomial]
+    exact u.property
   exact TauCeti.CommuteOrNeg.of_mem_closure hgen hc hu
 
 omit [Invertible (2 : R)] [LinearOrder I] in
