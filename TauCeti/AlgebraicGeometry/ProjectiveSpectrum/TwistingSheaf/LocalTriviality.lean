@@ -66,8 +66,23 @@ theorem res_chartGenerator {V : (Proj 𝒜).Opens} (i : V ⟶ U) :
       chartGenerator n f hf V (i.le.trans hU) :=
   (rfl)
 
+/-- Multiplication of standard basis sections adds their degrees. -/
+@[simp↓]
+theorem mul_chartGenerator_apply (m : ℤ) (x : U) :
+    (mul 𝒜 U m n (chartGenerator m f hf U hU) (chartGenerator n f hf U hU)).1 x =
+      (chartGenerator (m + n) f hf U hU).1 x := by
+  let := x.1.isPrime
+  simp only [mul_apply, chartGenerator_apply, Localization.mk_mul]
+  apply Localization.mk_eq_mk_iff.mpr
+  apply Localization.r_of_eq
+  change f ^ (-(m + n)).toNat * (f ^ m.toNat * f ^ n.toNat) =
+    (f ^ (-m).toNat * f ^ (-n).toNat) * f ^ (m + n).toNat
+  simp only [← pow_add]
+  congr 1
+  omega
+
 /-- The standard basis sections in opposite degrees multiply to one in each localization. -/
-theorem chartGenerator_mul_neg_apply (x : U) :
+theorem chartGenerator_apply_mul_chartGenerator_neg_apply (x : U) :
     (chartGenerator n f hf U hU).1 x * (chartGenerator (-n) f hf U hU).1 x = 1 := by
   let := x.1.isPrime
   simp only [chartGenerator_apply, neg_neg]
@@ -105,21 +120,15 @@ def chartSectionsLinearEquiv :
   map_add' a b := add_smul a b _
   map_smul' a b := mul_smul a b _
   invFun s := (sectionsLinearEquivTwistingSheafZero 𝒜 U).symm (chartInverse n f hf U hU s)
-  left_inv a := Subtype.ext <| funext fun x ↦ HomogeneousLocalization.val_injective _ <|
-    (sectionsLinearEquivTwistingSheafZero_symm_apply_val U _ x).trans <|
-      (chartInverse_apply n f hf U hU _ x).trans <|
-        (congrArg (· * (chartGenerator (-n) f hf U hU).1 x)
-          (smul_apply a (chartGenerator n f hf U hU) x)).trans <|
-            (mul_assoc _ _ _).trans <|
-              (congrArg ((a.1 x).val * ·)
-                (chartGenerator_mul_neg_apply n f hf U hU x)).trans (mul_one _)
-  right_inv s := ext fun x ↦ (smul_apply _ _ x).trans <|
-    (congrArg (· * (chartGenerator n f hf U hU).1 x)
-      ((sectionsLinearEquivTwistingSheafZero_symm_apply_val U _ x).trans
-        (chartInverse_apply n f hf U hU s x))).trans <|
-          (mul_assoc _ _ _).trans <|
-            (congrArg (s.1 x * ·)
-              ((mul_comm _ _).trans (chartGenerator_mul_neg_apply n f hf U hU x))).trans (mul_one _)
+  left_inv a := Subtype.ext <| funext fun x ↦ HomogeneousLocalization.val_injective _ <| by
+    simp only [sectionsLinearEquivTwistingSheafZero_symm_apply_val U _ x,
+      chartInverse_apply n f hf U hU _ x, smul_apply a _ x,
+      mul_assoc, chartGenerator_apply_mul_chartGenerator_neg_apply n f hf U hU x, mul_one]
+  right_inv s := ext fun x ↦ by
+    simp only [smul_apply _ _ x, sectionsLinearEquivTwistingSheafZero_symm_apply_val U _ x,
+      chartInverse_apply n f hf U hU s x, mul_assoc,
+      mul_comm ((chartGenerator (-n) f hf U hU).1 x),
+      chartGenerator_apply_mul_chartGenerator_neg_apply n f hf U hU x, mul_one]
 
 /-- In standard chart coordinates the forward map multiplies by the basis section. -/
 theorem chartSectionsLinearEquiv_apply (a : Γ(Proj 𝒜, U)) :
