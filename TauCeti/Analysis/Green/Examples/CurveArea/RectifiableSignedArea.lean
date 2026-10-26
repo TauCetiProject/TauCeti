@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Green.Examples.CurveArea.Basic
 public import TauCeti.Analysis.Green.Examples.CurveArea.SignedArea
 public import TauCeti.MeasureTheory.Integral.CurveIntegral.Rectifiable
 

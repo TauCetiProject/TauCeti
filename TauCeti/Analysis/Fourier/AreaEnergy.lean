@@ -46,10 +46,13 @@ exactly for constant curves and circles traversed once
 (`HasConstantSpeedOnWith.eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff`).
 
 Passing to the natural parameterization gives the isoperimetric inequality
-`4π |rectifiableSignedArea γ a b| ≤ L²` for every continuous closed plane curve, where `L` is its
-total variation and `TauCeti.rectifiableSignedArea` is the geometric signed area
+`4π |rectifiableSignedArea γ a b| ≤ L²` for every continuous closed plane curve, where
+`L = (eVariationOn γ (Icc a b)).toReal` is its total variation and
+`TauCeti.rectifiableSignedArea` is the geometric signed area
 (`TauCeti.four_pi_mul_abs_rectifiableSignedArea_le`). No absolute continuity of the parameter is
-assumed. Equality holds exactly when the curve traverses a circle once, uniformly in arclength,
+assumed. For a curve of infinite variation both sides are zero by convention, so the inequality
+has content only for curves of bounded variation. For a continuous closed curve of bounded
+variation, equality holds exactly when the curve traverses a circle once, uniformly in arclength,
 or is constant (`TauCeti.eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_iff`).
 
 The proof is Fourier-analytic and works directly at absolutely continuous regularity. Writing
