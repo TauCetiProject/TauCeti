@@ -55,6 +55,33 @@ universe v u
 variable {C : Type u} [Category.{v} C]
 
 
+/-- If `i` is a retract of the image of `a : A ⟶ B`, a morphism `h` out of the source of `i`, read
+through the retraction and the splitting of its target `P'`, is a morphism `k : A ⟶ P'.X` of `C`.
+The span `(i, h)` is then a retract of the span `(a, k)` under `toKaroubi`. -/
+private theorem exists_span_retract {P Q P' : Karoubi C} {i : P ⟶ Q} {A B : C} {a : A ⟶ B}
+    (r : RetractArrow i ((toKaroubi C).map a)) (h : P ⟶ P') :
+    ∃ k : A ⟶ P'.X, h ≫ Karoubi.decompId_i P' = r.i.left ≫ (toKaroubi C).map k ∧
+      (toKaroubi C).map k ≫ Karoubi.decompId_p P' = r.r.left ≫ h := by
+  have hk : (toKaroubi C).map (r.r.left ≫ h ≫ Karoubi.decompId_i P').f =
+      r.r.left ≫ h ≫ Karoubi.decompId_i P' := by
+    ext
+    simp
+  refine ⟨_, by rw [hk]; simp, ?_⟩
+  rw [hk, Category.assoc, Category.assoc, ← Karoubi.decompId, Category.comp_id]
+
+/-- The dual of `exists_span_retract`: the cospan `(p, h)` is a retract of the cospan `(d, k)`
+under `toKaroubi`. -/
+private theorem exists_cospan_retract {Q P P' : Karoubi C} {p : Q ⟶ P} {B D : C} {d : B ⟶ D}
+    (r : RetractArrow p ((toKaroubi C).map d)) (h : P' ⟶ P) :
+    ∃ k : P'.X ⟶ D, Karoubi.decompId_i P' ≫ (toKaroubi C).map k = h ≫ r.i.right ∧
+      Karoubi.decompId_p P' ≫ h = (toKaroubi C).map k ≫ r.r.right := by
+  have hk : (toKaroubi C).map (Karoubi.decompId_p P' ≫ h ≫ r.i.right).f =
+      Karoubi.decompId_p P' ≫ h ≫ r.i.right := by
+    ext
+    simp
+  refine ⟨_, ?_, by rw [hk]; simp⟩
+  rw [hk, ← Category.assoc, ← Karoubi.decompId, Category.id_comp]
+
 variable [Preadditive C]
 
 namespace IsKernelCokernelPair
@@ -161,15 +188,7 @@ private theorem karoubiConflations_isInflation_iff {P Q : Karoubi C} (f : P ⟶ 
   constructor
   · intro hf
     obtain ⟨_, _, _, T, hT, ⟨e⟩⟩ := (ConflationClass.isInflation_iff _ f).mp hf
-    refine ⟨_, _, T.f, E.isInflation_f hT,
-      ⟨⟨Arrow.homMk e.i.τ₁ e.i.τ₂ e.i.comm₁₂, Arrow.homMk e.r.τ₁ e.r.τ₂ e.r.comm₁₂, ?_⟩⟩⟩
-    refine Arrow.hom_ext _ _ ?_ ?_
-    · have := congrArg ShortComplex.Hom.τ₁ e.retract
-      simp only [ShortComplex.comp_τ₁, ShortComplex.id_τ₁] at this
-      simpa using this
-    · have := congrArg ShortComplex.Hom.τ₂ e.retract
-      simp only [ShortComplex.comp_τ₂, ShortComplex.id_τ₂] at this
-      simpa using this
+    exact ⟨_, _, T.f, E.isInflation_f hT, ⟨e.retractArrowF⟩⟩
   · rintro ⟨_, _, _, ha, ⟨h⟩⟩
     exact E.karoubiConflations_isInflation_of_retract ha h
 
@@ -225,15 +244,7 @@ private theorem karoubiConflations_isDeflation_iff {Q R : Karoubi C} (g : Q ⟶ 
   constructor
   · intro hg
     obtain ⟨_, _, _, T, hT, ⟨e⟩⟩ := (ConflationClass.isDeflation_iff _ g).mp hg
-    refine ⟨_, _, T.g, E.isDeflation_g hT,
-      ⟨⟨Arrow.homMk e.i.τ₂ e.i.τ₃ e.i.comm₂₃, Arrow.homMk e.r.τ₂ e.r.τ₃ e.r.comm₂₃, ?_⟩⟩⟩
-    refine Arrow.hom_ext _ _ ?_ ?_
-    · have := congrArg ShortComplex.Hom.τ₂ e.retract
-      simp only [ShortComplex.comp_τ₂, ShortComplex.id_τ₂] at this
-      simpa using this
-    · have := congrArg ShortComplex.Hom.τ₃ e.retract
-      simp only [ShortComplex.comp_τ₃, ShortComplex.id_τ₃] at this
-      simpa using this
+    exact ⟨_, _, T.g, E.isDeflation_g hT, ⟨e.retractArrowG⟩⟩
   · rintro ⟨_, _, _, hd, ⟨h⟩⟩
     exact E.karoubiConflations_isDeflation_of_retract hd h
 
@@ -278,20 +289,15 @@ private theorem karoubiConflations_isDeflation_comp {P Q R : Karoubi C} {p : P �
       (E.isDeflation_comp _ _ (E.deflations.of_isIso θ) (E.isDeflation_id_biprod hd' B))) h
 
 /-- Pushouts of inflations of the idempotent completion exist. If `i` is a retract of the image of
-an inflation `a : A ⟶ B` of `E`, the span `(i, h)` is a retract of the image of the span `(a, k)`,
-where `k` is `h` read through the retractions; the pushout of `(a, k)` in `C` exists by `E`. -/
+an inflation `a` of `E`, the span `(i, h)` is a retract of the image of a span `(a, k)`, whose
+pushout in `C` exists by `E`. -/
 private theorem karoubiConflations_hasPushout {P Q P' : Karoubi C} {i : P ⟶ Q}
     (hi : E.karoubiConflations.IsInflation i) (h : P ⟶ P') : HasPushout i h := by
   obtain ⟨A, B, a, ha, ⟨r⟩⟩ := (E.karoubiConflations_isInflation_iff i).mp hi
-  let k : A ⟶ P'.X := (r.r.left ≫ h ≫ Karoubi.decompId_i P').f
-  have hk : (toKaroubi C).map k = r.r.left ≫ h ≫ Karoubi.decompId_i P' := by
-    ext
-    simp [k]
+  obtain ⟨k, wk, wk'⟩ := exists_span_retract r h
   have : HasPushout a k := E.hasPushouts_inflations.hasPushout k ha
-  exact (IsPushout.of_hasPushout a k).map_toKaroubi.hasPushout_of_retract (iP := r.i.left)
-    (rP := r.r.left) (iP' := Karoubi.decompId_i P') (rP' := Karoubi.decompId_p P')
-    r.retract_right (Karoubi.decompId P').symm r.i_w.symm r.r_w.symm (by rw [hk]; simp)
-    (by rw [hk, Category.assoc, Category.assoc, ← Karoubi.decompId, Category.comp_id])
+  exact (IsPushout.of_hasPushout a k).map_toKaroubi.hasPushout_of_retract r.retract_right
+    (Karoubi.decompId P').symm r.i_w.symm r.r_w.symm wk wk'
 
 /-- Inflations of the idempotent completion are stable under cobase change. The cobase change of
 `i` along `h` is a retract of the image of the cobase change in `C` of the corresponding
@@ -300,16 +306,11 @@ private theorem karoubiConflations_isInflation_of_isPushout {P Q P' Z : Karoubi 
     {h : P ⟶ P'} {h' : Q ⟶ Z} {i' : P' ⟶ Z} (sq : IsPushout h i i' h')
     (hi : E.karoubiConflations.IsInflation i) : E.karoubiConflations.IsInflation i' := by
   obtain ⟨A, B, a, ha, ⟨r⟩⟩ := (E.karoubiConflations_isInflation_iff i).mp hi
-  let k : A ⟶ P'.X := (r.r.left ≫ h ≫ Karoubi.decompId_i P').f
-  have hk : (toKaroubi C).map k = r.r.left ≫ h ≫ Karoubi.decompId_i P' := by
-    ext
-    simp [k]
+  obtain ⟨k, wk, wk'⟩ := exists_span_retract r h
   have : HasPushout a k := E.hasPushouts_inflations.hasPushout k ha
   have hpo := IsPushout.of_hasPushout a k
-  obtain ⟨r'⟩ := sq.flip.nonempty_retractArrow_of_retract hpo.map_toKaroubi (iP := r.i.left)
-    (rP := r.r.left) (iP' := Karoubi.decompId_i P') (rP' := Karoubi.decompId_p P')
-    r.retract_right (Karoubi.decompId P').symm r.i_w.symm r.r_w.symm (by rw [hk]; simp)
-    (by rw [hk, Category.assoc, Category.assoc, ← Karoubi.decompId, Category.comp_id])
+  obtain ⟨r'⟩ := sq.flip.nonempty_retractArrow_of_retract hpo.map_toKaroubi r.retract_right
+    (Karoubi.decompId P').symm r.i_w.symm r.r_w.symm wk wk'
   exact E.karoubiConflations_isInflation_of_retract
     (E.isStableUnderCobaseChange_inflations.of_isPushout hpo.flip ha) r'
 
@@ -318,15 +319,10 @@ private theorem karoubiConflations_isInflation_of_isPushout {P Q P' Z : Karoubi 
 private theorem karoubiConflations_hasPullback {Q P P' : Karoubi C} {p : Q ⟶ P}
     (hp : E.karoubiConflations.IsDeflation p) (h : P' ⟶ P) : HasPullback p h := by
   obtain ⟨B, D, d, hd, ⟨r⟩⟩ := (E.karoubiConflations_isDeflation_iff p).mp hp
-  let k : P'.X ⟶ D := (Karoubi.decompId_p P' ≫ h ≫ r.i.right).f
-  have hk : (toKaroubi C).map k = Karoubi.decompId_p P' ≫ h ≫ r.i.right := by
-    ext
-    simp [k]
+  obtain ⟨k, wk, wk'⟩ := exists_cospan_retract r h
   have : HasPullback d k := E.hasPullbacks_deflations.hasPullback k hd
-  exact (IsPullback.of_hasPullback d k).map_toKaroubi.hasPullback_of_retract (iP := r.i.right)
-    (rP := r.r.right) (iP' := Karoubi.decompId_i P') (rP' := Karoubi.decompId_p P')
-    r.retract_left (Karoubi.decompId P').symm r.i_w r.r_w
-    (by rw [hk, ← Category.assoc, ← Karoubi.decompId, Category.id_comp]) (by rw [hk]; simp)
+  exact (IsPullback.of_hasPullback d k).map_toKaroubi.hasPullback_of_retract r.retract_left
+    (Karoubi.decompId P').symm r.i_w r.r_w wk wk'
 
 /-- Deflations of the idempotent completion are stable under base change; dual to
 `karoubiConflations_isInflation_of_isPushout`. -/
@@ -334,16 +330,11 @@ private theorem karoubiConflations_isDeflation_of_isPullback {Q P P' Z : Karoubi
     {h : P' ⟶ P} {h' : Z ⟶ Q} {p' : Z ⟶ P'} (sq : IsPullback h' p' p h)
     (hp : E.karoubiConflations.IsDeflation p) : E.karoubiConflations.IsDeflation p' := by
   obtain ⟨B, D, d, hd, ⟨r⟩⟩ := (E.karoubiConflations_isDeflation_iff p).mp hp
-  let k : P'.X ⟶ D := (Karoubi.decompId_p P' ≫ h ≫ r.i.right).f
-  have hk : (toKaroubi C).map k = Karoubi.decompId_p P' ≫ h ≫ r.i.right := by
-    ext
-    simp [k]
+  obtain ⟨k, wk, wk'⟩ := exists_cospan_retract r h
   have : HasPullback d k := E.hasPullbacks_deflations.hasPullback k hd
   have hpb := IsPullback.of_hasPullback d k
-  obtain ⟨r'⟩ := sq.nonempty_retractArrow_of_retract hpb.map_toKaroubi (iP := r.i.right)
-    (rP := r.r.right) (iP' := Karoubi.decompId_i P') (rP' := Karoubi.decompId_p P')
-    r.retract_left (Karoubi.decompId P').symm r.i_w r.r_w
-    (by rw [hk, ← Category.assoc, ← Karoubi.decompId, Category.id_comp]) (by rw [hk]; simp)
+  obtain ⟨r'⟩ := sq.nonempty_retractArrow_of_retract hpb.map_toKaroubi r.retract_left
+    (Karoubi.decompId P').symm r.i_w r.r_w wk wk'
   exact E.karoubiConflations_isDeflation_of_retract
     (E.isStableUnderBaseChange_deflations.of_isPullback hpb hd) r'
 

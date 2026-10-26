@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ShortComplex.Biproduct
+public import TauCeti.Algebra.Homology.ShortComplex.Retract
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Kernels
 
@@ -181,13 +182,10 @@ pair. A morphism into `S₁.X₂` killed by `S₁.g` is pushed into `S₂.X₂`,
 `S₂.f`, and pulled back by the retraction; dually for the cokernel. -/
 theorem of_retract (h : IsKernelCokernelPair S₂) (e : Retract S₁ S₂) :
     IsKernelCokernelPair S₁ := by
-  have h₁ : e.i.τ₁ ≫ e.r.τ₁ = 𝟙 _ := by rw [← ShortComplex.comp_τ₁, e.retract, ShortComplex.id_τ₁]
-  have h₂ : e.i.τ₂ ≫ e.r.τ₂ = 𝟙 _ := by rw [← ShortComplex.comp_τ₂, e.retract, ShortComplex.id_τ₂]
-  have h₃ : e.i.τ₃ ≫ e.r.τ₃ = 𝟙 _ := by rw [← ShortComplex.comp_τ₃, e.retract, ShortComplex.id_τ₃]
   have := h.mono_f
   have := h.epi_g
-  have : IsSplitMono e.i.τ₁ := ⟨⟨e.r.τ₁, h₁⟩⟩
-  have : IsSplitEpi e.r.τ₃ := ⟨⟨e.i.τ₃, h₃⟩⟩
+  have : IsSplitMono e.i.τ₁ := ⟨⟨e.r.τ₁, e.retract_τ₁⟩⟩
+  have : IsSplitEpi e.r.τ₃ := ⟨⟨e.i.τ₃, e.retract_τ₃⟩⟩
   have : Mono S₁.f := by
     have : Mono (S₁.f ≫ e.i.τ₂) := by rw [← e.i.comm₁₂]; exact mono_comp _ _
     exact mono_of_mono S₁.f e.i.τ₂
@@ -199,13 +197,13 @@ theorem of_retract (h : IsKernelCokernelPair S₂) (e : Retract S₁ S₂) :
     rw [Category.assoc, e.i.comm₂₃, reassoc_of% hk, zero_comp]
   have lift_f {W : C} (k : W ⟶ S₁.X₂) (hk' : k ≫ S₁.g = 0) :
       (h.lift _ (hk hk') ≫ e.r.τ₁) ≫ S₁.f = k := by
-    rw [Category.assoc, e.r.comm₁₂, h.lift_f_assoc, Category.assoc, h₂, Category.comp_id]
+    rw [Category.assoc, e.r.comm₁₂, h.lift_f_assoc, Category.assoc, e.retract_τ₂, Category.comp_id]
   -- Dually, a morphism killed by `S₁.f` is retracted, descended through `S₂.g` and pushed back.
   have hd {W : C} {k : S₁.X₂ ⟶ W} (hk : S₁.f ≫ k = 0) : S₂.f ≫ e.r.τ₂ ≫ k = 0 := by
     rw [← Category.assoc, ← e.r.comm₁₂, Category.assoc, hk, comp_zero]
   have g_desc {W : C} (k : S₁.X₂ ⟶ W) (hk' : S₁.f ≫ k = 0) :
       S₁.g ≫ e.i.τ₃ ≫ h.desc _ (hd hk') = k := by
-    rw [← Category.assoc, ← e.i.comm₂₃, Category.assoc, h.g_desc, ← Category.assoc, h₂,
+    rw [← Category.assoc, ← e.i.comm₂₃, Category.assoc, h.g_desc, ← Category.assoc, e.retract_τ₂,
       Category.id_comp]
   exact
     { nonempty_fIsKernel := ⟨KernelFork.IsLimit.ofι _ _ (fun k hk' ↦ h.lift _ (hk hk') ≫ e.r.τ₁)
