@@ -49,10 +49,15 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
     hxy
     (g y)]
   have hext : tangentCoordChange (𝓡∂ (n + 1)) y x y (g y) = v₀ := by
+    have htrivialization (z : M) (v : TangentSpace (𝓡∂ (n + 1)) z) :
+        (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+          (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨z, v⟩).2 =
+          tangentCoordChange (𝓡∂ (n + 1)) z (x : M) z v := by
+      rw [TangentBundle.trivializationAt_apply, tangentCoordChange_def]
+      rfl
     have hvalue : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
         (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨(x : M), v₀⟩).2 = v₀ := by
-      rw [TangentBundle.trivializationAt_apply]
-      change tangentCoordChange (𝓡∂ (n + 1)) (x : M) (x : M) (x : M) v₀ = v₀
+      rw [htrivialization]
       rw [tangentCoordChange_self (x := (x : M))
         (mem_extChartAt_source (I := 𝓡∂ (n + 1)) (x : M))]
     have hcoord : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
@@ -67,8 +72,7 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
     have hrel : tangentCoordChange (𝓡∂ (n + 1)) y x y (g y) =
         (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
           (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨y, g y⟩).2 := by
-      rw [TangentBundle.trivializationAt_apply, tangentCoordChange_def]
-      simp only [extChartAt]
+      exact (htrivialization y (g y)).symm
     exact hrel.trans hcoord
   rw [hext]
   simp [v₀]
