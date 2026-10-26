@@ -70,8 +70,8 @@ private theorem scaled_fisherSnedecorPDFReal (hm : 0 < m) (hn : 0 < n) (hx : 0 <
     field_simp
   have ha : (m + 2 * (j : ℝ)) / 2 = m / 2 + j := by ring
   have he : -((m + 2 * (j : ℝ) + n) / 2) = -((m + n) / 2) - j := by ring
-  rw [harg, ha, he, show m / 2 + (j : ℝ) - 1 = (m / 2 - 1) + j by ring,
-    rpow_add hy, rpow_sub hz, rpow_natCast, rpow_natCast]
+  have hpower : m / 2 + (j : ℝ) - 1 = (m / 2 - 1) + j := by ring
+  rw [harg, ha, he, hpower, rpow_add hy, rpow_sub hz, rpow_natCast, rpow_natCast]
   simp only [div_pow]
   field_simp [hd.ne', hn.ne', hz.ne', (beta_pos (by positivity : 0 < m / 2 + j)
     (by positivity : 0 < n / 2)).ne']
@@ -121,9 +121,9 @@ theorem summable_poisson_mul_scaled_fisherSnedecorPDFReal (hm : 0 < m) (hn : 0 <
     rw [Real.norm_of_nonneg (hf _).le, Real.norm_of_nonneg (hf _).le]
     rw [div_eq_iff (hf j).ne']
     dsimp [f]
+    have hshape : m / 2 + ((j : ℝ) + 1) = (m / 2 + j) + 1 := by ring
     rw [Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one, pow_succ,
-      show m / 2 + ((j : ℝ) + 1) = (m / 2 + j) + 1 by ring,
-      beta_add_one_left (by positivity) (by positivity)]
+      hshape, beta_add_one_left (by positivity) (by positivity)]
     field_simp [(beta_pos (by positivity : 0 < m / 2 + j) (by positivity : 0 < n / 2)).ne']
     ring
   apply summable_of_ratio_test_tendsto_lt_one (l := 0) (by norm_num)
@@ -309,8 +309,8 @@ theorem noncentralFMeasure_eq_withDensity (m n : ℝ) (l : ℝ≥0) :
     funext x
     rw [Pi.tsum_apply (Pi.summable.2 fun _ ↦ ENNReal.summable), noncentralFPDF_eq_tsum h.1 h.2]
     simp only [Pi.smul_apply, smul_eq_mul, mul_assoc]
-  · rw [noncentralFMeasure_of_not_pos h,
-      show noncentralFPDF m n l = 0 from funext (noncentralFPDF_of_not_pos h l), withDensity_zero]
+  · have hpdf : noncentralFPDF m n l = 0 := funext (noncentralFPDF_of_not_pos h l)
+    rw [noncentralFMeasure_of_not_pos h, hpdf, withDensity_zero]
 
 /-- The extended density integrates to one for positive degrees. -/
 theorem lintegral_noncentralFPDF_eq_one (hm : 0 < m) (hn : 0 < n) (l : ℝ≥0) :
@@ -329,7 +329,8 @@ theorem integrable_noncentralFPDFReal (m n : ℝ) (l : ℝ≥0) :
     simp_rw [← noncentralFPDF_eq_ofReal]
     rw [lintegral_noncentralFPDF_eq_one h.1 h.2]
     norm_num
-  · rw [show noncentralFPDFReal m n l = 0 from funext (noncentralFPDFReal_of_not_pos h l)]
+  · have hpdf : noncentralFPDFReal m n l = 0 := funext (noncentralFPDFReal_of_not_pos h l)
+    rw [hpdf]
     exact integrable_zero _ _ _
 
 /-- The real density integrates to one for positive degrees. -/
