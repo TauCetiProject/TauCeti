@@ -271,7 +271,9 @@ theorem _root_.Representation.exists_common_fixed_vector_of_baseChange
   simp only [Finsupp.coe_zero, Pi.zero_apply] at hi
   refine ⟨e w i, hi, fun g ↦ ?_⟩
   rw [← Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply]
-  exact congrArg (fun x ↦ e x i) (hfixed g)
+  have h := hfixed g
+  rw [_root_.Representation.baseChange_apply, LinearMap.baseChange_eq_lTensor] at h
+  exact congrArg (fun x ↦ e x i) h
 
 end
 
