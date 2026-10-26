@@ -88,10 +88,9 @@ private theorem encard_setOf_not_separable_le (x : Fin (n + 2) → K) (hx : x 1 
   calc _ = (algebraMap K L '' _).encard :=
         ((algebraMap K L).injective.injOn).encard_image.symm
     _ ≤ ((derivative f).rootSet L).encard := (encard_le_encard hsub).trans (encard_image_le _ _)
-    _ ≤ (derivative f).natDegree := by
-        rw [rootSet, encard_coe_eq_coe_finsetCard]
-        exact_mod_cast (Multiset.toFinset_card_le _).trans
-          ((card_roots' _).trans natDegree_map_le)
+    _ ≤ (derivative f).natDegree :=
+        encard_le_coe_iff_finite_ncard_le.mpr
+          ⟨(derivative f).rootSet_finite L, (derivative f).ncard_rootSet_le L⟩
     _ ≤ n + 2 := by
         exact_mod_cast (natDegree_derivative_le f).trans (by simp [f])
 
