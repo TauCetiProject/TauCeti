@@ -67,16 +67,15 @@ theorem barycentricSubdivisionRealizationHomeomorph_trans {K : AbstractSimplicia
   have hρ := PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp ρ.2
   obtain ⟨σ, -, hσmax⟩ := hρ.2.exists_isGreatest ρ.1.finite_toSet hρ.1
   -- The canonical homeomorphism maps the simplex `ρ` into the greatest face `σ` of the chain.
-  let φ := barycentricSubdivisionFaceMap K σ hσmax
   have hfactor : (barycentricSubdivisionRealizationHomeomorph K).trans f ∘ faceInclusion _ ρ =
-      (f ∘ faceInclusion K σ) ∘ φ := by
+      (f ∘ faceInclusion K σ) ∘ barycentricSubdivisionFaceMap K σ hσmax := by
     funext x
     simp only [comp_apply, Homeomorph.trans_apply,
       barycentricSubdivisionRealizationHomeomorph_apply]
-    congr 1
-    exact Subtype.ext (by simp [φ, barycentricSubdivisionFaceMap_val K σ hσmax x])
+    exact congrArg f
+      (congrFun (barycentricSubdivisionRealizationMap_comp_faceInclusion K ρ σ hσmax) x)
   rw [hfactor]
-  -- In barycentric coordinates, `φ` is the linear map sending the vertex `τ` of `ρ` to the
+  -- In barycentric coordinates, the face map is the linear map sending the vertex `τ` of `ρ` to the
   -- barycenter of `τ`.
   refine (isSmoothTriangulation_iff.mp h σ).comp_linear (Fintype.linearCombination ℝ
     fun (τ : ρ.1) (b : σ.1) => faceBarycenter K τ b) (fun x => funext fun b => ?_)

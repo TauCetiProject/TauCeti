@@ -42,6 +42,8 @@ The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear To
   combination of face barycenters.
 * `AbstractSimplicialComplex.barycentricSubdivisionFaceMap_apply`: the coordinates of the face map.
 * `AbstractSimplicialComplex.continuous_barycentricSubdivisionFaceMap`: the face map is continuous.
+* `AbstractSimplicialComplex.barycentricSubdivisionRealizationMap_comp_faceInclusion`: on a
+  subdivision simplex, the realization map factors through the face map.
 -/
 
 public section
@@ -185,6 +187,20 @@ theorem barycentricSubdivisionRealizationMap_vertex (K : AbstractSimplicialCompl
   rw [barycentricSubdivisionRealizationMap_val, vertex_val,
     barycentricSubdivisionLinearMap_single]
 
+/-- Restriction of the barycentric-subdivision realization map to a simplex `ρ` of the
+subdivision, a family of faces of `σ`, is the barycentric-subdivision face map followed by the
+face inclusion of `σ`. -/
+theorem barycentricSubdivisionRealizationMap_comp_faceInclusion
+    (K : AbstractSimplicialComplex ι)
+    (ρ : Face (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+      K.toPreAbstractSimplicialComplex)) (σ : Face K) (hρσ : ∀ τ ∈ ρ.1, τ ≤ σ) :
+    barycentricSubdivisionRealizationMap K ∘ faceInclusion _ ρ =
+      faceInclusion K σ ∘ barycentricSubdivisionFaceMap K σ hρσ := by
+  funext x
+  apply Subtype.ext
+  simp only [Function.comp_apply, barycentricSubdivisionRealizationMap_val, faceInclusion_val,
+    barycentricSubdivisionFaceMap_val]
+
 /-- The barycentric-subdivision realization map is continuous for the weak topologies on both
 realizations. -/
 theorem continuous_barycentricSubdivisionRealizationMap (K : AbstractSimplicialComplex ι) :
@@ -193,17 +209,7 @@ theorem continuous_barycentricSubdivisionRealizationMap (K : AbstractSimplicialC
   intro ρ
   have hρ := TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp ρ.2
   obtain ⟨σ, _, hσmax⟩ := hρ.2.exists_isGreatest ρ.1.finite_toSet hρ.1
-  let toFace := barycentricSubdivisionFaceMap K σ hσmax
-  have hfactor :
-      barycentricSubdivisionRealizationMap K ∘ faceInclusion _ ρ =
-        faceInclusion K ⟨σ.1, σ.2⟩ ∘ toFace := by
-    funext x
-    apply Subtype.ext
-    simp only [Function.comp_apply, barycentricSubdivisionRealizationMap_val, faceInclusion_val,
-      toFace]
-    exact (barycentricSubdivisionFaceMap_val K σ hσmax x).symm
-  rw [hfactor]
-  exact (continuous_faceInclusion K ⟨σ.1, σ.2⟩).comp
-    (continuous_barycentricSubdivisionFaceMap K σ hσmax)
+  rw [barycentricSubdivisionRealizationMap_comp_faceInclusion K ρ σ hσmax]
+  exact (continuous_faceInclusion K σ).comp (continuous_barycentricSubdivisionFaceMap K σ hσmax)
 
 end AbstractSimplicialComplex
