@@ -43,20 +43,15 @@ private def inverseGaussianComplexMGF (μ lam : ℝ) (z : ℂ) : ℂ :=
   Complex.exp (((lam / μ : ℝ) : ℂ) *
     (1 - Complex.sqrt (1 - ((2 * μ ^ 2 / lam : ℝ) : ℂ) * z)))
 
-private theorem analyticOnNhd_inverseGaussianComplexMGF (hμ : 0 < μ) (hlam : 0 < lam) :
+private theorem analyticOnNhd_inverseGaussianComplexMGF (hlam : 0 < lam) :
     AnalyticOnNhd ℂ (inverseGaussianComplexMGF μ lam)
       {z : ℂ | z.re ∈ Iio (lam / (2 * μ ^ 2))} := by
   apply DifferentiableOn.analyticOnNhd _ (isOpen_Iio.preimage Complex.continuous_re)
   intro z hz
-  have hc : 0 < 2 * μ ^ 2 / lam := by positivity
-  have hmul : (2 * μ ^ 2 / lam) * z.re < 1 := calc
-    (2 * μ ^ 2 / lam) * z.re <
-        (2 * μ ^ 2 / lam) * (lam / (2 * μ ^ 2)) :=
-      mul_lt_mul_of_pos_left hz hc
-    _ = 1 := by field_simp
   have hre : 0 < (1 - ((2 * μ ^ 2 / lam : ℝ) : ℂ) * z).re := by
     simpa only [Complex.sub_re, Complex.one_re, Complex.mul_re, Complex.ofReal_re,
-      Complex.ofReal_im, zero_mul, sub_zero] using sub_pos.mpr hmul
+      Complex.ofReal_im, zero_mul, sub_zero, mul_div_right_comm] using
+      one_sub_two_mul_sq_mul_div_pos hlam hz
   have hslit : 1 - ((2 * μ ^ 2 / lam : ℝ) : ℂ) * z ∈ Complex.slitPlane :=
     Complex.mem_slitPlane_iff.mpr (Or.inl hre)
   unfold inverseGaussianComplexMGF
@@ -65,30 +60,13 @@ private theorem analyticOnNhd_inverseGaussianComplexMGF (hμ : 0 < μ) (hlam : 0
 private theorem inverseGaussianComplexMGF_ofReal (hμ : 0 < μ) (hlam : 0 < lam)
     {t : ℝ} (ht : t < lam / (2 * μ ^ 2)) :
     inverseGaussianComplexMGF μ lam t = mgf id (inverseGaussianMeasure μ lam) t := by
-  rw [mgf_id_inverseGaussianMeasure hμ hlam ht.le]
-  have hnonneg : 0 ≤ 1 - 2 * μ ^ 2 * t / lam := by
-    have hden : 0 < 2 * μ ^ 2 := by positivity
-    have hlt : 2 * μ ^ 2 * t < lam := by
-      simpa only [mul_comm] using (lt_div_iff₀ hden).mp ht
-    exact sub_nonneg.mpr ((div_le_one hlam).mpr hlt.le)
   have harg : (1 : ℂ) - ((2 * μ ^ 2 / lam : ℝ) : ℂ) * t =
       ((1 - 2 * μ ^ 2 * t / lam : ℝ) : ℂ) := by
     push_cast
     ring
-  unfold inverseGaussianComplexMGF
-  rw [harg]
-  have hsqrt : Complex.sqrt ((1 - 2 * μ ^ 2 * t / lam : ℝ) : ℂ) =
-      (√(1 - 2 * μ ^ 2 * t / lam) : ℂ) := by
-    rw [Complex.sqrt_of_nonneg (by exact_mod_cast hnonneg)]
-    simp only [Complex.ofReal_re]
-  rw [hsqrt]
-  have hexp : ((lam / μ : ℝ) : ℂ) *
-      (1 - (√(1 - 2 * μ ^ 2 * t / lam) : ℝ)) =
-      ((lam / μ * (1 - √(1 - 2 * μ ^ 2 * t / lam) : ℝ)) : ℂ) := by
-    norm_cast
-  rw [hexp]
-  convert (Complex.ofReal_exp (lam / μ *
-    (1 - √(1 - 2 * μ ^ 2 * t / lam)))).symm using 1
+  rw [mgf_id_inverseGaussianMeasure hμ hlam ht.le, inverseGaussianComplexMGF, harg,
+    Complex.sqrt_of_nonneg (Complex.zero_le_real.mpr (one_sub_two_mul_sq_mul_div_pos hlam ht).le),
+    Complex.ofReal_re]
   norm_cast
 
 /-- The characteristic function of a valid inverse Gaussian law. The square root is the
@@ -106,7 +84,7 @@ theorem charFun_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam) (t : ℝ)
     exact hu.le
   have hEq := eqOn_complexMGF_of_eqOn_mgf isOpen_Iio
     (convex_Iio (lam / (2 * μ ^ 2))) hsub
-    (analyticOnNhd_inverseGaussianComplexMGF hμ hlam)
+    (analyticOnNhd_inverseGaussianComplexMGF hlam)
     (fun u hu ↦ inverseGaussianComplexMGF_ofReal hμ hlam hu)
   have hit : (t : ℂ) * Complex.I ∈
       {z : ℂ | z.re ∈ Iio (lam / (2 * μ ^ 2))} := by
