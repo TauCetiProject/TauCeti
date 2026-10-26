@@ -128,9 +128,8 @@ namespace SmoothBundleForm
 
 variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 
-/-- Two smooth bundle-valued forms are equal when they agree on every tangent tuple.
-
-The proof uses Mathlib's `ContinuousAlternatingMap.ext` for the underlying alternating maps. -/
+/-- Two smooth bundle-valued forms are equal when they agree on every tangent tuple. -/
+-- The proof uses Mathlib's `ContinuousAlternatingMap.ext` for the underlying alternating maps.
 @[ext]
 theorem ext {φ ψ : SmoothBundleForm I F V k}
     (h : ∀ x v, φ.1 x v = ψ.1 x v) : φ = ψ := by
