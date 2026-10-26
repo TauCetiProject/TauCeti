@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Field.ZPowers
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
+import TauCeti.Data.Int.MulPred
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Algebra.Ring.GeomSum
@@ -65,19 +66,6 @@ namespace TauCeti
 
 variable {K : Type*} [NormedField K]
 
-/-! ### The exponent `n (n - 1) / 2` -/
-
-private theorem triangle_add (n k : ℤ) :
-    (n + k) * (n + k - 1) / 2 = n * (n - 1) / 2 + k * (k - 1) / 2 + n * k := by
-  have h (m : ℤ) : 2 * (m * (m - 1) / 2) = m * (m - 1) :=
-    Int.two_mul_ediv_two_of_even (Int.even_mul_pred_self m)
-  refine mul_left_cancel₀ (two_ne_zero (α := ℤ)) ?_
-  rw [mul_add, mul_add, h, h, h]
-  ring
-
-private theorem triangle_one_sub (n : ℤ) : (1 - n) * (1 - n - 1) / 2 = n * (n - 1) / 2 := by
-  rw [show (1 - n) * (1 - n - 1) = n * (n - 1) by ring]
-
 /-! ### The series -/
 
 /-- The theta function of the Tate curve with parameter `q`, the bilateral series
@@ -100,8 +88,9 @@ private theorem tateTheta_eq_tsum_thetaTerm (q u : Kˣ) :
 /-- Consecutive terms of the theta series differ by the factor `-qⁿ u`. -/
 private theorem thetaTerm_add_one (q u : Kˣ) (n : ℤ) :
     thetaTerm q u (n + 1) = -((q : K) ^ n * u) * thetaTerm q u n := by
-  rw [thetaTerm, thetaTerm, triangle_add n 1, zpow_add₀ (neg_ne_zero.mpr one_ne_zero),
-    zpow_add₀ q.ne_zero, zpow_add₀ q.ne_zero, zpow_add₀ u.ne_zero]
+  rw [thetaTerm, thetaTerm, Int.add_mul_add_sub_one_ediv_two n 1,
+    zpow_add₀ (neg_ne_zero.mpr one_ne_zero), zpow_add₀ q.ne_zero, zpow_add₀ q.ne_zero,
+    zpow_add₀ u.ne_zero]
   simp only [zpow_one, sub_self, mul_zero, Int.zero_ediv, zpow_zero, mul_one]
   ring
 
@@ -142,9 +131,10 @@ theorem hasSum_tateTheta [CompleteSpace K] (q u : Kˣ) (hq : ‖(q : K)‖ < 1) 
 private theorem thetaTerm_add (q u : Kˣ) (n k : ℤ) :
     thetaTerm q u (n + k) =
       (-1) ^ k * (q : K) ^ (k * (k - 1) / 2) * (u : K) ^ k * thetaTerm q (q ^ k * u) n := by
-  rw [thetaTerm, thetaTerm, triangle_add, zpow_add₀ (neg_ne_zero.mpr one_ne_zero),
-    zpow_add₀ q.ne_zero, zpow_add₀ q.ne_zero, zpow_add₀ u.ne_zero, Units.val_mul,
-    Units.val_zpow_eq_zpow_val, mul_zpow, ← zpow_mul, mul_comm k n]
+  rw [thetaTerm, thetaTerm, Int.add_mul_add_sub_one_ediv_two,
+    zpow_add₀ (neg_ne_zero.mpr one_ne_zero), zpow_add₀ q.ne_zero, zpow_add₀ q.ne_zero,
+    zpow_add₀ u.ne_zero, Units.val_mul, Units.val_zpow_eq_zpow_val, mul_zpow, ← zpow_mul,
+    mul_comm k n]
   ring
 
 /-- **The transformation law of the theta function** under `u ↦ qᵏ u`. -/
@@ -174,7 +164,7 @@ theorem tateTheta_self_mul (q u : Kˣ) :
 
 private theorem thetaTerm_one_sub (q u : Kˣ) (n : ℤ) :
     thetaTerm q u⁻¹ (1 - n) = -(u : K)⁻¹ * thetaTerm q u n := by
-  rw [thetaTerm, thetaTerm, triangle_one_sub, sub_eq_add_neg,
+  rw [thetaTerm, thetaTerm, Int.one_sub_mul_one_sub_sub_one_ediv_two, sub_eq_add_neg,
     zpow_add₀ (neg_ne_zero.mpr one_ne_zero), zpow_one, zpow_neg, ← inv_zpow, inv_neg_one,
     Units.val_inv_eq_inv_val, inv_zpow', neg_add, neg_neg, zpow_add₀ u.ne_zero, zpow_neg_one]
   field_simp
@@ -200,7 +190,7 @@ paired term. -/
 private theorem thetaTerm_add_one_add_thetaTerm_neg (q u : Kˣ) (k : ℕ) :
     thetaTerm q u ((k : ℤ) + 1) + thetaTerm q u (-k) = ((u : K) - 1) * pairTerm q u k := by
   have hT : -(k : ℤ) * (-(k : ℤ) - 1) / 2 = ((k : ℤ) + 1) * k / 2 := by
-    rw [show -(k : ℤ) = 1 - ((k : ℤ) + 1) by ring, triangle_one_sub]
+    rw [show -(k : ℤ) = 1 - ((k : ℤ) + 1) by ring, Int.one_sub_mul_one_sub_sub_one_ediv_two]
     ring_nf
   have hgeom := geom_sum_mul (u : K) (2 * k + 1)
   rw [thetaTerm, thetaTerm, pairTerm, hT, add_sub_cancel_right, zpow_neg (-1 : K), ← inv_zpow,
