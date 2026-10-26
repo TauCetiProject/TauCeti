@@ -112,12 +112,6 @@ noncomputable def zigzagAlgebraProjectiveCochainsEquivCorner (i j : V) (s : ℤ)
 
 local notation "E" => zigzagAlgebraProjectiveCochainsEquivCorner k G
 
-private theorem projectiveGenerator_mem (i : V) :
-    spanSingletonGenerator (e i) ∈ (P i).grading.piece 0 := by
-  apply (mem_zigzagAlgebraGradedProjective_piece_iff k G i 0).mpr
-  simpa only [coe_spanSingletonGenerator] using
-    zigzagAlgebraBasis_inl_mem_integerGrade_zero k G i
-
 /-- The forward dictionary is the actual cochain evaluation at the vertex generator. -/
 @[simp]
 theorem coe_zigzagAlgebraProjectiveCochainsEquivCorner_apply
@@ -130,7 +124,8 @@ theorem coe_zigzagAlgebraProjectiveCochainsEquivCorner_apply
     _ = _ := by
       have h := congrArg (fun y : P j ↦ (y : Z))
         (GradedModuleCat.homShiftEquivSignedOppositeCochains_symm_apply_of_mem
-          Γ (P i) (P j) s f (projectiveGenerator_mem k G i))
+          Γ (P i) (P j) s f
+            (spanSingletonGenerator_mem_zigzagAlgebraGradedProjective_piece_zero k G i))
       simpa only [g, mul_zero, Int.negOnePow_zero, one_smul] using h
 
 /-- The inverse corner dictionary is signed right multiplication on a homogeneous input. -/
@@ -167,39 +162,9 @@ theorem coe_zigzagAlgebraProjectiveCochainsEquivCorner_symm_apply_generator
   rw [LinearEquiv.apply_symm_apply] at h
   exact h.symm
 
-private theorem projectiveCochainsEquivCorner_apply_hom
-    (i j : V) (s : ℤ) (f : P i ⟶ (P j).shiftObj s) :
-    E i j s (I (P i) (P j) s f) = H i j s f := by
-  simp only [zigzagAlgebraProjectiveCochainsEquivCorner, LinearEquiv.trans_apply,
-    LinearEquiv.symm_apply_apply]
-
-private theorem projectiveCochainsEquivCorner_symm_hom
-    (i j : V) (s : ℤ) (f : P i ⟶ (P j).shiftObj s) :
-    (E i j s).symm (H i j s f) = I (P i) (P j) s f := by
-  simp only [zigzagAlgebraProjectiveCochainsEquivCorner, LinearEquiv.symm_trans_apply,
-    LinearEquiv.symm_symm, LinearEquiv.symm_apply_apply]
-
-/-- Keller composition matches the actual shifted graded-map composite with its Koszul factor. -/
-theorem zigzagAlgebraProjectiveCochainsEquivCorner_shifted_comp
-    (i j l : V) (s t : ℤ) (f : P i ⟶ (P j).shiftObj s)
-    (g : P j ⟶ (P l).shiftObj t) :
-    letI : Module (GradedOpposite Γ)ᵐᵒᵖ (P i) := (D i).moduleOp
-    letI : Module (GradedOpposite Γ)ᵐᵒᵖ (P j) := (D j).moduleOp
-    letI : Module (GradedOpposite Γ)ᵐᵒᵖ (P l) := (D l).moduleOp
-    letI : IsScalarTower k (GradedOpposite Γ)ᵐᵒᵖ (P i) := (D i).scalarTower
-    letI : IsScalarTower k (GradedOpposite Γ)ᵐᵒᵖ (P j) := (D j).scalarTower
-    letI : IsScalarTower k (GradedOpposite Γ)ᵐᵒᵖ (P l) := (D l).scalarTower
-    dgRightModuleCochains.comp ((E j l t).symm (H j l t g))
-        ((E i j s).symm (H i j s f)) (by omega) =
-      (s * t).negOnePow • (E i l (t + s)).symm
-        (H i l (t + s) (f ≫ (GradedModuleCat.shiftFunctor s).map g ≫
-          (GradedModuleCat.shiftFunctorAddIso (Γ).piece t s).hom.app (P l))) := by
-  rw [projectiveCochainsEquivCorner_symm_hom, projectiveCochainsEquivCorner_symm_hom,
-    projectiveCochainsEquivCorner_symm_hom]
-  exact GradedModuleCat.homShiftEquivSignedOppositeCochains_comp
-    Γ (P i) (P j) (P l) s t f g
-
 /-- The corner vector of Keller composition is the product of corner vectors with its sign. -/
+-- Normalize composition before generator evaluation unfolds the dictionary.
+@[simp↓]
 theorem coe_zigzagAlgebraProjectiveCochainsEquivCorner_comp
     (i j l : V) (s t : ℤ) (f : K i j s) (g : K j l t) :
     letI : Module (GradedOpposite Γ)ᵐᵒᵖ (P i) := (D i).moduleOp
@@ -214,8 +179,7 @@ theorem coe_zigzagAlgebraProjectiveCochainsEquivCorner_comp
   let g' := (I (P j) (P l) t).symm g
   have h := GradedModuleCat.homShiftEquivSignedOppositeCochains_comp
     Γ (P i) (P j) (P l) s t f' g'
-  rw [show I (P i) (P j) s f' = f from (I (P i) (P j) s).apply_symm_apply f,
-    show I (P j) (P l) t g' = g from (I (P j) (P l) t).apply_symm_apply g] at h
+  simp only [f', g', LinearEquiv.apply_symm_apply] at h
   have hc := congrArg (fun z : K i l (t + s) ↦ (E i l (t + s) z : Z)) h
   calc
     _ = (s * t).negOnePow •
@@ -308,6 +272,8 @@ theorem coe_zigzagAlgebraProjectiveDGHomEquivCorner_symm_mul_of_mem
 
 /-- The enriched composition factor cancels the Keller factor: corner vectors multiply in the
 same order as the original shifted graded maps. -/
+-- Normalize composition before generator evaluation unfolds the dictionary.
+@[simp↓]
 theorem coe_zigzagAlgebraProjectiveDGHomEquivCorner_comp
     (i j l : V) (s t : ℤ) (f : DGHom k (-s) (D i) (D j))
     (g : DGHom k (-t) (D j) (D l)) :
