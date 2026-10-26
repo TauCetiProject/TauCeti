@@ -40,7 +40,7 @@ open holomorphicStructureSheaf
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℂ E H)
-  {ι Flag : Type} {X : ι → Type} [∀ i, TopologicalSpace (X i)]
+  {ι : Type} {Flag : Type*} {X : ι → Type} [∀ i, TopologicalSpace (X i)]
   [∀ i, ChartedSpace H (X i)] (d : FlagPairData ι Flag X)
 
 /-- The normalization quotient with the sheaf of matching holomorphic functions. The
@@ -49,6 +49,47 @@ abbrev sheafedSpace : SheafedSpace CommRingCat where
   carrier := TopCat.of (GluedCurve d)
   presheaf := (quotientSheaf I (gluedRelSetoid d)).presheaf
   IsSheaf := (quotientSheaf I (gluedRelSetoid d)).property
+
+/-- Restriction in the nodal sheafed space evaluates by inclusion upstairs. -/
+@[simp]
+theorem sheafedSpace_map_apply {U V : (Opens (GluedCurve d))ᵒᵖ} (h : U ⟶ V)
+    (g : (sheafedSpace I d).presheaf.obj U)
+    (x : (Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj V.unop) :
+    (quotientSheafSectionsEquiv I (gluedRelSetoid d) V.unop
+      (((sheafedSpace I d).presheaf.map h).hom g)).1 x =
+      (quotientSheafSectionsEquiv I (gluedRelSetoid d) U.unop g).1
+        (Opens.inclusion (leOfHom ((Opens.map (TopCat.quotientMk
+          (gluedRelSetoid d))).map h.unop)) x) := by
+  exact (congrArg
+    (fun f : (holomorphicStructureSheaf I (Σ i, X i)).obj.obj
+      (op ((Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj V.unop)) ↦ f x)
+    (quotientSheaf_map_val I (gluedRelSetoid d) h.unop g)).trans (map_apply _ _ _)
+
+-- These evaluation lemmas handle categorical composition at the boundary. Their explicit
+-- equalities can be composed without unfolding sheaf projections in the descent proofs.
+-- Composite evaluation formulas stay out of simp: their left sides reduce by hom_comp.
+/-- Restricting after a section map evaluates that map at the included point upstairs. -/
+theorem sheafedSpace_comp_map_apply {R : CommRingCat}
+    {U V : (Opens (GluedCurve d))ᵒᵖ} (f : R ⟶ (sheafedSpace I d).presheaf.obj U)
+    (h : U ⟶ V) (g : R)
+    (x : (Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj V.unop) :
+    (quotientSheafSectionsEquiv I (gluedRelSetoid d) V.unop
+      ((f ≫ (sheafedSpace I d).presheaf.map h).hom g)).1 x =
+      (quotientSheafSectionsEquiv I (gluedRelSetoid d) U.unop (f.hom g)).1
+        (Opens.inclusion (leOfHom ((Opens.map (TopCat.quotientMk
+          (gluedRelSetoid d))).map h.unop)) x) := by
+  exact sheafedSpace_map_apply I d h (f.hom g) x
+
+/-- Maps into nodal sections agree when their values agree upstairs. -/
+@[ext]
+theorem sheafedSpace_sectionMap_ext {R : CommRingCat} {U : Opens (GluedCurve d)}
+    {f g : R ⟶ (sheafedSpace I d).presheaf.obj (op U)}
+    (h : ∀ a x, (quotientSheafSectionsEquiv I (gluedRelSetoid d) U (f.hom a)).1 x =
+      (quotientSheafSectionsEquiv I (gluedRelSetoid d) U (g.hom a)).1 x) : f = g := by
+  apply CommRingCat.hom_ext
+  apply RingHom.ext
+  intro a
+  exact quotientSheaf_ext I (gluedRelSetoid d) (h a)
 
 /-- Stalks of the normalization quotient are local rings, including at its nodes. -/
 instance isLocalRing_quotientStalk [Finite Flag] [∀ i, T2Space (X i)] (z : GluedCurve d) :
@@ -69,9 +110,9 @@ abbrev locallyRingedSpace [Finite Flag] [∀ i, T2Space (X i)] : LocallyRingedSp
   isLocalRing := isLocalRing_quotientStalk I d
 
 variable {I d}
-  {ι' Flag' : Type} {X' : ι' → Type} [∀ i, TopologicalSpace (X' i)]
+  {ι' : Type} {Flag' : Type*} {X' : ι' → Type} [∀ i, TopologicalSpace (X' i)]
   [∀ i, ChartedSpace H (X' i)] {d' : FlagPairData ι' Flag' X'}
-  {ι'' Flag'' : Type} {X'' : ι'' → Type} [∀ i, TopologicalSpace (X'' i)]
+  {ι'' : Type} {Flag'' : Type*} {X'' : ι'' → Type} [∀ i, TopologicalSpace (X'' i)]
   [∀ i, ChartedSpace H (X'' i)] {d'' : FlagPairData ι'' Flag'' X''}
 
 namespace Iso
@@ -133,6 +174,20 @@ theorem pullbackSection_apply (e : Iso I ω d d') (U : Opens (GluedCurve d'))
   rw [RingEquiv.apply_symm_apply]
   exact ofContMDiff_apply _ _ _
 
+/-- Pullback after a section map evaluates the map at the image on the normalization. -/
+theorem pullbackSection_comp_apply (e : Iso I ω d d') (U : Opens (GluedCurve d'))
+    {R : CommRingCat} (f : R ⟶ (sheafedSpace I d').presheaf.obj (op U)) (g : R)
+    (x : (Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj
+      ((Opens.map (TopCat.ofHom
+        ⟨e.gluedCurveHomeomorph, e.gluedCurveHomeomorph.continuous⟩)).obj U)) :
+    (quotientSheafSectionsEquiv I (gluedRelSetoid d) _
+      ((f ≫ CommRingCat.ofHom (e.pullbackSection U)).hom g)).1 x =
+      (quotientSheafSectionsEquiv I (gluedRelSetoid d') U (f.hom g)).1
+        ⟨e x.1, by
+          rw [Opens.mem_map, TopCat.quotientMk_apply, ← e.gluedCurveHomeomorph_mk]
+          exact x.2⟩ := by
+  exact pullbackSection_apply e U (f.hom g) x
+
 /-- An actual normalization isomorphism descends with its holomorphic structure-sheaf map.
 The abbreviation lets the domains of its section maps compute as inverse images downstairs. -/
 abbrev sheafedSpaceHom (e : Iso I ω d d') : sheafedSpace I d ⟶ sheafedSpace I d' :=
@@ -142,21 +197,12 @@ abbrev sheafedSpaceHom (e : Iso I ω d d') : sheafedSpace I d ⟶ sheafedSpace I
         { app := fun U ↦ CommRingCat.ofHom (e.pullbackSection U.unop)
           naturality := by
             intro U V h
-            apply CommRingCat.hom_ext
-            apply RingHom.ext
-            intro g
-            apply quotientSheaf_ext
-            intro x
-            -- Expose categorical composition; both sides restrict and then precompose upstairs.
-            change (quotientSheafSectionsEquiv I (gluedRelSetoid d) _
-                (e.pullbackSection _ ((quotientSheaf I (gluedRelSetoid d')).obj.map h g))).1 x =
-              (quotientSheafSectionsEquiv I (gluedRelSetoid d) _
-                ((quotientSheaf I (gluedRelSetoid d)).obj.map
-                  ((Opens.map (TopCat.ofHom
-                    ⟨e.gluedCurveHomeomorph, e.gluedCurveHomeomorph.continuous⟩)).map h.unop).op
-                  (e.pullbackSection _ g))).1 x
-            erw [pullbackSection_apply, quotientSheaf_map_val, map_apply,
-              quotientSheaf_map_val, map_apply, pullbackSection_apply] } }
+            apply sheafedSpace_sectionMap_ext
+            intro g x
+            exact (pullbackSection_comp_apply e V.unop _ g x).trans
+              ((sheafedSpace_map_apply I d' h g _).trans
+                ((pullbackSection_apply e U.unop g _).symm.trans
+                  (sheafedSpace_comp_map_apply I d _ _ g x).symm)) } }
 
 /-- The map on sections in ringed descent is normalization pullback. -/
 @[simp]
@@ -185,17 +231,12 @@ theorem sheafedSpaceHom_refl : (Iso.refl I ω d).sheafedSpaceHom = 𝟙 (sheafed
   apply InducedCategory.hom_ext
   refine PresheafedSpace.ext_of_app sheafedSpaceHom_refl_base fun U ↦ ?_
   rw [sheafedSpaceHom_app, SheafedSpace.id_hom_c_app]
-  apply CommRingCat.hom_ext
-  apply RingHom.ext
-  intro g
-  apply quotientSheaf_ext
-  intro x
-  -- `erw` identifies the bundled presheaf projections with the quotient-sheaf maps.
-  erw [CommRingCat.hom_comp, RingHom.comp_apply]
-  erw [quotientSheaf_map_val I (gluedRelSetoid d), map_apply]
-  erw [pullbackSection_apply (Iso.refl I ω d) U g]
-  exact congrArg ((quotientSheafSectionsEquiv I (gluedRelSetoid d) U g).1)
-    (Subtype.ext (refl_apply _))
+  apply sheafedSpace_sectionMap_ext
+  intro g x
+  exact (sheafedSpace_comp_map_apply I d _ _ g x).trans
+    ((pullbackSection_apply (Iso.refl I ω d) U g _).trans
+      (congrArg ((quotientSheafSectionsEquiv I (gluedRelSetoid d) U g).1)
+        (Subtype.ext (refl_apply _))))
 
 /-- Ringed descent preserves composition, including the maps on holomorphic sections. -/
 @[simp]
@@ -205,21 +246,15 @@ theorem sheafedSpaceHom_trans (e : Iso I ω d d') (e' : Iso I ω d' d'') :
   refine PresheafedSpace.ext_of_app (e.sheafedSpaceHom_trans_base e') fun U ↦ ?_
   rw [sheafedSpaceHom_app, SheafedSpace.comp_hom_c_app, sheafedSpaceHom_app]
   simp only [SheafedSpace.comp_hom_base]
-  apply CommRingCat.hom_ext
-  apply RingHom.ext
-  intro g
-  apply quotientSheaf_ext
-  intro x
-  -- `erw` identifies the bundled presheaf projections with the quotient-sheaf maps.
-  erw [CommRingCat.hom_comp, RingHom.comp_apply]
-  erw [quotientSheaf_map_val I (gluedRelSetoid d), map_apply]
-  erw [pullbackSection_apply (e.trans e') U g]
-  erw [CommRingCat.hom_comp, RingHom.comp_apply]
-  erw [sheafedSpaceHom_app e]
-  erw [pullbackSection_apply e ((Opens.map e'.sheafedSpaceHom.hom.base).obj U),
-    pullbackSection_apply e' U]
-  exact congrArg ((quotientSheafSectionsEquiv I (gluedRelSetoid d'') U g).1)
-    (Subtype.ext (trans_apply e e' _))
+  apply sheafedSpace_sectionMap_ext
+  intro g x
+  exact (sheafedSpace_comp_map_apply I d _ _ g x).trans
+    ((pullbackSection_apply (e.trans e') U g _).trans
+      ((congrArg ((quotientSheafSectionsEquiv I (gluedRelSetoid d'') U g).1)
+        (Subtype.ext (trans_apply e e' _))).trans
+        ((pullbackSection_apply e' U g _).symm.trans
+          (pullbackSection_comp_apply e
+            ((Opens.map e'.sheafedSpaceHom.hom.base).obj U) _ g x).symm)))
 
 /-- An analytic normalization isomorphism respecting the node pairs descends to an isomorphism
 of the holomorphic sheafed spaces. -/
