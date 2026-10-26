@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
+public import Mathlib.Algebra.QuadraticAlgebra.AlgHom
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
