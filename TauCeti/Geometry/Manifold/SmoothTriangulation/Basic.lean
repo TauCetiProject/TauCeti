@@ -119,13 +119,18 @@ theorem of_le (h : IsSimplexImmersion I n g) (hmn : m ≤ n) : IsSimplexImmersio
 /-- Post-composing an immersion of a simplex with a `Cⁿ` map whose differential is injective at
 every point gives an immersion of the simplex. -/
 theorem comp (h : IsSimplexImmersion I n g) {φ : M → N} (hφ : ContMDiff I J n φ)
-    (hφ' : ∀ x, Injective (mfderiv I J φ x)) (hn : n ≠ 0) :
+    (hφ' : ∀ x, Injective (mfderiv I J φ x)) :
     IsSimplexImmersion J n (φ ∘ g) := by
   obtain ⟨F, hFg, hF, hF'⟩ := h
   refine ⟨φ ∘ F, fun x => by simp [hFg], hφ.comp_contMDiffOn hF, fun t => ?_⟩
   obtain ⟨F', hFt, hinj⟩ := hF' t
-  refine ⟨(mfderiv I J φ (F t.weights)).comp F',
-    ((hφ (F t.weights)).mdifferentiableAt hn).hasMFDerivAt.comp_hasMFDerivWithinAt _ hFt,
+  -- An injective `mfderiv` forces differentiability: otherwise it is `0`, so `E` is trivial.
+  have hφt : MDifferentiableAt I J φ (F t.weights) := by
+    by_contra hd
+    have : Subsingleton E := ⟨fun a b => hφ' (F t.weights) <| by
+      rw [mfderiv_zero_of_not_mdifferentiableAt hd]; rfl⟩
+    exact hd (mdifferentiable_of_subsingleton _)
+  refine ⟨(mfderiv I J φ (F t.weights)).comp F', hφt.hasMFDerivAt.comp_hasMFDerivWithinAt _ hFt,
     fun v hv hv0 => hinj v hv (hφ' (F t.weights) ?_)⟩
   exact hv0.trans (map_zero _).symm
 
@@ -158,7 +163,7 @@ theorem trans_diffeomorph (h : IsSmoothTriangulation I n f) (Φ : M ≃ₘ^n⟮I
   -- `(f.trans Φ.toHomeomorph) ∘ faceInclusion K σ` is `Φ ∘ (f ∘ faceInclusion K σ)` by definition.
   (h σ).comp (φ := Φ) Φ.contMDiff (fun x => by
     rw [← Φ.mfderivToContinuousLinearEquiv_coe hn]
-    exact (Φ.mfderivToContinuousLinearEquiv hn x).injective) hn
+    exact (Φ.mfderivToContinuousLinearEquiv hn x).injective)
 
 end IsSmoothTriangulation
 
