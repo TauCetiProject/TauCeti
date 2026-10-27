@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Quadratic.Model
 public import TauCeti.NumberTheory.QuadraticOrder.PrimeIdeal
 public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.Algebra.Squarefree
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Explicit prime ideals of the ring of integers of `ℚ(√d)`
@@ -28,9 +29,12 @@ prime `p`, the prime `2` included:
 * otherwise, when the relevant polynomial has no root modulo `p`, the ideal `(p)` is maximal:
   `p` is inert.
 
-The two factors coincide exactly in the ramified case, so together these cover split, ramified
-and inert primes. The factorization needs no case distinction at `2`, because Dedekind's criterion
-holds at every `p` in the maximal order. By
+Every prime of `𝓞 K` above `p` is one of these ideals. The two factors coincide exactly when `p`
+divides the discriminant of `K`, which is `4d`, respectively `d`; then `(p)` is the square of the
+single prime above `p`. So these statements cover split, ramified and inert primes. The ramified
+primes are explicit: `(p) = (p, √d) ^ 2` for every prime `p ∣ d`, and
+`(2) = (2, √d - 1) ^ 2` for `d ≡ 3 (mod 4)`. The factorization needs no case distinction at `2`,
+because Dedekind's criterion holds at every `p` in the maximal order. By
 contrast, in the order `ℤ[√d]` of conductor `2` with `d ≡ 1 (mod 4)` the criterion fails at `2`:
 `(2, √d - 1)² ≠ (2)` (`QuadraticAlgebra.span_two_omega_sub_one_sq_ne_span_two`).
 
@@ -46,6 +50,13 @@ contrast, in the order `ℤ[√d]` of conductor `2` with `d ≡ 1 (mod 4)` the c
 * `QuadraticAlgebra.isMaximal_span_natCast_halfGen_sub`, `absNorm_span_natCast_halfGen_sub`,
   `span_natCast_halfGen_sub_mul_span_natCast_halfGen_sub`,
   `isMaximal_span_natCast_iff_of_mod_four_eq_one`: the case `d ≡ 1 (mod 4)`.
+* `QuadraticAlgebra.isPrime_and_natCast_mem_iff_of_mod_four_ne_one`,
+  `isPrime_and_natCast_mem_iff_of_mod_four_eq_one`: the complete list of primes above `p`.
+* `QuadraticAlgebra.span_natCast_integralSqrt_sub_sq_eq_iff`,
+  `span_natCast_halfGen_sub_sq_eq_iff`: `(p)` is the square of the prime above `p` exactly when
+  `p` divides the discriminant, and the companion criteria for the two factors to coincide.
+* `QuadraticAlgebra.span_natCast_integralSqrt_sq_eq_span_natCast`,
+  `span_two_integralSqrt_sub_one_sq_eq_span_two`: the explicit ramified primes.
 
 ## References
 
@@ -83,6 +94,33 @@ omit [Fact p.Prime] in
 private theorem isMaximal_map_symm_iff (I : Ideal (QuadraticAlgebra ℤ a b)) :
     (I.map e.symm).IsMaximal ↔ I.IsMaximal :=
   Ideal.isMaximal_map_iff_of_bijective _ e.symm.bijective
+
+omit [Fact p.Prime] in
+private theorem map_symm_injective : Function.Injective (Ideal.map e.symm) :=
+  fun I J h => by
+    rw [← Ideal.comap_map_of_bijective _ e.symm.bijective (I := I), h,
+      Ideal.comap_map_of_bijective _ e.symm.bijective]
+
+omit [Fact p.Prime] in
+private theorem isPrime_and_natCast_mem_map_symm_iff (I : Ideal (QuadraticAlgebra ℤ a b)) :
+    (I.map e.symm).IsPrime ∧ (p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)) ∈ I.map e.symm ↔
+      I.IsPrime ∧ (p : QuadraticAlgebra ℤ a b) ∈ I := by
+  have hc := Ideal.comap_map_of_bijective _ e.symm.bijective (I := I)
+  refine and_congr ⟨fun h => hc ▸ Ideal.comap_isPrime _ _, fun _ => inferInstance⟩ ?_
+  conv_rhs => rw [← hc, Ideal.mem_comap, map_natCast]
+
+/-- The primes of `𝓞 ℚ(√d)` above `p`, read off from those of an integral model. -/
+private theorem isPrime_and_natCast_mem_iff_of_equiv
+    {P : Ideal (𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))} :
+    P.IsPrime ∧ (p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)) ∈ P ↔
+      (P = Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))} ∧
+          ∀ r : ℤ, ¬ (p : ℤ) ∣ r ^ 2 - b * r - a) ∨
+        ∃ r : ℤ, (p : ℤ) ∣ r ^ 2 - b * r - a ∧
+          P = Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)), e.symm ω - r} := by
+  obtain ⟨Q, rfl⟩ : ∃ Q : Ideal (QuadraticAlgebra ℤ a b), P = Q.map e.symm :=
+    ⟨_, (Ideal.map_comap_of_surjective _ e.symm.surjective P).symm⟩
+  simp_rw [isPrime_and_natCast_mem_map_symm_iff, isPrime_and_natCast_mem_iff,
+    ← map_symm_span_natCast e, ← map_symm_span_pair e, (map_symm_injective e).eq_iff]
 
 end Transport
 
@@ -152,6 +190,75 @@ theorem isMaximal_span_natCast_iff_of_mod_four_ne_one :
     isMaximal_span_natCast_iff]
   simp
 
+include hsf hd4 in
+/-- **The primes above `p` for `d ≢ 1 (mod 4)`.** A prime ideal `P` of `𝓞 ℚ(√d)` contains `p`
+exactly when either `d` is not a square modulo `p` and `P = (p)`, or `P = (p, √d - r)` for a
+square root `r` of `d` modulo `p`. -/
+theorem isPrime_and_natCast_mem_iff_of_mod_four_ne_one
+    {P : Ideal (𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))} :
+    P.IsPrime ∧ (p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)) ∈ P ↔
+      (P = Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))} ∧
+          ∀ r : ℤ, ¬ (p : ℤ) ∣ r ^ 2 - d) ∨
+        ∃ r : ℤ, (p : ℤ) ∣ r ^ 2 - d ∧
+          P = Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
+            integralSqrt (omega_sq_eq_algebraMap_int (d := d)) - r} := by
+  rw [isPrime_and_natCast_mem_iff_of_equiv (ringOfIntegersEquiv hsf hd4),
+    ringOfIntegersEquiv_symm_omega]
+  simp
+
+include hsf hd4 in
+/-- **Ramification for `d ≢ 1 (mod 4)`.** For a square root `r` of `d` modulo `p`, the two
+primes `(p, √d - r)` and `(p, √d + r)` above `p` coincide exactly when `p` divides the
+discriminant `4d` of `ℚ(√d)`. -/
+theorem span_natCast_integralSqrt_sub_eq_span_natCast_integralSqrt_add_iff
+    (hr : (p : ℤ) ∣ r ^ 2 - d) :
+    Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
+        integralSqrt (omega_sq_eq_algebraMap_int (d := d)) - r} =
+      Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
+        integralSqrt (omega_sq_eq_algebraMap_int (d := d)) + r} ↔
+      (p : ℤ) ∣ NumberField.discr (QuadraticAlgebra ℚ (d : ℚ) 0) := by
+  have hp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
+  have hadd : integralSqrt (omega_sq_eq_algebraMap_int (d := d)) + (r : 𝓞 _) =
+      integralSqrt (omega_sq_eq_algebraMap_int (d := d)) - ((-r : ℤ) : 𝓞 _) := by
+    push_cast; ring
+  rw [hadd, ← map_ringOfIntegersEquiv_symm_span hsf hd4,
+    ← map_ringOfIntegersEquiv_symm_span hsf hd4, (map_symm_injective _).eq_iff, eq_comm,
+    span_natCast_omega_sub_eq_iff (by simpa using hr), discr_eq_four_mul_of_mod_four_ne_one hsf hd4]
+  -- `(2r)² = 4d + 4 (r² - d)`, so `p ∣ 2r` exactly when `p ∣ 4d`.
+  have h4 : (p : ℤ) ∣ (r - -r) ^ 2 - 4 * d := by
+    convert dvd_mul_of_dvd_right hr 4 using 1; ring
+  constructor
+  · intro h
+    simpa using (dvd_sub (dvd_pow h two_ne_zero) h4)
+  · intro h
+    exact hp.dvd_of_dvd_pow (n := 2) (by simpa using dvd_add h4 h)
+
+include hsf hd4 in
+/-- **Ramified primes for `d ≢ 1 (mod 4)`.** For a square root `r` of `d` modulo `p`, the
+factorization `p 𝓞 ℚ(√d) = (p, √d - r) ^ 2` holds exactly when `p` divides the discriminant `4d`
+of `ℚ(√d)`. Otherwise `p` splits into the two distinct primes `(p, √d ∓ r)`. -/
+theorem span_natCast_integralSqrt_sub_sq_eq_iff (hr : (p : ℤ) ∣ r ^ 2 - d) :
+    Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
+        integralSqrt (omega_sq_eq_algebraMap_int (d := d)) - r} ^ 2 =
+      Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))} ↔
+      (p : ℤ) ∣ NumberField.discr (QuadraticAlgebra ℚ (d : ℚ) 0) := by
+  rw [← span_natCast_integralSqrt_sub_eq_span_natCast_integralSqrt_add_iff hsf hd4 hr, sq,
+    ← span_natCast_integralSqrt_sub_mul_span_natCast_integralSqrt_add hsf hd4 hr]
+  refine ⟨fun h => mul_left_cancel₀ ?_ h, fun h => by rw [← h]⟩
+  exact (isMaximal_span_natCast_integralSqrt_sub hsf hd4 hr).ne_bot_of_isIntegral_int
+
+include hsf in
+/-- **The ramified prime above `2` for `d ≡ 3 (mod 4)`.** Then `2 𝓞 ℚ(√d) = (2, √d - 1) ^ 2`. -/
+theorem span_two_integralSqrt_sub_one_sq_eq_span_two (hd : d % 4 = 3) :
+    Ideal.span {(2 : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
+        integralSqrt (omega_sq_eq_algebraMap_int (d := d)) - 1} ^ 2 = Ideal.span {2} := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have h := (span_natCast_integralSqrt_sub_sq_eq_iff (p := 2) (r := 1) hsf (by omega)
+    (by norm_num; omega)).mpr (by
+      rw [discr_eq_four_mul_of_mod_four_ne_one hsf (by omega)]
+      exact Dvd.dvd.mul_right (by norm_num) _)
+  simpa using h
+
 end ModFourNeOne
 
 /-! ### The case `d ≡ 1 (mod 4)` -/
@@ -219,6 +326,81 @@ theorem isMaximal_span_natCast_iff_of_mod_four_eq_one :
     isMaximal_span_natCast_iff]
   simp
 
+include hsf in
+/-- **The primes above `p` for `d ≡ 1 (mod 4)`.** A prime ideal `P` of `𝓞 ℚ(√d)` contains `p`
+exactly when either `X² - X - (d - 1)/4` has no root modulo `p` and `P = (p)`, or
+`P = (p, η - r)` for a root `r` of it modulo `p`, where `η = (1 + √d)/2`. -/
+theorem isPrime_and_natCast_mem_iff_of_mod_four_eq_one
+    {P : Ideal (𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))} :
+    P.IsPrime ∧ (p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)) ∈ P ↔
+      (P = Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))} ∧
+          ∀ r : ℤ, ¬ (p : ℤ) ∣ r ^ 2 - r - (d - 1) / 4) ∨
+        ∃ r : ℤ, (p : ℤ) ∣ r ^ 2 - r - (d - 1) / 4 ∧
+          P = Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
+            halfGen minpoly_integralSqrt_omega hd4 - r} := by
+  rw [isPrime_and_natCast_mem_iff_of_equiv (ringOfIntegersEquivHalf hsf hd4),
+    ringOfIntegersEquivHalf_symm_omega]
+  simp
+
+include hsf in
+/-- **Ramification for `d ≡ 1 (mod 4)`.** For a root `r` of `X² - X - (d - 1)/4` modulo `p`, the
+two primes `(p, η - r)` and `(p, η - (1 - r))` above `p` coincide exactly when `p` divides the
+discriminant `d` of `ℚ(√d)`, where `η = (1 + √d)/2`. -/
+theorem span_natCast_halfGen_sub_eq_span_natCast_halfGen_sub_iff
+    (hr : (p : ℤ) ∣ r ^ 2 - r - (d - 1) / 4) :
+    Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
+        halfGen minpoly_integralSqrt_omega hd4 - r} =
+      Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
+        halfGen minpoly_integralSqrt_omega hd4 - (1 - r : ℤ)} ↔
+      (p : ℤ) ∣ NumberField.discr (QuadraticAlgebra ℚ (d : ℚ) 0) := by
+  have hp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
+  rw [← map_ringOfIntegersEquivHalf_symm_span hsf hd4,
+    ← map_ringOfIntegersEquivHalf_symm_span hsf hd4, (map_symm_injective _).eq_iff, eq_comm,
+    span_natCast_omega_sub_eq_iff (by simpa using hr), discr_eq_of_mod_four_eq_one hsf hd4]
+  -- `(2r - 1)² = d + 4 (r² - r - (d - 1)/4)`, so `p ∣ 2r - 1` exactly when `p ∣ d`.
+  have h4 : (p : ℤ) ∣ (r - (1 - r)) ^ 2 - d := by
+    convert dvd_mul_of_dvd_right hr 4 using 1
+    have hd : d = 4 * ((d - 1) / 4) + 1 := by omega
+    linear_combination -hd
+  constructor
+  · intro h
+    simpa using (dvd_sub (dvd_pow h two_ne_zero) h4)
+  · intro h
+    exact hp.dvd_of_dvd_pow (n := 2) (by simpa using dvd_add h4 h)
+
+include hsf in
+/-- **Ramified primes for `d ≡ 1 (mod 4)`.** For a root `r` of `X² - X - (d - 1)/4` modulo `p`,
+the factorization `p 𝓞 ℚ(√d) = (p, η - r) ^ 2` holds exactly when `p` divides the discriminant
+`d` of `ℚ(√d)`, where `η = (1 + √d)/2`. Otherwise `p` splits into the two distinct primes
+`(p, η - r)` and `(p, η - (1 - r))`. -/
+theorem span_natCast_halfGen_sub_sq_eq_iff (hr : (p : ℤ) ∣ r ^ 2 - r - (d - 1) / 4) :
+    Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
+        halfGen minpoly_integralSqrt_omega hd4 - r} ^ 2 =
+      Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))} ↔
+      (p : ℤ) ∣ NumberField.discr (QuadraticAlgebra ℚ (d : ℚ) 0) := by
+  rw [← span_natCast_halfGen_sub_eq_span_natCast_halfGen_sub_iff hsf hd4 hr, sq,
+    ← span_natCast_halfGen_sub_mul_span_natCast_halfGen_sub hsf hd4 hr]
+  refine ⟨fun h => mul_left_cancel₀ ?_ h, fun h => by rw [← h]⟩
+  exact (isMaximal_span_natCast_halfGen_sub hsf hd4 hr).ne_bot_of_isIntegral_int
+
 end ModFourEqOne
+
+/-! ### The ramified primes dividing `d` -/
+
+/-- **The ramified prime above a prime divisor of `d`.** For squarefree `d` and a prime `p ∣ d`,
+`p 𝓞 ℚ(√d) = (p, √d) ^ 2`, whatever the residue of `d` modulo `4`. -/
+theorem span_natCast_integralSqrt_sq_eq_span_natCast (hsf : Squarefree d) (hp : (p : ℤ) ∣ d) :
+    Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
+        integralSqrt (omega_sq_eq_algebraMap_int (d := d))} ^ 2 =
+      Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))} := by
+  have hp' : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
+  obtain ⟨m, hm⟩ := hp
+  -- `p ∤ m`, since `p ^ 2 ∤ d`.
+  have hpm : IsCoprime (p : ℤ) m := hp'.coprime_iff_not_dvd.mpr fun ⟨k, hk⟩ =>
+    hp'.not_isUnit (hsf p ⟨k, by rw [hm, hk]; ring⟩)
+  refine Ideal.span_pair_sq_eq_span_singleton_of_isCoprime (m := (m : 𝓞 _)) ?_
+    (by simpa using hpm.intCast (R := 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)))
+  rw [integralSqrt_sq]
+  exact (congrArg (algebraMap ℤ _) hm).trans (by simp)
 
 end QuadraticAlgebra

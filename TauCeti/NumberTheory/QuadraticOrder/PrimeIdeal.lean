@@ -33,7 +33,9 @@ generators, following the Dedekind–Kummer recipe:
 * every prime of `ℤ[ω]` containing `p` is `𝔭_r` or `𝔭_(b - r)` (`eq_or_eq_of_natCast_mem`),
   whether or not the criterion holds; the two coincide exactly when `p ∣ 2r - b`;
 * if `f` has no root modulo `p`, then `(p)` itself is maximal, so `p` is inert
-  (`isMaximal_span_natCast_iff`), and conversely.
+  (`isMaximal_span_natCast_iff`), and conversely;
+* together, the primes of `ℤ[ω]` above `p` are exactly `(p)` when `f` has no root modulo `p`, and
+  the ideals `𝔭_r` otherwise (`isPrime_and_natCast_mem_iff`).
 
 For a monogenic order inside a number field, Mathlib's Kummer–Dedekind theorem
 (`KummerDedekind.normalizedFactorsMapEquivNormalizedFactorsMinPolyMk`) describes the primes of
@@ -359,5 +361,30 @@ theorem isMaximal_span_natCast_iff :
     rw [hspan]
     exact RingHom.ker_isMaximal_of_surjective _
       (mapRingHom_surjective (Int.castRingHom (ZMod p)) a b ZMod.intCast_surjective)
+
+/-- **The primes above `p`.** A prime ideal `P` of `ℤ[ω]` contains the rational prime `p` exactly
+when either `X² - b X - a` has no root modulo `p` and `P = (p)`, or `P = (p, ω - r)` for a root
+`r` of `X² - b X - a` modulo `p`. This lists every prime of `ℤ[ω]` above `p`, including at primes
+dividing the conductor of a nonmaximal order. -/
+theorem isPrime_and_natCast_mem_iff {P : Ideal (QuadraticAlgebra ℤ a b)} :
+    P.IsPrime ∧ (p : QuadraticAlgebra ℤ a b) ∈ P ↔
+      (P = Ideal.span {(p : QuadraticAlgebra ℤ a b)} ∧
+          ∀ r : ℤ, ¬ (p : ℤ) ∣ r ^ 2 - b * r - a) ∨
+        ∃ r : ℤ, (p : ℤ) ∣ r ^ 2 - b * r - a ∧
+          P = Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (r : QuadraticAlgebra ℤ a b)} := by
+  constructor
+  · rintro ⟨hP, hp⟩
+    by_cases h : ∃ r : ℤ, (p : ℤ) ∣ r ^ 2 - b * r - a
+    · obtain ⟨r, hr⟩ := h
+      refine Or.inr ?_
+      rcases eq_or_eq_of_natCast_mem hr hp with h | h
+      · exact ⟨r, hr, h⟩
+      · exact ⟨b - r, by convert hr using 1; ring, h⟩
+    · rw [not_exists] at h
+      refine Or.inl ⟨((isMaximal_span_natCast_iff.mpr h).eq_of_le hP.ne_top ?_).symm, h⟩
+      rwa [Ideal.span_le, Set.singleton_subset_iff]
+  · rintro (⟨rfl, h⟩ | ⟨r, hr, rfl⟩)
+    · exact ⟨(isMaximal_span_natCast_iff.mpr h).isPrime, Ideal.mem_span_singleton_self _⟩
+    · exact ⟨(isMaximal_span_natCast_omega_sub hr).isPrime, Ideal.subset_span (by simp)⟩
 
 end QuadraticAlgebra
