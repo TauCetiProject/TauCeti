@@ -52,6 +52,17 @@ class ContentCISeparationTests(unittest.TestCase):
             self.assertIn('scripts/test_bors_scope_approval.py', steps[restore]['run'])
             self.assertIn('scripts/test_content_ci_separation.py', steps[restore]['run'])
 
+    def test_dependency_warming_probes_are_manual_only(self):
+        path = WORKFLOWS / 'warm-dependencies.yml'
+        if not path.exists():
+            self.skipTest('this generated project has no dependency warmer')
+        steps = workflow(path.name)['jobs']['warm']['steps']
+        probes = [step for step in steps
+                  if 'bash scripts/probe_dependency_sandbox.sh' in step.get('run', '')]
+        self.assertTrue(probes)
+        for probe in probes:
+            self.assertEqual(probe.get('if'), 'inputs.capacity')
+
     def test_workflow_shell_steps_parse(self):
         for name in ('ci.yml', 'pr-build.yml', 'infrastructure-tests.yml', 'lint-full.yml'):
             for job in workflow(name)['jobs'].values():
