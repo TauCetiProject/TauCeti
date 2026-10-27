@@ -343,6 +343,7 @@ private theorem coe_projectiveCorner_castDeg (i j : V) (s t : ℤ) (h : s = t)
   simp only [castDeg_self]
 
 /-- The degree-indexed dictionary carries genuine enriched composition to corner multiplication. -/
+@[simp↓]
 theorem coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_comp
     (i j l : V) (a b n : ℤ) (hab : a + b = n)
     (f : DGHom k a (D i) (D j)) (g : DGHom k b (D j) (D l)) :
