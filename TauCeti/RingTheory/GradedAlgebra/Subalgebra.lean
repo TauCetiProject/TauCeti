@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
+public import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # The grading of a homogeneous subalgebra
@@ -33,7 +34,7 @@ underlying effective descent for projective spectra.
   homogeneous components in `A`.
 -/
 
-@[expose] public section
+public section
 
 open DirectSum
 
@@ -63,32 +64,11 @@ variable [GradedAlgebra 𝒜] {T 𝒜}
 /-- The grading of a homogeneous subalgebra induced by the ambient grading is internal: every
 element of `T` is uniquely a finite sum of elements of `T` lying in the pieces `𝒜 i`. -/
 theorem isInternal_grading (hT : SetLike.IsHomogeneous 𝒜 T) :
-    DirectSum.IsInternal (T.grading 𝒜) := by
-  -- Each piece of `T` includes into the corresponding piece of `A`.
-  let φ : ∀ i, T.grading 𝒜 i →+ 𝒜 i := fun i ↦
-    { toFun x := ⟨x.1, x.2⟩
-      map_zero' := rfl
-      map_add' _ _ := rfl }
-  have hφ : ∀ i (a : T.grading 𝒜 i), ((φ i a : 𝒜 i) : A) = ((a : T) : A) := fun _ _ ↦ rfl
-  have hcomm : ∀ x : ⨁ i, T.grading 𝒜 i,
-      ((DirectSum.coeAddMonoidHom (T.grading 𝒜) x : T) : A) =
-        DirectSum.coeAddMonoidHom 𝒜 (DirectSum.map φ x) := by
-    intro x
-    induction x using DirectSum.induction_on with
-    | zero => simp
-    | of i x => simp [hφ]
-    | add x y hx hy => simp [hx, hy]
-  refine ⟨fun x y hxy ↦ ?_, fun x ↦ ?_⟩
-  · refine ((DirectSum.map_injective φ).mpr fun i a b h ↦ by
-      ext; rw [← hφ, ← hφ, h]) ((DirectSum.Decomposition.isInternal 𝒜).injective ?_)
-    rw [← hcomm, ← hcomm, hxy]
-  -- An element of `T` is the sum of its homogeneous components, each of which lies in `T`.
-  classical
-  refine ⟨∑ i ∈ (decompose 𝒜 (x : A)).support,
-    DirectSum.of (fun i ↦ T.grading 𝒜 i) i
-      ⟨⟨decompose 𝒜 (x : A) i, hT i x.2⟩, (decompose 𝒜 (x : A) i).2⟩, Subtype.ext ?_⟩
-  simp only [map_sum, DirectSum.coeAddMonoidHom_of, AddSubmonoidClass.coe_finsetSum]
-  exact DirectSum.sum_support_decompose 𝒜 (x : A)
+    DirectSum.IsInternal (T.grading 𝒜) :=
+  -- Restrict the decomposition of `A` along the inclusion, whose range contains the homogeneous
+  -- components of elements of `T`.
+  TauCeti.DirectSum.isInternal_comap 𝒜 (T.grading 𝒜) T.val.toLinearMap Subtype.val_injective
+    (fun _ _ ↦ Iff.rfl) fun i x ↦ ⟨⟨_, hT i x.2⟩, rfl⟩
 
 /-- A homogeneous subalgebra is a graded algebra, graded by its intersections with the pieces of
 the ambient grading. -/
@@ -100,9 +80,9 @@ variable (T 𝒜) [GradedAlgebra (T.grading 𝒜)]
 
 /-- The inclusion of a subalgebra into the ambient algebra, as a homomorphism of graded algebras
 for the induced grading. -/
-def gradedVal : T.grading 𝒜 →ₐᵍ[R] 𝒜 where
+@[expose] def gradedVal : T.grading 𝒜 →ₐᵍ[R] 𝒜 where
   __ := T.val
-  map_mem hx := hx
+  map_mem := mem_grading_iff T 𝒜 |>.mp
 
 @[simp]
 theorem coe_gradedVal : ⇑(T.gradedVal 𝒜) = Subtype.val :=

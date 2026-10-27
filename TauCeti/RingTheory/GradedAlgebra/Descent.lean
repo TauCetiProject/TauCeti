@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.GradedAlgebra.TensorProduct
 public import TauCeti.RingTheory.Flat.EffectiveDescent
+public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 public import TauCeti.RingTheory.GradedAlgebra.Subalgebra
 
 /-!
@@ -56,7 +57,7 @@ algebra (`TauCeti.AlgebraicGeometry.Descent.Proj`).
 * The Stacks Project, Chapter *Descent*, Section *Descent data for schemes over schemes*.
 -/
 
-@[expose] public section
+public section
 
 open TensorProduct DirectSum
 
@@ -87,12 +88,12 @@ abbrev descendedGrading (i : ι) : Submodule R D.descended :=
 omit [DecidableEq ι] [AddMonoid ι] in
 theorem mem_descendedGrading_iff {i : ι} {a : D.descended} :
     a ∈ D.descendedGrading ℬ i ↔ (a : B) ∈ ℬ i :=
-  Iff.rfl
+  Subalgebra.mem_grading_iff _ _
 
 /-- The inclusion of the descended algebra into `B`, as a homomorphism of graded rings. -/
-def descendedGradedVal : D.descendedGrading ℬ →+*ᵍ ℬ where
+@[expose] def descendedGradedVal : D.descendedGrading ℬ →+*ᵍ ℬ where
   __ := (D.descended.val : D.descended →+* B)
-  map_mem hx := hx
+  map_mem := D.mem_descendedGrading_iff ℬ |>.mp
 
 omit [DecidableEq ι] [AddMonoid ι] in
 @[simp]
@@ -103,7 +104,7 @@ variable [GradedAlgebra ℬ] [D.IsGraded ℬ]
 
 /-- The coaction of a graded descent datum, as a homomorphism of graded `S`-algebras from `B` to
 `S ⊗[R] B` with the base-changed grading. -/
-def gradedCoaction : ℬ →ₐᵍ[S] fun i ↦ ((ℬ i).restrictScalars R).baseChange S where
+@[expose] def gradedCoaction : ℬ →ₐᵍ[S] fun i ↦ ((ℬ i).restrictScalars R).baseChange S where
   __ := D.coaction
   map_mem := IsGraded.coaction_mem
 
@@ -173,19 +174,12 @@ private theorem coe_gradedBaseChangeHom [Module.Flat R S] :
 /-- **Effectivity of graded descent.** If `S` is flat over `R`, the effectivity isomorphism
 `S ⊗[R] D.descended ≃ₐ[S] B` of a graded descent datum is an isomorphism of graded algebras: it
 carries `S ⊗[R] (D.descended ∩ ℬ i)` exactly onto `ℬ i`. -/
+@[simp]
 theorem baseChangeEquiv_mem_iff [Module.Flat R S] {x : S ⊗[R] D.descended} {i : ι} :
     D.baseChangeEquiv x ∈ ℬ i ↔ x ∈ (D.descendedGrading ℬ i).baseChange S := by
   rw [← D.coe_gradedBaseChangeHom ℬ]
-  refine ⟨fun hx ↦ ?_, fun hx ↦ (D.gradedBaseChangeHom ℬ).map_mem hx⟩
-  -- The degree-`i` component of `x` has the same image as `x`, so it is `x` itself.
-  have h := map_directSumDecompose (fun i ↦ (D.descendedGrading ℬ i).baseChange S) ℬ
-    (D.gradedBaseChangeHom ℬ) (x := x) (i := i)
-  rw [decompose_of_mem_same ℬ hx] at h
-  have hinj : Function.Injective (D.gradedBaseChangeHom ℬ) := by
-    rw [D.coe_gradedBaseChangeHom ℬ]
-    exact D.baseChangeEquiv.injective
-  rw [← hinj h]
-  exact SetLike.coe_mem _
+  exact Graded.map_mem_iff_of_injective _
+    (D.coe_gradedBaseChangeHom ℬ ▸ D.baseChangeEquiv.injective)
 
 end Ring
 
