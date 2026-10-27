@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.Minpoly.Primitive
 public import TauCeti.NumberTheory.Height.House
 public import TauCeti.RingTheory.Algebraic.Denominator
-public import TauCeti.Analysis.Polynomial.SupNorm.CoeffBound
+public import TauCeti.Analysis.Polynomial.CoeffBound
 
 /-!
 # Denominators and the size of an algebraic number
