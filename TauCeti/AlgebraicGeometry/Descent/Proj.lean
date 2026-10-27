@@ -21,9 +21,10 @@ inclusion into `B` is a graded ring homomorphism exhibiting `B` as the base chan
 `Proj ℬ ⟶ Proj (D.descendedGrading ℬ)`, `Spec S ⟶ Spec R`
 
 is cartesian: `Proj ℬ` is the base change of the projective spectrum of the descended graded
-algebra. Thus the projective spectrum of a graded algebra carrying a graded descent datum, such
-as the homogeneous coordinate ring of a projective scheme with a compatibly descended relatively
-ample line bundle, is obtained by base change from a projective scheme over `Spec R`.
+algebra. This applies, for instance, to the section ring of a projective scheme with a
+compatibly descended relatively ample line bundle. No finiteness or generation hypotheses are
+imposed on `ℬ`, so nothing is claimed here about projectivity of
+`Proj (D.descendedGrading ℬ)` over `Spec R`.
 
 ## Main results
 
