@@ -8,7 +8,6 @@ module
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Equation
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.Basic
 public import TauCeti.KnotTheory.Grid.Homology.Transpose
-import TauCeti.Algebra.CharP.Two
 
 /-!
 # Commutation invariance of `GH⁻` and of `τ`
@@ -40,8 +39,6 @@ elementary commutation (`GridDiagram.IsKnot.tau_eq_of_isCommutation`).
 
 ## Main results
 
-* `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_reverse_add_eq`: the homotopy
-  equation `∂' ∘ H' + H' ∘ ∂' = 1 + Φ ∘ Ψ` on the commuted diagram.
 * `TauCeti.GridDiagram.unblockedHomologyCommutationMap_bijective`: **commutation invariance of
   `GH⁻`**, the commutation map on unblocked grid homology is bijective.
 * `TauCeti.GridDiagram.IsKnot.tau_swapColumns`: `τ` is unchanged by a column commutation.
@@ -68,62 +65,6 @@ variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) (R : Type*)
 
 local notation "G'" => G.swapColumns C.column (finRotate n C.column)
 
-/-! ### The reverse commutation at chain level -/
-
-section Chain
-
-variable [CommSemiring R] [CharP R 2]
-
-omit [CommSemiring R] [CharP R 2] in
-/-- Commuting back along the reverse data recovers the original diagram. -/
-private theorem swapColumns_reverse_swapColumns :
-    (G').swapColumns C.reverse.column (finRotate n C.reverse.column) = G := by
-  rw [ColumnCommutationData.reverse_column, swapColumns_swapColumns]
-
-/-- **The reverse commutation map is a chain map back to `G`.** The pentagon map `Ψ` of the
-reverse commutation intertwines the unblocked differential of the commuted diagram with that of
-`G`. -/
-theorem commutationMap_reverse_comp_unblockedDifferential :
-    ((G').commutationMap R C.reverse).comp ((G').unblockedDifferential R) =
-      (G.unblockedDifferential R).comp ((G').commutationMap R C.reverse) := by
-  have h := (G').commutationMap_comp_unblockedDifferential C.reverse R
-  rwa [swapColumns_reverse_swapColumns] at h
-
-/-- **The homotopy equation on the commuted diagram.** The hexagon map `H'` of the reverse
-commutation is a chain homotopy between the identity of `GC⁻(G')` and the round trip `Φ ∘ Ψ`
-through `G`: `∂' ∘ H' + H' ∘ ∂' = 1 + Φ ∘ Ψ`. -/
-theorem unblockedDifferential_commutationHomotopy_reverse_add_eq (c : GridChainMinus R n) :
-    (G').unblockedDifferential R ((G').commutationHomotopy R C.reverse c) +
-        (G').commutationHomotopy R C.reverse ((G').unblockedDifferential R c) =
-      c + G.commutationMap R C ((G').commutationMap R C.reverse c) := by
-  have h := (G').unblockedDifferential_commutationHomotopy_add_eq C.reverse R c
-  -- The type of the twice-reversed data mentions the doubly swapped diagram, so its turn is
-  -- replaced by that of `C` before that diagram is rewritten to `G`.
-  have hturn : (C.reverse.reverse : ColumnTurn n) = C := ColumnTurn.ext (by simp) (by simp)
-  rwa [hturn, swapColumns_reverse_swapColumns] at h
-
-/-- On a cycle `z` of `GC⁻(G)`, the round trip `Ψ ∘ Φ` through the commuted diagram is the
-identity up to the boundary of `H z`. -/
-theorem commutationMap_reverse_commutationMap_of_mem_ker {z : GridChainMinus R n}
-    (hz : z ∈ LinearMap.ker (G.unblockedDifferential R)) :
-    (G').commutationMap R C.reverse (G.commutationMap R C z) =
-      z + G.unblockedDifferential R (G.commutationHomotopy R C z) := by
-  have h := G.unblockedDifferential_commutationHomotopy_add_eq C R z
-  rw [LinearMap.mem_ker.mp hz, map_zero, add_zero] at h
-  rw [h, ← add_assoc, add_self_eq_zero_of_charTwo (MvPolynomial (Fin n) R) z, zero_add]
-
-/-- On a cycle `z` of `GC⁻(G')`, the round trip `Φ ∘ Ψ` through `G` is the identity up to the
-boundary of `H' z`. -/
-theorem commutationMap_commutationMap_reverse_of_mem_ker {z : GridChainMinus R n}
-    (hz : z ∈ LinearMap.ker ((G').unblockedDifferential R)) :
-    G.commutationMap R C ((G').commutationMap R C.reverse z) =
-      z + (G').unblockedDifferential R ((G').commutationHomotopy R C.reverse z) := by
-  have h := G.unblockedDifferential_commutationHomotopy_reverse_add_eq C R z
-  rw [LinearMap.mem_ker.mp hz, map_zero, add_zero] at h
-  rw [h, ← add_assoc, add_self_eq_zero_of_charTwo (MvPolynomial (Fin n) R) z, zero_add]
-
-end Chain
-
 /-! ### Bijectivity on homology -/
 
 variable [CommRing R] [CharP R 2]
@@ -140,7 +81,7 @@ theorem unblockedHomologyCommutationMap_bijective :
     obtain ⟨w, hw⟩ := hy
     rw [unblockedHomologyClass_eq_zero_iff]
     refine ⟨(G').commutationMap R C.reverse w - G.commutationHomotopy R C z, ?_⟩
-    have hΨ := LinearMap.congr_fun (G.commutationMap_reverse_comp_unblockedDifferential C R) w
+    have hΨ := LinearMap.congr_fun (G.commutationMap_reverse_comp_unblockedDifferential R C) w
     simp only [LinearMap.comp_apply, hw] at hΨ
     rw [map_sub, ← hΨ, G.commutationMap_reverse_commutationMap_of_mem_ker C R z.2,
       add_sub_cancel_right]
@@ -148,9 +89,8 @@ theorem unblockedHomologyCommutationMap_bijective :
     -- `Φ Ψ z - z = ∂' H' z`.
     obtain ⟨z, rfl⟩ := (G').unblockedHomologyClass_surjective R y
     have hΨz : (G').commutationMap R C.reverse z ∈ LinearMap.ker (G.unblockedDifferential R) := by
-      have h := LinearMap.congr_fun (G.commutationMap_reverse_comp_unblockedDifferential C R) z
-      simp only [LinearMap.comp_apply, LinearMap.mem_ker.mp z.2, map_zero] at h
-      exact LinearMap.mem_ker.mpr h.symm
+      have h := (G').commutationMap_mem_ker_unblockedDifferential R C.reverse z.2
+      simpa only [ColumnCommutationData.reverse_column, swapColumns_swapColumns] using h
     refine ⟨G.unblockedHomologyClass R ⟨_, hΨz⟩, ?_⟩
     rw [unblockedHomologyCommutationMap_unblockedHomologyClass, ← sub_eq_zero, ← map_sub,
       unblockedHomologyClass_eq_zero_iff]
