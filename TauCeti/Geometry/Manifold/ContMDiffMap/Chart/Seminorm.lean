@@ -50,10 +50,9 @@ noncomputable def chartDerivativeSeminorm (x : M)
     (K : TopologicalSpace.Compacts (extChartAt I x).target) (m : ℕ) (hm : m ≤ n) :
     Seminorm 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯ :=
   (normSeminorm 𝕜 C(K, E [×m]→L[𝕜] F)).comp
-    ({ toFun := fun f ↦ (chartIteratedFDerivLinearMap x m hm f).restrict K
-       map_add' := fun f g ↦ by rw [map_add]; rfl
-       map_smul' := fun c f ↦ by rw [map_smul]; rfl } :
-      C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜] C(K, E [×m]→L[𝕜] F))
+    ((ContinuousMap.compCLM 𝕜 (E [×m]→L[𝕜] F)
+      (ContinuousMap.subtypeVal (K : Set (extChartAt I x).target))).toLinearMap ∘ₗ
+        chartIteratedFDerivLinearMap x m hm)
 
 /-- The derivative seminorm is the supremum norm of the restricted chart jet. -/
 theorem chartDerivativeSeminorm_apply (x : M)
@@ -61,7 +60,7 @@ theorem chartDerivativeSeminorm_apply (x : M)
     (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
     chartDerivativeSeminorm x K m hm f = ‖(chartIteratedFDeriv f x m hm).restrict K‖ := by
   rw [chartDerivativeSeminorm, Seminorm.comp_apply]
-  simp only [coe_normSeminorm, LinearMap.coe_mk, AddHom.coe_mk]
+  simp only [coe_normSeminorm]
   exact congrArg (fun j : C((extChartAt I x).target, E [×m]→L[𝕜] F) ↦ ‖j.restrict K‖)
     (chartIteratedFDerivLinearMap_apply x m hm f)
 
