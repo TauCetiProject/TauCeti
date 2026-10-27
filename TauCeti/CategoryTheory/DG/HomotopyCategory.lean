@@ -655,6 +655,19 @@ theorem homOf_smul {X Y : C} (r : R) (f : DGHom R 0 X Y)
     homOf R (r • f) ((dgCycles R X Y).smul_mem r hf) = r • homOf R f hf :=
   dgHomotopyClass_smul R r f hf
 
+/-- Every morphism of the homotopy category is the class of a closed degree-zero DG morphism. -/
+theorem exists_homOf_eq {X Y : C} (f : of R X ⟶ of R Y) :
+    ∃ (g : DGHom R 0 X Y) (hg : g ∈ dgCycles R X Y), homOf R g hg = f :=
+  exists_dgHomotopyClass_eq R f
+
+/-- Taking a morphism to the homotopy category preserves negation. -/
+@[simp]
+theorem homOf_neg {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
+    homOf R (-f) ((dgCycles R X Y).neg_mem hf) = -homOf R f hf := by
+  rw [eq_neg_iff_add_eq_zero, ← homOf_add, ← homOf_zero]
+  congr 1
+  exact neg_add_cancel f
+
 /-- A closed degree-zero DG morphism represents zero precisely when it is a boundary. -/
 @[simp]
 theorem homOf_eq_zero_iff {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgCycles R X Y) :

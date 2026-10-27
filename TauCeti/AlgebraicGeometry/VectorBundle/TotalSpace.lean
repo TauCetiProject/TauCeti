@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra
+public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Bidual
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Pullback
 public import TauCeti.AlgebraicGeometry.VectorBundle.InternalHom.Pullback

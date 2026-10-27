@@ -117,29 +117,13 @@ theorem _root_.ZLattice.volume_image_eq_measure_div_covolume (L : Submodule ℤ 
     (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] (s : Set E) :
     volume ((b.ofZLatticeBasis ℝ).equivFun '' s) =
       μ s / ENNReal.ofReal (ZLattice.covolume L μ) := by
-  set φ := (b.ofZLatticeBasis ℝ).equivFun
-  have hφ : MeasurableEmbedding φ :=
-    φ.toContinuousLinearEquiv.toHomeomorph.toMeasurableEquiv.measurableEmbedding
-  have : (μ.map φ).IsAddHaarMeasure := φ.toContinuousLinearEquiv.isAddHaarMeasure_map μ
-  -- The image of `μ` is a multiple `c • volume`, and `c` is the measure of the fundamental domain.
-  obtain ⟨c, hc⟩ : ∃ c : ENNReal, μ.map φ = c • volume :=
-    ⟨_, by rw [← addHaarMeasure_eq_volume_pi ι]; exact Measure.addHaarMeasure_unique _ _⟩
-  have hμ : ∀ t, μ t = c * volume (φ '' t) := fun t ↦ by
-    rw [← smul_eq_mul, ← Measure.smul_apply, ← hc, hφ.map_apply,
-      Set.preimage_image_eq t φ.injective]
-  have hF : φ '' ZSpan.fundamentalDomain (b.ofZLatticeBasis ℝ) =
-      Set.pi Set.univ fun _ ↦ Set.Ico (0 : ℝ) 1 := by
-    ext x
-    have hx : ∀ i, (b.ofZLatticeBasis ℝ).repr (φ.symm x) i = x i := fun i ↦
-      congrFun (φ.apply_symm_apply x) i
-    simp [LinearEquiv.image_eq_preimage_symm, ZSpan.mem_fundamentalDomain, hx]
-  have hcov : ENNReal.ofReal (ZLattice.covolume L μ) = c := by
-    have hfin := (ZSpan.fundamentalDomain_isBounded (b.ofZLatticeBasis ℝ)).measure_lt_top (μ := μ)
-    rw [ZLattice.covolume_eq_measure_fundamentalDomain L μ (ZLattice.isAddFundamentalDomain b μ),
-      measureReal_def, ENNReal.ofReal_toReal hfin.ne]
-    simp [hμ, hF, Real.volume_pi_Ico]
-  rw [hμ s, ← hcov, mul_comm, ENNReal.mul_div_cancel_right
-    (ENNReal.ofReal_pos.2 (ZLattice.covolume_pos L μ)).ne' ENNReal.ofReal_ne_top]
+  -- The coordinates carry `μ` to Lebesgue measure scaled by the covolume, which is the measure of
+  -- the fundamental domain.
+  have hfin := (ZSpan.fundamentalDomain_isBounded (b.ofZLatticeBasis ℝ)).measure_lt_top (μ := μ)
+  rw [(b.ofZLatticeBasis ℝ).addHaar_eq_measure_fundamentalDomain_mul_volume_image μ s,
+    ZLattice.covolume_eq_measure_fundamentalDomain L μ (ZLattice.isAddFundamentalDomain b μ),
+    measureReal_def, ENNReal.ofReal_toReal hfin.ne, mul_comm,
+    ENNReal.mul_div_cancel_right (ZSpan.measure_fundamentalDomain_ne_zero _) hfin.ne]
 
 /-- **The covolume is antitone in the lattice.** If a full lattice `L₁` is contained in a discrete
 `ℤ`-submodule `L₂`, then `covolume L₂ μ ≤ covolume L₁ μ` for any Haar measure `μ`. The submodule

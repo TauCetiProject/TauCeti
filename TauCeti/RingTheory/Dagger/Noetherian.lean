@@ -68,21 +68,18 @@ private theorem finite_comp_optionC_of_surjective {A : Type*}
   let ev : Polynomial W →ₐ[W] A := Polynomial.aeval (π (X (Option σ) K none))
   let φ : Polynomial.degreeLT W s →ₗ[W] A :=
     ev.toLinearMap ∘ₗ (Polynomial.degreeLT W s).subtype
-  have hev (r : Polynomial W) :
-      π (r.eval₂ (washnitzerAlgebra.optionC (R := K)).toRingHom (X (Option σ) K none)) = ev r := by
-    simpa only [ev, Polynomial.aeval_def, RingHom.algebraMap_toAlgebra,
-      AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, AlgHom.coe_toRingHom] using
-      Polynomial.hom_eval₂ (p := r) (f := (washnitzerAlgebra.optionC (R := K)).toRingHom)
-        (g := π.toRingHom) (x := X (Option σ) K none)
+  have hev (r : Polynomial W) : π (polynomialToOption r) = ev r := by
+    have h : (π : W' →+* A).comp polynomialToOption = (ev : Polynomial W →+* A) :=
+      Polynomial.ringHom_ext (fun a ↦ by simp [ev, RingHom.algebraMap_toAlgebra]) (by simp [ev])
+    exact RingHom.congr_fun h r
   have hφ : Function.Surjective φ := by
     intro a
     obtain ⟨f, rfl⟩ := hπ a
     obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
-    have hf : f = q * g + r.eval₂ (washnitzerAlgebra.optionC (R := K)).toRingHom
-        (X (Option σ) K none) :=
+    have hf : f = q * g + polynomialToOption r :=
       optionSeries_injective (by simpa using hqr.symm)
     refine ⟨⟨r, Polynomial.mem_degreeLT.mpr hr⟩, ?_⟩
-    simpa [hf, hzero, hev, φ] using (hev r).symm
+    simp [hf, hzero, hev, φ]
   have : Module.Finite W (Polynomial.degreeLT W s) :=
     Module.Finite.equiv (Polynomial.degreeLTEquiv W s).symm
   exact Module.Finite.of_surjective φ hφ

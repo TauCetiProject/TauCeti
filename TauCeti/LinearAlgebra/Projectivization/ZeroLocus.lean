@@ -37,6 +37,8 @@ under the induced map of projective spaces.
 
 ## Main results
 
+* `TauCeti.complexProjectiveZeroLocus_mk_iff_forall_smul`: the class of a nonzero vector `v` lies
+  in the zero locus exactly when every `p i` vanishes on every multiple of `v`.
 * `TauCeti.complexProjectiveZeroLocus_mk_iff`: for homogeneous equations, the class of a nonzero
   vector `v` lies in the zero locus exactly when every `p i` vanishes at `v`.
 * `TauCeti.complexProjectiveZeroLocus_mk_iff_dehomogenize` and
@@ -79,14 +81,22 @@ theorem mem_complexProjectiveZeroLocus {p : ι → MvPolynomial (Fin N) ℂ}
     L ∈ complexProjectiveZeroLocus p ↔ ∀ i, ∀ v ∈ L.submodule, eval v (p i) = 0 :=
   Iff.rfl
 
+/-- The class of a nonzero vector `v` lies in the zero locus exactly when every equation
+vanishes at every scalar multiple of `v`. No homogeneity is needed. -/
+theorem complexProjectiveZeroLocus_mk_iff_forall_smul {p : ι → MvPolynomial (Fin N) ℂ}
+    (v : Fin N → ℂ) (hv : v ≠ 0) :
+    Projectivization.mk ℂ v hv ∈ complexProjectiveZeroLocus p ↔
+      ∀ i, ∀ c : ℂ, eval (c • v) (p i) = 0 := by
+  simp only [mem_complexProjectiveZeroLocus, Projectivization.submodule_mk,
+    Submodule.mem_span_singleton, forall_exists_index, forall_apply_eq_imp_iff]
+
 /-- For homogeneous equations, the class of a nonzero vector `v` lies in the zero locus exactly
 when every equation vanishes at `v`. This includes equations of degree zero, which are constants
 and vanish at `v` exactly when they are zero. -/
 theorem complexProjectiveZeroLocus_mk_iff {p : ι → MvPolynomial (Fin N) ℂ} {d : ι → ℕ}
     (hp : ∀ i, (p i).IsHomogeneous (d i)) (v : Fin N → ℂ) (hv : v ≠ 0) :
     Projectivization.mk ℂ v hv ∈ complexProjectiveZeroLocus p ↔ ∀ i, eval v (p i) = 0 := by
-  simp only [mem_complexProjectiveZeroLocus, Projectivization.submodule_mk,
-    Submodule.mem_span_singleton, forall_exists_index, forall_apply_eq_imp_iff]
+  rw [complexProjectiveZeroLocus_mk_iff_forall_smul]
   refine forall_congr' fun i ↦ ⟨fun h ↦ by simpa using h 1, fun h c ↦ ?_⟩
   rw [(hp i).eval_smul, h, smul_zero]
 

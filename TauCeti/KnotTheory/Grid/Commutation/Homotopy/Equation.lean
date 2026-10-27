@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Unpaired
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Mixed.Side
 import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Geometry
+import TauCeti.Algebra.CharP.Two
 
 /-!
 # The homotopy equation of a grid commutation
@@ -50,6 +51,11 @@ hexagon does not cut away.
   diagonal, every unpaired hexagon composite is a same-side or a mixed-side pentagon partner.
 * `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_add_eq`: the homotopy equation
   `∂ ∘ H + H ∘ ∂ = 1 + Ψ ∘ Φ` in characteristic two.
+* `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_reverse_add_eq`: the homotopy
+  equation `∂' ∘ H' + H' ∘ ∂' = 1 + Φ ∘ Ψ` of the reverse commutation, on the commuted diagram.
+* `TauCeti.GridDiagram.commutationMap_reverse_commutationMap_of_mem_ker` and
+  `TauCeti.GridDiagram.commutationMap_commutationMap_reverse_of_mem_ker`: on cycles, both round
+  trips are the identity up to a boundary.
 
 ## References
 
@@ -791,5 +797,45 @@ theorem unblockedDifferential_commutationHomotopy_add_eq
       simp only [Finset.mem_sdiff] at hF
       exact ((G.mem_sameSidePentagonPartners_or_mem_mixedSidePentagonPartners C hzx hF.1.1).elim
         hF.1.2 hF.2).elim) c
+
+/-- **The homotopy equation on the commuted diagram.** The hexagon map `H'` of the reverse
+commutation is a chain homotopy between the identity of `GC⁻(G')` and the round trip `Φ ∘ Ψ`
+through `G`: `∂' ∘ H' + H' ∘ ∂' = 1 + Φ ∘ Ψ`. -/
+theorem unblockedDifferential_commutationHomotopy_reverse_add_eq
+    (R : Type*) [CommSemiring R] [CharP R 2] (c : GridChainMinus R n) :
+    (G.swapColumns a b).unblockedDifferential R
+          ((G.swapColumns a b).commutationHomotopy R C.reverse c) +
+        (G.swapColumns a b).commutationHomotopy R C.reverse
+          ((G.swapColumns a b).unblockedDifferential R c) =
+      c + G.commutationMap R C ((G.swapColumns a b).commutationMap R C.reverse c) := by
+  have h := (G.swapColumns a b).unblockedDifferential_commutationHomotopy_add_eq C.reverse R c
+  -- The type of the twice-reversed data mentions the doubly swapped diagram, so its turn is
+  -- replaced by that of `C` before that diagram is rewritten to `G`.
+  have hturn : (C.reverse.reverse : ColumnTurn n) = C := ColumnTurn.ext (by simp) (by simp)
+  rw [hturn] at h
+  simpa only [ColumnCommutationData.reverse_column, swapColumns_swapColumns] using h
+
+/-- On a cycle `z` of `GC⁻(G)`, the round trip `Ψ ∘ Φ` through the commuted diagram is the
+identity up to the boundary of `H z`. -/
+theorem commutationMap_reverse_commutationMap_of_mem_ker
+    (R : Type*) [CommSemiring R] [CharP R 2] {z : GridChainMinus R n}
+    (hz : z ∈ LinearMap.ker (G.unblockedDifferential R)) :
+    (G.swapColumns a b).commutationMap R C.reverse (G.commutationMap R C z) =
+      z + G.unblockedDifferential R (G.commutationHomotopy R C z) := by
+  have h := G.unblockedDifferential_commutationHomotopy_add_eq C R z
+  rw [LinearMap.mem_ker.mp hz, map_zero, add_zero] at h
+  rw [h, ← add_assoc, add_self_eq_zero_of_charTwo (MvPolynomial (Fin n) R) z, zero_add]
+
+/-- On a cycle `z` of `GC⁻(G')`, the round trip `Φ ∘ Ψ` through `G` is the identity up to the
+boundary of `H' z`. -/
+theorem commutationMap_commutationMap_reverse_of_mem_ker
+    (R : Type*) [CommSemiring R] [CharP R 2] {z : GridChainMinus R n}
+    (hz : z ∈ LinearMap.ker ((G.swapColumns a b).unblockedDifferential R)) :
+    G.commutationMap R C ((G.swapColumns a b).commutationMap R C.reverse z) =
+      z + (G.swapColumns a b).unblockedDifferential R
+        ((G.swapColumns a b).commutationHomotopy R C.reverse z) := by
+  have h := G.unblockedDifferential_commutationHomotopy_reverse_add_eq C R z
+  rw [LinearMap.mem_ker.mp hz, map_zero, add_zero] at h
+  rw [h, ← add_assoc, add_self_eq_zero_of_charTwo (MvPolynomial (Fin n) R) z, zero_add]
 
 end TauCeti.GridDiagram

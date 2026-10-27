@@ -118,7 +118,7 @@ theorem exists_paths_setSeparator_sum_eq [Finite V] [DecidableEq V] (c : V → �
       q.vertices.map inl ⊆ (P' i).vertices ∧
       ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
     obtain ⟨a, ha, b, hb, q, hq⟩ := AuxTerminalHom.exists_arrowWalk_map_vertices_subset (P' i)
-    obtain ⟨a', ha', b', hb', r, hr, hrq, hint⟩ :=
+    obtain ⟨a', ha', b', hb', r, hr, hrq, -, hint⟩ :=
       ArrowWalk.exists_isPath_interior_notMem (A := (A : Set V)) (B := (B : Set V)) q ha hb
     exact ⟨a', ha', b', hb', r, hr, List.Subset.trans (List.map_subset _ hrq) hq,
       by simpa using hint⟩

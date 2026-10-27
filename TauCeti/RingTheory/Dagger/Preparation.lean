@@ -22,6 +22,9 @@ The factorization is stated through the injective inclusions into the Tate algeb
 not merely to their completions. Existence uses unequal radii: the radii in the coefficient
 variables can be smaller than the radius in `Y`, as is necessary for `Y + X²`.
 Uniqueness is detected at unit radius and needs no completeness hypothesis.
+`washnitzerAlgebra.exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq` restates existence
+in the overconvergent algebra itself, evaluating the monic polynomial at `Y` by
+`washnitzerAlgebra.polynomialToOption`.
 
 ## References
 
@@ -181,6 +184,22 @@ theorem exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
     simpa using hG m
   simpa only [map_mul, hgG] using congrArg
     (PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype) heq
+
+/-- Overconvergent Weierstrass preparation stated in `K⟨X, Y⟩†` itself: a series distinguished
+of degree `s` at unit radius in the separated variable, with unit coefficient in degree `s`, is
+an overconvergent unit times the evaluation at `Y` of a monic polynomial of degree `s` over the
+smaller overconvergent algebra. -/
+theorem exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq [CompleteSpace K] {g : W} {s : ℕ}
+    (hg : PowerSeries.IsDistinguished 1 s
+      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+    (hu : IsUnit (PowerSeries.coeff s
+      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) :
+    ∃ (e : W) (ω : Polynomial W₀), IsUnit e ∧ ω.IsMonicOfDegree s ∧
+      e * polynomialToOption ω = g := by
+  obtain ⟨e, ω, he, hm, heq⟩ := exists_isUnit_isMonicOfDegree_mul_eq hg hu
+  refine ⟨e, ω, he, hm, toTate_injective (Huber.restrictedOptionEquiv.injective ?_)⟩
+  apply Subtype.ext
+  rw [map_mul, map_mul, Subring.coe_mul, restrictedOptionEquiv_toTate_polynomialToOption, heq]
 
 /-- Unique multivariable Weierstrass preparation in the Monsky–Washnitzer algebra.
 The series is distinguished of degree `s` at unit radius in the separated variable,
