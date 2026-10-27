@@ -8,29 +8,29 @@ module
 public import Mathlib.RingTheory.Algebraic.Denominator
 
 /-!
-# Denominators of elements integral over `ℤ`
+# Denominators of integral elements
 
 The *denominator* `Algebra.natDenominator x` of an element `x` of a commutative ring is the
 absolute value of a generator of the ideal of integers `n` with `n • x` integral over `ℤ`
-(`Algebra.natDenominator_dvd_iff`); it is `0` when `x` is transcendental over `ℤ`. An element that
-is itself integral over `ℤ` therefore has denominator one
-(`Algebra.natDenominator_eq_one_of_isIntegral`): every integer multiple of `x` is then integral
-over `ℤ`.
+(`Algebra.natDenominator_dvd_iff`); it is `0` when `x` is transcendental over `ℤ`. The denominator
+of `x` is `1` exactly when `x` is itself integral over `ℤ`
+(`Algebra.natDenominator_eq_one_iff`), that is, when every integer multiple of `x` is integral over
+`ℤ`.
 
 ## Main results
 
-* `Algebra.natDenominator_eq_one_of_isIntegral`: an element integral over `ℤ` has denominator `1`.
+* `Algebra.natDenominator_eq_one_iff`: `natDenominator x = 1` iff `x` is integral over `ℤ`.
 -/
 
 public section
 
 namespace Algebra
 
-/-- An element integral over `ℤ` has denominator one: every integer multiple of `x` is then
-integral over `ℤ`. -/
+/-- The denominator of `x` is one exactly when `x` is integral over `ℤ`: then every integer
+multiple of `x` is integral over `ℤ`. -/
 @[simp]
-theorem natDenominator_eq_one_of_isIntegral {S : Type*} [CommRing S] {x : S}
-    (hx : IsIntegral ℤ x) : natDenominator x = 1 :=
-  Nat.dvd_one.mp (natDenominator_dvd_iff.mpr (by simpa using hx))
+theorem natDenominator_eq_one_iff {S : Type*} [CommRing S] {x : S} :
+    natDenominator x = 1 ↔ IsIntegral ℤ x := by
+  rw [← Nat.dvd_one, natDenominator_dvd_iff, one_smul]
 
 end Algebra

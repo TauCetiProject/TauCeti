@@ -16,23 +16,25 @@ import Mathlib.Topology.Algebra.Polynomial
 
 The *denominator* `den(x) = Algebra.natDenominator x` of an algebraic number `x` is the least
 positive integer `D` such that `D x` is an algebraic integer: it generates the ideal of integers
-clearing the denominator of `x` (`Algebra.natDenominator_dvd_iff`). In particular `den(x) = 1` for
-an algebraic integer (`Algebra.natDenominator_eq_one_of_isIntegral`). It divides the leading
-coefficient of the primitive minimal polynomial of `x`
+clearing the denominator of `x` (`Algebra.natDenominator_dvd_iff`), and it is `1` exactly for an
+algebraic integer (`Algebra.natDenominator_eq_one_iff`). It divides the leading coefficient of the
+primitive minimal polynomial of `x`
 (`TauCeti.natDenominator_dvd_leadingCoeff_primitiveMinpoly`), which is at most its `d`-th power
 (`TauCeti.leadingCoeff_primitiveMinpoly_le_natDenominator_pow`).
 
-The main result is Evertse's lower bound for the conjugates of a nonzero algebraic number: for
-`z ∈ ℂ` of degree `d` over `ℚ` and every complex conjugate `w` of `z`,
+The main result is Evertse's lower bound for the conjugates of a nonzero algebraic number: for an
+algebraic `z` of degree `d` over `ℚ` in a field of characteristic zero and every complex conjugate
+`w` of `z`,
 
   `den(z) ^ d * house(z) ^ (d - 1) * ‖w‖ ≥ 1`,
 
-that is, `‖w‖ ≥ den(z) ^ (-d) * house(z) ^ (1 - d)` in the form stated with integer powers
-(`TauCeti.zpow_natDenominator_mul_zpow_house_le_norm`). The leading coefficient of the primitive
-minimal polynomial satisfies the sharper bound
+that is, `‖w‖ ≥ den(z) ^ (-d) * house(z) ^ (1 - d)`
+(`TauCeti.one_le_natDenominator_pow_mul_house_pow_mul_norm_of_mem_rootSet`); the form with integer
+powers is stated at `w = z` (`TauCeti.zpow_natDenominator_mul_zpow_house_le_norm`). The leading
+coefficient of the primitive minimal polynomial satisfies the sharper bound
 `TauCeti.one_le_leadingCoeff_primitiveMinpoly_mul_house_pow_mul_norm`. For an algebraic integer
-the denominator is `1`, so the bound reads `house(z) ^ (d - 1) * ‖z‖ ≥ 1`
-(`TauCeti.one_le_house_pow_mul_norm`).
+the denominator is `1`, so the bound reads `house(z) ^ (d - 1) * ‖w‖ ≥ 1` for every conjugate `w`
+(`TauCeti.one_le_house_pow_mul_norm_of_mem_rootSet`).
 
 ## References
 
@@ -45,12 +47,13 @@ open Polynomial
 
 namespace TauCeti
 
-variable {z : ℂ}
+variable {K : Type*} [Field K] [CharZero K]
 
-/-- **The conjugate bound in terms of the leading coefficient.** Let `z ∈ ℂ` be a nonzero
-algebraic number of degree `d` and let `a₀` be the leading coefficient of its primitive minimal
-polynomial. Every complex conjugate `w` of `z` satisfies `a₀ * house(z) ^ (d - 1) * ‖w‖ ≥ 1`. -/
-theorem one_le_leadingCoeff_primitiveMinpoly_mul_house_pow_mul_norm {w : ℂ}
+/-- **The conjugate bound in terms of the leading coefficient.** Let `z` be a nonzero algebraic
+number of degree `d` in a field of characteristic zero and let `a₀` be the leading coefficient of
+its primitive minimal polynomial. Every complex conjugate `w` of `z` satisfies
+`a₀ * house(z) ^ (d - 1) * ‖w‖ ≥ 1`. -/
+theorem one_le_leadingCoeff_primitiveMinpoly_mul_house_pow_mul_norm {z : K} {w : ℂ}
     (hz : IsAlgebraic ℚ z) (hz0 : z ≠ 0) (hw : w ∈ (minpoly ℚ z).rootSet ℂ) :
     1 ≤ ((primitiveMinpoly z).leadingCoeff : ℝ) * house z ^ ((minpoly ℚ z).natDegree - 1) *
       ‖w‖ := by
@@ -93,20 +96,7 @@ theorem one_le_leadingCoeff_primitiveMinpoly_mul_house_pow_mul_norm {w : ℂ}
   have hconst : P.coeff 0 = -w * q.coeff 0 := by
     rw [coeff_zero_eq_eval_zero, ← hfac, eval_mul, eval_sub, eval_X, eval_C, zero_sub,
       coeff_zero_eq_eval_zero]
-  have hcoeff0 : (primitiveMinpoly z).coeff 0 ≠ 0 := by
-    intro h0
-    obtain ⟨r, hr⟩ := X_dvd_iff.mpr h0
-    have hr0 : r ≠ 0 := by
-      rintro rfl
-      rw [mul_zero] at hr
-      exact primitiveMinpoly_ne_zero z hr
-    have hzr : aeval z r = 0 := by
-      have h := aeval_primitiveMinpoly hz
-      rw [hr, aeval_mul, aeval_X] at h
-      exact (mul_eq_zero.mp h).resolve_left hz0
-    have hle := natDegree_le_of_dvd ((primitiveMinpoly_dvd_iff hz).mpr hzr) hr0
-    rw [hr, natDegree_mul (by simp) hr0, natDegree_X] at hle
-    omega
+  have hcoeff0 : (primitiveMinpoly z).coeff 0 ≠ 0 := coeff_zero_primitiveMinpoly_ne_zero hz hz0
   -- the constant term of `F_z` is a nonzero integer, so it has modulus at least `1`
   have hint_norm : (1 : ℝ) ≤ ‖((primitiveMinpoly z).coeff 0 : ℂ)‖ := by
     rw [Complex.norm_intCast]
@@ -140,10 +130,10 @@ theorem one_le_leadingCoeff_primitiveMinpoly_mul_house_pow_mul_norm {w : ℂ}
     _ = ((primitiveMinpoly z).leadingCoeff : ℝ) * house z ^ ((minpoly ℚ z).natDegree - 1) *
           ‖w‖ := by ring
 
-/-- **Evertse's lower bound for the conjugates of an algebraic number.** Let `z ∈ ℂ` be a nonzero
-algebraic number of degree `d` and `w` a complex conjugate of `z`. Then
-`den(z) ^ d * house(z) ^ (d - 1) * ‖w‖ ≥ 1`. -/
-theorem one_le_natDenominator_pow_mul_house_pow_mul_norm_of_mem_rootSet {w : ℂ}
+/-- **Evertse's lower bound for the conjugates of an algebraic number.** Let `z` be a nonzero
+algebraic number of degree `d` in a field of characteristic zero and `w` a complex conjugate of
+`z`. Then `den(z) ^ d * house(z) ^ (d - 1) * ‖w‖ ≥ 1`. -/
+theorem one_le_natDenominator_pow_mul_house_pow_mul_norm_of_mem_rootSet {z : K} {w : ℂ}
     (hz : IsAlgebraic ℚ z) (hz0 : z ≠ 0) (hw : w ∈ (minpoly ℚ z).rootSet ℂ) :
     1 ≤ (Algebra.natDenominator z : ℝ) ^ (minpoly ℚ z).natDegree *
       house z ^ ((minpoly ℚ z).natDegree - 1) * ‖w‖ := by
@@ -165,7 +155,8 @@ theorem one_le_natDenominator_pow_mul_house_pow_mul_norm_of_mem_rootSet {w : ℂ
 
 /-- **Evertse's lower bound.** A nonzero algebraic number `z ∈ ℂ` of degree `d` satisfies
 `den(z) ^ d * house(z) ^ (d - 1) * ‖z‖ ≥ 1`. -/
-theorem one_le_natDenominator_pow_mul_house_pow_mul_norm (hz : IsAlgebraic ℚ z) (hz0 : z ≠ 0) :
+theorem one_le_natDenominator_pow_mul_house_pow_mul_norm {z : ℂ} (hz : IsAlgebraic ℚ z)
+    (hz0 : z ≠ 0) :
     1 ≤ (Algebra.natDenominator z : ℝ) ^ (minpoly ℚ z).natDegree *
       house z ^ ((minpoly ℚ z).natDegree - 1) * ‖z‖ :=
   one_le_natDenominator_pow_mul_house_pow_mul_norm_of_mem_rootSet hz hz0
@@ -173,7 +164,7 @@ theorem one_le_natDenominator_pow_mul_house_pow_mul_norm (hz : IsAlgebraic ℚ z
 
 /-- The lower bound for a nonzero algebraic number of degree `d` as an inequality between
 negative and positive integer powers: `den(z) ^ (-d) * house(z) ^ (1 - d) ≤ ‖z‖`. -/
-theorem zpow_natDenominator_mul_zpow_house_le_norm (hz : IsAlgebraic ℚ z) (hz0 : z ≠ 0) :
+theorem zpow_natDenominator_mul_zpow_house_le_norm {z : ℂ} (hz : IsAlgebraic ℚ z) (hz0 : z ≠ 0) :
     (Algebra.natDenominator z : ℝ) ^ (-((minpoly ℚ z).natDegree : ℤ)) *
       house z ^ (1 - ((minpoly ℚ z).natDegree : ℤ)) ≤ ‖z‖ := by
   set d := (minpoly ℚ z).natDegree
@@ -195,13 +186,23 @@ theorem zpow_natDenominator_mul_zpow_house_le_norm (hz : IsAlgebraic ℚ z) (hz0
         one_le_natDenominator_pow_mul_house_pow_mul_norm hz hz0
     _ = ‖z‖ * ((Algebra.natDenominator z : ℝ) ^ d * house z ^ (d - 1)) := by ring
 
+/-- **The bound for algebraic integers.** A nonzero algebraic integer `z` of degree `d` in a field
+of characteristic zero satisfies `house(z) ^ (d - 1) * ‖w‖ ≥ 1` for every complex conjugate `w`
+of `z`: its denominator is `1`. -/
+theorem one_le_house_pow_mul_norm_of_mem_rootSet {z : K} {w : ℂ} (hz : IsIntegral ℤ z)
+    (hz0 : z ≠ 0) (hw : w ∈ (minpoly ℚ z).rootSet ℂ) :
+    1 ≤ house z ^ ((minpoly ℚ z).natDegree - 1) * ‖w‖ := by
+  have hzQ : IsAlgebraic ℚ z := (hz.tower_top (A := ℚ)).isAlgebraic
+  have h := one_le_natDenominator_pow_mul_house_pow_mul_norm_of_mem_rootSet hzQ hz0 hw
+  have hD : Algebra.natDenominator z = 1 := Algebra.natDenominator_eq_one_iff.mpr hz
+  simpa [hD] using h
+
 /-- **The bound for algebraic integers.** A nonzero algebraic integer `z ∈ ℂ` of degree `d`
 satisfies `house(z) ^ (d - 1) * ‖z‖ ≥ 1`: its denominator is `1`. -/
 theorem one_le_house_pow_mul_norm {z : ℂ} (hz : IsIntegral ℤ z) (hz0 : z ≠ 0) :
-    1 ≤ house z ^ ((minpoly ℚ z).natDegree - 1) * ‖z‖ := by
-  have hzQ : IsAlgebraic ℚ z := (hz.tower_top (A := ℚ)).isAlgebraic
-  have h := one_le_natDenominator_pow_mul_house_pow_mul_norm hzQ hz0
-  simpa [Algebra.natDenominator_eq_one_of_isIntegral hz] using h
+    1 ≤ house z ^ ((minpoly ℚ z).natDegree - 1) * ‖z‖ :=
+  one_le_house_pow_mul_norm_of_mem_rootSet hz hz0
+    ((mem_rootSet_of_ne (minpoly.ne_zero (hz.tower_top (A := ℚ)))).mpr (minpoly.aeval ℚ z))
 
 /-! ### Examples -/
 
