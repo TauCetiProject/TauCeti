@@ -213,7 +213,7 @@ private theorem mul_mem_localNeighbors
   · simpa using hk
   · -- across a side, the only tiles are `P` and its paired translate
     rw [inv_inv] at hk
-    have hne := σ.map_smul_ne_vertex hi (hv i) (hv (i + 1))
+    have hne := σ.vertex_ne_inl_map_smul hi (hv i) (hv (i + 1))
     rcases σ.mem_localNeighbors_iff.1 hk with rfl | ⟨i', hi', rfl⟩ | ⟨l, m, hl, -⟩
     · rw [mul_one]
       exact σ.inv_map_mem_localNeighbors hi

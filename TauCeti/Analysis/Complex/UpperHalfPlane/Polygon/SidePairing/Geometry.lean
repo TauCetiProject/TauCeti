@@ -210,7 +210,7 @@ theorem exists_mem_side_mem_interior_union_inv_smul_carrier {z : ℍ} (hz : z �
 
 /-- The side-pairing map carries a point of side `i` other than its endpoints to a point which is
 not a finite vertex. -/
-theorem map_smul_ne_vertex {i : Fin n} {x : ℍ} (hi : x ∈ P.side i) (hp : P.vertex i ≠ .inl x)
+theorem vertex_ne_inl_map_smul {i : Fin n} {x : ℍ} (hi : x ∈ P.side i) (hp : P.vertex i ≠ .inl x)
     (hq : P.vertex (i + 1) ≠ .inl x) (l : Fin n) : P.vertex l ≠ .inl (σ.map i • x) := by
   intro hl
   rcases P.eq_or_eq_add_one_of_vertex_eq_inl_of_mem_side hl (σ.map_smul_mem_side hi) with rfl | rfl
