@@ -81,7 +81,7 @@ theorem eventually_sum_Icc_div_sub_eq_sum (S : Finset ℕ)
 /-- Finite changes preserve convergence of ordered harmonic sums, with the explicit finite
 correction to the limit. This does not assert an unconditional sum at `1`. -/
 theorem tendsto_sum_Icc_div_congr_finset_iff [TopologicalSpace K]
-    [IsTopologicalAddGroup K] (S : Finset ℕ)
+    [SeparatelyContinuousAdd K] (S : Finset ℕ)
     (hab : ∀ n, n ≠ 0 → n ∉ S → a n = b n) :
     Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, b n / (n : K)) atTop
         (𝓝 (L + ∑ n ∈ S, (b n - a n) / (n : K))) ↔

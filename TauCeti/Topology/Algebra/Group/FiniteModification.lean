@@ -14,7 +14,8 @@ public import Mathlib.Topology.Algebra.Group.Basic
 For sequences in an additive commutative group agreeing outside a finite set at positive
 indices, `Finset.sum_Icc_sub_eq_sum` gives the exact difference of their ordered partial
 sums once the cutoff contains every changed index. The correction omits index `0`.
-`Finset.tendsto_sum_Icc_congr_finset_iff` transports convergence in both directions.
+`Finset.tendsto_sum_Icc_congr_finset_iff` transports convergence in both directions,
+assuming only separate continuity of addition.
 
 These are the finite-sum prerequisites for the finite coefficient corrections in
 `TauCeti.NumberTheory.LSeries.BoundaryConvergence.FiniteModification`.
@@ -51,7 +52,7 @@ theorem sum_Icc_sub_eq_sum (S : Finset ℕ)
 /-- Finite changes preserve convergence of ordered partial sums, with the explicit finite
 correction to the limit. No agreement at index `0` is required. -/
 theorem tendsto_sum_Icc_congr_finset_iff [TopologicalSpace G]
-    [IsTopologicalAddGroup G] (S : Finset ℕ)
+    [SeparatelyContinuousAdd G] (S : Finset ℕ)
     (hab : ∀ n, n ≠ 0 → n ∉ S → a n = b n) :
     Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, b n) atTop
         (𝓝 (L + ∑ n ∈ S.erase 0, (b n - a n))) ↔
