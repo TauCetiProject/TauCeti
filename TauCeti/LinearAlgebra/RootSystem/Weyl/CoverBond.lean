@@ -38,11 +38,15 @@ saturated chain of `W / W_λ` are the integers that the description of Lakshmiba
 ## Main results
 
 * `TauCeti.existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy`: **a cover of `W / W_λ`
-  has a unique positive root label**.
+  has a unique positive root label**; `TauCeti.smul_ne_smul_of_minimalCosetRepCovBy` says its two
+  orbit weights are distinct.
 * `TauCeti.reflectionBond_pos` and `TauCeti.reflectionBond_pos_of_minimalCosetRepCovBy`: **the bond
   of a cover is strictly positive**.
 * `TauCeti.exists_nat_reflectionBond_eq_of_minimalCosetRepCovBy`: **the bond of a cover is a
   positive integer** when `λ` is integral.
+* `TauCeti.minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero` and
+  `TauCeti.reflectionBond_simple_smul_one_smul`: a simple reflection `sᵢ` off the walls through `λ`
+  covers the identity, with bond `⟨λ, αᵢ^∨⟩`.
 
 ## References
 
@@ -71,6 +75,14 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
 variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic]
   [P.IsReduced] [P.flip.IsReduced] {lam : M}
 
+/-- The two orbit weights of a cover `y ⋖ x` of `W / W_λ` are distinct: distinct minimal coset
+representatives move `λ` to distinct points. -/
+theorem smul_ne_smul_of_minimalCosetRepCovBy (hlam : lam ∈ dominantChamber P b)
+    {x y : P.weylGroup}
+    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
+    y • lam ≠ x • lam := fun heq ↦ h.ne <|
+  eq_of_isMinimalCosetRep_of_smul_eq hlam h.isMinimalCosetRep_left h.isMinimalCosetRep_right heq
+
 /-- **A cover of `W / W_λ` has a unique positive root label.** If `y` is covered by `x` in the
 Bruhat order of the minimal coset representatives of the stabilizer of the dominant weight `λ`,
 there is exactly one positive root `β` with `y λ = s_β (x λ)`. -/
@@ -78,8 +90,7 @@ theorem existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy
     (hlam : lam ∈ dominantChamber P b) {x y : P.weylGroup}
     (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
     ∃! β, b.IsPos β ∧ P.reflection β (x • lam) = y • lam := by
-  have hne : y • lam ≠ x • lam := fun heq ↦ h.ne <|
-    eq_of_isMinimalCosetRep_of_smul_eq hlam h.isMinimalCosetRep_left h.isMinimalCosetRep_right heq
+  have hne := smul_ne_smul_of_minimalCosetRepCovBy hlam h
   -- The reflection of the cover is the reflection in the root `j = w αᵢ`.
   obtain ⟨t, ⟨w, i, rfl⟩, -, hmem⟩ := h.exists_isReflection
   rw [inv_mul_mem_parabolic_wallIndices_iff hlam, weylCoxeterSystem_simple,
@@ -126,8 +137,7 @@ theorem exists_nat_reflectionBond_eq_of_minimalCosetRepCovBy (hlam : lam ∈ dom
     (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
     ∃ n : ℕ, 0 < n ∧ P.reflectionBond b (x • lam) (y • lam) = n := by
   obtain ⟨β, ⟨hβ, hβx⟩, -⟩ := existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam h
-  have hne : y • lam ≠ x • lam := fun heq ↦ h.ne <|
-    eq_of_isMinimalCosetRep_of_smul_eq hlam h.isMinimalCosetRep_left h.isMinimalCosetRep_right heq
+  have hne := smul_ne_smul_of_minimalCosetRepCovBy hlam h
   have hpos := reflectionBond_pos_of_minimalCosetRepCovBy hlam h
   -- `⟨y λ, β^∨⟩ = ⟨λ, (y⁻¹ β)^∨⟩` is an integer.
   obtain ⟨z, hz⟩ := P.exists_intCast_eq_coroot'_of_forall_mem_support b hint
@@ -138,5 +148,30 @@ theorem exists_nat_reflectionBond_eq_of_minimalCosetRepCovBy (hlam : lam ∈ dom
   rw [reflectionBond_eq_coroot' hβ hβx hne, hz] at hpos ⊢
   have hz0 : 0 < z := Int.cast_pos.mp hpos
   exact ⟨z.toNat, by omega, by rw [← Int.cast_natCast, Int.toNat_of_nonneg hz0.le]⟩
+
+/-- **A simple reflection off the walls through `λ` covers the identity in `W / W_λ`**: if
+`⟨λ, αᵢ^∨⟩ ≠ 0`, then `1 ⋖ sᵢ`. -/
+theorem minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero (hlam : lam ∈ dominantChamber P b)
+    {i : b.support} (hi : P.coroot' i lam ≠ 0) :
+    (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) 1
+      ((weylCoxeterSystem P b).simple i) := by
+  refine (weylCoxeterSystem P b).minimalCosetRepCovBy_one_simple fun hmem ↦ hi ?_
+  rw [parabolic_wallIndices_eq_stabilizer P b hlam, MulAction.mem_stabilizer_iff,
+    weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul] at hmem
+  have h := coroot'_reflection_self P i lam
+  rw [hmem] at h
+  exact CharZero.eq_neg_self_iff.mp h
+
+/-- **The bond of the cover `1 ⋖ sᵢ` of `W / W_λ` is `⟨λ, αᵢ^∨⟩`**, for a simple root `αᵢ` with
+`⟨λ, αᵢ^∨⟩ ≠ 0`. -/
+theorem reflectionBond_simple_smul_one_smul (hlam : lam ∈ dominantChamber P b) {i : b.support}
+    (hi : P.coroot' i lam ≠ 0) :
+    P.reflectionBond b ((weylCoxeterSystem P b).simple i • lam) ((1 : P.weylGroup) • lam) =
+      P.coroot' i lam := by
+  have h := minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero hlam hi
+  rw [reflectionBond_eq_coroot' (b.isPos_of_mem_support i.2) _
+    (smul_ne_smul_of_minimalCosetRepCovBy hlam h), one_smul]
+  rw [weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul, one_smul,
+    reflection_same]
 
 end TauCeti
