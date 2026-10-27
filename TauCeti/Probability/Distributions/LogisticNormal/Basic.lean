@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Probability.Distributions.Dirichlet.Basic
-public import Mathlib.Probability.Distributions.Gaussian.Multivariate
+public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 
 /-!
 # Simplex logistic-normal laws
@@ -100,11 +100,11 @@ theorem continuous_logisticNormalChart (r : ι) : Continuous (logisticNormalChar
     have hD : ∀ z : EuclideanSpace ℝ {i // i ≠ r},
         1 + ∑ j, Real.exp (z j) ≠ 0 := fun z ↦ by positivity
     simp_rw [logisticNormalChart_apply, Equiv.funSplitAt_symm_apply]
-    split_ifs
+    split_ifs with hi
     · exact continuous_const.div (by fun_prop) hD
     · exact (by fun_prop : Continuous (fun z : EuclideanSpace ℝ {i // i ≠ r} ↦
-        Real.exp (z ⟨i, by assumption⟩))).div (by fun_prop) hD
-  exact (EuclideanSpace.equiv ι ℝ).symm.continuous.comp hcoords
+        Real.exp (z ⟨i, hi⟩))).div (by fun_prop) hD
+  exact (PiLp.homeomorph 2 (fun _ : ι ↦ ℝ)).comp_continuous_iff.mp hcoords
 
 /-- The logistic chart is measurable. -/
 @[fun_prop]
@@ -138,10 +138,10 @@ theorem logisticNormalLogRatio_chart (r : ι) (z : EuclideanSpace ℝ {i // i �
   have hD : 1 + ∑ k, Real.exp (z k) ≠ 0 := by positivity
   simp [logisticNormalLogRatio_apply, hD]
 
-/-- The logistic chart recovers every strictly positive vector whose coordinates sum to one. -/
-theorem logisticNormalChart_logRatio (r : ι) {x : EuclideanSpace ℝ ι}
-    (hx : ∀ i, 0 < x i) (hsum : ∑ i, x i = 1) :
-    logisticNormalChart r (logisticNormalLogRatio r x) = x := by
+/-- The logistic chart of a strictly positive vector's log ratios is its normalization. -/
+theorem logisticNormalChart_logRatio_eq_dirichletNormalize (r : ι) {x : EuclideanSpace ℝ ι}
+    (hx : ∀ i, 0 < x i) :
+    logisticNormalChart r (logisticNormalLogRatio r x) = dirichletNormalize x := by
   have heq : (Equiv.funSplitAt r ℝ).symm
       (1, fun j : {i // i ≠ r} ↦ Real.exp (logisticNormalLogRatio r x j)) =
       fun i ↦ (x r)⁻¹ * x i := by
@@ -153,6 +153,12 @@ theorem logisticNormalChart_logRatio (r : ι) {x : EuclideanSpace ℝ ι}
     · rw [Real.exp_log (div_pos (hx i) (hx r))]
       ring
   rw [logisticNormalChart, heq, dirichletNormalize_const_mul (inv_ne_zero (hx r).ne')]
+
+/-- The logistic chart recovers every strictly positive vector whose coordinates sum to one. -/
+theorem logisticNormalChart_logRatio (r : ι) {x : EuclideanSpace ℝ ι}
+    (hx : ∀ i, 0 < x i) (hsum : ∑ i, x i = 1) :
+    logisticNormalChart r (logisticNormalLogRatio r x) = x := by
+  rw [logisticNormalChart_logRatio_eq_dirichletNormalize r hx]
   ext i
   simp [dirichletNormalize_apply, hsum]
 
@@ -192,7 +198,8 @@ instance isProbabilityMeasure_logisticNormalMeasure (r : ι)
 @[simp]
 theorem logisticNormalMeasure_zero (r : ι) (m : EuclideanSpace ℝ {i // i ≠ r}) :
     logisticNormalMeasure r m 0 = Measure.dirac (logisticNormalChart r m) := by
-  simp [logisticNormalMeasure_def, multivariateGaussian]
+  rw [logisticNormalMeasure_def, multivariateGaussian_zero_right,
+    Measure.map_dirac' (measurable_logisticNormalChart r)]
 
 /-- An invalid covariance gives the same point-mass fallback as its Gaussian source. -/
 theorem logisticNormalMeasure_of_not_posSemidef (r : ι)
@@ -214,7 +221,7 @@ theorem ae_mem_simplex_logisticNormalMeasure (r : ι)
 
 /-- Taking all additive log ratios recovers the source Gaussian, including its fallbacks. -/
 @[simp]
-theorem map_logRatio_logisticNormalMeasure (r : ι)
+theorem map_logisticNormalLogRatio_logisticNormalMeasure (r : ι)
     (m : EuclideanSpace ℝ {i // i ≠ r}) (S : Matrix {i // i ≠ r} {i // i ≠ r} ℝ) :
     (logisticNormalMeasure r m S).map (logisticNormalLogRatio r) = multivariateGaussian m S := by
   rw [logisticNormalMeasure_def, Measure.map_map (measurable_logisticNormalLogRatio r)
@@ -222,15 +229,15 @@ theorem map_logRatio_logisticNormalMeasure (r : ι)
   simp only [Function.comp_def, logisticNormalLogRatio_chart, Measure.map_id']
 
 /-- Each additive log ratio has the corresponding scalar Gaussian law. -/
-theorem map_logRatio_eval_logisticNormalMeasure (r : ι)
+theorem map_log_div_logisticNormalMeasure (r : ι)
     (m : EuclideanSpace ℝ {i // i ≠ r}) {S : Matrix {i // i ≠ r} {i // i ≠ r} ℝ}
     (hS : S.PosSemidef) (j : {i // i ≠ r}) :
     (logisticNormalMeasure r m S).map (fun x ↦ Real.log (x j / x r)) =
       gaussianReal (m j) (S j j).toNNReal := by
   rw [← (measurePreserving_eval_multivariateGaussian (μ := m) hS (i := j)).map_eq,
-    ← map_logRatio_logisticNormalMeasure r m S,
+    ← map_logisticNormalLogRatio_logisticNormalMeasure r m S,
     Measure.map_map (by fun_prop) (measurable_logisticNormalLogRatio r)]
-  rfl
+  simp only [Function.comp_def, logisticNormalLogRatio_apply]
 
 /-- Joint Giry measurability in the Gaussian mean and all raw covariance coordinates. -/
 @[fun_prop]
