@@ -54,6 +54,8 @@ Eisenstein series through their constant terms.
 ## Main results
 
 * `ModularForm.qExpansionAt_mul`: the `q`-expansion at a cusp is multiplicative.
+* `ModularForm.qExpansionAt_mul_left`, `ModularForm.qExpansionAt_neg`: the dependence of the
+  `q`-expansion at a cusp on the representative.
 * `ModularForm.qExpansionAt_diamondOp`: diamond operators act on the `q`-expansions at the
   cusps by left multiplication of cusp representatives.
 * `ModularForm.tendsto_translate_constantTermAt`: `f ∣ γ` tends to the constant term at `i∞`.
@@ -198,6 +200,31 @@ theorem qExpansionAt_mul {k₁ k₂ : ℤ} (γ : SL(2, ℤ)) (f : ModularForm Γ
   exact ModularForm.qExpansion_mul_coe (Γγ.strictWidthInfty_pos_iff.mpr Fact.out)
     Γγ.strictWidthInfty_mem_strictPeriods _ _
 
+/-- Multiplying the representative on the left by an element of `Γ` does not change the
+`q`-expansion at the cusp: the conjugated subgroups and the translates both agree. -/
+theorem qExpansionAt_mul_left {h : SL(2, ℤ)} (hh : mapGL ℝ h ∈ Γ) (γ : SL(2, ℤ))
+    (f : ModularForm Γ k) : qExpansionAt (h * γ) f = qExpansionAt γ f := by
+  rw [qExpansionAt_apply, qExpansionAt_apply, coe_translate, coe_translate, map_mul,
+    SlashAction.slash_mul, SlashInvariantFormClass.slash_action_eq f _ hh, _root_.mul_inv_rev,
+    map_mul, mul_smul,
+    Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer (Γ.inv_mem hh))]
+
+/-- Negating the representative multiplies the `q`-expansion at the cusp by `(-1)^k`. -/
+theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
+    qExpansionAt (-γ) f = (-1 : ℂ) ^ k • qExpansionAt γ f := by
+  let Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ
+  have hneg : mapGL ℝ (-γ) = mapGL ℝ γ * (-1) := by
+    rw [← mapGL_neg_one (R := ℤ), ← map_mul, mul_neg_one]
+  have hcentral :
+      (-1 : GL (Fin 2) ℝ)⁻¹ ∈ Subgroup.normalizer (Γγ : Set (GL (Fin 2) ℝ)) :=
+    Subgroup.mem_normalizer_iff.mpr fun x ↦ by simp
+  rw [qExpansionAt_apply, qExpansionAt_apply, coe_translate, coe_translate, hneg,
+    SlashAction.slash_mul, ModularForm.slash_neg_one, _root_.mul_inv_rev, map_mul, mul_smul,
+    Subgroup.conjAct_pointwise_smul_eq_self hcentral]
+  exact qExpansion_smul (ModularFormClass.analyticAt_cuspFunction_zero
+    (translate f (mapGL ℝ γ)) (Γγ.strictWidthInfty_pos_iff.mpr Fact.out)
+    Γγ.strictWidthInfty_mem_strictPeriods) _
+
 /-- The constant term of `f` at the cusp represented by `γ ∈ SL₂(ℤ)`, as a linear functional.
 
 It is the constant coefficient of the `q`-expansion at that cusp. -/
@@ -241,8 +268,8 @@ theorem tendsto_translate_constantTermAt (γ : SL(2, ℤ)) (f : ModularForm Γ k
 constant term. -/
 theorem constantTermAt_mul_left {h : SL(2, ℤ)} (hh : mapGL ℝ h ∈ Γ) (γ : SL(2, ℤ))
     (f : ModularForm Γ k) : constantTermAt (h * γ) f = constantTermAt γ f := by
-  rw [constantTermAt_eq_valueAtInfty, constantTermAt_eq_valueAtInfty, coe_translate,
-    coe_translate, map_mul, SlashAction.slash_mul, SlashInvariantFormClass.slash_action_eq f _ hh]
+  rw [constantTermAt_eq_coeff_zero_qExpansionAt, constantTermAt_eq_coeff_zero_qExpansionAt,
+    qExpansionAt_mul_left hh]
 
 /-- Multiplying the representative on the right by a power of `T` does not change the constant
 term, since slashing by `T ^ j` is the translation `τ ↦ τ + j`. -/
@@ -260,13 +287,8 @@ theorem constantTermAt_mul_T_zpow (γ : SL(2, ℤ)) (j : ℤ) (f : ModularForm �
 /-- Negating the representative multiplies the constant term by `(-1)^k`. -/
 theorem constantTermAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     constantTermAt (-γ) f = (-1) ^ k * constantTermAt γ f := by
-  refine tendsto_nhds_unique (tendsto_translate_constantTermAt _ f) ?_
-  convert (tendsto_translate_constantTermAt γ f).const_mul ((-1 : ℂ) ^ k) using 1
-  ext τ
-  have hneg : mapGL ℝ (-γ) = mapGL ℝ γ * (-1) := by
-    rw [← mapGL_neg_one (R := ℤ), ← map_mul, mul_neg_one]
-  rw [coe_translate, coe_translate, hneg, SlashAction.slash_mul, ModularForm.slash_neg_one]
-  rw [Pi.smul_apply, smul_eq_mul]
+  rw [constantTermAt_eq_coeff_zero_qExpansionAt, constantTermAt_eq_coeff_zero_qExpansionAt,
+    qExpansionAt_neg, PowerSeries.coeff_smul, smul_eq_mul]
 
 /-- Multiplying the representative on the right by an element `m` fixing `∞` (that is, with
 vanishing lower-left entry, so `m = ±Tʲ`) multiplies the constant term by `(m₀₀)ᵏ = (±1)ᵏ`. -/
