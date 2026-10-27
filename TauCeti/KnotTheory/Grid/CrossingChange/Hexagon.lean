@@ -19,9 +19,9 @@ which leaves the column-`a` markings of `G` on its right and the column-`b` mark
 Since the segments interleave, `γ` meets `β` in four points, and each of the four thin bigons
 between them contains exactly one marking. The crossing change maps of Ozsváth--Stipsicz--Szabó
 are the pentagon-counting maps `Φ : GC⁻(G) → GC⁻(G')` (`GridDiagram.commutationMap`) turning at
-one intersection point `s`, and `Ψ : GC⁻(G') → GC⁻(G)` turning at the intersection point `t`
-shared by the two bigons containing `X`-markings. Going up the vertical circle the markings of
-the two columns alternate, in one of two orders.
+one intersection point `s`, and `Ψ : GC⁻(G') → GC⁻(G)` turning at another intersection point
+`t`. Going up the vertical circle the markings of the two columns alternate, in one of two
+orders, which determine the rows of `s` and `t`.
 
 * If `O_a` lies on the arc of column `b`, the order is `O_b, O_a, X_b, X_a`. Then `s` lies in
   the row of `O_a`, `t` in the row of `X_b`, `Φ` preserves the bigrading and `Ψ` has bidegree
@@ -253,7 +253,8 @@ intersection point in row `t`, linear over the polynomial ring: a generator `x` 
 over the counted hexagons from `x`, of both shapes, of their weights times their targets.
 
 For interleaving columns, with `C.turnRow` and `t` the rows of the turn points of the crossing
-change maps `Φ` and `Ψ`, it is the homotopy between `Ψ ∘ Φ` and multiplication by a variable. -/
+change maps `Φ` and `Ψ`, it is meant to be the homotopy between `Ψ ∘ Φ` and multiplication by a
+variable; only its bidegree is proved here. -/
 noncomputable def crossingChangeHomotopy (C : ColumnTurn n) (t : Fin n) :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
   Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
@@ -288,10 +289,6 @@ private theorem card_OColumns_eq_of_hexagon (P : GridHexagonBetween a s s' x y)
     (hO : G.O a ∈ insert s' (Grid.cIco s s') ↔ G.O (finRotate n a) ∈ Grid.cIoo s s') :
     (G.OColumnsOfSquares P.crossingCoveredSquares).card =
       (G.OColumns P.toGridRectangle).card := by
-  have hcol : ∀ c r, (c, r) ∈ P.toGridRectangle.coveredSquares ↔
-      c ∈ Grid.cIco P.left (finRotate n a) ∧ r ∈ Grid.cIco P.bottom P.top := fun c r => by
-    rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares, GridRectangleBetween.bottom_def,
-      GridRectangleBetween.top_def, P.right_eq]
   have ha : a ∈ Grid.cIco P.left (finRotate n a) := Grid.self_mem_cIco_finRotate P.left_ne
   have hb : finRotate n a ∉ Grid.cIco P.left (finRotate n a) := Grid.right_notMem_cIco _ _
   have hab : a ≠ finRotate n a := fun h => hb (h ▸ ha)
@@ -308,10 +305,11 @@ private theorem card_OColumns_eq_of_hexagon (P : GridHexagonBetween a s s' x y)
     rcases eq_or_ne c a with rfl | hca
     · rw [Equiv.swap_apply_left]
       exact iff_of_false (fun h => h.elim (fun h => h.2 ⟨rfl, hOa⟩) fun h => hab h.1)
-        fun h => hb ((hcol _ _).mp h).1
+        fun h => hb ((P.mem_toGridRectangle_coveredSquares _).mp h).1
     rcases eq_or_ne c (finRotate n a) with rfl | hcb
     · rw [Equiv.swap_apply_right]
-      exact iff_of_true (Or.inr ⟨rfl, hOb⟩) ((hcol _ _).mpr ⟨ha, hrows hOa⟩)
+      exact iff_of_true (Or.inr ⟨rfl, hOb⟩)
+        ((P.mem_toGridRectangle_coveredSquares _).mpr ⟨ha, hrows hOa⟩)
     · rw [Equiv.swap_apply_of_ne_of_ne hca hcb]
       exact ⟨fun h => h.elim And.left fun h => (hcb h.1).elim,
         fun h => Or.inl ⟨h, fun h' => hca h'.1⟩⟩
@@ -321,8 +319,10 @@ private theorem card_OColumns_eq_of_hexagon (P : GridHexagonBetween a s s' x y)
     ext c
     rw [mem_OColumnsOfSquares, mem_OColumns, P.mem_crossingCoveredSquares]
     rcases eq_or_ne c (finRotate n a) with rfl | hcb
-    · exact iff_of_false (fun h => h.elim (fun h => hb ((hcol _ _).mp h.1).1) fun h => hOb h.2)
-        fun h => hb ((hcol _ _).mp h).1
+    · exact iff_of_false
+        (fun h => h.elim (fun h => hb ((P.mem_toGridRectangle_coveredSquares _).mp h.1).1)
+          fun h => hOb h.2)
+        fun h => hb ((P.mem_toGridRectangle_coveredSquares _).mp h).1
     · refine ⟨fun h => h.elim And.left fun h => (hcb h.1).elim, fun h => Or.inl ⟨h, ?_⟩⟩
       rintro ⟨rfl, h'⟩
       exact hOa h'
@@ -333,10 +333,6 @@ rows. -/
 private theorem XSet_inter_eq_of_hexagon {P : GridHexagonBetween a s s' x y}
     (hX : G.X a ∈ insert s' (Grid.cIco s s')) (hP : Disjoint P.crossingCoveredSquares G.XSet) :
     G.XSet ∩ P.toGridRectangle.coveredSquares = {(a, G.X a)} := by
-  have hcol : ∀ c r, (c, r) ∈ P.toGridRectangle.coveredSquares ↔
-      c ∈ Grid.cIco P.left (finRotate n a) ∧ r ∈ Grid.cIco P.bottom P.top := fun c r => by
-    rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares, GridRectangleBetween.bottom_def,
-      GridRectangleBetween.top_def, P.right_eq]
   ext ⟨c, r⟩
   rw [Finset.mem_inter, Finset.mem_singleton, G.mk_mem_XSet]
   constructor
@@ -346,8 +342,8 @@ private theorem XSet_inter_eq_of_hexagon {P : GridHexagonBetween a s s' x y}
     refine Finset.disjoint_left.mp hP ((P.mem_crossingCoveredSquares _).mpr
       (Or.inl ⟨hr, fun h => hca h.1⟩)) ((G.mk_mem_XSet c _).mpr rfl)
   · rintro ⟨rfl, rfl⟩
-    exact ⟨rfl, (hcol _ _).mpr ⟨Grid.self_mem_cIco_finRotate P.left_ne,
-      P.insert_cIco_subset_cIco_bottom_top hX⟩⟩
+    exact ⟨rfl, (P.mem_toGridRectangle_coveredSquares _).mpr
+      ⟨Grid.self_mem_cIco_finRotate P.left_ne, P.insert_cIco_subset_cIco_bottom_top hX⟩⟩
 
 /-- The rectangle under a crossing-change hexagon turning on its initial side carries as many
 `O`-markings as the hexagon, provided that the column-`b` `O`-marking lies in the cut rows exactly
@@ -356,10 +352,6 @@ private theorem card_OColumns_eq_of_initialHexagon (P : GridInitialHexagonBetwee
     (hO : G.O (finRotate n a) ∈ insert s' (Grid.cIco s s') ↔ G.O a ∈ Grid.cIoo s s') :
     (G.OColumnsOfSquares P.crossingCoveredSquares).card =
       (G.OColumns P.toGridRectangle).card := by
-  have hcol : ∀ c r, (c, r) ∈ P.toGridRectangle.coveredSquares ↔
-      c ∈ Grid.cIco (finRotate n a) P.right ∧ r ∈ Grid.cIco P.bottom P.top := fun c r => by
-    rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares, GridRectangleBetween.bottom_def,
-      GridRectangleBetween.top_def, P.left_eq]
   have hb : finRotate n a ∈ Grid.cIco (finRotate n a) P.right :=
     Grid.left_mem_cIco P.right_ne.symm
   have ha : a ∉ Grid.cIco (finRotate n a) P.right := by simp
@@ -376,11 +368,12 @@ private theorem card_OColumns_eq_of_initialHexagon (P : GridInitialHexagonBetwee
       P.mem_crossingCoveredSquares]
     rcases eq_or_ne c a with rfl | hca
     · rw [Equiv.swap_apply_left]
-      exact iff_of_true (Or.inr ⟨rfl, hOa⟩) ((hcol _ _).mpr ⟨hb, hrows hOb⟩)
+      exact iff_of_true (Or.inr ⟨rfl, hOa⟩)
+        ((P.mem_toGridRectangle_coveredSquares _).mpr ⟨hb, hrows hOb⟩)
     rcases eq_or_ne c (finRotate n a) with rfl | hcb
     · rw [Equiv.swap_apply_right]
       exact iff_of_false (fun h => h.elim (fun h => h.2 ⟨rfl, hOb⟩) fun h => hab h.1.symm)
-        fun h => ha ((hcol _ _).mp h).1
+        fun h => ha ((P.mem_toGridRectangle_coveredSquares _).mp h).1
     · rw [Equiv.swap_apply_of_ne_of_ne hca hcb]
       exact ⟨fun h => h.elim And.left fun h => (hca h.1).elim,
         fun h => Or.inl ⟨h, fun h' => hcb h'.1⟩⟩
@@ -390,8 +383,10 @@ private theorem card_OColumns_eq_of_initialHexagon (P : GridInitialHexagonBetwee
     ext c
     rw [mem_OColumnsOfSquares, mem_OColumns, P.mem_crossingCoveredSquares]
     rcases eq_or_ne c a with rfl | hca
-    · exact iff_of_false (fun h => h.elim (fun h => ha ((hcol _ _).mp h.1).1) fun h => hOa h.2)
-        fun h => ha ((hcol _ _).mp h).1
+    · exact iff_of_false
+        (fun h => h.elim (fun h => ha ((P.mem_toGridRectangle_coveredSquares _).mp h.1).1)
+          fun h => hOa h.2)
+        fun h => ha ((P.mem_toGridRectangle_coveredSquares _).mp h).1
     · refine ⟨fun h => h.elim And.left fun h => (hca h.1).elim, fun h => Or.inl ⟨h, ?_⟩⟩
       rintro ⟨rfl, h'⟩
       exact hOb h'
@@ -403,10 +398,6 @@ private theorem XSet_inter_eq_of_initialHexagon {P : GridInitialHexagonBetween a
     (hX : G.X (finRotate n a) ∈ insert s' (Grid.cIco s s'))
     (hP : Disjoint P.crossingCoveredSquares G.XSet) :
     G.XSet ∩ P.toGridRectangle.coveredSquares = {(finRotate n a, G.X (finRotate n a))} := by
-  have hcol : ∀ c r, (c, r) ∈ P.toGridRectangle.coveredSquares ↔
-      c ∈ Grid.cIco (finRotate n a) P.right ∧ r ∈ Grid.cIco P.bottom P.top := fun c r => by
-    rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares, GridRectangleBetween.bottom_def,
-      GridRectangleBetween.top_def, P.left_eq]
   ext ⟨c, r⟩
   rw [Finset.mem_inter, Finset.mem_singleton, G.mk_mem_XSet]
   constructor
@@ -416,7 +407,7 @@ private theorem XSet_inter_eq_of_initialHexagon {P : GridInitialHexagonBetween a
     refine Finset.disjoint_left.mp hP ((P.mem_crossingCoveredSquares _).mpr
       (Or.inl ⟨hr, fun h => hcb h.1⟩)) ((G.mk_mem_XSet c _).mpr rfl)
   · rintro ⟨rfl, rfl⟩
-    exact ⟨rfl, (hcol _ _).mpr ⟨Grid.left_mem_cIco P.right_ne.symm,
+    exact ⟨rfl, (P.mem_toGridRectangle_coveredSquares _).mpr ⟨Grid.left_mem_cIco P.right_ne.symm,
       P.insert_cIco_subset_cIco_bottom_top hX⟩⟩
 
 end Markings
@@ -575,10 +566,10 @@ private theorem crossingChangeHomotopy_mem_bigradedChainMinusPiece_of_rows (R : 
 /-- **The crossing change homotopy has bidegree `(-1, -1)`**, for markings in the order
 `O_b, O_a, X_b, X_a`. If the segments of the columns `a = C.column` and `b = finRotate n a`
 interleave with `O_a` on the arc of column `b`, then the hexagons with corners at the turn point
-in the row of `O_a` and at the point in the row `t` of `X_b` give a homotopy sending a chain of
-`GC⁻(G)` homogeneous of bidegree `g` to one homogeneous of bidegree `g + (-1, -1)`. This is the
-bidegree of a homotopy between multiplication by a variable and the composite of the crossing
-change maps, of bidegrees `(0, 0)` and `(-2, -1)`. -/
+in the row of `O_a` and at the point in the row `t` of `X_b` make the hexagon-counting
+map `H` send a chain of `GC⁻(G)` homogeneous of bidegree `g` to one homogeneous of bidegree
+`g + (-1, -1)`. This is the bidegree of a homotopy between multiplication by a variable and the
+composite of the crossing change maps, of bidegrees `(0, 0)` and `(-2, -1)`. -/
 theorem crossingChangeHomotopy_mem_bigradedChainMinusPiece_of_mem_columnArc (R : Type*)
     [CommSemiring R] (h : G.1.ColumnsInterleaving C.column (finRotate n C.column))
     (hO : G.1.O C.column ∈ G.1.columnArc (finRotate n C.column))
@@ -593,10 +584,10 @@ theorem crossingChangeHomotopy_mem_bigradedChainMinusPiece_of_mem_columnArc (R :
 /-- **The crossing change homotopy has bidegree `(-1, -1)`**, for markings in the order
 `O_b, X_a, X_b, O_a`. If the segments of the columns `a = C.column` and `b = finRotate n a`
 interleave with `O_a` off the arc of column `b`, then the hexagons with corners at the turn point
-in the row of `X_a` and at the point in the row `t` of `O_b` give a homotopy sending a chain of
-`GC⁻(G)` homogeneous of bidegree `g` to one homogeneous of bidegree `g + (-1, -1)`. This is the
-bidegree of a homotopy between multiplication by a variable and the composite of the crossing
-change maps, of bidegrees `(-2, -1)` and `(0, 0)`. -/
+in the row of `X_a` and at the point in the row `t` of `O_b` make the hexagon-counting
+map `H` send a chain of `GC⁻(G)` homogeneous of bidegree `g` to one homogeneous of bidegree
+`g + (-1, -1)`. This is the bidegree of a homotopy between multiplication by a variable and the
+composite of the crossing change maps, of bidegrees `(-2, -1)` and `(0, 0)`. -/
 theorem crossingChangeHomotopy_mem_bigradedChainMinusPiece_of_notMem_columnArc (R : Type*)
     [CommSemiring R] (h : G.1.ColumnsInterleaving C.column (finRotate n C.column))
     (hO : G.1.O C.column ∉ G.1.columnArc (finRotate n C.column))
