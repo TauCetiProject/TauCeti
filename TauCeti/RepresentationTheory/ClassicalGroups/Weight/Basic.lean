@@ -17,9 +17,6 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 -- `Subrepresentation`, whose weight spaces are the traces of the ambient ones.
 public import Mathlib.RepresentationTheory.Subrepresentation
--- A tuple is determined by its sums over the initial segments, which is why a highest weight is
--- unique.
-import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # Weights of the diagonal torus of the general linear group
@@ -71,13 +68,10 @@ The definitions themselves need only a commutative ring, and are stated there.
   subrepresentation are the traces of the ambient ones**, with
   `Subrepresentation.weightSpace_toRepresentation_eq_bot_iff` giving the criterion for a weight
   not to occur in the subrepresentation.
-* `Representation.IntertwiningMap.apply_mem_weightSpace`,
-  `Representation.IntertwiningMap.map_weightSpace_le` and `Representation.Equiv.map_weightSpace`:
+* `Representation.IntertwiningMap.map_weightSpace_le` and `Representation.Equiv.map_weightSpace`:
   **intertwining maps preserve weights**, and an equivalence of representations matches their
   weight spaces, so that the weights of a representation are an isomorphism invariant
-  (`Representation.Equiv.weightSpace_eq_bot_iff`). Weight spaces spanning a representation
-  therefore also span any equivariant quotient
-  (`Representation.IntertwiningMap.iSup_weightSpace_eq_top_of_surjective`).
+  (`Representation.Equiv.weightSpace_eq_bot_iff`).
 * `TauCeti.eq_of_forall_sum_filter_lt_le` and
   `Representation.Equiv.eq_of_forall_sum_filter_lt_le`: the dominance order on integer weights is
   antisymmetric, and hence a highest weight is an isomorphism invariant.
@@ -207,20 +201,15 @@ variable {k : Type u} [CommRing k] {n : ℕ}
 variable {V W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
 variable {ρ : Representation k (GL (Fin n) k) V} {σ : Representation k (GL (Fin n) k) W}
 
-/-- **An equivariant map preserves weight vectors**: it commutes with every torus element, so it
-carries a joint eigenvector of the torus to a joint eigenvector with the same eigenvalues. -/
-theorem apply_mem_weightSpace (f : IntertwiningMap ρ σ) {l : Fin n → ℤ} {v : V}
-    (hv : v ∈ weightSpace ρ l) : f v ∈ weightSpace σ l := by
-  rw [mem_weightSpace_iff]
-  intro t
-  rw [← f.isIntertwining, apply_of_mem_weightSpace hv, map_smul]
-
-/-- **An intertwining map carries each weight space into the weight space of the same weight.** -/
+/-- **An intertwining map carries vectors of weight `l` to vectors of weight `l`**: it commutes
+with every torus element, so it maps each joint eigenvector to a joint eigenvector with the same
+eigenvalues. -/
 theorem map_weightSpace_le (f : IntertwiningMap ρ σ) (l : Fin n → ℤ) :
     (weightSpace ρ l).map f.toLinearMap ≤ weightSpace σ l := by
   rintro _ ⟨v, hv, rfl⟩
-  rw [f.toLinearMap_apply]
-  exact f.apply_mem_weightSpace hv
+  rw [mem_weightSpace_iff]
+  intro t
+  rw [f.toLinearMap_apply, ← f.isIntertwining, apply_of_mem_weightSpace hv, map_smul]
 
 /-- Integer weight spaces spanning a representation also span any equivariant quotient. -/
 theorem iSup_weightSpace_eq_top_of_surjective (f : IntertwiningMap ρ σ)
@@ -238,17 +227,24 @@ end Representation.IntertwiningMap
 namespace TauCeti
 
 /-- **The dominance order on integer vectors is antisymmetric**: two vectors each of whose partial
-sums `∑_{j < m}` bounds the other's agree, since a vector is determined by those prefix sums
-(`TauCeti.eq_of_forall_prefixSum_eq`). -/
+sums `∑_{j < m}` bounds the other's agree. -/
 theorem eq_of_forall_sum_filter_lt_le {n : ℕ} {a b : Fin n → ℤ}
     (hab : ∀ m : ℕ, ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j ≤
       ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j)
     (hba : ∀ m : ℕ, ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j ≤
       ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j) :
-    a = b :=
-  eq_of_forall_prefixSum_eq fun m => by
-    rw [prefixSum_def, prefixSum_def]
-    exact le_antisymm (hab m) (hba m)
+    a = b := by
+  have heq (m : ℕ) := le_antisymm (hab m) (hba m)
+  funext i
+  have hset : (Finset.univ.filter fun j : Fin n => (j : ℕ) < i + 1) =
+      insert i (Finset.univ.filter fun j : Fin n => (j : ℕ) < i) := by
+    ext j
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert, Fin.ext_iff]
+    omega
+  have hi : i ∉ Finset.univ.filter fun j : Fin n => (j : ℕ) < i := by simp
+  have h := heq (i + 1)
+  rw [hset, Finset.sum_insert hi, Finset.sum_insert hi, heq i] at h
+  exact add_right_cancel h
 
 end TauCeti
 

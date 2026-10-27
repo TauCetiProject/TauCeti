@@ -30,7 +30,6 @@ This file contains basic facts about finite partial sums.
   distributive scalar actions commute with prefix sums.
 * `TauCeti.prefixSum_le_of_sum_le`: a tuple with smaller total sum and larger tail has smaller
   prefix sums.
-* `TauCeti.eq_of_forall_prefixSum_eq`: a finite sequence is determined by its prefix sums.
 * `TauCeti.eq_zero_of_forall_sum_Iic_eq_zero`: a finite sequence whose inclusive partial sums
   all vanish is zero.
 -/
@@ -140,15 +139,6 @@ theorem prefixSum_init {k : ℕ} (hk : k ≤ n) (x : Fin (n + 1) → M) :
 theorem prefixSum_append_zero {m : ℕ} (k : ℕ) (x : Fin n → M) :
     prefixSum k (Fin.append x (0 : Fin m → M)) = prefixSum k x := by
   simp [prefixSum, sum_filter, Fin.sum_univ_add]
-
-/-- **A finite sequence is determined by its prefix sums**: consecutive prefix sums differ by a
-single coordinate, so cancelling the shorter one off the longer recovers that coordinate. -/
-theorem eq_of_forall_prefixSum_eq [IsLeftCancelAdd M] {y z : Fin n → M}
-    (h : ∀ m : ℕ, prefixSum m y = prefixSum m z) : y = z := by
-  funext i
-  have hi := h ((i : ℕ) + 1)
-  rw [prefixSum_succ i.isLt, prefixSum_succ i.isLt, h (i : ℕ)] at hi
-  exact add_left_cancel hi
 
 end PrefixSum
 
