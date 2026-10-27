@@ -44,6 +44,7 @@ integrable on that set.
 
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
+In particular, the squared norm of a continuous compactly supported function is integrable.
 
 A real function with values in `[0, 1]` almost everywhere on a measurable set agrees almost
 everywhere there with a function that is locally integrable on the whole space and everywhere
@@ -67,6 +68,8 @@ everywhere there with a function that is locally integrable on the whole space a
   integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
   every `Lᵖ` on its measurable subsets.
+* `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
+  compactly supported function is integrable.
 
 ## Attribution
 
@@ -289,6 +292,14 @@ section ContinuousOn
 
 variable {X E : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup E]
+
+/-- The squared norm of a continuous compactly supported function is integrable for any measure
+finite on compact sets. -/
+theorem Continuous.integrable_norm_sq_of_hasCompactSupport {F : Type*}
+    [SeminormedAddCommGroup F] {f : X → F}
+    (hf : Continuous f) (hcf : HasCompactSupport f) : Integrable (fun x ↦ ‖f x‖ ^ 2) μ := by
+  apply Continuous.integrable_of_hasCompactSupport (by fun_prop)
+  exact hcf.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)
 
 /-- A function continuous on a compact set `K` lies in every `Lᵖ` on each measurable subset of
 `K`, for a measure that is finite on compact sets: it is bounded there, and the subset has finite

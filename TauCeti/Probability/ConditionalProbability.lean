@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.ConditionalProbability
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Interval
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Basic
@@ -28,7 +29,9 @@ zero contribute nothing, so no positivity hypothesis on the fibres is needed.
 Conditioning on almost-everywhere equal events gives equal conditional measures, and a function
 bounded on a measurable event is integrable for the conditional measure on it. A measurable map
 that scales measure by a constant factor carries conditional measures to conditional measures.
-Conditional measures on intervals agree across endpoint conventions whenever the relevant
+Conditioning a probability measure away from a single point removes that atom and rescales the
+rest by `1 / (1 - μ {a})`; this computes the masses of, and integrals against, the conditioned
+measure. Conditional measures on intervals agree across endpoint conventions whenever the relevant
 endpoint atoms vanish. These identities apply to any partially ordered measurable space,
 including atomless laws and atomic laws with null endpoints.
 
@@ -42,6 +45,10 @@ recovers the law.
 * `ProbabilityTheory.cond_congr_ae`
 * `ProbabilityTheory.integrable_cond_of_norm_le`
 * `ProbabilityTheory.map_cond_preimage`
+* `ProbabilityTheory.cond_compl_singleton_real`,
+  `ProbabilityTheory.cond_compl_singleton_real_singleton`,
+  `ProbabilityTheory.integrable_cond_compl_singleton_iff`,
+  `ProbabilityTheory.integral_cond_compl_singleton`
 * `MeasureTheory.Measure.cond_Icc_eq_cond_Ioc`, `MeasureTheory.Measure.cond_Ioo_eq_cond_Ioc`,
   `MeasureTheory.Measure.cond_Ico_eq_cond_Ioc`
 * `MeasureTheory.Measure.tvDist_cond_self`, `MeasureTheory.Measure.tendsto_tvDist_cond` —
@@ -101,6 +108,95 @@ theorem sum_meas_smul_cond_fiber_of_countable [Countable β] [MeasurableSingleto
         congr 1
         ext ω
         simp
+
+/-! ### Removing one atom -/
+
+section ComplSingleton
+
+variable [MeasurableSingletonClass Ω] {μ : Measure Ω} {a : Ω}
+
+/-- Conditioning away from a point leaves no mass at that point. -/
+@[simp]
+theorem cond_compl_singleton_apply_self : μ[|{a}ᶜ] {a} = 0 := by
+  simp [cond_apply (measurableSet_singleton a).compl]
+
+/-- A function is integrable for a finite measure conditioned away from a point exactly when it is
+integrable for the measure itself: only the single atom at that point differs. -/
+theorem integrable_cond_compl_singleton_iff [IsFiniteMeasure μ] {E : Type*}
+    [NormedAddCommGroup E] {f : Ω → E} : Integrable f μ[|{a}ᶜ] ↔ Integrable f μ := by
+  have hatom : IntegrableOn f {a} μ := integrableOn_singleton
+  have hcompl : Integrable f μ[|{a}ᶜ] ↔ IntegrableOn f {a}ᶜ μ := by
+    by_cases hμ : μ {a}ᶜ = 0
+    · simp [IntegrableOn, cond, Measure.restrict_eq_zero.2 hμ]
+    · rw [cond, integrable_smul_measure (ENNReal.inv_ne_zero.2 (measure_ne_top _ _))
+        (ENNReal.inv_ne_top.2 hμ), IntegrableOn]
+  rw [hcompl, ← integrableOn_univ, ← compl_union_self {a}, integrableOn_union,
+    and_iff_left hatom]
+
+variable [IsProbabilityMeasure μ]
+
+/-- Conditioning a probability measure away from a point removes all mass exactly when the measure
+is the point mass there. -/
+theorem cond_compl_singleton_eq_zero_iff : μ[|{a}ᶜ] = 0 ↔ μ {a} = 1 := by
+  rw [cond_eq_zero, prob_compl_eq_one_sub (measurableSet_singleton a)]
+  constructor
+  · rintro (h | h)
+    · exact absurd h (ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self)
+    · exact le_antisymm prob_le_one (tsub_eq_zero_iff_le.1 h)
+  · intro h
+    simp [h]
+
+/-- A probability measure conditioned away from a point is a probability measure unless it is the
+point mass there. -/
+theorem isProbabilityMeasure_cond_compl_singleton (h : μ {a} ≠ 1) :
+    IsProbabilityMeasure μ[|{a}ᶜ] :=
+  cond_isProbabilityMeasure fun h' => h (cond_compl_singleton_eq_zero_iff.1 (by simp [h']))
+
+/-- Conditioning a probability measure away from a point rescales the other singleton masses by
+`1 / (1 - μ {a})`. -/
+theorem cond_compl_singleton_apply_singleton {x : Ω} (hx : x ≠ a) :
+    μ[|{a}ᶜ] {x} = (1 - μ {a})⁻¹ * μ {x} := by
+  rw [cond_apply (measurableSet_singleton a).compl,
+    prob_compl_eq_one_sub (measurableSet_singleton a),
+    inter_eq_right.2 (singleton_subset_iff.2 hx)]
+
+/-- Conditioning a probability measure away from a point removes that point from every set and
+rescales the remaining real mass by `1 / (1 - μ.real {a})`. -/
+theorem cond_compl_singleton_real (s : Set Ω) :
+    (μ[|{a}ᶜ]).real s = μ.real (s \ {a}) / (1 - μ.real {a}) := by
+  rw [measureReal_def, cond_apply (measurableSet_singleton a).compl,
+    prob_compl_eq_one_sub (measurableSet_singleton a)]
+  simp [measureReal_def, ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top,
+    sdiff_eq_compl_inter, div_eq_inv_mul]
+
+/-- Conditioning a probability measure away from a point rescales the other real singleton masses
+by `1 / (1 - μ.real {a})`. -/
+theorem cond_compl_singleton_real_singleton {x : Ω} (hx : x ≠ a) :
+    (μ[|{a}ᶜ]).real {x} = μ.real {x} / (1 - μ.real {a}) := by
+  rw [cond_compl_singleton_real, sdiff_singleton_eq_self fun h => hx (mem_singleton_iff.1 h).symm]
+
+/-- Integration against a probability measure conditioned away from a point removes the
+contribution of the atom there and rescales by `1 / (1 - μ.real {a})`. -/
+theorem integral_cond_compl_singleton {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {f : Ω → E} (hf : Integrable f μ) :
+    ∫ x, f x ∂μ[|{a}ᶜ] = (1 - μ.real {a})⁻¹ • (∫ x, f x ∂μ - μ.real {a} • f a) := by
+  rw [cond, integral_smul_measure, setIntegral_compl (measurableSet_singleton a) hf,
+    integral_singleton, ENNReal.toReal_inv, ← measureReal_def,
+    probReal_compl_eq_one_sub (measurableSet_singleton a)]
+
+/-- For a function vanishing at `a`, integration against a probability measure conditioned away
+from `a` is integration against the measure itself, rescaled by `1 / (1 - μ.real {a})`. No
+integrability is needed: both sides vanish together when the function is not integrable. -/
+theorem integral_cond_compl_singleton_of_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : Ω → E} (hf : f a = 0) :
+    ∫ x, f x ∂μ[|{a}ᶜ] = (1 - μ.real {a})⁻¹ • ∫ x, f x ∂μ := by
+  rw [cond, integral_smul_measure,
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+      rw [notMem_compl_iff, mem_singleton_iff] at hx
+      rw [hx, hf],
+    ENNReal.toReal_inv, ← measureReal_def, probReal_compl_eq_one_sub (measurableSet_singleton a)]
+
+end ComplSingleton
 
 end ProbabilityTheory
 
