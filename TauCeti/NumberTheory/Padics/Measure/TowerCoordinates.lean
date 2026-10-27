@@ -120,7 +120,7 @@ theorem towerCoordinates_injective [T2Space R] :
     Function.Injective (towerCoordinates (R := R) T) := by
   intro μ ν hμν
   have := T.isTopologicalGroup
-  have := T.totallyDisconnectedSpace
+  have := T.totallySeparatedSpace
   refine toCompletedGroupAlgebra_injective (completedGroupAlgebra.ext fun U ↦ ?_)
   obtain ⟨n, hn⟩ := T.exists_ker_le_of_isOpen U.isOpen
   apply MonoidAlgebra.coeff_injective
@@ -171,7 +171,7 @@ along a tower is the family of finite projections of an integral measure. -/
 theorem towerCoordinates_surjective :
     Function.Surjective (towerCoordinates (R := ℤ_[p]) T) := by
   have := T.isTopologicalGroup
-  have := T.totallyDisconnectedSpace
+  have := T.totallySeparatedSpace
   rintro ⟨c, hc⟩
   -- Assemble the pushforwards of `c` to all finite quotients into an element of `ℤ_p[[Γ]]`.
   have hx ⦃U V : OpenNormalSubgroup Γ⦄ (hUV : U ≤ V) :
