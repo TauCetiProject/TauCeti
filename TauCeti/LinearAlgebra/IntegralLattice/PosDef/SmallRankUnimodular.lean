@@ -257,7 +257,8 @@ theorem exists_integralForm_eq_zero_of_integralNorm_eq_two (h2 : 2 ≤ finrank �
     rw [finrank_orthogonalSum, ← eS.finrank_carrier_eq, finrank_carrier, Module.finrank_self,
       finrank_carrier N, ← finrank_carrier L] at h
     omega
-  have hLT := (show N.IsPosDef by rwa [IsPosDef, hNform]).isPosDef_ofIntegralForm_restrict T
+  have hNpos : N.IsPosDef := by rwa [IsPosDef, hNform]
+  have hLT := hNpos.isPosDef_ofIntegralForm_restrict T
   have : Nontrivial (ofIntegralForm _ (N.isSymm_integralForm.restrict T)) :=
     Module.nontrivial_of_finrank_pos (R := ℤ) (by omega)
   -- Hermite's inequality in rank `n - 1 ≤ 8` and determinant two bounds the minimum of `T` by two.
