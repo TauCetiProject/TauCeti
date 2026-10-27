@@ -188,6 +188,19 @@ theorem burauCoordMatrix_apply (n : ℕ) (t : R) (i : Fin (n - 1)) (a : Fin n) :
       if (i : ℕ) < (a : ℕ) then -t ^ ((a : ℕ) - (i : ℕ) - 1) else 0 :=
   (rfl)
 
+private theorem burauCoordMatrix_apply_mul (n : ℕ) (t : R) (i : Fin (n - 1)) (a : Fin n)
+    (h : (i : ℕ) < (a : ℕ)) :
+    burauCoordMatrix n t i a * t = -t ^ ((a : ℕ) - (i : ℕ)) := by
+  have hexp : (a : ℕ) - (i : ℕ) - 1 + 1 = (a : ℕ) - (i : ℕ) := by omega
+  rw [burauCoordMatrix_apply, ite_eq_left h, neg_mul, ← pow_succ, hexp]
+
+private theorem burauCoordMatrix_apply_commute (n : ℕ) (t : R) (i : Fin (n - 1)) (a : Fin n) :
+    Commute t (burauCoordMatrix n t i a) := by
+  rw [burauCoordMatrix_apply]
+  split_ifs
+  · exact ((Commute.refl t).pow_right _).neg_right
+  · exact Commute.zero_right t
+
 /-- **The Burau columns are independent**: their matrix has an explicit left inverse for every
 `t`. Over a commutative ring their span is consequently a free direct summand of the module
 on the strands. -/
@@ -195,21 +208,24 @@ on the strands. -/
 theorem burauCoordMatrix_mul_burauColMatrix (n : ℕ) (t : R) :
     burauCoordMatrix n t * burauColMatrix n t = 1 := by
   ext i k
-  rw [mul_burauColMatrix_apply, dotProduct_burauCol, burauCoordMatrix_apply,
-    burauCoordMatrix_apply, BraidGroup.val_strand, BraidGroup.val_strandSucc]
+  rw [mul_burauColMatrix_apply, dotProduct_burauCol]
   rcases lt_trichotomy (i : ℕ) (k : ℕ) with hlt | heq | hgt
   · have hne : i ≠ k := by omega
-    have hsplit : (k : ℕ) + 1 - (i : ℕ) - 1 = ((k : ℕ) - (i : ℕ) - 1) + 1 := by omega
+    have hstrand : (i : ℕ) < (BraidGroup.strand (n := n) k : ℕ) := by
+      simpa only [BraidGroup.val_strand] using hlt
+    rw [burauCoordMatrix_apply_mul n t i (BraidGroup.strand k) hstrand,
+      burauCoordMatrix_apply, BraidGroup.val_strand, BraidGroup.val_strandSucc]
     have hlt_succ : (i : ℕ) < (k : ℕ) + 1 := by omega
-    simp only [ite_eq_left hlt, ite_eq_left hlt_succ, hsplit, pow_succ, neg_mul, sub_self,
-      Matrix.one_apply_ne hne]
+    have hexp : (k : ℕ) + 1 - (i : ℕ) - 1 = (k : ℕ) - (i : ℕ) := by omega
+    simp [hlt_succ, hexp, Matrix.one_apply_ne hne]
   · have hik : i = k := Fin.ext heq
     subst k
-    simp
+    simp [burauCoordMatrix_apply, BraidGroup.val_strand, BraidGroup.val_strandSucc]
   · have hne : i ≠ k := by omega
     have hnot_lt : ¬ (i : ℕ) < (k : ℕ) := by omega
     have hnot_lt_succ : ¬ (i : ℕ) < (k : ℕ) + 1 := by omega
-    simp [hnot_lt, hnot_lt_succ, Matrix.one_apply_ne hne]
+    simp [burauCoordMatrix_apply, BraidGroup.val_strand, BraidGroup.val_strandSucc,
+      hnot_lt, hnot_lt_succ, Matrix.one_apply_ne hne]
 
 private theorem burauColMatrix_mulVec_zero (m : ℕ) (hm : 0 < m) (t : R) (c : Fin m → R) :
     (burauColMatrix (m + 1) t *ᵥ c) 0 = t * c ⟨0, hm⟩ := by
@@ -249,6 +265,46 @@ private theorem burauColMatrix_mulVec_succ (m : ℕ) (t : R) (c : Fin m → R) (
         exact j.isLt)
     simp [h, hsucc]
 
+private theorem burauColMatrix_mul_burauCoordMatrix_zero (m : ℕ) (t : R) (b : Fin (m + 2)) :
+    (burauColMatrix (m + 2) t * burauCoordMatrix (m + 2) t) 0 b =
+      (if (0 : Fin (m + 2)) = b then 1 else 0) - t ^ (b : ℕ) := by
+  rw [← Matrix.col_apply (burauColMatrix (m + 2) t * burauCoordMatrix (m + 2) t) b 0,
+    Matrix.col_mul_eq_mulVec_col, burauColMatrix_mulVec_zero _ (by omega), Matrix.col_apply]
+  refine Fin.cases ?_ (fun b => ?_) b
+  · simp
+  · have hbpos : (0 : ℕ) < (b.succ : ℕ) := by simp
+    rw [(burauCoordMatrix_apply_commute (m + 2) t ⟨0, by omega⟩ b.succ).eq,
+      burauCoordMatrix_apply_mul (m + 2) t ⟨0, by omega⟩ b.succ hbpos]
+    simp [(Fin.succ_ne_zero b).symm]
+
+private theorem burauColMatrix_mul_burauCoordMatrix_succ (m : ℕ) (t : R) (i : Fin (m + 1))
+    (b : Fin (m + 2)) :
+    (burauColMatrix (m + 2) t * burauCoordMatrix (m + 2) t) i.succ b =
+      if i.succ = b then 1 else 0 := by
+  rw [← Matrix.col_apply (burauColMatrix (m + 2) t * burauCoordMatrix (m + 2) t) b i.succ,
+    Matrix.col_mul_eq_mulVec_col, burauColMatrix_mulVec_succ]
+  simp only [Matrix.col_apply]
+  rcases lt_trichotomy ((i : ℕ) + 1) (b : ℕ) with hlt | heq | hgt
+  · have hi : (i : ℕ) + 1 < m + 1 := by omega
+    have hne : i.succ ≠ b := by
+      simp only [ne_eq, Fin.ext_iff, Fin.val_succ]
+      omega
+    have hib : (i : ℕ) < (b : ℕ) := by omega
+    have hexp : (b : ℕ) - ((i : ℕ) + 1) = (b : ℕ) - (i : ℕ) - 1 := by omega
+    rw [dite_eq_left hi,
+      (burauCoordMatrix_apply_commute (m + 2) t ⟨(i : ℕ) + 1, hi⟩ b).eq,
+      burauCoordMatrix_apply_mul (m + 2) t ⟨(i : ℕ) + 1, hi⟩ b hlt]
+    simp [burauCoordMatrix_apply, hib, hexp, hne]
+  · have hb : i.succ = b := Fin.ext heq
+    subst b
+    simp [burauCoordMatrix_apply]
+  · have hne : i.succ ≠ b := by
+      simp only [ne_eq, Fin.ext_iff, Fin.val_succ]
+      omega
+    have hnot_lt_succ : ¬ (i : ℕ) + 1 < (b : ℕ) := by omega
+    have hnot_lt : ¬ (i : ℕ) < (b : ℕ) := by omega
+    simp [burauCoordMatrix_apply, hnot_lt_succ, hnot_lt, hne]
+
 /-- The Burau columns and their coordinates give the projection onto the invariant kernel
 along the zeroth coordinate. -/
 @[simp]
@@ -263,58 +319,11 @@ theorem burauColMatrix_mul_burauCoordMatrix (n : ℕ) (t : R) :
       simp [Matrix.mul_apply, vecMulVec_apply]
   | succ m =>
       ext a b
-      -- Read each product column as a matrix-vector product to use the sparse column action.
-      have hcol := congrFun (Matrix.col_mul_eq_mulVec_col
-        (M := burauColMatrix (m + 1 + 1) t)
-        (N := burauCoordMatrix (m + 1 + 1) t) (i := b)) a
-      rw [Matrix.col_apply] at hcol
-      rw [hcol]
-      -- Row zero gives the geometric coefficients; the successor rows telescope to identity rows.
       refine Fin.cases ?_ (fun i => ?_) a
-      · rw [burauColMatrix_mulVec_zero _ (by omega)]
-        by_cases hb : (b : ℕ) = 0
-        · have hb' : b = 0 := Fin.ext hb
-          subst b
-          simp [Matrix.col_apply, Matrix.sub_apply, vecMulVec_apply]
-        · have hb' : (0 : Fin (m + 1 + 1)) ≠ b := by
-            simpa only [ne_eq, Fin.ext_iff, Fin.val_zero, eq_comm] using hb
-          have hbpos : 0 < (b : ℕ) := by omega
-          have hbone : 1 ≤ (b : ℕ) := by omega
-          simp only [Matrix.col_apply, burauCoordMatrix_apply, ite_eq_left hbpos, Nat.sub_zero,
-            Matrix.sub_apply, Matrix.one_apply_ne hb', vecMulVec_apply, Pi.single_eq_same,
-            one_mul, zero_sub]
-          rw [mul_neg, ← pow_succ', Nat.sub_add_cancel hbone]
-      · rw [burauColMatrix_mulVec_succ]
-        simp only [Matrix.col_apply, burauCoordMatrix_apply, Matrix.sub_apply,
-          vecMulVec_apply, Pi.single_apply, Fin.succ_ne_zero, ite_false, zero_mul, sub_zero]
-        by_cases hi : (i : ℕ) + 1 < m + 1
-        · rw [dite_eq_left hi]
-          rcases lt_trichotomy ((i : ℕ) + 1) (b : ℕ) with hlt | heq | hgt
-          · have hne : i.succ ≠ b := by
-              simp only [ne_eq, Fin.ext_iff, Fin.val_succ]
-              omega
-            have hsplit : (b : ℕ) - (i : ℕ) - 1 =
-                ((b : ℕ) - ((i : ℕ) + 1) - 1) + 1 := by omega
-            have hib : (i : ℕ) < (b : ℕ) := by omega
-            simp [hlt, hib, hsplit, pow_succ', mul_neg, Matrix.one_apply_ne hne]
-          · have hb : i.succ = b := Fin.ext heq
-            subst b
-            simp
-          · have hne : i.succ ≠ b := by
-              simp only [ne_eq, Fin.ext_iff, Fin.val_succ]
-              omega
-            have hnot_lt_succ : ¬ (i : ℕ) + 1 < (b : ℕ) := by omega
-            have hnot_lt : ¬ (i : ℕ) < (b : ℕ) := by omega
-            simp [hnot_lt_succ, hnot_lt, Matrix.one_apply_ne hne]
-        · -- The final row has only the negative of the preceding column coefficient.
-          rw [dite_eq_right hi]
-          have hb : (i : ℕ) < (b : ℕ) ↔ i.succ = b := by
-            simp only [Fin.ext_iff, Fin.val_succ]
-            omega
-          by_cases heq : i.succ = b
-          · subst b
-            simp
-          · simp [hb, heq, Matrix.one_apply_ne heq]
+      · rw [burauColMatrix_mul_burauCoordMatrix_zero]
+        simp [Matrix.sub_apply, vecMulVec_apply, Matrix.one_apply]
+      · rw [burauColMatrix_mul_burauCoordMatrix_succ]
+        simp [Matrix.sub_apply, vecMulVec_apply, Matrix.one_apply]
 
 /-- **The Burau columns span the kernel of the geometric covector**: every vector annihilated by
 `(1, t, …, t ^ (n - 1))` is reconstructed from its `burauCoordMatrix` coordinates, for every
