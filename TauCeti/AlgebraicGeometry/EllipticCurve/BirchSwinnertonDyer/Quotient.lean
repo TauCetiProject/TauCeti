@@ -14,10 +14,10 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Product
 /-!
 # The Birch–Swinnerton-Dyer quotient of an elliptic curve over `ℚ`
 
-For an elliptic curve `E` over `ℚ` whose Shafarevich–Tate group `Ш(E/ℚ)` is finite, the
+For an elliptic curve `E` over `ℚ` whose Shafarevich–Tate group `Sha(E/ℚ)` is finite, the
 *arithmetic side* of the Birch–Swinnerton-Dyer conjecture is the real number
 
-  `Ω(E) · Reg(E/ℚ) · #Ш(E/ℚ) · ∏_p c_p / #E(ℚ)_tors²`.
+  `Ω(E) · Reg(E/ℚ) · #Sha(E/ℚ) · ∏_p c_p / #E(ℚ)_tors²`.
 
 Its factors are, in order:
 
@@ -41,7 +41,8 @@ of `E` at `s = 1`, `r` being the rank of `E(ℚ)`.
 
 ## Main definitions
 
-* `WeierstrassCurve.bsdQuotient E`: the Birch–Swinnerton-Dyer quotient of `E`, for `Ш(E/ℚ)` finite.
+* `WeierstrassCurve.bsdQuotient E`: the Birch–Swinnerton-Dyer quotient of `E`, for `Sha(E/ℚ)`
+  finite.
 
 ## Main results
 
@@ -72,12 +73,12 @@ variable (E : WeierstrassCurve ℚ) [E.IsElliptic]
 /-- **The Birch–Swinnerton-Dyer quotient** of an elliptic curve `E` over `ℚ` whose
 Shafarevich–Tate group is finite:
 
-  `Ω(E) · Reg(E/ℚ) · #Ш(E/ℚ) · ∏_p c_p / #E(ℚ)_tors²`,
+  `Ω(E) · Reg(E/ℚ) · #Sha(E/ℚ) · ∏_p c_p / #E(ℚ)_tors²`,
 
 with `Ω(E)` the real period of a global minimal equation, `Reg(E/ℚ)` the regulator of the
 Néron–Tate pairing, `c_p` the local Tamagawa number at the prime `p` and `E(ℚ)_tors` the torsion
-subgroup of the Mordell–Weil group. The order of `Ш(E/ℚ)` is counted with the finiteness
-hypothesis, so the quotient has no value on a curve with infinite `Ш(E/ℚ)`
+subgroup of the Mordell–Weil group. The order of `Sha(E/ℚ)` is counted with the finiteness
+hypothesis, so the quotient has no value on a curve with infinite `Sha(E/ℚ)`
 (`WeierstrassCurve.bsdQuotient_def` restates it with `Nat.card`). -/
 noncomputable def bsdQuotient [Finite E.sha] : ℝ :=
   letI := Fintype.ofFinite E.sha
@@ -85,7 +86,7 @@ noncomputable def bsdQuotient [Finite E.sha] : ℝ :=
     Nat.card (AddCommGroup.torsion E.toAffine.Point) ^ 2
 
 /-- **The Birch–Swinnerton-Dyer quotient in terms of its factors**:
-`Ω(E) · Reg(E/ℚ) · #Ш(E/ℚ) · ∏_p c_p / #E(ℚ)_tors²`. -/
+`Ω(E) · Reg(E/ℚ) · #Sha(E/ℚ) · ∏_p c_p / #E(ℚ)_tors²`. -/
 theorem bsdQuotient_def [Finite E.sha] :
     E.bsdQuotient = E.minimalRealPeriod * E.toAffine.regulator * Nat.card E.sha *
       E.tamagawaProduct (R := ℤ) / Nat.card (AddCommGroup.torsion E.toAffine.Point) ^ 2 := by
