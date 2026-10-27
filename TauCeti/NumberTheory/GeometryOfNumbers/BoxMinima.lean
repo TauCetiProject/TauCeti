@@ -107,15 +107,19 @@ theorem successiveMin_eq_of_crosspolytope_subset_of_subset_box (ha : ∀ j, 0 < 
   rw [finrank_span_eq_card hv, Fintype.card_fin, Basis.finrank_flag, Fin.val_castSucc] at hle
   omega
 
+/-- With nonnegative weights, the weighted cross-polytope lies in the weighted box. -/
+private lemma crosspolytope_subset_box (ha : ∀ j, 0 ≤ a j) :
+    {x | ∑ j, a j * |b.repr x j| ≤ 1} ⊆ {x | ∀ j, a j * |b.repr x j| ≤ 1} := fun _ hx j ↦
+  (Finset.single_le_sum (fun k _ ↦ mul_nonneg (ha k) (abs_nonneg _)) (Finset.mem_univ j)).trans hx
+
 /-- **The successive minima of a weighted box.** Let `b` be a basis of `E` and `a` positive
 nondecreasing weights. The successive minima of the lattice `span ℤ (range b)` with respect to the
 weighted box `K = {x | ∀ j, a j * |b.repr x j| ≤ 1}` are the weights `a i`. -/
 theorem successiveMin_box (ha : ∀ j, 0 < a j) (hmono : Monotone a)
     (hK : (K : Set E) = {x | ∀ j, a j * |b.repr x j| ≤ 1}) (i : Fin (finrank ℝ E)) :
     successiveMin (span ℤ (Set.range b)) K i = a i :=
-  successiveMin_eq_of_crosspolytope_subset_of_subset_box ha hmono (hK ▸ fun _ hx j ↦
-    (Finset.single_le_sum (fun k _ ↦ mul_nonneg (ha k).le (abs_nonneg _)) (Finset.mem_univ j)).trans
-      hx) hK.le i
+  successiveMin_eq_of_crosspolytope_subset_of_subset_box ha hmono
+    ((crosspolytope_subset_box fun j ↦ (ha j).le).trans hK.ge) hK.le i
 
 /-- **The successive minima of a weighted cross-polytope.** Let `b` be a basis of `E` and `a`
 positive nondecreasing weights. The successive minima of the lattice `span ℤ (range b)` with
@@ -124,8 +128,7 @@ respect to the weighted cross-polytope `K = {x | ∑ j, a j * |b.repr x j| ≤ 1
 theorem successiveMin_crosspolytope (ha : ∀ j, 0 < a j) (hmono : Monotone a)
     (hK : (K : Set E) = {x | ∑ j, a j * |b.repr x j| ≤ 1}) (i : Fin (finrank ℝ E)) :
     successiveMin (span ℤ (Set.range b)) K i = a i :=
-  successiveMin_eq_of_crosspolytope_subset_of_subset_box ha hmono hK.ge (hK ▸ fun _ hx j ↦
-    (Finset.single_le_sum (fun k _ ↦ mul_nonneg (ha k).le (abs_nonneg _)) (Finset.mem_univ j)).trans
-      hx) i
+  successiveMin_eq_of_crosspolytope_subset_of_subset_box ha hmono hK.ge
+    (hK.le.trans (crosspolytope_subset_box fun j ↦ (ha j).le)) i
 
 end ZLattice
