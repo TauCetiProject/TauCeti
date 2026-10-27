@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.MatrixNormal.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Transforms
+public import TauCeti.LinearAlgebra.Matrix.Vec
 
 /-!
 # Directional transforms of matrix normal laws
@@ -37,30 +38,6 @@ namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
-/-- The quadratic form of a Kronecker product on column-stacked matrices is a trace:
-`vec A ⬝ᵥ (V ⊗ₖ U) *ᵥ vec B = trace (Aᵀ * U * B * Vᵀ)`. -/
-theorem _root_.Matrix.vec_dotProduct_kronecker_mulVec_vec {R l m n p : Type*}
-    [NonUnitalCommSemiring R] [Fintype l] [Fintype m] [Fintype n] [Fintype p]
-    (A : Matrix l p R) (U : Matrix l m R) (B : Matrix m n R) (V : Matrix p n R) :
-    A.vec ⬝ᵥ (V ⊗ₖ U) *ᵥ B.vec = (Aᵀ * U * B * Vᵀ).trace := by
-  rw [Matrix.kronecker_mulVec_vec, Matrix.vec_dotProduct_vec]
-  simp only [Matrix.mul_assoc]
-
-omit [DecidableEq ι] [DecidableEq κ] in
-private lemma vec_dotProduct_kronecker_mulVec_vec_of_posSemidef {V : Matrix κ κ ℝ}
-    (hV : V.PosSemidef) (T : Matrix ι κ ℝ) (U : Matrix ι ι ℝ) :
-    T.vec ⬝ᵥ (V ⊗ₖ U) *ᵥ T.vec = (Tᵀ * U * T * V).trace := by
-  rw [Matrix.vec_dotProduct_kronecker_mulVec_vec, (by simpa using hV.isHermitian.eq : Vᵀ = V)]
-
-omit [DecidableEq ι] [DecidableEq κ] in
-/-- For positive semidefinite `U` and `V`, the covariance quadratic form
-`trace (Tᵀ * U * T * V)` is nonnegative. It is the quadratic form of `V ⊗ₖ U` at `vec T`. -/
-theorem _root_.Matrix.PosSemidef.trace_transpose_mul_mul_mul_nonneg {U : Matrix ι ι ℝ}
-    {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) (T : Matrix ι κ ℝ) :
-    0 ≤ (Tᵀ * U * T * V).trace := by
-  simpa only [star_trivial, vec_dotProduct_kronecker_mulVec_vec_of_posSemidef hV] using
-    (hV.kronecker hU).dotProduct_mulVec_nonneg T.vec
-
 omit [DecidableEq ι] [DecidableEq κ] in
 private lemma coe_toNNReal_trace_transpose_mul_mul_mul {U : Matrix ι ι ℝ}
     {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) (T : Matrix ι κ ℝ) :
@@ -82,7 +59,7 @@ private lemma hasLaw_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ
         (Tᵀ * U * T * V).trace := by
     rw [EuclideanSpace.inner_eq_star_dotProduct]
     simp only [Matrix.toLpLin_apply, WithLp.ofLp_toLp, star_trivial]
-    rw [dotProduct_comm, vec_dotProduct_kronecker_mulVec_vec_of_posSemidef hV]
+    rw [dotProduct_comm, hV.isHermitian.isSymm.vec_dotProduct_kronecker_mulVec_vec]
   refine ⟨(continuous_const.matrix_mul continuous_id).matrix_trace.measurable.aemeasurable, ?_⟩
   have h := map_inner_multivariateGaussian (WithLp.toLp 2 M.vec) (WithLp.toLp 2 T.vec)
     (hV.kronecker hU)
