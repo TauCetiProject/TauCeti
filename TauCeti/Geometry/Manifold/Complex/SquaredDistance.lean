@@ -49,32 +49,26 @@ theorem manifoldLeviForm_norm_sq_sub_apply
     (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x) (v w : E) :
     manifoldLeviForm E (fun y ↦ ‖i y - a‖ ^ 2) x v w =
       inner ℂ (mvfderiv 𝓘(ℂ, E) i x v) (mvfderiv 𝓘(ℂ, E) i x w) := by
-  have hnorm : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 (fun z : F ↦ ‖z‖ ^ 2) (i x - a) :=
-    (contDiff_norm_sq ℂ).contDiffAt.contMDiffAt
-  have hsub := hi.sub (contMDiffAt_const (c := a))
   have h := manifoldLeviForm_comp_apply (g := fun y ↦ i y - a)
-    (u := fun z : F ↦ ‖z‖ ^ 2) hnorm hsub v w
-  simp only [manifoldLeviForm_def, chartAt_self_eq, OpenPartialHomeomorph.refl_symm,
-    OpenPartialHomeomorph.refl_apply, comp_id, leviForm_norm_sq] at h
-  -- The model-space Levi form takes vectors in the canonically identified tangent fibres.
-  erw [innerₛₗ_apply_apply] at h
-  erw [← mvfderiv_apply_eq_mfderiv_apply (fun y ↦ i y - a) x v,
-    ← mvfderiv_apply_eq_mfderiv_apply (fun y ↦ i y - a) x w] at h
+    (u := fun z : F ↦ ‖z‖ ^ 2) (contDiff_norm_sq ℂ).contDiffAt.contMDiffAt
+    (hi.sub contMDiffAt_const) v w
   have hd := mvfderiv_sub (hi.mdifferentiableAt (by norm_num))
     (mdifferentiableAt_const (I := 𝓘(ℂ, E)) (c := a) (x := x))
-  simp only [mvfderiv_const, sub_zero] at hd
-  simp only [Pi.sub_def] at hd
-  rw [hd] at h
-  simpa only [manifoldLeviForm_def, Function.comp_def] using h
+  simp only [mvfderiv_const, sub_zero, Pi.sub_def] at hd
+  -- The vectors `v w : E` are passed explicitly, so that they are elaborated as tangent vectors.
+  rw [← hd, mvfderiv_apply_eq_mfderiv_apply (fun y ↦ i y - a) x v,
+    mvfderiv_apply_eq_mfderiv_apply (fun y ↦ i y - a) x w]
+  simp only [manifoldLeviForm_def, chartAt_self_eq, OpenPartialHomeomorph.refl_symm,
+    OpenPartialHomeomorph.refl_apply, comp_id, leviForm_norm_sq] at h
+  simpa only [manifoldLeviForm_def, comp_def] using h.trans (innerₛₗ_apply_apply ℂ _ _)
 
 /-- The Levi diagonal of squared distance is the squared norm of the complex tangent map. -/
 theorem re_manifoldLeviForm_norm_sq_sub_apply_self
     (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x) (v : E) :
     (manifoldLeviForm E (fun y ↦ ‖i y - a‖ ^ 2) x v v).re =
       ‖mvfderiv 𝓘(ℂ, E) i x v‖ ^ 2 := by
-  rw [manifoldLeviForm_norm_sq_sub_apply hi, inner_self_eq_norm_sq_to_K]
-  -- Evaluate the norm in the ambient space, through the vector-valued derivative.
-  exact_mod_cast rfl
+  rw [manifoldLeviForm_norm_sq_sub_apply hi, ← RCLike.re_to_complex]
+  exact inner_self_eq_norm_sq _
 
 /-- Squared distance along a holomorphic map is strictly plurisubharmonic exactly at
 its immersion points. -/
@@ -86,18 +80,20 @@ theorem isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_iff
   rw [isManifoldStrictlyPlurisubharmonicAt_iff]
   constructor
   · intro h
-    apply (mvfderiv 𝓘(ℂ, E) i x).ker_eq_bot.mp
-    apply LinearMap.ker_eq_bot'.mpr
-    intro v hv
+    refine (injective_iff_map_eq_zero (mvfderiv 𝓘(ℂ, E) i x)).2 fun v hv ↦ ?_
     by_contra hne
     have hp := h v hne
-    -- The kernel vector is in the tangent fibre, canonically the model of the Levi form.
-    erw [re_manifoldLeviForm_norm_sq_sub_apply_self hi] at hp
-    erw [hv] at hp
-    simp only [norm_zero, sq, zero_mul, lt_self_iff_false] at hp
+    rw [re_manifoldLeviForm_norm_sq_sub_apply_self hi v, hv, norm_zero, sq, zero_mul] at hp
+    exact lt_irrefl 0 hp
   · intro hinj v hv
     rw [re_manifoldLeviForm_norm_sq_sub_apply_self hi]
     exact sq_pos_of_pos (norm_pos_iff.mpr ((map_ne_zero_iff _ hinj).2 hv))
+
+/-- Squared distance along a complex `C²` map is real `C²`. -/
+private theorem contMDiffAt_norm_sq_sub (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x) :
+    ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 (fun y ↦ ‖i y - a‖ ^ 2) x :=
+  (contDiff_norm_sq ℂ).contDiffAt.contMDiffAt.comp x
+    ((hi.restrictScalars ℝ).sub contMDiffAt_const)
 
 /-- The sum of the real Hessian on a complex tangent vector and its rotation by `I`
 is four times the squared norm of the tangent map. The Hessian here is computed in the
@@ -124,17 +120,11 @@ theorem hessianQuadraticForm_norm_sq_sub_add_I_smul_of_mem_maximalAtlas
       hessianQuadraticForm ((fun y ↦ ‖i y - a‖ ^ 2) ∘ e.symm) (e x)
         (mvfderiv 𝓘(ℝ, E) e x (I • v)) =
       4 * ‖mvfderiv 𝓘(ℂ, E) i x v‖ ^ 2 := by
-  have hnorm : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 (fun z : F ↦ ‖z‖ ^ 2) (i x - a) :=
-    (contDiff_norm_sq ℂ).contDiffAt.contMDiffAt
-  have hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 (fun y ↦ ‖i y - a‖ ^ 2) x :=
-    hnorm.comp x ((hi.restrictScalars ℝ).sub (contMDiffAt_const (c := a)))
-  have h := congrArg Complex.re
-    (manifoldLeviForm_apply_self_of_mem_maximalAtlas he hx hf hcrit v)
-  rw [re_manifoldLeviForm_norm_sq_sub_apply_self hi] at h
+  have h := congrArg Complex.re (manifoldLeviForm_apply_self_of_mem_maximalAtlas he hx
+    (contMDiffAt_norm_sq_sub hi) hcrit v)
+  rw [re_manifoldLeviForm_norm_sq_sub_apply_self hi, Complex.ofReal_re] at h
   -- The chart derivative is read in the model space using the vector-valued API.
-  erw [← mvfderiv_apply_eq_mfderiv_apply e x v,
-    ← mvfderiv_apply_eq_mfderiv_apply e x (I • v)] at h
-  simp only [Complex.ofReal_re] at h
+  rw [mvfderiv_apply_eq_mfderiv_apply e x v, mvfderiv_apply_eq_mfderiv_apply e x (I • v)]
   linarith
 
 /-- At a critical point of squared distance along a holomorphic immersion, the real
@@ -146,9 +136,6 @@ theorem manifoldMorseIndex_norm_sq_sub_le [FiniteDimensional ℂ E]
     (hcrit : mvfderiv 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x = 0) :
     manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x ≤ finrank ℂ E := by
   have hpos := (isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_iff (a := a) hi).2 hinj
-  have hsub := (hi.restrictScalars ℝ).sub (contMDiffAt_const (c := a))
-  have hnorm : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 (fun z : F ↦ ‖z‖ ^ 2) (i x - a) :=
-    (contDiff_norm_sq ℂ).contDiffAt.contMDiffAt
-  exact hpos.manifoldMorseIndex_le (hnorm.comp x hsub) hcrit
+  exact hpos.manifoldMorseIndex_le (contMDiffAt_norm_sq_sub hi) hcrit
 
 end TauCeti
