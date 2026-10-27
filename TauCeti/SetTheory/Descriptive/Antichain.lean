@@ -30,8 +30,8 @@ Cantor antichain gives a perfect antichain, its range; in a completely metrizabl
 antichain gives a Cantor antichain, through `Perfect.exists_nat_bool_injection`. In particular
 the two agree on Polish spaces.
 
-A Cantor antichain on `A` gives continuum many classes, both of `E` and of its restriction
-`E.comap ((↑) : A → X)` to `A`. The restriction is reached through
+A Cantor antichain on `A` gives at least continuum many classes, both of `E` and of its
+restriction `E.comap ((↑) : A → X)` to `A`. The restriction is reached through
 `Setoid.hasCantorAntichainOn_subtype_iff`, which passes Cantor antichains between `A` and the whole
 subtype `↥A`.
 
@@ -47,8 +47,8 @@ subtype `↥A`.
   a coarser topology.
 * `Setoid.hasCantorAntichainOn_subtype_iff`: Cantor antichains on `A` and on `↥A`.
 * `Setoid.HasCantorAntichainOn.continuum_le_mk_quotient` and
-  `Setoid.HasCantorAntichainOn.continuum_le_mk_quotient_comap`: continuum many classes, of `E`
-  and of its restriction to `A`.
+  `Setoid.HasCantorAntichainOn.continuum_le_mk_quotient_comap`: at least continuum many classes,
+  of `E` and of its restriction to `A`.
 * `Setoid.HasCantorAntichainOn.hasPerfectAntichainOn` (Hausdorff spaces),
   `Setoid.HasPerfectAntichainOn.hasCantorAntichainOn` (completely metrizable spaces) and
   `Setoid.hasCantorAntichainOn_iff_hasPerfectAntichainOn`.
@@ -167,7 +167,7 @@ theorem hasCantorAntichainOn_subtype_iff :
   · rintro ⟨f, hf, hA, hE⟩
     exact ⟨fun a => ⟨f a, hA a⟩, hf.subtype_mk _, fun _ => trivial, hE⟩
 
-/-- **Continuum many classes.** If `A` carries a Cantor antichain for `E`, then `E` has at least
+/-- **At least continuum many classes.** If `A` carries a Cantor antichain for `E`, then `E` has at least
 continuum many classes. -/
 theorem HasCantorAntichainOn.continuum_le_mk_quotient (h : E.HasCantorAntichainOn A) :
     𝔠 ≤ #(Quotient E) := by
@@ -176,7 +176,7 @@ theorem HasCantorAntichainOn.continuum_le_mk_quotient (h : E.HasCantorAntichainO
     fun a b hab => by_contra fun hne => hE a b hne (Quotient.exact hab)
   simpa using lift_mk_le_lift_mk_of_injective hinj
 
-/-- **Continuum many classes on `A`.** If `A` carries a Cantor antichain for `E`, then the
+/-- **At least continuum many classes on `A`.** If `A` carries a Cantor antichain for `E`, then the
 restriction of `E` to `A` has at least continuum many classes. -/
 theorem HasCantorAntichainOn.continuum_le_mk_quotient_comap (h : E.HasCantorAntichainOn A) :
     𝔠 ≤ #(Quotient (E.comap ((↑) : A → X))) :=

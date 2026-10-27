@@ -16,7 +16,7 @@ only:
 * equality on Cantor space has a Cantor antichain on the whole space, the identity map;
 * the universal relation has no Cantor antichain on any set;
 * the subtype bridge bounds the quotient of a specified subset: equality restricted to the
-  points of Cantor space starting with `true` has continuum many classes.
+  points of Cantor space starting with `true` has at least continuum many classes.
 -/
 
 open Cardinal
@@ -33,8 +33,8 @@ example {X : Type*} [TopologicalSpace X] (A : Set X) :
   obtain ⟨f, -, -, hf⟩ := Setoid.hasCantorAntichainOn_iff.1 h
   exact hf (fun _ => false) (fun _ => true) (fun h => by simpa using congrFun h 0) trivial
 
--- Restricted to the points starting with `true`, equality still has continuum many classes:
--- prepending `true` is a Cantor antichain on that set.
+-- Restricted to the points starting with `true`, equality still has at least continuum many
+-- classes: prepending `true` is a Cantor antichain on that set.
 example : 𝔠 ≤ #(Quotient ((⊥ : Setoid (ℕ → Bool)).comap
     ((↑) : {x : ℕ → Bool | x 0 = true} → ℕ → Bool))) := by
   refine Setoid.HasCantorAntichainOn.continuum_le_mk_quotient_comap
