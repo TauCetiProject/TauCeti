@@ -241,10 +241,8 @@ private def circleParamDerivEquiv (z : EuclideanSpace ℝ (Fin 1)) :
 
 private theorem circleParamDerivEquiv_apply (z w : EuclideanSpace ℝ (Fin 1)) :
     circleParamDerivEquiv z w = circleParamDeriv z w :=
-  (congrFun (LinearEquiv.coe_toContinuousLinearEquiv'
-    (LinearEquiv.ofInjectiveEndo (circleParamDeriv z).toLinearMap
-      (injective_circleParamDeriv z))) w).trans
-    (congrFun (LinearEquiv.coe_ofInjectiveEndo _ _) w)
+  -- Both `toContinuousLinearEquiv` and `ofInjectiveEndo` keep the underlying function.
+  rfl
 
 private theorem hasMFDerivAt_circleParam (z : EuclideanSpace ℝ (Fin 1)) :
     HasMFDerivAt (𝓡 1) (𝓡 1) (fun w : EuclideanSpace ℝ (Fin 1) ↦ Circle.exp (w 0)) z
@@ -310,6 +308,15 @@ private theorem injOn_circleParam :
   rw [Subsingleton.elim j 0]
   exact h
 
+/-- The parameter domain `(-π, π)` of the parametrization has volume `2π`. -/
+private theorem volume_preimage_proj_Ioo_neg_pi_pi :
+    MeasureTheory.volume ((EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 1)) ⁻¹'
+      Set.Ioo (-Real.pi) Real.pi) = ENNReal.ofReal (2 * Real.pi) := by
+  rw [(TauCeti.volume_preserving_euclideanSpace_proj (ι := Fin 1) 0).measure_preimage
+    measurableSet_Ioo.nullMeasurableSet, Real.volume_Ioo]
+  congr 1
+  ring
+
 /-- The integral of the angular form over the counterclockwise circle is `2π`. -/
 theorem integralTopForm_circleOrientation_circleAngularForm :
     integralTopForm circleOrientation circleAngularForm = 2 * Real.pi := by
@@ -328,12 +335,10 @@ theorem integralTopForm_circleOrientation_circleAngularForm :
     (fun z _ ↦ by
       rw [← Manifold.Orientation.orientationAt_mk, hl, map_circleParamDerivEquiv_orientation])
   rw [← hl, h.2, MeasureTheory.setIntegral_congr_fun hD fun z _ ↦
-      circleAngularForm_apply_circleParamDerivEquiv z,
-    MeasureTheory.setIntegral_const, smul_eq_mul, mul_one, MeasureTheory.measureReal_def,
-    (TauCeti.volume_preserving_euclideanSpace_proj (ι := Fin 1) 0).measure_preimage
-      measurableSet_Ioo.nullMeasurableSet, Real.volume_Ioo,
-    ENNReal.toReal_ofReal (by linarith [Real.pi_pos])]
-  ring
+      circleAngularForm_apply_circleParamDerivEquiv z]
+  rw [MeasureTheory.setIntegral_const, MeasureTheory.measureReal_def,
+    volume_preimage_proj_Ioo_neg_pi_pi]
+  simp [Real.pi_pos.le]
 
 /-- The angular form integrates to `±2π` over the circle, the sign being that of the
 orientation. -/
