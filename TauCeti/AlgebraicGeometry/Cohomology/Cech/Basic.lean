@@ -7,20 +7,21 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Basic
-public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
+public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.Topology.Sheaves.Leray
 
 /-!
 # Čech cohomology of quasi-coherent sheaves for affine covers
 
-Let `X` be a locally Noetherian scheme and let `M` be a quasi-coherent sheaf of modules on `X`.
-Then `M` has no cohomology in positive degrees on affine opens. So every finite open cover `U` of
-`X` whose nonempty finite intersections are affine is a Leray cover for `M`, and by Leray's theorem
-(`TauCeti.Topology.homologyCechComplexIsoH`) the Čech cohomology `Hⁿ(U, M)` of the underlying
-abelian sheaf of `M` is isomorphic to the cohomology `Hⁿ(X, M)`. When `X` has affine diagonal, for
-instance when it is separated, finite intersections of affine opens are affine
-(`AlgebraicGeometry.IsAffineOpen.biInf`), so `Hⁿ(X, M)` can be computed from the Čech complex of
-any finite affine open cover.
+Let `X` be a scheme and let `M` be a quasi-coherent sheaf of modules on `X`. Then `M` has no
+cohomology in positive degrees on affine opens
+(`AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen`). So every
+finite open cover `U` of `X` whose nonempty finite intersections are affine is a Leray cover for
+`M`, and by Leray's theorem (`TauCeti.Topology.homologyCechComplexIsoH`) the Čech cohomology
+`Hⁿ(U, M)` of the underlying abelian sheaf of `M` is isomorphic to the cohomology `Hⁿ(X, M)`.
+When `X` has affine diagonal, for instance when it is separated, finite intersections of affine
+opens are affine (`AlgebraicGeometry.IsAffineOpen.biInf`), so `Hⁿ(X, M)` can be computed from the
+Čech complex of any finite affine open cover.
 
 The isomorphism is natural in the quasi-coherent sheaf `M`. In particular it intertwines the map
 on Čech cohomology induced by multiplication by a global function `r` on `M` with the action of
@@ -53,21 +54,20 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 open TauCeti TauCeti.AlgebraicGeometry.Scheme.Modules
 
-variable {X : Scheme.{u}} [IsLocallyNoetherian X] {ι : Type u} (U : ι → X.Opens)
+variable {X : Scheme.{u}} {ι : Type u} (U : ι → X.Opens)
   (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U))
 
 include hU in
-/-- On a locally Noetherian scheme, a quasi-coherent sheaf has no cohomology in positive degrees on
-a nonempty finite intersection of members of `U`, which is affine. -/
+/-- A quasi-coherent sheaf has no cohomology in positive degrees on a nonempty finite intersection
+of members of `U`, which is affine. -/
 private lemma subsingleton_cohomologyOn_inf_succ (M : X.Modules) [M.IsQuasicoherent]
     (s : Finset ι) (hs : s.Nonempty) (k : ℕ) : Subsingleton (cohomologyOn M (k + 1) (s.inf U)) :=
-  have : IsNoetherianRing Γ(X, s.inf U) := IsLocallyNoetherian.component_noetherian ⟨_, hU s hs⟩
   subsingleton_cohomologyOn_succ_of_isAffineOpen M (hU s hs) k
 
 variable [Finite ι] (hcover : ⨆ i, U i = ⊤)
 
-/-- **Čech cohomology computes the cohomology of a quasi-coherent sheaf.** Let `X` be a locally
-Noetherian scheme, `M` a quasi-coherent sheaf of modules on `X`, and `U` a finite family of opens
+/-- **Čech cohomology computes the cohomology of a quasi-coherent sheaf.** Let `X` be a scheme,
+`M` a quasi-coherent sheaf of modules on `X`, and `U` a finite family of opens
 covering `X` whose nonempty finite intersections are affine, for instance a finite affine open
 cover when `X` has affine diagonal. Then the Čech cohomology `Hⁿ(U, M)` of the underlying abelian
 sheaf of `M` is isomorphic to `Hⁿ(X, M)`, for every `n`, naturally in `M`

@@ -6,22 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
-public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
+public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 
 /-!
-# Cohomology of schemes finite over an affine Noetherian base
+# Cohomology of schemes finite over an affine base
 
-A scheme finite over an affine locally Noetherian scheme is itself affine and locally Noetherian,
-so the acyclicity of quasi-coherent sheaves on affine locally Noetherian schemes
-(`Scheme.Modules.subsingleton_cohomology_succ_of_isAffine`) applies: a quasi-coherent sheaf on it
-has no cohomology in positive degrees. The main example is a scheme finite over a field `k`,
-taking the structure morphism to `Spec k`.
+A scheme finite over an affine scheme is itself affine, so the acyclicity of quasi-coherent sheaves
+on affine schemes (`Scheme.Modules.subsingleton_cohomology_succ_of_isAffine`) applies: a
+quasi-coherent sheaf on it has no cohomology in positive degrees. The main example is a scheme
+finite over a field `k`, taking the structure morphism to `Spec k`.
 
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isFinite`:
-  acyclicity of quasi-coherent sheaves on the source of a finite morphism to an affine locally
-  Noetherian scheme.
+  acyclicity of quasi-coherent sheaves on the source of a finite morphism to an affine scheme.
 
 ## References
 
@@ -38,13 +36,12 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 open TauCeti TauCeti.AlgebraicGeometry.Scheme.Modules
 
-/-- A quasi-coherent sheaf on the source of a finite morphism to an affine locally Noetherian
-scheme (for example, on a scheme finite over a field) has no cohomology in positive degrees. -/
+/-- A quasi-coherent sheaf on the source of a finite morphism to an affine scheme (for example, on
+a scheme finite over a field) has no cohomology in positive degrees. -/
 theorem subsingleton_cohomology_succ_of_isFinite {X S : Scheme.{u}} (f : X ⟶ S) [IsFinite f]
-    [IsAffine S] [IsLocallyNoetherian S] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    [IsAffine S] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
     Subsingleton (Cohomology M (n + 1)) := by
   have : IsAffine X := isAffine_of_isAffineHom f
-  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian f
   exact subsingleton_cohomology_succ_of_isAffine M n
 
 end AlgebraicGeometry.Scheme.Modules
