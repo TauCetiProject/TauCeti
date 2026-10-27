@@ -38,7 +38,9 @@ The unit `1` is primary, so the reciprocity statements carry their nonunit hypot
 * `TauCeti.existsUnique_unit_mul_isPrimaryGaussian`: an element of odd norm has exactly one
   primary multiple by a unit.
 * `TauCeti.IsPrimaryGaussian.norm_sub_one_div_four`: for primary `a + b i`,
-  `(N(a + b i) - 1) / 4 ≡ (a - 1) / 2 (mod 2)`.
+  `(N(a + b i) - 1) / 4 ≡ (a - 1) / 2 (mod 2)`;
+  `TauCeti.IsPrimaryGaussian.norm_sub_one_div_four_modEq_four` refines this to
+  `(N(a + b i) - 1) / 4 ≡ -((a - 1) / 2) (mod 4)`.
 * `TauCeti.IsPrimaryGaussian.exists_multiset_prod_eq`: a primary element is a product of primary
   primes.
 
@@ -164,6 +166,26 @@ theorem IsPrimaryGaussian.norm_sub_one_div_four {ζ : K} {hζ : IsPrimitiveRoot 
       show 4 * k + 3 - 1 = 2 * (2 * k + 1) by ring, Int.mul_ediv_cancel_left _ (by norm_num),
       Int.mul_ediv_cancel_left _ (by norm_num)]
     exact Int.modEq_iff_dvd.mpr ⟨-2 * k ^ 2 - 2 * k - 2 * l ^ 2 - 2 * l - 1, by ring⟩
+
+/-- **The norm congruence of a primary Gaussian integer modulo `4`.** For primary `a + b i`,
+`(N(a + b i) - 1) / 4 ≡ -((a - 1) / 2) (mod 4)`. This is the exponent comparison of the
+supplementary law for `i` in quartic reciprocity. -/
+theorem IsPrimaryGaussian.norm_sub_one_div_four_modEq_four {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
+    {a b : ℤ} (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
+    (Algebra.norm ℤ ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) - 1) / 4 ≡ -((a - 1) / 2)
+      [ZMOD 4] := by
+  rw [hζ.isPrimaryGaussian_add_mul_iff] at hx
+  rw [hζ.norm_intCast_add_intCast_mul_toInteger_of_four, Int.ModEq]
+  simp only [Int.ModEq] at hx
+  rcases hx with ⟨ha, hb⟩ | ⟨ha, hb⟩
+  · obtain ⟨k, rfl⟩ : ∃ k, a = 4 * k + 1 := ⟨a / 4, by omega⟩
+    obtain ⟨l, rfl⟩ : ∃ l, b = 4 * l := ⟨b / 4, by omega⟩
+    ring_nf
+    omega
+  · obtain ⟨k, rfl⟩ : ∃ k, a = 4 * k + 3 := ⟨a / 4, by omega⟩
+    obtain ⟨l, rfl⟩ : ∃ l, b = 4 * l + 2 := ⟨b / 4, by omega⟩
+    ring_nf
+    omega
 
 /-- A rational integer is primary exactly when it is congruent to `1` modulo `4`. -/
 @[simp]

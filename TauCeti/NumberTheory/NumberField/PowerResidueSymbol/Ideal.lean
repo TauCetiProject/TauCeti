@@ -40,6 +40,8 @@ zero ideal, which has no prime factors, is the trivial character.
 * `Ideal.powerResidueSymbolIdeal_mk_eq_zero_iff`: `(α / 𝔞)_n = 0` exactly when `α` and `𝔞` are
   not coprime.
 * `Ideal.powerResidueSymbolIdeal_pow_eq_one`: on units the symbol is an `n`-th root of unity.
+* `Ideal.powerResidueSymbolIdeal_mk_of_pow_eq_one`: `(ζ / 𝔞)_n = ζ ^ ((N 𝔞 - 1) / n)` for an
+  `n`-th root of unity `ζ` of `𝓞 K`, when `N 𝔞` is prime to `n`.
 
 ## References
 
@@ -181,6 +183,38 @@ theorem powerResidueSymbolIdeal_pow_eq_one {x : 𝓞 K ⧸ 𝔞} (hx : IsUnit x)
   by_cases hn : (absNorm P).Coprime n
   · exact powerResidueSymbol_pow_eq_one hn hαP.ne_zero
   · rw [powerResidueSymbol_of_not_coprime hn, MulChar.one_apply hαP, one_pow]
+
+/-- **The power residue symbol of a root of unity at an ideal.** If `N 𝔞` is prime to `n` and `ζ`
+is an `n`-th root of unity of `𝓞 K`, then `(ζ / 𝔞)_n = ζ ^ ((N 𝔞 - 1) / n)`. At a prime this is
+`Ideal.powerResidueSymbol_mk_of_pow_eq_one`. -/
+theorem powerResidueSymbolIdeal_mk_of_pow_eq_one (h𝔞 : (absNorm 𝔞).Coprime n) {ζ : 𝓞 K}
+    (hζ : ζ ^ n = 1) :
+    powerResidueSymbolIdeal 𝔞 n (Quotient.mk 𝔞 ζ) = ζ ^ ((absNorm 𝔞 - 1) / n) := by
+  induction 𝔞 using UniqueFactorizationMonoid.induction_on_prime with
+  | h₁ =>
+    rw [zero_eq_bot, absNorm_bot, Nat.coprime_zero_left] at h𝔞
+    subst h𝔞
+    rw [pow_one] at hζ
+    simp [hζ]
+  | h₂ 𝔞 h =>
+    obtain rfl := isUnit_iff.mp h
+    rw [powerResidueSymbolIdeal_top, absNorm_top, Nat.sub_self, Nat.zero_div, pow_zero]
+  | h₃ 𝔞 P h𝔞₀ hP ih =>
+    have : P.IsMaximal := (isPrime_of_prime hP).isMaximal hP.ne_zero
+    rw [map_mul, Nat.coprime_mul_iff_left] at h𝔞
+    rw [powerResidueSymbolIdeal_mul_right hP.ne_zero h𝔞₀, ih h𝔞.2,
+      powerResidueSymbolIdeal_of_isMaximal, powerResidueSymbol_mk_of_pow_eq_one h𝔞.1 hζ, map_mul]
+    -- With `N P = 1 + n u` and `N 𝔞 = 1 + n v`, the exponent at `P 𝔞` is `u + v + n u v`.
+    obtain ⟨u, hu⟩ := dvd_absNorm_sub_one h𝔞.1
+    have h𝔞₁ : 1 ≤ absNorm 𝔞 := Nat.one_le_iff_ne_zero.mpr (absNorm_eq_zero_iff.not.mpr h𝔞₀)
+    obtain ⟨v, hv⟩ := (Nat.modEq_iff_dvd' h𝔞₁).mp (absNorm_modEq_one h𝔞.2).symm
+    have hP₁ : 1 ≤ absNorm P := Nat.one_le_iff_ne_zero.mpr (absNorm_eq_zero_iff.not.mpr hP.ne_zero)
+    have hmul : absNorm P * absNorm 𝔞 - 1 = n * (u + v + n * (u * v)) := by
+      rw [show absNorm P = n * u + 1 by omega, show absNorm 𝔞 = n * v + 1 by omega]
+      exact Nat.sub_eq_of_eq_add (by ring)
+    have hn := NeZero.pos n
+    rw [hu, hv, hmul, Nat.mul_div_cancel_left _ hn, Nat.mul_div_cancel_left _ hn,
+      Nat.mul_div_cancel_left _ hn, pow_add, pow_add, pow_mul, hζ, one_pow, mul_one]
 
 /-- For `n = 2`, a quadratic nonresidue modulo `P` has symbol `1` at `P ^ 2`, although it is not
 a square modulo `P ^ 2`: the value `1` does not detect residues at composite ideals. -/
