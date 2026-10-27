@@ -206,7 +206,7 @@ private theorem map_eq_of_coord_mem (hπ : Irreducible π) (P : Ideal (NodeAlgeb
     ((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
       (NodeAlgebra.mk (π ^ 1)) = P := by
   set 𝔪 := (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)
-  set q := (NodeAlgebra.mk (π ^ 1)).toRingHom
+  set q := NodeAlgebra.mk (π ^ 1)
   have hle : 𝔪.map q ≤ P := by
     rw [map_le_iff_le_comap]
     intro p hp
