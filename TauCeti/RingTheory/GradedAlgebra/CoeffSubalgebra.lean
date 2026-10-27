@@ -204,6 +204,11 @@ theorem mem_grade_iff_monomial_coeff {n : ℕ} {f : coeffSubalgebra M} :
 theorem monomial_mem_grade (n : ℕ) (b : B) (hb : b ∈ M n) : monomial M n b hb ∈ grade M n :=
   mem_grade_iff.mpr ⟨b, hb, rfl⟩
 
+variable (M) in
+/-- The polynomial parameter belongs to the degree-one piece. -/
+theorem X_mem_grade_one (h1 : (1 : B) ∈ M 1) : X M h1 ∈ grade M 1 :=
+  monomial_mem_grade 1 1 h1
+
 /-- The coefficients of an element of degree `n` vanish away from `n`. -/
 theorem coeff_eq_zero_of_mem_grade {m n : ℕ} {f : coeffSubalgebra M} (hf : f ∈ grade M n)
     (hmn : m ≠ n) : (f : B[X]).coeff m = 0 := by
@@ -457,6 +462,13 @@ theorem eval_monomial (r : R) (n : ℕ) (b : B) (hb : b ∈ M n) :
 theorem eval_X (r : R) (h1 : (1 : B) ∈ M 1) :
     eval M r (X M h1) = algebraMap R B r := by
   simp [eval_apply]
+
+@[simp]
+theorem eval_algebraMap (h1 : (1 : B) ∈ M 1) (r : R) (p : R[X]) :
+    letI := algebra M h1
+    eval M r (algebraMap R[X] (coeffSubalgebra M) p) = algebraMap R B (p.eval r) := by
+  let := algebra M h1
+  rw [eval_apply, coe_algebraMap, Polynomial.eval_map_apply]
 
 /-- Evaluation at `X = 1`, `∑ bₙ Xⁿ ↦ ∑ bₙ`, as an `R`-algebra map. -/
 noncomputable def evalOne : coeffSubalgebra M →ₐ[R] B := eval M 1

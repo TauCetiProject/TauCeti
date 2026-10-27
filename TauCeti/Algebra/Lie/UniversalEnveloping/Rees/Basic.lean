@@ -106,9 +106,8 @@ theorem reesAlgebra_evalOne_surjective :
 
 /-- The deformation parameter belongs to the degree-one piece. -/
 theorem reesParameter_mem_grade_one :
-    reesParameter R L ∈ coeffSubalgebra.grade (pbwFiltration R L) 1 := by
-  exact coeffSubalgebra.mem_grade_iff.mpr ⟨1, one_mem_pbwFiltration R L 1,
-    by rw [coeffSubalgebra.coe_X, monomial_one_one_eq_X]⟩
+    reesParameter R L ∈ coeffSubalgebra.grade (pbwFiltration R L) 1 :=
+  coeffSubalgebra.X_mem_grade_one _ (one_mem_pbwFiltration R L 1)
 
 /-- Each linear Rees generator belongs to the degree-one piece. -/
 theorem reesGenerator_mem_grade_one (x : L) :
