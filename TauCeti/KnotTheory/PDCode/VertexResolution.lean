@@ -369,7 +369,7 @@ private theorem orbitCount_mul_reconnect_inr (s : Fin n → Bool)
 
 /-- **Circles after resolving a crossing.** A state of `D` leaves as many circles as its
 restriction to the other crossings leaves in the resolution of `c` chosen by its value at `c`. -/
-@[simp] theorem stateLoopCount_insertNth (s : Fin n → Bool) :
+theorem stateLoopCount_insertNth (s : Fin n → Bool) :
     D.stateLoopCount (c.insertNth t s) = (D.resolveCrossing c t).stateLoopCount s := by
   set R := D.resolveCrossing c t
   set T := Perm.sumCongr (R.smoothingTurn (R.smoothingChoice s)) (D.localSmoothing c t)
@@ -419,7 +419,7 @@ theorem crossinglessComponentCount_resolveCrossing_eq_stateLoopCount (D : PDCode
 
 /-- Mirroring a resolution resolves the mirror code by the other smoothing: mirroring exchanges
 the `A`- and `B`-smoothings. -/
-theorem mirror_resolveCrossing :
+@[simp] theorem mirror_resolveCrossing :
     (D.resolveCrossing c t).mirror = D.mirror.resolveCrossing c !t := by
   have hS : D.mirror.localSmoothing c (!t) = D.localSmoothing c t := by
     cases t <;> simp [localSmoothing]
