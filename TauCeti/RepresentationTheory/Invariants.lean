@@ -600,7 +600,9 @@ theorem mapRepresentation_apply (σ : Representation A G M) (g : G) :
 
 end Monoid
 
-variable {A : Type u} {B : Type u'} [CommRing A] [CommRing B] {G : Type*} [Group G]
+section Injective
+
+variable {A : Type u} {B : Type u'} [CommRing A] [Ring B] {G : Type*} [Group G]
   {M : Type v} [AddCommGroup M] [Module A M] (F : ModuleCat.{v} A ⥤ ModuleCat.{v'} B)
 
 variable [Fintype G] [Invertible (Fintype.card G : A)] (σ : Representation A G M)
@@ -608,7 +610,8 @@ variable [Fintype G] [Invertible (Fintype.card G : A)] (σ : Representation A G 
 /-- When `#G` is invertible in `A`, every functor `F` carries the inclusion `M^G ⊆ M` of the
 invariants to an injective map, since the averaging projection retracts the inclusion. For an
 additive `F`, this identifies `F(M^G)` with the invariants of `F(M)`
-(`CategoryTheory.Functor.invariants_mapRepresentation`). -/
+(`CategoryTheory.Functor.invariants_mapRepresentation`). The target coefficient ring `B` need not
+be commutative. -/
 theorem map_ofHom_subtype_invariants_injective :
     Function.Injective (F.map (ModuleCat.ofHom σ.invariants.subtype)).hom := by
   -- The inclusion has the retraction given by the averaging projection.
@@ -620,7 +623,12 @@ theorem map_ofHom_subtype_invariants_injective :
   refine Function.LeftInverse.injective (g := (F.map π).hom) fun y ↦ ?_
   rw [← ModuleCat.comp_apply, ← F.map_comp, h, F.map_id, ModuleCat.id_apply]
 
-variable [F.Additive]
+end Injective
+
+variable {A : Type u} {B : Type u'} [CommRing A] [CommRing B] {G : Type*} [Group G]
+  {M : Type v} [AddCommGroup M] [Module A M] (F : ModuleCat.{v} A ⥤ ModuleCat.{v'} B)
+
+variable [Fintype G] [Invertible (Fintype.card G : A)] (σ : Representation A G M) [F.Additive]
 
 /-- **Additive functors commute with invariants.** When `#G` is invertible in `A`, the invariants
 of `F(M)` are the image of `F(M^G)` under `F` applied to the inclusion `M^G ⊆ M`. -/
