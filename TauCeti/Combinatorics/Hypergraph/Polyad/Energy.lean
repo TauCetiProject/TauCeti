@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.BigOperators.Finset.WeightedCauchySchwarz
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Density
-import Mathlib.Data.Fintype.CardEmbedding
+import TauCeti.Data.Fintype.CardEmbedding
 import Mathlib.Data.Rat.BigOperators
 
 /-!
@@ -73,12 +73,6 @@ namespace TauCeti
 namespace Colored3Graph
 
 variable {κ κ₂ κ₂' V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ] (H : Colored3Graph κ V)
-
-/-- There are `|V| (|V| - 1) (|V| - 2)` injective triples. -/
-private theorem card_injective_triple :
-    Fintype.card {x : Fin 3 → V // Function.Injective x} = (Fintype.card V).descFactorial 3 := by
-  rw [Fintype.card_congr (Equiv.subtypeInjectiveEquivEmbedding _ _), Fintype.card_embedding_eq,
-    Fintype.card_fin]
 
 /-- **Relative densities are conditional expectations.** If `φ` is constant on the support of
 each polyad over `S`, then weighting `φ` at each injective triple by the relative density of `c`
@@ -159,7 +153,7 @@ theorem polyadEnergy_le_one : H.polyadEnergy S ≤ 1 := by
   calc _ ≤ ∑ _x : {x : Fin 3 → V // Function.Injective x}, (1 : ℝ) :=
         sum_le_sum fun x _ ↦ H.sum_sq_relativeDensity_ofTriple_le_one x
     _ = (Fintype.card V).descFactorial 3 := by
-        rw [sum_const, card_univ, card_injective_triple, nsmul_one]
+        rw [sum_const, card_univ, Fintype.card_subtype_injective, Fintype.card_fin, nsmul_one]
 
 /-- The polyad energy is the sum over all polyads `P` and colors `c` of
 `(|P.support| / |V|.descFactorial 3) · d_H(c | P)²`. -/
@@ -237,13 +231,14 @@ theorem polyadDensityDeviation_abs_le {ε : ℝ} (hgap : H.polyadEnergy T - H.po
   obtain hD | hD := eq_or_ne ((Fintype.card V).descFactorial 3) 0
   · -- Without injective triples both sides vanish.
     have : IsEmpty {x : Fin 3 → V // Function.Injective x} := by
-      rw [← Fintype.card_eq_zero_iff, card_injective_triple, hD]
+      rw [← Fintype.card_eq_zero_iff, Fintype.card_subtype_injective, Fintype.card_fin, hD]
     rw [univ_eq_empty, sum_empty, hD, Nat.cast_zero, mul_zero]
   set D : ℝ := ((Fintype.card V).descFactorial 3 : ℝ)
   have hD₀ : 0 < D := Nat.cast_pos.2 (Nat.pos_of_ne_zero hD)
   rw [← H.polyadDensityDeviation_sq h] at hgap
   have hw : ∑ _x : {x : Fin 3 → V // Function.Injective x}, D⁻¹ ≤ 1 := by
-    rw [sum_const, card_univ, card_injective_triple, nsmul_eq_mul, mul_inv_cancel₀ hD₀.ne']
+    rw [sum_const, card_univ, Fintype.card_subtype_injective, Fintype.card_fin, nsmul_eq_mul,
+      mul_inv_cancel₀ hD₀.ne']
   have hε : ∑ x : {x : Fin 3 → V // Function.Injective x}, D⁻¹ *
       ((H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
         H.relativeDensity c (Polyad3.ofTriple S x)) ^ 2 ≤ ε := by
@@ -269,8 +264,8 @@ theorem polyadEnergy_const (c₀ : κ) (hV : 3 ≤ Fintype.card V) :
       rw [relativeDensity_def, relDensityOn_const_of_ne (Ne.symm hc)]; simp]
     rw [relativeDensity_def, relDensityOn_const_self ⟨x, Polyad3.mem_support_ofTriple x⟩]
     simp
-  rw [polyadEnergy_def, sum_congr rfl fun x _ ↦ hx x, sum_const, card_univ, card_injective_triple,
-    nsmul_one]
+  rw [polyadEnergy_def, sum_congr rfl fun x _ ↦ hx x, sum_const, card_univ,
+    Fintype.card_subtype_injective, Fintype.card_fin, nsmul_one]
   exact div_self (Nat.cast_ne_zero.2 (Nat.descFactorial_pos.2 hV).ne')
 
 end Colored3Graph
