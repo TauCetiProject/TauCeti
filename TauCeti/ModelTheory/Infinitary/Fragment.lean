@@ -344,45 +344,28 @@ private def componentStep : (Σ n, L.BoundedFormulaω Empty n) → ℕ × ℕ �
   | ⟨n, .iSup φs⟩, (4, k) => some ⟨n, φs k⟩
   | _, _ => none
 
-/-- Component steps iterated along a list of codes. -/
-private def componentPath (p : Σ n, L.BoundedFormulaω Empty n) :
-    List (ℕ × ℕ) → Option (Σ n, L.BoundedFormulaω Empty n)
-  | [] => some p
-  | c :: l => (componentStep p c).bind (componentPath · l)
-
-private theorem componentPath_append (p : Σ n, L.BoundedFormulaω Empty n)
-    (l₁ l₂ : List (ℕ × ℕ)) :
-    componentPath p (l₁ ++ l₂) = (componentPath p l₁).bind (componentPath · l₂) := by
-  induction l₁ generalizing p with
-  | nil => rfl
-  | cons c l ih =>
-    simp only [List.cons_append, componentPath]
-    cases componentStep p c with
-    | none => rfl
-    | some q => exact ih q
-
 /-- Every member of the generated fragment is reached from a generator along a finite list of
-coded component steps. -/
+coded component steps, iterated by `List.foldlM` in the `Option` monad. -/
 private theorem exists_componentPath_of_generatedFrom
     {S : Set (Σ n, L.BoundedFormulaω Empty n)} {p : Σ n, L.BoundedFormulaω Empty n}
-    (hp : GeneratedFrom S p) : ∃ s ∈ S, ∃ l : List (ℕ × ℕ), componentPath s l = some p := by
+    (hp : GeneratedFrom S p) : ∃ s ∈ S, ∃ l : List (ℕ × ℕ), l.foldlM componentStep s = some p := by
   induction hp with
   | base h => exact ⟨_, h, [], rfl⟩
   | imp_left _ ih =>
     obtain ⟨s, hs, l, hl⟩ := ih
-    exact ⟨s, hs, l ++ [(0, 0)], by rw [componentPath_append, hl]; rfl⟩
+    exact ⟨s, hs, l ++ [(0, 0)], by rw [List.foldlM_append, hl]; rfl⟩
   | imp_right _ ih =>
     obtain ⟨s, hs, l, hl⟩ := ih
-    exact ⟨s, hs, l ++ [(1, 0)], by rw [componentPath_append, hl]; rfl⟩
+    exact ⟨s, hs, l ++ [(1, 0)], by rw [List.foldlM_append, hl]; rfl⟩
   | all_body _ ih =>
     obtain ⟨s, hs, l, hl⟩ := ih
-    exact ⟨s, hs, l ++ [(2, 0)], by rw [componentPath_append, hl]; rfl⟩
+    exact ⟨s, hs, l ++ [(2, 0)], by rw [List.foldlM_append, hl]; rfl⟩
   | iInf_comp k _ ih =>
     obtain ⟨s, hs, l, hl⟩ := ih
-    exact ⟨s, hs, l ++ [(3, k)], by rw [componentPath_append, hl]; rfl⟩
+    exact ⟨s, hs, l ++ [(3, k)], by rw [List.foldlM_append, hl]; rfl⟩
   | iSup_comp k _ ih =>
     obtain ⟨s, hs, l, hl⟩ := ih
-    exact ⟨s, hs, l ++ [(4, k)], by rw [componentPath_append, hl]; rfl⟩
+    exact ⟨s, hs, l ++ [(4, k)], by rw [List.foldlM_append, hl]; rfl⟩
 
 /-- **Countability.** A countable set of formulas generates a countable fragment, over any
 language: every member is reached from a generator along a finite list of component steps, each
@@ -390,7 +373,7 @@ coded by a pair of natural numbers. -/
 theorem generated_countable {S : Set (Σ n, L.BoundedFormulaω Empty n)} (hS : S.Countable) :
     ((generated S : Fragment L) : Set (Σ n, L.BoundedFormulaω Empty n)).Countable := by
   have h : ((generated S : Fragment L) : Set (Σ n, L.BoundedFormulaω Empty n)) ⊆
-      ⋃ s ∈ S, Option.some ⁻¹' Set.range (componentPath s) := by
+      ⋃ s ∈ S, Option.some ⁻¹' Set.range fun l : List (ℕ × ℕ) => l.foldlM componentStep s := by
     intro p hp
     obtain ⟨s, hs, l, hl⟩ := exists_componentPath_of_generatedFrom hp
     exact Set.mem_biUnion hs ⟨l, hl⟩
