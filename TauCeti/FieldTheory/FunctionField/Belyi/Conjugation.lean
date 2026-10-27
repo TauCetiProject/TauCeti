@@ -28,10 +28,11 @@ The coefficient map fixes `t` and `t - 1`, so the bijection it induces between t
 (`TauCeti.Place.equivOfRingEquiv_mapRingEquiv_markedPlace`); the marked places are
 `k`-rational, which is why conjugation preserves them. Consequently conjugation carries algebraic
 Belyi pairs to algebraic Belyi pairs (`TauCeti.IsAlgebraicBelyiPair.of_mapRingEquiv`) of the same
-degree (`TauCeti.finrank_eq_of_mapRingEquiv`). Place by place, `τ` carries the places of `F` over
-the marked place numbered `i` bijectively onto the places of `F'` over the marked place numbered
-`i` (`TauCeti.Place.restrict_equivOfRingEquiv_eq_markedPlace_iff`), with the same ramification
-indices (`TauCeti.Place.ramificationIdx_equivOfRingEquiv_of_comm`) and residue degrees
+degree (`TauCeti.finrank_eq_of_mapRingEquiv`, in `TauCeti.FieldTheory.RatFunc.Map`). Place by
+place, `τ` carries the places of `F` over the marked place numbered `i` bijectively onto the places
+of `F'` over the marked place numbered `i`
+(`TauCeti.Place.restrict_equivOfRingEquiv_eq_markedPlace_iff`), with the same ramification indices
+(`TauCeti.Place.ramificationIdx_equivOfRingEquiv_of_comm`) and residue degrees
 (`TauCeti.Place.degree_equivOfRingEquiv`).
 
 Conjugation does not in general preserve the isomorphism class of a Belyi pair: the action of the
@@ -43,7 +44,6 @@ are built on top of this transport.
 * `TauCeti.Place.equivOfRingEquiv_mapRingEquiv_markedPlace`: conjugation fixes the marked places.
 * `TauCeti.IsAlgebraicBelyiPair.of_mapRingEquiv`: the conjugate of an algebraic Belyi pair is an
   algebraic Belyi pair.
-* `TauCeti.finrank_eq_of_mapRingEquiv`: of the same degree.
 * `TauCeti.Place.restrict_equivOfRingEquiv_eq_markedPlace_iff`: conjugation keeps the fibres over
   the marked places.
 
@@ -90,6 +90,7 @@ theorem equivOfRingEquiv_mapRingEquiv_markedPlace (i : Fin 3) :
   · exact h2 (by simp [ord_infty])
 
 /-- **Conjugation preserves the three marked places as a set.** -/
+@[simp]
 theorem equivOfRingEquiv_mapRingEquiv_mem_zeroOneInfty_iff {P : Place k (RatFunc k)} :
     equivOfRingEquiv σ (RatFunc.mapRingEquiv σ)
       (RatFunc.mapRingEquiv_algebraMap_const σ) P ∈ zeroOneInfty k' ↔
@@ -110,13 +111,6 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F'] [Algebra 
 
 include hτ
 
-/-- An isomorphism `τ : F ≃+* F'` carrying `k(t)` onto `k'(t)` by the coefficient map of `σ`
-carries the constants `k` onto `k'` along `σ`. -/
-theorem apply_algebraMap_eq_of_mapRingEquiv (c : k) :
-    τ (algebraMap k F c) = algebraMap k' F' (σ c) := by
-  rw [IsScalarTower.algebraMap_apply k (RatFunc k) F, hτ,
-    RatFunc.mapRingEquiv_algebraMap_const, ← IsScalarTower.algebraMap_apply]
-
 /-- **Conjugation keeps the fibres over the marked places**: if `τ : F ≃+* F'` carries `k(t)`
 onto `k'(t)` by the coefficient map of `σ`, then a place of `F` lies over the marked place
 numbered `i` exactly when its transport along `τ` lies over the marked place numbered `i`. -/
@@ -128,15 +122,6 @@ theorem Place.restrict_equivOfRingEquiv_eq_markedPlace_iff [Algebra.IsIntegral (
   rw [Place.restrict_equivOfRingEquiv σ τ _ (RatFunc.mapRingEquiv σ) hτ
     (RatFunc.mapRingEquiv_algebraMap_const σ),
     ← Place.equivOfRingEquiv_mapRingEquiv_markedPlace σ i, Equiv.apply_eq_iff_eq]
-
-omit [Algebra k F] [Algebra k' F'] [IsScalarTower k (RatFunc k) F]
-  [IsScalarTower k' (RatFunc k') F'] in
-/-- **Conjugation keeps the degree**: if `τ : F ≃+* F'` carries `k(t)` onto `k'(t)` by the
-coefficient map of `σ`, then the degrees of `F` and `F'` over the rational function fields agree. -/
-theorem finrank_eq_of_mapRingEquiv :
-    Module.finrank (RatFunc k') F' = Module.finrank (RatFunc k) F :=
-  (Algebra.finrank_eq_of_equiv_equiv (RatFunc.mapRingEquiv σ) τ
-    (RingHom.ext fun x ↦ (hτ x).symm)).symm
 
 /-- **The Galois conjugate of an algebraic Belyi pair is an algebraic Belyi pair**: if `F` is an
 algebraic Belyi pair over `k`, and `τ : F ≃+* F'` carries `k(t)` onto `k'(t)` by the coefficient

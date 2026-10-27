@@ -28,6 +28,9 @@ absolute Galois group, acts on the rational function field.
   `Polynomial.mapRingHom σ`.
 * `TauCeti.RatFunc.mapRingEquiv_refl`, `TauCeti.RatFunc.mapRingEquiv_symm` and
   `TauCeti.RatFunc.mapRingEquiv_trans`: it is functorial in `σ`.
+* `TauCeti.apply_algebraMap_eq_of_mapRingEquiv` and `TauCeti.finrank_eq_of_mapRingEquiv`: an
+  isomorphism `F ≃+* F'` of extensions carrying `K(X)` onto `L(X)` by the coefficient map of `σ`
+  carries `K` onto `L` along `σ`, and the two extensions have the same degree.
 -/
 
 public section
@@ -100,3 +103,34 @@ theorem mapRingEquiv_trans (τ : L ≃+* M) :
     IsFractionRing.ringEquivOfRingEquiv_comp (RatFunc K) (RatFunc L) (RatFunc M)]
 
 end TauCeti.RatFunc
+
+namespace TauCeti
+
+section Extension
+
+variable {K L F F' : Type*} [Field K] [Field L] [Field F] [Field F']
+  [Algebra (RatFunc K) F] [Algebra (RatFunc L) F']
+  (σ : K ≃+* L) (τ : F ≃+* F')
+  (hτ : ∀ x, τ (algebraMap (RatFunc K) F x) =
+    algebraMap (RatFunc L) F' (RatFunc.mapRingEquiv σ x))
+
+include hτ
+
+/-- An isomorphism `τ : F ≃+* F'` carrying `K(X)` onto `L(X)` by the coefficient map of `σ`
+carries the constants `K` onto `L` along `σ`. -/
+theorem apply_algebraMap_eq_of_mapRingEquiv [Algebra K F] [Algebra L F']
+    [IsScalarTower K (RatFunc K) F] [IsScalarTower L (RatFunc L) F'] (c : K) :
+    τ (algebraMap K F c) = algebraMap L F' (σ c) := by
+  rw [IsScalarTower.algebraMap_apply K (RatFunc K) F, hτ,
+    RatFunc.mapRingEquiv_algebraMap_const, ← IsScalarTower.algebraMap_apply]
+
+/-- An isomorphism `τ : F ≃+* F'` carrying `K(X)` onto `L(X)` by the coefficient map of `σ`
+preserves the degree: the degrees of `F` and `F'` over the rational function fields agree. -/
+theorem finrank_eq_of_mapRingEquiv :
+    Module.finrank (RatFunc L) F' = Module.finrank (RatFunc K) F :=
+  (Algebra.finrank_eq_of_equiv_equiv (RatFunc.mapRingEquiv σ) τ
+    (RingHom.ext fun x ↦ (hτ x).symm)).symm
+
+end Extension
+
+end TauCeti
