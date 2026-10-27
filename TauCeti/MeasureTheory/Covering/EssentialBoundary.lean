@@ -37,9 +37,9 @@ enlarge the frontier without changing the essential boundary.
 * `MeasureTheory.Measure.interior_subset_essentialInterior`,
   `essentialBoundary_subset_frontier`, `essentialInterior_subset_closure`: comparison with the
   topological notions.
-* `MeasureTheory.NullMeasurableSet.mem_essentialInterior_iff`: for a null-measurable set and a
-  locally finite measure positive on balls, the essential interior is the set of points of
-  density one.
+* `MeasureTheory.NullMeasurableSet.mem_essentialInterior_iff`, `essentialInterior_eq`: for a
+  null-measurable set and a locally finite measure positive on balls, the essential interior is
+  the set of points of density one.
 * `MeasureTheory.NullMeasurableSet.essentialInterior_ae_eq` and
   `MeasureTheory.NullMeasurableSet.measure_essentialBoundary`: by Lebesgue's density theorem, a
   null-measurable set agrees a.e. with its essential interior, and its essential boundary is
@@ -250,6 +250,13 @@ theorem mem_essentialInterior_iff (hs : NullMeasurableSet s μ) :
   hs.tendsto_measure_compl_inter_div_iff ((eventually_measure_closedBall_pos_lt_top x).mono
     fun _ hr => ⟨hr.1.ne', hr.2.ne⟩)
 
+/-- For a null-measurable set, the essential interior equals the set of density-one points, the
+set appearing in `MeasureTheory.NullMeasurableSet.ae_eq_setOf_tendsto_measure_inter_div`. -/
+theorem essentialInterior_eq (hs : NullMeasurableSet s μ) :
+    μ.essentialInterior s =
+      {x | Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 1)} :=
+  Set.ext fun _ => hs.mem_essentialInterior_iff
+
 end Positive
 
 variable {α : Type*} [MetricSpace α] [MeasurableSpace α] [SecondCountableTopology α]
@@ -257,21 +264,25 @@ variable {α : Type*} [MetricSpace α] [MeasurableSpace α] [SecondCountableTopo
   {s : Set α}
 
 /-- **Lebesgue's density theorem**, essential-interior form: a null-measurable set agrees almost
-everywhere with its essential interior. -/
+everywhere with its essential interior. This is derived from the density-one form
+`MeasureTheory.NullMeasurableSet.ae_eq_setOf_tendsto_measure_inter_div` applied to `s` and
+`sᶜ`. -/
 theorem essentialInterior_ae_eq (hs : NullMeasurableSet s μ) :
     μ.essentialInterior s =ᵐ[μ] s := by
-  -- Replace `s` by its measurable hull `t`, which has the same essential interior.
-  set t := toMeasurable μ s
-  have hst : s =ᵐ[μ] t := hs.toMeasurable_ae_eq.symm
-  rw [essentialInterior_congr hst]
-  refine (eventuallyEqSet_iff.2 ?_).trans hst.symm
-  filter_upwards [Besicovitch.ae_tendsto_measure_inter_div_of_measurableSet μ
-    (measurableSet_toMeasurable μ s).compl] with x hx
-  by_cases hxt : x ∈ t
-  · rw [indicator_of_notMem (notMem_compl_iff.2 hxt)] at hx
-    exact iff_of_true hx hxt
-  · rw [indicator_of_mem hxt, Pi.one_apply] at hx
-    exact iff_of_false (fun h => one_ne_zero (tendsto_nhds_unique hx h)) hxt
+  refine eventuallyEqSet_iff.2 ?_
+  filter_upwards [eventuallyEqSet_iff.1 hs.ae_eq_setOf_tendsto_measure_inter_div,
+    eventuallyEqSet_iff.1 hs.compl.ae_eq_setOf_tendsto_measure_inter_div] with x hx hxc
+  by_cases hxs : x ∈ s
+  · -- At a density-one point of `s`, small closed balls have positive finite measure.
+    have h1 := hx.1 hxs
+    refine iff_of_true ((hs.tendsto_measure_compl_inter_div_iff ?_).2 h1) hxs
+    obtain ⟨u, hu, hμu⟩ := μ.finiteAt_nhds x
+    obtain ⟨ε, hε, hεu⟩ := Metric.mem_nhds_iff.1 hu
+    filter_upwards [Ioo_mem_nhdsGT hε, h1.eventually_ne one_ne_zero] with r hr hr0
+    refine ⟨fun h => hr0 ?_,
+      ((measure_mono ((closedBall_subset_ball hr.2).trans hεu)).trans_lt hμu).ne⟩
+    rw [measure_mono_null inter_subset_right h, ENNReal.zero_div]
+  · exact iff_of_false (fun h => zero_ne_one (tendsto_nhds_unique h (hxc.1 hxs))) hxs
 
 /-- The essential boundary of a null-measurable set is `μ`-null. -/
 theorem measure_essentialBoundary (hs : NullMeasurableSet s μ) :
@@ -341,8 +352,7 @@ theorem essentialBoundary_closedBall (hr : 0 < r) :
       linarith
     · refine closedBall_lineMap_subset_closedBall ?_ hw
       rw [hy, abs_neg, abs_of_pos (by positivity)]
-      field_simp
-      rfl
+      exact (by field_simp : ρ / (2 * r) * r = ρ / 2).le
   · -- Points just inside `y`, towards the centre, form a quarter-radius ball in the ball.
     refine not_tendsto_measure_inter_closedBall_div_zero μ ?_
     filter_upwards [Ioo_mem_nhdsGT hr] with ρ ⟨hρ, hρr⟩
@@ -355,8 +365,7 @@ theorem essentialBoundary_closedBall (hr : 0 < r) :
       linarith [dist_triangle w (AffineMap.lineMap y x (ρ / (2 * r))) x]
     · refine closedBall_lineMap_subset_closedBall ?_ hw
       rw [hy, abs_of_pos (by positivity)]
-      field_simp
-      rfl
+      exact (by field_simp : ρ / (2 * r) * r = ρ / 2).le
 
 /-- For an additive Haar measure, the essential interior of a closed ball of positive radius is
 the open ball. -/
