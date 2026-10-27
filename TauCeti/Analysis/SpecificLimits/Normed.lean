@@ -169,7 +169,7 @@ theorem hasSum_prod_geometric_div {𝕜 ι : Type*} [NormedField 𝕜] [Fintype 
   have hg := hasSum_prod_geometric_of_norm_lt_one (r := fun i ↦ w i / z i)
     (fun i ↦ by rw [norm_div]; exact (div_lt_one (norm_pos_iff.mpr (hne i))).mpr (hw i))
   have heq (i) : (1 - w i / z i)⁻¹ / z i = (z i - w i)⁻¹ := by
-    rw [one_sub_div (hne i), inv_div, div_right_comm, div_self (hne i), one_div]
+    field_simp [hne i]
   convert hg.mul_right (∏ i, (z i)⁻¹) using 1
   · ext α
     simp only [← Finset.prod_mul_distrib, div_eq_mul_inv]

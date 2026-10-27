@@ -69,7 +69,8 @@ theorem hasSum_torusIntegral_prod_geometric {f : (Fin n → ℂ) → E}
     apply Finset.prod_congr rfl
     intro i _
     dsimp [q]
-    rw [abs_of_pos (hR i), ← mul_div_assoc, mul_div_cancel_left₀ _ (hR i).ne']
+    rw [abs_of_pos (hR i)]
+    field_simp [(hR i).ne']
   -- Integrate the absolutely summable kernel expansion using the integrable boundary norm.
   unfold torusIntegral
   apply hasSum_integral_of_dominated_convergence
@@ -124,8 +125,8 @@ theorem norm_torusIntegral_cauchyCoeff_le {f : (Fin n → ℂ) → E}
       congr 1
       apply Finset.prod_congr rfl
       intro i _
-      rw [pow_succ, mul_inv, mul_comm, mul_assoc, inv_mul_cancel₀ (hR i).ne', mul_one,
-        inv_pow]
+      rw [← inv_pow, pow_succ]
+      field_simp [(hR i).ne']
 
 variable [CompleteSpace E]
 
