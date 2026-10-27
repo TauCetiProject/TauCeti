@@ -37,6 +37,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] [Nontrivial E]
 
 /-- The unit-sphere embedding has every finite moment and is essentially bounded. -/
+@[simp]
 theorem memLp_coe_uniformSphereMeasure (p : ℝ≥0∞) :
     MemLp ((↑) : sphere (0 : E) 1 → E) p (uniformSphereMeasure E) := by
   exact MemLp.of_bound (by fun_prop) 1 (by filter_upwards with x; simp)
@@ -65,6 +66,7 @@ theorem covarianceBilin_map_coe_uniformSphereMeasure :
 
 /-- The covariance of two linear observables of a uniform unit vector is their inner product
 divided by the dimension. -/
+@[simp]
 theorem covariance_inner_uniformSphereMeasure (u v : E) :
     cov[fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫,
       fun x : sphere (0 : E) 1 ↦ ⟪v, (x : E)⟫; uniformSphereMeasure E] =
@@ -83,6 +85,7 @@ theorem covariance_inner_uniformSphereMeasure (u v : E) :
 
 /-- The mixed second moment of two linear observables of a uniform unit vector is their inner
 product divided by the dimension. -/
+@[simp]
 theorem integral_inner_mul_inner_uniformSphereMeasure (u v : E) :
     ∫ x : sphere (0 : E) 1, ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫ ∂uniformSphereMeasure E =
       ⟪u, v⟫ / (finrank ℝ E : ℝ) := by
@@ -96,6 +99,7 @@ theorem integral_inner_mul_inner_uniformSphereMeasure (u v : E) :
 
 /-- The variance of a linear observable of a uniform unit vector is its squared norm divided
 by the dimension. -/
+@[simp]
 theorem variance_inner_uniformSphereMeasure (u : E) :
     Var[fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫; uniformSphereMeasure E] =
       ‖u‖ ^ 2 / (finrank ℝ E : ℝ) := by
