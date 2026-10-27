@@ -223,10 +223,11 @@ private noncomputable def ofLimHomApp (n : ℕ) : F.obj (op n) →ₗ[A] G.obj (
   (I ^ (n + 1) • ⊤ : Submodule A F.lim).liftQ (G.limπ n ∘ₗ φ) (hG.pow_smul_top_le_ker _) ∘ₗ
     (hF.limQuotientEquiv n).symm.toLinearMap
 
-private theorem ofLimHomApp_limπ (n : ℕ) (x : F.lim) :
-    hF.ofLimHomApp hG φ n (F.limπ n x) = G.limπ n (φ x) := by
+private theorem ofLimHomApp_coe (n : ℕ) (x : F.lim) :
+    hF.ofLimHomApp hG φ n ((x : F.Product) n) = (φ x : G.Product) n := by
   have hx : (hF.limQuotientEquiv n).symm (F.limπ n x) = Submodule.Quotient.mk x := by
     rw [LinearEquiv.symm_apply_eq, limQuotientEquiv_mk]
+  rw [← limπ_apply, ← limπ_apply]
   simp only [ofLimHomApp, LinearMap.comp_apply, LinearEquiv.coe_coe, hx, Submodule.liftQ_apply]
 
 /-- The morphism of `I`-adic systems induced by a linear map `φ : lim Mₙ → lim Nₙ` of their limits,
@@ -237,14 +238,13 @@ noncomputable def ofLimHom : F ⟶ G :=
     ext x
     obtain ⟨y, rfl⟩ := F.limπ_surjective hF.transition_surjective (n + 1) x
     simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply, ← transition_def,
-      transition_limπ, ofLimHomApp_limπ]
+      limπ_apply, transition_coe_lim_succ, ofLimHomApp_coe]
 
 /-- The morphism induced by `φ` sends the `n`-th term of `x ∈ lim Mₙ` to that of `φ x`. -/
 @[simp]
 theorem ofLimHom_app_coe_apply (n : ℕ) (x : F.lim) :
     ((hF.ofLimHom hG φ).app (op n)).hom ((x : F.Product) n) = (φ x : G.Product) n := by
-  rw [← limπ_apply, ← limπ_apply, ofLimHom, NatTrans.ofOpSequence_app, ModuleCat.hom_ofHom,
-    ofLimHomApp_limπ]
+  rw [ofLimHom, NatTrans.ofOpSequence_app, ModuleCat.hom_ofHom, ofLimHomApp_coe]
 
 @[simp]
 theorem limMap_ofLimHom : limMap (hF.ofLimHom hG φ) = φ := by
