@@ -21,13 +21,15 @@ eigenvector `x` of `A† A` for `μ²` extends to the eigenvector `(x, μ⁻¹ A
 Consequently:
 
 * the two coordinate projections map the eigenspace of `D` for a real `μ` onto the eigenspaces of
-  `A† A` and of `A A†` for `μ²`, and they are injective on it when `μ ≠ 0`, so that `D` has the
-  eigenvalues `±σ` with the multiplicity of the squared singular value `σ²`;
+  `A† A` and of `A A†` for `μ²`, and they are injective on it when `μ ≠ 0`, so that for every
+  nonzero singular value `σ` the eigenvalues `±σ` of `D` have the multiplicity of the eigenvalue
+  `σ²` of `A† A`;
 * the coordinate projections map the point-spectral subspace of `D` selected by `Ω` onto the right
   and left singular subspaces of `A` selected by the squared values `{μ² | μ ∈ Ω}`;
 * for a set `Λ` of squared singular values, the point-spectral subspace of `D` selected by the
-  symmetric set `{μ | μ² ∈ Λ}`, which is the sum of its positive and negative spectral blocks, is
-  the product of the right and left singular subspaces of `A` selected by `Λ`;
+  symmetric set `{μ | μ² ∈ Λ}`, which is the sum of its positive and negative spectral blocks
+  together with the kernel of `D` when `0 ∈ Λ`, is the product of the right and left singular
+  subspaces of `A` selected by `Λ`;
 * if `A vᵢ = σᵢ uᵢ` and `A† uᵢ = σᵢ vᵢ` are the singular relations, then `(vᵢ, uᵢ)` and
   `(vᵢ, -uᵢ)` are eigenvectors of `D` for `σᵢ` and `-σᵢ`.
 
