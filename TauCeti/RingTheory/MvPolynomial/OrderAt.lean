@@ -45,6 +45,7 @@ The Taylor shift itself preserves the degree in each variable (`MvPolynomial.deg
 
 ## Main results
 
+* `MvPolynomial.taylor_eq_zero`: Taylor shifts reflect zero over commutative semirings.
 * `MvPolynomial.orderAt_eq_top_iff`: the order is `⊤` exactly for the zero polynomial.
 * `MvPolynomial.orderAt_eq_zero_iff`, `MvPolynomial.orderAt_pos_iff`: the order is positive
   exactly at the zeros of `p`.
@@ -282,6 +283,44 @@ theorem coeff_taylor_snoc {n : ℕ} (α : Fin n → R) (β : R) (f : MvPolynomia
     optionEquivRight_rename_finSuccEquivLast_taylor, coeff_map]
   simp
 
+/-- A Taylor shift over a commutative semiring is zero exactly when the original polynomial
+is zero. -/
+@[simp]
+theorem taylor_eq_zero {a : σ → R} {p : MvPolynomial σ R} : taylor a p = 0 ↔ p = 0 := by
+  classical
+  -- Separate one variable at a time to use univariate Taylor zero reflection.
+  have hfin (n : ℕ) : ∀ (q : MvPolynomial (Fin n) R) (b : Fin n → R),
+      taylor b q = 0 → q = 0 := by
+    induction n with
+    | zero =>
+      intro q b hq
+      obtain ⟨c, rfl⟩ := C_surjective (Fin 0) q
+      simpa only [taylor_C] using hq
+    | succ n ih =>
+      intro q b hq
+      apply (finSuccEquiv R n).injective
+      rw [map_zero, ← Polynomial.taylor_eq_zero (C (b 0))]
+      apply Polynomial.ext
+      intro k
+      rw [Polynomial.coeff_zero]
+      apply ih _ (Fin.tail b)
+      have h := congrArg (fun f ↦ (finSuccEquiv R n f).coeff k) hq
+      simpa only [finSuccEquiv_taylor, Polynomial.coeff_map, map_zero,
+        Polynomial.coeff_zero, AlgHom.coe_toRingHom] using h
+  constructor
+  · intro hp
+    -- Every polynomial uses only finitely many of the ambient variables.
+    let e := Fintype.equivFin p.vars
+    let f : Fin (Fintype.card p.vars) → σ := fun i ↦ (e.symm i).val
+    have hf : Function.Injective f := Subtype.val_injective.comp e.symm.injective
+    obtain ⟨q, hq⟩ := exists_rename_eq_of_vars_subset_range p f hf (by
+      intro i hi
+      exact ⟨e ⟨i, hi⟩, by simp [f]⟩)
+    rw [← hq, taylor_rename, rename_eq_zero_iff_of_injective _ hf] at hp
+    rw [← hq, hfin _ q _ hp, map_zero]
+  · rintro rfl
+    exact map_zero _
+
 end Taylor
 
 section TaylorRing
@@ -300,10 +339,6 @@ theorem totalDegree_taylor (a : σ → R) (p : MvPolynomial σ R) :
 
 theorem taylor_injective (a : σ → R) : Function.Injective (taylor a) :=
   Function.LeftInverse.injective (taylor_neg_taylor a)
-
-@[simp]
-theorem taylor_eq_zero {a : σ → R} {p : MvPolynomial σ R} : taylor a p = 0 ↔ p = 0 :=
-  map_eq_zero_iff _ (taylor_injective a)
 
 /-- The Taylor shift preserves the degree in each variable. -/
 @[simp]
