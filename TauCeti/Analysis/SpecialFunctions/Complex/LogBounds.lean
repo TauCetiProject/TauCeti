@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
-# The Taylor series of `-log (1 - ·)` summed over a family
+# Taylor series bounds for `-log (1 - ·)`
 
 Mathlib's `Complex.hasSum_taylorSeries_neg_log'` expands `-log (1 - z)` as `∑' e, z ^ (e+1)/(e+1)`
 for a single `z` of modulus less than one.  This file sums that over a family `r : ι → ℂ`: the
@@ -21,6 +21,14 @@ Both hypotheses are needed.  `∀ i, ‖r i‖ < 1` alone does not suffice: the 
 and summability of `r` is what supplies that uniformity.  That fibrewise argument is not carried out
 here: it is `TauCeti.summable_mul_norm_pow_succ`, stated for a seminormed additive group and an
 arbitrary real weight, and this file uses it at weight `1`.
+
+The file also gives an explicit truncation error for a single `z`: the `n`-th partial sum
+`∑ j ∈ Icc 1 n, z ^ j / j` differs from `log (1 - z)⁻¹` by at most
+`‖z‖ ^ (n + 1) / ((1 - ‖z‖) (n + 1))`, which restates Mathlib's
+`Complex.norm_log_one_sub_inv_add_logTaylor_neg_le` with the Taylor polynomial written out.  At
+`z = w / p`, for `‖w‖ ≤ 1` and a natural number `p ≥ 2`, this becomes `2 / p ^ (n + 1)`, and the
+factor `1 - w / p` is nonzero.  These are the estimates used to compare an Euler factor
+`(1 - w / p)⁻¹` with the prime-power partial sums of its logarithm.
 
 ## Main results
 
