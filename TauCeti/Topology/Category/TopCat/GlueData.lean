@@ -11,7 +11,7 @@ public import Mathlib.Topology.Connected.Basic
 public import TauCeti.Topology.Compactness.LocallyCompact
 
 /-!
-# Separation, countability, and local compactness of glued spaces
+# Separation, countability, local compactness, and connectedness of glued spaces
 
 A space obtained by gluing open charts is second countable when the chart family is countable
 and every chart is second countable. It is locally compact when every chart is locally compact.
