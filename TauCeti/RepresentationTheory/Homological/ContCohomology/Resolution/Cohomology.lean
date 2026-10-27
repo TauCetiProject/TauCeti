@@ -78,45 +78,24 @@ namespace TopRep
 
 universe u v w
 
-variable {k : Type u} [Ring k] [TopologicalSpace k] {G : Type v} [Group G]
+variable {k : Type u} [Ring k] [TopologicalSpace k] {G : Type v}
 
 section ChainMap
 
-variable {J J' : CochainComplex (TopRep.{w} k G) ℕ}
+variable [Monoid G] {ι : Type*} {s : ComplexShape ι}
+  {J J' : HomologicalComplex (TopRep.{w} k G) s}
 
-/-- A chain map of complexes of topological representations carries an invariant cocycle to an
-invariant cocycle. -/
-theorem d_mapInvariants_f_apply (f : J ⟶ J') {n : ℕ} (z : (J.X n).ρ.invariants)
-    (hz : (J.d n (n + 1)).hom (z : (J.X n).V) = 0) :
-    (J'.d n (n + 1)).hom ((f.f n).hom.mapInvariants z : (J'.X n).V) = 0 := by
+/-- A chain map carries an invariant element killed by a differential to an invariant element
+killed by the corresponding differential. -/
+theorem d_mapInvariants_f_apply (f : J ⟶ J') {i j : ι} (z : (J.X i).ρ.invariants)
+    (hz : (J.d i j).hom (z : (J.X i).V) = 0) :
+    (J'.d i j).hom ((f.f i).hom.mapInvariants z : (J'.X i).V) = 0 := by
   rw [ContIntertwiningMap.mapInvariants_apply, ← ConcreteCategory.comp_apply, f.comm,
     ConcreteCategory.comp_apply, hz, map_zero]
 
-/-- On the cohomology of invariants, a chain map `f : J ⟶ J'` carries the class of an invariant
-cocycle `z` to the class of `f z`. -/
-@[simp]
-theorem homologyMap_homologyπ_cyclesMkOfEq (f : J ⟶ J') {n : ℕ} (z : (J.X n).ρ.invariants)
-    (hz : (J.d n (n + 1)).hom (z : (J.X n).V) = 0) :
-    HomologicalComplex.homologyMap (((invariantsFunctor k G).mapHomologicalComplex _).map f) n
-        ((((invariantsFunctor k G).mapHomologicalComplex _).obj J).homologyπ n
-          ((((invariantsFunctor k G).mapHomologicalComplex _).obj J).cyclesMkOfEq z (n + 1)
-            (CochainComplex.next ℕ n) (Subtype.ext hz))) =
-      (((invariantsFunctor k G).mapHomologicalComplex _).obj J').homologyπ n
-        ((((invariantsFunctor k G).mapHomologicalComplex _).obj J').cyclesMkOfEq
-          ((f.f n).hom.mapInvariants z) (n + 1) (CochainComplex.next ℕ n)
-          (Subtype.ext (d_mapInvariants_f_apply f z hz))) := by
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.homologyπ_naturality,
-    ConcreteCategory.comp_apply]
-  congr 1
-  apply HomologicalComplex.iCycles_injective
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
-    HomologicalComplex.iCycles_cyclesMkOfEq, HomologicalComplex.iCycles_cyclesMkOfEq]
-  -- The invariants functor maps a morphism to its restriction to invariant elements.
-  rfl
-
 end ChainMap
 
-variable [TopologicalSpace G] [IsTopologicalGroup G]
+variable [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 namespace ResolutionContraction
 
@@ -168,8 +147,10 @@ theorem cohomologyMap_homologyπ {n : ℕ} (z : (J.X n).ρ.invariants)
     c.cohomologyMap n ((((invariantsFunctor k G).mapHomologicalComplex _).obj J).homologyπ n
         ((((invariantsFunctor k G).mapHomologicalComplex _).obj J).cyclesMkOfEq z (n + 1)
           (CochainComplex.next ℕ n) (Subtype.ext hz))) =
-      c.cohomologyClass z hz :=
-  (homologyMap_homologyπ_cyclesMkOfEq c.comparison z hz).trans (cochainClass_def _ _ _ _).symm
+      c.cohomologyClass z hz := by
+  rw [cohomologyMap_def, cohomologyClass_def, cochainClass_def,
+    HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq]
+  simp only [Functor.mapHomologicalComplex_map_f, invariantsFunctor, TopModuleCat.hom_ofHom]
 
 /-- The class of a sum of invariant cocycles is the sum of their classes. -/
 @[simp]
@@ -280,7 +261,8 @@ theorem cohomologyClass_map {J' : CochainComplex (TopRep.{max v w} k G) ℕ}
       c.cohomologyClass z hz := by
   rw [← c.cohomologyMap_homologyπ z hz, ← c'.cohomologyMap_homologyπ _
     (d_mapInvariants_f_apply f z hz), ← c.homologyMap_comp_cohomologyMap c' f hf n,
-    ConcreteCategory.comp_apply, homologyMap_homologyπ_cyclesMkOfEq f z hz]
+    ConcreteCategory.comp_apply, HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq]
+  simp only [Functor.mapHomologicalComplex_map_f, invariantsFunctor, TopModuleCat.hom_ofHom]
 
 /-- **Naturality of classes in the coefficients.** For a chain map `f : J ⟶ J'` lying over a
 coefficient morphism `g : X ⟶ Y`, the coefficient map of `g` carries the class of an invariant
@@ -294,7 +276,8 @@ theorem coeffMap_cohomologyClass {Y : TopRep.{max v w} k G}
   rw [← c.cohomologyMap_homologyπ z hz, ← c'.cohomologyMap_homologyπ _
     (d_mapInvariants_f_apply f z hz), ← ConcreteCategory.comp_apply,
     c.cohomologyMap_comp_coeffMap c' g f hf n, ConcreteCategory.comp_apply,
-    homologyMap_homologyπ_cyclesMkOfEq f z hz]
+    HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq]
+  simp only [Functor.mapHomologicalComplex_map_f, invariantsFunctor, TopModuleCat.hom_ofHom]
 
 end Homotopy
 
