@@ -19,12 +19,17 @@ converge absolutely. Their role is played by the values of the Weierstrass `ζ` 
 `N`-division points of `ℤ z + ℤ`: writing `x = ã - N y`, the term `(x₀ z + x₁)⁻¹` is `N⁻¹` times
 the term `(u - (y₀ z + y₁))⁻¹` of the lattice series of `ζ(u; ℤ z + ℤ)` at
 `u = (ã₀ z + ã₁) / N`, which that series makes convergent by adding `l⁻¹ + u l⁻²`. Unlike `℘`, the
-function `ζ` is only quasi-periodic, `ζ(u + l) = ζ(u) + η(l)`, so its division values must be
-corrected by the quasi-periods `η₁ = η(z)` and `η₂ = η(1)` to depend only on the residue `a`:
+function `ζ` is only quasi-periodic, `ζ(u + l) = ζ(u) + η(l)` for `u ∉ ℤ z + ℤ`, so its division
+values must be corrected by the quasi-periods `η₁ = η(z)` and `η₂ = η(1)` to depend only on the
+residue `a`:
 
 `F_a(z) = ζ((ã₀ z + ã₁) / N; ℤ z + ℤ) - (ã₀ η₁ + ã₁ η₂) / N`.
 
-Replacing `ã` by `ã + N y` changes both terms by `y₀ η₁ + y₁ η₂`. For a weight
+For a nonzero residue `a` the division point lies outside the lattice, and replacing `ã` by
+`ã + N y` changes both terms by `y₀ η₁ + y₁ η₂`. The zero residue is not covered by this: its
+division points are the lattice points, the poles of `ζ`, where `ζ` only has junk values. We use
+the representative `ã = 0` there; since the junk value `ζ(0)` is `0`
+(`PeriodPair.weierstrassZeta_zero`), this gives `F_0 = 0`. For a weight
 `W : (Fin 2 → ZMod N) → ℂ` we define
 
 `E₁^W(z) = N⁻¹ ∑_a W(a) F_a(z)`
@@ -303,123 +308,36 @@ theorem weightedE1_comp_neg (W : (Fin 2 → ZMod N) → ℂ) :
 theorem weightedE1_eq_zero_of_even {W : (Fin 2 → ZMod N) → ℂ} (hW : W.Even) :
     weightedE1 W = 0 := by
   have h := weightedE1_comp_neg W
-  rw [show (fun a ↦ W (-a)) = W from funext hW] at h
+  have hW' : (fun a ↦ W (-a)) = W := funext hW
+  rw [hW'] at h
   ext z
   exact CharZero.eq_neg_self_iff.mp (congrFun h z)
 
 /-! ### Holomorphy -/
-
-/-- The lattice series of `ζ` at the division point `(b₀ z + b₁) / M` converges locally uniformly
-in `z`. -/
-private lemma tendstoLocallyUniformly_weierstrassZeta_div (M : ℕ) [NeZero M] (b : Fin 2 → ℤ) :
-    TendstoLocallyUniformly
-      (fun (s : Finset (Fin 2 → ℤ)) (z : ℍ) ↦ ∑ y ∈ s,
-        (1 / (((b 0 : ℂ) * z + b 1) / M - (y 0 * z + y 1)) + 1 / ((y 0 : ℂ) * z + y 1) +
-          ((b 0 : ℂ) * z + b 1) / M / ((y 0 : ℂ) * z + y 1) ^ 2))
-      (fun z : ℍ ↦ z.periodPair.weierstrassZeta (((b 0 : ℂ) * z + b 1) / M)) atTop := by
-  rw [tendstoLocallyUniformly_iff_forall_isCompact]
-  intro K hK
-  obtain ⟨A, B, hB, HABK⟩ := subset_verticalStrip_of_isCompact hK
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (f := fun z : ℍ ↦ (z : ℂ))
-    continuous_coe.continuousOn
-  set r₀ := r ⟨⟨A, B⟩, hB⟩
-  have hr₀ : 0 < r₀ := r_pos _
-  set R : ℝ := |(b 0 : ℝ)| * |C| + |(b 1 : ℝ)| + 1
-  have hR : 0 < R := by positivity
-  have hlim : (fun z : ℍ ↦ z.periodPair.weierstrassZeta (((b 0 : ℂ) * z + b 1) / M)) =
-      fun z : ℍ ↦ ∑' y : Fin 2 → ℤ, (1 / (((b 0 : ℂ) * z + b 1) / M - (y 0 * z + y 1)) +
-        1 / ((y 0 : ℂ) * z + y 1) + ((b 0 : ℂ) * z + b 1) / M / ((y 0 : ℂ) * z + y 1) ^ 2) :=
-    funext fun z ↦ (hasSum_weierstrassZeta_periodPair z _).tsum_eq.symm
-  rw [hlim]
-  refine tendstoUniformlyOn_tsum_of_cofinite_eventually
-    (u := fun y ↦ 2 * R ^ 2 * r₀ ^ (-3 : ℝ) * ‖y‖ ^ (-3 : ℝ))
-    ((summable_one_div_norm_rpow (by norm_num)).mul_left _) ?_
-  have hev : ∀ᶠ y : Fin 2 → ℤ in cofinite, 2 * R / r₀ ≤ ‖y‖ := by
-    rw [← cocompact_eq_cofinite]
-    exact tendsto_norm_cocompact_atTop.eventually_ge_atTop _
-  filter_upwards [hev] with y hy z hz
-  have hy' : 2 * R ≤ r₀ * ‖y‖ := by
-    rwa [div_le_iff₀' hr₀] at hy
-  have hy0 : y ≠ 0 := by
-    rintro rfl
-    simp only [norm_zero, mul_zero] at hy'
-    linarith
-  have hl : r₀ * ‖y‖ ≤ ‖(y 0 : ℂ) * z + y 1‖ :=
-    (mul_le_mul_of_nonneg_right (r_lower_bound_on_verticalStrip z hB (HABK hz))
-      (norm_nonneg _)).trans (r_mul_max_le z hy0)
-  have hx : ‖((b 0 : ℂ) * z + b 1) / M‖ < R := by
-    have hM : (1 : ℝ) ≤ M := by exact_mod_cast NeZero.one_le
-    have hz' : ‖(z : ℂ)‖ ≤ |C| := (hC z hz).trans (le_abs_self C)
-    rw [norm_div, Complex.norm_natCast]
-    refine (div_le_self (norm_nonneg _) hM).trans_lt ?_
-    refine (norm_add_le _ _).trans_lt ?_
-    rw [norm_mul, Complex.norm_intCast, Complex.norm_intCast]
-    have := mul_le_mul_of_nonneg_left hz' (abs_nonneg (b 0 : ℝ))
-    linarith
-  refine (weierstrassZeta_bound hR hx (hy'.trans hl)).trans ?_
-  rw [mul_assoc (2 * R ^ 2), ← Real.mul_rpow hr₀.le (norm_nonneg _)]
-  exact mul_le_mul_of_nonneg_left
-    (Real.rpow_le_rpow_of_nonpos (by positivity) hl (by norm_num)) (by positivity)
-
-/-- The partial sums of the lattice series of `ζ` at a division point are holomorphic: in
-Eisenstein summands, the terms are `M (b - M y)⁻¹ + y⁻¹ + x y⁻²` with `x = (b₀ z + b₁) / M`. -/
-private lemma mdifferentiable_weierstrassZeta_div_term (M : ℕ) [NeZero M] (b y : Fin 2 → ℤ) :
-    MDiff fun z : ℍ ↦ (1 / (((b 0 : ℂ) * z + b 1) / M - (y 0 * z + y 1)) +
-      1 / ((y 0 : ℂ) * z + y 1) + ((b 0 : ℂ) * z + b 1) / M / ((y 0 : ℂ) * z + y 1) ^ 2 : ℂ) := by
-  have hM : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
-  have hS (k : ℤ) (v : Fin 2 → ℤ) : MDiff (eisSummand k v) :=
-    UpperHalfPlane.mdifferentiable_iff.mpr (eisSummand_extension_differentiableOn k v)
-  have hx : MDiff fun z : ℍ ↦ ((b 0 : ℂ) * z + b 1) / M :=
-    ((mdifferentiable_const.mul mdifferentiable_coe).add mdifferentiable_const).mul
-      mdifferentiable_const
-  have h : (fun z : ℍ ↦ 1 / (((b 0 : ℂ) * z + b 1) / M - (y 0 * z + y 1)) +
-      1 / ((y 0 : ℂ) * z + y 1) + ((b 0 : ℂ) * z + b 1) / M / ((y 0 : ℂ) * z + y 1) ^ 2) =
-      fun z ↦ M * eisSummand 1 (b - M • y) z + eisSummand 1 y z +
-        ((b 0 : ℂ) * z + b 1) / M * eisSummand 2 y z := by
-    ext z
-    have he : ((b - M • y) 0 : ℂ) * z + (b - M • y) 1 =
-        M * (((b 0 : ℂ) * z + b 1) / M - (y 0 * z + y 1)) := by
-      simp only [Pi.sub_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply, Int.cast_sub,
-        Int.cast_mul, Int.cast_natCast]
-      field_simp
-      ring
-    rw [eisSummand, eisSummand, eisSummand, he, _root_.zpow_neg_one, _root_.zpow_neg_one,
-      _root_.zpow_neg, zpow_ofNat, mul_inv, mul_inv_cancel_left₀ hM]
-    simp only [div_eq_mul_inv, one_mul]
-  rw [h]
-  exact ((mdifferentiable_const.mul (hS 1 _)).add (hS 1 y)).add (hx.mul (hS 2 y))
-
-/-- Each division value of `ζ` is holomorphic on `ℍ`. -/
-private lemma mdifferentiable_weierstrassZeta_div (M : ℕ) [NeZero M] (b : Fin 2 → ℤ) :
-    MDiff fun z : ℍ ↦ z.periodPair.weierstrassZeta (((b 0 : ℂ) * z + b 1) / M) :=
-  TauCeti.UpperHalfPlane.mdifferentiable_of_tendstoLocallyUniformly
-    (tendstoLocallyUniformly_weierstrassZeta_div M b) (Eventually.of_forall fun s ↦ by
-      convert MDifferentiable.sum (t := s)
-        fun y _ ↦ mdifferentiable_weierstrassZeta_div_term M b y using 1
-      ext z
-      simp [Finset.sum_apply])
 
 /-- The corrected division values are holomorphic on `ℍ`: the quasi-periods are the division
 values `η₁ = 2 ζ(z / 2)` and `η₂ = 2 ζ(1 / 2)`. -/
 private lemma mdifferentiable_zetaValue (b : Fin 2 → ℤ) : MDiff (zetaValue N b) := by
   have h₁ : MDiff fun z : ℍ ↦ z.periodPair.quasiPeriod ⟨_, z.periodPair.ω₁_mem_lattice⟩ := by
     convert (mdifferentiable_const (c := (2 : ℂ))).mul
-      (mdifferentiable_weierstrassZeta_div 2 ![1, 0]) using 1
+      (TauCeti.UpperHalfPlane.mdifferentiable_weierstrassZeta_periodPair_div 2 ![1, 0]) using 1
     ext z
     rw [quasiPeriod_eq_two_mul_weierstrassZeta _ _ z.periodPair.ω₁_div_two_notMem_lattice]
     simp
   have h₂ : MDiff fun z : ℍ ↦ z.periodPair.quasiPeriod ⟨_, z.periodPair.ω₂_mem_lattice⟩ := by
     convert (mdifferentiable_const (c := (2 : ℂ))).mul
-      (mdifferentiable_weierstrassZeta_div 2 ![0, 1]) using 1
+      (TauCeti.UpperHalfPlane.mdifferentiable_weierstrassZeta_periodPair_div 2 ![0, 1]) using 1
     ext z
     rw [quasiPeriod_eq_two_mul_weierstrassZeta _ _ z.periodPair.ω₂_div_two_notMem_lattice]
     simp
-  exact (mdifferentiable_weierstrassZeta_div N b).sub
+  exact (TauCeti.UpperHalfPlane.mdifferentiable_weierstrassZeta_periodPair_div N b).sub
     (((mdifferentiable_const.mul h₁).add (mdifferentiable_const.mul h₂)).mul mdifferentiable_const)
 
 /-- **The weighted weight-one series is holomorphic on `ℍ`.** -/
 theorem weightedE1_mdifferentiable (W : (Fin 2 → ZMod N) → ℂ) : MDiff (weightedE1 W) := by
-  rw [show weightedE1 W = _ from funext (weightedE1_eq_sum_zetaValue W)]
+  have h : weightedE1 W = fun z ↦ (N : ℂ)⁻¹ * ∑ a, W a * zetaValue N (lift a) z :=
+    funext (weightedE1_eq_sum_zetaValue W)
+  rw [h]
   refine mdifferentiable_const.mul ?_
   convert MDifferentiable.sum (t := Finset.univ)
     (f := fun a (z : ℍ) ↦ W a * zetaValue N (lift a) z)
