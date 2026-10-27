@@ -17,7 +17,8 @@ singular subscheme `Sing(X/K)` unramified over `K`. At every point `x` of `Sing(
 locus as the zero locus of the first Fitting ideal of `Ω_{X/K}`. It is at most two because the
 singular locus is reduced at `x`, so that its ideal in the local ring is the maximal ideal, while
 the first Fitting ideal of a module needing three generators lies in the square of the maximal
-ideal. The local ring statement used here is `TauCeti.finrank_tensor_kaehlerDifferential_eq_two`.
+ideal. The ring-level statement used here is `TauCeti.finrank_tensor_kaehlerDifferential_eq_two`,
+applied to `Γ(X, U)`.
 For a local algebra, the ring-level result `TauCeti.finrank_cotangentSpace_eq_two` also shows
 that the Zariski cotangent space `𝔪/𝔪²` at a node, which is the conormal space of the singular
 locus there, is this plane; this file proves no cotangent-space statement of its own. The two
