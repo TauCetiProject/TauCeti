@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupWithZero.Basic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Primary
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Ideal
 
@@ -51,16 +52,6 @@ public section
 open NumberField Ideal
 
 namespace TauCeti
-
-/-- Powers of an `n`-th root of unity with exponents congruent modulo `n` agree. -/
-private theorem zpow_eq_zpow_of_modEq {G₀ : Type*} [GroupWithZero G₀] {n : ℕ} {η : G₀}
-    (hη : η ^ n = 1) {l m : ℤ} (h : l ≡ m [ZMOD n]) : η ^ l = η ^ m := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp only [Int.ModEq, Nat.cast_zero, Int.emod_zero] at h
-    rw [h]
-  have h₀ : η ≠ 0 := ne_zero_pow hn (hη ▸ one_ne_zero)
-  obtain ⟨c, hc⟩ := h.dvd
-  rw [show m = l + n * c by omega, zpow_add₀ h₀, zpow_mul, zpow_natCast, hη, one_zpow, mul_one]
 
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
