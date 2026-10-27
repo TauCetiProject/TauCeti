@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.Generation
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # Continuous finite quotients of a topological group
