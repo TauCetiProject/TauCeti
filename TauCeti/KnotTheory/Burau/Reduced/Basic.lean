@@ -200,14 +200,16 @@ theorem burauCoordMatrix_mul_burauColMatrix (n : ℕ) (t : R) :
   rcases lt_trichotomy (i : ℕ) (k : ℕ) with hlt | heq | hgt
   · have hne : i ≠ k := by omega
     have hsplit : (k : ℕ) + 1 - (i : ℕ) - 1 = ((k : ℕ) - (i : ℕ) - 1) + 1 := by omega
-    simp only [ite_eq_left hlt, ite_eq_left (show (i : ℕ) < (k : ℕ) + 1 by omega), hsplit,
-      pow_succ, neg_mul, sub_self, Matrix.one_apply_ne hne]
+    have hlt_succ : (i : ℕ) < (k : ℕ) + 1 := by omega
+    simp only [ite_eq_left hlt, ite_eq_left hlt_succ, hsplit, pow_succ, neg_mul, sub_self,
+      Matrix.one_apply_ne hne]
   · have hik : i = k := Fin.ext heq
     subst k
     simp
   · have hne : i ≠ k := by omega
-    simp [show ¬ (i : ℕ) < (k : ℕ) by omega,
-      show ¬ (i : ℕ) < (k : ℕ) + 1 by omega, Matrix.one_apply_ne hne]
+    have hnot_lt : ¬ (i : ℕ) < (k : ℕ) := by omega
+    have hnot_lt_succ : ¬ (i : ℕ) < (k : ℕ) + 1 := by omega
+    simp [hnot_lt, hnot_lt_succ, Matrix.one_apply_ne hne]
 
 private theorem burauColMatrix_mulVec_zero (m : ℕ) (hm : 0 < m) (t : R) (c : Fin m → R) :
     (burauColMatrix (m + 1) t *ᵥ c) 0 = t * c ⟨0, hm⟩ := by
@@ -276,10 +278,12 @@ theorem burauColMatrix_mul_burauCoordMatrix (n : ℕ) (t : R) :
           simp [Matrix.col_apply, Matrix.sub_apply, vecMulVec_apply]
         · have hb' : (0 : Fin (m + 1 + 1)) ≠ b := by
             simpa only [ne_eq, Fin.ext_iff, Fin.val_zero, eq_comm] using hb
-          simp only [Matrix.col_apply, burauCoordMatrix_apply,
-            ite_eq_left (show 0 < (b : ℕ) by omega), Nat.sub_zero, Matrix.sub_apply,
-            Matrix.one_apply_ne hb', vecMulVec_apply, Pi.single_eq_same, one_mul, zero_sub]
-          rw [mul_neg, ← pow_succ', Nat.sub_add_cancel (show 1 ≤ (b : ℕ) by omega)]
+          have hbpos : 0 < (b : ℕ) := by omega
+          have hbone : 1 ≤ (b : ℕ) := by omega
+          simp only [Matrix.col_apply, burauCoordMatrix_apply, ite_eq_left hbpos, Nat.sub_zero,
+            Matrix.sub_apply, Matrix.one_apply_ne hb', vecMulVec_apply, Pi.single_eq_same,
+            one_mul, zero_sub]
+          rw [mul_neg, ← pow_succ', Nat.sub_add_cancel hbone]
       · rw [burauColMatrix_mulVec_succ]
         simp only [Matrix.col_apply, burauCoordMatrix_apply, Matrix.sub_apply,
           vecMulVec_apply, Pi.single_apply, Fin.succ_ne_zero, ite_false, zero_mul, sub_zero]
@@ -291,16 +295,17 @@ theorem burauColMatrix_mul_burauCoordMatrix (n : ℕ) (t : R) :
               omega
             have hsplit : (b : ℕ) - (i : ℕ) - 1 =
                 ((b : ℕ) - ((i : ℕ) + 1) - 1) + 1 := by omega
-            simp [hlt, show (i : ℕ) < (b : ℕ) by omega, hsplit,
-              pow_succ', mul_neg, Matrix.one_apply_ne hne]
+            have hib : (i : ℕ) < (b : ℕ) := by omega
+            simp [hlt, hib, hsplit, pow_succ', mul_neg, Matrix.one_apply_ne hne]
           · have hb : i.succ = b := Fin.ext heq
             subst b
             simp
           · have hne : i.succ ≠ b := by
               simp only [ne_eq, Fin.ext_iff, Fin.val_succ]
               omega
-            simp [show ¬ (i : ℕ) + 1 < (b : ℕ) by omega,
-              show ¬ (i : ℕ) < (b : ℕ) by omega, Matrix.one_apply_ne hne]
+            have hnot_lt_succ : ¬ (i : ℕ) + 1 < (b : ℕ) := by omega
+            have hnot_lt : ¬ (i : ℕ) < (b : ℕ) := by omega
+            simp [hnot_lt_succ, hnot_lt, Matrix.one_apply_ne hne]
         · -- The final row has only the negative of the preceding column coefficient.
           rw [dite_eq_right hi]
           have hb : (i : ℕ) < (b : ℕ) ↔ i.succ = b := by
