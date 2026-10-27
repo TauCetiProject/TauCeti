@@ -36,7 +36,6 @@ noncomputable def frobeniusSubIdCoeffs (e : E) : AnalyticStage p 0 E :=
   ZeroAtInftyContinuousMap.single (0, p) e - ZeroAtInftyContinuousMap.single (0, 1) e
 
 /-- The coefficients of `(X^p - X) • e` are `e` in degree `p` and `-e` in degree one. -/
-@[simp]
 theorem frobeniusSubIdCoeffs_apply (e : E) (i : ZMod (p ^ 0) × ℕ) :
     frobeniusSubIdCoeffs (p := p) e i =
       (if i.2 = p then e else 0) - if i.2 = 1 then e else 0 := by
@@ -102,9 +101,8 @@ theorem transition_frobeniusSubIdCoeffs (e : E) (he : (p : ℤ_[p]) • e = 0) :
     simp only [Nat.choose_zero_right, Nat.cast_one, Nat.sub_zero, one_mul, pow_zero, mul_one,
       pow_one, ← sub_smul]
     have hdiv : (p : ℤ_[p]) ∣ (a.val : ℤ_[p]) ^ p - a.val := by
-      rw [← Ideal.mem_span_singleton, ← PadicInt.maximalIdeal_eq_span_p,
-        ← PadicInt.ker_toZMod, RingHom.mem_ker]
-      simp [ZMod.pow_card]
+      simpa using map_dvd (Int.castRingHom ℤ_[p])
+        (Int.prime_dvd_pow_self_sub hp.out (a.val : ℤ))
     obtain ⟨r, hr⟩ := hdiv
     rw [hr, mul_comm, mul_smul, he, smul_zero]
   · obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hj
