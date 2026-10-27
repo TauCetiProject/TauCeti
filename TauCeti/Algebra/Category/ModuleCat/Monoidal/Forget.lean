@@ -59,14 +59,10 @@ variable {R} in
 lemma bijective_ε_comp_forget_map (M : ModuleCat.{v} R) :
     Function.Bijective fun f : 𝟙_ (ModuleCat.{v} R) ⟶ M ↦
       Functor.LaxMonoidal.ε (forget (ModuleCat.{v} R)) ≫ (forget (ModuleCat.{v} R)).map f := by
-  refine ⟨fun f g h ↦ ?_, fun t ↦ ⟨ofHom (LinearMap.toSpanSingleton R M (t PUnit.unit)), ?_⟩⟩
-  · have := types_congr_hom h PUnit.unit
-    simp at this
-    ext
-    simpa using this
-  · ext ⟨⟩
-    simp only [forget_ε, ConcreteCategory.hom_ofHom, TypeCat.Fun.toFun_apply,
-      CategoryTheory.comp_apply, TypeCat.Fun.coe_mk]
-    exact one_smul R _
+  convert ((homEquiv (M := 𝟙_ (ModuleCat.{v} R)) (N := M)).trans <|
+    (LinearMap.ringLmapEquivSelf R R M).toEquiv.trans
+      (TypeCat.homEquiv.trans (Equiv.funUnique PUnit M)).symm).bijective using 1
+  ext f ⟨⟩
+  simp [homEquiv]
 
 end ModuleCat

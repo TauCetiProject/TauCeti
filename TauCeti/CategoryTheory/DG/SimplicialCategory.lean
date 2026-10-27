@@ -6,12 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialCategory.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Forget
-public import TauCeti.Algebra.Homology.Monoidal.TruncLE
-public import TauCeti.AlgebraicTopology.DoldKan.Monoidal
-public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.SimplicialGroup
+public import TauCeti.AlgebraicTopology.DoldKan.SSet
 public import TauCeti.CategoryTheory.DG.ClosedCategory
-public import TauCeti.CategoryTheory.Monoidal.UnitHom
 
 /-!
 # The simplicial category of a differential graded category
@@ -24,17 +20,15 @@ Hom complex in non-positive cohomological degrees and its cycles in degree `0`, 
 chain complex, so the `n`-th homotopy group of a mapping space is the cohomology `H^{-n}` of the
 Hom complex.
 
-The construction transports the enrichment along the composite
-`TauCeti.doldKanSSetFunctor R` of three lax monoidal functors: the good truncation
-(`CochainComplex.truncLE'FunctorLaxMonoidal`), the Dold–Kan functor `Γ` with its
-Alexander–Whitney structure (`CategoryTheory.Idempotents.DoldKan.laxMonoidalΓ`) and the
-forgetful functor from simplicial modules to simplicial sets (`ModuleCat.forgetLaxMonoidal`).
-The enriched composition is therefore induced by the lax monoidal structures, and its unit and
-associativity laws are those of Mathlib's `CategoryTheory.TransportEnrichment`.
+The construction transports the enrichment along the lax monoidal functor
+`TauCeti.doldKanSSetFunctor R` of `TauCeti.AlgebraicTopology.DoldKan.SSet`, the composite of the
+good truncation, the Dold–Kan functor `Γ` and the forgetful functor from simplicial modules to
+simplicial sets. The enriched composition is therefore induced by the lax monoidal structures, and
+its unit and associativity laws are those of Mathlib's `CategoryTheory.TransportEnrichment`.
 
-Each of the three functors induces bijections on maps out of the tensor units; for the composite,
-maps `𝟙_ ⟶ K` from the unit complex, which are the degree-`0` cycles of `K`, are the vertices of
-`DK(τ_{≥ 0} K)` (`TauCeti.bijective_ε_comp_doldKanSSetFunctor_map`). The underlying ordinary
+This functor induces bijections on maps out of the tensor units: maps `𝟙_ ⟶ K` from the unit
+complex, which are the degree-`0` cycles of `K`, are the vertices of `DK(τ_{≥ 0} K)`
+(`TauCeti.bijective_ε_comp_doldKanSSetFunctor_map`). The underlying ordinary
 category of `C_Δ` is therefore the category of closed degree-zero morphisms of `C`, and `C_Δ` is a
 simplicial category in Mathlib's sense (`TauCeti.dgSimplicialCategory`), to which Mathlib's
 homotopy coherent nerve `CategoryTheory.SimplicialNerve` applies. Its mapping simplicial sets are
@@ -42,8 +36,6 @@ Kan complexes, since simplicial modules are.
 
 ## Main definitions and results
 
-* `TauCeti.doldKanSSetFunctor`: the lax monoidal functor `K ↦ DK(τ_{≥ 0} K)` from cochain
-  complexes of `R`-modules to simplicial sets.
 * `TauCeti.DGSimplicialCategory`: the simplicial category `C_Δ` of a differential graded category.
 * `TauCeti.dgSimplicialCategory`: its simplicial category structure.
 * `TauCeti.DGSimplicialCategory.sHom_of`: its mapping simplicial sets are `DK(τ_{≥ 0} Hom(X, Y))`.
@@ -67,47 +59,6 @@ universe v u
 namespace TauCeti
 
 variable (R : Type v) [CommRing R]
-
-/-- The functor sending a cochain complex `K` of `R`-modules to the underlying simplicial set of
-the Dold–Kan image `DK(τ_{≥ 0} K)` of its good truncation. -/
-noncomputable def doldKanSSetFunctor : CochainComplex (ModuleCat.{v} R) ℤ ⥤ SSet.{v} :=
-  embeddingDownNat.truncLE'Functor (ModuleCat.{v} R) ⋙ Idempotents.DoldKan.Γ ⋙
-    (Functor.whiskeringRight SimplexCategoryᵒᵖ _ _).obj (forget (ModuleCat.{v} R))
-
-/-- `TauCeti.doldKanSSetFunctor` sends `K` to the simplicial set underlying the simplicial module
-`Γ (τ_{≥ 0} K)`. -/
-lemma doldKanSSetFunctor_obj (K : CochainComplex (ModuleCat.{v} R) ℤ) :
-    (doldKanSSetFunctor R).obj K =
-      Idempotents.DoldKan.Γ.obj (K.truncLE' embeddingDownNat) ⋙ forget (ModuleCat.{v} R) :=
-  (rfl)
-
-/-- `TauCeti.doldKanSSetFunctor` is lax monoidal, as the composite of the lax monoidal good
-truncation, the lax monoidal Dold–Kan functor and the lax monoidal forgetful functor. -/
-noncomputable instance : (doldKanSSetFunctor R).LaxMonoidal :=
-  inferInstanceAs (embeddingDownNat.truncLE'Functor (ModuleCat.{v} R) ⋙ Idempotents.DoldKan.Γ ⋙
-    (Functor.whiskeringRight SimplexCategoryᵒᵖ _ _).obj (forget (ModuleCat.{v} R))).LaxMonoidal
-
-/-- The simplicial sets `DK(τ_{≥ 0} K)` are Kan complexes, as all simplicial modules are. -/
-instance (K : CochainComplex (ModuleCat.{v} R) ℤ) :
-    SSet.KanComplex ((doldKanSSetFunctor R).obj K) :=
-  SimplicialObject.kanComplex_comp_forget_moduleCat _
-
-/-- Maps `𝟙_ ⟶ K` out of the unit complex, which are the degree-`0` cycles of `K`, are the
-vertices of `DK(τ_{≥ 0} K)`: `TauCeti.doldKanSSetFunctor` induces bijections on maps out of the
-tensor units. -/
-lemma bijective_ε_comp_doldKanSSetFunctor_map (K : CochainComplex (ModuleCat.{v} R) ℤ) :
-    Function.Bijective fun f : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ K ↦
-      Functor.LaxMonoidal.ε (doldKanSSetFunctor R) ≫ (doldKanSSetFunctor R).map f :=
-  Functor.LaxMonoidal.bijective_ε_comp_map_comp
-    (embeddingDownNat.truncLE'Functor (ModuleCat.{v} R))
-    (Idempotents.DoldKan.Γ ⋙
-      (Functor.whiskeringRight SimplexCategoryᵒᵖ _ _).obj (forget (ModuleCat.{v} R)))
-    (fun K ↦ CochainComplex.bijective_ε_comp_truncLE'Functor_map K)
-    (Functor.LaxMonoidal.bijective_ε_comp_map_comp _ _
-      (Functor.FullyFaithful.bijective_ε_comp_map (F := Idempotents.DoldKan.Γ)
-        Idempotents.DoldKan.equivalence.fullyFaithfulInverse)
-      (Functor.LaxMonoidal.bijective_ε_comp_map_whiskeringRight _ _
-        ModuleCat.bijective_ε_comp_forget_map)) K
 
 /-- The **simplicial category `C_Δ` of a differential graded category** `C` (Lurie, *Higher
 Algebra*, Construction 1.3.1.13). Its objects are those of `C`
