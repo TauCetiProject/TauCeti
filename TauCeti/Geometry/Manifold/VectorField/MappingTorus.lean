@@ -28,10 +28,11 @@ section of the tangent bundle, and the orbits of the suspension flow are integra
 defined for all time.
 
 The time form `dt` is the differential of the projection `p`, read in the real tangent lines of
-the circle, and the field `T` is dual to it: `dt(T) = dp(T) = 1`. At `[t, x]` the vertical tangent
-space `ker dp` is the tangent space of the fiber, the image of the differential of the inclusion
-`x ↦ [t, x]`. Finally, `T` is in the kernel of every fiber form: `ι_T σ_v = 0` for
-every form `σ` on `M` preserved by `φ`.
+the circle (`TauCeti.SmoothMappingTorus.timeForm_apply`), and the field `T` is dual to it:
+`dt(T) = dp(T) = 1`. At `[t, x]` the vertical tangent space `ker dp` is the tangent space of the
+fiber, the image of the differential of the inclusion `x ↦ [t, x]`
+(`TauCeti.SmoothMappingTorus.range_mfderiv_mk`). Finally, `T` is in the kernel of every fiber
+form: `ι_T σ_v = 0` for every form `σ` on `M` preserved by `φ`.
 
 ## Main definitions
 
@@ -44,15 +45,8 @@ every form `σ` on `M` preserved by `φ`.
 * `TauCeti.SmoothMappingTorus.contMDiff_timeVectorField`: `T` is a smooth vector field.
 * `TauCeti.SmoothMappingTorus.isMIntegralCurve_flow`: the orbits of the suspension flow are
   integral curves of `T`.
-* `TauCeti.SmoothMappingTorus.timeForm_apply`: the time form is the differential of the
-  projection to the circle.
 * `TauCeti.SmoothMappingTorus.timeForm_timeVectorField`,
   `TauCeti.SmoothMappingTorus.mfderiv_proj_timeVectorField`: `dt(T) = 1` and `dp(T) = 1`.
-* `TauCeti.SmoothMappingTorus.mfderiv_mk_apply`,
-  `TauCeti.SmoothMappingTorus.mfderiv_proj_mfderiv_uncurry_mk`: the differential of a fiber
-  inclusion, and of the projection, in the coordinates `(t, x)`.
-* `TauCeti.SmoothMappingTorus.range_mfderiv_mk`: the tangent space of the fiber through `[t, x]`
-  is the vertical tangent space `ker dp`.
 * `TauCeti.SmoothMappingTorus.isCompl_span_timeVectorField_ker_mfderiv_proj`: the splitting
   `T Y_φ = ℝ T ⊕ ker dp`.
 * `TauCeti.SmoothMappingTorus.interior_timeVectorField_fiberForm`,
@@ -145,6 +139,9 @@ theorem contMDiff_timeVectorField :
     ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod I).tangent ∞
       (fun y ↦
         (⟨y, timeVectorField φ y⟩ : TangentBundle (𝓘(ℝ).prod I) (SmoothMappingTorus φ))) := by
+  -- This argument follows the proof of `TauCeti.contMDiff_vectorBundleEulerField` in
+  -- `TauCeti/Geometry/Manifold/VectorBundle/Euler.lean`, with the suspension flow in place of the
+  -- fibre dilation.
   -- The unit vector along the time factor, at the point `(0, y)` of `ℝ × Y_φ`.
   let σ : SmoothMappingTorus φ →
       TangentBundle (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (ℝ × SmoothMappingTorus φ) :=
@@ -176,12 +173,6 @@ theorem contMDiff_timeVectorField :
 
 /-! ### The time form and the vertical bundle -/
 
-/-- The time form `dt` of the mapping torus is the differential of the projection
-`p : Y_φ → ℝ / ℤ`, read in the real tangent lines of the circle. -/
-theorem timeForm_apply (y : SmoothMappingTorus φ) (v : Fin 1 → TangentSpace (𝓘(ℝ).prod I) y) :
-    (timeForm φ).1 y v = mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y (v 0) := by
-  rw [timeForm_def, SmoothForm.coe_mpullback, mpullback_apply, AddCircle.timeForm_apply]
-
 /-- The field `T` is dual to the time form: `dt(T) = 1`. -/
 @[simp]
 theorem timeForm_timeVectorField (y : SmoothMappingTorus φ) :
@@ -200,67 +191,6 @@ theorem mfderiv_proj_timeVectorField (y : SmoothMappingTorus φ) :
   rw [timeForm_timeVectorField] at h
   -- `![T y] 0` is `T y`.
   exact h.symm
-
-/-- The differential of the inclusion `x ↦ [t, x]` of a fiber is the differential of
-`(t, x) ↦ [t, x]` on the tangent vectors `(0, v)`. -/
-theorem mfderiv_mk_apply (t : ℝ) (x : M) (v : TangentSpace I x) :
-    mfderiv I (𝓘(ℝ).prod I) (mk φ t) x v =
-      mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-        ((Manifold.tangentSpaceProdEquiv (t, x)).symm (0, v)) := by
-  have hincl : HasMFDerivAt I (𝓘(ℝ).prod I) (fun x : M ↦ (t, x)) x
-      ((0 : TangentSpace I x →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ (TangentSpace I x))) :=
-    (hasMFDerivAt_const t x).prodMk (hasMFDerivAt_id x)
-  have h := mfderiv_comp_apply_of_eq x
-    ((contMDiff_uncurry_mk φ (t, x)).mdifferentiableAt (by simp)) hincl.mdifferentiableAt rfl v
-  rw [hincl.mfderiv] at h
-  rw [Manifold.tangentSpaceProdEquiv_symm_apply]
-  -- `mk φ t` is `(t, x) ↦ [t, x]` composed with `x ↦ (t, x)`, whose differential sends `v` to
-  -- `(0, v)`.
-  exact h
-
-/-- Every tangent vector of the mapping torus at `[t, x]` is the image of a tangent vector `(b, v)`
-of `ℝ × M` under the differential of `(t, x) ↦ [t, x]`. -/
-theorem exists_mfderiv_uncurry_mk_eq (t : ℝ) (x : M)
-    (w : TangentSpace (𝓘(ℝ).prod I) (mk φ t x)) :
-    ∃ (b : ℝ) (v : TangentSpace I x),
-      mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-        ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v)) = w := by
-  obtain ⟨u, hu⟩ :=
-    ((isLocalDiffeomorph_uncurry_mk φ).isInvertible_mfderiv (by simp) (t, x)).surjective w
-  exact ⟨(Manifold.tangentSpaceProdEquiv (t, x) u).1, (Manifold.tangentSpaceProdEquiv (t, x) u).2,
-    by rw [Prod.mk.eta, ContinuousLinearEquiv.symm_apply_apply, hu]⟩
-
-/-- The projection to the circle sends the image of `(b, v)` under the differential of
-`(t, x) ↦ [t, x]` to its real component `b`. -/
-theorem mfderiv_proj_mfderiv_uncurry_mk (t : ℝ) (x : M) (b : ℝ) (v : TangentSpace I x) :
-    mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (mk φ t x)
-        (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-          ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))) = b := by
-  have h := timeForm_apply φ (mk φ t x)
-    ![mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-      ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))]
-  rw [timeForm_apply_mfderiv_uncurry_mk, ContinuousLinearEquiv.apply_symm_apply] at h
-  -- `![w] 0` is `w`.
-  exact h.symm
-
-/-- The tangent space of the fiber through `[t, x]`, the range of the differential of the
-inclusion `x ↦ [t, x]`, is the vertical tangent space `ker dp` of the mapping torus. -/
-theorem range_mfderiv_mk (t : ℝ) (x : M) :
-    (mfderiv I (𝓘(ℝ).prod I) (mk φ t) x).range =
-      (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (mk φ t x)).ker := by
-  ext w
-  obtain ⟨b, v, rfl⟩ := exists_mfderiv_uncurry_mk_eq φ t x w
-  have hb := mfderiv_proj_mfderiv_uncurry_mk φ t x b v
-  constructor
-  · rintro ⟨v', hv'⟩
-    rw [ContinuousLinearMap.coe_coe, mfderiv_mk_apply] at hv'
-    -- Comparing the real components of `(0, v')` and `(b, v)`, which have the same image.
-    have h := congrArg Prod.fst ((Manifold.tangentSpaceProdEquiv (t, x)).symm.injective
-      (((isLocalDiffeomorph_uncurry_mk φ).isInvertible_mfderiv (by simp) (t, x)).injective hv'))
-    exact LinearMap.mem_ker.2 (hb.trans h.symm)
-  · intro hw
-    obtain rfl : b = 0 := hb.symm.trans (LinearMap.mem_ker.1 hw)
-    exact ⟨v, mfderiv_mk_apply φ t x v⟩
 
 /-- The splitting `T Y_φ = ℝ T ⊕ V` of the tangent space of the mapping torus into the line
 spanned by the field `T` and the vertical tangent space `V = ker dp`. -/
@@ -292,31 +222,19 @@ theorem isCompl_span_timeVectorField_ker_mfderiv_proj (y : SmoothMappingTorus φ
 theorem interior_timeVectorField_fiberForm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {k : ℕ} {σ : SmoothForm I M F (k + 1)} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ} :
     (fiberForm φ σ hσ).1.interior (timeVectorField φ) = 0 := by
-  funext y
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ y
-  -- Write the vectors `v i` as images of tangent vectors `u i` of `ℝ × M`.
-  choose u hu using fun i ↦
-    ((isLocalDiffeomorph_uncurry_mk φ).isInvertible_mfderiv (by simp) (t, x)).surjective (v i)
-  set D := mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
-  have hv : Matrix.vecCons (timeVectorField φ (mk φ t x)) v =
-      fun i ↦ D (Matrix.vecCons ((Manifold.tangentSpaceProdEquiv (t, x)).symm (1, 0)) u i) := by
-    -- Entrywise, these are `timeVectorField_mk` and the choice of `u`.
-    refine funext fun i ↦ Fin.cases ?_ (fun i ↦ ?_) i
-    · exact timeVectorField_mk φ t x
-    · exact (hu i).symm
-  -- On `ℝ × M`, the fiber form is the pullback of `σ` along the projection to `M`, which kills
-  -- the vector `(1, 0)`.
-  have h := DFunLike.congr_fun (congrFun (congrArg Subtype.val
-    (mpullback_uncurry_mk_fiberForm (σ := σ) (hσ := hσ))) (t, x))
-    (Matrix.vecCons ((Manifold.tangentSpaceProdEquiv (t, x)).symm (1, 0)) u)
-  simp only [SmoothForm.coe_mpullback, mpullback_apply, mfderiv_snd] at h
-  refine (RoughForm.interior_apply _ _ _ _).trans ?_
-  rw [uncurry_apply_pair, hv]
-  refine h.trans (σ.1 x |>.map_coord_zero 0 ?_)
-  -- The first vector is `(1, 0)`, whose component tangent to `M` vanishes.
-  exact congrArg Prod.snd
-    (Manifold.tangentSpaceProdEquiv_symm_apply (t, x) ((1 : ℝ), (0 : TangentSpace I x)))
+  -- The unit vector field `(1, 0)` of `ℝ × M`, related to `T` by `(t, x) ↦ [t, x]` and to the zero
+  -- field of `M` by the second projection.
+  let X : (p : ℝ × M) → TangentSpace (𝓘(ℝ).prod I) p :=
+    fun p ↦ (Manifold.tangentSpaceProdEquiv p).symm (1, 0)
+  refine (isLocalDiffeomorph_uncurry_mk φ).mpullback_injective (by simp)
+    (uncurry_mk_surjective φ) ?_
+  rw [mpullback_interior _ X _ _ fun p ↦ (timeVectorField_mk φ p.1 p.2).symm,
+    ← SmoothForm.coe_mpullback _ (contMDiff_uncurry_mk φ), mpullback_uncurry_mk_fiberForm,
+    SmoothForm.coe_mpullback, ← mpullback_interior _ X 0 _ fun p ↦ by
+      rw [mfderiv_snd]
+      exact congrArg Prod.snd
+        (Manifold.tangentSpaceProdEquiv_symm_apply p ((1 : ℝ), (0 : TangentSpace I p.2))),
+    RoughForm.interior_zero_field, mpullback_zero, mpullback_zero]
 
 /-- The field `T` lies in the kernel of the fiber form of every two-form `σ` preserved by `φ`:
 `σ_v(T, w) = 0`. -/

@@ -9,6 +9,7 @@ public import Mathlib.Dynamics.Flow
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.Quotient.Descent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Topology.MappingTorus.Basic
 
 /-!
@@ -77,6 +78,11 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
 * `TauCeti.SmoothMappingTorus.isFixedPt_flow_mk_iff_mem_zmultiples`: the periods of the orbit
   through `[t, x]` are the integer multiples of the minimal period of `x` under `φ`.
 * `TauCeti.SmoothMappingTorus.contMDiff_uncurry_flow`: the suspension flow is jointly `C^n`.
+* `TauCeti.SmoothMappingTorus.mfderiv_mk_apply`,
+  `TauCeti.SmoothMappingTorus.mfderiv_proj_mfderiv_uncurry_mk`: the differential of a fibre
+  inclusion, and of the projection, in the coordinates `(t, x)`.
+* `TauCeti.SmoothMappingTorus.range_mfderiv_mk`: the tangent space of the fibre through `[t, x]`
+  is the kernel of the differential of the projection.
 
 ## References
 
@@ -536,6 +542,81 @@ theorem proj_homeomorphMappingTorus (z : SmoothMappingTorus φ) :
     MappingTorus.proj _ (homeomorphMappingTorus φ z) = proj φ z := by
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
   simp
+
+
+end SmoothMappingTorus
+
+/-! ### Differentials of the quotient map and the projection -/
+
+namespace SmoothMappingTorus
+
+variable [T2Space M] [LocallyCompactSpace M] [IsManifold I ∞ M] (φ : M ≃ₘ⟮I, I⟯ M)
+
+/-- The differential of the inclusion `x ↦ [t, x]` of a fibre is the differential of
+`(t, x) ↦ [t, x]` on the tangent vectors `(0, v)`. -/
+theorem mfderiv_mk_apply (t : ℝ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ t) x v =
+      mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (Function.uncurry (mk φ)) (t, x)
+        ((Manifold.tangentSpaceProdEquiv (t, x)).symm (0, v)) := by
+  have hincl : HasMFDerivAt I (𝓘(ℝ).prod I) (fun x : M ↦ (t, x)) x
+      ((0 : TangentSpace I x →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ (TangentSpace I x))) :=
+    (hasMFDerivAt_const t x).prodMk (hasMFDerivAt_id x)
+  have h := mfderiv_comp_apply_of_eq x
+    ((contMDiff_uncurry_mk φ (t, x)).mdifferentiableAt (by simp)) hincl.mdifferentiableAt rfl v
+  rw [hincl.mfderiv] at h
+  rw [Manifold.tangentSpaceProdEquiv_symm_apply]
+  -- `mk φ t` is `(t, x) ↦ [t, x]` composed with `x ↦ (t, x)`, whose differential sends `v` to
+  -- `(0, v)`.
+  exact h
+
+/-- Every tangent vector of the mapping torus at `[t, x]` is the image of a tangent vector `(b, v)`
+of `ℝ × M` under the differential of `(t, x) ↦ [t, x]`. -/
+theorem exists_mfderiv_uncurry_mk_eq (t : ℝ) (x : M)
+    (w : TangentSpace (𝓘(ℝ).prod I) (mk φ t x)) :
+    ∃ (b : ℝ) (v : TangentSpace I x),
+      mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (Function.uncurry (mk φ)) (t, x)
+        ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v)) = w := by
+  obtain ⟨u, hu⟩ :=
+    ((isLocalDiffeomorph_uncurry_mk φ).isInvertible_mfderiv (by simp) (t, x)).surjective w
+  exact ⟨(Manifold.tangentSpaceProdEquiv (t, x) u).1, (Manifold.tangentSpaceProdEquiv (t, x) u).2,
+    by rw [Prod.mk.eta, ContinuousLinearEquiv.symm_apply_apply, hu]⟩
+
+/-- The projection to the circle sends the image of `(b, v)` under the differential of
+`(t, x) ↦ [t, x]` to its real component `b`. -/
+theorem mfderiv_proj_mfderiv_uncurry_mk (t : ℝ) (x : M) (b : ℝ) (v : TangentSpace I x) :
+    mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (mk φ t x)
+        (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (Function.uncurry (mk φ)) (t, x)
+          ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))) = b := by
+  have hcomp : proj φ ∘ Function.uncurry (mk φ) = ((↑) : ℝ → UnitAddCircle) ∘ Prod.fst :=
+    funext fun p ↦ proj_mk φ p.1 p.2
+  have h := mfderiv_comp_apply_of_eq (t, x)
+    ((contMDiff_proj φ (mk φ t x)).mdifferentiableAt (by simp))
+    ((contMDiff_uncurry_mk φ (t, x)).mdifferentiableAt (by simp)) rfl
+    ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))
+  rw [hcomp, mfderiv_comp (t, x) (AddCircle.hasMFDerivAt_coe 1 t).mdifferentiableAt
+    mdifferentiableAt_fst, AddCircle.mfderiv_coe, mfderiv_fst] at h
+  -- The first projection sends `(b, v)` to `b`.
+  exact h.symm.trans
+    (congrArg Prod.fst (Manifold.tangentSpaceProdEquiv_symm_apply (t, x) (b, v)))
+
+/-- The tangent space of the fibre through `[t, x]`, the range of the differential of the
+inclusion `x ↦ [t, x]`, is the kernel of the differential of the projection to the circle. -/
+theorem range_mfderiv_mk (t : ℝ) (x : M) :
+    (mfderiv I (𝓘(ℝ).prod I) (mk φ t) x).range =
+      (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (mk φ t x)).ker := by
+  ext w
+  obtain ⟨b, v, rfl⟩ := exists_mfderiv_uncurry_mk_eq φ t x w
+  have hb := mfderiv_proj_mfderiv_uncurry_mk φ t x b v
+  constructor
+  · rintro ⟨v', hv'⟩
+    rw [ContinuousLinearMap.coe_coe, mfderiv_mk_apply] at hv'
+    -- Comparing the real components of `(0, v')` and `(b, v)`, which have the same image.
+    have h := congrArg Prod.fst ((Manifold.tangentSpaceProdEquiv (t, x)).symm.injective
+      (((isLocalDiffeomorph_uncurry_mk φ).isInvertible_mfderiv (by simp) (t, x)).injective hv'))
+    exact LinearMap.mem_ker.2 (hb.trans h.symm)
+  · intro hw
+    obtain rfl : b = 0 := hb.symm.trans (LinearMap.mem_ker.1 hw)
+    exact ⟨v, mfderiv_mk_apply φ t x v⟩
 
 end SmoothMappingTorus
 
