@@ -51,8 +51,8 @@ loss is the factor `∏ i < n, max 1 ((i + 1) / 2) = n! / 2 ^ (n - 1)`
   nondecreasing.
 * `ZLattice.successiveMin_le_iff_finrank` and `ZLattice.successiveMin_isLeast_gauge`: the
   thresholds of `ZLattice.successiveMin_le_iff` as the dimension of the span of the lattice vectors
-  in `t • K`, or of gauge at most `t`; `ZLattice.successiveMin_zero_le_iff` is the first minimum as the least dilate
-  containing a nonzero lattice vector.
+  in `t • K`, or of gauge at most `t`; `ZLattice.successiveMin_zero_le_iff` is the first minimum
+  as the least dilate containing a nonzero lattice vector.
 * `ZLattice.successiveMin_antitone_body`, `ZLattice.successiveMin_antitone_lattice` and
   `ZLattice.successiveMin_smul`: enlarging the body or the lattice decreases the minima, and
   dilating the body by `c > 0` divides them by `c`.
