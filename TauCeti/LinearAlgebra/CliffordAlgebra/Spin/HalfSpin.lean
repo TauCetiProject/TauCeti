@@ -115,6 +115,7 @@ include hQ
 
 /-- **Spin elements act with determinant one** on an eigenspace of `Γ` of complex dimension
 two: the half-spin representations of `Spin(4)` take values in the special linear group. -/
+@[simp]
 theorem det_halfSpinRep (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2)
     (s : spinGroup Q) : LinearMap.det (halfSpinRep o ρ ε s) = 1 := by
   have : Nontrivial (eigenspace (ρ (chirality Q o)) ε) :=

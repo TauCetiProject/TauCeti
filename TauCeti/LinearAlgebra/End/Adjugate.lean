@@ -12,17 +12,18 @@ import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 /-!
 # The adjugate of an endomorphism of a two-dimensional space
 
-On a free module of rank two, the adjugate of an endomorphism `T` is `tr T • 1 - T`: in any basis
-this is the matrix adjugate (`Matrix.adjugate_fin_two_eq_trace_smul_one_sub`). This file records
+On a free module of rank two over a commutative ring, the adjugate of an endomorphism `T` is
+`tr T • 1 - T`: in any basis this is the matrix adjugate
+(`Matrix.adjugate_fin_two_eq_trace_smul_one_sub`). This file records
 the two basis-free consequences of that identification: the adjugate reverses products, and
 multiplying an endomorphism by its adjugate gives its determinant. Together they say that any map
 which reverses products and sends each `T` to `tr T • 1 - T` on a set of generators turns
-`T' T` into `det T`, which is how the determinant of a group acting on a two-dimensional space is
+`T' T` into `det T`, which is how the determinant of a group acting on a rank-two space is
 computed from a conjugation that reverses products.
 
 ## Main results
 
-* `LinearMap.toMatrix_trace_smul_one_sub`: in every basis of a rank-two space, `tr T • 1 - T` is
+* `LinearMap.toMatrix_trace_smul_one_sub`: in every basis of a rank-two module, `tr T • 1 - T` is
   the matrix adjugate of `T`.
 * `LinearMap.trace_mul_smul_one_sub_mul_of_finrank_eq_two`: the adjugate reverses products,
   `tr (S T) • 1 - S T = (tr T • 1 - T) (tr S • 1 - S)`.
@@ -47,11 +48,11 @@ theorem toMatrix_trace_smul_one_sub (b : Module.Basis (Fin 2) K E) (T : Module.E
 
 end CommRing
 
-section Field
+section Free
 
-variable [Field K] [AddCommGroup E] [Module K E]
+variable [CommRing K] [StrongRankCondition K] [AddCommGroup E] [Module K E] [Module.Free K E]
 
-/-- **The adjugate reverses products** on a two-dimensional space:
+/-- **The adjugate reverses products** on a free module of rank two:
 `tr (S T) • 1 - S T = (tr T • 1 - T) (tr S • 1 - S)`. -/
 theorem trace_mul_smul_one_sub_mul_of_finrank_eq_two (h₂ : Module.finrank K E = 2)
     (S T : Module.End K E) :
@@ -62,7 +63,7 @@ theorem trace_mul_smul_one_sub_mul_of_finrank_eq_two (h₂ : Module.finrank K E 
   rw [toMatrix_mul, toMatrix_trace_smul_one_sub, toMatrix_trace_smul_one_sub,
     toMatrix_trace_smul_one_sub, toMatrix_mul, Matrix.adjugate_mul_distrib]
 
-/-- **An endomorphism times its adjugate is its determinant** on a two-dimensional space:
+/-- **An endomorphism times its adjugate is its determinant** on a free module of rank two:
 `(tr T • 1 - T) T = det T • 1`. -/
 theorem trace_smul_one_sub_mul_self_of_finrank_eq_two (h₂ : Module.finrank K E = 2)
     (T : Module.End K E) :
@@ -73,6 +74,6 @@ theorem trace_smul_one_sub_mul_self_of_finrank_eq_two (h₂ : Module.finrank K E
   rw [toMatrix_mul, toMatrix_trace_smul_one_sub, Matrix.adjugate_mul, map_smul, toMatrix_one,
     det_toMatrix b]
 
-end Field
+end Free
 
 end LinearMap
