@@ -92,10 +92,6 @@ theorem exact_lcomp_quotientPeriodicComplex_d (hw : w ∈ nonZeroDivisors S)
         ((quotientPeriodicComplex.obj X).d b c).hom)
       (LinearMap.lcomp (S ⧸ Ideal.span {w})ᵐᵒᵖ (S ⧸ Ideal.span {w})
         ((quotientPeriodicComplex.obj X).d a b).hom) := by
-  have h₀₁ := congrArg (fun k ↦ k.hom.hom) X.obj.d₀_comp_d₁
-  have h₁₀ := congrArg (fun k ↦ k.hom.hom) X.obj.d₁_comp_d₀
-  simp only [FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_smul, FGModuleCat.hom_hom_id]
-    at h₀₁ h₁₀
   have hr : IsSMulRegular S w := Module.Flat.isSMulRegular_of_nonZeroDivisors hw
   -- The differentials of the reduced complex are, by definition of extension of scalars, the
   -- base changes of `d₀` and `d₁`, and precomposition `LinearMap.lcomp` is composition, so both
@@ -105,12 +101,14 @@ theorem exact_lcomp_quotientPeriodicComplex_d (hw : w ∈ nonZeroDivisors S)
     obtain rfl : c = 0 := hbc.symm.trans (by decide)
     have : Module.Projective S ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₁) :=
       X.property.2
-    exact LinearMap.exact_comp_baseChange_quotient_span_singleton _ _ h₁₀ h₀₁ hr
+    exact LinearMap.exact_comp_baseChange_quotient_span_singleton _ _
+      (LinearMap.ext (d₁_comp_d₀_apply X)) (LinearMap.ext (d₀_comp_d₁_apply X)) hr
   · obtain rfl : b = 0 := hab.symm.trans (by decide)
     obtain rfl : c = 1 := hbc.symm
     have : Module.Projective S ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₀) :=
       X.property.1
-    exact LinearMap.exact_comp_baseChange_quotient_span_singleton _ _ h₀₁ h₁₀ hr
+    exact LinearMap.exact_comp_baseChange_quotient_span_singleton _ _
+      (LinearMap.ext (d₀_comp_d₁_apply X)) (LinearMap.ext (d₁_comp_d₀_apply X)) hr
 
 /-- **The reduction of a matrix factorization is a complete resolution.** For a non-zero-divisor
 `w`, unfolding along the integers the reduction modulo `w` of a finite-projective matrix

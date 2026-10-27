@@ -28,7 +28,8 @@ The cokernel functor on factorizations is exact for the two Frobenius structures
   splits in both components. After reduction, the cokernels form a right exact sequence because
   the cokernel is right exact. The map `coker d₀'(X₁) ⟶ coker d₀'(X₂)` is injective because the
   reduction of `X₃` is exact at its even component, `ker d₀' = im d₁'`; this is the vanishing of
-  the connecting map of the snake lemma.
+  the connecting map of the snake lemma
+  (`TauCeti.MatrixFactorization.shortExact_map_cokernelFunctor_comp_forget₂`).
 * It preserves projective-injectives. These are the contractible factorizations, and the
   cokernel of a null-homotopic map factors through a projective module, so the cokernel of a
   contractible factorization is projective.
@@ -54,9 +55,6 @@ In the namespace `TauCeti.MatrixFactorization.HomotopyCategory`:
 
 ## Main results
 
-* `TauCeti.MatrixFactorization.shortExact_map_cokernelFunctor_comp_forget₂`: for factorizations
-  of the zero potential, cokernels carry a componentwise short exact sequence whose third term
-  is exact at its even component to a short exact sequence.
 * `TauCeti.MatrixFactorization.stableConflationExact_quotientGorensteinProjectiveCokernel`: the
   Gorenstein-projective cokernel functor preserves conflations and projective-injectives.
 * `HomotopyCategory.stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel`, in the
@@ -87,85 +85,6 @@ namespace TauCeti.MatrixFactorization
 open CategoryTheory Limits
 
 variable {S : Type u} [CommRing S] {w : S}
-
-/-! ### Cokernels of componentwise short exact sequences -/
-
-/-- For factorizations of the zero potential, cokernels of even-to-odd differentials carry a short
-complex `X₁ ⟶ X₂ ⟶ X₃` that is short exact in both components to a short exact sequence of
-modules, provided `X₃` is exact at its even component (`ker d₀ = im d₁`). The right exactness
-is that of cokernels; the injectivity on the left uses the exactness of `X₃`. -/
-theorem shortExact_map_cokernelFunctor_comp_forget₂ (hw : w = 0)
-    {T : ShortComplex (MatrixFactorization S w)}
-    (hf₁ : Function.Injective T.f.hom.f₁.hom.hom)
-    (h₀ : Function.Exact T.f.hom.f₀.hom.hom T.g.hom.f₀.hom.hom)
-    (h₁ : Function.Exact T.f.hom.f₁.hom.hom T.g.hom.f₁.hom.hom)
-    (hg₀ : Function.Surjective T.g.hom.f₀.hom.hom)
-    (hg₁ : Function.Surjective T.g.hom.f₁.hom.hom)
-    (hX₃ : Function.Exact T.X₃.obj.d₁.hom.hom T.X₃.obj.d₀.hom.hom) :
-    (T.map (cokernelFunctor ⋙ forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S))).ShortExact := by
-  -- The cokernel projections are natural, surjective, and have kernel the image of `d₀`.
-  have nat {X Y : MatrixFactorization S w} (g : X ⟶ Y) (y : X.obj.X₁.obj) :
-      (cokernelFunctor.map g).hom.hom (cokernelπ X y) = cokernelπ Y (g.hom.f₁.hom.hom y) :=
-    congrArg (fun k ↦ k.hom y) (cokernelπ_naturality g)
-  have comm {X Y : MatrixFactorization S w} (g : X ⟶ Y) (x : X.obj.X₀.obj) :
-      Y.obj.d₀.hom.hom (g.hom.f₀.hom.hom x) = g.hom.f₁.hom.hom (X.obj.d₀.hom.hom x) := by
-    simpa only [FGModuleCat.hom_hom_comp, LinearMap.comp_apply] using
-      congrArg (fun k ↦ k.hom.hom x) g.hom.comm₀
-  have comm₁ {X Y : MatrixFactorization S w} (g : X ⟶ Y) (y : X.obj.X₁.obj) :
-      Y.obj.d₁.hom.hom (g.hom.f₁.hom.hom y) = g.hom.f₀.hom.hom (X.obj.d₁.hom.hom y) := by
-    simpa only [FGModuleCat.hom_hom_comp, LinearMap.comp_apply] using
-      congrArg (fun k ↦ k.hom.hom y) g.hom.comm₁
-  have hd₀d₁ (y : T.X₂.obj.X₁.obj) : T.X₂.obj.d₀.hom.hom (T.X₂.obj.d₁.hom.hom y) = 0 := by
-    subst hw
-    simpa only [FGModuleCat.hom_hom_comp, LinearMap.comp_apply, zero_smul,
-      ObjectProperty.zero_hom, ModuleCat.hom_zero, LinearMap.zero_apply] using
-      congrArg (fun k ↦ k.hom.hom y) T.X₂.obj.d₁_comp_d₀
-  have hgf (y : T.X₁.obj.X₁.obj) : T.g.hom.f₁.hom.hom (T.f.hom.f₁.hom.hom y) = 0 :=
-    h₁.apply_apply_eq_zero y
-  -- Exactness in the middle: lift along `cokernelπ`, correct by `d₀`, and use exactness of the
-  -- odd components.
-  have hex :
-      Function.Exact (cokernelFunctor.map T.f).hom.hom (cokernelFunctor.map T.g).hom.hom := by
-    intro c
-    obtain ⟨b, rfl⟩ := cokernelπ_surjective T.X₂ c
-    refine ⟨fun hc ↦ ?_, ?_⟩
-    · rw [nat] at hc
-      obtain ⟨a₃, ha₃⟩ := ((exact_d₀_cokernelπ T.X₃) _).1 hc
-      obtain ⟨a₂, rfl⟩ := hg₀ a₃
-      obtain ⟨b₁, hb₁⟩ := (h₁ (b - T.X₂.obj.d₀.hom.hom a₂)).1 (by
-        rw [map_sub, ← comm, ha₃, sub_self])
-      refine ⟨cokernelπ T.X₁ b₁, ?_⟩
-      rw [nat, hb₁, map_sub, ((exact_d₀_cokernelπ T.X₂) _).2 ⟨a₂, rfl⟩, sub_zero]
-    · rintro ⟨c₁, hc₁⟩
-      rw [← hc₁]
-      simpa only [FGModuleCat.hom_hom_comp, LinearMap.comp_apply, T.zero, Functor.map_zero,
-        ObjectProperty.zero_hom, ModuleCat.hom_zero, LinearMap.zero_apply] using
-        congrArg (fun k ↦ k.hom.hom c₁) (cokernelFunctor.map_comp T.f T.g).symm
-  -- Injectivity on the left: the snake-lemma connecting map vanishes because `ker d₀ = im d₁`
-  -- in `X₃` and `d₀ d₁ = 0` in `X₂`.
-  have hinj : Function.Injective (cokernelFunctor.map T.f).hom.hom := by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    intro c hc
-    obtain ⟨b, rfl⟩ := cokernelπ_surjective T.X₁ c
-    rw [nat] at hc
-    obtain ⟨a₂, ha₂⟩ := ((exact_d₀_cokernelπ T.X₂) _).1 hc
-    obtain ⟨b₃, hb₃⟩ := (hX₃ (T.g.hom.f₀.hom.hom a₂)).1 (by rw [comm, ha₂, hgf])
-    obtain ⟨b₂, rfl⟩ := hg₁ b₃
-    obtain ⟨a₁, ha₁⟩ := (h₀ (a₂ - T.X₂.obj.d₁.hom.hom b₂)).1 (by
-      rw [map_sub, ← hb₃, ← comm₁, sub_self])
-    refine ((exact_d₀_cokernelπ T.X₁) _).2 ⟨a₁, hf₁ ?_⟩
-    rw [← comm, ha₁, map_sub, hd₀d₁, sub_zero, ha₂]
-  -- Surjectivity on the right: both `cokernelπ` and the odd component of `T.g` are surjective.
-  have hsurj : Function.Surjective (cokernelFunctor.map T.g).hom.hom := by
-    intro c
-    obtain ⟨b₃, rfl⟩ := cokernelπ_surjective T.X₃ c
-    obtain ⟨b₂, rfl⟩ := hg₁ b₃
-    exact ⟨cokernelπ T.X₂ b₂, nat T.g b₂⟩
-  -- Forgetting finite generation does not change the underlying linear maps.
-  exact
-    { exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 hex
-      mono_f := (ModuleCat.mono_iff_injective _).2 hinj
-      epi_g := (ModuleCat.epi_iff_surjective _).2 hsurj }
 
 /-! ### Exactness of the Gorenstein-projective cokernel functor -/
 
