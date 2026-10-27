@@ -83,11 +83,13 @@ coefficients in `ZMod 2`.
 
 public section
 
+universe u
+
 namespace TauCeti
 
 open _root_.ContinuousCohomology RegularFormClass
 
-variable {K L : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
+variable {K L : Type u} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Invertible (2 : K)] [Field L] [Algebra K L]
   [FiniteDimensional K L]
 
