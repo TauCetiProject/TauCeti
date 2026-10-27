@@ -17,15 +17,16 @@ Let `R` be a Noetherian local ring with maximal ideal `𝔪` and let `R̂` be it
 Then `R̂` is a Noetherian local ring, flat over `R`, with maximal ideal `𝔪 R̂` and the same residue
 field. This file shows that `R̂` has the same Krull dimension as `R`, and that `R̂` is regular if
 and only if `R` is. Together with Mathlib's `AdicCompletion.spanFinrank_maximalIdeal_eq`, these
-are the invariants of a local ring that can be computed after completion.
+are among the invariants of a local ring that are unchanged by completion.
 
 Descent of regularity from `R̂` to `R` lets regularity be tested on complete local rings, where the
-Cohen structure theorem presents them as quotients of power series rings over a field.
+Cohen structure theorem presents them as quotients of power series rings over a field or, in mixed
+characteristic, over a complete discrete valuation ring.
 
 ## Main results
 
-* `AdicCompletion.ringKrullDim_eq`: `R̂` and `R` have the same Krull dimension.
-* `AdicCompletion.isRegularLocalRing_iff`: `R̂` is regular if and only if `R` is.
+* `TauCeti.AdicCompletion.ringKrullDim_eq`: `R̂` and `R` have the same Krull dimension.
+* `TauCeti.AdicCompletion.isRegularLocalRing_iff`: `R̂` is regular if and only if `R` is.
 
 ## References
 
@@ -39,7 +40,7 @@ public section
 
 open IsLocalRing
 
-namespace AdicCompletion
+namespace TauCeti.AdicCompletion
 
 section
 
@@ -49,14 +50,14 @@ variable {R : Type*} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
 the ring. -/
 @[stacks 07NV]
 theorem ringKrullDim_eq : ringKrullDim (AdicCompletion (maximalIdeal R) R) = ringKrullDim R :=
-  TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq maximalIdeal_eq_map.symm
+  ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq AdicCompletion.maximalIdeal_eq_map.symm
 
 /-- The completion of a Noetherian local ring at its maximal ideal is regular if and only if the
 ring is. -/
 @[stacks 07NY]
 theorem isRegularLocalRing_iff :
     IsRegularLocalRing (AdicCompletion (maximalIdeal R) R) ↔ IsRegularLocalRing R :=
-  TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq maximalIdeal_eq_map.symm
+  isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq AdicCompletion.maximalIdeal_eq_map.symm
 
 end
 
@@ -65,4 +66,4 @@ instance {R : Type*} [CommRing R] [IsRegularLocalRing R] :
     IsRegularLocalRing (AdicCompletion (maximalIdeal R) R) :=
   isRegularLocalRing_iff.mpr ‹_›
 
-end AdicCompletion
+end TauCeti.AdicCompletion
