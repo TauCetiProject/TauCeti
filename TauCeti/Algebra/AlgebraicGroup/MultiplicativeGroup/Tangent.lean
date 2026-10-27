@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
+public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 import TauCeti.Algebra.Polynomial.Laurent.Basic
 
@@ -19,6 +19,8 @@ even when `B` is noncommutative. For commutative `B`, the tangent Lie bracket va
 
 ## Main declarations
 
+* `TauCeti.MultiplicativeGroup.derivation_T_zsmul`: tangent derivations evaluate every
+  Laurent monomial by its exponent times their value on `T`.
 * `TauCeti.MultiplicativeGroup.tangentLinearEquiv`: the tangent space of `𝔾ₘ` is linearly
   equivalent to `B`.
 * `TauCeti.MultiplicativeGroup.tangent_bracket_eq_zero`: the tangent Lie bracket of `𝔾ₘ`
@@ -70,6 +72,10 @@ private def monomialValues (d : Derivation R H C) : ℤ →+ C where
   map_zero' := by simp
   map_add' := derivation_T_add d
 
+private lemma monomialValues_apply (d : Derivation R H C) (n : ℤ) :
+    monomialValues d n = d (LaurentPolynomial.T n) :=
+  rfl
+
 /-- Two tangent derivations of the Laurent polynomial algebra are equal if they agree on `T`. -/
 @[ext]
 theorem derivation_ext {d e : Derivation R H C}
@@ -102,6 +108,12 @@ section Ring
 
 variable [Ring B] [Algebra R B]
 
+/-- A tangent derivation takes `Tⁿ` to the integer multiple `n • d(T)` of its value on `T`. -/
+theorem derivation_T_zsmul (d : Derivation R H C) (n : ℤ) :
+    d (LaurentPolynomial.T n) = n • d (LaurentPolynomial.T 1) := by
+  simpa only [zsmul_one, Int.cast_id, monomialValues_apply] using
+    map_zsmul (monomialValues d) n (1 : ℤ)
+
 private noncomputable def infinitesimalUnit (c : C) : (DualNumber C)ˣ :=
   have h : IsUnit (inl 1 + inr c : DualNumber C) := by
     rw [TrivSqZeroExt.isUnit_iff_isUnit_fst]
@@ -121,9 +133,9 @@ private theorem tangentCoordinate_surjective :
   have hq : (fstHom R C C).comp q = IsScalarTower.toAlgHom R H C := by
     simp only [q, comp_laurentEval, infinitesimalUnit_map_fst]
     apply (laurentEval_unique 1 _ ?_).symm
-    simp [CounitAlgebra.algebraMap_apply]
-    -- The coefficient synonym inherits the unit of `B`.
-    rfl
+    simp only [IsScalarTower.toAlgHom_apply, CounitAlgebra.algebraMap_apply,
+      LaurentPolynomial.counit_T, ← CounitAlgebra.algebraMap_base R H B, map_one,
+      Units.val_one]
   let d : Derivation R H C :=
     (derivationToDualNumberEquivLift R H C).symm ⟨q, hq⟩
   refine ⟨d, ?_⟩
@@ -148,26 +160,18 @@ theorem tangentLinearEquiv_apply (d : Derivation R H C) :
   rfl
 
 /-- The derivation corresponding to `b : B` takes the Laurent monomial `Tⁿ` to `n • b`.
-In particular, its values on `T` and `T⁻¹` are `b` and `-b`. -/
-@[simp]
+Values are transported to `B` through `CounitAlgebra.algEquivSelf`; in particular, the values
+on `T` and `T⁻¹` are `b` and `-b`. -/
+-- Evaluate before simplification removes the coefficient equivalence or changes `T 0`.
+@[simp↓]
 theorem tangentLinearEquiv_symm_apply_T (b : B) (n : ℤ) :
-    (tangentLinearEquiv (R := R) (B := B)).symm b (LaurentPolynomial.T n) = n • b := by
+    CounitAlgebra.algEquivSelf R H B
+      ((tangentLinearEquiv (R := R) (B := B)).symm b (LaurentPolynomial.T n)) = n • b := by
   have h : CounitAlgebra.algEquivSelf R H B
       ((tangentLinearEquiv (R := R) (B := B)).symm b (LaurentPolynomial.T 1)) = b := by
     simpa only [tangentLinearEquiv_apply] using
       (tangentLinearEquiv (R := R) (B := B)).apply_symm_apply b
-  have h' := congrArg (CounitAlgebra.algEquivSelf R H B).symm h
-  have h₁ : (tangentLinearEquiv (R := R) (B := B)).symm b (LaurentPolynomial.T 1) = b := by
-    simpa only [AlgEquiv.symm_apply_apply, CounitAlgebra.algEquivSelf_symm_apply] using h'
-  have hn := map_zsmul (monomialValues ((tangentLinearEquiv (R := R) (B := B)).symm b))
-    n (1 : ℤ)
-  have hn' : (tangentLinearEquiv (R := R) (B := B)).symm b (LaurentPolynomial.T n) =
-      n • (tangentLinearEquiv (R := R) (B := B)).symm b (LaurentPolynomial.T 1) := by
-    simpa only [monomialValues, AddMonoidHom.coe_mk, ZeroHom.coe_mk, zsmul_one,
-      Int.cast_id] using hn
-  rw [hn', h₁]
-  -- The coefficient synonym inherits the integer action of `B`.
-  rfl
+  rw [derivation_T_zsmul, map_zsmul, h]
 
 end Ring
 
