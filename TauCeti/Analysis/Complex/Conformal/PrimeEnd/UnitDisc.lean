@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Basic
+public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Impression
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Chord
 import Mathlib.Analysis.InnerProductSpace.Continuous
 import TauCeti.Analysis.Complex.Inner
@@ -39,6 +39,7 @@ theorem nor the fact that a crosscut cuts the disc into exactly two pieces.
 * `TauCeti.unitDiscPrimeEnd_injective` -- distinct points of the circle give distinct prime ends.
 * `TauCeti.IsNullChain.exists_nullChainEquivalent_unitDiscRadialChain` -- every null chain of the
   disc is equivalent to a radial chain.
+* `TauCeti.impression_unitDiscPrimeEnd` -- the impression at `ζ` is exactly `{ζ}`.
 * `TauCeti.unitDiscPrimeEnd_surjective`, `TauCeti.unitDiscPrimeEnd_bijective` -- every prime end
   of the disc is the prime end at a point of the circle.
 
@@ -208,17 +209,6 @@ section Surjective
 
 variable {C : ℕ → Set ℂ} {k : ℕ}
 
-/-- The crosscuts of a null chain of the disc eventually have small Euclidean diameter: on the
-closed disc the chordal distance is at least half the Euclidean one. -/
-private lemma IsNullChain.eventually_norm_sub_lt (hC : IsNullChain (ball 0 1) C) {ε : ℝ}
-    (hε : 0 < ε) : ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n, ‖z - w‖ < ε := by
-  filter_upwards [hC.eventually_chordal_lt (ε / 2) (by positivity)] with n hn z hz w hw
-  have hsub : C n ⊆ closedBall 0 1 := closure_ball (0 : ℂ) one_ne_zero ▸ hC.subset_closure n
-  have hz1 : ‖z‖ ≤ 1 := by simpa using hsub hz
-  have hw1 : ‖w‖ ≤ 1 := by simpa using hsub hw
-  have h := norm_sub_le_mul_chordal hz1 hw1
-  nlinarith [hn z hz w hw]
-
 /-- **The domains of a null chain of the disc shrink to the circle.** Eventually the domain cut
 off by the `n`-th crosscut lies within `√(2δ)` of an endpoint `x` of that crosscut. -/
 private lemma IsNullChain.eventually_exists_norm_sub_sq_le (hC : IsNullChain (ball 0 1) C)
@@ -230,7 +220,7 @@ private lemma IsNullChain.eventually_exists_norm_sub_sq_le (hC : IsNullChain (ba
   set δ' := min δ ((1 - ‖p‖) / 2)
   have hδ' : 0 < δ' := lt_min hδ (by linarith)
   have hδ'p : ‖p‖ < 1 - δ' := by linarith [min_le_right δ ((1 - ‖p‖) / 2)]
-  filter_upwards [hC.eventually_norm_sub_lt hδ'] with n hn
+  filter_upwards [hC.eventually_norm_sub_lt isBounded_ball hδ'] with n hn
   obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
   have hxC : x ∈ C n := hrange ▸ ⟨0, γ.source⟩
   have hx : ‖x‖ = 1 := by
@@ -298,16 +288,10 @@ theorem IsNullChain.exists_nullChainEquivalent_unitDiscRadialChain
     ∃ ζ : ℂ, ‖ζ‖ = 1 ∧ NullChainEquivalent (ball 0 1) C (unitDiscRadialChain ζ) := by
   set D := nullChainDomain (ball (0 : ℂ) 1) C
   have hDb : ∀ n, closure (D n) ⊆ closedBall 0 1 := fun n =>
-    closure_minimal (nullChainDomain_subset.trans (sdiff_subset.trans ball_subset_closedBall))
-      isClosed_closedBall
-  -- the closures of the domains have a common point `ζ`
-  obtain ⟨ζ, hζD⟩ : (⋂ n, closure (D n)).Nonempty :=
-    IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed _
-      (fun n => closure_mono (hC.nullChainDomain_succ_subset n))
-      (fun n => (hC.nonempty_nullChainDomain n).closure)
-      ((isCompact_closedBall 0 1).of_isClosed_subset isClosed_closure (hDb 0))
-      fun _ => isClosed_closure
-  rw [mem_iInter] at hζD
+    closure_minimal (nullChainDomain_subset_self.trans ball_subset_closedBall) isClosed_closedBall
+  -- the impression has a point `ζ`, common to the closures of the domains
+  obtain ⟨ζ, hζD⟩ := (hC.isConnected_nullChainImpression isBounded_ball).nonempty
+  rw [mem_nullChainImpression_iff] at hζD
   -- eventually `ζ` and the whole domain lie close to an endpoint of the crosscut
   have hnear : ∀ δ > 0, ∀ᶠ n in atTop, ∃ x : ℂ, ‖x‖ = 1 ∧ ‖ζ - x‖ ^ 2 ≤ 2 * δ ∧
       ∀ z ∈ D n, ‖z - x‖ ^ 2 ≤ 2 * δ := fun δ hδ =>
@@ -360,6 +344,28 @@ theorem unitDiscPrimeEnd_bijective : Function.Bijective unitDiscPrimeEnd :=
   ⟨unitDiscPrimeEnd_injective, unitDiscPrimeEnd_surjective⟩
 
 end Surjective
+
+/-- The impression of the prime end at a circle point is that point alone. -/
+@[simp]
+theorem impression_unitDiscPrimeEnd (ζ : sphere (0 : ℂ) 1) :
+    (unitDiscPrimeEnd ζ).impression = {(ζ : ℂ)} := by
+  have hζ : ‖(ζ : ℂ)‖ = 1 := mem_sphere_zero_iff_norm.mp ζ.2
+  rw [unitDiscPrimeEnd_def, PrimeEnd.impression_mk]
+  refine eq_singleton_iff_nonempty_unique_mem.mpr
+    ⟨((isNullChain_unitDiscRadialChain hζ).isConnected_nullChainImpression
+      isBounded_ball).nonempty, fun z hz => ?_⟩
+  by_contra hne
+  have hpos : 0 < ‖z - (ζ : ℂ)‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hne)
+  obtain ⟨n, hn⟩ := (eventually_eight_mul_lt hpos).exists
+  have hD : nullChainDomain (ball 0 1) (unitDiscRadialChain ζ) n ⊆
+      {w | ‖w - (ζ : ℂ)‖ ^ 2 ≤ 2 * (1 - (1 - 1 / ((n : ℝ) + 2)))} := by
+    rw [nullChainDomain_unitDiscRadialChain hζ]
+    exact fun w hw => norm_sub_sq_le hζ (mem_ball_zero_iff.mp hw.1).le hw.2.le
+  have hzbound := closure_minimal hD (isClosed_le (by fun_prop) continuous_const)
+    (mem_nullChainImpression_iff.mp hz n)
+  simp only [mem_ofPred_eq] at hzbound
+  have hden : 0 < (n : ℝ) + 2 := by positivity
+  nlinarith [one_div_pos.mpr hden]
 
 end TauCeti
 
