@@ -90,8 +90,8 @@ theorem tendsto_LSeries_nhdsGT_one {a : ℕ → ℂ} {L : ℂ}
     simpa [LSeriesSummable, hterm] using hsum σ hσ
   have hO : (fun n ↦ ∑ k ∈ Finset.Icc 1 n, f k) =O[atTop] fun n ↦ (n : ℝ) ^ (0 : ℝ) := by
     simpa using hlim.isBigO_one ℝ
-  rw [Function.comp_apply, show LSeries a σ = LSeries f ((σ - 1 : ℝ) : ℂ) by
-      simp [LSeries, hterm],
+  have hLSeries : LSeries a σ = LSeries f ((σ - 1 : ℝ) : ℂ) := by simp [LSeries, hterm]
+  rw [Function.comp_apply, hLSeries,
     LSeries_eq_mul_integral f le_rfl (by simpa using hσ) hsummable hO, real_smul]
   congr 1
   refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 1 < t) ↦ ?_

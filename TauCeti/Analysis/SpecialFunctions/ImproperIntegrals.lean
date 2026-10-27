@@ -110,8 +110,7 @@ theorem tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero {E : Type*} [NormedAddCo
   have hw {ε : ℝ} (hε : 0 < ε) : IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1)) (Ioi 1) :=
     integrableOn_Ioi_rpow_of_lt (by linarith) zero_lt_one
   have hw_eq {ε : ℝ} (hε : 0 < ε) : ε * ∫ t in Ioi (1 : ℝ), t ^ (-ε - 1) = 1 := by
-    rw [integral_Ioi_rpow_of_lt (by linarith) zero_lt_one, Real.one_rpow,
-      show -ε - 1 + 1 = -ε by ring]
+    rw [integral_Ioi_rpow_of_lt (by linarith) zero_lt_one, Real.one_rpow, sub_add_cancel]
     field_simp
   rw [Metric.tendsto_nhds]
   intro δ hδ
@@ -140,11 +139,13 @@ theorem tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero {E : Type*} [NormedAddCo
     have hw1 : t ^ (-ε - 1) ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos ht.le (by linarith)
     rw [norm_smul, Real.norm_of_nonneg hw0]
     by_cases htT : t ≤ T'
-    · rw [show b t = ‖g t - L‖ + δ / 2 * t ^ (-ε - 1) by
-        simp [b, indicator_of_mem (show t ∈ Ioc 1 T' from ⟨ht, htT⟩)]]
+    · have hmem : t ∈ Ioc 1 T' := ⟨ht, htT⟩
+      have hbt : b t = ‖g t - L‖ + δ / 2 * t ^ (-ε - 1) := by simp [b, indicator_of_mem hmem]
+      rw [hbt]
       nlinarith [norm_nonneg (g t - L)]
-    · rw [show b t = δ / 2 * t ^ (-ε - 1) by
-        simp [b, indicator_of_notMem (show t ∉ Ioc 1 T' from fun h ↦ htT h.2)]]
+    · have hmem : t ∉ Ioc 1 T' := fun h ↦ htT h.2
+      have hbt : b t = δ / 2 * t ^ (-ε - 1) := by simp [b, indicator_of_notMem hmem]
+      rw [hbt]
       have : ‖g t - L‖ ≤ δ / 2 := by
         simpa [dist_eq_norm] using hT t ((le_max_left T 1).trans (not_le.mp htT).le)
       nlinarith
