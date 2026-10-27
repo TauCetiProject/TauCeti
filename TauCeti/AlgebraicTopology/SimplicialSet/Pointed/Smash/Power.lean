@@ -20,7 +20,9 @@ The smash power `X^∧ι` of a pointed simplicial set `X`, indexed by a type `ι
 smash power of pointed types: its `n`-simplices are the basepoint and the families of
 `n`-simplices of `X` avoiding the basepoint in every coordinate. Bijections of the index type act
 by reindexing coordinates, concatenation of families identifies `X^∧ι ∧ X^∧κ` with
-`X^∧(ι ⊕ κ)`, and the smash power indexed by an empty type is the unit `S⁰`.
+`X^∧(ι ⊕ κ)`, and the smash power indexed by an empty type is the unit `S⁰`. A based map
+`X ⟶ Y` acts on smash powers coordinatewise, compatibly with these operations, and the smash power
+indexed by a type with a unique element is `X` itself.
 
 Indexing by the finite-bijection groupoid gives the symmetric sequence
 `PointedSSet.smashPowFunctor X : FiniteBijection ⥤ PointedSSet`, `n ↦ X^∧n`, on which
@@ -44,10 +46,14 @@ symmetric sequences, and symmetric spectra are the modules over the sphere seque
   of families sending the families with a coordinate at the basepoint to the basepoint.
 * `PointedSSet.smashPowReindex`, `PointedSSet.smashPowReindexIso`: the action of a bijection of
   index types.
+* `PointedSSet.smashPowMap`, `PointedSSet.smashPowMapIso`: functoriality in the pointed
+  simplicial set, applying a based map in every coordinate.
 * `PointedSSet.smashPowAppendIso`: concatenation `X^∧ι ⊗ X^∧κ ≅ X^∧(ι ⊕ κ)`.
 * `PointedSSet.smashPowUnitIso`: the identification `𝟙_ ≅ X^∧ι` for empty `ι`.
+* `PointedSSet.smashPowUniqueIso`: the identification `X^∧ι ≅ X` for `ι` with a unique element.
 * `PointedSSet.smashPowFunctor X`: the symmetric sequence `n ↦ X^∧n`, with its
   `Functor.Monoidal` and `Functor.Braided` instances.
+* `PointedSSet.sphere k`: the simplicial `k`-sphere `S^k = (S¹)^∧k`.
 * `PointedSSet.sphereSequence`: the sphere sequence `n ↦ (S¹)^∧n`.
 
 ## References
@@ -332,6 +338,111 @@ lemma smashPowUnitIso_hom_app_tensorUnitSimplex [IsEmpty ι] :
     (congr_app (congrArg Under.Hom.right (smashPowUnitIso X ι).inv_hom_id) n)
     (smashPowMk (isEmptyElim : ι → X.right.obj n))
 
+/-! ### Functoriality in the pointed simplicial set -/
+
+section Functoriality
+
+variable {Y Z : PointedSSet.{u}}
+
+/-- The based map `X^∧ι ⟶ Y^∧ι` induced by a based map `f : X ⟶ Y`, applying `f` in every
+coordinate. -/
+noncomputable def smashPowMap (f : X ⟶ Y) (ι : Type) : X.smashPow ι ⟶ Y.smashPow ι :=
+  smashPowLift (fun n x ↦ smashPowMk (f.right.app n ∘ x))
+    (fun n x i hi ↦ smashPowMk_eq_point_iff.2 ⟨i, by simp [hi]⟩)
+    (fun n m g x ↦ by
+      rw [map_smashPowMk]
+      exact congrArg smashPowMk (funext fun i ↦ NatTrans.naturality_apply f.right g (x i)))
+
+@[simp]
+lemma smashPowMap_app_smashPowMk (f : X ⟶ Y) (x : ι → X.right.obj n) :
+    (smashPowMap f ι).right.app n (smashPowMk x) = smashPowMk (f.right.app n ∘ x) :=
+  smashPowLift_app_smashPowMk _ _ _ x
+
+@[simp]
+lemma smashPowMap_id : smashPowMap (𝟙 X) ι = 𝟙 _ := by
+  ext n x
+  simp [Function.comp_def]
+
+@[simp]
+lemma smashPowMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
+    smashPowMap (f ≫ g) ι = smashPowMap f ι ≫ smashPowMap g ι := by
+  ext n x
+  simp [Function.comp_def]
+
+/-- Applying a based map in every coordinate commutes with reindexing the coordinates. -/
+@[reassoc (attr := simp)]
+lemma smashPowReindex_comp_smashPowMap (f : X ⟶ Y) (e : ι ≃ κ) :
+    X.smashPowReindex e ≫ smashPowMap f κ = smashPowMap f ι ≫ Y.smashPowReindex e := by
+  ext n x
+  simp [Function.comp_def]
+
+/-- Applying a based map in every coordinate commutes with concatenation of families. -/
+@[reassoc (attr := simp)]
+lemma smashPowAppend_comp_smashPowMap (f : X ⟶ Y) :
+    smashPowAppend X ι κ ≫ smashPowMap f (ι ⊕ κ) =
+      (smashPowMap f ι ⊗ₘ smashPowMap f κ) ≫ smashPowAppend Y ι κ :=
+  smashPow_tensor_hom_ext fun n x y ↦ by
+    simp only [comp_right_app_apply, smashPowAppend_app_smashMk, smashPowMap_app_smashPowMk,
+      tensorHom_app_smashMk, Sum.comp_elim]
+
+/-- Applying a based map in every coordinate of the smash power indexed by an empty type is
+compatible with the identifications with the unit `S⁰`. -/
+@[reassoc (attr := simp)]
+lemma smashPowMap_comp_smashPowToUnit [IsEmpty ι] (f : X ⟶ Y) :
+    smashPowMap f ι ≫ smashPowToUnit Y ι = smashPowToUnit X ι := by
+  ext n x
+  simp
+
+/-- The isomorphism `X^∧ι ≅ Y^∧ι` induced by an isomorphism `e : X ≅ Y`, applying `e` in every
+coordinate. -/
+noncomputable def smashPowMapIso (e : X ≅ Y) (ι : Type) : X.smashPow ι ≅ Y.smashPow ι where
+  hom := smashPowMap e.hom ι
+  inv := smashPowMap e.inv ι
+  hom_inv_id := by rw [← smashPowMap_comp, e.hom_inv_id, smashPowMap_id]
+  inv_hom_id := by rw [← smashPowMap_comp, e.inv_hom_id, smashPowMap_id]
+
+@[simp]
+lemma smashPowMapIso_hom (e : X ≅ Y) : (smashPowMapIso e ι).hom = smashPowMap e.hom ι := (rfl)
+
+@[simp]
+lemma smashPowMapIso_inv (e : X ≅ Y) : (smashPowMapIso e ι).inv = smashPowMap e.inv ι := (rfl)
+
+end Functoriality
+
+/-! ### A single smash factor -/
+
+variable (X ι) in
+/-- The smash power indexed by a type with a unique element is the pointed simplicial set itself:
+the class of a family corresponds to its only coordinate. -/
+noncomputable def smashPowUniqueIso [Unique ι] : X.smashPow ι ≅ X where
+  hom := smashPowLift (fun _ x ↦ x default) (fun _ x i hi ↦ Unique.eq_default i ▸ hi)
+    (fun _ _ _ _ ↦ rfl)
+  inv := Under.homMk
+    { app n := ↾fun x ↦ smashPowMk fun _ : ι ↦ x
+      naturality n m g := by
+        ext x
+        exact (map_smashPowMk g _).symm }
+    (by
+      ext n a
+      exact (smashPowMk_eq_point_iff.2 ⟨default, hom_app X n a⟩).trans (hom_app _ n a).symm)
+  hom_inv_id := by
+    ext n x
+    rw [comp_right_app_apply, smashPowLift_app_smashPowMk]
+    exact congrArg smashPowMk (funext fun i ↦ by rw [Unique.eq_default i])
+  inv_hom_id := by
+    ext n x
+    simp
+
+@[simp]
+lemma smashPowUniqueIso_hom_app_smashPowMk [Unique ι] (x : ι → X.right.obj n) :
+    (smashPowUniqueIso X ι).hom.right.app n (smashPowMk x) = x default :=
+  smashPowLift_app_smashPowMk (fun _ (x : ι → X.right.obj _) ↦ x default) _
+    (fun _ _ _ _ ↦ rfl) x
+
+@[simp]
+lemma smashPowUniqueIso_inv_app [Unique ι] (x : X.right.obj n) :
+    (smashPowUniqueIso X ι).inv.right.app n x = smashPowMk fun _ ↦ x := (rfl)
+
 /-! ### The symmetric sequence of smash powers -/
 
 variable (X) in
@@ -489,6 +600,34 @@ noncomputable instance : (smashPowFunctor X).Braided where
       smashPowReindex_app_smashPowMk]
     refine (smashPowMk_eq_smashPowMk_comp_symm _ fun i ↦ ?_).symm
     induction i using Fin.addCases <;> simp
+
+/-- A based map `f : X ⟶ Y` induces the morphism `X^∧n ⟶ Y^∧n` of symmetric sequences of smash
+powers applying `f` in every coordinate. It is a monoidal natural transformation. -/
+noncomputable def smashPowFunctorMap {Y : PointedSSet.{u}} (f : X ⟶ Y) :
+    smashPowFunctor X ⟶ smashPowFunctor Y where
+  app k := smashPowMap f (Fin k.len)
+
+@[simp]
+lemma smashPowFunctorMap_app {Y : PointedSSet.{u}} (f : X ⟶ Y) (k : FiniteBijection) :
+    (smashPowFunctorMap f).app k = smashPowMap f (Fin k.len) := (rfl)
+
+/-- Applying a based map in every coordinate is compatible with block concatenation and with the
+identifications `S⁰ ≅ X^∧0`. -/
+instance {Y : PointedSSet.{u}} (f : X ⟶ Y) : NatTrans.IsMonoidal (smashPowFunctorMap f) where
+  unit := by
+    rw [smashPowFunctor_ε, smashPowFunctor_ε, smashPowFunctorMap_app]
+    exact (Iso.eq_inv_comp _).1 ((Iso.comp_inv_eq _).1
+      (smashPowMap_comp_smashPowToUnit (ι := Fin 0) f))
+  tensor k l := by
+    rw [smashPowFunctor_μ, smashPowFunctor_μ, smashPowFunctorMap_app, smashPowFunctorMap_app,
+      smashPowFunctorMap_app, Category.assoc]
+    exact (congrArg (_ ≫ ·) (smashPowReindex_comp_smashPowMap f finSumFinEquiv)).trans
+      (smashPowAppend_comp_smashPowMap_assoc f _)
+
+/-- The simplicial `k`-sphere `S^k = (S¹)^∧k`, the `k`-fold smash power of the simplicial
+circle. -/
+noncomputable abbrev sphere (k : ℕ) : PointedSSet.{0} :=
+  circle.smashPow (Fin k)
 
 /-- The sphere sequence `n ↦ S^n = (S¹)^∧n` of smash powers of the simplicial circle, with the
 coordinate-permutation actions and the block-concatenation multiplication `S^p ∧ S^q → S^(p+q)`
