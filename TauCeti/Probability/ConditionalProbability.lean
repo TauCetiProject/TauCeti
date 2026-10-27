@@ -158,9 +158,9 @@ rescales the remaining real mass by `1 / (1 - μ.real {a})`. -/
 theorem cond_compl_singleton_real (s : Set Ω) :
     (μ[|{a}ᶜ]).real s = μ.real (s \ {a}) / (1 - μ.real {a}) := by
   rw [measureReal_def, cond_apply (measurableSet_singleton a).compl,
-    prob_compl_eq_one_sub (measurableSet_singleton a), ENNReal.toReal_mul, ENNReal.toReal_inv,
-    ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top, ENNReal.toReal_one,
-    ← sdiff_eq_compl_inter, div_eq_inv_mul, measureReal_def, measureReal_def]
+    prob_compl_eq_one_sub (measurableSet_singleton a)]
+  simp [measureReal_def, ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top,
+    sdiff_eq_compl_inter, div_eq_inv_mul]
 
 /-- Conditioning a probability measure away from a point rescales the other real singleton masses
 by `1 / (1 - μ.real {a})`. -/

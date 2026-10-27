@@ -135,7 +135,7 @@ theorem cdf_map_natCast_cond_compl_zero_of_lt_one (h : ν {0} ≠ 1) {x : ℝ} (
   rcases lt_or_ge x 0 with hneg | hnonneg
   · exact cdf_map_natCast_of_neg _ hneg
   · rw [cdf_map_natCast _ hnonneg, Nat.floor_eq_zero.2 hx, cond_compl_zero_real_Iic,
-      show Iic (0 : ℕ) = {0} from Iic_bot, sub_self, zero_div]
+      ← Nat.bot_eq_zero, Iic_bot, sub_self, zero_div]
 
 /-- At an interior level `u`, the quantile of the real cast of a zero-truncated law is the
 quantile of the original law at the rescaled level `ν.real {0} + u * (1 - ν.real {0})`. -/

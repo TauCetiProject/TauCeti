@@ -87,6 +87,7 @@ theorem integral_id_map_cast_poissonMeasure_cond_compl_zero :
 
 /-- The variance of the zero-truncated Poisson law, `r (1 + r) / (1 - exp (-r))` minus the square
 of the mean. -/
+@[simp]
 theorem variance_id_map_cast_poissonMeasure_cond_compl_zero :
     variance id ((Po(r)[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)) =
       r * (1 + r) / (1 - exp (-(r : ℝ))) - ((r : ℝ) / (1 - exp (-(r : ℝ)))) ^ 2 := by
