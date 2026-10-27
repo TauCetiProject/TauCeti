@@ -243,8 +243,8 @@ private theorem one_add_op_S_apply_periodDefect {ξ y : k[ℳ n]}
       ofMulAction_neg]
   -- right multiplication by `1 + S` commutes with left multiplication by `1 - S`
   have h₁ : (1 + ρR (.op ↑S)) ((1 - ρL S) ξ) = (1 - ρL S) ((1 + ρR (.op ↑S)) ξ) := by
-    rw [← Module.End.mul_apply, ← Module.End.mul_apply, ((Commute.one_left _).sub_left
-      ((Commute.one_right _).add_right (commute_ofMulAction (S : SL(2, ℤ)) _))).symm.eq]
+    rw [← Module.End.mul_apply, ← Module.End.mul_apply,
+      ((Commute.one_left _).sub_left (commute_ofMulAction_one_add S S)).symm.eq]
   rw [map_sub, h₁, ← Module.End.mul_apply (1 + _), one_add_mul_one_sub_of_sq_eq_one
     ofMulAction_op_S_sq, LinearMap.zero_apply, sub_zero, ← hy, ← Module.End.mul_apply,
     one_sub_mul_one_add_add_sq ofMulAction_S_sq (by simp), hUS]
@@ -265,8 +265,7 @@ private theorem one_add_op_U_add_op_U_sq_apply_periodDefect (hn : 0 < n) {ξ z :
     rw [← map_mul, ← MulOpposite.op_mul, mul_assoc, ← sq, TauCeti.ModularGroup.coe_S_sq, mul_one]
   -- right multiplications commute with left multiplications
   have hc (g : SL(2, ℤ)) : Commute (ρL g) (1 + υ' + υ' ^ 2) :=
-    ((Commute.one_right _).add_right (commute_ofMulAction _ _)).add_right
-      ((commute_ofMulAction _ _).pow_right 2)
+    commute_ofMulAction_one_add_add_sq g _
   have h₁ : (1 + υ' + υ' ^ 2 : Module.End k k[ℳ n]) ((1 - ρL S) ξ) =
       (1 - ρL S) ((1 + υ' + υ' ^ 2 : Module.End k k[ℳ n]) ξ) := by
     rw [← Module.End.mul_apply, ← Module.End.mul_apply,
@@ -279,6 +278,35 @@ private theorem one_add_op_U_add_op_U_sq_apply_periodDefect (hn : 0 < n) {ξ z :
   rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← Module.End.mul_apply,
     ← Module.End.mul_apply, mul_assoc (1 - ρL T),
     ((Commute.one_left _).sub_left ((hc T).mul_right (commute_ofMulAction _ _))).eq]
+
+/-- If `a S = a`, `b U = b` and `-a / 2 + b / 3` has vanishing right coset sums, then some `m` has
+`m (1 + S) = -a` and `m (1 + U + U²) = -b`: write `-a / 2 + b / 3 = (1 - S) u + (1 - U) v`, as `S`
+and `U` generate `Γ`, and take `m = -a / 2 + (1 - S) u = -b / 3 - (1 - U) v`. -/
+private theorem exists_one_add_op_S_apply_eq_neg_and_one_add_op_U_add_op_U_sq_apply_eq_neg
+    [Invertible (2 : k)] [Invertible (3 : k)] {a b : k[ℳ n]} (ha : ρR (.op ↑S) a = a)
+    (hb : ρR (.op ((T : PSL(2, ℤ)) * S)) b = b)
+    (hw : (⅟2 : k) • (-a) - (⅟3 : k) • (-b) ∈ Coinvariants.ker ρR) :
+    ∃ m, (1 + ρR (.op ↑S)) m = -a ∧ (1 + ρR (.op ((T : PSL(2, ℤ)) * S)) +
+      ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 2 : Module.End k k[ℳ n]) m = -b := by
+  obtain ⟨_, ⟨u, rfl⟩, _, ⟨v, rfl⟩, huv⟩ := Submodule.mem_sup.1 <|
+    ((coinvariantsKer_eq_iSup_range _
+      TauCeti.ModularGroup.closure_op_coe_S_op_coe_T_mul_coe_S).trans iSup_pair).le hw
+  set σ' : Module.End k k[ℳ n] := ρR (.op ↑S)
+  set υ' : Module.End k k[ℳ n] := ρR (.op ((T : PSL(2, ℤ)) * S))
+  rw [← Module.End.one_eq_id, ← neg_sub, ← neg_sub 1 υ', LinearMap.neg_apply,
+    LinearMap.neg_apply] at huv
+  have hb2 : (υ' ^ 2) b = b := by rw [sq, Module.End.mul_apply, hb, hb]
+  refine ⟨(⅟2 : k) • (-a) + (1 - σ') u, ?_, ?_⟩
+  · rw [map_add, ← Module.End.mul_apply _ (1 - σ'), one_add_mul_one_sub_of_sq_eq_one
+      ofMulAction_op_S_sq, LinearMap.zero_apply, add_zero, map_smul, LinearMap.add_apply,
+      Module.End.one_apply, map_neg, ha, ← two_smul k (-a), smul_smul, invOf_mul_self, one_smul]
+  · rw [show (⅟2 : k) • (-a) + (1 - σ') u = (⅟3 : k) • (-b) - (1 - υ') v by
+        linear_combination (norm := module) -huv,
+      map_sub, ← Module.End.mul_apply _ (1 - υ'),
+      one_add_add_sq_mul_one_sub_of_pow_three_eq_one (by simp [υ']), LinearMap.zero_apply,
+      sub_zero, map_smul, LinearMap.add_apply, LinearMap.add_apply, Module.End.one_apply,
+      map_neg, map_neg, hb, hb2, show -b + -b + -b = (3 : k) • -b by module, smul_smul,
+      invOf_mul_self, one_smul]
 
 /-! ### Popa–Zagier's Theorem 2(b) -/
 
@@ -300,11 +328,8 @@ theorem ExchangeRelations.periodRelation_iff_mapDomain_orbitRel_mk_coeff_eq_neg_
   -- right multiplications commute with `1 - T`, which is injective
   have hτ (f : Module.End k k[ℳ n]) (hf : Commute τ f) : Commute (1 - τ) f :=
     (Commute.one_left f).sub_left hf
-  have hcσ' : Commute (1 - τ) (1 + σ') :=
-    hτ _ ((Commute.one_right _).add_right (commute_ofMulAction _ _))
-  have hcυ' : Commute (1 - τ) (1 + υ' + υ' ^ 2) := hτ _
-    (((Commute.one_right _).add_right (commute_ofMulAction _ _)).add_right
-      ((commute_ofMulAction _ _).pow_right 2))
+  have hcσ' : Commute (1 - τ) (1 + σ') := hτ _ (commute_ofMulAction_one_add T S)
+  have hcυ' : Commute (1 - τ) (1 + υ' + υ' ^ 2) := hτ _ (commute_ofMulAction_one_add_add_sq T _)
   have hinj (v : k[ℳ n]) (hv : (1 - τ) v = 0) : v = 0 :=
     (one_sub_ofMulAction_T_injective hn.ne').eq_iff' (map_zero _) |>.1 hv
   -- `X (1 + S) = (1 - T) a` and `X (1 + U + U²) = (1 - T) b` for the period defect `X`
@@ -347,9 +372,9 @@ theorem ExchangeRelations.periodRelation_iff_mapDomain_orbitRel_mk_coeff_eq_neg_
       exact this.symm
     rw [hm1] at e₁
     linear_combination -(⅟2 : k) * e₁ - (ξ.coeff.mapDomain qR ⟦x⟧ + 1) * invOf_mul_self (2 : k)
-  · -- conversely, `m = -a / 2 - (S - 1) u = -b / 3 + (U - 1) v` has `m (1 + S) = -a` and
-    -- `m (1 + U + U²) = -b`, so `X + (1 - T) m` is killed by `1 + S` and by `1 + U + U²` on
-    -- the right, and vanishes by acyclicity
+  · -- conversely, the coset sums give `m` with `m (1 + S) = -a` and `m (1 + U + U²) = -b`, so
+    -- `X + (1 - T) m` is killed by `1 + S` and by `1 + U + U²` on the right, and vanishes by
+    -- acyclicity
     intro hc
     have hσ'a : σ' a = a := sub_eq_zero.1 <| hinj _ <| by
       rw [map_sub, ← Module.End.mul_apply, (hτ σ' (commute_ofMulAction _ _)).eq,
@@ -362,42 +387,18 @@ theorem ExchangeRelations.periodRelation_iff_mapDomain_orbitRel_mk_coeff_eq_neg_
           linear_combination (norm := noncomm_ring) hυ']
     -- `-a / 2 + b / 3` has vanishing coset sums, so it lies in `ℛₙ (S - 1) + ℛₙ (U - 1)`
     have hw : (⅟2 : k) • (-a) - (⅟3 : k) • (-b) ∈ Coinvariants.ker ρR := by
-      rw [coinvariantsKer_ofMulAction_eq_ker, LinearMap.mem_ker]
+      rw [coinvariantsKer_ofMulAction_eq_ker, LinearMap.mem_ker, map_sub, map_smul, map_smul,
+        map_neg, map_neg]
       ext K
       obtain ⟨x, rfl⟩ := Quotient.mk_surjective K
       have hx := hca (S⁻¹ • x)
       rw [smul_inv_smul, hc] at hx
-      rw [coeff_mapDomainLinearMap, coeff_sub, coeff_smul, coeff_smul, Finsupp.mapDomain_sub,
-        Finsupp.mapDomain_smul, Finsupp.mapDomain_smul, Finsupp.sub_apply, Finsupp.smul_apply,
-        Finsupp.smul_apply, ← coeff_mapDomainLinearMap (R := k),
-        ← coeff_mapDomainLinearMap (R := k), map_neg, map_neg, coeff_neg, coeff_neg,
-        Finsupp.neg_apply, Finsupp.neg_apply, coeff_mapDomainLinearMap, coeff_mapDomainLinearMap,
-        hx, hcb, coeff_zero, Finsupp.coe_zero, Pi.zero_apply, smul_eq_mul, smul_eq_mul]
+      simp only [coeff_sub, coeff_smul, coeff_neg, coeff_mapDomainLinearMap, coeff_zero,
+        Finsupp.coe_sub, Finsupp.coe_smul, Finsupp.coe_neg, Pi.sub_apply, Pi.smul_apply,
+        Pi.neg_apply, Finsupp.coe_zero, Pi.zero_apply, hx, hcb, smul_eq_mul]
       linear_combination (invOf_mul_self (3 : k)) - (invOf_mul_self (2 : k))
-    obtain ⟨_, ⟨u, rfl⟩, _, ⟨v, rfl⟩, huv⟩ := Submodule.mem_sup.1 <|
-      ((coinvariantsKer_eq_iSup_range _
-        TauCeti.ModularGroup.closure_op_coe_S_op_coe_T_mul_coe_S).trans iSup_pair).le hw
-    set m := (⅟2 : k) • (-a) - (σ' - LinearMap.id : Module.End k k[ℳ n]) u
-    have hm' : m = (⅟3 : k) • (-b) + (υ' - LinearMap.id : Module.End k k[ℳ n]) v := by
-      simp only [m]
-      linear_combination (norm := module) -huv
-    have hma : (1 + σ') m = -a := by
-      have h₀ : (1 + σ') * (σ' - LinearMap.id) = 0 := by
-        rw [← Module.End.one_eq_id, add_mul, one_mul, mul_sub, mul_one, ← sq, hσ']
-        abel
-      rw [map_sub, ← Module.End.mul_apply _ (σ' - LinearMap.id), h₀, LinearMap.zero_apply,
-        sub_zero, map_smul, LinearMap.add_apply, Module.End.one_apply, map_neg, hσ'a,
-        ← two_smul k (-a), smul_smul, invOf_mul_self, one_smul]
-    have hmb : (1 + υ' + υ' ^ 2 : Module.End k k[ℳ n]) m = -b := by
-      have h₀ : (1 + υ' + υ' ^ 2) * (υ' - LinearMap.id) = 0 := by
-        rw [← Module.End.one_eq_id, add_mul, add_mul, one_mul, mul_sub, mul_sub, mul_one, mul_one,
-          ← sq, ← pow_succ, hυ']
-        abel
-      have hb2 : (υ' ^ 2) b = b := by rw [sq, Module.End.mul_apply, hυ'b, hυ'b]
-      rw [hm', map_add, ← Module.End.mul_apply _ (υ' - LinearMap.id), h₀, LinearMap.zero_apply,
-        add_zero, map_smul, LinearMap.add_apply, LinearMap.add_apply, Module.End.one_apply,
-        map_neg, map_neg, hυ'b, hb2, show -b + -b + -b = (3 : k) • -b by module, smul_smul,
-        invOf_mul_self, one_smul]
+    obtain ⟨m, hma, hmb⟩ :=
+      exists_one_add_op_S_apply_eq_neg_and_one_add_op_U_add_op_U_sq_apply_eq_neg hσ'a hυ'b hw
     have e₁ : (1 + σ') ((1 - τ) m) = (1 - τ) ((1 + σ') m) :=
       LinearMap.congr_fun hcσ'.eq.symm m
     have e₂ : (1 + υ' + υ' ^ 2 : Module.End k k[ℳ n]) ((1 - τ) m) =

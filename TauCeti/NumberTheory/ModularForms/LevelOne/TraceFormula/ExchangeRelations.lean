@@ -179,13 +179,13 @@ section CommRing
 
 variable [CommRing k]
 
--- left multiplications commute with right multiplications, hence with the right multiplications
--- by `1 + h` and `1 + h + h²`
-private theorem commute_ofMulAction_one_add (g : SL(2, ℤ)) (h : PSL(2, ℤ)) :
+/-- Left multiplication by `g` on `k[ℳₙ]` commutes with right multiplication by `1 + h`. -/
+theorem commute_ofMulAction_one_add (g : SL(2, ℤ)) (h : PSL(2, ℤ)) :
     Commute (ρL g) (1 + ρR (.op h)) :=
   (Commute.one_right _).add_right (commute_ofMulAction _ _)
 
-private theorem commute_ofMulAction_one_add_add_sq (g : SL(2, ℤ)) (h : PSL(2, ℤ)) :
+/-- Left multiplication by `g` on `k[ℳₙ]` commutes with right multiplication by `1 + h + h²`. -/
+theorem commute_ofMulAction_one_add_add_sq (g : SL(2, ℤ)) (h : PSL(2, ℤ)) :
     Commute (ρL g) (1 + ρR (.op h) + ρR (.op h) ^ 2) :=
   (commute_ofMulAction_one_add g h).add_right ((commute_ofMulAction _ _).pow_right 2)
 
