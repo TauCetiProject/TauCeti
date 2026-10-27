@@ -57,6 +57,7 @@ The bicomplex identities hold for nonunital and nonassociative `A`; among the re
 * `TauCeti.connesB_comp_connesB`: `B ∘ B = 0`.
 * `TauCeti.hochschildCoboundary_comp_connesB_add_connesB_comp_hochschildCoboundary`:
   `b B + B b = 0`.
+* `TauCeti.connesB_hochschildCoboundary_zero`: `B b = 0` on degree-zero cochains.
 
 ## References
 
@@ -558,6 +559,16 @@ theorem hochschildCoboundary_comp_connesB_add_connesB_comp_hochschildCoboundary 
     hochschildCoboundary R A M n ∘ₗ connesB R A M n +
       connesB R A M (n + 1) ∘ₗ hochschildCoboundary R A M (n + 1) = 0 :=
   LinearMap.ext hochschildCoboundary_connesB_add_connesB_hochschildCoboundary
+
+/-- The mixed-complex identity at the bottom degree: `B (b φ) = 0` for every degree-zero
+cochain `φ`. -/
+@[simp]
+theorem connesB_hochschildCoboundary_zero (φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M) :
+    connesB R A M 0 (hochschildCoboundary R A M 0 φ) = 0 := by
+  ext a
+  simp only [connesB_apply, cyclicNorm_apply, sub_apply, barContraction_apply,
+    cyclicOperator_apply, hochschildCoboundary_zero_apply]
+  simp
 
 end ConnesB
 

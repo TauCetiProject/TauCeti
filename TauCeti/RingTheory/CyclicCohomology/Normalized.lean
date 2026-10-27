@@ -246,13 +246,6 @@ theorem normalizedConnesB_normalizedHochschildCoboundary_zero
     (φ : normalizedHochschildCochains R A M 0) :
     normalizedConnesB R A M 0 (normalizedHochschildCoboundary R A M 0 φ) = 0 := by
   apply Subtype.ext
-  ext a
-  rw [coe_normalizedConnesB, coe_normalizedHochschildCoboundary,
-    connesB_apply_of_normalized (hochschildCoboundary_mem_normalizedHochschildCochains φ.property)]
-  simp only [Nat.zero_add, Finset.sum_range_one, zero_mul, pow_zero, one_smul,
-    Equiv.Perm.one_def, Equiv.refl_symm, Equiv.coe_refl, Function.comp_id,
-    Submodule.coe_zero, zero_apply]
-  rw [hochschildCoboundary_zero_apply]
   simp
 
 end Operators
