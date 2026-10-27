@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Basic
+import TauCeti.Data.Nat.Choose.Basic
 import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Smul
 
 /-!
@@ -100,13 +101,8 @@ theorem localDensityCount_smul_div_pow {c : ℤ_[p]} (hc : c ≠ 0) (A : Matrix 
   have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   -- `n ^ 2 = n.choose 2 + (n + 1).choose 2`
   have hsq : Fintype.card n ^ 2 = (Fintype.card n).choose 2 + (Fintype.card n + 1).choose 2 := by
-    obtain _ | N := Fintype.card n
-    · rfl
-    · have h2 := Nat.choose_two_right (N + 1)
-      have h2' := Nat.div_mul_cancel (Nat.even_mul_pred_self (N + 1)).two_dvd
-      rw [Nat.choose_succ_succ' (N + 1), Nat.choose_one_right, h2]
-      rw [Nat.add_sub_cancel] at h2' ⊢
-      nlinarith
+    rw [Nat.choose_two_right (_ + 1), Nat.add_sub_cancel, mul_comm, sq,
+      Nat.choose_two_add_mul_succ_div_two]
   rw [localDensityCount_smul hc, Nat.cast_mul, Nat.cast_pow, hsq,
     div_eq_iff (pow_ne_zero _ hp0)]
   field_simp
