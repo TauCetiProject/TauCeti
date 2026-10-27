@@ -23,7 +23,8 @@ operator `Tₙ`. Solutions exist for every `n`; as in Popa–Zagier, who say tha
 [CZ]", this is an existence statement, without an explicit solution. Two solutions differ by an
 element `η` with `(1 - S)·η ∈ (1 - T)·ℛₙ`. Popa and Zagier also give an explicit solution, their
 eq. (15), and deduce (A) for it from the exchange relations (B) and the coset identity
-`⟨ξ, K⟩ = -1`; it is not constructed here.
+`⟨ξ, K⟩ = -1`. That deduction is
+`TauCeti.TraceFormulaMatrixModule.periodRelation_popaZagierElement`.
 
 Membership in `(1 - T)·ℛₙ` is decided by the criterion of Popa–Zagier §3: an element of `ℛₙ` lies in
 `(1 - T)·ℛₙ` if and only if its coefficients sum to zero along every orbit of `Γ_∞ = ⟨T⟩` on `ℳₙ`.
