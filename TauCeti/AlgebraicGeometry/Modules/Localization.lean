@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
+public import Mathlib.Topology.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
+import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 
 /-!
 # Sections of quasi-coherent modules over basic opens
@@ -29,6 +31,14 @@ sections over the basic opens of the members of an affine open cover are such lo
 quasi-coherent. This is how quasi-coherence is checked for modules built from explicit sections,
 such as the twisting sheaves on `Proj`.
 
+More generally, the restriction is a localization over every quasi-compact quasi-separated open
+`U`. Sections over `U` are determined by their restrictions to a finite affine cover, and are
+glued from sections that agree on the pairwise intersections, which are quasi-compact. On each
+affine member a section over `X.basicOpen f` extends after multiplication by a power of `f`, and
+on the quasi-compact intersections the extensions agree after multiplication by a further power.
+This is the input for the quasi-coherence of pushforwards along quasi-compact quasi-separated
+morphisms.
+
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Modules.moduleBasicOpen`: for `f ∈ Γ(X, U)`, the sections
@@ -39,6 +49,12 @@ such as the twisting sheaves on `Proj`.
   `M` and affine `U`, this restriction map is the localization at the powers of `f`.
 * `AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_map`: for quasi-coherent `M` and affine
   `U`, a section over `X.basicOpen f` times a power of `f` extends to `U`.
+* `AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_zero_of_isCompact`: for quasi-coherent `M`
+  and quasi-compact `U`, a section over `U` vanishing on `X.basicOpen f` is killed by a power of
+  `f`.
+* `AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestrict_of_qcqs`: for
+  quasi-coherent `M` and quasi-compact quasi-separated `U`, the restriction map
+  `Γ(M, U) ⟶ Γ(M, X.basicOpen f)` is the localization at the powers of `f`.
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_of_isLocalizedModule`: conversely, `M` is
   quasi-coherent if these restriction maps are localizations on the members of an affine open
   cover; `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_isLocalizedModule` is the
@@ -47,6 +63,8 @@ such as the twisting sheaves on `Proj`.
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Lemma II.5.3.
+* R. Vakil, *The Rising Sea*, the qcqs lemma; Mathlib's
+  `AlgebraicGeometry.isLocalization_basicOpen_of_qcqs` is the structure-sheaf case.
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I* (1971),
   Théorème 1.4.1.
 -/
@@ -274,6 +292,177 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_map [M.IsQuas
   rw [← IsScalarTower.algebraMap_smul Γ(X, X.basicOpen f), map_pow,
     basicOpenRestrict_apply] at hy
   exact ⟨n, y, hy⟩
+
+omit M in
+/-- Restriction along two inclusions of opens is restriction along the composite inclusion. This
+is `TopCat.Presheaf.restrict_restrict` without the restriction notation, so that it rewrites the
+restriction maps of both `𝒪_X` and `M`. -/
+private lemma map_homOfLE_map_homOfLE {C : Type*} [Category C] {FC : C → C → Type*}
+    {CC : C → Type*} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
+    {F : TopCat.Presheaf C X} {A B D : X.Opens} (h₁ : A ≤ B) (h₂ : B ≤ D)
+    (x : ToType (F.obj (op D))) :
+    F.map (homOfLE h₁).op (F.map (homOfLE h₂).op x) = F.map (homOfLE (h₁.trans h₂)).op x :=
+  TopCat.Presheaf.restrict_restrict h₁ h₂ x
+
+omit M in
+/-- A quasi-compact open is covered by finitely many affine opens. -/
+private lemma exists_finite_affine_cover (hU : IsCompact (U : Set X)) :
+    ∃ (s : Set X.affineOpens) (_ : Finite s), (∀ i : s, (i.1 : X.Opens) ≤ U) ∧
+      U ≤ ⨆ i : s, (i.1 : X.Opens) := by
+  obtain ⟨s, hs, e⟩ := isCompact_iff_finite_and_eq_biUnion_affineOpens.mp hU
+  exact ⟨s, hs.to_subtype, fun i ↦ e ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.2,
+    by rw [e, iSup_subtype']⟩
+
+open Scheme.Modules in
+/-- **Sections vanishing on a basic open are killed by a power of the function.** For a
+quasi-coherent `𝒪_X`-module `M`, a quasi-compact open `U` and `f ∈ Γ(X, U)`, a section of `M`
+over `U` whose restriction to `X.basicOpen f` vanishes is killed by a power of `f`. For the
+structure sheaf this is
+`AlgebraicGeometry.exists_pow_mul_eq_zero_of_res_basicOpen_eq_zero_of_isCompact`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_zero_of_isCompact
+    [M.IsQuasicoherent] (hU : IsCompact (U : Set X)) (f : Γ(X, U)) (x : Γ(M, U))
+    (hx : M.basicOpenRestrict f x = 0) : ∃ n : ℕ, f ^ n • x = 0 := by
+  obtain ⟨s, _, hVU, hUV⟩ := exists_finite_affine_cover hU
+  cases nonempty_fintype s
+  -- On each affine `V i ≤ U`, the restriction of `x` is killed by a power of `f`.
+  have H (i : s) : ∃ n : ℕ, X.presheaf.map (homOfLE (hVU i)).op f ^ n •
+      M.presheaf.map (homOfLE (hVU i)).op x = 0 := by
+    have := M.isLocalizedModule_basicOpenRestrict i.1.2 (X.presheaf.map (homOfLE (hVU i)).op f)
+    obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsLocalizedModule.exists_of_eq
+      (S := Submonoid.powers (X.presheaf.map (homOfLE (hVU i)).op f))
+      (f := M.basicOpenRestrict _) (x₁ := M.presheaf.map (homOfLE (hVU i)).op x) (x₂ := 0) (by
+        have hle : X.basicOpen (X.presheaf.map (homOfLE (hVU i)).op f) ≤ X.basicOpen f :=
+          X.basicOpen_restrict (homOfLE (hVU i)) f
+        have := congrArg (M.presheaf.map (homOfLE hle).op) hx
+        rw [basicOpenRestrict_apply, map_homOfLE_map_homOfLE, map_zero] at this
+        rwa [map_zero, basicOpenRestrict_apply, map_homOfLE_map_homOfLE])
+    exact ⟨n, by simpa [Submonoid.smul_def] using hn⟩
+  choose n hn using H
+  -- The largest of these powers kills `x` on every `V i`, hence on `U`.
+  refine ⟨Finset.univ.sup n, TopCat.Sheaf.eq_of_locally_eq'
+    (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X) (fun i : s ↦ (i.1 : X.Opens)) U
+    (fun i ↦ homOfLE (hVU i)) hUV _ _ fun i ↦ ?_⟩
+  -- The restriction maps of the sheaf `⟨M.presheaf, M.isSheaf⟩` are those of `M`.
+  change M.presheaf.map _ _ = M.presheaf.map _ _
+  rw [map_zero, M.map_smul, map_pow, ← tsub_add_cancel_of_le
+    (Finset.le_sup (f := n) (Finset.mem_univ i)), pow_add, mul_smul, hn i, smul_zero]
+
+open Scheme.Modules in
+/-- Let the opens `V i ≤ U` cover `U`, with quasi-compact pairwise intersections. Sections `x i`
+over the `V i` whose restrictions to the opens `V i ⊓ V j ⊓ X.basicOpen f` agree glue to a
+section over `U` after multiplication by a power of `f`. -/
+private lemma exists_pow_smul_eq_of_isCompact_inf [M.IsQuasicoherent] {ι : Type*} [Finite ι]
+    (V : ι → X.Opens) (hVU : ∀ i, V i ≤ U) (hUV : U ≤ ⨆ i, V i)
+    (hV : ∀ i j, IsCompact ((V i ⊓ V j : X.Opens) : Set X)) (f : Γ(X, U))
+    (x : ∀ i, Γ(M, V i))
+    (hx : ∀ i j, M.presheaf.map (homOfLE (inf_le_left.trans inf_le_left :
+        V i ⊓ V j ⊓ X.basicOpen f ≤ V i)).op (x i) =
+      M.presheaf.map (homOfLE (inf_le_left.trans inf_le_right :
+        V i ⊓ V j ⊓ X.basicOpen f ≤ V j)).op (x j)) :
+    ∃ (m : ℕ) (g : Γ(M, U)), ∀ i,
+      M.presheaf.map (homOfLE (hVU i)).op g = X.presheaf.map (homOfLE (hVU i)).op f ^ m • x i := by
+  cases nonempty_fintype ι
+  have hWU (p : ι × ι) : V p.1 ⊓ V p.2 ≤ U := inf_le_left.trans (hVU p.1)
+  -- The restrictions of `x i` and `x j` to `V i ⊓ V j` agree after multiplication by a power of
+  -- `f`, since their difference vanishes on `X.basicOpen (f|V i ⊓ V j)`.
+  have H (p : ι × ι) : ∃ m : ℕ, X.presheaf.map (homOfLE (hWU p)).op f ^ m •
+      (M.presheaf.map (homOfLE inf_le_left).op (x p.1) -
+        M.presheaf.map (homOfLE inf_le_right).op (x p.2)) = 0 := by
+    refine M.exists_pow_smul_eq_zero_of_isCompact (hV p.1 p.2) _ _ ?_
+    have hle : X.basicOpen (X.presheaf.map (homOfLE (hWU p)).op f) ≤
+        V p.1 ⊓ V p.2 ⊓ X.basicOpen f := (X.basicOpen_res _ _).le
+    have := congrArg (M.presheaf.map (homOfLE hle).op) (hx p.1 p.2)
+    rw [map_homOfLE_map_homOfLE, map_homOfLE_map_homOfLE] at this
+    rwa [basicOpenRestrict_apply, map_sub, map_homOfLE_map_homOfLE, map_homOfLE_map_homOfLE,
+      sub_eq_zero]
+  choose m hm using H
+  -- After multiplication by the largest of these powers, the sections are compatible.
+  let K := Finset.univ.sup m
+  let z (i : ι) : Γ(M, V i) := X.presheaf.map (homOfLE (hVU i)).op f ^ K • x i
+  have hc : TopCat.Presheaf.IsCompatible M.presheaf V z := by
+    intro i j
+    have h := congrArg (X.presheaf.map (homOfLE (hWU (i, j))).op f ^ (K - m (i, j)) • ·)
+      (hm (i, j))
+    simp only [smul_zero, smul_smul, ← pow_add, smul_sub, sub_eq_zero] at h
+    rw [tsub_add_cancel_of_le (Finset.le_sup (f := m) (Finset.mem_univ (i, j)))] at h
+    -- The inclusions of `V i ⊓ V j` in `V i` and `V j` are `homOfLE`.
+    change M.presheaf.map (homOfLE inf_le_left).op _ = M.presheaf.map (homOfLE inf_le_right).op _
+    simpa only [z, M.map_smul, map_pow, map_homOfLE_map_homOfLE] using h
+  obtain ⟨g, hg, -⟩ := TopCat.Sheaf.existsUnique_gluing'
+    (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X) V U (fun i ↦ homOfLE (hVU i)) hUV z
+    hc
+  exact ⟨K, g, hg⟩
+
+open Scheme.Modules in
+/-- For a quasi-coherent `𝒪_X`-module `M`, a quasi-compact quasi-separated open `U` and
+`f ∈ Γ(X, U)`, every section of `M` over `X.basicOpen f` has some `f ^ n • y` equal to the
+restriction of a section over `U`. -/
+private theorem exists_pow_smul_eq_basicOpenRestrict [M.IsQuasicoherent]
+    (hU : IsCompact (U : Set X)) (hU' : IsQuasiSeparated (U : Set X)) (f : Γ(X, U))
+    (y : Γ(M, X.basicOpen f)) :
+    ∃ (n : ℕ) (x : Γ(M, U)), f ^ n • y = M.basicOpenRestrict f x := by
+  obtain ⟨s, _, hVU, hUV⟩ := exists_finite_affine_cover hU
+  cases nonempty_fintype s
+  have hDV (i : s) : (i.1 : X.Opens) ⊓ X.basicOpen f ≤ i.1 := inf_le_left
+  have hDf (i : s) : (i.1 : X.Opens) ⊓ X.basicOpen f ≤ X.basicOpen f := inf_le_right
+  -- On each affine `V i`, some `f ^ n i • y` extends to a section `x i`.
+  have H (i : s) := M.exists_pow_smul_eq_map i.1.2 (X.presheaf.map (homOfLE (hVU i)).op f)
+    (X.basicOpen_res _ _) (hDV i) (M.presheaf.map (homOfLE (hDf i)).op y)
+  choose n x hx using H
+  simp only [map_homOfLE_map_homOfLE] at hx
+  -- After multiplication by powers of `f`, the `x i` extend the same multiple `f ^ N • y`.
+  let N := Finset.univ.sup n
+  let x' (i : s) : Γ(M, i.1) := X.presheaf.map (homOfLE (hVU i)).op f ^ (N - n i) • x i
+  have hx' (i : s) : M.presheaf.map (homOfLE (hDV i)).op (x' i) =
+      X.presheaf.map (homOfLE ((hDV i).trans (hVU i))).op f ^ N •
+        M.presheaf.map (homOfLE (hDf i)).op y := by
+    rw [M.map_smul, map_pow, map_homOfLE_map_homOfLE, ← hx i, smul_smul, ← pow_add,
+      tsub_add_cancel_of_le (Finset.le_sup (f := n) (Finset.mem_univ i))]
+  -- Since `U` is quasi-separated, the `x' i` glue after multiplication by a further power.
+  obtain ⟨K, g, hg⟩ := exists_pow_smul_eq_of_isCompact_inf M (fun i : s ↦ (i.1 : X.Opens)) hVU
+    hUV (fun i j ↦ hU' _ _ (hVU i) i.1.1.isOpen i.1.2.isCompact (hVU j) j.1.1.isOpen
+      j.1.2.isCompact) f x' fun i j ↦ by
+    have hi : (i.1 : X.Opens) ⊓ j.1 ⊓ X.basicOpen f ≤ (i.1 : X.Opens) ⊓ X.basicOpen f :=
+      inf_le_inf_right _ inf_le_left
+    have hj : (i.1 : X.Opens) ⊓ j.1 ⊓ X.basicOpen f ≤ (j.1 : X.Opens) ⊓ X.basicOpen f :=
+      inf_le_inf_right _ inf_le_right
+    rw [← map_homOfLE_map_homOfLE hi (hDV i), ← map_homOfLE_map_homOfLE hj (hDV j), hx',
+      hx', M.map_smul, M.map_smul, map_pow, map_pow, map_homOfLE_map_homOfLE,
+      map_homOfLE_map_homOfLE, map_homOfLE_map_homOfLE, map_homOfLE_map_homOfLE]
+  -- The glued section restricts to `f ^ (N + K) • y` on each `V i ⊓ X.basicOpen f`.
+  refine ⟨N + K, g, TopCat.Sheaf.eq_of_locally_eq'
+    (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+    (fun i : s ↦ (i.1 : X.Opens) ⊓ X.basicOpen f) (X.basicOpen f) (fun i ↦ homOfLE (hDf i))
+    (by rw [← iSup_inf_eq]; exact le_inf ((X.basicOpen_le f).trans hUV) le_rfl) _ _
+    fun i ↦ ?_⟩
+  -- The restriction maps of the sheaf `⟨M.presheaf, M.isSheaf⟩` are those of `M`.
+  change M.presheaf.map _ _ = M.presheaf.map _ _
+  rw [basicOpenRestrict_apply, map_homOfLE_map_homOfLE,
+    ← map_homOfLE_map_homOfLE (hDV i) (hVU i), hg, M.map_smul, hx', smul_smul,
+    ← IsScalarTower.algebraMap_smul Γ(X, X.basicOpen f), M.map_smul]
+  simp only [map_pow, map_homOfLE_map_homOfLE, ← pow_add, add_comm K]
+  rw [RingHom.algebraMap_toAlgebra, map_homOfLE_map_homOfLE]
+
+open Scheme.Modules in
+/-- **The qcqs lemma for quasi-coherent modules.** The sections of a quasi-coherent
+`𝒪_X`-module over the basic open `X.basicOpen f` of a quasi-compact quasi-separated open `U` are
+the localization of its sections over `U` at the powers of `f`. This is the module counterpart of
+`AlgebraicGeometry.isLocalization_basicOpen_of_qcqs`, and generalizes
+`AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestrict` from affine opens. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestrict_of_qcqs
+    [M.IsQuasicoherent] (hU : IsCompact (U : Set X)) (hU' : IsQuasiSeparated (U : Set X))
+    (f : Γ(X, U)) : IsLocalizedModule.Away f (M.basicOpenRestrict f) where
+  map_units := by
+    rintro ⟨_, n, rfl⟩
+    rw [map_pow]
+    exact (M.isUnit_algebraMap_end_basicOpen f).pow n
+  surj y := by
+    obtain ⟨n, x, h⟩ := exists_pow_smul_eq_basicOpenRestrict M hU hU' f y
+    exact ⟨⟨x, ⟨_, n, rfl⟩⟩, h⟩
+  exists_of_eq {x₁ x₂} h := by
+    obtain ⟨n, hn⟩ := M.exists_pow_smul_eq_zero_of_isCompact hU f (x₁ - x₂) (by
+      rw [map_sub, h, sub_self])
+    exact ⟨⟨_, n, rfl⟩, by simpa [Submonoid.smul_def, smul_sub, sub_eq_zero] using hn⟩
 
 end
 
