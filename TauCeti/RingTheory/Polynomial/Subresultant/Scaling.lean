@@ -89,7 +89,8 @@ theorem sturmSubresultantFactor_ne_zero {p q a : K[X]} {i : ℕ}
   exact pow_ne_zero _ (leadingCoeff_ne_zero.mpr
     (ne_zero_of_mem_sturmSeq (List.getElem_mem hk')))
 
-private theorem natDegree_le_sturmBound {p q a : K[X]} {m i : ℕ}
+/-- Each sequence entry satisfies the formal left bound used for its Euclidean step. -/
+theorem natDegree_le_sturmBound {p q a : K[X]} {m i : ℕ}
     (hp : p.natDegree ≤ m) (ha : (sturmSeq p q)[i]? = some a) :
     a.natDegree ≤ if i = 0 then m else a.natDegree := by
   split_ifs with hi
@@ -97,7 +98,8 @@ private theorem natDegree_le_sturmBound {p q a : K[X]} {m i : ℕ}
     simpa [eq_of_getElem?_zero_sturmSeq ha] using hp
   · exact le_rfl
 
-private theorem next_natDegree_le_sturmBound {p q a b : K[X]} {m i : ℕ}
+/-- The next sequence entry satisfies the same left bound when the initial right degree does. -/
+theorem next_natDegree_le_sturmBound {p q a b : K[X]} {m i : ℕ}
     (hq : i = 0 → q.natDegree ≤ m) (ha : (sturmSeq p q)[i]? = some a)
     (hb : (sturmSeq p q)[i + 1]? = some b) :
     b.natDegree ≤ if i = 0 then m else a.natDegree := by
