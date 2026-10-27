@@ -20,7 +20,7 @@ need not form an action. Its crossed product is the finite-support algebra with 
 
 We construct its left coefficient-module basis, scalar inclusion, and universal property.
 The coefficient algebra need not be commutative, and its inclusion need not be central.
-Only the base ring acts centrally. This is the algebraic setting for Clifford theory over
+Only the base semiring acts centrally. This is the algebraic setting for Clifford theory over
 nonsplitting fields, where equivariant endomorphisms form a nonscalar division algebra.
 
 The coordinate construction follows the existing `TauCeti.CrossedProduct` construction for
@@ -38,7 +38,11 @@ namespace TauCeti
 universe u v w
 
 variable (k : Type u) (D : Type v) (G : Type w)
-  [CommSemiring k] [Ring D] [_root_.Algebra k D] [Monoid G]
+  [CommSemiring k] [Monoid G]
+
+section Semiring
+
+variable [Semiring D] [_root_.Algebra k D]
 
 /-- Normalized algebra automorphisms and unit factors satisfying the crossed-system laws.
 The automorphisms compose only up to inner conjugation by the factors. -/
@@ -80,8 +84,8 @@ namespace Algebra
 
 variable (c : CrossedSystem k D G)
 
-noncomputable instance : AddCommGroup (Algebra c) :=
-  Equiv.addCommGroup ⟨toFinsupp, ofFinsupp, fun _ ↦ rfl, fun _ ↦ rfl⟩
+noncomputable instance : AddCommMonoid (Algebra c) :=
+  Equiv.addCommMonoid ⟨toFinsupp, ofFinsupp, fun _ ↦ rfl, fun _ ↦ rfl⟩
 
 /-- Forget multiplication and retain the finite-support coordinates. -/
 def equivFinsupp : Algebra c ≃+ (G →₀ D) where
@@ -137,7 +141,7 @@ theorem induction_on {motive : Algebra c → Prop} (a : Algebra c) (zero : motiv
   | add f g hf hg => simpa using add _ _ hf hg
   | single g d => simpa using smul_basis g d
 
-noncomputable instance : NonUnitalNonAssocRing (Algebra c) where
+noncomputable instance : NonUnitalNonAssocSemiring (Algebra c) where
   zero_mul a := by simp [mul_def]
   mul_zero a := by simp [mul_def]
   left_distrib a b d := by
@@ -149,7 +153,7 @@ noncomputable instance : NonUnitalNonAssocRing (Algebra c) where
     refine Finsupp.sum_add_index' (fun _ => by simp) fun g x y => ?_
     simp only [add_mul, add_smul, Finsupp.sum_add]
 
-noncomputable instance : NonUnitalRing (Algebra c) where
+noncomputable instance : NonUnitalSemiring (Algebra c) where
   mul_assoc a b d := by
     induction a using induction_on with
     | zero => simp only [zero_mul]
@@ -169,7 +173,7 @@ noncomputable instance : NonUnitalRing (Algebra c) where
       rw [← c.factor_assoc, ← mul_assoc (c.action g (c.action h z)),
         c.action_mul, mul_assoc]
 
-noncomputable instance : NonAssocRing (Algebra c) where
+noncomputable instance : NonAssocSemiring (Algebra c) where
   one_mul a := by
     induction a using induction_on with
     | zero => simp only [mul_zero]
@@ -185,9 +189,9 @@ noncomputable instance : NonAssocRing (Algebra c) where
       rw [one_def, ← one_smul D (basis c 1), smul_basis_mul_smul_basis]
       simp
 
-noncomputable instance : Ring (Algebra c) where
-  __ := (inferInstance : NonUnitalRing (Algebra c))
-  __ := (inferInstance : NonAssocRing (Algebra c))
+noncomputable instance : Semiring (Algebra c) where
+  __ := (inferInstance : NonUnitalSemiring (Algebra c))
+  __ := (inferInstance : NonAssocSemiring (Algebra c))
 
 /-- The left coefficient action associates with multiplication. -/
 instance : IsScalarTower D (Algebra c) (Algebra c) where
@@ -202,7 +206,7 @@ instance : IsScalarTower D (Algebra c) (Algebra c) where
     | add b b' hb hb' => simp only [mul_add, smul_add, hb, hb']
     | smul_basis h y => simp only [smul_smul, smul_basis_mul_smul_basis, mul_assoc]
 
-/-- Base-ring scalars commute with multiplication, since the coefficient automorphisms
+/-- Base-semiring scalars commute with multiplication, since the coefficient automorphisms
 are algebra automorphisms. -/
 instance : SMulCommClass k (Algebra c) (Algebra c) where
   smul_comm r a b := by
@@ -220,7 +224,7 @@ instance : SMulCommClass k (Algebra c) (Algebra c) where
       congr 1
       rw [← mul_assoc, _root_.Algebra.commutes, mul_assoc]
 
-/-- The crossed product is an algebra over the central base ring. -/
+/-- The crossed product is an algebra over the central base semiring. -/
 noncomputable instance : _root_.Algebra k (Algebra c) :=
   _root_.Algebra.ofModule
     (fun r a b => by rw [← algebraMap_smul D r a, smul_mul_assoc, algebraMap_smul])
@@ -346,4 +350,19 @@ instance [Nontrivial D] : Nontrivial (Algebra c) :=
 
 end Algebra
 end CrossedSystem
+
+end Semiring
+
+namespace CrossedSystem.Algebra
+
+variable {k D G} [Ring D] [_root_.Algebra k D] (c : CrossedSystem k D G)
+
+noncomputable instance : AddCommGroup (Algebra c) :=
+  Equiv.addCommGroup ⟨toFinsupp, ofFinsupp, fun _ ↦ rfl, fun _ ↦ rfl⟩
+
+noncomputable instance : Ring (Algebra c) where
+  __ := (inferInstance : Semiring (Algebra c))
+  __ := (inferInstance : AddCommGroup (Algebra c))
+
+end CrossedSystem.Algebra
 end TauCeti
