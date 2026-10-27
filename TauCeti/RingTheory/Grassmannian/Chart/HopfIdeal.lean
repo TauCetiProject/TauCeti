@@ -19,7 +19,9 @@ spectrum is the universal finite free subgroup on this chart of the subgroup par
 
 The construction uses `Module.Grassmannian.chartHomEquiv` for the ambient chart and
 `Module.Grassmannian.hopfIdealLocus` for the closed equations. The equations agree under
-the Grassmannian transition isomorphisms, as needed to glue the closed charts.
+the Grassmannian transition isomorphisms, as needed to glue the closed charts. When `H` is
+finitely presented as an `R`-module, as it is for a finite locally free group scheme, each closed
+chart is a finitely presented `R`-algebra.
 
 ## References
 
@@ -60,6 +62,12 @@ theorem mk_surjective : Function.Surjective (mk R x) :=
 @[simp]
 theorem ker_mk : RingHom.ker (mk R x) = ideal R x :=
   Ideal.Quotient.mkₐ_ker R _
+
+/-- For `H` finitely presented as an `R`-module, the closed chart is a finitely presented
+`R`-algebra: the ambient chart algebra is finitely presented, and the Hopf-ideal equations are
+finitely generated (`Module.Grassmannian.hopfIdealLocus_fg`). -/
+instance [Module.FinitePresentation R H] : Algebra.FinitePresentation R (CoordinateRing R x) :=
+  Algebra.FinitePresentation.quotient (hopfIdealLocus_fg _)
 
 variable {R x}
 
