@@ -349,6 +349,7 @@ theorem reductionMap_id : reductionMap I (LinearMap.id : M →ₗ[A] M) = 𝟙 (
   ext ⟨n⟩ x
   simp
 
+@[simp]
 theorem reductionMap_comp (u : M →ₗ[A] N) (w : N →ₗ[A] P) :
     reductionMap I (w ∘ₗ u) = reductionMap I u ≫ reductionMap I w := by
   ext ⟨n⟩ x
