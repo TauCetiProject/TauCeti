@@ -582,16 +582,18 @@ section Gamma1Conj
 
 variable {q N M : ℕ}
 
-/-- `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, as a subgroup of `SL(2, ℤ)`: for `q ∣ N` it consists of the
-matrices `(a, q b; c, d)` with `(a, b; q c, d) ∈ Γ₁(N)` (`mem_gamma1Conj_iff`). -/
+/-- `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, as a subgroup of `SL(2, ℤ)` (Mathlib's `conjGL` at
+`diag(q, 1)⁻¹`): for `q ∣ N` it consists of the matrices `(a, q b; c, d)` with
+`(a, b; q c, d) ∈ Γ₁(N)` (`mem_gamma1Conj_iff`). -/
 def gamma1Conj (q N : ℕ) [NeZero q] : Subgroup SL(2, ℤ) :=
-  (ConjAct.toConjAct (scaleGL q) • (Gamma1 N).map (mapGL ℝ)).comap (mapGL ℝ)
+  conjGL (Gamma1 N) (scaleGL q)⁻¹
 
 /-- The `diag(q, 1)`-conjugate `conjScale q δ c hc` of a matrix `δ ∈ Γ₁(N)` lies in
 `gamma1Conj q N`. -/
 lemma conjScale_mem_gamma1Conj [NeZero q] {δ : SL(2, ℤ)} (hδ : δ ∈ Gamma1 N) {c : ℤ}
     (hc : δ 1 0 = q * c) : conjScale q δ c hc ∈ gamma1Conj q N := by
-  rw [gamma1Conj, Subgroup.mem_comap, ← mapGL_conjScale, ← ConjAct.toConjAct_smul]
+  rw [gamma1Conj, conjGL, inv_inv, Subgroup.mem_comap, ← mapGL_conjScale,
+    ← ConjAct.toConjAct_smul]
   exact Subgroup.smul_mem_pointwise_smul _ _ _ ⟨δ, hδ, rfl⟩
 
 /-- For `q ∣ N`, the members of `gamma1Conj q N` are exactly the `diag(q, 1)`-conjugates
@@ -600,7 +602,8 @@ lemma mem_gamma1Conj_iff [NeZero q] (hqN : q ∣ N) {γ : SL(2, ℤ)} :
     γ ∈ gamma1Conj q N ↔
       ∃ δ ∈ Gamma1 N, ∃ (c : ℤ) (hc : δ 1 0 = q * c), conjScale q δ c hc = γ := by
   refine ⟨fun hγ ↦ ?_, fun ⟨δ, hδ, c, hc, h⟩ ↦ h ▸ conjScale_mem_gamma1Conj hδ hc⟩
-  rw [gamma1Conj, Subgroup.mem_comap, Subgroup.mem_smul_pointwise_iff_exists] at hγ
+  rw [gamma1Conj, conjGL, inv_inv, Subgroup.mem_comap,
+    Subgroup.mem_smul_pointwise_iff_exists] at hγ
   obtain ⟨_, ⟨δ, hδ, rfl⟩, hγ⟩ := hγ
   obtain ⟨c, hc⟩ : (q : ℤ) ∣ δ 1 0 :=
     (Int.natCast_dvd_natCast.mpr hqN).trans (mem_Gamma1_iff_dvd_lowerRow.mp hδ).1
@@ -612,6 +615,7 @@ lemma mem_gamma1Conj_iff [NeZero q] (hqN : q ∣ N) {γ : SL(2, ℤ)} :
 lemma map_gamma1Conj [NeZero q] (hqN : q ∣ N) :
     (gamma1Conj q N).map (mapGL ℝ) =
       ConjAct.toConjAct (scaleGL q) • (Gamma1 N).map (mapGL ℝ) := by
+  rw [gamma1Conj, conjGL, inv_inv]
   refine Subgroup.map_comap_eq_self fun x hx ↦ ?_
   obtain ⟨_, ⟨δ, hδ, rfl⟩, rfl⟩ := (Subgroup.mem_smul_pointwise_iff_exists _ _ _).mp hx
   obtain ⟨c, hc⟩ : (q : ℤ) ∣ δ 1 0 :=
@@ -624,13 +628,12 @@ lemma inv_conjAct_map_gamma1Conj [NeZero q] (hqN : q ∣ N) :
       (Gamma1 N).map (mapGL ℝ) := by
   rw [map_gamma1Conj hqN, smul_smul, ← map_mul, inv_mul_cancel, map_one, one_smul]
 
-/-- For `q ∣ N`, the image of `gamma1Conj q N` lies in the conjugate of `Γ₁(N)` by
-`(diag(q, 1)⁻¹)⁻¹`, the form taken by the hypothesis of restricting a translate by
-`diag(q, 1)⁻¹`. -/
-lemma map_gamma1Conj_le [NeZero q] (hqN : q ∣ N) :
+/-- The image of `gamma1Conj q N` lies in the conjugate of `Γ₁(N)` by `(diag(q, 1)⁻¹)⁻¹`, the
+form taken by the hypothesis of restricting a translate by `diag(q, 1)⁻¹`. -/
+lemma map_gamma1Conj_le [NeZero q] :
     (gamma1Conj q N).map (mapGL ℝ) ≤
-      ConjAct.toConjAct (scaleGL q)⁻¹⁻¹ • (Gamma1 N).map (mapGL ℝ) := by
-  rw [inv_inv, map_gamma1Conj hqN]
+      ConjAct.toConjAct (scaleGL q)⁻¹⁻¹ • (Gamma1 N).map (mapGL ℝ) :=
+  Subgroup.map_comap_le _ _
 
 /-- A matrix of `Γ₁(N)` whose upper-right entry is divisible by `q` lies in `gamma1Conj q N`. -/
 lemma mem_gamma1Conj_of_mem_Gamma1 [NeZero q] {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N)

@@ -295,7 +295,7 @@ lemma peterssonInnerCosets_levelRaise_eq_zero_iff [NeZero q] [NeZero N]
         0 ↔
       peterssonInnerCosets
         (CuspForm.restrict (Subgroup.map_mono (gamma1Conj_le_Gamma1 hqM)) φ)
-        (CuspForm.restrict (map_gamma1Conj_le ((Dvd.intro M rfl).trans hqM))
+        (CuspForm.restrict map_gamma1Conj_le
           (CuspForm.translate H (scaleGL q)⁻¹)) = 0 := by
   -- conjugating by `diag(q, 1)` carries the first pairing, of `V_q φ`, a multiple of
   -- `φ ∣ diag(q, 1)`, to a nonzero multiple of the second
@@ -306,7 +306,7 @@ lemma peterssonInnerCosets_levelRaise_eq_zero_iff [NeZero q] [NeZero N]
   have key := TauCeti.CuspForm.peterssonInnerCosets_slash_of_inv_conjAct_eq hdet
     (inv_conjAct_map_gamma1Conj ((Dvd.intro M rfl).trans hqM))
     (f := CuspForm.restrict (Subgroup.map_mono (gamma1Conj_le_Gamma1 hqM)) φ)
-    (g := CuspForm.restrict (map_gamma1Conj_le ((Dvd.intro M rfl).trans hqM))
+    (g := CuspForm.restrict map_gamma1Conj_le
       (CuspForm.translate H (scaleGL q)⁻¹))
     (F := (q : ℂ) ^ (k - 1) • CuspForm.levelRaise q (Gamma1_map_le_conjAct_scaleGL_of_dvd hqM) φ)
     (G := H) (by
@@ -371,7 +371,7 @@ private lemma peterssonInnerCosets_levelRaise_restrict_eq_zero_of_mem_cuspFormsN
   have hF : ∀ ψ : CuspForm ((Gamma1 n).map (mapGL ℝ)) k,
       peterssonInnerCosets
         (CuspForm.restrict (Subgroup.map_mono (gamma1Conj_le_Gamma1 (dvd_of_eq hn))) ψ)
-        (CuspForm.restrict (map_gamma1Conj_le hqK) (CuspForm.translate G (scaleGL q)⁻¹)) = 0 :=
+        (CuspForm.restrict map_gamma1Conj_le (CuspForm.translate G (scaleGL q)⁻¹)) = 0 :=
     fun ψ ↦ (peterssonInnerCosets_levelRaise_eq_zero_iff (hqM := dvd_of_eq hn)).mp
       ((CuspForm.mem_peterssonOrthogonal_iff.mp hG) _
         (levelRaise_mem_cuspFormsOldAt (dvd_of_eq hn) (dvd_of_eq hn) k ψ))
