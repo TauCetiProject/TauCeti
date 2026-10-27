@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -27,6 +29,8 @@ Inverting the flat map turns covector fields into vector fields: a Hamiltonian v
 ## Main declarations
 
 * `TauCeti.SmoothTwoForm.flat`: the flat map `v ↦ σ(v, ·)` at a point.
+* `TauCeti.SmoothTwoForm.interior_apply_eq_ofSubsingleton_flat`: the interior product `ι_X σ` is
+  the flat map applied to `X`.
 * `TauCeti.SmoothTwoForm.contMDiff_flat`: the flat maps form a smooth section.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_isInvertible_flat`: nondegeneracy is invertibility of
   the flat maps, in finite dimensions.
@@ -44,23 +48,6 @@ noncomputable section
 open Bundle
 open scoped ContDiff Manifold
 
-namespace ContinuousAlternatingMap
-
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- Currying a continuous alternating map of two vectors in its first slot, and reading the
-resulting alternating map of one vector as a linear map, evaluates the map on the pair. -/
-theorem ofSubsingletonLIE_symm_curryLeft_apply (f : E [⋀^Fin 2]→L[𝕜] F) (v w : E) :
-    (ofSubsingletonLIE (𝕜 := 𝕜) (E := E) (F := F) (ι := Fin 1) 0).symm (f.curryLeft v) w =
-      f ![v, w] := by
-  simp only [ofSubsingletonLIE_symm_apply, ofSubsingleton_symm_apply_apply, curryLeft_apply_apply]
-  congr 1
-  ext i
-  fin_cases i <;> rfl
-
-end ContinuousAlternatingMap
-
 namespace TauCeti
 
 namespace SmoothTwoForm
@@ -72,19 +59,23 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- The **flat map** of a two-form at a point: the contraction `v ↦ ι_v σ = σ(v, ·)`, as a
 continuous linear map from the tangent space to its dual. -/
 def flat (σ : SmoothTwoForm I M) (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
-  -- The tangent space is the model space `E`, whose norm gives continuous currying; the outer map
-  -- reads an alternating map of one vector as a linear map.
-  ((ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (ι := Fin 1)
-    0).symm.toContinuousLinearEquiv : (E [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] (E →L[ℝ] ℝ)) ∘L
-      ContinuousAlternatingMap.curryLeft (E := E) (σ.1 x)
+  -- The tangent space is the model space `E`, whose norm gives continuous currying.
+  ContinuousAlternatingMap.flatL ℝ E ℝ (σ.1 x)
 
 /-- The flat map evaluates as the two-form. -/
 @[simp]
 theorem flat_apply (σ : SmoothTwoForm I M) (x : M) (v w : TangentSpace I x) :
     σ.flat x v w = SmoothForm.eval₂ σ x v w := by
   rw [SmoothForm.eval₂_apply]
-  -- The defining composite is evaluated on the model space `E`.
-  exact ContinuousAlternatingMap.ofSubsingletonLIE_symm_curryLeft_apply (E := E) (σ.1 x) v w
+  exact ContinuousAlternatingMap.flatL_apply_apply (E := E) (σ.1 x) v w
+
+/-- The interior product `ι_X σ` at a point is the flat map applied to `X`, read as a one-form. -/
+theorem interior_apply_eq_ofSubsingleton_flat (σ : SmoothTwoForm I M)
+    (X : (x : M) → TangentSpace I x) (x : M) :
+    σ.1.interior X x =
+      ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ 0 (σ.flat x (X x)) := by
+  rw [RoughForm.interior_apply_eq_curryLeft]
+  exact (ContinuousAlternatingMap.ofSubsingleton_flatL_apply (E := E) (σ.1 x) (X x)).symm
 
 /-- **The flat maps of a two-form form a smooth section** of the bundle `Hom(TM, Hom(TM, ℝ))`. -/
 theorem contMDiff_flat (σ : SmoothTwoForm I M) :
@@ -95,22 +86,14 @@ theorem contMDiff_flat (σ : SmoothTwoForm I M) :
   rw [contMDiffAt_hom_bundle]
   refine ⟨contMDiffAt_id, ?_⟩
   have hσ := (contMDiffAt_continuousAlternatingMap_bundle _).1 (σ.contMDiff x₀)
-  -- In coordinates, the flat map is the same fixed continuous linear function of the
-  -- coordinate expression of the form.
-  let K : (E [⋀^Fin 2]→L[ℝ] ℝ) →L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ) :=
-    ContinuousLinearMap.compL ℝ E (E [⋀^Fin 1]→L[ℝ] ℝ) (E →L[ℝ] ℝ)
-        (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (ι := Fin 1)
-          0).symm.toContinuousLinearEquiv.toContinuousLinearMap ∘L
-      (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := ℝ)
-        (n := 1)).toContinuousLinearMap
-  refine (K.contDiff.comp_contMDiffAt hσ.2).congr_of_eventuallyEq ?_
+  -- In coordinates, the flat map is `flatL` applied to the coordinate expression of the form.
+  refine ((ContinuousAlternatingMap.flatL ℝ E ℝ).contDiff.comp_contMDiffAt
+    hσ.2).congr_of_eventuallyEq ?_
   filter_upwards [(trivializationAt E (TangentSpace I) x₀).open_baseSet.mem_nhds
     (mem_baseSet_trivializationAt E (TangentSpace I) x₀)] with y hy
   ext v w
-  rw [inCoordinates_apply_eq₂ (E₃ := Trivial M ℝ) hy hy (Set.mem_univ _), Function.comp_apply]
-  -- `K` is the defining composite of `flat`, evaluated on the model space `E`.
-  rw [show K _ v w = _ from
-    ContinuousAlternatingMap.ofSubsingletonLIE_symm_curryLeft_apply _ v w]
+  rw [inCoordinates_apply_eq₂ (E₃ := Trivial M ℝ) hy hy (Set.mem_univ _), Function.comp_apply,
+    ContinuousAlternatingMap.flatL_apply_apply]
   simp only [flat_apply, SmoothForm.eval₂_apply, Trivial.fiberBundle_trivializationAt',
     Trivial.linearMapAt_trivialization, Trivial.continuousLinearMapAt_trivialization,
     ContinuousAlternatingMap.inCoordinates, ContinuousLinearMap.id_compContinuousAlternatingMap,

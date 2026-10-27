@@ -31,7 +31,7 @@ needed to integrate it to a Hamiltonian flow.
 
 Since `σ` is alternating, `df(X) = σ(X, X) = 0` for a Hamiltonian vector field `X` of `f`: the
 Hamiltonian is constant along the integral curves of `X`, which is conservation of energy
-(`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurve`). For a constant
+(`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`). For a constant
 symplectic form on a vector space, the construction recovers the Hamiltonian vector field of the
 linear theory (`TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`).
 
@@ -44,8 +44,9 @@ linear theory (`TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`).
   uniqueness of the Hamiltonian vector field.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`: a `C^(n+1)`
   Hamiltonian has a `C^n` Hamiltonian vector field.
-* `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurve`: conservation of
-  energy along integral curves.
+* `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
+  of energy along integral curves on open preconnected sets of times, with the global case
+  `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurve`.
 * `TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`: comparison with the vector-space
   construction.
 
@@ -95,22 +96,9 @@ exterior derivative of the `0`-form of the Hamiltonian. -/
 theorem isHamiltonianVectorField_iff_interior_eq :
     σ.IsHamiltonianVectorField f X ↔
       σ.1.interior X = mextDeriv (RoughForm.ofFunction I f) := by
-  -- Both sides are one-forms; evaluate them on one tangent vector.
-  have hfin (x : M) (v : Fin 1 → TangentSpace I x) : Matrix.vecCons (X x) v = ![X x, v 0] := by
-    ext i
-    fin_cases i <;> rfl
-  rw [isHamiltonianVectorField_iff]
-  constructor
-  · intro h
-    funext x
-    ext v
-    rw [RoughForm.interior_apply, mextDeriv_ofFunction,
-      ContinuousAlternatingMap.ofSubsingleton_apply_apply, hfin, ← SmoothForm.eval₂_apply, h]
-  · intro h x v
-    have hv : σ.1.interior X x (fun _ ↦ v) = mextDeriv (RoughForm.ofFunction I f) x fun _ ↦ v := by
-      rw [h]
-    rwa [RoughForm.interior_apply, mextDeriv_ofFunction,
-      ContinuousAlternatingMap.ofSubsingleton_apply_apply, hfin, ← SmoothForm.eval₂_apply] at hv
+  -- Both sides are one-forms of one vector, the images of `σ♭ X` and `df` respectively.
+  simp only [isHamiltonianVectorField_iff_flat, funext_iff, interior_apply_eq_ofSubsingleton_flat,
+    mextDeriv_ofFunction, EmbeddingLike.apply_eq_iff_eq]
 
 namespace IsHamiltonianVectorField
 
@@ -121,13 +109,26 @@ theorem mvfderiv_apply_self (hX : σ.IsHamiltonianVectorField f X) (x : M) :
   exact SmoothForm.isAlt_bilinFormAt σ x (X x)
 
 /-- **Conservation of energy.** A Hamiltonian, differentiable along an integral curve of its
-Hamiltonian vector field, is constant along that curve. -/
+Hamiltonian vector field on an open interval of times (or any open preconnected set of times), is
+constant along that curve. -/
+theorem apply_eq_of_isMIntegralCurveOn (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M}
+    {s : Set ℝ} (hs : IsOpen s) (hs' : IsPreconnected s) (hγ : IsMIntegralCurveOn γ X s)
+    (hf : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) f (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    f (γ t) = f (γ t₀) := by
+  have hd (u : ℝ) (hu : u ∈ s) : HasDerivAt (f ∘ γ) 0 u := by
+    simpa only [hX.mvfderiv_apply_self] using
+      Manifold.hasDerivAt_comp_curve (hf u hu) ((hγ u hu).hasMFDerivAt (hs.mem_nhds hu))
+  exact hs.is_const_of_deriv_eq_zero hs'
+    (fun u hu ↦ (hd u hu).differentiableAt.differentiableWithinAt) (fun u hu ↦ (hd u hu).deriv)
+    ht ht₀
+
+/-- **Conservation of energy** along a global integral curve: a Hamiltonian, differentiable along
+an integral curve of its Hamiltonian vector field, is constant along that curve. -/
 theorem apply_eq_of_isMIntegralCurve (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M}
     (hγ : IsMIntegralCurve γ X) (hf : ∀ t, MDifferentiableAt I 𝓘(ℝ) f (γ t)) (s t : ℝ) :
-    f (γ t) = f (γ s) := by
-  have hd (t : ℝ) : HasDerivAt (f ∘ γ) 0 t := by
-    simpa only [hX.mvfderiv_apply_self] using Manifold.hasDerivAt_comp_curve (hf t) (hγ t)
-  exact is_const_of_deriv_eq_zero (fun t ↦ (hd t).differentiableAt) (fun t ↦ (hd t).deriv) t s
+    f (γ t) = f (γ s) :=
+  hX.apply_eq_of_isMIntegralCurveOn isOpen_univ isPreconnected_univ (hγ.isMIntegralCurveOn _)
+    (fun t _ ↦ hf t) (Set.mem_univ s) (Set.mem_univ t)
 
 end IsHamiltonianVectorField
 
