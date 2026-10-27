@@ -41,8 +41,9 @@ equivalence of chains visibly an equivalence relation.
 * `IsPreconnected.subset_nullChainDomain` -- a preconnected set off a crosscut that meets its
   domain lies in it.
 * `TauCeti.IsNullChain` -- the null-chain predicate.
-* `TauCeti.chordal_le_norm_sub`, `TauCeti.norm_sub_le_mul_chordal` -- on a bounded set, chordal
-  and Euclidean distances are comparable.
+* `TauCeti.chordal_le_norm_sub`, `TauCeti.norm_sub_le_mul_chordal`,
+  `TauCeti.norm_sub_lt_of_chordal_lt` -- on a bounded set, chordal and Euclidean distances are
+  comparable.
 * `TauCeti.IsNullChain.nullChainDomain_eq_connectedComponentIn` -- each domain is the component
   of the cut set containing the next crosscut.
 * `TauCeti.IsNullChain.separatesIn` -- Pommerenke's separation condition.
@@ -131,6 +132,16 @@ theorem norm_sub_le_mul_chordal {R : ℝ} {z w : ℂ} (hz : ‖z‖ ≤ R) (hw :
   rw [mul_div_assoc', le_div_iff₀ hpos]
   nlinarith [norm_nonneg (z - w)]
 
+/-- On the closed disc of radius `R` about `0`, a chordal distance below `ε / (1 + R ^ 2)` forces
+a Euclidean distance below `ε`. -/
+theorem norm_sub_lt_of_chordal_lt {R ε : ℝ} {z w : ℂ} (hz : ‖z‖ ≤ R) (hw : ‖w‖ ≤ R)
+    (h : ‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) < ε / (1 + R ^ 2)) : ‖z - w‖ < ε :=
+  calc
+    ‖z - w‖ ≤ (1 + R ^ 2) * (‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))) :=
+      norm_sub_le_mul_chordal hz hw
+    _ < (1 + R ^ 2) * (ε / (1 + R ^ 2)) := mul_lt_mul_of_pos_left h (by positivity)
+    _ = ε := by field_simp
+
 namespace IsNullChain
 
 /-- The domains cut off by a null chain decrease. -/
@@ -154,12 +165,7 @@ theorem eventually_norm_sub_lt (hC : IsNullChain U C) (hU : IsBounded U) {ε : �
   filter_upwards [hC.eventually_chordal_lt (ε / (1 + R ^ 2)) (by positivity)]
     with n hn z hz w hw
   have hsub := hC.subset_closure n
-  calc
-    ‖z - w‖ ≤ (1 + R ^ 2) * (‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))) :=
-      norm_sub_le_mul_chordal (hbound z (hsub hz)) (hbound w (hsub hw))
-    _ < (1 + R ^ 2) * (ε / (1 + R ^ 2)) :=
-      mul_lt_mul_of_pos_left (hn z hz w hw) (by positivity)
-    _ = ε := by field_simp
+  exact norm_sub_lt_of_chordal_lt (hbound z (hsub hz)) (hbound w (hsub hw)) (hn z hz w hw)
 
 /-- Crosscuts of a null chain eventually avoid each compact subset of the open domain. -/
 theorem eventually_disjoint_of_isCompact (hC : IsNullChain U C) (hU : IsOpen U) {K : Set ℂ}
@@ -189,13 +195,8 @@ theorem eventually_disjoint_of_isCompact (hC : IsNullChain U C) (hU : IsOpen U) 
   have hwz : δ / 2 ≤ ‖w - z‖ := by
     rw [← hwK, ← dist_eq_norm]
     exact infDist_le_dist_of_mem hzK
-  refine lt_irrefl (δ / 2) ?_
-  calc
-    δ / 2 ≤ (1 + (R + δ) ^ 2) * (‖w - z‖ / √((1 + ‖w‖ ^ 2) * (1 + ‖z‖ ^ 2))) :=
-      hwz.trans (norm_sub_le_mul_chordal hw ((hKR z hzK).trans (by linarith)))
-    _ < (1 + (R + δ) ^ 2) * (δ / 2 / (1 + (R + δ) ^ 2)) :=
-      mul_lt_mul_of_pos_left (hn w hwC z hzC) (by positivity)
-    _ = δ / 2 := by field_simp
+  exact hwz.not_gt
+    (norm_sub_lt_of_chordal_lt hw ((hKR z hzK).trans (by linarith)) (hn w hwC z hzC))
 
 /-- The next crosscut lies, inside `U`, in the domain cut off by the previous one. -/
 theorem inter_subset_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
