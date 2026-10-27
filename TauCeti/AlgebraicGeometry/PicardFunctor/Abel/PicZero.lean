@@ -85,7 +85,7 @@ theorem relativePicardFiberDegree_abelMap_app {T : (Over S)ᵒᵖ} {Ω : Type u}
   have hres : LineBundleClass.pullback g
       (LineBundleClass.mk hD.isEffectiveCartier.toInvertibleSheaf)⁻¹ =
         (LineBundleClass.mk hD'.isEffectiveCartier.toInvertibleSheaf)⁻¹ := by
-    rw [← LineBundleClass.pullbackHom_apply, map_inv, LineBundleClass.pullbackHom_apply]
+    rw [LineBundleClass.pullback_inv]
     exact congrArg (·⁻¹) (Scheme.IdealSheafData.IsEffectiveCartier.pullback_mk_toInvertibleSheaf
       hD.isEffectiveCartier hD'.isEffectiveCartier)
   -- The fibre is a connected smooth proper curve over `Ω`.

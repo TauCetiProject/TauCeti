@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Space
 
 /-!
@@ -47,8 +48,10 @@ with it the bilinearity of the pairing, is not proved here.
   class `a` on `X` with `ι : C ⟶ X`;
 * `LineBundleClass.intersectionNumber_pullback`: the projection formula along a morphism
   `g : X ⟶ Y`, `(g^* a · C) = (a · g_* C)` with `C` regarded on `Y` through `ι ≫ g`;
-* `LineBundleClass.intersectionNumber_pullback_eq_zero_of_comp_eq`: pullbacks have intersection
-  number zero with curves contracted to a point;
+* `LineBundleClass.intersectionNumber_eq_zero_of_eq_comp`: every class has intersection number
+  zero with a curve contracted to a point, and so
+  (`LineBundleClass.intersectionNumber_pullback_eq_zero_of_comp_eq`) does every pullback along a
+  morphism contracting the curve;
 * `LineBundleClass.intersectionNumber_mk_toInvertibleSheaf`: `(-D · C) = -dim_k Γ(D ∩ C)` for an
   effective Cartier divisor `D` meeting a proper curve `C` properly;
 * `LineBundleClass.intersectionNumber_mul` and `LineBundleClass.intersectionNumber_inv`:
@@ -110,14 +113,23 @@ lemma intersectionNumber_pullback (g : X ⟶ Y) (a : LineBundleClass Y) :
     intersectionNumber k ι (pullback g a) = intersectionNumber k (ι ≫ g) a := by
   rw [intersectionNumber_def, intersectionNumber_def, pullback_comp]
 
+/-- **Contracted curves.** If `ι` factors through a scheme `T` all of whose points specialize to
+one point, for instance the spectrum of a local ring or of the residue field of a point of `X`,
+then every class has intersection number zero with `C`. -/
+theorem intersectionNumber_eq_zero_of_eq_comp {T : Scheme.{u}} (h : C ⟶ T) (j : T ⟶ X)
+    (w : ι = h ≫ j) {t : T} (ht : ∀ y : T, y ⤳ t) (a : LineBundleClass X) :
+    intersectionNumber k ι a = 0 := by
+  rw [intersectionNumber_def, w, ← pullback_comp, eq_one_of_forall_specializes ht (pullback j a),
+    pullback_one, eulerDegree_one]
+
 /-- **Contracted curves.** If `ι ≫ g` factors through a scheme `T` all of whose points specialize
 to one point, for instance the spectrum of a local ring or of the residue field of a point of `Y`,
 then pullbacks along `g` have intersection number zero with `C`. -/
 theorem intersectionNumber_pullback_eq_zero_of_comp_eq {T : Scheme.{u}} (g : X ⟶ Y) (h : C ⟶ T)
     (j : T ⟶ Y) (w : ι ≫ g = h ≫ j) {t : T} (ht : ∀ y : T, y ⤳ t) (a : LineBundleClass Y) :
     intersectionNumber k ι (pullback g a) = 0 := by
-  rw [intersectionNumber_pullback, w, intersectionNumber_def, ← pullback_comp,
-    eq_one_of_forall_specializes ht (pullback j a), pullback_one, eulerDegree_one]
+  rw [intersectionNumber_pullback]
+  exact intersectionNumber_eq_zero_of_eq_comp k _ h j w ht a
 
 section Effective
 
@@ -166,8 +178,7 @@ codimension-one local rings are discrete valuation rings. -/
 theorem intersectionNumber_inv (a : LineBundleClass X) :
     intersectionNumber k ι a⁻¹ = -intersectionNumber k ι a := by
   have : IsLocallyNoetherian C := LocallyOfFiniteType.isLocallyNoetherian (C ↘ Spec (.of k))
-  rw [intersectionNumber_def, intersectionNumber_def, ← pullbackHom_apply, map_inv,
-    pullbackHom_apply]
+  rw [intersectionNumber_def, intersectionNumber_def, pullback_inv]
   exact eulerDegree_inv k (coheight_le_of_relativeDimensionLE_of_field (d := 1) (C ↘ Spec (.of k)))
     _
 
@@ -175,14 +186,19 @@ theorem intersectionNumber_inv (a : LineBundleClass X) :
 discrete valuation rings, as a homomorphism `Pic X →+ ℤ` on the additively written Picard
 group. -/
 def intersectionNumberHom : Additive (LineBundleClass X) →+ ℤ :=
-  AddMonoidHom.mk' (fun a ↦ intersectionNumber k ι a.toMul) fun a b ↦
-    intersectionNumber_mul k ι a.toMul b.toMul
+  have : IsLocallyNoetherian C := LocallyOfFiniteType.isLocallyNoetherian (C ↘ Spec (.of k))
+  have : CompactSpace C := QuasiCompact.compactSpace_of_compactSpace (C ↘ Spec (.of k))
+  have : IsNoetherian C := {}
+  have : Fact (∀ y : C, Order.coheight y ≤ 1) :=
+    ⟨coheight_le_of_relativeDimensionLE_of_field (d := 1) (C ↘ Spec (.of k))⟩
+  (eulerDegreeHom k C).comp (MonoidHom.toAdditive (pullbackHom ι))
 
 /-- The intersection-number homomorphism evaluates to the intersection number. -/
 @[simp]
 lemma intersectionNumberHom_apply (a : Additive (LineBundleClass X)) :
-    intersectionNumberHom k ι a = intersectionNumber k ι a.toMul :=
-  (rfl)
+    intersectionNumberHom k ι a = intersectionNumber k ι a.toMul := by
+  rw [intersectionNumberHom, AddMonoidHom.comp_apply, eulerDegreeHom_apply,
+    MonoidHom.toAdditive_apply_apply, pullbackHom_apply, toMul_ofMul, intersectionNumber_def]
 
 /-- **Intersecting with an effective Cartier divisor on a regular curve.** Let `D` be an effective
 Cartier divisor on `X` with ideal sheaf `I = 𝒪_X(-D)`, so that `𝒪_X(D)` has class the inverse of
@@ -193,8 +209,7 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf {I : X.IdealSheafData}
     (hI : I.IsEffectiveCartier) (hI' : (I.comap ι).IsEffectiveCartier) (s : Spec (.of k)) :
     intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ =
       ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)).finrank s := by
-  rw [intersectionNumber_def, ← pullbackHom_apply, map_inv, pullbackHom_apply,
-    hI.pullback_mk_toInvertibleSheaf hI']
+  rw [intersectionNumber_def, pullback_inv, hI.pullback_mk_toInvertibleSheaf hI']
   exact hI'.eulerDegree_inv_mk_toInvertibleSheaf k _ s
 
 end Regular
