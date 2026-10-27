@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
-import Mathlib.FieldTheory.PurelyInseparable.Exponent
+import TauCeti.FieldTheory.PurelyInseparable.Exponent
 
 /-!
 # A quadratic extension away from characteristic two is separable
@@ -42,6 +42,17 @@ namespace Algebra
 
 open Module
 
+/-- A finite extension of degree at most two that is not separable has degree two and separable
+degree one: its separable degree is a proper divisor of its degree. -/
+private theorem finSepDegree_eq_one_and_finrank_eq_two {K L : Type*} [Field K] [Field L]
+    [Algebra K L] [FiniteDimensional K L] (h : finrank K L ≤ 2) (hs : ¬Algebra.IsSeparable K L) :
+    Field.finSepDegree K L = 1 ∧ finrank K L = 2 := by
+  have hne : Field.finSepDegree K L ≠ finrank K L :=
+    mt (Field.finSepDegree_eq_finrank_iff K L).mp hs
+  have hpos : 0 < Field.finSepDegree K L := Nat.pos_of_ne_zero (NeZero.ne _)
+  have hle := Nat.le_of_dvd finrank_pos (Field.finSepDegree_dvd_finrank K L)
+  omega
+
 /-- **A field extension of degree two with `2 ≠ 0` in the base field is separable.**
 
 The hypothesis is the nonvanishing of `2` in the base field rather than a `CharP` assumption, so
@@ -49,25 +60,23 @@ that it transfers along any field extension by injectivity of the structure map.
 theorem isSeparable_of_finrank_eq_two {K L : Type*} [Field K] [Field L] [Algebra K L]
     (h2 : (2 : K) ≠ 0) (h : finrank K L = 2) : Algebra.IsSeparable K L := by
   have : FiniteDimensional K L := Module.finite_of_finrank_pos (by omega)
-  have hdvd : Field.finSepDegree K L ∣ 2 := h ▸ Field.finSepDegree_dvd_finrank K L
-  rcases (Nat.dvd_prime Nat.prime_two).mp hdvd with h1 | h1
-  · -- Separable degree one: the extension is purely inseparable, so `2` is a power of the
-    -- exponential characteristic, which forces characteristic two.
-    exfalso
-    have : IsPurelyInseparable K L := isPurelyInseparable_of_finSepDegree_eq_one h1
-    obtain ⟨q, hq⟩ := ExpChar.exists K
-    have _ : ExpChar K q := hq
-    obtain ⟨n, hn⟩ := IsPurelyInseparable.finrank_eq_pow K L q
-    rw [h] at hn
-    cases hq with
-    | zero => simp at hn
-    | prime hp =>
-      have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-      have hq2 : q = 2 :=
-        (Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp (by rw [hn]; exact dvd_pow_self q hn0)
-      subst hq2
-      exact h2 (by exact_mod_cast CharP.cast_eq_zero K 2)
-  · exact (Field.finSepDegree_eq_finrank_iff K L).mp (h1.trans h.symm)
+  -- Otherwise the separable degree is one: the extension is purely inseparable, so `2` is a power
+  -- of the exponential characteristic, which forces characteristic two.
+  by_contra hs
+  have : IsPurelyInseparable K L :=
+    isPurelyInseparable_of_finSepDegree_eq_one (finSepDegree_eq_one_and_finrank_eq_two h.le hs).1
+  obtain ⟨q, hq⟩ := ExpChar.exists K
+  have _ : ExpChar K q := hq
+  obtain ⟨n, hn⟩ := IsPurelyInseparable.finrank_eq_pow K L q
+  rw [h] at hn
+  cases hq with
+  | zero => simp at hn
+  | prime hp =>
+    have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+    have hq2 : q = 2 :=
+      (Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp (by rw [hn]; exact dvd_pow_self q hn0)
+    subst hq2
+    exact h2 (by exact_mod_cast CharP.cast_eq_zero K 2)
 
 /-- **A field extension of degree two that is not separable contains the square of each of its
 elements in the base field**: it is purely inseparable of exponent one. -/
@@ -75,37 +84,20 @@ theorem sq_mem_range_algebraMap_of_finrank_eq_two {K L : Type*} [Field K] [Field
     [Algebra K L] (h : finrank K L = 2) (hs : ¬Algebra.IsSeparable K L) (a : L) :
     a ^ 2 ∈ (algebraMap K L).range := by
   have : FiniteDimensional K L := Module.finite_of_finrank_pos (by omega)
-  have hdvd : Field.finSepDegree K L ∣ 2 := h ▸ Field.finSepDegree_dvd_finrank K L
-  have h1 : Field.finSepDegree K L = 1 := by
-    rcases (Nat.dvd_prime Nat.prime_two).mp hdvd with h1 | h1
-    · exact h1
-    · exact absurd ((Field.finSepDegree_eq_finrank_iff K L).mp (h1.trans h.symm)) hs
-  have : IsPurelyInseparable K L := isPurelyInseparable_of_finSepDegree_eq_one h1
+  have : IsPurelyInseparable K L :=
+    isPurelyInseparable_of_finSepDegree_eq_one (finSepDegree_eq_one_and_finrank_eq_two h.le hs).1
   obtain ⟨q, hq⟩ := ExpChar.exists K
   have _ : ExpChar K q := hq
-  have hq0 : 0 < q := by
-    cases hq with
-    | zero => exact one_pos
-    | prime hp => exact hp.pos
-  have hle : (minpoly K a).natDegree ≤ 2 := h ▸ minpoly.natDegree_le a
-  rw [IsPurelyInseparable.minpoly_natDegree_eq' K q] at hle
-  have hmem := IsPurelyInseparable.elemExponent_def' K q a
-  have hpos : 0 < q ^ IsPurelyInseparable.elemExponent K a := pow_pos hq0 _
-  interval_cases q ^ IsPurelyInseparable.elemExponent K a
-  · rw [pow_one] at hmem
-    exact pow_mem hmem 2
-  · exact hmem
+  -- The degree `2` is a power `q ^ m` of the exponential characteristic.
+  obtain ⟨m, hm⟩ := IsPurelyInseparable.finrank_eq_pow K L q
+  have := TauCeti.IsPurelyInseparable.pow_mem_of_finrank_le_pow K L q hm.le a
+  rwa [← hm, h] at this
 
 /-- **A finite extension of degree at most two that is not separable has degree exactly two.** -/
 theorem finrank_eq_two_of_not_isSeparable {K L : Type*} [Field K] [Field L] [Algebra K L]
     [FiniteDimensional K L] (h : finrank K L ≤ 2) (hs : ¬Algebra.IsSeparable K L) :
-    finrank K L = 2 := by
-  have hpos : 0 < finrank K L := finrank_pos
-  interval_cases hr : finrank K L
-  · refine absurd ((Field.finSepDegree_eq_finrank_iff K L).mp ?_) hs
-    rw [hr]
-    exact Nat.dvd_one.mp (hr ▸ Field.finSepDegree_dvd_finrank K L)
-  · rfl
+    finrank K L = 2 :=
+  (finSepDegree_eq_one_and_finrank_eq_two h hs).2
 
 end Algebra
 

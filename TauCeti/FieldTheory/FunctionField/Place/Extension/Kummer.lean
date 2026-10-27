@@ -163,10 +163,21 @@ variable [FiniteDimensional F F']
 omit [Algebra k F'] [IsScalarTower k k' F'] in
 /-- A polynomial over `𝒪_P` whose image in `F[X]` is the minimal polynomial of `y : F'` is monic,
 because `𝒪_P → F` is injective. -/
-private theorem monic_of_map_eq_minpoly {P : Place k F} {y : F'} {φ : P.integers[X]}
+theorem monic_of_map_eq_minpoly {P : Place k F} {y : F'} {φ : P.integers[X]}
     (hmin : φ.map (algebraMap P.integers F) = minpoly F y) : φ.Monic :=
   Polynomial.monic_of_injective (IsFractionRing.injective P.integers F)
     (hmin ▸ minpoly.monic (IsIntegral.of_finite F y))
+
+omit [Algebra k F'] [IsScalarTower k k' F'] in
+/-- A polynomial over `𝒪_P` whose image in `F[X]` is the minimal polynomial of a generator `y` of
+`F' / F` has degree `[F' : F]`. -/
+theorem natDegree_eq_finrank_of_map_eq_minpoly {P : Place k F} {y : F'}
+    (hy : IntermediateField.adjoin F {y} = ⊤) {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y) :
+    φ.natDegree = Module.finrank F F' := by
+  rw [← natDegree_map_eq_of_injective (IsFractionRing.injective P.integers F), hmin,
+    ← IntermediateField.adjoin.finrank (IsIntegral.of_finite F y), hy,
+    IntermediateField.finrank_top']
 
 /-- A root `y : F'` of a polynomial over `𝒪_P` whose image in `F[X]` is the minimal polynomial of
 `y` is integral at every place of `F' / k'` lying over `P`: that polynomial is monic, the
@@ -511,10 +522,7 @@ theorem exists_restrict_eq_relativeDegree_eq_and_isSeparable (hF : IsFunctionFie
         (hφ.map res).normalize_eq_self]
     have hdeg : (∏ q ∈ S, q).natDegree = ∑ q ∈ S, q.natDegree :=
       natDegree_prod_of_monic S (fun q ↦ q) fun q hq ↦ ((hS q).mp hq).2.1
-    rw [← hdeg, hprod, hφ.natDegree_map,
-      ← natDegree_map_eq_of_injective (IsFractionRing.injective P.integers F), hmin,
-      ← IntermediateField.adjoin.finrank (IsIntegral.of_finite F y), hy,
-      IntermediateField.finrank_top']
+    rw [← hdeg, hprod, hφ.natDegree_map, natDegree_eq_finrank_of_map_eq_minpoly hy hmin]
   -- Kummer's theorem attaches to the factors pairwise distinct places over `P`.
   obtain ⟨Q, hQinj, hQ⟩ := exists_injective_restrict_eq (k' := k') hF P y hmin (ι := S)
     (γ := Subtype.val) (fun q ↦ ((hS q).mp q.2).2.1) (fun q ↦ ((hS q).mp q.2).1)
