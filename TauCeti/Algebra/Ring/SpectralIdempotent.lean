@@ -99,24 +99,30 @@ variable {A : Type*} [Ring A] {C E w : A} {h : ℕ}
 
 /-- Replacing one block of a split operator by the identity gives a unit when the
 complementary block is invertible.
-The inverse is `E + w`, where `w` is the inverse of `C` on the complementary block. -/
+The inverse is `E + (1 - E) * w`, where `C * w = w * C = 1 - E`. -/
 theorem isUnit_add_mul_one_sub (he : IsIdempotentElem E)
-    (hw : C * w = 1 - E) (hw' : w * C = 1 - E) (hEw : E * w = 0)
-    (hwE : w * E = 0) : IsUnit (E + C * (1 - E)) := by
+    (hw : C * w = 1 - E) (hw' : w * C = 1 - E) :
+    IsUnit (E + C * (1 - E)) := by
   have hCE : Commute C E := by
     have hCw : Commute C w := hw.trans hw'.symm
     have h1 : Commute C (1 - E) := hw' ▸ hCw.mul_right (Commute.refl C)
     simpa using (Commute.one_right C).sub_right h1
+  have hEw : E * ((1 - E) * w) = 0 := by
+    simp [← mul_assoc, mul_sub, he.eq]
+  have hwE : (1 - E) * w * E = 0 := by
+    rw [← hw', mul_assoc w C w, hw, mul_assoc]
+    simp [sub_mul, he.eq]
   have hcompE : C * (1 - E) * E = 0 := by
     simp [mul_assoc, sub_mul, he.eq]
-  have hcompw : C * (1 - E) * w = 1 - E := by
-    simp [mul_assoc, sub_mul, hEw, hw]
+  have hcompw : C * (1 - E) * ((1 - E) * w) = 1 - E := by
+    rw [← mul_assoc, mul_assoc C (1 - E) (1 - E), he.one_sub.eq,
+      ((Commute.one_right C).sub_right hCE).eq, mul_assoc, hw, he.one_sub.eq]
   have hEcomp : E * (C * (1 - E)) = 0 := by
     rw [← mul_assoc, ← hCE.eq, mul_assoc]
     simp [mul_sub, he.eq]
-  have hwcomp : w * (C * (1 - E)) = 1 - E := by
-    rw [← mul_assoc, hw', he.one_sub.eq]
-  refine isUnit_iff_exists.mpr ⟨E + w, ?_, ?_⟩
+  have hwcomp : (1 - E) * w * (C * (1 - E)) = 1 - E := by
+    rw [mul_assoc, ← mul_assoc w C, hw', he.one_sub.eq, he.one_sub.eq]
+  refine isUnit_iff_exists.mpr ⟨E + (1 - E) * w, ?_, ?_⟩
   · simp [mul_add, add_mul, he.eq, hEw, hcompE, hcompw]
   · simp [mul_add, add_mul, he.eq, hwE, hEcomp, hwcomp]
 

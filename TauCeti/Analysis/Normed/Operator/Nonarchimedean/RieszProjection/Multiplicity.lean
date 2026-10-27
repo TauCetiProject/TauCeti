@@ -50,7 +50,6 @@ theorem isUnit_evalAt_charPowerSeries_complement (hE : IsRieszProjection u a h E
   have hunit := _root_.IsIdempotentElem.isUnit_add_mul_one_sub
     (A := C₀(I, R) →L[R] C₀(I, R)) hE.isIdempotentElem
     hE.one_sub_smul_mul_inverse hE.inverse_mul_one_sub_smul
-    hE.mul_inverse_eq_zero hE.inverse_mul_eq_zero
   convert hunit using 1
   ext x : 1
   simp only [sub_apply, one_apply_eq_self, smul_apply, mul_apply_eq_comp, add_apply, comp_apply]
@@ -67,9 +66,15 @@ variable {I K : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
 /-- The Fredholm factor on the finite Riesz summand is the expected pure power.
 The nilpotence bound need not be the order of a zero. -/
 theorem charPowerSeries_matrixCoeff_mul_eq_pow_finrank (hE : IsRieszProjection u a h E)
-    (hu : u.IsRowCompact) (ha : a ≠ 0) :
+    (hu : u.IsRowCompact) :
     (u * E).matrixCoeff.charPowerSeries =
       (1 - PowerSeries.C a⁻¹ * PowerSeries.X) ^ Module.finrank K E.range := by
+  by_cases ha : a = 0
+  · have hC : (1 - a • u : C₀(I, K) →L[K] C₀(I, K)) = 1 := by
+      ext x
+      simp [ha]
+    have hzero : E = 0 := by simpa only [hC, one_pow, one_mul] using hE.pow_mul_eq_zero
+    simp [ha, hzero]
   -- Fix the additive group before forming endomorphisms of the range, so their ring
   -- structure uses the same additive monoid as the submodule and its normed structure.
   let : AddCommGroup E.range := inferInstance
@@ -147,7 +152,7 @@ theorem finrank_range (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact)
   have hfactor : u.matrixCoeff.charPowerSeries =
       (PowerSeries.X - PowerSeries.C a) ^ n * (PowerSeries.C ((-a⁻¹) ^ n) * S) := by
     rw [hu.charPowerSeries_matrixCoeff_eq_mul_of_commute hE.isIdempotentElem hE.commute,
-      hE.charPowerSeries_matrixCoeff_mul_eq_pow_finrank hu ha, hlinear, mul_pow,
+      hE.charPowerSeries_matrixCoeff_mul_eq_pow_finrank hu, hlinear, mul_pow,
       ← map_pow, mul_assoc]
   have hG : (PowerSeries.C ((-a⁻¹) ^ n) * S).IsEntire :=
     (PowerSeries.isEntire_C _).mul hS
@@ -175,12 +180,7 @@ the Fredholm zero. At order zero the factor is one, even when the scalar is zero
 theorem charPowerSeries_matrixCoeff_mul_eq_pow (hE : IsRieszProjection u a h E)
     (hu : u.IsRowCompact) (hH : u.matrixCoeff.charPowerSeries.IsGoodZero a h) :
     (u * E).matrixCoeff.charPowerSeries = (1 - PowerSeries.C a⁻¹ * PowerSeries.X) ^ h := by
-  by_cases hh : h = 0
-  · subst h
-    simp [hE.eq_zero_of_order_zero]
-  have ha := (hH.isUnit hu.isEntire_charPowerSeries (Matrix.constantCoeff_charPowerSeries _)
-    (Nat.pos_of_ne_zero hh)).ne_zero
-  rw [hE.charPowerSeries_matrixCoeff_mul_eq_pow_finrank hu ha, hE.finrank_range hu hH]
+  rw [hE.charPowerSeries_matrixCoeff_mul_eq_pow_finrank hu, hE.finrank_range hu hH]
 
 end Field
 
