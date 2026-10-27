@@ -49,7 +49,6 @@ functor places the base change of `N`, and `H` need not be commutative.
   `A`-submodule `N`.
 * `Module.Grassmannian.rankAtStalk_quotient_hopfIdeal`: the quotient Hopf algebra has constant rank
   `k` over `A`.
-* `Module.Grassmannian.hopfIdealLocus_map_eq_bot`: the Hopf-ideal locus is stable under base change.
 
 ## References
 
@@ -142,11 +141,6 @@ end HopfIdeal
 section BaseChange
 
 variable {N : G(k, A ⊗[R] H; A)}
-
-/-- **The Hopf-ideal locus is stable under base change.** -/
-theorem hopfIdealLocus_map_eq_bot (hN : N.hopfIdealLocus = ⊥) (f : A →ₐ[R] B) :
-    (map f N).hopfIdealLocus = ⊥ := by
-  rw [hopfIdealLocus_map, hN, Ideal.map_bot]
 
 variable (hN : N.hopfIdealLocus = ⊥) (B) [Algebra A B] [IsScalarTower R A B]
 
