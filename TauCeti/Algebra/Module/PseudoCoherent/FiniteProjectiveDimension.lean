@@ -145,31 +145,6 @@ section ProjectiveDimension
 
 variable {R : Type u} [Ring R]
 
-/-- Along a finite free resolution of `M`, exact everywhere, the image of `d k` is projective
-exactly when `M` has projective dimension at most `k + 1`. In particular this projectivity does
-not depend on the resolution. -/
-private theorem projective_range_iff_hasProjectiveDimensionLE (k : ℕ) {M : Type u}
-    [AddCommGroup M] [Module R M] {n : ℕ → ℕ}
-    {d : ∀ i, (Fin (n (i + 1)) → R) →ₗ[R] (Fin (n i) → R)} {ε : (Fin (n 0) → R) →ₗ[R] M}
-    (hε : Function.Surjective ε) (h₀ : Function.Exact (d 0) ε)
-    (hd : ∀ i, Function.Exact (d (i + 1)) (d i)) :
-    Module.Projective R (range (d k)) ↔ HasProjectiveDimensionLE (ModuleCat.of R M) (k + 1) := by
-  rw [hasProjectiveDimensionLE_succ_iff_ker hε]
-  induction k generalizing M n with
-  | zero =>
-    rw [← projective_iff_hasProjectiveDimensionLE_zero, ← IsProjective.iff_projective,
-      exact_iff.mp h₀]
-  | succ k ih =>
-    -- Shift the resolution: `d (i + 1)` resolves `ker ε` along the corestriction of `d 0`.
-    let ε' : (Fin (n 1) → R) →ₗ[R] ker ε := (d 0).codRestrict (ker ε) h₀.apply_apply_eq_zero
-    have hε' : Function.Surjective ε' := by
-      rintro ⟨x, hx⟩
-      obtain ⟨y, rfl⟩ := (h₀ x).mp hx
-      exact ⟨y, rfl⟩
-    rw [ih (n := fun i ↦ n (i + 1)) (d := fun i ↦ d (i + 1)) hε'
-      (fun x ↦ Subtype.ext_iff.trans (hd 0 x)) (fun i ↦ hd (i + 1)),
-      hasProjectiveDimensionLE_succ_iff_ker hε']
-
 /-- **Finite projective dimension is pseudocoherence with bounded projective dimension.** A module
 `M` is `m`-fpd exactly when it is pseudocoherent and
 `HasProjectiveDimensionLE (ModuleCat.of R M) m`, that is, `Ext^i(M, -)` vanishes for `i > m`. -/
@@ -186,7 +161,8 @@ theorem isFPD_iff_hasProjectiveDimensionLE {M : Type u} [AddCommGroup M] [Module
     rcases m with _ | k
     · rw [IsProjective.iff_projective, projective_iff_hasProjectiveDimensionLE_zero]
       exact ⟨fun h ↦ h.1 rfl, fun h ↦ ⟨fun _ ↦ h, fun k hk ↦ absurd hk.symm k.succ_ne_zero⟩⟩
-    · rw [← projective_range_iff_hasProjectiveDimensionLE k hε h₀ hd]
+    · rw [← projective_range_iff_hasProjectiveDimensionLE k (F := fun i ↦ Fin (n i) → R) hε h₀
+        hd]
       exact ⟨fun h ↦ h.2 k rfl, fun h ↦ ⟨fun hk ↦ absurd hk k.succ_ne_zero,
         fun _ hk ↦ Nat.succ_injective hk ▸ h⟩⟩
   refine ⟨fun h ↦ ⟨h.isPseudoCoherentOver, ?_⟩, fun ⟨hM, hpd⟩ ↦ ?_⟩
