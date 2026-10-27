@@ -322,16 +322,21 @@ theorem polynomialBinomialSubcomodule_toSubmodule (b : Basis (Fin 2) R V) (d : �
 theorem mem_polynomialBinomialSubcomodule (b : Basis (Fin 2) R V) {d : ℕ}
     {f : MvPolynomial (Fin 2) R} :
     f ∈ polynomialBinomialSubcomodule H b d ↔
-      ∀ m ∈ f.support, m 0 + m 1 = d ∧ (d.choose (m 0) : R) ≠ 0 :=
-  Iff.rfl
+      ∀ m ∈ f.support, m 0 + m 1 = d ∧ (d.choose (m 0) : R) ≠ 0 := by
+  let _ := polynomial H b
+  rw [← Subcomodule.mem_toSubmodule, polynomialBinomialSubcomodule_toSubmodule,
+    MvPolynomial.mem_restrictSupport_iff, Set.subset_def]
+  simp only [Finset.mem_coe, Set.mem_ofPred_eq]
 
 /-- The monomial `xⁱ yʲ` lies in the binomial span of degree `d` exactly when `i + j = d` and
 `d choose i` is nonzero. -/
 theorem X_pow_mul_X_pow_mem_polynomialBinomialSubcomodule_iff [Nontrivial R]
     (b : Basis (Fin 2) R V) {d i j : ℕ} :
     (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j : MvPolynomial (Fin 2) R) ∈
-        polynomialBinomialSubcomodule H b d ↔ i + j = d ∧ (d.choose i : R) ≠ 0 :=
-  X_pow_mul_X_pow_mem_restrictSupport_iff
+        polynomialBinomialSubcomodule H b d ↔ i + j = d ∧ (d.choose i : R) ≠ 0 := by
+  let _ := polynomial H b
+  rw [← Subcomodule.mem_toSubmodule, polynomialBinomialSubcomodule_toSubmodule]
+  exact X_pow_mul_X_pow_mem_restrictSupport_iff
 
 /-- The binomial span consists of homogeneous polynomials of degree `d`. -/
 theorem polynomialBinomialSubcomodule_le_polynomialHomogeneousSubcomodule
