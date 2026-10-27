@@ -319,12 +319,53 @@ theorem zigzagAlgebraProjectiveDGHomEquivCorner_shifted_comp
     LinearEquiv.apply_symm_apply]
   exact (coe_zigzagAlgebraGradedProjectiveHomEquivCorner_comp k G i j l s t f g).symm
 
-/-! ### Finiteness and degree support of vertex Hom spaces -/
+/-! ### Degree-indexed vertex corner dictionary -/
 
-private def projectiveDGHomCornerEquiv (i j : V) (n : ℤ) :
-    DGHom k n (D i) (D j) ≃ₗ[k] ↥(C i j n) := by
-  rw [← Int.neg_neg n]
-  exact L i j (-n)
+/-- Degree-indexed homogeneous vertex morphisms identify with the corner in that same degree. -/
+def zigzagAlgebraProjectiveDGHomEquivCornerOfDegree (i j : V) (d : ℤ) :
+    DGHom k d (D i) (D j) ≃ₗ[k] ↥(C i j d) :=
+  (((dgHomComplex k (D i) (D j)).XIsoOfEq (Int.neg_neg d).symm).toLinearEquiv.trans
+    (L i j (-d))).trans (LinearEquiv.ofEq _ _ (by dsimp only; rw [Int.neg_neg]))
+
+/-- The degree-indexed dictionary evaluates through the original internal-shift dictionary. -/
+@[simp]
+theorem coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_apply
+    (i j : V) (d : ℤ) (f : DGHom k d (D i) (D j)) :
+    (zigzagAlgebraProjectiveDGHomEquivCornerOfDegree k G i j d f : Z) =
+      (L i j (-d) (castDeg k (Int.neg_neg d).symm f) : Z) := by
+  simp only [zigzagAlgebraProjectiveDGHomEquivCornerOfDegree, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, Iso.toLinearEquiv_apply, ← castDeg_def]
+
+private theorem coe_projectiveCorner_castDeg (i j : V) (s t : ℤ) (h : s = t)
+    (f : DGHom k (-s) (D i) (D j)) :
+    (L i j t (castDeg k (congrArg (fun n : ℤ ↦ -n) h) f) : Z) = (L i j s f : Z) := by
+  subst t
+  simp only [castDeg_self]
+
+/-- The degree-indexed dictionary carries genuine enriched composition to corner multiplication. -/
+@[simp↓]
+theorem coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_comp
+    (i j l : V) (a b n : ℤ) (hab : a + b = n)
+    (f : DGHom k a (D i) (D j)) (g : DGHom k b (D j) (D l)) :
+    (zigzagAlgebraProjectiveDGHomEquivCornerOfDegree k G i l n (dgComp k f g hab) : Z) =
+      (zigzagAlgebraProjectiveDGHomEquivCornerOfDegree k G i j a f : Z) *
+        (zigzagAlgebraProjectiveDGHomEquivCornerOfDegree k G j l b g : Z) := by
+  subst n
+  -- The term isomorphisms evaluate as castDeg, while ofEq preserves ambient corner vectors.
+  simp only [zigzagAlgebraProjectiveDGHomEquivCornerOfDegree, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, Iso.toLinearEquiv_apply, ← castDeg_def]
+  have hcast := coe_projectiveCorner_castDeg k G i l (-b + -a) (-(a + b)) (by omega)
+    (castDeg k (by omega) (dgComp k f g rfl))
+  calc
+    _ = (L i l (-b + -a) (castDeg k (by omega) (dgComp k f g rfl)) : Z) := by
+      simpa only [castDeg_castDeg] using hcast
+    _ = _ := by
+      simpa only [castDeg_dgComp_eq_castDeg, dgComp_castDeg_eq_castDeg,
+        castDeg_castDeg] using
+        (coe_zigzagAlgebraProjectiveDGHomEquivCorner_comp k G i j l (-a) (-b)
+          (castDeg k (Int.neg_neg a).symm f) (castDeg k (Int.neg_neg b).symm g))
+
+/-! ### Finiteness and degree support of vertex Hom spaces -/
 
 /-- Homogeneous vertex morphisms vanish outside the three path degrees. -/
 theorem zigzagAlgebraProjectiveDGHom_subsingleton (i j : V) (n : ℤ)
@@ -333,7 +374,8 @@ theorem zigzagAlgebraProjectiveDGHom_subsingleton (i j : V) (n : ℤ)
     dsimp only
     rw [zigzagAlgebraIntegerGrade_eq_bot_of_not_mem k G hn, inf_bot_eq]
   have : Subsingleton ↥(C i j n) := by rw [hc]; infer_instance
-  exact (projectiveDGHomCornerEquiv k G i j n).toEquiv.subsingleton_congr.mpr inferInstance
+  exact (zigzagAlgebraProjectiveDGHomEquivCornerOfDegree k G i j n).toEquiv.subsingleton_congr.mpr
+    inferInstance
 
 /-- Homogeneous vertex morphisms are finite over every commutative coefficient ring. -/
 instance zigzagAlgebraProjectiveDGHom_moduleFinite (i j : V) (n : ℤ) :
@@ -358,7 +400,7 @@ instance zigzagAlgebraProjectiveDGHom_moduleFinite (i j : V) (n : ℤ) :
           (fun h ↦ hadj h.symm), bot_inf_eq]
         exact Submodule.fg_bot
   have : Module.Finite k ↥(C i j n) := Module.Finite.of_fg hfg
-  exact Module.Finite.equiv (projectiveDGHomCornerEquiv k G i j n).symm
+  exact Module.Finite.equiv (zigzagAlgebraProjectiveDGHomEquivCornerOfDegree k G i j n).symm
 
 /-!
 ## Cohomology of the vertex Hom complexes
