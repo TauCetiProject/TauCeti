@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
 public import TauCeti.Algebra.Lie.Prod
 public import Mathlib.Algebra.Module.Torsion.Prod
-public import Mathlib.Data.Fintype.Sort
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 
@@ -208,40 +207,8 @@ variable {R : Type u} [CommRing R] {n : Type*} [Fintype n] [LinearOrder n]
 
 /-! ### The height operator -/
 
-variable (n) in
-/-- A strictly decreasing integer labelling of the index type: the negated position of an index in
-the increasing enumeration of the (finite, linearly ordered) index type. Only its strict
-antitonicity is ever used. -/
-private noncomputable def heightLabel : n → ℤ :=
-  fun i => -(((monoEquivOfFin n rfl).symm i : Fin (Fintype.card n)) : ℕ)
-
-private theorem strictAnti_heightLabel : StrictAnti (heightLabel n) := fun a b hab => by
-  have h : (((monoEquivOfFin n rfl).symm a : Fin (Fintype.card n)) : ℕ)
-      < (((monoEquivOfFin n rfl).symm b : Fin (Fintype.card n)) : ℕ) :=
-    Fin.lt_def.mp ((monoEquivOfFin n rfl).symm.strictMono hab)
-  simpa only [heightLabel, neg_lt_neg_iff, Nat.cast_lt] using h
-
 variable [DecidableEq n]
-
-variable (R n) in
-/-- The **height operator**, the diagonal matrix carrying the labelling `TauCeti.heightLabel`. Its
-adjoint action scales the matrix unit `Eᵢⱼ` by `heightLabel i - heightLabel j`, an integer that is
-negative exactly when `Eᵢⱼ` is a lowering operator. -/
-private noncomputable def heightMatrix : Matrix n n R :=
-  diagonal fun i => (heightLabel n i : R)
-
-private theorem heightMatrix_apply_diag (i : n) :
-    heightMatrix R n i i = (heightLabel n i : R) :=
-  diagonal_apply_eq _ i
-
-private theorem heightMatrix_mem_diagonalCartan : heightMatrix R n ∈ diagonalCartan R n :=
-  diagonal_mem_diagonalCartan _
-
 variable {mu : n → R}
-
-variable (R) in
-/-- The eigenvalue of the height operator on a vector of weight `μ`. -/
-private noncomputable def heightValue (mu : n → R) : R := ∑ i, mu i * (heightLabel n i : R)
 
 variable {M : Type w} [AddCommGroup M] [Module R M] [LieRingModule (Matrix n n R) M]
   [LieModule R (Matrix n n R) M]
@@ -250,11 +217,11 @@ variable (mu M) in
 /-- The eigenspace of the height operator for the eigenvalue `k` steps below that of a vector of
 weight `μ`. -/
 private noncomputable def heightEigenspace (k : ℤ) : Submodule R M :=
-  Module.End.eigenspace (toEnd R (Matrix n n R) M (heightMatrix R n)) (heightValue R mu + (k : R))
+  Module.End.eigenspace (toEnd R (Matrix n n R) M (glHeightMatrix R n)) (glHeight R n mu + (k : R))
 
 private theorem mem_heightEigenspace {k : ℤ} {m : M} :
     m ∈ heightEigenspace mu M k ↔
-      ⁅heightMatrix R n, m⁆ = (heightValue R mu + (k : R)) • m := by
+      ⁅glHeightMatrix R n, m⁆ = (glHeight R n mu + (k : R)) • m := by
   simp [heightEigenspace]
 
 /-- **Any vector of weight `μ` is a height eigenvector at height `0`**: the height operator is
@@ -262,32 +229,23 @@ diagonal, so it acts by the corresponding combination of the entries of `μ`. -/
 private theorem mem_heightEigenspace_zero_of_forall_lie_single_self {w : M}
     (hw : ∀ i : n, ⁅(single i i (1 : R) : Matrix n n R), w⁆ = mu i • w) :
     w ∈ heightEigenspace mu M 0 := by
-  rw [mem_heightEigenspace, heightMatrix, ← Matrix.sum_single_eq_diagonal, sum_lie,
-    heightValue, Int.cast_zero, add_zero, Finset.sum_smul]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  have hsingle : single i i (heightLabel n i : R) =
-      (heightLabel n i : R) • single i i (1 : R) := by simp
-  rw [hsingle, smul_lie, hw i, smul_smul, mul_comm]
+  simpa [mem_heightEigenspace] using lie_glHeightMatrix_eq_smul hw
 
 variable {v : M}
 
 /-- A highest weight vector is a height eigenvector, at height `0` by definition of
-`TauCeti.heightValue`. -/
+`TauCeti.glHeight`. -/
 private theorem mem_heightEigenspace_zero_of_isGlHighestWeightVector
     (hv : IsGlHighestWeightVector mu v) : v ∈ heightEigenspace mu M 0 :=
   mem_heightEigenspace_zero_of_forall_lie_single_self hv.lie_single_self_eq_smul
 
-/-- The matrix unit `Eₐᵦ` moves the height eigenspaces by `heightLabel a - heightLabel b`. -/
+/-- The matrix unit `Eₐᵦ` moves the height eigenspaces by `glHeightLabel a - glHeightLabel b`. -/
 private theorem lie_single_mem_heightEigenspace {a b : n} {k : ℤ} {m : M}
     (hm : m ∈ heightEigenspace mu M k) :
     ⁅(single a b (1 : R) : Matrix n n R), m⁆
-      ∈ heightEigenspace mu M (k + (heightLabel n a - heightLabel n b)) := by
+      ∈ heightEigenspace mu M (k + (glHeightLabel n a - glHeightLabel n b)) := by
   rw [mem_heightEigenspace] at hm ⊢
-  rw [leibniz_lie, lie_single_of_mem_diagonalCartan heightMatrix_mem_diagonalCartan,
-    heightMatrix_apply_diag, heightMatrix_apply_diag, hm, smul_lie, lie_smul, ← add_smul]
-  congr 1
-  push_cast
-  ring
+  simpa [Int.cast_add, add_assoc] using lie_glHeightMatrix_lie_single_eq_smul hm a b
 
 variable (mu M v) in
 /-- The span of a highest weight vector together with the height eigenspaces strictly below it.
@@ -307,7 +265,8 @@ private theorem mem_lowerHeightSubmodule_self : v ∈ lowerHeightSubmodule mu M 
 private theorem lie_single_mem_lowerHeightSubmodule (hv : IsGlHighestWeightVector mu v)
     {a b : n} (hab : b < a) {m : M} (hm : m ∈ lowerHeightSubmodule mu M v) :
     ⁅(single a b (1 : R) : Matrix n n R), m⁆ ∈ lowerHeightSubmodule mu M v := by
-  have hneg : heightLabel n a - heightLabel n b < 0 := sub_neg.mpr (strictAnti_heightLabel hab)
+  have hneg : glHeightLabel n a - glHeightLabel n b < 0 :=
+    sub_neg.mpr (strictAnti_glHeightLabel hab)
   have key : lowerHeightSubmodule mu M v ≤ Submodule.comap
       (toEnd R (Matrix n n R) M (single a b (1 : R))) (lowerHeightSubmodule mu M v) := by
     refine sup_le ?_ (iSup_le fun k => iSup_le fun hk => fun y hy => ?_)
@@ -329,17 +288,17 @@ zero is used, through the injectivity of `ℤ → R`, and where `R` must be a do
 torsion on `M`. -/
 private theorem disjoint_heightEigenspace_zero :
     Disjoint (heightEigenspace mu M 0) (⨆ (k : ℤ) (_ : k < 0), heightEigenspace mu M k) := by
-  have hne : heightValue R mu + ((0 : ℤ) : R)
-      ∉ {c : R | c ≠ heightValue R mu + ((0 : ℤ) : R)} := by simp
+  have hne : glHeight R n mu + ((0 : ℤ) : R)
+      ∉ {c : R | c ≠ glHeight R n mu + ((0 : ℤ) : R)} := by simp
   refine Disjoint.mono_right ?_
     ((Module.End.eigenspaces_iSupIndep
-      (toEnd R (Matrix n n R) M (heightMatrix R n))).disjoint_biSup hne)
+      (toEnd R (Matrix n n R) M (glHeightMatrix R n))).disjoint_biSup hne)
   refine iSup₂_le fun k hk => ?_
-  have hmem : heightValue R mu + (k : R) ∈ {c : R | c ≠ heightValue R mu + ((0 : ℤ) : R)} := by
+  have hmem : glHeight R n mu + (k : R) ∈ {c : R | c ≠ glHeight R n mu + ((0 : ℤ) : R)} := by
     have hk0 : ((k : ℤ) : R) ≠ ((0 : ℤ) : R) := by exact_mod_cast hk.ne
     simpa using hk0
-  exact le_iSup₂ (f := fun (c : R) (_ : c ∈ {c : R | c ≠ heightValue R mu + ((0 : ℤ) : R)}) =>
-    Module.End.eigenspace (toEnd R (Matrix n n R) M (heightMatrix R n)) c) _ hmem
+  exact le_iSup₂ (f := fun (c : R) (_ : c ∈ {c : R | c ≠ glHeight R n mu + ((0 : ℤ) : R)}) =>
+    Module.End.eigenspace (toEnd R (Matrix n n R) M (glHeightMatrix R n)) c) _ hmem
 
 /-- **The highest weight line.** In the module a highest weight vector `v` of weight `μ` generates,
 every vector on which the diagonal matrix units act by `μ` is a multiple of `v`. In particular `v`
