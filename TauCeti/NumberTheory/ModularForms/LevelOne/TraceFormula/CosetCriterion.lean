@@ -239,16 +239,6 @@ private theorem eq_zero_of_ofMulAction_T_eq [Semiring k] (hn : n ≠ 0) {v : k[�
   · have := congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 0) h1
     simp [coe_T_zpow] at this
 
-/-- `S` and `U = T S` generate `PSL(2, ℤ)ᵐᵒᵖ`. -/
-private theorem closure_op_S_op_T_mul_S :
-    Subgroup.closure {MulOpposite.op (S : PSL(2, ℤ)), .op ((T : PSL(2, ℤ)) * S)} = ⊤ := by
-  have hop := congrArg Subgroup.op TauCeti.ModularGroup.closure_coe_S_coe_T_mul_coe_S
-  rw [Subgroup.op_closure, Subgroup.op_top] at hop
-  convert hop using 2
-  ext g
-  obtain ⟨g, rfl⟩ := MulOpposite.op_surjective g
-  simp [-MulOpposite.op_mul]
-
 /-! ### The two halves of the period defect -/
 
 section CommRing
@@ -415,7 +405,8 @@ theorem ExchangeRelations.periodRelation_iff_mapDomain_orbitRel_mk_coeff_eq_neg_
         hx, hcb, coeff_zero, Finsupp.coe_zero, Pi.zero_apply, smul_eq_mul, smul_eq_mul]
       linear_combination (invOf_mul_self (3 : k)) - (invOf_mul_self (2 : k))
     obtain ⟨_, ⟨u, rfl⟩, _, ⟨v, rfl⟩, huv⟩ := Submodule.mem_sup.1 <|
-      ((coinvariantsKer_eq_iSup_range _ closure_op_S_op_T_mul_S).trans iSup_pair).le hw
+      ((coinvariantsKer_eq_iSup_range _
+        TauCeti.ModularGroup.closure_op_coe_S_op_coe_T_mul_coe_S).trans iSup_pair).le hw
     set m := (⅟2 : k) • (-a) - (σ' - LinearMap.id : Module.End k k[ℳ n]) u
     have hm' : m = (⅟3 : k) • (-b) + (υ' - LinearMap.id : Module.End k k[ℳ n]) v := by
       simp only [m]

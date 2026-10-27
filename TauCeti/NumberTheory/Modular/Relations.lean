@@ -16,7 +16,8 @@ In `PSL(2, ℤ)` the classes of `S = (0 -1; 1 0)` and `U = T * S = (1 -1; 1 0)`,
 `T = (1 1; 0 1)`, satisfy `S² = 1` and `U³ = 1`, and `U * S = T`. In `SL(2, ℤ)` the first two
 products are `-1` and the last is `-T`, so each relation is proved by checking that the
 corresponding element of `SL(2, ℤ)` is `±1`, that is, central. Likewise `U² * S` is the class of
-the lower-triangular matrix `T′ = (1 0; 1 1)`. The classes of `S` and `U` generate `PSL(2, ℤ)`.
+the lower-triangular matrix `T′ = (1 0; 1 1)`. The classes of `S` and `U` generate `PSL(2, ℤ)`,
+and hence also its opposite group.
 
 `U` is written `(T : PSL(2, ℤ)) * S`, the simp-normal form of the class of `T * S`.
 
@@ -28,7 +29,9 @@ the lower-triangular matrix `T′ = (1 0; 1 1)`. The classes of `S` and `U` gene
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_inv`: `U³ = 1`, `U⁻¹ = U²` and `(U²)⁻¹ = U`.
 * `Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S`: `g * S * S = g`, the product form of
   `S² = 1`; in particular `U * S = T`.
-* `TauCeti.ModularGroup.closure_coe_S_coe_T_mul_coe_S`: `S` and `U` generate `PSL(2, ℤ)`.
+* `TauCeti.ModularGroup.closure_coe_S_coe_T_mul_coe_S`,
+  `TauCeti.ModularGroup.closure_op_coe_S_op_coe_T_mul_coe_S`: `S` and `U` generate `PSL(2, ℤ)`
+  and, as right multipliers, `PSL(2, ℤ)ᵐᵒᵖ`.
 * `TauCeti.ModularGroup.tPrime`, `TauCeti.ModularGroup.coe_tPrime`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_mul_coe_S`: the matrix `T′ = (1 0; 1 1)` and
   `U² * S = T′`.
@@ -84,6 +87,16 @@ theorem closure_coe_S_coe_T_mul_coe_S :
     TauCeti.Matrix.SpecialLinearGroup.closure_S_T_mul_S
   rwa [MonoidHom.map_closure, Set.image_pair,
     Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective _)] at h
+
+/-- The classes of `S` and `U = T * S` generate `PSL(2, ℤ)ᵐᵒᵖ`, the group acting on the right. -/
+theorem closure_op_coe_S_op_coe_T_mul_coe_S :
+    Subgroup.closure {MulOpposite.op (S : PSL(2, ℤ)), .op ((T : PSL(2, ℤ)) * S)} = ⊤ := by
+  have hop := congrArg Subgroup.op closure_coe_S_coe_T_mul_coe_S
+  rw [Subgroup.op_closure, Subgroup.op_top] at hop
+  convert hop using 2
+  ext g
+  obtain ⟨g, rfl⟩ := MulOpposite.op_surjective g
+  simp [-MulOpposite.op_mul]
 
 /-- Right multiplication by `S` is an involution of `PSL(2, ℤ)`. -/
 @[simp]
