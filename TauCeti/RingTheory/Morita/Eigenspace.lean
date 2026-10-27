@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.RingTheory.Morita.ModuleEnd
 
+import TauCeti.LinearAlgebra.Eigenspace.TensorProduct
+
 /-!
 # Eigenspaces of modules over an algebra acting on `S` as all of `End S`
 
@@ -25,7 +27,8 @@ off from its eigenspaces in `S`: evaluation restricts to an isomorphism
 whenever the multiplicity space `S →ₗ[A] M` is flat over `k`, for instance whenever `k` is a
 field. Flatness is what makes the kernel of `(a - μ) ⊗ id` the image of `ker (a - μ) ⊗ X`, and it
 cannot be dropped: for `A = S = k` and a non-zero-divisor `r ∈ k`, the `0`-eigenspace of `r` is
-zero in `S` but is the `r`-torsion of `M`.
+zero in `S` but is the `r`-torsion of `M`. The flat exactness statement is
+`Module.End.exact_rTensor_eigenspace`.
 
 The case in view is the spinor module `S` of an even-dimensional complex Clifford algebra, where
 `a` is the chirality element: the eigenspaces of an arbitrary Clifford module `E` are then
@@ -60,25 +63,6 @@ variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
 variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable (h : Function.Bijective (Algebra.lsmul k k S : A →ₐ[k] Module.End k S))
 
-/-- On `S ⊗[k] X`, the eigenspace inclusion of `a` on `S`, tensored with `X`, is exact against
-`(a - μ) ⊗ id`. -/
-private theorem exact_rTensor_eigenspace (X : Type*) [AddCommGroup X] [Module k X]
-    [Module.Flat k X] (a : A) (μ : k) :
-    Function.Exact (((Algebra.lsmul k k S a).eigenspace μ).subtype.rTensor X)
-      ((Algebra.lsmul k k S a - μ • 1).rTensor X) := by
-  refine Module.Flat.rTensor_exact X ?_
-  rw [LinearMap.exact_iff, Submodule.range_subtype]
-  ext s
-  simp [sub_eq_zero]
-
-/-- `(a - μ) ⊗ id` acts on `S ⊗[k] X` as `a - μ` for the action of `A` on the left factor. -/
-private theorem rTensor_lsmul_sub_smul_apply (X : Type*) [AddCommGroup X] [Module k X] (a : A)
-    (μ : k) (t : S ⊗[k] X) :
-    (Algebra.lsmul k k S a - μ • 1).rTensor X t = a • t - μ • t := by
-  induction t using TensorProduct.inductionOn with
-  | tmul s x => simp [smul_tmul']
-  | add t u ht hu => rw [map_add, ht, hu, smul_add, smul_add]; abel
-
 variable [Module.Finite k S] [Module.Projective k S] [Module.Flat k (S →ₗ[A] M)]
 
 /-- Evaluation restricted to the `μ`-eigenspace of `a` on `S`, tensored with the multiplicity
@@ -98,7 +82,7 @@ private theorem range_eigenspaceEval (a : A) (μ : k) :
   set e := (isotypicTensorEquivOfBijective h (M := M)).restrictScalars k
   ext y
   rw [eigenspaceEval, LinearMap.range_comp, Submodule.mem_map_equiv,
-    ← (exact_rTensor_eigenspace (S →ₗ[A] M) a μ).linearMap_ker_eq, LinearMap.mem_ker,
+    ← (Module.End.exact_rTensor_eigenspace _ μ (S →ₗ[A] M)).linearMap_ker_eq, LinearMap.mem_ker,
     rTensor_lsmul_sub_smul_apply, Module.End.mem_eigenspace_iff, Algebra.lsmul_coe]
   -- `e⁻¹` is linear for both `A` and `k`, so it carries `a • y - μ • y` to the same expression.
   have he : a • e.symm y - μ • e.symm y = e.symm (a • y - μ • y) := by

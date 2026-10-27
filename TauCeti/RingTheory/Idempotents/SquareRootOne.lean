@@ -47,6 +47,8 @@ consume, but not the passage from a square root of one to the idempotent pair.
 
 * `TauCeti.halfOneAdd_add_halfOneAdd_neg`, `TauCeti.halfOneAdd_sub_halfOneAdd_neg`: the pair is
   complementary, and its difference recovers `ω`.
+* `TauCeti.halfOneAdd_smul_add_halfOneAdd_neg_smul`: in every module, each vector is the sum of
+  its images under the pair.
 * `TauCeti.halfOneAdd_mul_halfOneAdd_neg`, `TauCeti.isIdempotentElem_halfOneAdd`: for a square root
   of one the pair is orthogonal and idempotent.
 * `TauCeti.mul_halfOneAdd`, `TauCeti.mul_halfOneAdd_neg`: `ω` acts on the two idempotents by
@@ -91,6 +93,11 @@ theorem halfOneAdd_sub_halfOneAdd_neg (ω : A) : halfOneAdd R ω - halfOneAdd R 
 `IsIdempotentElem` API talks about it. -/
 theorem halfOneAdd_neg_eq_one_sub (ω : A) : halfOneAdd R (-ω) = 1 - halfOneAdd R ω :=
   eq_sub_of_add_eq' (halfOneAdd_add_halfOneAdd_neg R ω)
+
+/-- **Every vector splits along the pair**: in any `A`-module, `½ (1 + ω) m + ½ (1 - ω) m = m`. -/
+theorem halfOneAdd_smul_add_halfOneAdd_neg_smul {M : Type*} [AddCommGroup M] [Module A M] (ω : A)
+    (m : M) : halfOneAdd R ω • m + halfOneAdd R (-ω) • m = m := by
+  rw [← add_smul, halfOneAdd_add_halfOneAdd_neg, one_smul]
 
 variable {ω : A}
 

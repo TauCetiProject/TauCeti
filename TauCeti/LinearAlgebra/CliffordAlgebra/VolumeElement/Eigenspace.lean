@@ -38,10 +38,10 @@ the same dimension as soon as `n > 0`. In odd dimension `Γ` is central, so `E�
 preserved by the whole Clifford algebra: they are the two multiplicity pieces of `E` for the two
 central factors labelled by `Γ = ±1`.
 
-Finally, let `S` be a spinor module, a finite-dimensional `Cℓ`-module on which `Cℓ` acts as the
-whole of `End_ℂ S`, as for the Fock module of an even-dimensional space
-(`TauCeti.SpinPolarizationData.cliffordEquivEnd`). Then `dim S = 2 ^ (n / 2)`
-(`CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`), its half-spin
+Finally, suppose `n` is even and positive, and let `S` be a spinor module, a finite-dimensional
+`Cℓ`-module on which `Cℓ` acts as the whole of `End_ℂ S`, as for the Fock module of an
+even-dimensional space (`TauCeti.SpinPolarizationData.cliffordEquivEnd`). Then
+`dim S = 2 ^ (n / 2)` (`CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`), its half-spin
 spaces `S⁺` and `S⁻` both have dimension `2 ^ (n / 2 - 1)`, and by Morita evaluation
 (`TauCeti.eigenspaceTensorEquivOfBijective`) every module satisfies
 
@@ -63,10 +63,10 @@ so that `dim E^± = 2 ^ (n / 2 - 1) · dim Hom_Cℓ(S, E)`.
   Clifford algebra preserves the eigenspaces.
 * `CliffordAlgebra.finrank_eigenspace_complexVolume_neg`: in even positive dimension,
   `dim E⁻ = dim E⁺`.
-* `CliffordAlgebra.finrank_eigenspace_complexVolume_of_bijective_lsmul`: the half-spin spaces of
-  a spinor module have dimension `2 ^ (n / 2 - 1)`.
-* `CliffordAlgebra.finrank_eigenspace_complexVolume_eq_mul_finrank_linearMap`:
-  `dim E^± = 2 ^ (n / 2 - 1) · dim Hom_Cℓ(S, E)`.
+* `CliffordAlgebra.finrank_eigenspace_complexVolume_of_bijective_lsmul`: in even positive
+  dimension, the half-spin spaces of a spinor module have dimension `2 ^ (n / 2 - 1)`.
+* `CliffordAlgebra.finrank_eigenspace_complexVolume_eq_mul_finrank_linearMap`: in even positive
+  dimension, `dim E^± = 2 ^ (n / 2 - 1) · dim Hom_Cℓ(S, E)`.
 
 ## References
 
@@ -154,18 +154,12 @@ theorem halfOneAdd_neg_smul_mem_eigenspace_complexVolume (ψ : E) :
   simp only [mem_eigenspace_iff, Algebra.lsmul_coe]
   rw [← mul_smul, mul_halfOneAdd_neg ℂ (complexVolume_mul_self o hQ), neg_smul, neg_one_smul]
 
-omit hQ [Module ℂ E] [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) E] in
-/-- Every vector is the sum of its components `½ (1 + Γ) ψ` and `½ (1 - Γ) ψ`. -/
-private theorem halfOneAdd_smul_add_halfOneAdd_neg_smul (ψ : E) :
-    halfOneAdd ℂ (complexVolume Q o) • ψ + halfOneAdd ℂ (-complexVolume Q o) • ψ = ψ := by
-  rw [← add_smul, halfOneAdd_add_halfOneAdd_neg, one_smul]
-
 /-- **The projection onto the `1`-eigenspace** of `Γ`, along the `-1`-eigenspace, is the action
 of `½ (1 + Γ)`. -/
 theorem projection_eigenspace_complexVolume_apply (ψ : E) :
     Submodule.projection _ _ (isCompl_eigenspace_complexVolume (Q := Q) (E := E) o hQ) ψ =
       halfOneAdd ℂ (complexVolume Q o) • ψ := by
-  conv_lhs => rw [← halfOneAdd_smul_add_halfOneAdd_neg_smul (Q := Q) o ψ]
+  conv_lhs => rw [← halfOneAdd_smul_add_halfOneAdd_neg_smul ℂ (complexVolume Q o) ψ]
   rw [map_add, Submodule.projection_apply_of_mem_left _
       (halfOneAdd_smul_mem_eigenspace_complexVolume o hQ ψ),
     Submodule.projection_apply_of_mem_right _
@@ -176,7 +170,7 @@ of `½ (1 - Γ)`. -/
 theorem projection_eigenspace_complexVolume_neg_one_apply (ψ : E) :
     Submodule.projection _ _ (isCompl_eigenspace_complexVolume (Q := Q) (E := E) o hQ).symm ψ =
       halfOneAdd ℂ (-complexVolume Q o) • ψ := by
-  conv_lhs => rw [← halfOneAdd_smul_add_halfOneAdd_neg_smul (Q := Q) o ψ]
+  conv_lhs => rw [← halfOneAdd_smul_add_halfOneAdd_neg_smul ℂ (complexVolume Q o) ψ]
   rw [map_add, Submodule.projection_apply_of_mem_right _
       (halfOneAdd_smul_mem_eigenspace_complexVolume o hQ ψ),
     Submodule.projection_apply_of_mem_left _
