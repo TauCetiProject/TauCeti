@@ -168,11 +168,13 @@ variable {R S M N : Type*} [CommSemiring R] [CommSemiring S] [AddCommMonoid M] [
   [RingHomInvPair σ' σ]
 
 /-- Conjugation by a semilinear equivalence commutes with powers. -/
+@[simp]
 theorem conj_pow (e : M ≃ₛₗ[σ] N) (f : Module.End R M) (k : ℕ) :
     e.conj (f ^ k) = e.conj f ^ k :=
   map_pow e.conjRingEquiv f k
 
 /-- Conjugation by a semilinear equivalence `e` carries the kernel of `f` to its image under `e`. -/
+@[simp]
 theorem ker_conj (e : M ≃ₛₗ[σ] N) (f : Module.End R M) :
     LinearMap.ker (e.conj f) = (LinearMap.ker f).map (e : M →ₛₗ[σ] N) :=
   (map_ker_of_intertwine e f (e.conj f) fun d => by simp).symm

@@ -99,6 +99,7 @@ end LinearMap
 namespace LinearEquiv
 
 /-- Conjugate endomorphisms have kernels of the same dimension. -/
+@[simp]
 theorem finrank_ker_conj {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
     [AddCommMonoid N] [Module R N] (e : M ≃ₗ[R] N) (f : Module.End R M) :
     finrank R (LinearMap.ker (e.conj f)) = finrank R (LinearMap.ker f) := by
