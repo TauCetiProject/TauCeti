@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
-public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices
+public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Basic
 
 /-!

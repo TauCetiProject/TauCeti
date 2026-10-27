@@ -42,6 +42,8 @@ capacity; for residual capacities these are augmenting walks.
 * `TauCeti.ArrowWalk.bottleneck`: the least capacity along a walk that traverses an arrow.
 * `TauCeti.PositiveReachable c s t`: some walk from `s` to `t` traverses only arrows of positive
   capacity for `c`.
+* `TauCeti.ReachableWithout F s t`: some walk from `s` to `t` traverses no arrow of the set `F`
+  of arrows, so `t` stays reachable from `s` after deleting the arrows of `F`.
 * `TauCeti.ReachableAvoiding Q X s t`: some walk from `s` to `t` visits no vertex of `X`, so `t`
   stays reachable from `s` after deleting the vertices of `X`.
 * `TauCeti.ArrowWalk.InternallyDisjoint`: two walks from `s` to `t` sharing no vertex other than
@@ -68,7 +70,8 @@ capacity; for residual capacities these are augmenting walks.
 * `TauCeti.positiveReachable_iff_nonempty_arrowWalk`: positive reachability is reachability along
   the arrow family `TauCeti.PositiveHom c` of arrows of positive capacity.
 * `TauCeti.PositiveReachable.mem_of_mem`: a vertex set that no arrow of positive capacity leaves
-  contains every vertex positively reachable from one of its members.
+  contains every vertex positively reachable from one of its members, and
+  `TauCeti.ReachableWithout.mem_of_mem` is the counterpart for deleted arrows.
 * `TauCeti.positiveReachable_map_iff` and `TauCeti.positiveReachable_map_iff_of_strictMono`: a
   coefficient map preserving and reflecting positivity, such as a strictly monotone map fixing
   zero, does not change positive reachability.
@@ -305,6 +308,16 @@ end Bottleneck
 
 end ArrowWalk
 
+/-- An arrow-disjoint family of walks between distinct vertices has distinct members: a walk
+between distinct vertices traverses some arrow, which a second copy of it would share. -/
+theorem injective_of_pairwise_disjoint_arrows {s t : V} (hst : s ≠ t) {ι : Type*}
+    {P : ι → ArrowWalk Q s t} (hP : Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows) :
+    Function.Injective P := by
+  intro i j hij
+  by_contra hne
+  obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil _ ((P j).arrows_ne_nil hst)
+  exact hP hne (hij ▸ ha) ha
+
 /-! ### Reachability along arrows of positive capacity -/
 
 section PositiveReachable
@@ -497,6 +510,76 @@ lemma exists_isPath_of_isAcyclic {K : Type w} [Zero K] [LinearOrder K] [Finite V
     exact hmin w (ReflTransGen.head ⟨e', h⟩ hs) (.single ⟨e', h⟩)
   · refine le_antisymm (not_lt.1 fun h ↦ ?_) (hf _ _ e')
     exact hmax w (ht.tail ⟨e', h⟩) (.single ⟨e', h⟩)
+
+/-! ### Reachability after deleting arrows -/
+
+section ReachableWithout
+
+variable {F G : Set (Σ x y, Q x y)} {s t x : V}
+
+/-- The vertex `t` is *reachable from `s` without the arrows of `F`* when some walk from `s` to `t`
+traverses no arrow of `F`: reachability after deleting the arrows of `F`, which are identified in
+the total arrow type, so that parallel arrows are deleted separately. -/
+def ReachableWithout (F : Set (Σ x y, Q x y)) (s t : V) : Prop :=
+  ∃ p : ArrowWalk Q s t, ∀ a ∈ p.arrows, a ∉ F
+
+theorem reachableWithout_def :
+    ReachableWithout F s t ↔ ∃ p : ArrowWalk Q s t, ∀ a ∈ p.arrows, a ∉ F :=
+  Iff.rfl
+
+/-- Deleting no arrows, reachability is the existence of a walk. -/
+@[simp]
+theorem reachableWithout_empty_iff :
+    ReachableWithout (∅ : Set (Σ x y, Q x y)) s t ↔ Nonempty (ArrowWalk Q s t) := by
+  simp [reachableWithout_def]
+
+@[refl, simp]
+theorem ReachableWithout.refl (F : Set (Σ x y, Q x y)) (s : V) : ReachableWithout F s s :=
+  ⟨ArrowWalk.nil s, by simp⟩
+
+/-- A reachable vertex stays reachable along a further arrow outside `F`. -/
+theorem ReachableWithout.tail (h : ReachableWithout F s t) (e : Q t x) (he : ⟨t, x, e⟩ ∉ F) :
+    ReachableWithout F s x := by
+  obtain ⟨p, hp⟩ := h
+  refine ⟨p.cons e, fun a ha ↦ ?_⟩
+  rw [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at ha
+  rcases ha with ha | rfl
+  exacts [hp a ha, he]
+
+@[trans]
+theorem ReachableWithout.trans (h : ReachableWithout F s t) (h' : ReachableWithout F t x) :
+    ReachableWithout F s x := by
+  obtain ⟨p, hp⟩ := h
+  obtain ⟨p', hp'⟩ := h'
+  refine ⟨p.comp p', fun a ha ↦ ?_⟩
+  rw [ArrowWalk.arrows_comp, List.mem_append] at ha
+  exact ha.elim (hp a) (hp' a)
+
+/-- Deleting fewer arrows preserves reachability. -/
+theorem ReachableWithout.mono (hFG : F ⊆ G) (h : ReachableWithout G s t) :
+    ReachableWithout F s t :=
+  let ⟨p, hp⟩ := h
+  ⟨p, fun a ha haF ↦ hp a ha (hFG haF)⟩
+
+/-- Reachability after deleting arrows is witnessed by a path. -/
+theorem reachableWithout_iff_exists_isPath :
+    ReachableWithout F s t ↔ ∃ p : ArrowWalk Q s t, p.IsPath ∧ ∀ a ∈ p.arrows, a ∉ F := by
+  refine ⟨fun ⟨p, hp⟩ ↦ ?_, fun ⟨p, _, hp⟩ ↦ ⟨p, hp⟩⟩
+  obtain ⟨p', hp', hsub⟩ := p.exists_isPath_arrows_subset
+  exact ⟨p', hp', fun a ha ↦ hp a (hsub ha)⟩
+
+/-- A vertex set that no arrow outside `F` leaves contains every vertex reachable without the
+arrows of `F` from one of its members. -/
+theorem ReachableWithout.mem_of_mem {C : Set V} (h : ReachableWithout F s t) (hs : s ∈ C)
+    (hC : ∀ ⦃v w : V⦄ (e : Q v w), v ∈ C → ⟨v, w, e⟩ ∉ F → w ∈ C) : t ∈ C := by
+  obtain ⟨p, hp⟩ := h
+  induction p with
+  | nil => exact hs
+  | cons p e ih =>
+    simp only [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at hp
+    exact hC e (ih fun a ha ↦ hp a (.inl ha)) (hp _ (.inr rfl))
+
+end ReachableWithout
 
 /-! ### Reachability avoiding a vertex set -/
 
