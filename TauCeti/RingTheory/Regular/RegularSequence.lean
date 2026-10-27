@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Depth
+public import TauCeti.RingTheory.Depth.Basic
 public import Mathlib.RingTheory.Regular.RegularSequence
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.RingTheory.Flat.Localization
