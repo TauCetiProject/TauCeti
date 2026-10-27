@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Polynomial.SimpleRoots.Basic
 public import TauCeti.Topology.PiCurry.Analytic
 import Mathlib.Analysis.Analytic.Constructions
