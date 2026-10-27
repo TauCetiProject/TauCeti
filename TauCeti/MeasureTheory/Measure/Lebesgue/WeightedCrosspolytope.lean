@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 import TauCeti.Analysis.Convex.L1Ball
@@ -18,7 +19,13 @@ Euclidean volume is the volume of the coordinate ℓ¹ unit ball, multiplied by 
 basis determinant and divided by the product of the weights. This is the volume calculation
 used in the lower bound of Minkowski's second theorem.
 
-The argument reuses `TauCeti.volume_l1Ball` and Mathlib's determinant formula for linear images
+For an arbitrary additive Haar measure `μ` on a finite-dimensional real normed space, the same
+cross-polytope has measure `2 ^ n / n! / ∏ i, a i` times the measure of the fundamental
+parallelepiped of `b` (`Module.Basis.addHaar_weighted_crosspolytope`). No inner product is needed:
+the coordinates of `b` carry `μ` to a multiple of Lebesgue measure on `ι → ℝ`, and the multiple is
+the measure of the fundamental parallelepiped.
+
+The arguments reuse `TauCeti.volume_l1Ball` and Mathlib's determinant formula for linear images
 of additive Haar measure, `MeasureTheory.Measure.addHaar_image_linearMap`.
 
 ## References
@@ -89,3 +96,48 @@ theorem volume_weighted_crosspolytope {ι E : Type*} [Fintype ι] [DecidableEq �
       ring
 
 end OrthonormalBasis
+
+namespace Module.Basis
+
+/-- The measure of a weighted cross-polytope for an arbitrary additive Haar measure `μ`: if `b` is a
+basis of `E` and the weights `a i` are positive, then `{x | ∑ i, a i * |b.repr x i| ≤ 1}` has
+measure `2 ^ n / n! / ∏ i, a i` times the measure of the fundamental parallelepiped of `b`, where
+`n` is the number of basis vectors. In an inner product space with its canonical volume that
+measure is the absolute determinant of `b` in an orthonormal basis, as in
+`OrthonormalBasis.volume_weighted_crosspolytope`. -/
+theorem addHaar_weighted_crosspolytope {ι E : Type*} [Fintype ι] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] (b : Basis ι ℝ E) (μ : Measure E)
+    [μ.IsAddHaarMeasure] {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+    μ {x : E | ∑ i, a i * |b.repr x i| ≤ 1} =
+      ENNReal.ofReal ((2 : ℝ) ^ Fintype.card ι / (Fintype.card ι).factorial / ∏ i, a i) *
+        μ (ZSpan.fundamentalDomain b) := by
+  classical
+  have : FiniteDimensional ℝ E := b.finiteDimensional_of_finite
+  -- The coordinates `φ` carry `μ` to a multiple `c • volume` of Lebesgue measure.
+  set φ := b.equivFun.toContinuousLinearEquiv
+  have hφ : MeasurableEmbedding φ := φ.toHomeomorph.toMeasurableEquiv.measurableEmbedding
+  have : (μ.map φ).IsAddHaarMeasure := φ.isAddHaarMeasure_map μ
+  obtain ⟨c, hc⟩ : ∃ c : ENNReal, μ.map φ = c • volume :=
+    ⟨_, by rw [← addHaarMeasure_eq_volume_pi ι]; exact Measure.addHaarMeasure_unique _ _⟩
+  have hμ (t : Set E) : μ t = c * volume (φ '' t) := by
+    rw [← smul_eq_mul, ← Measure.smul_apply, ← hc, hφ.map_apply,
+      Set.preimage_image_eq t φ.injective]
+  -- The multiple `c` is the measure of the fundamental parallelepiped, the preimage of the cube.
+  have hF : φ '' ZSpan.fundamentalDomain b = Set.pi Set.univ fun _ ↦ Set.Ico (0 : ℝ) 1 := by
+    ext y
+    have hy (i : ι) : b.repr (φ.symm y) i = y i := congrFun (φ.apply_symm_apply y) i
+    simp [ContinuousLinearEquiv.image_eq_preimage_symm, ZSpan.mem_fundamentalDomain, hy]
+  -- The cross-polytope is the preimage of the `ℓ¹` ball under the diagonal map of the weights.
+  set D := Matrix.toLin' (Matrix.diagonal a)
+  have hD : LinearMap.det D = ∏ i, a i := by rw [LinearMap.det_toLin', Matrix.det_diagonal]
+  have hC : φ '' {x : E | ∑ i, a i * |b.repr x i| ≤ 1} = D ⁻¹' TauCeti.l1Ball ι := by
+    ext y
+    have hy (i : ι) : b.repr (φ.symm y) i = y i := congrFun (φ.apply_symm_apply y) i
+    simp [ContinuousLinearEquiv.image_eq_preimage_symm, TauCeti.mem_l1Ball, D, hy,
+      Matrix.mulVec_diagonal, abs_mul, abs_of_pos (ha _)]
+  have hprod : 0 < ∏ i, a i := Finset.prod_pos fun i _ ↦ ha i
+  rw [hμ, hμ, hF, Real.volume_pi_Ico, hC, Measure.addHaar_preimage_linearMap _ (hD ▸ hprod.ne'),
+    TauCeti.volume_l1Ball, hD, abs_inv, abs_of_pos hprod, ← ENNReal.ofReal_mul (by positivity)]
+  simp [div_eq_mul_inv, mul_comm]
+
+end Module.Basis

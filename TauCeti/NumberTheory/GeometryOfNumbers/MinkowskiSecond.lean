@@ -12,30 +12,36 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
 import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
 import TauCeti.Algebra.Module.ZLattice.Covolume
+import TauCeti.Analysis.Convex.Combination
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.LinearAlgebra.Basis.Triangular
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.MeasureTheory.Constructions.Pi
+import TauCeti.MeasureTheory.Measure.Lebesgue.WeightedCrosspolytope
 
 /-!
-# Minkowski's second theorem: the upper bound
+# Minkowski's second theorem
 
 Let `L` be a full lattice in an `n`-dimensional real normed space `E`, let `μ` be an additive
 Haar measure on `E`, and let `K` be a convex set symmetric about the origin. Minkowski's second
-theorem bounds the product of the successive minima `λ₀ ≤ ⋯ ≤ λₙ₋₁` of `L` with respect to `K`:
+theorem bounds the product of the successive minima `λ₀ ≤ ⋯ ≤ λₙ₋₁` of `L` with respect to `K`
+from both sides:
 
 ```text
-λ₀ ⋯ λₙ₋₁ · μ K ≤ 2ⁿ · covolume L μ.
+2ⁿ / n! · covolume L μ ≤ λ₀ ⋯ λₙ₋₁ · μ K ≤ 2ⁿ · covolume L μ.
 ```
 
-Since `λ₀ ≤ λᵢ` for every `i`, this strengthens Minkowski's first theorem, and it is the bound
-against which the products of the gauges of short lattice bases (such as fundamental systems of
-units, or bases of the integer kernel of a matrix) are measured.
+The lower bound assumes that `K` is a convex body with `0` in its interior. Both bounds are sharp:
+weighted cross-polytopes attain the lower one and weighted boxes the upper one.
 
-The main statement does not use a successive-minima function. It takes `ℝ`-independent lattice
-vectors `a i` and nonnegative numbers `g i` such that every lattice vector `v` with
-`gauge K v < g j` lies in the span of `a 0, …, a (j - 1)`. Independent vectors realizing the
-successive minima satisfy this with `g = λ`: if `gauge K v < λ_j` and `i ≤ j` is least with
+Since `λ₀ ≤ λᵢ` for every `i`, the upper bound strengthens Minkowski's first theorem, and it is the
+bound against which the products of the gauges of short lattice bases (such as fundamental systems
+of units, or bases of the integer kernel of a matrix) are measured.
+
+The main statement of the upper bound does not use a successive-minima function. It takes
+`ℝ`-independent lattice vectors `a i` and nonnegative numbers `g i` such that every lattice vector
+`v` with `gauge K v < g j` lies in the span of `a 0, …, a (j - 1)`. Independent vectors realizing
+the successive minima satisfy this with `g = λ`: if `gauge K v < λ_j` and `i ≤ j` is least with
 `λ_i > gauge K v`, then `a 0, …, a (i - 1)` and `v` lie in `(gauge K v) • K`, so `v` is in the span
 of `a 0, …, a (i - 1)` (`ZLattice.mem_span_image_Iio_of_gauge_lt_successiveMin`). Conversely,
 every such `g` satisfies `g j ≤ λ_j`.
@@ -49,8 +55,15 @@ every such `g` satisfies `g j ≤ λ_j`.
   and its real-valued form `ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`.
 * `ZLattice.prod_successiveMin_le_covolume_of_two_pow_finrank_le`: `λ₀ ⋯ λₙ₋₁ ≤ covolume L μ`
   for a symmetric convex body `K` with `2ⁿ ≤ μ K`.
+* `ZLattice.two_pow_div_factorial_mul_covolume_le_prod_mul_measure`: the lower bound
+  `2 ^ n / n! * covolume L μ ≤ (∏ i, a i) * μ K` for a basis `b` of lattice vectors with
+  `b i ∈ a i • K`.
+* `ZLattice.two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measure`: the classical
+  lower bound `2ⁿ / n! · covolume L μ ≤ λ₀ ⋯ λₙ₋₁ · μ K` for a symmetric convex body `K` with `0`
+  in its interior, and its real-valued form
+  `ZLattice.two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measureReal`.
 
-## Proof
+## Proof of the upper bound
 
 Coordinates in a `ℤ`-basis of `L` adapted to the flag spanned by the `a i`
 (`ZLattice.exists_basis_triangular`) reduce the statement to `L = ℤⁿ ⊆ ℝⁿ`, with
@@ -74,11 +87,24 @@ gives a subset of the unit cube, of volume at most `1`. Folding no coordinate do
 Chaining them from `V₀(g 0) = g 0 ^ n · vol C` up to `Vₙ(g (n - 1)) ≤ 1` gives
 `g 0 ⋯ g (n - 1) · vol C ≤ 1`.
 
+## Proof of the lower bound
+
+Take a basis `b` of `E` made of lattice vectors with `b i ∈ λ_i • K`
+(`ZLattice.exists_basis_gauge_eq_successiveMin`). Since `K` is convex and symmetric, it contains
+the weighted cross-polytope `{x | ∑ i, λ_i * |b.repr x i| ≤ 1}`
+(`Convex.weighted_crosspolytope_subset`), whose measure is `2ⁿ / n! / (λ₀ ⋯ λₙ₋₁)` times the
+measure of the fundamental parallelepiped of `b` (`Module.Basis.addHaar_weighted_crosspolytope`).
+That parallelepiped is a fundamental domain of the sublattice spanned by `b`, so its measure bounds
+the covolume of `L` (`ZLattice.covolume_le_abs_det_mul_measureReal`). The argument works with any
+Haar measure directly, without transport to a Euclidean space.
+
 ## References
 
 * J. W. S. Cassels, *An Introduction to the Geometry of Numbers*, Springer, 1959, Chapter VIII.
 * H. Davenport, *Minkowski's inequality for the minima associated with a convex body*, Quart. J.
   Math. Oxford **10** (1939), 119–121.
+* J.-H. Evertse, *Geometry of Numbers*, §2.3, Theorem 2.9 and the proof of its lower bound,
+  printed pp.24–27: <https://pub.math.leidenuniv.nl/~evertsejh/dio19-2.pdf>.
 -/
 
 public section
@@ -592,5 +618,71 @@ theorem prod_successiveMin_le_covolume_of_two_pow_finrank_le (L : Submodule ℤ 
     _ ≤ 2 ^ finrank ℝ E * ENNReal.ofReal (ZLattice.covolume L μ) :=
       prod_successiveMin_mul_measure_le_two_pow_mul_covolume L μ hKs
     _ = ENNReal.ofReal (ZLattice.covolume L μ) * 2 ^ finrank ℝ E := mul_comm _ _
+
+
+/-! ### The lower bound -/
+
+/-- **Minkowski's second theorem**, lower bound, general form. Let `L` be a discrete `ℤ`-submodule
+of an `n`-dimensional real normed space `E`, `μ` a Haar measure on `E`, and `K ⊆ E` convex,
+containing `0` and symmetric about it. If `b` is a basis of `E` over `ℝ` made of vectors of `L` and
+the positive numbers `a i` satisfy `b i ∈ a i • K`, then `2 ^ n / n! * covolume L μ ≤
+(∏ i, a i) * μ K`. The basis already implies that `L` is a full lattice.
+
+A basis attaining the successive minima `λ₀ ≤ ⋯ ≤ λₙ₋₁` of `L` with respect to `K` satisfies the
+hypothesis with `a = λ`, which gives the classical form `2ⁿ / n! · covolume L μ ≤
+λ₀ ⋯ λₙ₋₁ · μ K`. -/
+theorem two_pow_div_factorial_mul_covolume_le_prod_mul_measure (L : Submodule ℤ E)
+    [DiscreteTopology L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] {K : Set E}
+    (hK : Convex ℝ K) (h0 : (0 : E) ∈ K) (hKs : ∀ x ∈ K, -x ∈ K) {ι : Type*} [Fintype ι]
+    (b : Basis ι ℝ E) (hbL : ∀ i, b i ∈ L) {a : ι → ℝ} (ha : ∀ i, 0 < a i)
+    (hbK : ∀ i, b i ∈ a i • K) :
+    ENNReal.ofReal (2 ^ finrank ℝ E / (finrank ℝ E).factorial * ZLattice.covolume L μ) ≤
+      ENNReal.ofReal (∏ i, a i) * μ K := by
+  classical
+  -- The fundamental parallelepiped of `b` bounds the covolume of `L`, the cross-polytope spanned
+  -- by the `(a i)⁻¹ • b i` lies in `K`, and the two measures differ by `2 ^ n / n! / ∏ i, a i`.
+  have hprod : 0 < ∏ i, a i := Finset.prod_pos fun i _ ↦ ha i
+  have hcov : ZLattice.covolume L μ ≤ μ.real (ZSpan.fundamentalDomain b) := by
+    simpa [Basis.det_self] using ZLattice.covolume_le_abs_det_mul_measureReal L b hbL b μ
+  have hF : μ (ZSpan.fundamentalDomain b) ≠ ⊤ :=
+    (ZSpan.fundamentalDomain_isBounded b).measure_lt_top.ne
+  calc ENNReal.ofReal (2 ^ finrank ℝ E / (finrank ℝ E).factorial * ZLattice.covolume L μ)
+      ≤ ENNReal.ofReal (2 ^ finrank ℝ E / (finrank ℝ E).factorial *
+          μ.real (ZSpan.fundamentalDomain b)) := by gcongr
+    _ = ENNReal.ofReal (∏ i, a i) * μ {x : E | ∑ i, a i * |b.repr x i| ≤ 1} := by
+      rw [b.addHaar_weighted_crosspolytope μ ha, ← mul_assoc, ← ENNReal.ofReal_mul hprod.le,
+        mul_div_cancel₀ _ hprod.ne', ← finrank_eq_card_basis b, ENNReal.ofReal_mul (by positivity),
+        measureReal_def, ENNReal.ofReal_toReal hF]
+    _ ≤ ENNReal.ofReal (∏ i, a i) * μ K := by
+      gcongr
+      exact hK.weighted_crosspolytope_subset h0 hKs b ha hbK
+
+/-- **Minkowski's second theorem**, lower bound, in terms of the successive minima. For a full
+lattice `L` in a real normed space `E` of dimension `n`, a Haar measure `μ` on `E`, and a convex
+body `K` symmetric about `0` with `0` in its interior, the successive minima
+`λ i = successiveMin L K i` satisfy `2ⁿ / n! · covolume L μ ≤ λ₀ ⋯ λₙ₋₁ · μ K`. -/
+theorem two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measure (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
+    {K : ConvexBody E} (hK : 0 ∈ interior (K : Set E)) (hKs : ∀ x ∈ K, -x ∈ K) :
+    ENNReal.ofReal (2 ^ finrank ℝ E / (finrank ℝ E).factorial * ZLattice.covolume L μ) ≤
+      ENNReal.ofReal (∏ i, successiveMin L K i) * μ K := by
+  obtain ⟨b, hbL, -, hbK, -⟩ := exists_basis_gauge_eq_successiveMin L hK
+  exact two_pow_div_factorial_mul_covolume_le_prod_mul_measure L μ K.convex (interior_subset hK)
+    hKs b hbL (successiveMin_pos L hK) hbK
+
+/-- **Minkowski's second theorem**, lower bound, in terms of the successive minima and with real
+measures: `2ⁿ / n! · covolume L μ ≤ λ₀ ⋯ λₙ₋₁ · μ.real K`. -/
+theorem two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measureReal
+    (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac)
+    [μ.IsAddHaarMeasure] {K : ConvexBody E} (hK : 0 ∈ interior (K : Set E))
+    (hKs : ∀ x ∈ K, -x ∈ K) :
+    2 ^ finrank ℝ E / (finrank ℝ E).factorial * ZLattice.covolume L μ ≤
+      (∏ i, successiveMin L K i) * μ.real K := by
+  have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+    K.isCompact.measure_lt_top.ne)
+    (two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measure L μ hK hKs)
+  rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal
+    (Finset.prod_nonneg fun i _ ↦ successiveMin_nonneg L K i), ENNReal.toReal_ofReal
+    (mul_nonneg (by positivity) (ZLattice.covolume_pos L μ).le), ← measureReal_def] at h
 
 end ZLattice
