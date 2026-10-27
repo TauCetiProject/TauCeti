@@ -7,8 +7,8 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.ConstantTerm
 import TauCeti.NumberTheory.ModularForms.Cusps.Residue
-import TauCeti.Analysis.PSeries
-import Mathlib.Analysis.Real.Pi.Bounds
+import TauCeti.NumberTheory.ModularForms.EisensteinSeries.GammaSet
+import TauCeti.Analysis.PSeries.RowSums
 
 /-!
 # The weight-two cusp–Eisenstein decomposition at level `Γ(N)`
@@ -25,7 +25,8 @@ complement of `S₂(Γ(N))` in `M₂(Γ(N))`.
 The constant term of `G₂^W` at the cusp represented by `γ`, whose inverse has bottom row `r`
 modulo `N`, is `∑_{n ∈ ℤ} W(n r) n⁻² - N⁻² (∑_x W(x)) · 2 ζ(2)`. On even weights supported on
 the residues of coprime pairs, the row-sum operator `W ↦ (r ↦ ∑_n W(n r) n⁻²)` is injective: its
-diagonal coefficient `2` dominates `∑_{|n| ≥ 2} n⁻² = π² / 3 - 2`. Being an endomorphism of a
+diagonal coefficient `2` dominates `∑_{|n| ≥ 2} n⁻² = π² / 3 - 2`
+(`TauCeti.eq_zero_of_forall_tsum_zsmul_mul_zpow_neg_two_eq_zero`). Being an endomorphism of a
 finite-dimensional space, it is then bijective.
 
 * *Spanning.* The constant terms of `f ∈ M₂(Γ(N))` form such an even weight, the row sums of
@@ -44,8 +45,6 @@ finite-dimensional space, it is then bijective.
 
 ## Main results
 
-* `TauCeti.EisensteinSeries.eq_zero_of_forall_tsum_zsmul_mul_zpow_neg_two_eq_zero`: the
-  injectivity of the weight-two row sums on even functions on a finite group.
 * `TauCeti.EisensteinSeries.disjoint_primitiveG2Subspace_cuspFormSubmodule`: the subspace meets
   the cusp forms only in `0`.
 * `TauCeti.EisensteinSeries.sup_primitiveG2Subspace_cuspFormSubmodule_eq_top`: together with the
@@ -68,77 +67,6 @@ open scoped MatrixGroups
 
 namespace TauCeti.EisensteinSeries
 
-/-! ### Row sums on a finite group -/
-
-section RowSums
-
-variable {M : Type*} [AddGroup M] [Finite M]
-
-private lemma norm_intCast_zpow_neg_two (n : ℤ) : ‖(n : ℂ) ^ (-2 : ℤ)‖ = ((n : ℝ) ^ 2)⁻¹ := by
-  rw [norm_zpow, Complex.norm_intCast, _root_.zpow_neg, ← sq_abs (n : ℝ)]
-  norm_cast
-
-/-- On a finite additive group, the weight-two row sums `∑_{n ∈ ℤ} W(n • a) n⁻²` converge
-absolutely. -/
-theorem summable_zsmul_mul_zpow_neg_two (W : M → ℂ) (a : M) :
-    Summable fun n : ℤ ↦ W (n • a) * (n : ℂ) ^ (-2 : ℤ) := by
-  obtain ⟨C, hC⟩ := (Set.finite_range fun a ↦ ‖W a‖).bddAbove
-  refine Summable.of_norm_bounded
-    ((Real.summable_one_div_int_pow.mpr (by norm_num : 1 < 2)).mul_left C) fun n ↦ ?_
-  rw [norm_mul, norm_intCast_zpow_neg_two, one_div]
-  exact mul_le_mul_of_nonneg_right (hC ⟨_, rfl⟩) (by positivity)
-
-open Real in
-/-- **Diagonal dominance of the weight-two row sums.** Let `W` be an even function on a finite
-additive group. If the row sum `∑_{n ∈ ℤ} W(n • a) n⁻²` vanishes at every point `a` of the
-support of `W`, then `W = 0`. -/
-theorem eq_zero_of_forall_tsum_zsmul_mul_zpow_neg_two_eq_zero
-    {W : M → ℂ} (heven : ∀ a, W (-a) = W a)
-    (h : ∀ a, W a ≠ 0 → ∑' n : ℤ, W (n • a) * (n : ℂ) ^ (-2 : ℤ) = 0) : W = 0 := by
-  -- At a point `a` where `‖W‖` is maximal, the terms `n = ±1` of the row sum contribute
-  -- `2 W(a)`, while the others have total norm at most `‖W a‖ (π² / 3 - 2) < 2 ‖W a‖`.
-  classical
-  by_contra hW
-  obtain ⟨a, ha⟩ := Finite.exists_max fun a ↦ ‖W a‖
-  have hWa : W a ≠ 0 := by
-    refine fun h0 ↦ hW (funext fun b ↦ ?_)
-    simpa [h0] using ha b
-  set m := ‖W a‖ with hm
-  have hm0 : 0 < m := norm_pos_iff.mpr hWa
-  -- the comparison series `m ∑ n⁻² = m π² / 3`
-  let b : ℤ → ℝ := fun n ↦ m * ((n : ℝ) ^ 2)⁻¹
-  have hb : HasSum b (m * (π ^ 2 / 3)) := hasSum_int_inv_sq.mul_left m
-  let g : ℤ → ℂ := fun n ↦ W (n • a) * (n : ℂ) ^ (-2 : ℤ)
-  have hgb (n : ℤ) : ‖g n‖ ≤ b n := by
-    simp only [g, b, norm_mul, norm_intCast_zpow_neg_two]
-    exact mul_le_mul_of_nonneg_right (ha _) (by positivity)
-  have hg : HasSum g 0 := by
-    have hs : Summable g := Summable.of_norm_bounded hb.summable hgb
-    exact h a hWa ▸ hs.hasSum
-  have h1 : g 1 = W a := by simp [g]
-  have h2 : g (-1) = W a := by simp [g, heven]
-  have hb1 : b 1 = m := by simp [b]
-  have hb2 : b (-1) = m := by simp [b]
-  -- remove the terms `n = ± 1`
-  have hg' := (hg.update 1 0).update (-1) 0
-  have hb' := (hb.update 1 0).update (-1) 0
-  have hle := hg'.norm_le_of_bounded hb' fun n ↦ by
-    by_cases hn : n = -1
-    · subst hn; simp
-    by_cases hn' : n = 1
-    · subst hn'; simp
-    simp only [Function.update_of_ne hn, Function.update_of_ne hn']
-    exact hgb n
-  simp only [Function.update_of_ne (by norm_num : (-1 : ℤ) ≠ 1), h1, h2, hb1, hb2] at hle
-  have hnorm : ‖(0 : ℂ) - W a + (0 - W a + 0)‖ = 2 * m := by
-    rw [show (0 : ℂ) - W a + (0 - W a + 0) = -(2 * W a) by ring, norm_neg, norm_mul]
-    simp [hm]
-  rw [hnorm] at hle
-  have hpi : π ^ 2 < 12 := by nlinarith [Real.pi_lt_d2, pi_pos]
-  nlinarith
-
-end RowSums
-
 /-! ### The primitive weight-two Eisenstein subspace -/
 
 variable {N : ℕ}
@@ -151,40 +79,11 @@ private lemma vecMul_inv_eq (γ : SL(2, ℤ)) (n : ℤ) :
   ext i
   fin_cases i <;> simp [Matrix.SpecialLinearGroup.coe_inv, adjugate_fin_two]
 
-/-- A residue pair lifts to a coprime integer pair exactly when it is the bottom row modulo `N`
-of a matrix in `SL(2, ℤ)`. -/
-private lemma nonempty_gammaSet_iff (a : Fin 2 → ZMod N) :
-    Nonempty (gammaSet N 1 a) ↔
-      ∃ γ : SL(2, ℤ), ((![0, 1] : Fin 2 → ZMod N) ᵥ* (γ⁻¹ : SL(2, ℤ)) : Fin 2 → ZMod N) = a := by
-  constructor
-  · rintro ⟨x, hx⟩
-    obtain ⟨σ, hσ0, hσ1⟩ := (Int.isCoprime_iff_gcd_eq_one.mpr hx.2).exists_SL2_row 1
-    refine ⟨σ⁻¹, ?_⟩
-    rw [inv_inv]
-    ext i
-    fin_cases i <;> simpa [vecMul, dotProduct, hσ0, hσ1] using congrFun hx.1 _
-  · rintro ⟨γ, rfl⟩
-    refine ⟨⟨fun i ↦ (γ⁻¹ : SL(2, ℤ)) 1 i, ?_, ?_⟩⟩
-    · ext i
-      fin_cases i <;> simp [vecMul, dotProduct, adjugate_fin_two]
-    · refine Int.isCoprime_iff_gcd_eq_one.mp ⟨-(γ⁻¹ : SL(2, ℤ)) 0 1, (γ⁻¹ : SL(2, ℤ)) 0 0, ?_⟩
-      have := (γ⁻¹ : SL(2, ℤ)).det_coe
-      rw [det_fin_two] at this
-      linear_combination this
-
 private lemma neg_vecMul_inv (γ : SL(2, ℤ)) :
     (-((![0, 1] : Fin 2 → ZMod N) ᵥ* (γ⁻¹ : SL(2, ℤ))) : Fin 2 → ZMod N) =
       (![0, 1] : Fin 2 → ZMod N) ᵥ* ((-γ)⁻¹ : SL(2, ℤ)) := by
   ext i
   fin_cases i <;> simp [vecMul, dotProduct]
-
-private lemma nonempty_gammaSet_neg_iff (a : Fin 2 → ZMod N) :
-    Nonempty (gammaSet N 1 (-a)) ↔ Nonempty (gammaSet N 1 a) := by
-  suffices h : ∀ a : Fin 2 → ZMod N, Nonempty (gammaSet N 1 a) → Nonempty (gammaSet N 1 (-a)) by
-    exact ⟨fun ha ↦ neg_neg a ▸ h _ ha, h a⟩
-  intro a ha
-  obtain ⟨γ, rfl⟩ := (nonempty_gammaSet_iff a).mp ha
-  exact (nonempty_gammaSet_iff _).mpr ⟨-γ, (neg_vecMul_inv γ).symm⟩
 
 variable [NeZero N]
 
