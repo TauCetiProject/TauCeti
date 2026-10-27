@@ -66,6 +66,11 @@ theorem finiteZipfNormalizer_def (N : ℕ) (s : ℝ) :
 theorem finiteZipfNormalizer_zero_left (s : ℝ) : finiteZipfNormalizer 0 s = 0 := by
   simp [finiteZipfNormalizer]
 
+/-- A singleton support has normalizer one at every exponent. -/
+@[simp]
+theorem finiteZipfNormalizer_one_left (s : ℝ) : finiteZipfNormalizer 1 s = 1 := by
+  simp [finiteZipfNormalizer]
+
 /-- The normalizing sum is nonnegative at every exponent. -/
 theorem finiteZipfNormalizer_nonneg (N : ℕ) (s : ℝ) : 0 ≤ finiteZipfNormalizer N s := by
   exact Finset.sum_nonneg fun k _ ↦ Real.rpow_nonneg (Nat.cast_nonneg k) _
@@ -102,6 +107,17 @@ theorem finiteZipfMeasure_eq_sum_dirac (N : ℕ) (s : ℝ) :
     finiteZipfMeasure N s = ∑ k ∈ Finset.Icc 1 N,
       ENNReal.ofReal ((k : ℝ) ^ (-s) / finiteZipfNormalizer N s) • Measure.dirac k := (rfl)
 
+open Classical in
+/-- The mass of a set is the sum of the normalized weights of its support points. -/
+theorem finiteZipfMeasure_apply (N : ℕ) (s : ℝ) (A : Set ℕ) :
+    finiteZipfMeasure N s A =
+      ∑ k ∈ (Finset.Icc 1 N).filter (· ∈ A),
+        ENNReal.ofReal ((k : ℝ) ^ (-s) / finiteZipfNormalizer N s) := by
+  classical
+  rw [finiteZipfMeasure_eq_sum_dirac, Measure.finsetSum_apply, Finset.sum_filter]
+  simp [Measure.smul_apply, Measure.dirac_apply' _ MeasurableSet.of_discrete,
+    Set.indicator_apply, mul_ite]
+
 /-- There is no probability law on an empty finite Zipf support. -/
 @[simp]
 theorem finiteZipfMeasure_zero_left (s : ℝ) : finiteZipfMeasure 0 s = 0 := by
@@ -110,22 +126,21 @@ theorem finiteZipfMeasure_zero_left (s : ℝ) : finiteZipfMeasure 0 s = 0 := by
 /-- A singleton Zipf support gives the point mass at one at every exponent. -/
 @[simp]
 theorem finiteZipfMeasure_one_left (s : ℝ) : finiteZipfMeasure 1 s = Measure.dirac 1 := by
-  simp [finiteZipfMeasure, finiteZipfNormalizer]
+  simp [finiteZipfMeasure]
 
 /-- Every finite Zipf measure is finite, including the empty-support case. -/
 instance (N : ℕ) (s : ℝ) : IsFiniteMeasure (finiteZipfMeasure N s) := by
+  classical
   constructor
-  simp only [finiteZipfMeasure_eq_sum_dirac, Measure.finsetSum_apply,
-    Measure.smul_apply, smul_eq_mul, Measure.dirac_apply_of_mem (mem_univ _), mul_one]
+  rw [finiteZipfMeasure_apply]
   exact ENNReal.sum_lt_top.mpr fun _ _ ↦ ENNReal.ofReal_lt_top
 
 /-- A finite Zipf law is a probability measure whenever its support is nonempty. -/
 theorem isProbabilityMeasure_finiteZipfMeasure {N : ℕ} (hN : 0 < N) (s : ℝ) :
     IsProbabilityMeasure (finiteZipfMeasure N s) := by
+  classical
   constructor
-  rw [finiteZipfMeasure_eq_sum_dirac, Measure.finsetSum_apply]
-  simp only [Measure.smul_apply, Measure.dirac_apply_of_mem (mem_univ _), smul_eq_mul,
-    mul_one]
+  simp only [finiteZipfMeasure_apply, Set.mem_univ, Finset.filter_true]
   rw [← ENNReal.ofReal_sum_of_nonneg (fun k _ ↦ finiteZipfWeight_nonneg N s k),
     ← Finset.sum_div, ← finiteZipfNormalizer_def,
     div_self (finiteZipfNormalizer_pos hN s).ne', ENNReal.ofReal_one]
@@ -145,10 +160,7 @@ theorem finiteZipfMeasure_singleton (N : ℕ) (s : ℝ) (k : ℕ) :
       if k ∈ Finset.Icc 1 N then
         ENNReal.ofReal ((k : ℝ) ^ (-s) / finiteZipfNormalizer N s) else 0 := by
   classical
-  rw [finiteZipfMeasure_eq_sum_dirac, Measure.finsetSum_apply]
-  simp only [Measure.smul_apply, smul_eq_mul,
-    Measure.dirac_apply' _ (measurableSet_singleton k), Set.indicator_apply,
-    Set.mem_singleton_iff, Pi.one_apply, mul_ite, mul_one, mul_zero]
+  simp only [finiteZipfMeasure_apply, Finset.sum_filter, Set.mem_singleton_iff]
   rw [Finset.sum_ite_eq']
 
 /-- The real singleton masses, including the empty-support case. -/
@@ -320,12 +332,12 @@ theorem charFun_map_cast_finiteZipfMeasure (N : ℕ) (s t : ℝ) :
 @[fun_prop]
 theorem measurable_finiteZipfMeasure :
     Measurable fun p : ℕ × ℝ ↦ finiteZipfMeasure p.1 p.2 := by
+  classical
   apply measurable_from_prod_countable_right
   intro N
   apply Measure.measurable_measure.mpr
   intro A hA
-  simp only [finiteZipfMeasure_eq_sum_dirac, Measure.finsetSum_apply,
-    Measure.smul_apply, smul_eq_mul]
+  simp only [finiteZipfMeasure_apply]
   unfold finiteZipfNormalizer
   fun_prop
 
@@ -334,17 +346,10 @@ theorem finiteZipfMeasure_real_Iic (N : ℕ) (s : ℝ) (k : ℕ) :
     (finiteZipfMeasure N s).real (Iic k) =
       finiteZipfNormalizer (min N k) s / finiteZipfNormalizer N s := by
   classical
-  rw [measureReal_def, finiteZipfMeasure_eq_sum_dirac, Measure.finsetSum_apply,
-    ENNReal.toReal_sum (fun i _ ↦ by
-      rw [Measure.smul_apply, smul_eq_mul]
-      exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top (measure_ne_top (Measure.dirac i) _))]
-  simp only [Measure.smul_apply, smul_eq_mul, ENNReal.toReal_mul,
-    Measure.dirac_apply' _ measurableSet_Iic, Set.indicator_apply, Set.mem_Iic,
-    Pi.one_apply, ENNReal.toReal_ofReal (finiteZipfWeight_nonneg N s _)]
+  rw [measureReal_def, finiteZipfMeasure_apply,
+    ENNReal.toReal_sum (fun _ _ ↦ ENNReal.ofReal_ne_top)]
+  simp only [ENNReal.toReal_ofReal (finiteZipfWeight_nonneg N s _)]
   rw [finiteZipfNormalizer_def (min N k), Finset.sum_div]
-  simp only [apply_ite ENNReal.toReal, ENNReal.toReal_one, ENNReal.toReal_zero,
-    mul_ite, mul_one, mul_zero]
-  rw [← Finset.sum_filter]
   congr 1
   ext j
   simp [and_assoc]
@@ -382,7 +387,8 @@ theorem tendsto_quantile_map_cast_finiteZipfMeasure_nhdsGT_zero {N : ℕ} (hN : 
   let _ := isProbabilityMeasure_finiteZipfMeasure hN s
   have hmass : 0 < (finiteZipfMeasure N s).real (Iic 1) := by
     rw [finiteZipfMeasure_real_Iic, min_eq_right hN]
-    simpa [finiteZipfNormalizer] using inv_pos.mpr (finiteZipfNormalizer_pos hN s)
+    simpa only [finiteZipfNormalizer_one_left, one_div] using
+      inv_pos.mpr (finiteZipfNormalizer_pos hN s)
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [Ioo_mem_nhdsGT (lt_min_iff.mpr ⟨hmass, zero_lt_one⟩)] with u hu
   have hu' : u ∈ Ioo (0 : ℝ) 1 := ⟨hu.1, hu.2.trans_le (min_le_right _ _)⟩
@@ -444,13 +450,7 @@ theorem finiteZipfMeasure_eq_cond (N : ℕ) {s : ℝ} (hs : 1 < s) :
       _ = _ := by
         simp only [zipfMeasure_real_singleton hs, zipfWeightReal_def,
           ← Finset.sum_div, finiteZipfNormalizer_def]
-  have hmass : (zipfMeasure s) (Iic N) ≠ 0 := by
-    intro hz
-    have hpos : 0 < (zipfMeasure s).real (Iic N) := by
-      rw [hcum]
-      exact div_pos hH hZ
-    simp [measureReal_def, hz] at hpos
-  let _ := cond_isProbabilityMeasure hmass
+  let _ := cond_isProbabilityMeasure (zipfMeasure_Iic_ne_zero hN hs)
   apply Measure.ext_of_measureReal_singleton
   intro k
   rw [finiteZipfMeasure_real_singleton, measureReal_def,
@@ -471,12 +471,8 @@ theorem tvDist_finiteZipfMeasure_zipfMeasure {N : ℕ} (hN : 0 < N) {s : ℝ} (h
     tvDist (finiteZipfMeasure N s) (zipfMeasure s) =
       2 * (1 - (zipfMeasure s).real (Iic N)) := by
   let _ := isProbabilityMeasure_zipfMeasure hs
-  have hmass : zipfMeasure s (Iic N) ≠ 0 := by
-    intro hzero
-    exact ((zipfMeasure_singleton_ne_zero_iff hs 1).mpr one_ne_zero)
-      (measure_mono_null (singleton_subset_iff.mpr hN) hzero)
   rw [finiteZipfMeasure_eq_cond N hs]
-  exact (zipfMeasure s).tvDist_cond_self measurableSet_Iic hmass
+  exact (zipfMeasure s).tvDist_cond_self measurableSet_Iic (zipfMeasure_Iic_ne_zero hN hs)
 
 /-- Finite Zipf laws converge to the infinite Zipf law in total variation for `s > 1`. -/
 theorem tendsto_tvDist_finiteZipfMeasure_zipfMeasure {s : ℝ} (hs : 1 < s) :
