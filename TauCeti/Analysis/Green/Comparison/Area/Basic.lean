@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
-public import TauCeti.Analysis.InnerProductSpace.Orientation
-public import Mathlib.Analysis.InnerProductSpace.TwoDim
+public import TauCeti.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
