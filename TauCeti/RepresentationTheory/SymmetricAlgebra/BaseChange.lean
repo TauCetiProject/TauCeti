@@ -224,7 +224,8 @@ theorem symmetricAlgebraReynolds_scalarTensorBialgEquiv [Module.Flat R S]
       refine Subtype.ext ?_
       rw [coe_symmetricAlgebraReynolds_scalarTensorBialgEquiv_tmul,
         coe_symmetricAlgebraInvariantsBaseChangeEquiv]
-      rfl
+      simp only [LinearMap.baseChange_tmul, LinearMap.restrictScalars_apply,
+        Algebra.TensorProduct.map_tmul, AlgHom.id_apply, Subalgebra.coe_val]
 
 end Reynolds
 
