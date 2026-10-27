@@ -75,8 +75,8 @@ theorem mk_le_aleph_one_mul_of_mk_preimage_le {c : Cardinal.{u}} (hr : ∀ x, r 
     rw [hpre, Cardinal.lift_le]
     exact hc o.1 o.2
   have h := lift_mk_le_lift_mk_mul_of_lift_mk_preimage_le f hf
-  rw [mk_Iio_ordinal, card_omega, Cardinal.lift_lift, lift_aleph, Ordinal.lift_one] at h
-  rwa [← Cardinal.lift_le.{w + 1}, Cardinal.lift_mul, lift_aleph, Ordinal.lift_one]
+  rw [← Cardinal.lift_le.{w + 1}]
+  simpa using h
 
 /-- **Countable fibres over the countable ordinals bound a set by `ℵ₁`.** If `r` takes values
 below `ω₁` and each of its fibres over a countable ordinal is countable, then `#X ≤ ℵ₁`. -/
