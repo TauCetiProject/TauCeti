@@ -63,19 +63,6 @@ private theorem mem_exactForms_of_apply_eq {n m : ℕ} (h : n = m + 1) {φ : Smo
   ext v
   simpa [Fin.cast_eq_self] using (hφ x v).symm
 
-private theorem mextDeriv_wedge_apply_bundled (φ : SmoothForm I M ℝ k)
-    (ψ : SmoothForm I M ℝ l) (x : M) (v : Fin (k + l + 1) → TangentSpace I x) :
-    mextDeriv (RoughForm.wedge φ.1 ψ.1) x v =
-      RoughForm.wedge (mextDeriv φ.1) ψ.1 x
-          (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
-        (-1 : ℝ) ^ k • RoughForm.wedge φ.1 (mextDeriv ψ.1) x
-          (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
-  have h := mextDerivₗ_wedge φ ψ
-  have h' := congrArg (fun α => α.1 x v) h
-  simpa only [mextDerivₗ_apply, SmoothForm.coe_wedge, Submodule.coe_add,
-    Submodule.coe_smul, Pi.add_apply, Pi.smul_apply, ContinuousAlternatingMap.add_apply,
-    ContinuousAlternatingMap.smul_apply, SmoothForm.cast_apply] using h'
-
 /-- The Leibniz rule with a closed left factor: `d (φ ∧ β) = (-1) ^ k • φ ∧ dβ`.
 
 The right-hand side is a `(k + (l + 1))`-form while the left-hand side is a `(k + l + 1)`-form,
@@ -87,7 +74,7 @@ private theorem mextDeriv_wedge_of_left_closed {φ : SmoothForm I M ℝ k}
     mextDeriv (φ.1.wedge β.1) x v =
       (-1 : ℝ) ^ k • φ.1.wedge (mextDeriv β.1) x
         (v ∘ Fin.cast (Nat.add_assoc k l 1).symm) := by
-  have h := mextDeriv_wedge_apply_bundled φ β x v
+  have h := mextDeriv_wedge_apply φ β x v
   rw [hφ] at h
   simpa using h
 
@@ -95,11 +82,9 @@ private theorem mextDeriv_wedge_of_left_closed {φ : SmoothForm I M ℝ k}
 theorem wedge_mem_closedForms {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M ℝ l}
     (hφ : φ ∈ closedForms I M k) (hψ : ψ ∈ closedForms I M l) :
     wedge φ ψ ∈ closedForms I M (k + l) := by
-  rw [mem_closedForms] at hφ hψ ⊢
-  ext x v
-  have h := mextDeriv_wedge_apply_bundled φ ψ x v
-  rw [hφ, hψ] at h
-  simpa using h
+  rw [mem_closedForms_iff_mextDerivₗ_eq_zero] at hφ hψ ⊢
+  rw [mextDerivₗ_wedge, hφ, hψ]
+  simp
 
 /-- The wedge of an exact smooth form with a closed smooth form is exact. -/
 theorem wedge_mem_exactForms_of_left_mem {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M ℝ l}
@@ -116,7 +101,7 @@ theorem wedge_mem_exactForms_of_left_mem {φ : SmoothForm I M ℝ k} {ψ : Smoot
     rw [mem_closedForms] at hψ
     -- `d (α ∧ ψ) = dα ∧ ψ` because `ψ` is closed.
     refine mem_exactForms_of_apply_eq (by omega) (wedge α ψ) fun x v ↦ ?_
-    have h := mextDeriv_wedge_apply_bundled α ψ x v
+    have h := mextDeriv_wedge_apply α ψ x v
     rw [hψ] at h
     simpa [mextDerivₗ_apply] using h.symm
 
