@@ -24,10 +24,10 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory ProbabilityTheory Real Topology
+open Filter MeasureTheory ProbabilityTheory Real TauCeti.Probability Topology
 open scoped NNReal
 
-namespace TauCeti.Probability
+namespace AddCircle
 
 /-- Wrapped Cauchy laws tend weakly to Haar probability as the scale tends to infinity. -/
 theorem tendsto_wrappedCauchyMeasure_atTop_haar (m : AddCircle (2 * π)) :
@@ -45,4 +45,4 @@ theorem tendsto_wrappedCauchyMeasure_atTop_haar (m : AddCircle (2 * π)) :
   simpa only [Measure.coe_toProbabilityMeasure, integral_fourier_wrappedCauchyMeasure,
     Complex.ofReal_zero, mul_zero, Function.comp_def] using hcomplex.const_mul (fourier n m)
 
-end TauCeti.Probability
+end AddCircle
