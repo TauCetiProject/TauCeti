@@ -43,6 +43,9 @@ modular forms of level `Γ(N)`.
 * `UpperHalfPlane.hasSum_weierstrassP_periodPair_rows`: the sum along rows.
 * `TauCeti.UpperHalfPlane.norm_rowSum_le`, `TauCeti.UpperHalfPlane.norm_rowSum_le_of_le_abs_im`:
   the exponential decay of the rows.
+* `TauCeti.UpperHalfPlane.tendsto_rowSum_atImInfty`: rows whose imaginary part grows linearly in
+  `Im z` vanish at `i∞`.
+* `TauCeti.UpperHalfPlane.rowSum_zero`: the row at `0` is `2 ζ(2)`.
 -/
 
 public section
@@ -200,6 +203,36 @@ theorem norm_rowSum_le_of_le_abs_im {w : ℂ} {t : ℝ} (ht : 0 < t) (hw : t ≤
   refine h.trans ?_
   rw [div_mul_eq_mul_div, mul_div_assoc, mul_div_assoc]
   gcongr
+
+/-- The row at `0` is `P(0) = ∑_{n ≠ 0} n⁻² = 2 ζ(2)`, the value at `i∞` of Mathlib's
+`EisensteinSeries.G2`. -/
+@[simp]
+lemma rowSum_zero : rowSum 0 = 2 * riemannZeta 2 := by
+  have h := two_mul_riemannZeta_eq_tsum_int_inv_pow_of_even (k := 2) le_rfl even_two
+  push_cast at h
+  rw [h, rowSum_def]
+  exact tsum_congr fun n ↦ by simp
+
+open Filter Topology in
+/-- **The rows vanish at `i∞`**: if the imaginary part of `w(z)` grows at least like `c Im z` for
+some `c > 0`, then `P(w(z)) → 0` as `Im z → ∞`. -/
+theorem tendsto_rowSum_atImInfty {w : ℍ → ℂ} {c : ℝ} (hc : 0 < c)
+    (hw : ∀ z, c * z.im ≤ |(w z).im|) :
+    Tendsto (fun z ↦ rowSum (w z)) atImInfty (𝓝 0) := by
+  have him : Tendsto (fun z : ℍ ↦ z.im) atImInfty atTop := tendsto_comap
+  have hexp : Tendsto (fun z : ℍ ↦ 4 * π ^ 2 / (1 - Real.exp (-2 * π * 1)) ^ 2 *
+      Real.exp (-(2 * π * c * z.im))) atImInfty (𝓝 0) := by
+    simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+      (him.const_mul_atTop (by positivity : 0 < 2 * π * c))).const_mul
+        (4 * π ^ 2 / (1 - Real.exp (-2 * π * 1)) ^ 2)
+  refine squeeze_zero_norm' ?_ hexp
+  filter_upwards [him.eventually_ge_atTop (1 / c)] with z hz
+  have hw1 : 1 ≤ |(w z).im| := by
+    refine le_trans ?_ (hw z)
+    rwa [div_le_iff₀' hc] at hz
+  refine (norm_rowSum_le_of_le_abs_im one_pos hw1).trans
+    (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr (by nlinarith [hw z, Real.pi_pos]))
+      (div_nonneg (by positivity) (sq_nonneg _)))
 
 end TauCeti.UpperHalfPlane
 
