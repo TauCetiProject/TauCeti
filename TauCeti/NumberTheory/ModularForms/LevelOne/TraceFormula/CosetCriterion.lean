@@ -11,6 +11,7 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.NoncommRing
 import TauCeti.LinearAlgebra.End.OrderTwoThree
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Antitranspose
 import TauCeti.NumberTheory.Modular.Relations
 import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.Acyclicity
 
@@ -66,6 +67,7 @@ anti-involution `(a b; c d) ↦ (d b; c a)`, which exchanges the left and right 
 public section
 
 open MonoidAlgebra MulAction Representation ModularGroup
+open Matrix.SpecialLinearGroup (antitranspose)
 open scoped MatrixGroups RightActions
 
 namespace TauCeti.TraceFormulaMatrixModule
@@ -77,44 +79,15 @@ local notation "ρL" => ofMulAction k SL(2, ℤ) (ℳ n)
 local notation "ρR" => ofMulAction k PSL(2, ℤ)ᵐᵒᵖ (ℳ n)
 local notation "qR" => Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (ℳ n))
 
-/-! ### The anti-involution `(a b; c d) ↦ (d b; c a)` -/
-
-/-- The matrix `(d b; c a)` of `(a b; c d)`. -/
-private def flipMatrix (A : Matrix (Fin 2) (Fin 2) ℤ) : Matrix (Fin 2) (Fin 2) ℤ :=
-  !![A 1 1, A 0 1; A 1 0, A 0 0]
-
-private theorem flipMatrix_mul (A B : Matrix (Fin 2) (Fin 2) ℤ) :
-    flipMatrix (A * B) = flipMatrix B * flipMatrix A := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [flipMatrix, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
-
-private theorem det_flipMatrix (A : Matrix (Fin 2) (Fin 2) ℤ) : (flipMatrix A).det = A.det := by
-  simp [flipMatrix, Matrix.det_fin_two]
-  ring
-
-private theorem flipMatrix_flipMatrix (A : Matrix (Fin 2) (Fin 2) ℤ) :
-    flipMatrix (flipMatrix A) = A := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
-
-/-- The anti-involution on `SL(2, ℤ)`. -/
-private def flipSL (g : SL(2, ℤ)) : SL(2, ℤ) :=
-  ⟨flipMatrix g, by rw [det_flipMatrix, g.2]⟩
-
-private theorem flipSL_flipSL (g : SL(2, ℤ)) : flipSL (flipSL g) = g :=
-  Subtype.ext (flipMatrix_flipMatrix _)
-
-private theorem flipSL_T : flipSL T = T := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
+/-! ### The anti-involution `(a b; c d) ↦ (d b; c a)` on `ℳₙ` -/
 
 /-- The anti-involution on determinant-`n` matrices. -/
 private def flipFixedDet (A : TraceFormulaMatrix n) : TraceFormulaMatrix n :=
-  ⟨flipMatrix A.1, by rw [det_flipMatrix, A.2]⟩
+  ⟨A.1.antitranspose, by rw [Matrix.det_antitranspose, A.2]⟩
 
-private theorem val_flipFixedDet (A : TraceFormulaMatrix n) : (flipFixedDet A).1 = flipMatrix A.1 :=
-  (rfl)
+private theorem val_flipFixedDet (A : TraceFormulaMatrix n) :
+    (flipFixedDet A).1 = !![A.1 1 1, A.1 0 1; A.1 1 0, A.1 0 0] :=
+  Matrix.antitranspose_fin_two _
 
 /-- The anti-involution on `ℳₙ`. -/
 private def flip : ℳ n → ℳ n :=
@@ -124,7 +97,7 @@ private def flip : ℳ n → ℳ n :=
     · refine (congrArg mk (Subtype.ext ?_ : flipFixedDet (-B) = -flipFixedDet B)).trans (mk_neg _)
       rw [TraceFormulaMatrix.val_neg]
       ext i j
-      fin_cases i <;> fin_cases j <;> simp [flipFixedDet, flipMatrix]
+      fin_cases i <;> fin_cases j <;> simp [flipFixedDet]
 
 private theorem flip_mk (A : TraceFormulaMatrix n) : flip (mk A) = mk (flipFixedDet A) :=
   lift_mk _ _ A
@@ -132,16 +105,17 @@ private theorem flip_mk (A : TraceFormulaMatrix n) : flip (mk A) = mk (flipFixed
 private theorem flip_flip (x : ℳ n) : flip (flip x) = x := by
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
   rw [flip_mk, flip_mk]
-  exact congrArg mk (Subtype.ext (flipMatrix_flipMatrix A.1) : flipFixedDet (flipFixedDet A) = A)
+  exact congrArg mk
+    (Subtype.ext A.1.antitranspose_antitranspose : flipFixedDet (flipFixedDet A) = A)
 
 /-- The anti-involution turns left multiplication by `g` into right multiplication by its image. -/
 private theorem flip_smul (g : SL(2, ℤ)) (x : ℳ n) :
-    flip (g • x) = flip x <• (flipSL g : PSL(2, ℤ)) := by
+    flip (g • x) = flip x <• (antitranspose g : PSL(2, ℤ)) := by
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
   rw [smul_mk, flip_mk, flip_mk, op_smul_mk]
   refine congrArg mk (Subtype.ext ?_)
   rw [val_traceFormulaMatrixRight, inv_inv]
-  simp [flipFixedDet, flipSL, FixedDetMatrices.smul_coe, flipMatrix_mul]
+  simp [flipFixedDet, FixedDetMatrices.smul_coe, Matrix.antitranspose_mul]
 
 /-! ### The right coset representatives `ν` -/
 
@@ -169,13 +143,14 @@ private theorem mapDomain_coeff_flipSum_apply [Semiring k] (hn : n ≠ 0) (x : �
   rw [← coeff_mapDomainLinearMap (R := k), flipSum]
   refine coeff_mapDomainLinearMap_orbitRel_sum_single (fun x ↦ ?_) (fun x hx g hg ↦ ?_) 1 _
   · obtain ⟨g, hg⟩ := exists_smul_mem_upperTriangularReps hn (flip x)
-    refine ⟨MulOpposite.op (flipSL g : PSL(2, ℤ)), mem_image_flip_iff.2 ?_⟩
-    have h : x <• (flipSL g : PSL(2, ℤ)) = flip (g • flip x) := by rw [flip_smul, flip_flip]
+    refine ⟨MulOpposite.op (antitranspose g : PSL(2, ℤ)), mem_image_flip_iff.2 ?_⟩
+    have h : x <• (antitranspose g : PSL(2, ℤ)) = flip (g • flip x) := by rw [flip_smul, flip_flip]
     rwa [h, flip_flip]
   · -- write `g` as right multiplication by the image of some `h`; then `g • x = flip (h • flip x)`
     obtain ⟨g', hg'⟩ := QuotientGroup.mk_surjective g.unop
-    have key : g • x = flip (flipSL g' • flip x) := by
-      rw [flip_smul, flipSL_flipSL, flip_flip, hg', MulOpposite.op_unop]
+    have key : g • x = flip (antitranspose g' • flip x) := by
+      rw [flip_smul, Matrix.SpecialLinearGroup.antitranspose_antitranspose, flip_flip, hg',
+        MulOpposite.op_unop]
     rw [mem_image_flip_iff] at hx hg
     rw [key, flip_flip] at hg
     rw [key, smul_eq_self_of_mem_upperTriangularReps hx hg, flip_flip]
@@ -193,7 +168,7 @@ private theorem val_flipFixedDet_T_inv_smul (A : TraceFormulaMatrix n) :
       !![A.1 1 1, A.1 0 1 - A.1 1 1; A.1 1 0, A.1 0 0 - A.1 1 0] := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [val_flipFixedDet, flipMatrix, FixedDetMatrices.smul_coe, Matrix.mul_apply,
+    simp [val_flipFixedDet, FixedDetMatrices.smul_coe, Matrix.mul_apply,
       Fin.sum_univ_two] <;> ring
 
 /-- The right translate `(a b; c d) T⁻¹` is `(a, b - a; c, d - c)`. -/
