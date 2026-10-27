@@ -95,10 +95,6 @@ theorem isUnramifiedAt_of_notMem_support (h : IsAdmissibleModulus K L 𝔪)
     {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ 𝔪.support) (w : HeightOneSpectrum (𝓞 L))
     [w.asIdeal.LiesOver v.asIdeal] :
     Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := by
-  -- `L_w/K_v` is abelian: its Galois group is the decomposition group of `w`.
-  have : IsMulCommutative (w.adicCompletion L ≃ₐ[v.adicCompletion K] w.adicCompletion L) :=
-    (HeightOneSpectrum.decompositionEquiv v w).surjective.isMulCommutative
-  have : IsAbelianGalois (v.adicCompletion K) (w.adicCompletion L) := ⟨⟩
   have hc : conductorExponent (v.adicCompletion K) (w.adicCompletion L) = 0 :=
     Nat.eq_zero_of_le_zero <| (h.conductorExponent_le_exponent v w).trans_eq <|
       not_not.1 (mt (Modulus.mem_support_iff_exponent_ne_zero 𝔪 v).2 hv)
