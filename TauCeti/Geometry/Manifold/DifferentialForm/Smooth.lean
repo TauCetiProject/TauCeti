@@ -270,6 +270,34 @@ theorem eval₂_apply (φ : SmoothBundleForm I F V 2) (x : M)
     φ.eval₂ x v w = φ.1 x ![v, w] :=
   by simp [eval₂]
 
+/-- Ordered-pair evaluation is additive in its first tangent argument. -/
+theorem eval₂_add_left (φ : SmoothBundleForm I F V 2) (x : M)
+    (v v' w : TangentSpace I x) :
+    φ.eval₂ x (v + v') w = φ.eval₂ x v w + φ.eval₂ x v' w := by
+  simpa only [eval₂, Matrix.vecCons, Fin.update_cons_zero] using
+    (φ.1 x).map_update_add ![v, w] 0 v v'
+
+/-- Ordered-pair evaluation is additive in its second tangent argument. -/
+theorem eval₂_add_right (φ : SmoothBundleForm I F V 2) (x : M)
+    (v w w' : TangentSpace I x) :
+    φ.eval₂ x v (w + w') = φ.eval₂ x v w + φ.eval₂ x v w' := by
+  simpa only [eval₂, Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero] using
+    (φ.1 x).map_update_add ![v, w] (0 : Fin 1).succ w w'
+
+/-- Real scalar multiplication in the first tangent argument scales the fibre value. -/
+theorem eval₂_smul_left (φ : SmoothBundleForm I F V 2) (x : M)
+    (c : ℝ) (v w : TangentSpace I x) :
+    φ.eval₂ x (c • v) w = c • φ.eval₂ x v w := by
+  simpa only [eval₂, Matrix.vecCons, Fin.update_cons_zero] using
+    (φ.1 x).map_update_smul ![v, w] 0 c v
+
+/-- Real scalar multiplication in the second tangent argument scales the fibre value. -/
+theorem eval₂_smul_right (φ : SmoothBundleForm I F V 2) (x : M)
+    (c : ℝ) (v w : TangentSpace I x) :
+    φ.eval₂ x v (c • w) = c • φ.eval₂ x v w := by
+  simpa only [eval₂, Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero] using
+    (φ.1 x).map_update_smul ![v, w] (0 : Fin 1).succ c w
+
 /-- Two smooth bundle-valued two-forms are equal when their ordered-pair evaluations agree. -/
 theorem ext_eval₂ {φ ψ : SmoothBundleForm I F V 2}
     (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) : φ = ψ := by
