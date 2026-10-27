@@ -79,4 +79,25 @@ theorem cliffordExtensionNonabelianH1Equiv_mk (s : (groupExtension A).Splitting)
     cliffordExtensionConjClassesEquiv_mk]
   exact s.nonabelianH1Equiv_mk (fun _ _ => rfl) _
 
+/-- The inverse classification recovers the inertia action determined by a cocycle. -/
+@[simp]
+theorem cliffordExtensionNonabelianH1Equiv_symm_mk (s : (groupExtension A).Splitting) :
+    letI : TopologicalSpace (Quotient A) := ⊥
+    letI : TopologicalSpace (End A)ˣ := ⊥
+    letI : DiscreteTopology (Quotient A) := ⟨rfl⟩
+    letI := MulDistribMulAction.compHom (End A)ˣ s.conjAct
+    ∀ f : NonabelianH1.Cocycle (Quotient A) (End A)ˣ,
+      (cliffordExtensionNonabelianH1Equiv A s).symm (NonabelianH1.mk f) =
+        Quotient.mk _
+          ⟨representationOfSplitting A (s.ofCocycle (fun _ _ => rfl) f),
+            representationOfSplitting_comp A (s.ofCocycle (fun _ _ => rfl) f)⟩ := by
+  let : TopologicalSpace (Quotient A) := ⊥
+  let : TopologicalSpace (End A)ˣ := ⊥
+  let : DiscreteTopology (Quotient A) := ⟨rfl⟩
+  let := MulDistribMulAction.compHom (End A)ˣ s.conjAct
+  intro f
+  simp only [cliffordExtensionNonabelianH1Equiv, Equiv.symm_trans_apply]
+  rw [s.nonabelianH1Equiv_symm_mk (fun _ _ => rfl) f]
+  exact cliffordExtensionConjClassesEquiv_symm_mk A _
+
 end FDRep

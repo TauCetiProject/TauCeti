@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupExtension.Gauge
+public import TauCeti.GroupTheory.GroupExtension.FactorSetOfSection
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
 
 /-!
