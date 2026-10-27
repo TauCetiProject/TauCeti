@@ -41,12 +41,8 @@ theorem Monic.exists_mem_roots_one_le_norm {f : ℤ[X]} (hf : f.Monic)
   let F := f.map (Int.castRingHom ℂ)
   have hF : F.Monic := hf.map _
   have hFzero : F.coeff 0 ≠ 0 := by simpa [F] using hzero
-  have hroots : F.roots ≠ 0 := by
-    intro h
-    have hcard := IsAlgClosed.card_roots_eq_natDegree (p := F)
-    simp only [h, Multiset.card_zero] at hcard
-    have hdegF : 0 < F.natDegree := by simpa [F, hf.natDegree_map] using hdeg
-    exact (Nat.ne_of_gt hdegF) hcard.symm
+  have hroots : F.roots ≠ 0 := (IsAlgClosed.splits F).roots_ne_zero
+    (by simpa [F, hf.natDegree_map] using hdeg.ne')
   by_contra! h
   have hprod : (F.roots.map fun z ↦ ‖z‖).prod < 1 := by
     have hpos : ∀ z ∈ F.roots, 0 < ‖z‖ := by
