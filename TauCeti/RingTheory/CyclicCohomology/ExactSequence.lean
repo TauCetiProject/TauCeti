@@ -357,6 +357,16 @@ theorem exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConn
       rw [coe_cyclicTotalDifferential_cyclicTotalLift hφ]
       simp
 
+variable (R A M) in
+/-- The composite `B ∘ I : H^(m+1)(Tot) → HH^(m+1) → H^m(Tot)` vanishes. -/
+@[reassoc (attr := simp)]
+theorem homologyMap_cyclicTotalComplexToHochschild_comp_cyclicTotalHomologyConnesB (m : ℕ) :
+    HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) (m + 1) ≫
+      cyclicTotalHomologyConnesB R A M m = 0 :=
+  ModuleCat.hom_ext (LinearMap.ext fun c ↦
+    (exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConnesB
+      m).apply_apply_eq_zero c)
+
 /-- **Exactness of `HH^(m+1) → H^m(Tot) → H^(m+2)(Tot)`.** For a unital algebra, a class in the
 cohomology of the total cyclic bicomplex is killed by the periodicity map exactly when it is the
 image under `B` of a Hochschild class. -/
@@ -387,6 +397,14 @@ theorem exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity (m : ℕ
     refine ⟨cyclicTotalLift φ.1, Subtype.ext ?_⟩
     rw [coe_cyclicTotalDifferential_cyclicTotalLift (mem_hochschildCocycles_iff.1 φ.2)]
     simp
+
+variable (R A M) in
+/-- The composite `S ∘ B : HH^(m+1) → H^m(Tot) → H^(m+2)(Tot)` vanishes. -/
+@[reassoc (attr := simp)]
+theorem cyclicTotalHomologyConnesB_comp_cyclicTotalHomologyPeriodicity (m : ℕ) :
+    cyclicTotalHomologyConnesB R A M m ≫ cyclicTotalHomologyPeriodicity R A M m = 0 :=
+  ModuleCat.hom_ext (LinearMap.ext
+    (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity m).apply_apply_eq_zero)
 
 /-- **Exactness of `HC^(m+1) → HH^(m+1) → HC^m`.** For a unital algebra over a ring containing
 `ℚ`, a Hochschild class is killed by Connes' operator `B` exactly when it is the image under `I`
