@@ -62,7 +62,7 @@ variable [IsLocalRing R] [IsNoetherianRing R]
 /-- Over a Noetherian local ring, the local ring of the nodal equation at the image of
 the base maximal ideal and the two coordinates has dimension one more than the base.
 The primality hypothesis excludes the absent point when `n = 0`. -/
-theorem ringKrullDim_localization_quotient_X_mul_X_sub_C_pow (hπ : π ∈ maximalIdeal R) (n : ℕ)
+theorem ringKrullDim_localization_quotient_X_mul_X_sub_C_pow (n : ℕ)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
       (NodeAlgebra.mk (π ^ n))).IsPrime] :
     ringKrullDim (Localization.AtPrime
@@ -71,6 +71,7 @@ theorem ringKrullDim_localization_quotient_X_mul_X_sub_C_pow (hπ : π ∈ maxim
   let 𝔪 := (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)
   let B := Localization.AtPrime 𝔪
   let f := algebraMap (MvPolynomial (Fin 2) R) B (X 0 * X 1 - C (π ^ n))
+  have hπ : π ∈ maximalIdeal R := mem_maximalIdeal_of_isPrime_map_quotient_X_mul_X_sub_C_pow n
   have hn : n ≠ 0 := (isPrime_map_quotient_X_mul_X_sub_C_pow_iff hπ n).mp inferInstance
   have hdrop := ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors
     (IsLocalization.nonZeroDivisors_le_comap 𝔪.primeCompl B
@@ -80,7 +81,7 @@ theorem ringKrullDim_localization_quotient_X_mul_X_sub_C_pow (hπ : π ∈ maxim
     apply ENat.WithBot.add_one_cancel.mp
     convert hdrop using 1
     norm_num [𝔪, B, ringKrullDim_localization_comap_mvPolynomial_constantCoeff, add_assoc]
-  rw [ringKrullDim_eq_of_ringEquiv (S := B ⧸ span {f}) (localizationQuotientXMulXSubCPowEquiv hπ n)]
+  rw [ringKrullDim_eq_of_ringEquiv (S := B ⧸ span {f}) (localizationQuotientXMulXSubCPowEquiv π n)]
   exact hquot
 
 end IsNoetherianRing
@@ -92,13 +93,13 @@ variable [IsDomain R] [IsDiscreteValuationRing R]
 /-- The local ring of a nodal equation over a DVR at the image of the maximal ideal
 and both coordinates has Krull dimension two. -/
 theorem ringKrullDim_localization_quotient_X_mul_X_sub_C_pow_of_isDiscreteValuationRing
-    (hπ : π ∈ maximalIdeal R) (n : ℕ)
+    (n : ℕ)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
       (NodeAlgebra.mk (π ^ n))).IsPrime] :
     ringKrullDim (Localization.AtPrime
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
         (NodeAlgebra.mk (π ^ n)))) = 2 := by
-  rw [ringKrullDim_localization_quotient_X_mul_X_sub_C_pow hπ n,
+  rw [ringKrullDim_localization_quotient_X_mul_X_sub_C_pow n,
     IsDiscreteValuationRing.ringKrullDim_eq_one]
   norm_num
 

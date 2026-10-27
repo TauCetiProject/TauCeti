@@ -126,23 +126,24 @@ theorem isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalI
 when `n = 1`.** Here `π ∈ 𝔪_R \ 𝔪_R²` for a regular local ring `R`, and the origin is the image of
 `𝔪 = (𝔪_R, x, y)`, which is a prime ideal exactly when `n ≠ 0`
 (`TauCeti.isPrime_map_quotient_X_mul_X_sub_C_pow_iff`). -/
-theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalIdeal R)
+theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff
     (hπ2 : π ∉ maximalIdeal R ^ 2) (n : ℕ)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
       (NodeAlgebra.mk (π ^ n))).IsPrime] :
     IsRegularLocalRing (Localization.AtPrime
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
         (NodeAlgebra.mk (π ^ n)))) ↔ n = 1 := by
-  rw [← isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff hπ hπ2 n, ← C_pow]
+  rw [← isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff
+    (mem_maximalIdeal_of_isPrime_map_quotient_X_mul_X_sub_C_pow n) hπ2 n, ← C_pow]
   constructor
   · intro h
-    exact .of_ringEquiv (localizationQuotientXMulXSubCPowEquiv hπ n)
+    exact .of_ringEquiv (localizationQuotientXMulXSubCPowEquiv π n)
   · intro h
     let B := Localization.AtPrime
       ((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R))
     exact .of_ringEquiv
       (R := B ⧸ span {algebraMap (MvPolynomial (Fin 2) R) B (X 0 * X 1 - C (π ^ n))})
-      (localizationQuotientXMulXSubCPowEquiv hπ n).symm
+      (localizationQuotientXMulXSubCPowEquiv π n).symm
 
 end IsRegularRing
 
@@ -162,7 +163,7 @@ theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff_of_irredu
         (NodeAlgebra.mk (π ^ n)))) ↔ n = 1 := by
   have hm := (IsDiscreteValuationRing.irreducible_iff_uniformizer π).mp hπ
   refine isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff
-    (hm ▸ mem_span_singleton_self π) (fun h ↦ hπ.not_isUnit ?_) n
+    (fun h ↦ hπ.not_isUnit ?_) n
   rw [hm, span_singleton_pow, mem_span_singleton] at h
   obtain ⟨c, hc⟩ := h
   exact IsUnit.of_mul_eq_one c

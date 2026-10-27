@@ -41,8 +41,7 @@ variable [IsLocalRing R] [IsRegularRing R]
 /-- Over a regular local base, the maximal ideal at the closed point of a node of
 thickness at least two needs `dim R + 2` generators, since the equation has no linear term. -/
 theorem spanFinrank_maximalIdeal_localization_quotient_X_mul_X_sub_C_pow
-    (hπ : π ∈ maximalIdeal R) (n : ℕ)
-    (hn : 2 ≤ n)
+    (n : ℕ) (hn : 2 ≤ n)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
       (NodeAlgebra.mk (π ^ n))).IsPrime] :
     (maximalIdeal (Localization.AtPrime
@@ -55,11 +54,12 @@ theorem spanFinrank_maximalIdeal_localization_quotient_X_mul_X_sub_C_pow
   let A := Localization.AtPrime
     (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
       (NodeAlgebra.mk (π ^ n)))
-  let e : A ≃+* (B ⧸ span {f}) := localizationQuotientXMulXSubCPowEquiv hπ n
+  let e : A ≃+* (B ⧸ span {f}) := localizationQuotientXMulXSubCPowEquiv π n
   have : IsLocalRing (B ⧸ span {f}) := e.isLocalRing
   have hspan := TauCeti.IsLocalRing.spanFinrank_map_maximalIdeal_quotient_of_le_sq
     (maximalIdeal B).fg_of_isNoetherianRing
-    ((span_singleton_le_iff_mem _).mpr (algebraMap_X_mul_X_sub_C_pow_mem_maximalIdeal_sq hπ hn))
+    ((span_singleton_le_iff_mem _).mpr (algebraMap_X_mul_X_sub_C_pow_mem_maximalIdeal_sq
+      (mem_maximalIdeal_of_isPrime_map_quotient_X_mul_X_sub_C_pow (π := π) n) hn))
   rw [map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective] at hspan
   have : IsRegularLocalRing B :=
     _root_.IsRegularLocalRing.of_isRegularRing_of_isLocalRing B
@@ -81,13 +81,13 @@ variable [IsDomain R] [IsDiscreteValuationRing R]
 /-- Over a DVR, the maximal ideal at the closed point of a node of thickness at least two
 needs exactly three generators. -/
 theorem spanFinrank_maximalIdeal_localization_quotient_X_mul_X_sub_C_pow_of_isDiscreteValuationRing
-    (hπ : π ∈ maximalIdeal R) (n : ℕ) (hn : 2 ≤ n)
+    (n : ℕ) (hn : 2 ≤ n)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
       (NodeAlgebra.mk (π ^ n))).IsPrime] :
     (maximalIdeal (Localization.AtPrime
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
         (NodeAlgebra.mk (π ^ n))))).spanFinrank = 3 := by
-  have h := spanFinrank_maximalIdeal_localization_quotient_X_mul_X_sub_C_pow hπ n hn
+  have h := spanFinrank_maximalIdeal_localization_quotient_X_mul_X_sub_C_pow (π := π) n hn
   rw [IsDiscreteValuationRing.ringKrullDim_eq_one] at h
   exact_mod_cast h
 
