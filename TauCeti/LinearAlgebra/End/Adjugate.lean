@@ -22,6 +22,8 @@ computed from a conjugation that reverses products.
 
 ## Main results
 
+* `LinearMap.toMatrix_trace_smul_one_sub`: in every basis of a rank-two space, `tr T • 1 - T` is
+  the matrix adjugate of `T`.
 * `LinearMap.trace_mul_smul_one_sub_mul_of_finrank_eq_two`: the adjugate reverses products,
   `tr (S T) • 1 - S T = (tr T • 1 - T) (tr S • 1 - S)`.
 * `LinearMap.trace_smul_one_sub_mul_self_of_finrank_eq_two`: `(tr T • 1 - T) T = det T • 1`.
@@ -34,7 +36,7 @@ namespace LinearMap
 variable {K E : Type*} [Field K] [AddCommGroup E] [Module K E]
 
 /-- In rank two, the adjugate `T ↦ tr T • 1 - T` is the matrix adjugate in every basis. -/
-private theorem toMatrix_trace_smul_one_sub (b : Module.Basis (Fin 2) K E) (T : Module.End K E) :
+theorem toMatrix_trace_smul_one_sub (b : Module.Basis (Fin 2) K E) (T : Module.End K E) :
     toMatrix b b (trace K E T • 1 - T) = (toMatrix b b T).adjugate := by
   rw [Matrix.adjugate_fin_two_eq_trace_smul_one_sub, map_sub, map_smul, toMatrix_one,
     trace_eq_matrix_trace K b]
