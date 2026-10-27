@@ -25,11 +25,13 @@ and it is essential when `E = closure (span (A · E · A))`.
 
 ## Main results
 
-* `ContinuousLinearMap.exists_mul_apply_eq_of_mem_topologicalClosure_span`: Cohen–Hewitt
+* `ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span_right`: Cohen–Hewitt
   factorization for right modules. A right approximate identity of `A` bounded by `C` factors
   every `x` in the essential part of `E` as `x = y · a` with `‖a‖ ≤ C`, where `y` lies in the
   closure of `x · A` and within any prescribed distance `ε` of `x`.
-* `ContinuousLinearMap.exists_apply_mul_apply_eq_of_mem_topologicalClosure_span`: essential
+* `ContinuousLinearMap.coe_topologicalClosure_span_range_eq_right`: consequently `E · A` is
+  already a closed linear subspace: it equals the essential part of a right module.
+* `ContinuousLinearMap.exists_apply_apply_eq_of_mem_topologicalClosure_span`: essential
   bimodules over an algebra with a bounded two-sided approximate identity are pseudo-unital, so
   every element is a single triple product `a · z · b`.
 
@@ -59,7 +61,7 @@ approximate identity `l` bounded by `C`, acting boundedly on the right of a Bana
 through `R`. Every `x` in the essential part `closure (span (E · A))` factors as `x = R y a` with
 `‖a‖ ≤ C`, where `y` lies in the closure of `x · A` and within any prescribed distance `ε` of
 `x`. -/
-theorem exists_mul_apply_eq_of_mem_topologicalClosure_span (R : E →L[𝕜] A →L[𝕜] E)
+theorem exists_apply_eq_of_mem_topologicalClosure_span_right (R : E →L[𝕜] A →L[𝕜] E)
     (hR : ∀ x a b, R (R x a) b = R x (a * b)) {l : Filter A} [l.NeBot] {C : ℝ}
     (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (a * ·) l (𝓝 a)) {x : E}
     (hx : x ∈ (span 𝕜 (Set.range fun p : E × A ↦ R p.1 p.2)).topologicalClosure)
@@ -82,7 +84,10 @@ theorem exists_mul_apply_eq_of_mem_topologicalClosure_span (R : E →L[𝕜] A �
     rw [Filter.tendsto_map'_iff]
     have h : Tendsto (fun x : A ↦ MulOpposite.op (a.unop * x)) l (𝓝 (MulOpposite.op a.unop)) :=
       (MulOpposite.continuous_op.tendsto a.unop).comp (hl a.unop)
-    simpa [Function.comp_def, MulOpposite.op_mul, MulOpposite.op_unop] using h
+    have heq : (fun x : A ↦ MulOpposite.op (a.unop * x)) = fun x ↦ MulOpposite.op x * a := by
+      funext x
+      rw [MulOpposite.op_mul, MulOpposite.op_unop]
+    rwa [heq, MulOpposite.op_unop] at h
   have hx' : x ∈ (span 𝕜 (Set.range fun p : Aᵐᵒᵖ × E ↦ Lop p.1 p.2)).topologicalClosure := by
     have hset : Set.range (fun p : Aᵐᵒᵖ × E ↦ Lop p.1 p.2) =
         Set.range fun p : E × A ↦ R p.1 p.2 := by
@@ -107,50 +112,72 @@ theorem exists_mul_apply_eq_of_mem_topologicalClosure_span (R : E →L[𝕜] A �
       exact ⟨MulOpposite.op b, by simp [hLop]⟩
   rwa [hset] at hy
 
+/-- Over a Banach algebra with a bounded right approximate identity, the set `E · A` of products
+is already a closed linear subspace of a Banach right module `E`: it equals the essential part
+`closure (span (E · A))`. -/
+theorem coe_topologicalClosure_span_range_eq_right (R : E →L[𝕜] A →L[𝕜] E)
+    (hR : ∀ x a b, R (R x a) b = R x (a * b)) {l : Filter A} [l.NeBot] {C : ℝ}
+    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (a * ·) l (𝓝 a)) :
+    ((span 𝕜 (Set.range fun p : E × A ↦ R p.1 p.2)).topologicalClosure : Set E) =
+      Set.range fun p : E × A ↦ R p.1 p.2 := by
+  refine subset_antisymm (fun x hx ↦ ?_) ((subset_span).trans (le_topologicalClosure _))
+  obtain ⟨a, y, -, -, -, h⟩ :=
+    exists_apply_eq_of_mem_topologicalClosure_span_right R hR hC hl hx one_pos
+  exact ⟨(y, a), h⟩
+
+omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A] [CompleteSpace E] in
+/-- Right multiplication by a fixed element preserves the essential part of a Banach bimodule,
+`closure (span (A · E · A))`, because `(a · z · b) · c = a · z · (b * c)`. -/
+private lemma image_flip_span_le (L : A →L[𝕜] E →L[𝕜] E) (R : E →L[𝕜] A →L[𝕜] E)
+    (hR : ∀ x a b, R (R x a) b = R x (a * b)) (c : A) :
+    (R.flip c) '' (span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)) ⊆
+      span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2) :=
+  (Submodule.image_span_subset (R.flip c).toLinearMap _ _).2 fun u hu ↦ by
+    obtain ⟨⟨a, z, b⟩, rfl⟩ := hu
+    -- `image_span_subset` states its goal about the coerced `LinearMap` of `R.flip c`, so the
+    -- operand is not syntactically a bundled-map application and rewriting by `hR` needs the
+    -- goal restated in the bundled form first.
+    change R (R (L a z) b) c ∈ span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)
+    rw [hR (L a z) b c]
+    exact Submodule.subset_span ⟨(a, z, b * c), rfl⟩
+
 /-- **Pseudo-unitality of essential Banach bimodules.** Let `A` be a Banach algebra with a
 two-sided approximate identity `l` bounded by `C`, and let `E` be a Banach `A`-bimodule with
 bounded actions `L` and `R`. Every element of the essential part `closure (span (A · E · A))` is a
 single triple product: `x = L a (R z b)` with `‖a‖ ≤ C` and `‖b‖ ≤ C`. -/
-theorem exists_apply_mul_apply_eq_of_mem_topologicalClosure_span (L : A →L[𝕜] E →L[𝕜] E)
+theorem exists_apply_apply_eq_of_mem_topologicalClosure_span (L : A →L[𝕜] E →L[𝕜] E)
     (R : E →L[𝕜] A →L[𝕜] E) (hL : ∀ a b z, L (a * b) z = L a (L b z))
     (hR : ∀ x a b, R (R x a) b = R x (a * b)) (hLR : ∀ a z b, R (L a z) b = L a (R z b))
     {l : Filter A} (hl : l.IsApproximateUnit) {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C) {x : E}
     (hx : x ∈ (span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)).topologicalClosure) :
     ∃ a z b, ‖a‖ ≤ C ∧ ‖b‖ ≤ C ∧ L a (R z b) = x := by
-  -- The one-sided theorems need the properness of `l` as an instance.
+  -- `IsApproximateUnit`'s `neBot` field is `protected`, so the properness of `l` has to be
+  -- restated as a local instance for the one-sided theorems.
   have hlneBot : l.NeBot := hl.neBot
+  -- The essential part of the bimodule, whose elements are the triple products `a · z · b`.
+  set S : Submodule 𝕜 E := span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)
   -- `A · E · A` is contained in both one-sided essential parts.
-  have hAE : (span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)) ≤
-      span 𝕜 (Set.range fun p : A × E ↦ L p.1 p.2) := by
+  have hAE : S ≤ span 𝕜 (Set.range fun p : A × E ↦ L p.1 p.2) := by
     rw [Submodule.span_le]
     rintro _ ⟨⟨a, z, b⟩, rfl⟩
     simp only [hLR a z b]
     exact Submodule.subset_span ⟨(a, R z b), rfl⟩
-  have hEA : (span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)) ≤
-      span 𝕜 (Set.range fun p : E × A ↦ R p.1 p.2) := by
+  have hEA : S ≤ span 𝕜 (Set.range fun p : E × A ↦ R p.1 p.2) := by
     rw [Submodule.span_le]
     rintro _ ⟨⟨a, z, b⟩, rfl⟩
     exact Submodule.subset_span ⟨(L a z, b), rfl⟩
   -- The distance bounds of the two one-sided theorems are discarded, so `ε = 1` will do.
   obtain ⟨b, y, hb, hy, -, hRyb⟩ :=
-    exists_mul_apply_eq_of_mem_topologicalClosure_span R hR hC
+    exists_apply_eq_of_mem_topologicalClosure_span_right R hR hC
       hl.tendsto_mul_left (Submodule.topologicalClosure_mono hEA hx) one_pos
   -- The intermediate point stays in the bimodule essential part, being a multiple of `x`.
-  have hyS :
-      y ∈ (span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)).topologicalClosure := by
+  have hyS : y ∈ S.topologicalClosure := by
     refine closure_minimal ?_ isClosed_closure hy
     intro w hw
     obtain ⟨c, rfl⟩ := hw
-    have himg : (R.flip c) '' (span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)) ⊆
-        span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2) :=
-      (Submodule.image_span_subset (R.flip c).toLinearMap _ _).2 fun u hu ↦ by
-        obtain ⟨⟨a, z, b⟩, rfl⟩ := hu
-        change (R.flip c) (R (L a z) b) ∈
-          span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)
-        rw [ContinuousLinearMap.flip_apply, hR (L a z) b c]
-        exact Submodule.subset_span ⟨(a, z, b * c), rfl⟩
-    exact closure_mono himg (image_closure_subset_closure_image (R.flip c).continuous
-      (Set.mem_image_of_mem (R.flip c) hx))
+    exact closure_mono (image_flip_span_le L R hR c)
+      (image_closure_subset_closure_image (R.flip c).continuous
+        (Set.mem_image_of_mem (R.flip c) hx))
   obtain ⟨a, z, ha, -, -, hLaz⟩ :=
     exists_apply_eq_of_mem_topologicalClosure_span L hL hC
       hl.tendsto_mul_right (Submodule.topologicalClosure_mono hAE hyS) one_pos
