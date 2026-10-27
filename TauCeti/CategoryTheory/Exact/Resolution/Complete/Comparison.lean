@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomotopyCategory
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.CategoryTheory.Exact.Resolution.Complete.Basic
 
@@ -495,7 +496,30 @@ theorem ι_homotopyEquiv_inv_f_zero (e : r.Z 0 ≅ r'.Z 0) :
     r'.ι 0 ≫ (homotopyEquiv r r' e).inv.f 0 = e.inv ≫ r.ι 0 :=
   ι_lift_f_zero r' r e.inv
 
+/-- The morphism of cycles induced by the homotopy equivalence is `e.hom`. -/
+@[simp]
+theorem cyclesMap_homotopyEquiv_hom (e : r.Z 0 ≅ r'.Z 0) :
+    cyclesMap (homotopyEquiv r r' e).hom = e.hom := by
+  simp [← cancel_mono (r'.ι 0)]
+
+/-- The morphism of cycles induced by the inverse homotopy equivalence is `e.inv`. -/
+@[simp]
+theorem cyclesMap_homotopyEquiv_inv (e : r.Z 0 ≅ r'.Z 0) :
+    cyclesMap (homotopyEquiv r r' e).inv = e.inv := by
+  simp [← cancel_mono (r.ι 0)]
+
 end Homotopy
+
+/-- Two maps of complete resolutions agree in the homotopy category exactly when the difference
+of the morphisms they induce on the cycles in degree zero factors through a projective-injective
+object. -/
+theorem quotient_map_eq_iff {r r' : E.CompleteResolution} (φ ψ : r.complex ⟶ r'.complex) :
+    (HomotopyCategory.quotient C _).map φ = (HomotopyCategory.quotient C _).map ψ ↔
+      E.projectiveInjective.FactorsThrough (cyclesMap φ - cyclesMap ψ) := by
+  rw [← nonempty_homotopy_zero_iff (φ := φ - ψ) (by simp [Preadditive.comp_sub,
+    Preadditive.sub_comp])]
+  exact ⟨fun h ↦ ⟨Homotopy.equivSubZero (HomotopyCategory.homotopyOfEq _ _ h)⟩,
+    fun ⟨h⟩ ↦ HomotopyCategory.eq_of_homotopy _ _ (Homotopy.equivSubZero.symm h)⟩
 
 end CompleteResolution
 

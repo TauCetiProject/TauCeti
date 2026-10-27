@@ -275,6 +275,17 @@ protected noncomputable def OnOpenDisc.subring (R₀ : ℝ) : Subring R⟦X⟧ w
 theorem OnOpenDisc.mem_subring : f ∈ OnOpenDisc.subring R R₀ ↔ f.OnOpenDisc R₀ :=
   Iff.rfl
 
+/-- The inclusion of polynomials into series on the open disc. -/
+noncomputable def OnOpenDisc.polynomialHom : Polynomial R →+* OnOpenDisc.subring R R₀ :=
+  Polynomial.coeToPowerSeries.ringHom.codRestrict _ fun p ↦
+    OnOpenDisc.mem_subring.mpr (onOpenDisc_coe p)
+
+/-- Polynomial inclusion has the usual underlying formal power series. -/
+@[simp]
+theorem OnOpenDisc.coe_polynomialHom (p : Polynomial R) :
+    (OnOpenDisc.polynomialHom (R₀ := R₀) p : R⟦X⟧) = p :=
+  RingHom.codRestrict_apply _ _ _ p
+
 variable (R) in
 /-- The subring of series on the open disc of radius `R₀` shrinks as `R₀` grows. -/
 theorem OnOpenDisc.subring_antitone : Antitone (OnOpenDisc.subring R) :=
