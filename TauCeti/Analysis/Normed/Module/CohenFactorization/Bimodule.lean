@@ -70,7 +70,9 @@ theorem exists_apply_eq_of_mem_topologicalClosure_span_right (R : E →L[𝕜] A
     (hx : x ∈ (span 𝕜 (Set.range fun p : E × A ↦ R p.1 p.2)).topologicalClosure)
     {ε : ℝ} (hε : 0 < ε) :
     ∃ a y, ‖a‖ ≤ C ∧ y ∈ closure (Set.range fun b ↦ R x b) ∧ ‖y - x‖ < ε ∧ R y a = x := by
-  -- The opposite algebra acts on the left by `a · z = z · a.unop`.
+  -- The opposite algebra acts on the left by `a · z = z · a.unop`. The equality is definitional:
+  -- `flip` transposes the arguments of `R` and `opContinuousLinearEquiv.symm` is `unop`, so the
+  -- bundled map below computes to `R z a.unop` without any proof step.
   obtain ⟨Lop, hLop⟩ :
       ∃ Lop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E, ∀ (a : Aᵐᵒᵖ) (z : E), Lop a z = R z a.unop :=
     ⟨R.flip.comp (MulOpposite.opContinuousLinearEquiv 𝕜 (M := A)).symm.toContinuousLinearMap,
