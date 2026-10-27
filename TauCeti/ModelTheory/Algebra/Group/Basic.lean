@@ -481,13 +481,25 @@ end NotModel
 
 section Coefficients
 
-variable {A α G : Type*}
+variable {A α : Type*}
 
 /-- Including group-language terms into the coefficient language preserves the identity. -/
 @[simp] theorem onTerm_one :
     (Language.group.lhomWithConstants A).onTerm (1 : Language.group.Term α) = 1 := by
   rw [one_def, Language.Constants.term, LHom.onTerm]
   exact congrArg (Language.Term.func _) (funext fun i => i.elim0)
+
+end Coefficients
+
+end Group
+
+end TauCeti
+
+namespace FirstOrder.Language.Term
+
+open TauCeti.Group
+
+variable {A α : Type*}
 
 /-- Including group-language terms into the coefficient language preserves inversion. -/
 @[simp] theorem onTerm_inv (t : Language.group.Term α) :
@@ -503,6 +515,18 @@ variable {A α G : Type*}
         (Language.group.lhomWithConstants A).onTerm s := by
   rw [mul_def, Language.Functions.apply₂, LHom.onTerm]
   exact congrArg (Language.Term.func _) (funext fun i => by fin_cases i <;> rfl)
+
+end FirstOrder.Language.Term
+
+namespace TauCeti
+
+open FirstOrder FirstOrder.Language
+
+namespace Group
+
+section Coefficients
+
+variable {A G : Type*}
 
 /-- The coefficient-language sentence `a * b = b * a`, for coefficient names `a b : A`. -/
 def commSentence (a b : A) : Language.group[[A]].Sentence :=
