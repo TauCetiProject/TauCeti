@@ -604,11 +604,13 @@ theorem MinimalCosetRepCovBy.exists_isReflection {J : Set B} {y x : W}
     exact inv_mem hp
 
 /-- A **saturated chain** of the parabolic quotient `W / W_J`, descending through covers: a
-`RelSeries` `x₀, x₁, …, x_l` of minimal coset representatives in which each `x_{i+1}` is covered by
-`x_i` (`CoxeterSystem.MinimalCosetRepChain.minimalCosetRepCovBy`). Its length `l` is the number of
+`RelSeries` `x₀, x₁, …, x_l` of minimal coset representatives, as elements of the subtype
+`{w // cs.IsMinimalCosetRep J w}`, in which each `x_{i+1}` is covered by `x_i`
+(`CoxeterSystem.MinimalCosetRepChain.minimalCosetRepCovBy`). Its length `l` is the number of
 covers, and the chain of length `0` at `x` is `RelSeries.singleton _ x`. -/
 abbrev MinimalCosetRepChain (J : Set B) : Type _ :=
-  RelSeries {p : W × W | cs.MinimalCosetRepCovBy J p.2 p.1}
+  RelSeries {p : {w : W // cs.IsMinimalCosetRep J w} × {w : W // cs.IsMinimalCosetRep J w} |
+    cs.MinimalCosetRepCovBy J p.2 p.1}
 
 /-- Each step `x_{i+1} ⋖ x_i` of a saturated chain of `W / W_J` is a cover. -/
 theorem MinimalCosetRepChain.minimalCosetRepCovBy {cs : CoxeterSystem M W} {J : Set B}

@@ -80,7 +80,7 @@ variable {ι : Type u} {M : Type w} {N : Type x} [AddCommGroup M] [AddCommGroup 
 noncomputable def bondGcd (lam : M)
     (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)) : ℕ :=
   Finset.univ.gcd fun i : Fin C.length ↦
-    (P.reflectionBond b (C i.castSucc • lam) (C i.succ • lam)).natAbs
+    (P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam)).natAbs
 
 /-- A saturated chain `C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of the parabolic quotient `W / W_λ` is an
 **`a`-chain**, for a rational number `a`, when `a` times the bond `b_λ(x_{h-1}, x_h)` of each of its
@@ -89,7 +89,8 @@ Littelmann's condition that `a ⟨x_{h-1} λ, β_h^∨⟩` is an integer
 (`TauCeti.isAChain_iff_forall_coroot'`). -/
 def IsAChain (a : ℚ) (lam : M)
     (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)) : Prop :=
-  ∀ i : Fin C.length, ∃ z : ℤ, a * P.reflectionBond b (C i.castSucc • lam) (C i.succ • lam) = z
+  ∀ i : Fin C.length,
+    ∃ z : ℤ, a * P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam) = z
 
 variable {a : ℚ} {lam : M}
 
@@ -104,9 +105,9 @@ theorem isAChain_iff_den_dvd_bondGcd
 
 /-- The chain of length `0` has bond gcd `0`. -/
 @[simp]
-theorem bondGcd_singleton (y : P.weylGroup) :
-    bondGcd lam (RelSeries.singleton {p | (weylCoxeterSystem P b).MinimalCosetRepCovBy
-      (P.wallIndices b lam) p.2 p.1} y) = 0 :=
+theorem bondGcd_singleton
+    (y : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
+    bondGcd lam (RelSeries.singleton _ y) = 0 :=
   Finset.gcd_empty
 
 /-- The bond gcd of the concatenation of two saturated chains, the second starting where the first
@@ -117,14 +118,14 @@ theorem bondGcd_smash
     (h : C.last = D.head) : bondGcd lam (C.smash D h) = (bondGcd lam C).gcd (bondGcd lam D) := by
   -- The covers of the concatenation are those of `C`, followed by those of `D`.
   have hC (i : Fin C.length) :
-      (P.reflectionBond b ((C.smash D h) (i.castAdd D.length).castSucc • lam)
-        ((C.smash D h) (i.castAdd D.length).succ • lam)).natAbs =
-      (P.reflectionBond b (C i.castSucc • lam) (C i.succ • lam)).natAbs := by
+      (P.reflectionBond b (((C.smash D h) (i.castAdd D.length).castSucc).1 • lam)
+        (((C.smash D h) (i.castAdd D.length).succ).1 • lam)).natAbs =
+      (P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam)).natAbs := by
     rw [RelSeries.smash_castAdd, RelSeries.smash_succ_castAdd]
   have hD (i : Fin D.length) :
-      (P.reflectionBond b ((C.smash D h) (i.natAdd C.length).castSucc • lam)
-        ((C.smash D h) (i.natAdd C.length).succ • lam)).natAbs =
-      (P.reflectionBond b (D i.castSucc • lam) (D i.succ • lam)).natAbs := by
+      (P.reflectionBond b (((C.smash D h) (i.natAdd C.length).castSucc).1 • lam)
+        (((C.smash D h) (i.natAdd C.length).succ).1 • lam)).natAbs =
+      (P.reflectionBond b ((D i.castSucc).1 • lam) ((D i.succ).1 • lam)).natAbs := by
     rw [RelSeries.smash_natAdd, RelSeries.smash_succ_natAdd]
   refine Nat.dvd_antisymm (Nat.dvd_gcd (Finset.dvd_gcd fun i _ ↦ ?_)
     (Finset.dvd_gcd fun i _ ↦ ?_)) (Finset.dvd_gcd fun i _ ↦ ?_)
@@ -142,29 +143,29 @@ theorem bondGcd_smash
 its bond gcd and the bond `b_λ(x_l, y)` of the new cover. -/
 @[simp]
 theorem bondGcd_snoc {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
-    {y : P.weylGroup} (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y
-      C.last) :
+    {y : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y C.last) :
     bondGcd lam (C.snoc y h) =
-      (bondGcd lam C).gcd (P.reflectionBond b (C.last • lam) (y • lam)).natAbs := by
+      (bondGcd lam C).gcd (P.reflectionBond b (C.last.1 • lam) (y.1 • lam)).natAbs := by
   -- The covers of the extended chain are those of `C`, followed by `y ⋖ x_l`. The index types
   -- `Fin (C.length + 1 + 1)` and `Fin ((C.snoc y h).length + 1)` agree only up to unfolding
   -- `RelSeries.snoc`, so `rw` cannot use `RelSeries.snoc_castSucc` here; `congrArg₂` can.
   have hC (i : Fin C.length) :
-      (P.reflectionBond b (C.snoc y h (i.castSucc.castSucc : Fin (C.length + 1 + 1)) • lam)
-        (C.snoc y h (i.castSucc.succ : Fin (C.length + 1 + 1)) • lam)).natAbs =
-      (P.reflectionBond b (C i.castSucc • lam) (C i.succ • lam)).natAbs :=
-    congrArg₂ (fun x z ↦ (P.reflectionBond b (x • lam) (z • lam)).natAbs)
+      (P.reflectionBond b ((C.snoc y h (i.castSucc.castSucc : Fin (C.length + 1 + 1))).1 • lam)
+        ((C.snoc y h (i.castSucc.succ : Fin (C.length + 1 + 1))).1 • lam)).natAbs =
+      (P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam)).natAbs :=
+    congrArg₂ (fun x z ↦ (P.reflectionBond b (x.1 • lam) (z.1 • lam)).natAbs)
       (RelSeries.snoc_castSucc C y h i.castSucc) (RelSeries.snoc_castSucc C y h i.succ)
   have hy : (P.reflectionBond b
-      (C.snoc y h ((Fin.last C.length).castSucc : Fin (C.length + 1 + 1)) • lam)
-        (C.snoc y h (Fin.last (C.length + 1)) • lam)).natAbs =
-      (P.reflectionBond b (C.last • lam) (y • lam)).natAbs :=
-    congrArg₂ (fun x z ↦ (P.reflectionBond b (x • lam) (z • lam)).natAbs)
+      ((C.snoc y h ((Fin.last C.length).castSucc : Fin (C.length + 1 + 1))).1 • lam)
+        ((C.snoc y h (Fin.last (C.length + 1))).1 • lam)).natAbs =
+      (P.reflectionBond b (C.last.1 • lam) (y.1 • lam)).natAbs :=
+    congrArg₂ (fun x z ↦ (P.reflectionBond b (x.1 • lam) (z.1 • lam)).natAbs)
       (RelSeries.snoc_castSucc C y h (Fin.last C.length)) (RelSeries.last_snoc' C y h)
   have key (j : Fin (C.length + 1)) :
-      (bondGcd lam C).gcd (P.reflectionBond b (C.last • lam) (y • lam)).natAbs ∣
-        (P.reflectionBond b (C.snoc y h (j.castSucc : Fin (C.length + 1 + 1)) • lam)
-          (C.snoc y h (j.succ : Fin (C.length + 1 + 1)) • lam)).natAbs := by
+      (bondGcd lam C).gcd (P.reflectionBond b (C.last.1 • lam) (y.1 • lam)).natAbs ∣
+        (P.reflectionBond b ((C.snoc y h (j.castSucc : Fin (C.length + 1 + 1))).1 • lam)
+          ((C.snoc y h (j.succ : Fin (C.length + 1 + 1))).1 • lam)).natAbs := by
     induction j using Fin.lastCases with
     | last => exact (Nat.gcd_dvd_right _ _).trans hy.symm.dvd
     | cast i =>
@@ -193,8 +194,8 @@ is unique (`TauCeti.existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovB
 theorem isAChain_iff_forall_coroot' (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} :
     IsAChain a lam C ↔ ∀ i : Fin C.length, ∀ β, b.IsPos β →
-      P.reflection β (C i.castSucc • lam) = C i.succ • lam →
-        ∃ z : ℤ, a * P.coroot' β (C i.castSucc • lam) = z := by
+      P.reflection β ((C i.castSucc).1 • lam) = (C i.succ).1 • lam →
+        ∃ z : ℤ, a * P.coroot' β ((C i.castSucc).1 • lam) = z := by
   refine ⟨fun hC i β hβ hβx ↦ ?_, fun hC i ↦ ?_⟩
   · obtain ⟨z, hz⟩ := hC i
     refine ⟨-z, ?_⟩
@@ -230,7 +231,10 @@ gcd `|⟨λ, αᵢ^∨⟩|`. So it is an `a`-chain exactly when the denominator 
 `⟨λ, αᵢ^∨⟩`. -/
 theorem bondGcd_snoc_singleton_simple_one (hlam : lam ∈ dominantChamber P b) {i : b.support}
     (hi : P.coroot' i lam ≠ 0) :
-    bondGcd lam ((RelSeries.singleton _ ((weylCoxeterSystem P b).simple i)).snoc 1
+    bondGcd lam ((RelSeries.singleton _ ⟨(weylCoxeterSystem P b).simple i,
+      (minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero hlam hi).isMinimalCosetRep_right⟩ :
+        (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)).snoc
+      ⟨1, (minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero hlam hi).isMinimalCosetRep_left⟩
       (minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero hlam hi)) =
       (P.coroot' i lam).natAbs := by
   refine (bondGcd_snoc _).trans ?_
