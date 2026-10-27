@@ -223,7 +223,7 @@ theorem lieSubalgebra_centralizerKerHopfIdeal_toSubmodule_eq_sup (T : SplitMaxim
     DiagonalizableGroup.pairing_inv_right, ← Submodule.map_sup,
     ← Submodule.map_sup]
   congr 1
-  have h := iSup_int_eq_sup_pos_mul_sup_zero_sup_neg_mul
+  have h := iSup_int_eq_sup_pos_mul_sup_zero_sup_pos_mul_neg
     (fun n ↦ Derivation.adjointWeightSpace T.coordinateMap.hom (Multiplicative.ofAdd (n • α))) hψ
   simp only [smul_zero, zero_smul, iSup_const] at h ⊢
   exact h
