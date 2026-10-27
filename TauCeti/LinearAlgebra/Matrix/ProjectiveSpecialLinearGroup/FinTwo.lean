@@ -40,8 +40,10 @@ them; that classification, which runs through the action on the projective line,
   under nonzero powers in characteristic zero.
 * `Matrix.ProjectiveSpecialLinearGroup.upperRightHom`: the translations `x ↦ !![1, x; 0, 1]`, as
   an injective additive character `R → PSL(2, R)`, parabolic exactly away from `x = 0`
-  (`isParabolic_upperRightHom_iff`); `mul_zpow_mul_inv_eq_upperRightHom`: a conjugate of a
-  translation by `w` has its `n`-th power conjugate to the translation by `n * w`.
+  (`isParabolic_upperRightHom_iff`); `mk_mul_upperRightHom_mul_inv`: conjugation by an
+  upper-triangular matrix rescales translations by the square of its top-left entry;
+  `mul_zpow_mul_inv_eq_upperRightHom`: a conjugate of a translation by `w` has its `n`-th power
+  conjugate to the translation by `n * w`.
 
 ## References
 
@@ -196,6 +198,23 @@ theorem mul_zpow_mul_inv_eq_upperRightHom {σ γ : PSL(2, R)} {w : R}
     σ * γ ^ n * σ⁻¹ = upperRightHom (n * w) := by
   rw [← MulAut.conj_apply, map_zpow, MulAut.conj_apply, h, ← zsmul_eq_mul,
     AddChar.map_zsmul_eq_zpow]
+
+omit [NoZeroDivisors R] in
+/-- Conjugating a translation by an upper-triangular determinant-one matrix rescales its
+parameter by the square of the top-left entry. This holds over any commutative ring. -/
+theorem mk_mul_upperRightHom_mul_inv (a : SL(2, R)) (ha : a 1 0 = 0) (x : R) :
+    (a : PSL(2, R)) * upperRightHom x * (a : PSL(2, R))⁻¹ = upperRightHom (a 0 0 ^ 2 * x) := by
+  have hdet : a 0 0 * a 1 1 = 1 := by
+    have := a.det_coe
+    rw [det_fin_two, ha] at this
+    simpa using this
+  rw [mul_inv_eq_iff_eq_mul, upperRightHom_apply, upperRightHom_apply, ← QuotientGroup.mk_mul,
+    ← QuotientGroup.mk_mul]
+  congr 1
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [SpecialLinearGroup.transvection_coe, Matrix.mul_apply, Fin.sum_univ_two, ha]
+  linear_combination -(a 0 0 * x) * hdet
 
 /-- A translation is parabolic exactly when it is nontrivial. -/
 @[simp]
