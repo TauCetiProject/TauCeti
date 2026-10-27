@@ -165,19 +165,6 @@ theorem points_mulVec_mem
     ← GeneralLinear.pointsMulEquiv_apply, MulEquiv.apply_symm_apply] at h
   exact h
 
-/-- Subtracting a basis vector from its positive simple root translate at parameter one
-leaves the reflected basis vector when its simple weight is minus one. -/
-theorem positiveRoot_mulVec_single_sub (k : Type*) [CommRing k] (i : Fin 6) (a : Fin 27)
-    (ha : DynkinType.e6MinusculeWeight a i = -1) :
-    (((rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd 1) :
-        Matrix.GeneralLinearGroup (Fin 27) k) : Matrix (Fin 27) (Fin 27) k) *ᵥ
-          Pi.single a 1) - Pi.single a 1 =
-      Pi.single (DynkinType.e6MinusculeReflection i a) 1 := by
-  rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, one_smul]
-  simpa only [weightTable_raisingMatrix, weightTable_reflection] using
-    weightTable.one_add_raisingMatrix_mulVec_single_sub (R := k) i a
-      (by simpa only [weightTable_weight] using ha)
-
 /-! ## Simplicity over a field -/
 
 section Simple

@@ -14,7 +14,8 @@ import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
 import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic
 import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
-import TauCeti.Algebra.Lie.E6.Minuscule.StandardComodule
+import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Positive.StandardComodule
+import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Raising
 
 /-!
 # Equations for solvable overgroups of the positive E₆ minuscule subgroup
@@ -63,19 +64,6 @@ variable {k : Type u} [Field k]
 local notation "μ" => e6MinusculeWeight
 local notation "C₊" => posRootCone e6SimplyConnectedRootDatum e6SimplyConnectedBase
 
-private theorem rootPoint_matrix (i : Fin 6) (A : CommAlgCat.{u} k)
-    (p : HopfAlgebra.points (R := k) (H := AdditiveGroup.coordinateHopfAlgebra k) A) :
-    GeneralLinear.pointToGeneralLinear 27
-        (toConv (p.ofConv.comp (generatorCoordinateMap k (.inl (.inl i))).hom.toAlgHom)) =
-      (rootSubgroupPoints (.inl i) A (AdditiveGroup.gaPointsMulEquiv p) :
-        Matrix.GeneralLinearGroup (Fin 27) A) := by
-  rw [generatorCoordinateMap_inl, ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap]
-  have h :=
-    pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints
-      k (.inl i) A p
-  rw [BialgHom.mapDomain_apply, ofConv_toConv] at h
-  simpa only [CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom, AlgHom.comp_assoc] using h
-
 private theorem single_mem_of_raising_step
     (J : HopfIdeal k (GeneralLinear.coordinateHopfAlgebra k 27))
     (hJ : J ≤ definingIdeal k) :
@@ -92,11 +80,13 @@ private theorem single_mem_of_raising_step
   let p := (AdditiveGroup.gaPointsMulEquiv (R := k) (A := k)).symm
     (Multiplicative.ofAdd (1 : k))
   have hmem := GeneralLinear.quotientStandardComodule_mulVec_mem k 27 J
-    (generatorCoordinateMap k (.inl (.inl i)))
-    (((le_definingIdeal_iff k J).mp hJ).1 i) N p ha
-  rw [rootPoint_matrix i (CommAlgCat.of k k) p, MulEquiv.apply_symm_apply] at hmem
-  simpa only [positiveRoot_mulVec_single_sub k i a hi, Subcomodule.mem_toSubmodule] using
-    N.toSubmodule.sub_mem hmem ha
+    (generator k (.inl i))
+    (by simpa only [generator_inl] using ((le_definingIdeal_iff k J).mp hJ).1 i) N p ha
+  rw [pointToGeneralLinear_comp_generator_inl k i (CommAlgCat.of k k) p,
+    MulEquiv.apply_symm_apply, coe_rootSubgroupPoints_inl, toAdd_ofAdd, one_smul] at hmem
+  simpa only [weightTable_reflection, Subcomodule.mem_toSubmodule] using
+    weightTable.single_reflection_mem_of_mulVec_mem N.toSubmodule i a
+      (by simpa only [weightTable_weight] using hi) ha hmem
 
 private theorem single_mem_of_raising_path
     (J : HopfIdeal k (GeneralLinear.coordinateHopfAlgebra k 27))
