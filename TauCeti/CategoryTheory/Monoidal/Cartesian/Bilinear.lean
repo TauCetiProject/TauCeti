@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mon
-public import TauCeti.CategoryTheory.Monoidal.Functor
 
 /-!
 # Bilinear and alternating morphisms of monoid objects

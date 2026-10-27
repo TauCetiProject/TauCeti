@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Monoidal.CommGrp_
 public import TauCeti.AlgebraicGeometry.FiniteEtale.GroupScheme
 public import TauCeti.CategoryTheory.Action.Cartesian
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Bilinear
+public import TauCeti.CategoryTheory.Monoidal.Functor
 public import TauCeti.RingTheory.Etale.Galois
 
 /-!
