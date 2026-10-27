@@ -20,10 +20,8 @@ This file also identifies the characters of prime discriminants, including `-4`,
 These evaluations allow quadratic splitting characters to be computed without choosing a
 prime-discriminant factorization.
 
-The construction and proofs use `fundamentalDiscriminantChar_apply_int` and the value laws
-for `primeDiscriminantCharFun`. For the classical Kronecker convention, see K. Ireland and
-M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 6, and J. Voight,
-*Quaternion Algebras*, §24.3.3.
+For the classical Kronecker convention, see K. Ireland and M. Rosen, *A Classical Introduction
+to Modern Number Theory*, Chapter 6, and J. Voight, *Quaternion Algebras*, §24.3.3.
 -/
 
 public section
@@ -53,7 +51,7 @@ theorem fundamentalDiscriminantChar_apply_primeDiscriminant {P : ℤ}
     (s := {P}) (by simpa using hP) (by simp), genusCharFun_singleton]
 
 /-- At an odd prime discriminant `p*`, the character is the Legendre symbol modulo `p`. -/
-theorem fundamentalDiscriminantChar_oddPrimeDiscr {p : ℕ} [Fact p.Prime] (hp : Odd p)
+theorem fundamentalDiscriminantChar_oddPrimeDiscriminant {p : ℕ} [Fact p.Prime] (hp : Odd p)
     (n : ℤ) :
     fundamentalDiscriminantChar (oddPrimeDiscriminant p)
       (isPrimeDiscriminant_oddPrimeDiscriminant Fact.out hp).isFundamentalDiscr n =
