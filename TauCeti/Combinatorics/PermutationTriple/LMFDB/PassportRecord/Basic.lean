@@ -41,7 +41,7 @@ The aggregations `num_orbits` and `maxdegbf` describe which map rows the table c
 label and name strings are not interpreted here, so validity imposes no condition on them.
 
 The certified fields other than the certificate data are passport invariants: the theorems below
-read them from any connected triple in the passport of `t`.
+read them from any connected triple sharing a passport with `t`.
 
 ## Main definitions
 
@@ -246,33 +246,37 @@ theorem exists_hasLabel (h : r.IsValidAt t) {P : PassportSpec n}
 
 /-! ### Passport invariance of the certified fields -/
 
-variable {t' : ConnectedTriple n}
+variable {P : PassportSpec n} {t' : ConnectedTriple n}
 
-/-- The stored partitions are the ordered full cycle data of every triple in the passport. -/
-theorem lambdas_eq_cycleData (h : r.IsValidAt t)
-    (ht' : PassportSpec.HasPassport t' t.passportOf) : r.lambdas = t'.1.cycleData :=
-  h.lambdas_eq.trans (PassportSpec.cycleData_eq_of_hasPassport t.hasPassport_passportOf ht')
+/-- The stored partitions are the ordered full cycle data of every triple in a passport containing
+the reference triple. -/
+theorem lambdas_eq_cycleData (h : r.IsValidAt t) (hP : PassportSpec.HasPassport t P)
+    (ht' : PassportSpec.HasPassport t' P) : r.lambdas = t'.1.cycleData :=
+  h.lambdas_eq.trans (PassportSpec.cycleData_eq_of_hasPassport hP ht')
 
-/-- The stored orders are the order triple of every triple in the passport. -/
-theorem abc_eq_orderTriple (h : r.IsValidAt t)
-    (ht' : PassportSpec.HasPassport t' t.passportOf) : r.abc = t'.1.orderTriple :=
-  h.abc_eq.trans (PassportSpec.orderTriple_eq_of_hasPassport t.hasPassport_passportOf ht')
+/-- The stored orders are the order triple of every triple in a passport containing the reference
+triple. -/
+theorem abc_eq_orderTriple (h : r.IsValidAt t) (hP : PassportSpec.HasPassport t P)
+    (ht' : PassportSpec.HasPassport t' P) : r.abc = t'.1.orderTriple :=
+  h.abc_eq.trans (PassportSpec.orderTriple_eq_of_hasPassport hP ht')
 
-/-- The stored genus is the genus of every triple in the passport. -/
-theorem g_eq_genus (h : r.IsValidAt t) (ht' : PassportSpec.HasPassport t' t.passportOf) :
-    r.g = t'.1.genus :=
-  h.g_eq.trans (PassportSpec.genus_eq_of_hasPassport t.hasPassport_passportOf ht')
+/-- The stored genus is the genus of every triple in a passport containing the reference triple. -/
+theorem g_eq_genus (h : r.IsValidAt t) (hP : PassportSpec.HasPassport t P)
+    (ht' : PassportSpec.HasPassport t' P) : r.g = t'.1.genus :=
+  h.g_eq.trans (PassportSpec.genus_eq_of_hasPassport hP ht')
 
-/-- The stored geometry type is the geometry type of every triple in the passport. -/
-theorem geomtype_eq_geometryType (h : r.IsValidAt t)
-    (ht' : PassportSpec.HasPassport t' t.passportOf) : r.geomtype = t'.1.geometryType :=
-  h.geomtype_eq.trans (PassportSpec.geometryType_eq_of_hasPassport t.hasPassport_passportOf ht')
+/-- The stored geometry type is the geometry type of every triple in a passport containing the
+reference triple. -/
+theorem geomtype_eq_geometryType (h : r.IsValidAt t) (hP : PassportSpec.HasPassport t P)
+    (ht' : PassportSpec.HasPassport t' P) : r.geomtype = t'.1.geometryType :=
+  h.geomtype_eq.trans (PassportSpec.geometryType_eq_of_hasPassport hP ht')
 
-/-- The stored primitivity flag is set exactly when any triple of the passport is primitive. -/
+/-- The stored primitivity flag is set exactly when a triple in a passport containing the reference
+triple is primitive. -/
 theorem isPrimitive_eq_true_iff_of_hasPassport (h : r.IsValidAt t)
-    (ht' : PassportSpec.HasPassport t' t.passportOf) : r.isPrimitive = true ↔ t'.1.IsPrimitive :=
-  h.isPrimitive_eq_true_iff.trans
-    (PassportSpec.isPrimitive_iff_of_hasPassport t.hasPassport_passportOf ht')
+    (hP : PassportSpec.HasPassport t P) (ht' : PassportSpec.HasPassport t' P) :
+    r.isPrimitive = true ↔ t'.1.IsPrimitive :=
+  h.isPrimitive_eq_true_iff.trans (PassportSpec.isPrimitive_iff_of_hasPassport hP ht')
 
 end IsValidAt
 

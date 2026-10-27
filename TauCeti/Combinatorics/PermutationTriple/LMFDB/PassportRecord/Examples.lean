@@ -36,6 +36,14 @@ namespace TauCeti
 namespace PermutationTriple
 namespace LMFDB
 
+/-- A weakly increasing list `[x, y, z]` is the sort of every rearrangement `{a, b, c}` of it. -/
+private theorem list_eq_sort_of_eq {a b c x y z : ℕ} (hs : x ≤ y ∧ y ≤ z)
+    (h : ({a, b, c} : Multiset ℕ) = {x, y, z}) :
+    [x, y, z] = ({a, b, c} : Multiset ℕ).sort := by
+  rw [h, show ({x, y, z} : Multiset ℕ) = ↑[x, y, z] from rfl, Multiset.coe_sort,
+    List.mergeSort_eq_self]
+  simpa using ⟨⟨hs.1, hs.1.trans hs.2⟩, hs.2⟩
+
 /-! ### The primitive passport `3T2-3_2.1_2.1` -/
 
 /-- The passport row of `s3Triple`. It is primitive, so its primitivization block is a single
@@ -70,11 +78,7 @@ theorem isValidAt_s3PassportRecord :
     exact ⟨isConnected_s3Triple, ConnectedTriple.hasPassport_passportOf _⟩
   lambdas_eq := cycleData_s3Triple.symm
   abc_eq := orderTriple_s3Triple.symm
-  sortedAbc_eq := by
-    dsimp only [s3PassportRecord]
-    rw [show ({3, 2, 2} : Multiset ℕ) = ↑[2, 2, 3] by decide, Multiset.coe_sort,
-      List.mergeSort_eq_self]
-    decide
+  sortedAbc_eq := list_eq_sort_of_eq (by decide) (by decide)
   g_eq := genus_s3Triple.symm
   geomtype_eq := by
     dsimp only [s3PassportRecord]
@@ -85,17 +89,14 @@ theorem isValidAt_s3PassportRecord :
     exact transitiveGroupLabel_referenceSubgroup 3 _⟩
   passSize_eq :=
     (ConnectedTriple.passportSize_passportOf_of_degree_le_four (by norm_num) _).symm
-  isPrimitive_eq_true_iff :=
-    iff_of_true rfl ((isPrimitiveBool_eq_true_iff _).mp isPrimitiveBool_s3Triple)
+  isPrimitive_eq_true_iff := iff_of_true rfl isPrimitive_s3Triple
   isBlock_primitivizationBlock := by
     simp only [s3PassportRecord, Finset.coe_singleton]
     exact IsBlock.of_subsingleton Set.subsingleton_singleton
   primitivizationBlock_nonempty := Finset.singleton_nonempty _
   deg_eq_one_of_primitivizationBlock_eq_univ h := absurd h (by decide)
   eq_or_eq_univ_of_primitivizationBlock_subset C hC hsub := by
-    have hprim : s3Triple.IsPrimitive :=
-      (isPrimitiveBool_eq_true_iff _).mp isPrimitiveBool_s3Triple
-    rcases ((isPrimitive_iff _).mp hprim).isTrivialBlock_of_isBlock hC with hC | hC
+    rcases ((isPrimitive_iff _).mp isPrimitive_s3Triple).isTrivialBlock_of_isBlock hC with hC | hC
     · left
       simp only [s3PassportRecord, Finset.coe_singleton] at hsub ⊢
       exact hC.eq_singleton_of_mem (hsub rfl)
@@ -144,19 +145,14 @@ theorem isValidAt_torusPassportRecord :
     exact ⟨isConnected_torusTriple, ConnectedTriple.hasPassport_passportOf _⟩
   lambdas_eq := cycleData_torusTriple.symm
   abc_eq := orderTriple_torusTriple.symm
-  sortedAbc_eq := by
-    dsimp only [torusPassportRecord]
-    rw [show ({4, 4, 2} : Multiset ℕ) = ↑[2, 4, 4] by decide, Multiset.coe_sort,
-      List.mergeSort_eq_self]
-    decide
+  sortedAbc_eq := list_eq_sort_of_eq (by decide) (by decide)
   g_eq := genus_torusTriple.symm
   geomtype_eq := geometryType_torusTriple.symm
   exists_transitiveGroupLabel := ⟨⟨0, by simp⟩, rfl, by
     rw [monodromyGroup_torusTriple, ← referenceSubgroup_index_zero_eq_zpowers]
     exact transitiveGroupLabel_referenceSubgroup 4 _⟩
   passSize_eq := (ConnectedTriple.passportSize_passportOf_of_degree_le_four le_rfl _).symm
-  isPrimitive_eq_true_iff := iff_of_false Bool.false_ne_true fun h =>
-    Bool.false_ne_true (isPrimitiveBool_torusTriple ▸ (isPrimitiveBool_eq_true_iff _).mpr h)
+  isPrimitive_eq_true_iff := iff_of_false Bool.false_ne_true not_isPrimitive_torusTriple
   isBlock_primitivizationBlock := by
     simp only [torusPassportRecord, Finset.coe_pair]
     exact isBlock_torusTriple
