@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
-public import TauCeti.Analysis.InnerProductSpace.SingularValues
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basic
 
 /-!
 # Singular values and two-sided unitary matrix orbits
@@ -91,24 +91,33 @@ theorem singularValues_toEuclideanLin_of_unitary_mul_diagonal_mul_unitary
       (fun j ↦ (d j : 𝕜)) (Equiv.refl _)
       (by simpa only [Equiv.refl_apply, hnorm] using hanti) i
 
-/-- Singular values classify two-sided unitary orbits of square matrices. -/
+/-- Singular values classify two-sided unitary orbits of square matrices. This is the matrix
+form of `LinearMap.mem_twoSidedUnitaryOrbit_iff_singularValues_eq`. -/
 theorem exists_unitary_mul_mul_unitary_iff_singularValues_eq
-    (A B : Matrix (Fin n) (Fin n) 𝕜) :
-    (∃ U V : unitaryGroup (Fin n) 𝕜,
-      B = (U : Matrix (Fin n) (Fin n) 𝕜) * A * V) ↔
+    (A B : Matrix ι ι 𝕜) :
+    (∃ U V : unitaryGroup ι 𝕜,
+      B = (U : Matrix ι ι 𝕜) * A * V) ↔
       (toEuclideanLin A).singularValues = (toEuclideanLin B).singularValues := by
   constructor
   · rintro ⟨U, V, rfl⟩
     rw [singularValues_toEuclideanLin_mul_unitary,
       singularValues_toEuclideanLin_unitary_mul]
   · intro h
-    obtain ⟨U, V, hA⟩ := exists_unitary_mul_diagonal_mul_unitary A
-    obtain ⟨W, Z, hB⟩ := exists_unitary_mul_diagonal_mul_unitary B
-    refine ⟨W * U⁻¹, V⁻¹ * Z, ?_⟩
-    rw [hB, ← h]
-    conv_rhs => rw [hA]
-    simp only [Submonoid.coe_mul, ← Unitary.star_eq_inv, Unitary.coe_star]
-    simp [mul_assoc, ← mul_assoc (star (U : Matrix (Fin n) (Fin n) 𝕜)),
-      ← mul_assoc (V : Matrix (Fin n) (Fin n) 𝕜)]
+    obtain ⟨U, V, hUV⟩ := LinearMap.mem_twoSidedUnitaryOrbit.mp
+      ((LinearMap.mem_twoSidedUnitaryOrbit_iff_singularValues_eq
+        (C := toEuclideanLin A) (X := toEuclideanLin B)).mpr h.symm)
+    let e := EuclideanSpace.basisFun ι 𝕜
+    have hc (W : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :
+        (W : EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) =
+          W.toLinearEquiv.toLinearMap := by
+      ext x
+      rfl
+    rw [hc U, hc V] at hUV
+    refine ⟨⟨U.toMatrix e.toBasis e.toBasis, U.toMatrix_mem_unitaryGroup e e⟩,
+      ⟨V.toMatrix e.toBasis e.toBasis, V.toMatrix_mem_unitaryGroup e e⟩, ?_⟩
+    simpa only [e, toEuclideanLin_eq_toLin_orthonormal,
+      LinearMap.toMatrix_comp e.toBasis e.toBasis e.toBasis, LinearMap.toMatrix_toLin,
+      mul_assoc] using
+      congrArg (LinearMap.toMatrix e.toBasis e.toBasis) hUV.symm
 
 end Matrix

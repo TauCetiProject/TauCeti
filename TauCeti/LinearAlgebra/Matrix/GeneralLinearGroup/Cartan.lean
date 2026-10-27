@@ -16,7 +16,8 @@ unitary and `d` positive and decreasing. The diagonal `d` is unique, even when e
 the two compact factors need not be unique. Thus the closed positive chamber parametrizes
 the double cosets of the maximal compact subgroup.
 
-`Matrix.GeneralLinearGroup.existsUnique_kak` gives existence and chamber uniqueness.
+`Matrix.GeneralLinearGroup.existsUnique_pos_antitone_and_eq_unitary_mul_diagonal_mul_unitary`
+gives existence and chamber uniqueness.
 `Matrix.GeneralLinearGroup.mem_doubleCoset_unitarySubgroup_iff_singularValues_eq` identifies
 compact double cosets by the existing operator singular values. These statements include
 `GL₀`, and require no choices of compact factors in their interfaces.
@@ -34,16 +35,16 @@ public section
 
 namespace Matrix.GeneralLinearGroup
 
-variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
+variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ} {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- Two invertible matrices belong to the same compact double coset exactly when all their
 singular values agree. For real matrices the compact subgroup is the orthogonal group. -/
 theorem mem_doubleCoset_unitarySubgroup_iff_singularValues_eq
-    (g h : GL (Fin n) 𝕜) :
-    h ∈ DoubleCoset.doubleCoset g (unitarySubgroup (GL (Fin n) 𝕜))
-        (unitarySubgroup (GL (Fin n) 𝕜)) ↔
-      (toEuclideanLin (g : Matrix (Fin n) (Fin n) 𝕜)).singularValues =
-        (toEuclideanLin (h : Matrix (Fin n) (Fin n) 𝕜)).singularValues := by
+    (g h : GL ι 𝕜) :
+    h ∈ DoubleCoset.doubleCoset g (unitarySubgroup (GL ι 𝕜))
+        (unitarySubgroup (GL ι 𝕜)) ↔
+      (toEuclideanLin (g : Matrix ι ι 𝕜)).singularValues =
+        (toEuclideanLin (h : Matrix ι ι 𝕜)).singularValues := by
   rw [← exists_unitary_mul_mul_unitary_iff_singularValues_eq]
   constructor
   · intro hh
@@ -61,7 +62,7 @@ theorem mem_doubleCoset_unitarySubgroup_iff_singularValues_eq
 /-- The KAK decomposition of `GLₙ(ℝ)` and `GLₙ(ℂ)`: each invertible matrix has a unique
 positive decreasing diagonal factor between two compact factors. Uniqueness concerns the
 diagonal only, so repeated singular values are allowed. -/
-theorem existsUnique_kak (g : GL (Fin n) 𝕜) :
+theorem existsUnique_pos_antitone_and_eq_unitary_mul_diagonal_mul_unitary (g : GL (Fin n) 𝕜) :
     ∃! d : Fin n → ℝ, (∀ i, 0 < d i) ∧ Antitone d ∧
       ∃ U V : unitaryGroup (Fin n) 𝕜,
         (g : Matrix (Fin n) (Fin n) 𝕜) =
