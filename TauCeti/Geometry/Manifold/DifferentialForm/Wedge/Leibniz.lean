@@ -174,9 +174,11 @@ right are transported across the degree associativity equalities. -/
 theorem mextDerivₗ_wedgeWith [IsManifold I 2 M] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l) :
     mextDerivₗ I (k + l) (SmoothForm.wedgeWith μ φ ψ) =
-      SmoothForm.cast (show k + 1 + l = k + l + 1 by omega)
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F₃ q)
+        (show k + 1 + l = k + l + 1 by omega)
         (SmoothForm.wedgeWith μ (mextDerivₗ I k φ) ψ) +
-      (-1 : ℝ) ^ k • SmoothForm.cast (show k + (l + 1) = k + l + 1 by omega)
+      (-1 : ℝ) ^ k • LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F₃ q)
+        (show k + (l + 1) = k + l + 1 by omega)
         (SmoothForm.wedgeWith μ φ (mextDerivₗ I l ψ)) := by
   apply Subtype.ext
   ext x v
@@ -189,9 +191,11 @@ theorem mextDerivₗ_wedgeWith [IsManifold I 2 M] (μ : F₁ →L[ℝ] F₂ →L
 theorem mextDerivₗ_wedge [IsManifold I 2 M] (φ : SmoothForm I M ℝ k)
     (ψ : SmoothForm I M ℝ l) :
     mextDerivₗ I (k + l) (SmoothForm.wedge φ ψ) =
-      SmoothForm.cast (show k + 1 + l = k + l + 1 by omega)
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+        (show k + 1 + l = k + l + 1 by omega)
         (SmoothForm.wedge (mextDerivₗ I k φ) ψ) +
-      (-1 : ℝ) ^ k • SmoothForm.cast (show k + (l + 1) = k + l + 1 by omega)
+      (-1 : ℝ) ^ k • LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+        (show k + (l + 1) = k + l + 1 by omega)
         (SmoothForm.wedge φ (mextDerivₗ I l ψ)) := by
   simpa only [SmoothForm.wedge_def] using
     mextDerivₗ_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) φ ψ
