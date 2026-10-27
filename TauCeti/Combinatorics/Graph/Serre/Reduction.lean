@@ -210,10 +210,6 @@ theorem reduce_cons_of_reduce_eq_cons_reverse {a b c : Γ.V} (p : Γ.Path a b)
       rw [reduce_cons, ih hprev]
       exact reduceSnoc_eq_cons Γ (p.cons f) e hp
 
-theorem reduce_toPath {a b : Γ.V} (e : Quiver.Hom a b) :
-    reduce Γ e.toPath = e.toPath :=
-  reduce_eq_self_of_isReduced Γ _ (isReduced_toPath Γ e)
-
 /-- Reducing an already reduced path leaves it unchanged. -/
 theorem reduce_idem {a b : Γ.V} (p : Γ.Path a b) :
     reduce Γ (reduce Γ p) = reduce Γ p :=
@@ -322,11 +318,6 @@ theorem isReduced_iff_reduce_eq {a b : Γ.V} (p : Γ.Path a b) :
 @[simp↓] theorem reduce_comp_reduce_right {a b c : Γ.V} (p : Γ.Path a b)
     (q : Γ.Path b c) : reduce Γ (p.comp (reduce Γ q)) = reduce Γ (p.comp q) :=
   (((homotopic_reduce Γ q).comp_left Γ p).reduce_eq Γ).symm
-
-/-- Reducing both paths before concatenation leaves the final reduced path unchanged. -/
-theorem reduce_comp_reduce_reduce {a b c : Γ.V} (p : Γ.Path a b) (q : Γ.Path b c) :
-    reduce Γ ((reduce Γ p).comp (reduce Γ q)) = reduce Γ (p.comp q) := by
-  simp only [reduce_comp_reduce_left, reduce_comp_reduce_right]
 
 /-- Reversing a reduced representative gives the representative of the reversed path. -/
 @[simp] theorem reduce_reverse {a b : Γ.V} (p : Γ.Path a b) :
