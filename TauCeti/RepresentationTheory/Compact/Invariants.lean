@@ -59,12 +59,12 @@ intertwiners `V → W` (which for complex scalars and irreducible `V` is the mul
 
 `haarAverageMap` is defined as `integratedOperator π hπ 1` rather than as a fresh Haar average, so
 that the trace computation is the one already proved for the integrated operator and no second
-Bochner-integral bookkeeping is needed. Its two invariance lemmas are proved vectorwise from
-`TauCeti.haarAverage_comp_mulLeft` and `TauCeti.haarAverage_comp_mulRight`, applied to the orbit
-map `g ↦ π g v`, and not from the class-function machinery of
-`TauCeti/RepresentationTheory/Compact/Integrated.lean`: the constant function `1` is a class
-function, but that route yields only conjugation invariance, which is strictly weaker than the
-one-sided invariance used here.
+Bochner-integral bookkeeping is needed. Right absorption is proved vectorwise from
+`TauCeti.haarAverage_comp_mulRight`, applied to the orbit map `g ↦ π g v`. The constant function
+`1` is a class function, so `ContRepresentation.integratedOperator_comp` then gives left
+absorption from right absorption. Both identities hold without completeness; completeness enters
+when the average is shown to fix every invariant vector and hence to be a projection onto the
+invariants.
 
 The invariant subspace is Mathlib's `ContRepresentation.invariants`, not a new definition, and the
 projection is packaged through Mathlib's `LinearMap.IsProj` so that `LinearMap.IsProj.trace`
@@ -96,7 +96,6 @@ section Projection
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
-  [CompleteSpace V]
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
@@ -109,7 +108,7 @@ private noncomputable def orbitMap (v : V) : C(G, V) :=
   ⟨fun g ↦ π g v, (ContinuousLinearMap.apply 𝕜 V v).continuous.comp hπ⟩
 
 omit [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V] [CompleteSpace V] in
+  [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V] in
 /-- The orbit map, unfolded. -/
 @[simp]
 private theorem orbitMap_apply (v : V) (g : G) : orbitMap π hπ v g = π g v :=
@@ -124,14 +123,12 @@ invariant subspace. -/
 noncomputable def haarAverageMap : V →L[𝕜] V :=
   integratedOperator π hπ 1
 
-omit [CompleteSpace V] in
 /-- The Haar average of the action operators, evaluated at a vector. -/
 theorem haarAverageMap_apply (v : V) :
     haarAverageMap π hπ v = ∫ g, π g v ∂haarProb G := by
   rw [haarAverageMap, integratedOperator_apply]
   simp
 
-omit [CompleteSpace V] in
 /-- The Haar average, evaluated at a vector, is `TauCeti.haarAverage` of that vector's orbit map.
 This is the form in which the translation invariance of Haar averaging applies below. -/
 private theorem haarAverageMap_apply_eq_haarAverage (v : V) :
@@ -141,23 +138,12 @@ private theorem haarAverageMap_apply_eq_haarAverage (v : V) :
 
 /-! ### The two invariances
 
-Left invariance of Haar measure makes the average absorb the action on the left, right invariance
-— unimodularity, which a compact group has — makes it absorb the action on the right. Both are read
-off `TauCeti.haarAverage_comp_mulLeft` and `TauCeti.haarAverage_comp_mulRight`, once the two
-translates of the orbit map are identified. -/
+Right translation invariance of Haar measure gives right absorption directly from the orbit map.
+The constant function is a class function, so its integrated operator commutes with the action;
+combining this with right absorption gives left absorption as well, without completeness. -/
 
 omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] [NormedSpace ℝ V]
-  [SMulCommClass ℝ 𝕜 V] [CompleteSpace V] in
-/-- Precomposing the orbit map with left translation is postcomposing it with the action:
-`g ↦ π (h * g) v` is `g ↦ π h (π g v)`. -/
-private theorem orbitMap_comp_mulLeft (h : G) (v : V) :
-    (orbitMap π hπ v).comp (ContinuousMap.mulLeft h)
-      = (π h : C(V, V)).comp (orbitMap π hπ v) := by
-  ext g
-  simp [map_mul, mul_apply_eq_comp]
-
-omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] [NormedSpace ℝ V]
-  [SMulCommClass ℝ 𝕜 V] [CompleteSpace V] in
+  [SMulCommClass ℝ 𝕜 V] in
 /-- Precomposing the orbit map with right translation is the orbit map of the translated vector:
 `g ↦ π (g * h) v` is `g ↦ π g (π h v)`. -/
 private theorem orbitMap_comp_mulRight (h : G) (v : V) :
@@ -165,26 +151,6 @@ private theorem orbitMap_comp_mulRight (h : G) (v : V) :
   ext g
   simp [map_mul, mul_apply_eq_comp]
 
-/-- **The Haar average absorbs the action on the left**: `π h ∘ P = P`. This is left invariance of
-normalized Haar measure. -/
-@[simp]
-theorem comp_haarAverageMap (h : G) :
-    (π h).comp (haarAverageMap π hπ) = haarAverageMap π hπ := by
-  ext v
-  calc π h (haarAverageMap π hπ v)
-      = haarAverage G (𝕜 := 𝕜) ((π h : C(V, V)).comp (orbitMap π hπ v)) := by
-        rw [haarAverageMap_apply_eq_haarAverage, ContinuousLinearMap.haarAverage_comp_comm]
-    _ = haarAverage G (𝕜 := 𝕜) (orbitMap π hπ v) := by
-        rw [← orbitMap_comp_mulLeft, haarAverage_comp_mulLeft]
-    _ = haarAverageMap π hπ v := (haarAverageMap_apply_eq_haarAverage π hπ v).symm
-
-/-- The Haar average absorbs the action on the left, applied to a vector: `π h (P v) = P v`. -/
-@[simp]
-theorem comp_haarAverageMap_apply (h : G) (v : V) :
-    π h (haarAverageMap π hπ v) = haarAverageMap π hπ v :=
-  DFunLike.congr_fun (comp_haarAverageMap π hπ h) v
-
-omit [CompleteSpace V] in
 /-- **The Haar average absorbs the action on the right**: `P ∘ π h = P`. This is right invariance of
 normalized Haar measure, which holds because a compact group is unimodular. -/
 @[simp]
@@ -197,12 +163,27 @@ theorem haarAverageMap_comp (h : G) :
     _ = haarAverage G (𝕜 := 𝕜) (orbitMap π hπ v) := haarAverage_comp_mulRight G _ _
     _ = haarAverageMap π hπ v := (haarAverageMap_apply_eq_haarAverage π hπ v).symm
 
-omit [CompleteSpace V] in
 /-- The Haar average absorbs the action on the right, applied to a vector: `P (π h v) = P v`. -/
 @[simp]
 theorem haarAverageMap_comp_apply (h : G) (v : V) :
     haarAverageMap π hπ (π h v) = haarAverageMap π hπ v :=
   DFunLike.congr_fun (haarAverageMap_comp π hπ h) v
+
+/-- **The Haar average absorbs the action on the left**: `π h ∘ P = P`. -/
+@[simp]
+theorem comp_haarAverageMap (h : G) :
+    (π h).comp (haarAverageMap π hπ) = haarAverageMap π hπ := by
+  calc
+    _ = (haarAverageMap π hπ).comp (π h) := by
+      simpa only [haarAverageMap] using
+        (integratedOperator_comp π hπ (f := 1) (by simp) h).symm
+    _ = _ := haarAverageMap_comp π hπ h
+
+/-- The Haar average absorbs the action on the left, applied to a vector: `π h (P v) = P v`. -/
+@[simp]
+theorem comp_haarAverageMap_apply (h : G) (v : V) :
+    π h (haarAverageMap π hπ v) = haarAverageMap π hπ v :=
+  DFunLike.congr_fun (comp_haarAverageMap π hπ h) v
 
 /-! ### The projection onto the invariants -/
 
@@ -211,6 +192,8 @@ statement is not in simp normal form, since `ContRepresentation.mem_invariants` 
 membership — but `simp` proves it from `ContRepresentation.comp_haarAverageMap_apply`. -/
 theorem haarAverageMap_invariant (v : V) : haarAverageMap π hπ v ∈ π.invariants :=
   fun h ↦ comp_haarAverageMap_apply π hπ h v
+
+variable [CompleteSpace V]
 
 /-- The Haar average is the identity on the invariant subspace: the integrand is then constant, and
 normalized Haar measure has total mass one. -/
