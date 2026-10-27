@@ -18,9 +18,9 @@ Let `K = ℚ(i)`, given as a number field with `IsCyclotomicExtension {4} ℚ K`
 * `(i / λ)_4 = i ^ (-((a - 1) / 2))`, and
 * `(-1 / λ)_4 = (-1) ^ ((a - 1) / 2)`.
 
-In particular, for a rational integer `m ≡ 1 (mod 4)`, `(i / m)_4 = (-1) ^ ((m - 1) / 4)` and
-`(-1 / m)_4 = 1`. These are the supplementary laws that complement the law of biquadratic
-reciprocity for primary elements.
+In particular, for a rational integer `m ≡ 1 (mod 4)`, `(i / m)_4 = (-1) ^ ((m - 1) / 4)`, and
+`(-1 / m)_4 = 1` for every odd rational integer `m`. These are the supplementary laws that
+complement the law of biquadratic reciprocity for primary elements.
 
 Both laws follow from the value of the power residue symbol of a root of unity at an ideal,
 `(ζ / λ)_4 = ζ ^ ((N λ - 1) / 4)` (`Ideal.powerResidueSymbolIdeal_mk_of_pow_eq_one`), and the
@@ -31,16 +31,14 @@ are read in `K`, where the integer powers of `i` and `-1` live.
 
 ## Main results
 
-* `TauCeti.IsPrimaryGaussian.absNorm_span_singleton_coprime_four`: a primary element generates
-  an ideal of norm prime to `4`.
 * `TauCeti.IsPrimaryGaussian.powerResidueSymbolIdeal_mk_toInteger`:
   `(i / λ)_4 = i ^ (-((a - 1) / 2))`.
 * `TauCeti.IsPrimaryGaussian.powerResidueSymbolIdeal_mk_neg_one`:
   `(-1 / λ)_4 = (-1) ^ ((a - 1) / 2)`.
 * `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger`:
   `(i / m)_4 = (-1) ^ ((m - 1) / 4)` for a rational integer `m ≡ 1 (mod 4)`.
-* `TauCeti.powerResidueSymbolIdeal_span_intCast_mk_neg_one`: `(-1 / m)_4 = 1` for a rational
-  integer `m ≡ 1 (mod 4)`.
+* `TauCeti.powerResidueSymbolIdeal_span_intCast_mk_neg_one`: `(-1 / m)_4 = 1` for an odd
+  rational integer `m`.
 
 ## References
 
@@ -54,35 +52,19 @@ open NumberField Ideal
 
 namespace TauCeti
 
+/-- Powers of an `n`-th root of unity with exponents congruent modulo `n` agree. -/
+private theorem zpow_eq_zpow_of_modEq {G₀ : Type*} [GroupWithZero G₀] {n : ℕ} {η : G₀}
+    (hη : η ^ n = 1) {l m : ℤ} (h : l ≡ m [ZMOD n]) : η ^ l = η ^ m := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [Int.ModEq, Nat.cast_zero, Int.emod_zero] at h
+    rw [h]
+  have h₀ : η ≠ 0 := ne_zero_pow hn (hη ▸ one_ne_zero)
+  obtain ⟨c, hc⟩ := h.dvd
+  rw [show m = l + n * c by omega, zpow_add₀ h₀, zpow_mul, zpow_natCast, hη, one_zpow, mul_one]
+
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
-/-- A primary element of `𝓞 K = ℤ[i]` generates an ideal whose norm is odd, hence prime to `4`. -/
-theorem IsPrimaryGaussian.absNorm_span_singleton_coprime_four {x : 𝓞 K}
-    (hx : IsPrimaryGaussian x) : (absNorm (span {x})).Coprime 4 := by
-  rw [absNorm_span_singleton, show 4 = 2 ^ 2 by rfl]
-  exact Nat.Coprime.pow_right 2 (Nat.coprime_two_right.mpr (Int.natAbs_odd.mpr hx.odd_norm))
-
-variable {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {a b : ℤ}
-
-/-- For primary `λ = a + b i`, the exponent `(N λ - 1) / 4` of the power residue symbol at `λ` is
-the integer `(Algebra.norm ℤ λ - 1) / 4`. -/
-private theorem IsPrimaryGaussian.natCast_absNorm_sub_one_div_four
-    (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
-    (((absNorm (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) - 1) / 4 : ℕ) : ℤ) =
-      (Algebra.norm ℤ ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) - 1) / 4 := by
-  have hcop := hx.absNorm_span_singleton_coprime_four
-  have hN : (absNorm (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) : ℤ) =
-      Algebra.norm ℤ ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) := by
-    rw [absNorm_span_singleton, Int.natCast_natAbs, abs_of_nonneg]
-    rw [hζ.norm_intCast_add_intCast_mul_toInteger_of_four]
-    positivity
-  have h₀ : absNorm (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) ≠ 0 := by
-    intro h
-    rw [h, Nat.coprime_zero_left] at hcop
-    exact absurd hcop (by norm_num)
-  omega
-
-variable [HasEnoughRootsOfUnity (𝓞 K) 4]
+variable {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {a b : ℤ} [HasEnoughRootsOfUnity (𝓞 K) 4]
 
 /-- **The supplementary law for `i`.** If `λ = a + b i` is primary, then
 `(i / λ)_4 = i ^ (-((a - 1) / 2))`, the symbol being taken at the ideal `λ 𝓞 K` and read in `K`. -/
@@ -90,14 +72,11 @@ theorem IsPrimaryGaussian.powerResidueSymbolIdeal_mk_toInteger
     (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
     ((powerResidueSymbolIdeal (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) 4
       (Ideal.Quotient.mk _ hζ.toInteger) : 𝓞 K) : K) = ζ ^ (-((a - 1) / 2)) := by
-  have h₀ : ζ ≠ 0 := hζ.ne_zero (by norm_num)
-  have hc : ((hζ.toInteger : 𝓞 K) : K) = ζ := hζ.coe_toInteger
   rw [powerResidueSymbolIdeal_mk_of_pow_eq_one hx.absNorm_span_singleton_coprime_four
-      hζ.toInteger_isPrimitiveRoot.pow_eq_one, RingOfIntegers.coe_eq_algebraMap, map_pow,
-    ← RingOfIntegers.coe_eq_algebraMap, hc, ← zpow_natCast,
-    ← div_eq_one_iff_eq (zpow_ne_zero _ h₀), ← zpow_sub₀ h₀, hζ.zpow_eq_one_iff_dvd,
-    hx.natCast_absNorm_sub_one_div_four]
-  exact_mod_cast hx.norm_sub_one_div_four_modEq_four.symm.dvd
+      hζ.toInteger_isPrimitiveRoot.pow_eq_one]
+  push_cast [hζ.coe_toInteger]
+  rw [← zpow_natCast, hx.natCast_absNorm_sub_one_div_four]
+  exact zpow_eq_zpow_of_modEq hζ.pow_eq_one hx.norm_sub_one_div_four_modEq_four
 
 /-- **The supplementary law for `-1`.** If `λ = a + b i` is primary, then
 `(-1 / λ)_4 = (-1) ^ ((a - 1) / 2)`, the symbol being taken at the ideal `λ 𝓞 K` and read
@@ -107,12 +86,10 @@ theorem IsPrimaryGaussian.powerResidueSymbolIdeal_mk_neg_one
     ((powerResidueSymbolIdeal (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) 4
       (Ideal.Quotient.mk _ (-1)) : 𝓞 K) : K) = (-1) ^ ((a - 1) / 2) := by
   rw [powerResidueSymbolIdeal_mk_of_pow_eq_one hx.absNorm_span_singleton_coprime_four
-      (by norm_num), RingOfIntegers.coe_eq_algebraMap, map_pow, map_neg, map_one,
-    ← zpow_natCast, ← div_eq_one_iff_eq (zpow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)),
-    ← zpow_sub₀ (neg_ne_zero.mpr one_ne_zero),
-    (IsPrimitiveRoot.neg_one_of_two_ne_zero two_ne_zero).zpow_eq_one_iff_dvd,
-    hx.natCast_absNorm_sub_one_div_four]
-  exact_mod_cast hx.norm_sub_one_div_four.symm.dvd
+      (by norm_num)]
+  push_cast
+  rw [← zpow_natCast, hx.natCast_absNorm_sub_one_div_four]
+  exact zpow_eq_zpow_of_modEq (n := 2) (by norm_num) hx.norm_sub_one_div_four
 
 /-- **The supplementary law for `i` at a rational integer.** If `m ≡ 1 (mod 4)`, then
 `(i / m)_4 = (-1) ^ ((m - 1) / 4)`, the symbol being taken at the ideal `m 𝓞 K` and read in `K`. -/
@@ -129,16 +106,20 @@ theorem _root_.IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger
     show (m - 1) / 4 = j by omega, zpow_mul, zpow_ofNat, hζ.sq_eq_neg_one, zpow_neg, ← inv_zpow,
     inv_neg_one]
 
-/-- **The supplementary law for `-1` at a rational integer.** If `m ≡ 1 (mod 4)`, then
+/-- **The supplementary law for `-1` at a rational integer.** If `m` is odd, then
 `(-1 / m)_4 = 1`, the symbol being taken at the ideal `m 𝓞 K`. -/
-theorem powerResidueSymbolIdeal_span_intCast_mk_neg_one {m : ℤ} (hm : m ≡ 1 [ZMOD 4]) :
+theorem powerResidueSymbolIdeal_span_intCast_mk_neg_one {m : ℤ} (hm : Odd m) :
     powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4 (Ideal.Quotient.mk _ (-1)) = 1 := by
+  -- Since `m` and `-m` generate the same ideal, we may assume `m ≡ 1 (mod 4)`.
+  wlog hm₁ : m ≡ 1 [ZMOD 4] generalizing m
+  · have h := this hm.neg (by obtain ⟨k, rfl⟩ := hm; simp only [Int.ModEq] at hm₁ ⊢; omega)
+    rwa [Int.cast_neg, span_singleton_neg] at h
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
   -- Write `m` as the Gaussian integer `m + 0 i`.
   have hm₀ : (m : 𝓞 K) = (m : 𝓞 K) + ((0 : ℤ) : 𝓞 K) * hζ.toInteger := by simp
   have hx : IsPrimaryGaussian ((m : 𝓞 K) + ((0 : ℤ) : 𝓞 K) * hζ.toInteger) :=
-    hm₀ ▸ (isPrimaryGaussian_intCast_iff (K := K)).mpr hm
-  obtain ⟨j, hj⟩ := hm.symm.dvd
+    hm₀ ▸ (isPrimaryGaussian_intCast_iff (K := K)).mpr hm₁
+  obtain ⟨j, hj⟩ := hm₁.symm.dvd
   have h := hx.powerResidueSymbolIdeal_mk_neg_one
   rw [Even.neg_one_zpow ⟨j, by omega⟩] at h
   rw [hm₀]
