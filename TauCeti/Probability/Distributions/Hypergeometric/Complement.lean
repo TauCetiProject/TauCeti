@@ -68,8 +68,7 @@ theorem map_sub_map_cast_hypergeometricMeasure {N K n : ℕ} (hK : K ≤ N) :
     apply Measure.map_congr
     apply ae_iff_of_countable.mpr
     intro k hk
-    have hsupp := (hypergeometricWeight_ne_zero_iff N K n k).mp
-      (by simpa only [hypergeometricMeasure_singleton hK hn] using hk)
+    have hsupp := (hypergeometricMeasure_singleton_ne_zero_iff hK hn k).mp hk
     exact (Nat.cast_sub hsupp.2.1).symm
   · rw [hypergeometricMeasure_eq_zero_of_invalid (by omega), Measure.map_zero,
       Measure.map_zero, hypergeometricMeasure_eq_zero_of_invalid (by omega), Measure.map_zero]
@@ -82,7 +81,7 @@ open TauCeti.Probability
 
 /-- Counting the unmarked objects in a hypergeometric sample replaces `K` by `N - K`.
 Subtraction here is on the native natural-number carrier. -/
-theorem hypergeometric_compl {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+theorem sub_hypergeometricMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℕ} {N K n : ℕ} (hX : HasLaw X (hypergeometricMeasure N K n) P)
     (hK : K ≤ N) :
     HasLaw (fun ω ↦ n - X ω) (hypergeometricMeasure N (N - K) n) P := by
@@ -92,7 +91,7 @@ theorem hypergeometric_compl {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
 /-- A real-valued variable with the cast hypergeometric law is reflected by `x ↦ n - x`
 to the cast law with complementary marked population. -/
-theorem hypergeometric_compl_real {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+theorem sub_map_cast_hypergeometricMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {N K n : ℕ}
     (hX : HasLaw X ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)) P)
     (hK : K ≤ N) :
