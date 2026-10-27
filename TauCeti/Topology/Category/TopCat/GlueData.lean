@@ -110,6 +110,7 @@ instance locallyCompactSpace [∀ i, LocallyCompactSpace (D.U i)] :
 /-! ### Connectedness and the overlap graph -/
 
 /-- The images of two charts in the glued space meet exactly when their overlap is nonempty. -/
+@[simp]
 theorem range_ι_inter_range_ι_nonempty_iff (i j : D.J) :
     (range (D.toGlueData.ι i) ∩ range (D.toGlueData.ι j)).Nonempty ↔ Nonempty (D.V (i, j)) := by
   rw [D.image_inter, range_nonempty_iff_nonempty]
