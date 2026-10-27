@@ -158,7 +158,8 @@ theorem abs_steppedInducedGraphCount3_sub_le {P Q : Finpartition (univ : Finset 
     _ = ∑ _p : {p : Fin 3 × Fin 3 // p.1 < p.2}, Fintype.card V • ∑ x, ∑ y, D x y := by
         rw [sum_comm]
         exact sum_congr rfl fun p _ ↦ by
-          simpa using Fintype.sum_piFinset_apply_apply (ne_of_lt p.2) univ D
+          simpa [card_sdiff, ne_of_lt p.2, Nat.sub_sub] using
+            Fintype.sum_piFinset_apply_apply (ne_of_lt p.2) (fun _ ↦ univ) D
     _ = 3 * Fintype.card V * ∑ x, ∑ y, D x y := by
         have hpairs : Fintype.card {p : Fin 3 × Fin 3 // p.1 < p.2} = 3 := by decide
         rw [sum_const, card_univ, hpairs, nsmul_eq_mul, nsmul_eq_mul, ← mul_assoc]
