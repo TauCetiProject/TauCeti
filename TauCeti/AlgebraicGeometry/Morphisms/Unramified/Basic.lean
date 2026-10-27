@@ -13,7 +13,9 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 A morphism of schemes is unramified when it is locally of finite type and formally
 unramified. This packages the two conditions as a morphism property, so geometric
 constructions such as the singular subscheme of a nodal family can state the usual
-unramifiedness condition directly.
+unramifiedness condition directly. Since the diagonal of an unramified morphism is an open
+immersion, open immersions cancel against unramified morphisms on the right
+(`TauCeti.AlgebraicGeometry.Unramified.isOpenImmersion_hasOfPostcompProperty`).
 
 ## Main definition
 
@@ -98,6 +100,14 @@ instance (priority := 900) of_mono (f : X ⟶ Y) [Mono f] [LocallyOfFiniteType f
 
 instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y) [Etale f] : Unramified f := by
   exact ⟨⟩
+
+/-- If `f ≫ g` is an open immersion and `g` is unramified, then `f` is an open immersion, since
+the diagonal of an unramified morphism is an open immersion. In particular, a section of an
+unramified morphism is an open immersion. -/
+instance isOpenImmersion_hasOfPostcompProperty :
+    MorphismProperty.HasOfPostcompProperty @IsOpenImmersion @Unramified :=
+  MorphismProperty.hasOfPostcompProperty_iff_le_diagonal.mpr fun _ _ f (_ : Unramified f) ↦
+    inferInstanceAs (IsOpenImmersion (pullback.diagonal f))
 
 instance (f : X ⟶ Y) (V : Y.Opens) [Unramified f] : Unramified (f ∣_ V) :=
   MorphismProperty.of_isPullback (isPullback_morphismRestrict f V).flip ‹Unramified f›
