@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.Abel
-import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-!
 # Two-variable geometric sums in a noncommutative semiring
@@ -20,7 +20,7 @@ intertwines `x` and `y` up to the error `x ^ m - y ^ m`, so `S` is an exact inte
 `x * S = S * y` as soon as `x ^ m = y ^ m`.
 
 The file also records the second-order expansions of `(1 + x) ^ r` and of the geometric sum
-`∑_{i < r} (1 + x) ^ i` in a noncommutative ring, and that in a commutative ring a perturbation
+`∑_{i < r} (1 + x) ^ i` in a noncommutative ring, and that in a commutative semiring a perturbation
 `a + e' b` of `a` raises to the same powers as `a` after multiplying by an `e` with `e e' = 0`.
 
 In a ring without zero divisors and for `x ≠ 1`, the `x`-integer `[n]_x = ∑_{i < n} x ^ i` vanishes
@@ -92,12 +92,18 @@ theorem exists_one_add_pow_eq_and_geom_sum_eq {A : Type*} [Ring A] (x : A) (r : 
       simp only [mul_add, add_mul]
       abel
 
-/-- If `e e' = 0`, then `e (a + e' b) ^ k = e a ^ k`, as `(a + e' b) ^ k - a ^ k` is a multiple of
-`e' b`. For instance, `ε (a + ε b) ^ k = ε a ^ k` over the dual numbers. -/
-theorem mul_add_mul_pow_of_mul_eq_zero {A : Type*} [CommRing A] {e e' : A} (h : e * e' = 0)
+/-- If `e e' = 0`, then `e (a + e' b) ^ k = e a ^ k`, as every term of the expansion of
+`(a + e' b) ^ k` other than `a ^ k` is a multiple of `e'`. For instance, `ε (a + ε b) ^ k = ε a ^ k`
+over the dual numbers. -/
+theorem mul_add_mul_pow_of_mul_eq_zero {A : Type*} [CommSemiring A] {e e' : A} (h : e * e' = 0)
     (a b : A) (k : ℕ) : e * (a + e' * b) ^ k = e * a ^ k := by
-  obtain ⟨c, hc⟩ := sub_dvd_pow_sub_pow (a + e' * b) a k
-  linear_combination e * hc + b * c * h
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    calc e * (a + e' * b) ^ (k + 1) = e * (a + e' * b) ^ k * (a + e' * b) := by
+          rw [pow_succ, mul_assoc]
+      _ = e * a ^ (k + 1) + e * e' * (a ^ k * b) := by rw [ih]; ring
+      _ = e * a ^ (k + 1) := by rw [h, zero_mul, add_zero]
 
 /-- In a ring without zero divisors and for `x ≠ 1`, the `x`-integer `∑_{i < n} x ^ i` vanishes
 exactly when `x ^ n = 1`. -/
