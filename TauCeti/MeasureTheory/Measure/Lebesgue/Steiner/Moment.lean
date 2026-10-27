@@ -58,8 +58,13 @@ private theorem lintegral_norm_sq_steinerSymmetrization_le_and_eq_iff
     rw [← lintegral_indicator₀ hu]
     apply lintegral_congr
     intro t
-    simp only [indicator, mem_ofPred_eq]
-    split_ifs <;> simp only [norm_add_smul_sq e he]
+    -- Explicit section membership distinguishes its indicator from the ambient set's indicator.
+    by_cases ht : (y : E) + t • e ∈ u
+    · rw [indicator_of_mem ht,
+        indicator_of_mem (show t ∈ {t : ℝ | (y : E) + t • e ∈ u} from ht),
+        norm_add_smul_sq e he]
+    · rw [indicator_of_notMem ht,
+        indicator_of_notMem (show t ∉ {t : ℝ | (y : E) + t • e ∈ u} from ht)]
   have hmoment' : (∫⁻ y, m s y) ≠ ∞ := by rwa [← hformula s hs]
   have hfinite := ae_lt_top' (hmeas s hs) hmoment'
   have hcomp : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume,
@@ -115,9 +120,11 @@ theorem integrableOn_norm_sq_steinerSymmetrization (e : E) (he : ‖e‖ = 1)
     {s : Set E} (hs : NullMeasurableSet s volume)
     (hmoment : IntegrableOn (fun x ↦ ‖x‖ ^ 2) s volume) :
     IntegrableOn (fun x ↦ ‖x‖ ^ 2) (steinerSymmetrization e he s) volume := by
-  apply integrableOn_norm_sq_iff_lintegral_ne_top.mpr
+  apply (lintegral_ofReal_ne_top_iff_integrable (continuous_norm.pow 2).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x ↦ sq_nonneg ‖x‖)).mp
   exact ne_top_of_le_ne_top
-    (integrableOn_norm_sq_iff_lintegral_ne_top.mp hmoment)
+    ((lintegral_ofReal_ne_top_iff_integrable (continuous_norm.pow 2).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x ↦ sq_nonneg ‖x‖)).mpr hmoment)
     (lintegral_norm_sq_steinerSymmetrization_le e he hs)
 
 /-- The real-valued second moment decreases under Steiner symmetrization. -/
@@ -126,9 +133,11 @@ theorem integral_norm_sq_steinerSymmetrization_le (e : E) (he : ‖e‖ = 1)
     (hmoment : IntegrableOn (fun x ↦ ‖x‖ ^ 2) s volume) :
     (∫ x in steinerSymmetrization e he s, ‖x‖ ^ 2) ≤ (∫ x in s, ‖x‖ ^ 2) := by
   have hle := lintegral_norm_sq_steinerSymmetrization_le e he hs
-  rw [← ofReal_integral_norm_sq_eq_lintegral
-    (integrableOn_norm_sq_steinerSymmetrization e he hs hmoment),
-    ← ofReal_integral_norm_sq_eq_lintegral hmoment] at hle
+  rw [← ofReal_integral_eq_lintegral_ofReal
+    (integrableOn_norm_sq_steinerSymmetrization e he hs hmoment)
+      (Filter.Eventually.of_forall fun x ↦ sq_nonneg ‖x‖),
+    ← ofReal_integral_eq_lintegral_ofReal hmoment
+      (Filter.Eventually.of_forall fun x ↦ sq_nonneg ‖x‖)] at hle
   exact (ENNReal.ofReal_le_ofReal_iff (integral_nonneg fun x ↦ sq_nonneg ‖x‖)).mp hle
 
 /-- Equality of real-valued second moments characterizes the a.e. fixed points of a Steiner
@@ -138,11 +147,15 @@ theorem integral_norm_sq_steinerSymmetrization_eq_iff (e : E) (he : ‖e‖ = 1)
     (hmoment : IntegrableOn (fun x ↦ ‖x‖ ^ 2) s volume) :
     (∫ x in steinerSymmetrization e he s, ‖x‖ ^ 2) = (∫ x in s, ‖x‖ ^ 2) ↔
       s =ᵐ[volume] steinerSymmetrization e he s := by
-  have hfinite := integrableOn_norm_sq_iff_lintegral_ne_top.mp hmoment
+  have hfinite := (lintegral_ofReal_ne_top_iff_integrable
+    (continuous_norm.pow 2).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x ↦ sq_nonneg ‖x‖)).mpr hmoment
   have heq := lintegral_norm_sq_steinerSymmetrization_eq_iff e he hs hfinite
-  rw [← ofReal_integral_norm_sq_eq_lintegral
-    (integrableOn_norm_sq_steinerSymmetrization e he hs hmoment),
-    ← ofReal_integral_norm_sq_eq_lintegral hmoment,
+  rw [← ofReal_integral_eq_lintegral_ofReal
+    (integrableOn_norm_sq_steinerSymmetrization e he hs hmoment)
+      (Filter.Eventually.of_forall fun x ↦ sq_nonneg ‖x‖),
+    ← ofReal_integral_eq_lintegral_ofReal hmoment
+      (Filter.Eventually.of_forall fun x ↦ sq_nonneg ‖x‖),
     ENNReal.ofReal_eq_ofReal_iff (integral_nonneg fun x ↦ sq_nonneg ‖x‖)
       (integral_nonneg fun x ↦ sq_nonneg ‖x‖)] at heq
   exact heq

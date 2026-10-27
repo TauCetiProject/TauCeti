@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
-public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 
@@ -18,9 +17,7 @@ Among Lebesgue-measurable subsets of the real line of a prescribed finite length
 centered interval uniquely minimizes the second moment, up to null sets. Adding a constant
 to the quadratic weight gives the same comparison; this is useful on orthogonal line
 sections of a Euclidean set. A finite second moment forces finite measure in any proper
-normed additive group for a Borel measure finite on compact sets. The module also provides
-the integrability and real-integral bridges for second moments with respect to arbitrary
-measures.
+normed additive group for a Borel measure finite on compact sets.
 
 The comparison subtracts the constant value of the weight at the interval endpoints.
 The resulting weight is negative inside the interval and positive outside, so its
@@ -34,23 +31,6 @@ open MeasureTheory Set
 open scoped ENNReal
 
 namespace TauCeti
-
-/-- Integrability of the squared norm is equivalent to finiteness of its nonnegative integral. -/
-theorem integrableOn_norm_sq_iff_lintegral_ne_top {E : Type*} [NormedAddCommGroup E]
-    [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} {s : Set E} :
-    IntegrableOn (fun x : E ↦ ‖x‖ ^ 2) s μ ↔
-      (∫⁻ x in s, ENNReal.ofReal (‖x‖ ^ 2) ∂μ) ≠ ∞ :=
-  (lintegral_ofReal_ne_top_iff_integrable (continuous_norm.pow 2).aestronglyMeasurable
-    (Filter.Eventually.of_forall fun x ↦ sq_nonneg ‖x‖)).symm
-
-/-- The real second moment agrees with its nonnegative integral when it is integrable. -/
-theorem ofReal_integral_norm_sq_eq_lintegral {E : Type*} [NormedAddCommGroup E]
-    [MeasurableSpace E] {μ : Measure E} {s : Set E}
-    (hmoment : IntegrableOn (fun x : E ↦ ‖x‖ ^ 2) s μ) :
-    ENNReal.ofReal (∫ x in s, ‖x‖ ^ 2 ∂μ) =
-      ∫⁻ x in s, ENNReal.ofReal (‖x‖ ^ 2) ∂μ :=
-  ofReal_integral_eq_lintegral_ofReal hmoment
-    (Filter.Eventually.of_forall fun x ↦ sq_nonneg ‖x‖)
 
 /-- A finite second moment forces finite measure: the part outside the unit ball is bounded
 by its moment, and the unit ball is compact. -/
@@ -75,21 +55,6 @@ theorem measure_ne_top_of_lintegral_norm_sq_ne_top {E : Type*} [NormedAddCommGro
   exact ((measure_mono hsub).trans_lt ((measure_union_le _ _).trans_lt
     (ENNReal.add_lt_top.mpr ⟨Metric.isBounded_closedBall.measure_lt_top,
       lt_of_le_of_lt htail (lt_top_iff_ne_top.mpr hmoment)⟩))).ne
-
-private theorem integrableOn_add_sq_iff_lintegral_ne_top {μ : Measure ℝ} {s : Set ℝ}
-    {a : ℝ} (ha : 0 ≤ a) :
-    IntegrableOn (fun t : ℝ ↦ a + t ^ 2) s μ ↔
-      (∫⁻ t in s, ENNReal.ofReal (a + t ^ 2) ∂μ) ≠ ∞ :=
-  (lintegral_ofReal_ne_top_iff_integrable
-    (continuous_const.add (continuous_id.pow 2)).aestronglyMeasurable
-    (Filter.Eventually.of_forall fun t ↦ add_nonneg ha (sq_nonneg t))).symm
-
-private theorem ofReal_integral_add_sq_eq_lintegral {μ : Measure ℝ} {s : Set ℝ}
-    {a : ℝ} (ha : 0 ≤ a) (hint : IntegrableOn (fun t : ℝ ↦ a + t ^ 2) s μ) :
-    ENNReal.ofReal (∫ t in s, a + t ^ 2 ∂μ) =
-      ∫⁻ t in s, ENNReal.ofReal (a + t ^ 2) ∂μ :=
-  ofReal_integral_eq_lintegral_ofReal hint
-    (Filter.Eventually.of_forall fun t ↦ add_nonneg ha (sq_nonneg t))
 
 private theorem integrableOn_closedBall_add_sq (a r : ℝ) :
     IntegrableOn (fun t : ℝ ↦ a + t ^ 2) (Metric.closedBall (0 : ℝ) r) volume :=
@@ -139,6 +104,7 @@ private theorem integral_closedBall_add_sq_le_and_eq_iff {s : Set ℝ}
       s.indicator (fun t : ℝ ↦ (a + t ^ 2) - (a + r ^ 2)) := by
     apply (integral_eq_iff_of_ae_le hii hsi (Filter.Eventually.of_forall hle)).mp
     rw [heval I hI.nullMeasurableSet hi hfinI, heval s hs hint hfin, hmassR, heq]
+  apply Filter.eventuallyEqSet_iff.mpr
   filter_upwards [hweights, volume.ae_ne r, volume.ae_ne (-r)] with t ht htr htnr
   dsimp only [I] at ht
   have hne : (a + t ^ 2) - (a + r ^ 2) ≠ 0 := by
@@ -147,7 +113,6 @@ private theorem integral_closedBall_add_sq_le_and_eq_iff {s : Set ℝ}
       apply (sq_eq_sq_iff_eq_or_eq_neg).mp
       linarith
     exact this.elim htr htnr
-  apply propext
   constructor
   · intro hts
     by_contra hti
@@ -185,15 +150,16 @@ private theorem lintegral_eball_add_sq_le_and_eq_iff {s : Set ℝ}
   have hmass : volume s = volume (Metric.closedBall (0 : ℝ) r) := by
     rw [← measure_congr hae, Real.volume_eball]
     exact (ENNReal.mul_div_cancel (by norm_num) (by norm_num)).symm
+  have hnonneg (u : Set ℝ) : 0 ≤ᵐ[volume.restrict u] (fun t : ℝ ↦ a + t ^ 2) :=
+    Filter.Eventually.of_forall fun t ↦ add_nonneg ha (sq_nonneg t)
   have hint : IntegrableOn (fun t : ℝ ↦ a + t ^ 2) s volume :=
-    (integrableOn_add_sq_iff_lintegral_ne_top ha).mpr hmoment
+    (lintegral_ofReal_ne_top_iff_integrable
+      (continuous_const.add (continuous_id.pow 2)).aestronglyMeasurable (hnonneg s)).mp hmoment
   have hi : IntegrableOn (fun t : ℝ ↦ a + t ^ 2) (Metric.closedBall (0 : ℝ) r) volume :=
     integrableOn_closedBall_add_sq a r
   have hcmp := integral_closedBall_add_sq_le_and_eq_iff hs r hr hmass a hint
-  have hnonneg (u : Set ℝ) : 0 ≤ᵐ[volume.restrict u] (fun t : ℝ ↦ a + t ^ 2) :=
-    Filter.Eventually.of_forall fun t ↦ add_nonneg ha (sq_nonneg t)
-  rw [setLIntegral_congr hae, ← ofReal_integral_add_sq_eq_lintegral ha hi,
-    ← ofReal_integral_add_sq_eq_lintegral ha hint]
+  rw [setLIntegral_congr hae, ← ofReal_integral_eq_lintegral_ofReal hi (hnonneg _),
+    ← ofReal_integral_eq_lintegral_ofReal hint (hnonneg _)]
   refine ⟨ENNReal.ofReal_le_ofReal hcmp.1, ?_⟩
   rw [ENNReal.ofReal_eq_ofReal_iff (integral_nonneg_of_ae (hnonneg _))
     (integral_nonneg_of_ae (hnonneg _)), hcmp.2]
