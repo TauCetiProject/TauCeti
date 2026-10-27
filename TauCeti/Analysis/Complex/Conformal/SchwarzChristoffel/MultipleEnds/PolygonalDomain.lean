@@ -7,8 +7,8 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Vertex
-import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.BoundaryPrevertex
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.EndMatching
+import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.InfinityNormalization
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.LocalBoundary
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.LocallyConnectedBoundary
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.ModelEnd
@@ -43,11 +43,13 @@ sent to a point on a side, so all the turning exponents together sum to `-2`.
 
 The proof inverts `U` about an exterior point `q`.  The inverted domain has locally connected
 frontier, so Carathéodory's theorem gives a Riemann map `f` whose inverted coordinate
-`g = (f - q)⁻¹` is continuous on the closed upper half-plane.  The real zeros of `g` are the
-accesses to infinity, and they correspond bijectively to the ends: distinct zeros lie in distinct
-ends by a crosscut argument, and every end is reached because `f` is bounded away from the zeros.
-A real parameter `x₀` sent to a side is then moved to infinity by `z ↦ x₀ - 1 / z`, and the local
-side, corner and end conditions of
+`g = (f - q)⁻¹` is continuous on the closed upper half-plane, and which sends the point at infinity
+of the half-plane to a chosen frontier point `w` on a side
+(`TauCeti.exists_bijOn_upperHalfPlaneSet_tendsto_of_isPreconnectedApproachAt`).  The real zeros of
+`g` are the accesses to infinity, and they correspond bijectively to the ends: distinct zeros lie in
+distinct ends by a crosscut argument, and every end is reached because `f` is bounded away from the
+zeros.  The side through `w` gives the condition at infinity, and the local side, corner and end
+conditions of
 `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary` follow from the
 local geometry of `U`.  Ends of opening `2 * π`, exteriors of half-strips, are not among the ends
 allowed here.
@@ -103,14 +105,13 @@ private theorem exists_ball_side_of_inverted_coordinate_of_ne_prevertex {ι : Ty
   exact ⟨r, hr, p, b, hb, h₁, h₂, h₃, h₄⟩
 
 /-- **A Riemann map with a side point at infinity.**  Under the hypotheses of
-`TauCeti.exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_ends`, with the ends
-replaced by open sets `E k` preconnected at infinity inside `U`, there is a coordinate `g`,
-continuous on the closed upper half-plane, holomorphic and nonzero in the open one, and injective
-away from its zeros, such that `F = q + g⁻¹` maps the upper half-plane onto `U`.  Its nonzero real
-boundary values give frontier points of `U`, it has a nonzero limit at infinity, so that the point
-at infinity of the half-plane is sent to a side of `U`, and accordingly
+`TauCeti.exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_ends`, there is a
+coordinate `g`, continuous on the closed upper half-plane, holomorphic and nonzero in the open one,
+and injective away from its zeros, such that `F = q + g⁻¹` maps the upper half-plane onto `U`.  Its
+nonzero real boundary values give frontier points of `U`, it has a nonzero limit at infinity, so
+that the point at infinity of the half-plane is sent to a side of `U`, and accordingly
 `z * F''(z) / F'(z) → -2` there.  Finally the vertices have distinct real prevertices `a i`. -/
-private theorem exists_inverted_coordinate_of_polygonal_ends {ι κ : Type*} [Finite ι] [Finite κ]
+private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finite ι]
     {e : ι → ℝ} (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) {U : Set ℂ} (hUo : IsOpen U)
     (hUs : IsSimplyConnected U) (hUb : ¬IsBounded U) {v : ι → ℂ} (hv : Injective v)
     (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ p b : ℂ, b ≠ 0 ∧
@@ -120,9 +121,7 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι κ : Type*} [Fi
     {σ τ : Type*} [Finite σ] [Finite τ] {x y : σ → ℂ} {o d : τ → ℂ} (hd : ∀ k, d k ≠ 0)
     (hfr : frontier U =
       (⋃ i, segment ℝ (x i) (y i)) ∪ ⋃ k, (fun t : ℝ => o k + (t : ℂ) * d k) '' Ici 0)
-    {q : ℂ} (hq : q ∉ closure U) {E : κ → Set ℂ} {R : ℝ} (hEo : ∀ k, IsOpen (E k))
-    (hEd : Pairwise (Disjoint on E)) (hUE : ∀ w ∈ U, R < ‖w‖ → ∃ k, w ∈ E k)
-    (hEc : ∀ k, IsPreconnectedAtInfinityIn U (E k)) :
+    {q : ℂ} (hq : q ∉ closure U) :
     ∃ g : ℂ → ℂ, ∃ a : ι → ℝ, ContinuousOn g {z : ℂ | 0 ≤ z.im} ∧
       DifferentiableOn ℂ g upperHalfPlaneSet ∧ (∀ z ∈ upperHalfPlaneSet, g z ≠ 0) ∧
       InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0} ∧
@@ -132,64 +131,108 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι κ : Type*} [Fi
       Tendsto (fun z => z * logDeriv (deriv fun z => q + (g z)⁻¹) z)
         (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-2)) ∧
       Injective a ∧ ∀ i, g (a i) ≠ 0 ∧ q + (g (a i))⁻¹ = v i := by
-  -- a Riemann map `f` with continuous inverted coordinate `g = (f - q)⁻¹`, injective off its zeros
   have := locallyConnectedSpace_frontier_image_inv_sub_of_frontier_eq hUo hq hUb hd hfr
-  obtain ⟨f, g, -, hfU, hgc, hgd, hgf, hgne, -, hgr, hg0⟩ :=
-    exists_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_frontier_image_inv_sub hUo hUs hq hUb
-  have hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0} :=
-    injOn_inverted_boundary_of_polygonal (fun i => (he i).2.le) hUo hq hUb hgc hgd hgf hfU hgr
-      hg0 hside hcorner
-  have hgU : (fun z => q + (g z)⁻¹) '' upperHalfPlaneSet = U := by
-    rw [← hfU.image_eq]
-    exact image_congr fun z hz => by simp [hgf hz]
-  -- a nonzero real boundary value of `g` is the inverse of `w - q` for a frontier point `w`
-  have hfront {z : ℂ} (hz : z.im = 0) (hgz : g z ≠ 0) : q + (g z)⁻¹ ∈ frontier U := by
-    have hmem : g z ∈ frontier ((fun z : ℂ => (z - q)⁻¹) '' U) :=
-      hgr ▸ mem_insert_of_mem _ ⟨z, hz, rfl⟩
-    rw [frontier_image_inv_sub hUo hq hUb] at hmem
-    obtain ⟨w, hw, hwg⟩ := hmem.resolve_left hgz
-    rw [← hwg]
-    simpa using hw
-  -- the prevertices of the vertices
   have hvU (i : ι) : v i ∈ frontier U := by
     obtain ⟨r, hr, n, hn, hUi⟩ := hcorner i
     exact mem_frontier_of_forall_mem_iff_abs_arg_lt hr hn
       (by nlinarith [Real.pi_pos, (he i).1]) (by nlinarith [Real.pi_pos, (he i).2]) hUi
-  have hvq (i : ι) : (v i - q)⁻¹ ≠ 0 :=
-    inv_ne_zero (sub_ne_zero.mpr fun h => hq (h ▸ frontier_subset_closure (hvU i)))
-  obtain ⟨a₀, ha₀, ha₀g⟩ :=
-    exists_injective_prevertices_of_inverted_boundary hUo hq hUb hgc hgf hgr hv hvU
-  -- a real parameter `x₀` that is neither a zero of `g` nor a prevertex, so is sent to a side
-  obtain ⟨x₀, hx₀⟩ := ((finite_setOf_inverted_coordinate_eq_zero hgc hgd hgf hgne hfU hEo hEd hUE
-    hEc).union (finite_range a₀)).exists_notMem
-  have hgx₀ : g x₀ ≠ 0 := fun h => hx₀ (Or.inl h)
-  obtain ⟨r₀, hr₀, p₀, n₀, hn₀, hc₀, hi₀, hreal₀, hupper₀⟩ :=
-    exists_ball_side_of_inverted_coordinate_of_ne_prevertex hgc hgi hgU
-      (fun x hx => hfront (by simp) hx) hside
-      (fun i => ⟨(ha₀g i).1 ▸ hvq i, by rw [(ha₀g i).1, inv_inv, add_sub_cancel]⟩) hgx₀
-      fun i h => hx₀ (Or.inr ⟨i, h⟩)
-  -- move `x₀` to infinity
-  obtain ⟨g₁, hg₁0, hg₁g, hg₁c, hg₁d, hg₁ne, hg₁i, hg₁U, hg₁inf⟩ :=
-    exists_inverted_coordinate_comp_sub_inv hgc hgd hgne hgi hg0 x₀
-  have ha0 (i : ι) : (((x₀ - a₀ i)⁻¹ : ℝ) : ℂ) ≠ 0 := by
-    simpa [sub_eq_zero] using fun h => hx₀ (Or.inr ⟨i, h.symm⟩)
-  refine ⟨g₁, fun i => (x₀ - a₀ i)⁻¹, hg₁c, hg₁d, hg₁ne, hg₁i, ?_, fun x hx => ?_,
-    ⟨_, hgx₀, hg₁inf⟩, ?_, fun i j h => ha₀ (by simpa [sub_right_inj] using h), fun i => ?_⟩
-  · rw [← image_image (fun w => q + w⁻¹) g₁, hg₁U, image_image, hgU]
-  · have hx0 : (x : ℂ) ≠ 0 := fun h => hx (by rw [h, hg₁0])
-    rw [hg₁g _ hx0] at hx ⊢
-    exact hfront (by simp) hx
-  · -- the side point `q + (g x₀)⁻¹` at infinity gives the condition at infinity
-    exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_sub_inv
-      (fun z (hz : 0 < z.im) => by simp [hg₁g z fun h => by simp [h] at hz]) hr₀
-      (((differentiableOn_const q).add (hgd.inv hgne)).mono inter_subset_right) hn₀ hc₀ hi₀
-      hreal₀ hupper₀
-  · have hg₁a : g₁ ((x₀ - a₀ i)⁻¹ : ℝ) = (v i - q)⁻¹ := by
-      rw [hg₁g _ (ha0 i), ← (ha₀g i).1]
-      congr 1
-      simp
-    rw [hg₁a, inv_inv, add_sub_cancel]
-    exact ⟨hvq i, rfl⟩
+  have hqU {w : ℂ} (hw : w ∈ frontier U) : (w - q)⁻¹ ≠ 0 :=
+    inv_ne_zero (sub_ne_zero.mpr fun h => hq (h ▸ frontier_subset_closure hw))
+  -- a frontier point `w` which is not a vertex: otherwise the complement of the finitely many
+  -- vertices, which is connected, would lie in `U`, and so would `q`
+  obtain ⟨w, hw, hwv⟩ : ∃ w ∈ frontier U, ∀ i, w ≠ v i := by
+    by_contra! h
+    obtain ⟨u, hu, hun⟩ := not_subset.mp fun h' => hUb ((finite_range v).isBounded.subset h')
+    have hsub : (range v)ᶜ ⊆ U :=
+      ((finite_range v).countable.isConnected_compl_of_one_lt_rank
+        (by simp [Complex.rank_real_complex])).isPreconnected.subset_of_closure_inter_subset hUo
+        ⟨u, hun, hu⟩ fun z ⟨hz, hzv⟩ => by_contra fun hzU => hzv <| by
+          obtain ⟨i, hi⟩ := h z ⟨hz, by rwa [hUo.interior_eq]⟩
+          exact ⟨i, hi.symm⟩
+    exact hq (subset_closure (hsub fun ⟨i, hi⟩ => hq (hi ▸ frontier_subset_closure (hvU i))))
+  -- a Riemann map `f` sending infinity to `w`, with inverted coordinate `g = (f - q)⁻¹`
+  have hU (w : ℂ) (hw : w ∈ frontier U) : IsPreconnectedApproachAt U w := by
+    by_cases hv : ∃ i, w = v i
+    · obtain ⟨i, rfl⟩ := hv
+      obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
+      exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hb
+        (by nlinarith [Real.pi_pos, (he i).2]) hU
+    · obtain ⟨ρ, hρ, p, b, -, hU⟩ := hside w hw fun i hi => hv ⟨i, hi⟩
+      exact isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos hρ hU
+  obtain ⟨f, g, -, hfU, hgc, hgd, hgf, hgne, -, hgr, hginf, hgi, hwg⟩ :=
+    exists_bijOn_upperHalfPlaneSet_tendsto_of_isPreconnectedApproachAt hUo hUs hq hUb hU hw
+  have hgU : (fun z => q + (g z)⁻¹) '' upperHalfPlaneSet = U := by
+    rw [← hfU.image_eq]
+    exact image_congr fun z hz => by simp [hgf hz]
+  -- the real boundary values of `g` are the inverses of `w - q` for frontier points `w`
+  have hgr' : insert (w - q)⁻¹ (g '' {z : ℂ | z.im = 0}) =
+      insert 0 ((fun z : ℂ => (z - q)⁻¹) '' frontier U) := by
+    rw [hgr, frontier_image_inv_sub hUo hq hUb]
+  have hfront {z : ℂ} (hz : z.im = 0) (hgz : g z ≠ 0) : q + (g z)⁻¹ ∈ frontier U := by
+    obtain ⟨w', hw', hwg'⟩ := ((hgr' ▸ mem_insert_of_mem _ ⟨z, hz, rfl⟩ :
+      g z ∈ insert 0 ((fun z : ℂ => (z - q)⁻¹) '' frontier U))).resolve_left hgz
+    rw [← hwg']
+    simpa using hw'
+  -- the prevertices of the vertices
+  have hpre (i : ι) : ∃ a : ℝ, g a = (v i - q)⁻¹ := by
+    have hmem : (v i - q)⁻¹ ∈ insert (w - q)⁻¹ (g '' {z : ℂ | z.im = 0}) :=
+      hgr' ▸ mem_insert_of_mem _ ⟨v i, hvU i, rfl⟩
+    obtain ⟨z, hz, hgz⟩ := hmem.resolve_left fun h => hwv i (sub_left_inj.mp (inv_injective h)).symm
+    refine ⟨z.re, hgz ▸ congrArg g (Complex.ext (by simp) ?_)⟩
+    simp [show z.im = 0 from hz]
+  choose a ha using hpre
+  refine ⟨g, a, hgc, hgd, hgne, hgi, hgU, fun x hx => hfront (by simp) hx,
+    ⟨_, hqU hw, hginf⟩, ?_, fun i j h => hv (sub_left_injective (inv_injective
+      ((ha i).symm.trans ((congrArg (fun t : ℝ => g t) h).trans (ha j))))),
+    fun i => ⟨(ha i).symm ▸ hqU (hvU i), by rw [ha, inv_inv, add_sub_cancel]⟩⟩
+  -- in the coordinate `z ↦ -z⁻¹` at infinity, `g` extends by its limit `(w - q)⁻¹` at `0`, which
+  -- is not a value of `g`
+  have hφ := bijOn_const_sub_inv_upperHalfPlaneSet 0
+  have hH0 (z : ℂ) (hz : z ∈ upperHalfPlaneSet) : z ≠ 0 := fun h => by
+    simp [h, upperHalfPlaneSet] at hz
+  set G : ℂ → ℂ := update (fun z => g (((0 : ℝ) : ℂ) - z⁻¹)) 0 (w - q)⁻¹
+  have hG {z : ℂ} (hz : z ≠ 0) : G z = g (((0 : ℝ) : ℂ) - z⁻¹) := update_of_ne hz _ _
+  have hG0 : G 0 = (w - q)⁻¹ := update_self _ _ _
+  have hGi : InjOn G {z : ℂ | 0 ≤ z.im ∧ G z ≠ 0} := by
+    have hφH {z : ℂ} (hz : 0 ≤ z.im) : 0 ≤ (((0 : ℝ) : ℂ) - z⁻¹).im :=
+      (im_const_sub_inv_nonneg 0).mpr hz
+    rintro z ⟨hz, hGz⟩ z' ⟨hz', hGz'⟩ h
+    by_cases h₁ : z = 0 <;> by_cases h₂ : z' = 0
+    · rw [h₁, h₂]
+    · rw [h₁, hG0, hG h₂] at h
+      exact (hwg ⟨_, hφH hz', h.symm⟩).elim
+    · rw [h₂, hG0, hG h₁] at h
+      exact (hwg ⟨_, hφH hz, h⟩).elim
+    · rw [hG h₁] at h hGz
+      rw [hG h₂] at h hGz'
+      exact inv_injective (sub_right_injective (hgi ⟨hφH hz, hGz⟩ ⟨hφH hz', hGz'⟩ h))
+  have hGU : (fun z => q + (G z)⁻¹) '' upperHalfPlaneSet = U := by
+    calc (fun z => q + (G z)⁻¹) '' upperHalfPlaneSet
+        = (fun z => q + (g z)⁻¹) '' ((fun z => ((0 : ℝ) : ℂ) - z⁻¹) '' upperHalfPlaneSet) := by
+          rw [image_image]
+          exact image_congr fun z hz => by rw [hG (hH0 z hz)]
+      _ = U := by rw [hφ.image_eq, hgU]
+  have hGd : DifferentiableOn ℂ G upperHalfPlaneSet :=
+    (hgd.comp ((differentiableOn_const _).sub (differentiableOn_id.inv hH0)) hφ.mapsTo).congr
+      fun z hz => hG (hH0 z hz)
+  have hGne (z : ℂ) (hz : z ∈ upperHalfPlaneSet) : G z ≠ 0 := by
+    rw [hG (hH0 z hz)]
+    exact hgne _ (hφ.mapsTo hz)
+  -- the side through `w` at infinity gives the condition at infinity
+  obtain ⟨ρ, hρ, p, n, hn, hUw⟩ := hside w hw hwv
+  have hGc : ContinuousOn G {z : ℂ | 0 ≤ z.im} := continuousOn_update_comp_const_sub_inv hgc hginf 0
+  have hG0' : G ((0 : ℝ) : ℂ) = (w - q)⁻¹ := by rw [ofReal_zero, hG0]
+  have hUw' : ∀ z ∈ ball (q + (G ((0 : ℝ) : ℂ))⁻¹) ρ, (z ∈ U ↔ 0 < ((z - p) / n).im) := by
+    rwa [hG0', inv_inv, add_sub_cancel]
+  obtain ⟨r, hr, hc, hi, hreal, hupper⟩ :=
+    exists_ball_side_of_inverted_coordinate hGc hGi hGU (hG0' ▸ hqU hw) hρ hUw'
+  refine tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_sub_inv
+    (f := fun z => q + (G z)⁻¹) (fun z hz => ?_) hr
+    (((differentiableOn_const q).add (hGd.inv hGne)).mono inter_subset_right) hn hc hi hreal hupper
+  have hz0 : ((0 : ℝ) : ℂ) - z⁻¹ ≠ 0 := by simpa using hH0 z hz
+  dsimp only
+  rw [hG hz0]
+  simp
 
 /-- The Schwarz--Christoffel representation of a Riemann map of a polygonal domain with several
 ends, before its constants are named: a holomorphic bijection `f` of the upper half-plane onto `U`
@@ -227,8 +270,7 @@ private theorem exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygon
   -- the open far parts `E'` of the ends, and a coordinate `g` with `f = q + g⁻¹`
   obtain ⟨E', R', hE'o, hE'E, hE'd, hUE', hE'c, hE'b⟩ := exists_far_ends hb hE hEU hUE hEd
   obtain ⟨g, a, hgc, hgd, hgne, hgi, hgU, hgfr, ⟨c₀, hc₀, hginf⟩, hinfty, ha, hga⟩ :=
-    exists_inverted_coordinate_of_polygonal_ends he hUo hUs hUb hv hside hcorner hd hfr hq hE'o
-      hE'd hUE' hE'c
+    exists_inverted_coordinate_of_polygonal_ends he hUo hUs hUb hv hside hcorner hd hfr hq
   set f : ℂ → ℂ := fun z => q + (g z)⁻¹
   have hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet := fun z _ => by simp [f]
   have hfd : DifferentiableOn ℂ f upperHalfPlaneSet := (differentiableOn_const q).add (hgd.inv hgne)
