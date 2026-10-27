@@ -420,22 +420,8 @@ theorem mem_range_cuspToModFormCharSpace_iff_constantTermAt_eq_zero
     f ∈ LinearMap.range (cuspToModFormCharSpace k χ) ↔
       ∀ γ : SL(2, ℤ), ModularForm.constantTermAt
         (Γ := (Gamma1 N).map (mapGL ℝ)) γ (f : ModularForm _ k) = 0 := by
-  rw [← ModularForm.mem_cuspFormSubmodule_iff_constantTermAt_eq_zero]
-  constructor
-  · rintro ⟨g, rfl⟩
-    rw [coe_cuspToModFormCharSpace]
-    exact CuspForm.isCuspForm_toModularFormₗ
-      (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)
-  · intro hf
-    obtain ⟨g, hg⟩ := hf
-    have hgmem : (g : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) ∈
-        modFormCharSpace k χ := by
-      rw [← CuspForm.toModularFormₗ_eq_coe, hg]
-      exact f.2
-    refine ⟨⟨g, (coe_mem_modFormCharSpace_iff k χ g).mp hgmem⟩, ?_⟩
-    apply Subtype.ext
-    rw [coe_cuspToModFormCharSpace]
-    exact hg
+  rw [mem_range_cuspToModFormCharSpace_iff,
+    ModularForm.mem_cuspFormSubmodule_iff_constantTermAt_eq_zero]
 
 /-- The image of `S_k(N, χ)` in `M_k(N, χ)` is the kernel of the constant terms restricted to
 `M_k(N, χ)`. -/

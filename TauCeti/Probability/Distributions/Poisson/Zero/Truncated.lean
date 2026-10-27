@@ -7,14 +7,14 @@ module
 
 public import TauCeti.Probability.Distributions.Poisson.Basic
 public import TauCeti.Probability.Distributions.Poisson.Quantile
-public import TauCeti.Probability.Distributions.ZeroTruncation
+public import TauCeti.Probability.Distributions.Zero.Truncation
 
 /-!
 # The zero-truncated Poisson distribution
 
 The zero-truncated Poisson law of rate `r` is `Po(r)[|{0}ᶜ]`, the Poisson law conditioned on a
 positive count. This file specializes the generic zero-truncation formulas of
-`TauCeti.Probability.Distributions.ZeroTruncation` using the Poisson mass `exp (-r)` at zero:
+`TauCeti.Probability.Distributions.Zero.Truncation` using the Poisson mass `exp (-r)` at zero:
 
 * the masses `r ^ k / (k! (exp r - 1))` for `k ≠ 0`;
 * the mean `r / (1 - exp (-r))` and the variance;
