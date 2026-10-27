@@ -312,6 +312,23 @@ theorem ofLoop_trunc_sub_mem_orderSubmodule (N : ℤ) (u : currentAlgebra R L) :
   | add u v hu hv =>
     simpa only [map_add, add_sub_add_comm] using (orderSubmodule R L N).add_mem hu hv
 
+/-- Truncating a current preserves every lower order bound, including when the cutoff lies
+below that bound. No freeness of the coefficient module is needed. -/
+theorem ofLoop_trunc_mem_orderSubmodule (P : ℤ) {M : ℤ} {u : currentAlgebra R L}
+    (hu : u ∈ orderSubmodule R L M) :
+    ofLoop R L (trunc R L P u) ∈ orderSubmodule R L M := by
+  rw [orderSubmodule_def] at hu
+  induction hu using Submodule.span_induction with
+  | mem u hu =>
+    obtain ⟨f, x, hf, rfl⟩ := hu
+    rw [trunc_tmul, ofLoop_tmul]
+    apply tmul_mem_orderSubmodule
+    rw [HahnSeries.le_orderTop_iff_forall]
+    intro n hn
+    simp [HahnSeries.le_orderTop_iff_forall.mp hf n hn]
+  | zero => simp
+  | add u v _ _ hu hv => simpa only [map_add] using add_mem hu hv
+  | smul r u _ hu => simpa only [map_smul] using Submodule.smul_mem _ r hu
 
 /-- The polynomial mode `t^a ⊗ x` has order at least `a`. -/
 theorem ofLoop_single_tmul_mem_orderSubmodule (a : ℤ) (x : L) :

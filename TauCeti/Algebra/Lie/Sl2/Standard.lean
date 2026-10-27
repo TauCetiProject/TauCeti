@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.Sl2.WeightString
 public import TauCeti.Algebra.Lie.Subalgebra.Top
+import TauCeti.Algebra.Group.Action.Pow
 
 /-!
 # The standard irreducible representations of `sl₂`
@@ -926,20 +927,10 @@ subspace has a last nonzero term; that term is killed by `e`, hence is a nonzero
 `basis K n 0`. -/
 private theorem basis_zero_mem_of_ne_bot_of_raise_mem (N : Submodule K (Sl2Std K n)) (hN : N ≠ ⊥)
     (hraise : ∀ w ∈ N, raise K n w ∈ N) : basis K n 0 ∈ N := by
-  classical
   obtain ⟨v, hvN, hv⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hN
-  have hex : ∃ k, ((raise K n) ^ k) v = 0 :=
-    ⟨n + 1, by rw [raise_pow_eq_zero, LinearMap.zero_apply]⟩
-  have hfind := Nat.find_spec hex
-  have hfind0 : Nat.find hex ≠ 0 := by
-    intro h0
-    rw [h0, pow_zero] at hfind
-    exact hv (by simpa using hfind)
-  set k := Nat.find hex - 1 with hk
-  have hu : ((raise K n) ^ k) v ≠ 0 := Nat.find_min hex (by omega)
-  have hu0 : raise K n (((raise K n) ^ k) v) = 0 := by
-    have hkk : Nat.find hex = k + 1 := by omega
-    rwa [hkk, pow_succ', Module.End.mul_apply] at hfind
+  obtain ⟨k, hu, hu0⟩ := exists_pow_smul_ne_zero_and_smul_eq_zero (x := raise K n) hv
+    ⟨n + 1, by rw [raise_pow_eq_zero, zero_smul]⟩
+  simp only [Module.End.smul_def] at hu hu0
   have hcoeff : ((raise K n) ^ k) v 0 ≠ 0 := by
     intro h0
     exact hu (by rw [eq_smul_basis_zero_of_raise_eq_zero hu0, h0, zero_smul])

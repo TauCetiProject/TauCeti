@@ -45,8 +45,10 @@ this is proved for the Lagrangian `‖·‖ ^ p` with `1 ≤ p` and a bounded-be
 (`TauCeti.hopfLax_norm_rpow_add_add_smul_le`). They are upper semicontinuous at positive times when
 the initial datum and the Lagrangian are bounded below and the Lagrangian is continuous
 (`TauCeti.upperSemicontinuousOn_hopfLax`). So they must be shifted in time, to make the strip lie
-in positive times, before this theorem applies to them; lower semicontinuity on the final slice is
-a separate hypothesis that the cited results do not supply.
+in positive times, before this theorem applies to them. Lower semicontinuity on the final slice
+needs more: in a finite-dimensional space a continuous bounded initial datum makes them continuous
+at positive times (`TauCeti.continuousOn_hopfLax_norm_rpow`), which is how the lower bound of the
+Benamou–Brenier formula is proved (`TauCeti.IsContinuityEquation.wassersteinEDist_rpow_le`).
 
 The right side is the `ℝ≥0∞`-valued integral of the positive part of `L (vₜ x)`, so neither the
 integrability of the action nor a sign condition on `L` is assumed.

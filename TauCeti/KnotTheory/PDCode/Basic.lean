@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Enumerative.PerfectMatching
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Tactic.FinCases
+import TauCeti.Data.Fin.Basic
 
 /-!
 # PD-codes
@@ -474,6 +475,22 @@ theorem crossingBlockEquiv_trans {m r : ℕ} (cross₁ : Fin n ≃ Fin m) (cross
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective h
   simp
 
+/-- Renaming the crossings of a code with one crossing added last by the cyclic rotation sends
+slot `s` of the old crossing `j` to slot `s` of crossing `j + 1`. -/
+theorem crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inl {m : ℕ} (j : Fin m) (s : Fin 4) :
+    crossingBlockEquiv (finRotate (m + 1))
+        (halfEdgeSuccEquiv m (.inl (crossingSlotEquiv m (j, s)))) =
+      crossingSlotEquiv (m + 1) (j.succ, s) := by
+  rw [← crossingSlotEquiv_succ_castSucc, crossingBlockEquiv_apply_crossingSlotEquiv,
+    Fin.finRotate_castSucc]
+
+/-- Renaming the crossings of a code with one crossing added last by the cyclic rotation sends
+slot `s` of the added crossing to slot `s` of crossing `0`. -/
+theorem crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inr {m : ℕ} (s : Fin 4) :
+    crossingBlockEquiv (finRotate (m + 1)) (halfEdgeSuccEquiv m (.inr s)) =
+      crossingSlotEquiv (m + 1) (0, s) := by
+  rw [← crossingSlotEquiv_succ_last, crossingBlockEquiv_apply_crossingSlotEquiv, finRotate_last]
+
 /-- Relabel the half-edges and crossings of a code along equivalences of their index types: the
 half-edge `h` becomes `half h` and the crossing `j` becomes `cross j`. Slots are kept, so the
 half-edge in slot `s` of crossing `cross j` is `half` of the half-edge in slot `s` of crossing `j`;
@@ -586,6 +603,13 @@ theorem orientation_crossing_of_add_two_eq (D : OrientedPDCode n) (i : Fin n) {s
     D.orientation (D.crossing i t) = !D.orientation (D.crossing i s) := by
   rw [← hst, ← PDCode.oppositeCrossingSlot_apply, PDCode.crossing_apply, PDCode.crossing_apply,
     D.orientation_oppositeCrossingSlot]
+
+/-- An arc joins half-edges of opposite orientations, so no half-edge is paired with one of the
+same orientation. -/
+theorem ne_edgePair_of_orientation_eq (D : OrientedPDCode n) {x y : Fin (4 * n)}
+    (h : D.orientation x = D.orientation y) : x ≠ D.edgePair.val y := by
+  rintro rfl
+  simp at h
 
 /-- The sign of crossing `i`:`1` if the crossing is right-handed and `-1` if it is left-handed,
 as in Lickorish, Chapter 1. The slots are read counterclockwise in the oriented plane and

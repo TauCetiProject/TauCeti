@@ -61,6 +61,8 @@ coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R
   simultaneous values.
 * `AlgHom.exists_apply_eq_comp_of_entries`: an algebra map `(ι → T) →ₐ[T] (κ → T)` whose matrix
   entries are all `0` or `1` is induced by a map `κ → ι`.
+* `AlgHom.exists_eq_comp_piEvalAlgHom`: an algebra homomorphism from a finite product of algebras
+  into a domain factors through one of the projections.
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
@@ -156,6 +158,47 @@ theorem exists_apply_eq_comp_of_entries {T ι κ : Type*} [CommSemiring T] [Nont
   have h0 := congrFun (congrArg φ hprod) j
   simp [hu j] at h0
   simp [h0]
+
+
+/-- **An algebra homomorphism from a finite product into a domain factors through a projection.**
+For a finite family of `R`-algebras `A i` and an `R`-algebra `B` without zero divisors, every
+`φ : (Π i, A i) →ₐ[R] B` is `ψ ∘ Pi.evalAlgHom R A i` for some `i` and `ψ : A i →ₐ[R] B`. This
+generalises Mathlib's `AlgHom.eq_piEvalAlgHom`, the case `A i = B = R`. -/
+theorem exists_eq_comp_piEvalAlgHom {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
+    {A : ι → Type*} [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] {B : Type*} [Semiring B]
+    [Algebra R B] [NoZeroDivisors B] [Nontrivial B] (φ : (Π i, A i) →ₐ[R] B) :
+    ∃ i, ∃ ψ : A i →ₐ[R] B, φ = ψ.comp (Pi.evalAlgHom R A i) := by
+  classical
+  have := Fintype.ofFinite ι
+  have h1 := map_one φ
+  rw [← Finset.univ_sum_single (1 : Π i, A i), map_sum] at h1
+  simp only [Pi.one_apply] at h1
+  obtain ⟨i, hi⟩ : ∃ i, φ (Pi.single i 1) ≠ 0 := by
+    by_contra! h
+    simp_all
+  have h2 : ∀ j ≠ i, φ (Pi.single j 1) = 0 := by
+    refine fun j hj ↦ (eq_zero_or_eq_zero_of_mul_eq_zero ?_).resolve_left hi
+    rw [← map_mul]
+    convert map_zero φ
+    ext k
+    by_cases hk : k = i
+    · subst hk
+      simp [hj]
+    · simp [hk]
+  have h3 : φ (Pi.single i 1) = 1 := by rwa [Fintype.sum_eq_single i h2] at h1
+  -- `φ` only sees the `i`-th coordinate: the other summands of `x` are killed by `Pi.single j 1`.
+  have h4 (x : Π i, A i) : φ x = φ (Pi.single i (x i)) := by
+    conv_lhs => rw [← Finset.univ_sum_single x, map_sum]
+    refine Fintype.sum_eq_single i fun j hj ↦ ?_
+    rw [← mul_one (x j), Pi.single_mul, map_mul, h2 j hj, mul_zero]
+  refine ⟨i,
+    { toFun a := φ (Pi.single i a)
+      map_one' := h3
+      map_mul' a b := by rw [Pi.single_mul, map_mul]
+      map_zero' := by simp
+      map_add' a b := by rw [Pi.single_add, map_add]
+      commutes' r := by rw [← Pi.algebraMap_apply ι A r i, ← h4, AlgHom.commutes] },
+    AlgHom.ext h4⟩
 
 end AlgHom
 

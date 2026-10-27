@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
@@ -78,7 +79,7 @@ private def regKernelDeriv (n : ℕ) (v : EuclideanSpace ℝ (Fin n)) (t : ℝ)
 
 private lemma regKernel_zero (n : ℕ) : regKernel n 0 = newtonianKernel n := by
   funext x
-  rw [regKernel, newtonianKernel_def, add_zero, sq_rpow_div_two (norm_nonneg x)]
+  rw [regKernel, newtonianKernel_def, add_zero, Real.sq_rpow_div_two (norm_nonneg x)]
 
 private lemma regKernelDeriv_zero (hn : 3 ≤ n) (v : EuclideanSpace ℝ (Fin n))
     {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
@@ -86,7 +87,7 @@ private lemma regKernelDeriv_zero (hn : 3 ≤ n) (v : EuclideanSpace ℝ (Fin n)
   have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
   have hvol := (volume_real_unitBall_pos n).ne'
   rw [regKernelDeriv, fderiv_newtonianKernel_apply n (by omega) hx, add_zero,
-    show (2 - (n : ℝ)) / 2 - 1 = -(n : ℝ) / 2 by ring, sq_rpow_div_two (norm_nonneg x)]
+    show (2 - (n : ℝ)) / 2 - 1 = -(n : ℝ) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x)]
   have h2 : (n : ℝ) - 2 ≠ 0 := by linarith
   have h0 : (n : ℝ) ≠ 0 := by linarith
   field_simp

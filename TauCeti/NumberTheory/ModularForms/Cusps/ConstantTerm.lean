@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.NumberTheory.Modular.ConjugateTranslation
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 
 /-!
@@ -43,6 +44,8 @@ Eisenstein series through their constant terms.
 * `ModularForm.constantTermAt`: the constant-term functional attached to an element of
   `SL₂(ℤ)`.
 * `ModularForm.constantTerms`: all constant terms at once, as a linear map to `SL₂(ℤ) → ℂ`.
+* `TauCeti.constantTermsAtDivisors`: constant terms at the divisor representatives `1/d`
+  of `Γ₀(N)`, available at every nonzero level.
 * `TauCeti.ModularForm.constantTermAtCuspTranslationOrbit`: the constant term indexed by a cusp
   translation orbit.
 
@@ -50,7 +53,8 @@ Eisenstein series through their constant terms.
 
 * `ModularForm.tendsto_translate_constantTermAt`: `f ∣ γ` tends to the constant term at `i∞`.
 * `ModularForm.constantTermAt_mul_left`, `ModularForm.constantTermAt_mul_T_zpow`,
-  `ModularForm.constantTermAt_neg`: the dependence of the constant term on the representative.
+  `ModularForm.constantTermAt_neg`, `ModularForm.constantTermAt_mul_of_c_eq_zero`: the
+  dependence of the constant term on the representative.
 * `ModularForm.constantTermAt_diamondOp`: diamond operators act on constant terms by left
   multiplication of cusp representatives.
 * `ModularForm.nebentypusConstantTermSubspace`: functions on cusp representatives that
@@ -223,6 +227,17 @@ theorem constantTermAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
   rw [coe_translate, coe_translate, hneg, SlashAction.slash_mul, ModularForm.slash_neg_one]
   rw [Pi.smul_apply, smul_eq_mul]
 
+/-- Multiplying the representative on the right by an element `m` fixing `∞` (that is, with
+vanishing lower-left entry, so `m = ±Tʲ`) multiplies the constant term by `(m₀₀)ᵏ = (±1)ᵏ`. -/
+theorem constantTermAt_mul_of_c_eq_zero (γ : SL(2, ℤ)) {m : SL(2, ℤ)} (hm : m 1 0 = 0)
+    (f : ModularForm Γ k) :
+    constantTermAt (γ * m) f = (m 0 0 : ℂ) ^ k * constantTermAt γ f := by
+  rcases TauCeti.ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hm with h | h <;> rw [h]
+  · rw [constantTermAt_mul_T_zpow]
+    simp [ModularGroup.coe_T_zpow]
+  · rw [mul_neg, constantTermAt_neg, constantTermAt_mul_T_zpow]
+    simp [ModularGroup.coe_T_zpow]
+
 /-- A modular form is cuspidal exactly when its constant term vanishes after every
 `SL₂(ℤ)`-translate. -/
 theorem mem_cuspFormSubmodule_iff_constantTermAt_eq_zero (f : ModularForm Γ k) :
@@ -372,7 +387,31 @@ end ModularForm
 
 namespace TauCeti
 
-variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
+variable {N : ℕ}
+
+/-- The integral matrix representing the divisor cusp `1/d` of `Γ₀(N)`. -/
+def divisorCuspRep (d : N.divisors) : SL(2, ℤ) :=
+  ⟨!![1, 0; (d.val : ℤ), 1], by simp⟩
+
+/-- The matrix entries of the representative of the divisor cusp `1/d`. -/
+@[simp]
+theorem coe_divisorCuspRep (d : N.divisors) :
+    (divisorCuspRep d : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; (d.val : ℤ), 1] :=
+  (rfl)
+
+variable [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
+
+/-- The constant terms at the cusps `1/d` indexed by the divisors of `N`. -/
+def constantTermsAtDivisors :
+    ModularForm ((Gamma0 N).map (mapGL ℝ)) k →ₗ[ℂ] (N.divisors → ℂ) :=
+  (LinearMap.funLeft ℂ ℂ divisorCuspRep) ∘ₗ ModularForm.constantTerms
+
+/-- Evaluation of the divisor-indexed constant-term map. -/
+@[simp]
+theorem constantTermsAtDivisors_apply
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) (d : N.divisors) :
+    constantTermsAtDivisors f d = _root_.ModularForm.constantTermAt (divisorCuspRep d) f :=
+  (rfl)
 
 /-- Inside `M_k(N, χ)`, the common kernel of the cusp constant terms is precisely the image of
 `S_k(N, χ)`. -/
@@ -440,14 +479,10 @@ theorem mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero
   rw [mem_cuspFormSubmodule_iff_constantTermAt_eq_zero]
   constructor
   · intro hf c
-    induction c using Quotient.inductionOn with
-    | h q =>
-      induction q using Quotient.inductionOn with
-      | h x =>
-        obtain ⟨γ, hγ⟩ := x.property
-        have hx : x = (mapGL ℝ).rangeRestrict γ := Subtype.ext hγ.symm
-        rw [hx, constantTermAtCuspTranslationOrbit_mk_mapGL]
-        exact hf γ⁻¹
+    induction c using CuspTranslationOrbit.induction_on with
+    | h γ =>
+      rw [constantTermAtCuspTranslationOrbit_mk_mapGL]
+      exact hf γ⁻¹
   · intro hf γ
     simpa only [constantTermAtCuspTranslationOrbit_mk_mapGL, inv_inv] using
       hf (⟦(QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹) :

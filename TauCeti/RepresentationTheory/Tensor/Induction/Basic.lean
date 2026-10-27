@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Rep.Res
 public import TauCeti.GroupTheory.Perm.WreathProduct.Monomial
+public import TauCeti.LinearAlgebra.PiTensorProduct.SlotSum
 public import TauCeti.RepresentationTheory.Symmetric.TensorAction.Basic
 
 /-!
@@ -28,12 +29,27 @@ bundled `Rep` functors use a commutative ring, because the empty indexed tensor 
 an additive group over a semiring. Characteristic two is needed only later, when tensor induction
 is applied to the sign-free Evens norm.
 
+An endomorphism of `M` commuting with `D`, applied in one tensor factor at a time and summed (the
+slot sum of `TauCeti.PiTensorProduct.slotSum`), commutes with the wreath-product action, because
+the slot sum does not depend on how the factors are indexed. Likewise a grading of `M` preserved
+by `D` gives a total-degree grading of the tensor power preserved by the wreath product. These are
+the differential and the grading of the tensor induction of a complex.
+
 ## Main definitions
 
 * `Representation.wreathTensor`: the wreath-product representation on an indexed tensor power.
 * `Rep.wreathTensorFunctor`: its functorial form on representation categories.
 * `Subgroup.tensorInducedRepresentation`: tensor induction along a chosen transversal.
 * `Subgroup.tensorInductionFunctor`: tensor induction along a subgroup with a chosen transversal.
+* `Representation.IntertwiningMap.tensorInducedSlotSum`: the slot sum of an intertwining
+  endomorphism, as an intertwining endomorphism of tensor induction.
+
+## Main results
+
+* `Representation.slotSum_comp_wreathTensor`: the slot sum of an endomorphism commuting with the
+  action commutes with the wreath-product action.
+* `Representation.isHomogeneous_wreathTensor`: the wreath-product action preserves the total
+  degree of a tensor power of a graded module whose grading the action preserves.
 
 ## References
 
@@ -97,6 +113,38 @@ theorem wreathTensor_inr_apply_tprod (ρ : Representation R D M) (ι : Type x)
     ρ.wreathTensor ι (SemidirectProduct.inr σ) (PiTensorProduct.tprod R m) =
       PiTensorProduct.tprod R fun i ↦ m (σ.symm i) := by
   simp
+
+/-- The wreath-product action is reindexing by the top permutation followed by the base coordinates
+in every tensor factor. -/
+theorem wreathTensor_apply (ρ : Representation R D M) (ι : Type x)
+    (a : TauCeti.WreathProduct D ι) :
+    ρ.wreathTensor ι a = PiTensorProduct.map (fun i ↦ ρ (a.left i)) ∘ₗ
+      (PiTensorProduct.reindex R (fun _ : ι ↦ M) a.right).toLinearMap :=
+  (rfl)
+
+/-- The slot sum of an endomorphism commuting with the action of `D` commutes with the
+wreath-product action: it commutes with the base coordinates factor by factor, and the slot sum
+does not depend on how the tensor factors are indexed. -/
+theorem slotSum_comp_wreathTensor {ι : Type x} [Fintype ι] [DecidableEq ι]
+    (ρ : Representation R D M) {f : Module.End R M} (hf : ∀ g, f ∘ₗ ρ g = ρ g ∘ₗ f)
+    (a : TauCeti.WreathProduct D ι) :
+    TauCeti.PiTensorProduct.slotSum ι f ∘ₗ ρ.wreathTensor ι a =
+      ρ.wreathTensor ι a ∘ₗ TauCeti.PiTensorProduct.slotSum ι f := by
+  rw [wreathTensor_apply, ← LinearMap.comp_assoc,
+    TauCeti.PiTensorProduct.slotSum_comp_map _ fun i ↦ hf _, LinearMap.comp_assoc,
+    TauCeti.PiTensorProduct.slotSum_comp_reindex, LinearMap.comp_assoc]
+
+/-- If every element of `D` acts by a map preserving the degrees of a grading of `M`, then the
+wreath-product action preserves the total degree of the tensor power. -/
+theorem isHomogeneous_wreathTensor {ι : Type x} [Fintype ι] {A : Type*} [AddCommMonoid A]
+    {ℳ : A → Submodule R M} (ρ : Representation R D M)
+    (hρ : ∀ g, TauCeti.LinearMap.IsHomogeneous (ρ g) ℳ ℳ 0) (a : TauCeti.WreathProduct D ι) :
+    TauCeti.LinearMap.IsHomogeneous (ρ.wreathTensor ι a)
+      (TauCeti.PiTensorProduct.totalDegreePiece ι ℳ)
+      (TauCeti.PiTensorProduct.totalDegreePiece ι ℳ) 0 := by
+  have h := (TauCeti.PiTensorProduct.isHomogeneous_map fun i ↦ hρ (a.left i)).comp
+    (TauCeti.PiTensorProduct.isHomogeneous_reindex (ℳ := ℳ) a.right)
+  rwa [Finset.sum_const_zero, add_zero, ← wreathTensor_apply] at h
 
 variable {N : Type y} [AddCommMonoid N] [Module R N]
 variable {ρ : Representation R D M} {τ : Representation R D N}
@@ -323,5 +371,20 @@ noncomputable def tensorInduced (f : ρ.IntertwiningMap τ) (s : U.LeftTransvers
   have h := congrArg IntertwiningMap.toLinearMap
     (IntertwiningMap.wreathTensor_comp g f (G ⧸ U))
   exact h
+
+/-- The slot sum of an intertwining endomorphism, which applies it in one coset factor at a time,
+is an intertwining endomorphism of tensor induction. In characteristic two it is the differential
+of the tensor induction of a complex. -/
+noncomputable def tensorInducedSlotSum [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)]
+    (f : ρ.IntertwiningMap ρ) (s : U.LeftTransversal) :
+    (U.tensorInducedRepresentation s ρ).IntertwiningMap (U.tensorInducedRepresentation s ρ) where
+  toLinearMap := TauCeti.PiTensorProduct.slotSum (G ⧸ U) f.toLinearMap
+  isIntertwining' g := ρ.slotSum_comp_wreathTensor f.isIntertwining' (U.monomialHom s g)
+
+/-- The underlying linear map of the tensor-induced slot sum is the slot sum. -/
+@[simp] theorem tensorInducedSlotSum_toLinearMap [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)]
+    (f : ρ.IntertwiningMap ρ) (s : U.LeftTransversal) :
+    (f.tensorInducedSlotSum s).toLinearMap =
+      TauCeti.PiTensorProduct.slotSum (G ⧸ U) f.toLinearMap := (rfl)
 
 end Representation.IntertwiningMap

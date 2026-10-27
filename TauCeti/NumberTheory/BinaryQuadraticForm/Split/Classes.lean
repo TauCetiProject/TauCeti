@@ -143,7 +143,7 @@ theorem exists_smul_splitTriangularForm_eq_iff (s c d : ℤ) (hs : s ≠ 0) :
     linear_combination hc - c * hp2
   · rintro ⟨n, hn⟩
     refine ⟨ModularGroup.T ^ n, ?_⟩
-    ext <;> simp [splitTriangularForm, smul_a, smul_b, smul_c, ModularGroup.coe_T_zpow]
+    ext <;> simp [splitTriangularForm]
     linear_combination hn
 
 /-- Equality in the existing proper-class quotient is the same congruence criterion. -/

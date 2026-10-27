@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+public import Mathlib.MeasureTheory.Function.L1Space.AEEqFun
 import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
@@ -40,6 +41,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `TauCeti.totalVariationOn μ Ω u`: the total variation of `u` on `Ω`.
 * `TauCeti.ofReal_abs_integral_le_totalVariationOn`: every admissible pairing is bounded by the
   total variation, and `TauCeti.totalVariationOn_le_iff` characterises upper bounds.
+* `TauCeti.ofReal_abs_integral_le_ofReal_mul_totalVariationOn`: a test vector field bounded by `c`
+  pairs to at most `c |Du|(Ω)`.
 * `TauCeti.totalVariationOn_congr_ae`: the total variation only sees `u` almost everywhere on
   `Ω`.
 * `TauCeti.totalVariationOn_mono` and `TauCeti.totalVariationOn_iSup`: monotonicity and inner
@@ -51,6 +54,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `TauCeti.totalVariationOn_le_liminf_of_tendsto_integral` and
   `TauCeti.totalVariationOn_le_liminf`: lower semicontinuity under distributional convergence and
   under convergence in `L¹_loc(Ω)`.
+* `TauCeti.totalVariationOn_le_of_tendsto_L1`: an eventual total-variation bound is preserved
+  under convergence in `L¹(Ω)`.
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm`: a weakly differentiable
   function has total variation at most the integral of the norm of its weak derivative.
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`: against an additive Haar
@@ -186,6 +191,24 @@ theorem totalVariationOn_smul (c : ℝ) :
   · rw [abs_of_nonpos hc, ← totalVariationOn_smul_of_nonneg (neg_nonneg.mpr hc), neg_smul,
       totalVariationOn_neg]
 
+/-- A test vector field bounded by `c` pairs to at most `c |Du|(Ω)`. -/
+theorem ofReal_abs_integral_le_ofReal_mul_totalVariationOn (φ : 𝓓(Ω, E)) {c : ℝ}
+    (hφ : ∀ x, ‖φ x‖ ≤ c) :
+    ENNReal.ofReal |∫ x, divergenceCLM φ x * u x ∂μ| ≤
+      ENNReal.ofReal c * totalVariationOn μ Ω u := by
+  rcases le_or_gt c 0 with hc | hc
+  · have hφ0 : φ = 0 := by
+      ext x
+      exact norm_le_zero_iff.1 ((hφ x).trans hc)
+    simp [hφ0]
+  -- Pair `c⁻¹ • φ`, which is admissible, with `c • u`.
+  rw [← totalVariationOn_smul_of_nonneg hc.le]
+  convert ofReal_abs_integral_le_totalVariationOn (u := c • u) (c⁻¹ • φ) fun x => ?_ using 3
+  · congr 1 with x
+    simp only [map_smul, smul_apply, Pi.smul_apply, smul_eq_mul]
+    field_simp
+  · simpa [norm_smul, abs_of_pos hc, inv_mul_le_iff₀ hc] using hφ x
+
 /-- **Subadditivity.** For functions locally integrable on `Ω`,
 `|D(u + v)|(Ω) ≤ |Du|(Ω) + |Dv|(Ω)`. -/
 theorem totalVariationOn_add_le [OpensMeasurableSpace E] (hu : LocallyIntegrableOn u Ω μ)
@@ -273,6 +296,25 @@ theorem totalVariationOn_le_liminf [OpensMeasurableSpace E] {ι : Type*} {l : Fi
       (by simpa using integrable_smul_of_locallyIntegrableOn hu₀ ψ)]
   simpa only [mul_sub] using hbound fun x => u i x - u₀ x
 
+/-- An eventual bound on the total variation is preserved under convergence in `L¹(Ω)`. -/
+theorem totalVariationOn_le_of_tendsto_L1 [OpensMeasurableSpace E] {ι : Type*}
+    {l : Filter ι} [l.NeBot] {u : ι → E →₁[μ.restrict Ω] ℝ}
+    {v : E →₁[μ.restrict Ω] ℝ} {C : ℝ≥0∞} (h : Tendsto u l (𝓝 v))
+    (hC : ∀ᶠ i in l, totalVariationOn μ Ω (u i) ≤ C) :
+    totalVariationOn μ Ω v ≤ C := by
+  refine (totalVariationOn_le_liminf
+    (.of_forall fun i => IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn (u i)))
+    (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn v)) ?_).trans
+      (liminf_le_of_frequently_le' hC.frequently)
+  intro K _ hK
+  have hd := tendsto_iff_edist_tendsto_0.mp h
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hd
+    (fun _ => zero_le) fun i => ?_
+  rw [L1.edist_def]
+  simpa only [edist_eq_enorm_sub] using
+    (lintegral_mono_set hK :
+      (∫⁻ x in K, ‖u i x - v x‖ₑ ∂μ) ≤ ∫⁻ x in Ω, ‖u i x - v x‖ₑ ∂μ)
+
 /-! ### Weakly differentiable functions -/
 
 /-- **A weakly differentiable function has variation at most `∫_Ω ‖Du‖`.** If `u` has weak
@@ -282,7 +324,8 @@ theorem HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm [OpensMeasurableS
     {U : E → E →L[ℝ] ℝ} (h : HasWeakFDerivOn μ Ω u U) :
     totalVariationOn μ Ω u ≤ ∫⁻ x in Ω, ‖U x‖ₑ ∂μ := by
   refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
-  rw [h.integral_divergenceCLM_mul_eq_neg_integral φ]
+  simp_rw [← smul_eq_mul (α := ℝ)]
+  rw [h.integral_divergenceCLM_smul_eq_neg_integral φ]
   refine (ENNReal.ofReal_le_ofReal (neg_le_abs _)).trans ?_
   rw [← Real.enorm_eq_ofReal_abs]
   exact φ.enorm_integral_apply_le_setLIntegral_enorm hφ U
@@ -304,7 +347,8 @@ theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L
   -- admissible test vector fields.
   have key (φ : 𝓓(Ω, E)) :
       ∫ x, divergenceCLM φ x * u x ∂μ = ∫ x, U x ((-φ : 𝓓(Ω, E)) x) ∂μ := by
-    rw [h.integral_divergenceCLM_mul_eq_neg_integral φ, ← integral_neg]
+    simp_rw [← smul_eq_mul (α := ℝ)]
+    rw [h.integral_divergenceCLM_smul_eq_neg_integral φ, ← integral_neg]
     simp
   simp_rw [key]
   refine le_antisymm (iSup₂_le fun φ hφ => ?_) (iSup₂_le fun φ hφ => ?_)

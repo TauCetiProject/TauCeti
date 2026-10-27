@@ -57,6 +57,7 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `cgf_id_expMeasure` — cumulant-generating function `log (r / (r - t))`;
 * `charFun_expMeasure` — characteristic function `(r : ℂ) / (r - I * t)`;
 * `measureReal_Ioi_expMeasure`, `measure_Ioi_expMeasure` — tail probabilities;
+* `expMeasure_map_const_mul` — positive scaling divides the rate;
 * `memoryless_expMeasure` — the conditional tail is unchanged by elapsed time;
 * `map_sub_cond_expMeasure` — conditional on exceeding a nonnegative threshold, the excess
   has the original exponential law;
@@ -108,6 +109,12 @@ zero and the statement holds trivially. -/
 theorem ae_pos_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 < x := by
   rw [expMeasure]
   exact ae_pos_gammaMeasure 1 r
+
+/-- Scaling an exponential variable by a positive constant divides its rate by that constant. -/
+@[simp]
+theorem expMeasure_map_const_mul (hr : 0 < r) {c : ℝ} (hc : 0 < c) :
+    (expMeasure r).map (c * ·) = expMeasure (r / c) := by
+  simpa only [expMeasure] using gammaMeasure_map_const_mul one_pos hr hc
 
 /-- `expMeasure r` presented by its real-valued density, the form in which the shared density
 bridge of `TauCeti/Probability/Density.lean` applies. -/

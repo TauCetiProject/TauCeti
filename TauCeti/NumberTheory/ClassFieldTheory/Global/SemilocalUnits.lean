@@ -172,8 +172,8 @@ theorem isZero_tateCohomology_semilocalIntegralUnitsRep_of_neZero (w : HeightOne
 
 section InfinitePlace
 
-open NumberField NumberField.InfinitePlace
-open scoped NumberField.LiesOver
+open _root_.NumberField _root_.NumberField.InfinitePlace
+open scoped _root_.NumberField.LiesOver
 
 /-- **The Herbrand quotient of an archimedean completion.** For an infinite place `w` of `L` above
 the infinite place `v` of `K`, the units of `L_w` have Herbrand quotient `[L_w : K_v]` as a
