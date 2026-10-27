@@ -64,13 +64,6 @@ variable (k : Type v) [CommSemiring k] {A : Type u} [Semiring A] [Algebra k A]
 variable {k}
 variable {e f : A}
 
-/-- An element of the corner `eAf` is fixed by `f` on the right, hence lies in the left ideal
-`Af`. -/
-theorem mem_span_singleton_of_mem_cornerSubmodule {e f x : A} (hf : IsIdempotentElem f)
-    (hx : x ∈ cornerSubmodule k e f) : x ∈ (Ideal.span {f} : Ideal A) := by
-  exact (mem_span_singleton_iff_mul_eq_self hf).2
-    (mul_eq_self_of_mem_cornerSubmodule_right hf hx)
-
 /-- The value at the generator of a homomorphism `Ae → Af` lies in the corner `eAf`. -/
 theorem apply_generator_mem_cornerSubmodule (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (φ : (Ideal.span {e} : Ideal A) →ₗ[A] (Ideal.span {f} : Ideal A)) :
@@ -88,7 +81,7 @@ def cornerToSpanSingletonHom (hf : IsIdempotentElem f) (x : cornerSubmodule k e 
     (Ideal.span {e} : Ideal A) →ₗ[A] (Ideal.span {f} : Ideal A) where
   toFun y := ⟨(y : A) * (x : A), (mem_span_singleton_iff_mul_eq_self hf).2 (by
     rw [mul_assoc, (mem_span_singleton_iff_mul_eq_self hf).1
-      (mem_span_singleton_of_mem_cornerSubmodule hf x.2)])⟩
+      (mem_span_singleton_of_mem_cornerSubmodule x.2)])⟩
   map_add' y z := Subtype.ext (by simpa using add_mul (y : A) (z : A) (x : A))
   map_smul' a y := Subtype.ext (by simpa using mul_assoc a (y : A) (x : A))
 

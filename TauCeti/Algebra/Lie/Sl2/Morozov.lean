@@ -30,6 +30,9 @@ For the Lie algebra statement take `E = ad e`, `H = ad h` and `Z = ad z` where `
 operator form applies equally to the images of `e`, `h`, `z` in any representation in which the
 image of `e` is nilpotent.
 
+The individual filtration-step lemmas only require `k + 1` to be nonzero in `K`, and are stated
+over fields of arbitrary characteristic with this assumption.
+
 Mathlib's `IsSl2Triple.HasPrimitiveVectorWith.exists_nat` reaches the same kind of conclusion for
 a primitive vector of a complete `sl₂` triple acting on a Noetherian module. Here the third element
 `f` is what is being constructed and no finiteness is assumed; the nilpotence of `E` replaces both.
@@ -64,12 +67,14 @@ namespace TauCeti
 
 namespace Sl2
 
-variable {K V : Type*} [Field K] [CharZero K] [AddCommGroup V] [Module K V]
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   {E H Z : Module.End K V}
 
-/-- If `E ^ (k + 1)` kills `y`, then `H - k` sends `E ^ k y` into the range of `E ^ (k + 1)`. -/
+/-- If `E ^ (k + 1)` kills `y` and `k + 1` is nonzero in `K`, then `H - k` sends `E ^ k y`
+into the range of `E ^ (k + 1)`. -/
 private theorem apply_pow_apply_sub_smul_mem_range_pow_succ (hEZ : E * Z - Z * E = H)
-    (hHE : H * E - E * H = 2 • E) {k : ℕ} {y : V} (hy : (E ^ (k + 1)) y = 0) :
+    (hHE : H * E - E * H = 2 • E) {k : ℕ} [NeZero ((k + 1 : ℕ) : K)] {y : V}
+    (hy : (E ^ (k + 1)) y = 0) :
     H ((E ^ k) y) - (k : K) • (E ^ k) y ∈ LinearMap.range (E ^ (k + 1)) := by
   refine ⟨(k + 1 : K)⁻¹ • Z y, ?_⟩
   have h₁ := congr($(f_mul_e_pow_succ hEZ hHE k) y)
@@ -79,14 +84,16 @@ private theorem apply_pow_apply_sub_smul_mem_range_pow_succ (hEZ : E * Z - Z * E
   simp only [Module.End.mul_apply, hy, map_zero, LinearMap.sub_apply, LinearMap.smul_apply,
     map_add, LinearMap.add_apply, Module.End.natCast_apply, ← Nat.cast_smul_eq_nsmul K,
     map_smul] at h₁ h₂
-  have hinv : ((k : K) + 1)⁻¹ * ((k : K) + 1) = 1 := inv_mul_cancel₀ (Nat.cast_add_one_ne_zero k)
+  have hinv : ((k : K) + 1)⁻¹ * ((k : K) + 1) = 1 := by
+    simpa using inv_mul_cancel₀ (NeZero.ne ((k + 1 : ℕ) : K))
   rw [map_smul, eq_of_sub_eq_zero h₁.symm, h₂]
   push_cast
   linear_combination (norm := module) hinv • ((E ^ k) (H y) + (k : K) • (E ^ k) y)
 
-/-- `H - k` maps the `k`-th step `ker E ⊓ range (E ^ k)` of the filtration into the next one. -/
+/-- If `k + 1` is nonzero in `K`, then `H - k` maps the `k`-th step
+`ker E ⊓ range (E ^ k)` of the filtration into the next one. -/
 theorem apply_sub_smul_mem_ker_inf_range_pow_succ (hEZ : E * Z - Z * E = H)
-    (hHE : H * E - E * H = 2 • E) {k : ℕ} {c : V}
+    (hHE : H * E - E * H = 2 • E) {k : ℕ} [NeZero ((k + 1 : ℕ) : K)] {c : V}
     (hc : c ∈ LinearMap.ker E ⊓ LinearMap.range (E ^ k)) :
     H c - (k : K) • c ∈ LinearMap.ker E ⊓ LinearMap.range (E ^ (k + 1)) := by
   obtain ⟨hcE, y, rfl⟩ := hc
@@ -97,6 +104,8 @@ theorem apply_sub_smul_mem_ker_inf_range_pow_succ (hEZ : E * Z - Z * E = H)
       smul_zero, zero_sub, neg_eq_zero] at this
     simp [this, hcE]
   · rw [pow_succ', Module.End.mul_apply, hcE]
+
+variable [CharZero K]
 
 /-- For `a` not a natural number, `H - a` is injective on, and maps onto, every step of the
 filtration `ker E ⊓ range (E ^ k)`. This is proved by descending induction on `k`, starting from
@@ -164,17 +173,17 @@ open LieAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] {h e : L}
-
-omit [CharZero K] in
 /-- The operator relations of `ad e`, `ad h` and `ad z` when `h = ⁅e, z⁆` and
 `⁅h, e⁆ = 2 • e`. -/
-private theorem ad_relations (hhe : ⁅h, e⁆ = 2 • e) {z : L} (hz : ⁅e, z⁆ = h) :
+private theorem ad_relations {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] {h e : L}
+    (hhe : ⁅h, e⁆ = 2 • e) {z : L} (hz : ⁅e, z⁆ = h) :
     ad K L e * ad K L z - ad K L z * ad K L e = ad K L h ∧
       ad K L h * ad K L e - ad K L e * ad K L h = 2 • ad K L e := by
   constructor
   · rw [← hz, LieHom.map_lie, Ring.lie_def]
   · rw [← Ring.lie_def, ← LieHom.map_lie, hhe, map_nsmul]
+
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] {h e : L}
 
 /-- Let `ad e` be nilpotent, `⁅h, e⁆ = 2 • e` and `h ∈ [e, L]`. Then every eigenvalue of `ad h`
 on the centralizer of `e` is a natural number. -/
@@ -187,10 +196,12 @@ theorem exists_eq_natCast_of_lie_eq_smul (he : IsNilpotent (ad K L e)) (hhe : �
   exact Sl2.exists_eq_natCast_of_apply_eq_smul he hEZ hHE (by simpa using hc) hc0
     (by simpa using hhc)
 
-/-- Let `⁅h, e⁆ = 2 • e` and `h ∈ [e, L]`. Then `ad h - k` maps the `k`-th step
-`ker (ad e) ⊓ range ((ad e) ^ k)` of the filtration of the centralizer of `e` into the next one. -/
+omit [CharZero K] in
+/-- Let `⁅h, e⁆ = 2 • e` and `h ∈ [e, L]`. If `k + 1` is nonzero in `K`, then `ad h - k`
+maps the `k`-th step `ker (ad e) ⊓ range ((ad e) ^ k)` of the filtration of the centralizer of `e`
+into the next one. -/
 theorem lie_sub_smul_mem_ker_inf_range_pow_succ (hhe : ⁅h, e⁆ = 2 • e)
-    (hh : h ∈ LinearMap.range (ad K L e)) {k : ℕ} {c : L}
+    (hh : h ∈ LinearMap.range (ad K L e)) {k : ℕ} [NeZero ((k + 1 : ℕ) : K)] {c : L}
     (hc : c ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ k)) :
     ⁅h, c⁆ - (k : K) • c ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ (k + 1)) := by
   obtain ⟨z, hz⟩ := hh

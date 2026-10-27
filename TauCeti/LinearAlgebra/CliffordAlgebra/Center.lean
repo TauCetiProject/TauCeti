@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 import Mathlib.Algebra.Central.Basic
 import Mathlib.LinearAlgebra.Projection

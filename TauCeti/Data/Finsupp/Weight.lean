@@ -54,6 +54,9 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   corresponding value of `Finsupp.mapDomain b`.
 * `Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply`: for the block map `Sum.elim id b` on
   `τ ⊕ σ`, the indicator weight of block `h` of `a.sumElim e` is `a h + e.mapDomain b h`.
+* `Finsupp.natCast_weight_eq_of_support_subset`: on monomials supported in a finite set `s`, the
+  weight `weight w` agrees with any additive functional on `s → ℤ` taking the value `w i` on the
+  `i`-th coordinate vector.
 * `Finsupp.finite_degree_eq`: in finitely many variables there are finitely many exponent
   vectors of each degree.
 * `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
@@ -202,6 +205,26 @@ theorem weight_ite_sumElim_eq_add_mapDomain_apply {σ τ R : Type*} [DecidableEq
       a h + e.mapDomain b h := by
   rw [weight_ite_eq_mapDomain_apply, sumElim_eq_add, mapDomain_add, ← mapDomain_comp,
     ← mapDomain_comp]
+  simp
+
+end Finsupp
+
+namespace Finsupp
+
+/-- If an additive functional `μ` on the integer vectors indexed by a finite set `s` takes the
+value `w i` on the `i`-th coordinate vector, then `μ` agrees with the weight `weight w` on every
+monomial supported in `s`. -/
+theorem natCast_weight_eq_of_support_subset {σ : Type*} [DecidableEq σ] {s : Finset σ}
+    (μ : (s → ℤ) →+ ℤ) {w : σ → ℕ} (hμ : ∀ i : s, μ (Pi.single i 1) = w i) {a : σ →₀ ℕ}
+    (ha : a.support ⊆ s) : (weight w a : ℤ) = μ fun i ↦ (a i : ℤ) := by
+  rw [weight_apply, Finsupp.sum_of_support_subset a ha _ (by simp), Nat.cast_sum,
+    ← Finset.sum_coe_sort s]
+  conv_rhs => rw [← Finset.univ_sum_single fun i : s ↦ (a i : ℤ)]
+  rw [map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hc : (Pi.single i (a i : ℤ) : s → ℤ) = a i • Pi.single i 1 := by
+    rw [← Pi.single_smul', Nat.smul_one_eq_cast]
+  rw [hc, map_nsmul, hμ]
   simp
 
 end Finsupp

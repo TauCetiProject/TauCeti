@@ -29,9 +29,8 @@ The Floer equation `(du - X_K)^{0,1} = 0` says that the perturbed derivative is 
 the standard complex structure on `ℝ × ℝ`, or in coordinates
 `∂_s u - X_{K_s}(u) + J (∂_t u - X_{K_t}(u)) = 0`. Since the energy density is by definition
 the symplectic area density of the perturbed derivative, for solutions it is nonnegative under
-tameness and is half the metric energy density `|du - X_K|²`, by
-`IsComplexLinearMap.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg` and
-`IsComplexLinearMap.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm`.
+tameness (`SymplecticForm.floerEnergyDensity_nonneg`) and is half the metric energy density
+`|du - X_K|²`, by `IsComplexLinearMap.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm`.
 
 The main result is the energy identity: pointwise,
 `ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t}) = ω(∂_s u, ∂_t u) + d(K(u)) - R_K(u)`,
@@ -51,13 +50,18 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
 ## Main results
 
 * `SymplecticForm.floerEnergyDensity_eq`: the pointwise energy identity.
+* `SymplecticForm.floerEnergyDensity_nonneg`: the energy density of a solution is nonnegative.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
 * `SymplecticForm.isComplexLinearMap_perturbedFDeriv_iff`: the coordinate form of the Floer
   equation.
 * `SymplecticForm.hamiltonianCurvature_zero_left`,
   `SymplecticForm.hamiltonianCurvature_cylindrical`,
   `SymplecticForm.hamiltonianCurvature_continuation`: the curvature of perturbations without `ds`
-  component.
+  component, and `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`, its local form
+  along a line near which the perturbation is cylindrical.
+* `SymplecticForm.hamiltonianCurvature_congr_of_eventuallyEq`,
+  `SymplecticForm.hamiltonianCurvature_comp_add_right`: the curvature is local in the domain and
+  commutes with domain translations.
 
 ## References
 
@@ -69,7 +73,7 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
 
 public section
 
-open Function MeasureTheory Set
+open Filter Function MeasureTheory Set Topology
 
 namespace TauCeti.SymplecticForm
 
@@ -136,6 +140,47 @@ theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → 
   rw [h.fderiv]
   simp [stdComplexLineReal]
   ring
+
+omit [FiniteDimensional ℝ V] in
+/-- The cylindrical perturbation `K = H_t dt` of a `Cⁿ` time-dependent Hamiltonian is `Cⁿ`. -/
+theorem contDiff_uncurry_cylindrical {n : WithTop ℕ∞} {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ n (uncurry H)) : ContDiff ℝ n (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
+  hH.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
+
+/-- The curvature only depends on the germs of the perturbation data at the domain point. -/
+theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SymplecticForm V)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ} (hs : Ks =ᶠ[𝓝 z] Ks') (ht : Kt =ᶠ[𝓝 z] Kt') :
+    ω.hamiltonianCurvature Ks Kt z = ω.hamiltonianCurvature Ks' Kt' z := by
+  ext x
+  have hs' : (fun w ↦ Ks w x) =ᶠ[𝓝 z] fun w ↦ Ks' w x := hs.mono fun _ hw ↦ congrFun hw x
+  have ht' : (fun w ↦ Kt w x) =ᶠ[𝓝 z] fun w ↦ Kt' w x := ht.mono fun _ hw ↦ congrFun hw x
+  rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
+    hs.eq_of_nhds, ht.eq_of_nhds]
+
+/-- Curvature commutes with translations of the domain. -/
+theorem hamiltonianCurvature_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (v z : ℝ × ℝ) (x : V) :
+    ω.hamiltonianCurvature (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) z x =
+      ω.hamiltonianCurvature Ks Kt (z + v) x := by
+  simp only [hamiltonianCurvature_def]
+  rw [fderiv_comp_add_right (f := fun w ↦ Kt w x), fderiv_comp_add_right (f := fun w ↦ Ks w x)]
+
+/-- A datum `K = K_s ds + K_t dt` with `K_s = 0` and `K_t` independent of `s` near the line
+`s = c` has zero curvature along that line. -/
+theorem hamiltonianCurvature_eq_zero_of_cylindrical (ω : SymplecticForm V)
+    {Ks Kt : ℝ × ℝ → V → ℝ} {c : ℝ} (hKs : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = 0)
+    (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t)) (t : ℝ) (x : V) :
+    ω.hamiltonianCurvature Ks Kt (c, t) x = 0 := by
+  have hfst : Tendsto Prod.fst (𝓝 ((c, t) : ℝ × ℝ)) (𝓝 c) := continuous_fst.tendsto (c, t)
+  have hs : Ks =ᶠ[𝓝 (c, t)] fun _ _ ↦ 0 := by
+    filter_upwards [hfst.eventually hKs] with w hw
+    funext x
+    simpa using congrFun (hw w.2) x
+  have ht : Kt =ᶠ[𝓝 (c, t)] fun w ↦ Kt (c, w.2) := by
+    filter_upwards [hfst.eventually hKt] with w hw
+    simpa using hw w.2
+  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht]
+  exact ω.hamiltonianCurvature_cylindrical (fun t ↦ Kt (c, t)) (c, t) x
 
 end Curvature
 
@@ -244,11 +289,38 @@ theorem floerEnergyDensity_eq (ω : SymplecticForm V) (hu : DifferentiableAt ℝ
   rw [hs, ht]
   ring
 
+/-- **Nonnegativity of the Floer energy density.** If the perturbed derivative of `u` at `z` is
+complex linear for an almost complex structure `J` tamed by `ω`, that is if `u` solves the Floer
+equation at `z`, then the Floer energy density at `z` is nonnegative. -/
+theorem floerEnergyDensity_nonneg (ω : SymplecticForm V) {J : AlmostComplexStructure V}
+    (hJ : ω.Tames J)
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    0 ≤ ω.floerEnergyDensity Ks Kt u z := by
+  simpa only [floerEnergyDensity_def, ContinuousLinearMap.coe_coe] using
+    h.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hJ
+
 end Density
 
 section Integral
 
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+
+/-- For a map and perturbation data that are `C¹` over an open set `U` of the domain, the Floer
+energy density is continuous on `U`. -/
+theorem continuousOn_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) :
+    ContinuousOn (ω.floerEnergyDensity Ks Kt u) U := by
+  have hdu := hu.continuousOn_fderiv_of_isOpen hU le_rfl
+  refine (ω.continuousOn_apply_comp
+    ((hdu.clm_apply (continuousOn_const (c := stdComplexLineReal))).sub
+      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu.continuousOn hKs))
+    ((hdu.clm_apply (continuousOn_const (c := stdComplexLineImag))).sub
+      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu.continuousOn hKt))).congr
+    fun z _ ↦ ?_
+  simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
+    perturbedFDeriv_apply_stdComplexLineImag, Pi.sub_apply]
 
 /-- For perturbation data that is `C¹` over an open set `U` of the domain, the curvature evaluated
 along a map continuous on `U` is continuous on `U`. -/
@@ -265,22 +337,19 @@ theorem continuousOn_hamiltonianCurvature_comp (ω : SymplecticForm V) {U : Set 
       (hz : z ∈ U) : DifferentiableAt ℝ (uncurry K) (z, u z) :=
     (hK.differentiableOn one_ne_zero _ (hmem hz)).differentiableAt
       ((hU.prod isOpen_univ).mem_nhds (hmem hz))
-  -- The domain and target derivatives of `K` along `u` are restrictions of its joint derivative.
+  -- The domain derivatives of `K` along `u` are restrictions of its joint derivative.
   have hslice (K : ℝ × ℝ → V → ℝ) (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) {z : ℝ × ℝ}
       (hz : z ∈ U) (v : ℝ × ℝ) :
       fderiv ℝ (fun w ↦ K w (u z)) z v = fderiv ℝ (uncurry K) (z, u z) (v, 0) :=
     congrArg (· v) (fderiv_slice_left (f := uncurry K) (hdiff K hK hz))
-  have hX (K : ℝ × ℝ → V → ℝ) (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) :
-      ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) U :=
-    ω.continuousOn_hamiltonianVectorField_comp <|
-      ((hD K hK).clm_comp (continuousOn_const (c := ContinuousLinearMap.inr ℝ (ℝ × ℝ) V))).congr
-        fun _ hz ↦ fderiv_slice_right (f := uncurry K) (hdiff K hK hz)
   have h : ContinuousOn (fun z ↦ fderiv ℝ (uncurry Kt) (z, u z) (stdComplexLineReal, 0) -
       fderiv ℝ (uncurry Ks) (z, u z) (stdComplexLineImag, 0) -
         ω (ω.hamiltonianVectorField (Ks z) (u z)) (ω.hamiltonianVectorField (Kt z) (u z))) U :=
     (((hD Kt hKt).clm_apply continuousOn_const).sub
       ((hD Ks hKs).clm_apply continuousOn_const)).sub
-        (ω.continuousOn_apply_comp (hX Ks hKs) (hX Kt hKt))
+        (ω.continuousOn_apply_comp
+          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu hKs)
+          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu hKt))
   refine h.congr fun z hz ↦ ?_
   simp only [hamiltonianCurvature_def, poissonBracket_def, hslice Ks hKs hz, hslice Kt hKt hz]
 

@@ -310,6 +310,18 @@ theorem extGeodesicReflection_inr (g : PSL(2, ℝ)) (ξ : OnePoint ℝ) :
     extGeodesicReflection g (.inr ξ) = .inr (g • J • g⁻¹ • ξ) :=
   (rfl)
 
+/-- The extended reflection maps points of `ℍ` to points of `ℍ`. -/
+@[simp]
+theorem isLeft_extGeodesicReflection (g : PSL(2, ℝ)) (p : ℍ ⊕ OnePoint ℝ) :
+    (extGeodesicReflection g p).isLeft = p.isLeft := by
+  rcases p with z | ξ <;> simp
+
+/-- The extended reflection maps ideal points to ideal points. -/
+@[simp]
+theorem isRight_extGeodesicReflection (g : PSL(2, ℝ)) (p : ℍ ⊕ OnePoint ℝ) :
+    (extGeodesicReflection g p).isRight = p.isRight := by
+  rcases p with z | ξ <;> simp
+
 /-- Reflection in the geodesic line of `g` is reflection in the imaginary axis conjugated by
 `g`. -/
 theorem extGeodesicReflection_apply (g : PSL(2, ℝ)) (p : ℍ ⊕ OnePoint ℝ) :
