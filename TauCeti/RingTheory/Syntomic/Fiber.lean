@@ -66,13 +66,9 @@ theorem ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension {k A : 
   obtain ⟨s, hs, hst⟩ := h
   refine (ringKrullDim_le_iff_height_le _).mpr fun P hP ↦ ?_
   -- Some chart `A[1/t]` of the cover contains `P`, and the height of `P` is computed there.
-  obtain ⟨t, hts, htP⟩ : ∃ t ∈ s, t ∉ P := by
-    by_contra! H
-    exact hP.ne_top (eq_top_iff.mpr (hs ▸ Ideal.span_le.mpr H))
-  have hdisj : Disjoint (Submonoid.powers t : Set A) P :=
-    (Ideal.disjoint_powers_iff_notMem t hP.isRadical).mpr htP
+  obtain ⟨t, hts, hdisj⟩ := Ideal.exists_disjoint_powers_of_span_eq_top s hs P hP.ne_top
   have hPt : (P.map (algebraMap A (Localization.Away t))).IsPrime :=
-    IsLocalization.isPrime_of_isPrime_disjoint _ _ P hP hdisj
+    IsLocalization.isPrime_of_isPrime_disjoint _ _ P hP hdisj.symm
   have : Algebra.IsStandardSyntomicOfRelativeDimension n k (Localization.Away t) := by
     rw [← isStandardSyntomicOfRelativeDimension_algebraMap, IsScalarTower.algebraMap_eq k A]
     exact hst t hts
@@ -81,7 +77,8 @@ theorem ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension {k A : 
   have : Nontrivial (Localization.Away t) := nontrivial_of_ne 0 1 fun h ↦
     hPt.ne_top ((Ideal.eq_top_iff_one _).mpr (h ▸ Ideal.zero_mem _))
   have : Nontrivial (k ⊗[k] Localization.Away t) := e.toEquiv.nontrivial
-  rw [← IsLocalization.height_map_of_disjoint (S := Localization.Away t) (.powers t) P hdisj]
+  rw [← IsLocalization.height_map_of_disjoint (S := Localization.Away t) (.powers t) P
+    hdisj.symm]
   refine Ideal.height_le_ringKrullDim_of_isPrime.trans_eq ?_
   rw [← ringKrullDim_eq_of_ringEquiv e.toRingEquiv,
     Algebra.IsStandardSyntomicOfRelativeDimension.ringKrullDim_tensorProduct_of_field (n := n) k]
@@ -123,9 +120,9 @@ private theorem exists_notMem_isStandardSyntomicOfRelativeDimension_fiber_locali
     rw [← PrimeSpectrum.coe_primesOverOrderIsoFiber_symm_apply, OrderIso.symm_apply_apply]
   -- Choose a standard syntomic chart `(κ(p) ⊗[R] A)[1/t]` of the fibre around `Q`.
   obtain ⟨s, hs, hst⟩ := h
-  obtain ⟨t, hts, htQ⟩ : ∃ t ∈ s, t ∉ Q.asIdeal := by
-    by_contra! H
-    exact Q.isPrime.ne_top (eq_top_iff.mpr (hs ▸ Ideal.span_le.mpr H))
+  obtain ⟨t, hts, hdisj⟩ := Ideal.exists_disjoint_powers_of_span_eq_top s hs _ Q.isPrime.ne_top
+  have htQ : t ∉ Q.asIdeal :=
+    (Ideal.disjoint_powers_iff_notMem t Q.isPrime.isRadical).mp hdisj.symm
   -- Up to a unit of `κ(p)`, `t` is the image `1 ⊗ a` of some `a ∉ q`.
   obtain ⟨r, hr, a, hra⟩ := Ideal.Fiber.exists_smul_eq_one_tmul p t
   have hunit : IsUnit (algebraMap R (p.Fiber A) r) := by

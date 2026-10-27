@@ -92,16 +92,13 @@ theorem SyntomicOfRelativeDimension.of_fiberToSpecResidueField {X Y : Scheme.{u}
     intro i
     refine H (X.affineCover.f i ≫ f) (fun y ↦ ?_) ⟨_, rfl⟩
     -- The fibres of the restriction of `f` to an open subscheme are open subschemes of the fibres
-    -- of `f`. The fibre morphism `fiberToSpecResidueField` is by definition this `pullback.snd`.
-    have : SyntomicOfRelativeDimension n
-        (pullback.snd (X.affineCover.f i ≫ f) ((Spec R).fromSpecResidueField y)) := by
-      refine (MorphismProperty.cancel_left_of_respectsIso (P := @SyntomicOfRelativeDimension n)
-        (pullbackRightPullbackFstIso f _ (X.affineCover.f i)).hom _).mp ?_
-      rw [pullbackRightPullbackFstIso_hom_snd]
-      have hy : SyntomicOfRelativeDimension n (pullback.snd f ((Spec R).fromSpecResidueField y)) :=
-        h y
-      exact IsZariskiLocalAtSource.comp hy _
-    exact this
+    -- of `f`. The fibre morphism `fiberToSpecResidueField` is by definition a `pullback.snd`.
+    have hy := h y
+    simp only [Scheme.Hom.fiberToSpecResidueField] at hy ⊢
+    refine (MorphismProperty.cancel_left_of_respectsIso (P := @SyntomicOfRelativeDimension n)
+      (pullbackRightPullbackFstIso f _ (X.affineCover.f i)).hom _).mp ?_
+    rw [pullbackRightPullbackFstIso_hom_snd]
+    exact IsZariskiLocalAtSource.comp hy _
   obtain ⟨A, rfl⟩ := hX
   obtain ⟨φ, rfl⟩ := Spec.map_surjective f
   algebraize [φ.hom]
@@ -120,7 +117,7 @@ theorem syntomicOfRelativeDimension_iff_flat_and_fiberToSpecResidueField {X Y : 
       ∀ y, SyntomicOfRelativeDimension n (f.fiberToSpecResidueField y) := by
   refine ⟨fun hf ↦ ⟨SyntomicOfRelativeDimension.flat n f,
     SyntomicOfRelativeDimension.locallyOfFinitePresentation n f,
-    fun y ↦ inferInstanceAs (SyntomicOfRelativeDimension n (pullback.snd _ _))⟩,
+    fun y ↦ MorphismProperty.of_isPullback (IsPullback.of_hasPullback _ _) hf⟩,
     fun ⟨_, _, h⟩ ↦ ?_⟩
   exact SyntomicOfRelativeDimension.of_fiberToSpecResidueField f h
 
