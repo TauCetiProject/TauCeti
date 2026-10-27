@@ -361,8 +361,9 @@ theorem ι_sub_algebraMap_mem_span_range_ι_sub_algebraMap_iff_of_isCompl {A : S
       have hj := characterForm_eq_zero_of_mem_span B hA bA bB χ (Finsupp.single j 1) hrel
       rw [characterForm_single_ι_add_algebraMap] at hj
       simpa using hj
+    have hw_zero : w = 0 := congrArg Subtype.val hw0
     refine ⟨⟨y, hy⟩, ?_, sub_eq_zero.1 h0⟩
-    simp [show w = 0 from congrArg Subtype.val hw0]
+    simp [hw_zero]
   · rintro ⟨y, rfl, rfl⟩
     exact Submodule.subset_span ⟨y, rfl⟩
 

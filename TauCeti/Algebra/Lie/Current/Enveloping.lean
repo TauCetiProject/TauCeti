@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Current.ResidueCocycle
-public import TauCeti.Algebra.Lie.Extension
+public import TauCeti.Algebra.Lie.Current.CentralExtension
 public import TauCeti.Algebra.Lie.UniversalEnveloping.CentralQuotient
 
 /-!
@@ -43,7 +42,6 @@ than to `K`.
 
 ## Main definitions
 
-* `TauCeti.CurrentAlgebra.centralElement`: the central element `K = (0, 1)`.
 * `TauCeti.CurrentAlgebra.envelopingι`: the current generators of `U(ĝ) / (ι K - a)`.
 * `TauCeti.CurrentAlgebra.liftOfCurrents`: the universal property in terms of currents.
 * `TauCeti.CurrentAlgebra.levelEnvelopingEquiv`: the level comparison isomorphism.
@@ -78,42 +76,6 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 local notation "C" => currentAlgebra R L
 local notation "Z" => TrivialLieModule R C R
-
-section Central
-
-variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
-
-local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
-local notation "E" => ofTwoCocycle c
-
-/-- The central element `K = (0, 1)` of the residue central extension of the form `Φ`. -/
-def centralElement : E :=
-  ofProd c (0, (TrivialLieModule.equiv R C R).symm 1)
-
-/-- The element `K` is central. -/
-theorem centralElement_mem_center : centralElement Φ hΦ hΦs ∈ center R E :=
-  (LieModule.mem_maxTrivSubmodule R E E _).2 fun v ↦ by
-    simp only [centralElement, bracket_ofTwoCocycle, Equiv.symm_apply_apply, lie_zero,
-      trivial_lie_zero, map_zero, sub_zero, add_zero]
-    exact of_zero c
-
-/-- The element `K` is nonzero over a nontrivial ring. -/
-theorem centralElement_ne_zero [Nontrivial R] : centralElement Φ hΦ hΦs ≠ 0 := by
-  intro h
-  have h' := congrArg (fun v ↦ TrivialLieModule.equiv R C R ((ofProd c).symm v).2) h
-  simp [centralElement] at h'
-
-/-- Every element of the extension is a current plus a multiple of `K`. -/
-theorem ofProd_eq_add_smul_centralElement (u : C) (z : Z) :
-    ofProd c (u, z) =
-      ofProd c (u, 0) + TrivialLieModule.equiv R C R z • centralElement Φ hΦ hΦs := by
-  apply (ofProd c).symm.injective
-  simp only [centralElement, of_symm_add, of_symm_smul, Equiv.symm_apply_apply, Prod.smul_mk,
-    smul_zero, Prod.mk_add_mk, add_zero, zero_add, Prod.mk.injEq, true_and]
-  apply (TrivialLieModule.equiv R C R).injective
-  simp
-
-end Central
 
 section Generators
 

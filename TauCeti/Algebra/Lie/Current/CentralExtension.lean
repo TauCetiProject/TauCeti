@@ -14,8 +14,11 @@ public import TauCeti.Algebra.Lie.Extension
 For an invariant symmetric bilinear form `Φ` on a Lie algebra `L` over a commutative ring `R`, the
 residue central extension of the formal current algebra `L((t)) = R⸨X⸩ ⊗[R] L` is Mathlib's
 `LieAlgebra.ofTwoCocycle` of the residue cocycle `TauCeti.CurrentAlgebra.twoCocycleOfBilinear`. As
-an `R`-module it is `L((t)) × R`; write `K` for the central element `(0, 1)`. This file constructs
-the two basic maps between such extensions, both instances of the morphisms of central extensions
+an `R`-module it is `L((t)) × R`; write `K` for the central element `(0, 1)`
+(`TauCeti.CurrentAlgebra.centralElement`), which is central and nonzero over a nontrivial ring,
+and every element is a current plus a multiple of `K`
+(`TauCeti.CurrentAlgebra.ofProd_eq_add_smul_centralElement`). This file constructs the two basic
+maps between such extensions, both instances of the morphisms of central extensions
 `LieAlgebra.ofTwoCocycle.map`.
 
 * **Level rescaling.** If `Ψ = r • Φ`, then the map which is the identity on currents and sends
@@ -57,6 +60,42 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 local notation "C" => currentAlgebra R L
 local notation "Z" => TrivialLieModule R C R
+
+section Central
+
+variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
+
+local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "E" => ofTwoCocycle c
+
+/-- The central element `K = (0, 1)` of the residue central extension of the form `Φ`. -/
+@[expose] def centralElement : E :=
+  ofProd c (0, (TrivialLieModule.equiv R C R).symm 1)
+
+/-- The element `K` is central. -/
+theorem centralElement_mem_center : centralElement Φ hΦ hΦs ∈ center R E :=
+  (LieModule.mem_maxTrivSubmodule R E E _).2 fun v ↦ by
+    simp only [centralElement, bracket_ofTwoCocycle, Equiv.symm_apply_apply, lie_zero,
+      trivial_lie_zero, map_zero, sub_zero, add_zero]
+    exact of_zero c
+
+/-- The element `K` is nonzero over a nontrivial ring. -/
+theorem centralElement_ne_zero [Nontrivial R] : centralElement Φ hΦ hΦs ≠ 0 := by
+  intro h
+  have h' := congrArg (fun v ↦ TrivialLieModule.equiv R C R ((ofProd c).symm v).2) h
+  simp [centralElement] at h'
+
+/-- Every element of the extension is a current plus a multiple of `K`. -/
+theorem ofProd_eq_add_smul_centralElement (u : C) (z : Z) :
+    ofProd c (u, z) =
+      ofProd c (u, 0) + TrivialLieModule.equiv R C R z • centralElement Φ hΦ hΦs := by
+  apply (ofProd c).symm.injective
+  simp only [centralElement, of_symm_add, of_symm_smul, Equiv.symm_apply_apply, Prod.smul_mk,
+    smul_zero, Prod.mk_add_mk, add_zero, zero_add, Prod.mk.injEq, true_and]
+  apply (TrivialLieModule.equiv R C R).injective
+  simp
+
+end Central
 
 section Level
 
