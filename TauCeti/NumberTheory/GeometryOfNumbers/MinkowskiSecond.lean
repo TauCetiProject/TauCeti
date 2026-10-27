@@ -650,9 +650,10 @@ theorem two_pow_div_factorial_mul_covolume_le_prod_mul_measure (L : Submodule �
       ≤ ENNReal.ofReal (2 ^ finrank ℝ E / (finrank ℝ E).factorial *
           μ.real (ZSpan.fundamentalDomain b)) := by gcongr
     _ = ENNReal.ofReal (∏ i, a i) * μ {x : E | ∑ i, a i * |b.repr x i| ≤ 1} := by
-      rw [b.addHaar_weighted_crosspolytope μ ha, ← mul_assoc, ← ENNReal.ofReal_mul hprod.le,
-        mul_div_cancel₀ _ hprod.ne', ← finrank_eq_card_basis b, ENNReal.ofReal_mul (by positivity),
-        measureReal_def, ENNReal.ofReal_toReal hF]
+      rw [b.addHaar_weighted_crosspolytope μ ha, ← finrank_eq_card_basis b, ← ofReal_measureReal hF,
+        ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul hprod.le]
+      congr 1
+      field_simp
     _ ≤ ENNReal.ofReal (∏ i, a i) * μ K := by
       gcongr
       exact hK.weighted_crosspolytope_subset h0 hKs b ha hbK
