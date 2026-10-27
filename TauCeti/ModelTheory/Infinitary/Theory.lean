@@ -47,13 +47,12 @@ is a model of the image of a theory exactly when it is a model of the theory.
 * The definitions follow `cameronfreer/infinitary-logic` at commit
   `518a366cba97b1ae8c4dc64a297a396939bc3e0b`, `InfinitaryLogic/Lomega1omega/Theory.lean`, and
   the shape of Mathlib's first-order `Theory` and `Theory.Model`.
+* Divergences from that source: only theories, modelhood and the countable conjunction are taken
+  from it; the conjunction is the coded conjunction `iInfAlong` along
+  `IndexCoding.ofEncodableWith`, so the empty theory needs no separate case.
 * `FirstOrder.Language.LHom.onTheoryω`, `FirstOrder.Language.LHom.mem_onTheoryω` and
   `FirstOrder.Language.LHom.onTheoryω_model` follow Mathlib's first-order `LHom.onTheory`,
   `LHom.mem_onTheory` and `LHom.onTheory_model`.
-* Divergences from that source: only theories, modelhood, the countable conjunction, the image of
-  a theory under a language homomorphism and modelhood along expansions are included; the
-  conjunction is the coded conjunction `iInfAlong` along
-  `IndexCoding.ofEncodableWith`, so the empty theory needs no separate case.
 -/
 
 public section
