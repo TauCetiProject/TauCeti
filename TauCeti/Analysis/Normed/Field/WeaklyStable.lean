@@ -37,7 +37,8 @@ def IsWeaklyStable (K : Type u) [NormedField K] : Prop :=
   ∀ (L : Type u) [Field L] [Algebra K L] [FiniteDimensional K L]
     (φ : Module.Dual K L), ∃ C : ℝ, ∀ y, ‖φ y‖ ≤ C * spectralNorm K L y
 
-/-- The bounded-functional criterion for weak stability. -/
+/-- Unfolding lemma: `IsWeaklyStable K` says every functional on a finite extension is bounded
+by the spectral norm. -/
 theorem isWeaklyStable_iff (K : Type u) [NormedField K] :
     IsWeaklyStable K ↔ ∀ (L : Type u) [Field L] [Algebra K L] [FiniteDimensional K L]
       (φ : Module.Dual K L), ∃ C : ℝ, ∀ y, ‖φ y‖ ≤ C * spectralNorm K L y := Iff.rfl
