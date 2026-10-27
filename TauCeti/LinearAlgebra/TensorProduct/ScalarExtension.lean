@@ -40,6 +40,8 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
 * `TauCeti.TensorProduct.free_range_mk_one`: the unit-tensor image of a free module is free.
 * `TensorProduct.cancelBaseChangeRight` and `TensorProduct.cancelBaseChangeLeft`: cancelling
   a scalar-extended algebra identifies two iterated scalar extensions.
+* `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
+  scalar-extended modules cancels both copies of the extended coefficient ring.
 -/
 
 public section
@@ -132,6 +134,42 @@ theorem cancelBaseChangeLeft_lTensor (f : N →ₗ[B] N') (z : (B ⊗[R] P) ⊗[
   | add x y hx hy => simp_all
 
 namespace AlgebraTensorModule
+
+section CancelBaseChangeTensor
+
+variable {Q : Type*} [AddCommMonoid Q] [Module R Q]
+
+/-- Tensoring a module with two scalar-extended modules cancels both extended coefficient rings.
+The map sends `n ⊗ ((b ⊗ p) ⊗ (c ⊗ q))` to `(b * c) • n ⊗ (p ⊗ q)`. -/
+def cancelBaseChangeTensor (R B N P Q : Type*) [CommSemiring R] [CommSemiring B]
+    [Algebra R B] [AddCommMonoid N] [Module R N] [Module B N] [IsScalarTower R B N]
+    [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q] :
+    N ⊗[B] ((B ⊗[R] P) ⊗[B] (B ⊗[R] Q)) ≃ₗ[B] N ⊗[R] (P ⊗[R] Q) :=
+  TensorProduct.congr (LinearEquiv.refl B N) (distribBaseChange R B P Q).symm ≪≫ₗ
+    cancelBaseChange R B B N (P ⊗[R] Q)
+
+/-- Cancellation moves both scalar coefficients onto the unextended module factor. -/
+@[simp]
+theorem cancelBaseChangeTensor_tmul (n : N) (b c : B) (p : P) (q : Q) :
+    cancelBaseChangeTensor R B N P Q (n ⊗ₜ[B] ((b ⊗ₜ[R] p) ⊗ₜ[B] (c ⊗ₜ[R] q))) =
+      ((b * c) • n) ⊗ₜ[R] (p ⊗ₜ[R] q) := by
+  simp [cancelBaseChangeTensor]
+
+/-- The inverse cancellation inserts the unit scalar into each extended module factor. -/
+@[simp]
+theorem cancelBaseChangeTensor_symm_tmul (n : N) (p : P) (q : Q) :
+    (cancelBaseChangeTensor R B N P Q).symm (n ⊗ₜ[R] (p ⊗ₜ[R] q)) =
+      n ⊗ₜ[B] ((1 ⊗ₜ[R] p) ⊗ₜ[B] (1 ⊗ₜ[R] q)) := by
+  simp [cancelBaseChangeTensor]
+
+/-- Cancellation after distributing scalar extension recovers the original tensor factor. -/
+@[simp]
+theorem cancelBaseChangeTensor_tmul_distribBaseChange (n : N) (b : B) (z : P ⊗[R] Q) :
+    cancelBaseChangeTensor R B N P Q (n ⊗ₜ[B] distribBaseChange R B P Q (b ⊗ₜ[R] z)) =
+      (b • n) ⊗ₜ[R] z := by
+  simp [cancelBaseChangeTensor]
+
+end CancelBaseChangeTensor
 
 /-- Tensor cancellation commutes with tensoring the underlying linear map on the right. -/
 theorem cancelBaseChange_rTensor (f : N →ₗ[B] N') (z : N ⊗[B] (B ⊗[R] P)) :

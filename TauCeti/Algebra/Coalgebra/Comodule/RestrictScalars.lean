@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Coalgebra.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
-public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
 # Restriction of scalars for comodules over a base-changed coalgebra
@@ -41,24 +40,6 @@ variable {R : Type u} {A : Type v} {C : Type w} {M : Type x}
   [AddCommMonoid C] [Module R C]
   [AddCommMonoid M] [Module A M] [Module R M] [IsScalarTower R A M]
 
-private noncomputable def restrictScalarsCollapse :
-    M ⊗[A] ((A ⊗[R] C) ⊗[A] (A ⊗[R] C)) ≃ₗ[A] M ⊗[R] (C ⊗[R] C) :=
-  (TensorProduct.congr (LinearEquiv.refl A M)
-    (distribBaseChange R A C C).symm).trans (cancelBaseChange R A A M (C ⊗[R] C))
-
-private theorem restrictScalarsCollapse_comul [CoalgebraStruct R C] (z : M ⊗[A] (A ⊗[R] C)) :
-    restrictScalarsCollapse (R := R) (A := A) (C := C) (M := M)
-        (Coalgebra.comul.lTensor M z) =
-      Coalgebra.comul.lTensor M (cancelBaseChange R A A M C z) := by
-  induction z using TensorProduct.inductionOn with
-  | add z t hz ht => simp only [map_add, hz, ht]
-  | tmul m d =>
-    induction d using TensorProduct.inductionOn with
-    | add d e hd he => simp only [TensorProduct.tmul_add, map_add, hd, he]
-    | tmul a c =>
-      rw [LinearMap.lTensor_tmul, Coalgebra.baseChange_comul_tmul]
-      simp [restrictScalarsCollapse]
-
 variable [Coalgebra R C] [Comodule A (A ⊗[R] C) M]
 
 /-- The coaction obtained by cancelling the extended coefficient ring. -/
@@ -72,8 +53,8 @@ theorem restrictScalarsCoact_apply (m : M) :
       cancelBaseChange R A A M C (coact (R := A) (C := A ⊗[R] C) m) :=
   (rfl)
 
-private theorem restrictScalarsCollapse_coact (z : M ⊗[A] (A ⊗[R] C)) :
-    restrictScalarsCollapse (R := R) (A := A) (C := C) (M := M)
+private theorem cancelBaseChangeTensor_coact (z : M ⊗[A] (A ⊗[R] C)) :
+    cancelBaseChangeTensor R A M C C
         (TensorProduct.assoc A M (A ⊗[R] C) (A ⊗[R] C)
           ((coact (R := A) (C := A ⊗[R] C) (M := M)).rTensor _ z)) =
       TensorProduct.assoc R M C C
@@ -94,7 +75,7 @@ private theorem restrictScalarsCollapse_coact (z : M ⊗[A] (A ⊗[R] C)) :
         | add d e hd he =>
           simp_all only [smul_add, TensorProduct.tmul_add, TensorProduct.add_tmul, map_add]
         | tmul b d =>
-          simp [restrictScalarsCollapse, smul_smul, mul_comm, TensorProduct.smul_tmul',
+          simp [smul_smul, mul_comm, TensorProduct.smul_tmul',
             TensorProduct.assoc_tmul]
 
 /-- Regard a comodule over a scalar-extended coalgebra as a comodule over the
@@ -105,8 +86,8 @@ noncomputable def restrictScalars : Comodule R C M where
   coassoc := by
     ext m
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
-    rw [restrictScalarsCoact_apply, ← restrictScalarsCollapse_coact,
-      coassoc_apply, restrictScalarsCollapse_comul]
+    rw [restrictScalarsCoact_apply, ← cancelBaseChangeTensor_coact,
+      coassoc_apply, cancelBaseChangeTensor_lTensor_comul]
   lTensor_counit_comp_coact := by
     ext m
     simp only [LinearMap.comp_apply, LinearMap.flip_apply, TensorProduct.mk_apply]
