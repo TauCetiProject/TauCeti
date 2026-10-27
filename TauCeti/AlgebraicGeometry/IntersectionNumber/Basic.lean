@@ -46,8 +46,9 @@ with it the bilinearity of the pairing, is not proved here.
 
 * `LineBundleClass.intersectionNumber k ι a`: the intersection number `(a · C)` of a line-bundle
   class `a` on `X` with `ι : C ⟶ X`;
-* `LineBundleClass.intersectionNumber_pullback`: the projection formula along a morphism
-  `g : X ⟶ Y`, `(g^* a · C) = (a · g_* C)` with `C` regarded on `Y` through `ι ≫ g`;
+* `LineBundleClass.intersectionNumber_pullback`: compatibility with pullback along a morphism
+  `g : X ⟶ Y`, `(g^* a · C) = (a · (ι ≫ g))` with `C` mapping to `Y` by `ι ≫ g` (the cycle-level
+  projection formula, with the degree of `C` over its image, is not proved here);
 * `LineBundleClass.intersectionNumber_eq_zero_of_eq_comp`: every class has intersection number
   zero with a curve contracted to a point; combined with `intersectionNumber_pullback` applied to
   `ι ≫ g`, so does every pullback along a morphism `g` contracting the curve;
@@ -105,8 +106,8 @@ lemma intersectionNumber_mk (L : InvertibleSheaf X) :
 lemma intersectionNumber_one : intersectionNumber k ι (1 : LineBundleClass X) = 0 := by
   rw [intersectionNumber_def, pullback_one, eulerDegree_one]
 
-/-- **The projection formula along a morphism.** The intersection number of the pullback of a class
-`a` along `g : X ⟶ Y` with `ι : C ⟶ X` is the intersection number of `a` with `ι ≫ g`. -/
+/-- **Compatibility with pullback.** The intersection number of the pullback of a class `a` along
+`g : X ⟶ Y` with `ι : C ⟶ X` is the intersection number of `a` with `ι ≫ g`. -/
 @[simp]
 lemma intersectionNumber_pullback (g : X ⟶ Y) (a : LineBundleClass Y) :
     intersectionNumber k ι (pullback g a) = intersectionNumber k (ι ≫ g) a := by
