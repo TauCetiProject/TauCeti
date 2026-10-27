@@ -29,7 +29,7 @@ diagrams (with an odd number of components for the integral Alexander grading).
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Sections 4.6 and 5.1,
 and Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer homology*,
 Section 3.1 (arXiv:math/0610559). The construction specializes the existing
-`GridDiagram.commutationHomotopy` using `simplyBlockedSpecialization`.
+`GridDiagram.commutationHomotopy` using `simplyBlockedMap`.
 -/
 
 public section
@@ -47,21 +47,20 @@ variable {n : ℕ} (G : GridDiagram n) (R : Type*) [CommSemiring R]
 It counts both turn sides, with coefficients in the variables of the remaining columns. -/
 noncomputable def simplyBlockedCommutationHomotopy (i : Fin n) :
     GridChainHat R n i →ₗ[MvPolynomial {c : Fin n // c ≠ i} R] GridChainHat R n i :=
-  Finsupp.linearCombination _ fun x =>
-    simplyBlockedSpecialization R i (G.commutationHomotopy R C (Finsupp.single x 1))
+  simplyBlockedMap R i (G.commutationHomotopy R C)
 
 /-- On a generator, the simply blocked hexagon map specializes the unblocked hexagon map. -/
 theorem simplyBlockedCommutationHomotopy_single (i : Fin n) (x : GridState n) :
     G.simplyBlockedCommutationHomotopy R C i (Finsupp.single x 1) =
-      simplyBlockedSpecialization R i (G.commutationHomotopy R C (Finsupp.single x 1)) := by
-  rw [simplyBlockedCommutationHomotopy, Finsupp.linearCombination_single, one_smul]
+      simplyBlockedSpecialization R i (G.commutationHomotopy R C (Finsupp.single x 1)) :=
+  simplyBlockedMap_single R i _ x
 
 /-- The matrix entries of the simply blocked homotopy are the specialized hexagon counts. -/
 @[simp]
 theorem simplyBlockedCommutationHomotopy_single_apply (i : Fin n) (x y : GridState n) :
     G.simplyBlockedCommutationHomotopy R C i (Finsupp.single x 1) y =
       simplyBlockedRingHom R i (G.commutationHexagonCoefficient R C x y) := by
-  rw [simplyBlockedCommutationHomotopy_single, simplyBlockedSpecialization_apply,
+  rw [simplyBlockedCommutationHomotopy, simplyBlockedMap_single_apply,
     commutationHomotopy_single_apply, simplyBlockedRingHom_apply]
 
 /-- The simply blocked homotopy multiplies a chain by the specialized hexagon matrix. -/
@@ -70,24 +69,15 @@ theorem simplyBlockedCommutationHomotopy_apply_apply (i : Fin n)
     (c : GridChainHat R n i) (y : GridState n) :
     G.simplyBlockedCommutationHomotopy R C i c y =
       c.sum fun x p => p * simplyBlockedRingHom R i (G.commutationHexagonCoefficient R C x y) := by
-  rw [simplyBlockedCommutationHomotopy, Finsupp.linearCombination_apply]
-  simp only [Finsupp.sum_apply, Finsupp.smul_apply, smul_eq_mul,
-    simplyBlockedSpecialization_apply, commutationHomotopy_single_apply,
-    simplyBlockedRingHom_apply]
+  rw [simplyBlockedCommutationHomotopy, simplyBlockedMap_apply_apply]
+  simp only [commutationHomotopy_single_apply, simplyBlockedRingHom_apply]
 
 /-- Specialization at the blocked variable intertwines the two hexagon-counting maps. -/
 @[simp]
 theorem simplyBlockedSpecialization_commutationHomotopy (i : Fin n) (c : GridChainMinus R n) :
     simplyBlockedSpecialization R i (G.commutationHomotopy R C c) =
-      G.simplyBlockedCommutationHomotopy R C i (simplyBlockedSpecialization R i c) := by
-  apply Finsupp.ext
-  intro y
-  simp only [simplyBlockedSpecialization_apply, commutationHomotopy_apply_apply,
-    simplyBlockedCommutationHomotopy_apply_apply, commutationHexagonCoefficient_def,
-    simplyBlockedRingHom_apply]
-  rw [Finsupp.sum_fintype _ _ (fun _ => zero_mul _),
-    Finsupp.sum_fintype _ _ (fun _ => zero_mul _), map_sum]
-  simp only [map_mul, simplyBlockedSpecialization_apply]
+      G.simplyBlockedCommutationHomotopy R C i (simplyBlockedSpecialization R i c) :=
+  simplyBlockedSpecialization_apply_linearMap R i _ c
 
 /-- Blocking a hexagon weight discards the term if the hexagon covers the chosen `O`-marking;
 otherwise it is the product of the surviving marking variables. -/
@@ -96,7 +86,6 @@ theorem simplyBlockedRingHom_commutationHexagonWeight (i : Fin n) {x y : GridSta
     simplyBlockedRingHom R i (G.commutationHexagonWeight C R P) =
       if i ∈ G.OColumnsOfSquares P.coveredSquares then 0 else
         ∏ c ∈ (G.OColumnsOfSquares P.coveredSquares).subtype (· ≠ i), MvPolynomial.X c := by
-  classical
   have hw : G.commutationHexagonWeight C R P =
       monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares, Finsupp.single c 1) 1 := by
     cases P with
@@ -104,24 +93,7 @@ theorem simplyBlockedRingHom_commutationHexagonWeight (i : Fin n) {x y : GridSta
         GridCommutationHexagonBetween.coveredSquares_inl]
     | inr P => rw [G.commutationHexagonWeight_inr, G.initialHexagonWeight_eq_monomial,
         GridCommutationHexagonBetween.coveredSquares_inr]
-  rw [simplyBlockedRingHom_apply]
-  split_ifs with hi
-  · rw [hw]
-    refine killCompl_monomial_eq_zero_of_notMem_range _ 1 (a := i) ?_ (by simp)
-    rw [Finsupp.support_sum_eq_biUnion _ (by simp)]
-    simpa using hi
-  · have hrename :
-        rename (Subtype.val : {c : Fin n // c ≠ i} → Fin n)
-            (∏ c ∈ (G.OColumnsOfSquares P.coveredSquares).subtype (· ≠ i),
-              MvPolynomial.X (R := R) c) =
-          G.commutationHexagonWeight C R P := by
-      rw [map_prod, hw, monomial_sum_one]
-      simp only [rename_X]
-      simpa only [← X_pow_eq_monomial, pow_one] using
-        Finset.prod_subtype_of_mem (s := G.OColumnsOfSquares P.coveredSquares)
-          (p := fun c : Fin n => c ≠ i) (MvPolynomial.X (R := R))
-          (fun c hc hci => hi (hci ▸ hc))
-    rw [← hrename, killCompl_rename_app]
+  rw [simplyBlockedRingHom_apply, hw, killCompl_monomial_sum_single_one]
 
 /-- A simply blocked matrix entry is the sum of the weights of exactly those counted
 hexagons which avoid the blocked `O`-marking. -/
