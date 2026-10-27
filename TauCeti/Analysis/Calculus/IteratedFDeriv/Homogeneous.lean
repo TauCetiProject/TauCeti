@@ -55,7 +55,8 @@ theorem exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq {W G : Type*} [NormedAd
   have hn : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
   -- By homogeneity `m = m ∘ g` for `g = ‖ξ‖⁻¹ • ·`, and `g ξ` lies on the unit sphere.
   set g : W ≃L[ℝ] W := ContinuousLinearEquiv.smulLeft (Units.mk0 ‖ξ‖⁻¹ (inv_ne_zero hn.ne'))
-  have hg : ∀ x, g x = ‖ξ‖⁻¹ • x := fun x ↦ (rfl)
+  have hg : ∀ x, g x = ‖ξ‖⁻¹ • x := fun x ↦ by
+    rw [ContinuousLinearEquiv.smulLeft_apply_apply, Units.smul_def, Units.val_mk0]
   have hmg : m ∘ g = m := funext fun x ↦ by simp [hg, hhom _ (inv_pos.2 hn)]
   have hgξ : g ξ ∈ sphere (0 : W) 1 := by simp [hg, norm_smul, hn.ne']
   have hgn : ‖(g : W →L[ℝ] W)‖ ≤ ‖ξ‖⁻¹ :=

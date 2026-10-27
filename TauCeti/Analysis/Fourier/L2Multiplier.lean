@@ -45,6 +45,8 @@ defined, it agrees with Mathlib's multipliers.
   `MeasureTheory.Lp.fourierMultiplierCLM_toTemperedDistribution_eq`: for a bounded symbol of
   temperate growth, `T_m` agrees with Mathlib's multipliers on Schwartz functions and, as a
   tempered distribution, on every `f ∈ L²`.
+* `SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul`: for any bounded symbol `m`, a
+  Schwartz function `g` with `𝓕 g = m • 𝓕 f` is `T_m f` in `L²`.
 * `SchwartzMap.coeFn_fourierMultiplierCLM_toLp`: for a Schwartz symbol `σ`, `T_σ` is
   convolution with the Schwartz kernel `𝓕⁻ σ`, that is `T_σ f x = ∫ 𝓕⁻ σ (x - y) • f y` for
   almost every `x`. On Schwartz functions this is `SchwartzMap.fourierMultiplierCLM_eq_convolution`.
@@ -201,6 +203,20 @@ theorem _root_.SchwartzMap.toLp_fourierMultiplierCLM_eq (hg : g.HasTemperateGrow
     simp [h₁, h₂, h₃, h₄, SchwartzMap.smulLeftCLM_apply_apply hg]
   rw [fourierMultiplierCLM_apply, this, SchwartzMap.toLp_fourierInv_eq,
     SchwartzMap.fourierMultiplierCLM_apply]
+
+/-- A Schwartz function `g` whose Fourier transform is `m • 𝓕 f` is, in `L²`, the multiplier with
+symbol `m` applied to `f`. Here `m` need not have temperate growth: any bounded symbol works, so
+this also covers symbols that are discontinuous at the origin. -/
+theorem _root_.SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul {f g : 𝓢(E, F)}
+    {m' : E → ℂ} (hm : m =ᵐ[volume] m') (h : ∀ ξ, 𝓕 g ξ = m' ξ • 𝓕 f ξ) :
+    g.toLp 2 = fourierMultiplierCLM F m (f.toLp 2) := by
+  refine (fourierInv_fourier_eq (F := Lp F 2 (volume : Measure E)) _).symm.trans ?_
+  rw [fourierMultiplierCLM_apply, SchwartzMap.toLp_fourier_eq, SchwartzMap.toLp_fourier_eq]
+  congr 1
+  apply Lp.ext
+  filter_upwards [(𝓕 g).coeFn_toLp 2, coeFn_lpSMul (r := 2) m ((𝓕 f).toLp 2), hm,
+    (𝓕 f).coeFn_toLp 2] with ξ h₁ h₂ h₃ h₄
+  rw [h₁, h₂, Pi.smul_apply', h₃, h₄, h]
 
 /-- For a bounded symbol `g` of temperate growth, the `L²` multiplier agrees with the multiplier
 `TemperedDistribution.fourierMultiplierCLM F g` on tempered distributions: for every `f ∈ L²`,

@@ -133,16 +133,9 @@ variable [InnerProductSpace ℂ F] [CompleteSpace F]
 `m_v(ξ) = 2 ⟪ξ, v⟫ / ξ`. -/
 private theorem toLp_lineDerivOp_eq_fourierMultiplierCLM (u : 𝓢(ℂ, F)) (v : ℂ) :
     (∂_{v} u).toLp 2 = Lp.fourierMultiplierCLM F ((memLp_dbarSymbol v volume).toLp _)
-      ((schwartzDbar u).toLp 2) := by
-  refine (fourierInv_fourier_eq (F := Lp F 2 (volume : Measure ℂ)) _).symm.trans ?_
-  rw [Lp.fourierMultiplierCLM_apply, SchwartzMap.toLp_fourier_eq, SchwartzMap.toLp_fourier_eq]
-  congr 1
-  apply Lp.ext
-  filter_upwards [SchwartzMap.coeFn_toLp (𝓕 (∂_{v} u)) 2,
-    Lp.coeFn_lpSMul (r := 2) ((memLp_dbarSymbol v volume).toLp _) ((𝓕 (schwartzDbar u)).toLp 2),
-    (memLp_dbarSymbol v volume).coeFn_toLp, SchwartzMap.coeFn_toLp (𝓕 (schwartzDbar u)) 2]
-    with ξ h₁ h₂ h₃ h₄
-  rw [h₁, h₂, Pi.smul_apply', h₃, h₄, fourier_lineDerivOp_apply_eq_dbarSymbol_smul]
+      ((schwartzDbar u).toLp 2) :=
+  SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul _
+    (memLp_dbarSymbol v volume).coeFn_toLp (fourier_lineDerivOp_apply_eq_dbarSymbol_smul u v)
 
 /-- The estimate `‖∂_v u‖_{Lᵖ} ≤ C ‖\bar∂u‖_{Lᵖ}` for one direction `v`, from the Mihlin–Hörmander
 multiplier theorem. -/
