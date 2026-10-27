@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
 public import Mathlib.CategoryTheory.Monoidal.Opposite
 
 /-!
@@ -25,6 +26,15 @@ functor of a rigid monoidal category, be applied twice: its opposite monoidal op
 `((Dᵒᵖ)ᴹᵒᵖ)ᵒᵖᴹᵒᵖ`, which is identified with `D` as a monoidal category by
 `MonoidalOpposite.opMopOpMopEquivalence`, since the two reversals of the tensor product cancel.
 
+The same construction transposes trivializations. For functors `P : D ⥤ (Cᵒᵖ)ᴹᵒᵖ` and
+`Q : C ⥤ (Dᵒᵖ)ᴹᵒᵖ`, write `P'` and `Q'` for their opposite monoidal opposites followed by the
+removal of the wrappers. A natural isomorphism `P ⋙ Q' ≅ 𝟭 D` gives, componentwise through
+opposites, a natural isomorphism `𝟭 (Dᵒᵖ)ᴹᵒᵖ ≅ P' ⋙ Q`, which is monoidal when the given one is.
+When `C = D`, the composite `(P ⋙ P') ⋙ (Q ⋙ Q')` is then trivialized as well: its middle
+part `P' ⋙ Q` is trivialized by the transpose, and what remains is `P ⋙ Q'`. For the dual
+functors of a rigid monoidal category, this turns the trivializations of the mixed double duals
+into the statement that the double left and double right dual functors are mutually inverse.
+
 ## Main declarations
 
 * `CategoryTheory.Functor.opMop`: the functor induced between monoidal opposites;
@@ -37,7 +47,11 @@ functor of a rigid monoidal category, be applied twice: its opposite monoidal op
   opposite of an oplax, lax, and strong monoidal functor;
 * `CategoryTheory.MonoidalOpposite.opMopOpMopEquivalence`: the equivalence
   `((Cᵒᵖ)ᴹᵒᵖ)ᵒᵖᴹᵒᵖ ≌ C`, whose functor is strong monoidal with identity
-  comparison morphisms.
+  comparison morphisms;
+* `CategoryTheory.Iso.opMopComp`: the transpose `𝟭 (Dᵒᵖ)ᴹᵒᵖ ≅ P' ⋙ Q` of a natural isomorphism
+  `P ⋙ Q' ≅ 𝟭 D`, monoidal by `CategoryTheory.Iso.isMonoidal_opMopComp_hom`;
+* `CategoryTheory.Iso.doubleCompDouble`: the resulting isomorphism `(P ⋙ P') ⋙ (Q ⋙ Q') ≅ 𝟭 C`,
+  monoidal by `CategoryTheory.Iso.isMonoidal_doubleCompDouble_hom`.
 -/
 
 public section
@@ -346,3 +360,132 @@ theorem opMopOpMopEquivalence_functor_δ (X Y : (Cᵒᵖᴹᵒᵖ)ᵒᵖᴹᵒ�
   rfl
 
 end CategoryTheory.MonoidalOpposite
+
+namespace CategoryTheory.Iso
+
+open Functor.LaxMonoidal Functor.OplaxMonoidal
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+variable {P : D ⥤ Cᵒᵖᴹᵒᵖ} {Q : C ⥤ Dᵒᵖᴹᵒᵖ}
+
+/-- The transpose of a natural isomorphism `P ⋙ Q' ≅ 𝟭 D`, where `Q'` is the opposite monoidal
+opposite of `Q : C ⥤ (Dᵒᵖ)ᴹᵒᵖ` followed by the removal of the wrappers: the natural isomorphism
+`𝟭 (Dᵒᵖ)ᴹᵒᵖ ≅ P' ⋙ Q`, where `P'` is formed from `P : D ⥤ (Cᵒᵖ)ᴹᵒᵖ` in the same way. Its
+component at `Y` is the opposite of the component of the given isomorphism at the underlying
+object of `Y`, as for Mathlib's `CategoryTheory.NatIso.op`. -/
+def opMopComp (e : P ⋙ Q.op.opMop ⋙ (opMopOpMopEquivalence D).functor ≅ 𝟭 D) :
+    𝟭 Dᵒᵖᴹᵒᵖ ≅ (P.op.opMop ⋙ (opMopOpMopEquivalence C).functor) ⋙ Q :=
+  NatIso.ofComponents (fun Y => (mopFunctor Dᵒᵖ).mapIso (e.app Y.unmop.unop).op)
+    fun f => Quiver.Hom.unmop_inj (Quiver.Hom.unop_inj (e.hom.naturality f.unmop.unop).symm)
+
+variable (e : P ⋙ Q.op.opMop ⋙ (opMopOpMopEquivalence D).functor ≅ 𝟭 D)
+
+/-- The components of `e.opMopComp` are the opposites of the components of `e.hom`. -/
+@[simp]
+theorem opMopComp_hom_app (Y : Dᵒᵖᴹᵒᵖ) :
+    e.opMopComp.hom.app Y = (e.hom.app Y.unmop.unop).op.mop :=
+  (rfl)
+
+/-- The components of the inverse of `e.opMopComp` are the opposites of the components of
+`e.inv`. -/
+@[simp]
+theorem opMopComp_inv_app (Y : Dᵒᵖᴹᵒᵖ) :
+    e.opMopComp.inv.app Y = (e.inv.app Y.unmop.unop).op.mop :=
+  (rfl)
+
+section Square
+
+variable {P Q : C ⥤ Cᵒᵖᴹᵒᵖ}
+
+/-- For functors `P Q : C ⥤ (Cᵒᵖ)ᴹᵒᵖ`, write `P'` and `Q'` for their opposite monoidal opposites
+followed by the removal of the wrappers. A natural isomorphism `P ⋙ Q' ≅ 𝟭 C` makes the functor
+`P ⋙ P'`, which applies `P` twice, inverse on one side to `Q ⋙ Q'`: the middle composite
+`P' ⋙ Q` is trivialized by the transpose `Iso.opMopComp`, and what remains is `P ⋙ Q'`. -/
+def doubleCompDouble (e : P ⋙ Q.op.opMop ⋙ (opMopOpMopEquivalence C).functor ≅ 𝟭 C) :
+    (P ⋙ P.op.opMop ⋙ (opMopOpMopEquivalence C).functor) ⋙
+      (Q ⋙ Q.op.opMop ⋙ (opMopOpMopEquivalence C).functor) ≅ 𝟭 C :=
+  Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft P ((Functor.associator _ _ _).symm ≪≫
+      Functor.isoWhiskerRight e.opMopComp.symm _ ≪≫ Functor.leftUnitor _) ≪≫ e
+
+variable (e : P ⋙ Q.op.opMop ⋙ (opMopOpMopEquivalence C).functor ≅ 𝟭 C)
+
+/-- The component of `e.doubleCompDouble` at `X`: apply `Q` to the inverse of `e` at the
+underlying object of `P.obj X`, then apply `e` at `X`. -/
+@[simp]
+theorem doubleCompDouble_hom_app (X : C) :
+    e.doubleCompDouble.hom.app X =
+      (Q.map (e.inv.app (P.obj X).unmop.unop)).unmop.unop ≫ e.hom.app X :=
+  -- Only the identity components of the coherence isomorphisms are removed.
+  (Category.id_comp _).trans (((Category.id_comp _).trans (Category.comp_id _)) =≫ _)
+
+/-- The component of the inverse of `e.doubleCompDouble` at `X`. -/
+@[simp]
+theorem doubleCompDouble_inv_app (X : C) :
+    e.doubleCompDouble.inv.app X =
+      e.inv.app X ≫ (Q.map (e.hom.app (P.obj X).unmop.unop)).unmop.unop :=
+  -- Only the identity components of the coherence isomorphisms are removed.
+  (Category.comp_id _).trans (_ ≫= ((Category.comp_id _).trans (Category.id_comp _)))
+
+end Square
+
+variable [MonoidalCategory C] [MonoidalCategory D]
+
+/-- The unit comparison of `P' ⋙ Q`, with the wrappers removed, is the counit comparison of
+`P ⋙ Q'`. -/
+private theorem unmop_unop_ε_comp [P.OplaxMonoidal] [Q.LaxMonoidal] :
+    (ε ((P.op.opMop ⋙ (opMopOpMopEquivalence C).functor) ⋙ Q)).unmop.unop =
+      η (P ⋙ Q.op.opMop ⋙ (opMopOpMopEquivalence D).functor) := by
+  rw [comp_ε, comp_ε, opMopOpMopEquivalence_functor_ε]
+  -- `Category.id_comp` cannot be rewritten in place: the identity is typed through the removal
+  -- of the wrappers, so it is applied under `congrArg`.
+  refine (congrArg (fun g => (ε Q ≫ Q.map g).unmop.unop) (Category.id_comp _)).trans ?_
+  rw [comp_η, comp_η, opMopOpMopEquivalence_functor_η]
+  exact (_ ≫= Category.comp_id _).symm
+
+/-- The tensor comparison of `P' ⋙ Q`, with the wrappers removed, is the cotensor comparison of
+`P ⋙ Q'` at the underlying objects, in the reverse order. -/
+private theorem unmop_unop_μ_comp [P.OplaxMonoidal] [Q.LaxMonoidal] (X Y : Dᵒᵖᴹᵒᵖ) :
+    (μ ((P.op.opMop ⋙ (opMopOpMopEquivalence C).functor) ⋙ Q) X Y).unmop.unop =
+      δ (P ⋙ Q.op.opMop ⋙ (opMopOpMopEquivalence D).functor) Y.unmop.unop
+        (X.unmop.unop) := by
+  rw [comp_μ, comp_μ, opMopOpMopEquivalence_functor_μ]
+  -- As in `unmop_unop_ε_comp`, the identity is typed through the removal of the wrappers.
+  refine (congrArg (fun g => (μ Q _ _ ≫ Q.map g).unmop.unop) (Category.id_comp _)).trans ?_
+  rw [comp_δ, comp_δ, opMopOpMopEquivalence_functor_δ]
+  exact (_ ≫= Category.comp_id _).symm
+
+/-- The transpose of a monoidal natural isomorphism between strong monoidal functors is
+monoidal. -/
+instance isMonoidal_opMopComp_hom [P.Monoidal] [Q.Monoidal] [NatTrans.IsMonoidal e.hom] :
+    NatTrans.IsMonoidal e.opMopComp.hom where
+  -- Removing the wrappers, both conditions say that the components of `e.hom` are the oplax
+  -- structure morphisms of `P ⋙ Q'`, which follows from monoidality of `e.hom` since `P ⋙ Q'`
+  -- is strong monoidal. Removing the wrappers from a composite reverses it, definitionally.
+  unit := by
+    have h : e.hom.app (𝟙_ D) = η (P ⋙ Q.op.opMop ⋙ (opMopOpMopEquivalence D).functor) := by
+      rw [← cancel_epi (ε (P ⋙ Q.op.opMop ⋙ (opMopOpMopEquivalence D).functor)),
+        Functor.Monoidal.ε_η, NatTrans.IsMonoidal.unit, id_ε]
+    exact Quiver.Hom.unmop_inj (Quiver.Hom.unop_inj
+      ((Category.comp_id _).trans (h.trans unmop_unop_ε_comp.symm)))
+  tensor X Y := by
+    have h : e.hom.app (Y.unmop.unop ⊗ X.unmop.unop) =
+        δ (P ⋙ Q.op.opMop ⋙ (opMopOpMopEquivalence D).functor) _ _ ≫
+          (e.hom.app Y.unmop.unop ⊗ₘ e.hom.app X.unmop.unop) := by
+      rw [← cancel_epi (μ (P ⋙ Q.op.opMop ⋙ (opMopOpMopEquivalence D).functor) _ _),
+        Functor.Monoidal.μ_δ_assoc, NatTrans.IsMonoidal.tensor, id_μ, Category.comp_id]
+    exact Quiver.Hom.unmop_inj (Quiver.Hom.unop_inj
+      ((Category.comp_id _).trans (h.trans (unmop_unop_μ_comp X Y =≫ _).symm)))
+
+/-- `Iso.doubleCompDouble` is monoidal when the given isomorphism is: it is assembled from that
+isomorphism, its transpose, and the coherence isomorphisms of composition of functors. -/
+instance isMonoidal_doubleCompDouble_hom {P Q : C ⥤ Cᵒᵖᴹᵒᵖ} [P.Monoidal] [Q.Monoidal]
+    (e : P ⋙ Q.op.opMop ⋙ (opMopOpMopEquivalence C).functor ≅ 𝟭 C) [NatTrans.IsMonoidal e.hom] :
+    NatTrans.IsMonoidal e.doubleCompDouble.hom := by
+  dsimp only [doubleCompDouble, Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerLeft_hom,
+    Functor.isoWhiskerRight_hom]
+  infer_instance
+
+end CategoryTheory.Iso

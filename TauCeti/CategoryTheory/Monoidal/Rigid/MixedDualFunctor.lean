@@ -10,7 +10,7 @@ public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
 public import TauCeti.CategoryTheory.Monoidal.Rigid.LeftDualFunctor
 
 /-!
-# The mixed double duals are trivial
+# The mixed double duals are trivial, and the double duals are mutually inverse
 
 In a rigid monoidal category `C`, composing the right dual functor with the left dual functor, in
 either order, gives a strong monoidal endofunctor of `C`:
@@ -40,6 +40,20 @@ which hold for the duals `CategoryTheory.hasLeftDualRightDual` and
 contrast with the double right dual functor `X ↦ Xᘁᘁ`, which need not be isomorphic to the identity:
 a trivialization of the double right dual is the extra datum of a pivotal structure.
 
+What the mixed trivializations do give is that the double left and double right dual functors
+are mutually inverse monoidal autoequivalences: composing them in either order is trivialized by
+monoidal natural isomorphisms
+
+```text
+doubleRightDualFunctor C ⋙ doubleLeftDualFunctor C ≅ 𝟭 C,
+doubleLeftDualFunctor C ⋙ doubleRightDualFunctor C ≅ 𝟭 C.
+```
+
+The component `ᘁ(ᘁ(Xᘁᘁ)) ≅ X` of the first identifies `ᘁ(Xᘁᘁ)` with `Xᘁ` and then `ᘁ(Xᘁ)` with
+`X`, both through `ᘁ(Yᘁ) ≅ Y`, and dually for the second. This is not a comparison between the
+two double dual functors themselves: a natural isomorphism between them would trivialize the
+fourfold right dual functor.
+
 ## Main declarations
 
 * `TauCeti.leftDualRightDualFunctor` and its strong monoidal structure
@@ -53,7 +67,11 @@ a trivialization of the double right dual is the extra datum of a pivotal struct
   `TauCeti.rightDualLeftDualFunctor_ε` and `TauCeti.rightDualLeftDualFunctor_μ` written as
   right mates;
 * `TauCeti.rightDualLeftDualIso`: the natural isomorphism `(ᘁX)ᘁ ≅ X`, monoidal by
-  `TauCeti.rightDualLeftDualIso_isMonoidal`.
+  `TauCeti.rightDualLeftDualIso_isMonoidal`;
+* `TauCeti.doubleRightDualCompDoubleLeftDualIso` and
+  `TauCeti.doubleLeftDualCompDoubleRightDualIso`: the double left and double right dual functors
+  are mutually inverse, monoidally by `TauCeti.doubleRightDualCompDoubleLeftDualIso_isMonoidal`
+  and `TauCeti.doubleLeftDualCompDoubleRightDualIso_isMonoidal`.
 
 ## References
 
@@ -358,5 +376,95 @@ instance rightDualLeftDualIso_isMonoidal :
     exact rightMate_leftDualIso_hom _ _ _
 
 end RightDualLeftDual
+
+section DoubleDual
+
+variable (C) in
+/-- In a rigid monoidal category, the double left dual functor `X ↦ ᘁ(ᘁX)` undoes the double right
+dual functor `X ↦ Xᘁᘁ`. The component at `X` identifies `ᘁ(ᘁ(Xᘁᘁ))` with `ᘁ(Xᘁ)` by the left
+mate of the inverse of `leftDualRightDualIso C` at `Xᘁ`, and then `ᘁ(Xᘁ)` with `X` by
+`leftDualRightDualIso C` at `X`. -/
+noncomputable def doubleRightDualCompDoubleLeftDualIso :
+    doubleRightDualFunctor C ⋙ doubleLeftDualFunctor C ≅ 𝟭 C :=
+  (leftDualRightDualIso C).doubleCompDouble
+
+/-- The component of `doubleRightDualCompDoubleLeftDualIso C` at `X`: the left mate of the
+inverse of `leftDualRightDualIso C` at `Xᘁ`, followed by `leftDualRightDualIso C` at `X`. The
+left duals are the ones chosen by the rigid structure. -/
+@[simp]
+theorem doubleRightDualCompDoubleLeftDualIso_hom_app (X : C) :
+    (doubleRightDualCompDoubleLeftDualIso C).hom.app X =
+      leftMate (LeftRigidCategory.leftDual Xᘁ).exact
+          (LeftRigidCategory.leftDual (LeftRigidCategory.leftDual (Xᘁ)ᘁ).leftDual).exact
+          ((leftDualRightDualIso C).inv.app Xᘁ) ≫
+        (leftDualRightDualIso C).hom.app X :=
+  (Iso.doubleCompDouble_hom_app _ X).trans (leftAdjointMate_eq_leftMate _ =≫ _)
+
+/-- The component of the inverse of `doubleRightDualCompDoubleLeftDualIso C` at `X`. -/
+@[simp]
+theorem doubleRightDualCompDoubleLeftDualIso_inv_app (X : C) :
+    (doubleRightDualCompDoubleLeftDualIso C).inv.app X =
+      (leftDualRightDualIso C).inv.app X ≫
+        leftMate (LeftRigidCategory.leftDual (LeftRigidCategory.leftDual (Xᘁ)ᘁ).leftDual).exact
+          (LeftRigidCategory.leftDual Xᘁ).exact ((leftDualRightDualIso C).hom.app Xᘁ) :=
+  (Iso.doubleCompDouble_inv_app _ X).trans (_ ≫= leftAdjointMate_eq_leftMate _)
+
+/-- The isomorphism `ᘁ(ᘁ(Xᘁᘁ)) ≅ X` is monoidal, so the double left dual functor is inverse to the
+double right dual functor on one side as a monoidal functor. -/
+instance doubleRightDualCompDoubleLeftDualIso_isMonoidal :
+    NatTrans.IsMonoidal (doubleRightDualCompDoubleLeftDualIso C).hom :=
+  -- The monoidal structures of the double and mixed dual functors are those of their defining
+  -- composites, which is the form `Iso.isMonoidal_doubleCompDouble_hom` is stated in.
+  have : NatTrans.IsMonoidal (F₁ := rightDualFunctor C ⋙
+      (leftDualFunctor C).op.opMop ⋙ (opMopOpMopEquivalence C).functor)
+      (leftDualRightDualIso C).hom :=
+    leftDualRightDualIso_isMonoidal
+  Iso.isMonoidal_doubleCompDouble_hom (P := rightDualFunctor C) (Q := leftDualFunctor C)
+    (leftDualRightDualIso C)
+
+variable (C) in
+/-- In a rigid monoidal category, the double right dual functor `X ↦ Xᘁᘁ` undoes the double left
+dual functor `X ↦ ᘁ(ᘁX)`. The component at `X` identifies `(ᘁ(ᘁX))ᘁᘁ` with `(ᘁX)ᘁ` by the right
+mate of the inverse of `rightDualLeftDualIso C` at `ᘁX`, and then `(ᘁX)ᘁ` with `X` by
+`rightDualLeftDualIso C` at `X`. -/
+noncomputable def doubleLeftDualCompDoubleRightDualIso :
+    doubleLeftDualFunctor C ⋙ doubleRightDualFunctor C ≅ 𝟭 C :=
+  (rightDualLeftDualIso C).doubleCompDouble
+
+/-- The component of `doubleLeftDualCompDoubleRightDualIso C` at `X`: the right mate of the
+inverse of `rightDualLeftDualIso C` at `ᘁX`, followed by `rightDualLeftDualIso C` at `X`. The
+right duals are the ones chosen by the rigid structure. -/
+@[simp]
+theorem doubleLeftDualCompDoubleRightDualIso_hom_app (X : C) :
+    (doubleLeftDualCompDoubleRightDualIso C).hom.app X =
+      rightMate (RightRigidCategory.rightDual (ᘁX)).exact
+          (RightRigidCategory.rightDual (RightRigidCategory.rightDual (ᘁ(ᘁX))).rightDual).exact
+          ((rightDualLeftDualIso C).inv.app (ᘁX)) ≫
+        (rightDualLeftDualIso C).hom.app X :=
+  (Iso.doubleCompDouble_hom_app _ X).trans (rightAdjointMate_eq_rightMate _ =≫ _)
+
+/-- The component of the inverse of `doubleLeftDualCompDoubleRightDualIso C` at `X`. -/
+@[simp]
+theorem doubleLeftDualCompDoubleRightDualIso_inv_app (X : C) :
+    (doubleLeftDualCompDoubleRightDualIso C).inv.app X =
+      (rightDualLeftDualIso C).inv.app X ≫
+        rightMate
+          (RightRigidCategory.rightDual (RightRigidCategory.rightDual (ᘁ(ᘁX))).rightDual).exact
+          (RightRigidCategory.rightDual (ᘁX)).exact ((rightDualLeftDualIso C).hom.app (ᘁX)) :=
+  (Iso.doubleCompDouble_inv_app _ X).trans (_ ≫= rightAdjointMate_eq_rightMate _)
+
+/-- The isomorphism `(ᘁ(ᘁX))ᘁᘁ ≅ X` is monoidal, so the double right dual functor is inverse to
+the double left dual functor on the other side as a monoidal functor. -/
+instance doubleLeftDualCompDoubleRightDualIso_isMonoidal :
+    NatTrans.IsMonoidal (doubleLeftDualCompDoubleRightDualIso C).hom :=
+  -- As for `doubleRightDualCompDoubleLeftDualIso_isMonoidal`.
+  have : NatTrans.IsMonoidal (F₁ := leftDualFunctor C ⋙
+      (rightDualFunctor C).op.opMop ⋙ (opMopOpMopEquivalence C).functor)
+      (rightDualLeftDualIso C).hom :=
+    rightDualLeftDualIso_isMonoidal
+  Iso.isMonoidal_doubleCompDouble_hom (P := leftDualFunctor C) (Q := rightDualFunctor C)
+    (rightDualLeftDualIso C)
+
+end DoubleDual
 
 end TauCeti
