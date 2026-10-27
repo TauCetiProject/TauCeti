@@ -70,6 +70,11 @@ of the structure sheaf of `Spec` over basic opens
   `D₊(g)` is killed by a power of `g`.
 * `ProjectiveSpectrum.exists_mul_eq_pow_mul`: compatible homogeneous fractions whose standard opens
   cover `D₊(f)` glue to a single fraction with a power of `f` as denominator.
+* `ProjectiveSpectrum.comap_extendOfIsLocalization` and
+  `ProjectiveSpectrum.extendOfIsLocalization_comap`: if a graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ`
+  exhibits `B` as a localization of `A` at `M`, the points of `Proj ℬ` are, through `f⁻¹`, the
+  points of `Proj 𝒜` disjoint from `M`; the point over `x` is the extension of the homogeneous
+  prime ideal of `x` (`ProjectiveSpectrum.extendOfIsLocalization`).
 -/
 
 public section
@@ -401,5 +406,79 @@ theorem exists_mul_eq_pow_mul {n : ℤ} {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (h
       rw [mul_assoc, mul_comm (r z), hcompat x z, ← mul_assoc]
   rw [mul_comm (g x), ← DirectSum.coe_decompose_mul_add_of_right_mem 𝒜 (hg x), hsum,
     DirectSum.decompose_of_mem_same 𝒜 hmem]
+
+section Localization
+
+open HomogeneousIdeal
+
+variable {A B σ τ : Type*} [CommRing A] [SetLike σ A] [AddSubgroupClass σ A]
+  [CommRing B] [SetLike τ B] [AddSubgroupClass τ B]
+  {𝒜 : ℕ → σ} {ℬ : ℕ → τ} [GradedRing 𝒜] [GradedRing ℬ]
+  {f : 𝒜 →+*ᵍ ℬ} {M : Submonoid A} (hloc : letI := f.toRingHom.toAlgebra; IsLocalization M B)
+
+/-- For `f : 𝒜 →+*ᵍ ℬ` exhibiting `B` as a localization of `A` at `M`, the point of `Proj ℬ`
+over a point `x` of `Proj 𝒜` disjoint from `M`: its homogeneous prime ideal is the extension of
+that of `x`. -/
+def extendOfIsLocalization (x : ProjectiveSpectrum 𝒜)
+    (hx : Disjoint (M : Set A) x.asHomogeneousIdeal.toIdeal) : ProjectiveSpectrum ℬ where
+  asHomogeneousIdeal := x.asHomogeneousIdeal.map f
+  isPrime :=
+    letI := f.toRingHom.toAlgebra
+    IsLocalization.isPrime_of_isPrime_disjoint M B _ x.isPrime hx
+  not_irrelevant_le h := by
+    let := f.toRingHom.toAlgebra
+    obtain ⟨i, hi, s, hs, hsx⟩ := x.exists_le_mem_notMem 1
+    refine hsx ?_
+    rw [← HomogeneousIdeal.mem_iff,
+      ← IsLocalization.under_map_of_isPrime_disjoint M B x.isPrime hx]
+    exact h (mem_irrelevant_of_mem ℬ (by omega : 0 < i) (Graded.map_mem f hs))
+
+/-- The homogeneous prime ideal of the point over `x` is the extension of that of `x`. -/
+theorem extendOfIsLocalization_asHomogeneousIdeal (x : ProjectiveSpectrum 𝒜)
+    (hx : Disjoint (M : Set A) x.asHomogeneousIdeal.toIdeal) :
+    (x.extendOfIsLocalization hloc hx).asHomogeneousIdeal = x.asHomogeneousIdeal.map f :=
+  (rfl)
+
+include hloc in
+/-- The point of `Proj ℬ` over `x` contains `f a` exactly when `x` contains `a`. -/
+@[simp]
+theorem map_mem_extendOfIsLocalization_iff (x : ProjectiveSpectrum 𝒜)
+    (hx : Disjoint (M : Set A) x.asHomogeneousIdeal.toIdeal) (a : A) :
+    f a ∈ (x.extendOfIsLocalization hloc hx).asHomogeneousIdeal ↔ a ∈ x.asHomogeneousIdeal := by
+  let := f.toRingHom.toAlgebra
+  -- `f a ∈ x B` says that `a` lies in the contraction of the extension `x B`, which is `x`
+  exact Iff.of_eq
+    (congrArg (a ∈ ·) (IsLocalization.under_map_of_isPrime_disjoint M B x.isPrime hx))
+
+variable (hf : ℬ₊ ≤ 𝒜₊.map f)
+include hloc
+
+/-- The point of `Proj ℬ` over `x` lies over `x`. -/
+@[simp]
+theorem comap_extendOfIsLocalization (x : ProjectiveSpectrum 𝒜)
+    (hx : Disjoint (M : Set A) x.asHomogeneousIdeal.toIdeal) :
+    AlgebraicGeometry.ProjectiveSpectrum.comap f hf (x.extendOfIsLocalization hloc hx) = x :=
+  ProjectiveSpectrum.ext (HomogeneousIdeal.toIdeal_injective
+    (Ideal.ext (map_mem_extendOfIsLocalization_iff hloc x hx)))
+
+/-- The points of `Proj 𝒜` under points of `Proj ℬ` are disjoint from `M`, whose image consists of
+units. -/
+theorem disjoint_comap_of_isLocalization (y : ProjectiveSpectrum ℬ) :
+    Disjoint (M : Set A)
+      (AlgebraicGeometry.ProjectiveSpectrum.comap f hf y).asHomogeneousIdeal.toIdeal := by
+  let := f.toRingHom.toAlgebra
+  exact Set.disjoint_left.mpr fun m hm hmy ↦
+    y.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ hmy (IsLocalization.map_units B ⟨m, hm⟩))
+
+/-- Every point of `Proj ℬ` is the point over its image in `Proj 𝒜`. -/
+@[simp]
+theorem extendOfIsLocalization_comap (y : ProjectiveSpectrum ℬ) :
+    (AlgebraicGeometry.ProjectiveSpectrum.comap f hf y).extendOfIsLocalization hloc
+      (ProjectiveSpectrum.disjoint_comap_of_isLocalization hloc hf y) = y := by
+  let := f.toRingHom.toAlgebra
+  exact ProjectiveSpectrum.ext (HomogeneousIdeal.toIdeal_injective
+    (IsLocalization.map_under M B y.asHomogeneousIdeal.toIdeal))
+
+end Localization
 
 end ProjectiveSpectrum
