@@ -150,7 +150,7 @@ theorem cohomologyMap_homologyπ {n : ℕ} (z : (J.X n).ρ.invariants)
       c.cohomologyClass z hz := by
   rw [cohomologyMap_def, cohomologyClass_def, cochainClass_def,
     HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq]
-  simp only [Functor.mapHomologicalComplex_map_f, invariantsFunctor, TopModuleCat.hom_ofHom]
+  simp only [Functor.mapHomologicalComplex_map_f, ConcreteCategory.hom_ofHom]
 
 /-- The class of a sum of invariant cocycles is the sum of their classes. -/
 @[simp]
@@ -262,7 +262,7 @@ theorem cohomologyClass_map {J' : CochainComplex (TopRep.{max v w} k G) ℕ}
   rw [← c.cohomologyMap_homologyπ z hz, ← c'.cohomologyMap_homologyπ _
     (d_mapInvariants_f_apply f z hz), ← c.homologyMap_comp_cohomologyMap c' f hf n,
     ConcreteCategory.comp_apply, HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq]
-  simp only [Functor.mapHomologicalComplex_map_f, invariantsFunctor, TopModuleCat.hom_ofHom]
+  simp only [Functor.mapHomologicalComplex_map_f, ConcreteCategory.hom_ofHom]
 
 /-- **Naturality of classes in the coefficients.** For a chain map `f : J ⟶ J'` lying over a
 coefficient morphism `g : X ⟶ Y`, the coefficient map of `g` carries the class of an invariant
@@ -277,7 +277,7 @@ theorem coeffMap_cohomologyClass {Y : TopRep.{max v w} k G}
     (d_mapInvariants_f_apply f z hz), ← ConcreteCategory.comp_apply,
     c.cohomologyMap_comp_coeffMap c' g f hf n, ConcreteCategory.comp_apply,
     HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq]
-  simp only [Functor.mapHomologicalComplex_map_f, invariantsFunctor, TopModuleCat.hom_ofHom]
+  simp only [Functor.mapHomologicalComplex_map_f, ConcreteCategory.hom_ofHom]
 
 end Homotopy
 
