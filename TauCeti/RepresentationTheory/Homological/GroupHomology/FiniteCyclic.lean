@@ -141,6 +141,17 @@ theorem groupHomologyTrivialLinearEquivOdd_groupHomologyπOdd (i : ℕ) (hi : Od
   -- identity, so it sends `x` to `groupHomologyπOdd x`.
   rfl
 
+/-- The inverse of the odd-degree identification sends the residue class of `x ∈ A` to the
+homology class of the representative `x`. Unlike
+`groupHomologyTrivialLinearEquivOdd_groupHomologyπOdd`, whose left side applies the reducible
+`Rep.FiniteCyclicGroup.groupHomologyπOdd`, this direction can be used by `simp`. -/
+@[simp]
+theorem groupHomologyTrivialLinearEquivOdd_symm_mk (i : ℕ) (hi : Odd i) (x : A) :
+    (groupHomologyTrivialLinearEquivOdd k A g hg i hi).symm (Submodule.Quotient.mk x) =
+      groupHomologyπOdd (Rep.trivial k G A) g hg i hi ⟨x, by simp [Rep.applyAsHom, sub_hom]⟩ :=
+  (LinearEquiv.symm_apply_eq _).2
+    (groupHomologyTrivialLinearEquivOdd_groupHomologyπOdd k A g hg i hi ⟨x, _⟩).symm
+
 /-- The even-degree representative map is injective for a trivial representation, since
 `ρ(g) - 𝟙 = 0` has no nonzero image. -/
 private theorem groupHomologyπEven_trivial_injective (i : ℕ) [NeZero i] (hi : Even i) :
@@ -174,6 +185,19 @@ theorem coe_groupHomologyTrivialLinearEquivEven_groupHomologyπEven (i : ℕ) [N
         (groupHomologyπEven (Rep.trivial k G A) g hg i hi x) : A) = x := by
   rw [groupHomologyTrivialLinearEquivEven, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
   exact congrArg Subtype.val ((LinearEquiv.ofBijective _ _).symm_apply_apply x)
+
+/-- The inverse of the even-degree identification sends `x ∈ A[|G|]` to the homology class of the
+representative `x`. Unlike `coe_groupHomologyTrivialLinearEquivEven_groupHomologyπEven`, this
+direction can be used by `simp`. -/
+@[simp]
+theorem groupHomologyTrivialLinearEquivEven_symm_apply (i : ℕ) [NeZero i] (hi : Even i)
+    (x : Submodule.torsionBy k A (Nat.card G : k)) :
+    (groupHomologyTrivialLinearEquivEven k A g hg i hi).symm x =
+      groupHomologyπEven (Rep.trivial k G A) g hg i hi
+        ⟨x, by simpa [Representation.norm, Submodule.mem_torsionBy_iff, Nat.card_eq_fintype_card,
+          Nat.cast_smul_eq_nsmul] using x.2⟩ :=
+  (LinearEquiv.symm_apply_eq _).2 (Subtype.ext
+    (coe_groupHomologyTrivialLinearEquivEven_groupHomologyπEven k A g hg i hi ⟨x, _⟩).symm)
 
 end Trivial
 
@@ -230,5 +254,16 @@ theorem groupHomologyTrivialIntLinearEquivOdd_groupHomologyπOdd {G : Type} [Com
   -- Both remaining maps act on representatives: `x` goes to the class of `x` in `ℤ ⧸ (|G|)`, and
   -- then to its cast in `ZMod |G|`.
   rfl
+
+/-- The inverse of the odd-degree integral identification sends the residue of `n ∈ ℤ` to the
+homology class of the representative `n`. Unlike
+`groupHomologyTrivialIntLinearEquivOdd_groupHomologyπOdd`, this direction can be used by `simp`. -/
+@[simp]
+theorem groupHomologyTrivialIntLinearEquivOdd_symm_intCast {G : Type} [CommGroup G] [Fintype G]
+    [DecidableEq G] (g : G) (hg : ∀ x, x ∈ Subgroup.zpowers g) (i : ℕ) (hi : Odd i) (n : ℤ) :
+    (groupHomologyTrivialIntLinearEquivOdd g hg i hi).symm (n : ZMod (Nat.card G)) =
+      groupHomologyπOdd (Rep.trivial ℤ G ℤ) g hg i hi ⟨n, by simp [Rep.applyAsHom, sub_hom]⟩ :=
+  (LinearEquiv.symm_apply_eq _).2
+    (groupHomologyTrivialIntLinearEquivOdd_groupHomologyπOdd g hg i hi ⟨n, _⟩).symm
 
 end Rep.FiniteCyclicGroup
