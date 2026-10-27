@@ -24,7 +24,7 @@ symmetric sequence of pointed simplicial sets `X_n` with based `Σ_p × Σ_q`-eq
 maps `S^p ∧ X_q → X_(p+q)`, compatible with the unit `S⁰ ≅ S^0` and with block concatenation of
 spheres. These iterated structure maps and their laws are developed in
 `TauCeti.CategoryTheory.Monoidal.DayConvolution.Module`, through the generic
-`CategoryTheory.Mod.structureMap` API.
+`CategoryTheory.Mod.dayStructureMap` API.
 
 ## Main definitions
 

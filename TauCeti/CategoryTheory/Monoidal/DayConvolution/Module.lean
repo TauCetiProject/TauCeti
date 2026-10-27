@@ -26,14 +26,15 @@ constructed by Robin Carlier, using the computation and extensionality lemmas in
 
 ## Main definitions
 
-* `Mod.structureMap`: the levelwise action of a Day convolution module.
-* `Mod.homMk`: construct a module morphism from compatibility with the structure maps.
+* `Mod.dayStructureMap`: the levelwise action of a Day convolution module.
+* `Mod.dayHomMk`: construct a module morphism from compatibility with the structure maps.
 
 ## Main statements
 
-* `Mod.structureMap_naturality`: naturality in both variables.
-* `Mod.structureMap_hom`, `Mod.isModHom_iff`: the structure-map criterion for module morphisms.
-* `Mod.structureMap_unit`, `Mod.structureMap_assoc`: the unit and iteration laws for modules
+* `Mod.dayStructureMap_naturality`: naturality in both variables.
+* `Mod.dayStructureMap_hom`, `Mod.isModHom_iff_dayStructureMap`: the structure-map criterion for
+  module morphisms.
+* `Mod.dayStructureMap_unit`, `Mod.dayStructureMap_assoc`: the unit and iteration laws for modules
   over the monoid of a lax monoidal functor.
 
 ## References
@@ -77,74 +78,74 @@ variable {M : C ⊛⥤ V} [MonObj M]
 
 /-- The levelwise action `M p ⊗ X q ⟶ X (p ⊗ q)`, obtained by restricting the
 module action along the Day convolution unit. -/
-def structureMap (X : Mod (C ⊛⥤ V) M) (p q : C) :
+def dayStructureMap (X : Mod (C ⊛⥤ V) M) (p q : C) :
     M.functor.obj p ⊗ X.X.functor.obj q ⟶
       X.X.functor.obj (p ⊗ q) :=
   (DayFunctor.η M X.X).app (p, q) ≫
     (ModObj.smul (M := M) (X := X.X)).natTrans.app (p ⊗ q)
 
 /-- The structure maps restrict the module action along the Day convolution units. -/
-lemma structureMap_def (X : Mod (C ⊛⥤ V) M) (p q : C) :
-    X.structureMap p q = (DayFunctor.η M X.X).app (p, q) ≫
+lemma dayStructureMap_def (X : Mod (C ⊛⥤ V) M) (p q : C) :
+    X.dayStructureMap p q = (DayFunctor.η M X.X).app (p, q) ≫
       (ModObj.smul (M := M) (X := X.X)).natTrans.app (p ⊗ q) := (rfl)
 
 /-- Naturality of the structure maps in both variables. -/
 @[reassoc]
-lemma structureMap_naturality (X : Mod (C ⊛⥤ V) M) {p p' q q' : C}
+lemma dayStructureMap_naturality (X : Mod (C ⊛⥤ V) M) {p p' q q' : C}
     (f : p ⟶ p') (g : q ⟶ q') :
-    (M.functor.map f ⊗ₘ X.X.functor.map g) ≫ X.structureMap p' q' =
-      X.structureMap p q ≫ X.X.functor.map (f ⊗ₘ g) := by
+    (M.functor.map f ⊗ₘ X.X.functor.map g) ≫ X.dayStructureMap p' q' =
+      X.dayStructureMap p q ≫ X.X.functor.map (f ⊗ₘ g) := by
   let τ := DayFunctor.η M X.X ≫
     Functor.whiskerLeft (tensor C)
       (ModObj.smul (M := M) (X := X.X)).natTrans
   simpa only [τ, NatTrans.comp_app, Functor.whiskerLeft_app,
     externalProductBifunctor_obj_map, Functor.comp_map, tensor_map, tensor_obj,
-    tensorHom_def, structureMap] using
+    tensorHom_def, dayStructureMap] using
     τ.naturality (CategoryTheory.Prod.mkHom f g)
 
 /-- Every module morphism commutes with the structure maps. -/
 @[reassoc (attr := simp)]
-lemma structureMap_hom {X Y : Mod (C ⊛⥤ V) M} (f : X ⟶ Y) (p q : C) :
-    X.structureMap p q ≫ f.hom.natTrans.app (p ⊗ q) =
+lemma dayStructureMap_hom {X Y : Mod (C ⊛⥤ V) M} (f : X ⟶ Y) (p q : C) :
+    X.dayStructureMap p q ≫ f.hom.natTrans.app (p ⊗ q) =
       M.functor.obj p ◁ f.hom.natTrans.app q ≫
-        Y.structureMap p q := by
+        Y.dayStructureMap p q := by
   have h := congrArg (fun g : M ⊗ X.X ⟶ Y.X ↦
     (DayFunctor.η M X.X).app (p, q) ≫ g.natTrans.app (p ⊗ q))
     (IsModHom.smul_hom (A := M) (f := f.hom))
   simp only [DayFunctor.comp_natTrans, NatTrans.comp_app] at h
-  simpa [structureMap] using h
+  simpa [dayStructureMap] using h
 
 /-- A morphism of Day functors is a module morphism exactly when it commutes with
 the structure maps at every pair of objects. -/
-lemma isModHom_iff {X Y : Mod (C ⊛⥤ V) M} (f : X.X ⟶ Y.X) :
+lemma isModHom_iff_dayStructureMap {X Y : Mod (C ⊛⥤ V) M} (f : X.X ⟶ Y.X) :
     IsModHom M f ↔
-      ∀ p q, X.structureMap p q ≫ f.natTrans.app (p ⊗ q) =
-        M.functor.obj p ◁ f.natTrans.app q ≫ Y.structureMap p q := by
+      ∀ p q, X.dayStructureMap p q ≫ f.natTrans.app (p ⊗ q) =
+        M.functor.obj p ◁ f.natTrans.app q ≫ Y.dayStructureMap p q := by
   constructor
   · intro h
-    exact structureMap_hom (⟨f⟩ : X ⟶ Y)
+    exact dayStructureMap_hom (⟨f⟩ : X ⟶ Y)
   · intro h
     constructor
     apply DayFunctor.tensor_hom_ext
     intro p q
     simpa only [DayFunctor.comp_natTrans, NatTrans.comp_app, tensor_obj, Category.assoc,
       selfLeftAction_actionHomRight,
-      DayFunctor.η_app_comp_whiskerLeft_natTrans_app_assoc, structureMap] using h p q
+      DayFunctor.η_app_comp_whiskerLeft_natTrans_app_assoc, dayStructureMap] using h p q
 
 /-- Construct a module morphism from a morphism of Day functors and its compatibility
 with the structure maps. -/
-def homMk {X Y : Mod (C ⊛⥤ V) M} (f : X.X ⟶ Y.X)
-    (h : ∀ p q, X.structureMap p q ≫ f.natTrans.app (p ⊗ q) =
-      M.functor.obj p ◁ f.natTrans.app q ≫ Y.structureMap p q) :
+def dayHomMk {X Y : Mod (C ⊛⥤ V) M} (f : X.X ⟶ Y.X)
+    (h : ∀ p q, X.dayStructureMap p q ≫ f.natTrans.app (p ⊗ q) =
+      M.functor.obj p ◁ f.natTrans.app q ≫ Y.dayStructureMap p q) :
     X ⟶ Y :=
-  letI := (isModHom_iff f).mpr h
+  letI := (isModHom_iff_dayStructureMap f).mpr h
   ⟨f⟩
 
 @[simp]
-lemma homMk_hom {X Y : Mod (C ⊛⥤ V) M} (f : X.X ⟶ Y.X)
-    (h : ∀ p q, X.structureMap p q ≫ f.natTrans.app (p ⊗ q) =
-      M.functor.obj p ◁ f.natTrans.app q ≫ Y.structureMap p q) :
-    (homMk f h).hom = f := (rfl)
+lemma dayHomMk_hom {X Y : Mod (C ⊛⥤ V) M} (f : X.X ⟶ Y.X)
+    (h : ∀ p q, X.dayStructureMap p q ≫ f.natTrans.app (p ⊗ q) =
+      M.functor.obj p ◁ f.natTrans.app q ≫ Y.dayStructureMap p q) :
+    (dayHomMk f h).hom = f := (rfl)
 
 section LaxMonoidal
 
@@ -154,9 +155,9 @@ variable {F : C ⊛⥤ V} [F.functor.LaxMonoidal]
 is the left unitor followed by the canonical reindexing. -/
 -- Simplify before a concrete lax monoidal unit normalizes to its presentation.
 @[reassoc (attr := simp↓)]
-lemma structureMap_unit (X : Mod (C ⊛⥤ V) F) (q : C) :
+lemma dayStructureMap_unit (X : Mod (C ⊛⥤ V) F) (q : C) :
     Functor.LaxMonoidal.ε F.functor ▷ X.X.functor.obj q ≫
-        X.structureMap (𝟙_ C) q =
+        X.dayStructureMap (𝟙_ C) q =
       (λ_ (X.X.functor.obj q)).hom ≫ X.X.functor.map (λ_ q).inv := by
   have h := congrArg (fun f : 𝟙_ (C ⊛⥤ V) ⊗ X.X ⟶ X.X ↦
     DayFunctor.ν C V ▷ X.X.functor.obj q ≫
@@ -164,16 +165,16 @@ lemma structureMap_unit (X : Mod (C ⊛⥤ V) F) (q : C) :
       f.natTrans.app (𝟙_ C ⊗ q))
     (ModObj.one_smul_self F X.X)
   simp only [DayFunctor.comp_natTrans, NatTrans.comp_app] at h
-  simpa [structureMap, ← comp_whiskerRight_assoc] using h
+  simpa [dayStructureMap, ← comp_whiskerRight_assoc] using h
 
 /-- Multiplying before acting agrees with two successive structure maps. The final
 reindexing records the associator of the source category. -/
 @[reassoc]
-lemma structureMap_assoc (X : Mod (C ⊛⥤ V) F) (p q r : C) :
+lemma dayStructureMap_assoc (X : Mod (C ⊛⥤ V) F) (p q r : C) :
     Functor.LaxMonoidal.μ F.functor p q ▷ X.X.functor.obj r ≫
-        X.structureMap (p ⊗ q) r =
-      (α_ _ _ _).hom ≫ F.functor.obj p ◁ X.structureMap q r ≫
-        X.structureMap p (q ⊗ r) ≫ X.X.functor.map (α_ p q r).inv := by
+        X.dayStructureMap (p ⊗ q) r =
+      (α_ _ _ _).hom ≫ F.functor.obj p ◁ X.dayStructureMap q r ≫
+        X.dayStructureMap p (q ⊗ r) ≫ X.X.functor.map (α_ p q r).inv := by
   have h := congrArg
     (fun f : (F ⊗ F) ⊗ X.X ⟶ X.X ↦
       (DayFunctor.η F F).app (p, q) ▷
@@ -187,7 +188,7 @@ lemma structureMap_assoc (X : Mod (C ⊛⥤ V) F) (p q r : C) :
     DayFunctor.η_app_comp_whiskerLeft_natTrans_app_assoc,
     DayFunctor.η_app_whiskerRight_comp_η_app_comp_associator_hom_natTrans_app_assoc,
     ← comp_whiskerRight_assoc, DayFunctor.η_app_comp_mul_natTrans_app,
-    whiskerLeft_comp, structureMap, NatTrans.naturality, NatTrans.naturality_assoc] using h
+    whiskerLeft_comp, dayStructureMap, NatTrans.naturality, NatTrans.naturality_assoc] using h
 
 end LaxMonoidal
 
