@@ -318,6 +318,47 @@ theorem zigzagAlgebraProjectiveDGHomEquivCorner_shifted_comp
     LinearEquiv.apply_symm_apply]
   exact (coe_zigzagAlgebraGradedProjectiveHomEquivCorner_comp k G i j l s t f g).symm
 
+/-!
+## Cohomology of the vertex Hom complexes
+
+Vanishing Hom differentials identify canonical cohomology with the homogeneous vertex
+corners. The degree here belongs to the chosen path-graded DG model, independently of the
+external cohomological degree in the ordinary derived category of graded modules.
+-/
+
+/-- Canonical cohomology in path degree `-s` identifies with the graded vertex corner. -/
+def zigzagAlgebraProjectiveHomologyEquivCorner (i j : V) (s : ℤ) :
+    (dgHomComplex k (D i) (D j)).homology (-s) ≃ₗ[k] ↥(C i j (-s)) :=
+  (((dgHomComplex k (D i) (D j)).isoHomologyπ (-s - 1) (-s) (by simp)
+      (DGRightModuleCat.dgHomComplex_d_eq_zero (D i) (D j)
+        (zigzagAlgebraProjectiveDGRightModule_differential k G i)
+        (zigzagAlgebraProjectiveDGRightModule_differential k G j) (-s - 1) (-s))).symm ≪≫
+    (dgHomComplex k (D i) (D j)).iCyclesIso (-s) (-s + 1) (by simp)
+      (DGRightModuleCat.dgHomComplex_d_eq_zero (D i) (D j)
+        (zigzagAlgebraProjectiveDGRightModule_differential k G i)
+        (zigzagAlgebraProjectiveDGRightModule_differential k G j)
+        (-s) (-s + 1))).toLinearEquiv.trans (L i j s)
+
+/-- The corner of a canonical cohomology class is the corner of its representing cycle. -/
+@[simp]
+theorem zigzagAlgebraProjectiveHomologyEquivCorner_homologyπ
+    (i j : V) (s : ℤ) (z : (dgHomComplex k (D i) (D j)).cycles (-s)) :
+    zigzagAlgebraProjectiveHomologyEquivCorner k G i j s
+        (((dgHomComplex k (D i) (D j)).homologyπ (-s)).hom z) =
+      L i j s (((dgHomComplex k (D i) (D j)).iCycles (-s)).hom z) := by
+  let Kij := dgHomComplex k (D i) (D j)
+  let eπ := Kij.isoHomologyπ (-s - 1) (-s) (by simp)
+    (DGRightModuleCat.dgHomComplex_d_eq_zero (D i) (D j)
+        (zigzagAlgebraProjectiveDGRightModule_differential k G i)
+        (zigzagAlgebraProjectiveDGRightModule_differential k G j) (-s - 1) (-s))
+  have heπ : eπ.inv.hom (eπ.hom.hom z) = z := by
+    simpa only [ModuleCat.comp_apply, ModuleCat.id_apply] using
+      congrArg (fun f : Kij.cycles (-s) ⟶ Kij.cycles (-s) ↦ f.hom z) eπ.hom_inv_id
+  simpa only [zigzagAlgebraProjectiveHomologyEquivCorner, LinearEquiv.trans_apply,
+    Iso.toLinearEquiv_apply, Iso.trans_hom, Iso.symm_hom, ModuleCat.comp_apply,
+    HomologicalComplex.iCyclesIso_hom, eπ, HomologicalComplex.isoHomologyπ_hom, Kij] using
+      congrArg (fun z' : Kij.cycles (-s) ↦ L i j s ((Kij.iCycles (-s)).hom z')) heπ
+
 end Enriched
 
 end TauCeti

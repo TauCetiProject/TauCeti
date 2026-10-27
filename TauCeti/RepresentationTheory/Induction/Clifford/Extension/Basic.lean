@@ -128,6 +128,38 @@ noncomputable def rightHom : Carrier A →* Quotient A :=
 theorem rightHom_mk (p : implementers A) :
     rightHom A (QuotientGroup.mk p) = QuotientGroup.mk p.1.1 := (rfl)
 
+/-- An implementing pair is determined by its inertia element and its Clifford class. -/
+theorem implementer_ext {p q : implementers A} (ht : projection A p = projection A q)
+    (hc : (QuotientGroup.mk p : Carrier A) = QuotientGroup.mk q) : p = q := by
+  obtain ⟨n, hn⟩ := QuotientGroup.eq.mp hc
+  have hn1 : n = 1 := by
+    apply Subtype.ext
+    have hp : projection A (diagonal A n) = 1 := by
+      rw [hn, map_mul, map_inv, ht, inv_mul_cancel]
+    simpa only [projection_apply, diagonal_fst, Subgroup.coe_one, Subgroup.coe_inclusion] using
+      congrArg Subtype.val hp
+  have h : p⁻¹ * q = 1 := by simpa [hn1] using hn.symm
+  exact inv_mul_eq_one.mp h
+
+/-- Compatible inertia elements and Clifford classes have a unique implementing pair. -/
+theorem existsUnique_implementer (t : inertia A) (c : Carrier A)
+    (h : (QuotientGroup.mk t : Quotient A) = rightHom A c) :
+    ∃! p : implementers A, projection A p = t ∧ QuotientGroup.mk p = c := by
+  obtain ⟨p, rfl⟩ := QuotientGroup.mk_surjective c
+  rw [rightHom_mk] at h
+  have hn : (t / projection A p : inertia A) ∈ N.subgroupOf (inertia A) :=
+    QuotientGroup.eq_iff_div_mem.mp (by simpa only [projection_apply] using h)
+  let n : N := ⟨(t / projection A p : inertia A), Subgroup.mem_subgroupOf.mp hn⟩
+  have ht : projection A (diagonal A n * p) = t := by
+    apply Subtype.ext
+    simp [n, div_eq_mul_inv]
+  have hdiag : (QuotientGroup.mk (diagonal A n) : Carrier A) = 1 :=
+    (QuotientGroup.eq_one_iff _).mpr ⟨n, rfl⟩
+  have hc : (QuotientGroup.mk (diagonal A n * p) : Carrier A) = QuotientGroup.mk p := by
+    rw [QuotientGroup.mk_mul, hdiag, one_mul]
+  exact ⟨diagonal A n * p, ⟨ht, hc⟩, fun q hq => implementer_ext A (hq.1.trans ht.symm)
+    (hq.2.trans hc.symm)⟩
+
 /-- Equivariant automorphisms, inserted as implementing pairs over the identity. -/
 noncomputable def kernelLift : (End A)ˣ →* implementers A where
   toFun d := ⟨(1, FDRep.isoToLinearEquiv (Aut.unitsEndEquivAut A d).asIso), by
