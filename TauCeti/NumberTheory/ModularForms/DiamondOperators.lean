@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import TauCeti.NumberTheory.ModularForms.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Units
@@ -535,3 +536,66 @@ theorem coe_cuspToModFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) (f : c
 theorem cuspToModFormCharSpace_injective (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
     Function.Injective (cuspToModFormCharSpace k χ) := fun _ _ h ↦
   Subtype.ext (CuspForm.toModularFormₗ_injective (congrArg Subtype.val h))
+
+/-- The image of `S_k(N, χ)` in `M_k(N, χ)` consists of the forms of nebentypus `χ` that are cusp
+forms. -/
+theorem mem_range_cuspToModFormCharSpace_iff (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ)
+    (f : modFormCharSpace k χ) :
+    f ∈ LinearMap.range (cuspToModFormCharSpace k χ) ↔
+      (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) ∈
+        ModularForm.cuspFormSubmodule ((Gamma1 N).map (mapGL ℝ)) k := by
+  constructor
+  · rintro ⟨g, rfl⟩
+    rw [coe_cuspToModFormCharSpace]
+    exact ModularForm.CuspForm.isCuspForm_toModularFormₗ (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)
+  · rintro ⟨g, hg⟩
+    have hgmem : (g : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ modFormCharSpace k χ := by
+      rw [← CuspForm.toModularFormₗ_eq_coe, hg]
+      exact f.2
+    exact ⟨⟨g, (coe_mem_modFormCharSpace_iff k χ g).mp hgmem⟩, Subtype.ext hg⟩
+
+/-- The projection onto a diamond-stable complement of the cusp forms in `M_k(Γ₁(N))` commutes
+with the diamond operator, which also preserves the cusp forms. -/
+theorem commute_projection_diamondOp {k : ℤ} {d : (ZMod N)ˣ}
+    {F : Submodule ℂ (ModularForm ((Gamma1 N).map (mapGL ℝ)) k)}
+    (hF : IsCompl F (ModularForm.cuspFormSubmodule ((Gamma1 N).map (mapGL ℝ)) k))
+    (hd : ∀ f ∈ F, diamondOp k d f ∈ F) :
+    Commute (F.projection _ hF) (diamondOp k d) := by
+  apply (LinearMap.IsIdempotentElem.commute_iff (Submodule.isIdempotentElem_projection _)).mpr
+  rw [Submodule.range_projection, Submodule.ker_projection]
+  constructor
+  · exact (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).mpr hd
+  · apply (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).mpr
+    rintro f ⟨s, rfl⟩
+    rw [CuspForm.toModularFormₗ_eq_coe, diamondOp_coe_cuspForm]
+    exact ModularForm.CuspForm.isCuspForm_toModularFormₗ _
+
+/-- **A diamond-stable complement of the cusp forms splits each nebentypus space.** If `F` is a
+complement of the cusp forms in `M_k(Γ₁(N))` stable under the diamond operators, then its forms of
+nebentypus `χ` form a complement of the image of `S_k(N, χ)` in `M_k(N, χ)`. -/
+theorem isCompl_comap_subtype_range_cuspToModFormCharSpace {k : ℤ}
+    {F : Submodule ℂ (ModularForm ((Gamma1 N).map (mapGL ℝ)) k)}
+    (hF : IsCompl F (ModularForm.cuspFormSubmodule ((Gamma1 N).map (mapGL ℝ)) k))
+    (hd : ∀ d : (ZMod N)ˣ, ∀ f ∈ F, diamondOp k d f ∈ F) (χ : (ZMod N)ˣ →* ℂˣ) :
+    IsCompl (F.comap (modFormCharSpace k χ).subtype)
+      (LinearMap.range (cuspToModFormCharSpace k χ)) := by
+  constructor
+  · rw [Submodule.disjoint_def]
+    intro f hfF hfS
+    exact Subtype.ext (Submodule.disjoint_def.mp hF.disjoint _ hfF
+      ((mem_range_cuspToModFormCharSpace_iff k χ f).mp hfS))
+  · refine codisjoint_iff.mpr (eq_top_iff.mpr fun f _ ↦ ?_)
+    -- the projection onto `F` commutes with the diamond operators, so it preserves `χ`
+    have hPχ : F.projection _ hF f ∈ modFormCharSpace k χ := by
+      rw [mem_modFormCharSpace_iff]
+      intro d
+      rw [diamondOpHom_apply, ← Module.End.mul_apply,
+        ← (commute_projection_diamondOp hF (hd d)).eq, Module.End.mul_apply,
+        diamondOp_apply_of_mem_modFormCharSpace k χ d f.2, map_smul]
+    let e : modFormCharSpace k χ := ⟨F.projection _ hF f, hPχ⟩
+    have he : e ∈ F.comap (modFormCharSpace k χ).subtype := by
+      rw [Submodule.mem_comap, Submodule.subtype_apply]
+      exact Submodule.projection_apply_mem _ _
+    have hs : f - e ∈ LinearMap.range (cuspToModFormCharSpace k χ) :=
+      (mem_range_cuspToModFormCharSpace_iff k χ _).mpr (Submodule.sub_projection_mem _ _)
+    exact Submodule.mem_sup.mpr ⟨e, he, f - e, hs, add_sub_cancel _ _⟩
