@@ -34,7 +34,8 @@ variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
   {A : C} [MonObj A] {J : Type u₃} [Category.{v₃} J]
   (F : J ⥤ Mod D A) [PreservesColimit (F ⋙ forget A) (actionLeft D A)]
 
-/-- A module cocone is colimiting whenever its underlying cocone is colimiting. -/
+/-- A module cocone is colimiting whenever its underlying cocone is colimiting and
+the monoid's action preserves the colimit of the underlying diagram. -/
 noncomputable def isColimitOfForget (c : Cocone F)
     (hc : IsColimit ((forget A).mapCocone c)) : IsColimit c where
   desc s := Hom.mk' (hc.desc ((forget A).mapCocone s)) (by
@@ -183,7 +184,7 @@ noncomputable instance hasColimitsOfShape [HasColimitsOfShape J D] :
   hasColimitsOfShape_of_hasColimitsOfShape_createsColimitsOfShape (forget A)
 
 /-- The forgetful functor creates colimits of any size preserved by the action. -/
-noncomputable instance forgetCreatesColimitsOfSize
+noncomputable instance forgetCreatesColimits
     [PreservesColimitsOfSize.{v₃, u₃} (actionLeft D A)] :
     CreatesColimitsOfSize.{v₃, u₃} (forget (D := D) A) where
   CreatesColimitsOfShape := inferInstance
