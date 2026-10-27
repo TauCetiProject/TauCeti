@@ -233,8 +233,8 @@ theorem integralForm_realModelCarrierEquiv (x y : M) :
     (M.isIntegral_realModel hM).integralForm (M.realModelCarrierEquiv hM x)
       (M.realModelCarrierEquiv hM y) = M.integralForm x y := by
   apply Int.cast_injective (α := ℝ)
-  rw [ZLattice.IsIntegral.integralForm_cast, coe_realModelCarrierEquiv,
-    coe_realModelCarrierEquiv, inner_realModelMap, ← M.integralForm_cast, Rat.cast_intCast]
+  rw [← Rat.cast_intCast (M.integralForm x y), M.integralForm_cast]
+  simp [ZLattice.IsIntegral.integralForm_cast]
 
 /-- A positive definite integral lattice `M` is isometric to the rational model of its real
 model: the isometry sends a lattice vector `x` to `1 ⊗ (1 ⊗ x)`. -/
@@ -283,10 +283,7 @@ private theorem realModelMap_realModelCarrierEquivOfIsometry
       M'.realModel hM')
     (x : M) :
     M'.realModelMap hM' (realModelCarrierEquivOfIsometry f hf x) = f (M.realModelMap hM x) := by
-  rw [← coe_realModelCarrierEquiv, realModelCarrierEquivOfIsometry, LinearEquiv.trans_apply,
-    LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, LinearEquiv.ofSubmodules_apply,
-    coe_realModelCarrierEquiv, LinearEquiv.restrictScalars_apply,
-    LinearIsometryEquiv.coe_toLinearEquiv]
+  simp [← coe_realModelCarrierEquiv, realModelCarrierEquivOfIsometry]
 
 /-- A real linear isometry carrying the real model of `M` onto the real model of `M'` induces an
 isometry of the integral lattices `M` and `M'`. -/
