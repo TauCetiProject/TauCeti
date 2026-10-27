@@ -149,29 +149,36 @@ theorem exists_nat_reflectionBond_eq_of_minimalCosetRepCovBy (hlam : lam ∈ dom
   have hz0 : 0 < z := Int.cast_pos.mp hpos
   exact ⟨z.toNat, by omega, by rw [← Int.cast_natCast, Int.toNat_of_nonneg hz0.le]⟩
 
+omit [P.flip.IsReduced] in
 /-- **A simple reflection off the walls through `λ` covers the identity in `W / W_λ`**: if
 `⟨λ, αᵢ^∨⟩ ≠ 0`, then `1 ⋖ sᵢ`. -/
-theorem minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero (hlam : lam ∈ dominantChamber P b)
-    {i : b.support} (hi : P.coroot' i lam ≠ 0) :
+theorem minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero {i : b.support}
+    (hi : P.coroot' i lam ≠ 0) :
     (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) 1
       ((weylCoxeterSystem P b).simple i) := by
   refine (weylCoxeterSystem P b).minimalCosetRepCovBy_one_simple fun hmem ↦ hi ?_
-  rw [parabolic_wallIndices_eq_stabilizer P b hlam, MulAction.mem_stabilizer_iff,
-    weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul] at hmem
+  -- The walls through `λ` generate a subgroup of its stabilizer.
+  have hle : (weylCoxeterSystem P b).parabolic (P.wallIndices b lam) ≤
+      MulAction.stabilizer P.weylGroup lam :=
+    (CoxeterSystem.parabolic_le_iff _).mpr fun j hj ↦ by
+      rw [MulAction.mem_stabilizer_iff, weylCoxeterSystem_simple]
+      exact ofIdx_smul_eq_self_of_coroot'_eq_zero (mem_wallIndices.mp hj)
+  have hfix := MulAction.mem_stabilizer_iff.mp (hle hmem)
+  rw [weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul] at hfix
   have h := coroot'_reflection_self P i lam
-  rw [hmem] at h
+  rw [hfix] at h
   exact CharZero.eq_neg_self_iff.mp h
 
+omit [P.flip.IsReduced] in
 /-- **The bond of the cover `1 ⋖ sᵢ` of `W / W_λ` is `⟨λ, αᵢ^∨⟩`**, for a simple root `αᵢ` with
 `⟨λ, αᵢ^∨⟩ ≠ 0`. -/
-theorem reflectionBond_simple_smul_one_smul (hlam : lam ∈ dominantChamber P b) {i : b.support}
-    (hi : P.coroot' i lam ≠ 0) :
+theorem reflectionBond_simple_smul_one_smul {i : b.support} (hi : P.coroot' i lam ≠ 0) :
     P.reflectionBond b ((weylCoxeterSystem P b).simple i • lam) ((1 : P.weylGroup) • lam) =
       P.coroot' i lam := by
-  have h := minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero hlam hi
-  rw [reflectionBond_eq_coroot' (b.isPos_of_mem_support i.2) _
-    (smul_ne_smul_of_minimalCosetRepCovBy hlam h), one_smul]
-  rw [weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul, one_smul,
-    reflection_same]
+  rw [weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul, one_smul]
+  -- `sᵢ λ ≠ λ`, since `⟨sᵢ λ, αᵢ^∨⟩ = -⟨λ, αᵢ^∨⟩ ≠ ⟨λ, αᵢ^∨⟩`.
+  have hne : lam ≠ P.reflection i lam := fun h ↦ hi <| CharZero.eq_neg_self_iff.mp <| by
+    rw [← coroot'_reflection_self P i lam, ← h]
+  rw [reflectionBond_eq_coroot' (b.isPos_of_mem_support i.2) (P.reflection_same i lam) hne]
 
 end TauCeti

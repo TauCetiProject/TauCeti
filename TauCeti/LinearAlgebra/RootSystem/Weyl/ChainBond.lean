@@ -48,6 +48,8 @@ construction and their gcd is defined.
   denominator of `a` divides its bond gcd**.
 * `TauCeti.isAChain_iff_forall_coroot'`: the `a`-chain condition in Littelmann's form,
   `a ⟨x_{h-1} λ, β_h^∨⟩ ∈ ℤ` for the positive root label `β_h` of each cover.
+* `TauCeti.dvd_bondGcd_iff` and `TauCeti.bondGcd_dvd`: the bond gcd is the gcd of the bonds, as a
+  divisibility characterization.
 * `TauCeti.bondGcd_eq_zero_iff`: the bond gcd is positive exactly when the chain is nonempty.
 * `TauCeti.bondGcd_smash` and `TauCeti.isAChain_smash_iff`: the bond gcd and the `a`-chain
   condition of a concatenation of two chains.
@@ -94,14 +96,27 @@ def IsAChain (a : ℚ) (lam : M)
 
 variable {a : ℚ} {lam : M}
 
+/-- A natural number divides the bond gcd `d(C)` of a saturated chain exactly when it divides the
+bond of every cover of the chain. -/
+theorem dvd_bondGcd_iff {n : ℕ}
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} :
+    n ∣ bondGcd lam C ↔ ∀ i : Fin C.length,
+      n ∣ (P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam)).natAbs := by
+  simp only [bondGcd, Finset.dvd_gcd_iff, Finset.mem_univ, true_imp_iff]
+
+/-- The bond gcd `d(C)` of a saturated chain divides the bond of each cover of the chain. -/
+theorem bondGcd_dvd
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} (i : Fin C.length) :
+    bondGcd lam C ∣ (P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam)).natAbs :=
+  Finset.gcd_dvd (Finset.mem_univ i)
+
 /-- **A saturated chain is an `a`-chain exactly when the denominator of `a` divides its bond
 gcd.** Writing `a = p / q` in lowest terms with `q > 0`, the integrality of `a` times every bond of
 the chain `C` is the divisibility `q ∣ d(C)`. -/
 theorem isAChain_iff_den_dvd_bondGcd
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} :
     IsAChain a lam C ↔ a.den ∣ bondGcd lam C := by
-  simp only [IsAChain, bondGcd, Finset.dvd_gcd_iff, Finset.mem_univ, true_imp_iff,
-    ← Int.natCast_dvd, Rat.den_dvd_iff_exists_mul_intCast_eq]
+  simp only [IsAChain, dvd_bondGcd_iff, ← Int.natCast_dvd, Rat.den_dvd_iff_exists_mul_intCast_eq]
 
 /-- The chain of length `0` has bond gcd `0`. -/
 @[simp]
@@ -184,6 +199,21 @@ theorem isAChain_smash_iff
     (h : C.last = D.head) : IsAChain a lam (C.smash D h) ↔ IsAChain a lam C ∧ IsAChain a lam D := by
   simp only [isAChain_iff_den_dvd_bondGcd, bondGcd_smash, Nat.dvd_gcd_iff]
 
+/-- **The bond gcd of the chain `sᵢ ⋗ 1`.** For a simple root `αᵢ` with `⟨λ, αᵢ^∨⟩ ≠ 0`, the
+simple reflection `sᵢ` covers the identity in `W / W_λ`, and the saturated chain `sᵢ ⋗ 1` has bond
+gcd `|⟨λ, αᵢ^∨⟩|`. So it is an `a`-chain exactly when the denominator of `a` divides
+`⟨λ, αᵢ^∨⟩`. -/
+theorem bondGcd_snoc_singleton_simple_one {i : b.support} (hi : P.coroot' i lam ≠ 0) :
+    bondGcd lam ((RelSeries.singleton _ ⟨(weylCoxeterSystem P b).simple i,
+      (minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero hi).isMinimalCosetRep_right⟩ :
+        (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)).snoc
+      ⟨1, (minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero hi).isMinimalCosetRep_left⟩
+      (minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero hi)) =
+      (P.coroot' i lam).natAbs := by
+  refine (bondGcd_snoc _).trans ?_
+  rw [bondGcd_singleton, Nat.gcd_zero_left, RelSeries.last_singleton,
+    reflectionBond_simple_smul_one_smul hi]
+
 variable [P.flip.IsReduced]
 
 /-- **The `a`-chain condition in Littelmann's form.** A saturated chain `x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of
@@ -224,21 +254,5 @@ theorem bondGcd_eq_zero_iff (hlam : lam ∈ dominantChamber P b)
     (C.minimalCosetRepCovBy ⟨0, Nat.pos_of_ne_zero hC⟩)
   have := h ⟨0, Nat.pos_of_ne_zero hC⟩ (Finset.mem_univ _)
   omega
-
-/-- **The bond gcd of the chain `sᵢ ⋗ 1`.** For a simple root `αᵢ` with `⟨λ, αᵢ^∨⟩ ≠ 0`, the
-simple reflection `sᵢ` covers the identity in `W / W_λ`, and the saturated chain `sᵢ ⋗ 1` has bond
-gcd `|⟨λ, αᵢ^∨⟩|`. So it is an `a`-chain exactly when the denominator of `a` divides
-`⟨λ, αᵢ^∨⟩`. -/
-theorem bondGcd_snoc_singleton_simple_one (hlam : lam ∈ dominantChamber P b) {i : b.support}
-    (hi : P.coroot' i lam ≠ 0) :
-    bondGcd lam ((RelSeries.singleton _ ⟨(weylCoxeterSystem P b).simple i,
-      (minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero hlam hi).isMinimalCosetRep_right⟩ :
-        (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)).snoc
-      ⟨1, (minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero hlam hi).isMinimalCosetRep_left⟩
-      (minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero hlam hi)) =
-      (P.coroot' i lam).natAbs := by
-  refine (bondGcd_snoc _).trans ?_
-  rw [bondGcd_singleton, Nat.gcd_zero_left, RelSeries.last_singleton,
-    reflectionBond_simple_smul_one_smul hlam hi]
 
 end TauCeti
