@@ -36,7 +36,8 @@ shift. That is what a `q`-support hypothesis is spent on when descending along `
 stated here rather than at the descent because it mentions only coefficients, divisibility and
 `Function.Periodic.qParam`.
 
-Finally, the `q`-parameter as a function on `ℍ`: it is periodic, its own `q`-expansion is `X`,
+Finally, the `q`-parameter as a function on `ℍ`: it is periodic, its own `q`-expansion is `X`
+(and that of its `m`-th power is `X ^ m`),
 and a periodic function whose `q`-expansion has no constant term is asymptotic at `i∞` to its
 `q`-coefficient times `q`.  These are what a function with a pole at the cusp, such as `j`, is
 expanded through: one multiplies by `q` and divides the expansion of the product by `q`.
@@ -50,7 +51,8 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 * `CuspForm.qExpansion_injective`: a cusp form is determined by its `q`-expansion.
 * `TauCeti.smul_qParam_pow_shift_eq`: a shift by `1 / d` fixes every `q`-power that a
   `d`-supported coefficient function leaves alive.
-* `TauCeti.UpperHalfPlane.qExpansion_qParam`: the `q`-expansion of `q` is `X`.
+* `TauCeti.UpperHalfPlane.qExpansion_qParam` and `TauCeti.UpperHalfPlane.qExpansion_qParam_pow`:
+  the `q`-expansions of `q` and of its powers are `X` and its powers.
 * `TauCeti.UpperHalfPlane.tendsto_div_qParam_atImInfty`: `f / q` tends to the `q`-coefficient of
   `f` when the constant coefficient vanishes.
 
@@ -126,6 +128,28 @@ theorem UpperHalfPlane.qExpansion_qParam (hh : 0 < h) :
   convert hasSum_ite_eq 1 (Function.Periodic.qParam h (τ : ℂ)) using 2 with m
   rw [PowerSeries.coeff_X]
   split_ifs with hm <;> simp [hm]
+
+/-- The cusp function of a power of the `q`-parameter is analytic at `0`. -/
+theorem UpperHalfPlane.analyticAt_cuspFunction_qParam_pow (hh : 0 < h) (m : ℕ) :
+    AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) 0 :=
+  _root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh
+    (fun z ↦ by simpa using congrArg (· ^ m) (periodic_qParam_comp_ofComplex hh.ne' z))
+    ((Function.Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe).pow m)
+    (((_root_.UpperHalfPlane.qParam_tendsto_atImInfty hh).pow m).isBigO_one ℝ)
+
+/-- The `q`-expansion of the `m`-th power of the `q`-parameter is `X ^ m`. -/
+theorem UpperHalfPlane.qExpansion_qParam_pow (hh : 0 < h) (m : ℕ) :
+    qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) = PowerSeries.X ^ m := by
+  induction m with
+  | zero => simpa [Pi.one_def] using _root_.UpperHalfPlane.qExpansion_one h
+  | succ m ih =>
+    have hfun : (fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ (m + 1)) =
+        (fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) *
+          fun τ : ℍ ↦ Function.Periodic.qParam h τ := by
+      funext τ
+      simp [pow_succ]
+    rw [hfun, _root_.UpperHalfPlane.qExpansion_mul (analyticAt_cuspFunction_qParam_pow hh m)
+      (by simpa using analyticAt_cuspFunction_qParam_pow hh 1), ih, qExpansion_qParam hh, pow_succ]
 
 /-- A periodic function whose `q`-expansion has no constant term is asymptotic to its first
 coefficient times `q` at `i∞`: `f τ / q` tends to the coefficient of `q`. -/

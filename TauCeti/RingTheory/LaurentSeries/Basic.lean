@@ -58,8 +58,8 @@ by `φ.order.toNat`, and in particular preserves the residue when `φ.order = 1`
   `exp (-ord f)`; `TauCeti.LaurentSeries.valuation_coe` gives the same for a nonzero power series.
 * `TauCeti.LaurentSeries.valuation_mapRingHom`: applying a field embedding to the coefficients
   preserves the valuation.
-* `PowerSeries.order_coe` and `PowerSeries.orderTop_coe_of_ne_zero`: the order of a power series in
-  `R⸨X⸩` agrees with its power series order.
+* `PowerSeries.order_coe`, `PowerSeries.orderTop_coe` and `PowerSeries.orderTop_coe_of_ne_zero`:
+  the order of a power series in `R⸨X⸩` agrees with its power series order.
 * `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
 * `PowerSeries.coe_derivative` and `PowerSeries.coe_hasseDeriv`: the derivative and the Hasse
   derivatives of Laurent series extend those of power series.
@@ -103,6 +103,15 @@ theorem orderTop_coe_of_ne_zero {R : Type*} [Semiring R] {f : R⟦X⟧} (hf : f 
         rw [← Nat.cast_le (α := ℕ∞), ← hord]
         exact order_le g.natAbs hg
       omega
+
+/-- The `WithTop ℤ`-valued order of a power series coerced to `R⸨X⸩` is its order, read in
+`WithTop ℤ`; both are `⊤` exactly for the zero series. -/
+theorem orderTop_coe {R : Type*} [Semiring R] (f : R⟦X⟧) :
+    (f : R⸨X⸩).orderTop = f.order.map ((↑) : ℕ → ℤ) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp (order_eq_top.not.mpr hf)
+  rw [orderTop_coe_of_ne_zero hf, ← hn, ENat.map_natCast, ENat.toNat_natCast]
 
 /-- The integer order of a power series coerced to `R⸨X⸩` is `(f.order.toNat : ℤ)`. -/
 @[simp]
