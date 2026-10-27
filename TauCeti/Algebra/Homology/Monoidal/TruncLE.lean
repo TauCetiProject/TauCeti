@@ -387,8 +387,7 @@ lemma bijective_ε_comp_truncLE'Functor_map :
       simp only [comp_f, Category.assoc, truncLE'Map_f_truncLE'ToX,
         truncLE'Unit_f_truncLE'ToX_assoc, key]
       simp only [φ, Category.assoc, Iso.hom_inv_id, Category.comp_id, Iso.hom_inv_id_assoc]
-  -- the unit and the action on morphisms of the good truncation are `truncLE'Unit` and
-  -- `truncLE'Map` (`truncLE'Functor_ε` and `ComplexShape.Embedding.truncLE'Functor_map`)
+  simp only [truncLE'Functor_ε, ComplexShape.Embedding.truncLE'Functor_map]
   exact h
 
 end CochainComplex

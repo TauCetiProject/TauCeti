@@ -136,20 +136,19 @@ lemma homEquiv_id (X : C) : (homEquiv R X X (𝟙 (of R X)) : DGHom R 0 X X) = d
   (dgClosedHomEquiv_apply_coe R (X := ForgetEnrichment.of _ X) (Y := ForgetEnrichment.of _ X)
     _).trans (dgClosedHom_id R (ForgetEnrichment.of _ X))
 
+/-- The equivalence `homEquiv` takes the closed component of a morphism of `C_Δ`. -/
+private lemma homEquiv_apply_coe {X Y : C} (f : of R X ⟶ of R Y) :
+    (homEquiv R X Y f : DGHom R 0 X Y) =
+      dgClosedHom (C := C) R (X := ForgetEnrichment.of _ X) (Y := ForgetEnrichment.of _ Y) f :=
+  dgClosedHomEquiv_apply_coe (C := C) R f
+
 /-- Composition in `C_Δ` is the composition of closed degree-zero morphisms. -/
 @[simp]
 lemma homEquiv_comp {X Y Z : C} (f : of R X ⟶ of R Y) (g : of R Y ⟶ of R Z) :
     (homEquiv R X Z (f ≫ g) : DGHom R 0 X Z) =
-      dgCompZero R (homEquiv R X Y f : DGHom R 0 X Y) (homEquiv R Y Z g) :=
-  (dgClosedHomEquiv_apply_coe R (X := ForgetEnrichment.of _ X) (Y := ForgetEnrichment.of _ Z)
-    _).trans
-    ((dgClosedHom_comp R (X := ForgetEnrichment.of _ X) (Y := ForgetEnrichment.of _ Y)
-      (Z := ForgetEnrichment.of _ Z) f g).trans
-        (congrArg₂ (dgCompZero R)
-          (dgClosedHomEquiv_apply_coe R (X := ForgetEnrichment.of _ X)
-            (Y := ForgetEnrichment.of _ Y) f).symm
-          (dgClosedHomEquiv_apply_coe R (X := ForgetEnrichment.of _ Y)
-            (Y := ForgetEnrichment.of _ Z) g).symm))
+      dgCompZero R (homEquiv R X Y f : DGHom R 0 X Y) (homEquiv R Y Z g) := by
+  rw [homEquiv_apply_coe, homEquiv_apply_coe, homEquiv_apply_coe]
+  exact dgClosedHom_comp (C := C) R f g
 
 /-- The enriched identity of `C_Δ` at `X` is the vertex of the mapping simplicial set given by the
 identity of `X` in the differential graded category. -/
@@ -170,6 +169,10 @@ lemma eHomEquiv_apply {X Y : C} (f : of R X ⟶ of R Y) :
     (dgClosedHomEquiv_symm_apply R (X := ForgetEnrichment.of _ X) (Y := ForgetEnrichment.of _ Y)
       _).symm.trans ((homEquiv R X Y).symm_apply_apply f)
   rw [h]
+  -- `eHomEquiv SSet` is the `homEquiv` field `(eHomEquiv V).trans (e _)` of
+  -- `TransportEnrichment.enrichedOrdinaryCategory`, where `eHomEquiv V` is the `Equiv.refl` of
+  -- `ForgetEnrichment.enrichedOrdinaryCategory` and `e` is the `Equiv.ofBijective` of
+  -- `f ↦ ε ≫ F.map f` given in `TauCeti.dgSimplicialCategory`.
   rfl
 
 end DGSimplicialCategory
