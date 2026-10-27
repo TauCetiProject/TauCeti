@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
+public import Mathlib.CategoryTheory.Preadditive.Schur
 public import Mathlib.CategoryTheory.Simple
 
 /-!
@@ -25,6 +26,8 @@ finite-dimensionality of morphism spaces are separate hypotheses when they are n
 * `TauCeti.IsFiniteSemisimpleCategory`: every object is a finite biproduct of simple objects.
 * `TauCeti.IsFiniteSemisimpleCategory.of_equivalence`: transport finite semisimplicity across an
   equivalence.
+* `TauCeti.isSplitMono_of_nonzero_from_simple`: a nonzero morphism out of a simple object is a
+  split monomorphism.
 -/
 
 public section
@@ -76,5 +79,20 @@ theorem iff_of_equivalence (e : C ≌ D) :
     exact of_equivalence e.symm
 
 end IsFiniteSemisimpleCategory
+
+/-- In a finite semisimple category, a nonzero morphism out of a simple object is a split
+monomorphism. -/
+theorem isSplitMono_of_nonzero_from_simple {C : Type u} [Category.{v} C] [Abelian C]
+    [IsFiniteSemisimpleCategory C] {S Z : C} [Simple S] {f : S ⟶ Z} (hf : f ≠ 0) :
+    IsSplitMono f := by
+  obtain ⟨ι, hι, g, hg, hbg, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Z
+  -- Some component of `f` in a decomposition of `Z` into simple objects is nonzero, hence an
+  -- isomorphism by Schur's lemma.
+  obtain ⟨i, hi⟩ : ∃ i, f ≫ e.hom ≫ biproduct.π g i ≠ 0 := by
+    by_contra! h
+    exact hf <| (cancel_mono e.hom).1 <| biproduct.hom_ext _ _ fun i ↦ by simpa using h i
+  have := isIso_of_hom_simple hi
+  exact IsSplitMono.mk' ⟨e.hom ≫ biproduct.π g i ≫ inv (f ≫ e.hom ≫ biproduct.π g i), by
+    simpa only [Category.assoc] using IsIso.hom_inv_id (f ≫ e.hom ≫ biproduct.π g i)⟩
 
 end TauCeti

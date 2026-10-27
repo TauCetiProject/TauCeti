@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 public import TauCeti.Analysis.Calculus.TangentCone.Chart
+public import TauCeti.Analysis.Calculus.TangentCone.LevelSet
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
@@ -28,7 +29,8 @@ cone of `S₁ ∩ S₂` at `y` is that intersection. Its dimension is therefore
 
 The most common second set is a regular level set `g⁻¹ {0}`, whose tangent space is `ker g'`;
 cutting by it is transverse when the tangent space of the first set and `ker g'` span the whole
-space.
+space. The underlying regular-level tangent-cone calculation is
+`HasStrictFDerivAt.tangentConeAt_preimage_singleton`, which also applies to Banach spaces.
 
 ## Main results
 
@@ -36,8 +38,6 @@ space.
   intersection of two flattened sets is flattened onto the intersection of their tangent spaces.
 * `TauCeti.span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top`: the tangent space of a
   transverse intersection is the intersection of the two tangent spaces.
-* `TauCeti.span_tangentConeAt_preimage_zero`: the tangent space of a regular level set
-  `g⁻¹ {0}` is the kernel of the derivative of `g`.
 * `TauCeti.exists_isSliceChart_inter_preimage_zero` and
   `TauCeti.span_tangentConeAt_inter_preimage_zero`: the same two statements for the cut of a
   flattened set by a transverse regular level set.
@@ -152,32 +152,6 @@ theorem span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top {n : ℕ∞ω}
   exact he.finrank_span_tangentConeAt (Submodule.closed_of_finiteDimensional _) hye
     ⟨hyS₁, hyS₂⟩ (hA ▸ hd.hasFDerivAt)
 
-/-- **The tangent space of a regular level set.** If `g` is `C^n` (`n ≠ 0`) on an open set around
-a zero `y`, with surjective strict derivative `g'` at `y`, then the tangent space of the zero set of
-`g` at `y`, taken intrinsically as the span of its tangent cone, is `ker g'`. -/
-theorem span_tangentConeAt_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {g : E → F} {g' : E →L[𝕜] F}
-    {y : E} (hg : HasStrictFDerivAt g g' y) (hg' : g'.range = ⊤) (hy : g y = 0) {U : Set E}
-    (hU : IsOpen U) (hyU : y ∈ U) (hC : ∀ z ∈ U, ContDiffAt 𝕜 n g z) :
-    Submodule.span 𝕜 (tangentConeAt 𝕜 (g ⁻¹' {0}) y) = g'.ker := by
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-  let _ : FiniteDimensional 𝕜 F :=
-    FiniteDimensional.of_surjective g'.toLinearMap (LinearMap.range_eq_top.mp hg')
-  let _ : CompleteSpace F := FiniteDimensional.complete 𝕜 F
-  obtain ⟨e, hye, -, he, hes, hS⟩ := hg.exists_isSliceChart_preimage_zero hn hg'
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _)) hU hyU hC
-  obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hye ((he y hye).differentiableAt hn)
-    ((hes _ (e.map_source hye)).differentiableAt hn)
-  -- The tangent cone lies in `ker g'`, and its span has the dimension of `ker g'`, read off the
-  -- chart `e`.
-  refine Submodule.eq_of_le_of_finrank_eq (Submodule.span_le.2 fun v hv ↦ ?_)
-    (hS.finrank_span_tangentConeAt (Submodule.closed_of_finiteDimensional _) hye hy hA)
-  have hv' := tangentConeAt_mono (image_preimage_subset g {0})
-    (hg.hasFDerivAt.hasFDerivWithinAt.mapsTo_tangent_cone hv)
-  rw [hy, ← Submodule.bot_coe (R := 𝕜) (M := F),
-    Submodule.tangentConeAt_eq ⊥ (Submodule.closed_of_finiteDimensional _) (zero_mem _)] at hv'
-  simpa using hv'
-
 /-- **Cutting by a transverse regular level set.** Let a `C^n` chart `e₁` (`n ≠ 0`), whose inverse
 is differentiable at `e₁ y`, flatten `S` onto a linear subspace near `y ∈ S`, and let `g` be `C^n`
 on an open set around `y`, with `g y = 0` and surjective strict derivative `g'` at `y`. If the
@@ -199,10 +173,12 @@ theorem exists_isSliceChart_inter_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {S
   let _ : FiniteDimensional 𝕜 F :=
     FiniteDimensional.of_surjective g'.toLinearMap (LinearMap.range_eq_top.mp hg')
   let _ : CompleteSpace F := FiniteDimensional.complete 𝕜 F
-  obtain ⟨e₂, hy₂, -, hc₂, hs₂, h₂⟩ := hg.exists_isSliceChart_preimage_zero hn hg'
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _)) hU hyU hC
-  rw [← span_tangentConeAt_preimage_zero hn hg hg' hgy hU hyU hC] at htr ⊢
+  have hker := Submodule.ClosedComplemented.of_finiteDimensional_quotient g'.isClosed_ker
+  obtain ⟨e₂, hy₂, -, hc₂, hs₂, h₂⟩ :=
+    hg.exists_isSliceChart_preimage_zero hn hg' hker hU hyU hC
+  have hlevel := hg.span_tangentConeAt_preimage_singleton hg' hker
+  rw [hgy] at hlevel
+  rw [← hlevel] at htr ⊢
   exact exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top hn h₁ h₂ hy₁ hy₂ hyS hgy hc₁
     hc₂ hs₁ ((hs₂ _ (e₂.map_source hy₂)).differentiableAt hn) htr
 
@@ -222,10 +198,12 @@ theorem span_tangentConeAt_inter_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {S 
   let _ : FiniteDimensional 𝕜 F :=
     FiniteDimensional.of_surjective g'.toLinearMap (LinearMap.range_eq_top.mp hg')
   let _ : CompleteSpace F := FiniteDimensional.complete 𝕜 F
-  obtain ⟨e₂, hy₂, -, hc₂, hs₂, h₂⟩ := hg.exists_isSliceChart_preimage_zero hn hg'
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _)) hU hyU hC
-  rw [← span_tangentConeAt_preimage_zero hn hg hg' hgy hU hyU hC] at htr ⊢
+  have hker := Submodule.ClosedComplemented.of_finiteDimensional_quotient g'.isClosed_ker
+  obtain ⟨e₂, hy₂, -, hc₂, hs₂, h₂⟩ :=
+    hg.exists_isSliceChart_preimage_zero hn hg' hker hU hyU hC
+  have hlevel := hg.span_tangentConeAt_preimage_singleton hg' hker
+  rw [hgy] at hlevel
+  rw [← hlevel] at htr ⊢
   exact span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top hn h₁ h₂ hy₁ hy₂ hyS hgy hc₁
     hc₂ hs₁ ((hs₂ _ (e₂.map_source hy₂)).differentiableAt hn) htr
 

@@ -18,10 +18,10 @@ sense of `TauCeti.DescentDatum p X`, on a scheme `X ⟶ S'` affine over `S'`. Wr
 from `S' ×_S X` to `X`: the action `(s, x) ↦ s · x` and the second projection `(s, x) ↦ x`. On
 functions, these are two morphisms of quasi-coherent `𝒪_S`-algebras `π_* 𝒪_X ⟶ (π')_* 𝒪_{S' ×_S X}`,
 and this file defines the *descended scheme* `D.descended` as the relative spectrum over `S` of
-their equalizer (`CommMon.relativeSpecEqualizer`). Over an affine open `U` of `S` it is the
-spectrum of the functions on `π⁻¹ U` which are invariant under the descent datum
-(`CommMon.isPullback_relativeSpecEqualizerCover`); this is the global form of the invariant
-subalgebra `TauCeti.Algebra.DescentDatum.descended` used over an affine base.
+their equalizer (`CommMon.equalizerSubalgebraPresheaf`). Over an affine open `U` of `S` it is
+the spectrum of the functions on `π⁻¹ U` which are invariant under the descent datum
+(`CommMon.SubalgebraPresheaf.isPullback_relativeSpecCover`); this is the global form of the
+invariant subalgebra `TauCeti.Algebra.DescentDatum.descended` used over an affine base.
 
 The quotient map `D.toDescended : X ⟶ D.descended` lies over `S` and is invariant under the
 action (`DescentDatum.act_toDescended`). Consequently it induces a morphism of descent data
@@ -94,18 +94,21 @@ projection `S' ×_S X ⟶ X` agree. -/
 -- relative spectrum of the equalizer, and the equalizer lemmas rewrite them.
 @[expose, implicit_reducible]
 def descended : Over S :=
-  Over.mk (CommMon.relativeSpecEqualizerToBase D.actAlgebraMap (sndAlgebraMap p X))
+  Over.mk
+    (CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap (sndAlgebraMap p X)).relativeSpecToBase
 
 /-- The underlying scheme of the descended scheme is the relative spectrum of the equalizer of
 `D.actAlgebraMap` and `sndAlgebraMap p X`. -/
 theorem descended_left :
-    D.descended.left = CommMon.relativeSpecEqualizer D.actAlgebraMap (sndAlgebraMap p X) :=
+    D.descended.left =
+      (CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap (sndAlgebraMap p X)).relativeSpec :=
   (rfl)
 
 /-- The structure morphism of the descended scheme is that of the relative spectrum of the
 equalizer. -/
 theorem descended_hom :
-    D.descended.hom = CommMon.relativeSpecEqualizerToBase D.actAlgebraMap (sndAlgebraMap p X) :=
+    D.descended.hom = CommMon.SubalgebraPresheaf.relativeSpecToBase
+      (CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap (sndAlgebraMap p X)) :=
   (rfl)
 
 /-- The descended scheme is affine over `S`. -/
@@ -116,14 +119,14 @@ instance isAffineHom_descended_hom : IsAffineHom D.descended.hom := by
 /-- The quotient map from `X` to the scheme descended from `D`. -/
 def toDescended : X.left ⟶ D.descended.left :=
   inv (X.hom ≫ p).relativeSpecFunctionsToScheme ≫
-    CommMon.relativeSpecEqualizerπ D.actAlgebraMap (sndAlgebraMap p X)
+    (CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap (sndAlgebraMap p X)).relativeSpecπ
 
 /-- Through the identification of `X` with the relative spectrum of its functions over `S`, the
-quotient map is `CommMon.relativeSpecEqualizerπ`. -/
+quotient map is the projection `CommMon.SubalgebraPresheaf.relativeSpecπ`. -/
 @[reassoc]
 theorem relativeSpecFunctionsToScheme_toDescended :
     (X.hom ≫ p).relativeSpecFunctionsToScheme ≫ D.toDescended =
-      CommMon.relativeSpecEqualizerπ D.actAlgebraMap (sndAlgebraMap p X) := by
+      (CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap (sndAlgebraMap p X)).relativeSpecπ := by
   rw [toDescended, IsIso.hom_inv_id_assoc]
 
 /-- The quotient map lies over `S`. -/
@@ -131,7 +134,7 @@ theorem relativeSpecFunctionsToScheme_toDescended :
 theorem toDescended_hom : D.toDescended ≫ D.descended.hom = X.hom ≫ p := by
   rw [← cancel_epi (X.hom ≫ p).relativeSpecFunctionsToScheme,
     relativeSpecFunctionsToScheme_toDescended_assoc, descended_hom,
-    CommMon.relativeSpecEqualizerπ_relativeSpecEqualizerToBase,
+    CommMon.SubalgebraPresheaf.relativeSpecπ_relativeSpecToBase,
     Scheme.Hom.relativeSpecFunctionsToScheme_comp]
 
 /-- The quotient map is invariant under the descent datum: `s · x` and `x` have the same image. -/
@@ -140,11 +143,11 @@ theorem act_toDescended :
     D.act ≫ D.toDescended = pullback.snd p (X.hom ≫ p) ≫ D.toDescended := by
   -- Both maps are, through the identifications of affine schemes over `S` with the relative
   -- spectra of their function algebras, the relative spectra of the two algebra maps, which
-  -- `CommMon.relativeSpecEqualizerπ` coequalizes.
+  -- the projection to the relative spectrum of the equalizer coequalizes.
   rw [toDescended,
     Scheme.Hom.inv_relativeSpecFunctionsToScheme_naturality_assoc D.act D.act_comp_hom_comp,
     Scheme.Hom.inv_relativeSpecFunctionsToScheme_naturality_assoc _ rfl,
-    CommMon.relativeSpecMap_relativeSpecEqualizerπ]
+    CommMon.relativeSpecMap_equalizerSubalgebraPresheaf_relativeSpecπ]
 
 /-- The comparison morphism from `D` to the canonical descent datum on the base change
 `D.descended ×_S S'` of the descended scheme, `x ↦ (D.toDescended x, X.hom x)`. When it is an

@@ -38,7 +38,9 @@ semialgebraic sets under projection.
 
 To apply these results to a concrete ordered field such as `ℝ`, install the structures
 `FirstOrder.Ring.compatibleRingOfRing ℝ` and `FirstOrder.Language.orderStructure ℝ`; the
-`OrderedStructure` hypothesis then holds by `⟨fun _ => Iff.rfl⟩`.
+`OrderedStructure` hypothesis is then found by the instances
+`FirstOrder.Language.orderedStructure_orderStructure` and
+`FirstOrder.Language.orderedStructure_sum` of `TauCeti.ModelTheory.Order`.
 
 ## References
 

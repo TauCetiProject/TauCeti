@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fourier.AddCircle
 public import TauCeti.Analysis.Fourier.Hardy.Basic
-public import TauCeti.MeasureTheory.Function.Lp.Multiplication
 
 /-!
 # Toeplitz operators on boundary Hardy space
@@ -22,8 +20,16 @@ space `H²`, where `P` is the orthogonal projection onto `H²`. This file bundle
 * `TauCeti.adjoint_toeplitz`: the adjoint of `T_a` is the Toeplitz operator of the complex
   conjugate symbol;
 * `TauCeti.toeplitz_const`: a constant symbol acts by scalar multiplication;
-* `TauCeti.norm_toeplitz_le`: the operator norm of `T_a` is at most `‖a‖∞`;
-* `TauCeti.toeplitz_injective`: a symbol is determined by its Toeplitz operator.
+* `TauCeti.norm_toeplitz`: the operator norm of `T_a` is exactly `‖a‖∞`, so the symbol map is an
+  isometry (`TauCeti.isometry_toeplitz`) and in particular injective
+  (`TauCeti.toeplitz_injective`).
+
+The inequality `‖T_a‖ ≤ ‖a‖∞` is immediate from the compression. For the reverse inequality,
+multiplication by a Fourier monomial `e_N` is unitary on circle `L²` and commutes with `M_a`, and
+for `N` large it moves any two trigonometric polynomials `f, g` into `H²`. Hence
+`|⟪f, a g⟫| = |⟪e_N f, T_a (e_N g)⟫| ≤ ‖T_a‖ ‖f‖ ‖g‖`, which extends by density to all of `L²`
+and gives `‖M_a‖ ≤ ‖T_a‖`; the operator norm of `M_a` is `‖a‖∞`. This norm-equality
+argument follows Böttcher–Silbermann, *Analysis of Toeplitz Operators*, §2.
 
 The conventions are those of Conway, *A Course in Functional Analysis*, second edition, and of
 E. Park, *Toeplitz operators*: normalized Haar measure, the modes `exp (2πint)` and inner products
@@ -134,31 +140,77 @@ theorem norm_toeplitz_le (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     ‖toeplitz a‖ ≤ ‖a‖ :=
   norm_compress_multiplicationOperator_le a
 
-/-- A symbol is determined by its Toeplitz operator: all its Fourier coefficients occur as
-matrix entries, and the Fourier modes form a Hilbert basis of circle `L²`. -/
-theorem toeplitz_injective : Function.Injective toeplitz := by
-  rw [injective_iff_map_eq_zero]
-  intro a ha
-  -- Every integer is a difference of natural numbers, so all Fourier coefficients of `a` vanish.
-  have hcoeff (n : ℤ) : fourierCoeff a n = 0 := by
-    have hn : n = (n.toNat : ℤ) - ((-n).toNat : ℤ) := by omega
-    rw [hn, ← inner_hardyBasis_toeplitz_hardyBasis, ha, zero_apply, inner_zero_right]
-  -- Hence the `L²` function `a e₀` has no Fourier coefficients and vanishes.
-  have hzero :
-      (a • fourierBasis (T := 1) 0 : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) = 0 := by
-    apply (fourierBasis (T := 1)).repr.injective
-    ext n
-    rw [fourierBasis_repr, fourierCoeff_smul_fourierBasis, sub_zero, hcoeff, map_zero,
-      lp.coeFn_zero, Pi.zero_apply]
-  -- Since `e₀ = 1`, the symbol `a` itself vanishes almost everywhere.
-  apply Lp.ext
-  filter_upwards [Lp.coeFn_lpSMul (r := 2) a (fourierBasis (T := 1) 0),
-    coeFn_fourierLp (T := 1) 2 0, Lp.coeFn_zero ℂ 2 (AddCircle.haarAddCircle (T := 1)),
-    Lp.coeFn_zero ℂ ∞ (AddCircle.haarAddCircle (T := 1))] with x hx h0 hz hz'
-  rw [hzero] at hx
-  rw [hz', Pi.zero_apply]
-  rw [hz, Pi.zero_apply, Pi.smul_apply', coe_fourierBasis, h0, fourier_zero,
-    smul_eq_mul, mul_one] at hx
-  exact hx.symm
+/-- On trigonometric polynomials, the matrix coefficients of multiplication by `a` are bounded by
+the norm of `T_a`: multiplying by a high Fourier mode is unitary, commutes with multiplication by
+`a`, and moves both vectors into Hardy space, where `M_a` is compressed to `T_a`. -/
+private theorem norm_inner_smul_le_of_mem_span (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
+    {f g : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))}
+    (hf : f ∈ Submodule.span ℂ (Set.range (fourierBasis (T := 1))))
+    (hg : g ∈ Submodule.span ℂ (Set.range (fourierBasis (T := 1)))) :
+    ‖⟪f, a • g⟫_ℂ‖ ≤ ‖toeplitz a‖ * ‖f‖ * ‖g‖ := by
+  obtain ⟨N, hfN, hgN⟩ := ((eventually_fourierLp_smul_mem_hardySubmodule hf).and
+    (eventually_fourierLp_smul_mem_hardySubmodule hg)).exists
+  have hu := ae_norm_fourierLp_eq_one (T := 1) ∞ N
+  have hcomm := congrArg (· g)
+    (Lp.commute_multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N) a).eq
+  simp only [mul_apply_eq_comp, Lp.multiplicationOperator_apply] at hcomm
+  have hinner : ⟪f, a • g⟫_ℂ = ⟪(⟨_, hfN⟩ : HardySpace), toeplitz a ⟨_, hgN⟩⟫_ℂ := by
+    rw [inner_toeplitz_apply, Submodule.coe_mk, Submodule.coe_mk, ← hcomm]
+    simp only [← Lp.multiplicationOperator_apply]
+    exact ((LinearMap.norm_map_iff_inner_map_map
+      (Lp.multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N))).1
+        (Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one hu) f
+          (Lp.multiplicationOperator a g)).symm
+  have hnorm (h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) :
+      ‖(fourierLp (T := 1) ∞ N • h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))‖ = ‖h‖ := by
+    rw [← Lp.multiplicationOperator_apply,
+      Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one hu]
+  calc ‖⟪f, a • g⟫_ℂ‖ ≤ ‖(⟨_, hfN⟩ : HardySpace)‖ * (‖toeplitz a‖ * ‖(⟨_, hgN⟩ : HardySpace)‖) := by
+        rw [hinner]
+        exact (norm_inner_le_norm _ _).trans (by gcongr; exact ContinuousLinearMap.le_opNorm _ _)
+    _ = ‖toeplitz a‖ * ‖f‖ * ‖g‖ := by
+        rw [← Submodule.norm_coe, ← Submodule.norm_coe, Submodule.coe_mk, Submodule.coe_mk,
+          hnorm, hnorm]
+        ring
+
+/-- Multiplication by `a` on circle `L²` has norm at most the norm of `T_a`. -/
+private theorem norm_multiplicationOperator_le_norm_toeplitz
+    (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
+    ‖Lp.multiplicationOperator (E := ℂ) a‖ ≤ ‖toeplitz a‖ := by
+  have hD : Dense (Submodule.span ℂ (Set.range (fourierBasis (T := 1))) :
+      Set (Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))) :=
+    Submodule.dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := 1)).dense_span
+  -- The bound on matrix coefficients is a closed condition, so it extends from trigonometric
+  -- polynomials to all pairs of `L²` functions.
+  have hbound : ∀ p : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)) ×
+      Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)),
+      ‖⟪p.1, Lp.multiplicationOperator a p.2⟫_ℂ‖ ≤ ‖toeplitz a‖ * ‖p.1‖ * ‖p.2‖ := by
+    refine (hD.prod hD).induction (fun p hp ↦ ?_) (isClosed_le (by fun_prop) (by fun_prop))
+    rw [Lp.multiplicationOperator_apply]
+    exact norm_inner_smul_le_of_mem_span a hp.1 hp.2
+  refine ContinuousLinearMap.opNorm_le_of_re_inner_le (norm_nonneg (toeplitz a)) ?_
+  intro x y hx hy
+  calc
+    RCLike.re ⟪Lp.multiplicationOperator a x, y⟫_ℂ ≤
+        ‖⟪Lp.multiplicationOperator a x, y⟫_ℂ‖ := RCLike.re_le_norm _
+    _ = ‖⟪y, Lp.multiplicationOperator a x⟫_ℂ‖ := norm_inner_symm _ _
+    _ ≤ ‖toeplitz a‖ := by simpa only [hx, hy, mul_one] using hbound (y, x)
+
+/-- **Symbol norm.** The operator norm of the Toeplitz operator `T_a` is the `L∞` norm of its
+symbol. -/
+@[simp]
+theorem norm_toeplitz (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
+    ‖toeplitz a‖ = ‖a‖ := by
+  refine le_antisymm (norm_toeplitz_le a) ?_
+  rw [← Lp.norm_multiplicationOperator (E := ℂ) a]
+  exact norm_multiplicationOperator_le_norm_toeplitz a
+
+/-- The Toeplitz symbol map `a ↦ T_a` is an isometry. -/
+theorem isometry_toeplitz : Isometry toeplitz :=
+  AddMonoidHomClass.isometry_of_norm toeplitz norm_toeplitz
+
+/-- A symbol is determined by its Toeplitz operator. -/
+theorem toeplitz_injective : Function.Injective toeplitz :=
+  isometry_toeplitz.injective
 
 end TauCeti

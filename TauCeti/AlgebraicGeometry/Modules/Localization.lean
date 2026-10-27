@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
@@ -23,7 +24,10 @@ sheaf of algebras coequifibered over the structure sheaf on the small affine Zar
 is the input of `AlgebraicGeometry.AffineZariskiSite.relativeGluingData`.
 
 Over `Spec R` the statement is Mathlib's `AlgebraicGeometry.isIso_fromTildeΓ_iff_isLocalizing`;
-this module extends that affine result to arbitrary schemes.
+this module extends that affine result to arbitrary schemes. Conversely, an `𝒪_X`-module whose
+sections over the basic opens of the members of an affine open cover are such localizations is
+quasi-coherent. This is how quasi-coherence is checked for modules built from explicit sections,
+such as the twisting sheaves on `Proj`.
 
 ## Main declarations
 
@@ -33,6 +37,12 @@ this module extends that affine result to arbitrary schemes.
   `Γ(M, U) ⟶ Γ(M, X.basicOpen f)` as a `Γ(X, U)`-linear map;
 * `AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestrict`: for quasi-coherent
   `M` and affine `U`, this restriction map is the localization at the powers of `f`.
+* `AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_map`: for quasi-coherent `M` and affine
+  `U`, a section over `X.basicOpen f` times a power of `f` extends to `U`.
+* `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_of_isLocalizedModule`: conversely, `M` is
+  quasi-coherent if these restriction maps are localizations on the members of an affine open
+  cover; `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_isLocalizedModule` is the
+  resulting characterization.
 
 ## References
 
@@ -81,6 +91,19 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.basicOpenRestrict_apply (f : Γ(X,
     M.basicOpenRestrict f x = M.presheaf.map (homOfLE (X.basicOpen_le f)).op x :=
   (rfl)
 
+/-- A section `f ∈ Γ(X, U)` acts invertibly on the sections of an `𝒪_X`-module over the basic
+open `X.basicOpen f`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isUnit_algebraMap_end_basicOpen (f : Γ(X, U)) :
+    IsUnit (algebraMap Γ(X, U) (Module.End Γ(X, U) Γ(M, X.basicOpen f)) f) := by
+  rw [Module.End.isUnit_iff]
+  -- by `moduleBasicOpen`, `f` acts through its restriction to `X.basicOpen f`, a unit there
+  have : ⇑(algebraMap Γ(X, U) (Module.End Γ(X, U) Γ(M, X.basicOpen f)) f) =
+      algebraMap Γ(X, X.basicOpen f) (Module.End Γ(X, X.basicOpen f) Γ(M, X.basicOpen f))
+        (X.presheaf.map (homOfLE (X.basicOpen_le f)).op f) :=
+    (rfl)
+  rw [this, ← Module.End.isUnit_iff]
+  exact (X.toRingedSpace.isUnit_res_basicOpen f).map _
+
 /-- For an affine open `U`, the sections of an `𝒪_X`-module `M` over `U` are the global sections
 of its restriction to the affine chart `Spec Γ(X, U) ⟶ X`, as `Γ(X, U)`-modules. Here
 `Γ(X, U)` acts on the global sections of a module on `Spec Γ(X, U)` as their ring of
@@ -124,14 +147,16 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.Hom.fromSpecSectionsEquiv_naturali
   exact PresheafOfModules.naturality_apply f.val _ x
 
 open Scheme.Modules in
-/-- The sections of a quasi-coherent `𝒪_X`-module over the basic open `X.basicOpen f` of an
-affine open `U` are the localization of its sections over `U` at the powers of `f`. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestrict
-    [M.IsQuasicoherent] (hU : IsAffineOpen U) (f : Γ(X, U)) :
-    IsLocalizedModule.Away f (M.basicOpenRestrict f) := by
-  -- Restrict `M` to `Spec Γ(X, U)`, where the statement is Mathlib's `IsLocalizing`, and compare
-  -- the restriction maps along the identifications of `U` and `X.basicOpen f` with the images
-  -- of `⊤` and `D(f)` under `hU.fromSpec`.
+/-- For an affine open `U`, the restriction of `M` to the affine chart `Spec Γ(X, U)` is
+localizing in the sense of Mathlib's `AlgebraicGeometry.IsLocalizing` iff, for every
+`f ∈ Γ(X, U)`, the restriction of sections of `M` from `U` to `X.basicOpen f` is a localization
+at `f`. -/
+private theorem isLocalizing_restrict_fromSpec_iff (hU : IsAffineOpen U) :
+    IsLocalizing (modulesSpecToSheaf.obj (M.restrict hU.fromSpec)) ↔
+      ∀ f : Γ(X, U), IsLocalizedModule.Away f (M.basicOpenRestrict f) := by
+  refine forall_congr' fun f ↦ ?_
+  -- Compare the restriction maps along the identifications of `U` and `X.basicOpen f` with the
+  -- images of `⊤` and `D(f)` under `hU.fromSpec`.
   let N := M.restrict hU.fromSpec
   let D : (Spec Γ(X, U)).Opens := PrimeSpectrum.basicOpen f
   have h₁ : hU.fromSpec ''ᵁ ⊤ = U := by
@@ -157,13 +182,11 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestr
         have := ConcreteCategory.congr_hom hr r
         simp only [ConcreteCategory.comp_apply] at this
         exact this }
-  -- The restriction map of `N`, which is a localization since `N` is quasi-coherent.
+  -- The restriction map of `N`.
   let φ : Γ(N, ⊤) →ₗ[Γ(X, U)] Γ(N, D) :=
     { toFun := N.presheaf.map D.leTop.op
       map_add' := map_add _
       map_smul' r x := N.map_smul_Spec _ r x }
-  have hφ : IsLocalizedModule.Away f φ :=
-    (isIso_fromTildeΓ_iff_isLocalizing N).mp inferInstance f
   -- The restriction map of `M` is `φ` transported along the bijections `e₁` and `e₂`.
   have he : M.basicOpenRestrict f = e₂ ∘ₗ φ ∘ₗ e₁ := by
     have h : M.presheaf.map (homOfLE (X.basicOpen_le f)).op =
@@ -180,10 +203,77 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestr
   have he₁ : Function.Bijective e₁ := (M.fromSpecSectionsEquiv hU).bijective
   have he₂ : Function.Bijective e₂ := ConcreteCategory.bijective_of_isIso
     ((M.restrictAppIso hU.fromSpec D).hom ≫ M.presheaf.map (homOfLE h₂.ge).op)
-  unfold IsLocalizedModule.Away at hφ ⊢
-  rw [he, IsLocalizedModule.comp_iff_of_bijective_left,
-    IsLocalizedModule.comp_iff_of_bijective_right]
-  exacts [hφ, he₁, he₂]
+  have key : IsLocalizedModule.Away f (M.basicOpenRestrict f) ↔ IsLocalizedModule.Away f φ := by
+    unfold IsLocalizedModule.Away
+    rw [he, IsLocalizedModule.comp_iff_of_bijective_left,
+      IsLocalizedModule.comp_iff_of_bijective_right]
+    exacts [he₁, he₂]
+  -- `φ` is the restriction map of `modulesSpecToSheaf.obj N` from `⊤` to `D(f)`
+  exact key.symm
+
+open Scheme.Modules in
+/-- The sections of a quasi-coherent `𝒪_X`-module over the basic open `X.basicOpen f` of an
+affine open `U` are the localization of its sections over `U` at the powers of `f`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestrict
+    [M.IsQuasicoherent] (hU : IsAffineOpen U) (f : Γ(X, U)) :
+    IsLocalizedModule.Away f (M.basicOpenRestrict f) :=
+  (isLocalizing_restrict_fromSpec_iff M hU).1
+    ((isIso_fromTildeΓ_iff_isLocalizing (M.restrict hU.fromSpec)).1 inferInstance) f
+
+/-- **Quasi-coherence on an affine chart from localizations.** If, for an affine open `U`, the
+sections of `M` over every basic open `X.basicOpen f` are the localization at `f` of the sections
+over `U`, then the restriction of `M` to the affine chart `Spec Γ(X, U)` is quasi-coherent. This
+is the converse of `AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestrict`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_restrict_fromSpec
+    (hU : IsAffineOpen U) (h : ∀ f : Γ(X, U), IsLocalizedModule.Away f (M.basicOpenRestrict f)) :
+    (M.restrict hU.fromSpec).IsQuasicoherent :=
+  (isQuasicoherent_iff_isIso_fromTildeΓ _).2
+    ((isIso_fromTildeΓ_iff_isLocalizing _).2 ((isLocalizing_restrict_fromSpec_iff M hU).2 h))
+
+/-- **Quasi-coherence from localizations on an affine open cover.** An `𝒪_X`-module `M` is
+quasi-coherent as soon as `X` is covered by affine opens `U i` such that, for every
+`f ∈ Γ(X, U i)`, the sections of `M` over `X.basicOpen f` are the localization at `f` of the
+sections over `U i`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_of_isLocalizedModule
+    {ι : Type u} (U : ι → X.Opens) (hU : ∀ i, IsAffineOpen (U i)) (hcov : ⨆ i, U i = ⊤)
+    (h : ∀ i (f : Γ(X, U i)), IsLocalizedModule.Away f (M.basicOpenRestrict f)) :
+    M.IsQuasicoherent := by
+  refine AlgebraicGeometry.isQuasicoherent_of_isQuasicoherent_restrict M U hcov fun i ↦ ?_
+  have := M.isQuasicoherent_restrict_fromSpec (hU i) (h i)
+  -- `U i` is isomorphic to the affine chart, through which `U.ι` factors
+  have := Scheme.Modules.isQuasicoherent_restrictFunctor (hU i).isoSpec.hom
+    (M.restrict (hU i).fromSpec)
+  exact (SheafOfModules.isQuasicoherent (U i).toScheme.ringCatSheaf).prop_of_iso
+    (((Scheme.Modules.restrictFunctorComp (hU i).isoSpec.hom (hU i).fromSpec).app M).symm ≪≫
+      (Scheme.Modules.restrictFunctorCongr (hU i).isoSpec_hom_fromSpec).app M) this
+
+/-- An `𝒪_X`-module is quasi-coherent iff, for every affine open `U` and every `f ∈ Γ(X, U)`,
+its sections over `X.basicOpen f` are the localization at `f` of its sections over `U`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_isLocalizedModule :
+    M.IsQuasicoherent ↔ ∀ U : X.Opens, IsAffineOpen U →
+      ∀ f : Γ(X, U), IsLocalizedModule.Away f (M.basicOpenRestrict f) :=
+  ⟨fun _ _ hU f ↦ M.isLocalizedModule_basicOpenRestrict hU f, fun h ↦
+    M.isQuasicoherent_of_isLocalizedModule (fun U : X.affineOpens ↦ U.1) (fun U ↦ U.2)
+      (iSup_affineOpens_eq_top X) fun U ↦ h U.1 U.2⟩
+
+open Scheme.Modules in
+/-- **Sections over a basic open extend after multiplication by a power of the function.** For a
+quasi-coherent `𝒪_X`-module `M`, an affine open `U` and `f ∈ Γ(X, U)`, every section `x` of `M`
+over the basic open `V = X.basicOpen f` has some `f ^ n • x` equal to the restriction of a
+section over `U`. The open `V` is arbitrary up to the equality `X.basicOpen f = V`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_map [M.IsQuasicoherent]
+    (hU : IsAffineOpen U) (f : Γ(X, U)) {V : X.Opens} (hV : X.basicOpen f = V) (hVU : V ≤ U)
+    (x : Γ(M, V)) : ∃ (n : ℕ) (y : Γ(M, U)),
+      X.presheaf.map (homOfLE hVU).op f ^ n • x = M.presheaf.map (homOfLE hVU).op y := by
+  subst hV
+  have := M.isLocalizedModule_basicOpenRestrict hU f
+  obtain ⟨⟨y, _, n, rfl⟩, hy⟩ :=
+    IsLocalizedModule.surj (Submonoid.powers f) (M.basicOpenRestrict f) x
+  -- `f ^ n` acts on sections over `X.basicOpen f` through its restriction
+  simp only [Submonoid.smul_def] at hy
+  rw [← IsScalarTower.algebraMap_smul Γ(X, X.basicOpen f), map_pow,
+    basicOpenRestrict_apply] at hy
+  exact ⟨n, y, hy⟩
 
 end
 

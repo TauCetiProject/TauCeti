@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.TwoForm.Closed
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex
+public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 /-!
 # Nondegenerate, tame, and compatible two-forms on manifolds
@@ -36,6 +39,8 @@ example.
 * `TauCeti.SmoothTwoForm.IsNondegenerate`: fiberwise nondegeneracy of a smooth two-form.
 * `TauCeti.SmoothTwoForm.IsSymplectic`: a closed, fiberwise nondegenerate smooth two-form.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt`: the symplectic form on a tangent fiber.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_transport`: transport of tangent-fiber
+  symplectic forms by the differential of a symplectomorphism.
 * `TauCeti.SmoothTwoForm.Tames` and `TauCeti.SmoothTwoForm.Compatible`: the unbundled pointwise
   relations to a smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff`, `invariant_iff`, and `compatible_iff`: these
@@ -109,6 +114,29 @@ lemma IsNondegenerate.symplecticFormAt_apply (h : form.IsNondegenerate) (x : M)
     (v w : TangentSpace I x) :
     h.symplecticFormAt x v w = SmoothForm.eval₂ form x v w :=
   SmoothForm.bilinFormAt_apply form x v w
+
+section Transport
+
+variable {E₂ H₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂]
+  {I₂ : ModelWithCorners ℝ E₂ H₂} {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H₂ M₂]
+  [IsManifold I₂ ∞ M₂] {σ : SmoothTwoForm I M} {σ₂ : SmoothTwoForm I₂ M₂}
+  (hσ : σ.IsNondegenerate) {hσ₂ : σ₂.IsNondegenerate}
+
+/-- At every point, the differential of a diffeomorphism pulling `σ₂` back to `σ` transports the
+tangent-space symplectic form of `σ` to that of `σ₂`. -/
+theorem IsNondegenerate.symplecticFormAt_transport (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
+    (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) (y : M) :
+    (hσ.symplecticFormAt y).transport
+        (ψ.mfderivToContinuousLinearEquiv (by simp) y).toLinearEquiv =
+      hσ₂.symplecticFormAt (ψ y) := by
+  rw [← SymplecticForm.isSymplectomorphism_iff_transport_eq, SymplecticForm.isSymplectomorphism_iff]
+  intro v w
+  rw [IsNondegenerate.symplecticFormAt_apply, IsNondegenerate.symplecticFormAt_apply, ← hψ,
+    SmoothForm.eval₂_mpullback,
+    ContinuousLinearEquiv.coe_toLinearEquiv, ← ContinuousLinearEquiv.coe_coe,
+    Diffeomorph.mfderivToContinuousLinearEquiv_coe]
+
+end Transport
 
 /-- A smooth two-form tames a smooth almost complex structure when
 `form_x(v, J_x v) > 0` for every nonzero tangent vector. -/
@@ -231,6 +259,16 @@ lemma isNondegenerate_constSmooth (omegaForm : SymplecticForm V) :
   have hw := hv ((NormedSpace.fromTangentSpace x).symm w)
   simpa only [SmoothForm.bilinFormAt_apply, fromTangentSpace_constSmooth_apply,
     ContinuousLinearEquiv.apply_symm_apply] using hw
+
+/-- On every tangent fiber, the symplectic form of a constant smooth symplectic form is the
+defining algebraic form. -/
+@[simp]
+lemma isNondegenerate_constSmooth_symplecticFormAt (omegaForm : SymplecticForm V) (x : V) :
+    (isNondegenerate_constSmooth omegaForm).symplecticFormAt x = omegaForm := by
+  apply SymplecticForm.toBilinForm_injective
+  ext v w
+  exact (SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply _ x v w).trans
+    (constSmooth_apply omegaForm x v w)
 
 /-- A constant smooth symplectic form is closed. -/
 lemma isClosed_constSmooth (omegaForm : SymplecticForm V) : omegaForm.constSmooth.IsClosed :=

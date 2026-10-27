@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
 public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Basic
+public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Localization
 public import TauCeti.CategoryTheory.GrothendieckGroup.BoundedHomotopy.Basic
 public import TauCeti.CategoryTheory.GrothendieckGroup.EulerCharacteristic
 public import TauCeti.Algebra.BigOperators.AlternatingSum
@@ -56,7 +57,9 @@ its cohomology classes. Consequently, the comparison identifies a bounded comple
 The degree-zero embedding `DerivedCategory.singleFunctor`, the distinguished triangle
 `ShortComplex.ShortExact.singleTriangle`, the long exact cohomology sequence
 `DerivedCategory.HomologySequence` and the representation of bounded objects by bounded complexes
-`DerivedCategory.exists_iso_Q_obj_of_isGE_of_isLE` are from Mathlib's derived-category API.
+`DerivedCategory.exists_iso_Q_obj_of_isGE_of_isLE` are from Mathlib's derived-category API. The
+latter is used through the essential surjectivity of the localization functor
+`TauCeti.DerivedCategory.Bounded.Qh` from the bounded homotopy category.
 
 ## References
 
@@ -94,43 +97,13 @@ private lemma exists_finset_isZero_homology (X : DerivedCategory.Bounded A) :
   · exact (X.obj.isGE_iff a).1 ha n hn
   · exact (X.obj.isLE_iff b).1 hb n hn
 
-/-- A bounded complex up to homotopy defines a bounded object of the derived category. -/
-private lemma bounded_Qh_obj (K : HomotopyCategory.Bounded A) :
-    (DerivedCategory.TStructure.t (C := A)).bounded (DerivedCategory.Qh.obj K.obj) := by
-  obtain ⟨a, b, _, _⟩ := (CochainComplex.bounded_iff _ _).1
-    ((HomotopyCategory.bounded_quotient_obj_iff _).1 K.property)
-  exact (DerivedCategory.TStructure.t (C := A)).bounded.prop_of_iso
-    ((DerivedCategory.quotientCompQhIso A).app K.obj.as).symm
-    ⟨⟨a, inferInstance⟩, ⟨b, inferInstance⟩⟩
-
-variable (A) in
-/-- The localization functor from the bounded homotopy category to the bounded derived
-category. -/
-private noncomputable abbrev boundedQh : HomotopyCategory.Bounded A ⥤ DerivedCategory.Bounded A :=
-  (DerivedCategory.TStructure.t (C := A)).bounded.lift
-    (HomotopyCategory.Bounded.ι A ⋙ DerivedCategory.Qh) bounded_Qh_obj
-
-/-- Every object of the bounded derived category is represented by a bounded complex. -/
-private lemma exists_iso_boundedQh_obj (Y : DerivedCategory.Bounded A) :
-    ∃ K : HomotopyCategory.Bounded A, Nonempty ((boundedQh A).obj K ≅ Y) := by
-  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ := Y.property
-  obtain ⟨K, _, _, ⟨e⟩⟩ := Y.obj.exists_iso_Q_obj_of_isGE_of_isLE a b
-  have hK : CochainComplex.bounded A K := (CochainComplex.bounded_iff _ _).2 ⟨a, b, ‹_›, ‹_›⟩
-  exact ⟨(HomotopyCategory.Bounded.quotient A).obj ⟨K, hK⟩,
-    ⟨(DerivedCategory.TStructure.t (C := A)).bounded.fullyFaithfulι.preimageIso
-      (((DerivedCategory.TStructure.t (C := A)).bounded.liftCompιIso
-        (HomotopyCategory.Bounded.ι A ⋙ DerivedCategory.Qh) bounded_Qh_obj).app _ ≪≫
-        DerivedCategory.Qh.mapIso ((HomotopyCategory.Bounded.quotientCompιIso A).app ⟨K, hK⟩) ≪≫
-        (DerivedCategory.quotientCompQhIso A).app K ≪≫ e.symm)⟩⟩
-
 /-- The localization functor sends an object placed in degree zero to that object placed in degree
 zero. -/
 private noncomputable def boundedQhSingleIso (X : A) :
-    (boundedQh A).obj ((HomotopyCategory.Bounded.singleFunctor A 0).obj X) ≅
+    (DerivedCategory.Bounded.Qh A).obj ((HomotopyCategory.Bounded.singleFunctor A 0).obj X) ≅
       (DerivedCategory.Bounded.singleFunctor A 0).obj X :=
-  (DerivedCategory.TStructure.t (C := A)).bounded.fullyFaithfulι.preimageIso
-    (((DerivedCategory.TStructure.t (C := A)).bounded.liftCompιIso
-        (HomotopyCategory.Bounded.ι A ⋙ DerivedCategory.Qh) bounded_Qh_obj).app _ ≪≫
+  DerivedCategory.Bounded.ι.preimageIso
+    ((DerivedCategory.Bounded.QhCompιIsoιCompQh A).app _ ≪≫
       DerivedCategory.Qh.mapIso ((HomotopyCategory.Bounded.singleFunctorCompιIso A 0).app X) ≪≫
       ((DerivedCategory.singleFunctorIsoCompQh A 0).app X).symm ≪≫
       (((DerivedCategory.TStructure.t (C := A)).bounded.liftCompιIso
@@ -338,7 +311,7 @@ is a class in the bounded homotopy category, where the class of a complex is the
 the classes of its terms. -/
 private lemma toBoundedDerivedK0_surjective :
     Function.Surjective (toBoundedDerivedK0 (A := A)) := by
-  have hcomp : (TriangulatedK0.map (boundedQh A)).comp
+  have hcomp : (TriangulatedK0.map (DerivedCategory.Bounded.Qh A)).comp
       (SplitK0.boundedHomotopyEquiv A).toAddMonoidHom = toBoundedDerivedK0.comp (fromSplit A) :=
     SplitK0.hom_ext fun X ↦ by
       rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
@@ -346,11 +319,11 @@ private lemma toBoundedDerivedK0_surjective :
         toBoundedDerivedK0_of]
       exact TriangulatedK0.of_congr (boundedQhSingleIso X)
   refine TriangulatedK0.surjective_of_forall_of_mem_range fun Y => ?_
-  obtain ⟨K, ⟨e⟩⟩ := exists_iso_boundedQh_obj Y
-  refine ⟨fromSplit A ((SplitK0.boundedHomotopyEquiv A).symm (TriangulatedK0.of K)), ?_⟩
+  refine ⟨fromSplit A ((SplitK0.boundedHomotopyEquiv A).symm
+    (TriangulatedK0.of ((DerivedCategory.Bounded.Qh A).objPreimage Y))), ?_⟩
   rw [← AddMonoidHom.comp_apply, ← hcomp, AddMonoidHom.comp_apply,
     AddEquiv.coe_toAddMonoidHom, AddEquiv.apply_symm_apply, TriangulatedK0.map_of]
-  exact TriangulatedK0.of_congr e
+  exact TriangulatedK0.of_congr ((DerivedCategory.Bounded.Qh A).objObjPreimageIso Y)
 
 variable (A) in
 /-- **Abelian `K₀` is triangulated `K₀` of the bounded derived category.** The class of an object
