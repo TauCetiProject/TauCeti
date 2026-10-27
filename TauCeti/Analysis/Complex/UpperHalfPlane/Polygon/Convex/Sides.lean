@@ -218,12 +218,13 @@ theorem isClosed_side (k : Fin n) : IsClosed (P.side k) := by
   rw [← P.carrier_inter_range_sideGeodesic]
   exact P.isClosed_carrier.inter (isometry_geodesicLine _).isClosedEmbedding.isClosed_range
 
-/-- A point of a convex polygon which is not a finite vertex lies on at most one side. -/
-theorem eq_of_mem_side_of_mem_side {z : ℍ} (hz : ∀ j, P.vertex j ≠ .inl z) {i k : Fin n}
-    (hi : z ∈ P.side i) (hk : z ∈ P.side k) : i = k := by
+/-- A point of side `i` other than its finite endpoints lies on no other side. -/
+theorem eq_of_mem_side_of_mem_side {z : ℍ} {i k : Fin n} (hi : z ∈ P.side i)
+    (hzp : P.vertex i ≠ .inl z) (hzq : P.vertex (i + 1) ≠ .inl z) (hk : z ∈ P.side k) :
+    i = k := by
   by_contra hik
   exact disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine _)
-    (P.mem_leftHalfPlane_of_mem_side hi (hz i) (hz (i + 1)) (Ne.symm hik))
+    (P.mem_leftHalfPlane_of_mem_side hi hzp hzq (Ne.symm hik))
     (P.side_subset_range_sideGeodesic k hk)
 
 /-- A finite vertex lies on a side only as one of its two endpoints. -/

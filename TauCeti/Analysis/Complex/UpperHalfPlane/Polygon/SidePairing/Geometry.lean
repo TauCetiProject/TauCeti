@@ -36,6 +36,8 @@ coverage by all translates, require additional hypotheses.
   side inequalities in both tiles are strict.
 * `ConvexPolygon.SidePairing.mem_interior_union_smul_carrier_of_mem_side`: local coverage at
   every nonendpoint point of a paired side, with no additional inequalities assumed.
+* `ConvexPolygon.SidePairing.exists_mem_side_mem_interior_union_inv_smul_carrier`: local
+  coverage at every boundary point of the polygon other than a finite vertex.
 
 ## References
 
@@ -192,5 +194,29 @@ theorem mem_interior_union_smul_carrier_of_mem_side (i : Fin n) {z : ℍ}
   exact σ.mem_interior_union_smul_carrier i
     (fun _ hj ↦ P.mem_leftHalfPlane_of_mem_side hz hzp hzq hj)
     (fun _ hj ↦ P.mem_leftHalfPlane_of_mem_side hzinv hpinv hqinv hj)
+
+/-- A boundary point of the polygon other than a finite vertex lies on a side `k`, and the polygon
+and its translate `(map k)⁻¹ • P` across that side together contain a neighbourhood of it. -/
+theorem exists_mem_side_mem_interior_union_inv_smul_carrier {z : ℍ} (hz : z ∈ P.carrier)
+    (hzi : z ∉ interior P.carrier) (hv : ∀ i, P.vertex i ≠ .inl z) :
+    ∃ k, z ∈ P.side k ∧ z ∈ interior (P.carrier ∪ (σ.map k)⁻¹ • P.carrier) := by
+  have hzf : z ∈ frontier P.carrier := ⟨subset_closure hz, hzi⟩
+  obtain ⟨k, hk⟩ := mem_iUnion.1 (P.frontier_carrier ▸ hzf)
+  have h := σ.mem_interior_union_smul_carrier_of_mem_side (σ.pair k)
+    (by rwa [σ.pair_pair]) (by rw [σ.pair_pair]; exact hv k)
+    (by rw [σ.pair_pair]; exact hv (k + 1))
+  rw [map_pair] at h
+  exact ⟨k, hk, h⟩
+
+/-- The side-pairing map carries a point of side `i` other than its endpoints to a point which is
+not a finite vertex. -/
+theorem map_smul_ne_vertex {i : Fin n} {x : ℍ} (hi : x ∈ P.side i) (hp : P.vertex i ≠ .inl x)
+    (hq : P.vertex (i + 1) ≠ .inl x) (l : Fin n) : P.vertex l ≠ .inl (σ.map i • x) := by
+  intro hl
+  rcases P.eq_or_eq_add_one_of_vertex_eq_inl_of_mem_side hl (σ.map_smul_mem_side hi) with rfl | rfl
+  · rw [← σ.map_smul_vertex_add_one, ← Sum.smul_inl] at hl
+    exact hq (MulAction.injective _ hl)
+  · rw [← σ.map_smul_vertex, ← Sum.smul_inl] at hl
+    exact hp (MulAction.injective _ hl)
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
