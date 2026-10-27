@@ -615,6 +615,22 @@ theorem mem_flagPointSet_of_gluedRelSetoid_of_ne (d : FlagPairData ι Flag X) :
   · exact absurd heq hne
   · exact hx
 
+/-- **Flag pairs are the distinct points with the same image.**  Two points of the disjoint union
+are the two points of a flag pair exactly when they are distinct and are identified in the glued
+curve. -/
+theorem flagRel_iff_mk_eq_and_ne (d : FlagPairData ι Flag X) (x y : Σ i, X i) :
+    flagRel d x y ↔
+      Quotient.mk (gluedRelSetoid d) x = Quotient.mk (gluedRelSetoid d) y ∧ x ≠ y := by
+  constructor
+  · intro h
+    refine ⟨Quotient.sound ((gluedRelSetoid_r d x y).mpr (Or.inr h)), ?_⟩
+    rintro rfl
+    obtain ⟨f, ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩⟩ := h
+    · exact fstPoint_ne_sndPoint d f f (h₁.symm.trans h₂)
+    · exact fstPoint_ne_sndPoint d f f (h₂.symm.trans h₁)
+  · rintro ⟨h, hne⟩
+    exact ((gluedRel_def d x y).mp (Quotient.exact h)).resolve_left hne
+
 /-- **The node set is closed.**  The node set of the glued curve is a closed subset of it, so its
 complement is open. -/
 theorem isClosed_nodeSet (d : FlagPairData ι Flag X) [∀ i, TopologicalSpace (X i)]
