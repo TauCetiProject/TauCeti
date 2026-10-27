@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 -- Private: the orthogonal-basis and volume-element computations are used only inside proofs.
 import TauCeti.Algebra.CharP.Invertible
