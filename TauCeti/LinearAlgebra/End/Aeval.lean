@@ -13,7 +13,8 @@ public import Mathlib.Algebra.Polynomial.AlgebraMap
 A (semi)linear map `f` intertwining two endomorphisms `g` and `g₂` intertwines every polynomial
 in them: polynomial evaluation at `g₂` after `f` agrees with `f` after evaluation at `g`, with the
 coefficients transported along the ring homomorphism of `f`. This extends Mathlib's
-`Module.End.commute_pow_left_of_commute` from powers to polynomials.
+`Module.End.commute_pow_left_of_commute` from powers to polynomials, and generalizes
+`Polynomial.aeval_comp_eq_comp_aeval` from linear to semilinear maps.
 -/
 
 public section
@@ -36,10 +37,5 @@ theorem aeval_map_comp_of_comp_eq {R₂ : Type*} [CommSemiring R₂] [Module R�
     have hn := LinearMap.congr_fun (commute_pow_left_of_commute h n) x
     simp only [LinearMap.comp_apply] at hn
     simp [aeval_monomial, Algebra.algebraMap_eq_smul_one, hn]
-
-/-- A linear map intertwining two endomorphisms intertwines every polynomial in them. -/
-theorem aeval_comp_of_comp_eq [Module R M₂] {f : M →ₗ[R] M₂} {g : End R M} {g₂ : End R M₂}
-    (h : g₂.comp f = f.comp g) (p : R[X]) : (aeval g₂ p).comp f = f.comp (aeval g p) := by
-  simpa using aeval_map_comp_of_comp_eq h p
 
 end Module.End

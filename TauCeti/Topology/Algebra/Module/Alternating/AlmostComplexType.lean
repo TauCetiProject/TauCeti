@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.AlgebraMap
 public import TauCeti.LinearAlgebra.End.Aeval
+public import TauCeti.Topology.Algebra.Module.Alternating.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
@@ -58,8 +60,9 @@ differential forms on an almost complex manifold.
 ## Implementation notes
 
 The polynomial identity is proved by induction on the degree. Inserting a vector `v` as the first
-argument, the combinations `ι_v ∓ I • ι_{J v}` of interior products intertwine the derivation on
-`(k+1)`-forms with the derivation on `k`-forms shifted by `±I`.
+argument, the combinations `ι_v ∓ I • ι_{J v}` of interior products
+(`ContinuousAlternatingMap.curryLeftTopologicalLinear`) intertwine the derivation on `(k+1)`-forms
+with the derivation on `k`-forms shifted by `±I`.
 
 ## References
 
@@ -72,6 +75,8 @@ public section
 noncomputable section
 
 open Complex Polynomial Function
+open ContinuousAlternatingMap (curryLeftTopologicalLinear curryLeftTopologicalLinear_apply
+  curryLeftTopologicalLinear_neg curryLeftTopological_apply_apply)
 open scoped ComplexConjugate
 
 variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
@@ -393,19 +398,6 @@ theorem typeProjection_zero_one (J : V →L[ℝ] V) :
   match_scalars <;> ring_nf
   norm_num
 
-/-- Pullback along a continuous linear map, as a complex-linear map of forms. -/
-private def pullback (f : W →L[ℝ] V) : (V [⋀^Fin k]→L[ℝ] F) →ₗ[ℂ] W [⋀^Fin k]→L[ℝ] F where
-  toFun ω := ω.compContinuousLinearMap f
-  map_add' ω ω' := by ext; simp
-  map_smul' c ω := by ext; simp
-
-/-- Composition with a `σ`-semilinear coefficient map, as a `σ`-semilinear map of forms. -/
-private def coeffMap {σ : ℂ →+* ℂ} (L : F →L[ℝ] G) (hL : ∀ (c : ℂ) x, L (c • x) = σ c • L x) :
-    (V [⋀^Fin k]→L[ℝ] F) →ₛₗ[σ] V [⋀^Fin k]→L[ℝ] G where
-  toFun ω := L.compContinuousAlternatingMap ω
-  map_add' ω ω' := by ext; simp
-  map_smul' c ω := by ext; simp [hL]
-
 /-- A `σ`-semilinear coefficient map intertwines the polynomial defining a type projection with
 its image under `σ`. -/
 private lemma aeval_map_basis_compContinuousAlternatingMap {σ : ℂ →+* ℂ} {L : F →L[ℝ] G}
@@ -413,9 +405,14 @@ private lemma aeval_map_basis_compContinuousAlternatingMap {σ : ℂ →+* ℂ} 
     aeval J.alternatingDerivation
         ((Lagrange.basis (Finset.antidiagonal k) typeEigenvalue (p, q)).map σ)
         (L.compContinuousAlternatingMap ω) =
-      L.compContinuousAlternatingMap (J.typeProjection p q ω) :=
-  LinearMap.congr_fun (Module.End.aeval_map_comp_of_comp_eq (f := coeffMap (V := V) L hL)
-    (LinearMap.ext (alternatingDerivation_compContinuousAlternatingMap J L)) _) ω
+      L.compContinuousAlternatingMap (J.typeProjection p q ω) := by
+  have h := LinearMap.congr_fun (Module.End.aeval_map_comp_of_comp_eq
+    (f := L.compContinuousAlternatingMapSemilinear (M := V) (ι := Fin k) hL)
+    (LinearMap.ext fun ω ↦ by
+      simpa using alternatingDerivation_compContinuousAlternatingMap J L ω)
+    (Lagrange.basis (Finset.antidiagonal k) typeEigenvalue (p, q))) ω
+  simp only [LinearMap.comp_apply, compContinuousAlternatingMapSemilinear_apply] at h
+  exact h
 
 /-- Complex conjugation exchanges the type eigenvalues of `(p,q)` and `(q,p)`. -/
 private lemma conj_typeEigenvalue (pq : ℕ × ℕ) :
@@ -441,9 +438,14 @@ private lemma map_conj_basis (p q : ℕ) :
 theorem typeProjection_compContinuousLinearMap {K : W →L[ℝ] W} {f : W →L[ℝ] V}
     (hf : ∀ w, J (f w) = f (K w)) (ω : V [⋀^Fin k]→L[ℝ] F) :
     K.typeProjection p q (ω.compContinuousLinearMap f) =
-      (J.typeProjection p q ω).compContinuousLinearMap f :=
-  LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq (f := pullback (F := F) f)
-    (LinearMap.ext (alternatingDerivation_compContinuousLinearMap hf)) _) ω
+      (J.typeProjection p q ω).compContinuousLinearMap f := by
+  have h := LinearMap.congr_fun (Polynomial.aeval_comp_eq_comp_aeval
+    (σ := ContinuousAlternatingMap.compContinuousLinearMapLinear ℂ (N := F) (ι := Fin k) f)
+    (LinearMap.ext fun ω ↦ by simpa using alternatingDerivation_compContinuousLinearMap hf ω)
+    (Lagrange.basis (Finset.antidiagonal k) typeEigenvalue (p, q))) ω
+  simp only [LinearMap.comp_apply, ContinuousAlternatingMap.compContinuousLinearMapLinear_apply]
+    at h
+  exact h
 
 /-- A complex-linear coefficient map commutes with the type projections. -/
 theorem typeProjection_compContinuousAlternatingMap {L : F →L[ℝ] G}
@@ -472,46 +474,30 @@ section Interior
 
 variable {n : ℕ}
 
-/-- Inserting a vector as the first argument, as a complex-linear map of forms. -/
-private def interior (v : V) : (V [⋀^Fin (n + 1)]→L[ℝ] F) →ₗ[ℂ] V [⋀^Fin n]→L[ℝ] F where
-  toFun ω := ω.curryLeftTopological v
-  map_add' ω ω' := by
-    ext w
-    simp [ContinuousAlternatingMap.curryLeftTopological_apply_apply]
-  map_smul' c ω := by
-    ext w
-    simp [ContinuousAlternatingMap.curryLeftTopological_apply_apply]
-
-private lemma interior_apply (v : V) (ω : V [⋀^Fin (n + 1)]→L[ℝ] F) (w : Fin n → V) :
-    interior v ω w = ω (Matrix.vecCons v w) :=
-  ω.curryLeftTopological_apply_apply v w
-
-private lemma interior_neg (v : V) (ω : V [⋀^Fin (n + 1)]→L[ℝ] F) :
-    interior (-v) ω = -interior v ω :=
-  map_neg (ω.curryLeftTopological) v
-
 /-- Inserting `v` into the derivation of a form. -/
 private lemma interior_alternatingDerivation (J : V →L[ℝ] V) (v : V)
     (ω : V [⋀^Fin (n + 1)]→L[ℝ] F) :
-    interior v (J.alternatingDerivation ω) =
-      J.alternatingDerivation (interior v ω) + interior (J v) ω := by
+    curryLeftTopologicalLinear ℂ v (J.alternatingDerivation ω) =
+      J.alternatingDerivation (curryLeftTopologicalLinear ℂ v ω) +
+        curryLeftTopologicalLinear ℂ (J v) ω := by
   ext w
-  simp only [interior_apply, alternatingDerivation_apply, ContinuousAlternatingMap.add_apply,
-    Fin.sum_univ_succ, Matrix.vecCons, Fin.update_cons_zero, Fin.cons_zero, Fin.cons_succ,
-    ← Fin.cons_update]
+  simp only [curryLeftTopologicalLinear_apply, curryLeftTopological_apply_apply,
+    alternatingDerivation_apply, ContinuousAlternatingMap.add_apply, Fin.sum_univ_succ,
+    Matrix.vecCons, Fin.update_cons_zero, Fin.cons_zero, Fin.cons_succ, ← Fin.cons_update]
   exact add_comm _ _
 
 /-- The combination `ι_v - I • ι_{J v}` intertwines the derivation with the derivation
 shifted by `I`. -/
 private lemma interior_sub_comp_alternatingDerivation {J : V →L[ℝ] V} (hJ : ∀ v, J (J v) = -v)
     (v : V) :
-    (interior v - I • interior (J v)) ∘ₗ
+    (curryLeftTopologicalLinear ℂ v - I • curryLeftTopologicalLinear ℂ (J v)) ∘ₗ
         (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin (n + 1)]→L[ℝ] F)) =
-      (J.alternatingDerivation + algebraMap ℂ _ I) ∘ₗ (interior v - I • interior (J v)) := by
+      (J.alternatingDerivation + algebraMap ℂ _ I) ∘ₗ
+        (curryLeftTopologicalLinear ℂ v - I • curryLeftTopologicalLinear ℂ (J v)) := by
   ext ω : 1
   simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.smul_apply,
-    interior_alternatingDerivation, hJ, interior_neg, LinearMap.add_apply,
-    Module.algebraMap_end_apply, map_sub, map_smul]
+    interior_alternatingDerivation, hJ, curryLeftTopologicalLinear_neg, LinearMap.neg_apply,
+    LinearMap.add_apply, Module.algebraMap_end_apply, map_sub, map_smul]
   match_scalars <;> ring_nf
   simp
 
@@ -519,13 +505,14 @@ private lemma interior_sub_comp_alternatingDerivation {J : V →L[ℝ] V} (hJ : 
 shifted by `-I`. -/
 private lemma interior_add_comp_alternatingDerivation {J : V →L[ℝ] V} (hJ : ∀ v, J (J v) = -v)
     (v : V) :
-    (interior v + I • interior (J v)) ∘ₗ
+    (curryLeftTopologicalLinear ℂ v + I • curryLeftTopologicalLinear ℂ (J v)) ∘ₗ
         (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin (n + 1)]→L[ℝ] F)) =
-      (J.alternatingDerivation - algebraMap ℂ _ I) ∘ₗ (interior v + I • interior (J v)) := by
+      (J.alternatingDerivation - algebraMap ℂ _ I) ∘ₗ
+        (curryLeftTopologicalLinear ℂ v + I • curryLeftTopologicalLinear ℂ (J v)) := by
   ext ω : 1
   simp only [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.smul_apply,
-    interior_alternatingDerivation, hJ, interior_neg, LinearMap.sub_apply,
-    Module.algebraMap_end_apply, map_add, map_smul]
+    interior_alternatingDerivation, hJ, curryLeftTopologicalLinear_neg, LinearMap.neg_apply,
+    LinearMap.sub_apply, Module.algebraMap_end_apply, map_add, map_smul]
   match_scalars <;> ring_nf
   simp
 
@@ -574,26 +561,27 @@ private lemma aeval_alternatingDerivation_nodal (hJ : ∀ v, J (J v) = -v) (k : 
       simpa [aeval_comp] using h
     ext ω w
     set Ω := aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin (n + 1)]→L[ℝ] F)) P ω
-    have hint : ∀ v, interior v Ω = 0 := by
+    have hint : ∀ v, curryLeftTopologicalLinear ℂ v Ω = 0 := by
       intro v
-      have h₁ := congrArg (fun T ↦ T ω) (Module.End.aeval_comp_of_comp_eq
+      have h₁ := congrArg (fun T ↦ T ω) (Polynomial.aeval_comp_eq_comp_aeval
         (interior_sub_comp_alternatingDerivation (F := F) hJ v).symm P)
-      have h₂ := congrArg (fun T ↦ T ω) (Module.End.aeval_comp_of_comp_eq
+      have h₂ := congrArg (fun T ↦ T ω) (Polynomial.aeval_comp_eq_comp_aeval
         (interior_add_comp_alternatingDerivation (F := F) hJ v).symm P)
       simp only [LinearMap.comp_apply] at h₁ h₂
       rw [hplus] at h₁
       rw [hminus] at h₂
       simp only [LinearMap.zero_apply, LinearMap.sub_apply, LinearMap.add_apply,
         LinearMap.smul_apply] at h₁ h₂
-      have h₃ : (2 : ℂ) • interior v Ω = 0 := by
+      have h₃ : (2 : ℂ) • curryLeftTopologicalLinear ℂ v Ω = 0 := by
         rw [two_smul]
-        calc interior v Ω + interior v Ω
-            = (interior v Ω - I • interior (J v) Ω) + (interior v Ω + I • interior (J v) Ω) := by
+        calc curryLeftTopologicalLinear ℂ v Ω + curryLeftTopologicalLinear ℂ v Ω
+            = (curryLeftTopologicalLinear ℂ v Ω - I • curryLeftTopologicalLinear ℂ (J v) Ω) +
+                (curryLeftTopologicalLinear ℂ v Ω + I • curryLeftTopologicalLinear ℂ (J v) Ω) := by
               abel
           _ = 0 := by rw [← h₁, ← h₂, add_zero]
       exact (smul_eq_zero.1 h₃).resolve_left two_ne_zero
     rw [LinearMap.zero_apply, ← Fin.cons_self_tail w]
-    simpa [interior_apply, Matrix.vecCons] using congrArg (fun T ↦ T (Fin.tail w)) (hint (w 0))
+    simpa [Matrix.vecCons] using congrArg (fun T ↦ T (Fin.tail w)) (hint (w 0))
 
 end Nodal
 
