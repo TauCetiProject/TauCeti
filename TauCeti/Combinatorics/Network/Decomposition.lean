@@ -29,17 +29,28 @@ with all weights in any additive subgroup containing the values of `f`. For an o
 flow every path of a decomposition runs from `s` to `t`, and the path weights add up to the value
 of the flow; for a circulation there are no paths at all.
 
+Applying a strictly monotone additive coefficient map to every component weight transports a
+decomposition to the mapped assignment, retaining the same walks and component order. Strict
+monotonicity ensures that the weights remain positive and supply and demand signs are preserved.
+
 ## Main definitions
 
 * `TauCeti.WeightedWalk` and `TauCeti.WeightedClosedWalk`: directed walks and closed walks with a
   weight, and their assignments.
+* `TauCeti.WeightedWalk.map` and `TauCeti.WeightedClosedWalk.map`: change the weights while
+  retaining the walks.
 * `TauCeti.PathCycleDecomposition f`: a decomposition of `f` into positively weighted directed
   paths from supply to demand vertices and positively weighted directed cycles.
+* `TauCeti.PathCycleDecomposition.map`: change the coefficients of a decomposition along a
+  strictly monotone additive map.
 * `TauCeti.PathCycleDecomposition.pathAssignment` and
   `TauCeti.PathCycleDecomposition.cycleAssignment`: the sums of the path and cycle components.
 
 ## Main results
 
+* `TauCeti.PathCycleDecomposition.pathAssignment_map` and
+  `TauCeti.PathCycleDecomposition.cycleAssignment_map`: changing coefficients commutes with
+  summing the path and cycle components.
 * `TauCeti.exists_pathCycleDecomposition`: every nonnegative assignment has a path–cycle
   decomposition with at most as many components as arrows of positive value, all of whose weights
   lie in any given additive subgroup containing the values of the assignment.
@@ -114,9 +125,86 @@ structure WeightedClosedWalk (Q : V → V → Type v) (K : Type w) where
   /-- The weight of the closed walk. -/
   weight : K
 
-section AddCommMonoid
+namespace WeightedWalk
 
-variable [AddCommMonoid K]
+variable {L M : Type*}
+
+/-- Change the weight of a walk by applying a coefficient map.
+
+This definition is reducible so dependent expressions keep the original walk endpoints. -/
+@[expose, reducible]
+def map (p : WeightedWalk Q K) (φ : K → L) : WeightedWalk Q L where
+  source := p.source
+  target := p.target
+  walk := p.walk
+  weight := φ p.weight
+
+@[simp]
+theorem map_source (p : WeightedWalk Q K) (φ : K → L) : (p.map φ).source = p.source :=
+  (rfl)
+
+@[simp]
+theorem map_target (p : WeightedWalk Q K) (φ : K → L) : (p.map φ).target = p.target :=
+  (rfl)
+
+@[simp]
+theorem map_walk (p : WeightedWalk Q K) (φ : K → L) : (p.map φ).walk = p.walk :=
+  (rfl)
+
+@[simp]
+theorem map_weight (p : WeightedWalk Q K) (φ : K → L) : (p.map φ).weight = φ p.weight :=
+  (rfl)
+
+@[simp]
+theorem map_id (p : WeightedWalk Q K) : p.map id = p :=
+  (rfl)
+
+@[simp]
+theorem map_map (p : WeightedWalk Q K) (φ : K → L) (ψ : L → M) :
+    (p.map φ).map ψ = p.map (ψ ∘ φ) :=
+  (rfl)
+
+end WeightedWalk
+
+namespace WeightedClosedWalk
+
+variable {L M : Type*}
+
+/-- Change the weight of a closed walk by applying a coefficient map.
+
+This definition is reducible so dependent expressions keep the original base vertex. -/
+@[expose, reducible]
+def map (c : WeightedClosedWalk Q K) (φ : K → L) : WeightedClosedWalk Q L where
+  base := c.base
+  walk := c.walk
+  weight := φ c.weight
+
+@[simp]
+theorem map_base (c : WeightedClosedWalk Q K) (φ : K → L) : (c.map φ).base = c.base :=
+  (rfl)
+
+@[simp]
+theorem map_walk (c : WeightedClosedWalk Q K) (φ : K → L) : (c.map φ).walk = c.walk :=
+  (rfl)
+
+@[simp]
+theorem map_weight (c : WeightedClosedWalk Q K) (φ : K → L) : (c.map φ).weight = φ c.weight :=
+  (rfl)
+
+@[simp]
+theorem map_id (c : WeightedClosedWalk Q K) : c.map id = c :=
+  (rfl)
+
+@[simp]
+theorem map_map (c : WeightedClosedWalk Q K) (φ : K → L) (ψ : L → M) :
+    (c.map φ).map ψ = c.map (ψ ∘ φ) :=
+  (rfl)
+
+end WeightedClosedWalk
+
+section AddMonoid
+
+variable [AddMonoid K]
 
 /-- The assignment of a weighted walk: its walk weighted by its weight. -/
 noncomputable def WeightedWalk.assignment (p : WeightedWalk Q K) : Assignment Q K :=
@@ -134,7 +222,21 @@ theorem WeightedClosedWalk.assignment_def (c : WeightedClosedWalk Q K) :
     c.assignment = walkAssignment c.walk c.weight :=
   (rfl)
 
-end AddCommMonoid
+variable {L F : Type*} [AddMonoid L] [FunLike F K L] [AddMonoidHomClass F K L]
+
+/-- The assignment of a weighted walk commutes with additive changes of coefficients. -/
+@[simp]
+theorem WeightedWalk.assignment_map (p : WeightedWalk Q K) (φ : F) :
+    (p.map φ).assignment = p.assignment.map φ := by
+  simp only [assignment_def, Assignment.map_walkAssignment]
+
+/-- The assignment of a weighted closed walk commutes with additive changes of coefficients. -/
+@[simp]
+theorem WeightedClosedWalk.assignment_map (c : WeightedClosedWalk Q K) (φ : F) :
+    (c.map φ).assignment = c.assignment.map φ := by
+  simp only [assignment_def, Assignment.map_walkAssignment]
+
+end AddMonoid
 
 variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
 
@@ -219,6 +321,76 @@ theorem pathAssignment_def : D.pathAssignment = (D.paths.map WeightedWalk.assign
 theorem cycleAssignment_def :
     D.cycleAssignment = (D.cycles.map WeightedClosedWalk.assignment).sum :=
   (rfl)
+
+section Map
+
+variable {L : Type*} [AddCommGroup L] [Preorder L]
+
+/-- Change the coefficients of a path–cycle decomposition without changing its walks.
+Strict monotonicity preserves the positive weights and the signs of terminal excesses. -/
+def map (φ : K →+ L) (hφ : StrictMono φ) : PathCycleDecomposition (f.map φ) where
+  paths := D.paths.map (fun p ↦ p.map φ)
+  cycles := D.cycles.map (fun c ↦ c.map φ)
+  isPath_walk := List.forall_mem_map.2 fun p hp ↦ by
+    simpa only [WeightedWalk.map_walk] using D.isPath_walk p hp
+  isCycle_walk := List.forall_mem_map.2 fun c hc ↦ by
+    simpa only [WeightedClosedWalk.map_walk] using D.isCycle_walk c hc
+  weight_pos_of_mem_paths := List.forall_mem_map.2 fun p hp ↦ by
+    simpa only [WeightedWalk.map_weight, _root_.map_zero] using
+      hφ (D.weight_pos_of_mem_paths p hp)
+  weight_pos_of_mem_cycles := List.forall_mem_map.2 fun c hc ↦ by
+    simpa only [WeightedClosedWalk.map_weight, _root_.map_zero] using
+      hφ (D.weight_pos_of_mem_cycles c hc)
+  excessAt_source_neg := List.forall_mem_map.2 fun p hp ↦ by
+    simpa only [WeightedWalk.map_source, map_excessAt, _root_.map_zero] using
+      hφ (D.excessAt_source_neg p hp)
+  excessAt_target_pos := List.forall_mem_map.2 fun p hp ↦ by
+    simpa only [WeightedWalk.map_target, map_excessAt, _root_.map_zero] using
+      hφ (D.excessAt_target_pos p hp)
+  sum_paths_add_sum_cycles := by
+    funext x y e
+    simpa only [Pi.add_apply, Pi.list_sum_apply, List.map_map, Function.comp_def,
+      WeightedWalk.assignment_map, WeightedClosedWalk.assignment_map, Assignment.map_apply,
+      map_add, map_list_sum] using
+      congrArg (fun g : Assignment Q K ↦ φ (g e)) D.sum_paths_add_sum_cycles
+
+@[simp]
+theorem map_paths (φ : K →+ L) (hφ : StrictMono φ) :
+    (D.map φ hφ).paths = D.paths.map (fun p ↦ p.map φ) :=
+  (rfl)
+
+@[simp]
+theorem map_cycles (φ : K →+ L) (hφ : StrictMono φ) :
+    (D.map φ hφ).cycles = D.cycles.map (fun c ↦ c.map φ) :=
+  (rfl)
+
+@[simp]
+theorem map_id : D.map (AddMonoidHom.id K) strictMono_id = D := by
+  apply PathCycleDecomposition.ext <;> simp
+
+@[simp]
+theorem map_map {M : Type*} [AddCommGroup M] [Preorder M] (φ : K →+ L) (hφ : StrictMono φ)
+    (ψ : L →+ M) (hψ : StrictMono ψ) :
+    (D.map φ hφ).map ψ hψ = D.map (ψ.comp φ) (hψ.comp hφ) := by
+  apply PathCycleDecomposition.ext <;> simp [Function.comp_def]
+
+/-- Changing coefficients maps the total path assignment. -/
+@[simp]
+theorem pathAssignment_map (φ : K →+ L) (hφ : StrictMono φ) :
+    (D.map φ hφ).pathAssignment = D.pathAssignment.map φ := by
+  funext x y e
+  simp only [pathAssignment_def, map_paths, List.map_map, Function.comp_def,
+    WeightedWalk.assignment_map, Pi.list_sum_apply, Assignment.map_apply, map_list_sum]
+
+/-- Changing coefficients maps the total cycle assignment. -/
+@[simp]
+theorem cycleAssignment_map (φ : K →+ L) (hφ : StrictMono φ) :
+    (D.map φ hφ).cycleAssignment = D.cycleAssignment.map φ := by
+  funext x y e
+  simp only [cycleAssignment_def, map_cycles, List.map_map, Function.comp_def,
+    WeightedClosedWalk.assignment_map, Pi.list_sum_apply, Assignment.map_apply, map_list_sum]
+
+end Map
 
 @[simp]
 theorem pathAssignment_add_cycleAssignment : D.pathAssignment + D.cycleAssignment = f :=
