@@ -13,7 +13,6 @@ public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
 import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
 import TauCeti.Algebra.Module.ZLattice.Covolume
 import TauCeti.Analysis.Convex.Topology
-import TauCeti.LinearAlgebra.Basis.Triangular
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.MeasureTheory.Constructions.Pi
 
@@ -53,7 +52,7 @@ every such `g` satisfies `g j ≤ λ_j`.
 ## Proof
 
 Coordinates in a `ℤ`-basis of `L` adapted to the flag spanned by the `a i`
-(`ZLattice.exists_basis_triangular`) reduce the statement to `L = ℤⁿ ⊆ ℝⁿ`, with
+(`ZLattice.exists_basis_span_image_eq_flag`) reduce the statement to `L = ℤⁿ ⊆ ℝⁿ`, with
 `span (a 0, …, a (j - 1))` the span of the first `j` coordinate vectors, and to the open convex
 set `C = ½ • interior K`, whose volume is `2⁻ⁿ μ K / covolume L μ`
 (`ZLattice.volume_image_eq_measure_div_covolume`). The hypothesis says that two points of `g j • C`
@@ -462,7 +461,7 @@ private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopo
     refine ⟨eq_top_iff.2 ?_⟩
     rw [← e.span_eq]
     exact span_mono (range_subset_iff.2 (by simpa [he] using haL))
-  obtain ⟨b, hb⟩ := exists_basis_triangular e (by simpa [he] using haL)
+  obtain ⟨b, hb⟩ := exists_basis_span_image_eq_flag e (by simpa [he] using haL)
   set bR := b.ofZLatticeBasis ℝ L
   set φ := bR.equivFun
   have hmemL : ∀ v, v ∈ L ↔ ∀ i, φ v i ∈ range ((↑) : ℤ → ℝ) := fun v ↦ by
@@ -475,11 +474,11 @@ private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopo
     (hK.interior.smul _).linear_image φ.toLinearMap
   let g' : ℕ → ℝ := fun i ↦ if h : i < n then g ⟨i, h⟩ else 0
   have hflag : ∀ j, ∀ v ∈ span ℝ (a '' Iio j), φ v j = 0 := fun j v hv ↦ by
-    have hv' : v ∈ e.flag j.castSucc := by
-      simp only [Basis.flag, Fin.castSucc_lt_castSucc_iff]
+    have hv' : v ∈ bR.flag j.castSucc := by
+      simp only [Basis.flag, bR, Basis.ofZLatticeBasis_apply]
+      rw [hb, Basis.flag]
+      simp only [Fin.castSucc_lt_castSucc_iff]
       exact he ▸ hv
-    rw [← bR.flag_eq_of_triangular
-      (fun l ↦ by rw [b.ofZLatticeBasis_apply ℝ L l]; exact (hb l).1)] at hv'
     exact bR.mem_flag_iff_repr_eq_zero.1 hv' j le_rfl
   have core := prod_mul_volume_le_one hCopen.measurableSet hCc g'
     (fun i hi ↦ by simp [g', hi, hg0]) (fun i j hij hj ↦ by
