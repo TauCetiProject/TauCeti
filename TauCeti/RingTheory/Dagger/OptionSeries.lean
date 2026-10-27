@@ -71,42 +71,54 @@ theorem map_val_injective : Function.Injective
       washnitzerAlgebra σ R →+* MvPowerSeries σ R)) :=
   PowerSeries.map_injective _ Subtype.val_injective
 
+/-- The coefficientwise separation of `Y = X none` underlying `optionSeries`. -/
+private noncomputable def optionSeriesFun (f : washnitzerAlgebra (Option σ) R) :
+    PowerSeries (washnitzerAlgebra σ R) :=
+  PowerSeries.mk fun m ↦ ⟨_, coeff_optionEquivLeft_mem_washnitzerAlgebra f.2 m⟩
+
+private theorem coe_coeff_optionSeriesFun (f : washnitzerAlgebra (Option σ) R) (m : ℕ) :
+    (PowerSeries.coeff (R := washnitzerAlgebra σ R) m (optionSeriesFun f) : MvPowerSeries σ R) =
+      PowerSeries.coeff m (optionEquivLeft σ R (f : MvPowerSeries (Option σ) R)) := by
+  simp only [optionSeriesFun, PowerSeries.coeff_mk]
+
+private theorem map_val_optionSeriesFun (f : washnitzerAlgebra (Option σ) R) :
+    PowerSeries.map ((washnitzerAlgebra σ R).val :
+      washnitzerAlgebra σ R →+* MvPowerSeries σ R) (optionSeriesFun f) =
+      optionEquivLeft σ R (f : MvPowerSeries (Option σ) R) := by
+  ext m : 1
+  rw [PowerSeries.coeff_map]
+  exact coe_coeff_optionSeriesFun f m
+
 /-- Separate `Y = X none`, retaining overconvergent coefficients in the other variables. -/
 noncomputable def optionSeries :
-    washnitzerAlgebra (Option σ) R →ₐ[R] PowerSeries (washnitzerAlgebra σ R) := by
-  let F (f : washnitzerAlgebra (Option σ) R) : PowerSeries (washnitzerAlgebra σ R) :=
-    PowerSeries.mk fun m ↦ ⟨_, coeff_optionEquivLeft_mem_washnitzerAlgebra f.2 m⟩
-  have hF (f) : PowerSeries.map ((washnitzerAlgebra σ R).val :
-    washnitzerAlgebra σ R →+* MvPowerSeries σ R) (F f) =
-      optionEquivLeft σ R (f : MvPowerSeries (Option σ) R) := by
-    ext m : 1
-    simp [F, Subalgebra.val_apply]
-  have hi := map_val_injective (σ := σ) (R := R)
-  refine
-    { toFun := F
-      map_zero' := hi (by rw [hF]; simp)
-      map_one' := hi (by rw [hF]; simp)
-      map_add' := fun f g ↦ hi (by rw [map_add, hF, hF, hF]; simp)
-      map_mul' := fun f g ↦ hi (by rw [map_mul, hF, hF, hF]; simp)
-      commutes' := fun a ↦ hi ?_ }
-  rw [hF]
-  simp [PowerSeries.algebraMap_apply]
+    washnitzerAlgebra (Option σ) R →ₐ[R] PowerSeries (washnitzerAlgebra σ R) where
+  toFun := optionSeriesFun
+  map_zero' := map_val_injective (by rw [map_val_optionSeriesFun]; simp)
+  map_one' := map_val_injective (by rw [map_val_optionSeriesFun]; simp)
+  map_add' f g := map_val_injective (by
+    rw [map_add, map_val_optionSeriesFun, map_val_optionSeriesFun, map_val_optionSeriesFun]
+    simp)
+  map_mul' f g := map_val_injective (by
+    rw [map_mul, map_val_optionSeriesFun, map_val_optionSeriesFun, map_val_optionSeriesFun]
+    simp)
+  commutes' a := map_val_injective (by
+    rw [map_val_optionSeriesFun]
+    simp [PowerSeries.algebraMap_apply])
 
 /-- The separated coefficients are the formal coefficient slices. -/
 @[simp]
 theorem coe_coeff_optionSeries (f : washnitzerAlgebra (Option σ) R) (m : ℕ) :
     (PowerSeries.coeff (R := washnitzerAlgebra σ R) m (optionSeries f) : MvPowerSeries σ R) =
-      PowerSeries.coeff m (optionEquivLeft σ R (f : MvPowerSeries (Option σ) R)) := by
-  simp [optionSeries]
+      PowerSeries.coeff m (optionEquivLeft σ R (f : MvPowerSeries (Option σ) R)) :=
+  coe_coeff_optionSeriesFun f m
 
 /-- Forgetting overconvergence of the coefficients recovers the formal variable separation. -/
 @[simp]
 theorem map_val_optionSeries (f : washnitzerAlgebra (Option σ) R) :
     PowerSeries.map ((washnitzerAlgebra σ R).val :
       washnitzerAlgebra σ R →+* MvPowerSeries σ R) (optionSeries f) =
-      optionEquivLeft σ R (f : MvPowerSeries (Option σ) R) := by
-  ext m : 1
-  simp [Subalgebra.val_apply]
+      optionEquivLeft σ R (f : MvPowerSeries (Option σ) R) :=
+  map_val_optionSeriesFun f
 
 /-- Variable separation is injective. -/
 theorem optionSeries_injective : Function.Injective (optionSeries (σ := σ) (R := R)) := by
