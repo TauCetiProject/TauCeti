@@ -15,8 +15,9 @@ The sentence `FirstOrder.Language.infiniteSentence` is the countable conjunction
 conjoining it with a sentence restricts that sentence to its infinite models, without changing
 its models on an infinite carrier.
 
-The cardinality assertions and their characterization of infinite structures reuse Mathlib's
-`FirstOrder.Language.infiniteTheory` and `FirstOrder.Language.model_infiniteTheory_iff`.
+The cardinality assertions reuse Mathlib's `FirstOrder.Language.Sentence.cardGe` and
+`FirstOrder.Language.Sentence.realize_cardGe`; their characterization of infinite structures
+uses `Cardinal.aleph0_le` and `Cardinal.infinite_iff`.
 -/
 
 public section
@@ -42,19 +43,7 @@ also applies to empty structures and to languages with function symbols. -/
 @[simp]
 theorem realize_infiniteSentence_iff {M : Type w} [L.Structure M] :
     SentenceInf.Realize L.infiniteSentence M ↔ Infinite M := by
-  rw [SentenceInf.realize_def, FormulaInf.realize_def, infiniteSentence_def,
-    BoundedFormulaInf.realize_iInf]
-  simp only [BoundedFormula.realize_toInf]
-  simpa [infiniteTheory, Theory.model_iff, Sentence.Realize, Formula.Realize,
-    Subsingleton.elim default (Empty.elim : Empty → M)] using
-      (L.model_infiniteTheory_iff (M := M))
-
-/-- Conjoining the infinitude sentence restricts realization to infinite carriers. -/
-@[simp]
-theorem realize_inf_infiniteSentence_iff {M : Type w} [L.Structure M] (φ : L.Sentenceω) :
-    SentenceInf.Realize (φ ⊓ L.infiniteSentence) M ↔ SentenceInf.Realize φ M ∧ Infinite M := by
-  simpa only [SentenceInf.realize_def, FormulaInf.realize_def,
-    BoundedFormulaInf.realize_inf] using
-      and_congr (Iff.rfl : SentenceInf.Realize φ M ↔ _) (L.realize_infiniteSentence_iff (M := M))
+  simp only [infiniteSentence_def, SentenceInf.realize_iInf, Sentence.realize_toInf,
+    Sentence.realize_cardGe, Cardinal.infinite_iff, Cardinal.aleph0_le]
 
 end FirstOrder.Language
