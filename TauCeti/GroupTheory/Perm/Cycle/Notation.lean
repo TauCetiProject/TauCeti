@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Concrete
-public import TauCeti.GroupTheory.Perm.Partition
 
 /-!
 # Disjoint cycle notation
@@ -35,6 +34,12 @@ permutation has a notation.
   lengths padded by fixed points.
 * `Equiv.Perm.IsCycleNotation.inv`: reversing every cycle writes the inverse.
 * `Equiv.Perm.exists_isCycleNotation`: every permutation has a disjoint cycle notation.
+
+## References
+
+The proof of `Equiv.Perm.IsCycleNotation.cycleType_eq` follows the cycle-type computation in the
+construction half of Mathlib's `Equiv.Perm.exists_with_cycleType_iff`
+(`Mathlib/GroupTheory/Perm/Cycle/PossibleTypes.lean`).
 -/
 
 public section
@@ -103,8 +108,10 @@ theorem apply_ne_self_iff (h : σ.IsCycleNotation p) {x : α} : σ x ≠ x ↔ x
       simpa [hy] using h.two_le_length l (mem_cons_self ..)
     have hx : l.formPerm x ≠ x ↔ x ∈ l := by
       simpa using Set.ext_iff.mp (support_formPerm_of_nodup' l hl hl1) x
-    rw [← h.prod_map_formPerm, map_cons, prod_cons, Ne, hd.mul_apply_eq_iff, not_and_or, ← Ne,
-      ← Ne, hx, ih h.of_cons, flatten_cons, mem_append]
+    have hσ : σ x = x ↔ l.formPerm x = x ∧ (p.map formPerm).prod x = x := by
+      rw [← h.prod_map_formPerm, map_cons, prod_cons, hd.mul_apply_eq_iff]
+    rw [flatten_cons, mem_append, ← hx, ← ih h.of_cons, Ne, hσ]
+    tauto
 
 /-- **Inverse in cycle notation:** reversing every cycle of a disjoint cycle notation for `σ` gives
 one for `σ⁻¹`. -/
