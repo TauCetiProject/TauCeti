@@ -104,19 +104,19 @@ private theorem explicitDelta1_eq_cup_character (U : OpenSubgroup G)
   let S := DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
     (trivialF2_two_nsmul_eq_zero G)
   let mu := DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-    (trivialF2Pairing_smul_smul G)
+    (fun u => trivialF2Pairing_smul_smul G u)
   have hcup := explicitDelta1_explicitCup10_right S S mu (trivialF2Pairing G)
     (trivialF2Pairing G) continuous_of_discreteTopology continuous_of_discreteTopology
     continuous_of_discreteTopology
     (DiscreteCoind.pairing_smul U.toSubgroup U.isOpen' (trivialF2Pairing G)
-      (trivialF2Pairing_smul_smul G))
+      (fun u => trivialF2Pairing_smul_smul G u))
     (trivialF2Pairing_smul_smul G) (trivialF2Pairing_smul_smul G)
     (fun a b => by
       -- The general connecting-map lemma exposes the coefficient maps through `S`; unfolding
       -- that wrapper presents exactly the coinduction unit identity proved by `pairing_apply`.
       simp only [S, mu, DiscreteCoind.indexTwoShortExact_incl]
       change DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-        (trivialF2Pairing_smul_smul G) a (DiscreteCoind.unit G U.toSubgroup _ b) =
+        (fun u => trivialF2Pairing_smul_smul G u) a (DiscreteCoind.unit G U.toSubgroup _ b) =
           DiscreteCoind.unit G U.toSubgroup _ (trivialF2Pairing G a b)
       ext g
       rw [DiscreteCoind.pairing_apply, DiscreteCoind.unit_apply, DiscreteCoind.unit_apply,
@@ -128,7 +128,7 @@ private theorem explicitDelta1_eq_cup_character (U : OpenSubgroup G)
       change trivialF2Pairing G a (DiscreteCoind.trace G U.toSubgroup _ b) =
         DiscreteCoind.trace G U.toSubgroup _
           (DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-            (trivialF2Pairing_smul_smul G) a b)
+            (fun u => trivialF2Pairing_smul_smul G u) a b)
       exact (DiscreteCoind.trace_pairing U.toSubgroup U.isOpen'
         (trivialF2Pairing G) (trivialF2Pairing_smul_smul G) a b).symm)
     x (f2One (G := G))

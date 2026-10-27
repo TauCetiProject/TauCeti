@@ -10,17 +10,25 @@ public import Mathlib.Data.Fintype.CardEmbedding
 public import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Finset.Pairwise
 
-/-! # Embeddings into prescribed cells
+/-! # Counting embeddings
 
-Given a family `c : ι → Finset V` of cells, we count the embeddings `f : ι ↪ V` with
-`f i ∈ c i` for every `i`. When the cells are taken from a pairwise disjoint family, injectivity
-only constrains indices sharing a cell, so the count factors over the cells: a cell `A` hosting
-`m` indices contributes the falling factorial `(#A).descFactorial m`, and an unused cell
-contributes one. In particular, distinct cells contribute just their sizes, and in general the
-count is at most the product of the sizes of the cells.
+The injective maps `α → β` between finite types correspond to the embeddings `α ↪ β`, so there
+are `(card β).descFactorial (card α)` of them. We restate `Fintype.card_embedding_eq` for the
+subtype of injective functions, the form in which counts over injective tuples `Fin n → V` are
+taken.
+
+We also count embeddings into prescribed cells. Given a family `c : ι → Finset V` of cells, we
+count the embeddings `f : ι ↪ V` with `f i ∈ c i` for every `i`. When the cells are taken from a
+pairwise disjoint family, injectivity only constrains indices sharing a cell, so the count factors
+over the cells: a cell `A` hosting `m` indices contributes the falling factorial
+`(#A).descFactorial m`, and an unused cell contributes one. In particular, distinct cells
+contribute just their sizes, and in general the count is at most the product of the sizes of the
+cells.
 
 ## Main results
 
+* `Fintype.card_subtype_injective`: there are `(card β).descFactorial (card α)` injective maps
+  `α → β`.
 * `Equiv.embeddingMemEquivPi`: over a pairwise disjoint family of cells, the embeddings into the
   cells are the families of embeddings, one for each cell, of the indices assigned to that cell.
 * `Nat.card_embedding_mem_eq_prod_descFactorial`: the count over a pairwise disjoint family
@@ -33,6 +41,18 @@ count is at most the product of the sizes of the cells.
 public section
 
 open Finset Function
+
+namespace Fintype
+
+/-- There are `(card β).descFactorial (card α)` injective maps `α → β`; for instance
+`|V| (|V| - 1) (|V| - 2)` injective triples `Fin 3 → V`. This is `Fintype.card_embedding_eq` for
+the subtype of injective functions. -/
+theorem card_subtype_injective {α β : Type*} [Fintype α] [Fintype β]
+    [Fintype {f : α → β // Function.Injective f}] :
+    card {f : α → β // Function.Injective f} = (card β).descFactorial (card α) := by
+  rw [card_congr (Equiv.subtypeInjectiveEquivEmbedding _ _), card_embedding_eq]
+
+end Fintype
 
 namespace Equiv
 

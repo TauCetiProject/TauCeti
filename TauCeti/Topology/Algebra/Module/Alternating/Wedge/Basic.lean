@@ -203,6 +203,20 @@ theorem pairedWedge_add_right [ContinuousAdd F₂] {k l : ℕ} (μ : F₁ →L[�
   simp only [pairedWedge_apply, ContinuousAlternatingMap.add_apply, map_add,
     smul_add, Finset.sum_add_distrib]
 
+/-- The paired wedge distributes over finite sums in its first alternating map. -/
+theorem pairedWedge_sum_left [ContinuousAdd F₁] {k l : ℕ} {ι : Type*} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (s : Finset ι)
+    (φ : ι → E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
+    pairedWedge μ hμ (∑ i ∈ s, φ i) ψ = ∑ i ∈ s, pairedWedge μ hμ (φ i) ψ :=
+  _root_.map_sum (AddMonoidHom.mk' (pairedWedge μ hμ · ψ) (pairedWedge_add_left μ hμ · · ψ)) φ s
+
+/-- The paired wedge distributes over finite sums in its second alternating map. -/
+theorem pairedWedge_sum_right [ContinuousAdd F₂] {k l : ℕ} {ι : Type*}
+    (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
+    (s : Finset ι) (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : ι → E [⋀^Fin l]→L[ℝ] F₂) :
+    pairedWedge μ hμ φ (∑ i ∈ s, ψ i) = ∑ i ∈ s, pairedWedge μ hμ φ (ψ i) :=
+  _root_.map_sum (AddMonoidHom.mk' (pairedWedge μ hμ φ ·) (pairedWedge_add_right μ hμ φ)) ψ s
+
 /-- If the pairing turns multiplication by `c` in its first argument into multiplication by `d`,
 then so does the paired wedge in its first alternating map. For a complex-bilinear pairing this is
 complex-linearity in the first factor; it also covers pairings that are conjugate-linear in the

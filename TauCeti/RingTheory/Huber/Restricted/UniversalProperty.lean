@@ -36,8 +36,12 @@ converges and defines the unique continuous `A`-linear map `Φ : M⟨T₁, …, 
 basic neighbourhood `{f | ∀ t, fₜ ∈ V}` of `0` as soon as `m ∈ V`. Continuous `A`-linear maps
 out of `M⟨T₁, …, Tₖ⟩` therefore correspond exactly to such families.
 
-Neither completeness nor separatedness of `M` is used. They are needed only for `M⟨T₁, …, Tₖ⟩`
-itself to be complete and Hausdorff (`completeSpace_restrictedMvPowerSeriesSubmodule` and
+The expansion `f = ∑ₛ fₛ Tˢ`, uniqueness, and the equicontinuity of `Ψ(· Tˢ)` hold more
+generally over a semiring `A`, for `M` any uniform `A`-module with continuous addition and
+fixed-scalar multiplication; `M` need not have additive inverses. The equicontinuity statement
+also needs no additive-group structure on its target. Neither completeness nor separatedness
+of `M` is used. They are needed only for `M⟨T₁, …, Tₖ⟩` itself to be complete and Hausdorff
+(`completeSpace_restrictedMvPowerSeriesSubmodule` and
 `t2Space_restrictedMvPowerSeriesSubmodule`). The completeness and the nonarchimedean property of
 `N` are what make the sums `∑ₛ φₛ(fₛ)` converge, and they are not needed for uniqueness
 (`restrictedMvPowerSeriesSubmodule_linearMap_ext_of_continuous`).
@@ -149,8 +153,10 @@ end Lift
 
 end General
 
-variable {k : ℕ} {A M : Type*} [Ring A] [AddCommGroup M] [UniformSpace M]
-  [IsUniformAddGroup M] [Module A M] [ContinuousConstSMul A M]
+section Uniform
+
+variable {k : ℕ} {A M : Type*} [Semiring A] [AddCommMonoid M] [UniformSpace M] [ContinuousAdd M]
+  [Module A M] [ContinuousConstSMul A M]
 
 /-- **Every restricted series is the sum of its monomial terms**: `f = ∑ₛ fₛ Tˢ` for the
 topology of uniform convergence of coefficients. -/
@@ -160,36 +166,32 @@ theorem hasSum_restrictedMvPowerSeriesSubmoduleMonomial
     HasSum (fun s ↦ restrictedMvPowerSeriesSubmoduleMonomial s
       (((f : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) s)) f := by
   let := restrictedMvPowerSeriesSubmoduleUniformSpace k A M
-  have := isUniformAddGroup_restrictedMvPowerSeriesSubmodule (k := k) (A := A) (M := M)
-  rw [HasSum, SummationFilter.unconditional_filter, ← tendsto_sub_nhds_zero_iff]
-  refine hasBasis_nhds_zero_restrictedMvPowerSeriesSubmodule.tendsto_right_iff.mpr fun U hU ↦ ?_
-  have hneg : Tendsto (fun s ↦ -((f : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) s) cofinite
-      (𝓝 0) := by
-    simpa using Tendsto.neg (isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp f.2))
-  have hfin := eventually_cofinite.mp (hneg.eventually hU)
-  filter_upwards [eventually_ge_atTop hfin.toFinset] with S hS t
   -- Keep the coefficient function at its function type, so that `Pi.single` sums simplify.
   set a : (Fin k →₀ ℕ) → M := ((f : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M)
+  rw [HasSum, SummationFilter.unconditional_filter,
+    isUniformInducing_restrictedMvPowerSeriesSubmodule_coefficients.isInducing.tendsto_nhds_iff]
+  refine (UniformFun.hasBasis_nhds (Fin k →₀ ℕ) M (UniformFun.ofFun a)).tendsto_right_iff.mpr
+    fun V hV ↦ ?_
+  have hfin := eventually_cofinite.mp
+    ((isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp f.2)).eventually
+      (mem_nhds_right 0 hV))
+  filter_upwards [eventually_ge_atTop hfin.toFinset] with S hS t
   -- Reading off the coefficient at `t` is additive, so it commutes with the partial sum.
-  let c : restrictedMvPowerSeriesSubmodule k A M →+ M :=
-    { toFun x := ((x : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) t
-      map_zero' := rfl
-      map_add' _ _ := rfl }
-  have hc : (((∑ s ∈ S, restrictedMvPowerSeriesSubmoduleMonomial s (a s) - f :
+  let c : restrictedMvPowerSeriesSubmodule k A M →ₗ[A] M :=
+    (LinearMap.proj t).comp (restrictedMvPowerSeriesSubmodule k A M).subtype
+  have hc : (((∑ s ∈ S, restrictedMvPowerSeriesSubmoduleMonomial s (a s) :
       restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) t =
-      ∑ s ∈ S, (Pi.single s (a s) : (Fin k →₀ ℕ) → M) t - a t :=
-    (map_sub c _ _).trans <| by
-      rw [map_sum]
-      have hcoeff (s : Fin k →₀ ℕ) :
-          c (restrictedMvPowerSeriesSubmoduleMonomial s (a s)) =
-            (Pi.single s (a s) : (Fin k →₀ ℕ) → M) t :=
-        coeff_restrictedMvPowerSeriesSubmoduleMonomial s (a s) t
-      have hcf : c f = a t := rfl
-      simp only [hcoeff, hcf]
+      ∑ s ∈ S, (Pi.single s (a s) : (Fin k →₀ ℕ) → M) t :=
+    (map_sum c _ S).trans <| Finset.sum_congr rfl fun s _ ↦
+      coeff_restrictedMvPowerSeriesSubmoduleMonomial s (a s) t
   -- The partial sum over `S` agrees with `f` on `S` and vanishes off `S`.
+  -- Expose the coefficient function inside `UniformFun.toFun`; simplification cannot cross
+  -- the semireducible `MvPowerSeries` wrapper at module coefficients to apply `hc`.
+  change (a t, (((∑ s ∈ S, restrictedMvPowerSeriesSubmoduleMonomial s (a s) :
+      restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) t) ∈ V
   rw [hc, Finset.sum_pi_single]
   by_cases ht : t ∈ S
-  · simpa [ht] using mem_of_mem_nhds hU
+  · simpa [ht] using refl_mem_uniformity hV
   · have : t ∉ hfin.toFinset := fun h ↦ ht (hS h)
     simpa [ht] using this
 
@@ -206,6 +208,33 @@ theorem restrictedMvPowerSeriesSubmodule_linearMap_ext_of_continuous {N : Type*}
   ext f
   have hf := hasSum_restrictedMvPowerSeriesSubmoduleMonomial f
   exact (hf.map Ψ hΨ).unique (by simpa only [Function.comp_def, h] using hf.map Ψ' hΨ')
+
+/-- **The converse of the universal property**: the values `Ψ(m Tˢ)` of a continuous linear map
+`Ψ` out of `M⟨T₁, …, Tₖ⟩` form a family of linear maps `M → N` equicontinuous at `0`. -/
+theorem equicontinuousAt_comp_restrictedMvPowerSeriesSubmoduleMonomial {N : Type*}
+    [AddCommMonoid N] [UniformSpace N] [Module A N] :
+    letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
+    ∀ {Ψ : restrictedMvPowerSeriesSubmodule k A M →ₗ[A] N}, Continuous Ψ →
+      EquicontinuousAt (fun s ↦ ⇑(Ψ ∘ₗ restrictedMvPowerSeriesSubmoduleMonomial s)) 0 := by
+  let := restrictedMvPowerSeriesSubmoduleUniformSpace k A M
+  intro Ψ hΨ U hU
+  have hΨW : Ψ ⁻¹' {y | (0, y) ∈ U} ∈ 𝓝 0 :=
+    hΨ.continuousAt.preimage_mem_nhds (by rw [map_zero]; exact mem_nhds_left 0 hU)
+  obtain ⟨V, hV, hVW⟩ := hasBasis_nhds_zero_restrictedMvPowerSeriesSubmodule.mem_iff.mp hΨW
+  filter_upwards [hV] with m hm s
+  -- The monomial `m Tˢ` has every coefficient in `V`: `m` at `s` and `0` elsewhere.
+  have hmono : ∀ t, (((restrictedMvPowerSeriesSubmoduleMonomial (A := A) s m :
+      restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) :
+        (Fin k →₀ ℕ) → M) t ∈ V := fun t ↦ by
+    by_cases ht : t = s
+    · simpa [ht] using hm
+    · simpa [ht] using mem_of_mem_nhds hV
+  simpa using hVW hmono
+
+end Uniform
+
+variable {k : ℕ} {A M : Type*} [Ring A] [AddCommGroup M] [UniformSpace M]
+  [IsUniformAddGroup M] [Module A M] [ContinuousConstSMul A M]
 
 section Lift
 
@@ -246,29 +275,5 @@ theorem existsUnique_continuous_linearMap_restrictedMvPowerSeriesSubmodule
     (continuous_restrictedMvPowerSeriesSubmoduleLift hφ) fun s m ↦ by simp [h]
 
 end Lift
-
-/-- **The converse of the universal property**: the values `Ψ(m Tˢ)` of a continuous linear map
-`Ψ` out of `M⟨T₁, …, Tₖ⟩` form a family of linear maps `M → N` equicontinuous at `0`. -/
-theorem equicontinuousAt_comp_restrictedMvPowerSeriesSubmoduleMonomial {N : Type*}
-    [AddCommGroup N] [UniformSpace N] [IsUniformAddGroup N] [Module A N] :
-    letI := restrictedMvPowerSeriesSubmoduleUniformSpace k A M;
-    ∀ {Ψ : restrictedMvPowerSeriesSubmodule k A M →ₗ[A] N}, Continuous Ψ →
-      EquicontinuousAt (fun s ↦ ⇑(Ψ ∘ₗ restrictedMvPowerSeriesSubmoduleMonomial s)) 0 := by
-  let := restrictedMvPowerSeriesSubmoduleUniformSpace k A M
-  intro Ψ hΨ U hU
-  rw [uniformity_eq_comap_nhds_zero N] at hU
-  obtain ⟨W, hW, hWU⟩ := mem_comap.mp hU
-  have hΨW : Ψ ⁻¹' W ∈ 𝓝 0 := hΨ.continuousAt.preimage_mem_nhds (by rwa [map_zero])
-  obtain ⟨V, hV, hVW⟩ := hasBasis_nhds_zero_restrictedMvPowerSeriesSubmodule.mem_iff.mp hΨW
-  filter_upwards [hV] with m hm s
-  apply hWU
-  -- The monomial `m Tˢ` has every coefficient in `V`: `m` at `s` and `0` elsewhere.
-  have hmono : ∀ t, (((restrictedMvPowerSeriesSubmoduleMonomial (A := A) s m :
-      restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) :
-        (Fin k →₀ ℕ) → M) t ∈ V := fun t ↦ by
-    by_cases ht : t = s
-    · simpa [ht] using hm
-    · simpa [ht] using mem_of_mem_nhds hV
-  simpa using hVW hmono
 
 end TauCeti.Huber

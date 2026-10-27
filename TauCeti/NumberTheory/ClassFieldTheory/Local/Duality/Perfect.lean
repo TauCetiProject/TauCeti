@@ -108,8 +108,8 @@ private theorem flip_perfect_zero_two (hij : 0 + 2 = 2) :
     (tateDualityPairing A tr 0 2 hij)
     (((AddEquiv.ofBijective _ (explicitMap0_bijective _ _
         (absoluteGaloisGroupRestrictEquiv F : Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)
-        (absoluteGaloisGroupRestrictEquiv F).surjective (internalHomEquivTateDual A)
-        (internalHomEquivTateDual_smul A))).trans
+        (absoluteGaloisGroupRestrictEquiv F).surjective (internalHomEquivTateDual A).toAddMonoidHom
+        (internalHomEquivTateDual A).bijective (internalHomEquivTateDual_smul A))).trans
       (explicitH0IsoContinuousCohomology _ (tateDual A).V).toContinuousLinearEquiv.toAddEquiv).trans
       (ofDiscreteModuleRestrictScalarsIntEquiv (tateDual A) 0))
     ((explicitMap2Equiv _ _ _ _ (absoluteGaloisGroupRestrictEquiv F) (AddEquiv.refl A.V)
@@ -190,8 +190,8 @@ private theorem flip_perfect_two_zero (hij : 2 + 0 = 2) :
       (tateDual A).explicitH2AddEquivContinuousCohomologyOfDiscrete)
     (((AddEquiv.ofBijective _ (explicitMap0_bijective _ _
         (absoluteGaloisGroupRestrictEquiv F : Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)
-        (absoluteGaloisGroupRestrictEquiv F).surjective (AddEquiv.refl A.V)
-        (absoluteGaloisGroupRestrictEquiv_smul A))).trans
+        (absoluteGaloisGroupRestrictEquiv F).surjective (AddMonoidHom.id A.V)
+        Function.bijective_id (absoluteGaloisGroupRestrictEquiv_smul A))).trans
       (explicitH0IsoContinuousCohomology _ A.V).toContinuousLinearEquiv.toAddEquiv).trans
       (ofDiscreteModuleRestrictScalarsIntEquiv A 0))
     ((AddMonoidHom.compHom (explicitTr (F := F) tr).toAddMonoidHom).comp

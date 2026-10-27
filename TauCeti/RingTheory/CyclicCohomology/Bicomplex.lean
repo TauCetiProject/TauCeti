@@ -34,6 +34,10 @@ zero (`TauCeti.RingTheory.CyclicCohomology.RowExactness`), and this cochain map 
 quasi-isomorphism. So over a ring containing `ℚ`, cyclic cohomology defined by cyclic cochains is
 the cohomology of the total cyclic bicomplex.
 
+The total cochain modules require only additive commutative monoids of coefficients. Constructing
+the total differential and its compatibility with cyclic cochains uses bilinear multiplication on
+`A`; associativity is needed for the total differential to square to zero.
+
 ## Main definitions
 
 * `TauCeti.cyclicBicomplexHorizontal`: the horizontal differential out of column `p` of row `q`.
@@ -100,6 +104,13 @@ theorem cyclicBicomplexHorizontal_of_odd (hp : Odd p) :
     cyclicBicomplexHorizontal R A M p q = cyclicNorm R A M q :=
   ite_eq_right (Nat.not_even_iff_odd.2 hp)
 
+variable (R A M p q) in
+/-- The horizontal differentials are periodic of period two in the column. -/
+@[simp]
+theorem cyclicBicomplexHorizontal_add_two :
+    cyclicBicomplexHorizontal R A M (p + 2) q = cyclicBicomplexHorizontal R A M p q := by
+  simp [cyclicBicomplexHorizontal, Nat.even_add]
+
 /-- Two consecutive horizontal differentials compose to zero: `N (1 - λ) = 0 = (1 - λ) N`. -/
 @[simp]
 theorem cyclicBicomplexHorizontal_succ_mul_cyclicBicomplexHorizontal :
@@ -161,6 +172,13 @@ theorem cyclicBicomplexVertical_of_odd (hp : Odd p) :
   ite_eq_right (Nat.not_even_iff_odd.2 hp)
 
 variable (R A M p q) in
+/-- The vertical differentials are periodic of period two in the column. -/
+@[simp]
+theorem cyclicBicomplexVertical_add_two :
+    cyclicBicomplexVertical R A M (p + 2) q = cyclicBicomplexVertical R A M p q := by
+  simp [cyclicBicomplexVertical, Nat.even_add]
+
+variable (R A M p q) in
 /-- Adjacent squares of the cyclic bicomplex anticommute: going right then up is minus going up
 then right. In even columns this is `(1 - λ) b = b' (1 - λ)`, in odd columns `b N = N b'`. -/
 theorem cyclicBicomplexVertical_comp_cyclicBicomplexHorizontal :
@@ -209,7 +227,7 @@ end VerticalAssoc
 
 section TotalCochains
 
-variable (R A M : Type*) [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M]
+variable (R A M : Type*) [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid M]
   [Module R M]
 
 /-- The degree-`m` term `⊕_{p + q = m} C^q` of the total complex of the cyclic bicomplex: the
@@ -228,6 +246,12 @@ theorem mem_cyclicTotalCochains_iff {m : ℕ}
     x ∈ cyclicTotalCochains R A M m ↔ ∀ q, m < q → x q = 0 := by
   simp [cyclicTotalCochains, Submodule.mem_pi]
 
+/-- A total cochain of degree `m` vanishes in every row `q > m`. -/
+@[simp]
+theorem coe_cyclicTotalCochains_apply_of_lt {m q : ℕ} (x : cyclicTotalCochains R A M m)
+    (hq : m < q) : (x : ∀ q : ℕ, MultilinearMap R (fun _ : Fin (q + 1) ↦ A) M) q = 0 :=
+  mem_cyclicTotalCochains_iff.1 x.2 q hq
+
 /-- A cochain placed in row `k ≤ m` is a total cochain of degree `m`. -/
 theorem single_mem_cyclicTotalCochains {m k : ℕ} (hk : k ≤ m)
     (φ : MultilinearMap R (fun _ : Fin (k + 1) ↦ A) M) :
@@ -236,6 +260,11 @@ theorem single_mem_cyclicTotalCochains {m k : ℕ} (hk : k ≤ m)
   rw [mem_cyclicTotalCochains_iff]
   intro q hq
   exact Pi.single_eq_of_ne (by omega) _
+
+/-- A total cochain of degree `m` is a total cochain of every degree `n ≥ m`. -/
+theorem cyclicTotalCochains_mono : Monotone (cyclicTotalCochains R A M) := fun m n hmn x hx ↦ by
+  rw [mem_cyclicTotalCochains_iff] at hx ⊢
+  exact fun q hq ↦ hx q (lt_of_le_of_lt hmn hq)
 
 /-- A total cochain of degree `m` vanishing below row `m` is concentrated in column zero. -/
 private theorem eq_single_of_forall_lt {m : ℕ}
@@ -247,6 +276,13 @@ private theorem eq_single_of_forall_lt {m : ℕ}
   · rw [hlt q hq, Pi.single_eq_of_ne hq.ne]
   · rw [Pi.single_eq_same]
   · rw [mem_cyclicTotalCochains_iff.1 hx q hq, Pi.single_eq_of_ne hq.ne']
+
+end TotalCochains
+
+section Inclusion
+
+variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M]
+  [Module R M]
 
 variable (R A M) in
 /-- The inclusion of cyclic `m`-cochains into column zero of the total complex. -/
@@ -267,11 +303,11 @@ theorem cyclicCochainsToTotal_injective (m : ℕ) :
     Function.Injective (cyclicCochainsToTotal R A M m) := fun _ _ h ↦
   Subtype.ext (Pi.single_injective m (congrArg Subtype.val h))
 
-end TotalCochains
+end Inclusion
 
 section Total
 
-variable {R A M : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+variable {R A M : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
 variable (R A M) in
@@ -335,6 +371,73 @@ private theorem cyclicTotalDifferentialAux_mem {m : ℕ}
   rw [zero_add, cyclicTotalDifferentialAux_apply_succ, hx q (by omega), hx (q + 1) (by omega),
     map_zero, map_zero, add_zero]
 
+variable (R A M) in
+/-- The differential `D = d_h + d_v` of the total complex of the cyclic bicomplex, from total
+degree `m` to total degree `m + 1`. -/
+def cyclicTotalDifferential (m : ℕ) :
+    cyclicTotalCochains R A M m →ₗ[R] cyclicTotalCochains R A M (m + 1) :=
+  (cyclicTotalDifferentialAux R A M m).restrict fun _ ↦ cyclicTotalDifferentialAux_mem
+
+private theorem coe_cyclicTotalDifferential {m : ℕ} (x : cyclicTotalCochains R A M m) :
+    (cyclicTotalDifferential R A M m x).1 = cyclicTotalDifferentialAux R A M m x.1 :=
+  (rfl)
+
+/-- In row zero, the total differential is the horizontal differential out of column `m`. -/
+@[simp]
+theorem cyclicTotalDifferential_apply_zero {m : ℕ} (x : cyclicTotalCochains R A M m) :
+    (cyclicTotalDifferential R A M m x).1 0 = cyclicBicomplexHorizontal R A M m 0 (x.1 0) :=
+  (rfl)
+
+/-- In row `q + 1`, the total differential adds the vertical differential of the component in
+row `q`, in column `m - q`, to the horizontal differential of the component in row `q + 1`. -/
+@[simp]
+theorem cyclicTotalDifferential_apply_succ {m : ℕ} (x : cyclicTotalCochains R A M m) (q : ℕ) :
+    (cyclicTotalDifferential R A M m x).1 (q + 1) =
+      cyclicBicomplexVertical R A M (m - q) q (x.1 q) +
+        cyclicBicomplexHorizontal R A M (m - (q + 1)) (q + 1) (x.1 (q + 1)) :=
+  (rfl)
+
+/-- The total differential of a cochain `φ` in column zero of row `m` has the components
+`(1 - λ) φ` in row `m` and `b φ` in row `m + 1`. -/
+private theorem cyclicTotalDifferentialAux_single_self (m : ℕ)
+    (φ : MultilinearMap R (fun _ : Fin (m + 1) ↦ A) M) :
+    cyclicTotalDifferentialAux R A M m (Pi.single m φ) m = (1 - cyclicOperator R A M m) φ ∧
+      cyclicTotalDifferentialAux R A M m (Pi.single m φ) (m + 1) =
+        hochschildCoboundary R A M m φ := by
+  refine ⟨?_, ?_⟩
+  · rw [cyclicTotalDifferentialAux_apply_of_forall_lt m m _ fun q hq ↦ Pi.single_eq_of_ne hq.ne _,
+      Nat.sub_self, Pi.single_eq_same, cyclicBicomplexHorizontal_of_even Even.zero]
+  · rw [cyclicTotalDifferentialAux_apply_succ, Nat.sub_self, Pi.single_eq_same,
+      Pi.single_eq_of_ne (by omega), map_zero, add_zero,
+      cyclicBicomplexVertical_of_even Even.zero]
+
+/-- The inclusion into column zero commutes with the differentials: the total differential of a
+cyclic cochain `φ` is `(1 - λ) φ = 0` in column one plus `b φ` in column zero. -/
+@[simp]
+theorem cyclicTotalDifferential_cyclicCochainsToTotal {m : ℕ} (φ : cyclicCochains R A M m) :
+    cyclicTotalDifferential R A M m (cyclicCochainsToTotal R A M m φ) =
+      cyclicCochainsToTotal R A M (m + 1) (cyclicHochschildCoboundary R A M m φ) := by
+  obtain ⟨hcyc, hb⟩ := cyclicTotalDifferentialAux_single_self m φ.1
+  have hφ : (1 - cyclicOperator R A M m) φ.1 = 0 := by
+    rw [← LinearMap.mem_ker, ker_one_sub_cyclicOperator]
+    exact φ.2
+  apply Subtype.ext
+  rw [coe_cyclicTotalDifferential, coe_cyclicCochainsToTotal_apply, coe_cyclicCochainsToTotal_apply,
+    coe_cyclicHochschildCoboundary_apply,
+    eq_single_of_forall_lt
+      (cyclicTotalDifferentialAux_mem (single_mem_cyclicTotalCochains le_rfl _))
+      fun q hq ↦ ?_, hb]
+  rcases Nat.lt_succ_iff_lt_or_eq.1 hq with hq | rfl
+  · exact cyclicTotalDifferentialAux_single_apply_of_lt m hq φ.1
+  · rw [hcyc, hφ]
+
+end Total
+
+section TotalAssoc
+
+variable {R A M : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+
 /-- The total differential squares to zero on total cochains of degree `m`. -/
 private theorem cyclicTotalDifferentialAux_cyclicTotalDifferentialAux {m : ℕ}
     {x : ∀ k : ℕ, MultilinearMap R (fun _ : Fin (k + 1) ↦ A) M}
@@ -374,32 +477,6 @@ private theorem cyclicTotalDifferentialAux_cyclicTotalDifferentialAux {m : ℕ}
       rw [cyclicTotalDifferentialAux_apply_succ, Nat.add_sub_add_right, map_add,
         cyclicBicomplexVertical_cyclicBicomplexVertical, zero_add, hsq]
 
-variable (R A M) in
-/-- The differential `D = d_h + d_v` of the total complex of the cyclic bicomplex, from total
-degree `m` to total degree `m + 1`. -/
-def cyclicTotalDifferential (m : ℕ) :
-    cyclicTotalCochains R A M m →ₗ[R] cyclicTotalCochains R A M (m + 1) :=
-  (cyclicTotalDifferentialAux R A M m).restrict fun _ ↦ cyclicTotalDifferentialAux_mem
-
-private theorem coe_cyclicTotalDifferential {m : ℕ} (x : cyclicTotalCochains R A M m) :
-    (cyclicTotalDifferential R A M m x).1 = cyclicTotalDifferentialAux R A M m x.1 :=
-  (rfl)
-
-/-- In row zero, the total differential is the horizontal differential out of column `m`. -/
-@[simp]
-theorem cyclicTotalDifferential_apply_zero {m : ℕ} (x : cyclicTotalCochains R A M m) :
-    (cyclicTotalDifferential R A M m x).1 0 = cyclicBicomplexHorizontal R A M m 0 (x.1 0) :=
-  (rfl)
-
-/-- In row `q + 1`, the total differential adds the vertical differential of the component in
-row `q`, in column `m - q`, to the horizontal differential of the component in row `q + 1`. -/
-@[simp]
-theorem cyclicTotalDifferential_apply_succ {m : ℕ} (x : cyclicTotalCochains R A M m) (q : ℕ) :
-    (cyclicTotalDifferential R A M m x).1 (q + 1) =
-      cyclicBicomplexVertical R A M (m - q) q (x.1 q) +
-        cyclicBicomplexHorizontal R A M (m - (q + 1)) (q + 1) (x.1 (q + 1)) :=
-  (rfl)
-
 /-- The total differential squares to zero. -/
 @[simp]
 theorem cyclicTotalDifferential_cyclicTotalDifferential {m : ℕ}
@@ -413,41 +490,7 @@ theorem cyclicTotalDifferential_comp_cyclicTotalDifferential (m : ℕ) :
     cyclicTotalDifferential R A M (m + 1) ∘ₗ cyclicTotalDifferential R A M m = 0 :=
   LinearMap.ext cyclicTotalDifferential_cyclicTotalDifferential
 
-/-- The total differential of a cochain `φ` in column zero of row `m` has the components
-`(1 - λ) φ` in row `m` and `b φ` in row `m + 1`. -/
-private theorem cyclicTotalDifferentialAux_single_self (m : ℕ)
-    (φ : MultilinearMap R (fun _ : Fin (m + 1) ↦ A) M) :
-    cyclicTotalDifferentialAux R A M m (Pi.single m φ) m = (1 - cyclicOperator R A M m) φ ∧
-      cyclicTotalDifferentialAux R A M m (Pi.single m φ) (m + 1) =
-        hochschildCoboundary R A M m φ := by
-  refine ⟨?_, ?_⟩
-  · rw [cyclicTotalDifferentialAux_apply_of_forall_lt m m _ fun q hq ↦ Pi.single_eq_of_ne hq.ne _,
-      Nat.sub_self, Pi.single_eq_same, cyclicBicomplexHorizontal_of_even Even.zero]
-  · rw [cyclicTotalDifferentialAux_apply_succ, Nat.sub_self, Pi.single_eq_same,
-      Pi.single_eq_of_ne (by omega), map_zero, add_zero,
-      cyclicBicomplexVertical_of_even Even.zero]
-
-/-- The inclusion into column zero commutes with the differentials: the total differential of a
-cyclic cochain `φ` is `(1 - λ) φ = 0` in column one plus `b φ` in column zero. -/
-@[simp]
-theorem cyclicTotalDifferential_cyclicCochainsToTotal {m : ℕ} (φ : cyclicCochains R A M m) :
-    cyclicTotalDifferential R A M m (cyclicCochainsToTotal R A M m φ) =
-      cyclicCochainsToTotal R A M (m + 1) (cyclicHochschildCoboundary R A M m φ) := by
-  obtain ⟨hcyc, hb⟩ := cyclicTotalDifferentialAux_single_self m φ.1
-  have hφ : (1 - cyclicOperator R A M m) φ.1 = 0 := by
-    rw [← LinearMap.mem_ker, ker_one_sub_cyclicOperator]
-    exact φ.2
-  apply Subtype.ext
-  rw [coe_cyclicTotalDifferential, coe_cyclicCochainsToTotal_apply, coe_cyclicCochainsToTotal_apply,
-    coe_cyclicHochschildCoboundary_apply,
-    eq_single_of_forall_lt
-      (cyclicTotalDifferentialAux_mem (single_mem_cyclicTotalCochains le_rfl _))
-      fun q hq ↦ ?_, hb]
-  rcases Nat.lt_succ_iff_lt_or_eq.1 hq with hq | rfl
-  · exact cyclicTotalDifferentialAux_single_apply_of_lt m hq φ.1
-  · rw [hcyc, hφ]
-
-end Total
+end TotalAssoc
 
 section Reduction
 
@@ -477,11 +520,11 @@ private theorem exists_eq_single_add_cyclicTotalDifferentialAux {m : ℕ}
       -- the remainder `x - D y` vanishes below row `k` and has the same differential as `x`
       have hlt : ∀ q < k, (x - cyclicTotalDifferentialAux R A M m y) q = 0 := fun q hq ↦ by
         rw [Pi.sub_apply, hxy q hq, sub_self]
+      have hcol : m + 1 - k = m - k + 1 := by omega
       have hd := hdx k hk'
       rw [← sub_zero (cyclicTotalDifferentialAux R A M (m + 1) x),
         ← cyclicTotalDifferentialAux_cyclicTotalDifferentialAux hy, ← map_sub,
-        cyclicTotalDifferentialAux_apply_of_forall_lt _ _ _ hlt,
-        show m + 1 - k = m - k + 1 by omega] at hd
+        cyclicTotalDifferentialAux_apply_of_forall_lt _ _ _ hlt, hcol] at hd
       have := (hR k hk').invertible
       obtain ⟨z, hz⟩ : (x - cyclicTotalDifferentialAux R A M m y) k ∈
           LinearMap.range (cyclicBicomplexHorizontal R A M (m - k) k) := by

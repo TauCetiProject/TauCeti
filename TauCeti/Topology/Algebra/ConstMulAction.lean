@@ -43,8 +43,9 @@ open embedding.
   continuously on the nonzero vectors of a module on which they act continuously. These two
   instances are from Zayn Blore's Mathlib pull request
   [mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117).
-* `SubMulAction.properlyDiscontinuousSMul`: proper discontinuity is inherited by every invariant
-  subspace.
+* `Continuous.properlyDiscontinuousSMul`: proper discontinuity pulls back along a continuous
+  equivariant map; in particular (`SubMulAction.properlyDiscontinuousSMul`) it is inherited by
+  every invariant subspace.
 * `TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a
   properly discontinuous subgroup `H` acts properly discontinuously.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
@@ -257,17 +258,30 @@ theorem properlyDiscontinuousSMul_of_conjAct_smul_eq {G X : Type*} [Group G] [To
 
 end TauCeti
 
+/-- **Proper discontinuity pulls back along continuous equivariant maps.** If `f : X → Y` is
+continuous and commutes with the actions of `G`, and `G` acts properly discontinuously on `Y`,
+then `G` acts properly discontinuously on `X`: an element moving a compact `K` to meet a compact
+`L` moves the compact `f '' K` to meet `f '' L`. -/
+@[to_additive
+/-- **Proper discontinuity pulls back along continuous equivariant maps.** If `f : X → Y` is
+continuous and commutes with the additive actions of `G`, and `G` acts properly discontinuously
+on `Y`, then `G` acts properly discontinuously on `X`. -/]
+theorem Continuous.properlyDiscontinuousSMul {G X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [SMul G X] [SMul G Y] [ProperlyDiscontinuousSMul G Y] {f : X → Y}
+    (hf : Continuous f) (hsmul : ∀ (g : G) (x : X), f (g • x) = g • f x) :
+    ProperlyDiscontinuousSMul G X where
+  finite_disjoint_inter_image {K L} hK hL := by
+    refine (ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := G) (hK.image hf)
+      (hL.image hf)).subset ?_
+    rintro g ⟨_, ⟨x, hx, rfl⟩, hxL⟩
+    exact ⟨f (g • x), ⟨f x, ⟨x, hx, rfl⟩, (hsmul g x).symm⟩, ⟨g • x, hxL, rfl⟩⟩
+
 namespace SubMulAction
 
 /-- A properly discontinuous action remains properly discontinuous on every invariant subspace. -/
 theorem properlyDiscontinuousSMul {G X : Type*} [TopologicalSpace X] [SMul G X]
-    [ProperlyDiscontinuousSMul G X] (S : SubMulAction G X) : ProperlyDiscontinuousSMul G S where
-  finite_disjoint_inter_image {K L} hK hL := by
-    refine (ProperlyDiscontinuousSMul.finite_disjoint_inter_image
-      (hK.image continuous_subtype_val) (hL.image continuous_subtype_val)).subset ?_
-    rintro g ⟨y, ⟨x, hx, hxy⟩, hy⟩
-    exact
-      ⟨(y : X), ⟨(x : X), ⟨x, hx, rfl⟩, congrArg Subtype.val hxy⟩, ⟨y, hy, rfl⟩⟩
+    [ProperlyDiscontinuousSMul G X] (S : SubMulAction G X) : ProperlyDiscontinuousSMul G S :=
+  continuous_subtype_val.properlyDiscontinuousSMul fun _ _ ↦ rfl
 
 /-- A `SubMulAction` inherits the continuity of the action of each element. -/
 @[to_additive /-- A `SubAddAction` inherits the continuity of the action of each element. -/]

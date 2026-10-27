@@ -31,6 +31,11 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top`: for affine opens `V ≤ U`,
   the restrictions of the functions on `U` whose basic open lies in `V` generate the unit ideal of
   `Γ(X, V)`.
+* `AlgebraicGeometry.Scheme.inf_mem_range_basicOpen` and
+  `AlgebraicGeometry.IsAffineOpen.exists_mem_range_basicOpen_le_sup`: the basic opens of `U` are
+  closed under intersections, and for `U` affine, a basic open covered by a basic open `A` and
+  finitely many basic opens `V i` is covered by `A` and one basic open inside the union of the
+  `V i`.
 -/
 
 open TopologicalSpace AlgebraicGeometry
@@ -48,6 +53,12 @@ open CategoryTheory Opposite
 noncomputable section
 
 variable {X : Scheme.{u}} {U : X.Opens}
+
+/-- The preimages of two opens covering the target cover the source. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_sup_eq_top {Y : Scheme.{u}}
+    (f : X ⟶ Y) {U V : Y.Opens} (hUV : U ⊔ V = ⊤) :
+    f ⁻¹ᵁ U ⊔ f ⁻¹ᵁ V = ⊤ := by
+  rw [← f.preimage_sup, hUV, f.preimage_top]
 
 /-- If an endomorphism `f` of `X` equals the identity, then so does each of its restriction maps
 `Γ(X, U) ⟶ Γ(X, U)`. -/
@@ -131,6 +142,67 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top 
   refine Opens.mem_iSup.mpr ⟨⟨_, f, hfV, rfl⟩, ?_⟩
   rw [Scheme.basicOpen_res]
   exact ⟨hx, hxf⟩
+
+/-- The basic opens `X.basicOpen f` of sections `f` over an open `U` are closed under binary
+intersections. -/
+theorem _root_.AlgebraicGeometry.Scheme.inf_mem_range_basicOpen :
+    ∀ V ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f,
+      ∀ W ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f,
+        V ⊓ W ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f := by
+  rintro _ ⟨f, rfl⟩ _ ⟨g, rfl⟩
+  exact ⟨f * g, Scheme.basicOpen_mul _ _ _⟩
+
+/-- Let `U` be an affine open. If a basic open `Y` of `U` lies in the union of a basic open `A`
+and of finitely many basic opens `V i`, `i ∈ s`, of `U`, then it lies in the union of `A` and of a
+single basic open of `U` contained in the union of the `V i`. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.exists_mem_range_basicOpen_le_sup
+    (hU : IsAffineOpen U) {Y A : X.Opens} (hY : Y ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f)
+    (hA : A ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f) {ι : Type*} (V : ι → X.Opens)
+    (hV : ∀ i, V i ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f) (s : Finset ι)
+    (h : Y ≤ A ⊔ s.sup V) : ∃ W ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f,
+      Y ≤ A ⊔ W ∧ W ≤ s.sup V := by
+  classical
+  obtain ⟨g, rfl⟩ := hY
+  obtain ⟨f, rfl⟩ := hA
+  choose f' hf' using hV
+  beta_reduce at h hf'
+  let r : Γ(X, U) → Γ(X, X.basicOpen g) := fun a ↦ X.presheaf.map (homOfLE (X.basicOpen_le g)).op a
+  have hr (a : Γ(X, U)) : X.basicOpen (r a) = X.basicOpen g ⊓ X.basicOpen a :=
+    Scheme.basicOpen_res _ _ _
+  let T : Set Γ(X, X.basicOpen g) := (fun i ↦ r (f' i)) '' ↑s
+  -- the restrictions of `f` and of the `f' i` to `D(g)` generate the unit ideal there
+  have hspan : Ideal.span (insert (r f) T) = ⊤ := by
+    refine ((hU.basicOpen g).self_le_iSup_basicOpen_iff (s := insert (r f) T)).1 ?_
+    intro x hx
+    rcases Opens.mem_sup.1 (h hx) with hxf | hxs
+    · exact Opens.mem_iSup.2 ⟨⟨r f, Set.mem_insert _ _⟩, by rw [hr]; exact ⟨hx, hxf⟩⟩
+    · rw [Finset.sup_eq_iSup] at hxs
+      obtain ⟨i, hxi⟩ := Opens.mem_iSup.1 hxs
+      obtain ⟨hi, hxi⟩ := Opens.mem_iSup.1 hxi
+      exact Opens.mem_iSup.2 ⟨⟨r (f' i), Set.mem_insert_of_mem _ ⟨i, hi, rfl⟩⟩,
+        by rw [hr, hf']; exact ⟨hx, hxi⟩⟩
+  obtain ⟨a, z, hz, haz⟩ := Ideal.mem_span_insert.1
+    (hspan ▸ Submodule.mem_top : (1 : Γ(X, X.basicOpen g)) ∈ Ideal.span (insert (r f) T))
+  obtain ⟨h', hh'⟩ := hU.basicOpen_basicOpen_is_basicOpen g z
+  refine ⟨X.basicOpen h', ⟨h', rfl⟩, ?_, ?_⟩
+  · rw [hh']
+    calc X.basicOpen g = X.basicOpen (a * r f + z) := by rw [← haz, Scheme.basicOpen_one]
+      _ ≤ X.basicOpen (a * r f) ⊔ X.basicOpen z := X.basicOpen_add_le _ _
+      _ ≤ X.basicOpen f ⊔ X.basicOpen z := by
+        refine sup_le_sup_right ?_ _
+        rw [Scheme.basicOpen_mul, hr]
+        exact inf_le_right.trans inf_le_right
+  · -- a point of `D(z)` outside every `V i` would lie in the zero locus of the span of `T`
+    rw [hh']
+    intro x hx
+    by_contra hxs
+    have hxT : x ∈ X.zeroLocus T := by
+      rw [Scheme.mem_zeroLocus_iff]
+      rintro _ ⟨i, hi, rfl⟩ hxi
+      rw [hr, hf'] at hxi
+      exact hxs (Finset.le_sup (f := V) hi hxi.2)
+    rw [← Scheme.zeroLocus_span, Scheme.mem_zeroLocus_iff] at hxT
+    exact hxT z hz hx
 
 /-- Global sections of an affine chart `f : Spec R ⟶ Y` are natural in `R`: precomposing `f` with
 `Spec.map φ` turns the induced map `Γ(Y, V) ⟶ R` into its composite with `φ`. -/
