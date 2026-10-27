@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
+public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
+import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 /-!
 # The tangent Lie algebra of the multiplicative group
 
-The tangent space at the identity of the multiplicative group is one-dimensional. A tangent
+The tangent module at the identity of the multiplicative group is free of rank one. A tangent
 derivation of the Laurent polynomial Hopf algebra `R[T;T⁻¹]` is determined by its value on `T`,
-and every value occurs. The resulting linear equivalence with the coefficient algebra `B`
-identifies the tangent Lie bracket with the zero bracket.
+and every value in a coefficient ring `B` occurs. The resulting equivalence is `B`-linear,
+even when `B` is noncommutative. For commutative `B`, the tangent Lie bracket vanishes.
 
 ## Main declarations
 
@@ -27,9 +28,9 @@ identifies the tangent Lie bracket with the zero bracket.
 
 The construction follows the formal pattern of
 `TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Tangent`.
-Laurent-polynomial induction and the formulas for the counit and comultiplication of `T` come from
-Mathlib's `Mathlib.Algebra.Polynomial.Laurent` and
-`Mathlib.RingTheory.Bialgebra.MonoidAlgebra`.
+Laurent evaluation at a unit and the dual-number derivation dictionary construct the inverse
+equivalence. Laurent-polynomial induction and the counit formula for `T` come from Mathlib's
+`Mathlib.Algebra.Polynomial.Laurent` and `Mathlib.RingTheory.Bialgebra.MonoidAlgebra`.
 -/
 
 public section
@@ -40,52 +41,42 @@ namespace TauCeti
 
 namespace MultiplicativeGroup
 
-open TauCeti.Bialgebra TrivSqZeroExt WithConv
+open TauCeti.Bialgebra TrivSqZeroExt
 
 universe u w
 
 noncomputable section
 
 variable {R : Type u} [CommSemiring R]
-variable {B : Type w} [CommRing B] [Algebra R B]
+variable {B : Type w}
 
 local notation "H" => R[T;T⁻¹]
 local notation "C" => CounitAlgebra R H B
+
+section Semiring
+
+variable [Semiring B] [Algebra R B]
 
 private lemma derivation_T_add (d : Derivation R H C) (m n : ℤ) :
     d (LaurentPolynomial.T (m + n)) =
       d (LaurentPolynomial.T m) + d (LaurentPolynomial.T n) := by
   rw [LaurentPolynomial.T_add, Derivation.leibniz]
-  simp only [Algebra.smul_def, CounitAlgebra.algebraMap_apply,
-    LaurentPolynomial.counit_T, map_one]
-  -- Simplification leaves `1 : B` multiplying a value in the coefficient synonym `C`, so the
-  -- target is not type-correct at implicit transparency and no propositional rewrite applies.
-  change (1 : C) * d (LaurentPolynomial.T n) +
-      (1 : C) * d (LaurentPolynomial.T m) =
-    d (LaurentPolynomial.T m) + d (LaurentPolynomial.T n)
-  simp only [one_mul, add_comm]
+  apply (CounitAlgebra.algEquivSelf R H B).injective
+  simp only [map_add, CounitAlgebra.algEquivSelf_smul, LaurentPolynomial.counit_T,
+    map_one, one_mul, add_comm]
+
+private def monomialValues (d : Derivation R H C) : ℤ →+ C where
+  toFun n := d (LaurentPolynomial.T n)
+  map_zero' := by simp
+  map_add' := derivation_T_add d
 
 /-- Two tangent derivations of the Laurent polynomial algebra are equal if they agree on `T`. -/
 @[ext]
 theorem derivation_ext {d e : Derivation R H C}
     (h : d (LaurentPolynomial.T 1) = e (LaurentPolynomial.T 1)) : d = e := by
-  have hT : ∀ n : ℤ, d (LaurentPolynomial.T n) = e (LaurentPolynomial.T n) := by
-    intro n
-    induction n using Int.induction_on with
-    | zero => simp
-    | succ n hn =>
-        rw [derivation_T_add d n 1, derivation_T_add e n 1, hn, h]
-    | pred n hn =>
-        calc
-          d (LaurentPolynomial.T (-(n : ℤ) - 1)) =
-              d (LaurentPolynomial.T (-(n : ℤ))) - d (LaurentPolynomial.T 1) := by
-                rw [eq_sub_iff_add_eq, ← derivation_T_add]
-                norm_num
-          _ = e (LaurentPolynomial.T (-(n : ℤ))) - e (LaurentPolynomial.T 1) := by
-                rw [hn, h]
-          _ = e (LaurentPolynomial.T (-(n : ℤ) - 1)) := by
-                rw [sub_eq_iff_eq_add, ← derivation_T_add]
-                norm_num
+  have hT (n : ℤ) : d (LaurentPolynomial.T n) = e (LaurentPolynomial.T n) :=
+    DFunLike.congr_fun
+      (AddMonoidHom.ext_int (f := monomialValues d) (g := monomialValues e) h) n
   apply Derivation.ext
   intro p
   induction p using LaurentPolynomial.induction_on' with
@@ -105,6 +96,12 @@ private lemma tangentCoordinate_apply (d : Derivation R H C) :
       CounitAlgebra.algEquivSelf R H B (d (LaurentPolynomial.T 1)) :=
   rfl
 
+end Semiring
+
+section Ring
+
+variable [Ring B] [Algebra R B]
+
 private noncomputable def infinitesimalUnit (c : C) : (DualNumber C)ˣ :=
   have h : IsUnit (inl 1 + inr c : DualNumber C) := by
     rw [TrivSqZeroExt.isUnit_iff_isUnit_fst]
@@ -112,7 +109,7 @@ private noncomputable def infinitesimalUnit (c : C) : (DualNumber C)ˣ :=
   h.unit
 
 private lemma infinitesimalUnit_map_fst (c : C) :
-    Units.map (fstHom R C C).toMonoidHom (infinitesimalUnit c) = 1 := by
+    Units.map (fstHom R C C : DualNumber C →* C) (infinitesimalUnit c) = 1 := by
   ext
   simp [infinitesimalUnit]
 
@@ -120,29 +117,23 @@ private theorem tangentCoordinate_surjective :
     Function.Surjective (tangentCoordinate (R := R) (B := B)) := by
   intro b
   let c : C := (CounitAlgebra.algEquivSelf R H B).symm b
-  let g : (DualNumber C)ˣ := infinitesimalUnit c
-  let q : WithConv (H →ₐ[R] DualNumber C) :=
-    (pointsMulEquiv (R := R) (A := DualNumber C)).symm g
-  have hq : q ∈ tangentKer R H B := by
-    rw [tangentKer_def, MonoidHom.mem_ker, dualNumberReduction_def]
-    apply (pointsMulEquiv (R := R) (A := C)).injective
-    rw [pointsMulEquiv_mapValue]
-    simp only [q, MulEquiv.apply_symm_apply, map_one]
-    exact infinitesimalUnit_map_fst c
+  let q : H →ₐ[R] DualNumber C := laurentEval (infinitesimalUnit c)
+  have hq : (fstHom R C C).comp q = IsScalarTower.toAlgHom R H C := by
+    simp only [q, comp_laurentEval, infinitesimalUnit_map_fst]
+    apply (laurentEval_unique 1 _ ?_).symm
+    simp [CounitAlgebra.algebraMap_apply]
+    -- The coefficient synonym inherits the unit of `B`.
+    rfl
   let d : Derivation R H C :=
-    ((derivationMulEquivTangentKer R H B).symm ⟨q, hq⟩).toAdd
+    (derivationToDualNumberEquivLift R H C).symm ⟨q, hq⟩
   refine ⟨d, ?_⟩
-  have hd : d (LaurentPolynomial.T 1) = snd (q.ofConv (LaurentPolynomial.T 1)) := by
-    dsimp only [d]
-    rw [derivationMulEquivTangentKer_symm_apply]
-  rw [tangentCoordinate_apply, hd]
-  have hval : q.ofConv (LaurentPolynomial.T 1) = (g : DualNumber C) := by
-    simp [q, pointsMulEquiv_symm_apply, ofConv_toConv]
-  rw [hval]
-  simp only [g, infinitesimalUnit, IsUnit.unit_spec, snd_add, snd_inl, snd_inr, zero_add, c]
-  exact (CounitAlgebra.algEquivSelf R H B).apply_symm_apply b
+  rw [tangentCoordinate_apply]
+  dsimp only [d]
+  rw [derivationToDualNumberEquivLift_symm_apply]
+  simp only [q, laurentEval_T_one, infinitesimalUnit, IsUnit.unit_spec, snd_add, snd_inl,
+    snd_inr, zero_add, c, AlgEquiv.apply_symm_apply]
 
-/-- **The tangent space at the identity of `𝔾ₘ` is one-dimensional.** The equivalence sends
+/-- **The tangent module at the identity of `𝔾ₘ` is free of rank one.** The equivalence sends
 a counit-valued derivation to its value on the Laurent generator `T`. -/
 noncomputable def tangentLinearEquiv : Derivation R H C ≃ₗ[B] B :=
   LinearEquiv.ofBijective tangentCoordinate
@@ -156,23 +147,40 @@ theorem tangentLinearEquiv_apply (d : Derivation R H C) :
       CounitAlgebra.algEquivSelf R H B (d (LaurentPolynomial.T 1)) := by
   rfl
 
-/-- The derivation corresponding to `b : B` takes the Laurent generator `T` to `b`. -/
+/-- The derivation corresponding to `b : B` takes the Laurent monomial `Tⁿ` to `n • b`.
+In particular, its values on `T` and `T⁻¹` are `b` and `-b`. -/
 @[simp]
-theorem tangentLinearEquiv_symm_apply_T (b : B) :
-    (tangentLinearEquiv (R := R) (B := B)).symm b (LaurentPolynomial.T 1) = b := by
+theorem tangentLinearEquiv_symm_apply_T (b : B) (n : ℤ) :
+    (tangentLinearEquiv (R := R) (B := B)).symm b (LaurentPolynomial.T n) = n • b := by
   have h : CounitAlgebra.algEquivSelf R H B
       ((tangentLinearEquiv (R := R) (B := B)).symm b (LaurentPolynomial.T 1)) = b := by
     simpa only [tangentLinearEquiv_apply] using
       (tangentLinearEquiv (R := R) (B := B)).apply_symm_apply b
   have h' := congrArg (CounitAlgebra.algEquivSelf R H B).symm h
-  simpa only [AlgEquiv.symm_apply_apply, CounitAlgebra.algEquivSelf_symm_apply] using h'
+  have h₁ : (tangentLinearEquiv (R := R) (B := B)).symm b (LaurentPolynomial.T 1) = b := by
+    simpa only [AlgEquiv.symm_apply_apply, CounitAlgebra.algEquivSelf_symm_apply] using h'
+  have hn := map_zsmul (monomialValues ((tangentLinearEquiv (R := R) (B := B)).symm b))
+    n (1 : ℤ)
+  have hn' : (tangentLinearEquiv (R := R) (B := B)).symm b (LaurentPolynomial.T n) =
+      n • (tangentLinearEquiv (R := R) (B := B)).symm b (LaurentPolynomial.T 1) := by
+    simpa only [monomialValues, AddMonoidHom.coe_mk, ZeroHom.coe_mk, zsmul_one,
+      Int.cast_id] using hn
+  rw [hn', h₁]
+  -- The coefficient synonym inherits the integer action of `B`.
+  rfl
+
+end Ring
+
+section Lie
+
+variable [CommRing B] [Algebra R B]
 
 /-- **The tangent Lie algebra of `𝔾ₘ` is abelian.** -/
 @[simp]
-theorem tangent_bracket_eq_zero (d e : Derivation R H C) : ⁅d, e⁆ = 0 := by
-  apply derivation_ext
-  rw [Derivation.bracket_apply, LaurentPolynomial.comul_T]
-  simp [mul_comm]
+theorem tangent_bracket_eq_zero (d e : Derivation R H C) : ⁅d, e⁆ = 0 :=
+  trivial_lie_zero _ _ d e
+
+end Lie
 
 end
 
