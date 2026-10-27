@@ -24,8 +24,13 @@ coefficient in degree `s`. Overconvergent Weierstrass division by `f` shows that
 spanned over `W` by `1, Y, …, Y ^ (s - 1)`, so it is a finite `W`-module. If `W` is noetherian,
 `W' ⧸ (f)` is then a noetherian module, hence `I` is finitely generated.
 
+The Weierstrass-division finiteness step is also exposed for any finite map annihilating a
+distinguished series with a unit coefficient in the distinguished degree.
+
 ## Main results
 
+* `TauCeti.Dagger.washnitzerAlgebra.finite_comp_optionC_of_isDistinguished`: a finite map
+  annihilating such a distinguished series is finite over the algebra in one fewer variable.
 * `TauCeti.Dagger.washnitzerAlgebra.isNoetherianRing`: `K⟨X⟩†` is noetherian for finitely many
   variables.
 
