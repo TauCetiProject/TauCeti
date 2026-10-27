@@ -25,10 +25,11 @@ differential into it, the identification of the homology with the cycles is natu
 `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact when `j = c.next i`
 (`HomologicalComplex.cyclesShortComplex_exact`). For adjacent degrees `i` and `j`, the cycles of a
 complex exact in degree `j` fit into a short exact sequence `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
-(`HomologicalComplex.cyclesShortComplex_shortExact`); likewise a monomorphism onto the kernel of
-the differential `Kᵢ ⟶ Kⱼ` gives a short exact sequence `0 ⟶ A ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
-(`HomologicalComplex.shortExact_toCycles`). Constructing the bundled cycle sequence
-requires homology only in the two selected degrees.
+(`HomologicalComplex.cyclesShortComplex_shortExact`), which stays short exact when its outer terms
+are replaced by isomorphic objects (`HomologicalComplex.cyclesShortComplex_shortExact_of_iso`);
+likewise a monomorphism onto the kernel of the differential `Kᵢ ⟶ Kⱼ` gives a short exact sequence
+`0 ⟶ A ⟶ Kᵢ ⟶ Zⱼ ⟶ 0` (`HomologicalComplex.shortExact_toCycles`). Constructing the bundled cycle
+sequence requires homology only in the two selected degrees.
 The exactness results additionally require homology of the cycle sequence itself.
 For chain complexes indexed by the natural numbers, the identification of zero chains with
 cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`), and so is the passage from zero
@@ -213,6 +214,17 @@ lemma cyclesShortComplex_shortExact (i j : ι) [K.HasHomology i] [K.HasHomology 
   rw [cyclesShortComplex_def] at hE ⊢
   exact ShortComplex.ShortExact.mk' hE
     inferInstance (epi_toCycles_of_exactAt hK (c.prev_eq' hij))
+
+/-- The cycle sequence `Zᵢ(K) ⟶ Kᵢ ⟶ Zⱼ(K)`, with its outer terms replaced along isomorphisms
+`X ≅ Zᵢ(K)` and `Zⱼ(K) ≅ Y`, is short exact when `i` and `j` are adjacent and `K` is exact in
+degree `j`. -/
+lemma cyclesShortComplex_shortExact_of_iso {i j : ι} [K.HasHomology i] [K.HasHomology j]
+    [(K.cyclesShortComplex i j).HasHomology] (hij : c.Rel i j) (hK : K.ExactAt j) {X Y : C}
+    (e : X ≅ K.cycles i) (e' : K.cycles j ≅ Y) :
+    (ShortComplex.mk (e.hom ≫ K.iCycles i) (K.toCycles i j ≫ e'.hom)
+      (by simp [iCycles_toCycles_assoc])).ShortExact :=
+  ShortComplex.shortExact_of_iso (ShortComplex.isoMk e.symm (Iso.refl (K.X i)) e') <|
+    K.cyclesShortComplex_def i j ▸ K.cyclesShortComplex_shortExact i j hij hK
 
 /-- A monomorphism `A ⟶ Kᵢ` onto the kernel of the differential `Kᵢ ⟶ Kⱼ` fits into a short exact
 sequence `0 ⟶ A ⟶ Kᵢ ⟶ Zⱼ ⟶ 0` when `i` precedes `j` and `K` is exact in degree `j`. -/

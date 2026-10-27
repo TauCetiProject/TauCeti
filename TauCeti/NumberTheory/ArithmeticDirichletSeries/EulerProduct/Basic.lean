@@ -75,8 +75,6 @@ this identity holds for any multiplicative `f` with no further data.
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII.
 * Mathlib's `ArithmeticFunction.ofPowerSeries` and `ArithmeticFunction.eulerProduct` APIs.
-* `TauCetiRoadmap/ArithmeticDirichletSeries/Suggested.lean`, whose local-factor target signatures
-  and naming are adapted here.
 -/
 
 public section
@@ -98,14 +96,11 @@ theorem coe_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
     (primeIdealPow P e : Ideal (𝓞 K)) = P.asIdeal ^ e :=
   (rfl)
 
-variable [NumberField K]
-
 /-- The absolute norm is multiplicative on prime powers. -/
-theorem absNorm_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
+theorem absNorm_primeIdealPow [IsDedekindDomain (𝓞 K)] (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
     Ideal.absNorm (primeIdealPow P e : Ideal (𝓞 K)) = Ideal.absNorm P.asIdeal ^ e := by
   rw [coe_primeIdealPow, map_pow]
 
-omit [NumberField K] in
 /-- Distinct primes give distinct first powers, so a family indexed by the primes is a subfamily
 of one indexed by the nonzero ideals. -/
 theorem primeIdealPow_one_injective :
@@ -115,51 +110,37 @@ theorem primeIdealPow_one_injective :
       congrArg (Subtype.val : (Ideal (𝓞 K))⁰ → Ideal (𝓞 K)) h)
 
 /-- Distinct exponents give distinct prime powers. -/
-theorem primeIdealPow_injective (P : HeightOneSpectrum (𝓞 K)) :
+theorem primeIdealPow_injective [IsDedekindDomain (𝓞 K)] (P : HeightOneSpectrum (𝓞 K)) :
     Function.Injective (primeIdealPow P) := fun m n h ↦
-  Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)
-    (by simpa only [absNorm_primeIdealPow] using
-      congrArg (fun I : (Ideal (𝓞 K))⁰ ↦ Ideal.absNorm (I : Ideal (𝓞 K))) h)
+  pow_injective_of_not_isUnit P.prime.not_isUnit P.prime.ne_zero
+    (by simpa only [coe_primeIdealPow] using congrArg Subtype.val h)
 
 end IsDedekindDomain.HeightOneSpectrum
 
 namespace TauCeti
 
-/-- **Every nonzero ideal is eventually supported.** A finite set of height-one primes that
-contains all primes of norm at most `Ideal.absNorm A` already contains every prime divisor of `A`,
-and those bounded-norm sets are cofinal by the Northcott property of the absolute norm. -/
-theorem eventually_isPrimeTo_compl {K : Type*} [Field K] [NumberField K]
+/-- Every nonzero ideal is eventually supported: a sufficiently large finite set of height-one
+primes contains all its finitely many prime divisors. -/
+theorem eventually_isPrimeTo_compl {K : Type*} [Field K] [IsDedekindDomain (𝓞 K)]
     (A : (Ideal (𝓞 K))⁰) :
     ∀ᶠ S : Finset (HeightOneSpectrum (𝓞 K)) in Filter.atTop,
       Ideal.IsPrimeTo (A : Ideal (𝓞 K)) (S : Set (HeightOneSpectrum (𝓞 K)))ᶜ := by
   classical
-  let T : Finset (HeightOneSpectrum (𝓞 K)) :=
-    (Northcott.finite_le (h := fun P : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm P.asIdeal)
-      (Ideal.absNorm (A : Ideal (𝓞 K)))).toFinset
-  filter_upwards [Filter.eventually_ge_atTop T] with S hTS
+  have hfinite := Ideal.finite_factors (nonZeroDivisors.coe_ne_zero A)
+  filter_upwards [Filter.eventually_ge_atTop hfinite.toFinset] with S hS
   rw [Ideal.isPrimeTo_iff]
-  refine ⟨nonZeroDivisors.coe_ne_zero A, fun P hP hPdvd ↦ hP ?_⟩
-  have hnormP : Ideal.absNorm P.asIdeal ≤ Ideal.absNorm (A : Ideal (𝓞 K)) :=
-    Nat.le_of_dvd (Ideal.absNorm_pos_of_nonZeroDivisors A)
-      (Ideal.absNorm_dvd_absNorm_of_le (Ideal.dvd_iff_le.mp hPdvd))
-  exact hTS ((Northcott.finite_le
-    (h := fun P : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm P.asIdeal)
-    (Ideal.absNorm (A : Ideal (𝓞 K)))).mem_toFinset.mpr hnormP)
+  exact ⟨nonZeroDivisors.coe_ne_zero A, fun P hP hPdvd ↦ hP (hS (hfinite.mem_toFinset.mpr hPdvd))⟩
 
 namespace IdealArithmeticFunction
 
 variable {K : Type*} [Field K]
 
-variable [NumberField K]
-
 /-- The canonical local power series of `f` at a height-one prime `P`; its coefficient at `n` is
 the value of `f` at the nonzero ideal `P ^ n`. -/
 noncomputable def localPowerSeries (f : IdealArithmeticFunction K)
     (P : HeightOneSpectrum (𝓞 K)) : PowerSeries ℂ :=
-  PowerSeries.mk fun n =>
-    f ⟨P.asIdeal ^ n, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero n P.ne_bot)⟩
+  PowerSeries.mk fun n ↦ f (P.primeIdealPow n)
 
-omit [NumberField K] in
 /-- Coefficients of the canonical local power series are the prime-power values of `f`. -/
 @[simp]
 theorem coeff_localPowerSeries (f : IdealArithmeticFunction K)
@@ -167,9 +148,7 @@ theorem coeff_localPowerSeries (f : IdealArithmeticFunction K)
     PowerSeries.coeff n (localPowerSeries f P) =
       f (P.primeIdealPow n) := by
   simp only [localPowerSeries, PowerSeries.coeff_mk]
-  exact congrArg f (Subtype.ext (P.coe_primeIdealPow n).symm)
 
-omit [NumberField K] in
 /-- The constant coefficient of the canonical local power series is `f 1`. -/
 @[simp]
 theorem constantCoeff_localPowerSeries (f : IdealArithmeticFunction K)
@@ -179,7 +158,6 @@ theorem constantCoeff_localPowerSeries (f : IdealArithmeticFunction K)
   rw [coeff_localPowerSeries]
   exact congrArg f (Subtype.ext (pow_zero P.asIdeal))
 
-omit [NumberField K] in
 /-- Conjugating ideal coefficients conjugates the coefficients of every local power series. -/
 @[simp]
 theorem localPowerSeries_star (f : IdealArithmeticFunction K)
@@ -190,17 +168,21 @@ theorem localPowerSeries_star (f : IdealArithmeticFunction K)
 
 /-- The canonical local arithmetic factor at `P`, obtained by substituting `N(P)⁻ˢ` into the
 formal prime-power series through Mathlib's `ArithmeticFunction.ofPowerSeries`. -/
-noncomputable def localArithmeticFactor (f : IdealArithmeticFunction K)
+noncomputable def localArithmeticFactor [IsDedekindDomain (𝓞 K)] (f : IdealArithmeticFunction K)
     (P : HeightOneSpectrum (𝓞 K)) : ArithmeticFunction ℂ :=
   ArithmeticFunction.ofPowerSeries (Ideal.absNorm P.asIdeal) (localPowerSeries f P)
 
 /-- The canonical local arithmetic factor is Mathlib's arithmetic function associated to the
 local power series at `P`. -/
-theorem localArithmeticFactor_def (f : IdealArithmeticFunction K)
+theorem localArithmeticFactor_def [IsDedekindDomain (𝓞 K)] (f : IdealArithmeticFunction K)
     (P : HeightOneSpectrum (𝓞 K)) :
     localArithmeticFactor f P =
       ArithmeticFunction.ofPowerSeries (Ideal.absNorm P.asIdeal) (localPowerSeries f P) := by
   rw [localArithmeticFactor]
+
+section NumberField
+
+variable [NumberField K]
 
 /-- At a power of `N(P)`, the local arithmetic factor is the corresponding value at `P ^ n`. -/
 @[simp]
@@ -264,15 +246,14 @@ theorem tendsTo_eulerProduct_localArithmeticFactor (f : IdealArithmeticFunction 
     ∀ᶠ S : Finset (HeightOneSpectrum (𝓞 K)) in Filter.atTop,
       (∏ P ∈ S, localArithmeticFactor f P) n =
         ArithmeticFunction.eulerProduct f.localArithmeticFactor n := by
-  have hlocal : f.localArithmeticFactor = fun P ↦
-      ArithmeticFunction.ofPowerSeries (Ideal.absNorm P.asIdeal) (localPowerSeries f P) := by
-    rfl
-  rw [hlocal]
+  simp_rw [localArithmeticFactor_def]
   exact
     ArithmeticFunction.tendsTo_eulerProduct_ofPowerSeries
       (fun P : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm P.asIdeal)
       (fun P ↦ localPowerSeries f P)
       (fun P ↦ (constantCoeff_localPowerSeries f P).trans hf) n
+
+end NumberField
 
 /-- The canonical local power series of the convolution identity is the constant series `1`. -/
 @[simp]
@@ -290,7 +271,11 @@ theorem localPowerSeries_delta (P : HeightOneSpectrum (𝓞 K)) :
       · intro hpow
         have hunit : IsUnit P.asIdeal :=
           IsUnit.of_pow_eq_one (congrArg Subtype.val hpow) (Nat.succ_ne_zero n)
-        exact P.prime.not_isUnit hunit
+        exact P.isPrime.ne_top (Ideal.isUnit_iff.mp hunit)
+
+section IsDedekindDomain
+
+variable [IsDedekindDomain (𝓞 K)]
 
 /-- Every canonical local arithmetic factor of the convolution identity is `1`. -/
 @[simp]
@@ -298,6 +283,8 @@ theorem localArithmeticFactor_delta (P : HeightOneSpectrum (𝓞 K)) :
     localArithmeticFactor (delta : IdealArithmeticFunction K) P = 1 := by
   rw [localArithmeticFactor, localPowerSeries_delta]
   exact (ArithmeticFunction.ofPowerSeries (Ideal.absNorm P.asIdeal)).map_one
+
+end IsDedekindDomain
 
 /-! ### Finite Euler products -/
 
@@ -313,7 +300,6 @@ noncomputable def supportedPart (f : IdealArithmeticFunction K)
 variable {f : IdealArithmeticFunction K} {S : Set (HeightOneSpectrum (𝓞 K))}
   {A : (Ideal (𝓞 K))⁰}
 
-omit [NumberField K] in
 /-- On an ideal supported on `S`, the restriction of `f` to `S` is `f`. -/
 @[simp]
 theorem supportedPart_apply_of_isPrimeTo_compl (hA : Ideal.IsPrimeTo (A : Ideal (𝓞 K)) Sᶜ) :
@@ -321,7 +307,6 @@ theorem supportedPart_apply_of_isPrimeTo_compl (hA : Ideal.IsPrimeTo (A : Ideal 
   Set.indicator_of_mem
     (s := {A : (Ideal (𝓞 K))⁰ | Ideal.IsPrimeTo (A : Ideal (𝓞 K)) Sᶜ}) hA f
 
-omit [NumberField K] in
 /-- On an ideal with a prime factor outside `S`, the restriction of `f` to `S` vanishes. -/
 @[simp]
 theorem supportedPart_apply_of_not_isPrimeTo_compl (hA : ¬ Ideal.IsPrimeTo (A : Ideal (𝓞 K)) Sᶜ) :
@@ -329,11 +314,22 @@ theorem supportedPart_apply_of_not_isPrimeTo_compl (hA : ¬ Ideal.IsPrimeTo (A :
   Set.indicator_of_notMem
     (s := {A : (Ideal (𝓞 K))⁰ | Ideal.IsPrimeTo (A : Ideal (𝓞 K)) Sᶜ}) hA f
 
-omit [NumberField K] in
 /-- The restriction of `f` to `S` is supported on the ideals supported on `S`. -/
 theorem isPrimeTo_compl_of_supportedPart_apply_ne_zero (hA : supportedPart f S A ≠ 0) :
     Ideal.IsPrimeTo (A : Ideal (𝓞 K)) Sᶜ :=
   not_not.mp fun h ↦ hA (supportedPart_apply_of_not_isPrimeTo_compl h)
+
+/-- Every nonzero ideal is supported on the set of all height-one primes. -/
+@[simp]
+theorem supportedPart_univ (f : IdealArithmeticFunction K) : supportedPart f Set.univ = f := by
+  funext A
+  refine supportedPart_apply_of_isPrimeTo_compl ?_
+  rw [Set.compl_univ]
+  exact Ideal.isPrimeTo_empty.mpr (by simpa using nonZeroDivisors.coe_ne_zero A)
+
+section IsDedekindDomain
+
+variable [IsDedekindDomain (𝓞 K)]
 
 /-- The unit ideal is supported on every set of primes. This is not marked `@[simp]`: `simp`
 already reaches it through `supportedPart_apply_of_isPrimeTo_compl`. -/
@@ -360,25 +356,19 @@ theorem IsMultiplicative.supportedPart (hf : f.IsMultiplicative)
       (by rw [Submonoid.coe_mul, Ideal.isPrimeTo_mul_iff]; tauto),
       supportedPart_apply_of_not_isPrimeTo_compl hI, zero_mul]
 
-omit [NumberField K] in
-/-- Every nonzero ideal is supported on the set of all height-one primes. -/
+/-- Only the unit ideal is supported on no prime at all, so the empty restriction is the
+convolution identity scaled by the value at the unit ideal. -/
 @[simp]
-theorem supportedPart_univ (f : IdealArithmeticFunction K) : supportedPart f Set.univ = f := by
-  funext A
-  refine supportedPart_apply_of_isPrimeTo_compl ?_
-  rw [Set.compl_univ]
-  exact Ideal.isPrimeTo_empty.mpr (by simpa using nonZeroDivisors.coe_ne_zero A)
-
-/-- Only the unit ideal is supported on no prime at all, so the empty restriction of a function
-taking the value `1` there is the convolution identity. -/
-theorem supportedPart_empty (hf : f 1 = 1) : supportedPart f ∅ = delta := by
+theorem supportedPart_empty (f : IdealArithmeticFunction K) :
+    supportedPart f ∅ = f 1 • delta := by
   funext A
   have hiff : Ideal.IsPrimeTo (A : Ideal (𝓞 K)) (∅ : Set (HeightOneSpectrum (𝓞 K)))ᶜ ↔ A = 1 := by
     rw [Set.compl_empty, Ideal.isPrimeTo_univ_iff, ← Ideal.one_eq_top]
     exact ⟨fun h ↦ Subtype.ext h, fun h ↦ congrArg Subtype.val h⟩
   rcases eq_or_ne A 1 with rfl | hA
-  · rw [supportedPart_apply_of_isPrimeTo_compl (hiff.mpr rfl), delta_one, hf]
-  · rw [supportedPart_apply_of_not_isPrimeTo_compl fun h ↦ hA (hiff.mp h), delta_of_ne_one hA]
+  · simp
+  · simp [supportedPart_apply_of_not_isPrimeTo_compl fun h ↦ hA (hiff.mp h),
+      delta_of_ne_one hA]
 
 /-- **A surviving `{P}`-part is a power of `P`.**  The restriction to the powers of a single prime
 kills every ideal not prime to `{P}ᶜ`, and for a single prime that condition is exactly being a
@@ -387,6 +377,10 @@ private theorem exists_eq_pow_of_supportedPart_singleton_apply_ne_zero
     {P : HeightOneSpectrum (𝓞 K)} {I : (Ideal (𝓞 K))⁰} (hI : supportedPart f {P} I ≠ 0) :
     ∃ m : ℕ, (I : Ideal (𝓞 K)) = P.asIdeal ^ m :=
   Ideal.isPrimeTo_compl_singleton_iff.mp (isPrimeTo_compl_of_supportedPart_apply_ne_zero hI)
+
+end IsDedekindDomain
+
+variable [NumberField K]
 
 /-- **Only the `S`-part/`P`-part pair survives.**  Where `A` is `P ^ n` times an ideal `B` prime to
 `Sᶜ`, and `C` is that power of `P`, every pair of the antidiagonal of `A` other than `(B, C)`
@@ -468,11 +462,9 @@ theorem normCoeff_supportedPart_singleton (f : IdealArithmeticFunction K)
   rw [normCoeff_eq_sum_normFiber]
   by_cases hn : ∃ k : ℕ, Ideal.absNorm P.asIdeal ^ k = n
   · obtain ⟨k, rfl⟩ := hn
-    obtain ⟨C, hCval⟩ : ∃ C : (Ideal (𝓞 K))⁰, (C : Ideal (𝓞 K)) = P.asIdeal ^ k :=
-      ⟨⟨_, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k P.ne_bot)⟩, rfl⟩
-    have hCmem : C ∈ normFiber K (Ideal.absNorm P.asIdeal ^ k) := by
-      rw [mem_normFiber, hCval, map_pow]
-    have hother : ∀ I ∈ normFiber K (Ideal.absNorm P.asIdeal ^ k), I ≠ C →
+    have hCmem : P.primeIdealPow k ∈ normFiber K (Ideal.absNorm P.asIdeal ^ k) := by
+      rw [mem_normFiber, P.coe_primeIdealPow, map_pow]
+    have hother : ∀ I ∈ normFiber K (Ideal.absNorm P.asIdeal ^ k), I ≠ P.primeIdealPow k →
         supportedPart f ({P} : Set (HeightOneSpectrum (𝓞 K))) I = 0 := by
       intro I hI hIC
       by_contra hI0
@@ -480,11 +472,11 @@ theorem normCoeff_supportedPart_singleton (f : IdealArithmeticFunction K)
       have hjk : Ideal.absNorm P.asIdeal ^ j = Ideal.absNorm P.asIdeal ^ k := by
         rw [← map_pow, ← hj]
         exact (mem_normFiber K).mp hI
-      exact hIC (Subtype.ext (by rw [hj, hCval, Nat.pow_right_injective h2 hjk]))
-    rw [Finset.sum_eq_single_of_mem C hCmem hother, supportedPart_apply_of_isPrimeTo_compl
-      (by rw [hCval]; exact Ideal.isPrimeTo_compl_singleton_iff.mpr ⟨k, rfl⟩),
+      exact hIC (Subtype.ext (by rw [hj, P.coe_primeIdealPow, Nat.pow_right_injective h2 hjk]))
+    rw [Finset.sum_eq_single_of_mem (P.primeIdealPow k) hCmem hother,
+      supportedPart_apply_of_isPrimeTo_compl
+        (Ideal.isPrimeTo_compl_singleton_iff.mpr ⟨k, P.coe_primeIdealPow k⟩),
       localArithmeticFactor_apply_pow]
-    exact congrArg f (Subtype.ext hCval)
   · rw [localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq f P hn]
     refine Finset.sum_eq_zero fun I hI ↦ ?_
     by_contra hI0
@@ -502,7 +494,8 @@ theorem normCoeff_supportedPart (hf : f.IsMultiplicative)
   classical
   induction S using Finset.induction_on with
   | empty =>
-      rw [Finset.coe_empty, supportedPart_empty hf.map_one, normCoeff_delta, Finset.prod_empty]
+      rw [Finset.coe_empty, supportedPart_empty, hf.map_one, one_smul, normCoeff_delta,
+        Finset.prod_empty]
   | insert P S hPS ih =>
       rw [Finset.coe_insert, supportedPart_insert hf (by simpa using hPS), normCoeff_convolution,
         ih, normCoeff_supportedPart_singleton, Finset.prod_insert hPS, mul_comm]

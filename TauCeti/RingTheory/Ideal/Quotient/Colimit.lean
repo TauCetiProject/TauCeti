@@ -16,8 +16,8 @@ isomorphisms for every algebra in a diagram, the same holds for its colimit. No 
 or nonemptiness assumption on the diagram is needed. This gives the residue-ring
 identification in constructions by colimits of étale neighbourhoods.
 
-Use `TauCeti.bijective_algebraMap_quotient_colimit I D hD` for bijectivity and
-`TauCeti.quotientColimitEquiv I D hD` for the corresponding algebra equivalence, where
+Use `I.bijective_algebraMap_quotient_colimit D hD` for bijectivity and
+`I.quotientColimitEquiv D hD` for the corresponding algebra equivalence, where
 `hD` gives bijectivity of the canonical residue map at each object of `D`.
 
 The proof constructs compatible residue maps to `R / I` and descends them through the
@@ -36,7 +36,7 @@ open CategoryTheory Limits
 
 universe u v w t
 
-namespace TauCeti
+namespace Ideal
 
 variable {R : Type u} [CommRing R] (I : Ideal R)
 
@@ -175,4 +175,4 @@ theorem quotientColimitEquiv_symm_mk_ι (j : J) (b : D.obj j) :
   rw [hinv]
   exact congrArg (fun f ↦ f.hom b) (colimit.ι_desc (residueCocone I D hD) j)
 
-end TauCeti
+end Ideal

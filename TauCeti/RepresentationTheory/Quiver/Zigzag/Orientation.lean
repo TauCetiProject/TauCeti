@@ -304,11 +304,11 @@ theorem sum_card_hom_add_card_hom_mul [Fintype V] [DecidableRel G.Adj] {S : Type
   simp only [vertexEquiv_apply, vertexEquiv_symm_vertex, hc j]
 
 /-- **A positive superadditive weight on an oriented graph excludes isolated vertices.** Let `δ`
-be a weight on the vertices of an orientation of a finite simple graph over a strictly ordered
-commutative ring, positive at every vertex, with `2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at every
+be a weight on the vertices of an orientation of a finite simple graph over an ordered
+semiring, positive at every vertex, with `2 δ_i ≤ ∑_j (#(i ⟶ j) + #(j ⟶ i)) δ_j` at every
 vertex of the oriented quiver. Then every vertex of the graph has a neighbour. -/
 theorem exists_adj_of_pos_two_mul_le_sum [Finite V]
-    {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+    {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
     (δ : OrientedQuiver G o → S) (hδ : ∀ i, 0 < δ i)
     (hδle : ∀ i, 2 * δ i ≤
       ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j)

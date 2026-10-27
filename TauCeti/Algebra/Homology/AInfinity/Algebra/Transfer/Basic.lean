@@ -367,6 +367,16 @@ theorem barMap_transferInclusion :
       _ = _ := by
         rw [LinearSpecialContraction.perturb_incl, barTensorTrick_incl, barTensorTrick_homotopy]
 
+/-- The Taylor components of the extending morphism are the letter projection of the perturbed
+inclusion `i - K X i`. -/
+theorem taylor_transferInclusion :
+    (𝒜.transferInclusion c hh hincl hproj).taylor =
+      letter R A ∘ₗ (ReducedTensorWords.map (R := R) c.incl -
+        c.reducedTensorWordsHomotopy (𝒜.grading.shift 1) ∘ₗ
+          (𝒜.barTensorTrick c hh hincl hproj).perturbationSeries 𝒜.higherBarDifferential ∘ₗ
+          ReducedTensorWords.map (R := R) c.incl) := by
+  rw [AInfinityHom.taylor_def, barMap_transferInclusion]
+
 /-- The linear part of the extending morphism is the inclusion of the contraction. -/
 @[simp]
 theorem linearPart_transferInclusion :
@@ -704,6 +714,16 @@ theorem barMap_transferProjection :
             hproj)).proj := rfl
       _ = _ := by
         rw [LinearSpecialContraction.perturb_proj, barTensorTrick_proj, barTensorTrick_homotopy]
+
+/-- The Taylor components of the projection morphism are the letter projection of the perturbed
+projection `p - p X K`. -/
+theorem taylor_transferProjection :
+    (𝒜.transferProjection c hh hincl hproj).taylor =
+      letter R H ∘ₗ (ReducedTensorWords.map (R := R) c.proj -
+        ReducedTensorWords.map (R := R) c.proj ∘ₗ
+          (𝒜.barTensorTrick c hh hincl hproj).perturbationSeries 𝒜.higherBarDifferential ∘ₗ
+          c.reducedTensorWordsHomotopy (𝒜.grading.shift 1)) := by
+  rw [AInfinityHom.taylor_def, barMap_transferProjection]
 
 /-- The linear part of the projection morphism is the projection of the contraction. -/
 @[simp]

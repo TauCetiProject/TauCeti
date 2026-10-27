@@ -9,8 +9,10 @@ public import Mathlib.Algebra.Module.ZLattice.Covolume
 public import Mathlib.Analysis.Convex.Gauge
 import Mathlib.Analysis.Convex.Measure
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
 import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
 import TauCeti.Algebra.Module.ZLattice.Covolume
+import TauCeti.Analysis.Convex.Topology
 import TauCeti.LinearAlgebra.Basis.Triangular
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.MeasureTheory.Constructions.Pi
@@ -30,17 +32,23 @@ Since `λ₀ ≤ λᵢ` for every `i`, this strengthens Minkowski's first theore
 against which the products of the gauges of short lattice bases (such as fundamental systems of
 units, or bases of the integer kernel of a matrix) are measured.
 
-The statement here does not use a successive-minima function. It takes `ℝ`-independent lattice
+The main statement does not use a successive-minima function. It takes `ℝ`-independent lattice
 vectors `a i` and nonnegative numbers `g i` such that every lattice vector `v` with
 `gauge K v < g j` lies in the span of `a 0, …, a (j - 1)`. Independent vectors realizing the
 successive minima satisfy this with `g = λ`: if `gauge K v < λ_j` and `i ≤ j` is least with
-`λ_i = λ_j`, then `a 0, …, a (i - 1)` and `v` lie in a dilate of `K` smaller than `λ_i • K`, so `v`
-is in the span of `a 0, …, a (i - 1)`. Conversely, every such `g` satisfies `g j ≤ λ_j`.
+`λ_i > gauge K v`, then `a 0, …, a (i - 1)` and `v` lie in `(gauge K v) • K`, so `v` is in the span
+of `a 0, …, a (i - 1)` (`ZLattice.mem_span_image_Iio_of_gauge_lt_successiveMin`). Conversely,
+every such `g` satisfies `g j ≤ λ_j`.
 
-## Main result
+## Main results
 
 * `ZLattice.prod_mul_measure_le_two_pow_mul_covolume`:
   `(∏ i, g i) * μ K ≤ 2 ^ n * covolume L μ`.
+* `ZLattice.prod_successiveMin_mul_measure_le_two_pow_mul_covolume`: the classical form
+  `λ₀ ⋯ λₙ₋₁ · μ K ≤ 2ⁿ · covolume L μ` for a symmetric convex body `K`,
+  and its real-valued form `ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`.
+* `ZLattice.prod_successiveMin_le_covolume_of_two_pow_finrank_le`: `λ₀ ⋯ λₙ₋₁ ≤ covolume L μ`
+  for a symmetric convex body `K` with `2ⁿ ≤ μ K`.
 
 ## Proof
 
@@ -401,45 +409,44 @@ private theorem prod_mul_volume_le_one {n : ℕ} {C : Set (Fin n → ℝ)} (hC :
 
 /-! ### The general theorem -/
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- In coordinates `φ` in which `L` is `ℤⁿ` and the span of `a 0, …, a (j - 1)` lies in the kernel
-of the `j`-th coordinate, two points of `g j • φ '' (½ • interior K)` whose difference is an
+/-- In coordinates `φ` in which `L` is `ℤⁿ`, if the `j`-th coordinate vanishes on every `v ∈ L`
+with `gauge K v < t`, then two points of `t • φ '' (½ • interior K)` whose difference is an
 integer vector have the same `j`-th coordinate: their difference is `φ w` for some `w ∈ L` with
-`gauge K w < g j`. -/
-private theorem apply_eq_of_mem_smul_image {L : Submodule ℤ E} {K : Set E} (hK : Convex ℝ K)
-    (hKs : ∀ x ∈ K, -x ∈ K) (hKabs : Absorbent ℝ K) {n : ℕ} {a : Fin n → E} {g : Fin n → ℝ}
-    (hg0 : ∀ i, 0 < g i) (hgap : ∀ j, ∀ v ∈ L, gauge K v < g j → v ∈ span ℝ (a '' Iio j))
-    (φ : E ≃ₗ[ℝ] (Fin n → ℝ)) (hmemL : ∀ v, v ∈ L ↔ ∀ i, φ v i ∈ range ((↑) : ℤ → ℝ))
-    (hflag : ∀ j, ∀ v ∈ span ℝ (a '' Iio j), φ v j = 0) (j : Fin n) {x y : Fin n → ℝ}
-    (hx : x ∈ g j • φ '' ((1 / 2 : ℝ) • interior K))
-    (hy : y ∈ g j • φ '' ((1 / 2 : ℝ) • interior K)) (hxy : ∀ i, ∃ k : ℤ, x i - y i = k) :
+`gauge K w < t`. -/
+private theorem apply_eq_of_mem_smul_image {E : Type*} [AddCommGroup E] [Module ℝ E]
+    [TopologicalSpace E] [ContinuousSMul ℝ E] {L : Submodule ℤ E} {K : Set E} (hK : Convex ℝ K)
+    (hKs : ∀ x ∈ K, -x ∈ K) (hKabs : Absorbent ℝ K) {n : ℕ} (φ : E ≃ₗ[ℝ] (Fin n → ℝ))
+    (hmemL : ∀ v, v ∈ L ↔ ∀ i, φ v i ∈ range ((↑) : ℤ → ℝ)) (j : Fin n) {t : ℝ} (ht : 0 < t)
+    (hgap : ∀ v ∈ L, gauge K v < t → φ v j = 0) {x y : Fin n → ℝ}
+    (hx : x ∈ t • φ '' ((1 / 2 : ℝ) • interior K))
+    (hy : y ∈ t • φ '' ((1 / 2 : ℝ) • interior K)) (hxy : ∀ i, ∃ k : ℤ, x i - y i = k) :
     x j = y j := by
   obtain ⟨_, ⟨_, ⟨u, hu, rfl⟩, rfl⟩, rfl⟩ := hx
   obtain ⟨_, ⟨_, ⟨u', hu', rfl⟩, rfl⟩, rfl⟩ := hy
-  set w : E := (g j / 2) • (u - u')
-  have hw : φ w = g j • φ ((1 / 2 : ℝ) • u) - g j • φ ((1 / 2 : ℝ) • u') := by
+  set w : E := (t / 2) • (u - u')
+  have hw : φ w = t • φ ((1 / 2 : ℝ) • u) - t • φ ((1 / 2 : ℝ) • u') := by
     simp only [w, map_smul, map_sub, smul_sub, smul_smul]
     ring_nf
   have hwL : w ∈ L := (hmemL w).2 fun i ↦ by
     obtain ⟨k, hk⟩ := hxy i
     exact ⟨k, by rw [hw, Pi.sub_apply, hk]⟩
-  have hgauge : gauge K w < g j := by
+  have hgauge : gauge K w < t := by
     have h1 := interior_subset_gauge_lt_one K hu
     have h2 := interior_subset_gauge_lt_one K hu'
     have h3 : gauge K (u - u') ≤ gauge K u + gauge K u' := by
       simpa [sub_eq_add_neg, gauge_neg hKs] using gauge_add_le hK hKabs u (-u')
     simp only [mem_ofPred_eq] at h1 h2
-    rw [gauge_smul_of_nonneg (by linarith [hg0 j]), smul_eq_mul]
-    nlinarith [hg0 j]
-  have := hflag j w (hgap j w hwL hgauge)
+    rw [gauge_smul_of_nonneg (by linarith), smul_eq_mul]
+    nlinarith
+  have := hgap w hwL hgauge
   rwa [hw, Pi.sub_apply, sub_eq_zero] at this
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
 
 /-- The theorem for the interior of `K`, assuming `0 ∈ interior K` and `0 < g i`. -/
 private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopology L]
-    [IsZLattice ℝ L] (μ : Measure E) [μ.IsAddHaarMeasure] {K : Set E} (hK : Convex ℝ K)
+    (μ : Measure E) [μ.IsAddHaarMeasure] {K : Set E} (hK : Convex ℝ K)
     (hKs : ∀ x ∈ K, -x ∈ K) (h0 : (0 : E) ∈ interior K) {n : ℕ} (hn : n = finrank ℝ E)
     {a : Fin n → E} (haL : ∀ i, a i ∈ L) (ha : LinearIndependent ℝ a) {g : Fin n → ℝ}
     (hg0 : ∀ i, 0 < g i) (hg : Monotone g)
@@ -450,6 +457,11 @@ private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopo
   -- Coordinates `φ` from a basis `b` of `L` adapted to the flag spanned by `a`.
   set e := basisOfLinearIndependentOfCardEqFinrank' a ha (by simp [hn])
   have he : ⇑e = a := coe_basisOfLinearIndependentOfCardEqFinrank' ..
+  -- The independent family already forces the discrete submodule to span `E`.
+  have : IsZLattice ℝ L := by
+    refine ⟨eq_top_iff.2 ?_⟩
+    rw [← e.span_eq]
+    exact span_mono (range_subset_iff.2 (by simpa [he] using haL))
   obtain ⟨b, hb⟩ := exists_basis_triangular e (by simpa [he] using haL)
   set bR := b.ofZLatticeBasis ℝ L
   set φ := bR.equivFun
@@ -474,7 +486,8 @@ private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopo
       simp only [g', hj, lt_of_le_of_lt hij hj, dite_true]
       exact hg (Fin.mk_le_mk.2 hij)) (fun j hj x hx y hy hxy ↦ by
       simp only [g', hj, dite_true] at hx hy
-      exact apply_eq_of_mem_smul_image hK hKs hKabs hg0 hgap φ hmemL hflag _ hx hy hxy)
+      exact apply_eq_of_mem_smul_image hK hKs hKabs φ hmemL _ (hg0 _)
+        (fun v hv hlt ↦ hflag _ v (hgap _ v hv hlt)) hx hy hxy)
   have hprod : ∏ i ∈ Finset.range n, g' i = ∏ i, g i := by
     rw [← Fin.prod_univ_eq_prod_range]
     exact Finset.prod_congr rfl fun i _ ↦ by simp [g', i.isLt]
@@ -490,17 +503,19 @@ private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopo
   simp [div_eq_mul_inv, ENNReal.ofReal_pow, ENNReal.ofReal_inv_of_pos]
   ring
 
-/-- **Minkowski's second theorem**, upper bound. Let `L` be a full lattice in an `n`-dimensional
-real normed space `E`, `μ` a Haar measure on `E`, and `K ⊆ E` convex and symmetric about `0`. Let
+/-- **Minkowski's second theorem**, upper bound. Let `L` be a discrete `ℤ`-submodule of an
+`n`-dimensional real normed space `E`, `μ` a Haar measure on `E`, and `K ⊆ E` convex and symmetric
+about `0`. Let
 `a 0, …, a (n - 1)` be `ℝ`-linearly independent vectors of `L` and `g 0, …, g (n - 1)`
 nonnegative numbers such that every `v ∈ L` with `gauge K v < g j` lies in the span of
 `a 0, …, a (j - 1)`. Then `(∏ i, g i) * μ K ≤ 2 ^ n * covolume L μ`.
+The full independent family already implies that the discrete submodule `L` is a full lattice.
 
 Independent lattice vectors realizing the successive minima `λ₀ ≤ ⋯ ≤ λₙ₋₁` of `L` with respect to
 `K` satisfy the hypothesis with `g = λ`, which gives the classical form
 `λ₀ ⋯ λₙ₋₁ · μ K ≤ 2ⁿ · covolume L μ`. -/
 theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E) [DiscreteTopology L]
-    [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] {K : Set E}
+    (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] {K : Set E}
     (hK : Convex ℝ K) (hKs : ∀ x ∈ K, -x ∈ K) {n : ℕ} (hn : n = finrank ℝ E) {a : Fin n → E}
     (haL : ∀ i, a i ∈ L) (ha : LinearIndependent ℝ a) {g : Fin n → ℝ} (hg0 : ∀ i, 0 ≤ g i)
     (hgap : ∀ j, ∀ v ∈ L, gauge K v < g j → v ∈ span ℝ (a '' Iio j)) :
@@ -514,14 +529,7 @@ theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E) [Discrete
   rcases (interior K).eq_empty_or_nonempty with hempty | ⟨x₀, hx₀⟩
   · simp [← hKint, hempty]
   -- Otherwise `K` is a neighbourhood of `0`, being convex and symmetric.
-  have hneg : -K = K := Set.ext fun x ↦ ⟨fun hx ↦ by simpa using hKs _ hx,
-    fun hx ↦ by simpa using hKs _ hx⟩
-  have h0 : (0 : E) ∈ interior K := by
-    have hx₀' : -x₀ ∈ interior K := by
-      have h := mem_image_of_mem (Homeomorph.neg E) hx₀
-      rwa [(Homeomorph.neg E).image_interior, Homeomorph.coe_neg, image_neg_eq_neg, hneg] at h
-    simpa using hK.interior hx₀ hx₀' (by norm_num : (0 : ℝ) ≤ 1 / 2)
-      (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
+  have h0 : (0 : E) ∈ interior K := hK.zero_mem_interior_of_symmetric hKs ⟨x₀, hx₀⟩
   -- Replace `g` by its running maximum `G`, which is monotone and still satisfies `hgap`.
   let G : Fin n → ℝ := fun j ↦ (Finset.Iic j).sup' ⟨j, Finset.mem_Iic.2 le_rfl⟩ g
   have hgG : ∀ i, g i ≤ G i := fun i ↦ Finset.le_sup' g (Finset.mem_Iic.2 le_rfl)
@@ -537,5 +545,52 @@ theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E) [Discrete
         exacts [fun i _ ↦ hg0 i, hgG i]
     _ ≤ _ := prod_mul_measure_interior_le L μ hK hKs h0 hn haL ha
       (fun i ↦ ((hg0 i).lt_of_ne' (hgz i)).trans_le (hgG i)) hG hGgap
+
+/-- **Minkowski's second theorem**, upper bound, in terms of the successive minima. For a full
+lattice `L` in a real normed space `E` of dimension `n`, a Haar measure `μ` on `E`, and a convex
+body `K` symmetric about `0`, the successive minima `λ i = successiveMin L K i` satisfy
+`λ₀ ⋯ λₙ₋₁ · μ K ≤ 2ⁿ · covolume L μ`. If `K` has empty interior, its measure is zero. -/
+theorem prod_successiveMin_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
+    {K : ConvexBody E} (hKs : ∀ x ∈ K, -x ∈ K) :
+    ENNReal.ofReal (∏ i, successiveMin L K i) * μ K ≤
+      2 ^ finrank ℝ E * ENNReal.ofReal (ZLattice.covolume L μ) := by
+  rcases (interior (K : Set E)).eq_empty_or_nonempty with hK | hK
+  · rw [← measure_interior_of_null_frontier (K.convex.addHaar_frontier μ), hK]
+    simp
+  have hK₀ : (0 : E) ∈ interior (K : Set E) := K.convex.zero_mem_interior_of_symmetric hKs hK
+  obtain ⟨a, ha, haL⟩ := exists_linearIndependent_gauge_eq_successiveMin L hK₀
+  exact prod_mul_measure_le_two_pow_mul_covolume L μ K.convex hKs rfl (fun i ↦ (haL i).1) ha
+    (successiveMin_nonneg L K) fun j v hvL hv ↦ mem_span_image_Iio_of_gauge_lt_successiveMin hK₀ ha
+      (fun i ↦ (haL i).1) (fun i ↦ (haL i).2.le) hvL hv
+
+/-- **Minkowski's second theorem**, upper bound, in terms of the successive minima and with real
+measures: `λ₀ ⋯ λₙ₋₁ · μ.real K ≤ 2ⁿ · covolume L μ`. -/
+theorem prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
+    {K : ConvexBody E} (hKs : ∀ x ∈ K, -x ∈ K) :
+    (∏ i, successiveMin L K i) * μ.real K ≤ 2 ^ finrank ℝ E * ZLattice.covolume L μ := by
+  have h := ENNReal.toReal_mono (by finiteness)
+    (prod_successiveMin_mul_measure_le_two_pow_mul_covolume L μ hKs)
+  rwa [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal
+    (Finset.prod_nonneg fun i _ ↦ successiveMin_nonneg L K i), ENNReal.toReal_ofReal
+    (ZLattice.covolume_pos L μ).le, ENNReal.toReal_pow, ENNReal.toReal_ofNat] at h
+
+/-- **Minkowski's second theorem for bodies of measure at least `2ⁿ`.** If a convex body `K`
+symmetric about `0` has `2ⁿ ≤ μ K`, then the successive minima of `L` with respect to `K` satisfy
+`λ₀ ⋯ λₙ₋₁ ≤ covolume L μ`. This applies, for instance, to the central
+slices of the cube `[-1, 1]ⁿ`, whose volume is at least `2ⁿ` by Vaaler's theorem. -/
+theorem prod_successiveMin_le_covolume_of_two_pow_finrank_le (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
+    {K : ConvexBody E} (hKs : ∀ x ∈ K, -x ∈ K) (hμK : 2 ^ finrank ℝ E ≤ μ K) :
+    ∏ i, successiveMin L K i ≤ ZLattice.covolume L μ := by
+  rw [← ENNReal.ofReal_le_ofReal_iff (ZLattice.covolume_pos L μ).le,
+    ← ENNReal.mul_le_mul_iff_left (pow_ne_zero (finrank ℝ E) two_ne_zero)
+      (ENNReal.pow_ne_top ENNReal.ofNat_ne_top)]
+  calc ENNReal.ofReal (∏ i, successiveMin L K i) * 2 ^ finrank ℝ E
+      ≤ ENNReal.ofReal (∏ i, successiveMin L K i) * μ K := by gcongr
+    _ ≤ 2 ^ finrank ℝ E * ENNReal.ofReal (ZLattice.covolume L μ) :=
+      prod_successiveMin_mul_measure_le_two_pow_mul_covolume L μ hKs
+    _ = ENNReal.ofReal (ZLattice.covolume L μ) * 2 ^ finrank ℝ E := mul_comm _ _
 
 end ZLattice

@@ -51,6 +51,8 @@ whole carrier the right cofree uniqueness does.
 * `TauCeti.AInfinityBimodule.barDifferential_sq_iff_taylor_comp_eq_zero`: a degree-one
   bicomodule coderivation squares to zero exactly when its Taylor component after one further
   application vanishes, the suspended form of the bimodule Stasheff identities.
+* `TauCeti.AInfinityBimodule.eq_of_taylorProj_comp_eq`: a bicomodule coderivation over the two
+  bar differentials is determined by its Taylor component.
 * `TauCeti.AInfinityBimodule.ext`: a bimodule is determined by its grading and its Taylor map.
 
 ## References
@@ -288,6 +290,32 @@ theorem ofBarDifferential_taylor (G : InternalGrading R M)
       taylorProj R A B M ∘ₗ D :=
   (rfl)
 
+/-- Two degree-one bicomodule coderivations over the bar differentials of `AA` and `BB` agree as
+soon as their two-sided counit components agree: by cofreeness on both sides, such a coderivation
+is determined by its Taylor component. -/
+theorem eq_of_taylorProj_comp_eq {G : InternalGrading R M}
+    {D E : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
+      (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B}
+    (hDl : Comodule.IsLeftGradedCoderivationOver
+      (Comodule.leftCoactRTensor (TensorWords R B)
+        (Comodule.leftCofreeCoact R (TensorWords R A) M))
+      (TensorWords.grading (AA.grading.shift 1)) 1 AA.coaugmentedBarDifferential D)
+    (hDr : Comodule.IsGradedCoderivationOver (barGrading AA BB G) 1
+      BB.coaugmentedBarDifferential D)
+    (hEl : Comodule.IsLeftGradedCoderivationOver
+      (Comodule.leftCoactRTensor (TensorWords R B)
+        (Comodule.leftCofreeCoact R (TensorWords R A) M))
+      (TensorWords.grading (AA.grading.shift 1)) 1 AA.coaugmentedBarDifferential E)
+    (hEr : Comodule.IsGradedCoderivationOver (barGrading AA BB G) 1
+      BB.coaugmentedBarDifferential E)
+    (h : taylorProj R A B M ∘ₗ D = taylorProj R A B M ∘ₗ E) : D = E := by
+  have hleft := hDl.comp_eq_comp_of_counit_comp_eq
+    (Comodule.comp_rid_comp_lTensor_eq_lTensor_comp_leftCoactRTensor _
+      (Coalgebra.counit (R := R) (A := TensorWords R B)))
+    hEl (by simpa only [taylorProj_def, LinearMap.comp_assoc] using h)
+  exact hDr.eq_of_counit_comp_eq (barGrading AA BB G) BB.coaugmentedBarDifferential D E hEr
+    (by simpa only [LinearMap.comp_assoc] using hleft)
+
 /-- `A∞` bimodules on a fixed carrier are determined by their grading and Taylor map.  In
 particular, the stored bar differential contains no data beyond its two-sided counit component. -/
 @[ext]
@@ -298,14 +326,7 @@ theorem ext {MM NN : AInfinityBimodule AA BB M} (hG : MM.grading = NN.grading)
     cases NN with
     | mk H E hE hEl hEr hesq =>
       subst hG
-      have hleft := hDl.comp_eq_comp_of_counit_comp_eq
-        (Comodule.comp_rid_comp_lTensor_eq_lTensor_comp_leftCoactRTensor _
-          (Coalgebra.counit (R := R) (A := TensorWords R B)))
-        hEl (by simpa only [taylor_def, taylorProj_def, LinearMap.comp_assoc] using htaylor)
-      have hDE : D = E := hDr.eq_of_counit_comp_eq (barGrading AA BB G)
-        BB.coaugmentedBarDifferential D E hEr
-          (by simpa only [LinearMap.comp_assoc] using hleft)
-      subst E
+      obtain rfl : D = E := eq_of_taylorProj_comp_eq hDl hDr hEl hEr htaylor
       rfl
 
 end AInfinityBimodule

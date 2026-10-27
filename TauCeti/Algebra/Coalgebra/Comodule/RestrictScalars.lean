@@ -5,9 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.BaseChange
+public import TauCeti.Algebra.Coalgebra.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
-public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
 # Restriction of scalars for comodules over a base-changed coalgebra
@@ -38,9 +37,10 @@ universe u v w x y
 
 variable {R : Type u} {A : Type v} {C : Type w} {M : Type x}
   [CommSemiring R] [CommSemiring A] [Algebra R A]
-  [AddCommMonoid C] [Module R C] [Coalgebra R C]
+  [AddCommMonoid C] [Module R C]
   [AddCommMonoid M] [Module A M] [Module R M] [IsScalarTower R A M]
-  [Comodule A (A ⊗[R] C) M]
+
+variable [Coalgebra R C] [Comodule A (A ⊗[R] C) M]
 
 /-- The coaction obtained by cancelling the extended coefficient ring. -/
 noncomputable def restrictScalarsCoact : M →ₗ[R] M ⊗[R] C :=
@@ -53,13 +53,8 @@ theorem restrictScalarsCoact_apply (m : M) :
       cancelBaseChange R A A M C (coact (R := A) (C := A ⊗[R] C) m) :=
   (rfl)
 
-private noncomputable def restrictScalarsCollapse :
-    M ⊗[A] ((A ⊗[R] C) ⊗[A] (A ⊗[R] C)) ≃ₗ[A] M ⊗[R] (C ⊗[R] C) :=
-  (TensorProduct.congr (LinearEquiv.refl A M)
-    (distribBaseChange R A C C).symm).trans (cancelBaseChange R A A M (C ⊗[R] C))
-
-private theorem restrictScalarsCollapse_coact (z : M ⊗[A] (A ⊗[R] C)) :
-    restrictScalarsCollapse (R := R) (A := A) (C := C) (M := M)
+private theorem cancelBaseChangeTensor_coact (z : M ⊗[A] (A ⊗[R] C)) :
+    cancelBaseChangeTensor R A M C C
         (TensorProduct.assoc A M (A ⊗[R] C) (A ⊗[R] C)
           ((coact (R := A) (C := A ⊗[R] C) (M := M)).rTensor _ z)) =
       TensorProduct.assoc R M C C
@@ -80,22 +75,8 @@ private theorem restrictScalarsCollapse_coact (z : M ⊗[A] (A ⊗[R] C)) :
         | add d e hd he =>
           simp_all only [smul_add, TensorProduct.tmul_add, TensorProduct.add_tmul, map_add]
         | tmul b d =>
-          simp [restrictScalarsCollapse, smul_smul, mul_comm, TensorProduct.smul_tmul',
+          simp [smul_smul, mul_comm, TensorProduct.smul_tmul',
             TensorProduct.assoc_tmul]
-
-omit [Comodule A (A ⊗[R] C) M] in
-private theorem restrictScalarsCollapse_comul (z : M ⊗[A] (A ⊗[R] C)) :
-    restrictScalarsCollapse (R := R) (A := A) (C := C) (M := M)
-        (Coalgebra.comul.lTensor M z) =
-      Coalgebra.comul.lTensor M (cancelBaseChange R A A M C z) := by
-  induction z using TensorProduct.inductionOn with
-  | add z t hz ht => simp only [map_add, hz, ht]
-  | tmul m d =>
-    induction d using TensorProduct.inductionOn with
-    | add d e hd he => simp only [TensorProduct.tmul_add, map_add, hd, he]
-    | tmul a c =>
-      rw [LinearMap.lTensor_tmul, Coalgebra.baseChange_comul_tmul]
-      simp [restrictScalarsCollapse]
 
 /-- Regard a comodule over a scalar-extended coalgebra as a comodule over the
 original coalgebra. Select this structure explicitly as a local instance. -/
@@ -105,8 +86,8 @@ noncomputable def restrictScalars : Comodule R C M where
   coassoc := by
     ext m
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
-    rw [restrictScalarsCoact_apply, ← restrictScalarsCollapse_coact,
-      coassoc_apply, restrictScalarsCollapse_comul]
+    rw [restrictScalarsCoact_apply, ← cancelBaseChangeTensor_coact,
+      coassoc_apply, cancelBaseChangeTensor_lTensor_comul]
   lTensor_counit_comp_coact := by
     ext m
     simp only [LinearMap.comp_apply, LinearMap.flip_apply, TensorProduct.mk_apply]
@@ -171,5 +152,31 @@ theorem Hom.restrictScalars_toLinearMap (f : Hom A (A ⊗[R] C) M N) :
 theorem Hom.restrictScalars_apply (f : Hom A (A ⊗[R] C) M N) (m : M) :
     f.restrictScalars (R := R) m = f m :=
   (rfl)
+
+/-- Restriction of scalars preserves the identity comodule morphism. -/
+-- Simplify before `ComoduleCat.ofHom_id` rewrites the identity in categorical form.
+@[simp↓]
+theorem Hom.restrictScalars_id :
+    let _ := Comodule.restrictScalars (R := R) (A := A) (C := C) (M := M)
+    (Hom.id A (A ⊗[R] C) M).restrictScalars (R := R) = Hom.id R C M := by
+  let _ := Comodule.restrictScalars (R := R) (A := A) (C := C) (M := M)
+  ext m
+  simp only [Hom.restrictScalars_apply, Hom.id_apply]
+
+/-- Restriction of scalars preserves composition of comodule morphisms. -/
+@[simp]
+theorem Hom.restrictScalars_comp {P : Type*} [AddCommMonoid P] [Module A P] [Module R P]
+    [IsScalarTower R A P] [Comodule A (A ⊗[R] C) P]
+    (g : Hom A (A ⊗[R] C) N P) (f : Hom A (A ⊗[R] C) M N) :
+    let _ := Comodule.restrictScalars (R := R) (A := A) (C := C) (M := M)
+    let _ := Comodule.restrictScalars (R := R) (A := A) (C := C) (M := N)
+    let _ := Comodule.restrictScalars (R := R) (A := A) (C := C) (M := P)
+    (g.comp f).restrictScalars (R := R) =
+      (g.restrictScalars (R := R)).comp (f.restrictScalars (R := R)) := by
+  let _ := Comodule.restrictScalars (R := R) (A := A) (C := C) (M := M)
+  let _ := Comodule.restrictScalars (R := R) (A := A) (C := C) (M := N)
+  let _ := Comodule.restrictScalars (R := R) (A := A) (C := C) (M := P)
+  ext m
+  simp
 
 end TauCeti.Comodule

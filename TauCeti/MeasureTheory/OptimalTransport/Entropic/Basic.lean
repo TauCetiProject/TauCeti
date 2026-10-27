@@ -63,7 +63,7 @@ free energy `-ε log Z ≥ 0`, and the two problems have the same optimal coupli
   zero temperature the regularised value is the transport cost, which it always dominates.
 * `TauCeti.entropicTransportCost_le_lintegral_prod`,
   `TauCeti.entropicTransportCost_ne_top_of_lintegral_ne_top` and
-  `TauCeti.entropicTransportCost_ne_top_of_forall_le`: for probability measures the regularised
+  `TauCeti.entropicTransportCost_ne_top_of_ae_le`: for probability measures the regularised
   value is at most the cost of the product coupling, so it is finite for a cost of finite integral
   against `μ ⊗ ν`, in particular for a bounded cost.
 * `TauCeti.entropicTransportCost_const`: for a constant cost the regularised value is the
@@ -520,13 +520,13 @@ theorem entropicTransportCost_ne_top_of_lintegral_ne_top [IsProbabilityMeasure �
     entropicTransportCost c ε μ ν ≠ ∞ :=
   ne_top_of_le_ne_top hc (entropicTransportCost_le_lintegral_prod c ε)
 
-/-- For a cost bounded by `B`, the regularised transport cost of two probability measures is
-finite, by the product-coupling bound. -/
-theorem entropicTransportCost_ne_top_of_forall_le [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
-    {B : ℝ≥0} (hcB : ∀ z, c z ≤ B) (ε : ℝ≥0) : entropicTransportCost c ε μ ν ≠ ∞ :=
+/-- For a cost bounded by `B` almost everywhere against `μ.prod ν`, the regularised transport
+cost of two probability measures is finite, by the product-coupling bound. -/
+theorem entropicTransportCost_ne_top_of_ae_le [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    {B : ℝ≥0} (hcB : ∀ᵐ z ∂μ.prod ν, c z ≤ B) (ε : ℝ≥0) :
+    entropicTransportCost c ε μ ν ≠ ∞ :=
   entropicTransportCost_ne_top_of_lintegral_ne_top
-    (ne_top_of_le_ne_top (ENNReal.coe_ne_top (r := B)) <| (lintegral_mono hcB).trans_eq (by simp))
-    ε
+    (ne_top_of_le_ne_top ENNReal.coe_ne_top (lintegral_le_const hcB)) ε
 
 /-- For a constant cost `a`, the regularised transport cost of two probability measures is `a`,
 attained by the product coupling. Since a coupling `π` pays `a + ε * klDiv π (μ.prod ν)`, at

@@ -9,9 +9,8 @@ public import Mathlib.CategoryTheory.Functor.OfSequence
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.Homotopy.CellAttachment
+public import TauCeti.Topology.CWComplex.Abstract.Trans
 public import TauCeti.Topology.CWComplex.Classical.CWType
-public import TauCeti.Topology.CWComplex.Classical.Image
-public import TauCeti.Topology.CWComplex.Classical.Trans
 
 /-!
 # Killing the homotopy groups of a space from a given dimension on
@@ -44,10 +43,11 @@ colimit in each dimension with those of a finite stage
 
 When `X` is itself a Hausdorff CW complex with no cells of dimension greater than `n`, this
 relative CW structure, read classically, composes with the CW structure of `X`
-(`TauCeti.relCWComplexTrans`): the cells of the tower have dimension greater than `n`, so their
-boundaries meet `X` inside its skeleton below their dimension. So `killHomotopyGroups n X x` is
-then a CW complex (`TauCeti.killHomotopyGroupsCWComplex`), whose cells are those of `X` and those of
-the tower, and in particular it has CW type (`TauCeti.cwType_killHomotopyGroups`).
+(`TopCat.RelativeCWComplex.cwComplexTrans`): the cells of the tower have dimension greater than
+`n`, so their boundaries meet `X` inside its skeleton below their dimension. So
+`killHomotopyGroups n X x` is then a CW complex (`TauCeti.killHomotopyGroupsCWComplex`), whose
+cells are those of `X` and those of the tower, and in particular it has CW type
+(`TauCeti.cwType_killHomotopyGroups`).
 
 Maps out of the colimit are built in the same way, stage by stage. Every cell of the tower is
 attached along a based map, so a map `f : X ⟶ Z` into a space whose homotopy groups `πₖ(Z, f x)`
@@ -326,39 +326,6 @@ open Topology Topology.RelCWComplex
 variable [T2Space X] [CWComplex (Set.univ : Set X)]
   (hX : ∀ m, n < m → IsEmpty (cell (Set.univ : Set X) m))
 
-/-- The CW structure on `X`, carried to the range of `TauCeti.killHomotopyGroupsIncl n X x`. -/
-private abbrev rangeInclRelCWComplex :
-    RelCWComplex (Set.range (killHomotopyGroupsIncl n X x)) ∅ :=
-  (isClosedEmbedding_killHomotopyGroupsIncl n X x).relCWComplex Set.image_univ (Set.image_empty _)
-
-/-- The relative CW structure of the tower, as a classical relative CW complex. -/
-private abbrev towerRelCWComplex :
-    RelCWComplex (Set.univ : Set (killHomotopyGroups n X x))
-      (Set.range (killHomotopyGroupsIncl n X x)) :=
-  (killHomotopyGroupsRelativeCWComplex n X x).toRelCWComplex
-
-include hX in
-/-- Every cell of the tower has dimension greater than `n`, and `X` has no cells of dimension
-greater than `n`, so the part in `X` of the boundary of an `m`-cell of the tower lies in the
-skeleton of `X` below dimension `m`, which is all of `X`, viewed in the colimit via the
-inclusion. -/
-private lemma cellFrontier_inter_range_subset_skeletonLT :
-    letI := rangeInclRelCWComplex n X x
-    letI := towerRelCWComplex n X x
-    ∀ m (i : cell (Set.univ : Set (killHomotopyGroups n X x)) m),
-      cellFrontier m i ∩ Set.range (killHomotopyGroupsIncl n X x) ⊆
-        skeletonLT (Set.range (killHomotopyGroupsIncl n X x)) m := by
-  let := rangeInclRelCWComplex n X x
-  let := towerRelCWComplex n X x
-  intro m i
-  have hm : n < m := by
-    by_contra hm
-    exact (isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι n X x
-      (Nat.le_of_not_gt hm)).false ((TopCat.RelativeCWComplex.toRelCWComplexCellEquiv _ m) i)
-  refine Set.inter_subset_right.trans
-    (TauCeti.skeletonLT_eq_complex_of_isEmpty_cell _ m fun k hk ↦ ?_).superset
-  exact (IsClosedEmbedding.relCWComplexCellEquiv _ _ _ k).isEmpty_congr.2 (hX k (hm.trans_le hk))
-
 include hX in
 /-- **The colimit of the tower is a CW complex.** If `X` is a Hausdorff CW complex all of whose
 cells have dimension at most `n`, then `TauCeti.killHomotopyGroups n X x` is a CW complex. Its
@@ -367,11 +334,8 @@ cells attached at step `m` of the tower, which all have dimension greater than `
 (`TauCeti.killHomotopyGroupsCWComplexCellEquiv`). -/
 @[instance_reducible]
 def killHomotopyGroupsCWComplex : CWComplex (Set.univ : Set (killHomotopyGroups n X x)) :=
-  letI := rangeInclRelCWComplex n X x
-  letI := towerRelCWComplex n X x
-  letI := relCWComplexTrans Set.univ (Set.range (killHomotopyGroupsIncl n X x)) ∅
-    (cellFrontier_inter_range_subset_skeletonLT n X x hX)
-  RelCWComplex.toCWComplex _
+  (killHomotopyGroupsRelativeCWComplex n X x).cwComplexTrans hX fun _ hm ↦
+    isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι n X x (Nat.le_of_lt_succ hm)
 
 /-- The `m`-cells of `TauCeti.killHomotopyGroupsCWComplex` are the `m`-cells of `X` together with
 the cells attached at step `m` of the tower. -/
@@ -380,11 +344,7 @@ def killHomotopyGroupsCWComplexCellEquiv (m : ℕ) :
       (killHomotopyGroupsCWComplex n X x hX).instRelCWComplex m ≃
       cell (Set.univ : Set X) m ⊕
         ((killHomotopyGroupsRelativeCWComplex n X x).attachCells m (not_isMax m)).ι :=
-  letI := rangeInclRelCWComplex n X x
-  letI := towerRelCWComplex n X x
-  (relCWComplexTransCellEquiv (cellFrontier_inter_range_subset_skeletonLT n X x hX) m).trans <|
-    Equiv.sumCongr (IsClosedEmbedding.relCWComplexCellEquiv _ _ _ m)
-      ((killHomotopyGroupsRelativeCWComplex n X x).toRelCWComplexCellEquiv m)
+  TopCat.RelativeCWComplex.cwComplexTransCellEquiv _ _ _ m
 
 /-- The characteristic map of an `m`-cell of `X`, as a cell of
 `TauCeti.killHomotopyGroupsCWComplex`, is its characteristic map in `X` followed by the inclusion
@@ -395,13 +355,8 @@ lemma coe_map_killHomotopyGroupsCWComplexCellEquiv_symm_inl (m : ℕ)
     ⇑(@map _ _ (Set.univ : Set (killHomotopyGroups n X x)) ∅
       (killHomotopyGroupsCWComplex n X x hX).instRelCWComplex m
         ((killHomotopyGroupsCWComplexCellEquiv n X x hX m).symm (.inl i))) =
-      killHomotopyGroupsIncl n X x ∘ map m i := by
-  let := rangeInclRelCWComplex n X x
-  let := towerRelCWComplex n X x
-  refine (congrArg (fun e : PartialEquiv _ _ ↦ ⇑e) (map_relCWComplexTrans_inl
-    (cellFrontier_inter_range_subset_skeletonLT n X x hX) m
-      ((IsClosedEmbedding.relCWComplexCellEquiv _ _ _ m).symm i))).trans ?_
-  rw [IsClosedEmbedding.coe_map_relCWComplex, Equiv.apply_symm_apply]
+      killHomotopyGroupsIncl n X x ∘ map m i :=
+  TopCat.RelativeCWComplex.coe_map_cwComplexTransCellEquiv_symm_inl _ _ _ m i
 
 /-- The characteristic map of a cell attached at step `m` of the tower, as a cell of
 `TauCeti.killHomotopyGroupsCWComplex`, is the inclusion of the attached disk, read on the closed
@@ -414,13 +369,8 @@ lemma map_killHomotopyGroupsCWComplexCellEquiv_symm_inr (m : ℕ)
       (killHomotopyGroupsCWComplex n X x hX).instRelCWComplex m
         ((killHomotopyGroupsCWComplexCellEquiv n X x hX m).symm (.inr i)) y =
       (⟨m, not_isMax m, i⟩ : (killHomotopyGroupsRelativeCWComplex n X x).Cells).ι
-        ((diskHomeomorphClosedBall m).symm y) := by
-  let := rangeInclRelCWComplex n X x
-  let := towerRelCWComplex n X x
-  refine (congrArg (fun e : PartialEquiv (Fin m → ℝ) (killHomotopyGroups n X x) ↦ e y)
-    (map_relCWComplexTrans_inr (cellFrontier_inter_range_subset_skeletonLT n X x hX) m
-      (((killHomotopyGroupsRelativeCWComplex n X x).toRelCWComplexCellEquiv m).symm i))).trans ?_
-  rw [TopCat.RelativeCWComplex.toRelCWComplex_map_apply, Equiv.apply_symm_apply]
+        ((diskHomeomorphClosedBall m).symm y) :=
+  TopCat.RelativeCWComplex.map_cwComplexTransCellEquiv_symm_inr _ _ _ m i y
 
 include hX in
 /-- If `X` is a Hausdorff CW complex all of whose cells have dimension at most `n`, then

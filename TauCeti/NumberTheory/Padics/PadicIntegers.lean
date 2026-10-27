@@ -11,6 +11,8 @@ public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Finset.Max
 import Mathlib.Data.Int.Associated
 import Mathlib.Data.Nat.Factorization.Basic
@@ -40,6 +42,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
 
 ## Main results
 
+* `PadicInt.norm_p_lt_one`: the uniformizer `p` of `ℤ_p` has norm less than `1`, so that every
+  series `∑ₙ pⁿ aₙ` converges in `ℤ_p` (`PadicInt.summable_pow_mul`).
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
@@ -52,6 +56,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
   particular an integer is a unit of `ℤ_[p]` exactly when `p` does not divide it
   (`PadicInt.isUnit_intCast_iff`), and `2` is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
+* `PadicInt.intCast_not_surjective`: not every `p`-adic integer is an integer.
 * `PadicInt.inv_eq_inverse`, `PadicInt.continuous_inverse`: Mathlib's `PadicInt.inv` is
   `Ring.inverse`, the inverse on units extended by `0`, and it is continuous because the nonunits
   `pℤ_p` form an open set.
@@ -75,6 +80,16 @@ public section
 namespace PadicInt
 
 variable {p : ℕ} [Fact p.Prime]
+
+/-- The uniformizer `p` of `ℤ_p` has norm less than `1`. -/
+theorem norm_p_lt_one : ‖(p : ℤ_[p])‖ < 1 :=
+  (norm_lt_one_iff_dvd _).mpr dvd_rfl
+
+/-- Every series `∑ₙ pⁿ aₙ` of `p`-adic integers converges in `ℤ_p`. -/
+theorem summable_pow_mul (a : ℕ → ℤ_[p]) : Summable fun n ↦ (p : ℤ_[p]) ^ n * a n :=
+  .of_norm_bounded (summable_geometric_of_lt_one (norm_nonneg _) norm_p_lt_one) fun n ↦ by
+    rw [norm_mul, norm_pow]
+    exact mul_le_of_le_one_right (by positivity) (norm_le_one _)
 
 /-- In `ℤ_p`, `1 + x` is a unit whenever `p ∣ x`. -/
 theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit (1 + x) :=
@@ -133,6 +148,19 @@ theorem not_isUnit_iff_dvd {z : ℤ_[p]} : ¬IsUnit z ↔ (p : ℤ_[p]) ∣ z :=
 theorem isUnit_intCast_iff {z : ℤ} : IsUnit (z : ℤ_[p]) ↔ ¬(p : ℤ) ∣ z := by
   rw [← not_iff_not, not_not, not_isUnit_iff_dvd, ← pow_one (p : ℤ_[p]), pow_p_dvd_int_iff,
     pow_one]
+
+/-- Not every `p`-adic integer is an integer: the inverse in `ℤ_p` of the unit `1 + p` is not the
+image of an integer. -/
+theorem intCast_not_surjective : ¬Function.Surjective (Int.cast : ℤ → ℤ_[p]) := fun h ↦ by
+  have hp := (Fact.out : p.Prime).two_le
+  have hu : IsUnit ((1 + p : ℤ) : ℤ_[p]) := isUnit_intCast_iff.2 fun hdvd ↦ by
+    have : (p : ℤ) ∣ 1 := (dvd_add_left (dvd_refl _)).1 hdvd
+    have := Int.le_of_dvd one_pos this
+    omega
+  obtain ⟨m, hm⟩ := h ↑hu.unit⁻¹
+  have hmul : (1 + p : ℤ) * m = 1 :=
+    Int.cast_injective (α := ℤ_[p]) <| by rw [Int.cast_mul, hm, IsUnit.mul_val_inv, Int.cast_one]
+  rcases Int.eq_one_or_neg_one_of_mul_eq_one hmul with h1 | h1 <;> omega
 
 /-- `2` is not a unit in `ℤ_2`. -/
 theorem not_isUnit_two : ¬IsUnit (2 : ℤ_[2]) := by

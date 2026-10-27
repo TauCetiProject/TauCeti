@@ -17,6 +17,8 @@ A sum of squares of independent unit-variance real Gaussians has noncentral chi-
 Its degree is the number of coordinates and its noncentrality is the sum of squared means.
 Equivalently, the squared norm of a Gaussian vector with identity covariance has noncentrality
 equal to the squared norm of its mean. The empty coordinate type gives the point mass at zero.
+In one dimension, the square of a unit-variance Gaussian with mean `m` has degree one and
+noncentrality `m ^ 2`.
 
 The identification uses the Gaussian-square moment-generating function and
 `TauCeti.Measure.ext_of_mgf`. The product-law equality also yields the construction for an
@@ -68,6 +70,19 @@ theorem map_sum_sq_pi_gaussianReal_noncentral (m : ι → ℝ) :
     Finset.sum_div, Finset.sum_mul]
   congr 2
   ring
+
+/-- The square of a unit-variance real Gaussian with mean `m` has noncentral chi-squared law with
+degree one and noncentrality `m ^ 2`. -/
+theorem gaussianReal_map_sq_noncentral (m : ℝ) :
+    (gaussianReal m 1).map (fun x : ℝ ↦ x ^ 2) = noncentralChiSquaredMeasure 1 (‖m‖₊ ^ 2) := by
+  have hf : (fun x : ℝ ↦ x ^ 2) ∘ MeasurableEquiv.funUnique Unit ℝ =
+      fun x ↦ ∑ i, x i ^ 2 := by
+    funext x
+    simp
+  rw [← (measurePreserving_funUnique (gaussianReal m 1) Unit).map_eq,
+    Measure.map_map (by fun_prop) (MeasurableEquiv.measurable _), hf,
+    map_sum_sq_pi_gaussianReal_noncentral fun _ : Unit ↦ m]
+  simp
 
 /-- The squared norm of an identity-covariance Gaussian has noncentral chi-squared law with
 noncentrality the squared norm of its mean. Dimension zero is included. -/

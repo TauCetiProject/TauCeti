@@ -23,6 +23,12 @@ The square root of a natural power of a nonnegative real is the real power with 
 `√(x ^ n) = x ^ (n / 2)`. This is the form in which a determinant `det (c • G) = c ^ n det G` of
 an `n × n` matrix contributes to a volume density `√(det G)`.
 
+A real power of a nonnegative base can also be written as a power of its square:
+`(x ^ 2) ^ (s / 2) = x ^ s`.
+
+For `i < d`, comparing the `(d - i)`-th root `x ^ (1 / (d - i))` with `y` is comparing `x` with
+the natural power `y ^ (d - i)`, the form in which spectral values of polynomials are bounded.
+
 A natural power `b ^ n` with `1 ≤ b` and `n ≤ δ r` is at most `(b ^ δ) ^ r`, which turns a degree
 bound with a real factor `δ` into a bound by an `r`-th power.
 
@@ -42,6 +48,9 @@ A positive real raised to a finitely supported sum of exponents is the product o
 * `Real.rpow_eventuallyEq_exp_mul_log`: `x ^ q = exp (q * log x)` eventually along a filter on
   which `x` is eventually positive.
 * `Real.sqrt_pow_eq_rpow`: `√(x ^ n) = x ^ (n / 2)` for `0 ≤ x`.
+* `Real.sq_rpow_div_two`: `(x ^ 2) ^ (s / 2) = x ^ s` for `0 ≤ x`.
+* `Real.rpow_one_div_natCast_sub_le_iff`: `x ^ (1 / (d - i)) ≤ y ↔ x ≤ y ^ (d - i)` for `i < d`
+  and nonnegative `x`, `y`.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
@@ -74,6 +83,18 @@ theorem rpow_eventuallyEq_exp_mul_log {l : Filter ℝ} (hpos : ∀ᶠ x in l, 0 
 exponent: `√(x ^ n) = x ^ (n / 2)`. -/
 theorem sqrt_pow_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) : √(x ^ n) = x ^ ((n : ℝ) / 2) := by
   rw [sqrt_eq_rpow, ← rpow_natCast, ← rpow_mul hx, mul_one_div]
+
+/-- For a nonnegative real number `a`, taking the real power `s / 2` of `a ^ 2` gives `a ^ s`. -/
+@[simp]
+theorem sq_rpow_div_two {a : ℝ} (ha : 0 ≤ a) (s : ℝ) : (a ^ 2) ^ (s / 2) = a ^ s := by
+  rw [rpow_div_two_eq_sqrt s (sq_nonneg a), sqrt_sq ha]
+
+/-- For `i < d`, the `(d - i)`-th root of a nonnegative `x` is at most a nonnegative `y` exactly
+when `x ≤ y ^ (d - i)`. -/
+theorem rpow_one_div_natCast_sub_le_iff {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) {d i : ℕ}
+    (h : i < d) : x ^ (1 / (d - i : ℝ)) ≤ y ↔ x ≤ y ^ (d - i) := by
+  rw [← Nat.cast_sub h.le, one_div,
+    rpow_inv_le_iff_of_pos hx hy (by exact_mod_cast Nat.sub_pos_of_lt h), rpow_natCast]
 
 /-- A natural power `b ^ n` with `1 ≤ b` and `n ≤ δ r` is at most `(b ^ δ) ^ r`. This converts a
 degree bound `n ≤ δ r` with a real factor `δ` into a bound by an `r`-th power. -/

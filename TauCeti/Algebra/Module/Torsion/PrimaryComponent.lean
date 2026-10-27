@@ -114,13 +114,13 @@ theorem map_pPowerTorsion_of_exact {N P : Type*} [AddCommMonoid N] [Module A N]
 
 section Exact
 
-variable {Z M N P : Type*} [AddCommMonoid Z] [Module A Z] [AddCommGroup M] [Module A M]
-  [AddCommMonoid P] [Module A P]
+variable {Z M N P : Type*} [AddCommMonoid Z] [Module A Z] [AddCommMonoid P] [Module A P]
 
 /-- **The `p`-power torsion is injective along an exact sequence** `Z → M → N` whose first term is
 torsion and has no `p`-power torsion, for `p` prime: the map `M → N` is injective on the `p`-power
 torsion of `M`. -/
-theorem injOn_pPowerTorsion_of_exact [AddCommMonoid N] [Module A N] [Fact p.Prime]
+theorem injOn_pPowerTorsion_of_exact [AddCommGroup M] [Module A M]
+    [AddCommMonoid N] [Module A N] [Fact p.Prime]
     {ψ : Z →ₗ[A] M} {φ : M →ₗ[A] N}
     (hψφ : Function.Exact ψ φ) (hZt : IsAddTorsion Z) (hZ : pPowerTorsion p A Z = ⊥) :
     Set.InjOn φ (pPowerTorsion p A M) := by
@@ -145,8 +145,10 @@ theorem injOn_pPowerTorsion_of_exact [AddCommMonoid N] [Module A N] [Fact p.Prim
 
 /-- **The `p`-power torsion is surjective along an exact sequence** `M → N → P` whose first term is
 torsion and whose last term has no `p`-power torsion, for `p` prime: every `p`-power torsion
-element of `N` is the image of a `p`-power torsion element of `M`. -/
-theorem surjOn_pPowerTorsion_of_exact [AddCommGroup N] [Module A N] [Fact p.Prime]
+element of `N` is the image of a `p`-power torsion element of `M`. All three modules may be
+additive commutative monoids. -/
+theorem surjOn_pPowerTorsion_of_exact [AddCommMonoid M] [Module A M]
+    [AddCommMonoid N] [Module A N] [Fact p.Prime]
     {φ : M →ₗ[A] N} {χ : N →ₗ[A] P}
     (hφχ : Function.Exact φ χ) (hMt : IsAddTorsion M) (hP : pPowerTorsion p A P = ⊥) :
     Set.SurjOn φ (pPowerTorsion p A M) (pPowerTorsion p A N) := by
