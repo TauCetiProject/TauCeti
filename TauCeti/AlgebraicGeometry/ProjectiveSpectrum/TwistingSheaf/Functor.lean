@@ -163,7 +163,7 @@ def comap : Γ(twistingSheaf 𝒜 n, U) →+ Γ(twistingSheaf ℬ n, V) where
 @[simp]
 theorem comap_apply (s : Γ(twistingSheaf 𝒜 n, U)) (y : V) :
     (comap f hf hUV s).1 y =
-      localizationsMap f hf y.1 (s.1 ⟨ProjectiveSpectrum.comap f hf y.1, hUV y.2⟩) :=
+      localizationsMap f hf y.1 (s.1 (⟨ProjectiveSpectrum.comap f hf y.1, hUV y.2⟩ : U)) :=
   (rfl)
 
 /-- The pullback of sections commutes with restriction. -/
@@ -191,10 +191,11 @@ theorem val_map_appLE_apply (a : Γ(Proj 𝒜, U)) (y : V) :
 
 /-- **The pullback of sections is linear over the map of structure sheaves.** -/
 theorem comap_smul (a : Γ(Proj 𝒜, U)) (s : Γ(twistingSheaf 𝒜 n, U)) :
-    comap f hf hUV (a • s) = (map f hf).appLE U V hUV a • comap f hf hUV s :=
-  ext fun _ ↦ ((comap_apply ..).trans <| (congrArg _ (smul_apply ..)).trans (map_mul ..)).trans <|
-    (congrArg₂ (· * ·) (val_map_appLE_apply ..).symm (comap_apply ..).symm).trans
-      (smul_apply ..).symm
+    comap f hf hUV (a • s) = (map f hf).appLE U V hUV a • comap f hf hUV s := by
+  refine ext fun (y : V) ↦ ?_
+  simp only [comap_apply, smul_apply, map_mul, val_map_appLE_apply]
+  -- The two sides differ only in which `Opens` type the point `f⁻¹ y` is ascribed to.
+  rfl
 
 /-- The pullback of a fraction `r / s` is the fraction `f r / f s`. -/
 @[simp]
@@ -202,19 +203,17 @@ theorem comap_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ �
     (hU : U ≤ basicOpen 𝒜 s) :
     comap f hf hUV (const h r s hr hs U hU) =
       const h (f r) (f s) (Graded.map_mem f hr) (Graded.map_mem f hs) V
-        (hUV.trans fun _ hy ↦ hU hy) :=
-  ext fun y ↦ (comap_apply ..).trans <| (congrArg _ (const_apply ..)).trans <|
-    (localizationsMap_mk ..).trans
-      (const_apply h (f r) (f s) (Graded.map_mem f hr) (Graded.map_mem f hs)
-        (hUV.trans fun _ hy ↦ hU hy) y).symm
+        (hUV.trans fun _ hy ↦ hU hy) := by
+  refine ext fun (y : V) ↦ ?_
+  simp only [comap_apply, const_apply]
+  exact localizationsMap_mk ..
 
 /-- The pullback of sections is multiplicative. -/
 @[simp]
 theorem comap_mul {m : ℤ} (s : Γ(twistingSheaf 𝒜 m, U)) (t : Γ(twistingSheaf 𝒜 n, U)) :
-    comap f hf hUV (mul 𝒜 U m n s t) = mul ℬ V m n (comap f hf hUV s) (comap f hf hUV t) :=
-  ext fun _ ↦ (comap_apply ..).trans <| (congrArg _ (mul_apply ..)).trans <|
-    (map_mul ..).trans <| (congrArg₂ (· * ·) (comap_apply ..).symm (comap_apply ..).symm).trans
-      (mul_apply (comap f hf hUV s) (comap f hf hUV t) _).symm
+    comap f hf hUV (mul 𝒜 U m n s t) = mul ℬ V m n (comap f hf hUV s) (comap f hf hUV t) := by
+  refine ext fun (y : V) ↦ ?_
+  simp only [comap_apply, mul_apply, map_mul]
 
 end twistingSheaf
 
