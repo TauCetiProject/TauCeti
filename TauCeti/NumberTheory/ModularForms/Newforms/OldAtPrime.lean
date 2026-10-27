@@ -29,7 +29,8 @@ multiplicity one across unrelated levels.
 
 ## Main definitions
 
-* `TauCeti.cuspFormsOldAt N k q`: the `q`-old subspace of `S_k(Γ₁(N))`.
+* `TauCeti.cuspFormsOldAt N k q`: the `q`-old subspace of `S_k(Γ₁(N))`;
+  `TauCeti.cuspFormsOldAt_def` identifies it with `cuspFormsOldOf` for the condition `q * M ∣ N`.
 * `TauCeti.cuspFormsNewAt N k q`: the `q`-new subspace, its Petersson-orthogonal complement;
   `TauCeti.mem_cuspFormsNewAt_iff` tests it on the level-raises.
 
@@ -81,6 +82,11 @@ from level `N / q` (`cuspFormsOldAt_le_of_prime`). -/
 def cuspFormsOldAt (N : ℕ) [NeZero N] (k : ℤ) (q : ℕ) :
     Submodule ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
   cuspFormsOldOf N k (q * · ∣ N)
+
+/-- Defining equation for the sealed `cuspFormsOldAt`: it is `cuspFormsOldOf` for the levels `M`
+with `q * M ∣ N`. -/
+lemma cuspFormsOldAt_def (N : ℕ) [NeZero N] (k : ℤ) (q : ℕ) :
+    cuspFormsOldAt N k q = cuspFormsOldOf N k (q * · ∣ N) := (rfl)
 
 variable {M d N q : ℕ}
 
@@ -239,6 +245,7 @@ theorem frickeOperatorCusp_mem_cuspFormsNewAt_iff [NeZero N]
       frickeOperatorCusp k g ∈ cuspFormsNewAt N k q := by
     intro g hg
     have h := normalizedFrickeOperatorCusp_mem_peterssonOrthogonal (fun x hx ↦ by
+      rw [cuspFormsOldAt_def] at hx ⊢
       rw [normalizedFrickeOperatorCusp_def, LinearMap.smul_apply]
       exact Submodule.smul_mem _ _ (frickeOperatorCusp_mem_cuspFormsOldOf hx))
       (cuspFormsNewAt_def N k q ▸ hg)
