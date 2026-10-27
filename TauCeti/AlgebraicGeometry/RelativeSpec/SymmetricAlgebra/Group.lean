@@ -167,15 +167,28 @@ lemma relativeSpecSymmetricAlgebraHomAddEquiv_add_eq_add_fst_snd :
   -- field of `AddMonObj.ofRepresentableBy`
   (relativeSpecSymmetricAlgebraRepresentableBy F).homEquiv'.apply_symm_apply _
 
+/-- The module map of a morphism `f` into `Spec_X (Sym F) ×_X Spec_X (Sym F)` followed by the
+addition morphism is the sum of the module maps of the two components of `f`. -/
+lemma relativeSpecSymmetricAlgebraHomAddEquiv_comp_add_eq_add_comp_fst_comp_snd {T : Over X}
+    (f : T ⟶ (MorphismProperty.Over.forget _ _ X).obj
+        ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F))) ⊗
+      (MorphismProperty.Over.forget _ _ X).obj
+        ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) :
+    relativeSpecSymmetricAlgebraHomAddEquiv F T (f ≫ σ) =
+      relativeSpecSymmetricAlgebraHomAddEquiv F T (f ≫ fst _ _) +
+        relativeSpecSymmetricAlgebraHomAddEquiv F T (f ≫ snd _ _) := by
+  simp only [relativeSpecSymmetricAlgebraHomAddEquiv_comp,
+    relativeSpecSymmetricAlgebraHomAddEquiv_add_eq_add_fst_snd, map_add]
+
 /-- **The additive group structure of `Spec_X (Sym F)` is commutative.** -/
 instance isCommAddMonObjRelativeSpecSymmetricAlgebra :
     IsCommAddMonObj ((MorphismProperty.Over.forget _ _ X).obj
       ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) where
   add_comm := (relativeSpecSymmetricAlgebraHomAddEquiv F _).injective (by
-    rw [relativeSpecSymmetricAlgebraHomAddEquiv_comp,
-      relativeSpecSymmetricAlgebraHomAddEquiv_add_eq_add_fst_snd, map_add,
-      ← relativeSpecSymmetricAlgebraHomAddEquiv_comp,
-      ← relativeSpecSymmetricAlgebraHomAddEquiv_comp, braiding_hom_fst, braiding_hom_snd, add_comm])
+    simp only [relativeSpecSymmetricAlgebraHomAddEquiv_comp_add_eq_add_comp_fst_comp_snd,
+      braiding_hom_fst, braiding_hom_snd,
+      relativeSpecSymmetricAlgebraHomAddEquiv_add_eq_add_fst_snd]
+    exact add_comm _ _)
 
 /-- The isomorphism `relativeSpecSymmetricAlgebraHomAddEquiv` is natural in the quasicoherent
 sheaf: composing with the relative-spectrum map of `Sym a` for `a : F' ⟶ F` corresponds to
@@ -201,14 +214,9 @@ instance isAddMonHom_relativeSpec_map {F' F : QuasicoherentSheaf X} (a : F' ⟶ 
       relativeSpecSymmetricAlgebraHomAddEquiv_zero_eq_zero, map_zero])
   add_hom := (relativeSpecSymmetricAlgebraHomAddEquiv F' _).injective (by
     -- both sides have module map `a ≫ φ₁ + a ≫ φ₂`, for `φᵢ` the module maps of the projections
-    rw [relativeSpecSymmetricAlgebraHomAddEquiv_comp_relativeSpec_map,
-      relativeSpecSymmetricAlgebraHomAddEquiv_comp,
-      relativeSpecSymmetricAlgebraHomAddEquiv_add_eq_add_fst_snd,
-      relativeSpecSymmetricAlgebraHomAddEquiv_add_eq_add_fst_snd, map_add, map_add,
-      ← relativeSpecSymmetricAlgebraHomAddEquiv_comp_relativeSpec_map,
-      ← relativeSpecSymmetricAlgebraHomAddEquiv_comp_relativeSpec_map,
-      ← relativeSpecSymmetricAlgebraHomAddEquiv_comp,
-      ← relativeSpecSymmetricAlgebraHomAddEquiv_comp, tensorHom_fst, tensorHom_snd])
+    simp only [relativeSpecSymmetricAlgebraHomAddEquiv_comp_add_eq_add_comp_fst_comp_snd,
+      tensorHom_fst, tensorHom_snd, relativeSpecSymmetricAlgebraHomAddEquiv_comp_relativeSpec_map,
+      relativeSpecSymmetricAlgebraHomAddEquiv_add_eq_add_fst_snd, map_add])
 
 variable (X) in
 /-- `F ↦ Spec_X (Sym F)` as a contravariant functor from quasicoherent sheaves on `X` to group
