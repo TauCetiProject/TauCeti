@@ -13,8 +13,8 @@ public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Transport
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 public import TauCeti.RingTheory.TensorProduct.Maps
-import Mathlib.Algebra.MvPolynomial.Coeff
 import TauCeti.Data.Nat.Choose.Basic
+import TauCeti.RingTheory.MvPolynomial.BinomialSupport
 
 /-!
 # Polynomial functions on a comodule
@@ -221,33 +221,6 @@ end Points
 /-! ### Binary forms with binomial support -/
 
 section Binomial
-
-/-- The monomial `xⁱ yʲ` lies in the span of the monomials of degree `d` with nonzero binomial
-coefficient exactly when `i + j = d` and `d choose i` is nonzero. -/
-private theorem X_pow_mul_X_pow_mem_restrictSupport_iff [Nontrivial R] {d i j : ℕ} :
-    (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j : MvPolynomial (Fin 2) R) ∈
-        MvPolynomial.restrictSupport R {m | m 0 + m 1 = d ∧ (d.choose (m 0) : R) ≠ 0} ↔
-      i + j = d ∧ (d.choose i : R) ≠ 0 := by
-  rw [MvPolynomial.X_pow_eq_monomial, MvPolynomial.X_pow_eq_monomial,
-    MvPolynomial.monomial_mul_monomial, MvPolynomial.monomial_mem_restrictSupport]
-  simp
-
-/-- A submodule contains the span of the monomials of degree `d` with nonzero binomial coefficient
-exactly when it contains each such monomial `xⁱ yʲ`. -/
-private theorem restrictSupport_binomial_le_iff {d : ℕ}
-    {p : Submodule R (MvPolynomial (Fin 2) R)} :
-    MvPolynomial.restrictSupport R {m | m 0 + m 1 = d ∧ (d.choose (m 0) : R) ≠ 0} ≤ p ↔
-      ∀ i j, i + j = d → (d.choose i : R) ≠ 0 →
-        (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j : MvPolynomial (Fin 2) R) ∈ p := by
-  rw [MvPolynomial.restrictSupport_eq_span, Submodule.span_le]
-  refine ⟨fun h i j hij hi ↦ ?_, ?_⟩
-  · have hm := h ⟨Finsupp.single 0 i + Finsupp.single 1 j, by simpa using ⟨hij, hi⟩, rfl⟩
-    simp only [SetLike.mem_coe, MvPolynomial.monomial_fin_two, map_one, one_mul,
-      Finsupp.add_apply, Finsupp.single_eq_same, Finsupp.single_eq_of_ne zero_ne_one,
-      Finsupp.single_eq_of_ne one_ne_zero, add_zero, zero_add] at hm
-    exact hm
-  · rintro h _ ⟨m, ⟨hmd, hm⟩, rfl⟩
-    simpa [MvPolynomial.monomial_fin_two] using h _ _ hmd hm
 
 variable [NoZeroDivisors R]
 
