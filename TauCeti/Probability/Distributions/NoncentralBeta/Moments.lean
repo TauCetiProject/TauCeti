@@ -171,8 +171,7 @@ theorem integrable_exp_mul_noncentralBetaMeasure
     (hX : HasLaw X (TauCeti.Probability.noncentralBetaMeasure a b l) P) (t : ℝ) :
     Integrable (fun ω ↦ exp (t * X ω)) P := by
   refine hX.integrable_fun_comp (f := fun x : ℝ ↦ exp (t * x)) ?_
-  have ht : t ∈ integrableExpSet id (TauCeti.Probability.noncentralBetaMeasure a b l) := by
-    simp
-  exact ht
+  exact integrable_exp_mul_of_mem_Icc measurable_id.aemeasurable
+    (TauCeti.Probability.ae_mem_Icc_noncentralBetaMeasure a b l)
 
 end ProbabilityTheory.HasLaw
