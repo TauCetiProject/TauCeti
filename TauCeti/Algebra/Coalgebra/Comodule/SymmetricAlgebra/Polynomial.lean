@@ -232,6 +232,23 @@ private theorem X_pow_mul_X_pow_mem_restrictSupport_iff [Nontrivial R] {d i j : 
     MvPolynomial.monomial_mul_monomial, MvPolynomial.monomial_mem_restrictSupport]
   simp
 
+/-- A submodule contains the span of the monomials of degree `d` with nonzero binomial coefficient
+exactly when it contains each such monomial `xⁱ yʲ`. -/
+private theorem restrictSupport_binomial_le_iff {d : ℕ}
+    {p : Submodule R (MvPolynomial (Fin 2) R)} :
+    MvPolynomial.restrictSupport R {m | m 0 + m 1 = d ∧ (d.choose (m 0) : R) ≠ 0} ≤ p ↔
+      ∀ i j, i + j = d → (d.choose i : R) ≠ 0 →
+        (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j : MvPolynomial (Fin 2) R) ∈ p := by
+  rw [MvPolynomial.restrictSupport_eq_span, Submodule.span_le]
+  refine ⟨fun h i j hij hi ↦ ?_, ?_⟩
+  · have hm := h ⟨Finsupp.single 0 i + Finsupp.single 1 j, by simpa using ⟨hij, hi⟩, rfl⟩
+    simp only [SetLike.mem_coe, MvPolynomial.monomial_fin_two, map_one, one_mul,
+      Finsupp.add_apply, Finsupp.single_eq_same, Finsupp.single_eq_of_ne zero_ne_one,
+      Finsupp.single_eq_of_ne one_ne_zero, add_zero, zero_add] at hm
+    exact hm
+  · rintro h _ ⟨m, ⟨hmd, hm⟩, rfl⟩
+    simpa [MvPolynomial.monomial_fin_two] using h _ _ hmd hm
+
 variable [NoZeroDivisors R]
 
 /-- The coaction sends a monomial `xⁱ yʲ` with nonzero `(i + j) choose i` into the tensor
@@ -301,12 +318,9 @@ noncomputable def polynomialBinomialSubcomodule (b : Basis (Fin 2) R V) (d : ℕ
       intro f hf
       rw [polynomial_coact]
       exact h hf
-    refine (MvPolynomial.restrictSupport_eq_span R _).trans_le (Submodule.span_le.mpr ?_)
-    rintro _ ⟨m, ⟨hm, hmd⟩, rfl⟩
-    beta_reduce
-    rw [SetLike.mem_coe, Submodule.mem_comap, AlgHom.toLinearMap_apply,
-      MvPolynomial.monomial_fin_two, map_one, one_mul]
-    exact polynomialCoact_X_pow_mul_X_pow_mem b hm hmd
+    refine restrictSupport_binomial_le_iff.mpr fun i j hij hi ↦ ?_
+    rw [Submodule.mem_comap, AlgHom.toLinearMap_apply]
+    exact polynomialCoact_X_pow_mul_X_pow_mem b hij hi
 
 /-- The underlying submodule of the binomial span is spanned by its monomials. -/
 @[simp]
@@ -337,6 +351,18 @@ theorem X_pow_mul_X_pow_mem_polynomialBinomialSubcomodule_iff [Nontrivial R]
   let _ := polynomial H b
   rw [← Subcomodule.mem_toSubmodule, polynomialBinomialSubcomodule_toSubmodule]
   exact X_pow_mul_X_pow_mem_restrictSupport_iff
+
+/-- A submodule contains the binomial span of degree `d` exactly when it contains each monomial
+`xⁱ yʲ` with `i + j = d` and nonzero binomial coefficient `d choose i`. -/
+theorem polynomialBinomialSubcomodule_toSubmodule_le_iff (b : Basis (Fin 2) R V) {d : ℕ}
+    {p : Submodule R (MvPolynomial (Fin 2) R)} :
+    letI := polynomial H b
+    (polynomialBinomialSubcomodule H b d).toSubmodule ≤ p ↔
+      ∀ i j, i + j = d → (d.choose i : R) ≠ 0 →
+        (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j : MvPolynomial (Fin 2) R) ∈ p := by
+  let _ := polynomial H b
+  rw [polynomialBinomialSubcomodule_toSubmodule]
+  exact restrictSupport_binomial_le_iff
 
 /-- The binomial span consists of homogeneous polynomials of degree `d`. -/
 theorem polynomialBinomialSubcomodule_le_polynomialHomogeneousSubcomodule

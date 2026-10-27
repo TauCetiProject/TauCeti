@@ -604,15 +604,12 @@ theorem binaryFormsSocle_le_of_X_one_pow_mem
     simpa using h
   -- It suffices to check the spanning monomials of the socle.
   rw [← Subcomodule.toSubmodule_le_toSubmodule, binaryFormsSocle,
-    Comodule.polynomialBinomialSubcomodule_toSubmodule, MvPolynomial.restrictSupport_eq_span,
-    Submodule.span_le]
-  rintro _ ⟨m, ⟨hmd, hm₀⟩, rfl⟩
-  beta_reduce
-  rw [SetLike.mem_coe, Subcomodule.mem_toSubmodule, MvPolynomial.monomial_fin_two, map_one,
-    one_mul]
-  have hmem := SMulMemClass.smul_mem (d.choose (m 0) : k)⁻¹
-    (choose_smul_X_pow_add_mul_X_pow_sub_mem W hy (m 0))
-  rwa [smul_smul, inv_mul_cancel₀ hm₀, one_smul, zero_add, ← hmd, Nat.add_sub_cancel_left]
+    Comodule.polynomialBinomialSubcomodule_toSubmodule_le_iff]
+  intro i j hij hi
+  rw [Subcomodule.mem_toSubmodule]
+  have hmem := SMulMemClass.smul_mem (d.choose i : k)⁻¹
+    (choose_smul_X_pow_add_mul_X_pow_sub_mem W hy i)
+  rwa [smul_smul, inv_mul_cancel₀ hi, one_smul, zero_add, ← hij, Nat.add_sub_cancel_left]
     at hmem
 
 /-- **The socle lies in every nonzero subrepresentation of the binary forms of degree `d`**, over
