@@ -8,9 +8,11 @@ module
 public import Mathlib.RingTheory.Ideal.Height
 public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
+public import TauCeti.Topology.KrullDimension.Local
 public import TauCeti.Topology.PureDimension
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import TauCeti.RingTheory.Catenary
+import TauCeti.Topology.KrullDimension.ClosedCover
 
 /-!
 # Krull dimension and heights under quotients
@@ -41,6 +43,11 @@ The spectrum of a ring is pure-dimensional of dimension `d` exactly when every q
 minimal prime has Krull dimension `d`: the irreducible components are the closed subsets `V(P)`
 for minimal primes `P`. This gives a componentwise criterion using only quotient dimensions.
 
+In a noetherian ring `R`, a point `p` of `Spec R` has an open neighbourhood avoiding the finitely
+many irreducible components `V(q)` not through `p`. That neighbourhood is covered by the closed
+sets `V(q)` with `q ≤ p`, so the local Krull dimension of `Spec R` at `p` is at most the largest
+`dim (R ⧸ q)` over the minimal primes `q ≤ p`.
+
 ## Main results
 
 * `Ideal.topologicalKrullDim_zeroLocus`: the closed subset `V(I)` of `Spec R` has the Krull
@@ -64,6 +71,9 @@ for minimal primes `P`. This gives a componentwise criterion using only quotient
   height of its image modulo some minimal prime `q ≤ p`.
 * `PrimeSpectrum.coheight_eq_ringKrullDim_quotient`: the coheight of a point `p` of `Spec R` is the
   Krull dimension of `R ⧸ p`.
+* `PrimeSpectrum.topologicalKrullDimAt_le_iSup_ringKrullDim_quotient`: in a noetherian ring, the
+  local Krull dimension of `Spec R` at `p` is at most the supremum of `dim (R ⧸ q)` over the
+  minimal primes `q ≤ p`.
 * `Ideal.height_add_ringKrullDim_quotient_le`: `ht p + dim (R ⧸ p) ≤ dim R` for a prime `p`.
 -/
 
@@ -292,6 +302,41 @@ theorem coheight_eq_ringKrullDim_quotient (p : PrimeSpectrum R) :
     ext x
     rw [Set.mem_Ici, mem_zeroLocus, SetLike.coe_subset_coe, asIdeal_le_asIdeal]
   rw [Order.coheight_eq_krullDim_Ici, ringKrullDim_quotient, this]
+
+open Topology TauCeti in
+/-- In a noetherian ring `R`, the local Krull dimension of `Spec R` at a point `p` is at most the
+largest Krull dimension `dim (R ⧸ q)` of an irreducible component `V(q)` of `Spec R` through `p`. -/
+theorem topologicalKrullDimAt_le_iSup_ringKrullDim_quotient [IsNoetherianRing R]
+    (p : PrimeSpectrum R) :
+    topologicalKrullDimAt (PrimeSpectrum R) p ≤
+      ⨆ (q : Ideal R) (_ : q ∈ minimalPrimes R) (_ : q ≤ p.asIdeal), ringKrullDim (R ⧸ q) := by
+  -- The open neighbourhood `U` of `p` avoiding the finitely many components `V(q)` not through
+  -- `p` is covered by the components `V(q)` through `p`.
+  let S := {q ∈ minimalPrimes R | ¬q ≤ p.asIdeal}
+  have hS : S.Finite := (minimalPrimes.finite_of_isNoetherianRing R).subset (Set.sep_subset _ _)
+  let U : Set (PrimeSpectrum R) := (⋃ q ∈ S, zeroLocus (q : Set R))ᶜ
+  have hU : IsOpen U := (hS.isClosed_biUnion fun _ _ ↦ isClosed_zeroLocus _).isOpen_compl
+  have hpU : p ∈ U := by
+    simp only [U, S, Set.mem_compl_iff, Set.mem_iUnion, mem_zeroLocus, SetLike.coe_subset_coe]
+    exact fun ⟨q, ⟨_, h⟩, h'⟩ ↦ h h'
+  let T := {q ∈ minimalPrimes R | q ≤ p.asIdeal}
+  have : Finite T :=
+    ((minimalPrimes.finite_of_isNoetherianRing R).subset (Set.sep_subset _ _)).to_subtype
+  refine (topologicalKrullDimAt_le_of_isOpen hU hpU).trans ?_
+  rw [topologicalKrullDim_eq_iSup_of_isClosed
+    (fun q : T ↦ (Subtype.val ⁻¹' zeroLocus (q.1 : Set R) : Set U))
+    (fun q ↦ (isClosed_zeroLocus _).preimage continuous_subtype_val) ?_]
+  · refine iSup_le fun q ↦ ?_
+    rw [IsEmbedding.subtypeVal.topologicalKrullDim_preimage, Subtype.range_coe]
+    refine (IsEmbedding.inclusion Set.inter_subset_left).isInducing.topologicalKrullDim_le.trans
+      ?_
+    rw [Ideal.topologicalKrullDim_zeroLocus]
+    exact le_iSup₂_of_le q.1 q.2.1 (le_iSup_of_le q.2.2 le_rfl)
+  · intro x
+    obtain ⟨q, hq, hqx⟩ := Ideal.exists_minimalPrimes_le (bot_le : ⊥ ≤ x.1.asIdeal)
+    refine ⟨⟨q, hq, ?_⟩, (mem_zeroLocus _ _).2 hqx⟩
+    by_contra h
+    exact x.2 (Set.mem_biUnion (x := q) ⟨hq, h⟩ ((mem_zeroLocus _ _).2 hqx))
 
 end PrimeSpectrum
 
