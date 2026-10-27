@@ -22,6 +22,7 @@ composite `𝔾ₘ → D(X) → G`. On points it sends a unit `u` to the image i
 
 * `BialgHom.cocharacter`: the cocharacter `𝔾ₘ → D(X) → G` of a cocharacter of `D(X)`, with
   point formula `BialgHom.pointsHom_cocharacter`.
+* `BialgHom.ker_le_ker_cocharacter`: the cocharacter kills the functions vanishing on `D(X)`.
 * `BialgHom.pointsHom_cocharacter_mul` and `BialgHom.cocharacter_pow`: products and powers of
   cocharacters of `D(X)`.
 
@@ -58,6 +59,14 @@ theorem toMultiplicativeBialgEquiv_comp_cocharacter (ψ : X →* Multiplicative 
       (MonoidAlgebra.mapDomainBialgHom R ψ).comp π := by
   ext h
   simp [cocharacter]
+
+/-- The cocharacter of `ψ` factors through `D(X)`, so it kills every function vanishing on
+`D(X)`. -/
+theorem ker_le_ker_cocharacter (ψ : X →* Multiplicative ℤ) :
+    RingHom.ker π.toAlgHom.toRingHom ≤ RingHom.ker (π.cocharacter ψ).toAlgHom.toRingHom := by
+  intro h hh
+  rw [RingHom.mem_ker] at hh ⊢
+  simp_all [cocharacter]
 
 /-! ### Points -/
 

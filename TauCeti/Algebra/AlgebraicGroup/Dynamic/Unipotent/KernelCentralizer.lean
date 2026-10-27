@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.ClosedImmersion.Unipotent
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Diagonalizable
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.KernelCentralizer
+import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Smooth
 import TauCeti.Order.CompactlyGenerated
 import TauCeti.Order.CompleteLattice.Basic
 
@@ -20,10 +22,13 @@ cocharacter `ψ` of `T`, with image `λ` in `G`, this file defines the closed su
 `U_G(λ) ∩ Z_G(ker α)`
 
 of points of the centralizer of `ker α` which are contracted to the identity by conjugation with
-`λ(t)` as `t → 0`. Classically, since `Z_G(ker α)` is closed and contains `λ`, these are the points
-of the dynamic unipotent subgroup `U_{Z_G(ker α)}(λ)` of the centralizer itself; when `G` is
-connected reductive over a field, `α` is a root and `⟨α, ψ⟩ > 0`, this is the root group `U_α`,
-and replacing `ψ` by `ψ⁻¹` gives `U_{-α}`. These identifications are not proved here.
+`λ(t)` as `t → 0`. Since `Z_G(ker α)` is closed and contains the image of `λ`, this is the dynamic
+unipotent subgroup `U_{Z_G(ker α)}(λ)` of the centralizer itself
+(`BialgHom.quotientSupUnipotentDefiningHopfIdealIso`). Consequently it is geometrically connected
+over a field, and smooth whenever `G` is smooth of finite type over a Noetherian ring, because the
+centralizer `Z_G(ker α)` then is. Classically, when `G` is connected reductive over a field, `α` is
+a root and `⟨α, ψ⟩ > 0`, this is the root group `U_α`, and replacing `ψ` by `ψ⁻¹` gives `U_{-α}`;
+that identification is not proved here.
 
 Its Lie algebra is computed from the weight decomposition `𝔤 = ⨁ χ, 𝔤_χ` of `Lie G` under `T`.
 The Lie algebra of `Z_G(ker α)` is `⨆ n : ℤ, 𝔤_{nα}` and that of `U_G(λ)` is the sum of the
@@ -35,9 +40,9 @@ In particular this is `⨆ n > 0, 𝔤_{nα}` whenever `⟨α, ψ⟩ > 0`, indep
 zero when `⟨α, ψ⟩ = 0`. For `⟨α, ψ⟩ ≠ 0` the weights `nα` split by the sign of `n * ⟨α, ψ⟩`, so
 the Lie algebras of `U_G(λ) ∩ Z_G(ker α)`, of `Z_G(T)` and of `U_G(λ⁻¹) ∩ Z_G(ker α)` span the Lie
 algebra of `Z_G(ker α)`: this is the tangent form of the open cell `U_{-α} × Z_G(T) × U_α` in the
-rank-one centralizer. Nothing here assumes a field, smoothness, reductivity, or that `α` is a
-root; the Lie-algebra statements assume only that the augmentation cotangent module of `H` is
-finite projective.
+rank-one centralizer. Apart from the smoothness and connectedness statements, nothing here
+assumes a field, smoothness, reductivity, or that `α` is a root; the Lie-algebra statements
+assume only that the augmentation cotangent module of `H` is finite projective.
 
 ## Main declarations
 
@@ -46,6 +51,12 @@ finite projective.
 * `TauCeti.SplitMaximalTorus.centralizerKerHopfIdeal_le_unipotentCentralizerKerHopfIdeal` and
   `TauCeti.SplitMaximalTorus.unipotentDefiningHopfIdeal_le_unipotentCentralizerKerHopfIdeal`: it
   lies in `Z_G(ker α)` and in `U_G(λ)`.
+* `TauCeti.SplitMaximalTorus.centralizerKerHopfIdeal_toIdeal_le_ker_cocharacter`: `λ` factors
+  through `Z_G(ker α)`.
+* `SplitMaximalTorus.smoothCommHopfAlgProperty_quotient_unipotentCentralizerKerHopfIdeal`: it is
+  smooth when `G` is.
+* `geometricallyConnectedCommHopfAlgProperty_quotient_unipotentCentralizerKerHopfIdeal`: over a
+  field it is geometrically connected.
 * `TauCeti.SplitMaximalTorus.lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule`: its Lie
   algebra is `⨆ (n : ℤ) (_ : 0 < n * ⟨α, ψ⟩), 𝔤_{nα}`.
 * `SplitMaximalTorus.lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule_of_pairing_pos`:
@@ -112,6 +123,50 @@ theorem unipotentCentralizerKerHopfIdeal_neg (T : SplitMaximalTorus R H r)
     T.unipotentCentralizerKerHopfIdeal (-α) ψ = T.unipotentCentralizerKerHopfIdeal α ψ := by
   rw [unipotentCentralizerKerHopfIdeal_def, unipotentCentralizerKerHopfIdeal_def,
     centralizerKerHopfIdeal_neg]
+
+/-! ### Smoothness and connectedness -/
+
+/-- **`λ` factors through `Z_G(ker α)`**: the cocharacter kills the equations of the centralizer,
+since it factors through the split maximal torus, which centralizes `ker α`. So `λ` descends to a
+cocharacter of `Z_G(ker α)`, whose dynamic unipotent subgroup is `U_G(λ) ∩ Z_G(ker α)`
+(`BialgHom.quotientSupUnipotentDefiningHopfIdealIso`). -/
+theorem centralizerKerHopfIdeal_toIdeal_le_ker_cocharacter (T : SplitMaximalTorus R H r)
+    (α : ULift.{u} (Fin r) →₀ ℤ)
+    (ψ : Multiplicative (ULift.{u} (Fin r) →₀ ℤ) →* Multiplicative ℤ) :
+    (T.centralizerKerHopfIdeal α).toIdeal ≤
+      RingHom.ker (T.coordinateMap.hom.cocharacter ψ).toAlgHom.toRingHom := by
+  intro x hx
+  refine T.coordinateMap.hom.ker_le_ker_cocharacter ψ (RingHom.mem_ker.mpr ?_)
+  exact (T.mem_definingIdeal x).1 <|
+    T.centralizerKerHopfIdeal_le_definingIdeal α (HopfIdeal.mem_toIdeal.mp hx)
+
+/-- **`U_G(λ) ∩ Z_G(ker α)` is smooth** when `G` is smooth of finite type over a Noetherian ring:
+it is the dynamic unipotent subgroup of the centralizer `Z_G(ker α)`, which is then smooth. -/
+theorem smoothCommHopfAlgProperty_quotient_unipotentCentralizerKerHopfIdeal [IsNoetherianRing R]
+    [Algebra.Smooth R H] (T : SplitMaximalTorus R H r) (α : ULift.{u} (Fin r) →₀ ℤ)
+    (ψ : Multiplicative (ULift.{u} (Fin r) →₀ ℤ) →* Multiplicative ℤ) :
+    smoothCommHopfAlgProperty R
+      (CommHopfAlgCat.quotient H (T.unipotentCentralizerKerHopfIdeal α ψ)) := by
+  have hZ : smoothCommHopfAlgProperty R
+      (CommHopfAlgCat.quotient H (T.centralizerKerHopfIdeal α)) := by
+    rw [centralizerKerHopfIdeal_def]
+    exact BialgHom.smoothCommHopfAlgProperty_quotient_centralizerHopfIdeal
+      (H := FiniteTypeCommHopfAlgCat.of R H) (T.kerCoordinateMap α)
+  rw [unipotentCentralizerKerHopfIdeal_def]
+  exact BialgHom.smoothCommHopfAlgProperty_quotient_sup_unipotentDefiningHopfIdeal
+    (T.centralizerKerHopfIdeal_toIdeal_le_ker_cocharacter α ψ) hZ
+
+/-- **`U_G(λ) ∩ Z_G(ker α)` is geometrically connected** over a field, with no smoothness
+assumption on `G`: it is the dynamic unipotent subgroup of the centralizer `Z_G(ker α)`. -/
+theorem geometricallyConnectedCommHopfAlgProperty_quotient_unipotentCentralizerKerHopfIdeal
+    {k : Type u} [Field k] {H : CommHopfAlgCat.{u} k} [Algebra.FiniteType k H]
+    (T : SplitMaximalTorus k H r) (α : ULift.{u} (Fin r) →₀ ℤ)
+    (ψ : Multiplicative (ULift.{u} (Fin r) →₀ ℤ) →* Multiplicative ℤ) :
+    geometricallyConnectedCommHopfAlgProperty k
+      (CommHopfAlgCat.quotient H (T.unipotentCentralizerKerHopfIdeal α ψ)) := by
+  rw [unipotentCentralizerKerHopfIdeal_def]
+  exact BialgHom.geometricallyConnectedCommHopfAlgProperty_quotient_sup_unipotentDefiningHopfIdeal
+    (T.centralizerKerHopfIdeal_toIdeal_le_ker_cocharacter α ψ)
 
 /-! ### Lie algebras -/
 
