@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Fourier.L2Multiplier
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
-public import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
