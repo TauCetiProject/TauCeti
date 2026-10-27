@@ -59,9 +59,9 @@ first statement does not extend to `|c| < 1`.
 
 ## Source note
 
-The statements and proofs of this file adapt the earlier, unmerged Tau Ceti formalization in
+The statements and proofs of this file adapt the Tau Ceti formalization in
 [TauCeti PR #20860](https://github.com/TauCetiProject/TauCeti/pull/20860) by
-@tauceti-ai-for-science, ported here to current `main`.
+@tauceti-ai-for-science.
 -/
 
 public section
