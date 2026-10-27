@@ -94,9 +94,6 @@ theorem isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalI
   set 𝔪 := (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)
   set B := Localization.AtPrime 𝔪
   set ι := algebraMap (MvPolynomial (Fin 2) R) B
-  have hmem (p : MvPolynomial (Fin 2) R) (hp : constantCoeff p ∈ maximalIdeal R) :
-      ι p ∈ maximalIdeal B :=
-    (IsLocalization.AtPrime.to_map_mem_maximal_iff B 𝔪 p).mpr hp
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · -- `xy - 1` is a unit of `B`, so the quotient is the zero ring
     have hu : IsUnit (ι (X 0 * X 1 - C π ^ 0)) :=
@@ -104,11 +101,9 @@ theorem isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalI
     simp only [zero_ne_one, iff_false]
     intro h
     exact Ideal.Quotient.nontrivial_iff.mp inferInstance (span_singleton_eq_top.mpr hu)
-  have hC : ι (C π) ∈ maximalIdeal B := hmem _ (by simpa using hπ)
-  have hX (i : Fin 2) : ι (X i) ∈ maximalIdeal B := hmem _ (by simp)
   have hfm : ι (X 0 * X 1 - C π ^ n) ∈ maximalIdeal B := by
-    rw [map_sub, map_mul, map_pow]
-    exact sub_mem (mul_mem_right _ _ (hX 0)) (pow_mem_of_mem _ hC n hn)
+    rw [← C_pow]
+    exact algebraMap_X_mul_X_sub_C_pow_mem_maximalIdeal hπ hn.ne'
   have hf0 : ι (X 0 * X 1 - C π ^ n) ≠ 0 := by
     rw [Ne, IsLocalization.to_map_eq_zero_iff B (primeCompl_le_nonZeroDivisors 𝔪)]
     intro h
@@ -121,10 +116,8 @@ theorem isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalI
   · -- for `n ≥ 2` both `xy` and `πⁿ` lie in the square of the maximal ideal
     by_contra hn1
     refine h ?_
-    obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := ⟨n - 2, by omega⟩
-    rw [map_sub, map_mul, map_pow, pow_add, pow_two]
-    exact sub_mem (mul_mem_mul (hX 0) (hX 1))
-      (mul_mem_left _ _ (by rw [pow_two]; exact mul_mem_mul hC hC))
+    rw [← C_pow]
+    exact algebraMap_X_mul_X_sub_C_pow_mem_maximalIdeal_sq hπ (by omega)
   · -- for `n = 1` the constant coefficient `-π` of the equation does not lie in `𝔪_R²`
     rintro rfl
     exact algebraMap_notMem_maximalIdeal_sq (by simpa using hπ2)

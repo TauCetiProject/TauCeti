@@ -24,7 +24,9 @@ singularities over a local base.
 
 public section
 
-namespace MvPolynomial
+namespace TauCeti
+
+open MvPolynomial
 
 variable {R σ : Type*} [CommRing R] [IsNoetherianRing R] [Finite σ]
 
@@ -56,14 +58,12 @@ theorem _root_.Ideal.height_comap_mvPolynomial_constantCoeff (p : Ideal R) [p.Is
 
 /-- Adjoining polynomial coordinates and localizing at the closed origin raises local
 Krull dimension by the number of coordinates. -/
-theorem ringKrullDim_localization_comap_constantCoeff [IsLocalRing R] :
+theorem ringKrullDim_localization_comap_mvPolynomial_constantCoeff [IsLocalRing R] :
     ringKrullDim (Localization.AtPrime ((IsLocalRing.maximalIdeal R).comap
       (constantCoeff : MvPolynomial σ R →+* R))) = ringKrullDim R + Nat.card σ := by
   rw [IsLocalization.AtPrime.ringKrullDim_eq_height
       ((IsLocalRing.maximalIdeal R).comap (constantCoeff : MvPolynomial σ R →+* R)),
     Ideal.height_comap_mvPolynomial_constantCoeff, WithBot.coe_add,
-    IsLocalRing.maximalIdeal_height_eq_ringKrullDim]
-  -- The two natural-number casts into `WithBot ℕ∞` are definitionally equal.
-  rfl
+    IsLocalRing.maximalIdeal_height_eq_ringKrullDim, WithBot.coe_natCast]
 
-end MvPolynomial
+end TauCeti
