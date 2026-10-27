@@ -5,25 +5,32 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
+public import TauCeti.Algebra.Ring.NegOnePow
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.Twisted.Closure
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.WeightedTrace
 
 /-!
 # Supertraces on the formal twisted closure of zigzag projectives
 
-The diagonal trace on a summand shifted by an integer r is multiplied by r.negOnePow.
-Together with opposite vertex weights on selected edges this makes degree-one matrix
-composition anticyclic, hence kills the commutator differential of an arbitrary MC twist.
-The descended functional uses the existing canonical cohomology maps.
+A selected presentation by vertex projectives defines a degree-two supertrace on an actual
+finite formal twisted object over a commutative ring. Its vertex coefficients are arbitrary.
+Each diagonal summand has the sign of its formal integer shift.
 
-The corner calculation reuses `TauCeti.zigzagAlgebraTrace_weighted_mul_flip` from
-`TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.WeightedTrace`.
-The diagonal weighting transports this graded cyclicity to homogeneous DG cochains and
-MC matrix traces using `DGShiftClosure.dgHomEquiv_dgComp` and the differential formula in
-`TauCeti.CategoryTheory.DG.ShiftClosure.Basic`.
+Opposite coefficients at adjacent vertices occurring in the selected presentations give
+anticyclicity for degree-one compositions. For an endomorphism presentation, this condition
+makes the supertrace kill Maurer–Cartan boundaries and descend to canonical degree-two
+cohomology. The twisted differential itself need not vanish.
 
 This construction concerns the existing formal closure. It supplies neither perfectness nor
 the naturality or triangulated realization required for an all-object Serre identification.
+
+## References
+
+* The weighted-corner cyclicity formula is `TauCeti.zigzagAlgebraTrace_weighted_mul_flip` in
+  `TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.WeightedTrace`.
+* The formal-shift composition and differential conventions are
+  `DGShiftClosure.dgHomEquiv_dgComp` and `DGShiftClosure.dgHomEquiv_dgDifferential` in
+  `TauCeti.CategoryTheory.DG.ShiftClosure.Basic`.
 -/
 
 public section
@@ -73,32 +80,17 @@ private def diagonalHomEquiv (X : 𝒮) (i : V) (hX : X.obj.obj = D i) :
   (entryHomEquiv k G X X i i hX hX 2).trans
     ((dgHomComplex k (D i) (D i)).XIsoOfEq (by omega)).toLinearEquiv
 
-private theorem shiftComp_one_one (r s : ℤ) :
-    ((r - s) * (1 + (s - r))).negOnePow = 1 := by
-  rw [show (r - s) * (1 + (s - r)) =
-    -((s - r) + (s - r) * (s - r)) by ring]
-  rw [Int.negOnePow_neg, Int.negOnePow_add, Int.negOnePow_mul_self,
-    Int.units_mul_self]
-
-private theorem supertraceSign (r s : ℤ) :
-    r.negOnePow * ((1 + (s - r)) * (2 - (1 + (s - r)))).negOnePow =
-      -s.negOnePow := by
-  rw [show (1 + (s - r)) * (2 - (1 + (s - r))) =
-    2 * (1 + (s - r)) - (1 + (s - r)) * (1 + (s - r)) by ring]
-  rw [Int.negOnePow_sub, Int.negOnePow_two_mul, Int.negOnePow_mul_self, one_mul,
-    ← Int.negOnePow_add, show r + (1 + (s - r)) = s + 1 by ring,
-    Int.negOnePow_succ]
-
 private theorem diagonalHomEquiv_comp_one_one (X Y : 𝒮) (i j : V)
     (hX : X.obj.obj = D i) (hY : Y.obj.obj = D j)
     (f : DGHom k 1 X Y) (g : DGHom k 1 Y X) :
     diagonalHomEquiv k G X i hX (dgComp k f g rfl) =
       dgComp k (entryHomEquiv k G X Y i j hX hY 1 f)
         (entryHomEquiv k G Y X j i hY hX 1 g) (by omega) := by
+  have hsign := Int.negOnePow_mul_one_sub (X.shift - Y.shift)
+  rw [sub_sub_eq_add_sub, add_sub_assoc] at hsign
   simp only [diagonalHomEquiv, entryHomEquiv, LinearEquiv.trans_apply,
     Iso.toLinearEquiv_apply, ← castDeg_def, DGShiftClosure.dgHomEquiv_dgComp,
-    DGFullSubcategory.dgComp_eq,
-    shiftComp_one_one, one_smul]
+    DGFullSubcategory.dgComp_eq, hsign, one_smul]
   rw [homCongr_comp k G hX hY hX]
   simpa only [entryHomEquiv, LinearEquiv.trans_apply, castDeg_self] using
     (castDeg_dgComp k (p' := 1 + (Y.shift - X.shift))
@@ -154,7 +146,9 @@ private theorem shiftedVertexTrace_comp_one_one (c : V → k) (X Y : 𝒮) (i j 
     LinearEquiv.coe_coe]
   rw [diagonalHomEquiv_comp_one_one k G X Y i j hX hY f g,
     diagonalHomEquiv_comp_one_one k G Y X j i hY hX g f,
-    hcyc, smul_smul, supertraceSign]
+    hcyc, smul_smul, Int.negOnePow_mul_two_sub, ← Int.negOnePow_add]
+  rw [add_left_comm X.shift 1 (Y.shift - X.shift), ← add_sub_assoc,
+    add_sub_cancel_left, add_comm 1 Y.shift, Int.negOnePow_succ]
   simp only [Units.neg_smul]
 
 private def matrixTrace (c : V → k) (M : DGAdditiveClosure 𝒮)
@@ -188,7 +182,7 @@ private theorem shifted_dgDifferential_eq_zero (X Y : 𝒮) (i j : V)
     dgDifferential k n f = 0 := by
   apply (DGShiftClosure.dgHomEquiv k X Y (n + 1)).injective
   rw [DGShiftClosure.dgHomEquiv_dgDifferential, map_zero]
-  rw [show n + 1 + (Y.shift - X.shift) = (n + (Y.shift - X.shift)) + 1 by omega]
+  rw [add_right_comm n 1 (Y.shift - X.shift)]
   have hd := DGRightModuleCat.dgDifferential_eq_zero _ _
     (by rw [hX]) (by rw [hY]) (n + (Y.shift - X.shift))
     (DGShiftClosure.dgHomEquiv k X Y n f)
