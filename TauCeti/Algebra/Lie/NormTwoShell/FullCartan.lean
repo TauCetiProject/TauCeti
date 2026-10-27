@@ -127,7 +127,6 @@ variable {B : Matrix I I ℤ} {Y : Type*} [AddCommGroup Y]
 
 /-- The carrier `Y × (Φ →₀ ℤ)` of the signed Lie algebra of the norm-two shell `Φ` of `B` over the
 full Cartan lattice `Y` of `D`. The bracket is `Matrix.FullShellLieAlgebra.bracketBilin`. -/
-@[nolint unusedArguments]
 def FullShellLieAlgebra (_D : ShellCartanDatum B Y) : Type _ :=
   Y × (B.normTwoShell →₀ ℤ)
 
