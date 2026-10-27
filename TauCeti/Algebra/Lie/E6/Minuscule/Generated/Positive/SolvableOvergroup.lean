@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Adjoint.WeightSpace
 public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Positive.BorelCandidate
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E6.MinusculeWeight.Positive
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule.Quotient
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
 import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic
@@ -62,51 +63,18 @@ variable {k : Type u} [Field k]
 local notation "μ" => e6MinusculeWeight
 local notation "C₊" => posRootCone e6SimplyConnectedRootDatum e6SimplyConnectedBase
 
-private theorem quotient_rootSubgroup_point
-    (J : HopfIdeal k (GeneralLinear.coordinateHopfAlgebra k 27))
-    (hJ : J ≤ definingIdeal k) (i : Fin 6) (t : k) :
-    let f := CommHopfAlgCat.liftQuotient J (generatorCoordinateMap k (.inl (.inl i)))
-      (((le_definingIdeal_iff k J).mp hJ).1 i)
-    let q := (AdditiveGroup.gaPointsMulEquiv (R := k) (A := k)).symm
-      (Multiplicative.ofAdd t)
+private theorem rootPoint_matrix (i : Fin 6) (A : CommAlgCat.{u} k)
+    (p : HopfAlgebra.points (R := k) (H := AdditiveGroup.coordinateHopfAlgebra k) A) :
     GeneralLinear.pointToGeneralLinear 27
-        ((CommHopfAlgCat.mkQuotient
-          (GeneralLinear.coordinateHopfAlgebra k 27) J).mapPointsFunctor.app
-          (CommAlgCat.of k k) (f.mapPointsFunctor.app (CommAlgCat.of k k) q)) =
-      (rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd t) :
-        Matrix.GeneralLinearGroup (Fin 27) k) := by
-  let f := CommHopfAlgCat.liftQuotient J (generatorCoordinateMap k (.inl (.inl i)))
-    (((le_definingIdeal_iff k J).mp hJ).1 i)
-  let q := (AdditiveGroup.gaPointsMulEquiv (R := k) (A := k)).symm
-    (Multiplicative.ofAdd t)
-  dsimp only
-  -- The exposed point-functor application packages coordinate precomposition.
-  -- Folding this wrapper does not unfold the underlying point-map implementation.
-  have h : GeneralLinear.pointToGeneralLinear 27
-      ((coordinateMap k).mapPointsFunctor.app (CommAlgCat.of k k)
-        (toConv (q.ofConv.comp
-          (rootSubgroupToBaseChangeCoordinateMap k (.inl i)).hom.toAlgHom))) =
-      (rootSubgroupPoints (.inl i) k (AdditiveGroup.gaPointsMulEquiv q) :
-        Matrix.GeneralLinearGroup (Fin 27) k) :=
+        (toConv (p.ofConv.comp (generatorCoordinateMap k (.inl (.inl i))).hom.toAlgHom)) =
+      (rootSubgroupPoints (.inl i) A (AdditiveGroup.gaPointsMulEquiv p) :
+        Matrix.GeneralLinearGroup (Fin 27) A) := by
+  rw [generatorCoordinateMap_inl, ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap]
+  have h :=
     pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints
-      k (.inl i) (CommAlgCat.of k k) q
-  have hcomp' : f.hom.comp (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal) =
-      (rootSubgroupToBaseChangeCoordinateMap k (.inl i)).hom.comp (coordinateMap k).hom := by
-    calc
-      _ = (generatorCoordinateMap k (.inl (.inl i))).hom :=
-        Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom J.toIdeal _
-          (((le_definingIdeal_iff k J).mp hJ).1 i)
-      _ = _ := by
-        rw [generatorCoordinateMap_inl,
-          ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
-          _root_.CommHopfAlgCat.hom_comp]
-  have hcompAlg := congrArg BialgHom.toAlgHom hcomp'
-  simp only [BialgHom.comp_toAlgHom] at hcompAlg
-  rw [_root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
-  rw [_root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
-    _root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
-  simpa only [CommHopfAlgCat.hom_mkQuotient, ofConv_toConv, AlgHom.comp_assoc,
-    ← hcompAlg, f, q, MulEquiv.apply_symm_apply] using h
+      k (.inl i) A p
+  rw [BialgHom.mapDomain_apply, ofConv_toConv] at h
+  simpa only [CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom, AlgHom.comp_assoc] using h
 
 private theorem single_mem_of_raising_step
     (J : HopfIdeal k (GeneralLinear.coordinateHopfAlgebra k 27))
@@ -121,24 +89,13 @@ private theorem single_mem_of_raising_step
   dsimp only
   intro N a b hab ha
   obtain ⟨i, hi, rfl⟩ := (e6MinusculeRaisingStep_iff _ _).mp hab
-  let f := CommHopfAlgCat.liftQuotient J (generatorCoordinateMap k (.inl (.inl i)))
-    (((le_definingIdeal_iff k J).mp hJ).1 i)
-  let q := (AdditiveGroup.gaPointsMulEquiv (R := k) (A := k)).symm
+  let p := (AdditiveGroup.gaPointsMulEquiv (R := k) (A := k)).symm
     (Multiplicative.ofAdd (1 : k))
-  -- The quotient's point-functor application folds the same exposed wrapper, so
-  -- the subcomodule action is expressed in the form of quotient_rootSubgroup_point.
-  have hmem :
-      (GeneralLinear.pointToGeneralLinear 27
-        ((CommHopfAlgCat.mkQuotient
-          (GeneralLinear.coordinateHopfAlgebra k 27) J).mapPointsFunctor.app
-          (CommAlgCat.of k k) (f.mapPointsFunctor.app (CommAlgCat.of k k) q)) :
-        Matrix (Fin 27) (Fin 27) k) *ᵥ Pi.single a (1 : k) ∈ N :=
-    GeneralLinear.corestrictStandardComodule_mulVec_mem k 27
-      (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal) N
-      (f.mapPointsFunctor.app (CommAlgCat.of k k) q) ha
-  rw [quotient_rootSubgroup_point J hJ i (1 : k)] at hmem
-  rw [← Subcomodule.mem_toSubmodule] at hmem ha ⊢
-  simpa only [positiveRoot_mulVec_single_sub k i a hi] using
+  have hmem := GeneralLinear.quotientStandardComodule_mulVec_mem k 27 J
+    (generatorCoordinateMap k (.inl (.inl i)))
+    (((le_definingIdeal_iff k J).mp hJ).1 i) N p ha
+  rw [rootPoint_matrix i (CommAlgCat.of k k) p, MulEquiv.apply_symm_apply] at hmem
+  simpa only [positiveRoot_mulVec_single_sub k i a hi, Subcomodule.mem_toSubmodule] using
     N.toSubmodule.sub_mem hmem ha
 
 private theorem single_mem_of_raising_path

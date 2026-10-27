@@ -173,11 +173,10 @@ theorem positiveRoot_mulVec_single_sub (k : Type*) [CommRing k] (i : Fin 6) (a :
         Matrix.GeneralLinearGroup (Fin 27) k) : Matrix (Fin 27) (Fin 27) k) *ᵥ
           Pi.single a 1) - Pi.single a 1 =
       Pi.single (DynkinType.e6MinusculeReflection i a) 1 := by
-  rw [coe_rootSubgroupPoints_inl, Matrix.add_mulVec, Matrix.one_mulVec,
-    Matrix.smul_mulVec]
-  simp only [toAdd_ofAdd, one_smul]
-  rw [Matrix.mulVec_single_one, weightTable.raisingMatrix_map_col]
-  simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
+  rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, one_smul]
+  simpa only [weightTable_raisingMatrix, weightTable_reflection] using
+    weightTable.one_add_raisingMatrix_mulVec_single_sub (R := k) i a
+      (by simpa only [weightTable_weight] using ha)
 
 /-! ## Simplicity over a field -/
 
