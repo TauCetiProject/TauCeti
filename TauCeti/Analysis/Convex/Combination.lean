@@ -13,18 +13,18 @@ import Mathlib.Tactic.Module
 /-!
 # Convex combinations: sub-convex combinations and the centroid
 
-This file collects two facts about finite convex combinations in a vector space over a linearly
-ordered field.
+This file collects facts on two topics about finite convex combinations in a vector space over a
+linearly ordered field: sub-convex combinations and the centroid.
 
 A convex set containing `0` also contains every combination `∑ i, w i • z i` of its points with
 nonnegative weights of total at most `1`, the missing weight being put on `0`
 (`Convex.sum_mem_of_zero_mem`). If the set is moreover symmetric, the coefficients may have any
 sign as long as their absolute values sum to at most `1` (`Convex.sum_mem_of_sum_abs_le_one`). In
 particular such a set contains the weighted cross-polytope `{x | ∑ i, a i * |b.repr x i| ≤ 1}` as
-soon as it contains each `(a i)⁻¹ • b i` (`Convex.weighted_crosspolytope_subset`). This containment
-is the step in the lower bound of Minkowski's second theorem that places a cross-polytope spanned
-by vectors attaining the successive minima inside the body; its volume is
-`OrthonormalBasis.volume_weighted_crosspolytope`.
+soon as it contains each `(a i)⁻¹ • b i` for positive weights `a i`
+(`Convex.weighted_crosspolytope_subset`). This containment is the step in the lower bound of
+Minkowski's second theorem that places a cross-polytope spanned by vectors attaining the
+successive minima inside the body; its volume is `OrthonormalBasis.volume_weighted_crosspolytope`.
 
 Over a linearly ordered field there is no topology to speak of relative interiors, but the
 centroid of a nonempty finite set `s` still behaves like a relative interior point of the convex
