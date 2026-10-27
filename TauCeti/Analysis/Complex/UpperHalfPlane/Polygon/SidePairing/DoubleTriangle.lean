@@ -41,6 +41,8 @@ relations of the triangle group.
   by products of reflections.
 * `ConvexPolygon.doubleTriangleSidePairing_cycleLength_zero` and its companions: the lengths of
   the vertex cycles.
+* `ConvexPolygon.doubleTriangleSidePairing_pair_ne_self`: no side of the double is paired with
+  itself, so the type of self-paired sides is empty.
 * `ConvexPolygon.doubleTriangleSidePairing_sameCycle_iff`: two vertices of the double lie on the
   same cycle exactly when they come from the same vertex of `P`.
 * `ConvexPolygon.doubleTriangleSidePairing_cycleMap_ne_one`: the cycle transformation at a finite
@@ -199,6 +201,15 @@ theorem doubleTriangleSidePairing_cycleMap_one :
       geodesicReflectionComp (P.sideGeodesic 0) (P.sideGeodesic 2) *
         geodesicReflectionComp (P.sideGeodesic 1) (P.sideGeodesic 0) := by
   simp [SidePairing.cycleMap_def, SidePairing.partialCycleMap_succ]
+
+/-- No side of the double of a triangle is paired with itself. -/
+theorem doubleTriangleSidePairing_pair_ne_self (i : Fin 4) :
+    (P.doubleTriangleSidePairing h₀ h₁).pair i ≠ i := by
+  fin_cases i <;> simp [Fin.rev]
+
+/-- The double of a triangle has no self-paired side. -/
+instance : IsEmpty {i : Fin 4 // (P.doubleTriangleSidePairing h₀ h₁).pair i = i} :=
+  ⟨fun i ↦ doubleTriangleSidePairing_pair_ne_self i.1 i.2⟩
 
 /-- The successor along the vertex cycles of the double fixes `P 0` and `P 1` and exchanges the
 mirror image `P 2'` of `P 2` with `P 2`. -/

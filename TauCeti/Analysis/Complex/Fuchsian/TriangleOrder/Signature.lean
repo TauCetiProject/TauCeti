@@ -108,10 +108,6 @@ private theorem isLeft_and_cycleMap_ne_one_iff (j : Fin 4) :
   rw [← isLeft_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁)]
   exact ⟨And.left, fun hj ↦ ⟨hj, doubleTriangleSidePairing_cycleMap_ne_one hj⟩⟩
 
-/-- No side of the double of a triangle is paired with itself. -/
-private instance : IsEmpty {i : Fin 4 // (P.doubleTriangleSidePairing h₀ h₁).pair i = i} :=
-  ⟨fun ⟨i, hi⟩ ↦ by revert hi; fin_cases i <;> simp [Fin.rev]⟩
-
 /-! ### Elliptic points -/
 
 /-- **The elliptic orbits of a group tiled by a doubled triangle.** Let `Γ` contain the
