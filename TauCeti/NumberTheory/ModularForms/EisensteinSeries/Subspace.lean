@@ -176,7 +176,7 @@ theorem twistedDivisorSum_of_eq_one [NeZero N] (h : a.psi = 1 ∧ a.phi = 1) (e 
 
 /-- The index `(1, 1, 1)` of an even weight `k`: both characters trivial modulo one, and raising
 parameter one. -/
-@[expose] def one (hk : Even k) : CharIndex N k where
+def one (hk : Even k) : CharIndex N k where
   u := 1
   v := 1
   t := 1
@@ -189,15 +189,35 @@ parameter one. -/
       (hk.natCast (α := ℤ)).neg_one_zpow]
   level_dvd := by simp
 
+/-- The first modulus of the index `(1, 1, 1)` is one. -/
+@[simp] theorem one_u (hk : Even k) : (one hk : CharIndex N k).u = 1 := by
+  rfl
+
+/-- The second modulus of the index `(1, 1, 1)` is one. -/
+@[simp] theorem one_v (hk : Even k) : (one hk : CharIndex N k).v = 1 := by
+  rfl
+
+/-- The raising parameter of the index `(1, 1, 1)` is one. -/
+@[simp] theorem one_t (hk : Even k) : (one hk : CharIndex N k).t = 1 := by
+  rfl
+
+/-- The first character of the index `(1, 1, 1)` is trivial. -/
+@[simp] theorem one_psi (hk : Even k) : (one hk : CharIndex N k).psi = 1 := by
+  rfl
+
+/-- The second character of the index `(1, 1, 1)` is trivial. -/
+@[simp] theorem one_phi (hk : Even k) : (one hk : CharIndex N k).phi = 1 := by
+  rfl
+
 /-- The index `(1, 1, 1)` has trivial nebentypus. -/
-theorem nebentypus_one (hk : Even k) : (one hk : CharIndex N k).nebentypus = 1 :=
-  nebentypus_eq_one _ ⟨rfl, rfl⟩
+@[simp] theorem nebentypus_one (hk : Even k) : (one hk : CharIndex N k).nebentypus = 1 :=
+  nebentypus_eq_one _ ⟨one_psi hk, one_phi hk⟩
 
 /-- An index is `(1, 1, 1)` exactly when its two characters are trivial and its raising
 parameter is one. -/
 theorem eq_one_iff [NeZero N] (hk : Even k) :
     a = one hk ↔ a.psi = 1 ∧ a.phi = 1 ∧ a.t = 1 := by
-  refine ⟨fun h ↦ by subst h; exact ⟨rfl, rfl, rfl⟩, ?_⟩
+  refine ⟨fun h ↦ by subst h; exact ⟨one_psi hk, one_phi hk, one_t hk⟩, ?_⟩
   rintro ⟨hpsi, hphi, ht⟩
   have hu := u_eq_one_of_psi_eq_one hpsi
   have hv := v_eq_one_of_phi_eq_one hphi

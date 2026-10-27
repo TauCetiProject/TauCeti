@@ -165,8 +165,9 @@ private lemma qExpansion_weightTwoForm_coeff_eq (n : {n : ℕ // n ≠ 0}) :
           else 0) := by
   by_cases h : a.psi = 1 ∧ a.phi = 1
   · rw [qExpansion_weightTwoForm_coeff_of_eq_one a h n.2, ite_eq_left h, ite_eq_left h,
-      twistedDivisorSum_of_eq_one a h, twistedDivisorSum_of_eq_one (one even_two) ⟨rfl, rfl⟩]
-    simp only [one, one_dvd, ite_true, Nat.div_one]
+      twistedDivisorSum_of_eq_one a h,
+      twistedDivisorSum_of_eq_one (one even_two) ⟨one_psi _, one_phi _⟩]
+    simp only [one_t, one_dvd, ite_true, Nat.div_one]
     split_ifs <;> ring
   · rw [qExpansion_weightTwoForm_coeff_of_ne_one a (not_and_or.mp h) n.2, ite_eq_right h,
       ite_eq_right h]
