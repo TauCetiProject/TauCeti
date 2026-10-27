@@ -55,6 +55,8 @@ presupposing that any exist.
   continuous kernel is bounded from `L²(G)` into the uniform norm of `C(G)`.
 * `TauCeti.convolutionOperator_apply_eq_integral_leftRegularLp`: convolution is the strong
   integral of weighted left translations, including for infinite compact groups.
+* `TauCeti.norm_convolutionOperator_le`: the operator norm on `L²(G)` is at most the `L¹` norm
+  of the kernel.
 * `TauCeti.isSelfAdjoint_convolutionOperator`: a symmetric kernel gives a self-adjoint operator.
 * `TauCeti.convolutionCLM_compMeasurePreserving_mul_right`: convolution commutes with right
   translation.
@@ -351,13 +353,6 @@ theorem coeFn_convolutionOperator (k : C(G, 𝕜)) (f : Lp 𝕜 2 (haarProb G)) 
     convolutionOperator k f =ᵐ[haarProb G] convolutionCLM k f :=
   ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (haarProb G) (𝕜 := 𝕜) _
 
-/-- The convolution operator on `L²(G)` has operator norm at most the uniform norm of its
-kernel. -/
-theorem norm_convolutionOperator_le (k : C(G, 𝕜)) : ‖convolutionOperator (G := G) k‖ ≤ ‖k‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg k) fun f => by
-    rw [convolutionOperator_apply]
-    exact (norm_toLp_le _).trans (norm_convolutionCLM_apply_le k f)
-
 private noncomputable def weightedLeftTranslate (k f : C(G, 𝕜)) : C(G, C(G, 𝕜)) :=
   ContinuousMap.curry ⟨fun p : G × G => k p.1 * f (p.1⁻¹ * p.2), by fun_prop⟩
 
@@ -409,6 +404,21 @@ theorem convolutionOperator_apply_eq_integral_leftRegularLp (k : C(G, 𝕜))
         rw [Function.comp_apply, Function.comp_apply, hT]
         exact convolutionOperator_toLp_eq_integral k F)
   rw [← hT, congrFun heq f]
+
+/-- The convolution operator on `L²(G)` has operator norm at most the `L¹` norm of its
+kernel. In particular, nonnegative kernels of unit mass give contractions, independently of their
+uniform norms. -/
+theorem norm_convolutionOperator_le (k : C(G, 𝕜)) :
+    ‖convolutionOperator (G := G) k‖ ≤ ∫ g, ‖k g‖ ∂haarProb G := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (integral_nonneg fun g => norm_nonneg _) fun f => ?_
+  rw [convolutionOperator_apply_eq_integral_leftRegularLp]
+  calc
+    ‖∫ g, k g • leftRegularLp 𝕜 G g f ∂haarProb G‖
+        ≤ ∫ g, ‖k g‖ * ‖f‖ ∂haarProb G := by
+      refine norm_integral_le_of_norm_le ((integrable_continuousMap G k).norm.mul_const _)
+        (Filter.Eventually.of_forall fun g => ?_)
+      rw [norm_smul, (isUnitary_leftRegularLp 𝕜 G).norm_map]
+    _ = (∫ g, ‖k g‖ ∂haarProb G) * ‖f‖ := integral_mul_const _ _
 
 /-! ### Self-adjointness for a symmetric kernel
 

@@ -41,7 +41,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory ProbabilityTheory Real Set
-open scoped Topology
+open scoped NNReal Topology
 
 namespace TauCeti
 
@@ -103,6 +103,17 @@ theorem zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure {
     (isOpen_lt (by fun_prop : Continuous fun t : ℝ ↦ (1 - p) * exp t)
       continuous_const).interior_eq]
   simpa using hp
+
+/-- The real cast of a valid negative-binomial law has finite moments of every order. This
+includes the shape-zero boundary. -/
+theorem memLp_id_map_cast_negativeBinomialMeasure {r p : ℝ} (hr : 0 ≤ r) (hp : 0 < p)
+    (hp1 : p ≤ 1) (q : ℝ≥0) :
+    MemLp id q ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) := by
+  rcases hr.eq_or_lt with rfl | hr
+  · rw [negativeBinomialMeasure_zero hp hp1, Measure.map_dirac' (by fun_prop)]
+    exact memLp_dirac enorm_lt_top
+  · exact memLp_of_mem_interior_integrableExpSet
+      (zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1) q
 
 private lemma cgf_eventuallyEq {r p : ℝ} (hr : 0 < r) (hp : 0 < p) (hp1 : p ≤ 1) :
     cgf id ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) =ᶠ[𝓝 0]
@@ -223,12 +234,8 @@ theorem integral_sq_map_cast_negativeBinomialMeasure
   · rw [negativeBinomialMeasure_zero hp hp1, Measure.map_dirac' (by fun_prop)]
     norm_num
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
-  have hmem : MemLp id 2 ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) :=
-    (memLp_two_iff_integrable_sq measurable_id.aestronglyMeasurable).2
-      (integrable_pow_of_mem_interior_integrableExpSet
-        (zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1) 2)
   have hvar := variance_id_map_cast_negativeBinomialMeasure hr.le hp hp1
-  rw [variance_eq_sub hmem] at hvar
+  rw [variance_eq_sub (memLp_id_map_cast_negativeBinomialMeasure hr.le hp hp1 2)] at hvar
   simp only [Pi.pow_apply, id_eq,
     integral_id_map_cast_negativeBinomialMeasure hr.le hp hp1] at hvar
   rw [sub_eq_iff_eq_add.1 hvar]

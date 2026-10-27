@@ -38,7 +38,9 @@ sheets the certificate data are read. Each field is tied to the invariant it rec
 * every stored triple lies in the passport of `t`.
 
 The aggregations `num_orbits` and `maxdegbf` describe which map rows the table contains, and the
-label and name strings are not interpreted here, so validity imposes no condition on them.
+label and name strings are not interpreted here, so validity imposes no condition on them. The
+stored primitivization label is tied to the map row it names, through the quotient by the
+primitivization block, by `TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsPrimitivizationOf`.
 
 The certified fields other than the certificate data are passport invariants: the theorems below
 read them from any connected triple sharing a passport with `t`.

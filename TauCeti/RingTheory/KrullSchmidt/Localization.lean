@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
-public import Mathlib.RingTheory.Localization.FractionRing
+public import Mathlib.RingTheory.Localization.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.LinearAlgebra.TensorProduct.Prod
@@ -16,17 +16,18 @@ import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.Localization.TensorProduct
 
 /-!
-# Cancellation after tensoring with the field of fractions
+# Cancellation after tensoring with a field localization
 
-Let `R` be a commutative ring with field of fractions `K` and let `A` be an `R`-algebra. For an
-`A`-module `M`, the rationalization `M ⊗[R] K` is again an `A`-module. If `P` is finitely
-generated over `R`, then `P ⊗[R] K` cancels from `A`-linear equivalences of rationalizations:
+Let `R` be a commutative semiring, let `K` be a localization of `R` that is a field, and let `A`
+be an `R`-algebra semiring. For an `A`-semimodule `M`, the localization `M ⊗[R] K` is again an
+`A`-semimodule. If `P` is finitely generated over `R`, then `P ⊗[R] K` cancels from `A`-linear
+equivalences of localizations:
 `(M × P) ⊗[R] K ≃ (N × P) ⊗[R] K` gives `M ⊗[R] K ≃ N ⊗[R] K`.
 
-As an `A`-module `P ⊗[R] K` rarely has finite length (`K` itself does not over `R` unless `R` is a
-field), so cancellation over `A` does not apply directly. Instead the rationalizations are modules
+As an `A`-module `P ⊗[R] K` need not have finite length: for `R = A = P = ℤ` and `K = ℚ`, it is
+`ℚ`, which has infinite length over `ℤ`. Instead the localizations are modules
 over the ring `K ⊗[R] A`, with `K` acting on the right factor, and over this ring `P ⊗[R] K` has
-finite length because it is finite-dimensional over `K`. An `A`-linear map of rationalizations is
+finite length because it is finite-dimensional over `K`. An `A`-linear map of localizations is
 `R`-linear, hence `K`-linear because `K` is a localization of `R`, hence `K ⊗[R] A`-linear; so
 cancellation of a summand of finite length over `K ⊗[R] A` applies.
 
@@ -35,9 +36,9 @@ of a finite group used to pass from a stable isomorphism of `ℤ_p[G]`-lattices 
 
 ## Main results
 
-* `TauCeti.IsFractionRing.nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv`: the
-  rationalization of a module that is finitely generated over `R` cancels from an `A`-linear
-  equivalence of rationalizations.
+* `TauCeti.IsLocalization.nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv`: the
+  localization of a semimodule that is finitely generated over `R` cancels from an `A`-linear
+  equivalence of localizations at a field.
 
 ## References
 
@@ -47,16 +48,15 @@ of a finite group used to pass from a stable isomorphism of `ℤ_p[G]`-lattices 
 
 public section
 
-namespace TauCeti.IsFractionRing
+namespace TauCeti.IsLocalization
 
 open scoped TensorProduct
 
-variable {R : Type*} [CommRing R] (K : Type*) [Field K] [Algebra R K]
-  {A : Type*} [Ring A] [Algebra R A]
+variable {R : Type*} [CommSemiring R] {A : Type*} [Semiring A] [Algebra R A]
 
 section RightAction
 
-variable (M : Type*) [AddCommGroup M] [Module R M]
+variable (K : Type*) [Field K] [Algebra R K] (M : Type*) [AddCommMonoid M] [Module R M]
 
 /-- `K` acting on `M ⊗[R] K` through the right factor, as an algebra map to the
 `R`-endomorphisms. -/
@@ -79,7 +79,7 @@ private theorem smul_tmul_right (q : K) (m : M) (r : K) : q • (m ⊗ₜ[R] r) 
 private instance : IsScalarTower R K (M ⊗[R] K) :=
   ⟨fun r q v ↦ by rw [rightModule_smul, rightModule_smul, map_smul, LinearMap.smul_apply]⟩
 
-/-- The right action of `K` on `M ⊗[R] K` is `K`-linearly the rationalization `K ⊗[R] M`. -/
+/-- The right action of `K` on `M ⊗[R] K` is `K`-linearly the localization `K ⊗[R] M`. -/
 private noncomputable def commLinearEquiv : M ⊗[R] K ≃ₗ[K] K ⊗[R] M :=
   AddEquiv.toLinearEquiv (TensorProduct.comm R M K).toAddEquiv fun q v ↦ by
     induction v using TensorProduct.inductionOn with
@@ -99,17 +99,25 @@ end RightAction
 
 attribute [local instance] rightModule
 
-/-- **Cancellation of rationalizations.** Let `R` have field of fractions `K` and let `A` be an
-`R`-algebra. If `P` is finitely generated over `R`, an `A`-linear equivalence
+variable (S : Submonoid R) (K : Type*) [Field K] [Algebra R K]
+
+/-- **Cancellation after localization to a field.** Let `K` be a localization of `R` at `S`
+that is a field, and let `A` be an `R`-algebra semiring. If `P` is finitely generated over `R`,
+an `A`-linear equivalence
 `(M × P) ⊗[R] K ≃ (N × P) ⊗[R] K` induces an `A`-linear equivalence `M ⊗[R] K ≃ N ⊗[R] K`. No
-finiteness is required of `M` and `N`. -/
-theorem nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv [IsFractionRing R K]
-    {M N P : Type*} [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
-    [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
-    [AddCommGroup P] [Module R P] [Module A P] [IsScalarTower R A P] [Module.Finite R P]
+finiteness is required of `M` and `N`. The semimodules `M`, `N` and `P` need only be additive
+commutative monoids; their localizations acquire additive inverses from the field action. -/
+theorem nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv [IsLocalization S K]
+    {M N P : Type*} [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M]
+    [AddCommMonoid N] [Module R N] [Module A N] [IsScalarTower R A N]
+    [AddCommMonoid P] [Module R P] [Module A P] [IsScalarTower R A P] [Module.Finite R P]
     (h : Nonempty (((M × P) ⊗[R] K) ≃ₗ[A] ((N × P) ⊗[R] K))) :
     Nonempty ((M ⊗[R] K) ≃ₗ[A] (N ⊗[R] K)) := by
   obtain ⟨e⟩ := h
+  -- The field action supplies additive inverses on the localizations.
+  let _ : AddCommGroup (M ⊗[R] K) := Module.addCommMonoidToAddCommGroup K
+  let _ : AddCommGroup (N ⊗[R] K) := Module.addCommMonoidToAddCommGroup K
+  let _ : AddCommGroup (P ⊗[R] K) := Module.addCommMonoidToAddCommGroup K
   -- Let `q ⊗ a ∈ K ⊗[R] A` act on each rationalization as `q • a • _`.
   let _ : Module (K ⊗[R] A) (M ⊗[R] K) := TensorProduct.Algebra.module
   let _ : Module (K ⊗[R] A) (N ⊗[R] K) := TensorProduct.Algebra.module
@@ -133,7 +141,7 @@ theorem nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv [IsFractionRing R
     (e.trans (TensorProduct.prodLeft R A N P K))
   obtain ⟨f⟩ := nonempty_linearEquiv_of_prod_linearEquiv_of_isFiniteLength hP
     ⟨AddEquiv.toLinearEquiv e'.toAddEquiv
-      ((IsLocalization.linearMap_compatibleSMul_tensorProduct (nonZeroDivisors R) K
+      ((IsLocalization.linearMap_compatibleSMul_tensorProduct S K
         (fun q a v ↦ Prod.ext (hM q a v.1) (hT q a v.2))
         (fun q a v ↦ Prod.ext (hN q a v.1) (hT q a v.2))).map_smul e'.toLinearMap)⟩
   -- A `K ⊗[R] A`-linear equivalence is `A`-linear, since `a` acts as `1 ⊗ a`.
@@ -141,4 +149,4 @@ theorem nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv [IsFractionRing R
   have h1 := f.map_smul ((1 : K) ⊗ₜ[R] a) v
   rwa [hM, hN, one_smul, one_smul] at h1
 
-end TauCeti.IsFractionRing
+end TauCeti.IsLocalization

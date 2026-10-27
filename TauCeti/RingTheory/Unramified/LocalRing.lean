@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LocalRing.Quotient
+public import Mathlib.RingTheory.RingHom.Unramified
 public import Mathlib.RingTheory.Unramified.LocalRing
 public import TauCeti.RingTheory.LocalRing.Localization
 
@@ -30,6 +31,10 @@ says the same for generation as an algebra by a single element.
 Over a field, an unramified local algebra is a field. Hence a proper ideal of a local algebra
 essentially of finite type over a field, with formally unramified quotient, is the maximal ideal.
 
+For an `R`-algebra `S` and primes `q` of `S` and `p = q ∩ R` of `R`, the local homomorphism
+`R_p → S_q` is formally unramified iff `S` is unramified over `R` at `q`. Stalk maps of morphisms of
+affine schemes are such local homomorphisms, so this is how unramifiedness is read off from a stalk.
+
 ## Main results
 
 * `TauCeti.isUnramifiedAt_maximalIdeal_iff`: a local `R`-algebra is unramified at its maximal
@@ -40,6 +45,8 @@ essentially of finite type over a field, with formally unramified quotient, is t
 * `Ideal.eq_maximalIdeal_of_formallyUnramified_quotient`: over a field `K`, a proper ideal of a
   local `K`-algebra essentially of finite type, with quotient formally unramified over `K`, is the
   maximal ideal.
+* `Localization.formallyUnramified_localRingHom_iff`: the local homomorphism `R_p → S_q` is formally
+  unramified iff `S` is unramified over `R` at `q`.
 -/
 
 public section
@@ -105,3 +112,20 @@ theorem _root_.Ideal.eq_maximalIdeal_of_formallyUnramified_quotient {I : Ideal A
 end Field
 
 end TauCeti
+
+namespace Localization
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- The local homomorphism `R_p → S_q` at primes `q` over `p` is formally unramified iff `S` is
+unramified over `R` at `q`. -/
+theorem formallyUnramified_localRingHom_iff (p : Ideal R) [p.IsPrime] (q : Ideal S) [q.IsPrime]
+    (h : p = q.comap (algebraMap R S)) :
+    (localRingHom p q (algebraMap R S) h).FormallyUnramified ↔ Algebra.IsUnramifiedAt R q := by
+  have : q.LiesOver p := ⟨h⟩
+  let := AtPrime.algebraOfLiesOver p q
+  refine RingHom.formallyUnramified_algebraMap.trans
+    ⟨fun _ ↦ Algebra.FormallyUnramified.comp R (Localization.AtPrime p) _,
+      fun _ ↦ .of_restrictScalars R _ _⟩
+
+end Localization
