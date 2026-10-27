@@ -117,7 +117,9 @@ private lemma isVonNBounded_setOf_add_mem (hb : IsBounded C) :
   rw [mem_closedBall, dist_self_add_left] at hv'
   rwa [mem_closedBall_zero_iff, ← Submodule.norm_coe]
 
-private lemma setOf_add_mem_mem_nhds (hc : c ∈ intrinsicInterior ℝ C) :
+/-- For a point `c` of the intrinsic interior of `C`, the displacements `v` in the direction of
+the affine span of `C` with `c + v ∈ C` form a neighbourhood of `0`. -/
+theorem setOf_add_mem_mem_nhds_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C) :
     {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} ∈ 𝓝 0 := by
   obtain ⟨y, hy, rfl⟩ := hc
   -- Translating the direction by `y` is a continuous map into the affine span sending `0` to `y`.
@@ -145,7 +147,8 @@ noncomputable def convexClosedBallHomeomorph (hconv : Convex ℝ C) (hcl : IsClo
   -- The gauge rescaling carries the closed unit ball of `V` onto the closed set `S`.
   have hg := image_gaugeRescaleHomeomorph_closure (convex_closedBall (0 : V) 1)
     (closedBall_mem_nhds 0 one_pos) (NormedSpace.isVonNBounded_closedBall ℝ V 1)
-    (convex_setOf_add_mem hconv) (setOf_add_mem_mem_nhds hc) (isVonNBounded_setOf_add_mem hb)
+    (convex_setOf_add_mem hconv) (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)
+    (isVonNBounded_setOf_add_mem hb)
   have hgS : _ '' closedBall (0 : V) 1 = S := by
     rwa [closure_closedBall, (isClosed_setOf_add_mem hcl).closure_eq] at hg
   ((Homeomorph.image _ _).trans (Homeomorph.setCongr hgS)).trans

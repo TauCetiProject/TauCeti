@@ -161,12 +161,9 @@ theorem brouwerFixedPoint_compactConvex_finiteSpan {E : Type*} [NormedAddCommGro
     (hC : IsCompact C) (hconv : Convex ℝ C) (hne : C.Nonempty) (f : C(C, C)) :
     ∃ x, IsFixedPt f x := by
   -- Read `C` inside `V`, where the finite-dimensional theorem applies.
-  let e : (V.subtype ⁻¹' C : Set V) ≃ₜ C :=
-    { toFun x := ⟨x.1, x.2⟩
-      invFun x := ⟨⟨x, hCV x.2⟩, x.2⟩
-      continuous_toFun := by fun_prop
-      continuous_invFun := by fun_prop }
   have hCV' : C ⊆ range V.subtype := by simpa using hCV
+  let e : (V.subtype ⁻¹' C : Set V) ≃ₜ C :=
+    Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange hCV'
   obtain ⟨x, hx⟩ := hne
   exact e.forall_exists_isFixedPt_iff.1 (brouwerFixedPoint_compactConvex
     ((Topology.IsInducing.subtypeVal.isCompact_preimage_iff hCV').2 hC)
