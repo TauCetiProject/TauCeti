@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
-public import Mathlib.Tactic.NormNum
 public import TauCeti.CategoryTheory.DG.AdditiveClosure.Basic
 public import TauCeti.CategoryTheory.DG.Twisted.Basic
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Trace
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.Projective
 
 /-!
@@ -24,6 +21,14 @@ The underlying matrix differential vanishes, but the twisted differential genera
 Boundary vanishing follows from cancellation of its two commutator terms. Formal shifts require
 an additional supertrace sign and are not part of this unshifted construction. No perfectness,
 Serre functor, triangulated realization or spherical-object assertion is made here.
+
+## References
+
+* The formal weighted-corner argument is
+  `TauCeti.zigzagAlgebraGradedCornerWeightedTracePairing_flip` in
+  `TauCeti/RepresentationTheory/Quiver/Zigzag/Componentwise/Corner/WeightedTrace.lean`.
+  The degree-one anticyclicity proof here extends it to arbitrary vertex coefficients
+  and transports it to homogeneous DG cochains through the projective corner dictionary.
 -/
 
 public section
