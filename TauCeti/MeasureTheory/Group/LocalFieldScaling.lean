@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.NumberTheory.LocalField.Basic
+import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.LinearAlgebra.FreeModule.CardQuotient
 import TauCeti.NumberTheory.LocalField.Uniformizer
 
@@ -56,6 +57,8 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
   ball `x +ᵥ c • ∏ i, 𝒪[K]` with `c ≠ 0`.
 * `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow`: for a left-invariant `μ`,
   the box with factors `𝓂[K] ^ e i` has `q ^ (-∑ i, e i)` times the volume of the integer box.
+* `MeasureTheory.Measure.measure_integerBox_inter_coord_eq_zero`: a coordinate hyperplane
+  inside an integer box of finite measure is null.
 * `MeasureTheory.Measure.addHaar_image_mulVec`: for a regular Haar measure `μ`,
   `μ (A '' s) = q ^ (-k) * μ s` for every set `s`.
 
@@ -205,6 +208,29 @@ theorem measure_univ_pi_image_maximalIdeal_pow (μ : Measure (ι → K)) [μ.IsA
   rw [image_maximalIdeal_pow_eq_smul hϖ, ← image_smul, Algebra.algebraMap_ofSubsemiring_apply,
     SubmonoidClass.coe_pow]
   simp only [smul_eq_mul]
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- A coordinate hyperplane inside the integer box is null for a left-invariant measure
+whose integer box has finite measure. -/
+theorem measure_integerBox_inter_coord_eq_zero [Finite ι]
+    (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
+    (hμ : μ (integerBox K ι) ≠ ∞) (j : ι) :
+    μ (integerBox K ι ∩ {a | a j = 0}) = 0 := by
+  classical
+  let := Fintype.ofFinite ι
+  have hq : (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ < 1 :=
+    ENNReal.inv_lt_one.mpr (by exact_mod_cast (Finite.one_lt_card : 1 < Nat.card 𝓀[K]))
+  refine ENNReal.eq_zero_of_le_mul_pow (ε := (μ (integerBox K ι)).toNNReal) hq fun k ↦ ?_
+  have hsub : integerBox K ι ∩ {a | a j = 0} ⊆
+      univ.pi (fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ (if i = j then k else 0))) := by
+    rintro a ⟨ha, haj⟩ i _
+    by_cases hij : i = j
+    · subst i
+      exact ⟨0, by simp, by simpa using haj.symm⟩
+    · exact ⟨⟨a i, mem_integerBox.mp ha i⟩, by simp [hij], rfl⟩
+  have h := (measure_mono hsub).trans_eq
+    (measure_univ_pi_image_maximalIdeal_pow μ (fun i ↦ if i = j then k else 0))
+  simpa [ENNReal.coe_toNNReal hμ, one_div, ENNReal.inv_pow, mul_comm] using h
 
 /-- **The scaling law on balls.** If the determinant of a square matrix `A` over `𝒪[K]` is
 associated to `ϖ ^ k` for a uniformizer `ϖ`, then for every left-invariant measure on `ι → K`,
