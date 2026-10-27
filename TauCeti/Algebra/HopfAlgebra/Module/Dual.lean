@@ -62,28 +62,28 @@ variable [Module.IsReflexive R V]
 
 /-- Evaluation after the action of a unit. When the unit implements the square of the
 antipode, this is the intertwining equivalence with the double contragredient. -/
-def hopfPivotEquiv (ρ : H →ₐ[R] Module.End R V) (g : Hˣ) :
+def unitEvalEquiv (ρ : H →ₐ[R] Module.End R V) (g : Hˣ) :
     V ≃ₗ[R] Dual R (Dual R V) :=
   (LinearMap.GeneralLinearGroup.generalLinearEquiv R V (Units.map ρ.toMonoidHom g)).trans
     (Module.evalEquiv R V)
 
 /-- The double-dual comparison sends `v` to the functional `φ ↦ φ(gv)`. -/
 @[simp]
-theorem hopfPivotEquiv_apply (ρ : H →ₐ[R] Module.End R V) (g : Hˣ) (v : V)
-    (φ : Dual R V) : ρ.hopfPivotEquiv g v φ = φ (ρ (g : H) v) := (rfl)
+theorem unitEvalEquiv_apply (ρ : H →ₐ[R] Module.End R V) (g : Hˣ) (v : V)
+    (φ : Dual R V) : ρ.unitEvalEquiv g v φ = φ (ρ (g : H) v) := (rfl)
 
 /-- The inverse comparison evaluates the double functional, then acts by `g⁻¹`. -/
 @[simp]
-theorem hopfPivotEquiv_symm_apply (ρ : H →ₐ[R] Module.End R V) (g : Hˣ)
+theorem unitEvalEquiv_symm_apply (ρ : H →ₐ[R] Module.End R V) (g : Hˣ)
     (Φ : Dual R (Dual R V)) :
-    (ρ.hopfPivotEquiv g).symm Φ = ρ (↑g⁻¹ : H) ((Module.evalEquiv R V).symm Φ) := (rfl)
+    (ρ.unitEvalEquiv g).symm Φ = ρ (↑g⁻¹ : H) ((Module.evalEquiv R V).symm Φ) := (rfl)
 
 /-- If `g` implements `S²`, the double-dual comparison intertwines the original action
 with the double contragredient. -/
-theorem hopfPivotEquiv_intertwines (ρ : H →ₐ[R] Module.End R V) (g : Hˣ)
+theorem unitEvalEquiv_intertwines (ρ : H →ₐ[R] Module.End R V) (g : Hˣ)
     (hg : ∀ a : H, antipode R (antipode R a) = (g : H) * a * ↑g⁻¹)
     (a : H) (v : V) :
-    ρ.hopfPivotEquiv g (ρ a v) = ρ.hopfDual.hopfDual a (ρ.hopfPivotEquiv g v) := by
+    ρ.unitEvalEquiv g (ρ a v) = ρ.hopfDual.hopfDual a (ρ.unitEvalEquiv g v) := by
   have hcancel : ρ (↑g⁻¹ : H) (ρ (g : H) v) = v := by
     rw [← Module.End.mul_apply, ← map_mul]
     simp
@@ -108,9 +108,9 @@ theorem hopfDual_intertwines (f : V →ₗ[R] W)
 variable [Module.IsReflexive R V] [Module.IsReflexive R W]
 
 /-- Evaluation after a fixed unit is natural in intertwining maps. -/
-theorem hopfPivotEquiv_natural (f : V →ₗ[R] W)
+theorem unitEvalEquiv_natural (f : V →ₗ[R] W)
     (hf : ∀ (a : H) (v : V), f (ρ a v) = σ a (f v)) (g : Hˣ) (v : V) :
-    f.dualMap.dualMap (ρ.hopfPivotEquiv g v) = σ.hopfPivotEquiv g (f v) := by
+    f.dualMap.dualMap (ρ.unitEvalEquiv g v) = σ.unitEvalEquiv g (f v) := by
   ext φ
   simp [hf]
 

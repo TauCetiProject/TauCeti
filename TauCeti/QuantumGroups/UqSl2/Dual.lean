@@ -19,7 +19,7 @@ without a genericity or type-1 assumption.
 
 These are the underlying representation maps for the pivotal comparison. No categorical
 rigidity or monoidal structure is asserted here. The construction specializes
-`AlgHom.hopfPivotEquiv` using the antipode square proved in `UqSl2.Antipode`.
+`AlgHom.unitEvalEquiv` using the antipode square proved in `UqSl2.Antipode`.
 
 ## References
 
@@ -39,7 +39,7 @@ variable (q : ℂ) [Fact (q ≠ 0)]
 
 /-- The double-contragredient comparison `v ↦ (φ ↦ φ(K⁻¹v))`. -/
 def doubleDualEquiv : V ≃ₗ[ℂ] Dual ℂ (Dual ℂ V) :=
-  (Algebra.lsmul ℂ ℂ V).hopfPivotEquiv (kUnit q)⁻¹
+  (Algebra.lsmul ℂ ℂ V).unitEvalEquiv (kUnit q)⁻¹
 
 /-- The comparison evaluates a functional at `K⁻¹v`. -/
 @[simp]
@@ -57,7 +57,7 @@ theorem doubleDualEquiv_symm_apply (Φ : Dual ℂ (Dual ℂ V)) :
 theorem doubleDualEquiv_smul (a : UqSl2 q) (v : V) :
     doubleDualEquiv q V (a • v) =
       (Algebra.lsmul ℂ ℂ V).hopfDual.hopfDual a (doubleDualEquiv q V v) :=
-  (Algebra.lsmul ℂ ℂ V).hopfPivotEquiv_intertwines (kUnit q)⁻¹
+  (Algebra.lsmul ℂ ℂ V).unitEvalEquiv_intertwines (kUnit q)⁻¹
     (fun a => by simpa using antipode_antipode q a) a v
 
 end TauCeti.UqSl2
@@ -76,7 +76,7 @@ variable {q : ℂ} [Fact (q ≠ 0)] {V W : Type*}
 theorem uqSl2_doubleDualEquiv_natural (f : V →ₗ[TauCeti.UqSl2 q] W) (v : V) :
     (f.restrictScalars ℂ).dualMap.dualMap (doubleDualEquiv q V v) =
       doubleDualEquiv q W (f v) := by
-  exact (f.restrictScalars ℂ).hopfPivotEquiv_natural
+  exact (f.restrictScalars ℂ).unitEvalEquiv_natural
     (ρ := Algebra.lsmul ℂ ℂ V) (σ := Algebra.lsmul ℂ ℂ W)
     (fun a v => f.map_smul a v) (kUnit q)⁻¹ v
 
