@@ -47,6 +47,7 @@ antipode commute with base change (`LinearMap.counit_rTensor` and
   when `N.hopfIdealLocus = ⊥`.
 * `Module.Grassmannian.hopfIdealLocus_map`: the formation of `hopfIdealLocus` commutes with base
   change.
+* `Module.Grassmannian.hopfIdealLocus_map_eq_bot`: the Hopf-ideal locus is stable under base change.
 
 ## References
 
@@ -277,5 +278,11 @@ theorem hopfIdealLocus_map (f : A →ₐ[R] B) (N : G(k, A ⊗[R] H; A)) :
     have hx' := (hopfIdealLocus_le_ker_iff (g.comp f) N).2 h hx
     rwa [RingHom.mem_ker, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
       Ideal.Quotient.eq_zero_iff_mem] at hx'
+
+
+/-- **The Hopf-ideal locus is stable under base change.** -/
+theorem hopfIdealLocus_map_eq_bot {N : G(k, A ⊗[R] H; A)} (hN : N.hopfIdealLocus = ⊥)
+    (f : A →ₐ[R] B) : (map f N).hopfIdealLocus = ⊥ := by
+  rw [hopfIdealLocus_map, hN, Ideal.map_bot]
 
 end Module.Grassmannian

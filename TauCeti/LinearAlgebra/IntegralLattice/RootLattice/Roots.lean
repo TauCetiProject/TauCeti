@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.RepresentationNumber
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Dynkin
-public import TauCeti.LinearAlgebra.Matrix.NormTwoShell
+public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SimplyLaced
 

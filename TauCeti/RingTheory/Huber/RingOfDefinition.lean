@@ -715,6 +715,27 @@ theorem exists_pairOfDefinition_le_le {B C : Subring A} (hB : IsBounded (B : Set
       (by rw [Subring.coe_inf]; exact Set.inter_subset_left)) hB)
   exact ⟨Q, hQ ▸ _root_.le_sup_right, hQ ▸ sup_le inf_le_right hBC⟩
 
+/-- Finitely many elements of an open subring of `A°` lie in a single ring of definition
+contained in that subring. This allows finite algebraic data over `A°` to be treated inside
+an adic ring. -/
+theorem exists_pairOfDefinition_finset_subset {B : Subring A}
+    (hopen : IsOpen (B : Set A)) (hle : B ≤ powerBoundedSubring A) (s : Finset B) :
+    ∃ P : PairOfDefinition A, P.ringOfDefinition ≤ B ∧
+      ∀ x ∈ s, (x : A) ∈ P.ringOfDefinition := by
+  classical
+  let t := s.image (fun x : B ↦ (x : A))
+  have ht : ∀ x ∈ t, IsPowerBounded x := by
+    intro x hx
+    obtain ⟨y, -, rfl⟩ := Finset.mem_image.mp hx
+    exact mem_powerBoundedSubring.mp (hle y.property)
+  obtain ⟨P, hP, hPB⟩ := exists_pairOfDefinition_le_le
+    (isBounded_subringClosure t.finite_toSet ht) hopen
+    (Subring.closure_le.mpr (by
+      intro x hx
+      obtain ⟨y, -, rfl⟩ := Finset.mem_image.mp hx
+      exact y.property))
+  exact ⟨P, hPB, fun x hx ↦ hP (Subring.subset_closure (Finset.mem_image_of_mem _ hx))⟩
+
 /-- **Wedhorn Corollary 6.4(5).** A Huber ring is adic — the whole ring is a ring of definition,
 so that its topology is the adic topology of a finitely generated ideal — exactly when it is
 bounded in itself. -/
