@@ -85,7 +85,7 @@ local notation "𝕢" => Function.Periodic.qParam
 private theorem neg_le_meromorphicOrderAt_iff {k : ℕ} (hf : MeromorphicAt (cuspFunction h f) 0) :
     ((-k : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 ↔
       0 ≤ meromorphicOrderAt (fun q ↦ q ^ k * cuspFunction h f q) 0 := by
-  rw [meromorphicOrderAt_qParam_pow_mul hf]
+  rw [meromorphicOrderAt_pow_mul_cuspFunction hf]
   cases meromorphicOrderAt (cuspFunction h f) 0 using WithTop.recTopCoe with
   | top => simp
   | coe n =>
@@ -158,9 +158,8 @@ theorem laurentQExpansion_eq (hh : 0 < h) (hf : MeromorphicAt (cuspFunction h f)
     simp [HahnSeries.single_pow, ← mul_assoc, HahnSeries.single_mul_single]
   rw [laurentQExpansion, ← key (neg_cuspPoleOrder_le h f) k, add_comm, key hk]
 
-/-- If the cusp function of `𝕢 ^ k * f` is analytic at `0`, then the cusp function of `f` is
-meromorphic at `0` with a pole of order at most `k`, and the Laurent `q`-expansion of `f` is the
-`q`-expansion of `𝕢 ^ k * f` shifted down by `k`. -/
+/-- If the cusp function of `𝕢 ^ k * f` is analytic at `0`, then the Laurent `q`-expansion of `f`
+is the `q`-expansion of `𝕢 ^ k * f` shifted down by `k`. -/
 theorem laurentQExpansion_eq_of_analyticAt_qParam_pow_mul (hh : 0 < h) {k : ℕ}
     (hk : AnalyticAt ℂ (cuspFunction h (fun τ ↦ 𝕢 h τ ^ k * f τ)) 0) :
     laurentQExpansion h f = HahnSeries.single (-(k : ℤ)) 1 *
@@ -231,7 +230,7 @@ theorem orderTop_laurentQExpansion (hh : 0 < h) (hf : MeromorphicAt (cuspFunctio
     PowerSeries.orderTop_coe, TauCeti.qExpansion_order_eq_analyticOrderAt_cuspFunction han,
     ← han.meromorphicOrderAt_eq,
     meromorphicOrderAt_congr (cuspFunction_qParam_pow_mul_eventuallyEq hh _ f),
-    meromorphicOrderAt_qParam_pow_mul hf]
+    meromorphicOrderAt_pow_mul_cuspFunction hf]
   cases hn : meromorphicOrderAt (cuspFunction h f) 0 using WithTop.recTopCoe with
   | top => simp
   | coe n =>
@@ -248,7 +247,7 @@ theorem laurentQExpansion_eq_zero_iff (hh : 0 < h) (hf : MeromorphicAt (cuspFunc
 
 /-- The Laurent `q`-expansion of a constant function is the constant Laurent series. -/
 @[simp]
-theorem laurentQExpansion_const (hh : 0 < h) (c : ℂ) :
+theorem laurentQExpansion_const (h : ℝ) (c : ℂ) :
     laurentQExpansion h (fun _ ↦ c) = HahnSeries.C c := by
   have hc : (fun _ : ℍ ↦ c) = c • (1 : ℍ → ℂ) := by
     funext
@@ -256,19 +255,24 @@ theorem laurentQExpansion_const (hh : 0 < h) (c : ℂ) :
   have han : AnalyticAt ℂ (cuspFunction h (1 : ℍ → ℂ)) 0 := by
     rw [cuspFunction_one]
     exact analyticAt_const
-  rw [laurentQExpansion_of_analyticAt hh (by simpa [cuspFunction_const] using analyticAt_const),
-    hc, qExpansion_smul han]
+  have hk : cuspPoleOrder h (fun _ ↦ c) = 0 := by
+    classical
+    simp only [cuspPoleOrder, cuspFunction_const, meromorphicOrderAt_const]
+    split_ifs <;> simp
+  rw [laurentQExpansion, hk]
+  simp only [CharP.cast_eq_zero, neg_zero, pow_zero, one_mul]
+  rw [HahnSeries.single_zero_one, one_mul, hc, qExpansion_smul han]
   simpa [qExpansion_one] using (HahnSeries.C_mul_eq_smul (r := c) (x := (1 : LaurentSeries ℂ))).symm
 
 /-- The Laurent `q`-expansion of `1` is `1`. -/
 @[simp]
-theorem laurentQExpansion_one (hh : 0 < h) : laurentQExpansion h (1 : ℍ → ℂ) = 1 := by
-  rw [Pi.one_def, laurentQExpansion_const hh, map_one]
+theorem laurentQExpansion_one (h : ℝ) : laurentQExpansion h (1 : ℍ → ℂ) = 1 := by
+  rw [Pi.one_def, laurentQExpansion_const, map_one]
 
 /-- The Laurent `q`-expansion of `0` is `0`. -/
 @[simp]
-theorem laurentQExpansion_zero (hh : 0 < h) : laurentQExpansion h (0 : ℍ → ℂ) = 0 := by
-  rw [Pi.zero_def, laurentQExpansion_const hh, map_zero]
+theorem laurentQExpansion_zero (h : ℝ) : laurentQExpansion h (0 : ℍ → ℂ) = 0 := by
+  rw [Pi.zero_def, laurentQExpansion_const, map_zero]
 
 /-- The Laurent `q`-expansion is multiplicative. -/
 theorem laurentQExpansion_mul (hh : 0 < h) (hf : MeromorphicAt (cuspFunction h f) 0)
@@ -334,7 +338,7 @@ theorem laurentQExpansion_smul (hh : 0 < h) (hf : MeromorphicAt (cuspFunction h 
     funext
     simp
   rw [hc, laurentQExpansion_mul hh (meromorphicAt_cuspFunction_const c) hf,
-    laurentQExpansion_const hh, HahnSeries.C_mul_eq_smul]
+    laurentQExpansion_const, HahnSeries.C_mul_eq_smul]
 
 /-- The Laurent `q`-expansion commutes with negation. -/
 @[simp]
@@ -354,12 +358,12 @@ theorem laurentQExpansion_sub (hh : 0 < h) (hf : MeromorphicAt (cuspFunction h f
 theorem laurentQExpansion_pow (hh : 0 < h) (hf : MeromorphicAt (cuspFunction h f) 0) (n : ℕ) :
     laurentQExpansion h (f ^ n) = laurentQExpansion h f ^ n := by
   induction n with
-  | zero => simpa using laurentQExpansion_one hh
+  | zero => simp
   | succ n ih =>
     rw [pow_succ, laurentQExpansion_mul hh (meromorphicAt_cuspFunction_pow hf n) hf, ih, pow_succ]
 
-/-- The Laurent `q`-expansion commutes with inverses. This includes functions vanishing near
-`i∞`, whose expansion and inverse are both `0`. -/
+/-- The Laurent `q`-expansion commutes with inverses. This includes the case where the cusp
+function vanishes near `q = 0`, where both sides are `0`. -/
 theorem laurentQExpansion_inv (hh : 0 < h) (hf : MeromorphicAt (cuspFunction h f) 0) :
     laurentQExpansion h f⁻¹ = (laurentQExpansion h f)⁻¹ := by
   have heq : cuspFunction h f⁻¹ =ᶠ[𝓝[≠] 0] (cuspFunction h f)⁻¹ :=
@@ -373,7 +377,7 @@ theorem laurentQExpansion_inv (hh : 0 < h) (hf : MeromorphicAt (cuspFunction h f
     rw [h₁, Pi.inv_apply, h₂, inv_zero]
   · have hne := (meromorphicOrderAt_ne_top_iff_eventually_ne_zero hf).mp htop
     refine eq_inv_of_mul_eq_one_right ?_
-    rw [← laurentQExpansion_mul hh hf hfi, ← laurentQExpansion_one hh]
+    rw [← laurentQExpansion_mul hh hf hfi, ← laurentQExpansion_one h]
     refine laurentQExpansion_congr hh ?_
     filter_upwards [self_mem_nhdsWithin, hne] with q hq hq'
     rw [cuspFunction_of_ne_zero hq] at hq'

@@ -224,14 +224,14 @@ theorem UpperHalfPlane.cuspFunction_one (h : ℝ) : cuspFunction h (1 : ℍ → 
   cuspFunction_const h 1
 
 /-- The cusp function of a power is the power of the cusp function, when the cusp function is
-analytic at `0`. -/
-theorem UpperHalfPlane.cuspFunction_pow (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
+continuous at `0`. -/
+theorem UpperHalfPlane.cuspFunction_pow (hf : ContinuousAt (cuspFunction h f) 0) :
     ∀ n : ℕ, cuspFunction h (f ^ n) = cuspFunction h f ^ n
   | 0 => by rw [pow_zero, pow_zero]; exact cuspFunction_one h
   | n + 1 => by
     rw [pow_succ, pow_succ, ← cuspFunction_pow hf n,
       _root_.UpperHalfPlane.cuspFunction_mul
-        (by rw [cuspFunction_pow hf n]; exact (hf.continuousAt.pow n)) hf.continuousAt]
+        (by rw [cuspFunction_pow hf n]; exact hf.pow n) hf]
 
 /-- The `q`-expansion of a power is the power of the `q`-expansion, when the cusp function is
 analytic at `0`. -/
@@ -240,7 +240,7 @@ theorem UpperHalfPlane.qExpansion_pow (hf : AnalyticAt ℂ (cuspFunction h f) 0)
   | 0 => by rw [pow_zero, pow_zero, _root_.UpperHalfPlane.qExpansion_one]
   | n + 1 => by
     have h_an : AnalyticAt ℂ (cuspFunction h (f ^ n)) 0 := by
-      rw [cuspFunction_pow hf n]
+      rw [cuspFunction_pow hf.continuousAt n]
       exact hf.pow n
     rw [pow_succ, pow_succ, _root_.UpperHalfPlane.qExpansion_mul h_an hf, qExpansion_pow hf n]
 
@@ -285,7 +285,7 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_const (c : ℂ) :
   cuspFunction_const h c ▸ analyticAt_const.meromorphicAt
 
 /-- The order at `0` of `q ^ k` times the cusp function of `f`. -/
-theorem UpperHalfPlane.meromorphicOrderAt_qParam_pow_mul {k : ℕ}
+theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}
     (hf : MeromorphicAt (cuspFunction h f) 0) :
     meromorphicOrderAt (fun q ↦ q ^ k * cuspFunction h f q) 0 =
       k + meromorphicOrderAt (cuspFunction h f) 0 := by
@@ -300,7 +300,7 @@ end CuspFunction
 theorem UpperHalfPlane.analyticAt_cuspFunction_qParam_pow (hh : 0 < h) (m : ℕ) :
     AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) 0 := by
   have hq := analyticAt_cuspFunction_qParam hh
-  rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m, cuspFunction_pow hq m]
+  rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m, cuspFunction_pow hq.continuousAt m]
   exact hq.pow m
 
 /-- The `q`-expansion of the `m`-th power of the `q`-parameter is `X ^ m`. -/
