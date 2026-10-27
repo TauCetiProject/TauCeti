@@ -299,6 +299,19 @@ end Restriction
 variable {Y : Scheme.{u}} [Y.Over (Spec (.of R))]
   (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
 
+/-- The base ring acts on sections of a pushforward over `U` as it acts on sections over the
+preimage of `U`: pushforward restricts scalars along `f.app U`, which carries the image of the
+base ring in `Γ(Y, U)` to its image in `Γ(X, f ⁻¹ᵁ U)`. -/
+lemma pushforward_baseRingToStructurePresheaf_smul (M : X.Modules) (U : Y.Opens) (r : R)
+    (s : Γ((pushforward f).obj M, U)) :
+    (Y.baseRingToStructurePresheaf R).app (op U) r • s =
+      ((X.baseRingToStructurePresheaf R).app (op (f ⁻¹ᵁ U)) r •
+        show Γ(M, f ⁻¹ᵁ U) from s : Γ(M, f ⁻¹ᵁ U)) := by
+  -- Scalars act on pushforward sections through `f.app U` by definition of the pushforward.
+  change f.app U ((Y.baseRingToStructurePresheaf R).app (op U) r) •
+    (show Γ(M, f ⁻¹ᵁ U) from s) = _
+  rw [app_baseRingToStructurePresheaf]
+
 /-- The sections of a pushforward over an open have the same base-ring module structure as
 the sections on its preimage. -/
 def pushforwardSectionsBaseLinearEquiv (M : X.Modules) (U : Y.Opens) :
@@ -311,19 +324,13 @@ def pushforwardSectionsBaseLinearEquiv (M : X.Modules) (U : Y.Opens) :
     ((Y.baseRingToStructurePresheaf R).app (op U)).hom
   let : Module R Γ(M, f ⁻¹ᵁ U) := Module.compHom Γ(M, f ⁻¹ᵁ U)
     ((X.baseRingToStructurePresheaf R).app (op (f ⁻¹ᵁ U))).hom
-  let : Module Γ(X, f ⁻¹ᵁ U) Γ((pushforward f).obj M, U) :=
-    inferInstanceAs (Module Γ(X, f ⁻¹ᵁ U) Γ(M, f ⁻¹ᵁ U))
   exact
     { toFun := id
       invFun := id
       left_inv _ := rfl
       right_inv _ := rfl
       map_add' _ _ := rfl
-      map_smul' r s := by
-        -- Pushforward restricts scalars along `f.app U`; the base-ring actions factor through it.
-        change f.app U ((Y.baseRingToStructurePresheaf R).app (op U) r) • (s : Γ(M, f ⁻¹ᵁ U)) =
-          (X.baseRingToStructurePresheaf R).app (op (f ⁻¹ᵁ U)) r • (s : Γ(M, f ⁻¹ᵁ U))
-        rw [app_baseRingToStructurePresheaf] }
+      map_smul' := pushforward_baseRingToStructurePresheaf_smul R f M U }
 
 -- Normalize the implicit section types before registering simp rules: `pushforward_obj_obj`
 -- otherwise rewrites their left-hand sides before the section formulas can apply.

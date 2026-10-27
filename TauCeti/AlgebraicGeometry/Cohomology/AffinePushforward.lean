@@ -44,20 +44,13 @@ lemma mayerVietorisSectionsDifferenceLinear_pushforward {X Y : Scheme.{u}} (f : 
     (b : Γ((pushforward f).obj M, V)) :
     mayerVietorisSectionsDifferenceLinear ((pushforward f).obj M) U V (a, b) =
       mayerVietorisSectionsDifferenceLinear M (f ⁻¹ᵁ U) (f ⁻¹ᵁ V) (a, b) := by
-  let N := (pushforward f).obj M
-  have hres : N.presheaf.map (homOfLE inf_le_left).op a -
-      N.presheaf.map (homOfLE inf_le_right).op b =
-        M.presheaf.map (homOfLE inf_le_left).op a -
-          M.presheaf.map (homOfLE inf_le_right).op b := by
-    simp only [N, pushforward_obj_presheaf_map]
-    -- Preimages of inclusions are the same morphisms in the opens poset.
-    rfl
-  -- Compose the public formulas explicitly: their section types agree at default
-  -- transparency, but type inference for rewriting does not unfold pushforward objects.
-  exact (mayerVietorisSectionsDifferenceLinear_apply N U V a b).trans
-    ((mayerVietorisSectionsDifference_apply N U V a b).trans
-      (hres.trans ((mayerVietorisSectionsDifference_apply M _ _ a b).symm.trans
-        (mayerVietorisSectionsDifferenceLinear_apply M _ _ a b).symm)))
+  -- Instantiate the preimage formulas explicitly: their pair type is only definitionally
+  -- that of the pushforward sections.
+  simp only [mayerVietorisSectionsDifferenceLinear_apply M (f ⁻¹ᵁ U) (f ⁻¹ᵁ V) a b,
+    mayerVietorisSectionsDifference_apply M (f ⁻¹ᵁ U) (f ⁻¹ᵁ V) a b,
+    mayerVietorisSectionsDifferenceLinear_apply, mayerVietorisSectionsDifference_apply]
+  -- Pushforward restriction maps are restrictions along preimages of the inclusions.
+  rfl
 
 /-- An overlap section has zero boundary for a pushforward exactly when it has zero boundary
 on the preimage cover. Pushforward sections over `U ⊓ V` are definitionally sections over
@@ -79,6 +72,24 @@ lemma mayerVietorisBoundaryLinear_pushforward_eq_zero_iff {X Y : Scheme.{u}} (f 
   · exact ⟨(a, b), (f.mayerVietorisSectionsDifferenceLinear_pushforward M U V a b).symm.trans h⟩
   · exact ⟨(a, b), (f.mayerVietorisSectionsDifferenceLinear_pushforward M U V a b).trans h⟩
 
+section KerEq
+
+variable {S P Q Q' : Type*} [Ring S] [AddCommGroup P] [AddCommGroup Q] [AddCommGroup Q']
+  [Module S P] [Module S Q] [Module S Q'] (g : P →ₗ[S] Q) (h : P →ₗ[S] Q')
+  (hg : Function.Surjective g) (hh : Function.Surjective h) (hk : LinearMap.ker g = LinearMap.ker h)
+
+/-- Two surjective linear maps with the same kernel identify their codomains, by the first
+isomorphism theorem. -/
+private def equivOfSurjectiveOfKerEq : Q ≃ₗ[S] Q' :=
+  (g.quotKerEquivOfSurjective hg).symm.trans
+    ((Submodule.quotEquivOfEq _ _ hk).trans (h.quotKerEquivOfSurjective hh))
+
+private lemma equivOfSurjectiveOfKerEq_apply (x : P) :
+    equivOfSurjectiveOfKerEq g h hg hh hk (g x) = h x := by
+  simp [equivOfSurjectiveOfKerEq]
+
+end KerEq
+
 variable {R : Type u} [CommRing R] {X Y : Scheme.{u}}
   [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))]
   (f : X ⟶ Y) [f.IsOver (Spec (.of R))]
@@ -87,14 +98,9 @@ variable {R : Type u} [CommRing R] {X Y : Scheme.{u}}
 over the base ring, with no condition on the morphism. -/
 def cohomologyZeroPushforwardBaseLinearEquiv (M : X.Modules) :
     Cohomology ((pushforward f).obj M) 0 ≃ₗ[R] Cohomology M 0 := by
-  -- Local sections use `baseRingToStructurePresheaf`, whereas global sections use
-  -- `baseRingToGlobalSections`; identify these scalar maps at the top open.
-  -- Both syntactic presentations of the top preimage have the same module structure;
-  -- instance search needs each presentation, as for intersections below.
-  let : Module Γ(X, f ⁻¹ᵁ ⊤) Γ((pushforward f).obj M, ⊤) :=
-    inferInstanceAs (Module Γ(X, f ⁻¹ᵁ ⊤) Γ(M, f ⁻¹ᵁ ⊤))
-  let : Module Γ(X, ⊤) Γ((pushforward f).obj M, ⊤) :=
-    inferInstanceAs (Module Γ(X, ⊤) Γ(M, ⊤))
+  -- Global sections carry the action through `baseRingToGlobalSections`, which is only
+  -- propositionally the action through `baseRingToStructurePresheaf` used by
+  -- `pushforwardSectionsBaseLinearEquiv`, so that equivalence cannot be reused at `⊤`.
   let e : Γ((pushforward f).obj M, ⊤) ≃ₗ[R] Γ(M, ⊤) :=
     { toFun := id
       invFun := id
@@ -102,14 +108,9 @@ def cohomologyZeroPushforwardBaseLinearEquiv (M : X.Modules) :
       right_inv _ := rfl
       map_add' _ _ := rfl
       map_smul' r s := by
-        -- Pushforward global sections restrict scalars along `f.app ⊤`; compare the
-        -- two base-ring maps through their structure-presheaf components at the top open.
-        change f.app ⊤ (baseRingToGlobalSections R Y r) • (s : Γ(M, ⊤)) =
-          baseRingToGlobalSections R X r • (s : Γ(M, ⊤))
-        have h := app_baseRingToStructurePresheaf R f ⊤ r
-        simp only [f.preimage_top, Scheme.baseRingToStructurePresheaf_app_top,
-          CommRingCat.hom_ofHom] at h
-        exact congrArg (fun a : Γ(X, ⊤) ↦ a • (s : Γ(M, ⊤))) h }
+        rw [base_smul_globalSections_eq_baseRingToStructurePresheaf_smul]
+        exact (pushforward_baseRingToStructurePresheaf_smul R f M ⊤ r s).trans
+          (base_smul_globalSections_eq_baseRingToStructurePresheaf_smul R X M r s).symm }
   exact (cohomologyZeroBaseLinearEquiv R Y ((pushforward f).obj M)).trans
     (e.trans (cohomologyZeroBaseLinearEquiv R X M).symm)
 
@@ -183,8 +184,7 @@ def cohomologyOnePushforwardBaseLinearEquiv [IsAffineHom f]
     rw [hx]
     exact f.mayerVietorisBoundaryLinear_pushforward_eq_zero_iff M U V hUV s
   -- Both cohomology modules are the quotient of the common overlap by this kernel.
-  exact (bY.quotKerEquivOfSurjective hbY).symm.trans
-    ((Submodule.quotEquivOfEq _ _ hker).trans (bX.quotKerEquivOfSurjective hbX))
+  exact equivOfSurjectiveOfKerEq bY bX hbY hbX hker
 
 /-- The degree-one comparison carries the boundary of an overlap section to its boundary
 on the preimage cover. The section types are identified by pushforward and `f.preimage_inf`. -/
@@ -201,13 +201,11 @@ lemma cohomologyOnePushforwardBaseLinearEquiv_boundary [IsAffineHom f]
     Module.compHom _ ((Y.baseRingToStructurePresheaf R).app (op (U ⊓ V))).hom
   let : Module R Γ(M, f ⁻¹ᵁ (U ⊓ V)) :=
     Module.compHom _ ((X.baseRingToStructurePresheaf R).app (op (f ⁻¹ᵁ (U ⊓ V)))).hom
-  rw [cohomologyOnePushforwardBaseLinearEquiv, LinearEquiv.trans_apply]
-  -- The boundary's scalar restriction is definitionally the same function; `erw`
-  -- unfolds it when matching the first-isomorphism-theorem formulas.
-  erw [LinearMap.quotKerEquivOfSurjective_symm_apply, LinearEquiv.trans_apply,
-    Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
-  exact congrArg (mayerVietorisBoundaryLinear M (f ⁻¹ᵁ U) (f ⁻¹ᵁ V)
-    (f.preimage_sup_eq_top hUV)) (pushforwardSectionsBaseLinearEquiv_apply R f M (U ⊓ V) s)
+  -- The comparison sends the boundary of `s` to the boundary of its image under the
+  -- section comparison, which is `s` itself.
+  exact (equivOfSurjectiveOfKerEq_apply _ _ _ _ _ s).trans (congrArg
+    (mayerVietorisBoundaryLinear M (f ⁻¹ᵁ U) (f ⁻¹ᵁ V) (f.preimage_sup_eq_top hUV))
+    (pushforwardSectionsBaseLinearEquiv_apply R f M (U ⊓ V) s))
 
 /-- On a locally Noetherian target covered by two affine opens, first cohomology of an affine
 pushforward is finite exactly when first cohomology on the locally Noetherian source is finite. -/
