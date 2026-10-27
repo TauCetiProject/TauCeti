@@ -12,9 +12,10 @@ public import TauCeti.NumberTheory.Padics.Distribution.AnalyticStage
 # Polynomial coefficients in an analytic stage
 
 At level `h`, the coefficient vectors vanishing above degree `k` form the submodule
-`polynomialSubmodule S k`. Restricting to the indices `ZMod (p^h) × Fin (k+1)` identifies
-it isometrically with the finite product of coefficient modules. Degree truncation is a
-contractive projection onto this submodule, and the union over all degrees is dense.
+`polynomialSubmodule S k`. When `p^h ≠ 0`, restricting to the indices
+`ZMod (p^h) × Fin (k+1)` identifies it isometrically with the finite product of coefficient
+modules, and degree truncations converge in norm. Degree truncation is always a contractive
+projection onto this submodule, and the union over all degrees is dense.
 
 For coefficients in a complete ultrametric `ℤ_p`-module, these vectors evaluate on each
 disc to a polynomial in the normalized coordinate `w = (x-a)/p^h`. The polynomial on a
@@ -136,9 +137,9 @@ theorem norm_polynomialTruncation_le (c : AnalyticStage p h E) :
 
 end Coefficients
 
-variable [hp : Fact p.Prime]
-
 section FiniteProduct
+
+variable [NeZero (p ^ h)]
 
 variable (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E]
 
@@ -214,7 +215,7 @@ section Approximation
 variable (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E]
 
 /-- Degree truncations converge in the Gauss norm to the original analytic coefficient vector. -/
-theorem tendsto_polynomialTruncation (c : AnalyticStage p h E) :
+theorem tendsto_polynomialTruncation [NeZero (p ^ h)] (c : AnalyticStage p h E) :
     Tendsto (fun k ↦ polynomialTruncation S k c) atTop (𝓝 c) := by
   let u (k : ℕ) : Finset (ZMod (p ^ h) × ℕ) := Finset.univ ×ˢ Finset.range (k + 1)
   have hu : Tendsto u atTop atTop := by
@@ -230,7 +231,6 @@ theorem tendsto_polynomialTruncation (c : AnalyticStage p h E) :
     Function.comp_def]
     using (ZeroAtInftyContinuousMap.hasSum_single c).comp hu
 
-omit hp in
 /-- Discwise polynomial coefficient vectors are dense in every analytic stage. -/
 theorem dense_iUnion_polynomialSubmodule :
     Dense (⋃ k, (polynomialSubmodule (p := p) (h := h) (E := E) S k :
@@ -246,6 +246,8 @@ theorem dense_iUnion_polynomialSubmodule :
 end Approximation
 
 section Evaluation
+
+variable [hp : Fact p.Prime]
 
 variable (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [Module ℤ_[p] E]
 
