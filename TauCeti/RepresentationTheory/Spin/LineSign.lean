@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Spin.OddStructure
 public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 
 /-!
