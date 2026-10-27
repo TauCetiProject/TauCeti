@@ -28,7 +28,10 @@ zero:
   reaches the level, or equivalently as zero up to the mass at zero and the negative-binomial
   quantile at the rescaled level `(u - w) / (1 - w)` above it.
 
-The mass, mean, variance and quantile formulas also cover the Dirac boundaries `r = 0` and `p = 1`.
+The masses, mean and variance, and the quantile as zero up to the mass at zero and the rescaled
+negative-binomial quantile above it, also cover the Dirac boundaries `r = 0` and `p = 1`; the
+exponential-integrability domain, the incomplete-Beta cdf and the least-index quantile need
+`0 < r`.
 
 ## References
 
