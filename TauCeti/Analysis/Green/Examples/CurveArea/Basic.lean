@@ -48,6 +48,10 @@ theorem contDiff_areaP {n : WithTop ℕ∞} : ContDiff ℝ n areaP :=
 theorem contDiff_areaQ {n : WithTop ℕ∞} : ContDiff ℝ n areaQ :=
   Complex.reCLM.contDiff.div_const 2
 
+/-- The signed-area form `(x dy - y dx) / 2` is a continuous field of real 1-forms. -/
+theorem continuous_oneForm_area : Continuous (oneForm areaP areaQ) :=
+  (contDiff_areaP (n := 0)).continuous.oneForm (contDiff_areaQ (n := 0)).continuous
+
 /-- The signed-area form has curl one in the positive basis `(1,I)`. -/
 @[simp]
 theorem curl_area (z : ℂ) : curl areaP areaQ z = 1 := by

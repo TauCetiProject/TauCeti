@@ -5,6 +5,9 @@ Authors: Tau Ceti AI contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Pi
+public import Mathlib.Algebra.Module.Submodule.Defs
+public import Mathlib.Data.Finsupp.SMul
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.LocallyConstant.Basic
@@ -33,12 +36,19 @@ to some finite level `A n`, and the finite levels are cofinal among all the fini
 * `TauCeti.FiniteQuotientTower Γ A`: a tower of discrete quotients `q n : Γ →ₜ* A n` with
   transition homomorphisms and point-separating kernels.
 * `TauCeti.FiniteQuotientTower.ker`: the kernel of `q n`, as an open normal subgroup.
+* `TauCeti.FiniteQuotientTower.toQuotient`: for a normal subgroup `U` containing the kernel of
+  `q n`, the homomorphism `A n →* Γ ⧸ U` through which the quotient map factors.
+* `TauCeti.FiniteQuotientTower.compatibleFamilies`: the families of finitely supported
+  coefficients on the levels that are compatible under the transition maps; these are the
+  coordinates of measures on `Γ`.
 
 ## Main results
 
 * `TauCeti.FiniteQuotientTower.ext`: a tower is determined by its projections; the transition
   homomorphisms are forced by surjectivity.
 * `TauCeti.FiniteQuotientTower.t_t`: the transition homomorphisms compose.
+* `TauCeti.FiniteQuotientTower.totallyDisconnectedSpace`: a group with a tower is totally
+  disconnected.
 * `TauCeti.FiniteQuotientTower.hasAntitoneBasis_nhds_one`: over a compact group the kernels form
   a decreasing neighbourhood basis of `1`.
 * `TauCeti.FiniteQuotientTower.exists_ker_le_of_isOpen`: every open subgroup of a compact group
@@ -148,6 +158,13 @@ theorem eq_of_forall_q_eq {x y : Γ} (h : ∀ n, T.q n x = T.q n y) : x = y := b
   exact hn (by rw [map_mul, map_inv, h n, inv_mul_cancel])
 
 include T in
+/-- A group with a tower of finite quotients is totally disconnected: the projections are
+constant on every preconnected set, and they separate points. -/
+theorem totallyDisconnectedSpace : TotallyDisconnectedSpace Γ where
+  isTotallyDisconnected_univ _ _ hs _ hx _ hy :=
+    T.eq_of_forall_q_eq fun n ↦ hs.constant (T.q n).continuous.continuousOn hx hy
+
+include T in
 /-- Over a compact group the quotients of a tower are finite. -/
 theorem finite [CompactSpace Γ] (n : ℕ) : Finite (A n) :=
   have : CompactSpace (A n) := (T.surjective_q n).compactSpace (T.q n).continuous
@@ -201,6 +218,40 @@ theorem exists_ker_le_of_isOpen [SeparatelyContinuousMul Γ] [CompactSpace Γ] {
   (T.hasAntitoneBasis_nhds_one.mem_iff.mp (hU.mem_nhds U.one_mem)).imp fun _ hn ↦
     SetLike.coe_subset_coe.mp hn
 
+/-! ### Quotients coarser than a level -/
+
+/-- For a normal subgroup `U` containing the `n`-th kernel, the homomorphism `A n →* Γ ⧸ U`
+through which the quotient map `Γ → Γ ⧸ U` factors (`toQuotient_q`). -/
+noncomputable def toQuotient {n : ℕ} {U : Subgroup Γ} [U.Normal] (h : (T.ker n : Subgroup Γ) ≤ U) :
+    A n →* Γ ⧸ U :=
+  (T.q n : Γ →* A n).liftOfSurjective (T.surjective_q n)
+    ⟨QuotientGroup.mk' U, by rwa [QuotientGroup.ker_mk']⟩
+
+/-- The homomorphism `A n →* Γ ⧸ U` sends the image of `x` at level `n` to the coset of `x`. -/
+@[simp]
+theorem toQuotient_q {n : ℕ} {U : Subgroup Γ} [U.Normal] (h : (T.ker n : Subgroup Γ) ≤ U)
+    (x : Γ) : T.toQuotient h (T.q n x) = x :=
+  MonoidHom.liftOfRightInverse_comp_apply _ _ _ _ x
+
+/-- Factoring the quotient map through a deeper level is compatible with the transition
+homomorphism. -/
+@[simp]
+theorem toQuotient_t {m n : ℕ} (hmn : m ≤ n) {U : Subgroup Γ} [U.Normal]
+    (h : (T.ker m : Subgroup Γ) ≤ U) (a : A n) :
+    T.toQuotient h (T.t hmn a) =
+      T.toQuotient (le_trans (α := Subgroup Γ) (T.ker_antitone hmn) h) a := by
+  obtain ⟨x, rfl⟩ := T.surjective_q n a
+  simp
+
+/-- At the `n`-th kernel itself, the homomorphism `A n →* Γ ⧸ ker q n` is injective. -/
+theorem toQuotient_injective (n : ℕ) :
+    Function.Injective (T.toQuotient (le_refl (T.ker n : Subgroup Γ))) := fun a b hab ↦ by
+  obtain ⟨x, rfl⟩ := T.surjective_q n a
+  obtain ⟨y, rfl⟩ := T.surjective_q n b
+  rw [toQuotient_q, toQuotient_q, QuotientGroup.eq] at hab
+  have hq := T.mem_ker.mp hab
+  rwa [map_mul, map_inv, inv_mul_eq_one] at hq
+
 /-! ### Functions factoring through a level -/
 
 variable {B : Type*}
@@ -250,6 +301,28 @@ theorem exists_monoidHom_comp_q_eq [ContinuousMul Γ] [CompactSpace Γ] [Monoid 
     rw [← map_mul, hgq, hgq, hgq, map_mul]
   · ext x
     simp [hgq]
+
+/-! ### Compatible families of coefficients -/
+
+/-- The **compatible families** along a tower: the families of finitely supported coefficients
+`c n : A n →₀ R` such that pushing `c n` forward along the transition map to a level `m ≤ n`,
+which sums the coefficients over each fibre, gives `c m`. -/
+def compatibleFamilies (R : Type*) [Semiring R] : Submodule R (∀ n, A n →₀ R) where
+  carrier := {c | ∀ ⦃m n : ℕ⦄ (h : m ≤ n), (c n).mapDomain (T.t h) = c m}
+  add_mem' {c d} hc hd m n h := by
+    rw [Pi.add_apply, Pi.add_apply, Finsupp.mapDomain_add, hc h, hd h]
+  zero_mem' m n h := by
+    rw [Pi.zero_apply, Pi.zero_apply, Finsupp.mapDomain_zero]
+  smul_mem' r c hc m n h := by
+    rw [Pi.smul_apply, Pi.smul_apply, Finsupp.mapDomain_smul, hc h]
+
+variable {T} in
+/-- A family is compatible when its pushforward from every level to every lower level is the
+family at the lower level. -/
+@[simp]
+theorem mem_compatibleFamilies {R : Type*} [Semiring R] {c : ∀ n, A n →₀ R} :
+    c ∈ T.compatibleFamilies R ↔ ∀ ⦃m n : ℕ⦄ (h : m ≤ n), (c n).mapDomain (T.t h) = c m :=
+  Iff.rfl
 
 end FiniteQuotientTower
 

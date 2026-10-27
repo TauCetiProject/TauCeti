@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 public import Mathlib.Analysis.SpecialFunctions.Sigmoid
 public import TauCeti.Geometry.Manifold.Boundary.BicollarSide
 public import TauCeti.Geometry.Manifold.Instances.Torus
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
+import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
 
 /-!
 # Knot exteriors from solid-torus neighbourhoods
@@ -33,6 +34,8 @@ topological charted-space structure.
 ## Main definitions
 
 * `TauCeti.knotExterior`: the exterior of a solid torus neighbourhood.
+* `TauCeti.IsSolidTorusNeighborhood.exteriorBoundaryInclusion`: the boundary torus of the exterior,
+  parametrized by `S¹ × S¹` through `Φ`.
 * `TauCeti.SolidTorus.halve`: the solid torus of half the radius inside the solid torus.
 * `TauCeti.halveBicollar`: the bicollar of its boundary torus, swept out by the annuli of `Φ`.
 * `TauCeti.IsSolidTorusNeighborhood.exteriorChartedSpace`: the exterior of the half-radius
@@ -108,6 +111,38 @@ theorem IsSolidTorusNeighborhood.exterior_frontier
   rw [knotExterior, frontier_compl]
   exact h.frontier_image
 
+namespace IsSolidTorusNeighborhood
+
+variable {f : Circle → X} {Φ : SolidTorus → X}
+
+/-- The boundary torus of a solid torus neighbourhood lies in the knot exterior. -/
+theorem apply_boundaryInclusion_mem_knotExterior (h : IsSolidTorusNeighborhood f Φ)
+    (q : Circle × Circle) : Φ (SolidTorus.boundaryInclusion q) ∈ knotExterior (Φ := Φ) := by
+  rw [mem_knotExterior]
+  rintro ⟨p, hp, hpq⟩
+  rw [h.isEmbedding.injective hpq, mem_ofPred_eq, SolidTorus.coe_boundaryInclusion_fst,
+    Circle.norm_coe] at hp
+  exact lt_irrefl _ hp
+
+/-- The boundary torus of the knot exterior, parametrized by `S¹ × S¹` through the solid torus
+neighbourhood: `q ↦ Φ (q.1, q.2)`. -/
+def exteriorBoundaryInclusion (h : IsSolidTorusNeighborhood f Φ) (q : Circle × Circle) :
+    knotExterior (Φ := Φ) :=
+  ⟨Φ (SolidTorus.boundaryInclusion q), h.apply_boundaryInclusion_mem_knotExterior q⟩
+
+/-- The parametrized boundary torus of the exterior is `q ↦ Φ (q.1, q.2)`. -/
+@[simp]
+theorem coe_exteriorBoundaryInclusion_apply (h : IsSolidTorusNeighborhood f Φ)
+    (q : Circle × Circle) :
+    (h.exteriorBoundaryInclusion q : X) = Φ (SolidTorus.boundaryInclusion q) :=
+  (rfl)
+
+/-- The parametrization of the boundary torus of the exterior is injective. -/
+theorem exteriorBoundaryInclusion_injective (h : IsSolidTorusNeighborhood f Φ) :
+    Function.Injective h.exteriorBoundaryInclusion := fun _ _ hq ↦
+  h.isEmbedding_comp_boundaryInclusion.injective (congrArg Subtype.val hq)
+
+end IsSolidTorusNeighborhood
 
 end Topology
 
@@ -203,25 +238,15 @@ private theorem norm_sigmoidPolar (q : Circle × ℝ) : ‖sigmoidPolar q‖ = R
     Real.norm_of_nonneg (Real.sigmoid_pos _).le]
 
 private theorem isOpenEmbedding_sigmoidPolar : IsOpenEmbedding sigmoidPolar := by
-  let σ : ℝ → Ioi (0 : ℝ) := codRestrict Real.sigmoid (Ioi 0) fun t => Real.sigmoid_pos t
-  have hσ : IsOpenEmbedding σ := by
-    refine ⟨(IsEmbedding.subtypeVal.comp Topology.isEmbedding_sigmoid).codRestrict _ _, ?_⟩
-    have hσr : range σ = Subtype.val ⁻¹' range Real.sigmoid := range_codRestrict _
-    rw [hσr]
-    refine IsOpen.preimage continuous_subtype_val ?_
-    have : range Real.sigmoid = Ioo 0 1 := Real.range_sigmoid
-    exact this ▸ isOpen_Ioo
-  have hpolar : sigmoidPolar = Subtype.val ∘ (homeomorphUnitSphereProd ℂ).symm ∘
-      Prod.map (Homeomorph.refl Circle) σ := by
+  have hσ : IsOpenEmbedding Real.sigmoid :=
+    ⟨IsEmbedding.subtypeVal.comp Topology.isEmbedding_sigmoid, Real.range_sigmoid ▸ isOpen_Ioo⟩
+  have hpolar : sigmoidPolar = (fun q : sphere (0 : ℂ) 1 × ℝ => Real.sigmoid q.2 • (q.1 : ℂ)) ∘
+      Prod.map Circle.homeomorphSphere id := by
     funext q
-    -- `Circle` is the unit sphere of `ℂ` by definition, so the two sides agree on the nose once
-    -- the polar inverse is unfolded.
-    simp only [sigmoidPolar, Function.comp_apply, homeomorphUnitSphereProd_symm_apply_coe]
-    rfl
+    simp [sigmoidPolar]
   rw [hpolar]
-  exact isOpen_compl_singleton.isOpenEmbedding_subtypeVal.comp
-    ((homeomorphUnitSphereProd ℂ).symm.isOpenEmbedding.comp
-      ((Homeomorph.refl Circle).isOpenEmbedding.prodMap hσ))
+  exact (hσ.smul_coe_sphere Real.sigmoid_pos).comp
+    (Circle.homeomorphSphere.isOpenEmbedding.prodMap IsOpenEmbedding.id)
 
 /-- The bicollar of the boundary torus of the half-radius solid torus inside a solid torus
 neighbourhood `Φ`: `((u, z), t) ↦ Φ (σ(t) u, z)`, where `σ` is the logistic sigmoid. It meets

@@ -58,6 +58,8 @@ lower bound on the dimension is needed: in dimension one, both measures count po
 * `TauCeti.euclideanHausdorffMeasure_restrict_sphere`: the same comparison as measures on `E`.
 * `TauCeti.euclideanHausdorffMeasure_sphere_zero_one_eq_ofReal`: the unit sphere has
   `(n - 1)`-dimensional Hausdorff measure `2 π ^ (n / 2) / Γ(n / 2)`.
+* `TauCeti.toSphere_volume_apply_univ`: the same value `2 π ^ (n / 2) / Γ(n / 2)` for the total
+  mass of Mathlib's surface measure `Measure.toSphere volume`.
 * `TauCeti.euclideanHausdorffMeasure_sphere`: `μHE[n - 1] (sphere c r) = n ω_n r ^ (n - 1)`.
 * `TauCeti.roundSphereVolume`: the area `|Sⁿ|` of the unit round sphere `Sⁿ ⊆ ℝⁿ⁺¹`, its normalized
   `n`-dimensional Hausdorff measure (not the ambient Lebesgue measure, which vanishes).
@@ -349,6 +351,15 @@ theorem euclideanHausdorffMeasure_sphere_zero_one_eq_ofReal :
     field_simp
   rw [InnerProductSpace.volume_ball, ← hreal, ENNReal.ofReal_mul (Nat.cast_nonneg _)]
   simp
+
+/-- **The surface area of the unit sphere.** On a real inner product space of dimension `n`,
+Mathlib's surface measure `Measure.toSphere volume` gives the unit sphere total mass
+`2 π ^ (n / 2) / Γ(n / 2)`. In dimension zero the sphere is empty and both sides vanish. -/
+theorem toSphere_volume_apply_univ :
+    (volume : Measure E).toSphere univ =
+      ENNReal.ofReal (2 * Real.pi ^ ((finrank ℝ E : ℝ) / 2) / Real.Gamma (finrank ℝ E / 2)) := by
+  rw [toSphere_apply_univ, ← euclideanHausdorffMeasure_sphere_zero_one,
+    euclideanHausdorffMeasure_sphere_zero_one_eq_ofReal]
 
 /-- A sphere of radius `r > 0` in an `n`-dimensional real inner product space has
 `(n - 1)`-dimensional Hausdorff measure `n ω_n r ^ (n - 1)`, where `ω_n` is the volume of the

@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.GrothendieckGroup.BaseChange
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Projection
 import TauCeti.RepresentationTheory.Induction.BaseChange
-import TauCeti.RepresentationTheory.FDRep
+import TauCeti.RepresentationTheory.FDRep.Basic
 
 /-!
 # Scalar extension of group-algebra Grothendieck rings

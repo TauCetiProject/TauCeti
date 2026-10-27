@@ -117,14 +117,14 @@ theorem exists_smul_eq_splitPrincipalForm_of_discrim_eq_one
   have hb2 : g.b ^ 2 = 1 := by simpa [discrim_def, discrim, hga] using hg
   have hb : g.b = 1 ∨ g.b = -1 := sq_eq_one_iff.mp hb2
   have hT : (ModularGroup.T ^ (g.b * g.c)) • g = ⟨0, g.b, 0⟩ := by
-    ext <;> simp [smul_a, smul_b, smul_c, ModularGroup.coe_T_zpow, hga]
+    ext <;> simp [hga]
     linear_combination -g.c * hb2
   rcases hb with hb | hb
   · refine ⟨(ModularGroup.T ^ (g.b * g.c)) * ρ, ?_⟩
     rw [mul_smul, hT, hb, splitPrincipalForm_def]
   · refine ⟨ModularGroup.S * ((ModularGroup.T ^ (g.b * g.c)) * ρ), ?_⟩
     rw [mul_smul, mul_smul, hT, hb, splitPrincipalForm_def]
-    ext <;> simp [smul_a, smul_b, smul_c, ModularGroup.coe_S]
+    simp
 
 /-- The existing proper-class quotient has only the principal class in discriminant one. -/
 theorem properClass_eq_splitPrincipalForm_of_discrim_eq_one

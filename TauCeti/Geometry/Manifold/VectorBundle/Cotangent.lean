@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
@@ -36,6 +37,12 @@ the derivative of the inverse change of charts at `φ q`
 pushed-forward tangent vector as the old covector pairs with the original one
 (`TauCeti.CotangentBundle.extChartAt_extChartAt_symm_snd_apply_fderivWithin`).
 This is the transformation law of covector components, dual to that of tangent vectors.
+
+Covectors pull back along the differential of a map `f : M → N`: a covector `p` at `f x` gives the
+covector `p ∘ df_x` at `x`. For a family of covectors over a parameter manifold this is smooth:
+`TauCeti.CotangentBundle.contMDiffAt_mk_comp_mfderiv` loses one degree of smoothness of `f`, as
+the differential does. It gives the smoothness of the cotangent lift of a diffeomorphism
+(`Diffeomorph.cotangent`).
 
 The construction follows the Zulip discussion `Cotangent Bundle as a Manifold` in the channel
 `Is there code for X?`, which observed that Mathlib's continuous-linear-map bundle operations
@@ -67,7 +74,16 @@ abbrev CotangentBundle (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalS
 namespace CotangentBundle
 
 variable {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I 1 M]
+
+/-- Two covectors are equal if they have the same base point and take the same values. -/
+theorem ext {z w : CotangentBundle I M} (hproj : z.proj = w.proj)
+    (h : ∀ v : TangentSpace I z.proj, z.2 v = w.2 v) : z = w := by
+  obtain ⟨x, p⟩ := z
+  obtain ⟨y, q⟩ := w
+  obtain rfl : x = y := hproj
+  exact congrArg (TotalSpace.mk' (E →L[𝕜] 𝕜) x) (ContinuousLinearMap.ext h)
+
+variable [IsManifold I 1 M]
 
 /-- The preferred chart of the cotangent bundle at `z₀` sends a covector `z` to the chart image of
 its base point and to the covector precomposed with the inverse of the tangent chart at `z₀`. -/
@@ -143,6 +159,61 @@ theorem extChartAt_extChartAt_symm_snd_apply_fderivWithin (z₀ z₁ : Cotangent
   rw [extChartAt_extChartAt_symm z₀ z₁ p hq hq₁, hd, ContinuousLinearMap.comp_apply,
     Function.comp_apply, ← tangentCoordChange_def, tangentCoordChange_comp ⟨⟨hx, hq₁⟩, hx⟩,
     tangentCoordChange_self hx]
+
+section Pullback
+
+variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J 1 N]
+  {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace 𝕜 EX] [TopologicalSpace HX]
+  {IX : ModelWithCorners 𝕜 EX HX} [TopologicalSpace X] [ChartedSpace HX X]
+  {m n : WithTop ℕ∞}
+
+/-- **Pulling covectors back along a map is smooth.** Let `Ψ z` be a covector at `f (g z)`,
+depending on a parameter `z`. Its pullback along the differential of `f` at `g z`,
+`Ψ z ∘ df_(g z)`, is a covector at `g z`. If `Ψ` and `g` are `C^m` at `z₀` and `f` is `C^n` at
+`g z₀` with `m + 1 ≤ n`, the family of pulled-back covectors is `C^m` at `z₀`. -/
+theorem contMDiffAt_mk_comp_mfderiv {Ψ : X → CotangentBundle J N} {g : X → M} {f : M → N}
+    {z₀ : X} (hΨg : ∀ z, (Ψ z).proj = f (g z))
+    (hΨ : ContMDiffAt IX (J.prod 𝓘(𝕜, E' →L[𝕜] 𝕜)) m Ψ z₀) (hg : ContMDiffAt IX I m g z₀)
+    (hf : ContMDiffAt I J n f (g z₀)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m
+      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).2 ∘L mfderiv I J f (g z)) :
+        CotangentBundle I M)) z₀ := by
+  rw [contMDiffAt_hom_bundle] at hΨ ⊢
+  refine ⟨hg, ?_⟩
+  -- In bundle coordinates, the pulled-back covector is the coordinate expression of `Ψ z`
+  -- composed with that of the differential of `f`.
+  -- Differentiating `f` on its own source needs no `C¹` structure on the parameter space.
+  have hd := (hf.mfderiv_const hmn).comp z₀ hg
+  refine (hΨ.2.clm_comp hd).congr_of_eventuallyEq ?_
+  filter_upwards [(hf.continuousAt.comp hg.continuousAt).preimage_mem_nhds
+      ((trivializationAt E' (TangentSpace J) (f (g z₀))).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt' _))] with z hz
+  rw [hΨg z₀]
+  -- Replace the covector `Ψ z` by one written over its base point `f (g z)`.
+  have hz' := hΨg z
+  generalize Ψ z = w at hz' ⊢
+  obtain ⟨y, p⟩ := w
+  obtain rfl : y = f (g z) := hz'
+  ext v
+  simp only [ContinuousLinearMap.inCoordinates, Function.comp_apply, inTangentCoordinates,
+    ContinuousLinearMap.comp_apply, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_apply, id_eq]
+  rw [Trivialization.symmL_continuousLinearMapAt _ (b := f (g z)) hz]
+
+/-- **Pulling covectors back along a map is smooth.** The global version of
+`TauCeti.CotangentBundle.contMDiffAt_mk_comp_mfderiv`. -/
+theorem contMDiff_mk_comp_mfderiv {Ψ : X → CotangentBundle J N} {g : X → M} {f : M → N}
+    (hΨg : ∀ z, (Ψ z).proj = f (g z))
+    (hΨ : ContMDiff IX (J.prod 𝓘(𝕜, E' →L[𝕜] 𝕜)) m Ψ) (hg : ContMDiff IX I m g)
+    (hf : ContMDiff I J n f) (hmn : m + 1 ≤ n) :
+    ContMDiff IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m
+      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).2 ∘L mfderiv I J f (g z)) :
+        CotangentBundle I M)) :=
+  fun z ↦ contMDiffAt_mk_comp_mfderiv hΨg (hΨ z) (hg z) (hf (g z)) hmn
+
+end Pullback
 
 end CotangentBundle
 

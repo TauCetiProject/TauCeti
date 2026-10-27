@@ -130,7 +130,7 @@ theorem SidePairing.side_eq_dirichletFace (σ : P.SidePairing) (hmap : ∀ i, σ
     have hxD : x ∈ dirichletDomain Γ p := hP ▸ P.side_subset_carrier i hx
     refine (inv_smul_mem_dirichletDomain_iff hxD t⁻¹).1 ?_
     rw [inv_inv, ← hP]
-    exact P.side_subset_carrier _ (σ.map_smul_side i ▸ smul_mem_smul_set hx)
+    exact P.side_subset_carrier _ (σ.map_smul_mem_side hx)
   obtain ⟨j, hj⟩ := exists_side_eq_dirichletFace_of_nontrivial hP
     (TauCeti.smul_ne_of_ne_one Γ ℍ hp ht) ((P.side_nontrivial i).mono hsub)
   rw [← hj, P.eq_of_nontrivial_side_inter_side (i := j) (j := i)

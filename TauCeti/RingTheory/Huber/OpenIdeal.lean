@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.Topology.Algebra.Group.DenseRange
 
+import Mathlib.RingTheory.Nakayama
 import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 
 /-!
@@ -22,7 +23,8 @@ work is that an *ideal* of `A` containing the image of `Iⁿ` automatically cont
 
 The openness criteria require only separate continuity of addition. The small-coefficient and
 weighted-neighbourhood results require only separate continuity of multiplication, together with
-the chosen pair of definition.
+the chosen pair of definition. Stability of open ideals under perturbation of their generators
+needs, in addition, an `I`-adically complete ring of definition.
 
 ## Main results
 
@@ -51,6 +53,11 @@ the chosen pair of definition.
 * `TauCeti.Huber.PairOfDefinition.exists_forall_mem_idealImage_exists_sum_eq`: if a finite set `T`
   spans an ideal containing a neighbourhood of zero, then a basic neighbourhood of zero
   consists of `T`-combinations whose *coefficients* lie in any prescribed basic neighbourhood.
+* `TauCeti.Huber.PairOfDefinition.exists_forall_isOpen_span_of_sub_mem_idealImage` and
+  `TauCeti.Huber.exists_mem_nhds_forall_isOpen_span_of_sub_mem`: over a complete Hausdorff Huber
+  ring, a set spanning an open ideal keeps doing so under small perturbations of its elements —
+  the open-ideal clause of Wedhorn's Proposition 7.34. The proof is Nakayama's lemma in the
+  `I`-adically complete ring of definition.
 * `TauCeti.Huber.PairOfDefinition.isAdic_map_idealOfDefinition`: for compatible rings of
   definition, a continuous map extending the source ideal of definition to an open ambient ideal
   makes its extension an ideal of definition in the target ring of definition.
@@ -111,8 +118,9 @@ formalised there and nothing could be ported.
 
 ## References
 
-* [Wedhorn, *Adic Spaces*][wedhorn_adic], Lemmas 6.6 and 6.20, Remark 7.30(1) and (5), and §6.5
-  on adic homomorphisms, with Proposition 6.25 on homomorphisms from Tate rings.
+* [Wedhorn, *Adic Spaces*][wedhorn_adic], Lemmas 6.6 and 6.20, Remark 7.30(1) and (5),
+  Proposition 7.34, and §6.5 on adic homomorphisms, with Proposition 6.25 on homomorphisms from
+  Tate rings.
 * [AINTLIB](https://github.com/CBirkbeck/AINTLIB), branch `dev/adic-spaces`,
   `projects/AdicSpaces/Adic spaces/OpenIdeals.lean` and `HuberRings.lean`.
 -/
@@ -315,6 +323,57 @@ theorem exists_forall_mem_idealImage_exists_sum_eq (P : PairOfDefinition A) (T :
       _ = ((∑ z ∈ G, z * c z : P.ringOfDefinition) : A) := by push_cast; rfl
       _ = (y : A) := by rw [hsum]
 
+variable [SeparatelyContinuousMul A] in
+/-- **Wedhorn Proposition 7.34, the open-ideal clause.** Let `A₀` be `I`-adically complete, as it
+is for every pair of definition of a complete Hausdorff Huber ring. If a set `T` spans an open
+ideal of `A`, then there is a basic neighbourhood `Iⁿ` of zero such that every set `T'`
+containing, for each `t ∈ T`, an element within `Iⁿ` of `t` again spans an open ideal. Wedhorn
+takes `T` finite; any set spanning an open ideal is allowed here.
+
+Together with `TauCeti.ValuationSpectrum.exists_forall_rationalSubset_eq_of_sub_mem_idealImage`,
+this says that perturbing a presentation `(T, s)` of a rational subset slightly yields again a
+presentation of a rational subset, and of the same one.
+
+Completeness cannot be dropped: in `ℤ` with the `p`-adic topology the ideal spanned by `1` is
+open, but its perturbations `1 + pⁿ` span non-open ideals. -/
+theorem exists_forall_isOpen_span_of_sub_mem_idealImage (P : PairOfDefinition A)
+    [IsAdicComplete P.idealOfDefinition P.ringOfDefinition] {T : Set A}
+    (hT : IsOpen (Ideal.span T : Set A)) :
+    ∃ n : ℕ, ∀ T' : Set A, (∀ t ∈ T, ∃ u ∈ T', t - u ∈ P.idealImage n) →
+      IsOpen (Ideal.span T' : Set A) := by
+  classical
+  -- A finite part `F` of `T` already spans an open ideal; only its partners in `T'` are used.
+  obtain ⟨F, hFT, hF⟩ := P.exists_finset_subset_isOpen_span_of_isOpen_span hT
+  obtain ⟨n, hn⟩ :=
+    P.exists_forall_mem_idealImage_exists_sum_eq F (hF.mem_nhds (Ideal.span _).zero_mem) 1
+  refine ⟨n, fun T' hTT' ↦ (P.isOpen_iff_exists_pow_le _).mpr ⟨n, ?_⟩⟩
+  choose! u hu hδ using fun t (ht : t ∈ F) ↦ hTT' t (hFT ht)
+  -- The ideal `T' · A`, pulled back to the ring of definition.
+  set a : Ideal P.ringOfDefinition := (Ideal.span T').comap P.ringOfDefinition.subtype
+  -- Each `y ∈ Iⁿ` is `∑ t * w t` over `t ∈ F`, with `w t ∈ I`. Replacing every `t` by its
+  -- partner `u t` changes the sum by `∑ (t - u t) * w t ∈ Iⁿ⁺¹`, so `y` lies in `a` up to an
+  -- error in `I • Iⁿ`.
+  have hle : P.idealOfDefinition ^ n ≤ a ⊔ P.idealOfDefinition • P.idealOfDefinition ^ n := by
+    intro y hy
+    obtain ⟨w, hw, hsum⟩ := hn y ((P.mem_idealImage n).mpr ⟨y, hy, rfl⟩)
+    obtain ⟨e, he, hee⟩ := (P.mem_idealImage (n + 1)).mp
+      (sum_mem fun t ht ↦ P.mul_mem_idealImage_add (hδ t ht) (hw t ht) :
+        ∑ t ∈ F, (t - u t) * w t ∈ P.idealImage (n + 1))
+    have hcomb : (y : A) - e = ∑ t ∈ F, u t * w t := by
+      rw [hee, ← hsum, ← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun t _ ↦ by ring
+    refine Submodule.mem_sup.mpr ⟨y - e, Ideal.mem_comap.mpr ?_, e,
+      by rwa [Ideal.smul_eq_mul, ← pow_succ'], sub_add_cancel y e⟩
+    rw [map_sub, Subring.subtype_apply, Subring.subtype_apply, hcomb]
+    exact sum_mem fun t ht ↦ Ideal.mul_mem_right _ _ (Ideal.subset_span (hu t ht))
+  -- Nakayama's lemma: `I` lies in the Jacobson radical of the `I`-adically complete ring `A₀`.
+  have hpow : P.idealOfDefinition ^ n ≤ a := Submodule.le_of_le_smul_of_le_jacobson_bot
+    P.fg_idealOfDefinition.pow (IsAdicComplete.le_jacobson_bot _) hle
+  rw [P.extendedIdealOfDefinition_pow, Ideal.span_le]
+  rintro x hx
+  obtain ⟨y, hy, rfl⟩ := (P.mem_idealImage n).mp hx
+  exact Ideal.mem_comap.mp (hpow hy)
+
 omit [SeparatelyContinuousAdd A] in
 variable [SeparatelyContinuousMul A] in
 open scoped Topology Pointwise in
@@ -498,6 +557,29 @@ theorem isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isPrime [IsHuber
     simp
 
 end IsHuberRing
+
+section Complete
+
+open Topology
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [CompleteSpace A] [T0Space A]
+
+/-- **Wedhorn Proposition 7.34, the open-ideal clause**, for a complete Hausdorff Huber ring: if
+`T` spans an open ideal, then so does every set `T'` containing, for each `t ∈ T`, an element
+sufficiently close to `t`. Unlike
+`TauCeti.Huber.PairOfDefinition.exists_forall_isOpen_span_of_sub_mem_idealImage`, no pair of
+definition appears; it is the companion of
+`TauCeti.ValuationSpectrum.exists_mem_nhds_forall_rationalSubset_eq_of_sub_mem`. -/
+theorem exists_mem_nhds_forall_isOpen_span_of_sub_mem [IsHuberRing A] {T : Set A}
+    (hT : IsOpen (Ideal.span T : Set A)) :
+    ∃ V ∈ 𝓝 (0 : A), ∀ T' : Set A, (∀ t ∈ T, ∃ u ∈ T', t - u ∈ V) →
+      IsOpen (Ideal.span T' : Set A) := by
+  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+  obtain ⟨n, hn⟩ := P.exists_forall_isOpen_span_of_sub_mem_idealImage hT
+  exact ⟨P.idealImage n, (P.isOpen_idealImage n).mem_nhds (P.idealImage n).zero_mem, hn⟩
+
+end Complete
 
 section Tate
 

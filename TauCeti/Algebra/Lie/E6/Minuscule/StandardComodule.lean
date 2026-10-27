@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.E6.Minuscule.BaseChange
 import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
 import TauCeti.Algebra.Lie.E6.Minuscule.PointsFunctor
+import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Raising
 
 /-!
 # The standard representation of the type-E6 minuscule carrier
@@ -244,8 +245,10 @@ private theorem single_reflection_mem
   rcases DynkinType.e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with
     hneg | hzero | hpos
   · have hact := hroot (.inl i) _ ha
-    have hsub := N.sub_mem hact ha
-    rwa [positiveRoot_mulVec_single_sub k i a hneg] at hsub
+    rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, one_smul] at hact
+    simpa only [weightTable_reflection] using
+      weightTable.single_reflection_mem_of_mulVec_mem N i a
+        (by simpa only [weightTable_weight] using hneg) ha hact
   · rw [(DynkinType.e6MinusculeReflection_eq_self_iff i a).2 hzero]
     exact ha
   · have hact := hroot (.inr i) _ ha

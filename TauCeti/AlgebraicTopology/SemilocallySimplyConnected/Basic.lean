@@ -48,6 +48,9 @@ instances, witnessed by singleton neighbourhoods.
 * Instances deriving the property for simply connected spaces, strongly locally contractible
   spaces, discrete spaces, and binary products.
 
+Simple connectivity of nonempty star-convex and convex subsets is provided by
+`TauCeti.Analysis.Convex.SimplyConnected`.
+
 ## References
 
 This file supplies the semilocal-simple-connectivity hypothesis required by the Tau Ceti

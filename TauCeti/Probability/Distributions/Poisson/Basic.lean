@@ -42,6 +42,15 @@ theorem poissonMeasure_zero : poissonMeasure 0 = Measure.dirac 0 := by
   intro n
   cases n <;> simp [poissonMeasure_singleton]
 
+/-- A Poisson law of rate `r` has mass `exp (-r)` at zero. -/
+theorem poissonMeasure_real_singleton_zero (r : ℝ≥0) : Po(r).real {0} = exp (-(r : ℝ)) := by
+  simp [poissonMeasure_real_singleton]
+
+/-- A Poisson law puts all its mass at zero exactly at rate zero. -/
+theorem poissonMeasure_singleton_zero_eq_one_iff {r : ℝ≥0} : Po(r) {0} = 1 ↔ r = 0 := by
+  rw [poissonMeasure_singleton, ENNReal.ofReal_eq_one]
+  simp
+
 /-- The probability-generating series of a Poisson law: weighted by the Poisson masses, the powers
 `z ^ k` sum to `exp ((z - 1) * r)`. -/
 theorem hasSum_pow_poissonMeasure (r : ℝ≥0) (z : ℝ) :

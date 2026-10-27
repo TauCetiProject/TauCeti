@@ -7,8 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
 public import Mathlib.CategoryTheory.Triangulated.Generators
-public import Mathlib.CategoryTheory.Triangulated.Opposite.Subcategory
 public import TauCeti.CategoryTheory.Preadditive.EilenbergSwindle
+public import TauCeti.CategoryTheory.Triangulated.Opposite.Subcategory
 
 /-!
 # Localizing and colocalizing closures in a pretriangulated category
@@ -40,10 +40,10 @@ categories.
 ## Main results
 
 * `CategoryTheory.ObjectProperty.isStableUnderRetracts_of_isClosedUnderCoproducts_nat`:
-  an isomorphism-closed triangulated subcategory closed under countable coproducts is closed
-  under retracts.
+  an isomorphism-closed property closed under countable coproducts and satisfying
+  `IsTriangulatedClosed₁` (for instance a triangulated subcategory) is closed under retracts.
 * `CategoryTheory.ObjectProperty.isStableUnderRetracts_of_isClosedUnderProducts_nat`: the dual
-  statement for countable products.
+  statement for countable products, assuming `IsTriangulatedClosed₃`.
 * `CategoryTheory.ObjectProperty.localizingClosure_le_iff`,
   `CategoryTheory.ObjectProperty.colocalizingClosure_le_iff`: the universal properties.
 * `CategoryTheory.ObjectProperty.triangEnvelope_le_localizingClosure`,
@@ -64,29 +64,32 @@ universe v u
 
 namespace CategoryTheory.ObjectProperty
 
-open Limits Pretriangulated ZeroObject
+open Limits Pretriangulated Pretriangulated.Opposite ZeroObject
 
 variable {C : Type u} [Category.{v} C] [HasZeroObject C] [Preadditive C] [HasShift C ℤ]
   [∀ n : ℤ, (shiftFunctor C n).Additive] [Pretriangulated C]
 
 section Thick
 
-variable (P : ObjectProperty C) [P.IsTriangulated] [P.IsClosedUnderIsomorphisms]
+variable (P : ObjectProperty C) [P.IsClosedUnderIsomorphisms]
 
-/-- An isomorphism-closed triangulated subcategory closed under countable coproducts is closed
-under retracts (Eilenberg swindle). -/
-theorem isStableUnderRetracts_of_isClosedUnderCoproducts_nat [HasCoproductsOfShape ℕ C]
-    [P.IsClosedUnderColimitsOfShape (Discrete ℕ)] : P.IsStableUnderRetracts where
+/-- An isomorphism-closed property closed under countable coproducts, and such that the first
+object of a distinguished triangle satisfies it whenever the other two do, is closed under
+retracts (Eilenberg swindle). This applies in particular to triangulated subcategories. -/
+theorem isStableUnderRetracts_of_isClosedUnderCoproducts_nat [P.IsTriangulatedClosed₁]
+    [HasCoproductsOfShape ℕ C] [P.IsClosedUnderColimitsOfShape (Discrete ℕ)] :
+    P.IsStableUnderRetracts where
   of_retract {X Y} h hY := by
     have hW : P (∐ fun _ : ℕ ↦ Y) := P.prop_colimit _ fun _ ↦ hY
     exact P.ext_of_isTriangulatedClosed₁ _ (binaryBiproductTriangle_distinguished X _)
       (P.prop_of_iso h.biprodSigmaIso.symm hW) hW
 
-/-- An isomorphism-closed triangulated subcategory closed under countable products is closed
-under retracts. -/
-theorem isStableUnderRetracts_of_isClosedUnderProducts_nat [HasProductsOfShape ℕ C]
-    [P.IsClosedUnderLimitsOfShape (Discrete ℕ)] : P.IsStableUnderRetracts := by
-  open Pretriangulated.Opposite in
+/-- An isomorphism-closed property closed under countable products, and such that the third
+object of a distinguished triangle satisfies it whenever the other two do, is closed under
+retracts. This applies in particular to triangulated subcategories. -/
+theorem isStableUnderRetracts_of_isClosedUnderProducts_nat [P.IsTriangulatedClosed₃]
+    [HasProductsOfShape ℕ C] [P.IsClosedUnderLimitsOfShape (Discrete ℕ)] :
+    P.IsStableUnderRetracts := by
   have : P.op.IsClosedUnderColimitsOfShape (Discrete ℕ) :=
     have := (P.isClosedUnderLimitsOfShape_iff_op (Discrete ℕ)).1 inferInstance
     .of_equivalence (Discrete.opposite ℕ)

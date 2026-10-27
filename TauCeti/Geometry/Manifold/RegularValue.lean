@@ -126,6 +126,18 @@ theorem isRegularPoint_iff_surjective_fderivWithin [IsManifold I 1 M] [IsManifol
   rw [← hA, ← hB, isRegularPoint_iff]
   exact ((EquivLike.comp_surjective _ A).trans (EquivLike.surjective_comp B _)).symm
 
+/-- For a scalar function, regularity is equivalent to a nonzero differential, read in the
+scalar field using `mvfderiv`. No differentiability hypothesis is needed. -/
+theorem isRegularPoint_iff_mvfderiv_ne_zero {g : M → 𝕜} :
+    IsRegularPoint I 𝓘(𝕜) g x ↔ mvfderiv I g x ≠ 0 := by
+  rw [isRegularPoint_iff]
+  have h : Surjective (mvfderiv I g x) ↔ Surjective (mfderiv I 𝓘(𝕜) g x) := by
+    simpa only [mvfderiv, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe] using
+      EquivLike.comp_surjective (mfderiv I 𝓘(𝕜) g x) (NormedSpace.fromTangentSpace (g x))
+  rw [← h]
+  refine (LinearMap.surjective_iff_ne_zero (f := (mvfderiv I g x).toLinearMap)).trans ?_
+  exact not_congr (ContinuousLinearMap.coe_inj (f := mvfderiv I g x) (g := 0))
+
 /-- For a map between normed spaces, a regular point is a point at which the Fréchet derivative
 is surjective. -/
 theorem isRegularPoint_iff_surjective_fderiv {f : E → E'} {x : E} :
