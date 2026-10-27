@@ -32,7 +32,7 @@ so every vector bundle with finite-dimensional model fibre admits such a map int
 * `TauCeti.weightedTrivializationMap`: the fibrewise map `v ↦ (ρ i x • e i v)ᵢ`.
 * `TauCeti.continuous_weightedTrivializationMap`: it is continuous on the total space when each
   weight is continuous with topological support in the base set of its trivialization.
-* `TauCeti.injective_weightedTrivializationMap`: it is injective on the fibre over a point of the
+* `TauCeti.weightedTrivializationMap_injective`: it is injective on the fibre over a point of the
   base set of some `e i` at which `ρ i` is nonzero.
 * `TauCeti.exists_continuous_injective_pi_of_iUnion_baseSet`: a finite cover by trivializations of
   a normal base gives a continuous fibrewise injective linear map into the trivial bundle with
@@ -96,7 +96,7 @@ theorem continuous_weightedTrivializationMap (hρ : ∀ i, Continuous (ρ i))
 
 /-- `weightedTrivializationMap` is injective on the fibre over a point `x` of the base set of some
 `e i` at which the weight `ρ i` does not vanish. -/
-theorem injective_weightedTrivializationMap {x : B} {i : ι} (hxi : x ∈ (e i).baseSet)
+theorem weightedTrivializationMap_injective {x : B} {i : ι} (hxi : x ∈ (e i).baseSet)
     (hi : ρ i x ≠ 0) : Injective (weightedTrivializationMap e ρ x) := by
   intro v w hvw
   have h : (e i).continuousLinearMapAt 𝕜 x v = (e i).continuousLinearMapAt 𝕜 x w :=
@@ -129,7 +129,7 @@ theorem exists_continuous_injective_pi_of_iUnion_baseSet [NormalSpace B] [Finite
       hwsupp, fun x ↦ ?_⟩
   obtain ⟨i, hi⟩ := ρ.exists_pos (mem_univ x)
   have hwi : w i x ≠ 0 := (map_ne_zero (algebraMap ℝ 𝕜)).2 hi.ne'
-  exact injective_weightedTrivializationMap e w (hwsupp i (subset_tsupport _ hwi)) hwi
+  exact weightedTrivializationMap_injective e w (hwsupp i (subset_tsupport _ hwi)) hwi
 
 /-- Over a compact normal base (for instance a compact Hausdorff base), every vector bundle with
 finite-dimensional model fibre admits a continuous fibrewise injective linear map into the
