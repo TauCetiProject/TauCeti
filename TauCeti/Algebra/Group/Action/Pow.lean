@@ -17,14 +17,14 @@ For a monoid `M` acting on a type `V` with a zero, an element `x : M` and a vect
 contains `0` and `w ≠ 0`, then some nonzero term `xⁿ • w` is immediately followed by the zero
 term `x • xⁿ • w`. The action need not fix `0`, so later terms of the string may be nonzero
 again. Raising and lowering operators of representations, such as `E` and `F` for `U_q(sl₂)`,
-use this to produce highest- and lowest-weight vectors. For a distributive action the zero is
-fixed, so once a term of the string vanishes all later terms vanish.
+use this to produce highest- and lowest-weight vectors. When the action fixes the zero, once a
+term of the string vanishes all later terms vanish.
 
 ## Main results
 
 * `TauCeti.exists_pow_smul_ne_zero_and_smul_eq_zero`: if `xⁿ • w = 0` for some `n` and `w ≠ 0`,
   then `xⁿ • w ≠ 0` and `x • xⁿ • w = 0` for some `n`.
-* `TauCeti.pow_smul_eq_zero_of_le`: for a distributive action, if `xᵐ • w = 0` and `m ≤ n`, then
+* `TauCeti.pow_smul_eq_zero_of_le`: for an action fixing `0`, if `xᵐ • w = 0` and `m ≤ n`, then
   `xⁿ • w = 0`.
 -/
 
@@ -45,10 +45,12 @@ theorem exists_pow_smul_ne_zero_and_smul_eq_zero {x : M} {w : V} (hw0 : w ≠ 0)
   rw [← mul_smul, ← pow_succ', Nat.sub_add_cancel hn]
   exact Nat.find_spec h
 
-/-- For a distributive action, if a power of `x` kills `w`, then so does every higher power of
-`x`. This is the action counterpart of `pow_mul_eq_zero_of_le`. -/
-theorem pow_smul_eq_zero_of_le {M N : Type*} [Monoid M] [AddMonoid N] [DistribMulAction M N]
-    {x : M} {w : N} {m n : ℕ} (hmn : m ≤ n) (h : x ^ m • w = 0) : x ^ n • w = 0 := by
-  rw [← Nat.sub_add_cancel hmn, pow_add, mul_smul, h, smul_zero]
+/-- If a power of `x` kills `w` and scalars fix `0`, then every higher power of `x` kills `w`.
+This is the action counterpart of `pow_mul_eq_zero_of_le`. It only uses `x • 0 = 0` and
+`(x * y) • w = x • y • w` (`IsScalarTower M M N`); no addition on `N` is needed. -/
+theorem pow_smul_eq_zero_of_le {M N : Type*} [Monoid M] [Zero N] [SMulZeroClass M N]
+    [IsScalarTower M M N] {x : M} {w : N} {m n : ℕ} (hmn : m ≤ n) (h : x ^ m • w = 0) :
+    x ^ n • w = 0 := by
+  rw [← Nat.sub_add_cancel hmn, pow_add, ← smul_eq_mul, smul_assoc, h, smul_zero]
 
 end TauCeti
