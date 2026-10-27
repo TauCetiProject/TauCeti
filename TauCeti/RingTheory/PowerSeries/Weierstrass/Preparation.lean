@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Weierstrass preparation for restricted power series
@@ -191,11 +192,7 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace R]
     exact le_max_right _ _
   -- The remainder is a polynomial of degree less than `s`; subtract it from `X ^ s`.
   have hpc : ((r.trunc s : Polynomial R) : PowerSeries R) = r :=
-    PowerSeries.ext fun m ↦ by
-      rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-      split_ifs with hm
-      · rfl
-      · exact (hr m (by omega)).symm
+    PowerSeries.coe_trunc_eq_self_of_coeff_eq_zero hr
   set ω : Polynomial R := Polynomial.X ^ s - r.trunc s with hω
   have hωc : (ω : PowerSeries R) = PowerSeries.X ^ s - r := by
     rw [hω, Polynomial.coe_sub, Polynomial.coe_pow, Polynomial.coe_X, hpc]
