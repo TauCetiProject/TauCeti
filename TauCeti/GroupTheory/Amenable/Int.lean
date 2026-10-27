@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.Amenable.Average
 public import TauCeti.MeasureTheory.Group.Foelner.Int
-import TauCeti.GroupTheory.Amenable.Sequence
 
 /-!
 # Amenability of the integer group
