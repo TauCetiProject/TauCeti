@@ -8,8 +8,7 @@ module
 public import TauCeti.FieldTheory.Minpoly.Primitive
 public import TauCeti.NumberTheory.Height.House
 public import TauCeti.RingTheory.Algebraic.Denominator
-
-import Mathlib.Topology.Algebra.Polynomial
+public import TauCeti.Analysis.Polynomial.SupNorm.CoeffBound
 
 /-!
 # Denominators and the size of an algebraic number
@@ -61,41 +60,23 @@ theorem one_le_leadingCoeff_primitiveMinpoly_mul_house_pow_mul_norm {z : K} {w :
   have hmono : (minpoly ℚ z).Monic := minpoly.monic hint
   set P : ℂ[X] := (minpoly ℚ z).map (algebraMap ℚ ℂ) with hP
   have hPmono : P.Monic := hmono.map _
-  have hP0 : P ≠ 0 := hPmono.ne_zero
   have hwroot : P.IsRoot w := by
     have hw' := (mem_rootSet_of_ne (minpoly.ne_zero hint)).mp hw
-    simpa [hP, Polynomial.IsRoot, eval_map, aeval_def] using hw'
-  -- divide the minimal polynomial by the linear factor at the conjugate `w`
-  set q : ℂ[X] := P /ₘ (X - C w)
-  have hfac : (X - C w) * q = P := mul_divByMonic_eq_iff_isRoot.mpr hwroot
-  have hqmono : q.Monic := by
-    have h := congrArg leadingCoeff hfac
-    rw [leadingCoeff_mul, (monic_X_sub_C w).leadingCoeff, one_mul, hPmono.leadingCoeff] at h
-    exact h
-  have hq0 : q ≠ 0 := hqmono.ne_zero
-  have hqdeg : q.natDegree = (minpoly ℚ z).natDegree - 1 := by
-    have h := congrArg natDegree hfac
-    rw [natDegree_mul (monic_X_sub_C w).ne_zero hq0, natDegree_X_sub_C, hP,
-      natDegree_map_eq_of_injective (RingHom.injective (algebraMap ℚ ℂ))] at h
-    omega
-  -- the remaining roots of the quotient are the other conjugates of `z`
-  have hroot_le : ∀ u ∈ q.roots, ‖u‖ ≤ house z := by
+    rw [Polynomial.IsRoot.def, hP, eval_map_algebraMap]
+    exact hw'
+  -- every root of `P` is a complex conjugate of `z`
+  have hProots : ∀ u ∈ P.roots, ‖u‖ ≤ house z := by
     intro u hu
-    have huP : P.IsRoot u := by
-      rw [Polynomial.IsRoot.def, ← hfac, eval_mul, eval_sub, eval_X, eval_C]
-      exact mul_eq_zero_of_right _ ((mem_roots hq0).mp hu)
     refine norm_le_house_of_mem_rootSet ?_
     rw [rootSet_def, Finset.mem_coe, Multiset.mem_toFinset, aroots_def, ← hP]
-    exact (mem_roots hP0).mpr huP
-  have hqcoeff : ‖q.coeff 0‖ ≤ house z ^ ((minpoly ℚ z).natDegree - 1) := by
-    have h := coeff_le_of_roots_le (p := q) (f := RingHom.id ℂ) (B := house z) 0 hqmono
-      (IsAlgClosed.splits _) (by simpa using hroot_le)
-    simpa only [Polynomial.map_id, tsub_zero, Nat.choose_zero_right, Nat.cast_one, mul_one,
-      hqdeg] using h
-  -- the constant term of the minimal polynomial is `-w` times that of the quotient
-  have hconst : P.coeff 0 = -w * q.coeff 0 := by
-    rw [coeff_zero_eq_eval_zero, ← hfac, eval_mul, eval_sub, eval_X, eval_C, zero_sub,
-      coeff_zero_eq_eval_zero]
+    exact hu
+  have hPdeg : P.natDegree = (minpoly ℚ z).natDegree := by
+    rw [hP, natDegree_map_eq_of_injective (RingHom.injective (algebraMap ℚ ℂ))]
+  -- the constant term of `P` is `±w` times the product of its other roots
+  have hPcoeff : ‖P.coeff 0‖ ≤ ‖w‖ * house z ^ ((minpoly ℚ z).natDegree - 1) := by
+    have h := norm_coeff_zero_le_norm_mul_pow_of_roots_le hPmono (IsAlgClosed.splits P) hProots
+      hwroot
+    rwa [hPdeg] at h
   have hcoeff0 : (primitiveMinpoly z).coeff 0 ≠ 0 := coeff_zero_primitiveMinpoly_ne_zero hz hz0
   -- the constant term of `F_z` is a nonzero integer, so it has modulus at least `1`
   have hint_norm : (1 : ℝ) ≤ ‖((primitiveMinpoly z).coeff 0 : ℂ)‖ := by
@@ -103,15 +84,13 @@ theorem one_le_leadingCoeff_primitiveMinpoly_mul_house_pow_mul_norm {z : K} {w :
     exact_mod_cast Int.one_le_abs hcoeff0
   have hcast : ((primitiveMinpoly z).coeff 0 : ℂ) =
       ((primitiveMinpoly z).leadingCoeff : ℂ) * P.coeff 0 := by
-    have h1 := congrArg (fun p : ℚ[X] => p.coeff 0) (map_primitiveMinpoly hz)
-    simp only [coeff_map, Int.coe_castRingHom, coeff_C_mul] at h1
-    have h2 := congrArg (fun q : ℚ => (q : ℂ)) h1
-    push_cast at h2
-    have h3 : P.coeff 0 = ((minpoly ℚ z).coeff 0 : ℂ) := by
+    have h := congrArg (fun q : ℚ => (q : ℂ)) (coeff_primitiveMinpoly hz 0)
+    push_cast at h
+    have hPc : P.coeff 0 = ((minpoly ℚ z).coeff 0 : ℂ) := by
       rw [hP, coeff_map]
       norm_num
-    rw [h3]
-    exact h2
+    rw [hPc]
+    exact h
   have hnorm_a : ‖((primitiveMinpoly z).leadingCoeff : ℂ)‖ =
       ((primitiveMinpoly z).leadingCoeff : ℝ) := by
     rw [Complex.norm_intCast, abs_of_pos]
@@ -119,14 +98,11 @@ theorem one_le_leadingCoeff_primitiveMinpoly_mul_house_pow_mul_norm {z : K} {w :
   calc (1 : ℝ) ≤ ‖((primitiveMinpoly z).coeff 0 : ℂ)‖ := hint_norm
     _ = ((primitiveMinpoly z).leadingCoeff : ℝ) * ‖P.coeff 0‖ := by
         rw [hcast, norm_mul, hnorm_a]
-    _ = ((primitiveMinpoly z).leadingCoeff : ℝ) * (‖w‖ * ‖q.coeff 0‖) := by
-        rw [hconst, norm_mul, norm_neg]
     _ ≤ ((primitiveMinpoly z).leadingCoeff : ℝ) *
           (‖w‖ * house z ^ ((minpoly ℚ z).natDegree - 1)) := by
         have ha : (0 : ℝ) ≤ ((primitiveMinpoly z).leadingCoeff : ℝ) := by
           exact_mod_cast (leadingCoeff_primitiveMinpoly_pos z).le
-        exact mul_le_mul_of_nonneg_left
-          (mul_le_mul_of_nonneg_left hqcoeff (norm_nonneg w)) ha
+        exact mul_le_mul_of_nonneg_left hPcoeff ha
     _ = ((primitiveMinpoly z).leadingCoeff : ℝ) * house z ^ ((minpoly ℚ z).natDegree - 1) *
           ‖w‖ := by ring
 
