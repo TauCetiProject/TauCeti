@@ -21,8 +21,7 @@ whose constants do not depend on the time, as needed for the Hölder estimates o
 * for all orders `j` in time and `m` in space,
   `‖∂ₜ^j D^m K_t(x)‖ ≤ C t^(-(n + m + 2j) / 2) exp(-‖x‖² / (8t))` for all `t > 0`;
 * equivalently for `j = 0`, `‖D^m K_t(x)‖ ≤ C t^(-m / 2) K_{2t}(x)`;
-* `‖x‖^α K_t(x) ≤ C t^(α / 2) K_{2t}(x)` and `‖D^m K_t(x)‖ ‖x‖^α ≤ C t^((α - m) / 2) K_{4t}(x)`
-  for `α ≥ 0`;
+* `‖D^m K_t(x)‖ ‖x‖^α ≤ C t^((α - m) / 2) K_{4t}(x)` for `α ≥ 0`;
 * consequently `∫ ‖D^m K_t(x)‖ ‖x‖^α dx ≤ C t^((α - m) / 2)`, in particular
   `∫ ‖D^m K_t‖ ≤ C t^(-m / 2)`;
 * `∫ D^m K_t = 0` for `m ≥ 1`.
@@ -41,7 +40,6 @@ the constant function `1`.
   derivatives.
 * `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel`: the bound by
   `C t^(-m / 2) K_{2t}(x)`.
-* `TauCeti.exists_norm_rpow_mul_heatKernel_le`: absorbing the weight `‖x‖^α` into `K_{2t}`.
 * `TauCeti.exists_norm_iteratedFDeriv_heatKernel_mul_rpow_le`: the weighted bound by
   `C t^((α - m) / 2) K_{4t}(x)`.
 * `TauCeti.integrable_norm_iteratedFDeriv_heatKernel_mul_rpow`: integrability of the weighted
@@ -54,6 +52,8 @@ the constant function `1`.
 
 * A. Friedman, *Partial Differential Equations of Parabolic Type*, Chapter 1 (Gaussian bounds on
   the derivatives of the fundamental solution).
+* A. Lunardi, *Linear and nonlinear diffusion problems*, Chapter 4 (weighted kernel estimates for
+  heat potentials).
 -/
 
 public section
@@ -184,36 +184,6 @@ theorem exists_norm_iteratedFDeriv_heatKernel_le_mul_rpow_mul_heatKernel (m : �
     _ = _ := by
         rw [hG, mul_rpow (by positivity) ht.le, ← hexp]
         ring
-
-/-- **Scale-invariant polynomial weights.** For `α ≥ 0` there is a constant `C > 0`, independent of
-the time, with `‖x‖^α K_t(x) ≤ C t^(α/2) K_{2t}(x)` for all `t > 0` and all `x`. -/
-theorem exists_norm_rpow_mul_heatKernel_le {α : ℝ} (hα : 0 ≤ α) :
-    ∃ C > 0, ∀ t, 0 < t → ∀ x : E,
-      ‖x‖ ^ α * heatKernel t x ≤ C * t ^ (α / 2) * heatKernel (2 * t) x := by
-  obtain ⟨C, hC0, hC⟩ := exists_one_add_norm_pow_mul_heatKernel_le (E := E) one_pos ⌈α⌉₊
-  simp only [mul_one] at hC
-  refine ⟨C, hC0, fun t ht x => ?_⟩
-  set y : E := (√t)⁻¹ • x
-  have hy : 0 ≤ ‖y‖ := norm_nonneg y
-  have hxα : ‖x‖ ^ α = t ^ (α / 2) * ‖y‖ ^ α := by
-    have hx : ‖x‖ = √t * ‖y‖ := by
-      rw [norm_smul, norm_inv, norm_of_nonneg (sqrt_nonneg t),
-        mul_inv_cancel_left₀ (sqrt_pos.2 ht).ne']
-    rw [hx, mul_rpow (sqrt_nonneg t) hy, rpow_div_two_eq_sqrt _ ht.le]
-  have hyα : ‖y‖ ^ α ≤ (1 + ‖y‖) ^ ⌈α⌉₊ :=
-    calc ‖y‖ ^ α ≤ (1 + ‖y‖) ^ α := rpow_le_rpow hy (by linarith) hα
-      _ ≤ (1 + ‖y‖) ^ (⌈α⌉₊ : ℝ) := rpow_le_rpow_of_exponent_le (by linarith) (Nat.le_ceil α)
-      _ = (1 + ‖y‖) ^ ⌈α⌉₊ := rpow_natCast _ _
-  rw [heatKernel_eq_mul_heatKernel_one_smul ht, mul_comm 2 t,
-    heatKernel_mul_eq_mul_heatKernel_smul ht two_pos, hxα]
-  calc t ^ (α / 2) * ‖y‖ ^ α * ((√t)⁻¹ ^ finrank ℝ E * heatKernel 1 y)
-      = t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * (‖y‖ ^ α * heatKernel 1 y) := by ring
-    _ ≤ t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * ((1 + ‖y‖) ^ ⌈α⌉₊ * heatKernel 1 y) := by
-        gcongr
-        exact (heatKernel_pos one_pos y).le
-    _ ≤ t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * (C * heatKernel 2 y) :=
-        mul_le_mul_of_nonneg_left (hC y) (by positivity)
-    _ = C * t ^ (α / 2) * ((√t)⁻¹ ^ finrank ℝ E * heatKernel 2 y) := by ring
 
 /-- **Scale-invariant weighted Gaussian bounds on the derivatives of the heat kernel.** For every
 order `m` and every `α ≥ 0` there is a constant `C > 0`, independent of the time, with
