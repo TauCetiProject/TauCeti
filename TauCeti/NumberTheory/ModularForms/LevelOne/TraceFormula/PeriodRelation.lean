@@ -38,6 +38,8 @@ Membership in `(1 - T)·ℛₙ` is decided by the criterion of Popa–Zagier §3
 
 * `TauCeti.TraceFormulaMatrixModule.mem_range_one_sub_T_iff`: an element of `k[ℳₙ]` lies in
   `(1 - T)·k[ℳₙ]` if and only if its coefficient sums along the `⟨T⟩`-orbits vanish.
+* `TauCeti.TraceFormulaMatrixModule.one_sub_ofMulAction_T_injective`: for `n ≠ 0`, left
+  multiplication by `1 - T` is injective on `k[ℳₙ]`.
 * `TauCeti.TraceFormulaMatrixModule.PeriodRelation.add` and
   `TauCeti.TraceFormulaMatrixModule.PeriodRelation.sub_mem`: solutions of (A) are determined up to
   elements `η` with `(1 - S)·η ∈ (1 - T)·ℛₙ`.
@@ -100,6 +102,37 @@ theorem mem_range_one_sub_T_iff {ζ : k[TraceFormulaMatrixModule n]} :
     ζ ∈ LinearMap.range (1 - ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) T) ↔
       mapDomainLinearMap k k (Quotient.mk (MulAction.orbitRel (Subgroup.zpowers T) _)) ζ = 0 := by
   rw [← neg_sub, LinearMap.range_neg, Module.End.one_eq_id, mem_range_ofMulAction_sub_id_iff]
+
+/-- For `n ≠ 0`, left multiplication by `1 - T` is injective on `k[ℳₙ]`: the orbits of `⟨T⟩` on
+`ℳₙ` are infinite, and elements of `k[ℳₙ]` are finitely supported. In particular the witness of the
+period relation (A) is unique. -/
+theorem one_sub_ofMulAction_T_injective (hn : n ≠ 0) :
+    Function.Injective
+      (1 - ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) T : Module.End k _) := by
+  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
+  rw [LinearMap.sub_apply, Module.End.one_apply, sub_eq_zero] at hv
+  have hinv (x : TraceFormulaMatrixModule n) : v.coeff (T⁻¹ • x) = v.coeff x := by
+    rw [← coeff_ofMulAction, ← hv]
+  have hzpow (m : ℤ) (x : TraceFormulaMatrixModule n) : v.coeff (T ^ m • x) = v.coeff x := by
+    induction m using Int.induction_on generalizing x with
+    | zero => simp
+    | succ m ih => rw [zpow_add_one, mul_smul, ih, ← hinv, inv_smul_smul]
+    | pred m ih => rw [zpow_sub_one, mul_smul, ih, hinv]
+  ext x
+  by_contra hx
+  -- `m ↦ T ^ m • x` is injective, with values in the finite support of `v`
+  refine v.coeff.support.finite_toSet.not_infinite (Set.infinite_of_injective_forall_mem
+    (f := fun m : ℤ ↦ T ^ m • x) (fun m m' h ↦ ?_) fun m ↦ by simpa [hzpow] using hx)
+  have h' : T ^ (m - m') • T ^ m' • x = T ^ m' • x := by
+    rw [← mul_smul, ← zpow_add, sub_add_cancel]
+    exact h
+  rcases eq_one_or_eq_neg_one_of_smul_eq hn h' with h1 | h1
+  · have := congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 1) h1
+    simp only [coe_T_zpow] at this
+    simp at this
+    omega
+  · have := congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 0) h1
+    simp [coe_T_zpow] at this
 
 /-- Adding to a solution of the period relation an element `η` with `(1 - S)·η ∈ (1 - T)·ℛₙ` gives
 another solution. -/

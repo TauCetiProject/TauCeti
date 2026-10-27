@@ -210,35 +210,6 @@ private theorem one_sub_ofMulAction_T_flipSum [CommRing k] (hn : 0 < n) :
     split_ifs <;> first | (exfalso; omega) | norm_num
   · simp [hc]
 
-/-! ### Left multiplication by `1 - T` is injective -/
-
-/-- For `n ≠ 0`, the only element of `k[ℳₙ]` fixed by left multiplication by `T` is `0`: the
-orbits of `⟨T⟩` on `ℳₙ` are infinite, and elements of `k[ℳₙ]` are finitely supported. -/
-private theorem eq_zero_of_ofMulAction_T_eq [Semiring k] (hn : n ≠ 0) {v : k[ℳ n]}
-    (hv : ρL T v = v) : v = 0 := by
-  have hinv (x : ℳ n) : v.coeff (T⁻¹ • x) = v.coeff x := by
-    rw [← coeff_ofMulAction, hv]
-  have hzpow (m : ℤ) (x : ℳ n) : v.coeff (T ^ m • x) = v.coeff x := by
-    induction m using Int.induction_on generalizing x with
-    | zero => simp
-    | succ m ih => rw [zpow_add_one, mul_smul, ih, ← hinv, inv_smul_smul]
-    | pred m ih => rw [zpow_sub_one, mul_smul, ih, hinv]
-  ext x
-  by_contra hx
-  -- `m ↦ T ^ m • x` is injective, with values in the finite support of `v`
-  refine v.coeff.support.finite_toSet.not_infinite (Set.infinite_of_injective_forall_mem
-    (f := fun m : ℤ ↦ T ^ m • x) (fun m m' h ↦ ?_) fun m ↦ by simpa [hzpow] using hx)
-  have h' : T ^ (m - m') • T ^ m' • x = T ^ m' • x := by
-    rw [← mul_smul, ← zpow_add, sub_add_cancel]
-    exact h
-  rcases eq_one_or_eq_neg_one_of_smul_eq hn h' with h1 | h1
-  · have := congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 1) h1
-    simp only [coe_T_zpow] at this
-    simp at this
-    omega
-  · have := congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 0) h1
-    simp [coe_T_zpow] at this
-
 /-! ### The two halves of the period defect -/
 
 section CommRing
@@ -334,9 +305,8 @@ theorem ExchangeRelations.periodRelation_iff_mapDomain_orbitRel_mk_coeff_eq_neg_
   have hcυ' : Commute (1 - τ) (1 + υ' + υ' ^ 2) := hτ _
     (((Commute.one_right _).add_right (commute_ofMulAction _ _)).add_right
       ((commute_ofMulAction _ _).pow_right 2))
-  have hinj (v : k[ℳ n]) (hv : (1 - τ) v = 0) : v = 0 := by
-    rw [LinearMap.sub_apply, Module.End.one_apply, sub_eq_zero] at hv
-    exact eq_zero_of_ofMulAction_T_eq hn.ne' hv.symm
+  have hinj (v : k[ℳ n]) (hv : (1 - τ) v = 0) : v = 0 :=
+    (one_sub_ofMulAction_T_injective hn.ne').eq_iff' (map_zero _) |>.1 hv
   -- `X (1 + S) = (1 - T) a` and `X (1 + U + U²) = (1 - T) b` for the period defect `X`
   set X := (1 - ρL S) ξ - (1 - σ') (upperTriangularSum k n)
   obtain ⟨a, ha⟩ : ∃ a, a = -ρL S ((1 + ρL (T * S) + ρL (T * S) ^ 2 : Module.End k k[ℳ n]) y) :=
