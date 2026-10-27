@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
+import Mathlib.FieldTheory.PurelyInseparable.Exponent
 
 /-!
 # A quadratic extension away from characteristic two is separable
@@ -19,9 +20,13 @@ characteristic two.
 The characteristic-two exception is genuine: over `K = 𝔽₂(t)` the extension `K(√t) / K` has
 degree `2` and is purely inseparable.
 
+Conversely, an inseparable extension of degree two contains the square of each of its elements in
+the base field.
+
 ## Main results
 
 * `TauCeti.Algebra.isSeparable_of_finrank_eq_two`
+* `TauCeti.Algebra.sq_mem_range_algebraMap_of_finrank_eq_two`
 -/
 
 public section
@@ -58,6 +63,33 @@ theorem isSeparable_of_finrank_eq_two {K L : Type*} [Field K] [Field L] [Algebra
       subst hq2
       exact h2 (by exact_mod_cast CharP.cast_eq_zero K 2)
   · exact (Field.finSepDegree_eq_finrank_iff K L).mp (h1.trans h.symm)
+
+/-- **A field extension of degree two that is not separable contains the square of each of its
+elements in the base field**: it is purely inseparable of exponent one. -/
+theorem sq_mem_range_algebraMap_of_finrank_eq_two {K L : Type*} [Field K] [Field L]
+    [Algebra K L] (h : finrank K L = 2) (hs : ¬Algebra.IsSeparable K L) (a : L) :
+    a ^ 2 ∈ (algebraMap K L).range := by
+  have : FiniteDimensional K L := Module.finite_of_finrank_pos (by omega)
+  have hdvd : Field.finSepDegree K L ∣ 2 := h ▸ Field.finSepDegree_dvd_finrank K L
+  have h1 : Field.finSepDegree K L = 1 := by
+    rcases (Nat.dvd_prime Nat.prime_two).mp hdvd with h1 | h1
+    · exact h1
+    · exact absurd ((Field.finSepDegree_eq_finrank_iff K L).mp (h1.trans h.symm)) hs
+  have : IsPurelyInseparable K L := isPurelyInseparable_of_finSepDegree_eq_one h1
+  obtain ⟨q, hq⟩ := ExpChar.exists K
+  have _ : ExpChar K q := hq
+  have hq0 : 0 < q := by
+    cases hq with
+    | zero => exact one_pos
+    | prime hp => exact hp.pos
+  have hle : (minpoly K a).natDegree ≤ 2 := h ▸ minpoly.natDegree_le a
+  rw [IsPurelyInseparable.minpoly_natDegree_eq' K q] at hle
+  have hmem := IsPurelyInseparable.elemExponent_def' K q a
+  have hpos : 0 < q ^ IsPurelyInseparable.elemExponent K a := pow_pos hq0 _
+  interval_cases q ^ IsPurelyInseparable.elemExponent K a
+  · rw [pow_one] at hmem
+    exact pow_mem hmem 2
+  · exact hmem
 
 end Algebra
 

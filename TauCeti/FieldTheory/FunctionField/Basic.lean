@@ -17,9 +17,10 @@ import Mathlib.RingTheory.Adjoin.Polynomial.Bivariate
 # Algebraic function fields of one variable
 
 This file defines an algebraic function field intrinsically: no rational parameter is chosen.
-It proves that every transcendental element is a valid parameter and generates a function field
-of its own, compares the intrinsic notion with Mathlib's chosen-parameter `FunctionField`, and
-characterizes it by finite generation and transcendence degree one.
+It proves that every transcendental element is a valid parameter, and only those, and that it
+generates a function field of its own, compares the intrinsic notion with Mathlib's
+chosen-parameter `FunctionField`, and characterizes it by finite generation and transcendence
+degree one.
 
 It then records how the notion behaves along a change of the field on either side: a finite
 extension of `F` is again a function field over `k`, an algebraic descent `F / E` preserves
@@ -58,6 +59,14 @@ namespace IsFunctionField
 /-- An algebraic function field contains an element transcendental over its base field. -/
 theorem exists_transcendental (hF : IsFunctionField k F) : ∃ x : F, Transcendental k x :=
   hF.imp fun _ hx ↦ hx.1
+
+/-- An algebraic function field is algebraic over `k⟮x⟯` only for `x` transcendental over `k`: for
+`x` algebraic, `F` would be algebraic over `k`. -/
+theorem transcendental_of_isAlgebraic_adjoin (hF : IsFunctionField k F) {x : F}
+    [Algebra.IsAlgebraic k⟮x⟯ F] : Transcendental k x := fun halg ↦ by
+  obtain ⟨t, ht⟩ := hF.exists_transcendental
+  have : Algebra.IsAlgebraic k k⟮x⟯ := isAlgebraic_adjoin_simple halg.isIntegral
+  exact ht ((Algebra.IsAlgebraic.trans k k⟮x⟯ F).isAlgebraic t)
 
 /-- Every transcendental element of an algebraic function field is a rational parameter: the
 field is finite over the intermediate field it generates. -/

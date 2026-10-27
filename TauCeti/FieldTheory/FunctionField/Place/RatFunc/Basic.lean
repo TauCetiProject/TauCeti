@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.RatFunc.Ostrowski
 public import TauCeti.FieldTheory.FunctionField.Place.Adic
+public import TauCeti.FieldTheory.FunctionField.Place.Equiv
 public import TauCeti.RingTheory.Polynomial.HeightOneSpectrum
 
 /-!
@@ -61,6 +62,9 @@ becomes the bijection `TauCeti.Place.ratFuncEquiv`.
 * `TauCeti.Place.eq_infty_or_exists_eq_adicOfIrreducible_X_sub_C` and
   `TauCeti.Place.ratFuncDegreeOneEquiv`: the degree-one places are `ℙ¹(k) = k ∪ {∞}`
   (Stichtenoth, Corollary 1.2.3).
+* `TauCeti.Place.infinite_setOf_degree_eq_one_ratFunc` and
+  `TauCeti.Place.infinite_setOf_degree_eq_one_adjoin`: over an infinite field, `k(x)` has
+  infinitely many rational places, also when realized as `k⟮x⟯` for a transcendental `x`.
 
 That `k` is the exact field of constants of `k(x)` — Proposition 1.2.1(d) — is
 `TauCeti.algebraicClosure_ratFunc`.
@@ -522,6 +526,25 @@ theorem ratFuncDegreeOneEquiv_symm_adicOfIrreducible (a : k)
     (h : (adicOfIrreducible (irreducible_X_sub_C a)).degree = 1) :
     (ratFuncDegreeOneEquiv k).symm ⟨adicOfIrreducible (irreducible_X_sub_C a), h⟩ = some a :=
   ((ratFuncDegreeOneEquiv k).symm_apply_eq).mpr (Subtype.ext (rfl))
+
+/-- **Over an infinite field, `k(x)` has infinitely many rational places**, since they are indexed
+by `ℙ¹(k)` (`TauCeti.Place.ratFuncDegreeOneEquiv`). -/
+theorem infinite_setOf_degree_eq_one_ratFunc [Infinite k] :
+    {P : Place k (RatFunc k) | P.degree = 1}.Infinite :=
+  Set.infinite_coe_iff.mp (Infinite.of_injective _ (ratFuncDegreeOneEquiv k).injective)
+
+variable {k} in
+/-- **Over an infinite field, every rational function field `k(x)` has infinitely many rational
+places**: for `x` transcendental over `k` in any extension field, `k(x) ≃ₐ[k] RatFunc k`, and
+transport along this isomorphism preserves degrees. -/
+theorem infinite_setOf_degree_eq_one_adjoin [Infinite k] {F : Type*} [Field F] [Algebra k F]
+    {x : F} (hx : Transcendental k x) :
+    {P : Place k (IntermediateField.adjoin k {x}) | P.degree = 1}.Infinite := by
+  let e := RatFunc.algEquivOfTranscendental x hx
+  let τ := equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv fun c ↦ e.commutes c
+  refine ((infinite_setOf_degree_eq_one_ratFunc k).image τ.injective.injOn).mono ?_
+  rintro _ ⟨P, hP, rfl⟩
+  exact (degree_equivOfRingEquiv _ _ _ P).trans hP
 
 end Place
 
