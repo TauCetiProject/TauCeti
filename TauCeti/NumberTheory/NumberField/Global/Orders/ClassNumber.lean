@@ -97,6 +97,7 @@ def picToClassGroup : Pic O →* ClassGroup (𝓞 K) :=
 
 /-- On the class of an invertible ideal `I`, `picToClassGroup` gives the ideal class of the
 extension of `I` to the maximal order. -/
+@[simp]
 theorem picToClassGroup_mkPic (I : O.invertibleProperFractionalIdeals) :
     O.picToClassGroup (O.mkPic I) = ClassGroup.mk K (maximalOrderUnitsEquiv K
       ((Hom.ofLE (O.le_ringOfIntegers.trans_eq
