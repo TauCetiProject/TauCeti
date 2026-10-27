@@ -170,12 +170,14 @@ theorem minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero {i : b.support}
   exact CharZero.eq_neg_self_iff.mp h
 
 omit [P.flip.IsReduced] in
-/-- **The bond of the cover `1 ⋖ sᵢ` of `W / W_λ` is `⟨λ, αᵢ^∨⟩`**, for a simple root `αᵢ` with
-`⟨λ, αᵢ^∨⟩ ≠ 0`. -/
-theorem reflectionBond_simple_smul_one_smul {i : b.support} (hi : P.coroot' i lam ≠ 0) :
+/-- **The bond of `sᵢ λ` and `λ` is `⟨λ, αᵢ^∨⟩`**, for a simple root `αᵢ`. When `⟨λ, αᵢ^∨⟩ ≠ 0`
+this is the bond of the cover `1 ⋖ sᵢ` of `W / W_λ`; otherwise `sᵢ λ = λ` and both sides vanish. -/
+theorem reflectionBond_simple_smul_one_smul (i : b.support) :
     P.reflectionBond b ((weylCoxeterSystem P b).simple i • lam) ((1 : P.weylGroup) • lam) =
       P.coroot' i lam := by
   rw [weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul, one_smul]
+  by_cases hi : P.coroot' i lam = 0
+  · rw [P.reflection_apply, hi, zero_smul, sub_zero, reflectionBond_self]
   -- `sᵢ λ ≠ λ`, since `⟨sᵢ λ, αᵢ^∨⟩ = -⟨λ, αᵢ^∨⟩ ≠ ⟨λ, αᵢ^∨⟩`.
   have hne : lam ≠ P.reflection i lam := fun h ↦ hi <| CharZero.eq_neg_self_iff.mp <| by
     rw [← coroot'_reflection_self P i lam, ← h]

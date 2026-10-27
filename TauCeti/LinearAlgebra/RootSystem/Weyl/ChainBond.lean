@@ -52,7 +52,8 @@ construction and their gcd is defined.
   divisibility characterization.
 * `TauCeti.bondGcd_eq_zero_iff`: the bond gcd is positive exactly when the chain is nonempty.
 * `TauCeti.bondGcd_smash` and `TauCeti.isAChain_smash_iff`: the bond gcd and the `a`-chain
-  condition of a concatenation of two chains.
+  condition of a concatenation of two chains; `TauCeti.bondGcd_snoc` and
+  `TauCeti.isAChain_snoc_iff` for the extension of a chain by one cover.
 
 ## References
 
@@ -199,6 +200,25 @@ theorem isAChain_smash_iff
     (h : C.last = D.head) : IsAChain a lam (C.smash D h) ↔ IsAChain a lam C ∧ IsAChain a lam D := by
   simp only [isAChain_iff_den_dvd_bondGcd, bondGcd_smash, Nat.dvd_gcd_iff]
 
+/-- The chain of length `0` is an `a`-chain for every `a`. -/
+@[simp]
+theorem isAChain_singleton
+    (y : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
+    IsAChain a lam (RelSeries.singleton _ y) :=
+  fun i ↦ i.elim0
+
+/-- A saturated chain extended by one more cover `y ⋖ x_l` at its end is an `a`-chain exactly when
+the chain is an `a`-chain and `a` times the bond `b_λ(x_l, y)` of the new cover is an integer. -/
+@[simp]
+theorem isAChain_snoc_iff
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
+    {y : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y C.last) :
+    IsAChain a lam (C.snoc y h) ↔ IsAChain a lam C ∧
+      ∃ z : ℤ, a * P.reflectionBond b (C.last.1 • lam) (y.1 • lam) = z := by
+  simp only [isAChain_iff_den_dvd_bondGcd, bondGcd_snoc, Nat.dvd_gcd_iff, ← Int.natCast_dvd,
+    Rat.den_dvd_iff_exists_mul_intCast_eq]
+
 /-- **The bond gcd of the chain `sᵢ ⋗ 1`.** For a simple root `αᵢ` with `⟨λ, αᵢ^∨⟩ ≠ 0`, the
 simple reflection `sᵢ` covers the identity in `W / W_λ`, and the saturated chain `sᵢ ⋗ 1` has bond
 gcd `|⟨λ, αᵢ^∨⟩|`. So it is an `a`-chain exactly when the denominator of `a` divides
@@ -212,7 +232,7 @@ theorem bondGcd_snoc_singleton_simple_one {i : b.support} (hi : P.coroot' i lam 
       (P.coroot' i lam).natAbs := by
   refine (bondGcd_snoc _).trans ?_
   rw [bondGcd_singleton, Nat.gcd_zero_left, RelSeries.last_singleton,
-    reflectionBond_simple_smul_one_smul hi]
+    reflectionBond_simple_smul_one_smul i]
 
 variable [P.flip.IsReduced]
 
