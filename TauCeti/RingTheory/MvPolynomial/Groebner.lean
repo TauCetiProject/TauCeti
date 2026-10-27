@@ -89,6 +89,41 @@ def IsGroebnerBasis (G : Set (MvPolynomial σ R)) (I : Ideal (MvPolynomial σ R)
 variable {m} {f r : MvPolynomial σ R} {B G G' : Set (MvPolynomial σ R)}
   {I : Ideal (MvPolynomial σ R)}
 
+/-- Unfolding lemma for `MonomialOrder.IsRemainder`. -/
+theorem isRemainder_iff : m.IsRemainder f B r ↔
+    (∃ g : B →₀ MvPolynomial σ R,
+      f = Finsupp.linearCombination _ (fun b : B ↦ (b : MvPolynomial σ R)) g + r ∧
+      ∀ b : B, m.toWithBotSyn (m.withBotDegree (b : MvPolynomial σ R)) +
+        m.toWithBotSyn (m.withBotDegree (g b)) ≤ m.toWithBotSyn (m.withBotDegree f)) ∧
+    ∀ c ∈ r.support, ∀ b ∈ B, b ≠ 0 → ¬ m.degree b ≤ c :=
+  Iff.rfl
+
+/-- The division representation of a remainder: `f = ∑ g_b * b + r` with
+`deg b + deg g_b ≤ deg f` for each `b ∈ B`. -/
+theorem IsRemainder.exists_linearCombination (h : m.IsRemainder f B r) :
+    ∃ g : B →₀ MvPolynomial σ R,
+      f = Finsupp.linearCombination _ (fun b : B ↦ (b : MvPolynomial σ R)) g + r ∧
+      ∀ b : B, m.toWithBotSyn (m.withBotDegree (b : MvPolynomial σ R)) +
+        m.toWithBotSyn (m.withBotDegree (g b)) ≤ m.toWithBotSyn (m.withBotDegree f) :=
+  h.1
+
+/-- No monomial of a remainder is divisible by the leading monomial of a nonzero divisor. -/
+theorem IsRemainder.not_degree_le (h : m.IsRemainder f B r) {c : σ →₀ ℕ} (hc : c ∈ r.support)
+    {b : MvPolynomial σ R} (hb : b ∈ B) (hb0 : b ≠ 0) : ¬ m.degree b ≤ c :=
+  h.2 c hc b hb hb0
+
+/-- Unfolding lemma for `MonomialOrder.IsGroebnerBasis`. -/
+theorem isGroebnerBasis_iff : m.IsGroebnerBasis G I ↔
+    G ⊆ I ∧ Ideal.span (m.leadingTerm '' I) = Ideal.span (m.leadingTerm '' G) :=
+  Iff.rfl
+
+/-- A subset of `I` whose leading terms span the ideal of leading terms of `I` is a Gröbner basis
+of `I`. -/
+theorem IsGroebnerBasis.mk (hGI : G ⊆ I)
+    (hspan : Ideal.span (m.leadingTerm '' I) = Ideal.span (m.leadingTerm '' G)) :
+    m.IsGroebnerBasis G I :=
+  ⟨hGI, hspan⟩
+
 /-- The remainders of `0` are exactly `0`. -/
 @[simp]
 theorem isRemainder_zero_left_iff : m.IsRemainder 0 B r ↔ r = 0 := by
@@ -108,7 +143,7 @@ divisible by the leading monomial of a nonzero element of `B`. -/
 theorem exists_degree_le_degree_of_isRemainder_zero (h : m.IsRemainder f B 0) (hf : f ≠ 0) :
     ∃ b ∈ B, b ≠ 0 ∧ m.degree b ≤ m.degree f := by
   classical
-  obtain ⟨⟨g, hfg, hdeg⟩, -⟩ := h
+  obtain ⟨g, hfg, hdeg⟩ := h.exists_linearCombination
   rw [add_zero, Finsupp.linearCombination_apply, Finsupp.sum] at hfg
   have hmem : m.degree f ∈ (∑ b ∈ g.support, g b • (b : MvPolynomial σ R)).support := by
     rw [← hfg]
@@ -155,19 +190,20 @@ theorem IsGroebnerBasis.span_leadingTerm_image (h : m.IsGroebnerBasis G I) :
 
 /-- An ideal is a Gröbner basis of itself. -/
 theorem isGroebnerBasis_self (I : Ideal (MvPolynomial σ R)) : m.IsGroebnerBasis (I : Set _) I :=
-  ⟨subset_rfl, rfl⟩
+  .mk subset_rfl rfl
 
 /-- Adjoining further elements of `I` to a Gröbner basis of `I` gives a Gröbner basis of `I`. -/
 theorem IsGroebnerBasis.mono (h : m.IsGroebnerBasis G I) (hGG' : G ⊆ G') (hG'I : G' ⊆ I) :
     m.IsGroebnerBasis G' I :=
-  ⟨hG'I, le_antisymm (h.2.le.trans (Ideal.span_mono (Set.image_mono hGG')))
-    (Ideal.span_mono (Set.image_mono hG'I))⟩
+  .mk hG'I <| le_antisymm
+    (h.span_leadingTerm_image.le.trans (Ideal.span_mono (Set.image_mono hGG')))
+    (Ideal.span_mono (Set.image_mono hG'I))
 
 /-- Removing `0` does not change whether a set is a Gröbner basis. -/
 @[simp]
 theorem isGroebnerBasis_sdiff_singleton_zero :
     m.IsGroebnerBasis (G \ {0}) I ↔ m.IsGroebnerBasis G I := by
-  simp only [IsGroebnerBasis, m.span_leadingTerm_sdiff_singleton_zero,
+  simp only [isGroebnerBasis_iff, m.span_leadingTerm_sdiff_singleton_zero,
     Set.sdiff_singleton_subset_iff, Set.insert_eq_of_mem (show (0 : MvPolynomial σ R) ∈ (I : Set _)
       from I.zero_mem)]
 
@@ -177,7 +213,7 @@ theorem IsGroebnerBasis.exists_degree_le_degree (h : m.IsGroebnerBasis G I)
     {p : MvPolynomial σ R} (hp : p ∈ I) (hp0 : p ≠ 0) :
     ∃ g ∈ G, g ≠ 0 ∧ m.degree g ≤ m.degree p := by
   refine exists_degree_le_of_mem_span_leadingTerm
-    (h.2 ▸ Ideal.subset_span ⟨p, hp, rfl⟩ : m.leadingTerm p ∈ _) ?_
+    (h.span_leadingTerm_image ▸ Ideal.subset_span ⟨p, hp, rfl⟩ : m.leadingTerm p ∈ _) ?_
   rw [m.support_leadingTerm' hp0]
   exact Finset.mem_singleton_self _
 
@@ -188,8 +224,8 @@ theorem isGroebnerBasis_iff_forall_exists_degree_le_degree
     (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) :
     m.IsGroebnerBasis G I ↔
       G ⊆ I ∧ ∀ p ∈ I, p ≠ 0 → ∃ g ∈ G, g ≠ 0 ∧ m.degree g ≤ m.degree p := by
-  refine ⟨fun h ↦ ⟨h.1, fun p hp hp0 ↦ h.exists_degree_le_degree hp hp0⟩,
-    fun ⟨hGI, hdeg⟩ ↦ ⟨hGI, le_antisymm ?_ (Ideal.span_mono (Set.image_mono hGI))⟩⟩
+  refine ⟨fun h ↦ ⟨h.subset, fun p hp hp0 ↦ h.exists_degree_le_degree hp hp0⟩,
+    fun ⟨hGI, hdeg⟩ ↦ .mk hGI (le_antisymm ?_ (Ideal.span_mono (Set.image_mono hGI)))⟩
   rw [Ideal.span_le, Set.image_subset_iff]
   intro p hp
   rcases eq_or_ne p 0 with rfl | hp0
@@ -213,7 +249,7 @@ variable [CommRing R] {m} {f f₁ f₂ r r₁ r₂ : MvPolynomial σ R} {B G : S
 
 /-- A polynomial differs from its remainders by an element of the ideal spanned by the divisors. -/
 theorem IsRemainder.sub_mem_span (h : m.IsRemainder f B r) : f - r ∈ Ideal.span B := by
-  obtain ⟨⟨g, hf, -⟩, -⟩ := h
+  obtain ⟨g, hf, -⟩ := h.exists_linearCombination
   rw [hf, add_sub_cancel_right, Finsupp.linearCombination_apply]
   exact Submodule.sum_mem _ fun b _ ↦ Submodule.smul_mem _ _ (Ideal.subset_span b.2)
 
@@ -243,7 +279,7 @@ theorem IsGroebnerBasis.sub_mem_iff (h : m.IsGroebnerBasis G I) (h₁ : m.IsRema
     (h₂ : m.IsRemainder f₂ G r₂) : f₁ - f₂ ∈ I ↔ r₁ = r₂ := by
   classical
   have hdiff : f₁ - f₂ - (r₁ - r₂) ∈ I := by
-    have := Ideal.span_le.2 h.1 (Ideal.sub_mem _ h₁.sub_mem_span h₂.sub_mem_span)
+    have := Ideal.span_le.2 h.subset (Ideal.sub_mem _ h₁.sub_mem_span h₂.sub_mem_span)
     rwa [sub_sub_sub_comm] at this
   rw [← sub_add_cancel (f₁ - f₂) (r₁ - r₂), I.add_mem_iff_right hdiff]
   refine ⟨fun hr ↦ by_contra fun hne ↦ ?_, fun hr ↦ by simp [hr]⟩
@@ -252,8 +288,8 @@ theorem IsGroebnerBasis.sub_mem_iff (h : m.IsGroebnerBasis G I) (h₁ : m.IsRema
   have hne' : r₁ - r₂ ≠ 0 := sub_ne_zero.2 hne
   obtain ⟨g, hgG, hg0, hgd⟩ := h.exists_degree_le_degree hr hne'
   rcases Finset.mem_union.1 (support_sub σ r₁ r₂ (m.degree_mem_support hne')) with hc | hc
-  · exact h₁.2 _ hc g hgG hg0 hgd
-  · exact h₂.2 _ hc g hgG hg0 hgd
+  · exact h₁.not_degree_le hc hgG hg0 hgd
+  · exact h₂.not_degree_le hc hgG hg0 hgd
 
 /-- **Uniqueness of remainders.** Remainders on division by a Gröbner basis are unique. -/
 theorem IsGroebnerBasis.eq_of_isRemainder (h : m.IsGroebnerBasis G I) (h₁ : m.IsRemainder f G r₁)
@@ -277,7 +313,7 @@ theorem IsGroebnerBasis.isRemainder_zero_iff_mem (h : m.IsGroebnerBasis G I)
 /-- A Gröbner basis of `I` whose nonzero members have unit leading coefficients generates `I`. -/
 theorem IsGroebnerBasis.ideal_eq_span (h : m.IsGroebnerBasis G I)
     (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) : I = Ideal.span G := by
-  refine le_antisymm (fun f hf ↦ ?_) (Ideal.span_le.2 h.1)
+  refine le_antisymm (fun f hf ↦ ?_) (Ideal.span_le.2 h.subset)
   simpa using ((h.isRemainder_zero_iff_mem hG).2 hf).sub_mem_span
 
 /-- Remainders on division by a Gröbner basis whose nonzero members have unit leading
@@ -291,7 +327,7 @@ theorem IsGroebnerBasis.existsUnique_isRemainder (h : m.IsGroebnerBasis G I)
 `I` if and only if every element of `I` has remainder `0` on division by `G`. -/
 theorem isGroebnerBasis_iff_isRemainder_zero (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) :
     m.IsGroebnerBasis G I ↔ G ⊆ I ∧ ∀ f ∈ I, m.IsRemainder f G 0 := by
-  refine ⟨fun h ↦ ⟨h.1, fun f hf ↦ (h.isRemainder_zero_iff_mem hG).2 hf⟩, fun ⟨hGI, h0⟩ ↦ ?_⟩
+  refine ⟨fun h ↦ ⟨h.subset, fun f hf ↦ (h.isRemainder_zero_iff_mem hG).2 hf⟩, fun ⟨hGI, h0⟩ ↦ ?_⟩
   exact (isGroebnerBasis_iff_forall_exists_degree_le_degree hG).2
     ⟨hGI, fun p hp hp0 ↦ exists_degree_le_degree_of_isRemainder_zero (h0 p hp) hp0⟩
 
