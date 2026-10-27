@@ -299,6 +299,49 @@ theorem homotopic_iff_reduce_eq {a b : Γ.V} {p q : Γ.Path a b} :
     exact (homotopic_reduce Γ p).trans
       (by simpa only [h] using (homotopic_reduce Γ q).symm)
 
+/-- Backtrack homotopy is preserved by appending a path. -/
+theorem Homotopic.comp_right {a b c : Γ.V} {p q : Γ.Path a b}
+    (h : Homotopic Γ p q) (r : Γ.Path b c) :
+    Homotopic Γ (p.comp r) (q.comp r) := by
+  induction r with
+  | nil => simpa using h
+  | cons r e ih => simpa only [Quiver.Path.comp_cons] using Homotopic.cons ih e
+
+/-- Backtrack homotopy is preserved by prepending a path. -/
+theorem Homotopic.comp_left {a b c : Γ.V} (p : Γ.Path a b) {q r : Γ.Path b c}
+    (h : Homotopic Γ q r) : Homotopic Γ (p.comp q) (p.comp r) := by
+  induction h with
+  | refl q => exact .refl _
+  | symm _ ih => exact ih.symm
+  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
+  | cons h e ih => simpa only [Quiver.Path.comp_cons] using Homotopic.cons ih e
+  | backtrack q e =>
+      simpa only [Quiver.Path.comp_cons] using Homotopic.backtrack (p.comp q) e
+
+/-- Reducing a prefix before concatenation does not change the reduced result. -/
+theorem reduce_comp_reduce_left {a b c : Γ.V} (p : Γ.Path a b)
+    (q : Γ.Path b c) :
+    reduce Γ ((reduce Γ p).comp q) = reduce Γ (p.comp q) := by
+  exact (Homotopic.comp_right Γ (homotopic_reduce Γ p) q).reduce_eq Γ |>.symm
+
+/-- Reducing a suffix before concatenation does not change the reduced result. -/
+theorem reduce_comp_reduce_right {a b c : Γ.V} (p : Γ.Path a b)
+    (q : Γ.Path b c) :
+    reduce Γ (p.comp (reduce Γ q)) = reduce Γ (p.comp q) := by
+  exact (Homotopic.comp_left Γ p (homotopic_reduce Γ q)).reduce_eq Γ |>.symm
+
+/-- A path followed by its reverse is backtrack homotopic to the empty path. -/
+theorem homotopic_comp_reverse {a b : Γ.V} (p : Γ.Path a b) :
+    Homotopic Γ (p.comp p.reverse) (Quiver.Path.nil : Γ.Path a a) := by
+  induction p with
+  | nil => simpa using (Homotopic.refl (Quiver.Path.nil : Γ.Path a a) : Homotopic Γ _ _)
+  | cons p e ih =>
+      rw [Quiver.Path.reverse, ← Quiver.Path.comp_assoc]
+      have hback : Homotopic Γ ((p.cons e).comp (Quiver.reverse e).toPath) p := by
+        simpa only [Quiver.Path.comp_cons, Quiver.Path.comp_nil,
+          Quiver.Hom.toPath] using Homotopic.backtrack p e
+      exact (hback.comp_right Γ p.reverse).trans ih
+
 /-- A path is reduced precisely when normalisation leaves it unchanged. -/
 theorem isReduced_iff_reduce_eq {a b : Γ.V} (p : Γ.Path a b) :
     IsReduced Γ p ↔ reduce Γ p = p := by
