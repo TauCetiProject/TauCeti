@@ -14,8 +14,8 @@ public import TauCeti.RingTheory.LaurentSeries.LocalField
 For a finite field `F` of characteristic `p`, the Laurent series field `F⸨X⸩` is a nonarchimedean
 local field of characteristic `p` (`TauCeti.LaurentSeries.isNonarchimedeanLocalField`), with
 residue field `F`. It is the equal-characteristic case of Serre's finiteness dichotomy: whenever
-`p ∣ n`, the family `σ_{F⸨X⸩}(n)` of totally ramified subextensions of degree `n` of a separable
-closure is infinite. Serre's mass formula nevertheless gives the weighted series
+`0 < n` and `p ∣ n`, the family `σ_{F⸨X⸩}(n)` of totally ramified subextensions of degree `n` of
+a separable closure is infinite. Serre's mass formula nevertheless gives the weighted series
 `∑_{L ∈ σ_{F⸨X⸩}(n)} q ^ (-c(L))` the finite value `n`, where `q` is the cardinality of `F`
 (`TauCeti.LaurentSeries.natCard_residueField`).
 
