@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Finiteness.Defs
 public import TauCeti.RingTheory.Valuation.CofinalIdeal.Basic
+import TauCeti.RingTheory.Valuation.SpanPow
 
 /-!
 # The ideal-indexed characteristic subgroup `cΓ_v(I)`
@@ -48,8 +49,6 @@ positive powers propagates it across `√I = √J`, for every convex subgroup.
   minimality halves of **Lemma 7.2**, with `Valuation.isLeast_of_idealCofinalFor` the
   least-element form of the last.
 * `Valuation.idealCofinalFor_radical_iff` : cofinality depends only on the radical.
-* `Valuation.exists_mem_max_restrict_ne_zero` : a finite set contains a nonvanishing
-  value-maximising element whenever the radical of its span contains a nonvanishing element.
 * `Valuation.isGreatestIdealCofinal_closure_singleton_of_span` : **Lemma 7.2's
   greatest-cofinal conclusion** from a generating set, with
   `exists_isGreatestIdealCofinal_of_not_meets` its existence form, which is what Definition 7.3
@@ -275,16 +274,15 @@ variable {A : Type*} [CommRing A] {Γ₀ : Type*} [LinearOrderedCommGroupWithZer
 /-- **Cofinality of an ideal depends only on its radical.** This is what allows `I` to be
 replaced by a finitely generated ideal with the same radical — the standing hypothesis
 of §7.1. -/
+@[simp]
 theorem idealCofinalFor_radical_iff {v : Valuation A Γ₀}
     {H : TauCeti.ConvexSubgroup (v.valueGroup)}
     {I : Ideal A} : IdealCofinalFor v H I.radical ↔ IdealCofinalFor v H I := by
   constructor
   · exact fun h ↦ h.mono Ideal.le_radical
   · intro h a ha
-    obtain ⟨n, hn⟩ := Ideal.mem_radical_iff.mp ha
-    rcases Nat.eq_zero_or_pos n with rfl | hn0
-    · exact (not_cofinalValueFor_one v H.toSubgroup (by simpa using h _ hn)).elim
-    · exact (cofinalValueFor_pow_iff hn0).mp (h _ hn)
+    obtain ⟨_, hn⟩ := Ideal.mem_radical_iff.mp ha
+    exact (h _ hn).of_pow
 
 /-- Two ideals with the same radical are cofinal for exactly the same convex subgroups. -/
 theorem idealCofinalFor_congr_of_radical_eq {v : Valuation A Γ₀}
@@ -336,27 +334,6 @@ private theorem not_mem_characteristicSubgroup_of_pow_mem {v : Valuation A Γ₀
   apply hdisj
   refine idealMeetsCharacteristicSubgroup_iff.mpr ⟨_, ⟨t ^ n, hn, ?_⟩, pow_mem hmem n⟩
   simp [map_pow, v.restrict_eq_mk ht0]
-
-/-- A finite set has a nonvanishing element of greatest value if the radical of its span
-contains an element of nonzero value. -/
-theorem exists_mem_max_restrict_ne_zero {v : Valuation A Γ₀} {T : Finset A} {a₀ : A}
-    (ha₀ : a₀ ∈ (Ideal.span (T : Set A)).radical) (ha₀0 : v a₀ ≠ 0) :
-    ∃ t₀ ∈ T, v t₀ ≠ 0 ∧ ∀ t ∈ T, v.restrict t ≤ v.restrict t₀ := by
-  have hsupp : ¬ ∀ t ∈ T, t ∈ v.supp := by
-    intro hall
-    have hspan : Ideal.span (T : Set A) ≤ v.supp := Ideal.span_le.mpr hall
-    have ha₀supp := (inferInstance : v.supp.IsPrime).radical_le_iff.mpr hspan ha₀
-    exact ha₀0 ((v.mem_supp_iff _).mp ha₀supp)
-  have hTne : T.Nonempty := by
-    rcases T.eq_empty_or_nonempty with rfl | hne'
-    · exact absurd (by simp) hsupp
-    · exact hne'
-  obtain ⟨t₀, ht₀T, ht₀max⟩ := T.exists_max_image (fun t ↦ v.restrict t) hTne
-  refine ⟨t₀, ht₀T, fun hz ↦ hsupp fun t ht ↦ ?_, ht₀max⟩
-  rw [v.mem_supp_iff]
-  have hle : v.restrict t ≤ v.restrict t₀ := ht₀max t ht
-  rw [v.restrict_eq_zero_iff.mpr hz] at hle
-  exact v.restrict_eq_zero_iff.mp (le_antisymm hle zero_le)
 
 /-- **Wedhorn Lemma 7.2, existence form of the greatest-cofinal conclusion.** Under the standing
 hypothesis of §7.1 — that `I` has the same radical as some finitely generated ideal — with `v(I)`

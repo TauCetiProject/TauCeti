@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
+import TauCeti.RingTheory.Valuation.SpanPow
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Points
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Presentation
