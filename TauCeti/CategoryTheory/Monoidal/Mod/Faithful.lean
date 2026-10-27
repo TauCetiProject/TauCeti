@@ -17,8 +17,8 @@ monoidal functor carries an action of `M` on `X` to an action of `F.obj M` on `F
 action of `M` on `X` as soon as its action morphism is the image under `F` of a morphism
 `M ⊗ X ⟶ X`: the action axioms hold on `X` because they hold after applying `F`. Faithfulness
 also makes the action on `X` unique, and it reflects equivariant morphisms. Between cartesian
-monoidal categories, a monoidal functor which reflects isomorphisms also reflects the torsor
-condition that `(m, x) ↦ (m • x, x)` is an isomorphism.
+monoidal categories, a monoidal functor which reflects isomorphisms also reflects the
+pseudo-torsor condition that `(m, x) ↦ (m • x, x)` is an isomorphism.
 
 This is the formal part of descent of group actions: for a base change functor along a morphism of
 effective descent, the morphism-descent theorem supplies the required action morphism. The
@@ -34,7 +34,7 @@ construction parallels `CategoryTheory.Functor.monObjOfFaithful` for monoid obje
 * `CategoryTheory.Functor.isModHom_map_iff`: a faithful monoidal functor reflects equivariant
   morphisms.
 * `CategoryTheory.Functor.isIso_lift_smul_snd_modObjObj_iff`: a monoidal functor which reflects
-  isomorphisms reflects the torsor condition.
+  isomorphisms reflects the pseudo-torsor condition.
 -/
 
 public section

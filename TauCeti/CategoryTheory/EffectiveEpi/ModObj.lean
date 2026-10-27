@@ -10,7 +10,7 @@ public import TauCeti.CategoryTheory.EffectiveEpi.Descent
 public import TauCeti.CategoryTheory.Monoidal.Mod.Faithful
 
 /-!
-# Descent of actions and torsors along effective epimorphisms
+# Descent of actions and pseudo-torsors along effective epimorphisms
 
 Let `p : S' ⟶ S` be a morphism in a category with pullbacks, all of whose base changes are
 effective epimorphisms, and let `S'' = S' ×_S S'`. An action over `S` of a monoid object `G` over
@@ -27,8 +27,9 @@ the action morphism of the unique action of `G` on `X` whose base change is the 
 Equivariant morphisms satisfying the descent condition descend to equivariant morphisms.
 
 Base change along `p` reflects isomorphisms (`TauCeti.reflectsIsomorphisms_pullback`), so the
-torsor condition descends as well: the morphism `G ×_S X ⟶ X ×_S X`, `(g, x) ↦ (g • x, x)`, of the
-descended action is an isomorphism exactly when that of the given action is.
+pseudo-torsor condition descends as well: the morphism `G ×_S X ⟶ X ×_S X`,
+`(g, x) ↦ (g • x, x)`, of the descended action is an isomorphism exactly when that of the given
+action is.
 
 The base change functor is faithful and monoidal, so the action axioms on `X` follow from those on
 `X'` (`CategoryTheory.Functor.modObjOfFaithful`); descent of morphisms supplies the action
@@ -48,8 +49,8 @@ apply to fpqc and fppf descent of actions of group schemes and of finite groups.
 * `TauCeti.eq_descendModObj`: uniqueness of the descended action.
 * `TauCeti.isModHom_descendHom`: an equivariant morphism satisfying the descent condition descends
   to an equivariant morphism.
-* `TauCeti.isIso_lift_smul_snd_descendModObj_iff`: the descended action satisfies the torsor
-  condition exactly when the given one does.
+* `TauCeti.isIso_lift_smul_snd_descendModObj_iff`: the descended action satisfies the
+  pseudo-torsor condition exactly when the given one does.
 
 ## References
 
@@ -115,7 +116,7 @@ theorem eq_descendModObj (h : ModObj G X)
     h = descendModObj p G X h_smul :=
   (Over.pullback p).modObjObj_injective G X <| e.trans (modObjObj_descendModObj p G X).symm
 
-/-- **Descent of the torsor condition.** The morphism `G ×_S X ⟶ X ×_S X`,
+/-- **Descent of the pseudo-torsor condition.** The morphism `G ×_S X ⟶ X ×_S X`,
 `(g, x) ↦ (g • x, x)`, of the descended action is an isomorphism if and only if that of the given
 action of `G ×_S S'` on `X ×_S S'` is. In particular, if `G ×_S S'` acts on `X ×_S S'` as a
 pseudo-torsor, so does `G` on `X`. -/
