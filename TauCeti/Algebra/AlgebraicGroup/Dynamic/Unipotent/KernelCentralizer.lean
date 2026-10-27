@@ -51,8 +51,6 @@ assume only that the augmentation cotangent module of `H` is finite projective.
 * `TauCeti.SplitMaximalTorus.centralizerKerHopfIdeal_le_unipotentCentralizerKerHopfIdeal` and
   `TauCeti.SplitMaximalTorus.unipotentDefiningHopfIdeal_le_unipotentCentralizerKerHopfIdeal`: it
   lies in `Z_G(ker α)` and in `U_G(λ)`.
-* `TauCeti.SplitMaximalTorus.centralizerKerHopfIdeal_toIdeal_le_ker_cocharacter`: `λ` factors
-  through `Z_G(ker α)`.
 * `SplitMaximalTorus.smoothCommHopfAlgProperty_quotient_unipotentCentralizerKerHopfIdeal`: it is
   smooth when `G` is.
 * `geometricallyConnectedCommHopfAlgProperty_quotient_unipotentCentralizerKerHopfIdeal`: over a
@@ -125,20 +123,6 @@ theorem unipotentCentralizerKerHopfIdeal_neg (T : SplitMaximalTorus R H r)
     centralizerKerHopfIdeal_neg]
 
 /-! ### Smoothness and connectedness -/
-
-/-- **`λ` factors through `Z_G(ker α)`**: the cocharacter kills the equations of the centralizer,
-since it factors through the split maximal torus, which centralizes `ker α`. So `λ` descends to a
-cocharacter of `Z_G(ker α)`, whose dynamic unipotent subgroup is `U_G(λ) ∩ Z_G(ker α)`
-(`BialgHom.quotientSupUnipotentDefiningHopfIdealIso`). -/
-theorem centralizerKerHopfIdeal_toIdeal_le_ker_cocharacter (T : SplitMaximalTorus R H r)
-    (α : ULift.{u} (Fin r) →₀ ℤ)
-    (ψ : Multiplicative (ULift.{u} (Fin r) →₀ ℤ) →* Multiplicative ℤ) :
-    (T.centralizerKerHopfIdeal α).toIdeal ≤
-      RingHom.ker (T.coordinateMap.hom.cocharacter ψ).toAlgHom.toRingHom := by
-  intro x hx
-  refine T.coordinateMap.hom.ker_le_ker_cocharacter ψ (RingHom.mem_ker.mpr ?_)
-  exact (T.mem_definingIdeal x).1 <|
-    T.centralizerKerHopfIdeal_le_definingIdeal α (HopfIdeal.mem_toIdeal.mp hx)
 
 /-- **`U_G(λ) ∩ Z_G(ker α)` is smooth** when `G` is smooth of finite type over a Noetherian ring:
 it is the dynamic unipotent subgroup of the centralizer `Z_G(ker α)`, which is then smooth. -/

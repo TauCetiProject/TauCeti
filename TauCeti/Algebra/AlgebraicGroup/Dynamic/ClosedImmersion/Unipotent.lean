@@ -25,8 +25,8 @@ finite type over a Noetherian ring then `Z ∩ U_G(λ)` is smooth, whatever `G` 
 
 ## Main declarations
 
-* `BialgHom.comapOfSurjective_unipotentDefiningHopfIdeal_liftBialgHom`: the inverse image of
-  `U_Z(λ_Z)` in `G` is `Z ∩ U_G(λ)`.
+* `BialgHom.comapOfSurjective_unipotentDefiningHopfIdeal_liftBialgHom`: the image of `U_Z(λ_Z)`
+  under `Z ↪ G` is `Z ∩ U_G(λ)`.
 * `BialgHom.quotientSupUnipotentDefiningHopfIdealIso`: the corresponding isomorphism of
   coordinate Hopf algebras.
 * `BialgHom.smoothCommHopfAlgProperty_quotient_sup_unipotentDefiningHopfIdeal`: `Z ∩ U_G(λ)` is
@@ -53,8 +53,9 @@ section CommRing
 variable {R : Type u} [CommRing R] {H : CommHopfAlgCat.{v} R}
 
 /-- **The dynamic unipotent subgroup of a closed subgroup `Z` through which `λ` factors is
-`Z ∩ U_G(λ)`.** The inverse image in `G` of the dynamic unipotent subgroup of the descended
-cocharacter of `Z = Spec (H ⧸ I)` is cut out by `I ⊔ J`, where `J` cuts out `U_G(λ)`. -/
+`Z ∩ U_G(λ)`.** Pulling back the defining ideal of the dynamic unipotent subgroup of the
+descended cocharacter of `Z = Spec (H ⧸ I)` along `H → H ⧸ I` gives `I ⊔ J`, where `J` cuts out
+`U_G(λ)`: the image of that subgroup under `Z ↪ G` is `Z ∩ U_G(λ)`. -/
 theorem comapOfSurjective_unipotentDefiningHopfIdeal_liftBialgHom (I : HopfIdeal R H)
     (l : H →ₐc[R] LaurentPolynomial R) (hI : I.toIdeal ≤ RingHom.ker l.toAlgHom.toRingHom) :
     (Bialgebra.Quotient.liftBialgHom I.toIdeal l hI).unipotentDefiningHopfIdeal.comapOfSurjective
@@ -112,7 +113,7 @@ theorem mkQuotient_comp_mkQuotient_comp_quotientSupUnipotentDefiningHopfIdealIso
 smooth of finite type over a Noetherian ring, then so is `Z ∩ U_G(λ)`. No smoothness of `G` is
 needed. -/
 theorem smoothCommHopfAlgProperty_quotient_sup_unipotentDefiningHopfIdeal [IsNoetherianRing R]
-    [Algebra.FiniteType R H] {I : HopfIdeal R H} {l : H →ₐc[R] LaurentPolynomial R}
+    {I : HopfIdeal R H} {l : H →ₐc[R] LaurentPolynomial R}
     (hI : I.toIdeal ≤ RingHom.ker l.toAlgHom.toRingHom)
     (hZ : smoothCommHopfAlgProperty R (CommHopfAlgCat.quotient H I)) :
     smoothCommHopfAlgProperty R (CommHopfAlgCat.quotient H (I ⊔ l.unipotentDefiningHopfIdeal)) := by
@@ -125,11 +126,11 @@ theorem smoothCommHopfAlgProperty_quotient_sup_unipotentDefiningHopfIdeal [IsNoe
 end CommRing
 
 /-- **`Z ∩ U_G(λ)` is geometrically connected.** Over a field, the intersection of the dynamic
-unipotent subgroup of a finite-type affine group with a closed subgroup through which the
+unipotent subgroup of an affine group with a closed subgroup of finite type through which the
 cocharacter factors is geometrically connected. No smoothness or reducedness is needed. -/
 theorem geometricallyConnectedCommHopfAlgProperty_quotient_sup_unipotentDefiningHopfIdeal
-    {k : Type u} [Field k] {H : CommHopfAlgCat.{u} k} [Algebra.FiniteType k H]
-    {I : HopfIdeal k H} {l : H →ₐc[k] LaurentPolynomial k}
+    {k : Type u} [Field k] {H : CommHopfAlgCat.{u} k} {I : HopfIdeal k H}
+    [Algebra.FiniteType k (H ⧸ I.toIdeal)] {l : H →ₐc[k] LaurentPolynomial k}
     (hI : I.toIdeal ≤ RingHom.ker l.toAlgHom.toRingHom) :
     geometricallyConnectedCommHopfAlgProperty k
       (CommHopfAlgCat.quotient H (I ⊔ l.unipotentDefiningHopfIdeal)) :=

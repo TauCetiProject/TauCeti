@@ -76,8 +76,9 @@ theorem unipotentDefiningHopfIdeal_eq_map_of_surjective
   simp only [HopfIdeal.mem_map_iff_of_surjective hφ, BialgHom.mapDomain_apply_apply,
     forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
 
-/-- The inverse image in `G` of the dynamic parabolic of a closed subgroup `Z` is the
-intersection `Z ∩ P_G(λ)` of `Z` with the ambient dynamic parabolic. -/
+/-- Pulling back the defining ideal of the dynamic parabolic of a closed subgroup `Z` along
+`H → O(Z)` gives the ideal of `Z ∩ P_G(λ)`: the image of that parabolic under `Z ↪ G` is the
+intersection of `Z` with the ambient dynamic parabolic. -/
 theorem comapOfSurjective_parabolicDefiningHopfIdeal
     (φ : H →ₐc[R] K) (hφ : Function.Surjective φ)
     (l : K →ₐc[R] LaurentPolynomial R) :
@@ -85,8 +86,9 @@ theorem comapOfSurjective_parabolicDefiningHopfIdeal
       parabolicDefiningHopfIdeal (l.comp φ) ⊔ HopfIdeal.kerOfSurjective φ hφ := by
   rw [parabolicDefiningHopfIdeal_eq_map_of_surjective φ hφ l, HopfIdeal.comapOfSurjective_map]
 
-/-- The inverse image in `G` of the dynamic unipotent subgroup of a closed subgroup `Z` is the
-intersection `Z ∩ U_G(λ)` of `Z` with the ambient dynamic unipotent subgroup. -/
+/-- Pulling back the defining ideal of the dynamic unipotent subgroup of a closed subgroup `Z`
+along `H → O(Z)` gives the ideal of `Z ∩ U_G(λ)`: the image of that subgroup under `Z ↪ G` is the
+intersection of `Z` with the ambient dynamic unipotent subgroup. -/
 theorem comapOfSurjective_unipotentDefiningHopfIdeal
     (φ : H →ₐc[R] K) (hφ : Function.Surjective φ)
     (l : K →ₐc[R] LaurentPolynomial R) :

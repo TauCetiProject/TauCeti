@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Maximal
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
 import TauCeti.Algebra.MonoidAlgebra.MapDomain
@@ -56,6 +57,8 @@ statements assume only that the augmentation cotangent module of `H` is finite p
   `TauCeti.SplitMaximalTorus.centralizerKerHopfIdeal_le_centralizerHopfIdeal` and
   `TauCeti.SplitMaximalTorus.centralizerKerTorusHopfIdeal_le_centralizerKerHopfIdeal`: the
   containments `T ⊆ Z_G(ker α)` and `Z_G(T) ⊆ Z_G(ker α) ⊆ Z_G(T_α)`.
+* `TauCeti.SplitMaximalTorus.centralizerKerHopfIdeal_toIdeal_le_ker_cocharacter`: the image `λ`
+  in `G` of a cocharacter of `T` factors through `Z_G(ker α)`.
 * `TauCeti.SplitMaximalTorus.lieSubalgebra_centralizerKerHopfIdeal_toSubmodule` and
   `TauCeti.SplitMaximalTorus.lieSubalgebra_centralizerKerTorusHopfIdeal_toSubmodule`: their Lie
   algebras.
@@ -206,6 +209,19 @@ theorem centralizerKerHopfIdeal_le_definingIdeal (T : SplitMaximalTorus R H r)
   rw [centralizerKerHopfIdeal_def, kerCoordinateMap_def] at hx
   exact (T.mem_definingIdeal x).2 <| (HopfIdeal.mem_kerOfSurjective _ T.surjective).1 <|
     BialgHom.centralizerHopfIdeal_comp_le_kerOfSurjective _ T.surjective _ hx
+
+/-- **`λ` factors through `Z_G(ker α)`**: the cocharacter kills the equations of the centralizer,
+since it factors through the split maximal torus, which centralizes `ker α`. So `λ` descends to a
+cocharacter of `Z_G(ker α)`. -/
+theorem centralizerKerHopfIdeal_toIdeal_le_ker_cocharacter (T : SplitMaximalTorus R H r)
+    (α : ULift.{u} (Fin r) →₀ ℤ)
+    (ψ : Multiplicative (ULift.{u} (Fin r) →₀ ℤ) →* Multiplicative ℤ) :
+    (T.centralizerKerHopfIdeal α).toIdeal ≤
+      RingHom.ker (T.coordinateMap.hom.cocharacter ψ).toAlgHom.toRingHom := by
+  intro x hx
+  refine T.coordinateMap.hom.ker_le_ker_cocharacter ψ (RingHom.mem_ker.mpr ?_)
+  exact (T.mem_definingIdeal x).1 <|
+    T.centralizerKerHopfIdeal_le_definingIdeal α (HopfIdeal.mem_toIdeal.mp hx)
 
 /-- **`Z_G(ker α) ⊆ Z_G(T_α)`**, since `T_α ⊆ ker α`. -/
 theorem centralizerKerTorusHopfIdeal_le_centralizerKerHopfIdeal (T : SplitMaximalTorus R H r)
