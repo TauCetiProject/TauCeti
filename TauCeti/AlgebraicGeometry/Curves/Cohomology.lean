@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.MayerVietoris
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
-public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveLine
+public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveLine.Finite
 public import TauCeti.AlgebraicGeometry.Curves.AffineCover
 public import TauCeti.AlgebraicGeometry.Curves.ProjectiveLine
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
@@ -38,7 +38,7 @@ in every degree. A rational function `x ∈ k(X)` transcendental over `k` identi
 two-chart model of `k(X)` built from `x` (`AlgebraicGeometry.Scheme.isoTwoChartModel`), which maps
 finitely to the projective line (`TauCeti.AlgebraicGeometry.twoChartModel.toProjectiveLine`). The
 cohomology of a coherent sheaf on a scheme finite over `ℙ¹_k` is finite-dimensional
-(`TauCeti.AlgebraicGeometry.projectiveLine.finite_cohomology_of_isFinite`).
+(`AlgebraicGeometry.Scheme.Modules.finite_cohomology_of_isFinite_to_projectiveLine`).
 
 Neither a rational point nor a perfect base field is assumed.
 
@@ -139,7 +139,7 @@ theorem finiteDimensional_cohomology_of_isCurveOver (M : X.Modules) [M.IsQuasico
   -- the two-chart model built from the image of `X` maps finitely to `ℙ¹_k`
   let ν : X ⟶ projectiveLine k := (X.isoTwoChartModel (hX ▸ hx.ne_zero) (hX ▸ hx)).hom ≫
     twoChartModel.toProjectiveLine hF (hX ▸ hx.ne_zero)
-  exact projectiveLine.finite_cohomology_of_isFinite k ν M n
+  exact finite_cohomology_of_isFinite_to_projectiveLine k ν M n
 
 end IsCurveOver
 
