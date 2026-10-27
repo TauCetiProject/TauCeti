@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.RingTheory.Localization.Away.AdjoinRoot
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.Bialgebra
+public import TauCeti.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
 # The general linear coordinate Hopf algebra
@@ -484,21 +484,17 @@ localized inverse entry. -/
 theorem genericMatrix_inv_apply (i j : Fin n) :
     (genericMatrix R n)⁻¹ i j =
       coordinateHopfAlgebraAlgEquiv R n ((localizedGenericMatrix R n)⁻¹ i j) := by
-  have h : (genericMatrix R n)⁻¹ =
-      ((localizedGenericMatrix R n)⁻¹).map (coordinateHopfAlgebraAlgEquiv R n) := by
-    apply Matrix.inv_eq_left_inv
-    rw [genericMatrix, ← Matrix.map_mul,
-      Matrix.nonsing_inv_mul _ (isUnit_det_localizedGenericMatrix R n)]
-    exact Matrix.map_one _ (map_zero _) (map_one _)
-  rw [h, Matrix.map_apply]
+  simpa only [genericMatrix, AlgEquiv.coe_toAlgHom, Matrix.map_apply] using
+    (congrFun (congrFun (Matrix.map_nonsing_inv
+      (coordinateHopfAlgebraAlgEquiv R n).toAlgHom (localizedGenericMatrix R n)) i) j).symm
 
 /-- Algebra morphisms out of `O(GLₙ)` commute with inverting the generic matrix. -/
 theorem map_inv_genericMatrix {T : Type*} [CommRing T] [Algebra R T]
     (φ : coordinateHopfAlgebra R n →ₐ[R] T) :
     ((genericMatrix R n)⁻¹).map φ = ((genericMatrix R n).map φ)⁻¹ := by
-  refine (Matrix.inv_eq_left_inv ?_).symm
-  rw [← Matrix.map_mul, Matrix.nonsing_inv_mul _ (isUnit_det_genericMatrix R n)]
-  simp
+  simpa only [← Matrix.nonsing_inv_eq_ringInverse, AlgHom.mapMatrix_apply] using
+    ((genericMatrix R n).isUnit_iff_isUnit_det.mpr
+      (isUnit_det_genericMatrix R n)).map_ringInverse φ.mapMatrix
 
 /-- Mathlib has no `CommHopfAlgCat.of_comul` lemma exposing the comultiplication stored by
 `CommHopfAlgCat.of`. This bridge locally crosses the two definitional wrappers:
