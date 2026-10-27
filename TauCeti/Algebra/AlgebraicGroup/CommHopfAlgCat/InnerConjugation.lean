@@ -25,10 +25,10 @@ H --conj#--> H ⊗ H --(g ⊗ id)--> H.
 
 ## Main declarations
 
-* `TauCeti.CommHopfAlgCat.innerConjugationIso`: the corresponding coordinate Hopf-algebra
+* `CommHopfAlgCat.innerConjugationIso`: the corresponding coordinate Hopf-algebra
   automorphism.
-* `TauCeti.CommHopfAlgCat.innerConjugationIso_hom_toAlgHom`: its explicit coordinate formula.
-* `TauCeti.CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom`: its natural action on
+* `CommHopfAlgCat.innerConjugationIso_hom_toAlgHom`: its explicit coordinate formula.
+* `CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom`: its natural action on
   algebra-valued points.
 
 ## References
@@ -42,9 +42,7 @@ H --conj#--> H ⊗ H --(g ⊗ id)--> H.
 
 public section
 
-open CategoryTheory TauCeti TauCeti.CommHopfAlgCat TauCeti.HopfAlgebra WithConv
-
-namespace TauCeti
+open CategoryTheory TauCeti
 
 universe u v
 
@@ -140,5 +138,3 @@ theorem mapPointsFunctor_innerConjugationIso_inv
     HopfAlgebra.innerConjugationPointNatIso_inv_point, Iso.symm_hom]
 
 end CommHopfAlgCat
-
-end TauCeti
