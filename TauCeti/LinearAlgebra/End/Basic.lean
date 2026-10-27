@@ -35,7 +35,7 @@ namespace Module.End
 
 /-- A product of endomorphisms each of which acts on `s` by the scalar `z` acts on `s` by
 `z ^ l.length`. -/
-theorem list_prod_apply_eq_pow_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+theorem list_prod_apply_eq_pow_smul {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     {l : List (Module.End R M)} {z : R} {s : M} (h : ∀ a ∈ l, a s = z • s) :
     l.prod s = z ^ l.length • s := by
   induction l with
