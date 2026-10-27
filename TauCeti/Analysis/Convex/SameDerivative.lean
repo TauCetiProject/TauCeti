@@ -243,27 +243,28 @@ theorem _root_.IsOpen.exists_eq_add_of_fderiv_ae_eq [FiniteDimensional ℝ E] [M
 end Normed
 
 /-- **Uniqueness of convex potentials on an affine subspace.** On a connected open subset `Ω`
-of an affine subspace `S` with finite-dimensional direction, two convex functions finite on `Ω`
-whose derivatives along `S` agree `μ`-almost everywhere on `Ω` differ by a real constant there.
+of an affine subspace `S` with finite-dimensional direction, two functions on `S` that are convex
+in translated coordinates, never take the value `⊥` and are finite on `Ω` differ by a real constant
+if their derivatives along `S` agree `μ`-almost everywhere on `Ω`. The intrinsic affine Haar
+measure restricted to `Ω` must be absolutely continuous with respect to `μ`.
 
 The affine Haar measure is the image of `ρ` under `w ↦ w +ᵥ p`. The derivatives are those of the
-translated restrictions on `S.direction`, evaluated at `x -ᵥ p`; no ambient differentiability is
-required. Taking `S` to be the affine span of a domain gives the relative-interior version. -/
+translated restrictions on `S.direction`, evaluated at `x -ᵥ p`. Taking `S` to be the affine span
+of a domain gives the relative-interior version. -/
 theorem _root_.AffineSubspace.exists_eq_add_of_fderiv_ae_eq {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
     (S : AffineSubspace ℝ E) [Nonempty S] [FiniteDimensional ℝ S.direction]
-    (p : S) {u v : E → EReal} {Ω : Set S} {ρ : Measure S.direction} {μ : Measure S}
+    (p : S) {u v : S → EReal} {Ω : Set S} {ρ : Measure S.direction} {μ : Measure S}
     [ρ.IsAddHaarMeasure] (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω)
-    (hu : Convex ℝ {q : E × ℝ | u q.1 ≤ q.2}) (hubot : ∀ x, u x ≠ ⊥)
-    (hv : Convex ℝ {q : E × ℝ | v q.1 ≤ q.2}) (hvbot : ∀ x, v x ≠ ⊥)
+    (hu : Convex ℝ {q : S.direction × ℝ | u (q.1 +ᵥ p) ≤ q.2}) (hubot : ∀ x, u x ≠ ⊥)
+    (hv : Convex ℝ {q : S.direction × ℝ | v (q.1 +ᵥ p) ≤ q.2}) (hvbot : ∀ x, v x ≠ ⊥)
     (huΩ : ∀ x ∈ Ω, u x ≠ ⊤) (hvΩ : ∀ x ∈ Ω, v x ≠ ⊤)
     (hμ : (ρ.map (fun w : S.direction => w +ᵥ p)).restrict Ω ≪ μ)
     (h : (fun x : S => fderiv ℝ (fun w : S.direction => (u (w +ᵥ p : S)).toReal)
         (x -ᵥ p)) =ᵐ[μ.restrict Ω]
       (fun x : S => fderiv ℝ (fun w : S.direction => (v (w +ᵥ p : S)).toReal) (x -ᵥ p))) :
-    ∃ c : ℝ, Ω.EqOn (fun x : S => u x) (fun x : S => v x + c) := by
+    ∃ c : ℝ, Ω.EqOn u (fun x => v x + c) := by
   let e := (AffineIsometryEquiv.vaddConst ℝ p).toHomeomorph.toMeasurableEquiv
-  let A := S.subtype.comp (AffineEquiv.vaddConst ℝ p).toAffineMap
   -- Read both measures in the direction space through the same affine chart.
   have hρ : (ρ.map e).restrict Ω ≪ μ := by
     simpa only [e, Homeomorph.toMeasurableEquiv_coe, AffineIsometryEquiv.coe_toHomeomorph,
@@ -280,19 +281,14 @@ theorem _root_.AffineSubspace.exists_eq_add_of_fderiv_ae_eq {E : Type*} [NormedA
     simpa only [e, Homeomorph.toMeasurableEquiv_symm_coe,
       AffineIsometryEquiv.coe_symm_toHomeomorph, AffineIsometryEquiv.coe_vaddConst_symm]
       using hx
-  -- Pull back the real epigraphs along the affine chart, leaving the height unchanged.
-  have huc : Convex ℝ {q : S.direction × ℝ | u (q.1 +ᵥ p : S) ≤ q.2} := by
-    simpa [A] using hu.affine_preimage (A.prodMap (AffineMap.id ℝ ℝ))
-  have hvc : Convex ℝ {q : S.direction × ℝ | v (q.1 +ᵥ p : S) ≤ q.2} := by
-    simpa [A] using hv.affine_preimage (A.prodMap (AffineMap.id ℝ ℝ))
   have hopen : IsOpen (e ⁻¹' Ω) := hΩ.preimage (AffineIsometryEquiv.vaddConst ℝ p).continuous
   obtain ⟨c, hc⟩ := hopen.exists_eq_add_of_fderiv_ae_eq
     ((AffineIsometryEquiv.vaddConst ℝ p).toHomeomorph.isPreconnected_preimage.2 hΩc)
-    huc (fun w => hubot _) hvc (fun w => hvbot _)
+    hu (fun w => hubot _) hv (fun w => hvbot _)
     (fun w hw => huΩ _ hw) (fun w hw => hvΩ _ hw) hρ' h'
   refine ⟨c, fun x hx => ?_⟩
   have hx' : e.symm x ∈ e ⁻¹' Ω := by simpa using hx
-  simpa [e, A] using hc hx'
+  simpa [e] using hc hx'
 
 section InnerProduct
 
