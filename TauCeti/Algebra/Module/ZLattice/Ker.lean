@@ -94,11 +94,14 @@ theorem isZLattice_comap_ker_subtype {L' : Submodule ℤ E'} [DiscreteTopology L
     rw [LinearMap.range_domRestrict, ZLattice.rank ℝ L] at hZ
     have hS : span ℝ (M : Set E) = (LinearMap.ker f).restrictScalars ℝ :=
       eq_of_le_of_finrank_le (span_le.2 fun x hx ↦ hx.2) (by omega)
-    -- Transport `span ℝ M = ker f` along the inclusion `ker f → E`.
+    -- The inclusion `ker f → E` maps `L ∩ ker f`, as a subgroup of `ker f`, onto `M`.
     let ι := (LinearMap.ker f).subtype.restrictScalars ℝ
+    have himage : ι '' (ZLattice.comap K L (LinearMap.ker f).subtype : Set (LinearMap.ker f)) =
+        (M : Set E) := by
+      ext x
+      simp [ι, M, and_comm]
+    -- Transport `span ℝ M = ker f` along `ι`.
     refine map_injective_of_injective (f := ι) (LinearMap.ker f).injective_subtype ?_
-    rw [map_span, Submodule.map_top, LinearMap.range_restrictScalars, range_subtype,
-      ZLattice.coe_comap, LinearMap.coe_restrictScalars, Set.image_preimage_eq_inter_range,
-      coe_subtype, Subtype.range_coe, ← hS, coe_inf, coe_restrictScalars]
+    rw [map_span, himage, hS, Submodule.map_top, LinearMap.range_restrictScalars, range_subtype]
 
 end ZLattice
