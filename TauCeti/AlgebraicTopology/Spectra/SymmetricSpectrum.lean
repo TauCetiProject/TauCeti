@@ -23,7 +23,8 @@ Shipley and Smith, a symmetric spectrum is a module over this commutative monoid
 Unwinding the universal property of the Day convolution, a symmetric spectrum `X` amounts to a
 symmetric sequence of pointed simplicial sets `X_n` with based `Σ_p × Σ_q`-equivariant structure
 maps `S^p ∧ X_q → X_(p+q)`, compatible with the unit `S⁰ ≅ S^0` and with block concatenation of
-spheres; this description in terms of structure maps is not formalized in this file.
+spheres. These iterated structure maps and their laws are developed in
+`TauCeti.AlgebraicTopology.Spectra.StructureMaps`.
 
 ## Main definitions
 
