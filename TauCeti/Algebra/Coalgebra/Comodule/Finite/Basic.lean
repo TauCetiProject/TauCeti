@@ -134,6 +134,7 @@ instance homModule (M N : FGComoduleCat.{u, v, w} R C) : Module R (M ⟶ N) :=
 
 /-- Morphisms between finitely generated comodules are linearly equivalent to their
 underlying morphisms in the ambient comodule category. -/
+@[no_expose]
 def homLinearEquiv (M N : FGComoduleCat.{u, v, w} R C) :
     (M ⟶ N) ≃ₗ[R] (M.obj ⟶ N.obj) :=
   AddEquiv.linearEquiv R (α := M ⟶ N) (β := M.obj ⟶ N.obj)
@@ -160,13 +161,13 @@ theorem hom_smul {M N : FGComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) :
 @[simp]
 theorem homLinearEquiv_apply {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
     homLinearEquiv M N f = f.hom :=
-  rfl
+  (rfl)
 
 /-- The inverse morphism identification restores the finite-generation wrapper. -/
 @[simp]
 theorem homLinearEquiv_symm_apply {M N : FGComoduleCat.{u, v, w} R C} (f : M.obj ⟶ N.obj) :
     (homLinearEquiv M N).symm f = ObjectProperty.homMk f :=
-  rfl
+  (rfl)
 
 /-- The inclusion from finitely generated comodules to all comodules. -/
 abbrev incl : FGComoduleCat.{u, v, w} R C ⥤ ComoduleCat.{u, v, w} R C :=
