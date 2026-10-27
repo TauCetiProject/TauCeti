@@ -357,12 +357,12 @@ No finiteness or projectivity is needed for this direction;
 both. -/
 theorem subsingleton_of_comp_eq_id {r : P₀ →ₗ[A] P₁} (hr : r ∘ₗ p₁ = LinearMap.id) :
     Subsingleton (AuslanderReitenTranspose p₁) := by
-  apply Submodule.Quotient.subsingleton_iff.mpr
-  apply LinearMap.range_eq_top.mpr
-  intro φ
+  refine subsingleton_of_forall_eq 0 fun x => ?_
+  obtain ⟨φ, rfl⟩ := mk_surjective p₁ x
+  rw [mk_eq_zero_iff]
   refine ⟨φ ∘ₗ r, ?_⟩
-  ext x
-  simpa using LinearMap.congr_fun (congrArg (fun f => φ ∘ₗ f) hr) x
+  ext y
+  simpa using LinearMap.congr_fun (congrArg (fun f => φ ∘ₗ f) hr) y
 
 /-- **A vanishing transpose splits the presenting map.**  If `P₁` is a finitely generated
 projective module and the transpose of `p₁ : P₁ → P₀` vanishes, then `p₁` admits a retraction.
