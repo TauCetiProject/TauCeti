@@ -15,7 +15,9 @@ Separating `Y = X none` in an overconvergent series in `Option σ` gives a forma
 series whose coefficients are overconvergent in `σ`. The map `washnitzerAlgebra.optionSeries`
 is injective and agrees with `MvPowerSeries.optionEquivLeft` on underlying formal series.
 It provides the coefficient ring for polynomial remainders in overconvergent Weierstrass
-division. No claim is made that an arbitrary series of overconvergent coefficients is itself
+division. Conversely, `washnitzerAlgebra.optionC` views an overconvergent series in `σ` as one in
+`Option σ` that is constant in `Y`; along it, polynomials over the coefficient ring are evaluated
+at `Y`. No claim is made that an arbitrary series of overconvergent coefficients is itself
 overconvergent: the coefficients must satisfy a common radius bound. The split polyradius
 `splitRadius r ρ`, with radius `r` in `Y` and `ρ` elsewhere, is the unequal-radius setting in
 which overconvergent preparation and division are carried out.
@@ -41,6 +43,20 @@ theorem coeff_optionEquivLeft_mem_washnitzerAlgebra {f : MvPowerSeries (Option �
   obtain ⟨ρ, hρ, hf⟩ := mem_washnitzerAlgebra.mp hf
   exact mem_washnitzerAlgebra.mpr
     ⟨ρ, hρ, Huber.isRestricted_coeff_optionEquivLeft (zero_lt_one.trans hρ) hf m⟩
+
+/-- An overconvergent series in `σ`, viewed as a series in `Option σ` constant in the separated
+variable `Y = X none`, is overconvergent. -/
+theorem optionEquivLeft_symm_C_mem_washnitzerAlgebra {f : MvPowerSeries σ R}
+    (hf : f ∈ washnitzerAlgebra σ R) :
+    (optionEquivLeft σ R).symm (PowerSeries.C f) ∈ washnitzerAlgebra (Option σ) R := by
+  obtain ⟨ρ, hρ, hf⟩ := mem_washnitzerAlgebra.mp hf
+  have : Fact (0 < ρ) := ⟨zero_lt_one.trans hρ⟩
+  let g := (Huber.restrictedOptionEquiv (c := fun _ : Option σ ↦ ρ)).symm
+    ⟨PowerSeries.C ⟨f, hf⟩, PowerSeries.isRestricted_C _ _⟩
+  refine mem_washnitzerAlgebra.mpr ⟨ρ, hρ, ?_⟩
+  have hg : (g : MvPowerSeries (Option σ) R) = (optionEquivLeft σ R).symm (PowerSeries.C f) := by
+    simp [g]
+  exact hg ▸ g.2
 
 /-- The split polyradius on `Option σ`: radius `r` in the separated variable `Y = X none` and
 radius `ρ` in the remaining variables. -/
@@ -142,6 +158,39 @@ theorem optionSeries_X_some (i : σ) :
   apply map_val_injective
   rw [map_val_optionSeries, coe_X, optionEquivLeft_X_some, PowerSeries.map_C]
   exact congrArg PowerSeries.C (coe_X i).symm
+
+/-- An overconvergent series in `σ` as an overconvergent series in `Option σ`, constant in the
+separated variable `Y = X none`. -/
+noncomputable def optionC : washnitzerAlgebra σ R →ₐ[R] washnitzerAlgebra (Option σ) R :=
+  (((optionEquivLeft σ R).symm : PowerSeries (MvPowerSeries σ R) →ₐ[R]
+      MvPowerSeries (Option σ) R).comp
+    ((IsScalarTower.toAlgHom R (MvPowerSeries σ R) (PowerSeries (MvPowerSeries σ R))).comp
+      (washnitzerAlgebra σ R).val)).codRestrict _ fun f ↦ by
+    simpa [PowerSeries.algebraMap_apply] using
+      optionEquivLeft_symm_C_mem_washnitzerAlgebra f.2
+
+/-- The series underlying `optionC f` is `f`, constant in the separated variable. -/
+@[simp]
+theorem coe_optionC (f : washnitzerAlgebra σ R) :
+    (optionC f : MvPowerSeries (Option σ) R) =
+      (optionEquivLeft σ R).symm (PowerSeries.C (f : MvPowerSeries σ R)) := by
+  simp [optionC]
+
+/-- Separating `Y` from `optionC f` gives the constant univariate series `f`. -/
+@[simp]
+theorem optionSeries_optionC (f : washnitzerAlgebra σ R) :
+    optionSeries (optionC f) = PowerSeries.C f := by
+  apply map_val_injective
+  simp
+
+/-- `optionC` sends the variable `Xᵢ` to the variable `X (some i)`. -/
+@[simp]
+theorem optionC_X (i : σ) : optionC (X σ R i) = X (Option σ) R (some i) :=
+  optionSeries_injective (by simp)
+
+/-- `optionC` is injective. -/
+theorem optionC_injective : Function.Injective (optionC (σ := σ) (R := R)) := fun f g h ↦
+  PowerSeries.C_injective (by simpa using congrArg optionSeries h)
 
 /-- Mapping the separated coefficients into the unit-radius Tate algebra agrees with
 the restricted-series iteration. -/
