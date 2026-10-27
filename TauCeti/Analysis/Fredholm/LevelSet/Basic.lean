@@ -84,26 +84,6 @@ namespace TauCeti
 
 open Filter Module Set Topology
 
-/-! ### The kernel finrank along a level set of constant index -/
-
-section FinrankKer
-
-variable {𝕜 : Type*} [Ring 𝕜] [Nontrivial 𝕜]
-  {E : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-  {F : Type*} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
-
-/-- Along a level set where a family of continuous linear maps is surjective and has constant
-index `n`, the kernel has finrank `n`. This algebraic identity does not require finite-dimensional
-kernels; identifying them with `Fin n → 𝕜` additionally requires finite-dimensionality over a
-field. -/
-theorem finrank_ker_eq_of_mem_levelSet {f : E → F} {c : F} {D : E → E →L[𝕜] F} {n : ℕ}
-    (hsurj : ∀ x ∈ {x | f x = c}, Function.Surjective (D x))
-    (hindex : ∀ x ∈ {x | f x = c}, ContinuousLinearMap.index (D x) = n)
-    {x : E} (hx : x ∈ {x | f x = c}) : finrank 𝕜 ↥(D x).ker = n :=
-  (ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D x) (hsurj x hx)).2 (hindex x hx)
-
-end FinrankKer
-
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
@@ -373,7 +353,8 @@ noncomputable def levelSetChartAt
     (z : ↥{x | f x = c}) : OpenPartialHomeomorph ↥{x | f x = c} (Fin n → 𝕜) :=
   (levelSetChartModel (hf z.1 z.2) (LinearMap.range_eq_top.2 (hsurj z.1 z.2))
     (hFred z.1 z.2).closedComplemented_ker (hFred z.1 z.2).finite_ker
-    (finrank_ker_eq_of_mem_levelSet hsurj hindex z.2) z.2).restrOpen
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
+      (hindex z.1 z.2)) z.2).restrOpen
       (levelSetImplicitCoordSource hf hsurj (fun x hx => (hFred x hx).closedComplemented_ker) z)
       (isOpen_levelSetImplicitCoordSource hf hsurj
         (fun x hx => (hFred x hx).closedComplemented_ker) z)
@@ -406,7 +387,8 @@ theorem levelSetChartAt_target
     (z : ↥{x | f x = c}) :
     (levelSetChartAt hf hFred hsurj hindex z).target =
       ((D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
-          (finrank_ker_eq_of_mem_levelSet hsurj hindex z.2)).symm ⁻¹'
+          ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
+            (hindex z.1 z.2))).symm ⁻¹'
         (levelSetChart (hf z.1 z.2) (LinearMap.range_eq_top.2 (hsurj z.1 z.2))
           (hFred z.1 z.2).closedComplemented_ker z.2).target ∩
         (levelSetChartAt hf hFred hsurj hindex z).symm ⁻¹'
@@ -426,7 +408,8 @@ theorem levelSetChartAt_apply
     (z w : ↥{x | f x = c}) :
     levelSetChartAt hf hFred hsurj hindex z w =
       (D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
-        (finrank_ker_eq_of_mem_levelSet hsurj hindex z.2)
+        ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
+          (hindex z.1 z.2))
         (levelSetChart (hf z.1 z.2) (LinearMap.range_eq_top.2 (hsurj z.1 z.2))
           (hFred z.1 z.2).closedComplemented_ker z.2 w) :=
   levelSetChartModel_apply _ _ _ _ _ _ _
@@ -443,7 +426,8 @@ theorem levelSetChartAt_symm_apply
       (levelSetChart (hf z.1 z.2) (LinearMap.range_eq_top.2 (hsurj z.1 z.2))
           (hFred z.1 z.2).closedComplemented_ker z.2).symm
         (((D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
-          (finrank_ker_eq_of_mem_levelSet hsurj hindex z.2)).symm k) :=
+          ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
+            (hindex z.1 z.2))).symm k) :=
   levelSetChartModel_symm_apply _ _ _ _ _ _ _
 
 /-- The preferred chart at `z` is normalised at `z`: it sends `z` to the origin of `Fin n → 𝕜`. -/
