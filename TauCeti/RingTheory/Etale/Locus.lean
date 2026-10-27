@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Smooth.Fiber
-public import Mathlib.RingTheory.RingHom.Unramified
 public import Mathlib.RingTheory.Smooth.Flat
 
 /-!
@@ -18,8 +17,8 @@ exactly flatness of `S_q` over `R` together with Mathlib's `Algebra.IsUnramified
 (`Algebra.isEtaleAt_iff_flat_and_isUnramifiedAt`). Only flatness at the single prime `q` is
 assumed; Mathlib's `Algebra.IsEtaleAt.of_isUnramifiedAt_of_flat` asks for flatness of all of `S`.
 
-The converse direction spreads étaleness to some `S_f` with `f ∉ q`
-(`Algebra.exists_etale_of_isEtaleAt`), which is flat, and localizes. For the forward direction,
+The forward direction spreads étaleness to some `S_f` with `f ∉ q`
+(`Algebra.exists_etale_of_isEtaleAt`), which is flat, and localizes. For the reverse direction,
 put `p = q ∩ R`. The local ring `S_q` is flat over `R_p`, and its closed fibre
 `κ(p) ⊗[R_p] S_q` is formally unramified and essentially of finite type over the field `κ(p)`,
 hence formally étale. Mathlib's local criterion
@@ -28,16 +27,13 @@ over `R_p`; with formal unramifiedness it is formally étale over `R_p`, hence o
 presentation of `S_q` as a localization of the finitely presented `R_p`-algebra `S_p` is set up
 as in Mathlib's proof of `Algebra.IsSmoothAt.of_formallySmooth_fiber`.
 
-The file also translates flatness and formal unramifiedness of the local homomorphism
-`R_p → S_q` into these pointwise conditions (`Localization.flat_localRingHom_iff`,
-`Localization.formallyUnramified_localRingHom_iff`). Stalk maps of morphisms of affine schemes
-are such local homomorphisms, so this is how the conditions are read off from stalks.
-
 ## Main results
 
 * `Algebra.isEtaleAt_iff_flat_and_isUnramifiedAt`: for `S` finitely presented over `R`, `S` is
   étale over `R` at `q` iff `S_q` is flat over `R` and `S` is unramified over `R` at `q`.
 * `Algebra.IsEtaleAt.flat_localization`: the flatness half of the forward direction.
+* `Algebra.IsEtaleAt.of_flat_of_isUnramifiedAt`: the reverse direction, the pointwise form of
+  Mathlib's `Algebra.IsEtaleAt.of_isUnramifiedAt_of_flat`.
 
 ## References
 
@@ -73,7 +69,7 @@ theorem IsEtaleAt.flat_localization [FinitePresentation R S] (q : Ideal S) [q.Is
 attribute [local instance] FormallyEtale.of_formallyUnramified_of_field in
 /-- If `S` is finitely presented over `R`, unramified at a prime `q`, and `S_q` is flat over `R`,
 then `S` is étale over `R` at `q`. -/
-private theorem IsEtaleAt.of_flat_of_isUnramifiedAt [FinitePresentation R S] (q : Ideal S)
+theorem IsEtaleAt.of_flat_of_isUnramifiedAt [FinitePresentation R S] (q : Ideal S)
     [q.IsPrime] [Module.Flat R (Localization.AtPrime q)] [IsUnramifiedAt R q] :
     IsEtaleAt R q := by
   let p := q.under R
@@ -118,30 +114,3 @@ theorem isEtaleAt_iff_flat_and_isUnramifiedAt [FinitePresentation R S] (q : Idea
     fun ⟨_, _⟩ ↦ IsEtaleAt.of_flat_of_isUnramifiedAt q⟩
 
 end Algebra
-
-namespace Localization
-
-variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-
-/-- The local homomorphism `R_p → S_q` at primes `q` over `p` is flat iff `S_q` is flat over
-`R`. -/
-theorem flat_localRingHom_iff (p : Ideal R) [p.IsPrime] (q : Ideal S) [q.IsPrime]
-    (h : p = q.comap (algebraMap R S)) :
-    (localRingHom p q (algebraMap R S) h).Flat ↔ Module.Flat R (Localization.AtPrime q) := by
-  have : q.LiesOver p := ⟨h⟩
-  let := AtPrime.algebraOfLiesOver p q
-  rw [← Module.flat_iff_of_isLocalization (Localization.AtPrime p) p.primeCompl]
-  exact RingHom.flat_algebraMap_iff
-
-/-- The local homomorphism `R_p → S_q` at primes `q` over `p` is formally unramified iff `S` is
-unramified over `R` at `q`. -/
-theorem formallyUnramified_localRingHom_iff (p : Ideal R) [p.IsPrime] (q : Ideal S) [q.IsPrime]
-    (h : p = q.comap (algebraMap R S)) :
-    (localRingHom p q (algebraMap R S) h).FormallyUnramified ↔ Algebra.IsUnramifiedAt R q := by
-  have : q.LiesOver p := ⟨h⟩
-  let := AtPrime.algebraOfLiesOver p q
-  refine RingHom.formallyUnramified_algebraMap.trans
-    ⟨fun _ ↦ Algebra.FormallyUnramified.comp R (Localization.AtPrime p) _,
-      fun _ ↦ .of_restrictScalars R _ _⟩
-
-end Localization
