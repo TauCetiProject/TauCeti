@@ -48,6 +48,8 @@ differential forms on an almost complex manifold.
   the derivation of an endomorphism with `J² = -1`.
 * `ContinuousLinearMap.typeProjection`: for `J² = -1`, the projection onto the forms of type
   `(p,q)`.
+* `ContinuousLinearMap.typePolynomial`, `ContinuousLinearMap.typeProjection_eq_aeval`: the
+  polynomial, independent of `J`, whose value at the derivation is the type projection.
 * `ContinuousLinearMap.sum_typeProjection`: a form is the sum of its components of each type.
 * `ContinuousLinearMap.isOfType_typeProjection`,
   `ContinuousAlternatingMap.IsOfType.typeProjection_self`: the projections land in, and fix, the
@@ -317,6 +319,20 @@ evaluated at the derivation induced by `J` on complex-valued `k`-forms. For `J²
 projection onto the forms of type `(p,q)` for `J`, and it vanishes unless `p + q = k`. -/
 def typeProjection (p q : ℕ) : Module.End ℂ (V [⋀^Fin k]→L[ℝ] F) :=
   aeval J.alternatingDerivation (Lagrange.basis (Finset.antidiagonal k) typeEigenvalue (p, q))
+
+variable (k) in
+/-- The polynomial defining the type projections: the Lagrange basis polynomial at `(p - q) * I`
+of the nodes `(p' - q') * I`, `p' + q' = k`. It does not depend on `J`, so the type projections
+of any endomorphism are this polynomial evaluated at its derivation. -/
+def typePolynomial (p q : ℕ) : ℂ[X] :=
+  Lagrange.basis (Finset.antidiagonal k) typeEigenvalue (p, q)
+
+variable (J) in
+/-- The type projection is the type polynomial evaluated at the derivation. -/
+theorem typeProjection_eq_aeval (p q : ℕ) :
+    (J.typeProjection p q : Module.End ℂ (V [⋀^Fin k]→L[ℝ] F)) =
+      aeval J.alternatingDerivation (typePolynomial k p q) :=
+  (rfl)
 
 variable {ω : V [⋀^Fin k]→L[ℝ] F} {p q p' q' : ℕ}
 

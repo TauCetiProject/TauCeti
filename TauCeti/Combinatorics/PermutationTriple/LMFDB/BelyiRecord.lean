@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.Passport.Class
 public import TauCeti.Combinatorics.PermutationTriple.Passport.OfTriple
+public import TauCeti.GroupTheory.Perm.Cycle.Notation
 
 /-!
 # Belyi-map records and the translation of stored triples
@@ -41,9 +42,16 @@ entries. `TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsValidFor` states what a 
 a passport, and the theorems following it read the stored partitions, genus, and monodromy group
 off the stored permutations, and bound the number of stored classes by the passport size.
 
-The stored cycle notation of the table omits fixed points, so it records Mathlib's
-`Equiv.Perm.cycleType` of a stored permutation; the stored partitions are its padding by parts
-equal to one (`TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsValidFor.lambdas_eq_cycleType_add`).
+The table also stores each triple in disjoint cycle notation, which omits fixed points and writes
+the identity as the empty product. A row parses it into lists of cycles
+(`TauCeti.PermutationTriple.LMFDB.CycleNotationTriple`), and validity asks that it be a disjoint
+cycle notation (`Equiv.Perm.IsCycleNotation`) for the stored triple in the same position. The
+notation is not translated: the stored notation of a component is reversed cycle by cycle to give
+the notation of the corresponding component of the translated triple
+(`TauCeti.PermutationTriple.LMFDB.StoredTriple.IsCycleNotation.isCycleNotation_toTriple_σ0`). The
+listed lengths are the stored permutation's `Equiv.Perm.cycleType`, so the stored partitions are
+the listed lengths padded by parts equal to one
+(`TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsValidFor.lambdas_eq_of_mem_triplesCyc`).
 
 The stored base field, the defining equations of the curve and the map, the floating-point
 values of the embeddings, and the labels are carried as data and are not interpreted here.
@@ -52,6 +60,8 @@ values of the embeddings, and the labels are carried as data and are not interpr
 
 * `TauCeti.PermutationTriple.LMFDB.StoredTriple`: a triple in the database's convention.
 * `TauCeti.PermutationTriple.LMFDB.StoredTriple.toTriple`: the triple it denotes.
+* `TauCeti.PermutationTriple.LMFDB.StoredTriple.IsCycleNotation`: a stored triple written in
+  disjoint cycle notation.
 * `TauCeti.PermutationTriple.LMFDB.BelyiRecord`: a parsed row of the Belyi-map table.
 * `TauCeti.PermutationTriple.LMFDB.BelyiRecord.storedEmbeddingCount`: the number of stored
   embedding entries.
@@ -64,6 +74,9 @@ values of the embeddings, and the labels are carried as data and are not interpr
 * `TauCeti.PermutationTriple.LMFDB.StoredTriple.genus_toTriple` and
   `TauCeti.PermutationTriple.LMFDB.StoredTriple.hasPassport_toTriple_iff`, with their companions:
   the invariants of the translated triple, read off the stored permutations.
+* `TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsValidFor.lambdas_eq_of_mem_triplesCyc`: the
+  stored partitions of a valid row are the cycle lengths of its stored cycle notation, padded by
+  fixed points.
 * `TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsValidFor.card_storedClasses_le_passportSize`:
   the stored triples of a valid row represent at most as many isomorphism classes as the passport
   has.
@@ -87,6 +100,12 @@ namespace LMFDB
 right, so its stored triples satisfy `σ0 * σ1 * σinf = 1` in Mathlib's multiplication. -/
 abbrev StoredTriple (n : ℕ) : Type :=
   {p : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // p.1 * p.2.1 * p.2.2 = 1}
+
+/-- A triple of permutations of `Fin n` in disjoint cycle notation, as the database's cycle
+notation is parsed: each component is a list of cycles, each cycle the list of its points in
+order, where the stored point `i` is the element `i - 1` of `Fin n`. -/
+abbrev CycleNotationTriple (n : ℕ) : Type :=
+  List (List (Fin n)) × List (List (Fin n)) × List (List (Fin n))
 
 namespace StoredTriple
 
@@ -193,6 +212,61 @@ theorem hasPassport_toTriple_iff (hs : s.toTriple.IsConnected) (P : PassportSpec
       s.1.2.2.partition.parts = P.laminf := by
   rw [PassportSpec.hasPassport_iff, monodromyGroup_toTriple, cycleData_toTriple]
 
+/-! ### Stored cycle notation -/
+
+/-- `c` writes each component of `s` in disjoint cycle notation, as the database stores it: fixed
+points are omitted and the identity is the empty list of cycles. -/
+structure IsCycleNotation (c : CycleNotationTriple n) : Prop where
+  /-- `c.1` writes the first stored component. -/
+  σ0 : s.1.1.IsCycleNotation c.1
+  /-- `c.2.1` writes the second stored component. -/
+  σ1 : s.1.2.1.IsCycleNotation c.2.1
+  /-- `c.2.2` writes the third stored component. -/
+  σinf : s.1.2.2.IsCycleNotation c.2.2
+
+/-- Every stored triple can be written in disjoint cycle notation. -/
+theorem exists_isCycleNotation : ∃ c : CycleNotationTriple n, s.IsCycleNotation c := by
+  obtain ⟨p0, h0⟩ := s.1.1.exists_isCycleNotation
+  obtain ⟨p1, h1⟩ := s.1.2.1.exists_isCycleNotation
+  obtain ⟨pinf, hinf⟩ := s.1.2.2.exists_isCycleNotation
+  exact ⟨(p0, p1, pinf), h0, h1, hinf⟩
+
+namespace IsCycleNotation
+
+variable {s} {c : CycleNotationTriple n}
+
+/-- The stored cycle notation of the first component, reversed cycle by cycle, writes the first
+component of the translated triple. -/
+theorem isCycleNotation_toTriple_σ0 (h : s.IsCycleNotation c) :
+    s.toTriple.σ0.IsCycleNotation (c.1.map List.reverse) := by
+  simpa using h.σ0.inv
+
+/-- The stored cycle notation of the second component, reversed cycle by cycle, writes the second
+component of the translated triple. -/
+theorem isCycleNotation_toTriple_σ1 (h : s.IsCycleNotation c) :
+    s.toTriple.σ1.IsCycleNotation (c.2.1.map List.reverse) := by
+  simpa using h.σ1.inv
+
+/-- The stored cycle notation of the third component, reversed cycle by cycle, writes the third
+component of the translated triple. -/
+theorem isCycleNotation_toTriple_σinf (h : s.IsCycleNotation c) :
+    s.toTriple.σinf.IsCycleNotation (c.2.2.map List.reverse) := by
+  simpa using h.σinf.inv
+
+/-- The ordered full cycle partitions of the translated triple are the cycle lengths of the stored
+cycle notation, each padded by one part equal to one for every point it omits. -/
+theorem cycleData_toTriple (h : s.IsCycleNotation c) :
+    s.toTriple.cycleData =
+      ((c.1.map List.length : Multiset ℕ) + Multiset.replicate (n - (c.1.map List.length).sum) 1,
+        (c.2.1.map List.length : Multiset ℕ) +
+          Multiset.replicate (n - (c.2.1.map List.length).sum) 1,
+        (c.2.2.map List.length : Multiset ℕ) +
+          Multiset.replicate (n - (c.2.2.map List.length).sum) 1) := by
+  rw [StoredTriple.cycleData_toTriple, h.σ0.parts_partition_eq, h.σ1.parts_partition_eq,
+    h.σinf.parts_partition_eq, Fintype.card_fin]
+
+end IsCycleNotation
+
 end StoredTriple
 
 /-! ### Belyi-map records -/
@@ -227,8 +301,9 @@ structure BelyiRecord (n : ℕ) where
   embeddings : List (Float × Float)
   /-- The stored triples, in the database's convention. -/
   triples : List (StoredTriple n)
-  /-- The stored triples in cycle notation, which omits fixed points. -/
-  triplesCyc : List (List String)
+  /-- The stored triples in cycle notation, parsed into lists of cycles. The notation omits fixed
+  points and writes the identity as the empty list of cycles. -/
+  triplesCyc : List (CycleNotationTriple n)
   /-- The stored equations of the curve. -/
   curve : String
   /-- The stored formula for the map. -/
@@ -276,8 +351,9 @@ theorem card_storedClasses_le_storedEmbeddingCount :
 
 /-- A row is valid for the passport `P` when its stored degree is the degree, its stored orbit
 size is its number of stored embedding entries, it stores at least one triple, every stored
-triple denotes a connected triple with passport `P`, the stored partitions are those of `P`, and
-the stored genus is the genus of every stored triple.
+triple denotes a connected triple with passport `P`, its stored cycle notation writes the stored
+triples position by position, the stored partitions are those of `P`, and the stored genus is the
+genus of every stored triple.
 
 The labels, the base field, the equations, and the embedding values are not constrained. -/
 structure IsValidFor (P : PassportSpec n) : Prop where
@@ -290,6 +366,9 @@ structure IsValidFor (P : PassportSpec n) : Prop where
   /-- Every stored triple denotes a connected triple with passport `P`. -/
   hasPassport :
     ∀ s ∈ r.triples, ∃ hs : s.toTriple.IsConnected, PassportSpec.HasPassport ⟨s.toTriple, hs⟩ P
+  /-- The stored cycle notation writes the stored triples, position by position. -/
+  forall₂_isCycleNotation :
+    List.Forall₂ (fun c s ↦ StoredTriple.IsCycleNotation s c) r.triplesCyc r.triples
   /-- The stored partitions are those of `P`. -/
   lambdas_eq : r.lambdas = (P.lam0, P.lam1, P.laminf)
   /-- The stored genus is the genus of every stored triple. -/
@@ -342,6 +421,38 @@ theorem lambdas_eq_cycleType_add (h : r.IsValidFor P) (hs : s ∈ r.triples) :
   rw [h.lambdas_eq_partition hs]
   simp only [Perm.parts_partition, Fintype.card_fin]
 
+/-- A valid row stores one cycle notation for each stored triple. -/
+theorem length_triplesCyc (h : r.IsValidFor P) : r.triplesCyc.length = r.triples.length :=
+  h.forall₂_isCycleNotation.length_eq
+
+/-- Every stored cycle notation of a valid row writes one of its stored triples. -/
+theorem exists_mem_triples_isCycleNotation (h : r.IsValidFor P) {c : CycleNotationTriple n}
+    (hc : c ∈ r.triplesCyc) : ∃ s ∈ r.triples, s.IsCycleNotation c := by
+  suffices ∀ {l₁ l₂}, List.Forall₂ (fun c s ↦ StoredTriple.IsCycleNotation s c) l₁ l₂ →
+      c ∈ l₁ → ∃ s ∈ l₂, s.IsCycleNotation c from this h.forall₂_isCycleNotation hc
+  intro l₁ l₂ hF hc
+  induction hF with
+  | nil => simp at hc
+  | @cons c' s' _ _ hcs _ ih =>
+    obtain rfl | hc := List.mem_cons.mp hc
+    · exact ⟨s', List.mem_cons_self .., hcs⟩
+    · obtain ⟨s, hs, hsc⟩ := ih hc
+      exact ⟨s, List.mem_cons_of_mem _ hs, hsc⟩
+
+/-- **The stored partitions from the stored cycle notation.** The stored partitions of a valid row
+are the cycle lengths of each of its stored cycle notations, padded by one part equal to one for
+every omitted fixed point. -/
+theorem lambdas_eq_of_mem_triplesCyc (h : r.IsValidFor P) {c : CycleNotationTriple n}
+    (hc : c ∈ r.triplesCyc) :
+    r.lambdas =
+      ((c.1.map List.length : Multiset ℕ) + Multiset.replicate (n - (c.1.map List.length).sum) 1,
+        (c.2.1.map List.length : Multiset ℕ) +
+          Multiset.replicate (n - (c.2.1.map List.length).sum) 1,
+        (c.2.2.map List.length : Multiset ℕ) +
+          Multiset.replicate (n - (c.2.2.map List.length).sum) 1) := by
+  obtain ⟨s, hs, hsc⟩ := h.exists_mem_triples_isCycleNotation hc
+  rw [h.lambdas_eq_cycleData hs, hsc.cycleData_toTriple]
+
 /-- In a valid row, the group generated by the first two stored components of every stored
 triple is conjugate to the reference group of the passport. -/
 theorem exists_map_closure_eq (h : r.IsValidFor P) (hs : s ∈ r.triples) :
@@ -391,24 +502,29 @@ end IsValidFor
 /-- Every connected triple is the stored triple of a formal row that is valid for its passport, so
 `TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsValidFor` is not vacuous. The row carries
 placeholder data in the fields that validity leaves unconstrained: the base-field polynomial
-`X - 1` with a single embedding entry, and empty labels and equations. It is not a certificate that
+`X - 1` with a single embedding entry, and empty labels and equations. Its cycle notation is some
+disjoint cycle notation for the stored triple. It is not a certificate that
 the corresponding Belyi map is defined over `ℚ`, which this theorem does not establish. -/
 theorem exists_isValidFor (t : ConnectedTriple n) :
-    ∃ r : BelyiRecord n, r.IsValidFor t.passportOf ∧ r.triples = [equivOppositeConvention n t.1] :=
-  ⟨{ label := "", plabel := "", deg := n, lambdas := t.1.cycleData, g := t.1.genus,
-      orbitSize := 1, baseField := [-1, 1], embeddings := [(1, 0)],
-      triples := [equivOppositeConvention n t.1], triplesCyc := [], curve := "", map := "",
-      planeModel := "", planeConstant := "", curveLabel := none, friends := [],
-      storedEmbeddingCount_eq_triplesLength := rfl },
-    { deg_eq := rfl
-      orbitSize_eq := rfl
-      triples_ne_nil := List.cons_ne_nil _ _
-      hasPassport := by
-        simp only [List.mem_singleton, forall_eq, StoredTriple.toTriple_equivOppositeConvention]
-        exact ⟨t.2, t.hasPassport_passportOf⟩
-      lambdas_eq := by
-        rw [t.passportOf_lam0, t.passportOf_lam1, t.passportOf_laminf]
-      g_eq := by simp },
+    ∃ r : BelyiRecord n,
+      r.IsValidFor t.passportOf ∧ r.triples = [equivOppositeConvention n t.1] := by
+  obtain ⟨c, hc⟩ := StoredTriple.exists_isCycleNotation (equivOppositeConvention n t.1)
+  exact
+    ⟨{ label := "", plabel := "", deg := n, lambdas := t.1.cycleData, g := t.1.genus,
+        orbitSize := 1, baseField := [-1, 1], embeddings := [(1, 0)],
+        triples := [equivOppositeConvention n t.1], triplesCyc := [c], curve := "", map := "",
+        planeModel := "", planeConstant := "", curveLabel := none, friends := [],
+        storedEmbeddingCount_eq_triplesLength := rfl },
+      { deg_eq := rfl
+        orbitSize_eq := rfl
+        triples_ne_nil := List.cons_ne_nil _ _
+        hasPassport := by
+          simp only [List.mem_singleton, forall_eq, StoredTriple.toTriple_equivOppositeConvention]
+          exact ⟨t.2, t.hasPassport_passportOf⟩
+        forall₂_isCycleNotation := .cons hc .nil
+        lambdas_eq := by
+          rw [t.passportOf_lam0, t.passportOf_lam1, t.passportOf_laminf]
+        g_eq := by simp },
     rfl⟩
 
 end BelyiRecord
