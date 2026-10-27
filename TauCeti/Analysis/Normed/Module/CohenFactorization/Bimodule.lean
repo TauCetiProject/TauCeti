@@ -5,18 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Analysis.Normed.Ring.Basic
-public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.ApproximateUnit
-public import TauCeti.Analysis.Normed.Module.CohenFactorization
+public import TauCeti.Analysis.Normed.Module.CohenFactorization.Basic
 
 /-!
 # Cohen–Hewitt factorization for right modules and pseudo-unital bimodules
 
 This is the right-module and bimodule companion of the left-module Cohen–Hewitt theorem
 `ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span` of
-`TauCeti.Analysis.Normed.Module.CohenFactorization`, and it reuses that theorem rather than
+`TauCeti.Analysis.Normed.Module.CohenFactorization.Basic`, and it reuses that theorem rather than
 repeating its construction.
 
 Let `A` be a possibly nonunital Banach algebra over `𝕜` and `E` a Banach space. A *bounded right
@@ -32,7 +29,7 @@ and it is essential when `E = closure (span (A · E · A))`.
   factorization for right modules. A right approximate identity of `A` bounded by `C` factors
   every `x` in the essential part of `E` as `x = y · a` with `‖a‖ ≤ C`, where `y` lies in the
   closure of `x · A` and within any prescribed distance `ε` of `x`.
-* `TauCeti.CohenHewitt.exists_apply_mul_apply_eq_of_mem_topologicalClosure_span`: essential
+* `ContinuousLinearMap.exists_apply_mul_apply_eq_of_mem_topologicalClosure_span`: essential
   bimodules over an algebra with a bounded two-sided approximate identity are pseudo-unital, so
   every element is a single triple product `a · z · b`.
 
@@ -71,10 +68,7 @@ theorem exists_mul_apply_eq_of_mem_topologicalClosure_span (R : E →L[𝕜] A �
   -- The opposite algebra acts on the left by `a · z = z · a.unop`.
   obtain ⟨Lop, hLop⟩ :
       ∃ Lop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E, ∀ (a : Aᵐᵒᵖ) (z : E), Lop a z = R z a.unop :=
-    ⟨R.flip.comp (LinearMap.mkContinuous
-        ({ toFun := MulOpposite.unop, map_add' := fun _ _ ↦ rfl
-           map_smul' := fun c a ↦ MulOpposite.unop_smul c a } : Aᵐᵒᵖ →ₗ[𝕜] A) 1
-        fun a ↦ by rw [one_mul]; exact le_of_eq (MulOpposite.norm_unop a)),
+    ⟨R.flip.comp (MulOpposite.opContinuousLinearEquiv 𝕜 (M := A)).symm.toContinuousLinearMap,
       fun a z ↦ rfl⟩
   have hLop' : ∀ (a b : Aᵐᵒᵖ) (z : E), Lop (a * b) z = Lop a (Lop b z) := by
     intro a b z
@@ -113,16 +107,6 @@ theorem exists_mul_apply_eq_of_mem_topologicalClosure_span (R : E →L[𝕜] A �
       exact ⟨MulOpposite.op b, by simp [hLop]⟩
   rwa [hset] at hy
 
-end ContinuousLinearMap
-
-namespace TauCeti.CohenHewitt
-
-open ContinuousLinearMap
-
-variable {𝕜 A E : Type*} [RCLike 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-
 /-- **Pseudo-unitality of essential Banach bimodules.** Let `A` be a Banach algebra with a
 two-sided approximate identity `l` bounded by `C`, and let `E` be a Banach `A`-bimodule with
 bounded actions `L` and `R`. Every element of the essential part `closure (span (A · E · A))` is a
@@ -149,7 +133,7 @@ theorem exists_apply_mul_apply_eq_of_mem_topologicalClosure_span (L : A →L[�
     exact Submodule.subset_span ⟨(L a z, b), rfl⟩
   -- The distance bounds of the two one-sided theorems are discarded, so `ε = 1` will do.
   obtain ⟨b, y, hb, hy, -, hRyb⟩ :=
-    ContinuousLinearMap.exists_mul_apply_eq_of_mem_topologicalClosure_span R hR hC
+    exists_mul_apply_eq_of_mem_topologicalClosure_span R hR hC
       hl.tendsto_mul_left (Submodule.topologicalClosure_mono hEA hx) one_pos
   -- The intermediate point stays in the bimodule essential part, being a multiple of `x`.
   have hyS :
@@ -158,22 +142,19 @@ theorem exists_apply_mul_apply_eq_of_mem_topologicalClosure_span (L : A →L[�
     intro w hw
     obtain ⟨c, rfl⟩ := hw
     have himg : (R.flip c) '' (span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)) ⊆
-        span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2) := by
-      rintro _ ⟨u, hu, rfl⟩
-      induction hu using Submodule.span_induction with
-      | mem u hu =>
+        span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2) :=
+      (Submodule.image_span_subset (R.flip c).toLinearMap _ _).2 fun u hu ↦ by
         obtain ⟨⟨a, z, b⟩, rfl⟩ := hu
+        change (R.flip c) (R (L a z) b) ∈
+          span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)
         rw [ContinuousLinearMap.flip_apply, hR (L a z) b c]
         exact Submodule.subset_span ⟨(a, z, b * c), rfl⟩
-      | zero => simp
-      | add u v _ _ hu hv => rw [map_add]; exact Submodule.add_mem _ hu hv
-      | smul k u _ hu => rw [map_smul]; exact Submodule.smul_mem _ k hu
     exact closure_mono himg (image_closure_subset_closure_image (R.flip c).continuous
       (Set.mem_image_of_mem (R.flip c) hx))
   obtain ⟨a, z, ha, -, -, hLaz⟩ :=
-    ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span L hL hC
+    exists_apply_eq_of_mem_topologicalClosure_span L hL hC
       hl.tendsto_mul_right (Submodule.topologicalClosure_mono hAE hyS) one_pos
   refine ⟨a, z, b, ha, hb, ?_⟩
   rw [← hLR a z b, hLaz, hRyb]
 
-end TauCeti.CohenHewitt
+end ContinuousLinearMap
