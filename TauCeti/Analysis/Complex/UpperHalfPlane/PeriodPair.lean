@@ -35,8 +35,9 @@ For the Weierstrass `ζ` function `PeriodPair.weierstrassZeta` and its quasi-per
 laws `ζ(x / (c z + d); ℤ γz + ℤ) = (c z + d) ζ(x; ℤ z + ℤ)` and
 `η(l / (c z + d); ℤ γz + ℤ) = (c z + d) η(l; ℤ z + ℤ)`, the inputs for weight one.
 
-Finally, `ℂˣ` acts on period pairs by rescaling, `c • (ω₁, ω₂) = (c ω₁, c ω₂)`, with lattice `c Λ`,
-and every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-plane.
+Finally, `ℂˣ` acts on period pairs by rescaling, `c • (ω₁, ω₂) = (c ω₁, c ω₂)`, with lattice `c Λ`;
+this multiplies the lattice sums `G n` by `c⁻ⁿ`, `℘(c z)` by `c⁻²` and `℘'(c z)` by `c⁻³`, and
+every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-plane.
 
 ## Main definitions
 
@@ -64,6 +65,10 @@ and every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper ha
   `Im z` vanish at `i∞`.
 * `TauCeti.UpperHalfPlane.rowSum_zero`: the row at `0` is `2 ζ(2)`.
 * `PeriodPair.lattice_smul`: the lattice of `c • L` is `c Λ`.
+* `PeriodPair.G_smul`, `PeriodPair.g₂_smul`, `PeriodPair.g₃_smul`,
+  `PeriodPair.weierstrassP_smul`, `PeriodPair.derivWeierstrassP_smul`: rescaling the lattice by
+  `c` rescales `G n` by `c⁻ⁿ`, `℘` by `c⁻²` and `℘'` by `c⁻³`.
+* `PeriodPair.G_eq_of_lattice_eq`: the lattice sums depend only on the lattice.
 * `PeriodPair.exists_lattice_eq_smul_periodPair`: every lattice is homothetic to `ℤ τ + ℤ`.
 -/
 
@@ -403,6 +408,44 @@ lemma coe_latticeSMulEquiv (l : L.lattice) : (L.latticeSMulEquiv c l : ℂ) = c 
 lemma mul_mem_lattice_smul_iff {x : ℂ} : (c : ℂ) * x ∈ (c • L).lattice ↔ x ∈ L.lattice := by
   rw [lattice_smul, Submodule.mem_map]
   exact ⟨fun ⟨y, hy, hyx⟩ ↦ mul_right_injective₀ c.ne_zero hyx ▸ hy, fun h ↦ ⟨x, h, rfl⟩⟩
+
+/-- The lattice sums `G n` are homogeneous of degree `-n` in the lattice. -/
+@[simp]
+lemma G_smul (n : ℕ) : (c • L).G n = L.G n / (c : ℂ) ^ n := by
+  rw [G, G, ← (L.latticeSMulEquiv c).toEquiv.tsum_eq, div_eq_mul_inv, ← tsum_mul_right]
+  simp [mul_pow, mul_comm]
+
+@[simp]
+lemma g₂_smul : (c • L).g₂ = L.g₂ / (c : ℂ) ^ 4 := by
+  rw [g₂, g₂, G_smul, mul_div_assoc]
+
+@[simp]
+lemma g₃_smul : (c • L).g₃ = L.g₃ / (c : ℂ) ^ 6 := by
+  rw [g₃, g₃, G_smul, mul_div_assoc]
+
+/-- `℘(c z; c Λ) = c⁻² ℘(z; Λ)`. -/
+@[simp]
+lemma weierstrassP_smul (z : ℂ) : ℘[c • L] (c * z) = ℘[L] z / (c : ℂ) ^ 2 := by
+  rw [weierstrassP, weierstrassP, ← (L.latticeSMulEquiv c).toEquiv.tsum_eq, div_eq_mul_inv,
+    ← tsum_mul_right]
+  congr 1 with l
+  simp only [LinearEquiv.coe_toEquiv, coe_latticeSMulEquiv, ← mul_sub, mul_pow, one_div, mul_inv]
+  ring
+
+/-- `℘'(c z; c Λ) = c⁻³ ℘'(z; Λ)`. -/
+@[simp]
+lemma derivWeierstrassP_smul (z : ℂ) : ℘'[c • L] (c * z) = ℘'[L] z / (c : ℂ) ^ 3 := by
+  rw [derivWeierstrassP, derivWeierstrassP, ← (L.latticeSMulEquiv c).toEquiv.tsum_eq,
+    neg_div, div_eq_mul_inv, ← tsum_mul_right]
+  congr 2 with l
+  simp only [LinearEquiv.coe_toEquiv, coe_latticeSMulEquiv, ← mul_sub, mul_pow, div_eq_mul_inv,
+    mul_inv]
+  ring
+
+/-- The lattice sums `G n` depend only on the lattice, not on the chosen basis. -/
+lemma G_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) : L.G = L'.G := by
+  ext n
+  rw [G, G, h]
 
 lemma ω₁_ne_zero : L.ω₁ ≠ 0 := by
   simpa using L.indep.ne_zero 0

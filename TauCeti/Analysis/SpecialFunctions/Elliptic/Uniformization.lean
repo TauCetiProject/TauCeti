@@ -42,9 +42,8 @@ discriminant never vanishes and the curve is elliptic. Its `j`-invariant is
 
 ## Main results
 
-* `PeriodPair.G_smul`, `PeriodPair.weierstrassP_smul`, `PeriodPair.derivWeierstrassP_smul`,
-  `PeriodPair.weierstrassCurve_smul`: rescaling the lattice by `c` rescales `G n` by `c⁻ⁿ`, `℘` by
-  `c⁻²`, `℘'` by `c⁻³`, and changes the curve by the variable change with `u = c`.
+* `PeriodPair.weierstrassCurve_smul`: rescaling the lattice by `c` changes the curve by the
+  variable change with `u = c`.
 * `UpperHalfPlane.G_periodPair`: `G k (ℤ τ + ℤ) = 2 ζ(k) E_k(τ)` for `k ≥ 3`.
 * `UpperHalfPlane.weierstrassCurve_Δ_periodPair`: the discriminant of the curve of `ℤ τ + ℤ` is
   `(2 π)¹² Δ(τ)`.
@@ -69,52 +68,6 @@ public noncomputable section
 open Complex ModularForm UpperHalfPlane WeierstrassCurve
 
 open scoped Real
-
-namespace PeriodPair
-
-/-! ### Lattice sums and `℘` under rescaling -/
-
-variable (L : PeriodPair) (c : ℂˣ)
-
-/-- The lattice sums `G n` are homogeneous of degree `-n` in the lattice. -/
-@[simp]
-lemma G_smul (n : ℕ) : (c • L).G n = L.G n / (c : ℂ) ^ n := by
-  rw [G, G, ← (L.latticeSMulEquiv c).toEquiv.tsum_eq, div_eq_mul_inv, ← tsum_mul_right]
-  simp [mul_pow, mul_comm]
-
-@[simp]
-lemma g₂_smul : (c • L).g₂ = L.g₂ / (c : ℂ) ^ 4 := by
-  rw [g₂, g₂, G_smul, mul_div_assoc]
-
-@[simp]
-lemma g₃_smul : (c • L).g₃ = L.g₃ / (c : ℂ) ^ 6 := by
-  rw [g₃, g₃, G_smul, mul_div_assoc]
-
-/-- `℘(c z; c Λ) = c⁻² ℘(z; Λ)`. -/
-@[simp]
-lemma weierstrassP_smul (z : ℂ) : ℘[c • L] (c * z) = ℘[L] z / (c : ℂ) ^ 2 := by
-  rw [weierstrassP, weierstrassP, ← (L.latticeSMulEquiv c).toEquiv.tsum_eq, div_eq_mul_inv,
-    ← tsum_mul_right]
-  congr 1 with l
-  simp only [LinearEquiv.coe_toEquiv, coe_latticeSMulEquiv, ← mul_sub, mul_pow, one_div, mul_inv]
-  ring
-
-/-- `℘'(c z; c Λ) = c⁻³ ℘'(z; Λ)`. -/
-@[simp]
-lemma derivWeierstrassP_smul (z : ℂ) : ℘'[c • L] (c * z) = ℘'[L] z / (c : ℂ) ^ 3 := by
-  rw [derivWeierstrassP, derivWeierstrassP, ← (L.latticeSMulEquiv c).toEquiv.tsum_eq,
-    neg_div, div_eq_mul_inv, ← tsum_mul_right]
-  congr 2 with l
-  simp only [LinearEquiv.coe_toEquiv, coe_latticeSMulEquiv, ← mul_sub, mul_pow, div_eq_mul_inv,
-    mul_inv]
-  ring
-
-/-- The lattice sums `G n` depend only on the lattice, not on the chosen basis. -/
-lemma G_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) : L.G = L'.G := by
-  ext n
-  rw [G, G, h]
-
-end PeriodPair
 
 /-! ### Lattice sums of `ℤ τ + ℤ` -/
 
