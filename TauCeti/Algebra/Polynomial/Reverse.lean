@@ -41,7 +41,8 @@ The file also records how reversal interacts with products of monic polynomials 
 binomials `X ^ n - C a`, which together compute the reverse of a characteristic polynomial that
 factors into such binomials, and that reflection at a sum of degree bounds is multiplicative on
 finite products (`Polynomial.reflect_prod`), which computes the reflection of a determinant of
-polynomials term by term.
+polynomials term by term. Reflection at a degree bound stays within that bound, and its
+coefficient at the bound is the constant coefficient.
 -/
 
 public section
@@ -151,6 +152,16 @@ theorem reflect_prod [CommSemiring R] {ι : Type*} (s : Finset ι) (f : ι → R
     rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.sum_insert ha,
       reflect_mul _ _ (h a (Finset.mem_insert_self a s)) hs,
       ih fun i hi ↦ h i (Finset.mem_insert_of_mem hi)]
+
+/-- Reflection at a bound on the degree stays within that bound. -/
+theorem natDegree_reflect_le_of_natDegree_le [Semiring R] {p : R[X]} {N : ℕ}
+    (hN : p.natDegree ≤ N) : (p.reflect N).natDegree ≤ N :=
+  natDegree_reflect_le.trans (max_le le_rfl hN)
+
+/-- The coefficient of the reflection at the bound itself is the constant coefficient. -/
+theorem coeff_reflect_self [Semiring R] (p : R[X]) (N : ℕ) :
+    (p.reflect N).coeff N = p.coeff 0 := by
+  rw [coeff_reflect, revAt_le le_rfl, Nat.sub_self]
 
 /-- Reflection exchanges an invertible root with its inverse, preserving its multiplicity.
 The degree bound can exceed the actual degree, and the zero polynomial is included. -/

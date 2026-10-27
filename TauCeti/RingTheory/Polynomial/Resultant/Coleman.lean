@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
@@ -82,14 +83,6 @@ section Auxiliary
 
 variable {B P : R[X]} {n : ℕ}
 
-private theorem natDegree_map_reflect_le (hP : P.natDegree ≤ n) :
-    ((P.reflect n).map C).natDegree ≤ n :=
-  natDegree_map_le.trans (natDegree_reflect_le.trans (max_le le_rfl hP))
-
-private theorem coeff_map_reflect_self (P : R[X]) (n : ℕ) :
-    ((P.reflect n).map C).coeff n = C (P.coeff 0) := by
-  rw [coeff_map, coeff_reflect, revAt_le le_rfl, Nat.sub_self]
-
 private theorem natDegree_one_sub_C_X_mul_le (B : R[X]) :
     (1 - C X * B.map C).natDegree ≤ B.natDegree :=
   (natDegree_sub_le _ _).trans (max_le (by simp)
@@ -127,7 +120,8 @@ theorem colemanDBounded_succ (hP : P.natDegree ≤ n) (hB : B.natDegree ≤ m) :
     have h := resultant_X_pow_left _ 1 m ((natDegree_one_sub_C_X_mul_le B).trans hB)
     rwa [pow_one, pow_one, coeff_zero_one_sub_C_X_mul] at h
   rw [colemanDBounded, hX, Polynomial.map_mul, map_X, add_comm n 1,
-    resultant_mul_left_of_natDegree_le natDegree_X_le (natDegree_map_reflect_le hP)
+    resultant_mul_left_of_natDegree_le natDegree_X_le
+      (natDegree_map_le.trans (natDegree_reflect_le_of_natDegree_le hP))
       ((natDegree_one_sub_C_X_mul_le B).trans hB), hXres, colemanDBounded]
 
 /-- Padding the rank by `k` multiplies Coleman's transform by `(1 - B(0) T) ^ k`. -/
@@ -159,8 +153,10 @@ theorem colemanDBounded_mul {P₁ P₂ : R[X]} {n₁ n₂ : ℕ} (hP₁ : P₁.n
     colemanDBounded B (P₁ * P₂) (n₁ + n₂) m =
       colemanDBounded B P₁ n₁ m * colemanDBounded B P₂ n₂ m := by
   rw [colemanDBounded, reflect_mul _ _ hP₁ hP₂, Polynomial.map_mul,
-    resultant_mul_left_of_natDegree_le (natDegree_map_reflect_le hP₁)
-      (natDegree_map_reflect_le hP₂) ((natDegree_one_sub_C_X_mul_le B).trans hB),
+    resultant_mul_left_of_natDegree_le
+      (natDegree_map_le.trans (natDegree_reflect_le_of_natDegree_le hP₁))
+      (natDegree_map_le.trans (natDegree_reflect_le_of_natDegree_le hP₂))
+      ((natDegree_one_sub_C_X_mul_le B).trans hB),
     colemanDBounded, colemanDBounded]
 
 /-- Coleman's transform commutes with coefficient ring homomorphisms. -/
@@ -197,6 +193,7 @@ theorem natDegree_colemanDBounded_le (B P : R[X]) (n m : ℕ) :
   simpa [Fin.sum_univ_add] using key
 
 /-- Coleman's transform has constant coefficient one. -/
+@[simp]
 theorem coeff_zero_colemanDBounded (hP0 : P.coeff 0 = 1) (B : R[X]) (n m : ℕ) :
     (colemanDBounded B P n m).coeff 0 = 1 := by
   -- `simp` cannot rewrite the arguments of `resultant`, whose degree bounds are `optParam`s
@@ -212,7 +209,8 @@ theorem coeff_zero_colemanDBounded (hP0 : P.coeff 0 = 1) (B : R[X]) (n m : ℕ) 
 /-- With `B = T`, Coleman's transform returns `P`: the eigenvalues are unchanged. -/
 @[simp]
 theorem colemanDBounded_X_left (hP : P.natDegree ≤ n) : colemanDBounded X P n 1 = P := by
-  rw [colemanDBounded, map_X, resultant_one_sub_C_mul_X_right _ _ (natDegree_map_reflect_le hP),
+  rw [colemanDBounded, map_X, resultant_one_sub_C_mul_X_right _ _
+      (natDegree_map_le.trans (natDegree_reflect_le_of_natDegree_le hP)),
     reflect_map, reflect_reflect, eval_map, eval₂_C_X]
 
 /-- With `B = 0`, Coleman's transform is one. -/
@@ -220,7 +218,7 @@ theorem colemanDBounded_X_left (hP : P.natDegree ≤ n) : colemanDBounded X P n 
 theorem colemanDBounded_zero_left (hP0 : P.coeff 0 = 1) (n m : ℕ) :
     colemanDBounded 0 P n m = 1 := by
   rw [colemanDBounded, Polynomial.map_zero, mul_zero, sub_zero, resultant_one_right,
-    coeff_map_reflect_self, hP0, C_1, one_pow]
+    coeff_map, coeff_reflect_self, hP0, C_1, one_pow]
 
 /-- With `P = 1`, all `n` eigenvalues are zero, and Coleman's transform is `(1 - B(0) T) ^ n`. -/
 @[simp]
