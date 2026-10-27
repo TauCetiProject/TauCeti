@@ -37,7 +37,7 @@ the list, a position of higher priority than the attending requirement.
   record of strictly higher priority unchanged.
 * `TauCeti.Priority.getElem?_update_of_gt`: an update in range resets every record of strictly
   lower priority.
-* `TauCeti.Priority.all_attention_finite_of_local`: if each requirement receives attention
+* `TauCeti.Priority.finite_attentionStages_of_local`: if each requirement receives attention
   finitely often whenever every higher-priority requirement does, then every requirement receives
   attention finitely often.
 * `TauCeti.Priority.exists_forall_getElem?_run_eq_of_finite`: if requirements `0, …, e` each
@@ -181,7 +181,7 @@ theorem mem_attentionStages {action : ℕ → Option ℕ} {e t : ℕ} :
 
 /-- **Priority induction.** If each requirement receives attention finitely often whenever every
 higher-priority requirement does, then every requirement receives attention finitely often. -/
-theorem all_attention_finite_of_local (action : ℕ → Option ℕ)
+theorem finite_attentionStages_of_local (action : ℕ → Option ℕ)
     (hlocal : ∀ e, (∀ i, i < e → (attentionStages action i).Finite) →
       (attentionStages action e).Finite) (e : ℕ) :
     (attentionStages action e).Finite := by
@@ -229,7 +229,7 @@ theorem exists_forall_getElem?_run_eq_of_local (init : List α) (sched : ℕ →
     (hlocal : ∀ e, (∀ i, i < e → (attentionStages (fun s => (sched s).map Update.prio) i).Finite) →
       (attentionStages (fun s => (sched s).map Update.prio) e).Finite) (e : ℕ) :
     ∃ N, ∀ n, N ≤ n → (run init sched n)[e]? = (run init sched N)[e]? :=
-  exists_forall_getElem?_run_eq_of_finite fun i _ => all_attention_finite_of_local _ hlocal i
+  exists_forall_getElem?_run_eq_of_finite fun i _ => finite_attentionStages_of_local _ hlocal i
 
 end Priority
 
