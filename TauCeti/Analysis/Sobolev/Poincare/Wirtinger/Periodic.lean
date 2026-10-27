@@ -19,10 +19,11 @@ holds with constant `((b - a) / (2π))²`. Equality holds exactly for a first ha
 mean, as an almost-everywhere identity. Both statements are independent of representatives.
 
 The vector-valued results use `HasWeakLineDerivOn`, and the scalar results apply directly to
-`W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2`, with its recorded weak gradient. The proof uses the
-continuous representative and weak FTC from `WeakDeriv.Interval`, identifies its classical
-and weak derivatives almost everywhere, and applies the AC inequality and equality theorem
-`TauCeti.integral_norm_sub_average_sq_eq_iff`.
+`W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2`, with its recorded weak gradient; the endpoint-trace
+characterization holds on `W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p` for every `1 ≤ p`. The proof
+uses the continuous representative and weak FTC from `WeakDeriv.Interval`, identifies its
+classical and weak derivatives almost everywhere, and applies the AC inequality and equality
+theorem `TauCeti.integral_norm_sub_average_sq_eq_iff`.
 
 ## References
 
@@ -120,20 +121,23 @@ end HasWeakLineDerivOn
 
 namespace W1p
 
-variable {a b : ℝ} (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2)
+variable {a b : ℝ}
 
-/-- A scalar `W¹,²` class is periodic exactly when its recorded gradient has integral zero.
-Periodicity means that an AC representative has matching endpoint values. -/
-theorem integral_gradient_eq_zero_iff_exists_absolutelyContinuousOnInterval (hab : a ≤ b) :
+/-- A scalar `W¹,ᵖ` class, `1 ≤ p`, is periodic exactly when its recorded gradient has integral
+zero. Periodicity means that an AC representative has matching endpoint values. -/
+theorem integral_gradient_eq_zero_iff_exists_absolutelyContinuousOnInterval {p : ENNReal}
+    [Fact (1 ≤ p)] (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) (hab : a ≤ b) :
     (∫ t in a..b, W1p.gradient u t) = 0 ↔
       ∃ v : ℝ → ℝ, AbsolutelyContinuousOnInterval v a b ∧
         W1p.value u =ᵐ[volume.restrict (Ioo a b)] v ∧ v a = v b := by
   have hw : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
       (W1p.value u) (W1p.gradient u) 1 := by
     simpa using (W1p.hasWeakFDerivOn u).hasWeakLineDerivOn (1 : ℝ)
-  have hp : MemLp (W1p.gradient u) 2 (volume.restrict (Ioo a b)) := Lp.memLp _
+  have hp : MemLp (W1p.gradient u) p (volume.restrict (Ioo a b)) := Lp.memLp _
   exact hw.integral_eq_zero_iff_exists_absolutelyContinuousOnInterval
-    (hp.integrable one_le_two) hab
+    (hp.integrable Fact.out) hab
+
+variable (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2)
 
 /-- The sharp periodic Wirtinger inequality on the canonical scalar weak Sobolev space. -/
 theorem integral_norm_sub_average_sq_le (hab : a < b)
