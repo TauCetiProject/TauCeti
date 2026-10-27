@@ -20,12 +20,13 @@ import TauCeti.LinearAlgebra.Matrix.RationalCanonicalFormFinTwo
 
 For a degree-two algebra `L` over a field `K`, any non-scalar element `x` gives the basis
 `(1, x)`. If `x² = t x - d`, multiplication by `x` has companion matrix
-`TauCeti.companionFinTwo t d`, so its trace is `t` and its norm is `d`
-(`TauCeti.Algebra.trace_eq_of_mul_self_eq`, `TauCeti.Algebra.norm_eq_of_mul_self_eq`). The norm
-calculation requires only a ring structure on `L`; the trace calculation requires a commutative
-ring, as required by Mathlib's `Algebra.trace`. These include split and non-reduced quadratic
-algebras such as `K × K` and `K[X]/(X²)`. The formulas also identify the trace and norm of the
-eigenvalues used in the elliptic conjugacy normal forms of `GL₂(K)`.
+`TauCeti.companionFinTwo t d`, whose determinant is `d`. Thus the norm of `x` is `d`
+(`TauCeti.Algebra.norm_eq_of_mul_self_eq`), requiring only a ring structure on `L`. For a
+commutative algebra its trace is `t`, by
+`Algebra.IsQuadraticExtension.trace_eq_neg_of_sq_add_mul_add_eq_zero` with coefficient `-t`.
+This covers split and non-reduced quadratic algebras such as `K × K` and `K[X]/(X²)`. The formulas
+also identify the trace and norm of the eigenvalues used in the elliptic conjugacy normal forms
+of `GL₂(K)`.
 
 For a separable quadratic extension `L/K` the trace and norm are the two elementary symmetric
 functions of the pair `{x, σx}`, where `σ` is the nontrivial automorphism: `tr x = x + σx` and
@@ -130,22 +131,11 @@ private theorem leftMulMatrix_quadraticExtensionBasis {x : E}
 
 end Basis
 
-/-! ### The trace and the norm -/
+/-! ### The norm of a quadratic generator -/
 
 namespace Algebra
 
 variable {E : Type*}
-
-/-- The trace of a non-scalar element `x` in a commutative degree-two algebra over a field is
-`t` whenever `x² = t x - d`. -/
-theorem trace_eq_of_mul_self_eq [CommRing E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
-    {x : E} (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
-    (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
-    Algebra.trace F E x = t := by
-  rw [Algebra.trace_eq_matrix_trace
-      (quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)),
-    leftMulMatrix_quadraticExtensionBasis hx hx2,
-    trace_companionFinTwo]
 
 /-- The norm of a non-scalar element `x` in a degree-two algebra over a field is `d` whenever
 `x² = t x - d`. The algebra need only be a ring. -/

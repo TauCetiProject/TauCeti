@@ -54,8 +54,9 @@ The elliptic case is the one that needs a quadratic extension, and it is where t
 (`TauCeti.GL2NonSplitTorus.trace_gl2NonSplitTorusHom` and
 `TauCeti.GL2NonSplitTorus.val_det_gl2NonSplitTorusHom`), so the normal form is pinned by the
 quadratic-algebra lemmas of `TauCeti/RingTheory/Norm/Quadratic.lean`:
-`TauCeti.Algebra.trace_eq_of_mul_self_eq` and `TauCeti.Algebra.norm_eq_of_mul_self_eq` identify
-those with `t` and `d` for an `x` outside `F` satisfying `x² = t x - d`, and
+`Algebra.IsQuadraticExtension.trace_eq_neg_of_sq_add_mul_add_eq_zero` and
+`TauCeti.Algebra.norm_eq_of_mul_self_eq` identify those with `t` and `d` for an `x` outside `F`
+satisfying `x² = t x - d`, and
 `TauCeti.exists_mul_self_eq_of_finite` from `TauCeti/FieldTheory/Quadratic.lean` supplies such an
 `x` over a finite field.
 
@@ -223,8 +224,13 @@ theorem isConj_gl2NonSplitTorusHom_of_trace_of_det {g : GL (Fin 2) F} {x : Eˣ}
     exact hx ⟨c, (sub_eq_zero.1 (mul_self_eq_zero.1 (by linear_combination hx2))).symm⟩
   refine (isConj_iff_of_notMem_range_scalar hg
     (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hx)).2 ⟨?_, ?_⟩
-  · rw [htrace, GL2NonSplitTorus.trace_gl2NonSplitTorusHom,
-      Algebra.trace_eq_of_mul_self_eq hx hx2]
+  · rw [htrace, GL2NonSplitTorus.trace_gl2NonSplitTorusHom]
+    symm
+    simpa only [neg_neg] using
+      _root_.Algebra.IsQuadraticExtension.trace_eq_neg_of_sq_add_mul_add_eq_zero
+        (t := -t) (c := d) hx (by
+          rw [pow_two, map_neg]
+          linear_combination hx2)
   · rw [hdet, ← Matrix.GeneralLinearGroup.val_det_apply,
       GL2NonSplitTorus.val_det_gl2NonSplitTorusHom,
       Algebra.norm_eq_of_mul_self_eq hx hx2]
