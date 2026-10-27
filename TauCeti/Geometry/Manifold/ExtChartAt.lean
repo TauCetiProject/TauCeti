@@ -22,10 +22,11 @@ admit finite open chart covers whose coordinate images lie in compact subsets of
 even without Hausdorffness.
 
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
-without differentiability assumptions. On an open subset, extended charts are restrictions of the
-ambient ones, so near a chart point the inverse charts of nested open subsets differ only by the
-inclusion. Over `ℝ`, every chart point has a convex neighbourhood within the model range,
-inside the chart target, on which flat calculus applies even when the manifold has boundary.
+without differentiability assumptions; for a boundaryless model, their domains are open. On an
+open subset, extended charts are restrictions of the ambient ones, so near a chart point the
+inverse charts of nested open subsets differ only by the inclusion. Over `ℝ`, every chart point has
+a convex neighbourhood within the model range, inside the chart target, on which flat calculus
+applies even when the manifold has boundary.
 
 ## Main results
 
@@ -76,6 +77,14 @@ theorem injOn_extChartAt_coordChange (α β : M) {s : Set M}
   rw [PartialEquiv.trans_source, PartialEquiv.symm_source, Set.mem_inter_iff,
     Set.mem_preimage, (extChartAt I α).left_inv (hsub hx).1]
   exact ⟨(extChartAt I α).map_source (hsub hx).1, (hsub hx).2⟩
+
+omit [ChartedSpace H M] in
+/-- For a boundaryless model, the domain of the change of coordinates between two charts is
+open. -/
+theorem _root_.ModelWithCorners.isOpen_extendCoordChange_source [I.Boundaryless]
+    {e e' : OpenPartialHomeomorph M H} : IsOpen (I.extendCoordChange e e').source :=
+  (e.continuousOn_extend_symm (I := I)).isOpen_inter_preimage e.isOpen_extend_target
+    e'.isOpen_extend_source
 
 /-- The extended chart of an open subset at a point sends that point to the same coordinates as
 the extended chart of a larger open subset at its image under the inclusion. -/

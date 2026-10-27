@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ENat.Lattice
 public import Mathlib.Data.Set.Card
 public import Mathlib.Topology.Homotopy.Contractible
+public import Mathlib.Topology.Homotopy.LocallyContractible
 public import Mathlib.Topology.Sets.Opens
 
 /-!
@@ -42,7 +43,11 @@ critical point on that level.
   cover of size at most `n`, and `TauCeti.lsCategoryCount_lt_top_iff`: the count is finite exactly
   when `A` has a categorical cover.
 * `TauCeti.lsCategoryCount_union_le` and `TauCeti.lsCategoryCount_biUnion_le`: subadditivity.
-* `TauCeti.lsCategoryCount_le_of_homotopic_id`: the deformation inequality.
+* `TauCeti.lsCategoryCount_le_of_homotopic_id` and `TauCeti.lsCategoryCount_le_of_deformation`:
+  the deformation inequality, for a map homotopic to the identity and for the endpoint of a
+  deformation `[0, 1] × X → X` starting at the identity.
+* `TauCeti.exists_isOpen_superset_lsCategoryCount_le_encard`: in a locally contractible space every
+  set has an open neighbourhood whose count is at most its cardinality.
 * `ContinuousMap.HomotopyEquiv.lsCategoryCount_univ_eq` and `Homeomorph.lsCategoryCount_image`:
   invariance under homotopy equivalences and homeomorphisms.
 * `TauCeti.lsCategoryCount_eq_zero` and `TauCeti.lsCategoryCount_pos`: the count vanishes exactly
@@ -316,12 +321,51 @@ theorem lsCategoryCount_le_of_homotopic_id (g : C(X, X))
     lsCategoryCount X A ≤ lsCategoryCount X B :=
   lsCategoryCount_le_of_mapsTo g (.id X) (by simpa using hg) hA
 
+/-- The deformation inequality for a deformation `Φ : [0, 1] × X → X` starting at the identity: if
+its endpoint `Φ (1, ·)` maps `A` into `B`, then the Lusternik–Schnirelmann count of `A` is at most
+that of `B`. -/
+theorem lsCategoryCount_le_of_deformation (Φ : C(unitInterval × X, X)) (h0 : ∀ x, Φ (0, x) = x)
+    (hA : MapsTo (fun x ↦ Φ (1, x)) A B) : lsCategoryCount X A ≤ lsCategoryCount X B := by
+  let g : C(X, X) := ⟨fun x ↦ Φ (1, x), by fun_prop⟩
+  let F : Homotopy (ContinuousMap.id X) g :=
+    { toContinuousMap := Φ, map_zero_left := h0, map_one_left := fun _ ↦ rfl }
+  exact lsCategoryCount_le_of_homotopic_id g ⟨F.symm⟩ hA
+
 /-- In a contractible space every open set is categorical, so every subset has count at most `1`.
 -/
 theorem lsCategoryCount_le_one [ContractibleSpace X] (A : Set X) : lsCategoryCount X A ≤ 1 := by
   have h := (id_nullhomotopic X).comp_left (subtypeVal (⊤ : Opens X))
   rw [ContinuousMap.id_comp] at h
   simpa using (LSCategoricalCover.single (A := A) ⊤ (by simp) h).lsCategoryCount_le
+
+/-- In a locally contractible space every point has an open neighbourhood of
+Lusternik–Schnirelmann count at most `1`: the interior of a neighbourhood whose inclusion is
+nullhomotopic. -/
+theorem exists_isOpen_mem_lsCategoryCount_le_one (hX : LocallyContractibleSpace X) (x : X) :
+    ∃ U, IsOpen U ∧ x ∈ U ∧ lsCategoryCount X U ≤ 1 := by
+  obtain ⟨V, hVU, hV, hnull⟩ := hX x univ Filter.univ_mem
+  refine ⟨interior V, isOpen_interior, mem_interior_iff_mem_nhds.mpr hV, ?_⟩
+  -- The inclusion of `interior V` factors through the nullhomotopic inclusion of `V`.
+  have h : (subtypeVal (interior V)).Nullhomotopic :=
+    (hnull.comp_right (subtypeVal univ)).comp_left (inclusion interior_subset)
+  exact_mod_cast
+    (LSCategoricalCover.single ⟨interior V, isOpen_interior⟩ subset_rfl h).lsCategoryCount_le
+
+/-- In a locally contractible space every set `S` has an open neighbourhood whose
+Lusternik–Schnirelmann count is at most the cardinality of `S`: for finite `S`, the union of
+neighbourhoods of count at most `1` of its points. -/
+theorem exists_isOpen_superset_lsCategoryCount_le_encard (hX : LocallyContractibleSpace X)
+    (S : Set X) : ∃ U, IsOpen U ∧ S ⊆ U ∧ lsCategoryCount X U ≤ S.encard := by
+  cases S.finite_or_infinite with
+  | inr hS => exact ⟨univ, isOpen_univ, subset_univ S, by simp [hS.encard_eq]⟩
+  | inl hS =>
+    choose U hUo hxU hU using exists_isOpen_mem_lsCategoryCount_le_one hX
+    refine ⟨⋃ x ∈ hS.toFinset, U x, isOpen_biUnion fun x _ ↦ hUo x,
+      fun x hx ↦ mem_biUnion (hS.mem_toFinset.mpr hx) (hxU x), ?_⟩
+    calc lsCategoryCount X (⋃ x ∈ hS.toFinset, U x)
+        ≤ ∑ x ∈ hS.toFinset, lsCategoryCount X (U x) := lsCategoryCount_biUnion_le _ _
+      _ ≤ ∑ x ∈ hS.toFinset, 1 := Finset.sum_le_sum fun x _ ↦ hU x
+      _ = S.encard := by simp [hS.encard_eq_coe_toFinset_card]
 
 /-- A contractible space, in particular a point, has Lusternik–Schnirelmann count `1`. -/
 @[simp]

@@ -163,20 +163,7 @@ private theorem lie_differenceRootGenerator_negSumRootGenerator
     {n : ℕ} (i j k : Fin n) (hjk : j ≠ k) :
     ⁅differenceRootGenerator (K := K) j i, negSumRootGenerator (K := K) j k⁆ =
       -negSumRootGenerator (K := K) i k := by
-  apply Subtype.ext
-  rw [LieSubalgebra.coe_bracket, val_differenceRootGenerator,
-    val_negSumRootGenerator, NegMemClass.coe_neg, val_negSumRootGenerator]
-  -- Reduce the equality of bundled orthogonal elements to the root matrices it contains.
-  change ⁅differenceRootMatrix (K := K) j i, negSumRootMatrix (K := K) j k⁆ =
-    -negSumRootMatrix (K := K) i k
-  rw [LieRing.of_associative_ring_bracket, differenceRootMatrix_def,
-    negSumRootMatrix_def, negSumRootMatrix_def, Matrix.fromBlocks_neg,
-    Matrix.fromBlocks_multiply, Matrix.fromBlocks_multiply]
-  ext (a | a) (b | b)
-  all_goals
-    simp [Matrix.fromBlocks, Matrix.transpose_single, Matrix.single_apply,
-      Matrix.mul_sub, Matrix.sub_mul, hjk, hjk.symm]
-  all_goals ring
+  simp [lie_differenceRootGenerator_negSumRootGenerator_eq_ite, hjk]
 
 private theorem reverseDifferenceRootGenerator_mem_lieSpan
     (n : ℕ) (hn : 4 ≤ n) (i j : Fin n) (hij : i < j) :

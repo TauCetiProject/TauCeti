@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Ext.Baer
 public import Mathlib.Algebra.Category.ModuleCat.Ext.DimensionShifting
 public import Mathlib.RingTheory.FiniteLength
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
@@ -24,6 +25,11 @@ hereditary condition in terms of Mathlib's projective-dimension predicate.
 
 For a module of projective dimension at most one, the standard free presentation has
 projective kernel and hence is a projective resolution of length one.
+
+The projective dimensions of the cyclic modules `R ⧸ I` bound those of all modules: by Baer's
+criterion they bound every injective dimension, and the vanishing of all `Ext^{n+1}(-, N)` then
+bounds every projective dimension (Stacks, Lemma 10.109.12 (065T)). This is how a bound on finite
+modules over a Noetherian ring becomes a bound on its global dimension.
 -/
 
 public section
@@ -61,6 +67,20 @@ theorem _root_.ModuleCat.hasProjectiveDimensionLT_of_isFiniteLength
       (LinearMap.exact_subtype_mkQ N) N.injective_subtype N.mkQ_surjective
     exact hT.hasProjectiveDimensionLT_X₂ n ih
       (h (ModuleCat.of R (M ⧸ N)) inferInstance)
+
+/-- **Global dimension is attained on cyclic modules.** If every cyclic module `R ⧸ I` has
+projective dimension at most `n`, then every `R`-module has projective dimension at most `n`.
+Stacks, Lemma 10.109.12 (065T). -/
+theorem _root_.ModuleCat.hasProjectiveDimensionLE_of_quotients [Small.{v} R] (n : ℕ)
+    (h : ∀ I : Ideal R, HasProjectiveDimensionLE (ModuleCat.of R (Shrink.{v} (R ⧸ I))) n)
+    (M : ModuleCat.{v} R) : HasProjectiveDimensionLE M n := by
+  -- By Baer's criterion every module has injective dimension at most `n` ...
+  have hinj (N : ModuleCat.{v} R) : HasInjectiveDimensionLE N n :=
+    ModuleCat.hasInjectiveDimensionLE_of_quotients N n fun I ↦
+      HasProjectiveDimensionLT.subsingleton _ (n + 1) (n + 1) le_rfl N
+  -- ... so every `Ext^{n+1}(M, N)` vanishes.
+  exact hasProjectiveDimensionLT_of_enoughInjectives M (n + 1) fun N ↦
+    HasInjectiveDimensionLT.subsingleton _ (n + 1) (n + 1) le_rfl M
 
 /-- The standard free presentation of a module of projective dimension at most one
 has projective kernel, so it is a projective resolution of length one. -/

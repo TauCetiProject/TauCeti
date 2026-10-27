@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Algebra.Group.Submonoid.BigOperators
@@ -140,6 +141,13 @@ theorem arrowSum_add (f g : Assignment Q K) (S T : Finset V) :
     arrowSum (f + g) S T = arrowSum f S T + arrowSum g S T := by
   simp [arrowSum_def, sum_add_distrib]
 
+theorem arrowSum_sum {ι : Type*} (s : Finset ι) (f : ι → Assignment Q K) (S T : Finset V) :
+    arrowSum (∑ i ∈ s, f i) S T = ∑ i ∈ s, arrowSum (f i) S T := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [sum_insert hi, sum_insert hi, arrowSum_add, ih]
+
 @[simp]
 theorem arrowSum_empty_left (f : Assignment Q K) (T : Finset V) : arrowSum f ∅ T = 0 := by
   simp [arrowSum_def]
@@ -270,6 +278,14 @@ theorem sum_sum_single_out [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q 
       Assignment.single_apply_of_ne e q fun h ↦ hv (congrArg Sigma.fst h)
 
 end AddCommMonoid
+
+/-- The unit assignment counts arrows: its total value on the arrows from `S` to `T` is the
+number of these arrows, with parallel arrows counted separately. -/
+theorem arrowSum_one [AddCommMonoidWithOne K] [Fintype V] [DecidableEq V]
+    [∀ v w, Fintype (Q v w)] (S T : Finset V) :
+    arrowSum (1 : Assignment Q K) S T = #{a : Σ x y, Q x y | a.1 ∈ S ∧ a.2.1 ∈ T} := by
+  rw [arrowSum_eq_sum_ite, natCast_card_filter]
+  simp only [Fintype.sum_sigma, Pi.one_apply]
 
 section SubtractionCommMonoid
 
@@ -509,6 +525,13 @@ end AddCommGroup
 /-! ### Change of coefficients -/
 
 namespace Assignment
+
+/-- Subtracting a subgroup-valued reference preserves membership on each arrow. -/
+theorem sub_apply_mem_iff [AddGroup K] {M : Type*} [SetLike M K]
+    [AddSubgroupClass M K] {H : M} {f h : Assignment Q K} {x y : V} (e : Q x y)
+    (hh : h e ∈ H) : (f - h) e ∈ H ↔ f e ∈ H := by
+  simpa only [Pi.sub_apply, sub_eq_add_neg] using
+    add_mem_cancel_right (y := f e) (neg_mem hh)
 
 section Algebra
 

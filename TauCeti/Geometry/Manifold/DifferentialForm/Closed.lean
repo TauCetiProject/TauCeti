@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
+public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # Closed smooth differential forms
@@ -13,6 +14,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 Closedness is the vanishing of the generic manifold exterior derivative of a smooth form. This
 module also characterizes it by vanishing of the exterior derivatives of the chart expressions.
 The degree-two specialization in `TwoForm.Closed` supplies a constant-form convenience theorem.
+Since pullback commutes with the exterior derivative, smooth pullback sends closed forms to closed
+forms (`TauCeti.SmoothForm.IsClosed.mpullback`).
 The predicate and its generic API live here so they can be reused at every degree.
 -/
 
@@ -118,6 +121,20 @@ theorem isClosed_const {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   rw [SmoothForm.const_toRoughForm]
   rw [hconst]
   exact mextDeriv_const A
+
+section Pullback
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I 2 M]
+  [IsManifold I' 2 M']
+
+/-- The smooth pullback of a closed form is closed. -/
+theorem IsClosed.mpullback {φ : SmoothForm I' M' F k} (hφ : φ.IsClosed) (f : M → M')
+    (hf : ContMDiff I I' ∞ f) : (mpullback f hf φ).IsClosed := by
+  rw [isClosed_def, ← mextDerivₗ_apply, mextDerivₗ_mpullback, coe_mpullback, mextDerivₗ_apply,
+    (isClosed_def φ).mp hφ, TauCeti.mpullback_zero]
+
+end Pullback
 
 end SmoothForm
 

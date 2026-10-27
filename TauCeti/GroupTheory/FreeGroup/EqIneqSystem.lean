@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 public import Mathlib.GroupTheory.Commutator.Basic
+public import Mathlib.Data.List.ProdSigma
 
 /-!
 # Finite systems of equations and inequations over a free group
@@ -107,6 +108,38 @@ def append (S T : EqIneqSystem X A) : EqIneqSystem X A :=
     (S.append T).IsSolution v c ↔ S.IsSolution v c ∧ T.IsSolution v c := by
   simp [IsSolution, append, List.mem_append, or_imp, forall_and, and_assoc,
     and_left_comm]
+
+/-- Distribute conjunction over two finite disjunctions of word systems. -/
+def disjunctionProduct (S T : List (EqIneqSystem X A)) : List (EqIneqSystem X A) :=
+  (S.product T).map fun st => st.1.append st.2
+
+/-- A system occurs in the distributed product exactly when it appends a system from each
+input family. -/
+@[simp] theorem mem_disjunctionProduct_iff (S T : List (EqIneqSystem X A))
+    (U : EqIneqSystem X A) :
+    U ∈ disjunctionProduct S T ↔ ∃ s ∈ S, ∃ t ∈ T, s.append t = U := by
+  simp only [disjunctionProduct, List.mem_map]
+  constructor
+  · rintro ⟨⟨s, t⟩, hst, heq⟩
+    obtain ⟨hs, ht⟩ := List.mem_product.mp hst
+    exact ⟨s, hs, t, ht, heq⟩
+  · rintro ⟨s, hs, t, ht, heq⟩
+    exact ⟨(s, t), List.mem_product.mpr ⟨hs, ht⟩, heq⟩
+
+/-- Solving a system in a distributed conjunction is equivalent to solving one system
+from each input family. -/
+theorem exists_isSolution_disjunctionProduct (S T : List (EqIneqSystem X A))
+    (v : X → G) (c : A → G) :
+    (∃ U ∈ disjunctionProduct S T, U.IsSolution v c) ↔
+      (∃ s ∈ S, s.IsSolution v c) ∧ (∃ t ∈ T, t.IsSolution v c) := by
+  simp only [mem_disjunctionProduct_iff]
+  constructor
+  · rintro ⟨U, ⟨s, hs, t, ht, rfl⟩, hU⟩
+    exact ⟨⟨s, hs, (isSolution_append s t v c).mp hU |>.1⟩,
+      ⟨t, ht, (isSolution_append s t v c).mp hU |>.2⟩⟩
+  · rintro ⟨⟨s, hs, hS⟩, ⟨t, ht, hT⟩⟩
+    exact ⟨s.append t, ⟨s, hs, t, ht, rfl⟩,
+      (isSolution_append s t v c).mpr ⟨hS, hT⟩⟩
 
 /-- Evaluation commutes with a group homomorphism when the variables and coefficients are
 mapped along that homomorphism. -/

@@ -57,8 +57,9 @@ linear approximation error by the difference of the Hessians.
   Hölder derivative.
 * `HolderOnWith.norm_apply_le_of_hasFDerivWithinAt`: the resulting bound on a directional
   derivative.
-* `HolderWith.norm_fderiv_le_of_norm_le` and `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le`:
-  the interpolation inequality on the whole space.
+* `HolderWith.norm_le_of_hasFDerivAt`, `HolderWith.norm_fderiv_le_of_norm_le` and
+  `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le`: the interpolation inequality on the whole
+  space.
 * `ContDiff.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_le`: the Landau-type inequality.
 * `HolderWith.norm_iteratedFDeriv_add_two_le_of_norm_le` and
   `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove`: the absorbed bounds on the two
@@ -158,12 +159,14 @@ end HolderOnWith
 
 namespace HolderWith
 
-/-- **Interpolation inequality.** If `g` is differentiable with `‖g‖ ≤ M` and its derivative is
-globally `α`-Hölder with constant `H`, then `‖fderiv ℝ g x‖ ≤ 2 M / ε + H ε^α` for every
-`ε > 0`. -/
-theorem norm_fderiv_le_of_norm_le {g : E → F} {H α : ℝ≥0} (hH : HolderWith H α (fderiv ℝ g))
-    (hg : Differentiable ℝ g) {M : ℝ} (hM : ∀ y, ‖g y‖ ≤ M) {ε : ℝ} (hε : 0 < ε) (x : E) :
-    ‖fderiv ℝ g x‖ ≤ 2 * M / ε + H * ε ^ (α : ℝ) := by
+/-- **Interpolation inequality.** If `g` has derivative `g'` everywhere, `‖g‖ ≤ M`, and `g'` is
+globally `α`-Hölder with constant `H`, then `‖g' x‖ ≤ 2 M / ε + H ε^α` for every `ε > 0`. With
+`α = 1` this is the Landau-type inequality `‖g' x‖ ≤ 2 M / ε + L ε` for a derivative that is
+Lipschitz with constant `L`. -/
+theorem norm_le_of_hasFDerivAt {g : E → F} {g' : E → E →L[ℝ] F} {H α : ℝ≥0}
+    (hH : HolderWith H α g') (hg : ∀ y, HasFDerivAt g (g' y) y) {M : ℝ} (hM : ∀ y, ‖g y‖ ≤ M)
+    {ε : ℝ} (hε : 0 < ε) (x : E) :
+    ‖g' x‖ ≤ 2 * M / ε + H * ε ^ (α : ℝ) := by
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x)
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v => ?_
   rcases eq_or_ne v 0 with rfl | hv
@@ -175,7 +178,7 @@ theorem norm_fderiv_le_of_norm_le {g : E → F} {H α : ℝ≥0} (hH : HolderWit
   have hcv : ‖c • v‖ = ε := by
     rw [norm_smul, Real.norm_of_nonneg hc.le, hc_def, div_mul_cancel₀ _ hv'.ne']
   have hD := (hH.holderOnWith univ).norm_apply_le_of_hasFDerivWithinAt
-    (fun y _ => (hg y).hasFDerivAt.hasFDerivWithinAt) (subset_univ _) (x := x) (w := c • v)
+    (fun y _ => (hg y).hasFDerivWithinAt) (subset_univ _) (x := x) (w := c • v)
   rw [map_smul, norm_smul, Real.norm_of_nonneg hc.le, hcv,
     Real.rpow_add' hε.le (by positivity), Real.rpow_one] at hD
   have hrhs : (2 * M / ε + H * ε ^ (α : ℝ)) * ‖v‖ =
@@ -184,6 +187,14 @@ theorem norm_fderiv_le_of_norm_le {g : E → F} {H α : ℝ≥0} (hH : HolderWit
     field_simp
   rw [hrhs, le_div_iff₀ hc, mul_comm]
   linarith [hM (x + c • v), hM x]
+
+/-- **Interpolation inequality.** If `g` is differentiable with `‖g‖ ≤ M` and its derivative is
+globally `α`-Hölder with constant `H`, then `‖fderiv ℝ g x‖ ≤ 2 M / ε + H ε^α` for every
+`ε > 0`. -/
+theorem norm_fderiv_le_of_norm_le {g : E → F} {H α : ℝ≥0} (hH : HolderWith H α (fderiv ℝ g))
+    (hg : Differentiable ℝ g) {M : ℝ} (hM : ∀ y, ‖g y‖ ≤ M) {ε : ℝ} (hε : 0 < ε) (x : E) :
+    ‖fderiv ℝ g x‖ ≤ 2 * M / ε + H * ε ^ (α : ℝ) :=
+  hH.norm_le_of_hasFDerivAt (fun y => (hg y).hasFDerivAt) hM hε x
 
 /-- **Interpolation inequality for iterated derivatives.** If `‖D^k f‖ ≤ M` and `D^(k+1) f` is
 globally `α`-Hölder with constant `H`, then `‖D^(k+1) f x‖ ≤ 2 M / ε + H ε^α` for every
