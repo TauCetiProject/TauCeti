@@ -72,7 +72,7 @@ theorem flat_apply (σ : SmoothTwoForm I M) (x : M) (v w : TangentSpace I x) :
 /-- The interior product `ι_X σ` at a point is the flat map applied to `X`, read as a one-form. -/
 theorem interior_apply_eq_ofSubsingleton_flat (σ : SmoothTwoForm I M)
     (X : (x : M) → TangentSpace I x) (x : M) :
-    σ.1.interior X x =
+    RoughForm.interior X σ.1 x =
       ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ 0 (σ.flat x (X x)) := by
   rw [RoughForm.interior_apply_eq_curryLeft]
   exact (ContinuousAlternatingMap.ofSubsingleton_flatL_apply (E := E) (σ.1 x) (X x)).symm

@@ -133,7 +133,7 @@ theorem exact_mayerVietoris (U V : Opens M) :
       · exact dite_eq_right hy
     have hγ : IsSmoothForm I ∞ γ :=
       IsSmoothForm.of_mpullback_inclusion_sup (hγU ▸ α.isSmoothForm) (hγV ▸ β.isSmoothForm)
-    exact ⟨⟨γ, hγ.mem_smoothForms⟩, Subtype.ext ((coe_mpullback _ _ _).trans hγU),
+    exact ⟨⟨γ, hγ.mem_smoothBundleForms⟩, Subtype.ext ((coe_mpullback _ _ _).trans hγU),
       Subtype.ext ((coe_mpullback _ _ _).trans hγV)⟩
   · rintro ⟨φ, rfl, rfl⟩
     rw [← LinearMap.comp_apply, ← LinearMap.comp_apply, ← mpullback_comp, ← mpullback_comp]
@@ -176,7 +176,7 @@ variable [IsManifold I ∞ M] (hρ : ContMDiff I 𝓘(ℝ) ∞ ρ) (hρV : tsupp
 private def cutoffLeft (φ : SmoothForm I (U ⊓ V : Opens M) F k) : SmoothForm I U F k :=
   ⟨RoughForm.extendByZero U fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1 y,
     (φ.isSmoothForm.extendByZero_smul inf_le_left (hρ.comp (contMDiff_inclusion le_sup_left))
-      fun _ hx ↦ eventually_eq_zero_of_tsupport_subset hρV hx).mem_smoothForms⟩
+      fun _ hx ↦ eventually_eq_zero_of_tsupport_subset hρV hx).mem_smoothBundleForms⟩
 
 /-- The cut-off form `(ρ - 1) φ` on `U ⊓ V`, extended by zero to a smooth form on `V`. -/
 private def cutoffRight (φ : SmoothForm I (U ⊓ V : Opens M) F k) : SmoothForm I V F k :=
@@ -184,7 +184,7 @@ private def cutoffRight (φ : SmoothForm I (U ⊓ V : Opens M) F k) : SmoothForm
       fun y : (U ⊓ V : Opens M) ↦ (ρ (Opens.inclusion inf_le_sup y) - 1) • φ.1 y,
     (φ.isSmoothForm.extendByZero_smul inf_le_right
       ((hρ.comp (contMDiff_inclusion le_sup_right)).sub contMDiff_const)
-      fun _ hx ↦ eventually_sub_one_eq_zero_of_tsupport_subset hρU hx).mem_smoothForms⟩
+      fun _ hx ↦ eventually_sub_one_eq_zero_of_tsupport_subset hρU hx).mem_smoothBundleForms⟩
 
 /-- A form `φ` on `U ⊓ V` is the difference `ρ φ - (ρ - 1) φ` of the restrictions of its two
 cut-off forms. -/
@@ -229,7 +229,7 @@ private theorem mpullback_extendByZero_mextDeriv_cutoff (φ : closedForms I (U �
         (eventually_sub_one_eq_zero_of_tsupport_subset hρU hx)]
   refine ⟨rfl, congrArg _ ?_⟩
   -- Since `φ` is closed, `d((ρ - 1) φ) = d(ρ φ) - dφ = d(ρ φ)`.
-  let ρφ : SmoothForm I (U ⊓ V : Opens M) ℝ k := ⟨_, hρφ.mem_smoothForms⟩
+  let ρφ : SmoothForm I (U ⊓ V : Opens M) ℝ k := ⟨_, hρφ.mem_smoothBundleForms⟩
   have hsub : (fun y : (U ⊓ V : Opens M) ↦ (ρ (Opens.inclusion inf_le_sup y) - 1) • φ.1.1 y) =
       (ρφ - φ.1).1 := by
     funext y
@@ -252,7 +252,7 @@ theorem exists_closedForms_coe_eq_extendByZero_mextDeriv (φ : closedForms I (U 
     IsSmoothForm.of_mpullback_inclusion_sup
       (hU ▸ (mextDerivₗ I k (cutoffLeft hρ hρV φ.1)).isSmoothForm)
       (hV ▸ (mextDerivₗ I k (cutoffRight hρ hρU φ.1)).isSmoothForm)
-  let σ : SmoothForm I (U ⊔ V : Opens M) ℝ (k + 1) := ⟨_, hσ.mem_smoothForms⟩
+  let σ : SmoothForm I (U ⊔ V : Opens M) ℝ (k + 1) := ⟨_, hσ.mem_smoothBundleForms⟩
   -- It is closed, since its restrictions to `U` and to `V` are exact.
   refine ⟨⟨σ, (mem_closedForms_iff_mextDerivₗ_eq_zero I σ).mpr <|
     SmoothForm.injective_mayerVietoris U V ?_⟩, rfl⟩

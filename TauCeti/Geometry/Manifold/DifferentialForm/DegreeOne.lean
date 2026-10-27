@@ -155,9 +155,7 @@ namespace SmoothForm
 def degreeOneEquiv :
     SmoothForm I M F 1 ≃ₗ[ℝ]
       ContMDiffSection I (E →L[ℝ] F) ∞ (fun x : M ↦ TangentSpace I x →L[ℝ] F) :=
-  (LinearEquiv.ofEq _ _ <| Submodule.ext fun _ ↦
-    mem_smoothForms.trans mem_smoothBundleForms.symm).trans
-    (SmoothBundleForm.degreeOneEquiv (V := Bundle.Trivial M F))
+  SmoothBundleForm.degreeOneEquiv (V := Bundle.Trivial M F)
 
 /-- The section of a smooth one-form evaluates a tangent vector as the form does. -/
 @[simp]

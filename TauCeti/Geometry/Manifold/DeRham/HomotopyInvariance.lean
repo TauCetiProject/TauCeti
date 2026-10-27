@@ -87,7 +87,7 @@ theorem map_prodMk_left_zero_eq_map_prodMk_left_one (k : ℕ) :
     have : IsManifold I ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
     rw [eq_comm, ← sub_eq_zero, ← map_sub, mk_eq_zero_iff, exactForms_succ]
     refine ⟨⟨homotopyOperator φ.1.1,
-      (IsSmoothForm.homotopyOperator φ.1.isSmoothForm).mem_smoothForms⟩, ?_⟩
+      (IsSmoothForm.homotopyOperator φ.1.isSmoothForm).mem_smoothBundleForms⟩, ?_⟩
     refine Subtype.ext (funext fun x ↦ ?_)
     rw [mextDerivₗ_apply, mextDeriv_homotopyOperator (φ.1.isSmoothForm.of_le (by simp))
       ((mem_closedForms _ φ.1).mp φ.2)]

@@ -411,14 +411,15 @@ variable (I) in
 /-- The exterior derivative as a real linear map on smooth fixed-coefficient forms. -/
 def mextDerivₗ [IsManifold I 2 M] (k : ℕ) :
     SmoothForm I M F k →ₗ[ℝ] SmoothForm I M F (k + 1) where
-  toFun φ := ⟨mextDeriv φ.1, mextDeriv_mem_smoothForms φ.2⟩
+  toFun φ := ⟨mextDeriv φ.1, mem_smoothBundleForms.mpr
+    (isSmoothBundleForm_mextDeriv φ.1 φ.isSmoothBundleForm (by simp))⟩
   map_add' φ ψ := by
     apply Subtype.ext
     funext x
     apply mextDeriv_add
-    · simpa using φ.1.differentiableWithinAt_inChartAt (s := Set.univ) (x := x)
+    · simpa using RoughForm.differentiableWithinAt_inChartAt φ.1 (s := Set.univ) (x := x)
         (φ.mdifferentiableAt x).mdifferentiableWithinAt
-    · simpa using ψ.1.differentiableWithinAt_inChartAt (s := Set.univ) (x := x)
+    · simpa using RoughForm.differentiableWithinAt_inChartAt ψ.1 (s := Set.univ) (x := x)
         (ψ.mdifferentiableAt x).mdifferentiableWithinAt
   map_smul' c φ := Subtype.ext (mextDeriv_smul c φ.1)
 

@@ -179,15 +179,15 @@ open scoped ContDiff
 /-- Pullback along a smooth map, as a linear map on smooth fixed-coefficient forms. -/
 def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) :
     SmoothForm I' M' F k →ₗ[ℝ] SmoothForm I M F k where
-  toFun φ := ⟨TauCeti.mpullback I I' f φ.1,
-    mem_smoothForms.mpr ((mem_smoothForms.mp φ.2).mpullback hf (by simp))⟩
-  map_add' φ ψ := Subtype.ext (TauCeti.mpullback_add f φ.1 ψ.1)
-  map_smul' c φ := Subtype.ext (TauCeti.mpullback_smul f c φ.1)
+  toFun φ := ⟨TauCeti.mpullback (F := F) I I' f φ.1,
+    mem_smoothBundleForms.mpr (φ.isSmoothBundleForm.mpullback hf (by simp))⟩
+  map_add' φ ψ := Subtype.ext (TauCeti.mpullback_add (F := F) f φ.1 ψ.1)
+  map_smul' c φ := Subtype.ext (TauCeti.mpullback_smul (F := F) f c φ.1)
 
 /-- The underlying rough form of smooth pullback is rough pullback. -/
 @[simp]
 theorem coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (φ : SmoothForm I' M' F k) :
-    (mpullback f hf φ).1 = TauCeti.mpullback I I' f φ.1 := (rfl)
+    (mpullback f hf φ).1 = TauCeti.mpullback (F := F) I I' f φ.1 := (rfl)
 
 /-- Evaluation of smooth pullback on tangent vectors. Simplification also obtains this from
 `coe_mpullback` and the rough pullback's application law. -/
@@ -276,7 +276,8 @@ theorem mpullback_comp (f : M → M') (g : M' → M'')
   ext φ : 1
   apply Subtype.ext
   simp only [coe_mpullback, LinearMap.comp_apply]
-  exact TauCeti.mpullback_comp (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)) φ.1
+  exact TauCeti.mpullback_comp (F := F)
+    (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)) φ.1
 
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}

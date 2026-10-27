@@ -60,7 +60,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 /-- The radial field `p ∂_p` is vertical, so the Liouville form vanishes on it: `ι_Z λ = 0`. -/
 @[simp]
 theorem liouvilleForm_interior_vectorBundleEulerField [IsManifold I 2 M] :
-    (liouvilleForm I M).1.interior (vectorBundleEulerField I) = 0 := by
+    RoughForm.interior (vectorBundleEulerField I) (liouvilleForm I M).1 = 0 := by
   funext z
   ext v
   simp [RoughForm.interior_apply, liouvilleForm_apply]
@@ -71,7 +71,8 @@ variable [IsManifold I ∞ M]
 symplectic form `ω = -dλ` of the cotangent bundle with its Euler vector field gives minus the
 Liouville form: `ι_Z ω = -λ`. -/
 theorem symplecticForm_interior_vectorBundleEulerField :
-    (symplecticForm I M).1.interior (vectorBundleEulerField I) = -(liouvilleForm I M).1 := by
+    RoughForm.interior (vectorBundleEulerField I) (symplecticForm I M).1 =
+      -(liouvilleForm I M).1 := by
   funext z
   ext v
   -- Read both sides in the chart at `z`, where the Euler field is `(0, p)`.

@@ -321,7 +321,7 @@ namespace SmoothForm
 theorem mlieDerivForm_eq_interior_mextDeriv_add {φ : SmoothForm I M F (k + 1)}
     {V : (x : M) → TangentSpace I x}
     (hV : MDifferentiable I I.tangent (fun y ↦ (V y : TangentBundle I M))) :
-    mlieDerivForm V φ.1 = (mextDeriv φ.1).interior V + mextDeriv (φ.1.interior V) := by
+    mlieDerivForm V φ.1 = (mextDeriv φ.1).interior V + mextDeriv (RoughForm.interior V φ.1) := by
   exact TauCeti.mlieDerivForm_eq_interior_mextDeriv_add φ.mdifferentiable hV
 
 /-- On a smooth closed form, along a differentiable vector field, the Lie derivative is the exterior
@@ -330,7 +330,7 @@ theorem mlieDerivForm_eq_mextDeriv_interior {φ : SmoothForm I M F (k + 1)}
     {V : (x : M) → TangentSpace I x}
     (hV : MDifferentiable I I.tangent (fun y ↦ (V y : TangentBundle I M)))
     (hφ : φ.IsClosed) :
-    mlieDerivForm V φ.1 = mextDeriv (φ.1.interior V) := by
+    mlieDerivForm V φ.1 = mextDeriv (RoughForm.interior V φ.1) := by
   exact TauCeti.mlieDerivForm_eq_mextDeriv_interior φ.mdifferentiable hV
     ((SmoothForm.isClosed_def φ).mp hφ)
 

@@ -155,7 +155,7 @@ def alternatingDerivation
     (A : ContMDiffSection I (E →L[ℝ] E) ∞ fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) :
     Module.End ℂ (SmoothForm I M F k) where
   toFun φ := ⟨fun x ↦ (A x).alternatingDerivation (φ.1 x),
-    (φ.isSmoothForm.alternatingDerivation A.contMDiff).mem_smoothForms⟩
+    (φ.isSmoothForm.alternatingDerivation A.contMDiff).mem_smoothBundleForms⟩
   map_add' φ ψ := Subtype.ext <| funext fun x ↦ map_add _ (φ.1 x) (ψ.1 x)
   map_smul' c φ := Subtype.ext <| funext fun x ↦ map_smul _ c (φ.1 x)
 

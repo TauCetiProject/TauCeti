@@ -142,7 +142,7 @@ variable (I M) in
 bundle projection. It is a smooth one-form on `T*M`, and in every bundle chart it is the linear
 Liouville form `TauCeti.cotangentLiouvilleForm`, that is `Σ pᵢ dqᵢ`. -/
 def liouvilleForm : SmoothForm (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I M) ℝ 1 :=
-  ⟨liouvilleRough I M, isSmoothForm_liouvilleRough.mem_smoothForms⟩
+  ⟨liouvilleRough I M, isSmoothForm_liouvilleRough.mem_smoothBundleForms⟩
 
 /-- The underlying rough form of `liouvilleForm`. -/
 private theorem coe_liouvilleForm : (liouvilleForm I M).1 = liouvilleRough I M :=
@@ -163,7 +163,7 @@ with coordinates `(q, p)`, the Liouville form is the linear Liouville form
 `λ_(q,p)(δq, δp) = p(δq)`, that is `Σ pᵢ dqᵢ`. -/
 theorem inChartAt_liouvilleForm (z₀ : CotangentBundle I M) {w : E × (E →L[ℝ] ℝ)}
     (hw : w ∈ (extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z₀).target) :
-    (liouvilleForm I M).1.inChartAt z₀ w = cotangentLiouvilleForm w :=
+    RoughForm.inChartAt (liouvilleForm I M).1 z₀ w = cotangentLiouvilleForm w :=
   inChartAt_liouvilleRough z₀ hw
 
 /-- **The Liouville form is tautological.** Pulling it back along the section `x ↦ σ x` of the
@@ -242,7 +242,8 @@ bundle, the canonical symplectic form is the linear form
 theorem inChartAt_symplecticForm_apply (z₀ : CotangentBundle I M) {w : E × (E →L[ℝ] ℝ)}
     (hw : w ∈ (extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z₀).target)
     (v : Fin 2 → E × (E →L[ℝ] ℝ)) :
-    (symplecticForm I M).1.inChartAt z₀ w v = strongDualCotangentSymplecticForm (v 0) (v 1) := by
+    RoughForm.inChartAt (symplecticForm I M).1 z₀ w v =
+      strongDualCotangentSymplecticForm (v 0) (v 1) := by
   have huniq : UniqueDiffWithinAt ℝ (range (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))) w :=
     (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).uniqueDiffOn w (extChartAt_target_subset_range z₀ hw)
   have hd : (mextDeriv (liouvilleRough I M)).inChartAt z₀ w =

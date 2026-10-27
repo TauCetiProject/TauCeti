@@ -96,7 +96,7 @@ theorem isHamiltonianVectorField_iff_flat :
 exterior derivative of the `0`-form of the Hamiltonian. -/
 theorem isHamiltonianVectorField_iff_interior_eq :
     σ.IsHamiltonianVectorField f X ↔
-      σ.1.interior X = mextDeriv (RoughForm.ofFunction I f) := by
+      RoughForm.interior X σ.1 = mextDeriv (RoughForm.ofFunction I f) := by
   -- Both sides are one-forms of one vector, the images of `σ♭ X` and `df` respectively.
   simp only [isHamiltonianVectorField_iff_flat, funext_iff, interior_apply_eq_ofSubsingleton_flat,
     mextDeriv_ofFunction, EmbeddingLike.apply_eq_iff_eq]

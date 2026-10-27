@@ -136,7 +136,7 @@ theorem poincarePairing_mk (o : Manifold.Orientation I M (Fin (k + l)))
     (φ : closedForms I M k) (ψ : compactlySupportedClosedForms I M l) :
     poincarePairing I M o (deRhamCohomology.mk I k φ)
         (compactlySupportedDeRhamCohomology.mk I l ψ) =
-      integralTopForm o ((φ.1 : RoughForm I M ℝ k).wedge ψ.1.1) := by
+      integralTopForm o (RoughForm.wedge (φ.1 : RoughForm I M ℝ k) ψ.1.1) := by
   rw [poincarePairing_apply, compactlySupportedDeRhamCohomology.wedge_mk,
     compactlySupportedDeRhamCohomology.integral_mk, SmoothForm.coe_wedge]
 

@@ -122,7 +122,8 @@ namespace SmoothForm
 /-- The paired wedge of smooth fixed-coefficient forms, as a bilinear map. -/
 def wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
     SmoothForm I M F₁ k →ₗ[ℝ] SmoothForm I M F₂ l →ₗ[ℝ] SmoothForm I M F₃ (k + l) :=
-  LinearMap.mk₂ ℝ (fun φ ψ ↦ ⟨_, smoothForms_wedgeWith_mem μ φ ψ⟩)
+  LinearMap.mk₂ ℝ (fun φ ψ ↦ ⟨_,
+    mem_smoothBundleForms.mpr (mem_smoothForms.mp (smoothForms_wedgeWith_mem μ φ ψ))⟩)
     (fun φ φ' ψ ↦ Subtype.ext <| by
       simp only [Submodule.coe_add, RoughForm.wedgeWith_add_left])
     (fun c φ ψ ↦ Subtype.ext <| by

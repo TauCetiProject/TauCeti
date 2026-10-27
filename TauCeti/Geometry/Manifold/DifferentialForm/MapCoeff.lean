@@ -198,7 +198,7 @@ variable [IsManifold I 1 M]
 
 /-- A continuous linear map of coefficient spaces, as a linear map on smooth forms. -/
 def mapCoeff (L : F →L[ℝ] G) : SmoothForm I M F k →ₗ[ℝ] SmoothForm I M G k where
-  toFun φ := ⟨RoughForm.mapCoeff L φ.1, (φ.isSmoothForm.mapCoeff L).mem_smoothForms⟩
+  toFun φ := ⟨RoughForm.mapCoeff L φ.1, (φ.isSmoothForm.mapCoeff L).mem_smoothBundleForms⟩
   map_add' φ ψ := Subtype.ext (RoughForm.mapCoeff_add L φ.1 ψ.1)
   map_smul' c φ := Subtype.ext (RoughForm.mapCoeff_smul L c φ.1)
 
@@ -245,7 +245,7 @@ instance instSMul [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
     [SMulCommClass ℝ S F] : SMul S (SmoothForm I M F k) where
   smul c φ := ⟨c • φ.1, by
     rw [RoughForm.smul_eq_mapCoeff]
-    exact (φ.isSmoothForm.mapCoeff _).mem_smoothForms⟩
+    exact (φ.isSmoothForm.mapCoeff _).mem_smoothBundleForms⟩
 
 /-- The rough form underlying a scalar multiple of a smooth form is the scalar multiple of its
 rough form. -/
@@ -265,7 +265,7 @@ theorem smul_eq_mapCoeff [Monoid S] [DistribMulAction S F] [ContinuousConstSMul 
 coefficients this is the complex vector space of complex-valued smooth forms. -/
 instance instModule [Semiring S] [Module S F] [ContinuousConstSMul S F] [SMulCommClass ℝ S F] :
     Module S (SmoothForm I M F k) :=
-  Function.Injective.module S (smoothForms I M F k).subtype.toAddMonoidHom
+  Function.Injective.module S (smoothBundleForms I F (Bundle.Trivial M F) k).subtype.toAddMonoidHom
     Subtype.val_injective fun _ _ ↦ (rfl)
 
 /-- When the coefficient scalars restrict to real scalars, so do their actions on smooth forms;

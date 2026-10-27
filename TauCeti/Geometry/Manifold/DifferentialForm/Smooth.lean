@@ -424,7 +424,7 @@ theorem IsSmoothForm.of_le [IsManifold I 1 M] {m n : WithTop ℕ∞} {φ : Rough
   (isSmoothForm_def m φ).mpr (hφ.contMDiff.of_le hmn)
 
 /-- The submodule of smooth fixed-coefficient `F`-valued rough forms. -/
-abbrev smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
+def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
     [NormedAddCommGroup F] [NormedSpace ℝ F] (k : ℕ) :
     Submodule ℝ (RoughForm I M F k) :=
@@ -438,16 +438,17 @@ theorem mem_smoothForms {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalS
       IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (k := k) (n := ∞) φ :=
   Iff.rfl
 
-/-- A smooth fixed-coefficient rough form lies in `smoothForms`. -/
-theorem IsSmoothForm.mem_smoothForms [IsManifold I 1 M] {φ : RoughForm I M F k}
-    (hφ : IsSmoothForm I ∞ φ) : φ ∈ smoothForms I M F k :=
-  TauCeti.mem_smoothForms.mpr ((isSmoothBundleForm_def ∞ φ).mpr ((isSmoothForm_def ∞ φ).mp hφ))
+/-- A smooth fixed-coefficient rough form lies in the smooth bundle-form submodule. -/
+theorem IsSmoothForm.mem_smoothBundleForms [IsManifold I 1 M] {φ : RoughForm I M F k}
+    (hφ : IsSmoothForm I ∞ φ) : φ ∈ smoothBundleForms I F (Bundle.Trivial M F) k :=
+  TauCeti.mem_smoothBundleForms.mpr
+    ((isSmoothBundleForm_def ∞ φ).mpr ((isSmoothForm_def ∞ φ).mp hφ))
 
 /-- A smooth fixed-coefficient differential `k`-form. -/
 abbrev SmoothForm (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
     [NormedAddCommGroup F] [NormedSpace ℝ F] (k : ℕ) : Type _ :=
-  ↥(smoothForms I M F k)
+  SmoothBundleForm I F (Bundle.Trivial M F) k
 
 namespace SmoothForm
 
@@ -669,13 +670,8 @@ lemma contMDiff_apply {n : WithTop ℕ∞} [ENat.LEInfty n]
     {V W : ∀ y : N, TangentSpace I (b y)}
     (hV : ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (V y)))
     (hW : ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (W y))) :
-    ContMDiff I' 𝓘(ℝ, F) n
-      (fun y ↦ SmoothBundleForm.eval₂ (V := Bundle.Trivial M F)
-        form
-        (b y) (V y) (W y)) := by
-  have h := SmoothBundleForm.contMDiff_eval₂ (I := I) (F := F)
-    (V := Bundle.Trivial M F)
-      form hV hW
+    ContMDiff I' 𝓘(ℝ, F) n (fun y ↦ form.eval₂ (b y) (V y) (W y)) := by
+  have h := SmoothBundleForm.contMDiff_eval₂ form hV hW
   intro y₀
   have hy := h y₀
   have hy' := (Bundle.contMDiffAt_totalSpace (IM := I') (IB := I) (n := n)).mp hy
@@ -694,7 +690,7 @@ def bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
 
 @[simp]
 theorem bilinFormAt_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpace I x) :
-    φ.bilinFormAt x v w = SmoothBundleForm.eval₂ (V := Bundle.Trivial M ℝ) φ x v w :=
+    φ.bilinFormAt x v w = φ.eval₂ x v w :=
   by simp [bilinFormAt, SmoothBundleForm.eval₂]
 
 /-- The bilinear form represented by a degree-two smooth form is alternating. -/
@@ -720,7 +716,7 @@ theorem altAt_apply (φ : SmoothForm I M F k) (x : M) (v : Fin k → E) :
 
 /-- The degree-two alternating-map view evaluated on a tuple agrees with ordered-pair evaluation. -/
 theorem altAt_apply_eval₂ (φ : SmoothForm I M F 2) (x : M) (v : Fin 2 → E) :
-    φ.altAt x v = SmoothBundleForm.eval₂ (V := Bundle.Trivial M F) φ x (v 0) (v 1) := by
+    φ.altAt x v = φ.eval₂ x (v 0) (v 1) := by
   have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [hv]
   simp only [altAt, SmoothBundleForm.eval₂]
