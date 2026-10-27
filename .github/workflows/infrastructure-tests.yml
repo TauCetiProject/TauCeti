@@ -1,0 +1,156 @@
+name: Infrastructure tests
+
+# Regression tests for CI tooling never participate in content CI or publication.
+# Use unprivileged PR events: candidate scripts run without secrets or write access.
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/**', '.github/**']
+  pull_request:
+    paths: ['scripts/**', '.github/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infrastructure-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          project-directory: .
+      - name: Restore workflow contract tests after shared setup
+        # Implementations come from the pinned shared tools, as in content CI.
+        # These tests and the suite runner describe this checkout's workflows.
+        run: |
+          git ls-files -z -- \
+            scripts/test_bors_scope_approval.py \
+            scripts/test_bulk_unpack_cache.py \
+            scripts/test_duplicate_audit_workflow.py \
+            scripts/test_lake_cache_probe.py \
+            scripts/test_lake_cache_reuse.py \
+            scripts/test_workflow_pins.py \
+            scripts/test_content_ci_separation.py \
+            scripts/run-infrastructure-tests.sh \
+            | xargs -0 -r git restore --source=HEAD --
+      - name: Install test dependencies
+        run: python3 -m pip install 'PyYAML>=6'
+      - name: Checkout the pinned merge policy (read-only)
+        uses: ./.github/actions/checkout-merge-policy
+      - name: Infrastructure policy unit tests
+        run: bash scripts/run-infrastructure-tests.sh
+
+  lean-fixtures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          project-directory: .
+      - name: Restore workflow contract tests after shared setup
+        # Implementations come from the pinned shared tools, as in content CI.
+        # These tests and the suite runner describe this checkout's workflows.
+        run: |
+          git ls-files -z -- \
+            scripts/test_bors_scope_approval.py \
+            scripts/test_bulk_unpack_cache.py \
+            scripts/test_duplicate_audit_workflow.py \
+            scripts/test_lake_cache_probe.py \
+            scripts/test_lake_cache_reuse.py \
+            scripts/test_workflow_pins.py \
+            scripts/test_content_ci_separation.py \
+            scripts/run-infrastructure-tests.sh \
+            | xargs -0 -r git restore --source=HEAD --
+      - name: Install elan (pinned + checksum) and the toolchain
+        env:
+          ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
+          ELAN_VER: v4.2.3
+        run: |
+          curl -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
+          tar -xzf elan.tar.gz elan-init
+          ./elan-init -y --default-toolchain none
+          rm -f elan.tar.gz elan-init
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.elan/bin:$PATH"
+          elan toolchain install "$(cat lean-toolchain)"
+          lean --version
+          lake --version
+
+      - name: Audit and Lake regression fixtures
+        run: |
+          LEAN="$(elan which lean)"
+          LEAN_SYSROOT="$("$LEAN" --print-prefix)"
+          export LEAN LEAN_SYSROOT
+          python3 scripts/test_duplicate_declarations.py
+          python3 scripts/test_check_imports.py
+          python3 scripts/test_bulk_unpack_cache.py --integration
+          python3 scripts/test_lake_cache_reuse.py --integration
+          python3 scripts/test_lake_cache_publish.py --integration
+
+  header-fixtures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          project-directory: .
+      - name: Restore workflow contract tests after shared setup
+        # Implementations come from the pinned shared tools, as in content CI.
+        # These tests and the suite runner describe this checkout's workflows.
+        run: |
+          git ls-files -z -- \
+            scripts/test_bors_scope_approval.py \
+            scripts/test_bulk_unpack_cache.py \
+            scripts/test_duplicate_audit_workflow.py \
+            scripts/test_lake_cache_probe.py \
+            scripts/test_lake_cache_reuse.py \
+            scripts/test_workflow_pins.py \
+            scripts/test_content_ci_separation.py \
+            scripts/run-infrastructure-tests.sh \
+            | xargs -0 -r git restore --source=HEAD --
+      - name: Install elan (pinned + checksum) and the toolchain
+        env:
+          ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
+          ELAN_VER: v4.2.3
+        run: |
+          curl -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
+          tar -xzf elan.tar.gz elan-init
+          ./elan-init -y --default-toolchain none
+          rm -f elan.tar.gz elan-init
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.elan/bin:$PATH"
+          elan toolchain install "$(cat lean-toolchain)"
+          lean --version
+          lake --version
+
+      - name: Fetch Mathlib for header-checker fixtures
+        run: lake exe cache get
+      - name: Header audit equivalence tests
+        run: lake env python3 scripts/test_header_style.py

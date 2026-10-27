@@ -45,6 +45,11 @@ scope do not coincide.
   axioms beyond `propext`, `Classical.choice`, `Quot.sound` (so no `native_decide`), no
   `meta import`, and the Mathlib linter set (style, file length, no `maxHeartbeats`
   overrides). Do not try to disable these.
+- Content CI verifies the mathematics. Regression tests of CI tooling belong in
+  independent workflows triggered by changes under `scripts/` or `.github/`
+  (the general suite is `Infrastructure tests`). Never make content builds, audits, lint, merge statuses, or cache
+  publication depend on infrastructure test suites. Runtime checks needed to establish
+  a safe sandbox and validate the actual candidate remain part of content CI.
 - Prefer named definitions, abbreviations, and lemmas to custom term syntax. Local tactic
   macros should remove substantial repeated proof machinery, rather than just shorten a
   couple of small proofs. Keep macro hygiene enabled: `set_option`, including
