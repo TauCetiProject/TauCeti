@@ -18,8 +18,8 @@ homotopy makes the difference of the induced cycle maps factor through a finite 
 term of the target complex. Thus cycles define an additive functor from the homotopy category
 of totally acyclic complexes to the stable category of Gorenstein-projective modules.
 This functor is essentially surjective in every degree: a shifted complete resolution supplies
-a preimage of every Gorenstein-projective module. No full-faithfulness or triangulated
-comparison for the cycle functor is asserted here.
+a preimage of every Gorenstein-projective module. Full faithfulness, and hence the equivalence,
+is in `TauCeti.Algebra.Homology.TotallyAcyclic.StableEquivalence`.
 
 The source is the quotient of `TauCeti.TotallyAcyclicComplex`, defined in
 `TauCeti.Algebra.Homology.TotallyAcyclic.Basic`, by the
