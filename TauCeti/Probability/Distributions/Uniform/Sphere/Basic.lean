@@ -61,7 +61,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Metric Set
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 namespace TauCeti.Probability
 
@@ -100,6 +100,25 @@ instance isProbabilityMeasure_uniformSphereMeasure [Nontrivial E] :
     rw [uniformSphereMeasure_def, Measure.smul_apply, smul_eq_mul]
     exact ENNReal.inv_mul_cancel (Measure.measure_univ_ne_zero.2 (Measure.toSphere_ne_zero _))
       (measure_ne_top _ _)
+
+instance isFiniteMeasure_uniformSphereMeasure : IsFiniteMeasure (uniformSphereMeasure E) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have hzero : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
+    rw [hzero]
+    infer_instance
+  · infer_instance
+
+/-- The exponential of every real linear observable of a uniform sphere point is integrable. -/
+theorem integrable_exp_inner_uniformSphereMeasure (η : E) :
+    Integrable (fun x : sphere (0 : E) 1 ↦ Real.exp ⟪η, (x : E)⟫_ℝ) (uniformSphereMeasure E) := by
+  refine Integrable.of_bound (by fun_prop) (Real.exp ‖η‖) (Filter.Eventually.of_forall fun x ↦ ?_)
+  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
+  simpa using real_inner_le_norm η (x : E)
+
+/-- The exponential moment of a linear observable is positive in positive dimension. -/
+theorem integral_exp_inner_uniformSphereMeasure_pos [Nontrivial E] (η : E) :
+    0 < ∫ x : sphere (0 : E) 1, Real.exp ⟪η, (x : E)⟫_ℝ ∂uniformSphereMeasure E :=
+  integral_exp_pos (integrable_exp_inner_uniformSphereMeasure η)
 
 end UniformSphere
 
