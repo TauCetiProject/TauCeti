@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Module.Alternating.AlmostComplexType
-public import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
+public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 
 /-!
 # Alternation and the `(p,q)` type of complex-valued forms
@@ -180,14 +180,10 @@ theorem IsOfType.typeProjection_alternatizeUncurryFin_eq_zero
   have hη' (v : E) : J.alternatingDerivation (η v) = c • η v - β v := by
     simp only [β, ContinuousLinearMap.comp_apply, ← hD]
     exact eq_sub_of_add_eq (hη v)
-  have halt_sub (θ₁ θ₂ : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F) :
-      alternatizeUncurryFin (θ₁ - θ₂) = alternatizeUncurryFin θ₁ - alternatizeUncurryFin θ₂ :=
-    map_sub (ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F) θ₁ θ₂
   have hJJ (θ : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F) :
       alternatizeUncurryFin ((θ ∘L J) ∘L J) = -alternatizeUncurryFin θ := by
     have h : (θ ∘L J) ∘L J = -θ := by ext v; simp [hJ]
-    rw [h]
-    exact map_neg (ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F) θ
+    rw [h, alternatizeUncurryFin_neg]
   -- The type-`(P,Q)` components of the alternations of `η`, `β`, `γ` and of their compositions
   -- with `J` satisfy a linear system whose determinant does not vanish.
   have e1 := smul_typeProjection_alternatizeUncurryFin (P := P) (Q := Q) hJ (θ := η)
@@ -202,8 +198,8 @@ theorem IsOfType.typeProjection_alternatizeUncurryFin_eq_zero
     (θ' := c • γ - (2 : ℂ) • β) fun v ↦ by simp [hγ]
   have e6 := smul_typeProjection_alternatizeUncurryFin (P := P) (Q := Q) hJ (θ := γ ∘L J)
     (θ' := c • (γ ∘L J) - (2 : ℂ) • (β ∘L J)) fun v ↦ by simp [hγ]
-  simp only [halt_sub, alternatizeUncurryFin_add, alternatizeUncurryFin_smul, hJJ, map_add,
-    map_sub, map_smul, map_neg] at e1 e2 e3 e4 e5 e6
+  simp only [alternatizeUncurryFin_sub, alternatizeUncurryFin_add, alternatizeUncurryFin_smul, hJJ,
+    map_add, map_sub, map_smul, map_neg] at e1 e2 e3 e4 e5 e6
   -- With `t = ((P - Q) - (p - q)) * I`, the determinant of this system is `(t² + 1)(t² + 9)`,
   -- which is nonzero for every type other than the four bidegrees.
   exact eq_zero_of_typeShift (t := ((P : ℂ) - Q) * I - c)
