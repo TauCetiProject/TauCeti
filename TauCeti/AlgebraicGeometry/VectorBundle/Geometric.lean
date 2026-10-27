@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 public import TauCeti.AlgebraicGeometry.VectorBundle.LinearScheme
 public import TauCeti.AlgebraicGeometry.VectorBundle.TotalSpace
 
@@ -65,11 +64,6 @@ universe u
 noncomputable section
 
 variable (X : Scheme.{u})
-
-/-- A quasicoherent sheaf is finite locally free when its underlying `𝒪_X`-module is locally free
-and finitely presented. -/
-abbrev QuasicoherentSheaf.isFiniteLocallyFree : ObjectProperty (QuasicoherentSheaf X) :=
-  (SheafOfModules.isFiniteLocallyFree X.ringCatSheaf).inverseImage (ObjectProperty.ι _)
 
 /-- A linear scheme over `X` is a geometric vector bundle when the degree-one component of its
 grading is finite locally free. -/
