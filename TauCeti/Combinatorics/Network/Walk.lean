@@ -62,7 +62,7 @@ capacity; for residual capacities these are augmenting walks.
   endpoints.
 * `TauCeti.ArrowWalk.exists_isPath_interior_notMem`: every walk from a vertex of `A` to a vertex
   of `B` contains a path from a vertex of `A` to a vertex of `B` with no other vertex in `A` or
-  `B`.
+  `B`, traversing only arrows of the walk.
 * `TauCeti.ArrowWalk.exists_isCycle_arrows_subset`: every closed walk of positive length contains
   a cycle.
 * `TauCeti.ArrowWalk.le_bottleneck_iff` and `TauCeti.ArrowWalk.exists_mem_bottleneck_eq`: the
@@ -310,26 +310,32 @@ theorem exists_isPath_arrows_subset {s t : V} (p : ArrowWalk Q s t) :
       exact List.append_subset.2
         ⟨List.subset_append_of_subset_left _ hsub, List.subset_append_right _ _⟩
 
+/-- A walk traversing only arrows of another walk from the same vertex visits only vertices of that
+walk. -/
+theorem vertices_subset_of_arrows_subset {s t t' : V} {p : ArrowWalk Q s t}
+    {p' : ArrowWalk Q s t'} (h : p'.arrows ⊆ p.arrows) : p'.vertices ⊆ p.vertices := by
+  rw [vertices_eq_cons_map_target_arrows p', vertices_eq_cons_map_target_arrows p]
+  exact List.cons_subset_cons _ (List.map_subset _ h)
+
 /-- Every walk contains a path with the same endpoints that visits only vertices of the walk. -/
 theorem exists_isPath_vertices_subset {s t : V} (p : ArrowWalk Q s t) :
-    ∃ p' : ArrowWalk Q s t, p'.IsPath ∧ p'.vertices ⊆ p.vertices := by
-  obtain ⟨p', hp', hsub⟩ := exists_isPath_arrows_subset p
-  refine ⟨p', hp', ?_⟩
-  rw [vertices_eq_cons_map_target_arrows p', vertices_eq_cons_map_target_arrows p]
-  exact List.cons_subset_cons _ (List.map_subset _ hsub)
+    ∃ p' : ArrowWalk Q s t, p'.IsPath ∧ p'.vertices ⊆ p.vertices :=
+  let ⟨p', hp', hsub⟩ := exists_isPath_arrows_subset p
+  ⟨p', hp', vertices_subset_of_arrows_subset hsub⟩
 
 /-- A path from a vertex of `A` to a vertex of `B` contains a path from a vertex of `A` to a vertex
-of `B` whose other vertices lie in neither `A` nor `B`. -/
+of `B` whose other vertices lie in neither `A` nor `B`, visiting only vertices and traversing only
+arrows of the original path. -/
 private theorem IsPath.exists_isPath_interior_notMem {A B : Set V} :
     ∀ (n : ℕ) {s t : V} (p : ArrowWalk Q s t), p.length = n → p.IsPath → s ∈ A → t ∈ B →
       ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧ q.vertices ⊆ p.vertices ∧
-        ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
+        q.arrows ⊆ p.arrows ∧ ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
   intro n
   induction n using Nat.strong_induction_on with
   | _ n ih =>
   intro s t p hn hp hs ht
   by_cases hint : ∀ v ∈ p.vertices, v ≠ s → v ≠ t → v ∉ A ∧ v ∉ B
-  · exact ⟨s, hs, t, ht, p, hp, List.Subset.refl _, hint⟩
+  · exact ⟨s, hs, t, ht, p, hp, List.Subset.refl _, List.Subset.refl _, hint⟩
   push Not at hint
   obtain ⟨v, hv, hvs, hvt, hvAB⟩ := hint
   -- Split `p` at the offending vertex `v` and keep the shorter piece that still runs from `A`
@@ -343,35 +349,41 @@ private theorem IsPath.exists_isPath_interior_notMem {A B : Set V} :
     @Quiver.Path.vertices_comp V ⟨Q⟩ _ _ _ p₁ p₂
   by_cases hvA : v ∈ A
   · have h₁ : p₁.length ≠ 0 := fun h ↦ hvs (@Quiver.Path.eq_of_length_zero V ⟨Q⟩ _ _ p₁ h).symm
-    obtain ⟨a, ha, b, hb, q, hq, hsub, hint⟩ :=
+    obtain ⟨a, ha, b, hb, q, hq, hsub, hasub, hint⟩ :=
       ih p₂.length (by omega) p₂ rfl hp.of_comp_right hvA ht
-    refine ⟨a, ha, b, hb, q, hq, List.Subset.trans hsub ?_, hint⟩
-    rw [hcomp]
-    exact List.subset_append_right _ _
+    refine ⟨a, ha, b, hb, q, hq, List.Subset.trans hsub ?_, ?_, hint⟩
+    · rw [hcomp]
+      exact List.subset_append_right _ _
+    · rw [arrows_comp]
+      exact List.Subset.trans hasub (List.subset_append_right _ _)
   · have h₂ : p₂.length ≠ 0 := fun h ↦ hvt (@Quiver.Path.eq_of_length_zero V ⟨Q⟩ _ _ p₂ h)
-    obtain ⟨a, ha, b, hb, q, hq, hsub, hint⟩ :=
+    obtain ⟨a, ha, b, hb, q, hq, hsub, hasub, hint⟩ :=
       ih p₁.length (by omega) p₁ rfl hp.of_comp_left hs (hvAB hvA)
-    refine ⟨a, ha, b, hb, q, hq, fun x hx ↦ ?_, hint⟩
-    have hend : p₁.vertices.dropLast ++ [v] = p₁.vertices :=
-      @Quiver.Path.dropLast_append_end_eq V ⟨Q⟩ _ _ p₁
-    have hx := hsub hx
-    rw [← hend, List.mem_append, List.mem_singleton] at hx
-    rw [hcomp]
-    rcases hx with hx | rfl
-    · exact List.mem_append_left _ hx
-    · exact List.mem_append_right _ (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ p₂)
+    refine ⟨a, ha, b, hb, q, hq, fun x hx ↦ ?_, ?_, hint⟩
+    · have hend : p₁.vertices.dropLast ++ [v] = p₁.vertices :=
+        @Quiver.Path.dropLast_append_end_eq V ⟨Q⟩ _ _ p₁
+      have hx := hsub hx
+      rw [← hend, List.mem_append, List.mem_singleton] at hx
+      rw [hcomp]
+      rcases hx with hx | rfl
+      · exact List.mem_append_left _ hx
+      · exact List.mem_append_right _ (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ p₂)
+    · rw [arrows_comp]
+      exact List.Subset.trans hasub (List.subset_append_left _ _)
 
 /-- **Trimming a walk between two vertex sets.** A walk from a vertex of `A` to a vertex of `B`
 contains a path from a vertex `a ∈ A` to a vertex `b ∈ B` whose vertices other than `a` and `b`
-lie in neither `A` nor `B`. -/
+lie in neither `A` nor `B`, and which visits only vertices and traverses only arrows of the
+walk. -/
 theorem exists_isPath_interior_notMem {A B : Set V} {s t : V} (p : ArrowWalk Q s t) (hs : s ∈ A)
     (ht : t ∈ B) :
     ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧ q.vertices ⊆ p.vertices ∧
-      ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
-  obtain ⟨p', hp', hsub⟩ := exists_isPath_vertices_subset p
-  obtain ⟨a, ha, b, hb, q, hq, hqsub, hint⟩ :=
+      q.arrows ⊆ p.arrows ∧ ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
+  obtain ⟨p', hp', hsub⟩ := exists_isPath_arrows_subset p
+  obtain ⟨a, ha, b, hb, q, hq, hqsub, hqasub, hint⟩ :=
     IsPath.exists_isPath_interior_notMem _ p' rfl hp' hs ht
-  exact ⟨a, ha, b, hb, q, hq, List.Subset.trans hqsub hsub, hint⟩
+  exact ⟨a, ha, b, hb, q, hq, List.Subset.trans hqsub (vertices_subset_of_arrows_subset hsub),
+    List.Subset.trans hqasub hsub, hint⟩
 
 /-- **Cycle extraction.** Every closed walk of positive length contains a cycle at the same vertex
 that traverses only arrows of the walk. -/
