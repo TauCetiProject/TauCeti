@@ -29,8 +29,8 @@ is the group homology of `G` with trivial coefficients
 (`TauCeti.classifyingSpaceSingularHomologyIsoGroupHomology`), and the group homology of a finite
 cyclic group is computed from its two-periodic resolution
 (`Rep.FiniteCyclicGroup.groupHomologyTrivialLinearEquivOdd`,
-`Rep.FiniteCyclicGroup.groupHomologyTrivialLinearEquivEven`). The odd-degree identifications use a
-generator `g` of `G`; the vanishing results only use that `G` is cyclic.
+`Rep.FiniteCyclicGroup.groupHomologyTrivialLinearEquivEven`). The explicit identifications, in odd
+and even degree, use a generator `g` of `G`; the vanishing results only use that `G` is cyclic.
 
 ## Main definitions
 
