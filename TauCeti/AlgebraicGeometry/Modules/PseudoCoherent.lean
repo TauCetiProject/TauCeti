@@ -131,6 +131,7 @@ theorem restrict (h : F.HasFiniteFreeResolution) (f : Y ⟶ X) [IsOpenImmersion 
 end HasFiniteFreeResolution
 
 /-- A free module of finite rank has a finite free resolution, concentrated in degree zero. -/
+@[simp]
 theorem hasFiniteFreeResolution_free (ι : Type u) [Finite ι] :
     HasFiniteFreeResolution (SheafOfModules.free (R := X.ringCatSheaf) ι) := by
   refine ⟨_, 𝟙 _, fun n ↦ ?_, inferInstance⟩
@@ -196,6 +197,7 @@ theorem isPseudoCoherent_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens} (h
     hres.of_iso ((restrictFunctorComp V.ι (U i).ι).app F).symm⟩
 
 /-- A free module of finite rank is pseudo-coherent. -/
+@[simp]
 theorem isPseudoCoherent_free (ι : Type u) [Finite ι] :
     IsPseudoCoherent (SheafOfModules.free (R := X.ringCatSheaf) ι) :=
   (hasFiniteFreeResolution_free ι).isPseudoCoherent
