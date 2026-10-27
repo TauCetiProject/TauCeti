@@ -216,7 +216,7 @@ end Separating
 
 section ExtendScalars
 
-variable {k' F' : Type*} [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F']
+variable {k' F' : Type*} [Field k'] [Field F'] [SMul k k'] [Algebra k F'] [Algebra k' F']
 variable [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 /-- **Derivatives are stable under extension of scalars**: if `x` is separating for `F / k` and its
@@ -327,50 +327,16 @@ vanishes, while separability of `F / k⟮x⟯` would make the function field alg
 @[simp]
 theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F) :
     Algebra.IsSeparable k⟮x⟯ F ↔ D k F x ≠ 0 := by
-  by_cases hx : Transcendental k x
-  case neg =>
-    have halg : IsAlgebraic k x := not_not.mp hx
-    have hD : D k F x = 0 := D_eq_zero_of_isSeparable
-      (PerfectField.separable_of_irreducible (minpoly.irreducible halg.isIntegral))
-    refine iff_of_false (fun hsep ↦ ?_) (not_not.mpr hD)
-    have : Algebra.Transcendental k F := Algebra.transcendental_def.mpr hF.exists_transcendental
-    exact hx (transcendental_of_isAlgebraic_adjoin (x := x))
-  let _ := hF.finiteDimensional_adjoin hx
-  have hunr : Algebra.IsSeparable k⟮x⟯ F ↔ Subsingleton Ω[F⁄k⟮x⟯] := by
-    rw [← Algebra.FormallyUnramified.iff_isSeparable, Algebra.formallyUnramified_iff]
-  have hmap : Subsingleton Ω[F⁄k⟮x⟯] ↔
-      (KaehlerDifferential.mapBaseChange k k⟮x⟯ F).range = ⊤ :=
-    subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top k k⟮x⟯ F
-  have hrange : (KaehlerDifferential.mapBaseChange k k⟮x⟯ F).range =
-      Submodule.span F {D k F x} := by
-    let x' : k⟮x⟯ := ⟨x, IntermediateField.subset_adjoin k {x} rfl⟩
-    have hx'val : algebraMap k⟮x⟯ F x' = x := by
-      simpa only [x'] using IntermediateField.algebraMap_apply k⟮x⟯ x'
-    have hx' : Transcendental k x' :=
-      (Subalgebra.transcendental_iff_transcendental_val
-        (S := k⟮x⟯.toSubalgebra)).mpr hx
-    have htop : k⟮x'⟯ = ⊤ := by
-      apply IntermediateField.lift_injective k⟮x⟯
-      rw [IntermediateField.lift_adjoin_simple, IntermediateField.lift_top]
-    let e : k⟮x'⟯ ≃ₐ[k] k⟮x⟯ :=
-      (IntermediateField.equivOfEq htop).trans IntermediateField.topEquiv
-    let _ : Algebra.IsSeparable k⟮x'⟯ k⟮x⟯ :=
-      Algebra.IsSeparable.of_equiv_equiv e.symm.toRingEquiv (RingEquiv.refl k⟮x⟯) (by
-        ext z
-        simp [e])
-    obtain ⟨b, hb⟩ := exists_basis_unit_D hx'
-    have hspan : Submodule.span k⟮x⟯ {D k k⟮x⟯ x'} = ⊤ := by
-      rw [← hb]
-      simpa only [Set.range_unique] using b.span_eq
-    rw [range_mapBaseChange_eq_span_singleton k k⟮x⟯ F
-      (D k k⟮x⟯ x') hspan, KaehlerDifferential.map_D, hx'val]
+  have : Algebra.EssFiniteType k F := hF.essFiniteType
+  have : Algebra.Transcendental k F := trdeg_ne_zero_iff.mp (hF.trdeg_eq_one ▸ one_ne_zero)
   have hdim : finrank F Ω[F⁄k] = 1 := by
     obtain ⟨y, hy, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
     let _ := hsep
     exact finrank_kaehlerDifferential_eq_one_of_separating hy
-  have hspan : Submodule.span F {D k F x} = ⊤ ↔ D k F x ≠ 0 :=
-    span_singleton_eq_top_iff_ne_zero_of_finrank_eq_one hdim _
-  rw [hunr, hmap, hrange, hspan]
+  refine ⟨fun hsep ↦ ?_, fun hDx ↦
+    (transcendental_and_isSeparable_adjoin_of_D_ne_zero hdim hDx).2⟩
+  let _ := hsep
+  exact D_ne_zero_of_separating transcendental_of_isAlgebraic_adjoin
 
 end IsFunctionField
 

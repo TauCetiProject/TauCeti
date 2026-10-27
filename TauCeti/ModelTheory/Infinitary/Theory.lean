@@ -31,6 +31,8 @@ code no member carry `⊤`, so the conjunction of the empty theory holds in ever
 * `FirstOrder.Language.Theoryω.Model.mono`, `FirstOrder.Language.Theoryω.model_empty`,
   `FirstOrder.Language.Theoryω.model_union_iff`, `FirstOrder.Language.Theoryω.model_insert_iff`:
   the basic laws of modelhood.
+* `FirstOrder.Language.Theoryω.model_image_toOmega_iff`: a structure is a model of the image of
+  a first-order theory exactly when it is a model of the first-order theory.
 * `FirstOrder.Language.StrongHomClass.theoryω_model_iff`: isomorphic structures are models of the
   same theories.
 
@@ -102,6 +104,13 @@ theorem model_insert_iff {φ : L.Sentenceω} :
 theorem model_singleton_iff {φ : L.Sentenceω} :
     ({φ} : L.Theoryω).Model M ↔ SentenceInf.Realize φ M := by
   simp only [model_iff, Set.mem_singleton_iff, forall_eq]
+
+/-- A structure is a model of the image of a first-order theory in `L_{ω₁ω}` exactly when it is a
+model of the first-order theory. -/
+@[simp]
+theorem model_image_toOmega_iff {T : L.Theory} :
+    Model (BoundedFormula.toOmega '' T) M ↔ M ⊨ T := by
+  simp only [model_iff, Set.forall_mem_image, Sentence.realize_toInf, Theory.model_iff]
 
 /-! ### The conjunction of a countable theory -/
 

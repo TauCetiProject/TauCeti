@@ -71,10 +71,12 @@ velocity field is at most the expected action of the curves.
   `TauCeti.IsContinuityEquation.integrableOn_integral_fderiv`: for every `C¹` compactly supported
   test function, the integrand of the continuity equation is absolutely integrable against `μₜ dt`,
   integrable against `μₜ` for almost every `t`, and its spatial integral is integrable in time.
-* `TauCeti.IsContinuityEquation.integrableOn_integral_of_norm_le` and
-  `TauCeti.IsContinuityEquation.integrableOn_integral_fderiv_of_norm_fderiv_le`: for a bounded `u`
-  with bounded derivative, `t ↦ ∫ u (t, ·) dμₜ` and the spatial integral of the integrand of the
-  continuity equation are integrable over `(a, b)`.
+* `TauCeti.IsContinuityEquation.integrableOn_integral_of_norm_le`: the spatial integral of a
+  bounded jointly strongly measurable function with values in a normed real vector space is
+  integrable over `(a, b)`.
+* `TauCeti.IsContinuityEquation.integrableOn_integral_fderiv_of_norm_fderiv_le`: for a real-valued
+  function with bounded derivative, the spatial integral of the integrand of the continuity
+  equation is integrable over `(a, b)`.
 * `TauCeti.isContinuityEquation_map`: the laws at time `t` of a measurable family of absolutely
   continuous curves following `v`, with finite expected length, solve the continuity equation with
   velocity `v`.
@@ -103,6 +105,7 @@ open scoped ENNReal
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The family of measures `μ : ℝ → Measure E` solves the continuity equation
 `∂ₜ μₜ + div (vₜ μₜ) = 0` with velocity field `v` on the time interval `(a, b)`, in the sense of
@@ -206,11 +209,11 @@ private lemma lintegral_eq_mul_normalizedKernel (hμ : Measurable μ) {t : ℝ} 
     ENNReal.mul_inv_cancel (by simp) (by simp [ht]), one_mul]
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
-private lemma integral_eq_mul_normalizedKernel (hμ : Measurable μ) {t : ℝ} (ht : μ t univ ≠ ∞)
-    (f : E → ℝ) : ∫ x, f x ∂μ t = (1 + μ t univ).toReal * ∫ x, f x ∂normalizedKernel hμ t := by
+private lemma integral_eq_smul_normalizedKernel (hμ : Measurable μ) {t : ℝ} (ht : μ t univ ≠ ∞)
+    (f : E → F) : ∫ x, f x ∂μ t = (1 + μ t univ).toReal • ∫ x, f x ∂normalizedKernel hμ t := by
   have h0 : (1 + μ t univ).toReal ≠ 0 := (ENNReal.toReal_pos (by simp) (by simp [ht])).ne'
-  rw [normalizedKernel_apply, integral_smul_measure, smul_eq_mul, ENNReal.toReal_inv, ← mul_assoc,
-    mul_inv_cancel₀ h0, one_mul]
+  rw [normalizedKernel_apply, integral_smul_measure, ENNReal.toReal_inv, smul_smul,
+    mul_inv_cancel₀ h0, one_smul]
 
 namespace IsContinuityEquation
 
@@ -231,17 +234,17 @@ theorem aemeasurable_lintegral (h : IsContinuityEquation μ v a b) {f : ℝ → 
   filter_upwards [h.ae_measure_univ_ne_top] with t ht
   exact (lintegral_eq_mul_normalizedKernel h.measurable ht _).symm
 
-/-- The `μₜ`-integral of a jointly measurable function is almost everywhere strongly measurable in
-time. -/
-theorem aestronglyMeasurable_integral (h : IsContinuityEquation μ v a b) {f : ℝ → E → ℝ}
+/-- The `μₜ`-integral of a jointly strongly measurable function with values in a normed real vector
+space is almost everywhere strongly measurable in time. -/
+theorem aestronglyMeasurable_integral (h : IsContinuityEquation μ v a b) {f : ℝ → E → F}
     (hf : StronglyMeasurable (uncurry f)) :
     AEStronglyMeasurable (fun t ↦ ∫ x, f t x ∂μ t) (volume.restrict (Ioo a b)) := by
   have hm : Measurable fun t ↦ 1 + μ t univ :=
     measurable_const.add ((Measure.measurable_coe .univ).comp h.measurable)
   have hκ := hf.integral_kernel_prod_right (κ := normalizedKernel h.measurable)
-  refine (hm.ennreal_toReal.stronglyMeasurable.mul hκ).aestronglyMeasurable.congr ?_
+  refine (hm.ennreal_toReal.stronglyMeasurable.smul hκ).aestronglyMeasurable.congr ?_
   filter_upwards [h.ae_measure_univ_ne_top] with t ht
-  exact (integral_eq_mul_normalizedKernel h.measurable ht _).symm
+  exact (integral_eq_smul_normalizedKernel h.measurable ht _).symm
 
 /-- The integrand of the continuity equation is absolutely integrable against `μₜ dt` on `(a, b)`,
 for every `C¹` compactly supported test function `φ`. -/
@@ -323,13 +326,14 @@ theorem integrableOn_integral_norm (h : IsContinuityEquation μ v a b) :
   exact (integral_norm_eq_lintegral_enorm
     (h.measurable_velocity.comp measurable_prodMk_left).aestronglyMeasurable).symm
 
-/-- For a bounded jointly measurable function `f` of time and space, the function
+/-- For a bounded jointly strongly measurable function `f` of time and space with values in a
+normed real vector space, the function
 `t ↦ ∫ f (t, x) dμₜ(x)` is integrable over `(a, b)`. -/
-theorem integrableOn_integral_of_norm_le (h : IsContinuityEquation μ v a b) {f : ℝ × E → ℝ}
-    (hf : Measurable f) {M : ℝ} (hM : ∀ q, ‖f q‖ ≤ M) :
+theorem integrableOn_integral_of_norm_le (h : IsContinuityEquation μ v a b) {f : ℝ × E → F}
+    (hf : StronglyMeasurable f) {M : ℝ} (hM : ∀ q, ‖f q‖ ≤ M) :
     IntegrableOn (fun t ↦ ∫ x, f (t, x) ∂μ t) (Ioo a b) := by
   refine (h.integrableOn_measureReal_univ.const_mul M).mono'
-    (h.aestronglyMeasurable_integral (f := fun t x ↦ f (t, x)) hf.stronglyMeasurable) ?_
+    (h.aestronglyMeasurable_integral (f := fun t x ↦ f (t, x)) hf) ?_
   filter_upwards [h.ae_isFiniteMeasure_and_integrable] with t ⟨_, _⟩
   exact norm_integral_le_of_norm_le_const (ae_of_all _ fun x ↦ hM _)
 

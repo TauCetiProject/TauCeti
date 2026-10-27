@@ -18,6 +18,9 @@ and so is the free cumulant `κ_π(a)`, which is a linear combination of block m
 Möbius inversion. In other words, the block moments and the free cumulants
 `κ_n(a₁, …, aₙ)` are multilinear functionals of their arguments.
 
+The additive laws only require an additive map from a semiring `A` to a commutative semiring
+`R` (a commutative ring for cumulants), without a common scalar algebra.
+
 Multilinearity is the basic tool for computing with cumulants: it reduces cumulants of sums and
 scalar multiples to cumulants of the summands, for example when splitting each argument into its
 centred part and a multiple of `1`.
@@ -65,11 +68,10 @@ variable {R A α : Type*} [LinearOrder α] {s : Finset α}
 
 section Moment
 
-variable [CommSemiring R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R) (a : α → A)
-
 /-- Changing the entry at a position `i ∈ s` affects the block moment `φ_P(a)` only through the
 moment of the part of `P` containing `i`, in which `a i` appears exactly once. -/
-private theorem exists_partitionMoment_update (P : Finpartition s) {i : α} (hi : i ∈ s) :
+private theorem exists_partitionMoment_update [CommMonoid R] [Monoid A] (φ : A → R)
+    (a : α → A) (P : Finpartition s) {i : α} (hi : i ∈ s) :
     ∃ (p q : A) (c : R), ∀ x : A, partitionMoment φ (update a i x) P = φ (p * x * q) * c := by
   have hiB : i ∈ (P.part i).sort := mem_sort _ |>.2 (P.mem_part_self.2 hi)
   refine ⟨(((P.part i).sort.map a).take ((P.part i).sort.idxOf i)).prod,
@@ -86,24 +88,31 @@ private theorem exists_partitionMoment_update (P : Finpartition s) {i : α} (hi 
 
 /-- The block moment `φ_P(a)` is additive in each entry `a i` with `i ∈ s`. -/
 @[simp]
-theorem partitionMoment_update_add (P : Finpartition s) {i : α} (hi : i ∈ s) (x y : A) :
+theorem partitionMoment_update_add [CommSemiring R] [Semiring A] {F : Type*} [FunLike F A R]
+    [AddHomClass F A R] (φ : F) (a : α → A) (P : Finpartition s) {i : α} (hi : i ∈ s)
+    (x y : A) :
     partitionMoment φ (update a i (x + y)) P =
       partitionMoment φ (update a i x) P + partitionMoment φ (update a i y) P := by
   obtain ⟨p, q, c, h⟩ := exists_partitionMoment_update φ a P hi
-  rw [h, h, h, mul_add, add_mul, map_add, add_mul]
+  simp [h, mul_add, add_mul]
 
 /-- The block moment `φ_P(a)` is homogeneous in each entry `a i` with `i ∈ s`. -/
 @[simp]
-theorem partitionMoment_update_smul (P : Finpartition s) {i : α} (hi : i ∈ s) (c : R) (x : A) :
+theorem partitionMoment_update_smul [CommSemiring R] [Semiring A] [Algebra R A]
+    (φ : A →ₗ[R] R) (a : α → A) (P : Finpartition s) {i : α} (hi : i ∈ s) (c : R) (x : A) :
     partitionMoment φ (update a i (c • x)) P = c * partitionMoment φ (update a i x) P := by
   obtain ⟨p, q, d, h⟩ := exists_partitionMoment_update φ a P hi
-  rw [h, h, mul_smul_comm, smul_mul_assoc, map_smul, smul_eq_mul, mul_assoc]
+  simp [h, mul_assoc]
 
 end Moment
 
 section Cumulant
 
-variable [CommRing R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R) (a : α → A)
+variable [CommRing R]
+
+section Additive
+
+variable [Semiring A] {F : Type*} [FunLike F A R] [AddHomClass F A R] (φ : F) (a : α → A)
 
 /-- The free cumulant `κ_π(a)` is additive in each entry `a i` with `i ∈ s`. -/
 @[simp]
@@ -114,6 +123,19 @@ theorem partitionCumulant_update_add (π : NoncrossingPartition s) {i : α} (hi 
   simp only [partitionCumulant_def, partitionMoment_update_add φ a _ hi, mul_add,
     sum_add_distrib]
 
+/-- The free cumulant `κ_s(a)` of a word is additive in each entry `a i` with `i ∈ s`. -/
+@[simp]
+theorem freeCumulant_update_add {i : α} (hi : i ∈ s) (x y : A) :
+    freeCumulant φ (update a i (x + y)) s =
+      freeCumulant φ (update a i x) s + freeCumulant φ (update a i y) s := by
+  simp only [freeCumulant_def, partitionCumulant_update_add φ a _ hi]
+
+end Additive
+
+section Homogeneous
+
+variable [Semiring A] [Algebra R A] (φ : A →ₗ[R] R) (a : α → A)
+
 /-- The free cumulant `κ_π(a)` is homogeneous in each entry `a i` with `i ∈ s`. -/
 @[simp]
 theorem partitionCumulant_update_smul (π : NoncrossingPartition s) {i : α} (hi : i ∈ s)
@@ -121,13 +143,6 @@ theorem partitionCumulant_update_smul (π : NoncrossingPartition s) {i : α} (hi
     partitionCumulant φ (update a i (c • x)) π = c * partitionCumulant φ (update a i x) π := by
   simp only [partitionCumulant_def, partitionMoment_update_smul φ a _ hi, mul_sum,
     mul_left_comm c]
-
-/-- The free cumulant `κ_s(a)` of a word is additive in each entry `a i` with `i ∈ s`. -/
-@[simp]
-theorem freeCumulant_update_add {i : α} (hi : i ∈ s) (x y : A) :
-    freeCumulant φ (update a i (x + y)) s =
-      freeCumulant φ (update a i x) s + freeCumulant φ (update a i y) s := by
-  simp only [freeCumulant_def, partitionCumulant_update_add φ a _ hi]
 
 /-- The free cumulant `κ_s(a)` of a word is homogeneous in each entry `a i` with `i ∈ s`. -/
 @[simp]
@@ -169,6 +184,8 @@ theorem freeCumulant_add_algebraMap (hφ : φ 1 = 1) (c : α → R) (hs : 1 < #s
     rw [hupd, freeCumulant_update_add φ _ hi, freeCumulant_update_smul φ _ hi, hunit, mul_zero,
       add_zero, hai]
     exact ih ((subset_insert i t).trans hts)
+
+end Homogeneous
 
 end Cumulant
 

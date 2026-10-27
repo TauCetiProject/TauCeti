@@ -21,12 +21,11 @@ public import TauCeti.RingTheory.Adjoin.Inverse
 
 Let `ℙ¹_R = Proj R[X₀, X₁]` be the projective line over a commutative ring `R`
 (`TauCeti.AlgebraicGeometry.projectiveLine`). This file computes the cohomology of its structure
-sheaf: `H⁰(ℙ¹_R, 𝒪) = R` over any ring, and `Hⁿ(ℙ¹_R, 𝒪) = 0` for `n ≥ 1` when `R` is
-Noetherian. This is the case `m = 0` of the computation of `Hⁿ(ℙ¹_R, 𝒪(m))` (Hartshorne,
-Theorem III.5.1). Over a Noetherian ring it also shows that the cohomology `Hⁿ(ℙ¹_R, M)` of every
-quasi-coherent sheaf `M` of finite type is a finitely generated `R`-module in every degree, the
-projective line case of the finiteness of cohomology of coherent sheaves on proper schemes
-(Stacks, Tag 02O6).
+sheaf: `H⁰(ℙ¹_R, 𝒪) = R` and `Hⁿ(ℙ¹_R, 𝒪) = 0` for `n ≥ 1`, over any ring. This is the case
+`m = 0` of the computation of `Hⁿ(ℙ¹_R, 𝒪(m))` (Hartshorne, Theorem III.5.1). Over a Noetherian
+ring it also shows that the cohomology `Hⁿ(ℙ¹_R, M)` of every quasi-coherent sheaf `M` of finite
+type is a finitely generated `R`-module in every degree, the projective line case of the
+finiteness of cohomology of coherent sheaves on proper schemes (Stacks, Tag 02O6).
 
 The computation uses the cover of `ℙ¹_R` by the standard charts `D₊(X₀)` and `D₊(X₁)`, with
 overlap `D₊(X₀X₁)`. Their rings of functions are the degree-zero homogeneous localizations, which
@@ -34,9 +33,10 @@ are `R[t]`, `R[t⁻¹]` and `R[t, t⁻¹]` for `t = X₁ / X₀`. The Čech comp
 `0 → R → R[t] × R[t⁻¹] → R[t, t⁻¹] → 0` of this cover is exact: a pair of polynomials `p(t)` and
 `q(t⁻¹)` that agree is a constant, and every Laurent polynomial is a sum of a polynomial in `t` and
 a polynomial in `t⁻¹`. Exactness at `R[t] × R[t⁻¹]` identifies the global functions with `R` over
-any ring. Over a Noetherian ring, quasi-coherent sheaves on the affine charts have no higher
-cohomology, so the two-open description of `H¹` as overlap functions modulo differences of
-restrictions (`TauCeti.AlgebraicGeometry.sectionsQuotientEquivCohomologyOne`) shows that
+any ring. Quasi-coherent sheaves on the affine charts have no higher cohomology, again over any
+ring (Serre's vanishing theorem needs no Noetherian hypothesis), so the two-open description of
+`H¹` as overlap functions modulo differences of restrictions
+(`TauCeti.AlgebraicGeometry.sectionsQuotientEquivCohomologyOne`) shows that
 `H¹(ℙ¹_R, 𝒪) = 0`, and Mayer–Vietoris kills every quasi-coherent sheaf in degrees at least two.
 
 For a quasi-coherent sheaf `M` of finite type the same description presents `H¹(ℙ¹_R, M)` as the
@@ -64,11 +64,12 @@ All in the namespace `TauCeti.AlgebraicGeometry.projectiveLine`:
 
 * `bijective_baseRingToGlobalSections`: the global functions on `ℙ¹_R` are the constants `R`.
 * `cohomologyZeroTrivialLinearEquiv`: `H⁰(ℙ¹_R, 𝒪) ≃ₗ[R] R`.
-* `subsingleton_cohomology_one_trivial`: `H¹(ℙ¹_R, 𝒪) = 0` over a Noetherian ring.
+* `subsingleton_cohomology_one_trivial`: `H¹(ℙ¹_R, 𝒪) = 0` over any ring.
 * `subsingleton_cohomology_of_two_le`: `Hⁿ(ℙ¹_R, M) = 0` for `n ≥ 2` and `M` quasi-coherent, over
-  a Noetherian ring.
+  any ring.
 * `finite_cohomology_zero`, `finite_cohomology_one`: `H⁰(ℙ¹_R, M)` and `H¹(ℙ¹_R, M)` are finitely
-  generated `R`-modules for `M` quasi-coherent of finite type, over a Noetherian ring.
+  generated `R`-modules for `M` quasi-coherent of finite type, over a Noetherian ring for `H⁰` and
+  over any ring for `H¹`.
 * `finite_cohomology`: the same for `Hⁿ(ℙ¹_R, M)` in every degree `n`.
 * `genus_eq_zero`: the projective line over a field has genus zero.
 
@@ -337,15 +338,13 @@ private theorem isNoetherianRing_basicOpen_coord [IsNoetherianRing R] (i : Fin 2
     IsNoetherianRing Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) :=
   image_awayι_top R i ▸ isNoetherianRing_of_ringEquiv R[X] (chartSectionsEquiv R i).symm
 
-/-- **The structure sheaf of the projective line has no first cohomology** over a Noetherian
-ring. -/
-instance subsingleton_cohomology_one_trivial [IsNoetherianRing R] :
+/-- **The structure sheaf of the projective line has no first cohomology**, over any ring. -/
+instance subsingleton_cohomology_one_trivial :
     Subsingleton (Cohomology (InvertibleSheaf.trivial (projectiveLine R)).obj 1) := by
   let M : (projectiveLine R).Modules := SheafOfModules.unit (projectiveLine R).ringCatSheaf
   suffices Subsingleton (Cohomology M 1) from
     (trivialCohomologyBaseLinearEquiv R (projectiveLine R) 1).toEquiv.subsingleton
   have hacyclic (i : Fin 2) : Subsingleton (cohomologyOn M 1 (Proj.basicOpen 𝒜 (coord R i))) :=
-    have := isNoetherianRing_basicOpen_coord R i
     subsingleton_cohomologyOn_succ_of_isAffineOpen M
       (Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R i) one_pos) 0
   -- `H¹` is the quotient of the functions on the overlap by the differences of restrictions
@@ -360,13 +359,11 @@ instance subsingleton_cohomology_one_trivial [IsNoetherianRing R] :
   exact (sectionsQuotientEquivCohomologyOne M _ _ (basicOpen_coord_sup_eq_top R) (hacyclic 0)
     (hacyclic 1)).symm.toEquiv.subsingleton
 
-/-- **Vanishing above dimension one**: over a Noetherian ring, a quasi-coherent sheaf on the
-projective line has no cohomology in degrees at least two. -/
-theorem subsingleton_cohomology_of_two_le [IsNoetherianRing R] (M : (projectiveLine R).Modules)
-    [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) := by
-  have : IsLocallyNoetherian (projectiveLine R) :=
-    LocallyOfFiniteType.isLocallyNoetherian (projectiveLine R ↘ Spec (.of R))
-  exact subsingleton_cohomology_of_two_le_of_isAffineOpen M
+/-- **Vanishing above dimension one**: over any ring, a quasi-coherent sheaf on the projective
+line has no cohomology in degrees at least two. -/
+theorem subsingleton_cohomology_of_two_le (M : (projectiveLine R).Modules)
+    [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) :=
+  subsingleton_cohomology_of_two_le_of_isAffineOpen M
     (Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R 0) one_pos)
     (Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R 1) one_pos)
     (Proj.basicOpen_mul 𝒜 _ _ ▸ Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mul_coord_mem R) two_pos)
@@ -596,11 +593,10 @@ private theorem finite_cohomology_of_finite (M : (projectiveLine R).Modules) (n 
   exact Module.Finite.trans Γ(projectiveLine R, ⊤) (Cohomology M n)
 
 /-- **The first cohomology of a quasi-coherent sheaf of finite type on the projective line is a
-finitely generated module** over a Noetherian base ring `R`. -/
-theorem finite_cohomology_one [IsNoetherianRing R] (M : (projectiveLine R).Modules)
+finitely generated module** over any base ring `R`. -/
+theorem finite_cohomology_one (M : (projectiveLine R).Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] : Module.Finite R (Cohomology M 1) := by
   have hacyclic (i : Fin 2) : Subsingleton (cohomologyOn M 1 (Proj.basicOpen 𝒜 (coord R i))) :=
-    have := isNoetherianRing_basicOpen_coord R i
     subsingleton_cohomologyOn_succ_of_isAffineOpen M
       (Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R i) one_pos) 0
   have := finite_sectionsQuotient R M
