@@ -105,6 +105,20 @@ theorem map_inner_uniformSphereMeasure_of_finrank_eq_one (hdim : Module.finrank 
     Measure.map_smul _ hm.aemeasurable]
   simp [ENNReal.smul_def, add_comm]
 
+/-- In dimension one the exponential moment is the hyperbolic cosine of the coordinate
+along a chosen unit vector. -/
+theorem integral_exp_inner_uniformSphereMeasure_of_finrank_eq_one
+    (hdim : Module.finrank ℝ E = 1) (η : E) (e : sphere (0 : E) 1) :
+    ∫ x : sphere (0 : E) 1, Real.exp ⟪η, (x : E)⟫_ℝ ∂uniformSphereMeasure E =
+      Real.cosh ⟪η, (e : E)⟫_ℝ := by
+  rw [uniformSphereMeasure_eq_of_finrank_eq_one hdim e,
+    integral_add_measure
+      ((integrable_dirac (by finiteness)).smul_measure (by finiteness))
+      ((integrable_dirac (by finiteness)).smul_measure (by finiteness)), integral_smul_measure,
+    integral_smul_measure]
+  simp [Real.cosh_eq, inner_neg_right, smul_eq_mul]
+  ring
+
 /-- The unit sphere of the real line, embedded in `ℝ`, has the Rademacher law. -/
 @[simp]
 theorem map_coe_uniformSphereMeasure_real :

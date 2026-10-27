@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.RationalModel
 public import TauCeti.LinearAlgebra.IntegralLattice.Level
+public import TauCeti.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.GroupTheory.Schreier
 
 /-!
@@ -40,11 +41,12 @@ This is the level of the real model of a lattice, with the norm of `E` as its qu
 rational model `TauCeti.IntegralLattice` has the analogous invariant
 `TauCeti.IntegralLattice.level`, defined by the same condition on its dual lattice, and this file
 follows its API. For a full integral lattice the two agree on the rational model
-`ZLattice.ratModel` (`ZLattice.level_ratModel`), which transports the descriptions proved there:
-in a `ℤ`-basis with Gram matrix `G`, the level is the least `N > 0` for which `N • G⁻¹` is an
-integral matrix with even diagonal (`TauCeti.IntegralLattice.isLeast_level`), and for even `L` it
-divides `N` exactly when `N` kills the discriminant quadratic form
-(`TauCeti.IntegralLattice.IsEven.level_dvd_iff`).
+`ZLattice.ratModel` (`ZLattice.level_ratModel`), which transports the descriptions proved there.
+For even `L` the level divides `N` exactly when `N` kills the discriminant quadratic form
+(`TauCeti.IntegralLattice.IsEven.level_dvd_iff`). For a `ℤ`-basis `b` of `L` with real Gram matrix
+`G = (⟪b i, b j⟫)`, the level divides `N` exactly when `N • G⁻¹` is an integral matrix with even
+diagonal (`ZLattice.level_dvd_iff_gram`), so it is the least `N > 0` with this property
+(`ZLattice.isLeast_level`). Indeed `G⁻¹` is the Gram matrix of the basis of `L^∨` dual to `b`.
 
 The approach and API here (the unguarded-infimum definition, the divisibility characterization,
 the dual inclusion and the discriminant-group bounds) are adapted from the earlier formalization
@@ -68,6 +70,9 @@ by tauceti-ai-for-science in
 * `ZLattice.level_comap`: the level is invariant under linear isometry equivalences.
 * `ZLattice.level_ratModel`: the level of a full integral lattice is the level of its rational
   model.
+* `ZLattice.level_dvd_iff_gram`, `ZLattice.isLeast_level`: for a full integral lattice with a
+  `ℤ`-basis of real Gram matrix `G`, the level is the least `N > 0` for which `N • G⁻¹` is an
+  integral matrix with even diagonal.
 
 ## References
 
@@ -242,6 +247,37 @@ theorem level_ratModel (hL : IsIntegral L) : (ratModel hL).level = level L := by
     refine ⟨m, ?_⟩
     rw [← hnorm]
     exact_mod_cast hm
+
+/-- **The level in a basis.** For a full integral lattice `L` with a `ℤ`-basis `b` of real Gram
+matrix `G = (⟪b i, b j⟫)`, the level divides `N` exactly when `N • G⁻¹` is an integral matrix with
+even diagonal. -/
+theorem level_dvd_iff_gram (hL : IsIntegral L) {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι ℤ L) (N : ℕ) :
+    level L ∣ N ↔ ∃ M : Matrix ι ι ℤ, (∀ i, Even (M i i)) ∧
+      M.map (Int.cast : ℤ → ℝ) = (N : ℝ) • (Matrix.gram ℝ fun i ↦ (b i : E))⁻¹ := by
+  -- Transport `b` to a carrier basis of the rational model, whose integral Gram matrix, cast to
+  -- `ℝ`, is the real Gram matrix of `b`; the inverse may then be taken over `ℚ`.
+  have hgram : Matrix.gram ℝ (fun i ↦ (b i : E)) =
+      (((ratModel hL).gramMatrix (b.map (ratModelCarrierEquiv hL))).map
+        (Int.cast : ℤ → ℚ)).map (Rat.castHom ℝ) := by
+    ext i j
+    simp [Matrix.gram_apply, hL.integralForm_cast]
+  rw [← level_ratModel hL, ← Int.natCast_dvd_natCast,
+    (ratModel hL).level_dvd_iff_gramMatrix (b.map (ratModelCarrierEquiv hL)) N, hgram,
+    ← Matrix.map_nonsing_inv]
+  refine exists_congr fun M ↦ and_congr_right fun _ ↦ ?_
+  rw [← (Matrix.map_injective (Rat.castHom ℝ).injective).eq_iff, Matrix.map_map]
+  simp [← Matrix.ext_iff]
+
+/-- **The level as a least element.** For a full integral lattice `L` with a `ℤ`-basis `b` of real
+Gram matrix `G = (⟪b i, b j⟫)`, the level is the least `N > 0` for which `N • G⁻¹` is an integral
+matrix with even diagonal. -/
+theorem isLeast_level (hL : IsIntegral L) {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι ℤ L) :
+    IsLeast {N : ℕ | 0 < N ∧ ∃ M : Matrix ι ι ℤ, (∀ i, Even (M i i)) ∧
+      M.map (Int.cast : ℤ → ℝ) = (N : ℝ) • (Matrix.gram ℝ fun i ↦ (b i : E))⁻¹} (level L) :=
+  ⟨⟨hL.level_pos, (level_dvd_iff_gram hL b _).mp dvd_rfl⟩,
+    fun _ ⟨hN, hM⟩ ↦ Nat.le_of_dvd hN ((level_dvd_iff_gram hL b _).mpr hM)⟩
 
 end FiniteDimensional
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.Weierstrass
+public import Mathlib.RingTheory.Finiteness.Basic
 import Mathlib.RingTheory.Finiteness.Ideal
 import Mathlib.RingTheory.Polynomial.Basic
 
@@ -23,8 +24,13 @@ coefficient in degree `s`. Overconvergent Weierstrass division by `f` shows that
 spanned over `W` by `1, Y, …, Y ^ (s - 1)`, so it is a finite `W`-module. If `W` is noetherian,
 `W' ⧸ (f)` is then a noetherian module, hence `I` is finitely generated.
 
+The Weierstrass-division finiteness step is also exposed for any finite map annihilating a
+distinguished series with a unit coefficient in the distinguished degree.
+
 ## Main results
 
+* `TauCeti.Dagger.washnitzerAlgebra.finite_comp_optionC_of_isDistinguished`: a finite map
+  annihilating such a distinguished series is finite over the algebra in one fewer variable.
 * `TauCeti.Dagger.washnitzerAlgebra.isNoetherianRing`: `K⟨X⟩†` is noetherian for finitely many
   variables.
 
@@ -48,6 +54,55 @@ local notation "W" => washnitzerAlgebra σ K
 local notation "W'" => washnitzerAlgebra (Option σ) K
 local notation "Tate" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
 
+/-- Division makes the polynomials of bounded degree surject onto an algebra in which a
+distinguished series vanishes. -/
+private theorem finite_comp_optionC_of_surjective {A : Type*}
+    [CommRing A] [Algebra K A] {π : W' →ₐ[K] A}
+    (hπ : Function.Surjective π) {g : W'} {s : ℕ}
+    (hg : PowerSeries.IsDistinguished 1 s
+      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+    (hu : IsUnit (PowerSeries.coeff s
+      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate)))
+    (hzero : π g = 0) : (π.comp (washnitzerAlgebra.optionC (R := K))).Finite := by
+  let : Algebra W A := (π.comp (washnitzerAlgebra.optionC (R := K))).toRingHom.toAlgebra
+  let ev : Polynomial W →ₐ[W] A := Polynomial.aeval (π (X (Option σ) K none))
+  let φ : Polynomial.degreeLT W s →ₗ[W] A :=
+    ev.toLinearMap ∘ₗ (Polynomial.degreeLT W s).subtype
+  have hev (r : Polynomial W) : π (polynomialToOption r) = ev r := by
+    have h : (π : W' →+* A).comp polynomialToOption = (ev : Polynomial W →+* A) :=
+      Polynomial.ringHom_ext (fun a ↦ by simp [ev, RingHom.algebraMap_toAlgebra]) (by simp [ev])
+    exact RingHom.congr_fun h r
+  have hφ : Function.Surjective φ := by
+    intro a
+    obtain ⟨f, rfl⟩ := hπ a
+    obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
+    have hf : f = q * g + polynomialToOption r :=
+      optionSeries_injective (by simpa using hqr.symm)
+    refine ⟨⟨r, Polynomial.mem_degreeLT.mpr hr⟩, ?_⟩
+    simp [hf, hzero, hev, φ]
+  have : Module.Finite W (Polynomial.degreeLT W s) :=
+    Module.Finite.equiv (Polynomial.degreeLTEquiv W s).symm
+  exact Module.Finite.of_surjective φ hφ
+
+/-- A finite map annihilating a distinguished series is already finite over the algebra in
+one fewer variable. The distinguished coefficient must be a unit; no reducedness or
+surjectivity of the map is required. -/
+theorem finite_comp_optionC_of_isDistinguished {A : Type*}
+    [CommRing A] [Algebra K A] {g : W'} {s : ℕ}
+    (hg : PowerSeries.IsDistinguished 1 s
+      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+    (hu : IsUnit (PowerSeries.coeff s
+      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate)))
+    {π : W' →ₐ[K] A} (hπ : π.Finite) (hzero : π g = 0) :
+    (π.comp (washnitzerAlgebra.optionC (R := K))).Finite := by
+  have hsmall : (π.rangeRestrict.comp (washnitzerAlgebra.optionC (R := K))).Finite :=
+    finite_comp_optionC_of_surjective π.rangeRestrict_surjective hg hu (Subtype.ext hzero)
+  have hval : π.range.val.Finite := by
+    apply AlgHom.Finite.of_comp_finite (f := π.rangeRestrict)
+    rwa [AlgHom.val_comp_rangeRestrict]
+  have hfin := hval.comp hsmall
+  rwa [← AlgHom.comp_assoc, AlgHom.val_comp_rangeRestrict] at hfin
+
 /-- An ideal of `K⟨X, Y⟩†` containing a series which is distinguished in `Y`, with a unit
 coefficient in the distinguished degree, is finitely generated as soon as `K⟨X⟩†` is
 noetherian: by Weierstrass division, the quotient by that series is a finite `K⟨X⟩†`-module. -/
@@ -58,29 +113,15 @@ private theorem fg_of_isDistinguished_mem [IsNoetherianRing W] {I : Ideal W'} {g
     (hu : IsUnit (PowerSeries.coeff s
       (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) : I.FG := by
   let : Algebra W W' := (optionC (σ := σ) (R := K)).toRingHom.toAlgebra
-  let Y : W' := X (Option σ) K none
   let J : Ideal W' := Ideal.span {g}
-  have hev (r : Polynomial W) : optionSeries (Polynomial.aeval Y r) = (r : PowerSeries W) :=
-    optionSeries_eval₂_optionC_X_none r
-  -- Division by `g` makes the remainders of degree `< s` surject onto `W' ⧸ (g)`.
-  let φ : Polynomial.degreeLT W s →ₗ[W] W' ⧸ J :=
-    ((Ideal.Quotient.mkₐ W J).comp (Polynomial.aeval Y)).toLinearMap ∘ₗ
-      (Polynomial.degreeLT W s).subtype
-  have hφ : Function.Surjective φ := by
-    intro x
-    obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-    obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
-    have hf : f = q * g + Polynomial.aeval Y r :=
-      optionSeries_injective (by rw [map_add, map_mul, hev]; exact hqr.symm)
-    refine ⟨⟨r, Polynomial.mem_degreeLT.mpr hr⟩, ?_⟩
-    simp only [φ, LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
-      AlgHom.toLinearMap_apply, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
-    refine (Ideal.Quotient.eq.mpr ?_).symm
-    rw [hf, add_sub_cancel_right]
-    exact Ideal.mul_mem_left _ _ (Ideal.subset_span rfl)
-  have : Module.Finite W (Polynomial.degreeLT W s) :=
-    Module.Finite.equiv (Polynomial.degreeLTEquiv W s).symm
-  have : Module.Finite W (W' ⧸ J) := Module.Finite.of_surjective φ hφ
+  let π : W' →ₐ[K] W' ⧸ J := Ideal.Quotient.mkₐ K J
+  have hgJ : g ∈ J := Ideal.subset_span (Set.mem_singleton g)
+  have hz : π g = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr hgJ
+  have hsur : Function.Surjective π := Ideal.Quotient.mk_surjective
+  have hfin := finite_comp_optionC_of_surjective (σ := σ) (K := K)
+    (A := W' ⧸ J) (π := π) hsur hg hu hz
+  have : Module.Finite W (W' ⧸ J) :=
+    (RingHom.finite_algebraMap (A := W) (B := W' ⧸ J)).mp hfin
   have : IsNoetherian W' (W' ⧸ J) :=
     isNoetherian_of_tower W (isNoetherian_of_isNoetherianRing_of_finite W (W' ⧸ J))
   refine Submodule.fg_of_fg_map_of_fg_inf_ker J.mkQ (IsNoetherian.noetherian _) ?_
@@ -102,26 +143,14 @@ private theorem isNoetherianRing_option [Finite σ] [IsNoetherianRing W] : IsNoe
 
 omit [CompleteSpace K] in
 /-- Renaming the variables along an equivalence preserves noetherianity of `K⟨X⟩†`. -/
-private theorem isNoetherianRing_of_equiv {τ : Type*} [Finite σ] [Finite τ] (e : σ ≃ τ)
+private theorem isNoetherianRing_of_equiv {τ : Type*} (e : σ ≃ τ)
     [IsNoetherianRing W] : IsNoetherianRing (washnitzerAlgebra τ K) := by
-  classical
-  have hX₁ (i : σ) (t : τ →₀ ℕ) : ‖(MvPolynomial.X (R := K) (e i)).coeff t‖ ≤ 1 := by
-    rw [MvPolynomial.coeff_X]
-    split_ifs <;> simp
-  have hX₁' (i : τ) (t : σ →₀ ℕ) : ‖(MvPolynomial.X (R := K) (e.symm i)).coeff t‖ ≤ 1 := by
-    rw [MvPolynomial.coeff_X]
-    split_ifs <;> simp
-  exact isNoetherianRing_of_ringEquiv W
-    (substEquiv (fun s ↦ MvPolynomial.X (e s)) (fun _ ↦ MvPolynomial.constantCoeff_X _ _) hX₁
-      (fun t ↦ MvPolynomial.X (e.symm t)) (fun _ ↦ MvPolynomial.constantCoeff_X _ _) hX₁'
-      (by simp) (by simp)).toRingEquiv
+  exact isNoetherianRing_of_ringEquiv W (renameAlgEquiv (R := K) e).toRingEquiv
 
 omit [CompleteSpace K] in
 /-- With no variables, `K⟨X⟩† = K` is noetherian. -/
 private theorem isNoetherianRing_of_isEmpty [IsEmpty σ] : IsNoetherianRing W := by
-  refine isNoetherianRing_of_surjective K W (algebraMap K W) fun f ↦ ?_
-  obtain ⟨c, hc⟩ := C_surjective (σ := σ) (f : MvPowerSeries σ K)
-  exact ⟨c, Subtype.ext (by simpa [MvPowerSeries.algebraMap_apply] using hc)⟩
+  exact isNoetherianRing_of_surjective K W (algebraMap K W) algebraMap_surjective
 
 /-- **Monsky–Washnitzer algebras are noetherian.** Over a complete ultrametric normed field `K`,
 the algebra `K⟨X⟩†` of overconvergent power series in finitely many variables is a noetherian

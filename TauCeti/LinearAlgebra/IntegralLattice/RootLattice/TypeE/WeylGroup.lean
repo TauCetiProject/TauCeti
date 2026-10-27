@@ -8,11 +8,12 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Reflection
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE.Roots
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Datum
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Automorphism
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
 
 /-!
-# The isometry group of the E₈ lattice is its Weyl group
+# The isometry group of the E₈ lattice is its Weyl group, of order 696729600
 
 Every isometry of the integral E₈ lattice `typeE₈RootLattice` is a product of reflections in its
 240 roots: `TauCeti.IntegralLattice.weylGroup_typeE₈RootLattice_eq_top` says that the Weyl group
@@ -30,6 +31,10 @@ Its surjectivity and the equality of the two Weyl groups with the full groups bo
 rigidity of the E₈ diagram: every automorphism of a root system of type E₈ lies in its Weyl group
 (`TauCeti.weylGroup_eq_top_of_hasCartanType_E8`).
 
+The same isomorphism transports the order of the automorphism group of the datum,
+`TauCeti.DynkinType.card_aut_e8SimplyConnectedRootDatum`, and its transitivity on the roots, so
+`|O(E₈)| = |W(E₈)| = 240 · 126 · 23040 = 696729600`.
+
 ## Main definitions
 
 * `TauCeti.IntegralLattice.typeE₈IsometryEquivAut`: the isomorphism from the isometry group of the
@@ -45,6 +50,10 @@ rigidity of the E₈ diagram: every automorphism of a root system of type E₈ l
   isometry group of the E₈ lattice.**
 * `TauCeti.IntegralLattice.neg_mem_weylGroup_typeE₈RootLattice`: `-1` lies in the Weyl group of
   the E₈ lattice.
+* `TauCeti.IntegralLattice.exists_carrierEquiv_typeE₈RootVector_eq`: the isometry group acts
+  transitively on the 240 roots.
+* `TauCeti.IntegralLattice.card_isometry_typeE₈RootLattice` and
+  `TauCeti.IntegralLattice.card_weylGroup_typeE₈RootLattice`: **`|O(E₈)| = |W(E₈)| = 696729600`.**
 
 ## References
 
@@ -263,5 +272,26 @@ theorem weylGroup_typeE₈RootLattice_eq_top : typeE₈RootLattice.weylGroup = �
 theorem neg_mem_weylGroup_typeE₈RootLattice :
     Isometry.neg typeE₈RootLattice ∈ typeE₈RootLattice.weylGroup := by
   simp
+
+/-! ## The order of the isometry group -/
+
+/-- **The isometry group of the E₈ lattice acts transitively on its 240 roots.** -/
+theorem exists_carrierEquiv_typeE₈RootVector_eq (i j : Fin 240) :
+    ∃ g : Isometry typeE₈RootLattice typeE₈RootLattice,
+      g.carrierEquiv (typeE₈RootVector i) = typeE₈RootVector j := by
+  obtain ⟨u, hu⟩ := MulAction.exists_smul_eq e8SimplyConnectedRootDatum.Aut i j
+  refine ⟨typeE₈IsometryEquivAut.symm u, ?_⟩
+  rw [← typeE₈RootVector_typeE₈IsometryEquivAut_indexEquiv, MulEquiv.apply_symm_apply]
+  exact congrArg typeE₈RootVector hu
+
+/-- **The isometry group of the E₈ lattice has order `240 · 126 · 23040 = 696729600`.** -/
+theorem card_isometry_typeE₈RootLattice :
+    Nat.card (Isometry typeE₈RootLattice typeE₈RootLattice) = 696729600 := by
+  rw [Nat.card_congr typeE₈IsometryEquivAut.toEquiv, card_aut_e8SimplyConnectedRootDatum]
+
+/-- **The Weyl group of the E₈ lattice has order `696729600`.** -/
+theorem card_weylGroup_typeE₈RootLattice :
+    Nat.card typeE₈RootLattice.weylGroup = 696729600 := by
+  rw [weylGroup_typeE₈RootLattice_eq_top, Subgroup.card_top, card_isometry_typeE₈RootLattice]
 
 end TauCeti.IntegralLattice

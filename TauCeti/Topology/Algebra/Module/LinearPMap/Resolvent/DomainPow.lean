@@ -5,20 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.Resolvent.Unbounded
 public import TauCeti.LinearAlgebra.LinearPMap.DomainPow
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic
 
 /-!
 # The resolvent raises the order of an iterated domain
 
-At a point `lambda` of the resolvent set of an unbounded operator `A`, the resolvent
+At a point `lambda` of the resolvent set of a partial linear operator `A`, the resolvent
 `R(lambda, A)` is a right inverse of `lambda • I - A`, so `A R(lambda) y = lambda R(lambda) y - y`
 for every `y`. Reading that identity as a recursion turns a single regularity step,
 `R(lambda) y ∈ D(A)`, into the statement that `R(lambda)` maps `D(Aⁿ)` into `D(Aⁿ⁺¹)`; in
 particular `R(lambda)ⁿ` lands in `D(Aⁿ)`.
 
-These are the regularising maps behind the density of the iterated domains `D(Aⁿ)`, since
-`lambdaⁿ R(lambda)ⁿ` converges strongly to the identity for a generator.
+These identities hold for modules over any ring, with an arbitrary topology on the module.
+For generators of strongly continuous semigroups on real Banach spaces, these are the
+regularising maps behind the density of the iterated domains `D(Aⁿ)`, since
+`lambdaⁿ R(lambda)ⁿ` converges strongly to the identity.
 
 ## Main results
 
@@ -32,8 +34,8 @@ noncomputable section
 
 namespace TauCeti
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-variable {A : X →ₗ.[ℝ] X} {lambda : ℝ}
+variable {𝕜 X : Type*} [Ring 𝕜] [AddCommGroup X] [TopologicalSpace X] [Module 𝕜 X]
+variable {A : X →ₗ.[𝕜] X} {lambda : 𝕜}
 
 /-- The resolvent raises the order of an iterated domain by one: it maps `D(Aⁿ)` into
 `D(Aⁿ⁺¹)`. -/
@@ -56,11 +58,7 @@ theorem resolvent_pow_mem_domainPow (h : lambda ∈ LinearPMap.resolventSet A) (
   induction n with
   | zero => simp
   | succ n ih =>
-      have hstep : (LinearPMap.resolvent A lambda ^ (n + 1)) x
-          = LinearPMap.resolvent A lambda ((LinearPMap.resolvent A lambda ^ n) x) := by
-        rw [pow_succ', mul_apply_eq_comp]
-      rw [hstep]
-      exact resolvent_mem_domainPow_succ h ih
+      simpa only [pow_succ', mul_apply_eq_comp] using resolvent_mem_domainPow_succ h ih
 
 end TauCeti
 

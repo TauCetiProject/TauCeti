@@ -199,7 +199,7 @@ theorem LSeriesSummable_localArithmeticFactor (hs : Summable (idealTerm K f s))
 /-- The norm coefficients of the restriction of `f` to no primes are Mathlib's Kronecker delta. -/
 theorem coe_normCoeff_supportedPart_empty (hf : f 1 = 1) :
     ⇑(normCoeff K (supportedPart f (∅ : Set (HeightOneSpectrum (𝓞 K))))) = LSeries.delta := by
-  rw [supportedPart_empty hf, normCoeff_delta]
+  rw [supportedPart_empty, hf, one_smul, normCoeff_delta]
   funext n
   simp [ArithmeticFunction.one_apply, LSeries.delta]
 

@@ -34,13 +34,15 @@ open scoped ENNReal RealInnerProductSpace
 namespace TauCeti.Probability
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [Nontrivial E]
+  [MeasurableSpace E] [BorelSpace E]
 
 /-- The unit-sphere embedding has every finite moment and is essentially bounded. -/
 @[simp]
 theorem memLp_coe_uniformSphereMeasure (p : ℝ≥0∞) :
     MemLp ((↑) : sphere (0 : E) 1 → E) p (uniformSphereMeasure E) := by
   exact MemLp.of_bound (by fun_prop) 1 (by filter_upwards with x; simp)
+
+variable [Nontrivial E]
 
 /-- The covariance of the embedded uniform sphere law is the inner product divided by the
 dimension. -/

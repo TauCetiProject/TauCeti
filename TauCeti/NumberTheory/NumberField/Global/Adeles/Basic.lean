@@ -203,8 +203,9 @@ theorem AdeleRing.continuous_ofAdicCompletion (v : IsDedekindDomain.HeightOneSpe
 on the idempotent `(1, 0)`**, the second hypothesis being stated for every adele with components
 `1` and `0`. The diagonal copy of `K` is not dense in the adele ring, but `K × K` is dense in the
 product of the infinite and the finite adele rings, and `(x, y) = e x + (1 - e) y` for the
-idempotent `e = (1, 0)`. -/
-theorem AdeleRing.ringHom_ext [NumberField K] {T : Type*} [Ring T] [TopologicalSpace T]
+idempotent `e = (1, 0)`. The target need only be a nonassociative semiring: the equivalent
+decomposition `(x, y) = e (x - y) + y` uses subtraction only in `K`. -/
+theorem AdeleRing.ringHom_ext [NumberField K] {T : Type*} [NonAssocSemiring T] [TopologicalSpace T]
     [T2Space T] {f g : AdeleRing R K →+* T} (hf : Continuous f) (hg : Continuous g)
     (hK : ∀ x : K, f (algebraMap K _ x) = g (algebraMap K _ x))
     (h₁₀ : ∀ a : AdeleRing R K, a.1 = 1 → a.2 = 0 → f a = g a) : f = g := by
@@ -222,8 +223,8 @@ theorem AdeleRing.ringHom_ext [NumberField K] {T : Type*} [Ring T] [TopologicalS
       funext fun p ↦ ?_
   have hp : Prod.map (algebraMap K (InfiniteAdeleRing K))
       (algebraMap K (IsDedekindDomain.FiniteAdeleRing R K)) p =
-        (1, 0) * algebraMap K _ p.1 + (1 - (1, 0)) * algebraMap K _ p.2 :=
+        (1, 0) * algebraMap K _ (p.1 - p.2) + algebraMap K _ p.2 :=
     Prod.ext (by simp) (by simp)
-  simp only [Function.comp_apply, hp, map_add, map_mul, map_sub, map_one, hK', h₁₀']
+  simp only [Function.comp_apply, hp, map_add, map_mul, hK', h₁₀']
 
 end NumberField
