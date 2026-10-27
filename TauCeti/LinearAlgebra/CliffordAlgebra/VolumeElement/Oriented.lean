@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 -- Private: the parity, orthogonal-basis and orthogonal-product computations are used only inside
 -- proofs.

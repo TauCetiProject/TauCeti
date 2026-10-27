@@ -172,6 +172,7 @@ theorem chirality_mul_ι (v : V) : chirality Q o * ι Q v = -(ι Q v * chirality
   rw [chirality_eq_neg_volumeElement, neg_mul, mul_neg,
     volumeElement_mul_ι_of_even o (by decide) v]
 
+omit hQ in
 /-- **The base-changed chirality element anticommutes with every vector**: for a commutative
 `ℝ`-algebra `A`, the image of `Γ` in `CliffordAlgebra (Q.baseChange A)` anticommutes with `ι z`
 for every `z : A ⊗[ℝ] V`. -/
@@ -182,7 +183,7 @@ theorem ofBaseChangeAux_chirality_mul_ι (A : Type*) [CommRing A] [Algebra ℝ A
   | tmul a v =>
     have h : ι (Q.baseChange A) (a ⊗ₜ v) = a • ofBaseChangeAux A Q (ι Q v) := by
       simp [← map_smul, TensorProduct.smul_tmul']
-    simp only [h, mul_smul_comm, smul_mul_assoc, ← map_mul, chirality_mul_ι o hQ, map_neg,
+    simp only [h, mul_smul_comm, smul_mul_assoc, ← map_mul, chirality_mul_ι o, map_neg,
       smul_neg]
   | add x y hx hy => rw [map_add, mul_add, add_mul, hx, hy, neg_add]
 
