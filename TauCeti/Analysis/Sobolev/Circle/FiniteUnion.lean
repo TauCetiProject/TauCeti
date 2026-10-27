@@ -15,8 +15,8 @@ A function on a finite disjoint union of boundary circles is a finite family of 
 its components. The ℓ² norm is the square root of the sum of their squared Sobolev norms.
 `CircleSobolev.piLpEquiv` identifies this family with a single Fourier sequence taking values
 in the finite ℓ² product. The coefficient equations retain the component labels and the
-continuous-representative equation identifies the actual boundary values. The latter can be
-used separately with each component's positive period.
+continuous-representative equations identify the actual boundary values for any common
+positive period.
 
 The caller's `Fintype` instance is retained explicitly: it determines the finite ℓ²
 products and sums. The empty family is allowed.
@@ -41,29 +41,33 @@ private def component (a : CircleSobolev s (PiLp 2 E)) (i : ι) : CircleSobolev 
   ⟨fun n ↦ a.coeff n i, a.memℓp_weight_smul_coeff.mono' fun n ↦ by
     simpa only [PiLp.smul_apply] using PiLp.norm_apply_le (weight s n • a.coeff n) i⟩
 
+private theorem hasSum_assemble_coeff (a : PiLp 2 (fun i ↦ CircleSobolev s (E i))) :
+    HasSum (fun n ↦ weight (2 * s) n * ‖WithLp.toLp 2 (fun i ↦ (a i).coeff n)‖ ^ 2)
+      (∑ i, ‖a i‖ ^ 2) := by
+  have h := hasSum_sum (s := Finset.univ) (fun i _ ↦ hasSum_norm_sq (a i))
+  convert h using 1
+  ext n
+  simp [PiLp.norm_sq_eq_of_L2, Finset.mul_sum]
+
 private def assemble (a : PiLp 2 (fun i ↦ CircleSobolev s (E i))) :
     CircleSobolev s (PiLp 2 E) where
   coeff n := WithLp.toLp 2 (fun i ↦ (a i).coeff n)
   memℓp_weight_smul_coeff := by
     apply (memℓp_weight_smul_iff _).2
-    have h := hasSum_sum (s := Finset.univ) (fun i _ ↦ hasSum_norm_sq (a i))
-    have hn (n : ℤ) :
-        (weight s n * ‖WithLp.toLp 2 (fun i ↦ (a i).coeff n)‖) ^ 2 =
-          ∑ i, weight (2 * s) n * ‖(a i).coeff n‖ ^ 2 := by
-      rw [mul_pow, PiLp.norm_sq_eq_of_L2, Finset.mul_sum, two_mul, weight_add]
-      congr 1
-      ext i
-      ring
-    convert h.summable using 1
-    exact funext hn
+    convert (hasSum_assemble_coeff a).summable using 1
+    ext n
+    rw [two_mul, weight_add]
+    ring
 
 private theorem norm_sq_assemble (a : PiLp 2 (fun i ↦ CircleSobolev s (E i))) :
-    ‖assemble a‖ ^ 2 = ∑ i, ‖a i‖ ^ 2 := by
-  have h := hasSum_sum (s := Finset.univ) (fun i _ ↦ hasSum_norm_sq (a i))
-  refine (hasSum_norm_sq (assemble a)).unique ?_
-  convert h using 1
-  ext n
-  simp [assemble, PiLp.norm_sq_eq_of_L2, Finset.mul_sum]
+    ‖assemble a‖ ^ 2 = ∑ i, ‖a i‖ ^ 2 :=
+  (hasSum_norm_sq (assemble a)).unique (hasSum_assemble_coeff a)
+
+private theorem assemble_component (a : CircleSobolev s (PiLp 2 E)) :
+    assemble (WithLp.toLp 2 (component a)) = a := by
+  apply CircleSobolev.ext
+  funext n
+  exact PiLp.ext fun i ↦ rfl
 
 /-- Fourier coefficients on a finite union of circles, identified with a finite ℓ²
 product of the component Sobolev spaces. This is valid at every real Sobolev order. -/
@@ -71,10 +75,7 @@ def piLpEquiv :
     CircleSobolev s (PiLp 2 E) ≃ₗᵢ[ℂ] PiLp 2 (fun i ↦ CircleSobolev s (E i)) where
   toFun a := WithLp.toLp 2 (component a)
   invFun := assemble
-  left_inv a := by
-    apply CircleSobolev.ext
-    funext n
-    exact PiLp.ext fun i ↦ rfl
+  left_inv := assemble_component
   right_inv a := by
     apply PiLp.ext
     intro i
@@ -88,12 +89,8 @@ def piLpEquiv :
     intro i
     exact CircleSobolev.ext (by rfl)
   norm_map' a := by
-    have ha : assemble (WithLp.toLp 2 (component a)) = a := by
-      apply CircleSobolev.ext
-      funext n
-      exact PiLp.ext fun i ↦ rfl
     have h := norm_sq_assemble (WithLp.toLp 2 (component a))
-    rw [ha, ← PiLp.norm_sq_eq_of_L2] at h
+    rw [assemble_component, ← PiLp.norm_sq_eq_of_L2] at h
     exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp h.symm
 
 /-- Projection to a boundary component keeps its Fourier coefficients. -/
@@ -133,7 +130,7 @@ theorem piLpEquiv_inclusion (h : t ≤ s) (a : CircleSobolev s (PiLp 2 E)) (i : 
 variable [∀ i, CompleteSpace (E i)] (T : ℝ) [Fact (0 < T)]
 
 /-- The family decomposition agrees with evaluation of the continuous boundary functions.
-The period can be chosen independently on each boundary component. -/
+Both sides use the same arbitrary positive period `T`. -/
 @[simp]
 theorem toContinuousMap_piLpEquiv (hs : 1 / 2 < s)
     (a : CircleSobolev s (PiLp 2 E)) (i : ι) (x : AddCircle T) :
