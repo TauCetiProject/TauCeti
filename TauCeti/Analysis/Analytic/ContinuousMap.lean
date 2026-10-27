@@ -16,6 +16,9 @@ values in the continuous functions on that compact set. Thus it supplies a singl
 parameter power series whose coefficients are continuous boundary functions, with convergence
 uniform in the boundary variable. This is the input needed for coefficientwise contour
 integration of parameter expansions.
+Conversely, restricting a native power series to a compact family of points bounded strictly
+inside its ball of representation gives a series converging in the uniform norm. This permits
+continuous linear operations on the boundary values to pass through the native series.
 
 The compact set is presented by a continuous map from any compact space to a complex normed
 space. In particular it may be a circle or a product of circles of different radii. Only the
@@ -46,6 +49,39 @@ theorem HasFPowerSeriesOnBall.tendstoUniformlyOn_apply
   filter_upwards [Metric.tendstoUniformlyOn_iff.1 (hf.tendstoUniformlyOn' hr) ε hε]
     with n hn b hb
   exact (ContinuousMap.dist_apply_le_dist b.2).trans_lt (hn b.1 hb.1)
+
+/-- Restricting a native power series to a compact family of points strictly inside its ball
+of representation gives a series converging in the uniform norm. In particular, its terms may
+be passed through any continuous linear operation on continuous functions. -/
+theorem HasFPowerSeriesOnBall.hasSum_compact
+    {𝕜 E F K : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [CompleteSpace F] [TopologicalSpace K] [CompactSpace K]
+    {f : E → F} {p : FormalMultilinearSeries 𝕜 E F} {a : E} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f p a r) (g : C(K, E)) {s : ℝ≥0}
+    (hs : (s : ℝ≥0∞) < r) (hg : ∀ z, ‖g z - a‖ ≤ s) :
+    HasSum (fun n ↦ (⟨fun z ↦ p n (fun _ ↦ g z - a), by fun_prop⟩ : C(K, F)))
+      ⟨fun z ↦ f (g z), hf.continuousOn.comp_continuous g.continuous fun z ↦ by
+        rw [Metric.mem_eball, edist_eq_enorm_sub]
+        exact lt_of_le_of_lt (by exact_mod_cast hg z) hs⟩ := by
+  let q : ℕ → C(K, F) := fun n ↦ ⟨fun z ↦ p n (fun _ ↦ g z - a), by fun_prop⟩
+  have hq : Summable q := by
+    apply Summable.of_norm
+    refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
+      (p.summable_norm_mul_pow (hs.trans_le hf.r_le))
+    apply (ContinuousMap.norm_le _ (by positivity)).2
+    intro z
+    exact ((p n).le_opNorm _).trans (by
+      simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+      gcongr
+      exact hg z)
+  have heval (z : K) : (∑' n, q n) z = f (g z) := by
+    apply (hq.hasSum.mapL (ContinuousMap.evalCLM 𝕜 z)).unique
+    exact hf.hasSum_sub (by
+      rw [Metric.mem_eball, edist_eq_enorm_sub]
+      exact lt_of_le_of_lt (by exact_mod_cast hg z) hs)
+  convert hq.hasSum using 1
+  exact (ContinuousMap.ext heval).symm
 
 namespace TauCeti
 
