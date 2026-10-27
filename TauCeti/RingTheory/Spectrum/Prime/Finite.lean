@@ -79,6 +79,7 @@ theorem exists_notMem_isLocalization_atPrime_away [Finite (PrimeSpectrum R)]
     exact Set.disjoint_right.mp hdisj (Submonoid.mem_powers _)
       (Ideal.IsPrime.prod_mem_iff.mpr ⟨⟨⟨q, hq⟩, h⟩, Finset.mem_univ _, ha ⟨⟨q, hq⟩, h⟩⟩ :
         ∏ q, a q ∈ q)
-  exact not_not.mpr (hqp (hle (Ideal.mem_span_singleton_self r)))
+  rw [Ideal.mem_primeCompl_iff, not_not]
+  exact hqp (hle (Ideal.mem_span_singleton_self r))
 
 end PrimeSpectrum
