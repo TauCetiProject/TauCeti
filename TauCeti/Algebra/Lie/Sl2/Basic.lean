@@ -52,9 +52,11 @@ that composes to zero is already zero.
   ring over any nontrivial ring.
 * `TauCeti.slFinTwoBasis`: the standard basis `(e, f, h)` of `sl (Fin 2) R`, obtained from the
   coordinate isomorphism `TauCeti.slFinTwoEquivFun` and identified vector by vector in
-  `TauCeti.slFinTwoBasis_zero`, `TauCeti.slFinTwoBasis_one` and `TauCeti.slFinTwoBasis_two`. The
-  rank `3` is the case `n = Fin 2` of `TauCeti.finrank_sl`, and the `Module.Free` and
-  `Module.Finite` instances come from there too.
+  `TauCeti.slFinTwoBasis_zero`, `TauCeti.slFinTwoBasis_one` and `TauCeti.slFinTwoBasis_two`. Its
+  bracket relations are `TauCeti.lie_slFinTwoBasis_zero_one`,
+  `TauCeti.lie_slFinTwoBasis_two_zero` and `TauCeti.lie_slFinTwoBasis_two_one`. The rank `3` is the
+  case `n = Fin 2` of `TauCeti.finrank_sl`, and the `Module.Free` and `Module.Finite` instances come
+  from there too.
 * `TauCeti.toLieSubalgebra_isSl2Triple_single_eq_top`: in `sl (Fin 2) R` the subalgebra generated
   by a standard triple is the whole of `sl (Fin 2) R`. The underlying expansion of an arbitrary
   element in the triple is `TauCeti.eq_smul_single_add_smul_single_add_smul_singleSubSingle`.
@@ -294,6 +296,27 @@ theorem slFinTwoBasis_one : slFinTwoBasis R 1 = SpecialLinear.single 1 0 one_ne_
 @[simp]
 theorem slFinTwoBasis_two : slFinTwoBasis R 2 = SpecialLinear.singleSubSingle 0 1 (1 : R) :=
   Subtype.ext <| by simpa using slFinTwoBasis_apply R 2
+
+/-! ### The relations of the standard basis of `sl₂` -/
+
+/-- The standard basis of `sl (Fin 2) R` obeys the relation `⁅e, f⁆ = h`, in the form
+`TauCeti.lieHomOfSl2Basis` asks for. -/
+theorem lie_slFinTwoBasis_zero_one :
+    ⁅slFinTwoBasis R 0, slFinTwoBasis R 1⁆ = slFinTwoBasis R 2 := by
+  rw [slFinTwoBasis_zero, slFinTwoBasis_one, slFinTwoBasis_two]
+  exact lie_single_single_eq_singleSubSingle zero_ne_one 1
+
+/-- The standard basis of `sl (Fin 2) R` obeys the relation `⁅h, e⁆ = 2e`. -/
+theorem lie_slFinTwoBasis_two_zero :
+    ⁅slFinTwoBasis R 2, slFinTwoBasis R 0⁆ = (2 : R) • slFinTwoBasis R 0 := by
+  rw [slFinTwoBasis_zero, slFinTwoBasis_two]
+  exact lie_singleSubSingle_single zero_ne_one 1
+
+/-- The standard basis of `sl (Fin 2) R` obeys the relation `⁅h, f⁆ = -2f`. -/
+theorem lie_slFinTwoBasis_two_one :
+    ⁅slFinTwoBasis R 2, slFinTwoBasis R 1⁆ = -((2 : R) • slFinTwoBasis R 1) := by
+  rw [slFinTwoBasis_one, slFinTwoBasis_two]
+  exact lie_singleSubSingle_single_swap zero_ne_one 1
 
 variable {R}
 
