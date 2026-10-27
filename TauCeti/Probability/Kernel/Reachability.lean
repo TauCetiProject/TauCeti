@@ -13,11 +13,9 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 
 For a kernel `κ` on a measurable space, a state `y` is *reachable* from `x` if some power of `κ`
 (including the zeroth) assigns positive mass to `y`, and two states *communicate* if they are
-mutually reachable. This file proves that reachability is reflexive and transitive (the latter via
-the Chapman-Kolmogorov equation, bounding the integral below by its restriction to a single
-intermediate state) and that communication is an equivalence relation, then bridges both to
-Mathlib's
-`Kernel.IsIrreducible` with respect to the counting measure.
+mutually reachable. Reachability is reflexive and transitive, so communication is an equivalence
+relation, and both are characterized by Mathlib's `Kernel.IsIrreducible` with respect to the
+counting measure.
 -/
 
 public section
@@ -26,7 +24,7 @@ open MeasureTheory
 
 namespace ProbabilityTheory.Kernel
 
-variable {S : Type*} [MeasurableSpace S] (κ : Kernel S S)
+variable {S : Type*} [MeasurableSpace S] {κ : Kernel S S}
 
 /-- A state `y` is reachable from `x` for the kernel `κ` if some power of `κ`, including the
 zeroth, assigns positive mass to `y`. -/
@@ -46,29 +44,28 @@ target state. -/
 theorem reaches_def (x y : S) :
     κ.Reaches x y ↔ ∃ n : ℕ, 0 < (κ ^ n) x {y} := Iff.rfl
 
-/-- The zeroth power of a kernel is the identity kernel: `1 : Kernel S S` is `Kernel.id`. -/
-theorem pow_zero_eq_id : (κ ^ 0 : Kernel S S) = Kernel.id := rfl
-
-/-- Every state reaches itself: the zeroth power of a kernel is the identity kernel, hence the
-Dirac mass at the state. -/
+/-- Every state reaches itself. -/
 @[simp] theorem Reaches.refl (x : S) : κ.Reaches x x := by
   use 0
-  rw [pow_zero_eq_id, Kernel.id_apply, Measure.dirac_apply_of_mem (Set.mem_singleton_iff.2 rfl)]
+  -- the zeroth power of a kernel is the identity kernel, hence the Dirac mass at the state;
+  -- `rw [pow_zero]` would leave the numeral `1`, which simp does not unfold to `Kernel.id`
+  rw [show (κ ^ 0 : Kernel S S) = Kernel.id from rfl,
+    Kernel.id_apply, Measure.dirac_apply_of_mem (Set.mem_singleton_iff.2 rfl)]
   simp
 
 /-- A positive one-step transition mass implies reachability. -/
-theorem reaches_of_pos (x y : S) (h : 0 < κ x {y}) : κ.Reaches x y := by
+theorem reaches_of_pos {x y : S} (h : 0 < κ x {y}) : κ.Reaches x y := by
   use 1
   simpa [pow_one] using h
 
-/-- Reachability is transitive: paths of positive mass can be concatenated using the
-Chapman-Kolmogorov equation, bounding the resulting integral below by its restriction to the
-single intermediate state. -/
-theorem Reaches.trans [MeasurableSingletonClass S] (x y z : S)
+/-- Reachability is transitive. -/
+theorem Reaches.trans [MeasurableSingletonClass S] {x y z : S}
     (hxy : κ.Reaches x y) (hyz : κ.Reaches y z) : κ.Reaches x z := by
   obtain ⟨n, hn⟩ := hxy
   obtain ⟨m, hm⟩ := hyz
   use n + m
+  -- Chapman-Kolmogorov: (κ ^ (n + m)) x {z} = ∫⁻ b, (κ ^ m) b {z} ∂((κ ^ n) x); bound the
+  -- resulting integral below by its restriction to the single intermediate state y
   have hyz_y : 0 < (κ ^ m) y {z} * (κ ^ n) x {y} := by
     rw [ENNReal.mul_pos_iff]
     exact ⟨hm, hn⟩
@@ -82,16 +79,16 @@ theorem Reaches.trans [MeasurableSingletonClass S] (x y z : S)
 
 /-- Every state communicates with itself. -/
 @[simp] theorem Communicates.refl (x : S) : κ.Communicates x x :=
-    ⟨Reaches.refl κ x, Reaches.refl κ x⟩
+    ⟨Reaches.refl x, Reaches.refl x⟩
 
 /-- Communication is symmetric. -/
-theorem Communicates.symm (x y : S) (h : κ.Communicates x y) : κ.Communicates y x :=
+theorem Communicates.symm {x y : S} (h : κ.Communicates x y) : κ.Communicates y x :=
   ⟨h.2, h.1⟩
 
 /-- Communication is transitive. -/
-theorem Communicates.trans [MeasurableSingletonClass S] (x y z : S)
+theorem Communicates.trans [MeasurableSingletonClass S] {x y z : S}
     (hxy : κ.Communicates x y) (hyz : κ.Communicates y z) : κ.Communicates x z :=
-  ⟨Reaches.trans κ x y z hxy.1 hyz.1, Reaches.trans κ z y x hyz.2 hxy.2⟩
+  ⟨hxy.1.trans hyz.1, hyz.2.trans hxy.2⟩
 
 /-- Communication is commutative: two states communicate in one order if and only if they
 communicate in the other. -/
@@ -103,11 +100,11 @@ theorem communicates_equivalence [MeasurableSingletonClass S] :
     Equivalence κ.Communicates := by
   refine ⟨?_, ?_, ?_⟩
   · intro x
-    exact Communicates.refl κ x
+    exact Communicates.refl x
   · intro x y h
-    exact Communicates.symm κ x y h
+    exact h.symm
   · intro x y z hxy hyz
-    exact Communicates.trans κ x y z hxy hyz
+    exact hxy.trans hyz
 
 /-- A kernel is irreducible with respect to the counting measure if and only if every state
 reaches every state. -/
