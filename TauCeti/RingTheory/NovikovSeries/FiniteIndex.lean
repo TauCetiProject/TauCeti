@@ -15,35 +15,30 @@ public import TauCeti.RingTheory.NovikovSeries.Functoriality
 # Novikov series over a finite-index subgroup of exponents
 
 Let `N : H →+ ℝ` be a period homomorphism on an additive commutative group `H`, and let `K ≤ H`
-be a subgroup, with the restricted period map `N.comp K.subtype`. The pushforward along the
-inclusion `K → H` makes `Nov(R, H, N)` an algebra over `Nov(R, K, N|K)`; its algebra map keeps
-every coefficient at its exponent (`TauCeti.NovikovSeries.coeff_algebraMap_addSubgroup_coe`). For
-a finite cyclic covering, `H` is the deck group of the base and `K` that of the cover, and this
-is the extension along which the norm and trace of Novikov series are taken.
+be a subgroup, with the restricted period map `N.comp K.subtype`. By
+`TauCeti.NovikovSeries.instAlgebraAddSubgroup`, the pushforward along the inclusion `K → H` makes
+`Nov(R, H, N)` an algebra over `Nov(R, K, N|K)`. For an abelian covering of a base space with deck
+group `H`, the subgroup `K` is the deck group of that covering over an intermediate finite cyclic
+covering of the base, whose own deck group is `H ⧸ K`; this is the extension along which the norm
+and trace of Novikov series are taken.
 
-The restriction of coefficients `comap K.subtype` to `K` satisfies the projection formula
-`comap (b * a) = b * comap a` for `b` in `Nov(R, K, N|K)`
-(`TauCeti.NovikovSeries.comap_subtype_algebraMap_mul`). Consequently, if `K` has finite index and
-`s : H ⧸ K → H` picks a representative of each coset, the monomials `e^(s q)` form a basis of
-`Nov(R, H, N)` over `Nov(R, K, N|K)` (`TauCeti.NovikovSeries.cosetBasis`): the coordinate at `q`
-of a series `a` is the series on `K` with coefficient `a.coeff (s q + k)` at `k`. This basis is
-finite, so the norm and trace of Mathlib's `Algebra.norm` and `Algebra.trace` are defined by the
-determinant and trace of multiplication, with their basis independence and the multiplicativity
-of the norm. Each diagonal entry of the matrix of multiplication by `a` in this basis is the
-restriction of `a` to `K`, so the trace of `a` is `[H : K]` times that restriction
+By the projection formula `TauCeti.NovikovSeries.comap_subtype_algebraMap_mul`, if `K` has finite
+index and `s : H ⧸ K → H` picks a representative of each coset, the monomials `e^(s q)` form a
+basis of `Nov(R, H, N)` over `Nov(R, K, N|K)` (`TauCeti.NovikovSeries.cosetBasis`): the
+coordinate at `q` of a series `a` is the series on `K` with coefficient `a.coeff (s q + k)` at
+`k`. This basis is finite, so the norm and trace of Mathlib's `Algebra.norm` and `Algebra.trace`
+are defined by the determinant and trace of multiplication, with their basis independence and the
+multiplicativity of the norm. Each diagonal entry of the matrix of multiplication by `a` in this
+basis is the restriction of `a` to `K`, so the trace of `a` is `[H : K]` times that restriction
 (`TauCeti.NovikovSeries.trace_eq_index_smul_comap`).
 
 ## Main definitions
 
-* `TauCeti.NovikovSeries.instAlgebraAddSubgroup`: `Nov(R, H, N)` as an algebra over
-  `Nov(R, K, N|K)`, along the pushforward of the inclusion of exponents.
 * `TauCeti.NovikovSeries.cosetBasis`: for a finite-index subgroup `K` and coset representatives
   `s`, the basis of monomials `e^(s q)`.
 
 ## Main results
 
-* `TauCeti.NovikovSeries.comap_subtype_algebraMap_mul`: the projection formula for restriction
-  of coefficients to `K`.
 * `TauCeti.NovikovSeries.cosetBasis_apply` and `TauCeti.NovikovSeries.coeff_cosetBasis_repr`:
   the basis vectors and the coefficients of the coordinates.
 * `TauCeti.NovikovSeries.finrank_eq_index`: over a nontrivial commutative ring, the rank of
@@ -70,90 +65,10 @@ namespace NovikovSeries
 
 variable {R H : Type*} [AddCommGroup H] {N : H →+ ℝ} (K : AddSubgroup H)
 
-/-- The inclusion of a subgroup preserves periods, for the restricted period map. -/
-theorem exists_period_rescale_subtype :
-    ∃ c > 0, ∀ k, N (K.subtype k) = c * (N.comp K.subtype) k :=
-  ⟨1, one_pos, fun k => by simp⟩
+section Restriction
 
-section Algebra
-
-variable [CommSemiring R]
-
-/-- Novikov series on `H` form an algebra over Novikov series on a subgroup `K`, with the
-restricted period map, along the pushforward of the inclusion `K → H`. -/
-instance instAlgebraAddSubgroup :
-    Algebra (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) :=
-  (mapRingHom (RingHom.id R) K.subtype (exists_period_rescale_subtype K)).toAlgebra
-
-/-- The algebra map from Novikov series on `K` is the pushforward along the inclusion. -/
-theorem algebraMap_addSubgroup_eq_mapRingHom :
-    algebraMap (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) =
-      mapRingHom (RingHom.id R) K.subtype (exists_period_rescale_subtype K) :=
-  (rfl)
-
-variable {K}
-
-/-- The algebra map from Novikov series on `K` keeps every coefficient at its exponent. -/
-@[simp]
-theorem coeff_algebraMap_addSubgroup_coe (b : NovikovSeries R K (N.comp K.subtype)) (k : K) :
-    (algebraMap _ (NovikovSeries R H N) b).coeff k = b.coeff k := by
-  rw [algebraMap_addSubgroup_eq_mapRingHom, mapRingHom_apply, ← AddSubgroup.subtype_apply,
-    coeff_map_of_injective _ _ _ K.subtype_injective, RingHom.toAddMonoidHom_id,
-    AddMonoidHom.id_apply]
-
-/-- The algebra map from Novikov series on `K` has zero coefficients outside `K`. -/
-theorem coeff_algebraMap_addSubgroup_of_notMem (b : NovikovSeries R K (N.comp K.subtype))
-    {h : H} (hh : h ∉ K) : (algebraMap _ (NovikovSeries R H N) b).coeff h = 0 := by
-  rw [algebraMap_addSubgroup_eq_mapRingHom, mapRingHom_apply]
-  exact coeff_map_eq_zero_of_notMem_range _ K.subtype _ b (by simpa using hh)
-
-/-- The algebra map from Novikov series on `K` sends the monomial `r e^k` to `r e^k`. -/
-@[simp]
-theorem algebraMap_addSubgroup_single (k : K) (r : R) :
-    algebraMap (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) (single k r) =
-      single (k : H) r := by
-  rw [algebraMap_addSubgroup_eq_mapRingHom, mapRingHom_apply, map_single, RingHom.toAddMonoidHom_id,
-    AddMonoidHom.id_apply, AddSubgroup.subtype_apply]
-
-variable (K) in
-/-- The coefficient scalars act on Novikov series on `H` through Novikov series on `K`. -/
-instance instIsScalarTowerAddSubgroup :
-    IsScalarTower R (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) :=
-  .of_algebraMap_eq (S := NovikovSeries R K (N.comp K.subtype)) fun r => by
-    simp only [algebraMap_apply, algebraMap_addSubgroup_single, AddSubgroup.coe_zero]
-
-variable (hφ : ∃ c > 0, ∀ k, N (K.subtype k) = c * (N.comp K.subtype) k)
+variable [CommSemiring R] {K} (hφ : ∃ c > 0, ∀ k, N (K.subtype k) = c * (N.comp K.subtype) k)
   (hker : (K.subtype.ker : Set K).Finite)
-
-/-- Restricting the image of a Novikov series on `K` back to `K` recovers the series. -/
-@[simp]
-theorem comap_subtype_algebraMap (b : NovikovSeries R K (N.comp K.subtype)) :
-    comap K.subtype hφ hker (algebraMap _ (NovikovSeries R H N) b) = b := by
-  ext k
-  rw [coeff_comap, AddSubgroup.subtype_apply, coeff_algebraMap_addSubgroup_coe]
-
-/-- The projection formula: restriction of coefficients to `K` is linear over Novikov series
-on `K`. -/
-theorem comap_subtype_algebraMap_mul (b : NovikovSeries R K (N.comp K.subtype))
-    (a : NovikovSeries R H N) :
-    comap K.subtype hφ hker (algebraMap _ _ b * a) = b * comap K.subtype hφ hker a := by
-  ext k
-  rw [coeff_comap, AddSubgroup.subtype_apply, coeff_mul]
-  refine (coeff_mul_eq_sum_of_injOn (F := (finite_setOf_add_eq b (comap K.subtype hφ hker a)
-    k).toFinset) (f := fun p : K × K => ((p.1 : H), (p.2 : H)))
-    (fun p hp => ?_) (fun u v huv hu hv => ?_) fun p _ p' _ hpp' => ?_).trans ?_
-  · rw [Set.Finite.mem_toFinset] at hp
-    simp only [← AddSubgroup.coe_add, hp.1]
-  · have huK : u ∈ K := by_contra fun huK => hu (coeff_algebraMap_addSubgroup_of_notMem b huK)
-    have hvK : v ∈ K := by
-      rw [← add_sub_cancel_left u v, huv]
-      exact K.sub_mem k.2 huK
-    refine ⟨(⟨u, huK⟩, ⟨v, hvK⟩), (Set.Finite.mem_toFinset _).2 ⟨Subtype.ext huv, ?_, ?_⟩, rfl⟩
-    · rwa [← coeff_algebraMap_addSubgroup_coe (H := H)]
-    · rwa [coeff_comap]
-  · simp only [Prod.mk.injEq] at hpp'
-    exact Prod.ext (Subtype.ext hpp'.1) (Subtype.ext hpp'.2)
-  · simp only [coeff_algebraMap_addSubgroup_coe, coeff_mul, coeff_comap, AddSubgroup.subtype_apply]
 
 /-- Restricting to `K` a monomial `r e^g` with `g ∉ K` times a series on `K` gives zero. -/
 private theorem comap_subtype_single_mul_algebraMap_of_notMem {g : H} (hg : g ∉ K) (r : R)
@@ -163,7 +78,12 @@ private theorem comap_subtype_single_mul_algebraMap_of_notMem {g : H} (hg : g �
   rw [coeff_comap, coeff_single_mul, coeff_algebraMap_addSubgroup_of_notMem, mul_zero, coeff_zero]
   exact fun hk => hg (by simpa using K.sub_mem k.2 hk)
 
-end Algebra
+/-- Restricting to `K` the translate `e^(-g) a` reads off the coefficients of `a` on `g + K`. -/
+private theorem coeff_comap_subtype_single_neg_mul (g : H) (a : NovikovSeries R H N) (k : K) :
+    (comap K.subtype hφ hker (single (-g) 1 * a)).coeff k = a.coeff (g + k) := by
+  simp [coeff_single_mul]
+
+end Restriction
 
 section Basis
 
@@ -181,8 +101,8 @@ private def cosetEquiv :
     simp only [mul_add, map_add, Pi.add_apply]
   map_smul' b a := by
     ext1 q
-    rw [RingHom.id_apply, Pi.smul_apply, smul_eq_mul, Algebra.smul_def, mul_left_comm,
-      comap_subtype_algebraMap_mul]
+    dsimp only [RingHom.id_apply, Pi.smul_apply]
+    rw [smul_eq_mul, Algebra.smul_def, mul_left_comm, comap_subtype_algebraMap_mul]
   invFun c := ∑ᶠ q, single (s q) 1 * algebraMap _ _ (c q)
   left_inv a := by
     have := Fintype.ofFinite (H ⧸ K)
@@ -190,9 +110,9 @@ private def cosetEquiv :
     dsimp only
     rw [finsum_eq_sum_of_fintype, coeff_sum, sum_eq_single (h : H ⧸ K)]
     · have hK : -s h + h ∈ K := QuotientAddGroup.eq.1 (hs h)
-      rw [coeff_single_mul, one_mul, ← AddSubgroup.coe_mk K _ hK,
-        coeff_algebraMap_addSubgroup_coe, coeff_comap, AddSubgroup.subtype_apply,
-        AddSubgroup.coe_mk, coeff_single_mul_add, one_mul]
+      rw [coeff_single_mul, ← AddSubgroup.coe_mk K _ hK, coeff_algebraMap_addSubgroup_coe,
+        coeff_comap_subtype_single_neg_mul]
+      simp
     · intro q _ hq
       rw [coeff_single_mul, coeff_algebraMap_addSubgroup_of_notMem, mul_zero]
       exact fun hK => hq (by rw [← hs q]; exact QuotientAddGroup.eq.2 hK)
@@ -202,8 +122,8 @@ private def cosetEquiv :
     ext1 p
     dsimp only
     rw [finsum_eq_sum_of_fintype, mul_sum, map_sum, sum_eq_single p]
-    · rw [← mul_assoc, single_mul_single, neg_add_cancel, mul_one, single_zero_one, one_mul,
-        comap_subtype_algebraMap]
+    · rw [← mul_assoc, single_mul_single]
+      simp
     · intro q _ hq
       rw [← mul_assoc, single_mul_single, mul_one, comap_subtype_single_mul_algebraMap_of_notMem]
       exact fun hK => hq (by rw [← hs p, ← hs q]; exact (QuotientAddGroup.eq.2 hK).symm)
@@ -238,9 +158,8 @@ theorem cosetBasis_apply (q : H ⧸ K) :
 @[simp]
 theorem coeff_cosetBasis_repr (a : NovikovSeries R H N) (q : H ⧸ K) (k : K) :
     ((cosetBasis K s hs).repr a q).coeff k = a.coeff (s q + k) := by
-  rw [cosetBasis, Module.Basis.ofEquivFun_repr_apply, cosetEquiv_apply, coeff_comap,
-    AddSubgroup.subtype_apply, ← neg_add_cancel_left (s q) k, coeff_single_mul_add, one_mul,
-    add_neg_cancel_left]
+  rw [cosetBasis, Module.Basis.ofEquivFun_repr_apply, cosetEquiv_apply,
+    coeff_comap_subtype_single_neg_mul]
 
 /-- Over a finite-index subgroup `K`, the Novikov series on `H` form a free module. -/
 instance instModuleFreeAddSubgroup :
@@ -281,9 +200,7 @@ theorem trace_eq_index_smul_comap
     Nat.card_eq_fintype_card, ← card_univ, ← sum_const]
   refine sum_congr rfl fun q _ => ?_
   ext k
-  rw [Matrix.diag_apply, Algebra.leftMulMatrix_eq_repr_mul, cosetBasis_apply,
-    coeff_cosetBasis_repr, coeff_comap, AddSubgroup.subtype_apply, add_comm, coeff_mul_single_add,
-    mul_one]
+  simp [Algebra.leftMulMatrix_eq_repr_mul, b, coeff_mul_single]
 
 end Ring
 
