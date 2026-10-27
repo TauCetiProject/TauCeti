@@ -154,6 +154,15 @@ theorem equiv_pow_apply_head (c : f.JordanChainBasis ι) (d : g.JordanChainBasis
   · rw [pow_map_zero_of_le (not_lt.1 hj) (c.pow_len_apply_head i), map_zero,
       pow_map_zero_of_le (by rw [hσ]; omega) (d.pow_len_apply_head (σ i))]
 
+/-- The inverse of the conjugator of two Jordan-chain bases with matching lengths is the conjugator
+in the opposite direction. -/
+@[simp]
+theorem equiv_symm (c : f.JordanChainBasis ι) (d : g.JordanChainBasis κ) (σ : ι ≃ κ)
+    (hσ : ∀ i, d.len (σ i) = c.len i) :
+    (c.equiv d σ hσ).symm = d.equiv c σ.symm fun j => by rw [← hσ, Equiv.apply_symm_apply] := by
+  refine LinearEquiv.toLinearMap_injective (d.basis.ext fun ⟨i, j⟩ => ?_)
+  simp [LinearEquiv.symm_apply_eq]
+
 /-- The conjugator of two Jordan-chain bases with matching lengths intertwines the two
 endomorphisms. -/
 @[simp]
@@ -292,24 +301,32 @@ private theorem linearIndependent_dual_pow_apply {m : ℕ} {v : V} (φ : Dual K 
       · rw [← mul_apply, ← pow_add, pow_map_zero_of_le (by omega) hv, map_zero, mul_zero]
     · simp
 
-/-- Adding one more chain, of length `m` with head `v`, to a linearly independent family of Jordan
-chains whose span is disjoint from the span of the new chain. -/
+/-- Jordan chains for `f`, indexed by `ι`, whose vectors are linearly independent and span the
+subspace `Z`. For `Z = ⊤` these are the data of a `JordanChainBasis`. -/
+private structure JordanChains (f : End K V) (Z : Submodule K V) (ι : Type*) where
+  /-- The length of each chain. -/
+  len : ι → ℕ
+  /-- The head of each chain. -/
+  head : ι → V
+  len_pos (i : ι) : 0 < len i
+  pow_len_apply_head (i : ι) : (f ^ len i) (head i) = 0
+  linearIndependent :
+    LinearIndependent K fun p : Σ i, Fin (len i) => (f ^ (p.2 : ℕ)) (head p.1)
+  span_eq : span K (Set.range fun p : Σ i, Fin (len i) => (f ^ (p.2 : ℕ)) (head p.1)) = Z
+
+/-- Adding one more chain, of length `m` with head `v`, to Jordan chains spanning a subspace `Z`
+disjoint from the span of the new chain. -/
 private theorem exists_jordanChains_sup {m : ℕ} {v : V} (hm : 0 < m) (hv : (f ^ m) v = 0)
-    (hu : LinearIndependent K fun i : Fin m => (f ^ (i : ℕ)) v) {ι : Type} [Finite ι]
-    {len : ι → ℕ} {head : ι → V} (hpos : ∀ i, 0 < len i) (hpow : ∀ i, (f ^ len i) (head i) = 0)
-    (hli : LinearIndependent K fun p : Σ i, Fin (len i) => (f ^ (p.2 : ℕ)) (head p.1))
-    (hdisj : Disjoint (span K (Set.range fun i : Fin m => (f ^ (i : ℕ)) v))
-      (span K (Set.range fun p : Σ i, Fin (len i) => (f ^ (p.2 : ℕ)) (head p.1)))) :
-    ∃ (ι' : Type) (_ : Finite ι') (len' : ι' → ℕ) (head' : ι' → V), (∀ i, 0 < len' i) ∧
-      (∀ i, (f ^ len' i) (head' i) = 0) ∧
-      LinearIndependent K (fun p : Σ i, Fin (len' i) => (f ^ (p.2 : ℕ)) (head' p.1)) ∧
-      span K (Set.range fun p : Σ i, Fin (len' i) => (f ^ (p.2 : ℕ)) (head' p.1)) =
-        span K (Set.range fun i : Fin m => (f ^ (i : ℕ)) v) ⊔
-          span K (Set.range fun p : Σ i, Fin (len i) => (f ^ (p.2 : ℕ)) (head p.1)) := by
-  let len₁ : Unit ⊕ ι → ℕ := Sum.elim (fun _ => m) len
-  let head₁ : Unit ⊕ ι → V := Sum.elim (fun _ => v) head
+    (hu : LinearIndependent K fun i : Fin m => (f ^ (i : ℕ)) v) {Z : Submodule K V} {ι : Type}
+    [Finite ι] (c : JordanChains f Z ι)
+    (hdisj : Disjoint (span K (Set.range fun i : Fin m => (f ^ (i : ℕ)) v)) Z) :
+    ∃ (ι' : Type) (_ : Finite ι'),
+      Nonempty (JordanChains f (span K (Set.range fun i : Fin m => (f ^ (i : ℕ)) v) ⊔ Z) ι') := by
+  rw [← c.span_eq] at hdisj ⊢
+  let len₁ : Unit ⊕ ι → ℕ := Sum.elim (fun _ => m) c.len
+  let head₁ : Unit ⊕ ι → V := Sum.elim (fun _ => v) c.head
   let F₁ (p : Σ i : Unit, Fin (len₁ (.inl i))) : V := (f ^ (p.2 : ℕ)) v
-  let F₂ (p : Σ i : ι, Fin (len₁ (.inr i))) : V := (f ^ (p.2 : ℕ)) (head p.1)
+  let F₂ (p : Σ i : ι, Fin (len₁ (.inr i))) : V := (f ^ (p.2 : ℕ)) (c.head p.1)
   have hF : (fun p : Σ s, Fin (len₁ s) => (f ^ (p.2 : ℕ)) (head₁ p.1)) =
       Sum.elim F₁ F₂ ∘ Equiv.sumSigmaDistrib fun s => Fin (len₁ s) := by
     funext p
@@ -319,13 +336,13 @@ private theorem exists_jordanChains_sup {m : ℕ} {v : V} (hm : 0 < m) (hv : (f 
   have h₁ : LinearIndependent K F₁ := (linearIndependent_equiv e).1 hu
   have hr₁ : Set.range F₁ = Set.range fun i : Fin m => (f ^ (i : ℕ)) v :=
     (EquivLike.range_comp F₁ e).symm
-  refine ⟨Unit ⊕ ι, inferInstance, len₁, head₁, ?_, ?_, ?_, ?_⟩
+  refine ⟨Unit ⊕ ι, inferInstance, ⟨⟨len₁, head₁, ?_, ?_, ?_, ?_⟩⟩⟩
   · rintro (_ | i)
-    exacts [hm, hpos i]
+    exacts [hm, c.len_pos i]
   · rintro (_ | i)
-    exacts [hv, hpow i]
+    exacts [hv, c.pow_len_apply_head i]
   · rw [hF, linearIndependent_equiv]
-    refine h₁.sum_type hli ?_
+    refine h₁.sum_type c.linearIndependent ?_
     rwa [hr₁]
   · rw [hF, EquivLike.range_comp, Set.Sum.elim_range, span_union, hr₁]
     -- `F₂` is the family of the given chains, with `len₁ (.inr i)` unfolding to `len i`.
@@ -388,10 +405,7 @@ vectors are linearly independent. The proof splits off a chain of maximal length
 invariant complement, and recurses on the dimension of `Z`. -/
 private theorem exists_jordanChains [FiniteDimensional K V] (hf : IsNilpotent f)
     (Z : Submodule K V) (hZ : ∀ x ∈ Z, f x ∈ Z) :
-    ∃ (ι : Type) (_ : Finite ι) (len : ι → ℕ) (head : ι → V), (∀ i, 0 < len i) ∧
-      (∀ i, (f ^ len i) (head i) = 0) ∧
-      LinearIndependent K (fun p : Σ i, Fin (len i) => (f ^ (p.2 : ℕ)) (head p.1)) ∧
-      span K (Set.range fun p : Σ i, Fin (len i) => (f ^ (p.2 : ℕ)) (head p.1)) = Z := by
+    ∃ (ι : Type) (_ : Finite ι), Nonempty (JordanChains f Z ι) := by
   classical
   induction hd : finrank K Z using Nat.strong_induction_on generalizing Z with
   | _ d ih =>
@@ -402,8 +416,8 @@ private theorem exists_jordanChains [FiniteDimensional K V] (hf : IsNilpotent f)
   set m := Nat.find hex
   have hfm (x : V) (hx : x ∈ Z) : (f ^ m) x = 0 := Nat.find_spec hex hx
   rcases Nat.eq_zero_or_pos m with h0 | hpos
-  · refine ⟨Empty, inferInstance, Empty.elim, Empty.elim, fun i => i.elim, fun i => i.elim,
-      linearIndependent_empty_type, ?_⟩
+  · refine ⟨Empty, inferInstance, ⟨⟨Empty.elim, Empty.elim, fun i => i.elim, fun i => i.elim,
+      linearIndependent_empty_type, ?_⟩⟩⟩
     rw [Set.range_eq_empty, span_empty, eq_comm, eq_bot_iff]
     intro x hx
     simpa [h0] using hfm x hx
@@ -414,16 +428,16 @@ private theorem exists_jordanChains [FiniteDimensional K V] (hf : IsNilpotent f)
     simpa using (Module.forall_dual_apply_eq_zero_iff K _).not.2 hv
   obtain ⟨hu, Z', hZ', hdisj, hsup, hdim⟩ := invariant_complement hZ hfm hvZ φ hφ
   -- The complement is smaller than `Z`, since the chain of `v` has length `m > 0`.
-  obtain ⟨ι, _, len, head, hpos', hpow', hli', hspan'⟩ := ih _ (by omega) Z' hZ' rfl
-  obtain ⟨ι', _, len', head', h₁, h₂, h₃, h₄⟩ := exists_jordanChains_sup hpos (hfm v hvZ) hu
-    hpos' hpow' hli' (hspan' ▸ hdisj)
-  exact ⟨ι', inferInstance, len', head', h₁, h₂, h₃, by rw [h₄, hspan', hsup]⟩
+  obtain ⟨ι, _, ⟨c⟩⟩ := ih _ (by omega) Z' hZ' rfl
+  obtain ⟨ι', _, ⟨c'⟩⟩ := exists_jordanChains_sup hpos (hfm v hvZ) hu c hdisj
+  exact ⟨ι', inferInstance, ⟨{ c' with span_eq := c'.span_eq.trans hsup }⟩⟩
 
 /-- A nilpotent endomorphism of a finite-dimensional vector space has a Jordan-chain basis. -/
 theorem exists_jordanChainBasis [FiniteDimensional K V] (hf : IsNilpotent f) :
     ∃ (ι : Type) (_ : Fintype ι), Nonempty (f.JordanChainBasis ι) := by
-  obtain ⟨ι, _, len, head, h₁, h₂, h₃, h₄⟩ := exists_jordanChains hf ⊤ fun _ _ => mem_top
-  exact ⟨ι, .ofFinite ι, ⟨⟨len, head, h₁, h₂, h₃, h₄⟩⟩⟩
+  obtain ⟨ι, _, ⟨c⟩⟩ := exists_jordanChains hf ⊤ fun _ _ => mem_top
+  exact ⟨ι, .ofFinite ι, ⟨⟨c.len, c.head, c.len_pos, c.pow_len_apply_head, c.linearIndependent,
+    c.span_eq⟩⟩⟩
 
 /-- An endomorphism of a finite-dimensional vector space is nilpotent if and only if it has a
 Jordan-chain basis. -/
