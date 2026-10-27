@@ -35,12 +35,14 @@ Eisenstein series of level `Γ(N)`, as the values of `℘` are in weight two.
 
 ## Main results
 
+* `PeriodPair.weierstrassZeta_bound`: the terms of the series are `O(|l|⁻³)` on balls.
 * `PeriodPair.hasSumLocallyUniformly_weierstrassZeta`, `PeriodPair.hasSum_weierstrassZeta`: the
   series converges locally uniformly to `ζ`.
 * `PeriodPair.hasDerivAt_weierstrassZeta`: `ζ' = -℘` away from `Λ`.
 * `PeriodPair.differentiableOn_weierstrassZeta`: `ζ` is holomorphic away from `Λ`.
 * `PeriodPair.weierstrassZeta_neg`: `ζ` is odd.
 * `PeriodPair.weierstrassZeta_add_coe`: the quasi-periodicity `ζ(z + l) = ζ(z) + η(l)`.
+* `PeriodPair.quasiPeriod_eq_intCast_mul_add`: `η(m ω₁ + n ω₂) = m η(ω₁) + n η(ω₂)`.
 * `PeriodPair.quasiPeriod_eq_two_mul_weierstrassZeta`: `η(l) = 2 ζ(l / 2)` if `l / 2 ∉ Λ`.
 
 ## References
@@ -70,7 +72,7 @@ def weierstrassZeta (z : ℂ) : ℂ := ∑' l : L.lattice, (1 / (z - l) + 1 / l 
 
 /-- The terms `1 / (s - l) + 1 / l + s / l² = s² / (l² (s - l))` of the series of `ζ` are
 `O(|l|⁻³)`, uniformly for `s` in a ball. -/
-private lemma weierstrassZeta_bound {r : ℝ} (hr : 0 < r) {s : ℂ} (hs : ‖s‖ < r) {l : ℂ}
+lemma weierstrassZeta_bound {r : ℝ} (hr : 0 < r) {s : ℂ} (hs : ‖s‖ < r) {l : ℂ}
     (h : 2 * r ≤ ‖l‖) :
     ‖1 / (s - l) + 1 / l + s / l ^ 2‖ ≤ 2 * r ^ 2 * ‖l‖ ^ (-3 : ℝ) := by
   have hl : 0 < ‖l‖ := by linarith
@@ -154,6 +156,11 @@ theorem weierstrassZeta_neg (z : ℂ) : L.weierstrassZeta (-z) = -L.weierstrassZ
   rw [neg_sub_neg, ← neg_sub, inv_neg]
   ring
 
+/-- `ζ(0) = 0`, as `ζ` is odd. -/
+@[simp]
+theorem weierstrassZeta_zero : L.weierstrassZeta 0 = 0 :=
+  CharZero.eq_neg_self_iff.mp (by simpa using L.weierstrassZeta_neg 0)
+
 /-- Away from the lattice, `ζ(z + l) - ζ(z)` does not depend on `z`: its derivative
 `℘(z) - ℘(z + l)` vanishes on the connected open set `ℂ ∖ Λ`. This is subsumed by
 `PeriodPair.weierstrassZeta_add_coe`. -/
@@ -201,6 +208,16 @@ theorem weierstrassZeta_sub_coe {z : ℂ} (hz : z ∉ L.lattice) (l : L.lattice)
     L.weierstrassZeta (z - l) = L.weierstrassZeta z - L.quasiPeriod l := by
   have hz' : z - l ∉ L.lattice := fun h ↦ hz (by simpa using add_mem h l.2)
   rw [eq_sub_iff_add_eq, ← L.weierstrassZeta_add_coe hz', sub_add_cancel]
+
+/-- The quasi-periods are determined by those of the two periods: if `l = m ω₁ + n ω₂`, then
+`η(l) = m η(ω₁) + n η(ω₂)`. -/
+theorem quasiPeriod_eq_intCast_mul_add (l : L.lattice) {m n : ℤ}
+    (h : m * L.ω₁ + n * L.ω₂ = l) :
+    L.quasiPeriod l = m * L.quasiPeriod ⟨L.ω₁, L.ω₁_mem_lattice⟩ +
+      n * L.quasiPeriod ⟨L.ω₂, L.ω₂_mem_lattice⟩ := by
+  have hl : l = m • (⟨L.ω₁, L.ω₁_mem_lattice⟩ : L.lattice) + n • ⟨L.ω₂, L.ω₂_mem_lattice⟩ :=
+    Subtype.ext (by simp [← h, zsmul_eq_mul])
+  rw [hl, map_add, map_zsmul, map_zsmul, zsmul_eq_mul, zsmul_eq_mul]
 
 /-- Since `ζ` is odd, `η(l) = 2 ζ(l / 2)` whenever `l / 2 ∉ Λ`. -/
 theorem quasiPeriod_eq_two_mul_weierstrassZeta (l : L.lattice) (hl : (l : ℂ) / 2 ∉ L.lattice) :
