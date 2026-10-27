@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.Infinitary.LanguageMap
 public import Mathlib.Logic.Small.Defs
 public import Mathlib.Basic.Countable.Small
+public import TauCeti.ModelTheory.Basic
 
 /-!
 # The small presentation of a countable language
@@ -30,14 +31,10 @@ language into `Language.{0, 0}`, where constructions that live in a fixed univer
 
 ## Main results
 
-* `FirstOrder.Language.LEquiv.realize_onBoundedFormulaInf`: realization is preserved by
-  translation along a language equivalence, the target structure being the reduct along the
-  inverse map.
-* `FirstOrder.Language.realize_smallPresentation`: the case of the small presentation.
-
-## References
-
-* Follows the roadmap signatures of `TauCetiRoadmap/InfinitaryModelExistence/README.md`, §0.3.
+* `FirstOrder.Language.realize_smallPresentation`: an `L`-structure, reinterpreted along the
+  inverse map, realizes the translation of a formula into the small presentation exactly when it
+  realizes the formula. It is the case of `FirstOrder.Language.LEquiv.realize_onBoundedFormulaInf`
+  for the small presentation.
 -/
 
 public section
@@ -50,39 +47,13 @@ namespace Language
 
 variable {L : Language.{u, v}}
 
-/-- A language with countably many function symbols has countably many of each arity. -/
-instance countable_functions_of_countable_sigma [Countable (Σ n, L.Functions n)] (n : ℕ) :
-    Countable (L.Functions n) :=
-  (sigma_mk_injective (i := n)).countable
-
-/-- A language with countably many relation symbols has countably many of each arity. -/
-instance countable_relations_of_countable_sigma [Countable (Σ n, L.Relations n)] (n : ℕ) :
-    Countable (L.Relations n) :=
-  (sigma_mk_injective (i := n)).countable
-
-namespace LEquiv
-
-variable {L' : Language.{u', v'}} {ι : Type uι} {α : Type uα}
-
-/-- **Realization along a language equivalence.** An `L`-structure, reinterpreted as an
-`L'`-structure along the inverse map, realizes the translation of an infinitary formula exactly
-when it realizes the formula. -/
-theorem realize_onBoundedFormulaInf (e : L ≃ᴸ L') {M : Type w} [L.Structure M] {n : ℕ}
-    (φ : L.BoundedFormulaInf ι α n) (v : α → M) (xs : Fin n → M) :
-    letI := e.invLHom.reduct M
-    (e.toLHom.onBoundedFormulaInf φ).Realize v xs ↔ φ.Realize v xs := by
-  let := e.invLHom.reduct M
-  -- translating back along the inverse map, an expansion of the reduct, gives `φ` again
-  rw [← LHom.realize_onBoundedFormulaInf e.invLHom, ← LHom.comp_onBoundedFormulaInf, e.left_inv,
-    LHom.id_onBoundedFormulaInf]
-
-end LEquiv
-
 variable (L) [Countable (Σ n, L.Functions n)] [Countable (Σ n, L.Relations n)]
 
 /-- The **small presentation** of a language with countably many function and relation symbols:
-the language in `Language.{0, 0}` whose symbols of each arity are `Shrink.{0}` of those of `L`. -/
-def smallPresentation : Language.{0, 0} where
+the language in `Language.{0, 0}` whose symbols of each arity are `Shrink.{0}` of those of `L`.
+The definition is exposed so that the symbol maps of `smallPresentationEquiv` can be stated
+through `equivShrink`. -/
+@[expose] def smallPresentation : Language.{0, 0} where
   Functions n := Shrink.{0} (L.Functions n)
   Relations n := Shrink.{0} (L.Relations n)
 
@@ -109,6 +80,32 @@ noncomputable def smallPresentationEquiv : L ≃ᴸ L.smallPresentation where
   right_inv := LHom.funext
     (funext fun _ => funext fun f => (equivShrink.{0} _).apply_symm_apply f)
     (funext fun _ => funext fun R => (equivShrink.{0} _).apply_symm_apply R)
+
+/-- The equivalence sends a function symbol to its shrunk copy. -/
+@[simp]
+theorem smallPresentationEquiv_toLHom_onFunction {n : ℕ} (f : L.Functions n) :
+    L.smallPresentationEquiv.toLHom.onFunction f = equivShrink.{0} (L.Functions n) f :=
+  (rfl)
+
+/-- The equivalence sends a relation symbol to its shrunk copy. -/
+@[simp]
+theorem smallPresentationEquiv_toLHom_onRelation {n : ℕ} (R : L.Relations n) :
+    L.smallPresentationEquiv.toLHom.onRelation R = equivShrink.{0} (L.Relations n) R :=
+  (rfl)
+
+/-- The inverse equivalence sends a shrunk function symbol back. -/
+@[simp]
+theorem smallPresentationEquiv_invLHom_onFunction {n : ℕ}
+    (f : L.smallPresentation.Functions n) :
+    L.smallPresentationEquiv.invLHom.onFunction f = (equivShrink.{0} (L.Functions n)).symm f :=
+  (rfl)
+
+/-- The inverse equivalence sends a shrunk relation symbol back. -/
+@[simp]
+theorem smallPresentationEquiv_invLHom_onRelation {n : ℕ}
+    (R : L.smallPresentation.Relations n) :
+    L.smallPresentationEquiv.invLHom.onRelation R = (equivShrink.{0} (L.Relations n)).symm R :=
+  (rfl)
 
 /-- The small presentation of a relational language is relational. -/
 instance isRelational_smallPresentation [L.IsRelational] : L.smallPresentation.IsRelational :=

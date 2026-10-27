@@ -14,7 +14,8 @@ These examples exercise the small presentation from a downstream module, through
 statements only, for a language in the universes `(1, 1)` with a unary function symbol and a
 binary relation symbol for every natural number:
 
-* its small presentation is a language in `Language.{0, 0}` with countably many symbols;
+* its small presentation is a language in `Language.{0, 0}` with countably many function symbols
+  and countably many relation symbols;
 * a sentence keeps its meaning in the small presentation: an `L`-structure, reinterpreted along
   the inverse map, satisfies the translation of `∀ x, R₀ (f₀ x) x` exactly when it satisfies the
   sentence, so function symbols are transported too;
@@ -25,7 +26,12 @@ universe w
 
 open FirstOrder FirstOrder.Language
 
--- The small presentation lives in `Language.{0, 0}` and has countably many relation symbols.
+-- The small presentation lives in `Language.{0, 0}` and has countably many function symbols ...
+example : Countable (Σ n, (Language.mk.{1, 1} (fun _ => ULift.{1} ℕ) fun _ =>
+    ULift.{1} ℕ).smallPresentation.Functions n) :=
+  inferInstance
+
+-- ... and countably many relation symbols.
 example : Countable (Σ n, (Language.mk.{1, 1} (fun _ => ULift.{1} ℕ) fun _ =>
     ULift.{1} ℕ).smallPresentation.Relations n) :=
   inferInstance
