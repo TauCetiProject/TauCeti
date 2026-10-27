@@ -41,8 +41,9 @@ of left cosets. This is the permutation module `A[G ⧸ U]`, of order `|A| ^ [G 
   trace `Coind_U^G M → M` is surjective.
 * `TauCeti.DiscreteCoind.trace_eq_relIndex_nsmul_of_forall_smul_eq`,
   `TauCeti.DiscreteCoind.trace_eq_zero_of_forall_smul_eq`: on the `G`-invariants of `Coind_V^G M`,
-  for `V ≤ U` with `U` acting trivially on `M`, the trace is `[U : V]` times the norm along `G ⧸ U`;
-  in particular it vanishes when `[U : V]` kills `M`. This is the co-effaceability of `H⁰` that
+  for `V ≤ U` with `U` fixing the constant value of a `G`-invariant function, its trace is
+  `[U : V]` times the norm along `G ⧸ U`; in particular it vanishes when `[U : V]` kills `M`.
+  This is the co-effaceability of `H⁰` that
   Tate's duality argument for the cohomological dimension of a Demushkin group uses (Serre,
   *Structure de certains pro-p-groupes*, §9.1).
 -/
@@ -239,24 +240,24 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
-/-- **The trace on invariants is a multiple of the norm.** For finite-index subgroups `V ≤ U` with
-`U` acting trivially on `M`, the trace of a `G`-invariant element `f` of `Coind_V^G M` is
-`[U : V]` times the norm `∑_{q ∈ G ⧸ U} q.out • f 1` of its constant value. -/
-theorem trace_eq_relIndex_nsmul_of_forall_smul_eq (hVU : V ≤ U)
-    (htriv : ∀ u ∈ U, ∀ m : M, u • m = m) {f : DiscreteCoind G V M} (hf : ∀ g : G, g • f = f) :
+/-- **The trace on invariants is a multiple of the norm.** For finite-index subgroups `V ≤ U` and
+a `G`-invariant element `f` of `Coind_V^G M` whose constant value `f 1` is fixed by `U`, the trace
+is `[U : V]` times the norm `∑_{q ∈ G ⧸ U} q.out • f 1`. -/
+theorem trace_eq_relIndex_nsmul_of_forall_smul_eq (hVU : V ≤ U) {f : DiscreteCoind G V M}
+    (hfix : ∀ u ∈ U, u • f 1 = f 1) (hf : ∀ g : G, g • f = f) :
     trace G V M f = V.relIndex U • ∑ q : G ⧸ U, q.out • f 1 := by
   rw [trace_apply]
   simp only [apply_eq_apply_one_of_forall_smul_eq hf]
-  exact Subgroup.sum_out_smul_eq_relIndex_nsmul hVU fun u hu ↦ htriv u hu _
+  exact Subgroup.sum_out_smul_eq_relIndex_nsmul hVU hfix
 
-/-- **The trace kills the invariants once the relative index kills the module.** For finite-index
-subgroups `V ≤ U` with `U` acting trivially on `M` and `[U : V] • m = 0` for every `m`, the trace
-`Coind_V^G M → M` vanishes on the `G`-invariants: the map `H⁰(G, Coind_V^G M) → H⁰(G, M)` induced
-by `trace` is zero. -/
-theorem trace_eq_zero_of_forall_smul_eq (hVU : V ≤ U) (htriv : ∀ u ∈ U, ∀ m : M, u • m = m)
-    (hkill : ∀ m : M, V.relIndex U • m = 0) {f : DiscreteCoind G V M} (hf : ∀ g : G, g • f = f) :
+/-- **The trace of an invariant vanishes once the relative index kills the module.** For
+finite-index subgroups `V ≤ U`, a `G`-invariant element `f` of `Coind_V^G M` whose constant value
+`f 1` is fixed by `U` has zero trace if `[U : V] • m = 0` for every `m : M`. -/
+theorem trace_eq_zero_of_forall_smul_eq (hVU : V ≤ U) {f : DiscreteCoind G V M}
+    (hfix : ∀ u ∈ U, u • f 1 = f 1) (hkill : ∀ m : M, V.relIndex U • m = 0)
+    (hf : ∀ g : G, g • f = f) :
     trace G V M f = 0 := by
-  rw [trace_eq_relIndex_nsmul_of_forall_smul_eq hVU htriv hf, hkill]
+  rw [trace_eq_relIndex_nsmul_of_forall_smul_eq hVU hfix hf, hkill]
 
 end TraceInvariants
 
