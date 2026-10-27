@@ -64,6 +64,8 @@ definition `I`, and `U` is the complement of `V(I)`: the non-open primes of `C`.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.submoduleBlowup.toSpec_preimage_basicOpen`: the inverse image of
+  `D(h)` in `Y` is the standard open `D₊(h)`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.iSup_basicOpen_eq_top`: the standard opens
   `D₊(f T)`, `f ∈ F`, cover `Y`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.isProper_toSpec`: for finite `F`, `Y ⟶ Spec C` is
@@ -120,6 +122,17 @@ noncomputable def toSpec : submoduleBlowup C F ⟶ Spec (.of C) :=
 theorem toSpec_def : toSpec C F = Proj.toSpecZero (gradedRing C F) ≫
     Spec.map (CommRingCat.ofHom (algebraMap C (gradedRing C F 0))) :=
   (rfl)
+
+/-- The inverse image of the basic open `D(h)` of `Spec C` in the blowup is the standard open
+`D₊(h)` of the degree-zero image of `h`. -/
+theorem toSpec_preimage_basicOpen (h : C) :
+    toSpec C F ⁻¹ᵁ PrimeSpectrum.basicOpen h =
+      Proj.basicOpen (gradedRing C F)
+        (algebraMap C (coeffSubalgebra fun n ↦ Submodule.span C F ^ n) h) := by
+  have e := Scheme.Hom.comp_preimage (Proj.toSpecZero (gradedRing C F))
+    (Spec.map (CommRingCat.ofHom (algebraMap C (gradedRing C F 0)))) (PrimeSpectrum.basicOpen h)
+  rwa [SpecMap_preimage_basicOpen, CommRingCat.ofHom_apply,
+    Proj.toSpecZero_preimage_basicOpen, ← toSpec_def] at e
 
 /-- **The standard opens `D₊(f T)` cover the blowup.** -/
 theorem iSup_basicOpen_eq_top :
@@ -283,12 +296,8 @@ private theorem toSpec_preimage_basicOpen_le {h : C}
   intro x hx
   -- A point over `D(h)` is a homogeneous prime not containing `h`.
   have hx' : algebraMap C (coeffSubalgebra fun n ↦ Submodule.span C F ^ n) h ∉
-      x.asHomogeneousIdeal := by
-    have e := Scheme.Hom.comp_preimage (Proj.toSpecZero (gradedRing C F))
-      (Spec.map (CommRingCat.ofHom (algebraMap C (gradedRing C F 0)))) (PrimeSpectrum.basicOpen h)
-    rw [SpecMap_preimage_basicOpen, CommRingCat.ofHom_apply,
-      Proj.toSpecZero_preimage_basicOpen, ← toSpec_def] at e
-    exact (Proj.mem_basicOpen _ _ x).mp (e ▸ hx)
+      x.asHomogeneousIdeal :=
+    (Proj.mem_basicOpen _ _ x).mp (toSpec_preimage_basicOpen C F h ▸ hx)
   -- It also avoids some `f T` with `f ∈ F`, since these cover the blowup.
   obtain ⟨⟨f, hf⟩, hxf⟩ := TopologicalSpace.Opens.mem_iSup.mp
     ((iSup_basicOpen_eq_top C F).ge (Set.mem_univ x))

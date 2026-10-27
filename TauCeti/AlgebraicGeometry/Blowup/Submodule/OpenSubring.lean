@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Blowup.Submodule
+public import TauCeti.AlgebraicGeometry.Blowup.Submodule.Basic
 public import TauCeti.AlgebraicGeometry.SpecOpenSubring
 
 /-!

@@ -17,8 +17,8 @@ Let `B` be a `C`-algebra, `F ⊆ B` a set and `J = span C F` the `C`-submodule o
 graded ring `R(J) = ⨁ₙ Jⁿ Tⁿ ⊆ B[T]`, with `J⁰` the image of `C`, is `TauCeti.coeffSubalgebra` of
 the powers `n ↦ Jⁿ`, and it is generated over `C` by the elements `f T` with `f ∈ F`. Its `Proj`
 is the blowup of the submodule `J`, `TauCeti.AlgebraicGeometry.submoduleBlowup` in
-`TauCeti/AlgebraicGeometry/Blowup/Submodule.lean`. This file contains the ring theory of the
-blowup, which needs no scheme theory; the declarations live in the namespace of that scheme.
+`TauCeti/AlgebraicGeometry/Blowup/Submodule/Basic.lean`. This file contains the ring theory of
+the blowup, which needs no scheme theory; the declarations live in the namespace of that scheme.
 
 If `F` generates the unit ideal of `B`, then the image of the irrelevant ideal of `R(J)` under
 evaluation at `T = 1` generates the unit ideal of `B`.
