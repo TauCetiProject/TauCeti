@@ -234,6 +234,20 @@ theorem map_const_smul_uniformBallMeasure {s : ℝ} (hs : s ≠ 0) (c : E) (r : 
     (fun A _ ↦ Measure.addHaar_preimage_smul volume hs A) measurableSet_ball
   exact (ENNReal.ofReal_pos.2 (abs_pos.2 (inv_ne_zero (pow_ne_zero _ hs)))).ne'
 
+/-- Every uniform ball law of nonnegative radius is an affine image of the centered unit-ball
+law. At radius zero the affine map is constant and gives the point mass at the center. -/
+theorem uniformBallMeasure_eq_map_unitBall (c : E) {r : ℝ} (hr : 0 ≤ r) :
+    uniformBallMeasure c r =
+      (uniformBallMeasure (0 : E) 1).map (fun x ↦ c + r • x) := by
+  have := isProbabilityMeasure_uniformBallMeasure (c := (0 : E)) (by norm_num : (0 : ℝ) ≤ 1)
+  rcases hr.eq_or_lt with rfl | hr
+  · simp [Measure.map_const]
+  have hscale := map_const_smul_uniformBallMeasure hr.ne' (0 : E) 1
+  simp only [smul_zero, abs_of_pos hr, mul_one] at hscale
+  rw [uniformBallMeasure_eq_map_const_add c, ← hscale,
+    Measure.map_map (measurable_const_add c) (measurable_const_smul r)]
+  rfl
+
 end Transport
 
 end TauCeti.Probability

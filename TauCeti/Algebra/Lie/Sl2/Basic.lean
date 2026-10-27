@@ -48,6 +48,8 @@ that composes to zero is already zero.
   `sl₂` triple in `sl n R`. The three bracket relations are available separately as
   `TauCeti.lie_single_single_eq_singleSubSingle`, `TauCeti.lie_singleSubSingle_single` and
   `TauCeti.lie_singleSubSingle_single_swap`.
+* `TauCeti.isSl2Triple_matrix_single`: the same matrix units form a triple in the full matrix Lie
+  ring over any nontrivial ring.
 * `TauCeti.slFinTwoBasis`: the standard basis `(e, f, h)` of `sl (Fin 2) R`, obtained from the
   coordinate isomorphism `TauCeti.slFinTwoEquivFun` and identified vector by vector in
   `TauCeti.slFinTwoBasis_zero`, `TauCeti.slFinTwoBasis_one` and `TauCeti.slFinTwoBasis_two`. The
@@ -197,6 +199,23 @@ theorem isSl2Triple_single [Nontrivial R] (hij : i ≠ j) :
     rw [lie_singleSubSingle_single hij, two_smul, two_smul]
   lie_h_f_nsmul := by
     rw [lie_singleSubSingle_single_swap hij, two_smul, two_smul]
+
+/-- For distinct indices the matrix units `Eₚq`, `E_qp` and `Eₚₚ - E_qq` form an `sl₂` triple
+in the full matrix Lie ring, over any nontrivial ring. -/
+theorem isSl2Triple_matrix_single {S : Type*} [Ring S] [Nontrivial S]
+    (p q : n) (hpq : p ≠ q) :
+    IsSl2Triple (single p p (1 : S) - single q q 1) (single p q (1 : S)) (single q p 1) where
+  h_ne_zero hzero := (one_ne_zero : (1 : S) ≠ 0) <| by
+    simpa [single_apply, hpq, hpq.symm] using congrArg (fun A => A p p) hzero
+  lie_e_f := lie_single_single_eq_sub p q 1
+  lie_h_e_nsmul := by
+    rw [lie_single_self_sub_single_self_single hpq, two_smul, ← single_add]
+    norm_num
+  lie_h_f_nsmul := by
+    rw [← neg_sub (single q q (1 : S)) (single p p 1), neg_lie,
+      lie_single_self_sub_single_self_single hpq.symm]
+    rw [two_smul, ← single_add]
+    norm_num
 
 end Triple
 
