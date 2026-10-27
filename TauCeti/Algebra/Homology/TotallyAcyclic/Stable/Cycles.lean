@@ -97,6 +97,18 @@ theorem quotient_map_eq_iff {P Q : TotallyAcyclicComplex.{v} A} (f g : P ⟶ Q) 
     homotopyInclusion_map_quotient_map, homotopyInclusion_map_quotient_map]
   exact CategoryTheory.Quotient.functor_map_eq_iff _ _ _
 
+/-- A map of totally acyclic complexes is null-homotopic exactly when its shift is. -/
+theorem shift_map_mem_homotopyIdeal_iff {P Q : TotallyAcyclicComplex.{v} A} (f : P ⟶ Q) (n : ℤ) :
+    f⟦n⟧' ∈ (homotopyIdeal A).hom _ _ ↔ f ∈ (homotopyIdeal A).hom P Q := by
+  let F := toHomotopyCategory.{v} A
+  have h : F.map (f⟦n⟧') =
+      (F.commShiftIso n).hom.app P ≫ (F.map f)⟦n⟧' ≫ (F.commShiftIso n).inv.app Q := by
+    rw [← F.commShiftIso_hom_naturality_assoc]
+    simp
+  rw [Functor.mem_kerIdeal_hom, Functor.mem_kerIdeal_hom, h,
+    Preadditive.IsIso.comp_left_eq_zero, Preadditive.IsIso.comp_right_eq_zero,
+    Functor.map_eq_zero_iff]
+
 /-- Cycles in any degree, viewed as Gorenstein-projective modules. -/
 abbrev cyclesFunctor (n : ℤ) : TotallyAcyclicComplex.{v} A ⥤ GorensteinProjectiveModuleCat.{v} A :=
   (IsGorensteinProjective A).lift
@@ -126,6 +138,41 @@ instance cyclesFunctor_essSurj (n : ℤ) : (cyclesFunctor.{v} A n).EssSurj where
     obtain ⟨P, hP, ⟨e⟩⟩ := (isGorensteinProjective_iff M.obj).mp M.property
     exact ⟨⟨P⟦-n⟧, hP.shift (-n)⟩,
       ⟨ObjectProperty.isoMk _ (P.shiftCyclesIso (-n) n 0 (by simp) ≪≫ e)⟩⟩
+
+/-- The cycles in degree zero of the shift by `n` are the cycles in degree `n`. -/
+def shiftCyclesIso (n : ℤ) :
+    shiftFunctor (TotallyAcyclicComplex.{v} A) n ⋙ cyclesFunctor A 0 ≅ cyclesFunctor A n :=
+  NatIso.ofComponents (fun P ↦ ObjectProperty.isoMk _
+      ((HomologicalComplex.cyclesFunctor _ _ 0).mapIso
+          ((ObjectProperty.ι _).commShiftIso n |>.app P) ≪≫
+        P.obj.shiftCyclesIso n 0 n (add_zero n)))
+    (fun {P Q} f ↦ by
+      let e := (ObjectProperty.ι
+        (fun P : CochainComplex (ModuleCat.{v} A) ℤ ↦ P.IsTotallyAcyclic)).commShiftIso n
+      have h := congrArg (fun g ↦ HomologicalComplex.cyclesMap g 0)
+        ((ObjectProperty.ι _).commShiftIso_hom_naturality f n)
+      simp only [ObjectProperty.ι_map, HomologicalComplex.cyclesMap_comp] at h
+      -- The square on cycles, stated with the underlying modules; the components of the
+      -- isomorphism are these composites by definition.
+      have key : HomologicalComplex.cyclesMap (f⟦n⟧').hom 0 ≫
+          HomologicalComplex.cyclesMap (e.hom.app Q) 0 ≫
+            (Q.obj.shiftCyclesIso n 0 n (add_zero n)).hom =
+          (HomologicalComplex.cyclesMap (e.hom.app P) 0 ≫
+            (P.obj.shiftCyclesIso n 0 n (add_zero n)).hom) ≫
+              HomologicalComplex.cyclesMap f.hom n := by
+        rw [reassoc_of% h, Category.assoc]
+        exact congrArg (_ ≫ ·)
+          (CochainComplex.shiftCyclesIso_hom_naturality _ f.hom n 0 n (add_zero n))
+      exact ObjectProperty.hom_ext _ key)
+
+/-- The component of `TauCeti.TotallyAcyclicComplex.shiftCyclesIso`: the map on cycles induced
+by the identification of the shift in `TotallyAcyclicComplex` with the shift of complexes,
+followed by `CochainComplex.shiftCyclesIso`. -/
+@[simp]
+theorem shiftCyclesIso_hom_app_hom (n : ℤ) (P : TotallyAcyclicComplex.{v} A) :
+    ((shiftCyclesIso A n).hom.app P).hom =
+      HomologicalComplex.cyclesMap (((ObjectProperty.ι _).commShiftIso n).hom.app P) 0 ≫
+        (P.obj.shiftCyclesIso n 0 n (add_zero n)).hom := (rfl)
 
 variable [Small.{v} A]
 
