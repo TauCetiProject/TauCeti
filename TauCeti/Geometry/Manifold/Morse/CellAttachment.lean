@@ -9,18 +9,19 @@ public import TauCeti.Geometry.Manifold.Morse.AdmissibleCharts
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 public import TauCeti.Geometry.Manifold.Morse.HandleRetraction
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
 # Cell attachment across a critical level
 
 Let `f` be a smooth function on a boundaryless finite-dimensional manifold, and let `c` be a
-critical value at which `f` has finitely many critical points, all nondegenerate. Milnor's
-Theorem 3.2 says that passing the level `c` attaches one cell at each of these critical points:
-for small `ε > 0`, the sublevel `M_{c+ε} = {f ≤ c + ε}` deformation retracts onto the lower
-sublevel `M_{c-ε} = {f ≤ c - ε}` with one `λ`-cell attached at each critical point of index `λ`.
+critical value at which `f` has finitely many critical points, all nondegenerate, such that the
+band `f⁻¹[c - δ, c + δ]` is compact for some `δ > 0`. Milnor's Theorem 3.2 says that passing the
+level `c` attaches one cell at each of these critical points: for small `ε > 0`, the sublevel
+`M_{c+ε} = {f ≤ c + ε}` deformation retracts onto the lower sublevel `M_{c-ε} = {f ≤ c - ε}` with
+one `λ`-cell attached at each critical point of index `λ`.
 
 The cells are explicit. In a normalized Morse chart `ψ` at a critical point of index `λ`,
 
@@ -31,13 +32,15 @@ Its boundary sphere lies on the level `f⁻¹(c - ε)`.
 
 Following Milnor, write `u` for the negative and `v` for the positive coordinates of a chart. The
 function `F = f - μ(‖u‖² + 2‖v‖²)` agrees with `f` outside the ellipsoids `‖u‖² + 2‖v‖² ≤ 2ε`,
-where `μ` is a smooth nonincreasing cutoff with `μ = 2ε` on `[0, ε]` and `μ = 0` on `[2ε, ∞)`.
-It has the same sublevel `{F ≤ c + ε} = M_{c+ε}`, and no critical points in the band
-`F⁻¹[c - ε, c + ε]`: along the positive directions `F` strictly increases away from `v = 0`, and on
-`v = 0` it lies below `c - ε`. So `M_{c+ε}` deformation retracts onto `{F ≤ c - ε}`
-(`TauCeti.exists_sublevelDeformation`), which in turn retracts onto `M_{c-ε}` with the cells
-attached (`TauCeti.exists_inter_sublevel_union_cells_deformation`), since lowering the positive
-coordinates lowers `F`. The two retractions compose.
+where `μ` is a smooth nonincreasing cutoff with `μ = 2ε` on `[0, ε]` and `μ = 0` on `[2ε, ∞)`
+(`TauCeti.exists_contDiff_antitone_cutoff`). It has the same sublevel `{F ≤ c + ε} = M_{c+ε}`.
+When the band `f⁻¹[c - ε, c + ε]` is compact and its critical points lie in the charts, `F` has no
+critical points in the band `F⁻¹[c - ε, c + ε]`: outside the ellipsoids it agrees with `f`, whose
+critical points in the band are the chart centres; along the positive directions `F` strictly
+increases away from `v = 0`, and on `v = 0` it lies below `c - ε`. So `M_{c+ε}` deformation
+retracts onto `{F ≤ c - ε}` (`TauCeti.exists_sublevelDeformation`), which in turn retracts onto
+`M_{c-ε}` with the cells attached (`TauCeti.exists_inter_sublevel_union_cells_deformation`), since
+lowering the positive coordinates lowers `F`. The two retractions compose.
 
 ## Main results
 
@@ -392,23 +395,6 @@ end MilnorFunction
 
 section CellAttachment
 
-/-- Milnor's cutoff: a smooth nonincreasing function equal to `2ε` on `(-∞, ε]` and to `0` on
-`[2ε, ∞)`. Lowering `f` by it at `‖u‖² + 2‖v‖²` pushes the critical point below `c - ε` without
-changing `f` outside Milnor's ellipsoid. -/
-private theorem exists_milnorCutoff (hε : 0 < ε) :
-    ∃ μ : ℝ → ℝ, ContDiff ℝ ∞ μ ∧ Antitone μ ∧ (∀ r, 0 ≤ μ r) ∧ (∀ r, 2 * ε ≤ r → μ r = 0) ∧
-      ∀ r ≤ ε, μ r = 2 * ε := by
-  refine ⟨fun r ↦ 2 * ε * (1 - Real.smoothTransition ((r - ε) / ε)),
-    contDiff_const.mul (contDiff_const.sub (Real.smoothTransition.contDiff.comp (by fun_prop))),
-    fun r s hrs ↦ mul_le_mul_of_nonneg_left (sub_le_sub_left (Real.smoothTransition.monotone
-      (div_le_div_of_nonneg_right (by linarith) hε.le)) _) (by positivity),
-    fun r ↦ mul_nonneg (by positivity) (sub_nonneg.2 (Real.smoothTransition.le_one _)),
-    fun r hr ↦ ?_, fun r hr ↦ ?_⟩
-  · have h : 1 ≤ (r - ε) / ε := (one_le_div hε).2 (by linarith)
-    simp only [Real.smoothTransition.one_of_one_le h, sub_self, mul_zero]
-  · have h : (r - ε) / ε ≤ 0 := div_nonpos_of_nonpos_of_nonneg (by linarith) hε.le
-    simp only [Real.smoothTransition.zero_of_nonpos h, sub_zero, mul_one]
-
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
 
 /-- **Cell attachment in disjoint Morse charts.** Let `f` be smooth, and let `ψ i` be charts of
@@ -436,7 +422,9 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
         (ContinuousMap.id _) {x | (x : M) ∈ {x | f x ≤ c - ε} ∪
           ⋃ i, (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0}}) := by
   have := Fintype.ofFinite ι
-  obtain ⟨μ, hμ, hμa, hμ_nonneg, hμ₀, hμ_eq⟩ := exists_milnorCutoff hε
+  -- Milnor's cutoff, equal to `2ε` on `(-∞, ε]` and to `0` on `[2ε, ∞)`.
+  obtain ⟨μ, hμ, hμa, hμ_nonneg, hμ₀, hμ_eq⟩ :=
+    exists_contDiff_antitone_cutoff (by linarith : ε < 2 * ε) (by positivity : 0 ≤ 2 * ε)
   set F := milnorFunction ψ f c μ
   set S := {x | f x ≤ c - ε} ∪
     ⋃ i, (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0}
