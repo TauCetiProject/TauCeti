@@ -75,6 +75,7 @@ isomorphism of the underlying object. -/
 @[simp]
 theorem drinfeldIso_hom_hom (X : Action V H) :
     (drinfeldIso X).hom.hom = (drinfeldIso X.V).hom := by
+  -- The pairing is in V; h matches by Action.rightDual_v, which is rfl also for the double dual.
   apply ExactPairing.rightHom_ext (X := X.Vᘁ) (Y := (X.Vᘁ : V)ᘁ)
   have h := congrArg Hom.hom (drinfeldIso_hom_comp_evaluation X)
   simp only [comp_hom, whiskerRight_hom, evaluation_hom, β_hom_hom] at h
