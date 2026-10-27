@@ -11,7 +11,20 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Module
 
 /-!
-# The centroid is an algebraic relative interior point
+# Convex combinations: sub-convex combinations and the centroid
+
+This file collects two facts about finite convex combinations in a vector space over a linearly
+ordered field.
+
+A convex set containing `0` also contains every combination `∑ i, w i • z i` of its points with
+nonnegative weights of total at most `1`, the missing weight being put on `0`
+(`Convex.sum_mem_of_zero_mem`). If the set is moreover symmetric, the coefficients may have any
+sign as long as their absolute values sum to at most `1` (`Convex.sum_mem_of_sum_abs_le_one`). In
+particular such a set contains the weighted cross-polytope `{x | ∑ i, a i * |b.repr x i| ≤ 1}` as
+soon as it contains each `(a i)⁻¹ • b i` (`Convex.weighted_crosspolytope_subset`). This containment
+is the step in the lower bound of Minkowski's second theorem that places a cross-polytope spanned
+by vectors attaining the successive minima inside the body; its volume is
+`OrthonormalBasis.volume_weighted_crosspolytope`.
 
 Over a linearly ordered field there is no topology to speak of relative interiors, but the
 centroid of a nonempty finite set `s` still behaves like a relative interior point of the convex
@@ -20,14 +33,72 @@ on the ray from `p` remains in the convex hull (`Finset.exists_lineMap_centroid_
 
 This is what makes a point outside a "visible" set lie off the affine span of every simplex in it,
 as used for cones of geometric simplicial complexes.
+
+## References
+
+* J.-H. Evertse, *Geometry of Numbers*, §2.3, Lemma 2.10 and the lower-bound proof of
+  Theorem 2.9, printed pp.26–27: <https://pub.math.leidenuniv.nl/~evertsejh/dio19-2.pdf>.
 -/
 
 public section
 
 open Finset
+open scoped Pointwise
 
-variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup E]
+variable {𝕜 E ι : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup E]
   [Module 𝕜 E]
+
+namespace Convex
+
+variable {s : Set E}
+
+/-- A convex set containing `0` contains every combination of its points with nonnegative
+weights of total at most `1`. -/
+theorem sum_mem_of_zero_mem (hs : Convex 𝕜 s) (h₀ : (0 : E) ∈ s) {t : Finset ι} {w : ι → 𝕜}
+    {z : ι → E} (hw₀ : ∀ i ∈ t, 0 ≤ w i) (hw₁ : ∑ i ∈ t, w i ≤ 1) (hz : ∀ i ∈ t, z i ∈ s) :
+    ∑ i ∈ t, w i • z i ∈ s := by
+  -- Put the remaining weight `1 - ∑ i ∈ t, w i` on the point `0`.
+  have h := hs.sum_mem (t := t.insertNone) (w := fun o ↦ o.elim (1 - ∑ i ∈ t, w i) w)
+    (z := fun o ↦ o.elim 0 z) (by simpa [Option.forall] using ⟨hw₁, hw₀⟩) (by simp)
+    (by simpa [Option.forall] using ⟨h₀, hz⟩)
+  simpa using h
+
+/-- A convex set containing `0` and symmetric about it contains every combination of its points
+whose coefficients have absolute values of total at most `1`. -/
+theorem sum_mem_of_sum_abs_le_one (hs : Convex 𝕜 s) (h₀ : (0 : E) ∈ s)
+    (hneg : ∀ x ∈ s, -x ∈ s) {t : Finset ι} {c : ι → 𝕜} {z : ι → E}
+    (hc : ∑ i ∈ t, |c i| ≤ 1) (hz : ∀ i ∈ t, z i ∈ s) :
+    ∑ i ∈ t, c i • z i ∈ s := by
+  classical
+  -- Move the sign of each coefficient onto its vector.
+  have h (i : ι) : c i • z i = |c i| • if 0 ≤ c i then z i else -z i := by
+    split_ifs with hci
+    · rw [abs_of_nonneg hci]
+    · rw [abs_of_neg (not_le.1 hci), neg_smul, smul_neg, neg_neg]
+  simp only [h]
+  refine hs.sum_mem_of_zero_mem h₀ (fun i _ ↦ abs_nonneg _) hc fun i hi ↦ ?_
+  split_ifs
+  exacts [hz i hi, hneg _ (hz i hi)]
+
+/-- **A weighted cross-polytope inside a symmetric convex set.** Let `s` be a convex set
+containing `0` and symmetric about it, `b` a basis and `a` positive weights with `b i ∈ a i • s`
+for every `i`. Then `s` contains the weighted cross-polytope
+`{x | ∑ i, a i * |b.repr x i| ≤ 1}`. -/
+theorem weighted_crosspolytope_subset [Fintype ι] (hs : Convex 𝕜 s) (h₀ : (0 : E) ∈ s)
+    (hneg : ∀ x ∈ s, -x ∈ s) (b : Module.Basis ι 𝕜 E) {a : ι → 𝕜} (ha : ∀ i, 0 < a i)
+    (hb : ∀ i, b i ∈ a i • s) :
+    {x : E | ∑ i, a i * |b.repr x i| ≤ 1} ⊆ s := by
+  intro x hx
+  have hx' : x = ∑ i, (a i * b.repr x i) • (a i)⁻¹ • b i := by
+    conv_lhs => rw [← b.sum_repr x]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    simp [smul_smul, mul_right_comm _ _ (a i)⁻¹, (ha i).ne']
+  rw [hx']
+  refine hs.sum_mem_of_sum_abs_le_one h₀ hneg ?_ fun i _ ↦
+    (Set.mem_smul_set_iff_inv_smul_mem₀ (ha i).ne' _ _).1 (hb i)
+  simpa [abs_mul, abs_of_pos (ha _)] using hx
+
+end Convex
 
 namespace Finset
 
