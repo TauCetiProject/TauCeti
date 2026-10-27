@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Functor
+public import Mathlib.RingTheory.GradedAlgebra.Radical
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 
@@ -26,7 +27,11 @@ isomorphism of schemes. It computes the locus where a function `g / fⁿ` on a s
 chart `D₊(f)` is invertible: it is `D₊(fg)`, so the restriction of sections from `D₊(f)` to
 `D₊(fg)` is a localization at `g / fⁿ`. Finally, it identifies the inverse image under
 `Proj A ⟶ Spec A₀` of the basic open of a degree-zero element `r` with the standard open `D₊(r)`,
-so that the structure map to `Spec A₀` can be studied through homogeneous prime ideals.
+so that the structure map to `Spec A₀` can be studied through homogeneous prime ideals. It also
+proves the homogeneous Nullstellensatz for elements of the irrelevant ideal, with two consequences
+used to compute the sections of the twisting sheaves over standard opens: a homogeneous element
+vanishing in the localizations at all points of `D₊(g)` is killed by a power of `g`, and compatible
+homogeneous fractions covering `D₊(f)` glue to a single fraction over a power of `f`.
 
 ## Main definitions
 
@@ -50,6 +55,12 @@ so that the structure map to `Spec A₀` can be studied through homogeneous prim
   arbitrarily large degree.
 * `ProjectiveSpectrum.ext_of_mem_pos`: positive-degree homogeneous elements determine a
   projective point, allowing comparison through its positive-degree coordinate opens.
+* `ProjectiveSpectrum.mem_radical_of_zeroLocus_subset`: the homogeneous Nullstellensatz, for
+  elements of the irrelevant ideal.
+* `ProjectiveSpectrum.exists_pow_mul_eq_zero`: a homogeneous element which is locally zero on
+  `D₊(g)` is killed by a power of `g`.
+* `ProjectiveSpectrum.exists_mul_eq_pow_mul`: compatible homogeneous fractions whose standard opens
+  cover `D₊(f)` glue to a single fraction with a power of `f` as denominator.
 -/
 
 public section
@@ -254,5 +265,95 @@ theorem ext_of_mem_pos {x y : ProjectiveSpectrum 𝒜}
     simpa only [← HomogeneousIdeal.mem_iff, x.isPrime.mul_mem_iff_mem_or_mem,
       y.isPrime.mul_mem_iff_mem_or_mem, htx', hty', or_false] using heq
   · exact h (i + 1) (Nat.succ_pos i) s hs
+
+/-- **Homogeneous Nullstellensatz on `Proj`.** If an element `f` of the irrelevant ideal lies in
+every point of `Proj A` containing a homogeneous ideal `I`, then `f` lies in the radical of `I`. -/
+theorem mem_radical_of_zeroLocus_subset {I : Ideal A} (hI : I.IsHomogeneous 𝒜) {f : A}
+    (hf : f ∈ HomogeneousIdeal.irrelevant 𝒜) (h : zeroLocus 𝒜 I ⊆ zeroLocus 𝒜 {f}) :
+    f ∈ I.radical := by
+  rw [Ideal.IsHomogeneous.radical_eq hI, Submodule.mem_sInf]
+  rintro J ⟨hJ, hIJ, hJp⟩
+  by_contra hfJ
+  -- otherwise `J` is a relevant homogeneous prime containing `I` but not `f`
+  have hx : (⟨⟨J, hJ⟩, hJp, fun hle ↦ hfJ (hle hf)⟩ : ProjectiveSpectrum 𝒜) ∈ zeroLocus 𝒜 {f} :=
+    h hIJ
+  exact hfJ (hx (Set.mem_singleton f))
+
+/-- Let `g` be an element of the irrelevant ideal, for instance homogeneous of positive degree,
+and `a` homogeneous. If at every point `x` of `D₊(g)` the element `a` is annihilated by some element
+outside `x`, then `a` is annihilated by a power of `g`. -/
+theorem exists_pow_mul_eq_zero {g a : A} {k : ℕ} (hg : g ∈ HomogeneousIdeal.irrelevant 𝒜)
+    (ha : a ∈ 𝒜 k)
+    (h : ∀ x : ProjectiveSpectrum 𝒜, g ∉ x.asHomogeneousIdeal →
+      ∃ c ∉ x.asHomogeneousIdeal, c * a = 0) :
+    ∃ N, g ^ N * a = 0 := by
+  classical
+  -- the homogeneous annihilators of `a` span a homogeneous ideal `I` annihilating `a`
+  let I := Ideal.span {u | SetLike.IsHomogeneousElem 𝒜 u ∧ u * a = 0}
+  have hI : I.IsHomogeneous 𝒜 := Ideal.homogeneous_span _ _ fun _ hu ↦ hu.1
+  have hIa (u : A) (hu : u ∈ I) : u * a = 0 := by
+    induction hu using Submodule.span_induction with
+    | mem u hu => exact hu.2
+    | zero => exact zero_mul a
+    | add u v _ _ hu hv => rw [add_mul, hu, hv, add_zero]
+    | smul c u _ hu => rw [smul_eq_mul, mul_assoc, hu, mul_zero]
+  suffices g ∈ I.radical from this.imp fun N hN ↦ hIa _ hN
+  refine mem_radical_of_zeroLocus_subset hI hg fun x hx ↦ ?_
+  rw [mem_zeroLocus, Set.singleton_subset_iff]
+  by_contra hgx
+  obtain ⟨c, hcx, hc⟩ := h x hgx
+  -- some homogeneous component `cᵢ` of `c` lies outside `x`, and `cᵢ * a = 0` lies in `I`
+  obtain ⟨i, hi⟩ : ∃ i, (DirectSum.decompose 𝒜 c i : A) ∉ x.asHomogeneousIdeal := by
+    by_contra! H
+    exact hcx ((x.asHomogeneousIdeal.isHomogeneous.mem_iff 𝒜).2 H)
+  refine hi (hx (Ideal.subset_span ⟨⟨i, SetLike.coe_mem _⟩, ?_⟩))
+  have := DirectSum.coe_decompose_mul_of_right_mem_of_le 𝒜 (a := c) (n := i + k) ha
+    (Nat.le_add_left k i)
+  rwa [hc, DirectSum.decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero,
+    Nat.add_sub_cancel, eq_comm] at this
+
+/-- **Gluing homogeneous fractions.** Let `f` be homogeneous of positive degree `d`, and let
+`r x / g x` be finitely many fractions of homogeneous elements of degrees `deg r x = deg g x + n`
+whose standard opens `D₊(g x)` cover `D₊(f)`, and which are compatible in the strong sense
+`g x * r z = g z * r x`. Then there is a single fraction `R / fᵏ`, with `R` homogeneous of degree
+`k * d + n`, such that `g x * R = fᵏ * r x` for every `x`. -/
+theorem exists_mul_eq_pow_mul {n : ℤ} {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (hd : 0 < d) {ι : Type*}
+    [Finite ι] {i j : ι → ℕ} (h : ∀ x, (j x : ℤ) = i x + n) {r g : ι → A}
+    (hr : ∀ x, r x ∈ 𝒜 (j x)) (hg : ∀ x, g x ∈ 𝒜 (i x))
+    (hcover : ∀ y : ProjectiveSpectrum 𝒜, f ∉ y.asHomogeneousIdeal →
+      ∃ x, g x ∉ y.asHomogeneousIdeal)
+    (hcompat : ∀ x z, g x * r z = g z * r x) :
+    ∃ (k J : ℕ) (_ : (J : ℤ) = (k * d : ℕ) + n) (R : A), R ∈ 𝒜 J ∧ ∀ x, g x * R = f ^ k * r x := by
+  classical
+  have := Fintype.ofFinite ι
+  -- `f` lies in the radical of the ideal generated by the `g x`
+  obtain ⟨K, hK⟩ : f ∈ (Ideal.span (Set.range g)).radical := by
+    refine mem_radical_of_zeroLocus_subset (Ideal.homogeneous_span _ _ ?_)
+      (HomogeneousIdeal.mem_irrelevant_of_mem 𝒜 hd hf) fun y hy ↦ ?_
+    · rintro _ ⟨x, rfl⟩
+      exact ⟨_, hg x⟩
+    rw [mem_zeroLocus, Set.singleton_subset_iff]
+    by_contra hfy
+    obtain ⟨x, hx⟩ := hcover y hfy
+    exact hx (hy (Ideal.subset_span ⟨x, rfl⟩))
+  -- raise the exponent so that the numerator has nonnegative degree `k * d + n`
+  set k := K + n.natAbs
+  obtain ⟨c, hc⟩ := Ideal.mem_span_range_iff_exists_fun.1
+    (show f ^ k ∈ _ from pow_add f K n.natAbs ▸ Ideal.mul_mem_right _ _ hK)
+  have hkd : k ≤ k * d := Nat.le_mul_of_pos_right k hd
+  set J := ((k * d : ℕ) + n).toNat
+  have hJ : (J : ℤ) = (k * d : ℕ) + n := by omega
+  -- the numerator is the degree-`J` part of `∑ x, c x * r x`
+  refine ⟨k, J, hJ, _, SetLike.coe_mem (DirectSum.decompose 𝒜 (∑ x, c x * r x) J), fun x ↦ ?_⟩
+  have hmem : f ^ k * r x ∈ 𝒜 (J + i x) := by
+    convert SetLike.mul_mem_graded (SetLike.pow_mem_graded k hf) (hr x) using 2
+    have := h x
+    simp only [smul_eq_mul]
+    omega
+  rw [mul_comm (g x), ← Nat.add_sub_cancel J (i x),
+    ← DirectSum.coe_decompose_mul_of_right_mem_of_le 𝒜 (hg x) (Nat.le_add_left _ _),
+    Finset.sum_mul, Finset.sum_congr rfl fun z _ ↦ (by
+      rw [mul_assoc, mul_comm (r z), hcompat x z, ← mul_assoc]),
+    ← Finset.sum_mul, hc, DirectSum.decompose_of_mem_same 𝒜 hmem]
 
 end ProjectiveSpectrum
