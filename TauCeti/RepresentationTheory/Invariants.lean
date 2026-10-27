@@ -158,7 +158,7 @@ theorem range_norm_trivial (k H : Type*) [CommSemiring k] [Group H] [Fintype H] 
 
 /-- For the trivial representation, the norm `N = ∑ ρ(h)` is multiplication by the group order. -/
 @[simp]
-theorem norm_trivial_apply (k H : Type*) {V : Type*} [CommSemiring k] [Group H] [Fintype H]
+theorem norm_trivial_apply (k H : Type*) {V : Type*} [Semiring k] [Group H] [Fintype H]
     [AddCommMonoid V] [Module k V] (x : V) :
     (Representation.trivial k H V).norm x = (Nat.card H : k) • x := by
   simp [Representation.norm, Nat.card_eq_fintype_card, Nat.cast_smul_eq_nsmul]
