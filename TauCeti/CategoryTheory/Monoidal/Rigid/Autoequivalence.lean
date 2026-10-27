@@ -291,6 +291,9 @@ instance leftDualEquivalence_isMonoidal : (leftDualEquivalence C).IsMonoidal :=
 /-- The double right dual functor of a rigid monoidal category, as an autoequivalence of `C` whose
 inverse is the double left dual functor: the right dual equivalence followed by the inverse of
 the left dual equivalence. -/
+-- Exposed: the statements of `doubleRightDualEquivalence_unitIso` and
+-- `doubleRightDualEquivalence_counitIso` only typecheck once the functor and inverse unfold.
+@[expose]
 noncomputable def doubleRightDualEquivalence : C ≌ C :=
   (rightDualEquivalence C).trans (leftDualEquivalence C).symm
 
@@ -350,6 +353,19 @@ instance doubleLeftDualCompDoubleRightDual_isMonoidal :
     NatTrans.IsMonoidal (doubleLeftDualCompDoubleRightDual C).hom :=
   inferInstanceAs (NatTrans.IsMonoidal
     ((rightDualEquivalence C).trans (leftDualEquivalence C).symm).counitIso.hom)
+
+/-- The unit of `doubleRightDualEquivalence C` is the inverse of
+`doubleRightDualCompDoubleLeftDual C`. -/
+@[simp]
+theorem doubleRightDualEquivalence_unitIso :
+    (doubleRightDualEquivalence C).unitIso = (doubleRightDualCompDoubleLeftDual C).symm :=
+  (rfl)
+
+/-- The counit of `doubleRightDualEquivalence C` is `doubleLeftDualCompDoubleRightDual C`. -/
+@[simp]
+theorem doubleRightDualEquivalence_counitIso :
+    (doubleRightDualEquivalence C).counitIso = doubleLeftDualCompDoubleRightDual C :=
+  (rfl)
 
 variable {C}
 
