@@ -96,7 +96,10 @@ noncomputable def unitizationContinuousAlgEquiv (hB : IsClosed (B : Set A))
   letI : CompleteSpace (Algebra.adjoin 𝕜 (B : Set A)) := (B.isClosed_adjoin hB).completeSpace_coe
   let e := (WithLp.unitizationAlgEquiv 𝕜).trans (unitizationAlgEquiv B h1)
   have he_coe : (fun x ↦ (e x : A)) =
-      fun x ↦ unitization B (WithLp.ofLp x) := rfl
+      fun x ↦ unitization B (WithLp.ofLp x) := by
+    funext x
+    simpa only [e, AlgEquiv.trans_apply, WithLp.unitizationAlgEquiv_apply, unitization_apply]
+      using unitizationAlgEquiv_apply_coe B h1 (WithLp.ofLp x)
   have he : Continuous e := continuous_induced_rng.mpr (by
     simp only [Function.comp_def, he_coe]
     exact B.continuous_unitization)
@@ -121,7 +124,20 @@ theorem unitizationContinuousAlgEquiv_apply_coe (hB : IsClosed (B : Set A))
     (h1 : (1 : A) ∉ B) (x : WithLp 1 (Unitization 𝕜 B)) :
     (B.unitizationContinuousAlgEquiv hB h1 x : A) =
       algebraMap 𝕜 A (WithLp.ofLp x).fst + (WithLp.ofLp x).snd := by
-  rfl
+  rw [← ContinuousAlgEquiv.coe_toAlgEquiv, unitizationContinuousAlgEquiv_toAlgEquiv,
+    AlgEquiv.trans_apply,
+    unitizationAlgEquiv_apply_coe, WithLp.unitizationAlgEquiv_apply]
+
+/-- The inverse bounded identification recovers the scalar and nonunital coordinates. -/
+@[simp↓]
+theorem unitizationContinuousAlgEquiv_symm_apply (hB : IsClosed (B : Set A))
+    (h1 : (1 : A) ∉ B) (r : 𝕜) (b : B)
+    {h : algebraMap 𝕜 A r + b ∈ Algebra.adjoin 𝕜 (B : Set A)} :
+    (B.unitizationContinuousAlgEquiv hB h1).symm ⟨algebraMap 𝕜 A r + b, h⟩ =
+      WithLp.toLp 1 (Unitization.inl r + (b : Unitization 𝕜 B)) := by
+  apply (B.unitizationContinuousAlgEquiv hB h1).symm_apply_eq.mpr
+  apply Subtype.ext
+  simp
 
 end NontriviallyNormedField
 
