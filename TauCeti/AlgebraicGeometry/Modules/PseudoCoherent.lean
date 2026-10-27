@@ -83,6 +83,20 @@ def IsPseudoCoherent (F : X.Modules) : Prop :=
 
 variable {F G : X.Modules}
 
+/-- Unfolding of `HasFiniteFreeResolution`: a chain complex of free modules of finite rank with a
+quasi-isomorphism to `F[0]`. -/
+theorem hasFiniteFreeResolution_iff : F.HasFiniteFreeResolution ↔
+    ∃ (P : ChainComplex X.Modules ℕ) (π : P ⟶ (ChainComplex.single₀ X.Modules).obj F),
+      (∀ n, ∃ ι : Type u, Finite ι ∧
+        Nonempty (P.X n ≅ SheafOfModules.free (R := X.ringCatSheaf) ι)) ∧ QuasiIso π :=
+  Iff.rfl
+
+/-- Unfolding of `IsPseudoCoherent`: every point has an open neighbourhood `U` on which `F` has a
+finite free resolution. -/
+theorem isPseudoCoherent_iff : F.IsPseudoCoherent ↔
+    ∀ x : X, ∃ U : X.Opens, x ∈ U ∧ (F.restrict U.ι).HasFiniteFreeResolution :=
+  Iff.rfl
+
 namespace HasFiniteFreeResolution
 
 /-- Having a finite free resolution is invariant under isomorphism. -/
@@ -91,7 +105,8 @@ theorem of_iso (e : F ≅ G) (h : F.HasFiniteFreeResolution) : G.HasFiniteFreeRe
   exact ⟨P, π ≫ (ChainComplex.single₀ X.Modules).map e.hom, hP, inferInstance⟩
 
 /-- An exact functor `T` into `X.Modules` carries a resolution `P ⟶ A[0]` whose terms `T` sends to
-free modules of finite rank to a finite free resolution of `T A`. -/
+free modules of finite rank to a finite free resolution of `T A`. The construction follows Mathlib's
+`CategoryTheory.Functor.mapProjectiveResolution`. -/
 theorem of_quasiIso_map {C : Type*} [Category* C] [Abelian C] (T : C ⥤ X.Modules) [T.Additive]
     [T.PreservesHomology] {P : ChainComplex C ℕ} {A : C}
     (π : P ⟶ (ChainComplex.single₀ C).obj A) [QuasiIso π]
