@@ -36,7 +36,10 @@ linear-independence theorem for the constant terms at all cusps.
 
 * `TauCeti.EisensteinSeries.CharIndex.eq_of_changeLevel_eq`: an index is determined by its
   raising parameter and its two characters raised to level `N`; the moduli alone are determined
-  by the raised characters (`u_eq_of_changeLevel_eq`, `v_eq_of_changeLevel_eq`).
+  by the raised characters (`u_eq_of_changeLevel_eq`, `v_eq_of_changeLevel_eq`), and a trivial
+  character has modulus one (`u_eq_one_of_psi_eq_one`, `v_eq_one_of_phi_eq_one`).
+* `TauCeti.EisensteinSeries.CharIndex.nebentypus_eq_one`: the trivial pair of characters induces
+  the trivial nebentypus.
 * `TauCeti.EisensteinSeries.CharIndex.form_mem_modFormCharSpace`: every indexed series belongs
   to the character space prescribed by its induced nebentypus.
 * `TauCeti.EisensteinSeries.CharIndex.qExpansion_form_coeff`: the positive Fourier coefficients
@@ -119,6 +122,13 @@ theorem nebentypus_def :
     unfold nebentypus
     congr
 
+/-- The nebentypus of an index whose two characters are trivial is trivial. -/
+theorem nebentypus_eq_one (h : a.psi = 1 ∧ a.phi = 1) : a.nebentypus = 1 := by
+  rw [nebentypus_def, h.1, h.2, DirichletCharacter.changeLevel_one,
+    DirichletCharacter.changeLevel_one, mul_one]
+  ext x
+  simp
+
 /-- The modulus of the first character of an index is the conductor of its raise to level `N`,
 so indices whose first characters agree after raising have the same first modulus. -/
 theorem u_eq_of_changeLevel_eq [NeZero N] {a b : CharIndex N k}
@@ -134,6 +144,18 @@ theorem v_eq_of_changeLevel_eq [NeZero N] {a b : CharIndex N k}
   have h := congrArg DirichletCharacter.conductor hphi
   rwa [DirichletCharacter.conductor_changeLevel, DirichletCharacter.conductor_changeLevel,
     a.phi_primitive, b.phi_primitive] at h
+
+/-- The first character of an index is trivial only when its modulus is one, the modulus of a
+primitive character being its conductor. -/
+theorem u_eq_one_of_psi_eq_one [NeZero N] {a : CharIndex N k} (h : a.psi = 1) : a.u = 1 := by
+  have : NeZero a.u := NeZero.of_dvd a.u_dvd
+  rw [← a.psi_primitive, h, DirichletCharacter.conductor_one]
+
+/-- The second character of an index is trivial only when its modulus is one, the modulus of a
+primitive character being its conductor. -/
+theorem v_eq_one_of_phi_eq_one [NeZero N] {a : CharIndex N k} (h : a.phi = 1) : a.v = 1 := by
+  have : NeZero a.v := NeZero.of_dvd a.v_dvd
+  rw [← a.phi_primitive, h, DirichletCharacter.conductor_one]
 
 /-- Two indices with the same raising parameter whose characters agree after raising to level
 `N` are equal: a primitive character is determined by its raise, its modulus being the
