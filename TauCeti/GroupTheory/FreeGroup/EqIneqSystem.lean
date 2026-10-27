@@ -141,6 +141,37 @@ theorem exists_isSolution_disjunctionProduct (S T : List (EqIneqSystem X A))
     exact ⟨s.append t, ⟨s, hs, t, ht, rfl⟩,
       (isSolution_append s t v c).mpr ⟨hS, hT⟩⟩
 
+/-- Evaluating a word after renaming its variable letters along `f` evaluates the original
+word at the composite assignment. -/
+@[simp] theorem eval_map_sumMap {Y : Type*} (f : X → Y) (v : Y → G) (c : A → G)
+    (w : FreeGroup (X ⊕ A)) :
+    eval v c (FreeGroup.map (Sum.map f id) w) = eval (v ∘ f) c w := by
+  rw [← MonoidHom.comp_apply]
+  congr 1
+  apply FreeGroup.ext_hom
+  intro i
+  cases i <;> simp
+
+/-- Rename the variables of a system along `f : X → Y`, keeping its coefficient letters.
+Several variables may be identified, and variables outside the range of `f` stay unused. -/
+def relabel {Y : Type*} (f : X → Y) (S : EqIneqSystem X A) : EqIneqSystem Y A :=
+  ⟨S.eqs.map (FreeGroup.map (Sum.map f id)), S.ineqs.map (FreeGroup.map (Sum.map f id))⟩
+
+/-- The equations of a relabelled system are the relabelled equations. -/
+@[simp] theorem eqs_relabel {Y : Type*} (f : X → Y) (S : EqIneqSystem X A) :
+    (S.relabel f).eqs = S.eqs.map (FreeGroup.map (Sum.map f id)) := by rfl
+
+/-- The inequations of a relabelled system are the relabelled inequations. -/
+@[simp] theorem ineqs_relabel {Y : Type*} (f : X → Y) (S : EqIneqSystem X A) :
+    (S.relabel f).ineqs = S.ineqs.map (FreeGroup.map (Sum.map f id)) := by rfl
+
+/-- An assignment solves a relabelled system exactly when its composite with the relabelling
+solves the original system. -/
+@[simp] theorem isSolution_relabel {Y : Type*} (f : X → Y) (S : EqIneqSystem X A)
+    (v : Y → G) (c : A → G) :
+    (S.relabel f).IsSolution v c ↔ S.IsSolution (v ∘ f) c := by
+  simp [IsSolution]
+
 /-- Evaluation commutes with a group homomorphism when the variables and coefficients are
 mapped along that homomorphism. -/
 @[simp] theorem comp_eval (φ : G →* H) (v : X → G) (c : A → G) :
