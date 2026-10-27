@@ -18,7 +18,7 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 Every `C^n` real vector bundle with finite-dimensional fibres over a σ-compact Hausdorff smooth
 manifold modelled on a finite-dimensional space carries a `C^n` Riemannian metric
 (`TauCeti.nonempty_contMDiffRiemannianMetric`). In particular, a σ-compact Hausdorff smooth
-manifold modelled on a finite-dimensional space carries a smooth (`C^∞`) Riemannian metric on its
+manifold modelled on a finite-dimensional space carries a `C^n` Riemannian metric on its
 tangent bundle (`TauCeti.nonempty_contMDiffRiemannianMetric_tangentBundle`). Here `n` ranges over
 `ℕ∞`: the metric is built with smooth partitions of unity, so the analytic case is not covered.
 
@@ -39,7 +39,7 @@ parts, and it gives the exponential maps, distances and volumes built from a met
   fibres over a σ-compact Hausdorff smooth manifold modelled on a finite-dimensional space has a
   `C^n` Riemannian metric.
 * `TauCeti.nonempty_contMDiffRiemannianMetric_tangentBundle`: a σ-compact Hausdorff smooth
-  manifold modelled on a finite-dimensional space has a smooth (`C^∞`) Riemannian metric on its
+  manifold modelled on a finite-dimensional space has a `C^n` Riemannian metric on its
   tangent bundle.
 
 ## References
@@ -114,17 +114,13 @@ theorem nonempty_contMDiffRiemannianMetric [∀ b, ContinuousConstSMul ℝ (E b)
   exact ⟨⟨s, fun b ↦ (hs b).1, fun b ↦ (hs b).2.1, fun b ↦ (hs b).2.2, s.contMDiff⟩⟩
 
 /-- **Existence of a Riemannian metric on a manifold.** A σ-compact Hausdorff smooth manifold
-modelled on a finite-dimensional space admits a smooth (`C^∞`) Riemannian metric on its tangent
-bundle. -/
+modelled on a finite-dimensional space admits a `C^n` Riemannian metric on its tangent bundle for
+every `n : ℕ∞`, including a smooth metric when `n = ∞`. -/
 theorem nonempty_contMDiffRiemannianMetric_tangentBundle
     {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
     [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M] :
-    Nonempty (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) := by
-  let _ : IsManifold I (∞ + 1) M := by
-    simpa using (inferInstance : IsManifold I ∞ M)
-  let _ : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  exact nonempty_contMDiffRiemannianMetric
+    Nonempty (ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) :=
+  nonempty_contMDiffRiemannianMetric
 
 end TauCeti
