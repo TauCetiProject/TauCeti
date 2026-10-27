@@ -284,7 +284,8 @@ theorem W1p.w1p0Submodule_le_ker_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
 
 /-- **The trace commutes with smooth bounded multiplication.** On a bounded Lipschitz domain, for
 `1 ≤ p < ∞`, the trace of `ψ u` is `ψ` times the trace of `u`, for every smooth `ψ` bounded
-together with its gradient on `Ω`. -/
+together with its gradient on `Ω`. The density argument is adapted from the flat version
+`TauCeti.W1p.hyperplaneTrace_contDiffSMul_ae` in `TauCeti.Analysis.Sobolev.Trace.Multiplication`. -/
 theorem W1p.frontierTrace_contDiffSMul_ae (hp : p ≠ (∞ : ℝ≥0∞))
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
