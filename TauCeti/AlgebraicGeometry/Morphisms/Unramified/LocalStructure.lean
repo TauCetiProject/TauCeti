@@ -86,20 +86,6 @@ theorem exists_isClosedImmersion_etale_of_unramified (g : Z ⟶ Spec (.of R)) [U
     exact IsScalarTower.algebraMap_apply R Γ(Z, V) (Localization.Away f) r
   · rw [Scheme.Hom.comp_apply, Scheme.Hom.comp_apply, hw, hQ, Scheme.hom_inv_apply]
 
-/-- The graph of a morphism `j : W ⟶ Spec E` over `Spec R`, defined on an open subscheme `W` of
-`Z`, is an open immersion into the base change of `Z` along the étale `Spec E ⟶ Spec R`: it is a
-section of the unramified projection over `W`. -/
-private theorem isOpenImmersion_lift_of_isPullback {E : Type u} [CommRing E] [Algebra R E]
-    [Algebra.Etale R E] {g : Z ⟶ Spec (.of R)} {W Z' : Scheme.{u}} {ι : W ⟶ Z}
-    [IsOpenImmersion ι] {j : W ⟶ Spec (.of E)} {p : Z' ⟶ Z} {g' : Z' ⟶ Spec (.of E)}
-    (H : IsPullback p g' g (Spec.algebraMap R E)) (hcomm : j ≫ Spec.algebraMap R E = ι ≫ g) :
-    IsOpenImmersion (H.lift ι j hcomm.symm) := by
-  have : Etale (Spec.algebraMap R E) :=
-    (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance)
-  have : Unramified p := MorphismProperty.of_isPullback (P := @Unramified) H.flip inferInstance
-  have : IsOpenImmersion (H.lift ι j hcomm.symm ≫ p) := by rwa [H.lift_fst]
-  exact MorphismProperty.of_postcomp @IsOpenImmersion (W' := @Unramified) _ p ‹_› ‹_›
-
 /-- **Étale local structure of unramified morphisms.** If `g : Z ⟶ Spec R` is unramified and
 `z` is a point of `Z`, then there is an étale `R`-algebra `E` such that on every base change
 `Z'` of `Z` along `Spec E ⟶ Spec R`, with projections `p : Z' ⟶ Z` and `g' : Z' ⟶ Spec E`, some
@@ -115,7 +101,9 @@ theorem exists_isClosedImmersion_of_isPullback_etale (g : Z ⟶ Spec (.of R)) [U
   obtain ⟨E, _, _, _, W, ι, j, w, hι, hj, hcomm, hw⟩ :=
     g.exists_isClosedImmersion_etale_of_unramified z
   refine ⟨E, inferInstance, inferInstance, inferInstance, fun p g' H ↦ ?_⟩
-  refine ⟨W, H.lift ι j hcomm.symm, w, isOpenImmersion_lift_of_isPullback H hcomm,
+  have : Etale (Spec.algebraMap R E) :=
+    (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance)
+  refine ⟨W, H.lift ι j hcomm.symm, w, isOpenImmersion_lift_of_isPullback H hcomm.symm,
     by rwa [H.lift_fst], by rwa [H.lift_snd], ?_⟩
   rw [← Scheme.Hom.comp_apply, H.lift_fst, hw]
 
@@ -172,7 +160,9 @@ theorem exists_isClosedImmersion_of_isPullback_isLocalRing_etale [Finite (PrimeS
     g.exists_isClosedImmersion_isLocalRing_etale_of_unramified z
   refine ⟨E, inferInstance, inferInstance, inferInstance, inferInstance, ?_, fun p g' H ↦ ?_⟩
   · rw [← hjw, ← Scheme.Hom.comp_apply, hcomm, Scheme.Hom.comp_apply, hw]
-  refine ⟨W, H.lift ι j hcomm.symm, w, isOpenImmersion_lift_of_isPullback H hcomm,
+  have : Etale (Spec.algebraMap R E) :=
+    (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance)
+  refine ⟨W, H.lift ι j hcomm.symm, w, isOpenImmersion_lift_of_isPullback H hcomm.symm,
     by rwa [H.lift_fst], by rwa [H.lift_snd], ?_, ?_⟩
   · rw [← Scheme.Hom.comp_apply, H.lift_fst, hw]
   · rw [← Scheme.Hom.comp_apply, H.lift_snd, hjw]

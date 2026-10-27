@@ -9,8 +9,6 @@ public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
 public import TauCeti.AlgebraicGeometry.Morphisms.Unramified.LocalStructure
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Etale
-import TauCeti.RingTheory.RegularLocalRing.Basic
-import TauCeti.RingTheory.RegularLocalRing.Flat
 import TauCeti.RingTheory.Spectrum.Prime.Finite
 
 /-!
@@ -145,11 +143,9 @@ theorem _root_.AlgebraicGeometry.Scheme.exists_singularLocus_iso_Spec_quotient_o
   have : IsLocalHom (algebraMap R E) :=
     (IsLocalRing.isLocalHom_iff_comap_closedPoint _).mpr
       ((Spec.map_apply ..).symm.trans (hE₀.trans hz))
-  have : IsNoetherianRing E := Algebra.FiniteType.isNoetherianRing R E
-  have hmax := Algebra.FormallyUnramified.map_maximalIdeal (R := R) (S := E)
-  have : _root_.IsRegularLocalRing E := IsRegularLocalRing.of_flat_of_map_maximalIdeal_eq hmax
-  have : IsDiscreteValuationRing E := IsDiscreteValuationRing.of_flat_of_map_maximalIdeal_eq hmax
-  have hπE := IsDiscreteValuationRing.irreducible_algebraMap_of_map_maximalIdeal_eq hmax hπ
+  obtain ⟨_, _, hπE⟩ :=
+    IsDiscreteValuationRing.exists_isDiscreteValuationRing_of_etale (R := R) (S := E)
+  replace hπE := hπE π hπ
   refine ⟨E, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, hπE, fun X' _ g H ↦ ?_⟩
   have : SyntomicOfRelativeDimension 1 (X' ↘ Spec (.of E)) :=
