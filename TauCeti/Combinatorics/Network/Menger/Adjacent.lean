@@ -152,7 +152,7 @@ theorem exists_paths_isMixedSeparator_card_eq [Finite V] [Fintype (Q s t)] (hst 
     Sum.elim (fun i ↦ @Prefunctor.mapPath V ⟨WithoutHom F⟩ V ⟨Q⟩ (WithoutHom.incl F) s t (P i))
       fun e ↦ (ArrowWalk.nil s).cons e
   have hP'l (i : Fin k) : (P' (.inl i)).vertices = (P i).vertices :=
-    WithoutHom.vertices_mapPath_incl _
+    ArrowWalk.vertices_mapPath_of_obj_eq_id _ rfl _
   have hP'r (e : Q s t) : P' (.inr e) = (ArrowWalk.nil s).cons e := rfl
   -- Every member of `P` visits a vertex other than `s` and `t`, unlike a single arrow.
   have hint (i : Fin k) : ∃ v ∈ (P' (.inl i)).vertices, v ≠ s ∧ v ≠ t :=
@@ -191,7 +191,8 @@ theorem exists_paths_isMixedSeparator_card_eq [Finite V] [Fintype (Q s t)] (hst 
     obtain ⟨p', rfl⟩ := WithoutHom.exists_mapPath_incl_eq p fun a ha haF ↦
       h.2 a ha (mem_arrowFinset.1 haF).1 (mem_arrowFinset.1 haF).2
     exact hX (reachableAvoiding_def.2
-      ⟨p', fun v hv hvX ↦ h.1 v ((WithoutHom.vertices_mapPath_incl p').symm ▸ hv) hvX⟩)
+      ⟨p', fun v hv hvX ↦ h.1 v
+        ((ArrowWalk.vertices_mapPath_of_obj_eq_id (WithoutHom.incl F) rfl p').symm ▸ hv) hvX⟩)
 
 /-- **Menger's theorem for internally vertex-disjoint directed paths between possibly adjacent
 terminals, predicate form.** Let `s ≠ t` be vertices of an arrow family on a finite vertex type,

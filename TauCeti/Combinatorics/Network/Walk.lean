@@ -717,12 +717,6 @@ variable (F) in
 abbrev WithoutHom.incl : @Prefunctor V ⟨WithoutHom F⟩ V ⟨Q⟩ :=
   @Prefunctor.mk V ⟨WithoutHom F⟩ V ⟨Q⟩ (fun v ↦ v) fun e ↦ e.1
 
-/-- Pushing a walk along the inclusion of the arrows outside `F` keeps its vertices. -/
-theorem WithoutHom.vertices_mapPath_incl (p : ArrowWalk (WithoutHom F) s t) :
-    ArrowWalk.vertices (Q := Q) (s := s) (t := t)
-      (@Prefunctor.mapPath V ⟨WithoutHom F⟩ V ⟨Q⟩ (incl F) s t p) = p.vertices :=
-  ArrowWalk.vertices_mapPath_of_obj_eq_id _ rfl p
-
 /-- A walk traversing no arrow of `F` is the image of a walk along the arrows outside `F`. -/
 theorem WithoutHom.exists_mapPath_incl_eq (p : ArrowWalk Q s t) (hp : ∀ a ∈ p.arrows, a ∉ F) :
     ∃ p' : ArrowWalk (WithoutHom F) s t,
