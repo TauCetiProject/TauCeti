@@ -29,7 +29,8 @@ linear factors by `card s` over any commutative ring, without the nontriviality 
 that an affine substitution `X ↦ a X + b` with `a ≠ 0` keeps the degree.
 `Polynomial.sub_C_ne_zero` records that a nonconstant polynomial differs from every constant
 polynomial, and `Polynomial.natDegree_one_sub_C_mul_le` bounds the degree of `1 - C a * p` by that
-of `p`.
+of `p`; in particular `Polynomial.natDegree_one_sub_C_mul_X_le` shows that `1 - t X` has degree at
+most one.
 -/
 
 public section
@@ -85,6 +86,11 @@ theorem _root_.Polynomial.sub_C_ne_zero {S : Type*} [Ring S] {p : S[X]} (hp : 0 
 theorem _root_.Polynomial.natDegree_one_sub_C_mul_le {S : Type*} [Ring S] (a : S) (p : S[X]) :
     (1 - C a * p).natDegree ≤ p.natDegree :=
   (natDegree_sub_le _ _).trans (max_le (by simp) (natDegree_C_mul_le _ _))
+
+/-- The linear polynomial `1 - t X` has degree at most one. -/
+theorem _root_.Polynomial.natDegree_one_sub_C_mul_X_le {S : Type*} [Ring S] (t : S) :
+    (1 - C t * X).natDegree ≤ 1 :=
+  (natDegree_one_sub_C_mul_le t X).trans natDegree_X_le
 
 /-- For `2 ≤ n`, the trinomial `X ^ n + C a * X + C b` has degree `n`. -/
 theorem _root_.Polynomial.natDegree_X_pow_add_C_mul_X_add_C [Nontrivial R] (a b : R) {n : ℕ}

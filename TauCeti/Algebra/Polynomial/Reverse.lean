@@ -41,8 +41,8 @@ The file also records how reversal interacts with products of monic polynomials 
 binomials `X ^ n - C a`, which together compute the reverse of a characteristic polynomial that
 factors into such binomials, and that reflection at a sum of degree bounds is multiplicative on
 finite products (`Polynomial.reflect_prod`), which computes the reflection of a determinant of
-polynomials term by term. Reflection at a degree bound stays within that bound, and its
-coefficient at the bound is the constant coefficient.
+polynomials term by term. Reflection at a degree bound stays within that bound, also after a
+coefficient map, and its coefficient at the bound is the constant coefficient.
 -/
 
 public section
@@ -157,6 +157,11 @@ theorem reflect_prod [CommSemiring R] {ι : Type*} (s : Finset ι) (f : ι → R
 theorem natDegree_reflect_le_of_natDegree_le [Semiring R] {p : R[X]} {N : ℕ}
     (hN : p.natDegree ≤ N) : (p.reflect N).natDegree ≤ N :=
   natDegree_reflect_le.trans (max_le le_rfl hN)
+
+/-- Reflection at a bound on the degree, followed by a coefficient map, stays within that bound. -/
+theorem natDegree_map_reflect_le_of_natDegree_le [Semiring R] [Semiring S] (f : R →+* S)
+    {p : R[X]} {N : ℕ} (hN : p.natDegree ≤ N) : ((p.reflect N).map f).natDegree ≤ N :=
+  natDegree_map_le.trans (natDegree_reflect_le_of_natDegree_le hN)
 
 /-- The coefficient of the reflection at the bound itself is the constant coefficient. -/
 theorem coeff_reflect_self [Semiring R] (p : R[X]) (N : ℕ) :
