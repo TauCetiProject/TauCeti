@@ -38,18 +38,7 @@ and evaluates it at a prime `p` not dividing `2 det A`.
 **Stabilization.** Let `A` be symmetric with `2 det A ∣ pᵉ`, for instance `e = v_p(2 det A)`.
 For every `r > 2 e` the count at level `r + 1` is `p ^ (n.choose 2)` times the count at level `r`,
 so the normalized count is constant from `r₀ = 2 e + 1` on, and the local density exists and is a
-positive rational number. The argument has three steps, with `k = r - e > e`:
-
-* for `r > e` every solution modulo `pʳ` has unit determinant, so the solutions form a group, and
-  their number is the number of their images modulo `pᵏ` times the number of solutions that are
-  `1` modulo `pᵏ`;
-* one Newton step `X ↦ X + pᵏ Z`, with `Z` built from the adjugate of `Xᵀ A`, shows that the
-  solutions at levels `r` and `r + 1` have the same images modulo `pᵏ`;
-* the solutions that are `1` modulo `pᵏ` are the matrices `1 + pᵏ Z`, with `Z` modulo `pᵉ`
-  (at level `r`) or modulo `pᵉ⁺¹` (at level `r + 1`) in the kernel of `Z ↦ A Z + (A Z)ᵀ`. This
-  map takes symmetric values, and its image contains `pᵉ` times every symmetric matrix `H`, the
-  image of `c adj(A) H` for `pᵉ = 2 det A · c`. So its image has the same index in the symmetric
-  matrices at both levels, and its kernel grows by `p^{n²} / p^{n (n + 1) / 2} = p^{n (n - 1) / 2}`.
+positive rational number.
 
 **Primes not dividing `2 det A`.** There one may take `e = 0`, so the normalized count is constant
 from `r = 1` on, and the local density is `#O(A mod p) / p^{n (n - 1) / 2}`, where `O(A mod p)`
@@ -146,6 +135,20 @@ theorem localDensityCount_transpose_mul_mul {A P : Matrix n n ℤ_[p]} (hP : IsU
   exact hP.map _
 
 /-! ### Stabilization at every prime -/
+
+/- The proof of `localDensityCount_succ_of_dvd` has three steps, with `k = r - e > e`:
+
+* for `r > e` every solution modulo `pʳ` has unit determinant, so the solutions form a group, and
+  their number is the number of their images modulo `pᵏ` times the number of solutions that are
+  `1` modulo `pᵏ`;
+* one Newton step `X ↦ X + pᵏ Z`, with `Z` built from the adjugate of `Xᵀ A`, shows that the
+  solutions at levels `r` and `r + 1` have the same images modulo `pᵏ`;
+* the solutions that are `1` modulo `pᵏ` are the matrices `1 + pᵏ Z`, with `Z` modulo `pᵉ`
+  (at level `r`) or modulo `pᵉ⁺¹` (at level `r + 1`) in the kernel of `Z ↦ A Z + (A Z)ᵀ`. This
+  map takes symmetric values, and its image contains `pᵉ` times every symmetric matrix `H`, the
+  image of `c adj(A) H` for `pᵉ = 2 det A · c`. So its image has the same index in the symmetric
+  matrices at both levels, and its kernel grows by `p^{n²} / p^{n (n + 1) / 2} = p^{n (n - 1) / 2}`.
+-/
 
 /-- If `Xᵀ A X ≡ A` modulo `p ^ r`, where `det A` divides `p ^ e` for some `e < r`, then `X` has
 unit determinant. -/
@@ -338,8 +341,8 @@ private theorem natCard_setOf_mem_isometryMatrices_map_eq_one {A : Matrix n n �
       Subtype.ext hWZ⟩
 
 /-- **The image of `Z ↦ A Z + (A Z)ᵀ` modulo `p ^ (e + 1)` contains `pᵉ` times every symmetric
-matrix**, when `2 det A ∣ p ^ e`: a symmetric `W` vanishing modulo `p ^ e` lifts to `pᵉ T` over
-`ℤ_p` with `T` symmetric, which is the image of `c adj(A) T` for `pᵉ = 2 det A c`. -/
+matrix**, when `2 det A ∣ p ^ e`: every symmetric `W` modulo `p ^ (e + 1)` that vanishes modulo
+`p ^ e` is a value of this map. -/
 private theorem exists_tangentHom_eq_of_map_castHom_eq_zero {A : Matrix n n ℤ_[p]} {e : ℕ}
     (he : 2 * A.det ∣ (p : ℤ_[p]) ^ e) (hdvd : p ^ e ∣ p ^ (e + 1))
     {W : Matrix n n (ZMod (p ^ (e + 1)))} (hW : W.map (ZMod.castHom hdvd (ZMod (p ^ e))) = 0)
@@ -370,13 +373,14 @@ private theorem exists_tangentHom_eq_of_map_castHom_eq_zero {A : Matrix n n ℤ_
   ring
 
 /-- **The kernel of `Z ↦ A Z + (A Z)ᵀ` grows by `p ^ (n.choose 2)` from level `e` to `e + 1`**,
-when `2 det A ∣ p ^ e`. The image of the map consists of symmetric matrices and contains `pᵉ`
-times all of them, so its index in the symmetric matrices is the same at both levels. -/
+when `2 det A ∣ p ^ e`. -/
 private theorem natCard_ker_tangentHom_succ {A : Matrix n n ℤ_[p]} {e : ℕ}
     (he : 2 * A.det ∣ (p : ℤ_[p]) ^ e) :
     Nat.card (tangentHom (A.map (PadicInt.toZModPow (p := p) (e + 1)))).ker =
       p ^ (Fintype.card n).choose 2 *
         Nat.card (tangentHom (A.map (PadicInt.toZModPow (p := p) e))).ker := by
+  -- the image of the map consists of symmetric matrices and contains `pᵉ` times all of them, so
+  -- its index in the symmetric matrices is the same at both levels
   have hdvd : p ^ e ∣ p ^ (e + 1) := pow_dvd_pow p e.le_succ
   set L₁ := tangentHom (A.map (PadicInt.toZModPow (p := p) (e + 1)))
   set L₀ := tangentHom (A.map (PadicInt.toZModPow (p := p) e))
