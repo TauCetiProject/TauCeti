@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.Deriv
+public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.NumberTheory.LSeries.Linearity
-public import TauCeti.Topology.Algebra.InfiniteSum.FiniteModification
+public import TauCeti.NumberTheory.LSeries.Deriv
+public import TauCeti.Topology.Algebra.Group.FiniteModification
 
 /-!
 # Finite changes of Dirichlet coefficients
@@ -15,7 +16,9 @@ public import TauCeti.Topology.Algebra.InfiniteSum.FiniteModification
 Changing coefficients on a finite set adds a finite Dirichlet polynomial to an analytic
 continuation, and adds its value at `1` to the limit of ordered harmonic sums. This file
 gives both corrections explicitly. In particular, the boundary statements concern limits
-of finite sums and do not require absolute summability at the boundary.
+of finite sums and do not require absolute summability at the boundary. The imported
+`LSeries.differentiable_sum_term` shows that the correction is entire; combine its
+`.differentiableOn` with `DifferentiableOn.add` to correct a continuation.
 
 The coefficient at `0` is immaterial throughout. The finite set of changes may contain `0`,
 and agreement outside it is required only at positive indices.
@@ -23,8 +26,6 @@ and agreement outside it is required only at positive indices.
 ## Main declarations
 
 * `LSeriesHasSum.congr_finset`: transport a native Dirichlet-series sum through finite changes.
-* `DifferentiableOn.add_sum_LSeries_term`: the corrected continuation is holomorphic
-  on the original domain.
 * `Finset.eventually_sum_Icc_div_sub_eq_sum`: the exact eventual finite correction.
 * `Finset.tendsto_sum_Icc_div_congr_finset_iff`: the corresponding equivalence of
   ordered boundary limits.
@@ -50,14 +51,45 @@ theorem congr_finset {a b : ℕ → ℂ} {s A : ℂ} (ha : LSeriesHasSum a s A)
 
 end LSeriesHasSum
 
-namespace DifferentiableOn
+open Filter
+open scoped Topology
 
-/-- Adding the finite Dirichlet correction to a holomorphic continuation preserves its
-domain of holomorphy. The correction itself is entire, including at `s = 0`. -/
-theorem add_sum_LSeries_term {F : ℂ → ℂ} {Ω : Set ℂ}
-    (hF : DifferentiableOn ℂ F Ω) (c : ℕ → ℂ) (S : Finset ℕ) :
-    DifferentiableOn ℂ (fun s ↦ F s + ∑ n ∈ S, LSeries.term c s n) Ω := by
-  exact hF.add (Differentiable.fun_sum (𝕜 := ℂ)
-    (fun n _ s ↦ (LSeries.hasDerivAt_term c n s).differentiableAt)).differentiableOn
+namespace Finset
 
-end DifferentiableOn
+variable {K : Type*} [DivisionRing K] {a b : ℕ → K} {L : K}
+
+/-- Once the cutoff contains every positive changed index, the difference of the ordered
+harmonic sums is exactly the finite correction. Changes at index `0` contribute zero. -/
+theorem sum_Icc_div_sub_eq_sum (S : Finset ℕ)
+    (hab : ∀ n, n ≠ 0 → n ∉ S → a n = b n) {N : ℕ} (hN : S.sup id ≤ N) :
+    (∑ n ∈ Icc 1 N, b n / (n : K)) - (∑ n ∈ Icc 1 N, a n / (n : K)) =
+      ∑ n ∈ S, (b n - a n) / (n : K) := by
+  classical
+  simpa only [← sub_div,
+    sum_erase (a := 0) (f := fun n ↦ (b n - a n) / (n : K)) S (by simp)] using
+    sum_Icc_sub_eq_sum S (fun n hn hnS ↦ congrArg (· / (n : K)) (hab n hn hnS)) hN
+
+/-- The exact correction formula for finite changes holds eventually in the natural cutoff. -/
+theorem eventually_sum_Icc_div_sub_eq_sum (S : Finset ℕ)
+    (hab : ∀ n, n ≠ 0 → n ∉ S → a n = b n) :
+    ∀ᶠ N : ℕ in atTop,
+      (∑ n ∈ Icc 1 N, b n / (n : K)) - (∑ n ∈ Icc 1 N, a n / (n : K)) =
+        ∑ n ∈ S, (b n - a n) / (n : K) := by
+  filter_upwards [eventually_ge_atTop (S.sup id)] with N hN
+  exact sum_Icc_div_sub_eq_sum S hab hN
+
+/-- Finite changes preserve convergence of ordered harmonic sums, with the explicit finite
+correction to the limit. This does not assert an unconditional sum at `1`. -/
+theorem tendsto_sum_Icc_div_congr_finset_iff [TopologicalSpace K]
+    [IsTopologicalAddGroup K] (S : Finset ℕ)
+    (hab : ∀ n, n ≠ 0 → n ∉ S → a n = b n) :
+    Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, b n / (n : K)) atTop
+        (𝓝 (L + ∑ n ∈ S, (b n - a n) / (n : K))) ↔
+      Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, a n / (n : K)) atTop (𝓝 L) := by
+  classical
+  simpa only [← sub_div,
+    sum_erase (a := 0) (f := fun n ↦ (b n - a n) / (n : K)) S (by simp)] using
+    tendsto_sum_Icc_congr_finset_iff (L := L) S
+      (fun n hn hnS ↦ congrArg (· / (n : K)) (hab n hn hnS))
+
+end Finset
