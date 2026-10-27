@@ -5,7 +5,7 @@ Authors: Wentao Li
 -/
 module
 
-public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.NarrowClass
+public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Narrow.Class
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring

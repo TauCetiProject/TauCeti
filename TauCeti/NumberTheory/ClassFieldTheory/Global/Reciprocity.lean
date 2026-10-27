@@ -39,6 +39,15 @@ As in the local case, the layer of `L` does not depend on `ι`, and changing `ι
 abelianization, so finite global reciprocity does not depend on the embedding
 (`globalArtinEquiv_eq_of_iota`).
 
+The global Artin maps of the different finite Galois extensions are compatible in towers. The
+global class formation has an absolute Artin map `C_K → G_K^ab` whose finite restrictions are the
+Artin maps of its layers (`ClassFormation.abelianizationRestrict_absoluteArtinMap`). So if
+`g ∈ G_K` represents the absolute Artin symbol of `c ∈ C_K`, then the global Artin symbol of `c`
+in `Gal(L/K)^ab` is the class of the restriction of `g` to `L`, for every `L`
+(`globalArtinMap_eq_of_mk_eq_absoluteArtinMap`). In particular, for a `K`-embedding `M → L` of
+finite Galois extensions, restricting the global Artin symbol from `L` to `M` gives the global
+Artin symbol of `M/K` (`globalArtinMap_comp`).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.globalArtinEquiv K L ι`: finite global reciprocity
@@ -57,13 +66,18 @@ abelianization, so finite global reciprocity does not depend on the embedding
 * `TauCeti.ClassFieldTheory.surjective_globalArtinMap`: the global Artin map is surjective.
 * `TauCeti.ClassFieldTheory.globalArtinMap_principal`: the global Artin map kills principal
   ideles.
+* `TauCeti.ClassFieldTheory.globalArtinMap_eq_of_mk_eq_absoluteArtinMap`: the global Artin symbol
+  in `Gal(L/K)^ab` is the restriction of any representative of the absolute Artin symbol.
+* `TauCeti.ClassFieldTheory.globalArtinMap_comp`: the global Artin map is compatible with
+  restriction to a Galois subextension.
 * `TauCeti.ClassFieldTheory.card_ideleClassNormQuotient`: the norm index theorem
   `[C_K : N_{L/K}(C_L)] = [L : K]` for a finite abelian extension.
 
 ## References
 
 * E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §4.
-* J. Neukirch, *Algebraic Number Theory*, Chapter VI, §5.
+* J. Neukirch, *Algebraic Number Theory*, Chapter VI, §5 (including the compatibility of the
+  norm residue symbol in towers).
 * J. S. Milne, *Class Field Theory*, v4.03, Chapter VIII.
 -/
 
@@ -180,6 +194,40 @@ theorem globalArtinMap_principal (ι : L →ₐ[K] SeparableClosure K) (x : Kˣ)
         (.ofMul (IdeleGroup.unitEmbedding (𝓞 K) K x : IdeleClassGroup (𝓞 K) K)) = 0 := by
   rw [(QuotientGroup.eq_one_iff (N := IdeleGroup.principalSubgroup (𝓞 K) K) _).2 ⟨x, rfl⟩,
     ofMul_one, map_zero]
+
+/-! ### Compatibility in towers -/
+
+/-- **The global Artin map through a representative of the absolute Artin symbol.** If
+`g ∈ G_K` represents the absolute Artin symbol of `c ∈ C_K` for the global class formation, then
+for every finite Galois extension `L/K`, embedded in the separable closure by `ι`, the Artin
+symbol of `c` in `Gal(L/K)^ab` is the class of the restriction of `g` along `ι`. -/
+theorem globalArtinMap_eq_of_mk_eq_absoluteArtinMap (ι : L →ₐ[K] SeparableClosure K)
+    {c : IdeleClassGroup (𝓞 K) K} (g : AbsoluteGaloisGroup K)
+    (hg : Additive.ofMul (g : TopologicalAbelianization (AbsoluteGaloisGroup K)) =
+      (globalClassFormation K).absoluteArtinMap (globalGroundEquiv K (.ofMul c))) :
+    globalArtinMap K L ι (.ofMul c) = .ofMul (Abelianization.of (ι.restrictNormalHom g)) := by
+  have hmem : g ∈ (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).ground := by simp
+  -- The layer Artin map is the restriction of the absolute one, evaluated at the class of `g`.
+  rw [globalArtinMap_apply, globalArtinEquiv_mk,
+    ← (globalClassFormation K).abelianizationRestrict_absoluteArtinMap, ← hg,
+    NormalLayer.abelianizationRestrict_mk _ ⟨g, hmem⟩]
+  simp
+
+/-- **The global Artin map is compatible in towers**: for a `K`-embedding `f : M → L` of a
+finite Galois extension `M/K` into `L`, restricting the global Artin symbol in `Gal(L/K)^ab` to
+`M` along `f` gives the global Artin symbol in `Gal(M/K)^ab`. -/
+theorem globalArtinMap_comp {M : Type*} [Field M] [NumberField M] [Algebra K M] [IsGalois K M]
+    (f : M →ₐ[K] L) (ι : L →ₐ[K] SeparableClosure K) :
+    (Abelianization.map f.restrictNormalHom).toAdditive.comp (globalArtinMap K L ι) =
+      globalArtinMap K M (ι.comp f) := by
+  refine AddMonoidHom.ext fun c ↦ ?_
+  obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
+  -- Represent the absolute Artin symbol of `c` by some `g ∈ G_K`; both symbols restrict `g`.
+  obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective
+    ((globalClassFormation K).absoluteArtinMap (globalGroundEquiv K (.ofMul c))).toMul
+  have hg' := congrArg Additive.ofMul hg
+  simp [globalArtinMap_eq_of_mk_eq_absoluteArtinMap K L ι g hg',
+    globalArtinMap_eq_of_mk_eq_absoluteArtinMap K M (ι.comp f) g hg']
 
 end Galois
 

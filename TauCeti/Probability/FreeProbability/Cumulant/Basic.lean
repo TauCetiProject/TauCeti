@@ -70,6 +70,9 @@ traciality are never assumed. For `s = ∅` the cumulant
   the mean `φ a_i` and the covariance `φ (a_i * a_j) - φ a_i * φ a_j`.
 * `TauCeti.freeCumulant_eq_zero_of_apply_eq_one` — if `φ 1 = 1`, the free cumulant of a word of
   length at least two with a unit argument vanishes.
+* `TauCeti.partitionMoment_congr`, `TauCeti.partitionCumulant_congr` and
+  `TauCeti.freeCumulant_congr` — block moments and cumulants depend only on the letters at the
+  positions of `s`.
 
 ## References
 
@@ -101,6 +104,13 @@ def partitionMoment (φ : A → R) (a : α → A) (P : Finpartition s) : R :=
 theorem partitionMoment_def (φ : A → R) (a : α → A) (P : Finpartition s) :
     partitionMoment φ a P = ∏ B ∈ P.parts, φ ((B.sort.map a).prod) := by
   rw [partitionMoment]
+
+/-- The block moment `φ_P(a)` depends only on the letters of `a` at the positions of `s`. -/
+theorem partitionMoment_congr (φ : A → R) {a b : α → A} (h : Set.EqOn a b s) (P : Finpartition s) :
+    partitionMoment φ a P = partitionMoment φ b P := by
+  rw [partitionMoment_def, partitionMoment_def]
+  refine prod_congr rfl fun B hB => ?_
+  rw [List.map_congr_left fun x hx => h (P.le hB ((mem_sort _).1 hx))]
 
 /-- The block moment of the partition into singletons is the product of the individual
 moments. -/
@@ -143,6 +153,16 @@ def freeCumulant (φ : A → R) (a : α → A) (s : Finset α) : R :=
 theorem freeCumulant_def (φ : A → R) (a : α → A) (s : Finset α) :
     freeCumulant φ a s = partitionCumulant φ a (⊤ : NoncrossingPartition s) := by
   rw [freeCumulant]
+
+/-- The free cumulant `κ_π(a)` depends only on the letters of `a` at the positions of `s`. -/
+theorem partitionCumulant_congr (φ : A → R) {a b : α → A} (h : Set.EqOn a b s)
+    (π : NoncrossingPartition s) : partitionCumulant φ a π = partitionCumulant φ b π := by
+  simp_rw [partitionCumulant_def, partitionMoment_congr φ h]
+
+/-- The free cumulant `κ_s(a)` depends only on the letters of `a` at the positions of `s`. -/
+theorem freeCumulant_congr (φ : A → R) {a b : α → A} (h : Set.EqOn a b s) :
+    freeCumulant φ a s = freeCumulant φ b s := by
+  rw [freeCumulant_def, freeCumulant_def, partitionCumulant_congr φ h]
 
 variable (φ : A → R) (a : α → A)
 

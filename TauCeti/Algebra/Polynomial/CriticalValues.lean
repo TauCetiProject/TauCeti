@@ -33,6 +33,9 @@ field of characteristic zero when `p` and `q` are nonconstant.
 * `Polynomial.criticalValues_comp_subset`: the critical values of a composite.
 * `Polynomial.criticalValues_comp`: equality for nonconstant polynomials over a field of
   characteristic zero, computed in an algebraically closed field.
+* `Polynomial.algebraMap_mem_criticalValues_of_isAlgClosed`: a critical value lying in the
+  coefficient field, attained in some field extension, is attained in every algebraically closed
+  one.
 
 ## References
 
@@ -149,5 +152,25 @@ theorem criticalValues_comp {K L : Type*} [Field K] [CharZero K] [Field L] [IsAl
     have hxy : aeval x q = y := by rwa [← eval_map_algebraMap]
     rw [← hxy]
     exact key x (by rw [hxy, aeval_eq_zero_of_mem_rootSet hy, mul_zero])
+
+/-- A critical value of `p ∈ K[X]` that lies in `K` and is attained at a critical point in some
+field extension `L` of `K` is also a critical value of `p` in every algebraically closed field
+extension `Ω` of `K`. -/
+theorem algebraMap_mem_criticalValues_of_isAlgClosed {K L Ω : Type*} [Field K] [Field L]
+    [Field Ω] [IsAlgClosed Ω] [Algebra K L] [Algebra K Ω] {p : K[X]} {c : K}
+    (h : algebraMap K L c ∈ p.criticalValues L) : algebraMap K Ω c ∈ p.criticalValues Ω := by
+  obtain ⟨x, hx, hxc⟩ := mem_criticalValues.mp h
+  have hp' : derivative p ≠ 0 := ne_zero_of_mem_rootSet hx
+  have hx' := aeval_eq_zero_of_mem_rootSet hx
+  have hint : IsIntegral K x := IsAlgebraic.isIntegral ⟨_, hp', hx'⟩
+  -- A root `ξ ∈ Ω` of the minimal polynomial of the critical point `x` is a common root of `p′`
+  -- and of `p - c`, as `x` is.
+  obtain ⟨ξ, hξ⟩ := IsAlgClosed.exists_aeval_eq_zero_of_injective Ω (algebraMap K Ω).injective
+    (minpoly K x) (minpoly.degree_pos hint).ne'
+  have aeval_eq_zero {q : K[X]} (hq : aeval x q = 0) : aeval ξ q = 0 := by
+    obtain ⟨r, hr⟩ := minpoly.dvd K x hq
+    rw [hr, map_mul, hξ, zero_mul]
+  refine ⟨ξ, (mem_rootSet_of_ne hp').mpr (aeval_eq_zero hx'), ?_⟩
+  simpa [sub_eq_zero] using aeval_eq_zero (q := p - C c) (by simp [hxc])
 
 end Polynomial

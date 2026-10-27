@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import TauCeti.CategoryTheory.Abelian.LeftDerived
+import Mathlib.CategoryTheory.Abelian.Exact
 
 /-!
 # `Tor` from a projective presentation of length one
@@ -29,6 +30,12 @@ kernels of `Hᵢ(K) ⊗ Bⱼ(L) ⟶ Hᵢ(K) ⊗ Zⱼ(L)`.
 
 These are the specializations to `X ⊗ -` of the computation of left derived functors in
 `TauCeti.CategoryTheory.Abelian.LeftDerived`.
+
+For Mathlib's `CategoryTheory.Tor' C n`, which derives the first variable instead,
+`((Tor' C n).obj X).obj Y` is `Lₙ(- ⊗ Y)(X)`. The file records two facts about it in the
+underived variable `Y`: it is an additive functor of `Y`, and `Tor'ₙ₊₁(X, 𝟙_ C)` vanishes
+(`CategoryTheory.isZero_Tor'_succ_tensorUnit`), since `- ⊗ 𝟙_ C` is isomorphic to the identity
+functor and hence exact.
 
 ## References
 
@@ -95,5 +102,23 @@ lemma Tor_obj_map_comp_torOneIsoKernel_hom (X : C) (φ : S ⟶ S') :
   leftDerived_map_comp_leftDerivedOneIsoKernel_hom _ hS' φ
 
 end ShortComplex.ShortExact
+
+/-- `Tor'` is additive in its second variable, the one that is not derived. -/
+instance (X : C) (n : ℕ) : ((Tor' C n).obj X).Additive where
+  map_add := by
+    simp only [Tor'_obj_map, Functor.map_add, NatTrans.leftDerived_add, NatTrans.app_add]
+    -- The two sums are formed in the hom-groups of `((Tor' C n).obj X).obj Y` and of
+    -- `(((tensoringRight C).obj Y).leftDerived n).obj X`, which agree by definition
+    -- (`CategoryTheory.Tor'_obj_obj`).
+    exact fun {_ _ _ _} ↦ rfl
+
+/-- The higher `Tor'` groups with the tensor unit as second variable vanish: `- ⊗ 𝟙_ C` is
+isomorphic to the identity functor, so it is exact. -/
+lemma isZero_Tor'_succ_tensorUnit (X : C) (n : ℕ) :
+    IsZero (((Tor' C (n + 1)).obj X).obj (𝟙_ C)) := by
+  have : ((tensoringRight C).obj (𝟙_ C)).PreservesHomology :=
+    Functor.preservesHomology_of_map_exact _ fun S hS ↦
+      ShortComplex.exact_of_iso (S.mapNatIso (rightUnitorNatIso C)).symm hS
+  exact Functor.isZero_leftDerived_succ _ X n
 
 end CategoryTheory
