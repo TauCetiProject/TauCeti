@@ -56,6 +56,8 @@ The finite set of the dominant integral weights below `lam` over which the expan
 
 * `RootPairing.coeff_weightOrbitSum`: the coefficients of `m_x` are `1` on the orbit of `x` and `0`
   elsewhere, and `RootPairing.isWeylInvariant_weightOrbitSum`: `m_x` is Weyl-invariant.
+* `RootPairing.isWeylInvariant_sum_single_smul`: the sum `∑_w e^{w x}` of all Weyl translates of
+  `x`, counted with repetition, is Weyl-invariant.
 * `TauCeti.IsWeylInvariant.eq_sum_coeff_smul_weightOrbitSum`: **a Weyl-invariant element supported
   below `lam` on integral weights is the combination of the orbit sums of the dominant integral
   weights below `lam`, with its own coefficients.**
@@ -184,6 +186,18 @@ theorem isWeylInvariant_weightOrbitSum (x : M) : IsWeylInvariant P (P.weightOrbi
   simp only [coeff_weightOrbitSum, smul_mem_weylWeightOrbit_iff]
 
 end OrbitSum
+
+variable {P} in
+/-- **The sum of all Weyl translates of a weight is Weyl-invariant.** In `∑_w e^{w x}` each weight
+of the Weyl orbit of `x` occurs once for every Weyl group element sending `x` to it, and
+translating by a Weyl group element permutes those elements. -/
+theorem isWeylInvariant_sum_single_smul [Fintype P.weylGroup] (x : M) :
+    IsWeylInvariant P (∑ w : P.weylGroup, AddMonoidAlgebra.single (w • x) (1 : ℤ)) := by
+  classical
+  refine (isWeylInvariant_iff P _).mpr fun v y ↦ ?_
+  simp only [AddMonoidAlgebra.coeff_sum, Finset.sum_apply', AddMonoidAlgebra.coeff_single,
+    Finsupp.single_apply]
+  exact Fintype.sum_equiv (Equiv.mulLeft v⁻¹) _ _ fun w ↦ by simp [mul_smul, inv_smul_eq_iff]
 
 end RootPairing
 

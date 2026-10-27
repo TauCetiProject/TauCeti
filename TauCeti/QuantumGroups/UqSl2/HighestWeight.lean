@@ -35,17 +35,9 @@ theorem exists_eq_sign_mul_pow_of_highest_weight_vector [FiniteDimensional ℂ V
     (hv0 : v ≠ 0) (hev : e q • v = 0) :
     ∃ (m : ℕ) (ε : ℤˣ), μ = ε * q ^ m ∧
       f q ^ (m + 1) • v = 0 ∧ f q ^ m • v ≠ 0 := by
-  classical
-  have hex : ∃ n : ℕ, f q ^ n • v = 0 := exists_f_pow_smul_eq_zero hq v
-  let N := Nat.find hex
-  have hN : f q ^ N • v = 0 := Nat.find_spec hex
-  have hNpos : 0 < N := by
-    by_contra! h
-    exact hv0 (by simpa [Nat.eq_zero_of_le_zero h] using hN)
-  let m := N - 1
-  have hNm : N = m + 1 := by omega
-  have hFm : f q ^ m • v ≠ 0 := by
-    exact Nat.find_min hex (by omega)
+  obtain ⟨m, hFm, hFm1⟩ :=
+    exists_pow_smul_ne_zero_and_smul_eq_zero hv0 (exists_f_pow_smul_eq_zero hq v)
+  have hN : f q ^ (m + 1) • v = 0 := by rwa [pow_succ', mul_smul]
   have hμ := weight_ne_zero hv hv0
   have hkInv : kInv q • v = μ⁻¹ • v := by
     have hk : μ • (kInv q • v) = v := by
@@ -61,8 +53,8 @@ theorem exists_eq_sign_mul_pow_of_highest_weight_vector [FiniteDimensional ℂ V
   have hcomm : (quantumInteger q (m + 1) * (q - q⁻¹)⁻¹ * (q⁻¹ ^ m * μ - q ^ m * μ⁻¹)) •
       f q ^ m • v = 0 := by
     have hf (c : ℂ) (w : V) : f q ^ m • c • w = c • f q ^ m • w := smul_comm _ _ _
-    have h := congrArg (· • v) (e_mul_f_pow hq.sub_inv_ne_zero N)
-    simp only [hNm, mul_smul, hNm ▸ hN, hev, smul_zero, add_smul, zero_add, smul_assoc,
+    have h := congrArg (· • v) (e_mul_f_pow hq.sub_inv_ne_zero (m + 1))
+    simp only [mul_smul, hN, hev, smul_zero, add_smul, zero_add, smul_assoc,
       sub_smul, mem_weightSpace_iff.mp hv, hkInv, Nat.add_sub_cancel, Nat.cast_add,
       Nat.cast_one, smul_sub, hf] at h
     generalize f q ^ m • v = w at h ⊢
@@ -76,7 +68,7 @@ theorem exists_eq_sign_mul_pow_of_highest_weight_vector [FiniteDimensional ℂ V
     linear_combination
       (μ * q ^ m) * hcoefficient - μ ^ 2 * hqm + (q ^ m) ^ 2 * mul_inv_cancel₀ hμ
   rcases eq_or_eq_neg_of_sq_eq_sq μ (q ^ m) hsq with hpos | hneg
-  · exact ⟨m, 1, by simpa using hpos, hNm ▸ hN, hFm⟩
-  · exact ⟨m, -1, by simpa using hneg, hNm ▸ hN, hFm⟩
+  · exact ⟨m, 1, by simpa using hpos, hN, hFm⟩
+  · exact ⟨m, -1, by simpa using hneg, hN, hFm⟩
 
 end TauCeti.UqSl2
