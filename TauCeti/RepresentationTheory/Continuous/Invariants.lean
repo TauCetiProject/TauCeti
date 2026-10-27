@@ -42,8 +42,8 @@ homomorphism `G → G ⧸ S` together with the inclusion `Xˢ ↪ X`.
 
 ## Main results
 
-* `TopRep.invariantsFunctor_map`: taking invariants maps a morphism to its restriction to
-  invariant vectors.
+* `TopRep.invariantsFunctor_map`, `TopRep.invariantsFunctor_map_hom`: taking invariants restricts a
+  morphism to invariant vectors, as a bundled morphism and as a continuous linear map.
 * `ContRepresentation.apply_mem_invariants_restrict`: the invariants of `π|_S` are a
   `G`-stable submodule when `S` is normal.
 * `ContRepresentation.invariants_restrict_bot`,
@@ -182,6 +182,15 @@ invariant vectors, bundled as a morphism of topological modules. -/
 theorem invariantsFunctor_map {X Y : TopRep R G} (f : X ⟶ Y) :
     (invariantsFunctor R G).map f = TopModuleCat.ofHom f.hom.mapInvariants :=
   (rfl)
+
+-- Not a simp lemma: the generic ConcreteCategory.hom_ofHom already proves this equation, so
+-- adding the attribute would violate simpNF. Instantiate this projection equation explicitly
+-- in simp only when the reducible invariants functor has already been simplified in the goal.
+/-- The underlying continuous linear map induced by taking invariants is the restriction of the
+original morphism to invariant vectors. -/
+theorem invariantsFunctor_map_hom {X Y : TopRep R G} (f : X ⟶ Y) :
+    ((invariantsFunctor R G).map f).hom = f.hom.mapInvariants :=
+  (congrArg TopModuleCat.Hom.hom (invariantsFunctor_map f)).trans (TopModuleCat.hom_ofHom R _)
 
 variable (X : TopRep R G) (S : Subgroup G) [S.Normal]
 
