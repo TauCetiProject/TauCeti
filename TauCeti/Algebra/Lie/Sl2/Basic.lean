@@ -150,7 +150,7 @@ theorem lie_single_single_eq_singleSubSingle (hij : i ≠ j) (c : R) :
   ext : 1
   rw [SpecialLinear.sl_bracket, SpecialLinear.val_single, SpecialLinear.val_single,
     SpecialLinear.val_singleSubSingle, ← LieRing.of_associative_ring_bracket,
-    lie_single_single_eq_sub]
+    Matrix.lie_single_single_eq_sub]
 
 /-- `⁅Eᵢᵢ - Eⱼⱼ, Eᵢⱼ⁆ = 2 Eᵢⱼ` in `sl n R`: the relation `⁅h, e⁆ = 2e` of the standard `sl₂`
 triple. -/
@@ -207,13 +207,13 @@ theorem isSl2Triple_matrix_single {S : Type*} [Ring S] [Nontrivial S]
     IsSl2Triple (single p p (1 : S) - single q q 1) (single p q (1 : S)) (single q p 1) where
   h_ne_zero hzero := (one_ne_zero : (1 : S) ≠ 0) <| by
     simpa [single_apply, hpq, hpq.symm] using congrArg (fun A => A p p) hzero
-  lie_e_f := lie_single_single_eq_sub p q 1
+  lie_e_f := Matrix.lie_single_single_eq_sub p q 1
   lie_h_e_nsmul := by
-    rw [lie_single_self_sub_single_self_single hpq, two_smul, ← single_add]
+    rw [Matrix.lie_single_self_sub_single_self_single hpq, two_smul, ← single_add]
     norm_num
   lie_h_f_nsmul := by
     rw [← neg_sub (single q q (1 : S)) (single p p 1), neg_lie,
-      lie_single_self_sub_single_self_single hpq.symm]
+      Matrix.lie_single_self_sub_single_self_single hpq.symm]
     rw [two_smul, ← single_add]
     norm_num
 
