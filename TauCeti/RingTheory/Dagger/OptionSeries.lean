@@ -192,32 +192,6 @@ theorem optionC_X (i : σ) : optionC (X σ R i) = X (Option σ) R (some i) :=
 theorem optionC_injective : Function.Injective (optionC (σ := σ) (R := R)) := fun f g h ↦
   PowerSeries.C_injective (by simpa using congrArg optionSeries h)
 
-/-- Evaluating a polynomial with overconvergent coefficients in `σ` at `Y = X none` along `optionC`
-and separating `Y` again recovers the polynomial as a univariate series. -/
-@[simp]
-theorem optionSeries_eval₂_optionC_X_none (r : Polynomial (washnitzerAlgebra σ R)) :
-    optionSeries (r.eval₂ (optionC (σ := σ) (R := R) : _ →+* _) (X (Option σ) R none)) =
-      (r : PowerSeries (washnitzerAlgebra σ R)) := by
-  have h : (optionSeries : washnitzerAlgebra (Option σ) R →ₐ[R] _).toRingHom.comp
-      (Polynomial.eval₂RingHom (optionC (σ := σ) (R := R) : _ →+* _) (X (Option σ) R none)) =
-        Polynomial.coeToPowerSeries.ringHom :=
-    Polynomial.ringHom_ext (fun a ↦ by simp) (by simp)
-  exact RingHom.congr_fun h r
-
-/-- Mapping the separated coefficients into the unit-radius Tate algebra agrees with
-the restricted-series iteration. -/
-@[simp]
-theorem map_toTate_optionSeries (f : washnitzerAlgebra (Option σ) R) :
-    PowerSeries.map (toTate σ R : washnitzerAlgebra σ R →+*
-      IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ))) (optionSeries f) =
-      (Huber.restrictedOptionEquiv (toTate (Option σ) R f) :
-        PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)))) := by
-  ext m : 1
-  apply Subtype.ext
-  rw [PowerSeries.coeff_map, Huber.coeff_restrictedOptionEquiv (c := fun _ ↦ 1),
-    coe_toTate]
-  exact (coe_toTate _).trans (coe_coeff_optionSeries f m)
-
 /-- Evaluation of polynomials over `R⟨X⟩†` at the separated variable `Y = X none`, as a ring map
 `R⟨X⟩†[Y] → R⟨X, Y⟩†`. -/
 noncomputable def polynomialToOption :
@@ -239,13 +213,30 @@ theorem polynomialToOption_X :
 /-- Separating `Y` from the evaluation of a polynomial at `Y` recovers the polynomial. -/
 @[simp]
 theorem optionSeries_polynomialToOption (p : Polynomial (washnitzerAlgebra σ R)) :
-    optionSeries (polynomialToOption p) = (p : PowerSeries (washnitzerAlgebra σ R)) :=
-  optionSeries_eval₂_optionC_X_none p
+    optionSeries (polynomialToOption p) = (p : PowerSeries (washnitzerAlgebra σ R)) := by
+  have h : (optionSeries : washnitzerAlgebra (Option σ) R →ₐ[R] _).toRingHom.comp
+      polynomialToOption = Polynomial.coeToPowerSeries.ringHom :=
+    Polynomial.ringHom_ext (fun a ↦ by simp) (by simp)
+  exact RingHom.congr_fun h p
 
 /-- Evaluation at `Y` is injective: a polynomial is recovered by separating `Y` again. -/
 theorem polynomialToOption_injective :
     Function.Injective (polynomialToOption (σ := σ) (R := R)) := fun p q h ↦
   Polynomial.coe_injective _ (by simpa using congrArg optionSeries h)
+
+/-- Mapping the separated coefficients into the unit-radius Tate algebra agrees with
+the restricted-series iteration. -/
+@[simp]
+theorem map_toTate_optionSeries (f : washnitzerAlgebra (Option σ) R) :
+    PowerSeries.map (toTate σ R : washnitzerAlgebra σ R →+*
+      IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ))) (optionSeries f) =
+      (Huber.restrictedOptionEquiv (toTate (Option σ) R f) :
+        PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)))) := by
+  ext m : 1
+  apply Subtype.ext
+  rw [PowerSeries.coeff_map, Huber.coeff_restrictedOptionEquiv (c := fun _ ↦ 1),
+    coe_toTate]
+  exact (coe_toTate _).trans (coe_coeff_optionSeries f m)
 
 /-- In the unit-radius Tate algebra, the evaluation of `p` at `Y` is `p` with coefficients mapped
 along `toTate`. -/
