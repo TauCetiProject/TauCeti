@@ -44,6 +44,15 @@ Petersson adjoint is the double coset operator of the main involution `α^ι = (
 The Hecke operators `Tₙ` are double coset operators of this kind, so this is the analytic core
 of the adjoint formula `Tₙ* = ⟨n⟩⁻¹ Tₙ` at indices prime to the level.
 
+Combined with `CuspForm.restrict_trace`, the adjunction compares forms for two groups `A` and
+`B` neither of which contains the other, on their intersection `L = A ⊓ B`, provided both lie in
+a group `D` every element of which is a product of an element of `A` and one of `B`. The trace
+from `L` to `B` of a form for `A` is then the restriction of its trace from `A` to `D`, so a form
+for `B` orthogonal to every form for `D` is, on `L`, orthogonal to every form for `A`. No
+hypothesis on `-I` is needed there: if `-I ∈ B` but `-I ∉ L`, then `-I ∉ A`, and the pairing is
+moved to `A` instead. For `A = Γ₁(N)` and `B = Γ₁(M)` this is the comparison of forms of levels
+`N` and `M` at level `lcm N M`, through level `gcd N M`.
+
 The Petersson products here are not normalised by the volume of the fundamental domain. When
 `Γ₁ = Γ₂` that makes no difference to the identity, and it is Diamond–Shurman's Proposition
 5.5.2(b). When `Γ₁ ≠ Γ₂` it is the un-normalised products that match with no volume factor.
@@ -55,6 +64,9 @@ The Petersson products here are not normalised by the volume of the fundamental 
 * `CuspForm.peterssonInnerCosets_trace_left`: the same for Mathlib's `CuspForm.trace`.
 * `CuspForm.peterssonInnerCosets_trace_translate`: the Petersson adjoint of the double coset
   operator `f ↦ tr (f ∣[k] α)` is `g ↦ tr (g ∣[k] α^ι)`.
+* `CuspForm.peterssonInnerCosets_restrict_restrict_eq_zero`: for `L = A ⊓ B` inside a group `D`
+  that factors as `A · B`, a form for `B` orthogonal to the forms for `D` is, on `L`, orthogonal
+  to the forms for `A`.
 
 ## References
 
@@ -287,5 +299,56 @@ theorem peterssonInnerCosets_trace_translate {Γ₁ Γ₂ : Subgroup SL(2, ℤ)}
   rw [peterssonInnerCosets_trace_left h₃ hneg₁, mul_left_cancel₀ hd hC,
     ← peterssonInnerCosets_conj_symm, ← peterssonInnerCosets_trace_left h₃' hneg₂,
     peterssonInnerCosets_conj_symm]
+
+/-! ### Orthogonality across two levels -/
+
+/-- **Orthogonality to the lower level survives restriction to the intersection.** Let
+`L = A ⊓ B`, with `A, B ≤ D` and every element of `D` a product of one of `A` and one of `B`. If a
+cusp form `F` for `B` is Petersson-orthogonal to (the restriction of) every cusp form for `D`,
+then on `L` its restriction is orthogonal to the restriction of every cusp form for `A`.
+
+For `A = Γ₁(N)`, `B = Γ₁(M)`, `D = Γ₁(gcd N M)` and `L = Γ₁(lcm N M)` this compares forms of two
+levels neither of which divides the other: a form of level `M` orthogonal to the forms of level
+`gcd N M` stays orthogonal, at level `lcm N M`, to all forms of level `N`. -/
+theorem peterssonInnerCosets_restrict_restrict_eq_zero {A B D L : Subgroup SL(2, ℤ)}
+    [A.FiniteIndex] [B.FiniteIndex] [D.FiniteIndex] [L.FiniteIndex] (hAD : A ≤ D) (hBD : B ≤ D)
+    (hL : L = A ⊓ B) (hmul : ∀ d ∈ D, ∃ a ∈ A, ∃ b ∈ B, a * b = d)
+    {F : CuspForm (B.map (mapGL ℝ)) k}
+    (hF : ∀ ψ : CuspForm (D.map (mapGL ℝ)) k,
+      peterssonInnerCosets (CuspForm.restrict (Subgroup.map_mono hBD) ψ) F = 0)
+    (φ : CuspForm (A.map (mapGL ℝ)) k) :
+    peterssonInnerCosets (CuspForm.restrict (Subgroup.map_mono (hL.trans_le inf_le_left)) φ)
+      (CuspForm.restrict (Subgroup.map_mono (hL.trans_le inf_le_right)) F) = 0 := by
+  have hLAB : L.map (mapGL ℝ) = A.map (mapGL ℝ) ⊓ B.map (mapGL ℝ) := by
+    rw [hL, Subgroup.map_inf_eq _ _ _ mapGL_injective]
+  -- factorizations in `SL(2, ℤ)` give factorizations of the images in `GL(2, ℝ)`
+  have hmap : ∀ {X Y : Subgroup SL(2, ℤ)}, (∀ d ∈ D, ∃ x ∈ X, ∃ y ∈ Y, x * y = d) →
+      ∀ h ∈ D.map (mapGL ℝ), ∃ x ∈ X.map (mapGL ℝ), ∃ y ∈ Y.map (mapGL ℝ), x * y = h := by
+    rintro X Y hXY _ ⟨d, hd, rfl⟩
+    obtain ⟨x, hx, y, hy, rfl⟩ := hXY d hd
+    exact ⟨_, ⟨x, hx, rfl⟩, _, ⟨y, hy, rfl⟩, (map_mul _ x y).symm⟩
+  by_cases hneg : (-1 : SL(2, ℤ)) ∈ B → (-1 : SL(2, ℤ)) ∈ L
+  · -- pair at level `B`: the trace of `φ` from `L` to `B` is the restriction of its trace to `D`
+    have hmul' : ∀ d ∈ D, ∃ b ∈ B, ∃ a ∈ A, b * a = d := fun d hd ↦ by
+      obtain ⟨a, ha, b, hb, hab⟩ := hmul d⁻¹ (inv_mem hd)
+      exact ⟨b⁻¹, inv_mem hb, a⁻¹, inv_mem ha, by rw [← mul_inv_rev, hab, inv_inv]⟩
+    rw [← peterssonInnerCosets_trace_left hLAB hneg φ F,
+      ← CuspForm.restrict_trace (Subgroup.map_mono hBD) (hmap hmul')]
+    exact hF _
+  · -- otherwise `-I ∈ B` but `-I ∉ A`: pair at level `A`, where the trace of `F` from `L` is
+    -- the restriction of its trace to `D`, and that trace vanishes because it is orthogonal to
+    -- itself
+    obtain ⟨hB1, hL1⟩ := not_imp.mp hneg
+    have hA1 : (-1 : SL(2, ℤ)) ∉ A := fun hA1 ↦ hL1 (hL ▸ ⟨hA1, hB1⟩)
+    have hB : B.map (mapGL ℝ) = B.map (mapGL ℝ) ⊓ D.map (mapGL ℝ) :=
+      (inf_eq_left.mpr (Subgroup.map_mono hBD)).symm
+    have htr : CuspForm.trace (D.map (mapGL ℝ)) F = 0 := by
+      refine peterssonInnerCosets_definite _ ?_
+      rw [peterssonInnerCosets_trace_left hB (fun _ ↦ hB1), ← peterssonInnerCosets_conj_symm]
+      exact (congrArg conj (hF _)).trans (map_zero _)
+    rw [← peterssonInnerCosets_conj_symm,
+      ← peterssonInnerCosets_trace_left (hLAB.trans (inf_comm _ _)) (fun h ↦ absurd h hA1) F φ,
+      ← CuspForm.restrict_trace (Subgroup.map_mono hAD) (hmap hmul), htr,
+      (CuspForm.restrict_eq_zero_iff _).mpr rfl, peterssonInnerCosets_zero_left, map_zero]
 
 end CuspForm
