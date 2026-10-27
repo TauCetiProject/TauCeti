@@ -203,8 +203,6 @@ theorem eval₂_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f)
         φ
         (f x) (mfderiv I I' f x v) (mfderiv I I' f x w) := by
   rw [SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply]
-  change (mpullback f hf φ).1 x ![v, w] =
-    φ.1 (f x) ![mfderiv I I' f x v, mfderiv I I' f x w]
   rw [mpullback_apply]
   congr 1
   ext i

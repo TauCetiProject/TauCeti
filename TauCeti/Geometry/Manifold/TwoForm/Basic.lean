@@ -64,7 +64,6 @@ theorem const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
       (const B) x v w =
       B (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
   rw [SmoothBundleForm.eval₂_apply]
-  change (const B).1 x ![v, w] = _
   rw [const_eq, SmoothForm.const_apply]
   simp only [ContinuousAlternatingMap.smul_apply]
   rw [ContinuousAlternatingMap.alternatizeBilinCLM_apply]

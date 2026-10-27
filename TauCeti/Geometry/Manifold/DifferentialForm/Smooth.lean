@@ -253,16 +253,7 @@ theorem eval₂_self (φ : SmoothBundleForm I F V 2) (x : M) (v : TangentSpace I
 theorem eval₂_swap (φ : SmoothBundleForm I F V 2) (x : M)
     (v w : TangentSpace I x) :
     φ.eval₂ x v w = -φ.eval₂ x w v := by
-  have h := (φ.1 x).map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
-  have htuple : ![v, w] ∘ Equiv.swap 0 1 = ![w, v] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [htuple] at h
-  have h' : φ.eval₂ x w v = -φ.eval₂ x v w := by
-    simpa [eval₂] using h
-  calc
-    φ.eval₂ x v w = - -φ.eval₂ x v w := by simp
-    _ = -φ.eval₂ x w v := by rw [h']
+  simpa [eval₂] using (φ.1 x).map_swap ![w, v] (i := 0) (j := 1) Fin.zero_ne_one
 
 @[simp]
 theorem eval₂_apply (φ : SmoothBundleForm I F V 2) (x : M)
