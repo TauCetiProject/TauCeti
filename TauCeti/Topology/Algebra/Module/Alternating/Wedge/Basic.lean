@@ -184,12 +184,19 @@ theorem pairedWedge_toAlternatingMap_of_eq_alternatization {k l : ℕ}
     (pairedWedge μ hμ φ ψ).toAlternatingMap =
       ((pairingLinear μ).compMultilinearMap
         ((f.domCoprod g).domDomCongr finSumFinEquiv)).alternatization := by
-  rw [pairedWedge_toAlternatingMap, wedgeWithUnalternated_def,
-    LinearMap.compMultilinearMap_alternatization, MultilinearMap.alternatization_domDomCongr,
-    MultilinearMap.domCoprod_alternatization_eq, hf, hg, ← MultilinearMap.domCoprod_alternatization,
-    LinearMap.compMultilinearMap_alternatization, MultilinearMap.alternatization_domDomCongr,
-    Fintype.card_fin, Fintype.card_fin, AlternatingMap.domDomCongr_smul,
-    LinearMap.compAlternatingMap_smul, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul, Nat.cast_mul,
+  -- Structural identity: alternatizing the unalternated pairing of two alternatizations
+  -- gives `k! l!` times the alternatization of the paired product.
+  have key : (wedgeWithUnalternated μ φ ψ).alternatization =
+      (k.factorial * l.factorial) • ((pairingLinear μ).compMultilinearMap
+        ((f.domCoprod g).domDomCongr finSumFinEquiv)).alternatization := by
+    rw [wedgeWithUnalternated_def, LinearMap.compMultilinearMap_alternatization,
+      MultilinearMap.alternatization_domDomCongr, MultilinearMap.domCoprod_alternatization_eq,
+      hf, hg, ← MultilinearMap.domCoprod_alternatization,
+      LinearMap.compMultilinearMap_alternatization, MultilinearMap.alternatization_domDomCongr,
+      Fintype.card_fin, Fintype.card_fin, AlternatingMap.domDomCongr_smul,
+      LinearMap.compAlternatingMap_smul]
+  -- Scalar normalization: the `(k! l!)⁻¹` of the paired wedge cancels these factorials.
+  rw [pairedWedge_toAlternatingMap, key, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul, Nat.cast_mul,
     inv_mul_cancel₀ (by positivity), one_smul]
 
 /-- Precomposing both inputs of a paired wedge by a continuous linear map is the same as
