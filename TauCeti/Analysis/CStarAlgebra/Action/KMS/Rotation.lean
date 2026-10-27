@@ -40,23 +40,7 @@ open scoped ComplexOrder
 
 namespace TauCeti.CStarAction
 
-/-- The coordinate function `z ↦ z` on the circle. -/
-private def coordinate : C(Circle, ℂ) :=
-  ⟨(↑), by fun_prop⟩
-
-@[simp]
-private theorem coordinate_apply (z : Circle) : coordinate z = z :=
-  (rfl)
-
-/-- The coordinate function is an eigenvector of the rotation action. -/
-private theorem rotation_coordinate (t : ℝ) :
-    rotation (Multiplicative.ofAdd t) coordinate = Complex.exp (-I * t) • coordinate := by
-  ext z
-  simp [Circle.coe_exp, ← Complex.exp_neg, mul_comm]
-
-private theorem star_coordinate_mul : star coordinate * coordinate = 1 := by
-  ext z
-  simp [Complex.conj_mul']
+open TauCeti.Circle
 
 variable {X : Type*} [TopologicalSpace X] [CompactSpace X]
 
@@ -84,7 +68,11 @@ theorem isKMSState_rotation_iff {β : ℝ} {ω : C(Circle, ℂ) →P[ℂ] ℂ} :
     rw [← PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one, hω.norm_eq_one, ofReal_one]
   have key := hω.apply_mul_entireExtension_mul_I (star coordinate)
     (isEntireAnalytic_of_apply_eq_exp_smul rotation_coordinate)
-  simpa [entireExtension_eq_exp_smul rotation_coordinate, mul_comm coordinate,
-    star_coordinate_mul, hω1, mul_left_comm I, ← ofReal_exp] using key
+  rw [entireExtension_eq_exp_smul rotation_coordinate, mul_smul_comm, star_coordinate_mul,
+    coordinate_mul_star, map_smul, hω1, smul_eq_mul, mul_one] at key
+  -- `key : exp (-i (iβ)) = 1`, and `-i (iβ) = β`
+  have hexp : (Real.exp β : ℂ) = 1 := by
+    rwa [show -I * (β * I) = β by linear_combination (-(β : ℂ)) * I_sq, ← ofReal_exp] at key
+  exact Real.exp_eq_one_iff β |>.mp (mod_cast hexp)
 
 end TauCeti.CStarAction
