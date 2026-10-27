@@ -277,10 +277,4 @@ theorem maximalNumberFieldOrder_toSubalgebra
     (K : Type u) [Field K] [NumberField K] :
     (maximalNumberFieldOrder K).toSubalgebra = integralClosure ℤ K := (rfl)
 
-/-- Every order is contained in the maximal order. -/
-theorem NumberFieldOrder.toSubalgebra_le_maximalNumberFieldOrder {K : Type*} [Field K]
-    [NumberField K] (O : NumberFieldOrder K) :
-    O.toSubalgebra ≤ (maximalNumberFieldOrder K).toSubalgebra :=
-  O.le_ringOfIntegers.trans_eq (maximalNumberFieldOrder_toSubalgebra K).symm
-
 end TauCeti.GlobalNumberFields

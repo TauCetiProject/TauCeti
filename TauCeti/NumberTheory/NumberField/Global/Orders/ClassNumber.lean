@@ -93,13 +93,14 @@ variable (O : NumberFieldOrder K)
 fractional ideal `I` of `O` goes to the ideal class of `I 𝓞 K`. -/
 def picToClassGroup : Pic O →* ClassGroup (𝓞 K) :=
   (maximalOrderPicEquiv K).toMonoidHom.comp
-    (Hom.ofLE O.toSubalgebra_le_maximalNumberFieldOrder).mapPic
+    (Hom.ofLE (O.le_ringOfIntegers.trans_eq (maximalNumberFieldOrder_toSubalgebra K).symm)).mapPic
 
 /-- On the class of an invertible ideal `I`, `picToClassGroup` gives the ideal class of the
 extension of `I` to the maximal order. -/
 theorem picToClassGroup_mkPic (I : O.invertibleProperFractionalIdeals) :
     O.picToClassGroup (O.mkPic I) = ClassGroup.mk K (maximalOrderUnitsEquiv K
-      ((Hom.ofLE O.toSubalgebra_le_maximalNumberFieldOrder).mapInvertible I)) := by
+      ((Hom.ofLE (O.le_ringOfIntegers.trans_eq
+        (maximalNumberFieldOrder_toSubalgebra K).symm)).mapInvertible I)) := by
   rw [picToClassGroup, MonoidHom.comp_apply, Hom.mapPic_mkPic, MulEquiv.coe_toMonoidHom,
     maximalOrderPicEquiv_mkPic]
 
