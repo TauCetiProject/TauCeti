@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.RingTheory.FormalGroup.BaseChange
+public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Rescale
 -- Proof-only: the coefficients after swapping the variables.
 import TauCeti.RingTheory.MvPowerSeries.Substitution
@@ -22,7 +23,9 @@ ring `R` and let `s ∈ R`. Multiplying the coefficient of every monomial of tot
 
 which satisfies `s • F^s(X, Y) = F(s X, s Y)`; when `s` is a nonzerodivisor, this identity
 characterises `F^s`. When `s` is a unit, `F^s(X, Y) = s⁻¹ F(s X, s Y)`
-is the transport of `F` along the coordinate change `X ↦ s X`. For every `s`, unit or not, `F^s`
+is the transport of `F` along the homothety `X ↦ s⁻¹ X` (`FormalGroup.homothety_smul`), and
+rescaling by `s` commutes with every change of coordinates up to conjugating the coordinate by that
+homothety (`FormalGroup.rescale_smul`). For every `s`, unit or not, `F^s`
 is again a formal group law, `FormalGroup.rescale F s`, and it is commutative when `F` is.
 
 This is the action of the multiplicative monoid of `R` on formal group laws
@@ -46,6 +49,10 @@ case of the polynomial variable `s` over `R[s]`.
 * `FormalGroup.map_rescale`: rescaling commutes with base change.
 * `FormalGroup.rescale_one` and `FormalGroup.rescale_rescale`: rescaling is an action of the
   multiplicative monoid of `R`.
+* `FormalGroup.homothety_smul`: transporting `F` along the homothety `X ↦ u X` by a unit `u` is
+  rescaling by `u⁻¹`.
+* `FormalGroup.rescale_smul`: rescaling by a unit commutes with changes of coordinates, up to
+  conjugating the coordinate by a homothety.
 
 ## References
 
@@ -172,5 +179,47 @@ theorem rescale_rescale (t : R) : (F.rescale s).rescale t = F.rescale (s * t) :=
   ext d
   simp only [coeff_rescale]
   ring
+
+/-- Rescaling does not change the additive formal group law. -/
+@[simp]
+theorem rescale_𝔾ₐ : (𝔾ₐ : FormalGroup R).rescale s = 𝔾ₐ := by
+  ext d
+  rw [coeff_rescale, 𝔾ₐ_toPowerSeries, map_add, coeff_X, coeff_X]
+  split_ifs <;> simp_all
+
+/-- **Changing coordinates by a homothety is rescaling**: transporting `F` along `X ↦ u X` gives
+`u F(u⁻¹ X, u⁻¹ Y)`, the rescaling of `F` by `u⁻¹`. -/
+theorem homothety_smul (u : Rˣ) : TauCeti.FormalCoordinate.homothety u • F = F.rescale ↑u⁻¹ := by
+  have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
+  -- Both sides are determined by their product with the unit `u⁻¹`, which is `F(u⁻¹ X, u⁻¹ Y)`.
+  have hreg : IsSMulRegular (MvPowerSeries (Fin 2) R) (↑u⁻¹ : R) :=
+    .pi fun _ ↦ (Units.isUnit u⁻¹).isRegular.left.isSMulRegular
+  refine FormalGroup.ext (hreg ?_)
+  dsimp only
+  rw [smul_rescale, smul_toPowerSeries, ← map_inv,
+    TauCeti.FormalCoordinate.toPowerSeries_homothety,
+    TauCeti.FormalCoordinate.toPowerSeries_homothety, PowerSeries.subst_smul (hX 0),
+    PowerSeries.subst_smul (hX 1), PowerSeries.subst_X (hX 0), PowerSeries.subst_X (hX 1)]
+  have hG : ![(↑u⁻¹ : R) • (X 0 : MvPowerSeries (Fin 2) R), (↑u⁻¹ : R) • X 1] =
+      (fun _ : Fin 2 ↦ (↑u⁻¹ : R)) • (X : Fin 2 → MvPowerSeries (Fin 2) R) := by
+    funext i
+    fin_cases i <;> rfl
+  have hc : constantCoeff (MvPowerSeries.rescale (fun _ : Fin 2 ↦ (↑u⁻¹ : R)) F.toPowerSeries) =
+      0 := by
+    rw [← coeff_zero_eq_constantCoeff_apply, MvPowerSeries.coeff_rescale]
+    simp [F.zero_constantCoeff]
+  rw [hG, ← MvPowerSeries.rescale_eq_subst, PowerSeries.subst_smul (.of_constantCoeff_zero hc),
+    PowerSeries.subst_X (.of_constantCoeff_zero hc), smul_smul, Units.inv_mul, one_smul]
+
+/-- **Rescaling commutes with changes of coordinates**: rescaling `φ • F` by a unit `u` gives the
+rescaling of `F` by `u`, transported along the conjugate `u⁻¹ φ(u X)` of `φ`. -/
+theorem rescale_smul (u : Rˣ) (φ : TauCeti.FormalCoordinate R) :
+    (φ • F).rescale u =
+      (TauCeti.FormalCoordinate.homothety u⁻¹ * φ * TauCeti.FormalCoordinate.homothety u) •
+        F.rescale u := by
+  have key (G : FormalGroup R) : G.rescale u = TauCeti.FormalCoordinate.homothety u⁻¹ • G := by
+    rw [homothety_smul, inv_inv]
+  rw [key, key, ← mul_smul, ← mul_smul, mul_assoc _ (TauCeti.FormalCoordinate.homothety u),
+    ← map_mul, mul_inv_cancel, map_one, mul_one]
 
 end FormalGroup

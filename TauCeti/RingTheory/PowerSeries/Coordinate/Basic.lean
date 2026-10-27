@@ -23,6 +23,8 @@ determined recursively from the linear coefficient (`PowerSeries.substInvFun`) a
 unique compositional inverse (`PowerSeries.eq_substInvOfIsUnit_of_subst_eq_X`). The linear
 coefficient is a group homomorphism to `Rˣ`; its kernel consists of the strict coordinates
 `X + ∑_{i ≥ 1} bᵢ X^(i + 1)`, which correspond to arbitrary families `(bᵢ)` of coefficients.
+The homotheties `X ↦ u X` split the linear coefficient, and conjugating a strict coordinate by
+the homothety by `u` multiplies `bᵢ` by `uⁱ`.
 Applying a ring homomorphism to the coefficients is a group homomorphism of formal coordinates.
 
 Each formal coordinate `φ` gives the substitution automorphism `σ_φ : f ↦ f (φ)` of the
@@ -47,6 +49,7 @@ coordinates over `K` and the opposite of `K⟦X⟧ ≃ₐ[K] K⟦X⟧`, with inv
 * `TauCeti.FormalCoordinate.ofStrictCoeffs b`: the strict coordinate `X + ∑ bᵢ X^(i + 1)`.
 * `TauCeti.FormalCoordinate.strictCoeffsEquiv`: strict coordinates correspond to their
   coefficient families `ℕ+ → R`.
+* `TauCeti.FormalCoordinate.homothety u`: the homothety `X ↦ u X` by a unit `u`.
 * `TauCeti.FormalCoordinate.substAlgEquiv φ`: the substitution automorphism `f ↦ f (φ)`.
 * `TauCeti.FormalCoordinate.substAlgEquivHom`: the antihomomorphism `φ ↦ σ_φ`.
 * `TauCeti.FormalCoordinate.ofAlgEquiv σ`: over a field, the formal coordinate `σ X`.
@@ -58,6 +61,8 @@ coordinates over `K` and the opposite of `K⟦X⟧ ≃ₐ[K] K⟦X⟧`, with inv
 * `TauCeti.FormalCoordinate.subst_subst_inv`, `TauCeti.FormalCoordinate.subst_inv_subst`:
   `φ (φ⁻¹ (x)) = x = φ⁻¹ (φ (x))` for every substitutable multivariate series `x`.
 * `TauCeti.FormalCoordinate.substAlgEquiv_mul`: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`.
+* `TauCeti.FormalCoordinate.homothety_inv_mul_ofStrictCoeffs_mul_homothety`: conjugating
+  `X + ∑ bᵢ X^(i + 1)` by the homothety by `u` gives `X + ∑ uⁱ bᵢ X^(i + 1)`.
 * `TauCeti.FormalCoordinate.map_substAlgEquiv`: substitution commutes with base change of the
   coefficients.
 * `TauCeti.FormalCoordinate.constantCoeff_substAlgEquiv`: substitution automorphisms preserve
@@ -332,6 +337,29 @@ theorem coeff_succ_ofStrictCoeffs (b : ℕ+ → R) (i : ℕ+) :
 theorem coeff_one_ofStrictCoeffs (b : ℕ+ → R) : coeff 1 (ofStrictCoeffs b).toPowerSeries = 1 := by
   simp [ofStrictCoeffs]
 
+/-- The strict coordinate with all coefficients `bᵢ = 0` is the identity coordinate `X`. -/
+@[simp]
+theorem ofStrictCoeffs_zero : ofStrictCoeffs (0 : ℕ+ → R) = 1 :=
+  FormalCoordinate.ext <| PowerSeries.ext fun n ↦ by
+    rcases n with _ | _ | n <;> simp [ofStrictCoeffs, coeff_X]
+
+/-- The strict coordinate whose only nonzero coefficient is `bₙ = e` is `X + e X^(n + 1)`. -/
+theorem toPowerSeries_ofStrictCoeffs_single (n : ℕ+) (e : R) :
+    (ofStrictCoeffs (Pi.single n e)).toPowerSeries = X + C e * X ^ ((n : ℕ) + 1) :=
+  PowerSeries.ext fun k ↦ by
+    rcases k with _ | _ | k
+    · simp
+    · simp [coeff_X]
+    · have h := coeff_succ_ofStrictCoeffs (Pi.single n e) k.succPNat
+      rw [Nat.succPNat_coe] at h
+      rw [h, map_add, coeff_X, coeff_C_mul_X_pow, Pi.single_apply]
+      by_cases hk : k.succPNat = n
+      · have hk' : k + 1 = n := by rw [← hk, Nat.succPNat_coe]
+        simp [hk, hk']
+      · have hk' : k + 1 ≠ n := fun h' ↦
+          hk (PNat.coe_injective (by rw [Nat.succPNat_coe]; exact h'))
+        simp [hk, hk']
+
 /-- The coordinates `X + ∑ bᵢ X^(i + 1)` are strict: their linear coefficient is `1`. -/
 theorem ofStrictCoeffs_mem_ker_linearCoeff (b : ℕ+ → R) :
     ofStrictCoeffs b ∈ (linearCoeff (R := R)).ker :=
@@ -369,6 +397,57 @@ theorem map_ofStrictCoeffs {S : Type*} [CommRing S] (f : R →+* S) (b : ℕ+ �
     split_ifs <;> simp
 
 end Strict
+
+section Homothety
+
+/-- The **homothety** `X ↦ u X` by a unit `u`, as a formal coordinate. The homotheties split the
+linear coefficient (`TauCeti.FormalCoordinate.linearCoeff_homothety`). -/
+noncomputable def homothety : Rˣ →* FormalCoordinate R where
+  toFun u :=
+    { toPowerSeries := (u : R) • X
+      constantCoeff_toPowerSeries := by simp
+      isUnit_coeff_one := by simp }
+  map_one' := FormalCoordinate.ext (one_smul R X)
+  map_mul' u v := FormalCoordinate.ext <| by
+    rw [toPowerSeries_mul]
+    dsimp only
+    rw [subst_smul (HasSubst.smul_X' _), subst_X (HasSubst.smul_X' _), Units.val_mul, mul_smul]
+
+/-- The homothety by `u` is the series `u X`. -/
+@[simp]
+theorem toPowerSeries_homothety (u : Rˣ) : (homothety u).toPowerSeries = (u : R) • X :=
+  (rfl)
+
+/-- The linear coefficient of the homothety by `u` is `u`. -/
+@[simp]
+theorem linearCoeff_homothety (u : Rˣ) : linearCoeff (homothety u) = u :=
+  Units.ext <| by simp [linearCoeff]
+
+/-- Conjugating a formal coordinate `φ` by the homothety by `u` gives the coordinate
+`u⁻¹ φ(u X)`, whose coefficient of `Xⁿ` is `uⁿ⁻¹` times that of `φ`. -/
+theorem coeff_homothety_inv_mul_mul_homothety (u : Rˣ) (φ : FormalCoordinate R) (n : ℕ) :
+    coeff n (homothety u⁻¹ * φ * homothety u).toPowerSeries =
+      ↑u⁻¹ * (u : R) ^ n * coeff n φ.toPowerSeries := by
+  rw [toPowerSeries_mul, toPowerSeries_mul, toPowerSeries_homothety, toPowerSeries_homothety,
+    subst_smul φ.hasSubst, subst_X φ.hasSubst, subst_smul (HasSubst.smul_X' _),
+    ← rescale_eq_subst, coeff_smul, coeff_rescale, smul_eq_mul, mul_assoc]
+
+/-- Conjugating the strict coordinate `X + ∑ bᵢ X^(i + 1)` by the homothety by `u` gives
+`u⁻¹ φ(u X) = X + ∑ uⁱ bᵢ X^(i + 1)`. -/
+theorem homothety_inv_mul_ofStrictCoeffs_mul_homothety (u : Rˣ) (b : ℕ+ → R) :
+    homothety u⁻¹ * ofStrictCoeffs b * homothety u =
+      ofStrictCoeffs fun i ↦ (u : R) ^ (i : ℕ) * b i :=
+  FormalCoordinate.ext <| PowerSeries.ext fun n ↦ by
+    rw [coeff_homothety_inv_mul_mul_homothety]
+    rcases n with _ | _ | n
+    · simp [coeff_zero_eq_constantCoeff_apply]
+    · simp
+    · have h := coeff_succ_ofStrictCoeffs b ⟨n + 1, n.succ_pos⟩
+      have h' := coeff_succ_ofStrictCoeffs (fun i ↦ (u : R) ^ (i : ℕ) * b i) ⟨n + 1, n.succ_pos⟩
+      simp only [PNat.mk_coe] at h h'
+      rw [h, h', pow_succ', ← mul_assoc, Units.inv_mul, one_mul]
+
+end Homothety
 
 section Field
 
