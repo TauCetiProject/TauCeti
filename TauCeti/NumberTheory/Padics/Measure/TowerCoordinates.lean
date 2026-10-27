@@ -152,7 +152,7 @@ private def quotientFamily (c : ∀ n, A n →₀ ℤ_[p]) (U : OpenNormalSubgro
   MonoidAlgebra.ofCoeff ((c (T.exists_ker_le_of_isOpen U.isOpen).choose).mapDomain
     (T.toQuotient (T.exists_ker_le_of_isOpen U.isOpen).choose_spec))
 
-omit [∀ n, Finite (A n)] in
+omit [IsTopologicalGroup Γ] [∀ n, Finite (A n)] in
 private theorem coeff_quotientFamily {c : ∀ n, A n →₀ ℤ_[p]}
     (hc : c ∈ T.compatibleFamilies ℤ_[p]) {U : OpenNormalSubgroup Γ} {n : ℕ}
     (hn : (T.ker n : Subgroup Γ) ≤ U) :
