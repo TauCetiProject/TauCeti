@@ -18,7 +18,7 @@ of the primitive residue-class Eisenstein series. This file proves that it is co
 the cusp forms.
 
 The decomposition descends from the corresponding decomposition for `Γ(N)` by
-`TauCeti.ModularForm.isCompl_comap_restrictₗ_cuspFormSubmodule`, since the primitive
+`ModularForm.isCompl_comap_restrictₗ_cuspFormSubmodule`, since the primitive
 Eisenstein span is stable under slashing by `SL(2, ℤ)`: the slash transformation formula sends the
 series with residue `a` to the series whose residue is the right translate of `a`.
 
@@ -39,7 +39,6 @@ series with residue `a` to the series whose residue is the right translate of `a
 public noncomputable section
 
 open Matrix Matrix.SpecialLinearGroup ModularForm CongruenceSubgroup
-open TauCeti.ModularForm
 open UpperHalfPlane
 open _root_.EisensteinSeries
 open scoped MatrixGroups

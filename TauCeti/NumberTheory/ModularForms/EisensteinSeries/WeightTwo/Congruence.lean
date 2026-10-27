@@ -22,7 +22,7 @@ Slashing by `γ ∈ SL(2, ℤ)` replaces the weight `W` of `G₂^W` by `a ↦ W(
 (`TauCeti.EisensteinSeries.weightedG2_slash_apply`). Right multiplication by `SL(2, ℤ)` permutes
 the residues of coprime pairs, so it preserves both conditions on `W`, and the subspace of
 `M₂(Γ(N))` is stable under slashing. The descent is then
-`TauCeti.ModularForm.isCompl_comap_restrictₗ_cuspFormSubmodule` and its nebentypus form.
+`ModularForm.isCompl_comap_restrictₗ_cuspFormSubmodule` and its nebentypus form.
 
 ## Main definitions
 
@@ -50,7 +50,6 @@ the residues of coprime pairs, so it preserves both conditions on `W`, and the s
 public noncomputable section
 
 open Matrix Matrix.SpecialLinearGroup ModularForm CongruenceSubgroup
-open TauCeti.ModularForm
 open _root_.EisensteinSeries
 open scoped MatrixGroups
 

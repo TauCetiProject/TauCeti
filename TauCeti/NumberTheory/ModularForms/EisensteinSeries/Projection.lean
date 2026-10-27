@@ -41,7 +41,6 @@ primitive-character Eisenstein series is a separate spanning statement.
 public noncomputable section
 
 open Matrix Matrix.SpecialLinearGroup ModularForm CongruenceSubgroup
-open TauCeti.ModularForm
 open _root_.EisensteinSeries
 open scoped MatrixGroups
 

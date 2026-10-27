@@ -29,26 +29,28 @@ index. The diamond operators slash by elements of `Γ₀(N)`, so they preserve b
 complement and the cusp forms, and a diamond-stable complement of the cusp forms splits each
 nebentypus space (`isCompl_comap_subtype_range_cuspToModFormCharSpace`).
 
+The declarations live in Mathlib's root `ModularForm` namespace, so dot notation works on
+modular forms.
+
 ## Main definitions
 
-* `TauCeti.ModularForm.gammaSlashₗ`: slashing by `γ ∈ SL(2, ℤ)` as an endomorphism of
-  `M_k(Γ(N))`.
+* `ModularForm.gammaSlashₗ`: slashing by `γ ∈ SL(2, ℤ)` as an endomorphism of `M_k(Γ(N))`.
 
 ## Main results
 
-* `TauCeti.ModularForm.gammaSlashₗ_one`, `TauCeti.ModularForm.gammaSlashₗ_mul`,
-  `TauCeti.ModularForm.gammaSlashₗ_of_mem_Gamma`: `gammaSlashₗ` is a right action of
+* `ModularForm.gammaSlashₗ_one`, `ModularForm.gammaSlashₗ_mul`,
+  `ModularForm.gammaSlashₗ_of_mem_Gamma`: `gammaSlashₗ` is a right action of
   `SL(2, ℤ)` on which `Γ(N)` acts trivially.
-* `TauCeti.ModularForm.restrict_diamondOp_eq_gammaSlashₗ`: restricted to `Γ(N)`, a diamond
+* `ModularForm.restrict_diamondOp_eq_gammaSlashₗ`: restricted to `Γ(N)`, a diamond
   operator is slashing by a representative in `Γ₀(N)`.
-* `TauCeti.ModularForm.restrict_traceₗ_mem`: the trace from `Γ(N)` to `Γ`, restricted back
+* `ModularForm.restrict_traceₗ_mem`: the trace from `Γ(N)` to `Γ`, restricted back
   to `Γ(N)`, preserves a slash-stable subspace.
-* `TauCeti.ModularForm.isCompl_comap_restrictₗ_cuspFormSubmodule`: a `Γ`-stable
+* `ModularForm.isCompl_comap_restrictₗ_cuspFormSubmodule`: a `Γ`-stable
   complement of the cusp forms of level `Γ(N)` descends to a complement of the cusp forms on
   `Γ ⊇ Γ(N)`.
-* `TauCeti.ModularForm.diamondOp_mem_comap_restrictₗ`: on `Γ₁(N)`, the descended complement
+* `ModularForm.diamondOp_mem_comap_restrictₗ`: on `Γ₁(N)`, the descended complement
   is stable under the diamond operators.
-* `TauCeti.ModularForm.isCompl_comap_restrictₗ_charSpace_range_cuspToModFormCharSpace`: the
+* `ModularForm.isCompl_comap_restrictₗ_charSpace_range_cuspToModFormCharSpace`: the
   descended complement splits `M_k(N, χ)` against the image of `S_k(N, χ)`.
 
 ## References
@@ -62,7 +64,7 @@ public noncomputable section
 open Matrix Matrix.SpecialLinearGroup ModularForm CongruenceSubgroup
 open scoped MatrixGroups Pointwise
 
-namespace TauCeti.ModularForm
+namespace ModularForm
 
 variable {N : ℕ} {k : ℤ}
 
@@ -201,4 +203,4 @@ theorem isCompl_comap_restrictₗ_charSpace_range_cuspToModFormCharSpace
 
 end Gamma1
 
-end TauCeti.ModularForm
+end ModularForm
