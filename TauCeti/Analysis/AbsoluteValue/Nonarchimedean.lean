@@ -55,6 +55,12 @@ open Polynomial
 
 namespace AbsoluteValue
 
+/-- An absolute value lying over `v` agrees with `v` on the base. -/
+theorem LiesOver.apply_algebraMap {K L S : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
+    [FaithfulSMul K L] [PartialOrder S] [Semiring S] {w : AbsoluteValue L S}
+    (v : AbsoluteValue K S) [w.LiesOver v] (x : K) : w (algebraMap K L x) = v x := by
+  rw [← LiesOver.under_eq w v, under_def, comp_apply]
+
 section Field
 
 variable {F : Type*} [Field F] {v : AbsoluteValue F ℝ}
@@ -84,8 +90,7 @@ theorem isNonarchimedean_of_liesOver {K : Type*} [CommSemiring K] [Nontrivial K]
     [FaithfulSMul K F] {u : AbsoluteValue K ℝ} [v.LiesOver u] (hu : IsNonarchimedean u) :
     IsNonarchimedean v :=
   isNonarchimedean_of_forall_natCast_le_one fun n ↦ by
-    have h : v (algebraMap K F n) = u n := by rw [← LiesOver.under_eq v u, under_def, comp_apply]
-    rw [← map_natCast (algebraMap K F), h]
+    rw [← map_natCast (algebraMap K F), LiesOver.apply_algebraMap u]
     exact hu.apply_natCast_le_one (by simp) (map_one _)
 
 end Field
@@ -184,7 +189,7 @@ theorem liesOver_nonarchRpow {K L : Type*} [CommSemiring K] [Semiring L] [Algebr
     (hw : IsNonarchimedean w) (hu : IsNonarchimedean u) :
     (w.nonarchRpow hw ht).LiesOver (u.nonarchRpow hu ht) := by
   refine ⟨ext fun x ↦ ?_⟩
-  simp [under_def, ← LiesOver.under_eq w u]
+  simp [under_def, LiesOver.apply_algebraMap u]
 
 end AbsoluteValue
 
