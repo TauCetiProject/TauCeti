@@ -14,7 +14,7 @@ public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 A finite group `Q` **occurs as a continuous finite quotient** of a topological group `G`, written
 `IsFiniteContinuousQuotient G Q`, when `Q` is finite and some surjective homomorphism `G →* Q` has
 open kernel. The predicate is phrased through the kernel and not through a topology on `Q`: when
-`G` is a topological group (`IsTopologicalGroup G`), a homomorphism into a finite discrete group is
+`G` has continuous left translations, a homomorphism into a finite discrete group is
 continuous exactly when its kernel is open (`MonoidHom.continuous_iff_isOpen_ker`), so nothing is
 lost, and the predicate is manifestly invariant under isomorphism of `Q`. The continuous finite
 quotients of `G` are, up to isomorphism, the quotients `G ⧸ U` by its open normal subgroups of
@@ -34,8 +34,9 @@ consumer of this predicate, is in `TauCeti.Topology.Algebra.Group.Profinite.Fini
 * `TauCeti.isFiniteContinuousQuotient_iff_exists_openNormalSubgroup`: the continuous finite
   quotients of `G` are the quotients by its open normal subgroups of finite index, up to
   isomorphism.
-* `TauCeti.isFiniteContinuousQuotient_iff_exists_continuous`: for a finite discrete `Q` and a
-  topological group `G`, the predicate is the existence of a continuous surjection `G →* Q`.
+* `TauCeti.isFiniteContinuousQuotient_iff_exists_continuous`: for a finite discrete `Q` and a group
+  `G` with continuous left translations, the predicate is the existence of a continuous surjection
+  `G →* Q`.
 * `TauCeti.isFiniteContinuousQuotient_congr_left`,
   `TauCeti.isFiniteContinuousQuotient_congr_right`: the predicate depends only on the topological
   isomorphism class of `G` and on the isomorphism class of `Q`.
@@ -57,7 +58,7 @@ variable (G : Type u) [Group G] [TopologicalSpace G] (Q : Type v) [Group Q]
 
 /-- `Q` **occurs as a continuous finite quotient** of the topological group `G`: `Q` is finite and
 some surjective homomorphism `G →* Q` has open kernel. The group `Q` carries no topology; when `G`
-is a topological group (`IsTopologicalGroup G`) and `Q` carries the discrete topology, an open
+has continuous left translations and `Q` carries the discrete topology, an open
 kernel is the same as continuity (`isFiniteContinuousQuotient_iff_exists_continuous`). Finiteness
 is part of the predicate because an open kernel alone does not force it: a discrete group is a
 quotient of itself with open kernel. When `G` is compact with separately continuous multiplication
@@ -95,9 +96,9 @@ theorem _root_.OpenNormalSubgroup.isFiniteContinuousQuotient (U : OpenNormalSubg
 theorem IsFiniteContinuousQuotient.finite (h : IsFiniteContinuousQuotient G Q) : Finite Q :=
   h.1
 
-/-- For a topological group `G` and a finite group `Q` carrying the discrete topology, occurring as
+/-- For a group `G` with continuous left translations and a finite discrete group `Q`, occurring as
 a continuous finite quotient is the existence of a continuous surjective homomorphism onto `Q`. -/
-theorem isFiniteContinuousQuotient_iff_exists_continuous [IsTopologicalGroup G] [Finite Q]
+theorem isFiniteContinuousQuotient_iff_exists_continuous [ContinuousConstSMul G G] [Finite Q]
     [TopologicalSpace Q] [DiscreteTopology Q] :
     IsFiniteContinuousQuotient G Q ↔ ∃ f : G →* Q, Function.Surjective f ∧ Continuous f := by
   rw [isFiniteContinuousQuotient_iff, and_iff_right ‹Finite Q›]
