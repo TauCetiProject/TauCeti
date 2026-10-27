@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
 public import TauCeti.AlgebraicGeometry.EllipticCurve.RealPeriod
+import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.GlobalExistence
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
@@ -85,15 +86,12 @@ change of variables `C` carries `E` to a globally minimal equation, the real per
 theorem minimalRealPeriod_eq_abs_mul {C : VariableChange ℚ} (hC : IsGlobalMinimal ℤ (C • E)) :
     E.minimalRealPeriod = |((C.u : ℚ) : ℝ)| * (E.baseChange ℝ).realPeriod := by
   obtain ⟨D, hD⟩ := exists_smul_eq_reducedMinimalModel E
-  -- The change of variables from `C • E` to the reduced minimal model is defined over `ℤ`, so its
-  -- scaling factor `D.u / C.u` is `±1`.
-  obtain ⟨C₀, hC₀⟩ := hC.exists_baseChange_eq_of_smul_eq
-    (isReducedMinimal_reducedMinimalModel E).isGlobalMinimal (D * C⁻¹)
-    (by rw [mul_smul, inv_smul_smul, hD])
+  -- The change of variables `D * C⁻¹` carries the globally minimal equation `C • E` to the reduced
+  -- minimal model, so its scaling factor `D.u / C.u` is `±1`.
+  have := hC.isIntegral
+  have h := (abs_u_eq_one_iff_isGlobalMinimal (C • E) (D := D * C⁻¹)
+    (by simpa [mul_smul, hD] using (isReducedMinimal_reducedMinimalModel E).isGlobalMinimal)).mpr hC
   have hu : |(D.u : ℚ)| = |(C.u : ℚ)| := by
-    have h : |((C₀.baseChange ℚ).u : ℚ)| = 1 := by
-      simpa [VariableChange.baseChange] using abs_unit_intCast (α := ℚ) C₀.u
-    rw [hC₀] at h
     simpa [abs_mul, abs_inv, mul_inv_eq_one₀, C.u.ne_zero] using h
   rw [minimalRealPeriod, ← hD, realPeriod_baseChange_variableChange, eq_ratCast, ← Rat.cast_abs,
     hu, Rat.cast_abs]
@@ -111,22 +109,21 @@ equation of `E` with integer coefficients is at most the real period of `E`, whi
 global minimal equation. -/
 theorem realPeriod_baseChange_le_minimalRealPeriod [IsIntegral ℤ E] :
     (E.baseChange ℝ).realPeriod ≤ E.minimalRealPeriod := by
-  obtain ⟨D, hD⟩ := exists_smul_eq_reducedMinimalModel E
-  rw [minimalRealPeriod, ← hD, realPeriod_baseChange_variableChange, eq_ratCast]
+  obtain ⟨D, hD⟩ := exists_isGlobalMinimal_smul ℤ E
+  rw [minimalRealPeriod_eq_abs_mul E hD]
   exact le_mul_of_one_le_left (realPeriod_pos _).le
-    (by exact_mod_cast one_le_abs_u_of_smul_eq_reducedMinimalModel E hD)
+    (by exact_mod_cast one_le_abs_u_of_isGlobalMinimal_smul E hD)
 
 /-- **Among integral equations, the global minimal ones are those of largest real period**: an
 equation of `E` with integer coefficients has the real period of `E` exactly when it is globally
 minimal. -/
 theorem realPeriod_baseChange_eq_minimalRealPeriod_iff [IsIntegral ℤ E] :
     (E.baseChange ℝ).realPeriod = E.minimalRealPeriod ↔ IsGlobalMinimal ℤ E := by
-  obtain ⟨D, hD⟩ := exists_smul_eq_reducedMinimalModel E
-  -- Since `Ω_min = |u| Ω(E_ℝ)`, equality says `|u| = 1` for the scaling factor `u` of the change of
-  -- variables to the reduced minimal model.
-  rw [← abs_u_eq_one_iff_isGlobalMinimal E hD, minimalRealPeriod, ← hD,
-    realPeriod_baseChange_variableChange, eq_ratCast, eq_comm, mul_eq_right₀ (realPeriod_pos _).ne']
-  exact_mod_cast Iff.rfl
+  obtain ⟨D, hD⟩ := exists_isGlobalMinimal_smul ℤ E
+  -- Since `Ω_min = |u| Ω(E_ℝ)`, equality says `|u| = 1` for the scaling factor `u` of `D`.
+  rw [← abs_u_eq_one_iff_isGlobalMinimal E hD, minimalRealPeriod_eq_abs_mul E hD, eq_comm,
+    mul_eq_right₀ (realPeriod_pos _).ne']
+  norm_cast
 
 namespace VariableChange
 

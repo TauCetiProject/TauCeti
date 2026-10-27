@@ -63,9 +63,9 @@ and `3`.
   `WeierstrassCurve.abs_Δ_reducedMinimalModel_eq_iff`: an equation with integer coefficients has
   discriminant at least `|Δ_min|` in absolute value, with equality exactly when it is globally
   minimal.
-* `WeierstrassCurve.one_le_abs_u_of_smul_eq_reducedMinimalModel` and
+* `WeierstrassCurve.one_le_abs_u_of_isGlobalMinimal_smul` and
   `WeierstrassCurve.abs_u_eq_one_iff_isGlobalMinimal`: the same statements for the scaling factor
-  `u` of the change of variables carrying an integral equation to the reduced minimal model:
+  `u` of a change of variables carrying an integral equation to a globally minimal one:
   `1 ≤ |u|`, with equality exactly when the equation is globally minimal.
 
 ## References
@@ -319,28 +319,6 @@ theorem abs_Δ_reducedMinimalModel_eq_iff (E : WeierstrassCurve ℚ) [E.IsEllipt
     Ideal.span_singleton_eq_span_singleton, ← Int.natAbs_eq_iff_associated, ← hm, ← hd]
   simp only [algebraMap_int_eq, eq_intCast, ← Int.cast_abs, ← Nat.cast_natAbs, Nat.cast_inj]
 
-/-- **An integral equation is scaled up from the reduced minimal model**: if `E` has integer
-coefficients and `D • E` is the reduced minimal model, then `1 ≤ |u|` for the scaling factor `u`
-of `D`, since `Δ_min = u⁻¹² Δ(E)` and `|Δ_min| ≤ |Δ(E)|`. -/
-theorem one_le_abs_u_of_smul_eq_reducedMinimalModel (E : WeierstrassCurve ℚ) [E.IsElliptic]
-    [IsIntegral ℤ E] {D : VariableChange ℚ} (hD : D • E = reducedMinimalModel E) :
-    1 ≤ |(D.u : ℚ)| := by
-  have hΔ := abs_Δ_reducedMinimalModel_le E
-  rw [← hD, variableChange_Δ, abs_mul, mul_le_iff_le_one_left (abs_pos.mpr E.isUnit_Δ.ne_zero)]
-    at hΔ
-  simpa [abs_pow, pow_le_one_iff_of_nonneg, one_le_pow_iff_of_nonneg, inv_le_one₀, D.u.ne_zero]
-    using hΔ
-
-/-- **An integral equation is globally minimal exactly when it differs from the reduced minimal
-model by `u = ±1`**: if `E` has integer coefficients and `D • E` is the reduced minimal model,
-then `E` is globally minimal exactly when `|u| = 1` for the scaling factor `u` of `D`. -/
-theorem abs_u_eq_one_iff_isGlobalMinimal (E : WeierstrassCurve ℚ) [E.IsElliptic]
-    [IsIntegral ℤ E] {D : VariableChange ℚ} (hD : D • E = reducedMinimalModel E) :
-    |(D.u : ℚ)| = 1 ↔ IsGlobalMinimal ℤ E := by
-  rw [← abs_Δ_reducedMinimalModel_eq_iff, ← hD, variableChange_Δ, abs_mul,
-    mul_eq_right₀ (abs_ne_zero.mpr E.isUnit_Δ.ne_zero)]
-  simp [abs_pow, pow_eq_one_iff_of_nonneg]
-
 namespace VariableChange
 
 /-- **The reduced minimal model is an isomorphism invariant**: it is unchanged by a change of
@@ -353,6 +331,38 @@ theorem reducedMinimalModel_smul (C : VariableChange ℚ) (E : WeierstrassCurve 
     (by rw [mul_smul, hD])
 
 end VariableChange
+
+/-- The discriminant of a globally minimal equation `D • E` agrees up to sign with that of the
+reduced minimal model of `E`. -/
+private theorem abs_Δ_reducedMinimalModel_eq_of_isGlobalMinimal_smul (E : WeierstrassCurve ℚ)
+    [E.IsElliptic] {D : VariableChange ℚ} (hD : IsGlobalMinimal ℤ (D • E)) :
+    |(reducedMinimalModel E).Δ| = |(D • E).Δ| := by
+  have := hD.isIntegral
+  rw [← VariableChange.reducedMinimalModel_smul D, abs_Δ_reducedMinimalModel_eq_iff]
+  exact hD
+
+/-- **An integral equation is scaled up from a global minimal one**: if `E` has integer
+coefficients and `D • E` is globally minimal, then `1 ≤ |u|` for the scaling factor `u` of `D`,
+since `Δ(D • E) = u⁻¹² Δ(E)` and `|Δ_min| ≤ |Δ(E)|`. -/
+theorem one_le_abs_u_of_isGlobalMinimal_smul (E : WeierstrassCurve ℚ) [E.IsElliptic]
+    [IsIntegral ℤ E] {D : VariableChange ℚ} (hD : IsGlobalMinimal ℤ (D • E)) :
+    1 ≤ |(D.u : ℚ)| := by
+  have hΔ := abs_Δ_reducedMinimalModel_le E
+  rw [abs_Δ_reducedMinimalModel_eq_of_isGlobalMinimal_smul E hD, variableChange_Δ, abs_mul,
+    mul_le_iff_le_one_left (abs_pos.mpr E.isUnit_Δ.ne_zero)] at hΔ
+  simpa [abs_pow, pow_le_one_iff_of_nonneg, one_le_pow_iff_of_nonneg, inv_le_one₀, D.u.ne_zero]
+    using hΔ
+
+/-- **An integral equation is globally minimal exactly when it differs from a global minimal one
+by `u = ±1`**: if `E` has integer coefficients and `D • E` is globally minimal, then `E` is
+globally minimal exactly when `|u| = 1` for the scaling factor `u` of `D`. -/
+theorem abs_u_eq_one_iff_isGlobalMinimal (E : WeierstrassCurve ℚ) [E.IsElliptic]
+    [IsIntegral ℤ E] {D : VariableChange ℚ} (hD : IsGlobalMinimal ℤ (D • E)) :
+    |(D.u : ℚ)| = 1 ↔ IsGlobalMinimal ℤ E := by
+  rw [← abs_Δ_reducedMinimalModel_eq_iff,
+    abs_Δ_reducedMinimalModel_eq_of_isGlobalMinimal_smul E hD, variableChange_Δ, abs_mul,
+    mul_eq_right₀ (abs_ne_zero.mpr E.isUnit_Δ.ne_zero)]
+  simp [abs_pow, pow_eq_one_iff_of_nonneg]
 
 end WeierstrassCurve
 

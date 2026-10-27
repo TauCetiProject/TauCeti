@@ -312,7 +312,6 @@ period of the base change of `C • V` is `|u|` times that of `V`, `u` being rea
 theorem realPeriod_baseChange_variableChange {R : Type*} [CommRing R] [Algebra R ℝ]
     (C : VariableChange R) (V : WeierstrassCurve R) :
     ((C • V).baseChange ℝ).realPeriod = |algebraMap R ℝ C.u| * (V.baseChange ℝ).realPeriod := by
-  rw [baseChange, baseChange, ← map_variableChange, realPeriod_variableChange,
-    VariableChange.map_u, Units.coe_map, MonoidHom.coe_ofClass]
+  simp [baseChange, ← map_variableChange, realPeriod_variableChange]
 
 end WeierstrassCurve
