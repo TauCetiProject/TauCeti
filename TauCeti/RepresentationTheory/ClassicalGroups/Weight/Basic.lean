@@ -238,15 +238,17 @@ end Representation.IntertwiningMap
 namespace TauCeti
 
 /-- **The dominance order on integer vectors is antisymmetric**: two vectors each of whose partial
-sums `∑_{j < m}` bounds the other's agree, since a vector is determined by those sums
-(`TauCeti.eq_of_forall_sum_filter_lt_eq`). -/
+sums `∑_{j < m}` bounds the other's agree, since a vector is determined by those prefix sums
+(`TauCeti.eq_of_forall_prefixSum_eq`). -/
 theorem eq_of_forall_sum_filter_lt_le {n : ℕ} {a b : Fin n → ℤ}
     (hab : ∀ m : ℕ, ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j ≤
       ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j)
     (hba : ∀ m : ℕ, ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, b j ≤
       ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j) :
     a = b :=
-  eq_of_forall_sum_filter_lt_eq fun m => le_antisymm (hab m) (hba m)
+  eq_of_forall_prefixSum_eq fun m => by
+    rw [prefixSum_def, prefixSum_def]
+    exact le_antisymm (hab m) (hba m)
 
 end TauCeti
 
