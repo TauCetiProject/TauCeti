@@ -25,8 +25,8 @@ derivation is a continuous bilinear expression in the coordinates of `A` and of 
 Mathlib's derivative `ContinuousAlternatingMap.fderivCompContinuousLinearMap` of pullback at the
 identity, so it preserves smoothness. A form has type `(p,q)` for `J`
 (`TauCeti.SmoothForm.IsOfType`) when `p + q = k` and the derivation of `J` acts on it as
-multiplication by `(p - q) * I`; equivalently, its value at every point has type `(p,q)` for the
-almost complex structure of that tangent space.
+multiplication by `(p - q) * I`; equivalently, `p + q = k` and its value at every point has type
+`(p,q)` for the almost complex structure of that tangent space.
 
 The type projections `TauCeti.SmoothAlmostComplexStructure.typeProjection J p q` are the fibrewise
 type polynomials evaluated at the derivation of `J`. Hence they are complex-linear endomorphisms
