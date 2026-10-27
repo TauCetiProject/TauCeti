@@ -6,19 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.ContinuousMap
-public import TauCeti.Analysis.CStarAlgebra.Action.KMS.Basic
+public import TauCeti.Analysis.CStarAlgebra.Action.KMS.ContinuousMap
 
 /-!
 # KMS states of the rotation of the circle
 
-On a commutative C⋆-algebra every state is tracial, hence a `0`-KMS state of every dynamics,
-`isKMSState_zero_iff_of_comm`. In particular, for a compact space `X` the evaluation state
-`f ↦ f x` on `C(X, ℂ)` is a `0`-KMS state of every real action on `C(X, ℂ)`,
-`isKMSState_zero_ofClass_evalStarAlgHom`.
-
-For the rotation action of the real line on `C(S¹, ℂ)` the evaluation states are not invariant,
-`exists_ofClass_evalStarAlgHom_rotation_ne`. So a `0`-KMS state need not be invariant, in contrast
-with `IsKMSState.apply_action` for nonzero inverse temperature.
+Evaluation states on `C(S¹, ℂ)` are `0`-KMS states of every real action,
+`isKMSState_zero_ofClass_evalStarAlgHom`, but for the rotation action of the real line they are
+not invariant, `exists_ofClass_evalStarAlgHom_rotation_ne`. So a `0`-KMS state need not be
+invariant, in contrast with `IsKMSState.apply_action` for nonzero inverse temperature.
 
 At nonzero inverse temperature the rotation action has no KMS states at all: the β-KMS states
 of `rotation` are exactly the states for `β = 0` and there are none otherwise,
@@ -41,14 +37,6 @@ open scoped ComplexOrder
 namespace TauCeti.CStarAction
 
 open Circle (coordinate coordinate_mul_star star_coordinate_mul)
-
-variable {X : Type*} [TopologicalSpace X] [CompactSpace X]
-
-/-- Evaluation at a point is a `0`-KMS state of every real action on `C(X, ℂ)`. -/
-theorem isKMSState_zero_ofClass_evalStarAlgHom (α : CStarAction (Multiplicative ℝ) C(X, ℂ))
-    (x : X) : α.IsKMSState 0 (.ofClass (ContinuousMap.evalStarAlgHom ℂ ℂ x)) := by
-  refine isKMSState_zero_iff_of_comm.mpr (ofReal_injective ?_)
-  simp [PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one]
 
 open PositiveContinuousLinearMap in
 /-- Evaluation states are not invariant under the rotation action, although they are `0`-KMS
