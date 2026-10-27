@@ -91,20 +91,6 @@ theorem crossingChangeHomotopy_unblockedDifferential_single_apply (x z : GridSta
   rw [crossingChangeHomotopy_apply_apply, Finsupp.sum_fintype _ _ fun _ => zero_mul _]
   simp
 
-/-- On a grid-state generator, the coefficient of the round trip `Ψ ∘ Φ` through the exchanged
-diagram, with `Ψ` turning in row `t`, is the sum over intermediate states of the pentagon
-coefficient of `Φ`, renamed by the column swap, times that of `Ψ`. -/
-theorem commutationMap_withTurnRow_commutationMap_single_apply (x z : GridState n) :
-    (G.swapColumns a b).commutationMap R (C.withTurnRow t)
-        (G.commutationMap R C (Finsupp.single x 1)) z =
-      ∑ y : GridState n,
-        rename (Equiv.swap a b) (G.commutationPentagonCoefficient R C x y) *
-          (G.swapColumns a b).commutationPentagonCoefficient R (C.withTurnRow t) y z := by
-  rw [commutationMap_apply_apply, Finsupp.sum_fintype _ _ fun _ => by simp]
-  refine Finset.sum_congr rfl fun y _ => ?_
-  rw [commutationMap_single_apply, ColumnTurn.withTurnRow_column,
-    commutationPentagonCoefficient_def (G.swapColumns a b)]
-
 /-! ### Counting returning domains -/
 
 /-- A diagonal coefficient counting two-step domains which all have the weight `w`, and of which
@@ -148,29 +134,19 @@ private theorem sum_hexagonWeight_mul_unblockedCoefficient_self
     obtain ⟨m', Q, r'⟩ := E
     rw [GridTwoStepDecomposition.mem_decompositionsOf,
       G.mem_crossingChangeHexagons_and_mem_unblockedRectangles_iff C t hX] at hD hE
-    have hP := (P.isEmpty_and_isEmpty_iff r).mp hD
-    have hQ := (Q.isEmpty_and_isEmpty_iff r').mp hE
-    obtain rfl : m = m' := by
-      rw [P.target_eq_swapColumns, Q.target_eq_swapColumns, hP.2, hQ.2]
-    obtain rfl : P = Q := Subsingleton.elim _ _
-    obtain rfl : r = r' := GridRectangleBetween.left_injective (hP.1.trans hQ.1.symm)
+    cases P.sigma_target_eq_of_isEmpty_and_isEmpty r Q r' hD hE
     rfl
-  · constructor
+  · rw [← GridHexagonBetween.exists_target_isEmpty_and_isEmpty_iff C.column_ne_next]
+    constructor
     · rintro ⟨⟨m, P, r⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,
         G.mem_crossingChangeHexagons_and_mem_unblockedRectangles_iff C t hX] at hD
-      have hP := ((P.isEmpty_and_isEmpty_iff r).mp hD).2
-      exact ⟨by simpa only [hP, P.right_eq] using P.lower_mem,
-        by simpa only [P.right_eq] using P.upper_mem⟩
-    · rintro ⟨hs, ht⟩
-      let P := GridHexagonBetween.ofSwapColumns x a C.column_ne_next hs ht
-      let r := GridRectangleBetween.ofSwapColumns (x.swapColumns a b) x a b C.column_ne_next
-        (GridState.swapColumns_swapColumns _ _ _).symm
-      refine ⟨⟨_, P, r⟩, ?_⟩
+      exact ⟨m, P, r, hD⟩
+    · rintro ⟨m, P, r, h⟩
+      refine ⟨⟨m, P, r⟩, ?_⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,
         G.mem_crossingChangeHexagons_and_mem_unblockedRectangles_iff C t hX]
-      exact (P.isEmpty_and_isEmpty_iff r).mpr ⟨(GridRectangleBetween.ofSwapColumns_left ..).trans
-        (GridHexagonBetween.ofSwapColumns_left ..).symm, GridHexagonBetween.ofSwapColumns_left ..⟩
+      exact h
 
 /-- The returning initial-side hexagon followed by a rectangle: it lies in column `b`, and exists
 exactly when `s` and `t` occur in this order going up from the row of `x` in column `b` to its row
@@ -183,7 +159,6 @@ private theorem sum_initialHexagonWeight_mul_unblockedCoefficient_self
       if C.turnRow ∈ Grid.cIco (x b) (x (finRotate n b)) ∧
           t ∈ Grid.cIoo C.turnRow (x (finRotate n b)) then
         G.crossingChangeAnnulusWeight R C t else 0 := by
-  have hbc : b ≠ finRotate n b := (finRotate n).injective.ne C.column_ne_next
   refine sum_mul_sum_eq_ite R _ _ x _ _ _ _ (fun D hD => ?_) (fun D hD E hE => ?_) ?_
   · rw [GridTwoStepDecomposition.mem_decompositionsOf] at hD
     exact G.crossingChangeInitialHexagonWeight_mul_OMonomial_eq_crossingChangeAnnulusWeight R C t
@@ -193,29 +168,19 @@ private theorem sum_initialHexagonWeight_mul_unblockedCoefficient_self
     obtain ⟨m', Q, r'⟩ := E
     rw [GridTwoStepDecomposition.mem_decompositionsOf,
       G.mem_crossingChangeInitialHexagons_and_mem_unblockedRectangles_iff C t hX] at hD hE
-    have hP := (P.isEmpty_and_isEmpty_iff r).mp hD
-    have hQ := (Q.isEmpty_and_isEmpty_iff r').mp hE
-    obtain rfl : m = m' := by
-      rw [P.target_eq_swapColumns, Q.target_eq_swapColumns, hP.2, hQ.2]
-    obtain rfl : P = Q := Subsingleton.elim _ _
-    obtain rfl : r = r' := GridRectangleBetween.left_injective (hP.1.trans hQ.1.symm)
+    cases P.sigma_target_eq_of_isEmpty_and_isEmpty r Q r' hD hE
     rfl
-  · constructor
+  · rw [← GridInitialHexagonBetween.exists_target_isEmpty_and_isEmpty_iff C.column_ne_next]
+    constructor
     · rintro ⟨⟨m, P, r⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,
         G.mem_crossingChangeInitialHexagons_and_mem_unblockedRectangles_iff C t hX] at hD
-      have hP := ((P.isEmpty_and_isEmpty_iff r).mp hD).2
-      exact ⟨by simpa only [P.left_eq, hP] using P.lower_mem,
-        by simpa only [hP] using P.upper_mem⟩
-    · rintro ⟨hs, ht⟩
-      let P := GridInitialHexagonBetween.ofSwapColumns x (finRotate n b) hbc.symm hs ht
-      let r := GridRectangleBetween.ofSwapColumns (x.swapColumns b (finRotate n b)) x b
-        (finRotate n b) hbc (GridState.swapColumns_swapColumns _ _ _).symm
-      refine ⟨⟨_, P, r⟩, ?_⟩
+      exact ⟨m, P, r, hD⟩
+    · rintro ⟨m, P, r, h⟩
+      refine ⟨⟨m, P, r⟩, ?_⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,
         G.mem_crossingChangeInitialHexagons_and_mem_unblockedRectangles_iff C t hX]
-      exact (P.isEmpty_and_isEmpty_iff r).mpr ⟨(GridRectangleBetween.ofSwapColumns_left ..).trans
-        P.left_eq.symm, GridInitialHexagonBetween.ofSwapColumns_right ..⟩
+      exact h
 
 /-- The returning rectangle followed by a terminal-side hexagon: it lies in column `a`, and exists
 exactly when `t` and `s` occur in this order going up from the row of `x` in column `b` to its row
@@ -236,41 +201,19 @@ private theorem sum_OMonomial_mul_hexagonWeight_self
     obtain ⟨m', r', Q⟩ := E
     rw [GridTwoStepDecomposition.mem_decompositionsOf, and_comm,
       G.mem_crossingChangeHexagons_and_mem_unblockedRectangles_iff C t hX] at hD hE
-    have hP := (P.isEmpty_and_isEmpty_iff r).mp hD
-    have hQ := (Q.isEmpty_and_isEmpty_iff r').mp hE
-    obtain rfl : m = m' := by
-      rw [P.toGridRectangleBetween.source_eq_swapColumns,
-        Q.toGridRectangleBetween.source_eq_swapColumns, hP.2, hQ.2, P.right_eq, Q.right_eq]
-    obtain rfl : P = Q := Subsingleton.elim _ _
-    obtain rfl : r = r' := GridRectangleBetween.left_injective (hP.1.trans hQ.1.symm)
+    cases P.sigma_source_eq_of_isEmpty_and_isEmpty r Q r' hD hE
     rfl
-  · constructor
+  · rw [← GridHexagonBetween.exists_source_isEmpty_and_isEmpty_iff C.column_ne_next]
+    constructor
     · rintro ⟨⟨m, r, P⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf, and_comm,
         G.mem_crossingChangeHexagons_and_mem_unblockedRectangles_iff C t hX] at hD
-      have hP := (P.isEmpty_and_isEmpty_iff r).mp hD
-      have hright : r.right = P.right :=
-        P.toGridRectangleBetween.right_eq_right_of_left_eq_left r hP.1
-      have hl : m P.left = x b := by rw [← hP.1, r.map_left, hright, P.right_eq]
-      have hr : m P.right = x a := by rw [← hright, r.map_right, hP.1, hP.2]
-      exact ⟨by simpa only [hl, hr] using P.lower_mem, by simpa only [hr] using P.upper_mem⟩
-    · rintro ⟨hs, ht⟩
-      -- The hexagon occupies column `a` and reads the exchanged rows of `a` and `b`.
-      let m := x.swapColumns a b
-      let r := GridRectangleBetween.ofSwapColumns x m a b C.column_ne_next rfl
-      let P := GridHexagonBetween.ofSwapColumns m a C.column_ne_next
-        (by simpa only [m, GridState.swapColumns_apply, Equiv.swap_apply_left,
-          Equiv.swap_apply_right] using hs)
-        (by simpa only [m, GridState.swapColumns_apply, Equiv.swap_apply_right] using ht)
-      -- Transport the hexagon along the double swap together with its initial side.
-      obtain ⟨P, hP⟩ : ∃ P : GridHexagonBetween a t C.turnRow m x, P.left = a := by
-        rw [← GridState.swapColumns_swapColumns a b x]
-        exact ⟨P, GridHexagonBetween.ofSwapColumns_left ..⟩
-      refine ⟨⟨_, r, P⟩, ?_⟩
+      exact ⟨m, r, P, hD⟩
+    · rintro ⟨m, r, P, h⟩
+      refine ⟨⟨m, r, P⟩, ?_⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf, and_comm,
         G.mem_crossingChangeHexagons_and_mem_unblockedRectangles_iff C t hX]
-      exact (P.isEmpty_and_isEmpty_iff r).mpr
-        ⟨(GridRectangleBetween.ofSwapColumns_left ..).trans hP.symm, hP⟩
+      exact h
 
 /-- The returning rectangle followed by an initial-side hexagon: it lies in column `b`, and exists
 exactly when `s` and `t` occur in this order going up from the row of `x` in the column after `b`
@@ -281,7 +224,6 @@ private theorem sum_OMonomial_mul_initialHexagonWeight_self
         ∑ P ∈ G.crossingChangeInitialHexagons C t y x, G.crossingChangeInitialHexagonWeight R P =
       if C.turnRow ∈ Grid.cIco (x (finRotate n b)) (x b) ∧ t ∈ Grid.cIoo C.turnRow (x b) then
         G.crossingChangeAnnulusWeight R C t else 0 := by
-  have hbc : b ≠ finRotate n b := (finRotate n).injective.ne C.column_ne_next
   refine sum_mul_sum_eq_ite R _ _ x _ _ _ _ (fun D hD => ?_) (fun D hD E hE => ?_) ?_
   · rw [GridTwoStepDecomposition.mem_decompositionsOf, and_comm] at hD
     rw [mul_comm]
@@ -292,41 +234,19 @@ private theorem sum_OMonomial_mul_initialHexagonWeight_self
     obtain ⟨m', r', Q⟩ := E
     rw [GridTwoStepDecomposition.mem_decompositionsOf, and_comm,
       G.mem_crossingChangeInitialHexagons_and_mem_unblockedRectangles_iff C t hX] at hD hE
-    have hP := (P.isEmpty_and_isEmpty_iff r).mp hD
-    have hQ := (Q.isEmpty_and_isEmpty_iff r').mp hE
-    obtain rfl : m = m' := by
-      rw [P.toGridRectangleBetween.source_eq_swapColumns,
-        Q.toGridRectangleBetween.source_eq_swapColumns, hP.2, hQ.2, P.left_eq, Q.left_eq]
-    obtain rfl : P = Q := Subsingleton.elim _ _
-    obtain rfl : r = r' := GridRectangleBetween.left_injective (hP.1.trans hQ.1.symm)
+    cases P.sigma_source_eq_of_isEmpty_and_isEmpty r Q r' hD hE
     rfl
-  · constructor
+  · rw [← GridInitialHexagonBetween.exists_source_isEmpty_and_isEmpty_iff C.column_ne_next]
+    constructor
     · rintro ⟨⟨m, r, P⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf, and_comm,
         G.mem_crossingChangeInitialHexagons_and_mem_unblockedRectangles_iff C t hX] at hD
-      have hP := (P.isEmpty_and_isEmpty_iff r).mp hD
-      have hright : r.right = P.right :=
-        P.toGridRectangleBetween.right_eq_right_of_left_eq_left r hP.1
-      have hl : m P.left = x (finRotate n b) := by rw [← hP.1, r.map_left, hright, hP.2]
-      have hr : m P.right = x b := by rw [← hright, r.map_right, hP.1, P.left_eq]
-      exact ⟨by simpa only [hl, hr] using P.lower_mem, by simpa only [hr] using P.upper_mem⟩
-    · rintro ⟨hs, ht⟩
-      -- The hexagon occupies column `b` and reads the exchanged rows of `b` and the next column.
-      let m := x.swapColumns b (finRotate n b)
-      let r := GridRectangleBetween.ofSwapColumns x m b (finRotate n b) hbc rfl
-      let P := GridInitialHexagonBetween.ofSwapColumns m (finRotate n b) hbc.symm
-        (by simpa only [m, GridState.swapColumns_apply, Equiv.swap_apply_left,
-          Equiv.swap_apply_right] using hs)
-        (by simpa only [m, GridState.swapColumns_apply, Equiv.swap_apply_right] using ht)
-      obtain ⟨P, hP⟩ : ∃ P : GridInitialHexagonBetween a C.turnRow t m x,
-          P.right = finRotate n b := by
-        rw [← GridState.swapColumns_swapColumns b (finRotate n b) x]
-        exact ⟨P, GridInitialHexagonBetween.ofSwapColumns_right ..⟩
-      refine ⟨⟨_, r, P⟩, ?_⟩
+      exact ⟨m, r, P, hD⟩
+    · rintro ⟨m, r, P, h⟩
+      refine ⟨⟨m, r, P⟩, ?_⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf, and_comm,
         G.mem_crossingChangeInitialHexagons_and_mem_unblockedRectangles_iff C t hX]
-      exact (P.isEmpty_and_isEmpty_iff r).mpr
-        ⟨(GridRectangleBetween.ofSwapColumns_left ..).trans P.left_eq.symm, hP⟩
+      exact h
 
 /-- **The diagonal of `∂H`.** If the annulus squares carry no `X`-marking, the coefficient of
 `∂ ∘ H` from a grid state `x` to itself counts the returning hexagon--rectangle annuli: one in
@@ -386,43 +306,20 @@ private theorem sum_pentagonWeight_mul_pentagonWeight_self
     obtain ⟨m', P', Q'⟩ := E
     rw [GridTwoStepDecomposition.mem_decompositionsOf,
       G.mem_pentagons_and_mem_pentagons_withTurnRow_iff C t hX] at hD hE
-    have hP := (P.isEmpty_and_isEmpty_iff Q).mp hD
-    have hP' := (P'.isEmpty_and_isEmpty_iff Q').mp hE
-    obtain rfl : m = m' := by
-      rw [P.target_eq_swapColumns, P'.target_eq_swapColumns, hP, hP']
-    obtain rfl : P = P' := Subsingleton.elim _ _
-    obtain rfl : Q = Q' := Subsingleton.elim _ _
+    cases P.sigma_eq_of_left_eq Q P' Q' ((P.isEmpty_and_isEmpty_iff Q).mp hD)
+      ((P'.isEmpty_and_isEmpty_iff Q').mp hE)
     rfl
-  · constructor
+  · rw [← GridPentagonBetween.exists_left_eq_iff C.column_ne_next rfl]
+    constructor
     · rintro ⟨⟨m, P, Q⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,
         G.mem_pentagons_and_mem_pentagons_withTurnRow_iff C t hX] at hD
-      have hP := (P.isEmpty_and_isEmpty_iff Q).mp hD
-      have hQ : Q.left = P.left := by
-        rcases P.toGridRectangleBetween.left_right_eq_cases Q.toGridRectangleBetween with h | h
-        · exact h.1
-        · exact absurd (h.2.symm.trans Q.right_eq) P.left_ne
-      have hb := P.toGridRectangleBetween.bottom_eq_top_of_left_eq_left
-        Q.toGridRectangleBetween hQ
-      have ht := P.toGridRectangleBetween.top_eq_bottom_of_left_eq_left
-        Q.toGridRectangleBetween hQ
-      exact ⟨by simpa only [hP, P.right_eq] using P.turn_mem,
-        by simpa only [hb, ht, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
-          hP, P.right_eq] using Q.turn_mem_cIco_bottom_top⟩
-    · rintro ⟨hs, ht⟩
-      let m := x.swapColumns a b
-      let P := GridPentagonBetween.ofSwapColumns x a C.column_ne_next hs
-      let r := GridRectangleBetween.ofSwapColumns m x a b C.column_ne_next
-        (GridState.swapColumns_swapColumns _ _ _).symm
-      let Q : GridPentagonBetween a t m x := GridPentagonBetween.ofRightEq r
-        (GridRectangleBetween.ofSwapColumns_right ..)
-        (by simpa only [r, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
-          GridRectangleBetween.ofSwapColumns_left, GridRectangleBetween.ofSwapColumns_right, m,
-          GridState.swapColumns_apply, Equiv.swap_apply_left, Equiv.swap_apply_right] using ht)
+      exact ⟨m, P, Q, (P.isEmpty_and_isEmpty_iff Q).mp hD⟩
+    · rintro ⟨m, P, Q, hP⟩
       refine ⟨⟨m, P, Q⟩, ?_⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,
         G.mem_pentagons_and_mem_pentagons_withTurnRow_iff C t hX]
-      exact (P.isEmpty_and_isEmpty_iff Q).mpr (GridPentagonBetween.ofSwapColumns_left ..)
+      exact (P.isEmpty_and_isEmpty_iff Q).mpr hP
 
 /-- The returning pair of initial-side pentagons: it lies in column `b`, and exists exactly when
 the turn row `s` lies between the rows of `x` in column `b` and the next column, and `t` between
@@ -436,7 +333,6 @@ private theorem sum_initialPentagonWeight_mul_initialPentagonWeight_self
       if C.turnRow ∈ Grid.cIco (x b) (x (finRotate n b)) ∧
           t ∈ Grid.cIco (x (finRotate n b)) (x b) then
         G.crossingChangeAnnulusWeight R C t else 0 := by
-  have hbc : b ≠ finRotate n b := (finRotate n).injective.ne C.column_ne_next
   refine sum_mul_sum_eq_ite R _ _ x _ _ _ _ (fun D hD => ?_) (fun D hD E hE => ?_) ?_
   · rw [GridTwoStepDecomposition.mem_decompositionsOf,
       G.mem_initialPentagons_and_mem_initialPentagons_withTurnRow_iff C t hX] at hD
@@ -446,41 +342,20 @@ private theorem sum_initialPentagonWeight_mul_initialPentagonWeight_self
     obtain ⟨m', P', Q'⟩ := E
     rw [GridTwoStepDecomposition.mem_decompositionsOf,
       G.mem_initialPentagons_and_mem_initialPentagons_withTurnRow_iff C t hX] at hD hE
-    have hP := (P.isEmpty_and_isEmpty_iff Q).mp hD
-    have hP' := (P'.isEmpty_and_isEmpty_iff Q').mp hE
-    obtain rfl : m = m' := by
-      rw [P.target_eq_swapColumns, P'.target_eq_swapColumns, hP, hP']
-    obtain rfl : P = P' := Subsingleton.elim _ _
-    obtain rfl : Q = Q' := Subsingleton.elim _ _
+    cases P.sigma_eq_of_right_eq Q P' Q' ((P.isEmpty_and_isEmpty_iff Q).mp hD)
+      ((P'.isEmpty_and_isEmpty_iff Q').mp hE)
     rfl
-  · constructor
+  · rw [← GridInitialPentagonBetween.exists_right_eq_iff C.column_ne_next rfl]
+    constructor
     · rintro ⟨⟨m, P, Q⟩, hD⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,
         G.mem_initialPentagons_and_mem_initialPentagons_withTurnRow_iff C t hX] at hD
-      have hP := (P.isEmpty_and_isEmpty_iff Q).mp hD
-      have hQ : Q.left = P.left := Q.left_eq.trans P.left_eq.symm
-      have hb := P.toGridRectangleBetween.bottom_eq_top_of_left_eq_left
-        Q.toGridRectangleBetween hQ
-      have ht := P.toGridRectangleBetween.top_eq_bottom_of_left_eq_left
-        Q.toGridRectangleBetween hQ
-      exact ⟨by simpa only [hP, P.left_eq] using P.turn_mem,
-        by simpa only [hb, ht, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
-          hP, P.left_eq] using Q.turn_mem_cIco_bottom_top⟩
-    · rintro ⟨hs, ht⟩
-      let m := x.swapColumns b (finRotate n b)
-      let P := GridInitialPentagonBetween.ofSwapColumns x (finRotate n b) hbc.symm hs
-      let r := GridRectangleBetween.ofSwapColumns m x b (finRotate n b) hbc
-        (GridState.swapColumns_swapColumns _ _ _).symm
-      let Q : GridInitialPentagonBetween a t m x :=
-        ⟨r, GridRectangleBetween.ofSwapColumns_left ..,
-          by simpa only [r, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
-            GridRectangleBetween.ofSwapColumns_left, GridRectangleBetween.ofSwapColumns_right,
-            m, GridState.swapColumns_apply, Equiv.swap_apply_left, Equiv.swap_apply_right]
-            using ht⟩
+      exact ⟨m, P, Q, (P.isEmpty_and_isEmpty_iff Q).mp hD⟩
+    · rintro ⟨m, P, Q, hP⟩
       refine ⟨⟨m, P, Q⟩, ?_⟩
       rw [GridTwoStepDecomposition.mem_decompositionsOf,
         G.mem_initialPentagons_and_mem_initialPentagons_withTurnRow_iff C t hX]
-      exact (P.isEmpty_and_isEmpty_iff Q).mpr (GridInitialPentagonBetween.ofSwapColumns_right ..)
+      exact (P.isEmpty_and_isEmpty_iff Q).mpr hP
 
 /-- Pentagons turning on opposite sides never return to their source when the two turn rows
 differ: together they would form a thin horizontal annulus, whose single row contains both turn

@@ -39,8 +39,6 @@ coefficients.
 
 ## Main definitions
 
-* `TauCeti.GridDiagram.ColumnTurn.withTurnRow`: the column turn at the same columns turning in
-  another row, the turn of the reverse crossing change map.
 * `TauCeti.GridDiagram.crossingChangeAnnulusSquares`: the marked squares covered by every returning
   domain.
 * `TauCeti.GridDiagram.crossingChangeAnnulusWeight`: the monomial of their `O`-markings.
@@ -74,32 +72,7 @@ namespace GridDiagram
 
 open MvPolynomial
 
-variable {n : ℕ}
-
-/-! ### The reverse turn -/
-
-/-- The column turn at the same pair of columns as `C`, turning in row `t` instead. For a crossing
-change with the turn of `Φ` in row `C.turnRow`, the reverse crossing change map `Ψ` is the
-commutation map of the exchanged diagram at `C.withTurnRow t`.
-
-It is reducible, so that the pentagons of this turn are the pentagons at the column `C.column`
-turning in row `t`. -/
-abbrev ColumnTurn.withTurnRow (C : ColumnTurn n) (t : Fin n) : ColumnTurn n :=
-  ⟨C.column, t, C.column_ne_next⟩
-
-/-- The turn in another row exchanges the same columns. -/
-@[simp]
-theorem ColumnTurn.withTurnRow_column (C : ColumnTurn n) (t : Fin n) :
-    (C.withTurnRow t).column = C.column :=
-  (rfl)
-
-/-- The turn in row `t` turns in row `t`. -/
-@[simp]
-theorem ColumnTurn.withTurnRow_turnRow (C : ColumnTurn n) (t : Fin n) :
-    (C.withTurnRow t).turnRow = t :=
-  (rfl)
-
-variable (G : GridDiagram n) (R : Type*) [CommSemiring R] (C : ColumnTurn n) (t : Fin n)
+variable {n : ℕ} (G : GridDiagram n) (R : Type*) [CommSemiring R] (C : ColumnTurn n) (t : Fin n)
 
 local notation "a" => C.column
 local notation "b" => finRotate n C.column
@@ -113,6 +86,7 @@ noncomputable def crossingChangeAnnulusSquares : Finset (Fin n × Fin n) :=
   {a} ×ˢ Grid.cIoo C.turnRow t ∪ {b} ×ˢ Grid.cIoo t C.turnRow
 
 /-- Membership in the squares carrying the markings of a returning domain. -/
+@[simp]
 theorem mem_crossingChangeAnnulusSquares (p : Fin n × Fin n) :
     p ∈ crossingChangeAnnulusSquares C t ↔
       p.1 = a ∧ p.2 ∈ Grid.cIoo C.turnRow t ∨ p.1 = b ∧ p.2 ∈ Grid.cIoo t C.turnRow := by
@@ -292,6 +266,20 @@ private theorem pentagonPair_squares {S₁ S₂ : Finset (Fin n × Fin n)} {B T 
   · simp only [Equiv.swap_apply_of_ne_of_ne hca hcb, hca, hcb, false_and, or_self, iff_self,
       not_false_eq_true, and_self]
 
+/-- A product over squares of the variable of the exchanged column at each `O`-marking of the
+exchanged diagram, the weight of one of its pentagons, is the product of the variables of the
+`O`-markings of `G` in those squares read in `G` by exchanging the columns `a` and `b`. -/
+private theorem prod_ite_swapColumns_OSet (S : Finset (Fin n × Fin n)) :
+    (∏ p ∈ S, if p ∈ (G.swapColumns a b).OSet then MvPolynomial.X (Equiv.swap a b p.1)
+        else (1 : MvPolynomial (Fin n) R)) =
+      ∏ c ∈ G.OColumnsOfSquares
+        (S.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding),
+        MvPolynomial.X c := by
+  rw [← G.prod_ite_OSet_eq_prod_OColumnsOfSquares, Finset.prod_map]
+  refine Finset.prod_congr rfl fun p _ => ?_
+  simp only [mem_OSet, swapColumns_O, GridState.swapColumns_apply, Function.Embedding.coeFn_mk,
+    Equiv.prodCongr_apply, Equiv.coe_refl, Prod.map_fst, Prod.map_snd, id_eq]
+
 /-- The weight of a pentagon of the exchanged diagram, read in `G` by exchanging the columns `a`
 and `b`. -/
 private theorem pentagonWeight_withTurnRow {u v : GridState n}
@@ -300,10 +288,8 @@ private theorem pentagonWeight_withTurnRow {u v : GridState n}
       ∏ c ∈ G.OColumnsOfSquares
         (Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding),
         MvPolynomial.X c := by
-  rw [pentagonWeight_eq_prod_coveredSquares, ← G.prod_ite_OSet_eq_prod_OColumnsOfSquares,
-    Finset.prod_map]
-  refine Finset.prod_congr rfl fun p _ => ?_
-  simp
+  rw [pentagonWeight_eq_prod_coveredSquares]
+  exact prod_ite_swapColumns_OSet R _
 
 /-- The weight of an initial-side pentagon of the exchanged diagram, read in `G` by exchanging the
 columns `a` and `b`. -/
@@ -313,10 +299,8 @@ private theorem initialPentagonWeight_withTurnRow {u v : GridState n}
       ∏ c ∈ G.OColumnsOfSquares
         (Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding),
         MvPolynomial.X c := by
-  rw [initialPentagonWeight_eq_prod_coveredSquares, ← G.prod_ite_OSet_eq_prod_OColumnsOfSquares,
-    Finset.prod_map]
-  refine Finset.prod_congr rfl fun p _ => ?_
-  simp
+  rw [initialPentagonWeight_eq_prod_coveredSquares]
+  exact prod_ite_swapColumns_OSet R _
 
 /-- Two empty returning terminal-side pentagons, the first turning in the turn row of `C` and the
 second in row `t`, cover exactly the annulus squares. -/
@@ -328,12 +312,7 @@ private theorem pentagon_squares {u v : GridState n} (P : GridPentagonBetween a 
       ¬(p ∈ P.coveredSquares ∧ p ∈
         Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) := by
   have hP := (P.isEmpty_and_isEmpty_iff Q).mp h
-  have hQ : Q.left = P.left := by
-    rcases P.toGridRectangleBetween.left_right_eq_cases Q.toGridRectangleBetween with h | h
-    · exact h.1
-    · exact absurd (h.2.symm.trans Q.right_eq) P.left_ne
-  have hb := P.toGridRectangleBetween.bottom_eq_top_of_left_eq_left Q.toGridRectangleBetween hQ
-  have ht := P.toGridRectangleBetween.top_eq_bottom_of_left_eq_left Q.toGridRectangleBetween hQ
+  obtain ⟨hQ, hb, ht⟩ := P.left_eq_left_and_bottom_eq_top_and_top_eq_bottom Q
   refine pentagonPair_squares (mem_coveredSquares_of_left_eq P hP)
     (by simpa only [hb, ht] using mem_coveredSquares_of_left_eq Q (hQ.trans hP))
     P.turn_mem_cIco_bottom_top (by simpa only [hb, ht] using Q.turn_mem_cIco_bottom_top) p
@@ -349,11 +328,9 @@ private theorem initialPentagon_squares {u v : GridState n}
       ¬(p ∈ P.coveredSquares ∧ p ∈
         Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) := by
   have hP := (P.isEmpty_and_isEmpty_iff Q).mp h
-  have hQ : Q.left = P.left := Q.left_eq.trans P.left_eq.symm
+  obtain ⟨hQ, hb, ht⟩ := P.left_eq_left_and_bottom_eq_top_and_top_eq_bottom Q
   have hQr : Q.right = P.right :=
     P.toGridRectangleBetween.right_eq_right_of_left_eq_left Q.toGridRectangleBetween hQ
-  have hb := P.toGridRectangleBetween.bottom_eq_top_of_left_eq_left Q.toGridRectangleBetween hQ
-  have ht := P.toGridRectangleBetween.top_eq_bottom_of_left_eq_left Q.toGridRectangleBetween hQ
   refine pentagonPair_squares (mem_coveredSquares_of_right_eq P hP)
     (by simpa only [hb, ht] using mem_coveredSquares_of_right_eq Q (hQr.trans hP))
     P.turn_mem_cIco_bottom_top (by simpa only [hb, ht] using Q.turn_mem_cIco_bottom_top) p
