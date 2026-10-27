@@ -221,6 +221,15 @@ theorem integrable_dirichletMultinomialMeasure {E : Type*} [SeminormedAddGroup E
       (integrable_dirac (by simp)).smul_measure (by simp)
   · simp [dirichletMultinomialMeasure_eq_zero_of_invalid ha]
 
+/-- Every observable of the Euclidean count vector is integrable, including at invalid
+concentrations, where the measure is zero. -/
+theorem integrable_map_multinomialToEuclidean_dirichletMultinomialMeasure
+    {E : Type*} [SeminormedAddGroup E] (f : EuclideanSpace ℝ ι → E)
+    (n : ℕ) (a : ι → ℝ) :
+    Integrable f ((dirichletMultinomialMeasure n a).map multinomialToEuclidean) := by
+  rw [measurableEmbedding_multinomialToEuclidean.integrable_map_iff]
+  exact integrable_dirichletMultinomialMeasure _ n a
+
 open Classical in
 /-- Integrate a count observable by a finite sum of its values against the singleton masses.
 For valid concentrations, the masses simplify to the Gamma-ratio formula; otherwise both

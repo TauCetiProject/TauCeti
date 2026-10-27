@@ -124,6 +124,17 @@ theorem map_eval_dirichletMultinomialMeasure [DecidableEq ι] [Nontrivial ι]
   exact (congrArg Subtype.val (Set.projIcc_of_mem zero_le_one
     ⟨NNReal.coe_nonneg _, by exact_mod_cast (p x).weights_apply_le_one i⟩)).symm
 
+/-- A real coordinate of the Euclidean count vector is the real cast of its beta-binomial
+marginal, provided that there is at least one other category. -/
+@[simp]
+theorem map_eval_map_multinomialToEuclidean_dirichletMultinomialMeasure
+    [DecidableEq ι] [Nontrivial ι] (ha : ∀ i, 0 < a i) (n : ℕ) (i : ι) :
+    ((dirichletMultinomialMeasure n a).map multinomialToEuclidean).map (fun z ↦ z i) =
+      (betaBinomialMeasure n (a i) (∑ j with j ≠ i, a j)).map (Nat.cast : ℕ → ℝ) := by
+  rw [← map_eval_dirichletMultinomialMeasure ha n i,
+    Measure.map_map (by fun_prop) (by fun_prop), Measure.map_map (by fun_prop) (by fun_prop)]
+  simp only [Function.comp_def, multinomialToEuclidean_apply]
+
 /-- The total count in a nonempty proper block has the beta-binomial law whose shapes are
 the total concentrations in the block and in its complement. -/
 @[simp]
