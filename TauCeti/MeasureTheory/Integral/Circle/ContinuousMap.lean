@@ -35,7 +35,8 @@ private theorem intervalIntegrable_boundary (c : ℂ) (R : ℝ)
   exact ((continuous_circleMap 0 R).mul_const I).smul
     (f.continuous.comp ((continuous_circleMap c R).subtype_mk _))
 
-/-- Circle integration as a continuous complex linear map on continuous boundary functions. -/
+/-- Circle integration as a continuous complex linear map on continuous boundary functions.
+For an incomplete codomain, this is the zero map, as Mathlib defines its integral to be zero. -/
 noncomputable def circleIntegralCLM (c : ℂ) (R : ℝ) : C(sphere c |R|, E) →L[ℂ] E :=
   LinearMap.mkContinuous
     { toFun := fun f => ∫ θ in 0..2 * Real.pi, deriv (circleMap c R) θ •
