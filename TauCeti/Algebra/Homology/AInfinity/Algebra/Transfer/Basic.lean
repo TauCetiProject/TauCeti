@@ -432,8 +432,8 @@ theorem mul_transfer (a b : H) :
   set τ := GH.koszulTwist 1
   have hτi : 𝒜.grading.koszulTwist 1 (c.incl (τ a)) = c.incl a := by
     have h := LinearMap.congr_fun (hincl.koszulTwist_comp 1) (τ a)
-    simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-      LinearMap.comp_apply] at h
+    simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, Module.End.smulLeft_apply,
+      one_smul, LinearMap.comp_apply] at h
     rw [h, ← LinearMap.comp_apply τ, InternalGrading.koszulTwist_comp_self, LinearMap.id_apply]
   have hfil : of R A (2 : ℕ+) (PiTensorProduct.tprod R ![c.incl (τ a), c.incl b]) ∈
       filtration R A 2 := by
@@ -491,8 +491,8 @@ private theorem homotopy_koszulTwist_apply (u : A) :
     c.homotopy (𝒜.grading.koszulTwist 1 u) = -𝒜.grading.koszulTwist 1 (c.homotopy u) := by
   have h := LinearMap.congr_fun (hh.koszulTwist_comp 1) u
   simp only [mul_neg, mul_one, Int.reduceNeg, Int.negOnePow_neg, Int.negOnePow_one, Units.val_neg,
-    Units.val_one, Int.cast_neg, Int.cast_one, neg_smul, one_smul, LinearMap.comp_apply,
-    LinearMap.neg_apply] at h
+    Units.val_one, Int.cast_neg, Int.cast_one, LinearMap.comp_apply, Module.End.smulLeft_apply,
+    neg_smul, one_smul] at h
   rw [h, neg_neg]
 
 /-- The letterwise inclusion of a three-letter word. -/

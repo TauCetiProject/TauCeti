@@ -30,7 +30,8 @@ without duplicating it.
 The file also records that a finitely generated internally graded module has only finitely many
 nonzero pieces, the Koszul twist operator used to encode Koszul signs on homogeneous elements, and
 the letterwise tuple operation that applies it on a half-open index interval. These sign
-operations use integer degrees, while decomposition and transport allow any index type.
+operations use integer degrees, while decomposition and transport allow any index type. The
+Koszul twist and its tuple operation work over any ring: their integer signs are central scalars.
 
 ## Main definitions
 
@@ -423,7 +424,7 @@ end FiniteSupport
 
 section KoszulTwist
 
-variable {R : Type u} {M : Type v} [CommRing R] [AddCommMonoid M] [Module R M]
+variable {R : Type u} {M : Type v} [Ring R] [AddCommMonoid M] [Module R M]
 
 /-- The Koszul twist of parameter `q`: on the homogeneous piece of degree `e` it acts as the
 scalar `(-1)^(q * e)`.
@@ -435,8 +436,8 @@ degree `D` is the scalar by which `koszulTwist G q` scales those inputs. -/
 noncomputable def InternalGrading.koszulTwist (G : InternalGrading R M) (q : ℤ) : M →ₗ[R] M :=
   DirectSum.coeLinearMap (fun e => G.piece e) ∘ₗ
     DirectSum.toModule R ℤ (⨁ e : ℤ, G.piece e)
-      (fun e => (((q * e).negOnePow : ℤ) : R) •
-        DirectSum.lof R ℤ (fun e => G.piece e) e) ∘ₗ
+      (fun e => DirectSum.lof R ℤ (fun e => G.piece e) e ∘ₗ
+        Module.End.smulLeft (((q * e).negOnePow : ℤ) : R) (Set.intCast_mem_center R _)) ∘ₗ
     (DirectSum.decomposeLinearEquiv (ℳ := G.piece)).toLinearMap
 
 /-- The tuple `x` with exactly the letters at positions in the half-open interval `[a, a + p)`
@@ -451,7 +452,7 @@ end KoszulTwist
 
 section KoszulTwistLemmas
 
-variable {R : Type u} {M : Type v} [CommRing R] [AddCommMonoid M] [Module R M]
+variable {R : Type u} {M : Type v} [Ring R] [AddCommMonoid M] [Module R M]
 
 /-- On a homogeneous element of degree `e`, the Koszul twist of parameter `q` acts as the scalar
 `(-1)^(q * e)`. -/
@@ -552,11 +553,13 @@ variable {N : Type w} [AddCommMonoid N] [Module R N]
 
 /-- A homogeneous linear map of degree `r` commutes with the Koszul twist of parameter `q` up to
 the scalar `(-1)^(q * r)`. This is the operator form of the sign acquired by moving a degree-`r`
-map past a homogeneous input. -/
+map past a homogeneous input. The sign acts through its central scalar endomorphism, so this
+formula also applies over a noncommutative ring. -/
 theorem koszulTwist_comp {G : InternalGrading R M} {H : InternalGrading R N}
     {f : M →ₗ[R] N} {r : ℤ} (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (q : ℤ) :
     H.koszulTwist q ∘ₗ f =
-      ((((q * r).negOnePow : ℤ) : R) • (f ∘ₗ G.koszulTwist q)) := by
+      Module.End.smulLeft (((q * r).negOnePow : ℤ) : R) (Set.intCast_mem_center R _) ∘ₗ
+        (f ∘ₗ G.koszulTwist q) := by
   refine DirectSum.decompose_lhom_ext (ℳ := G.piece) fun p ↦ ?_
   ext x
   have hx : (x : M) ∈ G.piece p := Submodule.coe_mem x
@@ -569,7 +572,7 @@ theorem koszulTwist_comp {G : InternalGrading R M} {H : InternalGrading R N}
     rw [← Int.cast_mul, ← Units.val_mul, ← Int.negOnePow_add]
     congr 2
     ring_nf
-  simpa only [LinearMap.comp_apply, LinearMap.smul_apply, Submodule.coe_subtype] using hcalc
+  simpa only [LinearMap.comp_apply, Module.End.smulLeft_apply, Submodule.coe_subtype] using hcalc
 
 end LinearMap.IsHomogeneous
 

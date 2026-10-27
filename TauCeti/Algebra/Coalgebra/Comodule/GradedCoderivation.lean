@@ -99,7 +99,8 @@ theorem IsGradedCoderivationOver.square_commutes_coact_of_negOnePow_eq_neg_one {
   let H := b.lTensor M ∘ₗ T.rTensor C
   have hρ : ρ ∘ₗ D = (F + H) ∘ₗ ρ := h
   have hTF : T ∘ₗ D = (-1 : R) • (D ∘ₗ T) := by
-    simpa only [T, hqr] using hD.koszulTwist_comp q
+    simpa only [Module.End.smulLeft_eq, LinearMap.smul_comp, LinearMap.id_comp, T, hqr] using
+      hD.koszulTwist_comp q
   have hcross : F ∘ₗ H + H ∘ₗ F = 0 := by
     have hcomm : H ∘ₗ F = (-1 : R) • (F ∘ₗ H) := by
       calc
