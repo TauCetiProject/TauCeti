@@ -110,7 +110,7 @@ theorem nullChainImpression_subset_frontier (hC : IsNullChain U C) (hU : IsOpen 
       hU hUc (by simp only [insert_subset_iff, singleton_subset_iff]; exact ⟨hpU, hxU⟩)
   have hxL : x ∈ interior L := hpair (by simp)
   have hpL : p ∈ L := interior_subset (hpair (by simp))
-  obtain ⟨n, hn⟩ := (hC.eventually_disjoint_isCompact hU hUb hL hLU).exists
+  obtain ⟨n, hn⟩ := (hC.eventually_disjoint_of_isCompact hU hUb hL hLU).exists
   obtain ⟨z, hzL, hzD⟩ := _root_.mem_closure_iff.mp (hxD n) _ isOpen_interior hxL
   have hLD : L ⊆ nullChainDomain U C n :=
     hLc.subset_nullChainDomain (fun w hw => ⟨hLU hw, disjoint_right.mp hn hw⟩)

@@ -162,7 +162,7 @@ theorem eventually_norm_sub_lt (hC : IsNullChain U C) (hU : IsBounded U) {ε : �
     _ = ε := by field_simp
 
 /-- Crosscuts of a bounded null chain eventually avoid each compact subset of the open domain. -/
-theorem eventually_disjoint_isCompact (hC : IsNullChain U C) (hU : IsOpen U)
+theorem eventually_disjoint_of_isCompact (hC : IsNullChain U C) (hU : IsOpen U)
     (hUb : IsBounded U) {K : Set ℂ} (hK : IsCompact K) (hKU : K ⊆ U) :
     ∀ᶠ n in atTop, Disjoint (C n) K := by
   obtain ⟨δ, hδ, hδU⟩ := hK.exists_thickening_subset_open hU hKU
