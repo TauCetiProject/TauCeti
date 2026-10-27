@@ -34,6 +34,9 @@ field.
   in the `ℤ`-spans of two `ℚ`-bases differ by the determinant of the change of basis.
 * `Submodule.toAddSubgroup_submoduleOf`: taking the underlying additive subgroup commutes
   with restricting a submodule to another submodule.
+* `Submodule.isLattice_span`: the span of a finite set spanning the ambient module is a full
+  lattice.
+* `Module.Finite.of_isLattice`: a module containing a full lattice is finite.
 * `Submodule.finrank_eq_finrank`: a full lattice and its ambient space have the
   same finrank.
 * `LinearEquiv.extendOfIsLattice`: extension of an `R`-linear equivalence between
@@ -48,7 +51,7 @@ field.
   vector lies in a free full lattice submodule.
 * `Submodule.IsLattice.exists_ne_zero_forall_smul_mem`: a single nonzero scalar multiplies a
   finitely generated submodule into a free full lattice submodule.
-* `TauCeti.TensorProduct.rationalizationEquiv_baseChange_unitTmulEquiv`: rationalizing that
+* `TensorProduct.rationalizationEquiv_baseChange_unitTmulEquiv`: rationalizing that
   unit-tensor lattice returns the scalar extension one started from.
 
 ## References
@@ -279,9 +282,29 @@ theorem isLattice_map (S : Submodule R V) [S.IsLattice A] (f : V →ₗ[A] W)
 
 end Map
 
+section Span
+
+variable {R A V : Type*} [CommRing R] [CommRing A] [Algebra R A]
+variable [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V]
+
+/-- The `R`-span of a finite set spanning `V` over `A` is a full lattice. In particular every
+finite-dimensional vector space contains a lattice, the span of a basis. -/
+theorem isLattice_span {s : Set V} (hs : s.Finite) (hspan : span A s = ⊤) :
+    (span R s).IsLattice A where
+  fg := ⟨hs.toFinset, by simp⟩
+  span_eq_top := by rw [span_span_of_tower, hspan]
+
+/-- A module containing a full lattice is finite: the generators of the lattice span it. -/
+theorem _root_.Module.Finite.of_isLattice (M : Submodule R V) [M.IsLattice A] :
+    Module.Finite A V := by
+  obtain ⟨s, hs⟩ := IsLattice.fg (A := A) (M := M)
+  exact ⟨⟨s, by rw [← span_span_of_tower R, hs, IsLattice.span_eq_top]⟩⟩
+
+end Span
+
 end Submodule
 
-namespace TauCeti.TensorProduct
+namespace TensorProduct
 
 variable {R : Type u} {K : Type v} {M : Type w}
 
@@ -329,7 +352,7 @@ theorem unitTmulEquiv_baseChange_trans_rationalizationEquiv :
       LinearEquiv.refl K (K ⊗[R] M) :=
   LinearEquiv.ext rationalizationEquiv_baseChange_unitTmulEquiv
 
-end TauCeti.TensorProduct
+end TensorProduct
 
 namespace Submodule.IsLattice
 

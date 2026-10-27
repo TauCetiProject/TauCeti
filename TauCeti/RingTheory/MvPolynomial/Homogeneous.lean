@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 
 /-!
 # Scaling the variables of a homogeneous polynomial
@@ -22,10 +23,11 @@ notation such as `hp.eval₂_const_mul`, `hp.aeval_smul`, and `hp.eval_smul`. In
 vector, `hp.aeval_eq_sum_finsuppAntidiag` expands a value as a sum over the exponent vectors of
 degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
 positive degree, `hp.natDegree_aeval_le` bounds by `n` the degree of a substitution of
-polynomials of degree at most one, and `hp.homogeneousComponent_mul_right` records that
+polynomials of degree at most one, `hp.homogeneousComponent_mul_right` records that
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
-by `d`. `TauCeti.eval_coe_homogeneousSubmodule_eq_sum` restates the expansion of values for
-`eval` on elements of `homogeneousSubmodule`.
+by `d`, and `hp.not_dvd_X` records that over a domain a homogeneous polynomial of degree at least
+two divides no variable. `TauCeti.eval_coe_homogeneousSubmodule_eq_sum` restates the expansion of
+values for `eval` on elements of `homogeneousSubmodule`.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
@@ -152,6 +154,17 @@ theorem aeval_eq_sum_finsuppAntidiag {σ R S : Type*} [Fintype σ] [DecidableEq 
   · rw [← Finsupp.degree_eq_sum]
     exact (hp.degree_eq_sum_deg_support hl).symm
   · rw [notMem_support_iff.mp hl, map_zero, zero_mul]
+
+/-- Over a domain, a homogeneous polynomial of degree at least two divides none of the variables. -/
+theorem not_dvd_X {σ R : Type*} [CommRing R] [IsDomain R] {p : MvPolynomial σ R} {n : ℕ}
+    (hp : p.IsHomogeneous n) (hn : 2 ≤ n) (i : σ) : ¬ p ∣ _root_.MvPolynomial.X i := by
+  rintro ⟨q, hq⟩
+  have hq0 : q ≠ 0 := by rintro rfl; simp at hq
+  have hp0 : p ≠ 0 := by rintro rfl; simp at hq
+  have := congrArg _root_.MvPolynomial.totalDegree hq
+  rw [_root_.MvPolynomial.totalDegree_X, _root_.MvPolynomial.totalDegree_mul_of_isDomain hp0 hq0,
+    hp.totalDegree hp0] at this
+  omega
 
 end MvPolynomial.IsHomogeneous
 

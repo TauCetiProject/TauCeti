@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Dense
-public import TauCeti.Analysis.Normed.Operator.Resolvent.DomainPow
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.DomainPow
 
 /-!
 # The iterated generator domains of a strongly continuous semigroup are dense

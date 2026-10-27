@@ -7,8 +7,10 @@ module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
+import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.MvPowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Changing the coordinate of a formal group law
@@ -42,6 +44,8 @@ representable by a polynomial ring over the Lazard ring.
   to `φ • F`, that is `φ(F(X, Y)) = (φ • F)(φ(X), φ(Y))`.
 * `FormalGroup.instIsCommSMul`: changing coordinates preserves commutativity.
 * `FormalGroup.map_smul`: changing coordinates commutes with base change.
+* `FormalGroup.ofStrictCoeffs_single_smul_𝔾ₐ_toPowerSeries`: if `e² = 0`, transporting the
+  additive law along `X + e X^(n + 1)` gives `X + Y + e ((X + Y)^(n + 1) - X^(n + 1) - Y^(n + 1))`.
 
 ## References
 
@@ -222,5 +226,38 @@ theorem map_smul (f : R →+* S) (φ : FormalCoordinate R) (F : FormalGroup R) :
   congr 2
   funext s
   fin_cases s <;> simp [PowerSeries.map_subst (hX _)]
+
+/-- If `e² = 0`, transporting the additive formal group law along `X + e X^(n + 1)` gives
+`X + Y + e ((X + Y)^(n + 1) - X^(n + 1) - Y^(n + 1))`. For instance, over the dual numbers this is
+the first-order deformation of `X + Y` in the direction of the coordinate coefficient `bₙ`. -/
+theorem ofStrictCoeffs_single_smul_𝔾ₐ_toPowerSeries (n : ℕ+) {e : R} (he : e * e = 0) :
+    (FormalCoordinate.ofStrictCoeffs (Pi.single n e) • 𝔾ₐ).toPowerSeries =
+      (X 0 + X 1 : MvPowerSeries (Fin 2) R) + C e *
+        ((X 0 + X 1) ^ ((n : ℕ) + 1) - X 0 ^ ((n : ℕ) + 1) - X 1 ^ ((n : ℕ) + 1)) := by
+  have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
+  have hC : C e * C (-e) = (0 : MvPowerSeries (Fin 2) R) := by
+    rw [← map_mul, mul_neg, he, neg_zero, map_zero]
+  have hS (i : Fin 2) : PowerSeries.HasSubst
+      (X i + C (-e) * X i ^ ((n : ℕ) + 1) : MvPowerSeries (Fin 2) R) :=
+    .of_constantCoeff_zero (by simp)
+  rw [smul_toPowerSeries, FormalCoordinate.inv_ofStrictCoeffs_single_of_mul_self_eq_zero n he,
+    FormalCoordinate.toPowerSeries_ofStrictCoeffs_single,
+    FormalCoordinate.toPowerSeries_ofStrictCoeffs_single,
+    PowerSeries.subst_X_add_C_mul_X_pow (hX 0), PowerSeries.subst_X_add_C_mul_X_pow (hX 1),
+    𝔾ₐ_toPowerSeries, subst_add (hasSubst_finTwo (hS 0) (hS 1)),
+    subst_X (hasSubst_finTwo (hS 0) (hS 1)), subst_X (hasSubst_finTwo (hS 0) (hS 1))]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+  -- `S = X + Y - e (X^(n + 1) + Y^(n + 1))`, and `e S^(n + 1) = e (X + Y)^(n + 1)`.
+  have hS' : PowerSeries.HasSubst
+      (X 0 + C (-e) * X 0 ^ ((n : ℕ) + 1) + (X 1 + C (-e) * X 1 ^ ((n : ℕ) + 1)) :
+        MvPowerSeries (Fin 2) R) :=
+    .of_constantCoeff_zero (by simp)
+  rw [PowerSeries.subst_X_add_C_mul_X_pow hS']
+  have hsum : (X 0 + C (-e) * X 0 ^ ((n : ℕ) + 1) + (X 1 + C (-e) * X 1 ^ ((n : ℕ) + 1)) :
+        MvPowerSeries (Fin 2) R) =
+      X 0 + X 1 + C (-e) * (X 0 ^ ((n : ℕ) + 1) + X 1 ^ ((n : ℕ) + 1)) := by
+    ring
+  rw [hsum, mul_add_mul_pow_of_mul_eq_zero hC, map_neg]
+  ring
 
 end FormalGroup

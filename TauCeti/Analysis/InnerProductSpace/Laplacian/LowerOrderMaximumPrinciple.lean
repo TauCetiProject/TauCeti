@@ -66,8 +66,7 @@ theorem le_of_mul_le_laplacian_add_fderiv_le_frontier {K : Set E} (hK : IsCompac
   have hwpos (y : E) : 0 < w y := Real.exp_pos _
   have hwcd : ContDiff ℝ 2 w := (contDiff_exp_inner _ u).of_le (by norm_cast)
   obtain ⟨C, hC⟩ := hK.bddAbove_image hwcd.continuous.continuousOn
-  have hC0 : 0 ≤ C := (hwpos x).le.trans (hC (Set.mem_image_of_mem w hxK))
-  apply le_of_forall_pos_mul_le hC0
+  apply le_of_forall_pos_mul_le (C := C)
   intro ε hε
   obtain ⟨z, hzK, hzmax⟩ := hK.exists_isMaxOn ⟨x, hxK⟩
     (hcont.add (hwcd.continuous.continuousOn.const_smul ε))
