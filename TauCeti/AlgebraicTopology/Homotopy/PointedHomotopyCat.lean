@@ -74,14 +74,12 @@ theorem homotopicRel_iff {X Y : BasedTopologicalSpace.{u}} {f g : X ⟶ Y} :
 instance : Congruence homotopicRel.{u} where
   equivalence := ⟨fun f ↦ .refl f.toContinuousMap, fun h ↦ h.symm, fun h₁ h₂ ↦ h₁.trans h₂⟩
   comp_left f g g' h := by
-    rw [homotopicRel_iff, comp_eq_hom_comp, comp_eq_hom_comp, Hom.toContinuousMap_comp,
-      Hom.toContinuousMap_comp]
+    simp only [homotopicRel_iff, comp_eq_hom_comp, Hom.toContinuousMap_comp]
     -- Precomposing with `f` gives a homotopy relative to `f ⁻¹' {basepoint}`, which contains the
     -- base point of the source.
     exact (h.precomp f.toContinuousMap).mono (by simp)
   comp_right g h := by
-    rw [homotopicRel_iff, comp_eq_hom_comp, comp_eq_hom_comp, Hom.toContinuousMap_comp,
-      Hom.toContinuousMap_comp]
+    simp only [homotopicRel_iff, comp_eq_hom_comp, Hom.toContinuousMap_comp]
     exact h.comp_continuousMap g.toContinuousMap
 
 /-- **The fundamental group at the base point**, as a functor from based spaces to groups. A based
@@ -96,8 +94,7 @@ map induces `FundamentalGroup.mapOfEq` along its base-point equation. -/
       (FundamentalGroup.mapOfEq_id rfl a)
   map_comp f g := by
     refine GrpCat.hom_ext (MonoidHom.ext fun a ↦ ?_)
-    rw [GrpCat.hom_comp, MonoidHom.comp_apply, GrpCat.hom_ofHom, GrpCat.hom_ofHom,
-      GrpCat.hom_ofHom]
+    simp only [GrpCat.hom_comp, MonoidHom.comp_apply, GrpCat.hom_ofHom]
     exact (FundamentalGroup.mapOfEq_congr (Hom.toContinuousMap_comp g f) _ _ a).trans
       (FundamentalGroup.mapOfEq_comp _ _ _ _ a).symm
 

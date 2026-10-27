@@ -122,6 +122,15 @@ def classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso :
   NatIso.ofComponents (fun G ↦ (classifyingSpaceFundamentalGroupMulEquiv G).toGrpIso)
     fun φ ↦ by
       ext a
+      -- The composite sends `φ` to `mapOfEq` along `φ.hom.classifyingSpaceMap`: this is the
+      -- definitional chain `classifyingSpaceHomotopyFunctor_map`,
+      -- `PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map`,
+      -- `BasedTopologicalSpace.fundamentalGroupFunctor_map_hom` and
+      -- `classifyingSpaceFunctor_map_toContinuousMap`, which `rw` cannot apply because the source
+      -- and target objects of the composite only agree with theirs up to unfolding.
+      change classifyingSpaceFundamentalGroupMulEquiv _ (FundamentalGroup.mapOfEq
+          φ.hom.classifyingSpaceMap φ.hom.classifyingSpaceMap_basepoint a) =
+        φ.hom (classifyingSpaceFundamentalGroupMulEquiv _ a)
       exact φ.hom.classifyingSpaceFundamentalGroupMulEquiv_mapOfEq a
 
 @[simp]
