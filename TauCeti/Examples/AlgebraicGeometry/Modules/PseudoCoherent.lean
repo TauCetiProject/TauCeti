@@ -11,8 +11,8 @@ import TauCeti.AlgebraicGeometry.Modules.PseudoCoherent
 # Tests for pseudo-coherent modules on schemes
 
 Free modules of finite rank and zero modules are pseudo-coherent on every scheme. Over a
-noetherian ring `R`, the sheaf on `Spec R` associated with a cyclic module `R ⧸ I` is
-pseudo-coherent, although it is not free.
+noetherian ring `R`, the sheaf on `Spec R` associated with any cyclic module `R ⧸ I` is
+pseudo-coherent.
 -/
 
 open CategoryTheory Limits ZeroObject
@@ -31,8 +31,8 @@ example (X : Scheme.{u}) (n : ℕ) :
 example (X : Scheme.{u}) : IsPseudoCoherent (0 : X.Modules) :=
   .of_isZero (isZero_zero _)
 
-/-- An additional non-free example: over a noetherian ring `R`, the sheaf associated with
-`R ⧸ I` is pseudo-coherent. -/
+/-- An additional cyclic example: over a noetherian ring `R`, the sheaf associated with
+`R ⧸ I` is pseudo-coherent for every ideal `I`. -/
 example (R : CommRingCat.{u}) [IsNoetherianRing R] (I : Ideal R) :
     (tilde (ModuleCat.of R (R ⧸ I))).IsPseudoCoherent :=
   isPseudoCoherent_tilde .of_isNoetherianRing
