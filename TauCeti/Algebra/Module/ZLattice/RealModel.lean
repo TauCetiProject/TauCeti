@@ -27,7 +27,8 @@ inner product space, and the two constructions are mutually inverse up to isomet
 * the rational model of the real model of `M` is isometric to `M`
   (`TauCeti.IntegralLattice.ratModelRealModelIsometry`);
 * the real model of the rational model of an integral full lattice `L ⊆ E` is carried onto `L`
-  by a linear isometry equivalence with `E` (`ZLattice.realModelRatModelIsometry`).
+  by a linear isometry equivalence of its real model space with `E`
+  (`ZLattice.realModelRatModelIsometry`).
 
 Moreover a real linear isometry carrying one real model onto another induces an isometry of the
 rational lattices (`TauCeti.IntegralLattice.Isometry.ofRealModel`), so that facts proved about
@@ -42,8 +43,8 @@ isometry classes of rational lattices, such as non-isometry, transfer to the rea
   its real model.
 * `TauCeti.IntegralLattice.ratModelRealModelIsometry M hM`: the isometry from `M` to the rational
   model of its real model.
-* `ZLattice.realModelRatModelIsometry hL`: the linear isometry from the real model of the rational
-  model of `L` onto `E`.
+* `ZLattice.realModelRatModelIsometry hL`: the linear isometry from the real model space of the
+  rational model of `L` onto `E`.
 * `TauCeti.IntegralLattice.Isometry.ofRealModel`: the isometry of rational lattices induced by an
   isometry of real models.
 
@@ -51,6 +52,9 @@ isometry classes of rational lattices, such as non-isometry, transfer to the rea
 
 * `TauCeti.IntegralLattice.inner_realModelMap`: the inner product extends the rational form.
 * `TauCeti.IntegralLattice.isIntegral_realModel`: the real model is an integral lattice.
+* `TauCeti.IntegralLattice.isEven_realModel_iff` and
+  `TauCeti.IntegralLattice.isUnimodular_realModel_iff`: the real model is even, resp. unimodular,
+  exactly when `M` is.
 * `TauCeti.IntegralLattice.RealModelSpace.finrank_eq`: the real model space has the rank of `M`.
 * `ZLattice.map_realModel_realModelRatModelIsometry`: the isometry carries the real model of the
   rational model onto `L`.
@@ -149,8 +153,8 @@ theorem realModelMap_apply (x : V) : M.realModelMap hM x = (1 : ℝ) ⊗ₜ[ℚ]
 @[simp]
 theorem inner_realModelMap (x y : V) :
     ⟪M.realModelMap hM x, M.realModelMap hM y⟫ = (M.form x y : ℝ) := by
-  rw [RealModelSpace.inner_def, realModelMap_apply, realModelMap_apply,
-    LinearMap.BilinForm.baseChange_tmul, one_mul, Algebra.smul_def, mul_one, eq_ratCast]
+  rw [RealModelSpace.inner_def]
+  simp [realModelMap_apply, Algebra.smul_def]
 
 /-- The rational embedding into the real model space is injective. -/
 theorem realModelMap_injective : Function.Injective (M.realModelMap hM) := by
@@ -246,6 +250,17 @@ theorem ratModelRealModelIsometry_apply_coe (x : M) :
     M.ratModelRealModelIsometry hM x = 1 ⊗ₜ[ℤ] M.realModelCarrierEquiv hM x := by
   simp [ratModelRealModelIsometry]
 
+/-- The real model of `M` is even exactly when `M` is even. -/
+theorem isEven_realModel_iff : ZLattice.IsEven (M.realModel hM) ↔ M.IsEven :=
+  (ZLattice.isEven_ratModel_iff _).symm.trans (M.ratModelRealModelIsometry hM).isEven_iff.symm
+
+/-- The real model of `M` is unimodular exactly when `M` is unimodular. -/
+theorem isUnimodular_realModel_iff : ZLattice.IsUnimodular (M.realModel hM) ↔ M.IsUnimodular := by
+  rw [← ZLattice.isUnimodular_ratModel_iff (M.isIntegral_realModel hM),
+    isUnimodular_iff_natCard_discriminantGroup_eq_one,
+    isUnimodular_iff_natCard_discriminantGroup_eq_one,
+    Nat.card_congr (M.ratModelRealModelIsometry hM).discriminantGroupEquiv.toEquiv]
+
 namespace Isometry
 
 variable {W : Type*} [AddCommGroup W] [Module ℚ W] {M} {hM} {M' : IntegralLattice W}
@@ -270,8 +285,8 @@ private theorem realModelMap_realModelCarrierEquivOfIsometry
     M'.realModelMap hM' (realModelCarrierEquivOfIsometry f hf x) = f (M.realModelMap hM x) := by
   rw [← coe_realModelCarrierEquiv, realModelCarrierEquivOfIsometry, LinearEquiv.trans_apply,
     LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, LinearEquiv.ofSubmodules_apply,
-    coe_realModelCarrierEquiv]
-  rfl
+    coe_realModelCarrierEquiv, LinearEquiv.restrictScalars_apply,
+    LinearIsometryEquiv.coe_toLinearEquiv]
 
 /-- A real linear isometry carrying the real model of `M` onto the real model of `M'` induces an
 isometry of the integral lattices `M` and `M'`. -/
@@ -282,9 +297,7 @@ noncomputable def ofRealModel (f : M.RealModelSpace hM ≃ₗᵢ[ℝ] M'.RealMod
   .ofCarrierEquiv (realModelCarrierEquivOfIsometry f hf) fun x y ↦ by
     apply Int.cast_injective (α := ℚ)
     apply Rat.cast_injective (α := ℝ)
-    rw [M'.integralForm_cast, ← inner_realModelMap (hM := hM'),
-      realModelMap_realModelCarrierEquivOfIsometry, realModelMap_realModelCarrierEquivOfIsometry,
-      f.inner_map_map, inner_realModelMap, M.integralForm_cast]
+    simp [← inner_realModelMap (hM := hM'), realModelMap_realModelCarrierEquivOfIsometry]
 
 /-- The isometry induced by a real isometry of real models agrees with it on rational vectors. -/
 @[simp]
@@ -318,10 +331,7 @@ private theorem realModelRatModelLinearMap_tmul (r : ℝ) (z : ℚ ⊗[ℤ] L) :
     realModelRatModelLinearMap L (r ⊗ₜ[ℚ] z) = r • ratModelMap L z := by
   induction z using TensorProduct.inductionOn with
   | tmul q x =>
-    rw [realModelRatModelLinearMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      AlgebraTensorModule.cancelBaseChange_tmul, LinearMap.liftBaseChange_tmul, ratModelMap_tmul,
-      smul_smul, Rat.smul_def, mul_comm]
-    rfl
+    simp [realModelRatModelLinearMap, ratModelMap_tmul, smul_smul, Algebra.smul_def, mul_comm]
   | add z w hz hw => rw [tmul_add, map_add, hz, hw, map_add, smul_add]
 
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
@@ -336,13 +346,12 @@ private theorem inner_realModelRatModelLinearMap (hL : IsIntegral L)
     induction y using TensorProduct.inductionOn with
     | add y y' hy hy' => simp only [map_add, inner_add_right, hy, hy']
     | tmul s w =>
-      rw [realModelRatModelLinearMap_tmul, realModelRatModelLinearMap_tmul, real_inner_smul_left,
-        real_inner_smul_right, ← ratModel_form_cast hL, LinearMap.BilinForm.baseChange_tmul,
-        Algebra.smul_def, eq_ratCast]
+      simp [realModelRatModelLinearMap_tmul, real_inner_smul_left, real_inner_smul_right,
+        ← ratModel_form_cast hL, Algebra.smul_def]
       ring
 
-/-- The real model of the rational model of an integral full lattice `L` is isometric to `E`,
-by the real-linear extension `r ⊗ z ↦ r • ratModelMap L z` of `ratModelMap L`. It carries the
+/-- The real model space of the rational model of an integral full lattice `L` is isometric to
+`E`, by the real-linear extension `r ⊗ z ↦ r • ratModelMap L z` of `ratModelMap L`. It carries the
 real model onto `L` (`map_realModel_realModelRatModelIsometry`). -/
 noncomputable def realModelRatModelIsometry (hL : IsIntegral L) :
     (ratModel hL).RealModelSpace (isPosDef_ratModel hL) ≃ₗᵢ[ℝ] E :=
