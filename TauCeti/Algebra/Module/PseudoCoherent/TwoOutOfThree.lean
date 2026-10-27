@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Module.PseudoCoherent.Basic
 
 import Mathlib.LinearAlgebra.Basis.Prod
+import TauCeti.LinearAlgebra.Exact
 
 /-!
 # Two-out-of-three for pseudocoherent modules
@@ -27,12 +28,6 @@ The degree `m` ranges over `ℕ∞`. Since `⊤ + 1 = ⊤ - 1 = ⊤`, the case `
 extensions, kernels of surjections and cokernels of injections. This is the module theory that
 makes pseudocoherent modules, unlike finitely presented ones, behave well over rings that are not
 coherent.
-
-The extension statement is proved one degree at a time. Surjections `Rᵃ → M₁` and `Rᵇ → M₂`
-combine, after lifting `Rᵇ → M₂` along `g`, to a surjection `Rᵃ × Rᵇ → M` whose kernel is an
-extension of the two kernels (the horseshoe construction). The other two statements reduce to it
-through the short exact sequence `0 → ker π → ker (g ∘ π) → ker g → 0` attached to a surjection
-`π : Rᵏ → M`.
 
 ## Main results
 
@@ -60,50 +55,13 @@ universe u
 
 variable {R : Type u} [Ring R]
 
-/-- **The horseshoe step.** Given a short exact sequence `0 → M₁ → M → M₂ → 0` and surjections
-`π₁ : Rᵃ → M₁` and `π₂ : Rᵇ → M₂`, there is a surjection `π : Rᵃ × Rᵇ → M` whose kernel is an
-extension of `ker π₂` by `ker π₁`. -/
-private theorem exists_surjective_ker_exact {M₁ M M₂ : Type*} [AddCommGroup M₁] [Module R M₁]
-    [AddCommGroup M] [Module R M] [AddCommGroup M₂] [Module R M₂] {f : M₁ →ₗ[R] M}
-    {g : M →ₗ[R] M₂} (hf : Function.Injective f) (hfg : Function.Exact f g)
-    (hg : Function.Surjective g) {a b : ℕ} {π₁ : (Fin a → R) →ₗ[R] M₁}
-    (hπ₁ : Function.Surjective π₁) {π₂ : (Fin b → R) →ₗ[R] M₂}
-    (hπ₂ : Function.Surjective π₂) :
-    ∃ π : ((Fin a → R) × (Fin b → R)) →ₗ[R] M, Function.Surjective π ∧
-      ∃ (i : ker π₁ →ₗ[R] ker π) (p : ker π →ₗ[R] ker π₂),
-        Function.Injective i ∧ Function.Exact i p ∧ Function.Surjective p := by
-  -- Lift `π₂` along `g` to `σ : Rᵇ → M`, and send `(x, y)` to `f (π₁ x) + σ y`.
-  obtain ⟨σ, hσ⟩ := Module.projective_lifting_property g π₂ hg
-  have hgσ (y : Fin b → R) : g (σ y) = π₂ y := LinearMap.congr_fun hσ y
-  -- Every element of `ker g` is `f (π₁ x)` for some `x`.
-  have hlift {m : M} (hm : g m = 0) : ∃ x, f (π₁ x) = m := by
-    obtain ⟨m₁, rfl⟩ := (hfg m).mp hm
-    obtain ⟨x, rfl⟩ := hπ₁ m₁
-    exact ⟨x, rfl⟩
-  let π := (f ∘ₗ π₁).coprod σ
-  have hπ (z : (Fin a → R) × (Fin b → R)) : π z = f (π₁ z.1) + σ z.2 := rfl
-  refine ⟨π, fun m ↦ ?_, (inl R _ _).restrict fun x hx ↦ ?_, (snd R _ _).restrict fun z hz ↦ ?_,
-    fun x y hxy ↦ ?_, fun z ↦ ?_, fun y ↦ ?_⟩
-  · obtain ⟨y, hy⟩ := hπ₂ (g m)
-    obtain ⟨x, hx⟩ := hlift (m := m - σ y) (by simp [hgσ, hy])
-    exact ⟨(x, y), by simp [hπ, hx]⟩
-  · simp_all
-  · rw [mem_ker] at hz ⊢
-    simpa [hπ, hgσ, hfg.apply_apply_eq_zero] using congrArg g hz
-  · exact Subtype.ext (Prod.ext_iff.mp (congrArg Subtype.val hxy)).1
-  · obtain ⟨⟨x, y⟩, hz⟩ := z
-    have hz' : f (π₁ x) + σ y = 0 := (hπ _).symm.trans hz
-    refine ⟨fun h ↦ ?_, ?_⟩
-    · have hy : y = 0 := congrArg Subtype.val h
-      subst hy
-      exact ⟨⟨x, mem_ker.mpr (hf (by simpa using hz'))⟩, rfl⟩
-    · rintro ⟨x', hx'⟩
-      exact Subtype.ext (congrArg (fun z ↦ (Subtype.val z).2) hx').symm
-  · obtain ⟨y, hy⟩ := y
-    obtain ⟨x, hx⟩ := hlift (m := σ y) (by rwa [hgσ, ← mem_ker])
-    exact ⟨⟨(-x, y), by simp [hπ, hx]⟩, rfl⟩
-
 section ShortExact
+
+/- The extension statement is proved one degree at a time: surjections `Rᵃ → M₁` and `Rᵇ → M₂`
+combine, after lifting `Rᵇ → M₂` along `g`, to a surjection `Rᵃ × Rᵇ → M` whose kernel is an
+extension of the two kernels (the horseshoe step `TauCeti.exists_surjective_ker_exact`). The other
+two statements reduce to it through the short exact sequence `0 → ker π → ker (g ∘ π) → ker g → 0`
+attached to a surjection `π : Rᵏ → M` (`TauCeti.exact_ker_comp`). -/
 
 variable {M₁ M M₂ : Type*} [AddCommGroup M₁] [Module R M₁] [AddCommGroup M] [Module R M]
   [AddCommGroup M₂] [Module R M₂] {f : M₁ →ₗ[R] M} {g : M →ₗ[R] M₂}
@@ -159,25 +117,6 @@ theorem extension (hf : Function.Injective f) (hfg : Function.Exact f g)
   induction m using ENat.recTopCoe with
   | top => exact top_iff.mpr fun n ↦ hnat n (top_iff.mp h₁ n) (top_iff.mp h₂ n)
   | coe n => exact hnat n h₁ h₂
-
-/-- For a surjection `π : P → M` and a linear map `g : M → M₂`, the sequence
-`0 → ker π → ker (g ∘ π) → ker g → 0`, given by inclusion and by `π`, is exact. -/
-private theorem exact_ker_comp {P : Type*} [AddCommGroup P] [Module R P] {π : P →ₗ[R] M}
-    (hπ : Function.Surjective π) (g : M →ₗ[R] M₂) :
-    Function.Injective (Submodule.inclusion (ker_le_ker_comp π g)) ∧
-      Function.Exact (Submodule.inclusion (ker_le_ker_comp π g))
-        (π.restrict (p := ker (g ∘ₗ π)) (q := ker g) fun _ hx ↦ by simpa using hx) ∧
-      Function.Surjective (π.restrict (p := ker (g ∘ₗ π)) (q := ker g)
-        fun _ hx ↦ by simpa using hx) := by
-  refine ⟨Submodule.inclusion_injective _, fun x ↦ ?_, fun y ↦ ?_⟩
-  · obtain ⟨x, hx⟩ := x
-    refine ⟨fun h ↦ ⟨⟨x, mem_ker.mpr (congrArg Subtype.val h)⟩, rfl⟩, ?_⟩
-    rintro ⟨⟨y, hy⟩, hxy⟩
-    obtain rfl : y = x := congrArg Subtype.val hxy
-    exact Subtype.ext (mem_ker.mp hy)
-  · obtain ⟨y, hy⟩ := y
-    obtain ⟨x, rfl⟩ := hπ y
-    exact ⟨⟨x, by simpa using hy⟩, rfl⟩
 
 /-- **A cokernel loses at most one degree of pseudocoherence.** If `0 → M₁ → M → M₂ → 0` is exact,
 `M` is `m`-pseudocoherent and, when `m > 0`, `M₁` is `(m - 1)`-pseudocoherent, then `M₂` is
