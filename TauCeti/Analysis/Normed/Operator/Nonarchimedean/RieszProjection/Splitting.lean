@@ -63,20 +63,20 @@ theorem range_pow_eq_ker (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
     LinearMap.range (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
       C₀(I, R) →ₗ[R] C₀(I, R)) = LinearMap.ker (E : C₀(I, R) →ₗ[R] C₀(I, R)) := by
   have hEn := hE.of_le hn
-  obtain ⟨w, hw, hw', -⟩ := hE.exists_inverse
   have h1 := _root_.IsIdempotentElem.one_sub_eq_pow_mul_pow hE.isIdempotentElem
-    (A := C₀(I, R) →L[R] C₀(I, R)) hEn.pow_mul_eq_zero hw hw'
+    (A := C₀(I, R) →L[R] C₀(I, R)) hEn.pow_mul_eq_zero hE.one_sub_smul_mul_inverse
+    hE.inverse_mul_one_sub_smul
   have hzero : E * (1 - a • u) ^ n = 0 :=
     ((hE.commute_one_sub_smul.pow_left n).eq).symm.trans hEn.pow_mul_eq_zero
   ext x
   simp only [LinearMap.mem_range, LinearMap.mem_ker, coe_coe]
   constructor
   · rintro ⟨y, rfl⟩
-    simpa using congr($hzero y)
+    simpa only [mul_apply_eq_comp, zero_apply] using congr($hzero y)
   · intro hx
-    refine ⟨(w ^ n) x, ?_⟩
-    have := congr($h1 x)
-    simpa [hx] using this.symm
+    refine ⟨(hE.inverse ^ n) x, ?_⟩
+    simpa only [mul_apply_eq_comp, sub_apply, one_apply_eq_self, hx, sub_zero] using
+      congr($h1 x).symm
 
 /-- The ranges of the powers of `1 - a • u` stabilise at the nilpotence bound of a
 Riesz projection. -/
@@ -121,16 +121,13 @@ theorem coe_equivKer_apply (hE : IsRieszProjection u a h E) (x : E.ker) :
     (hE.equivKer x : C₀(I, R)) = (1 - a • u) x :=
   (rfl)
 
-/-- The inverse complementary automorphism acts by any operator `w` with
-`(1 - a • u) * w = 1 - E` and `E * w = 0`, for instance by `IsRieszProjection.inverse`. -/
-theorem coe_equivKer_symm_apply (hE : IsRieszProjection u a h E)
-    {w : C₀(I, R) →L[R] C₀(I, R)} (hw : (1 - a • u) * w = 1 - E) (hEw : E * w = 0)
-    (x : E.ker) : (hE.equivKer.symm x : C₀(I, R)) = w x := by
-  have hx : E x = 0 := LinearMap.mem_ker.mp x.property
-  have hwx : w x ∈ E.ker := LinearMap.mem_ker.mpr congr($hEw x)
-  rw [hE.equivKer.symm_apply_eq.mpr (Subtype.ext ?_ : x = hE.equivKer ⟨w x, hwx⟩)]
-  simpa only [coe_equivKer_apply, mul_apply_eq_comp, sub_apply, one_apply_eq_self, hx,
-    sub_zero] using congr($hw x).symm
+/-- The inverse complementary automorphism acts by the complementary inverse
+`IsRieszProjection.inverse`, which `IsRieszProjection.eq_inverse` identifies with any operator
+`w` satisfying `(1 - a • u) * w = 1 - E` and `E * w = 0`. -/
+@[simp]
+theorem coe_equivKer_symm_apply (hE : IsRieszProjection u a h E) (x : E.ker) :
+    (hE.equivKer.symm x : C₀(I, R)) = hE.inverse x :=
+  (rfl)
 
 variable [DiscreteTopology I] [DecidableEq I] [IsUltrametricDist R]
 

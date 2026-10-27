@@ -169,11 +169,13 @@ theorem inverse_mul_one_sub_smul (hE : IsRieszProjection u a h E) :
   exact hw
 
 /-- The complementary inverse takes values in the kernel of the Riesz projection. -/
+@[simp]
 theorem mul_inverse_eq_zero (hE : IsRieszProjection u a h E) : E * hE.inverse = 0 := by
   obtain ⟨-, -, hw, -, -⟩ := hE.exists_inverse.choose_spec
   exact hw
 
 /-- The complementary inverse vanishes on the range of the Riesz projection. -/
+@[simp]
 theorem inverse_mul_eq_zero (hE : IsRieszProjection u a h E) : hE.inverse * E = 0 := by
   obtain ⟨-, -, -, hw, -⟩ := hE.exists_inverse.choose_spec
   exact hw
@@ -183,6 +185,17 @@ theorem inverse_mem_closure_adjoin (hE : IsRieszProjection u a h E) :
     hE.inverse ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
   obtain ⟨-, -, -, -, hw⟩ := hE.exists_inverse.choose_spec
   exact hw
+
+/-- The complementary inverse is the unique right inverse of `1 - a • u` up to `1 - E` that
+takes values in the kernel of the Riesz projection. -/
+theorem eq_inverse (hE : IsRieszProjection u a h E) {w : C₀(I, R) →L[R] C₀(I, R)}
+    (hw : (1 - a • u) * w = 1 - E) (hEw : E * w = 0) : w = hE.inverse := by
+  calc w = (1 - E) * w := by
+        rw [sub_mul (α := C₀(I, R) →L[R] C₀(I, R)), one_mul, hEw, sub_zero w]
+    _ = hE.inverse * ((1 - a • u) * w) := by rw [← mul_assoc, hE.inverse_mul_one_sub_smul]
+    _ = hE.inverse := by
+        rw [hw, mul_sub (α := C₀(I, R) →L[R] C₀(I, R)), mul_one, hE.inverse_mul_eq_zero,
+          sub_zero hE.inverse]
 
 /-- The complementary inverse preserves the kernel of the Riesz projection. -/
 theorem mapsTo_ker_inverse (hE : IsRieszProjection u a h E) :
