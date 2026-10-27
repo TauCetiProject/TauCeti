@@ -128,13 +128,13 @@ theorem adjoinRoot (hA : IsAffinoidAlgebra K A) {p : A[X]} (hp : p.Monic) :
   let e := hQ.polynomialQuotientEquiv one_pos hQm
   let ψ : Tate (Option (Fin n)) →+* AdjoinRoot p :=
     g.comp (e.symm.toRingHom.comp ((Ideal.Quotient.mk _).comp
-      (Huber.restrictedOptionEquiv (σ := Fin n) (R := K)).toRingHom))
+      (restrictedOptionEquiv (σ := Fin n) (R := K)).toRingHom))
   have hψ : Function.Surjective ψ :=
     (Ideal.Quotient.lift_surjective_of_surjective _ hker hev).comp <|
       e.symm.surjective.comp <| Ideal.Quotient.mk_surjective.comp <| RingEquiv.surjective _
   have hψc (r : K) : ψ (algebraMap K _ r) = algebraMap K (AdjoinRoot p) r := by
     simp only [ψ, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-      AlgEquiv.coe_toRingEquiv, Huber.restrictedOptionEquiv_algebraMap,
+      AlgEquiv.coe_toRingEquiv, restrictedOptionEquiv_algebraMap,
       Ideal.Quotient.mk_algebraMap, AlgEquiv.commutes]
     rw [← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.lift_mk]
     simp only [ev, coe_eval₂RingHom, Polynomial.algebraMap_apply, Polynomial.eval₂_C,
