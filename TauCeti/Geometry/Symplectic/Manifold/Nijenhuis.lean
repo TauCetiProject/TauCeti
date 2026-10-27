@@ -39,7 +39,7 @@ statement that `N_J` maps two `(0,1)` vectors to a `(1,0)` vector.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_apply_left`,
   `TauCeti.SmoothAlmostComplexStructure.nijenhuis_apply_right`,
   `TauCeti.SmoothAlmostComplexStructure.nijenhuis_apply_both`: anti-commutation with `J` in each
-  argument, and invariance under applying `J` to both arguments.
+  argument, and sign reversal under applying `J` to both arguments.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_neg`: `-J` has the same Nijenhuis tensor.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_const`: a constant almost complex structure on
   a vector space has vanishing Nijenhuis tensor.
@@ -88,6 +88,15 @@ private lemma mdifferentiableAt_apply_field {X : Π x : M, TangentSpace I x}
     (hX : MDiffAt (T% X) x) : MDiffAt (T% (fun y ↦ J y (X y))) x :=
   J.mdifferentiableAt_apply mdifferentiableAt_id hX
 
+omit [IsManifold I ∞ M] in
+/-- Pointwise negation of a vector field is scalar multiplication by `-1`. The Lie bracket only
+has scalar rules `mlieBracket_const_smul_left` and `mlieBracket_const_smul_right`, so negated
+fields are rewritten into this form before applying them. -/
+private lemma neg_field_eq_neg_one_smul (X : Π x : M, TangentSpace I x) :
+    (fun y ↦ -X y) = (-1 : ℝ) • X := by
+  ext
+  simp
+
 section Complete
 
 variable [CompleteSpace E]
@@ -128,7 +137,7 @@ private lemma nijenhuisAux_apply_left {X : Π x : M, TangentSpace I x}
     (hX : MDiffAt (T% X) x) (Y : Π x : M, TangentSpace I x) :
     J.nijenhuisAux (fun y ↦ J y (X y)) Y x = -J x (J.nijenhuisAux X Y x) := by
   simp only [nijenhuisAux, apply_apply]
-  rw [show (fun y ↦ -X y) = (-1 : ℝ) • X by ext; simp, mlieBracket_const_smul_left hX,
+  rw [neg_field_eq_neg_one_smul, mlieBracket_const_smul_left hX,
     mlieBracket_const_smul_left hX]
   simp only [map_sub, map_smul, apply_apply]
   module
@@ -201,6 +210,7 @@ theorem nijenhuis_self (v : TangentSpace I x) : J.nijenhuis x v v = 0 := by
 
 /-- The Nijenhuis tensor anti-commutes with `J` in its first argument:
 `N_J(Jv, w) = -J N_J(v, w)`. -/
+@[simp]
 theorem nijenhuis_apply_left (v w : TangentSpace I x) :
     J.nijenhuis x (J x v) w = -J x (J.nijenhuis x v w) := by
   have := FiniteDimensional.complete ℝ E
@@ -212,6 +222,7 @@ theorem nijenhuis_apply_left (v w : TangentSpace I x) :
 
 /-- The Nijenhuis tensor anti-commutes with `J` in its second argument:
 `N_J(v, Jw) = -J N_J(v, w)`. -/
+@[simp]
 theorem nijenhuis_apply_right (v w : TangentSpace I x) :
     J.nijenhuis x v (J x w) = -J x (J.nijenhuis x v w) := by
   rw [nijenhuis_antisymm, nijenhuis_apply_left, J.nijenhuis_antisymm w v]
@@ -235,12 +246,10 @@ theorem nijenhuis_neg (x : M) : (-J).nijenhuis x = J.nijenhuis x := by
   have hJY := J.mdifferentiableAt_apply_field hY
   rw [nijenhuis_apply_extend, nijenhuis_apply_extend]
   simp only [nijenhuisAux, neg_apply]
-  rw [show (fun y ↦ -J y (extend E v y)) =
-      (-1 : ℝ) • fun y ↦ J y (extend E v y) by ext y; simp,
-    show (fun y ↦ -J y (extend E w y)) =
-      (-1 : ℝ) • fun y ↦ J y (extend E w y) by ext y; simp,
-    mlieBracket_const_smul_left hJX, mlieBracket_const_smul_right hJY,
-    mlieBracket_const_smul_left hJX, mlieBracket_const_smul_right hJY]
+  rw [neg_field_eq_neg_one_smul fun y ↦ J y (extend E v y),
+    neg_field_eq_neg_one_smul fun y ↦ J y (extend E w y), mlieBracket_const_smul_left hJX,
+    mlieBracket_const_smul_right hJY, mlieBracket_const_smul_left hJX,
+    mlieBracket_const_smul_right hJY]
   simp only [neg_one_smul, map_neg]
   abel
 
