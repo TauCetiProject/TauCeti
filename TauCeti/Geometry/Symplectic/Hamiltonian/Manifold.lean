@@ -192,6 +192,13 @@ theorem eval₂_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace
     SmoothForm.eval₂ σ x (σ.hamiltonianVectorField f x) v = mvfderiv I f x v := by
   rw [← flat_apply, h.flat_hamiltonianVectorField]
 
+/-- The simp normal form of `eval₂_hamiltonianVectorField`, with `eval₂` unfolded:
+`σ_x(X_f, v) = df_x(v)`. -/
+@[simp]
+theorem apply_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace I x) :
+    σ.1 x ![σ.hamiltonianVectorField f x, v] = mvfderiv I f x v := by
+  rw [← SmoothForm.eval₂_apply, h.eval₂_hamiltonianVectorField]
+
 /-- The Hamiltonian vector field of `f` is a Hamiltonian vector field of `f`. -/
 theorem isHamiltonianVectorField_hamiltonianVectorField (f : M → ℝ) :
     σ.IsHamiltonianVectorField f (σ.hamiltonianVectorField f) :=
