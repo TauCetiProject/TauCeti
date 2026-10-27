@@ -15,7 +15,7 @@ Let `f : R →+* S` be a surjective ring homomorphism and `c ∈ R` an element w
 the kernel of `f`: `c * z = 0` exactly when `f z = 0`. Then `Xᵀ (c • A) X = c • A` says exactly
 that the reduction of `X` along `f` preserves the reduction of `A`. So the matrices preserving
 `c • A` are the full preimage of the matrices preserving `A.map f`, and there are
-`Nat.card (ker f) ^ (k ^ 2)` times as many of them, for `k` the size of the index type.
+`Nat.card (ker f) ^ (Fintype.card n ^ 2)` times as many of them, for `n` the index type.
 
 The case of interest is `R = ℤ/p^{r+k}`, `S = ℤ/pʳ` and `c` the image of a `p`-adic integer of
 valuation `k`. This is how the count behind the local density of a quadratic lattice changes when
@@ -49,9 +49,9 @@ theorem isometryMatrices_smul_eq_comap (f : R →+* S) {c : R} (hc : ∀ z, c * 
 
 /-- **Counting matrices preserving a scaled Gram matrix.** Let `f` be surjective and let `c` have
 annihilator `ker f`. Then the `Nat.card` of the matrices preserving `c • A` is
-`Nat.card (ker f) ^ (k ^ 2)` times that of the matrices preserving `A.map f`, for `k` the size of
-the index type: they are the preimage of the latter under reduction, whose fibers are the
-matrices with entries in `ker f`. -/
+`Nat.card (ker f) ^ (Fintype.card n ^ 2)` times that of the matrices preserving `A.map f`: they
+are the preimage of the latter under reduction, whose fibers are the matrices with entries in
+`ker f`. -/
 theorem natCard_isometryMatrices_smul (f : R →+* S) (hf : Function.Surjective f) {c : R}
     (hc : ∀ z, c * z = 0 ↔ f z = 0) (A : Matrix n n R) :
     Nat.card (isometryMatrices (c • A)) =
