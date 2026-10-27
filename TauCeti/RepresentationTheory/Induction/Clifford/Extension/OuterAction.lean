@@ -40,7 +40,7 @@ variable {k : Type u} {G : Type v} [CommRing k] [Group G]
   {N : Subgroup G} [N.Normal] (A : FDRep k N)
 
 /-- The commutant action of a kernel unit is an inner algebra automorphism. -/
-theorem cliffordCommutantAction_inl_mem_innerAlgAut (d : (End A)ˣ) :
+theorem commutantAction_inl_mem_innerAlgAut (d : (End A)ˣ) :
     commutantAction (inl A d) ∈ innerAlgAut k (End A) := by
   refine (mem_innerAlgAut_iff k (End A) _).mpr ⟨d, fun f ↦ ?_⟩
   simp
@@ -54,7 +54,7 @@ private theorem ker_rightHom_le_cliffordOuterAction_ker :
       ((QuotientGroup.mk' (innerAlgAut K (End A))).comp commutantAction).ker := by
   rw [← range_inl_eq_ker_rightHom]
   rintro _ ⟨d, rfl⟩
-  exact (QuotientGroup.eq_one_iff _).mpr (cliffordCommutantAction_inl_mem_innerAlgAut A d)
+  exact (QuotientGroup.eq_one_iff _).mpr (commutantAction_inl_mem_innerAlgAut A d)
 
 /-- The canonical action of the inertia quotient on the commutant modulo inner automorphisms. -/
 noncomputable def cliffordOuterAction : Quotient A →* OuterAlgAut K (End A) :=
@@ -83,7 +83,7 @@ theorem cliffordOuterAction_section (s : (groupExtension A).Section) (q : Quotie
   exact (congrArg (cliffordOuterAction A) hq).symm.trans (cliffordOuterAction_rightHom A (s q))
 
 /-- Two sections induce the same automorphisms modulo inner conjugation. -/
-theorem cliffordOuterAction_section_eq (s t : (groupExtension A).Section) (q : Quotient A) :
+theorem mk_commutantAction_section_eq (s t : (groupExtension A).Section) (q : Quotient A) :
     (QuotientGroup.mk (commutantAction (s q)) : OuterAlgAut K (End A)) =
       QuotientGroup.mk (commutantAction (t q)) := by
   rw [← cliffordOuterAction_section A s q, ← cliffordOuterAction_section A t q]
