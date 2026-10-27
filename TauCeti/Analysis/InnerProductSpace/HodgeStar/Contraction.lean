@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 public import TauCeti.RingTheory.KoszulComplex.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 
