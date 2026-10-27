@@ -257,8 +257,7 @@ private theorem analyticAt_of_continuousOn_closedBall_pi [CompleteSpace E] {f : 
     apply torusIntegralCLM_eq_torusIntegral
     intro x
     simp only [M, LinearMap.coe_mk, AddHom.coe_mk,
-      ContinuousMap.smul_apply', hinvw]
-    rfl
+      ContinuousMap.smul_apply', hinvw, F, ContinuousMap.coe_mk]
   rw [Pi.smul_apply, Function.comp_apply, hJ,
     hc.torusIntegral_prod_sub_inv_smul hd hwb, smul_smul,
     inv_mul_cancel₀ (pow_ne_zero _ two_pi_I_ne_zero), one_smul]
