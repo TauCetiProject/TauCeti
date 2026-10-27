@@ -43,13 +43,8 @@ namespace TauCeti.Probability
 
 variable {r : ℝ≥0}
 
-private theorem poissonMeasure_real_singleton_zero (r : ℝ≥0) :
-    Po(r).real {0} = exp (-(r : ℝ)) := by
-  simp [poissonMeasure_real_singleton]
-
-private theorem poissonMeasure_singleton_zero_ne_one (hr : r ≠ 0) : Po(r) {0} ≠ 1 := by
-  rw [poissonMeasure_singleton, Ne, ENNReal.ofReal_eq_one]
-  simpa using hr
+private theorem poissonMeasure_singleton_zero_ne_one (hr : r ≠ 0) : Po(r) {0} ≠ 1 :=
+  poissonMeasure_singleton_zero_eq_one_iff.not.2 hr
 
 private theorem one_sub_exp_neg_pos (hr : r ≠ 0) : 0 < 1 - exp (-(r : ℝ)) := by
   rw [sub_pos, exp_lt_one_iff, neg_lt_zero, NNReal.coe_pos]

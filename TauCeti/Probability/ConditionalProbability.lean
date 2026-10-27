@@ -40,7 +40,8 @@ including atomless laws and atomic laws with null endpoints.
 * `ProbabilityTheory.cond_congr_ae`
 * `ProbabilityTheory.integrable_cond_of_norm_le`
 * `ProbabilityTheory.map_cond_preimage`
-* `ProbabilityTheory.cond_compl_singleton_real_singleton`,
+* `ProbabilityTheory.cond_compl_singleton_real`,
+  `ProbabilityTheory.cond_compl_singleton_real_singleton`,
   `ProbabilityTheory.integrable_cond_compl_singleton_iff`,
   `ProbabilityTheory.integral_cond_compl_singleton`
 * `MeasureTheory.Measure.cond_Icc_eq_cond_Ioc`, `MeasureTheory.Measure.cond_Ioo_eq_cond_Ioc`,
@@ -152,13 +153,20 @@ theorem cond_compl_singleton_apply_singleton {x : Ω} (hx : x ≠ a) :
     prob_compl_eq_one_sub (measurableSet_singleton a),
     inter_eq_right.2 (singleton_subset_iff.2 hx)]
 
+/-- Conditioning a probability measure away from a point removes that point from every set and
+rescales the remaining real mass by `1 / (1 - μ.real {a})`. -/
+theorem cond_compl_singleton_real (s : Set Ω) :
+    (μ[|{a}ᶜ]).real s = μ.real (s \ {a}) / (1 - μ.real {a}) := by
+  rw [measureReal_def, cond_apply (measurableSet_singleton a).compl,
+    prob_compl_eq_one_sub (measurableSet_singleton a), ENNReal.toReal_mul, ENNReal.toReal_inv,
+    ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top, ENNReal.toReal_one,
+    ← sdiff_eq_compl_inter, div_eq_inv_mul, measureReal_def, measureReal_def]
+
 /-- Conditioning a probability measure away from a point rescales the other real singleton masses
 by `1 / (1 - μ.real {a})`. -/
 theorem cond_compl_singleton_real_singleton {x : Ω} (hx : x ≠ a) :
     (μ[|{a}ᶜ]).real {x} = μ.real {x} / (1 - μ.real {a}) := by
-  rw [measureReal_def, cond_compl_singleton_apply_singleton hx, ENNReal.toReal_mul,
-    ENNReal.toReal_inv, ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top,
-    ENNReal.toReal_one, div_eq_inv_mul, measureReal_def, measureReal_def]
+  rw [cond_compl_singleton_real, sdiff_singleton_eq_self fun h => hx (mem_singleton_iff.1 h).symm]
 
 /-- Integration against a probability measure conditioned away from a point removes the
 contribution of the atom there and rescales by `1 / (1 - μ.real {a})`. -/

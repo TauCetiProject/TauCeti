@@ -68,13 +68,8 @@ variable [IsProbabilityMeasure ν]
 rescaled by `1 / (1 - ν.real {0})`. -/
 theorem cond_compl_zero_real_Iic (k : ℕ) :
     (ν[|{0}ᶜ]).real (Iic k) = (ν.real (Iic k) - ν.real {0}) / (1 - ν.real {0}) := by
-  have hset : {0}ᶜ ∩ Iic k = Iic k \ {0} := by
-    rw [inter_comm, sdiff_eq]
-  rw [measureReal_def, cond_apply (measurableSet_singleton 0).compl, hset,
-    ENNReal.toReal_mul, ENNReal.toReal_inv, prob_compl_eq_one_sub (measurableSet_singleton 0),
-    ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top, ENNReal.toReal_one,
-    ← measureReal_def, ← measureReal_def, measureReal_sdiff (singleton_subset_iff.2 (Nat.zero_le k))
-      (measurableSet_singleton 0), div_eq_inv_mul]
+  rw [cond_compl_singleton_real, measureReal_sdiff (singleton_subset_iff.2 (Nat.zero_le k))
+    (measurableSet_singleton 0)]
 
 /-! ### The real cast -/
 
