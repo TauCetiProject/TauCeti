@@ -16,16 +16,20 @@ multivariate t law is the affine range of its scale matrix. Thus singular scales
 singular with respect to ambient Euclidean volume. In positive dimension this includes the
 point mass at zero scale; the support formula also applies to empty coordinate types.
 
-The support calculation uses `support_multivariateGaussian` and `support_chiSquaredMeasure`:
-the Gaussian--chi-squared mixture reaches every point of the affine range at a positive mixing
-value, where its defining map is continuous. Singularity uses the existing almost-sure
-concentration theorem and Mathlib's `Measure.addHaar_affineSubspace`.
+The affine carrier is `m + range S`. For a positive semidefinite scale that is not positive
+definite, this is a proper affine subspace of zero ambient volume. The ambient Radon--Nikodym
+derivative therefore vanishes almost everywhere, even when the law has total mass one.
 
 ## References
 
 * S. Kotz and S. Nadarajah, *Multivariate t Distributions and Their Applications*, Cambridge
   University Press, 2004, chapter 1.
 -/
+
+/- The support calculation uses `support_multivariateGaussian` and `support_chiSquaredMeasure`:
+the Gaussian--chi-squared mixture reaches every point of the affine range at a positive mixing
+value, where its defining map is continuous. Singularity uses the existing almost-sure
+concentration theorem and Mathlib's `Measure.addHaar_affineSubspace`. -/
 
 public section
 
