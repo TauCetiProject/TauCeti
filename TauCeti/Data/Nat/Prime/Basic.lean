@@ -21,9 +21,9 @@ instance search. Mathlib supplies it only as a local instance
 Arguments that treat the primes `2` and `3` separately, as for Weierstrass equations, need the
 complementary fact that every other prime, that is, every prime `p ≥ 5`, does not divide `6`.
 
-If `n ∣ m` but `q * n ∤ m` for a prime `q`, then `m` and `q * n` have the same `q`-part as `m` and
-`n` respectively, which pins down their gcd and lcm: comparing a level `q * n` with a multiple
-`q * m` of the same `q`-part, as for congruence subgroups, uses these values.
+If `n ∣ m` but `q * n ∤ m` for a prime `q`, then `m` and `n` have the same `q`-part, hence so do
+`q * m` and `q * n`; this pins down the gcd and lcm of `m` and `q * n`, which are used to compare
+a level `q * n` with a multiple `q * m` of the same `q`-part, as for congruence subgroups.
 
 ## Main declarations
 
