@@ -21,9 +21,9 @@ at `h`, without any finite-dimensional or Noetherian assumption. The named autom
 `ContinuousLinearMap.IsRieszProjection.equivKer` restricts `C` to the complementary summand
 `ker E`; its forward and inverse application lemmas identify both maps.
 
-At a good zero of the Fredholm series of a row-compact operator, the stabilised kernel is
-finitely generated and projective. This applies over coefficient rings with nilpotents and
-includes order zero, when the kernel is zero and the complementary range is the whole module.
+For any Riesz projection of a row-compact operator, with no good-zero hypothesis, the stabilised
+kernel is finitely generated and projective. This applies over coefficient rings with nilpotents
+and includes order zero, when the kernel is zero and the complementary range is the whole module.
 The topological complement can be used with `Submodule.prodEquivOfIsTopCompl` to obtain the
 continuous linear equivalence from the product of the two summands to the original space.
 

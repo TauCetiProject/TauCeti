@@ -36,8 +36,10 @@ The Riesz projector is constructed from the Hasse derivatives of the Fredholm re
 is a Riesz projection, with `w = b (C b) ^ h`
 (`ContinuousLinearMap.IsRowCompact.isRieszProjection_rieszProjection`). For `h > 0` the operator
 `1 - C b = -c⁻¹ • u Δʰ⁻¹V(a)` is row compact, so `E` is row compact
-(`ContinuousLinearMap.IsRowCompact.isRowCompact_rieszProjection`). Hence its range is a finitely
-generated projective `R`-module
+(`ContinuousLinearMap.IsRowCompact.isRowCompact_rieszProjection`). More generally, every Riesz
+projection of a row-compact operator is row compact, including at order `0`, since
+`E = a • u * (∑ i < h, C ^ i) * E` (`ContinuousLinearMap.IsRieszProjection.isRowCompact`).
+Hence its range is a finitely generated projective `R`-module
 (`ContinuousLinearMap.IsRowCompact.finite_range_of_isIdempotentElem`,
 `ContinuousLinearMap.IsRowCompact.projective_range_of_isIdempotentElem`). The scalars may have
 nilpotents and need not be Noetherian; over a ring the range need not be free.
@@ -58,6 +60,8 @@ nilpotents and need not be Noetherian; over a ring the range need not be free.
 * `ContinuousLinearMap.IsRowCompact.isRieszProjection_rieszProjection`: at a good zero, the
   explicit projector is a Riesz projection.
 * `ContinuousLinearMap.IsRowCompact.isRowCompact_rieszProjection`: it is row compact.
+* `ContinuousLinearMap.IsRieszProjection.isRowCompact`: every Riesz projection of a row-compact
+  operator is row compact.
 
 ## References
 
@@ -132,9 +136,8 @@ theorem mapsTo_ker (hE : IsRieszProjection u a h E) : Set.MapsTo u E.ker E.ker :
 
 /-- The operator preserves the range of its Riesz projection. -/
 theorem mapsTo_range (hE : IsRieszProjection u a h E) : Set.MapsTo u E.range E.range := by
-  rintro x hx
-  obtain ⟨y, rfl⟩ := LinearMap.mem_range.mp hx
-  exact LinearMap.mem_range.mpr ⟨u y, congr($(hE.commute.eq.symm) y)⟩
+  rw [LinearMap.coe_range, coe_coe]
+  exact Function.Semiconj.mapsTo_range fun x ↦ congr($(hE.commute.eq.symm) x)
 
 /-- The spectral operator preserves the kernel of its Riesz projection. -/
 theorem mapsTo_ker_one_sub_smul (hE : IsRieszProjection u a h E) :
@@ -146,9 +149,8 @@ theorem mapsTo_ker_one_sub_smul (hE : IsRieszProjection u a h E) :
 /-- The spectral operator preserves the range of its Riesz projection. -/
 theorem mapsTo_range_one_sub_smul (hE : IsRieszProjection u a h E) :
     Set.MapsTo (1 - a • u : C₀(I, R) →L[R] C₀(I, R)) E.range E.range := by
-  intro x hx
-  simpa only [sub_apply, one_apply_eq_self, smul_apply, SetLike.mem_coe] using
-    E.range.sub_mem hx (E.range.smul_mem a (hE.mapsTo_range hx))
+  rw [LinearMap.coe_range, coe_coe]
+  exact Function.Semiconj.mapsTo_range fun x ↦ congr($(hE.commute_one_sub_smul.eq.symm) x)
 
 /-- The **complementary inverse** of a Riesz projection: the inverse of `1 - a • u` on the
 complementary summand `range (1 - E)`, extended by zero on `range E`, chosen from
