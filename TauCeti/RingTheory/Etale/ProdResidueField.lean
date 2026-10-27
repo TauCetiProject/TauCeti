@@ -10,9 +10,9 @@ public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 import Mathlib.RingTheory.Finiteness.Prod
 import Mathlib.RingTheory.Flat.TorsionFree
-import Mathlib.RingTheory.Localization.LocalizationLocalization
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.RingTheory.Smooth.Flat
+import TauCeti.RingTheory.Localization.LocalizationLocalization
 
 /-!
 # The closed-point factor `A × κ(A)` over a local ring
@@ -91,23 +91,6 @@ theorem isEtaleAt_prod_residueField (q : Ideal (A × ResidueField A)) [q.IsPrime
   exact Algebra.mem_etaleLocus_iff.mp (Algebra.basicOpen_subset_etaleLocus_iff.mpr hloc
     ((PrimeSpectrum.mem_basicOpen _ ⟨q, inferInstance⟩).mpr (fst_one_notMem A q hq)))
 
-/-- If `S` is a localization of `B` away from `e` and `q` is a prime of `B` not containing `e`,
-then `B_q` is isomorphic to the localization of `S` at the prime `q S`. -/
-private theorem exists_ringEquiv_localization_of_away {B S : Type*} [CommRing B] [CommRing S]
-    [Algebra B S] (e : B) [IsLocalization.Away e S] (q : Ideal B) [q.IsPrime] (hq : e ∉ q) :
-    ∃ (P : Ideal S) (_ : P.IsPrime),
-      Nonempty (Localization.AtPrime q ≃+* Localization.AtPrime P) := by
-  have hdisj := (Ideal.disjoint_powers_iff_notMem_of_isPrime e).mpr hq
-  let P := q.map (algebraMap B S)
-  have : P.IsPrime := IsLocalization.isPrime_of_isPrime_disjoint _ S q ‹_› hdisj
-  have hP : P.under B = q := IsLocalization.under_map_of_isPrime_disjoint _ S ‹_› hdisj
-  -- `convert` is needed because the prime `P.under B` carries its own `IsPrime` instance.
-  have : IsLocalization.AtPrime (Localization.AtPrime P) q := by
-    convert IsLocalization.isLocalization_isLocalization_atPrime_isLocalization
-      (Submonoid.powers e) (Localization.AtPrime P) P
-    exact hP.symm
-  exact ⟨P, inferInstance, ⟨(IsLocalization.algEquiv q.primeCompl _ _).toRingEquiv⟩⟩
-
 /-- Every localization of `A × κ(A)` at a prime is isomorphic to a localization of `A` or of
 `κ(A)` at a prime, according to whether the prime omits `(1, 0)` or `(0, 1)`. -/
 private theorem exists_ringEquiv_localization (q : Ideal (A × ResidueField A)) [q.IsPrime] :
@@ -117,12 +100,16 @@ private theorem exists_ringEquiv_localization (q : Ideal (A × ResidueField A)) 
       Nonempty (Localization.AtPrime q ≃+* Localization.AtPrime P) := by
   by_cases h : ((1, 0) : A × ResidueField A) ∈ q
   · let := (RingHom.snd A (ResidueField A)).toAlgebra
-    refine .inr (exists_ringEquiv_localization_of_away ((0, 1) : A × ResidueField A) q
-      fun h' ↦ ?_)
-    exact Ideal.IsPrime.ne_top inferInstance
-      (q.eq_top_of_isUnit_mem (q.add_mem h h') (by simp [← Prod.one_eq_mk]))
+    obtain ⟨P, _, -, f⟩ := IsLocalization.exists_ringEquiv_localization_atPrime
+      (Submonoid.powers ((0, 1) : A × ResidueField A)) (ResidueField A) q
+      ((Ideal.disjoint_powers_iff_notMem_of_isPrime _).mpr fun h' ↦ Ideal.IsPrime.ne_top
+        inferInstance (q.eq_top_of_isUnit_mem (q.add_mem h h') (by simp [← Prod.one_eq_mk])))
+    exact .inr ⟨P, inferInstance, f⟩
   · let := (RingHom.fst A (ResidueField A)).toAlgebra
-    exact .inl (exists_ringEquiv_localization_of_away ((1, 0) : A × ResidueField A) q h)
+    obtain ⟨P, _, -, f⟩ := IsLocalization.exists_ringEquiv_localization_atPrime
+      (Submonoid.powers ((1, 0) : A × ResidueField A)) A q
+      ((Ideal.disjoint_powers_iff_notMem_of_isPrime _).mpr h)
+    exact .inl ⟨P, inferInstance, f⟩
 
 variable [IsDomain A]
 
