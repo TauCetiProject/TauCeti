@@ -43,7 +43,10 @@ repeated; the bimodule statement is then one application of each of the two one-
 
 ## References
 
-* H. G. Dales, *Banach Algebras and Automatic Continuity*, §2.9.
+* H. G. Dales, *Banach Algebras and Automatic Continuity*, §2.9; the one-sided factorization is
+  Theorem 2.9.24 there.
+* E. Hewitt, *The ranges of certain convolution operators*, Math. Scand. 15 (1964), 147–155.
+* P. J. Cohen, *Factorization in group algebras*, Duke Math. J. 26 (1959), 199–205.
 -/
 
 public section
@@ -176,9 +179,8 @@ theorem exists_apply_apply_eq_of_mem_topologicalClosure_span (L : A →L[𝕜] E
     refine closure_minimal ?_ isClosed_closure hy
     intro w hw
     obtain ⟨c, rfl⟩ := hw
-    exact closure_mono (image_flip_span_le L R hR c)
-      (image_closure_subset_closure_image (R.flip c).continuous
-        (Set.mem_image_of_mem (R.flip c) hx))
+    exact map_mem_closure (f := R.flip c) (R.flip c).continuous hx
+      (Set.image_subset_iff.1 (image_flip_span_le L R hR c))
   obtain ⟨a, z, ha, -, -, hLaz⟩ :=
     exists_apply_eq_of_mem_topologicalClosure_span L hL hC
       hl.tendsto_mul_right (Submodule.topologicalClosure_mono hAE hyS) one_pos
