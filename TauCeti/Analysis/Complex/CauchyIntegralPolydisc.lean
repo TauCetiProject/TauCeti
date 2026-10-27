@@ -102,6 +102,13 @@ theorem torusMap_mem_pi_sphere {c : Fin n → ℂ} {R : Fin n → ℝ} (hR : ∀
     (θ : Fin n → ℝ) : torusMap c R θ ∈ univ.pi fun i => sphere (c i) (R i) :=
   fun i _ => circleMap_mem_sphere (c i) (hR i) (θ i)
 
+/-- Each coordinate of the torus parametrization has distance equal to its nonnegative
+radius from the corresponding center. -/
+theorem norm_torusMap_apply_sub_center {c : Fin n → ℂ} {R : Fin n → ℝ}
+    (θ : Fin n → ℝ) (i : Fin n) (hR : 0 ≤ R i) :
+    ‖torusMap c R θ i - c i‖ = R i := by
+  simp [torusMap, abs_of_nonneg hR]
+
 /-- The parametrization `torusMap c R` of the torus `T(c, R)` is continuous. -/
 @[fun_prop]
 theorem continuous_torusMap (c : Fin n → ℂ) (R : Fin n → ℝ) :

@@ -51,7 +51,7 @@ field.
   vector lies in a free full lattice submodule.
 * `Submodule.IsLattice.exists_ne_zero_forall_smul_mem`: a single nonzero scalar multiplies a
   finitely generated submodule into a free full lattice submodule.
-* `TauCeti.TensorProduct.rationalizationEquiv_baseChange_unitTmulEquiv`: rationalizing that
+* `TensorProduct.rationalizationEquiv_baseChange_unitTmulEquiv`: rationalizing that
   unit-tensor lattice returns the scalar extension one started from.
 
 ## References
@@ -304,7 +304,7 @@ end Span
 
 end Submodule
 
-namespace TauCeti.TensorProduct
+namespace TensorProduct
 
 variable {R : Type u} {K : Type v} {M : Type w}
 
@@ -352,7 +352,7 @@ theorem unitTmulEquiv_baseChange_trans_rationalizationEquiv :
       LinearEquiv.refl K (K ⊗[R] M) :=
   LinearEquiv.ext rationalizationEquiv_baseChange_unitTmulEquiv
 
-end TauCeti.TensorProduct
+end TensorProduct
 
 namespace Submodule.IsLattice
 

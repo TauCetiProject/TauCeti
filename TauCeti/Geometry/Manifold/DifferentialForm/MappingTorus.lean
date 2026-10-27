@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.Quotient
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # The time form and fiber forms of a smooth mapping torus
@@ -43,6 +44,10 @@ symplectic suspension of `φ`.
   fibers.
 * `TauCeti.SmoothMappingTorus.mpullback_uncurry_mk_timeForm`: on `ℝ × M`, the time form is the
   differential of the real coordinate.
+* `TauCeti.SmoothMappingTorus.timeForm_apply_mfderiv_uncurry_mk`,
+  `TauCeti.SmoothMappingTorus.eval₂_fiberForm_mfderiv_uncurry_mk`: on the image of a tangent
+  vector `(b, v)` of `ℝ × M` under the differential of `(t, x) ↦ [t, x]`, the time form is `b`
+  and the fiber form of a two-form `σ` evaluates as `σ` on the components `v`.
 * `TauCeti.SmoothMappingTorus.mpullback_uncurry_mk_fiberForm`: on `ℝ × M`, the fiber form is the
   pullback of `σ` along the second projection; `TauCeti.SmoothMappingTorus.eq_fiberForm_iff` says
   that it is the only form on `Y_φ` with this pullback.
@@ -110,6 +115,24 @@ theorem mpullback_uncurry_mk_timeForm :
       ((contMDiff_proj φ).mdifferentiable (by simp)), hcomp,
     mpullback_comp mdifferentiable_fst
       ((AddCircle.contMDiff_coe 1 ∞).mdifferentiable (by simp))]
+
+/-- The time form sends the image of a tangent vector `(b, v)` of `ℝ × M` under the differential of
+`(t, x) ↦ [t, x]` to its real component `b`. -/
+theorem timeForm_apply_mfderiv_uncurry_mk (t : ℝ) (x : M)
+    (w : TangentSpace (𝓘(ℝ).prod I) (t, x)) :
+    (timeForm φ).1 (mk φ t x) ![mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x) w] =
+      (Manifold.tangentSpaceProdEquiv (t, x) w).1 := by
+  have h := DFunLike.congr_fun (congrFun (mpullback_uncurry_mk_timeForm φ) (t, x)) ![w]
+  simp only [TauCeti.mpullback_apply, mfderiv_fst, mextDeriv_ofFunction, mvfderiv_eq_fderiv,
+    fderiv_id, Matrix.vec_single_eq_const] at h
+  -- `uncurry (mk φ) (t, x)` is `mk φ t x`, so `h` evaluates the time form at `[t, x]`.
+  refine (congrArg ((timeForm φ).1 (mk φ t x)) (Matrix.vec_single_eq_const _)).trans (h.trans ?_)
+  simp only [ContinuousAlternatingMap.ofSubsingleton_apply_apply, ContinuousLinearMap.coe_comp,
+    comp_apply, ContinuousLinearMap.coe_id', id_eq]
+  rw [Manifold.tangentSpaceProdEquiv_apply]
+  -- Tangent vectors of `ℝ` are real numbers, on which `NormedSpace.fromTangentSpace` is the
+  -- identity.
+  rfl
 
 /-- The time form vanishes on each fiber `x ↦ [t, x]` of the mapping torus. -/
 theorem mpullback_mk_timeForm (t : ℝ) :
@@ -193,6 +216,22 @@ theorem mpullback_mk_fiberForm (t : ℝ) :
     mpullback_uncurry_mk_fiberForm, ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
   have hid : Prod.snd ∘ (fun x : M ↦ (t, x)) = id := rfl
   simp only [hid, SmoothForm.mpullback_id, LinearMap.id_apply]
+
+/-- The fiber form of a two-form `σ` evaluates on the images of tangent vectors `(b, v)` and
+`(b', v')` of `ℝ × M` under the differential of `(t, x) ↦ [t, x]` as `σ` on `v` and `v'`. -/
+theorem eval₂_fiberForm_mfderiv_uncurry_mk {τ : SmoothForm I M F 2}
+    {hτ : SmoothForm.mpullback φ φ.contMDiff τ = τ} (t : ℝ) (x : M)
+    (w w' : TangentSpace (𝓘(ℝ).prod I) (t, x)) :
+    (fiberForm φ τ hτ).eval₂ (mk φ t x)
+        (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x) w)
+        (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x) w') =
+      τ.eval₂ x (Manifold.tangentSpaceProdEquiv (t, x) w).2
+        (Manifold.tangentSpaceProdEquiv (t, x) w').2 := by
+  have h := congrArg (fun β ↦ β.eval₂ (t, x) w w') (mpullback_uncurry_mk_fiberForm (hσ := hτ))
+  simp only [SmoothForm.eval₂_mpullback, mfderiv_snd] at h
+  rw [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_apply]
+  -- `uncurry (mk φ) (t, x)` is `mk φ t x`, and `ContinuousLinearMap.snd` is `Prod.snd`.
+  exact h
 
 /-- The fiber form of `σ` is closed exactly when `σ` is closed. -/
 @[simp]

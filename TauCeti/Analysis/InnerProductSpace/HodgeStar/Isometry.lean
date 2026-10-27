@@ -12,9 +12,11 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 # Metric and functorial properties of the Hodge star
 
 The Hodge star preserves the inner product and hence defines a linear isometric equivalence
-between complementary exterior powers. Reversing the orientation negates it, and transporting
-the orientation along a linear isometric equivalence commutes with it. These statements hold
-also in dimension zero, for either orientation.
+between complementary exterior powers. Combined with the defining identity
+`⟪⋆x, y⟫ = vol (x ∧ y)`, this gives the wedge characterization `α ∧ ⋆β = ⟪α, β⟫ vol`.
+Reversing the orientation negates the Hodge star, and transporting the orientation along a
+linear isometric equivalence commutes with it. These statements hold also in dimension zero, for
+either orientation.
 
 ## References
 
@@ -87,6 +89,12 @@ theorem inner_hodgeStar_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V)
     (x y : ⋀[ℝ]^k V) : ⟪o.hodgeStar hkl x, o.hodgeStar hkl y⟫ = ⟪x, y⟫ := by
   simpa only [← o.hodgeStarIsometry_toLinearEquiv hkl, LinearIsometryEquiv.coe_toLinearEquiv]
     using (o.hodgeStarIsometry hkl).inner_map_map x y
+
+/-- **The wedge characterization of the Hodge star**: `α ∧ ⋆β = ⟪α, β⟫ vol`, that is, the
+volume of `α ∧ ⋆β` is the inner product of `α` and `β`, for `α β ∈ ⋀ᵏ V`. -/
+theorem wedgePairing_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V) (x y : ⋀[ℝ]^k V) :
+    wedgePairing o.volumeEquiv hkl x (o.hodgeStar hkl y) = ⟪x, y⟫ := by
+  rw [← inner_hodgeStar_apply, inner_hodgeStar_hodgeStar]
 
 /-- The Hodge star preserves norms. -/
 @[simp]

@@ -47,6 +47,8 @@ vectors of norm one forces `#ι = #κ` and `N ≅ N'`.
   norm one.
 * `TauCeti.IntegralLattice.IsPosDef.two_mul_finrank_unitNormSubmodule`: `2k` is the number of
   vectors of norm one.
+* `TauCeti.IntegralLattice.two_le_finrank_unitNormSubmodule`: two orthogonal vectors of norm one
+  give `2 ≤ k`.
 * `TauCeti.IntegralLattice.IsPosDef.nonempty_isometry_unitLattice_of_unitNormSubmodule_eq_top`:
   a positive definite lattice spanned by its vectors of norm one is `I_n`.
 * `TauCeti.IntegralLattice.Isometry.unitNormComplement`: isometric lattices have isometric
@@ -84,6 +86,23 @@ theorem vectorsOfNorm_one_subset_unitNormSubmodule :
 theorem unitNormSubmodule_le_iff {p : Submodule ℤ L} :
     L.unitNormSubmodule ≤ p ↔ L.vectorsOfNorm 1 ⊆ p :=
   Submodule.span_le
+
+/-- Two orthogonal vectors of norm one span a rank-two part of the unit-norm sublattice. -/
+theorem two_le_finrank_unitNormSubmodule {x y : L} (hx : L.integralForm x x = 1)
+    (hy : L.integralForm y y = 1) (hxy : L.integralForm x y = 0) :
+    2 ≤ finrank ℤ L.unitNormSubmodule := by
+  have hyx : L.integralForm y x = 0 := by rw [L.isSymm_integralForm.eq, hxy]
+  let f : Fin 2 → L.unitNormSubmodule := ![
+    ⟨x, L.vectorsOfNorm_one_subset_unitNormSubmodule ((L.mem_vectorsOfNorm_one_iff).2 hx)⟩,
+    ⟨y, L.vectorsOfNorm_one_subset_unitNormSubmodule ((L.mem_vectorsOfNorm_one_iff).2 hy)⟩]
+  have hf : LinearIndependent ℤ f := by
+    refine LinearIndependent.pair_iff.2 fun a b hab ↦ ?_
+    have hab' : a • x + b • y = 0 := congrArg Subtype.val hab
+    have ha := congrArg (L.integralForm x) hab'
+    have hb := congrArg (L.integralForm y) hab'
+    simp only [map_add, map_smul, smul_eq_mul, hx, hy, hxy, hyx, map_zero] at ha hb
+    omega
+  simpa using hf.fintype_card_le_finrank
 
 /-- The orthogonal complement of the unit-norm sublattice, as an integral lattice in its own
 rational span. -/
@@ -369,13 +388,9 @@ theorem unitNormDecomposition_apply_zero_tmul (r : ℚ)
 
 /-- The complement of the unit-norm sublattice of a positive definite lattice is positive
 definite. -/
-theorem isPosDef_unitNormComplement : L.unitNormComplement.IsPosDef := by
-  rw [isPosDef_iff_posDef_integralNorm]
-  intro y hy
-  obtain ⟨t, rfl⟩ := L.unitNormComplementEquiv.surjective y
-  rw [integralNorm_apply, integralForm_unitNormComplementEquiv, ← integralNorm_apply]
-  refine hL.posDef_integralNorm _ fun ht ↦ hy ?_
-  rw [Submodule.coe_eq_zero.1 ht, LinearEquiv.map_zero]
+theorem isPosDef_unitNormComplement : L.unitNormComplement.IsPosDef :=
+  -- `unitNormComplement L` is by definition the rationalized restriction to the complement.
+  hL.isPosDef_ofIntegralForm_restrict _
 
 /-- Splitting off the unit-norm sublattice preserves the determinant. -/
 @[simp]

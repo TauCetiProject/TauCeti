@@ -207,15 +207,9 @@ theorem antipode_coordinateRingMap (x : MatrixMonoid.CoordinateRing R n) :
 matrix-monoid coordinate ring. -/
 theorem algHom_ext_away {T : Type*} [Semiring T] [Algebra R T]
     {f g : CoordinateRing R n →ₐ[R] T}
-    (h : f.comp (coordinateRingMap R n) = g.comp (coordinateRingMap R n)) : f = g := by
-  apply AlgHom.ext
-  have h' : f.toRingHom = g.toRingHom := by
-    apply IsLocalization.ringHom_ext
-      (Submonoid.powers
-        (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R)))
-    simpa only [AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, coordinateRingMap,
-      IsScalarTower.coe_toAlgHom] using congrArg AlgHom.toRingHom h
-  exact RingHom.congr_fun h'
+    (h : f.comp (coordinateRingMap R n) = g.comp (coordinateRingMap R n)) : f = g :=
+  IsLocalization.algHom_ext
+    (Submonoid.powers (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R))) h
 
 /-- Comultiplication sends a localized generic entry to the matrix-multiplication sum. -/
 @[simp]
@@ -680,14 +674,12 @@ theorem coordinateHopfAlgebra_algHom_ext {T : Type*} [Semiring T] [Algebra R T]
     apply MvPolynomial.algHom_ext
     rintro ⟨i, j⟩
     simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom] using h i j
-  apply AlgHom.ext
-  intro x
-  obtain ⟨y, rfl⟩ := (coordinateHopfAlgebraAlgEquiv R n).surjective x
-  exact DFunLike.congr_fun hcomp y
+  exact (AlgHom.cancel_right (coordinateHopfAlgebraAlgEquiv R n).surjective).mp hcomp
 
 /-- Two bialgebra homomorphisms out of the bundled coordinate Hopf algebra of `GLₙ` are equal
 if they agree on the localized generic entries. -/
-theorem coordinateHopfAlgebra_bialgHom_ext {T : Type*} [Semiring T] [Bialgebra R T]
+theorem coordinateHopfAlgebra_bialgHom_ext {T : Type*} [Semiring T] [Algebra R T]
+    [CoalgebraStruct R T]
     {f g : coordinateHopfAlgebra R n →ₐc[R] T}
     (h : ∀ i j, f (coordinateHopfAlgebraAlgEquiv R n
         (coordinateRingMap R n (MvPolynomial.X (i, j)))) =

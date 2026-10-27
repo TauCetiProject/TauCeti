@@ -11,15 +11,17 @@ public import TauCeti.Combinatorics.Graph.Stallings.Folded
 # Products of labelled graphs
 
 The product of two based labelled Serre graphs pairs darts carrying the same signed letter.
-Its closed paths project to closed paths in both factors, so its accepted subgroup lies in
-their intersection. Foldedness is preserved by the product.
+Its closed paths project to closed paths in both factors. For folded factors, paths with the
+same reduced label combine in the product, so it accepts exactly the subgroup intersection.
+Foldedness is preserved by the product.
 
 The construction is the fibre product over the labelled rose used in Stallings' subgroup
 intersection method.
 
 ## References
 
-* I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free groups*, Section 9.
+* I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free groups*,
+  Section 9, Proposition 9.4.
 -/
 
 public section
@@ -228,6 +230,33 @@ theorem exists_prod_path_of_word_eq (S : StallingsGraph.{u, v, w} α)
       · erw [Prefunctor.mapPath_cons]
         rw [hrT]
         rfl
+
+/-- The product of folded labelled graphs reads exactly the intersection of their
+accepted subgroups, at every pair of vertices. -/
+theorem prod_subgroup {S : StallingsGraph.{u, v, w} α}
+    {T : StallingsGraph.{u, x, y} α} (hS : S.IsFolded) (hT : T.IsFolded)
+    (a : S.graph.V) (b : T.graph.V) :
+    (S.prod T).subgroup (a, b) = S.subgroup a ⊓ T.subgroup b := by
+  classical
+  apply le_antisymm (prod_subgroup_le S T a b)
+  intro g hg
+  obtain ⟨hgS, hgT⟩ := hg
+  obtain ⟨p, hp, hpg⟩ := (S.mem_subgroup_iff_exists_reduced_path).mp hgS
+  obtain ⟨q, hq, hqg⟩ := (T.mem_subgroup_iff_exists_reduced_path).mp hgT
+  have hword : S.word p = T.word q := by
+    calc
+      S.word p = (S.read p).toWord := (IsFolded.toWord_read_eq_word S hS p hp).symm
+      _ = g.toWord := by rw [hpg]
+      _ = (T.read q).toWord := by rw [hqg]
+      _ = T.word q := IsFolded.toWord_read_eq_word T hT q hq
+  obtain ⟨r, hrS, _⟩ := exists_prod_path_of_word_eq S T p q hword
+  apply (S.prod T).mem_subgroup_iff.mpr
+  refine ⟨r, ?_⟩
+  calc
+    (S.prod T).read r = S.read ((S.prodFst T).graphHom.toPrefunctor.mapPath r) :=
+      ((S.prodFst T).read_mapPath r).symm
+    _ = S.read p := congrArg S.read hrS
+    _ = g := hpg
 
 /-- A product of folded labelled graphs is folded. -/
 theorem IsFolded.prod {S : StallingsGraph.{u, v, w} α}

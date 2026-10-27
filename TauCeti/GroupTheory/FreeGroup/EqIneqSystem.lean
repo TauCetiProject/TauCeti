@@ -141,6 +141,63 @@ theorem exists_isSolution_disjunctionProduct (S T : List (EqIneqSystem X A))
     exact ⟨s.append t, ⟨s, hs, t, ht, rfl⟩,
       (isSolution_append s t v c).mpr ⟨hS, hT⟩⟩
 
+/-- Evaluating a word after renaming its variable letters along `f` evaluates the original
+word at the composite assignment. -/
+@[simp] theorem eval_map_sumMap {Y : Type*} (f : X → Y) (v : Y → G) (c : A → G)
+    (w : FreeGroup (X ⊕ A)) :
+    eval v c (FreeGroup.map (Sum.map f id) w) = eval (v ∘ f) c w := by
+  rw [← MonoidHom.comp_apply]
+  congr 1
+  apply FreeGroup.ext_hom
+  intro i
+  cases i <;> simp
+
+/-- Rename the variables of a system along `f : X → Y`, keeping its coefficient letters.
+Several variables may be identified, and variables outside the range of `f` stay unused. -/
+def relabel {Y : Type*} (f : X → Y) (S : EqIneqSystem X A) : EqIneqSystem Y A :=
+  ⟨S.eqs.map (FreeGroup.map (Sum.map f id)), S.ineqs.map (FreeGroup.map (Sum.map f id))⟩
+
+/-- The equations of a relabelled system are the relabelled equations. -/
+@[simp] theorem eqs_relabel {Y : Type*} (f : X → Y) (S : EqIneqSystem X A) :
+    (S.relabel f).eqs = S.eqs.map (FreeGroup.map (Sum.map f id)) := by rfl
+
+/-- The inequations of a relabelled system are the relabelled inequations. -/
+@[simp] theorem ineqs_relabel {Y : Type*} (f : X → Y) (S : EqIneqSystem X A) :
+    (S.relabel f).ineqs = S.ineqs.map (FreeGroup.map (Sum.map f id)) := by rfl
+
+/-- An assignment solves a relabelled system exactly when its composite with the relabelling
+solves the original system. -/
+@[simp] theorem isSolution_relabel {Y : Type*} (f : X → Y) (S : EqIneqSystem X A)
+    (v : Y → G) (c : A → G) :
+    (S.relabel f).IsSolution v c ↔ S.IsSolution (v ∘ f) c := by
+  simp [IsSolution]
+
+/-- Relabelling along the identity leaves a system unchanged. -/
+@[simp] theorem relabel_id (S : EqIneqSystem X A) : S.relabel id = S := by
+  ext1 <;> simp [List.map_id'', FreeGroup.map.id]
+
+/-- Relabelling twice is relabelling along the composite. -/
+@[simp] theorem relabel_relabel {Y Z : Type*} (f : X → Y) (g : Y → Z)
+    (S : EqIneqSystem X A) : (S.relabel f).relabel g = S.relabel (g ∘ f) := by
+  ext1 <;> simp [FreeGroup.map.comp, Sum.map_comp_map]
+
+/-- Relabelling the empty system gives the empty system. -/
+@[simp] theorem relabel_empty {Y : Type*} (f : X → Y) :
+    (empty X A).relabel f = empty Y A := by rfl
+
+/-- Relabelling distributes over appending systems. -/
+@[simp] theorem relabel_append {Y : Type*} (f : X → Y) (S T : EqIneqSystem X A) :
+    (S.append T).relabel f = (S.relabel f).append (T.relabel f) := by
+  ext1 <;> simp
+
+/-- Relabelling every system of a distributed conjunction distributes over the product. -/
+theorem map_relabel_disjunctionProduct {Y : Type*} (f : X → Y)
+    (S T : List (EqIneqSystem X A)) :
+    (disjunctionProduct S T).map (relabel f) =
+      disjunctionProduct (S.map (relabel f)) (T.map (relabel f)) := by
+  simp [disjunctionProduct, List.product, List.map_flatMap, List.flatMap_map,
+    Function.comp_def]
+
 /-- Evaluation commutes with a group homomorphism when the variables and coefficients are
 mapped along that homomorphism. -/
 @[simp] theorem comp_eval (φ : G →* H) (v : X → G) (c : A → G) :

@@ -52,7 +52,8 @@ of the structure sheaf of `Spec` over basic opens
 * `AlgebraicGeometry.Proj.map_toSpecZero`: `Proj.map f` lies over `Spec` of the degree-zero part
   of `f`.
 * `AlgebraicGeometry.Proj.basicOpen_awayToSection_mk`: on the chart `D₊(f)`, the function `g / fⁿ`
-  is invertible exactly on `D₊(fg)`.
+  is invertible exactly on `D₊(fg)`; its values in the localizations are given by
+  `AlgebraicGeometry.Proj.val_awayToSection_mk_apply`.
 * `AlgebraicGeometry.Proj.toSpecZero_preimage_basicOpen`: the inverse image of the basic open
   `D(r)` of a degree-zero element under `Proj A ⟶ Spec A₀` is the standard open `D₊(r)`.
 * `AlgebraicGeometry.Proj.toSpecZero_appLE_basicOpen`: on `D₊(f)`, the functions pulled back
@@ -163,29 +164,6 @@ theorem mapIso_inv (f : 𝒜 →+*ᵍ ℬ) (g : ℬ →+*ᵍ 𝒜) (hfg : Functi
       map g (HomogeneousIdeal.irrelevant_le_map_of_surjective g hgf.surjective) :=
   (rfl)
 
-/-- On the standard chart `D₊(f)`, the function `g / fⁿ` is invertible exactly on `D₊(fg)`. -/
-theorem basicOpen_awayToSection_mk {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (n : ℕ) (g : A)
-    (hg : g ∈ 𝒜 (n • d)) :
-    (Proj 𝒜).basicOpen (awayToSection 𝒜 f (Away.mk 𝒜 hf n g hg)) = basicOpen 𝒜 (f * g) := by
-  ext p
-  rw [SetLike.mem_coe, SetLike.mem_coe, basicOpen_mul, TopologicalSpace.Opens.mem_inf]
-  by_cases hp : p ∈ basicOpen 𝒜 f
-  · -- the germ of `g / fⁿ` at `p` is `g / fⁿ` in the homogeneous localization at `p`
-    rw [Scheme.mem_basicOpen _ _ _ hp]
-    have h := ConcreteCategory.congr_hom (ProjectiveSpectrum.Proj.awayToSection_germ 𝒜 f p hp)
-      (Away.mk 𝒜 hf n g hg)
-    -- `erw`: the germ map of the scheme `Proj 𝒜` is that of its structure sheaf only up to
-    -- unfolding the scheme structure
-    erw [h]
-    refine (MulEquiv.isUnit_map (Proj.stalkIso' 𝒜 p).symm.toMulEquiv
-      (x := mapId 𝒜 (Submonoid.powers_le.mpr hp) (Away.mk 𝒜 hf n g hg))).trans ?_
-    rw [← isUnit_iff_isUnit_val]
-    -- `erw`: the homogeneous prime of `p` is read through the same identification
-    erw [Away.mk, map_mk, val_mk, Localization.mk_eq_mk', IsLocalization.AtPrime.isUnit_mk'_iff]
-    exact ⟨fun h ↦ ⟨hp, h⟩, And.right⟩
-  · simp only [hp, false_and, iff_false]
-    exact fun h ↦ hp ((Proj 𝒜).basicOpen_le _ h)
-
 variable (𝒜) in
 /-- **Degree-zero basic opens.** The inverse image under `Proj A ⟶ Spec A₀` of the basic open
 `D(r)` of a degree-zero element `r` is the standard open `D₊(r)` of `Proj A`: the points `x` with
@@ -262,6 +240,44 @@ opens `D₊(f)` of the elements `f ∈ A₁` cover `Proj A`. -/
 theorem iSup_basicOpen_eq_top_of_adjoin_eq_top (h : Algebra.adjoin (𝒜 0) (𝒜 1 : Set A) = ⊤) :
     ⨆ f : 𝒜 1, basicOpen 𝒜 (f : A) = ⊤ :=
   iSup_basicOpen_eq_top' 𝒜 _ (fun f ↦ ⟨1, f.2⟩) (by rwa [Subtype.range_coe_subtype])
+
+section
+
+variable {A : Type u} {σ : Type*} [CommRing A] [SetLike σ A] [AddSubgroupClass σ A]
+  {𝒜 : ℕ → σ} [GradedRing 𝒜]
+
+/-- On the standard chart `D₊(f)`, the function `g / fⁿ` takes the value `g / fⁿ` in the
+localization at each point. -/
+theorem val_awayToSection_mk_apply {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (n : ℕ) (g : A)
+    (hg : g ∈ 𝒜 (n • d)) (x : basicOpen 𝒜 f) :
+    ((awayToSection 𝒜 f (Away.mk 𝒜 hf n g hg)).1 x).val =
+      Localization.mk g ⟨f ^ n, fun h ↦ x.2 (x.1.isPrime.mem_of_pow_mem n h)⟩ :=
+  (rfl)
+
+/-- On the standard chart `D₊(f)`, the function `g / fⁿ` is invertible exactly on `D₊(fg)`. -/
+theorem basicOpen_awayToSection_mk {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (n : ℕ) (g : A)
+    (hg : g ∈ 𝒜 (n • d)) :
+    (Proj 𝒜).basicOpen (awayToSection 𝒜 f (Away.mk 𝒜 hf n g hg)) = basicOpen 𝒜 (f * g) := by
+  ext p
+  rw [SetLike.mem_coe, SetLike.mem_coe, basicOpen_mul, TopologicalSpace.Opens.mem_inf]
+  by_cases hp : p ∈ basicOpen 𝒜 f
+  · -- the germ of `g / fⁿ` at `p` is `g / fⁿ` in the homogeneous localization at `p`
+    rw [Scheme.mem_basicOpen _ _ _ hp]
+    have h := ConcreteCategory.congr_hom (ProjectiveSpectrum.Proj.awayToSection_germ 𝒜 f p hp)
+      (Away.mk 𝒜 hf n g hg)
+    -- `erw`: the germ map of the scheme `Proj 𝒜` is that of its structure sheaf only up to
+    -- unfolding the scheme structure
+    erw [h]
+    refine (MulEquiv.isUnit_map (Proj.stalkIso' 𝒜 p).symm.toMulEquiv
+      (x := mapId 𝒜 (Submonoid.powers_le.mpr hp) (Away.mk 𝒜 hf n g hg))).trans ?_
+    rw [← isUnit_iff_isUnit_val]
+    -- `erw`: the homogeneous prime of `p` is read through the same identification
+    erw [Away.mk, map_mk, val_mk, Localization.mk_eq_mk', IsLocalization.AtPrime.isUnit_mk'_iff]
+    exact ⟨fun h ↦ ⟨hp, h⟩, And.right⟩
+  · simp only [hp, false_and, iff_false]
+    exact fun h ↦ hp ((Proj 𝒜).basicOpen_le _ h)
+
+end
 
 end AlgebraicGeometry.Proj
 
