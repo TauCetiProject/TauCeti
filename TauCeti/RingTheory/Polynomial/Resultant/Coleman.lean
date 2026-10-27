@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
@@ -79,28 +80,13 @@ theorem colemanD_def (B P : R[X]) :
     colemanD B P = colemanDBounded B P P.natDegree B.natDegree := by
   rw [colemanD]
 
-section Auxiliary
-
-variable {B P : R[X]} {n : ℕ}
-
-private theorem natDegree_one_sub_C_X_mul_le (B : R[X]) :
-    (1 - C X * B.map C).natDegree ≤ B.natDegree :=
-  (natDegree_sub_le _ _).trans (max_le (by simp)
-    ((natDegree_C_mul_le _ _).trans natDegree_map_le))
-
-private theorem coeff_zero_one_sub_C_X_mul (B : R[X]) :
-    (1 - C X * B.map C).coeff 0 = 1 - C (B.coeff 0) * X := by
-  rw [coeff_sub, coeff_one_zero, coeff_C_mul, coeff_map, mul_comm]
-
-end Auxiliary
-
 variable {B P : R[X]} {n m : ℕ}
 
 /-- Raising the degree bound for `B` does not change Coleman's transform. -/
 theorem colemanDBounded_add_right_deg (hB : B.natDegree ≤ m) (hP0 : P.coeff 0 = 1) (k : ℕ) :
     colemanDBounded B P n (m + k) = colemanDBounded B P n m := by
   rw [colemanDBounded, resultant_add_right_deg _ _ _ _ _
-    ((natDegree_one_sub_C_X_mul_le B).trans hB)]
+    ((natDegree_one_sub_C_mul_le _ _).trans (natDegree_map_le.trans hB))]
   simp [hP0, colemanDBounded]
 
 /-- Coleman's transform does not depend on the chosen bound for the degree of `B`. -/
@@ -117,12 +103,15 @@ theorem colemanDBounded_succ (hP : P.natDegree ≤ n) (hB : B.natDegree ≤ m) :
     simpa [reflect_one, add_comm 1 n] using reflect_mul (1 : R[X]) P (F := 1) (by simp) hP
   -- the resultant with `X` at degree bound one is the constant coefficient
   have hXres : X.resultant (1 - C X * B.map C) 1 m = 1 - C (B.coeff 0) * X := by
-    have h := resultant_X_pow_left _ 1 m ((natDegree_one_sub_C_X_mul_le B).trans hB)
-    rwa [pow_one, pow_one, coeff_zero_one_sub_C_X_mul] at h
+    have h := resultant_X_pow_left _ 1 m
+      ((natDegree_one_sub_C_mul_le (X : R[X]) (B.map C)).trans (natDegree_map_le.trans hB))
+    rw [pow_one, pow_one] at h
+    simp [h, X_mul_C]
   rw [colemanDBounded, hX, Polynomial.map_mul, map_X, add_comm n 1,
     resultant_mul_left_of_natDegree_le natDegree_X_le
       (natDegree_map_le.trans (natDegree_reflect_le_of_natDegree_le hP))
-      ((natDegree_one_sub_C_X_mul_le B).trans hB), hXres, colemanDBounded]
+      ((natDegree_one_sub_C_mul_le _ _).trans (natDegree_map_le.trans hB)),
+    hXres, colemanDBounded]
 
 /-- Padding the rank by `k` multiplies Coleman's transform by `(1 - B(0) T) ^ k`. -/
 theorem colemanDBounded_add (hP : P.natDegree ≤ n) (hB : B.natDegree ≤ m) (k : ℕ) :
@@ -156,7 +145,7 @@ theorem colemanDBounded_mul {P₁ P₂ : R[X]} {n₁ n₂ : ℕ} (hP₁ : P₁.n
     resultant_mul_left_of_natDegree_le
       (natDegree_map_le.trans (natDegree_reflect_le_of_natDegree_le hP₁))
       (natDegree_map_le.trans (natDegree_reflect_le_of_natDegree_le hP₂))
-      ((natDegree_one_sub_C_X_mul_le B).trans hB),
+      ((natDegree_one_sub_C_mul_le _ _).trans (natDegree_map_le.trans hB)),
     colemanDBounded, colemanDBounded]
 
 /-- Coleman's transform commutes with coefficient ring homomorphisms. -/
@@ -225,16 +214,18 @@ theorem colemanDBounded_zero_left (hP0 : P.coeff 0 = 1) (n m : ℕ) :
 theorem colemanDBounded_one_right (hB : B.natDegree ≤ m) (n : ℕ) :
     colemanDBounded B 1 n m = (1 - C (B.coeff 0) * X) ^ n := by
   rw [colemanDBounded, reflect_one, Polynomial.map_pow, map_X,
-    resultant_X_pow_left _ _ _ ((natDegree_one_sub_C_X_mul_le B).trans hB),
-    coeff_zero_one_sub_C_X_mul]
+    resultant_X_pow_left _ _ _
+      ((natDegree_one_sub_C_mul_le _ _).trans (natDegree_map_le.trans hB))]
+  simp [X_mul_C]
 
 /-- Coleman's transform of a single factor `1 - α T` is `1 - B(α) T`. -/
 theorem colemanDBounded_one_sub_C_mul_X (hB : B.natDegree ≤ m) (α : R) :
     colemanDBounded B (1 - C α * X) 1 m = 1 - C (B.eval α) * X := by
   have hr : (1 - C α * X).reflect 1 = X - C α := by simp
   rw [colemanDBounded, hr, Polynomial.map_sub, map_X, map_C,
-    resultant_X_sub_C_left _ _ _ ((natDegree_one_sub_C_X_mul_le B).trans hB), eval_sub, eval_one,
-    eval_mul, eval_C, eval_map, eval₂_hom, mul_comm]
+    resultant_X_sub_C_left _ _ _
+      ((natDegree_one_sub_C_mul_le _ _).trans (natDegree_map_le.trans hB)),
+    eval_sub, eval_one, eval_mul, eval_C, eval_map, eval₂_hom, mul_comm]
 
 /-- If `P = ∏ (1 - αᵢ T)` has one factor for each unit of rank, Coleman's transform is
 `∏ (1 - B(αᵢ) T)`: it replaces each inverse root `αᵢ` by `B(αᵢ)`. -/
