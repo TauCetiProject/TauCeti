@@ -111,12 +111,8 @@ private theorem matrixTrace_comp_one_one (c : V → k) (M N : DGAdditiveClosure 
     matrixTrace k G c M v hv (dgComp k f g rfl) =
       -matrixTrace k G c N w hw (dgComp k g f rfl) := by
   classical
-  change (∑ i, vertexTrace k G (c (v i)) (v i)
-    (homCongr k G (hv i) (hv i) 2
-      (DGAdditiveClosure.dgHomEquiv k M M 2 (dgComp k f g rfl) i i))) =
-    -(∑ j, vertexTrace k G (c (w j)) (w j)
-      (homCongr k G (hw j) (hw j) 2
-        (DGAdditiveClosure.dgHomEquiv k N N 2 (dgComp k g f rfl) j j)))
+  unfold matrixTrace
+  dsimp only [LinearMap.coe_mk, AddHom.coe_mk]
   simp only [DGAdditiveClosure.dgHomEquiv_dgComp, map_sum]
   rw [Finset.sum_comm]
   simp only [← Finset.sum_neg_distrib]
@@ -170,8 +166,7 @@ theorem zigzagAlgebraFiniteTwistedTrace_dgDifferential (c : V → k)
     (v : X.obj.ι → V) (hv : ∀ i, X.obj.X i = D (v i))
     (hc : ∀ i j, G.Adj (v i) (v j) → c (v j) = -c (v i)) (f : DGHom k 1 X X) :
     zigzagAlgebraFiniteTwistedTrace k G c X v hv (dgDifferential k 1 f) = 0 := by
-  change matrixTrace k G c X.obj v hv
-    (DGTwistedObject.dgHomEquiv k X X 2 (dgDifferential k 1 f)) = 0
+  simp only [zigzagAlgebraFiniteTwistedTrace, LinearMap.comp_apply, LinearEquiv.coe_coe]
   erw [DGTwistedObject.dgHomEquiv_dgDifferential k 1 f]
   rw [matrix_dgDifferential_eq_zero k G X.obj v hv]
   simp only [zero_add, Int.negOnePow_one, Units.neg_smul, one_smul, map_sub, map_neg]
@@ -195,6 +190,7 @@ def zigzagAlgebraFiniteTwistedHomologyTrace (c : V → k)
   exact (K.homologyι 2 ≫ K.descOpcycles tr 1 (by simp) ht).hom
 
 /-- On a canonical cycle class, the descended trace evaluates the representing cocycle. -/
+@[simp]
 theorem zigzagAlgebraFiniteTwistedHomologyTrace_homologyπ (c : V → k)
     (X : DGTwistedObject k (DGAdditiveClosure
       (DGRightModuleCat.{u, u, u}
