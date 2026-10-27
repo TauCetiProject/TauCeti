@@ -495,6 +495,18 @@ theorem ι_homotopyEquiv_inv_f_zero (e : r.Z 0 ≅ r'.Z 0) :
     r'.ι 0 ≫ (homotopyEquiv r r' e).inv.f 0 = e.inv ≫ r.ι 0 :=
   ι_lift_f_zero r' r e.inv
 
+/-- The morphism of cycles induced by the homotopy equivalence is `e.hom`. -/
+@[simp]
+theorem cyclesMap_homotopyEquiv_hom (e : r.Z 0 ≅ r'.Z 0) :
+    cyclesMap (homotopyEquiv r r' e).hom = e.hom := by
+  simp [← cancel_mono (r'.ι 0)]
+
+/-- The morphism of cycles induced by the inverse homotopy equivalence is `e.inv`. -/
+@[simp]
+theorem cyclesMap_homotopyEquiv_inv (e : r.Z 0 ≅ r'.Z 0) :
+    cyclesMap (homotopyEquiv r r' e).inv = e.inv := by
+  simp [← cancel_mono (r.ι 0)]
+
 end Homotopy
 
 end CompleteResolution

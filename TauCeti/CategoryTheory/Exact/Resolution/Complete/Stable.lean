@@ -107,6 +107,14 @@ theorem ι_liftMap_f_zero {X Y : C} (f : X ⟶ Y) :
         (hE.completeResolution Y).ι 0 :=
   CompleteResolution.ι_lift_f_zero _ _ _
 
+/-- The lift of `f` induces `f` on the cycles in degree zero, up to the chosen identifications
+of the cycles with the source and target. -/
+@[simp]
+theorem cyclesMap_liftMap {X Y : C} (f : X ⟶ Y) :
+    CompleteResolution.cyclesMap (hE.liftMap f) =
+      (hE.completeResolutionIso X).hom ≫ f ≫ (hE.completeResolutionIso Y).inv := by
+  simp [← cancel_mono ((hE.completeResolution Y).ι 0)]
+
 /-- The functor sending an object to the homotopy class of its complete resolution, and a
 morphism to the homotopy class of its lift. -/
 noncomputable def completeResolutionFunctor :
