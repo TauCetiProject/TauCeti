@@ -137,11 +137,9 @@ private lemma image_flip_span_le (L : A →L[𝕜] E →L[𝕜] E) (R : E →L[�
       span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2) :=
   (Submodule.image_span_subset (R.flip c).toLinearMap _ _).2 fun u hu ↦ by
     obtain ⟨⟨a, z, b⟩, rfl⟩ := hu
-    -- `image_span_subset` states its goal about the coerced `LinearMap` of `R.flip c`, so the
-    -- operand is not syntactically a bundled-map application and rewriting by `hR` needs the
-    -- goal restated in the bundled form first.
-    change R (R (L a z) b) c ∈ span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)
-    rw [hR (L a z) b c]
+    -- Undo the `toLinearMap` coercion that `image_span_subset` introduces, then use the
+    -- definition of `flip` and the right-action law.
+    rw [ContinuousLinearMap.coe_coe (R.flip c), ContinuousLinearMap.flip_apply, hR (L a z) b c]
     exact Submodule.subset_span ⟨(a, z, b * c), rfl⟩
 
 /-- **Pseudo-unitality of essential Banach bimodules.** Let `A` be a Banach algebra with a
