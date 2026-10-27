@@ -82,8 +82,8 @@ theorem AnalyticOnNhd.le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (close
       · simp
       · rw [mem_closedBall, dist_comm, dist_eq_norm] at hu
         have hpos : 0 < ‖c - u‖ := norm_pos_iff.2 (sub_ne_zero.2 huc.symm)
-        rw [← Real.log_abs, abs_mul, abs_inv, abs_norm, ← div_eq_mul_inv]
-        exact Real.log_nonneg ((one_le_div hpos).2 hu)
+        rw [← Real.log_abs]
+        exact Real.log_nonneg (by simpa [← div_eq_mul_inv, abs_div, one_le_div hpos] using hu)
     · simp [hu]
   have hord : ((((analyticOrderAt f c).map (Nat.cast : ℕ → ℤ)).untop₀ : ℤ) : ℝ) =
       analyticOrderNatAt f c := by
@@ -172,7 +172,8 @@ theorem eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_l
       tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
         (by simpa using (hθS.comp hρlim).norm)
         (Eventually.of_forall fun n ↦ norm_pos_iff.2 fun h ↦ hθN (mem_iUnion.2 ⟨n, h⟩))
-    exact (ENNReal.tendsto_ofReal_atTop.comp (tendsto_atTop_mono (fun x ↦ le_max_right _ _)
+    exact (ENNReal.tendsto_ofReal_atTop.comp (tendsto_atTop_mono
+      (fun _ ↦ by rw [posLog_apply]; exact le_max_right _ _)
       (tendsto_log_atTop.comp (tendsto_inv_nhdsGT_zero.comp h0)))).liminf_eq
   -- Fatou's lemma then makes the integrals of `G n` unbounded, against the bound `2π (C - L)`.
   have hbound : ∀ n, ∫⁻ θ in A, G n θ ≤ ENNReal.ofReal (2 * π * (C - L)) := fun n ↦
