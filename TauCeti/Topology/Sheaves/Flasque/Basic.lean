@@ -27,7 +27,10 @@ surjective. This file proves that a flasque sheaf has no higher cohomology.
   cohomology in every positive degree over every open subset;
 * `TauCeti.Topology.subsingleton_H_succ_of_isFlasque`: the same statement for the cohomology
   of the whole space;
-* `TauCeti.Topology.isFlasque_skyscraperSheaf`: skyscraper sheaves are flasque, and hence acyclic.
+* `TauCeti.Topology.isFlasque_skyscraperSheaf`: skyscraper sheaves are flasque, and hence acyclic;
+* `TopCat.Sheaf.IsFlasque.epi_cokernel_π_app` and `TopCat.Sheaf.IsFlasque.exact_cokernel_π_app`:
+  if `0 ⟶ A ⟶ B ⟶ C` is exact with `A` and `B` flasque, then taking sections over an open `U`
+  gives an exact sequence `B(U) ⟶ C(U) ⟶ (coker (B ⟶ C))(U) ⟶ 0`.
 
 The proof is the classical dimension shift. Embedding a flasque sheaf `F` in an injective sheaf
 `I` gives a short exact sequence `0 ⟶ F ⟶ I ⟶ Q ⟶ 0`, and the covariant long exact sequence of
@@ -183,3 +186,36 @@ theorem of_isZero {C : Type*} [Category* C] [HasZeroObject C] {X : TopCat.{u}}
   ⟨fun _ ↦ (h.obj _).epi _⟩
 
 end TopCat.Presheaf.IsFlasque
+
+namespace TopCat.Sheaf.IsFlasque
+
+variable {X : TopCat.{u}}
+  {E : ShortComplex (CategoryTheory.Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})}
+
+/-- If `0 ⟶ A ⟶ B ⟶ C` is an exact sequence of sheaves of abelian groups with `A` and `B` flasque,
+then every section of the cokernel of `B ⟶ C` lifts to a section of `C`. -/
+theorem epi_cokernel_π_app (hE : E.Exact) [Mono E.f] [Presheaf.IsFlasque E.X₁.obj]
+    [Presheaf.IsFlasque E.X₂.obj] (U : Opens X) : Epi ((cokernel.π E.g).hom.app (op U)) :=
+  have := of_shortExact_of_isFlasque₁₂ hE.shortExact_factorThruImage
+  epi_of_shortExact (ShortComplex.shortExact_image_ι_cokernel_π E.g)
+
+/-- If `0 ⟶ A ⟶ B ⟶ C` is an exact sequence of sheaves of abelian groups with `A` flasque, then a
+section of `C` maps to zero in the cokernel of `B ⟶ C` exactly when it comes from a section of
+`B`. -/
+theorem exact_cokernel_π_app (hE : E.Exact) [Mono E.f] [Presheaf.IsFlasque E.X₁.obj]
+    (U : Opens X) :
+    (ShortComplex.mk (E.g.hom.app (op U)) ((cokernel.π E.g).hom.app (op U)) (by
+      simp [← NatTrans.comp_app, ← ObjectProperty.FullSubcategory.comp_hom])).Exact := by
+  rw [ShortComplex.ab_exact_iff]
+  intro c hc
+  -- `c` is a section of the image sheaf, since sections preserve kernels
+  have h₂ := (ShortComplex.shortExact_image_ι_cokernel_π E.g).exact.map_of_mono_of_preservesKernel
+    (sheafToPresheaf _ _ ⋙ (evaluation _ _).obj (op U)) inferInstance inferInstance
+  obtain ⟨i, rfl⟩ := (ShortComplex.ab_exact_iff _).1 h₂ c hc
+  -- and sections of the image lift to `B`, because the kernel `A` is flasque
+  obtain ⟨b, rfl⟩ := (AddCommGrpCat.epi_iff_surjective _).1
+    (epi_of_shortExact hE.shortExact_factorThruImage (U := U)) i
+  exact ⟨b, by simp [← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
+    ← ObjectProperty.FullSubcategory.comp_hom]⟩
+
+end TopCat.Sheaf.IsFlasque

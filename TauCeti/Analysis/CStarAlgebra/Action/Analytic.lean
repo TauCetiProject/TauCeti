@@ -82,6 +82,12 @@ theorem entireExtension_ofReal (h : α.IsEntireAnalytic a) (t : ℝ) :
 theorem entireExtension_apply_zero (h : α.IsEntireAnalytic a) : α.entireExtension a 0 = a := by
   simpa using h.entireExtension_ofReal 0
 
+/-- For an entire analytic `b`, the correlation function `z ↦ φ (a α_z(b))` is entire. -/
+theorem differentiable_apply_mul_entireExtension (hb : α.IsEntireAnalytic b) {φ : A →L[ℂ] ℂ}
+    {a : A} : Differentiable ℂ fun z => φ (a * α.entireExtension b z) :=
+  φ.differentiable.comp
+    ((ContinuousLinearMap.mul ℂ A a).differentiable.comp hb.differentiable_entireExtension)
+
 end IsEntireAnalytic
 
 /-- **Uniqueness of continuation.** Any entire extension of the orbit of `a` is the
