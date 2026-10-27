@@ -17,8 +17,8 @@ A lattice vector of norm two defines a lattice isometry by
 `sₓ(y) = y - B(x, y) • x`. Integrality of the pairing ensures that this reflection preserves
 the integral carrier, and its involutivity makes carrier preservation an equality.
 These isometries generate the Weyl group `TauCeti.IntegralLattice.weylGroup` of the lattice, a
-subgroup of its isometry group; comparing the two groups is how root systems enter the study of
-lattice automorphisms.
+normal subgroup of its isometry group; comparing the two groups is how root systems enter the study
+of lattice automorphisms.
 
 The construction works for indefinite and degenerate lattices as well as positive definite
 ones. We give its ambient and integral action, involutivity, fixed-vector criterion, and
@@ -177,5 +177,16 @@ theorem weylGroup_le_iff {H : Subgroup (Isometry L L)} :
     L.weylGroup ≤ H ↔ ∀ (x : L) (hx : L.integralNorm x = 2), rootReflection x hx ∈ H := by
   rw [weylGroup_def, Subgroup.closure_le]
   exact ⟨fun h x hx ↦ h ⟨x, hx, rfl⟩, by rintro h _ ⟨x, hx, rfl⟩; exact h x hx⟩
+
+/-- The Weyl group is normal in the isometry group, since conjugating a root reflection by an
+isometry gives the reflection in the image root. -/
+instance weylGroup_normal : L.weylGroup.Normal where
+  conj_mem n hn g := by
+    have h : L.weylGroup ≤ L.weylGroup.comap (MulAut.conj g).toMonoidHom :=
+      weylGroup_le_iff.mpr fun x hx ↦ by
+        rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply,
+          Isometry.mul_rootReflection_mul_inv]
+        exact rootReflection_mem_weylGroup _ _
+    exact h hn
 
 end TauCeti.IntegralLattice

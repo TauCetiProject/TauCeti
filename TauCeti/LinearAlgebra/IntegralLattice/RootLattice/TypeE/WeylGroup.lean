@@ -63,18 +63,12 @@ open _root_.Matrix DynkinType
 
 /-- Integer simple-root coordinates, as an identification of `ℤ⁸` with the E₈ lattice. -/
 private noncomputable def typeE₈CoordinateEquiv : (Fin 8 → ℤ) ≃ₗ[ℤ] typeE₈RootLattice :=
-  LinearEquiv.ofBijective
-    { toFun v := ⟨fun j ↦ (v j : ℚ), (mem_typeE₈RootLattice_carrier_iff _).mpr fun j ↦ ⟨v j, rfl⟩⟩
-      map_add' _ _ := Subtype.ext (funext fun _ ↦ by simp)
-      map_smul' _ _ := Subtype.ext (funext fun _ ↦ by simp) }
-    ⟨fun _ _ h ↦ funext fun j ↦ Int.cast_injective (α := ℚ) (congrFun (congrArg Subtype.val h) j),
-      fun x ↦ by
-        choose v hv using (mem_typeE₈RootLattice_carrier_iff _).mp x.2
-        exact ⟨v, Subtype.ext (funext hv)⟩⟩
+  ofGramMatrixBasisFunEquiv (CartanMatrix.E 8) (CartanMatrix.E_isSymm 8) ≪≫ₗ
+    LinearEquiv.ofEq _ _ (by rw [typeE₈RootLattice_carrier, ofGramMatrix_carrier])
 
 private theorem coe_typeE₈CoordinateEquiv_apply (v : Fin 8 → ℤ) :
-    (typeE₈CoordinateEquiv v : Fin 8 → ℚ) = fun j ↦ (v j : ℚ) :=
-  (rfl)
+    (typeE₈CoordinateEquiv v : Fin 8 → ℚ) = fun j ↦ (v j : ℚ) := by
+  simp [typeE₈CoordinateEquiv]
 
 /-- The coordinates of an enumerated lattice root are those of the corresponding coroot. -/
 private theorem typeE₈CoordinateEquiv_e8Coroot (i : Fin 240) :
@@ -86,7 +80,7 @@ private theorem integralForm_typeE₈CoordinateEquiv (u w : Fin 8 → ℤ) :
     typeE₈RootLattice.integralForm (typeE₈CoordinateEquiv u) (typeE₈CoordinateEquiv w) =
       (u ᵥ* CartanMatrix.E 8) ⬝ᵥ w := by
   apply Int.cast_injective (α := ℚ)
-  rw [integralForm_cast]
+  rw [integralForm_cast, coe_typeE₈CoordinateEquiv_apply, coe_typeE₈CoordinateEquiv_apply]
   exact form_typeE₈RootLattice_intCast u w
 
 /-- Multiplication of row vectors by the E₈ Cartan matrix, a linear equivalence because the
@@ -153,6 +147,11 @@ private theorem typeE₈IsometryToAut_weightMap_apply
       typeE₈WeightEquiv (g.carrierEquiv x) := by
   simp [typeE₈IsometryToAut, RootPairing.Equiv.mk']
 
+private theorem typeE₈IsometryToAut_indexEquiv
+    (g : Isometry typeE₈RootLattice typeE₈RootLattice) :
+    (typeE₈IsometryToAut g).indexEquiv = typeE₈RootPerm g :=
+  rfl
+
 private theorem typeE₈IsometryToAut_mul (g h : Isometry typeE₈RootLattice typeE₈RootLattice) :
     typeE₈IsometryToAut (g * h) = typeE₈IsometryToAut g * typeE₈IsometryToAut h := by
   apply RootPairing.Equiv.weightHom_injective
@@ -167,21 +166,21 @@ private theorem typeE₈IsometryToAut_injective : Function.Injective typeE₈Iso
   apply typeE₈WeightEquiv.injective
   rw [← typeE₈IsometryToAut_weightMap_apply, ← typeE₈IsometryToAut_weightMap_apply, hgh]
 
+/-- Pairing with a coroot of the datum is the lattice form with the corresponding lattice root. -/
+private theorem dotProduct_typeE₈WeightEquiv_e8Coroot (y : typeE₈RootLattice) (i : Fin 240) :
+    typeE₈WeightEquiv y ⬝ᵥ e8Coroot i = typeE₈RootLattice.integralForm y (typeE₈RootVector i) := by
+  rw [← dotProduct_typeE₈WeightEquiv, ← typeE₈CoordinateEquiv_e8Coroot,
+    LinearEquiv.symm_apply_apply]
+
 private theorem typeE₈IsometryToAut_rootReflection (i : Fin 240) :
     typeE₈IsometryToAut (rootReflection _ (integralNorm_typeE₈RootVector i)) =
       RootPairing.Equiv.reflection _ i := by
   apply RootPairing.Equiv.weightHom_injective
   ext1 m
   obtain ⟨y, rfl⟩ := typeE₈WeightEquiv.surjective m
-  simp only [RootPairing.Equiv.weightHom_apply, RootPairing.Equiv.weightEquiv_apply,
-    typeE₈IsometryToAut_weightMap_apply, RootPairing.Equiv.reflection_weightEquiv,
-    rootReflection_carrierEquiv_apply, map_sub, map_zsmul, typeE₈WeightEquiv_typeE₈RootVector,
-    RootPairing.reflection_apply, RootPairing.coroot', e8SimplyConnectedRootDatum_root,
-    e8SimplyConnectedRootDatum_coroot]
-  have hc : e8Coroot i = typeE₈CoordinateEquiv.symm (typeE₈RootVector i) := by
-    rw [← typeE₈CoordinateEquiv_e8Coroot, LinearEquiv.symm_apply_apply]
-  rw [LinearMap.flip_apply, e8SimplyConnectedRootDatum_toLinearMap_apply, hc,
-    dotProduct_typeE₈WeightEquiv, typeE₈RootLattice.isSymm_integralForm.eq]
+  simp [typeE₈IsometryToAut_weightMap_apply, typeE₈WeightEquiv_typeE₈RootVector,
+    RootPairing.reflection_apply, dotProduct_typeE₈WeightEquiv_e8Coroot,
+    typeE₈RootLattice.isSymm_integralForm.eq]
 
 /-- Every root reflection of the E₈ lattice is the reflection in an enumerated root. -/
 private theorem exists_rootReflection_eq (x : typeE₈RootLattice)
@@ -213,6 +212,10 @@ noncomputable def typeE₈IsometryEquivAut :
   MulEquiv.ofBijective (MonoidHom.mk' typeE₈IsometryToAut typeE₈IsometryToAut_mul)
     ⟨typeE₈IsometryToAut_injective, Set.range_eq_univ.mp range_typeE₈IsometryToAut⟩
 
+private theorem typeE₈IsometryEquivAut_apply (g : Isometry typeE₈RootLattice typeE₈RootLattice) :
+    typeE₈IsometryEquivAut g = typeE₈IsometryToAut g :=
+  rfl
+
 /-- **The isomorphism permutes the root indices as the isometry permutes the lattice roots.** This
 characterizes it, since an automorphism of a root system is determined by its permutation of the
 roots. -/
@@ -220,16 +223,17 @@ roots. -/
 theorem typeE₈RootVector_typeE₈IsometryEquivAut_indexEquiv
     (g : Isometry typeE₈RootLattice typeE₈RootLattice) (i : Fin 240) :
     typeE₈RootVector ((typeE₈IsometryEquivAut g).indexEquiv i) =
-      g.carrierEquiv (typeE₈RootVector i) :=
-  typeE₈RootVector_typeE₈RootPerm g i
+      g.carrierEquiv (typeE₈RootVector i) := by
+  rw [typeE₈IsometryEquivAut_apply, typeE₈IsometryToAut_indexEquiv,
+    typeE₈RootVector_typeE₈RootPerm]
 
 /-- **The isomorphism sends the reflection in a lattice root to the reflection of the datum in the
 same root.** -/
 @[simp]
 theorem typeE₈IsometryEquivAut_rootReflection (i : Fin 240) :
     typeE₈IsometryEquivAut (rootReflection _ (integralNorm_typeE₈RootVector i)) =
-      RootPairing.Equiv.reflection _ i :=
-  typeE₈IsometryToAut_rootReflection i
+      RootPairing.Equiv.reflection _ i := by
+  rw [typeE₈IsometryEquivAut_apply, typeE₈IsometryToAut_rootReflection]
 
 /-! ## The isometry group is generated by root reflections -/
 
