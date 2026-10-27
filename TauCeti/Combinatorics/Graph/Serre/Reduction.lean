@@ -16,7 +16,9 @@ step in constructing the path group of a graph; it keeps the two directions of a
 
 ## References
 
-* J.-P. Serre, *Trees*, Chapter I, §2.2.
+* J.-P. Serre, *Trees*, Chapter I, §§2.1–2.2.
+* `reduceSnoc` and `reduce` adapt Mathlib's `FreeGroup.reduce` in
+  `Mathlib/GroupTheory/FreeGroup/Reduce.lean` to paths with dependent endpoints.
 -/
 
 public section
@@ -75,6 +77,20 @@ theorem Homotopic.comp {a b c : Γ.V} {p q : Γ.Path a b} {r s : Γ.Path b c}
     Homotopic Γ (p.comp r) (q.comp s) :=
   (h.comp_right Γ r).trans (k.comp_left Γ q)
 
+/-- A path followed by its reverse is homotopic to the empty path. -/
+theorem Homotopic.comp_reverse {a b : Γ.V} (p : Γ.Path a b) :
+    Homotopic Γ (p.comp p.reverse) Quiver.Path.nil := by
+  induction p with
+  | nil => exact .refl _
+  | cons p e ih =>
+    rw [Quiver.Path.reverse, ← Quiver.Path.comp_assoc, Quiver.Path.comp_toPath_eq_cons]
+    exact ((Homotopic.backtrack p e).comp_right Γ p.reverse).trans ih
+
+/-- The reverse of a path followed by that path is homotopic to the empty path. -/
+theorem Homotopic.reverse_comp {a b : Γ.V} (p : Γ.Path a b) :
+    Homotopic Γ (p.reverse.comp p) Quiver.Path.nil := by
+  simpa only [Quiver.Path.reverse_reverse] using Homotopic.comp_reverse Γ p.reverse
+
 /-- Reversing homotopic paths preserves homotopy. -/
 theorem Homotopic.reverse {a b : Γ.V} {p q : Γ.Path a b}
     (h : Homotopic Γ p q) : Homotopic Γ p.reverse q.reverse := by
@@ -82,7 +98,9 @@ theorem Homotopic.reverse {a b : Γ.V} {p q : Γ.Path a b}
   | refl => exact .refl _
   | symm _ ih => exact ih.symm
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
-  | cons h e ih => exact ih.comp_left Γ (Quiver.reverse e).toPath
+  | cons h e ih =>
+    rw [Quiver.Path.reverse, Quiver.Path.reverse]
+    exact ih.comp_left Γ (Quiver.reverse e).toPath
   | backtrack p e =>
     have hb : Homotopic Γ (e.toPath.comp (Quiver.reverse e).toPath) Quiver.Path.nil := by
       rw [Quiver.Path.comp_toPath_eq_cons]
@@ -172,7 +190,7 @@ theorem reduce_cons_of_isReduced {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Ho
   rw [reduce_cons]
   exact reduceSnoc_eq_cons Γ (reduce Γ p) e h
 
-/-- Reduction fixes precisely the already reduced paths. -/
+/-- Reduction leaves an already reduced path unchanged. -/
 @[simp] theorem reduce_eq_self_of_isReduced {a b : Γ.V} (p : Γ.Path a b)
     (hp : IsReduced Γ p) : reduce Γ p = p := by
   induction p with
@@ -231,6 +249,7 @@ theorem reduceSnoc_reverse {a b c : Γ.V} (p : Γ.Path a b)
 @[simp↓] theorem reduce_backtrack {a b c : Γ.V} (p : Γ.Path a b)
     (e : Quiver.Hom b c) :
     reduce Γ ((p.cons e).cons (Quiver.reverse e)) = reduce Γ p := by
+  rw [reduce_cons, reduce_cons]
   exact reduceSnoc_reverse Γ (reduce Γ p) (isReduced_reduce Γ p) e
 
 /-- Backtrack-homotopic paths have the same reduced form. -/
@@ -242,6 +261,16 @@ theorem Homotopic.reduce_eq {a b : Γ.V} {p q : Γ.Path a b}
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
   | cons h e ih => simp only [reduce_cons, ih]
   | backtrack p e => exact reduce_backtrack Γ p e
+
+/-- A path followed by its reverse reduces to the empty path. -/
+@[simp↓] theorem reduce_comp_reverse {a b : Γ.V} (p : Γ.Path a b) :
+    reduce Γ (p.comp p.reverse) = Quiver.Path.nil := by
+  simpa only [reduce_nil] using (Homotopic.comp_reverse Γ p).reduce_eq Γ
+
+/-- The reverse of a path followed by that path reduces to the empty path. -/
+@[simp↓] theorem reduce_reverse_comp {a b : Γ.V} (p : Γ.Path a b) :
+    reduce Γ (p.reverse.comp p) = Quiver.Path.nil := by
+  simpa only [reduce_nil] using (Homotopic.reverse_comp Γ p).reduce_eq Γ
 
 /-- Two reduced paths in the same backtrack homotopy class are equal. -/
 theorem Homotopic.eq_of_isReduced {a b : Γ.V} {p q : Γ.Path a b}
