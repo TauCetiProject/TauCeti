@@ -8,7 +8,9 @@ module
 public import Mathlib.Topology.Instances.ENNReal.Lemmas
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 public import TauCeti.FieldTheory.IntermediateField.RootCount
+public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Region
 import TauCeti.NumberTheory.LocalField.Eisenstein.RootCount
+import TauCeti.NumberTheory.LocalField.RootCount.Measurable
 import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
@@ -37,6 +39,10 @@ than the discriminant exponent `d(L)`, then `L.rootCount a` is the number of the
 contain a root. The balls do not depend on `a`, so integrating `L.rootCount` over the Eisenstein
 polynomials reduces to measuring, ball by ball, the polynomials with a root in that ball.
 
+For the integration itself, each root count is almost everywhere measurable on the Eisenstein
+region, for any measure on coefficient space. This holds because the Eisenstein region lies in the
+integer box, where root counts are measurable (`IntermediateField.aemeasurable_rootCount`).
+
 ## Main results
 
 * `TauCeti.tsum_rootCount_eq_of_separable`: at a separable Eisenstein polynomial of degree `n`,
@@ -44,6 +50,8 @@ polynomials reduces to measuring, ball by ball, the polynomials with a root in t
 * `IntermediateField.rootCount_eq_sum_ite_of_eisenstein`: for `L ∈ σ_K(n)`, the root count of an
   Eisenstein polynomial of degree `n` is the number of balls containing a root, in any disjoint
   cover of the uniformizers of `L` by balls of order larger than `d(L)`.
+* `TauCeti.aemeasurable_rootCount_restrict_eisensteinSet`: for `L ∈ σ_K(n)`, the root count in `L`
+  is almost everywhere measurable on the Eisenstein region.
 
 ## References
 
@@ -54,7 +62,7 @@ polynomials reduces to measuring, ball by ball, the polynomials with a root in t
 public section
 noncomputable section
 
-open ValuativeRel Polynomial IsDiscreteValuationRing
+open ValuativeRel Polynomial IsDiscreteValuationRing MeasureTheory
 open scoped IntermediateField ENNReal
 
 namespace TauCeti
@@ -160,5 +168,16 @@ theorem _root_.IntermediateField.rootCount_eq_sum_ite_of_eisenstein {n : ℕ}
   rw [L.rootCount_def, ← hf, aroots_eq_map_roots_integerRing L hmonic, Multiset.card_map]
   exact card_roots_map_eq_sum_ite_of_eisenstein he ((natDegree_eq_of_map_eq hf).trans hL'.1.symm)
     hr C hcover hdisj
+
+/-- **The root counts are measurable on the Eisenstein region.** For `L ∈ σ_K(n)` and any measure
+`μ` on the coefficient space `Fin n → K`, the root count `a ↦ L.rootCount a` is almost everywhere
+measurable for `μ` restricted to the Eisenstein region `TauCeti.eisensteinSet K n`. -/
+theorem aemeasurable_rootCount_restrict_eisensteinSet {n : ℕ} [MeasurableSpace (Fin n → K)]
+    [OpensMeasurableSpace (Fin n → K)] (μ : Measure (Fin n → K))
+    {L : IntermediateField K (SeparableClosure K)} (hL : L ∈ totallyRamifiedOfDegree K n) :
+    AEMeasurable (fun a ↦ (L.rootCount a : ℝ≥0∞)) (μ.restrict (eisensteinSet K n)) := by
+  have := (mem_totallyRamifiedOfDegree_iff.mp hL).2.finite
+  exact measurable_from_nat.comp_aemeasurable (L.aemeasurable_rootCount
+    (ae_restrict_of_forall_mem measurableSet_eisensteinSet (eisensteinSet_subset_integerBox n)))
 
 end TauCeti

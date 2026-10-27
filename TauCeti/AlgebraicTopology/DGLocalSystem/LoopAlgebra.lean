@@ -53,6 +53,8 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
   sees the component of dimension zero, and it is surjective.
 * `TauCeti.groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom`: the basis element of the
   class of a Moore loop goes to the cohomology class of its point chain.
+* `TauCeti.groupAlgebraToLoopChainCohomology_mem_cohomologyGrading_zero`: the group ring lands in
+  cohomological degree zero.
 
 ## References
 
@@ -410,6 +412,16 @@ theorem groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom (γ : MooreLoop
           (cubicalChainDifferential_lof_zero _ _ _)⟩ := by
   rw [← groupAlgebraToLoopChainCohomology_loopZeroChainToGroupAlgebra,
     loopZeroChainToGroupAlgebra_ofCube, SingularCube.point_apply, MonoidAlgebra.of_apply]
+
+/-- `groupAlgebraToLoopChainCohomology` lands in degree zero: the group ring is `H₀(Ω_b B; R)`. -/
+theorem groupAlgebraToLoopChainCohomology_mem_cohomologyGrading_zero
+    (a : MonoidAlgebra R (FundamentalGroup B b)) :
+    groupAlgebraToLoopChainCohomology B b R a ∈
+      (loopChain_isDGAlgebra B b R).cohomologyGrading 0 := by
+  obtain ⟨c, rfl⟩ := loopZeroChainToGroupAlgebra_surjective (R := R) (x := b) a
+  rw [groupAlgebraToLoopChainCohomology_loopZeroChainToGroupAlgebra]
+  exact (loopChain_isDGAlgebra B b R).mem_cohomologyGrading.mpr
+    ⟨_, by simpa using cubicalChainLof_mem (MooreLoopSpace B b) R c, rfl⟩
 
 end GroupAlgebra
 
