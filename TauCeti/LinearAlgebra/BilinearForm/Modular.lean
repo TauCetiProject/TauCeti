@@ -42,10 +42,11 @@ This file proves the facts about modular forms that hold over every commutative 
 * an `a`-modular submodule splits off orthogonally when `a` divides every value of the form
   (`LinearMap.BilinForm.IsModular.isCompl_orthogonal`).
 
-A family whose Gram matrix is `a` times a matrix of unit determinant spans an `a`-modular
-submodule (`LinearMap.BilinForm.isModular_restrict_span_range`). Over a local ring, a pairing
-`B u w` which is a non-zero-divisor dividing every value of a symmetric form therefore gives a
-`B u w`-modular orthogonal summand inside the span of `u` and `w`
+A form whose Gram matrix in a basis is `a` times a matrix of unit determinant is `a`-modular
+(`Module.Basis.isModular_of_isUnit_det`), so a family with such a Gram matrix spans an
+`a`-modular submodule (`LinearMap.BilinForm.isModular_restrict_span_range`). Over a local ring,
+a pairing `B u w` which is a non-zero-divisor dividing every value of a symmetric form therefore
+gives a `B u w`-modular orthogonal summand inside the span of `u` and `w`
 (`LinearMap.BilinForm.IsSymm.exists_isModular_restrict_isCompl_orthogonal`): either `B u u` or
 `B w w` is `B u w` times a unit, or `u` and `w` span a binary summand whose Gram matrix is `B u w`
 times a matrix of unit determinant. No inverse of `2` is needed; this is the splitting step of
@@ -303,22 +304,29 @@ theorem IsModular.isCompl_orthogonal (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors
   rw [horth]
   exact B'.isCompl_orthogonal_of_restrict_bijective S hB' (hCB ▸ hCp.bijective_left)
 
+/-- **A Gram matrix `a` times a matrix of unit determinant gives a modular form.** If the Gram
+matrix of `B` in a finite basis is `a` times a matrix of unit determinant, with `a` a
+non-zero-divisor, then `B` is `a`-modular. -/
+theorem _root_.Module.Basis.isModular_of_isUnit_det {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι R M)
+    {G : Matrix ι ι R} (ha : a ∈ nonZeroDivisors R) (hG : ∀ i j, B (b i) (b j) = a * G i j)
+    (hdet : IsUnit G.det) : B.IsModular a := by
+  obtain ⟨C, hC⟩ := exists_smul_eq_of_forall_dvd ha
+    (dvd_apply_of_forall_dvd_basis b fun i j ↦ ⟨G i j, hG i j⟩)
+  have hCG : LinearMap.toMatrix₂ b b C = G := Matrix.ext fun i j ↦
+    (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
+      rw [LinearMap.toMatrix₂_apply, ← hG, ← hC]
+      simp)
+  exact ⟨C, hC, b.isPerfPair_of_isUnit_det C (hCG ▸ hdet)⟩
+
 /-- **A Gram block of unit determinant spans a modular submodule.** If the Gram matrix of a finite
 family `v` is `a` times a matrix of unit determinant, with `a` a non-zero-divisor, then the
 restriction of `B` to the span of `v` is `a`-modular. -/
 theorem isModular_restrict_span_range {ι : Type*} [Fintype ι] [DecidableEq ι] {v : ι → M}
     {G : Matrix ι ι R} (ha : a ∈ nonZeroDivisors R) (hG : ∀ i j, B (v i) (v j) = a * G i j)
-    (hdet : IsUnit G.det) : (B.restrict (Submodule.span R (Set.range v))).IsModular a := by
-  let b := Basis.span (linearIndependent_of_isUnit_det ha hG hdet)
-  have hb : ∀ i j, B.restrict _ (b i) (b j) = a * G i j := fun i j ↦ by
-    simp [b, Basis.span_apply, hG]
-  obtain ⟨C, hC⟩ := exists_smul_eq_of_forall_dvd ha
-    (dvd_apply_of_forall_dvd_basis b fun i j ↦ ⟨G i j, hb i j⟩)
-  have hCG : LinearMap.toMatrix₂ b b C = G := Matrix.ext fun i j ↦
-    (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
-      rw [LinearMap.toMatrix₂_apply, ← hb, ← hC]
-      simp)
-  exact ⟨C, hC, b.isPerfPair_of_isUnit_det C (hCG ▸ hdet)⟩
+    (hdet : IsUnit G.det) : (B.restrict (Submodule.span R (Set.range v))).IsModular a :=
+  (Basis.span (linearIndependent_of_isUnit_det ha hG hdet)).isModular_of_isUnit_det ha
+    (fun i j ↦ by simp [Basis.span_apply, hG]) hdet
 
 /-- A symmetric binary Gram block scaled by a non-zero-divisor is linearly independent and
 spans a modular submodule when the product of its normalized diagonal entries is a nonunit.

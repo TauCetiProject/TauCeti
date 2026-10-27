@@ -38,6 +38,11 @@ satisfy the hypotheses of this construction (`HomologicalComplex.moduleCat_d_inv
 `HomologicalComplex.moduleCat_mem_iff_exists_d_eq_inv`).  At a degree where the complex
 is exact, the image of the incoming differential, the term and the image of the outgoing
 differential form a short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`).
+A chain map restricts to a map between the images of the differentials
+(`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
+(`HomologicalComplex.Hom.boundaryMap_comp`), and injective where the chain map is; for a
+degreewise short exact sequence of complexes whose third term is exact, these maps form a sequence
+exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`).
 -/
 
 public section
@@ -78,6 +83,69 @@ theorem exact_subtype_rangeRestrict {i j k : ι} (hi : c.prev j = i) (hk : c.nex
   rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict, Submodule.range_subtype]
   exact ((ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
     ((K.exactAt_iff' i j k hi hk).1 h)).symm
+
+section BoundaryMap
+
+variable {K L M : HomologicalComplex (ModuleCat R) c}
+
+/-- A chain map of complexes of modules sends the image of the differential `K.X i ⟶ K.X j` into
+the image of the differential `L.X i ⟶ L.X j`. -/
+def Hom.boundaryMap (φ : K ⟶ L) (i j : ι) :
+    LinearMap.range (K.d i j).hom →ₗ[R] LinearMap.range (L.d i j).hom :=
+  (φ.f j).hom.restrict fun _ ⟨y, hy⟩ ↦ ⟨(φ.f i).hom y, by rw [Hom.comm_apply, hy]⟩
+
+/-- The map on boundaries induced by a chain map is the restriction of the chain map. -/
+@[simp]
+theorem Hom.coe_boundaryMap (φ : K ⟶ L) (i j : ι) (x : LinearMap.range (K.d i j).hom) :
+    (φ.boundaryMap i j x : L.X j) = (φ.f j).hom x :=
+  (rfl)
+
+/-- The identity chain map induces the identity on boundaries. -/
+@[simp]
+theorem Hom.boundaryMap_id (i j : ι) : (𝟙 K : K ⟶ K).boundaryMap i j = LinearMap.id :=
+  LinearMap.ext fun _ ↦ Subtype.ext rfl
+
+/-- The map on boundaries induced by a composite of chain maps is the composite of the induced
+maps. -/
+@[simp]
+theorem Hom.boundaryMap_comp (φ : K ⟶ L) (ψ : L ⟶ M) (i j : ι) :
+    (φ ≫ ψ).boundaryMap i j = ψ.boundaryMap i j ∘ₗ φ.boundaryMap i j :=
+  LinearMap.ext fun _ ↦ Subtype.ext rfl
+
+/-- A chain map that is injective in degree `j` is injective on the boundaries of degree `j`. -/
+theorem Hom.boundaryMap_injective (φ : K ⟶ L) (i : ι) {j : ι}
+    (hφ : Function.Injective (φ.f j).hom) : Function.Injective (φ.boundaryMap i j) :=
+  fun _ _ hxy ↦ Subtype.ext (hφ (congrArg Subtype.val hxy))
+
+/-- Let `K ⟶ L ⟶ M` be chain maps of complexes of modules, let `h = c.prev i` and
+`j = c.next i`. If the sequence `K ⟶ L ⟶ M` is exact in degrees `i` and `j`, `L ⟶ M` is
+surjective in degree `h` and `M` is exact in degree `i`, then the induced maps on the images of
+the differentials `K.X i ⟶ K.X j`, `L.X i ⟶ L.X j` and `M.X i ⟶ M.X j` form a sequence that is
+exact in the middle. -/
+theorem Hom.exact_boundaryMap {φ : K ⟶ L} {ψ : L ⟶ M} {h i j : ι} (hh : c.prev i = h)
+    (hj : c.next i = j) (hi : Function.Exact (φ.f i).hom (ψ.f i).hom)
+    (hj' : Function.Exact (φ.f j).hom (ψ.f j).hom) (hψ : Function.Surjective (ψ.f h).hom)
+    (hM : M.ExactAt i) : Function.Exact (φ.boundaryMap i j) (ψ.boundaryMap i j) := by
+  rintro ⟨_, x, rfl⟩
+  constructor
+  · intro hx
+    have hx' : (M.d i j).hom ((ψ.f i).hom x) = 0 := by
+      rw [Hom.comm_apply]
+      exact congrArg Subtype.val hx
+    -- The image of `x` in `M.X i` is a cycle, hence the boundary of some `ψ w`; then
+    -- `x - d w` comes from `K.X i` and has the same boundary as `x`.
+    obtain ⟨⟨_, z, rfl⟩, hz⟩ := ((exact_subtype_rangeRestrict hh hj hM) _).1 (Subtype.ext hx')
+    obtain ⟨w, rfl⟩ := hψ z
+    obtain ⟨x', hx''⟩ := (hi (x - (L.d h i).hom w)).1 (by
+      rw [map_sub, ← Hom.comm_apply, sub_eq_zero]
+      exact hz.symm)
+    refine ⟨⟨(K.d i j).hom x', x', rfl⟩, Subtype.ext ?_⟩
+    rw [coe_boundaryMap, ← Hom.comm_apply, hx'', map_sub, d_comp_d_apply, sub_zero]
+  · rintro ⟨x', hx'⟩
+    rw [← hx']
+    exact Subtype.ext (hj'.apply_apply_eq_zero _)
+
+end BoundaryMap
 
 /-- The inclusion of the degree-`n` cycles of a homological complex of modules into its degree-`n`
 term is injective. -/

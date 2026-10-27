@@ -37,6 +37,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 * `sum_range_eq_of_eq_zero_off_pair` and `sum_range_eq_of_eq_zero_off_triple`: convenient
   specializations to supports of size two and three.
 * `sum_range_add_add`: splitting a `range n` sum into a prefix, a block, and a suffix.
+* `sum_sum_range_split_blocks`: splitting a double sum over the blocks of a word at one position
+  into the blocks containing it, those before it, and those after it.
 * `sum_range_min_add_two`: the two-step recurrence satisfied by the sums
   `∑_{i ≤ min j r} c^i a (j + r − 2i)`.
 * `sum_range_min_zero`: the base case `j = 0` of that recurrence, which its `j + 1` cannot state.
@@ -49,11 +51,15 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   adjacent contributions, retaining the final boundary term.
 * `Finset.prod_range_two_mul_add_one`, `Finset.sum_range_two_mul_add_one`: split a product or sum
   over `range (2 * k + 1)` into its even and odd indices.
+* `Finset.four_dvd_sum_range_two_mul_add_one`: a sum over `range (2 * k + 1)` of even terms,
+  symmetric under `i ↦ 2 * k - i` and vanishing at the middle index `k`, is divisible by `4`.
 * `Finset.prod_card_filter_lt_card_filter_gt`, `Finset.sum_card_filter_lt_card_filter_gt`: reindex
   a product or sum over a finite subset `s` of a linear order by the number of elements of `s`
   before each element.
 * `Finset.prod_range_mul_eq_prod_prod`, `Finset.sum_range_mul_eq_sum_sum`: split a product or
   sum over `range (n * q)` into `q` consecutive blocks of `n` terms.
+* `Finset.sum_range_two_mul_succ`: the sum `∑_{i=1}^{m} 2i` of the first `m` positive even
+  numbers is `m (m + 1)`.
 -/
 
 public section
@@ -84,6 +90,24 @@ theorem prod_range_two_mul_add_one {M : Type*} [CommMonoid M] (g : ℕ → M) (k
       prod_range_succ (fun j => g (2 * j)) (k + 1), prod_range_succ (fun j => g (2 * j + 1)) k,
       show 2 * k + 1 + 1 = 2 * (k + 1) by ring]
     ac_rfl
+
+
+/-- A sum over `range (2 * k + 1)` of a family that is symmetric under `i ↦ 2 * k - i`, vanishes
+at the middle index `k` and takes even values, is divisible by `4`: it is twice the sum over
+`i < k`. -/
+theorem four_dvd_sum_range_two_mul_add_one {R : Type*} [Semiring R] (k : ℕ) (h : ℕ → R)
+    (hsym : ∀ i ≤ 2 * k, h (2 * k - i) = h i) (hk : h k = 0) (h2 : ∀ i, 2 ∣ h i) :
+    4 ∣ ∑ i ∈ range (2 * k + 1), h i := by
+  rw [show 2 * k + 1 = (k + 1) + k by ring, sum_range_add, sum_range_succ, hk, add_zero]
+  have : ∑ x ∈ range k, h (k + 1 + x) = ∑ x ∈ range k, h x := by
+    rw [← sum_range_reflect h k]
+    refine sum_congr rfl fun x hx ↦ ?_
+    rw [mem_range] at hx
+    rw [← hsym (k - 1 - x) (by omega)]
+    congr 1
+    omega
+  rw [this, ← two_mul, ← two_add_two_eq_four, ← two_mul]
+  exact mul_dvd_mul_left 2 (dvd_sum fun i _ ↦ h2 i)
 
 /-- Reindexing a product over a finite subset `s` of a linear order by the number `i` of elements
 of `s` before each element; there are then `#s - 1 - i` elements of `s` after it. -/
@@ -124,6 +148,13 @@ theorem prod_range_mul_eq_prod_prod {M : Type*} [CommMonoid M] (f : ℕ → M) (
   induction q with
   | zero => simp
   | succ q ih => rw [Nat.mul_succ, prod_range_add, ih, prod_range_succ]
+
+/-- The sum `∑_{i=1}^{m} 2i` of the first `m` positive even numbers is `m (m + 1)`. It is, for
+instance, the exponent of the leading power of `q` in `∏_{i=1}^{m} (q^{2i} - 1)`. -/
+theorem sum_range_two_mul_succ (m : ℕ) : ∑ i ∈ range m, 2 * (i + 1) = m * (m + 1) := by
+  induction m with
+  | zero => rfl
+  | succ m ih => rw [sum_range_succ, ih]; ring
 
 end Finset
 
@@ -270,6 +301,42 @@ theorem sum_range_add_add {N : Type*} [AddCommMonoid N] (g : ℕ → N) {p d n :
     refine key.trans ?_
     simp only [Nat.add_assoc]
   rw [s1, s2, ← add_assoc]
+
+/-- Splitting a double sum over the blocks `(p, d)` (start and length) of a word of length
+`l + 1 + n` at its position `l`.  When the summand vanishes on blocks running past the end of the
+word, the sum is the sum over the blocks containing position `l`, those ending before it, and
+those starting after it.  The blocks containing position `l` are indexed by their start `j ≤ l`
+and the number `k ≤ n` of their letters after position `l`. -/
+theorem sum_sum_range_split_blocks {N : Type*} [AddCommMonoid N] (l n : ℕ) (g : ℕ → ℕ → N)
+    (hg : ∀ p d, l + 1 + n < p + d → g p d = 0) :
+    ∑ p ∈ range (l + 1 + n), ∑ d ∈ range (l + 1 + n + 1), g p d =
+      (∑ k ∈ range (n + 1), ∑ j ∈ range (l + 1), g j (l - j + 1 + k) +
+        ∑ p ∈ range (l + 1), ∑ d ∈ range (l + 1 + 1), if p + d ≤ l then g p d else 0) +
+      ∑ p ∈ range n, ∑ d ∈ range (n + 1), g (l + 1 + p) d := by
+  rw [sum_range_add, sum_comm (s := range (n + 1)), ← sum_add_distrib]
+  congr 1
+  · refine sum_congr rfl fun p hp ↦ ?_
+    rw [mem_range] at hp
+    have h₁ : ∑ k ∈ range p, g p (l - p + 1 + (n + 1) + k) = 0 :=
+      sum_eq_zero fun k _ ↦ hg p _ (by omega)
+    have h₂ : ∑ k ∈ range (p + 1), (if p + (l - p + 1 + k) ≤ l then g p (l - p + 1 + k) else 0) =
+        0 := sum_eq_zero fun k _ ↦ ite_eq_right_iff.2 fun h ↦ absurd h (by omega)
+    have h₃ : ∑ d ∈ range (l - p + 1), (if p + d ≤ l then g p d else 0) =
+        ∑ d ∈ range (l - p + 1), g p d :=
+      sum_congr rfl fun d hd ↦ ite_eq_left (by rw [mem_range] at hd; omega)
+    -- Cut the lengths of the blocks starting at `p` where they reach position `l` and the end.
+    have hlen : l + 1 + n + 1 = (l - p + 1) + (n + 1) + p := by omega
+    have hlen' : l + 1 + 1 = (l - p + 1) + (p + 1) := by omega
+    rw [hlen, sum_range_add (fun d ↦ g p d) (l - p + 1 + (n + 1)) p,
+      sum_range_add (fun d ↦ g p d) (l - p + 1) (n + 1), hlen',
+      sum_range_add (fun d ↦ if p + d ≤ l then g p d else 0) (l - p + 1) (p + 1), h₁, h₂, h₃,
+      add_zero, add_zero, add_comm]
+  · refine sum_congr rfl fun p hp ↦ ?_
+    rw [mem_range] at hp
+    have h₁ : ∑ k ∈ range (l + 1), g (l + 1 + p) (n + 1 + k) = 0 :=
+      sum_eq_zero fun k _ ↦ hg _ _ (by omega)
+    have hlen : l + 1 + n + 1 = (n + 1) + (l + 1) := by omega
+    rw [hlen, sum_range_add (fun d ↦ g (l + 1 + p) d) (n + 1) (l + 1), h₁, add_zero]
 
 
 

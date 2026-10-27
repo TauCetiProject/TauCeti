@@ -160,6 +160,19 @@ theorem multiplicity_eq_zero_of_isPrime_ne {P Q : Ideal B} (hP0 : P ≠ ⊥) [P.
 
 end Multiplicity
 
+section NormalizedFactors
+
+variable {B : Type*} [CommRing B] [IsDedekindDomain B]
+
+open UniqueFactorizationMonoid in
+/-- A prime factor of an ideal of a Dedekind domain is a maximal ideal. -/
+theorem isMaximal_of_mem_normalizedFactors {P I : Ideal B} (hP : P ∈ normalizedFactors I) :
+    P.IsMaximal :=
+  have hPp := prime_of_normalized_factor P hP
+  (isPrime_of_prime hPp).isMaximal (by simpa using hPp.ne_zero)
+
+end NormalizedFactors
+
 section Injective
 
 /-- If the contraction of `J` along an injective ring homomorphism is nonzero, so is `J` itself.

@@ -31,7 +31,7 @@ Monsky–Washnitzer algebras.
   J. reine angew. Math. 519 (2000), §1.3(i).
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.2.1, Theorem 2.
 
-The fixed-radius division is `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq`;
+The fixed-radius division is `TauCeti.PowerSeries.IsMulDistinguished.exists_mul_add_eq`;
 the radius selection is `TauCeti.Dagger.exists_isDistinguished_isUnit_of_isDistinguished_one`.
 -/
 
@@ -85,7 +85,9 @@ private theorem exists_mul_add_eq_series_of_isRestricted {ρ r : ℝ} [Fact (0 <
     ext m : 1
     exact Subtype.ext ((Huber.coeff_restrictedOptionEquiv (c := c) gC m).trans (hG m).symm)
   have hGr : PowerSeries.IsRestricted r G := hGC ▸ (Huber.restrictedOptionEquiv (c := c) gC).2
-  obtain ⟨Q, R, hQ, hR, hQR⟩ := hd.exists_mul_add_eq hu (zero_lt_one.trans hr) hGr hFr
+  obtain ⟨Q, R, hQ, hR, hQR⟩ := (PowerSeries.isMulDistinguished_iff_isUnit.mpr
+    ⟨hd, hu⟩).exists_mul_add_eq (zero_lt_one.trans hr) hGr hFr
+  rw [mul_comm] at hQR
   let qC := (Huber.restrictedOptionEquiv (c := c)).symm ⟨Q, hQ⟩
   let q : W' := ⟨qC, mem_washnitzerAlgebra.mpr
     ⟨ρ, hρ, isRestricted_of_le qC.2 (fun _ ↦ (zero_lt_one.trans hρ).le) hρc⟩⟩

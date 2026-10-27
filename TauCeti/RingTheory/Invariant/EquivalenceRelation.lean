@@ -7,7 +7,9 @@ module
 
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 public import Mathlib.RingTheory.Polynomial.Subring
+public import Mathlib.RingTheory.QuasiFinite.Basic
 public import TauCeti.LinearAlgebra.Charpoly.Projective
+public import TauCeti.RingTheory.Norm.Projective
 public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
@@ -24,7 +26,8 @@ kernel pair `Spec (A ⊗[C] A) ⇉ Spec A` of any `Spec A ⟶ Spec C` is an exam
 The ring of **invariants** of the relation is the equalizer `C = {a : s a = t a}`
 (`RingHom.eqLocus s t`); its spectrum is the candidate for the quotient `Spec A / Spec B`. This
 file proves that `A` is integral over `C` when `s` is finite locally free, that is, when `B` is a
-finite projective `A`-module through `s` (`RingHom.IsSpecEquivRel.isIntegral`).
+finite projective `A`-module through `s` (`RingHom.IsSpecEquivRel.isIntegral`), and that the points
+of `Spec C` are then the orbits of the relation on the points of `Spec A`.
 
 The proof follows the Stacks Project, Tag 03BK. For `f ∈ A`, let `Q ∈ A[X]` be the reversed
 characteristic polynomial `det (1 - X t(f))` of multiplication by `t(f)` on `B`, viewed as an
@@ -37,9 +40,17 @@ inversion `(u, v) ↦ (v, u)` of `Spec B` (`RingHom.IsSpecEquivRel.inv`) and fix
 second factor, carries this polynomial to its pullback along `t`. Hence `t (P f) = P(t f) = 0`,
 and `t` is injective because the relation is reflexive, so `P f = 0`.
 
-This is the first step of the construction of the quotient of an affine scheme by a finite locally
-free equivalence relation (SGA 3, Exposé V, Théorème 4.1), which is needed when the relation does
-not come from the action of a finite group.
+On points, `Spec A ⟶ Spec C` is surjective, and its fibres are the orbits of the relation: two
+primes of `A` lie over the same prime of `C` exactly when some prime of `B` relates them
+(`RingHom.IsSpecEquivRel.comap_subtype_eqLocus_eq_iff`). If `q` and `q'` are not related, prime
+avoidance over the finitely many primes of `B` over `q'` gives `f ∈ q` with `t f` in none of them.
+The norm of `t f` along `s` is an invariant
+(`RingHom.IsSpecEquivRel.projectiveNorm_mem_eqLocus`), and it lies in `q` but not in `q'`
+(`Algebra.projectiveNorm_mem_iff`), contradicting that `q` and `q'` lie over the same prime of `C`.
+
+These are the first steps of the construction of the quotient of an affine scheme by a finite
+locally free equivalence relation (SGA 3, Exposé V, Théorème 4.1), which is needed when the
+relation does not come from the action of a finite group.
 
 ## Main definitions
 
@@ -55,10 +66,16 @@ not come from the action of a finite group.
 * `RingHom.IsSpecEquivRel.isIntegral`: if `s` is finite locally free, `A` is integral over the
   ring of invariants `RingHom.eqLocus s t`.
 * `RingHom.isSpecEquivRel_tensorProduct`: the kernel pair of `C → A` is an equivalence relation.
+* `RingHom.IsSpecEquivRel.projectiveNorm_mem_eqLocus`: if `s` is finite locally free, the norm of
+  `t f` along `s` is an invariant.
+* `RingHom.IsSpecEquivRel.comap_subtype_eqLocus_surjective` and
+  `RingHom.IsSpecEquivRel.comap_subtype_eqLocus_eq_iff`: if `s` is finite locally free, the map
+  `Spec A ⟶ Spec C` is surjective and its fibres are the orbits of the relation.
 
 ## References
 
-* The Stacks Project, Tag 03BK.
+* The Stacks Project, Tag 03BK, and Chapter *Groupoid Schemes*, Section *Finite flat groupoids,
+  affine case*.
 * M. Demazure and A. Grothendieck, *Schémas en groupes (SGA 3)*, Exposé V, §4.
 -/
 
@@ -318,6 +335,115 @@ theorem isIntegral : Algebra.IsIntegral ((algebraMap A B).eqLocus t) A := by
   rw [← eval_map]
   convert h2
   exact map_toSubring _ _ _
+
+/-! ### Points of the quotient
+
+The ring map `C = {a : s a = t a} → A` is injective and, by `isIntegral`, integral, so every prime
+of `C` lies under a prime of `A`. Two primes of `A` lie over the same prime of `C` exactly when
+they are related by a prime of `B`, so the points of `Spec C` are the orbits of the relation on the
+points of `Spec A`. The proof follows the Stacks Project, Groupoid Schemes, Section *Finite flat
+groupoids, affine case*: if `q` and `q'` are not related, prime avoidance gives `f ∈ q` with `t f`
+outside every prime of `B` over `q'`, and the norm of `t f` is then an invariant lying in `q` but
+not in `q'`. -/
+
+/-- The norm of `t f` along `s`, the determinant of multiplication by `t f` on `B` viewed as a
+finite projective `A`-module through `s`, is an invariant of the relation. -/
+theorem projectiveNorm_mem_eqLocus (f : A) :
+    Algebra.projectiveNorm A (t f) ∈ (algebraMap A B).eqLocus t := by
+  -- the norm `det (t f)` is the value at `1` of `det (1 - X t (1 - f))`
+  have hN : Algebra.projectiveNorm A (t f) =
+      (LinearMap.projectiveCharpolyRev (Algebra.lmul A B (t (1 - f)))).eval 1 := by
+    rw [LinearMap.eval_one_projectiveCharpolyRev, Algebra.projectiveNorm_apply, map_sub t, map_one,
+      map_sub (Algebra.lmul A B), map_one (Algebra.lmul A B), sub_sub_cancel]
+  rw [hN, eval_eq_sum_range]
+  exact Subring.sum_mem _ fun i _ ↦ by
+    simpa using h.coeff_projectiveCharpolyRev_mem_eqLocus (1 - f) i
+
+/-- Every point of `Spec C`, for the ring of invariants `C = {a : s a = t a}`, comes from a point
+of `Spec A`. -/
+theorem comap_subtype_eqLocus_surjective :
+    Function.Surjective (PrimeSpectrum.comap ((algebraMap A B).eqLocus t).subtype) := by
+  have := h.isIntegral
+  exact Algebra.IsIntegral.comap_surjective ((algebraMap A B).eqLocus t) A
+
+-- If `q` and `q'` are not related, then some `f ∈ q` has `t f` outside every prime of `B` over
+-- `q'`.
+private theorem exists_mem_forall_notMem_primesOver {q q' : PrimeSpectrum A}
+    (hqq' : q.comap ((algebraMap A B).eqLocus t).subtype =
+      q'.comap ((algebraMap A B).eqLocus t).subtype)
+    (hne : ∀ r : PrimeSpectrum B, r.comap (algebraMap A B) = q → r.comap t ≠ q') :
+    ∃ f ∈ q.asIdeal, ∀ P ∈ q'.asIdeal.primesOver B, t f ∉ P := by
+  set C := (algebraMap A B).eqLocus t
+  have := h.isIntegral
+  have hC : t.comp (algebraMap C A) = (algebraMap A B).comp (algebraMap C A) := by
+    ext x
+    exact x.2.symm
+  -- `q` is contained in none of the primes `t⁻¹ P` for `P` over `q'`
+  have hnle : ∀ P ∈ q'.asIdeal.primesOver B, ¬ q.asIdeal ≤ P.comap t := by
+    rintro P ⟨hP, hPq'⟩ hle
+    -- both lie over the same prime of `C`, so by incomparability they are equal
+    have hunder : (P.comap t).under C = q.asIdeal.under C := by
+      have hq'' := congr(PrimeSpectrum.asIdeal $hqq')
+      simp only [PrimeSpectrum.comap_asIdeal] at hq''
+      rw [Ideal.under, Ideal.comap_comap, hC, ← Ideal.comap_comap, ← Ideal.under, ← Ideal.under,
+        ← hPq'.over]
+      exact hq''.symm
+    have hq : q.asIdeal = P.comap t := by
+      by_contra hne'
+      exact (Ideal.IsIntegral.under_lt_under (lt_of_le_of_ne hle hne')).ne hunder.symm
+    -- then `P` relates `q'` to `q`, and its image under the inversion relates `q` to `q'`
+    refine hne ⟨P.comap (h.inv : B →+* B), Ideal.comap_isPrime _ _⟩ ?_ ?_
+    · ext1
+      have hinv : (h.inv : B →+* B).comp (algebraMap A B) = t := by
+        ext a
+        simp
+      rw [PrimeSpectrum.comap_asIdeal, Ideal.comap_comap, hinv, ← hq]
+    · ext1
+      have hinv : (h.inv : B →+* B).comp t = algebraMap A B := by
+        ext a
+        simp
+      rw [PrimeSpectrum.comap_asIdeal, Ideal.comap_comap, hinv]
+      exact hPq'.over.symm
+  -- there are finitely many primes over `q'`, so prime avoidance applies
+  have hF := Algebra.QuasiFinite.finite_primesOver (S := B) q'.asIdeal
+  have hav := (Ideal.subset_union_prime (s := hF.toFinset) (f := fun P ↦ P.comap t) ⊥ ⊥
+    (fun P hP _ _ ↦ have := (hF.mem_toFinset.mp hP).1; Ideal.comap_isPrime t P)
+    (I := q.asIdeal)).not.mpr (by simpa using hnle)
+  simp only [Set.subset_def, not_forall] at hav
+  obtain ⟨f, hfq, hf⟩ := hav
+  exact ⟨f, hfq, fun P hP hfP ↦ hf (by simpa using ⟨P, hP, hfP⟩)⟩
+
+/-- **The points of the quotient are the orbits of the relation.** Two points `q` and `q'` of
+`Spec A` have the same image in `Spec C`, for the ring of invariants `C = {a : s a = t a}`, if and
+only if they are related: some point `r` of `Spec B` has `s⁻¹ r = q` and `t⁻¹ r = q'`. -/
+theorem comap_subtype_eqLocus_eq_iff {q q' : PrimeSpectrum A} :
+    q.comap ((algebraMap A B).eqLocus t).subtype = q'.comap ((algebraMap A B).eqLocus t).subtype ↔
+      ∃ r : PrimeSpectrum B, r.comap (algebraMap A B) = q ∧ r.comap t = q' := by
+  set C := (algebraMap A B).eqLocus t
+  have hC : (algebraMap A B).comp C.subtype = t.comp C.subtype := by
+    ext x
+    exact x.2
+  refine ⟨fun hqq' ↦ ?_, ?_⟩
+  · by_contra hne
+    push Not at hne
+    obtain ⟨f, hfq, hfP⟩ := h.exists_mem_forall_notMem_primesOver hqq' hne
+    -- the norm of `t f` is an invariant lying in `q`, through the diagonal point of `Spec B` over
+    -- `q`, which contains `t f`
+    obtain ⟨e, he, het⟩ := h.refl (RingHom.id A)
+    have hNq : Algebra.projectiveNorm A (t f) ∈ q.asIdeal := by
+      refine Algebra.projectiveNorm_mem_iff.mpr
+        ⟨q.asIdeal.comap e, ⟨Ideal.comap_isPrime _ _, ⟨?_⟩⟩, ?_⟩
+      · rw [Ideal.under, Ideal.comap_comap, he, Ideal.comap_id]
+      · rwa [Ideal.mem_comap, ← RingHom.comp_apply, het, RingHom.id_apply]
+    -- but not in `q'`, since `t f` lies in no prime over `q'`
+    have hNq' : Algebra.projectiveNorm A (t f) ∉ q'.asIdeal := fun hN ↦
+      have ⟨P, hP, hfP'⟩ := Algebra.projectiveNorm_mem_iff.mp hN
+      hfP P hP hfP'
+    have hN : (⟨_, h.projectiveNorm_mem_eqLocus f⟩ : C) ∈ (q.comap C.subtype).asIdeal := hNq
+    rw [hqq'] at hN
+    exact hNq' hN
+  · rintro ⟨r, rfl, rfl⟩
+    rw [← PrimeSpectrum.comap_comp_apply, ← PrimeSpectrum.comap_comp_apply, hC]
 
 end IsSpecEquivRel
 

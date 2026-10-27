@@ -37,6 +37,10 @@ particular a space of constant curvature has vanishing Weyl tensor.
   `CovariantDerivative.IsMetricCompatible.weylTensor_cyclic_eq_zero`: pair interchange and the
   first Bianchi identity.
 * `CovariantDerivative.sum_weylTensor_eq_zero`: the Weyl tensor is trace-free.
+* `CovariantDerivative.weylTensor_eq_zero_of_curvatureTensor_eq_zero`: a flat point has vanishing
+  Weyl tensor.
+* `CovariantDerivative.weylTensor_eq_zero_of_finrank_le_one`: the Weyl tensor vanishes in
+  dimension at most `1`.
 * `CovariantDerivative.weylTensor_eq_zero_of_curvatureTensor_eq_smul_inner_sub`: constant
   curvature implies vanishing Weyl tensor.
 * `CovariantDerivative.IsMetricCompatible.weylTensor_eq_zero_of_finrank_eq_three`: the Weyl
@@ -114,6 +118,21 @@ theorem sum_weylTensor_eq_zero {ι : Type*} [Fintype ι] (x : M)
   simp only [LinearMap.add_apply, LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul]
   ring
 
+/-- A point with zero curvature tensor has zero Weyl tensor, in every dimension. -/
+theorem weylTensor_eq_zero_of_curvatureTensor_eq_zero (x : M) (h : curvature x = 0) :
+    cov.weylTensor x = 0 := by
+  -- The curvature vanishes, and with it `Rm`, `Ric`, `Scal` and `P`.
+  have hs := cov.scalarCurvature_eq_zero_of_curvatureTensor_eq_zero x h
+  ext u v w z
+  simp [h, hs]
+
+/-- On a base of tangent dimension at most one, the Weyl tensor of every smooth connection
+vanishes. -/
+theorem weylTensor_eq_zero_of_finrank_le_one (x : M)
+    (hdim : Module.finrank ℝ (TangentSpace I x) ≤ 1) : cov.weylTensor x = 0 :=
+  cov.weylTensor_eq_zero_of_curvatureTensor_eq_zero x
+    (cov.curvatureTensor_eq_zero_of_finrank_le_one x hdim)
+
 /-- A space of constant curvature `R(w,u)v = κ (⟨u,v⟩ w - ⟨w,v⟩ u)` has vanishing Weyl tensor,
 away from dimension `2`. -/
 theorem weylTensor_eq_zero_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ)
@@ -122,11 +141,7 @@ theorem weylTensor_eq_zero_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ
       k • (inner ℝ u v • w - inner ℝ w v • u)) :
     cov.weylTensor x = 0 := by
   rcases le_or_gt (Module.finrank ℝ (TangentSpace I x)) 1 with h1 | h3
-  · -- In dimension at most one the curvature vanishes, and with it `Rm`, `Ric`, `Scal` and `P`.
-    have hR := cov.curvatureTensor_eq_zero_of_finrank_le_one x h1
-    have hs := cov.scalarCurvature_eq_zero_of_curvatureTensor_eq_zero x hR
-    ext u v w z
-    simp [hR, hs]
+  · exact cov.weylTensor_eq_zero_of_finrank_le_one x h1
   ext u v w z
   rw [weylTensor_apply,
     cov.schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub x k (by omega) h,

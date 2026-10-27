@@ -555,14 +555,13 @@ private noncomputable def structureOfPoint {X : EllObj B}
   (ModuliProblem.naiveLevelEquiv X).symm
     ⟨(zmodMonoidHomEquiv N _).symm ⟨P, hP.pow_eq_one⟩,
       EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder.mpr (by
-        rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+        rw [zmodMonoidHomEquiv_symm_apply_ofAdd_one]
         exact hP)⟩
 
 private theorem naiveLevelEquiv_structureOfPoint {X : EllObj B}
     {P : 𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap} (hP : X.curve.IsOfNaiveExactOrder P N) :
     (ModuliProblem.naiveLevelEquiv X (structureOfPoint hP)).1 (.ofAdd 1) = P := by
-  rw [structureOfPoint, Equiv.apply_symm_apply, ← coe_zmodMonoidHomEquiv_apply,
-    Equiv.apply_symm_apply]
+  rw [structureOfPoint, Equiv.apply_symm_apply, zmodMonoidHomEquiv_symm_apply_ofAdd_one]
 
 -- The universal naive `[Γ₁(N)]`-structure on the universal elliptic curve over `Y₁(N)`: the point
 -- `(0, 0)`.

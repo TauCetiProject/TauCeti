@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.LinearAlgebra.Complex.Eigenspace
 
 import Mathlib.Tactic.LinearCombination
@@ -34,6 +35,9 @@ structure from the real almost complex structure. A real vector `v` decomposes a
 * `TauCeti.AlmostComplexStructure.baseChange_holomorphicPart` and
   `TauCeti.AlmostComplexStructure.baseChange_antiholomorphicPart`: the complexified complex
   structure commutes with taking the `(1,0)`- and `(0,1)`-parts.
+* `TauCeti.AlmostComplexStructure.tmulConj_holomorphicPart` and
+  `TauCeti.AlmostComplexStructure.tmulConj_antiholomorphicPart`: conjugation of the
+  complexification exchanges the `(1,0)`- and `(0,1)`-parts.
 -/
 
 public section
@@ -125,5 +129,21 @@ theorem antiholomorphicPart_mem_eigenspace_baseChange_neg_I (v : V) :
     J.antiholomorphicPart v ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) := by
   rw [Module.End.mem_eigenspace_iff, baseChange_antiholomorphicPart,
     antiholomorphicPart_apply_apply]
+
+/-! ## Conjugation of the `(1,0)` and `(0,1)` parts -/
+
+/-- Conjugation of the complexification maps the `(1,0)`-part of a real vector to its
+`(0,1)`-part. -/
+@[simp]
+theorem tmulConj_holomorphicPart (v : V) :
+    tmulConj V (J.holomorphicPart v) = J.antiholomorphicPart v := by
+  simp [holomorphicPart_apply, antiholomorphicPart_apply, Complex.conj_I, map_ofNat]
+
+/-- Conjugation of the complexification maps the `(0,1)`-part of a real vector to its
+`(1,0)`-part. -/
+@[simp]
+theorem tmulConj_antiholomorphicPart (v : V) :
+    tmulConj V (J.antiholomorphicPart v) = J.holomorphicPart v := by
+  rw [← tmulConj_holomorphicPart, tmulConj_tmulConj]
 
 end TauCeti.AlmostComplexStructure
