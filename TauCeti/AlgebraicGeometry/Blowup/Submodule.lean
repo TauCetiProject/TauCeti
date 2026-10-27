@@ -8,7 +8,10 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
+public import TauCeti.AlgebraicGeometry.SpecOpenSubring
 public import TauCeti.RingTheory.GradedAlgebra.SubmoduleBlowup
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
+import TauCeti.AlgebraicGeometry.Restrict
 
 /-!
 # The blowup of a submodule
@@ -43,6 +46,14 @@ localizations `B(F/f')`. The charts follow the ideal case `affineBlowupι_toSpec
 `TauCeti/AlgebraicGeometry/Blowup/AffineCharts.lean`: the chart is `Proj.basicOpenIsoSpec`
 followed by the spectrum of the ring isomorphism `awayEquivFractionSubalgebra`.
 
+If `F` generates the unit ideal of `B`, the blowup changes nothing where `Spec B` and `Spec C`
+agree: over every open `U ⊆ Spec C` over which `Spec B ⟶ Spec C` restricts to an isomorphism,
+so does `Y ⟶ Spec C`. Over a basic open `D(h) ⊆ U` the map `C_h → B_h` is bijective, so some
+`a = hᴺ` lies in `J`, the part of `Y` over `D(h)` lies in the standard open `D₊(a T)`, and over
+`D(h)` the chart `Spec R(J)_(a T) ⟶ Spec C` is `Spec` of the isomorphism
+`C_h ≅ (R(J)_(a T))_h`. In Huber's proof `C` is a ring of definition of `B` with ideal of
+definition `I`, and `U` is the complement of `V(I)`: the non-open primes of `C`.
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.submoduleBlowup C F`: the scheme `Proj R(J)`.
@@ -69,11 +80,16 @@ followed by the spectrum of the ring isomorphism `awayEquivFractionSubalgebra`.
   `Spec C[F/S] ⟶ Y` is a morphism over `Spec C`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.basicOpenIsoSpec_hom_generator`: the chart pulls the
   generator `f/f'` of `C[F/S]` back to the homogeneous fraction `(f T)/(f' T)`.
+* `TauCeti.AlgebraicGeometry.submoduleBlowup.isIso_toSpec_restrict`: if `F` generates the unit
+  ideal of `B`, then `Y ⟶ Spec C` is an isomorphism over every open of `Spec C` over which
+  `Spec B ⟶ Spec C` is an isomorphism.
+* `TauCeti.AlgebraicGeometry.submoduleBlowup.isIso_toSpec_restrict_nonOpenPrimes`: for an open
+  subring `C` of a Huber ring, `Y ⟶ Spec C` is an isomorphism over the non-open primes of `C`.
 
 ## References
 
 * R. Huber, *A generalization of formal schemes and rigid analytic varieties*, Math. Z. 217
-  (1994), §2, proof of Theorem 2.5, Case I, (1.1) and (1.2)(i),(ii).
+  (1994), §2, proof of Theorem 2.5, Case I, (1.1) and (1.2)(i),(ii),(iii).
 * [The Stacks Project, Section *Blowing up*](https://stacks.math.columbia.edu/tag/01OF), in
   particular [Lemma 0804](https://stacks.math.columbia.edu/tag/0804) for the affine charts.
 -/
@@ -252,6 +268,226 @@ theorem basicOpenIsoSpec_hom_generator [DecidableEq B] (hS : (S : Set B) ⊆ F)
   simpa using awayEquivFractionSubalgebra_symm_apply_of_mul_eq hS hf hf' hz
 
 end Chart
+
+section AwayFromCenter
+
+open HomogeneousLocalization
+
+variable {C}
+
+/-- If `F` generates the unit ideal of `B` and every element of `B` becomes, after multiplication
+by a power of `h`, the image of an element of `C`, then some power of `h` maps into
+`J = span C F`. Indeed the elements `b` with `hⁿ b ∈ J` for some `n` form an ideal containing
+`F`. -/
+private theorem exists_algebraMap_pow_mem_span (hF : Ideal.span F = ⊤) {h : C}
+    (hs : ∀ b : B, ∃ c m, algebraMap C B c = algebraMap C B h ^ m * b) :
+    ∃ N : ℕ, algebraMap C B (h ^ N) ∈ Submodule.span C F := by
+  let K : Ideal B :=
+    { carrier := {b | ∃ n : ℕ, algebraMap C B (h ^ n) * b ∈ Submodule.span C F}
+      add_mem' := by
+        rintro a b ⟨m, hm⟩ ⟨n, hn⟩
+        refine ⟨m + n, ?_⟩
+        have : algebraMap C B (h ^ (m + n)) * (a + b) =
+            h ^ n • (algebraMap C B (h ^ m) * a) + h ^ m • (algebraMap C B (h ^ n) * b) := by
+          simp only [Algebra.smul_def, pow_add, map_mul]
+          ring
+        rw [this]
+        exact add_mem (Submodule.smul_mem _ _ hm) (Submodule.smul_mem _ _ hn)
+      zero_mem' := ⟨0, by simp⟩
+      smul_mem' := by
+        rintro x b ⟨n, hn⟩
+        obtain ⟨c, m, hc⟩ := hs x
+        refine ⟨m + n, ?_⟩
+        have : algebraMap C B (h ^ (m + n)) * (x • b) = c • (algebraMap C B (h ^ n) * b) := by
+          rw [smul_eq_mul, Algebra.smul_def, pow_add, map_mul, map_pow, map_pow]
+          linear_combination -(algebraMap C B h ^ n * b) * hc
+        rw [this]
+        exact Submodule.smul_mem _ c hn }
+  have h1 : (1 : B) ∈ K := by
+    rw [← Ideal.eq_top_iff_one, eq_top_iff, ← hF, Ideal.span_le]
+    exact fun f hf ↦ ⟨0, by simpa using Submodule.subset_span hf⟩
+  obtain ⟨N, hN⟩ := h1
+  exact ⟨N, by simpa using hN⟩
+
+/-- The element `a T` of degree one of `R(J)`, for `a ∈ J`. -/
+private noncomputable def monomialOne {a : B} (ha : a ∈ Submodule.span C F) :
+    coeffSubalgebra fun n ↦ Submodule.span C F ^ n :=
+  coeffSubalgebra.monomial _ 1 a (by rwa [pow_one])
+
+private theorem monomialOne_mem_gradedRing {a : B} (ha : a ∈ Submodule.span C F) :
+    monomialOne ha ∈ gradedRing C F 1 :=
+  coeffSubalgebra.monomial_mem_grade _ _ _
+
+/-- Over `D(h)`, the blowup lies in the standard open `D₊(a T)`, for `a = hᴺ ∈ J`, provided that
+every element of `B` becomes the image of an element of `C` after multiplication by a power
+of `h`. -/
+private theorem toSpec_preimage_basicOpen_le {h : C}
+    (hs : ∀ b : B, ∃ c m, algebraMap C B c = algebraMap C B h ^ m * b) {N : ℕ}
+    (ha : algebraMap C B (h ^ N) ∈ Submodule.span C F) :
+    toSpec C F ⁻¹ᵁ PrimeSpectrum.basicOpen h ≤
+      Proj.basicOpen (gradedRing C F) (monomialOne ha) := by
+  intro x hx
+  -- A point over `D(h)` is a homogeneous prime not containing `h`.
+  have hx' : algebraMap C (coeffSubalgebra fun n ↦ Submodule.span C F ^ n) h ∉
+      x.asHomogeneousIdeal := by
+    have e := Scheme.Hom.comp_preimage (Proj.toSpecZero (gradedRing C F))
+      (Spec.map (CommRingCat.ofHom (algebraMap C (gradedRing C F 0)))) (PrimeSpectrum.basicOpen h)
+    rw [SpecMap_preimage_basicOpen, CommRingCat.ofHom_apply,
+      Proj.toSpecZero_preimage_basicOpen, ← toSpec_def] at e
+    exact (Proj.mem_basicOpen _ _ x).mp (e ▸ hx)
+  -- It also avoids some `f T` with `f ∈ F`, since these cover the blowup.
+  obtain ⟨⟨f, hf⟩, hxf⟩ := TopologicalSpace.Opens.mem_iSup.mp
+    ((iSup_basicOpen_eq_top C F).ge (Set.mem_univ x))
+  -- Write `hᵐ f = c` with `c ∈ C`; then `c · (a T) = hᴺ⁺ᵐ · (f T)`, which `x` avoids.
+  obtain ⟨c, m, hc⟩ := hs f
+  have heq : algebraMap C (coeffSubalgebra fun n ↦ Submodule.span C F ^ n) c * monomialOne ha =
+      algebraMap C _ h ^ (N + m) * monomialDegreeOne C hf := by
+    ext1
+    simp only [monomialOne, Subalgebra.coe_mul, Subalgebra.coe_algebraMap, Subalgebra.coe_pow,
+      coeffSubalgebra.coe_monomial, coe_monomialDegreeOne, Polynomial.algebraMap_apply]
+    rw [← map_pow, Polynomial.C_mul_monomial, Polynomial.C_mul_monomial, hc, map_pow]
+    congr 1
+    ring
+  have hmem : x ∈ Proj.basicOpen (gradedRing C F)
+      (algebraMap C (coeffSubalgebra fun n ↦ Submodule.span C F ^ n) c * monomialOne ha) := by
+    rw [heq, Proj.basicOpen_mul]
+    exact ⟨(Proj.mem_basicOpen _ _ x).mpr fun hk ↦ hx' (x.isPrime.mem_of_pow_mem _ hk), hxf⟩
+  exact ((Proj.basicOpen_mul _ _ _).le hmem).2
+
+/-- If `C_h → B_h` is bijective and `a = hᴺ ∈ J`, then the chart map `C → R(J)_(a T)` becomes
+bijective after inverting `h`. -/
+private theorem bijective_awayMap_algebraMap_away {h : C}
+    (hb : Function.Bijective (Localization.awayMap (algebraMap C B) h)) {N : ℕ}
+    (ha : algebraMap C B (h ^ N) ∈ Submodule.span C F) :
+    Function.Bijective
+      (Localization.awayMap (algebraMap C (Away (gradedRing C F) (monomialOne ha))) h) := by
+  refine ⟨Localization.awayMap_injective_iff.mpr fun c hc ↦ ?_,
+    Localization.awayMap_surjective_iff.mpr fun z ↦ ?_⟩
+  · -- If `c/1 = 0` in the chart, then `(a T)ᵏ c = 0` in `R(J)`, so `hᴺᵏ c` maps to `0` in `B`.
+    have hc' := congrArg HomogeneousLocalization.val hc
+    rw [val_algebraMap, val_zero, IsScalarTower.algebraMap_apply C
+      (coeffSubalgebra fun n ↦ Submodule.span C F ^ n) (Localization.Away (monomialOne ha)),
+      IsLocalization.map_eq_zero_iff (Submonoid.powers (monomialOne ha))] at hc'
+    obtain ⟨⟨_, k, rfl⟩, hk⟩ := hc'
+    have hk' := congrArg (fun p : coeffSubalgebra fun n ↦ Submodule.span C F ^ n ↦
+      (p : Polynomial B).coeff k) hk
+    simp only [monomialOne, Subalgebra.coe_mul, Subalgebra.coe_pow, coeffSubalgebra.coe_monomial,
+      Subalgebra.coe_algebraMap, Polynomial.algebraMap_apply, Polynomial.monomial_pow,
+      Polynomial.monomial_mul_C, one_mul, Polynomial.coeff_monomial_same,
+      ZeroMemClass.coe_zero, Polynomial.coeff_zero] at hk'
+    obtain ⟨n, hn⟩ := Localization.awayMap_injective_iff.mp hb.1 (h ^ (N * k) * c)
+      (by rwa [map_mul, pow_mul, map_pow])
+    exact ⟨n + N * k, by rw [pow_add, mul_assoc, hn]⟩
+  · -- Write `z = x/(a T)ⁿ` with `x = y Tⁿ`, and `hᵐ y = c`; then `hᵐ⁺ᴺⁿ z = c`.
+    obtain ⟨n, x, hx, rfl⟩ := Away.mk_surjective _ (monomialOne_mem_gradedRing ha) z
+    obtain ⟨y, -, hxy⟩ := coeffSubalgebra.mem_grade_iff.mp hx
+    obtain ⟨c, m, hc⟩ := Localization.awayMap_surjective_iff.mp hb.2 y
+    refine ⟨c, m + N * n, HomogeneousLocalization.val_injective _ ?_⟩
+    have key : algebraMap C (coeffSubalgebra fun n ↦ Submodule.span C F ^ n) c *
+        monomialOne ha ^ n = algebraMap C _ h ^ (m + N * n) * x := by
+      ext1
+      simp only [monomialOne, Subalgebra.coe_mul, Subalgebra.coe_pow, coeffSubalgebra.coe_monomial,
+        Subalgebra.coe_algebraMap, Polynomial.algebraMap_apply, Polynomial.monomial_pow, ← hxy]
+      rw [← Polynomial.C_pow, Polynomial.C_mul_monomial, Polynomial.C_mul_monomial, smul_eq_mul,
+        mul_one, one_mul, hc]
+      congr 1
+      simp only [map_pow]
+      ring
+    simp only [val_mul, val_pow, val_algebraMap, IsScalarTower.algebraMap_apply C
+      (coeffSubalgebra fun n ↦ Submodule.span C F ^ n) (Localization.Away (monomialOne ha))]
+    rw [Away.val_mk, Localization.mk_eq_mk', ← map_pow,
+      IsLocalization.mul_mk'_eq_mk'_of_mul, IsLocalization.eq_mk'_iff_mul_eq, ← map_mul]
+    exact congrArg (algebraMap _ _) key
+
+/-- The affine chart `Spec R(J)_(a T) ⟶ Proj R(J)` onto `D₊(a T)`, for `a ∈ J`. -/
+private noncomputable abbrev chart {a : B} (ha : a ∈ Submodule.span C F) :
+    Spec (.of (Away (gradedRing C F) (monomialOne ha))) ⟶ submoduleBlowup C F :=
+  Proj.awayι (gradedRing C F) (monomialOne ha) (monomialOne_mem_gradedRing ha) one_pos
+
+/-- Over an open subset `W` of a basic open `D(h)` of `Spec C` on which `Spec B → Spec C` is an
+isomorphism, the blowup is an isomorphism. -/
+private theorem isIso_toSpec_restrict_of_le_basicOpen (hF : Ideal.span F = ⊤) {h : C}
+    (hb : Function.Bijective (Localization.awayMap (algebraMap C B) h))
+    {W : (Spec (.of C)).Opens} (hW : W ≤ PrimeSpectrum.basicOpen h) :
+    IsIso (toSpec C F ∣_ W) := by
+  obtain ⟨N, ha⟩ := exists_algebraMap_pow_mem_span hF (Localization.awayMap_surjective_iff.mp hb.2)
+  -- The chart `Spec R(J)_(a T) ⟶ Spec C` is an isomorphism over `D(h)`, hence over `W`.
+  have hιg : chart ha ≫ toSpec C F =
+      Spec.map (CommRingCat.ofHom (algebraMap C (Away (gradedRing C F) (monomialOne ha)))) := by
+    rw [toSpec_def, Proj.awayι_toSpecZero_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+      algebraMap_eq_comp]
+  have hchart : IsIso (Spec.map (CommRingCat.ofHom
+      (algebraMap C (Away (gradedRing C F) (monomialOne ha)))) ∣_ PrimeSpectrum.basicOpen h) :=
+    ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff (SpecMapRestrictBasicOpenIso
+      (CommRingCat.ofHom (algebraMap C (Away (gradedRing C F) (monomialOne ha)))) h)).mpr
+      (isIso_SpecMap_iff.mpr (bijective_awayMap_algebraMap_away hb ha))
+  have hchartW : IsIso ((chart ha ≫ toSpec C F) ∣_ W) := by
+    rw [hιg]
+    exact (MorphismProperty.isomorphisms.iff _).mp (IsZariskiLocalAtTarget.restrict_of_le
+      (MorphismProperty.isomorphisms Scheme) ((MorphismProperty.isomorphisms.iff _).mpr hchart) hW)
+  -- Over `W`, the blowup lies in the chart, so the blowup is the chart up to an isomorphism.
+  have hle : toSpec C F ⁻¹ᵁ W ≤ (chart ha).opensRange := by
+    rw [Proj.opensRange_awayι]
+    exact ((toSpec C F).preimage_mono hW).trans
+      (toSpec_preimage_basicOpen_le (Localization.awayMap_surjective_iff.mp hb.2) ha)
+  have : IsIso (chart ha ∣_ toSpec C F ⁻¹ᵁ W) :=
+    (chart ha).isIso_morphismRestrict_of_le_opensRange hle
+  rw [morphismRestrict_comp] at hchartW
+  -- `hchartW` is passed explicitly: the source of the composite in its type is written
+  -- `(chart ≫ toSpec) ⁻¹ᵁ W` rather than `chart ⁻¹ᵁ toSpec ⁻¹ᵁ W`, which instance search does
+  -- not unfold.
+  exact @IsIso.of_isIso_comp_left _ _ _ _ _ (chart ha ∣_ toSpec C F ⁻¹ᵁ W)
+    (toSpec C F ∣_ W) _ hchartW
+
+variable (C) in
+/-- **The blowup of a submodule is an isomorphism away from the centre.** Let `F` generate the
+unit ideal of `B`, and let `U` be an open subset of `Spec C` over which `Spec B ⟶ Spec C`
+restricts to an isomorphism. Then the blowup `Proj R(J) ⟶ Spec C` also restricts to an
+isomorphism over `U`.
+
+For instance, if `B` is a Huber ring, `C` a ring of definition with ideal of definition `I` and
+`U = Spec C ∖ V(I)`, this applies by `Subring.isIso_morphismRestrict_nonOpenPrimes`. The
+hypothesis on `F` cannot be dropped: for `C = B = k[x, y]` and `F = {x, y}` the blowup of the
+origin is not an isomorphism, although `Spec B ⟶ Spec C` is the identity. -/
+theorem isIso_toSpec_restrict (hF : Ideal.span F = ⊤) {U : (Spec (.of C)).Opens}
+    (hU : IsIso (Spec.map (CommRingCat.ofHom (algebraMap C B)) ∣_ U)) :
+    IsIso (toSpec C F ∣_ U) := by
+  -- Cover `U` by the basic opens `D(h)` contained in it.
+  let V (h : {h : C // (PrimeSpectrum.basicOpen h : (Spec (.of C)).Opens) ≤ U}) :
+      U.toScheme.Opens :=
+    U.ι ⁻¹ᵁ PrimeSpectrum.basicOpen h.1
+  have hV : ⨆ h, V h = ⊤ := by
+    refine top_le_iff.mp fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ?_
+    obtain ⟨_, ⟨h, rfl⟩, hxh, hhU⟩ :=
+      TopologicalSpace.Opens.isBasis_iff_nbhd.mp PrimeSpectrum.isBasis_basic_opens x.2
+    exact ⟨⟨h, hhU⟩, hxh⟩
+  rw [← MorphismProperty.isomorphisms.iff,
+    IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := MorphismProperty.isomorphisms Scheme) V hV]
+  intro h
+  refine ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
+    (morphismRestrictRestrict (toSpec C F) U (V h))).mpr ?_
+  -- Over `D(h) ⊆ U`, the morphism `Spec B ⟶ Spec C` is `Spec` of `C_h → B_h`, so this map is
+  -- bijective.
+  have hφ : IsIso
+      (Spec.map (CommRingCat.ofHom (algebraMap C B)) ∣_ PrimeSpectrum.basicOpen h.1) :=
+    (MorphismProperty.isomorphisms.iff _).mp (IsZariskiLocalAtTarget.restrict_of_le _
+      ((MorphismProperty.isomorphisms.iff _).mpr hU) h.2)
+  have hb := isIso_SpecMap_iff.mp (((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
+    (SpecMapRestrictBasicOpenIso (CommRingCat.ofHom (algebraMap C B)) h.1)).mp hφ)
+  exact (MorphismProperty.isomorphisms.iff _).mpr
+    (isIso_toSpec_restrict_of_le_basicOpen hF hb (U.ι.image_preimage_le _))
+
+/-- **The blowup over the non-open primes of an open subring.** Let `C` be an open subring of a
+Huber ring `A` and let `F ⊆ A` generate the unit ideal. Then the blowup `Proj R(J) ⟶ Spec C` of
+`J = span C F` restricts to an isomorphism over the non-open primes of `C`. For a ring of
+definition `C` with ideal of definition `I`, these are the primes not containing `I`. -/
+theorem isIso_toSpec_restrict_nonOpenPrimes {A : Type u} [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [Huber.IsHuberRing A] (C : Subring A) (hC : IsOpen (C : Set A))
+    {F : Set A} (hF : Ideal.span F = ⊤) :
+    IsIso (toSpec C F ∣_ C.nonOpenPrimes) :=
+  isIso_toSpec_restrict C hF (C.isIso_morphismRestrict_nonOpenPrimes hC)
+
+end AwayFromCenter
 
 end submoduleBlowup
 
