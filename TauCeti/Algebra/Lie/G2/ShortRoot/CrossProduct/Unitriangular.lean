@@ -14,7 +14,9 @@ public import TauCeti.LinearAlgebra.Matrix.Triangular
 When multiplication by two is injective, the upper-unitriangular matrices preserving the
 seven-dimensional cross product admit an explicit six-parameter polynomial normal form.
 The parameters are entries at positions `(0,1)`, `(1,2)`, `(0,2)`, `(3,6)`, `(0,4)`, and
-`(0,5)`. In particular, equality can be tested on these six entries alone.
+`(0,5)`. In particular, equality can be tested on these six entries alone. The normal forms are
+closed under multiplication, by an explicit polynomial group law valid over every commutative
+ring, and each has an explicit normal-form inverse.
 
 This is the coordinate calculation for identifying the positive unipotent subgroup of the
 short-root carrier. It applies over rings with zero divisors and over nonreduced algebras
@@ -78,6 +80,36 @@ theorem crossUnipotentMatrix_def (a b c d e f : R) :
 
 @[simp] theorem crossUnipotentMatrix_zero_five (a b c d e f : R) :
     crossUnipotentMatrix a b c d e f 0 5 = f := (rfl)
+
+/-- The normal form with all parameters zero is the identity matrix. -/
+@[simp]
+theorem crossUnipotentMatrix_zero :
+    crossUnipotentMatrix (0 : R) 0 0 0 0 0 = 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [crossUnipotentMatrix_def]
+
+/-- **The group law of the normal forms.** The product of two normal forms is the normal form of
+explicit polynomials in their parameters, over every commutative ring. -/
+@[simp]
+theorem crossUnipotentMatrix_mul_crossUnipotentMatrix (a b c d e f a' b' c' d' e' f' : R) :
+    crossUnipotentMatrix a b c d e f * crossUnipotentMatrix a' b' c' d' e' f' =
+      crossUnipotentMatrix (a + a') (b + b') (c + c' + a * b')
+        (d + d' + a * a' * b' - a * c' + c * a')
+        (e + e' + a * a' ^ 2 * b' - a * a' * c' - a * d' + c * a' ^ 2 + 2 * d * a')
+        (f + f' + a * a' * b' * c' - a * b' * d' - a * c' ^ 2 + c * a' * c' - c * d' +
+          2 * d * c' + e * b') := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [crossUnipotentMatrix_def, Matrix.mul_apply, Fin.sum_univ_seven] <;> ring
+
+/-- A normal form has an explicit right inverse, the normal form of polynomials in its
+parameters. -/
+theorem crossUnipotentMatrix_mul_crossUnipotentMatrix_eq_one (a b c d e f : R) :
+    crossUnipotentMatrix a b c d e f *
+        crossUnipotentMatrix (-a) (-b) (a * b - c) (-d) (a * d - e)
+          (-a * b * d + b * e + c * d - f) = 1 := by
+  rw [crossUnipotentMatrix_mul_crossUnipotentMatrix, ← crossUnipotentMatrix_zero]
+  congr 1 <;> ring
 
 /-- Every parameter tuple gives an upper-unitriangular matrix. -/
 @[simp]

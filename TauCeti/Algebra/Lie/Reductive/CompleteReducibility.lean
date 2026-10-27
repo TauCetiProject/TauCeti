@@ -109,7 +109,8 @@ theorem complementedLattice_lieSubmodule_of_isSemisimple_center
     (hZ : ∀ z : center K L, (toEnd K (center K L) M z).IsSemisimple) :
     ComplementedLattice (LieSubmodule K L M) := by
   apply complementedLattice_lieSubmodule_of_iSup_weightSpace_center_eq_top
-  simp_rw [← genWeightSpace_eq_weightSpace_of_isSemisimple hZ, ← LieSubmodule.iSup_toSubmodule,
+  simp_rw [← genWeightSpace_eq_weightSpace_of_isFinitelySemisimple
+    (fun z ↦ (hZ z).isFinitelySemisimple), ← LieSubmodule.iSup_toSubmodule,
     iSup_genWeightSpace_eq_top K (center K L) M, LieSubmodule.top_toSubmodule]
 
 end TauCeti

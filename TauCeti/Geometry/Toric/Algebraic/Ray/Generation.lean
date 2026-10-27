@@ -34,6 +34,8 @@ integral basis, hence linearly independent, so a regular cone is simplicial.
   a ray.
 * `TauCeti.Toric.IsToricCone.hull_primitiveGenerator`: a toric cone is the cone hull of its
   primitive ray generators.
+* `TauCeti.Toric.IsToricCone.le_of_isFaceOf_of_sum_primitiveGenerator_mem`: a face of a toric
+  cone containing the sum of its primitive ray generators is the whole cone.
 * `TauCeti.Toric.mem_dualSemigroup_iff_primitiveGenerator`: an integral character lies in the dual
   semigroup of a toric cone exactly when it is nonnegative on every primitive ray generator.
 * `TauCeti.Toric.mem_dualSemigroup_iff_of_isPrimitiveGenerator`: the same criterion for any
@@ -111,6 +113,20 @@ theorem IsToricCone.hull_primitiveGenerator (hi : IsIntegralLattice i) (hσ : Is
     rw [ρ.eq_hull_singleton (hσ.salient.anti ρ.1.isFaceOf.le) (primitiveGenerator_mem hi hσ ρ)
       (by simpa using hi.injective.ne (primitiveGenerator_ne_zero hi hσ ρ))]
     exact Submodule.span_mono (Set.singleton_subset_iff.2 ⟨_, ⟨ρ, rfl⟩, rfl⟩)
+
+/-- A face of a toric cone `σ` containing the sum of the primitive generators of all rays of `σ`
+contains `σ`: by the face property it contains every primitive generator, and these span `σ`. -/
+theorem IsToricCone.le_of_isFaceOf_of_sum_primitiveGenerator_mem (hi : IsIntegralLattice i)
+    (hσ : IsToricCone i σ) {F : PointedCone ℝ V} (hF : F.IsFaceOf σ)
+    (hu : i (∑ ρ ∈ ToricRay.faceFinset (PointedCone.IsFaceOf.refl σ) hσ.fg,
+      primitiveGenerator hi hσ ρ) ∈ F) : σ ≤ F := by
+  have hsum : ∑ ν : ToricRay.faceFinset (PointedCone.IsFaceOf.refl σ) hσ.fg,
+      i (primitiveGenerator hi hσ ν) ∈ F := by
+    rwa [Finset.sum_coe_sort _ fun ν ↦ i (primitiveGenerator hi hσ ν), ← map_sum]
+  refine (hσ.hull_primitiveGenerator hi).ge.trans (Submodule.span_le.2 ?_)
+  rintro _ ⟨_, ⟨ρ, rfl⟩, rfl⟩
+  exact hF.mem_of_sum_mem (fun ν ↦ ν.1.1.isFaceOf.le (primitiveGenerator_mem hi hσ ν.1)) hsum
+    ⟨ρ, (ToricRay.mem_faceFinset _ _).2 ρ.1.isFaceOf.le⟩
 
 /-- An integral character lies in the dual semigroup of a toric cone exactly when it is
 nonnegative on every primitive ray generator. -/

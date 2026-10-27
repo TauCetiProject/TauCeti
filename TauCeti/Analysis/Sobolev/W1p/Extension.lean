@@ -349,9 +349,7 @@ theorem W1p0.hasWeakFDerivOn_indicator (hsub : Omega ≤ Omega')
     exact coeFn_extendByZeroLpₗᵢ _ _ _ _
   refine (hmem.congr_ae hvalue).congr_ae_deriv ?_
   filter_upwards [hgradient] with x hx
-  refine ContinuousLinearMap.ext fun v => ?_
-  rw [Sobolev1JetLp.candidateWeakFDeriv_apply, innerSL_apply_apply, ← W1p.gradient_coe, hx]
-  exact real_inner_comm _ _
+  rw [Sobolev1JetLp.candidateWeakFDeriv_def, ← W1p.gradient_coe, hx]
 
 /-- **The weak gradient of a `W^{1,p}_0` function on a bounded set has integral zero.** If `Ω` is
 bounded and `u ∈ W^{1,p}_0(Ω)`, then `∫_Ω ⟪∇u, w⟫ = 0` for every direction `w`. A function of

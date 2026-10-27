@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import TauCeti.Analysis.InnerProductSpace.NormDet
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Comp
@@ -23,7 +24,8 @@ corresponding coordinate direction: along the line `s ↦ (s, y)` in the first f
 These are the chain rules used to compute integrals over a half-space `{x | a < x.fst}` one
 normal line or one tangential slice at a time, as in Fubini-type proofs of the divergence
 theorem. The file also computes the derivative of the normal graph parametrization
-`y ↦ (φ y, y)`: it is the graph `x ↦ (A x, x)` of the derivative `A` of `φ`.
+`y ↦ (φ y, y)`: it is the graph `x ↦ (A x, x)` of the derivative `A` of `φ`, so its
+geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
 
 ## Main declarations
 
@@ -35,6 +37,11 @@ theorem. The file also computes the derivative of the normal graph parametrizati
   the derivative.
 * `DifferentiableAt.fderiv_normalGraphEmbedding`: the Fréchet derivative of a graph
   parametrization at a differentiability point.
+* `DifferentiableAt.injective_fderiv_normalGraphEmbedding`: that derivative is injective.
+* `DifferentiableAt.range_fderiv_normalGraphEmbedding`: the range of that derivative is the
+  linear tangent graph.
+* `DifferentiableAt.normDet_fderiv_normalGraphEmbedding`: the geometric Jacobian of a graph
+  parametrization is `sqrt (1 + ‖Dφ‖²)`.
 -/
 
 public section
@@ -98,6 +105,34 @@ theorem _root_.DifferentiableAt.fderiv_normalGraphEmbedding {φ : V → ℝ} {x 
     (hφ : DifferentiableAt ℝ φ x) :
     fderiv ℝ (TauCeti.normalGraphEmbedding φ) x = (fderiv ℝ φ x).normalGraphL :=
   hφ.hasFDerivAt.normalGraphEmbedding.fderiv
+
+/-- At a differentiability point, the Fréchet derivative of a graph parametrization is
+injective. -/
+theorem _root_.DifferentiableAt.injective_fderiv_normalGraphEmbedding {φ : V → ℝ} {x : V}
+    (hφ : DifferentiableAt ℝ φ x) :
+    Function.Injective (fderiv ℝ (TauCeti.normalGraphEmbedding φ) x) := by
+  rw [hφ.fderiv_normalGraphEmbedding]
+  exact (fderiv ℝ φ x).injective_normalGraphL
+
+/-- At a differentiability point of `φ`, the range of the derivative of the normal graph
+parametrization is the linear graph of `fderiv ℝ φ x`. This is the tangent plane to a `C¹`
+normal graph at the corresponding point. -/
+theorem _root_.DifferentiableAt.range_fderiv_normalGraphEmbedding {φ : V → ℝ} {x : V}
+    (hφ : DifferentiableAt ℝ φ x) :
+    (LinearMap.range (fderiv ℝ (TauCeti.normalGraphEmbedding φ) x).toLinearMap :
+      Set (WithLp 2 (ℝ × V))) =
+      {z | z.fst = fderiv ℝ φ x z.snd} := by
+  rw [hφ.fderiv_normalGraphEmbedding]
+  exact (fderiv ℝ φ x).range_normalGraphL
+
+/-- At a differentiability point, the geometric Jacobian of a normal graph parametrization is
+the classical surface factor `sqrt (1 + ‖Dφ‖²)`. -/
+theorem _root_.DifferentiableAt.normDet_fderiv_normalGraphEmbedding {U : Type*}
+    [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U] {φ : U → ℝ} {x : U}
+    (hφ : DifferentiableAt ℝ φ x) :
+    (fderiv ℝ (TauCeti.normalGraphEmbedding φ) x).normDet =
+      Real.sqrt (1 + ‖fderiv ℝ φ x‖ ^ 2) := by
+  rw [hφ.fderiv_normalGraphEmbedding, ContinuousLinearMap.normDet_normalGraphL]
 
 end NormalGraph
 

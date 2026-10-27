@@ -9,6 +9,7 @@ import TauCeti.RepresentationTheory.ProjectiveRepresentation.Finite
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.RootsOfUnity
 import TauCeti.RepresentationTheory.ProjectiveRepresentation.Torsion
 public import TauCeti.GroupTheory.GroupExtension.Character.Basic
+import TauCeti.FieldTheory.IsAlgClosed.Units
 import Mathlib.GroupTheory.FiniteAbelian.Duality
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
@@ -39,7 +40,7 @@ even when the characteristic divides the order of the original group.
 * The torsion representative theorem:
   `TauCeti.FactorSet.nsmul_eq_zero_iff_exists_factorSet_pow_eq_one`.
 * The stem criterion:
-  `TauCeti.FactorSet.characterTransgression_injective_iff_range_inl_le_commutator_of_isAlgClosed`.
+  `TauCeti.FactorSet.characterTransgression_injective_iff_range_inl_le_commutator_of_rootableBy`.
 -/
 
 public section
@@ -167,7 +168,7 @@ theorem exists_finite_stem_factorSet_bijective_characterTransgression :
   · rw [← FactorSet.range_inl_eq_ker_rightHom]
     exact α.inl_range_le_center trivialMulDistribMulAction_smul
   · rw [← FactorSet.range_inl_eq_ker_rightHom]
-    exact (α.characterTransgression_injective_iff_range_inl_le_commutator_of_isAlgClosed).mp
-      hbij.injective
+    exact (α.characterTransgression_injective_iff_range_inl_le_commutator_of_rootableBy
+      trivialMulDistribMulAction_smul).mp hbij.injective
 
 end TauCeti

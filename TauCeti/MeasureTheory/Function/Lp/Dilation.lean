@@ -20,7 +20,7 @@ the factor is `1`. This is the `eLpNorm` counterpart of the lower Lebesgue integ
 
 More generally, composing with a linear automorphism `e` multiplies the `Lᵖ` seminorm by
 `|det e|^(-1 / p)`, and the `Lᵖ` seminorm on a preimage `e ⁻¹' s` by the same factor relative to
-the `Lᵖ` seminorm on `s`.
+the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a continuous extended norm.
 
 ## Main declarations
 
@@ -54,31 +54,28 @@ theorem eLpNorm_comp_inv_smul (u : E → G) {r : ℝ} (hr : 0 < r) (p : ℝ≥0�
   rw [inv_pow, inv_inv, abs_of_pos (by positivity), ENNReal.ofReal_rpow_of_pos (by positivity),
     ← Real.rpow_natCast, ← Real.rpow_mul hr.le, one_div, ENNReal.toReal_inv, div_eq_mul_inv]
 
+/-- **Linear change of variables in the `Lᵖ` seminorm on a set:** composing with a linear
+automorphism `e` multiplies the `Lᵖ` seminorm on `e ⁻¹' s`, against an additive Haar measure, by
+`|det e|^(-1 / p)` relative to the `Lᵖ` seminorm of the function on `s`. The set `s` need not be
+measurable. -/
+theorem eLpNorm_comp_continuousLinearEquiv_restrict_preimage
+    (u : E → G) (e : E ≃L[ℝ] E) (p : ℝ≥0∞) {s : Set E} :
+    eLpNorm (u ∘ e) p (μ.restrict (e ⁻¹' s)) =
+      ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
+        eLpNorm u p (μ.restrict s) := by
+  have hdet : LinearMap.det (e : E →ₗ[ℝ] E) ≠ 0 := (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
+  have hmap : Measure.map e μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ :=
+    Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
+  have he : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
+  rw [← he.eLpNorm_map_measure, ← he.restrict_map, hmap, Measure.restrict_smul,
+    eLpNorm_smul_measure_of_ne_zero (by simpa using hdet), smul_eq_mul]
+
 /-- **Linear change of variables in the `Lᵖ` seminorm:** composing with a linear automorphism `e`
 multiplies the `Lᵖ` seminorm against an additive Haar measure by `|det e|^(-1 / p)`. The exponent
 `1 / p` is `(1 / p).toReal`, which is `0` at `p = 0` and `p = ∞`, where the factor is thus `1`. -/
 theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p : ℝ≥0∞) :
     eLpNorm (u ∘ e) p μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
       eLpNorm u p μ := by
-  have hdet : LinearMap.det (e : E →ₗ[ℝ] E) ≠ 0 := (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
-  have hmap : Measure.map e μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ :=
-    Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
-  have he : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
-  rw [← he.eLpNorm_map_measure, hmap, eLpNorm_smul_measure_of_ne_zero (by simpa using hdet),
-    smul_eq_mul]
-
-/-- **Linear change of variables in the `Lᵖ` seminorm on a set:** composing with a linear
-automorphism `e` multiplies the `Lᵖ` seminorm on `e ⁻¹' s`, against an additive Haar measure, by
-`|det e|^(-1 / p)` relative to the `Lᵖ` seminorm of the function on `s`. -/
-theorem eLpNorm_comp_continuousLinearEquiv_restrict_preimage {F : Type*} [NormedAddCommGroup F]
-    (u : E → F) (e : E ≃L[ℝ] E) (p : ℝ≥0∞) {s : Set E} (hs : MeasurableSet s) :
-    eLpNorm (u ∘ e) p (μ.restrict (e ⁻¹' s)) =
-      ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
-        eLpNorm u p (μ.restrict s) := by
-  have hind : (e ⁻¹' s).indicator (u ∘ e) = s.indicator u ∘ e :=
-    funext fun _ => Set.indicator_comp_right e
-  rw [← eLpNorm_indicator_eq_eLpNorm_restrict
-      (hs.preimage e.continuous.measurable).nullMeasurableSet, hind,
-    eLpNorm_comp_continuousLinearEquiv, eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet]
+  simpa using eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := Set.univ)
 
 end TauCeti

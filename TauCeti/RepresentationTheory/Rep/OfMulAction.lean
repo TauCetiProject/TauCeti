@@ -6,12 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Sum
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
-public import Mathlib.RepresentationTheory.Rep.Basic
+public import Mathlib.RepresentationTheory.Rep.Iso
+public import Mathlib.RepresentationTheory.Rep.Res
 public import TauCeti.GroupTheory.QuotientGroup.Basic
+public import TauCeti.RepresentationTheory.FreeOfBasis
+import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
-# Equivalences of permutation representations
+# Maps and equivalences of permutation representations
+
+`MulActionHom.toRepRes` linearly extends a map equivariant along a monoid homomorphism
+to a morphism of permutation representations with restricted target action. It respects
+identity and composition. `Rep.ofMulAction_hom_ext` tests morphism equality on basis vectors.
 
 For a monoid `G`, equivariantly equivalent `G`-sets carry equivalent permutation
 representations, and the permutation representation on a disjoint union is the product of
@@ -25,6 +33,11 @@ carry the left regular representation.
 Both identifications go through `ofMulActionIsoCongr`, which turns a `G`-equivariant equivalence
 of `G`-sets into an isomorphism of the permutation representations they carry.
 
+For a free action of a group `G` on `X`, every point is a unique translate of the chosen
+representative of its orbit, so the permutation representation `k[X]` is free over the group
+ring, with basis the chosen representatives of the orbits. In particular it is a projective
+object of `Rep k G`.
+
 ## Main definitions
 
 * `TauCeti.ofMulActionIsoCongr`: an equivariant equivalence of `G`-sets induces an isomorphism
@@ -34,6 +47,13 @@ of `G`-sets into an isomorphism of the permutation representations they carry.
 * `TauCeti.quotientIsoCongr`: equal subgroups give isomorphic permutation representations.
 * `TauCeti.quotientTopIsoTrivial`: `k[G ⧸ ⊤] ≅ k` with the trivial action.
 * `TauCeti.quotientBotIsoLeftRegular`: `k[G ⧸ ⊥] ≅ k[G]` with the left regular action.
+* `TauCeti.ofMulActionIsoFree`: for a free action, `k[X]` is the free representation on the
+  orbits.
+
+## Main results
+
+* `TauCeti.projective_ofMulAction`: the permutation representation of a free action is
+  projective.
 
 The equivalences and isomorphisms come with lemmas reading them and their inverses on basis
 elements. For the coset representations, these bases are indexed by `G ⧸ H`.
@@ -41,6 +61,81 @@ elements. For the coset representations, these bases are indexed by `G ⧸ H`.
 -/
 
 public section
+
+open CategoryTheory
+
+namespace Rep
+
+/-- Morphisms out of a permutation representation are determined by their values on basis
+vectors with coefficient one. -/
+@[ext]
+theorem ofMulAction_hom_ext {k G X : Type*} [Ring k] [Monoid G] [MulAction G X]
+    {A : Rep k G} {f g : ofMulAction k G X ⟶ A}
+    (h : ∀ x, f.hom (MonoidAlgebra.single x 1) = g.hom (MonoidAlgebra.single x 1)) : f = g := by
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  exact MonoidAlgebra.lhom_ext' fun x => LinearMap.ext_ring (h x)
+
+end Rep
+
+namespace MulActionHom
+
+universe u v v' v'' w
+
+variable {k : Type u} [Ring k] {G : Type v} {H : Type v'} {K : Type v''}
+  [Monoid G] [Monoid H] [Monoid K]
+  {X Y Z : Type w} [MulAction G X] [MulAction H Y] [MulAction K Z]
+  {φ : G →* H} {ψ : H →* K}
+
+/-- Linear extension of a map equivariant along a monoid homomorphism, with the target
+representation restricted along that homomorphism. -/
+noncomputable def toRepRes (f : X →ₑ[φ] Y) :
+    Rep.ofMulAction k G X ⟶ Rep.res φ (Rep.ofMulAction k H Y) :=
+  Rep.ofHom
+    { toLinearMap := MonoidAlgebra.mapDomainLinearMap k k f.toFun
+      isIntertwining' g := by
+        refine MonoidAlgebra.lhom_ext' fun x => LinearMap.ext_ring ?_
+        simp [Representation.ofMulAction_single, f.map_smul'] }
+
+/-- The underlying linear map sends coefficients along the equivariant function. -/
+@[simp]
+theorem toRepRes_hom_toLinearMap (f : X →ₑ[φ] Y) :
+    (dsimp% only (f.toRepRes (k := k)).hom.toLinearMap) =
+      MonoidAlgebra.mapDomainLinearMap k k f.toFun :=
+  (rfl)
+
+-- Explicit toFun projections let simp evaluate bundled constructors without unfolding the
+-- FunLike instance across module boundaries.
+/-- Linear extension sends a basis vector to the basis vector indexed by its image. -/
+@[simp]
+theorem toRepRes_hom_single (f : X →ₑ[φ] Y) (x : X) (r : k) :
+    (dsimp% only ((f.toRepRes (k := k)).hom (MonoidAlgebra.single x r))) =
+      MonoidAlgebra.single (f.toFun x) r := by
+  simp [toRepRes]
+
+/-- Linear extension of the identity is the identity morphism. -/
+@[simp]
+theorem toRepRes_id :
+    (MulActionHom.id G (X := X)).toRepRes (k := k) (φ := MonoidHom.id G) =
+      𝟙 (Rep.ofMulAction k G X) := by
+  apply Rep.ofMulAction_hom_ext
+  intro x
+  simp [MulActionHom.id]
+
+/-- Linear extension respects composition, restricting the second morphism along the first
+homomorphism. -/
+@[simp]
+theorem toRepRes_comp (g : Y →ₑ[ψ] Z) (f : X →ₑ[φ] Y) :
+    (g.comp f (κ := ⟨rfl⟩)).toRepRes (k := k) (φ := ψ.comp φ) =
+      f.toRepRes ≫ (Rep.resFunctor φ).map g.toRepRes := by
+  apply Rep.ofMulAction_hom_ext
+  intro x
+  simp only [Rep.hom_comp, ← Representation.IntertwiningMap.toLinearMap_apply]
+  simp only [Representation.IntertwiningMap.comp_toLinearMap, Rep.resMap_hom_toLinearMap,
+    toRepRes_hom_toLinearMap, LinearMap.comp_apply, MonoidAlgebra.mapDomainLinearMap_single]
+  rfl
+
+end MulActionHom
 
 namespace TauCeti
 
@@ -245,5 +340,46 @@ theorem quotientTopIsoTrivial_inv_hom_apply (r : k) :
   simp [quotientTopIsoTrivial, Representation.ofMulActionSubsingletonEquivTrivial]
 
 end QuotientTop
+
+section Free
+
+open _root_.MulAction (orbitRel selfEquivOrbitsQuotientProd)
+
+variable (k : Type u) [CommRing k] {G : Type u} [Group G] (X : Type u) [MulAction G X]
+  [IsCancelSMul G X]
+
+/-- **The permutation representation of a free action is free over the group ring**, with
+basis the chosen representatives `q.out` of the orbits: the generator `single q (single g r)` of
+the free representation corresponds to `single (g • q.out) r`. -/
+noncomputable def ofMulActionIsoFree :
+    Rep.ofMulAction k G X ≅ Rep.free k G (orbitRel.Quotient G X) :=
+  (Rep.mkIso ((Representation.ofMulAction k G X).freeEquivOfBasis (MonoidAlgebra.basis X k)
+    ((Equiv.sigmaEquivProd _ G).trans
+      (selfEquivOrbitsQuotientProd IsCancelSMul.stabilizer_eq_bot).symm) fun g h q ↦ by
+        simp [mul_smul])).symm
+
+/-- The generator `single q (single g r)` of the free representation corresponds to the basis
+vector `single (g • q.out) r` of the permutation representation. -/
+@[simp]
+theorem ofMulActionIsoFree_inv_hom_single (q : orbitRel.Quotient G X) (g : G) (r : k) :
+    (dsimp% only ((ofMulActionIsoFree k X).inv.hom
+        (Finsupp.single q (MonoidAlgebra.single g r)))) =
+      MonoidAlgebra.single (g • q.out) r := by
+  rw [ofMulActionIsoFree, Iso.symm_inv, Rep.mkIso_hom_hom_apply]
+  simp
+
+/-- The basis vector `single (g • q.out) r` of the permutation representation corresponds to the
+generator `single q (single g r)` of the free representation. -/
+@[simp]
+theorem ofMulActionIsoFree_hom_hom_single (q : orbitRel.Quotient G X) (g : G) (r : k) :
+    (dsimp% only ((ofMulActionIsoFree k X).hom.hom (MonoidAlgebra.single (g • q.out) r))) =
+      Finsupp.single q (MonoidAlgebra.single g r) := by
+  rw [← ofMulActionIsoFree_inv_hom_single, Rep.hom_inv_apply]
+
+/-- The permutation representation of a free action is projective. -/
+instance projective_ofMulAction : Projective (Rep.ofMulAction k G X) :=
+  Projective.of_iso (ofMulActionIsoFree k X).symm inferInstance
+
+end Free
 
 end TauCeti

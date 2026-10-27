@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.GroupTheory.PLowerCentralSeries
+public import TauCeti.GroupTheory.ProperPower
 
 /-!
 # The Heisenberg group over a ring
@@ -229,6 +230,24 @@ end CharP
 /-- The Heisenberg group over `ZMod p` is a `p`-group; for `p > 0` it has order `p ^ 3`. -/
 theorem isPGroup_zmod (p : ℕ) : IsPGroup p (HeisenbergGroup (ZMod p)) :=
   IsPGroup.of_card (n := 3) (by rw [card_eq, Nat.card_zmod])
+
+/-- The central element with third coordinate one in the integer Heisenberg group is not a
+proper power. -/
+theorem not_isProperPower_mk_zero_zero_one :
+    ¬ Group.IsProperPower (⟨0, 0, 1⟩ : HeisenbergGroup ℤ) := by
+  intro h
+  obtain ⟨y, n, hn, heq⟩ := Group.isProperPower_iff.mp h
+  have hx := congrArg HeisenbergGroup.x heq
+  have hy := congrArg HeisenbergGroup.y heq
+  simp only [pow_eq, Int.nsmul_eq_mul, zero_eq_mul, Int.natCast_eq_zero] at hx hy
+  have hxy : y.x = 0 ∧ y.y = 0 := by
+    constructor <;> omega
+  have hz := congrArg HeisenbergGroup.z heq
+  simp only [pow_eq, hxy.1, nsmul_zero, hxy.2,
+    Int.nsmul_eq_mul, mul_zero, add_zero] at hz
+  have hdiv' : n ∣ 1 := Int.natCast_dvd_natCast.mp ⟨y.z, hz⟩
+  have hle : n ≤ 1 := Nat.le_of_dvd (by omega) hdiv'
+  omega
 
 end HeisenbergGroup
 

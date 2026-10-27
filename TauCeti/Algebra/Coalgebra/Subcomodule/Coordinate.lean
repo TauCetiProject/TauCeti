@@ -140,6 +140,20 @@ theorem exists_subcomodule_toSubmodule_eq_span_iff_coordinateSpanIsStable [Finit
   · intro h
     exact ⟨b.coordinateSpanSubcomodule s h, b.coordinateSpanSubcomodule_toSubmodule s h⟩
 
+/-- A coordinate subcomodule has zero coefficient in every row outside its indexing set
+and every column inside that set. -/
+theorem coefficient_eq_zero_of_coordinate_subcomodule [Finite ι]
+    (bas : Basis ι R M) (s : Set ι) (N : Subcomodule R C M)
+    (hcoord : N.toSubmodule = Submodule.span R (bas '' s))
+    {a b : ι} (ha : a ∉ s) (hb : b ∈ s) :
+    coefficientMatrix (C := C) bas a b = 0 := by
+  have hex : ∃ N' : Subcomodule R C M, N'.toSubmodule = Submodule.span R (bas '' s) :=
+    ⟨N, hcoord⟩
+  have hstable : bas.coordinateSpanIsStable (C := C) s :=
+    (Module.Basis.exists_subcomodule_toSubmodule_eq_span_iff_coordinateSpanIsStable
+      (C := C) bas s).mp hex
+  exact (bas.coordinateSpanIsStable_iff (C := C) s).mp hstable a ha b hb
+
 section WeightFiltration
 
 variable {α : Type*} [LinearOrder α]

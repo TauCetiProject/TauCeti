@@ -86,6 +86,8 @@ to the canonical fraction fields used by Mathlib's different API.
   `TauCeti.Place.relativeDegree_le_finrank` its two halves (Stichtenoth, Corollary 3.1.12).
 * `TauCeti.Place.linearIndependent_pow_fin_ramificationIdx`: the first `e(P' ∣ P)` powers of
   a uniformizer at `P'` are linearly independent over `F`.
+* `TauCeti.Place.isAlgebraic_residueField_restrict`: the residue extension of an integral
+  extension of places is algebraic.
 * `TauCeti.Place.finiteDimensional_residueField_restrict`: the relative degree is finite, so it
   is not the junk value of `Module.finrank`; `TauCeti.Place.one_le_relativeDegree` and
   `TauCeti.Place.ramificationIdx_pos` are the matching lower bounds.
@@ -187,20 +189,21 @@ variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 section LocalIntegralClosure
 
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F']
-
 variable (F') (P : Place k F)
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
 variable [FiniteDimensional F F']
 
+omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] in
 /-- The local model `𝒪'_P` — the integral closure of `𝒪_P` in `F'` — has fraction field `F'`. -/
 instance isFractionRing_integralClosure :
     IsFractionRing (integralClosure (P.integers) F') F' :=
   IsIntegralClosure.isFractionRing_of_finite_extension (P.integers) F F' _
 
+omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] in
 /-- More precisely, `F'` is the localization of the local model `𝒪'_P` at the nonzero divisors
 of `𝒪_P`. -/
 theorem isLocalization_integralClosure :
@@ -210,16 +213,22 @@ theorem isLocalization_integralClosure :
 
 variable [Algebra.IsSeparable F F']
 
+omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] in
 /-- The local model `𝒪'_P` is a Dedekind domain. -/
 instance isDedekindDomain_integralClosure :
     IsDedekindDomain (integralClosure (P.integers) F') :=
   integralClosure.isDedekindDomain (A := P.integers) (K := F) (L := F')
 
+omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] in
 /-- The local model `𝒪'_P` is module-finite over `𝒪_P`. -/
 instance moduleFinite_integralClosure :
     Module.Finite (P.integers) (integralClosure (P.integers) F') :=
   IsIntegralClosure.finite (A := P.integers) (K := F) (L := F') _
 
+omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k F F'] in
 /-- Separability of `F' / F`, transported to the canonical fraction fields used by the
 integral-closure API. -/
 instance isSeparable_fractionRing_integralClosure :
@@ -287,12 +296,6 @@ section Restrict
 
 variable (k F) (P' : Place k' F')
 
-/-- The order function of `P'` restricted to `F` is the order function of the restricted
-valuation. -/
-private theorem ord_comap (f : F) :
-    Valuation.ord (P'.valuation.comap (algebraMap F F')) f = P'.ord (algebraMap F F' f) := by
-  rw [Valuation.ord_def, ord_def, Valuation.comap_apply]
-
 /-- The valuation of `P'` restricted to `F` is nontrivial: an algebraic extension of a field
 contained in a valuation ring is contained in that valuation ring, so a place of `F'` trivial on
 `F` would have all of `F'` as its valuation ring. -/
@@ -355,11 +358,9 @@ private theorem valuation_restrict :
 the order function at `P'` is `e(P' ∣ P)` times the order function at `P`. -/
 theorem ord_algebraMap_restrict (f : F) :
     P'.ord (algebraMap F F' f) = ramificationIdx F P' * (P'.restrict k F).ord f := by
-  have key : (P'.restrict k F).ord f =
-      Valuation.ord (P'.valuation.comap (algebraMap F F')).normalization f := by
-    rw [ord_def, valuation_restrict, Valuation.ord_def]
-  rw [← ord_comap F P' f, ramificationIdx, key,
-    ← Valuation.ord_normalization_mul_ordIndex _ f, mul_comm]
+  simpa only [Valuation.ord_comap, ← valuation_restrict k F P', ord_valuation,
+    ramificationIdx_def, mul_comm] using
+    (Valuation.ord_normalization_mul_ordIndex (P'.valuation.comap (algebraMap F F')) f).symm
 
 /-- Restriction scales the multiplicative valuation by the ramification index. -/
 theorem valuation_algebraMap_restrict (f : F) :
@@ -507,6 +508,49 @@ instance instIsLocalHomIntegers :
     rw [(P'.restrict k F).isUnit_iff_valuation_eq_one]
     rw [P'.isUnit_iff_valuation_eq_one, coe_algebraMap_integers] at ha
     exact (Valuation.HasExtension.val_map_eq_one_iff _ _ _).mp ha
+
+open Polynomial in
+/-- The residue field of a place is algebraic over the residue field of the place below it, for
+any integral extension `F' / F`. The minimal polynomial over `F` of `y ∈ 𝒪_{P'}`, normalized so
+that its coefficients lie in `𝒪_P` and one of them is a unit, reduces to a nonzero polynomial
+over `F_P` vanishing at the residue of `y`. -/
+instance isAlgebraic_residueField_restrict :
+    Algebra.IsAlgebraic (P'.restrict k F).ResidueField P'.ResidueField := by
+  refine ⟨fun x ↦ ?_⟩
+  obtain ⟨y, rfl⟩ := IsLocalRing.residue_surjective x
+  set p := minpoly F (y : F')
+  have hp0 : p ≠ 0 := minpoly.ne_zero (Algebra.IsIntegral.isIntegral _)
+  obtain ⟨i₀, hi₀, hdiv⟩ := (P'.restrict k F).exists_ne_zero_forall_div_mem_integers
+    (fun i : Fin (p.natDegree + 1) ↦ p.coeff i) (i₁ := Fin.last _) (by simpa using hp0)
+  have hlift : C (p.coeff i₀)⁻¹ * p ∈ lifts (algebraMap (P'.restrict k F).integers F) := by
+    refine lifts_iff_coeff_lifts _ |>.mpr fun n ↦ ?_
+    rw [coeff_C_mul]
+    rcases le_or_gt n p.natDegree with hn | hn
+    · exact ⟨⟨_, hdiv ⟨n, Nat.lt_succ_of_le hn⟩⟩, by simp [div_eq_inv_mul]⟩
+    · exact ⟨0, by simp [coeff_eq_zero_of_natDegree_lt hn]⟩
+  obtain ⟨q, hq⟩ := hlift
+  rw [coe_mapRingHom] at hq
+  refine ⟨q.map (algebraMap _ (P'.restrict k F).ResidueField), fun h ↦ ?_, ?_⟩
+  · have hc := congrArg (coeff · i₀) h
+    have hc' := congrArg (coeff · i₀) hq
+    simp only [coeff_map, coeff_zero, IsLocalRing.ResidueField.algebraMap_eq,
+      IsLocalRing.residue_eq_zero_iff] at hc
+    simp only [coeff_map, coeff_C_mul, inv_mul_cancel₀ hi₀] at hc'
+    have h1 : q.coeff i₀ = 1 := Subtype.ext hc'
+    rw [h1] at hc
+    exact (IsLocalRing.maximalIdeal.isMaximal _).ne_top ((Ideal.eq_top_iff_one _).mpr hc)
+  · have hy : aeval y q = 0 := by
+      apply Subtype.ext
+      have := hom_eval₂ q (algebraMap (P'.restrict k F).integers P'.integers) P'.integers.subtype y
+      -- Both composites are `algebraMap F F'` on the elements of `𝒪_P`: the algebra structure
+      -- of `𝒪_{P'}` over `𝒪_P` is the restriction of `algebraMap F F'`.
+      rw [show P'.integers.subtype.comp (algebraMap (P'.restrict k F).integers P'.integers) =
+        (algebraMap F F').comp (algebraMap (P'.restrict k F).integers F) from
+          RingHom.ext fun _ ↦ rfl, ← eval₂_map, hq] at this
+      rw [ZeroMemClass.coe_zero, aeval_def]
+      exact this.trans (by simp [eval₂_mul, ← aeval_def, p])
+    rw [aeval_map_algebraMap, ← IsLocalRing.ResidueField.algebraMap_eq, aeval_algebraMap_apply,
+      hy, map_zero]
 
 /-- The **relative degree** `f(P' ∣ P) = [F'_{P'} : F_P]` of a place `P'` of `F' / k'` over the
 place `P` of `F / k` it lies over (Stichtenoth, Definition 3.1.5). -/
@@ -890,12 +934,7 @@ theorem linearIndependent_pow_fin_ramificationIdx {t : F'} (ht : P'.ord t = 1) :
     have hmap : algebraMap F F' (c j) ≠ 0 := by simpa using hjc
     refine ⟨m, ?_⟩
     rw [hA, P'.ord_mul hmap (pow_ne_zero _ ht0), P'.ord_pow, ht, mul_one,
-      ← ord_comap F P' (c j), hm]
-    have hidx : Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) = e :=
-      rfl.trans he.symm
-    have hidx' : (Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) : ℤ) = e := by
-      exact_mod_cast hidx
-    rw [hidx']
+      ← ord_valuation, ← Valuation.ord_comap, hm, ← ramificationIdx_def, ← he]
   have hA₁ : A j₁ ≠ 0 := by simp [hA, hj₁, ht0]
   exact (sum_ne_zero_of_ord_eq_mul_add_natCast P' A hAord hA₁) hsum
 

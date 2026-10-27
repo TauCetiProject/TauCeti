@@ -10,9 +10,9 @@ the three repos fit together; this file only adds the contract for agents workin
 *new* mathematics: only add a new mathematical declaration (definition, theorem, instance,
 notation) or file when it advances a specific roadmap target, or supplies a prerequisite that a
 specific target needs. If something you want to build is not on the roadmap — whether a human
-asked for it or you found the gap yourself — say so and leave it to a human to add, rather than
-building it here. Never open a PR or an issue in TauCetiRoadmap yourself; reviewing a roadmap
-change needs human attention.
+asked for it or you found the gap yourself — select a target supported by the existing roadmaps instead. If your own PR's roadmap fit remains
+contested after its bounded repair attempts, close it with an explanation so a fresh attempt can try again. Never
+open a PR or an issue in TauCetiRoadmap yourself.
 
 Improving code that already exists is **always in scope** and needs no roadmap entry:
 refactoring, simplifying proofs, fixing or modestly generalising an existing lemma (without
@@ -55,6 +55,16 @@ scope do not coincide.
   double quotes, because interpolation can confuse the approximate lexer. Put explanatory
   references in comments without double quotes. A local syntax rule needed for elaboration performance
   should document the concrete need at its declaration.
+- The same source guard rejects explicit meta/unsafe declarations, elaborators, initializers,
+  run_cmd/run_elab/run_tac/run_meta/by_elab and #eval execution, manual initializer and
+  elaborator/tactic/macro registrations, and nonlocal macros.
+  Local macro and macro_rules definitions remain allowed, including existing local syntax needed
+  for elaboration performance. Their bodies still require review: this is a conservative token
+  check, not a parser or a guarantee that local macros contain no metaprogramming.
+  Write the local modifier after whitespace, a comment boundary, or a closing attribute bracket;
+  source text inside comments, literals, or longer identifiers cannot supply this exception.
+  The import-header guard also rejects direct Lean, Lake, and Mathlib.Lean implementation imports;
+  use mathematical modules and Mathlib tactic imports instead. Neither guard loads candidate code.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
 - Stacked PRs are prohibited, including drafts and PRs labelled keep/hold/human.
   Wait for each prerequisite to land on main before opening its dependent PR;

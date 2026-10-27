@@ -24,6 +24,8 @@ This file computes the elementary moments and transforms of the real-valued Bern
 * `integral_id_bernoulliMeasure` and `variance_id_bernoulliMeasure` give the mean and variance;
 * `integral_of_hasLaw_bernoulliMeasure` and `variance_of_hasLaw_bernoulliMeasure` give the
   corresponding random-variable statements;
+* `hasLaw_natCast_bernoulliMeasure` and `hasLaw_cast_eval_bernoulliMeasure` relate native
+  Bernoulli variables to their real casts;
 * `pgf_bernoulliMeasure` computes the probability-generating function on the native carrier;
 * `mgf_id_bernoulliMeasure` and `cgf_id_bernoulliMeasure` compute the moment- and
   cumulant-generating functions;
@@ -53,6 +55,21 @@ theorem pgf_bernoulliMeasure (p : unitInterval) (t : ℝ) :
   rw [pgf_def, integral_bernoulliMeasure]
   simp only [id_eq, pow_one, smul_eq_mul, pow_zero, mul_one]
   ring
+
+/-- The real cast of a native Bernoulli variable has the corresponding real Bernoulli law. -/
+theorem hasLaw_natCast_bernoulliMeasure (p : unitInterval) :
+    HasLaw (Nat.cast : ℕ → ℝ) Ber((1 : ℝ), 0, p) Ber((1 : ℕ), 0, p) :=
+  ⟨Measurable.of_discrete.aemeasurable, by simp [map_bernoulliMeasure]⟩
+
+/-- A real-cast coordinate under a product of native Bernoulli laws has the corresponding real
+Bernoulli law. -/
+theorem hasLaw_cast_eval_bernoulliMeasure {ι : Type*} [Fintype ι]
+    (p : ι → unitInterval) (i : ι) :
+    HasLaw (fun x : ι → ℕ ↦ (x i : ℝ)) Ber((1 : ℝ), 0, p i)
+      (Measure.pi fun i : ι ↦ Ber((1 : ℕ), 0, p i)) := by
+  simpa [Function.comp_def] using
+    (hasLaw_natCast_bernoulliMeasure (p i)).comp
+      (measurePreserving_eval (fun i : ι ↦ Ber((1 : ℕ), 0, p i)) i).hasLaw
 
 /-- The mean of the real-valued Bernoulli law with success probability `p` is `p`. -/
 @[simp]

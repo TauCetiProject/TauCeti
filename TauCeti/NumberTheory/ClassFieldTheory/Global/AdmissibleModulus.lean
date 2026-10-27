@@ -10,17 +10,25 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.ArtinNorm
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Range
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.Subgroup
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
+import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Open
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.ProductFormula
 
 /-!
-# Admissible moduli and the real places
+# Admissible moduli, the conductor, and the real places
 
 Let `L/K` be an extension of number fields. A modulus `𝔪` of `K` is **admissible** for `L/K`
 (`IsAdmissibleModulus K L 𝔪`) when its ray subgroup lies in the idele-class norm group
 `N_{L/K}(C_L)`. For an abelian extension this is the condition under which the global Artin map
 factors through the ray class group of `𝔪`, which is why ray-class reciprocity is stated for
 admissible moduli. Admissibility is inherited by multiples (`IsAdmissibleModulus.of_dvd`),
-because ray subgroups shrink as the modulus grows.
+because ray subgroups shrink as the modulus grows, and by subextensions
+(`IsAdmissibleModulus.tower_bot`), because norms compose in towers.
+
+The norm group `N_{L/K}(C_L)` is open, so it has a conductor in the sense of
+`OpenSubgroup.ideleClassConductor`: the **conductor** `abelianConductor K L` of `L/K` is the least
+admissible modulus, and a modulus is admissible exactly when the conductor divides it
+(`isAdmissibleModulus_iff_abelianConductor_dvd`). The conductor of a subextension divides that of
+the extension (`abelianConductor_dvd_abelianConductor`). None of this uses a reciprocity law.
 
 This file shows that the real places cannot be left out of an admissible modulus when `L` contains
 enough roots of unity. Let `w` be a real place of `K` and suppose that `L` contains a primitive
@@ -40,15 +48,23 @@ That idele class lies in the ray subgroup of every modulus whose infinite part o
 (`not_isAdmissibleModulus_of_forall_ne`). For `ℚ(i)/ℚ` this rejects the trivial modulus
 (`not_isAdmissibleModulus_one_Qi`), whose ray class group is trivial although the unramified prime
 `3` does not split in `ℚ(i)`. It also rejects the modulus `(4)`, which contains the only ramified
-prime: the conductor of `ℚ(i)/ℚ` is `(4) · ∞`.
+prime: the conductor of `ℚ(i)/ℚ` is `(4) · ∞`. In terms of the conductor, every real place of `K`
+lies in the infinite part of the conductor of `L/K` (`mem_abelianConductor_infinitePart`), and
+the real place of `ℚ` in that of `ℚ(i)/ℚ` (`mem_abelianConductor_infinitePart_Qi`).
 
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.IsAdmissibleModulus`: the ray subgroup of `𝔪` lies in the idele-class
   norm group of `L/K`.
+* `TauCeti.ClassFieldTheory.abelianConductor`: the conductor of `L/K`, its least admissible
+  modulus.
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.isAdmissibleModulus_iff_abelianConductor_dvd`: a modulus is
+  admissible exactly when the conductor divides it.
+* `TauCeti.ClassFieldTheory.abelianConductor_dvd_abelianConductor`: in a tower `K ⊆ L ⊆ M`, the
+  conductor of `L/K` divides that of `M/K`.
 * `TauCeti.ClassFieldTheory.ofCompletion_neg_one_notMem_range_ideleClassNormMap`: if `L` contains a
   primitive `pⁿ`-th root of unity with `pⁿ > 2`, the class of `-1` at a real place of `K` is not
   a norm from `L`.
@@ -56,6 +72,8 @@ prime: the conductor of `ℚ(i)/ℚ` is `(4) · ∞`.
   modulus whose infinite part omits a real place is not admissible.
 * `TauCeti.ClassFieldTheory.not_isAdmissibleModulus_one_Qi`: the trivial modulus is not admissible
   for `ℚ(i)/ℚ`.
+* `TauCeti.ClassFieldTheory.mem_abelianConductor_infinitePart`: under the same hypothesis, every
+  real place of `K` lies in the infinite part of the conductor of `L/K`.
 
 ## References
 
@@ -157,6 +175,55 @@ theorem IsAdmissibleModulus.of_dvd {𝔪 𝔫 : Modulus K} (h𝔪 : IsAdmissible
     (h : 𝔪 ∣ 𝔫) : IsAdmissibleModulus K L 𝔫 :=
   (raySubgroup_antitone h).trans h𝔪
 
+variable {M : Type} [Field M] [NumberField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M] in
+/-- **Admissibility passes to subextensions**: a norm from `M` is a norm from every intermediate
+field `L`. -/
+theorem IsAdmissibleModulus.tower_bot {𝔪 : Modulus K} (h : IsAdmissibleModulus K M 𝔪) :
+    IsAdmissibleModulus K L 𝔪 :=
+  h.trans (range_ideleClassNormMap_le_of_algHom (IsScalarTower.toAlgHom K L M))
+
+/-! ### The conductor -/
+
+variable (K L) in
+/-- **The conductor of an extension of number fields**: the least admissible modulus of `L/K`,
+that is, the conductor of the idele-class norm group `N_{L/K}(C_L)`, which is open. The admissible
+moduli are exactly its multiples (`isAdmissibleModulus_iff_abelianConductor_dvd`). For an abelian
+extension this is the conductor of class field theory; the definition itself uses only that the
+norm group is open, so it needs no hypothesis on `L/K`. -/
+def abelianConductor : Modulus K :=
+  OpenSubgroup.ideleClassConductor
+    ⟨(ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range,
+      isOpen_range_ideleClassNormMap K L⟩
+
+/-- **The characterization of admissibility**: a modulus is admissible for `L/K` exactly when the
+conductor of `L/K` divides it. -/
+theorem isAdmissibleModulus_iff_abelianConductor_dvd (𝔪 : Modulus K) :
+    IsAdmissibleModulus K L 𝔪 ↔ abelianConductor K L ∣ 𝔪 := by
+  rw [abelianConductor, OpenSubgroup.ideleClassConductor_dvd_iff]
+  -- The open subgroup `⟨N_{L/K}(C_L), _⟩` coerces to `N_{L/K}(C_L)` by projection.
+  exact isAdmissibleModulus_iff.symm
+
+variable (K L) in
+/-- The conductor of `L/K` is admissible for `L/K`. -/
+theorem isAdmissibleModulus_abelianConductor : IsAdmissibleModulus K L (abelianConductor K L) :=
+  (isAdmissibleModulus_iff_abelianConductor_dvd _).mpr (Modulus.dvd_refl _)
+
+variable (K) in
+/-- The trivial extension has the trivial conductor. -/
+@[simp]
+theorem abelianConductor_self : abelianConductor K K = Modulus.one K :=
+  Modulus.eq_one_of_dvd_one <| (isAdmissibleModulus_iff_abelianConductor_dvd _).mp fun c _ ↦
+    ⟨ideleClassExtension K K c, by
+      simpa only [MonoidHom.coe_ofClass, Module.finrank_self, pow_one] using
+        ideleClassNormMap_ideleClassExtension K K c⟩
+
+variable (M : Type) [Field M] [NumberField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M] in
+/-- **The conductor of a subextension divides the conductor of the extension**: for a tower
+`K ⊆ L ⊆ M`, the conductor of `L/K` divides that of `M/K`. -/
+theorem abelianConductor_dvd_abelianConductor : abelianConductor K L ∣ abelianConductor K M :=
+  (isAdmissibleModulus_iff_abelianConductor_dvd _).mp
+    (isAdmissibleModulus_abelianConductor K M).tower_bot
+
 /-- **A modulus omitting a real place is not admissible for an extension containing `μ_{pⁿ}`.**
 If `L` contains a primitive `pⁿ`-th root of unity with `pⁿ > 2` and the real place `w` of `K` is
 not in the infinite part of `𝔪`, then `𝔪` is not admissible for `L/K`. -/
@@ -174,5 +241,23 @@ theorem not_isAdmissibleModulus_one_Qi (E : Type) [Field E] [NumberField E] [Alg
     ¬ IsAdmissibleModulus ℚ E (Modulus.one ℚ) :=
   not_isAdmissibleModulus_of_forall_ne 2 Rat.isReal_infinitePlace (by simp)
     (n := 2) (IsCyclotomicExtension.zeta_spec 4 ℚ E) (by norm_num)
+
+/-- **The conductor of an extension containing `μ_{pⁿ}` contains every real place.** If `L`
+contains a primitive `pⁿ`-th root of unity with `pⁿ > 2`, every real place of `K` lies in the
+infinite part of the conductor of `L/K`. -/
+theorem mem_abelianConductor_infinitePart (p : ℕ) [Fact p.Prime]
+    (w : {w : InfinitePlace K // w.IsReal}) {n : ℕ} {ζ : L} (hζ : IsPrimitiveRoot ζ (p ^ n))
+    (hpn : 2 < p ^ n) :
+    w ∈ (abelianConductor K L).infinitePart := by
+  by_contra hw
+  exact not_isAdmissibleModulus_of_forall_ne p w.2 (fun w' hw' heq ↦ hw (Subtype.ext heq ▸ hw'))
+    hζ hpn (isAdmissibleModulus_abelianConductor K L)
+
+/-- **The conductor of `ℚ(i)/ℚ` contains the real place of `ℚ`.** -/
+theorem mem_abelianConductor_infinitePart_Qi (E : Type) [Field E] [NumberField E] [Algebra ℚ E]
+    [IsCyclotomicExtension {4} ℚ E] :
+    ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩ ∈ (abelianConductor ℚ E).infinitePart :=
+  mem_abelianConductor_infinitePart 2 _ (n := 2) (IsCyclotomicExtension.zeta_spec 4 ℚ E)
+    (by norm_num)
 
 end TauCeti.ClassFieldTheory

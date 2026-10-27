@@ -46,6 +46,8 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
 
 ## Main results
 
+* `TauCeti.finrank_euclideanSpace_fin_succ_fact`: the dimension of `ℝⁿ⁺¹`, in the form the
+  stereographic charts of its unit sphere take it.
 * `TauCeti.injective_fderiv_stereoInvFunAux_comp_coe`: the inverse of stereographic projection
   from `v`, as a map from `(ℝ ∙ v)ᗮ` to the ambient space, has injective derivative.
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
@@ -71,6 +73,14 @@ open Function Manifold Metric Module Set
 open scoped Manifold InnerProductSpace ContDiff
 
 namespace TauCeti
+
+/-- The dimension of `ℝⁿ⁺¹`, in the form `Fact (finrank ℝ E = n + 1)` taken by the stereographic
+charts of the unit sphere of `E`. Installed with `attribute [local instance]`, it lets results
+stated for the unit sphere of a general `E` apply to the unit sphere of
+`EuclideanSpace ℝ (Fin (n + 1))`. -/
+theorem finrank_euclideanSpace_fin_succ_fact (n : ℕ) :
+    Fact (finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) = n + 1) :=
+  ⟨finrank_euclideanSpace_fin⟩
 
 section Stereographic
 

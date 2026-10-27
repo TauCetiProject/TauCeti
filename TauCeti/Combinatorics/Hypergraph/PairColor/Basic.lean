@@ -18,6 +18,7 @@ symmetric colors and genuinely oriented colors in the lower skeleton of a hyperg
 `PairColorSystem.colorOfPair` extends the coloring to all vertex pairs with values in `Option`:
 only diagonal pairs have color `none`. `PairColorSystem.ofRaw` makes any directed coloring
 coherent by recording its colors in both orientations, using the product palette.
+`coordPair` extracts the ordered distinct pair of two coordinates of an injective tuple.
 -/
 
 public section
@@ -114,5 +115,22 @@ theorem ofRaw_rev (color : {p : V × V // p.1 ≠ p.2} → κ) (c : κ × κ) :
     (ofRaw color).rev c = c.swap := (rfl)
 
 end PairColorSystem
+
+/-- The ordered distinct pair formed by two coordinates of an injective tuple. -/
+def coordPair {ι V : Type*} (x : {x : ι → V // Function.Injective x}) (i j : ι)
+    (hij : i ≠ j) : {p : V × V // p.1 ≠ p.2} :=
+  ⟨(x.1 i, x.1 j), fun h ↦ hij (x.2 h)⟩
+
+/-- The underlying pair of `coordPair x i j hij` consists of the `i`th and `j`th coordinates. -/
+@[simp]
+theorem coe_coordPair {ι V : Type*} (x : {x : ι → V // Function.Injective x}) (i j : ι)
+    (hij : i ≠ j) : (coordPair x i j hij : V × V) = (x.1 i, x.1 j) := (rfl)
+
+/-- The color of a coordinate pair is the total pair color of the two coordinates. -/
+theorem PairColorSystem.color_coordPair_eq_iff {ι κ V : Type*} (C : PairColorSystem κ V)
+    {x : {x : ι → V // Function.Injective x}} {i j : ι} (hij : i ≠ j) {k : κ} :
+    C.color (coordPair x i j hij) = k ↔ C.colorOfPair (x.1 i) (x.1 j) = some k := by
+  rw [C.colorOfPair_of_ne (fun h ↦ hij (x.2 h)), Option.some_inj]
+  rfl
 
 end TauCeti

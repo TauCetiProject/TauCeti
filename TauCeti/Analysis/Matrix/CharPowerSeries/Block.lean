@@ -88,7 +88,7 @@ theorem charPowerSeries_fromBlocks_zero₁₂
     have h := E.summable_iff.mpr (hM n)
     refine h.congr fun s ↦ ?_
     simp only [Function.comp_apply, E, Equiv.subtypeEquiv_apply, Equiv.finsetCongr_apply]
-    rw [← principalMinor_submatrix_equiv, hmatrix]
+    rw [← principalMinor_submatrix _ e.toEmbedding, Equiv.coe_toEmbedding, hmatrix]
   rw [← charPowerSeries_submatrix_equiv (fromBlocks A 0 C D) e, hmatrix,
     charPowerSeries_fromBlocks_zero₂₁ D C A hD hA hsum, mul_comm]
 

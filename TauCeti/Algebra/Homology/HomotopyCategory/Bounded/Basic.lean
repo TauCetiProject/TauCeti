@@ -130,6 +130,30 @@ lemma bounded_cylinder {K : CochainComplex C ℤ} (hK : CochainComplex.bounded C
   · simp only [ComplexShape.up_Rel] at hj
     exact K.isZero_of_isStrictlyLE b _ (by lia)
 
+/-- The mapping cone of a morphism `K ⟶ L` is strictly bounded above by `n` when `K` is strictly
+bounded above by `n + 1` and `L` by `n`. This is the upper-bound counterpart of Mathlib's
+`CochainComplex.isStrictlyGE_mappingCone`. -/
+lemma isStrictlyLE_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
+    (n₁ n₂ n : ℤ) [K.IsStrictlyLE n₁] [L.IsStrictlyLE n₂] (hn₁ : n₁ ≤ n + 1 := by lia)
+    (hn₂ : n₂ ≤ n := by lia) :
+    (CochainComplex.mappingCone f).IsStrictlyLE n := by
+  rw [CochainComplex.isStrictlyLE_iff]
+  intro i hi
+  rw [CochainComplex.mappingCone.isZero_X_iff]
+  exact ⟨K.isZero_of_isStrictlyLE n₁ (i + 1) (by lia), L.isZero_of_isStrictlyLE n₂ i (by lia)⟩
+
+/-- The mapping cone of a morphism between bounded cochain complexes is bounded. If the source
+and target have bounds `(a₁, b₁)` and `(a₂, b₂)`, the cone has bounds
+`(min (a₁ - 1) a₂, max (b₁ - 1) b₂)`. -/
+lemma bounded_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
+    (hK : CochainComplex.bounded C K) (hL : CochainComplex.bounded C L) :
+    CochainComplex.bounded C (CochainComplex.mappingCone f) := by
+  obtain ⟨a₁, b₁, ha₁, hb₁⟩ := (CochainComplex.bounded_iff C K).1 hK
+  obtain ⟨a₂, b₂, ha₂, hb₂⟩ := (CochainComplex.bounded_iff C L).1 hL
+  exact (CochainComplex.bounded_iff C _).2 ⟨min (a₁ - 1) a₂, max (b₁ - 1) b₂,
+    CochainComplex.isStrictlyGE_mappingCone f a₁ a₂ _,
+    isStrictlyLE_mappingCone f b₁ b₂ _⟩
+
 end
 
 namespace Bounded
@@ -206,13 +230,6 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
       rwa [← HomotopyCategory.bounded_quotient_obj_iff]
     have h₂' : CochainComplex.bounded C T.obj₂.as := by
       rwa [← HomotopyCategory.bounded_quotient_obj_iff]
-    rw [CochainComplex.bounded_iff] at h₁' h₂'
-    obtain ⟨a₁, b₁, ha₁, hb₁⟩ := h₁'
-    obtain ⟨a₂, b₂, ha₂, hb₂⟩ := h₂'
-    let _ := ha₁
-    let _ := hb₁
-    let _ := ha₂
-    let _ := hb₂
     have quotient_obj_of_as (K : HomotopyCategory C (.up ℤ)) :
         (HomotopyCategory.quotient C (.up ℤ)).obj K.as = K := by
       cases K
@@ -228,14 +245,8 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
       ⟨Triangle.π₃.mapIso (isoTriangleOfIso₁₂ T _ hT
         (HomotopyCategory.mappingCone_triangleh_distinguished f)
         e₁.symm e₂.symm ?_)⟩⟩
-    · rw [HomotopyCategory.bounded_quotient_obj_iff, CochainComplex.bounded_iff]
-      refine ⟨min (a₁ - 1) a₂, max (b₁ - 1) b₂, ?_, ?_⟩
-      · exact CochainComplex.isStrictlyGE_mappingCone f a₁ a₂ _ (by omega) (by omega)
-      · rw [CochainComplex.isStrictlyLE_iff]
-        intro i hi
-        rw [CochainComplex.mappingCone.isZero_X_iff]
-        exact ⟨CochainComplex.isZero_of_isStrictlyLE (K := T.obj₁.as) b₁ (i + 1) (by omega),
-          CochainComplex.isZero_of_isStrictlyLE (K := T.obj₂.as) b₂ i (by omega)⟩
+    · rw [HomotopyCategory.bounded_quotient_obj_iff]
+      exact CochainComplex.bounded_mappingCone f h₁' h₂'
     -- Unfold the compatibility condition from `isoTriangleOfIso₁₂`; the explicit transports
     -- `e₁` and `e₂` avoid the nonstandard definitional-equality options used by Mathlib's proof.
     · change T.mor₁ ≫ e₂.inv =
@@ -246,6 +257,12 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
 instance [HasZeroObject C] [HasBinaryBiproducts C] :
     (HomotopyCategory.bounded C).IsTriangulated where
   toIsTriangulatedClosed₂ := .of_isTriangulatedClosed₃
+
+/-- Every object of the homotopy category represented by a bounded complex is represented by a
+bounded below complex. -/
+lemma bounded_le_plus : HomotopyCategory.bounded C ≤ _root_.HomotopyCategory.plus C := by
+  rintro _ ⟨K, hK⟩
+  exact ⟨K, hK.1⟩
 
 /-- The homotopy category of bounded cochain complexes. -/
 abbrev Bounded := (HomotopyCategory.bounded C).FullSubcategory

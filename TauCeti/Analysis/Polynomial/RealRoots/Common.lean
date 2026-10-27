@@ -28,6 +28,12 @@ the multiplicity of each listed root in each member is the same at every paramet
 membership of a listed root in the root set of each member does not depend on the parameter. This
 is the common ordered list of real roots over which a delineable family is stacked.
 
+The hypothesis on distinct complex roots follows from gcd data: the number of distinct complex
+roots of a nonzero real polynomial is its degree minus the degree of its gcd with its derivative.
+So both results also hold when each member has locally constant degree of its gcd with its
+derivative. By the subresultant gcd criterion, this is what fixed vanishing of principal
+subresultant coefficients provides.
+
 The underlying topological gluing argument is provided separately for any local continuous,
 strictly increasing enumerations of an intrinsic set of real roots. It does not require the
 coefficient hypotheses used to construct such enumerations.
@@ -40,6 +46,11 @@ coefficient hypotheses used to construct such enumerations.
   number of distinct complex roots.
 * `Polynomial.exists_continuous_ordered_common_roots_of_preconnectedSpace`: the common ordered list
   of real roots with constant multiplicities in every member.
+* `Polynomial.eventually_exists_bijOn_biUnion_aroots_toFinset_of_natDegree_gcd_derivative`: the
+  family matching lemma with locally constant degrees of the gcds of the members with their
+  derivatives in place of the hypothesis on distinct complex roots.
+* `Polynomial.exists_continuous_ordered_common_roots_of_natDegree_gcd_derivative`: the common
+  ordered list of real roots under the same gcd hypotheses.
 
 ## References
 
@@ -171,6 +182,32 @@ theorem eventually_card_aroots_prod_eq {x₀ : B}
     aroots_prod_toFinset _ _ (hne fun k => (hdeg k).self_of_nhds)]
   exact (Finset.card_nbij e he.mapsTo he.injOn he.surjOn).symm
 
+/-- **Family matching lemma for real polynomials, gcd form.** Let `F k x` be real polynomials of
+degree `d k` near `x₀`, for `k` in a finite index type, whose coefficients of index at most `d k`
+are continuous at `x₀`. Suppose that near `x₀` the degree of the gcd of each member with its
+derivative, and the degree of the gcd of every pair of distinct members, are the same as at
+`x₀`. Then for `x` near `x₀` there is a single bijection `e` from the distinct complex roots of
+all the `F k x₀` onto those of all the `F k x` that moves each root by less than `ε` and preserves
+its multiplicity in every member. -/
+theorem eventually_exists_bijOn_biUnion_aroots_toFinset_of_natDegree_gcd_derivative {x₀ : B}
+    (hF : ∀ k, ∀ i ≤ d k, ContinuousAt (fun x => (F k x).coeff i) x₀)
+    (hdeg : ∀ k, ∀ᶠ x in 𝓝 x₀, (F k x).degree = d k)
+    (hder : ∀ k, ∀ᶠ x in 𝓝 x₀,
+      (EuclideanDomain.gcd (F k x) (F k x).derivative).natDegree =
+        (EuclideanDomain.gcd (F k x₀) (F k x₀).derivative).natDegree)
+    (hgcd : Pairwise fun k l => ∀ᶠ x in 𝓝 x₀, (EuclideanDomain.gcd (F k x) (F l x)).natDegree =
+      (EuclideanDomain.gcd (F k x₀) (F l x₀)).natDegree)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ x in 𝓝 x₀, ∃ e : ℂ → ℂ,
+      Set.BijOn e (Finset.univ.biUnion fun k => ((F k x₀).aroots ℂ).toFinset)
+        (Finset.univ.biUnion fun k => ((F k x).aroots ℂ).toFinset) ∧
+      ∀ z ∈ Finset.univ.biUnion (fun k => ((F k x₀).aroots ℂ).toFinset), ‖e z - z‖ < ε ∧
+        ∀ k, ((F k x).map (algebraMap ℝ ℂ)).rootMultiplicity (e z) =
+          ((F k x₀).map (algebraMap ℝ ℂ)).rootMultiplicity z :=
+  eventually_exists_bijOn_biUnion_aroots_toFinset hF hdeg
+    (fun k => (eventually_card_aroots_toFinset_eq_of_natDegree_gcd_derivative (K := ℂ) (hdeg k)
+      (hder k)).mono fun _ hx => hx.le) hgcd hε
+
 omit [Fintype ι] in
 /-- **Common ordered real roots.** Let `F k x` be real polynomials of degree `d k`, for `k` in a
 finite index type, whose coefficients depend continuously on a parameter in a nonempty
@@ -220,5 +257,31 @@ theorem exists_continuous_ordered_common_roots_of_preconnectedSpace [Finite ι]
       (fun k _ j hj => hF k j hj)
       (fun k _ x => (natDegree_eq_of_degree_eq_some (hdeg k x)).le)
       (hrc i) (fun k _ => hne k) (hmult i) k (Finset.mem_univ k)⟩
+
+omit [Fintype ι] in
+/-- **Common ordered real roots, gcd form.** Let `F k x` be real polynomials of degree `d k`, for
+`k` in a finite index type, whose coefficients depend continuously on a parameter in a nonempty
+preconnected space. Suppose that the degree of the gcd of each member with its derivative, and
+the degree of the gcd of every pair of distinct members, are locally constant. Then there are
+finitely many continuous functions `r x 0 < ⋯ < r x (n - 1)` whose values at each `x` are exactly
+the real roots of the members `F k x` together, and the multiplicity of `r x i` as a root of each
+member `F k x` does not depend on `x`. -/
+theorem exists_continuous_ordered_common_roots_of_natDegree_gcd_derivative
+    [Finite ι] [PreconnectedSpace B] [Nonempty B]
+    (hF : ∀ k, ∀ i ≤ d k, Continuous (fun x => (F k x).coeff i))
+    (hdeg : ∀ k x, (F k x).degree = d k)
+    (hder : ∀ k x₀, ∀ᶠ x in 𝓝 x₀,
+      (EuclideanDomain.gcd (F k x) (F k x).derivative).natDegree =
+        (EuclideanDomain.gcd (F k x₀) (F k x₀).derivative).natDegree)
+    (hgcd : Pairwise fun k l => ∀ x₀, ∀ᶠ x in 𝓝 x₀,
+      (EuclideanDomain.gcd (F k x) (F l x)).natDegree =
+        (EuclideanDomain.gcd (F k x₀) (F l x₀)).natDegree) :
+    ∃ n : ℕ, ∃ r : B → Fin n → ℝ,
+      (∀ i, Continuous (fun x => r x i)) ∧ (∀ x, StrictMono (r x)) ∧
+      (∀ x t, (∃ k, (F k x).IsRoot t) ↔ ∃ i, r x i = t) ∧
+      (∀ k i x y, (F k x).rootMultiplicity (r x i) = (F k y).rootMultiplicity (r y i)) :=
+  exists_continuous_ordered_common_roots_of_preconnectedSpace hF hdeg
+    (fun k x₀ => (eventually_card_aroots_toFinset_eq_of_natDegree_gcd_derivative (K := ℂ)
+      (Eventually.of_forall (hdeg k)) (hder k x₀)).mono fun _ hx => hx.le) hgcd
 
 end Polynomial

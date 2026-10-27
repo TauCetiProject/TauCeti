@@ -8,6 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+import Mathlib.Geometry.Manifold.BumpFunction
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
@@ -28,6 +31,9 @@ orthonormal basis. The constant-curvature calculation fixes the sign convention:
 The calculation is stated for any bilinear form in place of `κ g`, and then specialised
 to `κ g`.
 
+The Ricci coefficients of a smooth connection in a chart-local frame are smooth on the chart, so
+the Ricci tensor pairs vector fields differentiable at a point to a function differentiable there.
+
 The convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 7. The curvature tensor being contracted is
 `CovariantDerivative.curvatureTensor`, with convention
@@ -37,7 +43,7 @@ Springer GTM 176 (2018), Chapter 7. The curvature tensor being contracted is
 public section
 
 open Bundle
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -167,5 +173,78 @@ theorem ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub
   intro w u v
   rw [h w u v]
   simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_sub, smul_smul, smul_eq_mul]
+
+open Riemannian.Tensor in
+/-- The Ricci coefficients `Ric(eᵢ, eⱼ)` of a smooth connection on the tangent bundle in the
+chart-local frame at `a` are smooth on the chart source. No metric is involved. -/
+theorem contMDiffOn_ricciTensor_chartLocalFrame (a : M) (i j : Fin (Module.finrank ℝ E)) :
+    ContMDiffOn I 𝓘(ℝ) ∞
+      (fun x ↦ cov.ricciTensor x (chartLocalFrame (I := I) a i x)
+        (chartLocalFrame (I := I) a j x))
+      (chartAt H a).source := by
+  let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  let e := trivializationAt E (TangentSpace I : M → Type _) a
+  let b := Module.finBasis ℝ E
+  have hsource : (chartAt H a).source = e.baseSet :=
+    (TangentBundle.trivializationAt_baseSet (I := I) a).symm
+  intro x₀ hx₀
+  rw [hsource] at hx₀
+  refine ContMDiffAt.contMDiffWithinAt ?_
+  -- Cut off the frame by a bump function equal to one near `x₀`. This gives globally smooth
+  -- vector fields, to which the curvature operator applies, agreeing with the frame near `x₀`.
+  have hnhds : e.baseSet ∈ 𝓝 x₀ := e.open_baseSet.mem_nhds hx₀
+  obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hnhds).mem_iff.mp hnhds
+  let X (k : Fin (Module.finrank ℝ E)) : Π y : M, TangentSpace I y :=
+    (ρ : M → ℝ) • chartLocalFrame (I := I) a k
+  have hX (k : Fin (Module.finrank ℝ E)) : CMDiff ∞ (T% (X k)) :=
+    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport e.open_baseSet hρ
+      (contMDiffOn_chartLocalFrame (I := I) a k)
+  have hsum : ContMDiffAt I 𝓘(ℝ) ∞
+      (fun y ↦ ∑ k, e.localFrameCoeff I b k y (cov.curvatureOperator (X k) (X i) (X j) y)) x₀ :=
+    contMDiffAt_finsetSum fun k _ ↦ contMDiffAt_localFrameCoeff b hx₀
+      (cov.contMDiff_curvatureOperator (hX k) (hX i) (hX j) x₀) k
+  refine hsum.congr_of_eventuallyEq ?_
+  filter_upwards [ρ.eventuallyEq_one, hnhds] with y hρy hy
+  have hXy (k : Fin (Module.finrank ℝ E)) : X k y = chartLocalFrame (I := I) a k y := by
+    simp only [X, Pi.smul_apply', hρy, Pi.one_apply, one_smul]
+  -- Trace `w ↦ R(w, eᵢ)eⱼ` in the trivialization basis, which is the chart-local frame.
+  have hb (k : Fin (Module.finrank ℝ E)) : e.basisAt b hy k = chartLocalFrame (I := I) a k y :=
+    (chartLocalFrame_apply_of_mem_chart_source (I := I) a (hsource ▸ hy) k).symm
+  rw [cov.ricciTensor_eq_sum y (e.basisAt b hy)]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [e.localFrameCoeff_apply_of_mem_baseSet b hy (cov.curvatureOperator (X k) (X i) (X j)) k,
+    ← curvatureTensor_apply cov y (hX k) (hX i) (hX j), hXy, hXy, hXy, hb]
+
+open Riemannian.Tensor in
+/-- The Ricci tensor of a smooth connection pairs two vector fields differentiable at `x` to a
+function differentiable at `x`. No metric is involved. -/
+theorem mdifferentiableAt_ricciTensor_apply {σ τ : Π x : M, TangentSpace I x} {x : M}
+    (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
+    MDiffAt (fun y ↦ cov.ricciTensor y (σ y) (τ y)) x := by
+  let e := trivializationAt E (TangentSpace I : M → Type _) x
+  let b := Module.finBasis ℝ E
+  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
+  have hfin {f : Fin (Module.finrank ℝ E) → M → ℝ} (hf : ∀ i, MDiffAt (f i) x) :
+      MDiffAt (fun y ↦ ∑ i, f i y) x := by
+    simpa only [Finset.sum_fn] using MDifferentiableAt.sum (t := Finset.univ) fun i _ ↦ hf i
+  -- Expand both fields in the chart-local frame at `x`, whose Ricci coefficients are smooth.
+  have hsum : MDiffAt (fun y ↦ ∑ i, ∑ j, e.localFrameCoeff I b i y (σ y) *
+      e.localFrameCoeff I b j y (τ y) *
+        cov.ricciTensor y (chartLocalFrame (I := I) x i y) (chartLocalFrame (I := I) x j y)) x :=
+    hfin fun i ↦ hfin fun j ↦
+      ((mdifferentiableAt_localFrameCoeff b hx hσ i).mul
+        (mdifferentiableAt_localFrameCoeff b hx hτ j)).mul
+      (((cov.contMDiffOn_ricciTensor_chartLocalFrame x i j).contMDiffAt
+        ((chartAt H x).open_source.mem_nhds (mem_chart_source H x))).mdifferentiableAt
+          (by simp))
+  refine hsum.congr_of_eventuallyEq ?_
+  filter_upwards [e.eventually_eq_localFrame_sum_coeff_smul (I := I) b (s := σ) hx,
+    e.eventually_eq_localFrame_sum_coeff_smul (I := I) b (s := τ) hx] with y hσy hτy
+  conv_lhs => rw [hσy, hτy]
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul,
+    chartLocalFrame_def, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
 
 end CovariantDerivative

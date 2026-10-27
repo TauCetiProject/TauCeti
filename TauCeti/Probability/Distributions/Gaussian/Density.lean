@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.EuclideanLin
+public import TauCeti.Analysis.Matrix.Sqrt
+public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Gaussian.Multivariate
@@ -41,6 +42,12 @@ form into the one of `S⁻¹`.
 * `TauCeti.Probability.stdGaussian_eq_withDensity` — the standard Gaussian on `EuclideanSpace ℝ ι`
   is Lebesgue
   measure weighted by `(2π)^(-d/2) * exp (-‖x‖² / 2)`;
+* `TauCeti.Probability.stdGaussian_eq_withDensity_norm` — the same density on any
+  finite-dimensional real inner product space;
+* `TauCeti.Probability.support_multivariateGaussian` — the support at a positive-semidefinite
+  covariance is the affine range `m + range S`;
+* `TauCeti.Probability.ae_mem_affineRange_multivariateGaussian` — the law is almost surely in
+  this affine range;
 * `TauCeti.Probability.multivariateGaussian_eq_withDensity` — the density presentation of the law;
 * `TauCeti.Probability.hasPDF_of_hasLaw_multivariateGaussian` and
   `TauCeti.Probability.pdf_eq_multivariateGaussianPDF_of_hasLaw_multivariateGaussian` — the `HasPDF`
@@ -166,6 +173,94 @@ theorem stdGaussian_eq_withDensity :
   rw [prod_gaussianPDFReal_zero_one, MeasurableEquiv.coe_toLp_symm,
     ← EuclideanSpace.real_norm_sq_eq]
 
+/-- **The standard Gaussian on a finite-dimensional real inner product space has the isotropic
+Gaussian density** `(2π)^(-d/2) * exp (-‖x‖² / 2)`, where `d` is the dimension. -/
+theorem stdGaussian_eq_withDensity_norm (E : Type*) [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] :
+    stdGaussian E =
+      volume.withDensity fun x =>
+        ENNReal.ofReal ((2 * π) ^ (-(Module.finrank ℝ E : ℝ) / 2) * exp (-‖x‖ ^ 2 / 2)) := by
+  -- Transport the Euclidean density along an orthonormal basis, which preserves volume and norms.
+  let b := (stdOrthonormalBasis ℝ E).repr
+  have hvol : (volume : Measure (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))).map b.symm =
+      volume :=
+    b.symm.measurePreserving.map_eq
+  have htransport : ∀ g : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) → ℝ≥0∞,
+      ((volume : Measure (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))).withDensity g).map
+          b.symm =
+        (volume : Measure E).withDensity fun x => g (b x) := fun g => by
+    simpa [hvol] using b.symm.toMeasurableEquiv.map_withDensity volume g
+  rw [← stdGaussian_map b.symm, stdGaussian_eq_withDensity, htransport]
+  congr 1
+  funext x
+  simp
+
+/-- The standard Gaussian measure on a finite-dimensional real inner product space has full
+support. -/
+@[simp]
+theorem support_stdGaussian (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] :
+    (stdGaussian E).support = Set.univ := by
+  let e : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) ≃ₗᵢ[ℝ] E :=
+    (stdOrthonormalBasis ℝ E).repr.symm
+  have hsupport : (stdGaussian (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))).support =
+      Set.univ := by
+    rw [stdGaussian_eq_withDensity]
+    let f : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) → ℝ≥0∞ := fun x =>
+      ENNReal.ofReal
+        ((2 * π) ^ (-(Fintype.card (Fin (Module.finrank ℝ E)) : ℝ) / 2) * exp (-‖x‖ ^ 2 / 2))
+    have hf : Measurable f := by
+      fun_prop
+    have hsupp : Function.support f = Set.univ := by
+      ext x
+      simp only [Function.mem_support, Set.mem_univ, iff_true, ne_eq, ENNReal.ofReal_eq_zero,
+        not_le, f]
+      positivity
+    simpa only [f, closure_univ] using
+      (Measure.support_withDensity_eq_closure (μ := volume) hf isOpen_univ hsupp)
+  rw [← stdGaussian_map e]
+  rw [← e.coe_toHomeomorph]
+  rw [Measure.support_map_homeomorph, hsupport]
+  exact Set.image_univ_of_surjective e.surjective
+
+/-- The support of a multivariate Gaussian measure with positive-semidefinite covariance is the
+affine range of its covariance. -/
+@[simp]
+theorem support_multivariateGaussian (hS : S.PosSemidef) (m : EuclideanSpace ℝ ι) :
+    (multivariateGaussian m S).support =
+      (AffineSubspace.mk' m (LinearMap.range (Matrix.toEuclideanLin S)) :
+        Set (EuclideanSpace ℝ ι)) := by
+  rw [multivariateGaussian,
+    Measure.support_map_eq_closure_range _ (support_stdGaussian (EuclideanSpace ℝ ι))
+      (by fun_prop),
+    ← hS.range_toEuclideanLin_sqrt]
+  let A : AffineSubspace ℝ (EuclideanSpace ℝ ι) :=
+    AffineSubspace.mk' m (LinearMap.range (Matrix.toEuclideanLin (CFC.sqrt S)))
+  have hAclosed : IsClosed (A : Set (EuclideanSpace ℝ ι)) := A.closed_of_finiteDimensional
+  have hrange : Set.range (fun x => m + Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) x) =
+      (A : Set (EuclideanSpace ℝ ι)) := by
+    ext y
+    simp only [Set.mem_range, SetLike.mem_coe, AffineSubspace.mem_mk', vsub_eq_sub, A]
+    constructor
+    · rintro ⟨x, rfl⟩
+      rw [Matrix.toEuclideanCLM_apply, add_sub_cancel_left]
+      exact LinearMap.mem_range_self _ x
+    · rintro ⟨x, hx⟩
+      refine ⟨x, ?_⟩
+      rw [Matrix.toEuclideanCLM_apply, hx]
+      abel
+  rw [hrange, hAclosed.closure_eq]
+
+/-- A multivariate Gaussian measure with positive-semidefinite covariance is almost surely in the
+affine range of its covariance. -/
+theorem ae_mem_affineRange_multivariateGaussian (hS : S.PosSemidef)
+    (m : EuclideanSpace ℝ ι) :
+    ∀ᵐ x ∂multivariateGaussian m S,
+      x ∈ (AffineSubspace.mk' m (LinearMap.range (Matrix.toEuclideanLin S)) :
+        Set (EuclideanSpace ℝ ι)) := by
+  exact Filter.eventually_mem_set.mpr <|
+    support_multivariateGaussian hS m ▸ (multivariateGaussian m S).support_mem_ae
+
 /-- **A nondegenerate multivariate Gaussian law is Lebesgue measure with the Gaussian density.** -/
 theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
     multivariateGaussian m S = volume.withDensity (multivariateGaussianPDF m S) := by
@@ -178,13 +273,10 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
   have hdetR : (CFC.sqrt S).det = √S.det := by simpa using hS.posSemidef.det_sqrt
   have hdetRpos : 0 < (CFC.sqrt S).det := by rw [hdetR]; positivity
   have hRunit : (CFC.sqrt S).det ≠ 0 := hdetRpos.ne'
-  have hCLM : ∀ (X : Matrix ι ι ℝ) (z : EuclideanSpace ℝ ι),
-      Matrix.toEuclideanCLM (𝕜 := ℝ) X z = X.toEuclideanLin z := fun X z => by
-    rw [← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin X, ContinuousLinearMap.coe_coe]
   -- the square root is invertible, so it induces a continuous linear equivalence
   have hAfun : (fun x : EuclideanSpace ℝ ι => m + Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) x)
       = fun x => m + Matrix.toEuclideanCLE (CFC.sqrt S) hRunit x :=
-    funext fun x => by rw [hCLM, Matrix.toEuclideanCLE_apply]
+    funext fun x => by rw [Matrix.toEuclideanCLM_apply, Matrix.toEuclideanCLE_apply]
   -- the inverse square root pulls the isotropic quadratic form back to the one of `S⁻¹`
   have hconj : ((CFC.sqrt S)⁻¹).conjTranspose * 1 * (CFC.sqrt S)⁻¹ = S⁻¹ := by
     rw [mul_one, hR.isHermitian.inv.eq, ← Matrix.mul_inv_rev, hRR]
@@ -241,13 +333,11 @@ theorem mutuallySingular_multivariateGaussian_volume (hS : ¬ S.PosDef)
     exact hS ⟨by ext i; exact isEmptyElim i,
       fun x hx => absurd (Finsupp.ext fun i => isEmptyElim i) hx⟩
   by_cases hSS : S.PosSemidef
-  · have hdet0 : (CFC.sqrt S).det = 0 := by
-      have hS0 : S.det = 0 := by
-        by_contra hd
-        exact hS (hSS.posDef_iff_det_ne_zero.mpr hd)
-      simp [hSS.det_sqrt, hS0]
+  · have hdet0 : S.det = 0 := by
+      by_contra hd
+      exact hS (hSS.posDef_iff_det_ne_zero.mpr hd)
     set p : Submodule ℝ (EuclideanSpace ℝ ι) :=
-      LinearMap.range (Matrix.toEuclideanLin (CFC.sqrt S)) with hp
+      LinearMap.range (Matrix.toEuclideanLin S) with hp
     have hptop : p ≠ ⊤ :=
       (LinearMap.range_lt_top_of_det_eq_zero (by rw [LinearMap.det_toLpLin]; exact hdet0)).ne
     -- the law is carried by the proper affine subspace through `m` with direction `p`
@@ -257,13 +347,8 @@ theorem mutuallySingular_multivariateGaussian_volume (hS : ¬ S.PosDef)
     have hAc : MeasurableSet (A : Set (EuclideanSpace ℝ ι))ᶜ :=
       A.closed_of_finiteDimensional.measurableSet.compl
     refine ⟨(A : Set (EuclideanSpace ℝ ι))ᶜ, hAc, ?_, ?_⟩
-    · rw [multivariateGaussian, Measure.map_apply (by fun_prop) hAc]
-      convert measure_empty (μ := stdGaussian (EuclideanSpace ℝ ι))
-      ext x
-      simp only [Set.mem_preimage, Set.mem_compl_iff, Set.mem_empty_iff_false, iff_false, not_not,
-        hA, SetLike.mem_coe, AffineSubspace.mem_mk', vsub_eq_sub,
-        add_sub_cancel_left, hp]
-      exact LinearMap.mem_range_self _ x
+    · simpa only [hA, hp] using
+        mem_ae_iff.mp (Filter.eventually_mem_set.mp (ae_mem_affineRange_multivariateGaussian hSS m))
     · rw [compl_compl]
       exact Measure.addHaar_affineSubspace volume A hAtop
   · rw [multivariateGaussian_of_not_posSemidef m hSS]

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Geometry
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Homeomorph
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.PL
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.PL
 public import TauCeti.Topology.PL.FiniteInf
 public import TauCeti.Topology.PL.Inverse
 import Mathlib.Analysis.Normed.Module.FiniteDimension
@@ -25,7 +26,8 @@ coordinate on the starred face from each of its vertices and transfers the total
 to the new vertex. This extension is piecewise affine on minimum-coordinate cells and agrees
 with the inverse of the stellar homeomorphism of finite weak polyhedra. The resulting maps are
 packaged by the realization-level `PLHomeomorphic` relation, which is closed under symmetry and
-composition; this file derives such a package for every finite stellar equivalence.
+composition; this file derives such a package for every finite stellar equivalence and descends it
+through injective vertex relabelings for intrinsic stellar equivalence.
 
 Reference: Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2.
 -/
@@ -565,5 +567,29 @@ theorem plHomeomorphic
   exact hP.choose_spec hfin
 
 end StellarEquivalent
+
+namespace StellarEquivalentUpToRelabeling
+
+/-- Intrinsically stellar-equivalent finite complexes have PL-homeomorphic weak polyhedra.
+
+Finiteness is required only for one complex; intrinsic stellar equivalence transports it to every
+intermediate complex in the stellar chain. -/
+theorem plHomeomorphic (h : StellarEquivalentUpToRelabeling K L)
+    (hfin : K.faces.Finite) : PLHomeomorphic K L := by
+  exact (h.induction_on
+    (P := fun A B => StellarEquivalentUpToRelabeling A B ∧
+      (A.faces.Finite → PLHomeomorphic A B))
+    (fun A B e d he =>
+      ⟨of_common_relabeling e d he, fun hA =>
+        PLHomeomorphic.of_common_relabeling (e := e) (d := d)
+          (he.plHomeomorphic ((finite_faces_map_iff_of_injective e e.injective).mpr hA))⟩)
+    (fun A => ⟨.refl A, fun _ => PLHomeomorphic.refl A⟩)
+    (fun _ _ ih =>
+      ⟨ih.1.symm, fun hB => (ih.2 ((finite_faces_iff ih.1).mpr hB)).symm⟩)
+    (fun _ _ _ ihAB ihBC =>
+      ⟨ihAB.1.trans ihBC.1, fun hA =>
+        (ihAB.2 hA).trans (ihBC.2 ((finite_faces_iff ihAB.1).mp hA))⟩)).2 hfin
+
+end StellarEquivalentUpToRelabeling
 
 end PreAbstractSimplicialComplex

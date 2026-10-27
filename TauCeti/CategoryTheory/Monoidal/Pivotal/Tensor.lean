@@ -32,7 +32,8 @@ traces and dimensions are therefore multiplicative without further hypotheses.
 
 * `TauCeti.pivotalExactPairing_tensor_evaluation` and
   `TauCeti.pivotalExactPairing_tensor_coevaluation`: the pivotal pairing of `X ⊗ Y` is the tensor
-  product of the pivotal pairings, up to `rightDualTensorIso X Y`;
+  product of the pivotal pairings, up to `rightDualTensorIso X Y`, which is therefore also a
+  comparison of left duals (`TauCeti.rightDualTensorIso_hom_eq_leftMate`);
 * `TauCeti.leftTrace_tensorHom` and `TauCeti.rightTrace_tensorHom`: the traces of `f ⊗ₘ g` as
   nested loops;
 * `TauCeti.leftTrace_tensorHom_eq_comp`, `TauCeti.rightTrace_tensorHom_eq_comp`,
@@ -79,8 +80,7 @@ theorem pivotalExactPairing_tensor_evaluation (X Y : C) :
         ε_ ((Yᘁ : C) ⊗ (Xᘁ : C)) (((Yᘁ : C) ⊗ (Xᘁ : C))ᘁ : C) =
       @evaluation C _ _ (Yᘁ ⊗ Xᘁ) (X ⊗ Y)
         (@tensor C _ _ Yᘁ Xᘁ Y X (pivotalExactPairing Y) (pivotalExactPairing X)) := by
-    rw [comp_whiskerRight, Category.assoc, rightDualTensorIso, rightDualIso_inv,
-      rightMate_comp_evaluation, MonoidalCategory.whiskerLeft_id, Category.id_comp,
+    rw [comp_whiskerRight, Category.assoc, rightDualTensorIso_inv_whiskerRight_evaluation,
       tensor_evaluation,
       @tensor_evaluation C _ _ _ _ _ _ (pivotalExactPairing Y) (pivotalExactPairing X),
       pivotalExactPairing_evaluation, pivotalExactPairing_evaluation, tensorHom_def']
@@ -111,6 +111,18 @@ theorem pivotalExactPairing_tensor_evaluation (X Y : C) :
       (whisker_exchange_assoc _ _ _).symm
     _ = _ := by rw [hε]
 
+/-- The comparison `rightDualTensorIso X Y : (X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` of right duals is also the
+comparison of left duals of `X ⊗ Y`, for the pivotal pairing of `X ⊗ Y` and the tensor product of
+the pivotal pairings of `Y` and of `X`. -/
+theorem rightDualTensorIso_hom_eq_leftMate (X Y : C) :
+    (rightDualTensorIso X Y).hom =
+      leftMate (@tensor C _ _ Yᘁ Xᘁ Y X (pivotalExactPairing Y) (pivotalExactPairing X))
+        (pivotalExactPairing (X ⊗ Y)) (𝟙 (X ⊗ Y)) :=
+  @leftDualHom_ext C _ _ _ _ _
+    (@tensor C _ _ Yᘁ Xᘁ Y X (pivotalExactPairing Y) (pivotalExactPairing X)) _ _ (by
+      rw [leftMate_comp_evaluation, id_whiskerRight, Category.id_comp,
+        pivotalExactPairing_tensor_evaluation])
+
 /-- The coevaluation of the pivotal pairing of `X ⊗ Y`, followed by the comparison
 `rightDualTensorIso X Y : (X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ`, is the coevaluation of the tensor product of the
 pivotal pairings of `Y` and of `X`. -/
@@ -120,27 +132,18 @@ theorem pivotalExactPairing_tensor_coevaluation (X Y : C) :
         (rightDualTensorIso X Y).hom ▷ (X ⊗ Y) =
       @coevaluation C _ _ (Yᘁ ⊗ Xᘁ) (X ⊗ Y)
         (@tensor C _ _ Yᘁ Xᘁ Y X (pivotalExactPairing Y) (pivotalExactPairing X)) := by
-  -- By the evaluation formula, `rightDualTensorIso X Y` is the comparison of the two pairings as
-  -- left duals of `X ⊗ Y`, which carries one coevaluation to the other.
-  have hk : (rightDualTensorIso X Y).hom =
-      leftMate (@tensor C _ _ Yᘁ Xᘁ Y X (pivotalExactPairing Y) (pivotalExactPairing X))
-        (pivotalExactPairing (X ⊗ Y)) (𝟙 (X ⊗ Y)) :=
-    @leftDualHom_ext C _ _ _ _ _
-      (@tensor C _ _ Yᘁ Xᘁ Y X (pivotalExactPairing Y) (pivotalExactPairing X)) _ _ (by
-        rw [leftMate_comp_evaluation, id_whiskerRight, Category.id_comp,
-          pivotalExactPairing_tensor_evaluation])
-  rw [hk, coevaluation_comp_leftMate, MonoidalCategory.whiskerLeft_id, Category.comp_id]
+  -- `rightDualTensorIso X Y` is the comparison of the two pairings as left duals of `X ⊗ Y`,
+  -- which carries one coevaluation to the other.
+  rw [rightDualTensorIso_hom_eq_leftMate, coevaluation_comp_leftMate,
+    MonoidalCategory.whiskerLeft_id, Category.comp_id]
 
 /-- **The left trace of a tensor product** is a nested loop: the left trace of `f` acts on `Y`
 from the left, inside the left trace of `g`. -/
 theorem leftTrace_tensorHom {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
     leftTrace (f ⊗ₘ g) = leftTrace ((λ_ Y).inv ≫ leftTrace f ▷ Y ≫ (λ_ Y).hom ≫ g) := by
-  have hε : ε_ (X ⊗ Y) (X ⊗ Y)ᘁ =
-      (rightDualTensorIso X Y).hom ▷ (X ⊗ Y) ≫ ε_ (X ⊗ Y) ((Yᘁ : C) ⊗ (Xᘁ : C)) := by
-    rw [rightDualTensorIso, rightDualIso_hom, rightMate_comp_evaluation,
-      MonoidalCategory.whiskerLeft_id, Category.id_comp]
   -- Replace the dual `(X ⊗ Y)ᘁ` by `Yᘁ ⊗ Xᘁ` with the tensor product pairings.
-  rw [leftTrace_def, hε, whisker_exchange_assoc, pivotalExactPairing_tensor_coevaluation_assoc]
+  rw [leftTrace_def, ← rightDualTensorIso_hom_whiskerRight_evaluation, whisker_exchange_assoc,
+    pivotalExactPairing_tensor_coevaluation_assoc]
   refine (@ExactPairing.coevaluation_whiskerLeft_tensorHom_evaluation C _ _ _ _ _ _
     (pivotalExactPairing X) _ (pivotalExactPairing Y) _ f g).trans ?_
   rw [leftTrace_def, leftTrace_def]
@@ -149,13 +152,9 @@ theorem leftTrace_tensorHom {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
 from the right, inside the right trace of `f`. -/
 theorem rightTrace_tensorHom {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
     rightTrace (f ⊗ₘ g) = rightTrace (f ≫ (ρ_ X).inv ≫ X ◁ rightTrace g ≫ (ρ_ X).hom) := by
-  have hη : η_ (X ⊗ Y) (X ⊗ Y)ᘁ ≫ (X ⊗ Y) ◁ (rightDualTensorIso X Y).hom =
-      η_ (X ⊗ Y) ((Yᘁ : C) ⊗ (Xᘁ : C)) := by
-    rw [rightDualTensorIso, rightDualIso_hom, coevaluation_comp_rightMate, id_whiskerRight,
-      Category.comp_id]
   -- Replace the dual `(X ⊗ Y)ᘁ` by `Yᘁ ⊗ Xᘁ` with the tensor product pairings.
   rw [rightTrace_def, pivotalExactPairing_tensor_evaluation, ← whisker_exchange_assoc,
-    reassoc_of% hη]
+    coevaluation_comp_whiskerLeft_rightDualTensorIso_hom_assoc]
   refine (@ExactPairing.coevaluation_tensorHom_whiskerRight_evaluation C _ _ _ _ _ _
     (pivotalExactPairing X) _ (pivotalExactPairing Y) _ f g).trans ?_
   rw [rightTrace_def, rightTrace_def]

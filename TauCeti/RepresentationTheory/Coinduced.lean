@@ -229,11 +229,11 @@ theorem resCoindToHom_bijective_of_transport {k : Type*} [CommRing k] {B : Rep k
       T g' h' (T g h a) = T (g' * g) (by rw [h', h, mul_smul]) a)
     (htrans : ∀ i, ∃ g : G, p w = g • p i) (hsurj : ∀ g : G, ∃ i, p w = g • p i) :
     Function.Bijective (Rep.resCoindToHom _ B A f).hom := by
-  refine ⟨fun x x' h ↦ eq_of_forall_transport_component_eq e T he htrans fun g ↦ ?_,
+  refine ⟨fun x x' h ↦ e.eq_of_forall_transport_component_eq T he htrans fun g ↦ ?_,
     fun F ↦ ?_⟩
   · rw [← hf, ← hf]
     exact congrArg (fun F ↦ eA (F.1 g)) h
-  obtain ⟨x, hx⟩ := exists_forall_transport_component_eq e T he hT htrans hsurj
+  obtain ⟨x, hx⟩ := e.exists_forall_transport_component_eq T he hT htrans hsurj
     (fun g ↦ eA (F.1 g)) fun d hd g ↦ by
       have hF := F.2 ⟨d, MulAction.mem_stabilizer_iff.mpr hd.symm⟩ g
       simp only [Subgroup.subtype_apply] at hF

@@ -7,7 +7,9 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Norm
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.FirstInequality
+import TauCeti.NumberTheory.NumberField.Kummer.SUnitRadical
 
 /-!
 # The index of the auxiliary Kummer idele classes
@@ -47,6 +49,8 @@ fundamental inequality.
   ideles in `E_{S,T}` are those of the `(S ∪ T)`-units that are `p`-th powers.
 * `TauCeti.ClassFieldTheory.index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card`:
   `[C_K : E_{S,T} Kˣ / Kˣ] · p ^ #T = p ^ (#S + r₁ + r₂)`.
+* `TauCeti.ClassFieldTheory.index_range_ideleClassNormMap_le_of_finrank_prime`: the Kummer case
+  of the second fundamental inequality, `[C_K : N_{L/K}(C_L)] ≤ p`.
 
 ## References
 
@@ -191,5 +195,93 @@ theorem index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card
   apply Nat.eq_of_mul_eq_mul_right (pow_pos hp.pos (S.card + Fintype.card (InfinitePlace K)))
   rw [mul_assoc, ← pow_add, ← pow_add]
   convert h using 2 <;> ring
+
+/-! ### The Kummer case of the second fundamental inequality -/
+
+/-- **The Kummer case of the second fundamental inequality.** Let `L/K` be a Galois extension of
+number fields of prime degree `p`, and suppose that `K` contains the `p`-th roots of unity. Then
+the idele-class norm group has index at most `p`:
+`[C_K : N_{L/K}(C_L)] ≤ p`. -/
+theorem index_range_ideleClassNormMap_le_of_finrank_prime
+    (K L : Type) [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
+    [IsGalois K L] (p : ℕ) [Fact p.Prime] [HasEnoughRootsOfUnity K p]
+    (hfin : Module.finrank K L = p) :
+    (GlobalNumberFields.ideleClassNormMap K L).range.index ≤ p := by
+  classical
+  -- Choose a finite set `S` containing the places above `p` and the ramified places of `L/K`,
+  -- whose classes generate the class group. Kummer theory embeds `L` into `M = K(U_S^{1/p})`.
+  -- The auxiliary places theorem supplies `T` with `p ^ #T = [M : L]` and an inclusion
+  -- `E_{S,T} ⊆ N_{L/K}(C_L)`. The index formula for `E_{S,T}`, together with
+  -- `[M : K] = p ^ (#S + r₁ + r₂)`, then cancels the factor `p ^ #T` and gives the bound.
+  let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
+  let F := ι.fieldRange
+  have hFfin : Module.finrank K F = p :=
+    (LinearEquiv.finrank_eq ι.equivFieldRange.symm.toLinearEquiv).trans hfin
+  have : NumberField F :=
+    have : FiniteDimensional K F := ι.equivFieldRange.toLinearEquiv.finiteDimensional
+    .of_module_finite K F
+  have : IsGalois K F := IsGalois.of_algEquiv ι.equivFieldRange
+  have : Fact (Nat.card Gal(F/K)).Prime :=
+    ⟨(IsGalois.card_aut_eq_finrank K F).trans hFfin |>.symm ▸ Fact.out⟩
+  have : IsCyclic Gal(F/K) := isCyclic_of_prime_card rfl
+  obtain ⟨S, hFS, hS, hpS⟩ := ClassGroup.exists_finset_superset_closure_classGroupMk_image_eq_top
+    (TauCeti.NumberField.ramifiedSupport K F) (a := (p : NumberField.RingOfIntegers K))
+    (by exact_mod_cast (Fact.out : p.Prime).ne_zero)
+  have hram (v : HeightOneSpectrum (NumberField.RingOfIntegers K)) (hv : v ∉ (S : Set _)) :
+      ∃ w : HeightOneSpectrum (NumberField.RingOfIntegers F),
+        w.asIdeal.LiesOver v.asIdeal ∧
+          Algebra.IsUnramifiedAt (NumberField.RingOfIntegers K) w.asIdeal := by
+    obtain ⟨w, hw⟩ := HeightOneSpectrum.under_surjective
+      (NumberField.RingOfIntegers K) (NumberField.RingOfIntegers F) v
+    have hwv : w.asIdeal.LiesOver v.asIdeal := hw ▸ inferInstance
+    refine ⟨w, hwv, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport v ?_ w.asIdeal⟩
+    exact fun hvram ↦ hv (hFS hvram)
+  have hFM : F ≤ kummerField (SeparableClosure K) p
+      ((S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))).unit K) :=
+    TauCeti.NumberField.le_kummerField_sUnits_of_isCyclic hS (hFfin ▸ dvd_rfl) hram
+  let M := kummerField (SeparableClosure K) p
+    ((S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))).unit K)
+  let F' : IntermediateField K M := F.comap M.val
+  have hFM' : F ≤ M.val.fieldRange := by
+    intro x hx
+    exact ⟨⟨x, hFM hx⟩, rfl⟩
+  have hmap : F'.map M.val = F := IntermediateField.map_comap_eq_self hFM'
+  let eFM : F' ≃ₐ[K] F :=
+    (IntermediateField.equivMap F' M.val).trans (IntermediateField.equivOfEq hmap)
+  have hF'fin : Module.finrank K F' = p := by
+    rw [← hFfin]
+    exact LinearEquiv.finrank_eq eFM.toLinearEquiv
+  have : NumberField F' := NumberField.of_module_finite K F'
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K p
+  let _ : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  have hroots : ∀ a ∈ (S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))).unit K,
+      ∃ x : SeparableClosure K, x ^ p = algebraMap K (SeparableClosure K) (a : K) := by
+    intro a _
+    exact IsSepClosed.exists_pow_nat_eq _ p
+  obtain ⟨T, hST, hcard, hsurj, hnorm⟩ :=
+    exists_auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap
+      (E := SeparableClosure K) (Fact.out : p.Prime) S hpS hζ.toInteger_isPrimitiveRoot
+      hroots F'
+  have haux := index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card
+    (K := K) (Fact.out : p.Prime) hST hS hpS hsurj
+  have hMfin : Module.finrank K M =
+      p ^ (Fintype.card (InfinitePlace K) + S.card) := by
+    rw [finrank_kummerField hroots, relIndex_range_powMonoidHom_sUnits_numberField,
+      Nat.card_coe_set_eq, Set.ncard_coe_finset]
+  let _ : Module.Free F' M := Module.Free.of_divisionRing F' M
+  let _ : Module.Finite F' M := Module.Finite.of_restrictScalars_finite K F' M
+  have hauxIndex : (auxiliaryKummerIdeleClassSubgroup (K := K) S T p).index = p := by
+    apply Nat.eq_of_mul_eq_mul_right (pow_pos (Fact.out : p.Prime).pos T.card)
+    rw [haux, add_comm S.card, ← hMfin, ← Module.finrank_mul_finrank K F' M,
+      hF'fin, ← hcard]
+  have hdvd : (GlobalNumberFields.ideleClassNormMap K F').range.index ∣ p := by
+    rw [← hauxIndex]
+    exact Subgroup.index_dvd_of_le hnorm
+  have hFle : (GlobalNumberFields.ideleClassNormMap K F).range.index ≤ p :=
+    (congrArg Subgroup.index
+      (GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv eFM)).symm.trans_le
+      (Nat.le_of_dvd (Fact.out : p.Prime).pos hdvd)
+  exact (congrArg Subgroup.index
+    (GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv ι.equivFieldRange)).trans_le hFle
 
 end TauCeti.ClassFieldTheory

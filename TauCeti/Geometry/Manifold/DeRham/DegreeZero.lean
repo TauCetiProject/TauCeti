@@ -52,7 +52,7 @@ theorem mem_closedForms_zero_iff (φ : SmoothForm I M ℝ 0) :
     φ ∈ closedForms I M 0 ↔ IsLocallyConstant fun x ↦ φ.1 x 0 := by
   have hφ : IsSmoothForm I ∞ (RoughForm.ofFunction I fun x ↦ φ.1 x 0) := by
     rw [← RoughForm.eq_ofFunction, isSmoothForm_def]
-    exact (isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)
+    exact φ.contMDiff
   have h := mextDeriv_ofFunction_eq_zero_iff
     ((isSmoothForm_ofFunction_iff.mp hφ).mdifferentiable (by simp))
   rwa [← RoughForm.eq_ofFunction, ← mem_closedForms] at h
@@ -61,10 +61,9 @@ variable (M) in
 /-- Closed smooth real `0`-forms are exactly the locally constant real functions. -/
 def closedFormsZeroEquiv : closedForms I M 0 ≃ₗ[ℝ] LocallyConstant M ℝ where
   toFun φ := ⟨fun x ↦ φ.1.1 x 0, (mem_closedForms_zero_iff I φ.1).mp φ.2⟩
-  invFun f := ⟨⟨RoughForm.ofFunction I f, mem_smoothForms.mpr <|
-      (isSmoothBundleForm_def ∞ _).mpr <| (isSmoothForm_def ∞ _).mp <|
-        isSmoothForm_ofFunction_iff.mpr fun x ↦ contMDiffAt_const.congr_of_eventuallyEq
-          ((IsLocallyConstant.iff_eventually_eq f).mp f.isLocallyConstant x)⟩,
+  invFun f := ⟨⟨RoughForm.ofFunction I f,
+      (isSmoothForm_ofFunction_iff.mpr fun x ↦ contMDiffAt_const.congr_of_eventuallyEq
+        ((IsLocallyConstant.iff_eventually_eq f).mp f.isLocallyConstant x)).mem_smoothForms⟩,
     (mem_closedForms_zero_iff I _).mpr <| by
       simp only [RoughForm.ofFunction_apply]
       exact f.isLocallyConstant⟩

@@ -12,7 +12,8 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basic
 # Torsion in tensor products
 
 An annihilator of either factor annihilates its tensor product with an arbitrary module.
-Similarly, the tensor product of a torsion abelian group with any abelian group is torsion.
+Similarly, the tensor product of commutative additive monoids is torsion if either factor is
+torsion.
 No flatness or finite generation is required. These facts supply the tensor closure properties
 used in Hurewicz theorems modulo a class of abelian groups.
 
@@ -42,7 +43,7 @@ theorem isTorsionBy_tensorProduct_left {S : Type*} [Semiring S] [Module S M]
 
 /-- An annihilator of the right factor annihilates the tensor product when the scalar action
 can be moved between its factors. -/
-theorem isTorsionBy_tensorProduct_right {S : Type*} [CommSemiring S] [Module S M]
+theorem isTorsionBy_tensorProduct_right {S : Type*} [Semiring S] [Module S M]
     [Module S N] [SMulCommClass R S M] [TensorProduct.CompatibleSMul R S M N] {r : S}
     (h : Module.IsTorsionBy S N r) : Module.IsTorsionBy S (M ⊗[R] N) r := by
   intro t
@@ -50,18 +51,21 @@ theorem isTorsionBy_tensorProduct_right {S : Type*} [CommSemiring S] [Module S M
   | tmul x y => rw [← TensorProduct.tmul_smul, h (x := y), TensorProduct.tmul_zero]
   | add x y hx hy => simp [smul_add, hx, hy]
 
-/-- Tensoring a torsion abelian group on the left with any abelian group gives a torsion group. -/
-theorem isAddTorsion_tensorProduct_left {A B : Type*} [AddCommGroup A] [AddCommGroup B]
+/-- Tensoring a torsion commutative additive monoid on the left with any commutative additive
+monoid gives a torsion monoid. -/
+theorem isAddTorsion_tensorProduct_left {A B : Type*} [AddCommMonoid A] [AddCommMonoid B]
     [Module R A] [Module R B] (h : IsAddTorsion A) : IsAddTorsion (A ⊗[R] B) := by
   intro t
   induction t using TensorProduct.inductionOn with
   | tmul x y => exact ((TensorProduct.mk R A B).flip y).toAddMonoidHom.isOfFinAddOrder (h x)
   | add x y hx hy => exact hx.add hy
 
-/-- Tensoring a torsion abelian group on the right with any abelian group gives a torsion group. -/
-theorem isAddTorsion_tensorProduct_right {A B : Type*} [AddCommGroup A] [AddCommGroup B]
-    [Module R A] [Module R B] (h : IsAddTorsion B) : IsAddTorsion (A ⊗[R] B) :=
-  IsAddTorsion.of_surjective (TensorProduct.comm R B A).surjective
-    (isAddTorsion_tensorProduct_left h)
+/-- Tensoring a torsion commutative additive monoid on the right with any commutative additive
+monoid gives a torsion monoid. -/
+theorem isAddTorsion_tensorProduct_right {A B : Type*} [AddCommMonoid A] [AddCommMonoid B]
+    [Module R A] [Module R B] (h : IsAddTorsion B) : IsAddTorsion (A ⊗[R] B) := fun t ↦ by
+  obtain ⟨u, rfl⟩ := (TensorProduct.comm R B A).surjective t
+  exact (TensorProduct.comm R B A).toAddMonoidHom.isOfFinAddOrder
+    (isAddTorsion_tensorProduct_left h u)
 
 end TauCeti

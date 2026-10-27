@@ -304,20 +304,9 @@ theorem isClosed_integralAdeles : IsClosed (integralAdeles R K : Set (FiniteAdel
 full product `∏_v K_v`. Finiteness of `S` cannot be dropped in general: for `S = Set.univ` this
 would say that the whole finite adele ring carries the product topology. -/
 theorem isEmbedding_coe_sIntegralAdeles {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
-    Topology.IsEmbedding fun a : sIntegralAdeles R K S ↦ ⇑(a : FiniteAdeleRing R K) := by
-  have hle : Filter.cofinite ≤ Filter.principal Sᶜ :=
-    Filter.le_principal_iff.mpr hS.compl_mem_cofinite
-  -- the `S`-integral finite adeles are the restricted product with respect to `𝓟 Sᶜ`
-  let g : sIntegralAdeles R K S →
-      Πʳ v : HeightOneSpectrum R, [v.adicCompletion K, v.adicCompletionIntegers K]_[
-        Filter.principal Sᶜ] :=
-    fun a ↦ ⟨⇑(a : FiniteAdeleRing R K), Filter.eventually_principal.mpr a.2⟩
-  -- `RestrictedProduct.inclusion` composed with `g` is the subtype inclusion by definition
-  have hg : Topology.IsEmbedding g := by
-    refine ⟨((RestrictedProduct.isEmbedding_inclusion_principal hle).isInducing.of_comp_iff).mp
-      Topology.IsInducing.subtypeVal, fun a b hab ↦ ?_⟩
-    exact Subtype.ext (FiniteAdeleRing.ext K fun v ↦ congrArg (fun x ↦ x v) hab)
-  exact RestrictedProduct.isEmbedding_coe_of_principal.comp hg
+    Topology.IsEmbedding fun a : sIntegralAdeles R K S ↦ ⇑(a : FiniteAdeleRing R K) :=
+  TauCeti.isEmbedding_restrictedProduct_coe_comp
+    (Filter.le_principal_iff.mpr hS.compl_mem_cofinite) Topology.IsEmbedding.subtypeVal fun a ↦ a.2
 
 /-- The diagonal image of an element of `K` in the finite adele ring is `S`-integral exactly when
 the element is an `S`-integer: the `S`-integral finite adeles meet `K` in `S.integer K`. It takes

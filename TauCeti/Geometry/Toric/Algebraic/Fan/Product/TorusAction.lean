@@ -103,8 +103,8 @@ theorem isPullback_algebraicActionMap_fst_snd :
     (Φ.isPullback_fst_snd_algebraicMap Ψ)
     (affineToricSchemeMap_comp_specMap_algebraMap _ _ _ _ _ _)
     (affineToricSchemeMap_comp_specMap_algebraMap _ _ _ _ _ _)
-    (by rw [← algebraicRealization_over, ← algebraicRealization_over]; exact comp_over _ _)
-    (by rw [← algebraicRealization_over, ← algebraicRealization_over]; exact comp_over _ _)
+    (FanHom.algebraicMap_comp_algebraicRealizationStructureMap _)
+    (FanHom.algebraicMap_comp_algebraicRealizationStructureMap _)
   convert h using 1 <;> apply pullback.hom_ext <;> simp
 
 /-- The torus action on a product fan scheme is the product of the torus actions on the factors:

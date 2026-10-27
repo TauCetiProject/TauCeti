@@ -33,6 +33,8 @@ conventions of every later differential graded construction.
   differential graded category.
 * `TauCeti.xIsoOfEq_hom_v` and `TauCeti.dgComp_v`: component formulas for degree transport and
   composition.
+* `CochainComplex.HomComplex.Cochain.v_apply_mem_ker_of_δ_eq_zero`: a closed degree-zero cochain
+  of complexes of modules sends closed elements to closed elements.
 
 ## References
 
@@ -101,3 +103,18 @@ theorem dgComp_v {K L M : CochainComplex C ℤ} {a b c : ℤ} (z₁ : DGHom R a 
   exact congrArg _ (Cochain.comp_v (z₁ : Cochain K L a) (z₂ : Cochain L M b) h x y w h₁ h₂)
 
 end TauCeti
+
+namespace CochainComplex.HomComplex.Cochain
+
+/-- A closed cochain of degree zero between complexes of modules sends elements killed by the
+differential to elements killed by the differential. -/
+theorem v_apply_mem_ker_of_δ_eq_zero {R : Type*} [Ring R] {K L : CochainComplex (ModuleCat R) ℤ}
+    (z : Cochain K L 0) (hz : δ 0 1 z = 0) {p q : ℤ} (hpq : p + 1 = q) {a : K.X p}
+    (ha : (K.d p q).hom a = 0) :
+    (z.v p p (add_zero p)).hom a ∈ LinearMap.ker (L.d p q).hom := by
+  have key := congrArg (fun φ ↦ ModuleCat.Hom.hom φ a) (Cochain.congr_v hz p q hpq)
+  simpa only [δ_zero_cochain_v, Cochain.zero_v, ModuleCat.hom_sub, ModuleCat.hom_comp,
+    LinearMap.sub_apply, LinearMap.comp_apply, ha, map_zero, sub_zero, ModuleCat.hom_zero,
+    LinearMap.zero_apply, LinearMap.mem_ker] using key
+
+end CochainComplex.HomComplex.Cochain

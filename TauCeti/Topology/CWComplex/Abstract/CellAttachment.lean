@@ -146,10 +146,8 @@ attachment: its characteristic disk gives an extension. -/
 theorem cellAttachment_attachingMap_nullhomotopic
     (φ : ι → (TopCat.diskBoundary n ⟶ X)) (i : ι) :
     ((cellAttachmentIncl φ).hom.comp (φ i).hom).Nullhomotopic := by
-  have h := congrArg TopCat.Hom.hom (cellAttachment_boundary φ i)
-  simp only [TopCat.hom_comp] at h
-  rw [h]
-  exact (((id_nullhomotopic (TopCat.disk n)).comp_right (cellAttachmentCell φ i).hom).comp_left
-    (TopCat.diskBoundaryInclusion n).hom)
+  rw [← TopCat.hom_comp]
+  exact (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).2
+    ⟨_, (cellAttachment_boundary φ i).symm⟩
 
 end TauCeti

@@ -44,11 +44,11 @@ section Apply
 
 variable {K : Type*} [TopologicalSpace K] [CompactSpace K]
   {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- Pointwise application of a continuous family of continuous linear maps to a continuous map,
-as a bounded bilinear operator. -/
+/-- Pointwise application of a continuous family of continuous linear maps between seminormed
+spaces to a continuous map, as a bounded bilinear operator. -/
 def applyContinuousLinearMap :
     C(K, E →L[𝕜] F) →L[𝕜] C(K, E) →L[𝕜] C(K, F) := by
   let L : C(K, E →L[𝕜] F) →ₗ[𝕜] C(K, E) →ₗ[𝕜] C(K, F) :=
@@ -80,7 +80,9 @@ section IntervalIntegral
 
 open MeasureTheory
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+section Extension
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Constant extension from a compact interval, bundled as a continuous linear map. -/
 private def intervalExtension (a b : ℝ) [Fact (a ≤ b)] :
@@ -91,6 +93,10 @@ private def intervalExtension (a b : ℝ) [Fact (a ≤ b)] :
 private theorem intervalExtension_apply (a b : ℝ) [Fact (a ≤ b)]
     (f : C(Set.Icc a b, E)) (t : ℝ) :
     intervalExtension a b f t = f (Set.projIcc a b Fact.out t) := rfl
+
+end Extension
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The primitive of a continuous path on a compact real interval, using constant extension before
 integration. -/

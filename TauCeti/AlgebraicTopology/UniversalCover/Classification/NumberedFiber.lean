@@ -398,6 +398,19 @@ theorem ConnectedCoverClass.mk_surjective :
     Function.Surjective (mk : ConnectedCover x n → _) :=
   Quotient.mk_surjective
 
+/-- A function on covers that is constant on isomorphism classes of the underlying covers, as a
+function on the classes. -/
+def ConnectedCoverClass.lift {α : Sort*} (f : ConnectedCover x n → α)
+    (hf : ∀ c c', IsIsomorphic c.cover c'.cover → f c = f c') : ConnectedCoverClass x n → α :=
+  Quotient.lift f hf
+
+/-- The lift of `f` takes the class of `c` to `f c`. -/
+@[simp]
+theorem ConnectedCoverClass.lift_mk {α : Sort*} (f : ConnectedCover x n → α)
+    (hf : ∀ c c', IsIsomorphic c.cover c'.cover → f c = f c') (c : ConnectedCover x n) :
+    ConnectedCoverClass.lift f hf (ConnectedCoverClass.mk c) = f c :=
+  (rfl)
+
 /-! ### The forgetful maps -/
 
 /-- Forgetting the numbering of the fibre. -/

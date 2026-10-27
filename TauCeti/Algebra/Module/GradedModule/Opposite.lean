@@ -218,6 +218,57 @@ theorem op_smul_mem_of_mem_graded {e : ℤ} {a : A} (ha : a ∈ 𝒜 e) {q : ℤ
   have := SetLike.GradedSMul.smul_mem hop hα
   rwa [vadd_eq_add, add_comm] at this
 
+/-- An element of degree zero of the algebra preserves the degrees of the module. -/
+theorem op_smul_mem_of_mem_zero {a : A} (ha : a ∈ 𝒜 0) {k : ℤ} {x : M} (hx : x ∈ ℳ k) :
+    op a • x ∈ ℳ k := by
+  simpa using op_smul_mem_of_mem_graded ha hx
+
 end GradedSMul
+
+section Koszul
+
+variable {R : Type u} {A : Type v} {M : Type w}
+  [CommRing R] [AddCommMonoid A] [Module R A] [AddCommMonoid M] [Module R M]
+  {𝒜 : ℤ → Submodule R A} [DirectSum.Decomposition 𝒜]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+
+section SMul
+
+variable [SMul Aᵐᵒᵖ M] [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+
+/-- The right action of an element of degree zero commutes with every Koszul twist on homogeneous
+module elements. -/
+theorem koszulTwist_op_smul_of_mem_zero [SMulCommClass R Aᵐᵒᵖ M] {a : A} (ha : a ∈ 𝒜 0)
+    {k : ℤ} {x : M} (hx : x ∈ ℳ k) (q : ℤ) :
+    (InternalGrading.ofDecomposition ℳ).koszulTwist q (op a • x) =
+      op a • (InternalGrading.ofDecomposition ℳ).koszulTwist q x := by
+  rw [InternalGrading.koszulTwist_apply_of_mem _ (e := k)
+      (by rw [InternalGrading.ofDecomposition_piece]; exact op_smul_mem_of_mem_zero ha hx),
+    InternalGrading.koszulTwist_apply_of_mem _ (e := k)
+      (by rwa [InternalGrading.ofDecomposition_piece]), smul_comm]
+
+/-- The right action of an element of degree zero after a Koszul twist preserves each piece of
+the module. -/
+theorem op_smul_koszulTwist_mem_of_mem_zero {a : A} (ha : a ∈ 𝒜 0) {k : ℤ} {x : M}
+    (hx : x ∈ ℳ k) (q : ℤ) :
+    op a • (InternalGrading.ofDecomposition ℳ).koszulTwist q x ∈ ℳ k :=
+  op_smul_mem_of_mem_zero ha (InternalGrading.koszulTwist_mem_ofDecomposition ℳ hx q)
+
+end SMul
+
+variable [Semigroup A] [SemigroupAction Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+
+/-- Two successive right actions with the same Koszul twist act by their product when the first
+acting element has degree zero: the twists cancel. -/
+theorem op_smul_koszulTwist_op_smul_koszulTwist {a b : A} (ha : a ∈ 𝒜 0) {k : ℤ} {x : M}
+    (hx : x ∈ ℳ k) (q : ℤ) :
+    op b • (InternalGrading.ofDecomposition ℳ).koszulTwist q
+      (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist q x) = op (a * b) • x := by
+  rw [koszulTwist_op_smul_of_mem_zero ha
+      (InternalGrading.koszulTwist_mem_ofDecomposition ℳ hx q),
+    InternalGrading.koszulTwist_koszulTwist, ← mul_smul, ← op_mul]
+
+end Koszul
 
 end TauCeti

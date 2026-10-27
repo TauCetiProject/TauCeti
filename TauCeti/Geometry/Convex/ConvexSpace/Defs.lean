@@ -13,7 +13,8 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 Complements to Mathlib's `Convexity.StdSimplex` about the maps `StdSimplex.map f`.  An arbitrary
 map adds weights over its fibres.  An injective map embeds a standard simplex as a face of a larger
 one and keeps the weights of a point, so it is injective.  For `f = j.succAbove` its image is the
-facet on which the `j`-th weight vanishes, so a function taking a constant value on every facet
+facet on which the `j`-th weight vanishes; for the last vertex this facet is the smaller simplex
+with a zero last weight appended.  A function taking a constant value on every facet
 takes that value wherever some weight vanishes.  Two facets, opposite `j < k`, meet in the
 codimension-two face opposite both: a common point of the two facets comes from that face through
 both composites of face maps, the two sides of the simplicial identity
@@ -24,14 +25,35 @@ public section
 
 namespace Convexity.StdSimplex
 
+section AddCommMonoid
+
+variable {R : Type*} [LE R] [AddCommMonoid R] [One R]
+
 /-- A point of the triangle `StdSimplex R (Fin 3)` is determined by its three weights. -/
-theorem ext_fin_three {R : Type*} [PartialOrder R] [Semiring R]
-    {x y : StdSimplex R (Fin 3)} (h0 : x.weights 0 = y.weights 0)
-    (h1 : x.weights 1 = y.weights 1) (h2 : x.weights 2 = y.weights 2) : x = y :=
-  ext <| Finsupp.ext fun
+theorem ext_fin_three {x y : StdSimplex R (Fin 3)} (h0 : x.weights 0 = y.weights 0)
+    (h1 : x.weights 1 = y.weights 1) (h2 : x.weights 2 = y.weights 2) : x = y := by
+  cases x
+  cases y
+  congr 1
+  exact Finsupp.ext fun
     | ⟨0, _⟩ => h0
     | ⟨1, _⟩ => h1
     | ⟨2, _⟩ => h2
+
+/-- The three weights of a point of the standard `2`-simplex add up to `1`. -/
+@[simp]
+theorem total_fin_three (x : StdSimplex R (Fin 3)) :
+    x.weights 0 + x.weights 1 + x.weights 2 = 1 := by
+  simpa [Finsupp.sum_fintype, Fin.sum_univ_three] using x.total
+
+/-- The weights of the last two vertices of a point of the standard `2`-simplex add up to at
+most `1`. -/
+theorem weights_one_add_weights_two_le_one [AddRightMono R] (x : StdSimplex R (Fin 3)) :
+    x.weights 1 + x.weights 2 ≤ 1 := by
+  rw [← x.total_fin_three, add_assoc]
+  exact le_add_of_nonneg_left (x.nonneg 0)
+
+end AddCommMonoid
 
 variable {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] {X Y : Type*}
 
@@ -39,29 +61,13 @@ variable {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] {X Y 
 theorem weights_map_apply [Fintype X] [DecidableEq Y]
     (f : X → Y) (x : StdSimplex R X) (y : Y) :
     (x.map f).weights y = ∑ i with f i = y, x.weights i := by
-  rw [weights_map, Finsupp.mapDomain_fintype, Finsupp.coe_finsetSum, Finset.sum_apply,
+  simp [weights_map, Finsupp.mapDomain_fintype, Finset.sum_apply, Finsupp.single_apply,
     Finset.sum_filter]
-  apply Finset.sum_congr rfl
-  intro i _
-  by_cases hi : f i = y <;> simp [hi]
 
 /-- Along an injective map, the weight at the image of a point is the weight at that point. -/
 theorem weights_map_apply_of_injective {f : X → Y} (hf : f.Injective) (x : StdSimplex R X)
     (a : X) : (x.map f).weights (f a) = x.weights a :=
   Finsupp.mapDomain_apply_of_injective hf _ _
-
-omit [IsStrictOrderedRing R] in
-/-- The three weights of a point of the standard `2`-simplex add up to `1`. -/
-theorem total_fin_three (x : StdSimplex R (Fin 3)) :
-    x.weights 0 + x.weights 1 + x.weights 2 = 1 := by
-  rw [← x.total_of_fintype, Fin.sum_univ_three]
-
-/-- The weights of the last two vertices of a point of the standard `2`-simplex add up to at
-most `1`. -/
-theorem weights_one_add_weights_two_le_one (x : StdSimplex R (Fin 3)) :
-    x.weights 1 + x.weights 2 ≤ 1 := by
-  rw [← x.total_fin_three, add_assoc]
-  exact le_add_of_nonneg_left (x.weights_nonneg 0)
 
 /-- The map of standard simplices along an injective map is injective. -/
 theorem map_injective {f : X → Y} (hf : f.Injective) : (map (R := R) f).Injective := by
@@ -86,6 +92,26 @@ theorem weights_map_succAbove_of_eq {n : ℕ} {j k : Fin (n + 1)} {i : Fin n}
     (h : j.succAbove i = k) (x : StdSimplex R (Fin n)) :
     (x.map j.succAbove).weights k = x.weights i :=
   h ▸ weights_map_apply_of_injective Fin.succAbove_right_injective x i
+
+/-- The facet of the standard simplex on `Fin (n + 1)` opposite its last vertex, the points with
+vanishing last weight, is the standard simplex on `Fin n` with a zero last weight appended. -/
+theorem range_snoc_weights_zero (n : ℕ) :
+    (Set.range fun s : StdSimplex R (Fin n) => (Fin.snoc ⇑s.weights 0 : Fin (n + 1) → R)) =
+      {y ∈ Set.range fun s : StdSimplex R (Fin (n + 1)) => ⇑s.weights | y (Fin.last n) = 0} := by
+  -- Appending a zero weight is the face map onto the facet opposite the last vertex.
+  have hsnoc (s : StdSimplex R (Fin n)) :
+      ⇑(s.map (Fin.last n).succAbove).weights = Fin.snoc ⇑s.weights 0 := by
+    funext k
+    induction k using Fin.lastCases with
+    | last => rw [weights_map_succAbove_self, Fin.snoc_last]
+    | cast j => rw [weights_map_succAbove_of_eq (Fin.succAbove_last_apply j), Fin.snoc_castSucc]
+  ext y
+  constructor
+  · rintro ⟨s, rfl⟩
+    exact ⟨⟨_, hsnoc s⟩, by simp⟩
+  · rintro ⟨⟨t, rfl⟩, ht⟩
+    obtain ⟨s, rfl⟩ := (mem_range_map_succAbove_iff _ t).2 ht
+    exact ⟨s, (hsnoc s).symm⟩
 
 /-- A function on a standard simplex which takes the value `z` on every facet takes the value `z`
 at every point with a vanishing weight. -/
@@ -117,5 +143,6 @@ theorem exists_map_succAbove_of_map_succAbove_eq {n : ℕ} {j k : Fin (n + 2)} (
     have := Fin.succAbove_succAbove_succAbove_predAbove j (k.pred (Fin.ne_zero_of_lt hjk)) m
     rwa [Fin.succAbove_pred_of_lt _ _ hjk, Fin.predAbove_of_le_castSucc _ _ hle] at this
   rw [← h, ← map_comp, ← hcomp, map_comp]
+
 
 end Convexity.StdSimplex

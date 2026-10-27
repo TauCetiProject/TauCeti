@@ -22,7 +22,10 @@ the topology of linear endomorphisms to local orthogonal point groups.
 The result holds over a Hausdorff commutative domain with module topologies and a finite free
 module, provided the form is continuous. A topological ring structure on the scalars supplies
 continuity; the theorem takes continuity directly. Local compactness is not needed
-for closedness.
+for closedness, but separation is: over a semiring with the indiscrete topology the module topology
+on the endomorphisms is indiscrete, and the orthogonal group of any form on a nontrivial module is
+a nonempty proper subset of it, since it omits `0`. So it is never closed there, already for
+`Q x = x ^ 2` on a field `K` in dimension one, where it is `{1, -1}`.
 
 Over a Hausdorff topological field, the orthogonal group of a
 finite-dimensional quadratic space is also closed in the linear automorphism group with its
@@ -36,6 +39,9 @@ groups over `ℝ` and `ℚ_p` are studied.
 
 * `TauCeti.QuadraticMap.isClosed_range_orthogonalGroup_toLinearMap`: the orthogonal group is
   closed in the endomorphism space, through its underlying linear maps.
+* `QuadraticMap.not_isClosed_range_orthogonalGroup_toLinearMap_of_indiscreteTopology`:
+  over scalars with the indiscrete topology this fails for every quadratic map on a nontrivial
+  module, so the `T2Space` hypothesis cannot be dropped.
 * `TauCeti.QuadraticMap.isClosed_orthogonalGroup`: the orthogonal group is closed in the linear
   automorphism group.
 * `TauCeti.QuadraticMap.instLocallyCompactSpaceOrthogonalGroup`: the orthogonal group is locally
@@ -71,6 +77,29 @@ theorem isClosed_range_orthogonalGroup_toLinearMap
   exact Q.isClosed_setOfPred_forall_map_app hcont
 
 end Endomorphism
+
+section Indiscrete
+
+variable {R M N : Type*} [CommSemiring R] [TopologicalSpace R] [IndiscreteTopology R]
+  [AddCommMonoid M] [Module R M] [Nontrivial M] [AddCommMonoid N] [Module R N]
+  [TopologicalSpace (Module.End R M)] [IsModuleTopology R (Module.End R M)]
+
+/-- Over a semiring with the indiscrete topology, the orthogonal group of any quadratic map on a
+nontrivial module is not closed in the endomorphism space: that space is indiscrete, and the
+orthogonal group is nonempty and does not contain `0`. Thus the separation hypothesis of
+`isClosed_range_orthogonalGroup_toLinearMap` cannot be dropped. -/
+theorem _root_.QuadraticMap.not_isClosed_range_orthogonalGroup_toLinearMap_of_indiscreteTopology
+    (Q : QuadraticMap R M N) :
+    ¬ IsClosed (Set.range (fun g : orthogonalGroup Q => (g : M ≃ₗ[R] M).toLinearMap)) := by
+  have := IsModuleTopology.toContinuousSMul R (Module.End R M)
+  have := IndiscreteTopology.of_continuousSMul R (Module.End R M)
+  rw [IndiscreteTopology.isClosed_iff, not_or]
+  refine ⟨(Set.range_nonempty _).ne_empty, fun h ↦ ?_⟩
+  obtain ⟨g, hg⟩ : (0 : Module.End R M) ∈ Set.range _ := h ▸ Set.mem_univ _
+  obtain ⟨m, hm⟩ := exists_ne (0 : M)
+  exact hm ((g : M ≃ₗ[R] M).injective (by simpa using LinearMap.congr_fun hg m))
+
+end Indiscrete
 
 section Automorphism
 

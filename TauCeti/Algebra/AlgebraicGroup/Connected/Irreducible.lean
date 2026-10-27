@@ -12,7 +12,7 @@ import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Reduction
 import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
-import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.RingTheory.Smooth.Regular
 import TauCeti.RingTheory.TensorProduct.Reduced
 

@@ -13,7 +13,6 @@ public import TauCeti.Probability.DeFinetti.Barycenter
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.PathDisintegration
 -- Non-public: de Finetti's theorem, via its subsequence form, is used only inside proofs.
 import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
-import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.Probability.DeFinetti.Subsequence
 import TauCeti.Probability.Independence.InfinitePi
 

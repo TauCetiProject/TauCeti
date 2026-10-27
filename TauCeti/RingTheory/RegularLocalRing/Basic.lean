@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 public import Mathlib.RingTheory.Localization.LocalizationLocalization
 public import Mathlib.RingTheory.Localization.Submodule
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
+import Mathlib.RingTheory.LocalProperties.Reduced
 
 /-!
 # Regular local rings are domains, and localizations of regular rings
@@ -30,7 +31,11 @@ is a regular ring, so that every `Localization M` of a regular ring, including
 * `TauCeti.IsRegularLocalRing.isDomain`: a regular local ring is an integral domain;
 * `TauCeti.IsRegularLocalRing.quotient_span_singleton`: for `x ∈ 𝔪 \ 𝔪²`, the quotient `R ⧸ (x)`
   is again a regular local ring, and `TauCeti.IsRegularLocalRing.quotient_span_singleton_iff`: for
-  a nonzero `x ∈ 𝔪` this happens exactly when `x ∉ 𝔪²`;
+  a nonzero `x ∈ 𝔪` this happens exactly when `x ∉ 𝔪²`, in which case
+  `TauCeti.IsRegularLocalRing.spanFinrank_maximalIdeal_quotient_span_singleton_add_one` shows that
+  the maximal ideal of `R ⧸ (x)` needs one generator fewer;
+* `Ideal.exists_mem_notMem_maximalIdeal_sq_of_quotient`: a nonzero ideal with regular quotient
+  contains an element outside `𝔪²`, also used by the one-element criterion;
 * `TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`: the quotient by such a
   parameter is a domain, so the ideal the parameter generates is prime, the hypothesis the
   statements for an irreducible first equation of `TauCeti.RingTheory.Intersection` take;
@@ -40,11 +45,13 @@ is a regular ring, so that every `Localization M` of a regular ring, including
   dimension at most one is a valuation ring.
 * `TauCeti.IsRegularRing.of_isLocalization`: a localization of a regular ring is a regular ring,
   with the instance `TauCeti.IsRegularRing.isRegularRing_localization` for `Localization M`.
+* `TauCeti.IsRegularRing.isReduced`: a regular ring is reduced, since its local rings are domains.
 
 ## References
 
-* [The Stacks Project, Lemma 10.106.2](https://stacks.math.columbia.edu/tag/00NP) and
-  [Lemma 10.106.3](https://stacks.math.columbia.edu/tag/00NQ).
+* [The Stacks Project, Lemma 10.106.2](https://stacks.math.columbia.edu/tag/00NP),
+  [Lemma 10.106.3](https://stacks.math.columbia.edu/tag/00NQ), and
+  [Lemma 10.106.4](https://stacks.math.columbia.edu/tag/00NR).
 * M. F. Atiyah and I. G. Macdonald, *Introduction to Commutative Algebra*, Lemma 11.23.
 * `TauCeti.IsRegularRing.of_isLocalization` generalizes from localizations at primes to
   all localizations the lemma `Pcf.Stacks.isRegularRing_localization_atPrime` of T. Dupuy,
@@ -137,6 +144,25 @@ ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrime
 instance (priority := 100) isDomain : IsDomain R :=
   isDomain_of_ringKrullDim_eq _ R (spanFinrank_maximalIdeal (R := R)).symm
 
+/-- A nonzero ideal of a regular local ring with regular quotient contains a parameter. -/
+theorem _root_.Ideal.exists_mem_notMem_maximalIdeal_sq_of_quotient (I : Ideal R)
+    [IsRegularLocalRing (R ⧸ I)] (hne : I ≠ ⊥) :
+    ∃ parameter ∈ I, parameter ∉ maximalIdeal R ^ 2 := by
+  by_contra! hall
+  have hemb := TauCeti.IsLocalRing.spanFinrank_map_maximalIdeal_quotient_of_le_sq
+    (maximalIdeal R).fg_of_isNoetherianRing hall
+  rw [map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective] at hemb
+  obtain ⟨element, hmem, hzero⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
+  have hle : span {element} ≤ I := (span_singleton_le_iff_mem _).mpr hmem
+  have hdim := ringKrullDim_le_of_surjective (Ideal.Quotient.factor hle)
+    (Ideal.Quotient.factor_surjective hle)
+  have hdrop := ringKrullDim_quotient_succ_le_of_nonZeroDivisor
+    (mem_nonZeroDivisors_of_ne_zero hzero)
+  have hbad := (add_le_add hdim (le_refl 1)).trans hdrop
+  rw [← spanFinrank_maximalIdeal (R := R ⧸ I),
+    ← spanFinrank_maximalIdeal (R := R), hemb] at hbad
+  exact absurd hbad (by norm_cast; omega)
+
 /-- If `R` is a regular local ring and `x ∈ 𝔪 \ 𝔪²`, then `R ⧸ (x)` is a regular local ring. -/
 @[stacks 00NQ "(2), for one generator"]
 theorem quotient_span_singleton {x : R} (hxm : x ∈ maximalIdeal R)
@@ -153,15 +179,20 @@ exactly when `x ∉ 𝔪²`. -/
 theorem quotient_span_singleton_iff {x : R} (hxm : x ∈ maximalIdeal R) (hx0 : x ≠ 0) :
     IsRegularLocalRing (R ⧸ span {x}) ↔ x ∉ maximalIdeal R ^ 2 := by
   refine ⟨fun _ hx ↦ ?_, quotient_span_singleton hxm⟩
-  -- for `x ∈ 𝔪²` the maximal ideal of `R ⧸ (x)` needs as many generators as `𝔪`, while the
-  -- nonzero divisor `x` lowers the dimension
-  have h₁ := spanFinrank_map_maximalIdeal_quotient_of_le_sq
-    (maximalIdeal R).fg_of_isNoetherianRing ((span_singleton_le_iff_mem _).mpr hx)
-  rw [map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective] at h₁
-  have h₂ := ringKrullDim_quotient_succ_le_of_nonZeroDivisor (mem_nonZeroDivisors_of_ne_zero hx0)
-  rw [← spanFinrank_maximalIdeal (R := R ⧸ span {x}), ← spanFinrank_maximalIdeal (R := R), h₁]
-    at h₂
-  exact absurd h₂ (by norm_cast; omega)
+  obtain ⟨parameter, hmem, hnot⟩ :=
+    _root_.Ideal.exists_mem_notMem_maximalIdeal_sq_of_quotient (span {x})
+      (span_singleton_eq_bot.not.mpr hx0)
+  exact hnot (((span_singleton_le_iff_mem _).mpr hx) hmem)
+
+/-- If `R` is a regular local ring and `x ∈ 𝔪` is nonzero with `R ⧸ (x)` regular, then the
+maximal ideal of `R ⧸ (x)` needs exactly one generator fewer than `𝔪`. -/
+theorem spanFinrank_maximalIdeal_quotient_span_singleton_add_one {x : R}
+    (hxm : x ∈ maximalIdeal R) (hx0 : x ≠ 0) [IsRegularLocalRing (R ⧸ span {x})] :
+    (maximalIdeal (R ⧸ span {x})).spanFinrank + 1 = (maximalIdeal R).spanFinrank := by
+  have hdim := ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors
+    (mem_nonZeroDivisors_of_ne_zero hx0) hxm
+  rw [← spanFinrank_maximalIdeal (R := R ⧸ span {x}), ← spanFinrank_maximalIdeal (R := R)] at hdim
+  exact_mod_cast hdim
 
 /-- **The curve a parameter cuts out is a domain, so its principal ideal is prime.** Let
 `(R, 𝔪)` be a regular local ring and let `f ∈ 𝔪 \ 𝔪²`, so that `f` is a parameter. Then the
@@ -220,6 +251,11 @@ theorem of_isLocalization (S : Type*) [CommRing S] [Algebra R S] [IsLocalization
 
 instance isRegularRing_localization : IsRegularRing (Localization M) :=
   of_isLocalization M _
+
+/-- A regular ring is reduced: its localizations at maximal ideals are regular local rings, hence
+domains. -/
+instance (priority := 100) isReduced : IsReduced R :=
+  isReduced_ofLocalizationMaximal _ fun _ _ ↦ inferInstance
 
 end IsRegularRing
 

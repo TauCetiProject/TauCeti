@@ -58,7 +58,7 @@ Write `d = F'(y₀)`. The polynomial `F(y₀ + d X)` has all its coefficients di
 constant coefficient `F(y₀)` by the hypothesis, its linear coefficient `d · d`, and its higher
 coefficients through the factor `dᵏ`. The quotient `G` satisfies `G(0) = F(y₀) / d² ∈ 𝔪` and
 `G'(0) = 1`, so Hensel's lemma without monicity
-(`TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal`) gives a root `t ∈ 𝔪` of `G`.
+(`Polynomial.exists_isRoot_sub_mem`) gives a root `t ∈ 𝔪` of `G`.
 Writing `0 = G(t) = G(0) + t + k t²` shows `v(t) = v(G(0))`, which is the estimate for
 `z = y₀ + d t`.
 
@@ -161,8 +161,8 @@ theorem exists_isRoot_addVal_eval_eq [HenselianLocalRing A] (F : A[X]) (y₀ : A
     intro h0
     rw [hval, h0, add_zero] at hlt
     exact hlt.false
-  obtain ⟨t, ht, htm⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal G hG0m
-    (hG'0 ▸ isUnit_one)
+  obtain ⟨t, ht, htm⟩ := Polynomial.exists_isRoot_sub_mem G hG0m
+    (by simp [hG'0])
   rw [sub_zero] at htm
   refine ⟨d * t + y₀, ?_, ?_⟩
   · rw [IsRoot, ← hGeval, ht.eq_zero, mul_zero]

@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Data.Nat.Factorization.Induction
+import TauCeti.Data.Int.ChineseRemainder
 import TauCeti.Data.ZMod.Divisibility
 
 /-!
@@ -65,6 +66,8 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.mem_Gamma1_iff_dvd_lowerRow`: `Γ₁(N)` membership read as the two integer
   divisibilities `(N : ℤ) ∣ c` and `(N : ℤ) ∣ d - 1` on the lower row, the `Γ₁` counterpart of
   `mem_Gamma0_iff_dvd`.
+* `CongruenceSubgroup.mul_inv_mem_Gamma1_iff_dvd_sub`: two matrices of `SL(2, ℤ)` lie in one
+  right coset of `Γ₁(N)` exactly when their lower rows agree modulo `N`.
 * `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0`: a `Γ₀(N)` matrix has
   unit upper-left entry modulo `N`.
 * `CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`: modulo its
@@ -236,6 +239,29 @@ pass it to `mem_Gamma1_iff_dvd_lowerRow.mpr` directly rather than destructuring 
 theorem mem_Gamma1_of_dvd_lowerRow {γ : SL(2, ℤ)} (h10 : (N : ℤ) ∣ γ 1 0)
     (h11 : (N : ℤ) ∣ γ 1 1 - 1) : γ ∈ Gamma1 N :=
   mem_Gamma1_iff_dvd_lowerRow.mpr ⟨h10, h11⟩
+
+/-- **Two matrices lie in one right coset of `Γ₁(N)` exactly when their lower rows agree modulo
+`N`**: `A * B⁻¹ ∈ Γ₁(N)` if and only if `(N : ℤ) ∣ c_A - c_B` and `(N : ℤ) ∣ d_A - d_B`. So the
+right cosets `Γ₁(N) \ SL(2, ℤ)` are read off from lower rows modulo `N`; at `B = 1` this is
+`mem_Gamma1_iff_dvd_lowerRow`. -/
+theorem mul_inv_mem_Gamma1_iff_dvd_sub {A B : SL(2, ℤ)} :
+    A * B⁻¹ ∈ Gamma1 N ↔ (N : ℤ) ∣ A 1 0 - B 1 0 ∧ (N : ℤ) ∣ A 1 1 - B 1 1 := by
+  have hB := Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one B
+  have h10 : (A * B⁻¹) 1 0 = A 1 0 * B 1 1 - A 1 1 * B 1 0 := by
+    simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.adjugate_fin_two]
+    ring
+  have h11 : (A * B⁻¹) 1 1 = -(A 1 0 * B 0 1) + A 1 1 * B 0 0 := by
+    simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.adjugate_fin_two]
+  rw [mem_Gamma1_iff_dvd_lowerRow, h10, h11]
+  constructor
+  · rintro ⟨⟨x, hx⟩, ⟨y, hy⟩⟩
+    refine ⟨⟨x * B 0 0 + y * B 1 0, ?_⟩, ⟨x * B 0 1 + y * B 1 1, ?_⟩⟩
+    · linear_combination B 0 0 * hx + B 1 0 * hy - A 1 0 * hB
+    · linear_combination B 0 1 * hx + B 1 1 * hy - A 1 1 * hB
+  · rintro ⟨⟨x, hx⟩, ⟨y, hy⟩⟩
+    refine ⟨⟨x * B 1 1 - y * B 1 0, ?_⟩, ⟨y * B 0 0 - x * B 0 1, ?_⟩⟩
+    · linear_combination B 1 1 * hx - B 1 0 * hy
+    · linear_combination B 0 0 * hy - B 0 1 * hx + hB
 
 /-- **The diagonal entries of a `Γ₀(M)` matrix are mutually inverse modulo `M`**: the determinant
 identity `ad - bc = 1` with the `bc` term killed by `M ∣ c`. It refines
@@ -692,22 +718,6 @@ theorem Gamma0_prime_power_index (p : ℕ) (hp : Nat.Prime p) (k : ℕ) (hk : 0 
 
 /-! ### The Chinese-remainder decomposition `Γ(gcd a b) = Γ(a) ⊔ Γ(b)` -/
 
-/-- Two integers agreeing modulo `gcd m n` are simultaneously congruent to a single lift,
-modulo `m` and modulo `n`: the Bézout coefficients give the lift explicitly. -/
-private lemma exists_int_modEq_of_modEq_gcd {m n x y : ℤ} (h : x ≡ y [ZMOD ↑(Int.gcd m n)]) :
-    ∃ z : ℤ, z ≡ x [ZMOD m] ∧ z ≡ y [ZMOD n] := by
-  rw [Int.modEq_iff_dvd] at h
-  obtain ⟨k, hk⟩ := h
-  have hbez := Int.gcd_eq_gcd_ab m n
-  refine ⟨x + m * (Int.gcdA m n * k), ?_, ?_⟩
-  · exact Int.modEq_iff_dvd.mpr ⟨-(Int.gcdA m n * k), by ring⟩
-  · refine Int.modEq_iff_dvd.mpr ⟨Int.gcdB m n * k, ?_⟩
-    -- `hk : y - x = gcd m n * k` is the divisibility witness; solved for `y` it is the shape
-    -- `hbez` can be substituted into.
-    have hy : y = x + (↑(Int.gcd m n) : ℤ) * k := by linarith
-    rw [hy, hbez]
-    ring
-
 /-- Entries of a `Γ(N)` matrix agree with the identity's modulo `N`. -/
 private lemma intCast_apply_modEq_one_of_mem_Gamma (N : ℕ) (γ : SL(2, ℤ))
     (hγ : γ ∈ Gamma N) (i j : Fin 2) :
@@ -808,7 +818,7 @@ private lemma exists_matrix_modEq_one_modEq_of_mem_Gamma_gcd {a b : ℕ} {γ : S
     have hgcd : (↑(Int.gcd (a : ℤ) (b : ℤ)) : ℤ) = ↑(Nat.gcd a b) := by simp [Int.gcd]
     rw [hgcd]
     exact intCast_apply_modEq_one_of_mem_Gamma _ γ hγ
-  choose z hza hzb using fun i j => exists_int_modEq_of_modEq_gcd (hcompat i j)
+  choose z hza hzb using fun i j => Int.exists_modEq_and_modEq_of_modEq_gcd (hcompat i j)
   exact ⟨Matrix.of z, hza, hzb⟩
 
 /-- **Shimura, Lemma 3.28.** `Γ(gcd a b) = Γ(a) ⊔ Γ(b)`: the join of two principal congruence

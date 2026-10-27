@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.ArrayLaw
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Infinite
 public import TauCeti.Probability.Process.Array.AldousHoover.Frozen
-import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.ProductKernel
 import TauCeti.Probability.Independence.InfinitePi
 
@@ -285,7 +284,7 @@ theorem graphLawOfArray_map_jointArray_snd (hg : Measurable g) :
   rw [graphLawOfArray_def, Measure.map_map measurable_graphOfArray
       (measurable_jointArray (fun q => g q.2) (by fun_prop)), hread,
     ← Measure.map_map (measurable_codingGraph g hg) hψ, map_vertex_cell_noiseMeasure]
-  refine measure_ext_of_map_restrictFin fun n => ?_
+  refine SimpleGraph.measure_ext_of_map_restrictFin fun n => ?_
   rw [infiniteSampleLaw_map_restrictFin]
   refine Measure.ext_of_singleton fun H => ?_
   have hfiber : MeasurableSet ((fun G : SimpleGraph ℕ => G.restrictFin n) ⁻¹' {H}) :=
@@ -320,8 +319,8 @@ theorem graphLawOfArray_map_jointArray {f : I × I × I × I → Bool} (hf : Mea
       (volume : Measure I).bind fun t =>
         infiniteSampleLaw (codingGraphon (fun q => f (t, q)) (hf.comp measurable_prodMk_left)) := by
   rw [map_jointArray_eq_bind_frozen hf, graphLawOfArray_def,
-    TauCeti.MeasureTheory.map_bind (measurable_map_jointArray_frozen hf).aemeasurable
-      measurable_graphOfArray]
+    Measure.map_bind (measurable_map_jointArray_frozen hf).aemeasurable
+      measurable_graphOfArray.aemeasurable]
   congr 1
   funext t
   rw [← graphLawOfArray_def]

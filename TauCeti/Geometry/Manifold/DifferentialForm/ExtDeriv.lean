@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Const
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -44,6 +45,8 @@ differentiable function is closed exactly when the function is locally constant.
   of a function is its manifold derivative.
 * `TauCeti.mextDeriv_ofFunction_eq_zero_iff`: the `0`-form of a differentiable function is closed
   exactly when the function is locally constant.
+* `TauCeti.mextDeriv_eq_zero_of_finrank_le`: on a manifold of dimension at most `k`, the exterior
+  derivative of every `k`-form vanishes.
 
 ## References
 
@@ -90,8 +93,11 @@ theorem inChartAt_add (φ η : RoughForm I M F k) (x₀ : M) :
     (φ + η).inChartAt x₀ = φ.inChartAt x₀ + η.inChartAt x₀ :=
   bundleMpullbackWithin_add _ _ φ η
 
+/-- The coordinate expression commutes with scalar multiplication of the coefficients, by any
+scalars acting continuously on the coefficient space and commuting with the real action. -/
 @[simp]
-theorem inChartAt_smul (c : ℝ) (φ : RoughForm I M F k) (x₀ : M) :
+theorem inChartAt_smul {S : Type*} [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
+    [SMulCommClass ℝ S F] (c : S) (φ : RoughForm I M F k) (x₀ : M) :
     (c • φ).inChartAt x₀ = c • φ.inChartAt x₀ :=
   bundleMpullbackWithin_smul _ _ c φ
 
@@ -106,7 +112,7 @@ theorem inChartAt_sub (φ η : RoughForm I M F k) (x₀ : M) :
   rw [sub_eq_add_neg, inChartAt_add, inChartAt_neg, sub_eq_add_neg]
 
 /-- Scalar localization of a form multiplies its coordinate expression by the pulled-back scalar. -/
-theorem inChartAt_fun_smul (f : M → ℝ) (φ : RoughForm I M ℝ k) (α : M) (y : E) :
+theorem inChartAt_fun_smul (f : M → ℝ) (φ : RoughForm I M F k) (α : M) (y : E) :
     inChartAt (I := I) (fun x ↦ f x • φ x) α y =
       f ((extChartAt I α).symm y) • φ.inChartAt α y := by
   ext v
@@ -241,16 +247,23 @@ theorem mextDeriv_add
   simp only [← mextDerivWithin_univ]
   exact mextDerivWithin_add (uniqueMDiffWithinAt_univ I) (by simpa using hφ) (by simpa using hη)
 
-/-- The exterior derivative commutes with real scalars wherever derivatives within the set are
-unique; no differentiability of the form is needed. -/
+/-- The exterior derivative commutes with scalar multiplication of the coefficients wherever
+derivatives within the set are unique; no differentiability of the form is needed. The scalars
+are those of a division semiring acting continuously on the coefficient space and commuting with
+the real action, such as `ℝ` itself or `ℂ` on complex coefficients. -/
 @[simp]
-theorem mextDerivWithin_smul (c : ℝ) (hs : UniqueMDiffWithinAt I s x) :
+theorem mextDerivWithin_smul {R : Type*} [DivisionSemiring R] [Module R F]
+    [SMulCommClass ℝ R F] [ContinuousConstSMul R F] (c : R) (hs : UniqueMDiffWithinAt I s x) :
     mextDerivWithin (c • φ) s x = c • mextDerivWithin φ s x := by
   rw [mextDerivWithin_def, RoughForm.inChartAt_smul]
-  exact extDerivWithin_smul c _ hs
+  exact extDerivWithin_smul_field c _ hs
 
+/-- The exterior derivative commutes with scalar multiplication of the coefficients by a
+division semiring acting continuously and commuting with the real action. -/
 @[simp]
-theorem mextDeriv_smul (c : ℝ) (φ : RoughForm I M F k) : mextDeriv (c • φ) = c • mextDeriv φ :=
+theorem mextDeriv_smul {R : Type*} [DivisionSemiring R] [Module R F]
+    [SMulCommClass ℝ R F] [ContinuousConstSMul R F] (c : R) (φ : RoughForm I M F k) :
+    mextDeriv (c • φ) = c • mextDeriv φ :=
   funext fun _ ↦ mextDerivWithin_smul c (uniqueMDiffWithinAt_univ I)
 
 @[simp]
@@ -303,6 +316,15 @@ theorem mextDeriv_eq_extDeriv (φ : RoughForm 𝓘(ℝ, E) E F k) (x : E) :
     mextDeriv φ x = extDeriv (E := E) (F := F) φ x := by
   rw [← mextDerivWithin_univ, mextDerivWithin_eq_extDerivWithin]
   exact congrFun (extDerivWithin_univ (𝕜 := ℝ) (E := E) (F := F) φ) x
+
+/-- The manifold exterior derivative of a constant form on its self-model space vanishes. -/
+@[simp]
+theorem mextDeriv_const (ω : E [⋀^Fin k]→L[ℝ] F) :
+    mextDeriv (I := 𝓘(ℝ, E)) (M := E) (F := F) (k := k)
+        ((fun _ ↦ ω) : RoughForm (𝓘(ℝ, E)) E F k) = 0 := by
+  funext x
+  exact (mextDeriv_eq_extDeriv ((fun _ : E ↦ ω) : RoughForm (𝓘(ℝ, E)) E F k) x).trans
+    (ContinuousAlternatingMap.extDeriv_const ω x)
 
 /-! ### Functions -/
 
@@ -373,5 +395,16 @@ theorem mextDeriv_ofFunction_eq_zero_iff [IsManifold I 1 M] {f : M → F}
     fun h ↦ funext fun x ↦ mextDeriv_ofFunction_apply_eq_zero_iff.mpr ?_⟩
   have hfx : f =ᶠ[𝓝 x] fun _ ↦ f x := (IsLocallyConstant.iff_eventually_eq f).mp h x
   exact hfx.mfderiv_eq.trans (mfderiv_const ..)
+
+/-! ### Forms of top degree -/
+
+/-- On a manifold of finite dimension at most `k`, the exterior derivative of every rough `k`-form
+vanishes, since there are no nonzero `(k + 1)`-forms. In particular, top-degree forms are closed. -/
+theorem mextDeriv_eq_zero_of_finrank_le [FiniteDimensional ℝ E]
+    (h : Module.finrank ℝ E ≤ k) (φ : RoughForm I M F k) : mextDeriv φ = 0 := by
+  funext x
+  -- `TangentSpace I x` is the model space `E` by definition
+  have hx : Module.finrank ℝ (TangentSpace I x) = Module.finrank ℝ E := rfl
+  exact (mextDeriv φ x).eq_zero_of_finrank_lt (by simpa [hx] using Nat.lt_succ_of_le h)
 
 end TauCeti

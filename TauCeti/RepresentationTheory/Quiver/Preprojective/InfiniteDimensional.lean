@@ -51,22 +51,30 @@ infinite-dimensional.
 * `TauCeti.not_module_finite_preprojectiveAlgebra_of_two_mul_le_sum`: **a preprojective algebra
   whose underlying multigraph carries a nonzero nonnegative weight `δ` with `(2I - A) δ ≤ 0` is
   infinite-dimensional.**
-* `TauCeti.not_module_finite_preprojectiveAlgebra_orientedQuiver_of_two_mul_le_sum`: the same for
-  an orientation of a finite simple graph, with the condition `2 δ_i ≤ ∑_{j ∼ i} δ_j`.
+* `TauCeti.not_module_finite_signlessPreprojectiveAlgebra_of_two_mul_le_sum`: the same for the
+  signless preprojective algebra of a finite quiver with arrow reversal.
+* `TauCeti.not_module_finite_preprojectiveAlgebra_orientedQuiver_of_two_mul_le_sum` and
+  `TauCeti.not_module_finite_signlessPreprojectiveAlgebra_doubledQuiver_of_two_mul_le_sum`: the
+  same for an orientation and for the doubled quiver of a finite simple graph, with the condition
+  `2 δ_i ≤ ∑_{j ∼ i} δ_j`.
 * `TauCeti.not_module_finite_preprojectiveAlgebra_of_not_posDef_titsForm`: **a preprojective
   algebra whose Tits form is not positive definite is infinite-dimensional.**
-* `TauCeti.not_module_finite_preprojectiveAlgebra_orientedQuiver_of_not_posDef`: the same for an
-  orientation of a finite simple graph whose matrix `2I - A` is not positive definite.
-* `TauCeti.not_module_finite_preprojectiveAlgebra_orientedQuiver_of_not_exists_dynkinType_iso`:
-  **the preprojective algebra of any orientation of a connected non-Dynkin graph is
+* `TauCeti.not_module_finite_preprojectiveAlgebra_orientedQuiver_of_not_posDef` and
+  `TauCeti.not_module_finite_signlessPreprojectiveAlgebra_of_not_posDef`: the same for a finite
+  simple graph whose matrix `2I - A` is not positive definite.
+* `TauCeti.not_module_finite_preprojectiveAlgebra_orientedQuiver_of_not_exists_dynkinType_iso` and
+  `TauCeti.not_module_finite_signlessPreprojectiveAlgebra_of_not_exists_dynkinType_iso`: **the
+  preprojective and signless preprojective algebras of a connected non-Dynkin graph are
   infinite-dimensional.**
-* `TauCeti.AffineDynkinType.not_module_finite_preprojectiveAlgebra`: **the preprojective algebra
-  of any orientation of a graphical affine simply-laced diagram is infinite-dimensional.**
+* `TauCeti.AffineDynkinType.not_module_finite_preprojectiveAlgebra` and
+  `TauCeti.AffineDynkinType.not_module_finite_signlessPreprojectiveAlgebra`: **the preprojective
+  and signless preprojective algebras of a graphical affine simply-laced diagram are
+  infinite-dimensional.**
 
 ## Implementation notes
 
 The oriented quiver of a graph has `Finite` vertex and arrow types; as in
-`TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective`, the `Fintype` structures its
+`TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`, the `Fintype` structures its
 preprojective algebra needs are supplied by `Fintype.ofFinite`.
 
 ## References
@@ -153,6 +161,22 @@ theorem not_module_finite_preprojectiveAlgebra_of_two_mul_le_sum {S : Type*} [Co
   -- `h` is about the same quotient, with the finiteness instances of the doubled quiver.
   convert h using 4 <;> exact hI
 
+/-- **A signless preprojective algebra carrying a suitable weight is infinite-dimensional.** If a
+nonzero nonnegative weight `δ` on the vertices of `Q` satisfies `2 δ_i ≤ ∑_j #(i ⟶ j) δ_j` at
+every vertex, then the signless preprojective algebra of `Q` is not a finite-dimensional `k`-vector
+space. -/
+theorem not_module_finite_signlessPreprojectiveAlgebra_of_two_mul_le_sum [HasReverse Q]
+    [∀ x : Q, Fintype (Quiver.Star x)] {S : Type*} [CommRing S] [LinearOrder S]
+    [IsStrictOrderedRing S] {δ : Q → S} (hδ0 : 0 ≤ δ) (hδ : δ ≠ 0)
+    (hδle : ∀ i, 2 * δ i ≤ ∑ j, (Fintype.card (i ⟶ j) : S) * δ j) :
+    ¬ Module.Finite k (signlessPreprojectiveAlgebra k Q) := by
+  have h := not_module_finite_quotient_span_range_of_two_mul_le_sum (R := Q)
+    (fun v => signlessPreprojectiveRelator k v)
+    (fun v => signlessPreprojectiveRelator_mem_grade_two k v)
+    (fun v => vertexIdempotent_mul_signlessPreprojectiveRelator k v)
+    (fun v => signlessPreprojectiveRelator_mul_vertexIdempotent k v) hδ0 hδ hδle
+  convert h using 4 <;> exact signlessPreprojectiveIdeal_eq_span k Q
+
 /-- **A preprojective algebra whose Tits form is not positive definite is infinite-dimensional.**
 If the Tits form of the finite quiver `Q` is not positive definite, then `Π_k(Q)` is not a
 finite-dimensional `k`-vector space. In particular this holds for every quiver with a loop, since a
@@ -225,6 +249,33 @@ theorem not_module_finite_preprojectiveAlgebra_orientedQuiver_of_two_mul_le_sum
   simp only [e, OrientedQuiver.vertexEquiv_apply, OrientedQuiver.vertexEquiv_symm_vertex]
   exact (hδle i).trans_eq (OrientedQuiver.sum_card_hom_add_card_hom_mul G o δ i).symm
 
+omit [Fintype V] [DecidableRel G.Adj] in
+/-- **The signless preprojective algebra of a graph carrying a suitable weight is
+infinite-dimensional.** If a nonzero nonnegative weight `δ` on the vertices of a finite simple graph
+`G` satisfies `2 δ_i ≤ ∑_{j ∼ i} δ_j` at every vertex, then the signless preprojective algebra of
+its doubled quiver is not a finite-dimensional `k`-vector space. -/
+theorem not_module_finite_signlessPreprojectiveAlgebra_doubledQuiver_of_two_mul_le_sum
+    [Finite V] [∀ i, Fintype (G.neighborSet i)] {S : Type*} [CommRing S] [LinearOrder S]
+    [IsStrictOrderedRing S] {δ : V → S} (hδ0 : 0 ≤ δ) (hδ : δ ≠ 0)
+    (hδle : ∀ i, 2 * δ i ≤ ∑ j ∈ G.neighborFinset i, δ j) :
+    ¬ Module.Finite k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+  classical
+  set e := DoubledQuiver.vertexEquiv G
+  refine not_module_finite_signlessPreprojectiveAlgebra_of_two_mul_le_sum k (Q := DoubledQuiver G)
+    (δ := fun i => δ (e.symm i)) (fun i => hδ0 (e.symm i))
+    (fun h => hδ (funext fun v => by simpa using congrFun h (e v))) fun i => ?_
+  obtain ⟨i, rfl⟩ := e.surjective i
+  simp only [e, DoubledQuiver.vertexEquiv_apply, DoubledQuiver.vertexEquiv_symm_vertex]
+  have hsum : ∑ j ∈ G.neighborFinset i, δ j =
+      ∑ j : V, G.adjMatrix S i j * δ j := by
+    simp only [SimpleGraph.adjMatrix_apply, ite_mul, one_mul, zero_mul]
+    rw [← Finset.sum_filter]
+    exact Finset.sum_congr (by ext j; simp) fun _ _ => rfl
+  refine (hδle i).trans_eq (hsum.trans (Fintype.sum_equiv e _ _ fun j => ?_))
+  simp only [e, DoubledQuiver.vertexEquiv_apply, DoubledQuiver.vertexEquiv_symm_vertex,
+    DoubledQuiver.card_hom_eq_adjMatrix, SimpleGraph.adjMatrix_apply, Nat.cast_ite, Nat.cast_one,
+    Nat.cast_zero]
+
 /-- **The preprojective algebra of an affine simply-laced diagram is infinite-dimensional**, for
 every orientation of a valid graphical affine diagram and over every field. The multiplicity-two
 diagram `Ã₁`, which is not a simple graph, is excluded by `IsGraphical`. -/
@@ -233,6 +284,18 @@ theorem AffineDynkinType.not_module_finite_preprojectiveAlgebra {t : AffineDynki
     ¬ Module.Finite k (preprojectiveAlgebra k (OrientedQuiver t.graph o)) :=
   not_module_finite_preprojectiveAlgebra_orientedQuiver_of_two_mul_le_sum k o (δ := t.marks)
     (fun i => (AffineDynkinType.marks_pos i).le)
+    (fun h => (AffineDynkinType.marks_pos (0 : Fin t.nodes)).ne' (congrFun h 0))
+    (fun i => (AffineDynkinType.sum_marks_neighborFinset_eq_two_mul ht hg i).ge)
+
+/-- **The signless preprojective algebra of an affine simply-laced diagram is
+infinite-dimensional**, for every valid graphical affine diagram and over every field. -/
+theorem AffineDynkinType.not_module_finite_signlessPreprojectiveAlgebra {t : AffineDynkinType}
+    [hN : ∀ i, Fintype (t.graph.neighborSet i)] (ht : t.Valid) (hg : t.IsGraphical) :
+    ¬ Module.Finite k (signlessPreprojectiveAlgebra k (DoubledQuiver t.graph)) := by
+  have hN_eq : hN = fun i ↦ Subtype.fintype (· ∈ t.graph.neighborSet i) := Subsingleton.elim _ _
+  cases hN_eq
+  exact not_module_finite_signlessPreprojectiveAlgebra_doubledQuiver_of_two_mul_le_sum k
+    (δ := t.marks) (fun i => (AffineDynkinType.marks_pos i).le)
     (fun h => (AffineDynkinType.marks_pos (0 : Fin t.nodes)).ne' (congrFun h 0))
     (fun i => (AffineDynkinType.sum_marks_neighborFinset_eq_two_mul ht hg i).ge)
 
@@ -258,6 +321,19 @@ theorem not_module_finite_preprojectiveAlgebra_orientedQuiver_of_not_posDef [Dec
   obtain ⟨δ, hδ0, hδ, hδle⟩ := SimpleGraph.exists_nonneg_two_mul_le_sum_of_not_posDef h
   exact not_module_finite_preprojectiveAlgebra_orientedQuiver_of_two_mul_le_sum k o hδ0 hδ hδle
 
+/-- **The signless preprojective algebra of a graph with non-positive-definite form is
+infinite-dimensional.** If the generalized Cartan matrix `2I - A` of a finite simple graph `G` is
+not positive definite over `ℝ`, then the signless preprojective algebra of its doubled quiver is not
+a finite-dimensional `k`-vector space. -/
+theorem not_module_finite_signlessPreprojectiveAlgebra_of_not_posDef [DecidableEq V]
+    [DecidableRel G.Adj] [hN : ∀ i, Fintype (G.neighborSet i)]
+    (h : ¬ (G.graphCartanMatrix ℝ).PosDef) :
+    ¬ Module.Finite k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+  have hN_eq : hN = fun i ↦ Subtype.fintype (· ∈ G.neighborSet i) := Subsingleton.elim _ _
+  cases hN_eq
+  obtain ⟨δ, hδ0, hδ, hδle⟩ := SimpleGraph.exists_nonneg_two_mul_le_sum_of_not_posDef h
+  exact not_module_finite_signlessPreprojectiveAlgebra_doubledQuiver_of_two_mul_le_sum k hδ0 hδ hδle
+
 /-- **The preprojective algebra of a connected non-Dynkin graph is infinite-dimensional.** If a
 connected finite simple graph `G` is not isomorphic to the diagram of any valid Dynkin type, then
 the preprojective algebra of every orientation of `G` is not a finite-dimensional `k`-vector
@@ -269,6 +345,20 @@ theorem not_module_finite_preprojectiveAlgebra_orientedQuiver_of_not_exists_dynk
     ¬ Module.Finite k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
   classical
   refine not_module_finite_preprojectiveAlgebra_orientedQuiver_of_not_posDef k o fun h ↦ hD ?_
+  obtain ⟨t, ht, -, hφ⟩ := SimpleGraph.exists_dynkinType_iso_of_isFiniteType_graphCartanMatrix hG
+    (SimpleGraph.isFiniteType_graphCartanMatrix_of_posDef h)
+  exact ⟨t, ht, hφ⟩
+
+/-- **The signless preprojective algebra of a connected non-Dynkin graph is infinite-dimensional.**
+If a connected finite simple graph `G` is not isomorphic to the diagram of any valid Dynkin type,
+then the signless preprojective algebra of its doubled quiver is not a finite-dimensional `k`-vector
+space. -/
+theorem not_module_finite_signlessPreprojectiveAlgebra_of_not_exists_dynkinType_iso
+    [∀ i, Fintype (G.neighborSet i)] (hG : G.Connected)
+    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
+    ¬ Module.Finite k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+  classical
+  refine not_module_finite_signlessPreprojectiveAlgebra_of_not_posDef k fun h ↦ hD ?_
   obtain ⟨t, ht, -, hφ⟩ := SimpleGraph.exists_dynkinType_iso_of_isFiniteType_graphCartanMatrix hG
     (SimpleGraph.isFiniteType_graphCartanMatrix_of_posDef h)
   exact ⟨t, ht, hφ⟩

@@ -14,11 +14,17 @@ This file records geometric properties of the standard fundamental domain associ
 Its convexity makes lattice cells preconnected, so cells crossing the boundary of a set can be
 detected by their intersection with the frontier in lattice-point counting arguments.
 
+It also records two basic facts about full lattices: such a lattice is the `ℤ`-span of a basis of
+the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice is membership of
+the image.
+
 ## Main results
 
 * `ZSpan.convex_fundamentalDomain`: the fundamental domain of a real basis is convex.
 * `ZSpan.eq_of_sub_mem_fundamentalDomain`: two integer-span translates placing a point in the
   fundamental domain are equal.
+* `ZLattice.exists_basis_span_eq`: a full lattice is the `ℤ`-span of a basis of the ambient space.
+* `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
 -/
 
 public section
@@ -56,3 +62,31 @@ theorem _root_.ZSpan.eq_of_sub_mem_fundamentalDomain [Finite ι] (β : Basis ι 
   exact neg_injective (congrArg Subtype.val heq)
 
 end TauCeti
+
+universe u
+
+namespace ZLattice
+
+/-- A vector lies in the pull-back of a lattice along a linear map exactly when its image lies in
+the lattice. -/
+@[simp]
+theorem mem_comap (K : Type*) [NormedField K] {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace K E] [NormedAddCommGroup F] [NormedSpace K F] (L : Submodule ℤ E)
+    (e : F →ₗ[K] E) {x : F} : x ∈ ZLattice.comap K L e ↔ e x ∈ L :=
+  Iff.rfl
+
+variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
+  [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]
+  [ProperSpace E]
+
+/-- A full lattice is the `ℤ`-span of a `K`-basis of the ambient space, indexed by a finite
+type. -/
+theorem exists_basis_span_eq (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice K L] :
+    ∃ (ι : Type u) (_ : Fintype ι) (_ : DecidableEq ι) (b : Basis ι K E),
+      Submodule.span ℤ (Set.range b) = L :=
+  have := module_finite K L
+  have := module_free K L
+  ⟨_, inferInstance, Classical.decEq _, (Free.chooseBasis ℤ L).ofZLatticeBasis K L,
+    (Free.chooseBasis ℤ L).ofZLatticeBasis_span K L⟩
+
+end ZLattice

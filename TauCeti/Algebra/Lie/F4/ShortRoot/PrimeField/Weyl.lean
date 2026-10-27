@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Lie.F4.ShortRoot.Weyl
+public import TauCeti.Algebra.Lie.F4.ShortRoot.Weyl.Basic
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.PointsFunctor
 
 /-!

@@ -21,6 +21,13 @@ The characteristic contraction equation determines the field uniquely. Its linea
 is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
 identity used to show that Hamiltonian flows preserve the symplectic form.
 
+Along a family of Hamiltonians whose derivatives vary continuously, the Hamiltonian vector
+fields vary continuously.
+
+The Poisson bracket `{F, G} = ω(X_F, X_G)` of two Hamiltonians is the symplectic pairing of their
+Hamiltonian vector fields. With the contraction convention it is `dF(X_G) = -dG(X_F)`; it is
+antisymmetric and vanishes when either argument is constant.
+
 See McDuff--Salamon, *Introduction to Symplectic Topology*, the discussion of Hamiltonian
 vector fields and their flows. The construction uses `SymplecticForm` contraction duality.
 -/
@@ -90,5 +97,77 @@ theorem apply_fderiv_hamiltonianVectorField_add (ω : SymplecticForm V) {H : V �
     ω.apply_fderiv_hamiltonianVectorField hd, ω.apply_fderiv_hamiltonianVectorField hd]
   rw [hH.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) u v]
   exact add_neg_cancel _
+
+/-- A constant Hamiltonian has zero Hamiltonian vector field. -/
+@[simp]
+theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
+    ω.hamiltonianVectorField (fun _ ↦ c) = 0 := by
+  funext x
+  rw [Pi.zero_apply, eq_comm, eq_hamiltonianVectorField_iff]
+  simp
+
+section Continuity
+
+variable {X : Type*} [TopologicalSpace X] {K : X → V → ℝ} {u : X → V} {s : Set X}
+
+/-- Along a family of Hamiltonians `K z` and points `u z` whose derivatives `dK_z(u z)` vary
+continuously on a set, the Hamiltonian vector fields `X_{K z}(u z)` vary continuously on it. -/
+theorem continuousOn_hamiltonianVectorField_comp (ω : SymplecticForm V)
+    (h : ContinuousOn (fun z ↦ fderiv ℝ (K z) (u z)) s) :
+    ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) s :=
+  ω.toBilinForm.toContinuousBilinearMap.inverse.continuous.comp_continuousOn h
+
+/-- Along a family of Hamiltonians `K z` and points `u z` whose derivatives `dK_z(u z)` vary
+continuously, the Hamiltonian vector fields `X_{K z}(u z)` vary continuously. -/
+theorem continuous_hamiltonianVectorField_comp (ω : SymplecticForm V)
+    (h : Continuous fun z ↦ fderiv ℝ (K z) (u z)) :
+    Continuous fun z ↦ ω.hamiltonianVectorField (K z) (u z) :=
+  ω.toBilinForm.toContinuousBilinearMap.inverse.continuous.comp h
+
+end Continuity
+
+section PoissonBracket
+
+/-- The Poisson bracket `{F, G}(x) = ω(X_F x, X_G x)` of two Hamiltonians. -/
+noncomputable def poissonBracket (ω : SymplecticForm V) (F G : V → ℝ) (x : V) : ℝ :=
+  ω (ω.hamiltonianVectorField F x) (ω.hamiltonianVectorField G x)
+
+theorem poissonBracket_def (ω : SymplecticForm V) (F G : V → ℝ) (x : V) :
+    ω.poissonBracket F G x =
+      ω (ω.hamiltonianVectorField F x) (ω.hamiltonianVectorField G x) :=
+  (rfl)
+
+/-- The Poisson bracket `{F, G}` is the derivative of `F` along the Hamiltonian field of `G`. -/
+theorem poissonBracket_eq_fderiv (ω : SymplecticForm V) (F G : V → ℝ) (x : V) :
+    ω.poissonBracket F G x = fderiv ℝ F x (ω.hamiltonianVectorField G x) := by
+  rw [poissonBracket_def, apply_hamiltonianVectorField]
+
+/-- The Poisson bracket `{F, G}` is minus the derivative of `G` along the Hamiltonian field of
+`F`. -/
+theorem poissonBracket_eq_neg_fderiv (ω : SymplecticForm V) (F G : V → ℝ) (x : V) :
+    ω.poissonBracket F G x = -fderiv ℝ G x (ω.hamiltonianVectorField F x) := by
+  rw [poissonBracket_def, ← ω.neg_eq, apply_hamiltonianVectorField]
+
+/-- The Poisson bracket is antisymmetric. -/
+theorem neg_poissonBracket (ω : SymplecticForm V) (F G : V → ℝ) (x : V) :
+    -ω.poissonBracket G F x = ω.poissonBracket F G x := by
+  rw [poissonBracket_def, poissonBracket_def, ω.neg_eq]
+
+@[simp]
+theorem poissonBracket_self (ω : SymplecticForm V) (F : V → ℝ) (x : V) :
+    ω.poissonBracket F F x = 0 := by
+  rw [poissonBracket_def, self_eq_zero]
+
+@[simp]
+theorem poissonBracket_const_left (ω : SymplecticForm V) (c : ℝ) (G : V → ℝ) (x : V) :
+    ω.poissonBracket (fun _ ↦ c) G x = 0 := by
+  simp [poissonBracket_def]
+
+@[simp]
+theorem poissonBracket_const_right (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (x : V) :
+    ω.poissonBracket F (fun _ ↦ c) x = 0 := by
+  simp [poissonBracket_def]
+
+end PoissonBracket
 
 end TauCeti.SymplecticForm

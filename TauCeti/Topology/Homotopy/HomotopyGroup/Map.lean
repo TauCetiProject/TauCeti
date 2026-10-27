@@ -16,7 +16,8 @@ supplies the map induced by a based continuous map (postcomposition of generaliz
 handles constant maps and subsingleton targets, and is a monoid homomorphism in positive
 dimensions. In dimension one it is Mathlib's induced map `FundamentalGroup.mapOfEq` of fundamental
 groups, read through `HomotopyGroup.pi1EquivFundamentalGroup`, so in particular one is bijective
-exactly when the other is.
+exactly when the other is. Every homotopy group of a subsingleton space is itself a subsingleton
+(`HomotopyGroup.subsingleton_of_subsingleton`).
 
 The covering-map isomorphisms on `π_n` for `n ≥ 2`
 (`TauCeti.Topology.Homotopy.HomotopyGroup.Covering`) are stated with it.
@@ -62,6 +63,12 @@ theorem map_continuousMap_const_apply (y : Y) (hy : (ContinuousMap.const X y) x 
   intro p
   rw [map_mk]
   exact congrArg _ (GenLoop.map_continuousMap_const y p)
+
+/-- Every homotopy group of a subsingleton space is a subsingleton: any two generalized loops
+in it are equal. This includes dimension zero. -/
+instance subsingleton_of_subsingleton [Subsingleton X] : Subsingleton (HomotopyGroup N X x) :=
+  ⟨fun a b ↦ Quotient.inductionOn₂ a b fun f g ↦
+    congrArg _ (_root_.GenLoop.ext f g fun _ ↦ Subsingleton.elim _ _)⟩
 
 /-- A based map into a subsingleton space induces the same map as the constant map at the
 target basepoint. -/
@@ -140,6 +147,14 @@ theorem map_congr {f₁ f₂ : C(X, Y)} (hfe : f₁ = f₂) (h₁ : f₁ x = y) 
     map f₁ h₁ a = map f₂ h₂ a := by
   subst hfe
   rfl
+
+/-- Composition law for a commuting triangle: if `g ∘ f = h`, then the composite of the maps
+induced by `f` and `g` on homotopy classes is the map induced by `h`. -/
+theorem map_comp_map_of_comp_eq {g : C(Y, Z)} {f : C(X, Y)} {h : C(X, Z)} (hgf : g.comp f = h)
+    (hg : g y = z) (hf : f x = y) (hh : h x = z) :
+    map (N := N) g hg ∘ map f hf = map h hh := by
+  subst hgf
+  exact map_comp_map g hg f hf
 
 /-- If `g ∘ f` is the identity, then the induced map of `g` undoes the induced map of `f` on
 homotopy classes. -/

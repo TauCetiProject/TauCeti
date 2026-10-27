@@ -132,6 +132,17 @@ theorem simpleMultiplicities_apply_eq_card {ι : Type} [Finite ι] (f : ι → C
   simp only [Finsupp.finsetSum_apply, Finsupp.single_apply, Nat.card_eq_fintype_card,
     Fintype.card_subtype, Finset.card_eq_sum_ones, Finset.sum_filter]
 
+open scoped Classical in
+/-- The multiplicity of a simple object is the sum of the indicators that it is isomorphic to
+each summand in any simple decomposition. -/
+theorem simpleMultiplicities_apply_classOf_eq_sum {ι : Type} [Fintype ι] (f : ι → C)
+    [∀ i, Simple (f i)] {X : C} (e : X ≅ ⨁ f) (S : C) [Simple S] :
+    simpleMultiplicities X (SimpleClasses.classOf S) =
+      ∑ i, if Nonempty (S ≅ f i) then 1 else 0 := by
+  rw [simpleMultiplicities_apply_eq_card f e]
+  simp only [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_eq_sum_ones,
+    Finset.sum_filter, SimpleClasses.classOf_eq_iff_nonempty_iso, Iso.nonempty_iso_symm]
+
 /-- Simple multiplicities classify objects of a finite semisimple category up to isomorphism. -/
 theorem nonempty_iso_iff_simpleMultiplicities_eq (X Y : C) :
     Nonempty (X ≅ Y) ↔ simpleMultiplicities X = simpleMultiplicities Y := by

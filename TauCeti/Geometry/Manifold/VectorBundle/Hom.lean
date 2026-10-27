@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # Testing smooth bundle homomorphisms on sections
@@ -23,13 +24,51 @@ assumption on the target fibres.
 
 The file also records that pulling back a fixed continuous bilinear form on the model fibre
 along a trivialization gives a `C^n` field of bilinear forms over its base set
-(`TauCeti.Manifold.contMDiffOn_trivializationAt_pullbackForm`).
+(`TauCeti.Manifold.contMDiffOn_trivializationAt_pullbackForm`), and that fibrewise inversion
+preserves smoothness of a hom-bundle section at every point where the section is invertible
+(`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle form of the
+smoothness of inversion of continuous linear maps between Banach spaces. A constant bilinear
+pairing between trivial bundles is a smooth hom-bundle section
+(`TauCeti.contMDiff_const_bundlePairing`).
 -/
 
 public section
 
 open Bundle FiberBundle Set
 open scoped ContDiff Manifold Topology
+
+namespace TauCeti
+
+variable {E H M F₁ F₂ F₃ : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [TopologicalSpace M] [ChartedSpace H M] {I : ModelWithCorners ℝ E H}
+  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  [NormedAddCommGroup F₃] [NormedSpace ℝ F₃] {n : WithTop ℕ∞}
+
+/-- A constant bilinear pairing is a smooth section of the hom bundle between trivial
+coefficient bundles. -/
+theorem contMDiff_const_bundlePairing (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
+    ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+        (E := fun z ↦ Trivial M F₁ z →L[ℝ] Trivial M F₂ z →L[ℝ] Trivial M F₃ z) y μ) := by
+  intro x
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨contMDiffAt_id, ?_⟩
+  have heq : (fun y ↦ ContinuousLinearMap.inCoordinates F₁ (Trivial M F₁)
+      (F₂ →L[ℝ] F₃) (fun z ↦ Trivial M F₂ z →L[ℝ] Trivial M F₃ z) x y x y μ) =
+      fun _ ↦ μ := by
+    funext y
+    ext v w
+    rw [inCoordinates_apply_eq₂ (by simp [Trivial.eq_trivialization M F₁])
+      (by simp [Trivial.eq_trivialization M F₂])
+      (by simp [Trivial.eq_trivialization M F₃])]
+    simp [Trivial.eq_trivialization M F₁, Trivial.eq_trivialization M F₂,
+      Trivial.eq_trivialization M F₃]
+  rw [heq]
+  exact contMDiffAt_const
+
+end TauCeti
 
 namespace TauCeti.Manifold
 
@@ -74,7 +113,7 @@ theorem contMDiff_hom_iff (A : Π x : M, V x →L[ℝ] W x) :
       ρ.contMDiff.contMDiffOn.smul_section_of_tsupport e.open_baseSet
         (hρ.trans inter_subset_left) (e.contMDiffOn_localFrame_baseSet ∞ b j)
     have hlocal := contMDiffOn_hom_of_localFrame (I := I) (e := e) (e' := e') b
-      huopen (fun y hy ↦ (hu hy).2) (A := A) (fun j ↦
+      (f := fun y ↦ y) contMDiffOn_id (fun y hy ↦ (hu hy).2) (A := A) (fun j ↦
         ((hA _ (htest j)).contMDiffOn).congr (fun y hy ↦ by
           dsimp only [Pi.smul_apply']
           simp only [(hu hy).1, Pi.one_apply, one_smul]))
@@ -115,3 +154,96 @@ theorem contMDiffOn_trivializationAt_pullbackForm [ContMDiffVectorBundle n F E I
 end PullbackForm
 
 end TauCeti.Manifold
+
+section Inverse
+
+variable {𝕜 B F₁ F₂ M : Type*} {n : WithTop ℕ∞}
+  {E₁ : B → Type*} {E₂ : B → Type*} [NontriviallyNormedField 𝕜]
+  [∀ x, AddCommGroup (E₁ x)] [∀ x, Module 𝕜 (E₁ x)] [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+  [CompleteSpace F₁]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [∀ x, TopologicalSpace (E₁ x)] [∀ x, AddCommGroup (E₂ x)]
+  [∀ x, Module 𝕜 (E₂ x)] [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [TopologicalSpace (TotalSpace F₂ E₂)] [∀ x, TopologicalSpace (E₂ x)]
+  [∀ x, IsTopologicalAddGroup (E₁ x)] [∀ x, ContinuousSMul 𝕜 (E₁ x)]
+  [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] {HB : Type*} [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B] {EM : Type*}
+  [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] {HM : Type*} [TopologicalSpace HM]
+  {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M] [ChartedSpace HM M]
+  [FiberBundle F₁ E₁] [VectorBundle 𝕜 F₁ E₁]
+  [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
+  {b : M → B} {ϕ : ∀ m, E₁ (b m) →L[𝕜] E₂ (b m)} {s : Set M} {x : M}
+
+/-- Consider linear maps `ϕ m : E₁ (b m) → E₂ (b m)` depending `C^n` on `m`, over a base map
+`b : M → B`, with `ϕ x` invertible. Then the fibrewise inverses `(ϕ m).inverse` depend `C^n` on
+`m` at `x`.
+
+We give here a version of this statement within a set at a point. -/
+theorem ContMDiffWithinAt.clm_bundle_inverse
+    (hϕ : CMDiffAt[s] n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun (x : B) ↦ (E₁ x →L[𝕜] E₂ x)) (b m) (ϕ m)) x)
+    (hx : (ϕ x).IsInvertible) :
+    CMDiffAt[s] n
+      (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁) (E := fun (x : B) ↦ (E₂ x →L[𝕜] E₁ x)) (b m)
+        (ϕ m).inverse) x := by
+  simp only [contMDiffWithinAt_hom_bundle] at hϕ ⊢
+  refine ⟨hϕ.1, ?_⟩
+  have h₁ := mem_baseSet_trivializationAt F₁ E₁ (b x)
+  have h₂ := mem_baseSet_trivializationAt F₂ E₂ (b x)
+  -- In coordinates centred at `b x`, the coordinate expression of `ϕ x` is invertible.
+  have hinv : (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ (b x) (b x) (b x) (b x)
+      (ϕ x)).IsInvertible := by
+    rw [ContinuousLinearMap.inCoordinates_eq h₁ h₂]
+    exact ContinuousLinearMap.isInvertible_equiv.comp
+      (hx.comp ContinuousLinearMap.isInvertible_equiv)
+  -- Near `x`, the inverse in coordinates is the inverse of the coordinate expression, and
+  -- inversion is smooth at an invertible map.
+  have hev : ∀ᶠ m in 𝓝[s] x, b m ∈ (trivializationAt F₁ E₁ (b x)).baseSet ∧
+      b m ∈ (trivializationAt F₂ E₂ (b x)).baseSet :=
+    hϕ.1.continuousWithinAt.preimage_mem_nhdsWithin <| Filter.inter_mem
+      ((trivializationAt F₁ E₁ (b x)).open_baseSet.mem_nhds h₁)
+      ((trivializationAt F₂ E₂ (b x)).open_baseSet.mem_nhds h₂)
+  have hcomp := (hinv.contDiffAt_map_inverse (n := n)).contMDiffAt.comp_contMDiffWithinAt x hϕ.2
+  refine hcomp.congr_of_eventuallyEq ?_ (ContinuousLinearMap.inCoordinates_inverse (ϕ x) h₁ h₂)
+  filter_upwards [hev] with m hm
+  exact ContinuousLinearMap.inCoordinates_inverse (ϕ m) hm.1 hm.2
+
+/-- Consider linear maps `ϕ m : E₁ (b m) → E₂ (b m)` depending `C^n` on `m`, over a base map
+`b : M → B`, with `ϕ x` invertible. Then the fibrewise inverses `(ϕ m).inverse` depend `C^n` on
+`m` at `x`.
+
+We give here a version of this statement at a point. -/
+theorem ContMDiffAt.clm_bundle_inverse
+    (hϕ : CMDiffAt n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun (x : B) ↦ (E₁ x →L[𝕜] E₂ x)) (b m) (ϕ m)) x)
+    (hx : (ϕ x).IsInvertible) :
+    CMDiffAt n
+      (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁) (E := fun (x : B) ↦ (E₂ x →L[𝕜] E₁ x)) (b m)
+        (ϕ m).inverse) x :=
+  ContMDiffWithinAt.clm_bundle_inverse hϕ hx
+
+/-- Consider linear maps `ϕ m : E₁ (b m) → E₂ (b m)` depending `C^n` on `m`, over a base map
+`b : M → B`, and invertible on `s`. Then the fibrewise inverses `(ϕ m).inverse` depend `C^n` on
+`m` on `s`. -/
+theorem ContMDiffOn.clm_bundle_inverse
+    (hϕ : CMDiff[s] n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun (x : B) ↦ (E₁ x →L[𝕜] E₂ x)) (b m) (ϕ m)))
+    (hs : ∀ x ∈ s, (ϕ x).IsInvertible) :
+    CMDiff[s] n
+      (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁) (E := fun (x : B) ↦ (E₂ x →L[𝕜] E₁ x)) (b m)
+        (ϕ m).inverse) :=
+  fun x hx ↦ (hϕ x hx).clm_bundle_inverse (hs x hx)
+
+/-- Consider linear maps `ϕ m : E₁ (b m) → E₂ (b m)` depending `C^n` on `m`, over a base map
+`b : M → B`, and all invertible. Then the fibrewise inverses `(ϕ m).inverse` depend `C^n` on
+`m`. -/
+theorem ContMDiff.clm_bundle_inverse
+    (hϕ : CMDiff n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun (x : B) ↦ (E₁ x →L[𝕜] E₂ x)) (b m) (ϕ m)))
+    (hinv : ∀ x, (ϕ x).IsInvertible) :
+    CMDiff n
+      (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁) (E := fun (x : B) ↦ (E₂ x →L[𝕜] E₁ x)) (b m)
+        (ϕ m).inverse) :=
+  fun x ↦ (hϕ x).clm_bundle_inverse (hinv x)
+
+end Inverse

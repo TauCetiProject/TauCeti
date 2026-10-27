@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
@@ -17,7 +19,8 @@ import Mathlib.Tactic.Ring
 
 This file records arithmetic identities involving natural-number binomial coefficients.
 
-Besides three identities for the second binomial coefficient, it develops Vandermonde's convolution
+Besides three identities for the second binomial coefficient and the sum `2ⁿ - 2` of the
+inner binomial coefficients `C(n, i)`, `0 < i < n`, it develops Vandermonde's convolution
 `∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a law
 supported on such a convolution: each summand is weighted by the falling factorial `(i)ₘ` of the
 summation index. The weighted sum is again a single binomial coefficient,
@@ -29,10 +32,14 @@ summation index. The weighted sum is again a single binomial coefficient,
   the triangular number is the corresponding square.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
+* `Nat.sum_Icc_choose_eq_two_pow_sub_two`: the binomial coefficients `C(n, i)`, `0 < i < n`,
+  sum to `2ⁿ - 2`.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
   `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)`.
 * `Nat.sum_range_descFactorial_mul_choose_mul_choose`: Vandermonde's convolution weighted by a
   falling factorial of the summation index.
+* `Nat.add_ascFactorial_mul_multichoose`: a rising factorial absorbed into a multiset
+  coefficient, `(r + k)⁽ᵐ⁾ * multichoose r k = r⁽ᵐ⁾ * multichoose (r + m) k`.
 
 ## References
 
@@ -86,6 +93,18 @@ theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
     rw [h]
     exact Nat.sub_eq_of_eq_add (by ring)
 
+/-- The binomial coefficients `C(n, i)` with `0 < i < n` sum to `2ⁿ - 2`. -/
+theorem sum_Icc_choose_eq_two_pow_sub_two (n : ℕ) :
+    ∑ i ∈ Icc 1 (n - 1), n.choose i = 2 ^ n - 2 := by
+  rcases n with _ | n
+  · simp
+  have h := sum_range_choose (n + 1)
+  rw [sum_range_succ, sum_range_succ'] at h
+  rw [Nat.add_sub_cancel, ← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range]
+  simp only [Nat.add_sub_cancel, Nat.add_comm 1]
+  simp at h
+  omega
+
 /-- **A falling factorial of the lower index lowers both indices of a binomial coefficient:**
 `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)` for `m ≤ i`.
 
@@ -96,6 +115,23 @@ theorem descFactorial_mul_choose {m i : ℕ} (hmi : m ≤ i) (A : ℕ) :
     i.descFactorial m * A.choose i = A.descFactorial m * (A - m).choose (i - m) := by
   rw [descFactorial_eq_factorial_mul_choose, descFactorial_eq_factorial_mul_choose,
     Nat.mul_assoc, Nat.mul_assoc, Nat.mul_comm (i.choose m) (A.choose i), choose_mul hmi]
+
+/-- **A rising factorial absorbed into a multiset coefficient:**
+`(r + k)⁽ᵐ⁾ * multichoose r k = r⁽ᵐ⁾ * multichoose (r + m) k`, where `n⁽ᵐ⁾` is the rising
+factorial `n.ascFactorial m` and `multichoose r k = C(r + k - 1, k)`.
+
+No hypothesis is needed: for `r = 0` both sides vanish unless `k = m = 0`. -/
+theorem add_ascFactorial_mul_multichoose (r m k : ℕ) :
+    (r + k).ascFactorial m * r.multichoose k = r.ascFactorial m * (r + m).multichoose k := by
+  -- Multiplying by `k !` turns both sides into `r⁽ᵏ⁺ᵐ⁾`, since `k ! * multichoose r k = r⁽ᵏ⁾`.
+  apply Nat.eq_of_mul_eq_mul_left (Nat.factorial_pos k)
+  calc k ! * ((r + k).ascFactorial m * r.multichoose k)
+      = r.ascFactorial k * (r + k).ascFactorial m := by
+        rw [ascFactorial_eq_factorial_mul_choose' r k, multichoose_eq]; ring
+    _ = r.ascFactorial m * (r + m).ascFactorial k := by
+      rw [ascFactorial_mul_ascFactorial, ascFactorial_mul_ascFactorial, Nat.add_comm k m]
+    _ = k ! * (r.ascFactorial m * (r + m).multichoose k) := by
+      rw [ascFactorial_eq_factorial_mul_choose' (r + m) k, multichoose_eq]; ring
 
 /-- **Vandermonde's convolution weighted by a falling factorial of the summation index.**
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
+public import Mathlib.MeasureTheory.Measure.Support
 
 /-!
 # Dirac measures: pushforwards, additive rigidity and finite convex combinations
@@ -31,6 +32,7 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
 * `Measure.map_dirac_of_aemeasurable` — the Dirac pushforward formula for a map that is
   only a.e. measurable.
 * `Measure.dirac_eq_dirac_of_inseparable` — inseparable points have equal Borel Dirac measures.
+* `MeasureTheory.Measure.support_dirac` — the topological support of a Dirac measure.
 * `TauCeti.MeasureTheory.measurePreserving_const_dirac` — a constant map out of a probability
   space onto a point `b` is measure preserving onto `Measure.dirac b`.
 * `MeasureTheory.Measure.eq_smul_dirac_of_forall_notMem` — a measure vanishing on measurable sets
@@ -46,7 +48,7 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
 public section
 
 open MeasureTheory
-open scoped NNReal
+open scoped NNReal Topology
 
 namespace Measure
 
@@ -74,6 +76,26 @@ theorem dirac_eq_dirac_of_inseparable [TopologicalSpace X] [BorelSpace X]
 end Measure
 
 namespace MeasureTheory.Measure
+
+open Set
+
+/-- The topological support of a Dirac measure is the closure of its singleton atom. -/
+@[simp]
+theorem support_dirac {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] (a : X) : (dirac a).support = closure {a} := by
+  ext x
+  rw [support_eq_forall_isOpen, Set.mem_ofPred_eq, mem_closure_iff]
+  constructor
+  · intro hx U hU hxU
+    have haU : a ∈ U := by
+      by_contra haU
+      simpa [dirac_apply' _ hU.measurableSet, Set.indicator_of_notMem haU] using
+        hx U hxU hU
+    exact ⟨a, haU, Set.mem_singleton a⟩
+  · intro hx U hxU hU
+    obtain ⟨_, haU, rfl⟩ := hx U hU hxU
+    rw [dirac_apply_of_mem haU]
+    exact zero_lt_one
 
 /-- A measure vanishing on every measurable set avoiding `x` is its total mass times the
 Dirac measure at `x`. No measurability assumption on `{x}` is needed. -/

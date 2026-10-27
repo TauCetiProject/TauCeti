@@ -70,8 +70,11 @@ of the cover. Transporting the latter needs only that the presentation maps fact
 quotients, which is what the relation hypotheses say; no isomorphism between them is required.
 Injectivity is Corollary 8.32 for the pair `(A, A°)`.
 
-The numerator sets are `Finset` literals, so writing them down needs decidable equality on `A`.
-That is an artefact of the notation rather than a hypothesis of the mathematics, so the public
+The localisation construction accepts arbitrary numerator sets, but the numerator sets here are
+written as `Finset` literals, coerced to sets: that is the form in which rational subsets and their
+presentations take numerators, so the results apply to the pieces `R({f, 1}/1)` and `R({1}/f)` as
+they occur there. Writing a `Finset` literal down needs decidable equality on `A`. That is an
+artefact of the notation rather than a hypothesis of the mathematics, so the public
 results take their instance from `Classical.decEq` instead of assuming `DecidableEq A`; the
 private helpers below stay polymorphic in the instance.
 
@@ -254,51 +257,53 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
 section Inverse
 
 variable (S₂ : Type*) [CommRing S₂] [Algebra A S₂] [IsLocalization.Away f S₂]
-  (hden₂ : HasDenominatorPower P {1} f S₂)
+  (hden₂ : HasDenominatorPower P ({1} : Finset A) f S₂)
 
 -- `A⟨X⟩ → A⟨X⟩ ⧸ (1 - f X) ≃ A⟨1/f⟩`.
 private noncomputable def laurentHom₂ :
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
     weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight →+*
       UniformSpace.Completion S₂ :=
-  rationalQuotientHom P {1} f S₂ hden₂ _ mem_numerators_inv (eq_denom_or_mem_range_inv f)
+  rationalQuotientHom P ({1} : Finset A) f S₂ hden₂ _ mem_numerators_inv
+    (eq_denom_or_mem_range_inv f)
     (Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) isUnit_one)
     (Ideal.isClosed_weightedRestrictedSubring_one_weight _)
 
 private theorem laurentHom₂_surjective :
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
     Function.Surjective (laurentHom₂ P f S₂ hden₂) :=
-  rationalQuotientHom_surjective P {1} f S₂ hden₂ _ _ _ _ _
+  rationalQuotientHom_surjective P ({1} : Finset A) f S₂ hden₂ _ _ _ _ _
 
 private theorem continuous_laurentHom₂ :
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
     Continuous (laurentHom₂ P f S₂ hden₂) :=
-  continuous_rationalQuotientHom P {1} f S₂ hden₂ _ _ _ _ _
+  continuous_rationalQuotientHom P ({1} : Finset A) f S₂ hden₂ _ _ _ _ _
 
 private theorem laurentHom₂_weightedC (a : A) :
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
     laurentHom₂ P f S₂ hden₂ (weightedC _ isWeightFamily_one_weight a) =
-      toCompletionLoc P {1} f S₂ hden₂ a :=
-  rationalQuotientHom_weightedC P {1} f S₂ hden₂ _ _ _ _ _ a
+      toCompletionLoc P ({1} : Finset A) f S₂ hden₂ a :=
+  rationalQuotientHom_weightedC P ({1} : Finset A) f S₂ hden₂ _ _ _ _ _ a
 
 private theorem laurentHom₂_weightedC_mul_weightedX_eq_one :
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
     laurentHom₂ P f S₂ hden₂ (weightedC _ isWeightFamily_one_weight f) *
       laurentHom₂ P f S₂ hden₂ (weightedX _ isWeightFamily_one_weight 0) = 1 := by
-  let _ := locUniformSpace P {1} f S₂ hden₂
-  have _ := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-  have _ := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-  have h := rationalQuotientHom_weightedC_mul_weightedX P {1} f S₂ hden₂ _ mem_numerators_inv
+  let _ := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have h := rationalQuotientHom_weightedC_mul_weightedX P ({1} : Finset A) f S₂ hden₂ _
+    mem_numerators_inv
     (eq_denom_or_mem_range_inv f)
     (Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) isUnit_one)
     (Ideal.isClosed_weightedRestrictedSubring_one_weight _) 0
@@ -311,51 +316,52 @@ variable [DecidableEq A]
 section Plus
 
 variable (S₁ : Type*) [CommRing S₁] [Algebra A S₁] [IsLocalization.Away (1 : A) S₁]
-  (hden₁ : HasDenominatorPower P {f, 1} 1 S₁)
+  (hden₁ : HasDenominatorPower P ({f, 1} : Finset A) 1 S₁)
 
 -- `A⟨X⟩ → A⟨X⟩ ⧸ (f - X) ≃ A⟨f/1⟩`.
 private noncomputable def laurentHom₁ :
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
     weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight →+*
       UniformSpace.Completion S₁ :=
-  rationalQuotientHom P {f, 1} 1 S₁ hden₁ _ (mem_numerators_plus f) (eq_denom_or_mem_range_plus f)
+  rationalQuotientHom P ({f, 1} : Finset A) 1 S₁ hden₁ _ (mem_numerators_plus f)
+    (eq_denom_or_mem_range_plus f)
     (Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) isUnit_one)
     (Ideal.isClosed_weightedRestrictedSubring_one_weight _)
 
 private theorem laurentHom₁_surjective :
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
     Function.Surjective (laurentHom₁ P f S₁ hden₁) :=
-  rationalQuotientHom_surjective P {f, 1} 1 S₁ hden₁ _ _ _ _ _
+  rationalQuotientHom_surjective P ({f, 1} : Finset A) 1 S₁ hden₁ _ _ _ _ _
 
 private theorem continuous_laurentHom₁ :
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
     Continuous (laurentHom₁ P f S₁ hden₁) :=
-  continuous_rationalQuotientHom P {f, 1} 1 S₁ hden₁ _ _ _ _ _
+  continuous_rationalQuotientHom P ({f, 1} : Finset A) 1 S₁ hden₁ _ _ _ _ _
 
 private theorem laurentHom₁_weightedC (a : A) :
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
     laurentHom₁ P f S₁ hden₁ (weightedC _ isWeightFamily_one_weight a) =
-      toCompletionLoc P {f, 1} 1 S₁ hden₁ a :=
-  rationalQuotientHom_weightedC P {f, 1} 1 S₁ hden₁ _ _ _ _ _ a
+      toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁ a :=
+  rationalQuotientHom_weightedC P ({f, 1} : Finset A) 1 S₁ hden₁ _ _ _ _ _ a
 
 private theorem laurentHom₁_weightedX :
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
     laurentHom₁ P f S₁ hden₁ (weightedX _ isWeightFamily_one_weight 0) =
       laurentHom₁ P f S₁ hden₁ (weightedC _ isWeightFamily_one_weight f) := by
-  let _ := locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-  have h := rationalQuotientHom_weightedC_mul_weightedX P {f, 1} 1 S₁ hden₁ _
+  let _ := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have h := rationalQuotientHom_weightedC_mul_weightedX P ({f, 1} : Finset A) 1 S₁ hden₁ _
     (mem_numerators_plus f) (eq_denom_or_mem_range_plus f)
     (Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) isUnit_one)
     (Ideal.isClosed_weightedRestrictedSubring_one_weight _) 0
@@ -366,53 +372,54 @@ end Plus
 section Inter
 
 variable (S₁₂ : Type*) [CommRing S₁₂] [Algebra A S₁₂] [IsLocalization.Away (1 * f) S₁₂]
-  (hden₁₂ : HasDenominatorPower P {f * f, f, 1} (1 * f) S₁₂)
+  (hden₁₂ : HasDenominatorPower P ({f * f, f, 1} : Finset A) (1 * f) S₁₂)
 
 -- `A⟨X, Y⟩ → A⟨X, Y⟩ ⧸ (f² - f X, 1 - f Y) ≃ A⟨{f², f, 1}/(1 · f)⟩`.
 private noncomputable def laurentHom₁₂ :
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
     weightedRestrictedSubring (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight →+*
       UniformSpace.Completion S₁₂ :=
-  rationalQuotientHom P {f * f, f, 1} (1 * f) S₁₂ hden₁₂ _ (mem_numerators_inter f)
+  rationalQuotientHom P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂ _ (mem_numerators_inter f)
     (eq_denom_or_mem_range_inter f)
     (Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) isUnit_one)
     (Ideal.isClosed_weightedRestrictedSubring_one_weight _)
 
 private theorem laurentHom₁₂_surjective :
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
     Function.Surjective (laurentHom₁₂ P f S₁₂ hden₁₂) :=
-  rationalQuotientHom_surjective P {f * f, f, 1} (1 * f) S₁₂ hden₁₂ _ _ _ _ _
+  rationalQuotientHom_surjective P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂ _ _ _ _ _
 
 private theorem continuous_laurentHom₁₂ :
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
     Continuous (laurentHom₁₂ P f S₁₂ hden₁₂) :=
-  continuous_rationalQuotientHom P {f * f, f, 1} (1 * f) S₁₂ hden₁₂ _ _ _ _ _
+  continuous_rationalQuotientHom P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂ _ _ _ _ _
 
 private theorem laurentHom₁₂_weightedC (a : A) :
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
     laurentHom₁₂ P f S₁₂ hden₁₂ (weightedC _ isWeightFamily_one_weight a) =
-      toCompletionLoc P {f * f, f, 1} (1 * f) S₁₂ hden₁₂ a :=
-  rationalQuotientHom_weightedC P {f * f, f, 1} (1 * f) S₁₂ hden₁₂ _ _ _ _ _ a
+      toCompletionLoc P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂ a :=
+  rationalQuotientHom_weightedC P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂ _ _ _ _ _ a
 
 -- `Y` is an inverse of `f`.
 private theorem laurentHom₁₂_weightedC_mul_weightedX_eq_one :
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
     laurentHom₁₂ P f S₁₂ hden₁₂ (weightedC _ isWeightFamily_one_weight f) *
       laurentHom₁₂ P f S₁₂ hden₁₂ (weightedX _ isWeightFamily_one_weight 1) = 1 := by
-  let _ := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have _ := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have _ := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have h := rationalQuotientHom_weightedC_mul_weightedX P {f * f, f, 1} (1 * f) S₁₂ hden₁₂ _
+  let _ := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have h := rationalQuotientHom_weightedC_mul_weightedX P ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+    hden₁₂ _
     (mem_numerators_inter f) (eq_denom_or_mem_range_inter f)
     (Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) isUnit_one)
     (Ideal.isClosed_weightedRestrictedSubring_one_weight _) 1
@@ -421,15 +428,16 @@ private theorem laurentHom₁₂_weightedC_mul_weightedX_eq_one :
 
 -- `X` is `f`, since `f X = f²` and `f` is a unit.
 private theorem laurentHom₁₂_weightedX_zero :
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
     laurentHom₁₂ P f S₁₂ hden₁₂ (weightedX _ isWeightFamily_one_weight 0) =
       laurentHom₁₂ P f S₁₂ hden₁₂ (weightedC _ isWeightFamily_one_weight f) := by
-  let _ := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have _ := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have _ := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have h := rationalQuotientHom_weightedC_mul_weightedX P {f * f, f, 1} (1 * f) S₁₂ hden₁₂ _
+  let _ := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have h := rationalQuotientHom_weightedC_mul_weightedX P ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+    hden₁₂ _
     (mem_numerators_inter f) (eq_denom_or_mem_range_inter f)
     (Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) isUnit_one)
     (Ideal.isClosed_weightedRestrictedSubring_one_weight _) 0
@@ -440,13 +448,13 @@ private theorem laurentHom₁₂_weightedX_zero :
 -- The kernel is `(f² - f X, 1 - f Y) ⊆ (f - X, 1 - XY)`.
 private theorem mem_span_of_laurentHom₁₂_eq_zero
     (u : weightedRestrictedSubring (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight)
-    (hu : letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-      letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-      letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+    (hu : letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+      letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+      letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
       laurentHom₁₂ P f S₁₂ hden₁₂ u = 0) : u ∈ Ideal.span
       {weightedC _ isWeightFamily_one_weight f - weightedX _ isWeightFamily_one_weight 0,
         1 - weightedX _ isWeightFamily_one_weight 0 * weightedX _ isWeightFamily_one_weight 1} := by
-  have hmem := (rationalQuotientHom_eq_zero_iff_mem P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+  have hmem := (rationalQuotientHom_eq_zero_iff_mem P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
     _ _ _ _ _).1 hu
   rw [rationalRelationIdeal_def] at hmem
   refine Ideal.span_le.2 (Set.range_subset_iff.2 (Fin.forall_fin_two.2 ⟨?_, ?_⟩)) hmem
@@ -462,25 +470,27 @@ end Inter
 variable (S₁ : Type*) [CommRing S₁] [Algebra A S₁] [IsLocalization.Away (1 : A) S₁]
   (S₂ : Type*) [CommRing S₂] [Algebra A S₂] [IsLocalization.Away f S₂]
   (S₁₂ : Type*) [CommRing S₁₂] [Algebra A S₁₂] [IsLocalization.Away (1 * f) S₁₂]
-  (hden₁ : HasDenominatorPower P {f, 1} 1 S₁) (hden₂ : HasDenominatorPower P {1} f S₂)
-  (hden₁₂ : HasDenominatorPower P {f * f, f, 1} (1 * f) S₁₂)
+  (hden₁ : HasDenominatorPower P ({f, 1} : Finset A) 1 S₁)
+      (hden₂ : HasDenominatorPower P ({1} : Finset A) f S₂)
+  (hden₁₂ : HasDenominatorPower P ({f * f, f, 1} : Finset A) (1 * f) S₁₂)
 
 -- Restricting from `A⟨f/1⟩` to the overlap corresponds to `A⟨T⟩ → A⟨X, Y⟩`, `T ↦ X`.
 private theorem restrictionRingHom_laurentHom₁
     (g : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    restrictionRingHom P {f, 1} 1 S₁ hden₁ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ f rfl (by simp)
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    restrictionRingHom P ({f, 1} : Finset A) 1 S₁ hden₁ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+        hden₁₂ f rfl (by simp)
         (laurentHom₁ P f S₁ hden₁ g) = laurentHom₁₂ P f S₁₂ hden₁₂
         (weightedRename Fin.castSuccEmb _ _ (fun _ ↦ subset_rfl) g) := by
-  have _ := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have _ := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+  have _ := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
   refine apply_eq_apply_weightedRename (continuous_restrictionRingHom ..)
     (continuous_laurentHom₁ P f S₁ hden₁) (continuous_laurentHom₁₂ P f S₁₂ hden₁₂) (fun _ ↦ ?_)
     (fun i ↦ ?_) g
@@ -494,20 +504,22 @@ private theorem restrictionRingHom_laurentHom₁
 -- Restricting from `A⟨1/f⟩` to the overlap corresponds to `A⟨T⟩ → A⟨X, Y⟩`, `T ↦ Y`.
 private theorem restrictionRingHom_laurentHom₂
     (h : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    restrictionRingHom P {1} f S₂ hden₂ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ 1 (mul_comm 1 f) (by simp)
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    restrictionRingHom P ({1} : Finset A) f S₂ hden₂ ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂ 1
+        (mul_comm 1 f) (by simp)
         (laurentHom₂ P f S₂ hden₂ h) = laurentHom₁₂ P f S₁₂ hden₁₂
         (weightedRename (Fin.succEmb 1) _ _ (fun _ ↦ subset_rfl) h) := by
-  have _ := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-  have _ := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-  have _ := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have _ := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have hC (a : A) : restrictionRingHom P {1} f S₂ hden₂ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ 1
+  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have hC (a : A) : restrictionRingHom P ({1} : Finset A) f S₂ hden₂ ({f * f, f, 1} : Finset A)
+      (1 * f) S₁₂ hden₁₂ 1
       (mul_comm 1 f) (by simp) (laurentHom₂ P f S₂ hden₂ (weightedC _ _ a)) =
         laurentHom₁₂ P f S₁₂ hden₁₂ (weightedC _ _ a) := by
     rw [laurentHom₂_weightedC, laurentHom₁₂_weightedC, ← RingHom.comp_apply,
@@ -546,7 +558,7 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
   (S₁ : Type*) [CommRing S₁] [Algebra A S₁] [IsLocalization.Away (1 : A) S₁]
   (S₂ : Type*) [CommRing S₂] [Algebra A S₂] [IsLocalization.Away f S₂]
   (S₁₂ : Type*) [CommRing S₁₂] [Algebra A S₁₂] [IsLocalization.Away (1 * f) S₁₂]
-  (hden₂ : HasDenominatorPower P {1} f S₂)
+  (hden₂ : HasDenominatorPower P ({1} : Finset A) f S₂)
 
 /-- **Wedhorn's Lemma 8.33, exactness in the middle.** Let `A` be a complete Hausdorff strongly
 noetherian Tate ring and `f ∈ A`, and let `U₁ = R({f, 1}/1)`, `U₂ = R({1}/f)` and
@@ -563,35 +575,40 @@ one for `U₁` is automatic at the denominator `1`
 (`TauCeti.Huber.PairOfDefinition.hasDenominatorPower_denom_one`), and the one for `U₁ ∩ U₂` is
 built from those two by `TauCeti.Huber.PairOfDefinition.hasDenominatorPower_mul`. -/
 theorem laurentCover_exact :
-    letI hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-    letI hden₁₂ := hasDenominatorPower_mul P {f, 1} {1} {f * f, f, 1} 1 f S₁ S₂ S₁₂
+    letI hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+    letI hden₁₂ := hasDenominatorPower_mul P ({f, 1} : Finset A) ({1} : Finset A)
+      ({f * f, f, 1} : Finset A) 1 f S₁ S₂ S₁₂
       (by simp) (by simp) hden₁ hden₂
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
     Function.Exact
-      (RingHom.prod (toCompletionLoc P {f, 1} 1 S₁ hden₁) (toCompletionLoc P {1} f S₂ hden₂))
-      ((restrictionRingHom P {f, 1} 1 S₁ hden₁ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ f rfl
+      (RingHom.prod (toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁)
+          (toCompletionLoc P ({1} : Finset A) f S₂ hden₂))
+      ((restrictionRingHom P ({f, 1} : Finset A) 1 S₁ hden₁ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+          hden₁₂ f rfl
           (by simp)).toAddMonoidHom.comp
           (AddMonoidHom.fst (UniformSpace.Completion S₁) (UniformSpace.Completion S₂)) -
-        (restrictionRingHom P {1} f S₂ hden₂ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ 1 (mul_comm 1 f)
+        (restrictionRingHom P ({1} : Finset A) f S₂ hden₂ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+          hden₁₂ 1 (mul_comm 1 f)
           (by simp)).toAddMonoidHom.comp
           (AddMonoidHom.snd (UniformSpace.Completion S₁) (UniformSpace.Completion S₂))) := by
-  have hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-  have hden₁₂ := hasDenominatorPower_mul P {f, 1} {1} {f * f, f, 1} 1 f S₁ S₂ S₁₂
+  have hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+  have hden₁₂ := hasDenominatorPower_mul P ({f, 1} : Finset A) ({1} : Finset A)
+    ({f * f, f, 1} : Finset A) 1 f S₁ S₂ S₁₂
     (by simp) (by simp) hden₁ hden₂
-  have _ := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-  have _ := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-  have _ := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have _ := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+  have _ := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
   rintro ⟨x₁, x₂⟩
   rw [restriction_sub_apply]
   refine ⟨fun h ↦ ?_, ?_⟩
@@ -618,34 +635,38 @@ is surjective. As in `laurentCover_exact`, only `U₂` comes with a standing hyp
 Exactness in the middle and injectivity of `a ↦ (a, a)` are `laurentCover_exact` and
 `laurentCover_injective`. -/
 theorem laurentCover_surjective :
-    letI hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-    letI hden₁₂ := hasDenominatorPower_mul P {f, 1} {1} {f * f, f, 1} 1 f S₁ S₂ S₁₂
+    letI hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+    letI hden₁₂ := hasDenominatorPower_mul P ({f, 1} : Finset A) ({1} : Finset A)
+      ({f * f, f, 1} : Finset A) 1 f S₁ S₂ S₁₂
       (by simp) (by simp) hden₁ hden₂
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-    letI := locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-    letI := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+    letI := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
     Function.Surjective
-      ((restrictionRingHom P {f, 1} 1 S₁ hden₁ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ f rfl
+      ((restrictionRingHom P ({f, 1} : Finset A) 1 S₁ hden₁ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+          hden₁₂ f rfl
           (by simp)).toAddMonoidHom.comp
           (AddMonoidHom.fst (UniformSpace.Completion S₁) (UniformSpace.Completion S₂)) -
-        (restrictionRingHom P {1} f S₂ hden₂ {f * f, f, 1} (1 * f) S₁₂ hden₁₂ 1 (mul_comm 1 f)
+        (restrictionRingHom P ({1} : Finset A) f S₂ hden₂ ({f * f, f, 1} : Finset A) (1 * f) S₁₂
+          hden₁₂ 1 (mul_comm 1 f)
           (by simp)).toAddMonoidHom.comp
           (AddMonoidHom.snd (UniformSpace.Completion S₁) (UniformSpace.Completion S₂))) := by
-  have hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-  have hden₁₂ := hasDenominatorPower_mul P {f, 1} {1} {f * f, f, 1} 1 f S₁ S₂ S₁₂
+  have hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+  have hden₁₂ := hasDenominatorPower_mul P ({f, 1} : Finset A) ({1} : Finset A)
+    ({f * f, f, 1} : Finset A) 1 f S₁ S₂ S₁₂
     (by simp) (by simp) hden₁ hden₂
-  have _ := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-  have _ := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-  have _ := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
-  have _ := isUniformAddGroup_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
-  have _ := isTopologicalRing_locUniformSpace P {f * f, f, 1} (1 * f) S₁₂ hden₁₂
+  have _ := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+  have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
+  have _ := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
   intro y
   obtain ⟨x₁, x₂, h⟩ := exists_sub_eq_of_surjective (laurentHom₁₂_surjective P f S₁₂ hden₁₂)
     (restrictionRingHom_laurentHom₁ P f S₁ S₁₂ hden₁ hden₁₂)
@@ -673,7 +694,8 @@ the first of these lies in `R({1}/f)`.
 This is the geometric half of the two-piece Laurent cover; `laurentCover_exact`,
 `laurentCover_surjective` and `laurentCover_injective` are the algebraic half. -/
 theorem spa_subset_iUnion_laurentCover (Aplus : Subring A) (f : A) :
-    spa Aplus ⊆ ⋃ b : Bool, rationalSubset Aplus (cond b {f, 1} {1}) (cond b 1 f) := by
+    spa Aplus ⊆ ⋃ b : Bool, rationalSubset Aplus (cond b ({f, 1} : Finset A) ({1} : Finset A))
+        (cond b 1 f) := by
   intro v hv
   have hspan : Ideal.span (({f, 1} : Finset A) : Set A) = ⊤ :=
     Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) isUnit_one
@@ -704,38 +726,42 @@ The two localisations may lie in independent universes. Exactness in the middle 
 surjectivity are `laurentCover_exact` and `laurentCover_surjective`. -/
 theorem laurentCover_injective (P : PairOfDefinition A) (f : A) (S₁ S₂ : Type*) [CommRing S₁]
     [Algebra A S₁] [IsLocalization.Away (1 : A) S₁] [CommRing S₂] [Algebra A S₂]
-    [IsLocalization.Away f S₂] (hden₂ : HasDenominatorPower P {1} f S₂) :
-    letI hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
-    letI := locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isUniformAddGroup_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := isTopologicalRing_locUniformSpace P {f, 1} 1 S₁ hden₁
-    letI := locUniformSpace P {1} f S₂ hden₂
-    letI := isUniformAddGroup_locUniformSpace P {1} f S₂ hden₂
-    letI := isTopologicalRing_locUniformSpace P {1} f S₂ hden₂
+    [IsLocalization.Away f S₂] (hden₂ : HasDenominatorPower P ({1} : Finset A) f S₂) :
+    letI hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
+    letI := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
+    letI := locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
+    letI := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
     Function.Injective
-      (RingHom.prod (toCompletionLoc P {f, 1} 1 S₁ hden₁) (toCompletionLoc P {1} f S₂ hden₂)) := by
-  have hden₁ := hasDenominatorPower_denom_one P {f, 1} S₁
+      (RingHom.prod (toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁)
+          (toCompletionLoc P ({1} : Finset A) f S₂ hden₂)) := by
+  have hden₁ := hasDenominatorPower_denom_one P ({f, 1} : Finset A) S₁
   -- Use canonical localizations to put the `Bool`-indexed family in one universe.
   let S (b : Bool) := Localization.Away (cond b 1 f)
   have _ : IsLocalization.Away (1 : A) (S true) :=
     inferInstanceAs (IsLocalization.Away (1 : A) (Localization.Away (1 : A)))
   have _ : IsLocalization.Away f (S false) :=
     inferInstanceAs (IsLocalization.Away f (Localization.Away f))
-  have hden₁' := hasDenominatorPower_denom_one P {f, 1} (S true)
-  have hden₂' : HasDenominatorPower P {1} f (S false) := by
-    obtain ⟨N, hN⟩ := (hasDenominatorPower_iff P {1} f S₂).mp hden₂
-    refine (hasDenominatorPower_iff P {1} f (S false)).mpr ⟨N, fun b hb ↦ ?_⟩
-    simpa only [mul_one] using divBy_mul_mem_locSubring P {1} f S₂ {1} f (S false)
+  have hden₁' := hasDenominatorPower_denom_one P ({f, 1} : Finset A) (S true)
+  have hden₂' : HasDenominatorPower P ({1} : Finset A) f (S false) := by
+    obtain ⟨N, hN⟩ := (hasDenominatorPower_iff P ({1} : Finset A) f S₂).mp hden₂
+    refine (hasDenominatorPower_iff P ({1} : Finset A) f (S false)).mpr ⟨N, fun b hb ↦ ?_⟩
+    simpa only [mul_one] using divBy_mul_mem_locSubring P ({1} : Finset A) f S₂ ({1} : Finset A) f
+      (S false)
       1 (mul_one f).symm (by simp) (hN b hb)
-  have hden (b : Bool) : HasDenominatorPower P (cond b {f, 1} {1}) (cond b 1 f) (S b) :=
+  have hden (b : Bool) :
+      HasDenominatorPower P (↑(cond b ({f, 1} : Finset A) {1})) (cond b 1 f) (S b) :=
     b.casesOn hden₂' hden₁'
   have hinj := pi_toCompletionLoc_injective P _ (Pair.powerBounded A).isRingOfIntegralElements
     (Pair.powerBounded_plus (A := A) ▸ P.le_powerBoundedSubring) _ _ S
     hden (spa_subset_iUnion_laurentCover _ f)
   -- The restriction maps to the canonical presentations preserve the structure maps from `A`.
-  let ρ₁ := restrictionRingHom P {f, 1} 1 S₁ hden₁ {f, 1} 1 (S true) hden₁'
+  let ρ₁ := restrictionRingHom P ({f, 1} : Finset A) 1 S₁ hden₁ ({f, 1} : Finset A) 1 (S true)
+    hden₁'
     1 (mul_one 1).symm (by simp)
-  let ρ₂ := restrictionRingHom P {1} f S₂ hden₂ {1} f (S false) hden₂'
+  let ρ₂ := restrictionRingHom P ({1} : Finset A) f S₂ hden₂ ({1} : Finset A) f (S false) hden₂'
     1 (mul_one f).symm (by simp)
   intro a b hab
   apply hinj

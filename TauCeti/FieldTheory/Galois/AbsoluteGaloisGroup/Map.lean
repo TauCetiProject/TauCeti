@@ -227,10 +227,7 @@ theorem bijective_absoluteGaloisGroup_mapOfAlgebra (h : Function.Bijective (alge
 
 end MapOfAlgebra
 
-section Isomorphism
-
-omit [Algebra K L]
-
+omit [Algebra K L] in
 /-- **Along a bijective ring homomorphism the map of absolute Galois groups is bijective**, for
 any choice of embedding of algebraic closures made by `Field.absoluteGaloisGroup.map`. -/
 theorem bijective_absoluteGaloisGroup_map {f : K →+* L} (hf : Function.Bijective f) :
@@ -240,6 +237,7 @@ theorem bijective_absoluteGaloisGroup_map {f : K →+* L} (hf : Function.Bijecti
     (IsAlgClosed.lift : AlgebraicClosure K →ₐ[K] AlgebraicClosure L).toAlgebra
   bijective_absoluteGaloisGroup_mapOfAlgebra hf
 
+omit [Algebra K L] in
 /-- **The isomorphism of absolute Galois groups induced by an isomorphism of fields**
 `e : K ≃+* L`: Mathlib's continuous map `Field.absoluteGaloisGroup.map e : G_L → G_K`, which is
 bijective (`bijective_absoluteGaloisGroup_map`) and hence a homeomorphism, as `G_L` is compact
@@ -256,12 +254,11 @@ def absoluteGaloisGroupMapEquiv (e : K ≃+* L) :
       (bijective_absoluteGaloisGroup_map e.bijective)).toEquiv)
     (Field.absoluteGaloisGroup.map e.toRingHom).continuous
 
+omit [Algebra K L] in
 /-- `absoluteGaloisGroupMapEquiv e` is Mathlib's map `Field.absoluteGaloisGroup.map e`. -/
 @[simp]
 theorem absoluteGaloisGroupMapEquiv_apply (e : K ≃+* L) (g : Field.absoluteGaloisGroup L) :
     absoluteGaloisGroupMapEquiv e g = Field.absoluteGaloisGroup.map e.toRingHom g :=
   (rfl)
-
-end Isomorphism
 
 end TauCeti

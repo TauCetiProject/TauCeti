@@ -8,7 +8,6 @@ module
 public import Mathlib.Probability.ProductMeasure
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import TauCeti.MeasureTheory.Measure.ProductKernel
-import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
@@ -121,15 +120,15 @@ theorem map_pi_deFinettiBarycenter {β : Type*} [MeasurableSpace β]
   calc (deFinettiBarycenter π).map (fun x i => f (x i))
       = π.bind fun P => (Measure.infinitePi fun _ : ℕ => (P : Measure α)).map
           fun x i => f (x i) :=
-        TauCeti.MeasureTheory.map_bind
-          TauCeti.MeasureTheory.measurable_infinitePi_const.aemeasurable hpi
+        Measure.map_bind
+          TauCeti.MeasureTheory.measurable_infinitePi_const.aemeasurable hpi.aemeasurable
     _ = π.bind fun P => Measure.infinitePi fun _ : ℕ => (P.map f : Measure β) :=
         congrArg (Measure.bind π) (funext fun P => by
           rw [Measure.infinitePi_map_pi (μ := fun _ : ℕ => (P : Measure α))
             (f := fun _ : ℕ => f) fun _ => hf]
           simp)
     _ = deFinettiBarycenter (π.map fun P => P.map f) := by
-        rw [deFinettiBarycenter_def, TauCeti.MeasureTheory.bind_map hmap.aemeasurable
-          TauCeti.MeasureTheory.measurable_infinitePi_const.aemeasurable, Function.comp_def]
+        rw [deFinettiBarycenter_def, Measure.bind_map hmap.aemeasurable
+          TauCeti.MeasureTheory.measurable_infinitePi_const.aemeasurable]
 
 end MeasureTheory.Measure

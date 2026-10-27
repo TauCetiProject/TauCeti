@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import TauCeti.Algebra.Lie.Weights.Semisimple
 public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
+import TauCeti.Algebra.Lie.Submodule.Finrank
 
 /-!
 # The Cartan subalgebra acts diagonalizably, and weight spaces are honest
@@ -55,6 +56,8 @@ to honest.
 * `TauCeti.iSup_weightSpace_eq_top` and `TauCeti.isInternal_weightSpace`: the honest weight spaces
   span `M`, and `M` is their internal direct sum, so `χ ↦ finrank (weightSpace M χ)` counts honest
   multiplicities.
+* `TauCeti.trace_toEnd_pow_eq_sum_finrank_nsmul`: `tr (ρ_M(h) ^ m) = ∑_χ dim M_χ · χ(h) ^ m`, the
+  trace of a power of a Cartan element as a power sum of the weights.
 * `TauCeti.eq_zero_of_genWeightSpace_ne_bot_of_isTrivial`: a trivial module has no weight but
   zero. This needs neither diagonalizability nor the Cartan hypothesis, and is stated for an
   arbitrary nilpotent Lie algebra acting trivially.
@@ -215,7 +218,8 @@ Mathlib's `LieModule.weightSpace_le_genWeightSpace` is the inclusion that holds 
 reverse one, and it is exactly the diagonalizability of the Cartan action. -/
 @[simp]
 theorem genWeightSpace_eq_weightSpace (χ : H → K) : genWeightSpace M χ = weightSpace M χ :=
-  genWeightSpace_eq_weightSpace_of_isSemisimple isSemisimple_toEnd_cartan χ
+  genWeightSpace_eq_weightSpace_of_isFinitelySemisimple
+    (fun x ↦ (isSemisimple_toEnd_cartan x).isFinitelySemisimple) χ
 
 /-- **Membership of a weight space is the eigenvector equation.** An element of a
 finite-dimensional module lies in the `χ`-weight space exactly when every `x : H` acts on it by the
@@ -243,5 +247,32 @@ Cartan subalgebra, so `χ ↦ finrank (weightSpace M χ)` counts honest multipli
 theorem isInternal_weightSpace :
     DirectSum.IsInternal fun χ : Weight K H M ↦ (weightSpace M (χ : H → K)).toSubmodule := by
   simpa only [genWeightSpace_eq_weightSpace] using isInternal_genWeightSpace K H M
+
+/-! ### Traces -/
+
+/-- **The trace of a power of a Cartan element**: `tr (ρ_M(h) ^ m) = ∑_μ dim M_μ · μ(h) ^ m`, the
+sum over the weights `μ` of `M`. -/
+theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
+    LinearMap.trace K M (toEnd K H M h ^ m) =
+      ∑ chi : Weight K H M, finrank K (genWeightSpace M chi) • chi h ^ m := by
+  classical
+  -- the weight space of `chi` is an honest eigenspace, on which `h` acts by the scalar `chi h`
+  have hact (chi : Weight K H M) (n : ℕ) (x : M) (hx : x ∈ genWeightSpace M chi) :
+      (toEnd K H M h ^ n) x = chi h ^ n • x := by
+    rw [genWeightSpace_eq_weightSpace, mem_weightSpace] at hx
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      rw [pow_succ', Module.End.mul_apply, ih, map_smul, toEnd_apply_apply, hx, smul_smul,
+        pow_succ]
+  have hmaps (chi : Weight K H M) : Set.MapsTo (toEnd K H M h ^ m)
+      (genWeightSpace M chi) (genWeightSpace M chi) := fun x hx ↦ by
+    rw [SetLike.mem_coe, hact chi m x hx]
+    exact Submodule.smul_mem _ _ hx
+  rw [LinearMap.trace_eq_sum_trace_restrict (isInternal_genWeightSpace K H M) hmaps]
+  refine Finset.sum_congr rfl fun chi _ ↦ ?_
+  have hres : (toEnd K H M h ^ m).restrict (hmaps chi) = chi h ^ m • LinearMap.id :=
+    LinearMap.ext fun x ↦ Subtype.ext (hact chi m x x.2)
+  rw [hres, map_smul, LinearMap.trace_id, smul_eq_mul, nsmul_eq_mul, mul_comm, finrank_toSubmodule]
 
 end TauCeti

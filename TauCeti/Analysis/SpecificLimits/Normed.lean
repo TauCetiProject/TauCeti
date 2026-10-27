@@ -9,15 +9,45 @@ public import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Tactic.Ring
 
 /-!
-# Shifted binomial geometric series
+# Geometric series in seminormed rings and normed fields
 
-These evaluations specialize Mathlib's binomial geometric-series formula to linear and
-quadratic coefficients. They do not require completeness or an ultrametric norm.
+The norms of the powers of an element in the open unit ball form a summable series, even when
+the seminorm is not normalized. The same holds after multiplication by bounded coefficients.
+Completeness then gives summability in the ring itself.
+
+Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
+formula to linear and quadratic coefficients, without requiring completeness or an ultrametric norm.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- The norms of the powers of an element in the open unit ball are summable in a seminormed
+ring, without requiring a normalized seminorm. -/
+theorem summable_norm_pow_of_norm_lt_one {K : Type*} [SeminormedRing K]
+    {q : K} (hq : ‖q‖ < 1) : Summable (fun n : ℕ ↦ ‖q ^ n‖) := by
+  -- The positive-degree estimate does not require any bound on the seminorm of one.
+  rw [← summable_nat_add_iff 1]
+  exact Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _)
+    (fun n ↦ norm_pow_le' q n.succ_pos)
+    ((summable_nat_add_iff 1).mpr (summable_geometric_of_lt_one (norm_nonneg q) hq))
+
+/-- A geometric series with bounded coefficients is absolutely summable in a seminormed ring
+when the parameter belongs to the open unit ball. -/
+theorem summable_norm_mul_pow_of_norm_le {K : Type*} [SeminormedRing K]
+    {b : ℕ → K} {C : ℝ} (hb : ∀ n, ‖b n‖ ≤ C) {q : K} (hq : ‖q‖ < 1) :
+    Summable (fun n : ℕ ↦ ‖b n * q ^ n‖) := by
+  apply Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
+    ((summable_norm_pow_of_norm_lt_one hq).mul_left C)
+  exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hb n) (norm_nonneg _))
+
+/-- A geometric series with bounded coefficients is summable in a complete seminormed ring
+when the parameter belongs to the open unit ball. -/
+theorem summable_mul_pow_of_norm_le {K : Type*} [SeminormedRing K] [CompleteSpace K]
+    {b : ℕ → K} {C : ℝ} (hb : ∀ n, ‖b n‖ ≤ C) {q : K} (hq : ‖q‖ < 1) :
+    Summable (fun n : ℕ ↦ b n * q ^ n) :=
+  (summable_norm_mul_pow_of_norm_le hb hq).of_norm
 
 variable {K : Type*} [NormedField K]
 

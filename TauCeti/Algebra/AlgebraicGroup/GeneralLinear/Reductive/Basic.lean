@@ -39,7 +39,7 @@ The final theorem transports this argument across the canonical identification
 * T. A. Springer, *Linear Algebraic Groups*, §§2.2 and 2.4.
 
 For the characteristic-zero complete-reducibility theorem, see
-`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.LinearlyReductive`.
+`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.LinearlyReductive.Basic`.
 -/
 
 public section

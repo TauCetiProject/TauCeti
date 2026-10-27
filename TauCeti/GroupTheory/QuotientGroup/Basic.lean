@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
@@ -43,6 +44,10 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   lies in `H`.
 * `Subgroup.natCard_mul_natCard_fixedBy`: the elements conjugating `g` into `H` number
   `|H| * |(G ⧸ H)^g|`.
+* `Subgroup.natCard_stabilizer_mul_natCard_mem_carrier`: counted by the conjugate they produce,
+  the same elements number `|C_G(g)| * #(H ∩ [g])`.
+* `Subgroup.natCard_fixedBy_mul_natCard`: the fixed-coset identity
+  `#(G ⧸ H)^g · |H| = |C_G(g)| · #(H ∩ [g])`.
 * `TauCeti.smul_quotient_eq_self_of_mem`: an element of a normal subgroup fixes every coset.
 * `TauCeti.quotientBot_equivariant`: `QuotientGroup.quotientBot` intertwines left translation on
   `G ⧸ ⊥` with left translation in `G`.
@@ -131,6 +136,48 @@ theorem _root_.Subgroup.natCard_mul_natCard_fixedBy (H : Subgroup G) (g : G) :
     _ = Nat.card (QuotientGroup.mk ⁻¹' (MulAction.fixedBy (G ⧸ H) g) : Set G) :=
         (Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet H _)).symm
     _ = Nat.card {x : G // x⁻¹ * g * x ∈ H} := Nat.card_congr (Equiv.subtypeEquivRight hmem)
+
+/-- The elements `x` of `G` with `x⁻¹ g x ∈ H`, counted by the conjugate they produce: there are
+`|C_G(g)|` of them over each element of `H` conjugate to `g`, where the centralizer `C_G(g)` is the
+stabilizer of `g` for the conjugation action. This is the companion of
+`Subgroup.natCard_mul_natCard_fixedBy`, which counts the same elements by their cosets. -/
+theorem _root_.Subgroup.natCard_stabilizer_mul_natCard_mem_carrier (H : Subgroup G) (g : G) :
+    Nat.card (stabilizer (ConjAct G) g) *
+        Nat.card {x : G // x ∈ (ConjClasses.mk g).carrier ∧ x ∈ H} =
+      Nat.card {x : G // x⁻¹ * g * x ∈ H} := by
+  -- Reparametrize by `c = x⁻¹` in `ConjAct G`, for which `x⁻¹ * g * x = c • g`.
+  have e₁ : {x : G // x⁻¹ * g * x ∈ H} ≃ {c : ConjAct G // c • g ∈ H} :=
+    (Equiv.inv G).trans ConjAct.toConjAct.toEquiv |>.subtypeEquiv fun x ↦ by
+      simp [ConjAct.smul_def]
+  -- The conjugates `c • g` are the points of the orbit of `g`, identified with `G ⧸ C_G(g)`.
+  set T : Set (ConjAct G ⧸ stabilizer (ConjAct G) g) :=
+    {q | ofQuotientStabilizer (ConjAct G) g q ∈ H}
+  have hset : {c : ConjAct G | c • g ∈ H} = QuotientGroup.mk ⁻¹' T := by
+    ext c
+    simp [T, ofQuotientStabilizer_mk]
+  have e₂ : T ≃ {x : G // x ∈ (ConjClasses.mk g).carrier ∧ x ∈ H} :=
+    ((orbitEquivQuotientStabilizer (ConjAct G) g).symm.subtypeEquiv
+        (p := (· ∈ T)) (q := fun y : orbit (ConjAct G) g ↦ (y : G) ∈ H) fun q ↦ by
+          induction q using QuotientGroup.induction_on
+          simp [T, ofQuotientStabilizer_mk]).trans <|
+      (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ orbit (ConjAct G) g) (· ∈ H)).trans <|
+        Equiv.subtypeEquivRight fun x ↦ by rw [ConjAct.orbit_eq_carrier_conjClasses]
+  rw [Nat.card_congr e₁, ← Nat.card_congr e₂, ← Nat.card_prod,
+    ← Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet _ T), ← hset, Set.coe_ofPred]
+
+/-- **The fixed-coset identity.** For a subgroup `H` of a group `G` and `g : G`,
+
+`#(G ⧸ H)^g · |H| = |C_G(g)| · #(H ∩ [g])`,
+
+where the centralizer `C_G(g)` is the stabilizer of `g` for the conjugation action and `[g]` is
+the conjugacy class of `g`. Both sides count the `x : G` with `x⁻¹ g x ∈ H`; no finiteness is
+needed, with the convention that `Nat.card` of an infinite type is `0`. -/
+theorem _root_.Subgroup.natCard_fixedBy_mul_natCard (H : Subgroup G) (g : G) :
+    Nat.card (fixedBy (G ⧸ H) g) * Nat.card H =
+      Nat.card (stabilizer (ConjAct G) g) *
+        Nat.card {x : G // x ∈ (ConjClasses.mk g).carrier ∧ x ∈ H} := by
+  rw [mul_comm, Subgroup.natCard_mul_natCard_fixedBy,
+    Subgroup.natCard_stabilizer_mul_natCard_mem_carrier]
 
 /-- Left translation on the cosets of the trivial subgroup is left translation in the group.
 

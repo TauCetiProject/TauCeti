@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Semigroups.Generator.Closed
 public import TauCeti.LinearAlgebra.LinearPMap.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
-import TauCeti.Analysis.Complex.SmulI
+import TauCeti.Topology.Algebra.Module.ComplexSmulI
 import TauCeti.Analysis.Semigroups.Generator.Invariance
 import TauCeti.Analysis.Semigroups.Generator.Similarity
 

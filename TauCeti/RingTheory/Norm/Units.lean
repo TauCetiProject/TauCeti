@@ -35,8 +35,8 @@ finiteness where the value is computed.
 * `TauCeti.Algebra.pow_finrank_mem_range_normUnits`: in a free algebra, the `finrank`-th power of
   a unit of the base is a norm; `TauCeti.Algebra.range_powMonoidHom_le_range_normUnits` does the
   same for every `n`-th power with `n` a multiple of the rank.
-* `TauCeti.Algebra.range_powMonoidHom_le_range_normUnits_baseChange`: powers by the degree of a
-  field extension are norms after any nontrivial commutative base change.
+* `TauCeti.Algebra.range_powMonoidHom_le_range_normUnits_baseChange`: powers by the rank of a
+  free algebra are norms after any commutative base change.
 * `AlgHom.normGroup_le_normGroup`: a larger extension has a smaller norm group.
 * `TauCeti.pow_finrank_mem_normGroup`: the `[L : K]`-th power of an element of `Kˣ` is a norm.
 -/
@@ -80,21 +80,29 @@ theorem Algebra.range_powMonoidHom_le_range_normUnits [Module.Free R S] {n : ℕ
   rw [powMonoidHom_apply, pow_mul']
   exact Algebra.pow_finrank_mem_range_normUnits R (a ^ k)
 
-section NormGroup
+section BaseChange
 
 open scoped TensorProduct
 
-variable (K L : Type*) [Field K] [Field L] [Algebra K L]
+variable (S) [Module.Free R S]
 
-/-- **Powers by the degree are norms after base change.** For a field extension `L/K` and any
-nontrivial commutative `K`-algebra `F`, a `Module.finrank K L`-th power in `Fˣ` is the norm of a
-unit of `F ⊗[K] L`. When `L/K` is finite, `F ⊗[K] L` is a free `F`-algebra of rank `[L : K]`; for
-an infinite extension the exponent is `0` and the statement is trivial. -/
+/-- **Powers by the rank are norms after base change.** For a free `R`-algebra `S` and any
+commutative `R`-algebra `F`, a `Module.finrank R S`-th power in `Fˣ` is the norm of a unit of
+`F ⊗[R] S`. When `F` is nontrivial, base change preserves the rank. If `S` is not module-finite
+over `R`, the exponent is `0` and the statement is trivial. -/
 theorem Algebra.range_powMonoidHom_le_range_normUnits_baseChange
-    (F : Type*) [CommRing F] [Nontrivial F] [Algebra K F] :
-    (powMonoidHom (Module.finrank K L) : Fˣ →* Fˣ).range ≤
-      (Algebra.normUnits F (S := F ⊗[K] L)).range :=
-  Algebra.range_powMonoidHom_le_range_normUnits F (by rw [Module.finrank_baseChange])
+    (F : Type*) [CommRing F] [Algebra R F] :
+    (powMonoidHom (Module.finrank R S) : Fˣ →* Fˣ).range ≤
+      (Algebra.normUnits F (S := F ⊗[R] S)).range := by
+  nontriviality F
+  have : Nontrivial R := (algebraMap R F).domain_nontrivial
+  exact Algebra.range_powMonoidHom_le_range_normUnits F (by rw [Module.finrank_baseChange])
+
+end BaseChange
+
+section NormGroup
+
+variable (K L : Type*) [Field K] [Field L] [Algebra K L]
 
 /-- The norm group `N_{L/K}(Lˣ)` of a finite field extension `L/K`: the image in `Kˣ` of the field
 norm on units, `Algebra.normUnits K : Lˣ →* Kˣ`. Finiteness is required because `Algebra.norm K`
@@ -108,6 +116,18 @@ variable {K L} in
 theorem mem_normGroup_iff [Module.Finite K L] {x : Kˣ} :
     x ∈ normGroup K L ↔ ∃ y : Lˣ, Algebra.norm K (y : L) = x := by
   simp [normGroup, Units.ext_iff]
+
+variable {K L} in
+/-- An element of `Kˣ` lies in the norm group exactly when it is `Algebra.normUnits K y` for a
+unit `y` of `L`. -/
+theorem mem_normGroup_iff_exists_normUnits [Module.Finite K L] {x : Kˣ} :
+    x ∈ normGroup K L ↔ ∃ y : Lˣ, Algebra.normUnits K y = x :=
+  Iff.rfl
+
+/-- The norm of a unit of `L` lies in the norm group `N_{L/K}(Lˣ)`. -/
+theorem normUnits_mem_normGroup [Module.Finite K L] (y : Lˣ) :
+    Algebra.normUnits K y ∈ normGroup K L :=
+  ⟨y, rfl⟩
 
 variable {K L} in
 /-- **A larger extension has a smaller norm group.** A `K`-algebra map `f : M →ₐ[K] L` of finite

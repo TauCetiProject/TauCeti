@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.CompleteReducibility
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
 public import Mathlib.Algebra.Lie.Killing
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.LinearlyReductive
-import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.LinearlyReductive
+import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.LinearlyReductive.Basic
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Connected
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.LowRank
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Tangent

@@ -45,7 +45,8 @@ morphism.
   agree once they agree after coevaluation;
 * `CategoryTheory.leftAdjointMate_rightAdjointMate` and
   `CategoryTheory.rightAdjointMate_leftAdjointMate`: taking the opposite-handed mate recovers the
-  original morphism;
+  original morphism, so `CategoryTheory.rightAdjointMate_injective`;
+* `CategoryTheory.Iso.rightAdjointMate`: the isomorphism `Yᘁ ≅ Xᘁ` induced by `X ≅ Y`;
 * `CategoryTheory.ExactPairing.rightMate`: the right adjoint mate with respect to explicit exact
   pairings, characterized by `CategoryTheory.ExactPairing.rightMate_comp_evaluation` and
   `CategoryTheory.ExactPairing.coevaluation_comp_rightMate`, with `rightMate_id` and
@@ -62,7 +63,8 @@ morphism.
   coevaluation, and conversely;
 * `TauCeti.rightAdjointMate_eq_rightMate`, `CategoryTheory.ExactPairing.rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightDualIso_inv`: Mathlib's `rightAdjointMate` and `rightDualIso`
-  as mates;
+  as mates, with the evaluation identities `rightDualIso_hom_whiskerRight_evaluation` and
+  `rightDualIso_inv_whiskerRight_evaluation`;
 * `CategoryTheory.ExactPairing.leftDualHom_ext`: morphisms into a left dual agree once they agree
   after evaluation;
 * `CategoryTheory.ExactPairing.leftMate`: the left adjoint mate with respect to explicit exact
@@ -71,8 +73,12 @@ morphism.
   the tensor product formulas `leftMate_whiskerLeft`, `leftMate_whiskerRight` and
   `leftMate_tensorHom`, and the structure-morphism formulas `leftMate_associator_hom`,
   `leftMate_leftUnitor_hom` and `leftMate_rightUnitor_hom`;
-* `TauCeti.leftAdjointMate_eq_leftMate` and `CategoryTheory.ExactPairing.leftDualIso_hom`:
-  Mathlib's `leftAdjointMate` and `leftDualIso` as left mates.
+* `TauCeti.leftAdjointMate_eq_leftMate`, `CategoryTheory.ExactPairing.leftDualIso_hom` and
+  `CategoryTheory.ExactPairing.leftDualIso_inv`: Mathlib's `leftAdjointMate` and `leftDualIso`
+  as left mates;
+* `CategoryTheory.ExactPairing.leftMate_rightDualIso_hom` and
+  `CategoryTheory.ExactPairing.rightMate_leftDualIso_hom`: the opposite-handed mate of the
+  comparison between two duals is an identity.
 
 ## References
 
@@ -245,6 +251,21 @@ theorem rightDualIso_inv {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁) (p₂ : 
   -- `(rightDualIso p₁ p₂).inv` and `(rightDualIso p₂ p₁).hom` are the same mate of `𝟙 X`.
   rightDualIso_hom p₂ p₁
 
+/-- Through the comparison `rightDualIso p₁ p₂ : Y₁ ≅ Y₂`, the evaluation of `p₂` is the
+evaluation of `p₁`. -/
+@[reassoc]
+theorem rightDualIso_hom_whiskerRight_evaluation {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁)
+    (p₂ : ExactPairing X Y₂) : (rightDualIso p₁ p₂).hom ▷ X ≫ ε_ X Y₂ = ε_ X Y₁ := by
+  rw [rightDualIso_hom, rightMate_comp_evaluation, MonoidalCategory.whiskerLeft_id,
+    Category.id_comp]
+
+/-- Through the inverse comparison `(rightDualIso p₁ p₂).inv : Y₂ ⟶ Y₁`, the evaluation of `p₁` is
+the evaluation of `p₂`. -/
+@[reassoc]
+theorem rightDualIso_inv_whiskerRight_evaluation {X Y₁ Y₂ : C} (p₁ : ExactPairing X Y₁)
+    (p₂ : ExactPairing X Y₂) : (rightDualIso p₁ p₂).inv ▷ X ≫ ε_ X Y₁ = ε_ X Y₂ := by
+  rw [rightDualIso_inv, ← rightDualIso_hom, rightDualIso_hom_whiskerRight_evaluation]
+
 /-- The mate of the evaluation `ε_ X X' : X' ⊗ X ⟶ 𝟙_ C`, taken with respect to the tensor product
 pairing of `(X', X'')` with `(X, X')` and the self-pairing of the unit, is the coevaluation
 `η_ X' X'' : 𝟙_ C ⟶ X' ⊗ X''`. -/
@@ -412,6 +433,36 @@ theorem leftDualIso_hom {X₁ X₂ Y : C} (p₁ : ExactPairing X₁ Y) (p₂ : E
     -- `leftDualIso` is defined as the left mate of `𝟙 Y` with `p₂` and `p₁` made ambient.
     exact @leftAdjointMate_comp_evaluation C _ _ Y Y ⟨X₂⟩ ⟨X₁⟩ (𝟙 Y))
 
+/-- The inverse of the comparison `leftDualIso p₁ p₂ : X₁ ≅ X₂` is the left mate of the identity
+of `Y` taken in the other direction. -/
+theorem leftDualIso_inv {X₁ X₂ Y : C} (p₁ : ExactPairing X₁ Y) (p₂ : ExactPairing X₂ Y) :
+    (leftDualIso p₁ p₂).inv = leftMate p₁ p₂ (𝟙 Y) :=
+  -- `(leftDualIso p₁ p₂).inv` and `(leftDualIso p₂ p₁).hom` are the same left mate of `𝟙 Y`.
+  leftDualIso_hom p₂ p₁
+
+/-- If `X` has two right duals `Y₁` and `Y₂`, then taking the left mate with respect to `(X, Y₁)`
+turns the comparison `rightDualIso p₁ p₂ : Y₁ ≅ Y₂` into the identity, transported to the pairing
+`(X, Y₂)`. With `q = p₂`, the left mate of the comparison is `𝟙 X`. -/
+theorem leftMate_rightDualIso_hom {X Y₁ Y₂ Z : C} (p₁ : ExactPairing X Y₁)
+    (p₂ : ExactPairing X Y₂) (q : ExactPairing Z Y₂) :
+    leftMate p₁ q (rightDualIso p₁ p₂).hom = leftMate p₂ q (𝟙 Y₂) := by
+  have h : leftMate p₁ p₂ (rightDualIso p₁ p₂).hom = 𝟙 X :=
+    leftDualHom_ext (Y := Y₁) (by
+      rw [leftMate_comp_evaluation, rightDualIso_hom_whiskerRight_evaluation,
+        MonoidalCategory.whiskerLeft_id, Category.id_comp])
+  rw [← Category.comp_id (rightDualIso p₁ p₂).hom, comp_leftMate p₁ p₂ q, h, Category.comp_id]
+
+/-- If `Y` has two left duals `X₁` and `X₂`, then taking the right mate with respect to `(X₁, Y)`
+turns the comparison `leftDualIso p₁ p₂ : X₁ ≅ X₂` into the identity, transported to the pairing
+`(X₂, Y)`. With `q = p₂`, the right mate of the comparison is `𝟙 Y`. -/
+theorem rightMate_leftDualIso_hom {X₁ X₂ Y Z : C} (p₁ : ExactPairing X₁ Y)
+    (p₂ : ExactPairing X₂ Y) (q : ExactPairing X₂ Z) :
+    rightMate p₁ q (leftDualIso p₁ p₂).hom = rightMate p₂ q (𝟙 X₂) := by
+  have h : rightMate p₁ p₂ (leftDualIso p₁ p₂).hom = 𝟙 Y :=
+    rightHom_ext (X := X₁) (by
+      rw [rightMate_comp_evaluation, leftDualIso_hom, leftMate_comp_evaluation])
+  rw [← Category.comp_id (leftDualIso p₁ p₂).hom, comp_rightMate p₁ p₂ q, h, Category.comp_id]
+
 end CategoryTheory.ExactPairing
 
 namespace CategoryTheory
@@ -436,6 +487,31 @@ theorem rightAdjointMate_leftAdjointMate {X Y : C} [HasLeftDual X] [HasLeftDual 
     _ = X ◁ leftAdjointMate f ≫ ε_ (ᘁX) X :=
       rightAdjointMate_comp_evaluation (leftAdjointMate f)
     _ = _ := leftAdjointMate_comp_evaluation f
+
+/-- Taking right adjoint mates is injective: the left adjoint mate is a left inverse. -/
+theorem rightAdjointMate_injective {X Y : C} [HasRightDual X] [HasRightDual Y] :
+    Function.Injective (rightAdjointMate : (X ⟶ Y) → (Yᘁ ⟶ Xᘁ)) :=
+  Function.LeftInverse.injective leftAdjointMate_rightAdjointMate
+
+/-- An isomorphism `X ≅ Y` induces an isomorphism `Yᘁ ≅ Xᘁ` of right duals, whose components are
+the right adjoint mates of those of `X ≅ Y`. -/
+def Iso.rightAdjointMate {X Y : C} [HasRightDual X] [HasRightDual Y] (e : X ≅ Y) : Yᘁ ≅ Xᘁ where
+  hom := e.homᘁ
+  inv := e.invᘁ
+  hom_inv_id := by rw [← comp_rightAdjointMate, e.inv_hom_id, rightAdjointMate_id]
+  inv_hom_id := by rw [← comp_rightAdjointMate, e.hom_inv_id, rightAdjointMate_id]
+
+/-- The component of `Iso.rightAdjointMate e` is the right adjoint mate of that of `e`. -/
+@[simp]
+theorem Iso.rightAdjointMate_hom {X Y : C} [HasRightDual X] [HasRightDual Y] (e : X ≅ Y) :
+    e.rightAdjointMate.hom = e.homᘁ :=
+  (rfl)
+
+/-- The inverse of `Iso.rightAdjointMate e` is the right adjoint mate of the inverse of `e`. -/
+@[simp]
+theorem Iso.rightAdjointMate_inv {X Y : C} [HasRightDual X] [HasRightDual Y] (e : X ≅ Y) :
+    e.rightAdjointMate.inv = e.invᘁ :=
+  (rfl)
 
 end CategoryTheory
 

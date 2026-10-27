@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Unipotent.Representability
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.LeviDecomposition.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
 public import TauCeti.Algebra.AlgebraicGroup.Product
+public import TauCeti.RingTheory.Smooth.Retract
 
 /-!
 # The coordinate algebra of the dynamic Levi decomposition
@@ -271,5 +272,35 @@ theorem parabolicCoordinateAlgEquiv_mk
       Ideal.Quotient.mk (parabolicDefiningHopfIdeal l).toIdeal h := by
     rw [CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk]
   exact (congrArg l.parabolicCoordinateAlgEquiv hm).symm.trans (hqP.symm.trans hv)
+
+/-- The dynamic unipotent subgroup is an algebra retract of the dynamic parabolic, so it is
+formally smooth whenever the dynamic parabolic is. -/
+instance formallySmooth_quotient_unipotentDefiningHopfIdeal (l : H →ₐc[R] LaurentPolynomial R)
+    [Algebra.FormallySmooth R (H ⧸ (parabolicDefiningHopfIdeal l).toIdeal)] :
+    Algebra.FormallySmooth R (H ⧸ l.unipotentDefiningHopfIdeal.toIdeal) := by
+  let ε : (H ⧸ (leviDefiningHopfIdeal l).toIdeal) →ₐ[R] R :=
+    Bialgebra.counitAlgHom R (H ⧸ (leviDefiningHopfIdeal l).toIdeal)
+  refine Algebra.FormallySmooth.of_retract
+    ((l.parabolicCoordinateAlgEquiv.symm.toAlgHom).comp Algebra.TensorProduct.includeLeft)
+    (((Algebra.TensorProduct.rid R R _).toAlgHom.comp
+      (Algebra.TensorProduct.map (AlgHom.id R _) ε)).comp
+        l.parabolicCoordinateAlgEquiv.toAlgHom) ?_
+  ext x
+  simp
+
+/-- The dynamic Levi subgroup is an algebra retract of the dynamic parabolic, so it is formally
+smooth whenever the dynamic parabolic is. -/
+instance formallySmooth_quotient_leviDefiningHopfIdeal (l : H →ₐc[R] LaurentPolynomial R)
+    [Algebra.FormallySmooth R (H ⧸ (parabolicDefiningHopfIdeal l).toIdeal)] :
+    Algebra.FormallySmooth R (H ⧸ (leviDefiningHopfIdeal l).toIdeal) := by
+  let ε : (H ⧸ l.unipotentDefiningHopfIdeal.toIdeal) →ₐ[R] R :=
+    Bialgebra.counitAlgHom R (H ⧸ l.unipotentDefiningHopfIdeal.toIdeal)
+  refine Algebra.FormallySmooth.of_retract
+    ((l.parabolicCoordinateAlgEquiv.symm.toAlgHom).comp Algebra.TensorProduct.includeRight)
+    (((Algebra.TensorProduct.lid R _).toAlgHom.comp
+      (Algebra.TensorProduct.map ε (AlgHom.id R _))).comp
+        l.parabolicCoordinateAlgEquiv.toAlgHom) ?_
+  ext x
+  simp
 
 end BialgHom

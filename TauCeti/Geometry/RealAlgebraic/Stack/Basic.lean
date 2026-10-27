@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Segment
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.Instances.Real.Lemmas
@@ -37,15 +38,26 @@ cells `TauCeti.stackCells` of the stack in the ambient space.
 * `TauCeti.iUnion_sectionSet_union_iUnion_sectorSet`, `TauCeti.pairwise_disjoint_sectionSet`,
   `TauCeti.pairwise_disjoint_sectorSet`, `TauCeti.disjoint_sectionSet_sectorSet`: the sections and
   sectors partition the cylinder.
+* `TauCeti.sectionSet_nonempty`, `TauCeti.sectorSet_nonempty`: over a nonempty base, every section
+  and every sector of a strictly ordered stack is nonempty.
+* `TauCeti.sectorSet_castSucc_succ_eq_image`, `TauCeti.sectorSet_zero_eq_image`,
+  `TauCeti.sectorSet_last_eq_image`: a bounded sector is the image of `X × (0, 1)`, and the lowest
+  and highest sectors are the images of `X × (-∞, 0)` and `X × (0, ∞)`, under explicit maps that
+  are continuous whenever the functions of the stack are, for a topological ring `α` (continuous
+  addition suffices for the two unbounded sectors).
 * `TauCeti.exists_continuous_forall_mem_sectorSet`: every sector of a continuous strictly ordered
   stack contains the graph of a continuous function.
 * `TauCeti.isConnected_sectionSet`, `TauCeti.isConnected_sectorSet`: over a connected base, the
   sections and sectors of a continuous strictly ordered real stack are connected.
 * `TauCeti.cylinder`, `TauCeti.isEmbedding_cylinder`: the ambient cylinder embedding.
 * `TauCeti.stackCells`: the ambient sections and sectors of a stack over a subset of `α ^ n`.
+* `TauCeti.image_cylinder_sectionSet_comp`, `TauCeti.image_cylinder_sectorSet_comp`,
+  `TauCeti.stackCells_comp`: ambient stack cells pull back along arbitrary base maps.
 * `TauCeti.sUnion_stackCells`, `TauCeti.pairwiseDisjoint_stackCells`,
   `TauCeti.isConnected_of_mem_stackCells`: the ambient cells of a stack partition the cylinder
   over its base, and over a connected base they are connected.
+* `TauCeti.ordConnected_setOf_cons_mem_of_mem_stackCells`: every ambient cell meets each line
+  parallel to the distinguished axis in an order-connected set.
 
 ## References
 
@@ -92,6 +104,13 @@ theorem sectionSet_comp (θ : Fin k → X → α) (f : Y → X) (i : Fin k) :
 theorem fst_image_sectionSet (θ : Fin k → X → α) (i : Fin k) :
     Prod.fst '' sectionSet θ i = univ :=
   eq_univ_of_forall fun x ↦ ⟨(x, θ i x), rfl, rfl⟩
+
+/-- Over a nonempty base, every section is nonempty. -/
+@[simp]
+theorem sectionSet_nonempty [Nonempty X] (θ : Fin k → X → α) (i : Fin k) :
+    (sectionSet θ i).Nonempty := by
+  rw [← image_nonempty (f := Prod.fst), fst_image_sectionSet]
+  exact univ_nonempty
 
 /-- Distinct sections of a stack whose functions are pointwise injective in the index are
 disjoint. -/
@@ -248,6 +267,61 @@ theorem fst_image_sectorSet [Nonempty α] [DenselyOrdered α] [NoMinOrder α] [N
         obtain ⟨t, ht⟩ := exists_between (hθ x i.castSucc_lt_succ)
         exact ⟨t, by rw [sectorSet_castSucc_succ hm]; exact ht⟩
 
+/-- Over a nonempty base, every sector of a pointwise strictly monotone stack with values in a
+densely ordered type without endpoints is nonempty. -/
+theorem sectorSet_nonempty [Nonempty X] [Nonempty α] [DenselyOrdered α] [NoMinOrder α]
+    [NoMaxOrder α] (hθ : ∀ x, StrictMono fun i ↦ θ i x) (j : Fin (k + 1)) :
+    (sectorSet θ j).Nonempty := by
+  rw [← image_nonempty (f := Prod.fst), fst_image_sectorSet hθ j]
+  exact univ_nonempty
+
+/-! ### Parametrizations of the sectors -/
+
+/-- For pointwise strictly monotone `θ` with values in an ordered field, the bounded sector between
+sections `i` and `i + 1` is the image of `X × (0, 1)` under the map sending `(x, s)` to the point
+`AffineMap.lineMap (θ i x) (θ (i + 1) x) s` of the fibre over `x`. When `α` is a topological ring,
+`Continuous.lineMap` shows that this map is continuous whenever the functions of the stack are. -/
+theorem sectorSet_castSucc_succ_eq_image [Field α] [IsStrictOrderedRing α]
+    {θ : Fin (k + 1) → X → α} (hθ : ∀ x, StrictMono fun i ↦ θ i x) (i : Fin k) :
+    sectorSet θ i.castSucc.succ =
+      (fun z : X × α ↦ (z.1, AffineMap.lineMap (θ i.castSucc z.1) (θ i.succ z.1) z.2)) ''
+        (univ ×ˢ Ioo 0 1) := by
+  ext ⟨x, t⟩
+  -- Each fibre is an open interval, which is the open segment between its endpoints.
+  have h : t ∈ Ioo (θ i.castSucc x) (θ i.succ x) ↔
+      t ∈ AffineMap.lineMap (θ i.castSucc x) (θ i.succ x) '' Ioo (0 : α) 1 := by
+    rw [← openSegment_eq_image_lineMap, openSegment_eq_Ioo (hθ x i.castSucc_lt_succ)]
+  rw [sectorSet_castSucc_succ fun x ↦ (hθ x).monotone, mem_ofPred_eq, ← mem_Ioo, h]
+  simp only [mem_image, mem_prod, mem_univ, true_and, Prod.exists, Prod.mk.injEq]
+  exact ⟨fun ⟨s, hs, h⟩ ↦ ⟨x, s, hs, rfl, h⟩, fun ⟨_, s, hs, rfl, h⟩ ↦ ⟨s, hs, h⟩⟩
+
+/-- For pointwise monotone `θ` with values in an ordered additive group, the lowest sector is the
+image of `X × (-∞, 0)` under the map translating the height `s` by `θ 0 x`. When addition on `α`
+is continuous, this map is continuous whenever `θ 0` is. -/
+theorem sectorSet_zero_eq_image [AddCommGroup α] [IsOrderedAddMonoid α] {θ : Fin (k + 1) → X → α}
+    (hθ : ∀ x, Monotone fun i ↦ θ i x) :
+    sectorSet θ 0 = (fun z : X × α ↦ (z.1, θ 0 z.1 + z.2)) '' (univ ×ˢ Iio 0) := by
+  ext ⟨x, t⟩
+  have h : t ∈ Iio (θ 0 x) ↔ t ∈ (θ 0 x + ·) '' Iio 0 := by
+    rw [image_const_add_Iio, add_zero]
+  rw [sectorSet_zero hθ, mem_ofPred_eq, ← mem_Iio, h]
+  simp only [mem_image, mem_prod, mem_univ, true_and, Prod.exists, Prod.mk.injEq]
+  exact ⟨fun ⟨s, hs, h⟩ ↦ ⟨x, s, hs, rfl, h⟩, fun ⟨_, s, hs, rfl, h⟩ ↦ ⟨s, hs, h⟩⟩
+
+/-- For pointwise monotone `θ` with values in an ordered additive group, the highest sector is the
+image of `X × (0, ∞)` under the map translating the height `s` by `θ k x`. When addition on `α`
+is continuous, this map is continuous whenever `θ k` is. -/
+theorem sectorSet_last_eq_image [AddCommGroup α] [IsOrderedAddMonoid α] {θ : Fin (k + 1) → X → α}
+    (hθ : ∀ x, Monotone fun i ↦ θ i x) :
+    sectorSet θ (Fin.last (k + 1)) =
+      (fun z : X × α ↦ (z.1, θ (Fin.last k) z.1 + z.2)) '' (univ ×ˢ Ioi 0) := by
+  ext ⟨x, t⟩
+  have h : t ∈ Ioi (θ (Fin.last k) x) ↔ t ∈ (θ (Fin.last k) x + ·) '' Ioi 0 := by
+    rw [image_const_add_Ioi, add_zero]
+  rw [sectorSet_last hθ, mem_ofPred_eq, ← mem_Ioi, h]
+  simp only [mem_image, mem_prod, mem_univ, true_and, Prod.exists, Prod.mk.injEq]
+  exact ⟨fun ⟨s, hs, h⟩ ↦ ⟨x, s, hs, rfl, h⟩, fun ⟨_, s, hs, rfl, h⟩ ↦ ⟨s, hs, h⟩⟩
+
 end Order
 
 section Topology
@@ -317,10 +391,8 @@ theorem isPreconnected_sectorSet [PreconnectedSpace X] (hc : ∀ i, Continuous (
 functions is connected. -/
 theorem isConnected_sectorSet [ConnectedSpace X] (hc : ∀ i, Continuous (θ i))
     (hθ : ∀ x, StrictMono fun i ↦ θ i x) (j : Fin (k + 1)) :
-    IsConnected (sectorSet θ j) := by
-  obtain ⟨x⟩ := ‹ConnectedSpace X›.toNonempty
-  obtain ⟨σ, -, hσj⟩ := exists_continuous_forall_mem_sectorSet hc hθ j
-  exact ⟨⟨_, hσj x⟩, isPreconnected_sectorSet hc hθ j⟩
+    IsConnected (sectorSet θ j) :=
+  ⟨sectorSet_nonempty hθ j, isPreconnected_sectorSet hc hθ j⟩
 
 end Topology
 
@@ -430,6 +502,42 @@ theorem finite_stackCells (C : Set (Fin n → α)) (θ : Fin k → C → α) :
     (stackCells C θ).Finite :=
   (finite_range _).union (finite_range _)
 
+section Map
+
+variable {m : ℕ} (θ : Fin k → C → α) (f : (Fin m → α) → Fin n → α)
+
+omit [LinearOrder α] in
+/-- Pullback of an ambient section along a base map. The height coordinate is unchanged. -/
+theorem image_cylinder_sectionSet_comp (i : Fin k) :
+    cylinder (f ⁻¹' C) '' sectionSet (fun i x ↦ θ i ⟨f x.1, x.2⟩) i =
+      (fun y ↦ Fin.cons (y 0) (f (Fin.tail y))) ⁻¹' (cylinder C '' sectionSet θ i) := by
+  ext y
+  simp only [mem_image_cylinder, mem_sectionSet, mem_preimage, Fin.tail_cons, Fin.cons_zero]
+
+/-- Pullback of an ambient sector along a base map, including either unbounded sector. -/
+theorem image_cylinder_sectorSet_comp (j : Fin (k + 1)) :
+    cylinder (f ⁻¹' C) '' sectorSet (fun i x ↦ θ i ⟨f x.1, x.2⟩) j =
+      (fun y ↦ Fin.cons (y 0) (f (Fin.tail y))) ⁻¹' (cylinder C '' sectorSet θ j) := by
+  ext y
+  simp only [mem_image_cylinder, mem_sectorSet, mem_preimage, Fin.tail_cons, Fin.cons_zero]
+
+/-- The cells of a pulled-back stack are precisely the inverse images of the original cells.
+This holds even when the base map is not injective or surjective. -/
+theorem stackCells_comp :
+    stackCells (f ⁻¹' C) (fun i x ↦ θ i ⟨f x.1, x.2⟩) =
+      (fun E ↦ (fun y ↦ Fin.cons (y 0) (f (Fin.tail y))) ⁻¹' E) '' stackCells C θ := by
+  ext E
+  simp only [mem_stackCells, mem_image]
+  constructor
+  · rintro (⟨i, rfl⟩ | ⟨j, rfl⟩)
+    · exact ⟨_, Or.inl ⟨i, rfl⟩, (image_cylinder_sectionSet_comp θ f i).symm⟩
+    · exact ⟨_, Or.inr ⟨j, rfl⟩, (image_cylinder_sectorSet_comp θ f j).symm⟩
+  · rintro ⟨E, (⟨i, rfl⟩ | ⟨j, rfl⟩), rfl⟩
+    · exact Or.inl ⟨i, image_cylinder_sectionSet_comp θ f i⟩
+    · exact Or.inr ⟨j, image_cylinder_sectorSet_comp θ f j⟩
+
+end Map
+
 /-- For pointwise strictly monotone `θ` with values in a densely ordered type without endpoints,
 every cell of the stack over `C` lies over the whole of `C`. -/
 theorem image_tail_of_mem_stackCells [Nonempty α] [DenselyOrdered α] [NoMinOrder α]
@@ -481,6 +589,30 @@ theorem pairwiseDisjoint_stackCells (hθ : ∀ x, Injective fun i ↦ θ i x) :
   · exact disjoint_sectionSet_sectorSet θ i j'
   · exact (disjoint_sectionSet_sectorSet θ i' j).symm
   · exact pairwise_disjoint_sectorSet θ fun h ↦ hne (h ▸ rfl)
+
+/-- Every cell of a stack meets each line parallel to the distinguished axis in an
+order-connected set: a point or nothing for a section, an open interval for a sector. -/
+theorem ordConnected_setOf_cons_mem_of_mem_stackCells {E : Set (Fin (n + 1) → α)}
+    (hE : E ∈ stackCells C θ) (x : Fin n → α) : {t | Fin.cons t x ∈ E}.OrdConnected := by
+  -- Over `x ∈ C` the slice of `cylinder C '' A` is the fibre of `A` over `x`, else it is empty.
+  have key {A : Set (C × α)} (hA : ∀ x, (Prod.mk x ⁻¹' A).OrdConnected) :
+      {t | Fin.cons t x ∈ cylinder C '' A}.OrdConnected := by
+    by_cases hx : x ∈ C
+    · convert hA ⟨x, hx⟩ using 1
+      ext t
+      simp only [mem_ofPred_eq, mem_preimage, mem_image_cylinder, Fin.tail_cons, Fin.cons_zero]
+      exact ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨hx, h⟩⟩
+    · convert ordConnected_empty (α := α) using 1
+      ext t
+      simp only [mem_ofPred_eq, mem_image_cylinder, Fin.tail_cons, mem_empty_iff_false,
+        iff_false]
+      exact fun ⟨h, _⟩ ↦ hx h
+  rcases hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
+  · refine key fun x ↦ ?_
+    convert ordConnected_singleton (a := θ i x) using 1
+    ext t
+    simp [mem_sectionSet, eq_comm]
+  · exact key (ordConnected_preimage_mk_sectorSet θ j)
 
 end Order
 

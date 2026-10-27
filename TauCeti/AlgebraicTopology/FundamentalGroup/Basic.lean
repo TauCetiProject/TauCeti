@@ -27,6 +27,8 @@ Stage 0.1 of the `TauCetiRoadmap/UniversalCovers` roadmap.
 
 * `FundamentalGroup.map_id`: the identity induces the identity homomorphism.
 * `FundamentalGroup.map_comp`: induced maps preserve composition.
+* `FundamentalGroup.fromPath_mk_out`: every element of the fundamental group is the class of a
+  chosen representative loop.
 * `FundamentalGroupoid.nonempty_hom`: the fundamental groupoid of a path-connected
   space is connected.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_iff`: the induced map has trivial range exactly
@@ -72,6 +74,12 @@ theorem map_comp {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topo
     (g : C(Y, Z)) (f : C(X, Y)) (x : X) :
     map (g.comp f) x = (map g (f x)).comp (map f x) :=
   MonoidHom.ext fun p ↦ End.ext (FundamentalGroupoid.map_comp_map g f p.asHom)
+
+/-- Every element of the fundamental group is the class of a chosen representative loop. -/
+@[simp]
+theorem fromPath_mk_out {X : Type*} [TopologicalSpace X] {x : X} (g : FundamentalGroup X x) :
+    fromPath (Path.Homotopic.Quotient.mk (Quotient.out (toPath g))) = g :=
+  congrArg End.of (Quotient.out_eq _)
 
 end FundamentalGroup
 

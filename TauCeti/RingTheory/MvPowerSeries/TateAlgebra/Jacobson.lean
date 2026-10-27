@@ -123,8 +123,7 @@ instance isJacobsonRing {σ : Type*} [Finite σ] : IsJacobsonRing (Tate σ) := b
     exact (isJacobsonRing_iso (IsRestricted.renameAlgEquiv (R := K) e fun _ ↦ 1).toRingEquiv).mp
       ‹_›
   · -- Without variables every series is a constant, so the Tate algebra is a quotient of `K`.
-    refine isJacobsonRing_of_surjective ⟨algebraMap K (Tate PEmpty), fun g ↦ ?_⟩
-    obtain ⟨r, hr⟩ := C_surjective (σ := PEmpty) (g : MvPowerSeries PEmpty K)
-    exact ⟨r, Subtype.ext (by simpa [coe_algebraMap_isRestrictedSubring] using hr)⟩
+    exact isJacobsonRing_of_surjective
+      ⟨algebraMap K (Tate PEmpty), algebraMap_isRestrictedSubring_surjective⟩
 
 end TauCeti.MvPowerSeries

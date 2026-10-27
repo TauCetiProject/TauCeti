@@ -13,22 +13,21 @@ public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Algebra.HopfAlgebra.TensorShear
 
 /-!
-# Finite locally free commutative group schemes are killed by their rank
+# Finite flat commutative Hopf algebras are killed by their rank
 
 Let `H` be a commutative and cocommutative Hopf algebra over a commutative ring `R`, so that
 `Spec H` is a commutative affine group scheme over `R` whose group of `A`-valued points is the
-convolution group `WithConv (H →ₐ[R] A)`. If `H` is finite projective over `R` of constant rank
-`n`, that is, `Spec H` is a finite locally free commutative group scheme of rank `n`, then every
-point is killed by `n`: `x ^ n = 1` for every commutative `R`-algebra `A` and every
-`x : WithConv (H →ₐ[R] A)`. This is Deligne's theorem. It is the input which turns a point of
-exact order `n` of an elliptic curve into an `n`-torsion point, and which makes the
-factorisation construction of dual isogenies possible.
+convolution group `WithConv (H →ₐ[R] A)`. If `H` is finite flat over `R` of constant stalk rank
+`n`, then every point is killed by `n`: `x ^ n = 1` for every commutative `R`-algebra `A` and every
+`x : WithConv (H →ₐ[R] A)`. This includes Deligne's theorem for finite locally free commutative
+group schemes. It is the input which turns a Drinfeld point of exact order `n` into an
+`n`-torsion section, and which makes the factorisation construction of dual isogenies possible.
 
 ## Main results
 
 * `TauCeti.AlgHom.convPow_finrank_eq_one`: when `H` is free of finite rank over `R`, every point
   is killed by `Module.finrank R H`.
-* `TauCeti.AlgHom.convPow_eq_one_of_rankAtStalk`: when `H` is finite projective over `R` and its
+* `TauCeti.AlgHom.convPow_eq_one_of_rankAtStalk`: when `H` is finite flat over `R` and its
   rank at every prime is `n`, every point is killed by `n`.
 
 ## Implementation notes
@@ -41,8 +40,8 @@ Write `ι₁` and `ι₂` for the two inclusions `H → H ⊗[R] H`. The shear a
 `a ⊗ b ↦ (a ⊗ 1) Δ b` of `H ⊗[R] H` over its left factor preserves norms and sends `ι₂` to
 `Δ = ι₁ * ι₂`, where `ι₁` comes from the identity of `H`. Taking norms gives
 `N(ι₂) = id ^ n * N(ι₂)`, and `ι₂` is a unit, so `id ^ n = 1`. The universal point `id` then
-controls every point. The locally free case follows by checking the resulting identity of
-elements of `H` after localizing at every maximal ideal of `R`.
+controls every point. The finite flat case follows by checking the resulting identity of
+elements of `H` after localizing at every maximal ideal of `R`, where finite flat modules are free.
 
 ## References
 
@@ -67,14 +66,14 @@ section Free
 algebra of linear maps `H → H`, through the left tensor factor. -/
 private noncomputable abbrev convTensorAlgebra :
     Algebra (WithConv (H →ₗ[R] H)) (WithConv (H →ₗ[R] H ⊗[R] H)) :=
-  ((IsScalarTower.toAlgHom R H (H ⊗[R] H)).convCompLeft H).toRingHom.toAlgebra
+  ((IsScalarTower.toAlgHom R H (H ⊗[R] H)).convPostcomp (C := H)).toRingHom.toAlgebra
 
 attribute [local instance] convTensorAlgebra
 
 /-- The structure map of `convTensorAlgebra` is post-composition with the left inclusion. -/
 private theorem algebraMap_convTensor (f : WithConv (H →ₗ[R] H)) :
     algebraMap (WithConv (H →ₗ[R] H)) (WithConv (H →ₗ[R] H ⊗[R] H)) f =
-      (IsScalarTower.toAlgHom R H (H ⊗[R] H)).convCompLeft H f :=
+      (IsScalarTower.toAlgHom R H (H ⊗[R] H)).convPostcomp (C := H) f :=
   rfl
 
 /-- A basis of `H` over `R` gives a basis of the convolution algebra of `H → H ⊗[R] H` over the
@@ -85,15 +84,16 @@ private noncomputable def convTensorBasis {ι : Type*} [Finite ι] (b : Module.B
     { (Algebra.TensorProduct.basis H b).convCoordEquiv R H with
       map_smul' := fun f φ => funext fun i => by
         simpa [Algebra.smul_def, algebraMap_convTensor] using
-          (Algebra.TensorProduct.basis H b).convCoordEquiv_convCompLeft_mul f φ i }
+          (Algebra.TensorProduct.basis H b).convCoordEquiv_convPostcomp_mul f φ i }
 
 /-- Post-composition with the shear automorphism `a ⊗ b ↦ (a ⊗ 1) Δ b` of `H ⊗[R] H`, as an
 automorphism of the convolution algebra of `H → H ⊗[R] H` over that of `H → H`. -/
 private noncomputable def convTensorShear :
     WithConv (H →ₗ[R] H ⊗[R] H) ≃ₐ[WithConv (H →ₗ[R] H)] WithConv (H →ₗ[R] H ⊗[R] H) where
   toFun := (HopfAlgebra.tensorShearMulRight (R := R) (H := H) :
-    H ⊗[R] H →ₐ[R] H ⊗[R] H).convCompLeft H
-  invFun := (HopfAlgebra.tensorShearMulRight (R := R) (H := H)).symm.toAlgHom.convCompLeft H
+    H ⊗[R] H →ₐ[R] H ⊗[R] H).convPostcomp (C := H)
+  invFun :=
+    (HopfAlgebra.tensorShearMulRight (R := R) (H := H)).symm.toAlgHom.convPostcomp (C := H)
   left_inv φ := by ext; simp
   right_inv φ := by ext; simp
   map_mul' := map_mul _
@@ -119,9 +119,11 @@ private theorem convTensorShear_includeRight :
       (Algebra.TensorProduct.includeLeft : H →ₐ[R] H ⊗[R] H).toLinearMap := by
     ext a
     simp [Algebra.TensorProduct.algebraMap_apply]
-  simp only [convTensorShear, algebraMap_convTensor, AlgEquiv.coe_mk, Equiv.coe_fn_mk,
-    _root_.AlgHom.convCompLeft_apply, hτ, hι]
-  exact Coalgebra.comul_eq_convMul_includeLeft_includeRight
+  apply ofConv_injective
+  simpa only [convTensorShear, algebraMap_convTensor, AlgEquiv.coe_mk, Equiv.coe_fn_mk,
+    _root_.LinearMap.convMul_def, ofConv_toConv,
+    _root_.AlgHom.convPostcomp_apply_ofConv, hτ, hι] using
+    congrArg ofConv (Coalgebra.comul_eq_convMul_includeLeft_includeRight (R := R) (C := H))
 
 omit [Coalgebra.IsCocomm R H] in
 /-- The right tensor inclusion is a convolution unit, being an algebra-homomorphism point. -/
@@ -173,8 +175,8 @@ private theorem convPow_eq_one_of_baseChange {S : Type*} [CommRing S] [Algebra R
   rw [← e.symm_apply_apply x, ← map_pow, convPow_finrank_eq_one, map_one]
 
 /-- **Deligne's theorem.** Every point of a commutative and cocommutative Hopf algebra which is
-finite projective of constant rank `n` over `R` is killed by `n`. -/
-theorem convPow_eq_one_of_rankAtStalk [Module.Finite R H] [Module.Projective R H] {n : ℕ}
+finite flat of constant stalk rank `n` over `R` is killed by `n`. -/
+theorem convPow_eq_one_of_rankAtStalk [Module.Finite R H] [Module.Flat R H] {n : ℕ}
     (hn : ∀ p, Module.rankAtStalk (R := R) H p = n) {A : Type*} [CommSemiring A] [Algebra R A]
     (x : WithConv (H →ₐ[R] A)) : x ^ n = 1 := by
   -- It suffices to treat the universal point, the identity of `H`. Its `n`-th power and the

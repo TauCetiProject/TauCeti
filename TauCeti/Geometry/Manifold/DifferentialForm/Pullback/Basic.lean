@@ -118,18 +118,22 @@ theorem bundleMpullback_add [∀ y, ContinuousAdd (V y)] (f : M → M')
   simpa only [bundleMpullbackWithin_univ] using
     (bundleMpullbackWithin_add (I := I) (I' := I') f univ ω η)
 
-/-- Within-set pullback commutes with scalar multiplication. -/
+/-- Within-set pullback commutes with scalar multiplication of the values, by any scalars
+acting continuously on the fibres and commuting with the real action. -/
 @[simp]
-theorem bundleMpullbackWithin_smul [∀ y, ContinuousConstSMul ℝ (V y)]
-    (f : M → M') (s : Set M) (c : ℝ) (ω : RoughBundleForm I' M' V k) :
+theorem bundleMpullbackWithin_smul {S : Type*} [Monoid S] [∀ y, DistribMulAction S (V y)]
+    [∀ y, ContinuousConstSMul S (V y)] [∀ y, SMulCommClass ℝ S (V y)]
+    (f : M → M') (s : Set M) (c : S) (ω : RoughBundleForm I' M' V k) :
     bundleMpullbackWithin I I' f s (c • ω) = c • bundleMpullbackWithin I I' f s ω := by
   ext x v
   simp
 
-/-- Pullback commutes with scalar multiplication. -/
+/-- Pullback commutes with scalar multiplication of the values, by any scalars acting
+continuously on the fibres and commuting with the real action. -/
 @[simp]
-theorem bundleMpullback_smul [∀ y, ContinuousConstSMul ℝ (V y)]
-    (f : M → M') (c : ℝ) (ω : RoughBundleForm I' M' V k) :
+theorem bundleMpullback_smul {S : Type*} [Monoid S] [∀ y, DistribMulAction S (V y)]
+    [∀ y, ContinuousConstSMul S (V y)] [∀ y, SMulCommClass ℝ S (V y)]
+    (f : M → M') (c : S) (ω : RoughBundleForm I' M' V k) :
     bundleMpullback I I' f (c • ω) = c • bundleMpullback I I' f ω := by
   simpa only [bundleMpullbackWithin_univ] using
     (bundleMpullbackWithin_smul (I := I) (I' := I') f univ c ω)
@@ -280,16 +284,20 @@ theorem mpullback_add [ContinuousAdd F] (f : M → M') (ω η : RoughForm I' M' 
     mpullback I I' f (ω + η) = mpullback I I' f ω + mpullback I I' f η :=
   bundleMpullback_add f ω η
 
-/-- Within-set pullback respects scalar multiplication. -/
+/-- Within-set pullback respects scalar multiplication of the coefficients, by any scalars
+acting continuously on the coefficient space and commuting with the real action. -/
 @[simp]
-theorem mpullbackWithin_smul [ContinuousConstSMul ℝ F] (f : M → M') (s : Set M)
-    (c : ℝ) (ω : RoughForm I' M' F k) :
+theorem mpullbackWithin_smul {S : Type*} [Monoid S] [DistribMulAction S F]
+    [ContinuousConstSMul S F] [SMulCommClass ℝ S F] (f : M → M') (s : Set M)
+    (c : S) (ω : RoughForm I' M' F k) :
     mpullbackWithin I I' f s (c • ω) = c • mpullbackWithin I I' f s ω :=
   bundleMpullbackWithin_smul f s c ω
 
-/-- Pullback respects scalar multiplication. -/
+/-- Pullback respects scalar multiplication of the coefficients, by any scalars acting
+continuously on the coefficient space and commuting with the real action. -/
 @[simp]
-theorem mpullback_smul [ContinuousConstSMul ℝ F] (f : M → M') (c : ℝ)
+theorem mpullback_smul {S : Type*} [Monoid S] [DistribMulAction S F]
+    [ContinuousConstSMul S F] [SMulCommClass ℝ S F] (f : M → M') (c : S)
     (ω : RoughForm I' M' F k) : mpullback I I' f (c • ω) = c • mpullback I I' f ω :=
   bundleMpullback_smul f c ω
 

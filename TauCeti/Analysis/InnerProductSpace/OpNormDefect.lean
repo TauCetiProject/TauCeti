@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 /-!
 # The defect form of a bounded operator
 
-For a bounded operator `X : F →L[𝕜] E` between inner product spaces, the real form
+For a bounded operator `X : F →L[𝕜] E` between seminormed inner product spaces, the real form
 `(v, w) ↦ ‖X‖² re ⟪v, w⟫ - re ⟪X v, X w⟫` is positive semidefinite, since its diagonal value
 `‖X‖² ‖v‖² - ‖X v‖²` is nonnegative by the definition of the operator norm. It therefore satisfies
 the Cauchy–Schwarz inequality. If a unit vector `v` nearly attains the norm of `X`, this makes
@@ -32,7 +32,8 @@ open scoped InnerProductSpace
 namespace ContinuousLinearMap
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E] [SeminormedAddCommGroup F]
+  [InnerProductSpace 𝕜 F]
 
 /-- **Cauchy–Schwarz for the defect form of an operator.** For `X : F →L[𝕜] E`, the real form
 `(v, w) ↦ ‖X‖² re ⟪v, w⟫ - re ⟪X v, X w⟫` is positive semidefinite, so it satisfies the
