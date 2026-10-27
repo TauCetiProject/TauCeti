@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.EulerProduct
 public import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
-import Mathlib.NumberTheory.LSeries.Nonvanishing
 
 /-!
 # The product of the local densities over the good primes
@@ -100,28 +99,6 @@ private theorem kroneckerSym_eq_quadraticChar {A : Matrix n n ℤ} {p : ℕ} [Fa
     ← RingHom.mapMatrix_apply, ← RingHom.map_det]
   simp [legendreSym]
 
-/-- The `ζ` part of the product: over the primes `p ∤ N`, the product of
-`∏_{i=1}^{m} (1 - p^{-2i})⁻¹` is `∏_{i=1}^{m} ζ^{(S)}(2i)`, with `S` the primes dividing `N`. -/
-private theorem hasProd_prod_inv_one_sub_cpow (N : ℕ) [NeZero N] (m : ℕ) :
-    HasProd (fun p : {p : Nat.Primes // ¬ (p : ℕ) ∣ N} =>
-        ∏ i ∈ Finset.range m, (1 - ((p : ℕ) : ℂ) ^ (-((2 * (i + 1) : ℕ) : ℂ)))⁻¹)
-      (∏ i ∈ Finset.range m, (∏ q ∈ N.primeFactors, (1 - (q : ℂ) ^ (-((2 * (i + 1) : ℕ) : ℂ)))) *
-        riemannZeta ((2 * (i + 1) : ℕ) : ℂ)) := by
-  rw [Finset.prod_congr rfl fun i _ => (DirichletCharacter.LFunctionTrivChar_eq_mul_riemannZeta
-    (N := N) (Nat.cast_ne_one.mpr (by omega : 2 * (i + 1) ≠ 1))).symm]
-  exact hasProd_prod fun i _ => DirichletCharacter.LFunctionTrivChar_eulerProduct_hasProd N
-    (by rw [Complex.natCast_re]; exact_mod_cast (by omega : 1 < 2 * (i + 1)))
-
-/-- The `ζ` part of the product is nonzero. -/
-private theorem prod_mul_riemannZeta_ne_zero (N : ℕ) [NeZero N] (m : ℕ) :
-    (∏ i ∈ Finset.range m, (∏ q ∈ N.primeFactors, (1 - (q : ℂ) ^ (-((2 * (i + 1) : ℕ) : ℂ)))) *
-      riemannZeta ((2 * (i + 1) : ℕ) : ℂ)) ≠ 0 := by
-  refine Finset.prod_ne_zero_iff.mpr fun i _ => ?_
-  rw [← DirichletCharacter.LFunctionTrivChar_eq_mul_riemannZeta
-    (Nat.cast_ne_one.mpr (by omega : 2 * (i + 1) ≠ 1))]
-  exact DirichletCharacter.LFunction_ne_zero_of_one_le_re _
-    (Or.inr (Nat.cast_ne_one.mpr (by omega))) (by rw [Complex.natCast_re]; norm_cast; omega)
-
 variable {A : Matrix n n ℤ}
 
 /-- **The product of the normalized local densities over the good primes, in odd rank.** Let `A`
@@ -138,7 +115,8 @@ theorem hasProd_inv_half_localDensity_of_card_eq_two_mul_add_one (hA : Aᵀ = A)
       (∏ i ∈ Finset.range m, (∏ q ∈ (2 * A.det).natAbs.primeFactors,
         (1 - (q : ℂ) ^ (-((2 * (i + 1) : ℕ) : ℂ)))) * riemannZeta ((2 * (i + 1) : ℕ) : ℂ)) := by
   have := neZero_natAbs_two_mul_det hdet
-  convert hasProd_prod_inv_one_sub_cpow (2 * A.det).natAbs m using 1 with p
+  convert TauCeti.hasProd_prod_inv_one_sub_cpow (2 * A.det).natAbs (Finset.range m)
+    (fun i => ((2 * (i + 1) : ℕ) : ℂ)) (fun i _ => by simp; norm_cast; omega) using 1 with p
   funext p
   have : Fact (p : ℕ).Prime := ⟨p.1.prop⟩
   obtain ⟨hp2, hu⟩ := ne_two_and_isUnit_det_map p.prop
@@ -159,7 +137,8 @@ theorem tprod_inv_half_localDensity_ne_zero_of_card_eq_two_mul_add_one (hA : A�
     ∏' p : {p : Nat.Primes // ¬ (p : ℕ) ∣ (2 * A.det).natAbs}, ((α p : ℂ) / 2)⁻¹ ≠ 0 := by
   have := neZero_natAbs_two_mul_det hdet
   rw [(hasProd_inv_half_localDensity_of_card_eq_two_mul_add_one hA hdet hn hα).tprod_eq]
-  exact prod_mul_riemannZeta_ne_zero _ m
+  exact TauCeti.prod_mul_riemannZeta_ne_zero _ _ (fun i _ => Nat.cast_ne_one.mpr (by omega))
+    fun i _ => by simp; norm_cast; omega
 
 /-- **The product of the normalized local densities over the good primes, in rank `1`**: every
 normalized density `α p / 2` is `1`, and the product is `1`. -/
@@ -192,7 +171,8 @@ theorem hasProd_inv_half_localDensity_of_card_eq_two_mul_add_two (hA : Aᵀ = A)
           (mul_ne_zero four_ne_zero (mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))
             hdet))) ((m + 1 : ℕ) : ℂ)) := by
   have := neZero_natAbs_two_mul_det hdet
-  refine ((hasProd_prod_inv_one_sub_cpow (2 * A.det).natAbs m).mul
+  refine ((TauCeti.hasProd_prod_inv_one_sub_cpow (2 * A.det).natAbs (Finset.range m)
+    (fun i => ((2 * (i + 1) : ℕ) : ℂ)) fun i _ => by simp; norm_cast; omega).mul
     (DirichletCharacter.LSeries_eulerProduct_hasProd_subtype _
       (by rw [Complex.natCast_re]; exact_mod_cast (by omega : 1 < m + 1)) fun p hp => ?_)).congr_fun
     fun p => ?_
@@ -226,7 +206,8 @@ theorem tprod_inv_half_localDensity_ne_zero_of_card_eq_two_mul_add_two (hA : A�
     ∏' p : {p : Nat.Primes // ¬ (p : ℕ) ∣ (2 * A.det).natAbs}, ((α p : ℂ) / 2)⁻¹ ≠ 0 := by
   have := neZero_natAbs_two_mul_det hdet
   rw [(hasProd_inv_half_localDensity_of_card_eq_two_mul_add_two hA hdet hm hn hα).tprod_eq]
-  exact mul_ne_zero (prod_mul_riemannZeta_ne_zero _ m)
+  exact mul_ne_zero (TauCeti.prod_mul_riemannZeta_ne_zero _ _
+      (fun i _ => Nat.cast_ne_one.mpr (by omega)) fun i _ => by simp; norm_cast; omega)
     (DirichletCharacter.LSeries_ne_zero_of_one_lt_re _
       (by rw [Complex.natCast_re]; exact_mod_cast (by omega : 1 < m + 1)))
 
