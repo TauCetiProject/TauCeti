@@ -176,15 +176,6 @@ private theorem trace_evenHalfSpinAction_ι_bilin_comm (u v : V) :
     trace_evenHalfSpinAction_smul] at h
   exact mul_left_cancel₀ (by exact_mod_cast hQe) h
 
-omit [Fact (finrank ℝ V = 4)] in
-/-- For the negative metric, the even Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
-private theorem even_ι_bilin_add_swap_of_neg (u v : V) :
-    (even.ι Q).bilin u v + (even.ι Q).bilin v u = algebraMap ℝ (even Q) (-2 * ⟪u, v⟫) := by
-  rw [even_ι_bilin_add_swap]
-  congr 1
-  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-  ring
-
 /-- **The trace of `c(u) c(v)` on an eigenspace of `Γ`** is `-⟪u, v⟫` times its dimension. -/
 theorem trace_evenHalfSpinAction_ι_bilin
     [FiniteDimensional ℂ (eigenspace (ρ (chirality Q o)) ε)] (u v : V) :

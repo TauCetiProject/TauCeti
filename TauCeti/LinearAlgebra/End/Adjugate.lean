@@ -33,13 +33,23 @@ public section
 
 namespace LinearMap
 
-variable {K E : Type*} [Field K] [AddCommGroup E] [Module K E]
+variable {K E : Type*}
+
+section CommRing
+
+variable [CommRing K] [AddCommGroup E] [Module K E]
 
 /-- In rank two, the adjugate `T ↦ tr T • 1 - T` is the matrix adjugate in every basis. -/
 theorem toMatrix_trace_smul_one_sub (b : Module.Basis (Fin 2) K E) (T : Module.End K E) :
     toMatrix b b (trace K E T • 1 - T) = (toMatrix b b T).adjugate := by
   rw [Matrix.adjugate_fin_two_eq_trace_smul_one_sub, map_sub, map_smul, toMatrix_one,
     trace_eq_matrix_trace K b]
+
+end CommRing
+
+section Field
+
+variable [Field K] [AddCommGroup E] [Module K E]
 
 /-- **The adjugate reverses products** on a two-dimensional space:
 `tr (S T) • 1 - S T = (tr T • 1 - T) (tr S • 1 - S)`. -/
@@ -62,5 +72,7 @@ theorem trace_smul_one_sub_mul_self_of_finrank_eq_two (h₂ : Module.finrank K E
   apply (toMatrix b b).injective
   rw [toMatrix_mul, toMatrix_trace_smul_one_sub, Matrix.adjugate_mul, map_smul, toMatrix_one,
     det_toMatrix b]
+
+end Field
 
 end LinearMap
