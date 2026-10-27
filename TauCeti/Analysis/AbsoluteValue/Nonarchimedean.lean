@@ -34,7 +34,9 @@ finite place of the extension.
 * `IsNonarchimedean.apply_le_one_of_isIntegral`: a nonarchimedean absolute value on an
   `R`-algebra which is bounded by `1` on the image of `R` is bounded by `1` on every element
   integral over `R`. Over `ℤ` the hypothesis on `R` is automatic,
-  `IsNonarchimedean.apply_le_one_of_isIntegral_int`.
+  `IsNonarchimedean.apply_le_one_of_isIntegral_int`. This is the absolute-value analogue of
+  Mathlib's `Valuation.Integers.isIntegral_iff_v_le_one`, and the proof follows the same size
+  argument on the equation of integrality.
 * `AbsoluteValue.nonarchRpow`: for `t > 0`, the function `x ↦ v x ^ t` is again an absolute value
   when `v` is nonarchimedean, equivalent to `v`, nonarchimedean, and lying over the corresponding
   power of the restriction of `v`. For an archimedean absolute value only `t ≤ 1` works in
@@ -84,7 +86,10 @@ namespace IsNonarchimedean
 variable {R F : Type*} [CommRing R] [Ring F] [Algebra R F] {v : AbsoluteValue F ℝ}
 
 /-- A nonarchimedean absolute value on an `R`-algebra which is bounded by `1` on the image of `R`
-is bounded by `1` on every element integral over `R`. -/
+is bounded by `1` on every element integral over `R`.
+
+This is the absolute-value analogue of the forward implication of Mathlib's
+`Valuation.Integers.isIntegral_iff_v_le_one`, and the proof follows it. -/
 theorem apply_le_one_of_isIntegral (hv : IsNonarchimedean v)
     (h : ∀ r : R, v (algebraMap R F r) ≤ 1) {x : F} (hx : IsIntegral R x) : v x ≤ 1 := by
   by_contra! hx1
