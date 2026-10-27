@@ -142,6 +142,26 @@ theorem lintegral_convolutionPower_succ (μ : Measure α) [SFinite μ] (n : ℕ)
       ∫⁻ x, ∫⁻ y, f (x + y) ∂μ ∂μ.convolutionPower n := by
   rw [convolutionPower_succ, lintegral_conv hf]
 
+/-- Evaluation of a convolution on a measurable set: the mass of the translate
+`{y | x + y ∈ s}` is integrated against the first measure. -/
+theorem conv_apply (μ ν : Measure α) [SFinite ν] {s : Set α} (hs : MeasurableSet s) :
+    (μ ∗ ν) s = ∫⁻ x, ν {y | x + y ∈ s} ∂μ := by
+  have htr (x : α) : MeasurableSet {y : α | x + y ∈ s} := hs.preimage (measurable_const_add x)
+  calc (μ ∗ ν) s = ∫⁻ z, (s.indicator 1) z ∂(μ ∗ ν) := (lintegral_indicator_one hs).symm
+    _ = ∫⁻ x, ∫⁻ y, (s.indicator 1) (x + y) ∂ν ∂μ :=
+      lintegral_conv (f := s.indicator 1) (by fun_prop)
+    _ = ∫⁻ x, ν {y | x + y ∈ s} ∂μ := by
+      refine lintegral_congr fun x => ?_
+      rw [← lintegral_indicator_one (htr x)]
+      exact lintegral_congr fun y => by
+        by_cases h : x + y ∈ s <;> simp [Set.indicator, h]
+
+/-- Convolution is additive in its second argument, for an arbitrary index type. -/
+theorem conv_sum {ι : Type*} [Countable ι] (μ : Measure α) (ν : ι → Measure α)
+    [∀ i, SFinite (ν i)] :
+    μ ∗ Measure.sum ν = Measure.sum fun i => μ ∗ ν i := by
+  simp only [Measure.conv, prod_sum_right, Measure.map_sum measurable_add.aemeasurable]
+
 /-- Mixing a family of measures indexed by `ℕ` that turns addition into convolution commutes
 with convolution: `(ρ.bind K) ∗ (σ.bind K) = (ρ ∗ σ).bind K` when
 `K (m + n) = K m ∗ K n`. -/
