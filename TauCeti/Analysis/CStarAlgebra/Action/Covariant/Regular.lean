@@ -249,6 +249,7 @@ theorem isNondegenerate_regular_coefficient (hρ : ρ.IsNondegenerate) :
 
 /-- For a measure positive on nonempty open sets, such as a Haar measure, the regular coefficient
 representation induced by `ρ` is nondegenerate exactly when `ρ` is. -/
+@[simp]
 theorem isNondegenerate_regular_coefficient_iff [μ.IsOpenPosMeasure] :
     (regular α ρ μ).coefficient.IsNondegenerate ↔ ρ.IsNondegenerate := by
   refine ⟨fun hπ => ?_, isNondegenerate_regular_coefficient⟩
