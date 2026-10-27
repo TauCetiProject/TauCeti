@@ -40,8 +40,10 @@ the list, a position of higher priority than the attending requirement.
 * `TauCeti.Priority.all_attention_finite_of_local`: if each requirement receives attention
   finitely often whenever every higher-priority requirement does, then every requirement receives
   attention finitely often.
-* `TauCeti.Priority.exists_forall_getElem?_run_eq_of_local`: under the same hypothesis, every
-  record eventually stops changing.
+* `TauCeti.Priority.exists_forall_getElem?_run_eq_of_finite`: if requirements `0, …, e` each
+  receive attention finitely often, the record at position `e` eventually stops changing.
+* `TauCeti.Priority.exists_forall_getElem?_run_eq_of_local`: under the conditional local
+  finiteness hypothesis, every record eventually stops changing.
 
 The stabilization theorem assumes only the conditional local finiteness of attention: no
 scheduling discipline, no bound on how often a requirement receives attention, and no effective
@@ -212,16 +214,22 @@ theorem getElem?_run_eq_of_forall_lt_prio {init : List α} {sched : ℕ → Opti
     · rw [run_succ_of_eq_none hu, ih]
     · rw [run_succ_of_eq_some hu, getElem?_update_of_lt _ _ (h n hn u hu), ih]
 
+/-- **Stabilization of one record.** If requirements `0, …, e` each receive attention finitely
+often, then the record at position `e` eventually stops changing. -/
+theorem exists_forall_getElem?_run_eq_of_finite {init : List α} {sched : ℕ → Option (Update α)}
+    {e : ℕ} (h : ∀ i, i ≤ e → (attentionStages (fun s => (sched s).map Update.prio) i).Finite) :
+    ∃ N, ∀ n, N ≤ n → (run init sched n)[e]? = (run init sched N)[e]? := by
+  obtain ⟨N, hN⟩ := exists_forall_lt_of_finite h
+  exact ⟨N, fun n hn => getElem?_run_eq_of_forall_lt_prio
+    (fun s hs u hu => hN s hs u.prio (by simp [hu])) hn⟩
+
 /-- **Stabilization.** If each requirement receives attention finitely often whenever every
 higher-priority requirement does, then every record eventually stops changing. -/
 theorem exists_forall_getElem?_run_eq_of_local (init : List α) (sched : ℕ → Option (Update α))
     (hlocal : ∀ e, (∀ i, i < e → (attentionStages (fun s => (sched s).map Update.prio) i).Finite) →
       (attentionStages (fun s => (sched s).map Update.prio) e).Finite) (e : ℕ) :
-    ∃ N, ∀ n, N ≤ n → (run init sched n)[e]? = (run init sched N)[e]? := by
-  obtain ⟨N, hN⟩ := exists_forall_lt_of_finite
-    fun i _ => all_attention_finite_of_local _ hlocal i
-  exact ⟨N, fun n hn => getElem?_run_eq_of_forall_lt_prio
-    (fun s hs u hu => hN s hs u.prio (by simp [hu])) hn⟩
+    ∃ N, ∀ n, N ≤ n → (run init sched n)[e]? = (run init sched N)[e]? :=
+  exists_forall_getElem?_run_eq_of_finite fun i _ => all_attention_finite_of_local _ hlocal i
 
 end Priority
 
