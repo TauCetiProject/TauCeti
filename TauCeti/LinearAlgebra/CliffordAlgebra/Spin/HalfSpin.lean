@@ -83,7 +83,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin 4))
 
 /-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
-local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
+private local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 
 section Module
 
