@@ -26,7 +26,7 @@ of all primes (`zHat.idemOfSet_mem_range_intCast_iff`).
 As an example, the profinite integer with components `1, 0, 1, 0, …` along the primes
 `2, 3, 5, 7, …` is `ω_S` for the set `S` of primes `ℓ` with an even number `π'(ℓ)` of primes
 below them, since the `n`-th prime has exactly `n` primes below it
-(`zHat.component_idemOfSet_even_primeCounting'_nth`). It has infinitely many components equal to
+(`zHat.component_nth_idemOfSet_even_primeCounting'`). It has infinitely many components equal to
 `1` and infinitely many equal to `0`, and it is not an integer
 (`zHat.idemOfSet_even_primeCounting'_ne_intCast`).
 
@@ -44,7 +44,7 @@ below them, since the `n`-th prime has exactly `n` primes below it
   the Boolean operations on sets of primes become ring operations on idempotents.
 * `TauCeti.zHat.idemOfSet_mem_range_intCast_iff`: `ω_S` is an integer exactly when `S` is empty or
   contains every prime.
-* `TauCeti.zHat.component_idemOfSet_even_primeCounting'_nth`,
+* `TauCeti.zHat.component_nth_idemOfSet_even_primeCounting'`,
   `TauCeti.zHat.idemOfSet_even_primeCounting'_ne_intCast`: the profinite integer with components
   `1, 0, 1, 0, …` is not an integer.
 
@@ -106,6 +106,11 @@ theorem isIdempotentElem_idemOfSet (S : Set Nat.Primes) : IsIdempotentElem (idem
   refine ringEquivPiPadicInt.injective (funext fun ℓ ↦ ?_)
   simp only [map_mul, ringEquivPiPadicInt_apply, component_idemOfSet]
   split_ifs <;> simp
+
+/-- `ω_S` squares to itself. -/
+@[simp]
+theorem idemOfSet_mul_self (S : Set Nat.Primes) : idemOfSet.{u} S * idemOfSet S = idemOfSet S :=
+  (isIdempotentElem_idemOfSet S).eq
 
 /-- The idempotent of the empty set of primes is `0`. -/
 @[simp]
@@ -200,29 +205,29 @@ section Alternating
 open Nat (nth primeCounting')
 
 /-- The `k`-th prime has an even number of primes below it exactly when `k` is even. -/
-private theorem nth_mem_setOf_even_primeCounting'_iff (k : ℕ) (hk : (nth Nat.Prime k).Prime) :
-    (⟨nth Nat.Prime k, hk⟩ : Nat.Primes) ∈ {ℓ : Nat.Primes | Even (primeCounting' ℓ)} ↔
-      Even k :=
+private theorem nth_mem_setOf_even_primeCounting'_iff (k : ℕ) :
+    (⟨nth Nat.Prime k, Nat.prime_nth_prime k⟩ : Nat.Primes) ∈
+        {ℓ : Nat.Primes | Even (primeCounting' ℓ)} ↔ Even k :=
   Iff.of_eq (congrArg Even (Nat.primeCounting'_nth_eq k))
 
 /-- **The profinite integer with components `1, 0, 1, 0, …`.** Let `S` be the set of primes `ℓ`
 with an even number `π'(ℓ)` of primes below `ℓ`. Since the `n`-th prime has exactly `n` primes
 below it, the component of `ω_S` at the `n`-th prime, counting from `nth Nat.Prime 0 = 2`, is `1`
 for even `n` and `0` for odd `n`. -/
-theorem component_nth_idemOfSet_even_primeCounting' (n : ℕ) [Fact (nth Nat.Prime n).Prime]
-    [Decidable (Even n)] :
+theorem component_nth_idemOfSet_even_primeCounting' (n : ℕ) [Decidable (Even n)] :
+    haveI := Fact.mk (Nat.prime_nth_prime n)
     component (nth Nat.Prime n) (idemOfSet.{u} {ℓ : Nat.Primes | Even (primeCounting' ℓ)}) =
       if Even n then 1 else 0 := by
   classical
-  exact (component_idemOfSet _ ⟨nth Nat.Prime n, Fact.out⟩).trans
-    (if_congr (nth_mem_setOf_even_primeCounting'_iff n Fact.out) rfl rfl)
+  exact (component_idemOfSet _ ⟨nth Nat.Prime n, Nat.prime_nth_prime n⟩).trans
+    (if_congr (nth_mem_setOf_even_primeCounting'_iff n) rfl rfl)
 
 /-- **The profinite integer with components `1, 0, 1, 0, …` is not an integer**: it is `ω_S` for a
 set `S` of primes containing the prime `nth Nat.Prime 0 = 2` but not the prime
 `nth Nat.Prime 1 = 3`. -/
 theorem idemOfSet_even_primeCounting'_ne_intCast (n : ℤ) :
     idemOfSet.{u} {ℓ : Nat.Primes | Even (primeCounting' ℓ)} ≠ n := by
-  have hmem (k : ℕ) := nth_mem_setOf_even_primeCounting'_iff k (Nat.prime_nth_prime k)
+  have hmem (k : ℕ) := nth_mem_setOf_even_primeCounting'_iff k
   refine idemOfSet_ne_intCast ⟨_, (hmem 0).mpr .zero⟩ (fun h ↦ ?_) n
   exact Nat.not_even_one ((hmem 1).mp (h ▸ Set.mem_univ _))
 
