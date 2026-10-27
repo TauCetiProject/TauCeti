@@ -219,7 +219,6 @@ theorem rescale_smul (u : Rˣ) (φ : TauCeti.FormalCoordinate R) :
         F.rescale u := by
   have key (G : FormalGroup R) : G.rescale u = TauCeti.FormalCoordinate.homothety u⁻¹ • G := by
     rw [homothety_smul, inv_inv]
-  rw [key, key, ← mul_smul, ← mul_smul, mul_assoc _ (TauCeti.FormalCoordinate.homothety u),
-    ← map_mul, mul_inv_cancel, map_one, mul_one]
+  simp [key, ← mul_smul, map_inv]
 
 end FormalGroup

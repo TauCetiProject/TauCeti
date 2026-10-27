@@ -11,13 +11,10 @@ public import TauCeti.RingTheory.FormalGroup.LazardRing.Indecomposable
 -- dual numbers, weighted homogeneity and leading monomials.
 import Mathlib.Algebra.MvPolynomial.Coeff
 import Mathlib.RingTheory.AlgebraicIndependent.Basic
-import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.RingTheory.FormalGroup.Rescale
-import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.RingTheory.MvPolynomial.DualNumber
 import TauCeti.RingTheory.MvPolynomial.MonomialOrder
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
-import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # The generators of the Lazard ring are algebraically independent
@@ -169,64 +166,6 @@ private theorem evalEps_ρ_eq_zero_of_mem_sq (n : ℕ+) {x : LazardRing}
   rw [map_mul, map_mul]
   ext <;> simp [hfst hy, hfst hz]
 
-/-- The inverse of `X + ε X^(n + 1)` is `X - ε X^(n + 1)`, as `ε² = 0`. -/
-private theorem inv_ofStrictCoeffs_single_eps (n : ℕ+) :
-    (FormalCoordinate.ofStrictCoeffs (Pi.single n (DualNumber.eps : DualNumber ℚ)))⁻¹ =
-      FormalCoordinate.ofStrictCoeffs (Pi.single n (-DualNumber.eps)) := by
-  refine inv_eq_of_mul_eq_one_right (FormalCoordinate.ext ?_)
-  have hε : PowerSeries.C (DualNumber.eps : DualNumber ℚ) * PowerSeries.C (-DualNumber.eps) =
-      0 := by
-    rw [← map_mul, mul_neg, DualNumber.eps_mul_eps, neg_zero, map_zero]
-  rw [FormalCoordinate.toPowerSeries_mul, FormalCoordinate.toPowerSeries_one,
-    FormalCoordinate.toPowerSeries_ofStrictCoeffs_single n DualNumber.eps,
-    PowerSeries.subst_X_add_C_mul_X_pow (FormalCoordinate.hasSubst _),
-    FormalCoordinate.toPowerSeries_ofStrictCoeffs_single]
-  -- Substitution produces the constant `MvPowerSeries.C ε` over `Unit`, which is `PowerSeries.C ε`;
-  -- then `ε (X - ε X^(n + 1))^(n + 1) = ε X^(n + 1)`.
-  change _ + PowerSeries.C _ * _ = _
-  rw [mul_add_mul_pow_of_mul_eq_zero hε, map_neg]
-  ring
-
-/-- The transported additive law over `ℚ[ε]` at `bₙ = ε`:
-`X + Y + ε ((X + Y)^(n + 1) - X^(n + 1) - Y^(n + 1))`. -/
-private theorem smul_𝔾ₐ_single_eps (n : ℕ+) :
-    (FormalCoordinate.ofStrictCoeffs (Pi.single n (DualNumber.eps : DualNumber ℚ)) •
-        FormalGroup.𝔾ₐ).toPowerSeries =
-      (X 0 + X 1 : MvPowerSeries (Fin 2) (DualNumber ℚ)) + MvPowerSeries.C DualNumber.eps *
-        ((X 0 + X 1) ^ ((n : ℕ) + 1) - X 0 ^ ((n : ℕ) + 1) - X 1 ^ ((n : ℕ) + 1)) := by
-  have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := DualNumber ℚ) i
-  have hε : MvPowerSeries.C (DualNumber.eps : DualNumber ℚ) *
-      MvPowerSeries.C (-DualNumber.eps) = (0 : MvPowerSeries (Fin 2) (DualNumber ℚ)) := by
-    rw [← map_mul, mul_neg, DualNumber.eps_mul_eps, neg_zero, map_zero]
-  have hS (i : Fin 2) : PowerSeries.HasSubst
-      (X i + MvPowerSeries.C (-DualNumber.eps) * X i ^ ((n : ℕ) + 1) :
-        MvPowerSeries (Fin 2) (DualNumber ℚ)) :=
-    .of_constantCoeff_zero (by simp)
-  rw [FormalGroup.smul_toPowerSeries, inv_ofStrictCoeffs_single_eps,
-    FormalCoordinate.toPowerSeries_ofStrictCoeffs_single,
-    FormalCoordinate.toPowerSeries_ofStrictCoeffs_single,
-    PowerSeries.subst_X_add_C_mul_X_pow (hX 0), PowerSeries.subst_X_add_C_mul_X_pow (hX 1),
-    FormalGroup.𝔾ₐ_toPowerSeries,
-    MvPowerSeries.subst_add (hasSubst_finTwo (hS 0) (hS 1)),
-    MvPowerSeries.subst_X (hasSubst_finTwo (hS 0) (hS 1)),
-    MvPowerSeries.subst_X (hasSubst_finTwo (hS 0) (hS 1))]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  -- `S = X + Y - ε (X^(n + 1) + Y^(n + 1))`, and `ε S^(n + 1) = ε (X + Y)^(n + 1)`.
-  have hS' : PowerSeries.HasSubst
-      (X 0 + MvPowerSeries.C (-DualNumber.eps) * X 0 ^ ((n : ℕ) + 1) +
-        (X 1 + MvPowerSeries.C (-DualNumber.eps) * X 1 ^ ((n : ℕ) + 1)) :
-        MvPowerSeries (Fin 2) (DualNumber ℚ)) :=
-    .of_constantCoeff_zero (by simp)
-  rw [PowerSeries.subst_X_add_C_mul_X_pow hS']
-  have hsum : (X 0 + MvPowerSeries.C (-DualNumber.eps) * X 0 ^ ((n : ℕ) + 1) +
-      (X 1 + MvPowerSeries.C (-DualNumber.eps) * X 1 ^ ((n : ℕ) + 1)) :
-        MvPowerSeries (Fin 2) (DualNumber ℚ)) =
-      X 0 + X 1 +
-        MvPowerSeries.C (-DualNumber.eps) * (X 0 ^ ((n : ℕ) + 1) + X 1 ^ ((n : ℕ) + 1)) := by
-    ring
-  rw [hsum, mul_add_mul_pow_of_mul_eq_zero hε, map_neg]
-  ring
-
 /-- The coefficient of `X Yⁿ` in the transported additive law, evaluated at `bₙ = ε`, is
 `(n + 1) ε`. -/
 private theorem snd_evalEps_ρ_coeff (n : ℕ+) :
@@ -254,9 +193,11 @@ private theorem snd_evalEps_ρ_coeff (n : ℕ+) :
   have h1 : d ≠ single 1 1 := fun h ↦ by simpa [d] using DFunLike.congr_fun h 0
   have h2 : d ≠ single 0 ((n : ℕ) + 1) := fun h ↦ by simpa [d] using DFunLike.congr_fun h 1
   have h3 : d ≠ single 1 ((n : ℕ) + 1) := fun h ↦ by simpa [d] using DFunLike.congr_fun h 0
-  rw [hcoeff, hmap, smul_𝔾ₐ_single_eps, hpow, map_add, map_add, coeff_X, coeff_X, coeff_C_mul,
-    map_sub, map_sub, MvPolynomial.coeff_coe, MvPolynomial.coeff_add_pow, coeff_X_pow, coeff_X_pow,
-    ite_eq_right h0, ite_eq_right h1, ite_eq_right h2, ite_eq_right h3]
+  rw [hcoeff, hmap,
+    FormalGroup.ofStrictCoeffs_single_smul_𝔾ₐ_toPowerSeries n DualNumber.eps_mul_eps, hpow,
+    map_add, map_add, coeff_X, coeff_X, coeff_C_mul, map_sub, map_sub, MvPolynomial.coeff_coe,
+    MvPolynomial.coeff_add_pow, coeff_X_pow, coeff_X_pow, ite_eq_right h0, ite_eq_right h1,
+    ite_eq_right h2, ite_eq_right h3]
   simp [d, add_comm 1]
 
 /-- The coefficient of `bₙ` in `ρ(xₙ)` is nonzero. -/

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Opposite
 public import Mathlib.Data.PNat.Defs
 public import Mathlib.RingTheory.PowerSeries.Substitution
 import Mathlib.RingTheory.PowerSeries.Inverse
+import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.RingTheory.PowerSeries.SubstInv
 import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -61,6 +62,8 @@ coordinates over `K` and the opposite of `K⟦X⟧ ≃ₐ[K] K⟦X⟧`, with inv
 * `TauCeti.FormalCoordinate.subst_subst_inv`, `TauCeti.FormalCoordinate.subst_inv_subst`:
   `φ (φ⁻¹ (x)) = x = φ⁻¹ (φ (x))` for every substitutable multivariate series `x`.
 * `TauCeti.FormalCoordinate.substAlgEquiv_mul`: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`.
+* `TauCeti.FormalCoordinate.inv_ofStrictCoeffs_single_of_mul_self_eq_zero`: if `e² = 0`, the
+  inverse of `X + e X^(n + 1)` is `X - e X^(n + 1)`.
 * `TauCeti.FormalCoordinate.homothety_inv_mul_ofStrictCoeffs_mul_homothety`: conjugating
   `X + ∑ bᵢ X^(i + 1)` by the homothety by `u` gives `X + ∑ uⁱ bᵢ X^(i + 1)`.
 * `TauCeti.FormalCoordinate.map_substAlgEquiv`: substitution commutes with base change of the
@@ -360,6 +363,19 @@ theorem toPowerSeries_ofStrictCoeffs_single (n : ℕ+) (e : R) :
           hk (PNat.coe_injective (by rw [Nat.succPNat_coe]; exact h'))
         simp [hk, hk']
 
+/-- If `e² = 0`, the inverse of `X + e X^(n + 1)` is `X - e X^(n + 1)`. -/
+theorem inv_ofStrictCoeffs_single_of_mul_self_eq_zero (n : ℕ+) {e : R} (he : e * e = 0) :
+    (ofStrictCoeffs (Pi.single n e))⁻¹ = ofStrictCoeffs (Pi.single n (-e)) := by
+  refine inv_eq_of_mul_eq_one_right (FormalCoordinate.ext ?_)
+  have hC : C e * C (-e) = 0 := by rw [← map_mul, mul_neg, he, neg_zero, map_zero]
+  rw [toPowerSeries_mul, toPowerSeries_one, toPowerSeries_ofStrictCoeffs_single n e,
+    subst_X_add_C_mul_X_pow (hasSubst _), toPowerSeries_ofStrictCoeffs_single]
+  -- Substitution produces the constant `MvPowerSeries.C e` over `Unit`, which is `C e`;
+  -- then `e (X - e X^(n + 1))^(n + 1) = e X^(n + 1)`.
+  change _ + C e * _ = _
+  rw [mul_add_mul_pow_of_mul_eq_zero hC, map_neg]
+  ring
+
 /-- The coordinates `X + ∑ bᵢ X^(i + 1)` are strict: their linear coefficient is `1`. -/
 theorem ofStrictCoeffs_mem_ker_linearCoeff (b : ℕ+ → R) :
     ofStrictCoeffs b ∈ (linearCoeff (R := R)).ker :=
@@ -445,7 +461,7 @@ theorem homothety_inv_mul_ofStrictCoeffs_mul_homothety (u : Rˣ) (b : ℕ+ → R
     · have h := coeff_succ_ofStrictCoeffs b ⟨n + 1, n.succ_pos⟩
       have h' := coeff_succ_ofStrictCoeffs (fun i ↦ (u : R) ^ (i : ℕ) * b i) ⟨n + 1, n.succ_pos⟩
       simp only [PNat.mk_coe] at h h'
-      rw [h, h', pow_succ', ← mul_assoc, Units.inv_mul, one_mul]
+      simp [h, h', pow_succ', mul_assoc]
 
 end Homothety
 

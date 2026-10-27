@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Two-variable geometric sums in a noncommutative semiring
@@ -96,8 +97,7 @@ theorem exists_one_add_pow_eq_and_geom_sum_eq {A : Type*} [Ring A] (x : A) (r : 
 theorem mul_add_mul_pow_of_mul_eq_zero {A : Type*} [CommRing A] {e e' : A} (h : e * e' = 0)
     (a b : A) (k : ℕ) : e * (a + e' * b) ^ k = e * a ^ k := by
   obtain ⟨c, hc⟩ := sub_dvd_pow_sub_pow (a + e' * b) a k
-  rw [← sub_eq_zero, ← mul_sub, hc, add_sub_cancel_left, ← mul_assoc, ← mul_assoc, h, zero_mul,
-    zero_mul]
+  linear_combination e * hc + b * c * h
 
 /-- In a ring without zero divisors and for `x ≠ 1`, the `x`-integer `∑_{i < n} x ^ i` vanishes
 exactly when `x ^ n = 1`. -/
