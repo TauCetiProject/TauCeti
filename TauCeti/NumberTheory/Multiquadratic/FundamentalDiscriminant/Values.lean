@@ -17,8 +17,6 @@ coprime to `D`. At even arguments the Jacobi symbol need not agree with the char
 
 This file also identifies the characters of prime discriminants, including `-4`, `8`, and
 `-8`, and proves multiplicativity in coprime fundamental discriminants.
-These evaluations allow quadratic splitting characters to be computed without choosing a
-prime-discriminant factorization.
 
 For the classical Kronecker convention, see K. Ireland and M. Rosen, *A Classical Introduction
 to Modern Number Theory*, Chapter 6, and J. Voight, *Quaternion Algebras*, §24.3.3.
