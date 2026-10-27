@@ -30,6 +30,8 @@ for the spinor-norm homomorphisms they describe.
 ## Main results
 
 * `CliffordAlgebra.orthogonalSpinorNorm`: the square-class-valued spinor norm on `O(Q)`.
+* `CliffordAlgebra.orthogonalSpinorNorm_prod_ofFn_reflectionOrthogonal`: the spinor norm of
+  `τ_{v₀} ⋯ τ_{vₙ₋₁}` is the square class of `Q v₀ ⋯ Q vₙ₋₁`.
 * `CliffordAlgebra.spinorNorm`: its restriction to `SO(Q)`.
 * `CliffordAlgebra.orthogonalSpinorNorm_eq_one_of_isSquare_apply`: when every invertible value of
   the form is a square, the orthogonal spinor norm is trivial.
@@ -125,6 +127,16 @@ theorem orthogonalSpinorNorm_reflectionOrthogonal (Q : QuadraticForm K V)
       squareClassHom (unitOfInvertible (Q v)) := by
   rw [← lipschitzToOrthogonal_unitι Q v, orthogonalSpinorNorm_lipschitzToOrthogonal,
     cliffordNorm_unitι]
+
+/-- **The spinor norm of a reflection factorization.** The spinor norm of a product of
+reflections `τ_{v₀} ⋯ τ_{vₙ₋₁}` is the square class of the product `Q v₀ ⋯ Q vₙ₋₁` of the norms
+of their defining vectors. -/
+theorem orthogonalSpinorNorm_prod_ofFn_reflectionOrthogonal (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) {n : ℕ} (v : Fin n → V) [∀ i, Invertible (Q (v i))] :
+    orthogonalSpinorNorm Q hQ (List.ofFn fun i ↦ QuadraticMap.reflectionOrthogonal Q (v i)).prod =
+      squareClassHom (∏ i, unitOfInvertible (Q (v i))) := by
+  rw [map_list_prod, List.map_ofFn, map_prod, ← Fin.prod_ofFn]
+  simp only [Function.comp_def, orthogonalSpinorNorm_reflectionOrthogonal]
 
 /-- If every invertible value of a finite-dimensional nondegenerate quadratic form is a square,
 its orthogonal spinor norm is trivial. -/

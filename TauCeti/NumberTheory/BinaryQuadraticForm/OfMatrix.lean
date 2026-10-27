@@ -123,7 +123,9 @@ theorem ofMatrix_inj_of_trace_eq {M N : Matrix (Fin 2) (Fin 2) ℤ} (h : M.trace
   ext i j
   fin_cases i <;> fin_cases j <;> lia
 
-private theorem two_mul_ediv_two_of_discrim_eq {f : BinaryQuadraticForm ℤ} {t n : ℤ}
+/-- If an integral form has discriminant `t² - 4 n`, then `t` and its middle coefficient have the
+same parity. -/
+theorem two_mul_ediv_two_of_discrim_eq {f : BinaryQuadraticForm ℤ} {t n : ℤ}
     (hf : f.discrim = t ^ 2 - 4 * n) : 2 * ((t - f.b) / 2) = t - f.b :=
   Int.two_mul_ediv_two_of_even <| by
     have := Int.discrim_emod_four f.a f.b f.c

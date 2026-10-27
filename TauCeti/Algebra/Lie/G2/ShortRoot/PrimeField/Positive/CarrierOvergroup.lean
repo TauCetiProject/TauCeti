@@ -17,9 +17,10 @@ transports the ambient Lie--Kolchin overgroup theorem to the carrier.
 
 Consequently, over an algebraically closed field of characteristic three, every Borel candidate
 in the carrier which contains the positive subgroup pulls back to an upper-triangular subgroup
-of `GL₇`. Proving that the positive subgroup is the carrier's upper-triangular intersection will
-turn this containment into Borel maximality; that intersection identification is not asserted
-here.
+of `GL₇`. Combined with `generatedPositiveDefiningIdeal_le_of_upperTriangular_le`, which puts
+every such upper-triangular closed subgroup inside the positive subgroup, this containment gives
+the Borel maximality `isBorelOverAlgClosed_generatedPositiveDefiningIdeal` in
+`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel.Basic`.
 
 ## Main declarations
 
@@ -56,6 +57,13 @@ def generatedPositiveRestriction :
       CommHopfAlgCat.baseChange (K := k) coordinateHopfAlgebra :=
   (coordinateHopfAlgebraGeneratedIso k).inv ≫
     CommHopfAlgCat.baseChangeMap (K := k) PrimeField.positiveRestriction
+
+/-- Positive restriction on the generated carrier is the scalar extension of positive
+restriction on the carrier, read through the coordinate identification. -/
+theorem generatedPositiveRestriction_def :
+    generatedPositiveRestriction k = (coordinateHopfAlgebraGeneratedIso k).inv ≫
+      CommHopfAlgCat.baseChangeMap (K := k) PrimeField.positiveRestriction := by
+  rw [generatedPositiveRestriction]
 
 /-- The generated carrier's ambient coordinate map followed by positive restriction is the
 standard coordinate map of the positive subgroup. -/
@@ -151,8 +159,8 @@ theorem upperTriangular_le_comapOfSurjective_of_geometricallySolvable_of_le
 pulls back to an upper-triangular subgroup of `GL₇`.
 
 The conclusion is contravariant: the ambient upper-triangular ideal lies below the inverse image
-of the candidate ideal. Proving that the positive subgroup is the carrier's upper-triangular
-intersection will therefore turn this containment into the maximality required for a Borel. -/
+of the candidate ideal. Combined with `generatedPositiveDefiningIdeal_le_of_upperTriangular_le`,
+this containment gives `isBorelOverAlgClosed_generatedPositiveDefiningIdeal`. -/
 theorem upperTriangular_le_comapOfSurjective_of_isBorelCandidate_of_le
     (I : HopfIdeal k (generatedCoordinateHopfAlgebra k))
     (hI : HopfIdeal.IsBorelCandidate k (finiteTypeGeneratedCoordinateHopfAlgebra k) I)

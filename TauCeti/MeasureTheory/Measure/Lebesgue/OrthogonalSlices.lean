@@ -19,6 +19,7 @@ of a Lebesgue-measurable set is the integral of the lengths of its parallel line
 Replacing a set by a volume-a.e. equal representative changes almost every section only
 on a one-dimensional null set. This permits line-section arguments for measurable sets
 without choosing a Borel representative permanently.
+The length of a line section is independent of its base point along the line, in any real module.
 
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
 `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
@@ -43,6 +44,15 @@ open scoped ENNReal RealInnerProductSpace
 
 namespace TauCeti
 
+/-- Moving the base point along the direction does not change the length of a line section. -/
+theorem volume_lineSection_add_smul {E : Type*} [AddCommMonoid E] [Module ℝ E]
+    (e : E) (s : Set E) (x : E) (c : ℝ) :
+    volume {t : ℝ | x + c • e + t • e ∈ s} = volume {t : ℝ | x + t • e ∈ s} := by
+  have h : {t : ℝ | x + c • e + t • e ∈ s} = (fun t ↦ t + c) ⁻¹' {t : ℝ | x + t • e ∈ s} := by
+    ext t
+    simp [add_smul, add_assoc, add_comm (t • e)]
+  rw [h, measure_preimage_add_right]
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
@@ -52,6 +62,29 @@ theorem measurePreserving_orthogonalLineEquiv (e : E) (he : ‖e‖ = 1) :
   rw [orthogonalLineEquiv_def]
   exact (orthogonalLineIsometry e he).measurePreserving.comp
     (WithLp.volume_preserving_toLp (ℝ ∙ e)ᗮ ℝ)
+
+private theorem aemeasurable_comp_orthogonalLineEquiv (e : E) (he : ‖e‖ = 1)
+    {g : E → ℝ≥0∞} (hg : AEMeasurable g volume) :
+    AEMeasurable (g ∘ orthogonalLineEquiv e he) (volume.prod volume) := by
+  exact hg.comp_quasiMeasurePreserving
+    (measurePreserving_orthogonalLineEquiv e he).quasiMeasurePreserving
+
+/-- Integrating an a.e. measurable nonnegative function along parallel lines gives an
+a.e. measurable function of the transverse coordinate. -/
+theorem aemeasurable_lintegral_line (e : E) (he : ‖e‖ = 1)
+    {g : E → ℝ≥0∞} (hg : AEMeasurable g volume) :
+    AEMeasurable (fun y : (ℝ ∙ e)ᗮ ↦ ∫⁻ t : ℝ, g ((y : E) + t • e)) volume := by
+  simpa only [Function.comp_apply, orthogonalLineEquiv_apply] using
+    (aemeasurable_comp_orthogonalLineEquiv e he hg).lintegral_prod_right'
+
+/-- Tonelli's theorem in orthogonal line coordinates. -/
+theorem lintegral_eq_lintegral_lintegral_line (e : E) (he : ‖e‖ = 1)
+    {g : E → ℝ≥0∞} (hg : AEMeasurable g volume) :
+    ∫⁻ x, g x = ∫⁻ y : (ℝ ∙ e)ᗮ, ∫⁻ t : ℝ, g ((y : E) + t • e) := by
+  rw [← (measurePreserving_orthogonalLineEquiv e he).lintegral_comp' hg,
+    lintegral_prod (fun p ↦ g (orthogonalLineEquiv e he p))
+      (aemeasurable_comp_orthogonalLineEquiv e he hg)]
+  simp only [orthogonalLineEquiv_apply]
 
 /-- Volume-a.e. equal sets have a.e. equal parallel sections for almost every transverse point.
 The exceptional transverse null set is allowed to depend on the direction. -/

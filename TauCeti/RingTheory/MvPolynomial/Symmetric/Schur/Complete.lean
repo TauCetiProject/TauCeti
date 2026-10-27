@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.Algebra.MvPolynomial.Monomial
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Branching
 

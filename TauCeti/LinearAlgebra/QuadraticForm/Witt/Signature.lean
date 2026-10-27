@@ -22,7 +22,7 @@ hyperbolic ideal. For an ordered real closed field, the resulting ring equivalen
 as its inverse.
 In particular, two regular forms over such a field have the same Witt class exactly when their
 integer signatures agree. Taking `K = ℝ` gives the real Witt ring; the real closed instance is
-available in `TauCeti.FieldTheory.IsRealClosed.Real`.
+available in `Mathlib.FieldTheory.IsRealClosed.Real`.
 
 ## Main definitions and results
 
@@ -115,5 +115,12 @@ noncomputable def WittRing.equivInt : WittRing K ≃+* ℤ :=
 @[simp]
 theorem WittRing.equivInt_apply (x : WittRing K) : equivInt x = signature x :=
   RingEquiv.ofBijective_apply _ _ x
+
+/-- **Witt classes over a real closed field.** Over an ordered real closed field, two regular-form
+classes have the same Witt class exactly when their signatures agree. -/
+theorem wittClass_eq_iff_signature_eq {x y : RegularFormClass K} :
+    wittClass x = wittClass y ↔ RegularFormClass.signature x = RegularFormClass.signature y := by
+  rw [← WittRing.equivInt.injective.eq_iff]
+  simp [WittRing.equivInt_apply]
 
 end TauCeti

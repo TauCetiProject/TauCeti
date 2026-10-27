@@ -13,7 +13,7 @@ public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 
 /-!
-# Changing the base ring of an integrality claim
+# Integrality and clearing denominators
 
 Mathlib's `isIntegral_trans` transfers integrality down a scalar tower `R → A → B`. The variant
 here drops the tower: the two candidate base rings are only required to map compatibly into the
@@ -29,6 +29,8 @@ without either being an algebra over the other.
   `A` is integrally closed.
 * `TauCeti.isIntegral_natCast_pow_mul_pow`: if `b x` is integral over `ℤ`, then so is
   `b ^ n x ^ j` for `j ≤ n`.
+* `TauCeti.isIntegral_pow_card_mul_prod_sub`: an integral common denominator for a finite set
+  clears the denominators of the product of differences from any one of its elements.
 * `TauCeti.isIntegral_rat_of_isIntegral_natCast_mul`: if `b x` is integral over `ℤ` for some
   `b ≠ 0`, then `x` is integral over `ℚ`.
 -/
@@ -82,6 +84,17 @@ theorem isIntegral_natCast_pow_mul_pow {A : Type*} [CommRing A] {x : A} {b : ℕ
   obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hj
   rw [pow_add, mul_right_comm, ← mul_pow, mul_comm]
   exact ((isIntegral_natCast b).pow l).mul (hbx.pow j)
+
+/-- If `l` and every `l x` for `x ∈ S` are integral over `R`, then
+`l ^ S.card * ∏ x ∈ S.erase a, (a - x)` is integral over `R` for every `a ∈ S`. -/
+theorem isIntegral_pow_card_mul_prod_sub {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+    [DecidableEq A] {S : Finset A} {l a : A} (ha : a ∈ S) (hl : IsIntegral R l)
+    (hS : ∀ x ∈ S, IsIntegral R (l * x)) :
+    IsIntegral R (l ^ S.card * ∏ x ∈ S.erase a, (a - x)) := by
+  rw [← Finset.card_erase_add_one ha, pow_succ', mul_assoc, Finset.pow_card_mul_prod]
+  refine hl.mul (IsIntegral.prod _ fun x hx ↦ ?_)
+  rw [mul_sub]
+  exact (hS a ha).sub (hS x (Finset.mem_of_mem_erase hx))
 
 /-- If `b x` is integral over `ℤ` for a nonzero natural number `b`, then `x` is integral over
 `ℚ`. -/
