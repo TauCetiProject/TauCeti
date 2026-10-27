@@ -228,4 +228,11 @@ theorem secondCovariantDerivative_const_smul (c : ℝ) (hσ : CMDiff ∞ (T% σ)
     cov.isCovariantDerivativeOnUniv.smul_const c (hσ.mdifferentiable (by simp) x)]
   simp only [smul_apply, smul_sub]
 
+/-- The second covariant derivative of the zero section is zero. -/
+@[simp]
+theorem secondCovariantDerivative_zero (x : M) :
+    cov.secondCovariantDerivative covT (0 : Π y : M, V y) x = 0 := by
+  simpa using secondCovariantDerivative_const_smul cov covT 0
+    (contMDiff_zeroSection ℝ V : CMDiff ∞ (T% (0 : Π y : M, V y))) x
+
 end CovariantDerivative
