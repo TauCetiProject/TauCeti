@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Algebra.Subalgebra.Unitization
+public import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
+public import Mathlib.Algebra.Algebra.Subalgebra.Unitization
 public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
+public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Topology.Algebra.Algebra.Equiv
 
 import Mathlib.Analysis.Normed.Operator.Banach
@@ -46,6 +48,7 @@ theorem norm_unitization_le (x : WithLp 1 (Unitization 𝕜 B)) :
   calc
     ‖(WithLp.ofLp x).fst • (1 : A) + (WithLp.ofLp x).snd‖ ≤
         ‖(WithLp.ofLp x).fst‖ * ‖(1 : A)‖ + ‖(WithLp.ofLp x).snd‖ := by
+      -- The norm on the subtype `B` is induced from `A`.
       exact (norm_add_le _ _).trans_eq (by rw [norm_smul]; rfl)
     _ ≤ max ‖(1 : A)‖ 1 * ‖(WithLp.ofLp x).fst‖ +
         max ‖(1 : A)‖ 1 * ‖(WithLp.ofLp x).snd‖ := by
@@ -64,19 +67,25 @@ theorem continuous_unitization :
 
 end NormedField
 
-section NontriviallyNormedField
+section TopologicalAlgebra
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedRing A] [NormedAlgebra 𝕜 A] (B : NonUnitalSubalgebra 𝕜 A)
+  [Ring A] [TopologicalSpace A] [IsTopologicalAddGroup A] [Algebra 𝕜 A]
+  [ContinuousSMul 𝕜 A] (B : NonUnitalSubalgebra 𝕜 A)
 
 /-- Adjoining the identity to a closed nonunital subalgebra gives a closed subalgebra.
 Its underlying vector subspace is `B.toSubmodule ⊔ 𝕜 ∙ (1 : A)`. -/
 theorem isClosed_adjoin (hB : IsClosed (B : Set A)) :
     IsClosed (Algebra.adjoin 𝕜 (B : Set A) : Set A) := by
-  rw [← Subalgebra.coe_toSubmodule, B.adjoin_toSubmodule, sup_comm]
+  rw [← Subalgebra.coe_toSubmodule, B.adjoin_eq_span_one_sup, sup_comm]
   exact B.toSubmodule.isClosed_sup_finiteDimensional (Submodule.span 𝕜 {1}) hB
 
-variable [CompleteSpace A]
+end TopologicalAlgebra
+
+section NontriviallyNormedField
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedRing A] [NormedAlgebra 𝕜 A] [CompleteSpace A] (B : NonUnitalSubalgebra 𝕜 A)
 
 /-- A closed nonunital subalgebra omitting the ambient identity has its external ℓ¹
 unitization boundedly isomorphic to its unital closure with the inherited norm. -/
@@ -86,14 +95,25 @@ noncomputable def unitizationContinuousAlgEquiv (hB : IsClosed (B : Set A))
   letI : CompleteSpace B := hB.completeSpace_coe
   letI : CompleteSpace (Algebra.adjoin 𝕜 (B : Set A)) := (B.isClosed_adjoin hB).completeSpace_coe
   let e := (WithLp.unitizationAlgEquiv 𝕜).trans (unitizationAlgEquiv B h1)
-  have he : Continuous e := continuous_induced_rng.mpr B.continuous_unitization
+  have he_coe : (fun x ↦ (e x : A)) =
+      fun x ↦ unitization B (WithLp.ofLp x) := rfl
+  have he : Continuous e := continuous_induced_rng.mpr (by
+    simp only [Function.comp_def, he_coe]
+    exact B.continuous_unitization)
   exact { e with
     continuous_toFun := he
     continuous_invFun := by
-      convert LinearEquiv.continuous_symm (𝕜 := 𝕜) (𝕜' := 𝕜)
+      -- Explicit carriers fix the algebra-to-linear coercion for elaboration.
+      exact LinearEquiv.continuous_symm (𝕜 := 𝕜) (𝕜' := 𝕜)
         (E := WithLp 1 (Unitization 𝕜 B)) (F := Algebra.adjoin 𝕜 (B : Set A))
-        e.toLinearEquiv (by simpa only [AlgEquiv.coe_toLinearEquiv] using he) using 1
-      · rfl }
+        e.toLinearEquiv (by simpa only [AlgEquiv.coe_toLinearEquiv] using he) }
+
+/-- The continuous unitization identification has the standard algebraic identification as its
+underlying algebra equivalence, so its inverse is the same algebraic inverse. -/
+theorem unitizationContinuousAlgEquiv_toAlgEquiv (hB : IsClosed (B : Set A))
+    (h1 : (1 : A) ∉ B) :
+    (B.unitizationContinuousAlgEquiv hB h1).toAlgEquiv =
+      (WithLp.unitizationAlgEquiv 𝕜).trans (unitizationAlgEquiv B h1) := (rfl)
 
 /-- The bounded identification sends the two unitization coordinates to their sum in `A`. -/
 @[simp]
