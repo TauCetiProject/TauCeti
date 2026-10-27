@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.PrimeCounting
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Decomposition
 
 /-!
@@ -100,11 +101,10 @@ theorem component_idemOfSet_of_notMem {ℓ : Nat.Primes} (h : ℓ ∉ S) :
   classical
   simp [h]
 
-/-- `ω_S` is idempotent. -/
+/-- `ω_S` is idempotent: each of its components is `0` or `1`. -/
 theorem isIdempotentElem_idemOfSet (S : Set Nat.Primes) : IsIdempotentElem (idemOfSet.{u} S) := by
   classical
-  refine ringEquivPiPadicInt.injective (funext fun ℓ ↦ ?_)
-  simp only [map_mul, ringEquivPiPadicInt_apply, component_idemOfSet]
+  refine (Pi.isIdempotentElem_iff.mpr fun ℓ ↦ ?_).map ringEquivPiPadicInt.symm
   split_ifs <;> simp
 
 /-- `ω_S` squares to itself. -/
@@ -172,16 +172,28 @@ theorem idemOfSet_injective : Function.Injective idemOfSet.{u} := fun S T h ↦ 
 theorem idemOfSet_inj : idemOfSet.{u} S = idemOfSet T ↔ S = T :=
   idemOfSet_injective.eq_iff
 
+/-- The idempotent of a set of primes is `0` exactly when the set is empty. -/
+@[simp]
+theorem idemOfSet_eq_zero_iff : idemOfSet.{u} S = 0 ↔ S = ∅ := by
+  rw [← idemOfSet_empty, idemOfSet_inj]
+
+/-- The idempotent of a set of primes is `1` exactly when the set contains every prime. -/
+@[simp]
+theorem idemOfSet_eq_one_iff : idemOfSet.{u} S = 1 ↔ S = Set.univ := by
+  rw [← idemOfSet_univ, idemOfSet_inj]
+
 /-- **The idempotents of `ℤ̂` are the `ω_S`.** A profinite integer is idempotent exactly when it is
-`ω_S` for some set `S` of primes, necessarily the set of primes at which its component is `1`: each
-component of an idempotent is an idempotent of the domain `ℤ_ℓ`, hence `0` or `1`. -/
+`ω_S` for some set `S` of primes, necessarily the set of primes at which its component is `1`: under
+the product decomposition each component of an idempotent is an idempotent of the domain `ℤ_ℓ`
+(`Pi.isIdempotentElem_iff`), hence `0` or `1`. -/
 theorem isIdempotentElem_iff_exists_idemOfSet {a : Additive zHat.{u}} :
     IsIdempotentElem a ↔ ∃ S, idemOfSet S = a := by
   classical
   refine ⟨fun h ↦ ⟨{ℓ | component ℓ a = 1}, ?_⟩, fun ⟨S, hS⟩ ↦ hS ▸ isIdempotentElem_idemOfSet S⟩
+  have h' := Pi.isIdempotentElem_iff.mp (h.map ringEquivPiPadicInt)
   refine ringEquivPiPadicInt.injective (funext fun ℓ ↦ ?_)
-  simp only [ringEquivPiPadicInt_apply, component_idemOfSet, Set.mem_ofPred_eq]
-  rcases IsIdempotentElem.iff_eq_zero_or_one.mp (h.map (component ℓ)) with h0 | h1 <;> simp [*]
+  simp only [ringEquivPiPadicInt_apply, component_idemOfSet, Set.mem_ofPred_eq] at h' ⊢
+  rcases IsIdempotentElem.iff_eq_zero_or_one.mp (h' ℓ) with h0 | h1 <;> simp [*]
 
 /-- **`ω_S` is an integer exactly when `S` is empty or contains every prime**, that is, when
 `ω_S` is `0` or `1`: an idempotent integer is `0` or `1`. -/
@@ -189,8 +201,8 @@ theorem idemOfSet_mem_range_intCast_iff :
     idemOfSet.{u} S ∈ Set.range (Int.cast : ℤ → Additive zHat.{u}) ↔ S = ∅ ∨ S = Set.univ := by
   refine ⟨fun ⟨n, hn⟩ ↦ ?_, ?_⟩
   · rcases isIdempotentElem_intCast_iff.mp (hn ▸ isIdempotentElem_idemOfSet S) with rfl | rfl
-    · exact Or.inl (idemOfSet_injective (by rw [← hn, idemOfSet_empty, Int.cast_zero]))
-    · exact Or.inr (idemOfSet_injective (by rw [← hn, idemOfSet_univ, Int.cast_one]))
+    · exact Or.inl (idemOfSet_eq_zero_iff.mp (by rw [← hn, Int.cast_zero]))
+    · exact Or.inr (idemOfSet_eq_one_iff.mp (by rw [← hn, Int.cast_one]))
   · rintro (rfl | rfl)
     · exact ⟨0, by rw [Int.cast_zero, idemOfSet_empty]⟩
     · exact ⟨1, by rw [Int.cast_one, idemOfSet_univ]⟩
