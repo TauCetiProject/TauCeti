@@ -17,7 +17,7 @@ An equivalence relation `R` on `X` is **isolated** by a family `E : I → Setoid
 `R`-equivalent to `x`. Then each `R`-class is pinned by one class of one `E i`, so the
 `R`-classes inject into the dependent sum of the `E i`-classes. Over a countable index type,
 countably many `E i`-classes each give countably many `R`-classes, and more generally the
-`R`-classes are bounded by any infinite bound on the `E i`-classes.
+`R`-classes are bounded by any infinite bound on both the index type and the `E i`-classes.
 
 Isolation is one-sided: the `E i`-class of `x` decides `R`-equivalence with `x`, for the index
 chosen for `x`.
@@ -36,7 +36,8 @@ intersection, equality, has continuum many classes.
   `E i`-classes.
 * `Setoid.IsolatedBy.countable_quotient`: countably many relations with countable quotients give
   `R` a countable quotient.
-* `Setoid.IsolatedBy.lift_mk_quotient_le`: the general cardinal transfer, for an infinite bound.
+* `Setoid.IsolatedBy.lift_mk_quotient_le`: the general cardinal transfer: at most `κ` relations
+  with at most `κ` classes each give at most `κ` classes, for an infinite `κ`.
 
 ## References
 
@@ -89,10 +90,10 @@ theorem IsolatedBy.countable_quotient [Countable I] [∀ i, Countable (Quotient 
   let ⟨_, hf⟩ := h.exists_injective_sigma
   hf.countable
 
-/-- **Cardinal transfer.** If `R` is isolated by countably many relations, each with at most `κ`
+/-- **Cardinal transfer.** If `R` is isolated by at most `κ` relations, each with at most `κ`
 classes for an infinite cardinal `κ`, then `R` has at most `κ` classes. -/
-theorem IsolatedBy.lift_mk_quotient_le [Countable I] {κ : Cardinal.{max u v}} (hκ : ℵ₀ ≤ κ)
-    (hE : ∀ i, lift.{v} #(Quotient (E i)) ≤ κ) (h : R.IsolatedBy E) :
+theorem IsolatedBy.lift_mk_quotient_le {κ : Cardinal.{max u v}} (hκ : ℵ₀ ≤ κ)
+    (hI : lift.{u} #I ≤ κ) (hE : ∀ i, lift.{v} #(Quotient (E i)) ≤ κ) (h : R.IsolatedBy E) :
     lift.{v} #(Quotient R) ≤ κ := by
   obtain ⟨f, hf⟩ := h.exists_injective_sigma
   calc lift.{v} #(Quotient R) ≤ lift.{u} #(Σ i, Quotient (E i)) := by
@@ -100,10 +101,9 @@ theorem IsolatedBy.lift_mk_quotient_le [Countable I] {κ : Cardinal.{max u v}} (
         exact lift_mk_le_lift_mk_of_injective hf
     _ = sum fun i => #(Quotient (E i)) := by rw [mk_sigma, lift_id'.{u, v}]
     _ ≤ lift.{u} #I * ⨆ i, lift.{v} #(Quotient (E i)) := sum_le_lift_mk_mul_iSup_lift _
-    _ ≤ ℵ₀ * κ := by
+    _ ≤ κ * κ := by
         gcongr
-        · exact lift_le_aleph0.2 (mk_le_aleph0_iff.2 inferInstance)
-        · exact ciSup_le' hE
-    _ = κ := aleph0_mul_eq hκ
+        exact ciSup_le' hE
+    _ = κ := mul_eq_self hκ
 
 end Setoid
