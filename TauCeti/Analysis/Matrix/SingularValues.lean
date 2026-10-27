@@ -11,7 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basi
 /-!
 # Singular values and two-sided unitary matrix orbits
 
-Square matrices lie in the same two-sided unitary orbit exactly when their singular values
+Rectangular matrices lie in the same two-sided unitary orbit exactly when their singular values
 agree. The singular values are Mathlib's `LinearMap.singularValues`, applied through
 `Matrix.toEuclideanLin`; no second enumeration is introduced.
 
@@ -31,10 +31,11 @@ namespace Matrix
 variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+variable {κ : Type*} [Fintype κ] [DecidableEq κ]
 
 /-- Left multiplication by a unitary matrix preserves every singular value. -/
 theorem singularValues_toEuclideanLin_unitary_mul
-    (A : Matrix ι ι 𝕜) (U : unitaryGroup ι 𝕜) :
+    (A : Matrix ι κ 𝕜) (U : unitaryGroup ι 𝕜) :
     (toEuclideanLin ((U : Matrix ι ι 𝕜) * A)).singularValues =
       (toEuclideanLin A).singularValues := by
   apply LinearMap.singularValues_eq_of_norm_apply_eq
@@ -44,11 +45,13 @@ theorem singularValues_toEuclideanLin_unitary_mul
     ← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe] using
     ContinuousLinearMap.norm_map_of_mem_unitary hU (toEuclideanLin A x)
 
+omit [DecidableEq ι] in
 /-- Right multiplication by a unitary matrix preserves every singular value. -/
 theorem singularValues_toEuclideanLin_mul_unitary
-    (A : Matrix ι ι 𝕜) (U : unitaryGroup ι 𝕜) :
-    (toEuclideanLin (A * (U : Matrix ι ι 𝕜))).singularValues =
+    (A : Matrix ι κ 𝕜) (U : unitaryGroup κ 𝕜) :
+    (toEuclideanLin (A * (U : Matrix κ κ 𝕜))).singularValues =
       (toEuclideanLin A).singularValues := by
+  classical
   rw [← LinearMap.singularValues_adjoint, ← toEuclideanLin_conjTranspose_eq_adjoint,
     conjTranspose_mul]
   exact (singularValues_toEuclideanLin_unitary_mul Aᴴ (star U)).trans
@@ -91,12 +94,12 @@ theorem singularValues_toEuclideanLin_of_unitary_mul_diagonal_mul_unitary
       (fun j ↦ (d j : 𝕜)) (Equiv.refl _)
       (by simpa only [Equiv.refl_apply, hnorm] using hanti) i
 
-/-- Singular values classify two-sided unitary orbits of square matrices. This is the matrix
+/-- Singular values classify two-sided unitary orbits of rectangular matrices. This is the matrix
 form of `LinearMap.mem_twoSidedUnitaryOrbit_iff_singularValues_eq`. -/
 theorem exists_unitary_mul_mul_unitary_iff_singularValues_eq
-    (A B : Matrix ι ι 𝕜) :
-    (∃ U V : unitaryGroup ι 𝕜,
-      B = (U : Matrix ι ι 𝕜) * A * V) ↔
+    (A B : Matrix ι κ 𝕜) :
+    (∃ (U : unitaryGroup ι 𝕜) (V : unitaryGroup κ 𝕜),
+      B = (U : Matrix ι ι 𝕜) * A * (V : Matrix κ κ 𝕜)) ↔
       (toEuclideanLin A).singularValues = (toEuclideanLin B).singularValues := by
   constructor
   · rintro ⟨U, V, rfl⟩
@@ -106,18 +109,24 @@ theorem exists_unitary_mul_mul_unitary_iff_singularValues_eq
     obtain ⟨U, V, hUV⟩ := LinearMap.mem_twoSidedUnitaryOrbit.mp
       ((LinearMap.mem_twoSidedUnitaryOrbit_iff_singularValues_eq
         (C := toEuclideanLin A) (X := toEuclideanLin B)).mpr h.symm)
-    let e := EuclideanSpace.basisFun ι 𝕜
-    have hc (W : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :
-        (W : EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) =
-          W.toLinearEquiv.toLinearMap := by
+    let eι := EuclideanSpace.basisFun ι 𝕜
+    let eκ := EuclideanSpace.basisFun κ 𝕜
+    -- Compare the continuous-linear and linear-equivalence coercions before taking matrices.
+    have hcU : (U : EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) =
+        U.toLinearEquiv.toLinearMap := by
       ext x
       rfl
-    rw [hc U, hc V] at hUV
-    refine ⟨⟨U.toMatrix e.toBasis e.toBasis, U.toMatrix_mem_unitaryGroup e e⟩,
-      ⟨V.toMatrix e.toBasis e.toBasis, V.toMatrix_mem_unitaryGroup e e⟩, ?_⟩
-    simpa only [e, toEuclideanLin_eq_toLin_orthonormal,
-      LinearMap.toMatrix_comp e.toBasis e.toBasis e.toBasis, LinearMap.toMatrix_toLin,
-      mul_assoc] using
-      congrArg (LinearMap.toMatrix e.toBasis e.toBasis) hUV.symm
+    have hcV : (V : EuclideanSpace 𝕜 κ →ₗ[𝕜] EuclideanSpace 𝕜 κ) =
+        V.toLinearEquiv.toLinearMap := by
+      ext x
+      rfl
+    rw [hcU, hcV] at hUV
+    refine ⟨⟨U.toMatrix eι.toBasis eι.toBasis, U.toMatrix_mem_unitaryGroup eι eι⟩,
+      ⟨V.toMatrix eκ.toBasis eκ.toBasis, V.toMatrix_mem_unitaryGroup eκ eκ⟩, ?_⟩
+    simpa only [eι, eκ, toEuclideanLin_eq_toLin_orthonormal,
+      LinearMap.toMatrix_comp eκ.toBasis eκ.toBasis eι.toBasis,
+      LinearMap.toMatrix_comp eκ.toBasis eι.toBasis eι.toBasis, LinearMap.toMatrix_toLin,
+      Matrix.mul_assoc] using
+      congrArg (LinearMap.toMatrix eκ.toBasis eι.toBasis) hUV.symm
 
 end Matrix
