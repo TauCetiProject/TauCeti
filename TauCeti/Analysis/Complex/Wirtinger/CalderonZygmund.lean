@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Analysis.Fourier.MihlinHormander
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
 /-!
@@ -108,18 +109,11 @@ private theorem schwartzDbar_apply [NormedSpace ℂ F] (u : 𝓢(ℂ, F)) (z : �
     schwartzDbar u z = conjWirtingerDeriv (⇑u) z 1 := by
   simp [schwartzDbar, conjWirtingerDeriv_apply, SchwartzMap.lineDerivOp_apply_eq_fderiv]
 
-/-- On the Fourier side, `∂_v` is multiplication by `2πi ⟪ξ, v⟫`. -/
-private theorem fourier_lineDerivOp_apply [NormedSpace ℂ F] (u : 𝓢(ℂ, F)) (v ξ : ℂ) :
-    𝓕 (∂_{v} u) ξ = ((2 * π * I) * (inner ℝ ξ v : ℝ)) • 𝓕 u ξ := by
-  have hv : (inner ℝ · v : ℂ → ℝ).HasTemperateGrowth := by fun_prop
-  rw [SchwartzMap.fourier_lineDerivOp_eq, smul_apply, SchwartzMap.smulLeftCLM_apply_apply hv,
-    ← Complex.coe_smul, smul_smul]
-
 /-- On the Fourier side, `\bar∂` is multiplication by `πi ξ`. -/
 private theorem fourier_schwartzDbar_apply [NormedSpace ℂ F] (u : 𝓢(ℂ, F)) (ξ : ℂ) :
     𝓕 (schwartzDbar u) ξ = (π * I * ξ) • 𝓕 u ξ := by
   simp only [schwartzDbar, FourierTransform.fourier_smul, FourierTransform.fourier_add,
-    smul_apply, add_apply, fourier_lineDerivOp_apply, smul_smul, ← add_smul]
+    smul_apply, add_apply, SchwartzMap.fourier_lineDerivOp_apply, smul_smul, ← add_smul]
   congr 1
   conv_rhs => rw [← re_add_im ξ]
   simp only [Complex.inner, conj_re, conj_im, mul_re, one_re, one_im, I_re, I_im]
@@ -129,7 +123,7 @@ private theorem fourier_schwartzDbar_apply [NormedSpace ℂ F] (u : 𝓢(ℂ, F)
 /-- On the Fourier side, `∂_v u` is the symbol `2 ⟪ξ, v⟫ / ξ` times `\bar∂u`. -/
 private theorem fourier_lineDerivOp_apply_eq_dbarSymbol_smul [NormedSpace ℂ F] (u : 𝓢(ℂ, F))
     (v ξ : ℂ) : 𝓕 (∂_{v} u) ξ = dbarSymbol v ξ • 𝓕 (schwartzDbar u) ξ := by
-  rw [fourier_lineDerivOp_apply, fourier_schwartzDbar_apply, smul_smul]
+  rw [SchwartzMap.fourier_lineDerivOp_apply, fourier_schwartzDbar_apply, smul_smul]
   congr 1
   linear_combination (-(π : ℂ) * I) * dbarSymbol_mul v ξ
 
