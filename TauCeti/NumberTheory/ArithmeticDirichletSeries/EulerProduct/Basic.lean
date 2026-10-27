@@ -118,9 +118,7 @@ theorem coeff_localPowerSeries (f : IdealArithmeticFunction K)
 theorem constantCoeff_localPowerSeries (f : IdealArithmeticFunction K)
     (P : HeightOneSpectrum (𝓞 K)) :
     (localPowerSeries f P).constantCoeff = f 1 := by
-  rw [← PowerSeries.coeff_zero_eq_constantCoeff]
-  rw [coeff_localPowerSeries]
-  exact congrArg f (Subtype.ext (by simp))
+  rw [← PowerSeries.coeff_zero_eq_constantCoeff, coeff_localPowerSeries, P.primeIdealPow_zero]
 
 /-- Conjugating ideal coefficients conjugates the coefficients of every local power series. -/
 @[simp]

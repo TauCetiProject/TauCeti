@@ -214,6 +214,11 @@ theorem coe_primeIdealPow (P : HeightOneSpectrum R) (e : ℕ) :
     (primeIdealPow P e : Ideal R) = P.asIdeal ^ e :=
   (rfl)
 
+/-- The zeroth power of a height-one prime is the unit ideal in the nonzero-ideal carrier. -/
+@[simp]
+theorem primeIdealPow_zero (P : HeightOneSpectrum R) : P.primeIdealPow 0 = 1 :=
+  Subtype.ext (by simp)
+
 /-- Distinct primes give distinct first powers. -/
 theorem primeIdealPow_one_injective :
     Function.Injective fun P : HeightOneSpectrum R ↦ primeIdealPow P 1 := fun P Q h ↦
