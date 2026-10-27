@@ -12,9 +12,9 @@ public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 -- Non-public: `Nat.card_zpowers` turns the order of `ε` into the order of the subgroup it
 -- generates.
 import Mathlib.Data.ZMod.QuotientGroup
--- Non-public: `IsPrimitiveRoot.neg_one` and `rootsOfUnity.isCyclic` supply the square roots of
--- unity of a field in which `2` is invertible.
-import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+-- Non-public: `IsPrimitiveRoot.neg_one_of_two_ne_zero` and `rootsOfUnity.isCyclic` supply the
+-- square roots of unity of a field in which `2` is invertible.
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # The characters of the group of signed monomials on which `ε` acts trivially
@@ -49,7 +49,7 @@ complementary sector, where `ε` acts by `-1`, is the one
 * `CliffordAlgebra.mem_monomialGroupSign_iff`: the sign subgroup is `{1, ε}`.
 * `CliffordAlgebra.natCard_monomialGroupSign`: it has order two.
 * `CliffordAlgebra.commutator_monomialGroup_le_monomialGroupSign`,
-  `CliffordAlgebra.mul_comm_quotient_monomialGroupSign` and
+  `CliffordAlgebra.isMulCommutative_quotient_monomialGroupSign` and
   `CliffordAlgebra.exponent_quotient_monomialGroupSign_dvd_two`: the quotient is commutative of
   exponent dividing two.
 * `CliffordAlgebra.natCard_quotient_monomialGroupSign`: the quotient has `2 ^ n` elements.
@@ -102,13 +102,6 @@ theorem monomialGroupEpsilon_mul_self :
     monomialGroupEpsilon Q v * monomialGroupEpsilon Q v = 1 :=
   Subtype.ext (by simp)
 
-/-- The element `ε` is central in the group of signed monomials; this is
-`CliffordAlgebra.neg_one_mem_center_monomialGroup` under the name `ε`, in the form the normality of
-the sign subgroup rewrites with. -/
-theorem monomialGroupEpsilon_mem_center :
-    monomialGroupEpsilon Q v ∈ Subgroup.center (monomialGroup Q v) :=
-  neg_one_mem_center_monomialGroup v
-
 theorem monomialGroupEpsilon_mem_monomialGroupSign :
     monomialGroupEpsilon Q v ∈ monomialGroupSign Q v :=
   Subgroup.mem_zpowers _
@@ -129,19 +122,13 @@ theorem mem_monomialGroupSign_iff {u : monomialGroup Q v} :
     · exact one_mem _
     · exact monomialGroupEpsilon_mem_monomialGroupSign v
 
-instance monomialGroupSign_normal : (monomialGroupSign Q v).Normal := by
-  refine ⟨fun u hu g ↦ ?_⟩
-  rcases (mem_monomialGroupSign_iff v).mp hu with rfl | rfl
-  · simp
-  · rw [Subgroup.mem_center_iff.mp (monomialGroupEpsilon_mem_center v) g, mul_assoc,
-      mul_inv_cancel, mul_one]
-    exact monomialGroupEpsilon_mem_monomialGroupSign v
+instance monomialGroupSign_normal : (monomialGroupSign Q v).Normal :=
+  Subgroup.normal_of_le_center (Subgroup.zpowers_le.mpr (neg_one_mem_center_monomialGroup v))
 
 /-! ### The quotient by the sign subgroup -/
 
 /-- **The commutator of two signed monomials lies in the sign subgroup.** Signed monomials of
-pairwise orthogonal generators commute or anticommute, so their commutator is `1` or `ε`. This is
-the commutator in the shape `QuotientGroup.eq` consumes;
+pairwise orthogonal generators commute or anticommute, so their commutator is `1` or `ε`;
 `CliffordAlgebra.commutator_monomialGroup_le_monomialGroupSign` is the subgroup form. -/
 theorem inv_mul_mul_comm_mem_monomialGroupSign
     (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j)) (c u : monomialGroup Q v) :
@@ -157,14 +144,6 @@ theorem inv_mul_mul_comm_mem_monomialGroupSign
     push_cast [hcu]
     simp
 
-/-- **The quotient of the group of signed monomials by its sign subgroup is commutative.** -/
-theorem mul_comm_quotient_monomialGroupSign (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
-    (x y : monomialGroup Q v ⧸ monomialGroupSign Q v) : x * y = y * x := by
-  induction x using QuotientGroup.induction_on with | H c =>
-  induction y using QuotientGroup.induction_on with | H u =>
-  rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, QuotientGroup.eq]
-  exact inv_mul_mul_comm_mem_monomialGroupSign v hv c u
-
 /-- **The commutator subgroup of the group of signed monomials lies in the sign subgroup**, which
 is the subgroup form of `CliffordAlgebra.inv_mul_mul_comm_mem_monomialGroupSign`. -/
 theorem commutator_monomialGroup_le_monomialGroupSign
@@ -176,10 +155,13 @@ theorem commutator_monomialGroup_le_monomialGroupSign
   rw [commutatorElement_def, hcomm]
   exact inv_mul_mul_comm_mem_monomialGroupSign v hv u⁻¹ c⁻¹
 
+/-- **The quotient of the group of signed monomials by its sign subgroup is commutative**, because
+the commutator subgroup lies in the sign subgroup. -/
 theorem isMulCommutative_quotient_monomialGroupSign
     (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j)) :
     IsMulCommutative (monomialGroup Q v ⧸ monomialGroupSign Q v) :=
-  .of_comm (mul_comm_quotient_monomialGroupSign v hv)
+  Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
+    (commutator_monomialGroup_le_monomialGroupSign v hv)
 
 /-! ### Characters and irreducible representations on which `ε` acts trivially -/
 
@@ -314,14 +296,6 @@ theorem natCard_quotient_monomialGroupSign [Fintype I] [Nontrivial R]
 
 /-! ### The characters of the quotient -/
 
-/-- A field in which `2` is invertible has enough square roots of unity: `-1` is a primitive one,
-and the square roots of unity of a domain form a cyclic group. -/
-private theorem hasEnoughRootsOfUnity_two (F : Type*) [Field F] (hF : (2 : F) ≠ 0) :
-    HasEnoughRootsOfUnity F 2 where
-  prim := ⟨-1, IsPrimitiveRoot.neg_one (ringChar F) fun hchar ↦
-    hF (by simpa using (ringChar.spec F 2).mpr (by simp [hchar]))⟩
-  cyc := inferInstance
-
 /-- **The quotient by the sign subgroup has exactly `2 ^ n` characters** with values in a field in
 which `2` is invertible: it is a finite commutative group of exponent dividing two with `2 ^ n`
 elements, and such a group is isomorphic to its character group. -/
@@ -332,13 +306,15 @@ theorem natCard_monoidHom_quotient_monomialGroupSign [Fintype I] [Nontrivial R]
   have hortho : ∀ i j, i ≠ j → Q.IsOrtho (b i) (b j) := fun _ _ hij ↦
     QuadraticMap.associated_isOrtho.mp (hb hij)
   have : Finite (monomialGroup Q b) := finite_monomialGroup hb hQ
-  have : HasEnoughRootsOfUnity F 2 := hasEnoughRootsOfUnity_two F hF
+  have : HasEnoughRootsOfUnity F 2 :=
+    { prim := ⟨-1, IsPrimitiveRoot.neg_one_of_two_ne_zero hF⟩, cyc := inferInstance }
   have : HasEnoughRootsOfUnity F
       (Monoid.exponent (monomialGroup Q b ⧸ monomialGroupSign Q b)) :=
     HasEnoughRootsOfUnity.of_dvd F (exponent_quotient_monomialGroupSign_dvd_two hb hQ)
   let hG : Group (monomialGroup Q b ⧸ monomialGroupSign Q b) := inferInstance
   let : CommGroup (monomialGroup Q b ⧸ monomialGroupSign Q b) :=
-    { hG with mul_comm := mul_comm_quotient_monomialGroupSign b hortho }
+    { hG with
+      mul_comm := isMulCommutative_iff.mp (isMulCommutative_quotient_monomialGroupSign b hortho) }
   rw [CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity _ F,
     natCard_quotient_monomialGroupSign hb hQ]
 
