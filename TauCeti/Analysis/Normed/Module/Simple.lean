@@ -51,17 +51,9 @@ The target need not be complete, normed or simple. -/
 theorem continuous_of_isSimpleModule (f : E →ₗ[A] F) : Continuous f := by
   have := IsSimpleModule.nontrivial A E
   obtain ⟨x, hx⟩ := exists_ne (0 : E)
-  have horbit : ⇑((LinearMap.toSpanSingleton A E x).restrictScalars 𝕜) =
-      fun a : A ↦ a • x := by
-    ext a
-    rw [LinearMap.restrictScalars_apply, LinearMap.toSpanSingleton_apply]
-  let q : A →L[𝕜] E :=
-    { (LinearMap.toSpanSingleton A E x).restrictScalars 𝕜 with
-      cont := by
-        rw [LinearMap.toFun_eq_coe, horbit]
-        exact continuous_id.smul continuous_const }
+  let q : A →L[𝕜] E := (ContinuousLinearMap.id 𝕜 A).smulRight x
   have hq (a : A) : q a = a • x := by
-    simp [q, LinearMap.toSpanSingleton_apply]
+    simp [q]
   apply (q.isQuotientMap (IsSimpleModule.toSpanSingleton_surjective A hx)).continuous_iff.mpr
   have h : f ∘ q = fun a : A ↦ a • f x := by
     funext a
