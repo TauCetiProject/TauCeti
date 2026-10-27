@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.Topology.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
+import TauCeti.Algebra.Group.Action.Pow
 
 /-!
 # Sections of quasi-coherent modules over basic opens
@@ -292,24 +293,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_map [M.IsQuas
     basicOpenRestrict_apply] at hy
   exact ⟨n, y, hy⟩
 
-omit M in
-/-- Restriction along two inclusions of opens is restriction along the composite inclusion. This
-is `TopCat.Presheaf.restrict_restrict` without the restriction notation, so that it rewrites the
-restriction maps of both `𝒪_X` and `M`. -/
-private lemma map_homOfLE_map_homOfLE {C : Type*} [Category C] {FC : C → C → Type*}
-    {CC : C → Type*} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
-    {F : TopCat.Presheaf C X} {A B D : X.Opens} (h₁ : A ≤ B) (h₂ : B ≤ D)
-    (x : ToType (F.obj (op D))) :
-    F.map (homOfLE h₁).op (F.map (homOfLE h₂).op x) = F.map (homOfLE (h₁.trans h₂)).op x :=
-  TopCat.Presheaf.restrict_restrict h₁ h₂ x
-
-omit M in
-/-- A power of `a` killing `x` is still killed after raising the exponent. -/
-private lemma pow_smul_eq_zero_of_le {R N : Type*} [Monoid R] [AddMonoid N]
-    [DistribMulAction R N] {a : R} {x : N} {m n : ℕ} (hmn : m ≤ n) (h : a ^ m • x = 0) :
-    a ^ n • x = 0 := by
-  rw [← tsub_add_cancel_of_le hmn, pow_add, mul_smul, h, smul_zero]
-
 open Scheme.Modules in
 /-- **Sections vanishing on a basic open are killed by a power of the function.** For a
 quasi-coherent `𝒪_X`-module `M`, a quasi-compact open `U` and `f ∈ Γ(X, U)`, a section of `M`
@@ -330,7 +313,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_zero_of_isCom
       (f := M.basicOpenRestrict _) (x₁ := M.presheaf.map (homOfLE (hVU i)).op x) (x₂ := 0) (by
         have hle : X.basicOpen (X.presheaf.map (homOfLE (hVU i)).op f) ≤ X.basicOpen f :=
           X.basicOpen_restrict (homOfLE (hVU i)) f
-        simpa only [basicOpenRestrict_apply, map_homOfLE_map_homOfLE, map_zero] using
+        simpa only [basicOpenRestrict_apply, ← Functor.map_comp_apply, ← op_comp, homOfLE_comp,
+          map_zero] using
           congrArg (M.presheaf.map (homOfLE hle).op) hx)
     exact ⟨n, by simpa [Submonoid.smul_def] using hn⟩
   choose n hn using H
@@ -367,7 +351,8 @@ private lemma exists_pow_smul_eq_of_isCompact_inf [M.IsQuasicoherent] {ι : Type
     refine M.exists_pow_smul_eq_zero_of_isCompact (hV p.1 p.2) _ _ ?_
     have hle : X.basicOpen (X.presheaf.map (homOfLE (hWU p)).op f) ≤
         V p.1 ⊓ V p.2 ⊓ X.basicOpen f := (X.basicOpen_res _ _).le
-    simpa only [basicOpenRestrict_apply, map_sub, map_homOfLE_map_homOfLE, sub_eq_zero] using
+    simpa only [basicOpenRestrict_apply, map_sub, ← Functor.map_comp_apply, ← op_comp, homOfLE_comp,
+      sub_eq_zero] using
       congrArg (M.presheaf.map (homOfLE hle).op) (hx p.1 p.2)
   choose m hm using H
   -- After multiplication by the largest of these powers, the sections are compatible.
@@ -379,7 +364,7 @@ private lemma exists_pow_smul_eq_of_isCompact_inf [M.IsQuasicoherent] {ι : Type
     rw [smul_sub, sub_eq_zero] at h
     -- The inclusions of `V i ⊓ V j` in `V i` and `V j` are `homOfLE`.
     change M.presheaf.map (homOfLE inf_le_left).op _ = M.presheaf.map (homOfLE inf_le_right).op _
-    simpa only [z, M.map_smul, map_pow, map_homOfLE_map_homOfLE] using h
+    simpa only [z, M.map_smul, map_pow, ← Functor.map_comp_apply, ← op_comp, homOfLE_comp] using h
   obtain ⟨g, hg, -⟩ := TopCat.Sheaf.existsUnique_gluing'
     (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X) V U (fun i ↦ homOfLE (hVU i)) hUV z
     hc
@@ -401,14 +386,14 @@ private theorem exists_pow_smul_eq_basicOpenRestrict [M.IsQuasicoherent]
   have H (i : s) := M.exists_pow_smul_eq_map i.1.2 (X.presheaf.map (homOfLE (hVU i)).op f)
     (X.basicOpen_res _ _) (hDV i) (M.presheaf.map (homOfLE (hDf i)).op y)
   choose n x hx using H
-  simp only [map_homOfLE_map_homOfLE] at hx
+  simp only [← Functor.map_comp_apply, ← op_comp, homOfLE_comp] at hx
   -- After multiplication by powers of `f`, the `x i` extend the same multiple `f ^ N • y`.
   let N := Finset.univ.sup n
   let x' (i : s) : Γ(M, i.1) := X.presheaf.map (homOfLE (hVU i)).op f ^ (N - n i) • x i
   have hx' (i : s) : M.presheaf.map (homOfLE (hDV i)).op (x' i) =
       X.presheaf.map (homOfLE ((hDV i).trans (hVU i))).op f ^ N •
         M.presheaf.map (homOfLE (hDf i)).op y := by
-    simp only [x', M.map_smul, map_pow, map_homOfLE_map_homOfLE]
+    simp only [x', M.map_smul, map_pow, ← Functor.map_comp_apply, ← op_comp, homOfLE_comp]
     rw [← hx i, smul_smul, pow_sub_mul_pow _ (Finset.le_sup (f := n) (Finset.mem_univ i))]
   -- Since `U` is quasi-separated, the `x' i` glue after multiplication by a further power.
   obtain ⟨K, g, hg⟩ := exists_pow_smul_eq_of_isCompact_inf M (fun i : s ↦ (i.1 : X.Opens)) hVU
@@ -418,8 +403,11 @@ private theorem exists_pow_smul_eq_basicOpenRestrict [M.IsQuasicoherent]
       inf_le_inf_right _ inf_le_left
     have hj : (i.1 : X.Opens) ⊓ j.1 ⊓ X.basicOpen f ≤ (j.1 : X.Opens) ⊓ X.basicOpen f :=
       inf_le_inf_right _ inf_le_right
-    rw [← map_homOfLE_map_homOfLE hi (hDV i), ← map_homOfLE_map_homOfLE hj (hDV j), hx', hx']
-    simp only [M.map_smul, map_pow, map_homOfLE_map_homOfLE]
+    -- Restrict `hx' i` and `hx' j` further to `V i ⊓ V j ⊓ X.basicOpen f`.
+    have hi' := congrArg (M.presheaf.map (homOfLE hi).op) (hx' i)
+    have hj' := congrArg (M.presheaf.map (homOfLE hj).op) (hx' j)
+    simp only [M.map_smul, map_pow, ← Functor.map_comp_apply, ← op_comp, homOfLE_comp] at hi' hj'
+    rw [hi', hj']
   -- The glued section restricts to `f ^ (N + K) • y` on each `V i ⊓ X.basicOpen f`.
   refine ⟨N + K, g, TopCat.Sheaf.eq_of_locally_eq'
     (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
@@ -428,11 +416,12 @@ private theorem exists_pow_smul_eq_basicOpenRestrict [M.IsQuasicoherent]
     fun i ↦ ?_⟩
   -- The restriction maps of the sheaf `⟨M.presheaf, M.isSheaf⟩` are those of `M`.
   change M.presheaf.map _ _ = M.presheaf.map _ _
-  rw [basicOpenRestrict_apply, map_homOfLE_map_homOfLE,
-    ← map_homOfLE_map_homOfLE (hDV i) (hVU i), hg, M.map_smul, hx', smul_smul,
-    ← IsScalarTower.algebraMap_smul Γ(X, X.basicOpen f), M.map_smul]
-  simp only [map_pow, map_homOfLE_map_homOfLE, ← pow_add, add_comm K]
-  rw [RingHom.algebraMap_toAlgebra, map_homOfLE_map_homOfLE]
+  -- Restrict the gluing identity `hg i` further to `V i ⊓ X.basicOpen f`.
+  have hg' := congrArg (M.presheaf.map (homOfLE (hDV i)).op) (hg i)
+  rw [M.map_smul, hx', smul_smul] at hg'
+  rw [basicOpenRestrict_apply, ← IsScalarTower.algebraMap_smul Γ(X, X.basicOpen f), M.map_smul]
+  simpa only [map_pow, ← Functor.map_comp_apply, ← op_comp, homOfLE_comp, ← pow_add, add_comm K,
+    RingHom.algebraMap_toAlgebra] using hg'.symm
 
 open Scheme.Modules in
 /-- **The qcqs lemma for quasi-coherent modules.** The sections of a quasi-coherent
