@@ -39,7 +39,8 @@ inclusion of each of its degrees into `K` and how it meets the differentials.
 * `ComplexShape.boundaryLE_embeddingDownNat_iff`: the boundary of `embeddingDownNat` is `0`.
 * `CochainComplex.truncLE'ToX`: the inclusion of degree `n` of `τ_{≥ 0} K` into `K^{-n}`, with
   `CochainComplex.truncLE'ToX_d_succ` and `CochainComplex.truncLE'ToX_zero_d` for the
-  differentials.
+  differentials, and `CochainComplex.truncLE'ToX_zero_comp_XIsoOfEq_hom`: in degree `0` it is the
+  inclusion of the cycles.
 -/
 public section
 
@@ -219,5 +220,15 @@ lemma truncLE'Map_f_truncLE'ToX {L : CochainComplex C ℤ} [∀ i, L.HasHomology
   have := congr_arg (fun g => g.f n) (truncLE'ToRestriction_naturality f embeddingDownNat)
   simp only [comp_f, restrictionMap_f' f embeddingDownNat (embeddingDownNat_f n)] at this
   simp [truncLE'ToX, reassoc_of% this]
+
+/-- In degree `0`, the inclusion of the good truncation into `K⁰` is the inclusion of the cycles
+`Z⁰ K`, up to the identification of `(τ_{≥ 0} K)₀` with the cycles. -/
+lemma truncLE'ToX_zero_comp_XIsoOfEq_hom (h : -((0 : ℕ) : ℤ) = 0) :
+    K.truncLE'ToX 0 ≫ (K.XIsoOfEq h).hom =
+      (K.truncLE'XIsoCycles embeddingDownNat (by simp)
+        ((boundaryLE_embeddingDownNat_iff 0).2 rfl)).hom ≫ K.iCycles 0 := by
+  rw [truncLE'ToX_def, K.truncLE'ToRestriction_f_eq_iso_hom_iCycles_iso_inv embeddingDownNat
+    (show embeddingDownNat.f 0 = 0 by simp) ((boundaryLE_embeddingDownNat_iff 0).2 rfl)]
+  simp [restrictionXIso]
 
 end CochainComplex

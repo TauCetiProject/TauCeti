@@ -46,6 +46,12 @@ The comultiplication of the alternating face map complex therefore passes to the
 * `CategoryTheory.Idempotents.DoldKan.laxMonoidalΓ`: the induced lax monoidal structure on the
   Dold–Kan functor `Γ`, with unit `CategoryTheory.Idempotents.DoldKan.Γ_ε` and tensorator
   `CategoryTheory.Idempotents.DoldKan.Γ_μ`.
+* `CategoryTheory.Idempotents.DoldKan.ΓObjZeroIso`: the vertices `(Γ K)₀` of `Γ K` are the
+  degree-zero term `K₀`, naturally in `K`.  Under this identification the unit and the tensorator
+  of `Γ` are the identifications of `𝟙_ C` and of `K₀ ⊗ L₀` with the degree-zero terms of the unit
+  complex and of `K ⊗ L` (`CategoryTheory.Idempotents.DoldKan.Γ_ε_app_zero_comp_ΓObjZeroIso_hom`
+  and `CategoryTheory.Idempotents.DoldKan.Γ_μ_app_zero_comp_ΓObjZeroIso_hom`), since the
+  Alexander–Whitney map is the identity in degree zero.
 
 ## References
 
@@ -132,6 +138,13 @@ lemma PInfty_comp_η_alternatingFaceMapComplex :
   ext (_ | n) : 1
   · rw [HomologicalComplex.comp_f, PInfty_f_0, Category.id_comp]
   · exact (HomologicalComplex.isZero_single_obj_X _ _ _ (n + 1) (by omega)).eq_of_tgt _ _
+
+omit [MonoidalCategory C] [MonoidalPreadditive C] [HasFiniteCoproducts C] in
+/-- In degree zero, the projection `PInfty` onto normalized chains is the identity, so it does
+not change the degree-zero component of a morphism out of the alternating face map complex. -/
+lemma PInfty_comp_f_zero {X : SimplicialObject C} {Y : ChainComplex C ℕ}
+    (g : (alternatingFaceMapComplex C).obj X ⟶ Y) : (PInfty ≫ g).f 0 = g.f 0 := by
+  rw [HomologicalComplex.comp_f, PInfty_f_0, Category.id_comp]
 
 end CategoryTheory.SimplicialObject
 
@@ -336,5 +349,121 @@ lemma Γ_μ (K L : ChainComplex C ℕ) :
     (equivalence.toAdjunction.homEquiv_unit _ _ _)
 
 end Monoidal
+
+section Vertices
+
+/-- The counit `N (Γ K) ⟶ K` of the Dold–Kan equivalence, with its source written as
+`N.obj (Γ.obj K)`, which is `(equivalence.inverse ⋙ equivalence.functor).obj K` only after
+unfolding `equivalence`. -/
+private def counitHom (K : ChainComplex C ℕ) : N.obj (Γ.obj K) ⟶ K :=
+  equivalence.counit.app K
+
+private instance (K : ChainComplex C ℕ) : IsIso (counitHom K) :=
+  inferInstanceAs (IsIso (equivalence.counit.app K))
+
+/-- The unit `S ⟶ Γ (N S)` of the Dold–Kan equivalence, with its target written as
+`Γ.obj (N.obj S)`. -/
+private def unitHom (S : SimplicialObject C) : S ⟶ Γ.obj (N.obj S) :=
+  equivalence.unit.app S
+
+@[reassoc]
+private lemma N_map_Γ_map_comp_counitHom {K L : ChainComplex C ℕ} (f : K ⟶ L) :
+    N.map (Γ.map f) ≫ counitHom L = counitHom K ≫ f :=
+  equivalence.counit.naturality f
+
+@[reassoc]
+private lemma N_map_unitHom_comp_counitHom (S : SimplicialObject C) :
+    N.map (unitHom S) ≫ counitHom (N.obj S) = 𝟙 _ :=
+  equivalence.functor_unit_comp S
+
+/-- The vertices of the simplicial object `Γ K` are the degree-zero term of the chain complex
+`K`: the projection onto the normalized chains of `Γ K`, which in degree zero are all of
+`(Γ K)₀` since `PInfty` is the identity there, followed by the counit `N (Γ K) ≅ K` of the
+Dold–Kan equivalence. -/
+def ΓObjZeroIso (K : ChainComplex C ℕ) : (Γ.obj K) _⦋0⦌ ≅ K.X 0 where
+  hom := (PInftyToN.app (Γ.obj K)).f 0 ≫ (counitHom K).f 0
+  inv := (inv (counitHom K)).f 0 ≫ (inclusionN.app (Γ.obj K)).f 0
+  hom_inv_id := by
+    rw [Category.assoc, ← HomologicalComplex.comp_f_assoc (counitHom K), IsIso.hom_inv_id]
+    -- the degree-zero term of the alternating face map complex of `Γ K` is `(Γ K)₀`
+    simp [← HomologicalComplex.comp_f, PInfty_f_0]
+  inv_hom_id := by
+    rw [Category.assoc, ← HomologicalComplex.comp_f_assoc (inclusionN.app _)]
+    simp
+
+private lemma ΓObjZeroIso_hom (K : ChainComplex C ℕ) :
+    (ΓObjZeroIso K).hom = (PInftyToN.app (Γ.obj K)).f 0 ≫ (counitHom K).f 0 :=
+  (rfl)
+
+/-- The identification of the vertices of `Γ K` with `K.X 0` is natural in `K`. -/
+@[reassoc]
+lemma Γ_map_app_zero_comp_ΓObjZeroIso_hom {K L : ChainComplex C ℕ} (f : K ⟶ L) :
+    (Γ.map f).app (op ⦋0⦌) ≫ (ΓObjZeroIso L).hom = (ΓObjZeroIso K).hom ≫ f.f 0 := by
+  have h := congrArg (fun g ↦ g.f 0) (PInftyToN.naturality (Γ.map f))
+  have h' := congrArg (fun g ↦ g.f 0) (N_map_Γ_map_comp_counitHom f)
+  simp only [HomologicalComplex.comp_f, alternatingFaceMapComplex_map_f] at h h'
+  simp only [ΓObjZeroIso_hom, Category.assoc, reassoc_of% h, h']
+
+/-- In degree zero, the transpose `S ⟶ Γ K` of a morphism `g : N S ⟶ K` along the Dold–Kan
+equivalence is `g` precomposed with the projection onto normalized chains. -/
+private lemma unit_app_comp_Γ_map_app_zero_comp_ΓObjZeroIso_hom (S : SimplicialObject C)
+    {K : ChainComplex C ℕ} (g : N.obj S ⟶ K) :
+    (unitHom S).app (op ⦋0⦌) ≫ (Γ.map g).app (op ⦋0⦌) ≫ (ΓObjZeroIso K).hom =
+      (PInftyToN.app S).f 0 ≫ g.f 0 := by
+  have h := congrArg (fun g ↦ g.f 0) (PInftyToN.naturality (unitHom S))
+  have h' := congrArg (fun g ↦ g.f 0) (N_map_unitHom_comp_counitHom S)
+  simp only [HomologicalComplex.comp_f, HomologicalComplex.id_f,
+    alternatingFaceMapComplex_map_f] at h h'
+  rw [Γ_map_app_zero_comp_ΓObjZeroIso_hom, ΓObjZeroIso_hom]
+  simp only [Category.assoc, reassoc_of% h, reassoc_of% h']
+
+attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
+
+variable [MonoidalCategory C] [MonoidalPreadditive C]
+
+/-- On vertices, the unit of the lax monoidal functor `Γ` is the identification of `𝟙_ C` with
+the degree-zero term of the unit chain complex. -/
+@[reassoc (attr := simp)]
+lemma Γ_ε_app_zero_comp_ΓObjZeroIso_hom :
+    (Functor.LaxMonoidal.ε (Γ : ChainComplex C ℕ ⥤ _)).app (op ⦋0⦌) ≫
+        (ΓObjZeroIso (𝟙_ (ChainComplex C ℕ))).hom =
+      (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 (𝟙_ C)).inv := by
+  have h : Functor.LaxMonoidal.ε (Γ : ChainComplex C ℕ ⥤ _) =
+      unitHom _ ≫ Γ.map (Functor.OplaxMonoidal.η N) :=
+    -- `unitHom` is the unit of the Dold–Kan equivalence with its target retyped
+    Γ_ε
+  rw [h, NatTrans.comp_app, Category.assoc, unit_app_comp_Γ_map_app_zero_comp_ΓObjZeroIso_hom,
+    N_η, ← HomologicalComplex.comp_f]
+  simp only [PInftyToN_app_comp_inclusionN_app_assoc,
+    SimplicialObject.PInfty_comp_η_alternatingFaceMapComplex,
+    SimplicialObject.alternatingFaceMapComplex_η_f_zero]
+
+/-- On vertices, the tensorator of the lax monoidal functor `Γ` is the inclusion of
+`K.X 0 ⊗ L.X 0` as the degree-zero term of `K ⊗ L`. -/
+@[reassoc (attr := simp)]
+lemma Γ_μ_app_zero_comp_ΓObjZeroIso_hom (K L : ChainComplex C ℕ) :
+    (Functor.LaxMonoidal.μ (Γ : ChainComplex C ℕ ⥤ _) K L).app (op ⦋0⦌) ≫
+        (ΓObjZeroIso (K ⊗ L)).hom =
+      ((ΓObjZeroIso K).hom ⊗ₘ (ΓObjZeroIso L).hom) ≫ ιTensorObj K L 0 0 0 rfl := by
+  have h : Functor.LaxMonoidal.μ (Γ : ChainComplex C ℕ ⥤ _) K L = unitHom (Γ.obj K ⊗ Γ.obj L) ≫
+      Γ.map (Functor.OplaxMonoidal.δ N (Γ.obj K) (Γ.obj L) ≫ (counitHom K ⊗ₘ counitHom L)) :=
+    -- `unitHom` and `counitHom` are the unit and counit of the Dold–Kan equivalence, retyped
+    Γ_μ K L
+  rw [h, NatTrans.comp_app, Category.assoc, unit_app_comp_Γ_map_app_zero_comp_ΓObjZeroIso_hom,
+    N_δ, ← HomologicalComplex.comp_f]
+  simp only [Category.assoc, PInftyToN_app_comp_inclusionN_app_assoc, tensorHom_comp_tensorHom]
+  -- `rw` rather than `simp`: `PInfty_comp_f_zero` must fire before `comp_f` splits the composite,
+  -- and the summands of the Alexander–Whitney map depend on the summation index
+  rw [SimplicialObject.PInfty_comp_f_zero, HomologicalComplex.comp_f,
+    SimplicialObject.alexanderWhitney_f, Fin.sum_univ_one]
+  simp only [Fin.val_zero, SimplexCategory.hom_zero_zero (SimplexCategory.subinterval _ _ _),
+    op_id, CategoryTheory.Functor.map_id, tensorHom_id, id_whiskerRight, Category.id_comp,
+    ΓObjZeroIso_hom]
+  -- The back index `0 - 0` of the Alexander–Whitney summand is `0` only by computation, so the
+  -- summand lemma is applied up to definitional unfolding.
+  exact ι_tensorHom (PInftyToN.app (Γ.obj K) ≫ counitHom K) (PInftyToN.app (Γ.obj L) ≫ counitHom L)
+    0 0 0 rfl
+
+end Vertices
 
 end CategoryTheory.Idempotents.DoldKan
