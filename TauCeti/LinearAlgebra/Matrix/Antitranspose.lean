@@ -86,7 +86,7 @@ theorem antitranspose_smul {β : Type*} [SMul β α] (c : β) (A : Matrix (Fin m
 /-- The antitranspose reverses products. -/
 theorem antitranspose_mul [AddCommMonoid α] [CommMagma α] (A B : Matrix (Fin m) (Fin m) α) :
     (A * B).antitranspose = B.antitranspose * A.antitranspose := by
-  change (A * B)ᵀ.submatrix Fin.rev Fin.rev = _
+  unfold antitranspose
   rw [transpose_mul]
   exact (submatrix_mul_equiv _ _ _ Fin.revPerm _).symm
 
