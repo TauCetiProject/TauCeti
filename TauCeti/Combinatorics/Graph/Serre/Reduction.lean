@@ -111,7 +111,7 @@ theorem Homotopic.reverse {a b : Γ.V} {p q : Γ.Path a b}
     simpa only [Quiver.Path.nil_comp] using hb.comp_right Γ p.reverse
 
 /-- Append one dart to a reduced path, removing its last dart when they backtrack. -/
-noncomputable def reduceSnoc {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c) :
+private noncomputable def reduceSnoc {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c) :
     Γ.Path a c := by
   classical
   cases p with
@@ -122,18 +122,18 @@ noncomputable def reduceSnoc {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b 
       exact q
     · exact (q.cons f).cons e
 
-@[simp] theorem reduceSnoc_nil {a c : Γ.V} (e : Quiver.Hom a c) :
+@[simp] private theorem reduceSnoc_nil {a c : Γ.V} (e : Quiver.Hom a c) :
     reduceSnoc Γ (Quiver.Path.nil : Γ.Path a a) e = e.toPath := by
   simp [reduceSnoc]
 
 /-- Appending a reverse dart cancels the last dart of any path. -/
-@[simp] theorem reduceSnoc_cons_reverse {a b c : Γ.V} (p : Γ.Path a b)
+@[simp] private theorem reduceSnoc_cons_reverse {a b c : Γ.V} (p : Γ.Path a b)
     (e : Quiver.Hom b c) :
     reduceSnoc Γ (p.cons e) (Quiver.reverse e) = p := by
   simp [reduceSnoc, Γ.reverse_val]
 
 /-- Appending a dart that does not reverse the last one retains both darts. -/
-theorem reduceSnoc_cons_of_ne {a b c d : Γ.V} (p : Γ.Path a b)
+private theorem reduceSnoc_cons_of_ne {a b c d : Γ.V} (p : Γ.Path a b)
     (e : Quiver.Hom b c) (f : Quiver.Hom c d) (h : f.1 ≠ Γ.rev e.1) :
     reduceSnoc Γ (p.cons e) f = (p.cons e).cons f := by
   simp [reduceSnoc, h]
@@ -146,11 +146,11 @@ noncomputable def reduce {a : Γ.V} : ∀ {b : Γ.V}, Γ.Path a b → Γ.Path a 
 theorem reduce_nil (a : Γ.V) :
     reduce Γ (Quiver.Path.nil : Γ.Path a a) = .nil := by simp [reduce]
 
-@[simp] theorem reduce_cons {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c) :
+private theorem reduce_cons {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c) :
     reduce Γ (p.cons e) = reduceSnoc Γ (reduce Γ p) e := by simp [reduce]
 
 /-- The output of one reduced append has no immediate backtrack. -/
-theorem isReduced_reduceSnoc {a b c : Γ.V} (p : Γ.Path a b)
+private theorem isReduced_reduceSnoc {a b c : Γ.V} (p : Γ.Path a b)
     (hp : IsReduced Γ p) (e : Quiver.Hom b c) :
     IsReduced Γ (reduceSnoc Γ p e) := by
   classical
@@ -167,14 +167,14 @@ theorem isReduced_reduceSnoc {a b c : Γ.V} (p : Γ.Path a b)
         (isReduced_cons_cons Γ q f e).mpr ⟨hp, h⟩
 
 /-- Every path reduces to a path with no immediate backtracking. -/
-@[simp↓] theorem isReduced_reduce {a b : Γ.V} (p : Γ.Path a b) :
+@[simp] theorem isReduced_reduce {a b : Γ.V} (p : Γ.Path a b) :
     IsReduced Γ (reduce Γ p) := by
   induction p with
   | nil => exact isReduced_nil Γ _
   | cons p e ih => exact isReduced_reduceSnoc Γ (reduce Γ p) ih e
 
 /-- A reduced path is fixed by appending a dart and reducing just that append. -/
-theorem reduceSnoc_eq_cons {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c)
+private theorem reduceSnoc_eq_cons {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c)
     (h : IsReduced Γ (p.cons e)) : reduceSnoc Γ p e = p.cons e := by
   classical
   cases p with
@@ -190,6 +190,13 @@ theorem reduce_cons_of_isReduced {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Ho
   rw [reduce_cons]
   exact reduceSnoc_eq_cons Γ (reduce Γ p) e h
 
+/-- A final dart cancels when the reduced prefix ends in its reverse. -/
+theorem reduce_cons_of_reduce_eq_cons_reverse {a b c : Γ.V} (p : Γ.Path a b)
+    (q : Γ.Path a c) (e : Quiver.Hom b c)
+    (h : reduce Γ p = q.cons (Quiver.reverse e)) : reduce Γ (p.cons e) = q := by
+  rw [reduce_cons, h]
+  simpa only [Quiver.reverse_reverse] using reduceSnoc_cons_reverse Γ q (Quiver.reverse e)
+
 /-- Reduction leaves an already reduced path unchanged. -/
 @[simp] theorem reduce_eq_self_of_isReduced {a b : Γ.V} (p : Γ.Path a b)
     (hp : IsReduced Γ p) : reduce Γ p = p := by
@@ -203,7 +210,7 @@ theorem reduce_cons_of_isReduced {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Ho
       rw [reduce_cons, ih hprev]
       exact reduceSnoc_eq_cons Γ (p.cons f) e hp
 
-@[simp↓] theorem reduce_toPath {a b : Γ.V} (e : Quiver.Hom a b) :
+theorem reduce_toPath {a b : Γ.V} (e : Quiver.Hom a b) :
     reduce Γ e.toPath = e.toPath :=
   reduce_eq_self_of_isReduced Γ _ (isReduced_toPath Γ e)
 
@@ -213,7 +220,7 @@ theorem reduce_idem {a b : Γ.V} (p : Γ.Path a b) :
   reduce_eq_self_of_isReduced Γ _ (isReduced_reduce Γ p)
 
 /-- Appending one dart is homotopic to its reduced append. -/
-theorem homotopic_reduceSnoc {a b c : Γ.V} (p : Γ.Path a b)
+private theorem homotopic_reduceSnoc {a b c : Γ.V} (p : Γ.Path a b)
     (e : Quiver.Hom b c) : Homotopic Γ (p.cons e) (reduceSnoc Γ p e) := by
   classical
   cases p with
@@ -229,7 +236,7 @@ theorem homotopic_reduceSnoc {a b c : Γ.V} (p : Γ.Path a b)
         (Homotopic.refl ((q.cons f).cons e) : Homotopic Γ _ _)
 
 /-- Cancelling a dart and its reverse after a reduced prefix returns that prefix. -/
-theorem reduceSnoc_reverse {a b c : Γ.V} (p : Γ.Path a b)
+private theorem reduceSnoc_reverse {a b c : Γ.V} (p : Γ.Path a b)
     (hp : IsReduced Γ p) (e : Quiver.Hom b c) :
     reduceSnoc Γ (reduceSnoc Γ p e) (Quiver.reverse e) = p := by
   classical
@@ -246,7 +253,7 @@ theorem reduceSnoc_reverse {a b c : Γ.V} (p : Γ.Path a b)
     · rw [reduceSnoc_cons_of_ne Γ q f e h, reduceSnoc_cons_reverse]
 
 /-- Inserting a backtrack does not change a path's reduced form. -/
-@[simp↓] theorem reduce_backtrack {a b c : Γ.V} (p : Γ.Path a b)
+@[simp] theorem reduce_backtrack {a b c : Γ.V} (p : Γ.Path a b)
     (e : Quiver.Hom b c) :
     reduce Γ ((p.cons e).cons (Quiver.reverse e)) = reduce Γ p := by
   rw [reduce_cons, reduce_cons]
@@ -262,6 +269,7 @@ theorem Homotopic.reduce_eq {a b : Γ.V} {p q : Γ.Path a b}
   | cons h e ih => simp only [reduce_cons, ih]
   | backtrack p e => exact reduce_backtrack Γ p e
 
+-- Run inverse cancellation before Mathlib expands the reverse of a path ending in a dart.
 /-- A path followed by its reverse reduces to the empty path. -/
 @[simp↓] theorem reduce_comp_reverse {a b : Γ.V} (p : Γ.Path a b) :
     reduce Γ (p.comp p.reverse) = Quiver.Path.nil := by
@@ -304,10 +312,21 @@ theorem isReduced_iff_reduce_eq {a b : Γ.V} (p : Γ.Path a b) :
     rw [← h]
     exact isReduced_reduce Γ p
 
+-- Absorb reductions before `reduce_reverse` normalizes only one side of an inverse pair.
+/-- Reducing the left path before concatenation leaves the final reduced path unchanged. -/
+@[simp↓] theorem reduce_comp_reduce_left {a b c : Γ.V} (p : Γ.Path a b)
+    (q : Γ.Path b c) : reduce Γ ((reduce Γ p).comp q) = reduce Γ (p.comp q) :=
+  (((homotopic_reduce Γ p).comp_right Γ q).reduce_eq Γ).symm
+
+/-- Reducing the right path before concatenation leaves the final reduced path unchanged. -/
+@[simp↓] theorem reduce_comp_reduce_right {a b c : Γ.V} (p : Γ.Path a b)
+    (q : Γ.Path b c) : reduce Γ (p.comp (reduce Γ q)) = reduce Γ (p.comp q) :=
+  (((homotopic_reduce Γ q).comp_left Γ p).reduce_eq Γ).symm
+
 /-- Reducing both paths before concatenation leaves the final reduced path unchanged. -/
 theorem reduce_comp_reduce_reduce {a b c : Γ.V} (p : Γ.Path a b) (q : Γ.Path b c) :
-    reduce Γ ((reduce Γ p).comp (reduce Γ q)) = reduce Γ (p.comp q) :=
-  (((homotopic_reduce Γ p).comp Γ (homotopic_reduce Γ q)).reduce_eq Γ).symm
+    reduce Γ ((reduce Γ p).comp (reduce Γ q)) = reduce Γ (p.comp q) := by
+  simp only [reduce_comp_reduce_left, reduce_comp_reduce_right]
 
 /-- Reversing a reduced representative gives the representative of the reversed path. -/
 @[simp] theorem reduce_reverse {a b : Γ.V} (p : Γ.Path a b) :
