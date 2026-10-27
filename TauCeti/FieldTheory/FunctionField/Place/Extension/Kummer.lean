@@ -383,7 +383,8 @@ theorem exists_restrict_eq_of_irreducible_map_residue (hF : IsFunctionField k F)
 and let `y : F'` be a root of a monic `φ ∈ 𝒪_P[X]` whose image in `F[X]` is the minimal
 polynomial of `y`.  To a family of pairwise distinct monic irreducible factors `γ i` of the
 reduction of `φ` modulo `P` there is an injective family of places of `F' / k'` over `P`, the
-place attached to `γ i` having relative degree at least `deg (γ i)`.
+place attached to `γ i` having relative degree at least `deg (γ i)`, and the value at `y` of a
+monic lift of `γ i` to `𝒪_P[X]` vanishing there.
 
 The factorization of the reduction of `φ` therefore bounds the splitting of `P` in `F' / F` from
 below; determining it needs the monogenicity hypothesis of Stichtenoth's Corollary 3.3.8. -/
@@ -393,14 +394,17 @@ theorem exists_injective_restrict_eq (hF : IsFunctionField k F) (P : Place k F) 
     (hirr : ∀ i, Irreducible (γ i))
     (hdvd : ∀ i, γ i ∣ φ.map (IsLocalRing.residue P.integers)) (hinj : Function.Injective γ) :
     ∃ Q : ι → Place k' F', Function.Injective Q ∧
-      ∀ i, (Q i).restrict k F = P ∧ (γ i).natDegree ≤ relativeDegree k F (Q i) := by
+      ∀ i, (Q i).restrict k F = P ∧ (γ i).natDegree ≤ relativeDegree k F (Q i) ∧
+        ∃ g : P.integers[X], g.Monic ∧ g.map (IsLocalRing.residue P.integers) = γ i ∧
+          (Q i).valuation (P.integersEval y g) < 1 := by
   choose g hgm hgmap using fun i ↦ P.exists_monic_map_residue_eq (hmonic i)
   choose Q hQres hQval hQdeg using fun i ↦ exists_restrict_eq_of_irreducible_map_residue
     (k' := k') hF P y hmin (hgm i) (hgmap i ▸ hirr i) (hgmap i ▸ hdvd i)
   -- `y` is integral over `𝒪_P`, so it has a residue at each of these places.
   have hyint : ∀ i, y ∈ (Q i).integers := fun i ↦
     mem_integers_of_map_eq_minpoly (hQres i) hmin
-  refine ⟨Q, fun i j hij ↦ hinj ?_, fun i ↦ ⟨hQres i, hgmap i ▸ hQdeg i⟩⟩
+  refine ⟨Q, fun i j hij ↦ hinj ?_, fun i ↦
+    ⟨hQres i, hgmap i ▸ hQdeg i, g i, hgm i, hgmap i, hQval i⟩⟩
   rw [← hgmap i, ← hgmap j]
   refine map_residue_eq_of_valuation_lt_one (hQres i) (hyint i) (hgm i) (hgmap i ▸ hirr i)
     (hQval i) (hgm j) (hgmap j ▸ hirr j) ?_
@@ -511,42 +515,28 @@ theorem exists_restrict_eq_relativeDegree_eq_and_isSeparable (hF : IsFunctionFie
       ← natDegree_map_eq_of_injective (IsFractionRing.injective P.integers F), hmin,
       ← IntermediateField.adjoin.finrank (IsIntegral.of_finite F y), hy,
       IntermediateField.finrank_top']
-  -- Kummer's theorem attaches to each factor `q` a place over `P` at which `q (y)` vanishes.
-  have hplace (q : P.ResidueField[X]) (hq : q ∈ S) : ∃ g : P.integers[X], g.Monic ∧
-      g.map res = q ∧ ∃ Q : Place k' F', Q.restrict k F = P ∧
-        Q.valuation (P.integersEval y g) < 1 ∧ q.natDegree ≤ relativeDegree k F Q := by
-    obtain ⟨hirrq, hmonq, hdvdq⟩ := (hS q).mp hq
-    obtain ⟨g, hgm, hgmap⟩ := P.exists_monic_map_residue_eq hmonq
-    obtain ⟨Q, hQ, hv, hdeg⟩ := exists_restrict_eq_of_irreducible_map_residue (k' := k') hF P y
-      hmin hgm (hgmap ▸ hirrq) (hgmap ▸ hdvdq)
-    exact ⟨g, hgm, hgmap, Q, hQ, hv, hgmap ▸ hdeg⟩
-  have hγ : γ ∈ S := (hS γ).mpr ⟨hirr, hmonic, hdvd⟩
-  have : Nonempty (Place k' F') := ⟨(hplace γ hγ).choose_spec.2.2.choose⟩
-  choose! g hgm hgmap Q hQ hv hdeg using hplace
-  -- These places are pairwise distinct: a place over `P` sees at most one factor.
-  have hinj : Set.InjOn Q S := fun q₁ hq₁ q₂ hq₂ h ↦ by
-    have hyint := mem_integers_of_map_eq_minpoly (hQ q₁ hq₁) hmin
-    rw [← hgmap q₁ hq₁, ← hgmap q₂ hq₂]
-    refine map_residue_eq_of_valuation_lt_one (hQ q₁ hq₁) hyint (hgm q₁ hq₁)
-      ((hgmap q₁ hq₁).symm ▸ ((hS q₁).mp hq₁).1) (hv q₁ hq₁) (hgm q₂ hq₂)
-      ((hgmap q₂ hq₂).symm ▸ ((hS q₂).mp hq₂).1) ?_
-    rw [h]
-    exact hv q₂ hq₂
+  -- Kummer's theorem attaches to the factors pairwise distinct places over `P`.
+  obtain ⟨Q, hQinj, hQ⟩ := exists_injective_restrict_eq (k' := k') hF P y hmin (ι := S)
+    (γ := Subtype.val) (fun q ↦ ((hS q).mp q.2).2.1) (fun q ↦ ((hS q).mp q.2).1)
+    (fun q ↦ ((hS q).mp q.2).2.2) Subtype.val_injective
   -- The fundamental inequality then forces `f (Q q ∣ P) = deg q` for every factor `q`.
-  have hle : ∑ q ∈ S, relativeDegree k F (Q q) ≤ ∑ q ∈ S, q.natDegree := by
-    rw [hdegS]
+  have hle : ∑ q : S, relativeDegree k F (Q q) ≤ ∑ q : S, (q : P.ResidueField[X]).natDegree := by
+    rw [Finset.sum_coe_sort S fun q ↦ q.natDegree, hdegS]
     refine le_trans (Finset.sum_le_sum fun q _ ↦
       Nat.le_mul_of_pos_left _ (ramificationIdx_pos F (Q q))) ?_
-    rw [← Finset.sum_image (f := fun P' ↦ ramificationIdx F P' * relativeDegree k F P') hinj]
+    rw [← Finset.sum_image (f := fun P' ↦ ramificationIdx F P' * relativeDegree k F P')
+      hQinj.injOn]
     exact sum_ramificationIdx_mul_relativeDegree_le_finrank k F P _ fun P' hP' ↦ by
-      obtain ⟨q, hq, rfl⟩ := Finset.mem_image.mp hP'
-      exact hQ q hq
-  have heq := (Finset.sum_eq_sum_iff_of_le hdeg).mp (le_antisymm (Finset.sum_le_sum hdeg) hle)
+      obtain ⟨q, -, rfl⟩ := Finset.mem_image.mp hP'
+      exact (hQ q).1
+  have heq := (Finset.sum_eq_sum_iff_of_le fun q _ ↦ (hQ q).2.1).mp
+    (le_antisymm (Finset.sum_le_sum fun q _ ↦ (hQ q).2.1) hle)
   -- Specialize to the factor `γ`, and identify the place below with `P`.
-  obtain ⟨P', hP', g', hg'm, hg'map, hv', hrel⟩ : ∃ P' : Place k' F', P'.restrict k F = P ∧
-      ∃ g' : P.integers[X], g'.Monic ∧ g'.map res = γ ∧
-        P'.valuation (P.integersEval y g') < 1 ∧ relativeDegree k F P' = γ.natDegree :=
-    ⟨Q γ, hQ γ hγ, g γ, hgm γ hγ, hgmap γ hγ, hv γ hγ, (heq γ hγ).symm⟩
+  have hγ : γ ∈ S := (hS γ).mpr ⟨hirr, hmonic, hdvd⟩
+  obtain ⟨hP', -, g', hg'm, hg'map, hv'⟩ := hQ ⟨γ, hγ⟩
+  have hrel : relativeDegree k F (Q ⟨γ, hγ⟩) = γ.natDegree :=
+    (heq ⟨γ, hγ⟩ (Finset.mem_univ _)).symm
+  generalize Q ⟨γ, hγ⟩ = P' at hP' hv' hrel
   clear_value res S
   subst hP' hres
   exact ⟨P', rfl, hrel, isSeparable_residueField_of_relativeDegree_eq k F P'

@@ -16,7 +16,8 @@ import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 /-!
 # Simple transcendental field extensions
 
-A simple transcendental field extension has transcendence degree one.
+A simple transcendental field extension has transcendence degree one.  Conversely, an element
+`x` over which a transcendental extension `F / k` is algebraic is itself transcendental over `k`.
 
 Combined with the tower rule for linear independence, a family that is linearly independent over
 the simple extension `k⟮x⟯` stays linearly independent over `k` after multiplying by arbitrary
@@ -36,6 +37,8 @@ The statements below assert linear independence; the valuation estimates are sep
   `F`, multiplied by the powers of a transcendental `x`, is `k`-linearly independent.
 * `Transcendental.linearIndependent_mul_pow_fin`: the finite-power restriction used in
   dimension estimates.
+* `TauCeti.transcendental_of_isAlgebraic_adjoin`: if a transcendental extension `F / k` is
+  algebraic over `k⟮x⟯`, then `x` is transcendental over `k`.
 -/
 
 public section
@@ -90,5 +93,12 @@ theorem _root_.Transcendental.linearIndependent_mul_pow_fin (hx : _root_.Transce
       simp only [Prod.mk.injEq, Fin.val_inj] at hpq
       exact Prod.ext hpq.1 hpq.2)
   simpa [Function.comp_def] using h
+
+/-- **A transcendental extension is algebraic over `k⟮x⟯` only for `x` transcendental over `k`**:
+for `x` algebraic, `k⟮x⟯` is algebraic over `k`, and then so would be `F`. -/
+theorem transcendental_of_isAlgebraic_adjoin [Algebra.Transcendental k F]
+    [Algebra.IsAlgebraic k⟮x⟯ F] : Transcendental k x := fun halg ↦ by
+  have : Algebra.IsAlgebraic k k⟮x⟯ := IntermediateField.isAlgebraic_adjoin_simple halg.isIntegral
+  exact Algebra.transcendental_iff_not_isAlgebraic.mp ‹_› (Algebra.IsAlgebraic.trans k k⟮x⟯ F)
 
 end TauCeti

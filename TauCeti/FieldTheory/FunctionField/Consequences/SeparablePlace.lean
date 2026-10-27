@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Kummer
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Conorm
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
 import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.Separable.Quadratic
 
@@ -38,24 +39,28 @@ nonconstant function in `L(B)` has index at most two.  Away from characteristic 
 is separable.  In characteristic two, if two functions `x, z ∈ L(B)` with `1, x, z` independent
 both had inseparable index two, then every square of `F` would lie in `k(x) ∩ k(z)`, so the
 separating element would force `k(x) = k(z)`.  But a function of `k(x)` whose poles are bounded by
-`(x)_∞` is a polynomial of degree at most one in `x`.  So every genus-zero function field with a
-separating element over an infinite field has a place of degree at most two with separable residue
-field.  Geometrically, a smooth proper curve of genus zero over an infinite field has a closed
-point whose residue field is separable of degree at most two over `k`.  Over that residue field
-the curve has a rational point, and a curve of genus zero with a rational point is the projective
-line (`TauCeti.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one`); this is the
-input for nodal reduction of curves of genus zero over a discrete valuation ring.
+`(x)_∞` is a polynomial of degree at most one in `x`.  So every genus-zero function field with
+exact constant field and a separating element over an infinite field has a place of degree at most
+two with separable residue field.  Geometrically, a smooth proper curve of genus zero over an
+infinite field has a closed point whose residue field is separable of degree at most two over `k`.
+Over that residue field the curve has a rational point, and a curve of genus zero with a rational
+point is the projective line
+(`TauCeti.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one`); this is the input
+for nodal reduction of curves of genus zero over a discrete valuation ring.
 
 ## Main results
 
 * `TauCeti.exists_place_degree_le_finrank_and_isSeparable`: a function field over an infinite
   field, separable over `k(x)`, has a place of degree at most `[F : k(x)]` with residue field
   separable over `k`.
+* `TauCeti.exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero`: a genus-zero function field
+  with exact constant field has an effective divisor `B` of degree two with `ℓ(B) ≥ 3`.
 * `TauCeti.exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero`: a genus-zero function
-  field with a separating element is separable over a rational subfield of index at most two.
+  field with exact constant field and a separating element is separable over a rational subfield
+  of index at most two.
 * `TauCeti.exists_place_degree_le_two_and_isSeparable_of_genus_eq_zero`: **a genus-zero function
-  field with a separating element over an infinite field has a place of degree at most two whose
-  residue field is separable over `k`**.
+  field with exact constant field and a separating element over an infinite field has a place of
+  degree at most two whose residue field is separable over `k`**.
 
 ## References
 
@@ -80,14 +85,13 @@ variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 /-! ### Separable places over a separable rational subfield -/
 
 /-- **A function field over an infinite field, separable over a rational subfield `k(x)`, has a
-place of degree at most `[F : k(x)]` whose residue field is separable over `k`.**  It lies over a
-rational place of `k(x)` at which the minimal polynomial of a primitive element of `F / k(x)` has
-separable reduction. -/
+place of degree at most `[F : k(x)]` whose residue field is separable over `k`.** -/
 theorem exists_place_degree_le_finrank_and_isSeparable [Infinite k] (hF : IsFunctionField k F)
     (x : F) [Algebra.IsSeparable k⟮x⟯ F] :
     ∃ P : Place k F, P.degree ≤ Module.finrank k⟮x⟯ F ∧ Algebra.IsSeparable k P.ResidueField := by
   classical
-  have hx : Transcendental k x := hF.transcendental_of_isAlgebraic_adjoin
+  have : Algebra.Transcendental k F := Algebra.transcendental_def.mpr hF.exists_transcendental
+  have hx : Transcendental k x := transcendental_of_isAlgebraic_adjoin
   have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
   have hF₁ : IsFunctionField k k⟮x⟯ := hx.isFunctionField_adjoin
   obtain ⟨y, hy⟩ := Field.exists_primitive_element k⟮x⟯ F
@@ -124,58 +128,6 @@ theorem exists_place_degree_le_finrank_and_isSeparable [Infinite k] (hF : IsFunc
     exact Algebra.IsSeparable.trans k (P.restrict k k⟮x⟯).ResidueField P.ResidueField
 
 /-! ### Genus zero -/
-
-/-- Two intermediate fields of index two over which `F` is inseparable coincide, as soon as `F` is
-separable over some `k(t)`.  Every square of `F` lies in `M = E₁ ⊓ E₂`, so `F` is purely
-inseparable over `M(t)`; it is also separable over `M(t) ⊇ k(t)`, so `F = M(t)`, which has degree
-at most two over `M` since `t² ∈ M`. -/
-private theorem eq_of_finrank_eq_two_of_not_isSeparable (t : F) [Algebra.IsSeparable k⟮t⟯ F]
-    {E₁ E₂ : IntermediateField k F} (h₁ : Module.finrank E₁ F = 2)
-    (hs₁ : ¬Algebra.IsSeparable E₁ F) (h₂ : Module.finrank E₂ F = 2)
-    (hs₂ : ¬Algebra.IsSeparable E₂ F) : E₁ = E₂ := by
-  set M := E₁ ⊓ E₂
-  have hsq (a : F) : a ^ 2 ∈ M := by
-    obtain ⟨c₁, hc₁⟩ := Algebra.sq_mem_range_algebraMap_of_finrank_eq_two h₁ hs₁ a
-    obtain ⟨c₂, hc₂⟩ := Algebra.sq_mem_range_algebraMap_of_finrank_eq_two h₂ hs₂ a
-    exact ⟨hc₁ ▸ c₁.2, hc₂ ▸ c₂.2⟩
-  -- `F` has characteristic two, as an inseparable extension of degree two of `E₁`.
-  have h2 : (2 : F) = 0 := by
-    by_contra h
-    refine hs₁ (Algebra.isSeparable_of_finrank_eq_two (fun h' ↦ h ?_) h₁)
-    have := congrArg (algebraMap E₁ F) h'
-    rwa [map_ofNat, map_zero] at this
-  -- `F = M(t)`: it is separable over `M(t) ⊇ k(t)`, and purely inseparable over it.
-  set E : IntermediateField M F := IntermediateField.adjoin M {t}
-  set E' : IntermediateField k F := E.restrictScalars k
-  have hle : k⟮t⟯ ≤ E' := IntermediateField.adjoin_simple_le_iff.mpr
-    (IntermediateField.mem_adjoin_simple_self M t)
-  let : Algebra k⟮t⟯ E' := (IntermediateField.inclusion hle).toAlgebra
-  have : IsScalarTower k⟮t⟯ E' F := .of_algebraMap_eq fun _ ↦ rfl
-  have : Algebra.IsSeparable E' F := Algebra.isSeparable_tower_top_of_isSeparable k⟮t⟯ E' F
-  have : CharP E' 2 := (CharP.charP_iff_prime_eq_zero Nat.prime_two).mpr
-    ((algebraMap E' F).injective (by rw [map_natCast, map_zero]; exact_mod_cast h2))
-  have : IsPurelyInseparable E' F := (isPurelyInseparable_iff_pow_mem E' 2).mpr fun a ↦
-    ⟨1, ⟨⟨a ^ 2, E.algebraMap_mem ⟨a ^ 2, hsq a⟩⟩, by simp⟩⟩
-  have hE : E = ⊤ := by
-    refine IntermediateField.restrictScalars_injective k (eq_top_iff.mpr fun a _ ↦ ?_)
-    obtain ⟨b, rfl⟩ := IsPurelyInseparable.surjective_algebraMap_of_isSeparable E' F a
-    exact b.2
-  -- So `[F : M] ≤ 2`, which forces `M = E₁` and `M = E₂`.
-  have hpoly : (X ^ 2 - C (⟨t ^ 2, hsq t⟩ : M)).Monic := monic_X_pow_sub_C _ two_ne_zero
-  have hroot : aeval t (X ^ 2 - C (⟨t ^ 2, hsq t⟩ : M)) = 0 := by simp
-  have hint : IsIntegral M t := ⟨_, hpoly, hroot⟩
-  have hMt : Module.finrank M F = (minpoly M t).natDegree := by
-    rw [← IntermediateField.finrank_top', ← hE, IntermediateField.adjoin.finrank hint]
-  have : FiniteDimensional M F :=
-    Module.finite_of_finrank_pos (hMt ▸ minpoly.natDegree_pos hint)
-  have hM : Module.finrank M F ≤ 2 := by
-    rw [hMt, ← natDegree_X_pow_sub_C (n := 2) (a := (⟨t ^ 2, hsq t⟩ : M))]
-    exact natDegree_le_natDegree (minpoly.degree_le_of_ne_zero (pnz := hpoly.ne_zero) (hp := hroot))
-  have hM₁ : M = E₁ := IntermediateField.eq_of_le_of_finrank_eq' inf_le_left
-    (le_antisymm (h₁ ▸ hM) (IntermediateField.finrank_le_of_le_left inf_le_left))
-  have hM₂ : M = E₂ := IntermediateField.eq_of_le_of_finrank_eq' inf_le_right
-    (le_antisymm (h₂ ▸ hM) (IntermediateField.finrank_le_of_le_left inf_le_right))
-  exact hM₁.symm.trans hM₂
 
 /-- **A function of `k(x)` whose poles are bounded by those of `x` lies in `k + k x`**: inside the
 rational function field `k(x)`, the Riemann–Roch space of `(x)_∞` contains `1` and `x` and has
@@ -219,30 +171,21 @@ private theorem mem_span_pair_of_mem_adjoin (hF : IsFunctionField k F) {x : F}
       mem_riemannRochSpace_poles hK₀ u⟩
   -- The function `z` descends to `L((x)_∞)` computed in `k(x)`.
   have hw : (⟨z, hzx⟩ : k⟮x⟯) ∈ riemannRochSpace (Divisor.poles hK₀ u) := by
+    have hu : Units.map (algebraMap k⟮x⟯ F : k⟮x⟯ →* F) u =
+        Units.mk0 x fun h ↦ hx (h ▸ isAlgebraic_zero) := Units.ext rfl
     have h := mem_riemannRochSpace_nsmul_poles_map_iff (k' := k) hK₀ hF 1 u ⟨z, hzx⟩
-    rw [one_nsmul, one_nsmul] at h
-    refine h.mp ?_
-    convert hz using 4 <;> rfl
+    rw [one_nsmul, one_nsmul, hu] at h
+    -- `algebraMap k⟮x⟯ F ⟨z, hzx⟩` is `z` by definition.
+    exact h.mp hz
   rw [← hspan, Submodule.mem_span_pair] at hw
   obtain ⟨a, b, hab⟩ := hw
   rw [Submodule.mem_span_pair]
   exact ⟨a, b, by simpa [x₀] using congrArg (algebraMap k⟮x⟯ F) hab⟩
 
-/-- An extension of index at most two that is not separable has index exactly two. -/
-private theorem finrank_eq_two_of_not_isSeparable (hF : IsFunctionField k F) {x : F}
-    (hx : Transcendental k x) (h2 : Module.finrank k⟮x⟯ F ≤ 2)
-    (hs : ¬Algebra.IsSeparable k⟮x⟯ F) : Module.finrank k⟮x⟯ F = 2 := by
-  have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
-  have hpos : 0 < Module.finrank k⟮x⟯ F := Module.finrank_pos
-  interval_cases h : Module.finrank k⟮x⟯ F
-  · refine absurd ((Field.finSepDegree_eq_finrank_iff k⟮x⟯ F).mp ?_) hs
-    rw [h]
-    exact Nat.dvd_one.mp (h ▸ Field.finSepDegree_dvd_finrank k⟮x⟯ F)
-  · rfl
-
-/-- In genus zero, over an exact constant field, the anticanonical class contains an effective
-divisor `B` of degree two, and `ℓ(B) = deg B + 1 - g ≥ 3`. -/
-private theorem exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero (hF : IsFunctionField k F)
+/-- **A function field of genus zero with exact constant field has an effective divisor of degree
+two whose Riemann–Roch space has dimension at least three.**  Such a divisor lies in the
+anticanonical class, and `ℓ(B) = deg B + 1 - g = 3`. -/
+theorem exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 0) :
     ∃ B : Divisor k F, 0 ≤ B ∧ Divisor.degree B = 2 ∧ 3 ≤ Divisor.dim B := by
   obtain ⟨W, hW⟩ := exists_isRiemannRochDivisor hF hex
@@ -260,15 +203,14 @@ private theorem exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero (hF : IsF
   · rw [← Divisor.dim_eq_of_linearlyEquivalent hF hequiv]
     omega
 
-/-- **A genus-zero function field with a separating element is separable over a rational subfield
-of index at most two.**  The index-two subfields come from an effective divisor `B` of degree two
-in the anticanonical class, which has `ℓ(B) ≥ 3`: any nonconstant `x ∈ L(B)` has
-`[F : k(x)] = deg (x)_∞ ≤ 2`.  Away from characteristic two the extension `F / k(x)` is then
-separable; in characteristic two one of `x` and `z` is a suitable choice, for any `x, z ∈ L(B)` with
-`1, x, z` linearly independent. -/
+/-- **A genus-zero function field with exact constant field and a separating element is separable
+over a rational subfield of index at most two.** -/
 theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 0) (t : F) [Algebra.IsSeparable k⟮t⟯ F] :
     ∃ x : F, Module.finrank k⟮x⟯ F ≤ 2 ∧ Algebra.IsSeparable k⟮x⟯ F := by
+  -- Take an effective `B` of degree two with `ℓ(B) ≥ 3`: any nonconstant `x ∈ L(B)` has
+  -- `[F : k(x)] = deg (x)_∞ ≤ 2`.  Away from characteristic two `F / k(x)` is then separable; in
+  -- characteristic two one of `x` and `z` works, for `x, z ∈ L(B)` with `1, x, z` independent.
   obtain ⟨B, hB, hBdeg, hdimB⟩ := exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero hF hex hg
   have hBeff : WeilDivisor.IsEffective B := WeilDivisor.isEffective_iff_zero_le.mpr hB
   -- A nonconstant `u ∈ L(B)` is transcendental, with `(u)_∞ ≤ B`, so `[F : k(u)] ≤ 2`.
@@ -309,9 +251,11 @@ theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFu
   · exact ⟨z, hz2, hzs⟩
   -- Otherwise both indices are two and `k(x) = k(z)`, so `z ∈ k(x)`.
   exfalso
-  have hx2' := finrank_eq_two_of_not_isSeparable hF hxt hx2 hxs
-  have hxz := eq_of_finrank_eq_two_of_not_isSeparable t hx2' hxs
-    (finrank_eq_two_of_not_isSeparable hF hzt hz2 hzs) hzs
+  have := hF.finiteDimensional_adjoin hxt
+  have := hF.finiteDimensional_adjoin hzt
+  have hx2' := Algebra.finrank_eq_two_of_not_isSeparable hx2 hxs
+  have hxz := IntermediateField.eq_of_finrank_eq_two_of_not_isSeparable t hx2' hxs
+    (Algebra.finrank_eq_two_of_not_isSeparable hz2 hzs) hzs
   have hzmem : z ∈ k⟮x⟯ := hxz ▸ IntermediateField.mem_adjoin_simple_self k z
   -- But `(x)_∞ = B`, both having degree two, so `z ∈ L((x)_∞)` would lie in `k + k x`.
   have hpoles : Divisor.poles hF (Units.mk0 x hx0) = B := by
@@ -322,10 +266,10 @@ theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFu
     simp at hpos
   exact hzx (mem_span_pair_of_mem_adjoin hF hxt hzmem (hpoles ▸ hzB))
 
-/-- **A genus-zero function field with a separating element, over an infinite field, has a place
-of degree at most two whose residue field is separable over `k`.**  Geometrically, a smooth proper
-curve of genus zero over an infinite field has a closed point whose residue field is a separable
-extension of degree at most two. -/
+/-- **A genus-zero function field with exact constant field and a separating element, over an
+infinite field, has a place of degree at most two whose residue field is separable over `k`.**
+Geometrically, a smooth proper curve of genus zero over an infinite field has a closed point whose
+residue field is a separable extension of degree at most two. -/
 theorem exists_place_degree_le_two_and_isSeparable_of_genus_eq_zero [Infinite k]
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 0) (t : F)
     [Algebra.IsSeparable k⟮t⟯ F] :

@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.RatFunc.Transcendental
 public import TauCeti.RingTheory.Kaehler.BaseChange
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 public import TauCeti.RingTheory.Kaehler.Separable
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
 
 /-!
 # One-dimensionality of the Kähler differentials of a function field
@@ -275,10 +276,7 @@ theorem transcendental_and_isSeparable_adjoin_of_D_ne_zero (h : finrank F Ω[F�
     ⟨(subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top k k⟮y⟯ F).mpr hrange⟩
   have : Algebra.EssFiniteType k⟮y⟯ F := .of_comp k k⟮y⟯ F
   have := Algebra.FormallyUnramified.isSeparable k⟮y⟯ F
-  refine ⟨fun halg ↦ ?_, this⟩
-  have : FiniteDimensional k k⟮y⟯ := IntermediateField.adjoin.finiteDimensional halg.isIntegral
-  have : Algebra.IsAlgebraic k F := Algebra.IsAlgebraic.trans k k⟮y⟯ F
-  exact Algebra.transcendental_iff_not_isAlgebraic.mp ‹_› inferInstance
+  exact ⟨transcendental_of_isAlgebraic_adjoin, this⟩
 
 /-- **The Kähler differentials of an essentially finite type transcendental field extension
 are one-dimensional exactly when it admits a single separating element**:
@@ -335,11 +333,8 @@ theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F) :
     have hD : D k F x = 0 := D_eq_zero_of_isSeparable
       (PerfectField.separable_of_irreducible (minpoly.irreducible halg.isIntegral))
     refine iff_of_false (fun hsep ↦ ?_) (not_not.mpr hD)
-    let _ := hsep
-    let _ : FiniteDimensional k k⟮x⟯ := IntermediateField.adjoin.finiteDimensional halg.isIntegral
-    have halgF : Algebra.IsAlgebraic k F := Algebra.IsAlgebraic.trans k k⟮x⟯ F
-    obtain ⟨y, hy⟩ := hF.exists_transcendental
-    exact hy (halgF.1 y)
+    have : Algebra.Transcendental k F := Algebra.transcendental_def.mpr hF.exists_transcendental
+    exact hx (transcendental_of_isAlgebraic_adjoin (x := x))
   let _ := hF.finiteDimensional_adjoin hx
   have hunr : Algebra.IsSeparable k⟮x⟯ F ↔ Subsingleton Ω[F⁄k⟮x⟯] := by
     rw [← Algebra.FormallyUnramified.iff_isSeparable, Algebra.formallyUnramified_iff]
