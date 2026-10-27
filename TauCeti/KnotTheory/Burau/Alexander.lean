@@ -53,9 +53,6 @@ Everything is stated over an arbitrary commutative ring `R` and an arbitrary uni
 
 ## Main results
 
-* `TauCeti.KnotTheory.submatrix_burau_strandIncl` and
-  `TauCeti.KnotTheory.burau_strandIncl_mulVec_single`: the Burau matrix of a braid with an extra
-  uncrossed strand is the old matrix in the old strands, and fixes the new strand.
 * `TauCeti.KnotTheory.burau_sub_one_mulVec_one` and
   `TauCeti.KnotTheory.geom_vecMul_burau_sub_one`: the two vectors annihilating `burau b - 1`,
   and `TauCeti.KnotTheory.det_burau_sub_one`, its vanishing determinant.
@@ -92,104 +89,6 @@ open KnotTheory
 variable {R : Type*} [CommRing R] {n : ℕ}
 
 namespace KnotTheory
-
-/-! ### The Burau matrix of a braid with an extra uncrossed strand -/
-
-private theorem burauCol_castSucc (t : R) (i : Fin n) (u : Fin (n + 1)) :
-    burauCol (n := n + 2) t i.castSucc u.castSucc = burauCol (n := n + 1) t i u := by
-  rw [burauCol_apply, burauCol_apply]
-  simp only [Fin.ext_iff, BraidGroup.val_strand, BraidGroup.val_strandSucc, Fin.val_castSucc]
-
-private theorem burauRow_castSucc (i : Fin n) (u : Fin (n + 1)) :
-    burauRow R (n := n + 2) i.castSucc u.castSucc = burauRow R (n := n + 1) i u := by
-  rw [burauRow_apply, burauRow_apply]
-  simp only [Fin.ext_iff, BraidGroup.val_strand, BraidGroup.val_strandSucc, Fin.val_castSucc]
-
-private theorem burau_strandIncl_aux (t : Rˣ) (b : BraidGroup (n + 1)) :
-    ((burau (n + 2) t (BraidGroup.strandIncl b) : Matrix (Fin (n + 2)) (Fin (n + 2)) R) *ᵥ
-        Pi.single (Fin.last (n + 1)) 1 = Pi.single (Fin.last (n + 1)) 1) ∧
-      (burau (n + 2) t (BraidGroup.strandIncl b) :
-          Matrix (Fin (n + 2)) (Fin (n + 2)) R).submatrix Fin.castSucc Fin.castSucc =
-        (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) := by
-  induction b using BraidGroup.sigma_induction_on with
-  | sigma i =>
-    rw [BraidGroup.strandIncl_sigma, burau_sigma, burau_sigma, coe_burauGL, coe_burauGL]
-    refine ⟨?_, ?_⟩
-    · rw [burauMatrix_mulVec, burauRow_dotProduct]
-      have h₁ : (Pi.single (Fin.last (n + 1)) 1 : Fin (n + 2) → R)
-          (BraidGroup.strand (n := n + 2) i.castSucc) = 0 := by
-        refine Pi.single_eq_of_ne ?_ 1
-        simp only [Ne, Fin.ext_iff, BraidGroup.val_strand, Fin.val_last, Fin.val_castSucc]
-        omega
-      have h₂ : (Pi.single (Fin.last (n + 1)) 1 : Fin (n + 2) → R)
-          (BraidGroup.strandSucc (n := n + 2) i.castSucc) = 0 := by
-        refine Pi.single_eq_of_ne ?_ 1
-        simp only [Ne, Fin.ext_iff, BraidGroup.val_strandSucc, Fin.val_last, Fin.val_castSucc]
-        omega
-      rw [h₁, h₂, sub_self, zero_smul, sub_zero]
-    · ext u v
-      rw [Matrix.submatrix_apply, burauMatrix_apply, burauMatrix_apply, burauCol_castSucc,
-        burauRow_castSucc]
-      simp [Fin.castSucc_inj]
-  | one =>
-    rw [map_one, map_one, map_one, Units.val_one, Units.val_one]
-    refine ⟨Matrix.one_mulVec _, ?_⟩
-    ext u v
-    rw [Matrix.submatrix_apply, Matrix.one_apply, Matrix.one_apply]
-    simp [Fin.castSucc_inj]
-  | mul b b' hb hb' =>
-    rw [map_mul, map_mul, map_mul, Units.val_mul, Units.val_mul]
-    refine ⟨?_, ?_⟩
-    · rw [← Matrix.mulVec_mulVec, hb'.1, hb.1]
-    · rw [Matrix.submatrix_mul_of_mulVec_single _ _ hb.1, hb.2, hb'.2, ← Units.val_mul,
-        ← map_mul]
-  | inv b hb =>
-    have hunit : ((burau (n + 2) t (BraidGroup.strandIncl b))⁻¹ : GL (Fin (n + 2)) R) *
-        (burau (n + 2) t (BraidGroup.strandIncl b)) = 1 := inv_mul_cancel _
-    have hmat : ((burau (n + 2) t (BraidGroup.strandIncl b⁻¹) : GL (Fin (n + 2)) R) :
-          Matrix (Fin (n + 2)) (Fin (n + 2)) R) *
-        (burau (n + 2) t (BraidGroup.strandIncl b) : Matrix (Fin (n + 2)) (Fin (n + 2)) R) = 1 := by
-      rw [map_inv, map_inv, ← Units.val_mul, hunit, Units.val_one]
-    have hcol : (burau (n + 2) t (BraidGroup.strandIncl b⁻¹) :
-        Matrix (Fin (n + 2)) (Fin (n + 2)) R) *ᵥ Pi.single (Fin.last (n + 1)) 1 =
-        Pi.single (Fin.last (n + 1)) 1 := by
-      conv_lhs => rw [← hb.1]
-      rw [Matrix.mulVec_mulVec, hmat, Matrix.one_mulVec]
-    refine ⟨hcol, ?_⟩
-    have hprod := congrArg (fun X : Matrix (Fin (n + 2)) (Fin (n + 2)) R =>
-      X.submatrix Fin.castSucc Fin.castSucc) hmat
-    simp only [Matrix.submatrix_mul_of_mulVec_single _ _ hcol, hb.2] at hprod
-    have hone : ((1 : Matrix (Fin (n + 2)) (Fin (n + 2)) R)).submatrix
-        Fin.castSucc Fin.castSucc = 1 := by
-      ext u v
-      rw [Matrix.submatrix_apply, Matrix.one_apply, Matrix.one_apply]
-      simp [Fin.castSucc_inj]
-    rw [hone] at hprod
-    have hbinv : (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) *
-        (burau (n + 1) t b⁻¹ : Matrix (Fin (n + 1)) (Fin (n + 1)) R) = 1 := by
-      rw [map_inv, ← Units.val_mul, mul_inv_cancel, Units.val_one]
-    calc (burau (n + 2) t (BraidGroup.strandIncl b⁻¹) :
-          Matrix (Fin (n + 2)) (Fin (n + 2)) R).submatrix Fin.castSucc Fin.castSucc
-        = _ * ((burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) *
-            (burau (n + 1) t b⁻¹ : Matrix (Fin (n + 1)) (Fin (n + 1)) R)) := by
-          rw [hbinv, Matrix.mul_one]
-      _ = (burau (n + 1) t b⁻¹ : Matrix (Fin (n + 1)) (Fin (n + 1)) R) := by
-          rw [← Matrix.mul_assoc, hprod, Matrix.one_mul]
-
-/-- **The Burau matrix of a braid with an uncrossed strand added.** Deleting the new strand's row
-and column recovers the Burau matrix of the original braid. -/
-theorem submatrix_burau_strandIncl (t : Rˣ) (b : BraidGroup (n + 1)) :
-    (burau (n + 2) t (BraidGroup.strandIncl b) :
-        Matrix (Fin (n + 2)) (Fin (n + 2)) R).submatrix Fin.castSucc Fin.castSucc =
-      (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :=
-  (burau_strandIncl_aux t b).2
-
-/-- The new strand of `TauCeti.BraidGroup.strandIncl b` is fixed by the Burau matrix: the last
-column is the last standard basis vector. -/
-theorem burau_strandIncl_mulVec_single (t : Rˣ) (b : BraidGroup (n + 1)) :
-    (burau (n + 2) t (BraidGroup.strandIncl b) : Matrix (Fin (n + 2)) (Fin (n + 2)) R) *ᵥ
-        Pi.single (Fin.last (n + 1)) 1 = Pi.single (Fin.last (n + 1)) 1 :=
-  (burau_strandIncl_aux t b).1
 
 /-! ### The elementary Burau matrix of the last crossing -/
 

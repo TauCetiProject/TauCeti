@@ -78,6 +78,9 @@ apiece" bullet of Layer 4 ("knot theory, done properly") of the GeometricTopolog
   permutation representation of the strands.
 * `TauCeti.KnotTheory.burau_mulVec_one` and `TauCeti.KnotTheory.vecMul_burau_geom`: the invariant
   column vector `(1, …, 1)` and the invariant row vector `(1, t, …, t ^ (n - 1))`.
+* `TauCeti.KnotTheory.submatrix_burau_strandIncl` and
+  `TauCeti.KnotTheory.burau_strandIncl_mulVec_single`: adding an uncrossed strand preserves the
+  old-strand block and fixes the new strand.
 
 ## References
 
@@ -572,6 +575,55 @@ theorem vecMul_burau_geom (t : Rˣ) (b : BraidGroup n) :
     (fun k : Fin n => (t : R) ^ (k : ℕ)) ᵥ* (burau n t b : Matrix (Fin n) (Fin n) R) =
       fun k : Fin n => (t : R) ^ (k : ℕ) :=
   vecMul_burau_of_forall (fun i => vecMul_burauMatrix_geom (t : R) i) b
+
+/-! ### The Burau matrix of a braid with an extra uncrossed strand -/
+
+/-- The new strand of `TauCeti.BraidGroup.strandIncl b` is fixed by the Burau matrix: the last
+column is the last standard basis vector. -/
+theorem burau_strandIncl_mulVec_single (t : Rˣ) (b : BraidGroup (n + 1)) :
+    (burau (n + 2) t (BraidGroup.strandIncl b) : Matrix (Fin (n + 2)) (Fin (n + 2)) R) *ᵥ
+        Pi.single (Fin.last (n + 1)) 1 = Pi.single (Fin.last (n + 1)) 1 := by
+  induction b using BraidGroup.sigma_induction_on with
+  | sigma i =>
+    rw [BraidGroup.strandIncl_sigma, burau_sigma, coe_burauGL, burauMatrix_mulVec,
+      burauRow_dotProduct, BraidGroup.strand_castSucc, BraidGroup.strandSucc_castSucc]
+    simp
+  | one => rw [map_one, map_one, Units.val_one, Matrix.one_mulVec]
+  | mul b b' hb hb' =>
+    simp only [map_mul, Units.val_mul, ← Matrix.mulVec_mulVec, hb', hb]
+  | inv b hb =>
+    have hmul : (burau (n + 2) t (BraidGroup.strandIncl b⁻¹) :
+          Matrix (Fin (n + 2)) (Fin (n + 2)) R) *ᵥ
+        ((burau (n + 2) t (BraidGroup.strandIncl b) :
+          Matrix (Fin (n + 2)) (Fin (n + 2)) R) *ᵥ Pi.single (Fin.last (n + 1)) 1) =
+        Pi.single (Fin.last (n + 1)) 1 := by
+      rw [Matrix.mulVec_mulVec, ← Units.val_mul, ← map_mul, ← map_mul, inv_mul_cancel,
+        map_one, map_one, Units.val_one, Matrix.one_mulVec]
+    rwa [hb] at hmul
+
+/-- **The Burau matrix of a braid with an uncrossed strand added.** Deleting the new strand's row
+and column recovers the Burau matrix of the original braid. -/
+theorem submatrix_burau_strandIncl (t : Rˣ) (b : BraidGroup (n + 1)) :
+    (burau (n + 2) t (BraidGroup.strandIncl b) :
+        Matrix (Fin (n + 2)) (Fin (n + 2)) R).submatrix Fin.castSucc Fin.castSucc =
+      (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) := by
+  let C : Matrix (Fin (n + 1)) (Fin (n + 2)) R :=
+    (1 : Matrix (Fin (n + 2)) (Fin (n + 2)) R).submatrix Fin.castSucc id
+  have h := burau_mul_of_forall (t := t) (C := C)
+    (ρ := (burau (n + 2) t).comp BraidGroup.strandIncl) (fun i => ?_) b
+  · ext u v
+    have he := congrArg (fun M : Matrix (Fin (n + 1)) (Fin (n + 2)) R => M u v.castSucc) h
+    simpa [C, Matrix.mul_apply, Matrix.submatrix_apply, Matrix.one_apply] using he.symm
+  · rw [MonoidHom.comp_apply, BraidGroup.strandIncl_sigma, burau_sigma, coe_burauGL]
+    ext u v
+    refine Fin.lastCases ?_ (fun v => ?_) v
+    · simp [C, Matrix.mul_apply, Matrix.submatrix_apply, Matrix.one_apply,
+        burauMatrix_apply, burauRow_apply, BraidGroup.strand_castSucc,
+        BraidGroup.strandSucc_castSucc, (Fin.castSucc_ne_last (BraidGroup.strand i)).symm,
+        (Fin.castSucc_ne_last (BraidGroup.strandSucc i)).symm]
+    · simp [C, Matrix.mul_apply, Matrix.submatrix_apply, Matrix.one_apply,
+        burauMatrix_apply, burauCol_apply, burauRow_apply, BraidGroup.strand_castSucc,
+        BraidGroup.strandSucc_castSucc]
 
 end CommRing
 
