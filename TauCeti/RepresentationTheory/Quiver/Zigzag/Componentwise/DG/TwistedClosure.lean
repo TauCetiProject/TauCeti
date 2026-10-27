@@ -25,7 +25,7 @@ Noetherian commutative ring the canonical cohomology is also finitely generated.
 these modules are finite-dimensional, so the existing canonical homotopy category is Hom-finite.
 
 The support depends on the shifts of the matrix entries: source shift `r` and target shift `s`
-contribute `{r-s, 1+r-s, 2+r-s}`. Twisting preserves these graded vector spaces but changes their
+contribute `{r-s, 1+r-s, 2+r-s}`. Twisting preserves these graded Hom modules but changes their
 differentials; the cohomology conclusions use finite subquotients, not vanishing differentials.
 This formal closure is not identified here with a triangulated realization or a retract completion.
 
@@ -112,7 +112,7 @@ theorem homSupport_def (X Y : ZigzagProjectiveTwistedClosure k G) :
             1 + (X.obj.X i).shift - (Y.obj.X j).shift,
             2 + (X.obj.X i).shift - (Y.obj.X j).shift} := (rfl)
 
-/-- A degree is supported exactly when it occurs in one of the three-degree matrix entries. -/
+/-- Membership in the support bound means occurring among the three shifted degrees of an entry. -/
 @[simp, grind =]
 theorem mem_homSupport_iff (X Y : ZigzagProjectiveTwistedClosure k G) (n : ℤ) :
     n ∈ homSupport k G X Y ↔
