@@ -42,6 +42,8 @@ of `NC(f '' s)` onto the upper interval `[σ_f, 1_s]` of `NC(s)`.
 * `TauCeti.freeCumulant_fiberProd` and `TauCeti.freeCumulant_fiberProd_eq_sum_prod` — the free
   cumulant of the grouped word is `∑_{π ⊔ σ_f = 1_s} κ_π(a)`, and in multiplicative form
   `∑_{π ⊔ σ_f = 1_s} ∏_{B ∈ π} κ_B(a)`.
+* `TauCeti.freeCumulant_comp_of_strictMonoOn` — for injective `f` no letters are grouped, so free
+  cumulants are invariant under increasing relabelling of the positions.
 
 ## References
 
@@ -155,6 +157,27 @@ theorem freeCumulant_fiberProd_eq_sum_prod (hf : MonotoneOn f s) :
       ∑ π : NoncrossingPartition s with π ⊔ NoncrossingPartition.comap hf ⊥ = ⊤,
         ∏ B ∈ π.1.parts, freeCumulant φ a B := by
   simp_rw [freeCumulant_fiberProd φ a hf, partitionCumulant_eq_prod_freeCumulant]
+
+/-- *Increasing relabelling*: for a map `e` that is strictly monotone on `s`, the free cumulant of
+the word `b ∘ e` along `s` is the free cumulant of `b` along the image `e '' s`. -/
+theorem freeCumulant_comp_of_strictMonoOn {e : α → β} (he : StrictMonoOn e s) (b : β → A) :
+    freeCumulant φ (b ∘ e) s = freeCumulant φ b (s.image e) := by
+  -- The fibres of `e` in `s` are singletons, so grouping along them changes nothing.
+  have hfib : ∀ x ∈ s, {y ∈ s | e y = e x} = {x} := fun x hx =>
+    eq_singleton_iff_unique_mem.2 ⟨mem_filter.2 ⟨hx, rfl⟩,
+      fun y hy => he.injOn (mem_filter.1 hy).1 hx (mem_filter.1 hy).2⟩
+  have hσ : NoncrossingPartition.comap he.monotoneOn ⊥ = ⊥ := by
+    refine Subtype.ext <| Finpartition.ext_of_part fun x hx => ?_
+    rw [NoncrossingPartition.coe_comap, NoncrossingPartition.coe_bot,
+      NoncrossingPartition.coe_bot, Finpartition.part_comap_bot hx, hfib x hx,
+      Finpartition.part_eq_of_mem _ (Finpartition.mem_bot_iff.2 ⟨x, hx, rfl⟩)
+        (mem_singleton_self x)]
+  have hb : Set.EqOn b (fiberProd (b ∘ e) s e) (s.image e) := by
+    intro y hy
+    obtain ⟨x, hx, rfl⟩ := mem_image.1 hy
+    simp [fiberProd_def, hfib x hx]
+  rw [freeCumulant_congr φ hb, freeCumulant_fiberProd φ (b ∘ e) he.monotoneOn, hσ]
+  simp only [sup_bot_eq, filter_eq', mem_univ, ite_true, sum_singleton, freeCumulant_def]
 
 end Cumulant
 

@@ -40,6 +40,8 @@ all of `α` are bundled as multilinear maps `(α → A) → R`:
 * `TauCeti.partitionCumulant_update_add`, `TauCeti.partitionCumulant_update_smul`,
   `TauCeti.freeCumulant_update_add`, `TauCeti.freeCumulant_update_smul` — the free cumulants
   `κ_π(a)` and `κ_s(a)` are linear in each entry `a i` with `i ∈ s`.
+* `TauCeti.freeCumulant_add_algebraMap` — for a normalised `φ`, free cumulants of order at least
+  two are invariant under adding scalars to their arguments, in particular under centring.
 
 ## Implementation notes
 
@@ -132,6 +134,37 @@ theorem freeCumulant_update_add {i : α} (hi : i ∈ s) (x y : A) :
 theorem freeCumulant_update_smul {i : α} (hi : i ∈ s) (c : R) (x : A) :
     freeCumulant φ (update a i (c • x)) s = c * freeCumulant φ (update a i x) s := by
   simp only [freeCumulant_def, partitionCumulant_update_smul φ a _ hi]
+
+/-- For a normalised `φ`, a free cumulant of order at least two is unchanged by adding scalar
+multiples of `1` to its arguments: `κ_s(a + c • 1) = κ_s(a)` when `φ 1 = 1` and `#s ≥ 2`. In
+particular, centring the letters `a x ↦ a x - φ (a x) • 1` does not change it. -/
+theorem freeCumulant_add_algebraMap (hφ : φ 1 = 1) (c : α → R) (hs : 1 < #s) :
+    freeCumulant φ (fun x => a x + algebraMap R A (c x)) s = freeCumulant φ a s := by
+  classical
+  -- Shift the letters at the positions of `t ⊆ s` one at a time; each shift adds the cumulant
+  -- of a word with a unit letter, which vanishes.
+  suffices h : ∀ t ⊆ s, freeCumulant φ
+      (fun x => if x ∈ t then a x + algebraMap R A (c x) else a x) s = freeCumulant φ a s by
+    rw [← h s subset_rfl]
+    exact freeCumulant_congr φ fun x hx => by simp [mem_coe.1 hx]
+  intro t
+  induction t using Finset.induction_on with
+  | empty => simp
+  | insert i t hit ih =>
+    intro hts
+    have hi := hts (mem_insert_self i t)
+    have hupd : (fun x => if x ∈ insert i t then a x + algebraMap R A (c x) else a x) =
+        update (fun x => if x ∈ t then a x + algebraMap R A (c x) else a x) i
+          (a i + c i • 1) := by
+      ext x
+      rcases eq_or_ne x i with rfl | hx
+      · simp [Algebra.algebraMap_eq_smul_one]
+      · rw [update_of_ne hx, if_congr (by rw [mem_insert, or_iff_right hx]) rfl rfl]
+    rw [hupd, freeCumulant_update_add φ _ hi, freeCumulant_update_smul φ _ hi,
+      freeCumulant_eq_zero_of_apply_eq_one φ _ hφ (update_self _ _ _) hi hs, mul_zero, add_zero,
+      ← ih ((subset_insert i t).trans hts)]
+    congr 1
+    exact update_eq_self_iff.2 (by simp [hit])
 
 end Cumulant
 
