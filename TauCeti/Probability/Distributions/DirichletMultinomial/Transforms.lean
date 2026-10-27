@@ -18,9 +18,6 @@ sums of the Gamma-ratio masses on the count antidiagonal. The cumulant-generatin
 is the logarithm of the positive exponential sum. These formulas include zero trials and
 one category; integrability also holds at invalid concentrations, whose measure is zero.
 
-The sums use `integral_dirichletMultinomialMeasure`, with no special-function transform
-or additional choice of simplex coordinates.
-
 ## References
 
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley,
@@ -59,13 +56,8 @@ theorem mgf_inner_dirichletMultinomialMeasure {a : ι → ℝ} (ha : ∀ i, 0 < 
           (Real.Gamma (∑ i, a i) / Real.Gamma ((∑ i, a i) + n) *
             ∏ i, Real.Gamma (a i + k i) / Real.Gamma (a i))) *
           Real.exp (t * ∑ i, θ i * (k i : ℝ)) := by
-  classical
-  rw [mgf, integral_map (by fun_prop) (by fun_prop), integral_dirichletMultinomialMeasure]
-  refine Finset.sum_congr rfl fun k hk ↦ ?_
-  have hsum : ∑ i, k i = n := (Finset.mem_piAntidiag.mp hk).1
-  simp [dirichletMultinomialMeasure_real_singleton ha, hsum,
-    EuclideanSpace.inner_eq_star_dotProduct, dotProduct, multinomialToEuclidean_apply,
-    mul_comm]
+  rw [mgf, integral_map_multinomialToEuclidean_dirichletMultinomialMeasure ha]
+  simp only [inner_multinomialToEuclidean, smul_eq_mul]
 
 open Classical in
 /-- The directional cgf is the logarithm of the finite Gamma-ratio exponential sum,
@@ -91,13 +83,9 @@ theorem charFun_map_multinomialToEuclidean_dirichletMultinomialMeasure
           (Real.Gamma (∑ i, a i) / Real.Gamma ((∑ i, a i) + n) *
             ∏ i, Real.Gamma (a i + k i) / Real.Gamma (a i))) •
           Complex.exp ((∑ i, (t i : ℂ) * (k i : ℂ)) * Complex.I) := by
-  classical
-  rw [charFun_apply, integral_map (by fun_prop) (by fun_prop),
-    integral_dirichletMultinomialMeasure]
-  refine Finset.sum_congr rfl fun k hk ↦ ?_
-  have hsum : ∑ i, k i = n := (Finset.mem_piAntidiag.mp hk).1
-  simp [dirichletMultinomialMeasure_real_singleton ha, hsum,
-    EuclideanSpace.inner_eq_star_dotProduct, dotProduct, multinomialToEuclidean_apply,
-    mul_comm]
+  rw [charFun_apply, integral_map_multinomialToEuclidean_dirichletMultinomialMeasure ha]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [real_inner_comm, inner_multinomialToEuclidean]
+  simp only [Complex.ofReal_sum, Complex.ofReal_mul, Complex.ofReal_natCast]
 
 end TauCeti.Probability
