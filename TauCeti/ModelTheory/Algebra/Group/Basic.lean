@@ -7,6 +7,10 @@ module
 
 public import Mathlib.ModelTheory.Semantics
 public import Mathlib.Algebra.Group.MinimalAxioms
+public import Mathlib.Algebra.Group.Pi.Basic
+public import Mathlib.Algebra.Group.TypeTags.Basic
+public import Mathlib.GroupTheory.FreeGroup.Basic
+import Mathlib.GroupTheory.FreeGroup.Reduce
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -17,7 +21,12 @@ multiplication symbol. Adding named coefficients uses Mathlib's `Language.withCo
 The interpretation in a group, and the three left-hand group axioms, give the semantic
 interface needed to turn group formulas into equations in words.
 A model of the group theory yields a group whose operations recover the symbol interpretations.
+The multiplicative monoid `ℕ` is not a model, however inversion is interpreted.
 Group homomorphisms, including those preserving named coefficients, induce language homomorphisms.
+Including group-language terms into the coefficient language preserves the group operations.
+The coefficient sentence `a * b = b * a` holds exactly when the coefficients of `a` and `b`
+commute, so it is false in the free group on two letters and true in `ℤ²`, with the bases as
+coefficients.
 
 The choice of symbols and coefficient letters follows Kharlampovich and Myasnikov,
 *Implicit function theorem over free groups*, §2.3. The language and structure interface
@@ -445,3 +454,112 @@ def coeffGroupLanguageHom (φ : G →* H) (c : A → G) (d : A → H)
 end Homomorphisms
 
 end MonoidHom
+
+namespace TauCeti
+
+open FirstOrder FirstOrder.Language
+
+namespace Group
+
+open Language.Structure
+
+section NotModel
+
+attribute [local instance] structureOfGroup
+
+/-- The multiplicative monoid `ℕ` is not a model of the group theory, however inversion is
+interpreted: the group theory is not satisfied by every monoid. -/
+theorem not_model_group_multiplicative_nat [Inv (Multiplicative ℕ)] :
+    ¬ Multiplicative ℕ ⊨ Language.Theory.group := fun h => by
+  have h' := (GroupAxiom.realize_toSentence_iff_toProp (G := Multiplicative ℕ) .invMulCancel).1
+    (Language.Theory.realize_sentence_of_mem Language.Theory.group (Set.mem_range_self _))
+  have h1 := congrArg Multiplicative.toAdd (h' (Multiplicative.ofAdd 1))
+  simp only [toAdd_mul, toAdd_ofAdd, toAdd_one] at h1
+  omega
+
+end NotModel
+
+section Coefficients
+
+variable {A α : Type*}
+
+/-- Including group-language terms into the coefficient language preserves the identity. -/
+@[simp] theorem onTerm_one :
+    (Language.group.lhomWithConstants A).onTerm (1 : Language.group.Term α) = 1 := by
+  rw [one_def, Language.Constants.term, LHom.onTerm]
+  exact congrArg (Language.Term.func _) (funext fun i => i.elim0)
+
+end Coefficients
+
+end Group
+
+end TauCeti
+
+namespace FirstOrder.Language.Term
+
+open TauCeti.Group
+
+variable {A α : Type*}
+
+/-- Including group-language terms into the coefficient language preserves inversion. -/
+@[simp] theorem onTerm_inv (t : Language.group.Term α) :
+    (Language.group.lhomWithConstants A).onTerm t⁻¹ =
+      ((Language.group.lhomWithConstants A).onTerm t)⁻¹ := by
+  rw [inv_def, Language.Functions.apply₁, LHom.onTerm]
+  exact congrArg (Language.Term.func _) (funext fun i => by fin_cases i; rfl)
+
+/-- Including group-language terms into the coefficient language preserves multiplication. -/
+@[simp] theorem onTerm_mul (t s : Language.group.Term α) :
+    (Language.group.lhomWithConstants A).onTerm (t * s) =
+      (Language.group.lhomWithConstants A).onTerm t *
+        (Language.group.lhomWithConstants A).onTerm s := by
+  rw [mul_def, Language.Functions.apply₂, LHom.onTerm]
+  exact congrArg (Language.Term.func _) (funext fun i => by fin_cases i <;> rfl)
+
+end FirstOrder.Language.Term
+
+namespace TauCeti
+
+open FirstOrder FirstOrder.Language
+
+namespace Group
+
+section Coefficients
+
+variable {A G : Type*}
+
+/-- The coefficient-language sentence `a * b = b * a`, for coefficient names `a b : A`. -/
+def commSentence (a b : A) : Language.group[[A]].Sentence :=
+  Language.Term.bdEqual ((Language.group.con a).term * (Language.group.con b).term)
+    ((Language.group.con b).term * (Language.group.con a).term)
+
+attribute [local instance] structureOfGroup
+
+/-- The sentence `a * b = b * a` holds exactly when the coefficients of `a` and `b` commute. -/
+@[simp] theorem realize_commSentence_iff [One G] [Inv G] [Mul G] (c : A → G) (a b : A) :
+    letI := Language.constantsOn.structure c
+    G ⊨ commSentence a b ↔ Commute (c a) (c b) :=
+  -- Realization of terms with named coefficients reduces definitionally to group operations.
+  Iff.rfl
+
+/-- The sentence `a * b = b * a`, for the two basis constants, is false in the free group on two
+letters: an equation with constants can distinguish groups. -/
+theorem not_realize_commSentence_freeGroup :
+    letI := Language.constantsOn.structure (FreeGroup.of : Fin 2 → FreeGroup (Fin 2))
+    ¬ FreeGroup (Fin 2) ⊨ commSentence (0 : Fin 2) 1 := by
+  rw [realize_commSentence_iff, Commute, SemiconjBy]
+  decide
+
+/-- The sentence `a * b = b * a` is true in `ℤ²`, with the standard basis as constants. -/
+theorem realize_commSentence_multiplicative_pi :
+    letI := Language.constantsOn.structure
+      (fun i => Multiplicative.ofAdd (Pi.single i 1) : Fin 2 → Multiplicative (Fin 2 → ℤ))
+    Multiplicative (Fin 2 → ℤ) ⊨ commSentence (0 : Fin 2) 1 := by
+  rw [realize_commSentence_iff]
+  exact Commute.all _ _
+
+end Coefficients
+
+end Group
+
+end TauCeti

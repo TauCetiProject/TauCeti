@@ -415,22 +415,19 @@ theorem addSubgroupClosure_pow_mul_mem_nhds (P : PairOfDefinition A) {T U : Set 
   rw [← hwa]
   exact sum_mem fun t ht ↦ AddSubgroup.subset_closure ⟨t, hFT ht, w t, hr (hw t ht), rfl⟩
 
-section
-
-open Topology
-
-variable {B : Type*} [CommRing B] [TopologicalSpace B]
-  [IsTopologicalRing A] [IsTopologicalRing B]
-
 omit [SeparatelyContinuousAdd A] in
-omit [IsTopologicalRing A] in
 /-- For compatible rings of definition, a continuous map extending a source ideal of definition
-to an open ambient ideal makes its extension an ideal of definition in the target subring. -/
-theorem isAdic_map_idealOfDefinition (P : PairOfDefinition A) (Q : PairOfDefinition B)
+to an open ambient ideal makes its extension an ideal of definition in the target subring.
+Only separate continuity of multiplication is needed in the ambient target: the adic topology
+already makes its ring of definition a topological ring. -/
+theorem isAdic_map_idealOfDefinition {B : Type*} [CommRing B] [TopologicalSpace B]
+    [SeparatelyContinuousMul B] (P : PairOfDefinition A) (Q : PairOfDefinition B)
     (f : A →+* B) (h : ∀ a ∈ P.ringOfDefinition, f a ∈ Q.ringOfDefinition)
     (hf : Continuous f) (hopen : IsOpen (P.extendedIdealOfDefinition.map f : Set B)) :
     IsAdic (P.idealOfDefinition.map (f.restrict _ _ h)) := by
   classical
+  have : IsTopologicalRing Q.ringOfDefinition :=
+    Q.isAdic_idealOfDefinition ▸ Q.idealOfDefinition.nonarchimedean.toIsTopologicalRing
   let f₀ := f.restrict _ _ h
   have hc : Continuous f₀ := (hf.comp continuous_subtype_val).subtype_mk _
   have hrad := P.isAdic_idealOfDefinition.map_le_radical_of_continuous
@@ -468,8 +465,6 @@ theorem isAdic_map_idealOfDefinition (P : PairOfDefinition A) (Q : PairOfDefinit
   have hgI : g ∈ P.idealOfDefinition := hG ▸ Ideal.subset_span hg
   convert Ideal.mem_map_of_mem f₀ hgI using 1
   exact Subtype.ext hgt.symm
-
-end
 
 end PairOfDefinition
 

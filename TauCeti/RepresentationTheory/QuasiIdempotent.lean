@@ -79,7 +79,8 @@ public section
 namespace Representation
 
 open scoped MonoidAlgebra
-open TauCeti (spanSingletonGenerator coe_spanSingletonGenerator)
+open TauCeti (spanSingletonGenerator coe_spanSingletonGenerator
+  exists_smul_spanSingletonGenerator smul_spanSingletonGenerator_self)
 
 variable {k G V : Type*} [CommSemiring k] [Monoid G] [AddCommMonoid V] [Module k V]
 variable (σ : Representation k G V) {a : k[G]} {κ : k}
@@ -87,18 +88,6 @@ variable (σ : Representation k G V) {a : k[G]} {κ : k}
 /-- The representation of `G` on the left ideal `k[G] a` by left multiplication. -/
 local notation "ρₐ" a =>
   ofModule' (k := k) (G := G) (Ideal.span {a} : Ideal k[G])
-
-/-- An element of the left ideal `k[G] a` is a left multiple of the generator `a`. -/
-private theorem exists_smul_spanSingletonGenerator (x : (Ideal.span {a} : Ideal k[G])) :
-    ∃ r : k[G], r • spanSingletonGenerator a = x := by
-  obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.mp x.2
-  exact ⟨r, Subtype.ext (by rwa [Submodule.coe_smul, coe_spanSingletonGenerator, smul_eq_mul])⟩
-
-/-- Under quasi-idempotence, `a` acting on the generator of `k[G] a` scales it by `κ`. -/
-private theorem smul_spanSingletonGenerator_self (ha : a * a = κ • a) :
-    a • spanSingletonGenerator a = κ • spanSingletonGenerator a :=
-  Subtype.ext (by
-    rwa [Submodule.coe_smul, Submodule.coe_smul_of_tower, coe_spanSingletonGenerator, smul_eq_mul])
 
 /-- An intertwining map out of `k[G] a` sends `r a` to `r` applied to its value at `a`. -/
 private theorem intertwining_apply_smul_generator (f : IntertwiningMap (ρₐ a) σ) (r : k[G]) :

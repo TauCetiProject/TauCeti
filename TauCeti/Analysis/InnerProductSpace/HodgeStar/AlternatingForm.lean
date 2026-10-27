@@ -1,0 +1,136 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
+
+/-!
+# The Hodge star of alternating forms
+
+On an oriented finite-dimensional real inner product space `V` of dimension `m`, the Hodge star
+of `⋀ᵏ V` is transported along `TauCeti.alternatingFormEquiv` to the continuous alternating forms
+`V [⋀^Fin k]→L[ℝ] ℝ`, the fibres of the bundle of differential forms. This gives
+`Orientation.formHodgeStar : (V [⋀^Fin k]→L[ℝ] ℝ) ≃ₗ[ℝ] V [⋀^Fin l]→L[ℝ] ℝ` for `k + l = m`.
+
+It is characterized by the wedge identity `α ∧ ⋆β = ⟨α, β⟩ vol` of forms, where `∧` is the
+wedge product of forms `ContinuousAlternatingMap.wedge`, `⟨·, ·⟩` is the Gram inner product
+`TauCeti.alternatingFormInner` and `vol` is `Orientation.volumeForm`. This is the identity that
+turns the `L²` pairing of forms on an oriented Riemannian manifold into an integral of a top
+form. The star is an isometry, satisfies `⋆⋆ = (-1) ^ (k l)` on `k`-forms, and changes sign
+with the orientation.
+
+## Main definitions
+
+* `Orientation.formHodgeStar`: the Hodge star of alternating forms.
+
+## Main results
+
+* `Orientation.wedge_formHodgeStar_apply`: `α ∧ ⋆β = ⟨α, β⟩ vol`.
+* `Orientation.formHodgeStar_formHodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
+* `Orientation.alternatingFormInner_formHodgeStar`: the star preserves the inner product of forms.
+
+## References
+
+* F. W. Warner, *Foundations of Differentiable Manifolds and Lie Groups*, Graduate Texts in
+  Mathematics 94, Springer (1983), §6.1.
+-/
+
+public section
+
+noncomputable section
+
+open Module exteriorPower TauCeti
+open scoped RealInnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {n : ℕ} [_i : Fact (finrank ℝ V = n)]
+
+namespace Orientation
+
+variable (o : Orientation ℝ V (Fin n))
+
+/-- The Hodge star of alternating forms on an oriented real inner product space, `k`-forms to
+`l`-forms for `k + l = finrank ℝ V`: the Hodge star of `⋀ᵏ V` transported along
+`TauCeti.alternatingFormEquiv`. It is characterized by `α ∧ ⋆β = ⟨α, β⟩ vol`
+(`Orientation.wedge_formHodgeStar_apply`). -/
+def formHodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V) :
+    (V [⋀^Fin k]→L[ℝ] ℝ) ≃ₗ[ℝ] V [⋀^Fin l]→L[ℝ] ℝ :=
+  ((alternatingFormEquiv V k).symm.trans (o.hodgeStar hkl)).trans (alternatingFormEquiv V l)
+
+/-- The Hodge star of the form of `x ∈ ⋀ᵏ V` is the form of `⋆x`. -/
+@[simp]
+theorem formHodgeStar_alternatingFormEquiv {k l : ℕ} (hkl : k + l = finrank ℝ V)
+    (x : ⋀[ℝ]^k V) :
+    o.formHodgeStar hkl (alternatingFormEquiv V k x) =
+      alternatingFormEquiv V l (o.hodgeStar hkl x) := by
+  simp [formHodgeStar]
+
+/-- The Hodge star of a form `α` evaluates on `(v₁, …, vₗ)` as the volume of `a ∧ v₁ ∧ ⋯ ∧ vₗ`,
+where `a ∈ ⋀ᵏ V` represents `α`. -/
+theorem formHodgeStar_apply {k l : ℕ} (hkl : k + l = finrank ℝ V) (α : V [⋀^Fin k]→L[ℝ] ℝ)
+    (v : Fin l → V) :
+    o.formHodgeStar hkl α v =
+      wedgePairing o.volumeEquiv hkl ((alternatingFormEquiv V k).symm α) (ιMulti ℝ l v) := by
+  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V k).surjective α
+  rw [formHodgeStar_alternatingFormEquiv, alternatingFormEquiv_apply, inner_hodgeStar_apply,
+    LinearEquiv.symm_apply_apply]
+
+/-- A top-degree inner product with a wedge of vectors, read in any degree `d = finrank ℝ V`: it
+is the volume of the element times the volume form of the vectors. -/
+private theorem inner_ιMulti_eq_volumeEquiv_mul_volumeForm {d : ℕ} (hd : d = finrank ℝ V)
+    (z : ⋀[ℝ]^d V) (z' : ⋀[ℝ]^(finrank ℝ V) V) (hz : (z : ExteriorAlgebra ℝ V) = z')
+    (v : Fin d → V) :
+    ⟪z, ιMulti ℝ d v⟫ = o.volumeEquiv z' * o.volumeForm (v ∘ finCongr (hd.trans _i.out).symm) := by
+  subst hd
+  obtain rfl : z = z' := Subtype.ext hz
+  rw [o.inner_eq_volumeEquiv_mul_volumeEquiv, volumeEquiv_ιMulti]
+
+/-- **The wedge characterization of the Hodge star of forms**: for `k`-forms `α` and `β`,
+`α ∧ ⋆β = ⟨α, β⟩ vol`, where `vol` is the volume form of the orientation, read in degree
+`k + l = finrank ℝ V`. -/
+theorem wedge_formHodgeStar_apply {k l : ℕ} (hkl : k + l = finrank ℝ V)
+    (α β : V [⋀^Fin k]→L[ℝ] ℝ) (v : Fin (k + l) → V) :
+    α.wedge (o.formHodgeStar hkl β) v =
+      alternatingFormInner V k α β * o.volumeForm (v ∘ finCongr (hkl.trans _i.out).symm) := by
+  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V k).surjective α
+  obtain ⟨b, rfl⟩ := (alternatingFormEquiv V k).surjective β
+  -- The wedge of forms is the form of the exterior product `a ∧ ⋆b`, a top-degree element whose
+  -- volume is `⟪a, b⟫`.
+  set z : ⋀[ℝ]^(finrank ℝ V) V := ⟨_, by
+    rw [← hkl]; exact (wedge ℝ V k l a (o.hodgeStar hkl b)).2⟩
+  rw [formHodgeStar_alternatingFormEquiv, ← alternatingFormEquiv_wedge,
+    alternatingFormEquiv_apply, alternatingFormInner_alternatingFormEquiv,
+    ← o.wedgePairing_hodgeStar hkl, wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _ z rfl]
+  exact o.inner_ιMulti_eq_volumeEquiv_mul_volumeForm hkl _ z rfl v
+
+/-- The Hodge star preserves the inner product of forms. -/
+@[simp]
+theorem alternatingFormInner_formHodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V)
+    (α β : V [⋀^Fin k]→L[ℝ] ℝ) :
+    alternatingFormInner V l (o.formHodgeStar hkl α) (o.formHodgeStar hkl β) =
+      alternatingFormInner V k α β := by
+  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V k).surjective α
+  obtain ⟨b, rfl⟩ := (alternatingFormEquiv V k).surjective β
+  simp
+
+/-- **The square of the Hodge star of forms**: `⋆⋆α = (-1) ^ (k l) α` for a `k`-form `α`, where
+`k + l = finrank ℝ V`. -/
+theorem formHodgeStar_formHodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V)
+    (hlk : l + k = finrank ℝ V) (α : V [⋀^Fin k]→L[ℝ] ℝ) :
+    o.formHodgeStar hlk (o.formHodgeStar hkl α) = (-1 : ℝ) ^ (k * l) • α := by
+  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V k).surjective α
+  rw [formHodgeStar_alternatingFormEquiv, formHodgeStar_alternatingFormEquiv,
+    hodgeStar_hodgeStar, map_smul]
+
+/-- Reversing the orientation negates the Hodge star of forms. -/
+@[simp]
+theorem formHodgeStar_neg_orientation {k l : ℕ} (hkl : k + l = finrank ℝ V)
+    (α : V [⋀^Fin k]→L[ℝ] ℝ) : (-o).formHodgeStar hkl α = -o.formHodgeStar hkl α := by
+  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V k).surjective α
+  simp
+
+end Orientation

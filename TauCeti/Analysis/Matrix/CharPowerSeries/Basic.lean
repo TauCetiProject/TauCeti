@@ -48,10 +48,11 @@ instances of the real estimates `TauCeti.mul_pow_le_of_forall_prod_le` and
 to the coefficients of the Fredholm resolvent.
 
 Only summability requires completeness; none of these estimates requires `‖1‖ = 1`.
-Over an ultrametric normed commutative ring with `‖1‖ = 1`, row bounds `‖A i j‖ ≤ r i`
+Over an ultrametric seminormed commutative ring with `‖1‖ = 1`, row bounds `‖A i j‖ ≤ r i`
 supply the product majorant (`Matrix.norm_principalMinor_le`). They give the row-bound
 corollaries `Matrix.norm_charCoeff_le`, `Matrix.summable_principalMinor`,
-`Matrix.norm_charCoeff_mul_pow_le`, and `Matrix.isRestricted_charPowerSeries`.
+and `Matrix.norm_charCoeff_mul_pow_le`. When the ring is normed, they also give
+`Matrix.isRestricted_charPowerSeries`.
 
 The tail estimate depends on `A` only through `r`, so it is uniform over every family of matrices
 sharing one product majorant. The coefficients do not depend on an enumeration of the index type
@@ -392,7 +393,7 @@ end NormedProductMajorants
 
 section Ultra
 
-variable [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+variable [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
 
 /-- **Coefficient bound.** If `r` bounds the rows of `A` and `C ≥ 0` bounds `∏ i ∈ s, r i` for
 every `n`-element set `s`, then `C` bounds the `n`-th coefficient of the principal-minor
@@ -403,7 +404,7 @@ theorem norm_charCoeff_le {A : Matrix ι ι R} {r : ι → ℝ} (hA : ∀ i j, �
   norm_charCoeff_le_of_principalMinor_le hC fun s hs' ↦
     (norm_principalMinor_le hA s).trans (hs s hs')
 
-/-- **Summability of principal minors.** Over a complete ultrametric normed ring with
+/-- **Summability of principal minors.** Over a complete ultrametric seminormed ring with
 `‖1‖ = 1`, if the rows of `A` are bounded by a family `r` tending to zero along the cofinite
 filter, then the principal minors of each fixed size form a summable family. -/
 theorem summable_principalMinor [CompleteSpace R] {A : Matrix ι ι R} {r : ι → ℝ}
@@ -422,6 +423,12 @@ theorem norm_charCoeff_mul_pow_le {A : Matrix ι ι R} {r : ι → ℝ} (hA : �
   norm_charCoeff_mul_pow_le_of_le_prod (norm_principalMinor_le hA)
     hρ hq₀ hq₁ hB T hT hrB n
 
+end Ultra
+
+section NormedUltra
+
+variable [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+
 /-- **Entirety.** If the rows of `A` are bounded by a family tending to zero along the cofinite
 filter, then the principal-minor series is restricted at every radius. -/
 theorem isRestricted_charPowerSeries {A : Matrix ι ι R} {r : ι → ℝ}
@@ -429,6 +436,6 @@ theorem isRestricted_charPowerSeries {A : Matrix ι ι R} {r : ι → ℝ}
     A.charPowerSeries.IsRestricted c :=
   isRestricted_charPowerSeries_of_le_prod (norm_principalMinor_le hA) hr c
 
-end Ultra
+end NormedUltra
 
 end Matrix

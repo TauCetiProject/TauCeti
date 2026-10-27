@@ -11,6 +11,8 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Units
 
+import Mathlib.Analysis.Normed.Ring.Units
+
 /-!
 # The Monsky–Washnitzer algebra of overconvergent power series
 
@@ -36,6 +38,11 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   `TauCeti.Dagger.washnitzerAlgebra.ofMvPolynomial`: the inclusion of the polynomials.
 * `TauCeti.Dagger.washnitzerAlgebra.toTate`: the inclusion of `W` into the unit-radius Tate
   algebra.
+* `TauCeti.Dagger.washnitzerAlgebra.ofRestricted`: the inclusion into `W` of the series
+  restricted at a polyradius bounded below by some `ρ > 1`.
+* `TauCeti.Dagger.washnitzerAlgebra.renameEquiv`: renaming the variables along an equivalence.
+* `TauCeti.Dagger.washnitzerAlgebra.isEmptyAlgEquiv`: with no variables, `W` is the coefficient
+  ring, via the constant coefficient.
 
 ## Main results
 
@@ -46,7 +53,8 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
 * `TauCeti.Dagger.washnitzerAlgebra.denseRange_toTate`: `W` is dense in the Tate algebra;
   `TauCeti.Dagger.washnitzerAlgebra_toSubring_lt`: over a nontrivially normed field it is a
   proper subring as soon as there is a variable, while `W` is everything when there is none
-  (`TauCeti.Dagger.washnitzerAlgebra_eq_top`).
+  (`TauCeti.Dagger.washnitzerAlgebra_eq_top`), and then every series is a constant
+  (`TauCeti.Dagger.algebraMap_washnitzerAlgebra_surjective`).
 * `TauCeti.Dagger.exists_isRestricted_forall_norm_coeff_mul_pow_lt`: strict coefficient bounds
   on an overconvergent series persist to some radius `ρ > 1`; by
   `TauCeti.Dagger.exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt` this holds for the
@@ -56,6 +64,8 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   overconvergent series is a unit of `W` iff it is a unit of the Tate algebra, iff its constant
   coefficient is nonzero and strictly dominates all others. In Gauss norm form,
   `TauCeti.Dagger.isUnit_washnitzerAlgebra_iff_norm_sub_lt` reads `|f - f(0)| < |f(0)|`.
+  Consequently `1 + c • f` is a unit for all scalars `c` near `0`
+  (`TauCeti.Dagger.washnitzerAlgebra.eventually_isUnit_one_add_smul`).
 * `TauCeti.Dagger.primitive_mem_washnitzerAlgebra` and `TauCeti.Dagger.washnitzerAlgebra.primitive`:
   over a field of characteristic zero, termwise primitives `∑ aᵥ Xᵛ ↦ ∑ aᵥ Xᵛ⁺ᵉⁱ / (νᵢ + 1)` of
   overconvergent series are overconvergent.
@@ -161,12 +171,41 @@ theorem mem_washnitzerAlgebra_iff_norm_coeff_le [Finite σ] {f : MvPowerSeries �
 theorem washnitzerAlgebra_eq_top [IsEmpty σ] : washnitzerAlgebra σ R = ⊤ :=
   eq_top_iff.2 fun _ _ ↦ ⟨2, one_lt_two, isRestricted_of_finite_support _ (Set.toFinite _)⟩
 
+/-- Without variables every overconvergent series is a constant. -/
+theorem algebraMap_washnitzerAlgebra_surjective [IsEmpty σ] :
+    Function.Surjective (algebraMap R (washnitzerAlgebra σ R)) := fun f ↦
+  let ⟨r, hr⟩ := C_surjective (f : MvPowerSeries σ R)
+  ⟨r, Subtype.ext hr⟩
+
 /-- The Monsky–Washnitzer algebra lies in the unit-radius Tate algebra. -/
 theorem washnitzerAlgebra_toSubring_le :
     (washnitzerAlgebra σ R).toSubring ≤ IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)) :=
   fun _ hf ↦ isRestricted_of_mem_washnitzerAlgebra hf zero_le_one le_rfl
 
 namespace washnitzerAlgebra
+
+/-- With no variables, every overconvergent series comes from the coefficient ring. -/
+theorem algebraMap_surjective [IsEmpty σ] :
+    Function.Surjective (algebraMap R (washnitzerAlgebra σ R)) := by
+  intro f
+  obtain ⟨c, hc⟩ := C_surjective (σ := σ) (f : MvPowerSeries σ R)
+  exact ⟨c, Subtype.ext (by simpa [MvPowerSeries.algebraMap_apply] using hc)⟩
+
+/-- Renaming variables along an equivalence preserves overconvergence. -/
+noncomputable def renameAlgEquiv {τ : Type*} (e : σ ≃ τ) :
+    washnitzerAlgebra σ R ≃ₐ[R] washnitzerAlgebra τ R :=
+  AlgEquiv.ofRingEquiv
+    (f := (MvPowerSeries.renameEquiv R e).toRingEquiv.restrict _ _ fun f ↦ by
+      simp only [mem_washnitzerAlgebra, AlgEquiv.coe_toRingEquiv]
+      exact exists_congr fun ρ ↦ and_congr_right fun _ ↦
+        (isRestricted_renameEquiv_iff (R := R) (c := fun _ ↦ ρ) e).symm)
+    fun r ↦ Subtype.ext (rename_C e r)
+
+/-- The renaming equivalence acts on the underlying formal power series by renaming. -/
+@[simp]
+theorem coe_renameAlgEquiv {τ : Type*} (e : σ ≃ τ) (f : washnitzerAlgebra σ R) :
+    (renameAlgEquiv e f : MvPowerSeries τ R) = MvPowerSeries.renameEquiv R e f :=
+  (rfl)
 
 variable (σ R) in
 /-- The variable `Xᵢ` as an element of the Monsky–Washnitzer algebra. -/
@@ -177,6 +216,21 @@ noncomputable def X (i : σ) : washnitzerAlgebra σ R :=
 @[simp]
 theorem coe_X (i : σ) : (X σ R i : MvPowerSeries σ R) = MvPowerSeries.X i :=
   (rfl)
+
+/-- A variable in the Monsky–Washnitzer algebra over a nontrivial ring is nonzero. -/
+@[simp]
+theorem X_ne_zero [Nontrivial R] (i : σ) : X σ R i ≠ 0 := by
+  intro h
+  have hc := congrArg (fun f : washnitzerAlgebra σ R ↦
+    coeff (Finsupp.single i 1) (f : MvPowerSeries σ R)) h
+  simp at hc
+
+/-- A variable in the Monsky–Washnitzer algebra over a nontrivial ring is not a unit. -/
+@[simp]
+theorem not_isUnit_X [Nontrivial R] (i : σ) : ¬ IsUnit (X σ R i) := by
+  intro h
+  have hu := h.map (constantCoeff.comp (washnitzerAlgebra σ R).val.toRingHom)
+  simp at hu
 
 variable (σ R) in
 /-- The inclusion of the polynomial algebra into the Monsky–Washnitzer algebra. -/
@@ -223,6 +277,63 @@ theorem denseRange_toTate : DenseRange (toTate σ R) := by
     (s := fun _ ↦ 2) (fun _ ↦ zero_le_one) fun _ ↦ one_le_two).mono ?_
   rintro _ ⟨f, rfl⟩
   exact ⟨⟨f, 2, one_lt_two, f.2⟩, Subtype.ext (by simp)⟩
+
+/-- For a polyradius `c` bounded below by some `ρ > 1`, the inclusion of the series restricted at
+`c` into the Monsky–Washnitzer algebra. -/
+noncomputable def ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i) :
+    IsRestricted.subring (R := R) c →+* washnitzerAlgebra σ R :=
+  (IsRestricted.subring (R := R) c).subtype.codRestrict (washnitzerAlgebra σ R).toSubring
+    fun f ↦ mem_washnitzerAlgebra.mpr
+      ⟨ρ, hρ, isRestricted_of_le f.2 (fun _ ↦ (zero_lt_one.trans hρ).le) hc⟩
+
+/-- The inclusion of a restricted subring does not change the underlying series. -/
+@[simp]
+theorem coe_ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i)
+    (f : IsRestricted.subring (R := R) c) : (ofRestricted hρ hc f : MvPowerSeries σ R) = f :=
+  (rfl)
+
+/-- A renamed series is overconvergent iff the original one is. -/
+private theorem renameEquiv_mem_iff {τ : Type*} (e : σ ≃ τ) (f : MvPowerSeries σ R) :
+    f ∈ washnitzerAlgebra σ R ↔
+      _root_.MvPowerSeries.renameEquiv R e f ∈ washnitzerAlgebra τ R := by
+  simp only [mem_washnitzerAlgebra]
+  exact exists_congr fun ρ ↦
+    and_congr_right' (isRestricted_renameEquiv_iff e (c := fun _ ↦ ρ)).symm
+
+/-- **Renaming the variables of overconvergent series.** Renaming along an equivalence
+`e : σ ≃ τ` is an `R`-algebra isomorphism `R⟨X_σ⟩† ≃ R⟨X_τ⟩†`. -/
+noncomputable def renameEquiv {τ : Type*} (e : σ ≃ τ) :
+    washnitzerAlgebra σ R ≃ₐ[R] washnitzerAlgebra τ R :=
+  AlgEquiv.ofRingEquiv
+    (f := (_root_.MvPowerSeries.renameEquiv R e).toRingEquiv.restrict _ _ (renameEquiv_mem_iff e))
+    fun r ↦ Subtype.ext (rename_C _ r)
+
+/-- The renaming isomorphism of overconvergent series is `MvPowerSeries.renameEquiv` on the
+underlying series. -/
+@[simp]
+theorem coe_renameEquiv {τ : Type*} (e : σ ≃ τ) (f : washnitzerAlgebra σ R) :
+    (washnitzerAlgebra.renameEquiv e f : MvPowerSeries τ R) =
+      _root_.MvPowerSeries.renameEquiv R e f :=
+  (rfl)
+
+variable (σ R) in
+/-- **Overconvergent series in no variables.** With no variables every series is a constant, so
+the constant coefficient is an `R`-algebra isomorphism `R⟨⟩† ≃ R`. -/
+noncomputable def isEmptyAlgEquiv [IsEmpty σ] : washnitzerAlgebra σ R ≃ₐ[R] R :=
+  (Subalgebra.equivOfEq _ _ washnitzerAlgebra_eq_top).trans <|
+    Subalgebra.topEquiv.trans (_root_.MvPowerSeries.isEmptyEquiv σ R)
+
+/-- The isomorphism `R⟨⟩† ≃ R` is the constant coefficient. -/
+@[simp]
+theorem isEmptyAlgEquiv_apply [IsEmpty σ] (f : washnitzerAlgebra σ R) :
+    isEmptyAlgEquiv σ R f = constantCoeff (f : MvPowerSeries σ R) :=
+  (rfl)
+
+/-- The inverse of `R⟨⟩† ≃ R` sends a scalar to the constant series. -/
+@[simp]
+theorem coe_isEmptyAlgEquiv_symm_apply [IsEmpty σ] (r : R) :
+    ((isEmptyAlgEquiv σ R).symm r : MvPowerSeries σ R) = C r :=
+  (rfl)
 
 end washnitzerAlgebra
 
@@ -430,6 +541,17 @@ theorem isUnit_washnitzerAlgebra_iff_norm_sub_lt (f : washnitzerAlgebra σ K) :
   rw [isUnit_washnitzerAlgebra_iff, MvPowerSeries.norm_lt_iff,
     ← forall_norm_coeff_sub_C_lt_iff]
   simp [coe_algebraMap_isRestrictedSubring]
+
+/-- **Small perturbations of `1` are units.** Over a complete ultrametric normed field, for every
+overconvergent series `f`, `1 + c • f` is a unit of the Monsky–Washnitzer algebra for all scalars
+`c` near `0`. -/
+theorem washnitzerAlgebra.eventually_isUnit_one_add_smul (f : washnitzerAlgebra σ K) :
+    ∀ᶠ c in 𝓝 (0 : K), IsUnit (1 + c • f) := by
+  -- Units of the complete Tate algebra form an open set containing `1 = 1 + 0 • f`.
+  have hcont : Continuous fun c : K ↦ 1 + c • washnitzerAlgebra.toTate σ K f :=
+    continuous_const.add (continuous_id.smul continuous_const)
+  filter_upwards [(hcont.tendsto 0).eventually (Units.isOpen.mem_nhds (by simp))] with c hc
+  exact (washnitzerAlgebra.isUnit_toTate_iff _).1 (by simpa using hc)
 
 end Units
 

@@ -43,9 +43,9 @@ jobs:
     # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
     # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
     # commit, supplied explicitly as review_ref.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@14d5db7642210a3cec00059feb33ac33a45daa5d
+    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@ea28bc91b0ee34855ddd84a91a607aa05a0667ac
     with:
-      review_ref: 14d5db7642210a3cec00059feb33ac33a45daa5d
+      review_ref: ea28bc91b0ee34855ddd84a91a607aa05a0667ac
       tools_repository: TauCetiProject/TauCetiTools
       tools_ref: 0f4096297f058bff8ccd873067aab7120202aecf
       dry_run: ${{ inputs.dry-run || false }}

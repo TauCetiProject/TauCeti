@@ -103,7 +103,9 @@ theorem Rat.algebraMap_int_ringOfIntegers_bijective : Function.Bijective (algebr
 
 namespace Ideal
 
-variable {S : Type*} [CommRing S] [Algebra (𝓞 ℚ) S]
+section Ring
+
+variable {S : Type*} [Ring S] [Algebra (𝓞 ℚ) S]
 
 /-- The ideal of `𝓞 ℚ` below an ideal `P` is the image of the ideal of `ℤ` below `P`. -/
 -- Not a `simp` lemma: it would rewrite the left-hand sides of `absNorm_under_ringOfIntegers_rat`
@@ -127,6 +129,25 @@ theorem card_quot_under_ringOfIntegers_rat (P : Ideal S) :
   rw [← Submodule.cardQuot_apply, ← Submodule.cardQuot_apply, ← absNorm_apply, ← absNorm_apply,
     absNorm_under_ringOfIntegers_rat]
 
+/-- The primes of `S` above `Q ∩ 𝓞 ℚ` are the primes above `p`, when `Q` lies over the ideal `p`
+of `ℤ`. -/
+-- Not a `simp` lemma: `p` occurs only in the `LiesOver` instance and on the right-hand side, so
+-- the `simpNF` linter reports that `simp` could never infer it.
+theorem primesOver_under_ringOfIntegers_rat_eq {T : Type*} [Ring T] [Algebra (𝓞 ℚ) T]
+    {p : Ideal ℤ} (Q : Ideal T) [Q.LiesOver p] :
+    (Q.under (𝓞 ℚ)).primesOver S = p.primesOver S := by
+  ext 𝔮
+  simp only [Ideal.primesOver, Set.mem_ofPred_eq, liesOver_iff]
+  rw [← (comap_injective_of_surjective _
+    Rat.algebraMap_int_ringOfIntegers_bijective.surjective).eq_iff]
+  simp only [← under_def, under_under, ← Q.over_def p]
+
+end Ring
+
+section CommRing
+
+variable {S : Type*} [CommRing S] [Algebra (𝓞 ℚ) S]
+
 /-- **Frobenius elements over `𝓞 ℚ` and over `ℤ` are the same.** An element `σ` is an arithmetic
 Frobenius at `Q` relative to the base ring `𝓞 ℚ` exactly when it is one relative to `ℤ`. -/
 @[simp]
@@ -148,19 +169,7 @@ theorem ramificationIdx_ringOfIntegers_rat_eq_int [Module.Flat (𝓞 ℚ) S] (P 
     P.ramificationIdx (𝓞 ℚ) = P.ramificationIdx ℤ :=
   ramificationIdx_eq_of_bijective Rat.algebraMap_int_ringOfIntegers_bijective P
 
-/-- The primes of `S` above `Q ∩ 𝓞 ℚ` are the primes above `p`, when `Q` lies over the ideal `p`
-of `ℤ`. -/
--- Not a `simp` lemma: `p` occurs only in the `LiesOver` instance and on the right-hand side, so
--- the `simpNF` linter reports that `simp` could never infer it.
-theorem primesOver_under_ringOfIntegers_rat_eq {T : Type*} [CommRing T] [Algebra (𝓞 ℚ) T]
-    {p : Ideal ℤ} (Q : Ideal T) [Q.LiesOver p] :
-    (Q.under (𝓞 ℚ)).primesOver S = p.primesOver S := by
-  ext 𝔮
-  simp only [Ideal.primesOver, Set.mem_ofPred_eq]
-  refine and_congr_right fun _ => ⟨fun h => ⟨?_⟩, fun h => ⟨?_⟩⟩
-  · rw [Ideal.over_def Q p, ← Ideal.under_under (A := ℤ) (B := 𝓞 ℚ) Q, h.over, Ideal.under_under]
-  · rw [under_ringOfIntegers_rat_eq_map, under_ringOfIntegers_rat_eq_map, ← h.over,
-      ← Ideal.over_def Q p]
+end CommRing
 
 end Ideal
 
