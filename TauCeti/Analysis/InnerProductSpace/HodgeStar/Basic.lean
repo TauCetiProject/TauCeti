@@ -185,7 +185,7 @@ theorem inner_hodgeStar_apply {k l : ℕ} (hkl : k + l = finrank ℝ V) (x : ⋀
 
 /-- On the basis of `⋀ᵏ V` induced by any orthonormal basis `e`, `⋆ e_I = vol(e) ε(I) e_{Iᶜ}`,
 where `vol(e) = ±1` is the volume form of `e` and `ε(I)` is the shuffle sign of `I`. -/
-private theorem hodgeStar_orthonormalBasis (b : OrthonormalBasis (Fin n) ℝ V) {k l : ℕ}
+theorem hodgeStar_orthonormalBasis (b : OrthonormalBasis (Fin n) ℝ V) {k l : ℕ}
     (hkl : k + l = finrank ℝ V) (s : powersetCard (Fin n) k) :
     o.hodgeStar hkl (b.toBasis.exteriorPower k s) =
       o.volumeForm b • powersetCard.sign s • b.toBasis.exteriorPower l
