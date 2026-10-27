@@ -73,8 +73,10 @@ private noncomputable def stickelbergerPhiAt (P : Ideal (𝓞 K)) : 𝓞 K :=
 
 /-- **The Gauss sum power** `Φ(A) ∈ 𝓞 K` of an ideal `A` of `𝓞 K`. If `A = P₁ ⋯ Pᵣ` is the
 factorisation of `A` into maximal ideals, `Φ(A)` is the product of the `Φ(Pᵢ)` over the factors
-whose norm is prime to `m`, where `Φ(P) = g(χ_P, ψ)^m` is the `m`-th power of the Gauss sum of
-`χ_P = (· / P)_m⁻¹` (`Ideal.stickelbergerPhi_prime`). -/
+whose norm is prime to `m`. For `m ≥ 2`, `Φ(P) = g(χ_P, ψ)^m` is the `m`-th power of the Gauss
+sum of `χ_P = (· / P)_m⁻¹` with any primitive additive character `ψ`
+(`Ideal.stickelbergerPhi_prime`); for `m = 1`, `Φ(P)` is just the Jacobi-sum expression of
+`Ideal.stickelbergerPhi_eq_mul_prod_jacobiSum`. -/
 noncomputable def stickelbergerPhi (A : Ideal (𝓞 K)) (m : ℕ) [NeZero m]
     [HasEnoughRootsOfUnity (𝓞 K) m] : 𝓞 K :=
   ((normalizedFactors A).map (stickelbergerPhiAt m)).prod
@@ -118,9 +120,8 @@ theorem stickelbergerPhi_prime (P : Ideal (𝓞 K)) [P.IsMaximal] [Fintype (𝓞
       orderOf_inv, orderOf_powerResidueSymbol hP]
   have h := gaussSum_pow_eq_prod_jacobiSum (hχ ▸ hm) hψ
   rw [hχ] at h
-  rw [h, stickelbergerPhi_eq_mul_prod_jacobiSum P hP, map_mul, map_mul, map_prod, map_natCast,
-    MulChar.ringHomComp_apply, absNorm_eq_natCard, Nat.card_eq_fintype_card]
-  simp_rw [MulChar.ringHomComp_pow, jacobiSum_ringHomComp]
+  rw [h, stickelbergerPhi_eq_mul_prod_jacobiSum P hP]
+  simp [MulChar.ringHomComp_pow, jacobiSum_ringHomComp, absNorm_eq_natCard]
 
 /-- **Multiplicativity of `Φ`.** `Φ(A B) = Φ(A) Φ(B)` for nonzero ideals `A` and `B`. -/
 theorem stickelbergerPhi_mul {A B : Ideal (𝓞 K)} (hA : A ≠ ⊥) (hB : B ≠ ⊥) :
@@ -152,12 +153,19 @@ private theorem stickelbergerPhi_norm_sq_of_isMaximal (P : Ideal (𝓞 K)) [P.Is
     rw [MulChar.ringHomComp_ne_one_iff hf, Ne, inv_eq_one, ← orderOf_eq_one_iff,
       orderOf_powerResidueSymbol hP]
     lia
-  have h := stickelbergerPhi_prime P hP hm hf
-    (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive (𝓞 K ⧸ P))
-  rw [RingHom.comp_apply] at h
-  rw [RingOfIntegers.coe_eq_algebraMap, h, norm_pow, ← pow_mul, mul_comm, pow_mul,
-    TauCeti.norm_gaussSum hχ (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive _),
-    Real.sq_sqrt (Nat.cast_nonneg _), absNorm_eq_natCard, Nat.card_eq_fintype_card]
+  have hψ := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive (𝓞 K ⧸ P)
+  -- `f` is `σ` precomposed with the coercion, so `stickelbergerPhi_prime` computes `σ (Φ(P))`.
+  have h : σ (stickelbergerPhi P m) = gaussSum ((powerResidueSymbol P m)⁻¹.ringHomComp f)
+      (AddChar.FiniteField.primitiveChar_to_Complex (𝓞 K ⧸ P)) ^ m :=
+    stickelbergerPhi_prime P hP hm hf hψ
+  calc ‖σ (stickelbergerPhi P m)‖ ^ 2
+      = (‖gaussSum ((powerResidueSymbol P m)⁻¹.ringHomComp f)
+          (AddChar.FiniteField.primitiveChar_to_Complex (𝓞 K ⧸ P))‖ ^ 2) ^ m := by
+        rw [h, norm_pow]
+        ring
+    _ = (absNorm P : ℝ) ^ m := by
+        rw [TauCeti.norm_gaussSum hχ hψ, Real.sq_sqrt (Nat.cast_nonneg _)]
+        simp [absNorm_eq_natCard]
 
 /-- **The absolute value of `Φ(A)`.** If `m ≥ 2` and the norm of `A` is prime to `m`, then
 `|σ(Φ(A))|² = N(A)^m` for every complex embedding `σ` of `K`. -/
