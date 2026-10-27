@@ -86,50 +86,14 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {K : Type*} [Field K]
 
-/-- The `e`-th power of a height-one prime of `𝓞 K`, as a nonzero integral ideal. -/
-def primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) : (Ideal (𝓞 K))⁰ :=
-  ⟨P.asIdeal ^ e, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero e P.ne_bot)⟩
-
-/-- A prime power, as a nonzero integral ideal, has the expected underlying ideal. -/
-@[simp]
-theorem coe_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
-    (primeIdealPow P e : Ideal (𝓞 K)) = P.asIdeal ^ e :=
-  (rfl)
-
 /-- The absolute norm is multiplicative on prime powers. -/
 theorem absNorm_primeIdealPow [IsDedekindDomain (𝓞 K)] (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
     Ideal.absNorm (primeIdealPow P e : Ideal (𝓞 K)) = Ideal.absNorm P.asIdeal ^ e := by
   rw [coe_primeIdealPow, map_pow]
 
-/-- Distinct primes give distinct first powers, so a family indexed by the primes is a subfamily
-of one indexed by the nonzero ideals. -/
-theorem primeIdealPow_one_injective :
-    Function.Injective fun P : HeightOneSpectrum (𝓞 K) ↦ primeIdealPow P 1 := fun P Q h ↦
-  HeightOneSpectrum.asIdeal_injective
-    (by simpa only [coe_primeIdealPow, pow_one] using
-      congrArg (Subtype.val : (Ideal (𝓞 K))⁰ → Ideal (𝓞 K)) h)
-
-/-- Distinct exponents give distinct prime powers. -/
-theorem primeIdealPow_injective [IsDedekindDomain (𝓞 K)] (P : HeightOneSpectrum (𝓞 K)) :
-    Function.Injective (primeIdealPow P) := fun m n h ↦
-  pow_injective_of_not_isUnit P.prime.not_isUnit P.prime.ne_zero
-    (by simpa only [coe_primeIdealPow] using congrArg Subtype.val h)
-
 end IsDedekindDomain.HeightOneSpectrum
 
 namespace TauCeti
-
-/-- Every nonzero ideal is eventually supported: a sufficiently large finite set of height-one
-primes contains all its finitely many prime divisors. -/
-theorem eventually_isPrimeTo_compl {K : Type*} [Field K] [IsDedekindDomain (𝓞 K)]
-    (A : (Ideal (𝓞 K))⁰) :
-    ∀ᶠ S : Finset (HeightOneSpectrum (𝓞 K)) in Filter.atTop,
-      Ideal.IsPrimeTo (A : Ideal (𝓞 K)) (S : Set (HeightOneSpectrum (𝓞 K)))ᶜ := by
-  classical
-  have hfinite := Ideal.finite_factors (nonZeroDivisors.coe_ne_zero A)
-  filter_upwards [Filter.eventually_ge_atTop hfinite.toFinset] with S hS
-  rw [Ideal.isPrimeTo_iff]
-  exact ⟨nonZeroDivisors.coe_ne_zero A, fun P hP hPdvd ↦ hP (hS (hfinite.mem_toFinset.mpr hPdvd))⟩
 
 namespace IdealArithmeticFunction
 
@@ -156,7 +120,7 @@ theorem constantCoeff_localPowerSeries (f : IdealArithmeticFunction K)
     (localPowerSeries f P).constantCoeff = f 1 := by
   rw [← PowerSeries.coeff_zero_eq_constantCoeff]
   rw [coeff_localPowerSeries]
-  exact congrArg f (Subtype.ext (pow_zero P.asIdeal))
+  exact congrArg f (Subtype.ext (by simp))
 
 /-- Conjugating ideal coefficients conjugates the coefficients of every local power series. -/
 @[simp]
@@ -270,7 +234,9 @@ theorem localPowerSeries_delta (P : HeightOneSpectrum (𝓞 K)) :
       · simp
       · intro hpow
         have hunit : IsUnit P.asIdeal :=
-          IsUnit.of_pow_eq_one (congrArg Subtype.val hpow) (Nat.succ_ne_zero n)
+          IsUnit.of_pow_eq_one
+            (by simpa only [P.coe_primeIdealPow, Submonoid.coe_one] using
+              congrArg Subtype.val hpow) (Nat.succ_ne_zero n)
         exact P.isPrime.ne_top (Ideal.isUnit_iff.mp hunit)
 
 section IsDedekindDomain
@@ -508,7 +474,7 @@ theorem eventually_normCoeff_supportedPart_eq (f : IdealArithmeticFunction K) (n
       normCoeff K (supportedPart f (S : Set (HeightOneSpectrum (𝓞 K)))) n =
         normCoeff K f n := by
   filter_upwards [(Filter.eventually_all_finset (normFiber K n)).mpr
-    fun A _ ↦ eventually_isPrimeTo_compl A] with S hS
+    fun A _ ↦ Ideal.eventually_isPrimeTo_compl (nonZeroDivisors.coe_ne_zero A)] with S hS
   rw [normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber]
   exact Finset.sum_congr rfl fun A hA ↦ supportedPart_apply_of_isPrimeTo_compl (hS A hA)
 
