@@ -304,17 +304,17 @@ theorem hochschildFace_castSucc_eq_succ_of_apply_succ_eq_one [MulOneClass A]
     (a : Fin (n + 2) → A) (j : Fin (n + 1))
     (ha : a j.succ = 1) : hochschildFace j.castSucc a = hochschildFace j.succ a := by
   have hleft : hochschildFace j.castSucc a = Fin.removeNth j.succ a := by
-    rw [hochschildFace_castSucc, Fin.contractNth_castSucc_eq_update_removeNth_succ,
-      ha, mul_one, Function.update_eq_self_iff, Fin.removeNth_apply, Fin.succAbove_succ_self]
+    simp [hochschildFace_castSucc, Fin.contractNth_castSucc_eq_update_removeNth_succ, ha,
+      Fin.removeNth_apply]
   rw [hleft]
   induction j using Fin.lastCases with
   | last =>
     ext k
     cases k using Fin.cases <;> simp_all [Fin.init]
   | cast j =>
-    rw [Fin.succ_castSucc, hochschildFace_castSucc,
-      Fin.contractNth_castSucc_eq_update_removeNth_succ, Fin.castSucc_succ, ha, one_mul,
-      Fin.update_removeNth_succ_eq_removeNth_castSucc, Fin.succ_castSucc]
+    rw [Fin.succ_castSucc] at ha ⊢
+    simp only [hochschildFace_castSucc, Fin.contractNth_castSucc_eq_update_removeNth_succ, ha,
+      one_mul, Fin.update_removeNth_succ_eq_removeNth_castSucc]
 
 /-- In a commutative monoid every Hochschild face preserves the product of the entries. -/
 @[simp]

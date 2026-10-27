@@ -145,35 +145,35 @@ variable {R A M : Type*} [Semiring R] [AddCommMonoid A] [One A] [Module R A]
   [AddCommGroup M] [Module R M] [SMulCommClass R R M] {n : ℕ}
 
 /-- On normalized cochains Connes' operator is the cyclic norm of unit insertion. -/
-theorem connesB_eq_cyclicNorm_barContraction_of_normalized
+theorem connesB_eq_cyclicNorm_barContraction_of_mem_normalizedHochschildCochains
     {φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M (n + 1)) :
     connesB R A M n φ = cyclicNorm R A M n (barContraction R A M n φ) := by
   have hs : barContraction R A M n (cyclicOperator R A M (n + 1) φ) = 0 := by
     ext a
-    rw [barContraction_apply, cyclicOperator_apply]
-    rw [hφ _ (0 : Fin (n + 1)).succ (Fin.succ_ne_zero _) (by simp), smul_zero]
-    rfl
+    rw [barContraction_apply, cyclicOperator_apply, zero_apply,
+      hφ _ (0 : Fin (n + 1)).succ (Fin.succ_ne_zero _) (by simp), smul_zero]
   rw [connesB_apply, map_sub, hs, sub_zero]
 
 /-- The signed cyclic-sum formula for `B` on normalized cochains, dual to the formula on
 normalized Hochschild chains. -/
-theorem connesB_apply_of_normalized
+theorem connesB_apply_of_mem_normalizedHochschildCochains
     {φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M (n + 1)) (a : Fin (n + 1) → A) :
     connesB R A M n φ a =
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n * k) •
         φ (Fin.cons 1 (a ∘ (finRotate (n + 1) ^ k).symm)) := by
-  rw [connesB_eq_cyclicNorm_barContraction_of_normalized hφ, cyclicNorm_apply]
+  rw [connesB_eq_cyclicNorm_barContraction_of_mem_normalizedHochschildCochains hφ,
+    cyclicNorm_apply]
   simp only [barContraction_apply]
 
 /-- `B` of a normalized cochain vanishes if any argument is the unit, including the zeroth. -/
-theorem connesB_apply_eq_zero_of_normalized
+theorem connesB_apply_eq_zero_of_mem_normalizedHochschildCochains
     {φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M (n + 1))
     (a : Fin (n + 1) → A) (i : Fin (n + 1)) (ha : a i = 1) :
     connesB R A M n φ a = 0 := by
-  rw [connesB_apply_of_normalized hφ]
+  rw [connesB_apply_of_mem_normalizedHochschildCochains hφ]
   apply Finset.sum_eq_zero
   intro k _
   rw [hφ _ ((finRotate (n + 1) ^ k) i).succ (Fin.succ_ne_zero _) (by simpa using ha),
@@ -184,7 +184,7 @@ theorem connesB_mem_normalizedHochschildCochains
     {φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M (n + 1)) :
     connesB R A M n φ ∈ normalizedHochschildCochains R A M n :=
-  fun a i _ ha ↦ connesB_apply_eq_zero_of_normalized hφ a i ha
+  fun a i _ ha ↦ connesB_apply_eq_zero_of_mem_normalizedHochschildCochains hφ a i ha
 
 variable (R A M) in
 /-- Connes' operator restricted to normalized cochains. -/
