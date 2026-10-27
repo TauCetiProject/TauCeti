@@ -66,7 +66,7 @@ compact in the Zariski topology. -/
 theorem IsEquationallyNoetherian.isCompact (h : IsEquationallyNoetherian ι) [Finite X]
     (s : Set (X → H)) : @IsCompact (X → H) (zariskiTopology ι X) s := by
   let := zariskiTopology ι X
-  refine isCompact_generateFrom (zariskiTopology_def ι X) fun P hP hsP ↦ ?_
+  refine isCompact_generateFrom (zariskiTopology_eq_generateFrom ι X) fun P hP hsP ↦ ?_
   -- Each member of `P` is the complement of the solution set of some system; their union is the
   -- complement of the solutions of the union `T` of these systems.
   choose! S hS using fun U (hU : U ∈ P) ↦ hP hU

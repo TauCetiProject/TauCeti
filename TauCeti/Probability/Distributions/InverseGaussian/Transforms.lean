@@ -108,6 +108,15 @@ private theorem inverseGaussianPDFReal_mul_exp_eq
     ring_nf
   · simp [inverseGaussianPDFReal_of_nonpos (not_lt.mp hx)]
 
+/-- Below the critical parameter `lam / (2 * μ ^ 2)`, the radicand in the inverse Gaussian
+moment-generating function is positive. -/
+theorem one_sub_two_mul_sq_mul_div_pos (hlam : 0 < lam) (ht : t < lam / (2 * μ ^ 2)) :
+    0 < 1 - 2 * μ ^ 2 * t / lam := by
+  rw [sub_pos, div_lt_one hlam]
+  rcases eq_or_ne μ 0 with rfl | hμ
+  · simpa using hlam
+  · exact (lt_div_iff₀' (by positivity)).mp ht
+
 /-- The inverse Gaussian moment-generating function, including its finite value at the
 critical parameter `lam / (2 * μ ^ 2)`. -/
 theorem mgf_id_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam)
@@ -131,11 +140,7 @@ theorem mgf_id_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam)
       field_simp
       ring
     rw [this, sqrt_zero, sub_zero, mul_one]
-  · have hA : 0 < 1 - 2 * μ ^ 2 * t / lam := by
-      have hden : 0 < 2 * μ ^ 2 := by positivity
-      have hlt : 2 * μ ^ 2 * t < lam := by
-        simpa only [mul_comm] using (lt_div_iff₀ hden).mp ht
-      exact sub_pos.mpr ((div_lt_one hlam).mpr hlt)
+  · have hA := one_sub_two_mul_sq_mul_div_pos hlam ht
     let ν := μ / √(1 - 2 * μ ^ 2 * t / lam)
     have hν : 0 < ν := div_pos hμ (sqrt_pos.mpr hA)
     have hνsq : ν ^ 2 = μ ^ 2 / (1 - 2 * μ ^ 2 * t / lam) := by

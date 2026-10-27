@@ -651,9 +651,10 @@ theorem hessian_eq_iteratedFDeriv_model_space
         _ = _ := (iteratedFDeriv_two_apply f x
           ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w]).symm
 
-/-- The Laplace–Beltrami operator of the standard Riemannian metric is Mathlib's flat Laplacian.
-This fixes the sign convention as `Δ = div ∘ grad`. -/
-theorem laplaceBeltrami_eq_laplacian
+/-- At a point `x` where `∇ f` is differentiable, the Laplace–Beltrami operator of the standard
+Riemannian metric equals Mathlib's flat Laplacian `Δ f`. This fixes the sign convention as
+`Δ = div ∘ grad`. -/
+theorem laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
     {f : F → ℝ} {x : F} (hgrad : DifferentiableAt ℝ (∇ f) x) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) f x = Δ f x := by
@@ -674,15 +675,24 @@ theorem laplaceBeltrami_eq_laplacian
   simpa only [b, OrthonormalBasis.map_apply, he] using
     hessian_eq_iteratedFDeriv_model_space hgrad (b i) (b i)
 
+/-- For a function `f` with `ContDiff ℝ 2 f` on a finite-dimensional real inner product space,
+the Laplace--Beltrami operator of the standard metric equals Mathlib's flat Laplacian `Δ f` at
+every point (convention `Δ = div ∘ grad`). -/
+theorem laplaceBeltrami_eq_laplacian
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    {f : F → ℝ} (hf : ContDiff ℝ 2 f) (x : F) :
+    laplaceBeltrami (modelWithCornersSelf ℝ F) f x = Δ f x := by
+  apply laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient
+  exact (hf.gradient_right (m := 1) (by norm_num)).differentiable (by norm_num) x
+
 /-- The squared norm has constant flat Laplace--Beltrami operator. -/
 @[simp] theorem laplaceBeltrami_norm_sq
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
     [FiniteDimensional ℝ F] (x : F) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x =
       2 * Module.finrank ℝ F := by
-  rw [laplaceBeltrami_eq_laplacian]
-  · exact TauCeti.laplacian_norm_sq x
-  · exact (((contDiff_norm_sq ℝ (E := F) (n := 2)).gradient_right (m := 1)
-      (by norm_num)).differentiable (by norm_num)) x
+  rw [laplaceBeltrami_eq_laplacian
+    (contDiff_norm_sq ℝ (E := F) (n := 2)) x]
+  exact TauCeti.laplacian_norm_sq x
 
 end TauCeti.Manifold
