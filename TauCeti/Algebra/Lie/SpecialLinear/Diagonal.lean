@@ -159,6 +159,27 @@ theorem specialLinearCorootBasis_apply (i : Fin r) :
       specialLinearDiagonalEquiv_singleSubSingle, LinearEquiv.apply_symm_apply]
   exact congrArg Subtype.val h
 
+/-- Simple coroots commute over every coefficient ring. -/
+theorem lie_specialLinearCoroot_eq_zero (s t : Fin r) :
+    ⁅(specialLinearCorootBasis r A s).val, (specialLinearCorootBasis r A t).val⁆ = 0 := by
+  apply Subtype.ext
+  rw [LieSubalgebra.coe_bracket]
+  exact lie_eq_zero_of_isDiag
+    ((mem_specialLinearDiagonal_iff r A _).mp (specialLinearCorootBasis r A s).property)
+    ((mem_specialLinearDiagonal_iff r A _).mp (specialLinearCorootBasis r A t).property)
+
+/-- Summing adjacent coroots over an interval gives its endpoint difference. -/
+theorem sum_Icc_specialLinearCoroot (i j : Fin r) (hij : i ≤ j) :
+    ∑ t ∈ Finset.Icc i j, (specialLinearCorootBasis r A t).val =
+      singleSubSingle i.castSucc j.succ (1 : A) := by
+  apply Subtype.ext
+  -- View the coercion as the additive inclusion so that `map_sum` applies.
+  change (sl (Fin (r + 1)) A).incl _ = _
+  simp only [map_sum, LieSubalgebra.coe_incl, specialLinearCorootBasis_apply,
+    val_singleSubSingle]
+  simpa only [neg_sub_neg] using
+    (Fin.sum_Icc_sub hij (fun k : Fin (r + 1) ↦ -Matrix.single k k (1 : A)))
+
 /-- Inverse simple-coroot coordinates reconstruct the corresponding linear combination of
 adjacent diagonal differences. -/
 theorem specialLinearCorootEquiv_symm_val (c : Fin r → A) :
