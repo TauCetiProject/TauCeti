@@ -17,9 +17,6 @@ unit on the entire product domain, provided the parameter domain is connected an
 This turns local forms of meromorphic root differences into global forms, allowing both poles
 and collisions on the hyperplane.
 
-The exponent comes from `TauCeti.exists_laurentExponents_of_isPreconnected`. The quotient by
-that power extends jointly analytically by `TauCeti.exists_analyticOnNhd_prod_eqOn`.
-
 ## References
 
 * S. McCallum, A. Parusiński, L. Paunescu, *Validity proof of Lazard's method for CAD
@@ -47,7 +44,8 @@ theorem exists_analyticOnNhd_eq_zpow_mul {f : E × ℂ → ℂ} {U : Set E} {s :
     ∃ e : ℤ, ∃ w : E × ℂ → ℂ, AnalyticOnNhd ℂ w (U ×ˢ s) ∧
       (∀ p ∈ U ×ˢ s, w p ≠ 0) ∧
       ∀ p ∈ U ×ˢ (s \ {0}), f p = p.2 ^ e * w p := by
-  -- Connectedness identifies the integer exponents of the local unit forms.
+  -- Connectedness identifies the integer exponents of the local unit forms via
+  -- TauCeti.exists_laurentExponents_of_isPreconnected.
   obtain ⟨e, -, he⟩ := exists_laurentExponents_of_isPreconnected
     (I := Unit) (P := fun _ _ ↦ True) hUc.nonempty hUc.isPreconnected (fun _ ↦ f)
     (fun _ x hx ↦ by
@@ -77,6 +75,7 @@ theorem exists_analyticOnNhd_eq_zpow_mul {f : E × ℂ → ℂ} {U : Set E} {s :
       (hline.eventually heq).and hC, C, ?_⟩
     rintro _ ⟨z, ⟨hz, hz0⟩, rfl⟩
     simpa only [comp_apply, hz.1 hz0] using hz.2
+  -- The quotient extends jointly analytically by TauCeti.exists_analyticOnNhd_prod_eqOn.
   obtain ⟨w, hw, hwq⟩ := exists_analyticOnNhd_prod_eqOn hU hs hq (fun _ ↦ hb)
   -- The extension agrees with the local unit also on the hyperplane, by uniqueness
   -- of the limit along a punctured slice. Thus no zero is introduced by extension.
