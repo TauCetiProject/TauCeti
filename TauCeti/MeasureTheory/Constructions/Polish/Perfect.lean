@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
-public import Mathlib.SetTheory.Cardinal.Continuum
+public import TauCeti.MeasureTheory.MeasurableSpace.Card
 
 /-!
 # The perfect set theorem for Borel sets, and cardinality bounds
@@ -19,17 +19,14 @@ theorem applies there, and a map continuous for the finer topology is continuous
 original one.
 
 In the other direction, a countably separated measurable space, and in particular a standard
-Borel space, has at most continuum many points, since it injects measurably into Cantor space;
-hence so does every quotient of one. Combined, an uncountable Borel subset of a Polish space has
-exactly `𝔠` points: Borel sets satisfy the continuum hypothesis.
+Borel space, has at most continuum many points (`TauCeti.mk_le_continuum_of_countablySeparated`).
+Combined, an uncountable Borel subset of a Polish space has exactly `𝔠` points: Borel sets
+satisfy the continuum hypothesis.
 
 ## Main results
 
 * `MeasurableSet.exists_nat_bool_injection_of_not_countable`: an uncountable Borel subset of a
   Polish space contains the range of a continuous injection of Cantor space.
-* `TauCeti.mk_le_continuum_of_countablySeparated`: a countably separated measurable space, in
-  particular a standard Borel space, has at most `𝔠` points.
-* `TauCeti.mk_quotient_le_continuum`: every quotient of such a space has at most `𝔠` elements.
 * `MeasurableSet.mk_eq_continuum_of_not_countable`: an uncountable Borel subset of a Polish space
   has exactly `𝔠` points.
 
@@ -58,24 +55,6 @@ theorem MeasurableSet.exists_nat_bool_injection_of_not_countable [TopologicalSpa
   obtain ⟨f, hfs, hf, hinj⟩ :=
     @IsClosed.exists_nat_bool_injection_of_not_countable X t ht s hclosed hunc
   exact ⟨f, hfs, continuous_le_rng hle hf, hinj⟩
-
-namespace TauCeti
-
-/-- **A countably separated measurable space has at most continuum many points**, since it
-injects into Cantor space. This applies in particular to every standard Borel space. -/
-theorem mk_le_continuum_of_countablySeparated (X : Type u) [MeasurableSpace X]
-    [MeasurableSpace.CountablySeparated X] : #X ≤ 𝔠 := by
-  obtain ⟨f, -, hf⟩ := MeasurableSpace.measurable_injection_nat_bool_of_countablySeparated X
-  simpa using lift_mk_le_lift_mk_of_injective hf
-
-/-- **A quotient of a countably separated measurable space has at most continuum many
-elements.** This applies in particular to the quotient of a standard Borel space by an
-arbitrary equivalence relation. -/
-theorem mk_quotient_le_continuum [MeasurableSpace X] [MeasurableSpace.CountablySeparated X]
-    (E : Setoid X) : #(Quotient E) ≤ 𝔠 :=
-  (mk_le_of_surjective Quotient.mk_surjective).trans (mk_le_continuum_of_countablySeparated X)
-
-end TauCeti
 
 /-- **Borel sets satisfy the continuum hypothesis.** An uncountable Borel subset of a Polish space
 has exactly continuum many points. -/

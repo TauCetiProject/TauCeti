@@ -47,4 +47,4 @@ example : #(univ : Set (ℕ → ℕ)) = 𝔠 :=
 
 -- Every quotient of `ℝ` has at most continuum many classes.
 example (E : Setoid ℝ) : #(Quotient E) ≤ 𝔠 :=
-  TauCeti.mk_quotient_le_continuum E
+  E.mk_quotient_le_continuum
