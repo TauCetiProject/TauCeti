@@ -75,21 +75,6 @@ section Infinitesimal
 variable {R A M : Type*} [CommRing R] [NonUnitalRing A] [Module R A] [AddCommGroup M]
   [Module R M] {m : ℕ} {φ : MultilinearMap R (fun _ : Fin (2 * m + 2) ↦ A) M}
 
-/-- Rotating an alternating tuple of even length swaps its two entries. -/
-private theorem alternating_comp_finRotate_symm {α : Type*} (x y : α) :
-    (fun k : Fin (2 * m + 2) ↦ if Even (k : ℕ) then x else y) ∘ (finRotate (2 * m + 2)).symm =
-      fun k : Fin (2 * m + 2) ↦ if Even (k : ℕ) then y else x := by
-  funext k
-  cases k using Fin.cases with
-  | zero =>
-    have h : (finRotate (2 * m + 2)).symm 0 = Fin.last (2 * m + 1) :=
-      (Equiv.symm_apply_eq _).2 finRotate_last.symm
-    simp [h]
-  | succ k =>
-    have h : (finRotate (2 * m + 2)).symm k.succ = k.castSucc :=
-      (Equiv.symm_apply_eq _).2 (Fin.finRotate_castSucc k).symm
-    by_cases hk : Even (k : ℕ) <;> simp [h, hk, Nat.even_add_one]
-
 /-- A cyclic cochain of odd degree changes sign when the distinguished entry of an alternating
 tuple moves one slot to the right and the two alternating entries are swapped. -/
 private theorem apply_update_alternating_finRotate (hφ : φ ∈ cyclicCochains R A M (2 * m + 1))
@@ -99,8 +84,9 @@ private theorem apply_update_alternating_finRotate (hφ : φ ∈ cyclicCochains 
       -φ (Function.update (fun k : Fin (2 * m + 2) ↦ if Even (k : ℕ) then x else y) k v) := by
   have h := mem_cyclicCochains_iff.1 hφ
     (Function.update (fun k : Fin (2 * m + 2) ↦ if Even (k : ℕ) then x else y) k v)
-  rwa [Function.update_comp_equiv, Equiv.symm_symm, alternating_comp_finRotate_symm,
-    (odd_two_mul_add_one m).neg_one_pow, neg_one_smul] at h
+  rwa [Function.update_comp_equiv, Equiv.symm_symm,
+    Fin.ite_even_comp_finRotate_symm ⟨m + 1, by ring⟩, (odd_two_mul_add_one m).neg_one_pow,
+    neg_one_smul] at h
 
 /-- On an alternating tuple, the value of a cyclic cochain of odd degree with one distinguished
 entry depends only on the parity of the slot of that entry. -/
@@ -143,22 +129,6 @@ private theorem apply_cons_init (hφ : φ ∈ cyclicCochains R A M (2 * m + 1))
       (Equiv.symm_apply_eq _).2 (Fin.finRotate_castSucc k).symm
     simp [hk, Fin.init]
 
-/-- The inner face of `(z, a₀, …, aₙ₊₁)` multiplying two quasi-inverse entries `aᵢ`, `aᵢ₊₁` splits
-into the values on the tuples deleting `aᵢ₊₁` or `aᵢ`. -/
-private theorem apply_contractNth_succ_cons {n : ℕ}
-    (ψ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) (z : A) (a : Fin (n + 2) → A)
-    (i : Fin (n + 1)) (h : a i.succ + a i.castSucc + a i.castSucc * a i.succ = 0) :
-    ψ (Fin.contractNth i.succ.castSucc (· * ·) (Fin.cons z a : Fin (n + 3) → A)) =
-      -(ψ (Fin.cons z (Fin.removeNth i.succ a)) + ψ (Fin.cons z (Fin.removeNth i.castSucc a))) := by
-  have hc : Fin.contractNth i.succ.castSucc (· * ·) (Fin.cons z a : Fin (n + 3) → A) =
-      Fin.cons z (Fin.contractNth i.castSucc (· * ·) a) := by
-    funext k
-    cases k using Fin.cases <;> simp [Fin.contractNth]
-  rw [hc, Fin.contractNth_castSucc_eq_update_removeNth_succ, Fin.cons_update,
-    ψ.map_update_mul_of_add_add_mul_eq_zero _ _ h, ← Fin.cons_update, ← Fin.cons_update,
-    Fin.update_removeNth_succ_eq_removeNth_castSucc,
-    Function.update_eq_self_iff.2 (by simp [Fin.removeNth_apply])]
-
 variable [IsScalarTower R A A] [SMulCommClass R A A]
 
 /-- Evaluating `bφ = 0` on `(z, x, y, …, x, y)` for quasi-inverse `x` and `y`: the inner faces
@@ -190,7 +160,8 @@ private theorem apply_update_alternating_zero_eq_apply_update_alternating_one
       (-1 : ℤ) ^ ((i.succ : Fin (2 * m + 2)) : ℕ) •
         φ (Fin.contractNth i.succ.castSucc (· * ·) (Fin.cons z a : Fin (2 * m + 3) → A)) =
         g i.castSucc - g i.succ := by
-    rw [apply_contractNth_succ_cons φ z a i (hadj i)]
+    rw [φ.map_contractNth_castSucc_of_add_add_mul_eq_zero _ _ (by simpa using hadj i),
+      ← Fin.succ_castSucc, Fin.removeNth_succ_cons, Fin.removeNth_succ_cons]
     simp only [hg, Fin.val_succ, Fin.val_castSucc, pow_succ, mul_neg_one, neg_smul, smul_neg,
       smul_add]
     abel

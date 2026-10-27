@@ -73,6 +73,8 @@ range, so the value is a `dite` rather than a plain application.
   successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
   as used when a new entry is inserted into a cyclic sequence.
 * `Fin.finRotate_castSucc`: the cyclic successor of a non-last index `i.castSucc` is `i.succ`.
+* `Fin.ite_even_comp_finRotate_symm`: rotating a tuple of even length alternating between two
+  entries swaps the two entries.
 * `Fin.succAbove_adjacent_cases`: the positions `p` of `Fin (n + 1)` cyclically adjacent to
   `p.succAbove i`.
 * `Fin.swap_castSucc_succ_succAbove`: the transposition of `k.castSucc` and `k.succ` exchanges the
@@ -310,6 +312,23 @@ theorem finRotate_succ_succAbove_of_ne {n : ℕ} {i k : Fin n} (hk : k ≠ i) :
 /-- The cyclic successor of a non-last index `i.castSucc` of `Fin (n + 1)` is `i.succ`. -/
 theorem finRotate_castSucc {n : ℕ} (i : Fin n) : finRotate (n + 1) i.castSucc = i.succ :=
   finRotate_of_lt i.isLt
+
+/-- Rotating a tuple of even length alternating between two entries swaps the two entries. -/
+theorem ite_even_comp_finRotate_symm {α : Type*} {n : ℕ} (hn : Even n) (x y : α) :
+    (fun k : Fin n ↦ if Even (k : ℕ) then x else y) ∘ (finRotate n).symm =
+      fun k : Fin n ↦ if Even (k : ℕ) then y else x := by
+  funext k
+  cases n with
+  | zero => exact k.elim0
+  | succ n =>
+    cases k using Fin.cases with
+    | zero =>
+      have h : (finRotate (n + 1)).symm 0 = last n := (Equiv.symm_apply_eq _).2 finRotate_last.symm
+      simp [h, Nat.even_add_one.1 hn]
+    | succ k =>
+      have h : (finRotate (n + 1)).symm k.succ = k.castSucc :=
+        (Equiv.symm_apply_eq _).2 (finRotate_castSucc k).symm
+      by_cases hk : Even (k : ℕ) <;> simp [h, hk, Nat.even_add_one]
 
 /-- A position `p` of `Fin (n + 1)` cyclically adjacent to `p.succAbove i` is `i.castSucc` or
 `i.succ`, or wraps around: `p` is last and `p.succAbove i` is `0`, or `p` is `0` and

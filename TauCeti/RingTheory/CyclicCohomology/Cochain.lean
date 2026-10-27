@@ -517,6 +517,18 @@ theorem _root_.MultilinearMap.map_update_mul_of_add_add_mul_eq_zero
   rw [← h, f.map_update_add, f.map_update_add, add_comm (f _) (f (Function.update r j p))] at h0
   exact eq_neg_of_add_eq_zero_right h0
 
+/-- A multilinear map evaluated on a tuple `x` with the quasi-inverse entries `j` and `j + 1`
+multiplied together is minus the sum of its values on `x` with entry `j + 1` or entry `j`
+deleted. -/
+theorem _root_.MultilinearMap.map_contractNth_castSucc_of_add_add_mul_eq_zero {n : ℕ}
+    (f : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (x : Fin (n + 2) → A) (j : Fin (n + 1))
+    (h : x j.succ + x j.castSucc + x j.castSucc * x j.succ = 0) :
+    f (Fin.contractNth j.castSucc (· * ·) x) =
+      -(f (Fin.removeNth j.succ x) + f (Fin.removeNth j.castSucc x)) := by
+  rw [Fin.contractNth_castSucc_eq_update_removeNth_succ,
+    f.map_update_mul_of_add_add_mul_eq_zero _ _ h, Fin.update_removeNth_succ_eq_removeNth_castSucc,
+    Function.update_eq_self_iff.2 (by simp [Fin.removeNth_apply])]
+
 end QuasiInverse
 
 section Coboundary
@@ -691,10 +703,7 @@ theorem hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero
       g j.succ - g j.castSucc := by
     have hj := hx j.castSucc
     rw [Fin.finRotate_castSucc] at hj
-    rw [Fin.contractNth_castSucc_eq_update_removeNth_succ,
-      ψ.map_update_mul_of_add_add_mul_eq_zero _ _ hj,
-      Fin.update_removeNth_succ_eq_removeNth_castSucc,
-      Function.update_eq_self_iff.2 (by simp [Fin.removeNth_apply])]
+    rw [ψ.map_contractNth_castSucc_of_add_add_mul_eq_zero _ _ hj]
     simp only [hg, Fin.val_succ, Fin.val_castSucc, pow_succ, mul_neg_one, neg_smul, smul_neg,
       smul_add]
     abel
