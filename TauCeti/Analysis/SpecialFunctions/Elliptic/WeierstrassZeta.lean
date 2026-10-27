@@ -133,9 +133,9 @@ theorem hasDerivAt_weierstrassZeta {z : ℂ} (hz : z ∉ L.lattice) :
     (s := (L.lattice : Set ℂ)ᶜ)
   -- the derivatives of the partial sums tend to `ζ'(z)`, and they are the partial sums of `-℘`
   have hD := (hζ.deriv (.of_forall hdiff) hU).tendsto_at hz
-  have hP : Tendsto (fun s ↦ deriv (F s) z) atTop (𝓝 (-℘[L] z)) :=
-    (show Tendsto _ atTop _ from (L.hasSum_weierstrassP z).neg).congr
-      fun s ↦ ((hF s hz).deriv).symm
+  have hP : Tendsto (fun s ↦ deriv (F s) z) atTop (𝓝 (-℘[L] z)) := by
+    refine Tendsto.congr (fun s ↦ ((hF s hz).deriv).symm) ?_
+    exact (L.hasSum_weierstrassP z).neg
   rw [← tendsto_nhds_unique hD hP]
   exact ((hζ.differentiableOn (.of_forall hdiff) hU) z hz).differentiableAt
     (hU.mem_nhds hz) |>.hasDerivAt
@@ -151,7 +151,7 @@ theorem weierstrassZeta_neg (z : ℂ) : L.weierstrassZeta (-z) = -L.weierstrassZ
   rw [weierstrassZeta, weierstrassZeta, ← (Equiv.neg L.lattice).tsum_eq, ← tsum_neg]
   congr with l
   simp only [Equiv.neg_apply, NegMemClass.coe_neg, neg_sq, one_div, div_neg, neg_div]
-  rw [show -z - -(l : ℂ) = -(z - l) by ring, inv_neg]
+  rw [neg_sub_neg, ← neg_sub, inv_neg]
   ring
 
 /-- Away from the lattice, `ζ(z + l) - ζ(z)` does not depend on `z`: its derivative
@@ -207,7 +207,7 @@ theorem quasiPeriod_eq_two_mul_weierstrassZeta (l : L.lattice) (hl : (l : ℂ) /
     L.quasiPeriod l = 2 * L.weierstrassZeta (l / 2) := by
   have hl' : -((l : ℂ) / 2) ∉ L.lattice := fun h ↦ hl (by simpa using neg_mem h)
   have h := L.weierstrassZeta_add_coe hl' l
-  rw [show -((l : ℂ) / 2) + l = l / 2 by ring, weierstrassZeta_neg] at h
+  rw [neg_add_eq_sub, sub_half, weierstrassZeta_neg] at h
   linear_combination -h
 
 end PeriodPair
