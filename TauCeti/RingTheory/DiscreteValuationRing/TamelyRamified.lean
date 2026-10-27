@@ -21,12 +21,12 @@ extension and let `B` be the integral closure of `A` in `L`. The maximal ideals 
 `B` are the primes over the maximal ideal of `A`; write `eᵢ` for their ramification indices and
 `fᵢ` for their residue degrees. Following Stacks, Definition 15.113.7, we say that `L` is
 
-* *unramified with respect to `A`* (`Algebra.IsUnramifiedWRT A L`) if every `eᵢ = 1` and every
-  residue extension `κ(𝔪ᵢ) / κ_A` is separable;
-* *tamely ramified with respect to `A`* (`Algebra.IsTamelyRamifiedWRT A L`) if every residue
-  extension is separable and every `eᵢ` is invertible in `κ_A`;
-* *totally ramified with respect to `A`* (`Algebra.IsTotallyRamifiedWRT A L`) if `n = 1` and
-  `κ(𝔪₁) = κ_A`.
+* *unramified with respect to `A`* (`TauCeti.Algebra.IsUnramifiedWRT A L`) if every `eᵢ = 1`
+  and every residue extension `κ(𝔪ᵢ) / κ_A` is separable;
+* *tamely ramified with respect to `A`* (`TauCeti.Algebra.IsTamelyRamifiedWRT A L`) if every
+  residue extension is separable and every `eᵢ` is invertible in `κ_A`;
+* *totally ramified with respect to `A`* (`TauCeti.Algebra.IsTotallyRamifiedWRT A L`) if
+  `n = 1` and `κ(𝔪₁) = κ_A`.
 
 The definitions take `L` to be a field; for a finite separable `K`-algebra `∏ Lⱼ` Stacks asks
 for them of every factor `Lⱼ`. Ramification indices are Mathlib's `Ideal.ramificationIdx`
@@ -37,16 +37,17 @@ and `TauCeti.IsTotallyRamified`.
 
 ## Main results
 
-* `Algebra.IsUnramifiedWRT.isTamelyRamifiedWRT`: unramified extensions are tamely ramified.
-* `Algebra.isTamelyRamifiedWRT_of_charZero`: if the residue field of `A` has characteristic
-  zero, every finite extension of `K` is tamely ramified with respect to `A`.
-* `Algebra.isUnramifiedWRT_iff_forall_isUnramifiedAt`: `L` is unramified with respect to `A` iff
-  the integral closure of `A` in `L` is unramified over `A` at every prime.
-* `Algebra.isUnramifiedWRT_iff_etale`: `L` is unramified with respect to `A` iff the integral
-  closure of `A` in `L` is étale over `A`.
-* `Algebra.isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank`: `L` is totally ramified
-  with respect to `A` iff some maximal ideal of the integral closure has ramification index
-  `[L : K]`.
+* `TauCeti.Algebra.IsUnramifiedWRT.isTamelyRamifiedWRT`: unramified extensions are tamely
+  ramified.
+* `TauCeti.Algebra.isTamelyRamifiedWRT_of_charZero`: if the residue field of `A` has
+  characteristic zero, every finite extension of `K` is tamely ramified with respect to `A`.
+* `TauCeti.Algebra.isUnramifiedWRT_iff_forall_isUnramifiedAt`: `L` is unramified with respect
+  to `A` iff the integral closure of `A` in `L` is unramified over `A` at every prime.
+* `TauCeti.Algebra.isUnramifiedWRT_iff_etale`: `L` is unramified with respect to `A` iff the
+  integral closure of `A` in `L` is étale over `A`.
+* `TauCeti.Algebra.isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank`: `L` is totally
+  ramified with respect to `A` iff some maximal ideal of the integral closure has ramification
+  index `[L : K]`.
 
 ## References
 
@@ -55,9 +56,9 @@ and `TauCeti.IsTotallyRamified`.
 
 public section
 
-open IsLocalRing
+open Algebra IsLocalRing
 
-namespace Algebra
+namespace TauCeti.Algebra
 
 section Definitions
 
@@ -93,6 +94,30 @@ def IsTotallyRamifiedWRT : Prop :=
     ∀ (P : Ideal (integralClosure A L)) [P.IsMaximal], P.inertiaDeg A = 1
 
 variable {A L}
+
+/-- Unfolds `IsUnramifiedWRT` to its defining condition on maximal ideals. -/
+theorem isUnramifiedWRT_def :
+    IsUnramifiedWRT A L ↔
+      ∀ (P : Ideal (integralClosure A L)) [P.IsMaximal] [P.LiesOver (maximalIdeal A)],
+        P.ramificationIdx A = 1 ∧
+          Algebra.IsSeparable (A ⧸ maximalIdeal A) (integralClosure A L ⧸ P) :=
+  Iff.rfl
+
+/-- Unfolds `IsTamelyRamifiedWRT` to its defining condition on maximal ideals. -/
+theorem isTamelyRamifiedWRT_def :
+    IsTamelyRamifiedWRT A L ↔
+      ∀ (P : Ideal (integralClosure A L)) [P.IsMaximal] [P.LiesOver (maximalIdeal A)],
+        Algebra.IsSeparable (A ⧸ maximalIdeal A) (integralClosure A L ⧸ P) ∧
+          IsUnit ((P.ramificationIdx A : ℕ) : A ⧸ maximalIdeal A) :=
+  Iff.rfl
+
+omit [IsLocalRing A] in
+/-- Unfolds `IsTotallyRamifiedWRT` to its defining condition on maximal ideals. -/
+theorem isTotallyRamifiedWRT_def :
+    IsTotallyRamifiedWRT A L ↔
+      (∃! P : Ideal (integralClosure A L), P.IsMaximal) ∧
+        ∀ (P : Ideal (integralClosure A L)) [P.IsMaximal], P.inertiaDeg A = 1 :=
+  Iff.rfl
 
 /-- Unramified extensions are tamely ramified. -/
 theorem IsUnramifiedWRT.isTamelyRamifiedWRT (h : IsUnramifiedWRT A L) :
@@ -231,4 +256,4 @@ theorem isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank :
 
 end DiscreteValuationRing
 
-end Algebra
+end TauCeti.Algebra
