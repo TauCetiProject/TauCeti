@@ -90,7 +90,7 @@ theorem sturmSubresultantFactor_ne_zero {p q a : K[X]} {i : ℕ}
     (ne_zero_of_mem_sturmSeq (List.getElem_mem hk')))
 
 /-- Each sequence entry satisfies the formal left bound used for its Euclidean step. -/
-theorem natDegree_le_sturmBound {p q a : K[X]} {m i : ℕ}
+theorem natDegree_le_ite_of_getElem?_sturmSeq {p q a : K[X]} {m i : ℕ}
     (hp : p.natDegree ≤ m) (ha : (sturmSeq p q)[i]? = some a) :
     a.natDegree ≤ if i = 0 then m else a.natDegree := by
   split_ifs with hi
@@ -99,7 +99,7 @@ theorem natDegree_le_sturmBound {p q a : K[X]} {m i : ℕ}
   · exact le_rfl
 
 /-- The next sequence entry satisfies the same left bound when the initial right degree does. -/
-theorem next_natDegree_le_sturmBound {p q a b : K[X]} {m i : ℕ}
+private theorem natDegree_succ_le_ite_of_getElem?_sturmSeq {p q a b : K[X]} {m i : ℕ}
     (hq : i = 0 → q.natDegree ≤ m) (ha : (sturmSeq p q)[i]? = some a)
     (hb : (sturmSeq p q)[i + 1]? = some b) :
     b.natDegree ≤ if i = 0 then m else a.natDegree := by
@@ -131,9 +131,9 @@ theorem subresultant_eq_sturmSubresultantFactor_mul {p q a b : K[X]} {m i j : �
       rw [eq_neg_mod_of_getElem?_sturmSeq hc ha hb, neg_mod]
     have hbc : b.natDegree ≤ (if i = 0 then m else c.natDegree) := by
       rw [hrec, natDegree_neg, mod_def]
-      exact natDegree_modByMonic_le_left.trans (natDegree_le_sturmBound hp hc)
+      exact natDegree_modByMonic_le_left.trans (natDegree_le_ite_of_getElem?_sturmSeq hp hc)
     have hstep := subresultant_eq_C_mul_subresultant_neg_mod
-      (p := c) (q := a) (r := b.natDegree) (natDegree_le_sturmBound hp hc)
+      (p := c) (q := a) (r := b.natDegree) (natDegree_le_ite_of_getElem?_sturmSeq hp hc)
       (by rw [hrec, natDegree_neg]) hbc (by omega : j < min b.natDegree a.natDegree)
     rw [← hrec] at hstep
     rw [ih hc ha (by omega), hstep, ← mul_assoc, ← C_mul,
@@ -151,12 +151,13 @@ theorem subresultant_natDegree_sub_one_eq_sturmSubresultantFactor_mul
     subresultant p q m q.natDegree (b.natDegree - 1) =
       C (-(p.sturmSubresultantFactor q m (b.natDegree - 1) i *
         (-b.leadingCoeff) ^ ((if i = 0 then m else a.natDegree) + 1 - b.natDegree))) * c := by
-  have hba := next_natDegree_le_sturmBound hq ha hb
+  have hba := natDegree_succ_le_ite_of_getElem?_sturmSeq hq ha hb
   have hcb := natDegree_lt_of_getElem?_sturmSeq hb hc
   have hrec : c = -(a % b) := by
     rw [eq_neg_mod_of_getElem?_sturmSeq ha hb hc, neg_mod]
   rw [subresultant_eq_sturmSubresultantFactor_mul hp ha hb (by omega),
-    subresultant_natDegree_sub_one (natDegree_le_sturmBound hp ha) (by omega) hba, hrec]
+    subresultant_natDegree_sub_one (natDegree_le_ite_of_getElem?_sturmSeq hp ha) (by omega) hba,
+    hrec]
   simp [mul_assoc]
 
 /-- **The lower end of a degree gap, with its exact scalar.** For three consecutive signed
@@ -172,12 +173,12 @@ theorem subresultant_natDegree_eq_sturmSubresultantFactor_mul
         ((-1) ^ (((if i = 0 then m else a.natDegree) - c.natDegree) * (b.natDegree - c.natDegree)) *
           b.leadingCoeff ^ ((if i = 0 then m else a.natDegree) - c.natDegree) *
           (-c.leadingCoeff) ^ (b.natDegree - c.natDegree - 1)))) * c := by
-  have hba := next_natDegree_le_sturmBound hq ha hb
+  have hba := natDegree_succ_le_ite_of_getElem?_sturmSeq hq ha hb
   have hcb := natDegree_lt_of_getElem?_sturmSeq hb hc
   have hrec : a % b = -c := by
     rw [eq_neg_mod_of_getElem?_sturmSeq ha hb hc, neg_mod, neg_neg]
   rw [subresultant_eq_sturmSubresultantFactor_mul hp ha hb hcb,
-    subresultant_eq_C_mul_mod (natDegree_le_sturmBound hp ha)
+    subresultant_eq_C_mul_mod (natDegree_le_ite_of_getElem?_sturmSeq hp ha)
       (by rw [hrec, natDegree_neg]) hcb (by omega),
     hrec, coeff_neg, coeff_natDegree]
   simp [mul_assoc]

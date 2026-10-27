@@ -117,7 +117,7 @@ theorem _root_.Polynomial.subresultant_eq_zero_of_getElem?_sturmSeq
     (htj : t.natDegree < j) (hjs : j + 1 < s.natDegree) :
     subresultant p q m q.natDegree j = 0 := by
   obtain ⟨a, ha⟩ := exists_getElem?_sturmSeq_of_succ hs
-  have hma := natDegree_le_sturmBound hp ha
+  have hma := natDegree_le_ite_of_getElem?_sturmSeq hp ha
   have hrec : t = -(a % s) := by
     rw [eq_neg_mod_of_getElem?_sturmSeq ha hs ht, neg_mod]
   rw [hrec, natDegree_neg] at htj
