@@ -31,7 +31,8 @@ of `y` by the one-parameter subgroup of `x` multiplies it by the one-parameter s
 commutator, at the product parameter. This is the class-two case of the Chevalley commutator
 formula, the case in which the only root of the form `i α + j β` besides `α` and `β` is `α + β`;
 in a simply-laced root system every pair of non-proportional roots falls under it or under the
-degenerate case below.
+commuting case `TauCeti.commute_baseChangeExp` from
+`TauCeti.RingTheory.Nilpotent.BaseChangeAction`.
 
 Nothing here divides by a factorial in `R`, so the relation holds over a ring of arbitrary
 characteristic. The whole point is the coefficient-one normal-ordering rule
@@ -46,7 +47,6 @@ its generating-function form.
 * `TauCeti.baseChangeExp_zsmul`: rescaling an element by an integer rescales the parameter of its
   exponential, which is how an integer structure constant enters.
 * `TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq`: the Chevalley commutator relation.
-* `TauCeti.commute_baseChangeExp`: its degenerate case, when the commutator vanishes.
 * `TauCeti.baseChangeExp_conj_of_commutator_eq`: its conjugation form.
 
 ## References
@@ -283,30 +283,6 @@ theorem baseChangeExp_mul_baseChangeExp_of_commutator_eq
     · rcases le_or_gt kx q with hq | hq
       · rw [hvx q hq, mul_zero]
       · rw [hvz k (by omega), mul_zero, zero_mul]
-
-/-- **The degenerate Chevalley commutator relation.** Exponentials of commuting elements commute.
-For root subgroups this is the case of two roots which are not opposite and whose sum is not a
-root. -/
-theorem commute_baseChangeExp {x y : A} (M : S) (hxy : Commute x y)
-    (hx : IsNilpotent x) (hy : IsNilpotent y)
-    (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
-    (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
-    (t u : R) :
-    Commute (baseChangeExp x M hMx t) (baseChangeExp y M hMy u) := by
-  obtain ⟨kx, hkx⟩ := hx
-  obtain ⟨ky, hky⟩ := hy
-  rw [baseChangeExp_of_pow_eq_zero x M hMx hkx,
-    baseChangeExp_of_pow_eq_zero y M hMy hky]
-  refine Commute.sum_left _ _ _ fun m _ => Commute.sum_right _ _ _ fun n _ => ?_
-  refine Commute.smul_left (Commute.smul_right ?_ _) _
-  have hcomm : integralDividedPower x M m (hMx m) * integralDividedPower y M n (hMy n) =
-      integralDividedPower y M n (hMy n) * integralDividedPower x M m (hMx m) := by
-    ext v
-    simp only [Module.End.mul_apply, coe_integralDividedPower_apply, ← mul_smul]
-    rw [(Associative.commute_dividedPower_dividedPower hxy m n).eq]
-  have h := congrArg (fun f : Module.End ℤ M => (Module.End.baseChangeHom ℤ R M) f) hcomm
-  simp only [map_mul] at h
-  exact h
 
 /-- The conjugation form of the Chevalley commutator relation: conjugating the one-parameter
 subgroup of `y` by that of `x` multiplies it by the one-parameter subgroup of the commutator `z`,

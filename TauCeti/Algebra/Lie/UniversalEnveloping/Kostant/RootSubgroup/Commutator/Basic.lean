@@ -137,7 +137,7 @@ theorem commute_kostantRootSubgroupPoints {i j : ι} (hij : ⁅e i, e j⁆ = 0)
   have hcomm := commute_of_lie_eq_zero ρ hij
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]
-  exact commute_baseChangeExp M hcomm hi hj _ _ _ _
+  exact commute_baseChangeExp M hcomm _ _ _ _
 
 /-- **The Chevalley commutator relation for Kostant root subgroups.** Suppose the distinguished
 root vectors satisfy `⁅eᵢ, eⱼ⁆ = c • eₖ` with `eₖ` central for both, and let `w` be any
