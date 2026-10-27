@@ -206,6 +206,7 @@ theorem norm_rowSum_le_of_le_abs_im {w : ℂ} {t : ℝ} (ht : 0 < t) (hw : t ≤
 
 /-- The row at `0` is `P(0) = ∑_{n ≠ 0} n⁻² = 2 ζ(2)`, the value at `i∞` of Mathlib's
 `EisensteinSeries.G2`. -/
+@[simp]
 lemma rowSum_zero : rowSum 0 = 2 * riemannZeta 2 := by
   have h := two_mul_riemannZeta_eq_tsum_int_inv_pow_of_even (k := 2) le_rfl even_two
   push_cast at h

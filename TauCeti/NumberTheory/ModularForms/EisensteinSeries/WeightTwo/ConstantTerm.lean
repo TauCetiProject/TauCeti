@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Basic
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Character
 public import TauCeti.NumberTheory.ModularForms.Cusps.LevelRaise
-import TauCeti.NumberTheory.ModularForms.EisensteinSeries.ConstantTerm
 
 /-!
 # Constant terms of weight-two Eisenstein series at the cusps
@@ -160,17 +159,9 @@ theorem constantTermAt_charG2MFRaise {t : ℕ} (htuv : t * (u * v) ∣ N) (h : �
         else 0) := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-  obtain ⟨δ, ha, hc⟩ := γ.exists_scaled_cusp_reduction (t := t)
-  have hg : (Int.gcd (γ 1 0) t : ℤ) ≠ 0 := by
-    exact_mod_cast (Int.gcd_pos_of_ne_zero_right (γ 1 0)
-      (Nat.cast_ne_zero.mpr (NeZero.ne t))).ne'
-  have hδa : δ 0 0 = (t : ℤ) * γ 0 0 / Int.gcd (γ 1 0) t := by
-    rw [ha, Int.mul_ediv_cancel _ hg]
-  have hδc : δ 1 0 = γ 1 0 / Int.gcd (γ 1 0) t := by
-    exact ((congrArg (fun c : ℤ ↦ c / Int.gcd (γ 1 0) t) hc).trans
-      (Int.mul_ediv_cancel _ hg)).symm
-  rw [charG2MFRaise_eq_levelRaise, _root_.ModularForm.constantTermAt_levelRaise _ _ γ δ ha hc,
-    constantTermAt_charG2MF ψ φ dvd_rfl h, hδa, hδc]
+  obtain ⟨δ, hδa, hδc, hδ⟩ := _root_.ModularForm.exists_constantTermAt_levelRaise
+    (charG2MF ψ φ dvd_rfl) (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) γ
+  rw [charG2MFRaise_eq_levelRaise, hδ, constantTermAt_charG2MF ψ φ dvd_rfl h, hδa, hδc]
 
 end Character
 

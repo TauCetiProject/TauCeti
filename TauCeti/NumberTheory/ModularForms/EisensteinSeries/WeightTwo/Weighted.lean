@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Weighted
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import Mathlib.Analysis.Normed.Group.Tannery
 
 /-!
@@ -250,19 +251,13 @@ theorem weightedG2_slash_apply (W : (Fin 2 → ZMod N) → ℂ) (γ : SL(2, ℤ)
         Matrix (Fin 2) (Fin 2) (ZMod N))) * ℘[z.periodPair] (divisionPoint N (lift a) z) := by
     rw [Finset.mul_sum]
     -- reindex the residues by `a ↦ a γ`
-    have h₁ : (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) *
-        ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) = 1 := by
-      rw [← Matrix.SpecialLinearGroup.coe_mul, ← map_mul, inv_mul_cancel, map_one,
-        Matrix.SpecialLinearGroup.coe_one]
     have h₂ : ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) *
         (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) = 1 := by
       rw [← Matrix.SpecialLinearGroup.coe_mul, ← map_mul, mul_inv_cancel, map_one,
         Matrix.SpecialLinearGroup.coe_one]
-    refine Fintype.sum_equiv (Matrix.toLinearEquivRight'OfInv h₁ h₂).toEquiv _ _ fun a ↦ ?_
-    have he : (Matrix.toLinearEquivRight'OfInv h₁ h₂).toEquiv a =
-        a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) :=
-      funext fun i ↦ by simp
-    simp only [he, Matrix.vecMul_vecMul, h₂, Matrix.vecMul_one]
+    refine Eq.trans (Finset.sum_congr rfl fun a _ ↦ ?_)
+      (Matrix.SpecialLinearGroup.sum_comp_vecMul _ (γ : SL(2, ZMod N)))
+    simp only [Matrix.vecMul_vecMul, h₂, Matrix.vecMul_one]
     ring
   rw [hsum, _root_.zpow_neg, zpow_ofNat]
   field_simp
@@ -362,6 +357,11 @@ private lemma norm_rowSum_le_of_le (w : ℂ) {m : ℤ} (hw : 1 / (N : ℝ) ≤ |
   exact (norm_rowSum_le_of_le_abs_im hN hw).trans (mul_le_mul_of_nonneg_left
     (Real.exp_le_exp.mpr (by nlinarith [Real.pi_pos])) hK)
 
+omit [NeZero N] in
+/-- The imaginary part of `m z` is `|m| Im z` in absolute value. -/
+private lemma abs_im_intCast_mul (m : ℤ) (z : ℍ) : |((m : ℂ) * z).im| = |(m : ℝ)| * z.im := by
+  simp [abs_mul, abs_of_pos z.im_pos]
+
 /-- The rows `P(m z)`, `m ≠ 0`, of the lattice series, on `1 ≤ Im z`. -/
 private lemma norm_rowSum_intCast_mul_le {m : ℤ} (hm : m ≠ 0) {z : ℍ} (hz : 1 ≤ z.im) :
     ‖rowSum (m * z)‖ ≤ rowConst N * Real.exp (-2 * π * (|(m : ℝ)| - 1)) := by
@@ -369,8 +369,7 @@ private lemma norm_rowSum_intCast_mul_le {m : ℤ} (hm : m ≠ 0) {z : ℍ} (hz 
     div_le_one_of_le₀ (by exact_mod_cast NeZero.one_le) (Nat.cast_nonneg N)
   have hm1 : (1 : ℝ) ≤ |(m : ℝ)| := by exact_mod_cast Int.one_le_abs hm
   have ht : |(m : ℝ)| ≤ |((m : ℂ) * z).im| := by
-    rw [Complex.mul_im, Complex.intCast_re, Complex.intCast_im, zero_mul, add_zero, abs_mul,
-      UpperHalfPlane.coe_im, abs_of_pos z.im_pos]
+    rw [abs_im_intCast_mul]
     exact le_mul_of_one_le_right (abs_nonneg _) hz
   exact norm_rowSum_le_of_le _ (by linarith) (by linarith)
 
@@ -541,8 +540,7 @@ private lemma tendsto_rowSum_divisionPoint_sub_sub_atImInfty (a : Fin 2 → ZMod
     have h₂ : Tendsto (fun z : ℍ ↦ rowSum (m * z)) atImInfty (𝓝 0) := by
       refine tendsto_rowSum_atImInfty one_pos fun z ↦ ?_
       have hm1 : (1 : ℝ) ≤ |(m : ℝ)| := by exact_mod_cast Int.one_le_abs hm
-      rw [Complex.mul_im, Complex.intCast_re, Complex.intCast_im, zero_mul, add_zero,
-        UpperHalfPlane.coe_im, abs_mul, abs_of_pos z.im_pos, one_mul]
+      rw [abs_im_intCast_mul, one_mul]
       exact le_mul_of_one_le_left z.im_pos.le hm1
     simpa using (tendsto_rowSum_divisionPoint_sub_atImInfty a (by simp [hm])).sub h₂
 
@@ -572,9 +570,9 @@ private lemma hasSum_zpow_val_sub (r : ZMod N) :
   refine h.congr_fun fun y ↦ ?_
   simp only [Function.comp_apply, Equiv.neg_apply, Int.cast_neg, Int.cast_sub, Int.cast_mul,
     Int.cast_natCast]
-  rw [← sub_eq_add_neg, show (r.val : ℂ) / N - y = ((r.val : ℂ) - N * y) / N by field_simp,
-    div_pow, one_div_div, div_eq_mul_inv, inv_mul_cancel_left₀ (pow_ne_zero 2 hN),
-    _root_.zpow_neg, zpow_ofNat]
+  rw [_root_.zpow_neg, zpow_ofNat]
+  field_simp
+  ring
 
 /-- The sum of a weight along the row `x₀ = 0`, grouped by residue classes modulo `N`:
 `∑_{n ∈ ℤ} W(0, n) n⁻² = N⁻² ∑_{r mod N} W(0, r) P(r / N)`. -/
@@ -629,19 +627,6 @@ theorem valueAtInfty_weightedG2 (W : (Fin 2 → ZMod N) → ℂ) :
       ((N : ℂ) ^ 2)⁻¹ * (∑ a, W a) * (2 * riemannZeta 2) :=
   (tendsto_weightedG2_atImInfty W).limUnder_eq
 
-/-- Right multiplication by an element of `SL(2, ZMod N)` permutes the residue pairs, so it does
-not change the total mass of a weight. -/
-private lemma sum_comp_vecMul (W : (Fin 2 → ZMod N) → ℂ) (g : SL(2, ZMod N)) :
-    ∑ a, W (a ᵥ* (g : Matrix (Fin 2) (Fin 2) (ZMod N))) = ∑ a, W a := by
-  have h₁ : (g : Matrix (Fin 2) (Fin 2) (ZMod N)) * ((g⁻¹ : SL(2, ZMod N)) :
-      Matrix (Fin 2) (Fin 2) (ZMod N)) = 1 := by
-    rw [← Matrix.SpecialLinearGroup.coe_mul, mul_inv_cancel, Matrix.SpecialLinearGroup.coe_one]
-  have h₂ : ((g⁻¹ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) *
-      (g : Matrix (Fin 2) (Fin 2) (ZMod N)) = 1 := by
-    rw [← Matrix.SpecialLinearGroup.coe_mul, inv_mul_cancel, Matrix.SpecialLinearGroup.coe_one]
-  exact Fintype.sum_equiv (Matrix.toLinearEquivRight'OfInv h₂ h₁).toEquiv _ _ fun a ↦
-    congrArg W (funext fun i ↦ by simp)
-
 /-- **The value at `i∞` of a translated weighted weight-two series.** For
 `γ = !![a, b; c, d] ∈ SL₂(ℤ)`, the value at `i∞` of `G₂^W ∣[2] γ` is
 `∑_{n ∈ ℤ} W(-n c, n a) n⁻² - N⁻² (∑_a W(a)) · 2 ζ(2)`: the multiples of the row `(-c, a)` of
@@ -650,7 +635,7 @@ theorem valueAtInfty_weightedG2_slash (W : (Fin 2 → ZMod N) → ℂ) (γ : SL(
     valueAtInfty (weightedG2 W ∣[(2 : ℤ)] γ) =
       ∑' n : ℤ, W ((↑) ∘ ![-(n * γ 1 0), n * γ 0 0]) * (n : ℂ) ^ (-2 : ℤ) -
         ((N : ℂ) ^ 2)⁻¹ * (∑ a, W a) * (2 * riemannZeta 2) := by
-  rw [weightedG2_slash_apply, valueAtInfty_weightedG2, sum_comp_vecMul]
+  rw [weightedG2_slash_apply, valueAtInfty_weightedG2, Matrix.SpecialLinearGroup.sum_comp_vecMul]
   congr 1
   refine tsum_congr fun n ↦ ?_
   congr 2
