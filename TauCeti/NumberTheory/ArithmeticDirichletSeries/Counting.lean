@@ -14,7 +14,7 @@ import Mathlib.Order.Filter.AtTopBot.Finset
 import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
-public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
+public import TauCeti.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 public import TauCeti.Order.Northcott.Basic
@@ -103,17 +103,6 @@ open scoped nonZeroDivisors NumberField
 open IsDedekindDomain
 
 /-! ### Ideals and height-one primes of bounded absolute norm -/
-
-/-- The absolute norm on nonzero ideals of an infinite Dedekind domain with finite quotients is
-Northcott, by `Ring.HasFiniteQuotients.finite_absNorm_le`. Mathlib already supplies the
-corresponding instance on height-one primes. -/
-instance instNorthcottAbsNormNonZeroDivisors {R : Type*} [CommRing R] [IsDedekindDomain R]
-    [Infinite R] [Ring.HasFiniteQuotients R] :
-    Northcott (fun I : (Ideal R)⁰ ↦ Ideal.absNorm (I : Ideal R)) := by
-  constructor
-  intro B
-  exact (Ring.HasFiniteQuotients.finite_absNorm_le (S := R) B).preimage
-    Subtype.val_injective.injOn
 
 variable (K : Type*) [Field K] [NumberField K]
 

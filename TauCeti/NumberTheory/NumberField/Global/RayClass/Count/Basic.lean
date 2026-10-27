@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
+public import TauCeti.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
 public import TauCeti.Order.Northcott.Basic
 
@@ -71,12 +71,17 @@ variable {K : Type*} [Field K] [NumberField K]
 /-! ### Finiteness of the sets being counted -/
 
 /-- **The absolute norm is Northcott on the ideals prime to a modulus**: only finitely many have
-norm below any bound. This mirrors `TauCeti.instNorthcottAbsNormNonZeroDivisors`, which does the
-same for `(Ideal R)⁰`. -/
+norm below any bound, by restriction of `TauCeti.instNorthcottAbsNormNonZeroDivisors`. -/
 instance (𝔪 : Modulus K) :
     Northcott (fun I : integralIdealsPrimeTo 𝔪 ↦ Ideal.absNorm (I : Ideal (𝓞 K))) where
-  finite_le B :=
-    (Ring.HasFiniteQuotients.finite_absNorm_le (S := 𝓞 K) B).preimage Subtype.val_injective.injOn
+  finite_le B := by
+    let f : integralIdealsPrimeTo 𝔪 → (Ideal (𝓞 K))⁰ := fun I ↦
+      ⟨I, mem_nonZeroDivisors_iff_ne_zero.mpr
+        (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)).1⟩
+    exact (Northcott.finite_le
+      (h := fun I : (Ideal (𝓞 K))⁰ ↦ Ideal.absNorm (I : Ideal (𝓞 K))) B).preimage
+        (f := f) fun _ _ _ _ h ↦
+          Subtype.ext (congrArg (fun I : (Ideal (𝓞 K))⁰ ↦ (I : Ideal (𝓞 K))) h)
 
 /-- The nonzero integral ideals prime to `𝔪` of norm at most a real bound form a finite type. The
 cutoff is real, and inclusive, per the convention `TauCeti.Order.Northcott.Basic` fixes. -/
