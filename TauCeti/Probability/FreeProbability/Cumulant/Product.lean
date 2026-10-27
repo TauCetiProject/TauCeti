@@ -168,10 +168,11 @@ theorem freeCumulant_comp_of_strictMonoOn {e : α → β} (he : StrictMonoOn e s
       fun y hy => he.injOn (mem_filter.1 hy).1 hx (mem_filter.1 hy).2⟩
   have hσ : NoncrossingPartition.comap he.monotoneOn ⊥ = ⊥ := by
     refine Subtype.ext <| Finpartition.ext_of_part fun x hx => ?_
-    rw [NoncrossingPartition.coe_comap, NoncrossingPartition.coe_bot,
-      NoncrossingPartition.coe_bot, Finpartition.part_comap_bot hx, hfib x hx,
-      Finpartition.part_eq_of_mem _ (Finpartition.mem_bot_iff.2 ⟨x, hx, rfl⟩)
-        (mem_singleton_self x)]
+    simp only [NoncrossingPartition.coe_comap, NoncrossingPartition.coe_bot,
+      Finpartition.part_comap_bot hx, hfib x hx]
+    -- The part of `⊥` through `x` is the singleton `{x}`.
+    exact (Finpartition.part_eq_of_mem _ (Finpartition.mem_bot_iff.2 ⟨x, hx, rfl⟩)
+      (mem_singleton_self x)).symm
   have hb : Set.EqOn b (fiberProd (b ∘ e) s e) (s.image e) := by
     intro y hy
     obtain ⟨x, hx, rfl⟩ := mem_image.1 hy

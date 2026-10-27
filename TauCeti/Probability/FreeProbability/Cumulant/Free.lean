@@ -19,21 +19,6 @@ freely independent exactly when every mixed free cumulant vanishes. This turns f
 condition on centred alternating words, into the vanishing of the off-diagonal cumulants, which is
 what makes cumulants additive on free families and underlies the free convolution.
 
-If the mixed cumulants vanish, then in the moment–cumulant formula for a centred alternating word
-every noncrossing partition contributes zero: it has a part that is a singleton, whose cumulant is
-a centred moment, or a part containing two adjacent letters, whose labels differ. Hence the moment
-vanishes, and this direction does not use the normalisation.
-
-Conversely, let the family be free and argue by induction on the length. If two adjacent letters
-have equal labels, group them into one letter: by the formula for cumulants with products as
-arguments, the shorter mixed cumulant equals the original cumulant plus the cumulants of
-noncrossing partitions `π ≠ 1` whose join with the grouping is `1`; by induction such a `π`
-contributes only if its parts are not mixed, and then merging the two parts through the grouped
-letters gives a noncrossing partition with unmixed parts above both, which is impossible. If all
-adjacent labels differ, centre the letters, which by multilinearity does not change a cumulant of
-order at least two; the moment of the centred alternating word vanishes by freeness, and every
-partition `π ≠ 1` contributes zero by induction and the argument of the first direction.
-
 The words are indexed by a finite set `s` of positions in a linear order, so that the results apply
 to every subword of a word; the cumulants `κ_n` are the case `s = Finset.univ : Finset (Fin n)`.
 
@@ -192,26 +177,32 @@ private theorem freeCumulant_eq_zero_of_isChain (h : IsFreelyIndependent φ B) (
   have hbB : ∀ z ∈ s, b z ∈ B (ℓ z) := fun z hz =>
     add_mem (ha z hz) (Subalgebra.algebraMap_mem _ _)
   have hbc : ∀ z, φ (b z) = 0 := fun z => by
-    rw [hb, map_add, Algebra.algebraMap_eq_smul_one, map_smul, hφ, smul_eq_mul, mul_one,
-      add_neg_cancel]
+    simp [hb, Algebra.algebraMap_eq_smul_one, hφ]
   have hmom : φ (s.sort.map b).prod = 0 := by
     have hne : s.sort.map (fun z => (ℓ z, b z)) ≠ [] :=
       List.ne_nil_of_mem (List.mem_map_of_mem ((mem_sort _).2 hx))
     have := isFreelyIndependent_iff.1 h _ hne (by rwa [List.map_map]) (by simpa using hbB)
       (by simp [hbc])
     rwa [List.map_map] at this
-  rw [apply_prod_eq_sum_prod_freeCumulant φ b ⟨x, hx⟩,
-    ← add_sum_erase _ _ (mem_univ ⊤), NoncrossingPartition.coe_top,
-    Finpartition.parts_top (nonempty_of_ne_empty (ne_empty_of_mem hx)).ne_empty,
-    prod_singleton, sum_eq_zero fun π hπ => ?_, add_zero,
-    freeCumulant_add_algebraMap φ a hφ _ hs] at hmom
-  · exact hmom
-  obtain ⟨X, hX, hX1 | ⟨u, hu, v, hv, huv, hadj⟩⟩ :=
-    π.2.exists_mem_parts_card_eq_one_or_adjacent ⟨x, hx⟩
-  · obtain ⟨z, rfl⟩ := card_eq_one.1 hX1
-    exact prod_eq_zero hX (by rw [freeCumulant_singleton, hbc])
-  · exact prod_freeCumulant_eq_zero_of_mixed ih hbB (ne_of_mem_erase hπ) hX hu hv
-      (isChain_map_sort_iff.1 halt u (π.1.le hX hu) v (π.1.le hX hv) huv hadj)
+  -- Expand the moment by the moment–cumulant formula and isolate the term of `π = 1`.
+  have hexp : φ (s.sort.map b).prod =
+      freeCumulant φ b s + ∑ π ∈ (univ : Finset (NoncrossingPartition s)).erase ⊤,
+        ∏ X ∈ π.1.parts, freeCumulant φ b X := by
+    rw [apply_prod_eq_sum_prod_freeCumulant φ b ⟨x, hx⟩, ← add_sum_erase _ _ (mem_univ ⊤),
+      ← partitionCumulant_eq_prod_freeCumulant, ← freeCumulant_def]
+  -- Every other `π` has a singleton part, whose cumulant is a centred moment, or a mixed part.
+  have hrest : ∑ π ∈ (univ : Finset (NoncrossingPartition s)).erase ⊤,
+      ∏ X ∈ π.1.parts, freeCumulant φ b X = 0 := by
+    refine sum_eq_zero fun π hπ => ?_
+    obtain ⟨X, hX, hX1 | ⟨u, hu, v, hv, huv, hadj⟩⟩ :=
+      π.2.exists_mem_parts_card_eq_one_or_adjacent ⟨x, hx⟩
+    · obtain ⟨z, rfl⟩ := card_eq_one.1 hX1
+      exact prod_eq_zero hX (by rw [freeCumulant_singleton, hbc])
+    · exact prod_freeCumulant_eq_zero_of_mixed ih hbB (ne_of_mem_erase hπ) hX hu hv
+        (isChain_map_sort_iff.1 halt u (π.1.le hX hu) v (π.1.le hX hv) huv hadj)
+  calc freeCumulant φ a s = freeCumulant φ b s := (freeCumulant_add_algebraMap φ a hφ _ hs).symm
+    _ = φ (s.sort.map b).prod := by rw [hexp, hrest, add_zero]
+    _ = 0 := hmom
 
 /-- *Free cumulants detect freeness*, the vanishing direction: if the subalgebras `B i` are freely
 independent for a normalised `φ`, then the free cumulant `κ_s(a)` of a word whose letters satisfy
@@ -219,6 +210,11 @@ independent for a normalised `φ`, then the free cumulant `κ_s(a)` of a word wh
 theorem IsFreelyIndependent.freeCumulant_eq_zero (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1)
     {a : α → A} (ha : ∀ x ∈ s, a x ∈ B (ℓ x)) {x y : α} (hx : x ∈ s) (hy : y ∈ s)
     (hxy : ℓ x ≠ ℓ y) : freeCumulant φ a s = 0 := by
+  -- Induct on the length. If two adjacent letters have equal labels, group them into one letter:
+  -- by the formula for cumulants with products as arguments, the shorter mixed cumulant is the
+  -- original one plus cumulants of partitions `π ≠ 1` that vanish by induction. If all adjacent
+  -- labels differ, centre the letters: the centred alternating word has vanishing moment by
+  -- freeness, and every partition `π ≠ 1` contributes zero by induction.
   induction hn : #s using Nat.strong_induction_on generalizing s a x y with | _ n ih =>
   have ih' : ∀ t : Finset α, #t < #s → ∀ b : α → A, (∀ z ∈ t, b z ∈ B (ℓ z)) →
       ∀ x ∈ t, ∀ y ∈ t, ℓ x ≠ ℓ y → freeCumulant φ b t = 0 :=
@@ -236,6 +232,9 @@ theorem isFreelyIndependent_of_freeCumulant_eq_zero
     (h : ∀ (n : ℕ) (a : Fin n → A) (ℓ : Fin n → ι), (∀ k, a k ∈ B (ℓ k)) → ∀ k k', ℓ k ≠ ℓ k' →
       freeCumulant φ a univ = 0) :
     IsFreelyIndependent φ B := by
+  -- In the moment–cumulant formula for a centred alternating word, every noncrossing partition
+  -- has a singleton part, whose cumulant is a centred moment, or a part containing two adjacent
+  -- letters, whose labels differ; either way it contributes zero.
   rw [isFreelyIndependent_iff]
   intro w hne halt hw hc
   -- Read the word as letters `a k` with labels `ℓ k` at the positions `k : Fin w.length`.

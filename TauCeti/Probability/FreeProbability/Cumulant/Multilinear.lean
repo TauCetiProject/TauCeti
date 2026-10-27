@@ -160,11 +160,15 @@ theorem freeCumulant_add_algebraMap (hφ : φ 1 = 1) (c : α → R) (hs : 1 < #s
       rcases eq_or_ne x i with rfl | hx
       · simp [Algebra.algebraMap_eq_smul_one]
       · rw [update_of_ne hx, if_congr (by rw [mem_insert, or_iff_right hx]) rfl rfl]
-    rw [hupd, freeCumulant_update_add φ _ hi, freeCumulant_update_smul φ _ hi,
-      freeCumulant_eq_zero_of_apply_eq_one φ _ hφ (update_self _ _ _) hi hs, mul_zero, add_zero,
-      ← ih ((subset_insert i t).trans hts)]
-    congr 1
-    exact update_eq_self_iff.2 (by simp [hit])
+    -- Split off the shift `c i • 1` by linearity in the entry `i`; its cumulant has a unit letter.
+    have hunit : freeCumulant φ (update (fun x => if x ∈ t then a x + algebraMap R A (c x) else
+        a x) i 1) s = 0 := freeCumulant_eq_zero_of_apply_eq_one φ _ hφ (update_self _ _ _) hi hs
+    have hai : update (fun x => if x ∈ t then a x + algebraMap R A (c x) else a x) i (a i) =
+        fun x => if x ∈ t then a x + algebraMap R A (c x) else a x :=
+      update_eq_self_iff.2 (by simp [hit])
+    rw [hupd, freeCumulant_update_add φ _ hi, freeCumulant_update_smul φ _ hi, hunit, mul_zero,
+      add_zero, hai]
+    exact ih ((subset_insert i t).trans hts)
 
 end Cumulant
 
