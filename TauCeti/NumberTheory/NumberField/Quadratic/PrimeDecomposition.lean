@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Quadratic.Model
 public import TauCeti.NumberTheory.QuadraticOrder.PrimeIdeal
 public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.Algebra.Squarefree
+import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -95,20 +96,6 @@ private theorem isMaximal_map_symm_iff (I : Ideal (QuadraticAlgebra ℤ a b)) :
     (I.map e.symm).IsMaximal ↔ I.IsMaximal :=
   Ideal.isMaximal_map_iff_of_bijective _ e.symm.bijective
 
-omit [Fact p.Prime] in
-private theorem map_symm_injective : Function.Injective (Ideal.map e.symm) :=
-  fun I J h => by
-    rw [← Ideal.comap_map_of_bijective _ e.symm.bijective (I := I), h,
-      Ideal.comap_map_of_bijective _ e.symm.bijective]
-
-omit [Fact p.Prime] in
-private theorem isPrime_and_natCast_mem_map_symm_iff (I : Ideal (QuadraticAlgebra ℤ a b)) :
-    (I.map e.symm).IsPrime ∧ (p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)) ∈ I.map e.symm ↔
-      I.IsPrime ∧ (p : QuadraticAlgebra ℤ a b) ∈ I := by
-  have hc := Ideal.comap_map_of_bijective _ e.symm.bijective (I := I)
-  refine and_congr ⟨fun h => hc ▸ Ideal.comap_isPrime _ _, fun _ => inferInstance⟩ ?_
-  conv_rhs => rw [← hc, Ideal.mem_comap, map_natCast]
-
 /-- The primes of `𝓞 ℚ(√d)` above `p`, read off from those of an integral model. -/
 private theorem isPrime_and_natCast_mem_iff_of_equiv
     {P : Ideal (𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))} :
@@ -119,8 +106,14 @@ private theorem isPrime_and_natCast_mem_iff_of_equiv
           P = Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)), e.symm ω - r} := by
   obtain ⟨Q, rfl⟩ : ∃ Q : Ideal (QuadraticAlgebra ℤ a b), P = Q.map e.symm :=
     ⟨_, (Ideal.map_comap_of_surjective _ e.symm.surjective P).symm⟩
-  simp_rw [isPrime_and_natCast_mem_map_symm_iff, isPrime_and_natCast_mem_iff,
-    ← map_symm_span_natCast e, ← map_symm_span_pair e, (map_symm_injective e).eq_iff]
+  have hmem : (p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)) ∈ Q.map e.symm ↔
+      (p : QuadraticAlgebra ℤ a b) ∈ Q := by
+    conv_rhs => rw [← Ideal.comap_map_of_bijective _ e.symm.bijective (I := Q), Ideal.mem_comap,
+      map_natCast]
+  simp_rw [Ideal.isPrime_map_iff_of_bijective _ e.symm.bijective, hmem,
+    isPrime_and_natCast_mem_iff, ← map_symm_span_natCast e, ← map_symm_span_pair e,
+    Function.Injective.eq_iff (f := Ideal.map e.symm)
+      (Ideal.relIsoOfBijective _ e.symm.bijective).symm.injective]
 
 end Transport
 
@@ -217,21 +210,16 @@ theorem span_natCast_integralSqrt_sub_eq_span_natCast_integralSqrt_add_iff
       Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
         integralSqrt (omega_sq_eq_algebraMap_int (d := d)) + r} ↔
       (p : ℤ) ∣ NumberField.discr (QuadraticAlgebra ℚ (d : ℚ) 0) := by
-  have hp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
   have hadd : integralSqrt (omega_sq_eq_algebraMap_int (d := d)) + (r : 𝓞 _) =
-      integralSqrt (omega_sq_eq_algebraMap_int (d := d)) - ((-r : ℤ) : 𝓞 _) := by
+      integralSqrt (omega_sq_eq_algebraMap_int (d := d)) - ((0 - r : ℤ) : 𝓞 _) := by
     push_cast; ring
   rw [hadd, ← map_ringOfIntegersEquiv_symm_span hsf hd4,
-    ← map_ringOfIntegersEquiv_symm_span hsf hd4, (map_symm_injective _).eq_iff, eq_comm,
-    span_natCast_omega_sub_eq_iff (by simpa using hr), discr_eq_four_mul_of_mod_four_ne_one hsf hd4]
-  -- `(2r)² = 4d + 4 (r² - d)`, so `p ∣ 2r` exactly when `p ∣ 4d`.
-  have h4 : (p : ℤ) ∣ (r - -r) ^ 2 - 4 * d := by
-    convert dvd_mul_of_dvd_right hr 4 using 1; ring
-  constructor
-  · intro h
-    simpa using (dvd_sub (dvd_pow h two_ne_zero) h4)
-  · intro h
-    exact hp.dvd_of_dvd_pow (n := 2) (by simpa using dvd_add h4 h)
+    ← map_ringOfIntegersEquiv_symm_span hsf hd4,
+    Function.Injective.eq_iff (f := Ideal.map (ringOfIntegersEquiv hsf hd4).symm)
+      (Ideal.relIsoOfBijective _ (ringOfIntegersEquiv hsf hd4).symm.bijective).symm.injective,
+    span_natCast_omega_sub_eq_span_natCast_omega_sub_iff (by simpa using hr),
+    discr_eq_four_mul_of_mod_four_ne_one hsf hd4]
+  simp
 
 include hsf hd4 in
 /-- **Ramified primes for `d ≢ 1 (mod 4)`.** For a square root `r` of `d` modulo `p`, the
@@ -353,20 +341,14 @@ theorem span_natCast_halfGen_sub_eq_span_natCast_halfGen_sub_iff
       Ideal.span {(p : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
         halfGen minpoly_integralSqrt_omega hd4 - (1 - r : ℤ)} ↔
       (p : ℤ) ∣ NumberField.discr (QuadraticAlgebra ℚ (d : ℚ) 0) := by
-  have hp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
   rw [← map_ringOfIntegersEquivHalf_symm_span hsf hd4,
-    ← map_ringOfIntegersEquivHalf_symm_span hsf hd4, (map_symm_injective _).eq_iff, eq_comm,
-    span_natCast_omega_sub_eq_iff (by simpa using hr), discr_eq_of_mod_four_eq_one hsf hd4]
-  -- `(2r - 1)² = d + 4 (r² - r - (d - 1)/4)`, so `p ∣ 2r - 1` exactly when `p ∣ d`.
-  have h4 : (p : ℤ) ∣ (r - (1 - r)) ^ 2 - d := by
-    convert dvd_mul_of_dvd_right hr 4 using 1
-    have hd : d = 4 * ((d - 1) / 4) + 1 := by omega
-    linear_combination -hd
-  constructor
-  · intro h
-    simpa using (dvd_sub (dvd_pow h two_ne_zero) h4)
-  · intro h
-    exact hp.dvd_of_dvd_pow (n := 2) (by simpa using dvd_add h4 h)
+    ← map_ringOfIntegersEquivHalf_symm_span hsf hd4,
+    Function.Injective.eq_iff (f := Ideal.map (ringOfIntegersEquivHalf hsf hd4).symm)
+      (Ideal.relIsoOfBijective _ (ringOfIntegersEquivHalf hsf hd4).symm.bijective).symm.injective,
+    span_natCast_omega_sub_eq_span_natCast_omega_sub_iff (by simpa using hr),
+    discr_eq_of_mod_four_eq_one hsf hd4]
+  -- The discriminant of `X² - X - (d - 1)/4` is `1 + 4 ((d - 1)/4) = d`.
+  rw [show (1 : ℤ) ^ 2 + 4 * ((d - 1) / 4) = d by omega]
 
 include hsf in
 /-- **Ramified primes for `d ≡ 1 (mod 4)`.** For a root `r` of `X² - X - (d - 1)/4` modulo `p`,

@@ -312,11 +312,11 @@ theorem Ideal.span_pair_pow_eq_span_singleton {R : Type u} [Ring R] {x z t : R} 
     exact add_mem (Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hxm n))
       (Ideal.mul_mem_left _ _ (Ideal.pow_mem_pow ht n))
 
-/-- **A pair whose square is principal.** In a commutative ring, if `x ^ 2 = z m` with `z` and `m`
-coprime, then `(z, x) ^ 2 = (z)`. For a squarefree integer `d = p m` with `p` prime, applied to a
-square root `x` of `d`, this is the ramified factorization `(p) = (p, √d) ^ 2`. -/
-theorem Ideal.span_pair_sq_eq_span_singleton_of_isCoprime {R : Type u} [CommRing R] {z x m : R}
-    (hx : x ^ 2 = z * m) (hm : IsCoprime z m) :
+/-- **A pair whose square is principal.** In a commutative semiring, if `x ^ 2 = z m` with `z`
+and `m` coprime, then `(z, x) ^ 2 = (z)`. For a squarefree integer `d = p m` with `p` prime,
+applied to a square root `x` of `d`, this is the ramified factorization `(p) = (p, √d) ^ 2`. -/
+theorem Ideal.span_pair_sq_eq_span_singleton_of_isCoprime {R : Type u} [CommSemiring R]
+    {z x m : R} (hx : x ^ 2 = z * m) (hm : IsCoprime z m) :
     Ideal.span {z, x} ^ 2 = Ideal.span {z} := by
   refine le_antisymm ?_ ?_
   · rw [sq, Ideal.span_pair_mul_span_pair, Ideal.span_le]

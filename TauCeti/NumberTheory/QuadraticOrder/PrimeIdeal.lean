@@ -31,7 +31,9 @@ generators, following the Dedekind–Kummer recipe:
   `ℤ[√d]` with `d ≡ 1 (mod 4)`, an order of conductor `2`, it fails at `p = 2`
   (`span_two_omega_sub_one_sq_ne_span_two`);
 * every prime of `ℤ[ω]` containing `p` is `𝔭_r` or `𝔭_(b - r)` (`eq_or_eq_of_natCast_mem`),
-  whether or not the criterion holds; the two coincide exactly when `p ∣ 2r - b`;
+  whether or not the criterion holds; the two coincide exactly when `p ∣ 2r - b`, that is, when
+  `p` divides the discriminant `b² + 4a` of `f`
+  (`span_natCast_omega_sub_eq_span_natCast_omega_sub_iff`);
 * if `f` has no root modulo `p`, then `(p)` itself is maximal, so `p` is inert
   (`isMaximal_span_natCast_iff`), and conversely;
 * together, the primes of `ℤ[ω]` above `p` are exactly `(p)` when `f` has no root modulo `p`, and
@@ -361,6 +363,25 @@ theorem isMaximal_span_natCast_iff :
     rw [hspan]
     exact RingHom.ker_isMaximal_of_surjective _
       (mapRingHom_surjective (Int.castRingHom (ZMod p)) a b ZMod.intCast_surjective)
+
+/-- **When the two primes above `p` coincide.** For a root `r` of `X² - b X - a` modulo `p`, the
+ideals `(p, ω - r)` and `(p, ω - (b - r))` coincide exactly when `p` divides the discriminant
+`b² + 4a` of `X² - b X - a`. -/
+theorem span_natCast_omega_sub_eq_span_natCast_omega_sub_iff
+    (hr : (p : ℤ) ∣ r ^ 2 - b * r - a) :
+    Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (r : QuadraticAlgebra ℤ a b)} =
+        Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - ((b - r : ℤ) : QuadraticAlgebra ℤ a b)} ↔
+      (p : ℤ) ∣ b ^ 2 + 4 * a := by
+  have hp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
+  rw [eq_comm, span_natCast_omega_sub_eq_iff hr]
+  -- `(2r - b)² = b² + 4a + 4 (r² - br - a)`, so `p ∣ 2r - b` exactly when `p ∣ b² + 4a`.
+  have h4 : (p : ℤ) ∣ (r - (b - r)) ^ 2 - (b ^ 2 + 4 * a) := by
+    convert dvd_mul_of_dvd_right hr 4 using 1; ring
+  constructor
+  · intro h
+    simpa using dvd_sub (dvd_pow h two_ne_zero) h4
+  · intro h
+    exact hp.dvd_of_dvd_pow (n := 2) (by simpa using dvd_add h4 h)
 
 /-- **The primes above `p`.** A prime ideal `P` of `ℤ[ω]` contains the rational prime `p` exactly
 when either `X² - b X - a` has no root modulo `p` and `P = (p)`, or `P = (p, ω - r)` for a root
