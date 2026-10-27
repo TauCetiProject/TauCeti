@@ -62,10 +62,19 @@ dilates of the unit ball, shows that a full lattice in a real normed space of di
   `ℤ`-basis of `L` has Lebesgue measure `μ s / covolume L μ`.
 * `ZLattice.covolume_le_covolume_of_le`: a full sublattice `L₁ ≤ L₂` has
   `covolume L₂ μ ≤ covolume L₁ μ`.
-* `ZLattice.covolume_le_abs_det_mul_measureReal`, `ZLattice.covolume_le_abs_det`: a real basis `b`
-  of lattice vectors has `covolume L ≤ |det_o b|` for any orthonormal basis `o`.
+* `ZLattice.covolume_le_abs_det_mul_measureReal`: a real basis `b` of lattice vectors has
+  `covolume L μ ≤ |det_{b₀} b| * μ.real (fundamentalDomain b₀)` for any Haar measure `μ` and any
+  real basis `b₀`.
+* `ZLattice.covolume_le_abs_det`: a real basis `b` of lattice vectors has `covolume L ≤ |det_o b|`
+  for any orthonormal basis `o`.
 * `ZLattice.ncard_closedBall_inter_isBigO`: a full lattice has `O(R^n)` points in the ball of
   radius `R`.
+
+## References
+
+* J.-H. Evertse, *Geometry of Numbers*, §2.3, lower-bound proof of Theorem 2.9,
+  printed p.27: <https://pub.math.leidenuniv.nl/~evertsejh/dio19-2.pdf>. This is the source of
+  `ZLattice.covolume_le_covolume_of_le` and `ZLattice.covolume_le_abs_det`.
 -/
 
 public section
