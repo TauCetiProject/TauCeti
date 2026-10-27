@@ -203,6 +203,21 @@ noncomputable def X (i : σ) : washnitzerAlgebra σ R :=
 theorem coe_X (i : σ) : (X σ R i : MvPowerSeries σ R) = MvPowerSeries.X i :=
   (rfl)
 
+/-- A variable in the Monsky–Washnitzer algebra over a nontrivial ring is nonzero. -/
+@[simp]
+theorem X_ne_zero [Nontrivial R] (i : σ) : X σ R i ≠ 0 := by
+  intro h
+  have hc := congrArg (fun f : washnitzerAlgebra σ R ↦
+    coeff (Finsupp.single i 1) (f : MvPowerSeries σ R)) h
+  simp at hc
+
+/-- A variable in the Monsky–Washnitzer algebra over a nontrivial ring is not a unit. -/
+@[simp]
+theorem not_isUnit_X [Nontrivial R] (i : σ) : ¬ IsUnit (X σ R i) := by
+  intro h
+  have hu := h.map (constantCoeff.comp (washnitzerAlgebra σ R).val.toRingHom)
+  simp at hu
+
 variable (σ R) in
 /-- The inclusion of the polynomial algebra into the Monsky–Washnitzer algebra. -/
 noncomputable def ofMvPolynomial : MvPolynomial σ R →ₐ[R] washnitzerAlgebra σ R :=

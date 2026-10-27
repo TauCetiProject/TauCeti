@@ -129,16 +129,8 @@ theorem washnitzerAlgebra.finite_of_isField {σ : Type*} [Finite σ]
   have hn : n = 0 := by
     by_contra hn
     let i : Fin n := ⟨0, Nat.pos_of_ne_zero hn⟩
-    let x : W (Fin n) := X (Fin n) K i
-    have hx : x ≠ 0 := by
-      intro h
-      have hc := congrArg (fun f : W (Fin n) ↦
-        coeff (Finsupp.single i 1) (f : MvPowerSeries (Fin n) K)) h
-      simp [x, coe_X] at hc
-    obtain ⟨y, hy⟩ := hf.mul_inv_cancel hx
-    have hu := (IsUnit.of_mul_eq_one y hy).map
-      (constantCoeff.comp (washnitzerAlgebra (Fin n) K).val.toRingHom)
-    simp [x, coe_X] at hu
+    obtain ⟨y, hy⟩ := hf.mul_inv_cancel (washnitzerAlgebra.X_ne_zero (R := K) i)
+    exact washnitzerAlgebra.not_isUnit_X i (IsUnit.of_mul_eq_one y hy)
   subst n
   have : Module.Finite K (W (Fin 0)) :=
     Module.Finite.of_surjective (Algebra.linearMap K (W (Fin 0)))
