@@ -42,6 +42,8 @@ homomorphism `G → G ⧸ S` together with the inclusion `Xˢ ↪ X`.
 
 ## Main results
 
+* `TopRep.invariantsFunctor_map`: taking invariants maps a morphism to its restriction to
+  invariant vectors.
 * `ContRepresentation.apply_mem_invariants_restrict`: the invariants of `π|_S` are a
   `G`-stable submodule when `S` is normal.
 * `ContRepresentation.invariants_restrict_bot`,
@@ -173,7 +175,15 @@ namespace TopRep
 open ContRepresentation
 
 variable {R : Type*} [Ring R] [TopologicalSpace R] {G : Type*} [Group G]
-  (X : TopRep R G) (S : Subgroup G) [S.Normal]
+
+/-- Taking invariants maps a morphism of topological representations to its restriction to
+invariant vectors, bundled as a morphism of topological modules. -/
+@[simp]
+theorem invariantsFunctor_map {X Y : TopRep R G} (f : X ⟶ Y) :
+    (invariantsFunctor R G).map f = TopModuleCat.ofHom f.hom.mapInvariants :=
+  (rfl)
+
+variable (X : TopRep R G) (S : Subgroup G) [S.Normal]
 
 /-- The `G ⧸ S`-object on the `S`-invariants of a topological representation, for a normal
 subgroup `S ≤ G`. This is the coefficient half of inflation. -/
