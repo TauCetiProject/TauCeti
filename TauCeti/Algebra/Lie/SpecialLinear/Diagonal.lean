@@ -14,11 +14,27 @@ public import TauCeti.LinearAlgebra.Fin.PartialSums
 
 The diagonal submodule of the native special linear Lie algebra has a basis of
 adjacent diagonal differences over every commutative ring. Its coordinates are
-nonempty initial sums of the diagonal entries. The construction includes rank zero
+nonempty initial sums of the diagonal entries. Diagonal elements act on matrix units by the
+difference of the corresponding diagonal entries. The construction includes rank zero
 and uses the existing partial-sum linear equivalence.
 -/
 
 public section
+
+namespace LieAlgebra.SpecialLinear
+
+attribute [local instance 100] LieRing.ofAssociativeRing in
+/-- A diagonal trace-zero matrix acts on a matrix unit by the difference of its diagonal entries. -/
+theorem lie_single_of_isDiag {R n : Type*} [CommRing R] [Fintype n] [DecidableEq n]
+    {N : sl n R} (hN : (N : Matrix n n R).IsDiag) {i j : n} (hij : i ≠ j) (c : R) :
+    ⁅N, single i j hij c⁆ =
+      ((N : Matrix n n R) i i - (N : Matrix n n R) j j) • single i j hij c := by
+  apply Subtype.ext
+  simpa only [LieSubalgebra.coe_bracket, val_single, SetLike.val_smul] using
+    TauCeti.lie_single_of_mem_diagonalCartan (TauCeti.mem_diagonalCartan_iff_isDiag.mpr hN)
+      i j c
+
+end LieAlgebra.SpecialLinear
 
 namespace TauCeti
 
