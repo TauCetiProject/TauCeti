@@ -54,17 +54,23 @@ theorem exists_quasiIso_single₀ (h : IsPseudoCoherentOver R M ⊤) :
   let π : P ⟶ (ChainComplex.single₀ (ModuleCat.{u} R)).obj (ModuleCat.of R M) :=
     (P.toSingle₀Equiv _).symm ⟨ModuleCat.ofHom ε, ModuleCat.hom_ext (LinearMap.ext fun x ↦ by
       simpa [hP₀] using h₀'.apply_apply_eq_zero x)⟩
+  have hπ₀ : π.f 0 = ModuleCat.ofHom ε := ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
   refine ⟨P, π, fun i ↦ ⟨n i, ⟨Iso.refl _⟩⟩, ⟨fun i ↦ ?_⟩⟩
   cases i with
   | zero =>
     rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _ rfl rfl rfl]
     refine ⟨?_, ?_⟩
-    -- In degree zero `P` is by construction the coordinate module `Fin (n 0) → R`.
+    -- In degree zero the incoming differential is `d 0` and `π` is `ε`; the term `P.X 0` is the
+    -- coordinate module `Fin (n 0) → R` by `ChainComplex.of_X`.
     · rw [ShortComplex.moduleCat_exact_iff_range_eq_ker]
-      simp only [π]
+      dsimp only [HomologicalComplex.shortComplexFunctor'_obj_f,
+        HomologicalComplex.shortComplexFunctor'_map_τ₂]
+      rw [hP₀, hπ₀]
+      simp only [ModuleCat.hom_ofHom]
       exact (LinearMap.exact_iff.mp h₀').symm
     · rw [ModuleCat.epi_iff_surjective]
-      simp only [π]
+      dsimp only [HomologicalComplex.shortComplexFunctor'_map_τ₂]
+      rw [hπ₀]
       exact hε
   | succ i =>
     rw [quasiIsoAt_iff_exactAt' π (i + 1) (ChainComplex.exactAt_succ_single_obj _ _),

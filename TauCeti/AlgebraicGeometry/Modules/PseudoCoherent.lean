@@ -67,17 +67,6 @@ noncomputable section
 
 variable {X Y : Scheme.{u}}
 
-/-- Restriction along an open immersion sends the free module on `ι` to the free module on `ι`. -/
-def restrictFreeIso (f : Y ⟶ X) [IsOpenImmersion f] (ι : Type u) :
-    restrict (SheafOfModules.free (R := X.ringCatSheaf) ι) f ≅
-      SheafOfModules.free (R := Y.ringCatSheaf) ι :=
-  -- The functor is rebound with its type as a functor between categories of sheaves of modules,
-  -- where `SheafOfModules.mapFreeIso` seeks its colimit-preservation instance.
-  let G : SheafOfModules X.ringCatSheaf ⥤ SheafOfModules Y.ringCatSheaf := restrictFunctor f
-  have : PreservesColimitsOfShape (Discrete ι) G :=
-    (restrictAdjunction f).leftAdjoint_preservesColimits.preservesColimitsOfShape
-  (SheafOfModules.mapFreeIso G ι (restrictUnitIso f).symm).symm
-
 /-- `F` has a *finite free resolution* when there are a chain complex `P` in nonnegative degrees
 whose terms are free modules of finite rank and a quasi-isomorphism `P ⟶ F[0]`, that is, an exact
 sequence `⋯ → 𝒪_X^{a₁} → 𝒪_X^{a₀} → F → 0` with every `aᵢ` finite. -/

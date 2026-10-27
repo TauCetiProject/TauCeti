@@ -21,17 +21,18 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 universe u
 
-/-- *test_free*: on every scheme, the free module of rank `n` is pseudo-coherent. -/
+/-- *IsPseudoCoherentSheaf_free*: on every scheme, the free module of rank `n` is
+pseudo-coherent. -/
 example (X : Scheme.{u}) (n : ℕ) :
     IsPseudoCoherent (SheafOfModules.free (R := X.ringCatSheaf) (ULift.{u} (Fin n))) :=
   isPseudoCoherent_free _
 
-/-- *test_zero*: on every scheme, the zero module is pseudo-coherent. -/
+/-- *IsPseudoCoherentSheaf_zero*: on every scheme, the zero module is pseudo-coherent. -/
 example (X : Scheme.{u}) : IsPseudoCoherent (0 : X.Modules) :=
   .of_isZero (isZero_zero _)
 
-/-- *test_noetherian*: over a noetherian ring `R`, the sheaf associated with `R ⧸ I` is
-pseudo-coherent. -/
+/-- An additional non-free example: over a noetherian ring `R`, the sheaf associated with
+`R ⧸ I` is pseudo-coherent. -/
 example (R : CommRingCat.{u}) [IsNoetherianRing R] (I : Ideal R) :
     (tilde (ModuleCat.of R (R ⧸ I))).IsPseudoCoherent :=
   isPseudoCoherent_tilde .of_isNoetherianRing
