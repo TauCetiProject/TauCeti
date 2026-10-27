@@ -49,7 +49,7 @@ For a left noetherian ring `A`, the finitely generated left `A`-modules form the
   models*, Section 1.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
@@ -66,6 +66,12 @@ isomorphism. -/
 def projectiveSingle : ObjectProperty (DerivedCategory.Bounded C) :=
   fun X ↦ ∃ P : C, Projective P ∧ Nonempty (X ≅ (singleFunctor C 0).obj P)
 
+/-- The objects of `projectiveSingle C` are the projective objects of `C` in degree zero, up to
+isomorphism. -/
+lemma projectiveSingle_iff (X : DerivedCategory.Bounded C) :
+    projectiveSingle C X ↔ ∃ P : C, Projective P ∧ Nonempty (X ≅ (singleFunctor C 0).obj P) :=
+  Iff.rfl
+
 instance : (projectiveSingle C).Nonempty :=
   ⟨⟨(singleFunctor C 0).obj 0, 0, inferInstance, ⟨Iso.refl _⟩⟩⟩
 
@@ -73,6 +79,9 @@ instance : (projectiveSingle C).Nonempty :=
 the projective objects of `C` in degree zero. -/
 def perfect : ObjectProperty (DerivedCategory.Bounded C) :=
   (projectiveSingle C).triangEnvelope
+
+/-- The perfect objects are the thick closure of the projective objects in degree zero. -/
+lemma perfect_eq : perfect C = (projectiveSingle C).triangEnvelope := (rfl)
 
 instance : (perfect C).IsTriangulated := by
   dsimp only [perfect]
@@ -99,6 +108,9 @@ namespace SingularityCategory
 /-- The Verdier quotient functor `Dᵇ(C) ⥤ D_sg(C)`. -/
 noncomputable def Q : DerivedCategory.Bounded C ⥤ SingularityCategory C :=
   (DerivedCategory.Bounded.perfect C).trW.Q
+
+/-- The quotient functor is the localization functor of `(perfect C).trW`. -/
+lemma Q_eq : Q C = (DerivedCategory.Bounded.perfect C).trW.Q := (rfl)
 
 instance : (Q C).IsLocalization (DerivedCategory.Bounded.perfect C).trW := by
   dsimp only [Q]

@@ -15,7 +15,7 @@ Every module over a division ring is injective. By Baer's criterion it suffices 
 from left ideals, and a left ideal of a division ring is zero or the whole ring.
 -/
 
-@[expose] public section
+public section
 
 universe u v
 

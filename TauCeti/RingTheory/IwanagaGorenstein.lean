@@ -35,7 +35,7 @@ Iwanaga–Gorenstein.
 * Edgar E. Enochs and Overtoun M. G. Jenda, *Relative Homological Algebra*, Section 9.1.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
