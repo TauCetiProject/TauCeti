@@ -149,7 +149,7 @@ with the negation of the sentence is unsatisfiable. This is the `L_{ω₁ω}` fo
 `Theory.models_iff_not_satisfiable`. -/
 theorem entails_iff_not_isSatisfiable : T.Entails φ ↔ ¬(insert φ.not T).IsSatisfiable := by
   simp only [entails_iff, isSatisfiable_iff, model_insert_iff, not_exists, not_and,
-    SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_not]
+    SentenceInf.realize_not]
   refine ⟨fun h M _ _ hφ hT => hφ (h M hT), fun h M _ _ hT => ?_⟩
   by_contra hφ
   exact h M _ ‹_› hφ hT
@@ -161,14 +161,11 @@ theorem Entails.realize_of_small (h : T.Entails φ) (M : Type w) [L.Structure M]
   by_contra hφ
   refine entails_iff_not_isSatisfiable.1 h (Model.isSatisfiable (M := M) ?_)
   rw [model_insert_iff]
-  refine ⟨?_, hM⟩
-  simpa only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_not]
-    using hφ
+  exact ⟨SentenceInf.realize_not.2 hφ, hM⟩
 
 /-- A theory is satisfiable exactly when it does not entail the false sentence. -/
 theorem isSatisfiable_iff_not_entails_bot : T.IsSatisfiable ↔ ¬T.Entails ⊥ := by
-  simp only [entails_iff, isSatisfiable_iff, SentenceInf.realize_def, FormulaInf.realize_def,
-    BoundedFormulaInf.realize_bot]
+  simp only [entails_iff, isSatisfiable_iff, SentenceInf.realize_bot]
   refine ⟨fun ⟨M, _, _, hM⟩ h => h M hM, fun h => by_contra fun hT => h fun M _ _ hM => ?_⟩
   exact hT ⟨M, _, ‹_›, hM⟩
 

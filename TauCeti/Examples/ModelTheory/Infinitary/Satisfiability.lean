@@ -76,26 +76,28 @@ theorem realize_numeral (N k : ℕ) (v : Empty ⊕ Fin 0 → NatWith N) :
   | succ k ih =>
     exact congrArg Nat.succ ih
 
+/-- In `NatWith N`, the constant `c` denotes `N`. -/
+theorem funMap_const (N : ℕ) (x : Fin 0 → NatWith N) :
+    Structure.funMap (L := lang) Func.const x = (N : ℕ) :=
+  rfl
+
 /-- `NatWith N` satisfies `c = Sᵏ0` exactly when `N = k`. -/
 theorem realize_eqNumeral_iff (N k : ℕ) :
     SentenceInf.Realize (eqNumeral k) (NatWith N) ↔ N = k := by
   rw [SentenceInf.realize_def, FormulaInf.realize_def, eqNumeral,
-    BoundedFormulaInf.realize_equal, realize_numeral]
+    BoundedFormulaInf.realize_equal, realize_numeral, Term.realize_func, funMap_const]
+  -- The left side is an equation in `NatWith N`, which is `ℕ` by definition.
   exact Iff.rfl
 
 /-- `NatWith N` satisfies `c ≠ Sᵏ0` exactly when `N ≠ k`. -/
 theorem realize_not_eqNumeral_iff (N k : ℕ) :
     SentenceInf.Realize (eqNumeral k).not (NatWith N) ↔ N ≠ k := by
-  rw [ne_eq, ← realize_eqNumeral_iff]
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_not]
+  rw [SentenceInf.realize_not, realize_eqNumeral_iff]
 
 /-- Every `NatWith N` satisfies `⋁ₖ c = Sᵏ0`. -/
 theorem realize_iSup_eqNumeral (N : ℕ) :
-    SentenceInf.Realize (.iSup eqNumeral) (NatWith N) := by
-  have h := (realize_eqNumeral_iff N N).2 rfl
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def,
-    BoundedFormulaInf.realize_iSup] at h ⊢
-  exact ⟨N, h⟩
+    SentenceInf.Realize (.iSup eqNumeral) (NatWith N) :=
+  SentenceInf.realize_iSup.2 ⟨N, (realize_eqNumeral_iff N N).2 rfl⟩
 
 /-- The theory is unsatisfiable: a model satisfies `c = Sᵏ0` for some `k`, against `c ≠ Sᵏ0`. -/
 theorem not_isSatisfiable : ¬ theory.IsSatisfiable := by
@@ -103,13 +105,8 @@ theorem not_isSatisfiable : ¬ theory.IsSatisfiable := by
   rintro ⟨M, _, _, hM⟩
   rw [theory, Theoryω.model_insert_iff] at hM
   obtain ⟨hdisj, hneg⟩ := hM
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def,
-    BoundedFormulaInf.realize_iSup] at hdisj
-  obtain ⟨k, hk⟩ := hdisj
-  have := hneg.realize_of_mem (Set.mem_range_self k)
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def,
-    BoundedFormulaInf.realize_not] at this
-  exact this hk
+  obtain ⟨k, hk⟩ := SentenceInf.realize_iSup.1 hdisj
+  exact SentenceInf.realize_not.1 (hneg.realize_of_mem (Set.mem_range_self k)) hk
 
 /-- Each sentence of the theory holds in `ℕ` once `c` is interpreted as a large enough number. -/
 theorem eventually_realize {ψ : lang.Sentenceω} (hψ : ψ ∈ theory) :
