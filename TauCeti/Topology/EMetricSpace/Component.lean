@@ -52,7 +52,8 @@ instance instCompleteSpaceEBallTop [PseudoEMetricSpace X] [CompleteSpace X] (x :
   Metric.isClosed_eball_top.isComplete.completeSpace_coe
 
 /-- Moving the anchor by a finite distance leaves its finite-distance component unchanged. -/
-theorem eball_top_eq_of_edist_ne_top [PseudoEMetricSpace X] {x y : X} (hxy : edist x y ≠ ∞) :
+theorem eball_top_eq_of_edist_ne_top [TopologicalSpace X] [WeakPseudoEMetricSpace X]
+    {x y : X} (hxy : edist x y ≠ ∞) :
     Metric.eball x ∞ = Metric.eball y ∞ :=
   Set.Subset.antisymm (Metric.eball_subset le_top hxy)
     (Metric.eball_subset le_top (by simpa only [edist_comm] using hxy))
