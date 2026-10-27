@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.Distributions.Uniform
 public import TauCeti.Probability.Distributions.Beta.Basic
-public import TauCeti.Probability.Distributions.Uniform.Sphere
+public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 import TauCeti.Probability.ConditionalProbability

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.WeierstrassZeta
 
 /-!
 # The period lattice of a point of the upper half-plane
@@ -29,6 +30,11 @@ forms:
 These are the inputs that make the values of `℘` at the `N`-division points of `ℤ z + ℤ` weight-two
 modular forms of level `Γ(N)`.
 
+For the Weierstrass `ζ` function `PeriodPair.weierstrassZeta` and its quasi-periods
+`PeriodPair.quasiPeriod`, the same rescaling of the lattice gives the weight-one transformation
+laws `ζ(x / (c z + d); ℤ γz + ℤ) = (c z + d) ζ(x; ℤ z + ℤ)` and
+`η(l / (c z + d); ℤ γz + ℤ) = (c z + d) η(l; ℤ z + ℤ)`, the inputs for weight one.
+
 ## Main definitions
 
 * `UpperHalfPlane.periodPair`: the period pair `(z, 1)`.
@@ -40,6 +46,12 @@ modular forms of level `Γ(N)`.
 * `UpperHalfPlane.intCast_mul_smul_add_intCast`: the lattice points of `γ z` in terms of those
   of `z`.
 * `UpperHalfPlane.weierstrassP_periodPair_smul`: the modular transformation law.
+* `UpperHalfPlane.div_denom_mem_lattice_periodPair_smul_iff`: the lattice of `γ z` is
+  `(c z + d)⁻¹` times that of `z`.
+* `UpperHalfPlane.hasSum_weierstrassZeta_periodPair`: the series of `ζ` over integer pairs.
+* `UpperHalfPlane.weierstrassZeta_periodPair_smul`,
+  `UpperHalfPlane.quasiPeriod_periodPair_smul`: the modular transformation laws of `ζ` and of its
+  quasi-periods.
 * `UpperHalfPlane.hasSum_weierstrassP_periodPair_rows`: the sum along rows.
 * `TauCeti.UpperHalfPlane.norm_rowSum_le`, `TauCeti.UpperHalfPlane.norm_rowSum_le_of_le_abs_im`:
   the exponential decay of the rows.
@@ -127,6 +139,82 @@ theorem weierstrassP_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (x : ℂ) :
     intCast_mul_smul_add_intCast γ z y]
   rw [← sub_div, div_pow, div_pow, one_div_div, one_div_div]
   ring
+
+/-- The lattice of `γ z` is `(c z + d)⁻¹` times that of `z`. -/
+lemma div_denom_mem_lattice_periodPair_smul_iff (γ : SL(2, ℤ)) (z : ℍ) (x : ℂ) :
+    x / denom γ z ∈ (γ • z).periodPair.lattice ↔ x ∈ z.periodPair.lattice := by
+  have hD := denom_ne_zero γ z
+  constructor
+  · intro h
+    obtain ⟨m, n, hmn⟩ := mem_lattice.mp h
+    have h' := intCast_mul_smul_add_intCast γ z ![m, n]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, periodPair_ω₁, periodPair_ω₂,
+      mul_one] at h' hmn
+    rw [hmn, div_left_inj' hD] at h'
+    rw [h']
+    exact intCast_mul_add_intCast_mem_lattice_periodPair z _ _
+  · intro h
+    obtain ⟨m, n, rfl⟩ := mem_lattice.mp h
+    -- the integer pair `y = (m, n) γ⁻¹` has `y γ = (m, n)`
+    set y : Fin 2 → ℤ := ![m, n] ᵥ* ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)
+    have hy : y ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ) = ![m, n] := by
+      rw [Matrix.vecMul_vecMul, ← Matrix.SpecialLinearGroup.coe_mul, inv_mul_cancel,
+        Matrix.SpecialLinearGroup.coe_one, Matrix.vecMul_one]
+    have h' := intCast_mul_smul_add_intCast γ z y
+    rw [hy] at h'
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, periodPair_ω₁, periodPair_ω₂,
+      mul_one] at h' ⊢
+    rw [← h']
+    exact intCast_mul_add_intCast_mem_lattice_periodPair (γ • z) _ _
+
+/-- **The Weierstrass `ζ` function of `ℤ z + ℤ` as a series over integer pairs**:
+`ζ(x; ℤ z + ℤ) = ∑_y (1 / (x - (y₀ z + y₁)) + 1 / (y₀ z + y₁) + x / (y₀ z + y₁)²)`, the series
+converging absolutely. -/
+theorem hasSum_weierstrassZeta_periodPair (z : ℍ) (x : ℂ) :
+    HasSum (fun y : Fin 2 → ℤ ↦ 1 / (x - (y 0 * z + y 1)) + 1 / ((y 0 : ℂ) * z + y 1) +
+      x / ((y 0 : ℂ) * z + y 1) ^ 2) (z.periodPair.weierstrassZeta x) := by
+  have h := z.periodPair.hasSum_weierstrassZeta x
+  rw [← (latticeEquiv z).hasSum_iff] at h
+  simpa only [Function.comp_def, coe_latticeEquiv] using h
+
+/-- **The modular transformation of `ζ`.** For `γ ∈ SL(2, ℤ)` the lattice of `γ z` is
+`(c z + d)⁻¹ (ℤ z + ℤ)`, so `ζ(x / (c z + d); ℤ γz + ℤ) = (c z + d) ζ(x; ℤ z + ℤ)`. -/
+theorem weierstrassZeta_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (x : ℂ) :
+    (γ • z).periodPair.weierstrassZeta (x / denom γ z) =
+      denom γ z * z.periodPair.weierstrassZeta x := by
+  have hD := denom_ne_zero γ z
+  -- reindex the integer pairs by `y ↦ y γ`
+  let e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) :=
+    Matrix.toLinearEquivRight'OfInv
+      (M := ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ))
+      (M' := (γ : Matrix (Fin 2) (Fin 2) ℤ))
+      (by simp [Matrix.adjugate_mul]) (by simp [Matrix.mul_adjugate])
+  have h := (hasSum_weierstrassZeta_periodPair z x).mul_left (denom γ z)
+  rw [← e.toEquiv.hasSum_iff] at h
+  refine (hasSum_weierstrassZeta_periodPair (γ • z) (x / denom γ z)).unique
+    (h.congr_fun fun y ↦ ?_)
+  simp only [Function.comp_apply, LinearEquiv.coe_toEquiv, e,
+    Matrix.toLinearEquivRight'OfInv_apply, Matrix.toLinearMapRight'_apply,
+    intCast_mul_smul_add_intCast γ z y]
+  rw [← sub_div, one_div_div, one_div_div, div_pow, div_div_div_eq, pow_two (denom γ z),
+    ← mul_assoc, mul_comm (denom γ z) (_ ^ 2), mul_div_mul_right _ _ hD]
+  ring
+
+/-- **The modular transformation of the quasi-periods.** The quasi-period of the lattice
+point `l / (c z + d)` of `ℤ γz + ℤ` is `(c z + d)` times that of `l` in `ℤ z + ℤ`. -/
+theorem quasiPeriod_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (l : z.periodPair.lattice) :
+    (γ • z).periodPair.quasiPeriod
+        ⟨l / denom γ z, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.2⟩ =
+      denom γ z * z.periodPair.quasiPeriod l := by
+  set x := z.periodPair.ω₁ / 2
+  have hx : x ∉ z.periodPair.lattice := z.periodPair.ω₁_div_two_notMem_lattice
+  have hx' : x / denom γ z ∉ (γ • z).periodPair.lattice :=
+    (div_denom_mem_lattice_periodPair_smul_iff γ z x).not.mpr hx
+  have h := (γ • z).periodPair.weierstrassZeta_add_coe hx'
+    ⟨l / denom γ z, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.2⟩
+  rw [← add_div, weierstrassZeta_periodPair_smul, weierstrassZeta_periodPair_smul,
+    z.periodPair.weierstrassZeta_add_coe hx, mul_add] at h
+  exact (add_left_cancel h).symm
 
 end UpperHalfPlane
 
