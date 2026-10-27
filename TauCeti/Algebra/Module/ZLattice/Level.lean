@@ -46,6 +46,11 @@ integral matrix with even diagonal (`TauCeti.IntegralLattice.isLeast_level`), an
 divides `N` exactly when `N` kills the discriminant quadratic form
 (`TauCeti.IntegralLattice.IsEven.level_dvd_iff`).
 
+The approach and API here (the unguarded-infimum definition, the divisibility characterization,
+the dual inclusion and the discriminant-group bounds) are adapted from the earlier formalization
+by tauceti-ai-for-science in
+[Tau Ceti PR #20694](https://github.com/TauCetiProject/TauCeti/pull/20694).
+
 ## Main definitions
 
 * `ZLattice.level L`: the least `N > 0` with `N ‖x‖² / 2 ∈ ℤ` for every `x ∈ L^∨`.
