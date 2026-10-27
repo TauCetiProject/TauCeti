@@ -5,25 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.Resolvent.Unbounded
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 public import TauCeti.LinearAlgebra.LinearPMap.RestrictScalars
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic
 
 /-!
 # Resolvents and restriction of scalars
 
-An unbounded operator `A : X →ₗ.[𝕜'] X` over a normed field extension `𝕜'` can also be read over a
-smaller field `𝕜`, as `A.restrictScalars 𝕜`. This file shows that the two resolvent notions
+A partial linear operator `A : X →ₗ.[𝕜'] X` over an algebra `𝕜'` of a commutative ring `𝕜`
+can also be read over `𝕜`, as `A.restrictScalars 𝕜`. This file shows that the two resolvent notions
 agree at the points of `𝕜`: for `mu : 𝕜`,
 
 `mu ∈ resolventSet (A.restrictScalars 𝕜) ↔ algebraMap 𝕜 𝕜' mu ∈ resolventSet A`,
 
 and the resolvents themselves correspond under `ContinuousLinearMap.restrictScalars`.
-The actions on `X` form a scalar tower; no norm compatibility between the two fields is required.
+The actions on `X` form a scalar tower. Only a topology on `X` is required; neither the scalars
+nor the module need norms, and addition and scalar multiplication need not be continuous.
 
-Only the forward direction has content. A bounded `𝕜`-linear inverse `R` of `mu • I - A` is
+The forward direction uses the fact that a continuous `𝕜`-linear inverse `R` of `mu • I - A` is
 automatically `𝕜'`-homogeneous: `z • R y` and `R (z • y)` have the same image under
-`mu • I - A`, because `A` is `𝕜'`-linear, so they agree. This homogeneity statement also works
-over an arbitrary ring algebra, without a norm or topology on the larger algebra.
+`mu • I - A`, because `A` is `𝕜'`-linear, so they agree.
 
 This is what lets a real-variable theorem about an operator on a complex Banach space — such as
 the Laplace-transform resolvent of a C₀-semigroup, which is built over `ℝ` — be read as a
@@ -33,32 +34,24 @@ statement about the genuinely complex resolvent set.
 
 * `LinearPMap.IsResolventAt.restrictScalars`: restricting scalars in an inverse of
   `lambda • I - A`.
-* `TauCeti.LinearPMap.map_smul_of_isResolventAt_restrictScalars`: a bounded inverse over `𝕜` is
+* `LinearPMap.map_smul_of_isResolventAt_restrictScalars`: a continuous inverse over `𝕜` is
   `𝕜'`-homogeneous.
-* `TauCeti.LinearPMap.exists_isResolventAt_of_isResolventAt_restrictScalars`: it therefore comes
+* `LinearPMap.exists_isResolventAt_of_isResolventAt_restrictScalars`: it therefore comes
   from an inverse over `𝕜'`.
-* `TauCeti.LinearPMap.mem_resolventSet_restrictScalars_iff`: the resolvent sets agree at the
+* `LinearPMap.mem_resolventSet_restrictScalars_iff`: the resolvent sets agree at the
   points of `𝕜`.
-* `TauCeti.LinearPMap.restrictScalars_resolvent`: the resolvents agree there.
+* `LinearPMap.restrictScalars_resolvent`: the resolvents agree there.
 -/
 
 public section
 
-noncomputable section
+namespace LinearPMap
 
-namespace TauCeti.LinearPMap
+variable {𝕜 𝕜' X : Type*} [CommRing 𝕜] [Ring 𝕜'] [Algebra 𝕜 𝕜'] [AddCommGroup X]
+  [TopologicalSpace X] [Module 𝕜 X] [Module 𝕜' X] [IsScalarTower 𝕜 𝕜' X]
+  {A : X →ₗ.[𝕜'] X} {mu : 𝕜} {R : X →L[𝕜'] X} {R₀ : X →L[𝕜] X}
 
-open _root_.LinearPMap (
-  IsResolventAt isResolventAt_iff_forall_mem_graph isResolventAt_resolvent
-  mem_resolventSet_iff resolvent_eq_of_isResolventAt)
-
-section Algebra
-
-variable {𝕜 𝕜' X : Type*} [NontriviallyNormedField 𝕜] [Ring 𝕜'] [Algebra 𝕜 𝕜']
-  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [Module 𝕜' X] [IsScalarTower 𝕜 𝕜' X]
-  {A : X →ₗ.[𝕜'] X} {mu : 𝕜} {R₀ : X →L[𝕜] X}
-
-/-- A bounded `𝕜`-linear inverse of `mu • I - A` respects the action of the larger algebra
+/-- A continuous `𝕜`-linear inverse of `mu • I - A` respects the action of the larger algebra
 `𝕜'`. No norm or topology on `𝕜'` is needed. -/
 theorem map_smul_of_isResolventAt_restrictScalars
     (h : IsResolventAt (A.restrictScalars 𝕜) mu R₀) (z : 𝕜') (y : X) :
@@ -70,22 +63,16 @@ theorem map_smul_of_isResolventAt_restrictScalars
     simpa only [Prod.smul_mk] using A.graph.smul_mem z (hgraph y)
   simpa only [smul_sub, smul_comm mu z, sub_sub_cancel] using hleft _ hz
 
-end Algebra
-
-variable {𝕜 𝕜' X : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
-  [Algebra 𝕜 𝕜'] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedSpace 𝕜' X]
-  [IsScalarTower 𝕜 𝕜' X] {A : X →ₗ.[𝕜'] X} {mu : 𝕜} {R : X →L[𝕜'] X} {R₀ : X →L[𝕜] X}
-
 /-- An inverse of `algebraMap 𝕜 𝕜' mu • I - A` restricts to an inverse of `mu • I - A` for the
 restriction of scalars. -/
-theorem _root_.LinearPMap.IsResolventAt.restrictScalars
+theorem IsResolventAt.restrictScalars
     (h : IsResolventAt A (algebraMap 𝕜 𝕜' mu) R) :
     IsResolventAt (A.restrictScalars 𝕜) mu (R.restrictScalars 𝕜) := by
   simpa only [isResolventAt_iff_forall_mem_graph, ContinuousLinearMap.coe_restrictScalars',
     LinearPMap.restrictScalars_graph, Submodule.restrictScalars_mem, algebraMap_smul 𝕜'] using h
 
-/-- A bounded inverse of `mu • I - A` over the smaller field is the restriction of scalars of a
-bounded inverse over the larger one. -/
+/-- A continuous inverse of `mu • I - A` over `𝕜` is the restriction of scalars of a continuous
+inverse over `𝕜'`. -/
 theorem exists_isResolventAt_of_isResolventAt_restrictScalars
     (h : IsResolventAt (A.restrictScalars 𝕜) mu R₀) :
     ∃ R : X →L[𝕜'] X, R.restrictScalars 𝕜 = R₀ ∧
@@ -99,7 +86,7 @@ theorem exists_isResolventAt_of_isResolventAt_restrictScalars
     AddHom.coe_mk, algebraMap_smul 𝕜'] using h
 
 /-- The resolvent sets of an operator and of its restriction of scalars agree at the points of the
-smaller field. -/
+base ring. -/
 @[simp]
 theorem mem_resolventSet_restrictScalars_iff :
     mu ∈ (A.restrictScalars 𝕜).resolventSet ↔ algebraMap 𝕜 𝕜' mu ∈ A.resolventSet := by
@@ -119,6 +106,4 @@ theorem restrictScalars_resolvent (h : mu ∈ (A.restrictScalars 𝕜).resolvent
     (IsResolventAt.restrictScalars
       (isResolventAt_resolvent (mem_resolventSet_restrictScalars_iff.mp h)))).symm
 
-end TauCeti.LinearPMap
-
-end
+end LinearPMap
