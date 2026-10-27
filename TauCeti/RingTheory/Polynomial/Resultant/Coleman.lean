@@ -145,10 +145,10 @@ theorem colemanDBounded_add_of_coeff_zero (hP : P.natDegree ≤ n) (hB : B.natDe
     colemanDBounded B P (n + k) m = colemanDBounded B P n m := by
   simp [colemanDBounded_add hP hB, hB0]
 
-/-- When `B(0) = 0`, every bounded Coleman transform equals the minimal-rank transform. -/
+/-- When `B(0) = 0`, the minimal-rank transform equals every bounded Coleman transform. -/
 theorem colemanD_eq_colemanDBounded (hP : P.natDegree ≤ n) (hB : B.natDegree ≤ m)
     (hP0 : P.coeff 0 = 1) (hB0 : B.coeff 0 = 0) :
-    colemanDBounded B P n m = colemanD B P := by
+    colemanD B P = colemanDBounded B P n m := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hP
   rw [colemanDBounded_add_of_coeff_zero le_rfl hB hB0, colemanDBounded_of_natDegree_le hB hP0,
     colemanD]
