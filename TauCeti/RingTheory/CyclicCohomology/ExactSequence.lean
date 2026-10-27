@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.CyclicCohomology.Periodicity
-import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Connes' operator `B` and the exactness of the SBI sequence
@@ -35,8 +34,10 @@ column zero lies in the image of the periodicity map, then its preimage is a tot
 Over a ring containing `ℚ`, the total cohomology is cyclic cohomology
 (`TauCeti.quasiIso_cyclicCochainComplexToTotal`), so the exactness at `HH^(m+1)` gives the
 exactness of `HC^(m+1) →I HH^(m+1) →B HC^m` for the maps `TauCeti.cyclicCohomology.toHochschild`
-and `TauCeti.hochschildCohomology.connesB` defined by cyclic cochains, and `I` is injective on
-`HC^1`. The periodicity map of the bicomplex is the shift of columns; it is not compared here with
+and `TauCeti.hochschildCohomology.connesB` defined by cyclic cochains. (Exactness at `HC^1`, the
+injectivity of `I`, holds over every commutative ring, see
+`TauCeti.cyclicCohomology.injective_toHochschild_one`.)
+The periodicity map of the bicomplex is the shift of columns; it is not compared here with
 Connes' operator `S`, normalized as the exterior product with the cyclic `2`-cocycle
 `(a₀, a₁, a₂) ↦ a₀a₁a₂`.
 
@@ -48,6 +49,9 @@ Connes' operator `S`, normalized as the exterior product with the cyclic `2`-coc
 
 * `TauCeti.cyclicTotalHomologyConnesB_mk`: `B` sends the class of a Hochschild cocycle `φ` to the
   class of the cyclic cocycle `B φ` in column zero.
+* `TauCeti.cyclicTotalHomologyMk_eq_zero_iff`: for a unital algebra, a total cocycle has zero class
+  exactly when its image under the periodicity map is the total differential of a total cochain
+  vanishing in column zero.
 * `TauCeti.exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConnesB`:
   `H^(m+1)(Tot) → HH^(m+1) → H^m(Tot)` is exact.
 * `TauCeti.exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity`:
@@ -57,8 +61,6 @@ Connes' operator `S`, normalized as the exterior product with the cyclic `2`-coc
   degree zero and injective in degree one.
 * `TauCeti.cyclicCohomology.exact_toHochschild_connesB`: over a ring containing `ℚ`,
   `HC^(m+1) → HH^(m+1) → HC^m` is exact.
-* `TauCeti.cyclicCohomology.injective_toHochschild_one`: over a ring containing `ℚ`,
-  `I : HC^1 → HH^1` is injective.
 
 ## References
 
@@ -208,106 +210,12 @@ private theorem exists_cyclicTotalDifferential_eq_of_coe_eq_coe_cyclicTotalDiffe
 
 end Cochains
 
-/-! ### Total cohomology classes -/
+/-! ### The initial terms of the SBI sequence -/
 
-section Classes
+section NonUnital
 
 variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
-
-/-- A total cochain is a total cocycle exactly when the differential of the total complex kills
-it. -/
-private theorem mem_ker_cyclicTotalDifferential_iff (n : ℕ) (x : cyclicTotalCochains R A M n) :
-    x ∈ LinearMap.ker (cyclicTotalDifferential R A M n) ↔
-      (cyclicTotalComplex R A M).d n (n + 1) ((cyclicTotalComplexXIso R A M n).inv x) = 0 := by
-  rw [LinearMap.mem_ker, (cyclicTotalComplex R A M).moduleCat_d_inv_eq_zero_iff
-    (cyclicTotalDifferential R A M) (cyclicTotalComplex_d R A M)]
-
-/-- The class of a total cocycle in the cohomology of the total complex. -/
-private def cyclicTotalMk (n : ℕ) :
-    LinearMap.ker (cyclicTotalDifferential R A M n) →ₗ[R] (cyclicTotalComplex R A M).homology n :=
-  (cyclicTotalComplex R A M).moduleCatCohomologyClassOfIso (fun n ↦ cyclicTotalCochains R A M n)
-    (fun n ↦ LinearMap.ker (cyclicTotalDifferential R A M n)) (cyclicTotalComplexXIso R A M)
-    (mem_ker_cyclicTotalDifferential_iff R A M) n
-
-variable {R A M}
-
-/-- The class of a total cocycle is the homology class of any cycle of the total complex whose
-underlying total cochain is that cocycle. -/
-private theorem cyclicTotalMk_eq_homologyπ {n : ℕ}
-    (x : LinearMap.ker (cyclicTotalDifferential R A M n)) (z : (cyclicTotalComplex R A M).cycles n)
-    (hz : (cyclicTotalComplexXIso R A M n).hom ((cyclicTotalComplex R A M).iCycles n z) = x.1) :
-    cyclicTotalMk R A M n x = (cyclicTotalComplex R A M).homologyπ n z :=
-  (cyclicTotalComplex R A M).moduleCatCohomologyClassOfIso_eq_homologyπ _ _ _
-    (mem_ker_cyclicTotalDifferential_iff R A M) x z hz
-
-/-- Every class in the cohomology of the total complex is the class of a total cocycle. -/
-private theorem cyclicTotalMk_surjective (n : ℕ) : Function.Surjective (cyclicTotalMk R A M n) :=
-  (cyclicTotalComplex R A M).moduleCatCohomologyClassOfIso_surjective _ _ _
-    (mem_ker_cyclicTotalDifferential_iff R A M) n
-
-/-- A total cocycle of degree zero has zero class exactly when it vanishes. -/
-private theorem cyclicTotalMk_zero_eq_zero_iff
-    (x : LinearMap.ker (cyclicTotalDifferential R A M 0)) :
-    cyclicTotalMk R A M 0 x = 0 ↔ x = 0 := by
-  rw [cyclicTotalMk, (cyclicTotalComplex R A M).moduleCatCohomologyClassOfIso_eq_zero_iff_exists
-    _ _ _ _ CochainComplex.prev_nat_zero, (cyclicTotalComplex R A M).shape 0 0 (by simp)]
-  simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
-  refine ⟨fun ⟨_, h⟩ ↦ Subtype.ext ?_, fun h ↦ ⟨0, by simp [h]⟩⟩
-  exact ((cyclicTotalComplexXIso R A M 0).inv_hom_id_apply x.1).symm.trans
-    (by rw [← h, map_zero])
-
-/-- A total cocycle of degree `n + 1` has zero class exactly when it is a total coboundary. -/
-private theorem cyclicTotalMk_succ_eq_zero_iff {n : ℕ}
-    (x : LinearMap.ker (cyclicTotalDifferential R A M (n + 1))) :
-    cyclicTotalMk R A M (n + 1) x = 0 ↔ ∃ w, cyclicTotalDifferential R A M n w = x.1 := by
-  rw [cyclicTotalMk, (cyclicTotalComplex R A M).moduleCatCohomologyClassOfIso_eq_zero_iff_exists
-    _ _ _ _ (CochainComplex.prev_nat_succ n)]
-  refine ⟨fun ⟨w, hw⟩ ↦ ⟨(cyclicTotalComplexXIso R A M n).hom w, ?_⟩,
-    fun ⟨w, hw⟩ ↦ ⟨(cyclicTotalComplexXIso R A M n).inv w, ?_⟩⟩
-  · rw [← cyclicTotalComplex_d_apply, hw, Iso.inv_hom_id_apply]
-  · apply (ModuleCat.mono_iff_injective (cyclicTotalComplexXIso R A M (n + 1)).hom).1
-      inferInstance
-    rw [cyclicTotalComplex_d_apply, Iso.inv_hom_id_apply, Iso.inv_hom_id_apply, hw]
-
-/-- A cyclic cocycle, included into column zero, is a total cocycle. -/
-private theorem cyclicCochainsToTotal_mem_ker {m : ℕ} (φ : cyclicCocycles R A M m) :
-    cyclicCochainsToTotal R A M m φ.1 ∈ LinearMap.ker (cyclicTotalDifferential R A M m) := by
-  rw [LinearMap.mem_ker, cyclicTotalDifferential_cyclicCochainsToTotal]
-  convert map_zero (cyclicCochainsToTotal R A M (m + 1))
-  exact Subtype.ext (by
-    rw [coe_cyclicHochschildCoboundary_apply]
-    exact (mem_cyclicCocycles_iff R A M).1 φ.2)
-
-/-- The projection onto column zero sends the class of a total cocycle to the Hochschild class of
-its column-zero component. -/
-private theorem homologyMap_cyclicTotalComplexToHochschild_cyclicTotalMk {m : ℕ}
-    (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
-    HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) m
-        (cyclicTotalMk R A M m x) =
-      hochschildCohomology.mk R A M m ⟨x.1.1 m, mem_hochschildCocycles_iff.2 (by
-        rw [← cyclicTotalToHochschild_apply, ← cyclicTotalToHochschild_cyclicTotalDifferential,
-          LinearMap.mem_ker.1 x.2, map_zero])⟩ := by
-  have hx := (mem_ker_cyclicTotalDifferential_iff R A M m x.1).1 x.2
-  rw [cyclicTotalMk_eq_homologyπ x ((cyclicTotalComplex R A M).moduleCatCyclesMk _ (m + 1)
-      (CochainComplex.next ℕ m) hx) (by simp),
-    HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
-  exact (hochschildCohomology.mk_eq_homologyπ R A M _ _
-    (by simp [cyclicTotalComplexToHochschild_f_apply])).symm
-
-/-- The periodicity map sends the class of a total cocycle `x` to the class of its image under the
-periodicity map. -/
-private theorem cyclicTotalHomologyPeriodicity_cyclicTotalMk {m : ℕ}
-    (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
-    cyclicTotalHomologyPeriodicity R A M m (cyclicTotalMk R A M m x) =
-      cyclicTotalMk R A M (m + 2) ⟨cyclicTotalPeriodicity R A M m x.1, by
-        rw [LinearMap.mem_ker, cyclicTotalDifferential_cyclicTotalPeriodicity,
-          LinearMap.mem_ker.1 x.2, map_zero]⟩ := by
-  have hx := (mem_ker_cyclicTotalDifferential_iff R A M m x.1).1 x.2
-  rw [cyclicTotalMk_eq_homologyπ x ((cyclicTotalComplex R A M).moduleCatCyclesMk _ (m + 1)
-      (CochainComplex.next ℕ m) hx) (by simp),
-    cyclicTotalHomologyPeriodicity_homologyπ]
-  exact (cyclicTotalMk_eq_homologyπ _ _ (by simp)).symm
 
 /-- In degree zero, the projection onto column zero is an isomorphism
 `H^0(Tot) → HH^0(A, Hom_R(A, M))`: every `0`-cochain is cyclic, and there are no coboundaries in
@@ -316,26 +224,24 @@ instance isIso_homologyMap_cyclicTotalComplexToHochschild_zero :
     IsIso (HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) 0) := by
   rw [ConcreteCategory.isIso_iff_bijective]
   refine ⟨(injective_iff_map_eq_zero _).2 fun c hc ↦ ?_, fun c ↦ ?_⟩
-  · obtain ⟨x, rfl⟩ := cyclicTotalMk_surjective 0 c
-    rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalMk,
+  · obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective 0 c
+    rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk,
       hochschildCohomology.mk_eq_zero_iff, hochschildCoboundaries_zero, Submodule.mem_bot] at hc
     -- a total cochain of degree zero is concentrated in row zero
-    rw [cyclicTotalMk_zero_eq_zero_iff]
+    rw [cyclicTotalHomologyMk_zero_eq_zero_iff]
     refine Subtype.ext (Subtype.ext (funext fun q ↦ ?_))
     cases q with
     | zero => exact hc
     | succ q => exact coe_cyclicTotalCochains_apply_of_lt x.1 q.succ_pos
   · obtain ⟨φ, rfl⟩ := hochschildCohomology.mk_surjective R A M 0 c
     have hφ : φ.1 ∈ cyclicCochains R A M 0 := by simp
-    refine ⟨cyclicTotalMk R A M 0 ⟨_, cyclicCochainsToTotal_mem_ker
+    refine ⟨cyclicTotalHomologyMk R A M 0 ⟨_, cyclicCochainsToTotal_mem_ker
       ⟨⟨φ, hφ⟩, (mem_cyclicCocycles_iff R A M).2 (mem_hochschildCocycles_iff.1 φ.2)⟩⟩, ?_⟩
-    rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalMk]
+    rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk]
     congr 1
     exact Subtype.ext (by simp)
 
-end Classes
-
-/-! ### The initial terms of the SBI sequence -/
+end NonUnital
 
 section Unital
 
@@ -344,17 +250,17 @@ variable {R : Type*} {A : Type u} {M : Type*} [CommRing R] [Semiring A] [Module 
 
 /-- A total cocycle of degree `m` has zero class exactly when the image under the periodicity map is
 the total differential of a total cochain vanishing in column zero. -/
-private theorem cyclicTotalMk_eq_zero_iff {m : ℕ}
+theorem cyclicTotalHomologyMk_eq_zero_iff {m : ℕ}
     (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
-    cyclicTotalMk R A M m x = 0 ↔ ∃ u : cyclicTotalCochains R A M (m + 1),
+    cyclicTotalHomologyMk R A M m x = 0 ↔ ∃ u : cyclicTotalCochains R A M (m + 1),
       u.1 (m + 1) = 0 ∧ (cyclicTotalDifferential R A M (m + 1) u).1 = x.1.1 := by
   cases m with
   | zero =>
-    rw [cyclicTotalMk_zero_eq_zero_iff]
+    rw [cyclicTotalHomologyMk_zero_eq_zero_iff]
     refine ⟨fun hx ↦ ⟨0, by simp, by simp [hx]⟩, fun ⟨u, hu, hux⟩ ↦ ?_⟩
     exact Subtype.ext (eq_zero_of_coe_eq_coe_cyclicTotalDifferential x.1 u hu hux.symm)
   | succ n =>
-    rw [cyclicTotalMk_succ_eq_zero_iff]
+    rw [cyclicTotalHomologyMk_succ_eq_zero_iff]
     refine ⟨fun ⟨w, hw⟩ ↦ ⟨cyclicTotalPeriodicity R A M n w, ?_, ?_⟩, fun ⟨u, hu, hux⟩ ↦
       exists_cyclicTotalDifferential_eq_of_coe_eq_coe_cyclicTotalDifferential x.1 u hu hux.symm⟩
     · rw [coe_cyclicTotalPeriodicity_apply]
@@ -369,13 +275,13 @@ theorem injective_homologyMap_cyclicTotalComplexToHochschild_one :
     Function.Injective
       (HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) 1) := by
   refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
-  obtain ⟨x, rfl⟩ := cyclicTotalMk_surjective 1 c
-  rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalMk,
+  obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective 1 c
+  rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk,
     hochschildCohomology.mk_eq_zero_iff, mem_hochschildCoboundaries_succ_iff] at hc
   obtain ⟨χ, hχ⟩ := hc
   -- the cochain `χ` in column zero has total differential `b χ = x 1` in column zero
   let w : cyclicTotalCochains R A M 0 := ⟨Pi.single 0 χ, single_mem_cyclicTotalCochains le_rfl χ⟩
-  rw [cyclicTotalMk_succ_eq_zero_iff]
+  rw [cyclicTotalHomologyMk_succ_eq_zero_iff]
   refine ⟨w, (sub_eq_zero.1 (eq_zero_of_cyclicTotalDifferential_apply_one_eq_zero
     (x.1 - cyclicTotalDifferential R A M 0 w) ?_ ?_)).symm⟩
   · simp [w, hχ]
@@ -398,6 +304,13 @@ def cyclicTotalHomologyConnesB (m : ℕ) :
   hochschildCohomology.connesB R A M m ≫
     HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m
 
+/-- The map `B` of the cyclic bicomplex is Connes' operator `B` on Hochschild cohomology followed
+by the map induced on cohomology by the inclusion of cyclic cochains into column zero. -/
+theorem cyclicTotalHomologyConnesB_def (m : ℕ) :
+    cyclicTotalHomologyConnesB R A M m = hochschildCohomology.connesB R A M m ≫
+      HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m :=
+  (rfl)
+
 variable {R A M}
 
 /-- The map `B` sends the class of a Hochschild cocycle `φ` to the class of the cyclic cocycle
@@ -405,30 +318,10 @@ variable {R A M}
 @[simp]
 theorem cyclicTotalHomologyConnesB_mk {m : ℕ} (φ : hochschildCocycles R A M (m + 1)) :
     cyclicTotalHomologyConnesB R A M m (hochschildCohomology.mk R A M (m + 1) φ) =
-      HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m
-        (cyclicCohomology.mk R A M m
-          ⟨⟨connesB R A M m φ, connesB_mem_cyclicCochains _⟩, connesB_mem_cyclicCocycles φ.2⟩) := by
-  rw [cyclicTotalHomologyConnesB, ModuleCat.comp_apply, hochschildCohomology.connesB_mk]
-
-/-- The inclusion of cyclic cochains into column zero sends the class of a cyclic cocycle to the
-class of the corresponding total cocycle. -/
-private theorem homologyMap_cyclicCochainComplexToTotal_mk {m : ℕ} (φ : cyclicCocycles R A M m) :
-    HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m
-        (cyclicCohomology.mk R A M m φ) =
-      cyclicTotalMk R A M m ⟨_, cyclicCochainsToTotal_mem_ker φ⟩ := by
-  rw [cyclicCohomology.mk_eq_homologyπ R A M φ ((cyclicCochainComplex R A M).moduleCatCyclesMk
-      ((cyclicCochainComplexXIso R A M m).inv φ.1) (m + 1) (CochainComplex.next ℕ m)
-      ((mem_cyclicCocycles_iff_complex R A M m φ.1).1 φ.2)) (by simp),
-    HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
-  exact (cyclicTotalMk_eq_homologyπ _ _ (by simp [cyclicCochainComplexToTotal_f_apply])).symm
-
-/-- The map `B` sends the class of a Hochschild cocycle `φ` to the class of the total cocycle
-`B φ` in column zero. -/
-private theorem cyclicTotalHomologyConnesB_mk' {m : ℕ} (φ : hochschildCocycles R A M (m + 1)) :
-    cyclicTotalHomologyConnesB R A M m (hochschildCohomology.mk R A M (m + 1) φ) =
-      cyclicTotalMk R A M m ⟨_, cyclicCochainsToTotal_mem_ker
+      cyclicTotalHomologyMk R A M m ⟨_, cyclicCochainsToTotal_mem_ker
         ⟨⟨connesB R A M m φ, connesB_mem_cyclicCochains _⟩, connesB_mem_cyclicCocycles φ.2⟩⟩ := by
-  rw [cyclicTotalHomologyConnesB_mk, homologyMap_cyclicCochainComplexToTotal_mk]
+  rw [cyclicTotalHomologyConnesB_def, ModuleCat.comp_apply, hochschildCohomology.connesB_mk,
+    homologyMap_cyclicCochainComplexToTotal_mk]
 
 /-- **Exactness of `H^(m+1)(Tot) → HH^(m+1) → H^m(Tot)`.** For a unital algebra, a Hochschild
 class is killed by `B` exactly when it is the projection onto column zero of a class in the
@@ -438,7 +331,7 @@ theorem exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConn
       (cyclicTotalHomologyConnesB R A M m) := by
   refine fun c ↦ ⟨fun hc ↦ ?_, ?_⟩
   · obtain ⟨φ, rfl⟩ := hochschildCohomology.mk_surjective R A M (m + 1) c
-    rw [cyclicTotalHomologyConnesB_mk', cyclicTotalMk_eq_zero_iff] at hc
+    rw [cyclicTotalHomologyConnesB_mk, cyclicTotalHomologyMk_eq_zero_iff] at hc
     obtain ⟨u, hu, hDu⟩ := hc
     -- the lift of `φ` minus `u` is a total cocycle whose column-zero component is `φ`
     have hx : cyclicTotalLift φ.1 - u ∈ LinearMap.ker (cyclicTotalDifferential R A M (m + 1)) := by
@@ -446,14 +339,14 @@ theorem exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConn
       rw [map_sub, Submodule.coe_sub, coe_cyclicTotalDifferential_cyclicTotalLift
         (mem_hochschildCocycles_iff.1 φ.2), hDu]
       simp
-    refine ⟨cyclicTotalMk R A M (m + 1) ⟨_, hx⟩, ?_⟩
-    rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalMk]
+    refine ⟨cyclicTotalHomologyMk R A M (m + 1) ⟨_, hx⟩, ?_⟩
+    rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk]
     congr 1
     exact Subtype.ext (by simp [cyclicTotalLift_apply_column_zero, hu])
   · rintro ⟨c, rfl⟩
-    obtain ⟨x, rfl⟩ := cyclicTotalMk_surjective (m + 1) c
-    rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalMk, cyclicTotalHomologyConnesB_mk',
-      cyclicTotalMk_eq_zero_iff]
+    obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective (m + 1) c
+    rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk,
+      cyclicTotalHomologyConnesB_mk, cyclicTotalHomologyMk_eq_zero_iff]
     have hD : cyclicTotalDifferential R A M (m + 1) x.1 = 0 := LinearMap.mem_ker.1 x.2
     have hφ : hochschildCoboundary R A M (m + 1) (x.1.1 (m + 1)) = 0 := by
       rw [← cyclicTotalToHochschild_apply, ← cyclicTotalToHochschild_cyclicTotalDifferential, hD,
@@ -471,8 +364,9 @@ theorem exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity (m : ℕ
     Function.Exact (cyclicTotalHomologyConnesB R A M m)
       (cyclicTotalHomologyPeriodicity R A M m) := by
   refine fun c ↦ ⟨fun hc ↦ ?_, ?_⟩
-  · obtain ⟨x, rfl⟩ := cyclicTotalMk_surjective m c
-    rw [cyclicTotalHomologyPeriodicity_cyclicTotalMk, cyclicTotalMk_succ_eq_zero_iff] at hc
+  · obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective m c
+    rw [cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMk,
+      cyclicTotalHomologyMk_succ_eq_zero_iff] at hc
     obtain ⟨y, hy⟩ := hc
     -- the column-zero component of `y` is a Hochschild cocycle
     have hφ : hochschildCoboundary R A M (m + 1) (y.1 (m + 1)) = 0 := by
@@ -481,36 +375,18 @@ theorem exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity (m : ℕ
       rw [Subtype.coe_mk, coe_cyclicTotalPeriodicity_apply]
       exact coe_cyclicTotalCochains_apply_of_lt x.1 (by omega)
     refine ⟨hochschildCohomology.mk R A M (m + 1) ⟨_, mem_hochschildCocycles_iff.2 hφ⟩, ?_⟩
-    rw [← sub_eq_zero, cyclicTotalHomologyConnesB_mk', ← map_sub, cyclicTotalMk_eq_zero_iff]
+    rw [← sub_eq_zero, cyclicTotalHomologyConnesB_mk, ← map_sub,
+      cyclicTotalHomologyMk_eq_zero_iff]
     refine ⟨cyclicTotalLift (y.1 (m + 1)) - y, by simp [cyclicTotalLift_apply_column_zero], ?_⟩
     rw [map_sub, Submodule.coe_sub, coe_cyclicTotalDifferential_cyclicTotalLift hφ, hy]
     simp
   · rintro ⟨c, rfl⟩
     obtain ⟨φ, rfl⟩ := hochschildCohomology.mk_surjective R A M (m + 1) c
-    rw [cyclicTotalHomologyConnesB_mk', cyclicTotalHomologyPeriodicity_cyclicTotalMk,
-      cyclicTotalMk_succ_eq_zero_iff]
+    rw [cyclicTotalHomologyConnesB_mk, cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMk,
+      cyclicTotalHomologyMk_succ_eq_zero_iff]
     refine ⟨cyclicTotalLift φ.1, Subtype.ext ?_⟩
     rw [coe_cyclicTotalDifferential_cyclicTotalLift (mem_hochschildCocycles_iff.1 φ.2)]
     simp
-
-/-- The map `I` on cyclic cohomology factors through the cohomology of the total complex. -/
-private theorem homologyMap_cyclicCochainComplexToTotal_comp_homologyMap (n : ℕ) :
-    HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) n ≫
-        HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) n =
-      cyclicCohomology.toHochschild R A M n := by
-  refine ModuleCat.hom_ext (cyclicCohomology.linearMap_ext (LinearMap.ext fun φ ↦ ?_))
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, ModuleCat.hom_comp, LinearMap.comp_apply,
-    homologyMap_cyclicCochainComplexToTotal_mk,
-    homologyMap_cyclicTotalComplexToHochschild_cyclicTotalMk, cyclicCohomology.toHochschild_mk]
-  congr 1
-  exact Subtype.ext (by simp)
-
-/-- Over a ring containing `ℚ`, the inclusion of cyclic cochains into column zero is bijective on
-cohomology. -/
-private theorem bijective_homologyMap_cyclicCochainComplexToTotal [Algebra ℚ R] (n : ℕ) :
-    Function.Bijective (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) n) :=
-  (ConcreteCategory.isIso_iff_bijective _).1 ((quasiIsoAt_iff_isIso_homologyMap _ _).1
-    ((quasiIso_iff _).1 (quasiIso_cyclicCochainComplexToTotal R A M) n))
 
 /-- **Exactness of `HC^(m+1) → HH^(m+1) → HC^m`.** For a unital algebra over a ring containing
 `ℚ`, a Hochschild class is killed by Connes' operator `B` exactly when it is the image under `I`
@@ -521,20 +397,14 @@ theorem cyclicCohomology.exact_toHochschild_connesB [Algebra ℚ R] (m : ℕ) :
   refine (LinearMap.exact_iff_of_surjective_of_bijective_of_injective _ _ _ _
     (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (m + 1)).hom LinearMap.id
     (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m).hom ?_ ?_
-    (bijective_homologyMap_cyclicCochainComplexToTotal (m + 1)).2 Function.bijective_id
-    (bijective_homologyMap_cyclicCochainComplexToTotal m).1).2
+    (bijective_homologyMap_cyclicCochainComplexToTotal R A M (m + 1)).2 Function.bijective_id
+    (bijective_homologyMap_cyclicCochainComplexToTotal R A M m).1).2
     (exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConnesB m)
-  · rw [LinearMap.id_comp, ← homologyMap_cyclicCochainComplexToTotal_comp_homologyMap]
-    rfl
-  · rfl
-
-/-- Over a ring containing `ℚ`, the map `I : HC^1(A; M) → HH^1(A, Hom_R(A, M))` of a unital
-algebra is injective. This is the exactness of the SBI sequence at `HC^1`. -/
-theorem cyclicCohomology.injective_toHochschild_one [Algebra ℚ R] :
-    Function.Injective (cyclicCohomology.toHochschild R A M 1) := by
-  rw [← homologyMap_cyclicCochainComplexToTotal_comp_homologyMap]
-  exact injective_homologyMap_cyclicTotalComplexToHochschild_one.comp
-    (bijective_homologyMap_cyclicCochainComplexToTotal 1).1
+  · rw [LinearMap.id_comp,
+      ← homologyMap_cyclicCochainComplexToTotal_comp_homologyMap_cyclicTotalComplexToHochschild]
+    exact (ModuleCat.hom_comp _ _).symm
+  · rw [LinearMap.comp_id, cyclicTotalHomologyConnesB_def]
+    exact ModuleCat.hom_comp _ _
 
 end Exactness
 

@@ -65,6 +65,11 @@ no comparison of the two normalizations is made here.
   image of the periodicity map up to a total coboundary.
 * `TauCeti.cyclicTotalHomologyPeriodicity_homologyπ`: `S` sends the class of a total cocycle of
   degree `m` to the class of the same family of cochains in degree `m + 2`.
+* `TauCeti.homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk`,
+  `TauCeti.cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMk`: `I` and `S` on classes of total
+  cocycles.
+* `TauCeti.homologyMap_cyclicCochainComplexToTotal_comp_homologyMap_cyclicTotalComplexToHochschild`:
+  `I` on cyclic cohomology factors through the cohomology of the total complex.
 * `TauCeti.exact_cyclicTotalHomologyPeriodicity_homologyMap_cyclicTotalComplexToHochschild`: for a
   unital algebra, `H^m(Tot) → H^(m+2)(Tot) → HH^(m+2)` is exact.
 
@@ -427,6 +432,38 @@ theorem cyclicTotalHomologyPeriodicity_homologyπ (m : ℕ) (x : (cyclicTotalCom
   apply (ModuleCat.mono_iff_injective (cyclicTotalComplexXIso R A M (m + 2)).hom).1 inferInstance
   rw [cyclicTotalComplexPeriodicity_f_apply, Iso.inv_hom_id_apply, Iso.inv_hom_id_apply]
 
+/-- The projection onto column zero sends the class of a total cocycle to the Hochschild class of
+its column-zero component. -/
+@[simp]
+theorem homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk {m : ℕ}
+    (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
+    HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) m
+        (cyclicTotalHomologyMk R A M m x) =
+      hochschildCohomology.mk R A M m ⟨x.1.1 m, mem_hochschildCocycles_iff.2 (by
+        rw [← cyclicTotalToHochschild_apply, ← cyclicTotalToHochschild_cyclicTotalDifferential,
+          LinearMap.mem_ker.1 x.2, map_zero])⟩ := by
+  have hx := (mem_ker_cyclicTotalDifferential_iff R A M m x.1).1 x.2
+  rw [cyclicTotalHomologyMk_eq_homologyπ x ((cyclicTotalComplex R A M).moduleCatCyclesMk _ (m + 1)
+      (CochainComplex.next ℕ m) hx) (by simp),
+    HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
+  exact (hochschildCohomology.mk_eq_homologyπ R A M _ _
+    (by simp [cyclicTotalComplexToHochschild_f_apply])).symm
+
+/-- The periodicity map sends the class of a total cocycle `x` to the class of its image under the
+periodicity map. -/
+@[simp]
+theorem cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMk {m : ℕ}
+    (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
+    cyclicTotalHomologyPeriodicity R A M m (cyclicTotalHomologyMk R A M m x) =
+      cyclicTotalHomologyMk R A M (m + 2) ⟨cyclicTotalPeriodicity R A M m x.1, by
+        rw [LinearMap.mem_ker, cyclicTotalDifferential_cyclicTotalPeriodicity,
+          LinearMap.mem_ker.1 x.2, map_zero]⟩ := by
+  have hx := (mem_ker_cyclicTotalDifferential_iff R A M m x.1).1 x.2
+  rw [cyclicTotalHomologyMk_eq_homologyπ x ((cyclicTotalComplex R A M).moduleCatCyclesMk _ (m + 1)
+      (CochainComplex.next ℕ m) hx) (by simp),
+    cyclicTotalHomologyPeriodicity_homologyπ]
+  exact (cyclicTotalHomologyMk_eq_homologyπ _ _ (by simp)).symm
+
 /-- The projection onto column zero kills the image of the periodicity map on cohomology:
 `I ∘ S = 0`. -/
 @[reassoc (attr := simp)]
@@ -497,5 +534,23 @@ theorem exact_cyclicTotalHomologyPeriodicity_homologyMap_cyclicTotalComplexToHoc
     Iso.inv_hom_id_apply, hSw, sub_sub_cancel]
 
 end Exactness
+
+section CyclicCohomology
+
+variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M]
+  [Module R M]
+
+/-- The map `I : HCⁿ(A; M) → HHⁿ(A, Hom_R(A, M))` on cyclic cohomology factors through the
+cohomology of the total complex. -/
+theorem homologyMap_cyclicCochainComplexToTotal_comp_homologyMap_cyclicTotalComplexToHochschild
+    (n : ℕ) :
+    HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) n ≫
+        HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) n =
+      cyclicCohomology.toHochschild R A M n := by
+  rw [← HomologicalComplex.homologyMap_comp,
+    cyclicCochainComplexToTotal_comp_cyclicTotalComplexToHochschild,
+    cyclicCohomology.toHochschild_def]
+
+end CyclicCohomology
 
 end TauCeti
