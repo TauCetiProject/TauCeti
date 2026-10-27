@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
-public import TauCeti.Analysis.SpecificLimits.Geometric
+public import TauCeti.Analysis.SpecificLimits.Normed
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.Normed.Group.FunctionSeries
 
@@ -14,15 +14,15 @@ import Mathlib.Analysis.Normed.Group.FunctionSeries
 # Multivariate Cauchy expansions on polydiscs
 
 The Cauchy integral on a polydisc expands into an unconditionally convergent series indexed
-by exponent vectors. For a holomorphic function on the closed polydisc, the coefficients
-are its multivariate Cauchy integrals and the series recovers the function throughout the
-open polydisc. A common boundary bound gives uniform convergence in both parameters and
-evaluation points on every smaller closed polydisc. The codomain may be any complex Banach
-space, and dimension zero is included.
+by exponent vectors. For a function continuous on the closed polydisc and holomorphic separately
+in each open coordinate disc, the coefficients are its Cauchy integrals and the series recovers
+the function throughout the open polydisc. A common boundary bound gives uniform convergence
+in both parameters and evaluation points on every smaller closed polydisc. The codomain may be
+any complex Banach space, and dimension zero is included.
 
 The kernel expansion and interchange of integration and summation require only torus
 integrability of the boundary values. The identification with the original function then
-uses `DifferentiableOn.torusIntegral_prod_sub_inv_smul`.
+uses `ContinuousOn.torusIntegral_prod_sub_inv_smul`.
 
 ## References
 
@@ -46,8 +46,8 @@ theorem hasSum_torusIntegral_prod_geometric {f : (Fin n → ℂ) → E}
       (∏ i, (w i / (z i - c i)) ^ α i / (z i - c i)) • f z)
       (∯ z in T(c, R), (∏ i, (z i - (c i + w i))⁻¹) • f z) := by
   have hR (i) : 0 < R i := (norm_nonneg _).trans_lt (hw i)
-  have hnorm (θ : Fin n → ℝ) (i : Fin n) : ‖torusMap c R θ i - c i‖ = R i := by
-    simp [torusMap, abs_of_pos (hR i)]
+  have hnorm (θ : Fin n → ℝ) (i : Fin n) :=
+    norm_torusMap_apply_sub_center (c := c) θ i (hR i).le
   have hne (θ : Fin n → ℝ) (i : Fin n) : torusMap c R θ i - c i ≠ 0 :=
     norm_ne_zero_iff.mp (by rw [hnorm]; exact (hR i).ne')
   let q : Fin n → ℝ := fun i ↦ ‖w i‖ / R i
@@ -78,14 +78,7 @@ theorem hasSum_torusIntegral_prod_geometric {f : (Fin n → ℂ) → E}
     apply AEStronglyMeasurable.smul
     · exact Continuous.aestronglyMeasurable (by fun_prop)
     · apply AEStronglyMeasurable.smul
-      · apply Continuous.aestronglyMeasurable
-        apply continuous_finsetProd
-        intro i _
-        exact (((continuous_const.div
-          (((continuous_apply i).comp (continuous_torusMap c R)).sub continuous_const)
-          (fun θ ↦ hne θ i)).pow _).div
-          (((continuous_apply i).comp (continuous_torusMap c R)).sub continuous_const)
-          (fun θ ↦ hne θ i))
+      · exact Continuous.aestronglyMeasurable (by fun_prop (disch := intro θ; exact hne θ _))
       · exact hf.1
   · intro α
     exact ae_of_all _ fun θ ↦ (hb α θ).le
@@ -93,22 +86,10 @@ theorem hasSum_torusIntegral_prod_geometric {f : (Fin n → ℂ) → E}
   · simpa only [tsum_mul_left] using hf.norm.mul_const (∑' α : Fin n → ℕ, ∏ i, q i ^ α i)
   · apply ae_of_all
     intro θ
-    have hg := hasSum_prod_geometric_of_norm_lt_one (r := fun i ↦
-      w i / (torusMap c R θ i - c i)) (fun i ↦ by
-        simpa only [norm_div, hnorm] using hq₁ i)
-    have heq (i : Fin n) :
-        (1 - w i / (torusMap c R θ i - c i))⁻¹ /
-          (torusMap c R θ i - c i) =
-        (torusMap c R θ i - (c i + w i))⁻¹ := by
-      rw [one_sub_div (hne θ i), inv_div, div_right_comm, div_self (hne θ i), one_div]
-      congr 1
-      ring
-    convert ((hg.mul_right (∏ i, (torusMap c R θ i - c i)⁻¹)).smul_const
-      (f (torusMap c R θ))).const_smul
-        (∏ i, (R i : ℂ) * exp (θ i * I) * I) using 1
-    · ext α
-      simp only [← Finset.prod_mul_distrib, div_eq_mul_inv]
-    · simp only [← Finset.prod_mul_distrib, ← div_eq_mul_inv, heq]
+    have hg := hasSum_prod_geometric_div (z := fun i ↦ torusMap c R θ i - c i)
+      (w := w) (fun i ↦ by simpa only [hnorm] using hw i)
+    simpa only [sub_sub] using (hg.smul_const (f (torusMap c R θ))).const_smul
+      (∏ i, (R i : ℂ) * exp (θ i * I) * I)
 
 /-- A uniform bound on the distinguished boundary gives the geometric bound on every
 multivariate Cauchy coefficient. No regularity of the boundary values is needed. -/
@@ -122,9 +103,8 @@ theorem norm_torusIntegral_cauchyCoeff_le {f : (Fin n → ℂ) → E}
   have hk (θ : Fin n → ℝ) :
       ‖(∏ i, (torusMap c R θ i - c i) ^ (α i + 1))⁻¹ • f (torusMap c R θ)‖ ≤
         (∏ i, (R i ^ (α i + 1))⁻¹) * M := by
-    have hn (i : Fin n) : ‖torusMap c R θ i - c i‖ = R i := by
-      simp [torusMap, abs_of_pos (hR i)]
-    simp only [norm_smul, norm_inv, norm_prod, norm_pow, hn, ← Finset.prod_inv_distrib]
+    simp only [norm_smul, norm_inv, norm_prod, norm_pow,
+      norm_torusMap_apply_sub_center θ _ (hR _).le, ← Finset.prod_inv_distrib]
     exact mul_le_mul_of_nonneg_left
       (hf _ (torusMap_mem_pi_sphere (fun i ↦ (hR i).le) θ))
       (Finset.prod_nonneg fun i _ ↦ inv_nonneg.mpr (pow_nonneg (hR i).le _))
@@ -149,12 +129,15 @@ theorem norm_torusIntegral_cauchyCoeff_le {f : (Fin n → ℂ) → E}
 
 variable [CompleteSpace E]
 
-/-- **The multivariate Cauchy expansion.** A function holomorphic on the closed polydisc is
-represented throughout the open polydisc by its Cauchy coefficients. The exponent vector
-indexes an unconditionally convergent series, so no choice of an enumeration is required. -/
-theorem _root_.DifferentiableOn.hasSum_torusIntegral_cauchyCoeff
+/-- **The multivariate Cauchy expansion.** A function continuous on the closed polydisc and
+holomorphic separately in each open coordinate disc is represented throughout the open polydisc
+by its Cauchy coefficients. The exponent vector indexes an unconditionally convergent series,
+so no choice of an enumeration is required. -/
+theorem _root_.ContinuousOn.hasSum_torusIntegral_cauchyCoeff
     {f : (Fin n → ℂ) → E} {c w : Fin n → ℂ} {R : Fin n → ℝ}
-    (hf : DifferentiableOn ℂ f (univ.pi fun i ↦ closedBall (c i) (R i)))
+    (hf : ContinuousOn f (univ.pi fun i ↦ closedBall (c i) (R i)))
+    (hd : ∀ z ∈ univ.pi (fun i ↦ closedBall (c i) (R i)), ∀ i, z i ∈ ball (c i) (R i) →
+      DifferentiableAt ℂ (fun x ↦ f (Function.update z i x)) (z i))
     (hw : ∀ i, ‖w i‖ < R i) :
     HasSum (fun α : Fin n → ℕ ↦ (∏ i, w i ^ α i) •
       ((2 * π * I : ℂ)⁻¹ ^ n •
@@ -162,7 +145,7 @@ theorem _root_.DifferentiableOn.hasSum_torusIntegral_cauchyCoeff
       (f (c + w)) := by
   have hR (i) : 0 < R i := (norm_nonneg _).trans_lt (hw i)
   have ht : TorusIntegrable f c R :=
-    (hf.continuousOn.comp_continuous (continuous_torusMap c R) fun θ i _ ↦
+    (hf.comp_continuous (continuous_torusMap c R) fun θ i _ ↦
       sphere_subset_closedBall (torusMap_mem_pi_sphere (fun i ↦ (hR i).le) θ i trivial))
       |>.integrableOn_Icc
   have h := (hasSum_torusIntegral_prod_geometric ht hw).const_smul
@@ -183,7 +166,7 @@ theorem _root_.DifferentiableOn.hasSum_torusIntegral_cauchyCoeff
   have hc : c + w ∈ univ.pi (fun i ↦ ball (c i) (R i)) := by
     intro i _
     simpa only [mem_ball, dist_eq_norm, Pi.add_apply, add_sub_cancel_left] using hw i
-  have hi := hf.torusIntegral_prod_sub_inv_smul hc
+  have hi := hf.torusIntegral_prod_sub_inv_smul hd hc
   simp only [Pi.add_apply] at hi
   simp only [Finset.prod_inv_distrib] at h
   rw [hi] at h
@@ -191,12 +174,16 @@ theorem _root_.DifferentiableOn.hasSum_torusIntegral_cauchyCoeff
     inv_mul_cancel₀ (pow_ne_zero _ two_pi_I_ne_zero), one_smul] using h
 
 /-- Multivariate Cauchy expansions converge uniformly in the parameter and the evaluation
-point on every smaller closed polydisc, if the family is holomorphic on the closed polydisc
-and uniformly bounded on its distinguished boundary. No topology on the parameter set is needed. -/
+point on every smaller closed polydisc, if each function is continuous on the closed polydisc
+and holomorphic separately in each open coordinate disc, with a common bound on the distinguished
+boundary. No topology on the parameter set is needed. -/
 theorem tendstoUniformlyOn_torusIntegral_cauchyCoeff {P : Type*} {S : Set P}
     {f : P → (Fin n → ℂ) → E} {c : Fin n → ℂ} {R r : Fin n → ℝ} {M : ℝ}
     (hr : ∀ i, 0 ≤ r i) (hrR : ∀ i, r i < R i)
-    (hf : ∀ x ∈ S, DifferentiableOn ℂ (f x) (univ.pi fun i ↦ closedBall (c i) (R i)))
+    (hf : ∀ x ∈ S, ContinuousOn (f x) (univ.pi fun i ↦ closedBall (c i) (R i)))
+    (hd : ∀ x ∈ S, ∀ z ∈ univ.pi (fun i ↦ closedBall (c i) (R i)), ∀ i,
+      z i ∈ ball (c i) (R i) →
+        DifferentiableAt ℂ (fun t ↦ f x (Function.update z i t)) (z i))
     (hb : ∀ x ∈ S, ∀ z ∈ univ.pi (fun i ↦ sphere (c i) (R i)), ‖f x z‖ ≤ M) :
     TendstoUniformlyOn
       (fun A : Finset (Fin n → ℕ) ↦ fun b : P × (Fin n → ℂ) ↦
@@ -215,7 +202,7 @@ theorem tendstoUniformlyOn_torusIntegral_cauchyCoeff {P : Type*} {S : Set P}
       have hi : ‖b.2 i‖ ≤ r i := by
         simpa only [mem_closedBall, dist_zero_right] using hb'.2 i trivial
       exact hi.trans_lt (hrR i)
-    exact ((hf b.1 hb'.1).hasSum_torusIntegral_cauchyCoeff hw).tsum_eq
+    exact ((hf b.1 hb'.1).hasSum_torusIntegral_cauchyCoeff (hd b.1 hb'.1) hw).tsum_eq
   · intro α b hb'
     rw [norm_smul, norm_prod]
     calc
