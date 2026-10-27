@@ -394,30 +394,6 @@ private theorem mem_comapInr {y : M'} :
       ((0, y) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} := by
   simp only [comapInr, LieSubmodule.mem_comap, LieModuleHom.inr_apply]
 
-variable (R n v v') in
-/-- The first projection of the product, restricted to the diagonal submodule. -/
-private def prodFst :
-    LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} →ₗ⁅R, Matrix n n R⁆ M :=
-  (LieModuleHom.fst R (Matrix n n R) M M').comp
-    (LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}).incl
-
-@[simp]
-private theorem prodFst_apply (p : LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) :
-    prodFst R n v v' p = (p : M × M').1 := by
-  simp only [prodFst, LieModuleHom.comp_apply, LieSubmodule.incl_apply, LieModuleHom.fst_apply]
-
-variable (R n v v') in
-/-- The second projection of the product, restricted to the diagonal submodule. -/
-private def prodSnd :
-    LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} →ₗ⁅R, Matrix n n R⁆ M' :=
-  (LieModuleHom.snd R (Matrix n n R) M M').comp
-    (LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}).incl
-
-@[simp]
-private theorem prodSnd_apply (p : LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) :
-    prodSnd R n v v' p = (p : M × M').2 := by
-  simp only [prodSnd, LieModuleHom.comp_apply, LieSubmodule.incl_apply, LieModuleHom.snd_apply]
-
 variable [LinearOrder n] {mu : n → R}
 
 /-- The diagonal of two highest weight vectors of the same weight is a highest weight vector of the
@@ -431,26 +407,6 @@ private theorem isGlHighestWeightVector_prod (hv : IsGlHighestWeightVector mu v)
       fun i j hij => by
       rw [lie_prod_apply, hv.lie_single_eq_zero hij, hv'.lie_single_eq_zero hij,
         Prod.mk_zero_zero]⟩
-
-private theorem surjective_prodFst [LieModule.IsIrreducible R (Matrix n n R) M]
-    (hv : IsGlHighestWeightVector mu v) :
-    Function.Surjective (prodFst R n v v') := by
-  refine (LieModuleHom.range_eq_top _).mp ?_
-  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot => hv.ne_zero ?_
-  have hmem : v ∈ LieModuleHom.range (prodFst R n v v') :=
-    ⟨⟨(v, v'), LieSubmodule.subset_lieSpan rfl⟩, by simp⟩
-  rw [hbot] at hmem
-  simpa using hmem
-
-private theorem surjective_prodSnd [LieModule.IsIrreducible R (Matrix n n R) M']
-    (hv' : IsGlHighestWeightVector mu v') :
-    Function.Surjective (prodSnd R n v v') := by
-  refine (LieModuleHom.range_eq_top _).mp ?_
-  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot => hv'.ne_zero ?_
-  have hmem : v' ∈ LieModuleHom.range (prodSnd R n v v') :=
-    ⟨⟨(v, v'), LieSubmodule.subset_lieSpan rfl⟩, by simp⟩
-  rw [hbot] at hmem
-  simpa using hmem
 
 variable [IsDomain R] [CharZero R] [Module.IsTorsionFree R M] [Module.IsTorsionFree R M']
 variable [LieModule R (Matrix n n R) M] [LieModule R (Matrix n n R) M']
@@ -516,7 +472,7 @@ private theorem eq_zero_of_inr_mem_lieSpan_prod
 
 private theorem injective_prodFst [LieModule.IsIrreducible R (Matrix n n R) M']
     (hv : IsGlHighestWeightVector mu v) (hv' : IsGlHighestWeightVector mu v') :
-    Function.Injective (prodFst R n v v') := by
+    Function.Injective (LieSubmodule.lieSpan R (Matrix n n R) {(v, v')}).prodFst := by
   intro p q hpq
   have h1 : ((p : M × M') - q).1 = 0 := sub_eq_zero.mpr (by simpa using hpq)
   have hd : ((p : M × M') - q) ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} :=
@@ -530,7 +486,7 @@ private theorem injective_prodFst [LieModule.IsIrreducible R (Matrix n n R) M']
 
 private theorem injective_prodSnd [LieModule.IsIrreducible R (Matrix n n R) M]
     (hv : IsGlHighestWeightVector mu v) (hv' : IsGlHighestWeightVector mu v') :
-    Function.Injective (prodSnd R n v v') := by
+    Function.Injective (LieSubmodule.lieSpan R (Matrix n n R) {(v, v')}).prodSnd := by
   intro p q hpq
   have h2 : ((p : M × M') - q).2 = 0 := sub_eq_zero.mpr (by simpa using hpq)
   have hd : ((p : M × M') - q) ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')} :=
@@ -544,13 +500,19 @@ private theorem injective_prodSnd [LieModule.IsIrreducible R (Matrix n n R) M]
 
 private theorem bijective_prodFst [LieModule.IsIrreducible R (Matrix n n R) M]
     [LieModule.IsIrreducible R (Matrix n n R) M'] (hv : IsGlHighestWeightVector mu v)
-    (hv' : IsGlHighestWeightVector mu v') : Function.Bijective (prodFst R n v v') :=
-  ⟨injective_prodFst hv hv', surjective_prodFst hv⟩
+    (hv' : IsGlHighestWeightVector mu v') :
+    Function.Bijective (LieSubmodule.lieSpan R (Matrix n n R) {(v, v')}).prodFst :=
+  ⟨injective_prodFst hv hv',
+    (LieSubmodule.lieSpan R (Matrix n n R) {(v, v')}).prodFst_surjective_of_mem_of_ne_zero
+      (LieSubmodule.subset_lieSpan rfl) hv.ne_zero⟩
 
 private theorem bijective_prodSnd [LieModule.IsIrreducible R (Matrix n n R) M]
     [LieModule.IsIrreducible R (Matrix n n R) M'] (hv : IsGlHighestWeightVector mu v)
-    (hv' : IsGlHighestWeightVector mu v') : Function.Bijective (prodSnd R n v v') :=
-  ⟨injective_prodSnd hv hv', surjective_prodSnd hv'⟩
+    (hv' : IsGlHighestWeightVector mu v') :
+    Function.Bijective (LieSubmodule.lieSpan R (Matrix n n R) {(v, v')}).prodSnd :=
+  ⟨injective_prodSnd hv hv',
+    (LieSubmodule.lieSpan R (Matrix n n R) {(v, v')}).prodSnd_surjective_of_mem_of_ne_zero
+      (LieSubmodule.subset_lieSpan rfl) hv'.ne_zero⟩
 
 /-! ### The classification -/
 
@@ -561,25 +523,25 @@ noncomputable def lieModuleEquivOfIsGlHighestWeightVector
     [LieModule.IsIrreducible R (Matrix n n R) M] [LieModule.IsIrreducible R (Matrix n n R) M']
     (hv : IsGlHighestWeightVector mu v) (hv' : IsGlHighestWeightVector mu v') :
     M ≃ₗ⁅R, Matrix n n R⁆ M' :=
-  (LieModuleEquiv.ofBijective (prodFst R n v v') (bijective_prodFst hv hv')).symm.trans
-    (LieModuleEquiv.ofBijective (prodSnd R n v v') (bijective_prodSnd hv hv'))
+  (LieModuleEquiv.ofBijective _ (bijective_prodFst hv hv')).symm.trans
+    (LieModuleEquiv.ofBijective _ (bijective_prodSnd hv hv'))
 
 @[simp]
 theorem lieModuleEquivOfIsGlHighestWeightVector_apply
     [LieModule.IsIrreducible R (Matrix n n R) M] [LieModule.IsIrreducible R (Matrix n n R) M']
     (hv : IsGlHighestWeightVector mu v) (hv' : IsGlHighestWeightVector mu v') :
     lieModuleEquivOfIsGlHighestWeightVector hv hv' v = v' := by
-  have hF : (LieModuleEquiv.ofBijective (prodFst R n v v') (bijective_prodFst hv hv'))
-      (⟨(v, v'), LieSubmodule.subset_lieSpan rfl⟩ :
-        LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) = v := by
-    rw [LieModuleEquiv.ofBijective_apply, prodFst_apply]
-  have hinv : (LieModuleEquiv.ofBijective (prodFst R n v v')
-      (bijective_prodFst hv hv')).symm v
-      = (⟨(v, v'), LieSubmodule.subset_lieSpan rfl⟩ :
-          LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) :=
-    (LieModuleEquiv.symm_apply_eq _).mpr hF.symm
-  rw [lieModuleEquivOfIsGlHighestWeightVector, LieModuleEquiv.trans_apply, hinv,
-    LieModuleEquiv.ofBijective_apply, prodSnd_apply]
+  let p : LieSubmodule.lieSpan R (Matrix n n R) {(v, v')} :=
+    ⟨(v, v'), LieSubmodule.subset_lieSpan rfl⟩
+  let eF := LieModuleEquiv.ofBijective _ (bijective_prodFst hv hv')
+  let eS := LieModuleEquiv.ofBijective _ (bijective_prodSnd hv hv')
+  have hp : eF p = v := by simp [eF, p]
+  have hinv : eF.symm v = p := eF.symm_apply_eq.mpr hp.symm
+  have hresult : eS (eF.symm v) = v' := by
+    rw [hinv]
+    simp [eS, p]
+  simpa only [lieModuleEquivOfIsGlHighestWeightVector, LieModuleEquiv.trans_apply, eF, eS]
+    using hresult
 
 /-- **The highest weight determines the irreducible `gl n R`-module.** Two irreducible
 `gl n R`-modules carrying highest weight vectors of the same weight `μ` are isomorphic. Neither is
@@ -599,16 +561,17 @@ least that of `M`, and has finite rank even though it need not be finitely gener
 theorem finrank_le_of_isGlHighestWeightVector [LieModule.IsIrreducible R (Matrix n n R) M]
     [Module.Finite R M'] (hv : IsGlHighestWeightVector mu v)
     (hv' : IsGlHighestWeightVector mu v') : finrank R M ≤ finrank R M' := by
-  have hinj := injective_prodSnd hv hv'
-  have hfin : Module.rank R (LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')})
-      < Cardinal.aleph0 :=
+  let D := LieSubmodule.lieSpan R (Matrix n n R) {(v, v')}
+  have hinj : Function.Injective D.prodSnd := injective_prodSnd hv hv'
+  have hsurj : Function.Surjective D.prodFst :=
+    D.prodFst_surjective_of_mem_of_ne_zero (LieSubmodule.subset_lieSpan rfl) hv.ne_zero
+  have hfin : Module.rank R D < Cardinal.aleph0 :=
     Cardinal.lift_lt_aleph0.mp
-      (((prodSnd R n v v').toLinearMap.lift_rank_le_of_injective hinj).trans_lt
+      ((D.prodSnd.toLinearMap.lift_rank_le_of_injective hinj).trans_lt
         (Cardinal.lift_lt_aleph0.mpr (rank_lt_aleph0 R M')))
   exact (finrank_le_finrank_of_rank_le_rank
-      ((prodFst R n v v').toLinearMap.lift_rank_le_of_surjective
-        (surjective_prodFst (M' := M') hv)) hfin).trans
-    (LinearMap.finrank_le_finrank_of_injective (f := (prodSnd R n v v').toLinearMap) hinj)
+      (D.prodFst.toLinearMap.lift_rank_le_of_surjective hsurj) hfin).trans
+    (LinearMap.finrank_le_finrank_of_injective (f := D.prodSnd.toLinearMap) hinj)
 
 end Diagonal
 
