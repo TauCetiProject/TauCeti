@@ -70,9 +70,8 @@ private theorem eq_zero_of_forall_linearCombination_eq_zero {k : ℤ} {l : ℕ �
   have hs : (l.support.image Prod.snd).Nonempty :=
     (Finsupp.support_nonempty_iff.2 hne).image _
   obtain ⟨⟨a₀, b₀⟩, h₀, hb₀⟩ := Finset.mem_image.1 ((l.support.image Prod.snd).min'_mem hs)
-  have hle (ab : ℕ × ℕ) (hab : ab ∈ l.support) : b₀ ≤ ab.2 := by
-    rw [show b₀ = _ from hb₀]
-    exact Finset.min'_le _ _ (Finset.mem_image_of_mem _ hab)
+  have hle (ab : ℕ × ℕ) (hab : ab ∈ l.support) : b₀ ≤ ab.2 :=
+    hb₀.trans_le (Finset.min'_le _ _ (Finset.mem_image_of_mem _ hab))
   -- Dividing the combination by `Δ ^ b₀` gives a function `T` that vanishes identically.
   let T : ℍ → ℂ := fun τ ↦
     ∑ ab ∈ l.support, l ab * (E₄ τ ^ ab.1 * discriminant τ ^ (ab.2 - b₀))
