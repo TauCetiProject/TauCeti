@@ -21,7 +21,7 @@ ACTION = ROOT / ".github/actions/checkout-merge-policy/action.yml"
 LOCAL_ACTION = "./.github/actions/checkout-merge-policy"
 # Each job that reads the merge policy, with how many times it does so.
 POLICY_READERS = {
-    ("ci.yml", "readiness-tests"): 1,
+    ("infrastructure-tests.yml", "python-tests"): 1,
     ("pages.yml", "build-data"): 1,
     ("pr-labels.yml", "label-resolved"): 1,
     ("pr-labels.yml", "sweep"): 1,
@@ -106,8 +106,16 @@ class WorkflowPins(unittest.TestCase):
                 with self.subTest(workflow=path.name, job=job_name):
                     # A plain checkout is trusted code only under these triggers.
                     triggers = workflow_triggers(path.name)
-                    self.assertLessEqual(set(triggers), TRUSTED_TRIGGERS,
-                                         "a trigger checks out PR-controlled code")
+                    if path.name == "infrastructure-tests.yml":
+                        # This job deliberately tests candidate tooling. It has no
+                        # secrets or write token, and publishes no merge verdict.
+                        self.assertEqual(set(triggers), {"push", "pull_request"})
+                        document = yaml.safe_load(path.read_text())
+                        self.assertEqual(document["permissions"], {"contents": "read"})
+                        self.assertNotIn("secrets", job)
+                    else:
+                        self.assertLessEqual(set(triggers), TRUSTED_TRIGGERS,
+                                             "a production trigger checks out PR-controlled code")
                     if "push" in triggers:
                         self.assertEqual((triggers["push"] or {}).get("branches"), ["main"])
                     # The local action must come from the last checkout at the workspace root

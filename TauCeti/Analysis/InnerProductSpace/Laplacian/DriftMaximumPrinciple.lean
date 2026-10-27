@@ -252,7 +252,6 @@ private theorem le_of_strict_subsolution_barrier {K : Set E} (hK : IsCompact K)
   -- `w` is bounded above by some `C` on the compact set `K`; perturbing `f` to `f + ε w`
   -- makes it a strict subsolution, so `f x ≤ m + ε (C - w x)`, and letting `ε → 0` gives `f x ≤ m`.
   obtain ⟨C, hCub⟩ := hK.bddAbove_image (f := w) hwcont
-  have hxC : w x ≤ C := hCub (Set.mem_image_of_mem w hxK)
   have key : ∀ ε : ℝ, 0 < ε → f x ≤ m + ε * (C - w x) := by
     intro ε hε
     set g : E → ℝ := fun y ↦ f y + ε • w y with hgdef
@@ -280,7 +279,7 @@ private theorem le_of_strict_subsolution_barrier {K : Set E} (hK : IsCompact K)
     have hzC : ε * w z ≤ ε * C :=
       mul_le_mul_of_nonneg_left (hCub (Set.mem_image_of_mem w hzK)) hε.le
     linarith [hbdry hzfr]
-  exact le_of_forall_pos_mul_le (sub_nonneg.mpr hxC) key
+  exact le_of_forall_pos_mul_le key
 
 /-- **Weak maximum principle for `Δ + b·∇` with bounded drift.**
 
@@ -374,7 +373,8 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_nonneg {K : Set E} (
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x) (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β)
     (hlap : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ Δ f x + fderiv ℝ f x (b x)) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
-  exact exists_mem_frontier_isMaxOn_of_le_frontier hK hne hcont fun hbdry ↦
+  exact hK.exists_mem_frontier_isMaxOn_of_le_frontier hne
+    (hcont.mono hK.isClosed.frontier_subset) fun hbdry ↦
     le_of_laplacian_add_fderiv_nonneg_le_frontier hK hcont hcd hb hlap hbdry
 
 /-- The `∃`-form of the weak minimum principle for `Δ + b·∇`: a supersolution with bounded

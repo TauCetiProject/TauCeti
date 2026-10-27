@@ -23,13 +23,13 @@ public section
 namespace TauCeti.BalancedTensorProduct
 
 variable {R B C M N P : Type*} [CommRing R] [Semiring B] [Semiring C]
-  [Algebra R B] [Algebra R C]
+  [Module R B] [Module R C]
   [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M]
   [AddCommGroup N] [Module R N] [Module B N] [Module Cᵐᵒᵖ N]
   [AddCommGroup P] [Module R P] [Module C P]
   [SMulCommClass B R N] [SMulCommClass Cᵐᵒᵖ R N] [SMulCommClass B Cᵐᵒᵖ N]
   {ℬ : ℤ → Submodule R B} {𝒞 : ℤ → Submodule R C}
-  [GradedAlgebra ℬ] [GradedAlgebra 𝒞]
+  [DirectSum.Decomposition ℬ] [DirectSum.Decomposition 𝒞]
   (G : InternalGrading R M) (H : InternalGrading R N) (I : InternalGrading R P)
   [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece G.piece]
   [SetLike.GradedSMul ℬ H.piece]

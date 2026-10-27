@@ -46,6 +46,8 @@ here, and the Cartan subalgebra has to be produced by hand.
   eigenvector of `ad A` with eigenvalue the difference `A i i - A j j`.
 * `TauCeti.single_mem_rootSpace`: consequently `Eᵢⱼ` lies in the root space for the weight
   `εᵢ - εⱼ`.
+* `TauCeti.lie_single_self_lie_single_eq_smul`: a matrix unit `Eₚq` shifts the diagonal eigenvalue
+  equations by `εₚ - ε_q` in any Lie module.
 * `TauCeti.mem_weightSpace_glWeightEquiv_iff`: membership in a weight space is equivalent to the
   coordinate eigenvalue equations for the diagonal matrix units.
 
@@ -143,6 +145,32 @@ theorem lie_single_of_mem_diagonalCartan {A : Matrix n n R} (hA : A ∈ diagonal
   by_cases h : i = a ∧ j = b
   · obtain ⟨rfl, rfl⟩ := h; simp
   · simp [h]
+
+section Raising
+
+variable {M : Type*} [AddCommGroup M] [Module R M] [LieRingModule (Matrix n n R) M]
+  [LieModule R (Matrix n n R) M]
+
+/-- **Raising a weight vector.** Bracketing a simultaneous eigenvector of the diagonal matrix units
+of weight `μ` with the matrix unit `Eₚq` satisfies the diagonal eigenvalue equations for
+`μ + εₚ - ε_q`, even if the resulting vector is zero. -/
+theorem lie_single_self_lie_single_eq_smul {mu : n → R} {v : M}
+    (hv : ∀ i : n, ⁅(single i i 1 : Matrix n n R), v⁆ = mu i • v) (p q : n) (i : n) :
+    ⁅(single i i 1 : Matrix n n R), ⁅(single p q 1 : Matrix n n R), v⁆⁆
+      = (mu + (Pi.single p 1 - Pi.single q 1) : n → R) i •
+        ⁅(single p q 1 : Matrix n n R), v⁆ := by
+  have hpp : (single i i (1 : R)) p p = (Pi.single p 1 : n → R) i := by
+    simp [single_apply, Pi.single_apply, eq_comm]
+  have hqq : (single i i (1 : R)) q q = (Pi.single q 1 : n → R) i := by
+    simp [single_apply, Pi.single_apply, eq_comm]
+  have hlie : ⁅(single i i 1 : Matrix n n R), (single p q 1 : Matrix n n R)⁆
+      = ((Pi.single p 1 : n → R) i - (Pi.single q 1 : n → R) i) • single p q 1 := by
+    rw [lie_single_of_mem_diagonalCartan (single_self_mem_diagonalCartan i 1) p q 1, hpp, hqq]
+  rw [leibniz_lie, hlie, smul_lie, hv i, lie_smul]
+  simp only [Pi.add_apply, Pi.sub_apply, add_smul, sub_smul]
+  abel
+
+end Raising
 
 /-! ### Self-normalizing, and the Cartan subalgebra instance -/
 

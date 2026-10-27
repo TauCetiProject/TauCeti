@@ -55,6 +55,7 @@ of a completed group algebra attached to two topological generators.
 
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
 * `PowerSeries.subst_one`: substitution preserves the constant series one.
+* `PowerSeries.subst_X_add_C_mul_X_pow`: substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`.
 * `PowerSeries.subst_eq_aeval_trunc_of_pow_eq_zero`: substitution at a series with a vanishing
   power is evaluation of a finite truncation.
 * `PowerSeries.subst_C_eq_C_aeval_trunc`: substitution at a nilpotent constant is the constant
@@ -97,6 +98,12 @@ theorem subst_one {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
     {τ : Type*} {a : MvPowerSeries τ S} (ha : HasSubst a) :
     (1 : R⟦X⟧).subst a = 1 := by
   rw [← coe_substAlgHom ha, map_one]
+
+/-- Substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`. -/
+theorem subst_X_add_C_mul_X_pow {R τ : Type*} [CommRing R] {a : MvPowerSeries τ R}
+    (ha : HasSubst a) (e : R) (k : ℕ) :
+    subst a (X + C e * X ^ k) = a + MvPowerSeries.C e * a ^ k := by
+  rw [subst_add ha, subst_mul ha, subst_pow ha, subst_X ha, subst_C]
 
 section Nilpotent
 
