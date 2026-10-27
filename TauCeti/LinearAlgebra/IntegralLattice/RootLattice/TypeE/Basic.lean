@@ -684,6 +684,15 @@ theorem norm_typeE₈RootLattice_intCast (v : Fin 8 → ℤ) :
       (((v ᵥ* CartanMatrix.E 8) ⬝ᵥ v : ℤ) : ℚ) := by
   exact norm_ofGramMatrix_basisFun_intCast _ _ v
 
+open _root_.Matrix in
+/-- The rational form of two integer vectors in simple-root coordinates is their integral Cartan
+form. -/
+theorem form_typeE₈RootLattice_intCast (u w : Fin 8 → ℤ) :
+    typeE₈RootLattice.form (fun j ↦ (u j : ℚ)) (fun j ↦ (w j : ℚ)) =
+      (((u ᵥ* CartanMatrix.E 8) ⬝ᵥ w : ℤ) : ℚ) := by
+  rw [typeE₈RootLattice, form_ofGramMatrix_basisFun_apply, ← dotProduct_mulVec]
+  simp [dotProduct, mulVec]
+
 /-- The `i`-th simple root of the type `E₈` root lattice, as a vector of the ambient space. -/
 -- This is sealed so `Pi.basisFun_apply` does not rewrite beneath it and destabilize the simp API.
 noncomputable def typeE₈SimpleRoot (i : Fin 8) : Fin 8 → ℚ := Pi.basisFun ℚ (Fin 8) i
