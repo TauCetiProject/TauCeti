@@ -44,7 +44,7 @@ of `ζ` converges locally uniformly in `z` and the quasi-periods are the divisio
 Since `ζ` is odd, so is `a ↦ F_a`, and `E₁^W` changes sign when `W` is replaced by `a ↦ W (-a)`
 (`TauCeti.EisensteinSeries.weightedE1_comp_neg`). This is the parity constraint of weight one:
 `E₁^W = 0` for every even weight `W` (`TauCeti.EisensteinSeries.weightedE1_eq_zero_of_even`), so
-for the weights `W(a) = ψ(a₀) φ̄(a₁)` attached to a pair of Dirichlet characters only the pairs
+for the weights `W(a) = ψ(a₀) conj(φ(a₁))` attached to a pair of Dirichlet characters only the pairs
 with `ψ(-1) φ(-1) = -1` contribute.
 
 ## Main definitions
