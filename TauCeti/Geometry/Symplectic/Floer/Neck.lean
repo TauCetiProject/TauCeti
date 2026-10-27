@@ -72,12 +72,15 @@ def neckCollapse (c L s : ℝ) : ℝ :=
 theorem neckCollapse_def (c L s : ℝ) : neckCollapse c L s = min s c + max (s - (c + L)) 0 :=
   (rfl)
 
+@[simp]
 theorem neckCollapse_of_le (hL : 0 ≤ L) (hs : s ≤ c) : neckCollapse c L s = s := by
   rw [neckCollapse_def, min_eq_left hs, max_eq_right (by linarith), add_zero]
 
+@[simp]
 theorem neckCollapse_of_mem_Icc (hs : s ∈ Icc c (c + L)) : neckCollapse c L s = c := by
   rw [neckCollapse_def, min_eq_right hs.1, max_eq_right (by linarith [hs.2]), add_zero]
 
+@[simp]
 theorem neckCollapse_of_ge (hL : 0 ≤ L) (hs : c + L ≤ s) : neckCollapse c L s = s - L := by
   rw [neckCollapse_def, min_eq_right (by linarith), max_eq_left (by linarith)]
   ring
