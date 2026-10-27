@@ -49,8 +49,8 @@ theorem finrank_end_pi_cyclic_root_pow {ι : Type*} [Fintype ι] (len : ι → �
   have := (monic_X_pow n).finite_adjoinRoot (R := K)
   let M (i : ι) := (AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
     Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ len i)}
-  let e (i j : ι) := FGModuleCat.cyclicModuleHomLinearEquiv K
-    (M := M j) (AdjoinRoot.root (X ^ n : K[X]) ^ len i)
+  let e (i j : ι) := FGModuleCat.homLinearEquivOfIsScalarTower K
+    (M := M j) (FGModuleCat.cyclicModule (AdjoinRoot.root (X ^ n : K[X]) ^ len i))
   let _ (i j : ι) : Module.Finite K (M i →ₗ[(AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ] M j) :=
     LinearEquiv.finiteDimensional ((e i j).symm.trans
       (FGModuleCat.cyclicModuleHomEquiv K (AdjoinRoot.root (X ^ n : K[X]) ^ len i))).symm
@@ -77,7 +77,7 @@ theorem finrank_centralizer_pi_cyclic_root_pow {ι : Type*} [Fintype ι] (len : 
     exact h.trans ((AlgHom.range_eq_top _).mpr (AlgEquiv.toOpposite K _).surjective)
   let M := (i : ι) → ((AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
     Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ len i)})
-  have e := Module.End.centralizerScalarEquiv (M := M) _ hgen
+  have e := centralizerScalarEquiv (M := M) _ hgen
   rw [Set.image_singleton] at e
   rw [e.toLinearEquiv.finrank_eq]
   exact finrank_end_pi_cyclic_root_pow len hlen

@@ -38,7 +38,7 @@ theorem restrictScalars_mem_centralizer (A : Subalgebra K (Module.End K N))
 
 end Subalgebra
 
-namespace Module.End
+namespace TauCeti
 
 variable {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
   [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M]
@@ -86,4 +86,4 @@ theorem centralizerScalarEquiv_symm_apply (s : Set A) (hs : Algebra.adjoin R s =
     (f : Module.End A M) :
     ((centralizerScalarEquiv s hs).symm f).val = f.restrictScalars R := (rfl)
 
-end Module.End
+end TauCeti
