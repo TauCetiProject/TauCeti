@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Vec
+public import TauCeti.LinearAlgebra.Matrix.BlockSucc
 
 /-!
 # Measurability of matrix operations
@@ -28,6 +29,8 @@ of scalars is measurable even at zero.
 * `TauCeti.matrixVecMeasurableEquiv` — vectorization as a measurable equivalence.
 * `TauCeti.measurable_matrix_mul` — matrix multiplication is measurable, and the
   `MeasurableMul₂` instance it supplies for square matrices.
+* `TauCeti.measurable_matrix_blockSucc` — the upper-left block extension `Matrix.blockSucc` is
+  measurable.
 * `TauCeti.measurable_matrix_inv` — matrix inversion is measurable, and the `MeasurableInv`
   instance it supplies.
 -/
@@ -73,7 +76,7 @@ theorem matrixVecMeasurableEquiv_symm_apply {m n α : Type*} [MeasurableSpace α
 entries. -/
 @[fun_prop]
 theorem measurable_matrix_mul {l m n R : Type*} [Fintype m] [MeasurableSpace R]
-    [NonUnitalNonAssocSemiring R] [MeasurableMul₂ R] [MeasurableAdd₂ R] :
+    [Mul R] [AddCommMonoid R] [MeasurableMul₂ R] [MeasurableAdd₂ R] :
     Measurable fun A : Matrix l m R × Matrix m n R => A.1 * A.2 := by
   rw [Matrix.measurable_iff]
   intro i j
@@ -83,9 +86,18 @@ theorem measurable_matrix_mul {l m n R : Type*} [Fintype m] [MeasurableSpace R]
 
 /-- Square matrices inherit `MeasurableMul₂` from the measurability of matrix multiplication, which
 makes the generic `Measurable.mul` dot notation available for matrix-valued maps. -/
-instance {m R : Type*} [Fintype m] [MeasurableSpace R] [NonUnitalNonAssocSemiring R]
+instance {m R : Type*} [Fintype m] [MeasurableSpace R] [Mul R] [AddCommMonoid R]
     [MeasurableMul₂ R] [MeasurableAdd₂ R] : MeasurableMul₂ (Matrix m m R) :=
   ⟨measurable_matrix_mul⟩
+
+/-- Placing a square matrix in the upper-left block of the next size, `Matrix.blockSucc`, is
+measurable: each entry of the result is an entry of the matrix or a constant. -/
+@[fun_prop]
+theorem measurable_matrix_blockSucc {n : ℕ} {R : Type*} [Semiring R] [MeasurableSpace R] :
+    Measurable (Matrix.blockSucc : Matrix (Fin n) (Fin n) R → _) := by
+  refine Measurable.of_eval_matrix _ fun i j ↦ ?_
+  induction i using Fin.lastCases <;> induction j using Fin.lastCases <;>
+    simp [Matrix.measurable_apply]
 
 variable {m : Type*} [Fintype m] [DecidableEq m] {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜]
   [IsTopologicalRing 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SecondCountableTopology 𝕜]
