@@ -617,18 +617,10 @@ theorem adjointWeightSpace_comp_bialgEquiv_eq_bot_iff_of_characterEquiv
     [Module.Projective R (Bialgebra.CotangentSpace R L)]
     (eM : M ≃* N) (e : H ≃ₐc[R] L) (π : L →ₐc[R] MonoidAlgebra R M) (α : M) :
     adjointWeightSpace (π.comp (e : H →ₐc[R] L)) α = ⊥ ↔ adjointWeightSpace π α = ⊥ := by
-  have hmem (x : Module.Dual R (Bialgebra.CotangentSpace R L)) :
-      dualCotangentEquiv e x ∈ adjointWeightSpace (π.comp (e : H →ₐc[R] L)) α ↔
-        x ∈ adjointWeightSpace π α := by
-    rw [dualCotangentEquiv_apply]
-    exact dualCotangentMap_mem_adjointWeightSpace_iff_of_characterEquiv eM
-      (e : H →ₐc[R] L) e.surjective π α x
-  simp only [Submodule.eq_bot_iff]
-  constructor
-  · intro h x hx
-    exact (dualCotangentEquiv e).map_eq_zero_iff.mp (h _ ((hmem x).mpr hx))
-  · intro h y hy
-    obtain ⟨x, rfl⟩ := (dualCotangentEquiv e).surjective y
-    rw [h x ((hmem x).mp hy), map_zero]
+  rw [← adjointWeightSpace_domCongr eM π α,
+    ← adjointWeightSpace_domCongr eM (π.comp (e : H →ₐc[R] L)) α, ← BialgHom.comp_assoc,
+    ← map_dualCotangentMap_adjointWeightSpace e,
+    ← ofBijective_dualCotangentMap_toLinearMap _ e.dualCotangentMap_bijective]
+  exact Submodule.map_eq_bot_iff
 
 end Derivation

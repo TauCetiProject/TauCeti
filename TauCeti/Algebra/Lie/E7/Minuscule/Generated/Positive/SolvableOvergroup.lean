@@ -222,12 +222,14 @@ theorem carrierQuotient_genericMatrix_eq_zero_of_posRootCone
       ((generatedCoordinateMap k).hom (GeneralLinear.genericMatrix k 56 a b)) = 0 := by
   let J := I.comapOfSurjective (generatedCoordinateMap k).hom
     (generatedCoordinateMap_surjective k)
+  let e := (generatedCoordinateMap k).quotientIsoOfSurjective
+    (generatedCoordinateMap_surjective k) I
   have : IsReduced (GeneralLinear.coordinateHopfAlgebra k 56 ⧸ J.toIdeal) :=
     (_root_.CommHopfAlgCat.Hom.isReduced_quotient_comapOfSurjective_iff _ _ I).mpr inferInstance
   have hzero := quotient_genericMatrix_eq_zero_of_posRootCone J
     (carrier_comap_le_definingIdeal I hI)
-    ((_root_.CommHopfAlgCat.Hom.prop_quotient_comapOfSurjective_iff _ _ _ I).mpr hconn)
-    ((_root_.CommHopfAlgCat.Hom.prop_quotient_comapOfSurjective_iff _ _ _ I).mpr hsolv) hcone hne
+    ((ObjectProperty.prop_iff_of_iso _ e).mpr hconn)
+    ((ObjectProperty.prop_iff_of_iso _ e).mpr hsolv) hcone hne
   have hz := BialgHom.congr_fun
     (_root_.CommHopfAlgCat.Hom.hom_quotientIsoOfSurjective_hom_comp_mkBialgHom
       (generatedCoordinateMap k) (generatedCoordinateMap_surjective k) I)
@@ -271,8 +273,8 @@ theorem carrierQuotient_adjointWeightSpace_neg_eq_bot_of_posRootCone
       GeneralLinear.hom_weightTorusCoordinateMap] using hgen
   have hzero := adjointWeightSpace_neg_eq_bot_of_posRootCone J
     (carrier_comap_le_definingIdeal I hI)
-    ((_root_.CommHopfAlgCat.Hom.prop_quotient_comapOfSurjective_iff _ _ _ I).mpr hconn)
-    ((_root_.CommHopfAlgCat.Hom.prop_quotient_comapOfSurjective_iff _ _ _ I).mpr hsolv)
+    ((ObjectProperty.prop_iff_of_iso _ e).mpr hconn)
+    ((ObjectProperty.prop_iff_of_iso _ e).mpr hsolv)
     (π.comp e.hom.hom) htorus hδ hne
   rw [← CommHopfAlgCat.coe_ofIso e] at hzero
   exact (Derivation.adjointWeightSpace_comp_bialgEquiv_eq_bot_iff_of_characterEquiv

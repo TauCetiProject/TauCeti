@@ -31,7 +31,6 @@ namespace TauCeti.DynkinType
 open scoped BigOperators
 
 local notation "P" => e7SimplyConnectedRootDatum
-local notation "B" => e7SimplyConnectedRootDatum.RootForm
 local notation "μ" => e7MinusculeWeight
 local notation "α" => fun i : Fin 7 ↦ e7Root (e7SimpleIndex i)
 
@@ -48,50 +47,11 @@ theorem e7MinusculeRaisingStep_iff (a b : Fin 56) :
 theorem mem_e7_posRootCone_iff {x : Fin 7 → ℤ} :
     x ∈ posRootCone P e7SimplyConnectedBase ↔
       ∃ c : Fin 7 → ℕ, x = ∑ i, c i • α i := by
-  classical
-  constructor
-  · intro hx
-    obtain ⟨f, hf⟩ := (mem_posRootCone P e7SimplyConnectedBase).mp hx
-    refine ⟨fun i ↦ f (e7SimpleIndex i), hf.trans ?_⟩
-    symm
-    refine Finset.sum_bij (fun i _ ↦ e7SimpleIndex i) ?_ ?_ ?_ ?_
-    · intro i _
-      simp only [mem_support_e7SimplyConnectedBase, e7SimpleIndex_val]
-      exact i.isLt
-    · intro i _ j _ h
-      exact e7SimpleIndex_injective h
-    · intro j hj
-      refine ⟨⟨j.val, mem_support_e7SimplyConnectedBase.mp hj⟩, Finset.mem_univ _, ?_⟩
-      exact Fin.ext (by simp only [e7SimpleIndex_val])
-    · intro i _
-      simp
-  · rintro ⟨c, rfl⟩
-    refine (posRootCone P e7SimplyConnectedBase).sum_mem fun i _ ↦ ?_
-    apply (posRootCone P e7SimplyConnectedBase).nsmul_mem
-    simpa only [e7SimplyConnectedRootDatum_root] using
-      root_mem_posRootCone_of_mem_posRoots P e7SimplyConnectedBase
-        (i := e7SimpleIndex i)
-        (support_subset_posRoots P e7SimplyConnectedBase (by simp))
-
-private theorem rootForm_minuscule_reflection (i : Fin 7) (a : Fin 56) :
-    B (μ (e7MinusculeReflection i a)) (μ (e7MinusculeReflection i a)) =
-      B (μ a) (μ a) := by
-  rw [← e7SimplyConnectedRootDatum_reflection_e7MinusculeWeight]
-  exact e7SimplyConnectedRootDatum.rootForm_reflection_reflection_apply _ _ _
-
-private theorem rootForm_minuscule_eq (a b : Fin 56) :
-    B (μ a) (μ a) = B (μ b) (μ b) := by
-  suffices h : ∀ a, B (μ a) (μ a) = B (μ 0) (μ 0) from
-    (h a).trans (h b).symm
-  intro a
-  obtain ⟨l, hl⟩ := exists_e7MinusculeReflections_eq a
-  rw [← hl]
-  clear a hl
-  induction l using List.reverseRecOn with
-  | nil => simp only [List.foldl_nil]
-  | append_singleton l i ih =>
-    rw [List.foldl_append]
-    simpa only [List.foldl_cons, List.foldl_nil, rootForm_minuscule_reflection] using ih
+  have he : Set.BijOn e7SimpleIndex Set.univ e7SimplyConnectedBase.support :=
+    ⟨fun i _ ↦ mem_support_e7SimplyConnectedBase.mpr (by simp), e7SimpleIndex_injective.injOn,
+      fun j hj ↦ ⟨⟨j, mem_support_e7SimplyConnectedBase.mp hj⟩, trivial, Fin.ext (by simp)⟩⟩
+  simpa only [e7SimplyConnectedRootDatum_root] using
+    mem_posRootCone_iff_exists_nat_of_bijOn P e7SimplyConnectedBase he
 
 /-- Raising paths are exactly the positive integral differences of minuscule weights. -/
 theorem e7Minuscule_raisingPath_iff_mem_posRootCone (a b : Fin 56) :
@@ -117,9 +77,12 @@ theorem e7Minuscule_raisingPath_iff_mem_posRootCone (a b : Fin 56) :
   · intro h
     obtain ⟨c, hc⟩ := mem_e7_posRootCone_iff.mp h
     refine e7SimplyConnectedRootDatum.toInvariantForm.reflTransGen_of_sub_eq_sum
-      (fun _ ↦ e7SimplyConnectedRootDatum.zero_le_rootForm _)
       (fun _ hv hne ↦ e7SimplyConnectedRootDatum.rootForm_pos_of_ne_zero hv hne)
-      e7MinusculeWeight_injective rootForm_minuscule_eq (f := e7SimpleIndex)
+      e7MinusculeWeight_injective
+      (e7SimplyConnectedRootDatum.toInvariantForm.apply_self_eq_of_forall_exists_foldl
+        e7SimplyConnectedRootDatum_reflection_e7MinusculeWeight
+        exists_e7MinusculeReflections_eq)
+      (f := e7SimpleIndex)
       (fun x i hi ↦ ?_) (by simpa only [e7SimplyConnectedRootDatum_root] using hc)
     -- A negative coroot value on a minuscule weight is `-1`, where the simple reflection raises.
     have hpair : e7SimplyConnectedRootDatum.coroot' (e7SimpleIndex i) (μ x) = μ x i := by

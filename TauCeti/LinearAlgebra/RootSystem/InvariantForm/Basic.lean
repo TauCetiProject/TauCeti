@@ -33,6 +33,8 @@ step towards a higher weight.
 * `RootPairing.InvariantForm.exists_pos_and_coroot'_neg_of_apply_self_eq`: if `x` and `y` have
   equal length and `y - x`, of positive length, is a natural combination of roots of nonnegative
   length, some root with positive coefficient has negative coroot value on `x`.
+* `RootPairing.InvariantForm.apply_self_eq_of_forall_exists_foldl`: vectors reached from one
+  another by reflections have equal length.
 * `RootPairing.InvariantForm.reflTransGen_of_sub_eq_sum`: iterating such raising steps joins two
   vectors of an injective family of equal length whose difference is a natural combination of
   roots.
@@ -59,10 +61,10 @@ theorem two_mul_apply_root (x : M) (j : ι) :
   rw [LinearMap.map_sub₂, LinearMap.map_smul₂, map_neg, map_neg, smul_eq_mul] at h
   linear_combination -h
 
-/-- **A root lowering a vector of the same length.** Let `x` and `y` have the same length for an
-invariant form whose roots have nonnegative length, and let `y - x`, of positive length, be a
-natural combination `∑ j ∈ s, c j • α_{f j}` of roots. Then some root `α_{f j}` with `c j > 0` has
-negative coroot value on `x`. -/
+/-- **A raising root between vectors of the same length.** Let `x` and `y` have the same length
+for an invariant form whose roots have nonnegative length, and let `y - x`, of positive length, be
+a natural combination `∑ j ∈ s, c j • α_{f j}` of roots. Then some root `α_{f j}` with `c j > 0`
+has negative coroot value on `x`. -/
 theorem exists_pos_and_coroot'_neg_of_apply_self_eq [LinearOrder R] [IsStrictOrderedRing R]
     (hroot : ∀ i, 0 ≤ B.form (P.root i) (P.root i)) {x y : M}
     (hxy : B.form x x = B.form y y) (hpos : 0 < B.form (y - x) (y - x))
@@ -87,14 +89,30 @@ theorem exists_pos_and_coroot'_neg_of_apply_self_eq [LinearOrder R] [IsStrictOrd
   · simp [hc]
   · exact mul_nonneg (Nat.cast_nonneg _) (mul_nonneg (hnonneg j hj hc) (hroot _))
 
+/-- **Equal length along a reflection orbit.** Let `s i` act on the indices of a family `μ` by
+lifting the reflection in `α_{e i}`. If every index is reached from `a₀` by successively applying
+the `s i`, all vectors `μ a` have the same length. -/
+theorem apply_self_eq_of_forall_exists_foldl {X κ : Type*} {μ : X → M} {e : κ → ι}
+    {s : κ → X → X} (hs : ∀ i a, P.reflection (e i) (μ a) = μ (s i a)) {a₀ : X}
+    (h : ∀ a, ∃ l : List κ, l.foldl (fun b i ↦ s i b) a₀ = a) (a b : X) :
+    B.form (μ a) (μ a) = B.form (μ b) (μ b) := by
+  have hfold (l : List κ) (c : X) :
+      B.form (μ (l.foldl (fun b i ↦ s i b) c)) (μ (l.foldl (fun b i ↦ s i b) c)) =
+        B.form (μ c) (μ c) := by
+    induction l generalizing c with
+    | nil => rfl
+    | cons i l ih => rw [List.foldl_cons, ih, ← hs, apply_reflection_reflection]
+  obtain ⟨l, rfl⟩ := h a
+  obtain ⟨l', rfl⟩ := h b
+  rw [hfold, hfold]
+
 /-- **Raising paths between vectors of equal length.** Let `μ` be an injective family of vectors of
 equal length, indexed by a type with a well-founded order, for an invariant form that is positive
-on the nonzero vectors of the root span and whose roots have nonnegative length. Suppose that
+on the nonzero vectors of the root span. Suppose that
 whenever a root `α_{f j}` has negative coroot value on `μ a`, an `r`-step leads from `a` to a
 smaller index `a'` with `μ a' = μ a + α_{f j}`. Then `r`-paths lead from `a` to every `b` for
 which `μ b - μ a` is a natural combination of the roots `α_{f j}`. -/
 theorem reflTransGen_of_sub_eq_sum [LinearOrder R] [IsStrictOrderedRing R]
-    (hroot : ∀ i, 0 ≤ B.form (P.root i) (P.root i))
     (hpos : ∀ v ∈ P.rootSpan R, v ≠ 0 → 0 < B.form v v)
     {X : Type*} [LT X] [WellFoundedLT X] {μ : X → M} (hμ : Function.Injective μ)
     (hlen : ∀ a b, B.form (μ a) (μ a) = B.form (μ b) (μ b))
@@ -110,6 +128,8 @@ theorem reflTransGen_of_sub_eq_sum [LinearOrder R] [IsStrictOrderedRing R]
     exact .refl
   have hspan : μ b - μ a ∈ P.rootSpan R := h ▸ Submodule.sum_mem _ fun j _ ↦
     Submodule.smul_of_tower_mem _ (c j) (Submodule.subset_span (Set.mem_range_self (f j)))
+  have hroot (i : ι) : 0 ≤ B.form (P.root i) (P.root i) :=
+    (hpos _ (Submodule.subset_span (Set.mem_range_self i)) (P.ne_zero i)).le
   obtain ⟨j, -, hcj, hj⟩ := B.exists_pos_and_coroot'_neg_of_apply_self_eq hroot (hlen a b)
     (hpos _ hspan (sub_ne_zero.mpr (hμ.ne (Ne.symm hab)))) h
   obtain ⟨a', ha', hr, hμa'⟩ := hstep a j hj

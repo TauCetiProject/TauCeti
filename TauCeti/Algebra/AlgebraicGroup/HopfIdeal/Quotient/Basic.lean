@@ -60,9 +60,8 @@ The same quotient of a finite-type commutative Hopf algebra is again an object o
   change a commutative Hopf algebra.
 * `CommHopfAlgCat.Hom.quotientIsoOfSurjective`: a surjective ambient morphism identifies
   the source quotient by an inverse-image Hopf ideal with the target quotient.
-* `CommHopfAlgCat.Hom.prop_quotient_comapOfSurjective_iff` and
-  `CommHopfAlgCat.Hom.isReduced_quotient_comapOfSurjective_iff`: isomorphism-closed properties
-  and reducedness transfer across that identification.
+* `CommHopfAlgCat.Hom.isReduced_quotient_comapOfSurjective_iff`: reducedness transfers across
+  that identification.
 * `TauCeti.CommHopfAlgCat.quotientIsoOfIso`: the specialization to an ambient isomorphism.
 * `CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso`: the quotient by the kernel of a surjective
   morphism is its target.
@@ -266,14 +265,6 @@ lemma _root_.CommHopfAlgCat.Hom.hom_quotientIsoOfSurjective_hom_comp_mkBialgHom 
       (Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal).comp f.hom := by
   simpa only [_root_.CommHopfAlgCat.hom_comp, hom_mkQuotient] using
     congrArg _root_.CommHopfAlgCat.Hom.hom (mkQuotient_comp_quotientIsoOfSurjective_hom f hf I)
-
-/-- An isomorphism-closed property holds for the quotient by the inverse image of a Hopf ideal
-along a surjective morphism exactly when it holds for the target quotient. -/
-theorem _root_.CommHopfAlgCat.Hom.prop_quotient_comapOfSurjective_iff
-    (P : ObjectProperty (_root_.CommHopfAlgCat.{v} R)) [P.IsClosedUnderIsomorphisms]
-    (f : H ⟶ K) (hf : Function.Surjective f.hom) (I : HopfIdeal R K) :
-    P (quotient H (I.comapOfSurjective f.hom hf)) ↔ P (quotient K I) :=
-  P.prop_iff_of_iso (quotientIsoOfSurjective f hf I)
 
 /-- The quotient by the inverse image of a Hopf ideal along a surjective morphism is reduced
 exactly when the target quotient is. -/

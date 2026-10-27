@@ -294,9 +294,7 @@ theorem mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom (w : Fin n �
 
 /-- **Vanishing adjoint weight spaces from vanishing coordinates.** If every generic matrix entry
 whose weight difference is `α` vanishes in the quotient coordinate algebra, the adjoint weight
-space of `α` is zero. By `mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom` a weight
-vector has tangent matrix supported on those entries, and a tangent vector kills the coordinates
-that vanish in the quotient. -/
+space of `α` is zero. -/
 theorem adjointWeightSpace_eq_bot_of_weightTorusCoordinateBialgHom (w : Fin n → Fin r → ℤ)
     (π : (GeneralLinear.coordinateHopfAlgebra R n ⧸ I.toIdeal) →ₐc[R]
       MonoidAlgebra R (Multiplicative (Fin r →₀ ℤ)))
@@ -307,6 +305,8 @@ theorem adjointWeightSpace_eq_bot_of_weightTorusCoordinateBialgHom (w : Fin n �
       Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal (GeneralLinear.genericMatrix R n i j) = 0) :
     Derivation.adjointWeightSpace π α = ⊥ := by
   classical
+  -- A weight vector has tangent matrix supported on the entries of weight difference `α`, and a
+  -- tangent vector kills the coordinates that vanish in the quotient.
   refine (Submodule.eq_bot_iff _).mpr fun x hx ↦ ?_
   have hentry := (mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom I w π hπ α x).mp hx
   apply (Derivation.cotangentLinearEquiv (B := R)).injective
