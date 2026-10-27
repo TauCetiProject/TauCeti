@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Isotropy
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.WittChain
-import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Semiring
 import TauCeti.LinearAlgebra.QuadraticForm.Witt.Cancellation
 
 /-!

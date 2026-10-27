@@ -213,18 +213,16 @@ theorem localHasse_add (x y : RegularFormClass K) :
 /-- **The local Hasse invariant of `m` hyperbolic planes** is `(-1, -1)_K^{m(m-1)/2}`. -/
 theorem localHasse_nsmul_hyperbolicClass (m : ℕ) :
     localHasse (m • hyperbolicClass K) = hilbertSymbol (-1 : Kˣ) (-1) ^ m.choose 2 := by
-  have hpow (n : ℕ) : hilbertSymbol ((-1 : Kˣ) ^ n) (-1) = hilbertSymbol (-1 : Kˣ) (-1) ^ n := by
-    simpa only [zpow_natCast] using
-      hilbertSymbol_zpow_left (Invertible.ne_zero (2 : K)) (-1) (-1) (n : ℤ)
   induction m with
   | zero => simp
   | succ m ih =>
     -- Adding a plane to `m` planes multiplies the invariant by the symbol
     -- `(-1, (-1)^m)_K = (-1, -1)_K^m` of the two discriminants.
     rw [succ_nsmul, localHasse_add, ih, localHasse_hyperbolicClass, discr_nsmul,
-      discr_hyperbolicClass, ← squareClass_pow,
-      hilbertSymbolOnSquareClasses_squareClass, hpow, Nat.choose_succ_succ',
-      Nat.choose_one_right, mul_one, pow_add, mul_comm]
+      discr_hyperbolicClass, ← squareClass_pow, hilbertSymbolOnSquareClasses_squareClass,
+      hilbertSymbol_pow_left (Invertible.ne_zero (2 : K))]
+    -- It remains to check `m.choose 2 + m = (m + 1).choose 2` in the exponent.
+    simp [Nat.choose_succ_succ', pow_add, mul_comm]
 
 /-- **Adjoining a line**: `s(⟨a⟩ ⊥ q) = s(q) · (a, d(q))_K`, the orthogonal-sum formula with the
 trivial local Hasse invariant of the rank-one summand. -/

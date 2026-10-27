@@ -68,10 +68,10 @@ theorem formClass_atRealPlace_eq_nsmul_hyperbolicClass_iff {Q : _root_.Quadratic
     formClass (Q.atRealPlace w) (Nondegenerate.atRealPlace hQ w) = m • hyperbolicClass ℝ ↔
       Module.finrank K V = 2 * m ∧ Q.realPositiveIndex w = m := by
   have hpq := realPositiveIndex_add_realNegativeIndex_eq_finrank hQ w
-  rw [RegularFormClass.eq_iff_rank_eq_and_signature_eq, rank_formClass, finrank_atRealPlace,
-    signature_formClass, RegularFormClass.signature_nsmul,
-    RegularFormClass.signature_hyperbolicClass, smul_zero, ← realPositiveIndex_eq_sigPos,
-    ← realNegativeIndex_eq_sigNeg, RegularFormClass.rank_nsmul, rank_hyperbolicClass]
+  simp only [RegularFormClass.eq_iff_rank_eq_and_signature_eq, rank_formClass,
+    finrank_atRealPlace, signature_formClass, RegularFormClass.signature_nsmul,
+    RegularFormClass.signature_hyperbolicClass, smul_zero, RegularFormClass.rank_nsmul,
+    rank_hyperbolicClass, realPositiveIndex_eq_sigPos, realNegativeIndex_eq_sigNeg] at hpq ⊢
   omega
 
 /-- A regular form that is the sum of `m` hyperbolic planes over `K` is the sum of `m` hyperbolic
@@ -109,9 +109,12 @@ theorem formClass_atFinitePlace_eq_nsmul_hyperbolicClass_iff (Q : _root_.Quadrat
           (RegularFormClass.discr (formClass Q hQ)) =
         m • squareClass (-1 : (v.adicCompletion K)ˣ) ∧
       Q.finiteHasse hQ v = hilbertSymbol (-1 : (v.adicCompletion K)ˣ) (-1) ^ m.choose 2 := by
+  have hd : RegularFormClass.discr (formClass (Q.atFinitePlace v)
+      (Nondegenerate.atFinitePlace hQ v)) = (algebraMap K (v.adicCompletion K)).squareClassMap
+        (RegularFormClass.discr (formClass Q hQ)) := by
+    rw [formClass_atFinitePlace, RegularFormClass.discr_baseChange]
   rw [RegularFormClass.eq_nsmul_hyperbolicClass_iff, rank_formClass, Module.finrank_baseChange,
-    formClass_atFinitePlace, RegularFormClass.discr_baseChange, ← formClass_atFinitePlace,
-    ← finiteHasse_def]
+    hd, ← finiteHasse_def]
 
 /-- **Local hyperbolicity by invariants.** A regular form `Q` is the sum of `m` hyperbolic planes
 at every finite and every real place exactly when it has rank `2m`, the image of its discriminant
