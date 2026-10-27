@@ -148,26 +148,12 @@ ring operations is all that is used. -/
 theorem continuous_coeff_prod_X_sub_C {ι R : Type*} [CommRing R] [TopologicalSpace R]
     [IsTopologicalRing R] (s : Finset ι) (k : ℕ) :
     Continuous fun f : ι → R => (∏ i ∈ s, (X - C (f i))).coeff k := by
-  classical
-  induction s using Finset.induction_on generalizing k with
-  | empty => simpa using continuous_const
-  | @insert a s ha ih =>
-    cases k with
-    | zero =>
-      have hpt : (fun f : ι → R => (∏ i ∈ insert a s, (X - C (f i))).coeff 0) =
-          fun f => -f a * (∏ i ∈ s, (X - C (f i))).coeff 0 := by
-        funext f
-        rw [Finset.prod_insert ha, mul_coeff_zero]
-        simp
-      rw [hpt]
-      exact (continuous_apply a).neg.mul (ih 0)
-    | succ k =>
-      have hpt : (fun f : ι → R => (∏ i ∈ insert a s, (X - C (f i))).coeff (k + 1)) =
-          fun f => (∏ i ∈ s, (X - C (f i))).coeff k
-            - f a * (∏ i ∈ s, (X - C (f i))).coeff (k + 1) := by
-        funext f
-        rw [Finset.prod_insert ha, sub_mul, coeff_sub, coeff_X_mul, coeff_C_mul]
-      rw [hpt]
-      exact (ih k).sub ((continuous_apply a).mul (ih (k + 1)))
+  refine continuous_iff_continuousAt.2 fun f₀ ↦ ?_
+  refine continuousAt_coeff_prod (f := fun i (f : ι → R) ↦ X - C (f i)) s fun i _ j _ ↦ ?_
+  simp only [coeff_sub, coeff_X, coeff_C]
+  split_ifs <;>
+    first
+    | exact continuousAt_const
+    | exact (continuous_const.sub (continuous_apply i)).continuousAt
 
 end TauCeti.Polynomial
