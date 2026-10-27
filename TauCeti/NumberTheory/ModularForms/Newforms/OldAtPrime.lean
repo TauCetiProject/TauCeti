@@ -44,6 +44,8 @@ multiplicity one across unrelated levels.
 * `TauCeti.levelRaise_mem_cuspFormsOldAt_of_mem`: `V_d` carries `q`-old forms to `q`-old forms.
 * `TauCeti.frickeOperatorCusp_mem_cuspFormsNewAt_iff`: the Fricke involution preserves the
   `q`-new subspace.
+* `TauCeti.peterssonInnerCosets_levelRaise_eq_zero_iff`: `⟪V_q φ, H⟫` vanishes exactly when the
+  pairing of `φ` with `H ∣ diag(q, 1)⁻¹` on `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹` does.
 * `TauCeti.restrict_mem_cuspFormsNewAt`, `TauCeti.levelRaise_mem_cuspFormsNewAt`: restriction to
   a level with the same `q`-part, and more generally `V_d` with `q * K ∤ K'`, preserve `q`-newness.
 
@@ -286,9 +288,9 @@ theorem frickeOperatorCusp_mem_cuspFormsNewAt_iff [NeZero N]
 /-- **`⟪V_q φ, H⟫` vanishes exactly when its `diag(q, 1)`-conjugate does**: the pairing on
 `Γ₁(N)` of `V_q φ` with `H` vanishes exactly when the pairing on
 `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹` of `φ` with `H ∣ diag(q, 1)⁻¹` does. -/
-private lemma peterssonInnerCosets_levelRaise_eq_zero_iff [NeZero q] [NeZero N]
-    (hqM : q * M ∣ N) (φ : CuspForm ((Gamma1 M).map (mapGL ℝ)) k)
-    (H : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+lemma peterssonInnerCosets_levelRaise_eq_zero_iff [NeZero q] [NeZero N]
+    {hqM : q * M ∣ N} {φ : CuspForm ((Gamma1 M).map (mapGL ℝ)) k}
+    {H : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} :
     peterssonInnerCosets (CuspForm.levelRaise q (Gamma1_map_le_conjAct_scaleGL_of_dvd hqM) φ) H =
         0 ↔
       peterssonInnerCosets
@@ -364,13 +366,13 @@ private lemma peterssonInnerCosets_levelRaise_restrict_eq_zero_of_mem_cuspFormsN
   rw [hn, hm] at hlcm
   rw [hn] at hgcd
   have hqK : q ∣ K := Dvd.intro n hn
-  rw [peterssonInnerCosets_levelRaise_eq_zero_iff (dvd_of_eq hm)]
+  rw [peterssonInnerCosets_levelRaise_eq_zero_iff (hqM := dvd_of_eq hm)]
   -- at level `K`, the conjugate of `G` is orthogonal to the forms of level `n`
   have hF : ∀ ψ : CuspForm ((Gamma1 n).map (mapGL ℝ)) k,
       peterssonInnerCosets
         (CuspForm.restrict (Subgroup.map_mono (gamma1Conj_le_Gamma1 (dvd_of_eq hn))) ψ)
         (CuspForm.restrict (map_gamma1Conj_le hqK) (CuspForm.translate G (scaleGL q)⁻¹)) = 0 :=
-    fun ψ ↦ (peterssonInnerCosets_levelRaise_eq_zero_iff (dvd_of_eq hn) ψ G).mp
+    fun ψ ↦ (peterssonInnerCosets_levelRaise_eq_zero_iff (hqM := dvd_of_eq hn)).mp
       ((CuspForm.mem_peterssonOrthogonal_iff.mp hG) _
         (levelRaise_mem_cuspFormsOldAt (dvd_of_eq hn) (dvd_of_eq hn) k ψ))
   have h := CuspForm.peterssonInnerCosets_restrict_restrict_eq_zero

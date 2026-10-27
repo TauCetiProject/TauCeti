@@ -62,7 +62,7 @@ the lower level. The `q`-expansion results go up only.
 * `TauCeti.mem_gamma1Conj_iff`, `TauCeti.gamma1Conj_le_Gamma1`, `TauCeti.gamma1Conj_eq_inf`,
   `TauCeti.exists_mul_gamma1Conj_eq_of_mem_Gamma1`: the conjugate of `Γ₁(N)` by `diag(q, 1)`, its
   position below `Γ₁(M)` for `q * M ∣ N`, its intersection with `Γ₁(m)`, and the factorisation
-  `Γ₁(gcd m K) = Γ₁(m) · diag(q, 1) Γ₁(K) diag(q, 1)⁻¹` for `q ∣ K`.
+  `Γ₁(gcd m K) ⊆ Γ₁(m) · diag(q, 1) Γ₁(K) diag(q, 1)⁻¹` for `q ∣ K`.
 * `TauCeti.exists_eq_T_zpow_mul_conjScale_mul_T_zpow`: the `T`-factorisation, in the other
   direction. For `l ∣ N`, every `γ' ∈ Γ₀(N / l)` is `T ^ i * conjScale l γ c * T ^ j` for some
   `i, j, c : ℤ` and some `γ ∈ Γ₀(N)` whose lower-left entry factors as `γ 1 0 = l * c` — a level
@@ -690,7 +690,8 @@ lemma gamma1Conj_eq_inf [NeZero q] {m K K' : ℕ} (hqK : q ∣ K) (hm : q * m = 
     rw [← hlcm, Gamma1_lcm_eq_inf]
     exact ⟨hδm, hδ⟩
 
-/-- **`Γ₁(n) = Γ₁(m) · diag(q, 1) Γ₁(K) diag(q, 1)⁻¹`**, for `q ∣ K` and `gcd m K = n`. -/
+/-- **`Γ₁(n) ⊆ Γ₁(m) · diag(q, 1) Γ₁(K) diag(q, 1)⁻¹`**, for `q ∣ K` and `gcd m K = n`: every
+element of `Γ₁(n)` factors as a product of an element of `Γ₁(m)` and one of `gamma1Conj q K`. -/
 lemma exists_mul_gamma1Conj_eq_of_mem_Gamma1 [NeZero q] {n m K : ℕ} (hqK : q ∣ K)
     (hgcd : Nat.gcd m K = n) {x : SL(2, ℤ)} (hx : x ∈ Gamma1 n) :
     ∃ a ∈ Gamma1 m, ∃ b ∈ gamma1Conj q K, a * b = x := by
