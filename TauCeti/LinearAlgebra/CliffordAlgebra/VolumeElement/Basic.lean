@@ -22,10 +22,13 @@ them and evenly many.
 
 The ordered product is spelled `(l.map (ι Q)).prod` for a list `l` of vectors, the spelling Mathlib
 already uses for it (`CliffordAlgebra.involute_prod_map_ι`, `CliffordAlgebra.reverse_prod_map_ι`)
-and the one the sibling file `Filtration.lean` uses
+and the one `TauCeti/LinearAlgebra/CliffordAlgebra/Filtration.lean` uses
 (`CliffordAlgebra.prod_map_ι_mem_filtration`); the results below are named `prod_map_ι_*` to
 match. Orthogonality is a hypothesis of each result rather than part of the object, so the name
-"volume element" is reserved for the informal reading.
+"volume element" is used informally here. The frame-free volume element
+`CliffordAlgebra.volumeElement` of an oriented real inner product space, defined in
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Oriented.lean`, is such a product for every
+positively oriented orthonormal basis that is orthogonal for the form.
 
 Both facts come from the single relation `ι Q a * ι Q b = -(ι Q b * ι Q a)` for orthogonal `a` and
 `b`. Pushing a vector `ι Q m` from one side of a product of `n` mutually orthogonal vectors to the

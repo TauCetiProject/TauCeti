@@ -55,6 +55,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
 * `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
   by `g` is inverted by `g⁻¹`.
+* `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
+  leaves sums over all row vectors unchanged.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
@@ -133,6 +135,19 @@ theorem vecMul_eq_iff_eq_vecMul_inv {R : Type*} [CommRing R] {n : Type*} [Fintyp
     rw [vecMul_vecMul, ← coe_mul, mul_inv_cancel, coe_one, vecMul_one]
   · rintro rfl
     rw [vecMul_vecMul, ← coe_mul, inv_mul_cancel, coe_one, vecMul_one]
+
+/-- Right multiplication of row vectors by `g ∈ SL(n, R)` permutes `n → R`, so it does not change
+a sum over all row vectors when `R` is finite. -/
+theorem sum_comp_vecMul {R : Type*} [CommRing R] [Fintype R] {n : Type*} [Fintype n]
+    [DecidableEq n] {M : Type*} [AddCommMonoid M] (F : (n → R) → M)
+    (g : SpecialLinearGroup n R) :
+    ∑ a, F (a ᵥ* (g : Matrix n n R)) = ∑ a, F a :=
+  Fintype.sum_equiv
+    { toFun a := a ᵥ* (g : Matrix n n R)
+      invFun y := y ᵥ* ((g⁻¹ : SpecialLinearGroup n R) : Matrix n n R)
+      left_inv a := ((vecMul_eq_iff_eq_vecMul_inv g a _).mp rfl).symm
+      right_inv y := (vecMul_eq_iff_eq_vecMul_inv g _ y).mpr rfl }
+    _ _ fun _ ↦ rfl
 
 /-- The determinant-one identity for an element of `SL₂(R)`, written in coordinates. -/
 lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
+public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.SignedOpposite
 public import TauCeti.Algebra.Homology.DG.Module.Opposite
 public import TauCeti.Algebra.Homology.DG.Module.Right.DGCategory
@@ -317,6 +318,47 @@ theorem zigzagAlgebraProjectiveDGHomEquivCorner_shifted_comp
     LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply,
     LinearEquiv.apply_symm_apply]
   exact (coe_zigzagAlgebraGradedProjectiveHomEquivCorner_comp k G i j l s t f g).symm
+
+/-! ### Finiteness and degree support of vertex Hom spaces -/
+
+private def projectiveDGHomCornerEquiv (i j : V) (n : ℤ) :
+    DGHom k n (D i) (D j) ≃ₗ[k] ↥(C i j n) := by
+  rw [← Int.neg_neg n]
+  exact L i j (-n)
+
+/-- Homogeneous vertex morphisms vanish outside the three path degrees. -/
+theorem zigzagAlgebraProjectiveDGHom_subsingleton (i j : V) (n : ℤ)
+    (hn : n ∉ ({0, 1, 2} : Finset ℤ)) : Subsingleton (DGHom k n (D i) (D j)) := by
+  have hc : C i j n = ⊥ := by
+    dsimp only
+    rw [zigzagAlgebraIntegerGrade_eq_bot_of_not_mem k G hn, inf_bot_eq]
+  have : Subsingleton ↥(C i j n) := by rw [hc]; infer_instance
+  exact (projectiveDGHomCornerEquiv k G i j n).toEquiv.subsingleton_congr.mpr inferInstance
+
+/-- Homogeneous vertex morphisms are finite over every commutative coefficient ring. -/
+instance zigzagAlgebraProjectiveDGHom_moduleFinite (i j : V) (n : ℤ) :
+    Module.Finite k (DGHom k n (D i) (D j)) := by
+  classical
+  have hfg : (C i j n).FG := by
+    dsimp only
+    by_cases hij : i = j
+    · subst j
+      rw [cornerSubmodule_zigzagAlgebra_self_inf_integerGrade]
+      split_ifs
+      · exact Submodule.fg_span_singleton _
+      · exact Submodule.fg_span_singleton _
+      · exact Submodule.fg_bot
+    · by_cases hadj : G.Adj j i
+      · rw [cornerSubmodule_zigzagAlgebra_inf_integerGrade_of_adj k G hadj]
+        split_ifs
+        · rw [cornerSubmodule_zigzagAlgebra_eq_span_of_adj k G hadj]
+          exact Submodule.fg_span_singleton _
+        · exact Submodule.fg_bot
+      · rw [cornerSubmodule_zigzagAlgebra_eq_bot_of_ne_of_not_adj k G hij
+          (fun h ↦ hadj h.symm), bot_inf_eq]
+        exact Submodule.fg_bot
+  have : Module.Finite k ↥(C i j n) := Module.Finite.of_fg hfg
+  exact Module.Finite.equiv (projectiveDGHomCornerEquiv k G i j n).symm
 
 /-!
 ## Cohomology of the vertex Hom complexes

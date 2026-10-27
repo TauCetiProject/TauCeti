@@ -230,6 +230,32 @@ end Hom
 @[simp] theorem rose_label (α : Type*) (e : (rose α).graph.E) :
     (rose α).label e = e := rfl
 
+/-- The labels give the canonical morphism from any labelled graph to the rose. -/
+def toRose (S : StallingsGraph α) : S.Hom (rose α) where
+  graphHom := {
+    mapV := fun _ => PUnit.unit
+    mapE := S.label
+    map_src := by intro e; rfl
+    map_rev := S.label_rev }
+  map_base := rfl
+  map_label := by intro e; rfl
+
+@[simp] theorem toRose_mapV (a : S.graph.V) :
+    S.toRose.graphHom.mapV a = PUnit.unit := (rfl)
+
+@[simp] theorem toRose_mapE (e : S.graph.E) :
+    S.toRose.graphHom.mapE e = S.label e := (rfl)
+
+/-- The rose admits exactly one labelled morphism from each labelled graph. -/
+theorem Hom.eq_toRose (f : S.Hom (rose α)) : f = S.toRose := by
+  apply Hom.ext
+  apply SerreGraph.Hom.ext
+  · funext a
+    cases f.graphHom.mapV a
+    rfl
+  · funext e
+    exact f.map_label e
+
 /-- Every free-group element is read by a loop in the rose. -/
 theorem rose_subgroup_top (α : Type*) :
     (rose α).subgroup PUnit.unit = ⊤ := by

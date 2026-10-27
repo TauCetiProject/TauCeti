@@ -188,6 +188,22 @@ theorem steinerSymmetrization_image_linearIsometryEquiv (e : E) (he : ‖e‖ = 
     mem_steinerSymmetrization_iff, mem_steinerSymmetrization_iff, L.inner_map_eq_flip]
   simp only [mem_preimage, map_add, map_smul, LinearIsometryEquiv.symm_apply_apply]
 
+/-- A Steiner symmetral is symmetric under the reflection in the hyperplane orthogonal to the
+direction of symmetrization. -/
+@[simp]
+theorem preimage_reflection_steinerSymmetrization (e : E) (he : ‖e‖ = 1) (s : Set E) :
+    (ℝ ∙ e)ᗮ.reflection ⁻¹' steinerSymmetrization e he s = steinerSymmetrization e he s := by
+  ext x
+  have hx : (ℝ ∙ e)ᗮ.reflection x = x + (-(2 * ⟪e, x⟫)) • e := by
+    rw [Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply, he]
+    module
+  have hinner : ⟪e, x + (-(2 * ⟪e, x⟫)) • e⟫ = -⟪e, x⟫ := by
+    rw [inner_add_right, inner_smul_right, real_inner_self_eq_norm_sq, he]
+    ring
+  rw [mem_preimage, hx, mem_steinerSymmetrization_iff, mem_steinerSymmetrization_iff,
+    volume_lineSection_add_smul, hinner]
+  simp only [Metric.mem_eball, edist_zero_right, enorm_neg]
+
 /-- Steiner symmetrization preserves convexity. -/
 theorem convex_steinerSymmetrization (e : E) (he : ‖e‖ = 1) {s : Set E}
     (hs : Convex ℝ s) : Convex ℝ (steinerSymmetrization e he s) := by

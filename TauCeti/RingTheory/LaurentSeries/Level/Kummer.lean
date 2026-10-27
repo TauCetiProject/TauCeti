@@ -257,6 +257,12 @@ the Puiseux field is a Galois extension of `K⸨X⸩`. -/
 instance isGalois_level : IsGalois K⸨X⸩ (level K d) :=
   IsGalois.of_algEquiv (levelEquiv K d)
 
+/-- If the coefficient field has a primitive `d`-th root of unity, then the level-`d` subfield of
+the Puiseux field is a normal extension of `K⸨X⸩`, so Galois automorphisms of larger fields
+restrict to it. Instance search does not find this through `isGalois_level` in reasonable time. -/
+instance normal_level : Normal K⸨X⸩ (level K d) :=
+  IsGalois.to_normal
+
 /-- If the coefficient field has a primitive `d`-th root of unity, then the Galois group of the
 level-`d` subfield of the Puiseux field over `K⸨X⸩` is the group of `d`-th roots of unity of `K`.
 The inverse is `levelKummer` (`TauCeti.puiseuxField.levelGalEquivRootsOfUnity_symm_apply`). -/
