@@ -369,13 +369,23 @@ theorem isHomogeneous_ker (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
 
 end Decompose
 
-/-- The image of a homogeneous linear map is a homogeneous submodule. -/
-theorem isHomogeneous_range {ι : Type} [DecidableEq ι] [AddGroup ι]
+/-- The image of a homogeneous linear map is a homogeneous submodule, for degrees in any
+additive monoid. -/
+theorem isHomogeneous_range {ι : Type} [DecidableEq ι] [AddMonoid ι]
     {G : InternalGrading R M ι} {H : InternalGrading R N ι} {f : M →ₗ[S] N} {r : ι}
     (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
     DirectSum.SetLike.IsHomogeneous H.piece (_root_.LinearMap.range f) := by
   rintro q _ ⟨x, rfl⟩
-  exact ⟨_, (hf.map_decompose (q - r) x).trans (by rw [sub_add_cancel])⟩
+  induction x using DirectSum.Decomposition.inductionOn G.piece with
+  | zero => simp
+  | @homogeneous p x =>
+    by_cases hpq : p + r = q
+    · subst q
+      rw [DirectSum.decompose_of_mem_same H.piece (hf.map_mem x.2)]
+      exact ⟨x, rfl⟩
+    · rw [DirectSum.decompose_of_mem_ne H.piece (hf.map_mem x.2) hpq]
+      exact Submodule.zero_mem _
+  | add x y hx hy => simpa using Submodule.add_mem _ hx hy
 
 end LinearMap.IsHomogeneous
 
