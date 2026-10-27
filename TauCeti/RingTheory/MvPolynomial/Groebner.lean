@@ -49,8 +49,7 @@ field is discharged by `MonomialOrder.isUnit_leadingCoeff`.
 The definitions `IsRemainder` and `IsGroebnerBasis` are those of Junyu Guo and Hao Shen in
 Mathlib pull request 29203, upstreamed from the WuProver Gröbner basis project.
 
-* D. Cox, J. Little, D. O'Shea, *Ideals, Varieties, and Algorithms* [coxlittleoshea1997],
-  Chapter 2, §§5–6.
+* D. Cox, J. Little, D. O'Shea, *Ideals, Varieties, and Algorithms*, Chapter 2, §§5–6.
 -/
 
 public section
@@ -124,6 +123,15 @@ theorem IsGroebnerBasis.mk (hGI : G ⊆ I)
     m.IsGroebnerBasis G I :=
   ⟨hGI, hspan⟩
 
+/-- For nonzero `p`, `q` and `f`, the `WithBot` degree bound `deg p + deg q ≤ deg f` used in
+`MonomialOrder.IsRemainder` is the corresponding bound on `MonomialOrder.degree`. -/
+theorem toWithBotSyn_withBotDegree_add_le_iff {p q : MvPolynomial σ R} (hp : p ≠ 0) (hq : q ≠ 0)
+    (hf : f ≠ 0) :
+    m.toWithBotSyn (m.withBotDegree p) + m.toWithBotSyn (m.withBotDegree q) ≤
+        m.toWithBotSyn (m.withBotDegree f) ↔
+      m.toSyn (m.degree p) + m.toSyn (m.degree q) ≤ m.toSyn (m.degree f) := by
+  simp [(m.withBotDegree_eq_coe_degree_iff _).2, toWithBotSyn_apply_coe, ← WithBot.coe_add, *]
+
 /-- The remainders of `0` are exactly `0`. -/
 @[simp]
 theorem isRemainder_zero_left_iff : m.IsRemainder 0 B r ↔ r = 0 := by
@@ -154,10 +162,7 @@ theorem exists_degree_le_degree_of_isRemainder_zero (h : m.IsRemainder f B 0) (h
   have hb0 : (b : MvPolynomial σ R) ≠ 0 := fun h ↦ by simp [h] at hb
   -- The degree condition gives `deg b + deg g_b ≤ deg f`, and `deg f` is a monomial of
   -- `g_b * b`, so the two sides are equal.
-  have hle := hdeg b
-  rw [(m.withBotDegree_eq_coe_degree_iff _).2 hb0, (m.withBotDegree_eq_coe_degree_iff _).2 hgb0,
-    (m.withBotDegree_eq_coe_degree_iff _).2 hf, toWithBotSyn_apply_coe, toWithBotSyn_apply_coe,
-    toWithBotSyn_apply_coe, ← WithBot.coe_add, WithBot.coe_le_coe] at hle
+  have hle := (toWithBotSyn_withBotDegree_add_le_iff hb0 hgb0 hf).1 (hdeg b)
   have hge : m.toSyn (m.degree f) ≤
       m.toSyn (m.degree (b : MvPolynomial σ R)) + m.toSyn (m.degree (g b)) :=
     (m.le_degree hb).trans (m.toSyn_degree_mul_le.trans_eq (add_comm _ _))
@@ -235,8 +240,7 @@ theorem isGroebnerBasis_iff_forall_exists_degree_le_degree
   have hu := hG g hgG hg0
   have hlt : m.leadingTerm p = monomial (m.degree p - m.degree g)
       (m.leadingCoeff p * ↑hu.unit⁻¹) * m.leadingTerm g := by
-    rw [leadingTerm, leadingTerm, monomial_mul_monomial, tsub_add_cancel_of_le hgp, mul_assoc,
-      IsUnit.val_inv_mul, mul_one]
+    simp [leadingTerm, monomial_mul_monomial, tsub_add_cancel_of_le hgp, mul_assoc]
   rw [Set.mem_preimage, SetLike.mem_coe, hlt]
   exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨g, hgG, rfl⟩)
 
