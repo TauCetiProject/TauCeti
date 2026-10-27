@@ -134,10 +134,10 @@ instance : IsTriangulated (SingularityCategory C) :=
 
 variable {C}
 
-/-- **Perfect objects vanish in the singularity category**: the map from zero to a perfect
-object has a perfect cone, so it becomes invertible. -/
+/-- **Perfect objects vanish in the singularity category.** -/
 lemma isZero_Q_obj_of_perfect {X : DerivedCategory.Bounded C}
     (hX : DerivedCategory.Bounded.perfect C X) : IsZero ((Q C).obj X) := by
+  -- The map from zero to `X` has cone `X`, which is perfect, so it becomes invertible.
   have h : (DerivedCategory.Bounded.perfect C).trW (0 : 0 ⟶ X) :=
     ObjectProperty.trW.mk _ (contractible_distinguished₁ X) hX
   have := Localization.inverts (Q C) _ _ h

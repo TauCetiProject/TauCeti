@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Injective
+public import TauCeti.Algebra.Module.Injective.DivisionRing
 public import Mathlib.Algebra.Field.Opposite
-public import Mathlib.Algebra.Module.Injective
 public import Mathlib.CategoryTheory.Abelian.Injective.Dimension
-public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
 # Iwanaga–Gorenstein rings
@@ -54,6 +53,8 @@ class IsIwanagaGorenstein (A : Type u) [Ring A] : Prop where
 
 namespace IsIwanagaGorenstein
 
+attribute [instance] isNoetherianRing isNoetherianRing_op
+
 /-- **Quasi-Frobenius rings are Iwanaga–Gorenstein**: a left and right noetherian ring that is
 self-injective on both sides has both self-injective dimensions zero. -/
 theorem of_injective (A : Type u) [Ring A] [IsNoetherianRing A] [IsNoetherianRing Aᵐᵒᵖ]
@@ -67,21 +68,8 @@ theorem of_injective (A : Type u) [Ring A] [IsNoetherianRing A] [IsNoetherianRin
     have := Module.injective_object_of_injective_module Aᵐᵒᵖ A
     exact ⟨0, inferInstance⟩
 
-/-- A division ring is injective over itself: a left ideal is zero or everything. -/
-private theorem injective_self (D : Type u) [DivisionRing D] : Module.Injective D D :=
-  Module.Baer.injective fun I g ↦ by
-    rcases Ideal.eq_bot_or_top I with rfl | rfl
-    · refine ⟨0, fun x hx ↦ ?_⟩
-      obtain rfl := (Submodule.mem_bot D).1 hx
-      rw [show (⟨0, hx⟩ : (⊥ : Ideal D)) = 0 from rfl, map_zero, map_zero]
-    · exact ⟨g ∘ₗ (LinearEquiv.ofTop (⊤ : Ideal D) rfl).symm.toLinearMap, fun x hx ↦ rfl⟩
-
 /-- Division rings are Iwanaga–Gorenstein. -/
 instance (D : Type u) [DivisionRing D] : IsIwanagaGorenstein D :=
-  have := injective_self D
-  have := injective_self Dᵐᵒᵖ
-  have : Module.Injective Dᵐᵒᵖ D :=
-    Module.Injective.of_ringEquiv (RingEquiv.refl Dᵐᵒᵖ) (MulOpposite.opLinearEquiv Dᵐᵒᵖ).symm
   of_injective D
 
 end IsIwanagaGorenstein
