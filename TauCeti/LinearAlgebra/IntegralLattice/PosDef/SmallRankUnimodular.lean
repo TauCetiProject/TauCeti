@@ -41,11 +41,11 @@ determinant two, it gives a second vector `s` of norm at most two orthogonal to 
 
 Now let `L` have no vectors of norm one, so `r` and `s` both have norm two. The two-neighbor of
 `L` along `r + s` contains the orthonormal vectors `(r + s) / 2` and `(r - s) / 2`, so it is
-`I₂ ⊕ M₀` with `M₀` of rank `n - 2 ≤ 7` and without vectors of norm one. In rank at most seven
-such an `M₀` is zero: by induction from rank at most five, since otherwise the neighbor is `Iₙ`
-and `4 ∣ n`. Hence the neighbor is `Iₙ`. A two-neighbor of `Iₙ` without vectors of norm one has
-`4 ∣ n` and, in rank eight, is `E₈`. So `L` is zero or `E₈`, and the classification follows from
-the splitting `L ≅ I_k ⊕ L₀`.
+`I_k ⊕ M₀` with `k ≥ 2` and `M₀` of rank `n - k ≤ n - 2 ≤ 7` and without vectors of norm one.
+In rank at most seven such an `M₀` is zero: by induction from rank at most five, since otherwise
+the neighbor is `Iₙ` and `4 ∣ n`. Hence the neighbor is `Iₙ`. A two-neighbor of `Iₙ` without
+vectors of norm one has `4 ∣ n` and, in rank eight, is `E₈`. So `L` is zero or `E₈`, and the
+classification follows from the splitting `L ≅ I_k ⊕ L₀`.
 
 ## Main declarations
 
