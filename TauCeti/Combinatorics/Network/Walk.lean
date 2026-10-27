@@ -230,6 +230,36 @@ theorem IsPath.of_comp_right {s t x : V} {p : ArrowWalk Q s t} {p' : ArrowWalk Q
   rw [isPath_def, hcomp] at hp
   exact hp.of_append_right
 
+/-- A path from `s` to `t` that traverses an arrow `e` from `s` to `t` consists of `e` alone. -/
+theorem IsPath.eq_cons_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) {e : Q s t}
+    (he : ⟨s, t, e⟩ ∈ p.arrows) : p = (nil s).cons e := by
+  -- The last vertex of a path `q.cons e'` is not a vertex of `q`.
+  have hlast {x y z : V} (q : ArrowWalk Q x y) (e' : Q y z) (h : (q.cons e').IsPath) :
+      z ∉ q.vertices := fun hz ↦ by
+    rw [isPath_def, vertices, @Quiver.Path.vertices_cons V ⟨Q⟩,
+      List.concat_eq_append, List.nodup_append] at h
+    exact h.2.2 z hz z (List.mem_singleton_self z) rfl
+  cases p with
+  | nil => simp at he
+  | cons q e' =>
+    rw [arrows_cons, List.mem_append, List.mem_singleton] at he
+    rcases he with he | he
+    · -- The target `t` of an arrow of `q` is a vertex of `q`, so `p` would visit `t` twice.
+      refine absurd ?_ (hlast q e' hp)
+      rw [vertices_eq_cons_map_target_arrows]
+      exact List.mem_cons_of_mem _ (List.mem_map_of_mem (f := fun a ↦ a.2.1) he)
+    · obtain ⟨rfl, he⟩ := Sigma.mk.inj_iff.1 he
+      obtain rfl : e = e' := eq_of_heq (Sigma.mk.inj_iff.1 (eq_of_heq he)).2
+      -- The initial segment `q` is a path from `s` back to `s`, hence has length zero.
+      cases q with
+      | nil => rfl
+      | cons q' e'' =>
+        have hq : (cons q' e'').IsPath := by
+          rw [isPath_def, vertices, @Quiver.Path.vertices_cons V ⟨Q⟩,
+            List.concat_eq_append] at hp
+          exact (isPath_def _).2 (hp.sublist (List.sublist_append_left _ _))
+        exact absurd (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ q') (hlast q' e'' hq)
+
 /-- **Path extraction.** Every walk contains a path with the same endpoints that traverses only
 arrows of the walk. -/
 theorem exists_isPath_arrows_subset {s t : V} (p : ArrowWalk Q s t) :
