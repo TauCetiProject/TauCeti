@@ -159,10 +159,12 @@ theorem inv_symm : h.inv.symm = h.inv := by
 
 end IsSpecEquivRel
 
-/-- The **kernel pair** of `Spec A ⟶ Spec C` is an equivalence relation: the two morphisms
-`Spec (A ⊗[C] A) ⇉ Spec A` given by the two inclusions relate two points of `Spec A` exactly when
-they agree on `C`. -/
-theorem isSpecEquivRel_tensorProduct (C A : Type u) [CommRing C] [CommRing A] [Algebra C A] :
+/-- The two inclusions `A ⇉ A ⊗[C] A` define an equivalence relation on `Spec A`: two points
+are related exactly when they agree on `C`. The scalars `C` may be a commutative semiring in an
+independent universe. When `C` is a commutative ring, this is the **kernel pair** of
+`Spec A ⟶ Spec C`. -/
+theorem isSpecEquivRel_tensorProduct (C : Type*) (A : Type u) [CommSemiring C] [CommRing A]
+    [Algebra C A] :
     (includeLeftRingHom : A →+* A ⊗[C] A).IsSpecEquivRel includeRight.toRingHom := by
   -- both inclusions agree on `C`
   have hC : (includeLeftRingHom : A →+* A ⊗[C] A).comp (algebraMap C A) =
