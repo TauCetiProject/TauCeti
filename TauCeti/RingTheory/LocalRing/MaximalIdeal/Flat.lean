@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.SpanRankOperations
-public import Mathlib.RingTheory.Ideal.CotangentBaseChange
+public import TauCeti.RingTheory.Ideal.Cotangent.BaseChange
 
 /-!
 # Generators of the maximal ideal along flat local homomorphisms
@@ -16,9 +16,9 @@ of `R` generates the maximal ideal `𝔪_S` of `S`. Then `𝔪_R` and `𝔪_S` n
 generators. One inequality holds without flatness, since the images of generators of `𝔪_R`
 generate `𝔪_S`. For the other, the images of elements of `𝔪_R` that are linearly independent in
 `𝔪_R / 𝔪_R²` remain linearly independent in `𝔪_S / 𝔪_S²`. This follows from Mathlib's flat base
-change of cotangent spaces, `Ideal.tensorCotangentHom_injective_of_flat`: a relation modulo
-`𝔪_S² = 𝔪_R² S` among them gives a vanishing element of `S ⊗[R] 𝔪_R / 𝔪_R²`, whose coefficients
-all lie in `𝔪_R S = 𝔪_S`.
+change of cotangent spaces, in the form `Ideal.sum_tmul_toCotangent_eq_zero_iff_of_flat`: a
+relation modulo `𝔪_S² = (𝔪_R S)²` among them gives a vanishing element of `S ⊗[R] 𝔪_R / 𝔪_R²`,
+whose coefficients all lie in `𝔪_R S = 𝔪_S`.
 
 The basic example is the completion of a Noetherian local ring at its maximal ideal, where Mathlib
 proves the same equality as `AdicCompletion.spanFinrank_maximalIdeal_eq`.
@@ -64,29 +64,13 @@ theorem spanFinrank_maximalIdeal_eq_of_flat_of_map_maximalIdeal_eq [IsNoetherian
       Ideal.toCotangent_eq_zero] at hg
     simpa using hg
   -- By flat base change of cotangent spaces, `∑ sᵢ ⊗ xᵢ` vanishes in `S ⊗[R] 𝔪_R / 𝔪_R²`.
-  have ht : ∑ j, s j ⊗ₜ[R] (maximalIdeal R).toCotangent (x j) = 0 := by
-    apply Ideal.tensorCotangentHom_injective_of_flat R S (maximalIdeal R)
-    simp only [map_sum, map_zero, Ideal.tensorCotangentHom_tmul, ← LinearMap.map_smul_of_tower]
-    rw [← map_sum, Ideal.toCotangent_eq_zero, Submodule.coe_sum]
-    -- Transport the membership along `S ⊗[R] R ≃ S`.
-    let e := (Algebra.TensorProduct.rid R S S).toRingEquiv
-    have he : (e : S ⊗[R] R →+* S).comp Algebra.TensorProduct.includeRight.toRingHom =
-        algebraMap R S := by ext; simp [e, Algebra.smul_def]
-    have hJ : ((maximalIdeal R).map Algebra.TensorProduct.includeRight.toRingHom ^ 2).map e =
-        maximalIdeal S ^ 2 := by
-      rw [Ideal.map_pow, ← h, ← he, ← Ideal.map_map, Ideal.map_coe]
-    rw [← Ideal.apply_mem_of_equiv_iff (f := e), hJ]
-    simp only [Submodule.coe_smul_of_tower, TensorProduct.smul_tmul', smul_eq_mul, mul_one, map_sum]
-    simpa [e, Algebra.smul_def, mul_comm] using hsum
+  have ht := (Ideal.sum_tmul_toCotangent_eq_zero_iff_of_flat (maximalIdeal R) .univ s x).mpr
+    (h ▸ hsum)
   -- Its `i`-th coordinate is the residue of `sᵢ`.
   let φ : CotangentSpace R →ₗ[R] ResidueField S :=
     ((Algebra.linearMap (ResidueField R) (ResidueField S)) ∘ₗ b.coord i).restrictScalars R
-  have := congr(LinearMap.liftBaseChange S φ $ht)
-  simp only [LinearMap.restrictScalars_comp, hx, map_sum, LinearMap.liftBaseChange_tmul,
-    LinearMap.coe_comp, LinearMap.coe_restrictScalars, Function.comp_apply,
-    Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply,
-    Algebra.linearMap_apply, MonoidWithZeroHom.map_ite_one_zero, smul_ite, smul_zero,
-    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, map_zero, φ] at this
-  rwa [← hs, ← ResidueField.algebraMap_eq, ← mul_one (algebraMap _ _ _), ← Algebra.smul_def]
+  rw [← hs]
+  simpa [φ, hx, Finsupp.single_apply, Algebra.smul_def] using
+    congr(LinearMap.liftBaseChange S φ $ht)
 
 end TauCeti.IsLocalRing
