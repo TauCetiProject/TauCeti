@@ -41,6 +41,10 @@ relations of the triangle group.
   by products of reflections.
 * `ConvexPolygon.doubleTriangleSidePairing_cycleLength_zero` and its companions: the lengths of
   the vertex cycles.
+* `ConvexPolygon.doubleTriangleSidePairing_sameCycle_iff`: two vertices of the double lie on the
+  same cycle exactly when they come from the same vertex of `P`.
+* `ConvexPolygon.doubleTriangleSidePairing_cycleMap_ne_one`: the cycle transformation at a finite
+  vertex is not the identity.
 * `ConvexPolygon.doubleTriangleSidePairing_cycleAngleSum_zero` and its companions: the cycle angle
   sums are twice the angles of `P`.
 * `ConvexPolygon.doubleTriangleSidePairing_cycleMap_zero` and its companions: the cycle
@@ -195,6 +199,32 @@ theorem doubleTriangleSidePairing_cycleMap_one :
       geodesicReflectionComp (P.sideGeodesic 0) (P.sideGeodesic 2) *
         geodesicReflectionComp (P.sideGeodesic 1) (P.sideGeodesic 0) := by
   simp [SidePairing.cycleMap_def, SidePairing.partialCycleMap_succ]
+
+/-- The successor along the vertex cycles of the double fixes `P 0` and `P 1` and exchanges the
+mirror image `P 2'` of `P 2` with `P 2`. -/
+theorem doubleTriangleSidePairing_next :
+    (P.doubleTriangleSidePairing h₀ h₁).next = Equiv.swap 1 3 := by
+  ext j
+  fin_cases j <;> simp [Fin.rev, Equiv.swap_apply_of_ne_of_ne]
+
+/-- Two vertices of the double lie on the same cycle exactly when they come from the same vertex
+of `P`: the vertices `P 0`, `P 2'`, `P 1`, `P 2` of the double come from the vertices `0`, `2`,
+`1`, `2` of `P`. -/
+theorem doubleTriangleSidePairing_sameCycle_iff {j k : Fin 4} :
+    (P.doubleTriangleSidePairing h₀ h₁).next.SameCycle j k ↔
+      (![0, 2, 1, 2] : Fin 4 → Fin 3) j = ![0, 2, 1, 2] k := by
+  rw [doubleTriangleSidePairing_next]
+  revert j k
+  decide
+
+/-- At a finite vertex of the double the cycle transformation is not the identity: its cycle angle
+sum is twice an angle of `P`, which is strictly between `0` and `2π`. -/
+theorem doubleTriangleSidePairing_cycleMap_ne_one {j : Fin 4}
+    (hj : ((P.doubleTriangle h₀ h₁).vertex j).isLeft) :
+    (P.doubleTriangleSidePairing h₀ h₁).cycleMap j ≠ 1 := by
+  refine SidePairing.cycleMap_ne_one_of_cycleAngleSum_lt _ hj ?_
+  fin_cases j <;> simp <;> linarith [P.interiorAngle_lt_pi 0, P.interiorAngle_lt_pi 1,
+    P.interiorAngle_lt_pi 2]
 
 /-! ### Orders of the cycle transformations -/
 
