@@ -306,23 +306,6 @@ section Integral
 
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
-/-- For perturbation data that is `C¹` over an open set `U` of the domain, the Hamiltonian vector
-fields `X_{K z}` evaluated along a map continuous on `U` vary continuously on `U`. -/
-theorem continuousOn_hamiltonianVectorField_comp_of_contDiffOn (ω : SymplecticForm V)
-    {K : ℝ × ℝ → V → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContinuousOn u U)
-    (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) :
-    ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) U := by
-  have hmem {z : ℝ × ℝ} (hz : z ∈ U) : (z, u z) ∈ U ×ˢ (univ : Set V) := ⟨hz, mem_univ _⟩
-  have hD : ContinuousOn (fun z ↦ fderiv ℝ (uncurry K) (z, u z)) U :=
-    (hK.continuousOn_fderiv_of_isOpen (hU.prod isOpen_univ) le_rfl).comp
-      (continuousOn_id.prodMk hu) fun _ hz ↦ hmem hz
-  -- The target derivative of `K` along `u` is a restriction of its joint derivative.
-  exact ω.continuousOn_hamiltonianVectorField_comp <|
-    (hD.clm_comp (continuousOn_const (c := ContinuousLinearMap.inr ℝ (ℝ × ℝ) V))).congr
-      fun _ hz ↦ fderiv_slice_right (f := uncurry K) <|
-        (hK.differentiableOn one_ne_zero _ (hmem hz)).differentiableAt
-          ((hU.prod isOpen_univ).mem_nhds (hmem hz))
-
 /-- For a map and perturbation data that are `C¹` over an open set `U` of the domain, the Floer
 energy density is continuous on `U`. -/
 theorem continuousOn_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ)} (hU : IsOpen U)

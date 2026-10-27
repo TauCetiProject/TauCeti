@@ -10,10 +10,11 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 /-!
 # Lebesgue integrals over a strip by exhaustion
 
-The strip `ℝ × T` is exhausted by the increasing rectangles `[-n, n] × T`. If the integral of a
-nonnegative function over `[-n, n] × T` is `F(n) - F(-n)` for a real function `F` with limits `A₁`
-at `-∞` and `A₂` at `∞`, then its integral over the whole strip is `A₂ - A₁`
-(`TauCeti.setLIntegral_univ_prod_eq_ofReal_of_tendsto`).
+The strip `ℝ × T` is exhausted by the increasing rectangles `[-n, n] × T`. If the lower Lebesgue
+integral of an `ℝ≥0∞`-valued function over `[-n, n] × T` is `ENNReal.ofReal (F(n) - F(-n))` for a
+real function `F` with limits `A₁` at `-∞` and `A₂` at `∞`, then its integral over the whole strip
+is `ENNReal.ofReal (A₂ - A₁)` (`TauCeti.setLIntegral_univ_prod_eq_ofReal_of_tendsto`). Since
+`ENNReal.ofReal` truncates at zero, this is `A₂ - A₁` when `A₁ ≤ A₂` and `0` otherwise.
 
 This is the passage from the energy identity on finite rectangles to the energy of a
 holomorphic strip or a Floer cylinder, whose energy is the difference of the limiting actions at
@@ -28,8 +29,9 @@ open MeasureTheory Set Filter Topology
 open scoped ENNReal
 
 /-- **Integrals over a strip by exhaustion.** If the integral of `f` over each rectangle
-`[-n, n] × T` is `F(n) - F(-n)`, where `F` tends to `A₁` at `-∞` and to `A₂` at `∞`, then the
-integral of `f` over the strip `ℝ × T` is `A₂ - A₁`. -/
+`[-n, n] × T` is `ENNReal.ofReal (F(n) - F(-n))`, where `F` tends to `A₁` at `-∞` and to `A₂` at
+`∞`, then the integral of `f` over the strip `ℝ × T` is `ENNReal.ofReal (A₂ - A₁)`, that is
+`A₂ - A₁` truncated at zero. -/
 theorem setLIntegral_univ_prod_eq_ofReal_of_tendsto {β : Type*} [MeasurableSpace β]
     {μ : Measure (ℝ × β)} {T : Set β} {f : ℝ × β → ℝ≥0∞} {F : ℝ → ℝ} {A₁ A₂ : ℝ}
     (hE : ∀ n : ℕ, ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ T, f z ∂μ = ENNReal.ofReal (F n - F (-n)))
