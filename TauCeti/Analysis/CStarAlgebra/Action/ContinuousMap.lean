@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
+public import TauCeti.Analysis.Complex.Circle
 public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
-public import Mathlib.Analysis.Complex.Circle
 
 /-!
 # Translation actions on algebras of continuous functions
@@ -21,9 +21,9 @@ map `(g, x) ↦ f (g⁻¹ • x)`, since the norm topology on `C(X, ℂ)` is the
 The *rotation action* `rotation` of the real line on `C(S¹, ℂ)` is the translation action of
 the circle group pulled back along `t ↦ exp (i t)`, `Circle.expContinuousMonoidHom`, so that
 `rotation t f z = f (exp (-i t) z)`. It is the basic example of a C⋆-dynamical system on a
-commutative algebra. The coordinate function `Circle.coordinate`, `u(z) = z`, is a unitary of
-`C(S¹, ℂ)` and an eigenvector of the rotation action, `α_t(u) = exp (-i t) u`,
-`rotation_coordinate`.
+commutative algebra. The coordinate function `Circle.coordinate`, `u(z) = z`, a unitary of
+`C(S¹, ℂ)` by `Circle.coordinate_mem_unitary`, is an eigenvector of the rotation action,
+`α_t(u) = exp (-i t) u`, `rotation_coordinate`.
 
 ## References
 
@@ -62,38 +62,6 @@ theorem ofMulAction_apply_apply (g : G) (f : C(X, ℂ)) (x : X) :
   (rfl)
 
 end TauCeti.CStarAction
-
-namespace Circle
-
-/-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
-from `Multiplicative ℝ`. -/
-def expContinuousMonoidHom : ContinuousMonoidHom (Multiplicative ℝ) Circle where
-  toFun t := Circle.exp t.toAdd
-  map_one' := Circle.exp_zero
-  map_mul' _ _ := Circle.exp_add _ _
-  continuous_toFun := Circle.exp.continuous.comp continuous_toAdd
-
-@[simp]
-theorem expContinuousMonoidHom_apply (t : Multiplicative ℝ) :
-    expContinuousMonoidHom t = Circle.exp t.toAdd :=
-  (rfl)
-
-/-- The coordinate function `z ↦ z` on the circle. -/
-def coordinate : C(Circle, ℂ) :=
-  ⟨(↑), by fun_prop⟩
-
-@[simp]
-theorem coordinate_apply (z : Circle) : coordinate z = z :=
-  (rfl)
-
-theorem star_coordinate_mul : star coordinate * coordinate = 1 := by
-  ext z
-  simp [Complex.conj_mul']
-
-theorem coordinate_mul_star : coordinate * star coordinate = 1 := by
-  rw [mul_comm, star_coordinate_mul]
-
-end Circle
 
 namespace TauCeti.CStarAction
 

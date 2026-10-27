@@ -68,9 +68,11 @@ theorem isKMSState_rotation_iff {β : ℝ} {ω : C(Circle, ℂ) →P[ℂ] ℂ} :
     rw [← PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one, hω.norm_eq_one, ofReal_one]
   have key := hω.apply_mul_entireExtension_mul_I (star coordinate)
     (isEntireAnalytic_of_apply_eq_exp_smul rotation_coordinate)
-  rw [entireExtension_eq_exp_smul rotation_coordinate, mul_smul_comm, star_coordinate_mul,
-    coordinate_mul_star, map_smul, hω1, smul_eq_mul, mul_one] at key
-  -- `key : exp (-i (iβ)) = 1`, and `-i (iβ) = β`
+  rw [entireExtension_eq_exp_smul rotation_coordinate] at key
+  -- `u⋆ u = u u⋆ = 1` and `ω 1 = 1` reduce `key` to `exp (-i (iβ)) = 1`
+  simp only [mul_smul_comm, star_coordinate_mul, coordinate_mul_star, map_smul, hω1,
+    smul_eq_mul, mul_one] at key
+  -- `-i (iβ) = β`
   have hexp : (Real.exp β : ℂ) = 1 := by
     rwa [show -I * (β * I) = β by linear_combination (-(β : ℂ)) * I_sq, ← ofReal_exp] at key
   exact Real.exp_eq_one_iff β |>.mp (mod_cast hexp)
