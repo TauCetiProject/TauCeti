@@ -143,7 +143,7 @@ theorem grade_one_eq_span_reesParameter_reesGenerator :
     (Submodule.subset_span (Or.inr ⟨x, rfl⟩))
 
 /-- The parameter and the linear Rees generators generate the PBW Rees algebra over `R`. -/
-theorem adjoin_reesParameter_reesGenerator :
+theorem adjoin_reesParameter_union_range_reesGenerator :
     Algebra.adjoin R ({reesParameter R L} ∪ Set.range (reesGenerator R L)) = ⊤ := by
   have hgen : Algebra.adjoin R (coeffSubalgebra.grade (pbwFiltration R L) 1 :
       Set (reesAlgebra R L)) = ⊤ := by
@@ -159,7 +159,7 @@ theorem adjoin_reesParameter_reesGenerator :
   exact fun _ hp ↦ hspan (grade_one_eq_span_reesParameter_reesGenerator R L ▸ hp)
 
 /-- Over the parameter ring, the linear Rees generators alone generate the Rees algebra. -/
-theorem adjoin_reesGenerator :
+theorem adjoin_range_reesGenerator :
     Algebra.adjoin R[X] (Set.range (reesGenerator R L)) = ⊤ := by
   have hle : Algebra.adjoin R ({reesParameter R L} ∪ Set.range (reesGenerator R L)) ≤
       (Algebra.adjoin R[X] (Set.range (reesGenerator R L))).restrictScalars R := by
@@ -168,7 +168,7 @@ theorem adjoin_reesGenerator :
     · obtain rfl := Set.mem_singleton_iff.mp ha
       simpa using (Algebra.adjoin R[X] (Set.range (reesGenerator R L))).algebraMap_mem X
     · exact Algebra.subset_adjoin ha
-  rw [adjoin_reesParameter_reesGenerator] at hle
+  rw [adjoin_reesParameter_union_range_reesGenerator] at hle
   exact top_unique hle
 
 end TauCeti.UniversalEnvelopingAlgebra
