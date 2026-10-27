@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.FittingIdeal.BaseChange
 public import TauCeti.RingTheory.FittingIdeal.LocalRing
 public import TauCeti.RingTheory.Kaehler.Conormal
 public import Mathlib.RingTheory.Etale.Field
-public import Mathlib.RingTheory.Unramified.LocalRing
+public import TauCeti.RingTheory.Unramified.LocalRing
 public import Mathlib.RingTheory.Ideal.Cotangent
 
 /-!
@@ -20,7 +20,8 @@ Let `A` be a local algebra, essentially of finite type over a field `K`, and let
 singular locus; the scheme-theoretic criterion for a nodal curve asks that `A ⧸ I` be unramified
 over `K`. If the closed point is singular, that is `I ≠ A`, then:
 
-* `I = 𝔪`: an unramified local `K`-algebra is a field, so the singular locus is reduced;
+* `I = 𝔪`: an unramified local `K`-algebra is a field, so the singular locus is reduced
+  (`Ideal.eq_maximalIdeal_of_formallyUnramified_quotient`);
 * `dim_κ κ ⊗[A] Ω[A⁄K] = 2`: it is at least two because the point is singular, and at most two
   because `Fitt₁(Ω[A⁄K]) ≤ 𝔪 ^ (dim_κ κ ⊗[A] Ω[A⁄K] - 1)`, while `𝔪 ≤ 𝔪²` would force `𝔪 = 0`
   by Nakayama's lemma, and then `Ω[A⁄K] = 0`;
@@ -37,8 +38,6 @@ two. This is the form used for nodal curves.
 
 ## Main results
 
-* `Ideal.eq_maximalIdeal_of_formallyUnramified_quotient`: a proper ideal `I` of `A` with `A ⧸ I`
-  unramified over `K` is `𝔪`; in particular `Fitt₁(Ω[A⁄K]) = 𝔪`.
 * `TauCeti.finrank_residueField_tensor_kaehlerDifferential_eq_two`: `dim_κ κ ⊗[A] Ω[A⁄K] = 2`.
 * `TauCeti.finrank_cotangentSpace_eq_two`: `dim_κ 𝔪/𝔪² = 2`.
 * `TauCeti.finrank_tensor_kaehlerDifferential_eq_two`: for `A` not necessarily local, the fibre of
@@ -64,22 +63,6 @@ section LocalRing
 
 variable {K A : Type*} [Field K] [CommRing A] [Algebra K A] [IsLocalRing A]
   [Algebra.EssFiniteType K A]
-
-variable (K) in
-/-- **An unramified quotient of a local algebra is its residue field.** A proper ideal of the
-local `K`-algebra `A` whose quotient is unramified over `K` is the maximal ideal. Applied to
-`Fitt₁(Ω[A⁄K])`, this says that the singular locus at a node is reduced. -/
-theorem _root_.Ideal.eq_maximalIdeal_of_formallyUnramified_quotient {I : Ideal A}
-    [Algebra.FormallyUnramified K (A ⧸ I)] (h : I ≠ ⊤) : I = maximalIdeal A := by
-  have : Nontrivial (A ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr h
-  have : IsLocalRing (A ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
-  -- An unramified local algebra over a field is a field.
-  have hB : maximalIdeal (A ⧸ I) = ⊥ := by
-    rw [← Algebra.FormallyUnramified.map_maximalIdeal (R := K),
-      IsLocalRing.maximalIdeal_eq_bot, Ideal.map_bot]
-  have hmax : (maximalIdeal (A ⧸ I)).comap (Ideal.Quotient.mk I) = maximalIdeal A :=
-    IsLocalRing.eq_maximalIdeal (Ideal.comap_isMaximal_of_surjective _ Ideal.Quotient.mk_surjective)
-  rw [← hmax, hB, ← RingHom.ker_eq_comap_bot, Ideal.mk_ker]
 
 variable [Algebra.FormallyUnramified K (A ⧸ fittingIdeal A Ω[A⁄K] 1)]
 
@@ -117,11 +100,12 @@ proper ideal of the local `K`-algebra `A` with unramified quotient, the Zariski 
 theorem finrank_cotangentSpace_eq_two (h : fittingIdeal A Ω[A⁄K] 1 ≠ ⊤) :
     finrank (ResidueField A) (CotangentSpace A) = 2 := by
   have hI := Ideal.eq_maximalIdeal_of_formallyUnramified_quotient K h
-  -- The residue field is the unramified quotient `A ⧸ Fitt₁(Ω[A⁄K])`, so it is étale over `K`.
+  -- The residue field is a quotient of the unramified `A ⧸ Fitt₁(Ω[A⁄K])`, so it is étale over `K`.
   have : Algebra.FormallyUnramified K (ResidueField A) :=
-    .of_equiv (Ideal.quotientEquivAlgOfEq K hI)
-  have : Algebra.EssFiniteType K (ResidueField A) :=
-    inferInstanceAs (Algebra.EssFiniteType K (A ⧸ maximalIdeal A))
+    .of_surjective (Ideal.Quotient.liftₐ _ (IsScalarTower.toAlgHom K A (ResidueField A))
+      fun a ha ↦ (residue_eq_zero_iff a).2 (hI ▸ ha))
+      (Ideal.Quotient.lift_surjective_of_surjective _ _ residue_surjective)
+  have : Algebra.EssFiniteType K (ResidueField A) := .comp K A (ResidueField A)
   have : Algebra.IsSeparable K (ResidueField A) := Algebra.FormallyUnramified.isSeparable K _
   have : Algebra.FormallyEtale K (ResidueField A) := .of_isSeparable K _
   -- The conormal map `𝔪/𝔪² → κ ⊗[A] Ω[A⁄K]` is then a bijection.
