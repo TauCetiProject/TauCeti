@@ -103,7 +103,7 @@ theorem isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalI
     exact Ideal.Quotient.nontrivial_iff.mp inferInstance (span_singleton_eq_top.mpr hu)
   have hfm : ι (X 0 * X 1 - C π ^ n) ∈ maximalIdeal B := by
     rw [← C_pow]
-    exact algebraMap_X_mul_X_sub_C_pow_mem_maximalIdeal hπ hn.ne'
+    exact algebraMap_X_mul_X_sub_C_mem_maximalIdeal (pow_mem_of_mem _ hπ n hn)
   have hf0 : ι (X 0 * X 1 - C π ^ n) ≠ 0 := by
     rw [Ne, IsLocalization.to_map_eq_zero_iff B (primeCompl_le_nonZeroDivisors 𝔪)]
     intro h
@@ -117,7 +117,8 @@ theorem isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalI
     by_contra hn1
     refine h ?_
     rw [← C_pow]
-    exact algebraMap_X_mul_X_sub_C_pow_mem_maximalIdeal_sq hπ (by omega)
+    exact algebraMap_X_mul_X_sub_C_mem_maximalIdeal_sq
+      (pow_le_pow_right (by omega) (pow_mem_pow hπ n))
   · -- for `n = 1` the constant coefficient `-π` of the equation does not lie in `𝔪_R²`
     rintro rfl
     exact algebraMap_notMem_maximalIdeal_sq (by simpa using hπ2)
@@ -134,16 +135,17 @@ theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
         (NodeAlgebra.mk (π ^ n)))) ↔ n = 1 := by
   rw [← isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff
-    (mem_maximalIdeal_of_isPrime_map_quotient_X_mul_X_sub_C_pow n) hπ2 n, ← C_pow]
+    ((maximalIdeal.isMaximal R).isPrime.mem_of_pow_mem n
+      mem_maximalIdeal_of_isPrime_map_quotient_X_mul_X_sub_C) hπ2 n, ← C_pow]
   constructor
   · intro h
-    exact .of_ringEquiv (localizationQuotientXMulXSubCPowEquiv π n)
+    exact .of_ringEquiv (localizationQuotientXMulXSubCEquiv (π ^ n))
   · intro h
     let B := Localization.AtPrime
       ((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R))
     exact .of_ringEquiv
       (R := B ⧸ span {algebraMap (MvPolynomial (Fin 2) R) B (X 0 * X 1 - C (π ^ n))})
-      (localizationQuotientXMulXSubCPowEquiv π n).symm
+      (localizationQuotientXMulXSubCEquiv (π ^ n)).symm
 
 end IsRegularRing
 
