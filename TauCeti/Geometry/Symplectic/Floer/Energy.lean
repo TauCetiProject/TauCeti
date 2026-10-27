@@ -137,6 +137,12 @@ theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → 
   simp [stdComplexLineReal]
   ring
 
+omit [FiniteDimensional ℝ V] in
+/-- The cylindrical perturbation `K = H_t dt` of a `Cⁿ` time-dependent Hamiltonian is `Cⁿ`. -/
+theorem contDiff_uncurry_cylindrical {n : WithTop ℕ∞} {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ n (uncurry H)) : ContDiff ℝ n (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
+  hH.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
+
 end Curvature
 
 section Differential
