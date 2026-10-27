@@ -204,10 +204,10 @@ theorem qExpansionAt_mul {k₁ k₂ : ℤ} (γ : SL(2, ℤ)) (f : ModularForm Γ
 `q`-expansion at the cusp: the conjugated subgroups and the translates both agree. -/
 theorem qExpansionAt_mul_left {h : SL(2, ℤ)} (hh : mapGL ℝ h ∈ Γ) (γ : SL(2, ℤ))
     (f : ModularForm Γ k) : qExpansionAt (h * γ) f = qExpansionAt γ f := by
-  rw [qExpansionAt_apply, qExpansionAt_apply, coe_translate, coe_translate, map_mul,
-    SlashAction.slash_mul, SlashInvariantFormClass.slash_action_eq f _ hh, _root_.mul_inv_rev,
-    map_mul, mul_smul,
-    Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer (Γ.inv_mem hh))]
+  have hΓ : ConjAct.toConjAct (mapGL ℝ h)⁻¹ • Γ = Γ :=
+    Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer (Γ.inv_mem hh))
+  simp only [qExpansionAt_apply, coe_translate, map_mul, SlashAction.slash_mul,
+    SlashInvariantFormClass.slash_action_eq f _ hh, _root_.mul_inv_rev, mul_smul, hΓ]
 
 /-- Negating the representative multiplies the `q`-expansion at the cusp by `(-1)^k`. -/
 theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
@@ -215,12 +215,11 @@ theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
   let Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ
   have hneg : mapGL ℝ (-γ) = mapGL ℝ γ * (-1) := by
     rw [← mapGL_neg_one (R := ℤ), ← map_mul, mul_neg_one]
-  have hcentral :
-      (-1 : GL (Fin 2) ℝ)⁻¹ ∈ Subgroup.normalizer (Γγ : Set (GL (Fin 2) ℝ)) :=
-    Subgroup.mem_normalizer_iff.mpr fun x ↦ by simp
-  rw [qExpansionAt_apply, qExpansionAt_apply, coe_translate, coe_translate, hneg,
-    SlashAction.slash_mul, ModularForm.slash_neg_one, _root_.mul_inv_rev, map_mul, mul_smul,
-    Subgroup.conjAct_pointwise_smul_eq_self hcentral]
+  have hΓ : ConjAct.toConjAct (-1 : GL (Fin 2) ℝ)⁻¹ • ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ =
+      Γγ :=
+    Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.mem_normalizer_iff.mpr fun x ↦ by simp)
+  simp only [qExpansionAt_apply, coe_translate, hneg, SlashAction.slash_mul,
+    ModularForm.slash_neg_one, _root_.mul_inv_rev, map_mul, mul_smul, hΓ]
   exact qExpansion_smul (ModularFormClass.analyticAt_cuspFunction_zero
     (translate f (mapGL ℝ γ)) (Γγ.strictWidthInfty_pos_iff.mpr Fact.out)
     Γγ.strictWidthInfty_mem_strictPeriods) _
@@ -340,9 +339,8 @@ theorem qExpansionAt_diamondOp {N : ℕ} [NeZero N] (k : ℤ) (d : (ZMod N)ˣ)
     (hg : (CongruenceSubgroup.Gamma0Map N).toHomUnits g = d) (γ : SL(2, ℤ))
     (f : ModularForm ((CongruenceSubgroup.Gamma1 N).map (mapGL ℝ)) k) :
     qExpansionAt γ (diamondOp k d f) = qExpansionAt ((g : SL(2, ℤ)) * γ) f := by
-  rw [qExpansionAt_apply, qExpansionAt_apply, coe_translate, coe_translate,
-    coe_diamondOp k d g hg, map_mul, CongruenceSubgroup.conjAct_mapGL_mul_smul_Gamma1 g.2,
-    SlashAction.slash_mul]
+  simp only [qExpansionAt_apply, coe_translate, coe_diamondOp k d g hg, map_mul,
+    CongruenceSubgroup.conjAct_mapGL_mul_smul_Gamma1 g.2, SlashAction.slash_mul]
 
 /-- Applying a diamond operator to a modular form acts on its cusp constant terms by left
 multiplication of the cusp representative. The representative `g ∈ Γ₀(N)` may be any lift
