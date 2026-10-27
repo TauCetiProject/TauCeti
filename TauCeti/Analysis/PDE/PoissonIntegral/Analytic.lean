@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.PoissonIntegral.Ball
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
-import TauCeti.Analysis.Complex.ParametricIntegral
+import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
 # Analyticity of the Poisson integral of the unit ball
