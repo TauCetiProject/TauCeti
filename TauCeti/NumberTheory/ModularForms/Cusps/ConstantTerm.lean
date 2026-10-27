@@ -41,8 +41,10 @@ Eisenstein series through their constant terms.
 
 ## Main definitions
 
+* `ModularForm.qExpansionAt`: the `q`-expansion at the cusp represented by an element of
+  `SL₂(ℤ)`, as a linear map to power series.
 * `ModularForm.constantTermAt`: the constant-term functional attached to an element of
-  `SL₂(ℤ)`.
+  `SL₂(ℤ)`, the constant coefficient of `ModularForm.qExpansionAt`.
 * `ModularForm.constantTerms`: all constant terms at once, as a linear map to `SL₂(ℤ) → ℂ`.
 * `TauCeti.constantTermsAtDivisors`: constant terms at the divisor representatives `1/d`
   of `Γ₀(N)`, available at every nonzero level.
@@ -51,6 +53,9 @@ Eisenstein series through their constant terms.
 
 ## Main results
 
+* `ModularForm.qExpansionAt_mul`: the `q`-expansion at a cusp is multiplicative.
+* `ModularForm.qExpansionAt_diamondOp`: diamond operators act on the `q`-expansions at the
+  cusps by left multiplication of cusp representatives.
 * `ModularForm.tendsto_translate_constantTermAt`: `f ∣ γ` tends to the constant term at `i∞`.
 * `ModularForm.constantTermAt_mul_left`, `ModularForm.constantTermAt_mul_T_zpow`,
   `ModularForm.constantTermAt_neg`, `ModularForm.constantTermAt_mul_of_c_eq_zero`: the
@@ -156,16 +161,52 @@ private local instance isArithmeticConjMapGL [Γ.IsArithmetic] (γ : SL(2, ℤ))
 
 variable [Γ.HasDetOne] [Γ.IsArithmetic]
 
+/-- The `q`-expansion of `f` at the cusp represented by `γ ∈ SL₂(ℤ)`, as a linear map.
+
+It is the `q`-expansion of the translate `f ∣ γ`, in the canonical strict width at infinity of
+the conjugated arithmetic subgroup. -/
+def qExpansionAt (γ : SL(2, ℤ)) : ModularForm Γ k →ₗ[ℂ] PowerSeries ℂ :=
+  let Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ
+  (TauCeti.ModularForm.qExpansionLinearMap
+      (Γγ.strictWidthInfty_pos_iff.mpr Fact.out) Γγ.strictWidthInfty_mem_strictPeriods k).comp
+    (translateₗ (mapGL ℝ γ) (by simp))
+
+/-- The `q`-expansion at the cusp represented by `γ` is the `q`-expansion of the translate. -/
+lemma qExpansionAt_apply (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
+    qExpansionAt γ f =
+      qExpansion (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).strictWidthInfty
+        (translate f (mapGL ℝ γ)) := by
+  rw [qExpansionAt, LinearMap.comp_apply, TauCeti.ModularForm.qExpansionLinearMap_apply,
+    translateₗ_apply]
+
+/-- At the identity representative, the `q`-expansion at the cusp is the `q`-expansion at `∞`. -/
+lemma qExpansionAt_one (f : ModularForm Γ k) :
+    qExpansionAt 1 f = qExpansion Γ.strictWidthInfty f := by
+  rw [qExpansionAt_apply, coe_translate, map_one, inv_one, map_one, one_smul, SlashAction.slash_one]
+
+/-- The `q`-expansion at a cusp is multiplicative: the expansion of a product of forms of
+weights `k₁` and `k₂` is the product of their expansions. -/
+theorem qExpansionAt_mul {k₁ k₂ : ℤ} (γ : SL(2, ℤ)) (f : ModularForm Γ k₁)
+    (g : ModularForm Γ k₂) : qExpansionAt γ (f.mul g) = qExpansionAt γ f * qExpansionAt γ g := by
+  let Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ
+  have hprod : ⇑(translate (f.mul g) (mapGL ℝ γ)) =
+      ⇑(translate f (mapGL ℝ γ)) * ⇑(translate g (mapGL ℝ γ)) := by
+    rw [coe_translate, coe_translate, coe_translate, coe_mul, mul_slash, det_mapGL, Units.val_one,
+      abs_one, one_smul]
+  rw [qExpansionAt_apply, qExpansionAt_apply, qExpansionAt_apply, hprod]
+  exact ModularForm.qExpansion_mul_coe (Γγ.strictWidthInfty_pos_iff.mpr Fact.out)
+    Γγ.strictWidthInfty_mem_strictPeriods _ _
+
 /-- The constant term of `f` at the cusp represented by `γ ∈ SL₂(ℤ)`, as a linear functional.
 
-It is the constant coefficient after translating by `γ`.  The q-expansion uses the canonical
-strict width at infinity of the conjugated arithmetic subgroup. -/
+It is the constant coefficient of the `q`-expansion at that cusp. -/
 def constantTermAt (γ : SL(2, ℤ)) : ModularForm Γ k →ₗ[ℂ] ℂ :=
-  let Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ
-  (PowerSeries.coeff 0).comp
-    ((TauCeti.ModularForm.qExpansionLinearMap
-      (Γγ.strictWidthInfty_pos_iff.mpr Fact.out) Γγ.strictWidthInfty_mem_strictPeriods k).comp
-      (translateₗ (mapGL ℝ γ) (by simp)))
+  (PowerSeries.coeff 0).comp (qExpansionAt γ)
+
+/-- The constant term at `γ` is the constant coefficient of the `q`-expansion at `γ`. -/
+lemma constantTermAt_eq_coeff_zero_qExpansionAt (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
+    constantTermAt γ f = (qExpansionAt γ f).coeff 0 := by
+  rw [constantTermAt, LinearMap.comp_apply]
 
 /-- The constant-term functional evaluates to the constant coefficient of the translated
 q-expansion. -/
@@ -174,8 +215,7 @@ lemma constantTermAt_apply (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     constantTermAt γ f =
       (qExpansion (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).strictWidthInfty
         (translate f (mapGL ℝ γ))).coeff 0 := by
-  rw [constantTermAt, LinearMap.comp_apply, LinearMap.comp_apply,
-    TauCeti.ModularForm.qExpansionLinearMap_apply, translateₗ_apply]
+  rw [constantTermAt_eq_coeff_zero_qExpansionAt, qExpansionAt_apply]
 
 /-- The constant term is the value at infinity of the translated modular form. -/
 lemma constantTermAt_eq_valueAtInfty (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
@@ -269,6 +309,18 @@ lemma constantTerms_apply (f : ModularForm Γ k) (γ : SL(2, ℤ)) :
     constantTerms f γ = constantTermAt γ f := by
   rw [constantTerms, LinearMap.pi_apply]
 
+/-- Applying a diamond operator to a modular form acts on its cusp `q`-expansions by left
+multiplication of the cusp representative. The representative `g ∈ Γ₀(N)` may be any lift
+of the unit indexing the diamond operator. -/
+theorem qExpansionAt_diamondOp {N : ℕ} [NeZero N] (k : ℤ) (d : (ZMod N)ˣ)
+    (g : ↥(CongruenceSubgroup.Gamma0 N))
+    (hg : (CongruenceSubgroup.Gamma0Map N).toHomUnits g = d) (γ : SL(2, ℤ))
+    (f : ModularForm ((CongruenceSubgroup.Gamma1 N).map (mapGL ℝ)) k) :
+    qExpansionAt γ (diamondOp k d f) = qExpansionAt ((g : SL(2, ℤ)) * γ) f := by
+  rw [qExpansionAt_apply, qExpansionAt_apply, coe_translate, coe_translate,
+    coe_diamondOp k d g hg, map_mul, CongruenceSubgroup.conjAct_mapGL_mul_smul_Gamma1 g.2,
+    SlashAction.slash_mul]
+
 /-- Applying a diamond operator to a modular form acts on its cusp constant terms by left
 multiplication of the cusp representative. The representative `g ∈ Γ₀(N)` may be any lift
 of the unit indexing the diamond operator. -/
@@ -278,8 +330,8 @@ theorem constantTermAt_diamondOp {N : ℕ} [NeZero N] (k : ℤ) (d : (ZMod N)ˣ)
     (f : ModularForm ((CongruenceSubgroup.Gamma1 N).map (mapGL ℝ)) k) :
     constantTermAt γ (diamondOp k d f) =
       constantTermAt ((g : SL(2, ℤ)) * γ) f := by
-  rw [constantTermAt_eq_valueAtInfty, constantTermAt_eq_valueAtInfty, coe_translate,
-    coe_translate, coe_diamondOp k d g hg, map_mul, SlashAction.slash_mul]
+  rw [constantTermAt_eq_coeff_zero_qExpansionAt, constantTermAt_eq_coeff_zero_qExpansionAt,
+    qExpansionAt_diamondOp k d g hg]
 
 /-- The subspace of functions on cusp representatives that transform with nebentypus `chi`
 under left multiplication by `Γ₀(N)`. This is the natural codomain for the constant terms of
