@@ -10,10 +10,12 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock
 -- Private: the involution eigenspaces, orthonormal-basis orthogonality, the parity of the
--- dimension and the half-spin dimensions are used only inside proofs.
+-- dimension, list products of endomorphisms and the half-spin dimensions are used only inside
+-- proofs.
 import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
+import TauCeti.LinearAlgebra.End.Basic
 import TauCeti.RepresentationTheory.Spin.Dimension
 
 /-!
@@ -86,17 +88,6 @@ namespace TauCeti.AlmostComplexStructure
 open CliffordAlgebra Module
 open scoped RealInnerProductSpace TensorProduct
 
-/-- A product of endomorphisms each of which acts on `s` by the scalar `z` acts on `s` by
-`z ^ l.length`. -/
-private theorem list_prod_apply_of_forall {M : Type*} [AddCommGroup M] [Module ℂ M]
-    {l : List (Module.End ℂ M)} {z : ℂ} {s : M} (h : ∀ a ∈ l, a s = z • s) :
-    l.prod s = z ^ l.length • s := by
-  induction l with
-  | nil => simp
-  | cons a l ih =>
-    rw [List.prod_cons, Module.End.mul_apply, ih fun a ha ↦ h a (List.mem_cons_of_mem _ ha),
-      map_smul, h a List.mem_cons_self, smul_smul, List.length_cons, pow_succ]
-
 /-! ### The normalized complex volume element in every even dimension -/
 
 section ComplexVolume
@@ -133,27 +124,19 @@ theorem fockAction_complexVolume_apply_one (b : OrthonormalBasis (Fin n) ℝ V)
     (hb : b.toBasis.orientation = o)
     (hbJ : ∀ (k : ℕ) (hk : 2 * k + 1 < n), b ⟨2 * k + 1, hk⟩ = J (b ⟨2 * k, by omega⟩)) :
     J.fockAction hQJ hQnd (complexVolume Q o) 1 = 1 := by
-  obtain ⟨ℓ, rfl⟩ : ∃ ℓ, n = ℓ * 2 := by
+  obtain ⟨ℓ, rfl⟩ : ∃ ℓ, n = 2 * ℓ := by
     obtain ⟨ℓ, hℓ⟩ := even_of_almostComplexStructure (n := n) J
     exact ⟨ℓ, by omega⟩
-  have hQb (i : Fin (ℓ * 2)) : Q (b i) = -1 := by rw [hQ, b.orthonormal.1 i]; norm_num
-  -- Group `c(e₁) ⋯ c(e₂ℓ)` into the `ℓ` pairs `c(u) c(J u)`, each acting on the vacuum by `-i`.
-  rw [complexVolume_eq o b hb (b.isOrthoᵢ_associated hQ), List.map_map, ← List.ofFn_eq_map,
-    List.ofFn_mul, List.prod_flatten, List.map_ofFn, map_smul, map_list_prod,
-    LinearMap.smul_apply, list_prod_apply_of_forall (z := -Complex.I)]
-  · simp only [List.length_map, List.length_ofFn, smul_smul, ← mul_pow,
-      show (ℓ * 2 + 1) / 2 = ℓ by omega]
+  have hQb (i : Fin (2 * ℓ)) : Q (b i) = -1 := by rw [hQ, b.orthonormal.1 i]; norm_num
+  -- `Γ` is `i ^ ℓ` times the `ℓ` pairs `c(u) c(J u)`, each acting on the vacuum by `-i`.
+  rw [complexVolume_eq_prod_pairs b hb (b.isOrthoᵢ_associated hQ), map_smul, map_list_prod,
+    LinearMap.smul_apply, Module.End.list_prod_apply_eq_pow_smul (z := -Complex.I)]
+  · simp [smul_smul, ← mul_pow]
+  · simp only [List.mem_map, List.mem_ofFn, forall_exists_index, and_imp]
+    rintro _ _ k rfl rfl
+    rw [hbJ k (by omega), map_mul, ← realFockAction_ι, ← realFockAction_ι, ← map_mul,
+      realFockAction_ι_mul_ι_apply_apply_one, hQb]
     simp
-  · intro a ha
-    obtain ⟨x, hx, rfl⟩ := List.mem_map.1 ha
-    obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hx
-    have key : J.fockAction hQJ hQnd (ι (Q.baseChange ℂ) (1 ⊗ₜ b ⟨2 * i, by omega⟩) *
-        ι (Q.baseChange ℂ) (1 ⊗ₜ b ⟨2 * i + 1, by omega⟩)) 1 = -Complex.I • 1 := by
-      rw [hbJ i (by omega), map_mul, ← realFockAction_ι, ← realFockAction_ι, ← map_mul,
-        realFockAction_ι_mul_ι_apply_apply_one, hQb]
-      simp
-    convert key using 6
-    simp [List.ofFn_succ, mul_comm]
 
 include hQ in
 /-- **`Γ` is exterior parity on the Fock module.** If the orientation of `V` is induced by `J`, in
@@ -195,24 +178,6 @@ theorem eigenspace_fockAction_complexVolume_neg_one (b : OrthonormalBasis (Fin n
   rw [Module.End.mem_eigenspace_iff, J.fockAction_complexVolume hQ hQJ hQnd b hb hbJ,
     AlgHom.toLinearMap_apply, neg_one_smul, involute_eq_neg_iff, mem_spinMinus]
 
-/-- The isotropic summand `W` of a complex structure on a space of dimension `n` has complex
-dimension `n / 2`. -/
-private theorem finrank_spinPolarizationData_W :
-    finrank ℂ (J.spinPolarizationData hQJ hQnd).W = n / 2 := by
-  obtain ⟨ℓ, hℓ⟩ := even_of_almostComplexStructure (n := n) J
-  refine ((J.spinPolarizationData hQJ hQnd).finrank_W_eq_of_finrank_eq_two_mul
-    (l := ℓ) ?_).trans (by omega)
-  rw [finrank_baseChange, Fact.out (p := finrank ℝ V = n)]
-  omega
-
-private theorem spinPolarizationData_W_ne_bot (hn : n ≠ 0) :
-    (J.spinPolarizationData hQJ hQnd).W ≠ ⊥ := by
-  intro h
-  have h₂ := finrank_spinPolarizationData_W (n := n) J hQJ hQnd
-  rw [h, finrank_bot] at h₂
-  have := even_of_almostComplexStructure (n := n) J
-  grind
-
 include hQ in
 /-- In positive dimension `n` the positive half-spinors of the Fock module have complex dimension
 `2 ^ (n / 2 - 1)`. -/
@@ -221,9 +186,11 @@ theorem finrank_eigenspace_fockAction_complexVolume_one (hn : n ≠ 0)
     (hbJ : ∀ (k : ℕ) (hk : 2 * k + 1 < n), b ⟨2 * k + 1, hk⟩ = J (b ⟨2 * k, by omega⟩)) :
     finrank ℂ (Module.End.eigenspace (J.fockAction hQJ hQnd (complexVolume Q o)) 1) =
       2 ^ (n / 2 - 1) := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by
+    rw [Fact.out (p := finrank ℝ V = n)]; omega)
   rw [J.eigenspace_fockAction_complexVolume_one hQ hQJ hQnd b hb hbJ,
-    finrank_spinPlus _ (J.spinPolarizationData_W_ne_bot hQJ hQnd hn),
-    finrank_spinPolarizationData_W (n := n) J hQJ hQnd]
+    finrank_spinPlus _ (J.spinPolarizationData_W_ne_bot hQJ hQnd),
+    J.finrank_spinPolarizationData_W hQJ hQnd, Fact.out (p := finrank ℝ V = n)]
 
 include hQ in
 /-- In positive dimension `n` the negative half-spinors of the Fock module have complex dimension
@@ -233,9 +200,11 @@ theorem finrank_eigenspace_fockAction_complexVolume_neg_one (hn : n ≠ 0)
     (hbJ : ∀ (k : ℕ) (hk : 2 * k + 1 < n), b ⟨2 * k + 1, hk⟩ = J (b ⟨2 * k, by omega⟩)) :
     finrank ℂ (Module.End.eigenspace (J.fockAction hQJ hQnd (complexVolume Q o)) (-1)) =
       2 ^ (n / 2 - 1) := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by
+    rw [Fact.out (p := finrank ℝ V = n)]; omega)
   rw [J.eigenspace_fockAction_complexVolume_neg_one hQ hQJ hQnd b hb hbJ,
-    finrank_spinMinus _ (J.spinPolarizationData_W_ne_bot hQJ hQnd hn),
-    finrank_spinPolarizationData_W (n := n) J hQJ hQnd]
+    finrank_spinMinus _ (J.spinPolarizationData_W_ne_bot hQJ hQnd),
+    J.finrank_spinPolarizationData_W hQJ hQnd, Fact.out (p := finrank ℝ V = n)]
 
 end ComplexVolume
 
@@ -290,9 +259,10 @@ include hQ in
 theorem finrank_positiveHalfSpinors_realFockAction (b : OrthonormalBasis (Fin 4) ℝ V)
     (hb : b.toBasis.orientation = o) (hb₁ : b 1 = J (b 0)) (hb₃ : b 3 = J (b 2)) :
     finrank ℂ (positiveHalfSpinors o (J.realFockAction hQJ hQnd)) = 2 := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
   rw [J.positiveHalfSpinors_realFockAction hQ hQJ hQnd b hb hb₁ hb₃,
-    finrank_spinPlus _ (spinPolarizationData_W_ne_bot J hQJ hQnd four_ne_zero),
-    finrank_spinPolarizationData_W (n := 4) J hQJ hQnd]
+    finrank_spinPlus _ (J.spinPolarizationData_W_ne_bot hQJ hQnd),
+    J.finrank_spinPolarizationData_W hQJ hQnd, Fact.out (p := finrank ℝ V = 4)]
   norm_num
 
 include hQ in
@@ -300,9 +270,10 @@ include hQ in
 theorem finrank_eigenspace_realFockAction_chirality_neg_one (b : OrthonormalBasis (Fin 4) ℝ V)
     (hb : b.toBasis.orientation = o) (hb₁ : b 1 = J (b 0)) (hb₃ : b 3 = J (b 2)) :
     finrank ℂ (Module.End.eigenspace (J.realFockAction hQJ hQnd (chirality Q o)) (-1)) = 2 := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
   rw [J.eigenspace_realFockAction_chirality_neg_one hQ hQJ hQnd b hb hb₁ hb₃,
-    finrank_spinMinus _ (spinPolarizationData_W_ne_bot J hQJ hQnd four_ne_zero),
-    finrank_spinPolarizationData_W (n := 4) J hQJ hQnd]
+    finrank_spinMinus _ (J.spinPolarizationData_W_ne_bot hQJ hQnd),
+    J.finrank_spinPolarizationData_W hQJ hQnd, Fact.out (p := finrank ℝ V = 4)]
   norm_num
 
 end Chirality
