@@ -60,8 +60,16 @@ no comparison of the two normalizations is made here.
   the projection onto column zero is the inclusion into Hochschild cochains.
 * `TauCeti.cyclicTotalComplexPeriodicity_comp_cyclicTotalComplexToHochschild`: `I ∘ S = 0` on
   cochains.
+* `TauCeti.exists_cyclicTotalPeriodicity_eq_add_cyclicTotalDifferential`: for a unital algebra, a
+  total cochain vanishing in column zero whose column-one component is a bar cocycle lies in the
+  image of the periodicity map up to a total coboundary.
 * `TauCeti.cyclicTotalHomologyPeriodicity_homologyπ`: `S` sends the class of a total cocycle of
   degree `m` to the class of the same family of cochains in degree `m + 2`.
+* `TauCeti.homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk`,
+  `TauCeti.cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMk`: `I` and `S` on classes of total
+  cocycles.
+* `TauCeti.homologyMap_cyclicCochainComplexToTotal_comp_homologyMap_cyclicTotalComplexToHochschild`:
+  `I` on cyclic cohomology factors through the cohomology of the total complex.
 * `TauCeti.exact_cyclicTotalHomologyPeriodicity_homologyMap_cyclicTotalComplexToHochschild`: for a
   unital algebra, `H^m(Tot) → H^(m+2)(Tot) → HH^(m+2)` is exact.
 
@@ -215,6 +223,28 @@ section Contraction
 variable {R A M : Type*} [CommRing R] [Semiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
+/-- **Killing column one.** Let `y` be a total cochain of degree `m + 2` of a unital algebra which
+vanishes in column zero and whose column-one component is a cocycle for the bar coboundary. Since
+the contraction `s` gives `y (m + 1) = b' (s (y (m + 1)))`, adding the total differential of
+`s (y (m + 1))`, placed in column one, moves `y` into the image of the periodicity map. -/
+theorem exists_cyclicTotalPeriodicity_eq_add_cyclicTotalDifferential {m : ℕ}
+    (y : cyclicTotalCochains R A M (m + 2)) (hy₂ : y.1 (m + 2) = 0)
+    (hy₁ : barCoboundary R A M (m + 1) (y.1 (m + 1)) = 0) :
+    ∃ w z, cyclicTotalPeriodicity R A M m w = y + cyclicTotalDifferential R A M (m + 1) z := by
+  let z : cyclicTotalCochains R A M (m + 1) :=
+    ⟨Pi.single m (barContraction R A M m (y.1 (m + 1))),
+      single_mem_cyclicTotalCochains (Nat.le_succ m) _⟩
+  have hz₁ : (cyclicTotalDifferential R A M (m + 1) z).1 (m + 1) = -y.1 (m + 1) := by
+    have h := barCoboundary_barContraction_add_barContraction_barCoboundary (y.1 (m + 1))
+    rw [hy₁, map_zero, add_zero] at h
+    simp [z, h]
+  have hz₂ : (cyclicTotalDifferential R A M (m + 1) z).1 (m + 2) = 0 := by
+    have hne : m + 1 + 1 ≠ m := by omega
+    simp [z, Pi.single_eq_of_ne hne]
+  obtain ⟨w, hw⟩ := (mem_range_cyclicTotalPeriodicity_iff
+    (x := y + cyclicTotalDifferential R A M (m + 1) z)).2 ⟨by simp [hz₁], by simp [hz₂, hy₂]⟩
+  exact ⟨w, z, hw⟩
+
 /-- **Killing the first two columns.** Let `x` be a total cocycle of degree `m + 2` of a unital
 algebra whose column-zero component is the Hochschild coboundary of a cochain `χ`. Then `x` is
 the sum of the image under the periodicity map of a total cochain of degree `m` and a total
@@ -230,13 +260,13 @@ private theorem exists_eq_cyclicTotalPeriodicity_add_cyclicTotalDifferential {m 
   -- the cochain `χ` in column zero, and the remainder `y = x - D χ`
   let c : cyclicTotalCochains R A M (m + 1) :=
     ⟨Pi.single (m + 1) χ, single_mem_cyclicTotalCochains le_rfl χ⟩
-  let y := x.1 - (cyclicTotalDifferential R A M (m + 1) c).1
+  let y : cyclicTotalCochains R A M (m + 2) := x - cyclicTotalDifferential R A M (m + 1) c
   have hc₂ : (cyclicTotalDifferential R A M (m + 1) c).1 (m + 2) = x.1 (m + 2) := by
     simp [c, hχ]
-  have hy₂ : y (m + 2) = 0 := by
-    simp only [y, Pi.sub_apply, hc₂, sub_self]
+  have hy₂ : y.1 (m + 2) = 0 := by
+    simp only [y, Submodule.coe_sub, Pi.sub_apply, hc₂, sub_self]
   -- the component `y` in column one is a cocycle for the bar coboundary
-  have hy₁ : barCoboundary R A M (m + 1) (y (m + 1)) = 0 := by
+  have hy₁ : barCoboundary R A M (m + 1) (y.1 (m + 1)) = 0 := by
     have hx' := congrArg (fun z ↦ z.1 (m + 2)) hx
     have hc₁ : (cyclicTotalDifferential R A M (m + 1) c).1 (m + 1) =
         χ - cyclicOperator R A M (m + 1) χ := by
@@ -251,29 +281,13 @@ private theorem exists_eq_cyclicTotalPeriodicity_add_cyclicTotalDifferential {m 
     rw [h₁, h₀, cyclicBicomplexVertical_of_odd odd_one,
       cyclicBicomplexHorizontal_of_even Even.zero] at hx'
     simp only [LinearMap.neg_apply, LinearMap.sub_apply, Module.End.one_apply] at hx'
-    simp only [y, Pi.sub_apply, map_sub, hc₁, ← hb]
+    simp only [y, Submodule.coe_sub, Pi.sub_apply, map_sub, hc₁, ← hb]
     exact sub_eq_zero.2 (neg_add_eq_zero.1 hx')
-  -- Since `b' y = 0` for the column-one component `y`, the contraction gives `y = b' (s y)`; the
-  -- total differential of `s y`, placed in column one, therefore has `-y` in column one.
-  let z : cyclicTotalCochains R A M (m + 1) :=
-    ⟨Pi.single m (barContraction R A M m (y (m + 1))),
-      single_mem_cyclicTotalCochains (Nat.le_succ m) _⟩
-  have hz₁ : (cyclicTotalDifferential R A M (m + 1) z).1 (m + 1) = -y (m + 1) := by
-    have h := barCoboundary_barContraction_add_barContraction_barCoboundary (y (m + 1))
-    rw [hy₁, map_zero, add_zero] at h
-    simp [z, h]
-  have hz₂ : (cyclicTotalDifferential R A M (m + 1) z).1 (m + 2) = 0 := by
-    have hne : m + 1 + 1 ≠ m := by omega
-    simp [z, Pi.single_eq_of_ne hne]
-  -- the total cochain `y + D z` vanishes in columns zero and one
-  let v : cyclicTotalCochains R A M (m + 2) := ⟨y + (cyclicTotalDifferential R A M (m + 1) z).1,
-    add_mem (sub_mem x.2 (cyclicTotalDifferential R A M (m + 1) c).2)
-      (cyclicTotalDifferential R A M (m + 1) z).2⟩
-  obtain ⟨w, hw⟩ := (mem_range_cyclicTotalPeriodicity_iff (x := v)).2
-    ⟨by simp [v, hz₁], by simp [v, hz₂, hy₂]⟩
+  -- killing column one of `y` leaves a total cochain in the image of the periodicity map
+  obtain ⟨w, z, hw⟩ := exists_cyclicTotalPeriodicity_eq_add_cyclicTotalDifferential y hy₂ hy₁
   refine ⟨w, c - z, ?_⟩
   rw [hw, map_sub]
-  simp only [v, y, Submodule.coe_sub]
+  simp only [y, Submodule.coe_sub, Submodule.coe_add]
   abel
 
 end Contraction
@@ -418,6 +432,38 @@ theorem cyclicTotalHomologyPeriodicity_homologyπ (m : ℕ) (x : (cyclicTotalCom
   apply (ModuleCat.mono_iff_injective (cyclicTotalComplexXIso R A M (m + 2)).hom).1 inferInstance
   rw [cyclicTotalComplexPeriodicity_f_apply, Iso.inv_hom_id_apply, Iso.inv_hom_id_apply]
 
+/-- The projection onto column zero sends the class of a total cocycle to the Hochschild class of
+its column-zero component. -/
+@[simp]
+theorem homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk {m : ℕ}
+    (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
+    HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) m
+        (cyclicTotalHomologyMk R A M m x) =
+      hochschildCohomology.mk R A M m ⟨x.1.1 m, mem_hochschildCocycles_iff.2 (by
+        rw [← cyclicTotalToHochschild_apply, ← cyclicTotalToHochschild_cyclicTotalDifferential,
+          LinearMap.mem_ker.1 x.2, map_zero])⟩ := by
+  have hx := (mem_ker_cyclicTotalDifferential_iff R A M m x.1).1 x.2
+  rw [cyclicTotalHomologyMk_eq_homologyπ x ((cyclicTotalComplex R A M).moduleCatCyclesMk _ (m + 1)
+      (CochainComplex.next ℕ m) hx) (by simp),
+    HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
+  exact (hochschildCohomology.mk_eq_homologyπ R A M _ _
+    (by simp [cyclicTotalComplexToHochschild_f_apply])).symm
+
+/-- The periodicity map sends the class of a total cocycle `x` to the class of its image under the
+periodicity map. -/
+@[simp]
+theorem cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMk {m : ℕ}
+    (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
+    cyclicTotalHomologyPeriodicity R A M m (cyclicTotalHomologyMk R A M m x) =
+      cyclicTotalHomologyMk R A M (m + 2) ⟨cyclicTotalPeriodicity R A M m x.1, by
+        rw [LinearMap.mem_ker, cyclicTotalDifferential_cyclicTotalPeriodicity,
+          LinearMap.mem_ker.1 x.2, map_zero]⟩ := by
+  have hx := (mem_ker_cyclicTotalDifferential_iff R A M m x.1).1 x.2
+  rw [cyclicTotalHomologyMk_eq_homologyπ x ((cyclicTotalComplex R A M).moduleCatCyclesMk _ (m + 1)
+      (CochainComplex.next ℕ m) hx) (by simp),
+    cyclicTotalHomologyPeriodicity_homologyπ]
+  exact (cyclicTotalHomologyMk_eq_homologyπ _ _ (by simp)).symm
+
 /-- The projection onto column zero kills the image of the periodicity map on cohomology:
 `I ∘ S = 0`. -/
 @[reassoc (attr := simp)]
@@ -488,5 +534,24 @@ theorem exact_cyclicTotalHomologyPeriodicity_homologyMap_cyclicTotalComplexToHoc
     Iso.inv_hom_id_apply, hSw, sub_sub_cancel]
 
 end Exactness
+
+section CyclicCohomology
+
+variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M]
+  [Module R M]
+
+/-- The map `I : HCⁿ(A; M) → HHⁿ(A, Hom_R(A, M))` on cyclic cohomology factors through the
+cohomology of the total complex. -/
+@[reassoc (attr := simp)]
+theorem homologyMap_cyclicCochainComplexToTotal_comp_homologyMap_cyclicTotalComplexToHochschild
+    (n : ℕ) :
+    HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) n ≫
+        HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) n =
+      cyclicCohomology.toHochschild R A M n := by
+  rw [← HomologicalComplex.homologyMap_comp,
+    cyclicCochainComplexToTotal_comp_cyclicTotalComplexToHochschild,
+    cyclicCohomology.toHochschild_def]
+
+end CyclicCohomology
 
 end TauCeti

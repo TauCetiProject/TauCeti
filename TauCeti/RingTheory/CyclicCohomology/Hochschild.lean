@@ -31,7 +31,9 @@ The cocycle and coboundary lemmas also apply to semiring scalars whose action on
 with itself.
 
 In degree zero there are no coboundaries, every cochain is cyclic and the cocycles are the traces,
-so `I : HC⁰(A; M) → HH⁰(A, Hom_R(A, M))` is an isomorphism.
+so `I : HC⁰(A; M) → HH⁰(A, Hom_R(A, M))` is an isomorphism. In degree one, a cyclic cocycle which
+is a Hochschild coboundary `b ψ` is the cyclic coboundary of the cyclic `0`-cochain `ψ`, so
+`I : HC¹(A; M) → HH¹(A, Hom_R(A, M))` is injective, over every commutative ring `R`.
 
 ## Main definitions
 
@@ -45,6 +47,7 @@ so `I : HC⁰(A; M) → HH⁰(A, Hom_R(A, M))` is an isomorphism.
   `B` on representing cocycles.
 * `TauCeti.cyclicCohomology.toHochschild_comp_connesB`: `B ∘ I = 0`.
 * `TauCeti.cyclicCohomology.isIso_toHochschild_zero`: `I` is an isomorphism in degree zero.
+* `TauCeti.cyclicCohomology.injective_toHochschild_one`: `I` is injective in degree one.
 
 ## References
 
@@ -183,6 +186,12 @@ sequence. -/
 def toHochschild (n : ℕ) : cyclicCohomology R A M n ⟶ hochschildCohomology R A M n :=
   HomologicalComplex.homologyMap (cyclicCochainComplexι R A M) n
 
+/-- The map `I` is the map induced on cohomology by the inclusion of the cyclic cochain complex
+into the Hochschild cochain complex. -/
+theorem toHochschild_def (n : ℕ) :
+    toHochschild R A M n = HomologicalComplex.homologyMap (cyclicCochainComplexι R A M) n :=
+  (rfl)
+
 /-- The map `I` sends the class of a cyclic cocycle to the Hochschild class of the same
 cochain. -/
 @[simp]
@@ -228,6 +237,19 @@ instance isIso_toHochschild_zero : IsIso (toHochschild R A M 0) := by
     refine ⟨mk R A M 0
       ⟨⟨φ, hφ⟩, (mem_cyclicCocycles_iff R A M).2 (mem_hochschildCocycles_iff.1 φ.2)⟩, ?_⟩
     rw [toHochschild_mk]
+
+/-- The map `I : HC¹(A; M) → HH¹(A, Hom_R(A, M))` is injective: a cyclic `1`-cocycle which is the
+Hochschild coboundary of a `0`-cochain `ψ` is the cyclic coboundary of `ψ`, since every `0`-cochain
+is cyclic. This is the exactness of the SBI sequence at `HC¹`. -/
+theorem injective_toHochschild_one : Function.Injective (toHochschild R A M 1) := by
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
+  obtain ⟨φ, rfl⟩ := mk_surjective R A M 1 x
+  rw [toHochschild_mk, hochschildCohomology.mk_eq_zero_iff,
+    mem_hochschildCoboundaries_succ_iff] at hx
+  obtain ⟨ψ, hψ⟩ := hx
+  have hψ' : ψ ∈ cyclicCochains R A M 0 := by simp
+  rw [mk_eq_zero_iff, mem_cyclicCoboundaries_succ_iff]
+  exact ⟨⟨ψ, hψ'⟩, Subtype.ext (by rw [coe_cyclicHochschildCoboundary_apply, hψ])⟩
 
 end cyclicCohomology
 
