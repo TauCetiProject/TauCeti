@@ -13,8 +13,9 @@ public import Mathlib.GroupTheory.Perm.Fin
 For a map `f : α → β` between linear orders and a finite set `s ⊆ α`, the inversions of `f` on
 `s` are the pairs `a < b` of elements of `s` whose order `f` reverses, `f b < f a`. When `f` is
 injective, the parity of their number is the sign of the permutation of `s` obtained by comparing
-the order of `s` with the order of its image `f(s)`; for a permutation of `Fin n` on the whole
-type this is `Equiv.Perm.sign` (`Equiv.Perm.sign_eq_neg_one_pow_card_inversions`).
+the order of `s` with the order of its image `f(s)`. For a permutation `σ` of `Fin n`,
+`Finset.univ.inversions σ` is the set of inversions counted by
+`TauCeti.sign_eq_neg_one_pow_card_inversion`, whose parity is `Equiv.Perm.sign σ`.
 
 These signs compare two orderings of the same finite set. In a signed cube totalization the edge
 `S ⟶ S ∪ {a}` carries the sign `(-1) ^ #{b ∈ S | b < a}`, and reordering the indices of the cube
@@ -35,8 +36,6 @@ composition (`Finset.neg_one_pow_card_inversions_comp`).
   position of `f a` in `f(s)`.
 * `Finset.neg_one_pow_card_inversions_comp`: the inversion sign of `g ∘ f` on `s` is the product
   of the inversion signs of `f` on `s` and of `g` on `f(s)`.
-* `Equiv.Perm.sign_eq_neg_one_pow_card_inversions`: the sign of a permutation of `Fin n` is the
-  parity of its number of inversions.
 -/
 
 public section
@@ -174,21 +173,3 @@ theorem neg_one_pow_card_inversions_comp {R : Type*} [Monoid R] [HasDistribNeg R
     rw [h'.neg_one_pow, h''.neg_one_pow]
 
 end Finset
-
-open Finset in
-/-- The sign of a permutation of `Fin n` is the parity of its number of inversions. -/
-theorem Equiv.Perm.sign_eq_neg_one_pow_card_inversions {n : ℕ} (σ : Equiv.Perm (Fin n)) :
-    Equiv.Perm.sign σ = (-1) ^ #(Finset.univ.inversions σ) := by
-  rw [σ.sign_eq_prod_prod_Ioi, Finset.prod_sigma', Finset.prod_ite, Finset.prod_const_one,
-    one_mul, Finset.prod_const]
-  congr 1
-  refine Finset.card_nbij' (fun p ↦ (p.1, p.2)) (fun p ↦ ⟨p.1, p.2⟩) ?_ ?_ (fun _ _ ↦ rfl)
-    (fun _ _ ↦ rfl)
-  · rintro ⟨i, j⟩ hp
-    simp only [Finset.coe_filter, Finset.mem_sigma, Finset.mem_univ, Finset.mem_Ioi, true_and,
-      Set.mem_ofPred_eq, Finset.mem_coe, Finset.mem_inversions] at hp ⊢
-    exact ⟨hp.1, lt_of_le_of_ne (not_lt.1 hp.2) (σ.injective.ne hp.1.ne')⟩
-  · rintro ⟨i, j⟩ hp
-    simp only [Finset.coe_filter, Finset.mem_sigma, Finset.mem_univ, Finset.mem_Ioi, true_and,
-      Set.mem_ofPred_eq, Finset.mem_coe, Finset.mem_inversions] at hp ⊢
-    exact ⟨hp.1, hp.2.not_gt⟩
