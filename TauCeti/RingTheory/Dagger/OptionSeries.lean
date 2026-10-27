@@ -16,11 +16,11 @@ series whose coefficients are overconvergent in `σ`. The map `washnitzerAlgebra
 is injective and agrees with `MvPowerSeries.optionEquivLeft` on underlying formal series.
 It provides the coefficient ring for polynomial remainders in overconvergent Weierstrass
 division. Conversely, `washnitzerAlgebra.optionC` views an overconvergent series in `σ` as one in
-`Option σ` that is constant in `Y`; along it, polynomials over the coefficient ring are evaluated
-at `Y`. No claim is made that an arbitrary series of overconvergent coefficients is itself
-overconvergent: the coefficients must satisfy a common radius bound. The split polyradius
-`splitRadius r ρ`, with radius `r` in `Y` and `ρ` elsewhere, is the unequal-radius setting in
-which overconvergent preparation and division are carried out.
+`Option σ` that is constant in `Y`; along it, `washnitzerAlgebra.polynomialToOption` evaluates
+polynomials over the coefficient ring at `Y`. No claim is made that an arbitrary series of
+overconvergent coefficients is itself overconvergent: the coefficients must satisfy a common
+radius bound. The split polyradius `splitRadius r ρ`, with radius `r` in `Y` and `ρ` elsewhere,
+is the unequal-radius setting in which overconvergent preparation and division are carried out.
 
 ## References
 
@@ -217,6 +217,48 @@ theorem map_toTate_optionSeries (f : washnitzerAlgebra (Option σ) R) :
   rw [PowerSeries.coeff_map, Huber.coeff_restrictedOptionEquiv (c := fun _ ↦ 1),
     coe_toTate]
   exact (coe_toTate _).trans (coe_coeff_optionSeries f m)
+
+/-- Evaluation of polynomials over `R⟨X⟩†` at the separated variable `Y = X none`, as a ring map
+`R⟨X⟩†[Y] → R⟨X, Y⟩†`. -/
+noncomputable def polynomialToOption :
+    Polynomial (washnitzerAlgebra σ R) →+* washnitzerAlgebra (Option σ) R :=
+  Polynomial.eval₂RingHom (optionC (σ := σ) (R := R) : _ →+* _) (X (Option σ) R none)
+
+/-- Constant polynomials evaluate to series constant in `Y`. -/
+@[simp]
+theorem polynomialToOption_C (a : washnitzerAlgebra σ R) :
+    polynomialToOption (Polynomial.C a) = optionC a :=
+  Polynomial.eval₂_C _ _
+
+/-- The variable of the polynomial ring evaluates to `Y = X none`. -/
+@[simp]
+theorem polynomialToOption_X :
+    polynomialToOption (Polynomial.X : Polynomial (washnitzerAlgebra σ R)) = X (Option σ) R none :=
+  Polynomial.eval₂_X _ _
+
+/-- Separating `Y` from the evaluation of a polynomial at `Y` recovers the polynomial. -/
+@[simp]
+theorem optionSeries_polynomialToOption (p : Polynomial (washnitzerAlgebra σ R)) :
+    optionSeries (polynomialToOption p) = (p : PowerSeries (washnitzerAlgebra σ R)) :=
+  optionSeries_eval₂_optionC_X_none p
+
+/-- Evaluation at `Y` is injective: a polynomial is recovered by separating `Y` again. -/
+theorem polynomialToOption_injective :
+    Function.Injective (polynomialToOption (σ := σ) (R := R)) := fun p q h ↦
+  Polynomial.coe_injective _ (by simpa using congrArg optionSeries h)
+
+/-- In the unit-radius Tate algebra, the evaluation of `p` at `Y` is `p` with coefficients mapped
+along `toTate`. -/
+@[simp]
+theorem restrictedOptionEquiv_toTate_polynomialToOption
+    (p : Polynomial (washnitzerAlgebra σ R)) :
+    (Huber.restrictedOptionEquiv (toTate _ R (polynomialToOption p)) :
+      PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)))) =
+      (p.map (toTate σ R).toRingHom :
+        PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)))) := by
+  rw [← map_toTate_optionSeries, optionSeries_polynomialToOption]
+  ext m : 1
+  simp [Polynomial.coeff_coe]
 
 end washnitzerAlgebra
 
