@@ -58,6 +58,8 @@ injective sheaf, which is flasque, so that its Čech complexes are exact for all
   for every member `Y` of `B`.
 * `TauCeti.Topology.prod_pi_mem_of_inf_mem`: a set of opens closed under binary intersections
   contains the finite intersections `Y ∩ U (a 0) ∩ ⋯ ∩ U (a n)` of its members.
+* `TopCat.Sheaf.exists_mem_lift_of_epi`: along an epimorphism of sheaves, sections lift locally on
+  the members of a set of opens which contains a basis inside each of its members.
 
 ## References
 
@@ -98,9 +100,10 @@ theorem isCechAcyclicOn_iff {F : Sheaf (Opens.grothendieckTopology X) AddCommGrp
           QuasiIso (cechAugmentation U isTerminalTop ((prod.functor.obj Y).op ⋙ F.obj)) :=
   Iff.rfl
 
-/-- Along an epimorphism of sheaves `π : F ⟶ G`, a section of `G` over a member `Y` of `B` lifts,
-near every point of `Y`, on a member of `B` contained in `Y`. -/
-private lemma exists_mem_lift
+/-- Let `B` be a set of opens containing, inside each of its members, a basis of the topology of
+that member. Along an epimorphism of sheaves `π : F ⟶ G`, a section of `G` over a member `Y` of `B`
+lifts, near every point of `Y`, on a member of `B` contained in `Y`. -/
+theorem _root_.TopCat.Sheaf.exists_mem_lift_of_epi
     (hbasis : ∀ U ∈ B, ∀ V : Opens X, V ≤ U → ∀ x ∈ V, ∃ W ∈ B, x ∈ W ∧ W ≤ V)
     {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}} (π : F ⟶ G) [Epi π]
     {Y : Opens X} (hY : Y ∈ B) (s : G.obj.obj (op Y)) (x : X) (hx : x ∈ Y) :
@@ -160,6 +163,39 @@ private lemma quasiIso_cechAugmentation_image (hF : IsCechAcyclicOn B F) {ι : T
     (imageSeq_shortExact F _) (fun _ _ ↦ imageSeq_shortExact F _) (hF U Y hY hU hYU)
     (TopCat.Sheaf.quasiIso_cechAugmentation_prod_of_isFlasque (Injective.under F) U Y hYU)
 
+/-- Let `π : F₂ ⟶ F₃` be a morphism of sheaves, `G` its image presheaf, and `U i` opens covering
+`Y`. If `G` satisfies the sheaf condition for this cover, in the form of the exactness of its
+augmented Čech complex in degree `0`, then sections `x i` of `G` over the opens `Y ⨯ U i`, whose
+images in `F₃` are restrictions of a single section `s` of `F₃` over `Y`, glue to a section of `G`
+over `Y ⨯ ⊤`. -/
+private lemma exists_map_eq_of_cover
+    {F₂ F₃ : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}} (π : F₂ ⟶ F₃) {ι : Type u}
+    (U : ι → Opens X) {Y : Opens X}
+    (hG : QuasiIso (cechAugmentation U isTerminalTop
+      ((prod.functor.obj Y).op ⋙ Limits.image π.hom)))
+    (s : F₃.obj.obj (op Y)) (x : ∀ i, (Limits.image π.hom).obj (op (Y ⨯ U i)))
+    (hx : ∀ i {V : Opens X} (e : V ⟶ Y ⨯ U i),
+      (image.ι π.hom).app (op V) ((Limits.image π.hom).map e.op (x i)) =
+        F₃.obj.map (e ≫ prod.fst).op s) :
+    ∃ g : (Limits.image π.hom).obj (op (Y ⨯ ⊤)), ∀ i (r : Y ⨯ U i ⟶ Y ⨯ ⊤),
+      (Limits.image π.hom).map r.op g = x i := by
+  have hι (V : (Opens X)ᵒᵖ) : Function.Injective ((image.ι π.hom).app V) :=
+    (AddCommGrpCat.mono_iff_injective _).1 inferInstance
+  have h := (Presieve.isSheafFor_comp_forget_addCommGrpCat_iff _ _).2
+    ((quasiIsoAt_cechAugmentation_zero_iff U isTerminalTop _).1 (hG.quasiIsoAt 0))
+  have hπ : (fun i ↦ isTerminalTop.from (U i)) = fun i ↦ homOfLE le_top :=
+    funext fun _ ↦ Subsingleton.elim _ _
+  rw [hπ, Presieve.isSheafFor_arrows_iff] at h
+  obtain ⟨g, hg, -⟩ := h x ((Presieve.Arrows.compatible_homOfLE_iff
+    (P := ((prod.functor.obj Y).op ⋙ Limits.image π.hom) ⋙ forget AddCommGrpCat)
+    (fun _ ↦ le_top) x).2
+    fun i j ↦ hι _ ((hx i ((prod.functor.obj Y).map (homOfLE inf_le_left))).trans
+      (Eq.trans (congrArg (fun f ↦ F₃.obj.map (Quiver.Hom.op f) s) (Subsingleton.elim _ _))
+        (hx j ((prod.functor.obj Y).map (homOfLE inf_le_right))).symm)))
+  -- `hg i` is stated for the presheaf `(prod.functor.obj Y).op ⋙ G`, whose maps are those of `G`
+  exact ⟨g, fun i r ↦ (congrArg (fun f ↦ (Limits.image π.hom).map (Quiver.Hom.op f) g)
+    (Subsingleton.elim r ((prod.functor.obj Y).map (homOfLE le_top)))).trans (hg i)⟩
+
 /-- Let `π : F₂ ⟶ F₃` be a morphism of sheaves, and let `U i` be opens covering `Y`. If the image
 presheaf of `π` satisfies the sheaf condition for this cover, in the form of the exactness of its
 augmented Čech complex in degree `0`, then a section of `F₃` over `Y` whose restrictions to the
@@ -172,14 +208,11 @@ private lemma exists_eq_of_cover {F₂ F₃ : Sheaf (Opens.grothendieckTopology 
     (s : F₃.obj.obj (op Y)) (t : ∀ i, F₂.obj.obj (op (U i)))
     (ht : ∀ i, π.hom.app (op (U i)) (t i) = F₃.obj.map (homOfLE (hUY i)).op s) :
     ∃ t' : F₂.obj.obj (op Y), π.hom.app (op Y) t' = s := by
-  have hι (V : (Opens X)ᵒᵖ) : Function.Injective ((image.ι π.hom).app V) :=
-    (AddCommGrpCat.mono_iff_injective _).1 inferInstance
   have hfac (V : (Opens X)ᵒᵖ) (y : F₂.obj.obj V) :
       (image.ι π.hom).app V ((factorThruImage π.hom).app V y) = π.hom.app V y := by
     rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app, image.fac]
   -- the lifts `t i`, restricted to `Y ⨯ U i`, as sections of the image presheaf
-  let x : ∀ i, (((prod.functor.obj Y).op ⋙ Limits.image π.hom) ⋙
-      forget AddCommGrpCat).obj (op (U i)) := fun i ↦
+  let x (i : ι) : (Limits.image π.hom).obj (op (Y ⨯ U i)) :=
     (factorThruImage π.hom).app (op (Y ⨯ U i)) (F₂.obj.map (prod.snd : Y ⨯ U i ⟶ U i).op (t i))
   have hx (i : ι) {V : Opens X} (e : V ⟶ Y ⨯ U i) :
       (image.ι π.hom).app (op V) ((Limits.image π.hom).map e.op (x i)) =
@@ -188,38 +221,27 @@ private lemma exists_eq_of_cover {F₂ F₃ : Sheaf (Opens.grothendieckTopology 
     dsimp only [x]
     rw [hfac, NatTrans.naturality_apply, ht, ← Functor.map_comp_apply, ← Functor.map_comp_apply]
     exact congrArg (fun f ↦ F₃.obj.map (Quiver.Hom.op f) s) (Subsingleton.elim _ _)
-  -- the image presheaf satisfies the sheaf condition for the cover
-  have h := (Presieve.isSheafFor_comp_forget_addCommGrpCat_iff _ _).2
-    ((quasiIsoAt_cechAugmentation_zero_iff U isTerminalTop _).1 (hG.quasiIsoAt 0))
-  have hπ : (fun i ↦ isTerminalTop.from (U i)) = fun i ↦ homOfLE le_top :=
-    funext fun _ ↦ Subsingleton.elim _ _
-  rw [hπ, Presieve.isSheafFor_arrows_iff] at h
-  obtain ⟨g, hg, -⟩ := h x ((Presieve.Arrows.compatible_homOfLE_iff (fun _ ↦ le_top) x).2
-    fun i j ↦ hι _ ((hx i ((prod.functor.obj Y).map (homOfLE inf_le_left))).trans
-      (Eq.trans (congrArg (fun f ↦ F₃.obj.map (Quiver.Hom.op f) s) (Subsingleton.elim _ _))
-        (hx j ((prod.functor.obj Y).map (homOfLE inf_le_right))).symm)))
+  obtain ⟨g, hg⟩ := exists_map_eq_of_cover π U hG s x hx
   obtain ⟨t', rfl⟩ := (AddCommGrpCat.epi_iff_surjective _).1
     (inferInstance : Epi ((factorThruImage π.hom).app (op (Y ⨯ ⊤)))) g
   refine ⟨F₂.obj.map (prod.lift (𝟙 Y) (isTerminalTop.from Y)).op t', ?_⟩
   refine TopCat.Sheaf.eq_of_locally_eq' F₃ U Y (fun i ↦ homOfLE (hUY i)) hYU _ _ fun i ↦ ?_
   let e : U i ⟶ Y ⨯ U i := prod.lift (homOfLE (hUY i)) (𝟙 _)
+  let r : Y ⨯ U i ⟶ Y ⨯ ⊤ := prod.map (𝟙 Y) (isTerminalTop.from (U i))
   calc F₃.obj.map (homOfLE (hUY i)).op (π.hom.app (op Y)
           (F₂.obj.map (prod.lift (𝟙 Y) (isTerminalTop.from Y)).op t'))
-      _ = (image.ι π.hom).app (op (U i)) ((Limits.image π.hom).map
-          (e ≫ (prod.functor.obj Y).map (homOfLE le_top)).op
-          ((factorThruImage π.hom).app (op (Y ⨯ ⊤)) t')) := by
-        conv_lhs => rw [← NatTrans.naturality_apply π.hom, ← Functor.map_comp_apply, ← op_comp]
-        -- `erw`: `(prod.functor.obj Y).obj ⊤` is `Y ⨯ ⊤` only after unfolding the functor
-        conv_rhs => erw [NatTrans.naturality_apply, hfac, ← NatTrans.naturality_apply π.hom]
+      _ = π.hom.app (op (U i)) (F₂.obj.map (e ≫ r).op t') := by
+        rw [← NatTrans.naturality_apply π.hom, ← Functor.map_comp_apply, ← op_comp]
         exact congrArg (fun f ↦ π.hom.app _ (F₂.obj.map (Quiver.Hom.op f) t'))
           (Subsingleton.elim _ _)
+      _ = (image.ι π.hom).app (op (U i)) ((Limits.image π.hom).map e.op
+          ((Limits.image π.hom).map r.op ((factorThruImage π.hom).app (op (Y ⨯ ⊤)) t'))) := by
+        rw [← NatTrans.naturality_apply (factorThruImage π.hom),
+          ← NatTrans.naturality_apply (factorThruImage π.hom), hfac, op_comp,
+          Functor.map_comp_apply]
       _ = F₃.obj.map (homOfLE (hUY i)).op s := by
-        rw [op_comp, Functor.map_comp, ConcreteCategory.comp_apply]
-        -- `erw`: `hg i` is stated for the presheaf `(prod.functor.obj Y).op ⋙ G` composed with
-        -- the forgetful functor, whose map is `G.map` only after unfolding the composite
-        erw [hg i, hx i e]
+        rw [hg i r, hx i e]
         exact congrArg (fun f ↦ F₃.obj.map (Quiver.Hom.op f) s) (Subsingleton.elim _ _)
-
 
 section
 
@@ -255,7 +277,7 @@ private lemma surjective_app_cokernel_π (hF : IsCechAcyclicOn B F) {Y : Opens X
     Function.Surjective ((cokernel.π (Injective.ι F)).hom.app (op Y)) := by
   intro s
   choose V hVB hxV hVY t ht using fun x : Y ↦
-    exists_mem_lift hbasis (cokernel.π (Injective.ι F)) hY s x.1 x.2
+    TopCat.Sheaf.exists_mem_lift_of_epi hbasis (cokernel.π (Injective.ι F)) hY s x.1 x.2
   obtain ⟨c, hc⟩ := (hcpt Y hY).elim_finite_subcover (fun x : Y ↦ (V x : Set X))
     (fun x ↦ (V x).isOpen) (fun x hx ↦ Set.mem_iUnion.2 ⟨⟨x, hx⟩, hxV _⟩)
   -- an empty subcover only covers the empty open, over which every section vanishes
@@ -281,20 +303,10 @@ private lemma surjective_app_cokernel_π (hF : IsCechAcyclicOn B F) {Y : Opens X
 include hcpt hbasis in
 /-- A sheaf which is Čech acyclic on `B` has no degree one cohomology on the members of `B`. -/
 private lemma subsingleton_H'_one (hF : IsCechAcyclicOn B F) {Y : Opens X} (hY : Y ∈ B) :
-    Subsingleton (F.H' 1 Y) := by
-  rw [sheafH'_eq]
-  refine subsingleton_ext_succ_of_injectiveCokernelSequence
-    ((freeYonedaSheafFunctor (Opens.grothendieckTopology X)).obj Y) F 0 fun x₃ ↦ ?_
-  obtain ⟨s, hs⟩ := surjective_app_cokernel_π hcpt hbasis hF hY
-    (freeYonedaSheafSectionsEquiv _ Y _ (Abelian.Ext.addEquiv₀ x₃))
-  -- `x₃` is the image of a degree zero class of the injective sheaf
-  have hφ : Abelian.Ext.addEquiv₀ x₃ =
-      (freeYonedaSheafSectionsEquiv _ Y _).symm s ≫ cokernel.π (Injective.ι F) := by
-    apply (freeYonedaSheafSectionsEquiv _ Y _).injective
-    rw [freeYonedaSheafSectionsEquiv_naturality_right, AddEquiv.apply_symm_apply, hs]
-  rw [← Abelian.Ext.mk₀_addEquiv₀_apply x₃, hφ, ← Abelian.Ext.mk₀_comp_mk₀,
-    Abelian.Ext.comp_assoc_of_second_deg_zero,
-    (injectiveCokernelSequence_shortExact F).comp_extClass, Abelian.Ext.comp_zero]
+    Subsingleton (F.H' 1 Y) :=
+  Sheaf.H'.subsingleton_X₁_one (injectiveCokernelSequence_shortExact F) Y
+    (surjective_app_cokernel_π hcpt hbasis hF hY)
+    (subsingleton_H'_succ_of_isFlasque (Injective.under F) 0 Y)
 
 include hinf hcpt hbasis in
 /-- The cokernel `Q` of the chosen embedding of a sheaf `F` which is Čech acyclic on `B` into an
@@ -324,11 +336,9 @@ theorem subsingleton_H'_succ_of_isCechAcyclicOn (hF : IsCechAcyclicOn B F) {Y : 
   induction n generalizing F with
   | zero => exact subsingleton_H'_one hcpt hbasis hF hY
   | succ n ih =>
-    have := ih (isCechAcyclicOn_cokernel hinf hcpt hbasis hF)
-    rw [sheafH'_eq] at this ⊢
-    refine subsingleton_ext_succ_of_injectiveCokernelSequence
-      ((freeYonedaSheafFunctor (Opens.grothendieckTopology X)).obj Y) F (n + 1) fun x₃ ↦ ?_
-    rw [Subsingleton.elim x₃ 0, Abelian.Ext.zero_comp]
+    exact Sheaf.H'.subsingleton_X₁ (injectiveCokernelSequence_shortExact F) Y (n + 1)
+      (ih (isCechAcyclicOn_cokernel hinf hcpt hbasis hF))
+      (subsingleton_H'_succ_of_isFlasque (Injective.under F) (n + 1) Y)
 
 end
 

@@ -165,7 +165,7 @@ theorem eulerCharBelow_pushforward_structureSheaf [IsFinite (X ↘ Spec (.of k))
     induction n with
     | zero => rfl
     | succ n ih =>
-      have := subsingleton_cohomology_succ_of_isFinite (X ↘ Spec (.of k)) M n
+      have := subsingleton_cohomology_succ_of_isAffineHom (X ↘ Spec (.of k)) M n
       rw [eulerCharBelow_succ, ih, Module.finrank_zero_of_subsingleton (M := Cohomology M (n + 1)),
         Nat.cast_zero, mul_zero, add_zero]
   refine (eulerCharBelow_pushforward f k M (n + 1)).trans ?_

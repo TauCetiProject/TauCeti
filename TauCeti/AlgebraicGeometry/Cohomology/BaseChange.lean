@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 
@@ -32,10 +31,11 @@ consequences:
 * `H¹(Y, g^* M) ≅ R' ⊗_R H¹(X, M)` for a quasicoherent `M` and an arbitrary base-ring
   map, when `X` has a two-affine cover with affine intersection;
 * `H⁰(Y, 𝒪_Y) ≅ R' ⊗_R H⁰(X, 𝒪_X)` when `X` is quasi-compact and quasi-separated;
-* `H¹(Y, 𝒪_Y) ≅ R' ⊗_R H¹(X, 𝒪_X)` under the same two-affine hypotheses.
+* `H¹(Y, 𝒪_Y) ≅ R' ⊗_R H¹(X, 𝒪_X)` for flat `R → R'`, when `X` is quasi-separated and covered by
+  two affine opens.
 
 Over a field `k` and a field extension `K / k`, these say that `dim_k H⁰(X, 𝒪_X)` and, for `X`
-locally of finite type over `k` and covered by two affine opens, `dim_k H¹(X, 𝒪_X)` do not change
+quasi-separated and covered by two affine opens, `dim_k H¹(X, 𝒪_X)` do not change
 under base change to `K`; when moreover `H¹(X, 𝒪_X)` is finite-dimensional, so is `H¹` after base
 change, and the genus does not change either. Smooth proper curves are covered by two affine
 opens, so this applies to them (`TauCeti.AlgebraicGeometry.Curves.Genus.BaseChange`).
@@ -474,44 +474,32 @@ theorem finiteDimensional_cohomology_one_pullback_of_isPullback (M : X.Modules)
   exact Module.Finite.equiv e
 
 include H in
-/-- Over a field, `H¹(X_K, 𝒪) ≅ K ⊗_k H¹(X, 𝒪)` for a scheme `X` locally of finite type over `k`
-covered by two affine opens, and a field extension `K / k`. -/
-private theorem nonempty_linearEquiv_tensor_cohomology_one_trivial_of_field
-    [LocallyOfFiniteType (X ↘ Spec (.of k))] {U V : X.Opens} (hU : IsAffineOpen U)
-    (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤) :
-    Nonempty (K ⊗[k] Cohomology (InvertibleSheaf.trivial X).obj 1 ≃ₗ[K]
-      Cohomology (InvertibleSheaf.trivial Y).obj 1) := by
-  -- a locally Noetherian scheme is quasi-separated
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  exact nonempty_linearEquiv_tensor_cohomology_one_trivial H hU hV hUV
-
-include H in
-/-- The dimension of `H¹(X, 𝒪_X)` does not change under extension of the base field, for a scheme
-locally of finite type over a field and covered by two affine opens. -/
-theorem finrank_cohomology_one_trivial_eq_of_isPullback [LocallyOfFiniteType (X ↘ Spec (.of k))]
+/-- The dimension of `H¹(X, 𝒪_X)` does not change under extension of the base field, for a
+quasi-separated scheme over a field covered by two affine opens. -/
+theorem finrank_cohomology_one_trivial_eq_of_isPullback [QuasiSeparatedSpace X]
     {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤) :
     finrank K (Cohomology (InvertibleSheaf.trivial Y).obj 1) =
       finrank k (Cohomology (InvertibleSheaf.trivial X).obj 1) := by
-  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_trivial_of_field H hU hV hUV
+  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_trivial H hU hV hUV
   rw [← e.finrank_eq, Module.finrank_baseChange]
 
 include H in
-/-- `H¹(X, 𝒪_X)` stays finite-dimensional under extension of the base field, for a scheme locally
-of finite type over a field and covered by two affine opens. -/
+/-- `H¹(X, 𝒪_X)` stays finite-dimensional under extension of the base field, for a
+quasi-separated scheme over a field covered by two affine opens. -/
 theorem finiteDimensional_cohomology_one_trivial_of_isPullback
-    [LocallyOfFiniteType (X ↘ Spec (.of k))] {U V : X.Opens} (hU : IsAffineOpen U)
+    [QuasiSeparatedSpace X] {U V : X.Opens} (hU : IsAffineOpen U)
     (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤)
     [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)] :
     FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj 1) := by
-  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_trivial_of_field H hU hV hUV
+  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_trivial H hU hV hUV
   exact Module.Finite.equiv e
 
 include H in
-/-- **The genus does not change under extension of the base field**, for a scheme locally of
-finite type over a field, covered by two affine opens, and with finite-dimensional `H¹(X, 𝒪_X)`.
+/-- **The genus does not change under extension of the base field**, for a quasi-separated scheme
+over a field, covered by two affine opens, and with finite-dimensional `H¹(X, 𝒪_X)`.
 The finite-dimensionality of `H¹` after base change, needed to form the genus of `Y`, follows
 from that before, by `finiteDimensional_cohomology_one_trivial_of_isPullback`. -/
-theorem genus_eq_of_isPullback [LocallyOfFiniteType (X ↘ Spec (.of k))] {U V : X.Opens}
+theorem genus_eq_of_isPullback [QuasiSeparatedSpace X] {U V : X.Opens}
     (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤)
     [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)] :
     haveI := finiteDimensional_cohomology_one_trivial_of_isPullback H hU hV hUV

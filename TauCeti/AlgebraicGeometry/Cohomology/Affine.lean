@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.AffineScheme
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
 public import TauCeti.Topology.Sheaves.Cartan
 import TauCeti.AlgebraicGeometry.Modules.Localization
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.AddCommGrp
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Comparison
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.MayerVietoris
@@ -115,19 +116,15 @@ private lemma exists_sub_eq {W A₀ A₁ A₀₁ : X.Opens} (hW : IsAffineOpen W
         (1 : Γ(X, W)) ∈ Ideal.span {c ^ m, d ^ n})
   refine ⟨X.presheaf.map (homOfLE (X.basicOpen_le c)).op q • y,
     -(X.presheaf.map (homOfLE (X.basicOpen_le d)).op p • y'), ?_⟩
-  rw [map_neg, sub_neg_eq_add, M.map_smul, M.map_smul, hρ, hρ, ← hy, ← hy', smul_smul,
-    smul_smul, ← add_smul, ← map_pow, ← map_pow, ← map_mul, ← map_mul, ← map_add, add_comm,
-    hpq, map_one, one_smul]
+  -- the restriction of `p * c ^ m + q * d ^ n = 1` to `D(c) ∩ D(d)`
+  have h1 : ρ q * ρ d ^ n + ρ p * ρ c ^ m = 1 := by
+    rw [add_comm]
+    simpa using congrArg ρ hpq
+  -- both summands are multiples of `z`, with coefficients adding up to `1`
+  rw [map_neg, sub_neg_eq_add, M.map_smul, M.map_smul, hρ, hρ, ← hy, ← hy']
+  rw [smul_smul, smul_smul, ← add_smul, h1, one_smul]
 
 variable {U : X.Opens}
-
-/-- The basic opens of `U` are closed under binary intersections. -/
-private lemma inf_mem_range_basicOpen :
-    ∀ V ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f,
-      ∀ W ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f,
-        V ⊓ W ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f := by
-  rintro _ ⟨f, rfl⟩ _ ⟨g, rfl⟩
-  exact ⟨f * g, Scheme.basicOpen_mul _ _ _⟩
 
 variable (hU : IsAffineOpen U)
 
@@ -163,59 +160,6 @@ private lemma quasiIso_cechAugmentation_fin_two {Y : X.Opens}
   exact ⟨(a, b), hab⟩
 
 include hU in
-/-- If a basic open `Y` of `U` lies in the union of a basic open `A` and of basic opens `V i`,
-`i ∈ s`, then it lies in the union of `A` and of a single basic open contained in the union of
-the `V i`. -/
-private lemma exists_mem_le_sup {Y A : X.Opens} (hY : Y ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f)
-    (hA : A ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f) {ι : Type*} (V : ι → X.Opens)
-    (hV : ∀ i, V i ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f) (s : Finset ι)
-    (h : Y ≤ A ⊔ s.sup V) : ∃ W ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f,
-      Y ≤ A ⊔ W ∧ W ≤ s.sup V := by
-  classical
-  obtain ⟨g, rfl⟩ := hY
-  obtain ⟨f, rfl⟩ := hA
-  choose f' hf' using hV
-  beta_reduce at h hf'
-  let r : Γ(X, U) → Γ(X, X.basicOpen g) := fun a ↦ X.presheaf.map (homOfLE (X.basicOpen_le g)).op a
-  have hr (a : Γ(X, U)) : X.basicOpen (r a) = X.basicOpen g ⊓ X.basicOpen a :=
-    Scheme.basicOpen_res _ _ _
-  let T : Set Γ(X, X.basicOpen g) := (fun i ↦ r (f' i)) '' ↑s
-  -- the restrictions of `f` and of the `f' i` to `D(g)` generate the unit ideal there
-  have hspan : Ideal.span (insert (r f) T) = ⊤ := by
-    refine ((hU.basicOpen g).self_le_iSup_basicOpen_iff (s := insert (r f) T)).1 ?_
-    intro x hx
-    rcases Opens.mem_sup.1 (h hx) with hxf | hxs
-    · exact Opens.mem_iSup.2 ⟨⟨r f, Set.mem_insert _ _⟩, by rw [hr]; exact ⟨hx, hxf⟩⟩
-    · rw [Finset.sup_eq_iSup] at hxs
-      obtain ⟨i, hxi⟩ := Opens.mem_iSup.1 hxs
-      obtain ⟨hi, hxi⟩ := Opens.mem_iSup.1 hxi
-      exact Opens.mem_iSup.2 ⟨⟨r (f' i), Set.mem_insert_of_mem _ ⟨i, hi, rfl⟩⟩,
-        by rw [hr, hf']; exact ⟨hx, hxi⟩⟩
-  obtain ⟨a, z, hz, haz⟩ := Ideal.mem_span_insert.1
-    (hspan ▸ Submodule.mem_top : (1 : Γ(X, X.basicOpen g)) ∈ Ideal.span (insert (r f) T))
-  obtain ⟨h', hh'⟩ := hU.basicOpen_basicOpen_is_basicOpen g z
-  refine ⟨X.basicOpen h', ⟨h', rfl⟩, ?_, ?_⟩
-  · rw [hh']
-    calc X.basicOpen g = X.basicOpen (a * r f + z) := by rw [← haz, Scheme.basicOpen_one]
-      _ ≤ X.basicOpen (a * r f) ⊔ X.basicOpen z := X.basicOpen_add_le _ _
-      _ ≤ X.basicOpen f ⊔ X.basicOpen z := by
-        refine sup_le_sup_right ?_ _
-        rw [Scheme.basicOpen_mul, hr]
-        exact inf_le_right.trans inf_le_right
-  · -- a point of `D(z)` outside every `V i` would lie in the zero locus of the span of `T`
-    rw [hh']
-    intro x hx
-    by_contra hxs
-    have hxT : x ∈ X.zeroLocus T := by
-      rw [Scheme.mem_zeroLocus_iff]
-      rintro _ ⟨i, hi, rfl⟩ hxi
-      rw [hr, hf'] at hxi
-      exact hxs (Finset.le_sup (f := V) hi hxi.2)
-    rw [← Scheme.zeroLocus_span, Scheme.mem_zeroLocus_iff] at hxT
-    exact hxT z hz hx
-
-
-include hU in
 /-- **Finite covers by basic opens.** Let `U` be an affine open, `s` a nonempty finite set of
 indices of basic opens `V i` of `U`, and `Y` a basic open of `U` contained in their union. The
 cover of `Y` by the opens `Y ∩ V i`, `i ∈ s`, is acyclic for a quasi-coherent sheaf.
@@ -236,7 +180,7 @@ private lemma quasiIso_cechAugmentation_finset {ι : Type u} (V : ι → X.Opens
     exact quasiIso_cechAugmentation_prod_of_hom _ isTerminalTop _ Y
       (i₀ := ⟨a, Finset.mem_singleton_self a⟩) (homOfLE (by simpa using hYs))
   | cons a s ha hs ih =>
-    obtain ⟨V₁, hV₁, hYV₁, hV₁s⟩ := exists_mem_le_sup hU hY (hV a) V hV s
+    obtain ⟨V₁, hV₁, hYV₁, hV₁s⟩ := hU.exists_mem_range_basicOpen_le_sup hY (hV a) V hV s
       (by simpa [Finset.sup_cons] using hYs)
     let F := (SheafOfModules.toSheaf X.ringCatSheaf).obj M
     let W : Finset.cons a s ha → X.Opens := fun i ↦ V i
@@ -247,7 +191,7 @@ private lemma quasiIso_cechAugmentation_finset {ι : Type u} (V : ι → X.Opens
       Fin.forall_fin_two.2 ⟨hV a, hV₁⟩
     have hYT₁ : (Y ⨯ T 1) ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f := by
       rw [CompleteLattice.prod_eq_inf]
-      exact inf_mem_range_basicOpen _ hY _ hV₁
+      exact Scheme.inf_mem_range_basicOpen _ hY _ hV₁
     -- restricting to `T 1` and then to `Y` is restricting to `Y ∩ T 1`
     let e := Functor.isoWhiskerRight (NatIso.op (prod.functorLeftComp Y (T 1))) F.obj
     refine (quasiIso_cechAugmentation_iff_of_fin_two_of_quasiIso_prod isTerminalTop
@@ -259,14 +203,15 @@ private lemma quasiIso_cechAugmentation_finset {ι : Type u} (V : ι → X.Opens
       exact (quasiIso_cechAugmentation_iff_of_iso _ _ _ (Functor.isoWhiskerRight
         (NatIso.op (prod.functorLeftComp _ _)) F.obj)).2
         (quasiIso_cechAugmentation_fin_two M hU (Topology.prod_pi_mem_of_inf_mem (U := W)
-          inf_mem_range_basicOpen (fun i ↦ hV i) hY n b) T hT ((leOfHom prod.fst).trans hYV₁))
+          Scheme.inf_mem_range_basicOpen (fun i ↦ hV i) hY n b) T hT
+          ((leOfHom prod.fst).trans hYV₁))
     · -- the restriction to `T 1` is compared with the cover by the `V i`, `i ∈ s`
       refine (quasiIso_cechAugmentation_iff_of_quasiIso_prod W isTerminalTop
         ((prod.functor.obj (T 1)).op ⋙ (prod.functor.obj Y).op ⋙ F.obj) W' (fun n b ↦ ?_)
         (fun n b ↦ ?_)).2 ?_
       · exact (quasiIso_cechAugmentation_iff_of_iso _ _ _ (Functor.isoWhiskerLeft _ e ≪≫
           Functor.isoWhiskerRight (NatIso.op (prod.functorLeftComp _ _)) F.obj)).2
-          (ih _ (Topology.prod_pi_mem_of_inf_mem (U := W) inf_mem_range_basicOpen
+          (ih _ (Topology.prod_pi_mem_of_inf_mem (U := W) Scheme.inf_mem_range_basicOpen
             (fun i ↦ hV i) hYT₁ n b) ((leOfHom (prod.fst ≫ prod.snd)).trans hV₁s))
       · exact quasiIso_cechAugmentation_prod_of_hom W isTerminalTop _ _
           (i₀ := ⟨b 0, Finset.mem_cons_of_mem (b 0).2⟩) (Pi.π _ 0)
@@ -295,7 +240,7 @@ III.3.5, without the Noetherian hypothesis): a quasi-coherent sheaf of modules h
 positive degrees on an affine open subset of a scheme. -/
 theorem subsingleton_cohomologyOn_succ_of_isAffineOpen (n : ℕ) :
     Subsingleton (cohomologyOn M (n + 1) U) := by
-  refine TauCeti.Topology.subsingleton_H'_succ_of_isCechAcyclicOn inf_mem_range_basicOpen
+  refine TauCeti.Topology.subsingleton_H'_succ_of_isCechAcyclicOn Scheme.inf_mem_range_basicOpen
     ?_ ?_ (isCechAcyclicOn_range_basicOpen M hU) ⟨1, Scheme.basicOpen_one _⟩ n
   · rintro _ ⟨f, rfl⟩
     exact (hU.basicOpen f).isCompact

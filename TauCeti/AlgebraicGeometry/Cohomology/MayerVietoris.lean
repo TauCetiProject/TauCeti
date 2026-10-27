@@ -37,8 +37,8 @@ together with the vanishing it gives when `U` and `V` cover `X`.
   uniform positive-degree acyclicity hypotheses;
 * `Scheme.Modules.subsingleton_cohomology_of_two_le_of_isAffineOpen` applies affine-open
   acyclicity when `U`, `V`, and `U ⊓ V` are affine, while the `_of_isAffineHom` variant obtains
-  the intersection hypothesis from an affine diagonal, and the `_of_isProper` variant supplies
-  the required separation hypothesis for a proper scheme over a field.
+  the intersection hypothesis from an affine diagonal, and the `_of_isSeparated` variant supplies
+  it for a separated (for instance proper) scheme over a field.
 
 These statements are the shape in which Mayer-Vietoris is used on a curve. The general theorem
 accepts arbitrary coefficients and explicit acyclicity hypotheses. For quasi-coherent
@@ -205,9 +205,9 @@ theorem subsingleton_cohomology_of_two_le_of_isAffineOpen_of_isAffineHom
 
 variable {k : Type u} [Field k] [X.Over (Spec (.of k))]
 
-/-- A proper scheme over a field which is covered by two affine opens has no quasi-coherent
-cohomology in degrees at least two. -/
-theorem subsingleton_cohomology_of_two_le_of_isProper [IsProper (X ↘ Spec (.of k))]
+/-- A separated (for instance proper) scheme over a field which is covered by two affine opens has
+no quasi-coherent cohomology in degrees at least two. -/
+theorem subsingleton_cohomology_of_two_le_of_isSeparated [IsSeparated (X ↘ Spec (.of k))]
     (hcover : ∃ U V : X.Opens, IsAffineOpen U ∧ IsAffineOpen V ∧ U ⊔ V = ⊤) (M : X.Modules)
     [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) := by
   have : IsSeparated (terminal.from X) := by

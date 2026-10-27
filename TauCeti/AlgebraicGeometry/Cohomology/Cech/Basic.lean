@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
-public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 public import TauCeti.Topology.Sheaves.Leray

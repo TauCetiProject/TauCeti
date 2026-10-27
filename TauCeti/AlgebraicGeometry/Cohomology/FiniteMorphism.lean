@@ -9,17 +9,19 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 
 /-!
-# Cohomology of schemes finite over an affine base
+# Cohomology of schemes affine over an affine base
 
-A scheme finite over an affine scheme is itself affine, so the acyclicity of quasi-coherent sheaves
-on affine schemes (`Scheme.Modules.subsingleton_cohomology_succ_of_isAffine`) applies: a
-quasi-coherent sheaf on it has no cohomology in positive degrees. The main example is a scheme
-finite over a field `k`, taking the structure morphism to `Spec k`.
+A scheme affine over an affine scheme, for example finite over it, is itself affine, so the
+acyclicity of quasi-coherent sheaves on affine schemes
+(`Scheme.Modules.subsingleton_cohomology_succ_of_isAffine`) applies: a quasi-coherent sheaf on it
+has no cohomology in positive degrees. The main example is a scheme finite over a field `k`, taking
+the structure morphism to `Spec k`.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isFinite`:
-  acyclicity of quasi-coherent sheaves on the source of a finite morphism to an affine scheme.
+* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffineHom`:
+  acyclicity of quasi-coherent sheaves on the source of an affine morphism (for example a finite
+  morphism) to an affine scheme.
 
 ## References
 
@@ -36,9 +38,9 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 open TauCeti TauCeti.AlgebraicGeometry.Scheme.Modules
 
-/-- A quasi-coherent sheaf on the source of a finite morphism to an affine scheme (for example, on
+/-- A quasi-coherent sheaf on the source of an affine morphism to an affine scheme (for example, on
 a scheme finite over a field) has no cohomology in positive degrees. -/
-theorem subsingleton_cohomology_succ_of_isFinite {X S : Scheme.{u}} (f : X ⟶ S) [IsFinite f]
+theorem subsingleton_cohomology_succ_of_isAffineHom {X S : Scheme.{u}} (f : X ⟶ S) [IsAffineHom f]
     [IsAffine S] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
     Subsingleton (Cohomology M (n + 1)) := by
   have : IsAffine X := isAffine_of_isAffineHom f
