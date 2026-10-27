@@ -28,8 +28,10 @@ test functions in `Lᵖ(Ω, E)`. An element is therefore recorded by its gradien
 `TauCeti.D1p0` is exactly the `Lᵖ` norm of that gradient, the space is complete, and for `p = 2` it
 is a Hilbert space with inner product `⟪u, v⟫ = ∫_Ω ⟪∇u, ∇v⟫`, inherited from `L²(Ω, E)`. The
 construction only assumes the measure finite on compact sets, for which `‖∇φ‖_p` is merely a
-seminorm on `C_c^∞(Ω)`. When the measure has full support, for instance a Haar measure, it is a
-norm, and the closure is the completion of `C_c^∞(Ω)` for it.
+seminorm on `C_c^∞(Ω)`. When the measure has full support, for instance a Haar measure, and `E`
+has positive dimension, it is a norm, and the closure is the completion of `C_c^∞(Ω)` for it. In
+general the closure is the completion of the quotient of `C_c^∞(Ω)` by the kernel of the
+seminorm.
 
 ## The Sobolev embedding
 
@@ -48,7 +50,7 @@ are unique, a vanishing image forces a vanishing gradient, so the map is injecti
 ## Main declarations
 
 * `TauCeti.d1p0Submodule` and `TauCeti.D1p0`: the space `D^{1,p}_0(Ω)`, complete for the
-  gradient norm, with the dense linear embedding `TauCeti.D1p0.ofTestFunctionₗ` of the test
+  gradient norm, with the dense linear map `TauCeti.D1p0.ofTestFunctionₗ` from the test
   functions (`TauCeti.D1p0.denseRange_ofTestFunctionₗ`, `TauCeti.D1p0.norm_ofTestFunctionₗ`).
 * `TauCeti.D1p0.inner_def` and `TauCeti.D1p0.inner_ofTestFunctionₗ`: the Hilbert space structure
   of `D^{1,2}_0(Ω)`.
@@ -90,8 +92,8 @@ variable [IsFiniteMeasureOnCompacts mu]
 
 /-- **The homogeneous Sobolev space `D^{1,p}_0(Ω)`**, as a closed subspace of `Lᵖ(Ω, E)`: the
 closure of the gradients `∇φ` of the test functions `φ ∈ C_c^∞(Ω)`, each element being recorded
-by its gradient field. When `mu` has full support, for instance a Haar measure, it is the
-completion of `C_c^∞(Ω)` for the gradient norm. -/
+by its gradient field. When `mu` has full support, for instance a Haar measure, and `E` has
+positive dimension, it is the completion of `C_c^∞(Ω)` for the gradient norm. -/
 def d1p0Submodule (mu : Measure E) [IsFiniteMeasureOnCompacts mu] (Omega : Opens E) (p : ENNReal)
     [Fact (1 ≤ p)] : ClosedSubmodule ℝ (Lp E p (mu.restrict Omega)) :=
   (LinearMap.range (gradientTestFunctionLpₗ mu Omega p)).closure
@@ -106,9 +108,9 @@ theorem coe_d1p0Submodule :
 
 /-- **The homogeneous Sobolev space `D^{1,p}_0(Ω)`**, the closure in `Lᵖ(Ω, E)` of the gradients
 of the test functions `C_c^∞(Ω)`, which is their completion for the gradient norm `‖∇φ‖_p` when
-`mu` has full support. An element is its gradient field in `Lᵖ(Ω, E)`. For a Haar measure `mu` and
-a Sobolev conjugate `p⋆ ≠ ∞`, the function it represents is its image under
-`TauCeti.D1p0.sobolevEmbeddingL`. -/
+`mu` has full support and `E` has positive dimension. An element is its gradient field in
+`Lᵖ(Ω, E)`. For a Haar measure `mu` and a Sobolev conjugate `p⋆ ≠ ∞`, the function it represents
+is its image under `TauCeti.D1p0.sobolevEmbeddingL`. -/
 abbrev D1p0 (mu : Measure E) [IsFiniteMeasureOnCompacts mu] (Omega : Opens E) (p : ENNReal)
     [Fact (1 ≤ p)] := (d1p0Submodule mu Omega p).toSubmodule
 
@@ -123,8 +125,9 @@ instance D1p0.instNormedSpace : NormedSpace ℝ (D1p0 mu Omega p) := inferInstan
 instance : CompleteSpace (D1p0 mu Omega p) :=
   (d1p0Submodule mu Omega p).isClosed.completeSpace_coe
 
-/-- **The test functions inside `D^{1,p}_0(Ω)`**: the linear embedding sending `φ ∈ C_c^∞(Ω)` to
-its gradient `∇φ`. -/
+/-- **The test functions inside `D^{1,p}_0(Ω)`**: the dense linear map sending `φ ∈ C_c^∞(Ω)` to
+its gradient `∇φ`. It is injective when the gradient seminorm is a norm, for instance when `mu`
+has full support and `E` has positive dimension. -/
 def D1p0.ofTestFunctionₗ (mu : Measure E) [IsFiniteMeasureOnCompacts mu] (Omega : Opens E)
     (p : ENNReal) [Fact (1 ≤ p)] : 𝓓(Omega, ℝ) →ₗ[ℝ] D1p0 mu Omega p where
   toFun phi := ⟨gradientTestFunctionLp p phi,
