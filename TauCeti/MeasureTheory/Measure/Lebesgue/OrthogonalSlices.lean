@@ -63,17 +63,27 @@ theorem measurePreserving_orthogonalLineEquiv (e : E) (he : ‖e‖ = 1) :
   exact (orthogonalLineIsometry e he).measurePreserving.comp
     (WithLp.volume_preserving_toLp (ℝ ∙ e)ᗮ ℝ)
 
+private theorem aemeasurable_comp_orthogonalLineEquiv (e : E) (he : ‖e‖ = 1)
+    {g : E → ℝ≥0∞} (hg : AEMeasurable g volume) :
+    AEMeasurable (g ∘ orthogonalLineEquiv e he) (volume.prod volume) := by
+  exact hg.comp_quasiMeasurePreserving
+    (measurePreserving_orthogonalLineEquiv e he).quasiMeasurePreserving
+
+/-- Integrating an a.e. measurable nonnegative function along parallel lines gives an
+a.e. measurable function of the transverse coordinate. -/
+theorem aemeasurable_lintegral_line (e : E) (he : ‖e‖ = 1)
+    {g : E → ℝ≥0∞} (hg : AEMeasurable g volume) :
+    AEMeasurable (fun y : (ℝ ∙ e)ᗮ ↦ ∫⁻ t : ℝ, g ((y : E) + t • e)) volume := by
+  simpa only [Function.comp_apply, orthogonalLineEquiv_apply] using
+    (aemeasurable_comp_orthogonalLineEquiv e he hg).lintegral_prod_right'
+
 /-- Tonelli's theorem in orthogonal line coordinates. -/
 theorem lintegral_eq_lintegral_lintegral_line (e : E) (he : ‖e‖ = 1)
     {g : E → ℝ≥0∞} (hg : AEMeasurable g volume) :
     ∫⁻ x, g x = ∫⁻ y : (ℝ ∙ e)ᗮ, ∫⁻ t : ℝ, g ((y : E) + t • e) := by
-  have hcoord : AEMeasurable (fun p : (ℝ ∙ e)ᗮ × ℝ ↦ g (orthogonalLineEquiv e he p))
-      (volume.prod volume) := by
-    convert hg.comp_quasiMeasurePreserving
-      (measurePreserving_orthogonalLineEquiv e he).quasiMeasurePreserving using 1
-    rfl
   rw [← (measurePreserving_orthogonalLineEquiv e he).lintegral_comp' hg,
-    lintegral_prod _ hcoord]
+    lintegral_prod (fun p ↦ g (orthogonalLineEquiv e he p))
+      (aemeasurable_comp_orthogonalLineEquiv e he hg)]
   simp only [orthogonalLineEquiv_apply]
 
 /-- Volume-a.e. equal sets have a.e. equal parallel sections for almost every transverse point.

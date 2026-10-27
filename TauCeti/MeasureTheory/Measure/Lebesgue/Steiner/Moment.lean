@@ -44,15 +44,8 @@ private theorem lintegral_norm_sq_steinerSymmetrization_le_and_eq_iff
   -- Tonelli transports the ambient moment and its finiteness to almost every line.
   have hS := nullMeasurableSet_steinerSymmetrization e he hs
   have hmeas (u : Set E) (hu : NullMeasurableSet u volume) : AEMeasurable (m u) volume := by
-    have hcoord : AEMeasurable (fun p : (ℝ ∙ e)ᗮ × ℝ ↦
-        u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) (orthogonalLineEquiv e he p))
-        (volume.prod volume) := by
-      convert AEMeasurable.comp_quasiMeasurePreserving
-        ((continuous_norm.pow 2).measurable.ennreal_ofReal.aemeasurable.indicator₀ hu)
-          (measurePreserving_orthogonalLineEquiv e he).quasiMeasurePreserving using 1
-      rfl
-    convert hcoord.lintegral_prod_right' using 1
-    simp only [m, orthogonalLineEquiv_apply]
+    exact aemeasurable_lintegral_line e he
+      ((continuous_norm.pow 2).measurable.ennreal_ofReal.aemeasurable.indicator₀ hu)
   have hformula (u : Set E) (hu : NullMeasurableSet u volume) :
       (∫⁻ x in u, ENNReal.ofReal (‖x‖ ^ 2)) = ∫⁻ y, m u y := by
     rw [← lintegral_indicator₀ hu]
@@ -90,8 +83,7 @@ private theorem lintegral_norm_sq_steinerSymmetrization_le_and_eq_iff
       filter_upwards [hpoint, hcomp] with y hy hc
       exact hc.2.mp hy
     have hzero : volume (s ∆ S) = 0 := by
-      rw [volume_eq_lintegral_volume_lineSection e he (hs.symmDiff hS)]
-      apply (lintegral_eq_zero_iff' (aemeasurable_volume_lineSection e he (hs.symmDiff hS))).mpr
+      apply (volume_eq_zero_iff_ae_volume_lineSection_eq_zero e he (hs.symmDiff hS)).mpr
       filter_upwards [hlines] with y hy
       exact measure_symmDiff_eq_zero_iff.mpr hy
     exact (measure_symmDiff_eq_zero_iff).mp hzero
@@ -123,13 +115,9 @@ theorem integrableOn_norm_sq_steinerSymmetrization (e : E) (he : ‖e‖ = 1)
     {s : Set E} (hs : NullMeasurableSet s volume)
     (hmoment : IntegrableOn (fun x ↦ ‖x‖ ^ 2) s volume) :
     IntegrableOn (fun x ↦ ‖x‖ ^ 2) (steinerSymmetrization e he s) volume := by
-  have hnonneg (u : Set E) : 0 ≤ᵐ[volume.restrict u] (fun x : E ↦ ‖x‖ ^ 2) :=
-    Filter.Eventually.of_forall fun x ↦ sq_nonneg ‖x‖
-  apply (lintegral_ofReal_ne_top_iff_integrable
-    (continuous_norm.pow 2).aestronglyMeasurable (hnonneg _)).mp
+  apply integrableOn_norm_sq_iff_lintegral_ne_top.mpr
   exact ne_top_of_le_ne_top
-    ((lintegral_ofReal_ne_top_iff_integrable
-      (continuous_norm.pow 2).aestronglyMeasurable (hnonneg _)).mpr hmoment)
+    (integrableOn_norm_sq_iff_lintegral_ne_top.mp hmoment)
     (lintegral_norm_sq_steinerSymmetrization_le e he hs)
 
 /-- The real-valued second moment decreases under Steiner symmetrization. -/
@@ -137,13 +125,11 @@ theorem integral_norm_sq_steinerSymmetrization_le (e : E) (he : ‖e‖ = 1)
     {s : Set E} (hs : NullMeasurableSet s volume)
     (hmoment : IntegrableOn (fun x ↦ ‖x‖ ^ 2) s volume) :
     (∫ x in steinerSymmetrization e he s, ‖x‖ ^ 2) ≤ (∫ x in s, ‖x‖ ^ 2) := by
-  have hnonneg (u : Set E) : 0 ≤ᵐ[volume.restrict u] (fun x : E ↦ ‖x‖ ^ 2) :=
-    Filter.Eventually.of_forall fun x ↦ sq_nonneg ‖x‖
   have hle := lintegral_norm_sq_steinerSymmetrization_le e he hs
-  rw [← ofReal_integral_eq_lintegral_ofReal
-    (integrableOn_norm_sq_steinerSymmetrization e he hs hmoment) (hnonneg _),
-    ← ofReal_integral_eq_lintegral_ofReal hmoment (hnonneg _)] at hle
-  exact (ENNReal.ofReal_le_ofReal_iff (integral_nonneg_of_ae (hnonneg _))).mp hle
+  rw [← ofReal_integral_norm_sq_eq_lintegral
+    (integrableOn_norm_sq_steinerSymmetrization e he hs hmoment),
+    ← ofReal_integral_norm_sq_eq_lintegral hmoment] at hle
+  exact (ENNReal.ofReal_le_ofReal_iff (integral_nonneg fun x ↦ sq_nonneg ‖x‖)).mp hle
 
 /-- Equality of real-valued second moments characterizes the a.e. fixed points of a Steiner
 symmetrization, provided the original second moment is integrable. -/
@@ -152,16 +138,13 @@ theorem integral_norm_sq_steinerSymmetrization_eq_iff (e : E) (he : ‖e‖ = 1)
     (hmoment : IntegrableOn (fun x ↦ ‖x‖ ^ 2) s volume) :
     (∫ x in steinerSymmetrization e he s, ‖x‖ ^ 2) = (∫ x in s, ‖x‖ ^ 2) ↔
       s =ᵐ[volume] steinerSymmetrization e he s := by
-  have hnonneg (u : Set E) : 0 ≤ᵐ[volume.restrict u] (fun x : E ↦ ‖x‖ ^ 2) :=
-    Filter.Eventually.of_forall fun x ↦ sq_nonneg ‖x‖
-  have hfinite := (lintegral_ofReal_ne_top_iff_integrable
-    (continuous_norm.pow 2).aestronglyMeasurable (hnonneg _)).mpr hmoment
+  have hfinite := integrableOn_norm_sq_iff_lintegral_ne_top.mp hmoment
   have heq := lintegral_norm_sq_steinerSymmetrization_eq_iff e he hs hfinite
-  rw [← ofReal_integral_eq_lintegral_ofReal
-    (integrableOn_norm_sq_steinerSymmetrization e he hs hmoment) (hnonneg _),
-    ← ofReal_integral_eq_lintegral_ofReal hmoment (hnonneg _),
-    ENNReal.ofReal_eq_ofReal_iff (integral_nonneg_of_ae (hnonneg _))
-      (integral_nonneg_of_ae (hnonneg _))] at heq
+  rw [← ofReal_integral_norm_sq_eq_lintegral
+    (integrableOn_norm_sq_steinerSymmetrization e he hs hmoment),
+    ← ofReal_integral_norm_sq_eq_lintegral hmoment,
+    ENNReal.ofReal_eq_ofReal_iff (integral_nonneg fun x ↦ sq_nonneg ‖x‖)
+      (integral_nonneg fun x ↦ sq_nonneg ‖x‖)] at heq
   exact heq
 
 end TauCeti
