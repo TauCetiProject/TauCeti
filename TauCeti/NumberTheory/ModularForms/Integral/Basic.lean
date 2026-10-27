@@ -72,6 +72,7 @@ noncomputable def integralAtCusps : Submodule ℤ (ModularForm Γ k) where
 variable {R Γ k}
 
 /-- Membership in the integral forms: every coefficient of every cusp expansion lies in `R`. -/
+@[simp]
 theorem mem_integralAtCusps_iff {f : ModularForm Γ k} :
     f ∈ integralAtCusps R Γ k ↔ ∀ (γ : SL(2, ℤ)) (n : ℕ), (qExpansionAt γ f).coeff n ∈ R :=
   Iff.rfl
@@ -109,18 +110,21 @@ private noncomputable def truncCoeffs : integralAtCusps R Γ k →ₗ[ℤ] Fin (
   toFun f i := ⟨(qExpansionAt 1 (f : ModularForm Γ k)).coeff i, f.2 1 i⟩
   map_add' f g := by
     ext i
-    simp
+    simp [-qExpansionAt_one]
   map_smul' c f := by
     ext i
-    simp
+    simp [-qExpansionAt_one]
 
-private theorem truncCoeffs_injective : Function.Injective (truncCoeffs R Γ k) := by
-  refine (injective_iff_map_eq_zero _).mpr fun f hf ↦ Subtype.ext ?_
-  refine TauCeti.ModularForm.sturm_bound_finiteIndex (f : ModularForm Γ k)
-    (lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_self _)
-      (PowerSeries.nat_le_order _ _ fun i hi ↦ ?_))
-  have hcoeff := congrArg (fun F ↦ (F ⟨i, hi⟩ : ℂ)) hf
-  simpa [truncCoeffs, qExpansionAt_one] using hcoeff
+omit [Γ.HasDetOne] [Γ.IsArithmetic] in
+/-- Every index up to the Sturm bound is below `sturmLength Γ k`. -/
+private theorem lt_sturmLength {i : ℕ} (hi : i ≤ (k * Nat.card (𝒮ℒ ⧸ Γ.subgroupOf 𝒮ℒ)).toNat / 12) :
+    i < sturmLength Γ k := by
+  unfold sturmLength
+  exact Nat.lt_succ_of_le hi
+
+private theorem truncCoeffs_injective : Function.Injective (truncCoeffs R Γ k) :=
+  fun f g h ↦ Subtype.ext <| eq_of_sturm_bound _ _ fun i hi ↦ by
+    simpa [truncCoeffs] using congrArg (fun F ↦ (F ⟨i, lt_sturmLength Γ k hi⟩ : ℂ)) h
 
 /-- When `R` is a finitely generated abelian group, the integral forms make up a finitely
 generated `ℤ`-module: by the Sturm bound they embed into finitely many copies of `R`. -/

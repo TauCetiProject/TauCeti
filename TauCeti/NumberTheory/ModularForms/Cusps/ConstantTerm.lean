@@ -180,9 +180,11 @@ lemma qExpansionAt_apply (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     translateₗ_apply]
 
 /-- At the identity representative, the `q`-expansion at the cusp is the `q`-expansion at `∞`. -/
+@[simp]
 lemma qExpansionAt_one (f : ModularForm Γ k) :
     qExpansionAt 1 f = qExpansion Γ.strictWidthInfty f := by
-  rw [qExpansionAt_apply, coe_translate, map_one, inv_one, map_one, one_smul, SlashAction.slash_one]
+  simp only [qExpansionAt_apply, coe_translate, map_one, inv_one, one_smul,
+    SlashAction.slash_one]
 
 /-- The `q`-expansion at a cusp is multiplicative: the expansion of a product of forms of
 weights `k₁` and `k₂` is the product of their expansions. -/
@@ -191,8 +193,7 @@ theorem qExpansionAt_mul {k₁ k₂ : ℤ} (γ : SL(2, ℤ)) (f : ModularForm Γ
   let Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ
   have hprod : ⇑(translate (f.mul g) (mapGL ℝ γ)) =
       ⇑(translate f (mapGL ℝ γ)) * ⇑(translate g (mapGL ℝ γ)) := by
-    rw [coe_translate, coe_translate, coe_translate, coe_mul, mul_slash, det_mapGL, Units.val_one,
-      abs_one, one_smul]
+    simp only [coe_translate, coe_mul, mul_slash, det_mapGL, Units.val_one, abs_one, one_smul]
   rw [qExpansionAt_apply, qExpansionAt_apply, qExpansionAt_apply, hprod]
   exact ModularForm.qExpansion_mul_coe (Γγ.strictWidthInfty_pos_iff.mpr Fact.out)
     Γγ.strictWidthInfty_mem_strictPeriods _ _
