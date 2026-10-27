@@ -14,10 +14,9 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 -- `TauCeti.GL2NonSplitTorusHom` is the elliptic normal form and occurs in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
--- Non-public: the trace and the norm of a quadratic irrationality, and the existence of one over a
--- finite field, are what pin the elliptic normal form; used in proofs only.
+-- Proof-only: a quadratic root in the extension, and its trace and norm, pin the elliptic form.
 import TauCeti.FieldTheory.Quadratic
-import Mathlib.RingTheory.Trace.Basic
+import TauCeti.RingTheory.Norm.Quadratic
 -- Non-public: `Matrix.GeneralLinearGroup.center_eq_range_scalar` turns a scalar element of `GL₂`
 -- into the scalar matrix of a unit, in a proof only.
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
@@ -54,10 +53,11 @@ The elliptic case is the one that needs a quadratic extension, and it is where t
 `F` enters. Multiplication by `x : E` has trace `Tr_{E/F} x` and determinant `N_{E/F} x`
 (`TauCeti.GL2NonSplitTorus.trace_gl2NonSplitTorusHom` and
 `TauCeti.GL2NonSplitTorus.val_det_gl2NonSplitTorusHom`), so the normal form is pinned by the
-quadratic-extension lemmas of `TauCeti/FieldTheory/Quadratic.lean`:
+quadratic-algebra lemmas of `TauCeti/RingTheory/Norm/Quadratic.lean`:
 `TauCeti.Algebra.trace_eq_of_mul_self_eq` and `TauCeti.Algebra.norm_eq_of_mul_self_eq` identify
 those with `t` and `d` for an `x` outside `F` satisfying `x² = t x - d`, and
-`TauCeti.exists_mul_self_eq_of_finite` supplies such an `x` over a finite field.
+`TauCeti.exists_mul_self_eq_of_finite` from `TauCeti/FieldTheory/Quadratic.lean` supplies such an
+`x` over a finite field.
 
 Uniqueness — that the four families are pairwise disjoint and that the parameters are determined up
 to the evident symmetries `(a, b) ↦ (b, a)` and `x ↦ x^q` — is the second half of the file, and it

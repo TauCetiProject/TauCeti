@@ -12,8 +12,20 @@ public import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 public import TauCeti.RingTheory.Norm.Units
 
+-- Proof-only: the companion matrix computes multiplication by a quadratic generator.
+import TauCeti.LinearAlgebra.Matrix.RationalCanonicalFormFinTwo
+
 /-!
 # Trace and norm in quadratic algebras and separable quadratic extensions
+
+For a degree-two algebra `L` over a field `K`, any non-scalar element `x` gives the basis
+`(1, x)`. If `x² = t x - d`, multiplication by `x` has companion matrix
+`TauCeti.companionFinTwo t d`, so its trace is `t` and its norm is `d`
+(`TauCeti.Algebra.trace_eq_of_mul_self_eq`, `TauCeti.Algebra.norm_eq_of_mul_self_eq`). The norm
+calculation requires only a ring structure on `L`; the trace calculation requires a commutative
+ring, as required by Mathlib's `Algebra.trace`. These include split and non-reduced quadratic
+algebras such as `K × K` and `K[X]/(X²)`. The formulas also identify the trace and norm of the
+eigenvalues used in the elliptic conjugacy normal forms of `GL₂(K)`.
 
 For a separable quadratic extension `L/K` the trace and norm are the two elementary symmetric
 functions of the pair `{x, σx}`, where `σ` is the nontrivial automorphism: `tr x = x + σx` and
@@ -78,10 +90,77 @@ Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
 Apache 2.0). That file's own header reads `Authors: Kevin Buzzard, Claude`; following this
 repository's convention for adapted material, the upstream authorship is credited here rather
 than in the copyright header. The root and square-root lemmas and `trace_inv` are not part of the
-adapted material.
+adapted material. The companion-matrix calculations follow C. Bonnafé,
+*Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
 -/
 
 public section
+
+namespace TauCeti
+
+variable {F : Type*} [Field F]
+
+/-! ### The basis `(1, x)` -/
+
+section Basis
+
+variable {E : Type*} [Ring E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
+
+/-- In the basis `(1, x)`, multiplication by `x` **is** the companion matrix of the monic quadratic
+that `x` satisfies. -/
+private theorem leftMulMatrix_quadraticExtensionBasis {x : E}
+    (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
+    (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
+    Algebra.leftMulMatrix
+      (quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)) x =
+      companionFinTwo t d := by
+  let b := quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)
+  -- Use the shared basis under a short name for the two column calculations.
+  change Algebra.leftMulMatrix b x = companionFinTwo t d
+  have e0 : x * b 0 = b 1 := by
+    simp [b]
+  have e1 : x * b 1 = (-d) • b 0 + t • b 1 := by
+    simp only [b, quadraticExtensionBasis_zero, quadraticExtensionBasis_one, Algebra.smul_def,
+      mul_one, map_neg]
+    rw [hx2, sub_eq_neg_add]
+  rw [companionFinTwo_def]
+  ext i j
+  rw [Algebra.leftMulMatrix_eq_repr_mul]
+  fin_cases j <;> fin_cases i <;> simp [e0, e1]
+
+end Basis
+
+/-! ### The trace and the norm -/
+
+namespace Algebra
+
+variable {E : Type*}
+
+/-- The trace of a non-scalar element `x` in a commutative degree-two algebra over a field is
+`t` whenever `x² = t x - d`. -/
+theorem trace_eq_of_mul_self_eq [CommRing E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
+    {x : E} (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
+    (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
+    Algebra.trace F E x = t := by
+  rw [Algebra.trace_eq_matrix_trace
+      (quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)),
+    leftMulMatrix_quadraticExtensionBasis hx hx2,
+    trace_companionFinTwo]
+
+/-- The norm of a non-scalar element `x` in a degree-two algebra over a field is `d` whenever
+`x² = t x - d`. The algebra need only be a ring. -/
+theorem norm_eq_of_mul_self_eq [Ring E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
+    {x : E} (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
+    (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
+    Algebra.norm F x = d := by
+  rw [Algebra.norm_eq_matrix_det
+      (quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)),
+    leftMulMatrix_quadraticExtensionBasis hx hx2,
+    det_companionFinTwo]
+
+end Algebra
+
+end TauCeti
 
 section CommRing
 

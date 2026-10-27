@@ -12,8 +12,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Basic
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.RingTheory.AdjoinRoot
--- Proof-only: the trace and norm of a quadratic irrationality, read off its quadratic equation.
-import TauCeti.FieldTheory.Quadratic
 -- Proof-only: `isMinimal_of_valuation_c₄_eq_one` and the transfer of split multiplicative
 -- reduction along a change of variables between minimal models.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
