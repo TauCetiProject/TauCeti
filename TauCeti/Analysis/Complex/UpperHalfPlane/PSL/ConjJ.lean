@@ -24,7 +24,8 @@ automorphism `pslConjJ` of `PSL(2, ℝ)`, sending the class of `!![a, b; c, d]` 
 * `TauCeti.UpperHalfPlane.J_smul_smul` and `TauCeti.UpperHalfPlane.J_smul_smul_onePoint`: `J`
   intertwines `g` with `pslConjJ g` on `ℍ` and on `∂ℍ`.
 * `TauCeti.UpperHalfPlane.pslConjJ_pslS` and `TauCeti.UpperHalfPlane.pslConjJ_dilation`:
-  conjugation by `J` fixes `pslS` and the dilations.
+  conjugation by `J` fixes `pslS` and the dilations; it inverts the translations
+  (`TauCeti.UpperHalfPlane.pslConjJ_upperRightHom`).
 * `TauCeti.UpperHalfPlane.J_smul_coe`, `TauCeti.UpperHalfPlane.J_smul_infty`: `J` negates real
   ideal points and fixes `∞`.
 -/
@@ -96,6 +97,18 @@ theorem pslConjJ_dilation (s : ℝ) :
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.SpecialLinearGroup.coe_dilation]
+
+/-- Conjugation by `J` inverts the translations `z ↦ z + x`. -/
+@[simp]
+theorem pslConjJ_upperRightHom (x : ℝ) :
+    pslConjJ (Matrix.ProjectiveSpecialLinearGroup.upperRightHom x) =
+      Matrix.ProjectiveSpecialLinearGroup.upperRightHom (-x) := by
+  rw [Matrix.ProjectiveSpecialLinearGroup.upperRightHom_apply,
+    Matrix.ProjectiveSpecialLinearGroup.upperRightHom_apply, pslConjJ_mk]
+  congr 1
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.SpecialLinearGroup.transvection_coe]
 
 /-- `J` negates real ideal points. -/
 @[simp]

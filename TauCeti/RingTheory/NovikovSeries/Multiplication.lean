@@ -49,7 +49,8 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
   set of pairs containing the pairs of support exponents.
 * `TauCeti.NovikovSeries.support_mul_subset`: the support of a product lies in the sum of the
   supports.
-* `TauCeti.NovikovSeries.single_mul_single`: monomials multiply by adding exponents.
+* `TauCeti.NovikovSeries.single_mul_single` and `TauCeti.NovikovSeries.single_pow`: monomials
+  multiply by adding exponents.
 * `TauCeti.NovikovSeries.unitsSingle`, `TauCeti.NovikovSeries.isUnit_single`: over an additive
   group, a monomial `u e^g` with unit coefficient is a unit, with inverse `u⁻¹ e^(-g)`.
 * `TauCeti.NovikovSeries.ofAddMonoidAlgebra_injective`: the group ring embeds into Novikov series.
@@ -132,7 +133,7 @@ theorem support_mul_subset (a b : NovikovSeries R H N) :
 
 /-- A coefficient of a product as a sum over a finite set `F`, mapped injectively by `f` onto a set
 of pairs adding up to `h` which contains every pair of support exponents. -/
-private theorem coeff_mul_eq_sum_of_injOn {ι : Type*} {a b : NovikovSeries R H N} {h : H}
+theorem coeff_mul_eq_sum_of_injOn {ι : Type*} {a b : NovikovSeries R H N} {h : H}
     {F : Finset ι} {f : ι → H × H} (hf : ∀ t ∈ F, (f t).1 + (f t).2 = h)
     (hab : ∀ u v, u + v = h → a.coeff u ≠ 0 → b.coeff v ≠ 0 → ∃ t ∈ F, f t = (u, v))
     (hinj : Set.InjOn f F) :
@@ -317,7 +318,7 @@ variable [AddMonoid H] {N : H →+ ℝ}
 /-- The coefficient at `h` of a triple product `a * b * c` is the sum of
 `a.coeff u * b.coeff v * c.coeff w` over the finitely many triples of support exponents with
 `u + v + w = h`. -/
-private theorem coeff_mul_mul_eq_sum [NonUnitalSemiring R] (a b c : NovikovSeries R H N) (h : H) :
+theorem coeff_mul_mul_eq_sum [NonUnitalSemiring R] (a b c : NovikovSeries R H N) (h : H) :
     (a * b * c).coeff h = ∑ t ∈ (finite_setOf_add_add_eq a b c h).toFinset,
       a.coeff t.1 * b.coeff t.2.1 * c.coeff t.2.2 := by
   classical
@@ -390,6 +391,14 @@ instance instNonUnitalRing [NonUnitalRing R] :
     NonUnitalRing (NovikovSeries R H N) where
 
 instance instRing [Ring R] : Ring (NovikovSeries R H N) where
+
+/-- The powers of a monomial: `(r e^g) ^ n = r ^ n e^(n • g)`. -/
+@[simp]
+theorem single_pow [Semiring R] (g : H) (r : R) (n : ℕ) :
+    (single g r : NovikovSeries R H N) ^ n = single (n • g) (r ^ n) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, ih, single_mul_single, succ_nsmul, pow_succ]
 
 end AddMonoid
 

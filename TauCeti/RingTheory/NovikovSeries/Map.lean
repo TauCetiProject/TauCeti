@@ -48,15 +48,24 @@ vanishing below `C`. Restricting a pushforward along an injective `φ` gives bac
 
 * `TauCeti.NovikovSeries.finite_support_inter_preimage_singleton`: a fibre of a period-rescaling
   homomorphism meets the support of a Novikov series in a finite set.
+* `TauCeti.NovikovSeries.finite_setOf_map_add_eq`: only finitely many pairs of support exponents
+  of two Novikov series have images under a period-rescaling homomorphism adding up to a given
+  exponent.
 * `TauCeti.NovikovSeries.exists_period_rescale_id` and
   `TauCeti.NovikovSeries.exists_period_rescale_comp`: the identity rescales periods by `1`, and
   composites rescale them by the product of the factors.
+* `TauCeti.NovikovSeries.period_rescale_neg`: negating both a period-preserving exponent map
+  and its target period rescales periods by `1`.
 * `TauCeti.NovikovSeries.coeff_map_eq_sum`: a coefficient of a pushforward as a sum over any
   finite set of exponents in the fibre containing the nonzero coefficients there.
+* `TauCeti.NovikovSeries.map_surjective`: pushforward along surjective coefficient and exponent
+  maps is surjective, even when the exponent map has infinite kernel.
 * `TauCeti.NovikovSeries.map_id` and `TauCeti.NovikovSeries.map_map`: the identity and composition
   laws of the pushforward.
 * `TauCeti.NovikovSeries.map_ofFinsupp`: the pushforward of a finitely supported series is the
   group-ring pushforward.
+* `TauCeti.NovikovSeries.map_single`: the pushforward of the monomial `r e^g` is the monomial
+  `ρ r e^(φ g)`.
 * `TauCeti.NovikovSeries.coeff_map_eq_zero_of_lt` and
   `TauCeti.NovikovSeries.coeff_comap_eq_zero_of_lt`: the pushforward moves the period cutoff `C`
   to `c * C`, and the restriction moves `c * C` back to `C`.
@@ -83,6 +92,12 @@ namespace NovikovSeries
 
 variable {R S T H H' H'' : Type*}
 
+/-- Negating both the target period and a period-preserving exponent map rescales periods
+by `1`. -/
+theorem period_rescale_neg [AddZeroClass H] [AddCommGroup H']
+    {N : H →+ ℝ} {N' : H' →+ ℝ} {φ : H →+ H'} (hφ : ∀ h, N' (φ h) = N h) :
+    ∀ h, (-N') ((-φ) h) = 1 * N h := fun h => by simp [hφ h]
+
 section Map
 
 variable [AddZeroClass H] [AddZeroClass H'] [AddZeroClass H''] {N : H →+ ℝ} {N' : H' →+ ℝ}
@@ -98,6 +113,16 @@ theorem finite_support_inter_preimage_singleton [Zero R] (a : NovikovSeries R H 
   rintro h ⟨hh, rfl⟩
   exact ⟨mem_support.1 hh, (le_div_iff₀' hc).2 (hφ h).ge⟩
 
+/-- If `φ` rescales periods by a positive constant, then for two Novikov series only finitely many
+pairs of support exponents have images under `φ` adding up to a given exponent. -/
+theorem finite_setOf_map_add_eq [Zero R] [Zero S] (a : NovikovSeries R H N)
+    (b : NovikovSeries S H N) {φ : H →+ H'} (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (h' : H') :
+    {p : H × H | φ p.1 + φ p.2 = h' ∧ a.coeff p.1 ≠ 0 ∧ b.coeff p.2 ≠ 0}.Finite := by
+  obtain ⟨c, hc, hcφ⟩ := hφ
+  refine (finite_setOf_period_add_lt a b (N' h' / c + 1)).subset fun p hp => ⟨?_, hp.2⟩
+  rw [← hp.1, ← map_add, hcφ, mul_div_cancel_left₀ _ hc.ne']
+  exact lt_add_one _
+
 /-- The identity rescales periods by `1`. -/
 theorem exists_period_rescale_id : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h :=
   ⟨1, one_pos, fun h => (one_mul (N h)).symm⟩
@@ -109,6 +134,35 @@ theorem exists_period_rescale_comp {φ : H →+ H'} {φ' : H' →+ H''}
   obtain ⟨c, hc, hφ⟩ := hφ
   obtain ⟨c', hc', hφ'⟩ := hφ'
   exact ⟨c' * c, mul_pos hc' hc, fun h => by rw [AddMonoidHom.comp_apply, hφ', hφ, mul_assoc]⟩
+
+/-- If an additive equivalence rescales periods by a positive factor `c`, its inverse rescales
+them by `c⁻¹`. -/
+theorem period_rescale_symm {e : H ≃+ H'} {c : ℝ} (hc : 0 < c)
+    (hcN : ∀ h, N' (e h) = c * N h) (h' : H') :
+    N (e.symm h') = c⁻¹ * N' h' := by
+  have h := hcN (e.symm h')
+  rw [e.apply_symm_apply] at h
+  rw [h, inv_mul_cancel_left₀ hc.ne']
+
+/-- The inverse of an additive equivalence that rescales periods positively also rescales
+periods positively. -/
+theorem exists_period_rescale_symm {e : H ≃+ H'}
+    (he : ∃ c > 0, ∀ h, N' (e h) = c * N h) :
+    ∃ c > 0, ∀ h', N (e.symm h') = c * N' h' := by
+  obtain ⟨c, hc, hcN⟩ := he
+  exact ⟨c⁻¹, inv_pos.mpr hc, period_rescale_symm hc hcN⟩
+
+/-- Successive additive equivalences rescaling periods positively have a composite that also
+rescales periods positively. -/
+theorem exists_period_rescale_trans {e : H ≃+ H'} {e' : H' ≃+ H''}
+    (he : ∃ c > 0, ∀ h, N' (e h) = c * N h)
+    (he' : ∃ c > 0, ∀ h, N'' (e' h) = c * N' h) :
+    ∃ c > 0, ∀ h, N'' ((e.trans e') h) = c * N h := by
+  simpa only [AddEquiv.trans_apply, AddMonoidHom.comp_apply,
+    AddEquiv.coe_toAddMonoidHom] using
+    exists_period_rescale_comp (φ := e.toAddMonoidHom) (φ' := e'.toAddMonoidHom)
+      (by simpa only [AddEquiv.coe_toAddMonoidHom] using he)
+      (by simpa only [AddEquiv.coe_toAddMonoidHom] using he')
 
 variable [AddMonoid R] [AddCommMonoid S] [AddCommMonoid T]
 
@@ -173,6 +227,54 @@ theorem coeff_map_of_support_inter_subset_singleton (a : NovikovSeries R H N) {h
     (hs : a.support ∩ φ ⁻¹' {φ h} ⊆ {h}) : (map ρ φ hφ a).coeff (φ h) = ρ (a.coeff h) := by
   rw [coeff_map_eq_sum ρ φ hφ a {h} (fun g hg => Finset.mem_singleton.2 (hs hg))
     fun g hg => by rw [Finset.mem_singleton.1 hg], Finset.sum_singleton]
+
+include hφ in
+private theorem exists_lift_of_rightInverse (σ : H' → H) (hσ : RightInverse σ φ)
+    (b : NovikovSeries S H' N') (f : H' → R)
+    (hf₀ : ∀ h', b.coeff h' = 0 → f h' = 0) :
+    ∃ a : NovikovSeries R H N, (∀ h', a.coeff (σ h') = f h') ∧ a.support ⊆ range σ := by
+  classical
+  obtain ⟨c, hc, hcφ⟩ := hφ
+  have hσ_supp (h : H) (hh : extend σ f 0 h ≠ 0) : ∃ h', σ h' = h := by
+    by_contra hσh
+    exact hh (extend_apply' f (fun _ => 0) h hσh)
+  let a : NovikovSeries R H N :=
+    { coeff := extend σ f 0
+      finite_lt C := by
+        refine ((b.finite_lt (c * C)).image σ).subset ?_
+        rintro h ⟨hh, hC⟩
+        obtain ⟨h', rfl⟩ := hσ_supp h hh
+        rw [hσ.injective.extend_apply] at hh
+        refine ⟨h', ⟨fun hb => hh (hf₀ h' hb), ?_⟩, rfl⟩
+        have hp := hcφ (σ h')
+        rw [hσ h'] at hp
+        exact hp.trans_lt (mul_lt_mul_of_pos_left hC hc) }
+  exact ⟨a, hσ.injective.extend_apply f 0, fun h hh => hσ_supp h (mem_support.1 hh)⟩
+
+/-- Pushforward along surjective coefficient and exponent maps is surjective. The exponent
+map may have infinite kernel and the period maps need not be injective or discrete. -/
+theorem map_surjective (hρ : Surjective ρ) (hφs : Surjective φ) : Surjective (map ρ φ hφ) := by
+  classical
+  obtain ⟨σ, hσ⟩ := hφs.hasRightInverse
+  obtain ⟨τ, hτ⟩ := hρ.hasRightInverse
+  intro b
+  let f : H' → R := fun h => if b.coeff h = 0 then 0 else τ (b.coeff h)
+  have hf (h : H') : ρ (f h) = b.coeff h := by
+    simp only [f]
+    split_ifs with h
+    · simp [h]
+    · exact hτ _
+  obtain ⟨a, ha, hs⟩ := exists_lift_of_rightInverse φ hφ σ hσ b f
+    (fun h hh => by simp [f, hh])
+  refine ⟨a, ?_⟩
+  ext h'
+  rw [← hσ h', coeff_map_of_support_inter_subset_singleton ρ φ _ a ?_]
+  · rw [ha, hf, hσ h']
+  · rintro h ⟨hh, heq⟩
+    obtain ⟨k, rfl⟩ := hs hh
+    simp only [mem_preimage, mem_singleton_iff] at heq
+    rw [hσ k, hσ h'] at heq
+    exact congrArg σ heq
 
 /-- Along an injective exponent homomorphism, the pushforward moves each coefficient to the image
 exponent. -/
@@ -265,6 +367,12 @@ theorem map_ofFinsupp (f : H →₀ R) :
         Finset.sum_empty]
       rintro g ⟨hg, hφg⟩
       exact absurd (by rw [← mem_singleton_iff.1 (hs hg)]; exact hφg) hh
+
+/-- The pushforward of the monomial `r e^g` is the monomial `ρ r e^(φ g)`. -/
+@[simp]
+theorem map_single (g : H) (r : R) : map ρ φ hφ (single g r) = single (φ g) (ρ r) := by
+  rw [← ofFinsupp_single, map_ofFinsupp, Finsupp.mapRange_single, Finsupp.mapDomain_single,
+    ofFinsupp_single]
 
 end Map
 

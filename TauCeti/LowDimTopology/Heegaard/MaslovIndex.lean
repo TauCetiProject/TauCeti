@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.Rat
+public import Mathlib.InformationTheory.Hamming
 public import TauCeti.LowDimTopology.Heegaard.Domain
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Fin
@@ -64,6 +65,10 @@ number of `∂D ∩ α` with `∂E ∩ β`, computed once along the `α`-curves 
 * `TauCeti.HeegaardRegionSystem.maslovIndex_one`: the Maslov index of the whole surface is
   `∑ χ(R) - #(α ∩ β) + 2n`, so it is two for a closed surface of genus `n`
   (`TauCeti.HeegaardRegionSystem.maslovIndex_one_eq_two`).
+* `TauCeti.HeegaardRegionSystem.IsDomainBetween.eulerMeasure_add_half_hammingDist_le_maslovIndex`:
+  a nonnegative domain from `x` to `y` has a corner at the points of `x` and of `y` on every
+  `α`-curve where they differ, so its Maslov index is at least its Euler measure plus half the
+  number of such curves.
 
 ## References
 
@@ -369,6 +374,83 @@ theorem maslovIndex_one_eq_two {χ : Region → ℤ}
   linarith
 
 end EulerMeasure
+
+section NonnegDomain
+
+variable {H} {x y : H.Generator} {D : Region → ℤ}
+
+variable (H) in
+/-- At an intersection point, the boundary of the `α`-part of a nonnegative domain is bounded by
+the sum of the multiplicities at the four corners there, that is, by four times the point
+measure. -/
+theorem abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure (hD : 0 ≤ D) (p : Point) :
+    |(H.alphaArcBoundary (H.alphaBoundary D) p : ℚ)| ≤ 4 * H.pointMeasure D p := by
+  have h₁ : (0 : ℚ) ≤ D (H.alphaLeft (H.alphaNext.symm p)) := by exact_mod_cast hD _
+  have h₂ : (0 : ℚ) ≤ D (H.alphaRight (H.alphaNext.symm p)) := by exact_mod_cast hD _
+  have h₃ : (0 : ℚ) ≤ D (H.alphaLeft p) := by exact_mod_cast hD _
+  have h₄ : (0 : ℚ) ≤ D (H.alphaRight p) := by exact_mod_cast hD _
+  simp only [alphaArcBoundary_apply, alphaBoundary_apply, pointMeasure_apply, Int.cast_sub]
+  rw [abs_le]
+  constructor <;> linarith
+
+variable (H) in
+/-- The point measure of a nonnegative domain is nonnegative. -/
+theorem pointMeasure_nonneg (hD : 0 ≤ D) (p : Point) : 0 ≤ H.pointMeasure D p := by
+  have := H.abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure hD p
+  linarith [abs_nonneg (H.alphaArcBoundary (H.alphaBoundary D) p : ℚ)]
+
+variable (H) in
+/-- The point measure of a nonnegative domain at a generator is nonnegative. -/
+theorem generatorPointMeasure_nonneg (hD : 0 ≤ D) (x : H.Generator) :
+    0 ≤ H.generatorPointMeasure x D := by
+  rw [generatorPointMeasure_apply]
+  exact sum_nonneg fun i _ => H.pointMeasure_nonneg hD _
+
+variable [DecidableEq Point]
+
+/-- If the boundary of the `α`-part of a nonnegative domain `D` has coefficient `±1` at the
+point of `w` on every `α`-curve where `x` and `y` differ, then each such curve contributes at least
+`1 / 4` to `n_w(D)`. -/
+private theorem hammingDist_le_four_mul_generatorPointMeasure_of_abs_eq_one (hD0 : 0 ≤ D)
+    (w : H.Generator) (hw : ∀ i, H.point x i ≠ H.point y i →
+      |(H.alphaArcBoundary (H.alphaBoundary D) (H.point w i) : ℚ)| = 1) :
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure w D := by
+  rw [hammingDist, generatorPointMeasure_apply, mul_sum, card_filter, Nat.cast_sum]
+  refine sum_le_sum fun i _ => ?_
+  split_ifs with hi
+  · simpa using (hw i hi).ge.trans
+      (H.abs_alphaArcBoundary_alphaBoundary_le_four_mul_pointMeasure hD0 (H.point w i))
+  · simpa using H.pointMeasure_nonneg hD0 (H.point w i)
+
+/-- For a nonnegative domain `D` from `x` to `y`, every `α`-curve on which `x` and `y` differ
+contributes at least `1 / 4` to `n_x(D)`. -/
+theorem IsDomainBetween.hammingDist_le_four_mul_generatorPointMeasure_left
+    (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure x D :=
+  hammingDist_le_four_mul_generatorPointMeasure_of_abs_eq_one hD0 x fun _ hi => by
+    rw [hD.alphaArcBoundary_alphaBoundary_point_left hi]; simp
+
+/-- For a nonnegative domain `D` from `x` to `y`, every `α`-curve on which `x` and `y` differ
+contributes at least `1 / 4` to `n_y(D)`. -/
+theorem IsDomainBetween.hammingDist_le_four_mul_generatorPointMeasure_right
+    (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure y D :=
+  hammingDist_le_four_mul_generatorPointMeasure_of_abs_eq_one hD0 y fun _ hi => by
+    rw [hD.alphaArcBoundary_alphaBoundary_point_right hi]; simp
+
+variable [Fintype Point] [DecidableEq Region] [Fintype Region]
+
+/-- The Maslov index of a nonnegative domain from `x` to `y` is at least its Euler measure plus
+half the number of `α`-curves on which `x` and `y` differ. -/
+theorem IsDomainBetween.eulerMeasure_add_half_hammingDist_le_maslovIndex (χ : Region → ℤ)
+    (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
+    H.eulerMeasure χ D + hammingDist (H.point x) (H.point y) / 2 ≤ H.maslovIndex χ x y D := by
+  have hx := hD.hammingDist_le_four_mul_generatorPointMeasure_left hD0
+  have hy := hD.hammingDist_le_four_mul_generatorPointMeasure_right hD0
+  rw [maslovIndex_apply]
+  linarith
+
+end NonnegDomain
 
 end HeegaardRegionSystem
 

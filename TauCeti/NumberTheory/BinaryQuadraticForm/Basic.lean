@@ -40,7 +40,7 @@ determinant hypothesis. The substitution `f ↦ f ∘ γ` found in much of the c
 a right action; composing with `γ⁻¹` instead gives the left action that `MulAction` expects, with
 the same orbits. With this convention `T • ⟨a, b, c⟩ = ⟨a, b - 2 a, a - b + c⟩` and
 `S • ⟨a, b, c⟩ = ⟨c, -b, a⟩`, where `S` and `T` are Mathlib's `ModularGroup.S = !![0, -1; 1, 0]`
-and `ModularGroup.T = !![1, 1; 0, 1]`; the examples at the end of the file check both formulas.
+and `ModularGroup.T = !![1, 1; 0, 1]` (`T_smul`, `S_smul`).
 It is also the convention for which the root `(-b + √(-D)) / (2 a)` of a positive definite form
 moves by the Möbius action of `γ` on the upper half-plane.
 
@@ -72,6 +72,8 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
   `TauCeti.BinaryQuadraticForm.smul_c`: the coefficients of `γ • f`.
 * `TauCeti.BinaryQuadraticForm.eval_smul`: `γ • f` is `f ∘ γ⁻¹`.
 * `TauCeti.BinaryQuadraticForm.discrim_smul`: the discriminant is invariant under `SL(2, R)`.
+* `TauCeti.BinaryQuadraticForm.T_zpow_smul`, `TauCeti.BinaryQuadraticForm.T_smul` and
+  `TauCeti.BinaryQuadraticForm.S_smul`: the action of `T ^ k`, `T` and `S` on coefficients.
 * `TauCeti.BinaryQuadraticForm.isUnit_det_of_quadratic_identity`: a coordinate change
   producing a unit discriminant has unit determinant over any commutative ring.
 * `TauCeti.BinaryQuadraticForm.mem_posDef`: membership in `posDef D`.
@@ -464,14 +466,22 @@ theorem mem_posDef {D : ℕ} [NeZero D] {f : BinaryQuadraticForm ℤ} :
     f ∈ posDef D ↔ f.discrim = -D ∧ 0 < f.a :=
   Iff.rfl
 
-/-! The convention `γ • f = f ∘ γ⁻¹` on the generators `T` and `S`: the formulas of the module
-docstring. -/
+/-- The translation `T ^ k` sends `a x² + b x y + c y²` to
+`a x² + (b - 2 a k) x y + (a k² - b k + c) y²`, the form `f(x - k y, y)`. -/
+@[simp]
+theorem T_zpow_smul (k : ℤ) (f : BinaryQuadraticForm ℤ) :
+    ModularGroup.T ^ k • f = ⟨f.a, f.b - 2 * f.a * k, f.a * k ^ 2 - f.b * k + f.c⟩ := by
+  ext <;> simp [ModularGroup.coe_T_zpow]
 
-example (a b c : ℤ) :
-    ModularGroup.T • (⟨a, b, c⟩ : BinaryQuadraticForm ℤ) = ⟨a, b - 2 * a, a - b + c⟩ := by
+/-- The translation `T` sends `a x² + b x y + c y²` to `a x² + (b - 2 a) x y + (a - b + c) y²`. -/
+@[simp]
+theorem T_smul (f : BinaryQuadraticForm ℤ) :
+    ModularGroup.T • f = ⟨f.a, f.b - 2 * f.a, f.a - f.b + f.c⟩ := by
   ext <;> simp [ModularGroup.coe_T]
 
-example (a b c : ℤ) : ModularGroup.S • (⟨a, b, c⟩ : BinaryQuadraticForm ℤ) = ⟨c, -b, a⟩ := by
+/-- The rotation `S` sends `a x² + b x y + c y²` to `c x² - b x y + a y²`. -/
+@[simp]
+theorem S_smul (f : BinaryQuadraticForm ℤ) : ModularGroup.S • f = ⟨f.c, -f.b, f.a⟩ := by
   ext <;> simp [ModularGroup.coe_S]
 
 end BinaryQuadraticForm

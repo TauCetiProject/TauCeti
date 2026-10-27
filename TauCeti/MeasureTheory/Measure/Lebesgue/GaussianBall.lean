@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Star
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 public import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.MeasureTheory.Integral.Lebesgue.InitialSegment
 
 /-!
 # The Gauss measure of a star-shaped set and the ball of volume one
@@ -29,10 +30,11 @@ of the cube `[-1, 1] ^ n` has `k`-dimensional volume at least `2 ^ k`.
 The comparison is made ray by ray, in polar coordinates. A set that is star-shaped about the
 origin meets each ray from the origin in an initial segment. Either that segment contains the
 segment of the ray inside `B`, or it is contained in it, and the two cases need only
-`exp (-π r ^ 2) ≤ 1` and the equality of the two radial integrals. That equality is forced by the
-equality of the two total masses, since the radial integrals do not depend on the direction of
-the ray. So the argument works for any radial density `φ (‖x‖) ≤ 1` against any closed ball of
-the same total mass, and for any additive Haar measure; the general statement is
+`exp (-π r ^ 2) ≤ 1` and comparison of the two radial integrals. This comparison follows from
+comparison of the two total masses, since the radial integrals do not depend on the direction of
+the ray. So the argument works for any radial density `φ (‖x‖)` with `φ r ≤ 1` for `r > 0`,
+against any closed ball of at least the same total mass, and for any additive Haar measure;
+the general statement is
 `TauCeti.setLIntegral_comp_norm_le_measure_inter_closedBall`.
 
 With the factor `π` in the exponent the Gauss density has total mass one in every dimension, so
@@ -41,13 +43,14 @@ no Gamma function and no closed form for the radius of the ball of volume one is
 ## Main results
 
 * `TauCeti.setLIntegral_comp_norm_le_measure_inter_closedBall`: for a radial density bounded by
-  one whose total mass is the measure of a closed ball, its integral over a measurable set
-  star-shaped about the origin is at most the measure of the set inside the ball.
+  one away from the origin whose total mass is at most the measure of a closed ball, its integral
+  over a measurable set star-shaped about the origin is at most the measure of the set inside
+  the ball.
 * `TauCeti.lintegral_ofReal_exp_neg_pi_mul_sq_norm`: the Gauss density `exp (-π ‖x‖ ^ 2)` has
   total mass one.
 * `TauCeti.setLIntegral_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_closedBall`: the Gauss
   measure of a measurable set star-shaped about the origin is at most its volume inside a closed
-  ball of volume one.
+  ball of volume at least one.
 
 ## References
 
@@ -75,38 +78,6 @@ section Radial
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- The comparison along one ray. Let `R` be an initial segment of the radii `r > 0`, let
-`φ ≤ 1`, and suppose that `φ` and the indicator of `(0, ρ]` have the same integral against the
-weight `w`. Then the integral of `φ` over `R` is at most the weight of `R ∩ (0, ρ]`. -/
-private lemma setLIntegral_le_of_lintegral_eq {w φ : ℝ → ℝ≥0∞} {ρ : ℝ} {R : Set ℝ}
-    (hφ : ∀ r, φ r ≤ 1)
-    (hmass : ∫⁻ r in Ioi (0 : ℝ), w r * φ r = ∫⁻ r in Ioi (0 : ℝ), (Iic ρ).indicator w r)
-    (hR : ∀ ⦃r s⦄, 0 < s → s ≤ r → r ∈ R → s ∈ R) :
-    ∫⁻ r in Ioi (0 : ℝ), R.indicator (fun r ↦ w r * φ r) r ≤
-      ∫⁻ r in Ioi (0 : ℝ), (R ∩ Iic ρ).indicator w r := by
-  by_cases hρR : ∀ r, 0 < r → r ≤ ρ → r ∈ R
-  · -- `R` contains `(0, ρ]`: compare with the total mass of `φ`.
-    calc ∫⁻ r in Ioi (0 : ℝ), R.indicator (fun r ↦ w r * φ r) r
-        ≤ ∫⁻ r in Ioi (0 : ℝ), w r * φ r := lintegral_mono fun r ↦ indicator_le_self _ _ _
-      _ = ∫⁻ r in Ioi (0 : ℝ), (Iic ρ).indicator w r := hmass
-      _ = ∫⁻ r in Ioi (0 : ℝ), (R ∩ Iic ρ).indicator w r := by
-        refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
-        by_cases hrρ : r ≤ ρ
-        · rw [indicator_of_mem (mem_Iic.2 hrρ),
-            indicator_of_mem (mem_inter (hρR r hr hrρ) (mem_Iic.2 hrρ))]
-        · rw [indicator_of_notMem (mt mem_Iic.1 hrρ),
-            indicator_of_notMem fun h ↦ hrρ (mem_Iic.1 (mem_of_mem_inter_right h))]
-  · -- `R` misses a radius `s ≤ ρ`, so it lies below `s`: use `φ ≤ 1` pointwise.
-    push Not at hρR
-    obtain ⟨s, hs, hsρ, hsR⟩ := hρR
-    refine setLIntegral_mono' measurableSet_Ioi fun r hr ↦ ?_
-    by_cases hrR : r ∈ R
-    · have hrρ : r ≤ ρ := (not_le.mp fun hsr ↦ hsR (hR hs hsr hrR)).le.trans hsρ
-      rw [indicator_of_mem hrR, indicator_of_mem (mem_inter hrR (mem_Iic.2 hrρ))]
-      exact mul_le_of_le_one_right' (hφ r)
-    · rw [indicator_of_notMem hrR]
-      exact zero_le
-
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- A point at radius `r > 0` on the ray in direction `u` has norm `r`. -/
 private lemma norm_smul_of_mem_sphere (u : sphere (0 : E) 1) {r : ℝ} (hr : r ∈ Ioi 0) :
@@ -123,10 +94,12 @@ private lemma indicator_closedBall_smul (u : sphere (0 : E) 1) {r ρ : ℝ} (hr 
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The comparison along the ray in direction `u`, for a set `A` star-shaped about the origin:
-under the hypotheses of `setLIntegral_le_of_lintegral_eq`, the integral of `φ ‖x‖` over the ray's
-part in `A` is at most the weight of the ray's part in `A ∩ closedBall 0 ρ`. -/
-private lemma lintegral_ray_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ} (hφ : ∀ r, φ r ≤ 1)
-    (hmass : ∫⁻ r in Ioi (0 : ℝ), w r * φ r = ∫⁻ r in Ioi (0 : ℝ), (Iic ρ).indicator w r)
+under the hypotheses of `setLIntegral_indicator_mul_le_setLIntegral_indicator_inter_Iic`, the
+integral of `φ ‖x‖` over the ray's part in `A` is at most the weight of the ray's part in
+`A ∩ closedBall 0 ρ`. -/
+private lemma lintegral_ray_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ}
+    (hφ : ∀ r ∈ Ioi (0 : ℝ), φ r ≤ 1)
+    (hmass : ∫⁻ r in Ioi (0 : ℝ), w r * φ r ≤ ∫⁻ r in Ioi (0 : ℝ), (Iic ρ).indicator w r)
     {A : Set E} (hA₀ : StarConvex ℝ 0 A) (u : sphere (0 : E) 1) :
     ∫⁻ r in Ioi (0 : ℝ), w r * A.indicator (fun x ↦ φ ‖x‖) (r • (u : E)) ≤
       ∫⁻ r in Ioi (0 : ℝ), w r * (A ∩ closedBall 0 ρ).indicator 1 (r • (u : E)) := by
@@ -145,7 +118,7 @@ private lemma lintegral_ray_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ} (hφ : ∀
         · rw [indicator_of_notMem hrA, indicator_of_notMem (s := R) (mt mem_preimage.1 hrA),
             mul_zero]
     _ ≤ ∫⁻ r in Ioi (0 : ℝ), (R ∩ Iic ρ).indicator w r :=
-        setLIntegral_le_of_lintegral_eq hφ hmass hR
+        setLIntegral_indicator_mul_le_setLIntegral_indicator_inter_Iic hφ hmass hR
     _ = ∫⁻ r in Ioi (0 : ℝ), w r * (A ∩ closedBall 0 ρ).indicator 1 (r • (u : E)) := by
         refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
         rw [inter_indicator_one, Pi.mul_apply, indicator_closedBall_smul u hr]
@@ -158,22 +131,23 @@ private lemma lintegral_ray_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ} (hφ : ∀
 
 /-- **The Gauss measure against a ball, for radial densities.** Let `μ` be an additive Haar
 measure on a finite-dimensional real normed space, and `φ : ℝ → ℝ≥0∞` a measurable function
-bounded by `1` such that the radial density `φ ‖x‖` has the same total mass as the closed ball
-`closedBall 0 ρ`. Then for every measurable set `A` that is star-shaped about the origin, the
-mass of `φ ‖x‖` on `A` is at most `μ (A ∩ closedBall 0 ρ)`.
+bounded by `1` at positive radii such that the radial density `φ ‖x‖` has total mass at most that
+of the closed ball `closedBall 0 ρ`. Then for every measurable set `A` that is star-shaped about
+the origin, the mass of `φ ‖x‖` on `A` is at most `μ (A ∩ closedBall 0 ρ)`.
 
 With `φ r = exp (-π r ^ 2)` and `μ` the volume of an inner product space this is the case of a
 single block in Bombieri–Gubler's Lemma C.3.7; see
 `TauCeti.setLIntegral_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_closedBall`. -/
 theorem setLIntegral_comp_norm_le_measure_inter_closedBall {φ : ℝ → ℝ≥0∞} (hφm : Measurable φ)
-    (hφ : ∀ r, φ r ≤ 1) {ρ : ℝ} (hmass : ∫⁻ x, φ ‖x‖ ∂μ = μ (closedBall 0 ρ)) {A : Set E}
+    (hφ : ∀ r ∈ Ioi (0 : ℝ), φ r ≤ 1) {ρ : ℝ}
+    (hmass : ∫⁻ x, φ ‖x‖ ∂μ ≤ μ (closedBall 0 ρ)) {A : Set E}
     (hA : MeasurableSet A) (hA₀ : StarConvex ℝ 0 A) :
     ∫⁻ x in A, φ ‖x‖ ∂μ ≤ μ (A ∩ closedBall 0 ρ) := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In the zero space `A` is empty or everything.
     rcases A.eq_empty_or_nonempty with rfl | hne
     · simp
-    rw [Subsingleton.eq_univ_of_nonempty hne, Measure.restrict_univ, univ_inter, hmass]
+    simpa only [Subsingleton.eq_univ_of_nonempty hne, Measure.restrict_univ, univ_inter] using hmass
   set k := Module.finrank ℝ E - 1
   -- The radial profiles of `φ ‖x‖` and of the ball do not depend on the direction `u`.
   set w : ℝ → ℝ≥0∞ := fun r ↦ ENNReal.ofReal (r ^ k)
@@ -186,17 +160,18 @@ theorem setLIntegral_comp_norm_le_measure_inter_closedBall {φ : ℝ → ℝ≥0
     refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
     rw [indicator_closedBall_smul u hr]
     by_cases hrρ : r ∈ Iic ρ <;> simp [hrρ]
-  -- The two total masses are `μ.toSphere univ * c` and `μ.toSphere univ * d`, so `c = d`.
-  have hcd : c = d := by
-    have h₁ : μ (closedBall 0 ρ) = μ.toSphere univ * c := by
-      rw [← hmass, lintegral_eq_lintegral_toSphere_lintegral_Ioi (f := fun x ↦ φ ‖x‖)
+  -- The two total masses are `μ.toSphere univ * c` and `μ.toSphere univ * d`, so `c ≤ d`.
+  have hcd : c ≤ d := by
+    have h₁ : ∫⁻ x, φ ‖x‖ ∂μ = μ.toSphere univ * c := by
+      rw [lintegral_eq_lintegral_toSphere_lintegral_Ioi (f := fun x ↦ φ ‖x‖)
         (hφm.comp measurable_norm), lintegral_congr hc, lintegral_const, mul_comm]
     have h₂ : μ (closedBall 0 ρ) = μ.toSphere univ * d := by
       rw [← lintegral_indicator_one measurableSet_closedBall,
         lintegral_eq_lintegral_toSphere_lintegral_Ioi
           (measurable_one.indicator measurableSet_closedBall), lintegral_congr hd,
         lintegral_const, mul_comm]
-    refine (ENNReal.mul_right_inj ?_ (measure_ne_top _ _)).1 (h₁.symm.trans h₂)
+    rw [h₁, h₂] at hmass
+    refine (ENNReal.mul_le_mul_iff_right ?_ (measure_ne_top _ _)).1 hmass
     rw [Ne, measure_univ_eq_zero]
     exact toSphere_ne_zero μ
   -- Compare ray by ray.
@@ -230,24 +205,24 @@ theorem lintegral_ofReal_exp_neg_pi_mul_sq_norm :
       (Integrable.of_integral_ne_zero (h ▸ one_ne_zero))
       (ae_of_all _ fun _ ↦ (Real.exp_pos _).le), h, ENNReal.ofReal_one]
 
-/-- **The Gauss measure of a star-shaped set is at most its volume inside the ball of volume
-one** (Bombieri–Gubler, Lemma C.3.7, for a single ball). On a finite-dimensional real inner
-product space, let `closedBall 0 ρ` have volume one. Then for every measurable set `A` that is
-star-shaped about the origin, in particular for every measurable convex set symmetric about the
-origin,
+/-- **The Gauss measure of a star-shaped set is at most its volume inside a ball of volume
+at least one** (Bombieri–Gubler, Lemma C.3.7, for a single ball of volume one). On a
+finite-dimensional real inner product space, let `closedBall 0 ρ` have volume at least one.
+Then for every measurable set `A` that is star-shaped about the origin, in particular for every
+measurable convex set symmetric about the origin,
 
 `∫⁻ x in A, exp (-π ‖x‖ ^ 2) ≤ volume (A ∩ closedBall 0 ρ)`.
 
 Such a radius `ρ` exists by `TauCeti.exists_volume_closedBall_eq_one`. -/
 theorem setLIntegral_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_closedBall {ρ : ℝ}
-    (hρ : volume (closedBall (0 : E) ρ) = 1) {A : Set E} (hA : MeasurableSet A)
+    (hρ : 1 ≤ volume (closedBall (0 : E) ρ)) {A : Set E} (hA : MeasurableSet A)
     (hA₀ : StarConvex ℝ 0 A) :
     ∫⁻ x in A, ENNReal.ofReal (Real.exp (-π * ‖x‖ ^ 2)) ≤ volume (A ∩ closedBall 0 ρ) :=
   setLIntegral_comp_norm_le_measure_inter_closedBall (φ := fun r ↦ ENNReal.ofReal
       (Real.exp (-π * r ^ 2))) (by fun_prop)
-    (fun r ↦ ENNReal.ofReal_le_one.2 <| Real.exp_le_one_iff.2 <|
+    (fun r _ ↦ ENNReal.ofReal_le_one.2 <| Real.exp_le_one_iff.2 <|
       mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 Real.pi_pos.le) (sq_nonneg r))
-    (lintegral_ofReal_exp_neg_pi_mul_sq_norm.trans hρ.symm) hA hA₀
+    (lintegral_ofReal_exp_neg_pi_mul_sq_norm.le.trans hρ) hA hA₀
 
 end Gauss
 

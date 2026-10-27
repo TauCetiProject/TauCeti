@@ -113,10 +113,6 @@ private theorem positiveMulIdeal_le (e : A) :
   rintro _ ⟨p, -, x, -, rfl⟩
   exact Ideal.mul_mem_left _ x (Ideal.subset_span rfl)
 
-private theorem isHomogeneous_span_singleton (he₀ : e ∈ 𝒜 0) :
-    (Ideal.span {e} : Ideal A).IsHomogeneous 𝒜 :=
-  Ideal.homogeneous_span 𝒜 _ fun _ hx => ⟨0, (Set.mem_singleton_iff.1 hx) ▸ he₀⟩
-
 private theorem isHomogeneous_positiveMulIdeal (he₀ : e ∈ 𝒜 0) :
     (gradedPositiveMulIdeal 𝒜 e).IsHomogeneous 𝒜 :=
   Ideal.homogeneous_span 𝒜 _ fun _ ⟨p, _, _, hx, hy⟩ =>
@@ -125,7 +121,8 @@ private theorem isHomogeneous_positiveMulIdeal (he₀ : e ∈ 𝒜 0) :
 /-- The inclusion `A₊e ⟶ Ae` of graded modules. -/
 private def positiveMulIdealInclusion (he₀ : e ∈ 𝒜 0) :
     GradedModuleCat.ofIdeal 𝒜 (gradedPositiveMulIdeal 𝒜 e) (isHomogeneous_positiveMulIdeal 𝒜 he₀) ⟶
-      GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e}) (isHomogeneous_span_singleton 𝒜 he₀) :=
+      GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e})
+        (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀⟩) :=
   GradedModuleCat.ofHom (Submodule.inclusion (positiveMulIdeal_le 𝒜 e)) <|
     LinearMap.isHomogeneous_def.2 fun p x hx => by
       rw [GradedModuleCat.mem_ofIdeal_piece_iff] at hx ⊢
@@ -187,7 +184,8 @@ theorem mem_gradedPositiveMulQuotient_piece_iff (he₀ : e ∈ 𝒜 0) {p : ℤ}
       ∃ x : (Ideal.span {e} : Ideal A), (x : A) ∈ 𝒜 p ∧ gradedPositiveMulQuotientMk he₀ x = y := by
   refine (GradedModuleCat.mem_cokernelGrading_piece_iff (positiveMulIdealInclusion 𝒜 he₀)).trans
     (exists_congr fun x => and_congr ?_ Iff.rfl)
-  exact GradedModuleCat.mem_ofIdeal_piece_iff (isHomogeneous_span_singleton 𝒜 he₀)
+  exact GradedModuleCat.mem_ofIdeal_piece_iff
+    (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀⟩)
 
 /-- **The map `Ae / A₊e ⟶ M` sending the class of `x` to `x m`**, for an element `m` of an
 `A`-module `M` killed by `A₊e`. -/
@@ -318,7 +316,7 @@ private theorem exists_eq_smul_headGenerator (i : I) (y : gradedPositiveMulQuoti
     ∃ c : k, y = c • headGenerator e he₀ i := by
   obtain ⟨x, rfl⟩ := gradedPositiveMulQuotientMk_surjective (he₀ i) y
   have hx₀ : (decompose 𝒜 (x : A) 0 : A) ∈ (Ideal.span {e i} : Ideal A) :=
-    isHomogeneous_span_singleton 𝒜 (he₀ i) 0 x.2
+    Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩ 0 x.2
   obtain ⟨c, hc⟩ := exists_eq_smul_of_mem_zero he hspan (decompose 𝒜 (x : A) 0).2 hx₀
   refine ⟨c, ?_⟩
   rw [headGenerator, ← LinearMap.map_smul_of_tower, ← sub_eq_zero, ← map_sub,

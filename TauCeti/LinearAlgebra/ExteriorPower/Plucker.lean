@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.GCDMonoid.Finset
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
-import Mathlib.LinearAlgebra.Matrix.Rank
+import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
 import TauCeti.LinearAlgebra.Matrix.Gram
 import TauCeti.LinearAlgebra.Submodule.Primitive
@@ -24,10 +24,10 @@ the index type of the induced basis of the exterior power.
 
 The coordinates are those of the exterior product `x 0 ∧ ⋯ ∧ x (p - 1)` in the basis of
 `⋀[R]^p (ι → R)` induced by the standard basis. Consequently a change of the family by a square
-matrix multiplies all coordinates by its determinant, and over a field they vanish identically
-exactly when the family is linearly dependent. Plücker coordinates are the coordinates of the
-point in projective space attached to a subspace of `K^ι`, and heights of subspaces are heights
-of these points.
+matrix multiplies all coordinates by its determinant, and over an integral domain they vanish
+identically exactly when the family is linearly dependent. Plücker coordinates give the point in
+projective space attached to a subspace of `K^ι`, and heights of subspaces are heights of these
+points.
 
 The Cauchy–Binet formula expresses the determinant of the `p × p` product of two such families
 as the sum of products of their Plücker coordinates. Over a commutative star ring, for instance
@@ -42,9 +42,10 @@ the complement of `t`. This is what makes the height of a subspace equal to the 
 orthogonal complement.
 
 The determinant identities hold over an arbitrary commutative ring. The comparison with linear
-independence and the complementary minors are over a field, while the coprimality theorem for
-saturated submodules holds over a principal ideal domain with a normalized gcd. The empty family
-has a single Plücker coordinate, equal to `1`, and a family of more than `#ι` vectors has none.
+independence holds over an integral domain and the complementary minors over a field, while the
+coprimality theorem for saturated submodules holds over a principal ideal domain with a normalized
+gcd. The empty family has a single Plücker coordinate, equal to `1`, and a family of more than
+`#ι` vectors has none.
 
 ## Main definitions
 
@@ -62,8 +63,8 @@ has a single Plücker coordinate, equal to `1`, and a family of more than `#ι` 
   ordered commutative ring, the Gram determinant of a matrix is nonnegative, and positive exactly
   when the rows are linearly independent.
 * `TauCeti.det_mul_conjTranspose_eq_sum_plucker_mul_star`: its Hermitian form.
-* `TauCeti.plucker_ne_zero_iff`: over a field, the Plücker coordinates of a family are not all
-  zero exactly when the family is linearly independent.
+* `TauCeti.plucker_ne_zero_iff`: over an integral domain, the Plücker coordinates of a family are
+  not all zero exactly when the family is linearly independent.
 * `TauCeti.exists_plucker_eq_mul_plucker_compl_or_eq_neg`: the Plücker coordinates of
   complementary orthogonal families are complementary minors, up to a common nonzero factor and
   signs.
@@ -106,6 +107,25 @@ def plucker (x : Fin p → ι → R) (s : powersetCard ι p) : R :=
 /-- The Plücker coordinate at `s` is the minor on the columns in `s`. -/
 theorem plucker_apply (x : Fin p → ι → R) (s : powersetCard ι p) :
     plucker x s = (Matrix.of fun i j ↦ x i (ofFinEmbEquiv.symm s j)).det := (rfl)
+
+/-- A maximal minor on any enumeration of its columns is the Plücker coordinate on its sorted
+range, multiplied by a permutation sign. -/
+theorem _root_.Matrix.exists_det_submatrix_eq_sign_mul_plucker (A : Matrix (Fin p) ι R)
+    (e : Fin p ↪ ι) :
+    ∃ σ : Equiv.Perm (Fin p), (A.submatrix id e).det =
+      (σ.sign : R) * plucker A.row (ofFinEmb p ι e) := by
+  set s := ofFinEmb p ι e
+  set t := ofFinEmbEquiv.symm s
+  have hrange : Set.range t = Set.range e := Set.ext fun i ↦ by
+    rw [mem_range_ofFinEmbEquiv_symm_iff_mem, mem_ofFinEmb_iff_mem_range]
+  let σ : Equiv.Perm (Fin p) := (Equiv.ofInjective e e.injective).trans
+    ((Set.equivOfEq hrange.symm).trans (Equiv.ofInjective t t.injective).symm)
+  have he : A.submatrix id e = (A.submatrix id t).submatrix id σ := by
+    ext i j
+    simp [σ, Equiv.apply_ofInjective_symm]
+  have hp : (A.submatrix id t).det = plucker A.row s :=
+    (plucker_apply A.row s).symm
+  exact ⟨σ, by rw [he, Matrix.det_permute', hp]⟩
 
 /-- The empty family has Plücker coordinate `1`. -/
 @[simp]
@@ -225,19 +245,27 @@ theorem det_mul_conjTranspose_eq_sum_plucker_mul_star [StarRing R] [Fintype ι]
   rw [hx, det_mul_transpose_eq_sum_plucker_mul]
   simp_rw [plucker_map, starRingEnd_apply]
 
+/-- Over an integral domain, the Plücker coordinates of a family are not all zero exactly when
+it is linearly independent. -/
+theorem plucker_ne_zero_iff [IsDomain R] [Finite ι] (x : Fin p → ι → R) :
+    plucker x ≠ 0 ↔ LinearIndependent R x := by
+  classical
+  constructor
+  · intro h
+    obtain ⟨s, hs⟩ := Function.ne_iff.1 h
+    exact (Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero
+      (A := Matrix.of x)).2 ⟨(ofFinEmbEquiv.symm s).toEmbedding, hs⟩
+  · intro hx
+    obtain ⟨e, he⟩ := (Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero
+      (A := Matrix.of x)).1 hx
+    obtain ⟨σ, hσ⟩ := (Matrix.of x).exists_det_submatrix_eq_sign_mul_plucker e
+    refine Function.ne_iff.2 ⟨ofFinEmb p ι e, ?_⟩
+    intro h
+    exact he (by simp [hσ, h])
+
 section Field
 
 variable {K : Type*} [Field K]
-
-/-- Over a field, the Plücker coordinates of a family are not all zero exactly when the family is
-linearly independent. -/
-theorem plucker_ne_zero_iff [Finite ι] (x : Fin p → ι → K) :
-    plucker x ≠ 0 ↔ LinearIndependent K x := by
-  rw [← ιMulti_ne_zero_iff, not_iff_not]
-  have h : plucker x = ((Pi.basisFun K ι).exteriorPower p).repr (ιMulti K p x) := by
-    ext s
-    exact plucker_eq_repr_ιMulti x s
-  rw [h, Finsupp.coe_eq_zero, LinearEquiv.map_eq_zero_iff]
 
 /-! ### Complementary minors -/
 

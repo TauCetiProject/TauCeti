@@ -43,6 +43,10 @@ endpoint are never interleaving.
 * `TauCeti.GridDiagram.columnsInterleaving_iff_not_columnsNoninterleaving`: interleaving is the
   negation of non-interleaving, for segments with four distinct endpoints.
 * `TauCeti.GridDiagram.columnsInterleaving_comm`: interleaving is symmetric in the two columns.
+* `TauCeti.GridDiagram.ColumnsInterleaving.O_mem_columnArc_iff`: for interleaving segments,
+  exactly one `O`-marking lies on the arc of the other column.
+* `TauCeti.GridDiagram.ColumnsInterleaving.O_swapColumns_mem_columnArc_iff`: exchanging the two
+  columns exchanges the two orders of the markings.
 * `TauCeti.GridDiagram.isCrossCommutation_comm`: cross-commutations are reversible.
 * `TauCeti.GridDiagram.isCrossCommutation_transpose`: diagonal reflection exchanges row and column
   cross-commutations.
@@ -180,6 +184,33 @@ theorem ColumnsInterleaving.not_columnsNoninterleaving {a b : Fin n}
 theorem columnsInterleaving_swapColumns (a b : Fin n) :
     (G.swapColumns a b).ColumnsInterleaving a b ↔ G.ColumnsInterleaving b a := by
   simp [ColumnsInterleaving, GridState.swapColumns_apply]
+
+variable {G} in
+/-- For interleaving segments in columns `a` and `b`, exactly one of the two `O`-markings lies on
+the open arc of the other column: the `O`-marking of `b` lies on the arc of `a` exactly when that
+of `a` does not lie on the arc of `b`. -/
+theorem ColumnsInterleaving.O_mem_columnArc_iff {a b : Fin n} (h : G.ColumnsInterleaving a b) :
+    G.O b ∈ G.columnArc a ↔ G.O a ∉ G.columnArc b := by
+  by_cases hO : G.O a ∈ G.columnArc b
+  · rcases (columnsInterleaving_iff G _ _).mp h with ⟨h₁, h₂⟩ | ⟨h₁, -⟩
+    · refine iff_of_false (fun h₃ => ?_) (not_not.mpr hO)
+      exact Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap _ _) h₃
+        (Grid.mem_cIoo_of_mem_cIoo_of_mem_cIoo_swap h₂ h₁)
+    · exact absurd h₁ (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap _ _) hO)
+  · rcases (columnsInterleaving_iff G _ _).mp h with ⟨h₁, -⟩ | ⟨h₁, h₂⟩
+    · exact absurd h₁ hO
+    · exact iff_of_true (Grid.mem_cIoo_of_mem_cIoo_of_mem_cIoo_swap h₁ h₂) hO
+
+variable {G} in
+/-- A cross-commutation exchanges the two orders of the markings of interleaving columns: after
+the columns `a` and `b` are exchanged, the `O`-marking of `a` lies on the arc of `b` exactly when
+it did not before. -/
+theorem ColumnsInterleaving.O_swapColumns_mem_columnArc_iff {a b : Fin n}
+    (h : G.ColumnsInterleaving a b) :
+    (G.swapColumns a b).O a ∈ (G.swapColumns a b).columnArc b ↔ G.O a ∉ G.columnArc b := by
+  simp only [columnArc, swapColumns_O, swapColumns_X, GridState.swapColumns_apply,
+    Equiv.swap_apply_left, Equiv.swap_apply_right]
+  exact h.O_mem_columnArc_iff
 
 /-- Diagonal reflection turns column interleaving in the reflected diagram into row interleaving
 in the original diagram. -/

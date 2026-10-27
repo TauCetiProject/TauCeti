@@ -400,15 +400,6 @@ completion is its `v`-adic valuation, and at a real place its sign is that of th
 -- The placewise membership and coordinate simp lemmas already normalize the left-hand side.
 theorem unitEmbedding_mem_ideleCongrOneSubgroup_iff {𝔪 : Modulus K} {x : Kˣ} :
     IdeleGroup.unitEmbedding (𝓞 K) K x ∈ ideleCongrOneSubgroup 𝔪 ↔ IsCongrOne 𝔪 x := by
-  have hsub : ∀ v : HeightOneSpectrum (𝓞 K),
-      Valued.v ((v.ideleFiniteCoord (IdeleGroup.unitEmbedding (𝓞 K) K x) :
-          v.adicCompletion K) - 1) = v.valuation K ((x : K) - 1) := by
-    intro v
-    rw [HeightOneSpectrum.ideleFiniteCoord_unitEmbedding, Units.coe_map]
-    simp only [MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe]
-    rw [← map_one (algebraMap K (v.adicCompletion K)), ← map_sub]
-    simp only [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
-      Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation']
   have hinf : ∀ w : {w : InfinitePlace K // w.IsReal},
       InfinitePlace.Completion.extensionEmbeddingOfIsReal w.2
         (w.1.ideleInfiniteCoord (IdeleGroup.unitEmbedding (𝓞 K) K x) : w.1.Completion) =
@@ -416,7 +407,8 @@ theorem unitEmbedding_mem_ideleCongrOneSubgroup_iff {𝔪 : Modulus K} {x : Kˣ}
     intro w
     rw [InfinitePlace.ideleInfiniteCoord_unitEmbedding]
     simp
-  simp only [mem_ideleCongrOneSubgroup_iff, hsub, hinf, isCongrOne_iff]
+  simp only [mem_ideleCongrOneSubgroup_iff, valued_ideleFiniteCoord_unitEmbedding_sub_one, hinf,
+    isCongrOne_iff]
 
 /-- **The principal ideles of the congruence subgroup are the congruence units.**  A principal
 idele lies in `ideleCongruenceSubgroup 𝔪` exactly when its generator is the image of a unit of

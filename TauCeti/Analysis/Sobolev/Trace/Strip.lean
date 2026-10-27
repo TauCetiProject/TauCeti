@@ -250,11 +250,11 @@ private theorem strip_energy_ofTestFunction
 
 private theorem norm_sq_hyperplaneTrace_ofTestFunction
     (c : ℝ) (φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ)) :
-    ‖W1p.hyperplaneTrace c (W1p.ofTestFunctionₗ volume ⊤ 2 φ)‖ ^ 2 =
+    ‖W1p.hyperplaneTrace ENNReal.ofNat_ne_top c (W1p.ofTestFunctionₗ volume ⊤ 2 φ)‖ ^ 2 =
       ∫ y : E, ‖φ (WithLp.toLp 2 (c, y))‖ ^ 2 := by
   rw [← Lp.integral_norm_sq_eq_norm_sq]
   apply integral_congr_ae
-  filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae c φ] with y hy
+  filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae (p := 2) (by norm_num) c φ] with y hy
   rw [hy]
 
 private theorem integral_strip_energy_le_weighted_energy
@@ -276,8 +276,8 @@ private theorem integral_strip_energy_le_weighted_energy
 
 private theorem norm_sq_hyperplaneTrace_add_le_strip_ofTestFunction
     {a b : ℝ} (hab : a < b) (φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ)) :
-    ‖W1p.hyperplaneTrace a (W1p.ofTestFunctionₗ volume ⊤ 2 φ)‖ ^ 2 +
-      ‖W1p.hyperplaneTrace b (W1p.ofTestFunctionₗ volume ⊤ 2 φ)‖ ^ 2 ≤
+    ‖W1p.hyperplaneTrace ENNReal.ofNat_ne_top a (W1p.ofTestFunctionₗ volume ⊤ 2 φ)‖ ^ 2 +
+      ‖W1p.hyperplaneTrace ENNReal.ofNat_ne_top b (W1p.ofTestFunctionₗ volume ⊤ 2 φ)‖ ^ 2 ≤
       (2 / (b - a) + 1) * ‖W1p.restrictL
         (show normalStrip (E := E) a b ≤ ⊤ from le_top)
         (W1p.ofTestFunctionₗ volume ⊤ 2 φ)‖ ^ 2 := by
@@ -296,17 +296,20 @@ bounded by its Sobolev norm restricted to the strip. The bound uses no energy ou
 theorem W1p.norm_sq_hyperplaneTrace_add_le_strip
     {a b : ℝ} (hab : a < b)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2) :
-    ‖W1p.hyperplaneTrace a u‖ ^ 2 + ‖W1p.hyperplaneTrace b u‖ ^ 2 ≤
+    ‖W1p.hyperplaneTrace ENNReal.ofNat_ne_top a u‖ ^ 2 +
+        ‖W1p.hyperplaneTrace ENNReal.ofNat_ne_top b u‖ ^ 2 ≤
       (2 / (b - a) + 1) *
         ‖W1p.restrictL (show normalStrip (E := E) a b ≤ ⊤ from le_top) u‖ ^ 2 := by
   let R : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2 →L[ℝ]
       W1p volume (normalStrip (E := E) a b) 2 := W1p.restrictL le_top
   have hclosed : IsClosed {u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2 |
-      ‖W1p.hyperplaneTrace a u‖ ^ 2 + ‖W1p.hyperplaneTrace b u‖ ^ 2 ≤
+      ‖W1p.hyperplaneTrace ENNReal.ofNat_ne_top a u‖ ^ 2 +
+          ‖W1p.hyperplaneTrace ENNReal.ofNat_ne_top b u‖ ^ 2 ≤
         (2 / (b - a) + 1) *
           ‖W1p.restrictL (show normalStrip (E := E) a b ≤ ⊤ from le_top) u‖ ^ 2} :=
-    isClosed_le (((W1p.hyperplaneTrace (E := E) a).continuous.norm.pow 2).add
-      ((W1p.hyperplaneTrace (E := E) b).continuous.norm.pow 2))
+    isClosed_le
+      (((W1p.hyperplaneTrace (E := E) (p := 2) ENNReal.ofNat_ne_top a).continuous.norm.pow 2).add
+        ((W1p.hyperplaneTrace (E := E) (p := 2) ENNReal.ofNat_ne_top b).continuous.norm.pow 2))
       (continuous_const.mul (R.continuous.norm.pow 2))
   exact (W1p.denseRange_ofTestFunctionₗ_top
     (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (p := 2) (by norm_num)).induction_on u
@@ -326,7 +329,7 @@ private theorem hyperplaneTrace_eq_zero_of_restrictL_eq_zero
     {a b : ℝ} (hab : a < b)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2)
     (hu : W1p.restrictL (show normalStrip (E := E) a b ≤ ⊤ from le_top) u = 0)
-    {c : ℝ} (hc : c = a ∨ c = b) : W1p.hyperplaneTrace c u = 0 := by
+    {c : ℝ} (hc : c = a ∨ c = b) : W1p.hyperplaneTrace ENNReal.ofNat_ne_top c u = 0 := by
   have hb := W1p.norm_sq_hyperplaneTrace_add_le_strip hab u
   have hright : (2 / (b - a) + 1) *
       ‖W1p.restrictL (show normalStrip (E := E) a b ≤ ⊤ from le_top) u‖ ^ 2 = 0 := by
@@ -343,7 +346,9 @@ theorem W1p.hyperplaneTrace_eq_of_value_ae_eq_strip
     {a b : ℝ} (hab : a < b)
     {u v : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 2}
     (hvalue : W1p.value u =ᵐ[volume.restrict (normalStrip (E := E) a b)] W1p.value v)
-    {c : ℝ} (hc : c = a ∨ c = b) : W1p.hyperplaneTrace c u = W1p.hyperplaneTrace c v := by
+    {c : ℝ} (hc : c = a ∨ c = b) :
+    W1p.hyperplaneTrace ENNReal.ofNat_ne_top c u =
+      W1p.hyperplaneTrace ENNReal.ofNat_ne_top c v := by
   have heq := restrictL_eq_of_value_ae_eq_strip hvalue
   have hzero := hyperplaneTrace_eq_zero_of_restrictL_eq_zero hab (u - v)
     (by rw [ContinuousLinearMap.map_sub, heq, sub_self]) hc

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.NormalFamilies
 import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
-# Montel's theorem: local boundedness is relative compactness
+# Montel's theorem: local boundedness and relative compactness
 
 A family of holomorphic maps on an open set `Ω ⊆ ℂ` with values in a proper complex normed space
 is locally bounded exactly when its continuous restrictions have compact closure in `C(↥Ω, E)`.
@@ -17,45 +17,25 @@ This space carries the compact-open topology, whose convergence is locally unifo
 The compactness equivalence supplies the input for the subsequence selection theorem in
 `Conformal/Montel/Basic.lean`.
 
-## The two directions
+The converse, `TauCeti.isLocallyBoundedOn_of_isCompact_closure_range`, is proved in
+`TauCeti/Analysis/Normed/Group/LocallyBounded.lean`: it is purely topological and holds on any
+topological domain, with values in any seminormed group.
 
-A family `F : ι → ℂ → E` of functions holomorphic on an open `Ω` restricts to a family
-`f : ι → C(↥Ω, E)`; the theorems below take that restriction as a hypothesis
-`⇑(f i) = Ω.domRestrict (F i)` rather than fixing one bundling, so that a caller which already
-carries such an `f` may use them directly. The hypothesis constrains nothing: a caller holding
-`hF : ∀ i, ContinuousOn (F i) Ω` and no `f` of its own takes
-`fun i => ⟨Ω.domRestrict (F i), (hF i).domRestrict⟩`, for which it holds by `rfl`.
-
-*Locally bounded ⇒ relatively compact* is the compact-open Arzelà–Ascoli theorem
-`ArzelaAscoli.isCompact_closure_of_equicontinuous`: equicontinuity is
-`TauCeti.IsLocallyBoundedOn.equicontinuousOn`, which is Cauchy's estimate, and pointwise relative
-compactness is local boundedness at a single point. This is the direction with analytic content —
-holomorphy enters only through the Cauchy estimate behind the equicontinuity.
-
-That pointwise step is also the only place the target matters: a norm bound confines the values to
-a closed ball, and for the ball to be compact `E` must be proper. So this direction is stated for
-a proper `E` — for a normed space over `ℂ` that is exactly finite-dimensionality — and the
-converse, which merely reads a bound off a compact set, for an arbitrary one.
-
-*Relatively compact ⇒ locally bounded* is a soft argument and needs no holomorphy at all, nor even
-openness of `Ω` or a complex domain: it is stated for a set `Ω` in an arbitrary topological space,
-because local compactness of the subtype `↥Ω` is all it uses. On a compact `K ⊆ Ω` the
-product `closure (range f) ×ˢ (Subtype.val ⁻¹' K)` is compact, local compactness of `↥Ω` makes
-evaluation `C(↥Ω, E) × ↥Ω → E` continuous in both variables at once, and a continuous real function
-on a compact set is bounded. The bound obtained is uniform in the index, which is exactly
-`TauCeti.IsLocallyBoundedOn`.
-
-Together they give `TauCeti.isCompact_closure_range_iff_isLocallyBoundedOn`: for a family of
-holomorphic maps of an open set into a proper `E`, relative compactness in `C(↥Ω, E)` and local
-boundedness are the same condition.
+The theorems take an ambient family `F` and continuous restrictions `f`, related by
+`⇑(f i) = Ω.domRestrict (F i)`. Given `hF : ∀ i, ContinuousOn (F i) Ω`, one can take
+`f i = ⟨Ω.domRestrict (F i), (hF i).domRestrict⟩`, making this equality reflexive.
 
 ## Main results
 
-* `TauCeti.isCompact_closure_range_of_isLocallyBoundedOn` — a locally bounded family of
-  holomorphic maps of an open set into a proper `E` is relatively compact in `C(↥Ω, E)`.
-* `TauCeti.isLocallyBoundedOn_of_isCompact_closure_range` — the converse, for any family of
-  maps on a set in a topological space whose subtype is locally compact.
-* `TauCeti.isCompact_closure_range_iff_isLocallyBoundedOn` — the two are equivalent.
+* `TauCeti.isCompact_closure_range_of_isLocallyBoundedOn`: a locally bounded holomorphic family
+  with proper target has relatively compact continuous restrictions.
+* `TauCeti.isCompact_closure_range_iff_isLocallyBoundedOn`: for holomorphic families on an open
+  set with proper target, relative compactness and local boundedness are equivalent.
+
+The forward direction uses `ArzelaAscoli.isCompact_closure_of_equicontinuous` and the Cauchy
+estimate in `TauCeti.IsLocallyBoundedOn.equicontinuousOn`. Properness turns the pointwise norm
+bounds into pointwise relative compactness; for a complex normed space it is equivalent to
+finite-dimensionality.
 
 This is the **analytic** normal-families theorem; it is deliberately not routed through Mathlib's
 `Analysis/LocallyConvex/Montel.lean` (`MontelSpace`), which is an unrelated notion.
@@ -77,82 +57,29 @@ namespace TauCeti
 variable {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {Ω : Set ℂ} {F : ι → ℂ → E}
   {f : ι → C(Ω, E)}
 
--- Equicontinuity of a family transfers to its range viewed as a subtype: every element of the
--- range is some member of the family, and equicontinuity is stable under reindexing.
-private theorem equicontinuous_subtype_val_range {X Y : Type*} [TopologicalSpace X]
-    [UniformSpace Y] {g : ι → C(X, Y)} (h : Equicontinuous fun i => (g i : X → Y)) :
-    Equicontinuous ((DFunLike.coe : C(X, Y) → (X → Y)) ∘
-      (Subtype.val : ↥(Set.range g) → C(X, Y))) := by
-  classical
-  choose σ hσ using fun x : ↥(Set.range g) => x.2
-  have heq : ((DFunLike.coe : C(X, Y) → (X → Y)) ∘ (Subtype.val : ↥(Set.range g) → C(X, Y)))
-      = (fun i => (g i : X → Y)) ∘ σ := funext fun x => by
-    rw [Function.comp_apply, Function.comp_apply, hσ x]
-  rw [heq]
-  exact h.comp σ
-
 /-- **Montel's theorem, relative-compactness form.** A locally bounded family of holomorphic
 maps of an open set `Ω ⊆ ℂ` into a proper complex normed space `E` restricts to a relatively
 compact family in the space `C(↥Ω, E)` of continuous maps with the compact-open topology.
 
 The sequential selection theorem `TauCeti.montel` follows from this compactness result.
-The local boundedness hypothesis cannot be dropped once `E`
-is nontrivial: on a nonempty open `Ω` the holomorphic family `F n z = n • v`, for a unit vector
-`v : E`, restricts to a closed discrete — hence non-relatively-compact — family. On `Ω = ∅`, or on
-the trivial `E = 0` where no unit vector exists, the conclusion holds regardless, so there is no
-counterexample in those two degenerate cases. Properness of `E` cannot be dropped
-either: it is what turns the pointwise norm bound into pointwise relative compactness, and for a
-normed space over `ℂ` it says exactly that `E` is finite-dimensional. -/
+Properness of `E` is essential: a bounded family of constant maps can fail to be relatively
+compact in an infinite-dimensional target. -/
 theorem isCompact_closure_range_of_isLocallyBoundedOn [ProperSpace E] (hΩ : IsOpen Ω)
     (hF : ∀ i, DifferentiableOn ℂ (F i) Ω) (hb : IsLocallyBoundedOn F Ω)
     (hf : ∀ i, ⇑(f i) = Ω.domRestrict (F i)) :
     IsCompact (closure (Set.range f)) := by
-  have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
   have heq : Equicontinuous fun i => (f i : Ω → E) := by
     rw [funext hf]
     exact (equicontinuous_restrict_iff F).mpr (hb.equicontinuousOn hΩ hF)
   -- Arzelà–Ascoli in the compact-open topology: equicontinuity comes from Cauchy's estimate and
   -- pointwise relative compactness from local boundedness.
-  refine ArzelaAscoli.isCompact_closure_of_equicontinuous (equicontinuous_subtype_val_range heq)
-    fun x => ?_
+  refine ArzelaAscoli.isCompact_closure_of_equicontinuous (by
+    rw [← Set.comp_rangeSplitting f]
+    exact heq.comp (Set.rangeSplitting f)) fun x => ?_
   obtain ⟨C, hC⟩ := hb.exists_forall_norm_le x.2
   refine ⟨closedBall 0 C, isCompact_closedBall _ _, fun g hg => ?_⟩
   obtain ⟨i, rfl⟩ := hg
   simpa [hf i, mem_closedBall, dist_zero_right] using hC i
-
-section GeneralDomain
-
--- The converse direction is pure topology: it never differentiates, so the domain need not be
--- `ℂ`, only a topological space whose subtype `↥Ω` is locally compact.
-variable {X : Type*} [TopologicalSpace X] {Ω : Set X} {F : ι → X → E} {f : ι → C(Ω, E)}
-
-omit [NormedSpace ℂ E] in
-/-- **The converse of Montel's theorem.** A family of maps on a set `Ω` with locally compact
-subtype whose restrictions are relatively compact in `C(↥Ω, E)` is locally bounded on `Ω`.
-
-No holomorphy is needed — not even a complex domain, nor continuity beyond what the restrictions
-already carry — and no properness of the target: evaluation is continuous in the map and the point
-together as soon as `↥Ω` is locally compact (for an open `Ω ⊆ ℂ` the instance is
-`IsOpen.locallyCompactSpace`), so a continuous real function on the compact product
-`closure (Set.range f) ×ˢ (Subtype.val ⁻¹' K)` is bounded — and its bound is uniform in the index,
-which is what local boundedness asserts. -/
-theorem isLocallyBoundedOn_of_isCompact_closure_range [LocallyCompactSpace Ω]
-    (hf : ∀ i, ⇑(f i) = Ω.domRestrict (F i)) (hcpt : IsCompact (closure (Set.range f))) :
-    IsLocallyBoundedOn F Ω := by
-  refine isLocallyBoundedOn_def.mpr fun K hKΩ hK => ?_
-  have hK' : IsCompact (Subtype.val ⁻¹' K : Set Ω) := by
-    refine Topology.IsEmbedding.subtypeVal.isCompact_iff.2 ?_
-    rwa [Subtype.image_preimage_val, inter_eq_self_of_subset_right hKΩ]
-  have hcont : Continuous fun p : C(Ω, E) × Ω => ‖p.1 p.2‖ := continuous_eval.norm
-  obtain ⟨C, hC⟩ := ((hcpt.prod hK').image hcont).bddAbove
-  refine ⟨C, fun i z hz => ?_⟩
-  have hmem : ((f i, (⟨z, hKΩ hz⟩ : Ω)) : C(Ω, E) × Ω) ∈
-      closure (Set.range f) ×ˢ (Subtype.val ⁻¹' K : Set Ω) :=
-    ⟨subset_closure ⟨i, rfl⟩, hz⟩
-  have hle : ‖(f i) (⟨z, hKΩ hz⟩ : Ω)‖ ≤ C := hC (mem_image_of_mem _ hmem)
-  rwa [hf i] at hle
-
-end GeneralDomain
 
 /-- **Montel's theorem as an equivalence.** For a family of holomorphic maps of an open set
 `Ω ⊆ ℂ` into a proper complex normed space `E`, being locally bounded on `Ω` and being relatively
@@ -160,7 +87,6 @@ compact in `C(↥Ω, E)` are the same condition. -/
 theorem isCompact_closure_range_iff_isLocallyBoundedOn [ProperSpace E] (hΩ : IsOpen Ω)
     (hF : ∀ i, DifferentiableOn ℂ (F i) Ω) (hf : ∀ i, ⇑(f i) = Ω.domRestrict (F i)) :
     IsCompact (closure (Set.range f)) ↔ IsLocallyBoundedOn F Ω :=
-  haveI : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
   ⟨isLocallyBoundedOn_of_isCompact_closure_range hf,
     fun hb => isCompact_closure_range_of_isLocallyBoundedOn hΩ hF hb hf⟩
 

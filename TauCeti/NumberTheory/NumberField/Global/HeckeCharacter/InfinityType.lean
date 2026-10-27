@@ -47,6 +47,8 @@ a `FiniteOrderInfinityType`: signs at the real places and nothing else.
 
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infinityType_eq_iff`: the infinity type is the
   unique continuous infinity type whose parameters describe every real and complex component.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.infiniteComponent_neg_one_eq_one_iff`: a Hecke
+  character is trivial on the sign `-1` at a real place exactly when its real parity there is zero.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infinityType_mul`: multiplying Hecke characters adds
   their infinity types.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infinityType_normPow`: the infinity type of the norm
@@ -256,6 +258,26 @@ theorem infinityType_eq_iff {χ : HeckeCharacter K} {t : ContinuousInfinityType 
   have hc' w := complexUnitsCharacter_inj.1 ((χ.complexComponent_eq w).symm.trans (hc w))
   ext w
   exacts [(hr' w).1, (hr' w).2, (hc' w).1, (hc' w).2]
+
+/-- **The real parity reads off the sign.**  At a real place `w`, a Hecke character takes the
+value `(-1) ^ ε` on the idele that is `-1` at `w` and `1` elsewhere, where `ε` is the real parity
+of its infinity type at `w`. -/
+theorem coe_infiniteComponent_neg_one (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (χ.infiniteComponent w.1 (-1) : ℂ) = (-1) ^ (χ.infinityType.realParity w).val := by
+  have h : (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2)).symm (-1) = -1 :=
+    Units.ext <| (continuousMulEquivRealOfIsReal w.2).symm_apply_eq.mpr (by simp)
+  rw [← h, ← realComponent_apply, realComponent_eq, realUnitsCharacter_neg_one]
+
+/-- A Hecke character is trivial on the idele that is `-1` at a real place `w` and `1` elsewhere
+exactly when the real parity of its infinity type at `w` vanishes. Unlike
+`infiniteComponent_eq_one_iff`, this needs no finite-order hypothesis. -/
+theorem infiniteComponent_neg_one_eq_one_iff (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    χ.infiniteComponent w.1 (-1) = 1 ↔ χ.infinityType.realParity w = 0 := by
+  rw [← Units.val_eq_one, coe_infiniteComponent_neg_one,
+    neg_one_pow_eq_one_iff_even (by norm_num), ← ZMod.natCast_eq_zero_iff_even,
+    ZMod.natCast_zmod_val]
 
 /-- The trivial Hecke character has the zero infinity type. -/
 @[simp]

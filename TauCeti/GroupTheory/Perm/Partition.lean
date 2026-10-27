@@ -379,6 +379,16 @@ theorem fullCycleType_one :
     fullCycleType (1 : Equiv.Perm α) = Multiset.replicate (Fintype.card α) 1 := by
   rw [fullCycleType_def, Equiv.Perm.parts_partition_one]
 
+/-- The identity is the only permutation all of whose full cycle lengths are one. -/
+@[simp]
+theorem forall_mem_fullCycleType_eq_one_iff {σ : Equiv.Perm α} :
+    (∀ k ∈ fullCycleType σ, k = 1) ↔ σ = 1 := by
+  refine ⟨fun h => ?_, fun h k hk => ?_⟩
+  · rw [← cycleType_eq_zero, ← filter_fullCycleType_eq_cycleType, Multiset.filter_eq_nil]
+    exact fun k hk => by rw [h k hk]; omega
+  · rw [h, fullCycleType_one] at hk
+    exact Multiset.eq_of_mem_replicate hk
+
 /-- On an empty finite carrier, the full cycle type is empty. -/
 @[simp]
 theorem fullCycleType_of_isEmpty [IsEmpty α] (σ : Equiv.Perm α) :

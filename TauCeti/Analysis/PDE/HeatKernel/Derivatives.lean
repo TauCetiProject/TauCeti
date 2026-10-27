@@ -89,7 +89,7 @@ decay at rate `1 / 8` and that class is closed under `Ψ ↦ Ψ'`
 private theorem gaussianDecay_iteratedFDeriv_heatKernel_one (m : ℕ) :
     GaussianDecay (1 / 8) (iteratedFDeriv ℝ m (heatKernel 1 : E → ℝ)) := by
   refine ⟨(contDiff_heatKernel 1 (k := ω)).iteratedFDeriv_right le_top, fun i p => ?_⟩
-  obtain ⟨C, hC⟩ :=
+  obtain ⟨C, -, hC⟩ :=
     exists_one_add_norm_pow_mul_norm_iteratedFDeriv_heatKernel_le (E := E) one_pos (i + m) p
   refine ⟨C * (4 * π * 2) ^ (-(finrank ℝ E : ℝ) / 2), fun y => ?_⟩
   rw [norm_iteratedFDeriv_iteratedFDeriv]

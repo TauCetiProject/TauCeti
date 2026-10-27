@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.GroupTheory.FreeGroup.Orbit
+public import TauCeti.GroupTheory.FreeGroup.Reduce
 
 /-!
 # Free group elements sorted by the first letter of their reduced word
@@ -61,10 +62,6 @@ open Pointwise
 namespace FreeGroup
 
 variable {α : Type*}
-
-/-- The inverse of a one-letter word is the inverse letter. -/
-theorem inv_mk_singleton (w : α × Bool) : (mk [w])⁻¹ = mk [(w.1, !w.2)] := by
-  simp [inv_mk, invRev]
 
 variable [DecidableEq α]
 

@@ -42,7 +42,8 @@ Over a ring with a multiplicative pseudo-uniformiser (`TauCeti.NormedRing.IsTate
   complete ultrametric module in `Type (max u v)` has a continuous linear section. For the
   converse, the vectors of norm at most one are the coordinate images of a surjection from a model
   space onto `M`.
-* `TauCeti.HasPr.projective`: a finitely generated module with (Pr) is projective. It is complete
+* `TauCeti.HasPr.projective`: a finitely generated module with (Pr) is a continuous linear retract
+  of some `R ^ n` (`TauCeti.HasPr.exists_comp_eq_id_of_finite`), so it is projective. It is complete
   by `TauCeti.HasPr.completeSpace`, since over a complete ring a retract of `C₀(I, R)` is
   complete.
 
@@ -231,10 +232,11 @@ theorem hasPr_iff_forall_exists_comp_eq_id [CompleteSpace M] [IsUltrametricDist 
   obtain ⟨s, hs⟩ := h C₀(B, R) q hq
   exact ⟨B, ⊥, ⟨rfl⟩, s, q, hs⟩
 
-/-- **Finite (Pr) modules are projective**: over a complete ultrametric ring with a
-multiplicative pseudo-uniformiser, a finitely generated module with property (Pr) is a projective
-module. -/
-theorem HasPr.projective [Module.Finite R M] (h : HasPr R M) : Module.Projective R M := by
+/-- **Finite (Pr) modules are retracts of finite free modules**: over a complete ultrametric ring
+with a multiplicative pseudo-uniformiser, a finitely generated module `M` with property (Pr) is a
+continuous linear retract `r ∘ i = id` of `R ^ n` for some `n`. -/
+theorem HasPr.exists_comp_eq_id_of_finite [Module.Finite R M] (h : HasPr R M) :
+    ∃ (n : ℕ) (i : M →L[R] (Fin n → R)) (r : (Fin n → R) →L[R] M), r.comp i = .id R M := by
   have := h.completeSpace
   obtain ⟨n, v, hv⟩ := Module.Finite.exists_fin (R := R) (M := M)
   -- The generators `v` give a continuous linear surjection `R ^ n → M`; it splits by (Pr).
@@ -242,6 +244,13 @@ theorem HasPr.projective [Module.Finite R M] (h : HasPr R M) : Module.Projective
     ⟨Fintype.linearCombination R v, (Fintype.linearCombination R v).continuous_on_pi⟩
   have hq : Surjective q := (span_range_eq_top_iff_surjective_fintypeLinearCombination R v).1 hv
   obtain ⟨s, hs⟩ := h.lifting_property q (.id R M) hq
+  exact ⟨n, s, q, hs⟩
+
+/-- **Finite (Pr) modules are projective**: over a complete ultrametric ring with a
+multiplicative pseudo-uniformiser, a finitely generated module with property (Pr) is a projective
+module. -/
+theorem HasPr.projective [Module.Finite R M] (h : HasPr R M) : Module.Projective R M := by
+  obtain ⟨n, s, q, hs⟩ := h.exists_comp_eq_id_of_finite
   exact Module.Projective.of_split s.toLinearMap q.toLinearMap
     (by rw [← ContinuousLinearMap.toLinearMap_comp, hs, ContinuousLinearMap.coe_id])
 

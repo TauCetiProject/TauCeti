@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.RingTheory.MvPowerSeries.Primitive.GaussNorm
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Units
@@ -35,6 +36,8 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   `TauCeti.Dagger.washnitzerAlgebra.ofMvPolynomial`: the inclusion of the polynomials.
 * `TauCeti.Dagger.washnitzerAlgebra.toTate`: the inclusion of `W` into the unit-radius Tate
   algebra.
+* `TauCeti.Dagger.washnitzerAlgebra.ofRestricted`: the inclusion into `W` of the series
+  restricted at a polyradius bounded below by some `ρ > 1`.
 
 ## Main results
 
@@ -47,12 +50,17 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   proper subring as soon as there is a variable, while `W` is everything when there is none
   (`TauCeti.Dagger.washnitzerAlgebra_eq_top`).
 * `TauCeti.Dagger.exists_isRestricted_forall_norm_coeff_mul_pow_lt`: strict coefficient bounds
-  on an overconvergent series persist to some radius `ρ > 1`.
+  on an overconvergent series persist to some radius `ρ > 1`; by
+  `TauCeti.Dagger.exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt` this holds for the
+  coefficients at any set of exponents.
 * `TauCeti.Dagger.isUnit_washnitzerAlgebra_iff` and
   `TauCeti.Dagger.washnitzerAlgebra.isUnit_toTate_iff`: over a complete ultrametric field an
   overconvergent series is a unit of `W` iff it is a unit of the Tate algebra, iff its constant
   coefficient is nonzero and strictly dominates all others. In Gauss norm form,
   `TauCeti.Dagger.isUnit_washnitzerAlgebra_iff_norm_sub_lt` reads `|f - f(0)| < |f(0)|`.
+* `TauCeti.Dagger.primitive_mem_washnitzerAlgebra` and `TauCeti.Dagger.washnitzerAlgebra.primitive`:
+  over a field of characteristic zero, termwise primitives `∑ aᵥ Xᵛ ↦ ∑ aᵥ Xᵛ⁺ᵉⁱ / (νᵢ + 1)` of
+  overconvergent series are overconvergent.
 
 ## References
 
@@ -162,6 +170,29 @@ theorem washnitzerAlgebra_toSubring_le :
 
 namespace washnitzerAlgebra
 
+/-- With no variables, every overconvergent series comes from the coefficient ring. -/
+theorem algebraMap_surjective [IsEmpty σ] :
+    Function.Surjective (algebraMap R (washnitzerAlgebra σ R)) := by
+  intro f
+  obtain ⟨c, hc⟩ := C_surjective (σ := σ) (f : MvPowerSeries σ R)
+  exact ⟨c, Subtype.ext (by simpa [MvPowerSeries.algebraMap_apply] using hc)⟩
+
+/-- Renaming variables along an equivalence preserves overconvergence. -/
+noncomputable def renameAlgEquiv {τ : Type*} (e : σ ≃ τ) :
+    washnitzerAlgebra σ R ≃ₐ[R] washnitzerAlgebra τ R :=
+  AlgEquiv.ofRingEquiv
+    (f := (MvPowerSeries.renameEquiv R e).toRingEquiv.restrict _ _ fun f ↦ by
+      simp only [mem_washnitzerAlgebra, AlgEquiv.coe_toRingEquiv]
+      exact exists_congr fun ρ ↦ and_congr_right fun _ ↦
+        (isRestricted_renameEquiv_iff (R := R) (c := fun _ ↦ ρ) e).symm)
+    fun r ↦ Subtype.ext (rename_C e r)
+
+/-- The renaming equivalence acts on the underlying formal power series by renaming. -/
+@[simp]
+theorem coe_renameAlgEquiv {τ : Type*} (e : σ ≃ τ) (f : washnitzerAlgebra σ R) :
+    (renameAlgEquiv e f : MvPowerSeries τ R) = MvPowerSeries.renameEquiv R e f :=
+  (rfl)
+
 variable (σ R) in
 /-- The variable `Xᵢ` as an element of the Monsky–Washnitzer algebra. -/
 noncomputable def X (i : σ) : washnitzerAlgebra σ R :=
@@ -171,6 +202,21 @@ noncomputable def X (i : σ) : washnitzerAlgebra σ R :=
 @[simp]
 theorem coe_X (i : σ) : (X σ R i : MvPowerSeries σ R) = MvPowerSeries.X i :=
   (rfl)
+
+/-- A variable in the Monsky–Washnitzer algebra over a nontrivial ring is nonzero. -/
+@[simp]
+theorem X_ne_zero [Nontrivial R] (i : σ) : X σ R i ≠ 0 := by
+  intro h
+  have hc := congrArg (fun f : washnitzerAlgebra σ R ↦
+    coeff (Finsupp.single i 1) (f : MvPowerSeries σ R)) h
+  simp at hc
+
+/-- A variable in the Monsky–Washnitzer algebra over a nontrivial ring is not a unit. -/
+@[simp]
+theorem not_isUnit_X [Nontrivial R] (i : σ) : ¬ IsUnit (X σ R i) := by
+  intro h
+  have hu := h.map (constantCoeff.comp (washnitzerAlgebra σ R).val.toRingHom)
+  simp at hu
 
 variable (σ R) in
 /-- The inclusion of the polynomial algebra into the Monsky–Washnitzer algebra. -/
@@ -218,7 +264,55 @@ theorem denseRange_toTate : DenseRange (toTate σ R) := by
   rintro _ ⟨f, rfl⟩
   exact ⟨⟨f, 2, one_lt_two, f.2⟩, Subtype.ext (by simp)⟩
 
+/-- For a polyradius `c` bounded below by some `ρ > 1`, the inclusion of the series restricted at
+`c` into the Monsky–Washnitzer algebra. -/
+noncomputable def ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i) :
+    IsRestricted.subring (R := R) c →+* washnitzerAlgebra σ R :=
+  (IsRestricted.subring (R := R) c).subtype.codRestrict (washnitzerAlgebra σ R).toSubring
+    fun f ↦ mem_washnitzerAlgebra.mpr
+      ⟨ρ, hρ, isRestricted_of_le f.2 (fun _ ↦ (zero_lt_one.trans hρ).le) hc⟩
+
+/-- The inclusion of a restricted subring does not change the underlying series. -/
+@[simp]
+theorem coe_ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i)
+    (f : IsRestricted.subring (R := R) c) : (ofRestricted hρ hc f : MvPowerSeries σ R) = f :=
+  (rfl)
+
 end washnitzerAlgebra
+
+/-- **Radius selection on a set of exponents.** If the coefficients of an overconvergent series at
+the exponents in `S` all have norm strictly less than `r`, then for some radius `ρ > 1` at which
+the series is restricted, the weighted coefficient norms `‖aᵥ‖ ρ^|ν|` with `ν ∈ S` are still
+strictly less than `r`. -/
+theorem exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt {f : MvPowerSeries σ R}
+    (hf : f ∈ washnitzerAlgebra σ R) {S : Set (σ →₀ ℕ)} {r : ℝ}
+    (h : ∀ t ∈ S, ‖coeff t f‖ < r) :
+    ∃ ρ > (1 : ℝ), IsRestricted (fun _ : σ ↦ ρ) f ∧ ∀ t ∈ S, ‖coeff t f‖ * ρ ^ t.degree < r := by
+  obtain ⟨ρ₀, hρ₀, hf⟩ := hf
+  -- Only finitely many exponents in `S` have weighted norm at least `r` at radius `ρ₀`.
+  have hS : {t ∈ S | r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree}.Finite := by
+    rcases le_or_gt r 0 with hr | hr
+    · exact Set.Finite.subset Set.finite_empty fun t ht ↦ absurd ((norm_nonneg _).trans_lt
+        (h t ht.1)) hr.not_gt
+    · refine Set.Finite.subset (s := {t | r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree}) ?_ fun t ht ↦ ht.2
+      simpa [not_lt] using
+        eventually_cofinite.1 ((isRestricted_const_iff.1 hf).eventually (gt_mem_nhds hr))
+  -- For each of them, the strict bound at radius `1` persists to radii near `1`.
+  have hnear : ∀ᶠ ρ in 𝓝 (1 : ℝ),
+      ρ < ρ₀ ∧ ∀ t ∈ {t ∈ S | r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree},
+        ‖coeff t f‖ * ρ ^ t.degree < r := by
+    refine (gt_mem_nhds hρ₀).and (hS.eventually_all.2 fun t ht ↦ ?_)
+    have hc : Continuous fun ρ : ℝ ↦ ‖coeff t f‖ * ρ ^ t.degree := by fun_prop
+    exact hc.continuousAt.eventually_lt continuousAt_const (by simpa using h t ht.1)
+  obtain ⟨ρ, ⟨hρ₀', hρS⟩, hρ⟩ :=
+    ((hnear.filter_mono nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Set.Ioi 1))).exists
+  refine ⟨ρ, hρ, isRestricted_of_le hf (fun _ ↦ zero_le_one.trans hρ.le) fun _ ↦ hρ₀'.le,
+    fun t htS ↦ ?_⟩
+  by_cases ht : r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree
+  · exact hρS t ⟨htS, ht⟩
+  · exact (mul_le_mul_of_nonneg_left
+      (pow_le_pow_left₀ (zero_le_one.trans (le_of_lt hρ)) hρ₀'.le _)
+      (norm_nonneg _)).trans_lt (not_le.1 ht)
 
 /-- **Radius selection.** If every coefficient of an overconvergent series has norm strictly less
 than `r`, then for some radius `ρ > 1` at which the series is restricted, every weighted
@@ -226,28 +320,9 @@ coefficient norm `‖aᵥ‖ ρ^|ν|` is still strictly less than `r`. -/
 theorem exists_isRestricted_forall_norm_coeff_mul_pow_lt {f : MvPowerSeries σ R}
     (hf : f ∈ washnitzerAlgebra σ R) {r : ℝ} (h : ∀ t, ‖coeff t f‖ < r) :
     ∃ ρ > (1 : ℝ), IsRestricted (fun _ : σ ↦ ρ) f ∧ ∀ t, ‖coeff t f‖ * ρ ^ t.degree < r := by
-  obtain ⟨ρ₀, hρ₀, hf⟩ := hf
-  have hr : 0 < r := (norm_nonneg _).trans_lt (h 0)
-  -- Only finitely many exponents have weighted norm at least `r` at radius `ρ₀`.
-  have hS : {t : σ →₀ ℕ | r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree}.Finite := by
-    simpa [not_lt] using
-      eventually_cofinite.1 ((isRestricted_const_iff.1 hf).eventually (gt_mem_nhds hr))
-  -- For each of them, the strict bound at radius `1` persists to radii near `1`.
-  have hnear : ∀ᶠ ρ in 𝓝 (1 : ℝ),
-      ρ < ρ₀ ∧ ∀ t ∈ {t : σ →₀ ℕ | r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree},
-        ‖coeff t f‖ * ρ ^ t.degree < r := by
-    refine (gt_mem_nhds hρ₀).and (hS.eventually_all.2 fun t _ ↦ ?_)
-    have hc : Continuous fun ρ : ℝ ↦ ‖coeff t f‖ * ρ ^ t.degree := by fun_prop
-    exact hc.continuousAt.eventually_lt continuousAt_const (by simpa using h t)
-  obtain ⟨ρ, ⟨hρ₀', hρS⟩, hρ⟩ :=
-    ((hnear.filter_mono nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Set.Ioi 1))).exists
-  refine ⟨ρ, hρ, isRestricted_of_le hf (fun _ ↦ zero_le_one.trans hρ.le) fun _ ↦ hρ₀'.le,
-    fun t ↦ ?_⟩
-  by_cases ht : r ≤ ‖coeff t f‖ * ρ₀ ^ t.degree
-  · exact hρS t ht
-  · exact (mul_le_mul_of_nonneg_left
-      (pow_le_pow_left₀ (zero_le_one.trans (le_of_lt hρ)) hρ₀'.le _)
-      (norm_nonneg _)).trans_lt (not_le.1 ht)
+  obtain ⟨ρ, hρ, hf, hρt⟩ :=
+    exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt hf (S := Set.univ) fun t _ ↦ h t
+  exact ⟨ρ, hρ, hf, fun t ↦ hρt t trivial⟩
 
 end Defs
 
@@ -411,5 +486,34 @@ theorem isUnit_washnitzerAlgebra_iff_norm_sub_lt (f : washnitzerAlgebra σ K) :
   simp [coe_algebraMap_isRestrictedSubring]
 
 end Units
+
+section Primitive
+
+variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CharZero K]
+
+/-- **Primitives of overconvergent series are overconvergent.** Over an ultrametric normed field
+of characteristic zero, the termwise primitive with respect to `Xᵢ` of an overconvergent series is
+overconvergent. See `MvPowerSeries.IsRestricted.primitive` for the radius-by-radius version. -/
+theorem primitive_mem_washnitzerAlgebra {f : MvPowerSeries σ K} (hf : f ∈ washnitzerAlgebra σ K)
+    (i : σ) : MvPowerSeries.primitive i f ∈ washnitzerAlgebra σ K := by
+  obtain ⟨ρ, hρ, hf⟩ := hf
+  obtain ⟨ρ', h1, h2⟩ := exists_between hρ
+  exact ⟨ρ', h1, hf.primitive (fun _ ↦ zero_le_one.trans h1.le) (fun _ ↦ h2.le) h2⟩
+
+variable (σ K) in
+/-- The termwise primitive with respect to `Xᵢ`, as a `K`-linear endomorphism of the
+Monsky–Washnitzer algebra. -/
+noncomputable def washnitzerAlgebra.primitive (i : σ) :
+    washnitzerAlgebra σ K →ₗ[K] washnitzerAlgebra σ K :=
+  (MvPowerSeries.primitive i ∘ₗ (washnitzerAlgebra σ K).toSubmodule.subtype).codRestrict
+    (washnitzerAlgebra σ K).toSubmodule fun f ↦ primitive_mem_washnitzerAlgebra f.2 i
+
+/-- The primitive in `W` is the termwise primitive of the underlying series. -/
+@[simp]
+theorem washnitzerAlgebra.coe_primitive (i : σ) (f : washnitzerAlgebra σ K) :
+    (washnitzerAlgebra.primitive σ K i f : MvPowerSeries σ K) = MvPowerSeries.primitive i f :=
+  (rfl)
+
+end Primitive
 
 end TauCeti.Dagger

@@ -1,0 +1,344 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
+public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.WeierstrassZeta
+
+/-!
+# The period lattice of a point of the upper half-plane
+
+A point `z` of the upper half-plane determines the period pair `(z, 1)`
+(`UpperHalfPlane.periodPair`), whose lattice is `ℤ z + ℤ`. This file records the Weierstrass
+function `℘(x; ℤ z + ℤ)` of Mathlib's `PeriodPair.weierstrassP` in the coordinates of modular
+forms:
+
+* as a series over integer pairs `y`,
+  `℘(x; ℤ z + ℤ) = ∑_y ((x - (y₀ z + y₁))⁻² - (y₀ z + y₁)⁻²)`;
+* under `γ ∈ SL(2, ℤ)` the lattice of `γ z` is `(c z + d)⁻¹ (ℤ z + ℤ)`, so
+  `℘(x / (c z + d); ℤ γz + ℤ) = (c z + d)² ℘(x; ℤ z + ℤ)`;
+* summing first along the rows `y₀ = m`,
+  `℘(x; ℤ z + ℤ) = ∑_m (P(x - m z) - P(m z))` with `P(w) = ∑_n (w + n)⁻²`
+  (`TauCeti.UpperHalfPlane.rowSum`), and `P(w)` decays like `e^(-2π |Im w|)` as `|Im w| → ∞`
+  (`TauCeti.UpperHalfPlane.norm_rowSum_le`,
+  `TauCeti.UpperHalfPlane.norm_rowSum_le_of_le_abs_im`).
+
+These are the inputs that make the values of `℘` at the `N`-division points of `ℤ z + ℤ` weight-two
+modular forms of level `Γ(N)`.
+
+For the Weierstrass `ζ` function `PeriodPair.weierstrassZeta` and its quasi-periods
+`PeriodPair.quasiPeriod`, the same rescaling of the lattice gives the weight-one transformation
+laws `ζ(x / (c z + d); ℤ γz + ℤ) = (c z + d) ζ(x; ℤ z + ℤ)` and
+`η(l / (c z + d); ℤ γz + ℤ) = (c z + d) η(l; ℤ z + ℤ)`, the inputs for weight one.
+
+## Main definitions
+
+* `UpperHalfPlane.periodPair`: the period pair `(z, 1)`.
+* `TauCeti.UpperHalfPlane.rowSum`: a row `∑_n (w + n)⁻²` of the lattice series.
+
+## Main results
+
+* `UpperHalfPlane.hasSum_weierstrassP_periodPair`: the series over integer pairs.
+* `UpperHalfPlane.intCast_mul_smul_add_intCast`: the lattice points of `γ z` in terms of those
+  of `z`.
+* `UpperHalfPlane.weierstrassP_periodPair_smul`: the modular transformation law.
+* `UpperHalfPlane.div_denom_mem_lattice_periodPair_smul_iff`: the lattice of `γ z` is
+  `(c z + d)⁻¹` times that of `z`.
+* `UpperHalfPlane.hasSum_weierstrassZeta_periodPair`: the series of `ζ` over integer pairs.
+* `UpperHalfPlane.weierstrassZeta_periodPair_smul`,
+  `UpperHalfPlane.quasiPeriod_periodPair_smul`: the modular transformation laws of `ζ` and of its
+  quasi-periods.
+* `UpperHalfPlane.hasSum_weierstrassP_periodPair_rows`: the sum along rows.
+* `TauCeti.UpperHalfPlane.norm_rowSum_le`, `TauCeti.UpperHalfPlane.norm_rowSum_le_of_le_abs_im`:
+  the exponential decay of the rows.
+* `TauCeti.UpperHalfPlane.tendsto_rowSum_atImInfty`: rows whose imaginary part grows linearly in
+  `Im z` vanish at `i∞`.
+* `TauCeti.UpperHalfPlane.rowSum_zero`: the row at `0` is `2 ζ(2)`.
+-/
+
+public section
+
+noncomputable section
+
+open Complex PeriodPair Matrix UpperHalfPlane
+open scoped MatrixGroups Real
+
+namespace UpperHalfPlane
+
+/-- The period pair `(z, 1)` of a point `z` of the upper half-plane; its lattice is `ℤ z + ℤ`. -/
+def periodPair (z : ℍ) : PeriodPair where
+  ω₁ := z
+  ω₂ := 1
+  indep := by
+    refine LinearIndependent.pair_iff.mpr fun s t h ↦ ?_
+    have hs : s = 0 := by
+      have him := congrArg Complex.im h
+      simp only [Complex.real_smul, Complex.add_im, Complex.mul_im, Complex.ofReal_re,
+        Complex.ofReal_im, zero_mul, add_zero, mul_one, Complex.zero_im] at him
+      exact (mul_eq_zero.mp him).resolve_right z.im_pos.ne'
+    subst hs
+    simpa using h
+
+@[simp]
+lemma periodPair_ω₁ (z : ℍ) : z.periodPair.ω₁ = z := (rfl)
+
+@[simp]
+lemma periodPair_ω₂ (z : ℍ) : z.periodPair.ω₂ = 1 := (rfl)
+
+/-- The points `m z + n` with `m n : ℤ` lie in the lattice of `z.periodPair`. -/
+lemma intCast_mul_add_intCast_mem_lattice_periodPair (z : ℍ) (m n : ℤ) :
+    (m : ℂ) * z + n ∈ z.periodPair.lattice :=
+  mem_lattice.mpr ⟨m, n, by simp⟩
+
+/-- The integer pairs parametrize the lattice of `z.periodPair` by `y ↦ y₀ z + y₁`. -/
+private def latticeEquiv (z : ℍ) : (Fin 2 → ℤ) ≃ z.periodPair.lattice :=
+  (finTwoArrowEquiv ℤ).trans z.periodPair.latticeEquivProd.symm.toEquiv
+
+private lemma coe_latticeEquiv (z : ℍ) (y : Fin 2 → ℤ) :
+    (latticeEquiv z y : ℂ) = y 0 * z + y 1 := by
+  simp [latticeEquiv, latticeEquiv_symm_apply]
+
+/-- **The Weierstrass function of `ℤ z + ℤ` as a series over integer pairs**:
+`℘(x; ℤ z + ℤ) = ∑_y ((x - (y₀ z + y₁))⁻² - (y₀ z + y₁)⁻²)`, the series converging absolutely. -/
+theorem hasSum_weierstrassP_periodPair (z : ℍ) (x : ℂ) :
+    HasSum (fun y : Fin 2 → ℤ ↦ 1 / (x - (y 0 * z + y 1)) ^ 2 - 1 / ((y 0 : ℂ) * z + y 1) ^ 2)
+      (℘[z.periodPair] x) := by
+  have h := z.periodPair.hasSum_weierstrassP x
+  rw [← (latticeEquiv z).hasSum_iff] at h
+  simpa only [Function.comp_def, coe_latticeEquiv] using h
+
+/-- In the coordinates of `γ z`, the lattice point `y₀ γz + y₁` is `(y γ)₀ z + (y γ)₁` divided by
+`c z + d`. -/
+lemma intCast_mul_smul_add_intCast (γ : SL(2, ℤ)) (z : ℍ) (y : Fin 2 → ℤ) :
+    (y 0 : ℂ) * ↑(γ • z) + y 1 =
+      (((y ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) 0 : ℂ) * z +
+        (y ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) 1) / denom γ z := by
+  simpa [EisensteinSeries.eisSummand, div_eq_inv_mul] using
+    EisensteinSeries.eisSummand_SL2_apply (-1) y γ z
+
+/-- **The modular transformation of `℘`.** For `γ ∈ SL(2, ℤ)` the lattice of `γ z` is
+`(c z + d)⁻¹ (ℤ z + ℤ)`, so `℘(x / (c z + d); ℤ γz + ℤ) = (c z + d)² ℘(x; ℤ z + ℤ)`. -/
+theorem weierstrassP_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (x : ℂ) :
+    ℘[(γ • z).periodPair] (x / denom γ z) = denom γ z ^ 2 * ℘[z.periodPair] x := by
+  have hD := denom_ne_zero γ z
+  -- reindex the integer pairs by `y ↦ y γ`
+  let e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) :=
+    Matrix.toLinearEquivRight'OfInv
+      (M := ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ))
+      (M' := (γ : Matrix (Fin 2) (Fin 2) ℤ))
+      (by simp [Matrix.adjugate_mul]) (by simp [Matrix.mul_adjugate])
+  have h := (hasSum_weierstrassP_periodPair z x).mul_left (denom γ z ^ 2)
+  rw [← e.toEquiv.hasSum_iff] at h
+  refine (hasSum_weierstrassP_periodPair (γ • z) (x / denom γ z)).unique (h.congr_fun fun y ↦ ?_)
+  simp only [Function.comp_apply, LinearEquiv.coe_toEquiv, e,
+    Matrix.toLinearEquivRight'OfInv_apply, Matrix.toLinearMapRight'_apply,
+    intCast_mul_smul_add_intCast γ z y]
+  rw [← sub_div, div_pow, div_pow, one_div_div, one_div_div]
+  ring
+
+/-- The lattice of `γ z` is `(c z + d)⁻¹` times that of `z`. -/
+lemma div_denom_mem_lattice_periodPair_smul_iff (γ : SL(2, ℤ)) (z : ℍ) (x : ℂ) :
+    x / denom γ z ∈ (γ • z).periodPair.lattice ↔ x ∈ z.periodPair.lattice := by
+  have hD := denom_ne_zero γ z
+  constructor
+  · intro h
+    obtain ⟨m, n, hmn⟩ := mem_lattice.mp h
+    have h' := intCast_mul_smul_add_intCast γ z ![m, n]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, periodPair_ω₁, periodPair_ω₂,
+      mul_one] at h' hmn
+    rw [hmn, div_left_inj' hD] at h'
+    rw [h']
+    exact intCast_mul_add_intCast_mem_lattice_periodPair z _ _
+  · intro h
+    obtain ⟨m, n, rfl⟩ := mem_lattice.mp h
+    -- the integer pair `y = (m, n) γ⁻¹` has `y γ = (m, n)`
+    set y : Fin 2 → ℤ := ![m, n] ᵥ* ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)
+    have hy : y ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ) = ![m, n] := by
+      rw [Matrix.vecMul_vecMul, ← Matrix.SpecialLinearGroup.coe_mul, inv_mul_cancel,
+        Matrix.SpecialLinearGroup.coe_one, Matrix.vecMul_one]
+    have h' := intCast_mul_smul_add_intCast γ z y
+    rw [hy] at h'
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, periodPair_ω₁, periodPair_ω₂,
+      mul_one] at h' ⊢
+    rw [← h']
+    exact intCast_mul_add_intCast_mem_lattice_periodPair (γ • z) _ _
+
+/-- **The Weierstrass `ζ` function of `ℤ z + ℤ` as a series over integer pairs**:
+`ζ(x; ℤ z + ℤ) = ∑_y (1 / (x - (y₀ z + y₁)) + 1 / (y₀ z + y₁) + x / (y₀ z + y₁)²)`, the series
+converging absolutely. -/
+theorem hasSum_weierstrassZeta_periodPair (z : ℍ) (x : ℂ) :
+    HasSum (fun y : Fin 2 → ℤ ↦ 1 / (x - (y 0 * z + y 1)) + 1 / ((y 0 : ℂ) * z + y 1) +
+      x / ((y 0 : ℂ) * z + y 1) ^ 2) (z.periodPair.weierstrassZeta x) := by
+  have h := z.periodPair.hasSum_weierstrassZeta x
+  rw [← (latticeEquiv z).hasSum_iff] at h
+  simpa only [Function.comp_def, coe_latticeEquiv] using h
+
+/-- **The modular transformation of `ζ`.** For `γ ∈ SL(2, ℤ)` the lattice of `γ z` is
+`(c z + d)⁻¹ (ℤ z + ℤ)`, so `ζ(x / (c z + d); ℤ γz + ℤ) = (c z + d) ζ(x; ℤ z + ℤ)`. -/
+theorem weierstrassZeta_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (x : ℂ) :
+    (γ • z).periodPair.weierstrassZeta (x / denom γ z) =
+      denom γ z * z.periodPair.weierstrassZeta x := by
+  have hD := denom_ne_zero γ z
+  -- reindex the integer pairs by `y ↦ y γ`
+  let e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) :=
+    Matrix.toLinearEquivRight'OfInv
+      (M := ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ))
+      (M' := (γ : Matrix (Fin 2) (Fin 2) ℤ))
+      (by simp [Matrix.adjugate_mul]) (by simp [Matrix.mul_adjugate])
+  have h := (hasSum_weierstrassZeta_periodPair z x).mul_left (denom γ z)
+  rw [← e.toEquiv.hasSum_iff] at h
+  refine (hasSum_weierstrassZeta_periodPair (γ • z) (x / denom γ z)).unique
+    (h.congr_fun fun y ↦ ?_)
+  simp only [Function.comp_apply, LinearEquiv.coe_toEquiv, e,
+    Matrix.toLinearEquivRight'OfInv_apply, Matrix.toLinearMapRight'_apply,
+    intCast_mul_smul_add_intCast γ z y]
+  rw [← sub_div, one_div_div, one_div_div, div_pow, div_div_div_eq, pow_two (denom γ z),
+    ← mul_assoc, mul_comm (denom γ z) (_ ^ 2), mul_div_mul_right _ _ hD]
+  ring
+
+/-- **The modular transformation of the quasi-periods.** The quasi-period of the lattice
+point `l / (c z + d)` of `ℤ γz + ℤ` is `(c z + d)` times that of `l` in `ℤ z + ℤ`. -/
+theorem quasiPeriod_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (l : z.periodPair.lattice) :
+    (γ • z).periodPair.quasiPeriod
+        ⟨l / denom γ z, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.2⟩ =
+      denom γ z * z.periodPair.quasiPeriod l := by
+  set x := z.periodPair.ω₁ / 2
+  have hx : x ∉ z.periodPair.lattice := z.periodPair.ω₁_div_two_notMem_lattice
+  have hx' : x / denom γ z ∉ (γ • z).periodPair.lattice :=
+    (div_denom_mem_lattice_periodPair_smul_iff γ z x).not.mpr hx
+  have h := (γ • z).periodPair.weierstrassZeta_add_coe hx'
+    ⟨l / denom γ z, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.2⟩
+  rw [← add_div, weierstrassZeta_periodPair_smul, weierstrassZeta_periodPair_smul,
+    z.periodPair.weierstrassZeta_add_coe hx, mul_add] at h
+  exact (add_left_cancel h).symm
+
+end UpperHalfPlane
+
+namespace TauCeti.UpperHalfPlane
+
+/-- A row `P(w) = ∑_n (w + n)⁻²` of the lattice series of `ℤ z + ℤ`: the row `y₀ = m` of
+`℘(x; ℤ z + ℤ)` is `P(x - m z) - P(m z)`. -/
+def rowSum (w : ℂ) : ℂ := ∑' n : ℤ, 1 / (w + n) ^ 2
+
+lemma rowSum_def (w : ℂ) : rowSum w = ∑' n : ℤ, 1 / (w + n) ^ 2 := (rfl)
+
+/-- The rows `∑_n (w + n)⁻²` of the lattice series are absolutely convergent. -/
+lemma summable_one_div_add_intCast_sq (w : ℂ) :
+    Summable fun n : ℤ ↦ 1 / (w + n) ^ 2 := by
+  simpa [one_div] using EisensteinSeries.linear_right_summable w 1 (k := 2) le_rfl
+
+/-- The row `∑_n (w + n)⁻²` converges to `rowSum w`. -/
+lemma hasSum_rowSum (w : ℂ) : HasSum (fun n : ℤ ↦ 1 / (w + n) ^ 2) (rowSum w) := by
+  rw [rowSum_def]
+  exact (summable_one_div_add_intCast_sq w).hasSum
+
+/-- The rows are even functions. -/
+lemma rowSum_neg (w : ℂ) : rowSum (-w) = rowSum w := by
+  rw [rowSum_def, rowSum_def, ← (Equiv.neg ℤ).tsum_eq]
+  refine tsum_congr fun n ↦ ?_
+  simp only [Equiv.neg_apply, Int.cast_neg]
+  ring
+
+/-- **The rows decay exponentially**: for `w` in the upper half-plane and `q = e^(2π i w)`,
+`‖∑_n (w + n)⁻²‖ ≤ 4 π² ‖q‖ / (1 - ‖q‖)²`. -/
+theorem norm_rowSum_le (w : ℍ) :
+    ‖rowSum w‖ ≤
+      4 * π ^ 2 * ‖cexp (2 * π * Complex.I * w)‖ /
+        (1 - ‖cexp (2 * π * Complex.I * w)‖) ^ 2 := by
+  have H := EisensteinSeries.qExpansion_identity (k := 1) le_rfl w
+  simp only [Nat.reduceAdd, pow_one, Nat.factorial_one, Nat.cast_one, div_one] at H
+  set q := cexp (2 * π * Complex.I * w)
+  have hq : ‖q‖ < 1 := norm_exp_two_pi_I_lt_one w
+  have hq' : 0 < 1 - ‖q‖ := by linarith
+  have h1 : 1 - ‖q‖ ≤ ‖1 - q‖ := by
+    simpa using norm_sub_norm_le (1 : ℂ) q
+  have h2 : ‖(-2 * π * Complex.I : ℂ)‖ ^ 2 = 4 * π ^ 2 := by
+    simp [abs_of_pos Real.pi_pos]
+    ring
+  rw [rowSum_def, H, tsum_coe_mul_geometric_of_norm_lt_one hq, norm_mul, norm_div, norm_pow,
+    norm_pow, h2, mul_div_assoc]
+  gcongr
+
+/-- **The rows decay exponentially away from the real axis**: if `0 < t ≤ |Im w|`, then
+`‖∑_n (w + n)⁻²‖ ≤ 4 π² e^(-2π |Im w|) / (1 - e^(-2π t))²`. -/
+theorem norm_rowSum_le_of_le_abs_im {w : ℂ} {t : ℝ} (ht : 0 < t) (hw : t ≤ |w.im|) :
+    ‖rowSum w‖ ≤ 4 * π ^ 2 / (1 - Real.exp (-2 * π * t)) ^ 2 * Real.exp (-2 * π * |w.im|) := by
+  have hθ : Real.exp (-2 * π * t) < 1 :=
+    Real.exp_lt_one_iff.mpr (by nlinarith [Real.pi_pos])
+  -- reduce to `0 < Im w` by evenness
+  wlog hpos : 0 < w.im generalizing w
+  · have hne : w.im ≠ 0 := by
+      intro h
+      rw [h, abs_zero] at hw
+      linarith
+    have := this (w := -w) (by simpa using hw)
+      (by simpa using lt_of_le_of_ne (not_lt.mp hpos) hne)
+    rwa [rowSum_neg, Complex.neg_im, abs_neg] at this
+  rw [abs_of_pos hpos] at hw ⊢
+  have hq : ‖cexp (2 * π * Complex.I * w)‖ = Real.exp (-2 * π * w.im) := by
+    rw [Complex.norm_exp]
+    congr 1
+    simp
+  have h := norm_rowSum_le (UpperHalfPlane.mk w hpos)
+  simp only [hq] at h
+  have hle : Real.exp (-2 * π * w.im) ≤ Real.exp (-2 * π * t) := by
+    rw [Real.exp_le_exp]
+    nlinarith [Real.pi_pos]
+  refine h.trans ?_
+  rw [div_mul_eq_mul_div, mul_div_assoc, mul_div_assoc]
+  gcongr
+
+/-- The row at `0` is `P(0) = ∑_{n ≠ 0} n⁻² = 2 ζ(2)`, the value at `i∞` of Mathlib's
+`EisensteinSeries.G2`. -/
+@[simp]
+lemma rowSum_zero : rowSum 0 = 2 * riemannZeta 2 := by
+  have h := two_mul_riemannZeta_eq_tsum_int_inv_pow_of_even (k := 2) le_rfl even_two
+  push_cast at h
+  rw [h, rowSum_def]
+  exact tsum_congr fun n ↦ by simp
+
+open Filter Topology in
+/-- **The rows vanish at `i∞`**: if the imaginary part of `w(z)` grows at least like `c Im z` for
+some `c > 0`, then `P(w(z)) → 0` as `Im z → ∞`. -/
+theorem tendsto_rowSum_atImInfty {w : ℍ → ℂ} {c : ℝ} (hc : 0 < c)
+    (hw : ∀ z, c * z.im ≤ |(w z).im|) :
+    Tendsto (fun z ↦ rowSum (w z)) atImInfty (𝓝 0) := by
+  have him : Tendsto (fun z : ℍ ↦ z.im) atImInfty atTop := tendsto_comap
+  have hexp : Tendsto (fun z : ℍ ↦ 4 * π ^ 2 / (1 - Real.exp (-2 * π * 1)) ^ 2 *
+      Real.exp (-(2 * π * c * z.im))) atImInfty (𝓝 0) := by
+    simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+      (him.const_mul_atTop (by positivity : 0 < 2 * π * c))).const_mul
+        (4 * π ^ 2 / (1 - Real.exp (-2 * π * 1)) ^ 2)
+  refine squeeze_zero_norm' ?_ hexp
+  filter_upwards [him.eventually_ge_atTop (1 / c)] with z hz
+  have hw1 : 1 ≤ |(w z).im| := by
+    refine le_trans ?_ (hw z)
+    rwa [div_le_iff₀' hc] at hz
+  refine (norm_rowSum_le_of_le_abs_im one_pos hw1).trans
+    (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr (by nlinarith [hw z, Real.pi_pos]))
+      (div_nonneg (by positivity) (sq_nonneg _)))
+
+end TauCeti.UpperHalfPlane
+
+namespace UpperHalfPlane
+
+open TauCeti.UpperHalfPlane
+
+/-- **The Weierstrass function of `ℤ z + ℤ` summed along rows**:
+`℘(x; ℤ z + ℤ) = ∑_m (∑_n (x - m z + n)⁻² - ∑_n (m z + n)⁻²)`. -/
+theorem hasSum_weierstrassP_periodPair_rows (z : ℍ) (x : ℂ) :
+    HasSum (fun m : ℤ ↦ rowSum (x - m * z) - rowSum (m * z)) (℘[z.periodPair] x) := by
+  have h := hasSum_weierstrassP_periodPair z x
+  rw [← (finTwoArrowEquiv ℤ).symm.hasSum_iff] at h
+  refine h.prod_fiberwise fun m ↦ ?_
+  have h₁ : HasSum (fun n : ℤ ↦ 1 / (x - (m * z + n)) ^ 2) (rowSum (x - m * z)) := by
+    rw [← rowSum_neg]
+    convert hasSum_rowSum (-(x - m * z)) using 2 with n
+    ring
+  simpa [Function.comp_def] using h₁.sub (hasSum_rowSum ((m : ℂ) * z))
+
+end UpperHalfPlane

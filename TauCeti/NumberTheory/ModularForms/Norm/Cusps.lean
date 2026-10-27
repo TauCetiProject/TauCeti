@@ -108,6 +108,24 @@ for the full coset space rather than its projective quotient; see the module doc
 abbrev CuspTranslationOrbit (𝒢 : Subgroup (GL (Fin 2) ℝ)) : Type :=
   orbitRel.Quotient (Subgroup.zpowers TSL) (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)
 
+/-- To prove a property of cusp translation orbits, it suffices to consider the orbits of
+cosets represented by integral matrices. -/
+@[elab_as_elim]
+theorem CuspTranslationOrbit.induction_on {P : CuspTranslationOrbit 𝒢 → Prop}
+    (c : CuspTranslationOrbit 𝒢)
+    (h : ∀ γ : SL(2, ℤ), P
+      (⟦(QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ) :
+        𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢)) : P c := by
+  induction c using Quotient.inductionOn with
+  | h q =>
+    induction q using Quotient.inductionOn with
+    | h x =>
+      obtain ⟨γ, hγ⟩ := x.property
+      have hx : x = (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ :=
+        Subtype.ext hγ.symm
+      rw [hx]
+      exact h γ
+
 section Translate
 
 variable [SlashInvariantFormClass F 𝒢 k]
