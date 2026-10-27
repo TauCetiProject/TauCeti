@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Basic.Complex.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
-import Mathlib.LinearAlgebra.Matrix.Transvection
 import TauCeti.Algebra.Polynomial.Laurent.Basic
 import TauCeti.Algebra.Polynomial.Laurent.Detection
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 
 /-!
 # Nontrivial entrywise field endomorphisms with infinitely many fixed points are not algebraic
@@ -64,10 +64,7 @@ theorem eq_id_of_forall_generalLinearToPoint_eq (σ : K →+* K)
   obtain ⟨γ, hγ⟩ : ∃ γ : GL (Fin n) K[T;T⁻¹], γ i j = T 1 := by
     rcases eq_or_ne i j with rfl | hij
     · exact ⟨TauCeti.diagGL (Pi.mulSingle i (isUnit_T 1).unit), by simp⟩
-    · refine ⟨Matrix.GeneralLinearGroup.mk'' (Matrix.transvection i j (T 1)) ?_, ?_⟩
-      · rw [Matrix.det_transvection_of_ne i j hij]
-        exact isUnit_one
-      · simp [Matrix.transvection, hij]
+    · exact ⟨TauCeti.transvectionUnit hij (T 1), by simp [Matrix.transvection, hij]⟩
   -- Restricting `f` along this point gives a Laurent polynomial whose value at every unit `u` is
   -- `σ u`, which forces `σ = id`.
   refine σ.eq_id_of_forall_eval₂_eq hσ ((generalLinearToPoint (R := K) n γ).ofConv f) fun u ↦ ?_
