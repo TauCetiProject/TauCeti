@@ -114,18 +114,13 @@ exactly the `K`-points of `E` killed by `N`. No hypothesis on the characteristic
 needed. -/
 theorem IsDrinfeldBasis.range_eq_ker (h : E.IsDrinfeldBasis N φ) :
     φ.range = (IsMonHom.monoidHom (E.mulBy N) _).ker := by
-  ext x
-  simp only [MonoidHom.mem_range, MonoidHom.mem_ker, IsMonHom.monoidHom_apply]
+  refine le_antisymm (range_le_ker_mulBy φ) fun x hx ↦ ?_
+  rw [MonoidHom.mem_ker, IsMonHom.monoidHom_apply] at hx
   obtain ⟨p⟩ : Nonempty (Spec (.of K)) := inferInstance
-  refine ⟨?_, fun hx ↦ ?_⟩
-  · rintro ⟨a, rfl⟩
-    have ha : a ^ N = 1 := Multiplicative.toAdd.injective <| by
-      ext <;> simp [nsmul_eq_mul]
-    rw [comp_mulBy, zpow_natCast, ← map_pow, ha, map_one]
-  · rw [← Set.mem_range, ← mem_support_pointsDivisor_iff φ x p, h.pointsDivisor_eq,
-      Scheme.Hom.support_ker]
-    refine subset_closure ⟨(E.torsionLift x hx).left p, ?_⟩
-    rw [← Scheme.Hom.comp_apply, ← Over.comp_left, E.torsionLift_torsionι x hx]
+  rw [MonoidHom.mem_range, ← Set.mem_range, ← mem_support_pointsDivisor_iff φ x p,
+    h.pointsDivisor_eq, Scheme.Hom.support_ker]
+  refine subset_closure ⟨(E.torsionLift x hx).left p, ?_⟩
+  rw [← Scheme.Hom.comp_apply, ← Over.comp_left, E.torsionLift_torsionι x hx]
 
 end Field
 

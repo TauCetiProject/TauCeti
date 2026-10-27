@@ -83,6 +83,22 @@ theorem polarizedComplexMeasure_diag (P : ProjValMeasure X H) (ξ : H)
     P.polarizedComplexMeasure ξ ξ B = (((P.diag ξ) B).toReal : ℂ) := by
   rw [P.polarizedComplexMeasure_apply ξ ξ B hB, P.inner_proj B hB ξ]
 
+/-- Polarizing against the zero vector in the first argument yields zero. -/
+@[simp]
+theorem polarizedComplexMeasure_zero_left (P : ProjValMeasure X H) (v : H) :
+    P.polarizedComplexMeasure 0 v = 0 := by
+  ext B hB
+  rw [P.polarizedComplexMeasure_apply (0 : H) v B hB]
+  simp
+
+/-- Polarizing against the zero vector in the second argument yields zero. -/
+@[simp]
+theorem polarizedComplexMeasure_zero_right (P : ProjValMeasure X H) (u : H) :
+    P.polarizedComplexMeasure u 0 = 0 := by
+  ext B hB
+  rw [P.polarizedComplexMeasure_apply u (0 : H) B hB]
+  simp
+
 /-- The complex measure is additive in its first (conjugate-linear) argument. -/
 theorem polarizedComplexMeasure_add_left (P : ProjValMeasure X H) (ψ ψ' ξ : H) :
     P.polarizedComplexMeasure (ψ + ψ') ξ =

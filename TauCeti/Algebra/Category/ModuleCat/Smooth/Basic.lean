@@ -200,6 +200,11 @@ example [Nonempty ι] (hJ : Directed (· ≥ ·) J) : Abelian (smoothModules.{v}
     isClosedUnderFiniteLimits_smoothModules hJ
   inferInstance
 
+/-- The inclusion of smooth modules into all `A`-modules preserves monomorphisms: a monomorphism
+of smooth modules is injective. -/
+instance [Nonempty ι] : (smoothModules.{v} J).ι.PreservesMonomorphisms :=
+  (smoothModules.{v} J).preservesMonomorphisms_ι_of_isNormalEpiCategory
+
 /-- Restriction of scalars along `f : B →+* A` sends modules smooth for `J` to modules smooth for
 `J'` when every pulled-back ideal `f⁻¹(J i)` contains some `J' i'`. -/
 theorem smoothModules_restrictScalars {B : Type u'} [Ring B] (f : B →+* A) {ι' : Type*}

@@ -9,9 +9,12 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import TauCeti.MeasureTheory.Measure.Lebesgue.GaussianBall
 -- Proof-only: negation-invariant restrictions and densities, the product comparison on symmetric
--- convex sets, Tonelli along an orthogonal decomposition, and products of densities.
+-- convex sets, Tonelli along an orthogonal decomposition, products of densities, the volume of
+-- `PiLp 2` as a product and the area of a disc.
+import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Integral.SymmetricConvexComparison
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import TauCeti.MeasureTheory.Measure.PiWithDensity
 
@@ -19,8 +22,9 @@ import TauCeti.MeasureTheory.Measure.PiWithDensity
 # Vaaler's cube-slicing theorem
 
 Every central slice of the cube `[-1, 1] ^ ι` by a linear subspace `V` of dimension `k` has
-`k`-dimensional volume at least `2 ^ k` (Vaaler 1979). This file proves it along the route of
-Bombieri–Gubler, Appendix C.3.
+`k`-dimensional volume at least `2 ^ k` (Vaaler 1979). Every central slice of the unit polydisc of
+`ℂ ^ ι` by a complex subspace of dimension `k` has real volume at least `π ^ k`. This file proves
+both along the route of Bombieri–Gubler, Appendix C.3.
 
 1. **The Gauss measure against a product of balls** (Lemma C.3.7). Let `B = ∏ i, B i` be a product
    of closed balls `B i ⊆ α i`, each of volume one, in finite-dimensional real inner product spaces.
@@ -37,8 +41,12 @@ Bombieri–Gubler, Appendix C.3.
    `E = Vᗮ ⊕ V`. The parallel slices `V ∩ (Q - w)` of `Q` are at most as large as the central one
    (Brunn's principle, `Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero`), so
    `volume (A ∩ Q) ≤ volume (V ∩ Q) * volume (closedBall (0 : Vᗮ) ε)`. Let `ε` tend to `0`.
-3. **The cube.** The cube `[-1/2, 1/2] ^ ι` is a product of intervals of length one, so its
-   central slices have volume at least one, and scaling by `2` gives `2 ^ k`.
+3. **Products of balls.** In the `L²` product `PiLp 2 α`, whose volume is the product of the
+   volumes of the factors, the first step supplies the hypothesis of the second for the product
+   `{x | ∀ i, ‖x i‖ ≤ ρ i}` of balls of volume one, so its central slices have volume at least one.
+4. **The cube and the polydisc.** The cube `[-1/2, 1/2] ^ ι` is a product of intervals of length
+   one, and scaling by `2` gives `2 ^ k`. The polydisc of radius `1 / √π` is a product of discs of
+   area one, and scaling by `√π` in real dimension `2 * k` gives `π ^ k`.
 
 No dominated convergence is needed in the second step, because Brunn's principle bounds every
 parallel slice by the central one.
@@ -50,8 +58,12 @@ parallel slice by the central one.
   one.
 * `Submodule.one_le_volume_preimage_coe`: the slicing step of Bombieri–Gubler, Theorem C.3.8, every
   central slice of a symmetric convex set that dominates the Gauss measure has volume at least one.
+* `Submodule.one_le_volume_setOf_forall_norm_le`: every central slice of a product of balls of
+  volume one has volume at least one.
 * `Submodule.two_pow_finrank_le_volume_setOf_forall_abs_le_one`: **Vaaler's cube-slicing
   theorem**.
+* `Submodule.pi_pow_finrank_le_volume_setOf_forall_norm_le_one`: its complex counterpart, for the
+  unit polydisc.
 
 ## References
 
@@ -84,7 +96,7 @@ private lemma withDensity_apply_le_restrict_apply {ρ : ℝ} (hρ : volume (clos
     volume.withDensity (fun x : E ↦ ENNReal.ofReal (Real.exp (-π * ‖x‖ ^ 2))) s ≤
       volume.restrict (closedBall (0 : E) ρ) s := by
   rw [withDensity_apply _ hs, restrict_apply hs]
-  refine setLIntegral_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_closedBall hρ hs ?_
+  refine setLIntegral_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_closedBall hρ.ge hs ?_
   -- A symmetric convex set contains the midpoint `0` of `x` and `-x`, so it is star-shaped.
   rcases s.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
   · exact starConvex_empty 0
@@ -263,6 +275,52 @@ theorem _root_.Submodule.one_le_volume_preimage_coe (V : Submodule ℝ E) {Q : S
 
 end CentralSlice
 
+section ProductOfBallsSlice
+
+variable {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, NormedAddCommGroup (α i)]
+  [∀ i, InnerProductSpace ℝ (α i)] [∀ i, FiniteDimensional ℝ (α i)] [∀ i, MeasurableSpace (α i)]
+  [∀ i, BorelSpace (α i)]
+
+/-- **Central slices of a product of balls of volume one.** Let `closedBall (0 : α i) (ρ i)` have
+volume one in each of finitely many finite-dimensional real inner product spaces `α i`. Then every
+central slice of the product `{x | ∀ i, ‖x i‖ ≤ ρ i}` of these balls by a real subspace `V` of the
+`L²` product `PiLp 2 α` has volume at least one, computed in `V`.
+
+The cube `[-1, 1] ^ ι` and the unit polydisc of `ℂ ^ ι` are dilates of such products. -/
+theorem _root_.Submodule.one_le_volume_setOf_forall_norm_le {ρ : ι → ℝ}
+    (hρ : ∀ i, volume (closedBall (0 : α i) (ρ i)) = 1) (V : Submodule ℝ (PiLp 2 α)) :
+    1 ≤ volume {x : V | ∀ i, ‖(x : PiLp 2 α) i‖ ≤ ρ i} := by
+  set Q : Set (PiLp 2 α) := {x | ∀ i, ‖x i‖ ≤ ρ i}
+  have hQe : Q = WithLp.ofLp ⁻¹' univ.pi fun i ↦ closedBall (0 : α i) (ρ i) := by
+    ext x
+    simp [Q]
+  -- The volume of `PiLp 2 α` is the product of the volumes of the factors.
+  have he := (PiLp.volume_preserving_symm_measurableEquiv_toLp α).symm
+  have hQ : MeasurableSet Q := hQe ▸ he.symm.measurable
+    (MeasurableSet.univ_pi fun _ ↦ measurableSet_closedBall)
+  have hQc : Convex ℝ Q := hQe ▸ (convex_pi fun i _ ↦ convex_closedBall 0 (ρ i)).linear_preimage
+    (WithLp.linearEquiv 2 ℝ (∀ i, α i)).toLinearMap
+  have hQneg (x) (hx : x ∈ Q) : -x ∈ Q := by simpa [Q] using hx
+  refine V.one_le_volume_preimage_coe hQ hQc hQneg fun A hA hAc hneg ↦ ?_
+  have h := setLIntegral_prod_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_pi hρ
+    (he.measurable hA) (hAc.linear_preimage (WithLp.linearEquiv 2 ℝ (∀ i, α i)).symm.toLinearMap)
+    (fun x hx ↦ by simpa using hneg _ hx)
+  calc ∫⁻ x in A, ENNReal.ofReal (Real.exp (-π * ‖x‖ ^ 2))
+      = ∫⁻ y in WithLp.toLp 2 ⁻¹' A, ENNReal.ofReal (Real.exp (-π * ‖WithLp.toLp 2 y‖ ^ 2)) :=
+        (he.setLIntegral_comp_preimage_emb (MeasurableEquiv.toLp 2 (∀ i, α i)).measurableEmbedding
+          _ A).symm
+    _ = ∫⁻ y in WithLp.toLp 2 ⁻¹' A, ∏ i, ENNReal.ofReal (Real.exp (-π * ‖y i‖ ^ 2)) := by
+      refine lintegral_congr fun y ↦ ?_
+      rw [PiLp.norm_sq_eq_of_L2, Finset.mul_sum, Real.exp_sum,
+        ENNReal.ofReal_prod_of_nonneg fun i _ ↦ (Real.exp_pos _).le]
+    _ ≤ volume (WithLp.toLp 2 ⁻¹' A ∩ univ.pi fun i ↦ closedBall (0 : α i) (ρ i)) := h
+    _ = volume (A ∩ Q) := by
+      rw [← he.measure_preimage (hA.inter hQ).nullMeasurableSet, hQe, preimage_inter,
+        preimage_preimage]
+      simp [MeasurableEquiv.coe_toLp]
+
+end ProductOfBallsSlice
+
 section Cube
 
 variable {ι : Type*} [Fintype ι]
@@ -273,49 +331,64 @@ theorem _root_.Submodule.two_pow_finrank_le_volume_setOf_forall_abs_le_one
     (V : Submodule ℝ (EuclideanSpace ℝ ι)) :
     2 ^ finrank ℝ V ≤ volume {x : V | ∀ i, |(x : EuclideanSpace ℝ ι) i| ≤ 1} := by
   -- The cube of side one is the product of the intervals `closedBall 0 (1 / 2)` of length one.
-  set Q : Set (EuclideanSpace ℝ ι) := {x | ∀ i, |x i| ≤ 1 / 2}
-  have hQe : Q = WithLp.ofLp ⁻¹' univ.pi fun _ ↦ closedBall (0 : ℝ) (1 / 2) := by
-    ext x
-    simp [Q, Real.norm_eq_abs]
-  have hQ : MeasurableSet Q := hQe ▸ (PiLp.volume_preserving_ofLp ι).measurable
-    (MeasurableSet.univ_pi fun _ ↦ measurableSet_closedBall)
-  have hQc : Convex ℝ Q := hQe ▸ (convex_pi fun _ _ ↦ convex_closedBall 0 (1 / 2)).linear_preimage
-    (WithLp.linearEquiv 2 ℝ (ι → ℝ)).toLinearMap
-  have hQneg (x) (hx : x ∈ Q) : -x ∈ Q := by simpa [Q] using hx
-  have hgauss (A : Set (EuclideanSpace ℝ ι)) (hA : MeasurableSet A) (hAc : Convex ℝ A)
-      (hneg : ∀ x ∈ A, -x ∈ A) :
-      ∫⁻ x in A, ENNReal.ofReal (Real.exp (-π * ‖x‖ ^ 2)) ≤ volume (A ∩ Q) := by
-    have he := PiLp.volume_preserving_toLp ι
-    have h := setLIntegral_prod_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_pi
-      (α := fun _ : ι ↦ ℝ) (ρ := fun _ ↦ 1 / 2) (fun _ ↦ by simp [Real.volume_closedBall])
-      (he.measurable hA) (hAc.linear_preimage (WithLp.linearEquiv 2 ℝ (ι → ℝ)).symm.toLinearMap)
-      (fun x hx ↦ by simpa using hneg _ hx)
-    calc ∫⁻ x in A, ENNReal.ofReal (Real.exp (-π * ‖x‖ ^ 2))
-        = ∫⁻ y in WithLp.toLp 2 ⁻¹' A, ENNReal.ofReal (Real.exp (-π * ‖WithLp.toLp 2 y‖ ^ 2)) :=
-          (he.setLIntegral_comp_preimage_emb (MeasurableEquiv.toLp 2 (ι → ℝ)).measurableEmbedding
-            _ A).symm
-      _ = ∫⁻ y in WithLp.toLp 2 ⁻¹' A, ∏ i, ENNReal.ofReal (Real.exp (-π * ‖y i‖ ^ 2)) := by
-        refine lintegral_congr fun y ↦ ?_
-        rw [EuclideanSpace.norm_sq_eq, Finset.mul_sum, Real.exp_sum,
-          ENNReal.ofReal_prod_of_nonneg fun i _ ↦ (Real.exp_pos _).le]
-      _ ≤ volume (WithLp.toLp 2 ⁻¹' A ∩ univ.pi fun _ ↦ closedBall (0 : ℝ) (1 / 2)) := h
-      _ = volume (A ∩ Q) := by
-        rw [← he.measure_preimage (hA.inter hQ).nullMeasurableSet, hQe, preimage_inter,
-          preimage_preimage]
-        simp only [preimage_id']
+  have h := V.one_le_volume_setOf_forall_norm_le (α := fun _ : ι ↦ ℝ) (ρ := fun _ ↦ 1 / 2)
+    fun _ ↦ by simp [Real.volume_closedBall]
   -- Scale the slice of the cube of side one by `2`.
   have hscale : {x : V | ∀ i, |(x : EuclideanSpace ℝ ι) i| ≤ 1} =
-      (2 : ℝ) • (((↑) : V → EuclideanSpace ℝ ι) ⁻¹' Q) := by
+      (2 : ℝ) • {x : V | ∀ i, ‖(x : EuclideanSpace ℝ ι) i‖ ≤ 1 / 2} := by
     ext x
     rw [mem_smul_set_iff_inv_smul_mem₀ two_ne_zero]
-    simp only [Q, mem_ofPred_eq, mem_preimage, Submodule.coe_smul, PiLp.smul_apply, smul_eq_mul,
+    simp only [mem_ofPred_eq, Submodule.coe_smul, PiLp.smul_apply, smul_eq_mul, Real.norm_eq_abs,
       abs_mul, abs_inv, abs_two]
     refine forall_congr' fun i ↦ ?_
     constructor <;> intro h <;> linarith
   rw [hscale, addHaar_smul, abs_of_nonneg (by positivity), ENNReal.ofReal_pow zero_le_two,
     ENNReal.ofReal_ofNat]
-  exact le_mul_of_one_le_right' (V.one_le_volume_preimage_coe hQ hQc hQneg hgauss)
+  exact le_mul_of_one_le_right' h
 
 end Cube
+
+section Polydisc
+
+variable {ι : Type*} [Fintype ι]
+
+/-- **Central slices of the unit polydisc.** Every central slice of the unit polydisc
+`{x | ∀ i, ‖x i‖ ≤ 1}` of `ℂ ^ ι` by a complex subspace `V` of `EuclideanSpace ℂ ι` has real
+volume at least `π ^ finrank ℂ V`, computed in the real subspace `V.restrictScalars ℝ`.
+
+This is the complex counterpart of Vaaler's cube-slicing theorem
+`Submodule.two_pow_finrank_le_volume_setOf_forall_abs_le_one`: the polydisc is the product of the
+discs of radius `1 / √π`, of area one, dilated by `√π`, and `V` has real dimension
+`2 * finrank ℂ V`. -/
+theorem _root_.Submodule.pi_pow_finrank_le_volume_setOf_forall_norm_le_one
+    (V : Submodule ℂ (EuclideanSpace ℂ ι)) :
+    ENNReal.ofReal π ^ finrank ℂ V ≤
+      volume {x : V.restrictScalars ℝ | ∀ i, ‖(x : EuclideanSpace ℂ ι) i‖ ≤ 1} := by
+  have hsqrt : 0 < √π := Real.sqrt_pos.2 Real.pi_pos
+  -- The disc of radius `1 / √π` has area one.
+  have hρ : volume (closedBall (0 : ℂ) (1 / √π)) = 1 := by
+    rw [Complex.volume_closedBall, ← ENNReal.ofReal_pow (by positivity),
+      ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by positivity)]
+    simp [Real.pi_pos.le, Real.pi_pos.ne']
+  have h := (V.restrictScalars ℝ).one_le_volume_setOf_forall_norm_le (α := fun _ : ι ↦ ℂ)
+    fun _ ↦ hρ
+  -- As a real subspace, `V` has dimension `2 * finrank ℂ V`.
+  have hrank : finrank ℝ (V.restrictScalars ℝ) = 2 * finrank ℂ V := by
+    rw [((Submodule.restrictScalarsEquiv ℝ ℂ _ V).restrictScalars ℝ).finrank_eq,
+      ← Complex.finrank_real_complex, Module.finrank_mul_finrank]
+  -- Scale the slice of the polydisc of radius `1 / √π` by `√π`.
+  have hscale : {x : V.restrictScalars ℝ | ∀ i, ‖(x : EuclideanSpace ℂ ι) i‖ ≤ 1} =
+      √π • {x : V.restrictScalars ℝ | ∀ i, ‖(x : EuclideanSpace ℂ ι) i‖ ≤ 1 / √π} := by
+    ext x
+    rw [mem_smul_set_iff_inv_smul_mem₀ hsqrt.ne']
+    simp only [mem_ofPred_eq, Submodule.coe_smul, PiLp.smul_apply, norm_smul, Real.norm_eq_abs,
+      abs_inv, abs_of_pos hsqrt]
+    refine forall_congr' fun i ↦ ?_
+    rw [one_div, mul_le_iff_le_one_right (inv_pos.2 hsqrt)]
+  rw [hscale, addHaar_smul, hrank, abs_of_nonneg (by positivity), pow_mul,
+    Real.sq_sqrt Real.pi_pos.le, ENNReal.ofReal_pow Real.pi_pos.le]
+  exact le_mul_of_one_le_right' h
+
+end Polydisc
 
 end TauCeti

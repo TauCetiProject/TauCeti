@@ -42,6 +42,15 @@ theorem poissonMeasure_zero : poissonMeasure 0 = Measure.dirac 0 := by
   intro n
   cases n <;> simp [poissonMeasure_singleton]
 
+/-- A Poisson law of rate `r` has mass `exp (-r)` at zero. -/
+theorem poissonMeasure_real_singleton_zero (r : ℝ≥0) : Po(r).real {0} = exp (-(r : ℝ)) := by
+  simp [poissonMeasure_real_singleton]
+
+/-- A Poisson law puts all its mass at zero exactly at rate zero. -/
+theorem poissonMeasure_singleton_zero_eq_one_iff {r : ℝ≥0} : Po(r) {0} = 1 ↔ r = 0 := by
+  rw [poissonMeasure_singleton, ENNReal.ofReal_eq_one]
+  simp
+
 /-- The probability-generating series of a Poisson law: weighted by the Poisson masses, the powers
 `z ^ k` sum to `exp ((z - 1) * r)`. -/
 theorem hasSum_pow_poissonMeasure (r : ℝ≥0) (z : ℝ) :
@@ -184,6 +193,28 @@ theorem variance_id_map_cast_poissonMeasure (r : ℝ≥0) :
   rw [integral_sq_map_cast_poissonMeasure,
     integral_id_map_cast_poissonMeasure]
   ring
+
+/-- Every nonnegative real power of the native Poisson count is integrable. -/
+theorem integrable_natCast_rpow_poissonMeasure (r : ℝ≥0) {p : ℝ} (hp : 0 ≤ p) :
+    Integrable (fun n : ℕ ↦ (n : ℝ) ^ p) (poissonMeasure r) := by
+  have h := integrable_rpow_of_mem_interior_integrableExpSet
+    (X := fun x : ℝ ↦ x) (μ := Po(ℝ, r)) (by simp) hp
+  simpa only [Function.comp_def] using
+    (integrable_map_measure (f := (Nat.cast : ℕ → ℝ)) (by fun_prop) (by fun_prop)).1 h
+
+/-- The mean of the native Poisson count is its rate. -/
+@[simp]
+theorem integral_natCast_poissonMeasure (r : ℝ≥0) :
+    ∫ n : ℕ, (n : ℝ) ∂poissonMeasure r = r := by
+  have h := integral_id_map_cast_poissonMeasure r
+  rwa [integral_map (by fun_prop) (by fun_prop)] at h
+
+/-- The variance of the native Poisson count is its rate. -/
+@[simp]
+theorem variance_natCast_poissonMeasure (r : ℝ≥0) :
+    variance (fun n : ℕ ↦ (n : ℝ)) (poissonMeasure r) = r := by
+  have h := variance_id_map_cast_poissonMeasure r
+  rwa [variance_map (by fun_prop) (by fun_prop), Function.id_comp] at h
 
 /-- A real random variable with Poisson law has expectation equal to the rate. -/
 theorem integral_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]

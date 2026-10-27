@@ -99,6 +99,19 @@ theorem iterateRelativeFrobenius_snd (n : ℕ) :
     π.iterateRelativeFrobenius p hS n ≫ pullback.snd _ _ = π :=
   pullback.lift_snd _ _ _
 
+/-- The projection `X^{(p^n)} ⟶ X` from the `n`-th Frobenius twist, followed by the iterated
+relative Frobenius, is the `n`-fold absolute Frobenius of the twist. -/
+@[reassoc (attr := simp)]
+theorem fst_iterateRelativeFrobenius (n : ℕ) :
+    pullback.fst π (S.iterateFrobenius p hS n) ≫ π.iterateRelativeFrobenius p hS n =
+      (pullback π (S.iterateFrobenius p hS n)).iterateFrobenius p
+        (natCast_eq_zero_of_hom (pullback.snd _ _) hS) n := by
+  ext
+  · rw [Category.assoc, iterateRelativeFrobenius_fst,
+      iterateFrobenius_naturality _ (natCast_eq_zero_of_hom π hS)]
+  · rw [Category.assoc, iterateRelativeFrobenius_snd, pullback.condition,
+      iterateFrobenius_naturality _ hS]
+
 /-- The zeroth Frobenius twist `X ×_{S, F_S^0} S` of `X` is `X`, through the first projection. -/
 noncomputable def iterateFrobeniusTwistZeroIso :
     pullback π (S.iterateFrobenius p hS 0) ≅ X :=

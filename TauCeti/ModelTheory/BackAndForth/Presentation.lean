@@ -47,6 +47,31 @@ theorem _root_.FirstOrder.Language.PartialEquiv.sameAtomicType (f : M ≃ₚ[L] 
   · exact (f.dom.subtype.map_rel r (a ∘ g)).trans
       (f.toEmbedding.map_rel r (a ∘ g)).symm
 
+omit [L.IsRelational] in
+/-- If the domain of a partial equivalence `f` is enumerated by a tuple `a` that `f` sends to `b`,
+then every partial equivalence sending `a` to `b` extends `f`. -/
+theorem _root_.FirstOrder.Language.PartialEquiv.le_of_dom_eq_range {f g : M ≃ₚ[L] N} {n : ℕ}
+    {a : Fin n → M} {b : Fin n → N} (a' : Fin n → f.dom) (ha : ∀ i, (a' i : M) = a i)
+    (hb : ∀ i, f.toEmbedding (a' i) = b i) (hd : (f.dom : Set M) = Set.range a)
+    (c : Fin n → g.dom) (hc : ∀ i, (c i : M) = a i) (he : ∀ i, g.toEmbedding (c i) = b i) :
+    f ≤ g := by
+  have hle : f.dom ≤ g.dom := by
+    intro z hz
+    have hz' : z ∈ Set.range a := by rw [← hd]; exact hz
+    obtain ⟨i, rfl⟩ := hz'
+    exact hc i ▸ (c i).property
+  apply (PartialEquiv.le_def _ _).mpr
+  refine ⟨hle, ?_⟩
+  -- Equality of the embeddings is checked on the tuple enumerating the whole domain.
+  ext z
+  have hz' : (z : M) ∈ Set.range a := by rw [← hd]; exact z.property
+  obtain ⟨i, hi⟩ := hz'
+  have hz : a' i = z := Subtype.ext ((ha i).trans hi)
+  subst z
+  have hc' : c i = Substructure.inclusion hle (a' i) :=
+    Subtype.ext (by simp only [Substructure.coe_inclusion, ha, hc])
+  exact (congrArg g.toEmbedding hc').symm.trans ((he i).trans (hb i).symm)
+
 /-- Tuples with matching atomic types induce a finitely generated partial equivalence whose
 whole domain is the range of the first tuple. Repeated entries are allowed. -/
 theorem SameAtomicType.exists_fgEquiv {n : ℕ} {a : Fin n → M} {b : Fin n → N}
@@ -107,31 +132,13 @@ theorem IsTupleBFSystem.potentialIso
       {x : M} {y : N} (hxy : ⟨n + 1, snoc a x, snoc b y⟩ ∈ S) :
       ∃ g ∈ T, x ∈ g.1.dom ∧ y ∈ g.1.cod ∧ f ≤ g := by
     obtain ⟨g, c, hc, he, hgdom⟩ := (hS.sameAtomicType hxy).exists_fgEquiv
-    have hle : f.1.dom ≤ g.1.dom := by
-      intro z hz
-      have hz' : z ∈ Set.range a := by rw [← hd]; exact hz
-      obtain ⟨i, rfl⟩ := hz'
-      have hci : (c i.castSucc : M) = a i := by
-        simpa only [snoc_castSucc] using hc i.castSucc
-      exact hci ▸ (c i.castSucc).property
     refine ⟨g, ⟨n + 1, snoc a x, snoc b y, hxy, c, hc, he, hgdom⟩, ?_, ?_, ?_⟩
     · exact (by simpa only [snoc_last] using hc (last n)) ▸ (c (last n)).property
     · have hy := (g.1.toEquiv (c (last n))).property
       exact (by simpa only [snoc_last] using he (last n)) ▸ hy
-    · apply (PartialEquiv.le_def _ _).mpr
-      refine ⟨hle, ?_⟩
-      -- Equality of the embeddings is checked on the tuple enumerating the whole domain.
-      ext z
-      have hz' : (z : M) ∈ Set.range a := by rw [← hd]; exact z.property
-      obtain ⟨i, hi⟩ := hz'
-      have hz : a' i = z := Subtype.ext ((ha i).trans hi)
-      subst z
-      have hc' : c i.castSucc = Substructure.inclusion hle (a' i) := by
-        apply Subtype.ext
-        simpa only [snoc_castSucc, Substructure.coe_inclusion, ha] using hc i.castSucc
-      have he' : g.1.toEmbedding (c i.castSucc) = b i := by
-        simpa only [snoc_castSucc] using he i.castSucc
-      exact (congrArg g.1.toEmbedding hc').symm.trans (he'.trans (hb i).symm)
+    · exact PartialEquiv.le_of_dom_eq_range a' ha hb hd (fun i => c i.castSucc)
+        (fun i => by simpa only [snoc_castSucc] using hc i.castSucc)
+        (fun i => by simpa only [snoc_castSucc] using he i.castSucc)
   rw [potentialIso_def]
   refine ⟨T, ?_, ?_, ?_⟩
   · obtain ⟨f, a', ha, hb, hd⟩ := (hS.sameAtomicType hS.empty_mem).exists_fgEquiv

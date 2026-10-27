@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Laurent
+public import TauCeti.Algebra.Polynomial.Laurent.Coeff
 
 /-!
 # Injective polynomial substitutions into Laurent polynomials
@@ -43,12 +43,7 @@ theorem coeff_pow_T_add_C_mul_T_neg_add_C_of_le (r s : R) (n : ℕ) (k : ℤ)
       simp [eq_comm]
   | succ n ih =>
       rw [pow_succ', add_mul, add_mul, mul_assoc]
-      have hT (j : ℤ) (p : R[T;T⁻¹]) : (T j * p).coeff k = p.coeff (k - j) := by
-        simpa only [T, one_mul, sub_eq_add_neg, add_comm] using
-          AddMonoidAlgebra.coeff_single_mul_apply p (1 : R) j k
-      have hC (t : R) (p : R[T;T⁻¹]) : (C t * p).coeff k = t * p.coeff k := by
-        exact AddMonoidAlgebra.coeff_single_zero_mul p t k
-      simp only [AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hT, hC]
+      simp only [AddMonoidAlgebra.coeff_add, Finsupp.add_apply, coeff_T_mul, coeff_C_mul]
       rw [ih (k - 1) (by omega), ih (k - -1) (by omega), ih k (by omega)]
       have h₁ : k - -1 ≠ (n : ℤ) := by omega
       have h₂ : k ≠ (n : ℤ) := by omega
@@ -62,16 +57,14 @@ theorem coeff_eval₂_T_add_C_mul_T_neg_add_C (p : R[X]) (r s : R) :
     (Polynomial.eval₂ C (T 1 + C r * T (-1) + C s) p).coeff p.natDegree =
       p.leadingCoeff := by
   classical
-  have hC (t : R) (q : R[T;T⁻¹]) (k : ℤ) : (C t * q).coeff k = t * q.coeff k :=
-    AddMonoidAlgebra.coeff_single_zero_mul q t k
   rw [Polynomial.eval₂_eq_sum_range, AddMonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply]
   rw [Finset.sum_eq_single p.natDegree]
-  · rw [hC,
+  · rw [coeff_C_mul,
       coeff_pow_T_add_C_mul_T_neg_add_C_of_le r s _ _ le_rfl]
     simp
   · intro i hi hne
     have hle : i ≤ p.natDegree := by simpa using (Finset.mem_range.mp hi)
-    rw [hC,
+    rw [coeff_C_mul,
       coeff_pow_T_add_C_mul_T_neg_add_C_of_le r s i _ (by exact_mod_cast hle)]
     simp [Ne.symm hne]
   · simp

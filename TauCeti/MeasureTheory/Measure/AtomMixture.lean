@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
-public import TauCeti.MeasureTheory.Measure.Measurability
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 /-!
@@ -26,7 +25,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Set
+open MeasureTheory Set
 
 open scoped ENNReal unitInterval
 
@@ -55,12 +54,12 @@ theorem atomMixture_apply {α : Type*} [MeasurableSpace α]
   simp [atomMixture, Measure.add_apply, Measure.smul_apply, Measure.dirac_apply' _ hs]
 
 /-- The mass of an atom mixture at a singleton. -/
-theorem atomMixture_singleton {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+@[simp]
+theorem atomMixture_singleton {α : Type*} [MeasurableSpace α]
     (μ : Measure α) (c : α) (w : unitInterval) :
     atomMixture μ c w {c} =
       ENNReal.ofReal (w : ℝ) + ENNReal.ofReal (1 - (w : ℝ)) * μ {c} := by
-  rw [atomMixture_apply _ _ _ (measurableSet_singleton c)]
-  simp
+  simp [atomMixture]
 
 /-- Away from the distinguished atom, an atom mixture rescales the original singleton mass. -/
 theorem atomMixture_singleton_of_ne {α : Type*} [MeasurableSpace α]
@@ -99,11 +98,8 @@ theorem measurable_atomMixture {β α : Type*} [MeasurableSpace β] [MeasurableS
     Measurable fun b => atomMixture (μ b) (c b) (w b) := by
   refine Measure.measurable_measure.2 fun s hs => ?_
   simp_rw [atomMixture_apply _ _ _ hs]
-  exact ((ENNReal.measurable_ofReal.comp (measurable_subtype_coe.comp hw)).mul
-      (measurable_one.indicator hs |>.comp hc)).add
-    ((ENNReal.measurable_ofReal.comp
-      (measurable_const.sub (measurable_subtype_coe.comp hw))).mul
-      ((Measure.measurable_coe hs).comp hμ))
+  have hμs : Measurable fun b => μ b s := (Measure.measurable_coe hs).comp hμ
+  fun_prop
 
 /-- If the base component has density `f`, the same component in the mixture has density
 `(1 - w) f`. The atom remains separate. -/
@@ -119,13 +115,13 @@ end MeasureTheory.Measure
 
 /-- Integrability is preserved when a point mass is mixed into a measure. -/
 theorem Integrable.atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
-    [NormedAddCommGroup E] {f : α → E} {μ : Measure α} (hf : Integrable f μ)
+    [SeminormedAddGroup E] {f : α → E} {μ : Measure α} (hf : Integrable f μ)
     (c : α) (w : unitInterval) : Integrable f (μ.atomMixture c w) := by
   rw [Measure.atomMixture]
   exact (integrable_dirac (by simp)).smul_measure (by simp) |>.add_measure
     (hf.smul_measure (by simp))
 
-namespace TauCeti.Probability
+namespace MeasureTheory.Measure
 
 /-- Integrating against an atom mixture gives the corresponding convex combination. -/
 theorem integral_atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
@@ -139,4 +135,4 @@ theorem integral_atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSing
   · exact (integrable_dirac (by simp)).smul_measure (by simp)
   · exact hf.smul_measure (by simp)
 
-end TauCeti.Probability
+end MeasureTheory.Measure

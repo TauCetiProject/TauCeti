@@ -11,8 +11,10 @@ import TauCeti.Data.ZMod.MonoidHomEquiv
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ZModProdAut
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
+import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 
 /-!
 # Naive level structures on an elliptic curve
@@ -187,7 +189,7 @@ theorem mem_naiveLocus_iff {h : H.left} :
 /-- For a finite group `A`, the naive locus is open: it is the complement of the finitely many
 closed sets where some `u a` with `a ≠ 1` meets the closed image of the zero section. -/
 theorem isOpen_naiveLocus [Finite A] : IsOpen (naiveLocus u) := by
-  have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp_structureMap
+  have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp
   have h : naiveLocus u = ⋂ a ∈ {a : A | a ≠ 1}, ((u a).left ⁻¹' Set.range E.zero)ᶜ := by
     ext h
     simp only [naiveLocus, Set.mem_ofPred_eq, Set.mem_iInter, Set.mem_compl_iff, Set.mem_preimage]
@@ -336,6 +338,30 @@ theorem IsFiberwiseInjective.disjoint_range (h : E.IsFiberwiseInjective φ) {a b
   subst t
   exact hab (h.left_apply_injective s ht.symm)
 
+/-- The divisor of a fibrewise injective finite family is the scheme-theoretic union of its
+disjoint sections. -/
+theorem IsFiberwiseInjective.pointsDivisor_eq_iInf_ker [Fintype A]
+    (hφ : E.IsFiberwiseInjective φ) : E.pointsDivisor φ = ⨅ a, (φ a).left.ker := by
+  rw [pointsDivisor_def]
+  apply Scheme.IdealSheafData.prod_eq_iInf_of_pairwise_disjoint_support
+  intro a b hab
+  apply disjoint_iff.mpr
+  apply SetLike.coe_injective
+  simpa only [Set.inf_eq_inter, Set.bot_eq_empty, TopologicalSpace.Closeds.coe_inf,
+    TopologicalSpace.Closeds.coe_bot, coe_support_ker_left] using
+    (hφ.disjoint_range hab).eq_bot
+
+/-- The divisor of a fibrewise injective finite family killed by `N` is contained in `E[N]`,
+expressed as the reverse inclusion of ideal sheaves. -/
+theorem IsFiberwiseInjective.ker_torsionι_left_le_pointsDivisor [Fintype A]
+    (hφ : E.IsFiberwiseInjective φ) {N : ℕ} (hkill : ∀ a, φ a ^ N = 1) :
+    (E.torsionι N).left.ker ≤ E.pointsDivisor φ := by
+  rw [hφ.pointsDivisor_eq_iInf_ker]
+  refine le_iInf fun a ↦ ?_
+  have hx : φ a ≫ E.mulBy N = 1 := by rw [comp_mulBy, zpow_natCast, hkill]
+  simpa [← Over.comp_left, E.torsionLift_torsionι (φ a) hx] using
+    Scheme.Hom.le_ker_comp (E.torsionLift (φ a) hx).left (E.torsionι N).left
+
 /-- **Points agree on the fibre over a point exactly when they agree there.** Two `S`-points `P`
 and `Q` of `E` have the same base change to the fibre `E_{κ(s)}` of `E` over the residue field
 `κ(s)` of a point `s` of `S` exactly when `P` and `Q` take the same value at `s`. -/
@@ -442,12 +468,7 @@ theorem isFiberwiseInjective_iff_range_eq_ker (hN : (N : K) ≠ 0)
     E.IsFiberwiseInjective φ ↔ φ.range = (IsMonHom.monoidHom (E.mulBy N) _).ker := by
   have : NeZero N := ⟨by rintro rfl; exact hN Nat.cast_zero⟩
   -- `φ` takes values in `E[N](K)`, which has `N²` elements, as many as `(ℤ/Nℤ)²`
-  have hle : φ.range ≤ (IsMonHom.monoidHom (E.mulBy N) _).ker := by
-    rintro _ ⟨a, rfl⟩
-    have ha : a ^ N = 1 := Multiplicative.toAdd.injective <| by
-      ext <;> simp [nsmul_eq_mul]
-    rw [MonoidHom.mem_ker, IsMonHom.monoidHom_apply, comp_mulBy, zpow_natCast, ← map_pow, ha,
-      map_one]
+  have hle := range_le_ker_mulBy φ
   have hker : Nat.card (IsMonHom.monoidHom (E.mulBy N) (𝟙_ (Over (Spec (.of K))))).ker = N ^ 2 := by
     rw [← Nat.card_congr (E.torsionPointsMulEquiv N _).toEquiv,
       E.natCard_torsion (n := N) (by exact_mod_cast hN), Int.natAbs_natCast]

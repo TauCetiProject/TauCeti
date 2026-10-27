@@ -40,12 +40,13 @@ complete ring `R` and for a complete ultrametric module `M` with contractive sca
 Thus a chosen basis and a chosen model isometry determine each other
 (`TauCeti.exists_isOrthonormalBasis_iff`), and a module is *orthonormalisable*
 (`TauCeti.IsONable R M`), that is linearly isometric to some `C₀(I, R)`, exactly when it has an
-orthonormal basis (`TauCeti.isONable_iff_exists_isOrthonormalBasis`). Completeness is essential:
-the finitely supported families in `C₀(ℕ, ℚ_[p])` contain the coordinate vectors, which are
-orthonormal with dense span, but they do not form a complete space: the partial sums of
-`∑' n, p ^ n • single n 1` are finitely supported, but their limit is not. Some nondiscreteness
-of `R` is needed here: over a finite field with the trivial norm, every family tending to zero is
-finitely supported.
+orthonormal basis (`TauCeti.isONable_iff_exists_isOrthonormalBasis`); the model spaces themselves
+are orthonormalisable for index types in every universe (`TauCeti.isONable_zeroAtInfty`).
+Completeness is essential: the finitely supported families in `C₀(ℕ, ℚ_[p])` contain the
+coordinate vectors, which are orthonormal with dense span, but they do not form a complete space:
+the partial sums of `∑' n, p ^ n • single n 1` are finitely supported, but their limit is not.
+Some nondiscreteness of `R` is needed here: over a finite field with the trivial norm, every
+family tending to zero is finitely supported.
 
 These characterisations need neither commutativity of `R` nor a norm-one or ultrametric
 hypothesis on `R`; the ultrametric inequality is assumed on `M`, where it makes the series
@@ -112,6 +113,12 @@ theorem isONable_def (M : Type u) [SeminormedAddCommGroup M] [Module R M] :
         Nonempty (M ≃ₗᵢ[R] C₀(I, R)) :=
   Iff.rfl
 
+variable (I) in
+/-- A model space `C₀(I, R)` is orthonormalisable, for an index type `I` in any universe. -/
+theorem isONable_zeroAtInfty [TopologicalSpace I] [DiscreteTopology I] : IsONable R C₀(I, R) :=
+  (isONable_def R _).2
+    ⟨ULift I, inferInstance, inferInstance, ⟨congrLeft R R Homeomorph.ulift.symm⟩⟩
+
 end Defs
 
 namespace IsOrthonormalFamily
@@ -124,6 +131,13 @@ variable [SeminormedRing R] [SeminormedAddCommGroup M] [Module R M] {e : I → M
 theorem norm_sum_smul (he : IsOrthonormalFamily R e) (s : Finset I) (a : I → R) :
     ‖∑ i ∈ s, a i • e i‖ = (s.sup fun i ↦ ‖a i‖₊ : ℝ≥0) := by
   rw [← coe_nnnorm, he s a]
+
+/-- A coefficient of a finite linear combination of an orthonormal family has norm at most the
+norm of the combination. -/
+theorem norm_le_norm_sum_smul (he : IsOrthonormalFamily R e) {s : Finset I} (a : I → R) {i : I}
+    (hi : i ∈ s) : ‖a i‖ ≤ ‖∑ i ∈ s, a i • e i‖ := by
+  rw [he.norm_sum_smul]
+  exact NNReal.coe_le_coe.mpr (Finset.le_sup (f := fun i ↦ ‖a i‖₊) hi)
 
 /-- A multiple of a vector of an orthonormal family has the norm of its coefficient. -/
 theorem norm_smul (he : IsOrthonormalFamily R e) (i : I) (r : R) : ‖r • e i‖ = ‖r‖ := by

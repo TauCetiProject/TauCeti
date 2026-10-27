@@ -35,6 +35,10 @@ transfer through a supplied Morita equivalence.
 an `(A,B)`-bimodule tensored over `B` with a left `B`-module is a left `A`-module.
 Both constructions are linear in each variable.
 
+`GradedBimoduleCat` is the category of graded bimodules of a graded algebra with an
+internal grading, and `GradedModuleCat.bimoduleTensor` is the balanced bimodule tensor of
+that setting.
+
 ## References
 
 * B. Keller, *Deriving DG categories*, Section 6.1.
@@ -416,37 +420,67 @@ theorem bimoduleModuleTensor_map_app (f : M ⟶ M') :
         bimoduleModuleTensorMap Γ Δ f (𝟙 N) ≫
         eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M') (N := N)).symm := (rfl)
 
-instance : ((bimoduleModuleTensor Γ Δ).obj M).Additive where
+-- Grading projections may compute for concrete gradings, so do not index on them.
+instance : Functor.Additive
+    (C := GradedModuleCat.{vN} (no_index Δ.piece))
+    (D := GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    ((bimoduleModuleTensor.{vM, vN} Γ Δ).obj M) where
   map_add := bimoduleModuleTensorMap_add_right Γ Δ (𝟙 M) _ _
 
-instance : ((bimoduleModuleTensor Γ Δ).flip.obj N).Additive where
+-- Grading-dependent flipped functors must also stay out of the instance index.
+instance : Functor.Additive
+    (C := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece))
+    (D := GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    ((no_index (bimoduleModuleTensor.{vM, vN} Γ Δ).flip).obj N) where
   map_add := bimoduleModuleTensorMap_add_left Γ Δ _ _ (𝟙 N)
 
-instance : (bimoduleModuleTensor Γ Δ).Additive where
+instance : Functor.Additive
+    (C := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece))
+    (D := GradedModuleCat.{vN} (no_index Δ.piece) ⥤
+      GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    (bimoduleModuleTensor.{vM, vN} Γ Δ) where
   map_add {X Y f g} := by
     apply NatTrans.ext
     funext N
     exact bimoduleModuleTensorMap_add_left Γ Δ f g (𝟙 N)
 
-instance : (bimoduleModuleTensor Γ Δ).flip.Additive where
+instance : Functor.Additive
+    (C := GradedModuleCat.{vN} (no_index Δ.piece))
+    (D := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece) ⥤
+      GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    (no_index (bimoduleModuleTensor.{vM, vN} Γ Δ).flip) where
   map_add {X Y f g} := by
     apply NatTrans.ext
     funext M
     exact bimoduleModuleTensorMap_add_right Γ Δ (𝟙 M) f g
 
-instance : ((bimoduleModuleTensor Γ Δ).obj M).Linear k where
+instance : Functor.Linear k
+    (C := GradedModuleCat.{vN} (no_index Δ.piece))
+    (D := GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    ((bimoduleModuleTensor.{vM, vN} Γ Δ).obj M) where
   map_smul f c := bimoduleModuleTensorMap_smul_right Γ Δ c (𝟙 M) f
 
-instance : ((bimoduleModuleTensor Γ Δ).flip.obj N).Linear k where
+instance : Functor.Linear k
+    (C := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece))
+    (D := GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    ((no_index (bimoduleModuleTensor.{vM, vN} Γ Δ).flip).obj N) where
   map_smul f c := bimoduleModuleTensorMap_smul_left Γ Δ c f (𝟙 N)
 
-instance : (bimoduleModuleTensor Γ Δ).Linear k where
+instance : Functor.Linear k
+    (C := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece))
+    (D := GradedModuleCat.{vN} (no_index Δ.piece) ⥤
+      GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    (bimoduleModuleTensor.{vM, vN} Γ Δ) where
   map_smul f c := by
     apply NatTrans.ext
     funext N
     exact bimoduleModuleTensorMap_smul_left Γ Δ c f (𝟙 N)
 
-instance : (bimoduleModuleTensor Γ Δ).flip.Linear k where
+instance : Functor.Linear k
+    (C := GradedModuleCat.{vN} (no_index Δ.piece))
+    (D := GradedModuleCat.{vM} (no_index (Γ.tensorProduct Δ.opposite).piece) ⥤
+      GradedModuleCat.{max vM vN} (no_index Γ.piece))
+    (no_index (bimoduleModuleTensor.{vM, vN} Γ Δ).flip) where
   map_smul f c := by
     apply NatTrans.ext
     funext M
@@ -959,3 +993,15 @@ instance : (bimoduleTensor Γ Δ Θ).flip.Linear k where
 end Tensor
 
 end TauCeti.GradedModuleCat
+
+namespace TauCeti
+
+universe w uA
+
+/-- The category of graded bimodules over the graded algebra `A` with internal grading `Ξ`:
+the graded modules over the enveloping grading `Ξ.tensorProduct Ξ.opposite`. -/
+abbrev GradedBimoduleCat (k : Type w) [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+    (Ξ : InternalGrading k A) :=
+  GradedModuleCat.{max uA w} (Ξ.tensorProduct Ξ.opposite).piece
+
+end TauCeti

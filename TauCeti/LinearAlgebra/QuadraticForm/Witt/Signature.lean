@@ -23,7 +23,7 @@ as its inverse.
 In particular, two regular forms over such a field have the same Witt class exactly when their
 integer signatures agree, and two regular forms of the same rank are isometric exactly when their
 integer signatures agree. Taking `K = ℝ` gives the real Witt ring; the real closed instance is
-available in `TauCeti.FieldTheory.IsRealClosed.Real`.
+available in `Mathlib.FieldTheory.IsRealClosed.Real`.
 
 ## Main definitions and results
 
@@ -32,6 +32,8 @@ available in `TauCeti.FieldTheory.IsRealClosed.Real`.
 * `WittRing.equivInt`: the signature isomorphism `W(K) ≃+* ℤ` for ordered real closed fields.
 * `WittRing.signature_wittClass`: computes the signature from a regular-form class.
 * `WittRing.intCast_signature`: reconstructs a Witt class from its signature.
+* `wittClass_eq_iff_signature_eq`: Witt classes over ordered real closed fields are determined by
+  the signature.
 * `RegularFormClass.eq_iff_rank_eq_and_signature_eq`: Sylvester's law of inertia for isometry
   classes over ordered real closed fields.
 
@@ -119,6 +121,13 @@ noncomputable def WittRing.equivInt : WittRing K ≃+* ℤ :=
 theorem WittRing.equivInt_apply (x : WittRing K) : equivInt x = signature x :=
   RingEquiv.ofBijective_apply _ _ x
 
+/-- **Witt classes over a real closed field.** Over an ordered real closed field, two regular-form
+classes have the same Witt class exactly when their signatures agree. -/
+theorem wittClass_eq_iff_signature_eq {x y : RegularFormClass K} :
+    wittClass x = wittClass y ↔ RegularFormClass.signature x = RegularFormClass.signature y := by
+  rw [← WittRing.equivInt.injective.eq_iff]
+  simp [WittRing.equivInt_apply]
+
 /-- **Sylvester's law of inertia for isometry classes.** Over an ordered real closed field, two
 regular-form classes are equal exactly when they have the same rank and the same signature. -/
 theorem RegularFormClass.eq_iff_rank_eq_and_signature_eq {x y : RegularFormClass K} :
@@ -126,8 +135,7 @@ theorem RegularFormClass.eq_iff_rank_eq_and_signature_eq {x y : RegularFormClass
   refine ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun ⟨hr, hs⟩ => ?_⟩
   -- Equal signatures give equal Witt classes, which differ by hyperbolic planes; equal ranks force
   -- the same number of planes on both sides, and Witt cancellation removes them.
-  obtain ⟨a, b, h⟩ := wittClass_eq_iff_exists_nsmul.mp
-    (WittRing.equivInt.injective (by simpa using hs) : wittClass x = wittClass y)
+  obtain ⟨a, b, h⟩ := wittClass_eq_iff_exists_nsmul.mp (wittClass_eq_iff_signature_eq.mpr hs)
   have hab : a = b := by
     have := congrArg rank h
     simp only [rank_add, rank_nsmul, hr, rank_hyperbolicClass] at this

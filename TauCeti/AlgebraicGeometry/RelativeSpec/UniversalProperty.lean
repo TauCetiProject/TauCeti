@@ -36,8 +36,10 @@ property in pullback form: morphisms `T ⟶ Spec_X A` over `X` correspond to mor
   map `A ⟶ q_* 𝒪_T`, characterized on charts by `CommMon.ι_relativeSpecLift`;
 * `CategoryTheory.CommMon.relativeSpecHomEquiv`: the bijection between morphisms over `X` and
   algebra maps;
-* `CategoryTheory.CommMon.relativeSpecLift_comp_pushforwardStructureAlgebraMap` and
-  `CategoryTheory.CommMon.relativeSpecLift_comp`: naturality in the test scheme and in the algebra;
+* `CategoryTheory.CommMon.relativeSpecLift_comp_pushforwardStructureAlgebraMap`,
+  `CategoryTheory.CommMon.relativeSpecLift_comp` and
+  `CategoryTheory.CommMon.relativeSpecHomEquiv_comp_relativeSpecMap`: naturality in the test
+  scheme and in the algebra;
 * `TauCeti.AlgebraicGeometry.relativeSpecHomIso X`: the bijection as a natural isomorphism of
   functors of quasi-coherent algebras and schemes over `X` (whose target uses the function-algebra
   functor `TauCeti.AlgebraicGeometry.overFunctions X`), with components
@@ -366,6 +368,13 @@ lemma relativeSpecHomEquiv_symm_apply_coe (φ : A ⟶ q.pushforwardStructureAlge
     ((A.relativeSpecHomEquiv q).symm φ).1 = relativeSpecLift φ :=
   (rfl)
 
+/-- The algebra map of the identity of `Spec_X A` is the inverse identification of `A` with the
+functions on `Spec_X A`. -/
+lemma relativeSpecHomEquiv_id :
+    A.relativeSpecHomEquiv A.relativeSpecToBase ⟨𝟙 _, Category.id_comp _⟩ =
+      A.relativeSpecPushforwardIso.inv := by
+  rw [relativeSpecHomEquiv_apply, Scheme.Hom.pushforwardStructureAlgebraMap_id, Category.comp_id]
+
 variable {B : CommMon X.Modules} [B.X.IsQuasicoherent]
 
 /-- The lift is natural in the algebra: precomposing the algebra map with `f : B ⟶ A`
@@ -385,6 +394,18 @@ lemma relativeSpecLift_comp (f : B ⟶ A) (φ : A ⟶ q.pushforwardStructureAlge
     Category.assoc]
   exact congrArg _ ((Iso.inv_comp_eq _).mp
     (relativeSpecPushforwardIso_inv_pushforwardStructureAlgebraMap_relativeSpecLift φ)).symm
+
+/-- The bijection `CommMon.relativeSpecHomEquiv` is natural in the algebra: composing with the
+relative-spectrum map of `f : B ⟶ A` corresponds to precomposing the algebra map with `f`. -/
+lemma relativeSpecHomEquiv_comp_relativeSpecMap (f : B ⟶ A)
+    (t : {t : T ⟶ A.relativeSpec // t ≫ A.relativeSpecToBase = q}) :
+    B.relativeSpecHomEquiv q ⟨t.1 ≫ relativeSpecMap f, by
+        rw [Category.assoc, relativeSpecMap_relativeSpecToBase, t.2]⟩ =
+      f ≫ A.relativeSpecHomEquiv q t := by
+  rw [← Equiv.eq_symm_apply]
+  refine Subtype.ext ?_
+  rw [relativeSpecHomEquiv_symm_apply_coe, relativeSpecLift_comp, relativeSpecHomEquiv_apply,
+    relativeSpecLift_relativeSpecPushforwardIso_inv_comp]
 
 end
 
@@ -426,10 +447,7 @@ private lemma relativeSpecOverHomEquiv_comp_relativeSpecMap {A B : Quasicoherent
     relativeSpecOverHomEquiv B T
         (t ≫ (MorphismProperty.Over.forget _ _ X).map ((relativeSpec X).map f.op)) =
       f.hom ≫ relativeSpecOverHomEquiv A T t := by
-  rw [← Equiv.eq_symm_apply]
-  refine Over.OverMorphism.ext ((CommMon.relativeSpecLift_comp f.hom _).trans ?_).symm
-  exact congrArg (· ≫ _)
-    (CommMon.relativeSpecLift_relativeSpecPushforwardIso_inv_comp t.left (Over.w t))
+  exact CommMon.relativeSpecHomEquiv_comp_relativeSpecMap f.hom ⟨t.left, Over.w t⟩
 
 /-- **The functor-of-points universal property of relative Spec**, natural in the algebra `A`
 and in the scheme `T` over `X`: morphisms `T ⟶ Spec_X A` over `X` correspond to morphisms of

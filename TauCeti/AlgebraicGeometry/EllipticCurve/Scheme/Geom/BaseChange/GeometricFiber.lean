@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
-import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # Nonvanishing of sections on geometric fibres
@@ -36,16 +37,11 @@ theorem left_apply_ne_zero_of_forall_isAlgClosed
     (h : ∀ (K : Type u) [Field K] [IsAlgClosed K] (t : Spec (.of K) ⟶ S), (N : K) ≠ 0 →
       pointsPullback (E.isPullback_baseChange t) (by simp) P ≠ 1) :
     P.left s ≠ E.zero s := by
-  let L := AlgebraicClosure (S.residueField s)
-  let t : Spec (.of L) ⟶ S :=
-    Spec.map (CommRingCat.ofHom (algebraMap (S.residueField s) L)) ≫ S.fromSpecResidueField s
-  have hNL : (N : L) ≠ 0 := by
-    rw [← map_natCast (algebraMap (S.residueField s) L)]
-    exact (map_ne_zero _).mpr hN
-  obtain ⟨p⟩ : Nonempty (Spec (.of L)) := inferInstance
-  have htp : t p = s := Scheme.fromSpecResidueField_apply s _
+  let t := S.fromSpecAlgebraicClosure s
+  obtain ⟨p⟩ : Nonempty (Spec (.of (AlgebraicClosure (S.residueField s)))) := inferInstance
+  have htp : t p = s := Scheme.fromSpecAlgebraicClosure_apply S s p
   intro hs
-  apply h L t hNL
+  apply h _ t hN.isUnit.natCast_ne_zero_of_algebra
   apply ((E.baseChange t).eq_one_iff_left_apply_eq_zero _ p).mpr
   exact (pointsPullback_left_apply_eq_zero_iff (E.isPullback_baseChange t)
     (by simp) P p).mpr (htp.symm ▸ hs)

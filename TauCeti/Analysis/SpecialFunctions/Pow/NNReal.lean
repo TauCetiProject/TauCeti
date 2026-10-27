@@ -119,9 +119,9 @@ theorem ofReal_inv_sqrt_le_of_pow_three_le {d y : ℝ} (hy : 0 < y) (h : y ^ 3 �
     _ = √2 * y ^ (-(3 / 2 : ℝ)) := by
         rw [← Real.rpow_natCast_mul hy.le]; norm_num
 
-/-- Away from three distinct points `e₁, e₂, e₃` of a normed group at most one of the factors
+/-- For three distinct points `e₁, e₂, e₃` of a normed additive group, at most one of the factors
 `‖z - eᵢ‖ₑ ^ (-1/2)` is large: the product of the three is at most a constant times their sum. -/
-theorem exists_enorm_sub_rpow_neg_half_mul_le {E : Type*} [NormedAddCommGroup E] {e₁ e₂ e₃ : E}
+theorem exists_enorm_sub_rpow_neg_half_mul_le {E : Type*} [NormedAddGroup E] {e₁ e₂ e₃ : E}
     (h₁₂ : e₁ ≠ e₂) (h₁₃ : e₁ ≠ e₃) (h₂₃ : e₂ ≠ e₃) : ∃ K : ℝ≥0∞, K ≠ ∞ ∧ ∀ z : E,
       ‖z - e₁‖ₑ ^ (-2⁻¹ : ℝ) * ‖z - e₂‖ₑ ^ (-2⁻¹ : ℝ) * ‖z - e₃‖ₑ ^ (-2⁻¹ : ℝ) ≤
         K * (‖z - e₁‖ₑ ^ (-2⁻¹ : ℝ) + ‖z - e₂‖ₑ ^ (-2⁻¹ : ℝ) + ‖z - e₃‖ₑ ^ (-2⁻¹ : ℝ)) := by

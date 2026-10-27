@@ -14,7 +14,8 @@ entry is prepended to a list. Dually, the last nonzero sign `List.lastSign` and
 the first nonzero sign of a second list decide whether concatenation creates one
 extra variation at the junction (`List.signVariations_append`). Consequences are
 invariance under reversal and splitting the count at any nonzero entry. Finally,
-scaling every entry by a nonzero element of an ordered ring preserves the count.
+scaling every entry by a nonzero element of an ordered ring, or a list of signs by a nonzero
+sign, preserves the count.
 
 These are the append and scaling laws for variations of sign sequences used in
 the Sturm and Descartes counting arguments; see Basu–Pollack–Roy, *Algorithms
@@ -189,5 +190,14 @@ theorem signVariations_map_mul_left (l : List R) {c : R} (hc : c ≠ 0) :
   rcases hc.lt_or_gt with hc | hc
   · exact signVariations_map_of_sign_eq_neg (fun x => by rw [sign_mul, sign_neg hc, neg_one_mul]) l
   · exact signVariations_map (fun x => by rw [sign_mul, sign_pos hc, one_mul]) l
+
+/-- Multiplying every entry of a list of signs on the left by a nonzero sign preserves the sign
+variations. -/
+theorem signVariations_map_signType_mul_left (l : List SignType) {s : SignType} (hs : s ≠ 0) :
+    List.signVariations (l.map (s * ·)) = List.signVariations l := by
+  cases s
+  · exact absurd rfl hs
+  · exact signVariations_map_of_sign_eq_neg (by decide) l
+  · exact signVariations_map (by decide) l
 
 end List
