@@ -10,6 +10,7 @@ import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 import Mathlib.GroupTheory.GroupAction.Transitive
 import Mathlib.GroupTheory.Index
 import all TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Basic
+import TauCeti.LinearAlgebra.RootSystem.EquivComp
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
 
@@ -84,10 +85,7 @@ private theorem exists_smul_eq_of_dotProduct_eq_one {i j : Fin 240}
     rw [e8SimplyConnectedRootDatum_pairing, hr, dotProduct_sub]
   have hsmul (m : Fin 240) : RootPairing.Equiv.reflection e8SimplyConnectedRootDatum r • m =
       e8SimplyConnectedRootDatum.reflectionPerm r m := by
-    -- The action of `Aut` on root indices is `indexEquiv` by definition; Mathlib states no lemma
-    -- unfolding it.
-    change (RootPairing.Equiv.reflection e8SimplyConnectedRootDatum r).indexEquiv m = _
-    rw [RootPairing.Equiv.reflection_indexEquiv]
+    rw [RootPairing.Equiv.smul_index_eq_indexEquiv, RootPairing.Equiv.reflection_indexEquiv]
   refine ⟨RootPairing.Equiv.reflection e8SimplyConnectedRootDatum r, ?_, fun m hm ↦ ?_⟩
   · rw [hsmul]
     apply e8Root.injective
@@ -137,11 +135,11 @@ private theorem orbit_e8FixingSubgroup (k : Fin 8) :
     (mem_fixingSubgroup_iff _).mp hg _ (by simpa using hi)
   refine subset_antisymm ?_ fun j hj ↦ ?_
   · rintro _ ⟨⟨g, hg⟩, rfl⟩ i hi
-    -- The action of `Aut` on root indices is `indexEquiv` by definition, and automorphisms
-    -- preserve the pairing.
+    -- Automorphisms preserve the pairing.
     have h : e8SimplyConnectedRootDatum.pairing (g • e8SimpleIndex k) (g • e8SimpleIndex i) =
-        e8SimplyConnectedRootDatum.pairing (e8SimpleIndex k) (e8SimpleIndex i) :=
-      RootPairing.Hom.pairing g.toHom
+        e8SimplyConnectedRootDatum.pairing (e8SimpleIndex k) (e8SimpleIndex i) := by
+      rw [RootPairing.Equiv.smul_index_eq_indexEquiv, RootPairing.Equiv.smul_index_eq_indexEquiv,
+        RootPairing.Hom.pairing]
     rw [hfix hg hi, e8SimplyConnectedRootDatum_pairing, e8SimplyConnectedRootDatum_pairing,
       e8Root_dotProduct_e8Coroot_e8SimpleIndex, e8Root_dotProduct_e8Coroot_e8SimpleIndex,
       root_e8SimpleIndex] at h
