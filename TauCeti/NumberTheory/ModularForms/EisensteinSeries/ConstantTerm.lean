@@ -168,8 +168,10 @@ theorem constantTermAt_weightedEisensteinSeriesMF (hk : 3 ≤ k) (γ : SL(2, ℤ
 variable {u v : ℕ} (ψ : DirichletCharacter ℂ u) (φ : DirichletCharacter ℂ v)
 
 /-- The sum of the character weight over the multiples of an integer pair `(-c, a)`: it vanishes
-unless `v ∣ c`, and otherwise factors through the series of `ψ φ⁻¹`. -/
-private lemma tsum_charWeight_mul_zpow (huv : u * v ∣ N) (c a : ℤ) :
+unless `v ∣ c`, and otherwise factors through the series of `ψ φ⁻¹`. This holds for every
+exponent `k`, and gives the constant terms of the Eisenstein series with character in every
+weight. -/
+lemma tsum_charWeight_mul_zpow (huv : u * v ∣ N) (c a : ℤ) :
     ∑' n : ℤ, charWeight N ψ φ ((↑) ∘ ![-(n * c), n * a]) * (n : ℂ) ^ (-k) =
       if (v : ℤ) ∣ c then
         ψ ((-(c / v) : ℤ) : ZMod u) * φ⁻¹ (a : ZMod v) *
