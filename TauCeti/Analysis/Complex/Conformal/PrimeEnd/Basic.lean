@@ -133,14 +133,27 @@ theorem norm_sub_le_mul_chordal {R : ℝ} {z w : ℂ} (hz : ‖z‖ ≤ R) (hw :
 
 namespace IsNullChain
 
+/-- The domains cut off by a null chain decrease. -/
+theorem antitone_nullChainDomain (hC : IsNullChain U C) : Antitone (nullChainDomain U C) :=
+  antitone_nat_of_succ_le hC.nullChainDomain_succ_subset
+
+/-- The part of a crosscut of a null chain inside the set is connected. -/
+theorem isConnected_inter (hC : IsNullChain U C) (n : ℕ) : IsConnected (C n ∩ U) := by
+  obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
+  exact hrange ▸ hγ.isConnected_range_inter
+
+/-- The crosscuts of a null chain lie in the closure of the domain. -/
+theorem subset_closure (hC : IsNullChain U C) (n : ℕ) : C n ⊆ closure U := by
+  obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
+  exact hrange ▸ hγ.range_subset_closure
+
 /-- On a bounded domain, chordally shrinking crosscuts also shrink in Euclidean diameter. -/
 theorem eventually_norm_sub_lt (hC : IsNullChain U C) (hU : IsBounded U) {ε : ℝ}
     (hε : 0 < ε) : ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n, ‖z - w‖ < ε := by
   obtain ⟨R, hR, hbound⟩ := hU.closure.exists_pos_norm_le
   filter_upwards [hC.eventually_chordal_lt (ε / (1 + R ^ 2)) (by positivity)]
     with n hn z hz w hw
-  obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
-  have hsub : C n ⊆ closure U := hrange ▸ hγ.range_subset_closure
+  have hsub := hC.subset_closure n
   calc
     ‖z - w‖ ≤ (1 + R ^ 2) * (‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))) :=
       norm_sub_le_mul_chordal (hbound z (hsub hz)) (hbound w (hsub hw))
@@ -160,20 +173,6 @@ theorem eventually_disjoint_isCompact (hC : IsNullChain U C) (hU : IsOpen U)
   have hxU : x ∈ U := hδU (mem_thickening_iff.mpr ⟨z, hzK, by
     simpa only [dist_eq_norm] using hn x hxC z hzC⟩)
   exact (hU.frontier_eq.subset hγ.source_mem_frontier).2 hxU
-
-/-- The domains cut off by a null chain decrease. -/
-theorem antitone_nullChainDomain (hC : IsNullChain U C) : Antitone (nullChainDomain U C) :=
-  antitone_nat_of_succ_le hC.nullChainDomain_succ_subset
-
-/-- The part of a crosscut of a null chain inside the set is connected. -/
-theorem isConnected_inter (hC : IsNullChain U C) (n : ℕ) : IsConnected (C n ∩ U) := by
-  obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
-  exact hrange ▸ hγ.isConnected_range_inter
-
-/-- The crosscuts of a null chain lie in the closure of the domain. -/
-theorem subset_closure (hC : IsNullChain U C) (n : ℕ) : C n ⊆ closure U := by
-  obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
-  exact hrange ▸ hγ.range_subset_closure
 
 /-- The next crosscut lies, inside `U`, in the domain cut off by the previous one. -/
 theorem inter_subset_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
