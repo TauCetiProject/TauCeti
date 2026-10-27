@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.MetricSpace.Basic
+public import Mathlib.Topology.Instances.ENNReal.Lemmas
 
 /-!
 # Metrics on finite-distance components
@@ -13,8 +13,9 @@ public import Mathlib.Topology.MetricSpace.Basic
 The finite-distance component of `x` in an extended pseudometric space is the existing subtype
 `Metric.eball x ∞`. Its extended distances are finite, so Mathlib's
 `PseudoEMetricSpace.toPseudoMetricSpace` gives it a pseudometric with the inherited extended
-distance and uniformity. If the ambient space is separated, the component is a metric space;
-if it is complete, so is the component, since it is closed.
+distance and uniformity. For a separated ambient space, Mathlib's `metricSpaceEMetricBall`
+supplies the corresponding metric. If the ambient space is complete, so is the component, since
+it is closed.
 
 These instances allow the usual metric-valued theory of absolutely continuous curves and gradient
 flows to be applied on a finite-distance component of an extended metric space. The metric
@@ -44,7 +45,7 @@ noncomputable instance (priority := low) instPseudoMetricSpaceEBallTop [PseudoEM
 metric takes precedence when the ambient space already has a metric. -/
 noncomputable instance (priority := low) instMetricSpaceEBallTop [EMetricSpace X] (x : X) :
     MetricSpace (Metric.eball x ∞) :=
-  MetricSpace.ofT0PseudoMetricSpace _
+  metricSpaceEMetricBall x ∞
 
 /-- A finite-distance component of a complete extended pseudometric space is complete. -/
 instance instCompleteSpaceEBallTop [PseudoEMetricSpace X] [CompleteSpace X] (x : X) :
