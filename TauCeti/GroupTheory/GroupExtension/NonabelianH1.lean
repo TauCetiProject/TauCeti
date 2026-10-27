@@ -38,12 +38,6 @@ open TauCeti TauCeti.GroupExtension
 variable {N E G : Type*} [Group N] [Group E] [Group G]
   {S : GroupExtension N E G}
 
-/-- Inclusion of the kernel intertwines the specified action with conjugation by `s`. -/
-theorem inl_smul [SMul G N] (s : S.Splitting)
-    (hact : ∀ g n, g • n = S.conjAct (s g) n) (g : G) (n : N) :
-    S.inl (g • n) = s g * S.inl n * (s g)⁻¹ := by
-  rw [hact, GroupExtension.inl_conjAct_comm]
-
 variable [TopologicalSpace G] [DiscreteTopology G] [TopologicalSpace N]
   [MulDistribMulAction G N] (s : S.Splitting)
   (hact : ∀ g n, g • n = S.conjAct (s g) n)
