@@ -120,17 +120,14 @@ theorem det_halfSpinRep (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε)
     (s : spinGroup Q) : LinearMap.det (halfSpinRep o ρ ε s) = 1 := by
   have : Nontrivial (eigenspace (ρ (chirality Q o)) ε) :=
     Module.nontrivial_of_finrank_eq_succ h₂
-  obtain ⟨ψ, hψ⟩ := exists_ne (0 : eigenspace (ρ (chirality Q o)) ε)
   have hs : halfSpinRep o ρ ε s = evenHalfSpinAction o ρ ε ⟨s, spinGroup.mem_even s.2⟩ :=
     congrArg (evenHalfSpinAction o ρ ε) (Subtype.ext (coe_spinGroupToEven_apply Q s))
-  have h := map_star_mul_self_apply_of_mem_even o ρ ε hQ h₂ (spinGroup.mem_even s.2) ψ
-  rw [← hs] at h
-  rw [spinGroup.star_mul_self_of_mem s.2, map_one, Module.End.one_apply, eq_comm,
-    ← sub_eq_zero] at h
-  have h' : (LinearMap.det (halfSpinRep o ρ ε s) - 1) • (ψ : W) = 0 := by
-    rw [sub_smul, one_smul]
-    exact h
-  exact sub_eq_zero.1 ((smul_eq_zero.1 h').resolve_right (by simpa using hψ))
+  -- `s* s = 1` for `s ∈ Spin`, so `1 = det (ρ s) • 1` on `W^ε`.
+  have h := evenHalfSpinAction_star_mul_self o ρ ε hQ h₂ (spinGroup.mem_even s.2)
+  rw [← hs, (Subtype.ext (spinGroup.star_mul_self_of_mem s.2) : (⟨_, _⟩ : even Q) = 1),
+    map_one] at h
+  exact (smul_left_injective ℂ (one_ne_zero (α := Module.End ℂ (eigenspace _ ε)))
+    ((one_smul ℂ _).trans h)).symm
 
 /-- **The twisted action has determinant `z²`**: `(s, z)` acts on an eigenspace of `Γ` of
 complex dimension two with determinant `z²`. So the determinant line of `W^±` is the square of the

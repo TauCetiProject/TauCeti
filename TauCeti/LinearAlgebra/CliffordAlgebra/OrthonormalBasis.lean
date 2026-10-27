@@ -33,7 +33,7 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   orthogonal for `Q`.
 * `OrthonormalBasis.prod_map_map_eq_neg_one_pow`: `Q` takes the value `-1` on orthonormal basis
   vectors.
-* `CliffordAlgebra.even_ι_bilin_add_swap_of_neg`: in the even subalgebra,
+* `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: in the even subalgebra,
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 
@@ -83,7 +83,7 @@ end OrthonormalBasis
 namespace CliffordAlgebra
 
 /-- For `Q v = -‖v‖²`, the even Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
-theorem even_ι_bilin_add_swap_of_neg (u v : V) :
+theorem even_ι_bilin_add_swap_eq_neg_two_inner (u v : V) :
     (even.ι Q).bilin u v + (even.ι Q).bilin v u = algebraMap ℝ (even Q) (-2 * ⟪u, v⟫) := by
   rw [even_ι_bilin_add_swap]
   congr 1
