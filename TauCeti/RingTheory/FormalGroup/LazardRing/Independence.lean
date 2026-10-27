@@ -11,11 +11,13 @@ public import TauCeti.RingTheory.FormalGroup.LazardRing.Indecomposable
 -- dual numbers, weighted homogeneity and leading monomials.
 import Mathlib.Algebra.MvPolynomial.Coeff
 import Mathlib.RingTheory.AlgebraicIndependent.Basic
+import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.RingTheory.FormalGroup.Rescale
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.RingTheory.MvPolynomial.DualNumber
 import TauCeti.RingTheory.MvPolynomial.MonomialOrder
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # The generators of the Lazard ring are algebraically independent
@@ -167,22 +169,6 @@ private theorem evalEps_ρ_eq_zero_of_mem_sq (n : ℕ+) {x : LazardRing}
   rw [map_mul, map_mul]
   ext <;> simp [hfst hy, hfst hz]
 
-/-- In the computations over `ℚ[ε]`: if `e e' = 0`, then `e (a + e' b)ᵏ = e aᵏ`, as
-`(a + e' b)ᵏ - aᵏ` is a multiple of `e' b`. -/
-private theorem mul_add_mul_pow {A : Type*} [CommRing A] {e e' : A} (h : e * e' = 0) (a b : A)
-    (k : ℕ) : e * (a + e' * b) ^ k = e * a ^ k := by
-  obtain ⟨c, hc⟩ := sub_dvd_pow_sub_pow (a + e' * b) a k
-  rw [← sub_eq_zero, ← mul_sub, hc, add_sub_cancel_left, ← mul_assoc, ← mul_assoc, h, zero_mul,
-    zero_mul]
-
-/-- Substituting `a` into `X + e X^(n + 1)` gives `a + e a^(n + 1)`. -/
-private theorem subst_X_add_C_mul_X_pow {A τ : Type*} [CommRing A] {a : MvPowerSeries τ A}
-    (ha : PowerSeries.HasSubst a) (e : A) (k : ℕ) :
-    PowerSeries.subst a (PowerSeries.X + PowerSeries.C e * PowerSeries.X ^ k) =
-      a + MvPowerSeries.C e * a ^ k := by
-  rw [PowerSeries.subst_add ha, PowerSeries.subst_mul ha, PowerSeries.subst_pow ha,
-    PowerSeries.subst_X ha, PowerSeries.subst_C]
-
 /-- The inverse of `X + ε X^(n + 1)` is `X - ε X^(n + 1)`, as `ε² = 0`. -/
 private theorem inv_ofStrictCoeffs_single_eps (n : ℕ+) :
     (FormalCoordinate.ofStrictCoeffs (Pi.single n (DualNumber.eps : DualNumber ℚ)))⁻¹ =
@@ -193,12 +179,12 @@ private theorem inv_ofStrictCoeffs_single_eps (n : ℕ+) :
     rw [← map_mul, mul_neg, DualNumber.eps_mul_eps, neg_zero, map_zero]
   rw [FormalCoordinate.toPowerSeries_mul, FormalCoordinate.toPowerSeries_one,
     FormalCoordinate.toPowerSeries_ofStrictCoeffs_single n DualNumber.eps,
-    subst_X_add_C_mul_X_pow (FormalCoordinate.hasSubst _),
+    PowerSeries.subst_X_add_C_mul_X_pow (FormalCoordinate.hasSubst _),
     FormalCoordinate.toPowerSeries_ofStrictCoeffs_single]
   -- Substitution produces the constant `MvPowerSeries.C ε` over `Unit`, which is `PowerSeries.C ε`;
   -- then `ε (X - ε X^(n + 1))^(n + 1) = ε X^(n + 1)`.
   change _ + PowerSeries.C _ * _ = _
-  rw [mul_add_mul_pow hε, map_neg]
+  rw [mul_add_mul_pow_of_mul_eq_zero hε, map_neg]
   ring
 
 /-- The transported additive law over `ℚ[ε]` at `bₙ = ε`:
@@ -219,7 +205,8 @@ private theorem smul_𝔾ₐ_single_eps (n : ℕ+) :
   rw [FormalGroup.smul_toPowerSeries, inv_ofStrictCoeffs_single_eps,
     FormalCoordinate.toPowerSeries_ofStrictCoeffs_single,
     FormalCoordinate.toPowerSeries_ofStrictCoeffs_single,
-    subst_X_add_C_mul_X_pow (hX 0), subst_X_add_C_mul_X_pow (hX 1), FormalGroup.𝔾ₐ_toPowerSeries,
+    PowerSeries.subst_X_add_C_mul_X_pow (hX 0), PowerSeries.subst_X_add_C_mul_X_pow (hX 1),
+    FormalGroup.𝔾ₐ_toPowerSeries,
     MvPowerSeries.subst_add (hasSubst_finTwo (hS 0) (hS 1)),
     MvPowerSeries.subst_X (hasSubst_finTwo (hS 0) (hS 1)),
     MvPowerSeries.subst_X (hasSubst_finTwo (hS 0) (hS 1))]
@@ -230,14 +217,14 @@ private theorem smul_𝔾ₐ_single_eps (n : ℕ+) :
         (X 1 + MvPowerSeries.C (-DualNumber.eps) * X 1 ^ ((n : ℕ) + 1)) :
         MvPowerSeries (Fin 2) (DualNumber ℚ)) :=
     .of_constantCoeff_zero (by simp)
-  rw [subst_X_add_C_mul_X_pow hS']
+  rw [PowerSeries.subst_X_add_C_mul_X_pow hS']
   have hsum : (X 0 + MvPowerSeries.C (-DualNumber.eps) * X 0 ^ ((n : ℕ) + 1) +
       (X 1 + MvPowerSeries.C (-DualNumber.eps) * X 1 ^ ((n : ℕ) + 1)) :
         MvPowerSeries (Fin 2) (DualNumber ℚ)) =
       X 0 + X 1 +
         MvPowerSeries.C (-DualNumber.eps) * (X 0 ^ ((n : ℕ) + 1) + X 1 ^ ((n : ℕ) + 1)) := by
     ring
-  rw [hsum, mul_add_mul_pow hε, map_neg]
+  rw [hsum, mul_add_mul_pow_of_mul_eq_zero hε, map_neg]
   ring
 
 /-- The coefficient of `X Yⁿ` in the transported additive law, evaluated at `bₙ = ε`, is
@@ -276,15 +263,16 @@ private theorem snd_evalEps_ρ_coeff (n : ℕ+) :
 private theorem coeff_ρ_generator_ne_zero (n : ℕ+) :
     (ρ (generator n)).coeff (single (toDual n) 1) ≠ 0 := by
   intro h0
+  -- With a zero coefficient of `bₙ`, the generator `xₙ` vanishes at `bₙ = ε`.
+  have hx : evalEps n (ρ (generator n)) = 0 := by
+    rw [evalEps, MvPolynomial.aeval_single_eps,
+      constantCoeff_ρ_of_mem (generator_mem_augmentationIdeal n), h0, zero_smul, map_zero,
+      add_zero]
   have hmem := coeff_formalGroup_sub_nsmul_generator_mem_sq n one_pos n.pos
   rw [Nat.add_sub_cancel] at hmem
-  have h := congrArg TrivSqZeroExt.snd (evalEps_ρ_eq_zero_of_mem_sq n hmem)
-  rw [map_sub, map_sub, map_nsmul, map_nsmul, TrivSqZeroExt.snd_sub, snd_evalEps_ρ_coeff,
-    evalEps, MvPolynomial.aeval_single_eps, h0] at h
   -- Modulo decomposables `a_{1, n}` is `((n + 1) / d_{n+1}) • xₙ`, so `n + 1 = 0` in `ℚ`.
-  simp only [Nat.choose_one_right, TrivSqZeroExt.algebraMap_eq_inl, zero_smul, add_zero,
-    nsmul_eq_mul, TrivSqZeroExt.snd_mul, TrivSqZeroExt.fst_natCast, TrivSqZeroExt.snd_inl,
-    smul_eq_mul, mul_zero, TrivSqZeroExt.fst_inl, TrivSqZeroExt.snd_natCast, smul_zero, sub_zero,
+  have h := congrArg TrivSqZeroExt.snd (evalEps_ρ_eq_zero_of_mem_sq n hmem)
+  rw [map_sub, map_sub, map_nsmul, map_nsmul, hx, smul_zero, sub_zero, snd_evalEps_ρ_coeff,
     TrivSqZeroExt.snd_zero] at h
   exact absurd h (by positivity)
 

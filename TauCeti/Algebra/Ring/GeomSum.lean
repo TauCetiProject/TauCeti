@@ -19,7 +19,8 @@ intertwines `x` and `y` up to the error `x ^ m - y ^ m`, so `S` is an exact inte
 `x * S = S * y` as soon as `x ^ m = y ^ m`.
 
 The file also records the second-order expansions of `(1 + x) ^ r` and of the geometric sum
-`∑_{i < r} (1 + x) ^ i` in a noncommutative ring.
+`∑_{i < r} (1 + x) ^ i` in a noncommutative ring, and that in a commutative ring a perturbation
+`a + e' b` of `a` raises to the same powers as `a` after multiplying by an `e` with `e e' = 0`.
 
 In a ring without zero divisors and for `x ≠ 1`, the `x`-integer `[n]_x = ∑_{i < n} x ^ i` vanishes
 exactly when `x ^ n = 1`, because `[n]_x * (x - 1) = x ^ n - 1`. Hence a product of `x`-integers,
@@ -31,6 +32,7 @@ exactly when `x ^ d ≠ 1` for each of its indices `d`.
 * `TauCeti.mul_geom_sum₂_add_pow`: `x * S + y ^ m = S * y + x ^ m` in any semiring.
 * `TauCeti.exists_one_add_pow_eq_and_geom_sum_eq`: `(1 + x) ^ r = 1 + r x + x² v` and
   `∑_{i < r} (1 + x) ^ i = r + C(r, 2) x + x² w` for some `v` and `w`.
+* `TauCeti.mul_add_mul_pow_of_mul_eq_zero`: if `e e' = 0`, then `e (a + e' b) ^ k = e a ^ k`.
 * `TauCeti.geom_sum_eq_zero_iff_pow_eq_one`: for `x ≠ 1` without zero divisors,
   `∑_{i < n} x ^ i = 0 ↔ x ^ n = 1`.
 * `TauCeti.prod_geom_sum_ne_zero_iff`: a product of `x`-integers is nonzero exactly when no index
@@ -88,6 +90,14 @@ theorem exists_one_add_pow_eq_and_geom_sum_eq {A : Type*} [Ring A] (x : A) (r : 
       push_cast
       simp only [mul_add, add_mul]
       abel
+
+/-- If `e e' = 0`, then `e (a + e' b) ^ k = e a ^ k`, as `(a + e' b) ^ k - a ^ k` is a multiple of
+`e' b`. For instance, `ε (a + ε b) ^ k = ε a ^ k` over the dual numbers. -/
+theorem mul_add_mul_pow_of_mul_eq_zero {A : Type*} [CommRing A] {e e' : A} (h : e * e' = 0)
+    (a b : A) (k : ℕ) : e * (a + e' * b) ^ k = e * a ^ k := by
+  obtain ⟨c, hc⟩ := sub_dvd_pow_sub_pow (a + e' * b) a k
+  rw [← sub_eq_zero, ← mul_sub, hc, add_sub_cancel_left, ← mul_assoc, ← mul_assoc, h, zero_mul,
+    zero_mul]
 
 /-- In a ring without zero divisors and for `x ≠ 1`, the `x`-integer `∑_{i < n} x ^ i` vanishes
 exactly when `x ^ n = 1`. -/
