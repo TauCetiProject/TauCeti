@@ -193,7 +193,8 @@ theorem IsPrimaryGaussian.norm_sub_one_div_four_modEq_four {ζ : K} {hζ : IsPri
 /-- A primary element of `𝓞 K = ℤ[i]` generates an ideal whose norm is odd, hence prime to `4`. -/
 theorem IsPrimaryGaussian.absNorm_span_singleton_coprime_four (hx : IsPrimaryGaussian x) :
     (Ideal.absNorm (Ideal.span {x})).Coprime 4 := by
-  rw [Ideal.absNorm_span_singleton, show 4 = 2 ^ 2 by rfl]
+  rw [Ideal.absNorm_span_singleton]
+  -- `4 = 2 ^ 2` holds by `rfl`, so coprimality to `2` suffices.
   exact Nat.Coprime.pow_right 2 (Nat.coprime_two_right.mpr (Int.natAbs_odd.mpr hx.odd_norm))
 
 /-- For primary `λ = a + b i`, the natural number `(N(λ 𝓞 K) - 1) / 4`, with `N` the absolute

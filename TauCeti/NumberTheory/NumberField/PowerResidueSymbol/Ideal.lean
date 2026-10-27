@@ -209,12 +209,13 @@ theorem powerResidueSymbolIdeal_mk_of_pow_eq_one (h𝔞 : (absNorm 𝔞).Coprime
     have h𝔞₁ : 1 ≤ absNorm 𝔞 := Nat.one_le_iff_ne_zero.mpr (absNorm_eq_zero_iff.not.mpr h𝔞₀)
     obtain ⟨v, hv⟩ := (Nat.modEq_iff_dvd' h𝔞₁).mp (absNorm_modEq_one h𝔞.2).symm
     have hP₁ : 1 ≤ absNorm P := Nat.one_le_iff_ne_zero.mpr (absNorm_eq_zero_iff.not.mpr hP.ne_zero)
+    have hPu : absNorm P = n * u + 1 := by omega
+    have h𝔞v : absNorm 𝔞 = n * v + 1 := by omega
     have hmul : absNorm P * absNorm 𝔞 - 1 = n * (u + v + n * (u * v)) := by
-      rw [show absNorm P = n * u + 1 by omega, show absNorm 𝔞 = n * v + 1 by omega]
+      rw [hPu, h𝔞v]
       exact Nat.sub_eq_of_eq_add (by ring)
-    have hn := NeZero.pos n
-    rw [hu, hv, hmul, Nat.mul_div_cancel_left _ hn, Nat.mul_div_cancel_left _ hn,
-      Nat.mul_div_cancel_left _ hn, pow_add, pow_add, pow_mul, hζ, one_pow, mul_one]
+    rw [hu, hv, hmul]
+    simp [NeZero.pos n, pow_add, pow_mul, hζ]
 
 /-- For `n = 2`, a quadratic nonresidue modulo `P` has symbol `1` at `P ^ 2`, although it is not
 a square modulo `P ^ 2`: the value `1` does not detect residues at composite ideals. -/

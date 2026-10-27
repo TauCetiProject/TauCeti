@@ -93,9 +93,11 @@ theorem _root_.IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger
   have hx : IsPrimaryGaussian ((m : 𝓞 K) + ((0 : ℤ) : 𝓞 K) * hζ.toInteger) :=
     hm₀ ▸ (isPrimaryGaussian_intCast_iff (K := K)).mpr hm
   obtain ⟨j, hj⟩ := hm.symm.dvd
-  rw [hm₀, hx.powerResidueSymbolIdeal_mk_toInteger, show -((m - 1) / 2) = 2 * -j by omega,
-    show (m - 1) / 4 = j by omega, zpow_mul, zpow_ofNat, hζ.sq_eq_neg_one, zpow_neg, ← inv_zpow,
-    inv_neg_one]
+  have h₂ : -((m - 1) / 2) = 2 * -j := by omega
+  have h₄ : (m - 1) / 4 = j := by omega
+  rw [hm₀, hx.powerResidueSymbolIdeal_mk_toInteger, h₂, h₄, zpow_mul, zpow_ofNat,
+    hζ.sq_eq_neg_one]
+  simp [zpow_neg, ← inv_zpow]
 
 /-- **The supplementary law for `-1` at a rational integer.** If `m` is odd, then
 `(-1 / m)_4 = 1`, the symbol being taken at the ideal `m 𝓞 K`. -/

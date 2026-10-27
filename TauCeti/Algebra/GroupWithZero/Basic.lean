@@ -39,9 +39,11 @@ agree. -/
 theorem zpow_eq_zpow_of_modEq {G₀ : Type*} [GroupWithZero G₀] {n : ℕ} {η : G₀}
     (hη : η ^ n = 1) {l m : ℤ} (h : l ≡ m [ZMOD n]) : η ^ l = η ^ m := by
   rcases eq_or_ne n 0 with rfl | hn
-  · rw [show l = m by simpa [Int.ModEq] using h]
+  · obtain rfl : l = m := by simpa [Int.ModEq] using h
+    rfl
   have h₀ : η ≠ 0 := ne_zero_pow hn (hη ▸ one_ne_zero)
   obtain ⟨c, hc⟩ := h.dvd
-  rw [show m = l + n * c by omega, zpow_add₀ h₀, zpow_mul, zpow_natCast, hη, one_zpow, mul_one]
+  have hm : m = l + n * c := by omega
+  simp [hm, zpow_add₀ h₀, zpow_mul, hη]
 
 end TauCeti
