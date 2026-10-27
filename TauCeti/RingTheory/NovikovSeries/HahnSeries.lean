@@ -209,24 +209,27 @@ private def toHahnSeriesFun (a : NovikovSeries R H N) : HahnSeries Γ (AddMonoid
       rw [← S.period_snd_equiv]
       exact S.strictMono_period.monotone hle⟩, rfl⟩
 
+private theorem coeff_coeff_toHahnSeriesFun (a : NovikovSeries R H N) (γ : Γ) (k : K) :
+    ((toHahnSeriesFun S a).coeff γ).coeff k = a.coeff (S.equiv.symm (k, γ)) :=
+  rfl
+
 private theorem toHahnSeriesFun_single (h : H) (r : R) :
     toHahnSeriesFun S (single h r : NovikovSeries R H N) =
       HahnSeries.single (S.equiv h).2 (AddMonoidAlgebra.single (S.equiv h).1 r) := by
   classical
   ext γ k
-  simp only [toHahnSeriesFun, coeff_kernelCoeff, HahnSeries.coeff_single]
+  rw [coeff_coeff_toHahnSeriesFun, HahnSeries.coeff_single]
   by_cases hγ : γ = (S.equiv h).2
-  · by_cases hk : k = (S.equiv h).1
-    · subst hγ hk
+  · subst hγ
+    by_cases hk : k = (S.equiv h).1
+    · subst hk
       simp
-    · rw [ite_eq_left hγ, AddMonoidAlgebra.coeff_single, Finsupp.single_apply,
-        ite_eq_right (Ne.symm hk), coeff_single_of_ne]
+    · have hne : S.equiv.symm (k, (S.equiv h).2) ≠ h := fun he => hk (by rw [← he]; simp)
+      simp [Ne.symm hk, coeff_single_of_ne hne]
+  · have hne : S.equiv.symm (k, γ) ≠ h := by
       rintro rfl
-      simp at hk
-  · rw [ite_eq_right hγ, coeff_single_of_ne, AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero,
-      Pi.zero_apply]
-    rintro rfl
-    simp at hγ
+      simp at hγ
+    simp [hγ, coeff_single_of_ne hne]
 
 variable [IsOrderedCancelAddMonoid Γ]
 
@@ -257,26 +260,24 @@ private theorem toHahnSeriesFun_mul (a b : NovikovSeries R H N) :
     obtain ⟨⟨rfl, rfl⟩, rfl, rfl⟩ := hgt
     rfl
   calc (a * b).coeff (S.equiv.symm (k, γ))
-      = ∑ p ∈ (D.sigma F).image g, a.coeff p.1 * b.coeff p.2 := by
-        refine coeff_mul_eq_sum (fun p hp => ?_) fun u v huv hu hv => ?_
-        · obtain ⟨⟨⟨i, j⟩, ⟨p, q⟩⟩, ht, rfl⟩ := Finset.mem_image.1 hp
-          simp only [Finset.mem_sigma, Finset.mem_antidiagonal, Finset.mem_filter, F, D] at ht
+      = ∑ t ∈ D.sigma F, a.coeff (g t).1 * b.coeff (g t).2 := by
+        refine coeff_mul_eq_sum_of_injOn (fun t ht => ?_) (fun u v huv hu hv => ?_) hg
+        · simp only [Finset.mem_sigma, Finset.mem_antidiagonal, Finset.mem_filter, F, D] at ht
           rw [← map_add, Prod.mk_add_mk, ht.2.2, ht.1.2.2]
         · have he : S.equiv u + S.equiv v = (k, γ) := by
             rw [← map_add, huv, AddEquiv.apply_symm_apply]
-          refine Finset.mem_image.2 ⟨⟨((S.equiv u).2, (S.equiv v).2),
-            ((S.equiv u).1, (S.equiv v).1)⟩, ?_, by simp [g]⟩
+          refine ⟨⟨((S.equiv u).2, (S.equiv v).2), ((S.equiv u).1, (S.equiv v).1)⟩, ?_,
+            by simp [g]⟩
           simp only [Finset.mem_sigma, Finset.mem_antidiagonal, HahnSeries.mem_support,
             Finset.mem_filter, Finset.mem_product, Finsupp.mem_support_iff, F, D]
           refine ⟨⟨fun hA => ?_, fun hB => ?_, congrArg Prod.snd he⟩, ⟨?_, ?_⟩,
             congrArg Prod.fst he⟩
           · have := congrArg (fun x => x.coeff (S.equiv u).1) hA
-            exact hu (by simpa [A, toHahnSeriesFun, coeff_kernelCoeff] using this)
+            exact hu (by simpa [A, coeff_coeff_toHahnSeriesFun] using this)
           · have := congrArg (fun x => x.coeff (S.equiv v).1) hB
-            exact hv (by simpa [B, toHahnSeriesFun, coeff_kernelCoeff] using this)
-          · simpa [A, toHahnSeriesFun, coeff_kernelCoeff] using hu
-          · simpa [B, toHahnSeriesFun, coeff_kernelCoeff] using hv
-    _ = ∑ t ∈ D.sigma F, a.coeff (g t).1 * b.coeff (g t).2 := Finset.sum_image hg
+            exact hv (by simpa [B, coeff_coeff_toHahnSeriesFun] using this)
+          · simpa [A, coeff_coeff_toHahnSeriesFun] using hu
+          · simpa [B, coeff_coeff_toHahnSeriesFun] using hv
     _ = ∑ ij ∈ D, ∑ p ∈ F ij, (A.coeff ij.1).coeff p.1 * (B.coeff ij.2).coeff p.2 :=
         Finset.sum_sigma _ _ _
     _ = ((A * B).coeff γ).coeff k := by
@@ -295,10 +296,10 @@ def toHahnSeries : NovikovSeries R H N →+* HahnSeries Γ (AddMonoidAlgebra R K
   map_mul' := toHahnSeriesFun_mul S
   map_zero' := by
     ext
-    simp [toHahnSeriesFun, coeff_kernelCoeff]
+    simp [coeff_coeff_toHahnSeriesFun]
   map_add' a b := by
     ext
-    simp [toHahnSeriesFun, coeff_kernelCoeff]
+    simp [coeff_coeff_toHahnSeriesFun]
 
 /-- The coefficient formula of the comparison: the coefficient of `toHahnSeries R S a` at `γ` has
 coefficient `a.coeff (S.equiv.symm (k, γ))` at `k`. -/
@@ -363,6 +364,7 @@ def locallyFiniteHahnSeries : Subsemiring (HahnSeries Γ (AddMonoidAlgebra R K))
   (toHahnSeries R S).rangeS.copy {f | ∀ C : ℝ, {γ | f.coeff γ ≠ 0 ∧ S.period γ < C}.Finite} <|
     Set.ext fun _ => (mem_range_toHahnSeries_iff S).symm
 
+@[simp]
 theorem mem_locallyFiniteHahnSeries_iff {f : HahnSeries Γ (AddMonoidAlgebra R K)} :
     f ∈ locallyFiniteHahnSeries R K S ↔
       ∀ C : ℝ, {γ | f.coeff γ ≠ 0 ∧ S.period γ < C}.Finite :=
@@ -392,6 +394,15 @@ theorem toHahnSeries_hahnSeriesEquiv_symm_apply (f : locallyFiniteHahnSeries R K
     toHahnSeries R S ((hahnSeriesEquiv R S).symm f) = f := by
   rw [← coe_hahnSeriesEquiv_apply, RingEquiv.apply_symm_apply]
 
+/-- The coefficient formula of the inverse comparison: the coefficient of
+`(hahnSeriesEquiv R S).symm f` at `h` is the coefficient at `(S.equiv h).1` of the Hahn coefficient
+of `f` at `(S.equiv h).2`. -/
+@[simp]
+theorem coeff_hahnSeriesEquiv_symm_apply (f : locallyFiniteHahnSeries R K S) (h : H) :
+    ((hahnSeriesEquiv R S).symm f).coeff h =
+      ((f : HahnSeries Γ (AddMonoidAlgebra R K)).coeff (S.equiv h).2).coeff (S.equiv h).1 := by
+  rw [coeff_eq_coeff_coeff_toHahnSeries S, toHahnSeries_hahnSeriesEquiv_symm_apply]
+
 end Semiring
 
 section Ring
@@ -407,8 +418,7 @@ theorem mem_periodFiltration_iff_coeff_toHahnSeries {a : NovikovSeries R H N} {C
   refine ⟨fun ha γ hγ => ?_, fun ha h hh => ?_⟩
   · ext k
     simpa using ha _ (by rwa [S.period_symm_apply])
-  · rw [coeff_eq_coeff_coeff_toHahnSeries S, ha _ (by rwa [S.period_snd_equiv]),
-      AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+  · simp [coeff_eq_coeff_coeff_toHahnSeries S a h, ha _ (by rwa [S.period_snd_equiv])]
 
 /-- Convergence in the period topology is eventual agreement of Hahn coefficients below each
 period. -/
