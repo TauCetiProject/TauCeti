@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Perm.Fin
+public import Mathlib.Algebra.Ring.Parity
+public import Mathlib.Data.Fintype.Prod
 
 /-!
 # Inversions of a map on a finite set
@@ -14,8 +15,8 @@ For a map `f : α → β` between linear orders and a finite set `s ⊆ α`, the
 `s` are the pairs `a < b` of elements of `s` whose order `f` reverses, `f b < f a`. When `f` is
 injective, the parity of their number is the sign of the permutation of `s` obtained by comparing
 the order of `s` with the order of its image `f(s)`. For a permutation `σ` of `Fin n`,
-`Finset.univ.inversions σ` is the set of inversions counted by
-`TauCeti.sign_eq_neg_one_pow_card_inversion`, whose parity is `Equiv.Perm.sign σ`.
+`TauCeti.sign_eq_neg_one_pow_card_inversion` identifies `(-1) ^ #(Finset.univ.inversions σ)` with
+`Equiv.Perm.sign σ`.
 
 These signs compare two orderings of the same finite set. In a signed cube totalization the edge
 `S ⟶ S ∪ {a}` carries the sign `(-1) ^ #{b ∈ S | b < a}`, and reordering the indices of the cube
@@ -29,6 +30,8 @@ composition (`Finset.neg_one_pow_card_inversions_comp`).
 
 ## Main results
 
+* `Finset.inversions_univ`: on a whole finite type, the inversions are all pairs `a < b` with
+  `f b < f a`.
 * `Finset.card_inversions_insert`: adjoining a new element `a` to `s` adds the inversions
   involving `a`.
 * `Finset.neg_one_pow_card_inversions_insert`: the inversion sign of an injective map on
@@ -67,6 +70,12 @@ theorem inversions_eq_empty_of_monotone {f : α → β} (hf : Monotone f) (s : F
   ext p
   simp only [mem_inversions, notMem_empty, iff_false, not_and]
   exact fun _ _ h ↦ (hf h.le).not_gt
+
+/-- On the whole of a finite type, the inversions of `f` are all the pairs `a < b` with
+`f b < f a`. -/
+theorem inversions_univ [Fintype α] (f : α → β) :
+    univ.inversions f = univ.filter fun p : α × α ↦ p.1 < p.2 ∧ f p.2 < f p.1 := by
+  rw [inversions, univ_product_univ]
 
 @[simp]
 theorem inversions_id (s : Finset α) : s.inversions id = ∅ :=
