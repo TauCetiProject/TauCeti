@@ -99,8 +99,10 @@ theorem Submodule.connectedComponentIn_orbitRelQuotient_mk_image_preimage [Discr
       continuous_quotient_mk'.continuousOn
   -- A neighbourhood `U` of `0` meeting `L'` only in `0`.
   obtain ⟨U, hUo, hU⟩ := isOpen_induced_iff.1 (isOpen_discrete {(0 : L')})
-  have hU0 : ∀ y ∈ U, y ∈ L' → y = 0 := fun y hy hyL ↦
-    congrArg Subtype.val (show (⟨y, hyL⟩ : L') ∈ ({0} : Set L') from hU ▸ hy)
+  have hU0 : ∀ y ∈ U, y ∈ L' → y = 0 := fun y hy hyL ↦ by
+    have hmem : (⟨y, hyL⟩ : L') ∈ Subtype.val ⁻¹' U := hy
+    rw [hU, mem_singleton_iff] at hmem
+    exact congrArg Subtype.val hmem
   have h0U : (0 : E') ∈ U := by
     have : (0 : L') ∈ Subtype.val ⁻¹' U := hU ▸ rfl
     exact this
@@ -155,17 +157,21 @@ theorem Submodule.coe_addSubgroupOf_eq_connectedComponent_zero [DiscreteTopology
         ((L'.comap (f.restrictScalars ℤ)).toAddSubgroup.map L.orbitRelQuotientMkHom) =
       connectedComponent (0 : (L'.comap (f.restrictScalars ℤ)).toAddSubgroup.map
         L.orbitRelQuotientMkHom) := by
-  have hK : ((L'.comap (f.restrictScalars ℤ)).toAddSubgroup.map L.orbitRelQuotientMkHom :
-      Set (AddAction.orbitRel.Quotient L E)) =
+  set K := (L'.comap (f.restrictScalars ℤ)).toAddSubgroup.map L.orbitRelQuotientMkHom
+  set K₀ := (LinearMap.ker (f.restrictScalars ℤ)).toAddSubgroup.map L.orbitRelQuotientMkHom
+  have hK : (K : Set (AddAction.orbitRel.Quotient L E)) =
       _root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L') := by
-    simp
-  have hK₀ : ((LinearMap.ker (f.restrictScalars ℤ)).toAddSubgroup.map L.orbitRelQuotientMkHom :
-      Set (AddAction.orbitRel.Quotient L E)) =
+    simp [K]
+  have hK₀ : (K₀ : Set (AddAction.orbitRel.Quotient L E)) =
       _root_.Quotient.mk (AddAction.orbitRel L E) '' (LinearMap.ker f) := by
-    simp
+    simp [K₀]
+  have hle : K₀ ≤ K := by
+    rintro _ ⟨x, hx : f x = 0, rfl⟩
+    exact ⟨x, by simp [hx], rfl⟩
+  -- Both sides are subsets of `K`; compare their images in the orbit space.
+  have himage : (K₀.addSubgroupOf K).map K.subtype = K₀ := by
+    rw [AddSubgroup.addSubgroupOf_map_subtype, inf_of_le_left hle]
   refine image_injective.2 Subtype.val_injective <|
     Eq.trans ?_ (connectedComponentIn_eq_image (zero_mem _))
-  rw [AddSubgroup.coe_addSubgroupOf, AddSubgroup.coe_subtype, image_preimage_eq_inter_range,
-    Subtype.range_coe_subtype, SetLike.setOfPred_mem_eq, hK, hK₀,
-    connectedComponentIn_orbitRelQuotient_mk_image_preimage L f hfc hf, inter_eq_left]
-  exact image_mono fun x hx ↦ by simp [LinearMap.mem_ker.1 hx]
+  rw [← AddSubgroup.coe_subtype, ← AddSubgroup.coe_map, himage, hK, hK₀,
+    connectedComponentIn_orbitRelQuotient_mk_image_preimage L f hfc hf]

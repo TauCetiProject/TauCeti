@@ -23,9 +23,10 @@ projection is additive, and records the resulting additive equivalence between t
 
 For a linear map `f : M → M₂` and a submodule `q` of `M₂`, the image `f⁻¹(q) / p` of `f⁻¹(q)` in
 the orbit space contains the image of `ker f`, and the quotient of the former by the latter is
-`(q ∩ range f) / f(p)`. For lattices `L ⊆ E`, `L' ⊆ E'` in complex vector spaces and a complex
-linear map `f` with `f(L) ⊆ L'`, this is the component group of `f⁻¹(L') / L`, the kernel of the
-induced homomorphism of complex tori `E / L → E' / L'`.
+`(q ∩ range f) / (q ∩ f(p))`, which is `(q ∩ range f) / f(p)` when `f(p) ⊆ q`. For lattices
+`L ⊆ E`, `L' ⊆ E'` in complex vector spaces and a complex linear map `f` with `f(L) ⊆ L'`, this is
+the component group of `f⁻¹(L') / L`, the kernel of the induced homomorphism of complex tori
+`E / L → E' / L'`.
 
 ## Main declarations
 
@@ -38,7 +39,7 @@ induced homomorphism of complex tori `E / L → E' / L'`.
 * `Submodule.orbitRelQuotient_mk_eq_zero_iff`: its kernel is `p`.
 * `Submodule.orbitRelQuotientMkHom`: the orbit projection as an additive map.
 * `Submodule.orbitRelQuotientComapQuotientEquiv`: the quotient of `f⁻¹(q) / p` by the image of
-  `ker f` is additively equivalent to `(q ∩ range f) / f(p)`.
+  `ker f` is additively equivalent to `(q ∩ range f) / (q ∩ f(p))`.
 -/
 
 public section
@@ -141,8 +142,9 @@ variable {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] (q : Submodule R M�
 
 /-- For a linear map `f : M → M₂` and submodules `p ≤ M`, `q ≤ M₂`, consider the image `K` of
 `f⁻¹(q)` and the image `K₀` of `ker f` in the orbit space of translation by `p`. The quotient
-`K / K₀` is additively equivalent to `(q ∩ range f) / f(p)`, by the map sending the class of the
-orbit of `x ∈ f⁻¹(q)` to the class of `f x`.
+`K / K₀` is additively equivalent to `(q ∩ range f) / (q ∩ f(p))`, by the map sending the class
+of the orbit of `x ∈ f⁻¹(q)` to the class of `f x`. Here the denominator `q ∩ f(p)` is the
+pullback of `f(p)` to `q ∩ range f`; it is `f(p)` itself when `f(p) ⊆ q`.
 
 For lattices `L ⊆ E`, `L' ⊆ E'` and a complex linear map `f` with `f(L) ⊆ L'`, `K = f⁻¹(L') / L`
 is the kernel of the induced homomorphism of complex tori `E / L → E' / L'`, `K₀` is its identity
