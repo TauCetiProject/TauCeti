@@ -292,7 +292,7 @@ theorem integrableExpSet_id_map_cast_finiteZipfMeasure (N : ℕ) (s : ℝ) :
   simp [integrableExpSet]
 
 /-- The finite Zipf probability generating function is a polynomial, at every real argument. -/
-theorem pgf_id_finiteZipfMeasure (N : ℕ) (s z : ℝ) :
+theorem pgf_finiteZipfMeasure (N : ℕ) (s z : ℝ) :
     pgf id (finiteZipfMeasure N s) z =
       ∑ k ∈ Finset.Icc 1 N, ((k : ℝ) ^ (-s) / finiteZipfNormalizer N s) * z ^ k := by
   rw [pgf_def, integral_finiteZipfMeasure]
