@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.IsTensorProduct
 public import TauCeti.RingTheory.FittingIdeal.Basic
+public import TauCeti.RingTheory.IsTensorProduct.Pushout
 
 /-!
 # The content of a submodule of a projective module
@@ -23,7 +23,7 @@ exactly when `A → A'` kills `N.minorsIdeal 1` (`IsBaseChange.minorsIdeal_one_l
 content itself commutes with base change (`IsBaseChange.minorsIdeal_one_span_image`), and for an
 ideal `J` of an `A`-algebra `B` which is projective as an `A`-module, the content of the extension
 of `J` to a pushout `A' ⊗[A] B` is the extension of the content of `J`
-(`Algebra.IsPushout.minorsIdeal_one_restrictScalars_map`). For finite free `M`, the base change of
+(`Ideal.minorsIdeal_one_restrictScalars_map`). For finite free `M`, the base change of
 the minors ideals of every size is `IsBaseChange.minorsIdeal_span_image`.
 
 Geometrically, if `Spec B → Spec A` is finite locally free and `J ⊆ B` cuts out a closed subscheme
@@ -40,7 +40,7 @@ which `Spec B` lies inside `Z`: the Weil restriction of `Z` along `Spec B → Sp
   change of `M` along `A → A'` is zero exactly when `A → A'` kills `N.minorsIdeal 1`.
 * `IsBaseChange.minorsIdeal_one_span_image`: for projective `M`, the ideal of `1 × 1` minors of
   the image of `N` in a base change of `M` is the extension of that of `N`.
-* `Algebra.IsPushout.minorsIdeal_one_restrictScalars_map`: the ideal version, for pushouts of
+* `Ideal.minorsIdeal_one_restrictScalars_map`: the ideal version, for pushouts of
   algebras.
 
 ## References
@@ -58,7 +58,8 @@ namespace Submodule
 variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M]
 
 /-- The value of a linear functional at an element of `N` is a `1 × 1` minor of `N`. -/
-theorem apply_mem_minorsIdeal_one {N : Submodule A M} (φ : Dual A M) {x : M} (hx : x ∈ N) :
+theorem _root_.LinearMap.apply_mem_minorsIdeal_one {N : Submodule A M} (φ : Dual A M)
+    {x : M} (hx : x ∈ N) :
     φ x ∈ N.minorsIdeal 1 := by
   simpa using det_mem_minorsIdeal (p := 1) (fun _ ↦ φ) (v := fun _ ↦ x) fun _ ↦ hx
 
@@ -66,23 +67,11 @@ theorem apply_mem_minorsIdeal_one {N : Submodule A M} (φ : Dual A M) {x : M} (h
 into `𝔞`. -/
 theorem minorsIdeal_one_le_iff {N : Submodule A M} {𝔞 : Ideal A} :
     N.minorsIdeal 1 ≤ 𝔞 ↔ ∀ φ : Dual A M, ∀ x ∈ N, φ x ∈ 𝔞 := by
-  refine ⟨fun h φ x hx ↦ h (apply_mem_minorsIdeal_one φ hx), fun h ↦ ?_⟩
+  refine ⟨fun h φ x hx ↦ h (φ.apply_mem_minorsIdeal_one hx), fun h ↦ ?_⟩
   refine minorsIdeal_le_iff.2 fun f v hv ↦ ?_
   simpa using h (f 0) (v 0) (hv 0)
 
 variable [Projective A M]
-
-/-- For projective `M`, an `A`-linear map `χ : M →ₗ[A] A'` to an `A`-algebra carries `N` into the
-extension of the content of `N`. -/
-theorem apply_mem_map_minorsIdeal_one {A' : Type*} [CommRing A'] [Algebra A A']
-    {N : Submodule A M} (χ : M →ₗ[A] A') {x : M} (hx : x ∈ N) :
-    χ x ∈ Ideal.map (algebraMap A A') (N.minorsIdeal 1) := by
-  obtain ⟨s, hs⟩ := Projective.out (R := A) (P := M)
-  rw [← hs x, Finsupp.linearCombination_apply, Finsupp.sum, map_sum]
-  refine Submodule.sum_mem _ fun m _ ↦ ?_
-  rw [map_smul, Algebra.smul_def]
-  exact Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _
-    (apply_mem_minorsIdeal_one ((Finsupp.lapply m).comp s) hx))
 
 /-- For projective `M`, every submodule `N` lies in `N.minorsIdeal 1 • ⊤`. -/
 theorem le_minorsIdeal_one_smul_top (N : Submodule A M) : N ≤ N.minorsIdeal 1 • ⊤ := by
@@ -90,7 +79,18 @@ theorem le_minorsIdeal_one_smul_top (N : Submodule A M) : N ≤ N.minorsIdeal 1 
   intro x hx
   rw [← hs x, Finsupp.linearCombination_apply, Finsupp.sum]
   exact sum_mem fun m _ ↦
-    smul_mem_smul (apply_mem_minorsIdeal_one ((Finsupp.lapply m).comp s) hx) mem_top
+    smul_mem_smul (((Finsupp.lapply m).comp s).apply_mem_minorsIdeal_one hx) mem_top
+
+/-- For projective `M`, an `A`-linear map to a possibly noncommutative `A`-algebra carries `N`
+into the extension of the content of `N`. -/
+theorem _root_.LinearMap.apply_mem_map_minorsIdeal_one {A' : Type*} [Semiring A'] [Algebra A A']
+    {N : Submodule A M} (χ : M →ₗ[A] A') {x : M} (hx : x ∈ N) :
+    χ x ∈ Ideal.map (algebraMap A A') (N.minorsIdeal 1) := by
+  refine smul_induction_on (p := fun x ↦ χ x ∈ Ideal.map (algebraMap A A') (N.minorsIdeal 1))
+    (le_minorsIdeal_one_smul_top N hx) (fun a ha m _ ↦ ?_)
+    fun x y hx hy ↦ by simpa using add_mem hx hy
+  rw [map_smul, Algebra.smul_def, Algebra.commutes a (χ m)]
+  exact Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ ha)
 
 /-- **The `1 × 1` minors as an Ohm–Rush content.** For projective `M`, `N.minorsIdeal 1` lies in an
 ideal `𝔞` exactly when `N ≤ 𝔞 • ⊤`: it is the smallest such ideal. -/
@@ -109,24 +109,29 @@ namespace IsBaseChange
 open Submodule
 
 variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M]
-  {A' M' : Type*} [CommRing A'] [Algebra A A'] [AddCommGroup M'] [Module A' M'] [Module A M']
-  [IsScalarTower A A' M'] {f : M →ₗ[A] M'}
+
+section CommSemiring
+
+variable {A' M' : Type*} [CommSemiring A'] [Algebra A A'] [AddCommMonoid M'] [Module A' M']
+  [Module A M'] [IsScalarTower A A' M'] {f : M →ₗ[A] M'}
 
 /-- For `M` projective and `f : M → M'` a base change of `M` along `A → A'`, the submodule `N`
 maps to zero in `M'` exactly when `A → A'` kills the content `N.minorsIdeal 1`. -/
 theorem minorsIdeal_one_le_ker_iff (h : IsBaseChange A' f) [Projective A M] {N : Submodule A M} :
     N.minorsIdeal 1 ≤ RingHom.ker (algebraMap A A') ↔ ∀ x ∈ N, f x = 0 := by
   refine ⟨fun hN x hx ↦ ?_, fun hN ↦ minorsIdeal_one_le_iff.2 fun φ x hx ↦ ?_⟩
-  · -- `x` is a combination of elements of `M` with coefficients in the content of `N`
-    obtain ⟨s, hs⟩ := Projective.out (R := A) (P := M)
-    rw [← hs x, Finsupp.linearCombination_apply, Finsupp.sum, map_sum]
-    refine Finset.sum_eq_zero fun m _ ↦ ?_
-    have hm := hN (apply_mem_minorsIdeal_one ((Finsupp.lapply m).comp s) hx)
-    simp only [LinearMap.comp_apply, Finsupp.lapply_apply, RingHom.mem_ker] at hm
-    rw [map_smul, ← algebraMap_smul A', hm, zero_smul]
+  · refine smul_induction_on (p := fun x ↦ f x = 0)
+      (le_minorsIdeal_one_smul_top N hx) (fun a ha m _ ↦ ?_)
+      fun x y hx hy ↦ by simp [hx, hy]
+    rw [map_smul, ← algebraMap_smul A', RingHom.mem_ker.1 (hN ha), zero_smul]
   · have := h.lift_eq ((Algebra.linearMap A A').comp φ) x
     rw [hN x hx, map_zero] at this
     exact RingHom.mem_ker.2 (by simpa using this.symm)
+
+end CommSemiring
+
+variable {A' M' : Type*} [CommRing A'] [Algebra A A'] [AddCommGroup M'] [Module A' M']
+  [Module A M'] [IsScalarTower A A' M'] {f : M →ₗ[A] M'}
 
 /-- **The content commutes with base change.** For `M` projective and `f : M → M'` a base change
 of `M` along `A → A'`, the content of the `A'`-submodule spanned by the image of `N` is the
@@ -138,18 +143,18 @@ theorem minorsIdeal_one_span_image (h : IsBaseChange A' f) [Projective A M] (N :
   · induction hy using span_induction with
     | mem y hy =>
       obtain ⟨x, hx, rfl⟩ := hy
-      exact apply_mem_map_minorsIdeal_one ((ψ.restrictScalars A).comp f) hx
+      exact ((ψ.restrictScalars A).comp f).apply_mem_map_minorsIdeal_one hx
     | zero => simp
     | add y z _ _ hy hz => simpa using add_mem hy hz
     | smul a y _ hy => simpa using Ideal.mul_mem_left _ a hy
   · have := h.lift_eq ((Algebra.linearMap A A').comp φ) x
     rw [Ideal.mem_comap]
-    simpa [this] using apply_mem_minorsIdeal_one (N := span A' (f '' N))
-      (h.lift ((Algebra.linearMap A A').comp φ)) (subset_span ⟨x, hx, rfl⟩)
+    simpa [this] using (h.lift ((Algebra.linearMap A A').comp φ)).apply_mem_minorsIdeal_one
+      (N := span A' (f '' N)) (subset_span ⟨x, hx, rfl⟩)
 
 end IsBaseChange
 
-namespace Algebra.IsPushout
+namespace Ideal
 
 open Submodule
 
@@ -157,42 +162,15 @@ variable {A A' B B' : Type*} [CommRing A] [CommRing A'] [CommRing B] [CommRing B
   [Algebra A B] [Algebra A' B'] [Algebra B B'] [Algebra A B'] [IsScalarTower A A' B']
   [IsScalarTower A B B']
 
-/-- In a pushout `B' = A' ⊗[A] B`, the extension of an ideal `J` of `B` is spanned over `A'` by
-the image of `J`. -/
-theorem restrictScalars_map_eq_span [h : Algebra.IsPushout A A' B B'] (J : Ideal B) :
-    (Ideal.map (algebraMap B B') J).restrictScalars A' = span A' (algebraMap B B' '' J) := by
-  refine le_antisymm (fun y hy ↦ ?_) (span_le.2 fun _ ⟨x, hx, hxy⟩ ↦ hxy ▸ J.mem_map_of_mem _ hx)
-  -- the `A'`-span of the image of `J` is stable under multiplication by `B'`
-  have key (b : B') {y : B'} (hy : y ∈ span A' (algebraMap B B' '' J)) :
-      b * y ∈ span A' (algebraMap B B' '' J) := by
-    induction b using h.out.inductionOn with
-    | tmul b =>
-      induction hy using span_induction with
-      | mem y hy =>
-        obtain ⟨x, hx, rfl⟩ := hy
-        exact subset_span ⟨b * x, J.mul_mem_left b hx, by simp⟩
-      | zero => simp
-      | add y z _ _ hy hz => simpa [mul_add] using add_mem hy hz
-      | smul a y _ hy => simpa [mul_smul_comm] using smul_mem _ a hy
-    | smul a b hb => simpa [smul_mul_assoc] using smul_mem _ a hb
-    | add b c hb hc => simpa [add_mul] using add_mem hb hc
-  induction hy using span_induction with
-  | mem y hy =>
-    obtain ⟨x, hx, rfl⟩ := hy
-    exact subset_span ⟨x, hx, rfl⟩
-  | zero => exact zero_mem _
-  | add y z _ _ hy hz => exact add_mem hy hz
-  | smul b y _ hy => exact key b hy
-
 /-- **The content of an extended ideal.** If `B` is projective as an `A`-module and `B'` is the
 pushout `A' ⊗[A] B`, the content over `A'` of the extension to `B'` of an ideal `J` of `B` is the
 extension of the content of `J` over `A`. -/
-theorem minorsIdeal_one_restrictScalars_map [h : Algebra.IsPushout A A' B B'] [Projective A B]
-    (J : Ideal B) :
+theorem minorsIdeal_one_restrictScalars_map [h : Algebra.IsPushout A A' B B']
+    [Projective A B] (J : Ideal B) :
     ((Ideal.map (algebraMap B B') J).restrictScalars A').minorsIdeal 1 =
       Ideal.map (algebraMap A A') ((J.restrictScalars A).minorsIdeal 1) := by
-  rw [restrictScalars_map_eq_span (A := A), ← h.out.minorsIdeal_one_span_image]
+  rw [Ideal.restrictScalars_map_eq_span (R := A), ← h.out.minorsIdeal_one_span_image]
   -- the base change map of the pushout is `algebraMap B B'`, and `J` has the same elements over `A`
   rw [AlgHom.coe_toLinearMap, IsScalarTower.coe_toAlgHom', Submodule.coe_restrictScalars]
 
-end Algebra.IsPushout
+end Ideal

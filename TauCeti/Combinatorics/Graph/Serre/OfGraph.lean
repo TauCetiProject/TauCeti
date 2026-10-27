@@ -8,107 +8,190 @@ module
 public import Mathlib.Algebra.FreeMonoid.Basic
 public import Mathlib.Combinatorics.Quiver.Path.Weight
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
-public import TauCeti.Combinatorics.Graph.EdgeEnds
 public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Combinatorics.Graph.EdgeEnds
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
 
 /-!
-# The Serre graph of a multigraph
+# Darts of a multigraph
 
-`Graph.toSerreGraph` replaces each actual edge of a multigraph by two darts, including for
-loops, and uses only its actual vertices. An ordering chosen for each unordered endpoint pair
-determines the source of each dart. Parallel edges retain their original identities.
+Every actual edge of a Mathlib multigraph gives two distinct Serre darts, including when the
+edge is a loop. The endpoints of an edge are unordered, so an arbitrary order is chosen once
+for its two darts. Reversing a dart exchanges these endpoints. This construction preserves
+parallel edge identities and supplies the directed paths needed for graph path groups.
 
-`Graph.serrePathToWalk` forgets dart directions and retains the sequence of edge identities.
-Every native walk between actual vertices lifts, so this comparison also preserves reachability
-and nonempty connectedness. In particular, the two directions of a loop can project to the same
-walk; no injectivity assertion is made.
+## Main declarations
 
-The construction uses Mathlib's `Graph` incidence and `Quiver.Path` APIs, with endpoint choices
-provided by `Graph.edgeEnds` and `Sym2.out`.
+* `Graph.toSerreGraph`: the Serre graph of the actual vertices and edges of a multigraph.
+* `Graph.toSerreGraph_isLink`: its dart incidence agrees with multigraph incidence.
+* `Graph.Walk.toSerrePath`: a multigraph walk lifted to a Serre path.
+* `Graph.serrePathToWalk`: the projection back to multigraph walks, preserving edge identities.
+* `Graph.nonempty_serrePath_iff_reachable`: agreement of the two reachability relations.
+
+Every native walk between actual vertices lifts. The two directions of a loop can project to
+the same walk, so the projection need not be injective.
 
 ## References
 
-* J.-P. Serre, *Trees*, Chapter I, §§2.1–2.2.
+* J.-P. Serre, *Trees*, Chapter I, §2.1.
 -/
 
 public section
 
-universe u v
-
 namespace Graph
 
-variable {V : Type u} {E : Type v} (G : Graph V E)
+variable {V : Type*} {E : Type*} (G : Graph V E)
 
-/-- The Serre graph on the actual vertices and edges of a multigraph. Each edge has two
-distinct darts, even when it is a loop. The structure assembly is exposed to identify its
-vertex and dart carriers; the endpoint choice remains in `Graph.edgeEnds`. -/
-@[expose, instance_reducible] noncomputable def toSerreGraph : TauCeti.SerreGraph.{u, v} where
+/-- The Serre graph of a multigraph. Its darts are an actual edge and a Boolean direction.
+The choice of direction uses an arbitrary ordering of each edge's two endpoints. -/
+@[expose, instance_reducible] noncomputable def toSerreGraph : TauCeti.SerreGraph where
   V := G.vertexSet
   E := G.edgeSet × Bool
-  src := fun d => if d.2 then (G.edgeEnds d.1).out.2 else (G.edgeEnds d.1).out.1
-  rev := fun d => (d.1, !d.2)
+  src := fun e => if e.2 then (G.edgeEnds e.1).out.1 else (G.edgeEnds e.1).out.2
+  rev := fun e => (e.1, !e.2)
   rev_rev := by intro ⟨e, b⟩; cases b <;> rfl
   rev_ne := by intro ⟨e, b⟩; cases b <;> simp
 
-/-- The sign selects one of the two chosen endpoints. -/
-@[simp] theorem toSerreGraph_src (d : G.edgeSet × Bool) :
-    G.toSerreGraph.src d =
-      if d.2 then (G.edgeEnds d.1).out.2 else (G.edgeEnds d.1).out.1 := (rfl)
+@[simp] theorem toSerreGraph_rev (e : G.edgeSet × Bool) :
+    G.toSerreGraph.rev e = (e.1, !e.2) := rfl
 
-/-- Reversal changes only the sign, retaining the edge identity. -/
-@[simp] theorem toSerreGraph_rev (d : G.edgeSet × Bool) :
-    G.toSerreGraph.rev d = (d.1, !d.2) := (rfl)
+@[simp] theorem toSerreGraph_src_pos (e : G.edgeSet) :
+    G.toSerreGraph.src (e, true) = (G.edgeEnds e).out.1 := rfl
 
-/-- The target is the other chosen endpoint. -/
-@[simp] theorem toSerreGraph_tgt (d : G.edgeSet × Bool) :
-    G.toSerreGraph.tgt d =
-      if d.2 then (G.edgeEnds d.1).out.1 else (G.edgeEnds d.1).out.2 := by
-  rw [TauCeti.SerreGraph.tgt_def, toSerreGraph_rev, toSerreGraph_src]
-  cases d.2 <;> rfl
+@[simp] theorem toSerreGraph_src_neg (e : G.edgeSet) :
+    G.toSerreGraph.src (e, false) = (G.edgeEnds e).out.2 := rfl
 
-/-- Each dart traverses its original multigraph edge. -/
-theorem toSerreGraph_isLink (d : G.edgeSet × Bool) :
-    G.IsLink d.1.1 (G.toSerreGraph.src d).1 (G.toSerreGraph.tgt d).1 := by
-  have h := (G.edgeEnds_eq_iff_isLink d.1
-    (G.edgeEnds d.1).out.1 (G.edgeEnds d.1).out.2).mp
-      (Sym2.mk_fst_out_snd_out (G.edgeEnds d.1)).symm
-  cases d with
-  | mk e b => cases b <;> simp only [toSerreGraph_src, toSerreGraph_tgt] <;>
-      first | exact h | exact h.symm
+@[simp] theorem toSerreGraph_tgt_pos (e : G.edgeSet) :
+    G.toSerreGraph.tgt (e, true) = (G.edgeEnds e).out.2 := by
+  calc
+    _ = G.toSerreGraph.src (G.toSerreGraph.rev (e, true)) :=
+      G.toSerreGraph.tgt_def _
+    _ = _ := by simpa only [toSerreGraph_rev, Bool.not_true] using G.toSerreGraph_src_neg e
 
-/-- Incidence with an original edge means being a source or target of either of its darts. -/
-theorem toSerreGraph_inc_iff (d : G.edgeSet × Bool) (x : G.vertexSet) :
-    G.Inc d.1.1 x.1 ↔ x = G.toSerreGraph.src d ∨ x = G.toSerreGraph.tgt d := by
-  rw [← G.mem_edgeEnds_iff]
-  rw [← Sym2.mk_fst_out_snd_out (G.edgeEnds d.1), Sym2.mem_iff]
-  rcases d with ⟨e, b⟩
-  cases b <;> simp [or_comm]
+@[simp] theorem toSerreGraph_tgt_neg (e : G.edgeSet) :
+    G.toSerreGraph.tgt (e, false) = (G.edgeEnds e).out.1 := by
+  calc
+    _ = G.toSerreGraph.src (G.toSerreGraph.rev (e, false)) :=
+      G.toSerreGraph.tgt_def _
+    _ = _ := by simpa only [toSerreGraph_rev, Bool.not_false] using G.toSerreGraph_src_pos e
 
-/-- Every traversal of an actual edge is represented by a dart with those ordered endpoints. -/
-theorem toSerreGraph_exists_dart_iff (e : G.edgeSet) (x y : G.vertexSet) :
-    (∃ b : Bool, G.toSerreGraph.src (e, b) = x ∧ G.toSerreGraph.tgt (e, b) = y) ↔
-      G.IsLink e.1 x.1 y.1 := by
-  constructor
-  · rintro ⟨b, hx, hy⟩
-    simpa only [hx, hy] using G.toSerreGraph_isLink (e, b)
-  · intro h
-    have he := (G.edgeEnds_eq_iff_isLink e x y).mpr h
-    have ho := (Sym2.mk_fst_out_snd_out (G.edgeEnds e)).trans he
-    rcases Sym2.eq_iff.mp ho with hxy | hyx
-    · exact ⟨false, by simpa using hxy.1, by simpa using hxy.2⟩
-    · exact ⟨true, by simpa using hyx.2, by simpa using hyx.1⟩
+/-- The endpoints of either dart of an actual edge are exactly that edge's unordered ends. -/
+theorem toSerreGraph_edgeEnds (d : G.toSerreGraph.E) :
+    s(G.toSerreGraph.src d, G.toSerreGraph.tgt d) = G.edgeEnds d.1 := by
+  obtain ⟨e, b⟩ := d
+  cases b
+  · rw [toSerreGraph_src_neg, toSerreGraph_tgt_neg]
+    -- Unfold the adapter to identify its vertex subtype with the graph's actual vertices.
+    change s((G.edgeEnds e).out.2, (G.edgeEnds e).out.1) = G.edgeEnds e
+    exact (Sym2.eq_swap).trans (Sym2.mk_fst_out_snd_out (G.edgeEnds e))
+  · rw [toSerreGraph_src_pos, toSerreGraph_tgt_pos]
+    -- Unfold the adapter to identify its vertex subtype with the graph's actual vertices.
+    change s((G.edgeEnds e).out.1, (G.edgeEnds e).out.2) = G.edgeEnds e
+    exact Sym2.mk_fst_out_snd_out (G.edgeEnds e)
 
-/-- The multigraph incidence carried by an arrow of the associated quiver. -/
-theorem toSerreGraph_hom_isLink {x y : G.vertexSet}
-    (f : @Quiver.Hom G.toSerreGraph.V G.toSerreGraph.toQuiver x y) :
-    G.IsLink f.1.1.1 x.1 y.1 := by
-  simpa only [f.2.1, f.2.2] using G.toSerreGraph_isLink f.1
+/-- A directed edge of `toSerreGraph` has precisely the incidence of its underlying edge. -/
+theorem toSerreGraph_isLink (d : G.toSerreGraph.E) (x y : G.vertexSet) :
+    G.IsLink d.1.1 x.1 y.1 ↔
+      (G.toSerreGraph.src d = x ∧ G.toSerreGraph.tgt d = y) ∨
+        (G.toSerreGraph.src d = y ∧ G.toSerreGraph.tgt d = x) := by
+  obtain ⟨e, b⟩ := d
+  cases b
+  · simp only [toSerreGraph_src_neg, toSerreGraph_tgt_neg]
+    -- Align the adapter's vertex subtype with the actual vertices before applying `Sym2.eq_iff`.
+    change G.IsLink e.1 x.1 y.1 ↔
+      ((G.edgeEnds e).out.2 = x ∧ (G.edgeEnds e).out.1 = y) ∨
+        ((G.edgeEnds e).out.2 = y ∧ (G.edgeEnds e).out.1 = x)
+    rw [← G.edgeEnds_eq_iff_isLink e x y]
+    conv_lhs => rw [← Sym2.mk_fst_out_snd_out (G.edgeEnds e)]
+    rw [Sym2.eq_iff]
+    tauto
+  · simp only [toSerreGraph_src_pos, toSerreGraph_tgt_pos]
+    -- Align the adapter's vertex subtype with the actual vertices before applying `Sym2.eq_iff`.
+    change G.IsLink e.1 x.1 y.1 ↔
+      ((G.edgeEnds e).out.1 = x ∧ (G.edgeEnds e).out.2 = y) ∨
+        ((G.edgeEnds e).out.1 = y ∧ (G.edgeEnds e).out.2 = x)
+    rw [← G.edgeEnds_eq_iff_isLink e x y]
+    conv_lhs => rw [← Sym2.mk_fst_out_snd_out (G.edgeEnds e)]
+    rw [Sym2.eq_iff]
+
+/-- The positive Boolean darts choose exactly one direction of every multigraph edge. -/
+theorem toSerreGraph_isOrientation :
+    G.toSerreGraph.IsOrientation {d | d.2 = true} := by
+  apply (TauCeti.SerreGraph.isOrientation_iff G.toSerreGraph _).2
+  intro ⟨e, b⟩
+  cases b
+  · simp only [toSerreGraph_rev]
+    -- Membership in the chosen orientation is the Boolean direction test.
+    change (false = true ↔ ¬(!false = true))
+    decide
+  · simp only [toSerreGraph_rev]
+    -- Membership in the chosen orientation is the Boolean direction test.
+    change (true = true ↔ ¬(!true = true))
+    decide
+
+/-- A multigraph edge is a loop exactly when either of its Serre darts is a loop. -/
+theorem toSerreGraph_isLoopAt_iff (e : G.edgeSet) (x : G.vertexSet) :
+    G.IsLoopAt e.1 x.1 ↔
+      G.toSerreGraph.src (e, true) = x ∧ G.toSerreGraph.tgt (e, true) = x := by
+  simpa only [Graph.IsLoopAt, or_self] using (G.toSerreGraph_isLink (e, true) x x)
+
+private theorem exists_toSerreGraph_dart (e : G.edgeSet) (x y : G.vertexSet)
+    (h : G.IsLink e.1 x.1 y.1) :
+    ∃ d : G.toSerreGraph.E,
+      d.1 = e ∧ G.toSerreGraph.src d = x ∧ G.toSerreGraph.tgt d = y := by
+  obtain ⟨hs, ht⟩ | ⟨hs, ht⟩ := (G.toSerreGraph_isLink (e, true) x y).mp h
+  · exact ⟨(e, true), rfl, hs, ht⟩
+  · refine ⟨(e, false), rfl, ?_, ?_⟩
+    · simpa only [toSerreGraph_src_neg, toSerreGraph_tgt_pos] using ht
+    · simpa only [toSerreGraph_tgt_neg, toSerreGraph_src_pos] using hs
+
+/-- A directed Serre dart over a link of a multigraph. For a loop either direction is valid;
+the choice is arbitrary, and the underlying edge is unchanged. -/
+noncomputable def toSerreGraphArrow (e : G.edgeSet) (x y : G.vertexSet)
+    (h : G.IsLink e.1 x.1 y.1) :
+    Quiver.Hom (V := G.toSerreGraph.V) x y :=
+  let d := Classical.choose (G.exists_toSerreGraph_dart e x y h)
+  ⟨d, (Classical.choose_spec (G.exists_toSerreGraph_dart e x y h)).2⟩
+
+@[simp] theorem toSerreGraphArrow_edge (e : G.edgeSet) (x y : G.vertexSet)
+    (h : G.IsLink e.1 x.1 y.1) :
+    (G.toSerreGraphArrow e x y h).1.1 = e :=
+  (Classical.choose_spec (G.exists_toSerreGraph_dart e x y h)).1
+
+namespace Walk
+
+variable {G}
+
+/-- Lift a multigraph walk with actual endpoints to a directed path in its Serre graph.
+Each traversal keeps its edge identity; a loop traversal chooses one of the two directions. -/
+noncomputable def toSerrePath {x y : V} (p : G.Walk x y)
+    (hx : x ∈ G.vertexSet) (hy : y ∈ G.vertexSet) :
+    G.toSerreGraph.Path ⟨x, hx⟩ ⟨y, hy⟩ := by
+  induction p with
+  | nil => exact .nil
+  | cons e h p ih =>
+    exact (G.toSerreGraphArrow ⟨e, h.edge_mem⟩ ⟨_, hx⟩
+      ⟨_, h.right_mem⟩ h).toPath.comp (ih h.right_mem hy)
+
+@[simp] theorem toSerrePath_nil {x : V} (hx hy : x ∈ G.vertexSet) :
+    toSerrePath (Graph.Walk.nil : G.Walk x x) hx hy = Quiver.Path.nil := by
+  simp [toSerrePath]
+
+@[simp] theorem toSerrePath_cons {x y z : V} (e : E) (h : G.IsLink e x y)
+    (p : G.Walk y z) (hx : x ∈ G.vertexSet) (hz : z ∈ G.vertexSet) :
+    toSerrePath (.cons e h p) hx hz =
+      (G.toSerreGraphArrow ⟨e, h.edge_mem⟩ ⟨x, hx⟩
+        ⟨y, h.right_mem⟩ h).toPath.comp (toSerrePath p h.right_mem hz) := by
+  simp [toSerrePath]
+
+end Walk
 
 /-- Forget dart directions in an indexed Serre path, keeping each original edge identity. -/
 def serrePathToWalk {x : G.vertexSet} :
     ∀ {y : G.vertexSet}, G.toSerreGraph.Path x y → G.Walk x.1 y.1
   | _, .nil => .nil
-  | _, .cons p f => (serrePathToWalk p).append (G.toSerreGraph_hom_isLink f).toWalk
+  | _, .cons p f =>
+    (serrePathToWalk p).append ((G.toSerreGraph_isLink f.1 _ _).mpr (.inl f.2)).toWalk
 
 @[simp] theorem serrePathToWalk_nil (x : G.vertexSet) :
     G.serrePathToWalk (Quiver.Path.nil : G.toSerreGraph.Path x x) = .nil := (rfl)
@@ -118,7 +201,7 @@ def serrePathToWalk {x : G.vertexSet} :
     (p : G.toSerreGraph.Path x y)
     (f : @Quiver.Hom G.toSerreGraph.V G.toSerreGraph.toQuiver y z) :
     G.serrePathToWalk (p.cons f) =
-      (G.serrePathToWalk p).append (G.toSerreGraph_hom_isLink f).toWalk := (rfl)
+      (G.serrePathToWalk p).append ((G.toSerreGraph_isLink f.1 _ _).mpr (.inl f.2)).toWalk := (rfl)
 
 /-- Path composition projects to native walk concatenation. -/
 @[simp] theorem serrePathToWalk_comp {x y z : G.vertexSet}
@@ -161,25 +244,27 @@ theorem edges_serrePathToWalk {x y : G.vertexSet} (p : G.toSerreGraph.Path x y) 
   | nil => simp [serrePathToWalk]
   | cons p f ih => simp [serrePathToWalk, ih]
 
+namespace Walk
+
+variable {G}
+
+/-- Projecting the lift of a native walk recovers that walk, including its edge identities. -/
+@[simp] theorem serrePathToWalk_toSerrePath {x y : V} (p : G.Walk x y)
+    (hx : x ∈ G.vertexSet) (hy : y ∈ G.vertexSet) :
+    G.serrePathToWalk (p.toSerrePath hx hy) = p := by
+  induction p with
+  | nil => simp
+  | cons e h p ih =>
+    simp [toSerrePath_cons, Quiver.Hom.toPath, ih, IsLink.toWalk_eq_cons]
+
+end Walk
+
 /-- Every native walk between actual vertices is the projection of a Serre path. In the loop
-case this chooses one of the two available directions without identifying them. -/
+case the lift chooses one of the two available directions without identifying them. -/
 theorem serrePathToWalk_surjective {x y : V} (hx : x ∈ G.vertexSet)
     (hy : y ∈ G.vertexSet) :
-    Function.Surjective (G.serrePathToWalk (x := ⟨x, hx⟩) (y := ⟨y, hy⟩)) := by
-  suffices ∀ {a b : V} (p : G.Walk a b) (ha : a ∈ G.vertexSet) (hb : b ∈ G.vertexSet),
-      ∃ q : G.toSerreGraph.Path ⟨a, ha⟩ ⟨b, hb⟩, G.serrePathToWalk q = p from
-    fun p => this p hx hy
-  intro a b p ha hb
-  induction p with
-  | nil => exact ⟨.nil, rfl⟩
-  | @cons x y z e h p ih =>
-    obtain ⟨q, hq⟩ := ih h.right_mem hb
-    obtain ⟨b, hb, ht⟩ :=
-      (G.toSerreGraph_exists_dart_iff ⟨e, h.edge_mem⟩ ⟨x, ha⟩ ⟨y, h.right_mem⟩).mpr h
-    let f : @Quiver.Hom G.toSerreGraph.V G.toSerreGraph.toQuiver
-        ⟨x, ha⟩ ⟨y, h.right_mem⟩ := ⟨(⟨e, h.edge_mem⟩, b), hb, ht⟩
-    refine ⟨f.toPath.comp q, ?_⟩
-    simp [Quiver.Hom.toPath, hq, IsLink.toWalk_eq_cons, f]
+    Function.Surjective (G.serrePathToWalk (x := ⟨x, hx⟩) (y := ⟨y, hy⟩)) :=
+  fun p => ⟨p.toSerrePath hx hy, p.serrePathToWalk_toSerrePath hx hy⟩
 
 /-- Serre path reachability agrees with native reachability on the actual vertices. -/
 theorem nonempty_serrePath_iff_reachable (x y : G.vertexSet) :

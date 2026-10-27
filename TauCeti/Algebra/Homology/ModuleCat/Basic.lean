@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Homology.ConcreteCategory
+public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 
 /-!
 # Cycles and homology of homological complexes of modules
@@ -42,7 +43,10 @@ A chain map restricts to a map between the images of the differentials
 (`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
 (`HomologicalComplex.Hom.boundaryMap_comp`), and injective where the chain map is; for a
 degreewise short exact sequence of complexes whose third term is exact, these maps form a sequence
-exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`).
+exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`).  A family of chain endomorphisms
+that is locally nilpotent on the degree-`n` term is locally nilpotent on the degree-`n` homology
+(`HomologicalComplex.iSup_wordKer_homologyMap_eq_top`), since the homology is a quotient of the
+cycles, a submodule of the term.
 -/
 
 public section
@@ -415,6 +419,22 @@ lemma homologyMap_homologyπ_moduleCatCyclesMk {L : HomologicalComplex (ModuleCa
   apply L.moduleCat_iCycles_injective
   rw [← ModuleCat.comp_apply, cyclesMap_i, ModuleCat.comp_apply, iCycles_moduleCatCyclesMk,
     iCycles_moduleCatCyclesMk]
+
+/-- **Local nilpotence passes to homology.** Let `φ` be a family of chain endomorphisms of a
+complex of modules. If every element of the degree-`n` term is killed by all sufficiently long
+composites of the maps `(φ i).f n`, then every degree-`n` homology class is killed by all
+sufficiently long composites of the induced maps `homologyMap (φ i) n`. -/
+theorem iSup_wordKer_homologyMap_eq_top {κ : Type*} (φ : κ → (K ⟶ K))
+    (h : ⨆ d, Module.End.wordKer (fun i ↦ ((φ i).f n).hom) d = ⊤) :
+    ⨆ d, Module.End.wordKer (fun i ↦ (homologyMap (φ i) n).hom) d = ⊤ := by
+  -- The cycles form a submodule of `K.X n` on which the maps `(φ i).f n` restrict to
+  -- `cyclesMap (φ i) n`, and the homology is a quotient of the cycles.
+  refine Module.End.iSup_wordKer_eq_top_of_surjective (f := fun i ↦ (cyclesMap (φ i) n).hom)
+    (fun i ↦ by rw [← ModuleCat.hom_comp, ← homologyπ_naturality, ModuleCat.hom_comp])
+    (K.moduleCat_homologyπ_surjective n) ?_
+  exact Module.End.iSup_wordKer_eq_top_of_injective
+    (fun i ↦ by rw [← ModuleCat.hom_comp, cyclesMap_i, ModuleCat.hom_comp])
+    (K.moduleCat_iCycles_injective n) h
 
 end HomologicalComplex
 

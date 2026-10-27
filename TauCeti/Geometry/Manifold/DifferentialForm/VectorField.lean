@@ -198,4 +198,34 @@ theorem mextDeriv_apply_one {φ : RoughForm I M F 1}
     mextDerivWithin_apply_one hφ.mdifferentiableWithinAt hV.mdifferentiableWithinAt
       hW.mdifferentiableWithinAt (uniqueMDiffWithinAt_univ I)
 
+namespace SmoothForm
+
+/-- The invariant exterior-derivative formula for a bundled smooth form. -/
+theorem mextDeriv_apply_vectorField {n : ℕ} {φ : SmoothForm I M F (n + 1)}
+    {V : Fin (n + 2) → (y : M) → TangentSpace I y}
+    (hV : ∀ i, MDifferentiableAt I I.tangent
+      (fun y ↦ (V i y : TangentBundle I M)) x) :
+    mextDeriv φ.1 x (V · x) =
+      (∑ i, (-1) ^ i.val •
+        mvfderiv I (fun y ↦ φ.1 y (i.removeNth (V · y))) x (V i x)) -
+      ∑ i : Fin (n + 1), ∑ j ≥ i, (-1) ^ (i + j : ℕ) •
+        φ.1 x (Matrix.vecCons (mlieBracket I (V i.castSucc) (V j.succ) x)
+          (j.removeNth <| i.castSucc.removeNth (V · x))) := by
+  exact TauCeti.mextDeriv_apply_vectorField (φ.mdifferentiableAt x) hV
+
+/-- The invariant formula for the exterior derivative of a bundled smooth one-form. -/
+theorem mextDeriv_apply_one {φ : SmoothForm I M F 1}
+    {V W : (y : M) → TangentSpace I y}
+    (hV : MDifferentiableAt I I.tangent
+      (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent
+      (fun y ↦ (W y : TangentBundle I M)) x) :
+    mextDeriv φ.1 x ![V x, W x] =
+      mvfderiv I (fun y ↦ φ.1 y ![W y]) x (V x) -
+        mvfderiv I (fun y ↦ φ.1 y ![V y]) x (W x) -
+        φ.1 x ![mlieBracket I V W x] := by
+  exact TauCeti.mextDeriv_apply_one (φ.mdifferentiableAt x) hV hW
+
+end SmoothForm
+
 end TauCeti
