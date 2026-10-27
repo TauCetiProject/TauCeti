@@ -156,6 +156,7 @@ theorem equiv_pow_apply_head (c : f.JordanChainBasis ι) (d : g.JordanChainBasis
 
 /-- The conjugator of two Jordan-chain bases with matching lengths intertwines the two
 endomorphisms. -/
+@[simp]
 theorem apply_equiv (c : f.JordanChainBasis ι) (d : g.JordanChainBasis κ) (σ : ι ≃ κ)
     (hσ : ∀ i, d.len (σ i) = c.len i) (x : V) : g (c.equiv d σ hσ x) = c.equiv d σ hσ (f x) := by
   have h : g ∘ₗ (c.equiv d σ hσ).toLinearMap = (c.equiv d σ hσ).toLinearMap ∘ₗ f := by
@@ -194,6 +195,7 @@ variable [CommSemiring K] [AddCommMonoid V] [AddCommMonoid W] [Module K V] [Modu
 
 /-- Two endomorphisms are conjugate by the conjugator of Jordan-chain bases with matching
 lengths. -/
+@[simp]
 theorem JordanChainBasis.conj_equiv (c : f.JordanChainBasis ι) (d : g.JordanChainBasis κ)
     (σ : ι ≃ κ) (hσ : ∀ i, d.len (σ i) = c.len i) : (c.equiv d σ hσ).conj f = g := by
   ext x
@@ -311,7 +313,7 @@ private theorem exists_jordanChains_sup {m : ℕ} {v : V} (hm : 0 < m) (hv : (f 
   have hF : (fun p : Σ s, Fin (len₁ s) => (f ^ (p.2 : ℕ)) (head₁ p.1)) =
       Sum.elim F₁ F₂ ∘ Equiv.sumSigmaDistrib fun s => Fin (len₁ s) := by
     funext p
-    rcases p with ⟨s | i, j⟩ <;> rfl
+    rcases p with ⟨s | i, j⟩ <;> simp [F₁, F₂, head₁]
   -- `F₁` reparametrizes the chain of `v` by `Equiv.uniqueSigma`, whose inverse is `j ↦ ⟨(), j⟩`.
   let e := (Equiv.uniqueSigma fun i : Unit => Fin (len₁ (.inl i))).symm
   have h₁ : LinearIndependent K F₁ := (linearIndependent_equiv e).1 hu
@@ -330,18 +332,18 @@ private theorem exists_jordanChains_sup {m : ℕ} {v : V} (hm : 0 < m) (hv : (f 
     rfl
 
 /-- The invariant complement of Halmos §57: if `f ^ m` kills the `f`-invariant subspace `Z`,
-`v ∈ Z`, and the linear form `φ` does not vanish at `f ^ (m - 1) v`, then the common kernel in
-`Z` of the forms `φ ∘ f ^ j`, `j < m`, is `f`-invariant, meets the span of the chain of `v`
-trivially, and together with it spans `Z`. -/
+`v ∈ Z`, and the linear form `φ` does not vanish at `f ^ (m - 1) v`, then the chain of `v` is
+linearly independent, and `Z` has an `f`-invariant subspace `Z'` of dimension `finrank K Z - m`
+that meets the span of the chain trivially and together with it spans `Z`. The subspace `Z'` is
+the common kernel in `Z` of the forms `φ ∘ f ^ j`, `j < m`. -/
 private theorem invariant_complement [FiniteDimensional K V] {m : ℕ} {Z : Submodule K V}
     (hZ : ∀ x ∈ Z, f x ∈ Z) (hfm : ∀ x ∈ Z, (f ^ m) x = 0) {v : V} (hvZ : v ∈ Z) (φ : Dual K V)
     (hφ : φ ((f ^ (m - 1)) v) ≠ 0) :
-    (∀ x ∈ Z ⊓ LinearMap.ker (LinearMap.pi fun j : Fin m => φ ∘ₗ f ^ (j : ℕ)),
-      f x ∈ Z ⊓ LinearMap.ker (LinearMap.pi fun j : Fin m => φ ∘ₗ f ^ (j : ℕ))) ∧
-    Disjoint (span K (Set.range fun i : Fin m => (f ^ (i : ℕ)) v))
-      (Z ⊓ LinearMap.ker (LinearMap.pi fun j : Fin m => φ ∘ₗ f ^ (j : ℕ))) ∧
-    span K (Set.range fun i : Fin m => (f ^ (i : ℕ)) v) ⊔
-      Z ⊓ LinearMap.ker (LinearMap.pi fun j : Fin m => φ ∘ₗ f ^ (j : ℕ)) = Z := by
+    LinearIndependent K (fun i : Fin m => (f ^ (i : ℕ)) v) ∧
+    ∃ Z' : Submodule K V, (∀ x ∈ Z', f x ∈ Z') ∧
+      Disjoint (span K (Set.range fun i : Fin m => (f ^ (i : ℕ)) v)) Z' ∧
+      span K (Set.range fun i : Fin m => (f ^ (i : ℕ)) v) ⊔ Z' = Z ∧
+      finrank K Z' + m = finrank K Z := by
   set u : Fin m → V := fun i => (f ^ (i : ℕ)) v
   set Φ : V →ₗ[K] Fin m → K := LinearMap.pi fun j => φ ∘ₗ f ^ (j : ℕ) with hΦ
   have hΦu : LinearIndependent K (Φ ∘ u) := linearIndependent_dual_pow_apply φ (hfm v hvZ) hφ
@@ -354,31 +356,32 @@ private theorem invariant_complement [FiniteDimensional K V] {m : ℕ} {Z : Subm
     rw [LinearMap.mem_ker, map_sum] at hxΦ
     simp only [map_smul] at hxΦ
     simp [Fintype.linearIndependent_iff.1 hΦu a hxΦ]
-  refine ⟨?_, hdisj.mono_right inf_le_right, ?_⟩
-  · -- The complement `Z'` is `f`-invariant.
-    intro x hx
-    rw [Submodule.mem_inf, LinearMap.mem_ker] at hx ⊢
-    refine ⟨hZ x hx.1, funext fun j => ?_⟩
-    simp only [hΦ, LinearMap.pi_apply, LinearMap.comp_apply, Pi.zero_apply]
-    rw [← mul_apply, ← pow_succ]
-    by_cases hj : (j : ℕ) + 1 < m
-    · exact congrFun hx.2 ⟨j + 1, hj⟩
-    · rw [show (j : ℕ) + 1 = m by omega, hfm x hx.1, map_zero]
-  · -- Dimension count: `C ⊔ Z' ≤ Z` and `dim C + dim Z' ≥ dim Z`.
+  -- Dimension count for `Z' = Z ⊓ ker Φ`: `C ⊔ Z' ≤ Z` and `dim C + dim Z' ≥ dim Z`.
+  have hC : finrank K (span K (Set.range u)) = m := by
+    rw [finrank_span_eq_card hu, Fintype.card_fin]
+  have h4 := Submodule.finrank_sup_add_finrank_inf_eq (span K (Set.range u)) (Z ⊓ LinearMap.ker Φ)
+  rw [(hdisj.mono_right inf_le_right).eq_bot, finrank_bot] at h4
+  have hsup : span K (Set.range u) ⊔ Z ⊓ LinearMap.ker Φ = Z := by
     have hCZ : span K (Set.range u) ≤ Z := by
       refine span_le.2 (Set.range_subset_iff.2 fun i => ?_)
       simp only [u, SetLike.mem_coe, pow_apply]
       exact Set.MapsTo.iterate hZ i hvZ
-    have hC : finrank K (span K (Set.range u)) = m := by
-      rw [finrank_span_eq_card hu, Fintype.card_fin]
     have hrange : finrank K (LinearMap.range Φ) ≤ m := (Submodule.finrank_le _).trans (by simp)
     have h1 := Φ.finrank_range_add_finrank_ker
     have h2 := Submodule.finrank_sup_add_finrank_inf_eq Z (LinearMap.ker Φ)
     have h3 := Submodule.finrank_le (Z ⊔ LinearMap.ker Φ)
-    have h4 := Submodule.finrank_sup_add_finrank_inf_eq (span K (Set.range u))
-      (Z ⊓ LinearMap.ker Φ)
-    rw [(hdisj.mono_right inf_le_right).eq_bot, finrank_bot] at h4
     exact Submodule.eq_of_le_of_finrank_le (sup_le hCZ inf_le_left) (by omega)
+  refine ⟨hu, Z ⊓ LinearMap.ker Φ, ?_, hdisj.mono_right inf_le_right, hsup, by
+    rw [hsup] at h4; omega⟩
+  -- The complement `Z'` is `f`-invariant.
+  intro x hx
+  rw [Submodule.mem_inf, LinearMap.mem_ker] at hx ⊢
+  refine ⟨hZ x hx.1, funext fun j => ?_⟩
+  simp only [hΦ, LinearMap.pi_apply, LinearMap.comp_apply, Pi.zero_apply]
+  rw [← mul_apply, ← pow_succ]
+  by_cases hj : (j : ℕ) + 1 < m
+  · exact congrFun hx.2 ⟨j + 1, hj⟩
+  · rw [show (j : ℕ) + 1 = m by omega, hfm x hx.1, map_zero]
 
 /-- Every `f`-invariant subspace `Z` on which `f` is nilpotent is spanned by Jordan chains whose
 vectors are linearly independent. The proof splits off a chain of maximal length together with an
@@ -409,16 +412,9 @@ private theorem exists_jordanChains [FiniteDimensional K V] (hf : IsNilpotent f)
     simpa [IsConcreteLE.not_le_iff_exists] using Nat.find_min hex (show m - 1 < m by omega)
   obtain ⟨φ, hφ⟩ : ∃ φ : Dual K V, φ ((f ^ (m - 1)) v) ≠ 0 := by
     simpa using (Module.forall_dual_apply_eq_zero_iff K _).not.2 hv
-  obtain ⟨hZ', hdisj, hsup⟩ := invariant_complement hZ hfm hvZ φ hφ
-  let Φ : V →ₗ[K] Fin m → K := LinearMap.pi fun j => φ ∘ₗ f ^ (j : ℕ)
-  have hu : LinearIndependent K fun i : Fin m => (f ^ (i : ℕ)) v :=
-    (linearIndependent_dual_pow_apply φ (hfm v hvZ) hφ).of_comp Φ
-  -- The complement is smaller than `Z`, since the chain of `v` spans an `m`-dimensional subspace.
-  have h := Submodule.finrank_sup_add_finrank_inf_eq
-    (span K (Set.range fun i : Fin m => (f ^ (i : ℕ)) v)) (Z ⊓ LinearMap.ker Φ)
-  rw [hdisj.eq_bot, finrank_bot, hsup, finrank_span_eq_card hu, Fintype.card_fin] at h
-  obtain ⟨ι, _, len, head, hpos', hpow', hli', hspan'⟩ :=
-    ih _ (by omega) (Z ⊓ LinearMap.ker Φ) hZ' rfl
+  obtain ⟨hu, Z', hZ', hdisj, hsup, hdim⟩ := invariant_complement hZ hfm hvZ φ hφ
+  -- The complement is smaller than `Z`, since the chain of `v` has length `m > 0`.
+  obtain ⟨ι, _, len, head, hpos', hpow', hli', hspan'⟩ := ih _ (by omega) Z' hZ' rfl
   obtain ⟨ι', _, len', head', h₁, h₂, h₃, h₄⟩ := exists_jordanChains_sup hpos (hfm v hvZ) hu
     hpos' hpow' hli' (hspan' ▸ hdisj)
   exact ⟨ι', inferInstance, len', head', h₁, h₂, h₃, by rw [h₄, hspan', hsup]⟩
