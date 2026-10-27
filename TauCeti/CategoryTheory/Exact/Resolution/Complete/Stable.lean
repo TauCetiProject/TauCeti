@@ -107,6 +107,14 @@ theorem ι_liftMap_f_zero {X Y : C} (f : X ⟶ Y) :
         (hE.completeResolution Y).ι 0 :=
   CompleteResolution.ι_lift_f_zero _ _ _
 
+/-- The lift of `f` induces `f` on the cycles in degree zero, up to the chosen identifications
+of the cycles with the source and target. -/
+@[simp]
+theorem cyclesMap_liftMap {X Y : C} (f : X ⟶ Y) :
+    CompleteResolution.cyclesMap (hE.liftMap f) =
+      (hE.completeResolutionIso X).hom ≫ f ≫ (hE.completeResolutionIso Y).inv := by
+  simp [← cancel_mono ((hE.completeResolution Y).ι 0)]
+
 /-- The functor sending an object to the homotopy class of its complete resolution, and a
 morphism to the homotopy class of its lift. -/
 noncomputable def completeResolutionFunctor :
@@ -251,6 +259,49 @@ theorem stableEquivCompleteResolutionHomotopyCategory_functor :
     hE.stableEquivCompleteResolutionHomotopyCategory.functor =
       hE.stableToCompleteResolutionHomotopyCategory :=
   (rfl)
+
+/-- On the image of an object of `C`, the functor from the stable category to the homotopy
+category is the complete-resolution functor. -/
+@[simp]
+theorem stableToHomotopyCategory_obj_projectiveStableFunctor_obj (X : C) :
+    hE.stableToHomotopyCategory.obj (E.projectiveStableFunctor.obj X) =
+      hE.completeResolutionFunctor.obj X :=
+  rfl
+
+/-- On the image of a morphism of `C`, the functor from the stable category to the homotopy
+category is the complete-resolution functor. -/
+@[simp]
+theorem stableToHomotopyCategory_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶ Y) :
+    hE.stableToHomotopyCategory.map (E.projectiveStableFunctor.map f) =
+      hE.completeResolutionFunctor.map f :=
+  rfl
+
+include hE in
+/-- Two maps of complete resolutions agree in the homotopy category exactly when the morphisms
+they induce on the cycles in degree zero agree in the stable category. -/
+theorem quotient_map_eq_iff {r r' : E.CompleteResolution} (φ ψ : r.complex ⟶ r'.complex) :
+    (HomotopyCategory.quotient C _).map φ = (HomotopyCategory.quotient C _).map ψ ↔
+      E.projectiveStableFunctor.map (CompleteResolution.cyclesMap φ) =
+        E.projectiveStableFunctor.map (CompleteResolution.cyclesMap ψ) := by
+  rw [CompleteResolution.quotient_map_eq_iff, ← sub_eq_zero, ← Functor.map_sub,
+    ExactStructure.projectiveStableFunctor_map_eq_zero_iff, hE.projectiveInjective_eq_isProjective]
+
+instance : hE.stableToHomotopyCategory.Full :=
+  Functor.Full.of_iso hE.stableToCompleteResolutionHomotopyCategoryCompιIso
+
+/-- `K_ac(P)` is the essential image of the complete-resolution functor. -/
+theorem completeResolutionComplex_eq_essImage :
+    E.completeResolutionComplex = hE.stableToHomotopyCategory.essImage := by
+  ext K
+  rw [completeResolutionComplex_iff]
+  constructor
+  · rintro ⟨r, ⟨e⟩⟩
+    exact ⟨E.projectiveStableFunctor.obj (r.Z 0), ⟨eqToIso (hE.completeResolutionFunctor_obj _) ≪≫
+      HomotopyCategory.isoOfHomotopyEquiv
+        (CompleteResolution.homotopyEquiv _ r (hE.completeResolutionIso (r.Z 0))) ≪≫ e.symm⟩⟩
+  · rintro ⟨X, ⟨e⟩⟩
+    exact ⟨hE.completeResolution X.as,
+      ⟨e.symm ≪≫ eqToIso (hE.completeResolutionFunctor_obj X.as)⟩⟩
 
 end IsFrobenius
 
