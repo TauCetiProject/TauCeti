@@ -35,9 +35,9 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
 
 * `Module.Basis.range_mk_one_eq_span`: the unit pure tensors are the span over the original
   semiring of a base-changed basis.
-* `TauCeti.TensorProduct.unitTmulEquiv`: a flat module is equivalent to its unit-tensor image
+* `TensorProduct.unitTmulEquiv`: a flat module is equivalent to its unit-tensor image
   under a faithful scalar extension.
-* `TauCeti.TensorProduct.free_range_mk_one`: the unit-tensor image of a free module is free.
+* `TensorProduct.free_range_mk_one`: the unit-tensor image of a free module is free.
 * `TensorProduct.cancelBaseChangeRight` and `TensorProduct.cancelBaseChangeLeft`: cancelling
   a scalar-extended algebra identifies two iterated scalar extensions.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
@@ -207,7 +207,7 @@ theorem injective_lTensor_iff_injective_lTensor_restrictScalars (f : N →ₗ[B]
 
 end LinearMap
 
-namespace TauCeti.TensorProduct
+namespace TensorProduct
 
 open Module
 
@@ -265,4 +265,4 @@ instance free_range_mk_one [Module.Free R M] :
 
 end CommSemiring
 
-end TauCeti.TensorProduct
+end TensorProduct
