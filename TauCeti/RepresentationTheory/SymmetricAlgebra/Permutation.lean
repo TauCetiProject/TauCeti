@@ -122,8 +122,8 @@ theorem mem_symmetricAlgebraInvariants_ofMulAction_perm_dual_iff
     (p : SymmetricAlgebra K (Module.Dual K K[σ])) :
     p ∈ (ofMulAction K (Equiv.Perm σ) σ).dual.symmetricAlgebraInvariants ↔
       (SymmetricAlgebra.equivMvPolynomial (MonoidAlgebra.basis σ K).dualBasis p).IsSymmetric := by
-  rw [mem_symmetricAlgebraInvariants_ofMulAction_dual_iff]
-  exact forall_congr' fun g ↦ by rw [show (g • · : σ → σ) = g from funext g.smul_def]
+  simp only [mem_symmetricAlgebraInvariants_ofMulAction_dual_iff, Equiv.Perm.smul_def,
+    MvPolynomial.IsSymmetric]
 
 /-- **The invariants of the full permutation representation are the symmetric polynomials**: the
 coordinates of `K[σ]` carry the invariant algebra of `S_σ` onto
