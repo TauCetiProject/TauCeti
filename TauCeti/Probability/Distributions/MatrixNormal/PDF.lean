@@ -102,6 +102,11 @@ theorem matrixNormalPDFReal_pos (M X : Matrix ι κ ℝ) (hU : U.PosDef) (hV : V
   have hdetV := hV.det_pos
   positivity
 
+/-- At positive-definite covariances the extended matrix normal density is everywhere positive. -/
+theorem matrixNormalPDF_pos (M X : Matrix ι κ ℝ) (hU : U.PosDef) (hV : V.PosDef) :
+    0 < matrixNormalPDF M U V X :=
+  ENNReal.ofReal_pos.mpr (matrixNormalPDFReal_pos M X hU hV)
+
 /-- Taking `toReal` recovers the real matrix normal density. -/
 @[simp]
 theorem toReal_matrixNormalPDF (M : Matrix ι κ ℝ) (U : Matrix ι ι ℝ) (V : Matrix κ κ ℝ)
@@ -112,6 +117,10 @@ theorem toReal_matrixNormalPDF (M : Matrix ι κ ℝ) (U : Matrix ι ι ℝ) (V 
 @[simp]
 theorem matrixNormalPDF_ne_top (M : Matrix ι κ ℝ) (U : Matrix ι ι ℝ) (V : Matrix κ κ ℝ)
     (X : Matrix ι κ ℝ) : matrixNormalPDF M U V X ≠ ⊤ := ENNReal.ofReal_ne_top
+
+/-- The matrix normal density is finite at every covariance parameter. -/
+theorem matrixNormalPDF_lt_top (M : Matrix ι κ ℝ) (U : Matrix ι ι ℝ) (V : Matrix κ κ ℝ)
+    (X : Matrix ι κ ℝ) : matrixNormalPDF M U V X < ⊤ := ENNReal.ofReal_lt_top
 
 /-- The matrix normal density agrees with the Gaussian density in vectorized coordinates. -/
 theorem matrixNormalPDFReal_eq_multivariateGaussianPDFReal (M X : Matrix ι κ ℝ)
