@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.SimpleModule.Isotypic
 
 /-!
@@ -35,6 +36,9 @@ module.
   equivalent to the direct sum of its isotypic components.
 
 ## Main statements
+
+* `TauCeti.finrank_linearMap_isotypicComponent`: restricting the target to its isotypic
+  component preserves the `finrank` of the hom space out of the simple module.
 
 * `TauCeti.IsSemisimpleModule.linearEquivIsotypicComponents_apply_coe` and
   `TauCeti.IsSemisimpleModule.linearEquivIsotypicComponents_symm_single`: the equivalence and its
@@ -92,6 +96,15 @@ component, preserving its values. -/
 theorem linearMapIsotypicComponentEquiv_symm_apply (f : S →ₗ[R] M) (s : S) :
     (linearMapIsotypicComponentEquiv k).symm f s =
       ⟨f s, f.apply_mem_isotypicComponent s⟩ := (rfl)
+
+variable {k} in
+/-- The `finrank` of a hom space out of `S` is unchanged by restricting the target to its
+`S`-isotypic component, because every map out of `S` lands there. The scalar semiring acts only
+on the target; no field or scalar action on `S` is needed. -/
+@[simp]
+theorem finrank_linearMap_isotypicComponent :
+    Module.finrank k (S →ₗ[R] isotypicComponent R M S) = Module.finrank k (S →ₗ[R] M) :=
+  (linearMapIsotypicComponentEquiv k).finrank_eq
 
 end Hom
 

@@ -45,15 +45,22 @@ private lemma algebraMap_a_mem_jacobianIdeal :
   rw [← coord_zero_mul_coord_one]
   exact Ideal.mul_mem_right _ _ (coord_mem_jacobianIdeal a 0)
 
-private def evalZero : NodeAlgebra R a →ₐ[R] R ⧸ Ideal.span {a} :=
+/-- Evaluation at the origin of the nodal equation, where the parameter vanishes. -/
+def evalZero : NodeAlgebra R a →ₐ[R] R ⧸ Ideal.span {a} :=
   lift a 0 0 (by simp)
+
+/-- Both coordinates vanish at the origin. -/
+@[simp]
+theorem evalZero_coord (i : Fin 2) : evalZero a (coord a i) = 0 := by
+  fin_cases i <;> simp [evalZero]
 
 private lemma evalZero_surjective : Function.Surjective (evalZero a) := by
   intro z
   obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective z
   exact ⟨algebraMap R (NodeAlgebra R a) r, (evalZero a).commutes r⟩
 
-private lemma jacobianIdeal_eq_ker_evalZero :
+/-- The origin is cut out by the two coordinate functions, including its scheme structure. -/
+theorem jacobianIdeal_eq_ker_evalZero :
     jacobianIdeal a = RingHom.ker (evalZero a).toRingHom := by
   apply le_antisymm
   · apply Ideal.span_le.mpr

@@ -28,7 +28,8 @@ periodic complex used in Eisenbud, *Homological algebra on a complete intersecti
 application to group representations*, Trans. Amer. Math. Soc. **260** (1980), Section 5.
 When the potential is a non-zero-divisor, the reduction of a finite-projective factorization
 modulo the potential is exact in both parities (`exact_quotient_d₁_d₀`, `exact_quotient_d₀_d₁`):
-if `d₀ x = w y`, then `w x = d₁ d₀ x = w d₁ y`, so `x = d₁ y`.
+if `d₀ x = w y`, then `w x = d₁ d₀ x = w d₁ y`, so `x = d₁ y`. Hence the reduced two-periodic
+complex is acyclic (`quotientPeriodicComplex_acyclic`).
 -/
 
 public section
@@ -442,5 +443,22 @@ theorem exact_quotient_d₀_d₁ (hw : w ∈ nonZeroDivisors S) (X : MatrixFacto
     (by simpa only [FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_smul, FGModuleCat.hom_hom_id]
       using congrArg (fun k ↦ k.hom.hom) X.obj.d₁_comp_d₀)
     (Module.Flat.isSMulRegular_of_nonZeroDivisors hw)
+
+/-- The two-periodic complex over `S/(w)` obtained by reducing a finite-projective matrix
+factorization modulo a non-zero-divisor potential `w` is exact in both parities. -/
+theorem quotientPeriodicComplex_acyclic (hw : w ∈ nonZeroDivisors S)
+    (X : MatrixFactorization S w) : (quotientPeriodicComplex.obj X).Acyclic := by
+  intro j
+  rcases (by decide : ∀ j : ZMod 2, j = 0 ∨ j = 1) j with rfl | rfl
+  · rw [HomologicalComplex.exactAt_iff' _ 1 0 1
+        ((ComplexShape.up (ZMod 2)).prev_eq' (ComplexShape.up_mk 1 0 (by decide)))
+        ((ComplexShape.up (ZMod 2)).next_eq' (ComplexShape.up_mk 0 1 (by decide))),
+      ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
+    exact exact_quotient_d₁_d₀ hw X
+  · rw [HomologicalComplex.exactAt_iff' _ 0 1 0
+        ((ComplexShape.up (ZMod 2)).prev_eq' (ComplexShape.up_mk 0 1 (by decide)))
+        ((ComplexShape.up (ZMod 2)).next_eq' (ComplexShape.up_mk 1 0 (by decide))),
+      ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
+    exact exact_quotient_d₀_d₁ hw X
 
 end TauCeti.MatrixFactorization
