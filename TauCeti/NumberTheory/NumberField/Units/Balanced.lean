@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.NormLeOne
 public import Mathlib.NumberTheory.NumberField.House
-public import Mathlib.NumberTheory.NumberField.Units.Regulator
 
 /-!
 # Balanced representatives modulo units and bounded divisors
@@ -76,13 +76,6 @@ theorem exists_norm_sub_logEmbedding_prod_zpow_le {u : Fin (rank K) → (𝓞 K)
   rw [hfloor, ← ZSpan.fract_apply]
   simpa [b] using ZSpan.norm_fract_le b v
 
-/-- The sum over the infinite places of `mult w * log w(x)` is `log |N(x)|`. -/
-private theorem sum_mult_mul_log_eq_log_abs_norm {x : K} (hx : x ≠ 0) :
-    ∑ w : InfinitePlace K, mult w * Real.log (w x) = Real.log |(Algebra.norm ℚ x : ℝ)| := by
-  rw [← Rat.cast_abs, ← prod_eq_abs_norm, Real.log_prod (fun w _ ↦ pow_ne_zero _
-    ((map_ne_zero w).mpr hx))]
-  simp [Real.log_pow]
-
 open scoped Classical in
 /-- **Balanced representatives modulo units.** If `u` has maximal rank, every nonzero `x : K` can
 be multiplied by a product of integer powers of the `u j` so that at every infinite place `w`,
@@ -114,9 +107,13 @@ theorem exists_unit_mul_balanced {u : Fin (rank K) → (𝓞 K)ˣ} (hu : IsMaxRa
     simp only [hf, hlog, logEmbedding_component]
     ring
   -- The deviations sum to zero, since `|N(ε x)| = |N(x)|` and `∑ w, mult w = [K : ℚ]`.
+  have hnorm : ∑ w : InfinitePlace K, mult w * Real.log (w x) =
+      Real.log |(Algebra.norm ℚ x : ℝ)| := by
+    simpa [mixedEmbedding.normAtAllPlaces_mixedEmbedding] using
+      mixedEmbedding.fundamentalCone.sum_expMap_symm_apply hx
   have hsum : ∑ w, f w = 0 := by
     simp only [hf, mul_sub, Finset.sum_sub_distrib, hlog, mul_add, Finset.sum_add_distrib,
-      sum_mult_mul_log, sum_mult_mul_log_eq_log_abs_norm hx, ← Finset.sum_mul, ← Nat.cast_sum,
+      sum_mult_mul_log, hnorm, ← Finset.sum_mul, ← Nat.cast_sum,
       sum_mult_eq, L, zero_add]
     rw [mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr finrank_pos.ne'), sub_self]
   have hc : 0 ≤ c := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
