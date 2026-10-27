@@ -20,6 +20,9 @@ the coordinates at level `m`. This file shows that, for integral coefficients, t
 identify measures with compatible families: every compatible family `c n : A n →₀ ℤ_p` is the
 family of coordinates of exactly one measure `μ ∈ D(Γ, ℤ_p)`.
 
+No continuity assumption on the group operations is needed: compactness and the tower imply it
+by `TauCeti.FiniteQuotientTower.isTopologicalGroup`.
+
 Uniqueness holds over every Hausdorff topological coefficient ring, because the levels of a tower
 are cofinal among the finite quotients `Γ ⧸ U` by open normal subgroups. Existence is read off the
 identification of integral measures with the completed group algebra
@@ -59,7 +62,7 @@ namespace AbstractMeasure
 
 -- The levels of a tower of a compact group are finite (`FiniteQuotientTower.finite`); finiteness is
 -- assumed as an instance because the finite projections along the levels require it.
-variable {Γ R : Type*} [Group Γ] [TopologicalSpace Γ] [IsTopologicalGroup Γ] [CompactSpace Γ]
+variable {Γ R : Type*} [Group Γ] [TopologicalSpace Γ] [CompactSpace Γ]
   {A : ℕ → Type*} [∀ n, Group (A n)] [∀ n, TopologicalSpace (A n)] [∀ n, DiscreteTopology (A n)]
   [∀ n, Finite (A n)] (T : FiniteQuotientTower Γ A)
 
@@ -67,7 +70,7 @@ section TopologicalRing
 
 variable [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
 
-omit [IsTopologicalGroup Γ] [CompactSpace Γ] in
+omit [CompactSpace Γ] in
 /-- The finite projections of a measure along the levels of a tower are compatible: pushing the
 projection at level `n` forward along the transition map to `m ≤ n` gives the projection at
 level `m`. -/
@@ -88,6 +91,7 @@ def towerCoordinates : D(Γ, R) →ₗ[R] T.compatibleFamilies R where
   map_add' μ ν := by ext; simp
   map_smul' r μ := by ext; simp
 
+omit [CompactSpace Γ] in
 /-- The coordinate of `towerCoordinates T μ` at level `n` is the finite projection of `μ` along the
 `n`-th level. -/
 @[simp]
@@ -95,9 +99,11 @@ theorem towerCoordinates_apply (μ : D(Γ, R)) (n : ℕ) :
     (towerCoordinates T μ : ∀ n, A n →₀ R) n = finiteProjection (T.q n : C(Γ, A n)) μ :=
   (rfl)
 
-/-- The projection of a measure to a quotient `Γ ⧸ U` coarser than a level of the tower is the
-pushforward of its coordinates at that level. -/
+omit [CompactSpace Γ] in
+/-- The projection of a measure to a finite discrete quotient `Γ ⧸ U` coarser than a level of
+the tower is the pushforward of its coordinates at that level. -/
 private theorem finiteProjection_quotientMk {n : ℕ} {U : OpenNormalSubgroup Γ}
+    [Finite (Γ ⧸ U.toSubgroup)] [DiscreteTopology (Γ ⧸ U.toSubgroup)]
     (h : (T.ker n : Subgroup Γ) ≤ U) (μ : D(Γ, R)) :
     finiteProjection (U.toSubgroup.quotientMkContinuousMonoidHom : C(Γ, Γ ⧸ U.toSubgroup)) μ =
       (finiteProjection (T.q n : C(Γ, A n)) μ).mapDomain (T.toQuotient h) := by
@@ -113,6 +119,7 @@ private theorem finiteProjection_quotientMk {n : ℕ} {U : OpenNormalSubgroup Γ
 theorem towerCoordinates_injective [T2Space R] :
     Function.Injective (towerCoordinates (R := R) T) := by
   intro μ ν hμν
+  have := T.isTopologicalGroup
   have := T.totallyDisconnectedSpace
   refine toCompletedGroupAlgebra_injective (completedGroupAlgebra.ext fun U ↦ ?_)
   obtain ⟨n, hn⟩ := T.exists_ker_le_of_isOpen U.isOpen
@@ -128,7 +135,7 @@ section PadicInt
 
 variable {p : ℕ} [Fact p.Prime]
 
-omit [IsTopologicalGroup Γ] [CompactSpace Γ] [∀ n, Finite (A n)] in
+omit [CompactSpace Γ] [∀ n, Finite (A n)] in
 /-- The pushforward of a compatible family to `Γ ⧸ U` does not depend on the level of the tower
 through which `Γ → Γ ⧸ U` is factored. -/
 private theorem mapDomain_toQuotient_eq {c : ∀ n, A n →₀ ℤ_[p]}
@@ -152,7 +159,7 @@ private def quotientFamily (c : ∀ n, A n →₀ ℤ_[p]) (U : OpenNormalSubgro
   MonoidAlgebra.ofCoeff ((c (T.exists_ker_le_of_isOpen U.isOpen).choose).mapDomain
     (T.toQuotient (T.exists_ker_le_of_isOpen U.isOpen).choose_spec))
 
-omit [IsTopologicalGroup Γ] [∀ n, Finite (A n)] in
+omit [∀ n, Finite (A n)] in
 private theorem coeff_quotientFamily {c : ∀ n, A n →₀ ℤ_[p]}
     (hc : c ∈ T.compatibleFamilies ℤ_[p]) {U : OpenNormalSubgroup Γ} {n : ℕ}
     (hn : (T.ker n : Subgroup Γ) ≤ U) :
@@ -163,6 +170,7 @@ private theorem coeff_quotientFamily {c : ∀ n, A n →₀ ℤ_[p]}
 along a tower is the family of finite projections of an integral measure. -/
 theorem towerCoordinates_surjective :
     Function.Surjective (towerCoordinates (R := ℤ_[p]) T) := by
+  have := T.isTopologicalGroup
   have := T.totallyDisconnectedSpace
   rintro ⟨c, hc⟩
   -- Assemble the pushforwards of `c` to all finite quotients into an element of `ℤ_p[[Γ]]`.
