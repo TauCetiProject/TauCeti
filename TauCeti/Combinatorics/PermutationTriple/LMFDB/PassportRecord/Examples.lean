@@ -40,8 +40,8 @@ namespace LMFDB
 private theorem list_eq_sort_of_eq {a b c x y z : ℕ} (hs : x ≤ y ∧ y ≤ z)
     (h : ({a, b, c} : Multiset ℕ) = {x, y, z}) :
     [x, y, z] = ({a, b, c} : Multiset ℕ).sort := by
-  rw [h, show ({x, y, z} : Multiset ℕ) = ↑[x, y, z] from rfl, Multiset.coe_sort,
-    List.mergeSort_eq_self]
+  rw [h, Multiset.insert_eq_cons, Multiset.insert_eq_cons, ← Multiset.coe_singleton,
+    Multiset.cons_coe, Multiset.cons_coe, Multiset.coe_sort, List.mergeSort_eq_self]
   simpa using ⟨⟨hs.1, hs.1.trans hs.2⟩, hs.2⟩
 
 /-! ### The primitive passport `3T2-3_2.1_2.1` -/
