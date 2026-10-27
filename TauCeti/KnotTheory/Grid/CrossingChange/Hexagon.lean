@@ -24,14 +24,17 @@ one intersection point `s`, and `Ψ : GC⁻(G') → GC⁻(G)` turning at another
 orders, which determine the rows of `s` and `t`.
 
 * If `O_a` lies on the arc of column `b`, the order is `O_b, O_a, X_b, X_a`. Then `s` lies in
-  the row of `O_a`, `t` in the row of `X_b`, `Φ` preserves the bigrading and `Ψ` has bidegree
-  `(-2, -1)` (`GridDiagram.commutationBidegree_eq_zero_of_mem_columnArc`).
+  the row of `O_a`, `t` in the row of `X_b`, and `Φ` preserves the bigrading
+  (`GridDiagram.commutationBidegree_eq_zero_of_mem_columnArc`).
 * Otherwise the order is `O_b, X_a, X_b, O_a`. Then `s` lies in the row of `X_a` and `t` in the
   row of `O_b`, and `Φ` has bidegree `(-2, -1)`
   (`GridDiagram.commutationBidegree_eq_of_notMem_columnArc`).
 
-Either way `Ψ ∘ Φ` has the bidegree `(-2, -1)` of multiplication by a variable. It is compared
-with such a multiplication by a homotopy `H : GC⁻(G) → GC⁻(G)` counting empty hexagons carrying
+Only the bidegree of `Φ` is proved by these lemmas. Following Ozsváth--Stipsicz--Szabó,
+Section 6.1, `Ψ` has the complementary bidegree, `(-2, -1)` in the first order and `(0, 0)` in
+the second, so that either way `Ψ ∘ Φ` has the bidegree `(-2, -1)` of multiplication by a
+variable; the bidegree of `Ψ` is not proved here. `Ψ ∘ Φ` is compared with such a
+multiplication by a homotopy `H : GC⁻(G) → GC⁻(G)` counting empty hexagons carrying
 no `X`-marking, whose boundary turns at `t` and at `s`. These have the shapes
 `TauCeti.GridHexagonBetween a t s` (terminal side running up `β` to `t`, up `γ` to `s` and up `β`
 again) and `TauCeti.GridInitialHexagonBetween a s t` (initial side running up `β` to `s`, up `γ`
