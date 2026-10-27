@@ -76,9 +76,24 @@ theorem tail_inc (o : Orientation G) (e : G.edgeSet) : G.Inc e.1 (o.tail e).1 :=
 theorem head_inc (o : Orientation G) (e : G.edgeSet) : G.Inc e.1 (o.head e).1 :=
   (o.isLink e).inc_right
 
+/-- Two orientations choosing the same tail for an edge also choose the same head. -/
+theorem head_eq_of_tail_eq {o₁ o₂ : Orientation G} {e : G.edgeSet}
+    (h : o₁.tail e = o₂.tail e) : o₁.head e = o₂.head e :=
+  Subtype.ext <| (o₁.isLink e).right_unique <| h ▸ o₂.isLink e
+
+/-- Two orientations are equal when they choose the same tail for every edge. -/
+theorem ext_of_tail {o₁ o₂ : Orientation G} (h : ∀ e, o₁.tail e = o₂.tail e) : o₁ = o₂ :=
+  ext h fun _ ↦ head_eq_of_tail_eq (h _)
+
+/-- Two orientations either agree on an edge or orient it in opposite directions. -/
+theorem tail_eq_and_head_eq_or_tail_eq_and_head_eq (o₁ o₂ : Orientation G) (e : G.edgeSet) :
+    o₁.tail e = o₂.tail e ∧ o₁.head e = o₂.head e ∨
+      o₁.tail e = o₂.head e ∧ o₁.head e = o₂.tail e := by
+  simpa only [Subtype.ext_iff] using (o₁.isLink e).eq_and_eq_or_eq_and_eq (o₂.isLink e)
+
 /-- Every multigraph admits an orientation, obtained from a representative of each unordered
 pair of edge ends. -/
-@[expose] noncomputable def ofEdgeEnds (G : Graph V E) : Orientation G where
+noncomputable def ofEdgeEnds (G : Graph V E) : Orientation G where
   tail e := (G.edgeEnds e).out.1
   head e := (G.edgeEnds e).out.2
   isLink e := G.edgeEnds_eq_iff_isLink e _ _ |>.1
@@ -87,15 +102,15 @@ pair of edge ends. -/
 @[simp]
 theorem ofEdgeEnds_tail (G : Graph V E) (e : G.edgeSet) :
     (ofEdgeEnds G).tail e = (G.edgeEnds e).out.1 :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem ofEdgeEnds_head (G : Graph V E) (e : G.edgeSet) :
     (ofEdgeEnds G).head e = (G.edgeEnds e).out.2 :=
-  rfl
+  (rfl)
 
 /-- Reverse every edge of an orientation. -/
-@[expose] def reverse (o : Orientation G) : Orientation G where
+def reverse (o : Orientation G) : Orientation G where
   tail := o.head
   head := o.tail
   isLink e := (o.isLink e).symm
@@ -103,19 +118,29 @@ theorem ofEdgeEnds_head (G : Graph V E) (e : G.edgeSet) :
 @[simp]
 theorem reverse_tail (o : Orientation G) (e : G.edgeSet) :
     o.reverse.tail e = o.head e :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem reverse_head (o : Orientation G) (e : G.edgeSet) :
     o.reverse.head e = o.tail e :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem reverse_reverse (o : Orientation G) : o.reverse.reverse = o := by
   ext <;> rfl
 
+theorem reverse_involutive : Function.Involutive (reverse (G := G)) :=
+  reverse_reverse
+
+theorem reverse_injective : Function.Injective (reverse (G := G)) :=
+  reverse_involutive.injective
+
+@[simp]
+theorem reverse_inj {o₁ o₂ : Orientation G} : o₁.reverse = o₂.reverse ↔ o₁ = o₂ :=
+  reverse_injective.eq_iff
+
 /-- Reversing every edge is an involutive equivalence on orientations. -/
-@[expose] def reverseEquiv (G : Graph V E) : Orientation G ≃ Orientation G where
+def reverseEquiv (G : Graph V E) : Orientation G ≃ Orientation G where
   toFun := reverse
   invFun := reverse
   left_inv := reverse_reverse
@@ -124,24 +149,22 @@ theorem reverse_reverse (o : Orientation G) : o.reverse.reverse = o := by
 @[simp]
 theorem reverseEquiv_apply (G : Graph V E) (o : Orientation G) :
     reverseEquiv G o = o.reverse :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem reverseEquiv_symm_apply (G : Graph V E) (o : Orientation G) :
     (reverseEquiv G).symm o = o.reverse :=
-  rfl
+  (rfl)
 
 /-- An edge is a loop at its chosen tail exactly when its chosen tail and head coincide. -/
 theorem tail_eq_head_iff_isLoopAt (o : Orientation G) (e : G.edgeSet) :
     o.tail e = o.head e ↔ G.IsLoopAt e.1 (o.tail e).1 := by
+  rw [← isLink_self_iff]
   constructor
   · intro h
-    change G.IsLink e.1 (o.tail e).1 (o.tail e).1
-    have hlink := o.isLink e
-    rw [← h] at hlink
-    exact hlink
+    simpa only [h] using o.isLink e
   · intro h
-    exact Subtype.ext (h.eq_of_inc (o.head_inc e))
+    exact Subtype.ext ((o.isLink e).right_unique h).symm
 
 /-- The unordered ends of an edge are diagonal exactly when the orientation makes it a loop
 arrow. -/
@@ -151,6 +174,7 @@ theorem edgeEnds_isDiag_iff (o : Orientation G) (e : G.edgeSet) :
 
 /-- The explicit family of arrows selected by an orientation. An arrow from `x` to `y` is an
 actual edge whose chosen tail is `x` and whose chosen head is `y`. -/
+@[ext]
 structure Hom (o : Orientation G) (x y : G.vertexSet) where
   /-- The actual edge underlying the arrow. -/
   edge : G.edgeSet
@@ -164,26 +188,20 @@ theorem Hom.isLink {o : Orientation G} {x y : G.vertexSet} (a : o.Hom x y) :
     G.IsLink a.edge.1 x.1 y.1 := by
   simpa only [a.tail_eq, a.head_eq] using o.isLink a.edge
 
-/-- Oriented arrows are equal when they have the same underlying edge identity. -/
-@[ext]
-theorem Hom.ext {o : Orientation G} {x y : G.vertexSet} {a b : o.Hom x y}
-    (h : a.edge = b.edge) : a = b :=
-  by cases a; cases b; simp_all
-
 /-- Regard an actual edge as the arrow from its chosen tail to its chosen head. -/
-@[expose] def arrow (o : Orientation G) (e : G.edgeSet) : o.Hom (o.tail e) (o.head e) :=
+def arrow (o : Orientation G) (e : G.edgeSet) : o.Hom (o.tail e) (o.head e) :=
   ⟨e, rfl, rfl⟩
 
 @[simp]
 theorem arrow_edge (o : Orientation G) (e : G.edgeSet) : (o.arrow e).edge = e :=
-  rfl
+  (rfl)
 
 /-- All arrows of an orientation, with their source and target vertices. -/
 abbrev TotalHom (o : Orientation G) := Σ x, Σ y, o.Hom x y
 
 /-- The total arrows of an orientation are exactly the actual edges of the multigraph. This
 equivalence retains parallel edge identities and sends a loop to one arrow. -/
-@[expose] def totalHomEquiv (o : Orientation G) : o.TotalHom ≃ G.edgeSet where
+def totalHomEquiv (o : Orientation G) : o.TotalHom ≃ G.edgeSet where
   toFun a := a.2.2.edge
   invFun e := ⟨o.tail e, o.head e, o.arrow e⟩
   left_inv := by
@@ -196,15 +214,15 @@ equivalence retains parallel edge identities and sends a loop to one arrow. -/
 @[simp]
 theorem totalHomEquiv_apply (o : Orientation G) (a : o.TotalHom) :
     o.totalHomEquiv a = a.2.2.edge :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem totalHomEquiv_symm_apply (o : Orientation G) (e : G.edgeSet) :
     o.totalHomEquiv.symm e = ⟨o.tail e, o.head e, o.arrow e⟩ :=
-  rfl
+  (rfl)
 
 /-- Reversing an orientation reverses an arrow while retaining its edge identity. -/
-@[expose] def reverseHomEquiv (o : Orientation G) (x y : G.vertexSet) :
+def reverseHomEquiv (o : Orientation G) (x y : G.vertexSet) :
     o.Hom x y ≃ o.reverse.Hom y x where
   toFun a := ⟨a.edge, a.head_eq, a.tail_eq⟩
   invFun a := ⟨a.edge, a.head_eq, a.tail_eq⟩
@@ -214,21 +232,17 @@ theorem totalHomEquiv_symm_apply (o : Orientation G) (e : G.edgeSet) :
 @[simp]
 theorem reverseHomEquiv_edge (o : Orientation G) {x y : G.vertexSet} (a : o.Hom x y) :
     (o.reverseHomEquiv x y a).edge = a.edge :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem reverseHomEquiv_symm_edge (o : Orientation G) {x y : G.vertexSet}
     (a : o.reverse.Hom y x) : ((o.reverseHomEquiv x y).symm a).edge = a.edge :=
-  rfl
-
-instance (o : Orientation G) (x y : G.vertexSet) [Finite G.edgeSet] : Finite (o.Hom x y) :=
-  Finite.of_injective Hom.edge fun _ _ ↦ Hom.ext
+  (rfl)
 
 /-- An orientation has finitely many arrows between any two vertices when its actual edge set is
 finite. -/
-noncomputable instance (o : Orientation G) (x y : G.vertexSet) [Finite G.edgeSet] :
-    Fintype (o.Hom x y) :=
-  Fintype.ofFinite _
+instance (o : Orientation G) (x y : G.vertexSet) [Finite G.edgeSet] : Finite (o.Hom x y) :=
+  Finite.of_injective Hom.edge fun _ _ ↦ Hom.ext
 
 end Orientation
 
