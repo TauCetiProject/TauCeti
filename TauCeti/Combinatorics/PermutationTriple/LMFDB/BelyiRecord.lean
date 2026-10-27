@@ -388,9 +388,11 @@ theorem card_storedClasses_le_passportSize (h : r.IsValidFor P) :
 
 end IsValidFor
 
-/-- Every connected triple is the stored triple of a valid row for its passport: the row over the
-base field `ℚ`, presented by `X - 1`, with its single embedding, and with empty labels and
-equations. -/
+/-- Every connected triple is the stored triple of a formal row that is valid for its passport, so
+`TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsValidFor` is not vacuous. The row carries
+placeholder data in the fields that validity leaves unconstrained: the base-field polynomial
+`X - 1` with a single embedding entry, and empty labels and equations. It is not a certificate that
+the corresponding Belyi map is defined over `ℚ`, which this theorem does not establish. -/
 theorem exists_isValidFor (t : ConnectedTriple n) :
     ∃ r : BelyiRecord n, r.IsValidFor t.passportOf ∧ r.triples = [equivOppositeConvention n t.1] :=
   ⟨{ label := "", plabel := "", deg := n, lambdas := t.1.cycleData, g := t.1.genus,
