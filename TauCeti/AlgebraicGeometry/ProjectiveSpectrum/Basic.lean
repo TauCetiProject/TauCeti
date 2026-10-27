@@ -44,6 +44,8 @@ so that the structure map to `Spec A₀` can be studied through homogeneous prim
   is invertible exactly on `D₊(fg)`.
 * `AlgebraicGeometry.Proj.toSpecZero_preimage_basicOpen`: the inverse image of the basic open
   `D(r)` of a degree-zero element under `Proj A ⟶ Spec A₀` is the standard open `D₊(r)`.
+* `ProjectiveSpectrum.exists_le_mem_notMem`: a projective point misses homogeneous elements of
+  arbitrarily large degree.
 * `ProjectiveSpectrum.ext_of_mem_pos`: positive-degree homogeneous elements determine a
   projective point, allowing comparison through its positive-degree coordinate opens.
 -/
@@ -210,6 +212,16 @@ namespace ProjectiveSpectrum
 
 variable {A σ : Type*} [CommRing A] [SetLike σ A] [AddSubmonoidClass σ A]
   {𝒜 : ℕ → σ} [GradedRing 𝒜]
+
+/-- A relevant homogeneous prime ideal misses homogeneous elements of arbitrarily large degree: it
+misses a homogeneous element of positive degree, and hence all of its powers. -/
+theorem exists_le_mem_notMem (x : ProjectiveSpectrum 𝒜) (N : ℕ) :
+    ∃ i, N ≤ i ∧ ∃ s ∈ 𝒜 i, s ∉ x.asHomogeneousIdeal := by
+  obtain ⟨d, hd, f, hf, hfx⟩ : ∃ d > 0, ∃ f ∈ 𝒜 d, f ∉ x.asHomogeneousIdeal := by
+    by_contra! h
+    exact x.not_irrelevant_le ((HomogeneousIdeal.irrelevant_le 𝒜).mpr h)
+  exact ⟨N * d, Nat.le_mul_of_pos_right N hd, f ^ N, by simpa using SetLike.pow_mem_graded N hf,
+    fun h ↦ hfx (x.isPrime.mem_of_pow_mem N h)⟩
 
 /-- Relevant homogeneous prime ideals are determined by their positive-degree elements. -/
 theorem ext_of_mem_pos {x y : ProjectiveSpectrum 𝒜}

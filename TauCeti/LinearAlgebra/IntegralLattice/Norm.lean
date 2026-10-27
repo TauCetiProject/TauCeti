@@ -49,8 +49,9 @@ the integral norm on the carrier.
 * `TauCeti.IntegralLattice.integralNorm_add`: polarization identity for the integral norm.
 * `TauCeti.IntegralLattice.integralNorm_sub`: subtractive polarization identity for the integral
   norm.
-* `TauCeti.IntegralLattice.mem_vectorsOfNorm_intCast` and
-  `TauCeti.IntegralLattice.mem_vectorsOfNorm_natCast`: characterization of integer-norm vectors.
+* `TauCeti.IntegralLattice.mem_vectorsOfNorm_intCast`,
+  `TauCeti.IntegralLattice.mem_vectorsOfNorm_natCast`, and
+  `TauCeti.IntegralLattice.mem_vectorsOfNorm_one_iff`: characterization of integer-norm vectors.
 
 ## References
 
@@ -237,6 +238,11 @@ norm equal to `n`. -/
 theorem mem_vectorsOfNorm_natCast (L : IntegralLattice V) {n : ℕ} {x : L} :
     x ∈ L.vectorsOfNorm (n : ℚ) ↔ L.integralNorm x = n := by
   rw [← Int.cast_natCast, L.mem_vectorsOfNorm_intCast]
+
+/-- A lattice vector has norm one if and only if its integral pairing with itself is one. -/
+theorem mem_vectorsOfNorm_one_iff (L : IntegralLattice V) {x : L} :
+    x ∈ L.vectorsOfNorm 1 ↔ L.integralForm x x = 1 := by
+  rw [← Int.cast_one (R := ℚ), L.mem_vectorsOfNorm_intCast, integralNorm_apply]
 
 /-- The zero vector in an integral lattice has norm zero. -/
 theorem zero_mem_vectorsOfNorm (L : IntegralLattice V) : (0 : L) ∈ L.vectorsOfNorm 0 := by

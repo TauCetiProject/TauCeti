@@ -51,11 +51,15 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   adjacent contributions, retaining the final boundary term.
 * `Finset.prod_range_two_mul_add_one`, `Finset.sum_range_two_mul_add_one`: split a product or sum
   over `range (2 * k + 1)` into its even and odd indices.
+* `Finset.four_dvd_sum_range_two_mul_add_one`: a sum over `range (2 * k + 1)` of even terms,
+  symmetric under `i ↦ 2 * k - i` and vanishing at the middle index `k`, is divisible by `4`.
 * `Finset.prod_card_filter_lt_card_filter_gt`, `Finset.sum_card_filter_lt_card_filter_gt`: reindex
   a product or sum over a finite subset `s` of a linear order by the number of elements of `s`
   before each element.
 * `Finset.prod_range_mul_eq_prod_prod`, `Finset.sum_range_mul_eq_sum_sum`: split a product or
   sum over `range (n * q)` into `q` consecutive blocks of `n` terms.
+* `Finset.sum_range_two_mul_succ`: the sum `∑_{i=1}^{m} 2i` of the first `m` positive even
+  numbers is `m (m + 1)`.
 -/
 
 public section
@@ -86,6 +90,24 @@ theorem prod_range_two_mul_add_one {M : Type*} [CommMonoid M] (g : ℕ → M) (k
       prod_range_succ (fun j => g (2 * j)) (k + 1), prod_range_succ (fun j => g (2 * j + 1)) k,
       show 2 * k + 1 + 1 = 2 * (k + 1) by ring]
     ac_rfl
+
+
+/-- A sum over `range (2 * k + 1)` of a family that is symmetric under `i ↦ 2 * k - i`, vanishes
+at the middle index `k` and takes even values, is divisible by `4`: it is twice the sum over
+`i < k`. -/
+theorem four_dvd_sum_range_two_mul_add_one {R : Type*} [Semiring R] (k : ℕ) (h : ℕ → R)
+    (hsym : ∀ i ≤ 2 * k, h (2 * k - i) = h i) (hk : h k = 0) (h2 : ∀ i, 2 ∣ h i) :
+    4 ∣ ∑ i ∈ range (2 * k + 1), h i := by
+  rw [show 2 * k + 1 = (k + 1) + k by ring, sum_range_add, sum_range_succ, hk, add_zero]
+  have : ∑ x ∈ range k, h (k + 1 + x) = ∑ x ∈ range k, h x := by
+    rw [← sum_range_reflect h k]
+    refine sum_congr rfl fun x hx ↦ ?_
+    rw [mem_range] at hx
+    rw [← hsym (k - 1 - x) (by omega)]
+    congr 1
+    omega
+  rw [this, ← two_mul, ← two_add_two_eq_four, ← two_mul]
+  exact mul_dvd_mul_left 2 (dvd_sum fun i _ ↦ h2 i)
 
 /-- Reindexing a product over a finite subset `s` of a linear order by the number `i` of elements
 of `s` before each element; there are then `#s - 1 - i` elements of `s` after it. -/
@@ -126,6 +148,13 @@ theorem prod_range_mul_eq_prod_prod {M : Type*} [CommMonoid M] (f : ℕ → M) (
   induction q with
   | zero => simp
   | succ q ih => rw [Nat.mul_succ, prod_range_add, ih, prod_range_succ]
+
+/-- The sum `∑_{i=1}^{m} 2i` of the first `m` positive even numbers is `m (m + 1)`. It is, for
+instance, the exponent of the leading power of `q` in `∏_{i=1}^{m} (q^{2i} - 1)`. -/
+theorem sum_range_two_mul_succ (m : ℕ) : ∑ i ∈ range m, 2 * (i + 1) = m * (m + 1) := by
+  induction m with
+  | zero => rfl
+  | succ m ih => rw [sum_range_succ, ih]; ring
 
 end Finset
 

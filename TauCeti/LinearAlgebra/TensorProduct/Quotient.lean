@@ -53,6 +53,9 @@ relations, for instance the rationalisation of a module over an integral group r
 * `TensorProduct.exists_one_tmul_eq`: every element of `(R ⧸ I) ⊗ M` is `1 ⊗ x`.
 * `TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq`: `1 ⊗ x` vanishes in
   `(R ⧸ (r)) ⊗ M` exactly when `x` is a multiple of `r`.
+* `LinearMap.exact_lTensor_quotient_span_singleton`: if `a : M → N` and `b : N → M` compose in
+  both orders to multiplication by `r`, and `r` is regular on `M`, then the reductions of `b` and
+  `a` modulo `r` form an exact pair.
 * `TensorProduct.AlgebraTensorModule.ker_rTensor_mkQ`: the kernel of the tensored
   quotient map `mkQ ⊗ 𝟙 N` is the range of `f ⊗ 𝟙 N`.
 * `TensorProduct.AlgebraTensorModule.rTensor_mkQ_surjective`: the tensored quotient map
@@ -90,6 +93,36 @@ theorem one_tmul_eq_zero_iff_exists_smul_eq (r : R) (x : M) :
   exact ⟨fun ⟨y, _, hy⟩ ↦ ⟨y, hy⟩, fun ⟨y, hy⟩ ↦ ⟨y, Submodule.mem_top, hy⟩⟩
 
 end TensorProduct
+
+namespace LinearMap
+
+open TensorProduct
+
+/-- **Reductions of a factorization of a regular scalar are exact.** Let `a : M → N` and
+`b : N → M` satisfy `a ∘ b = r • id` and `b ∘ a = r • id`, with `r` regular on `M`. Then the
+reductions `(R ⧸ (r)) ⊗ b` and `(R ⧸ (r)) ⊗ a` form an exact pair: if `a x ∈ rN`, say
+`a x = r • n`, then `r • b n = b (a x) = r • x`, so `x = b n`. -/
+theorem exact_lTensor_quotient_span_singleton {R M N : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] {r : R} (a : M →ₗ[R] N) (b : N →ₗ[R] M)
+    (hab : a ∘ₗ b = r • LinearMap.id) (hba : b ∘ₗ a = r • LinearMap.id) (hr : IsSMulRegular M r) :
+    Function.Exact (b.lTensor (R ⧸ Ideal.span {r})) (a.lTensor (R ⧸ Ideal.span {r})) := by
+  intro y
+  obtain ⟨x, rfl⟩ := exists_one_tmul_eq _ y
+  rw [lTensor_tmul, one_tmul_eq_zero_iff_exists_smul_eq]
+  constructor
+  · rintro ⟨n, hn⟩
+    refine ⟨1 ⊗ₜ n, ?_⟩
+    rw [lTensor_tmul, hr (show r • b n = r • x by
+      simpa [← map_smul, hn] using LinearMap.congr_fun hba x)]
+  · rintro ⟨z, hz⟩
+    obtain ⟨n, rfl⟩ := exists_one_tmul_eq _ z
+    rw [lTensor_tmul, ← sub_eq_zero, ← tmul_sub, one_tmul_eq_zero_iff_exists_smul_eq] at hz
+    obtain ⟨m, hm⟩ := hz
+    refine ⟨n - a m, ?_⟩
+    rw [smul_sub, ← map_smul, hm, map_sub, ← LinearMap.comp_apply, hab]
+    simp
+
+end LinearMap
 
 namespace TensorProduct.AlgebraTensorModule
 

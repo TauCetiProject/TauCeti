@@ -112,6 +112,23 @@ noncomputable def inr : C →+* CompletedTensor A B C :=
   ext a
   simp [inl, inr, ← Algebra.TensorProduct.algebraMap_apply]
 
+/-- The base algebra structure is induced by the left coprojection. -/
+noncomputable instance : Algebra A (CompletedTensor A B C) :=
+  ((inl A B C).comp (algebraMap A B)).toAlgebra
+
+/-- The base map is the composite through the left factor. -/
+theorem algebraMap_eq_inl : algebraMap A (CompletedTensor A B C) =
+    (inl A B C).comp (algebraMap A B) := (rfl)
+
+/-- The left coprojection preserves the base algebra map. -/
+@[simp] theorem inl_algebraMap (a : A) :
+    inl A B C (algebraMap A B a) = algebraMap A (CompletedTensor A B C) a := (rfl)
+
+/-- The right coprojection preserves the base algebra map. -/
+@[simp] theorem inr_algebraMap (a : A) :
+    inr A B C (algebraMap A C a) = algebraMap A (CompletedTensor A B C) a :=
+  (RingHom.congr_fun (inl_comp_algebraMap A B C) a).symm
+
 /-- The canonical tensor map is continuous. -/
 @[fun_prop] theorem continuous_toCompletion : Continuous (toCompletion A B C) :=
   Completion.continuous_coe _
@@ -134,6 +151,11 @@ theorem isAdicHom_inl : IsAdicHom (inl A B C) :=
 /-- The right coprojection is adic. -/
 theorem isAdicHom_inr : IsAdicHom (inr A B C) :=
   (isAdicHom_toCompletion A B C).comp (isAdicHom_includeRight_tensorTopology A B C)
+
+/-- The base map to the completed tensor is adic, so completed tensors can be iterated. -/
+instance : IsAdicHom (algebraMap A (CompletedTensor A B C)) := by
+  rw [algebraMap_eq_inl]
+  exact (isAdicHom_inl A B C).comp inferInstance
 
 /-- A Tate left factor makes the completed tensor ring Tate. -/
 instance [IsTateRing B] : IsTateRing (CompletedTensor A B C) :=
