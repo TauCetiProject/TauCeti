@@ -17,12 +17,11 @@ points and after an étale extension `R → E`, a closed subscheme of the base `
 singular subscheme of the base change `X_E` is the base change of `Sing(X/R)`
 (`AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι`).
 
-For the node chart `R[u,v]/(uv - a)` the singular subscheme is the closed subscheme
-`Spec R/(a)` of the base (`TauCeti.NodeAlgebra.singularLocusIso`). The theorem below shows that
-the singular subscheme of every nodal curve has this shape locally, after an étale extension of
-the base: near each of its points it is a closed subscheme of the base. For instance, over a
-discrete valuation ring with uniformizer `π`, the node charts `uv = πⁿ` and `uv = 0` of the
-étale local normal form have singular subschemes `Spec R/(πⁿ)` and `Spec R`.
+The theorem below shows that the singular subscheme of every nodal curve is, near each of its
+points and after an étale extension of the base, a closed subscheme of the base. It does not
+identify that closed subscheme. For the node chart `R[u,v]/(uv - a)` the singular subscheme is
+the principal closed subscheme `Spec R/(a)` of the base (`TauCeti.NodeAlgebra.singularLocusIso`);
+showing that a nodal curve is étale locally such a chart is not established here.
 
 ## Main result
 
