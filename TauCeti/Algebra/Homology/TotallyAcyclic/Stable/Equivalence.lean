@@ -88,6 +88,15 @@ theorem ker_stableCycles_le_homotopyIdeal (n : ℤ) :
 instance (n : ℤ) : (stableCyclesFunctor.{v} A n).Faithful :=
   (MorphismIdeal.faithful_lift_iff _ _ _).2 (ker_stableCycles_le_homotopyIdeal A n)
 
+/-- The cycles in degree zero of the lift of a map of cycles give back that map. -/
+@[simp]
+theorem cyclesFunctor_map_lift {P Q : TotallyAcyclicComplex.{v} A}
+    (g : (cyclesFunctor A 0).obj P ⟶ (cyclesFunctor A 0).obj Q) :
+    (cyclesFunctor A 0).map (ObjectProperty.homMk
+      (CochainComplex.IsTotallyAcyclic.lift P.property Q.property g.hom)) = g := by
+  ext : 1
+  exact CochainComplex.IsTotallyAcyclic.cyclesMap_lift _ _ _
+
 /-- Every stable map of cycles in degree `n` comes from a chain map: lift it on the shift by `n`,
 where it becomes a map of cycles in degree zero, and shift back. -/
 instance (n : ℤ) : (stableCyclesFunctor.{v} A n).Full where
@@ -96,21 +105,16 @@ instance (n : ℤ) : (stableCyclesFunctor.{v} A n).Full where
       (GorensteinProjectiveModuleCat.exactStructure.{v} A).projectiveStableFunctor.map_surjective g
     let e := shiftCyclesIso A n
     let sh := shiftFunctor (TotallyAcyclicComplex.{v} A) n
+    let g₁ : (cyclesFunctor A 0).obj (sh.obj P.as) ⟶ (cyclesFunctor A 0).obj (sh.obj Q.as) :=
+      e.hom.app P.as ≫ g₀ ≫ e.inv.app Q.as
     let ψ : sh.obj P.as ⟶ sh.obj Q.as := ObjectProperty.homMk
-      (CochainComplex.IsTotallyAcyclic.lift (sh.obj P.as).property (sh.obj Q.as).property
-        (e.hom.app P.as ≫ g₀ ≫ e.inv.app Q.as).hom)
+      (CochainComplex.IsTotallyAcyclic.lift (sh.obj P.as).property (sh.obj Q.as).property g₁.hom)
     refine ⟨(quotient A).map (sh.preimage ψ), ?_⟩
     rw [stableCyclesFunctor_map_quotient_map]
     congr 1
-    rw [← cancel_epi (e.hom.app P.as), ← e.hom.naturality, Functor.comp_map, Functor.map_preimage]
-    ext : 1
-    rw [ObjectProperty.FullSubcategory.comp_hom, cyclesFunctor_map_hom, ObjectProperty.homMk_hom]
-    -- Term mode: the cycles of the lift are typed through the objects of `sh ⋙ cyclesFunctor A 0`,
-    -- which `rw` does not unfold.
-    exact (congrArg (· ≫ (e.hom.app Q.as).hom)
-      (CochainComplex.IsTotallyAcyclic.cyclesMap_lift _ _ _)).trans
-      ((ObjectProperty.FullSubcategory.comp_hom _ _ _).symm.trans (congrArg (·.hom)
-        (by simp : (e.hom.app P.as ≫ g₀ ≫ e.inv.app Q.as) ≫ e.hom.app Q.as = e.hom.app P.as ≫ g₀)))
+    rw [← cancel_epi (e.hom.app P.as), ← e.hom.naturality, Functor.comp_map, Functor.map_preimage,
+      cyclesFunctor_map_lift]
+    simp [g₁]
 
 /-- Stable cycles in any degree are an equivalence; essential surjectivity is
 `TauCeti.TotallyAcyclicComplex.cyclesFunctor_essSurj`. -/
