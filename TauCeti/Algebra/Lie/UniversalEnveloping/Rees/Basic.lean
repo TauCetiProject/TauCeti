@@ -93,15 +93,39 @@ theorem eval_reesGenerator (r : R) (x : L) :
       r • _root_.UniversalEnvelopingAlgebra.ι R x := by
   simp [coeffSubalgebra.eval_apply, Algebra.smul_def, Algebra.commutes]
 
+@[simp]
+theorem evalOne_reesGenerator (x : L) :
+    coeffSubalgebra.evalOne (pbwFiltration R L) (reesGenerator R L x) =
+      _root_.UniversalEnvelopingAlgebra.ι R x := by
+  simp [coeffSubalgebra.evalOne_eq_eval]
+
 /-- Every enveloping-algebra element is the value at parameter one of a Rees polynomial. -/
-theorem evalOne_surjective :
+theorem reesAlgebra_evalOne_surjective :
     Function.Surjective (coeffSubalgebra.evalOne (pbwFiltration R L)) :=
   coeffSubalgebra.evalOne_surjective _ (iSup_pbwFiltration_eq_top R L)
 
+/-- The deformation parameter belongs to the degree-one piece. -/
+theorem reesParameter_mem_grade_one :
+    reesParameter R L ∈ coeffSubalgebra.grade (pbwFiltration R L) 1 := by
+  exact coeffSubalgebra.mem_grade_iff.mpr ⟨1, one_mem_pbwFiltration R L 1,
+    by rw [coeffSubalgebra.coe_X, monomial_one_one_eq_X]⟩
+
+/-- Each linear Rees generator belongs to the degree-one piece. -/
+theorem reesGenerator_mem_grade_one (x : L) :
+    reesGenerator R L x ∈ coeffSubalgebra.grade (pbwFiltration R L) 1 := by
+  exact coeffSubalgebra.mem_grade_iff.mpr
+    ⟨_, ι_mem_pbwFiltration_one R L x, (coe_reesGenerator R L x).symm⟩
+
 /-- The degree-one piece is spanned by the parameter and the linear Rees generators. -/
-theorem grade_one_le_span_reesParameter_reesGenerator :
-    coeffSubalgebra.grade (pbwFiltration R L) 1 ≤
+theorem grade_one_eq_span_reesParameter_reesGenerator :
+    coeffSubalgebra.grade (pbwFiltration R L) 1 =
       Submodule.span R ({reesParameter R L} ∪ Set.range (reesGenerator R L)) := by
+  refine le_antisymm ?_ (Submodule.span_le.mpr ?_)
+  swap
+  · rintro a (ha | ⟨x, rfl⟩)
+    · obtain rfl := Set.mem_singleton_iff.mp ha
+      exact reesParameter_mem_grade_one R L
+    · exact reesGenerator_mem_grade_one R L x
   intro p hp
   obtain ⟨a, ha, heq⟩ := coeffSubalgebra.mem_grade_iff.mp hp
   obtain rfl : p = coeffSubalgebra.monomial (pbwFiltration R L) 1 a ha :=
@@ -133,7 +157,7 @@ theorem adjoin_reesParameter_reesGenerator :
   have hspan : Submodule.span R ({reesParameter R L} ∪ Set.range (reesGenerator R L)) ≤
       (Algebra.adjoin R ({reesParameter R L} ∪ Set.range (reesGenerator R L))).toSubmodule :=
     Submodule.span_le.mpr Algebra.subset_adjoin
-  exact fun _ hp ↦ hspan (grade_one_le_span_reesParameter_reesGenerator R L hp)
+  exact fun _ hp ↦ hspan (grade_one_eq_span_reesParameter_reesGenerator R L ▸ hp)
 
 /-- Over the parameter ring, the linear Rees generators alone generate the Rees algebra. -/
 theorem adjoin_reesGenerator :

@@ -162,7 +162,9 @@ theorem algebraMap_X :
 theorem coe_algebraMap (p : R[X]) :
     letI := algebra M h1
     (algebraMap R[X] (coeffSubalgebra M) p : B[X]) = p.map (algebraMap R B) := by
-  exact (Polynomial.aeval_subalgebra_coe p _ (X M h1)).trans (by rw [coe_X]; rfl)
+  refine (Polynomial.aeval_subalgebra_coe p _ (X M h1)).trans ?_
+  rw [coe_X]
+  exact Polynomial.mapAlg_eq_map B p
 
 /-- The parameter-ring algebra structure extends the coefficient-ring algebra structure. -/
 theorem isScalarTower :
@@ -458,6 +460,14 @@ theorem eval_X (r : R) (h1 : (1 : B) ∈ M 1) :
 
 /-- Evaluation at `X = 1`, `∑ bₙ Xⁿ ↦ ∑ bₙ`, as an `R`-algebra map. -/
 noncomputable def evalOne : coeffSubalgebra M →ₐ[R] B := eval M 1
+
+/-- Evaluation at one is scalar evaluation with parameter `1`. -/
+theorem evalOne_eq_eval : evalOne M = eval M 1 :=
+  (rfl)
+
+@[simp]
+theorem evalOne_X (h1 : (1 : B) ∈ M 1) : evalOne M (X M h1) = 1 := by
+  simp [evalOne_eq_eval]
 
 variable {M} in
 /-- Evaluation at `X = 1` is ambient polynomial evaluation at `1`. -/
