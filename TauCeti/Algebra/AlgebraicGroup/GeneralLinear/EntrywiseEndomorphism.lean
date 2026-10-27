@@ -13,7 +13,7 @@ import TauCeti.Algebra.Polynomial.Laurent.Detection
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
 /-!
-# Entrywise field endomorphisms of the general linear group are not algebraic
+# Nontrivial entrywise field endomorphisms with infinitely many fixed points are not algebraic
 
 A field endomorphism `σ : K →+* K` acts entrywise on `GL_n(K)`. This file shows that, as soon as
 `σ` fixes infinitely many elements, this map on `K`-points is not regular unless `σ` is the
@@ -50,9 +50,10 @@ variable {K : Type*} [Field K] {n : ℕ}
 
 open TauCeti.GeneralLinear
 
-/-- **No matrix entry twisted by a nontrivial field endomorphism is a regular function on `GL_n`.**
-Let `σ` be an endomorphism of `K` fixing infinitely many elements. If a regular function `f` on
-`GL_n` takes the value `σ (g i j)` at every `g ∈ GL_n(K)`, then `σ` is the identity. -/
+/-- **No matrix entry twisted by a nontrivial field endomorphism with infinitely many fixed points
+is a regular function on `GL_n`.** Let `σ` be an endomorphism of `K` fixing infinitely many
+elements. If a regular function `f` on `GL_n` takes the value `σ (g i j)` at every
+`g ∈ GL_n(K)`, then `σ` is the identity. -/
 theorem eq_id_of_forall_generalLinearToPoint_eq (σ : K →+* K)
     (hσ : {x : K | σ x = x}.Infinite) {i j : Fin n} (f : coordinateHopfAlgebra K n)
     (h : ∀ g : GL (Fin n) K, (generalLinearToPoint (R := K) n g).ofConv f = σ (g i j)) :
@@ -75,11 +76,12 @@ theorem eq_id_of_forall_generalLinearToPoint_eq (σ : K →+* K)
     (toConv_comp_generalLinearToPoint_ofConv n (TauCeti.laurentEval (R := K) u) γ)
   simpa [h, hγ, TauCeti.laurentEval_eq_eval₂] using hu
 
-/-- **Entrywise field endomorphisms of `GL_n` are not algebraic.** Let `σ` be an endomorphism of
-`K` fixing infinitely many elements. The map `g ↦ σ g` on `K`-points of `GL_n` is induced by a
-`K`-algebra endomorphism `φ` of the coordinate algebra, acting on points by precomposition, if
-and only if `n = 0` or `σ` is the identity. Bialgebra endomorphisms, which are the endomorphisms
-of the algebraic group `GL_n`, are a special case. -/
+/-- **Nontrivial entrywise field endomorphisms with infinitely many fixed points are not
+algebraic on `GL_n`.** Let `σ` be an endomorphism of `K` fixing infinitely many elements. The
+map `g ↦ σ g` on `K`-points of `GL_n` is induced by a `K`-algebra endomorphism `φ` of the
+coordinate algebra, acting on points by precomposition, if and only if `n = 0` or `σ` is the
+identity. Bialgebra endomorphisms, which are the endomorphisms of the algebraic group `GL_n`, are
+a special case. -/
 theorem exists_algHom_pointToGeneralLinear_comp_eq_map_iff (σ : K →+* K)
     (hσ : {x : K | σ x = x}.Infinite) :
     (∃ φ : coordinateHopfAlgebra K n →ₐ[K] coordinateHopfAlgebra K n,
