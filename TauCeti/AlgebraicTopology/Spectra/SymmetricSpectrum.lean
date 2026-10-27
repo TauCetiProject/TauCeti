@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Mod
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Smash.Power
 public import TauCeti.AlgebraicTopology.Spectra.SymmetricSequence
-public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Monoid
+public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Module
 
 /-!
 # The sphere symmetric sequence and symmetric spectra
@@ -24,7 +23,8 @@ Unwinding the universal property of the Day convolution, a symmetric spectrum `X
 symmetric sequence of pointed simplicial sets `X_n` with based `Σ_p × Σ_q`-equivariant structure
 maps `S^p ∧ X_q → X_(p+q)`, compatible with the unit `S⁰ ≅ S^0` and with block concatenation of
 spheres. These iterated structure maps and their laws are developed in
-`TauCeti.AlgebraicTopology.Spectra.StructureMaps`.
+`TauCeti.CategoryTheory.Monoidal.DayConvolution.Module`, through the generic
+`CategoryTheory.Mod.structureMap` API.
 
 ## Main definitions
 
