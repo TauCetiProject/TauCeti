@@ -88,6 +88,9 @@ private theorem exists_finite_stable_set [CharP k p] [Finite G] (ρ : Representa
   have hptors : ∀ x : V, p • x = 0 := fun x => by
     rw [← Nat.cast_smul_eq_nsmul k, CharP.cast_eq_zero, zero_smul]
   have _izmod : Module (ZMod p) V := AddCommMonoid.zmodModule hptors
+  -- `p`-torsion supplies additive inverses via the `ZMod p`-module, as required by
+  -- `Module.natCard_eq_pow_finrank` below. This construction definitionally extends the
+  -- ambient `AddCommMonoid V`, so all module and submodule structures share addition and zero.
   let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup (ZMod p)
   obtain ⟨N, hN⟩ : ∃ N : Submodule (ZMod p) V,
       N = Submodule.span (ZMod p) (Set.range fun g : G => ρ g v) := ⟨_, rfl⟩
