@@ -70,7 +70,7 @@ theorem isValidAt_s3PassportRecord :
     exact ⟨isConnected_s3Triple, ConnectedTriple.hasPassport_passportOf _⟩
   lambdas_eq := cycleData_s3Triple.symm
   abc_eq := orderTriple_s3Triple.symm
-  sortedAbc_eq := PassportRecord.sortedAbc_eq_sort_iff.mpr ⟨by decide, by decide⟩
+  sortedAbc_eq := (Multiset.eq_sort_iff _).mpr ⟨by decide, by decide⟩
   g_eq := genus_s3Triple.symm
   geomtype_eq := by
     dsimp only [s3PassportRecord]
@@ -137,7 +137,7 @@ theorem isValidAt_torusPassportRecord :
     exact ⟨isConnected_torusTriple, ConnectedTriple.hasPassport_passportOf _⟩
   lambdas_eq := cycleData_torusTriple.symm
   abc_eq := orderTriple_torusTriple.symm
-  sortedAbc_eq := PassportRecord.sortedAbc_eq_sort_iff.mpr ⟨by decide, by decide⟩
+  sortedAbc_eq := (Multiset.eq_sort_iff _).mpr ⟨by decide, by decide⟩
   g_eq := genus_torusTriple.symm
   geomtype_eq := geometryType_torusTriple.symm
   exists_transitiveGroupLabel := ⟨⟨0, by simp⟩, rfl, by

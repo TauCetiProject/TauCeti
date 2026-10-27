@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.Passport.Label
-public import Mathlib.Data.Multiset.Sort
+public import TauCeti.Data.Multiset.Sort
 
 /-!
 # Passport records
@@ -172,28 +172,6 @@ structure IsValidAt (r : PassportRecord n) (t : ConnectedTriple n) : Prop where
   closure_autGroupGenerators :
     Subgroup.closure {τ | τ ∈ r.autGroupGenerators} = t.1.automorphismGroup
 
-/-- The stored search triple is the stored order triple sorted ascending exactly when it is
-weakly increasing and a rearrangement of the stored order triple. This is the form in which the
-`sortedAbc_eq` clause of validity is checked for a concrete row. -/
-theorem sortedAbc_eq_sort_iff {r : PassportRecord n} :
-    [r.sortedAbc.1, r.sortedAbc.2.1, r.sortedAbc.2.2] =
-        ({r.abc.1, r.abc.2.1, r.abc.2.2} : Multiset ℕ).sort ↔
-      (r.sortedAbc.1 ≤ r.sortedAbc.2.1 ∧ r.sortedAbc.2.1 ≤ r.sortedAbc.2.2) ∧
-        ({r.sortedAbc.1, r.sortedAbc.2.1, r.sortedAbc.2.2} : Multiset ℕ) =
-          {r.abc.1, r.abc.2.1, r.abc.2.2} := by
-  constructor
-  · intro h
-    have hle := Multiset.pairwise_sort ({r.abc.1, r.abc.2.1, r.abc.2.2} : Multiset ℕ) (· ≤ ·)
-    have hperm := Multiset.sort_eq ({r.abc.1, r.abc.2.1, r.abc.2.2} : Multiset ℕ) (· ≤ ·)
-    rw [← h] at hle hperm
-    simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, List.Pairwise.nil] at hle
-    exact ⟨by omega, hperm⟩
-  · rintro ⟨hs, h⟩
-    rw [← h, Multiset.insert_eq_cons, Multiset.insert_eq_cons, ← Multiset.coe_singleton,
-      Multiset.cons_coe, Multiset.cons_coe, Multiset.coe_sort, List.mergeSort_eq_self]
-    simpa using ⟨⟨hs.1, hs.1.trans hs.2⟩, hs.2⟩
-
 namespace IsValidAt
 
 variable {r : PassportRecord n} {t : ConnectedTriple n}
@@ -206,14 +184,17 @@ theorem abc_eq_lcm_lambdas (h : r.IsValidAt t) :
 
 /-- The stored search triple is weakly increasing. -/
 theorem sortedAbc_le (h : r.IsValidAt t) :
-    r.sortedAbc.1 ≤ r.sortedAbc.2.1 ∧ r.sortedAbc.2.1 ≤ r.sortedAbc.2.2 :=
-  (sortedAbc_eq_sort_iff.mp h.sortedAbc_eq).1
+    r.sortedAbc.1 ≤ r.sortedAbc.2.1 ∧ r.sortedAbc.2.1 ≤ r.sortedAbc.2.2 := by
+  have hle := ((Multiset.eq_sort_iff _).mp h.sortedAbc_eq).1
+  simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, List.Pairwise.nil] at hle
+  exact ⟨hle.1.1, hle.2.1⟩
 
 /-- The stored search triple is a rearrangement of the stored order triple. -/
 theorem sortedAbc_perm (h : r.IsValidAt t) :
     ({r.sortedAbc.1, r.sortedAbc.2.1, r.sortedAbc.2.2} : Multiset ℕ) =
       {r.abc.1, r.abc.2.1, r.abc.2.2} :=
-  (sortedAbc_eq_sort_iff.mp h.sortedAbc_eq).2
+  ((Multiset.eq_sort_iff _).mp h.sortedAbc_eq).2
 
 /-- The stored geometry type is spherical exactly when the reciprocals of the stored orders sum to
 more than one. -/
@@ -241,6 +222,12 @@ passport. -/
 theorem passSize_eq_natCard (h : r.IsValidAt t) :
     r.passSize = Nat.card {c : ConnectedIsoClass n // c.HasPassport t.passportOf} := by
   rw [h.passSize_eq, PassportSpec.passportSize_eq_card_hasPassport]
+
+/-- The stored passport size is the size of every passport containing the reference triple. -/
+theorem passSize_eq_passportSize (h : r.IsValidAt t) {P : PassportSpec n}
+    (hP : PassportSpec.HasPassport t P) : r.passSize = P.passportSize := by
+  obtain ⟨τ, rfl⟩ := (t.hasPassport_iff_exists_conjugate_passportOf P).mp hP
+  rw [h.passSize_eq, PassportSpec.passportSize_conjugate]
 
 /-- The stored passport size is positive. -/
 theorem passSize_pos (h : r.IsValidAt t) : 0 < r.passSize := by
@@ -286,6 +273,16 @@ reference triple. -/
 theorem geomtype_eq_geometryType (h : r.IsValidAt t) (hP : PassportSpec.HasPassport t P)
     (ht' : PassportSpec.HasPassport t' P) : r.geomtype = t'.1.geometryType :=
   h.geomtype_eq.trans (PassportSpec.geometryType_eq_of_hasPassport hP ht')
+
+/-- The stored group number displays a transitive-group label of the monodromy group of every
+triple in a passport containing the reference triple. -/
+theorem exists_transitiveGroupLabel_of_hasPassport (h : r.IsValidAt t)
+    (hP : PassportSpec.HasPassport t P) (ht' : PassportSpec.HasPassport t' P) :
+    ∃ j : TransitiveGroupIndex n, (j : ℕ) + 1 = r.group ∧
+      TransitiveGroupLabel j t'.1.monodromyGroup := by
+  obtain ⟨L, hL, -, hlabel⟩ := h.exists_hasLabel hP
+  rw [PassportLabel.groupNumber_def] at hL
+  exact ⟨L.group, hL, ((PassportSpec.hasLabel_iff_of_hasPassport ht' L).mp hlabel).1⟩
 
 /-- The stored primitivity flag is set exactly when a triple in a passport containing the reference
 triple is primitive. -/
