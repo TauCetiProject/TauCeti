@@ -17,7 +17,6 @@ import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.PolygonalFrontier
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.SectorEnd
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
-import TauCeti.Analysis.Complex.Conformal.Reflection.Infinity
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Formula
 
@@ -48,8 +47,9 @@ of the half-plane to a chosen frontier point `w` on a side
 (`TauCeti.exists_bijOn_upperHalfPlaneSet_tendsto_of_isPreconnectedApproachAt`).  The real zeros of
 `g` are the accesses to infinity, and they correspond bijectively to the ends: distinct zeros lie in
 distinct ends by a crosscut argument, and every end is reached because `f` is bounded away from the
-zeros.  The side through `w` gives the condition at infinity, and the local side, corner and end
-conditions of
+zeros.  The side through `w` gives the condition at infinity
+(`TauCeti.tendsto_mul_logDeriv_deriv_of_inverted_coordinate_of_side`), and the local side, corner
+and end conditions of
 `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary` follow from the
 local geometry of `U`.  Ends of opening `2 * π`, exteriors of half-strips, are not among the ends
 allowed here.
@@ -103,56 +103,6 @@ private theorem exists_ball_side_of_inverted_coordinate_of_ne_prevertex {ι : Ty
   obtain ⟨ρ, hρ, p, b, hb, hU⟩ := hside _ (hgfr x hx) hnv
   obtain ⟨r, hr, h₁, h₂, h₃, h₄⟩ := exists_ball_side_of_inverted_coordinate hgc hgi hgU hx hρ hU
   exact ⟨r, hr, p, b, hb, h₁, h₂, h₃, h₄⟩
-
-/-- **The condition at infinity from a side point.**  Let `g` be continuous on the closed upper
-half-plane, holomorphic and nonzero in the open one and injective away from its zeros, with
-`q + g⁻¹` mapping the upper half-plane onto `U`.  If `g` tends at infinity to `(w - q)⁻¹ ≠ 0`, which
-is not a value of `g`, and `U` is a half-plane near `w`, then `F = q + g⁻¹` satisfies
-`z * F''(z) / F'(z) → -2` at infinity. -/
-private theorem tendsto_mul_logDeriv_deriv_of_inverted_coordinate_of_side {g : ℂ → ℂ}
-    {q w : ℂ} {U : Set ℂ} (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im})
-    (hgd : DifferentiableOn ℂ g upperHalfPlaneSet) (hgne : ∀ z ∈ upperHalfPlaneSet, g z ≠ 0)
-    (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0})
-    (hgU : (fun z => q + (g z)⁻¹) '' upperHalfPlaneSet = U)
-    (hginf : Tendsto g (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 (w - q)⁻¹))
-    (hwg : (w - q)⁻¹ ∉ g '' {z : ℂ | 0 ≤ z.im}) (hw0 : (w - q)⁻¹ ≠ 0) {ρ : ℝ} (hρ : 0 < ρ)
-    {p n : ℂ} (hn : n ≠ 0) (hUw : ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - p) / n).im)) :
-    Tendsto (fun z => z * logDeriv (deriv fun z => q + (g z)⁻¹) z)
-      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-2)) := by
-  -- in the coordinate `z ↦ -z⁻¹` at infinity, `g` extends by its limit `(w - q)⁻¹` at `0`, which
-  -- is not a value of `g`
-  have hφ := bijOn_const_sub_inv_upperHalfPlaneSet 0
-  have hH0 (z : ℂ) (hz : z ∈ upperHalfPlaneSet) : z ≠ 0 := fun h => by
-    simp [h, upperHalfPlaneSet] at hz
-  set G : ℂ → ℂ := update (fun z => g (((0 : ℝ) : ℂ) - z⁻¹)) 0 (w - q)⁻¹
-  have hG {z : ℂ} (hz : z ≠ 0) : G z = g (((0 : ℝ) : ℂ) - z⁻¹) := update_of_ne hz _ _
-  have hG0 : G ((0 : ℝ) : ℂ) = (w - q)⁻¹ := by rw [ofReal_zero]; exact update_self _ _ _
-  have hGU : (fun z => q + (G z)⁻¹) '' upperHalfPlaneSet = U := by
-    calc (fun z => q + (G z)⁻¹) '' upperHalfPlaneSet
-        = (fun z => q + (g z)⁻¹) '' ((fun z => ((0 : ℝ) : ℂ) - z⁻¹) '' upperHalfPlaneSet) := by
-          rw [image_image]
-          exact image_congr fun z hz => by rw [hG (hH0 z hz)]
-      _ = U := by rw [hφ.image_eq, hgU]
-  have hGne (z : ℂ) (hz : z ∈ upperHalfPlaneSet) : G z ≠ 0 := by
-    rw [hG (hH0 z hz)]
-    exact hgne _ (hφ.mapsTo hz)
-  have hGc : ContinuousOn G {z : ℂ | 0 ≤ z.im} := continuousOn_update_comp_const_sub_inv hgc hginf 0
-  have hGi : InjOn G {z : ℂ | 0 ≤ z.im ∧ G z ≠ 0} :=
-    injOn_update_comp_const_sub_inv hgi (fun ⟨z, hz, h⟩ => hwg ⟨z, hz.1, h⟩) 0
-  have hGd : DifferentiableOn ℂ G upperHalfPlaneSet :=
-    differentiableOn_update_comp_const_sub_inv hgd 0 _
-  -- the side through `w`, now the image of the real parameter `0`, gives the condition at infinity
-  have hUw' : ∀ z ∈ ball (q + (G ((0 : ℝ) : ℂ))⁻¹) ρ, (z ∈ U ↔ 0 < ((z - p) / n).im) := by
-    rwa [hG0, inv_inv, add_sub_cancel]
-  obtain ⟨r, hr, hc, hi, hreal, hupper⟩ :=
-    exists_ball_side_of_inverted_coordinate hGc hGi hGU (hG0 ▸ hw0) hρ hUw'
-  refine tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
-    (f := fun z => q + (g z)⁻¹) (g := fun z => (q + (G z)⁻¹ - p) / n) (q := p) hr hn
-    (fun z hz => by simp [hG (hH0 z hz.2)]) ((hc.sub continuousOn_const).div_const n)
-    ((((differentiableOn_const q).add (hGd.inv hGne)).mono inter_subset_right).sub_const p
-      |>.div_const n)
-    hreal (fun z hz => hupper z hz.1 hz.2) fun z hz z' hz' h => hi hz hz' ?_
-  simpa [div_left_inj' hn] using h
 
 /-- **A Riemann map with a side point at infinity.**  Under the hypotheses of
 `TauCeti.exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_ends`, there is a

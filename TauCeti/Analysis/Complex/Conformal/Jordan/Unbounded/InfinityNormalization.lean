@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.BoundaryPrevertex
 
+import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.LocalBoundary
+import TauCeti.Analysis.Complex.Conformal.Reflection.Infinity
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
@@ -46,6 +48,9 @@ prevertex lies at infinity, even when the domain has several vertices at infinit
 * `TauCeti.differentiableOn_update_comp_const_sub_inv`,
   `TauCeti.injOn_update_comp_const_sub_inv` -- holomorphy and injectivity away from the zeros are
   kept when moving infinity to a real point.
+* `TauCeti.tendsto_mul_logDeriv_deriv_of_inverted_coordinate_of_side` -- when the point at
+  infinity of the half-plane is sent to a point `w` near which `U` is a half-plane, the Riemann map
+  `F` satisfies the Schwarz--Christoffel condition `z * F''(z) / F'(z) → -2` at infinity.
 
 ## References
 
@@ -215,5 +220,55 @@ theorem exists_bijOn_upperHalfPlaneSet_tendsto_of_isPreconnectedApproachAt
     (injOn_inverted_boundary_of_isPreconnectedApproachAt hUo hq hUb hgc hgd hgf hfU hgR hg0 hU)
   rw [hgt] at hK hR hlim hgt'
   exact ⟨f, g, hf, hfU', hgc', hgd', hgf', hgne', hK.trans hgK, hR.trans hgR, hlim, hgi, hgt'⟩
+
+/-- **The condition at infinity from a side point.**  Let `g` be continuous on the closed upper
+half-plane, holomorphic and nonzero in the open one and injective away from its zeros, with
+`q + g⁻¹` mapping the upper half-plane onto `U`.  If `g` tends at infinity to `(w - q)⁻¹ ≠ 0`, which
+is not a value of `g`, and `U` is a half-plane near `w`, then `F = q + g⁻¹` satisfies
+`z * F''(z) / F'(z) → -2` at infinity. -/
+theorem tendsto_mul_logDeriv_deriv_of_inverted_coordinate_of_side {g : ℂ → ℂ}
+    (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im})
+    (hgd : DifferentiableOn ℂ g upperHalfPlaneSet) (hgne : ∀ z ∈ upperHalfPlaneSet, g z ≠ 0)
+    (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0})
+    (hgU : (fun z => q + (g z)⁻¹) '' upperHalfPlaneSet = U)
+    (hginf : Tendsto g (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 (w - q)⁻¹))
+    (hwg : (w - q)⁻¹ ∉ g '' {z : ℂ | 0 ≤ z.im}) (hw0 : (w - q)⁻¹ ≠ 0) {ρ : ℝ} (hρ : 0 < ρ)
+    {p n : ℂ} (hn : n ≠ 0) (hUw : ∀ z ∈ Metric.ball w ρ, (z ∈ U ↔ 0 < ((z - p) / n).im)) :
+    Tendsto (fun z => z * logDeriv (deriv fun z => q + (g z)⁻¹) z)
+      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-2)) := by
+  -- in the coordinate `z ↦ -z⁻¹` at infinity, `g` extends by its limit `(w - q)⁻¹` at `0`, which
+  -- is not a value of `g`
+  have hφ := bijOn_const_sub_inv_upperHalfPlaneSet 0
+  have hH0 (z : ℂ) (hz : z ∈ upperHalfPlaneSet) : z ≠ 0 := fun h => by
+    simp [h, upperHalfPlaneSet] at hz
+  set G : ℂ → ℂ := update (fun z => g (((0 : ℝ) : ℂ) - z⁻¹)) 0 (w - q)⁻¹
+  have hG {z : ℂ} (hz : z ≠ 0) : G z = g (((0 : ℝ) : ℂ) - z⁻¹) := update_of_ne hz _ _
+  have hG0 : G ((0 : ℝ) : ℂ) = (w - q)⁻¹ := by rw [ofReal_zero]; exact update_self _ _ _
+  have hGU : (fun z => q + (G z)⁻¹) '' upperHalfPlaneSet = U := by
+    calc (fun z => q + (G z)⁻¹) '' upperHalfPlaneSet
+        = (fun z => q + (g z)⁻¹) '' ((fun z => ((0 : ℝ) : ℂ) - z⁻¹) '' upperHalfPlaneSet) := by
+          rw [image_image]
+          exact image_congr fun z hz => by rw [hG (hH0 z hz)]
+      _ = U := by rw [hφ.image_eq, hgU]
+  have hGne (z : ℂ) (hz : z ∈ upperHalfPlaneSet) : G z ≠ 0 := by
+    rw [hG (hH0 z hz)]
+    exact hgne _ (hφ.mapsTo hz)
+  have hGc : ContinuousOn G {z : ℂ | 0 ≤ z.im} := continuousOn_update_comp_const_sub_inv hgc hginf 0
+  have hGi : InjOn G {z : ℂ | 0 ≤ z.im ∧ G z ≠ 0} :=
+    injOn_update_comp_const_sub_inv hgi (fun ⟨z, hz, h⟩ => hwg ⟨z, hz.1, h⟩) 0
+  have hGd : DifferentiableOn ℂ G upperHalfPlaneSet :=
+    differentiableOn_update_comp_const_sub_inv hgd 0 _
+  -- the side through `w`, now the image of the real parameter `0`, gives the condition at infinity
+  have hUw' : ∀ z ∈ Metric.ball (q + (G ((0 : ℝ) : ℂ))⁻¹) ρ, (z ∈ U ↔ 0 < ((z - p) / n).im) := by
+    rwa [hG0, inv_inv, add_sub_cancel]
+  obtain ⟨r, hr, hc, hi, hreal, hupper⟩ :=
+    exists_ball_side_of_inverted_coordinate hGc hGi hGU (hG0 ▸ hw0) hρ hUw'
+  refine tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
+    (f := fun z => q + (g z)⁻¹) (g := fun z => (q + (G z)⁻¹ - p) / n) (q := p) hr hn
+    (fun z hz => by simp [hG (hH0 z hz.2)]) ((hc.sub continuousOn_const).div_const n)
+    ((((differentiableOn_const q).add (hGd.inv hGne)).mono inter_subset_right).sub_const p
+      |>.div_const n)
+    hreal (fun z hz => hupper z hz.1 hz.2) fun z hz z' hz' h => hi hz hz' ?_
+  simpa [div_left_inj' hn] using h
 
 end TauCeti
