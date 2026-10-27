@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Finsupp.MonomialOrder
 public import Mathlib.Data.Finsupp.Weight
+import TauCeti.Data.Finsupp.Weight
 import TauCeti.Geometry.Convex.Cone.Alternative
 
 /-!
@@ -87,22 +88,6 @@ private theorem exists_addMonoidHom_lt {ι : Type*} [Finite ι] {a b : ι → σ
   refine ⟨μ, fun j ↦ ?_⟩
   simpa [hx] using hpos j
 
-/-- The weight of a monomial supported in `s`, for the weight vector read off from an additive
-functional `μ` on the integer vectors indexed by `s`, is the value of `μ` on that monomial. -/
-private theorem natCast_weight_eq [DecidableEq σ] {s : Finset σ} (μ : (s → ℤ) →+ ℤ)
-    (hμ : ∀ i, 0 < μ (Pi.single i 1)) {a : σ →₀ ℕ} (ha : a.support ⊆ s) :
-    ((weight fun i ↦ if hi : i ∈ s then (μ (Pi.single ⟨i, hi⟩ 1)).toNat else 1) a : ℤ) =
-      μ (fun i ↦ (a i : ℤ)) := by
-  rw [weight_apply, Finsupp.sum_of_support_subset a ha _ (by simp), Nat.cast_sum,
-    ← Finset.sum_coe_sort s]
-  conv_rhs => rw [← Finset.univ_sum_single fun i : s ↦ (a i : ℤ)]
-  rw [map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hc : (Pi.single i (a i : ℤ) : s → ℤ) = a i • Pi.single i 1 := by
-    rw [← Pi.single_smul', Nat.smul_one_eq_cast]
-  rw [hc, map_nsmul]
-  simp [(hμ i).le]
-
 /-- **Weight realization of finitely many comparisons.** Finitely many strict comparisons
 `a j ≺[m] b j` of a monomial order are realized by a weight vector with positive entries. -/
 theorem exists_pos_weight_lt {ι : Type*} [Finite ι] {a b : ι → σ →₀ ℕ}
@@ -135,10 +120,13 @@ theorem exists_pos_weight_lt {ι : Type*} [Finite ι] {a b : ι → σ →₀ �
     split_ifs with hi
     · exact Int.lt_toNat.2 (hμ₁ ⟨i, hi⟩)
     · exact one_pos
-  · have := hμ (Sum.inl j)
+  · have hμw (i : s) : μ (Pi.single i 1) =
+        ((if hi : (i : σ) ∈ s then (μ (Pi.single ⟨i, hi⟩ 1)).toNat else 1 : ℕ) : ℤ) := by
+      simp [(hμ₁ i).le]
+    have := hμ (Sum.inl j)
     simp only [Sum.elim_inl] at this
-    exact_mod_cast (natCast_weight_eq μ hμ₁ (has j)).trans_lt
-      (this.trans_eq (natCast_weight_eq μ hμ₁ (hbs j)).symm)
+    exact_mod_cast (natCast_weight_eq_of_support_subset μ hμw (has j)).trans_lt
+      (this.trans_eq (natCast_weight_eq_of_support_subset μ hμw (hbs j)).symm)
 
 /-- **Weight realization on a finite set of monomials.** On a finite set `F` of monomials, some
 weight vector with positive entries induces exactly the strict comparisons of the monomial order
