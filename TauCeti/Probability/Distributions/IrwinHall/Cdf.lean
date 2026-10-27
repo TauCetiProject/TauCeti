@@ -97,12 +97,8 @@ theorem continuous_cdf_irwinHallMeasure {n : ℕ} (hn : 0 < n) :
 /-- The Irwin–Hall cdf increases strictly throughout its closed support interval. -/
 theorem strictMonoOn_cdf_irwinHallMeasure (n : ℕ) :
     StrictMonoOn (cdf (irwinHallMeasure n)) (Icc 0 (n : ℝ)) := by
-  by_cases hn : n = 0
-  · subst n
-    rw [Nat.cast_zero, Icc_self]
-    exact subsingleton_singleton.strictMonoOn _
   exact Measure.strictMonoOn_cdf_of_subset_support _ ordConnected_Icc
-    (by rw [support_irwinHallMeasure (Nat.pos_of_ne_zero hn)])
+    (by rw [support_irwinHallMeasure n])
 
 /-- A positive-order Irwin–Hall cdf vanishes at and below zero. -/
 @[simp]

@@ -7,13 +7,15 @@ module
 
 public import TauCeti.Probability.Distributions.IrwinHall.Basic
 public import Mathlib.MeasureTheory.Measure.Support
+import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.Probability.Distributions.Uniform.Support
 
 /-!
 # Support of Irwin–Hall laws
 
-A sum of `n > 0` independent unit uniforms has topological support `[0, n]`.
-Every interior point is the sum of a constant vector in the interior of the unit cube;
+A sum of `n` independent unit uniforms has topological support `[0, n]`, including the empty
+sum at order zero. At positive order, every interior point is the sum of a constant vector
+in the interior of the unit cube;
 neighborhoods of that vector have positive product measure. Exact support supplies strict
 increase of the cdf and uniqueness of its inverse on interior probability levels.
 
@@ -29,11 +31,16 @@ open MeasureTheory ProbabilityTheory Set Topology
 
 namespace TauCeti.Probability
 
-/-- The support of a positive-order Irwin–Hall law is the whole closed interval `[0, n]`. -/
+/-- The support of an Irwin–Hall law is the whole closed interval `[0, n]`,
+including at order zero. -/
 @[simp]
-theorem support_irwinHallMeasure {n : ℕ} (hn : 0 < n) :
+theorem support_irwinHallMeasure (n : ℕ) :
     (irwinHallMeasure n).support = Icc 0 (n : ℝ) := by
-  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  by_cases hn : n = 0
+  · subst n
+    simp only [irwinHallMeasure_zero, Measure.support_dirac, closure_singleton,
+      Nat.cast_zero, Icc_self]
+  have hnR : (0 : ℝ) < n := Nat.cast_pos.2 (Nat.pos_of_ne_zero hn)
   apply Subset.antisymm
   · exact Measure.support_subset_of_isClosed isClosed_Icc (ae_mem_Icc_irwinHallMeasure n)
   · have hinter : Ioo 0 (n : ℝ) ⊆ (irwinHallMeasure n).support := by
