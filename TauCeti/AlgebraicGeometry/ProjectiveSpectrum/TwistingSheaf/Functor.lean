@@ -56,7 +56,7 @@ the structure sheaf.
 * The Stacks Project, Section 27.11, Functoriality of Proj.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -92,7 +92,7 @@ theorem localizationsMap_mk (y : ProjectiveSpectrum ℬ) (r : A)
 through which `Proj.map f hf` acts on the structure sheaves. Stated at a point of
 `ProjectiveSpectrum ℬ`, where instance search finds that the ideal of `y` is prime, which it does
 not for points of the underlying space of `Proj ℬ`. -/
-private theorem val_localRingHom (y : ProjectiveSpectrum ℬ)
+theorem val_localRingHom (y : ProjectiveSpectrum ℬ)
     (a : HomogeneousLocalization.AtPrime 𝒜
       (ProjectiveSpectrum.comap f hf y).asHomogeneousIdeal.toIdeal) :
     (HomogeneousLocalization.localRingHom f _ _ rfl a).val = localizationsMap f hf y a.val :=
@@ -177,14 +177,24 @@ theorem res_comap {V' : (Proj ℬ).Opens} (i : V' ⟶ V) (s : Γ(twistingSheaf �
 @[simp]
 theorem comap_res {U' : (Proj 𝒜).Opens} (i : U' ⟶ U)
     (hU'V : V.1 ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U'.1) (s : Γ(twistingSheaf 𝒜 n, U)) :
-    comap f hf hU'V ((twistingSheaf 𝒜 n).presheaf.map i.op s) = comap f hf hUV s :=
+    comap f hf hU'V ((twistingSheaf 𝒜 n).presheaf.map i.op s) =
+      comap f hf (fun _ hy ↦ i.le (hU'V hy)) s :=
   (rfl)
+
+/-- The value at `y` of the image of a section `a` of the structure sheaf under `Proj.map f hf`,
+in the localization `B_y`, is the image of the value of `a` at `f⁻¹ y`. This holds by unfolding
+`Proj.map`, whose map of structure sheaves is Mathlib's `Proj.comapStructureSheaf`, applying
+`HomogeneousLocalization.localRingHom` pointwise. -/
+theorem val_map_appLE_apply (a : Γ(Proj 𝒜, U)) (y : V) :
+    (((map f hf).appLE U V hUV a).1 y).val = localizationsMap f hf y.1 (a.1 ⟨_, hUV y.2⟩).val :=
+  val_localRingHom f hf y.1 _
 
 /-- **The pullback of sections is linear over the map of structure sheaves.** -/
 theorem comap_smul (a : Γ(Proj 𝒜, U)) (s : Γ(twistingSheaf 𝒜 n, U)) :
     comap f hf hUV (a • s) = (map f hf).appLE U V hUV a • comap f hf hUV s :=
-  ext fun y ↦ (map_mul _ _ _).trans
-    (congrArg (· * _) (val_localRingHom f hf y.1 (a.1 ⟨_, hUV y.2⟩)).symm)
+  ext fun _ ↦ ((comap_apply ..).trans <| (congrArg _ (smul_apply ..)).trans (map_mul ..)).trans <|
+    (congrArg₂ (· * ·) (val_map_appLE_apply ..).symm (comap_apply ..).symm).trans
+      (smul_apply ..).symm
 
 /-- The pullback of a fraction `r / s` is the fraction `f r / f s`. -/
 @[simp]
@@ -193,13 +203,18 @@ theorem comap_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ �
     comap f hf hUV (const h r s hr hs U hU) =
       const h (f r) (f s) (Graded.map_mem f hr) (Graded.map_mem f hs) V
         (hUV.trans fun _ hy ↦ hU hy) :=
-  ext fun _ ↦ localizationsMap_mk ..
+  ext fun y ↦ (comap_apply ..).trans <| (congrArg _ (const_apply ..)).trans <|
+    (localizationsMap_mk ..).trans
+      (const_apply h (f r) (f s) (Graded.map_mem f hr) (Graded.map_mem f hs)
+        (hUV.trans fun _ hy ↦ hU hy) y).symm
 
 /-- The pullback of sections is multiplicative. -/
 @[simp]
 theorem comap_mul {m : ℤ} (s : Γ(twistingSheaf 𝒜 m, U)) (t : Γ(twistingSheaf 𝒜 n, U)) :
     comap f hf hUV (mul 𝒜 U m n s t) = mul ℬ V m n (comap f hf hUV s) (comap f hf hUV t) :=
-  ext fun _ ↦ map_mul _ _ _
+  ext fun _ ↦ (comap_apply ..).trans <| (congrArg _ (mul_apply ..)).trans <|
+    (map_mul ..).trans <| (congrArg₂ (· * ·) (comap_apply ..).symm (comap_apply ..).symm).trans
+      (mul_apply (comap f hf hUV s) (comap f hf hUV t) _).symm
 
 end twistingSheaf
 
@@ -211,8 +226,9 @@ open twistingSheaf
 theorem comap_toTwistingSheaf {U : (Proj 𝒜).Opens} {V : (Proj ℬ).Opens}
     (hUV : V.1 ⊆ ProjectiveSpectrum.comap f hf ⁻¹' U.1) {j : ℕ} (h : (j : ℤ) = n) (r : 𝒜 j) :
     comap f hf hUV (toTwistingSheaf 𝒜 h U r) =
-      toTwistingSheaf ℬ h V ⟨f r, Graded.map_mem f r.2⟩ :=
-  twistingSheaf.ext fun _ ↦ (localizationsMap_mk ..).trans (congrArg _ (Subtype.ext (map_one f)))
+      toTwistingSheaf ℬ h V ⟨f r, Graded.map_mem f r.2⟩ := by
+  rw [toTwistingSheaf_eq_const, comap_const, toTwistingSheaf_eq_const]
+  exact const_ext (by rw [map_one])
 
 /-- **The morphism of twisting sheaves induced by a graded ring homomorphism**: the morphism
 `𝒪_{Proj 𝒜}(n) ⟶ (Proj.map f hf)_* 𝒪_{Proj ℬ}(n)` of sheaves of modules on `Proj 𝒜`, given on
@@ -229,8 +245,10 @@ def twistingSheafMap (n : ℤ) :
 
 /-- On sections over `U`, the morphism of twisting sheaves is the pullback of sections to the
 preimage of `U`. -/
-theorem twistingSheafMap_app (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 𝒜 n, U)) :
-    Scheme.Modules.Hom.app (twistingSheafMap f hf n) U s = comap f hf Set.Subset.rfl s :=
+@[simp]
+theorem twistingSheafMap_app (U : (Proj 𝒜).Opens) :
+    Scheme.Modules.Hom.app (twistingSheafMap f hf n) U =
+      AddCommGrpCat.ofHom (comap f hf (U := U) Set.Subset.rfl) :=
   (rfl)
 
 /-- **The morphisms of twisting sheaves are compatible with composition**: under
@@ -243,6 +261,10 @@ theorem twistingSheafMap_comp (g : ℬ →+*ᵍ 𝒞) (hg : 𝒞₊ ≤ ℬ₊.m
         (Scheme.Modules.pushforward (map f hf)).map (twistingSheafMap g hg n) ≫
           (Scheme.Modules.pushforwardComp (map g hg) (map f hf)).hom.app (twistingSheaf 𝒞 n) := by
   ext U s : 3
+  simp only [Scheme.Modules.Hom.comp_app, Scheme.Modules.pushforward_map_app,
+    Scheme.Modules.pushforwardCongr_hom_app_app, Scheme.Modules.pushforwardComp_hom_app_app,
+    AddCommGrpCat.hom_comp, AddMonoidHom.comp_apply]
+  -- The remaining identity and `eqToHom` restriction maps act trivially on values.
   exact twistingSheaf.ext fun z ↦ DFunLike.congr_fun (localizationsMap_comp f hf g hg z.1) _
 
 /-- **The morphism of twisting sheaves induced by the identity is the identity**, under
@@ -252,6 +274,10 @@ theorem twistingSheafMap_id (n : ℤ) :
         (Scheme.Modules.pushforwardCongr map_id).hom.app (twistingSheaf 𝒜 n) ≫
           (Scheme.Modules.pushforwardId (Proj 𝒜)).hom.app (twistingSheaf 𝒜 n) = 𝟙 _ := by
   ext U s : 3
+  simp only [Scheme.Modules.Hom.comp_app, Scheme.Modules.pushforwardCongr_hom_app_app,
+    Scheme.Modules.pushforwardId_hom_app_app, Scheme.Modules.Hom.id_app, AddCommGrpCat.hom_comp,
+    AddCommGrpCat.hom_id, AddMonoidHom.comp_apply, AddMonoidHom.id_apply]
+  -- The remaining identity and `eqToHom` restriction maps act trivially on values.
   exact twistingSheaf.ext fun x ↦ localizationsMap_id x.1 _
 
 end Proj
