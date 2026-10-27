@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
+public import TauCeti.RepresentationTheory.Continuous.TopRep.HomologicalComplex
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Comparison
 
@@ -78,24 +79,8 @@ namespace TopRep
 
 universe u v w
 
-variable {k : Type u} [Ring k] [TopologicalSpace k] {G : Type v}
-
-section ChainMap
-
-variable [Monoid G] {ι : Type*} {s : ComplexShape ι}
-  {J J' : HomologicalComplex (TopRep.{w} k G) s}
-
-/-- A chain map carries an invariant element killed by a differential to an invariant element
-killed by the corresponding differential. -/
-theorem d_mapInvariants_f_apply (f : J ⟶ J') {i j : ι} (z : (J.X i).ρ.invariants)
-    (hz : (J.d i j).hom (z : (J.X i).V) = 0) :
-    (J'.d i j).hom ((f.f i).hom.mapInvariants z : (J'.X i).V) = 0 := by
-  rw [ContIntertwiningMap.mapInvariants_apply, ← ConcreteCategory.comp_apply, f.comm,
-    ConcreteCategory.comp_apply, hz, map_zero]
-
-end ChainMap
-
-variable [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {k : Type u} [Ring k] [TopologicalSpace k] {G : Type v} [Group G]
+  [TopologicalSpace G] [IsTopologicalGroup G]
 
 namespace ResolutionContraction
 
