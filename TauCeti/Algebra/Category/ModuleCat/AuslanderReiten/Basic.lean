@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Module.AuslanderReiten.CocyclePairing
 public import TauCeti.Algebra.Category.ModuleCat.HomCocycle
 public import TauCeti.CategoryTheory.Exact.Stable.Injective
+public import TauCeti.LinearAlgebra.Submodule.Quotient
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 
@@ -117,8 +118,7 @@ noncomputable def auslanderReitenStableHomEquiv
     intro χ
     obtain ⟨g, hg⟩ := auslanderReitenCocyclePairing_surjective f χ
     exact ⟨ModuleCat.ofHom g, hg⟩
-  exact (q.quotKerEquivOfSurjective F.map_surjective).symm.trans
-    ((Submodule.quotEquivOfEq _ _ hker).trans (p.quotKerEquivOfSurjective hp))
+  exact q.equivOfSurjectiveOfKerEq p F.map_surjective hp hker
 
 /-- The stable Hom comparison sends the stable class of a map to its cocycle pairing. -/
 @[simp]
@@ -130,11 +130,8 @@ theorem auslanderReitenStableHomEquiv_map
       auslanderReitenCocyclePairing f g.hom := by
   let : Module k (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) :=
     Linear.homModule (R := k) N (ModuleCat.of A (AuslanderReitenTranslate k f))
-  dsimp only [auslanderReitenStableHomEquiv, LinearEquiv.trans_apply]
   -- `mapLinearMap` has the functor map as its underlying function.
-  erw [quotKerEquivOfSurjective_symm_apply]
-  rw [Submodule.quotEquivOfEq_mk]
-  erw [quotKerEquivOfSurjective_apply_mk]
+  exact LinearMap.equivOfSurjectiveOfKerEq_apply _ _ _ _ _ g
 
 /-- The inverse comparison sends a cocycle pairing to the stable class of its map. -/
 @[simp]

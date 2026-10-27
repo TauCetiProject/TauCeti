@@ -21,6 +21,9 @@ Pulling back the span of a quotient class and then mapping it along a linear map
 image of the quotient kernel plus the span of the image of a representative. This identifies
 the underlying submodule when lifting a cyclic submodule of a subquotient, for example an
 eigenline, into the ambient module.
+
+Two surjective linear maps with the same kernel identify their codomains, by the first
+isomorphism theorem; `LinearMap.equivOfSurjectiveOfKerEq` packages this equivalence.
 -/
 
 public section
@@ -79,3 +82,24 @@ theorem map_comap_mkQ_span_singleton (S : Submodule R M) (f : M →ₗ[R] N) (v 
   simp [Submodule.map_span]
 
 end Submodule
+
+namespace LinearMap
+
+variable {R M N N' : Type*} [Ring R] [AddCommGroup M] [AddCommGroup N] [AddCommGroup N']
+  [Module R M] [Module R N] [Module R N'] (g : M →ₗ[R] N) (h : M →ₗ[R] N')
+  (hg : Function.Surjective g) (hh : Function.Surjective h) (hk : ker g = ker h)
+
+/-- Two surjective linear maps with the same kernel identify their codomains, by the first
+isomorphism theorem. -/
+noncomputable def equivOfSurjectiveOfKerEq : N ≃ₗ[R] N' :=
+  (g.quotKerEquivOfSurjective hg).symm.trans
+    ((Submodule.quotEquivOfEq _ _ hk).trans (h.quotKerEquivOfSurjective hh))
+
+/-- The equivalence sends the image of an element under the first map to its image under
+the second map. -/
+@[simp]
+theorem equivOfSurjectiveOfKerEq_apply (x : M) :
+    g.equivOfSurjectiveOfKerEq h hg hh hk (g x) = h x := by
+  simp [equivOfSurjectiveOfKerEq]
+
+end LinearMap

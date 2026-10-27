@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.SectionsQuotient.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
+public import TauCeti.LinearAlgebra.Submodule.Quotient
 
 /-!
 # Cohomology comparison through an affine morphism
@@ -71,24 +72,6 @@ lemma mayerVietorisBoundaryLinear_pushforward_eq_zero_iff {X Y : Scheme.{u}} (f 
   constructor <;> rintro ⟨⟨a, b⟩, h⟩
   · exact ⟨(a, b), (f.mayerVietorisSectionsDifferenceLinear_pushforward M U V a b).symm.trans h⟩
   · exact ⟨(a, b), (f.mayerVietorisSectionsDifferenceLinear_pushforward M U V a b).trans h⟩
-
-section KerEq
-
-variable {S P Q Q' : Type*} [Ring S] [AddCommGroup P] [AddCommGroup Q] [AddCommGroup Q']
-  [Module S P] [Module S Q] [Module S Q'] (g : P →ₗ[S] Q) (h : P →ₗ[S] Q')
-  (hg : Function.Surjective g) (hh : Function.Surjective h) (hk : LinearMap.ker g = LinearMap.ker h)
-
-/-- Two surjective linear maps with the same kernel identify their codomains, by the first
-isomorphism theorem. -/
-private def equivOfSurjectiveOfKerEq : Q ≃ₗ[S] Q' :=
-  (g.quotKerEquivOfSurjective hg).symm.trans
-    ((Submodule.quotEquivOfEq _ _ hk).trans (h.quotKerEquivOfSurjective hh))
-
-private lemma equivOfSurjectiveOfKerEq_apply (x : P) :
-    equivOfSurjectiveOfKerEq g h hg hh hk (g x) = h x := by
-  simp [equivOfSurjectiveOfKerEq]
-
-end KerEq
 
 variable {R : Type u} [CommRing R] {X Y : Scheme.{u}}
   [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))]
@@ -184,7 +167,7 @@ def cohomologyOnePushforwardBaseLinearEquiv [IsAffineHom f]
     rw [hx]
     exact f.mayerVietorisBoundaryLinear_pushforward_eq_zero_iff M U V hUV s
   -- Both cohomology modules are the quotient of the common overlap by this kernel.
-  exact equivOfSurjectiveOfKerEq bY bX hbY hbX hker
+  exact bY.equivOfSurjectiveOfKerEq bX hbY hbX hker
 
 /-- The degree-one comparison carries the boundary of an overlap section to its boundary
 on the preimage cover. The section types are identified by pushforward and `f.preimage_inf`. -/
@@ -203,7 +186,7 @@ lemma cohomologyOnePushforwardBaseLinearEquiv_boundary [IsAffineHom f]
     Module.compHom _ ((X.baseRingToStructurePresheaf R).app (op (f ⁻¹ᵁ (U ⊓ V)))).hom
   -- The comparison sends the boundary of `s` to the boundary of its image under the
   -- section comparison, which is `s` itself.
-  exact (equivOfSurjectiveOfKerEq_apply _ _ _ _ _ s).trans (congrArg
+  exact (LinearMap.equivOfSurjectiveOfKerEq_apply _ _ _ _ _ s).trans (congrArg
     (mayerVietorisBoundaryLinear M (f ⁻¹ᵁ U) (f ⁻¹ᵁ V) (f.preimage_sup_eq_top hUV))
     (pushforwardSectionsBaseLinearEquiv_apply R f M (U ⊓ V) s))
 
