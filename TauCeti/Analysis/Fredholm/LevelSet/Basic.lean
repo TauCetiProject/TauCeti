@@ -84,6 +84,26 @@ namespace TauCeti
 
 open Filter Module Set Topology
 
+/-! ### The kernel finrank along a level set of constant index -/
+
+section FinrankKer
+
+variable {𝕜 : Type*} [Ring 𝕜] [Nontrivial 𝕜]
+  {E : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  {F : Type*} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+
+/-- Along a level set where a family of continuous linear maps is surjective and has constant
+index `n`, the kernel has finrank `n`. This algebraic identity does not require finite-dimensional
+kernels; identifying them with `Fin n → 𝕜` additionally requires finite-dimensionality over a
+field. -/
+theorem finrank_ker_eq_of_mem_levelSet {f : E → F} {c : F} {D : E → E →L[𝕜] F} {n : ℕ}
+    (hsurj : ∀ x ∈ {x | f x = c}, Function.Surjective (D x))
+    (hindex : ∀ x ∈ {x | f x = c}, ContinuousLinearMap.index (D x) = n)
+    {x : E} (hx : x ∈ {x | f x = c}) : finrank 𝕜 ↥(D x).ker = n :=
+  (ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D x) (hsurj x hx)).2 (hindex x hx)
+
+end FinrankKer
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
@@ -296,16 +316,6 @@ theorem mem_levelSetChartModel_target {n : ℕ} (hf : HasStrictFDerivAt f f' a)
 /-! ### A regular level set of constant index is a charted space -/
 
 variable {D : E → E →L[𝕜] F} {n : ℕ}
-
-omit [CompleteSpace E] [CompleteSpace F] [CompleteSpace 𝕜] in
-/-- Along a regular level set on which the Fredholm index is constantly `n`, the kernel of the
-derivative at a point of the level set has dimension `n`, so `Fin n → 𝕜` is the local model
-there. -/
-theorem finrank_ker_eq_of_mem_levelSet
-    (hsurj : ∀ x ∈ {x | f x = c}, Function.Surjective (D x))
-    (hindex : ∀ x ∈ {x | f x = c}, ContinuousLinearMap.index (D x) = n)
-    {x : E} (hx : x ∈ {x | f x = c}) : finrank 𝕜 ↥(D x).ker = n :=
-  (ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D x) (hsurj x hx)).2 (hindex x hx)
 
 /-- The neighbourhood of a point `z` of a regular level set to which the preferred chart at `z` is
 cut down: the set on which the coordinate map of the implicit function theorem keeps an invertible
