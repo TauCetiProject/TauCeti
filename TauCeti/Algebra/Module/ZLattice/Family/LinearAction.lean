@@ -158,7 +158,7 @@ def torusFamilyLinearMulAction :
 
 /-- **The projection of the family of tori is equivariant**: `g` carries the fibre over `y` to
 the fibre over `g • y`. -/
-theorem torusFamilyProjection_smul (g : Γ) (x : letI := periodAddAction P
+@[simp] theorem torusFamilyProjection_smul (g : Γ) (x : letI := periodAddAction P
       AddAction.orbitRel.Quotient Λ (Y × E)) :
     letI := torusFamilyLinearMulAction R hone hmul P ρ hP
     torusFamilyProjection P (g • x) = g • torusFamilyProjection P x := by
