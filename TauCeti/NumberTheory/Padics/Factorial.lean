@@ -67,13 +67,10 @@ theorem factorial_dvd_factorial_div_mul_pow {p : ℕ} [hp : Fact p.Prime] (h n :
     (n ! : ℤ_[p]) ∣
       ((n / p ^ h)! : ℤ_[p]) * (p : ℤ_[p]) ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1) := by
   refine PadicInt.dvd_of_norm_le (le_of_eq ?_)
-  have hm : (n / p ^ h)! * p ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1) ≠ 0 :=
-    mul_ne_zero (factorial_ne_zero _) (pow_ne_zero _ hp.out.ne_zero)
-  rw [← Nat.cast_pow, ← Nat.cast_mul, PadicInt.norm_def, PadicInt.norm_def, PadicInt.coe_natCast,
-    PadicInt.coe_natCast, Padic.norm_natCast_eq_zpow hm,
-    Padic.norm_natCast_eq_zpow (factorial_ne_zero _),
-    padicValNat.mul (factorial_ne_zero _) (pow_ne_zero _ hp.out.ne_zero), padicValNat.prime_pow,
-    ← padicValNat_factorial_eq_add_sum]
+  have hv := padicValNat_factorial_eq_add_sum p n h
+  generalize ∑ k ∈ Finset.range h, n / p ^ (k + 1) = s at hv ⊢
+  simp [PadicInt.norm_def, Padic.norm_natCast_eq_zpow, factorial_ne_zero, hv, zpow_add₀,
+    hp.out.ne_zero, mul_comm]
 
 end TauCeti
 

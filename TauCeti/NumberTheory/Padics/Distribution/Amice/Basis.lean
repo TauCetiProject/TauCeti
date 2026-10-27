@@ -273,6 +273,11 @@ private theorem summable_amiceTerm (c : C₀(ℕ, E)) : Summable fun n ↦ amice
     squeeze_zero_norm (fun n ↦ norm_amiceTerm_le n (c n))
       (tendsto_zero_iff_norm_tendsto_zero.mp c.tendsto_cofinite)
 
+omit [CompleteSpace E] in
+private theorem norm_tsum_amiceTerm_le (c : C₀(ℕ, E)) : ‖∑' n, amiceTerm p h n (c n)‖ ≤ ‖c‖ :=
+  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg c) fun n ↦
+    (norm_amiceTerm_le n (c n)).trans (c.norm_coe_le_norm n)
+
 variable (p h) in
 /-- **Amice's map** `C₀(ℕ, E) → LA_h(E)`, `(cₙ) ↦ ∑ₙ e_{h,n} • cₙ`, sending a null sequence to
 the expansion on the discs of level `h` of the series of Amice's polynomials
@@ -290,8 +295,7 @@ noncomputable def amiceMap : C₀(ℕ, E) →L[S] AnalyticStage p h E :=
   { L with
     cont := AddMonoidHomClass.continuous_of_bound L 1 fun c ↦ by
       rw [one_mul]
-      exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg c) fun n ↦
-        (norm_amiceTerm_le n (c n)).trans (c.norm_coe_le_norm n) }
+      exact norm_tsum_amiceTerm_le c }
 
 /-- Amice's map is the sum of Amice's vectors `e_{h,n} • cₙ`. -/
 theorem hasSum_amiceMap (c : C₀(ℕ, E)) :
@@ -322,8 +326,7 @@ theorem amiceMap_single (n : ℕ) (e : E) :
 
 /-- Amice's map does not increase norms. -/
 theorem norm_amiceMap_le (c : C₀(ℕ, E)) : ‖amiceMap p h S c‖ ≤ ‖c‖ :=
-  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg c) fun n ↦
-    (norm_amiceTerm_le n (c n)).trans (c.norm_coe_le_norm n)
+  norm_tsum_amiceTerm_le c
 
 /-- Amice's map followed by evaluation is the Mahler series `x ↦ ∑ₙ (x choose n) • ⌊n / pʰ⌋! • cₙ`.
 -/
