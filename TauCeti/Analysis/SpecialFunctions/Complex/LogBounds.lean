@@ -27,6 +27,8 @@ arbitrary real weight, and this file uses it at weight `1`.
 * `Complex.summable_taylorSeries_neg_log`: for a summable `r : ι → ℂ` with every `‖r i‖ < 1`, the
   family `(i, e) ↦ r i ^ (e + 1) / (e + 1)` is summable over `ι × ℕ`.
 * `Complex.tsum_taylorSeries_neg_log`: its sum over `ι × ℕ` is `∑' i, -log (1 - r i)`.
+* `Complex.norm_log_one_sub_inv_sub_sum_Icc_le`: the truncation error of the same Taylor series
+  for a single `z`, with its `n`-th partial sum `∑ j ∈ Icc 1 n, z ^ j / j`.
 -/
 
 public section
@@ -69,5 +71,24 @@ theorem tsum_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (hr : Summable r
   have hfib : ∀ i, HasSum (fun e : ℕ ↦ r i ^ (e + 1) / ((e : ℂ) + 1))
       (-Complex.log (1 - r i)) := fun i ↦ hasSum_taylorSeries_neg_log' (h1 i)
   exact ((summable_taylorSeries_neg_log hr h1).hasSum.prod_fiberwise hfib).tsum_eq.symm
+
+/-- **The truncation error of the Taylor series of `log (1 - z)⁻¹`.** For `‖z‖ < 1`, the partial
+sum `∑ j ∈ Icc 1 n, z ^ j / j` approximates `log (1 - z)⁻¹ = -log (1 - z)` to within
+`‖z‖ ^ (n + 1) / ((1 - ‖z‖) (n + 1))`. This restates Mathlib's
+`Complex.norm_log_one_sub_inv_add_logTaylor_neg_le` with the Taylor polynomial written out. -/
+theorem norm_log_one_sub_inv_sub_sum_Icc_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
+    ‖log (1 - z)⁻¹ - ∑ j ∈ Finset.Icc 1 n, z ^ j / j‖ ≤
+      ‖z‖ ^ (n + 1) * (1 - ‖z‖)⁻¹ / (n + 1) := by
+  have hT : ∀ n : ℕ, logTaylor (n + 1) (-z) = -∑ j ∈ Finset.Icc 1 n, z ^ j / j := by
+    intro n
+    induction n with
+    | zero => simp [logTaylor_succ, logTaylor_zero]
+    | succ n ih =>
+      rw [logTaylor_succ, Pi.add_apply, ih, Finset.sum_Icc_succ_top (by lia), neg_pow z]
+      have : ((-1 : ℂ) ^ (n + 1 + 1) * (-1) ^ (n + 1)) = -1 := by
+        rw [← pow_add, show n + 1 + 1 + (n + 1) = 2 * (n + 1) + 1 by ring, pow_succ, pow_mul]
+        simp
+      linear_combination (z ^ (n + 1) / ((n + 1 : ℕ) : ℂ)) * this
+  simpa [hT, sub_eq_add_neg] using norm_log_one_sub_inv_add_logTaylor_neg_le n hz
 
 end Complex
