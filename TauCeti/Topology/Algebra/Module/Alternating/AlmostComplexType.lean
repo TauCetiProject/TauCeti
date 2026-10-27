@@ -172,6 +172,41 @@ theorem alternatingDerivation_compContinuousAlternatingMap (J : V →L[ℝ] V) (
   ext v
   simp [alternatingDerivation_apply]
 
+/-- The commutator of the derivations induced by two endomorphisms is induced by their commutator,
+taken in the opposite order since the endomorphisms act on the arguments of a form. -/
+theorem alternatingDerivation_alternatingDerivation_sub (J B : V →L[ℝ] V)
+    (ω : V [⋀^ι]→L[ℝ] F) :
+    J.alternatingDerivation (B.alternatingDerivation ω) -
+        B.alternatingDerivation (J.alternatingDerivation ω) =
+      (B ∘L J).alternatingDerivation ω - (J ∘L B).alternatingDerivation ω := by
+  ext v
+  -- Split each double sum into its diagonal part, where both endomorphisms hit the same
+  -- argument, and its off-diagonal part, which is symmetric in the two endomorphisms.
+  have hsplit (X Y : V →L[ℝ] V) :
+      ∑ i, ∑ j, ω (update (update v i (X (v i))) j (Y (update v i (X (v i)) j))) =
+        ∑ i, ω (update v i (Y (X (v i)))) +
+          ∑ i, ∑ j, if i = j then 0 else ω (update (update v i (X (v i))) j (Y (v j))) := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have h (j : ι) : ω (update (update v i (X (v i))) j (Y (update v i (X (v i)) j))) =
+        (if i = j then ω (update v i (Y (X (v i)))) else 0) +
+          if i = j then 0 else ω (update (update v i (X (v i))) j (Y (v j))) := by
+      rcases eq_or_ne i j with rfl | h
+      · simp
+      · simp [h, Ne.symm h]
+    simp only [h, Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+  have hsymm : ∑ i, ∑ j, (if i = j then 0 else
+        ω (update (update v i (J (v i))) j (B (v j)))) =
+      ∑ i, ∑ j, if i = j then 0 else ω (update (update v i (B (v i))) j (J (v j))) := by
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+    rcases eq_or_ne j i with rfl | h
+    · simp
+    · simp [h, Ne.symm h, update_comm h]
+  simp only [ContinuousAlternatingMap.sub_apply, alternatingDerivation_apply,
+    comp_apply, hsplit, hsymm]
+  abel
+
 end Derivation
 
 end ContinuousLinearMap
