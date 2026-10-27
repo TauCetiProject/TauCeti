@@ -191,7 +191,7 @@ open _root_.MvPolynomial
 
 section Repr
 
-variable (σ R : Type*) [CommRing R] (n : ℕ) [NeZero n]
+variable (σ R : Type*) [CommSemiring R] (n : ℕ) [NeZero n]
 
 /-- The coordinates of a polynomial over the image of `expand n`: the coefficient at `β` collects
 the monomials whose exponents are `β` modulo `n`, with these remainders removed and the

@@ -13,7 +13,9 @@ public import Mathlib.RingTheory.RingHom.Flat
 
 Let `φ : A →+* B` be a ring map and `L : B ≃+ (ι →₀ A)` an additive equivalence that is linear
 along `φ`, that is `L (φ a * b) = a • L b`. Then `L` is the coordinate map of a basis of `B` over
-`A` for the module structure `φ.toAlgebra`, so `φ` is flat of constant rank `Nat.card ι`.
+`A` for the module structure `φ.toAlgebra`; this only needs commutative semirings. For commutative
+rings, `φ` is then flat and `RingHom.finrank φ` is the constant function `Nat.card ι`. Since
+`Nat.card ι = 0` for infinite `ι`, this is the rank of `φ` only when `ι` is finite.
 
 The statements are about a ring map `φ` rather than an `A`-algebra `B`. Applied to an
 endomorphism `φ : A →+* A`, this keeps the module structure of `φ.toAlgebra` apart from the
@@ -26,14 +28,17 @@ are not defeq.
   coordinates and basis vectors computed by `RingHom.basisOfAddEquiv_repr_apply` and
   `RingHom.basisOfAddEquiv_apply`.
 * `RingHom.flat_of_addEquiv`: `φ` is flat.
-* `RingHom.finrank_of_addEquiv`: `φ` has rank `Nat.card ι` at every prime.
+* `RingHom.finrank_of_addEquiv`: `RingHom.finrank φ` is constantly `Nat.card ι`; for finite `ι`
+  this says that `φ` has rank `Nat.card ι` at every prime.
 -/
 
 public section
 
 namespace RingHom
 
-variable {A B ι : Type*} [CommRing A] [CommRing B] (φ : A →+* B) (L : B ≃+ (ι →₀ A))
+section Semiring
+
+variable {A B ι : Type*} [CommSemiring A] [CommSemiring B] (φ : A →+* B) (L : B ≃+ (ι →₀ A))
   (hL : ∀ a b, L (φ a * b) = a • L b)
 
 include hL
@@ -57,13 +62,24 @@ theorem basisOfAddEquiv_apply (i : ι) :
     letI := φ.toAlgebra; basisOfAddEquiv φ L hL i = L.symm (Finsupp.single i 1) := by
   simp [basisOfAddEquiv]
 
+end Semiring
+
+section Ring
+
+variable {A B ι : Type*} [CommRing A] [CommRing B] (φ : A →+* B) (L : B ≃+ (ι →₀ A))
+  (hL : ∀ a b, L (φ a * b) = a • L b)
+
+include hL
+
 /-- `φ` is flat when `L` gives coordinates of `B` over `A` along `φ`. -/
 theorem flat_of_addEquiv : φ.Flat :=
   letI := φ.toAlgebra
   have := Module.Free.of_basis (basisOfAddEquiv φ L hL)
   Module.Flat.of_free
 
-/-- `φ` has rank `Nat.card ι` everywhere when `L` gives coordinates of `B` over `A` along `φ`. -/
+/-- `RingHom.finrank φ` is constantly `Nat.card ι` when `L` gives coordinates of `B` over `A`
+along `φ`. For finite `ι` this is the rank of `φ` at every prime; for infinite `ι` both sides are
+`0` by the convention of `Nat.card` and `Module.finrank`, although `B` then has infinite rank. -/
 theorem finrank_of_addEquiv : φ.finrank = fun _ ↦ Nat.card ι := by
   ext x
   let := φ.toAlgebra
@@ -71,5 +87,7 @@ theorem finrank_of_addEquiv : φ.finrank = fun _ ↦ Nat.card ι := by
   have : Nontrivial A := x.nontrivial
   rw [RingHom.finrank, Module.rankAtStalk_eq_finrank_of_free,
     Module.finrank_eq_nat_card_basis (basisOfAddEquiv φ L hL), Pi.natCast_apply, Nat.cast_id]
+
+end Ring
 
 end RingHom
