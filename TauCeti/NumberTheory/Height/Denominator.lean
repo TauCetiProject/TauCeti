@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Minpoly.Primitive
 public import TauCeti.NumberTheory.Height.House
+public import TauCeti.RingTheory.Algebraic.Denominator
 
 import Mathlib.Topology.Algebra.Polynomial
 
@@ -177,11 +178,8 @@ theorem zpow_natDenominator_mul_zpow_house_le_norm (hz : IsAlgebraic ℚ z) (hz0
       house z ^ (1 - ((minpoly ℚ z).natDegree : ℤ)) ≤ ‖z‖ := by
   set d := (minpoly ℚ z).natDegree
   have hd1 : 1 ≤ d := minpoly.natDegree_pos hz.isIntegral
-  have hDne : Algebra.natDenominator z ≠ 0 := by
-    intro h0
-    have hdvd := natDenominator_dvd_leadingCoeff_primitiveMinpoly hz
-    rw [h0, Nat.cast_zero, zero_dvd_iff] at hdvd
-    exact (leadingCoeff_primitiveMinpoly_pos z).ne' hdvd
+  have hDne : Algebra.natDenominator z ≠ 0 :=
+    IsAlgebraic.natDenominator_ne_zero ((IsFractionRing.isAlgebraic_iff ℤ ℚ ℂ).2 hz)
   have hD : (0 : ℝ) < (Algebra.natDenominator z : ℝ) := by
     exact_mod_cast Nat.pos_of_ne_zero hDne
   have hh : (0 : ℝ) < house z :=
@@ -197,19 +195,13 @@ theorem zpow_natDenominator_mul_zpow_house_le_norm (hz : IsAlgebraic ℚ z) (hz0
         one_le_natDenominator_pow_mul_house_pow_mul_norm hz hz0
     _ = ‖z‖ * ((Algebra.natDenominator z : ℝ) ^ d * house z ^ (d - 1)) := by ring
 
-/-- An element integral over `ℤ` has denominator one: the integral multiples of `x` are all of
-`ℤ x`. -/
-theorem _root_.Algebra.natDenominator_eq_one_of_isIntegral {S : Type*} [CommRing S] {x : S}
-    (hx : IsIntegral ℤ x) : Algebra.natDenominator x = 1 :=
-  Nat.dvd_one.mp (Algebra.natDenominator_dvd_iff.mpr (by simpa using hx))
-
 /-- **The bound for algebraic integers.** A nonzero algebraic integer `z ∈ ℂ` of degree `d`
 satisfies `house(z) ^ (d - 1) * ‖z‖ ≥ 1`: its denominator is `1`. -/
 theorem one_le_house_pow_mul_norm {z : ℂ} (hz : IsIntegral ℤ z) (hz0 : z ≠ 0) :
     1 ≤ house z ^ ((minpoly ℚ z).natDegree - 1) * ‖z‖ := by
   have hzQ : IsAlgebraic ℚ z := (hz.tower_top (A := ℚ)).isAlgebraic
   have h := one_le_natDenominator_pow_mul_house_pow_mul_norm hzQ hz0
-  rwa [Algebra.natDenominator_eq_one_of_isIntegral hz, Nat.cast_one, one_pow, one_mul] at h
+  simpa [Algebra.natDenominator_eq_one_of_isIntegral hz] using h
 
 /-! ### Examples -/
 

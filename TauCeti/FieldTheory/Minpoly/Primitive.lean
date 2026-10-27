@@ -286,12 +286,9 @@ theorem leadingCoeff_primitiveMinpoly_le_natDenominator_pow {x : K} (hx : IsAlge
     (primitiveMinpoly x).leadingCoeff ≤
       (Algebra.natDenominator x : ℤ) ^ (minpoly ℚ x).natDegree := by
   set D : ℕ := Algebra.natDenominator x with hD
-  have hDvd : (D : ℤ) ∣ (primitiveMinpoly x).leadingCoeff := by
-    simpa only [← hD] using natDenominator_dvd_leadingCoeff_primitiveMinpoly hx
   have hD0 : D ≠ 0 := by
-    intro h0
-    rw [h0, Nat.cast_zero, zero_dvd_iff] at hDvd
-    exact (leadingCoeff_primitiveMinpoly_pos x).ne' hDvd
+    rw [hD]
+    exact IsAlgebraic.natDenominator_ne_zero ((IsFractionRing.isAlgebraic_iff ℤ ℚ K).2 hx)
   have hDpos : (0 : ℤ) < (D : ℤ) := by exact_mod_cast Nat.pos_of_ne_zero hD0
   -- `D x` is integral over `ℤ`, and it generates the same field as `x`, so it has degree `d`.
   have hy : IsIntegral ℤ (D • x) := Algebra.isIntegral_natDenominator_smul x
