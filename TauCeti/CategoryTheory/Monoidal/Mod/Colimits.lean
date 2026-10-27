@@ -146,6 +146,8 @@ theorem cocone_pt_X : (cocone F c hc).pt.X = c.pt := (rfl)
 /-- The lifted injections recover the specified injections after carrier transport. -/
 theorem cocone_ι_hom (j : J) :
     ((cocone F c hc).ι.app j).hom ≫ eqToHom (cocone_pt_X F c hc) = c.ι.app j := by
+  -- The reflexive carrier equality reduces eqToHom to the identity (eqToHom_refl), and
+  -- unfolding cocone and Hom.mk' reduces the injection's hom projection to c.ι.app j.
   exact Category.comp_id (c.ι.app j)
 
 /-- Forgetting the lifted cocone recovers the specified underlying cocone. -/
