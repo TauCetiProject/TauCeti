@@ -43,7 +43,7 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Invertible (2
   {Q : QuadraticForm R M}
 
 /-- A vector in the quadratic radical pairs to zero with every Clifford element. -/
-theorem scalarTrace_ι_mul_of_mem_radical {v : M} (hv : v ∈ Q.radical)
+theorem scalarTrace_ι_mul_eq_zero_of_mem_radical {v : M} (hv : v ∈ Q.radical)
     (x : CliffordAlgebra Q) : scalarTrace Q (ι Q v * x) = 0 := by
   have hassoc : QuadraticMap.associated Q v = 0 := by
     simpa only [QuadraticMap.radical_eq_ker_associated, LinearMap.mem_ker] using hv
@@ -60,7 +60,7 @@ theorem scalarTrace_mul_eq_zero_of_mem_span_radical {x : CliffordAlgebra Q}
   induction hx using TwoSidedIdeal.span_induction generalizing y with
   | mem x hx =>
     obtain ⟨v, hv, rfl⟩ := hx
-    exact scalarTrace_ι_mul_of_mem_radical hv y
+    exact scalarTrace_ι_mul_eq_zero_of_mem_radical hv y
   | zero => simp
   | add x z _ _ hx hz => simp [add_mul, hx, hz]
   | neg x _ hx => simp [hx]
@@ -167,19 +167,8 @@ theorem scalarTrace_reverse_mul_self_eq_zero_iff_mem_span_radical_of_isOrtho
     (x : CliffordAlgebra Q) :
     scalarTrace Q (reverse x * x) = 0 ↔
       x ∈ TwoSidedIdeal.span (ι Q '' (Q.radical : Set V)) := by
-  classical
-  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
-  · rw [mem_span_radical_iff_basis_repr_eq_zero hb]
-    rw [scalarTrace_reverse_mul hb, Finsupp.sum,
-      Finset.sum_eq_zero_iff_of_nonneg (fun s _ ↦ mul_prod_mul_self_nonneg hQ s _)] at hx
-    intro s hs
-    by_cases hmem : s ∈ ((basis Q b).repr x).support
-    · have h := hx s hmem
-      rw [mul_left_comm, mul_eq_zero, or_iff_right hs, mul_self_eq_zero] at h
-      exact h
-    · exact Finsupp.notMem_support_iff.mp hmem
-  · rw [scalarTrace_mul_comm]
-    exact scalarTrace_mul_eq_zero_of_mem_span_radical hx _
+  rw [scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero hb hQ,
+    mem_span_radical_iff_basis_repr_eq_zero hb]
 
 end OrderedRing
 
