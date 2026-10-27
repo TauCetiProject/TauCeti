@@ -448,6 +448,13 @@ theorem reconnect_val_of_ne {x : α} (hxa : x ≠ a) (hxb : x ≠ b) (hxa' : x �
     Equiv.swap_apply_of_ne_of_ne h₁ h₂]
 
 omit hba in
+/-- Reconnecting keeps an arc joining `x` to `y` when neither of its ends is `a` or `b`. -/
+theorem reconnect_val_of_val_eq {x y : α} (h : D.val x = y) (hxa : x ≠ a) (hxb : x ≠ b)
+    (hya : y ≠ a) (hyb : y ≠ b) : (D.reconnect a b).val x = y := by
+  have hne {z : α} (hz : y ≠ z) : x ≠ D.val z := fun h' => hz (h ▸ D.apply_eq_of_apply_eq h'.symm)
+  rw [reconnect_val_of_ne hxa hxb (hne hya) (hne hyb), h]
+
+omit hba in
 /-- Reconnecting an endpoint with itself leaves the matching unchanged. -/
 @[simp]
 theorem reconnect_self (D : PerfectMatching α) (a : α) : D.reconnect a a = D := by
@@ -695,21 +702,7 @@ theorem orbitCount_mul_reconnect (D : PerfectMatching α) {T : Perm α} {a : α}
   -- Reconnecting differs from `D` by two transpositions.
   have hval : (D.reconnect a (T a)).val =
       D.val * swap a (D.val (T a)) * swap (D.val a) (T a) := by
-    ext x
-    by_cases hxa : x = a
-    · subst hxa
-      simp [reconnect_val_self ha, swap_apply_of_ne_of_ne (D.apply_ne x).symm ha.symm]
-    by_cases hxt : x = T a
-    · subst hxt
-      simp [reconnect_val_right ha, swap_apply_of_ne_of_ne (D.apply_ne a) h₂]
-    by_cases hxd : x = D.val a
-    · subst hxd
-      simp [reconnect_val_val_self ha, swap_apply_of_ne_of_ne ha (D.apply_ne (T a)).symm]
-    by_cases hxd' : x = D.val (T a)
-    · subst hxd'
-      simp [reconnect_val_val_right ha, swap_apply_of_ne_of_ne h₂.symm (D.apply_ne (T a))]
-    simp [reconnect_val_of_ne hxa hxt hxd hxd', swap_apply_of_ne_of_ne hxd hxt,
-      swap_apply_of_ne_of_ne hxa hxd']
+    rw [reconnect_val, permCongr_eq_mul, swap_inv, mul_swap_eq_swap_mul D.val, D.apply_apply]
   -- Each transposition joins two consecutive points of one orbit, so each cuts that orbit.
   have hs₁ : (T * D.val).SameCycle (D.val (T a)) a := ⟨1, by simp [hT]⟩
   have hs₂ : (T * D.val * swap a (D.val (T a))).SameCycle (D.val a) (T a) :=

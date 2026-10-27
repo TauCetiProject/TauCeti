@@ -55,9 +55,11 @@ which `TauCeti.PDCode.kauffmanBracket_insertCrossing` excludes.
 * `TauCeti.PDCode.stateLoopCount_insertNth`: a state of `D` leaves as many circles as its
   restriction leaves in the corresponding resolution.
 * `TauCeti.PDCode.kauffmanBracket_eq_resolveCrossing`: the skein relation of the Kauffman bracket.
-* `TauCeti.PDCode.resolveCrossing_edgePair_val_of_edgePair_val_eq` and
-  `TauCeti.PDCode.resolveCrossing_edgePair_val_of_edgePair_val_eq_crossing`: the arcs of the
-  resolution that avoid `c`, and those passing once through its smoothing.
+* `TauCeti.PDCode.resolveCrossing_edgePair_val_of_edgePair_val_eq`,
+  `TauCeti.PDCode.resolveCrossing_edgePair_val_of_edgePair_val_eq_crossing` and
+  `TauCeti.PDCode.resolveCrossing_edgePair_val_of_edgePair_val_eq_crossing_twice`: the arcs of the
+  resolution that avoid `c`, and those passing once or twice through its smoothing.
+* `TauCeti.PDCode.detachedCircleCount_eq`: the detached circles in terms of the arcs of `D`.
 * `TauCeti.PDCode.mirror_resolveCrossing`: mirroring exchanges the two resolutions.
 * `TauCeti.PDCode.detachedCircleCount_eq_zero`: no circle is detached when no arc of `D` joins
   two slots of `c`; on the other hand the two resolutions of the kink consist of two and of one
@@ -106,6 +108,17 @@ private theorem slotMatching_val :
     (D.slotMatching c).val = (D.slotEquiv c).symm.permCongr D.edgePair.val :=
   PerfectMatching.congr_val _ _
 
+/-- The arc of `D` at a slot of a crossing other than `c`. -/
+private theorem slotMatching_val_inl_eq_iff (i : Fin n) (k : Fin 4) {y : Fin (4 * n) ⊕ Fin 4} :
+    (D.slotMatching c).val (.inl (crossingSlotEquiv n (i, k))) = y ↔
+      D.edgePair.val (D.crossing (c.succAbove i) k) = D.slotEquiv c y := by
+  rw [slotMatching_val, permCongr_apply, symm_symm, slotEquiv_inl, Equiv.symm_apply_eq]
+
+/-- The arc of `D` at a slot of `c`. -/
+private theorem slotMatching_val_inr_eq_iff (k : Fin 4) {y : Fin (4 * n) ⊕ Fin 4} :
+    (D.slotMatching c).val (.inr k) = y ↔ D.edgePair.val (D.crossing c k) = D.slotEquiv c y := by
+  rw [slotMatching_val, permCongr_apply, symm_symm, slotEquiv_inr, Equiv.symm_apply_eq]
+
 /-- The local smoothing selecting the `A`-smoothing of `c` for `t = true` and the `B`-smoothing
 for `t = false`. -/
 private def localSmoothing (t : Bool) : Perm (Fin 4) :=
@@ -119,14 +132,9 @@ private def pinchedOnce (t : Bool) : PerfectMatching (Fin (4 * n) ⊕ Fin 4) :=
 private def pinchedTwice (t : Bool) : PerfectMatching (Fin (4 * n) ⊕ Fin 4) :=
   (D.pinchedOnce c t).reconnect (.inr 2) (.inr (D.localSmoothing c t 2))
 
-/-- Reconnecting a matching of `α ⊕ β` at two points of `β` keeps an arc from a point of `α` to a
-point of `α`, or to a third point of `β`. -/
-private theorem reconnect_inr_val_inl {α β : Type*} [DecidableEq α] [DecidableEq β]
-    {M : PerfectMatching (α ⊕ β)} {x : α} {y : α ⊕ β} (h : M.val (.inl x) = y) {p q : β}
-    (hp : y ≠ .inr p) (hq : y ≠ .inr q) : (M.reconnect (.inr p) (.inr q)).val (.inl x) = y := by
-  have hne (r : β) (hr : y ≠ .inr r) : Sum.inl x ≠ M.val (.inr r) := fun h' ↦
-    hr (h ▸ M.apply_eq_of_apply_eq h'.symm)
-  rw [PerfectMatching.reconnect_val_of_ne (by simp) (by simp) (hne p hp) (hne q hq), h]
+private theorem localSmoothing_apply_apply (t : Bool) (m : Fin 4) :
+    D.localSmoothing c t (D.localSmoothing c t m) = m :=
+  slotSmoothing_apply_apply _ m
 
 /-- The slots of `c` are `0`, `2` and their smoothing partners, and these four are distinct. -/
 private theorem localSmoothing_facts (t : Bool) :
@@ -140,11 +148,32 @@ private theorem localSmoothing_facts (t : Bool) :
     simp only [slotSmoothing_true, slotSmoothing_false, Perm.mul_apply, swap_apply_def] <;>
     exact ⟨by decide, by decide, by decide, by decide⟩
 
+/-- The smoothing arcs at slots `0` and `2` are disjoint. -/
+private theorem ne_of_localSmoothing {t : Bool} {p r : Fin 4}
+    (hp : p = 0 ∨ p = D.localSmoothing c t 0) (hr : r = 2 ∨ r = D.localSmoothing c t 2) :
+    r ≠ p := by
+  revert p r
+  rw [localSmoothing]
+  generalize (bif t then D.overPair c else !D.overPair c) = b
+  cases b <;>
+    simp only [slotSmoothing_true, slotSmoothing_false, Perm.mul_apply, swap_apply_def] <;> decide
+
+/-- Two slots `m` and `m'` of `c`, with `m'` neither `m` nor its smoothing partner, lie on the two
+different smoothing arcs. -/
+private theorem localSmoothing_pair {t : Bool} {m m' : Fin 4} (h : m' ≠ m)
+    (h' : m' ≠ D.localSmoothing c t m) :
+    (m = 0 ∨ m = D.localSmoothing c t 0) ∧ (m' = 2 ∨ m' = D.localSmoothing c t 2) ∨
+      (m = 2 ∨ m = D.localSmoothing c t 2) ∧ (m' = 0 ∨ m' = D.localSmoothing c t 0) := by
+  revert m m'
+  rw [localSmoothing]
+  generalize (bif t then D.overPair c else !D.overPair c) = b
+  cases b <;>
+    simp only [slotSmoothing_true, slotSmoothing_false, Perm.mul_apply, swap_apply_def] <;> decide
+
 private theorem pinchedTwice_inr (t : Bool) (k : Fin 4) :
     (D.pinchedTwice c t).val (.inr k) = .inr (D.localSmoothing c t k) := by
   obtain ⟨h0, h2, h02, h20, h22, hm⟩ := D.localSmoothing_facts c t
-  have hSS (m : Fin 4) : D.localSmoothing c t (D.localSmoothing c t m) = m :=
-    slotSmoothing_apply_apply _ m
+  have hSS := D.localSmoothing_apply_apply c t
   set S := D.localSmoothing c t
   set M₁ := D.pinchedOnce c t
   have h₀ : M₁.val (.inr 0) = .inr (S 0) :=
@@ -152,20 +181,42 @@ private theorem pinchedTwice_inr (t : Bool) (k : Fin 4) :
   have h₀' : M₁.val (.inr (S 0)) = .inr 0 :=
     PerfectMatching.reconnect_val_right (by simpa using h0)
   -- The second reconnection, at slots `2` and `S 2`, keeps the arc joining `0` to `S 0`.
-  have hkeep (x y : Fin 4) (hxy : M₁.val (.inr x) = .inr y) (hx : x ≠ 2) (hx' : x ≠ S 2)
-      (hy : y ≠ 2) (hy' : y ≠ S 2) : (D.pinchedTwice c t).val (.inr x) = .inr y := by
-    have hne (r : Fin 4) (hr : y ≠ r) : (Sum.inr x : Fin (4 * n) ⊕ Fin 4) ≠ M₁.val (.inr r) :=
-      fun h' ↦ hr (Sum.inr_injective (hxy ▸ M₁.apply_eq_of_apply_eq h'.symm))
-    rw [pinchedTwice, PerfectMatching.reconnect_val_of_ne (by simpa using hx)
-      (by simpa using hx') (hne 2 hy) (hne _ hy'), hxy]
   have h2' : (Sum.inr (S 2) : Fin (4 * n) ⊕ Fin 4) ≠ .inr 2 := by simpa using h2
   rcases hm k with rfl | rfl | rfl | rfl
-  · exact hkeep 0 (S 0) h₀ (by decide) h20.symm h02 h22
+  · exact PerfectMatching.reconnect_val_of_val_eq h₀ (by simp) (by simpa using h20.symm)
+      (by simpa using h02) (fun h ↦ h22 (Sum.inr_injective h))
   · rw [hSS]
-    exact hkeep (S 0) 0 h₀' h02 h22 (by decide) h20.symm
+    exact PerfectMatching.reconnect_val_of_val_eq h₀' (by simpa using h02)
+      (fun h ↦ h22 (Sum.inr_injective h)) (by simp) (by simpa using h20.symm)
   · exact PerfectMatching.reconnect_val_self h2'
   · rw [hSS]
     exact PerfectMatching.reconnect_val_right h2'
+
+/-- The first reconnection continues an arc arriving at slot `0`, or at its smoothing partner,
+through the smoothing. -/
+private theorem pinchedOnce_val_of_val_eq_inr {t : Bool} {x : Fin (4 * n) ⊕ Fin 4} {m : Fin 4}
+    (hx : (D.slotMatching c).val x = .inr m) (hm : m = 0 ∨ m = D.localSmoothing c t 0) :
+    (D.pinchedOnce c t).val x = (D.slotMatching c).val (.inr (D.localSmoothing c t m)) := by
+  have h0 : (Sum.inr (D.localSmoothing c t 0) : Fin (4 * n) ⊕ Fin 4) ≠ .inr 0 := by
+    simpa using (D.localSmoothing_facts c t).1
+  rw [pinchedOnce, ← (D.slotMatching c).apply_eq_of_apply_eq hx]
+  rcases hm with rfl | rfl
+  · exact PerfectMatching.reconnect_val_val_self h0
+  · rw [localSmoothing_apply_apply]
+    exact PerfectMatching.reconnect_val_val_right h0
+
+/-- The second reconnection continues an arc arriving at slot `2`, or at its smoothing partner,
+through the smoothing. -/
+private theorem pinchedTwice_val_of_val_eq_inr {t : Bool} {x : Fin (4 * n) ⊕ Fin 4} {m : Fin 4}
+    (hx : (D.pinchedOnce c t).val x = .inr m) (hm : m = 2 ∨ m = D.localSmoothing c t 2) :
+    (D.pinchedTwice c t).val x = (D.pinchedOnce c t).val (.inr (D.localSmoothing c t m)) := by
+  have h2 : (Sum.inr (D.localSmoothing c t 2) : Fin (4 * n) ⊕ Fin 4) ≠ .inr 2 := by
+    simpa using (D.localSmoothing_facts c t).2.1
+  rw [pinchedTwice, ← (D.pinchedOnce c t).apply_eq_of_apply_eq hx]
+  rcases hm with rfl | rfl
+  · exact PerfectMatching.reconnect_val_val_self h2
+  · rw [localSmoothing_apply_apply]
+    exact PerfectMatching.reconnect_val_val_right h2
 
 private theorem isRight_pinchedTwice (t : Bool) (k : Fin 4) :
     ((D.pinchedTwice c t).val (.inr k)).isRight := by
@@ -238,10 +289,11 @@ theorem resolveCrossing_edgePair_val_of_edgePair_val_eq {i j : Fin n} {k l : Fin
   rw [resolveCrossing_edgePair_val, PerfectMatching.restrictInl_val_eq_iff, pinchedTwice,
     pinchedOnce]
   have hM : (D.slotMatching c).val (.inl (crossingSlotEquiv n (i, k))) =
-      .inl (crossingSlotEquiv n (j, l)) := by
-    rw [slotMatching_val, permCongr_apply, symm_symm, slotEquiv_inl, h, Equiv.symm_apply_eq,
-      slotEquiv_inl]
-  exact reconnect_inr_val_inl (reconnect_inr_val_inl hM (by simp) (by simp)) (by simp) (by simp)
+      .inl (crossingSlotEquiv n (j, l)) :=
+    (D.slotMatching_val_inl_eq_iff c i k).2 (by rwa [slotEquiv_inl])
+  exact PerfectMatching.reconnect_val_of_val_eq
+    (PerfectMatching.reconnect_val_of_val_eq hM Sum.inl_ne_inr Sum.inl_ne_inr Sum.inl_ne_inr
+      Sum.inl_ne_inr) Sum.inl_ne_inr Sum.inl_ne_inr Sum.inl_ne_inr Sum.inl_ne_inr
 
 /-- Smoothing a resolution reconnects its slots by the chosen local smoothings. -/
 @[simp] theorem smoothingTurn_resolveCrossing (b : Fin n → Bool) (i : Fin n) (k : Fin 4) :
@@ -366,22 +418,58 @@ theorem mirror_resolveCrossing :
   · funext i
     simp
 
+/-- The circles of the smoothing of `c` that meet no other crossing, in terms of the arcs of `D`:
+the smoothing arc at slot `0` is detached when the arc of `D` at slot `0` returns to its smoothing
+partner, and the smoothing arc at slot `2` when the arc of `D` at slot `2` returns to its smoothing
+partner, either directly or through the smoothing arc at slot `0`. -/
+theorem detachedCircleCount_eq :
+    D.detachedCircleCount c t =
+      (if D.edgePair.val (D.crossing c 0) =
+          D.crossing c (slotSmoothing (bif t then D.overPair c else !D.overPair c) 0) then 1
+        else 0) +
+        if D.edgePair.val (D.crossing c 2) =
+              D.crossing c (slotSmoothing (bif t then D.overPair c else !D.overPair c) 2) ∨
+            D.edgePair.val (D.crossing c 2) = D.crossing c 0 ∧
+              D.edgePair.val
+                  (D.crossing c (slotSmoothing (bif t then D.overPair c else !D.overPair c) 0)) =
+                D.crossing c (slotSmoothing (bif t then D.overPair c else !D.overPair c) 2) ∨
+            D.edgePair.val (D.crossing c 2) =
+                D.crossing c (slotSmoothing (bif t then D.overPair c else !D.overPair c) 0) ∧
+              D.edgePair.val (D.crossing c 0) =
+                D.crossing c (slotSmoothing (bif t then D.overPair c else !D.overPair c) 2) then 1
+        else 0 := by
+  obtain ⟨h0, -, h02, h20, -, -⟩ := D.localSmoothing_facts c t
+  rw [detachedCircleCount, ← localSmoothing]
+  have hE (k l : Fin 4) : D.edgePair.val (D.crossing c k) = D.crossing c l ↔
+      (D.slotMatching c).val (.inr k) = .inr l := by
+    rw [slotMatching_val_inr_eq_iff, slotEquiv_inr]
+  simp only [hE]
+  set S := D.localSmoothing c t
+  set M := D.slotMatching c
+  have h0' : (Sum.inr (S 0) : Fin (4 * n) ⊕ Fin 4) ≠ .inr 0 := by simpa using h0
+  -- The first reconnection changes the arc at slot `2` only when it ends at slot `0` or `S 0`.
+  have key : (D.pinchedOnce c t).val (.inr 2) = .inr (S 2) ↔ M.val (.inr 2) = .inr (S 2) ∨
+      M.val (.inr 2) = .inr 0 ∧ M.val (.inr (S 0)) = .inr (S 2) ∨
+      M.val (.inr 2) = .inr (S 0) ∧ M.val (.inr 0) = .inr (S 2) := by
+    by_cases hA : M.val (.inr 2) = .inr 0
+    · have hP : (D.pinchedOnce c t).val (M.val (.inr 0)) = M.val (.inr (S 0)) :=
+        PerfectMatching.reconnect_val_val_self h0'
+      rw [M.apply_eq_of_apply_eq hA] at hP
+      simp [hP, hA, h20.symm, h0.symm]
+    by_cases hB : M.val (.inr 2) = .inr (S 0)
+    · have hP : (D.pinchedOnce c t).val (M.val (.inr (S 0))) = M.val (.inr 0) :=
+        PerfectMatching.reconnect_val_val_right h0'
+      rw [M.apply_eq_of_apply_eq hB] at hP
+      simp [hP, hB, h0]
+    rw [pinchedOnce, PerfectMatching.reconnect_val_of_ne (by simp) (by simpa using h02.symm)
+      (fun h ↦ hA (M.apply_eq_of_apply_eq h.symm)) (fun h ↦ hB (M.apply_eq_of_apply_eq h.symm))]
+    simp [hA, hB]
+  simp only [key]
+
 /-- No circle of the smoothing of `c` is detached when no arc of `D` joins two slots of `c`. -/
 theorem detachedCircleCount_eq_zero (h : ∀ k l, D.edgePair.val (D.crossing c k) ≠ D.crossing c l) :
     D.detachedCircleCount c t = 0 := by
-  have hM (k l : Fin 4) : (D.slotMatching c).val (.inr k) ≠ .inr l := by
-    rw [slotMatching_val, permCongr_apply, symm_symm, slotEquiv_inr, Ne, Equiv.symm_apply_eq,
-      slotEquiv_inr]
-    exact h k l
-  have hne (k l : Fin 4) : (Sum.inr k : Fin (4 * n) ⊕ Fin 4) ≠ (D.slotMatching c).val (.inr l) :=
-    fun hk ↦ hM l k hk.symm
-  have h02 : D.localSmoothing c t 0 ≠ 2 := by
-    rw [localSmoothing]
-    generalize (bif t then D.overPair c else !D.overPair c) = b
-    cases b <;> simp [Perm.mul_apply, swap_apply_def]
-  have h₂ : (D.pinchedOnce c t).val (.inr 2) = (D.slotMatching c).val (.inr 2) :=
-    PerfectMatching.reconnect_val_of_ne (by simp) (by simpa using h02.symm) (hne _ _) (hne _ _)
-  simp [detachedCircleCount, h₂, hM]
+  simp only [detachedCircleCount_eq, h, false_and, or_self, ↓reduceIte, add_zero]
 
 /-- An arc of `D` from a crossing other than `c` to a slot `m` of `c`, continued through the
 smoothing of `c` to another crossing other than `c`, is an arc of the resolution. -/
@@ -392,51 +480,78 @@ theorem resolveCrossing_edgePair_val_of_edgePair_val_eq_crossing {i j : Fin n} {
       D.crossing (c.succAbove j) l) :
     (D.resolveCrossing c t).edgePair.val (crossingSlotEquiv n (i, k)) =
       crossingSlotEquiv n (j, l) := by
-  obtain ⟨h0, h2, h02, h20, h22, hm⟩ := D.localSmoothing_facts c t
-  have hSS (m : Fin 4) : D.localSmoothing c t (D.localSmoothing c t m) = m :=
-    slotSmoothing_apply_apply _ m
-  have h₂' : D.edgePair.val (D.crossing c (D.localSmoothing c t m)) =
-      D.crossing (c.succAbove j) l := h₂
+  obtain ⟨-, -, -, -, -, hm⟩ := D.localSmoothing_facts c t
+  have hSS := D.localSmoothing_apply_apply c t
+  rw [← localSmoothing] at h₂
   set S := D.localSmoothing c t
   set M := D.slotMatching c
-  have hM₁ : M.val (.inl (crossingSlotEquiv n (i, k))) = .inr m := by
-    rw [slotMatching_val, permCongr_apply, symm_symm, slotEquiv_inl, h₁, Equiv.symm_apply_eq,
-      slotEquiv_inr]
-  have hM₂ : M.val (.inr (S m)) = .inl (crossingSlotEquiv n (j, l)) := by
-    rw [slotMatching_val, permCongr_apply, symm_symm, slotEquiv_inr, h₂', Equiv.symm_apply_eq,
-      slotEquiv_inl]
-  rw [resolveCrossing_edgePair_val, PerfectMatching.restrictInl_val_eq_iff, pinchedTwice]
-  have h0' : (Sum.inr (S 0) : Fin (4 * n) ⊕ Fin 4) ≠ .inr 0 := by simpa using h0
-  have h2' : (Sum.inr (S 2) : Fin (4 * n) ⊕ Fin 4) ≠ .inr 2 := by simpa using h2
-  rcases hm m with rfl | rfl | rfl | rfl
-  · -- The arc enters `c` at slot `0`: the first reconnection joins it to the arc leaving `S 0`.
-    have hx : (D.pinchedOnce c t).val (.inl (crossingSlotEquiv n (i, k))) =
-        .inl (crossingSlotEquiv n (j, l)) := by
-      rw [pinchedOnce, ← M.apply_eq_of_apply_eq hM₁, PerfectMatching.reconnect_val_val_self h0',
-        hM₂]
-    exact reconnect_inr_val_inl hx (by simp) (by simp)
-  · have hx : (D.pinchedOnce c t).val (.inl (crossingSlotEquiv n (i, k))) =
-        .inl (crossingSlotEquiv n (j, l)) := by
-      rw [hSS] at hM₂
-      rw [pinchedOnce, ← M.apply_eq_of_apply_eq hM₁, PerfectMatching.reconnect_val_val_right h0',
-        hM₂]
-    exact reconnect_inr_val_inl hx (by simp) (by simp)
-  · -- The arc enters `c` at slot `2`, which the first reconnection keeps; the second joins it to
-    -- the arc leaving `S 2`.
-    have hx : (D.pinchedOnce c t).val (.inl (crossingSlotEquiv n (i, k))) = .inr 2 :=
-      reconnect_inr_val_inl hM₁ (by simp) (by simpa using h02.symm)
-    have hy : (D.pinchedOnce c t).val (.inl (crossingSlotEquiv n (j, l))) = .inr (S 2) :=
-      reconnect_inr_val_inl (M.apply_eq_of_apply_eq hM₂) (by simpa using h20)
-        (fun h ↦ h22 (Sum.inr_injective h).symm)
-    rw [← (D.pinchedOnce c t).apply_eq_of_apply_eq hx, PerfectMatching.reconnect_val_val_self h2',
-      (D.pinchedOnce c t).apply_eq_of_apply_eq hy]
-  · rw [hSS] at hM₂
-    have hx : (D.pinchedOnce c t).val (.inl (crossingSlotEquiv n (i, k))) = .inr (S 2) :=
-      reconnect_inr_val_inl hM₁ (by simpa using h20) (fun h ↦ h22 (Sum.inr_injective h).symm)
-    have hy : (D.pinchedOnce c t).val (.inl (crossingSlotEquiv n (j, l))) = .inr 2 :=
-      reconnect_inr_val_inl (M.apply_eq_of_apply_eq hM₂) (by simp) (by simpa using h02.symm)
-    rw [← (D.pinchedOnce c t).apply_eq_of_apply_eq hx, PerfectMatching.reconnect_val_val_right h2',
-      (D.pinchedOnce c t).apply_eq_of_apply_eq hy]
+  have hM₁ : M.val (.inl (crossingSlotEquiv n (i, k))) = .inr m :=
+    (D.slotMatching_val_inl_eq_iff c i k).2 (by rwa [slotEquiv_inr])
+  have hM₂ : M.val (.inr (S m)) = .inl (crossingSlotEquiv n (j, l)) :=
+    (D.slotMatching_val_inr_eq_iff c _).2 (by rwa [slotEquiv_inl])
+  rw [resolveCrossing_edgePair_val, PerfectMatching.restrictInl_val_eq_iff]
+  obtain hA | hB : (m = 0 ∨ m = S 0) ∨ (m = 2 ∨ m = S 2) := by simpa only [or_assoc] using hm m
+  · -- The arc enters `c` on the smoothing arc at slot `0`: the first reconnection continues it.
+    rw [pinchedTwice]
+    exact PerfectMatching.reconnect_val_of_val_eq
+      ((D.pinchedOnce_val_of_val_eq_inr c hM₁ hA).trans hM₂) Sum.inl_ne_inr Sum.inl_ne_inr
+      Sum.inl_ne_inr Sum.inl_ne_inr
+  · -- The arc enters `c` on the smoothing arc at slot `2`: the second reconnection continues it.
+    have hSm : S m = 2 ∨ S m = S 2 := by rcases hB with rfl | rfl; exacts [.inr rfl, .inl (hSS 2)]
+    have hx : (D.pinchedOnce c t).val (.inl (crossingSlotEquiv n (i, k))) = .inr m :=
+      PerfectMatching.reconnect_val_of_val_eq hM₁ Sum.inl_ne_inr Sum.inl_ne_inr
+        (by simpa using D.ne_of_localSmoothing c (.inl rfl) hB)
+        (by simpa using D.ne_of_localSmoothing c (.inr rfl) hB)
+    rw [D.pinchedTwice_val_of_val_eq_inr c hx hB]
+    exact PerfectMatching.reconnect_val_of_val_eq hM₂
+      (by simpa using D.ne_of_localSmoothing c (.inl rfl) hSm)
+      (fun h ↦ D.ne_of_localSmoothing c (.inr rfl) hSm (Sum.inr_injective h))
+      Sum.inl_ne_inr Sum.inl_ne_inr
+
+/-- An arc of `D` from a crossing other than `c` to a slot `m` of `c`, continued through the
+smoothing of `c` to a slot `m'` of `c`, and through the smoothing once more to another crossing
+other than `c`, is an arc of the resolution. -/
+theorem resolveCrossing_edgePair_val_of_edgePair_val_eq_crossing_twice {i j : Fin n}
+    {k l m m' : Fin 4} (h₁ : D.edgePair.val (D.crossing (c.succAbove i) k) = D.crossing c m)
+    (h₂ : D.edgePair.val
+        (D.crossing c (slotSmoothing (bif t then D.overPair c else !D.overPair c) m)) =
+      D.crossing c m')
+    (h₃ : D.edgePair.val
+        (D.crossing c (slotSmoothing (bif t then D.overPair c else !D.overPair c) m')) =
+      D.crossing (c.succAbove j) l) :
+    (D.resolveCrossing c t).edgePair.val (crossingSlotEquiv n (i, k)) =
+      crossingSlotEquiv n (j, l) := by
+  have hSS := D.localSmoothing_apply_apply c t
+  rw [← localSmoothing] at h₂ h₃
+  set S := D.localSmoothing c t
+  set M := D.slotMatching c
+  have hM₁ : M.val (.inl (crossingSlotEquiv n (i, k))) = .inr m :=
+    (D.slotMatching_val_inl_eq_iff c i k).2 (by rwa [slotEquiv_inr])
+  have hM₂ : M.val (.inr (S m)) = .inr m' :=
+    (D.slotMatching_val_inr_eq_iff c _).2 (by rwa [slotEquiv_inr])
+  have hM₃ : M.val (.inr (S m')) = .inl (crossingSlotEquiv n (j, l)) :=
+    (D.slotMatching_val_inr_eq_iff c _).2 (by rwa [slotEquiv_inl])
+  -- The arc of `D` from `S m` to `m'` joins the two smoothing arcs.
+  have hm : m' ≠ m := by
+    rintro rfl
+    simpa using (M.apply_eq_of_apply_eq hM₁).symm.trans (M.apply_eq_of_apply_eq hM₂)
+  have hm' : m' ≠ S m := fun h ↦ M.apply_ne _ (by rw [hM₂, h])
+  rw [resolveCrossing_edgePair_val, PerfectMatching.restrictInl_val_eq_iff]
+  rcases D.localSmoothing_pair c hm hm' with ⟨hA, hB⟩ | ⟨hB, hA⟩
+  · -- The first reconnection continues the arc to `m'`, and the second continues it to `S m'`.
+    have hSm : S m' = 2 ∨ S m' = S 2 := by rcases hB with rfl | rfl; exacts [.inr rfl, .inl (hSS 2)]
+    rw [D.pinchedTwice_val_of_val_eq_inr c ((D.pinchedOnce_val_of_val_eq_inr c hM₁ hA).trans hM₂)
+      hB]
+    exact PerfectMatching.reconnect_val_of_val_eq hM₃
+      (by simpa using D.ne_of_localSmoothing c (.inl rfl) hSm)
+      (fun h ↦ D.ne_of_localSmoothing c (.inr rfl) hSm (Sum.inr_injective h))
+      Sum.inl_ne_inr Sum.inl_ne_inr
+  · -- The second reconnection continues the arc to `S m`, and the first continues it to `S m'`.
+    have hx : (D.pinchedOnce c t).val (.inl (crossingSlotEquiv n (i, k))) = .inr m :=
+      PerfectMatching.reconnect_val_of_val_eq hM₁ Sum.inl_ne_inr Sum.inl_ne_inr
+        (by simpa using D.ne_of_localSmoothing c (.inl rfl) hB)
+        (by simpa using D.ne_of_localSmoothing c (.inr rfl) hB)
+    rw [D.pinchedTwice_val_of_val_eq_inr c hx hB, D.pinchedOnce_val_of_val_eq_inr c hM₂ hA, hM₃]
 
 /-- The `A`-resolution of the kink consists of two crossing-free circles. -/
 theorem crossinglessComponentCount_resolveCrossing_kink_true :
