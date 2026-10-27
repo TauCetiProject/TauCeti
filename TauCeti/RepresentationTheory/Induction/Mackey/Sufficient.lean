@@ -43,7 +43,7 @@ variable {k G : Type u} [Field k] [Group G] [Finite G] {H : Subgroup G}
 /-- Mackey's sufficient criterion over any field satisfying Maschke's hypothesis:
 induction of a simple representation is simple if the nonidentity double-coset
 intertwining spaces vanish. -/
-theorem simple_indFDRep_of_mackeyDisjoint (A : FDRep k H) [Simple A]
+theorem simple_indFDRep_of_mackeyDisjoint_doubleCoset (A : FDRep k H) [Simple A]
     (hG : IsUnit (Nat.card G : k))
     (h : ∀ D : DoubleCoset.Quotient (H : Set G) (H : Set G),
       D ≠ DoubleCoset.mk H H 1 → MackeyDisjoint A D.out) :
@@ -61,7 +61,7 @@ disjointness at each group element outside the inducing subgroup. -/
 theorem simple_indFDRep_of_forall_mackeyDisjoint (A : FDRep k H) [Simple A]
     (hG : IsUnit (Nat.card G : k)) (h : ∀ s ∉ H, MackeyDisjoint A s) :
     Simple (indFDRep A) := by
-  apply A.simple_indFDRep_of_mackeyDisjoint hG
+  apply A.simple_indFDRep_of_mackeyDisjoint_doubleCoset hG
   intro D hD
   exact h D.out fun hmem => hD ((DoubleCoset.out_eq' D).symm.trans
     ((doubleCosetMk_eq_mk_one_iff_mem H D.out).mpr hmem))
