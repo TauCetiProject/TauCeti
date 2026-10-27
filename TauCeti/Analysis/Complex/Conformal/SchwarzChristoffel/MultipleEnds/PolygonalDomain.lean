@@ -207,11 +207,11 @@ private theorem exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygon
     (hfr : frontier U =
       (⋃ i, segment ℝ (x i) (y i)) ∪ ⋃ k, (fun t : ℝ => o k + (t : ℂ) * d k) '' Ici 0)
     {q : ℂ} (hq : q ∉ closure U)
-    {E : κ → Set ℂ} {c b : κ → ℂ} {ρ R : ℝ} (hb : ∀ k, b k ≠ 0)
+    {E : κ → Set ℂ} {c b : κ → ℂ} {ρ : κ → ℝ} {R : ℝ} (hb : ∀ k, b k ≠ 0)
     (hE : ∀ k, (e' k ∈ Ioo (-3 : ℝ) (-1) ∧
-        E k = {w : ℂ | ρ < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2}) ∨
+        E k = {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2}) ∨
       (e' k = -1 ∧
-        E k = {w : ℂ | ρ < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi}))
+        E k = {w : ℂ | ρ k < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi}))
     (hEU : ∀ k, E k ⊆ U) (hUE : ∀ w ∈ U, R < ‖w‖ → ∃ k, w ∈ E k)
     (hEd : Pairwise (Disjoint on E)) :
     ∃ a : ι → ℝ, ∃ a' : κ → ℝ, Injective (Sum.elim a a') ∧ ∃ f : ℂ → ℂ,
@@ -302,11 +302,11 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_ends
     (hfr : frontier U =
       (⋃ i, segment ℝ (x i) (y i)) ∪ ⋃ k, (fun t : ℝ => o k + (t : ℂ) * d k) '' Ici 0)
     {q : ℂ} (hq : q ∉ closure U)
-    {E : κ → Set ℂ} {c b : κ → ℂ} {ρ R : ℝ} (hb : ∀ k, b k ≠ 0)
+    {E : κ → Set ℂ} {c b : κ → ℂ} {ρ : κ → ℝ} {R : ℝ} (hb : ∀ k, b k ≠ 0)
     (hE : ∀ k, (e' k ∈ Ioo (-3 : ℝ) (-1) ∧
-        E k = {w : ℂ | ρ < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2}) ∨
+        E k = {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2}) ∨
       (e' k = -1 ∧
-        E k = {w : ℂ | ρ < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi}))
+        E k = {w : ℂ | ρ k < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi}))
     (hEU : ∀ k, E k ⊆ U) (hUE : ∀ w ∈ U, R < ‖w‖ → ∃ k, w ∈ E k)
     (hEd : Pairwise (Disjoint on E)) :
     ∃ a : ι → ℝ, ∃ a' : κ → ℝ, Injective (Sum.elim a a') ∧ ∃ A : ℂ, A ≠ 0 ∧ ∃ B : ℂ,
@@ -356,11 +356,11 @@ theorem exponent_sum_eq_neg_two_of_polygonal_ends
     (hfr : frontier U =
       (⋃ i, segment ℝ (x i) (y i)) ∪ ⋃ k, (fun t : ℝ => o k + (t : ℂ) * d k) '' Ici 0)
     {q : ℂ} (hq : q ∉ closure U)
-    {E : κ → Set ℂ} {c b : κ → ℂ} {ρ R : ℝ} (hb : ∀ k, b k ≠ 0)
+    {E : κ → Set ℂ} {c b : κ → ℂ} {ρ : κ → ℝ} {R : ℝ} (hb : ∀ k, b k ≠ 0)
     (hE : ∀ k, (e' k ∈ Ioo (-3 : ℝ) (-1) ∧
-        E k = {w : ℂ | ρ < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2}) ∨
+        E k = {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2}) ∨
       (e' k = -1 ∧
-        E k = {w : ℂ | ρ < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi}))
+        E k = {w : ℂ | ρ k < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi}))
     (hEU : ∀ k, E k ⊆ U) (hUE : ∀ w ∈ U, R < ‖w‖ → ∃ k, w ∈ E k)
     (hEd : Pairwise (Disjoint on E)) :
     ∑ i, e i + ∑ k, e' k = -2 := by

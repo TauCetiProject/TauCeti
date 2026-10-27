@@ -298,46 +298,50 @@ less than `2 * π` or half-strip ends contained in `U` and covering it far out, 
 open, unbounded, pairwise disjoint and preconnected at infinity inside `U`, and still cover `U`
 far out. -/
 theorem exists_far_ends {κ : Type*} [Finite κ] {e' : κ → ℝ} {U : Set ℂ}
-    {E : κ → Set ℂ} {c b : κ → ℂ} {ρ R : ℝ} (hb : ∀ k, b k ≠ 0)
+    {E : κ → Set ℂ} {c b : κ → ℂ} {ρ : κ → ℝ} {R : ℝ} (hb : ∀ k, b k ≠ 0)
     (hE : ∀ k, (e' k ∈ Ioo (-3 : ℝ) (-1) ∧
-        E k = {w : ℂ | ρ < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2}) ∨
+        E k = {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2}) ∨
       (e' k = -1 ∧
-        E k = {w : ℂ | ρ < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi}))
+        E k = {w : ℂ | ρ k < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi}))
     (hEU : ∀ k, E k ⊆ U) (hUE : ∀ w ∈ U, R < ‖w‖ → ∃ k, w ∈ E k)
     (hEd : Pairwise (Disjoint on E)) :
     ∃ E' : κ → Set ℂ, ∃ R' : ℝ, (∀ k, IsOpen (E' k)) ∧ (∀ k, E' k ⊆ E k) ∧
       Pairwise (Disjoint on E') ∧ (∀ w ∈ U, R' < ‖w‖ → ∃ k, w ∈ E' k) ∧
       (∀ k, IsPreconnectedAtInfinityIn U (E' k)) ∧ ∀ k, ¬IsBounded (E' k) := by
   have := Fintype.ofFinite κ
-  refine ⟨fun k => E k ∩ {w : ℂ | max ρ 0 < ‖w - c k‖}, max R (max ρ 0 + ∑ k, ‖c k‖),
+  refine ⟨fun k => E k ∩ {w : ℂ | max (ρ k) 0 < ‖w - c k‖},
+    max R (∑ k, (max (ρ k) 0 + ‖c k‖)),
     fun k => ?_,
     fun k => inter_subset_left,
     fun k l hkl => (hEd hkl).mono inter_subset_left inter_subset_left, fun w hw hRw => ?_,
     fun k => ?_, fun k => ?_⟩
   · dsimp only
     rcases hE k with ⟨-, hEk⟩ | ⟨-, hEk⟩ <;> rw [hEk]
-    · -- the far part of the sector is the sector of radius `max ρ 0`
-      have hset : {w : ℂ | ρ < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2} ∩
-          {w : ℂ | max ρ 0 < ‖w - c k‖} =
-          {w : ℂ | max ρ 0 < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2} := by
+    · -- the far part of the sector is the sector of radius `max (ρ k) 0`
+      have hset :
+          {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2} ∩
+            {w : ℂ | max (ρ k) 0 < ‖w - c k‖} =
+          {w : ℂ | max (ρ k) 0 < ‖w - c k‖ ∧
+            |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2} := by
         ext w
         simp only [mem_inter_iff, mem_ofPred_eq, max_lt_iff]
         tauto
       rw [hset]
-      exact isOpen_sector (le_max_right ρ 0)
-    · exact (isOpen_halfStrip ρ (c k) (b k)).inter (isOpen_lt continuous_const (by fun_prop))
+      exact isOpen_sector (le_max_right (ρ k) 0)
+    · exact (isOpen_halfStrip (ρ k) (c k) (b k)).inter (isOpen_lt continuous_const (by fun_prop))
   · -- far from `0`, a point is far from every centre
     obtain ⟨k, hk⟩ := hUE w hw ((le_max_left _ _).trans_lt hRw)
-    have hck : ‖c k‖ ≤ ∑ l, ‖c l‖ :=
-      Finset.single_le_sum (f := fun l => ‖c l‖) (fun _ _ => norm_nonneg _) (Finset.mem_univ k)
+    have hck : max (ρ k) 0 + ‖c k‖ ≤ ∑ l, (max (ρ l) 0 + ‖c l‖) :=
+      Finset.single_le_sum (f := fun l => max (ρ l) 0 + ‖c l‖)
+        (fun l _ => add_nonneg (le_max_right _ _) (norm_nonneg _)) (Finset.mem_univ k)
     refine ⟨k, hk, ?_⟩
     have := norm_sub_norm_le w (c k)
-    have := le_max_right R (max ρ 0 + ∑ l, ‖c l‖)
-    exact (by linarith : max ρ 0 < ‖w - c k‖)
+    have := le_max_right R (∑ l, (max (ρ l) 0 + ‖c l‖))
+    exact (by linarith : max (ρ k) 0 < ‖w - c k‖)
   · rcases hE k with ⟨-, hEk⟩ | ⟨-, hEk⟩
-    · exact ((isPreconnectedAtInfinityIn_sector ρ _ (hb k)).mono (hEk ▸ hEU k)).subset
+    · exact ((isPreconnectedAtInfinityIn_sector (ρ k) _ (hb k)).mono (hEk ▸ hEU k)).subset
         (hEk ▸ inter_subset_left)
-    · exact ((isPreconnectedAtInfinityIn_halfStrip ρ (hb k)).mono (hEk ▸ hEU k)).subset
+    · exact ((isPreconnectedAtInfinityIn_halfStrip (ρ k) (hb k)).mono (hEk ▸ hEU k)).subset
         (hEk ▸ inter_subset_left)
   · dsimp only
     rcases hE k with ⟨he, hEk⟩ | ⟨-, hEk⟩ <;> rw [hEk]
