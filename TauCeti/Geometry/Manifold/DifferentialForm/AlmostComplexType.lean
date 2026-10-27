@@ -471,7 +471,7 @@ private theorem inChart_inChart {z : E} (hz : z ∈ (extChartAt I x).target) (w 
     J.inChart x z (J.inChart x z w) = -w := by
   simp only [inChart, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
   rw [Trivialization.symmL_continuousLinearMapAt _ (mem_baseSet_of_mem_target x hz),
-    show ∀ v, J.toEndomorphism _ (J.toEndomorphism _ v) = -v from J.apply_apply _, map_neg,
+    J.square_neg_apply, map_neg,
     Trivialization.continuousLinearMapAt_symmL _ (mem_baseSet_of_mem_target x hz)]
 
 /-- At the chart point, the almost complex structure read in the chart is `J x`. -/
