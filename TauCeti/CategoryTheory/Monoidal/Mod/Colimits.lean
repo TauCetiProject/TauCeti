@@ -32,7 +32,7 @@ open scoped MonoidalLeftAction
 variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
   {D : Type u₂} [Category.{v₂} D] [MonoidalLeftAction C D]
   {A : C} [MonObj A] {J : Type u₃} [Category.{v₃} J]
-  (F : J ⥤ Mod D A) [PreservesColimitsOfShape J (actionLeft D A)]
+  (F : J ⥤ Mod D A) [PreservesColimit (F ⋙ forget A) (actionLeft D A)]
 
 /-- A module cocone is colimiting whenever its underlying cocone is colimiting. -/
 noncomputable def isColimitOfForget (c : Cocone F)
@@ -43,7 +43,8 @@ noncomputable def isColimitOfForget (c : Cocone F)
       hc.fac ((forget A).mapCocone s) j
     apply (isColimitOfPreserves (actionLeft D A) hc).hom_ext
     intro j
-    -- Name the underlying descent to keep the actual module carriers explicit.
+    -- Normalize mapped-cocone projections to action notation so the module
+    -- homomorphism laws match.
     change (A ⊴ₗ (c.ι.app j).hom) ≫ γ ≫ l =
       (A ⊴ₗ (c.ι.app j).hom) ≫ (A ⊴ₗ l) ≫ γ
     rw [← IsModHom.smul_hom_assoc, hl, ← actionHomRight_comp_assoc, hl]
@@ -74,7 +75,8 @@ private def actionCocone : Cocone ((F ⋙ forget A) ⋙ actionLeft D A) where
       naturality := fun i j f ↦ by
         let p (j : J) : (F.obj j).X ⟶ c.pt := c.ι.app j
         have hp : (F.map f).hom ≫ p j = p i := c.w f
-        -- These are the actual module carriers of the underlying diagram.
+        -- Normalize composite-functor projections to action notation so the module
+        -- homomorphism law matches.
         change (A ⊴ₗ (F.map f).hom) ≫ (γ ≫ p j) = (γ ≫ p i) ≫ 𝟙 _
         rw [← IsModHom.smul_hom_assoc, Category.assoc, hp, Category.comp_id] }
 
@@ -86,18 +88,20 @@ private theorem actionMap_ι (j : J) :
     A ⊴ₗ c.ι.app j ≫ actionMap F c hc = γ[A, (F.obj j).X] ≫ c.ι.app j :=
   (isColimitOfPreserves (actionLeft D A) hc).fac (actionCocone F c) j
 
+variable [PreservesColimit ((F ⋙ forget A) ⋙ actionLeft D A) (actionLeft D A)]
+
 /-- The module structure on the point of an underlying colimiting cocone. -/
 @[instance_reducible]
 noncomputable def action : ModObj A c.pt where
   smul := actionMap F c hc
   one_smul := by
-    have : PreservesColimitsOfShape J (actionLeft D (𝟙_ C)) :=
-      preservesColimitsOfShape_of_natIso (actionUnitNatIso C D).symm
+    have : PreservesColimit (F ⋙ forget A) (actionLeft D (𝟙_ C)) :=
+      preservesColimit_of_natIso _ (actionUnitNatIso C D).symm
     apply (isColimitOfPreserves (actionLeft D (𝟙_ C)) hc).hom_ext
     intro j
     let p : (F.obj j).X ⟶ c.pt := c.ι.app j
     have hp : A ⊴ₗ p ≫ actionMap F c hc = γ ≫ p := actionMap_ι F c hc j
-    -- Name the injections to retain their actual source and target carriers.
+    -- Normalize mapped-cocone projections to the unit action so action exchange matches.
     change (𝟙_ C) ⊴ₗ p ≫ η ⊵ₗ c.pt ≫ actionMap F c hc =
       (𝟙_ C) ⊴ₗ p ≫ (λₗ c.pt).hom
     rw [action_exchange_assoc η[A] p, hp, ← Category.assoc, ModObj.one_smul]
@@ -105,22 +109,18 @@ noncomputable def action : ModObj A c.pt where
   mul_smul := by
     let e : actionLeft D (A ⊗ A) ≅ actionLeft D A ⋙ actionLeft D A :=
       (actionAssocNatIso C D).app A |>.app A
-    have : PreservesColimitsOfShape J (actionLeft D (A ⊗ A)) :=
-      preservesColimitsOfShape_of_natIso e.symm
+    have : PreservesColimit (F ⋙ forget A) (actionLeft D (A ⊗ A)) :=
+      preservesColimit_of_natIso _ e.symm
     apply (isColimitOfPreserves (actionLeft D (A ⊗ A)) hc).hom_ext
     intro j
     let p : (F.obj j).X ⟶ c.pt := c.ι.app j
     have hp : A ⊴ₗ p ≫ actionMap F c hc = γ ≫ p := actionMap_ι F c hc j
-    -- The tensor-square action on injections determines the associativity equation.
+    -- Normalize mapped-cocone projections to the tensor-square action so action exchange matches.
     change (A ⊗ A) ⊴ₗ p ≫ μ ⊵ₗ c.pt ≫ actionMap F c hc =
       (A ⊗ A) ⊴ₗ p ≫ (αₗ A A c.pt).hom ≫
         A ⊴ₗ actionMap F c hc ≫ actionMap F c hc
     rw [action_exchange_assoc μ[A] p, hp, ← Category.assoc, ModObj.mul_smul]
-    simp only [Category.assoc]
-    rw [tensor_actionHomRight_assoc]
-    simp only [Iso.inv_hom_id_assoc]
-    rw [← actionHomRight_comp_assoc, hp, actionHomRight_comp]
-    simp [hp]
+    simp [Category.assoc, ← actionHomRight_comp_assoc, hp]
 
 /-- Each underlying injection is equivariant for the induced action. -/
 theorem ι_action_smul (j : J) :
@@ -135,7 +135,9 @@ noncomputable def cocone : Cocone F where
     { app := fun j ↦ Hom.mk' (c.ι.app j) (ι_action_smul F c hc j).symm
       naturality := fun i j f ↦ by
         apply hom_ext
-        simpa [Hom.mk', forget] using c.w f }
+        -- Composite-functor carriers prevent Hom.mk'_hom from matching the injections directly.
+        change (F.map f).hom ≫ c.ι.app j = c.ι.app i ≫ 𝟙 c.pt
+        exact (c.w f).trans (Category.comp_id _).symm }
 
 /-- The underlying object of the lifted cocone is the specified colimit object. -/
 theorem cocone_pt_X : (cocone F c hc).pt.X = c.pt := (rfl)
@@ -147,7 +149,10 @@ theorem cocone_ι_hom (j : J) :
 
 /-- Forgetting the lifted cocone recovers the specified underlying cocone. -/
 noncomputable def forgetCoconeIso : (forget A).mapCocone (cocone F c hc) ≅ c :=
-  Cocone.ext (Iso.refl _) (fun _ ↦ by simp [cocone, Hom.mk', forget])
+  Cocone.ext (Iso.refl _) (fun j ↦ by
+    -- Normalize mapped-cocone projections to underlying injections so cocone_ι_hom matches.
+    change ((cocone F c hc).ι.app j).hom ≫ 𝟙 c.pt = c.ι.app j
+    exact cocone_ι_hom F c hc j)
 
 /-- The cocone lifted from an underlying colimit is itself a colimit. -/
 noncomputable def isColimit : IsColimit (cocone F c hc) :=
@@ -155,14 +160,22 @@ noncomputable def isColimit : IsColimit (cocone F c hc) :=
 
 end ColimitConstruction
 
+/-- The forgetful functor creates a diagram's colimit when the action preserves
+both its underlying colimit and the colimit of the diagram acted on once. -/
+noncomputable instance forgetCreatesColimit
+    [PreservesColimit ((F ⋙ forget A) ⋙ actionLeft D A) (actionLeft D A)] :
+    CreatesColimit F (forget (D := D) A) where
+  lifts := fun c hc ↦
+    { liftedCocone := ColimitConstruction.cocone F c hc
+      validLift := ColimitConstruction.forgetCoconeIso F c hc }
+  reflects := fun {c} hc ↦ ⟨isColimitOfForget F c hc⟩
+
+variable [PreservesColimitsOfShape J (actionLeft D A)]
+
 /-- The forgetful functor creates colimits preserved by the monoid's action. -/
 noncomputable instance forgetCreatesColimitsOfShape :
     CreatesColimitsOfShape J (forget (D := D) A) where
-  CreatesColimit := fun {F} ↦
-    { lifts := fun c hc ↦
-        { liftedCocone := ColimitConstruction.cocone F c hc
-          validLift := ColimitConstruction.forgetCoconeIso F c hc }
-      reflects := fun {c} hc ↦ ⟨isColimitOfForget F c hc⟩ }
+  CreatesColimit := inferInstance
 
 /-- Module objects inherit colimits preserved by the monoid's action. -/
 noncomputable instance hasColimitsOfShape [HasColimitsOfShape J D] :
