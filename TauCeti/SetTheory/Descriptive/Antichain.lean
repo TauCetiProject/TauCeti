@@ -167,8 +167,8 @@ theorem hasCantorAntichainOn_subtype_iff :
   · rintro ⟨f, hf, hA, hE⟩
     exact ⟨fun a => ⟨f a, hA a⟩, hf.subtype_mk _, fun _ => trivial, hE⟩
 
-/-- **At least continuum many classes.** If `A` carries a Cantor antichain for `E`, then `E` has at least
-continuum many classes. -/
+/-- **At least continuum many classes.** If `A` carries a Cantor antichain for `E`, then `E` has
+at least continuum many classes. -/
 theorem HasCantorAntichainOn.continuum_le_mk_quotient (h : E.HasCantorAntichainOn A) :
     𝔠 ≤ #(Quotient E) := by
   obtain ⟨f, -, -, hE⟩ := h
