@@ -182,12 +182,14 @@ def complexXIso (n : ℕ) : (complex k A).X n ≅ ModuleCat.of k (UniversalForms
   CategoryTheory.Iso.refl _
 
 /-- The complex differential is the word differential, under the public carrier identifications. -/
+@[simp]
 theorem complex_d (n : ℕ) :
     (complexXIso k A n).inv ≫ (complex k A).d n (n + 1) ≫
       (complexXIso k A (n + 1)).hom = ModuleCat.ofHom (d k A n) := by
   simp [complexXIso, complex]
 
 /-- Evaluation of the complex differential after identifying its source and target carriers. -/
+@[simp↓]
 theorem complex_d_apply (n : ℕ) (ω : UniversalForms k A n) :
     (complexXIso k A (n + 1)).hom
       ((complex k A).d n (n + 1) ((complexXIso k A n).inv ω)) = d k A n ω := by
@@ -273,6 +275,7 @@ def complexMap (f : A →ₙₐ[k] B) : complex k A ⟶ complex k B :=
       exact LinearMap.ext (fun ω ↦ (map_d k f n ω).symm))
 
 /-- The component of the induced chain map in tensor-word coordinates. -/
+@[simp]
 theorem complexMap_f (f : A →ₙₐ[k] B) (n : ℕ) :
     (complexXIso k A n).inv ≫ (complexMap k f).f n ≫ (complexXIso k B n).hom =
       ModuleCat.ofHom (map k f n) := by
