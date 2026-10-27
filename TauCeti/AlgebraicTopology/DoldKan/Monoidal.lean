@@ -46,6 +46,10 @@ The comultiplication of the alternating face map complex therefore passes to the
 * `CategoryTheory.Idempotents.DoldKan.laxMonoidalΓ`: the induced lax monoidal structure on the
   Dold–Kan functor `Γ`, with unit `CategoryTheory.Idempotents.DoldKan.Γ_ε` and tensorator
   `CategoryTheory.Idempotents.DoldKan.Γ_μ`.
+* `CategoryTheory.Idempotents.DoldKan.isIso_N_η` and
+  `CategoryTheory.Idempotents.DoldKan.isIso_Γ_ε`: the counit of `N` and the unit of `Γ` are
+  invertible, since the constant simplicial object on `𝟙_ C` has no nondegenerate simplices in
+  positive dimensions (`CategoryTheory.SimplicialObject.PInfty_f_succ_const`).
 
 ## References
 
@@ -132,6 +136,16 @@ lemma PInfty_comp_η_alternatingFaceMapComplex :
   ext (_ | n) : 1
   · rw [HomologicalComplex.comp_f, PInfty_f_0, Category.id_comp]
   · exact (HomologicalComplex.isZero_single_obj_X _ _ _ (n + 1) (by omega)).eq_of_tgt _ _
+
+omit [MonoidalCategory C] [MonoidalPreadditive C] [HasFiniteCoproducts C] in
+/-- Every simplex of positive dimension of a constant simplicial object is degenerate, so the
+projection `PInfty` onto normalized chains vanishes in positive degrees. -/
+lemma PInfty_f_succ_const (X : C) (n : ℕ) :
+    (PInfty (X := (Functor.const SimplexCategoryᵒᵖ).obj X)).f (n + 1) = 0 := by
+  have h := σ_comp_PInfty ((Functor.const SimplexCategoryᵒᵖ).obj X) (0 : Fin (n + 1))
+  simp only [SimplicialObject.σ, Functor.const_obj_map] at h
+  -- `𝟙 X` is the identity of the term in degree `n + 1` of the constant simplicial object
+  exact (Category.id_comp _).symm.trans h
 
 end CategoryTheory.SimplicialObject
 
@@ -334,6 +348,42 @@ lemma Γ_μ (K L : ChainComplex C ℕ) :
   letI : (equivalence (C := C)).functor.OplaxMonoidal := oplaxMonoidalN
   (equivalence.toAdjunction.rightAdjointLaxMonoidal_μ K L).trans
     (equivalence.toAdjunction.homEquiv_unit _ _ _)
+
+/-- The counit `N (𝟙_) ⟶ 𝟙_` of the normalized chain functor is invertible: the normalized chains
+of the constant simplicial object on `𝟙_ C` are `𝟙_ C`, concentrated in degree zero. -/
+instance isIso_N_η : IsIso (Functor.OplaxMonoidal.η (N : SimplicialObject C ⥤ _)) := by
+  have : IsSplitEpi (PInftyToN.app (𝟙_ (SimplicialObject C))) :=
+    ⟨⟨⟨inclusionN.app _, inclusionN_app_comp_PInftyToN_app _⟩⟩⟩
+  have : IsSplitMono (inclusionN.app (𝟙_ (SimplicialObject C))) :=
+    ⟨⟨⟨PInftyToN.app _, inclusionN_app_comp_PInftyToN_app _⟩⟩⟩
+  -- the inverse is the inclusion of `𝟙_ C` in degree zero, projected to normalized chains
+  refine ⟨mkHomFromSingle (𝟙 (𝟙_ C)) (fun k hk ↦ by simp at hk) ≫ PInftyToN.app _, ?_, ?_⟩
+  · rw [← cancel_epi (PInftyToN.app _), ← cancel_mono (inclusionN.app _), N_η]
+    simp only [Category.assoc, PInftyToN_app_comp_inclusionN_app_assoc,
+      PInftyToN_app_comp_inclusionN_app, Category.comp_id]
+    ext (_ | n) : 1
+    · simp only [alternatingFaceMapComplex_obj_X, Monoidal.tensorUnit_obj, comp_f, PInfty_f_0,
+        AlternatingFaceMapComplex.obj_X, SimplicialObject.alternatingFaceMapComplex_η_f_zero,
+        ChainComplex.single₀_obj_zero, ChainComplex.single₀ObjXSelf, Iso.refl_inv,
+        mkHomFromSingle_f, Iso.refl_hom, Category.comp_id, Category.id_comp]
+      -- the identities of `𝟙_ C` and of the degree-zero term of its constant simplicial object
+      exact (Category.id_comp _).trans (Category.id_comp _)
+    · have h : (PInfty (X := 𝟙_ (SimplicialObject C))).f (n + 1) = 0 :=
+        SimplicialObject.PInfty_f_succ_const (𝟙_ C) n
+      simp [h]
+  · rw [N_η, Category.assoc, PInftyToN_app_comp_inclusionN_app_assoc,
+      SimplicialObject.PInfty_comp_η_alternatingFaceMapComplex]
+    refine from_single_hom_ext ?_
+    simp only [ChainComplex.single₀_obj_zero, comp_f, alternatingFaceMapComplex_obj_X,
+      Monoidal.tensorUnit_obj, mkHomFromSingle_f, ChainComplex.single₀ObjXSelf, Iso.refl_hom,
+      Category.comp_id, SimplicialObject.alternatingFaceMapComplex_η_f_zero, Iso.refl_inv, id_f]
+    -- the identities of `𝟙_ C` and of the degree-zero term of the unit complex
+    exact Category.id_comp _
+
+/-- The unit `𝟙_ ⟶ Γ (𝟙_)` of the lax monoidal Dold–Kan functor is invertible. -/
+instance isIso_Γ_ε : IsIso (Functor.LaxMonoidal.ε (Γ : ChainComplex C ℕ ⥤ _)) := by
+  rw [Γ_ε]
+  exact IsIso.comp_isIso' inferInstance (Functor.map_isIso Γ (f := Functor.OplaxMonoidal.η N))
 
 end Monoidal
 

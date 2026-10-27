@@ -37,6 +37,8 @@ sets are `DK(τ_{≥ 0} Hom(x, y))` (Lurie, *Higher Algebra*, Construction 1.3.1
 * `CochainComplex.truncLE'TensorHom`: the tensorator `τ_{≥ 0} K ⊗ τ_{≥ 0} L ⟶ τ_{≥ 0} (K ⊗ L)`.
 * `CochainComplex.truncLE'Unit`: the unit `𝟙_ ⟶ τ_{≥ 0} 𝟙_`.
 * The instance `(ComplexShape.embeddingDownNat.truncLE'Functor (ModuleCat R)).LaxMonoidal`.
+* `CochainComplex.bijective_ε_comp_truncLE'Functor_map`: maps `𝟙_ ⟶ K` out of the unit complex
+  correspond to maps `𝟙_ ⟶ τ_{≥ 0} K` out of the unit chain complex.
 
 ## Implementation notes
 
@@ -353,5 +355,40 @@ lemma truncLE'Functor_μ :
     Functor.LaxMonoidal.μ (embeddingDownNat.truncLE'Functor (ModuleCat.{v} R)) K L =
       truncLE'TensorHom K L :=
   (rfl)
+
+omit L in
+/-- Maps `𝟙_ ⟶ K` out of the unit complex, which are the degree-`0` cycles of `K`, are the maps
+`𝟙_ ⟶ τ_{≥ 0} K` out of the unit chain complex: the lax monoidal good truncation induces
+bijections on maps out of the tensor units. -/
+lemma bijective_ε_comp_truncLE'Functor_map :
+    Function.Bijective fun f : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ K ↦
+      Functor.LaxMonoidal.ε (embeddingDownNat.truncLE'Functor (ModuleCat.{v} R)) ≫
+        (embeddingDownNat.truncLE'Functor (ModuleCat.{v} R)).map f := by
+  have h : Function.Bijective fun f : 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ) ⟶ K ↦
+      truncLE'Unit R ≫ truncLE'Map f embeddingDownNat := by
+    refine ⟨fun f g h ↦ ?_, fun g ↦ ?_⟩
+    · have := HomologicalComplex.congr_hom h 0 =≫ K.truncLE'ToX 0
+      simp only [comp_f, Category.assoc, truncLE'Map_f_truncLE'ToX,
+        truncLE'Unit_f_truncLE'ToX_assoc, cancel_epi] at this
+      exact from_single_hom_ext this
+    · have h0 : -((0 : ℕ) : ℤ) = 0 := by simp
+      let φ := (singleObjXSelf (down ℕ) 0 (𝟙_ (ModuleCat.{v} R))).inv ≫ g.f 0 ≫
+        K.truncLE'ToX 0 ≫ (K.XIsoOfEq h0).hom
+      have hφ (k : ℤ) (_ : (up ℤ).Rel 0 k) : φ ≫ K.d 0 k = 0 := by
+        simp only [φ, Category.assoc, XIsoOfEq_hom_comp_d, truncLE'ToX_zero_d, comp_zero]
+      -- `mkHomFromSingle_f` evaluates in degree `0`, whereas `CochainComplex.truncLE'ToX 0` and
+      -- `CochainComplex.truncLE'Unit_f_truncLE'ToX` involve the degree `-((0 : ℕ) : ℤ)`.
+      have key (i : ℤ) (hi : i = 0) : (singleObjXIsoOfEq (up ℤ) 0 _ i hi).inv ≫
+          (mkHomFromSingle φ hφ).f i = φ ≫ (K.XIsoOfEq hi).inv := by
+        subst hi
+        simp [mkHomFromSingle_f, singleObjXSelf]
+      refine ⟨mkHomFromSingle φ hφ, from_single_hom_ext ?_⟩
+      rw [← cancel_mono (K.truncLE'ToX 0)]
+      simp only [comp_f, Category.assoc, truncLE'Map_f_truncLE'ToX,
+        truncLE'Unit_f_truncLE'ToX_assoc, key]
+      simp only [φ, Category.assoc, Iso.hom_inv_id, Category.comp_id, Iso.hom_inv_id_assoc]
+  -- the unit and the action on morphisms of the good truncation are `truncLE'Unit` and
+  -- `truncLE'Map` (`truncLE'Functor_ε` and `ComplexShape.Embedding.truncLE'Functor_map`)
+  exact h
 
 end CochainComplex
