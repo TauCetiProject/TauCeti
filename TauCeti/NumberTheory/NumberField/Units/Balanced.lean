@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.NormLeOne
 public import Mathlib.NumberTheory.NumberField.House
+public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
 # Balanced representatives modulo units and bounded divisors
@@ -17,9 +18,10 @@ coordinates of a vector of the logarithmic space down on this basis approximates
 logarithmic embedding of a product `∏ j, u j ^ n j`, within the sum of the norms of the
 logarithmic embeddings of the `u j`.
 
-Applied to the vector `(log |N(x)| / d - log w(x))_w`, this multiplies any nonzero `x : K` by a
-unit `ε` so that every `log w(ε x)` lies within `c₁(u) = rank K * ∑ j, ‖log u j‖` of its average
-value `log |N(x)| / d`. In particular every conjugate of `ε x` has absolute value between
+Applied to the vector `(mult w * (log |N(x)| / d - log w(x)))_{w ≠ w₀}`, this multiplies any
+nonzero `x : K` by a unit `ε` so that every `log w(ε x)` lies within
+`c₁(u) = rank K * ∑ j, ‖log u j‖` of its average value `log |N(x)| / d`. In particular every
+conjugate of `ε x` has absolute value between
 `exp (-c₁(u)) * |N(x)| ^ (1 / d)` and `exp c₁(u) * |N(x)| ^ (1 / d)`.
 
 For a nonzero algebraic integer `α`, the divisors of `α` whose house is at most
@@ -208,12 +210,6 @@ theorem boundedDivisors_mul_unit (u : Fin (rank K) → (𝓞 K)ˣ) (η : (𝓞 K
   ext γ
   simp [mem_boundedDivisors, abs_mul, hη]
 
-/-- The absolute value of the norm of a nonzero algebraic integer is at least one. -/
-private theorem one_le_abs_norm {α : 𝓞 K} (hα : α ≠ 0) :
-    (1 : ℝ) ≤ |(Algebra.norm ℚ (α : K) : ℝ)| := by
-  rw [← Algebra.coe_norm_int, Rat.cast_intCast, ← Int.cast_abs, ← Int.cast_one, Int.cast_le]
-  exact Int.one_le_abs (Algebra.norm_ne_zero_iff.mpr hα)
-
 open scoped Classical in
 /-- For `α ≠ 0`, the divisor `1` belongs to `boundedDivisors u α`, since `|N(α)| ≥ 1`. -/
 theorem one_mem_boundedDivisors (u : Fin (rank K) → (𝓞 K)ˣ) {α : 𝓞 K} (hα : α ≠ 0) :
@@ -222,7 +218,7 @@ theorem one_mem_boundedDivisors (u : Fin (rank K) → (𝓞 K)ˣ) {α : 𝓞 K} 
   rw [RingOfIntegers.coe_eq_algebraMap, map_one, ← Int.cast_one, house_intCast, abs_one,
     Int.cast_one]
   refine one_le_mul_of_one_le_of_one_le (Real.one_le_exp (by positivity)) ?_
-  exact Real.one_le_rpow (one_le_abs_norm hα) (by positivity)
+  exact Real.one_le_rpow (RingOfIntegers.one_le_abs_norm hα) (by positivity)
 
 open scoped Classical in
 /-- **Divisors modulo units.** If `u` has maximal rank and `α ≠ 0`, every divisor `β` of `α` is a
@@ -242,7 +238,7 @@ theorem exists_mem_boundedDivisors_of_dvd {u : Fin (rank K) → (𝓞 K)ˣ} (hu 
     obtain ⟨δ, rfl⟩ := hβ
     have hδ : δ ≠ 0 := right_ne_zero_of_mul hα
     simp only [RingOfIntegers.coe_eq_algebraMap, map_mul, Rat.cast_mul, abs_mul]
-    exact le_mul_of_one_le_right (abs_nonneg _) (one_le_abs_norm hδ)
+    exact le_mul_of_one_le_right (abs_nonneg _) (RingOfIntegers.one_le_abs_norm hδ)
   rw [house, pi_norm_le_iff_of_nonneg (by positivity)]
   intro φ
   rw [canonicalEmbedding.apply_at, RingOfIntegers.coe_eq_algebraMap, map_mul]
