@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Amenable.Average
 public import TauCeti.MeasureTheory.Group.Foelner.Int
+import TauCeti.GroupTheory.Amenable.Sequence
 
 /-!
 # Amenability of the integer group
@@ -48,13 +49,7 @@ theorem hasFoelnerSets_multiplicative_int : HasFoelnerSets (Multiplicative ℤ) 
     simpa only [htranslate, F, ← image_symmDiff _ _ Multiplicative.ofAdd.injective,
       card_image_of_injective _ Multiplicative.ofAdd.injective] using
       Int.tendsto_card_image_add_left_Icc_symmDiff_div_card g.toAdd
-  -- Finite tests hold simultaneously at a sufficiently large index of this sequence.
-  rw [hasFoelnerSets_iff]
-  intro K ε hε
-  have hevent : ∀ᶠ n in atTop, ∀ g ∈ K, (#((g • F n) ∆ F n) : ℝ) / #(F n) < ε :=
-    (eventually_all_finset K).2 fun g _ => (hlimit g).eventually (gt_mem_nhds hε)
-  obtain ⟨n, hn⟩ := hevent.exists
-  exact ⟨F n, hne n, fun g hg => (div_lt_iff₀ (by exact_mod_cast (hne n).card_pos)).1 (hn g hg)⟩
+  exact .of_tendsto_card_smul_symmDiff_div_card (Eventually.of_forall hne) hlimit
 
 /-- The integer group is amenable for every group topology. -/
 instance Amenable.multiplicative_int [TopologicalSpace (Multiplicative ℤ)]
