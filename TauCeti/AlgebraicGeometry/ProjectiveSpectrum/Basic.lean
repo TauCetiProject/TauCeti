@@ -31,7 +31,12 @@ so that the structure map to `Spec A₀` can be studied through homogeneous prim
 proves the homogeneous Nullstellensatz for elements of the irrelevant ideal, with two consequences
 used to compute the sections of the twisting sheaves over standard opens: a homogeneous element
 vanishing in the localizations at all points of `D₊(g)` is killed by a power of `g`, and compatible
-homogeneous fractions covering `D₊(f)` glue to a single fraction over a power of `f`.
+homogeneous fractions covering `D₊(f)` glue to a single fraction over a power of `f`. These two
+are graded versions of the injectivity and gluing steps of Mathlib's computation of the sections
+of the structure sheaf of `Spec` over basic opens
+(`AlgebraicGeometry.StructureSheaf.toBasicOpenₗ_injective` and
+`AlgebraicGeometry.StructureSheaf.toBasicOpenₗ_surjective` in
+`Mathlib/AlgebraicGeometry/StructureSheaf.lean`), whose arguments they adapt.
 
 ## Main definitions
 
@@ -288,17 +293,11 @@ theorem exists_pow_mul_eq_zero {g a : A} {k : ℕ} (hg : g ∈ HomogeneousIdeal.
       ∃ c ∉ x.asHomogeneousIdeal, c * a = 0) :
     ∃ N, g ^ N * a = 0 := by
   classical
-  -- the homogeneous annihilators of `a` span a homogeneous ideal `I` annihilating `a`
-  let I := Ideal.span {u | SetLike.IsHomogeneousElem 𝒜 u ∧ u * a = 0}
-  have hI : I.IsHomogeneous 𝒜 := Ideal.homogeneous_span _ _ fun _ hu ↦ hu.1
-  have hIa (u : A) (hu : u ∈ I) : u * a = 0 := by
-    induction hu using Submodule.span_induction with
-    | mem u hu => exact hu.2
-    | zero => exact zero_mul a
-    | add u v _ _ hu hv => rw [add_mul, hu, hv, add_zero]
-    | smul c u _ hu => rw [smul_eq_mul, mul_assoc, hu, mul_zero]
-  suffices g ∈ I.radical from this.imp fun N hN ↦ hIa _ hN
-  refine mem_radical_of_zeroLocus_subset hI hg fun x hx ↦ ?_
+  -- the homogeneous core `I` of the annihilator of `a` is a homogeneous ideal annihilating `a`
+  let I := (Submodule.span A {a}).annihilator.homogeneousCore 𝒜
+  suffices g ∈ I.toIdeal.radical from this.imp fun N hN ↦
+    (Submodule.mem_annihilator_span_singleton _ _).1 (Ideal.toIdeal_homogeneousCore_le 𝒜 _ hN)
+  refine mem_radical_of_zeroLocus_subset I.isHomogeneous hg fun x hx ↦ ?_
   rw [mem_zeroLocus, Set.singleton_subset_iff]
   by_contra hgx
   obtain ⟨c, hcx, hc⟩ := h x hgx
@@ -306,11 +305,9 @@ theorem exists_pow_mul_eq_zero {g a : A} {k : ℕ} (hg : g ∈ HomogeneousIdeal.
   obtain ⟨i, hi⟩ : ∃ i, (DirectSum.decompose 𝒜 c i : A) ∉ x.asHomogeneousIdeal := by
     by_contra! H
     exact hcx ((x.asHomogeneousIdeal.isHomogeneous.mem_iff 𝒜).2 H)
-  refine hi (hx (Ideal.subset_span ⟨⟨i, SetLike.coe_mem _⟩, ?_⟩))
-  have := DirectSum.coe_decompose_mul_of_right_mem_of_le 𝒜 (a := c) (n := i + k) ha
-    (Nat.le_add_left k i)
-  rwa [hc, DirectSum.decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero,
-    Nat.add_sub_cancel, eq_comm] at this
+  refine hi (hx (Ideal.mem_homogeneousCore_of_homogeneous_of_mem ⟨i, SetLike.coe_mem _⟩
+    ((Submodule.mem_annihilator_span_singleton _ _).2 ?_)))
+  simpa [hc] using (DirectSum.coe_decompose_mul_add_of_right_mem 𝒜 (a := c) (i := i) ha).symm
 
 /-- **Gluing homogeneous fractions.** Let `f` be homogeneous of positive degree `d`, and let
 `r x / g x` be finitely many fractions of homogeneous elements of degrees `deg r x = deg g x + n`
@@ -350,10 +347,11 @@ theorem exists_mul_eq_pow_mul {n : ℤ} {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (h
     have := h x
     simp only [smul_eq_mul]
     omega
-  rw [mul_comm (g x), ← Nat.add_sub_cancel J (i x),
-    ← DirectSum.coe_decompose_mul_of_right_mem_of_le 𝒜 (hg x) (Nat.le_add_left _ _),
-    Finset.sum_mul, Finset.sum_congr rfl fun z _ ↦ (by
-      rw [mul_assoc, mul_comm (r z), hcompat x z, ← mul_assoc]),
-    ← Finset.sum_mul, hc, DirectSum.decompose_of_mem_same 𝒜 hmem]
+  have hsum : (∑ z, c z * r z) * g x = f ^ k * r x := by
+    rw [Finset.sum_mul, ← hc, Finset.sum_mul]
+    exact Finset.sum_congr rfl fun z _ ↦ by
+      rw [mul_assoc, mul_comm (r z), hcompat x z, ← mul_assoc]
+  rw [mul_comm (g x), ← DirectSum.coe_decompose_mul_add_of_right_mem 𝒜 (hg x), hsum,
+    DirectSum.decompose_of_mem_same 𝒜 hmem]
 
 end ProjectiveSpectrum
