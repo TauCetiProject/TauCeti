@@ -69,23 +69,7 @@ namespace TauCeti.EisensteinSeries
 
 /-! ### The primitive weight-two Eisenstein subspace -/
 
-variable {N : ℕ}
-
-/-- The multiples of the row `(-c, a)` of `γ⁻¹` modulo `N`, as they occur in the constant term
-of `G₂^W` at `γ = [a, b; c, d]`. -/
-private lemma vecMul_inv_eq (γ : SL(2, ℤ)) (n : ℤ) :
-    ((↑) ∘ ![-(n * γ 1 0), n * γ 0 0] : Fin 2 → ZMod N) =
-      n • ((![0, 1] : Fin 2 → ZMod N) ᵥ* (γ⁻¹ : SL(2, ℤ))) := by
-  ext i
-  fin_cases i <;> simp [Matrix.SpecialLinearGroup.coe_inv, adjugate_fin_two]
-
-private lemma neg_vecMul_inv (γ : SL(2, ℤ)) :
-    (-((![0, 1] : Fin 2 → ZMod N) ᵥ* (γ⁻¹ : SL(2, ℤ))) : Fin 2 → ZMod N) =
-      (![0, 1] : Fin 2 → ZMod N) ᵥ* ((-γ)⁻¹ : SL(2, ℤ)) := by
-  ext i
-  fin_cases i <;> simp [vecMul, dotProduct]
-
-variable [NeZero N]
+variable {N : ℕ} [NeZero N]
 
 variable (N) in
 /-- The weights of the primitive weight-two Eisenstein series: the functions `W` on residue
@@ -192,7 +176,7 @@ private lemma constantTermAt_weightedG2MF_eq (W : (Fin 2 → ZMod N) → ℂ) (�
       ∑' n : ℤ, W (n • ((![0, 1] : Fin 2 → ZMod N) ᵥ* (γ⁻¹ : SL(2, ℤ)))) *
           (n : ℂ) ^ (-2 : ℤ) -
         ((N : ℂ) ^ 2)⁻¹ * (∑ a, W a) * (2 * riemannZeta 2) := by
-  simp only [constantTermAt_weightedG2MF, vecMul_inv_eq]
+  simp only [constantTermAt_weightedG2MF, intCast_comp_vecCons_eq_zsmul_vecMul_inv]
 
 variable (N) in
 /-- The primitive weight-two Eisenstein subspace of `M₂(Γ(N))`: the series `G₂^W` for the weights
