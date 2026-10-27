@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.ConstantMultiplication.Generators
 public import TauCeti.Algebra.Lie.D4.Tripled.GroupScheme
 public import TauCeti.Algebra.Lie.D4.Tripled.TrilinearForm
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.ConstantMultiplication
+public import TauCeti.LinearAlgebra.Matrix.PartialMap
 
 /-!
 # The triality product on the tripled type-D₄ module
@@ -268,49 +269,13 @@ theorem eq_of_eq_mul_of_trialityProductMatrix_ne_zero {G : Type*} [CommGroup G]
 /-! ## Products with a raising or lowering matrix
 
 A raising or lowering matrix has a single entry `1` in each column on which its simple root acts,
-placed at the reflected index. The three lemmas below evaluate the matrix products in the
-derivation equation for such a matrix. -/
+placed at the reflected index. The matrix products in the derivation equation for such a matrix
+are evaluated by the lemmas of `TauCeti.LinearAlgebra.Matrix.PartialMap`. -/
 
 section Edge
 
 variable {X : Matrix (Fin 24) (Fin 24) ℤ} {p : Fin 24 → Prop} [DecidablePred p]
   {σ : Fin 24 → Fin 24}
-
-private theorem edge_mul_apply (hσ : ∀ a, σ (σ a) = a)
-    (hX : ∀ a b, X a b = if p b ∧ a = σ b then 1 else 0) (N : Matrix (Fin 24) (Fin 24) ℤ)
-    (a b : Fin 24) : (X * N) a b = if p (σ a) then N (σ a) b else 0 := by
-  rw [Matrix.mul_apply, Finset.sum_eq_single (σ a)]
-  · simp [hX, hσ]
-  · intro l _ hl
-    rw [hX]
-    split_ifs with h
-    · exact absurd (by rw [h.2, hσ]) hl
-    · exact zero_mul _
-  · simp
-
-private theorem mul_edge_apply (hX : ∀ a b, X a b = if p b ∧ a = σ b then 1 else 0)
-    (N : Matrix (Fin 24) (Fin 24) ℤ) (a b : Fin 24) :
-    (N * X) a b = if p b then N a (σ b) else 0 := by
-  rw [Matrix.mul_apply, Finset.sum_eq_single (σ b)]
-  · simp [hX]
-  · intro l _ hl
-    rw [hX]
-    split_ifs with h
-    · exact absurd h.2 hl
-    · exact mul_zero _
-  · simp
-
-private theorem sum_edge_smul_apply
-    (hX : ∀ a b, X a b = if p b ∧ a = σ b then 1 else 0) (N : Fin 24 → Matrix (Fin 24) (Fin 24) ℤ)
-    (c a b : Fin 24) : (∑ d, X d c • N d) a b = if p c then N (σ c) a b else 0 := by
-  rw [Matrix.sum_apply, Finset.sum_eq_single (σ c)]
-  · simp [hX]
-  · intro d _ hd
-    rw [Matrix.smul_apply, hX]
-    split_ifs with h
-    · exact absurd h.2 hd
-    · exact zero_smul _ _
-  · simp
 
 /-- Entrywise form of the derivation equation for such a matrix. -/
 private theorem edge_derivation (hσ : ∀ a, σ (σ a) = a)
@@ -323,7 +288,8 @@ private theorem edge_derivation (hσ : ∀ a, σ (σ a) = a)
     X * trialityProductMatrix c =
       ∑ d, X d c • trialityProductMatrix d + trialityProductMatrix c * X := by
   ext a b
-  rw [Matrix.add_apply, edge_mul_apply hσ hX, sum_edge_smul_apply hX, mul_edge_apply hX, h,
+  rw [Matrix.add_apply, Matrix.mul_apply_of_apply_eq_ite_left hσ hX,
+    Matrix.sum_smul_apply_of_apply_eq_ite hX, Matrix.mul_apply_of_apply_eq_ite_right hX, h,
     add_comm]
 
 /-- Entrywise form of the vanishing of the second-order terms for such a matrix. -/
@@ -332,7 +298,8 @@ private theorem edge_secondOrder
     (h : ∀ c a b : Fin 24, p b → p c → trialityProductMatrix (σ c) a (σ b) = 0) (c : Fin 24) :
     (∑ d, X d c • trialityProductMatrix d) * X = 0 := by
   ext a b
-  rw [mul_edge_apply hX, sum_edge_smul_apply hX, Matrix.zero_apply]
+  rw [Matrix.mul_apply_of_apply_eq_ite_right hX, Matrix.sum_smul_apply_of_apply_eq_ite hX,
+    Matrix.zero_apply]
   split_ifs with hb hc
   · exact h c a b hb hc
   · rfl

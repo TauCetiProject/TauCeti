@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.TorusCentralizer
-public import TauCeti.Algebra.Lie.D4.Tripled.TrialityProduct
+public import TauCeti.Algebra.Lie.D4.Tripled.Triality.Product
 
 /-!
 # The tripled type-D₄ weight torus and its maximality on field-valued points
