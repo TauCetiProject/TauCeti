@@ -58,6 +58,10 @@ decomposition `⋀ᵏ⁺¹ (M × R) ≅ ⋀ᵏ⁺¹ M ⊕ e ∧ ⋀ᵏ M` used t
 In this splitting, the contraction by `φ + x · snd` acts as `d(a + e ∧ b) = (d a + x b) - e ∧ d b`
 (`ExteriorAlgebra.map_fst_contractLeft_coprod`,
 `ExteriorAlgebra.contractLeft_map_fst_contractLeft_snd`).
+More generally, for functionals `φ` on `M` and `ψ` on `N`, the contraction by `φ.coprod ψ` acts on
+`a ∧ b`, with `a ∈ ⋀ⁱ M` and `b ∈ ⋀ N`, as `d a ∧ b + (-1) ^ i a ∧ d b`
+(`ExteriorAlgebra.contractLeft_coprod_map_inl_mul_map_inr`); this is the Leibniz rule that makes the
+Koszul complex of `φ.coprod ψ` the tensor product of those of `φ` and `ψ`.
 -/
 
 public section
@@ -619,6 +623,24 @@ theorem contractLeft_coprod_map_inl {N : Type*} [AddCommGroup N] [Module R N]
         (map (LinearMap.inl R M N) w) =
       map (LinearMap.inl R M N) (contractLeft (Q := (0 : QuadraticForm R M)) φ w) := by
   rw [contractLeft_map, LinearMap.coprod_inl]
+
+/-- **The contraction by `φ.coprod ψ` is an odd derivation on wedges**: for `a ∈ ⋀ⁱ M` and
+`b ∈ ⋀ N`, mapped into `⋀ (M × N)` along the inclusions of the factors,
+`d(a ∧ b) = d a ∧ b + (-1) ^ i a ∧ d b`. -/
+theorem contractLeft_coprod_map_inl_mul_map_inr {N : Type*} [AddCommGroup N] [Module R N]
+    (φ : Module.Dual R M) (ψ : Module.Dual R N) {i : ℕ} {a : ExteriorAlgebra R M}
+    (ha : a ∈ ⋀[R]^i M) (b : ExteriorAlgebra R N) :
+    contractLeft (Q := (0 : QuadraticForm R (M × N))) (φ.coprod ψ)
+        (map (LinearMap.inl R M N) a * map (LinearMap.inr R M N) b) =
+      map (LinearMap.inl R M N) (contractLeft (Q := (0 : QuadraticForm R M)) φ a) *
+          map (LinearMap.inr R M N) b +
+        (-1 : R) ^ i • (map (LinearMap.inl R M N) a *
+          map (LinearMap.inr R M N) (contractLeft (Q := (0 : QuadraticForm R N)) ψ b)) := by
+  have ha' : map (LinearMap.inl R M N) a ∈ ⋀[R]^i (M × N) :=
+    exteriorPower.coe_map (LinearMap.inl R M N) ⟨a, ha⟩ ▸
+      (exteriorPower.map i (LinearMap.inl R M N) ⟨a, ha⟩).2
+  rw [CliffordAlgebra.contractLeft_mul, contractLeft_coprod_map_inl, contractLeft_map,
+    LinearMap.coprod_inr, TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower ha', smul_mul_assoc]
 
 /-- The contraction by `φ + x · snd` on `e ∧ w`, with `e = (0, 1)`: `d(e ∧ w) = x w - e ∧ d w`. -/
 theorem contractLeft_coprod_ι_inr_mul (φ : Module.Dual R M) (x : R)
