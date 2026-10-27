@@ -22,21 +22,25 @@ import Mathlib.Algebra.Polynomial.SpecificDegree
 -- Non-public: `AdjoinRoot` and its power basis are the source of that root.
 import Mathlib.RingTheory.AdjoinRoot
 /-!
-# The trace and the norm of a quadratic irrationality
+# Trace and norm in quadratic algebras
 
-An element `x` of a degree-`2` extension `E/F` that does not lie in `F` satisfies a monic quadratic
-`x² = t x - d` over `F`, and the pair `(1, x)` is then an `F`-basis of `E`. In that basis
+An element `x` of a degree-`2` algebra `E` over a field `F` that does not lie in the image of `F`
+satisfies a monic quadratic `x² = t x - d` over `F`, and the pair `(1, x)` is then an
+`F`-basis of `E`. In that basis
 multiplication by `x` **is** the companion matrix `TauCeti.companionFinTwo t d` of `X² - t X + d`,
 which is the reading of the companion matrix its own docstring advertises. Since the trace and the
 norm of `x` are the trace and the determinant of that matrix, and both are basis independent,
-`Tr_{E/F} x = t` and `N_{E/F} x = d`.
+`Tr_{E/F} x = t` and `N_{E/F} x = d`. The norm calculation needs only a ring structure on `E`;
+the trace calculation needs a commutative ring, as required by Mathlib's `Algebra.trace`. In
+particular, these formulas cover split and non-reduced algebras such as `F × F` and `F[X]/(X²)`.
 
 These are what pin the elliptic normal form of `GL₂` in
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean`, where the quadratic is the
 characteristic polynomial of a matrix and `x` is the eigenvalue it acquires in `E`.
 
-Read in the other direction, every `x : E` satisfies the quadratic built from its own trace and
-norm, `x² = Tr_{E/F}(x) · x - N_{E/F}(x)`, with no hypothesis on `x`: what the `x ∉ F` hypothesis
+Read in the other direction, every `x : E` in a commutative quadratic algebra satisfies the
+quadratic built from its own trace and norm, `x² = Tr_{E/F}(x) · x - N_{E/F}(x)`, with no hypothesis
+on `x`: what the `x ∉ F` hypothesis
 buys the two theorems above is not the equation but the *uniqueness* of its coefficients. This is
 what separates the elliptic conjugacy classes of `GL₂(F)` from the split ones, an eigenvalue in `E`
 outside `F` being exactly what a split class does not have.
@@ -49,7 +53,7 @@ two extensions of a finite field of the same degree are isomorphic
 ## Main results
 
 * `TauCeti.Algebra.trace_eq_of_mul_self_eq` and `TauCeti.Algebra.norm_eq_of_mul_self_eq`: the trace
-  and the norm of an element `x` of a degree-`2` extension satisfying `x² = t x - d`, and lying
+  and the norm of an element `x` of a degree-`2` algebra satisfying `x² = t x - d`, and lying
   outside the base field, are `t` and `d`.
 * `TauCeti.exists_mul_self_eq_of_finite`: over a finite field, a quadratic with no root in `F` has
   a root in every degree-`2` extension.
@@ -71,7 +75,7 @@ variable {F : Type*} [Field F]
 
 section Basis
 
-variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
+variable {E : Type*} [Ring E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- In the basis `(1, x)`, multiplication by `x` **is** the companion matrix of the monic quadratic
 that `x` satisfies. -/
@@ -89,7 +93,7 @@ private theorem leftMulMatrix_quadraticExtensionBasis {x : E}
   have e1 : x * b 1 = (-d) • b 0 + t • b 1 := by
     simp only [b, quadraticExtensionBasis_zero, quadraticExtensionBasis_one, Algebra.smul_def,
       mul_one, map_neg]
-    linear_combination hx2
+    rw [hx2, sub_eq_neg_add]
   rw [companionFinTwo_def]
   ext i j
   rw [Algebra.leftMulMatrix_eq_repr_mul]
@@ -101,12 +105,12 @@ end Basis
 
 namespace Algebra
 
-variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
+variable {E : Type*}
 
-/-- **The trace of a quadratic irrationality.** If `E/F` has degree `2` and `x : E` lies outside
-`F` and satisfies `x² = t x - d`, then `Tr_{E/F} x = t`. -/
-theorem trace_eq_of_mul_self_eq {x : E}
-    (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
+/-- The trace of a non-scalar element `x` in a commutative degree-two algebra over a field is
+`t` whenever `x² = t x - d`. -/
+theorem trace_eq_of_mul_self_eq [CommRing E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
+    {x : E} (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
     (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
     Algebra.trace F E x = t := by
   rw [Algebra.trace_eq_matrix_trace
@@ -114,10 +118,10 @@ theorem trace_eq_of_mul_self_eq {x : E}
     leftMulMatrix_quadraticExtensionBasis hx hx2,
     trace_companionFinTwo]
 
-/-- **The norm of a quadratic irrationality.** If `E/F` has degree `2` and `x : E` lies outside `F`
-and satisfies `x² = t x - d`, then `N_{E/F} x = d`. -/
-theorem norm_eq_of_mul_self_eq {x : E}
-    (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
+/-- The norm of a non-scalar element `x` in a degree-two algebra over a field is `d` whenever
+`x² = t x - d`. The algebra need only be a ring. -/
+theorem norm_eq_of_mul_self_eq [Ring E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
+    {x : E} (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
     (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
     Algebra.norm F x = d := by
   rw [Algebra.norm_eq_matrix_det
