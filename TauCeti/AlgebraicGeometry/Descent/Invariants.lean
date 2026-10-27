@@ -32,6 +32,8 @@ intrinsically in terms of `D`, so that it can be compared with the descended sch
 ## Main declarations
 
 * `TauCeti.DescentDatum.invariants D`: the ring of global functions on `X` invariant under `D`;
+* `TauCeti.DescentDatum.mem_invariants_iff_of_isIso`: invariance tested on an isomorphic copy
+  of the action space;
 * `TauCeti.DescentDatum.Hom.appTop_mem_invariants_iff` and
   `TauCeti.DescentDatum.mem_invariants_transportArrow_iff`: invariance of `D.invariants` under
   isomorphisms of descent data and under transport along isomorphisms of arrows;
@@ -69,11 +71,20 @@ theorem mem_invariants_iff {D : DescentDatum p X} {b : Γ(X.left, ⊤)} :
     b ∈ D.invariants ↔ D.act.appTop b = (pullback.snd p (X.hom ≫ p)).appTop b :=
   Iff.rfl
 
+/-- Invariance can be tested after precomposing the action and the projection with an
+isomorphism onto the action space `S' ×_S X`. -/
+theorem mem_invariants_iff_of_isIso {D : DescentDatum p X} {b : Γ(X.left, ⊤)} {Z : Scheme.{u}}
+    (g : Z ⟶ pullback p (X.hom ≫ p)) [IsIso g] :
+    b ∈ D.invariants ↔ (g ≫ D.act).appTop b = (g ≫ pullback.snd p (X.hom ≫ p)).appTop b := by
+  have : IsIso g.appTop := inferInstanceAs (IsIso (g.app ⊤))
+  simp only [mem_invariants_iff, Scheme.Hom.comp_appTop, CommRingCat.comp_apply,
+    (ConcreteCategory.bijective_of_isIso g.appTop).injective.eq_iff]
+
 /-- A function on `X` pulled back from `S` is invariant. -/
 theorem hom_comp_appTop_mem_invariants (D : DescentDatum p X) (r : Γ(S, ⊤)) :
     (X.hom ≫ p).appTop r ∈ D.invariants := by
-  rw [mem_invariants_iff, ← CommRingCat.comp_apply, ← CommRingCat.comp_apply,
-    ← Scheme.Hom.comp_appTop, ← Scheme.Hom.comp_appTop, D.act_comp_hom_comp]
+  simpa only [mem_invariants_iff, Scheme.Hom.comp_appTop, CommRingCat.comp_apply] using
+    congr(Scheme.Hom.appTop $(D.act_comp_hom_comp) r)
 
 /-- The functions on `S`, as invariant functions on `X`. -/
 noncomputable def toInvariants (D : DescentDatum p X) : Γ(S, ⊤) →+* D.invariants :=
@@ -87,30 +98,25 @@ theorem coe_toInvariants (D : DescentDatum p X) (r : Γ(S, ⊤)) :
 /-- A morphism of descent data pulls back invariant functions to invariant functions. -/
 theorem Hom.appTop_mem_invariants {D : DescentDatum p X} {E : DescentDatum p Y} (f : Hom D E)
     {b : Γ(Y.left, ⊤)} (hb : b ∈ E.invariants) : f.hom.left.appTop b ∈ D.invariants := by
+  have hact := congr(Scheme.Hom.appTop $(f.map_act) b)
+  simp only [Scheme.Hom.comp_appTop, CommRingCat.comp_apply] at hact
   rw [mem_invariants_iff] at hb ⊢
-  rw [← CommRingCat.comp_apply, ← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop,
-    ← Scheme.Hom.comp_appTop, ← f.map_act, Scheme.Hom.comp_appTop, CommRingCat.comp_apply, hb,
-    ← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, pullback.lift_snd]
+  rw [← hact, hb]
+  simp only [← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, pullback.lift_snd]
 
 /-- An isomorphism of descent data identifies the invariant functions. -/
 theorem Hom.appTop_mem_invariants_iff {D : DescentDatum p X} {E : DescentDatum p Y} (f : Hom D E)
     [IsIso f.hom] {b : Γ(Y.left, ⊤)} : f.hom.left.appTop b ∈ D.invariants ↔ b ∈ E.invariants := by
   refine ⟨fun hb ↦ ?_, f.appTop_mem_invariants⟩
-  have h := f.inv.appTop_mem_invariants hb
-  rwa [← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, Hom.inv_hom, ← Over.comp_left,
-    IsIso.inv_hom_id, Over.id_left, Scheme.Hom.id_appTop, CommRingCat.id_apply] at h
+  simpa [← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, ← Over.comp_left] using
+    f.inv.appTop_mem_invariants hb
 
 /-- Transport along an isomorphism of arrows does not change the invariant functions. -/
 theorem mem_invariants_transportArrow_iff {T T' : Scheme.{u}} {q : T' ⟶ T}
     (e : Arrow.mk p ≅ Arrow.mk q) (D : DescentDatum p X) {b : Γ(X.left, ⊤)} :
     b ∈ (D.transportArrow e).invariants ↔ b ∈ D.invariants := by
-  have : IsIso (transportArrowActionComparison e X).appTop :=
-    inferInstanceAs (IsIso ((transportArrowActionComparison e X).app ⊤))
-  rw [mem_invariants_iff, mem_invariants_iff, transportArrow_act,
-    ← transportArrowActionComparison_snd e X]
-  simp only [Scheme.Hom.comp_appTop, CommRingCat.comp_apply]
-  exact (ConcreteCategory.bijective_of_isIso
-    (transportArrowActionComparison e X).appTop).injective.eq_iff
+  rw [D.mem_invariants_iff_of_isIso (transportArrowActionComparison e X), mem_invariants_iff,
+    transportArrow_act, transportArrowActionComparison_snd]
 
 end DescentDatum
 
@@ -130,17 +136,16 @@ theorem ΓSpecIso_inv_mem_invariants_spec_iff (E : DescentDatum R S B) {b : B} :
   have : IsIso L := by
     rw [show L = hsq.isoPullback.hom by refine pullback.hom_ext ?_ ?_ <;> simp [L]]
     infer_instance
-  have : IsIso L.appTop := inferInstanceAs (IsIso (L.app ⊤))
   have hact : L ≫ E.spec.act = Spec.map (CommRingCat.ofHom E.coaction.toRingHom) :=
     lift_spec_act E _
   have hsnd : L ≫ pullback.snd _ _ = Spec.map (CommRingCat.ofHom
       (Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B).toRingHom) :=
     pullback.lift_snd _ _ _
-  rw [TauCeti.DescentDatum.mem_invariants_iff, mem_descended_iff,
-    ← (ConcreteCategory.bijective_of_isIso L.appTop).injective.eq_iff]
-  simp only [← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, hact, hsnd]
-  rw [← CommRingCat.comp_apply, ← CommRingCat.comp_apply, ← Scheme.ΓSpecIso_inv_naturality,
-    ← Scheme.ΓSpecIso_inv_naturality, CommRingCat.comp_apply, CommRingCat.comp_apply,
+  -- Pulling back along `Spec φ` is `φ`, through `ΓSpecIso`.
+  have hΓ (φ : CommRingCat.of B ⟶ CommRingCat.of (S ⊗[R] B)) :
+      (Spec.map φ).appTop ((Scheme.ΓSpecIso _).inv b) = (Scheme.ΓSpecIso _).inv (φ b) := by
+    rw [← CommRingCat.comp_apply, ← Scheme.ΓSpecIso_inv_naturality, CommRingCat.comp_apply]
+  rw [TauCeti.DescentDatum.mem_invariants_iff_of_isIso L, hact, hsnd, mem_descended_iff, hΓ, hΓ,
     (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso _).inv).injective.eq_iff]
   simp
 

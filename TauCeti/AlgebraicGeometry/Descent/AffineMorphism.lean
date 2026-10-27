@@ -185,35 +185,21 @@ omit [IsAffineHom p] [IsAffineHom X.hom] in
 /-- The equalizer sections over `S` of the function algebra of `X ⟶ S` are the invariant
 functions on `X`, restricted to `(X.hom ≫ p) ⁻¹ᵁ ⊤ = ⊤`. -/
 private theorem mem_equalizerSections_top_iff {b : Γ(X.left, ⊤)} :
-    ((X.hom ≫ p).pushforwardStructureAlgebraSectionsRingEquiv ⊤).symm
-        (X.left.presheaf.map (homOfLE le_top).op b) ∈
+    (X.hom ≫ p).pushforwardStructureAlgebraΓRingEquiv b ∈
       CommMon.equalizerSections D.actAlgebraMap (sndAlgebraMap p X) ⊤ ↔ b ∈ D.invariants := by
   -- The restriction to `(pullback.snd p (X.hom ≫ p) ≫ X.hom ≫ p) ⁻¹ᵁ ⊤ = ⊤` is injective.
   have : IsIso (homOfLE (le_top : (pullback.snd p (X.hom ≫ p) ≫ X.hom ≫ p) ⁻¹ᵁ ⊤ ≤ ⊤)) :=
     ⟨homOfLE (by simp), Subsingleton.elim _ _, Subsingleton.elim _ _⟩
-  rw [CommMon.mem_equalizerSections,
-    Scheme.Hom.sectionsAlgHom_pushforwardStructureAlgebraMap_apply,
-    Scheme.Hom.sectionsAlgHom_pushforwardStructureAlgebraMap_apply, EmbeddingLike.apply_eq_iff_eq,
-    RingEquiv.apply_symm_apply, ← CommRingCat.comp_apply, ← CommRingCat.comp_apply,
-    Scheme.Hom.map_appLE, Scheme.Hom.map_appLE, mem_invariants_iff,
-    ← (ConcreteCategory.bijective_of_isIso
+  simp only [Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_apply, CommMon.mem_equalizerSections,
+    Scheme.Hom.sectionsAlgHom_pushforwardStructureAlgebraMap_apply, RingEquiv.apply_symm_apply,
+    EmbeddingLike.apply_eq_iff_eq, ← CommRingCat.comp_apply, Scheme.Hom.map_appLE,
+    mem_invariants_iff]
+  rw [← (ConcreteCategory.bijective_of_isIso
       ((pullback p (X.hom ≫ p)).presheaf.map (homOfLE (le_top :
-        (pullback.snd p (X.hom ≫ p) ≫ X.hom ≫ p) ⁻¹ᵁ ⊤ ≤ ⊤)).op)).injective.eq_iff,
-    ← CommRingCat.comp_apply, ← CommRingCat.comp_apply]
+        (pullback.snd p (X.hom ≫ p) ≫ X.hom ≫ p) ⁻¹ᵁ ⊤ ≤ ⊤)).op)).injective.eq_iff]
   -- Both sides are now the same restrictions of `D.act.appTop b` and of the projection, written
   -- once with `Scheme.Hom.appLE` and once as `appTop` followed by restriction.
   rfl
-
-omit [IsAffineHom p] [IsAffineHom X.hom] in
-/-- The identification of the global functions on `X` with the sections over `S` of the function
-algebra of `X ⟶ S`: restriction to `(X.hom ≫ p) ⁻¹ᵁ ⊤ = ⊤`, then the section-ring equivalence. -/
-private def globalSectionsRingEquiv :
-    Γ(X.left, ⊤) ≃+* Γ((X.hom ≫ p).pushforwardStructureAlgebra.X, ⊤) :=
-  have : IsIso (homOfLE (le_top : (X.hom ≫ p) ⁻¹ᵁ ⊤ ≤ ⊤)) :=
-    ⟨homOfLE (by simp), Subsingleton.elim _ _, Subsingleton.elim _ _⟩
-  (asIso (X.left.presheaf.map (homOfLE (le_top : (X.hom ≫ p) ⁻¹ᵁ ⊤ ≤ ⊤)).op)
-    ).commRingCatIsoToRingEquiv.trans
-    ((X.hom ≫ p).pushforwardStructureAlgebraSectionsRingEquiv ⊤).symm
 
 /-- Over an affine base, the descended scheme is the spectrum of the invariant functions: there
 is an isomorphism `θ : Spec D.invariants ≅ D.descended` over `S` through which the quotient map
@@ -253,17 +239,12 @@ private theorem exists_isIso_spec_invariants [IsAffine S] [IsAffine X.left] :
       rw [CommMon.SubalgebraPresheaf.sectionsPresheafι_app] at h
       exact h
   -- The equalizer sections over `S` are the invariant functions.
-  let ψ := globalSectionsRingEquiv (p := p) (X := X)
+  let ψ := (X.hom ≫ p).pushforwardStructureAlgebraΓRingEquiv
   have hE (b : Γ(X.left, ⊤)) : ψ b ∈ E.sections ⊤ ↔ b ∈ D.invariants := by
     rw [CommMon.equalizerSubalgebraPresheaf_sections]
     exact D.mem_equalizerSections_top_iff
   let φ : E.sections ⊤ ≃+* D.invariants :=
-    { toFun x := ⟨ψ.symm x.1, (hE _).1 ((ψ.apply_symm_apply x.1).symm ▸ x.2)⟩
-      invFun b := ⟨ψ b.1, (hE b.1).2 b.2⟩
-      left_inv x := Subtype.ext (ψ.apply_symm_apply x.1)
-      right_inv b := Subtype.ext (ψ.symm_apply_apply b.1)
-      map_mul' a b := Subtype.ext (map_mul ψ.symm a.1 b.1)
-      map_add' a b := Subtype.ext (map_add ψ.symm a.1 b.1) }
+    (ψ.restrict D.invariants (E.sections ⊤) fun b ↦ (hE b).symm).symm
   have : IsIso (CommRingCat.ofHom φ.toRingHom) := φ.toCommRingCatIso.isIso_hom
   refine ⟨Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ cE, inferInstance, ?_, ?_⟩
   · rw [Category.assoc, hcE, ← Spec.map_comp_assoc]
@@ -274,11 +255,10 @@ private theorem exists_isIso_spec_invariants [IsAffine S] [IsAffine X.left] :
     -- is the algebra map into the ambient ring.
     change ψ.symm (algebraMap Γ(S, ⊤) Γ(A.X, ⊤) r) = (X.hom ≫ p).appTop r
     rw [RingEquiv.symm_apply_eq, Scheme.Hom.pushforwardStructureAlgebra_algebraMap]
-    -- Unfold `ψ` into the restriction to `(X.hom ≫ p) ⁻¹ᵁ ⊤` followed by the section-ring
-    -- equivalence of the function algebra.
-    change _ = ((X.hom ≫ p).pushforwardStructureAlgebraSectionsRingEquiv ⊤).symm
-      (((X.hom ≫ p).appTop ≫ X.left.presheaf.map (homOfLE le_top).op) r)
-    rw [Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_symm_apply,
+    -- `ψ` is the restriction to `(X.hom ≫ p) ⁻¹ᵁ ⊤` followed by the section-ring equivalence of
+    -- the function algebra.
+    rw [Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_apply,
+      Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_symm_apply, ← CommRingCat.comp_apply,
       ← Scheme.Hom.appLE_eq_app]
     -- `appLE ⊤ ((X.hom ≫ p) ⁻¹ᵁ ⊤)` is by definition `app ⊤` followed by this restriction.
     rfl
@@ -291,7 +271,8 @@ private theorem exists_isIso_spec_invariants [IsAffine S] [IsAffine X.left] :
     simp only [← Spec.map_comp_assoc, Category.assoc]
     congr 2
     ext x
-    exact ψ.apply_symm_apply x.1
+    exact ((X.hom ≫ p).pushforwardStructureAlgebraΓRingEquiv_apply _).symm.trans
+      (ψ.apply_symm_apply x.1)
 
 /-- **Effective descent for affine morphisms over an affine base.** If `S` is affine and `p` is
 flat, the comparison from `D` to the canonical descent datum on the base change of the descended
