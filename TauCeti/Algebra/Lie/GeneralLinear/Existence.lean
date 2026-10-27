@@ -11,7 +11,7 @@ import TauCeti.Algebra.Lie.Sl2.Basic
 import Mathlib.Algebra.Lie.Weights.Linear
 
 /-!
-# Every finite-dimensional `gl n`-module has a dominant highest weight vector
+# Highest weight vectors for `gl n`-modules with triangularizable diagonal action
 
 Let `K` be a field of characteristic zero and let `M` be a nonzero finite-dimensional module over
 `gl n K = Matrix n n K`. If the diagonal Cartan action is triangularizable, as it is over an
