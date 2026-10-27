@@ -54,54 +54,54 @@ variable {ι : Type*} [Fintype ι]
 
 /-- Additive circle coordinates of a compact connected commutative Lie group, specified by a
 basis of its exponential kernel. -/
-def lieGroupAddCircleEquiv : Additive G ≃ₜ+ (ι → AddCircle (1 : ℝ)) :=
+def lieGroupUnitAddTorusEquiv : Additive G ≃ₜ+ UnitAddTorus ι :=
   (lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm.trans b.quotientLatticeEquiv
 
 /-- Exponentiating a Lie algebra element reduces its lattice-basis coordinates modulo one. -/
 @[simp]
-theorem lieGroupAddCircleEquiv_apply_lieExp (X : LeftInvariantDerivation I G) (i : ι) :
-    lieGroupAddCircleEquiv b (Additive.ofMul (lieExp X)) i =
-      ((b.ofZLatticeBasis ℝ _).repr X i : AddCircle (1 : ℝ)) := by
-  rw [lieGroupAddCircleEquiv, ContinuousAddEquiv.trans_apply,
+theorem lieGroupUnitAddTorusEquiv_apply_lieExp (X : LeftInvariantDerivation I G) (i : ι) :
+    lieGroupUnitAddTorusEquiv b (Additive.ofMul (lieExp X)) i =
+      ((b.ofZLatticeBasis ℝ _).repr X i : UnitAddCircle) := by
+  rw [lieGroupUnitAddTorusEquiv, ContinuousAddEquiv.trans_apply,
     lieExpQuotientKerContinuousAddEquiv_symm_apply, Module.Basis.quotientLatticeEquiv_apply_mk]
 
 /-- The inverse additive circle coordinates exponentiate the corresponding real linear
 combination of lattice basis vectors. -/
 @[simp]
-theorem lieGroupAddCircleEquiv_symm_apply (x : ι → ℝ) :
-    (lieGroupAddCircleEquiv b).symm (fun i => (x i : AddCircle (1 : ℝ))) =
+theorem lieGroupUnitAddTorusEquiv_symm_apply (x : ι → ℝ) :
+    (lieGroupUnitAddTorusEquiv b).symm (fun i => (x i : UnitAddCircle)) =
       Additive.ofMul (lieExp ((b.ofZLatticeBasis ℝ _).equivFun.symm x)) := by
-  apply (lieGroupAddCircleEquiv b).injective
+  apply (lieGroupUnitAddTorusEquiv b).injective
   ext i
-  simp only [ContinuousAddEquiv.apply_symm_apply, lieGroupAddCircleEquiv_apply_lieExp,
+  simp only [ContinuousAddEquiv.apply_symm_apply, lieGroupUnitAddTorusEquiv_apply_lieExp,
     ← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
 
 /-- Circle coordinates of a compact connected commutative Lie group. Each integral period in
 the chosen exponential-kernel basis becomes one full turn in the corresponding circle. -/
-def lieGroupCircleEquiv : G ≃ₜ* (ι → Circle) := by
-  let e := lieGroupAddCircleEquiv b
+def lieGroupCircleEquiv : G ≃ₜ* (ι → Circle) :=
+  let e := lieGroupUnitAddTorusEquiv b
   let c := Homeomorph.piCongrRight fun _ : ι =>
     AddCircle.homeomorphCircle (one_ne_zero : (1 : ℝ) ≠ 0)
-  exact
-    { toFun := fun g => c (e (Additive.ofMul g))
-      invFun := fun z => Additive.toMul (e.symm (c.symm z))
-      left_inv := fun g => by simp
-      right_inv := fun z => by simp
-      continuous_toFun := c.continuous.comp (e.continuous.comp continuous_ofMul)
-      continuous_invFun := continuous_toMul.comp (e.symm.continuous.comp c.symm.continuous)
-      map_mul' := fun x y => by
-        rw [ofMul_mul, map_add]
-        apply funext
-        intro i
-        simp only [c, Homeomorph.piCongrRight_apply, AddCircle.homeomorphCircle_apply,
-          Pi.add_apply, AddCircle.toCircle_add, Pi.mul_apply] }
+  { toFun := fun g => c (e (Additive.ofMul g))
+    invFun := fun z => Additive.toMul (e.symm (c.symm z))
+    left_inv := fun g => by simp
+    right_inv := fun z => by simp
+    continuous_toFun := c.continuous.comp (e.continuous.comp continuous_ofMul)
+    continuous_invFun := continuous_toMul.comp (e.symm.continuous.comp c.symm.continuous)
+    map_mul' := fun x y => by
+      rw [ofMul_mul, map_add]
+      apply funext
+      intro i
+      simp only [c, Homeomorph.piCongrRight_apply, AddCircle.homeomorphCircle_apply,
+        Pi.add_apply, AddCircle.toCircle_add, Pi.mul_apply] }
 
 /-- Multiplicative circle coordinates are the canonical unit-circle images of additive ones. -/
 theorem lieGroupCircleEquiv_apply (g : G) (i : ι) :
     lieGroupCircleEquiv b g i =
-      AddCircle.toCircle (lieGroupAddCircleEquiv b (Additive.ofMul g) i) := by
-  unfold lieGroupCircleEquiv
-  exact AddCircle.homeomorphCircle_apply _ _
+      AddCircle.toCircle (lieGroupUnitAddTorusEquiv b (Additive.ofMul g) i) := by
+  change (Homeomorph.piCongrRight fun _ : ι =>
+    AddCircle.homeomorphCircle (one_ne_zero : (1 : ℝ) ≠ 0)) _ i = _
+  rw [Homeomorph.piCongrRight_apply, AddCircle.homeomorphCircle_apply]
 
 /-- In circle coordinates, the exponential is the coordinatewise complex exponential, with
 period one in the chosen lattice basis. -/
@@ -109,7 +109,8 @@ period one in the chosen lattice basis. -/
 theorem lieGroupCircleEquiv_apply_lieExp (X : LeftInvariantDerivation I G) (i : ι) :
     lieGroupCircleEquiv b (lieExp X) i =
       Circle.exp (2 * Real.pi * (b.ofZLatticeBasis ℝ _).repr X i) := by
-  rw [lieGroupCircleEquiv_apply, lieGroupAddCircleEquiv_apply_lieExp, AddCircle.toCircle_apply_mk]
+  rw [lieGroupCircleEquiv_apply, lieGroupUnitAddTorusEquiv_apply_lieExp,
+    AddCircle.toCircle_apply_mk]
   simp only [div_one]
 
 /-- The inverse circle coordinates exponentiate the real linear combination of lattice basis
