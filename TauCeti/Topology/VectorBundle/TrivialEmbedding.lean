@@ -13,9 +13,10 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 # Embedding a vector bundle into a finite trivial bundle
 
 A family of linear trivializations `e i` of a vector bundle `E`, together with scalar weights
-`ρ i` supported in their base sets, assembles into a fibrewise continuous linear map
-`E x →L[𝕜] (ι → F)`, namely `v ↦ (ρ i x • e i v)ᵢ`. The resulting map of total spaces is
-continuous, and it is injective on every fibre as soon as at each point some weight is nonzero.
+`ρ i`, assembles into a fibrewise continuous linear map `E x →L[𝕜] (ι → F)`, namely
+`v ↦ (ρ i x • e i v)ᵢ`. When each weight `ρ i` is continuous with topological support in the base
+set of `e i`, the resulting map of total spaces is continuous. It is injective on the fibre over
+any point of the base set of some `e i` at which `ρ i` is nonzero.
 
 Applying this to a partition of unity subordinate to a finite cover by trivializations shows that,
 over a normal base admitting such a cover, a vector bundle with model fibre `F` admits a continuous
