@@ -37,6 +37,14 @@ computed from any ring isomorphic to the ring of integers, such as an explicit i
 * `RingEquiv.classNumber_eq`: isomorphic number fields have equal class numbers.
 * `RingEquiv.natCard_classGroup_eq_classNumber`: a ring isomorphic to `𝓞 K` has `classNumber K`
   ideal classes.
+
+## Source note
+
+The construction of `RingEquiv.classGroupEquiv` as `ClassGroup.mulEquiv` of
+`NumberField.RingOfIntegers.mapRingEquiv e`, and the deduction of `RingEquiv.classNumber_eq` from
+it, follow the earlier Tau Ceti formalization in
+[TauCeti PR #19781](https://github.com/TauCetiProject/TauCeti/pull/19781) by @aisathome-agent
+(feat: isomorphic number fields have the same class number).
 -/
 
 public section
