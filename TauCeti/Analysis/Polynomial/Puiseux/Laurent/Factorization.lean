@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.Basic
 public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Basic
-import TauCeti.Analysis.Analytic.Laurent.Exponent
-import TauCeti.Analysis.Analytic.ConstantOrder.Global
-import Mathlib.Analysis.Meromorphic.Order
+import TauCeti.Analysis.Analytic.Laurent.Global
 
 /-!
 # Construction of nonmonic Puiseux Laurent factorizations
@@ -138,64 +136,37 @@ theorem exists_analyticOnNhd_nonmonic_laurent
     · push_cast
       omega
     · simpa only [sub_zero] using (hform.mono fun b hb hb0 ↦ hb.2 hb0 i)
-  obtain ⟨x₀, hx₀⟩ := (inferInstance : Nonempty U)
-  obtain ⟨e, he, hform⟩ := exists_laurentExponents_of_isPreconnected
-    ⟨x₀, hx₀⟩ (isPreconnected_iff_preconnectedSpace.mpr inferInstance) r hlocal
-  -- Divide each pole-removed branch by its fixed, nonnegative slice order.
-  let m (i : Fin d) : ℕ := (e i + (d.factorial * a : ℕ)).toNat
-  have hm (i : Fin d) : (m i : ℤ) = e i + (d.factorial * a : ℕ) :=
-    Int.toNat_of_nonneg (by have := he i; omega)
-  have horder (i : Fin d) (x : E) (hx : x ∈ U) :
-      analyticOrderAt (fun y ↦ g i (x, y)) 0 = m i := by
-    obtain ⟨w, hw, hw0, hweq⟩ := hform i x hx
-    have hx' : (x, (0 : ℂ)) ∈ U ×ˢ ball 0 R' := ⟨hx, mem_ball_self hR'⟩
-    have hslice := ((hg i).1 (x, 0) hx').curry_right
-    have hmer : meromorphicOrderAt (fun y ↦ g i (x, y)) 0 = (m i : ℤ) := by
-      apply (meromorphicOrderAt_eq_int_iff hslice.meromorphicAt).2
-      refine ⟨fun y ↦ w (x, y), hw.curry_right, hw0, ?_⟩
-      have hline : Tendsto (fun y : ℂ ↦ (x, y)) (𝓝 0) (𝓝 (x, 0)) :=
-        (continuous_const.prodMk continuous_id).tendsto (0 : ℂ)
-      rw [eventually_nhdsWithin_iff]
-      filter_upwards [hline.eventually hweq, ball_mem_nhds (0 : ℂ) hR'] with y hy hyR hy0
-      have hyne : y ≠ 0 := by simpa using hy0
-      have hgi : g i (x, y) = y ^ (d.factorial * a) * r i (x, y) :=
-        (hg i).2 ⟨hx, hyR, hyne⟩
-      rw [hgi, hy hyne]
-      simp only [sub_zero, smul_eq_mul]
-      rw [← mul_assoc]
-      simp only [← zpow_natCast]
-      rw [← zpow_add₀ hyne, hm, add_comm]
-    apply ENat.map_natCast_injective (α := ℤ)
-    simpa only [← hslice.meromorphicOrderAt_eq, ENat.map_natCast] using hmer
-  have hquot (i : Fin d) := ((hg i).1).exists_eq_pow_smul_of_analyticOrderAt
-    hU (mem_ball_self hR') (horder i)
-  choose w hw hw0 hgw using hquot
-  have hrw (b : E × ℂ) (hb : b ∈ U ×ˢ (ball 0 R' \ {0})) (i : Fin d) :
-      r i b = b.2 ^ e i * w i b := by
-    have h := hgw i b ⟨hb.1, hb.2.1⟩
-    rw [(hg i).2 hb] at h
-    simp only [sub_zero, smul_eq_mul] at h
-    apply mul_left_cancel₀ (pow_ne_zero (d.factorial * a) hb.2.2)
-    rw [h, ← mul_assoc]
-    simp only [← zpow_natCast]
-    rw [← zpow_add₀ hb.2.2, hm, add_comm]
-  refine ⟨e, w, he, hw, ?_, hrw⟩
-  intro i b hb
-  by_cases hb0 : b.2 = 0
-  · simpa only [← hb0, Prod.mk.eta] using hw0 i b.1 hb.1
-  · -- The nonzero constant coefficient excludes zero roots away from the hyperplane.
-    have hb' : b ∈ U ×ˢ (ball 0 R' \ {0}) := ⟨hb.1, hb.2, hb0⟩
+  have hr0 (i : Fin d) (b : E × ℂ) (hb : b ∈ U ×ˢ (ball 0 R' \ {0})) :
+      r i b ≠ 0 := by
     have hroot : (F (b.1, b.2 ^ d.factorial)).IsRoot (r i b) := by
-      rw [(hr b hb').2, IsRoot, eval_mul]
+      rw [(hr b hb).2, IsRoot, eval_mul]
       simp [eval_prod, Finset.prod_eq_zero (Finset.mem_univ i)]
     have hconst0 : (F (b.1, b.2 ^ d.factorial)).coeff 0 ≠ 0 := by
       rw [hconst (b.1, b.2 ^ d.factorial)
-        ⟨hb.1, mapsTo_pow_ball_zero d.factorial_ne_zero hfit hb.2⟩]
-      exact mul_ne_zero (pow_ne_zero _ (pow_ne_zero _ hb0))
-        (hv0 _ ⟨hb.1, mapsTo_pow_ball_zero d.factorial_ne_zero hfit hb.2⟩)
-    intro hwb
+        ⟨hb.1, mapsTo_pow_ball_zero d.factorial_ne_zero hfit hb.2.1⟩]
+      exact mul_ne_zero (pow_ne_zero _ (pow_ne_zero _ hb.2.2))
+        (hv0 _ ⟨hb.1, mapsTo_pow_ball_zero d.factorial_ne_zero hfit hb.2.1⟩)
+    intro hri
     apply hconst0
     rw [coeff_zero_eq_eval_zero]
-    simpa only [hrw b hb' i, hwb, mul_zero, IsRoot] using hroot
+    simpa only [hri, IsRoot] using hroot
+  -- Globalize each branch's Laurent unit germs using nonvanishing off the hyperplane.
+  have hUc : IsConnected U := isConnected_iff_connectedSpace.mpr inferInstance
+  have hglobal (i : Fin d) := TauCeti.exists_analyticOnNhd_eq_zpow_mul
+    hU hUc isOpen_ball (mem_ball_self hR') (hra i) (hr0 i) (fun x hx ↦ by
+      obtain ⟨e, -, w, hw⟩ := hlocal i x hx
+      exact ⟨e, w, hw⟩)
+  choose e w hw hw0 hform using hglobal
+  refine ⟨e, w, ?_, hw, hw0, fun b hb i ↦ hform i b hb⟩
+  -- Uniqueness identifies the global exponent with a bounded local exponent.
+  obtain ⟨x₀, hx₀⟩ := (inferInstance : Nonempty U)
+  intro i
+  obtain ⟨n, hn, v, hv, hv0, hvform⟩ := hlocal i x₀ hx₀
+  have hx₀' : (x₀, (0 : ℂ)) ∈ U ×ˢ ball 0 R' := ⟨hx₀, mem_ball_self hR'⟩
+  have heq : e i = n := TauCeti.laurentExponent_eq (hw i _ hx₀') (hw0 i _ hx₀')
+    hv hv0 (by
+      filter_upwards [(hU.prod isOpen_ball).mem_nhds hx₀'] with b hb hb0
+      exact hform i b ⟨hb.1, hb.2, hb0⟩) hvform
+  rwa [heq]
 
 end TauCeti.Polynomial
