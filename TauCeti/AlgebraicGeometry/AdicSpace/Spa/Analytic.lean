@@ -291,7 +291,7 @@ theorem spaAnalytic_eq_biUnion_rationalSubset_of_span_eq_extendedIdealOfDefiniti
       exact ha0
     obtain ⟨t, htT, ht0, hmax⟩ :=
       Valuation.exists_mem_max_restrict_ne_zero (v := v.valuation)
-        (I := P.extendedIdealOfDefinition) hspan rfl haI ha0
+        (by rw [hspan]; exact Ideal.le_radical haI) ha0
     refine Set.mem_iUnion₂_of_mem htT
       ((mem_rationalSubset_iff Aplus T t v).mpr ⟨hvSpa, ?_, ?_⟩)
     · intro u huT
