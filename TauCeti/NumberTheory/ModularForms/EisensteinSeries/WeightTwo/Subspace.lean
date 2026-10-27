@@ -51,8 +51,9 @@ series alone, with a nonzero factor, so every coefficient of the combination van
 * `TauCeti.EisensteinSeries.CharIndex.qExpansion_weightTwoForm_coeff_of_ne_one` and
   `TauCeti.EisensteinSeries.CharIndex.qExpansion_weightTwoForm_coeff_of_eq_one`: its positive
   Fourier coefficients.
-* `TauCeti.EisensteinSeries.CharIndex.weightTwoForm_eq_zero_iff`: it vanishes exactly at the
-  index `(1, 1, 1)`.
+* `TauCeti.EisensteinSeries.CharIndex.weightTwoForm_eq_zero_iff` and
+  `TauCeti.EisensteinSeries.CharIndex.weightTwoForm_eq_zero_iff_eq_one`: it vanishes exactly at
+  the index `(1, 1, 1)` (`TauCeti.EisensteinSeries.CharIndex.one`).
 * `TauCeti.EisensteinSeries.CharIndex.linearIndepOn_weightTwoForm`: the nonzero series are
   linearly independent.
 * `TauCeti.finrank_weightTwoEisensteinSubspace`: the weight-two Eisenstein subspace of `M₂(N, χ)`
@@ -143,30 +144,10 @@ theorem weightTwoForm_eq_zero_iff :
     exact iff_of_false (normalizedCharG2MFRaise_ne_zero a.psi a.phi a.level_dvd
       (not_and_or.mp h) (by simpa using a.parity) a.phi_primitive) fun h' ↦ h ⟨h'.1, h'.2.1⟩
 
-/-- For the trivial pair, the twisted divisor sum is the divisor sum `σₑ`. -/
-private lemma twistedDivisorSum_of_eq_one {k : ℕ} (a : CharIndex N k) (h : a.psi = 1 ∧ a.phi = 1)
-    (e n : ℕ) : DirichletCharacter.twistedDivisorSum e a.psi a.phi n = (σ e n : ℂ) := by
-  have hu := u_eq_one_of_psi_eq_one h.1
-  have hv := v_eq_one_of_phi_eq_one h.2
-  obtain ⟨u, v, t, psi, phi, _, _, _, _⟩ := a
-  dsimp only at hu hv ⊢
-  subst hu hv
-  rw [DirichletCharacter.twistedDivisorSum_modOne_eq_sigma]
-  simp
-
-/-- The index `(1, 1, 1)` of weight two. -/
-private def one : CharIndex N 2 where
-  u := 1
-  v := 1
-  t := 1
-  psi := 1
-  phi := 1
-  psi_primitive := DirichletCharacter.isPrimitive_one_level_one
-  phi_primitive := DirichletCharacter.isPrimitive_one_level_one
-  parity := by
-    rw [show (-1 : ZMod 1) = 1 from Subsingleton.elim _ _]
-    norm_num
-  level_dvd := by simp
+/-- The weight-two series of an index vanishes exactly at the index `(1, 1, 1)`, stated as an
+equality of indices. -/
+theorem weightTwoForm_eq_zero_iff_eq_one : a.weightTwoForm = 0 ↔ a = one even_two := by
+  rw [weightTwoForm_eq_zero_iff, eq_one_iff]
 
 open scoped Classical in
 /-- The positive coefficients of the weight-two series of an index, as a combination of the
@@ -178,13 +159,13 @@ private lemma qExpansion_weightTwoForm_coeff_eq (n : {n : ℕ // n ≠ 0}) :
           (if a.t ∣ (n : ℕ) then DirichletCharacter.twistedDivisorSum 1 a.psi a.phi (n / a.t)
             else 0) +
         (if a.psi = 1 ∧ a.phi = 1 then -24 else 0) *
-          (if (one : CharIndex N 2).t ∣ (n : ℕ) then
-            DirichletCharacter.twistedDivisorSum 1 (one : CharIndex N 2).psi
-              (one : CharIndex N 2).phi (n / (one : CharIndex N 2).t)
+          (if (one even_two : CharIndex N 2).t ∣ (n : ℕ) then
+            DirichletCharacter.twistedDivisorSum 1 (one even_two : CharIndex N 2).psi
+              (one even_two : CharIndex N 2).phi (n / (one even_two : CharIndex N 2).t)
           else 0) := by
   by_cases h : a.psi = 1 ∧ a.phi = 1
   · rw [qExpansion_weightTwoForm_coeff_of_eq_one a h n.2, ite_eq_left h, ite_eq_left h,
-      twistedDivisorSum_of_eq_one a h, twistedDivisorSum_of_eq_one one ⟨rfl, rfl⟩]
+      twistedDivisorSum_of_eq_one a h, twistedDivisorSum_of_eq_one (one even_two) ⟨rfl, rfl⟩]
     simp only [one, one_dvd, ite_true, Nat.div_one]
     split_ifs <;> ring
   · rw [qExpansion_weightTwoForm_coeff_of_ne_one a (not_and_or.mp h) n.2, ite_eq_right h,
@@ -207,14 +188,14 @@ theorem linearIndepOn_weightTwoForm :
     if a.t ∣ (n : ℕ) then DirichletCharacter.twistedDivisorSum 1 a.psi a.phi (n / a.t) else 0
   set α : CharIndex N 2 → ℂ := fun a ↦ if a.psi = 1 ∧ a.phi = 1 then 24 * (a.t : ℂ) else 1
   set β : CharIndex N 2 → ℂ := fun a ↦ if a.psi = 1 ∧ a.phi = 1 then -24 else 0
-  have hL (a : CharIndex N 2) : L a.weightTwoForm = α a • v a + β a • v one := by
+  have hL (a : CharIndex N 2) : L a.weightTwoForm = α a • v a + β a • v (one even_two) := by
     funext n
     simp only [L, LinearMap.pi_apply, LinearMap.comp_apply, ModularForm.qExpansionLinearMap_apply,
       Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     exact qExpansion_weightTwoForm_coeff_eq a n
   refine linearIndepOn_iff.mpr fun l hl hzero ↦ ?_
   -- Rewrite the relation among the series as one among the sequences `v`.
-  have hrel : ∑ a, (l a * α a + if a = one then ∑ b, l b * β b else 0) • v a = 0 := by
+  have hrel : ∑ a, (l a * α a + if a = one even_two then ∑ b, l b * β b else 0) • v a = 0 := by
     have h := congrArg L hzero
     rw [Finsupp.linearCombination_apply, Finsupp.sum_fintype _ _ (by simp), map_sum,
       map_zero] at h
@@ -225,7 +206,7 @@ theorem linearIndepOn_weightTwoForm :
   ext a
   by_cases ha : a.weightTwoForm = 0
   · exact Finsupp.notMem_support_iff.mp fun h ↦ hl h ha
-  have hne : a ≠ one := fun h ↦ ha <| (weightTwoForm_eq_zero_iff _).mpr (h ▸ ⟨rfl, rfl, rfl⟩)
+  have hne : a ≠ one even_two := fun h ↦ ha <| (weightTwoForm_eq_zero_iff_eq_one _).mpr h
   have h := Fintype.linearIndependent_iff.mp hv _ hrel a
   rw [ite_eq_right hne, add_zero] at h
   have hα : α a ≠ 0 := by

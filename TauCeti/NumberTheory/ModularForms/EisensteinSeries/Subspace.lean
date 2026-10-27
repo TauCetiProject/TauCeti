@@ -29,6 +29,7 @@ linear-independence theorem for the constant terms at all cusps.
 * `TauCeti.EisensteinSeries.CharIndex`: the primitive, parity-compatible data `(psi, phi, t)`
   indexing a raised character Eisenstein series at level `N`.
 * `TauCeti.EisensteinSeries.CharIndex.nebentypus`: the product character induced at level `N`.
+* `TauCeti.EisensteinSeries.CharIndex.one`: the index `(1, 1, 1)` of an even weight.
 * `TauCeti.EisensteinSeries.CharIndex.form`: the corresponding normalized raised series.
 * `TauCeti.eisensteinSubspace`: the span of the generators with prescribed nebentypus.
 
@@ -38,6 +39,10 @@ linear-independence theorem for the constant terms at all cusps.
   raising parameter and its two characters raised to level `N`; the moduli alone are determined
   by the raised characters (`u_eq_of_changeLevel_eq`, `v_eq_of_changeLevel_eq`), and a trivial
   character has modulus one (`u_eq_one_of_psi_eq_one`, `v_eq_one_of_phi_eq_one`).
+* `TauCeti.EisensteinSeries.CharIndex.twistedDivisorSum_of_eq_one`: for the trivial pair of
+  characters, the twisted divisor sum is the divisor sum `σₑ`.
+* `TauCeti.EisensteinSeries.CharIndex.eq_one_iff`: an index is `(1, 1, 1)` exactly when its
+  characters are trivial and its raising parameter is one.
 * `TauCeti.EisensteinSeries.CharIndex.nebentypus_eq_one`: the trivial pair of characters induces
   the trivial nebentypus.
 * `TauCeti.EisensteinSeries.CharIndex.form_mem_modFormCharSpace`: every indexed series belongs
@@ -156,6 +161,53 @@ primitive character being its conductor. -/
 theorem v_eq_one_of_phi_eq_one [NeZero N] {a : CharIndex N k} (h : a.phi = 1) : a.v = 1 := by
   have : NeZero a.v := NeZero.of_dvd a.v_dvd
   rw [← a.phi_primitive, h, DirichletCharacter.conductor_one]
+
+/-- For an index whose two characters are trivial, the twisted divisor sum is the divisor sum
+`σₑ`. -/
+theorem twistedDivisorSum_of_eq_one [NeZero N] (h : a.psi = 1 ∧ a.phi = 1) (e n : ℕ) :
+    DirichletCharacter.twistedDivisorSum e a.psi a.phi n = (ArithmeticFunction.sigma e n : ℂ) := by
+  have hu := u_eq_one_of_psi_eq_one h.1
+  have hv := v_eq_one_of_phi_eq_one h.2
+  obtain ⟨u, v, t, psi, phi, _, _, _, _⟩ := a
+  dsimp only at hu hv ⊢
+  subst hu hv
+  rw [DirichletCharacter.twistedDivisorSum_modOne_eq_sigma]
+  simp
+
+/-- The index `(1, 1, 1)` of an even weight `k`: both characters trivial modulo one, and raising
+parameter one. -/
+@[expose] def one (hk : Even k) : CharIndex N k where
+  u := 1
+  v := 1
+  t := 1
+  psi := 1
+  phi := 1
+  psi_primitive := DirichletCharacter.isPrimitive_one_level_one
+  phi_primitive := DirichletCharacter.isPrimitive_one_level_one
+  parity := by
+    rw [show (-1 : ZMod 1) = 1 from Subsingleton.elim _ _, MulChar.map_one, mul_one,
+      (hk.natCast (α := ℤ)).neg_one_zpow]
+  level_dvd := by simp
+
+/-- The index `(1, 1, 1)` has trivial nebentypus. -/
+theorem nebentypus_one (hk : Even k) : (one hk : CharIndex N k).nebentypus = 1 :=
+  nebentypus_eq_one _ ⟨rfl, rfl⟩
+
+/-- An index is `(1, 1, 1)` exactly when its two characters are trivial and its raising
+parameter is one. -/
+theorem eq_one_iff [NeZero N] (hk : Even k) :
+    a = one hk ↔ a.psi = 1 ∧ a.phi = 1 ∧ a.t = 1 := by
+  refine ⟨fun h ↦ by subst h; exact ⟨rfl, rfl, rfl⟩, ?_⟩
+  rintro ⟨hpsi, hphi, ht⟩
+  have hu := u_eq_one_of_psi_eq_one hpsi
+  have hv := v_eq_one_of_phi_eq_one hphi
+  obtain ⟨u, v, t, psi, phi, _, _, _, _⟩ := a
+  dsimp only at hu hv ht
+  subst hu hv ht
+  clear hpsi hphi
+  obtain rfl := psi.level_one
+  obtain rfl := phi.level_one
+  rfl
 
 /-- Two indices with the same raising parameter whose characters agree after raising to level
 `N` are equal: a primitive character is determined by its raise, its modulus being the
