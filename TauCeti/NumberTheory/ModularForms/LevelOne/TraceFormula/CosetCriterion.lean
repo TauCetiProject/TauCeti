@@ -180,6 +180,30 @@ private theorem mapDomain_coeff_flipSum_apply [Semiring k] (hn : n ≠ 0) (x : �
     rw [key, flip_flip] at hg
     rw [key, smul_eq_self_of_mem_upperTriangularReps hx hg, flip_flip]
 
+/-- Membership of `mk A` in `ℳₙ^∞` in terms of the entries `(a b; c d)` of `A`. -/
+private theorem mk_mem_upperTriangularReps_iff_of_val_eq {A : TraceFormulaMatrix n}
+    {a b c d : ℤ} (hA : A.1 = !![a, b; c, d]) :
+    mk A ∈ upperTriangularReps n ↔
+      c = 0 ∧ 0 < a ∧ 0 ≤ b ∧ |b| < |d| ∨ c = 0 ∧ a < 0 ∧ b ≤ 0 ∧ |b| < |d| := by
+  simp [mk_mem_upperTriangularReps, FixedDetMatrices.reps, hA]
+
+/-- The image of `T⁻¹ (a b; c d)` under the anti-involution is `(d, b - d; c, a - c)`. -/
+private theorem val_flipFixedDet_T_inv_smul (A : TraceFormulaMatrix n) :
+    (flipFixedDet (T⁻¹ • A)).1 =
+      !![A.1 1 1, A.1 0 1 - A.1 1 1; A.1 1 0, A.1 0 0 - A.1 1 0] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [val_flipFixedDet, flipMatrix, FixedDetMatrices.smul_coe, Matrix.mul_apply,
+      Fin.sum_univ_two] <;> ring
+
+/-- The right translate `(a b; c d) T⁻¹` is `(a, b - a; c, d - c)`. -/
+private theorem val_traceFormulaMatrixRight_T (A : TraceFormulaMatrix n) :
+    (traceFormulaMatrixRight T A).1 =
+      !![A.1 0 0, A.1 0 1 - A.1 0 0; A.1 1 0, A.1 1 1 - A.1 1 0] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [val_traceFormulaMatrixRight, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
+
 /-- **`Tₙ^∞ (1 - T) = (1 - T) ν`**: for `n > 0` the right translate of `Tₙ^∞` by `T` differs from
 `Tₙ^∞` by the left multiple of `ν` by `1 - T`. -/
 private theorem one_sub_ofMulAction_T_flipSum [CommRing k] (hn : 0 < n) :
@@ -192,21 +216,19 @@ private theorem one_sub_ofMulAction_T_flipSum [CommRing k] (hn : 0 < n) :
     simpa [Matrix.det_fin_two] using A.2
   simp only [LinearMap.sub_apply, Module.End.one_apply, coeff_sub, Finsupp.coe_sub, Pi.sub_apply,
     coeff_ofMulAction, coeff_flipSum, coeff_upperTriangularSum, smul_mk, flip_mk,
-    ← MulOpposite.op_inv, ← QuotientGroup.mk_inv, op_smul_mk]
-  simp only [Set.indicator_apply, mk_mem_upperTriangularReps, Pi.one_apply,
-    FixedDetMatrices.reps, Set.mem_ofPred_eq,
-    TraceFormulaMatrix.val_neg, val_flipFixedDet, FixedDetMatrices.smul_coe,
-    val_traceFormulaMatrixRight, inv_inv, flipMatrix, coe_T_inv, Matrix.mul_apply,
-    Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, Matrix.neg_apply, zero_mul,
-    one_mul, mul_one, mul_zero, add_zero, zero_add, mul_neg, neg_mul, abs_neg]
+    ← MulOpposite.op_inv, ← QuotientGroup.mk_inv, op_smul_mk, inv_inv]
+  simp only [Set.indicator_apply, Pi.one_apply,
+    mk_mem_upperTriangularReps_iff_of_val_eq (val_flipFixedDet A),
+    mk_mem_upperTriangularReps_iff_of_val_eq (val_flipFixedDet_T_inv_smul A),
+    mk_mem_upperTriangularReps_iff_of_val_eq (Matrix.eta_fin_two A.1),
+    mk_mem_upperTriangularReps_iff_of_val_eq (val_traceFormulaMatrixRight_T A)]
   generalize A.1 0 0 = a, A.1 0 1 = b, A.1 1 0 = c, A.1 1 1 = d at hdet ⊢
   rcases eq_or_ne c 0 with rfl | hc
   · -- the four indicators are those of `0 ≤ b < a`, `d ≤ b < a + d`, `0 ≤ b < d` and
     -- `a ≤ b < a + d` (up to sign), and `[0, a) + [a, a + d) = [0, d) + [d, a + d)`
     rcases pos_and_pos_or_neg_and_neg_of_mul_pos (show 0 < a * d by linarith) with
       ⟨ha, hd⟩ | ⟨ha, hd⟩ <;>
-    simp only [neg_zero, add_zero, zero_add, abs_of_pos, abs_of_neg, ha, hd, abs_lt, true_and] <;>
+    simp only [sub_zero, abs_of_pos, abs_of_neg, ha, hd, abs_lt, true_and] <;>
     split_ifs <;> first | (exfalso; omega) | norm_num
   · simp [hc]
 
@@ -298,15 +320,16 @@ private theorem exists_one_add_op_S_apply_eq_neg_and_one_add_op_U_add_op_U_sq_ap
   have hb2 : (υ' ^ 2) b = b := by rw [sq, Module.End.mul_apply, hb, hb]
   refine ⟨(⅟2 : k) • (-a) + (1 - σ') u, ?_, ?_⟩
   · rw [map_add, ← Module.End.mul_apply _ (1 - σ'), one_add_mul_one_sub_of_sq_eq_one
-      ofMulAction_op_S_sq, LinearMap.zero_apply, add_zero, map_smul, LinearMap.add_apply,
-      Module.End.one_apply, map_neg, ha, ← two_smul k (-a), smul_smul, invOf_mul_self, one_smul]
+      ofMulAction_op_S_sq, LinearMap.zero_apply, add_zero]
+    simp only [map_smul, map_neg, LinearMap.add_apply, Module.End.one_apply, ha]
+    linear_combination (norm := module) -(invOf_mul_self (2 : k) • a)
   · rw [show (⅟2 : k) • (-a) + (1 - σ') u = (⅟3 : k) • (-b) - (1 - υ') v by
         linear_combination (norm := module) -huv,
       map_sub, ← Module.End.mul_apply _ (1 - υ'),
       one_add_add_sq_mul_one_sub_of_pow_three_eq_one (by simp [υ']), LinearMap.zero_apply,
-      sub_zero, map_smul, LinearMap.add_apply, LinearMap.add_apply, Module.End.one_apply,
-      map_neg, map_neg, hb, hb2, show -b + -b + -b = (3 : k) • -b by module, smul_smul,
-      invOf_mul_self, one_smul]
+      sub_zero]
+    simp only [map_smul, map_neg, LinearMap.add_apply, Module.End.one_apply, hb, hb2]
+    linear_combination (norm := module) -(invOf_mul_self (3 : k) • b)
 
 /-! ### Popa–Zagier's Theorem 2(b) -/
 

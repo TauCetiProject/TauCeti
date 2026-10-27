@@ -128,9 +128,7 @@ theorem one_sub_ofMulAction_T_injective (hn : n ≠ 0) :
     exact h
   rcases eq_one_or_eq_neg_one_of_smul_eq hn h' with h1 | h1
   · have := congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 1) h1
-    simp only [coe_T_zpow] at this
-    simp at this
-    omega
+    simpa [coe_T_zpow, sub_eq_zero] using this
   · have := congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 0) h1
     simp [coe_T_zpow] at this
 
