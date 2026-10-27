@@ -44,6 +44,8 @@ import TauCeti.Data.Set.PowersetCard
   deleting an existing element of an ordered finset in either order, deleting two distinct
   elements in either order, or inserting two distinct new elements in either order, gives
   opposite Koszul signs.
+* `Finset.card_filter_lt_add_card_filter_gt` counts the elements of a finset in a linear order
+  below and above one of its elements.
 * `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
   cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
   modulo two.
@@ -473,6 +475,23 @@ theorem neg_one_pow_card_filter_lt_mul_insert_insert {α R : Type*} [LinearOrder
   · have hj' : j ∉ {k ∈ s | k < i} := by simp [hj]
     simp only [filter_insert, hji, hji.not_gt, ↓reduceIte, card_insert_of_notMem hj', pow_succ]
     simp [← pow_add, add_comm]
+
+/-- An element of a finset in a linear order splits the remaining elements into those below and
+those above it. -/
+theorem card_filter_lt_add_card_filter_gt {α : Type*} [LinearOrder α] {s : Finset α} {v : α}
+    (hv : v ∈ s) : #{w ∈ s | w < v} + #{w ∈ s | v < w} + 1 = #s := by
+  have h₁ := card_filter_add_card_filter_not (s := s) (· < v)
+  have h₂ := card_filter_add_card_filter_not (s := {w ∈ s | ¬w < v}) (v < ·)
+  have h₃ : {w ∈ {w ∈ s | ¬w < v} | ¬v < w} = {v} := by
+    ext w
+    simp only [mem_filter, not_lt, mem_singleton]
+    exact ⟨fun hw ↦ le_antisymm hw.2 hw.1.2, fun hw ↦ by subst hw; exact ⟨⟨hv, le_rfl⟩, le_rfl⟩⟩
+  have h₄ : {w ∈ {w ∈ s | ¬w < v} | v < w} = {w ∈ s | v < w} := by
+    ext w
+    simp only [mem_filter, not_lt]
+    exact ⟨fun hw ↦ ⟨hw.1.1, hw.2⟩, fun hw ↦ ⟨⟨hw.1, hw.2.le⟩, hw.2⟩⟩
+  rw [h₃, h₄, card_singleton] at h₂
+  omega
 
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
 of its values at those two points. -/

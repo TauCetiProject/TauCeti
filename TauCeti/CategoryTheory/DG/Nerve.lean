@@ -7,6 +7,9 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Basic
 public import TauCeti.CategoryTheory.DG.HomotopyCategory
+public import TauCeti.Data.Fin.PredAbove
+public import TauCeti.Data.Finset.Basic
+public import TauCeti.Data.Set.InjOn
 
 /-!
 # The differential graded nerve
@@ -32,10 +35,9 @@ A subset `I` with minimum `i` and maximum `j` is recorded through its interior `
 the coherence `coh i j S` has cohomological degree `-#S` (`TauCeti.DGNerve.IsIndex`).  A
 monotone map `α` acts on these data as in Lurie's construction: on subsets on which `α` is
 injective it reindexes, a two-element subset collapsed by `α` receives the identity, and a larger
-collapsed subset receives zero (`TauCeti.DGNerve.Family.pullback`).  That this action preserves
-the equations is checked for injective maps directly; for a map collapsing a single pair of
-adjacent vertices the surviving terms of each equation cancel; and every map of
-`SimplexCategory` is a composite of such maps.
+collapsed subset receives zero (`TauCeti.DGNerve.Family.pullback`).  This action preserves the
+equations (`TauCeti.DGNerve.Family.IsCoherent.pullback`), so it defines the simplicial operators
+of `TauCeti.dgNerve`.
 
 ## Main definitions
 
@@ -45,6 +47,9 @@ adjacent vertices the surviving terms of each equation cancel; and every map of
 * `TauCeti.dgNerve`: the differential graded nerve, a simplicial set.
 * `TauCeti.dgNerveVerticesEquiv`: the vertices of `N_dg(C)` are the objects of `C`.
 * `TauCeti.dgNerveEdgesEquiv`: the edges of `N_dg(C)` are the closed degree-zero morphisms.
+* `TauCeti.DGNerve.Family.ofHom`: the family of the edge with a given degree-zero morphism, the
+  inverse image of a closed one under `TauCeti.dgNerveEdgesEquiv`
+  (`TauCeti.dgNerveEdgesEquiv_symm_apply_val`).
 
 ## Main results
 
@@ -53,6 +58,8 @@ adjacent vertices the surviving terms of each equation cancel; and every map of
   and `TauCeti.DGNerve.Family.pullback_coh_eq_zero`, with `TauCeti.dgNerve_map_val`: the
   coherences of a degenerate simplex; a collapsed edge is an identity and a larger collapsed
   coherence is zero.
+* `TauCeti.dgNerveVerticesEquiv_δ_one` and `TauCeti.dgNerveVerticesEquiv_δ_zero`: the source and
+  target of an edge are its two faces.
 * `TauCeti.dgNerveEdgesEquiv_σ_dgNerveVerticesEquiv_symm`: the degenerate edge at an object is
   its identity.
 * `TauCeti.dgNerve_d_coh_two`: a `2`-simplex with edges `f`, `g` and `h` carries a degree `-1`
@@ -117,22 +124,6 @@ theorem IsIndex.upper (h : IsIndex i j S m) (hv : v ∈ S) :
   refine ⟨(h.mem hv).2, fun w hw ↦ ?_, rfl⟩
   rw [mem_filter] at hw
   exact ⟨hw.2, (h.mem hw.1).2⟩
-
-/-- An interior vertex splits the remaining interior vertices into those below and above it. -/
-theorem card_filter_lt_add_card_filter_gt (hv : v ∈ S) :
-    #{w ∈ S | w < v} + #{w ∈ S | v < w} + 1 = #S := by
-  have h₁ := card_filter_add_card_filter_not (s := S) (· < v)
-  have h₂ := card_filter_add_card_filter_not (s := {w ∈ S | ¬w < v}) (v < ·)
-  have h₃ : {w ∈ {w ∈ S | ¬w < v} | ¬v < w} = {v} := by
-    ext w
-    simp only [mem_filter, not_lt, mem_singleton]
-    exact ⟨fun hw ↦ le_antisymm hw.2 hw.1.2, fun hw ↦ by subst hw; exact ⟨⟨hv, le_rfl⟩, le_rfl⟩⟩
-  have h₄ : {w ∈ {w ∈ S | ¬w < v} | v < w} = {w ∈ S | v < w} := by
-    ext w
-    simp only [mem_filter, not_lt]
-    exact ⟨fun hw ↦ ⟨hw.1.1, hw.2⟩, fun hw ↦ ⟨⟨hw.1, hw.2.le⟩, hw.2⟩⟩
-  rw [h₃, h₄, card_singleton] at h₂
-  omega
 
 /-- The degrees of the two factors of a split coherence add up to the degree of the face. -/
 theorem IsIndex.degree_add (h : IsIndex i j S m) (hv : v ∈ S) :
@@ -511,49 +502,25 @@ theorem pullback_compTerm_of_eq_right (x : Family R C ι) (α : κ →o ι) {i v
 
 end Family
 
-section Collapse
-
-variable {ι : Type w} [LinearOrder ι] {κ : Type w'} [LinearOrder κ] {α : κ → ι} {k k' : κ}
-
-omit [LinearOrder ι] in
-/-- For a map whose only collapse is `α k = α k'`, injectivity on a vertex set means not
-containing both `k` and `k'`. -/
-private theorem injOn_iff_of_collapse (hkk' : k < k') (hk : α k = α k')
-    (hcol : ∀ a b, a < b → α a = α b → a = k ∧ b = k') (U : Finset κ) :
-    Set.InjOn α U ↔ ¬(k ∈ U ∧ k' ∈ U) := by
-  refine ⟨fun hU hkU ↦ hkk'.ne (hU (mem_coe.mpr hkU.1) (mem_coe.mpr hkU.2) hk),
-    fun hU a ha b hb hab ↦ ?_⟩
-  rcases lt_trichotomy a b with hlt | rfl | hgt
-  · obtain ⟨rfl, rfl⟩ := hcol a b hlt hab
-    exact absurd ⟨ha, hb⟩ hU
-  · rfl
-  · obtain ⟨rfl, rfl⟩ := hcol b a hgt hab.symm
-    exact absurd ⟨hb, ha⟩ hU
-
-/-- The two vertices collapsed by a monotone map with a single collapse are adjacent. -/
-private theorem not_between_of_collapse (hα : Monotone α) (hk : α k = α k')
-    (hcol : ∀ a b, a < b → α a = α b → a = k ∧ b = k') {c : κ} (hc : k < c) (hc' : c < k') :
-    False :=
-  hc'.ne (hcol k c hc (le_antisymm (hα hc.le) (hk ▸ hα hc'.le))).2
-
-end Collapse
-
 namespace Family
 
 variable {ι : Type w} [LinearOrder ι] {κ : Type w'} [LinearOrder κ] {x : Family R C ι}
 
 /-- The dg nerve equation of a pulled-back coherence, for a monotone map whose only collapse is
-`α k = α k'`.  A collapsed coherence with interior vertices is zero, and in its equation at most
-two summands survive: either a single summand whose two parts agree because composing with the
-collapsed edge is the identity, or the faces omitting `k` and `k'`, which agree and carry
-opposite signs. -/
+`α k = α k'`: it holds whenever the original family is coherent. -/
 theorem IsCoherent.pullback_apply_of_collapse (hx : x.IsCoherent) (α : κ →o ι) {k k' : κ}
     (hkk' : k < k') (hk : α k = α k') (hcol : ∀ a b, a < b → α a = α b → a = k ∧ b = k')
     {i j : κ} {S : Finset κ} {m : ℤ} (h : IsIndex i j S m) :
     dgDifferential R m ((x.pullback α).coh i j S m h) = (x.pullback α).boundary h := by
-  have hinj := injOn_iff_of_collapse hkk' hk hcol
+  -- A collapsed coherence with interior vertices is zero, and in its equation at most two
+  -- summands survive: either a single summand whose two parts agree because composing with the
+  -- collapsed edge is the identity, or the faces omitting `k` and `k'`, which agree and carry
+  -- opposite signs.
+  have hinj (U : Finset κ) : Set.InjOn α U ↔ ¬(k ∈ U ∧ k' ∈ U) :=
+    Set.injOn_iff_of_collapse hkk' hk hcol U
+  -- The collapsed vertices `k` and `k'` are adjacent.
   have hbtw : ∀ c, k < c → c < k' → False := fun c hc hc' ↦
-    not_between_of_collapse α.monotone hk hcol hc hc'
+    hc'.ne (hcol k c hc (le_antisymm (α.monotone hc.le) (hk ▸ α.monotone hc'.le))).2
   by_cases hT : Set.InjOn α (insert i (insert j S) : Finset κ)
   · exact hx.pullback_apply_of_injOn α h hT
   obtain ⟨hkT, hk'T⟩ := not_not.mp ((hinj _).not.mp hT)
@@ -700,7 +667,8 @@ theorem IsCoherent.pullback_apply_of_collapse (hx : x.IsCoherent) (α : κ →o 
         pullback_coh_of_injOn x α _ (hinjOf (Or.inr hk'U)),
         x.coh_congr himage _
           ((h.erase hk'S).image α.monotone (hinjOf (Or.inr hk'U))),
-        hcard, Nat.cast_add, Nat.cast_one, Int.negOnePow_succ, Units.neg_smul, neg_add_cancel]
+        hcard]
+      simp [Int.negOnePow_succ]
     · rw [boundaryTerm_of_mem _ h hc,
         hzero (h.erase hc) (mem_insert_of_mem (mem_insert_of_mem (mem_erase.mpr ⟨hck.1.symm, hkS⟩)))
           (mem_insert_of_mem (mem_insert_of_mem (mem_erase.mpr ⟨hck.2.symm, hk'S⟩)))
@@ -717,28 +685,22 @@ theorem IsCoherent.pullback_apply_of_collapse (hx : x.IsCoherent) (α : κ →o 
 
 end Family
 
-/-- A degeneracy map of `SimplexCategory` identifies exactly the two vertices `i` and `i + 1`. -/
-private theorem predAbove_eq_predAbove {n : ℕ} (i : Fin (n + 1)) {a b : Fin (n + 2)} (hab : a < b)
-    (h : i.predAbove a = i.predAbove b) : a = i.castSucc ∧ b = i.succ := by
-  simp only [Fin.predAbove, Fin.ext_iff, Fin.lt_def] at h hab ⊢
-  split_ifs at h with h₁ h₂ h₂ <;>
-    simp only [Fin.val_pred, Fin.coe_castPred, Fin.val_castSucc] at h h₁ h₂ <;>
-    simp only [Fin.val_castSucc, Fin.val_succ] <;> omega
-
 /-- **Monotone maps preserve the dg nerve equations**: the pullback of a coherent family along a
-map of `SimplexCategory` is coherent.  A non-injective map factors through a degeneracy, which
-collapses a single pair of adjacent vertices. -/
+map of `SimplexCategory` is coherent.  This is what makes `TauCeti.DGNerve.Family.pullback` define
+the simplicial operators of `TauCeti.dgNerve`. -/
 theorem Family.IsCoherent.pullback {n : ℕ} {x : Family R C (Fin (n + 1))} (hx : x.IsCoherent)
     {m : ℕ} (θ : ⦋m⦌ ⟶ ⦋n⦌) : (x.pullback θ.toOrderHom).IsCoherent := by
   induction m with
   | zero => exact hx.pullback_of_injective fun a b _ ↦ Subsingleton.elim (α := Fin 1) a b
   | succ m ih =>
+    -- A non-injective map factors through a codegeneracy, which collapses a single pair of
+    -- adjacent vertices.
     by_cases hθ : Function.Injective θ.toOrderHom
     · exact hx.pullback_of_injective hθ
     obtain ⟨i, θ', rfl⟩ := SimplexCategory.eq_σ_comp_of_not_injective θ hθ
     rw [SimplexCategory.comp_toOrderHom, ← Family.pullback_pullback]
     exact fun _ _ _ _ h ↦ (ih θ').pullback_apply_of_collapse _ Fin.castSucc_lt_succ
-      (by simp [SimplexCategory.σ]) (fun a b hab e ↦ predAbove_eq_predAbove i hab e) h
+      (by simp [SimplexCategory.σ]) (fun a b hab e ↦ (Fin.predAbove_eq_predAbove_iff i hab).mp e) h
 
 end DGNerve
 
@@ -804,22 +766,32 @@ theorem isIndex_fin_two {i j : Fin 2} {S : Finset (Fin 2)} {m : ℤ} (h : IsInde
   exact ⟨hi, hj, hS, by rw [h.degree, hS, card_empty, Nat.cast_zero, neg_zero]⟩
 
 /-- The family of a `1`-simplex with edge `f : X ⟶ Y`. -/
-private noncomputable def edgeFamily {X Y : C} (f : DGHom R 0 X Y) : Family R C (Fin 2) where
+@[expose]
+noncomputable def DGNerve.Family.ofHom {X Y : C} (f : DGHom R 0 X Y) : Family R C (Fin 2) where
   obj := ![X, Y]
   coh i j S m h := by
     obtain ⟨rfl, rfl, -, rfl⟩ := isIndex_fin_two h
     exact f
 
-private theorem edgeFamily_coh {X Y : C} (f : DGHom R 0 X Y) (h : IsIndex (0 : Fin 2) 1 ∅ 0) :
-    (edgeFamily f).coh 0 1 ∅ 0 h = f :=
-  rfl
+@[simp]
+theorem DGNerve.Family.ofHom_obj_zero {X Y : C} (f : DGHom R 0 X Y) : (ofHom f).obj 0 = X :=
+  (rfl)
 
-private theorem edgeFamily_coh_eq (y : Family R C (Fin 2)) (h : IsIndex (0 : Fin 2) 1 ∅ 0) :
-    edgeFamily (y.coh 0 1 ∅ 0 h) = y := by
+@[simp]
+theorem DGNerve.Family.ofHom_obj_one {X Y : C} (f : DGHom R 0 X Y) : (ofHom f).obj 1 = Y :=
+  (rfl)
+
+@[simp]
+theorem DGNerve.Family.ofHom_coh {X Y : C} (f : DGHom R 0 X Y) (h : IsIndex (0 : Fin 2) 1 ∅ 0) :
+    (ofHom f).coh 0 1 ∅ 0 h = f :=
+  (rfl)
+
+private theorem ofHom_coh_eq (y : Family R C (Fin 2)) (h : IsIndex (0 : Fin 2) 1 ∅ 0) :
+    Family.ofHom (y.coh 0 1 ∅ 0 h) = y := by
   refine Family.ext (funext fun a ↦ ?_) fun i j S m h ↦ ?_
   · fin_cases a <;> rfl
   · obtain ⟨rfl, rfl, rfl, rfl⟩ := isIndex_fin_two h
-    exact heq_of_eq (edgeFamily_coh _ h)
+    exact heq_of_eq (Family.ofHom_coh _ h)
 
 /-- **The edges of the dg nerve are the closed degree-zero morphisms**: an edge `X ⟶ Y` is a
 degree-zero cocycle of `Hom(X, Y)`. -/
@@ -827,11 +799,11 @@ noncomputable def dgNerveEdgesEquiv (R : Type v) [CommRing R] (C : Type u) [DGCa
     (dgNerve R C) _⦋1⦌ ≃ Σ X Y : C, dgCycles R X Y where
   toFun x := ⟨x.1.obj 0, x.1.obj 1, ⟨x.1.coh 0 1 ∅ 0 (isIndex_empty_iff.mpr ⟨by simp, rfl⟩), by
     rw [mem_dgCycles, x.2, Family.boundary_def, sum_empty]⟩⟩
-  invFun f := ⟨edgeFamily f.2.2.1, fun i j S m h ↦ by
+  invFun f := ⟨Family.ofHom f.2.2.1, fun i j S m h ↦ by
     obtain ⟨rfl, rfl, rfl, rfl⟩ := isIndex_fin_two h
     rw [Family.boundary_def, sum_empty]
     exact (mem_dgCycles R).mp f.2.2.2⟩
-  left_inv x := Subtype.ext (edgeFamily_coh_eq x.1 _)
+  left_inv x := Subtype.ext (ofHom_coh_eq x.1 _)
   right_inv _ := rfl
 
 @[simp]
@@ -839,6 +811,22 @@ theorem dgNerveEdgesEquiv_apply (x : (dgNerve R C) _⦋1⦌) :
     dgNerveEdgesEquiv R C x = ⟨x.1.obj 0, x.1.obj 1,
       ⟨x.1.coh 0 1 ∅ 0 (isIndex_empty_iff.mpr ⟨by simp, rfl⟩), by
         rw [mem_dgCycles, x.2, Family.boundary_def, sum_empty]⟩⟩ :=
+  (rfl)
+
+/-- The edge with a given closed degree-zero morphism is the family of that morphism. -/
+@[simp]
+theorem dgNerveEdgesEquiv_symm_apply_val (f : Σ X Y : C, dgCycles R X Y) :
+    ((dgNerveEdgesEquiv R C).symm f).1 = Family.ofHom (f.2.2 : DGHom R 0 f.1 f.2.1) :=
+  (rfl)
+
+/-- The source of an edge is its face opposite the vertex `1`. -/
+theorem dgNerveVerticesEquiv_δ_one (x : (dgNerve R C) _⦋1⦌) :
+    dgNerveVerticesEquiv R C ((dgNerve R C).δ 1 x) = (dgNerveEdgesEquiv R C x).1 :=
+  (rfl)
+
+/-- The target of an edge is its face opposite the vertex `0`. -/
+theorem dgNerveVerticesEquiv_δ_zero (x : (dgNerve R C) _⦋1⦌) :
+    dgNerveVerticesEquiv R C ((dgNerve R C).δ 0 x) = (dgNerveEdgesEquiv R C x).2.1 :=
   (rfl)
 
 /-- **The degeneracy of a vertex is its identity**: the degenerate edge at an object `X` is the
@@ -868,8 +856,6 @@ theorem dgNerve_d_coh_two (x : (dgNerve R C) _⦋2⦌) :
       (by norm_num),
     Family.compTerm_def, x.1.coh_congr (S' := ∅) (by simp) _
       (isIndex_empty_iff.mpr ⟨by simp, by norm_num⟩)]
-  have : #({w ∈ ({1} : Finset (Fin 3)) | 1 < w}) = 0 := by simp
-  rw [this, Nat.cast_zero, zero_add, Int.negOnePow_one, mul_zero, Int.negOnePow_zero, one_smul,
-    Units.neg_smul, one_smul, neg_sub]
+  simp [filter_singleton]
 
 end TauCeti
