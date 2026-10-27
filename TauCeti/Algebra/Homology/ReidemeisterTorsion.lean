@@ -52,6 +52,15 @@ where `[c'ᵢ / cᵢ]` is the determinant of `c' i` with respect to `c i`
 bases multiplies the torsion by the signs of the permutations, and rescaling the basis vectors by
 units multiplies it by the alternating product of their products.
 
+The torsion is invariant under isomorphisms of based complexes: transporting the bases of `C`
+along an isomorphism `e : C ≅ D` gives `D` the same torsion
+(`HomologicalComplex.reidemeisterTorsion_map`).
+Combined with the basis-change formula, if `Aᵢ` is the matrix of `eᵢ` in given bases of `Cᵢ` and
+`Dᵢ`, then `τ(C) = τ(D) · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)`
+(`HomologicalComplex.reidemeisterTorsion_eq_mul_finprod_det_toMatrix`). This is the formula
+`τ(A⁻¹ d A) = τ(d) · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)` for a differential `d` conjugated by degreewise
+automorphisms `Aᵢ`.
+
 The torsion is multiplicative in short exact sequences
 (`HomologicalComplex.reidemeisterTorsion_eq_mul_of_shortExact`): if `0 → C₁ → C₂ → C₃ → 0` is a
 short exact sequence of chain complexes with `C₁` and `C₃` acyclic, and the bases of `C₂` are the
@@ -90,6 +99,10 @@ be compared componentwise along the field homomorphisms between them.
   of the chain bases.
 * `HomologicalComplex.reidemeisterTorsion_unitsSMul`: the change of the torsion under a rescaling
   of the chain basis vectors by units.
+* `HomologicalComplex.reidemeisterTorsion_map`: the torsion is invariant under isomorphisms of
+  based complexes.
+* `HomologicalComplex.reidemeisterTorsion_eq_mul_finprod_det_toMatrix`: the change of the torsion
+  under an isomorphism of complexes, in terms of the determinants of its matrices.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_of_shortExact`: the multiplicativity of the
   torsion in a based short exact sequence of acyclic complexes.
 * `HomologicalComplex.map_reidemeisterTorsion`: the torsion of the scalar extension of a based
@@ -824,5 +837,43 @@ theorem map_reidemeisterTorsion : φ (C.reidemeisterTorsion c) = D.reidemeisterT
     torsionBracket_semilinearMap φ (h (j + 1)) (hD (j + 1)) _ _ _ _ _ _ (hb (j + 1)) (hs j)]
 
 end ScalarExtension
+
+section Iso
+
+variable {C} {D : ChainComplex (ModuleCat F) ℤ} (e : C ≅ D)
+
+/-- The torsion is invariant under isomorphisms of based complexes: transporting the bases `c i`
+of `C` along an isomorphism `e : C ≅ D` gives bases of `D` for which `D` has the same torsion as
+`C`. -/
+theorem reidemeisterTorsion_map :
+    D.reidemeisterTorsion (fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv) =
+      C.reidemeisterTorsion c := by
+  -- `D` with the transported bases is the scalar extension of `C` along the identity: the
+  -- matrices of the differentials agree.
+  refine (map_reidemeisterTorsion (RingHom.id F) fun i ↦ ?_).symm
+  ext k l
+  simp only [LinearMap.toMatrix_apply, Basis.map_repr, Iso.toLinearEquiv_symm, Basis.map_apply,
+    Iso.toLinearEquiv_apply, Hom.isoApp_hom, Hom.comm_apply, LinearEquiv.trans_apply, Iso.symm_hom,
+    Hom.isoApp_inv, RingHom.coe_id, Matrix.map_apply, id_eq]
+  rw [← ConcreteCategory.comp_apply, ← comp_f, e.hom_inv_id, id_f, ConcreteCategory.id_apply]
+
+/-- The torsion under an isomorphism `e : C ≅ D` of complexes with bases `c i` and `c' i`: if
+`Aᵢ` is the matrix of `eᵢ : Cᵢ → Dᵢ` in the bases `c i` and `c' i`, then
+`τ(C, c) = τ(D, c') · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)`. When `C` and `D` have the same chain spaces and
+bases, the differential of `C` is the conjugate `A⁻¹ d A` of the differential `d` of `D` by the
+degreewise automorphisms `Aᵢ`, and this is the formula
+`τ(A⁻¹ d A) = τ(d) · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)`. -/
+theorem reidemeisterTorsion_eq_mul_finprod_det_toMatrix (c' : ∀ i, Basis (Fin (n i)) F (D.X i)) :
+    C.reidemeisterTorsion c = D.reidemeisterTorsion c' *
+      ∏ᶠ i : ℤ, (LinearMap.toMatrix (c i) (c' i) (e.hom.f i).hom).det ^ (i.negOnePow : ℤ) := by
+  rw [← reidemeisterTorsion_map c e, reidemeisterTorsion_eq_mul_finprod_det D c']
+  congr 1
+  refine finprod_congr fun i ↦ ?_
+  rw [Basis.det_apply]
+  congr 3
+  ext k
+  simp
+
+end Iso
 
 end HomologicalComplex

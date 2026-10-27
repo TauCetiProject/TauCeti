@@ -19,7 +19,9 @@ and a cyclic `M`-valued cocycle `φ` of odd degree `n = 2m + 1`, Connes' odd pai
 with `n + 1` alternating arguments. This file shows that the value depends only on the cyclic
 cohomology class of `φ`, and constructs the resulting linear map `HC²ᵐ⁺¹(A; M) → M`. Composed with
 matrix extension `HC²ᵐ⁺¹(A; M) → HC²ᵐ⁺¹(Matrix ι ι A; M)`, it pairs invertible matrices with cyclic
-cohomology through `φ#Tr`. Its descent to algebraic `K₁` is not treated here.
+cohomology through `φ#Tr`. Its homotopy invariance and multiplicativity, the relations through
+which it descends to algebraic `K₁`, are proved in
+`TauCeti.RingTheory.CyclicCohomology.OddPairing.Invariance`.
 
 The pairing descends to cohomology because the entries `x = u⁻¹ - 1` and `y = u - 1` are
 quasi-inverse to each other in both orders: `y + x + xy = 0 = x + y + yx`. More generally, if

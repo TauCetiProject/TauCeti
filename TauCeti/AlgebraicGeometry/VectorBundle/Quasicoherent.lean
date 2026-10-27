@@ -20,6 +20,8 @@ category of quasicoherent sheaves by a symmetric monoidal functor, compatibly wi
   symmetric monoidal inclusion;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pullbackToQuasicoherentIso`: the inclusion
   commutes with pullback;
+* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.isFiniteLocallyFree`: the property of a
+  quasicoherent sheaf of being finite locally free;
 -/
 
 public section
@@ -116,6 +118,11 @@ theorem pullbackToQuasicoherentIso_inv_app_hom {Y : Scheme.{u}} (f : X ⟶ Y)
   (rfl)
 
 end FiniteLocallyFreeSheaf
+
+/-- A quasicoherent sheaf is finite locally free when its underlying `𝒪_X`-module is locally free
+and finitely presented. -/
+abbrev QuasicoherentSheaf.isFiniteLocallyFree : ObjectProperty (QuasicoherentSheaf X) :=
+  (SheafOfModules.isFiniteLocallyFree X.ringCatSheaf).inverseImage (ObjectProperty.ι _)
 
 end
 
