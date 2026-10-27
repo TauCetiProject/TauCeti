@@ -198,7 +198,7 @@ variable {R : Type w} [CommRing R] {C} [GradedLinearQuiver.{u, v, w} R C] {F : D
 theorem koszulTwist_totalHomMap (q : ℤ) (x : TotalHom R (InducedQuiver C F)) :
     (totalGrading R C).koszulTwist q (totalHomMap R F x) =
       totalHomMap R F ((totalGrading R (InducedQuiver C F)).koszulTwist q x) := by
-  simpa using LinearMap.congr_fun (isHomogeneous_totalHomMap.koszulTwist_comp q) x
+  simpa using isHomogeneous_totalHomMap.koszulTwist_apply q x
 
 end CommRing
 

@@ -99,8 +99,7 @@ theorem IsGradedCoderivationOver.square_commutes_coact_of_negOnePow_eq_neg_one {
   let H := b.lTensor M ∘ₗ T.rTensor C
   have hρ : ρ ∘ₗ D = (F + H) ∘ₗ ρ := h
   have hTF : T ∘ₗ D = (-1 : R) • (D ∘ₗ T) := by
-    simpa only [Module.End.smulLeft_eq, LinearMap.smul_comp, LinearMap.id_comp, T, hqr] using
-      hD.koszulTwist_comp q
+    simpa only [T, hqr] using hD.koszulTwist_comp_eq_smul q
   have hcross : F ∘ₗ H + H ∘ₗ F = 0 := by
     have hcomm : H ∘ₗ F = (-1 : R) • (F ∘ₗ H) := by
       calc
@@ -292,7 +291,7 @@ def coderivationComm {r : ℤ} (f : Hom R C M N) (G : InternalGrading R M) (H : 
     have hF : F ∘ₗ ρM = ρN ∘ₗ f.toLinearMap := f.map_coact
     have htw : H.koszulTwist q ∘ₗ f.toLinearMap =
         (((q * r).negOnePow : ℤ) : R) • (f.toLinearMap ∘ₗ G.koszulTwist q) :=
-      hf.koszulTwist_comp q
+      hf.koszulTwist_comp_eq_smul q
     have hcross : TN ∘ₗ F = (((q * r).negOnePow : ℤ) : R) • (F ∘ₗ TM) := by
       refine TensorProduct.ext' fun x c ↦ ?_
       simpa only [TN, TM, F, LinearMap.comp_apply, LinearMap.rTensor_tmul,

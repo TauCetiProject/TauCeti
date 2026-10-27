@@ -224,7 +224,7 @@ twist. -/
 theorem koszulTwist_homInclusion (q : ℤ) (X Y : C) (f : homModule (R := R) X Y) :
     (totalGrading R C).koszulTwist q (homInclusion X Y f) =
       homInclusion X Y ((grading (R := R) X Y).koszulTwist q f) := by
-  simpa using LinearMap.congr_fun ((isHomogeneous_homInclusion X Y).koszulTwist_comp q) f
+  simpa using (isHomogeneous_homInclusion X Y).koszulTwist_apply q f
 
 /-- The Koszul twist of the total module of morphisms preserves each hom module. -/
 theorem koszulTwist_mem_range_homInclusion (q : ℤ) {X Y : C} {u : TotalHom R C}

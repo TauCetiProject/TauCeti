@@ -341,11 +341,10 @@ theorem val_koszulTwist_restrictScalars (q : ℤ) (x : DGRightModule.RestrictSca
       rw [InternalGrading.ofDecomposition_piece, IsDGRightModule.mem_restrictScalarsGrading_iff,
         InternalGrading.mem_map_piece_iff, LinearEquiv.symm_symm,
         InternalGrading.ofDecomposition_piece]
-  have h := LinearMap.congr_fun
-    (((InternalGrading.ofDecomposition ℳ).isHomogeneous_map_symm
-      (DGRightModule.RestrictScalars.linearEquiv f M).symm).koszulTwist_comp q) x
-  simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, Module.End.smulLeft_apply,
-    one_smul, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_symm,
+  have h := ((InternalGrading.ofDecomposition ℳ).isHomogeneous_map_symm
+    (DGRightModule.RestrictScalars.linearEquiv f M).symm).koszulTwist_apply q x
+  simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
+    LinearEquiv.coe_coe, LinearEquiv.symm_symm,
     DGRightModule.RestrictScalars.linearEquiv_apply] at h
   rw [hG]
   exact h.symm

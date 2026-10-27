@@ -62,8 +62,9 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
   `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
   map are homogeneous submodules.
-* `TauCeti.LinearMap.IsHomogeneous.koszulTwist_comp`: a homogeneous linear map commutes with
-  Koszul twists up to the sign determined by its degree.
+* `TauCeti.LinearMap.IsHomogeneous.koszulTwist_apply` and
+  `TauCeti.LinearMap.IsHomogeneous.koszulTwist_comp`: pointwise and operator forms of commuting a
+  homogeneous linear map with Koszul twists up to the sign determined by its degree.
 * `TauCeti.LinearMap.IsHomogeneous.twistedTuple_map`: a degree-zero homogeneous map commutes with
   twisting a block of a tuple.
 
@@ -551,6 +552,22 @@ namespace LinearMap.IsHomogeneous
 
 variable {N : Type w} [AddCommMonoid N] [Module R N]
 
+/-- A homogeneous linear map of degree `r` commutes pointwise with the Koszul twist of
+parameter `q` up to the scalar `(-1)^(q * r)`. -/
+theorem koszulTwist_apply {G : InternalGrading R M} {H : InternalGrading R N}
+    {f : M →ₗ[R] N} {r : ℤ} (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (q : ℤ) (x : M) :
+    H.koszulTwist q (f x) = (((q * r).negOnePow : ℤ) : R) • f (G.koszulTwist q x) := by
+  induction x using DirectSum.Decomposition.inductionOn G.piece with
+  | zero => simp
+  | @homogeneous p x =>
+    rw [H.koszulTwist_apply_of_mem (hf.map_mem x.2) q,
+      G.koszulTwist_apply_of_mem x.2 q, map_smul, smul_smul]
+    congr 1
+    rw [← Int.cast_mul, ← Units.val_mul, ← Int.negOnePow_add]
+    congr 2
+    ring_nf
+  | add x y hx hy => simp [map_add, hx, hy, smul_add]
+
 /-- A homogeneous linear map of degree `r` commutes with the Koszul twist of parameter `q` up to
 the scalar `(-1)^(q * r)`. This is the operator form of the sign acquired by moving a degree-`r`
 map past a homogeneous input. The sign acts through its central scalar endomorphism, so this
@@ -560,19 +577,18 @@ theorem koszulTwist_comp {G : InternalGrading R M} {H : InternalGrading R N}
     H.koszulTwist q ∘ₗ f =
       Module.End.smulLeft (((q * r).negOnePow : ℤ) : R) (Set.intCast_mem_center R _) ∘ₗ
         (f ∘ₗ G.koszulTwist q) := by
-  refine DirectSum.decompose_lhom_ext (ℳ := G.piece) fun p ↦ ?_
   ext x
-  have hx : (x : M) ∈ G.piece p := Submodule.coe_mem x
-  have hfx : f (x : M) ∈ H.piece (p + r) := hf.map_mem hx
-  have hcalc : H.koszulTwist q (f (x : M)) =
-      (((q * r).negOnePow : ℤ) : R) • f (G.koszulTwist q (x : M)) := by
-    rw [H.koszulTwist_apply_of_mem hfx q, G.koszulTwist_apply_of_mem hx q, map_smul,
-      smul_smul]
-    congr 1
-    rw [← Int.cast_mul, ← Units.val_mul, ← Int.negOnePow_add]
-    congr 2
-    ring_nf
-  simpa only [LinearMap.comp_apply, Module.End.smulLeft_apply, Submodule.coe_subtype] using hcalc
+  simpa only [LinearMap.comp_apply, Module.End.smulLeft_apply] using hf.koszulTwist_apply q x
+
+/-- Over a commutative ring, the Koszul compatibility of a homogeneous map is a scalar multiple
+of the composition with the source twist. -/
+theorem koszulTwist_comp_eq_smul {R : Type u} [CommRing R] {M : Type v} {N : Type w}
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {G : InternalGrading R M} {H : InternalGrading R N} {f : M →ₗ[R] N} {r : ℤ}
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (q : ℤ) :
+    H.koszulTwist q ∘ₗ f = (((q * r).negOnePow : ℤ) : R) • (f ∘ₗ G.koszulTwist q) := by
+  simpa only [Module.End.smulLeft_eq, LinearMap.smul_comp, LinearMap.id_comp] using
+    hf.koszulTwist_comp q
 
 end LinearMap.IsHomogeneous
 
@@ -618,12 +634,10 @@ theorem LinearMap.IsHomogeneous.twistedTuple_map {N : Type w} [AddCommMonoid N] 
     (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) (q : ℤ) {n : ℕ}
     (x : Fin n → M) (a p : ℕ) :
     H.twistedTuple q (fun i ↦ f (x i)) a p = fun i ↦ f (G.twistedTuple q x a p i) := by
-  have hcomm := hf.koszulTwist_comp q
   funext i
   simp only [InternalGrading.twistedTuple_apply]
   split_ifs with h
-  · have hi := LinearMap.congr_fun hcomm (x i)
-    simpa [LinearMap.comp_apply] using hi
+  · simpa using hf.koszulTwist_apply q (x i)
   · rfl
 
 /-- Twisting an empty interval leaves the tuple unchanged. -/

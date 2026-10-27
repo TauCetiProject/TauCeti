@@ -108,7 +108,7 @@ variable {R : Type u} {M : Type v}
 theorem opLinearEquiv_comp_koszulTwist (G : InternalGrading R M) (q : ℤ) :
     (opLinearEquiv R).toLinearMap ∘ₗ G.koszulTwist q =
       G.opposite.koszulTwist q ∘ₗ (opLinearEquiv R).toLinearMap := by
-  simpa using ((G.isHomogeneous_op).koszulTwist_comp q).symm
+  simpa using ((G.isHomogeneous_op).koszulTwist_comp_eq_smul q).symm
 
 /-- Applying the Koszul twist and then `op` agrees with twisting the opposite element. -/
 @[simp]
