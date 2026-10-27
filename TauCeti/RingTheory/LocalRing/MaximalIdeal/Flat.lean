@@ -74,8 +74,7 @@ theorem spanFinrank_maximalIdeal_eq_of_flat_of_map_maximalIdeal_eq [IsNoetherian
         algebraMap R S := by ext; simp [e, Algebra.smul_def]
     have hJ : ((maximalIdeal R).map Algebra.TensorProduct.includeRight.toRingHom ^ 2).map e =
         maximalIdeal S ^ 2 := by
-      rw [Ideal.map_pow, ← h, ← he, ← Ideal.map_map]
-      rfl
+      rw [Ideal.map_pow, ← h, ← he, ← Ideal.map_map, Ideal.map_coe]
     rw [← Ideal.apply_mem_of_equiv_iff (f := e), hJ]
     simp only [Submodule.coe_smul_of_tower, TensorProduct.smul_tmul', smul_eq_mul, mul_one, map_sum]
     simpa [e, Algebra.smul_def, mul_comm] using hsum
@@ -83,7 +82,11 @@ theorem spanFinrank_maximalIdeal_eq_of_flat_of_map_maximalIdeal_eq [IsNoetherian
   let φ : CotangentSpace R →ₗ[R] ResidueField S :=
     ((Algebra.linearMap (ResidueField R) (ResidueField S)) ∘ₗ b.coord i).restrictScalars R
   have := congr(LinearMap.liftBaseChange S φ $ht)
-  simp [LinearMap.liftBaseChange_tmul, hx, φ, Finsupp.single_apply] at this
+  simp only [LinearMap.restrictScalars_comp, hx, map_sum, LinearMap.liftBaseChange_tmul,
+    LinearMap.coe_comp, LinearMap.coe_restrictScalars, Function.comp_apply,
+    Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply,
+    Algebra.linearMap_apply, MonoidWithZeroHom.map_ite_one_zero, smul_ite, smul_zero,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, map_zero, φ] at this
   rwa [← hs, ← ResidueField.algebraMap_eq, ← mul_one (algebraMap _ _ _), ← Algebra.smul_def]
 
 end TauCeti.IsLocalRing
