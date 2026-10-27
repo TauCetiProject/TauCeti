@@ -29,8 +29,9 @@ index. The diamond operators slash by elements of `Γ₀(N)`, so they preserve b
 complement and the cusp forms, and a diamond-stable complement of the cusp forms splits each
 nebentypus space (`isCompl_comap_subtype_range_cuspToModFormCharSpace`).
 
-The declarations live in Mathlib's root `ModularForm` namespace, so dot notation works on
-modular forms.
+The declarations live in Mathlib's root `ModularForm` namespace, beside `ModularForm.translateₗ`,
+`ModularForm.restrictₗ` and `ModularForm.traceₗ`; the lemmas with an explicit modular-form
+argument can be used with dot notation, as in `f.coe_gammaSlashₗ γ`.
 
 ## Main definitions
 
