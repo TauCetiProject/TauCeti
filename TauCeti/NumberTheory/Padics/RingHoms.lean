@@ -43,6 +43,7 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   difference; `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is its case `p ^ n = 8`.
 * `PadicInt.isUnit_iff_toZModPow_three_mul_self`: the units of `ℤ_[2]` are exactly the elements
   whose residue modulo `8` squares to `1`.
+* `PadicInt.not_isSquare_neg_three`: `-3` is not a square in `ℤ_[2]`.
 * `PadicInt.two_dvd_sq_sub_self`: every `2`-adic integer satisfies `x ^ 2 ≡ x` modulo `2`.
 * `PadicInt.toZModPow_eq_one_of_norm_sub_one_le`: a norm bound forcing a `p`-adic integer to
   reduce to `1` modulo `p ^ n`.
@@ -182,6 +183,16 @@ theorem isUnit_iff_toZModPow_three_mul_self {z : ℤ_[2]} :
     obtain ⟨w, rfl⟩ := not_isUnit_iff_dvd.mp h
     have key : ∀ a : ZMod (2 ^ 3), 2 * a * (2 * a) ≠ 1 := by decide
     exact key (toZModPow 3 w) (by simpa [map_ofNat] using hz)
+
+/-- `-3` is not a square in `ℤ_[2]`, since it is not a square modulo `8`. -/
+theorem not_isSquare_neg_three : ¬IsSquare (-3 : ℤ_[2]) := by
+  rintro ⟨x, hx⟩
+  have h8 := congrArg (toZModPow 3) hx
+  rw [map_mul, map_neg, map_ofNat] at h8
+  revert h8
+  generalize toZModPow 3 x = y
+  revert y
+  decide
 
 /-- A `p`-adic integer within `p ^ (-n)` of `1` reduces to `1` modulo `p ^ n`. -/
 theorem toZModPow_eq_one_of_norm_sub_one_le {n : ℕ} {x : ℤ_[p]}

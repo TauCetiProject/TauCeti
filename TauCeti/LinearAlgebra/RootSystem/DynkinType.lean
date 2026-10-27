@@ -397,6 +397,11 @@ lemma cartanMatrix_isSymm_of_isSimplyLaced {t : DynkinType} (ht : t.cartanMatrix
   · have hzero := cartanMatrix_apply_eq_zero_iff_symm t j i
     rcases ht hji with h | h <;> rcases ht hji.symm with h' | h' <;> omega
 
+/-- **The Cartan matrix of a simply-laced Dynkin type is symmetric.** -/
+theorem IsSimplyLaced.isSymm_cartanMatrix {t : DynkinType} (ht : t.IsSimplyLaced) :
+    t.cartanMatrix.IsSymm :=
+  cartanMatrix_isSymm_of_isSimplyLaced ((isSimplyLaced_cartanMatrix_iff t).mpr (Or.inl ht))
+
 end DynkinType
 
 section RootPairing

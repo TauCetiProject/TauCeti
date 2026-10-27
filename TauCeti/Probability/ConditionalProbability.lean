@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.ConditionalProbability
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Interval
+public import Mathlib.MeasureTheory.Measure.TotalVariation.Basic
 
 /-!
 # Conditional measures and the law of total probability
@@ -31,6 +32,10 @@ Conditional measures on intervals agree across endpoint conventions whenever the
 endpoint atoms vanish. These identities apply to any partially ordered measurable space,
 including atomless laws and atomic laws with null endpoints.
 
+For any probability law, conditioning on a positive-mass measurable event has total variation
+distance twice the excluded mass. Conditioning on events whose masses tend to one therefore
+recovers the law.
+
 ## Main results
 
 * `ProbabilityTheory.sum_meas_smul_cond_fiber_of_countable`
@@ -39,6 +44,8 @@ including atomless laws and atomic laws with null endpoints.
 * `ProbabilityTheory.map_cond_preimage`
 * `MeasureTheory.Measure.cond_Icc_eq_cond_Ioc`, `MeasureTheory.Measure.cond_Ioo_eq_cond_Ioc`,
   `MeasureTheory.Measure.cond_Ico_eq_cond_Ioc`
+* `MeasureTheory.Measure.tvDist_cond_self`, `MeasureTheory.Measure.tendsto_tvDist_cond` —
+  the distance to a conditioned law and convergence as the retained mass tends to one
 -/
 
 public section
@@ -98,6 +105,51 @@ theorem sum_meas_smul_cond_fiber_of_countable [Countable β] [MeasurableSingleto
 end ProbabilityTheory
 
 namespace MeasureTheory.Measure
+
+open Filter ProbabilityTheory
+open scoped ENNReal Topology
+
+/-- Mathlib's total variation distance from a probability law conditioned on a positive-mass
+measurable event to the original law is twice the excluded mass. -/
+theorem tvDist_cond_self {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
+    [IsProbabilityMeasure μ] {A : Set Ω} (hA : MeasurableSet A) (hμA : μ A ≠ 0) :
+    tvDist (cond μ A) μ = 2 * (1 - μ.real A) := by
+  let _ := cond_isProbabilityMeasure hμA
+  have hH : IsHahnDecomposition μ (cond μ A) A := by
+    refine ⟨hA, ?_, ?_⟩
+    · rw [ProbabilityTheory.cond, Measure.restrict_smul, Measure.restrict_restrict hA,
+        inter_self]
+      apply Measure.le_iff.mpr
+      intro B hB
+      rw [Measure.smul_apply, smul_eq_mul]
+      have hi : 1 ≤ (μ A)⁻¹ := by
+        simpa using ENNReal.inv_le_inv.mpr (prob_le_one (μ := μ) (s := A))
+      simpa only [one_mul] using mul_le_mul_of_nonneg_right hi
+        (bot_le : (0 : ℝ≥0∞) ≤ μ.restrict A B)
+    · rw [ProbabilityTheory.cond, Measure.restrict_smul, Measure.restrict_restrict hA.compl]
+      simp only [compl_inter_self, Measure.restrict_empty, smul_zero]
+      exact bot_le
+  have hfull : (cond μ A).real A = 1 := by
+    simp only [measureReal_def, cond_apply_self hμA (measure_ne_top μ A), ENNReal.toReal_one]
+  have hzero : (cond μ A).real Aᶜ = 0 := by
+    simp [measureReal_def, cond_apply hA]
+  rw [tvDist_comm, hH.tvDist_eq, hfull, hzero, probReal_compl_eq_one_sub hA]
+  ring
+
+/-- Conditioning a probability law on eventually measurable events whose masses tend to one
+converges to that law in total variation. -/
+theorem tendsto_tvDist_cond {Ω ι : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
+    [IsProbabilityMeasure μ] {l : Filter ι} {A : ι → Set Ω}
+    (hA : ∀ᶠ i in l, MeasurableSet (A i))
+    (hmass : Tendsto (fun i ↦ μ.real (A i)) l (𝓝 1)) :
+    Tendsto (fun i ↦ tvDist (cond μ (A i)) μ) l (𝓝 0) := by
+  have h : Tendsto (fun i ↦ 2 * (1 - μ.real (A i))) l (𝓝 (2 * (1 - 1 : ℝ))) :=
+    (tendsto_const_nhds.sub hmass).const_mul 2
+  simp only [sub_self, mul_zero] at h
+  apply h.congr'
+  filter_upwards [hA, hmass.eventually (eventually_gt_nhds zero_lt_one)] with i hi hpos
+  exact (μ.tvDist_cond_self hi
+    ((measureReal_ne_zero_iff (measure_ne_top μ _)).mp hpos.ne')).symm
 
 variable {α : Type*} [PartialOrder α] [MeasurableSpace α] (μ : Measure α)
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Exp
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.NumberTheory.Padics.Measure.MahlerDuality
-public import TauCeti.RingTheory.PowerSeries.OpenDisc
+public import TauCeti.RingTheory.PowerSeries.OpenDisc.Basic
 import TauCeti.NumberTheory.Padics.Factorial
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
