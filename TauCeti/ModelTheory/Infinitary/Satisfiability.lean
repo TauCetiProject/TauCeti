@@ -225,13 +225,6 @@ theorem entails_iff_conjunction_entails (hT : T.Countable) :
 
 /-! ### Agreement with first-order satisfiability and entailment -/
 
-/-- A structure is a model of the image of a first-order theory in `L_{ω₁ω}` exactly when it is a
-model of the first-order theory. -/
-@[simp]
-theorem model_image_toOmega_iff {T : L.Theory} {M : Type w} [L.Structure M] :
-    Model (BoundedFormula.toOmega '' T) M ↔ M ⊨ T := by
-  simp only [model_iff, Set.forall_mem_image, Sentence.realize_toInf, Theory.model_iff]
-
 /-- The image of a first-order theory in `L_{ω₁ω}` is satisfiable exactly when the first-order
 theory is satisfiable in the sense of Mathlib's `Theory.IsSatisfiable`. -/
 @[simp]
