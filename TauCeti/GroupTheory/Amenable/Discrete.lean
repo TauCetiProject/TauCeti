@@ -17,6 +17,10 @@ correspondence preserves left invariance. This gives a bounded-function characte
 amenability suitable for constructing finitely additive probabilities from indicator functions.
 Amenability with the discrete topology also implies amenability with any group topology.
 
+A mean on a discrete group `G` also pushes forward along an arbitrary map `r : G → H`, by
+`f ↦ m (f ∘ r)` (`TauCeti.Mean.mapOfDiscrete`). When `r (φ h * x) = h * r x` for a homomorphism
+`φ : H →* G`, the pushforward of a left-invariant mean is left invariant.
+
 The function-space identification is `TauCeti.UCB.discreteAlgEquiv`; the normalization and
 positivity use Mathlib's `PositiveLinearMap`, without an additional continuity assumption.
 
@@ -101,6 +105,37 @@ theorem isLeftInvariant_iff_boundedContinuousFunction (m : Mean G) :
     simpa only [boundedContinuousFunctionEquiv_apply,
       UCB.discreteAlgEquiv_symm_compContinuous_mulLeft, AlgEquiv.symm_apply_apply] using
       hm g (UCB.discreteAlgEquiv G f)
+
+section MapOfDiscrete
+
+variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+
+/-- The pushforward `f ↦ m (f ∘ r)` of a mean `m` on a discrete group `G` along an arbitrary map
+`r : G → H` into a topological group, as a mean on `UCB H`. -/
+def mapOfDiscrete (r : G → H) (m : Mean G) : Mean H :=
+  mk₀ (m.toPositiveLinearMap.toLinearMap ∘ₗ (UCB.compRightAlgHomOfDiscrete r).toLinearMap)
+    (fun f hf => map_nonneg m (by simpa using UCB.monotone_compRightAlgHomOfDiscrete r hf))
+    (by simp)
+
+@[simp]
+theorem mapOfDiscrete_apply (r : G → H) (m : Mean G) (f : UCB H) :
+    m.mapOfDiscrete r f = m (UCB.compRightAlgHomOfDiscrete r f) :=
+  mk₀_apply _ _ _ f
+
+/-- Along a continuous homomorphism, the pushforward out of a discrete group is the pushforward
+`TauCeti.Mean.map`. -/
+theorem mapOfDiscrete_coe (φ : G →ₜ* H) (m : Mean G) : m.mapOfDiscrete (φ : G → H) = m.map φ :=
+  ext fun f => by simp [UCB.compRightAlgHomOfDiscrete_coe]
+
+/-- If `r (φ h * x) = h * r x` for a homomorphism `φ : H →* G`, then the pushforward of a
+left-invariant mean along `r` is left invariant. -/
+theorem IsLeftInvariant.mapOfDiscrete {m : Mean G} (hm : m.IsLeftInvariant) (φ : H →* G)
+    {r : G → H} (hr : ∀ h x, r (φ h * x) = h * r x) : (m.mapOfDiscrete r).IsLeftInvariant := by
+  refine isLeftInvariant_iff.2 fun h f => ?_
+  rw [mapOfDiscrete_apply, mapOfDiscrete_apply,
+    UCB.compRightAlgHomOfDiscrete_leftTranslation φ hr, hm.apply_leftTranslation]
+
+end MapOfDiscrete
 
 end Mean
 
