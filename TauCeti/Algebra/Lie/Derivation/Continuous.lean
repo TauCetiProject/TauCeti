@@ -187,7 +187,8 @@ theorem lie_continuousInnerDerivation (D : continuousDerivationLieAlgebra R A) (
 variable (R A)
 
 /-- **The inner derivations form a Lie ideal of the continuous derivations**: the image of
-`continuousInnerDerivation` is already an ideal, so its ideal range adds nothing to it. -/
+`continuousInnerDerivation` is already an ideal, so its ideal range adds nothing to it. This
+follows Mathlib's `LieDerivation.ad_isIdealMorphism`. -/
 theorem continuousInnerDerivation_isIdealMorphism :
     (continuousInnerDerivation R : A →ₗ⁅R⁆ continuousDerivationLieAlgebra R A).IsIdealMorphism :=
   (LieHom.isIdealMorphism_iff _).mpr fun D z => ⟨_, lie_continuousInnerDerivation D z⟩
@@ -195,7 +196,7 @@ theorem continuousInnerDerivation_isIdealMorphism :
 variable {R A}
 
 /-- A continuous derivation lies in the ideal of inner derivations exactly when it is `ad z` for
-some `z ∈ A`. -/
+some `z ∈ A`. This follows Mathlib's `LieDerivation.mem_ad_idealRange_iff`. -/
 theorem mem_continuousInnerDerivation_idealRange_iff {D : continuousDerivationLieAlgebra R A} :
     D ∈ (continuousInnerDerivation R : A →ₗ⁅R⁆ continuousDerivationLieAlgebra R A).idealRange ↔
       ∃ z : A, continuousInnerDerivation R z = D :=

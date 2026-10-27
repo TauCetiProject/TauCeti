@@ -283,7 +283,8 @@ theorem coe_innerDerivation (z : A) :
   (rfl)
 
 /-- **The bracket of a derivation with an inner derivation is inner**: `⁅D, ad z⁆ = ad (D z)`.
-This is the identity making the image of `innerDerivation` an ideal of `Der A`. -/
+This is the identity making the image of `innerDerivation` an ideal of `Der A`. It is the
+associative-algebra analogue of Mathlib's `LieDerivation.lie_der_ad_eq_ad_der`. -/
 theorem lie_innerDerivation (D : derivationLieAlgebra R A) (z : A) :
     ⁅D, innerDerivation R z⁆ = innerDerivation R ((D : Module.End R A) z) := by
   ext a
