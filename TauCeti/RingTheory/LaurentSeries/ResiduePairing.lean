@@ -104,7 +104,8 @@ up to the correction supplied by Leibniz's rule. -/
 theorem residuePairing_mul_right (f g h : R⸨X⸩) :
     residuePairing R f (g * h) =
       residuePairing R (f * h) g + residuePairing R (f * g) h := by
-  simp only [residuePairing_apply, derivative_mul, mul_add, coeff_add, mul_assoc, mul_comm]
+  simp only [residuePairing_apply, derivative_mul, mul_add, coeff_add]
+  congr 2 <;> ring
 
 /-- The three logarithmic terms in `d(fgh)` have residues summing to zero. -/
 theorem residuePairing_mul_add_cyclic (f g h : R⸨X⸩) :
@@ -208,8 +209,9 @@ theorem continuous_residuePairing :
     Continuous (fun p : K⸨X⸩ × K⸨X⸩ ↦ residuePairing K p.1 p.2) := by
   -- Coefficient extraction is continuous into the discrete topology, hence into any topology.
   have hcoeff : @Continuous K⸨X⸩ K _ ⊥ (fun f ↦ f.coeff (-1)) := by
-    let : UniformSpace K := ⊥
-    exact (uniformContinuous_coeff (-1)).continuous
+    rw [← UniformSpace.toTopologicalSpace_bot]
+    exact @UniformContinuous.continuous _ _ _ ⊥ _
+      (uniformContinuous_coeff (uK := ⊥) (-1))
   exact (continuous_le_rng bot_le hcoeff).comp
     (continuous_fst.mul (continuous_derivative.comp continuous_snd))
 
