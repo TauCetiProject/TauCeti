@@ -236,10 +236,8 @@ noncomputable def ofLimHom : F ⟶ G :=
   NatTrans.ofOpSequence (fun n ↦ ModuleCat.ofHom (hF.ofLimHomApp hG φ n)) fun n ↦ by
     ext x
     obtain ⟨y, rfl⟩ := F.limπ_surjective hF.transition_surjective (n + 1) x
-    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
-      ← transition_def]
-    rw [← LinearMap.comp_apply (F.transition n), transition_comp_limπ, ofLimHomApp_limπ,
-      ofLimHomApp_limπ, ← LinearMap.comp_apply (G.transition n), transition_comp_limπ]
+    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply, ← transition_def,
+      transition_limπ, ofLimHomApp_limπ]
 
 /-- The morphism induced by `φ` sends the `n`-th term of `x ∈ lim Mₙ` to that of `φ x`. -/
 @[simp]
@@ -262,12 +260,13 @@ theorem ofLimHom_limMap (f : F ⟶ G) : hF.ofLimHom hG (limMap f) = f :=
 /-- **Morphisms of `I`-adic systems are the linear maps of their limits** (EGA I, Ch. 0, 7.2.10):
 over an `I`-adically precomplete ring, if `M₀` is finite, then `f ↦ lim f` is a bijection from
 morphisms of towers `(Mₙ) ⟶ (Nₙ)` to linear maps `lim Mₙ → lim Nₙ`, for every `I`-adic system
-`(Nₙ)`. -/
-noncomputable def limMapEquiv : (F ⟶ G) ≃ (F.lim →ₗ[A] G.lim) where
+`(Nₙ)`. It is additive. -/
+noncomputable def limMapEquiv : (F ⟶ G) ≃+ (F.lim →ₗ[A] G.lim) where
   toFun := limMap
   invFun := hF.ofLimHom hG
   left_inv := hF.ofLimHom_limMap hG
   right_inv := hF.limMap_ofLimHom hG
+  map_add' := limMap_add
 
 @[simp]
 theorem limMapEquiv_apply (f : F ⟶ G) : hF.limMapEquiv hG f = limMap f :=

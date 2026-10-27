@@ -200,6 +200,11 @@ theorem transition_comp_limπ (n : ℕ) : F.transition n ∘ₗ F.limπ (n + 1) 
   ext x
   exact F.mem_lim.1 x.2 n
 
+/-- The projections `lim A → Aₙ` are compatible with the transitions. Not `@[simp]`: `simp`
+rewrites `limπ` to the coordinates of the family, where `transition_coe_lim_succ` applies. -/
+theorem transition_limπ (n : ℕ) (x : F.lim) : F.transition n (F.limπ (n + 1) x) = F.limπ n x :=
+  F.mem_lim.1 x.2 n
+
 @[ext]
 theorem lim_hom_ext {P : Type*} [AddCommGroup P] [Module R P] {f g : P →ₗ[R] F.lim}
     (h : ∀ n, F.limπ n ∘ₗ f = F.limπ n ∘ₗ g) : f = g := by

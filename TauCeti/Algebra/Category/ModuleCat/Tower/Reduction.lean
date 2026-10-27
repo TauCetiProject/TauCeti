@@ -172,12 +172,6 @@ theorem coe_toLimReduction_apply (x : M) (n : ℕ) :
     (toLimReduction I M x : (reduction I M).Product) n = reductionπ I M n x := by
   rw [← limπ_apply, ← LinearMap.comp_apply, limπ_comp_toLimReduction]
 
-/-- Two elements of `M` have the same image in `M ⧸ I^{n+1} M` exactly when they are congruent
-modulo `I^{n+1} M`. -/
-theorem reductionπ_eq_reductionπ_iff {n : ℕ} {x y : M} :
-    reductionπ I M n x = reductionπ I M n y ↔ x ≡ y [SMOD (I ^ (n + 1) • ⊤ : Submodule A M)] := by
-  rw [SModEq.sub_mem, ← ker_reductionπ I M n, LinearMap.mem_ker, map_sub, sub_eq_zero]
-
 /-- The map `M ⧸ I^{n+1} M → M ⧸ I^n M` from the `n`-th term of the reduction to the `n`-th term
 of Mathlib's adic completion. -/
 private noncomputable def toAdicQuotient (n : ℕ) :
@@ -224,7 +218,8 @@ private noncomputable def ofAdicCompletion : AdicCompletion I M →ₗ[A] (reduc
       ext x
       simp only [LinearMap.comp_apply, AdicCompletion.eval_apply, AdicCompletion.mk_apply_coe,
         Submodule.mkQ_apply, ofAdicQuotient_mk, transition_reductionπ]
-      exact (reductionπ_eq_reductionπ_iff I M).2 (x.2 (n + 1).le_succ).symm
+      -- `reductionπ` is `Submodule.mkQ`, so this is the Cauchy condition `SModEq.def`.
+      exact SModEq.def.1 (x.2 (n + 1).le_succ).symm
 
 private theorem limπ_ofAdicCompletion (x : AdicCompletion I M) (n : ℕ) :
     (reduction I M).limπ n (ofAdicCompletion I M x) = ofAdicQuotient I M n (x.val (n + 1)) := by
@@ -257,6 +252,22 @@ theorem limReductionEquiv_toLimReduction (x : M) :
   simp only [limReductionEquiv, LinearEquiv.coe_ofLinearMap, toAdicCompletion_val, limπ_apply,
     coe_toLimReduction_apply, toAdicQuotient_reductionπ, AdicCompletion.of_apply,
     Submodule.mkQ_apply]
+
+/-- The `n`-th term of the image in `AdicCompletion I M` of `y ∈ lim (M ⧸ I^{k+1} M)`, computed from
+a representative of its `n`-th term. -/
+theorem limReductionEquiv_apply_val {y : (reduction I M).lim} {n : ℕ} {m : M}
+    (h : (reduction I M).limπ n y = reductionπ I M n m) :
+    (limReductionEquiv I M y).val n = Submodule.Quotient.mk m := by
+  simp only [limReductionEquiv, LinearEquiv.coe_ofLinearMap, toAdicCompletion_val, h,
+    toAdicQuotient_reductionπ]
+
+/-- The `n`-th term of the preimage in `lim (M ⧸ I^{k+1} M)` of `x ∈ AdicCompletion I M`, computed
+from a representative of the `(n + 1)`-st term of `x`. -/
+theorem limπ_limReductionEquiv_symm_apply {x : AdicCompletion I M} {n : ℕ} {m : M}
+    (h : x.val (n + 1) = Submodule.Quotient.mk m) :
+    (reduction I M).limπ n ((limReductionEquiv I M).symm x) = reductionπ I M n m := by
+  simp only [limReductionEquiv, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
+    limπ_ofAdicCompletion, h, ofAdicQuotient_mk]
 
 theorem toLimReduction_eq :
     toLimReduction I M = (limReductionEquiv I M).symm.toLinearMap ∘ₗ AdicCompletion.of I M :=
@@ -343,6 +354,17 @@ theorem reductionMap_comp (u : M →ₗ[A] N) (w : N →ₗ[A] P) :
   ext ⟨n⟩ x
   simp
 
+@[simp]
+theorem reductionMap_zero : reductionMap I (0 : M →ₗ[A] N) = 0 := by
+  ext ⟨n⟩ x
+  simp
+
+@[simp]
+theorem reductionMap_add (u v : M →ₗ[A] N) :
+    reductionMap I (u + v) = reductionMap I u + reductionMap I v := by
+  ext ⟨n⟩ x
+  simp
+
 /-- The canonical maps to the limits of the reductions are natural. -/
 @[simp]
 theorem limMap_reductionMap_toLimReduction (u : M →ₗ[A] N) (x : M) :
@@ -365,6 +387,9 @@ theorem reductionFunctor_obj (M : ModuleCat.{v} A) : (reductionFunctor I).obj M 
 theorem reductionFunctor_map {M N : ModuleCat.{v} A} (u : M ⟶ N) :
     (reductionFunctor I).map u = reductionMap I u.hom :=
   (rfl)
+
+instance : (reductionFunctor.{v} I).Additive where
+  map_add {_ _ u v} := reductionMap_add I u.hom v.hom
 
 variable {I}
 
@@ -393,12 +418,13 @@ variable {I} {F : ModuleTower.{v} A} (hF : F.IsAdicSystem I) [IsPrecomplete I A]
   [Module.Finite A (F.obj (op 0))]
 
 /-- The isomorphism `lim Mₙ ⧸ I^{n+1} lim Mₙ ≃ Mₙ` of `ModuleTower.IsAdicSystem.limQuotientEquiv`,
-with source the `n`-th term of the reduction of `lim Mₙ`, which is that quotient by definition. -/
-noncomputable def reductionLimEquiv (n : ℕ) : (reduction I F.lim).obj (op n) ≃ₗ[A] F.obj (op n) :=
+with source the `n`-th term of the reduction of `lim Mₙ`, which is that quotient by definition. The
+ascription lets `NatIso.ofComponents` see the terms of the reduction. -/
+private noncomputable def reductionLimEquiv (n : ℕ) :
+    (reduction I F.lim).obj (op n) ≃ₗ[A] F.obj (op n) :=
   hF.limQuotientEquiv n
 
-@[simp]
-theorem reductionLimEquiv_reductionπ (n : ℕ) (x : F.lim) :
+private theorem reductionLimEquiv_reductionπ (n : ℕ) (x : F.lim) :
     hF.reductionLimEquiv n (reductionπ I F.lim n x) = F.limπ n x :=
   -- `reductionπ` is the quotient map `Submodule.mkQ`, by definition.
   hF.limQuotientEquiv_mk n x
@@ -409,11 +435,11 @@ compatible with the transitions. -/
 noncomputable def reductionLimIso : reduction I F.lim ≅ F :=
   NatIso.ofComponents (fun n ↦ (hF.reductionLimEquiv n.unop).toModuleIso) <| by
     rintro ⟨n⟩ ⟨k⟩ f
+    -- `ext` picks a representative `x ∈ lim Mₙ` of an element of `lim Mₙ ⧸ I^{n+1} lim Mₙ`.
     ext x
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, ModuleCat.hom_comp, ModuleCat.hom_comp,
-      LinearEquiv.toModuleIso_hom, LinearEquiv.toModuleIso_hom, ModuleCat.hom_ofHom,
-      ModuleCat.hom_ofHom]
-    simp
+    simp only [LinearEquiv.toModuleIso_hom, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom,
+      map_hom_eq_transitionOfLE, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+      transitionOfLE_reductionπ, reductionLimEquiv_reductionπ, limπ_apply, transitionOfLE_coe_lim]
 
 @[simp]
 theorem reductionLimIso_hom_app_reductionπ (n : ℕ) (x : F.lim) :
@@ -429,9 +455,13 @@ end IsAdicSystem
 section Finite
 
 /-- The property of a tower of being an `I`-adic system with finite term `M₀`. -/
-@[expose]
 def isFiniteAdicSystem : ObjectProperty (ModuleTower.{v} A) :=
   fun F ↦ F.IsAdicSystem I ∧ Module.Finite A (F.obj (op 0))
+
+@[simp]
+theorem isFiniteAdicSystem_iff (F : ModuleTower.{v} A) :
+    isFiniteAdicSystem I F ↔ F.IsAdicSystem I ∧ Module.Finite A (F.obj (op 0)) :=
+  Iff.rfl
 
 /-- The category of `I`-adic systems with finite term `M₀`, a full subcategory of the towers of
 `A`-modules. -/
@@ -441,7 +471,8 @@ abbrev FiniteAdicSystem := (isFiniteAdicSystem.{v} I).FullSubcategory
 @[expose]
 noncomputable def finiteReduction : FGModuleCat.{v} A ⥤ FiniteAdicSystem.{v} I :=
   (isFiniteAdicSystem I).lift ((ModuleCat.isFG A).ι ⋙ reductionFunctor I) fun M ↦
-    ⟨isAdicSystem_reduction I M, .of_surjective _ (reductionπ_surjective I M 0)⟩
+    (isFiniteAdicSystem_iff I _).2
+      ⟨isAdicSystem_reduction I M, .of_surjective _ (reductionπ_surjective I M 0)⟩
 
 @[simp]
 theorem finiteReduction_obj_obj (M : FGModuleCat.{v} A) :
@@ -468,7 +499,7 @@ instance [IsNoetherianRing A] [IsAdicComplete I A] : (finiteReduction I).Full wh
 of a finite module, its limit. -/
 instance [IsPrecomplete I A] : (finiteReduction.{v} I).EssSurj where
   mem_essImage F := by
-    obtain ⟨hF, _⟩ := F.property
+    obtain ⟨hF, _⟩ := (isFiniteAdicSystem_iff I _).1 F.property
     have := hF.finite_lim
     exact ⟨FGModuleCat.of A F.obj.lim, ⟨ObjectProperty.isoMk _ hF.reductionLimIso⟩⟩
 
