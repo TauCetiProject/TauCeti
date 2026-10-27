@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Index.Two
-public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.D8Plus.Isometry
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Signed
 public import TauCeti.LinearAlgebra.IntegralLattice.Unit
 import Mathlib.Algebra.BigOperators.Field
 
@@ -67,26 +67,11 @@ namespace TauCeti.IntegralLattice
 
 variable {n : ℕ} {L : IntegralLattice (Fin n → ℚ)}
 
-/-- The coordinate vector `eᵢ` is not in the checkerboard lattice, its coordinate sum being one. -/
-private theorem single_one_notMem_checkerboardCarrier (i : Fin n) :
-    Pi.single i (1 : ℚ) ∉ checkerboardCarrier n := by
-  rw [mem_checkerboardCarrier_iff]
-  rintro ⟨-, m, hm⟩
-  rw [Finset.sum_pi_single'] at hm
-  simp only [Finset.mem_univ, ite_true] at hm
-  have h : (1 : ℤ) = 2 * m := by exact_mod_cast hm
-  omega
-
-/-- The checkerboard lattice lies in the standard lattice. -/
-private theorem mem_unitLattice_carrier_of_mem_checkerboardCarrier {x : Fin n → ℚ}
-    (hx : x ∈ checkerboardCarrier n) : x ∈ (unitLattice (Fin n)).carrier :=
-  (mem_unitLattice_carrier_iff _ x).2 fun i ↦
-    (((mem_checkerboardCarrier_iff x).1 hx).1 i).imp fun _ h ↦ h.symm
-
-/-- The coordinate vector `eᵢ` lies in the standard lattice. -/
-private theorem single_one_mem_unitLattice_carrier (i : Fin n) :
-    Pi.single i (1 : ℚ) ∈ (unitLattice (Fin n)).carrier := by
-  simpa using (unitLatticeBasis (Fin n) i).2
+/-- A vector outside `ℤⁿ` has a coordinate which is not an integer. -/
+private theorem exists_forall_intCast_ne_of_notMem_unitLattice {y : Fin n → ℚ}
+    (hyZ : y ∉ (unitLattice (Fin n)).carrier) : ∃ j, ∀ z : ℤ, (z : ℚ) ≠ y j := by
+  by_contra! hall
+  exact hyZ ((mem_unitLattice_carrier_iff _ y).2 hall)
 
 section
 
@@ -113,8 +98,9 @@ private theorem add_mem_carrier_of_notMem {a b : Fin n → ℚ}
 private theorem exists_mem_carrier_notMem_unitLattice :
     ∃ y ∈ L.carrier, y ∉ (unitLattice (Fin n)).carrier := by
   by_contra! hle
-  have h1 := AddSubgroup.relIndex_eq_one.2 (show L.carrier.toAddSubgroup ≤
-    (L.carrier ⊓ (unitLattice (Fin n)).carrier).toAddSubgroup from fun x hx ↦ ⟨hx, hle x hx⟩)
+  have hle' : L.carrier.toAddSubgroup ≤
+      (L.carrier ⊓ (unitLattice (Fin n)).carrier).toAddSubgroup := fun x hx ↦ ⟨hx, hle x hx⟩
+  have h1 := AddSubgroup.relIndex_eq_one.2 hle'
   rw [h.relIndex_inf_left] at h1
   exact absurd h1 (by norm_num)
 
@@ -145,14 +131,12 @@ private theorem exists_eq_add_half_of_notMem_unitLattice {y : Fin n → ℚ} (hy
   -- `yᵢ + yⱼ` is an integer, because `eᵢ + eⱼ` lies in `L`.
   have hpair (i j : Fin n) : ∃ z : ℤ, (z : ℚ) = y i + y j := by
     obtain ⟨z, hz⟩ := exists_intCast_eq_sum_mul h
-      (add_mem_carrier_of_notMem h (single_one_mem_unitLattice_carrier i)
-        (single_one_mem_unitLattice_carrier j) (h₁ i) (h₁ j)) hy
+      (add_mem_carrier_of_notMem h (single_one_mem_unitLattice_carrier _ i)
+        (single_one_mem_unitLattice_carrier _ j) (h₁ i) (h₁ j)) hy
     refine ⟨z, ?_⟩
     rw [hz]
     simp [add_mul, Finset.sum_add_distrib, Pi.single_apply]
-  obtain ⟨j, hj⟩ : ∃ j, ∀ z : ℤ, (z : ℚ) ≠ y j := by
-    by_contra! hall
-    exact hyZ ((mem_unitLattice_carrier_iff _ y).2 hall)
+  obtain ⟨j, hj⟩ := exists_forall_intCast_ne_of_notMem_unitLattice hyZ
   obtain ⟨m, hm⟩ := hpair j j
   obtain ⟨k, rfl | rfl⟩ := m.even_or_odd'
   · exact absurd (by push_cast at hm; linarith) (hj k)
@@ -165,21 +149,19 @@ private theorem exists_eq_add_half_of_notMem_unitLattice {y : Fin n → ℚ} (hy
 theorem carrier_inf_eq_checkerboardCarrier_of_isNeighbor_unitLattice :
     L.carrier ⊓ (unitLattice (Fin n)).carrier = checkerboardCarrier n := by
   obtain ⟨y, hy, hyZ⟩ := exists_mem_carrier_notMem_unitLattice h
-  obtain ⟨j, -⟩ : ∃ j, ∀ z : ℤ, (z : ℚ) ≠ y j := by
-    by_contra! hall
-    exact hyZ ((mem_unitLattice_carrier_iff _ y).2 hall)
+  obtain ⟨j, -⟩ := exists_forall_intCast_ne_of_notMem_unitLattice hyZ
   have hD {x : Fin n → ℚ} : x ∈ L.carrier → x ∈ (unitLattice (Fin n)).carrier →
       x ∈ checkerboardCarrier n :=
     mem_checkerboardCarrier_of_mem h hy (exists_eq_add_half_of_notMem_unitLattice h h₁ hy hyZ)
   refine le_antisymm (fun x hx ↦ hD hx.1 hx.2) fun x hx ↦
-    ⟨?_, mem_unitLattice_carrier_of_mem_checkerboardCarrier hx⟩
+    ⟨?_, checkerboardCarrier_le_unitLattice_carrier n hx⟩
   -- If `x ∈ Dₙ` were outside `L`, then `x + eⱼ ∈ L ∩ ℤⁿ ⊆ Dₙ` would put `eⱼ` in `Dₙ`.
   by_contra hxL
-  have hxZ := mem_unitLattice_carrier_of_mem_checkerboardCarrier hx
-  have hej := single_one_mem_unitLattice_carrier j
+  have hxZ := checkerboardCarrier_le_unitLattice_carrier n hx
+  have hej := single_one_mem_unitLattice_carrier _ j
   have hsum := hD (add_mem_carrier_of_notMem h hxZ hej hxL (h₁ j))
     ((unitLattice (Fin n)).carrier.add_mem hxZ hej)
-  exact single_one_notMem_checkerboardCarrier j <| by
+  exact single_one_notMem_checkerboardCarrier n j <| by
     simpa using (checkerboardCarrier n).sub_mem hsum hx
 
 /-- **The two-neighbors of `Iₙ` without coordinate vectors.** If `L` is a Kneser two-neighbor of
@@ -212,9 +194,11 @@ theorem four_dvd_of_isNeighbor_unitLattice : 4 ∣ n := by
   have hy : y ∈ L.carrier := (hL y).2 (Or.inr (by simp))
   obtain ⟨z, hz⟩ := exists_intCast_eq_sum_mul h hy hy
   choose k hk using hyk
+  have hyy (i : Fin n) : y i * y i = ((k i : ℚ) ^ 2 + k i) + 1 / 4 := by
+    rw [hk i]
+    ring
   have hsum : ∑ i, y i * y i = ∑ i, ((k i : ℚ) ^ 2 + k i) + n / 4 := by
-    rw [Finset.sum_congr rfl fun i _ ↦ show y i * y i = ((k i : ℚ) ^ 2 + k i) + 1 / 4 by
-      rw [hk i]; ring, Finset.sum_add_distrib]
+    rw [Finset.sum_congr rfl fun i _ ↦ hyy i, Finset.sum_add_distrib]
     simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
     ring
   have hn : ((n : ℤ) : ℚ) = ((4 * (z - ∑ i, (k i ^ 2 + k i)) : ℤ) : ℚ) := by
@@ -225,56 +209,6 @@ theorem four_dvd_of_isNeighbor_unitLattice : 4 ∣ n := by
 end
 
 /-! ### The isometry with `Dₙ⁺` -/
-
-/-- A signed change of coordinates of `ℚⁿ` is an involution. -/
-private theorem signedEquiv_signedEquiv (u : Fin n → ℤˣ) (x : Fin n → ℚ) :
-    signedEquiv u (Equiv.refl _) (signedEquiv u (Equiv.refl _) x) = x := by
-  ext i
-  simp only [signedEquiv_apply, Equiv.refl_symm, Equiv.refl_apply, ← mul_assoc]
-  norm_cast
-  simp
-
-/-- A signed change of coordinates maps `Dₙ` into itself: it changes the coordinate sum by an even
-integer. -/
-private theorem signedEquiv_mem_checkerboardCarrier (u : Fin n → ℤˣ) {x : Fin n → ℚ}
-    (hx : x ∈ checkerboardCarrier n) : signedEquiv u (Equiv.refl _) x ∈ checkerboardCarrier n := by
-  obtain ⟨hxZ, m, hm⟩ := (mem_checkerboardCarrier_iff x).1 hx
-  choose w hw using hxZ
-  refine mem_checkerboardCarrier_of (fun i ↦ u i * w i) (fun i ↦ by simp [hw i]) ?_
-  have hw2 : ∑ i, w i = 2 * m := by
-    have : ((∑ i, w i : ℤ) : ℚ) = ((2 * m : ℤ) : ℚ) := by
-      push_cast
-      rw [← hm]
-      exact Finset.sum_congr rfl fun i _ ↦ (hw i).symm
-    exact_mod_cast this
-  have hsum : ∑ i, (u i : ℤ) * w i = ∑ i, w i + ∑ i, ((u i : ℤ) - 1) * w i := by
-    rw [← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring
-  rw [hsum, hw2]
-  refine (even_two_mul m).add (Finset.even_sum _ fun i _ ↦ (Even.mul_right ?_ _))
-  rcases Int.units_eq_one_or (u i) with hu | hu <;> simp [hu]
-
-private theorem signedEquiv_mem_checkerboardCarrier_iff (u : Fin n → ℤˣ) (x : Fin n → ℚ) :
-    signedEquiv u (Equiv.refl _) x ∈ checkerboardCarrier n ↔ x ∈ checkerboardCarrier n :=
-  ⟨fun hx ↦ signedEquiv_signedEquiv u x ▸ signedEquiv_mem_checkerboardCarrier u hx,
-    signedEquiv_mem_checkerboardCarrier u⟩
-
-/-- The carrier of `Dₙ⁺` is `Dₙ ∪ (g + Dₙ)` for any `g` congruent to the spinor modulo `Dₙ`. -/
-private theorem mem_checkerboardPlusCarrier_iff_of_sub_mem (heven : Even n) {g : Fin n → ℚ}
-    (hg : g - checkerboardSpinor n ∈ checkerboardCarrier n) (x : Fin n → ℚ) :
-    x ∈ (checkerboardPlusCarrier n).1 ↔
-      x ∈ checkerboardCarrier n ∨ x - g ∈ checkerboardCarrier n := by
-  rw [mem_checkerboardPlusCarrier_iff n heven, checkerboardLattice_carrier,
-    show x - checkerboardSpinor n = (x - g) + (g - checkerboardSpinor n) by abel,
-    Submodule.add_mem_iff_left _ hg]
-
-/-- The form of a lattice with the dot product is the form of `Dₙ⁺`. -/
-private theorem form_eq_checkerboardPlusLattice_form (hn : 8 ∣ n)
-    (hform : L.form = (unitLattice (Fin n)).form) :
-    L.form = (checkerboardPlusLattice n hn).form := by
-  rw [hform, checkerboardPlusLattice_form]
-  exact LinearMap.ext fun x ↦ LinearMap.ext fun x' ↦ by
-    rw [unitLattice_form_apply, checkerboardLattice_form_apply]
 
 /-- A lattice with the dot product of the form `Dₙ ∪ (y + Dₙ)`, where a signed change of
 coordinates carries `y` into the spinor coset, is the image of `Dₙ⁺` under that change. -/
@@ -287,8 +221,8 @@ private theorem nonempty_isometry_checkerboardPlusLattice_of_signedEquiv (hn : 8
   set τ : (Fin n → ℚ) ≃ₗ[ℚ] (Fin n → ℚ) := signedEquiv u (Equiv.refl _)
   have hτform (x x' : Fin n → ℚ) :
       L.form (τ x) (τ x') = (checkerboardPlusLattice n hn).form x x' := by
-    rw [← form_eq_checkerboardPlusLattice_form hn hform, hform, unitLattice_form_apply,
-      unitLattice_form_apply]
+    rw [checkerboardPlusLattice_form, checkerboardLattice_form_eq_unitLattice_form, hform,
+      unitLattice_form_apply, unitLattice_form_apply]
     simpa only [dotProduct] using dotProduct_signedEquiv u (Equiv.refl _) x x'
   have hτcarrier : (checkerboardPlusLattice n hn).carrier.map
       (τ.restrictScalars ℤ).toLinearMap = L.carrier := by
@@ -296,7 +230,7 @@ private theorem nonempty_isometry_checkerboardPlusLattice_of_signedEquiv (hn : 8
     have hsymm : (τ.restrictScalars ℤ).symm x = τ x :=
       (LinearEquiv.symm_apply_eq _).2 (signedEquiv_signedEquiv u x).symm
     rw [Submodule.mem_map_equiv, checkerboardPlusLattice_carrier,
-      mem_checkerboardPlusCarrier_iff_of_sub_mem (even_iff_two_dvd.2 (dvd_trans (by norm_num) hn))
+      mem_checkerboardPlusCarrier_iff_of_sub_mem n (even_iff_two_dvd.2 (dvd_trans (by norm_num) hn))
         hy, hL, hsymm, ← map_sub, signedEquiv_mem_checkerboardCarrier_iff,
       signedEquiv_mem_checkerboardCarrier_iff]
   exact ⟨⟨⟨τ, hτform⟩, hτcarrier⟩⟩
@@ -329,7 +263,9 @@ theorem nonempty_isometry_checkerboardPlusLattice_of_isNeighbor_unitLattice (hn 
       (fun i ↦ ?_) ?_)
   · rw [Pi.sub_apply, signedEquiv_apply, checkerboardSpinor_apply]
     rcases eq_or_ne i ⟨0, hpos⟩ with rfl | hij
-    · simp [hk]
+    · rw [Equiv.refl_symm, Equiv.refl_apply, Pi.mulSingle_eq_same, Pi.sub_apply,
+        Pi.single_eq_same, hk]
+      push_cast
       ring
     · simp [hk, hij]
   · obtain ⟨m, hm⟩ := hk2
@@ -357,14 +293,8 @@ variable {V : Type*} [AddCommGroup V] [Module ℚ V] {L N : IntegralLattice V}
 private theorem isNeighbor_transport_symm (e : Isometry (unitLattice (Fin n)) N)
     (h : L.IsNeighbor N 2) :
     (L.transport (e : (Fin n → ℚ) ≃ₗ[ℚ] V).symm).IsNeighbor (unitLattice (Fin n)) 2 := by
-  have hN : N.transport (e : (Fin n → ℚ) ≃ₗ[ℚ] V).symm = unitLattice (Fin n) := by
-    refine IntegralLattice.ext ?_ (LinearMap.ext fun x ↦ LinearMap.ext fun x' ↦ ?_)
-    · ext x
-      rw [transport_carrier, Submodule.mem_map_equiv]
-      exact e.apply_mem_carrier_iff x
-    · simp
   have h' := h.transport (e : (Fin n → ℚ) ≃ₗ[ℚ] V).symm
-  rwa [hN] at h'
+  rwa [e.transport_symm_eq] at h'
 
 /-- A two-neighbor without vectors of norm one of a lattice isometric to `Iₙ`, moved to `ℚⁿ` along
 that isometry, contains no coordinate vector. -/

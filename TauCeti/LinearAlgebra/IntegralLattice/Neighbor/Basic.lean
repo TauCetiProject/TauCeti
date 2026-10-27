@@ -75,17 +75,19 @@ theorem isNeighbor_comm : L.IsNeighbor M p ↔ M.IsNeighbor L p :=
 /-- **Neighbors transport along rational linear equivalences.** Transporting two `p`-neighbors
 along the same equivalence of their ambient spaces gives `p`-neighbors. -/
 theorem IsNeighbor.transport {W : Type*} [AddCommGroup W] [Module ℚ W] (h : L.IsNeighbor M p)
-    (e : V ≃ₗ[ℚ] W) : (L.transport e).IsNeighbor (M.transport e) p where
-  form_eq := by rw [transport_form, transport_form, h.form_eq]
-  relIndex_inf_left := by
+    (e : V ≃ₗ[ℚ] W) : (L.transport e).IsNeighbor (M.transport e) p := by
+  -- Transport is injective on carriers, so it preserves the relative index of an intersection.
+  have hrel (A B : IntegralLattice V) :
+      ((A.transport e).carrier ⊓ (B.transport e).carrier).toAddSubgroup.relIndex
+        (A.transport e).carrier.toAddSubgroup =
+        (A.carrier ⊓ B.carrier).toAddSubgroup.relIndex A.carrier.toAddSubgroup := by
     rw [transport_carrier, transport_carrier, ← Submodule.map_inf _ (e.restrictScalars ℤ).injective,
       Submodule.map_toAddSubgroup, Submodule.map_toAddSubgroup,
       AddSubgroup.relIndex_map_map_of_injective _ _ (e.restrictScalars ℤ).injective]
+  refine ⟨by rw [transport_form, transport_form, h.form_eq], ?_, ?_⟩
+  · rw [hrel]
     exact h.relIndex_inf_left
-  relIndex_inf_right := by
-    rw [transport_carrier, transport_carrier, ← Submodule.map_inf _ (e.restrictScalars ℤ).injective,
-      Submodule.map_toAddSubgroup, Submodule.map_toAddSubgroup,
-      AddSubgroup.relIndex_map_map_of_injective _ _ (e.restrictScalars ℤ).injective]
+  · rw [inf_comm, hrel, inf_comm]
     exact h.relIndex_inf_right
 
 /-- The common index of two neighbors is nonzero, since the intersection of two lattices on the
