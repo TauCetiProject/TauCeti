@@ -44,6 +44,7 @@ construct the Schubert cells or their closures as schemes.
 
 ## Main results
 
+* `Module.Basis.finrank_flag`: the flag subspace `F_k` has dimension `k`.
 * `Module.Basis.finrank_inf_flag`: `dim (W ⊓ F_j)` is the number of pivots of `W` below `j`.
 * `Module.Basis.card_flagPivots`: `W` has `dim W` pivots.
 * `Module.Basis.flagPivots_eq_iff`, `Module.Basis.flagPivots_eq_image_iff`: the pivot set is the
@@ -163,6 +164,16 @@ theorem mem_flagPivots {i : Fin n} :
     exact ⟨x, hxW, hxF, fun h ↦ hx ((mem_flag_castSucc_iff_of_mem_flag_succ hxF).mpr h)⟩
   · rintro ⟨x, hxW, hxF, hx⟩
     exact ⟨x, ⟨hxW, hxF⟩, fun h ↦ hx ((mem_flag_castSucc_iff_of_mem_flag_succ hxF).mp h)⟩
+
+/-- The `k`-th subspace of the flag of a basis indexed by `Fin n`, spanned by its first `k`
+vectors, has dimension `k`. -/
+@[simp]
+theorem finrank_flag [StrongRankCondition R] (b : Basis (Fin n) R M) (k : Fin (n + 1)) :
+    finrank R (b.flag k) = k := by
+  rw [flag, Set.image_eq_range]
+  refine (finrank_span_eq_card (b.linearIndependent.comp _ Subtype.val_injective)).trans ?_
+  simp [Fintype.card_subtype, Fin.lt_def, Fin.card_filter_val_lt]
+  omega
 
 end Semiring
 

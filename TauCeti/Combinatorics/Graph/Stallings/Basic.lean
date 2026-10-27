@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Combinatorics.Graph.Serre.Path
 public import TauCeti.Combinatorics.Quiver.PathWeight
 public import Mathlib.GroupTheory.FreeGroup.Basic
 public import Mathlib.Algebra.Group.End
@@ -16,7 +17,7 @@ public import Mathlib.Algebra.Group.End
 A labelled Serre graph assigns inverse letters to reversed darts. Reading the labels of
 closed paths at a vertex gives a subgroup of the free group. Based label-preserving morphisms
 send the accepted subgroup into that of the target. Moving the base vertex along a path
-conjugates the accepted subgroup.
+conjugates the accepted subgroup. Every accepted word also has a reduced-path witness.
 
 ## References
 
@@ -118,6 +119,63 @@ theorem mem_subgroup_iff {a : S.graph.V} {g : FreeGroup α} :
 
 theorem read_mem_subgroup {a : S.graph.V} (p : S.graph.Path a a) :
     S.read p ∈ S.subgroup a := ⟨p, rfl⟩
+
+/-- Every path has a reduced path with the same endpoints and free-group reading. -/
+theorem exists_reduced_path_read_eq
+    {a b : S.graph.V} (p : S.graph.Path a b) :
+    ∃ q : S.graph.Path a b, SerreGraph.Path.IsReduced S.graph q ∧ S.read q = S.read p := by
+  induction p with
+  | nil => exact ⟨.nil, by simp, rfl⟩
+  | @cons b c p e ih =>
+    obtain ⟨q, hq, hread⟩ := ih
+    cases q with
+    | nil =>
+      refine ⟨Quiver.Path.nil.cons e, ?_, ?_⟩
+      · simpa only [Quiver.Hom.toPath] using
+          (SerreGraph.Path.isReduced_toPath S.graph e)
+      simpa only [read_cons, read_nil] using congrArg
+        (fun x => x * FreeGroup.mk [S.label e.1]) hread
+    | @cons d b' r f =>
+      -- If the last two darts reverse one another, remove the pair. Otherwise append.
+      by_cases h : e.1 = S.graph.rev f.1
+      · have hcd : c = d := by
+          calc
+            c = S.graph.tgt e.1 := e.2.2.symm
+            _ = S.graph.tgt (S.graph.rev f.1) := by rw [h]
+            _ = d := by simpa only [S.graph.tgt_rev] using f.2.1
+        cases hcd
+        have hef : e = Quiver.reverse f := by
+          apply Subtype.ext
+          simpa only [S.graph.reverse_val] using h
+        subst e
+        refine ⟨r, ?_, ?_⟩
+        · cases r with
+          | nil => exact SerreGraph.Path.isReduced_nil S.graph a
+          | cons r g => exact ((SerreGraph.Path.isReduced_cons_cons S.graph r g f).mp hq).1
+        · rw [read_cons]
+          have hinv : S.read (Quiver.reverse f).toPath = (S.read f.toPath)⁻¹ := by
+            rw [← Quiver.Path.reverse_toPath, S.read_reverse]
+          simp only [read_toPath] at hinv
+          rw [hinv, ← hread]
+          rw [read_cons]
+          simp only [mul_assoc, mul_inv_cancel, mul_one]
+      · refine ⟨(r.cons f).cons e, ?_, ?_⟩
+        · exact (SerreGraph.Path.isReduced_cons_cons S.graph r f e).mpr
+            ⟨hq, h⟩
+        · simpa only [read_cons] using congrArg
+            (fun x => x * FreeGroup.mk [S.label e.1]) hread
+
+/-- Membership in the accepted subgroup can be witnessed by a reduced closed path. -/
+theorem mem_subgroup_iff_exists_reduced_path {a : S.graph.V} {g : FreeGroup α} :
+    g ∈ S.subgroup a ↔
+      ∃ p : S.graph.Path a a,
+        SerreGraph.Path.IsReduced S.graph p ∧ S.read p = g := by
+  constructor
+  · intro hg
+    obtain ⟨p, rfl⟩ := S.mem_subgroup_iff.mp hg
+    exact S.exists_reduced_path_read_eq p
+  · rintro ⟨p, _, rfl⟩
+    exact S.read_mem_subgroup p
 
 /-- Moving the base vertex along a path conjugates the accepted subgroup by its label. -/
 theorem subgroup_conj {a b : S.graph.V} (p : S.graph.Path a b) :

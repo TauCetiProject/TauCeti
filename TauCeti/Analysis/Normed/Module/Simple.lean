@@ -24,6 +24,11 @@ density into density over the complex scalars. The finite interpolation theorem
 using the algebraic `LinearIndependent.exists_smul_eq`. Simplicity here is algebraic:
 having no proper closed invariant subspace alone is not the hypothesis.
 
+Every element acting with infinite-dimensional range has a left multiple that kills a
+vector it does not kill while keeping infinite-dimensional range,
+`IsSimpleModule.exists_mul_smul_eq_zero`. Iterating this gives sequences of products with
+strictly increasing kernels, as used for separating ideals.
+
 The automatic-continuity argument uses Mathlib's open mapping theorem on the
 surjective orbit map at a nonzero vector. The scalar conclusion then uses
 nonemptiness of the spectrum of a bounded complex operator and Schur's lemma.
@@ -157,3 +162,70 @@ theorem exists_smul_eq_of_completeSpace {ι : Type*} [Finite ι] {v : ι → E}
   exact hv'.exists_smul_eq w
 
 end LinearIndependent
+
+namespace IsSimpleModule
+
+variable {A E : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+  [Module A E] [IsScalarTower ℂ A E] [ContinuousSMul A E] [IsSimpleModule A E]
+
+/-- If `p` acts on a simple complex Banach module with infinite-dimensional range, then some
+left multiple `b * p` kills a vector that `p` does not kill, and `b * p` still acts with
+infinite-dimensional range. The factor `b` is `1 - f` for a finite-rank action `f` when some
+element acts with nonzero finite rank, and otherwise comes from complex Jacobson density. -/
+theorem exists_mul_smul_eq_zero (p : A)
+    (hp : ¬ FiniteDimensional ℂ (LinearMap.range (Algebra.lsmul ℂ ℂ E p))) :
+    ∃ b : A, ∃ x : E, p • x ≠ 0 ∧ (b * p) • x = 0 ∧
+      ¬ FiniteDimensional ℂ (LinearMap.range (Algebra.lsmul ℂ ℂ E (b * p))) := by
+  obtain ⟨x, hx⟩ : ∃ x : E, p • x ≠ 0 := by
+    by_contra! h
+    have h0 : Algebra.lsmul ℂ ℂ E p = 0 := LinearMap.ext fun y ↦ by simpa using h y
+    rw [h0, LinearMap.range_zero] at hp
+    exact hp inferInstance
+  by_cases hfin : ∃ s : A, ∃ ξ : E, s • ξ ≠ 0 ∧
+      FiniteDimensional ℂ (LinearMap.range (Algebra.lsmul ℂ ℂ E s))
+  · -- Some `s` has nonzero finite rank. Transitivity gives `f = a * s * c` of finite rank
+    -- fixing `p • x`; then `b = 1 - f` kills `p • x` and has finite-dimensional kernel.
+    obtain ⟨s, ξ, hsξ, hs⟩ := hfin
+    obtain ⟨a, ha⟩ := IsSimpleModule.toSpanSingleton_surjective A hsξ (p • x)
+    obtain ⟨c, hc⟩ := IsSimpleModule.toSpanSingleton_surjective A hx ξ
+    rw [LinearMap.toSpanSingleton_apply] at ha hc
+    have hf : (a * s * c) • p • x = p • x := by rw [mul_smul, mul_smul, hc, ha]
+    have hfin : FiniteDimensional ℂ (LinearMap.range (Algebra.lsmul ℂ ℂ E (a * s * c))) := by
+      refine Submodule.finiteDimensional_of_le
+        (S₂ := (LinearMap.range (Algebra.lsmul ℂ ℂ E s)).map (Algebra.lsmul ℂ ℂ E a)) ?_
+      rintro _ ⟨y, rfl⟩
+      exact ⟨s • c • y, ⟨c • y, Algebra.lsmul_apply ..⟩, by simp⟩
+    refine ⟨1 - a * s * c, x, hx, by rw [mul_smul, sub_smul, one_smul, hf, sub_self],
+      fun h ↦ hp ?_⟩
+    rw [← Submodule.fg_iff_finiteDimensional] at h ⊢
+    refine Submodule.fg_of_fg_map_of_fg_inf_ker (Algebra.lsmul ℂ ℂ E (1 - a * s * c)) ?_ ?_
+    · rwa [← LinearMap.range_comp, ← Module.End.mul_eq_comp, ← map_mul]
+    · rw [Submodule.fg_iff_finiteDimensional]
+      refine Submodule.finiteDimensional_of_le
+        (S₂ := LinearMap.range (Algebra.lsmul ℂ ℂ E (a * s * c))) ?_
+      rintro y ⟨-, hy⟩
+      rw [SetLike.mem_coe, LinearMap.mem_ker, Algebra.lsmul_apply, sub_smul, one_smul,
+        sub_eq_zero] at hy
+      exact ⟨y, (Algebra.lsmul_apply ..).trans hy.symm⟩
+  · -- Every nonzero element has infinite rank. Density on `p • x` and an independent vector
+    -- `p • y` of the range of `p` gives `b` killing the first and fixing the second.
+    push Not at hfin
+    obtain ⟨w, hwR, hw⟩ : ∃ w ∈ LinearMap.range (Algebra.lsmul ℂ ℂ E p), w ∉ ℂ ∙ (p • x) := by
+      by_contra! h
+      have heq : LinearMap.range (Algebra.lsmul ℂ ℂ E p) = ℂ ∙ (p • x) :=
+        le_antisymm h ((Submodule.span_singleton_le_iff_mem _ _).2 ⟨x, Algebra.lsmul_apply ..⟩)
+      rw [heq] at hp
+      exact hp inferInstance
+    obtain ⟨y, rfl⟩ := hwR
+    rw [Algebra.lsmul_apply] at hw
+    have hli : LinearIndependent ℂ ![p • x, p • y] :=
+      (LinearIndependent.pair_iff' hx).2 fun r hr ↦
+        hw (Submodule.mem_span_singleton.2 ⟨r, hr⟩)
+    obtain ⟨b, hb⟩ := hli.exists_smul_eq_of_completeSpace (A := A) ![0, p • y]
+    have hy : p • y ≠ 0 := fun h ↦ hw (h ▸ Submodule.zero_mem _)
+    have hb1 : b • p • y = p • y := by simpa using hb 1
+    refine ⟨b, x, hx, by simpa [mul_smul] using hb 0, hfin _ y ?_⟩
+    rwa [mul_smul, hb1]
+
+end IsSimpleModule

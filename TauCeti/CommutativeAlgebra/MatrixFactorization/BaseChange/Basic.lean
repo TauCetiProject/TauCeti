@@ -425,10 +425,8 @@ theorem exact_quotient_d₁_d₀ (hw : w ∈ nonZeroDivisors S) (X : MatrixFacto
       ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₁.hom.hom
       ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₀.hom.hom :=
   LinearMap.exact_lTensor_quotient_span_singleton X.obj.d₀.hom.hom X.obj.d₁.hom.hom
-    (by simpa only [FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_smul, FGModuleCat.hom_hom_id]
-      using congrArg (fun k ↦ k.hom.hom) X.obj.d₁_comp_d₀)
-    (by simpa only [FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_smul, FGModuleCat.hom_hom_id]
-      using congrArg (fun k ↦ k.hom.hom) X.obj.d₀_comp_d₁)
+    (LinearMap.ext (d₁_comp_d₀_apply X))
+    (LinearMap.ext (d₀_comp_d₁_apply X))
     (Module.Flat.isSMulRegular_of_nonZeroDivisors hw)
 
 /-- The reduction modulo a non-zero-divisor potential `w` of a finite-projective matrix
@@ -438,10 +436,8 @@ theorem exact_quotient_d₀_d₁ (hw : w ∈ nonZeroDivisors S) (X : MatrixFacto
       ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₀.hom.hom
       ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₁.hom.hom :=
   LinearMap.exact_lTensor_quotient_span_singleton X.obj.d₁.hom.hom X.obj.d₀.hom.hom
-    (by simpa only [FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_smul, FGModuleCat.hom_hom_id]
-      using congrArg (fun k ↦ k.hom.hom) X.obj.d₀_comp_d₁)
-    (by simpa only [FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_smul, FGModuleCat.hom_hom_id]
-      using congrArg (fun k ↦ k.hom.hom) X.obj.d₁_comp_d₀)
+    (LinearMap.ext (d₀_comp_d₁_apply X))
+    (LinearMap.ext (d₁_comp_d₀_apply X))
     (Module.Flat.isSMulRegular_of_nonZeroDivisors hw)
 
 /-- The two-periodic complex over `S/(w)` obtained by reducing a finite-projective matrix

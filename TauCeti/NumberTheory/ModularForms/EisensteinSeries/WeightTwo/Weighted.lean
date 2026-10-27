@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.ModularForms.QExpansion
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.NumberTheory.ModularForms.Basic
 import Mathlib.Analysis.Normed.Group.Tannery
 
 /-!
@@ -55,6 +56,7 @@ of `G₂^W` at all cusps.
 
 * `TauCeti.EisensteinSeries.weightedG2`: the weight-two series weighted by `W`.
 * `TauCeti.EisensteinSeries.weightedG2MF`: it is a modular form of weight two and level `Γ(N)`.
+* `TauCeti.EisensteinSeries.weightedG2MFₗ`: the same, as a linear map in the weight.
 
 ## Main results
 
@@ -62,6 +64,8 @@ of `G₂^W` at all cusps.
 * `TauCeti.EisensteinSeries.hasSum_weightedG2_of_sum_eq_zero`: for a weight of total mass zero,
   the weighted series itself.
 * `TauCeti.EisensteinSeries.weightedG2_slash_apply`: the slash action.
+* `TauCeti.EisensteinSeries.weightedG2_comp_neg`: the series is unchanged when the residues are
+  negated.
 * `TauCeti.EisensteinSeries.weightedG2_mdifferentiable`: holomorphy on `ℍ`.
 * `TauCeti.EisensteinSeries.isBoundedAtImInfty_weightedG2_slash`: every `SL(2, ℤ)`-translate is
   bounded at `i∞`.
@@ -261,6 +265,23 @@ theorem weightedG2_slash_apply (W : (Fin 2 → ZMod N) → ℂ) (γ : SL(2, ℤ)
     ring
   rw [hsum, _root_.zpow_neg, zpow_ofNat]
   field_simp
+
+/-- **Weight two is even**: negating the residues does not change the weighted series, since
+slashing by `-1` in weight two is the identity. -/
+theorem weightedG2_comp_neg (W : (Fin 2 → ZMod N) → ℂ) :
+    weightedG2 (fun a ↦ W (-a)) = weightedG2 W := by
+  have h := weightedG2_slash_apply W (-1 : SL(2, ℤ))
+  have hGL : Matrix.SpecialLinearGroup.toGL
+      (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) (-1 : SL(2, ℤ))) = -1 :=
+    Matrix.SpecialLinearGroup.mapGL_neg_one
+  have hres (a : Fin 2 → ZMod N) :
+      a ᵥ* (((-1 : SL(2, ℤ))⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) = -a := by
+    ext i
+    fin_cases i <;> simp [vecMul, dotProduct]
+  rw [SL_slash, hGL, _root_.ModularForm.slash_neg_one] at h
+  simp only [hres] at h
+  rw [← h]
+  simp
 
 /-! ### Holomorphy -/
 
@@ -684,5 +705,14 @@ lemma weightedG2MF_smul (c : ℂ) (W : (Fin 2 → ZMod N) → ℂ) :
     weightedG2MF (c • W) = c • weightedG2MF W := by
   ext z
   exact congrFun (weightedG2_smul c W) z
+
+/-- The weighted weight-two series as a linear map from weights to `M₂(Γ(N))`. -/
+def weightedG2MFₗ : ((Fin 2 → ZMod N) → ℂ) →ₗ[ℂ] ModularForm Γ(N) 2 where
+  toFun := weightedG2MF
+  map_add' := weightedG2MF_add
+  map_smul' := weightedG2MF_smul
+
+@[simp]
+lemma weightedG2MFₗ_apply (W : (Fin 2 → ZMod N) → ℂ) : weightedG2MFₗ W = weightedG2MF W := (rfl)
 
 end TauCeti.EisensteinSeries

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 public import Mathlib.Data.Finset.Sum
 public import TauCeti.Combinatorics.Network.Excess
 public import TauCeti.Combinatorics.Network.MinimumCut.Basic
+public import TauCeti.Combinatorics.Network.Walk
 
 /-!
 # Auxiliary terminals
@@ -27,6 +28,11 @@ capacity of the new arrows it crosses plus the original capacity leaving `S.toLe
 original capacities are nonnegative, each arrow `σ → a` has capacity at least the total capacity
 leaving `a`, and each arrow `b → τ` at least the total capacity entering `b`, then this
 *normalization* of `S` has original cut capacity at most the capacity of `S`.
+
+A walk from a vertex of `A` to a vertex of `B` lifts to a walk from `σ` to `τ` through the same
+original vertices, and every walk from `σ` to `τ` contains a walk along original arrows from a
+vertex of `A` to a vertex of `B`, so deleting a set of original vertices separates `σ` from `τ`
+exactly when it separates `A` from `B`.
 
 ## Main definitions
 
@@ -52,6 +58,11 @@ leaving `a`, and each arrow `b → τ` at least the total capacity entering `b`,
 * `TauCeti.TerminalCut.IsMinimum.isMinimum_union_sdiff` and
   `TauCeti.TerminalCut.IsMinimum.arrowSum_union_sdiff`: normalizing a minimum `σ`–`τ` cut gives a
   minimum cut between `A` and `B` of the same capacity.
+* `TauCeti.AuxTerminalHom.exists_arrowWalk_vertices_eq` and
+  `TauCeti.AuxTerminalHom.exists_arrowWalk_map_vertices_subset`: lifting walks between `A` and `B`
+  to walks between the auxiliary terminals, and projecting them back.
+* `TauCeti.reachableAvoiding_auxTerminalHom_iff`: reachability between the auxiliary terminals
+  after deleting vertices is reachability from `A` to `B`.
 * `TauCeti.AuxTerminalHom.excessAt_inl` and `TauCeti.AuxTerminalHom.excessAt_inr_true`: the excess
   of an assignment at an original vertex and at the fresh sink.
 
@@ -475,6 +486,93 @@ theorem setFlowCapacity_mem {M : Type*} [SetLike M K] [AddSubmonoidClass M K] {H
     fun _ _ ↦ sum_mem fun _ _ ↦ sum_mem fun e _ ↦ hcap e⟩
 
 end SetFlowCapacity
+
+section Walk
+
+namespace AuxTerminalHom
+
+/-- A walk from `a ∈ A` along original arrows, preceded by the arrow from the fresh source. -/
+private theorem exists_arrowWalk_vertices_eq_cons {a w : V} (ha : a ∈ A) (q : ArrowWalk Q a w) :
+    ∃ p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl w),
+      p.vertices = inr false :: q.vertices.map inl := by
+  induction q with
+  | nil => exact ⟨(ArrowWalk.nil _).cons (source ha), rfl⟩
+  | cons q e ih =>
+    obtain ⟨p, hp⟩ := ih
+    refine ⟨p.cons (original e), ?_⟩
+    simp only [ArrowWalk.vertices, Quiver.Path.vertices_cons] at hp ⊢
+    simp [hp]
+
+/-- **Lifting a walk to auxiliary terminals.** A walk from `a ∈ A` to `b ∈ B` gives a walk from
+the fresh source to the fresh sink through the same original vertices. -/
+theorem exists_arrowWalk_vertices_eq {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b) :
+    ∃ p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true),
+      p.vertices = inr false :: q.vertices.map inl ++ [inr true] := by
+  obtain ⟨p, hp⟩ := exists_arrowWalk_vertices_eq_cons (B := B) ha q
+  refine ⟨p.cons (sink hb), ?_⟩
+  simp only [ArrowWalk.vertices, Quiver.Path.vertices_cons] at hp ⊢
+  simp [hp]
+
+/-- A walk from the fresh source to an original vertex `w` contains a walk along original arrows
+from a vertex of `A` to `w`. -/
+private theorem exists_arrowWalk_map_vertices_subset_of_eq_inl {y : V ⊕ Bool}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) y) {w : V} (hy : y = inl w) :
+    ∃ a ∈ A, ∃ q : ArrowWalk Q a w, q.vertices.map inl ⊆ p.vertices := by
+  induction p generalizing w with
+  | nil => exact absurd hy Sum.inr_ne_inl
+  | @cons z y p e ih =>
+    subst hy
+    simp only [ArrowWalk.vertices, Quiver.Path.vertices_cons, List.concat_eq_append]
+    rcases z with u | _ | _
+    · obtain ⟨a, ha, q, hq⟩ := ih rfl
+      refine ⟨a, ha, q.cons (originalEquiv.symm e), ?_⟩
+      simp only [Quiver.Path.vertices_cons, List.concat_eq_append,
+        List.map_append, List.map_singleton]
+      exact List.append_subset.2
+        ⟨List.Subset.trans hq (List.subset_append_left _ _), List.subset_append_right _ _⟩
+    · exact ⟨w, mem_of_source e, ArrowWalk.nil w, by simp⟩
+    · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inl w)) e
+
+/-- **Projecting a walk from auxiliary terminals.** A walk from the fresh source to the fresh sink
+contains a walk along original arrows from a vertex of `A` to a vertex of `B`. -/
+theorem exists_arrowWalk_map_vertices_subset
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :
+    ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.vertices.map inl ⊆ p.vertices := by
+  cases p with
+  | @cons y _ p e =>
+    rcases y with b | _ | _
+    · obtain ⟨a, ha, q, hq⟩ := exists_arrowWalk_map_vertices_subset_of_eq_inl p rfl
+      refine ⟨a, ha, b, mem_of_sink e, q, List.Subset.trans hq ?_⟩
+      simp only [ArrowWalk.vertices, Quiver.Path.vertices_cons, List.concat_eq_append]
+      exact List.subset_append_left _ _
+    · exact isEmptyElim (α := AuxTerminalHom Q A B (inr false) (inr true)) e
+    · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inr true)) e
+
+end AuxTerminalHom
+
+/-- The fresh sink is reachable from the fresh source avoiding a set `X` of vertices not containing
+either, exactly when some vertex of `B` is reachable from some vertex of `A` avoiding the original
+vertices in `X`. -/
+theorem reachableAvoiding_auxTerminalHom_iff {X : Set (V ⊕ Bool)} (hσ : inr false ∉ X)
+    (hτ : inr true ∉ X) :
+    ReachableAvoiding (AuxTerminalHom Q A B) X (inr false) (inr true) ↔
+      ∃ a ∈ A, ∃ b ∈ B, ReachableAvoiding Q (inl ⁻¹' X) a b := by
+  constructor
+  · intro h
+    obtain ⟨p, hp⟩ := reachableAvoiding_def.1 h
+    obtain ⟨a, ha, b, hb, q, hq⟩ := AuxTerminalHom.exists_arrowWalk_map_vertices_subset p
+    exact ⟨a, ha, b, hb, reachableAvoiding_def.2 ⟨q, fun v hv ↦ hp _ (hq (List.mem_map_of_mem hv))⟩⟩
+  · rintro ⟨a, ha, b, hb, h⟩
+    obtain ⟨q, hq⟩ := reachableAvoiding_def.1 h
+    obtain ⟨p, hp⟩ := AuxTerminalHom.exists_arrowWalk_vertices_eq ha hb q
+    refine reachableAvoiding_def.2 ⟨p, fun x hx ↦ ?_⟩
+    rw [hp] at hx
+    simp only [List.cons_append, List.mem_cons, List.mem_append, List.mem_map,
+      List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | ⟨v, hv, rfl⟩ | rfl
+    exacts [hσ, hq v hv, hτ]
+
+end Walk
 
 section Excess
 

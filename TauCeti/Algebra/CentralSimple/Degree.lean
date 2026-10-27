@@ -25,6 +25,7 @@ import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Algebra.Central.BaseChange
 import TauCeti.Algebra.Central.Quaternion
+import TauCeti.Algebra.Matrix.BaseChange
 
 /-!
 # The degree of a central simple algebra
@@ -127,12 +128,7 @@ private theorem exists_algEquiv_matrix_baseChange_of_isSepClosed [IsSepClosed L]
     ∃ (n : ℕ) (_ : NeZero n), Module.finrank K A = n ^ 2 ∧
       Nonempty (L ⊗[K] A ≃ₐ[L] Matrix (Fin n) (Fin n) L) := by
   obtain ⟨n, hn, -, ⟨e⟩⟩ := exists_algEquiv_matrix_of_isSepClosed L (L ⊗[K] A)
-  refine ⟨n, hn, ?_, ⟨e⟩⟩
-  calc Module.finrank K A
-      = Module.finrank L (L ⊗[K] A) :=
-        (Module.finrank_baseChange (R := L) (S := K) (M' := A)).symm
-    _ = Module.finrank L (Matrix (Fin n) (Fin n) L) := e.toLinearEquiv.finrank_eq
-    _ = n ^ 2 := by simp [Module.finrank_matrix, sq]
+  exact ⟨n, hn, Algebra.finrank_eq_sq_of_algEquiv_matrix K A L e, ⟨e⟩⟩
 
 /-- **The dimension of a finite-dimensional central simple algebra is a perfect square.**
 

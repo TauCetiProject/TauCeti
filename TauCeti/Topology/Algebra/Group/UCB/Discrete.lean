@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.ContinuousInv
-public import TauCeti.Topology.Algebra.Group.UCB.Translation
+public import TauCeti.Topology.Algebra.Group.UCB.CompRight
 
 /-!
 # Bounded functions on a discrete group
@@ -16,6 +16,12 @@ uniformity. Thus `TauCeti.UCB G` is the entire algebra `G →ᵇ ℝ`. The ident
 the supremum norm, pointwise order, constants, and left and right translations. Since every
 function on a discrete space is continuous, this is the bounded-function space used for
 finitely additive probabilities and discrete invariant means.
+
+For the same reason, precomposition `f ↦ f ∘ r` with an arbitrary map `r : G → H` into a
+topological group sends `UCB H` to `UCB G`; this is `TauCeti.UCB.compRightAlgHomOfDiscrete r`.
+When `r` is equivariant along a homomorphism `φ : H →* G`, in the sense that
+`r (φ h * x) = h * r x`, the pullback intertwines `L_h` with `L_(φ h)`. Such maps arise as the
+retractions of a discrete group onto a subgroup along a choice of right coset representatives.
 
 ## References
 
@@ -92,6 +98,59 @@ theorem discreteLinearIsometryEquiv_apply (f : UCB G) :
 theorem discreteLinearIsometryEquiv_symm_apply (f : G →ᵇ ℝ) :
     (discreteLinearIsometryEquiv G).symm f = (discreteAlgEquiv G).symm f :=
   (rfl)
+
+section CompRight
+
+variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+
+/-- On a discrete group `G`, the pullback `f ↦ f ∘ r` along an arbitrary map `r : G → H`, as a
+unital algebra homomorphism from `UCB H` to `UCB G`. -/
+def compRightAlgHomOfDiscrete (r : G → H) : UCB H →ₐ[ℝ] UCB G where
+  toFun f := (discreteAlgEquiv G).symm
+    ((f : H →ᵇ ℝ).compContinuous ⟨r, continuous_of_discreteTopology⟩)
+  map_one' := rfl
+  map_mul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  commutes' _ := rfl
+
+/-- The pullback `f ∘ r` is the precomposition of `f` with `r`. -/
+theorem coe_compRightAlgHomOfDiscrete (r : G → H) (f : UCB H) :
+    (compRightAlgHomOfDiscrete r f : G →ᵇ ℝ) =
+      (f : H →ᵇ ℝ).compContinuous ⟨r, continuous_of_discreteTopology⟩ :=
+  (rfl)
+
+@[simp]
+theorem compRightAlgHomOfDiscrete_apply (r : G → H) (f : UCB H) (x : G) :
+    (compRightAlgHomOfDiscrete r f : G →ᵇ ℝ) x = (f : H →ᵇ ℝ) (r x) :=
+  (rfl)
+
+/-- Along a continuous homomorphism, the pullback out of a discrete group is the pullback
+`TauCeti.UCB.compRightAlgHom`. -/
+theorem compRightAlgHomOfDiscrete_coe (φ : G →ₜ* H) :
+    compRightAlgHomOfDiscrete (φ : G → H) = compRightAlgHom φ :=
+  AlgHom.ext fun _ => ext fun _ => by simp
+
+/-- The pullback preserves the pointwise order. -/
+theorem monotone_compRightAlgHomOfDiscrete (r : G → H) :
+    Monotone (compRightAlgHomOfDiscrete r) :=
+  fun _ _ h => le_def.2 fun x => le_def.1 h (r x)
+
+/-- The pullback does not increase the supremum norm. -/
+theorem norm_compRightAlgHomOfDiscrete_apply_le (r : G → H) (f : UCB H) :
+    ‖compRightAlgHomOfDiscrete r f‖ ≤ ‖f‖ :=
+  (f : H →ᵇ ℝ).norm_compContinuous_le _
+
+/-- If `r (φ h * x) = h * r x` for a homomorphism `φ : H →* G`, then the pullback along `r`
+intertwines left translation by `h` with left translation by `φ h`. -/
+theorem compRightAlgHomOfDiscrete_leftTranslation (φ : H →* G) {r : G → H}
+    (hr : ∀ h x, r (φ h * x) = h * r x) (h : H) (f : UCB H) :
+    compRightAlgHomOfDiscrete r (leftTranslation h f) =
+      leftTranslation (φ h) (compRightAlgHomOfDiscrete r f) := by
+  ext x
+  simp [← map_inv, hr]
+
+end CompRight
 
 end UCB
 
