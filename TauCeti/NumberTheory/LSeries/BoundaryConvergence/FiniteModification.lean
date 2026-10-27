@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.NumberTheory.LSeries.Linearity
-public import TauCeti.NumberTheory.LSeries.Deriv
 public import TauCeti.Topology.Algebra.Group.FiniteModification
 
 /-!
@@ -16,8 +15,9 @@ public import TauCeti.Topology.Algebra.Group.FiniteModification
 Changing coefficients on a finite set adds a finite Dirichlet polynomial to an analytic
 continuation, and adds its value at `1` to the limit of ordered harmonic sums. This file
 gives both corrections explicitly. In particular, the boundary statements concern limits
-of finite sums and do not require absolute summability at the boundary. The imported
-`LSeries.differentiable_sum_term` shows that the correction is entire; combine its
+of finite sums and do not require absolute summability at the boundary. The lemma
+`LSeries.differentiable_sum_term` in `TauCeti.NumberTheory.LSeries.Deriv` shows that the
+correction is entire; combine its
 `.differentiableOn` with `DifferentiableOn.add` to correct a continuation.
 
 The coefficient at `0` is immaterial throughout. The finite set of changes may contain `0`,
