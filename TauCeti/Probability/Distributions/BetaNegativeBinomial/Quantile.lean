@@ -91,20 +91,17 @@ theorem tendsto_quantile_map_cast_betaNegativeBinomialMeasure_nhdsLT_one
   · subst r
     simp only [ite_true]
     refine tendsto_const_nhds.congr' ?_
-    filter_upwards [Ioo_mem_nhdsLT (show (0 : ℝ) < 1 by norm_num)] with u hu
+    filter_upwards [Ioo_mem_nhdsLT (by norm_num : (0 : ℝ) < 1)] with u hu
     rw [quantile_map_cast_betaNegativeBinomialMeasure_zero ha hb hu]
     rfl
-  rw [ite_eq_right hr0, EReal.tendsto_coe_nhds_top_iff]
+  rw [ite_eq_right hr0]
   have := isProbabilityMeasure_betaNegativeBinomialMeasure hr ha hb
-  refine tendsto_atTop.2 fun x ↦ ?_
-  have hx : cdf ((betaNegativeBinomialMeasure r a b).map (Nat.cast : ℕ → ℝ)) x < 1 := by
-    by_cases hx0 : 0 ≤ x
-    · rw [Measure.cdf_map_natCast _ hx0]
-      exact betaNegativeBinomialMeasure_real_Iic_lt_one (lt_of_le_of_ne hr (Ne.symm hr0))
-        ha hb _
-    · rw [cdf_map_cast_betaNegativeBinomialMeasure_of_neg hr ha hb (lt_of_not_ge hx0)]
-      exact zero_lt_one
-  filter_upwards [Ioo_mem_nhdsLT hx] with u hu
-  exact ((Measure.lt_quantile_iff _ ((cdf_nonneg _ _).trans_lt hu.1) hu.2).2 hu.1).le
+  refine Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one _ fun x ↦ ?_
+  by_cases hx0 : 0 ≤ x
+  · rw [Measure.cdf_map_natCast _ hx0]
+    exact betaNegativeBinomialMeasure_real_Iic_lt_one (lt_of_le_of_ne hr (Ne.symm hr0))
+      ha hb _
+  · rw [cdf_map_cast_betaNegativeBinomialMeasure_of_neg hr ha hb (lt_of_not_ge hx0)]
+    exact zero_lt_one
 
 end TauCeti.Probability

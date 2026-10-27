@@ -46,11 +46,12 @@ theorem map_succ_betaNegativeBinomialMeasure {ρ : ℝ} (hρ : 0 < ρ) :
     rw [hpre, betaNegativeBinomialMeasure_singleton (by norm_num) hρ (by norm_num),
       yuleSimonMeasure_singleton hρ, betaNegativeBinomialWeight_def, yuleSimonWeight_def]
     congr 1
-    rw [betaNegativeBinomialWeightReal_of_ne_zero one_ne_zero, Real.Gamma_one, one_mul,
-      add_comm (1 : ℝ) (k : ℝ), Real.Gamma_nat_eq_factorial,
-      div_self (by positivity : (k.factorial : ℝ) ≠ 0), one_mul, beta_one_right hρ,
-      yuleSimonWeightReal_def, Nat.cast_succ, beta_comm (ρ + 1) (k + 1)]
-    simp [mul_comm]
+    have hgamma : Real.Gamma (1 + (k : ℝ)) / (Real.Gamma 1 * k.factorial) = 1 := by
+      rw [add_comm (1 : ℝ) (k : ℝ), Real.Gamma_nat_eq_factorial]
+      simp [Nat.factorial_ne_zero]
+    rw [betaNegativeBinomialWeightReal_of_ne_zero one_ne_zero, hgamma, beta_one_right hρ]
+    simp [yuleSimonWeightReal_def, Nat.cast_succ, add_comm (1 : ℝ) (k : ℝ),
+      beta_comm (ρ + 1), mul_comm]
 
 /-- The successor of a natural-valued beta-negative-binomial variable with parameters
 `(1, ρ, 1)` has Yule–Simon law. -/
