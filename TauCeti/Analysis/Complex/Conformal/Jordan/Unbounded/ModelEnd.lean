@@ -10,6 +10,7 @@ public import TauCeti.Topology.Connected.AtInfinity
 
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Convex.PathConnected
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # The model ends of a polygonal domain are preconnected at infinity
@@ -233,15 +234,6 @@ theorem isOpen_halfStrip (ρ : ℝ) (c b : ℂ) :
   have hre : Continuous fun w : ℂ => ((w - c) / b).re := by fun_prop
   have him : Continuous fun w : ℂ => ((w - c) / b).im := by fun_prop
   exact (isOpen_lt continuous_const hre).inter (isOpen_Ioo.preimage him)
-
-/-- An unbounded set stays unbounded after removing a closed ball: its far part
-`s ∩ {w | ρ < ‖w - c‖}` is unbounded. -/
-theorem not_isBounded_inter_lt_norm_sub {E : Type*} [SeminormedAddCommGroup E] {s : Set E}
-    (hs : ¬IsBounded s) (c : E) (ρ : ℝ) : ¬IsBounded (s ∩ {w : E | ρ < ‖w - c‖}) :=
-  fun h => hs <| (h.union (isBounded_closedBall (x := c) (r := ρ))).subset fun w hw => by
-    by_cases hw' : ρ < ‖w - c‖
-    · exact Or.inl ⟨hw, hw'⟩
-    · exact Or.inr (mem_closedBall_iff_norm.mpr (not_lt.mp hw'))
 
 /-- A sector of positive half-opening is unbounded. -/
 theorem not_isBounded_sector {ρ α : ℝ} {c b : ℂ} (hα : 0 < α) :

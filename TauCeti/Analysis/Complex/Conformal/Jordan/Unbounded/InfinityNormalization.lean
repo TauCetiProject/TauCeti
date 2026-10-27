@@ -43,6 +43,9 @@ prevertex lies at infinity, even when the domain has several vertices at infinit
 * `TauCeti.exists_bijOn_upperHalfPlaneSet_tendsto_of_isPreconnectedApproachAt` -- the same, with
   injectivity of the inverted coordinate away from its zeros, when every frontier point has
   preconnected approach regions.
+* `TauCeti.differentiableOn_update_comp_const_sub_inv`,
+  `TauCeti.injOn_update_comp_const_sub_inv` -- holomorphy and injectivity away from the zeros are
+  kept when moving infinity to a real point.
 
 ## References
 
@@ -58,6 +61,39 @@ open Bornology Complex Filter Function Set Topology UpperHalfPlane
 namespace TauCeti
 
 variable {U : Set ℂ} {q w : ℂ}
+
+/-- **Moving infinity to a real point, holomorphy.** Precomposing a function `g` holomorphic in
+the upper half-plane with the Möbius map `z ↦ c - z⁻¹`, whatever its value at `0`, gives a function
+holomorphic in the upper half-plane. -/
+theorem differentiableOn_update_comp_const_sub_inv {g : ℂ → ℂ}
+    (hgd : DifferentiableOn ℂ g upperHalfPlaneSet) (c : ℝ) (L : ℂ) :
+    DifferentiableOn ℂ (update (fun z : ℂ => g ((c : ℂ) - z⁻¹)) 0 L) upperHalfPlaneSet := by
+  have hH0 : ∀ z ∈ upperHalfPlaneSet, z ≠ 0 := fun z (hz : 0 < z.im) h => by simp [h] at hz
+  exact (hgd.comp ((differentiableOn_const _).sub (differentiableOn_id.inv hH0))
+    (bijOn_const_sub_inv_upperHalfPlaneSet c).mapsTo).congr fun z hz => update_of_ne (hH0 z hz) _ _
+
+/-- **Moving infinity to a real point, injectivity.** Let `g` be injective on the closed upper
+half-plane away from its zeros. Precomposing `g` with the Möbius map `z ↦ c - z⁻¹` and giving it at
+`0` a value `L` which is not a nonzero value of `g` there keeps it injective away from its zeros. -/
+theorem injOn_update_comp_const_sub_inv {g : ℂ → ℂ}
+    (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0}) {L : ℂ}
+    (hL : L ∉ g '' {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0}) (c : ℝ) :
+    InjOn (update (fun z : ℂ => g ((c : ℂ) - z⁻¹)) 0 L)
+      {z : ℂ | 0 ≤ z.im ∧ update (fun z : ℂ => g ((c : ℂ) - z⁻¹)) 0 L z ≠ 0} := by
+  -- away from `0`, the new function is `g` at a point of the closed upper half-plane
+  have hT {z : ℂ} (hz : 0 ≤ z.im) (hz0 : z ≠ 0)
+      (hGz : update (fun z : ℂ => g ((c : ℂ) - z⁻¹)) 0 L z ≠ 0) :
+      (c : ℂ) - z⁻¹ ∈ {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0} :=
+    ⟨(im_const_sub_inv_nonneg c).mpr hz, by rwa [update_of_ne hz0] at hGz⟩
+  rintro z ⟨hz, hGz⟩ z' ⟨hz', hGz'⟩ h
+  rcases eq_or_ne z 0 with rfl | hz0 <;> rcases eq_or_ne z' 0 with rfl | hz0'
+  · rfl
+  · rw [update_self, update_of_ne hz0'] at h
+    exact (hL ⟨_, hT hz' hz0' hGz', h.symm⟩).elim
+  · rw [update_self, update_of_ne hz0] at h
+    exact (hL ⟨_, hT hz hz0 hGz, h⟩).elim
+  · rw [update_of_ne hz0, update_of_ne hz0'] at h
+    exact inv_injective (sub_right_injective (hgi (hT hz hz0 hGz) (hT hz' hz0' hGz') h))
 
 /-- Precomposing a Riemann map of the upper half-plane onto `U`, with continuous inverted
 coordinate `g₀ = (f₀ - q)⁻¹` tending to `0` at infinity, with the Möbius map `z ↦ t - z⁻¹` gives a
@@ -87,31 +123,23 @@ private theorem exists_inverted_coordinate_tendsto_of_ne_zero {f₀ g₀ : ℂ �
   have hG {z : ℂ} (hz : z ≠ 0) : G z = g₀ ((t : ℂ) - z⁻¹) := update_of_ne hz _ _
   refine ⟨fun z => f₀ ((t : ℂ) - z⁻¹), G, hfd.comp hφd hφ.mapsTo, hfU.comp hφ,
     continuousOn_update_comp_const_sub_inv hgc hg0 t,
-    (hgd.comp hφd hφ.mapsTo).congr fun z hz => hG (hH0 z hz),
+    differentiableOn_update_comp_const_sub_inv hgd t 0,
     fun z hz => by rw [hG (hH0 z hz)]; exact hgf (hφ.mapsTo hz),
     fun z hz => by rw [hG (hH0 z hz)]; exact hgne _ (hφ.mapsTo hz),
     insert_image_update_comp_const_sub_inv g₀ 0 (by simp) fun _ => im_const_sub_inv_nonneg t,
     insert_image_update_comp_const_sub_inv g₀ 0 (by simp) fun _ => im_const_sub_inv_eq_zero t,
-    tendsto_update_comp_const_sub_inv_cobounded (hgc _ (by simp)) 0, fun hgi => ?_⟩
-  -- a point where the new coordinate does not vanish is not `0`, and its image under the Möbius
-  -- map is a point where `g₀` does not vanish
-  have hT {z : ℂ} (hz : 0 ≤ z.im) (hGz : G z ≠ 0) :
-      z ≠ 0 ∧ (t : ℂ) - z⁻¹ ∈ {z : ℂ | 0 ≤ z.im ∧ g₀ z ≠ 0} := by
-    have hz0 : z ≠ 0 := by
-      rintro rfl
-      exact hGz (update_self _ _ _)
-    exact ⟨hz0, (im_const_sub_inv_nonneg t).mpr hz, hG hz0 ▸ hGz⟩
-  refine ⟨fun z hz z' hz' h => ?_, ?_⟩
-  · obtain ⟨hz0, hzT⟩ := hT hz.1 hz.2
-    obtain ⟨hz0', hzT'⟩ := hT hz'.1 hz'.2
-    rw [hG hz0, hG hz0'] at h
-    exact inv_injective (sub_right_injective (hgi hzT hzT' h))
-  · rintro ⟨z, hz, h⟩
-    obtain ⟨hz0, hzT⟩ := hT hz (h ▸ ht)
-    rw [hG hz0] at h
-    -- the only parameter carried to `t` by the Möbius map is the point `0` sent to infinity
-    have hzt : (t : ℂ) - z⁻¹ = t := hgi hzT ⟨by simp, ht⟩ h
-    exact hz0 (inv_eq_zero.mp (sub_eq_self.mp hzt))
+    tendsto_update_comp_const_sub_inv_cobounded (hgc _ (by simp)) 0, fun hgi =>
+      ⟨injOn_update_comp_const_sub_inv hgi (fun ⟨_, hz, h⟩ => hz.2 h) t, ?_⟩⟩
+  rintro ⟨z, hz, h⟩
+  -- a point where the new coordinate takes the nonzero value `g₀ t` is not `0`
+  have hz0 : z ≠ 0 := by
+    rintro rfl
+    exact ht (h.symm.trans (update_self _ _ _))
+  rw [hG hz0] at h
+  -- the only parameter carried to `t` by the Möbius map is the point `0` sent to infinity
+  have hzt : (t : ℂ) - z⁻¹ = t :=
+    hgi ⟨(im_const_sub_inv_nonneg t).mpr hz, h ▸ ht⟩ ⟨by simp, ht⟩ h
+  exact hz0 (inv_eq_zero.mp (sub_eq_self.mp hzt))
 
 /-- A finite frontier point `w` of `U` is the image of a real parameter `t` under the inverted
 coordinate `g₀` of
