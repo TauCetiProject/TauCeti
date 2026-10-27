@@ -27,7 +27,7 @@ variable {R : Type*} [CommSemiring R]
 
 /-- The monomial `xⁱ yʲ` lies in the span of the monomials of degree `d` with nonzero binomial
 coefficient exactly when `i + j = d` and `d choose i` is nonzero. -/
-theorem X_pow_mul_X_pow_mem_restrictSupport_iff [Nontrivial R] {d i j : ℕ} :
+theorem X_pow_mul_X_pow_mem_restrictSupport_binomial_iff [Nontrivial R] {d i j : ℕ} :
     (X 0 ^ i * X 1 ^ j : MvPolynomial (Fin 2) R) ∈
         restrictSupport R {m | m 0 + m 1 = d ∧ (d.choose (m 0) : R) ≠ 0} ↔
       i + j = d ∧ (d.choose i : R) ≠ 0 := by

@@ -579,8 +579,10 @@ theorem mem_binaryFormsSocle_iff_coeff {f : MvPolynomial (Fin 2) k} :
   · refine mem_binaryFormsSocle.mpr fun m hm ↦ ?_
     have hmd := (mem_binaryForms.mp hf).add_eq_of_mem_support hm
     refine ⟨hmd, fun hc ↦ MvPolynomial.mem_support_iff.mp hm ?_⟩
-    have hm' : Finsupp.single 0 (m 0) + Finsupp.single 1 (d - m 0) = m :=
-      Finsupp.ext (Fin.forall_fin_two.mpr ⟨by simp, by simp; omega⟩)
+    have hm' : Finsupp.single 0 (m 0) + Finsupp.single 1 (d - m 0) = m := by
+      simpa only [coe_finsuppDegreeFinTwoEquiv_symm, coe_finsuppDegreeFinTwoEquiv_apply] using
+        congrArg Subtype.val ((finsuppDegreeFinTwoEquiv d).symm_apply_apply
+          ⟨m, by rwa [Finsupp.degree_eq_sum, Fin.sum_univ_two]⟩)
     exact hm' ▸ h (m 0) hc
 
 /-- The highest weight vector `yᵈ` lies in the socle. -/
@@ -649,24 +651,20 @@ for which `d choose n` is nonzero in `k`. -/
 theorem finrank_binaryFormsSocle [DecidableEq k] :
     Module.finrank k (binaryFormsSocle k d).toSubmodule =
       ((Finset.range (d + 1)).filter fun n ↦ (d.choose n : k) ≠ 0).card := by
-  -- The socle has the monomial basis indexed by the exponents `(n, d - n)` with nonzero binomial.
-  have hS : {m : Fin 2 →₀ ℕ | m 0 + m 1 = d ∧ (d.choose (m 0) : k) ≠ 0} =
-      ↑(((Finset.range (d + 1)).filter fun n ↦ (d.choose n : k) ≠ 0).image
-        fun n ↦ (Finsupp.single 0 n + Finsupp.single 1 (d - n) : Fin 2 →₀ ℕ)) := by
-    ext m
-    simp only [Set.mem_ofPred_eq, Finset.coe_image, Finset.coe_filter, Finset.mem_range,
-      Set.mem_image]
-    constructor
-    · rintro ⟨hm, hm₀⟩
-      exact ⟨m 0, ⟨by omega, hm₀⟩, Finsupp.ext (Fin.forall_fin_two.mpr ⟨by simp, by simp; omega⟩)⟩
-    · rintro ⟨n, ⟨hn, hn₀⟩, rfl⟩
-      exact ⟨by simp; omega, by simpa using hn₀⟩
-  have hinj : Function.Injective
-      fun n : ℕ ↦ (Finsupp.single 0 n + Finsupp.single 1 (d - n) : Fin 2 →₀ ℕ) :=
-    fun n n' h ↦ by simpa using DFunLike.congr_fun h 0
+  -- The socle has the monomial basis indexed by the exponents of degree `d` with nonzero
+  -- binomial, which `finsuppDegreeFinTwoEquiv` identifies with the `n ≤ d` with nonzero binomial.
+  let e : {m : Fin 2 →₀ ℕ | m 0 + m 1 = d ∧ (d.choose (m 0) : k) ≠ 0} ≃
+      {j : Fin (d + 1) // (d.choose j : k) ≠ 0} :=
+    ((Equiv.subtypeEquivRight fun m ↦ by
+        rw [Set.mem_ofPred_eq, Finsupp.degree_eq_sum, Fin.sum_univ_two]).trans
+      (Equiv.subtypeSubtypeEquivSubtypeInter (fun m : Fin 2 →₀ ℕ ↦ m.degree = d)
+        fun m ↦ (d.choose (m 0) : k) ≠ 0).symm).trans
+      ((finsuppDegreeFinTwoEquiv d).subtypeEquiv fun _ ↦ by
+        rw [coe_finsuppDegreeFinTwoEquiv_apply])
   rw [binaryFormsSocle, Comodule.polynomialBinomialSubcomodule_toSubmodule,
-    Module.finrank_eq_nat_card_basis (MvPolynomial.basisRestrictSupport k _), hS,
-    Nat.card_coe_set_eq, Set.ncard_coe_finset, Finset.card_image_of_injective _ hinj]
+    Module.finrank_eq_nat_card_basis (MvPolynomial.basisRestrictSupport k _), Nat.card_congr e,
+    Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_filter, Finset.card_filter,
+    Fin.sum_univ_eq_sum_range fun n ↦ if (d.choose n : k) ≠ 0 then 1 else 0]
 
 /-- **The binary forms of degree `d` are simple when the binomial coefficients `d choose n` are
 nonzero in `k`**: they form an atom of the lattice of subrepresentations of the polynomial

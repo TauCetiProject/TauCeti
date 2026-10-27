@@ -262,7 +262,7 @@ private theorem polynomialCoact_X_pow_mul_X_pow_mem (b : Basis (Fin 2) R V) {d i
   refine Submodule.smul_mem _ _ ⟨⟨_, ?_⟩ ⊗ₜ[R] _, rfl⟩
   -- The monomial `x^(r + s) y^(d - r - s)` has nonzero binomial coefficient, by the
   -- factorization of `C(d, i) C(i, r) C(j, s)` through `C(d, r + s)`.
-  refine (X_pow_mul_X_pow_mem_restrictSupport_iff (R := R)).mpr ⟨by omega, fun hrs ↦ ?_⟩
+  refine (X_pow_mul_X_pow_mem_restrictSupport_binomial_iff (R := R)).mpr ⟨by omega, fun hrs ↦ ?_⟩
   have key := congrArg (Nat.cast : ℕ → R) (Nat.add_choose_mul_choose_mul_choose hr' hs')
   rw [hij] at key
   push_cast at key h0
@@ -323,7 +323,7 @@ theorem X_pow_mul_X_pow_mem_polynomialBinomialSubcomodule_iff [Nontrivial R]
         polynomialBinomialSubcomodule H b d ↔ i + j = d ∧ (d.choose i : R) ≠ 0 := by
   let _ := polynomial H b
   rw [← Subcomodule.mem_toSubmodule, polynomialBinomialSubcomodule_toSubmodule]
-  exact X_pow_mul_X_pow_mem_restrictSupport_iff
+  exact X_pow_mul_X_pow_mem_restrictSupport_binomial_iff
 
 /-- A submodule contains the binomial span of degree `d` exactly when it contains each monomial
 `xⁱ yʲ` with `i + j = d` and nonzero binomial coefficient `d choose i`. -/
