@@ -40,22 +40,35 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- On a closed interval, the squared displacement of a continuously differentiable path is
 bounded by the interval length times its squared-speed integral. -/
-theorem norm_sub_sq_le_integral_norm_deriv_sq {v : ℝ → V} (hv : ContDiff ℝ 1 v)
-    {a b t : ℝ} (hab : a ≤ b) (ht : t ∈ Icc a b) :
+theorem norm_sub_sq_le_integral_norm_deriv_sq {v : ℝ → V} {a b t : ℝ}
+    (hv : ContDiffOn ℝ 1 v (Icc a b)) (hab : a ≤ b) (ht : t ∈ Icc a b) :
     ‖v t - v a‖ ^ 2 ≤ (b - a) * ∫ r in Icc a b, ‖deriv v r‖ ^ 2 := by
-  have hd : Continuous (deriv v) := hv.continuous_deriv (by norm_num)
+  obtain rfl | hab' := hab.eq_or_lt
+  · obtain rfl : t = a := le_antisymm ht.2 ht.1
+    simp
+  have hd := hv.continuousOn_derivWithin (uniqueDiffOn_Icc hab') le_rfl
+  have heq : derivWithin v (Icc a b) =ᵐ[volume.restrict (Icc a b)] deriv v := by
+    rw [← restrict_Ioo_eq_restrict_Icc]
+    filter_upwards [self_mem_ae_restrict measurableSet_Ioo] with r hr
+    exact derivWithin_of_mem_nhds (Icc_mem_nhds hr.1 hr.2)
+  have hm : AEMeasurable (fun r ↦ ‖deriv v r‖ₑ) (volume.restrict (Icc a b)) :=
+    (hd.enorm.aemeasurable measurableSet_Icc).congr (heq.fun_comp enorm)
   have hFTC : ‖v t - v a‖ₑ ≤ ∫⁻ r in Icc a b, ‖deriv v r‖ₑ :=
-    (enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc hv.contDiffOn ht.1).trans
+    (enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc
+      (hv.mono (Icc_subset_Icc_right ht.2)) ht.1).trans
       (lintegral_mono_set (Icc_subset_Icc_right ht.2))
   have hHolder : (∫⁻ r in Icc a b, ‖deriv v r‖ₑ) ^ 2 ≤
       ENNReal.ofReal (b - a) * ∫⁻ r in Icc a b, ‖deriv v r‖ₑ ^ 2 := by
     have h := rpow_lintegral_le_measure_univ_rpow_mul
-      (μ := volume.restrict (Icc a b)) hd.enorm.measurable.aemeasurable
+      (μ := volume.restrict (Icc a b)) hm
       (r := 2) (by norm_num)
     norm_num at h
     exact h
   have hi : IntegrableOn (fun r ↦ ‖deriv v r‖ ^ 2) (Icc a b) :=
-    (hd.norm.pow 2).continuousOn.integrableOn_Icc
+    (hd.norm.pow 2).integrableOn_Icc.congr (by
+      filter_upwards [heq] with r hr
+      change ‖derivWithin v (Icc a b) r‖ ^ 2 = ‖deriv v r‖ ^ 2
+      rw [hr])
   have hbound := (pow_le_pow_left' hFTC 2).trans hHolder
   have hconv : (∫⁻ r in Icc a b, ‖deriv v r‖ₑ ^ 2) =
       ENNReal.ofReal (∫ r in Icc a b, ‖deriv v r‖ ^ 2) := by
@@ -79,7 +92,7 @@ the unit interval. The constant depends only on the two subspaces. -/
 theorem exists_norm_sq_le_mul_integral_norm_deriv_sq_of_disjoint
     (L₀ L₁ : Submodule ℝ V) [FiniteDimensional ℝ L₀] [FiniteDimensional ℝ L₁]
     (hL : Disjoint L₀ L₁) :
-    ∃ C > 0, ∀ (v : ℝ → V), ContDiff ℝ 1 v → v 0 ∈ L₀ → v 1 ∈ L₁ →
+    ∃ C > 0, ∀ (v : ℝ → V), ContDiffOn ℝ 1 v (Icc 0 1) → v 0 ∈ L₀ → v 1 ∈ L₁ →
       ∀ t ∈ Icc (0 : ℝ) 1,
         ‖v t‖ ^ 2 ≤ C * ∫ r in Icc (0 : ℝ) 1, ‖deriv v r‖ ^ 2 := by
   let f : L₀ × L₁ →ₗ[ℝ] V :=
@@ -147,7 +160,7 @@ theorem exists_integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_disjoint
       have hp : HasDerivAt (fun r : ℝ ↦ ((s, r) : ℝ × ℝ)) (0, 1) t :=
         (hasDerivAt_const t s).prodMk (hasDerivAt_id t)
       exact ((hu.differentiable one_ne_zero (s, t)).hasFDerivAt.comp_hasDerivAt t hp).deriv
-    have htbound := hpath (fun t ↦ u (s, t)) hv (hbottom s) (htop s)
+    have htbound := hpath (fun t ↦ u (s, t)) hv.contDiffOn (hbottom s) (htop s)
     simp_rw [hd] at htbound
     calc (∫ t in Icc (0 : ℝ) 1, ‖u (s, t)‖ ^ 2) ≤
         ∫ _t in Icc (0 : ℝ) 1,
