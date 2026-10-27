@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicGeometry.AffineSpace
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.Frobenius.Etale
 import Mathlib.Algebra.Field.ULift
-import Mathlib.Data.ZMod.QuotientRing
 import TauCeti.AlgebraicGeometry.Frobenius.Iterate
 import TauCeti.RingTheory.MvPolynomial.Expand
 
@@ -65,10 +64,7 @@ variable (σ : Type u) {S : Scheme.{u}} {p : ℕ} [Fact p.Prime]
 private noncomputable def toSpecPrimeField (hS : (p : Γ(S, ⊤)) = 0) :
     S ⟶ Spec (.of (ULift.{u} (ZMod p))) :=
   S.toSpecΓ ≫ Spec.map (CommRingCat.ofHom <|
-    (Ideal.Quotient.lift (Ideal.span {(p : ℤ)}) (Int.castRingHom Γ(S, ⊤)) fun a ha ↦ by
-      obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton'.1 ha
-      simp [hS]).comp
-    ((Int.quotientSpanNatEquivZMod p).symm.toRingHom.comp ULift.ringEquiv.toRingHom))
+    (ZMod.castHom (ringChar.dvd hS) Γ(S, ⊤)).comp ULift.ringEquiv.toRingHom)
 
 /-- The absolute Frobenius of `Spec 𝔽_p` is the identity. -/
 private theorem frobenius_spec_primeField :

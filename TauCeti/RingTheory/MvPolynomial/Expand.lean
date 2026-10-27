@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Flat.Rank
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.MvPolynomial.Expand
 public import Mathlib.RingTheory.RingHom.Flat
+public import TauCeti.RingTheory.RingHom.Basis
 
 /-!
 # Finiteness and freeness of `MvPolynomial.expand`
@@ -41,6 +42,8 @@ in `S[X_i]`.
 * `TauCeti.MvPolynomial.finite_expand`: `expand n` is a finite ring map for `0 < n`.
 * `TauCeti.MvPolynomial.exists_pow_eq_map_expand`: `(map f) (expand (p ^ n) g)` is a
   `p ^ n`-th power once the coefficients of `g` have `p ^ n`-th roots in `S`.
+* `TauCeti.MvPolynomial.basisExpand`: the monomials with exponents below `n` are a basis of
+  `R[X_i]` over itself along `expand n`, for `0 < n`.
 * `TauCeti.MvPolynomial.flat_expand`: `expand n` is flat for `0 < n`.
 * `TauCeti.MvPolynomial.finitePresentation_expand`: `expand n` is of finite presentation for
   finitely many variables.
@@ -181,41 +184,6 @@ theorem MvPolynomial.exists_pow_eq_map_expand {σ R S : Type*} [CommSemiring R] 
   rw [← MvPolynomial.map_iterateFrobenius_expand (p := p) _ n, MvPolynomial.map_expand, hmap,
     ← MvPolynomial.map_expand]
 
-section Generic
-
-/-! The lemmas of this section are stated for a ring map `φ : A →+* B` between two independent
-types. Applied to the endomorphism `expand n`, this keeps the module structure of `φ.toAlgebra`
-apart from the multiplication of `MvPolynomial σ R` on itself, which instance search would
-otherwise prefer; the two structures are not defeq. -/
-
-variable {A B ι : Type*} [CommRing A] [CommRing B] (φ : A →+* B) (L : B ≃+ (ι →₀ A))
-  (hL : ∀ a b, L (φ a * b) = a • L b)
-
-include hL
-
-/-- The basis of `B` over `A` along `φ` whose coordinates are given by `L`. -/
-private noncomputable def basisOfAddEquiv : letI := φ.toAlgebra; Module.Basis ι A B :=
-  letI := φ.toAlgebra
-  .ofRepr { L with
-    map_smul' a b := by simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using hL a b }
-
-/-- `φ` is flat when `L` gives coordinates of `B` over `A` along `φ`. -/
-private theorem flat_of_addEquiv : φ.Flat :=
-  letI := φ.toAlgebra
-  have := Module.Free.of_basis (basisOfAddEquiv φ L hL)
-  Module.Flat.of_free
-
-/-- `φ` has rank `Nat.card ι` everywhere when `L` gives coordinates of `B` over `A` along `φ`. -/
-private theorem finrank_of_addEquiv : φ.finrank = fun _ ↦ Nat.card ι := by
-  ext x
-  let := φ.toAlgebra
-  have := Module.Free.of_basis (basisOfAddEquiv φ L hL)
-  have : Nontrivial A := x.nontrivial
-  rw [RingHom.finrank, Module.rankAtStalk_eq_finrank_of_free,
-    Module.finrank_eq_nat_card_basis (basisOfAddEquiv φ L hL), Pi.natCast_apply, Nat.cast_id]
-
-end Generic
-
 namespace MvPolynomial
 
 open _root_.MvPolynomial
@@ -270,6 +238,24 @@ private theorem _root_.MvPolynomial.expandRepr_expand_mul (a b : MvPolynomial σ
     | add b₁ b₂ h₁ h₂ => rw [mul_add, map_add, h₁, h₂, map_add, smul_add]
   | add a₁ a₂ h₁ h₂ => rw [map_add, add_mul, map_add, h₁, h₂, add_smul]
 
+variable (σ R n) in
+/-- **The monomial basis along `expand n`.** `R[X_i]` is free over itself along
+`X_i ↦ X_i ^ n`, with basis the monomials whose exponents are all below `n`
+(`TauCeti.MvPolynomial.basisExpand_apply`). -/
+noncomputable def basisExpand :
+    @Module.Basis (σ →₀ Fin n) (MvPolynomial σ R) (MvPolynomial σ R) _ _
+      (expand n : MvPolynomial σ R →ₐ[R] _).toRingHom.toAlgebra.toModule :=
+  RingHom.basisOfAddEquiv _ (expandRepr σ R n) expandRepr_expand_mul
+
+/-- The basis vector of `basisExpand` at `β` is the monomial with exponents `β`. -/
+@[simp]
+theorem basisExpand_apply (β : σ →₀ Fin n) :
+    basisExpand σ R n β = monomial (β.mapRange Fin.val (Fin.val_zero n)) 1 := by
+  have hβ : expDivMod σ n (β.mapRange Fin.val (Fin.val_zero n)) = (β, 0) :=
+    Prod.ext (by ext i; simp [expDivMod]) (by ext i; simp [expDivMod, Nat.div_eq_of_lt (β i).isLt])
+  rw [basisExpand, RingHom.basisOfAddEquiv_apply, AddEquiv.symm_apply_eq, expandRepr_monomial, hβ,
+    ← C_apply, C_1]
+
 end Repr
 
 variable {σ R : Type*} [CommRing R] {n : ℕ}
@@ -278,7 +264,7 @@ variable {σ R : Type*} [CommRing R] {n : ℕ}
 `X_i ↦ X_i ^ n`. -/
 theorem flat_expand (hn : 0 < n) : (expand n : MvPolynomial σ R →ₐ[R] _).toRingHom.Flat :=
   have : NeZero n := ⟨hn.ne'⟩
-  flat_of_addEquiv _ _ expandRepr_expand_mul
+  RingHom.flat_of_addEquiv _ _ expandRepr_expand_mul
 
 /-- `MvPolynomial.expand n` is of finite presentation for finitely many variables. -/
 theorem finitePresentation_expand [Finite σ] (n : ℕ) :
@@ -293,8 +279,8 @@ of `R[X_i]` over `R[X_i]` along `X_i ↦ X_i ^ n` is `n ^ Nat.card σ` at every 
 theorem finrank_expand [Finite σ] (hn : 0 < n) :
     (expand n : MvPolynomial σ R →ₐ[R] _).toRingHom.finrank = fun _ ↦ n ^ Nat.card σ := by
   have : NeZero n := ⟨hn.ne'⟩
-  rw [finrank_of_addEquiv _ _ expandRepr_expand_mul, Nat.card_congr Finsupp.equivFunOnFinite,
-    Nat.card_fun, Nat.card_fin]
+  rw [RingHom.finrank_of_addEquiv _ _ expandRepr_expand_mul,
+    Nat.card_congr Finsupp.equivFunOnFinite, Nat.card_fun, Nat.card_fin]
 
 end MvPolynomial
 
