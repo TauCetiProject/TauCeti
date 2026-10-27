@@ -16,6 +16,7 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 import Mathlib.Tactic.Module
 import TauCeti.GroupTheory.Perm.Inversion
 import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.LinearAlgebra.Alternating.Alternatization
 
 /-!
 # Paired wedges of continuous alternating maps
@@ -26,6 +27,8 @@ factorials. It provides bilinearity and pullback compatibility for general topol
 spaces, including the flip law. A pairing that turns multiplication by one scalar into
 multiplication by another, such as a complex-bilinear pairing, makes the paired wedge semilinear
 in the same way, and the paired wedge is natural for coefficient maps intertwining two pairings.
+The paired wedge of two alternatizations is the alternatization of the paired product of the
+underlying multilinear maps.
 Joint continuity of each pairing is supplied explicitly; no norm is required on the domain or
 coefficients. The output coefficients require only continuity of multiplication by each fixed
 scalar. The flip law assumes this property for the second input coefficient space as well.
@@ -168,6 +171,26 @@ theorem pairedWedge_toAlternatingMap {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[
   simp only [ContinuousAlternatingMap.coe_toAlternatingMap, pairedWedge_apply,
     _root_.smul_apply, MultilinearMap.alternatization_apply,
     MultilinearMap.domDomCongr_apply, ContinuousAlternatingMap.wedgeWithUnalternated_apply]
+
+/-- **The paired wedge of alternatizations is the alternatization of the paired product**: if `φ`
+and `ψ` are the alternatizations of `f` and `g`, then their paired wedge is the alternatization of
+`v ↦ μ (f (v ∘ Fin.castAdd l)) (g (v ∘ Fin.natAdd k))`. The factorials produced by alternatizing
+twice cancel the determinant normalization. -/
+theorem pairedWedge_toAlternatingMap_of_eq_alternatization {k l : ℕ}
+    (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
+    {φ : E [⋀^Fin k]→L[ℝ] F₁} {ψ : E [⋀^Fin l]→L[ℝ] F₂}
+    {f : MultilinearMap ℝ (fun _ : Fin k => E) F₁} {g : MultilinearMap ℝ (fun _ : Fin l => E) F₂}
+    (hf : φ.toAlternatingMap = f.alternatization) (hg : ψ.toAlternatingMap = g.alternatization) :
+    (pairedWedge μ hμ φ ψ).toAlternatingMap =
+      ((pairingLinear μ).compMultilinearMap
+        ((f.domCoprod g).domDomCongr finSumFinEquiv)).alternatization := by
+  rw [pairedWedge_toAlternatingMap, wedgeWithUnalternated_def,
+    LinearMap.compMultilinearMap_alternatization, MultilinearMap.alternatization_domDomCongr,
+    MultilinearMap.domCoprod_alternatization_eq, hf, hg, ← MultilinearMap.domCoprod_alternatization,
+    LinearMap.compMultilinearMap_alternatization, MultilinearMap.alternatization_domDomCongr,
+    Fintype.card_fin, Fintype.card_fin, AlternatingMap.domDomCongr_smul,
+    LinearMap.compAlternatingMap_smul, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul, Nat.cast_mul,
+    inv_mul_cancel₀ (by positivity), one_smul]
 
 /-- Precomposing both inputs of a paired wedge by a continuous linear map is the same as
 precomposing the resulting wedge. -/

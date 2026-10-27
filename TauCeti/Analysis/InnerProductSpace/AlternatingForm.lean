@@ -9,7 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
-import TauCeti.LinearAlgebra.Alternating.Alternatization
 
 /-!
 # Alternating forms on a real inner product space
@@ -96,36 +95,23 @@ private theorem alternatingFormEquiv_ιMulti_toAlternatingMap {k : ℕ} (u : Fin
   ext v
   simp [inner_ιMulti_ιMulti, Matrix.det_apply, MultilinearMap.alternatization_apply]
 
-/-- The wedge-product formula on wedges of vectors, where both sides are alternatizations of
-products of covectors and `MultilinearMap.domCoprod_alternatization_eq` absorbs the factorials. -/
+/-- The wedge-product formula on wedges of vectors: both sides are alternatizations of products
+of covectors, by `ContinuousAlternatingMap.pairedWedge_toAlternatingMap_of_eq_alternatization`. -/
 private theorem alternatingFormEquiv_ιMulti_append {k l : ℕ} (u : Fin k → V) (w : Fin l → V) :
     alternatingFormEquiv V (k + l) (ιMulti ℝ (k + l) (Fin.append u w)) =
       (alternatingFormEquiv V k (ιMulti ℝ k u)).wedge
         (alternatingFormEquiv V l (ιMulti ℝ l w)) := by
-  classical
   apply ContinuousAlternatingMap.toAlternatingMap_injective
-  rw [ContinuousAlternatingMap.wedge_def, ContinuousAlternatingMap.pairedWedge_toAlternatingMap,
-    ContinuousAlternatingMap.wedgeWithUnalternated_def,
-    LinearMap.compMultilinearMap_alternatization, MultilinearMap.alternatization_domDomCongr,
-    MultilinearMap.domCoprod_alternatization_eq, alternatingFormEquiv_ιMulti_toAlternatingMap,
-    alternatingFormEquiv_ιMulti_toAlternatingMap, alternatingFormEquiv_ιMulti_toAlternatingMap,
-    ← MultilinearMap.domCoprod_alternatization, Fintype.card_fin, Fintype.card_fin]
+  rw [ContinuousAlternatingMap.wedge_def,
+    ContinuousAlternatingMap.pairedWedge_toAlternatingMap_of_eq_alternatization _ _
+      (alternatingFormEquiv_ιMulti_toAlternatingMap u)
+      (alternatingFormEquiv_ιMulti_toAlternatingMap w),
+    alternatingFormEquiv_ιMulti_toAlternatingMap]
   -- The product of the covectors of `u` and of `w`, read on `Fin (k + l)`, is the product of the
   -- covectors of the concatenation.
-  have key :
-      (ContinuousAlternatingMap.pairingLinear (ContinuousLinearMap.mul ℝ ℝ)).compMultilinearMap
-        ((((MultilinearMap.mkPiAlgebra ℝ (Fin k) ℝ).compLinearMap fun i ↦ innerₗ V (u i)).domCoprod
-          ((MultilinearMap.mkPiAlgebra ℝ (Fin l) ℝ).compLinearMap
-            fun i ↦ innerₗ V (w i))).domDomCongr finSumFinEquiv) =
-      (MultilinearMap.mkPiAlgebra ℝ (Fin (k + l)) ℝ).compLinearMap
-        fun i ↦ innerₗ V (Fin.append u w i) := by
-    ext v
-    simp [Fin.prod_univ_add]
-  rw [← key, LinearMap.compMultilinearMap_alternatization,
-    MultilinearMap.alternatization_domDomCongr]
+  congr 1
   ext v
-  simp
-  field_simp
+  simp [Fin.prod_univ_add]
 
 /-- **The exterior product is the wedge product of forms**: the form of `x ∧ y` is the wedge of
 the forms of `x ∈ ⋀ᵏ V` and `y ∈ ⋀ˡ V`, with the normalization of
