@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.MeasureTheory.Integral.TorusIntegral
+public import TauCeti.MeasureTheory.Integral.Torus.ContinuousMap
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -205,54 +205,6 @@ section Analytic
 
 variable {z : Fin n → ℂ} {R : ℝ}
 
-/-- The parametrization of the torus `∏ sphere (z i) R` by angles. -/
-private noncomputable def torusParam (z : Fin n → ℂ) (hR : 0 ≤ R) :
-    C(Fin n → ℝ, (i : Fin n) → sphere (z i) R) :=
-  ⟨fun θ i => ⟨torusMap z (fun _ => R) θ i, torusMap_mem_pi_sphere (fun _ => hR) θ i trivial⟩,
-    continuous_pi fun i =>
-      ((continuous_apply i).comp (continuous_torusMap z fun _ => R)).subtype_mk _⟩
-
-/-- Integration over the torus `∏ sphere (z i) R` against a fixed continuous function `F`, as a
-continuous linear functional on the continuous functions on the torus. -/
-private noncomputable def torusIntegralCLM (z : Fin n → ℂ) (hR : 0 ≤ R)
-    (F : C((i : Fin n) → sphere (z i) R, E)) : C((i : Fin n) → sphere (z i) R, ℂ) →L[ℂ] E :=
-  LinearMap.mkContinuous
-    { toFun := fun g => ∫ θ in Icc (0 : Fin n → ℝ) (fun _ => 2 * π),
-        (∏ i : Fin n, (R : ℂ) * exp (θ i * I) * I) •
-          (g (torusParam z hR θ) • F (torusParam z hR θ))
-      map_add' := fun g h => by
-        simp only [ContinuousMap.add_apply, add_smul, smul_add]
-        exact integral_add (Continuous.integrableOn_Icc (by fun_prop))
-          (Continuous.integrableOn_Icc (by fun_prop))
-      map_smul' := fun a g => by
-        simp only [ContinuousMap.smul_apply, smul_eq_mul, RingHom.id_apply, mul_smul,
-          smul_comm _ a]
-        exact integral_smul a _ }
-    (R ^ n * ‖F‖ * volume.real (Icc (0 : Fin n → ℝ) fun _ => 2 * π)) fun g => by
-      simp only [LinearMap.coe_mk, AddHom.coe_mk]
-      calc _ ≤ R ^ n * ‖F‖ * ‖g‖ * volume.real (Icc (0 : Fin n → ℝ) fun _ => 2 * π) :=
-            norm_setIntegral_le_of_norm_le_const measure_Icc_lt_top fun θ _ => by
-              simp only [norm_smul, norm_prod, norm_mul, norm_real, norm_exp_ofReal_mul_I,
-                norm_I, mul_one, Real.norm_eq_abs, abs_of_nonneg hR, Finset.prod_const,
-                Finset.card_univ, Fintype.card_fin]
-              have h : ‖g (torusParam z hR θ)‖ * ‖F (torusParam z hR θ)‖ ≤ ‖F‖ * ‖g‖ := by
-                rw [mul_comm ‖F‖]
-                exact mul_le_mul (g.norm_coe_le_norm _) (F.norm_coe_le_norm _) (norm_nonneg _)
-                  (norm_nonneg _)
-              nlinarith [mul_le_mul_of_nonneg_left h (pow_nonneg hR n)]
-        _ = _ := by ring
-
-/-- `torusIntegralCLM` computes the torus integral of any functions agreeing with its arguments on
-the torus. -/
-private theorem torusIntegralCLM_apply (hR : 0 ≤ R) {F : C((i : Fin n) → sphere (z i) R, E)}
-    {g : C((i : Fin n) → sphere (z i) R, ℂ)} {f : (Fin n → ℂ) → E} {G : (Fin n → ℂ) → ℂ}
-    (hF : ∀ x, F x = f fun i => x i) (hG : ∀ x, g x = G fun i => x i) :
-    torusIntegralCLM z hR F g = ∯ ζ in T(z, fun _ => R), G ζ • f ζ := by
-  simp only [torusIntegralCLM, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk,
-    torusIntegral, hF, hG]
-  -- The coordinates of `torusParam z hR θ` are `torusMap z (fun _ => R) θ` by definition.
-  rfl
-
 /-- A function of `n` complex variables which is continuous on a closed polydisc and separately
 complex differentiable in each variable is analytic at the center of the polydisc. -/
 private theorem analyticAt_of_continuousOn_closedBall_pi [CompleteSpace E] {f : (Fin n → ℂ) → E}
@@ -262,25 +214,35 @@ private theorem analyticAt_of_continuousOn_closedBall_pi [CompleteSpace E] {f : 
     AnalyticAt ℂ f z := by
   rw [closedBall_pi z hR.le] at hc hd
   -- On the torus `X = ∏ sphere (z i) R`, the Cauchy kernel is a unit of `C(X, ℂ)` at `w = z`.
-  let F : C((i : Fin n) → sphere (z i) R, E) :=
+  let F : C((i : Fin n) → sphere (z i) |R|, E) :=
     ⟨fun x => f fun i => x i, hc.comp_continuous (by fun_prop) fun x i _ =>
-      sphere_subset_closedBall (x i).2⟩
-  let K : (Fin n → ℂ) → C((i : Fin n) → sphere (z i) R, ℂ) := fun w =>
+      sphere_subset_closedBall (by simpa only [abs_of_pos hR] using (x i).2)⟩
+  let K : (Fin n → ℂ) → C((i : Fin n) → sphere (z i) |R|, ℂ) := fun w =>
     ∏ i, (⟨fun x => (x i : ℂ), by fun_prop⟩ - algebraMap ℂ _ (w i))
   have hKapply : ∀ w x, K w x = ∏ i, ((x i : ℂ) - w i) := fun w x => by
     simp [K, ContinuousMap.prod_apply]
   have hK : AnalyticAt ℂ K z := by
     refine Finset.analyticAt_fun_prod _ fun i _ => analyticAt_const.sub ?_
-    exact ((algebraMapCLM ℂ C((i : Fin n) → sphere (z i) R, ℂ)).comp
+    exact ((algebraMapCLM ℂ C((i : Fin n) → sphere (z i) |R|, ℂ)).comp
       (ContinuousLinearMap.proj i)).analyticAt z
   have hunit : IsUnit (K z) := (ContinuousMap.isUnit_iff_forall_ne_zero _).2 fun x => by
     rw [hKapply]
-    exact Finset.prod_ne_zero_iff.2 fun i _ => sub_ne_zero.2 (ne_of_mem_sphere (x i).2 hR.ne')
+    exact Finset.prod_ne_zero_iff.2 fun i _ =>
+      sub_ne_zero.2 (ne_of_mem_sphere (x i).2 (abs_pos.mpr hR.ne').ne')
   have hinv : AnalyticAt ℂ (fun w => Ring.inverse (K w)) z := by
     have h := analyticAt_inverse (𝕜 := ℂ) hunit.unit
     rw [hunit.unit_spec] at h
     exact h.comp hK
-  refine ((((torusIntegralCLM z hR.le F).analyticAt _).comp hinv).const_smul
+  -- Multiply the scalar kernel by the fixed boundary values before integrating.
+  let M : C((i : Fin n) → sphere (z i) |R|, ℂ) →L[ℂ]
+      C((i : Fin n) → sphere (z i) |R|, E) :=
+    { toFun := fun g => g • F
+      map_add' := fun g h => by ext x; simp [add_smul]
+      map_smul' := fun a g => by ext x; simp [mul_smul]
+      cont := ContinuousMap.continuous_of_continuous_uncurry _
+        (continuous_eval.smul (F.continuous.comp continuous_snd)) }
+  let J := (torusIntegralCLM (E := E) z (fun _ => R)).comp M
+  refine (((J.analyticAt _).comp hinv).const_smul
     (c := ((2 * π * I) ^ n)⁻¹)).congr ?_
   -- Near `z`, the kernel is still a unit, and the Cauchy formula recovers `f`.
   filter_upwards [hK.continuousAt.preimage_mem_nhds (Units.isOpen.mem_nhds hunit),
@@ -290,8 +252,14 @@ private theorem analyticAt_of_continuousOn_closedBall_pi [CompleteSpace E] {f : 
     refine eq_inv_of_mul_eq_one_left ?_
     rw [← hKapply, ← ContinuousMap.mul_apply, Ring.inverse_mul_cancel _ hw,
       ContinuousMap.one_apply]
-  rw [Pi.smul_apply, Function.comp_apply,
-    torusIntegralCLM_apply (G := fun ζ => (∏ i, (ζ i - w i))⁻¹) hR.le (fun _ => rfl) hinvw,
+  have hJ : J (Ring.inverse (K w)) =
+      ∯ ζ in T(z, fun _ => R), (∏ i, (ζ i - w i))⁻¹ • f ζ := by
+    apply torusIntegralCLM_eq_torusIntegral
+    intro x
+    simp only [M, LinearMap.coe_mk, AddHom.coe_mk,
+      ContinuousMap.smul_apply', hinvw]
+    rfl
+  rw [Pi.smul_apply, Function.comp_apply, hJ,
     hc.torusIntegral_prod_sub_inv_smul hd hwb, smul_smul,
     inv_mul_cancel₀ (pow_ne_zero _ two_pi_I_ne_zero), one_smul]
 
