@@ -259,7 +259,7 @@ private theorem expandRepr_monomial (d : σ →₀ ℕ) (r : R) :
   simp [expandRepr, ← single_eq_monomial]
 
 /-- The coordinates over the image of `expand n` are linear over that image. -/
-private theorem expandRepr_expand_mul (a b : MvPolynomial σ R) :
+private theorem _root_.MvPolynomial.expandRepr_expand_mul (a b : MvPolynomial σ R) :
     expandRepr σ R n (expand n a * b) = a • expandRepr σ R n b := by
   induction a using MvPolynomial.induction_on' with
   | monomial γ r =>
