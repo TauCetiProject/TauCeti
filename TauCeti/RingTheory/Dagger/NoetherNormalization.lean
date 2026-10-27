@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.Noetherian
-public import Mathlib.RingTheory.Finiteness.Basic
-import Mathlib.RingTheory.Polynomial.Basic
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import TauCeti.RingTheory.Ideal.Quotient.Radical
 
@@ -47,59 +45,6 @@ universe u v w
 variable {K : Type u} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 local notation "W " σ:max => washnitzerAlgebra σ K
-local notation "Tate " σ:max => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
-
-/-- Division makes the polynomials of bounded degree surject onto an algebra in which a
-distinguished series vanishes. -/
-private theorem finite_comp_optionC_of_surjective {σ : Type*} {A : Type*}
-    [CommRing A] [Algebra K A] {π : W (Option σ) →ₐ[K] A}
-    (hπ : Function.Surjective π) {g : W (Option σ)} {s : ℕ}
-    (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries (Tate σ)))
-    (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries (Tate σ))))
-    (hzero : π g = 0) : (π.comp (washnitzerAlgebra.optionC (R := K))).Finite := by
-  let : Algebra (W σ) A := (π.comp (washnitzerAlgebra.optionC (R := K))).toRingHom.toAlgebra
-  let ev : Polynomial (W σ) →ₐ[W σ] A := Polynomial.aeval (π (X (Option σ) K none))
-  let φ : Polynomial.degreeLT (W σ) s →ₗ[W σ] A :=
-    ev.toLinearMap ∘ₗ (Polynomial.degreeLT (W σ) s).subtype
-  have hev (r : Polynomial (W σ)) :
-      π (r.eval₂ (washnitzerAlgebra.optionC (R := K)).toRingHom (X (Option σ) K none)) = ev r := by
-    simpa only [ev, Polynomial.aeval_def, RingHom.algebraMap_toAlgebra,
-      AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, AlgHom.coe_toRingHom] using
-      Polynomial.hom_eval₂ (p := r) (f := (washnitzerAlgebra.optionC (R := K)).toRingHom)
-        (g := π.toRingHom) (x := X (Option σ) K none)
-  have hφ : Function.Surjective φ := by
-    intro a
-    obtain ⟨f, rfl⟩ := hπ a
-    obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
-    have hf : f = q * g + r.eval₂ (washnitzerAlgebra.optionC (R := K)).toRingHom
-        (X (Option σ) K none) :=
-      optionSeries_injective (by simpa using hqr.symm)
-    refine ⟨⟨r, Polynomial.mem_degreeLT.mpr hr⟩, ?_⟩
-    simpa [hf, hzero, hev, φ] using (hev r).symm
-  have : Module.Finite (W σ) (Polynomial.degreeLT (W σ) s) :=
-    Module.Finite.equiv (Polynomial.degreeLTEquiv (W σ) s).symm
-  exact Module.Finite.of_surjective φ hφ
-
-/-- A finite map annihilating a distinguished series is already finite over the algebra in
-one fewer variable. The distinguished coefficient must be a unit; no reducedness or
-surjectivity of the map is required. -/
-theorem washnitzerAlgebra.finite_comp_optionC_of_isDistinguished {σ : Type*} {A : Type*}
-    [CommRing A] [Algebra K A] {g : W (Option σ)} {s : ℕ}
-    (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries (Tate σ)))
-    (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries (Tate σ))))
-    {π : W (Option σ) →ₐ[K] A} (hπ : π.Finite) (hzero : π g = 0) :
-    (π.comp (washnitzerAlgebra.optionC (R := K))).Finite := by
-  have hsmall : (π.rangeRestrict.comp (washnitzerAlgebra.optionC (R := K))).Finite :=
-    finite_comp_optionC_of_surjective π.rangeRestrict_surjective hg hu (Subtype.ext hzero)
-  have hval : π.range.val.Finite := by
-    apply AlgHom.Finite.of_comp_finite (f := π.rangeRestrict)
-    rwa [AlgHom.val_comp_rangeRestrict]
-  have hfin := hval.comp hsmall
-  rwa [← AlgHom.comp_assoc, AlgHom.val_comp_rangeRestrict] at hfin
 
 /-- A noninjective finite map admits a finite map from the algebra in one fewer variable,
 after a change of variables. -/
@@ -126,13 +71,7 @@ private theorem exists_finite_injective_of_injective {σ : Type*} [Finite σ]
     ∃ (n : ℕ) (g : W (Fin n) →ₐ[K] A),
       n ≤ Nat.card σ ∧ Function.Injective g ∧ g.Finite := by
   let := Fintype.ofFinite σ
-  let e := (Fintype.equivFin σ).symm
-  let r : W (Fin (Fintype.card σ)) ≃ₐ[K] W σ := AlgEquiv.ofRingEquiv
-    (f := (MvPowerSeries.renameEquiv K e).toRingEquiv.restrict _ _ fun f ↦ by
-      simp only [mem_washnitzerAlgebra, AlgEquiv.coe_toRingEquiv]
-      exact exists_congr fun ρ ↦ and_congr_right fun _ ↦
-        (isRestricted_renameEquiv_iff (R := K) (c := fun _ ↦ ρ) e).symm)
-    fun k ↦ Subtype.ext (rename_C e k)
+  let r := washnitzerAlgebra.renameAlgEquiv (R := K) (Fintype.equivFin σ).symm
   exact ⟨_, π.comp r.toAlgHom, by simp [Nat.card_eq_fintype_card],
     hinj.comp r.injective, hπ.comp (AlgHom.Finite.of_surjective _ r.surjective)⟩
 
@@ -141,7 +80,7 @@ algebra in finitely many variables, it is finite over an injectively embedded Mo
 algebra with no more variables. In particular a surjective presentation suffices, by
 `AlgHom.Finite.of_surjective`. Finiteness uses the algebra structure induced by the
 displayed map. -/
-theorem exists_finite_injective_washnitzer {σ : Type v} [Finite σ]
+theorem washnitzerAlgebra.exists_finite_injective {σ : Type v} [Finite σ]
     {A : Type w} [CommRing A] [Algebra K A] [Nontrivial A]
     {π : W σ →ₐ[K] A} (hπ : π.Finite) :
     ∃ (n : ℕ) (g : W (Fin n) →ₐ[K] A),
@@ -158,25 +97,15 @@ theorem exists_finite_injective_washnitzer {σ : Type v} [Finite σ]
         n ≤ Nat.card σ ∧ Function.Injective g ∧ g.Finite)
     (fun {α β} e ih A _ _ _ π hπ ↦ ?_) (fun A _ _ _ π hπ ↦ ?_)
     (fun {σ} _ ih A _ _ _ π hπ ↦ ?_) σ
-  · -- Restrict formal variable renaming to the overconvergent subalgebras.
-    let r : W α ≃ₐ[K] W β := AlgEquiv.ofRingEquiv
-      (f := (MvPowerSeries.renameEquiv K e).toRingEquiv.restrict _ _ fun f ↦ by
-        simp only [mem_washnitzerAlgebra, AlgEquiv.coe_toRingEquiv]
-        exact exists_congr fun ρ ↦ and_congr_right fun _ ↦
-          (isRestricted_renameEquiv_iff (R := K) (c := fun _ ↦ ρ) e).symm)
-      fun k ↦ Subtype.ext (rename_C e k)
+  · let r := washnitzerAlgebra.renameAlgEquiv (R := K) e
     obtain ⟨n, g, hn, hg, hfin⟩ := ih A (π.comp r.toAlgHom)
       (hπ.comp (AlgHom.Finite.of_surjective _ r.surjective))
     exact ⟨n, g, hn.trans_eq (Nat.card_congr e), hg, hfin⟩
   · -- In zero variables the source is the coefficient field, so the map is injective.
     have hinj : Function.Injective π := by
       intro a b hab
-      obtain ⟨x, hx⟩ := C_surjective (σ := PEmpty) (a : MvPowerSeries PEmpty K)
-      obtain ⟨y, hy⟩ := C_surjective (σ := PEmpty) (b : MvPowerSeries PEmpty K)
-      have ha : algebraMap K (W PEmpty) x = a :=
-        Subtype.ext (by simpa [MvPowerSeries.algebraMap_apply] using hx)
-      have hb : algebraMap K (W PEmpty) y = b :=
-        Subtype.ext (by simpa [MvPowerSeries.algebraMap_apply] using hy)
+      obtain ⟨x, ha⟩ := washnitzerAlgebra.algebraMap_surjective a
+      obtain ⟨y, hb⟩ := washnitzerAlgebra.algebraMap_surjective b
       rw [← ha, ← hb, π.commutes, π.commutes] at hab
       rw [← ha, ← hb, (FaithfulSMul.algebraMap_injective K A) hab]
     exact exists_finite_injective_of_injective hπ hinj
@@ -192,7 +121,7 @@ theorem washnitzerAlgebra.finite_of_isField {σ : Type*} [Finite σ]
     {A : Type*} [CommRing A] [Algebra K A] {π : W σ →ₐ[K] A}
     (hπ : π.Finite) (hA : IsField A) : Module.Finite K A := by
   have := hA.nontrivial
-  obtain ⟨n, g, _, hg, hfin⟩ := exists_finite_injective_washnitzer hπ
+  obtain ⟨n, g, _, hg, hfin⟩ := washnitzerAlgebra.exists_finite_injective hπ
   let : Algebra (W (Fin n)) A := g.toRingHom.toAlgebra
   have : Module.Finite (W (Fin n)) A := hfin
   have : Algebra.IsIntegral (W (Fin n)) A := Algebra.IsIntegral.of_finite _ _
@@ -212,9 +141,8 @@ theorem washnitzerAlgebra.finite_of_isField {σ : Type*} [Finite σ]
     simp [x, coe_X] at hu
   subst n
   have : Module.Finite K (W (Fin 0)) :=
-    Module.Finite.of_surjective (Algebra.linearMap K (W (Fin 0))) fun f ↦ by
-      obtain ⟨c, hc⟩ := C_surjective (σ := Fin 0) (f : MvPowerSeries (Fin 0) K)
-      exact ⟨c, Subtype.ext (by simpa [MvPowerSeries.algebraMap_apply] using hc)⟩
+    Module.Finite.of_surjective (Algebra.linearMap K (W (Fin 0)))
+      washnitzerAlgebra.algebraMap_surjective
   have : IsScalarTower K (W (Fin 0)) A := IsScalarTower.of_algebraMap_eq fun k ↦ (g.commutes k).symm
   exact Module.Finite.trans (W (Fin 0)) A
 
