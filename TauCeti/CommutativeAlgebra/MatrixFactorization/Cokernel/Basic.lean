@@ -8,6 +8,7 @@ module
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Kernels
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.CategoryTheory.Linear.FullSubcategory
 
 /-!
@@ -15,7 +16,8 @@ public import TauCeti.CategoryTheory.Linear.FullSubcategory
 
 Taking the cokernel of the even-to-odd differential gives an additive functor to finitely
 generated modules over the coefficient ring. The projection and its universal property retain
-the ordinary categorical cokernel API. The functor uses Mathlib's
+the ordinary categorical cokernel API; on elements, the projection is surjective with kernel the
+image of `d₀`. The functor uses Mathlib's
 `CategoryTheory.Limits.coker` on the arrows supplied by the differential.
 
 Composing scalar extension with this functor gives cokernels over a target ring with arbitrary
@@ -111,6 +113,18 @@ instance cokernelπ_epi (X : MatrixFactorization S w) :
   epi_of_isColimit_cofork
     (c := CokernelCofork.ofπ (cokernelπ X) (d₀_cokernelπ X))
     (isColimitCokernelπ X)
+
+/-- The cokernel projection is surjective. -/
+theorem cokernelπ_surjective (X : MatrixFactorization S w) :
+    Function.Surjective (cokernelπ X) :=
+  (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+/-- On elements, the even differential and the cokernel projection form an exact pair: the
+kernel of the projection is the image of `d₀`. -/
+theorem exact_d₀_cokernelπ (X : MatrixFactorization S w) :
+    Function.Exact X.obj.d₀.hom.hom (cokernelπ X).hom :=
+  (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+    ((ShortComplex.mk _ _ (d₀_cokernelπ X)).exact_of_g_is_cokernel (isColimitCokernelπ X))
 
 /-- Under the object comparisons, a closed even map acts by the map induced on categorical
 cokernels by its components. -/

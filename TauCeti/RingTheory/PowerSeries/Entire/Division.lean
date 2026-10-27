@@ -11,12 +11,12 @@ public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.RingTheory.PowerSeries.Entire.Eval
+public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.PowerSeries.Trunc
-import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 
 /-!
 # Division of entire power series by polynomials with invertible leading coefficient
@@ -83,6 +83,9 @@ operators, whose Fredholm determinants are entire series.
   remainder vanishes exactly when `p` divides `f` with entire quotient.
 * `TauCeti.PowerSeries.exists_entire_mul_add_eq`: division by a polynomial with invertible
   leading coefficient, with entire quotient and polynomial remainder of smaller degree.
+* `TauCeti.PowerSeries.IsMulDistinguished.isEntire_of_isEntire_coe_mul`: over an ultrametric
+  ring, a series restricted at `c` whose product with a Weierstrass polynomial at `c` is entire
+  is itself entire.
 * `TauCeti.PowerSeries.eq_and_eq_of_entire_mul_add_eq` and
   `TauCeti.PowerSeries.existsUnique_entire_mul_add_eq`: uniqueness over an ultrametric ring
   with `‖1‖ = 1`.
@@ -600,6 +603,23 @@ theorem exists_entire_mul_add_eq (hf : f.IsEntire) (hp : IsUnit p.leadingCoeff)
     exact PowerSeries.degree_modByMonic_lt f hP.ne_zero
   · rw [mul_smul_comm, ← smul_mul_assoc, ← hcoe, add_comm]
     exact hf.modByMonic_add_divByMonic hP
+
+/-- **Restricted quotients of entire series by Weierstrass polynomials are entire.** Over a
+complete ultrametric normed commutative ring, let `ω` be a monic polynomial of degree `d` which
+is multiplicatively distinguished of degree `d` at a positive radius `c`. If `q` is restricted at
+`c` and `ω * q` is entire, then `q` is entire: it is the quotient of the entire division of
+`ω * q` by `ω`. The hypothesis on `ω` cannot be dropped: `(X - 1) * ∑ Xⁿ = -1` is entire. -/
+theorem IsMulDistinguished.isEntire_of_isEntire_coe_mul [IsUltrametricDist R] {c : ℝ} {d : ℕ}
+    {ω : Polynomial R} {q : R⟦X⟧} (hω : IsMulDistinguished c d (ω : R⟦X⟧)) (hc : 0 < c)
+    (hωm : ω.IsMonicOfDegree d) (hq : q.IsRestricted c) (h : ((ω : R⟦X⟧) * q).IsEntire) :
+    q.IsEntire := by
+  have hdiv := h.modByMonic_add_divByMonic hωm.monic
+  have hr : ∀ m, d ≤ m →
+      ((((ω : R⟦X⟧) * q).modByMonic ω : Polynomial R) : R⟦X⟧).coeff m = 0 := fun m hm ↦ by
+    rw [Polynomial.coeff_coe, coeff_modByMonic, ite_eq_right (by rw [hωm.natDegree_eq]; omega)]
+  obtain ⟨hq', -⟩ := hω.eq_and_eq_of_mul_add_eq_mul_add hc ((h.divByMonic ω).isRestricted c) hq
+    hr (fun _ _ ↦ map_zero _) (by rw [add_comm, hdiv, add_zero])
+  exact hq' ▸ h.divByMonic ω
 
 variable [IsUltrametricDist R] [NormOneClass R]
 

@@ -157,20 +157,14 @@ theorem norm_le (hF : α.IsKMSFunction β φ a b F) {z : ℂ} (hz : z ∈ im ⁻
 
 end IsKMSFunction
 
-/-- For an entire analytic `b`, the function `z ↦ φ (a α_z(b))` is entire. -/
-private theorem differentiable_apply_mul_entireExtension (hb : α.IsEntireAnalytic b) :
-    Differentiable ℂ fun z => φ (a * α.entireExtension b z) :=
-  φ.differentiable.comp
-    ((ContinuousLinearMap.mul ℂ A a).differentiable.comp hb.differentiable_entireExtension)
-
 namespace IsKMSFunction
 
 /-- For an entire analytic `b`, the KMS function of the pair `a, b` is `z ↦ φ (a α_z(b))`. -/
 theorem apply_eq_apply_mul_entireExtension (hF : α.IsKMSFunction β φ a b F)
     (hb : α.IsEntireAnalytic b) {z : ℂ} (hz : z ∈ im ⁻¹' uIcc 0 β) :
     F z = φ (a * α.entireExtension b z) :=
-  hF.eqOn_of_apply_ofReal (differentiable_apply_mul_entireExtension hb).continuous.continuousOn
-    (differentiable_apply_mul_entireExtension hb).differentiableOn
+  hF.eqOn_of_apply_ofReal hb.differentiable_apply_mul_entireExtension.continuous.continuousOn
+    hb.differentiable_apply_mul_entireExtension.differentiableOn
     (fun t => by rw [hb.entireExtension_ofReal]) hz
 
 /-- **Analytic KMS identity.** If the pair `a, b` has a KMS function and `b` is entire analytic,
@@ -189,8 +183,8 @@ theorem isKMSFunction_apply_mul_entireExtension_iff (hb : α.IsEntireAnalytic b)
       ∀ t : ℝ, φ (a * α.entireExtension b (t + β * I)) =
         φ (α (Multiplicative.ofAdd t) b * a) := by
   refine ⟨fun h => h.apply_ofReal_add_mul_I, fun h => ⟨?_, ?_, ?_, ?_, h⟩⟩
-  · exact (differentiable_apply_mul_entireExtension hb).continuous.continuousOn
-  · exact (differentiable_apply_mul_entireExtension hb).differentiableOn
+  · exact hb.differentiable_apply_mul_entireExtension.continuous.continuousOn
+  · exact hb.differentiable_apply_mul_entireExtension.differentiableOn
   · simpa [image_image] using (φ.comp (ContinuousLinearMap.mul ℂ A a)).lipschitzWith.isBounded_image
       (hb.isBounded_image_im_preimage (s := uIcc 0 β) (Metric.isBounded_Icc _ _))
   · exact fun t => by rw [hb.entireExtension_ofReal]

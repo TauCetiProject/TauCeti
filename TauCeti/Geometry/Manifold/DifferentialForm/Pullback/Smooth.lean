@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
@@ -242,6 +243,24 @@ theorem mpullback_proj_injective {F' : Type*} [NormedAddCommGroup F'] [NormedSpa
     Function.Injective
       (mpullback (I := I.prod 𝓘(ℝ, F')) (I' := I) (F := F) (k := k) (π F' V) (contMDiff_proj V)) :=
   mpullback_injective_of_rightInverse _ (contMDiff_zeroSection ℝ V) fun _ ↦ rfl
+
+/-- A smooth form preserved by a diffeomorphism `φ` is preserved by every integer power of `φ`. -/
+theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M F k}
+    (hσ : mpullback φ φ.contMDiff σ = σ) (j : ℤ) : mpullback ⇑(φ ^ j) (φ ^ j).contMDiff σ = σ := by
+  -- The diffeomorphisms preserving `σ` form a subgroup.
+  let S : Subgroup (M ≃ₘ⟮I, I⟯ M) :=
+    { carrier := {ψ | mpullback ψ ψ.contMDiff σ = σ}
+      one_mem' := by simp [Diffeomorph.coe_one]
+      mul_mem' := fun {ψ χ} hψ hχ ↦ by
+        simp only [Set.mem_ofPred_eq, Diffeomorph.coe_mul] at hψ hχ ⊢
+        rw [mpullback_comp χ ψ χ.contMDiff ψ.contMDiff, LinearMap.comp_apply, hψ, hχ]
+      inv_mem' := fun {ψ} hψ ↦ by
+        simp only [Set.mem_ofPred_eq, Diffeomorph.coe_inv] at hψ ⊢
+        conv_lhs => rw [← hψ]
+        rw [← LinearMap.comp_apply, ← mpullback_comp]
+        have hid : ⇑ψ ∘ ⇑ψ.symm = id := funext ψ.apply_symm_apply
+        simp only [hid, mpullback_id, LinearMap.id_apply] }
+  exact S.zpow_mem (x := φ) hσ j
 
 variable {F₁ F₂ F₃ : Type*}
   [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
