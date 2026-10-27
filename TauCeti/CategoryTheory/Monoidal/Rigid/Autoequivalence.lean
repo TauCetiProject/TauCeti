@@ -396,6 +396,8 @@ theorem doubleRightDualCompDoubleLeftDual_inv_app (X : C) :
     (doubleRightDualCompDoubleLeftDual C).inv.app X =
       (leftDualRightDualIso C).inv.app X ≫
         ((leftDualFunctor C).map ((leftDualRightDualIso C).hom.app Xᘁ)).unmop.unop := by
+  -- Restate the component for the composite equivalence, whose functors are the double dual
+  -- functors by definition, so that the simp set for `Equivalence.trans` applies.
   change ((rightDualEquivalence C).trans (leftDualEquivalence C).symm).unitIso.hom.app X = _
   simp only [Equivalence.trans_functor, Equivalence.trans_inverse, Functor.comp_obj, Functor.id_obj,
     Equivalence.trans_unitIso, Functor.isoWhiskerRight_trans, Iso.trans_assoc, Iso.trans_hom,
@@ -434,6 +436,8 @@ theorem doubleLeftDualCompDoubleRightDual_inv_app (X : C) :
     (doubleLeftDualCompDoubleRightDual C).inv.app X =
       (rightDualLeftDualIso C).inv.app X ≫
         ((rightDualFunctor C).map ((rightDualLeftDualIso C).hom.app (ᘁX))).unmop.unop := by
+  -- Restate the component for the composite equivalence, whose functors are the double dual
+  -- functors by definition, so that the simp set for `Equivalence.trans` applies.
   change ((rightDualEquivalence C).trans (leftDualEquivalence C).symm).counitIso.inv.app X = _
   simp only [Equivalence.trans_inverse, Equivalence.trans_functor, Functor.comp_obj,
     Functor.id_obj, Equivalence.trans_counitIso, Functor.isoWhiskerRight_trans, Iso.trans_assoc,
