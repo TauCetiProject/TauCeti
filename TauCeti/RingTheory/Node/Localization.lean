@@ -96,9 +96,10 @@ theorem isPrime_map_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalIdeal R)
       (NodeAlgebra.mk (π ^ n))).IsPrime ↔ n ≠ 0 := by
   refine ⟨?_, fun hn ↦ map_isPrime_of_surjective
     (f := NodeAlgebra.mk (π ^ n)) (NodeAlgebra.mk_surjective _) ?_⟩
-  · -- for `n = 0` the constant `πⁿ = 1` does not lie in `𝔪_R`
+  · -- for `n = 0` the constant `πⁿ = 1` is a unit, so it does not lie in `𝔪_R`
     rintro h rfl
-    exact mem_maximalIdeal_of_isPrime_map_quotient_X_mul_X_sub_C (a := π ^ 0) (by simp)
+    exact mem_nonunits_iff.mp ((mem_maximalIdeal _).mp
+      (mem_maximalIdeal_of_isPrime_map_quotient_X_mul_X_sub_C (a := π ^ 0))) (by simp)
   · rw [AlgHom.ker_coe, NodeAlgebra.ker_mk, span_le, Set.singleton_subset_iff,
       SetLike.mem_coe]
     exact X_mul_X_sub_C_pow_mem_comap_maximalIdeal hπ hn
@@ -136,34 +137,47 @@ private theorem nodeToLocalQuotient_mk (n : ℕ) (p : MvPolynomial (Fin 2) R) :
         (Localization.AtPrime ((maximalIdeal R).comap constantCoeff)) p) := by
   simpa using AlgHom.congr_fun (nodeToLocalQuotient_comp_mk (π := π) n) p
 
-/-- The local ring of a node at the image of `(𝔪_R, x, y)` is the quotient of the ambient
-polynomial local ring by the node equation. -/
-noncomputable def localizationQuotientXMulXSubCPowEquiv (π : R) (n : ℕ)
+/-- The node algebra acts on the quotient of the ambient polynomial local ring through
+`nodeToLocalQuotient`. -/
+private noncomputable abbrev nodeToLocalQuotientAlgebra (n : ℕ) :
+    Algebra (NodeAlgebra R (π ^ n))
+      (Localization.AtPrime ((maximalIdeal R).comap
+        (constantCoeff : MvPolynomial (Fin 2) R →+* R)) ⧸
+          span {(algebraMap (MvPolynomial (Fin 2) R)
+            (Localization.AtPrime ((maximalIdeal R).comap
+              (constantCoeff : MvPolynomial (Fin 2) R →+* R)))
+            (X 0 * X 1 - C (π ^ n)))}) :=
+  RingHom.toAlgebra (S := Localization.AtPrime ((maximalIdeal R).comap
+    (constantCoeff : MvPolynomial (Fin 2) R →+* R)) ⧸
+      span {(algebraMap (MvPolynomial (Fin 2) R)
+        (Localization.AtPrime ((maximalIdeal R).comap
+          (constantCoeff : MvPolynomial (Fin 2) R →+* R)))
+        (X 0 * X 1 - C (π ^ n)))}) (nodeToLocalQuotient (π := π) n).toRingHom
+
+/-- The quotient of the ambient polynomial local ring by the node equation is a localization
+of the node algebra at the image of `𝔪`, the node algebra acting through
+`nodeToLocalQuotient`. -/
+private theorem isLocalization_nodeToLocalQuotient (n : ℕ)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
       (NodeAlgebra.mk (π ^ n))).IsPrime] :
-    Localization.AtPrime
+    letI := nodeToLocalQuotientAlgebra (π := π) n
+    IsLocalization
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-        (NodeAlgebra.mk (π ^ n))) ≃+*
+        (NodeAlgebra.mk (π ^ n))).primeCompl
       (Localization.AtPrime ((maximalIdeal R).comap
         (constantCoeff : MvPolynomial (Fin 2) R →+* R)) ⧸
           span {(algebraMap (MvPolynomial (Fin 2) R)
             (Localization.AtPrime ((maximalIdeal R).comap
               (constantCoeff : MvPolynomial (Fin 2) R →+* R)))
             (X 0 * X 1 - C (π ^ n)))}) := by
+  let := nodeToLocalQuotientAlgebra (π := π) n
   let 𝔪 := (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)
-  let f : MvPolynomial (Fin 2) R := X 0 * X 1 - C (π ^ n)
   let q : MvPolynomial (Fin 2) R →+* NodeAlgebra R (π ^ n) := NodeAlgebra.mk (π ^ n)
   let B := Localization.AtPrime 𝔪
-  let J := span {algebraMap (MvPolynomial (Fin 2) R) B f}
-  -- `B ⧸ (f)` is the localization of `R[x, y] ⧸ (f)` at the image of `𝔪`
-  let φ : MvPolynomial (Fin 2) R →ₐ[R] B ⧸ J :=
-    (Ideal.Quotient.mkₐ R J).comp (IsScalarTower.toAlgHom R (MvPolynomial (Fin 2) R) B)
-  let ψ := nodeToLocalQuotient (π := π) n
-  have hcomp : ψ.comp (NodeAlgebra.mk (π ^ n)) = φ := nodeToLocalQuotient_comp_mk n
-  letI := RingHom.toAlgebra (R := NodeAlgebra R (π ^ n)) (S := B ⧸ J) ψ.toRingHom
+  let J := span {algebraMap (MvPolynomial (Fin 2) R) B (X 0 * X 1 - C (π ^ n))}
   have hloc := IsLocalization.of_surjective (S := B) (S' := B ⧸ J) 𝔪.primeCompl q
       (NodeAlgebra.mk_surjective _) (Ideal.Quotient.mk J) Ideal.Quotient.mk_surjective
-      (congrArg AlgHom.toRingHom hcomp.symm)
+      (congrArg AlgHom.toRingHom (nodeToLocalQuotient_comp_mk (π := π) n).symm)
       (by
         simp only [q, mk_ker, NodeAlgebra.ker_mk,
           Ideal.map_span, Set.image_singleton]
@@ -179,10 +193,50 @@ noncomputable def localizationQuotientXMulXSubCPowEquiv (π : R) (n : ℕ)
   have hsub := map_primeCompl_comap_of_surjective q (NodeAlgebra.mk_surjective (π ^ n))
     (𝔪.map (NodeAlgebra.mk (π ^ n)))
   simp only [hcomap] at hsub
-  rw [hsub] at hloc
-  let e := IsLocalization.algEquiv (𝔪.map (NodeAlgebra.mk (π ^ n))).primeCompl
-    (Localization.AtPrime (𝔪.map (NodeAlgebra.mk (π ^ n)))) (B ⧸ J)
-  exact e.toRingEquiv
+  rwa [hsub] at hloc
+
+private theorem isUnit_nodeToLocalQuotient (n : ℕ)
+    [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
+      (NodeAlgebra.mk (π ^ n))).IsPrime]
+    (y : (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
+      (NodeAlgebra.mk (π ^ n))).primeCompl) :
+    IsUnit (nodeToLocalQuotient (π := π) n y) := by
+  let := nodeToLocalQuotientAlgebra (π := π) n
+  have := isLocalization_nodeToLocalQuotient (π := π) n
+  exact ((isLocalization_iff _ _).mp this).1 y
+
+private theorem bijective_lift_nodeToLocalQuotient (n : ℕ)
+    [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
+      (NodeAlgebra.mk (π ^ n))).IsPrime] :
+    Function.Bijective (IsLocalization.lift (S := Localization.AtPrime
+      (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
+        (NodeAlgebra.mk (π ^ n)))) (P := (Localization.AtPrime ((maximalIdeal R).comap
+            (constantCoeff : MvPolynomial (Fin 2) R →+* R)) ⧸
+              span {(algebraMap (MvPolynomial (Fin 2) R)
+                (Localization.AtPrime ((maximalIdeal R).comap
+                  (constantCoeff : MvPolynomial (Fin 2) R →+* R)))
+                (X 0 * X 1 - C (π ^ n)))}))
+      (g := (nodeToLocalQuotient (π := π) n).toRingHom) (isUnit_nodeToLocalQuotient n)) := by
+  let := nodeToLocalQuotientAlgebra (π := π) n
+  have := isLocalization_nodeToLocalQuotient (π := π) n
+  exact IsLocalization.bijective (((maximalIdeal R).comap constantCoeff).map
+    (NodeAlgebra.mk (π ^ n))).primeCompl _ (IsLocalization.lift_comp _)
+
+/-- The local ring of a node at the image of `(𝔪_R, x, y)` is the quotient of the ambient
+polynomial local ring by the node equation. -/
+noncomputable def localizationQuotientXMulXSubCPowEquiv (π : R) (n : ℕ)
+    [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
+      (NodeAlgebra.mk (π ^ n))).IsPrime] :
+    Localization.AtPrime
+      (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
+        (NodeAlgebra.mk (π ^ n))) ≃+*
+      (Localization.AtPrime ((maximalIdeal R).comap
+        (constantCoeff : MvPolynomial (Fin 2) R →+* R)) ⧸
+          span {(algebraMap (MvPolynomial (Fin 2) R)
+            (Localization.AtPrime ((maximalIdeal R).comap
+              (constantCoeff : MvPolynomial (Fin 2) R →+* R)))
+            (X 0 * X 1 - C (π ^ n)))}) :=
+  RingEquiv.ofBijective _ (bijective_lift_nodeToLocalQuotient (π := π) n)
 
 /-- The localization comparison sends a polynomial representative to its image in the
 quotient of the ambient local ring. -/
@@ -194,12 +248,9 @@ theorem localizationQuotientXMulXSubCPowEquiv_algebraMap_mk
     localizationQuotientXMulXSubCPowEquiv π n
         (algebraMap _ _ (NodeAlgebra.mk (π ^ n) p)) =
       algebraMap (MvPolynomial (Fin 2) R) _ p := by
-  simp only [localizationQuotientXMulXSubCPowEquiv, AlgEquiv.coe_toRingEquiv,
-    AlgEquiv.commutes]
-  -- the node algebra acts on the quotient through `nodeToLocalQuotient`
-  rw [RingHom.algebraMap_toAlgebra, ← Ideal.Quotient.mk_algebraMap, AlgHom.toRingHom_eq_coe,
-    AlgHom.coe_toRingHom]
-  exact nodeToLocalQuotient_mk n p
+  rw [localizationQuotientXMulXSubCPowEquiv, RingEquiv.ofBijective_apply, IsLocalization.lift_eq,
+    AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, nodeToLocalQuotient_mk,
+    Ideal.Quotient.mk_algebraMap]
 
 /-- The localization comparison sends a coordinate of the node algebra to the class of the
 corresponding polynomial variable. -/

@@ -12,10 +12,10 @@ import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 /-!
 # Height of the origin over a closed point
 
-In a polynomial ring over a Noetherian ring, the inverse image of a maximal ideal under
-constant coefficient has height equal to the height of that ideal plus the number of
-variables. This computes the dimension of the ambient local ring used for hypersurface
-singularities over a local base.
+In a polynomial ring over a Noetherian ring, a maximal ideal lying over a maximal ideal `p`
+of the base, such as the inverse image of `p` under constant coefficient, has height equal to
+the height of `p` plus the number of variables. This computes the dimension of the ambient
+local ring used for hypersurface singularities over a local base.
 
 ## References
 
@@ -30,20 +30,16 @@ open MvPolynomial
 
 variable {R σ : Type*} [CommRing R] [IsNoetherianRing R] [Finite σ]
 
-/-- The origin over a closed point has height the height of that point plus the number of
-polynomial variables. -/
-theorem _root_.Ideal.height_comap_mvPolynomial_constantCoeff (p : Ideal R) [p.IsMaximal] :
-    (p.comap (constantCoeff : MvPolynomial σ R →+* R)).height = p.height + Nat.card σ := by
-  let P := p.comap (constantCoeff : MvPolynomial σ R →+* R)
-  have hsurj : Function.Surjective (constantCoeff : MvPolynomial σ R →+* R) :=
-    fun r ↦ ⟨C r, constantCoeff_C σ r⟩
-  have : P.IsMaximal := Ideal.comap_isMaximal_of_surjective _ hsurj
-  have : P.LiesOver p := ⟨by ext r; simp [P, Ideal.under_def]⟩
+/-- A maximal ideal of a polynomial ring lying over a maximal ideal `p` has height the height
+of `p` plus the number of polynomial variables. -/
+theorem _root_.MvPolynomial.height_eq_height_add_natCard (p : Ideal R) [p.IsMaximal]
+    (P : Ideal (MvPolynomial σ R)) [P.IsMaximal] [P.LiesOver p] :
+    P.height = p.height + Nat.card σ := by
   let Q := P.map (Ideal.Quotient.mk (p.map (algebraMap R (MvPolynomial σ R))))
   have : Q.IsMaximal := Ideal.IsMaximal.map_of_surjective_of_ker_le
     Ideal.Quotient.mk_surjective (by
-      rw [Ideal.mk_ker]
-      exact Ideal.map_le_iff_le_comap.mpr (by intro r hr; simpa [P] using hr))
+      rw [Ideal.mk_ker, Ideal.LiesOver.over (P := P) (p := p)]
+      exact Ideal.map_comap_le)
   let e : MvPolynomial σ (R ⧸ p) ≃+*
       (MvPolynomial σ R ⧸ p.map (algebraMap R (MvPolynomial σ R))) :=
     (quotientEquivQuotientMvPolynomial (σ := σ) p).toRingEquiv
@@ -55,6 +51,18 @@ theorem _root_.Ideal.height_comap_mvPolynomial_constantCoeff (p : Ideal R) [p.Is
   calc
     _ = p.height + Q.height := Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown p P
     _ = _ := by rw [hQ]
+
+/-- The origin over a closed point has height the height of that point plus the number of
+polynomial variables. -/
+theorem _root_.Ideal.height_comap_mvPolynomial_constantCoeff (p : Ideal R) [p.IsMaximal] :
+    (p.comap (constantCoeff : MvPolynomial σ R →+* R)).height = p.height + Nat.card σ := by
+  have hsurj : Function.Surjective (constantCoeff : MvPolynomial σ R →+* R) :=
+    fun r ↦ ⟨C r, constantCoeff_C σ r⟩
+  have : (p.comap (constantCoeff : MvPolynomial σ R →+* R)).IsMaximal :=
+    Ideal.comap_isMaximal_of_surjective _ hsurj
+  have : (p.comap (constantCoeff : MvPolynomial σ R →+* R)).LiesOver p :=
+    ⟨by ext r; simp [Ideal.under_def]⟩
+  exact MvPolynomial.height_eq_height_add_natCard p _
 
 /-- Adjoining polynomial coordinates and localizing at the closed origin raises local
 Krull dimension by the number of coordinates. -/
