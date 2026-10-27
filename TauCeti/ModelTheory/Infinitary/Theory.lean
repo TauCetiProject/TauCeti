@@ -19,6 +19,9 @@ enumerated into the carrier `ℕ` along `IndexCoding.ofEncodableWith`, form one 
 conjunction, which a structure satisfies exactly when it is a model of the theory. Indices that
 code no member carry `⊤`, so the conjunction of the empty theory holds in every structure.
 
+Theories move along language homomorphisms, sentence by sentence; along an expansion a structure
+is a model of the image of a theory exactly when it is a model of the theory.
+
 ## Main definitions
 
 * `FirstOrder.Language.Theoryω`: the `L_{ω₁ω}` theories of a language.
@@ -37,14 +40,19 @@ code no member carry `⊤`, so the conjunction of the empty theory holds in ever
   same theories.
 * `FirstOrder.Language.LHom.onTheoryω_model`: along an expansion, a structure is a model of the
   image of a theory exactly when it is a model of the theory.
+* `Set.Countable.onTheoryω`: the image of a countable theory is countable.
 
 ## References
 
 * The definitions follow `cameronfreer/infinitary-logic` at commit
   `518a366cba97b1ae8c4dc64a297a396939bc3e0b`, `InfinitaryLogic/Lomega1omega/Theory.lean`, and
   the shape of Mathlib's first-order `Theory` and `Theory.Model`.
-* Divergences from that source: only theories, modelhood and the countable conjunction are
-  included; the conjunction is the coded conjunction `iInfAlong` along
+* `FirstOrder.Language.LHom.onTheoryω`, `FirstOrder.Language.LHom.mem_onTheoryω` and
+  `FirstOrder.Language.LHom.onTheoryω_model` follow Mathlib's first-order `LHom.onTheory`,
+  `LHom.mem_onTheory` and `LHom.onTheory_model`.
+* Divergences from that source: only theories, modelhood, the countable conjunction, the image of
+  a theory under a language homomorphism and modelhood along expansions are included; the
+  conjunction is the coded conjunction `iInfAlong` along
   `IndexCoding.ofEncodableWith`, so the empty theory needs no separate case.
 -/
 
@@ -141,6 +149,10 @@ variable {L' : Language.{u', v'}}
 def onTheoryω (g : L →ᴸ L') (T : L.Theoryω) : L'.Theoryω :=
   g.onBoundedFormulaInf '' T
 
+/-- The image of a theory is the image of its sentences. -/
+theorem onTheoryω_def (g : L →ᴸ L') (T : L.Theoryω) : g.onTheoryω T = g.onBoundedFormulaInf '' T :=
+  (rfl)
+
 /-- Membership in the image of a theory. -/
 @[simp]
 theorem mem_onTheoryω {g : L →ᴸ L'} {T : L.Theoryω} {φ : L'.Sentenceω} :
@@ -149,7 +161,8 @@ theorem mem_onTheoryω {g : L →ᴸ L'} {T : L.Theoryω} {φ : L'.Sentenceω} :
 
 /-- **Modelhood along an expansion.** If the `L'`-structure on `M` expands its `L`-structure along
 `g`, then `M` is a model of the image of `T` exactly when it is a model of `T`. No injectivity of
-`g` and no countability of `T` is needed. -/
+`g` and no countability of `T` is needed. This is the infinitary form of Mathlib's
+`LHom.onTheory_model`. -/
 @[simp]
 theorem onTheoryω_model (g : L →ᴸ L') {M : Type w} [L.Structure M] [L'.Structure M]
     [g.IsExpansionOn M] (T : L.Theoryω) : (g.onTheoryω T).Model M ↔ T.Model M := by
@@ -158,6 +171,11 @@ theorem onTheoryω_model (g : L →ᴸ L') {M : Type w} [L.Structure M] [L'.Stru
     realize_onBoundedFormulaInf]
 
 end LHom
+
+/-- The image of a countable theory under a language homomorphism is countable. -/
+theorem _root_.Set.Countable.onTheoryω {L' : Language.{u', v'}} {T : L.Theoryω} (hT : T.Countable)
+    (g : L →ᴸ L') : (g.onTheoryω T).Countable :=
+  hT.image _
 
 namespace StrongHomClass
 
