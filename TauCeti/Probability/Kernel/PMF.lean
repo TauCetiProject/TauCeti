@@ -44,11 +44,13 @@ variable [Countable α] [MeasurableSingletonClass α]
 def ofPMF (p : α → PMF β) : Kernel α β :=
   ofFunOfCountable fun a => (p a).toMeasure
 
+/-- The row of `ofPMF p` at `a` is the measure of the PMF `p a`. -/
 theorem ofPMF_apply (p : α → PMF β) (a : α) : ofPMF p a = (p a).toMeasure := (rfl)
 
 instance (p : α → PMF β) : IsMarkovKernel (ofPMF p) :=
   ⟨fun a => by rw [ofPMF_apply]; infer_instance⟩
 
+/-- The singleton masses of `ofPMF p` are the transition weights of `p`. -/
 @[simp]
 theorem ofPMF_apply_singleton [MeasurableSingletonClass β] (p : α → PMF β) (a : α)
     (b : β) : ofPMF p a {b} = p a b := by
@@ -77,21 +79,25 @@ variable [Countable β] [MeasurableSingletonClass β]
 /-- The row PMF of a Markov kernel with countable target, given by its singleton masses. -/
 def toPMF (κ : Kernel α β) [IsMarkovKernel κ] (a : α) : PMF β := (κ a).toPMF
 
+/-- The row PMF of `κ` at `a` assigns to `b` the mass `κ a {b}`. -/
 @[simp]
 theorem toPMF_apply (κ : Kernel α β) [IsMarkovKernel κ] (a : α) (b : β) :
     κ.toPMF a b = κ a {b} := (rfl)
 
+/-- The measure of the row PMF of a Markov kernel recovers the original row measure. -/
 @[simp]
 theorem toPMF_toMeasure (κ : Kernel α β) [IsMarkovKernel κ] (a : α) :
     (κ.toPMF a).toMeasure = κ a := by
   exact Measure.toPMF_toMeasure _
 
+/-- Reading the row PMFs of `ofPMF p` recovers the original family `p`. -/
 @[simp]
 theorem toPMF_ofPMF [Countable α] [MeasurableSingletonClass α] (p : α → PMF β) :
     (ofPMF p).toPMF = p := by
   funext a
   exact PMF.ext fun b => ofPMF_apply_singleton p a b
 
+/-- A Markov kernel between countable spaces is recovered from its row PMFs. -/
 @[simp]
 theorem ofPMF_toPMF [Countable α] [MeasurableSingletonClass α] (κ : Kernel α β)
     [IsMarkovKernel κ] : ofPMF κ.toPMF = κ := by
