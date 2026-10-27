@@ -116,7 +116,7 @@ theorem reesGenerator_mem_grade_one (x : L) :
     ⟨_, ι_mem_pbwFiltration_one R L x, (coe_reesGenerator R L x).symm⟩
 
 /-- The degree-one piece is spanned by the parameter and the linear Rees generators. -/
-theorem grade_one_eq_span_reesParameter_reesGenerator :
+theorem grade_one_eq_span_reesParameter_union_range_reesGenerator :
     coeffSubalgebra.grade (pbwFiltration R L) 1 =
       Submodule.span R ({reesParameter R L} ∪ Set.range (reesGenerator R L)) := by
   refine le_antisymm ?_ (Submodule.span_le.mpr ?_)
@@ -156,7 +156,7 @@ theorem adjoin_reesParameter_union_range_reesGenerator :
   have hspan : Submodule.span R ({reesParameter R L} ∪ Set.range (reesGenerator R L)) ≤
       (Algebra.adjoin R ({reesParameter R L} ∪ Set.range (reesGenerator R L))).toSubmodule :=
     Submodule.span_le.mpr Algebra.subset_adjoin
-  exact fun _ hp ↦ hspan (grade_one_eq_span_reesParameter_reesGenerator R L ▸ hp)
+  exact fun _ hp ↦ hspan (grade_one_eq_span_reesParameter_union_range_reesGenerator R L ▸ hp)
 
 /-- Over the parameter ring, the linear Rees generators alone generate the Rees algebra. -/
 theorem adjoin_range_reesGenerator :
