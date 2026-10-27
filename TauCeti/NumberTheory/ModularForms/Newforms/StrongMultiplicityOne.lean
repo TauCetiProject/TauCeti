@@ -40,14 +40,9 @@ a corollary.
 
 Across unrelated levels, two newforms `f`, `g` of levels `N`, `M` whose nebentypes induce the
 same character modulo `lcm N M` and whose eigenvalues agree at all but finitely many primes
-`p ∤ N M` have `N = M` (`Newform.level_eq_of_forall_notMem_prime_eigenvalue_eq`). If `M ∤ N`,
-pick a prime `q` with `v_q(N) < v_q(M)` and compare at a common level `L` with the `q`-part of `M`
-that the finitely many exceptional primes divide. There `V₁ f − V₁ g` is a good Hecke eigenvector
-with `a₁ = 0`, hence `∑_{p ∣ L} V_p F_p` by the prime form of the Main Lemma
-(`TauCeti.exists_eq_sum_levelRaise_prime_of_forall_coprime_qExpansion_coeff_eq_zero`). Projecting
-onto the `q`-new subspace (`TauCeti.cuspFormsNewAt`) along the `q`-old one kills `V₁ f` and
-`V_q F_q` and fixes `V₁ g`, while for `p ≠ q` it sends `V_p F_p` to `V_p` of a `q`-new form
-(`TauCeti.levelRaise_mem_cuspFormsNewAt`); comparing first coefficients gives `-1 = 0`.
+`p ∤ N M` have `N = M` (`Newform.level_eq_of_forall_notMem_prime_eigenvalue_eq`). Nothing is
+assumed at the primes dividing `N M`; the two forms are separated by the `q`-new subspaces
+(`TauCeti.cuspFormsNewAt`) at a prime `q` where the levels have different valuations.
 
 ## Main results
 
@@ -222,11 +217,8 @@ theorem Newform.level_eq_of_dvd_of_forall_prime_eigenvalue_eq {M : ℕ} [NeZero 
 
 /-! ### Across unrelated levels -/
 
-/-- **The `q`-new part of `V_p F` has vanishing first coefficient**, for a prime `p ∣ L` and `F`
-of level `L / p`. If `p = q`, then `V_q F` is `q`-old. Otherwise split `F` along the `q`-old and
-`q`-new subspaces of level `L / p`: `V_p` keeps the first part `q`-old and the second `q`-new
-(`levelRaise_mem_cuspFormsNewAt`, as `q (L / p) ∤ L`), so the `q`-new part of `V_p F` is a
-level-raise by `p ≠ 1`, whose coefficients sit at the multiples of `p`. -/
+/-- **The `q`-new part of `V_p F` has vanishing first coefficient**, for primes `p ∣ L` and `q`,
+and `F` of level `L / p`. -/
 private theorem qExpansion_coeff_one_projection_levelRaise_eq_zero {L p q : ℕ} [NeZero L]
     [NeZero p] (hp : p.Prime) (hq : q.Prime) (hpL : p ∣ L)
     (F : CuspForm ((Gamma1 (L / p)).map (mapGL ℝ)) k) :
@@ -234,6 +226,10 @@ private theorem qExpansion_coeff_one_projection_levelRaise_eq_zero {L p q : ℕ}
       (isCompl_cuspFormsOldAt_cuspFormsNewAt L k q).symm
         (CuspForm.levelRaise p (Gamma1_map_le_conjAct_scaleGL_of_dvd
           (Nat.mul_div_cancel' hpL).dvd) F))).coeff 1 = 0 := by
+  -- if `p = q`, then `V_q F` is `q`-old. Otherwise split `F` along the `q`-old and `q`-new
+  -- subspaces of level `L / p`: `V_p` keeps the first part `q`-old and the second `q`-new, as
+  -- `q (L / p) ∤ L`, so the `q`-new part of `V_p F` is a level-raise by `p ≠ 1`, whose
+  -- coefficients sit at the multiples of `p`
   have : NeZero (L / p) := ⟨(Nat.div_pos (Nat.le_of_dvd (NeZero.pos L) hpL) hp.pos).ne'⟩
   have hpLp : p * (L / p) ∣ L := (Nat.mul_div_cancel' hpL).dvd
   by_cases hpq : p = q
@@ -254,13 +250,10 @@ private theorem qExpansion_coeff_one_projection_levelRaise_eq_zero {L p q : ℕ}
       (one_mem_strictPeriods_Gamma1_map _),
     ite_eq_right_iff.mpr fun h ↦ absurd (Nat.dvd_one.mp h) hp.ne_one]
 
-/-- **The comparison at a level where the two `q`-parts are told apart.** Let `f`, `g` be
+/-- **Newforms are separated at a level telling their `q`-parts apart.** Let `f`, `g` be
 newforms of levels `N`, `M`, and `L` a common multiple, for a prime `q` with `q N ∣ L` and
-`q M ∤ L`, at which their nebentypes agree and their eigenvalues agree at every prime `p ∤ L`.
-Then `V₁ f − V₁ g` at level `L` is a good Hecke eigenvector with `a₁ = 0`, hence a sum of
-`V_p F_p` over the primes `p ∣ L` (the prime form of the Main Lemma). Project onto the `q`-new
-subspace along the `q`-old one and read off `a₁`: `V₁ f` is `q`-old and `V₁ g` is `q`-new, while
-the projection of every `V_p F_p` has `a₁ = 0`. So `0 - 1 = 0`. -/
+`q M ∤ L`. Their nebentypes cannot agree at level `L` while their eigenvalues agree at every prime
+`p ∤ L`. -/
 private theorem false_of_mul_dvd_of_not_mul_dvd {M L q : ℕ} [NeZero M] [NeZero L]
     (f : Newform N k) (g : Newform M k) (hq : q.Prime) (hqN : q * N ∣ L)
     (hML : M ∣ L) (hqML : ¬q * M ∣ L)
@@ -269,6 +262,9 @@ private theorem false_of_mul_dvd_of_not_mul_dvd {M L q : ℕ} [NeZero M] [NeZero
       f.eigenvalue ⟨p, hp.pos⟩ (hpL.coprime_dvd_right (dvd_of_mul_left_dvd hqN)) =
         g.eigenvalue ⟨p, hp.pos⟩ (hpL.coprime_dvd_right hML)) :
     False := by
+  -- `V₁ f − V₁ g` at level `L` is a sum of `V_p F_p` over the primes `p ∣ L`. Project onto the
+  -- `q`-new subspace along the `q`-old one and read off `a₁`: `V₁ f` is `q`-old and `V₁ g` is
+  -- `q`-new, while the projection of every `V_p F_p` has `a₁ = 0`. So `0 - 1 = 0`.
   have : NeZero q := ⟨hq.ne_zero⟩
   have h1N : 1 * N ∣ L := by rw [one_mul]; exact dvd_of_mul_left_dvd hqN
   have h1M : 1 * M ∣ L := by rwa [one_mul]
@@ -323,16 +319,18 @@ private theorem false_of_mul_dvd_of_not_mul_dvd {M L q : ℕ} [NeZero M] [NeZero
     neg_eq_zero] at key
   exact one_ne_zero key
 
-/-- **Strong multiplicity one across levels, the level half, when `M ∤ N`.** Choose a prime `q`
-with `v_q(N) < v_q(M)` and compare at `L = lcm N M · ∏ p`, the product over the exceptional
-primes prime to `N M`: its `q`-part is that of `M`, and every prime not dividing it is good for
-both forms and outside `S`. -/
+/-- **Strong multiplicity one across levels, the level half, when `M ∤ N`**: two newforms of
+levels `N`, `M` with `M ∤ N` cannot have compatible nebentypes and eigenvalues agreeing at all
+but finitely many primes `p ∤ N M`. -/
 private theorem false_of_not_dvd {M : ℕ} [NeZero M] (f : Newform N k) (g : Newform M k)
     (hχ : f.χ.comp (ZMod.unitsMap (Nat.dvd_lcm_left N M)) =
       g.χ.comp (ZMod.unitsMap (Nat.dvd_lcm_right N M))) {S : Finset ℕ}
     (h : ∀ (p : ℕ) (hp : p.Prime) (hpN : p.Coprime N) (hpM : p.Coprime M), p ∉ S →
       f.eigenvalue ⟨p, hp.pos⟩ hpN = g.eigenvalue ⟨p, hp.pos⟩ hpM)
     (hMN : ¬M ∣ N) : False := by
+  -- choose a prime `q` with `v_q(N) < v_q(M)` and compare at `L = lcm N M · ∏ p`, the product
+  -- over the exceptional primes prime to `N M`: its `q`-part is that of `M`, and every prime not
+  -- dividing it is good for both forms and outside `S`
   have hN0 := NeZero.ne N
   have hM0 := NeZero.ne M
   -- a prime at which `M` has the larger valuation
