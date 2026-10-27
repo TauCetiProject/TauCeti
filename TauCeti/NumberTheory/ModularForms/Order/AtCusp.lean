@@ -151,7 +151,7 @@ private lemma cuspFunction_prod {ι : Type*} {f : ι → ℍ → ℂ} (s : Finse
     (hf : ∀ i ∈ s, AnalyticAt ℂ (cuspFunction h (f i)) 0) :
     cuspFunction h (∏ i ∈ s, f i) = ∏ i ∈ s, cuspFunction h (f i) := by
   induction s using Finset.cons_induction with
-  | empty => simpa using UpperHalfPlane.cuspFunction_one h
+  | empty => simp
   | cons a s ha ih =>
     have h_prev := ih fun i hi ↦ hf i (Finset.mem_cons_of_mem hi)
     rw [Finset.prod_cons, Finset.prod_cons, ← h_prev,

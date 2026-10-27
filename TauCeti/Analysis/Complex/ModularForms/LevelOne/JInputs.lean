@@ -439,15 +439,18 @@ theorem laurentQExpansion_j_coeff_natCast_sub_one (n : ℕ) :
     meromorphicAt_cuspFunction_j (k := 1) (by simp) n
 
 /-- The leading Laurent `q`-coefficient of `j` is `1`, the coefficient of `q⁻¹`. -/
+@[simp]
 theorem laurentQExpansion_j_coeff_neg_one :
     (UpperHalfPlane.laurentQExpansion 1 j).coeff (-1) = 1 := by
   simpa [constantCoeff_qExpansion_qParam_mul_j] using laurentQExpansion_j_coeff_natCast_sub_one 0
 
 /-- The constant Laurent `q`-coefficient of `j` is `744`. -/
+@[simp]
 theorem laurentQExpansion_j_coeff_zero : (UpperHalfPlane.laurentQExpansion 1 j).coeff 0 = 744 := by
   simpa [qExpansion_qParam_mul_j_coeff_one] using laurentQExpansion_j_coeff_natCast_sub_one 1
 
 /-- The Laurent `q`-coefficient of `q` in `j` is `196884`. -/
+@[simp]
 theorem laurentQExpansion_j_coeff_one :
     (UpperHalfPlane.laurentQExpansion 1 j).coeff 1 = 196884 := by
   simpa [qExpansion_qParam_mul_j_coeff_two] using laurentQExpansion_j_coeff_natCast_sub_one 2

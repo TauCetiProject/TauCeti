@@ -135,6 +135,7 @@ theorem UpperHalfPlane.analyticAt_cuspFunction_qParam (hh : 0 < h) :
     ((_root_.UpperHalfPlane.qParam_tendsto_atImInfty hh).isBigO_one ℝ)
 
 /-- The `q`-expansion of the `q`-parameter itself is the variable `X`. -/
+@[simp]
 theorem UpperHalfPlane.qExpansion_qParam (hh : 0 < h) :
     qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ) = PowerSeries.X := by
   ext m
@@ -211,6 +212,7 @@ theorem UpperHalfPlane.qExpansion_congr (hfg : cuspFunction h f =ᶠ[𝓝[≠] 0
     (cuspFunction_eventuallyEq_nhds hfg).iteratedDeriv_eq]
 
 /-- The cusp function of a constant function is constant. -/
+@[simp]
 theorem UpperHalfPlane.cuspFunction_const (h : ℝ) (c : ℂ) :
     cuspFunction h (fun _ : ℍ ↦ c) = fun _ ↦ c := by
   have h_lim : limUnder (𝓝[≠] (0 : ℂ))
@@ -220,6 +222,7 @@ theorem UpperHalfPlane.cuspFunction_const (h : ℝ) (c : ℂ) :
   exact Function.update_eq_self 0 (fun _ ↦ c)
 
 /-- The cusp function of `1` is `1`. -/
+@[simp]
 theorem UpperHalfPlane.cuspFunction_one (h : ℝ) : cuspFunction h (1 : ℍ → ℂ) = 1 :=
   cuspFunction_const h 1
 
@@ -304,6 +307,7 @@ theorem UpperHalfPlane.analyticAt_cuspFunction_qParam_pow (hh : 0 < h) (m : ℕ)
   exact hq.pow m
 
 /-- The `q`-expansion of the `m`-th power of the `q`-parameter is `X ^ m`. -/
+@[simp]
 theorem UpperHalfPlane.qExpansion_qParam_pow (hh : 0 < h) (m : ℕ) :
     qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) = PowerSeries.X ^ m := by
   rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m,
