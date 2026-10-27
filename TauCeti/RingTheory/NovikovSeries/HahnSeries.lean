@@ -192,9 +192,7 @@ private theorem kernelCoeff_ne_zero_iff {a : NovikovSeries R H N} {γ : Γ} :
     exact hcon ⟨_, mem_support.2 hk, by simp⟩
   · subst hγ
     have := congrArg (fun x => x.coeff (S.equiv h).1) hγ'
-    simp only [coeff_kernelCoeff, Prod.mk.eta, AddEquiv.symm_apply_apply,
-      AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply] at this
-    exact mem_support.1 hh this
+    exact mem_support.1 hh (by simpa [coeff_kernelCoeff] using this)
 
 /-- The Hahn series of a Novikov series, before it is bundled as a ring homomorphism. Its support
 is finite below each period, hence partially well-ordered. -/
@@ -272,10 +270,8 @@ private theorem toHahnSeriesFun_mul (a b : NovikovSeries R H N) :
             Finset.mem_filter, Finset.mem_product, Finsupp.mem_support_iff, F, D]
           refine ⟨⟨fun hA => ?_, fun hB => ?_, congrArg Prod.snd he⟩, ⟨?_, ?_⟩,
             congrArg Prod.fst he⟩
-          · have := congrArg (fun x => x.coeff (S.equiv u).1) hA
-            exact hu (by simpa [A, coeff_coeff_toHahnSeriesFun] using this)
-          · have := congrArg (fun x => x.coeff (S.equiv v).1) hB
-            exact hv (by simpa [B, coeff_coeff_toHahnSeriesFun] using this)
+          · exact (kernelCoeff_ne_zero_iff S).2 ⟨u, mem_support.2 hu, rfl⟩ hA
+          · exact (kernelCoeff_ne_zero_iff S).2 ⟨v, mem_support.2 hv, rfl⟩ hB
           · simpa [A, coeff_coeff_toHahnSeriesFun] using hu
           · simpa [B, coeff_coeff_toHahnSeriesFun] using hv
     _ = ∑ ij ∈ D, ∑ p ∈ F ij, (A.coeff ij.1).coeff p.1 * (B.coeff ij.2).coeff p.2 :=
@@ -291,8 +287,8 @@ of the exponents with `Γ`-component `γ`. -/
 def toHahnSeries : NovikovSeries R H N →+* HahnSeries Γ (AddMonoidAlgebra R K) where
   toFun := toHahnSeriesFun S
   map_one' := by
-    rw [← single_zero_one, toHahnSeriesFun_single, map_zero, Prod.fst_zero, Prod.snd_zero,
-      ← AddMonoidAlgebra.one_def, HahnSeries.single_zero_one]
+    rw [← single_zero_one, toHahnSeriesFun_single]
+    simp [← AddMonoidAlgebra.one_def]
   map_mul' := toHahnSeriesFun_mul S
   map_zero' := by
     ext
