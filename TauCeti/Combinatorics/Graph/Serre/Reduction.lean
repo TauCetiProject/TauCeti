@@ -149,7 +149,7 @@ theorem isReduced_reduceSnoc {a b c : Γ.V} (p : Γ.Path a b)
         (isReduced_cons_cons Γ q f e).mpr ⟨hp, h⟩
 
 /-- Every path reduces to a path with no immediate backtracking. -/
-@[simp] theorem isReduced_reduce {a b : Γ.V} (p : Γ.Path a b) :
+@[simp↓] theorem isReduced_reduce {a b : Γ.V} (p : Γ.Path a b) :
     IsReduced Γ (reduce Γ p) := by
   induction p with
   | nil => exact isReduced_nil Γ _
@@ -184,6 +184,10 @@ theorem reduce_cons_of_isReduced {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Ho
       have hprev := ((isReduced_cons_cons Γ p f e).mp hp).1
       rw [reduce_cons, ih hprev]
       exact reduceSnoc_eq_cons Γ (p.cons f) e hp
+
+@[simp↓] theorem reduce_toPath {a b : Γ.V} (e : Quiver.Hom a b) :
+    reduce Γ e.toPath = e.toPath :=
+  reduce_eq_self_of_isReduced Γ _ (isReduced_toPath Γ e)
 
 /-- Reducing an already reduced path leaves it unchanged. -/
 theorem reduce_idem {a b : Γ.V} (p : Γ.Path a b) :
@@ -224,9 +228,9 @@ theorem reduceSnoc_reverse {a b c : Γ.V} (p : Γ.Path a b)
     · rw [reduceSnoc_cons_of_ne Γ q f e h, reduceSnoc_cons_reverse]
 
 /-- Inserting a backtrack does not change a path's reduced form. -/
-@[simp] theorem reduce_backtrack {a b c : Γ.V} (p : Γ.Path a b)
+@[simp↓] theorem reduce_backtrack {a b c : Γ.V} (p : Γ.Path a b)
     (e : Quiver.Hom b c) :
-    reduceSnoc Γ (reduceSnoc Γ (reduce Γ p) e) (Quiver.reverse e) = reduce Γ p := by
+    reduce Γ ((p.cons e).cons (Quiver.reverse e)) = reduce Γ p := by
   exact reduceSnoc_reverse Γ (reduce Γ p) (isReduced_reduce Γ p) e
 
 /-- Backtrack-homotopic paths have the same reduced form. -/
