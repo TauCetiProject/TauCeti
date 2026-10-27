@@ -19,12 +19,15 @@ import Mathlib.Tactic.NoncommRing
 For a square matrix `A` over a commutative semiring, `Matrix.isometryMatrices A` is the submonoid
 of matrices `X` with `Xᵀ * A * X = A`, the endomorphisms of the coordinate module that preserve
 the bilinear form with Gram matrix `A`. Counting these matrices over the finite rings
-`ZMod (p ^ r)` is how the local density of a quadratic lattice is defined, and the two results
-here are what that count needs.
+`ZMod (p ^ r)` is how the local density of a quadratic lattice is defined, and the results here
+are what that count needs.
 
 * A change of basis `A ↦ Pᵀ * A * P` by an invertible `P` conjugates the submonoid by `P`, so its
   cardinality does not depend on the basis. Neither does it change under reindexing or under a
   ring isomorphism of the coefficients.
+* When every solution has unit determinant, the solutions form a group, so for any ring
+  homomorphism `f` their number is the number of their images under `f` times the number of
+  solutions sent to `1`.
 * Let `f : R →+* S` be surjective with square-zero kernel, let `2` be a unit of `R`, and let `A`
   be symmetric with unit determinant. Then every solution over `S` lifts to a solution over `R`,
   and the solutions over `R` lying above a fixed one correspond to the skew-symmetric matrices
@@ -43,6 +46,8 @@ the matrix `M * (1 + ½ A⁻¹ E)` is a solution, since all quadratic terms in t
   `A ↦ Pᵀ * A * P` for invertible `P`.
 * `Matrix.natCard_isometryMatrices_reindex`, `Matrix.natCard_isometryMatrices_map_ringEquiv`: the
   count is invariant under reindexing and under ring isomorphisms.
+* `Matrix.natCard_isometryMatrices_eq_mul`: the count is the number of images under a ring
+  homomorphism times the size of the fibre above `1`, when all solutions are invertible.
 * `Matrix.exists_map_eq_of_mem_isometryMatrices_map`: solutions lift across a surjection with
   square-zero kernel.
 * `Matrix.isometryMatricesFiberEquiv`: the solutions congruent to a given one modulo a
@@ -145,6 +150,49 @@ theorem isUnit_det_of_mem_isometryMatrices {A X : Matrix n n R} (hA : IsUnit A.d
   rw [det_mul, det_mul, det_transpose] at h
   have h' : X.det * X.det * A.det = 1 * A.det := by linear_combination h
   exact IsUnit.of_mul_eq_one _ (hA.mul_left_injective h')
+
+/-- The inverse of a matrix with unit determinant preserving `A` also preserves `A`. -/
+theorem nonsing_inv_mem_isometryMatrices {A X : Matrix n n R} (hX : X ∈ isometryMatrices A)
+    (hdet : IsUnit X.det) : X⁻¹ ∈ isometryMatrices A := by
+  rw [mem_isometryMatrices] at *
+  calc X⁻¹ᵀ * A * X⁻¹ = X⁻¹ᵀ * (Xᵀ * A * X) * X⁻¹ := by rw [hX]
+    _ = (X * X⁻¹)ᵀ * A * (X * X⁻¹) := by simp only [transpose_mul, Matrix.mul_assoc]
+    _ = A := by rw [mul_nonsing_inv X hdet, transpose_one, Matrix.one_mul, Matrix.mul_one]
+
+/-- **Counting matrices preserving a Gram matrix fibrewise.** If every matrix preserving `A` has
+unit determinant, these matrices form a group, so the fibres of a ring homomorphism `f` on them
+are the cosets of the fibre above `1`: their number is the number of their images under `f` times
+the number of them that `f` sends to `1`. -/
+theorem natCard_isometryMatrices_eq_mul (f : R →+* S) {A : Matrix n n R}
+    (hunit : ∀ X ∈ isometryMatrices A, IsUnit X.det) :
+    Nat.card (isometryMatrices A) = Nat.card ((isometryMatrices A).map f.mapMatrix) *
+      Nat.card {X ∈ isometryMatrices A | X.map f = 1} := by
+  set T := isometryMatrices A
+  let σ : T.map f.mapMatrix → Matrix n n R := fun y => y.2.choose
+  have hσT (y) : σ y ∈ T := y.2.choose_spec.1
+  have hσf (y) : (σ y).map f = y := y.2.choose_spec.2
+  have hσσ (y) : σ y * (σ y)⁻¹ = 1 := mul_nonsing_inv _ (hunit _ (hσT y))
+  have hσσ' (y) : (σ y)⁻¹ * σ y = 1 := nonsing_inv_mul _ (hunit _ (hσT y))
+  have hσinv (y) : (σ y)⁻¹.map f * y = 1 := by
+    rw [← hσf y, ← RingHom.mapMatrix_apply, ← RingHom.mapMatrix_apply, ← map_mul, hσσ', map_one]
+  rw [← Nat.card_prod]
+  refine Nat.card_congr
+    { toFun := fun X => (⟨f.mapMatrix X.1, X.1, X.2, rfl⟩,
+        ⟨(σ ⟨f.mapMatrix X.1, X.1, X.2, rfl⟩)⁻¹ * X.1,
+          T.mul_mem (nonsing_inv_mem_isometryMatrices (hσT _) (hunit _ (hσT _))) X.2, ?_⟩)
+      invFun := fun yK => ⟨σ yK.1 * yK.2.1, T.mul_mem (hσT _) yK.2.2.1⟩
+      left_inv := fun X => Subtype.ext ?_
+      right_inv := fun yK => ?_ }
+  · rw [← RingHom.mapMatrix_apply, map_mul]
+    exact hσinv _
+  · simp only [← Matrix.mul_assoc, hσσ, Matrix.one_mul]
+  · obtain ⟨y, K, hKT, hK⟩ := yK
+    have hy : (⟨f.mapMatrix (σ y * K), σ y * K, T.mul_mem (hσT y) hKT, rfl⟩ :
+        T.map f.mapMatrix) = y := by
+      ext1
+      simp only [map_mul, RingHom.mapMatrix_apply, hσf, hK, Matrix.mul_one]
+    simp only [hy, Prod.mk.injEq, Subtype.mk.injEq, true_and]
+    rw [← Matrix.mul_assoc, hσσ', Matrix.one_mul]
 
 /-- **The count of matrices preserving a Gram matrix does not depend on the basis**: for an
 invertible `P`, conjugation by `P` matches the solutions for `Pᵀ * A * P` with those for `A`. -/
