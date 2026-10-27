@@ -60,8 +60,7 @@ theorem isClosed_nullChainImpression : IsClosed (nullChainImpression U C) := by
 
 /-- Every chain impression is contained in the closure of the domain. -/
 theorem nullChainImpression_subset_closure : nullChainImpression U C ⊆ closure U :=
-  fun _ hz => closure_mono (nullChainDomain_subset.trans sdiff_subset)
-    (mem_nullChainImpression_iff.mp hz 0)
+  fun _ hz => closure_mono nullChainDomain_subset_self (mem_nullChainImpression_iff.mp hz 0)
 
 /-- Chain impressions in a bounded domain are compact. -/
 theorem isCompact_nullChainImpression (hU : IsBounded U) :
@@ -93,7 +92,7 @@ theorem isConnected_nullChainImpression (hC : IsNullChain U C) (hU : IsBounded U
     (fun i j => ⟨max i j, closure_mono (hC.antitone_nullChainDomain (le_max_left _ _)),
       closure_mono (hC.antitone_nullChainDomain (le_max_right _ _))⟩)
     (fun n => (hC.nonempty_nullChainDomain n).closure)
-    (fun _ => (hU.subset (nullChainDomain_subset.trans sdiff_subset)).isCompact_closure)
+    (fun _ => (hU.subset nullChainDomain_subset_self).isCompact_closure)
     (fun n => (hC.isConnected_nullChainDomain n).isPreconnected.closure)
 
 /-- The impression of a bounded null chain in a connected open domain lies in its frontier. -/
@@ -103,7 +102,7 @@ theorem nullChainImpression_subset_frontier (hC : IsNullChain U C) (hU : IsOpen 
   intro x hx
   have hxD := mem_nullChainImpression_iff.mp hx
   rw [hU.frontier_eq]
-  refine ⟨closure_mono (nullChainDomain_subset.trans sdiff_subset) (hxD 0), ?_⟩
+  refine ⟨nullChainImpression_subset_closure hx, ?_⟩
   intro hxU
   obtain ⟨p, hpC, hpU⟩ := (hC.isConnected_inter 0).nonempty
   obtain ⟨L, hL, hLc, hpair, hLU⟩ :=

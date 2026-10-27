@@ -83,6 +83,10 @@ theorem mem_nullChainDomain_iff {z : ℂ} :
 theorem nullChainDomain_subset : nullChainDomain U C n ⊆ U \ C n :=
   iUnion₂_subset fun _ _ => connectedComponentIn_subset _ _
 
+/-- The domain cut off by a crosscut lies in the ambient domain. -/
+theorem nullChainDomain_subset_self : nullChainDomain U C n ⊆ U :=
+  nullChainDomain_subset.trans sdiff_subset
+
 /-- A preconnected subset of `U \ C n` that meets the domain cut off by the `n`-th crosscut lies
 in that domain. -/
 theorem _root_.IsPreconnected.subset_nullChainDomain {S : Set ℂ} (hS : IsPreconnected S)
