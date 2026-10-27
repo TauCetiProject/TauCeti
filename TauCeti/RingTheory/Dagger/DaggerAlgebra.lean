@@ -68,17 +68,6 @@ class IsDaggerAlgebra : Prop where
 
 variable {K A}
 
-/-- The constant coefficient `W_0 → K`, which identifies the Monsky–Washnitzer algebra in zero
-variables with `K`. -/
-private noncomputable def constantCoeffFinZero : washnitzerAlgebra (Fin 0) K →ₐ[K] K where
-  toRingHom := constantCoeff.comp (washnitzerAlgebra (Fin 0) K).val.toRingHom
-  commutes' r := by simp [MvPowerSeries.algebraMap_apply]
-
-/-- Every scalar is the constant coefficient of a series in zero variables. -/
-private theorem constantCoeffFinZero_surjective :
-    Function.Surjective (constantCoeffFinZero (K := K)) :=
-  fun r ↦ ⟨algebraMap K _ r, constantCoeffFinZero.commutes r⟩
-
 namespace IsDaggerAlgebra
 
 /-- A surjective image of a dagger algebra is a dagger algebra. -/
@@ -108,7 +97,8 @@ variable (K) in
 /-- The coefficient field is a dagger algebra, presented by the constant coefficient
 `W_0 → K`. -/
 instance self : IsDaggerAlgebra K K :=
-  ⟨0, constantCoeffFinZero, constantCoeffFinZero_surjective⟩
+  ⟨0, (washnitzerAlgebra.isEmptyAlgEquiv (Fin 0) K).toAlgHom,
+    (washnitzerAlgebra.isEmptyAlgEquiv (Fin 0) K).surjective⟩
 
 end IsDaggerAlgebra
 
@@ -155,14 +145,6 @@ theorem presentationDim_le {n : ℕ} (φ : washnitzerAlgebra (Fin n) K →ₐ[K]
   classical
   exact Nat.find_min' _ ⟨φ, hφ⟩
 
-/-- Every overconvergent series in zero variables is a constant. -/
-private theorem algebraMap_washnitzerAlgebra_fin_zero_surjective :
-    Function.Surjective (algebraMap K (washnitzerAlgebra (Fin 0) K)) := fun f ↦
-  ⟨constantCoeff (f : MvPowerSeries (Fin 0) K), Subtype.ext <| by
-    ext t
-    rw [Subsingleton.elim t 0]
-    simp [MvPowerSeries.algebraMap_apply]⟩
-
 /-- **Dagger algebras of presentation dimension zero.** A dagger algebra has a presentation in
 zero variables iff every element is a scalar. -/
 theorem presentationDim_eq_zero_iff :
@@ -173,11 +155,12 @@ theorem presentationDim_eq_zero_iff :
       h ▸ ⟨presentation K A, presentation_surjective K A⟩
     refine fun a ↦ ?_
     obtain ⟨f, rfl⟩ := hφ a
-    obtain ⟨r, rfl⟩ := algebraMap_washnitzerAlgebra_fin_zero_surjective f
+    obtain ⟨r, rfl⟩ := algebraMap_washnitzerAlgebra_surjective f
     exact ⟨r, (φ.commutes r).symm⟩
   · intro h
-    exact Nat.le_zero.1 <| presentationDim_le ((Algebra.ofId K A).comp constantCoeffFinZero)
-      (h.comp constantCoeffFinZero_surjective)
+    let e := washnitzerAlgebra.isEmptyAlgEquiv (Fin 0) K
+    exact Nat.le_zero.1 <| presentationDim_le ((Algebra.ofId K A).comp e.toAlgHom)
+      (h.comp e.surjective)
 
 variable (K) in
 /-- The coefficient field has a presentation in zero variables. -/
@@ -231,7 +214,6 @@ theorem not_isDaggerAlgebra_polynomial {K : Type*} [NontriviallyNormedField K] [
     (Polynomial.X : Polynomial K)).filter_mono nhdsWithin_le_nhds |>.and
       (self_mem_nhdsWithin (s := {0}ᶜ))).exists
   have hdeg := Polynomial.natDegree_eq_zero_of_isUnit hc
-  rw [Polynomial.smul_eq_C_mul, add_comm, ← Polynomial.C_1, Polynomial.natDegree_linear hc0] at hdeg
-  exact one_ne_zero hdeg
+  simp_all [Polynomial.smul_eq_C_mul]
 
 end TauCeti.Dagger

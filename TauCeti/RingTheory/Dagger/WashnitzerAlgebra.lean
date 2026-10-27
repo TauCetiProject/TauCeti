@@ -11,6 +11,8 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Units
 
+import Mathlib.Analysis.Normed.Ring.Units
+
 /-!
 # The Monsky–Washnitzer algebra of overconvergent power series
 
@@ -39,6 +41,8 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
 * `TauCeti.Dagger.washnitzerAlgebra.ofRestricted`: the inclusion into `W` of the series
   restricted at a polyradius bounded below by some `ρ > 1`.
 * `TauCeti.Dagger.washnitzerAlgebra.renameEquiv`: renaming the variables along an equivalence.
+* `TauCeti.Dagger.washnitzerAlgebra.isEmptyAlgEquiv`: with no variables, `W` is the coefficient
+  ring, via the constant coefficient.
 
 ## Main results
 
@@ -49,7 +53,8 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
 * `TauCeti.Dagger.washnitzerAlgebra.denseRange_toTate`: `W` is dense in the Tate algebra;
   `TauCeti.Dagger.washnitzerAlgebra_toSubring_lt`: over a nontrivially normed field it is a
   proper subring as soon as there is a variable, while `W` is everything when there is none
-  (`TauCeti.Dagger.washnitzerAlgebra_eq_top`).
+  (`TauCeti.Dagger.washnitzerAlgebra_eq_top`), and then every series is a constant
+  (`TauCeti.Dagger.algebraMap_washnitzerAlgebra_surjective`).
 * `TauCeti.Dagger.exists_isRestricted_forall_norm_coeff_mul_pow_lt`: strict coefficient bounds
   on an overconvergent series persist to some radius `ρ > 1`; by
   `TauCeti.Dagger.exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt` this holds for the
@@ -166,6 +171,12 @@ theorem mem_washnitzerAlgebra_iff_norm_coeff_le [Finite σ] {f : MvPowerSeries �
 theorem washnitzerAlgebra_eq_top [IsEmpty σ] : washnitzerAlgebra σ R = ⊤ :=
   eq_top_iff.2 fun _ _ ↦ ⟨2, one_lt_two, isRestricted_of_finite_support _ (Set.toFinite _)⟩
 
+/-- Without variables every overconvergent series is a constant. -/
+theorem algebraMap_washnitzerAlgebra_surjective [IsEmpty σ] :
+    Function.Surjective (algebraMap R (washnitzerAlgebra σ R)) := fun f ↦
+  let ⟨r, hr⟩ := C_surjective (f : MvPowerSeries σ R)
+  ⟨r, Subtype.ext hr⟩
+
 /-- The Monsky–Washnitzer algebra lies in the unit-radius Tate algebra. -/
 theorem washnitzerAlgebra_toSubring_le :
     (washnitzerAlgebra σ R).toSubring ≤ IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)) :=
@@ -265,6 +276,25 @@ underlying series. -/
 theorem coe_renameEquiv {τ : Type*} (e : σ ≃ τ) (f : washnitzerAlgebra σ R) :
     (washnitzerAlgebra.renameEquiv e f : MvPowerSeries τ R) =
       _root_.MvPowerSeries.renameEquiv R e f :=
+  (rfl)
+
+variable (σ R) in
+/-- **Overconvergent series in no variables.** With no variables every series is a constant, so
+the constant coefficient is an `R`-algebra isomorphism `R⟨⟩† ≃ R`. -/
+noncomputable def isEmptyAlgEquiv [IsEmpty σ] : washnitzerAlgebra σ R ≃ₐ[R] R :=
+  (Subalgebra.equivOfEq _ _ washnitzerAlgebra_eq_top).trans <|
+    Subalgebra.topEquiv.trans (_root_.MvPowerSeries.isEmptyEquiv σ R)
+
+/-- The isomorphism `R⟨⟩† ≃ R` is the constant coefficient. -/
+@[simp]
+theorem isEmptyAlgEquiv_apply [IsEmpty σ] (f : washnitzerAlgebra σ R) :
+    isEmptyAlgEquiv σ R f = constantCoeff (f : MvPowerSeries σ R) :=
+  (rfl)
+
+/-- The inverse of `R⟨⟩† ≃ R` sends a scalar to the constant series. -/
+@[simp]
+theorem coe_isEmptyAlgEquiv_symm_apply [IsEmpty σ] (r : R) :
+    ((isEmptyAlgEquiv σ R).symm r : MvPowerSeries σ R) = C r :=
   (rfl)
 
 end washnitzerAlgebra
@@ -479,38 +509,11 @@ overconvergent series `f`, `1 + c • f` is a unit of the Monsky–Washnitzer al
 `c` near `0`. -/
 theorem washnitzerAlgebra.eventually_isUnit_one_add_smul (f : washnitzerAlgebra σ K) :
     ∀ᶠ c in 𝓝 (0 : K), IsUnit (1 + c • f) := by
-  -- The coefficients of `f` are bounded by its Gauss norm `C`; take `‖c‖ < (C + 1)⁻¹`.
-  set C := ‖washnitzerAlgebra.toTate σ K f‖
-  have hC : ∀ t, ‖coeff t (f : MvPowerSeries σ K)‖ ≤ C := fun t ↦ by
-    simpa using MvPowerSeries.norm_coeff_le_norm (washnitzerAlgebra.toTate σ K f) t
-  have hC0 : 0 ≤ C := norm_nonneg _
-  filter_upwards [Metric.ball_mem_nhds (0 : K) (inv_pos.2 (by linarith : (0 : ℝ) < C + 1))]
-    with c hc
-  rw [Metric.mem_ball, dist_zero_right] at hc
-  have hcC : ∀ t, ‖c * coeff t (f : MvPowerSeries σ K)‖ < 1 := fun t ↦ by
-    rw [norm_mul]
-    calc ‖c‖ * ‖coeff t (f : MvPowerSeries σ K)‖ ≤ ‖c‖ * C :=
-          mul_le_mul_of_nonneg_left (hC t) (norm_nonneg c)
-      _ < (C + 1)⁻¹ * (C + 1) := by nlinarith [norm_nonneg c]
-      _ = 1 := inv_mul_cancel₀ (by linarith)
-  -- The constant coefficient `1 + c f(0)` has norm `1`, and dominates all others.
-  have h1 : ‖1 + c * constantCoeff (f : MvPowerSeries σ K)‖ = 1 := by
-    have := hcC 0
-    rw [coeff_zero_eq_constantCoeff_apply] at this
-    rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by rw [norm_one]; exact this.ne'),
-      norm_one, max_eq_left this.le]
-  have hcoe : ((1 + c • f : washnitzerAlgebra σ K) : MvPowerSeries σ K) =
-      1 + c • (f : MvPowerSeries σ K) := by
-    rw [Subalgebra.coe_add, Subalgebra.coe_one, Subalgebra.coe_smul]
-  have hconst : constantCoeff (1 + c • (f : MvPowerSeries σ K)) =
-      1 + c * constantCoeff (f : MvPowerSeries σ K) := by
-    rw [map_add, map_one, constantCoeff_smul, smul_eq_mul]
-  refine (isUnit_washnitzerAlgebra_iff _).2 ⟨?_, fun t ht ↦ ?_⟩
-  · rw [hcoe, hconst, ← norm_ne_zero_iff, h1]
-    exact one_ne_zero
-  · classical
-    simp only [hcoe, hconst, h1, map_add, coeff_one, ht, ↓reduceIte, zero_add, coeff_smul]
-    exact hcC t
+  -- Units of the complete Tate algebra form an open set containing `1 = 1 + 0 • f`.
+  have hcont : Continuous fun c : K ↦ 1 + c • washnitzerAlgebra.toTate σ K f :=
+    continuous_const.add (continuous_id.smul continuous_const)
+  filter_upwards [(hcont.tendsto 0).eventually (Units.isOpen.mem_nhds (by simp))] with c hc
+  exact (washnitzerAlgebra.isUnit_toTate_iff _).1 (by simpa using hc)
 
 end Units
 
