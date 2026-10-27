@@ -35,7 +35,10 @@ variable {p : ℕ} {E : Type*} [NormedAddCommGroup E]
 noncomputable def frobeniusSubIdCoeffs (e : E) : AnalyticStage p 0 E :=
   ZeroAtInftyContinuousMap.single (0, p) e - ZeroAtInftyContinuousMap.single (0, 1) e
 
-/-- The coefficients of `(X^p - X) • e` are `e` in degree `p` and `-e` in degree one. -/
+/-- The coefficients of `(X^p - X) • e` are the difference of the indicator contributions
+in degree `p` and degree one. These contributions cancel when `p = 1`. -/
+-- Apply before simp normalizes the dependent index p^0 in the function coercion.
+@[simp↓]
 theorem frobeniusSubIdCoeffs_apply (e : E) (i : ZMod (p ^ 0) × ℕ) :
     frobeniusSubIdCoeffs (p := p) e i =
       (if i.2 = p then e else 0) - if i.2 = 1 then e else 0 := by
@@ -44,33 +47,33 @@ theorem frobeniusSubIdCoeffs_apply (e : E) (i : ZMod (p ^ 0) × ℕ) :
   simp only [frobeniusSubIdCoeffs, ZeroAtInftyContinuousMap.sub_apply,
     ZeroAtInftyContinuousMap.single_apply, Prod.mk.injEq, Subsingleton.elim a 0, true_and]
 
-variable [hp : Fact p.Prime]
-
-/-- The coefficient vector `(X^p - X) • e` vanishes exactly when `e` vanishes. -/
+/-- For `p ≠ 1`, the coefficient vector `(X^p - X) • e` vanishes exactly when `e` vanishes. -/
 @[simp]
-theorem frobeniusSubIdCoeffs_eq_zero (e : E) :
+theorem frobeniusSubIdCoeffs_eq_zero (hp : p ≠ 1) (e : E) :
     frobeniusSubIdCoeffs (p := p) e = 0 ↔ e = 0 := by
   constructor
   · intro h
     have := congrArg (fun c : AnalyticStage p 0 E ↦ c (0, p)) h
-    simpa only [frobeniusSubIdCoeffs_apply, hp.out.ne_one, ite_true, ite_false, sub_zero,
+    simpa only [frobeniusSubIdCoeffs_apply, hp, ite_true, ite_false, sub_zero,
       ZeroAtInftyContinuousMap.zero_apply] using this
   · rintro rfl
     simp only [frobeniusSubIdCoeffs, ZeroAtInftyContinuousMap.single_zero, sub_self]
 
-/-- The coefficient vector `(X^p - X) • e` has Gauss norm `‖e‖`. -/
+/-- For `p ≠ 1`, the coefficient vector `(X^p - X) • e` has Gauss norm `‖e‖`. -/
 @[simp]
-theorem norm_frobeniusSubIdCoeffs (e : E) :
+theorem norm_frobeniusSubIdCoeffs (hp : p ≠ 1) (e : E) :
     ‖frobeniusSubIdCoeffs (p := p) e‖ = ‖e‖ := by
   apply le_antisymm
   · refine (ZeroAtInftyContinuousMap.norm_le (norm_nonneg e)).mpr fun i ↦ ?_
     by_cases h : i.2 = p
-    · simp only [frobeniusSubIdCoeffs_apply, h, hp.out.ne_one, ite_true, ite_false, sub_zero,
+    · simp only [frobeniusSubIdCoeffs_apply, h, hp, ite_true, ite_false, sub_zero,
         le_rfl]
     · simp only [frobeniusSubIdCoeffs_apply, h, ite_false, zero_sub, norm_neg]
       split_ifs <;> simp
-  · simpa only [frobeniusSubIdCoeffs_apply, hp.out.ne_one, ite_true, ite_false, sub_zero] using
+  · simpa only [frobeniusSubIdCoeffs_apply, hp, ite_true, ite_false, sub_zero] using
       (frobeniusSubIdCoeffs (p := p) e).norm_coe_le_norm (0, p)
+
+variable [hp : Fact p.Prime]
 
 variable [Module ℤ_[p] E] [IsBoundedSMul ℤ_[p] E] [IsUltrametricDist E] [CompleteSpace E]
   (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]
@@ -118,7 +121,7 @@ theorem not_injective_transition_residueField :
       Ideal.Quotient.eq_zero_iff_mem,
       PadicInt.maximalIdeal_eq_span_p]
     exact Ideal.subset_span (by simp)
-  exact one_ne_zero <| (frobeniusSubIdCoeffs_eq_zero (p := p) _).mp <|
+  exact one_ne_zero <| (frobeniusSubIdCoeffs_eq_zero hp.out.ne_one _).mp <|
     hinj <| by simpa using transition_frobeniusSubIdCoeffs (p := p) ℤ_[p] _ he
 
 end TauCeti.AnalyticStage
