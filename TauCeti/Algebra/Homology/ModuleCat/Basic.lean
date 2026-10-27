@@ -43,9 +43,7 @@ A chain map restricts to a map between the images of the differentials
 (`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
 (`HomologicalComplex.Hom.boundaryMap_comp`), and injective where the chain map is; for a
 degreewise short exact sequence of complexes whose third term is exact, these maps form a sequence
-exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`).  An isomorphism of complexes
-restricts to linear isomorphisms between the images of their differentials
-(`HomologicalComplex.rangeDEquiv`).  A family of chain endomorphisms
+exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`).  A family of chain endomorphisms
 that is locally nilpotent on the degree-`n` term is locally nilpotent on the degree-`n` homology
 (`HomologicalComplex.iSup_wordKer_homologyMap_eq_top`), since the homology is a quotient of the
 cycles, a submodule of the term.
@@ -150,20 +148,6 @@ theorem Hom.exact_boundaryMap {φ : K ⟶ L} {ψ : L ⟶ M} {h i j : ι} (hh : c
   · rintro ⟨x', hx'⟩
     rw [← hx']
     exact Subtype.ext (hj'.apply_apply_eq_zero _)
-
-/-- An isomorphism `e : K ≅ L` of complexes of modules maps the image of the differential
-`K.d i j` isomorphically onto the image of `L.d i j`. -/
-def rangeDEquiv (e : K ≅ L) (i j : ι) :
-    LinearMap.range (K.d i j).hom ≃ₗ[R] LinearMap.range (L.d i j).hom :=
-  .ofLinearMap (e.hom.boundaryMap i j) (e.inv.boundaryMap i j)
-    (by rw [← Hom.boundaryMap_comp, e.inv_hom_id, Hom.boundaryMap_id])
-    (by rw [← Hom.boundaryMap_comp, e.hom_inv_id, Hom.boundaryMap_id])
-
-/-- The isomorphism `rangeDEquiv e i j` is the restriction of `e.hom.f j`. -/
-@[simp]
-lemma coe_rangeDEquiv_apply (e : K ≅ L) (i j : ι) (x : LinearMap.range (K.d i j).hom) :
-    (rangeDEquiv e i j x : L.X j) = (e.hom.f j).hom x :=
-  (rfl)
 
 end BoundaryMap
 
