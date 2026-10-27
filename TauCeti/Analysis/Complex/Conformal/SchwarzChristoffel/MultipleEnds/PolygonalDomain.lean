@@ -76,6 +76,32 @@ open Bornology Complex Filter Function Metric Set Topology UpperHalfPlane
 
 namespace TauCeti
 
+/-- **The side condition away from the prevertices.**  Let `g` be continuous on the closed upper
+half-plane and injective away from its zeros, with `q + g⁻¹` mapping the upper half-plane onto
+`U` and its nonzero real boundary values in the frontier of `U`.  At a real parameter `x` with
+`g x ≠ 0` which is not a prevertex `a i` of a vertex `v i`, the local half-plane description of
+`U` gives the side condition of the Schwarz--Christoffel formula for `q + g⁻¹`. -/
+private theorem exists_ball_side_of_inverted_coordinate_of_ne_prevertex {ι : Type*} {g : ℂ → ℂ}
+    {q : ℂ} {U : Set ℂ} (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im})
+    (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0})
+    (hgU : (fun z => q + (g z)⁻¹) '' upperHalfPlaneSet = U)
+    (hgfr : ∀ x : ℝ, g x ≠ 0 → q + (g x)⁻¹ ∈ frontier U) {v : ι → ℂ}
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ p b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - p) / b).im))
+    {a : ι → ℝ} (hga : ∀ i, g (a i) ≠ 0 ∧ q + (g (a i))⁻¹ = v i) {x : ℝ} (hx : g x ≠ 0)
+    (hxa : ∀ i, a i ≠ x) :
+    ∃ r > 0, ∃ p b : ℂ, b ≠ 0 ∧
+      ContinuousOn (fun z => q + (g z)⁻¹) (ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
+      InjOn (fun z => q + (g z)⁻¹) (ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
+      (∀ z ∈ ball (x : ℂ) r, z.im = 0 → ((q + (g z)⁻¹ - p) / b).im = 0) ∧
+      ∀ z ∈ ball (x : ℂ) r, 0 < z.im → 0 < ((q + (g z)⁻¹ - p) / b).im := by
+  have hnv (i : ι) : q + (g x)⁻¹ ≠ v i := fun h => by
+    have hg : g x = g (a i) := inv_injective (add_left_cancel (h.trans (hga i).2.symm))
+    exact hxa i (by exact_mod_cast hgi ⟨by simp, (hga i).1⟩ ⟨by simp, hx⟩ hg.symm)
+  obtain ⟨ρ, hρ, p, b, hb, hU⟩ := hside _ (hgfr x hx) hnv
+  obtain ⟨r, hr, h₁, h₂, h₃, h₄⟩ := exists_ball_side_of_inverted_coordinate hgc hgi hgU hx hρ hU
+  exact ⟨r, hr, p, b, hb, h₁, h₂, h₃, h₄⟩
+
 /-- **A Riemann map with a side point at infinity.**  Under the hypotheses of
 `TauCeti.exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_ends`, with the ends
 replaced by open sets `E k` preconnected at infinity inside `U`, there is a coordinate `g`,
@@ -137,12 +163,11 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι κ : Type*} [Fi
   obtain ⟨x₀, hx₀⟩ := ((finite_setOf_inverted_coordinate_eq_zero hgc hgd hgf hgne hfU hEo hEd hUE
     hEc).union (finite_range a₀)).exists_notMem
   have hgx₀ : g x₀ ≠ 0 := fun h => hx₀ (Or.inl h)
-  have hnotv (i : ι) : q + (g x₀)⁻¹ ≠ v i := fun h => hx₀ (Or.inr ⟨i, by
-    have hg : g x₀ = g (a₀ i) := by rw [(ha₀g i).1, ← h, add_sub_cancel_left, inv_inv]
-    exact_mod_cast hgi ⟨by simp, (ha₀g i).1 ▸ hvq i⟩ ⟨by simp, hgx₀⟩ hg.symm⟩)
-  obtain ⟨ρ₀, hρ₀, p₀, n₀, hn₀, hU₀⟩ := hside _ (hfront (by simp) hgx₀) hnotv
-  obtain ⟨r₀, hr₀, hc₀, hi₀, hreal₀, hupper₀⟩ :=
-    exists_ball_side_of_inverted_coordinate hgc hgi hgU hgx₀ hρ₀ hU₀
+  obtain ⟨r₀, hr₀, p₀, n₀, hn₀, hc₀, hi₀, hreal₀, hupper₀⟩ :=
+    exists_ball_side_of_inverted_coordinate_of_ne_prevertex hgc hgi hgU
+      (fun x hx => hfront (by simp) hx) hside
+      (fun i => ⟨(ha₀g i).1 ▸ hvq i, by rw [(ha₀g i).1, inv_inv, add_sub_cancel]⟩) hgx₀
+      fun i h => hx₀ (Or.inr ⟨i, h⟩)
   -- move `x₀` to infinity
   obtain ⟨g₁, hg₁0, hg₁g, hg₁c, hg₁d, hg₁ne, hg₁i, hg₁U, hg₁inf⟩ :=
     exists_inverted_coordinate_comp_sub_inv hgc hgd hgne hgi hg0 x₀
@@ -165,32 +190,6 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι κ : Type*} [Fi
       simp
     rw [hg₁a, inv_inv, add_sub_cancel]
     exact ⟨hvq i, rfl⟩
-
-/-- **The side condition away from the prevertices.**  Let `g` be continuous on the closed upper
-half-plane and injective away from its zeros, with `q + g⁻¹` mapping the upper half-plane onto
-`U` and its nonzero real boundary values in the frontier of `U`.  At a real parameter `x` with
-`g x ≠ 0` which is not a prevertex `a i` of a vertex `v i`, the local half-plane description of
-`U` gives the side condition of the Schwarz--Christoffel formula for `q + g⁻¹`. -/
-private theorem exists_ball_side_of_inverted_coordinate_of_ne_prevertex {ι : Type*} {g : ℂ → ℂ}
-    {q : ℂ} {U : Set ℂ} (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im})
-    (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0})
-    (hgU : (fun z => q + (g z)⁻¹) '' upperHalfPlaneSet = U)
-    (hgfr : ∀ x : ℝ, g x ≠ 0 → q + (g x)⁻¹ ∈ frontier U) {v : ι → ℂ}
-    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ p b : ℂ, b ≠ 0 ∧
-      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - p) / b).im))
-    {a : ι → ℝ} (hga : ∀ i, g (a i) ≠ 0 ∧ q + (g (a i))⁻¹ = v i) {x : ℝ} (hx : g x ≠ 0)
-    (hxa : ∀ i, a i ≠ x) :
-    ∃ r > 0, ∃ p b : ℂ, b ≠ 0 ∧
-      ContinuousOn (fun z => q + (g z)⁻¹) (ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
-      InjOn (fun z => q + (g z)⁻¹) (ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
-      (∀ z ∈ ball (x : ℂ) r, z.im = 0 → ((q + (g z)⁻¹ - p) / b).im = 0) ∧
-      ∀ z ∈ ball (x : ℂ) r, 0 < z.im → 0 < ((q + (g z)⁻¹ - p) / b).im := by
-  have hnv (i : ι) : q + (g x)⁻¹ ≠ v i := fun h => by
-    have hg : g x = g (a i) := inv_injective (add_left_cancel (h.trans (hga i).2.symm))
-    exact hxa i (by exact_mod_cast hgi ⟨by simp, (hga i).1⟩ ⟨by simp, hx⟩ hg.symm)
-  obtain ⟨ρ, hρ, p, b, hb, hU⟩ := hside _ (hgfr x hx) hnv
-  obtain ⟨r, hr, h₁, h₂, h₃, h₄⟩ := exists_ball_side_of_inverted_coordinate hgc hgi hgU hx hρ hU
-  exact ⟨r, hr, p, b, hb, h₁, h₂, h₃, h₄⟩
 
 /-- The Schwarz--Christoffel representation of a Riemann map of a polygonal domain with several
 ends, before its constants are named: a holomorphic bijection `f` of the upper half-plane onto `U`
