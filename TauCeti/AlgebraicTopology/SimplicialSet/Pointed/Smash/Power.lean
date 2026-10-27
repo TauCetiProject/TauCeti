@@ -33,10 +33,11 @@ of pointed simplicial sets: the block swap of `FiniteBijection` corresponds to s
 smash factors.
 
 For `X` the simplicial circle `S¹ = Δ[1]/∂Δ[1]` this is the sphere sequence
-`PointedSSet.sphereSequence`, `n ↦ S^n = (S¹)^∧n`, with its coordinate-permutation actions and
-block-concatenation multiplication `S^p ∧ S^q → S^(p+q)`. Under Day convolution along the block
-sum, lax braided monoidal functors out of `FiniteBijection` are the commutative monoids of
-symmetric sequences, and symmetric spectra are the modules over the sphere sequence.
+`PointedSSet.smashPowFunctor PointedSSet.circle`, `n ↦ S^n = (S¹)^∧n`, with its
+coordinate-permutation actions and block-concatenation multiplication `S^p ∧ S^q → S^(p+q)`.
+Under Day convolution along the block sum, lax braided monoidal functors out of
+`FiniteBijection` are the commutative monoids of symmetric sequences, and symmetric spectra are
+the modules over the sphere sequence.
 
 ## Main definitions
 
@@ -54,7 +55,6 @@ symmetric sequences, and symmetric spectra are the modules over the sphere seque
 * `PointedSSet.smashPowFunctor X`: the symmetric sequence `n ↦ X^∧n`, with its
   `Functor.Monoidal` and `Functor.Braided` instances.
 * `PointedSSet.sphere k`: the simplicial `k`-sphere `S^k = (S¹)^∧k`.
-* `PointedSSet.sphereSequence`: the sphere sequence `n ↦ (S¹)^∧n`.
 
 ## References
 
@@ -628,11 +628,5 @@ instance {Y : PointedSSet.{u}} (f : X ⟶ Y) : NatTrans.IsMonoidal (smashPowFunc
 circle. -/
 noncomputable abbrev sphere (k : ℕ) : PointedSSet.{0} :=
   circle.smashPow (Fin k)
-
-/-- The sphere sequence `n ↦ S^n = (S¹)^∧n` of smash powers of the simplicial circle, with the
-coordinate-permutation actions and the block-concatenation multiplication `S^p ∧ S^q → S^(p+q)`
-of its braided monoidal structure. -/
-noncomputable abbrev sphereSequence : FiniteBijection ⥤ PointedSSet.{0} :=
-  smashPowFunctor circle
 
 end TauCeti.PointedSSet

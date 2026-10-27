@@ -36,19 +36,27 @@ variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
 omit [MonObj A] in
 /-- Restricting the scalars of a `B`-module along `f : A ⟶ B` and then along `g : B ⟶ A`, where
 `g ≫ f = 𝟙 B`, recovers its action: the identity is equivariant in both directions. -/
-lemma smul_comp_id_eq (f : A ⟶ B) (g : B ⟶ A) (h : g ≫ f = 𝟙 B) (X : D) [ModObj B X] :
+private lemma smul_comp_id_eq (f : A ⟶ B) (g : B ⟶ A) (h : g ≫ f = 𝟙 B) (X : D) [ModObj B X] :
     γ[B, X] ≫ 𝟙 X = B ⊴ₗ 𝟙 X ≫ g ⊵ₗ X ≫ f ⊵ₗ X ≫ γ[B, X] ∧
       (g ⊵ₗ X ≫ f ⊵ₗ X ≫ γ[B, X]) ≫ 𝟙 X = B ⊴ₗ 𝟙 X ≫ γ[B, X] := by
   simp [← comp_actionHomLeft_assoc, h]
 
 /-- A `B`-module is isomorphic, by its identity, to its restriction along `f : A ⟶ B` and then
 along `g : B ⟶ A`, when `g ≫ f = 𝟙 B`. -/
-@[expose] def comapCompIso (f : A ⟶ B) (g : B ⟶ A) [IsMonHom f] [IsMonHom g] (h : g ≫ f = 𝟙 B)
+def comapCompIso (f : A ⟶ B) (g : B ⟶ A) [IsMonHom f] [IsMonHom g] (h : g ≫ f = 𝟙 B)
     (M : Mod D B) : M ≅ (comap g).obj ((comap f).obj M) where
   hom := Hom.mk' (𝟙 M.X) (smul_comp_id_eq f g h M.X).1
   inv := Hom.mk' (𝟙 M.X) (smul_comp_id_eq f g h M.X).2
   hom_inv_id := Hom.ext (Category.id_comp _)
   inv_hom_id := Hom.ext (Category.id_comp _)
+
+@[simp]
+lemma comapCompIso_hom_hom (f : A ⟶ B) (g : B ⟶ A) [IsMonHom f] [IsMonHom g] (h : g ≫ f = 𝟙 B)
+    (M : Mod D B) : (comapCompIso f g h M).hom.hom = 𝟙 M.X := (rfl)
+
+@[simp]
+lemma comapCompIso_inv_hom (f : A ⟶ B) (g : B ⟶ A) [IsMonHom f] [IsMonHom g] (h : g ≫ f = 𝟙 B)
+    (M : Mod D B) : (comapCompIso f g h M).inv.hom = 𝟙 M.X := (rfl)
 
 /-- Restriction of scalars along an isomorphism `e : A ≅ B` of monoid objects is an equivalence
 between the categories of `B`-modules and of `A`-modules, with inverse the restriction along
@@ -56,11 +64,20 @@ between the categories of `B`-modules and of `A`-modules, with inverse the restr
 @[expose] def comapEquivalence (e : A ≅ B) [IsMonHom e.hom] : Mod D B ≌ Mod D A where
   functor := comap e.hom
   inverse := comap e.inv
-  unitIso := NatIso.ofComponents (comapCompIso e.hom e.inv e.inv_hom_id) fun _ ↦
-    Hom.ext ((Category.comp_id _).trans (Category.id_comp _).symm)
-  counitIso := (NatIso.ofComponents (comapCompIso e.inv e.hom e.hom_inv_id) fun _ ↦
-    Hom.ext ((Category.comp_id _).trans (Category.id_comp _).symm)).symm
-  functor_unitIso_comp _ := Hom.ext (Category.id_comp _)
+  unitIso := NatIso.ofComponents (comapCompIso e.hom e.inv e.inv_hom_id) fun _ ↦ by
+    ext
+    simp only [comp_hom', comapCompIso_hom_hom]
+    exact (Category.comp_id _).trans (Category.id_comp _).symm
+  counitIso := (NatIso.ofComponents (comapCompIso e.inv e.hom e.hom_inv_id) fun _ ↦ by
+    ext
+    simp only [comp_hom', comapCompIso_hom_hom]
+    exact (Category.comp_id _).trans (Category.id_comp _).symm).symm
+  functor_unitIso_comp _ := by
+    ext
+    simp only [NatIso.ofComponents_hom_app, Functor.id_obj, Functor.comp_obj, Iso.symm_hom,
+      NatIso.ofComponents_inv_app, comp_hom', comap_map_hom, comapCompIso_hom_hom,
+      comapCompIso_inv_hom, id_hom']
+    exact Category.id_comp _
 
 @[simp]
 lemma comapEquivalence_functor (e : A ≅ B) [IsMonHom e.hom] :

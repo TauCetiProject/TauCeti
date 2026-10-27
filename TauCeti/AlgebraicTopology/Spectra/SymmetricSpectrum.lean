@@ -13,12 +13,12 @@ public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Module
 
 The sphere sequence `n ↦ S^n = (S¹)^∧n`, with the coordinate-permutation actions of `Σ_n` and the
 block-concatenation maps `S^p ∧ S^q → S^(p+q)`, is a braided monoidal functor out of the
-finite-bijection groupoid (`PointedSSet.sphereSequence`). Regarded as a symmetric sequence, it is
-the monoid `SymmetricSequence.smashPow PointedSSet.circle` of smash powers of the circle, and so
-a commutative monoid for the Day convolution product: its multiplication `S ⊗ S ⟶ S` is induced
-by block concatenation of sphere coordinates (`SymmetricSequence.smashPow_mul_app_smashMk`) and
-its unit by `S⁰ ≅ S^0`. Following Hovey, Shipley and Smith, a symmetric spectrum is a module over
-this commutative monoid.
+finite-bijection groupoid (`PointedSSet.smashPowFunctor PointedSSet.circle`). Regarded as a
+symmetric sequence, it is the monoid `SymmetricSequence.smashPow PointedSSet.circle` of smash
+powers of the circle, and so a commutative monoid for the Day convolution product: its
+multiplication `S ⊗ S ⟶ S` is induced by block concatenation of sphere coordinates
+(`SymmetricSequence.smashPow_mul_app_smashMk`) and its unit by `S⁰ ≅ S^0`. Following Hovey,
+Shipley and Smith, a symmetric spectrum is a module over this commutative monoid.
 
 Unwinding the universal property of the Day convolution, a symmetric spectrum `X` amounts to a
 symmetric sequence of pointed simplicial sets `X_n` with based `Σ_p × Σ_q`-equivariant structure
