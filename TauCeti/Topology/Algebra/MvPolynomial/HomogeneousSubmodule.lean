@@ -50,7 +50,7 @@ This file provides those continuity statements; their analytic counterparts are 
 
 * `TauCeti.continuous_eval_homogeneousSubmodule`: evaluation `(p, v) ↦ p(v)` is jointly
   continuous.
-* `TauCeti.isClosed_setOf_forall_eval_eq_zero_homogeneousSubmodule`: the common-zero relation
+* `TauCeti.isClosed_setOfPred_forall_eval_eq_zero_homogeneousSubmodule`: the common-zero relation
   is closed jointly in the coefficients and all vectors.
 * `TauCeti.continuous_jacobiMatrixAt_homogeneousSubmodule`: the Jacobian matrix of a family of
   homogeneous polynomials at a point depends continuously on the coefficients and the point
@@ -162,7 +162,7 @@ theorem continuous_eval_homogeneousSubmodule [Finite σ] (n : ℕ) :
 
 /-- The common-zero relation of a family of homogeneous polynomials is closed in the product
 of its coefficient space with all vectors, over a topological semiring with closed points. -/
-theorem isClosed_setOf_forall_eval_eq_zero_homogeneousSubmodule {ι : Type*} [Finite σ]
+theorem isClosed_setOfPred_forall_eval_eq_zero_homogeneousSubmodule {ι : Type*} [Finite σ]
     [T1Space R] (d : ι → ℕ) :
     IsClosed {x : (∀ i, homogeneousSubmodule σ R (d i)) × (σ → R) |
       ∀ i, eval x.2 (x.1 i : MvPolynomial σ R) = 0} := by

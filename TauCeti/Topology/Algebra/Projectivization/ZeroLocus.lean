@@ -52,7 +52,7 @@ families of zero loci cut out by equations of full Jacobian rank everywhere.
 * `TauCeti.isProperMap_complexProjectiveIncidence_fst`: its projection to the coefficient space
   is proper.
 * `TauCeti.isClosed_complexProjectiveBadRankLocus`: the bad-rank locus is closed.
-* `TauCeti.isOpen_setOf_forall_mulVec_surjective_jacobiMatrixAt`: the coefficients whose cone
+* `TauCeti.isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt`: the coefficients whose cone
   Jacobian has full rank at every nonzero common zero form an open set.
 
 ## References
@@ -137,7 +137,7 @@ theorem isClosed_complexProjectiveIncidence (d : ι → ℕ) :
     IsClosed (complexProjectiveIncidence N d) := by
   rw [← (IsOpenQuotientMap.id.prodMap
     Projectivization.isOpenQuotientMap_mk').isQuotientMap.isClosed_preimage]
-  convert (isClosed_setOf_forall_eval_eq_zero_homogeneousSubmodule
+  convert (isClosed_setOfPred_forall_eval_eq_zero_homogeneousSubmodule
     (σ := Fin N) (R := ℂ) d).preimage
       (continuous_fst.prodMk (continuous_subtype_val.comp' continuous_snd)) using 1
   ext ⟨c, v⟩
@@ -215,7 +215,7 @@ theorem isClosed_image_fst_complexProjectiveBadRankLocus [Finite ι] (d : ι →
 /-- **Full rank is an open condition on the equations.** The families `c` of homogeneous
 equations of degrees `d` whose cone Jacobian is surjective at every nonzero common zero form an
 open subset of the coefficient space. -/
-theorem isOpen_setOf_forall_mulVec_surjective_jacobiMatrixAt [Finite ι] (d : ι → ℕ) :
+theorem isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt [Finite ι] (d : ι → ℕ) :
     IsOpen {c : ∀ i, homogeneousSubmodule (Fin N) ℂ (d i) | ∀ v : Fin N → ℂ, v ≠ 0 →
       (∀ i, eval v (c i : MvPolynomial (Fin N) ℂ) = 0) →
         (jacobiMatrixAt (fun i ↦ (c i : MvPolynomial (Fin N) ℂ)) v).mulVec.Surjective} := by
