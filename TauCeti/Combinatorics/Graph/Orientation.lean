@@ -140,21 +140,13 @@ theorem reverse_inj {o₁ o₂ : Orientation G} : o₁.reverse = o₂.reverse �
   reverse_injective.eq_iff
 
 /-- Reversing every edge is an involutive equivalence on orientations. -/
-def reverseEquiv (G : Graph V E) : Orientation G ≃ Orientation G where
-  toFun := reverse
-  invFun := reverse
-  left_inv := reverse_reverse
-  right_inv := reverse_reverse
+def reverseEquiv (G : Graph V E) : Equiv.Perm (Orientation G) :=
+  reverse_involutive.toPerm reverse
 
 @[simp]
 theorem reverseEquiv_apply (G : Graph V E) (o : Orientation G) :
-    reverseEquiv G o = o.reverse :=
-  (rfl)
-
-@[simp]
-theorem reverseEquiv_symm_apply (G : Graph V E) (o : Orientation G) :
-    (reverseEquiv G).symm o = o.reverse :=
-  (rfl)
+    reverseEquiv G o = o.reverse := by
+  exact congrFun (Function.Involutive.coe_toPerm (reverse_involutive (G := G))) o
 
 /-- An edge is a loop at its chosen tail exactly when its chosen tail and head coincide. -/
 theorem tail_eq_head_iff_isLoopAt (o : Orientation G) (e : G.edgeSet) :
