@@ -281,9 +281,9 @@ theorem eval₂_surjective [Finite σ] (hφ : Continuous φ) (hI : IsAdic I)
 end Surjective
 
 /-- **Power series rings map onto adically complete rings.** Let `R` be `I`-adically complete, let
-`s : A →+* R` reach every class of `R ⧸ I`, and let a finite family `x` generate `I`. Then a
-surjective ring homomorphism `MvPowerSeries σ A →+* R` restricts to `s` on constants and sends
-each variable `X i` to `x i`. -/
+`s : A →+* R` reach every class of `R ⧸ I`, and let a finite family `x` generate `I`. Then there
+is a surjective ring homomorphism `MvPowerSeries σ A →+* R` that restricts to `s` on constants and
+sends each variable `X i` to `x i`. -/
 theorem exists_surjective_ringHom_of_isAdicComplete {σ A R : Type*} [Finite σ] [CommRing A]
     [CommRing R] {I : Ideal R} [IsAdicComplete I R] (s : A →+* R)
     (hs : Function.Surjective ((Ideal.Quotient.mk I).comp s)) (x : σ → R)

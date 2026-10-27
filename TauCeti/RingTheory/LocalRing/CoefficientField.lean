@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.SpanRank
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.RingTheory.Etale.Field
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.Smooth.AdicCompletion
+public import TauCeti.Algebra.Module.SpanRank
 public import TauCeti.RingTheory.Smooth.Field
 import TauCeti.RingTheory.MvPowerSeries.Evaluation
 
@@ -139,9 +139,9 @@ open MvPowerSeries in
 include k in
 /-- **Cohen structure theorem for complete local rings containing a field.** Let `R` be a
 complete local ring containing a field, and let a finite family `x` generate its maximal ideal.
-Then `R` has a coefficient field `s`, and a surjective ring homomorphism from the power series
-ring over the residue field onto `R` is `s` on constants and sends each variable `X i` to
-`x i`. -/
+Then `R` has a coefficient field `s`, and there is a surjective ring homomorphism from the power
+series ring over the residue field onto `R` that is `s` on constants and sends each variable
+`X i` to `x i`. -/
 theorem exists_surjective_mvPowerSeries_of_span_eq_maximalIdeal {σ : Type*} [Finite σ]
     (x : σ → R) (hx : Ideal.span (Set.range x) = maximalIdeal R) :
     ∃ s : ResidueField R →+* R, (∀ a, residue R (s a) = a) ∧
@@ -163,14 +163,10 @@ theorem exists_surjective_mvPowerSeries_spanFinrank (hfg : (maximalIdeal R).FG) 
       ∃ φ : MvPowerSeries (Fin (maximalIdeal R).spanFinrank) (ResidueField R) →+* R,
         Function.Surjective φ ∧ φ.comp C = s ∧
           Ideal.span (Set.range fun i ↦ φ (X i)) = maximalIdeal R := by
-  obtain ⟨t, hcard, hspan⟩ := Submodule.FG.exists_span_finset_card_eq_spanFinrank hfg
-  -- Index the generating finset `t` by `Fin (spanFinrank 𝔪)`.
-  let e : Fin (maximalIdeal R).spanFinrank ≃ t := (t.equivFin.trans (finCongr hcard)).symm
-  have hx : Ideal.span (Set.range (Subtype.val ∘ e)) = maximalIdeal R := by
-    rw [e.surjective.range_comp Subtype.val, Subtype.range_coe]
-    exact hspan
+  obtain ⟨x, hx⟩ :=
+    (Submodule.FG.spanFinrank_le_iff_exists_fin_generating_family hfg _).mp le_rfl
   obtain ⟨s, hs, φ, hφ, hC, hX⟩ :=
-    exists_surjective_mvPowerSeries_of_span_eq_maximalIdeal k R _ hx
+    exists_surjective_mvPowerSeries_of_span_eq_maximalIdeal k R x hx
   exact ⟨s, hs, φ, hφ, hC, by rwa [funext hX]⟩
 
 end TauCeti
