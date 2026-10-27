@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Vertex
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.EndMatching
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.InfinityNormalization
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.LocalBoundary
-import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.LocallyConnectedBoundary
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.ModelEnd
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.ParallelEnd
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.PolygonalFrontier
@@ -223,7 +222,9 @@ private theorem exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygon
       ∀ k, ∀ᶠ z in 𝓝[upperHalfPlaneSet] ((a' k : ℝ) : ℂ), f z ∈ E k := by
   have hH : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := fun z (hz : 0 < z.im) => hz.le
   -- the open far parts `E'` of the ends, and a coordinate `g` with `f = q + g⁻¹`
-  obtain ⟨E', R', hE'o, hE'E, hE'd, hUE', hE'c, hE'b⟩ := exists_far_ends hb hE hEU hUE hEd
+  obtain ⟨E', R', hE'o, hE'E, hE'd, hUE', hE'c, hE'b⟩ := exists_far_ends hb
+    (fun k => (hE k).imp (fun h => ⟨by nlinarith [Real.pi_pos, h.1.2], h.2⟩) And.right)
+    hEU hUE hEd
   obtain ⟨g, a, hgc, hgd, hgne, hgi, hgU, hgfr, ⟨c₀, hc₀, hginf⟩, hinfty, ha, hga⟩ :=
     exists_inverted_coordinate_of_polygonal_ends he hUo hUs hUb hv hside hcorner hd hfr hq
   set f : ℂ → ℂ := fun z => q + (g z)⁻¹

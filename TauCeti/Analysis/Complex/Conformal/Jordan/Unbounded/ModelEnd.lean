@@ -285,16 +285,15 @@ theorem not_isBounded_halfStrip {ρ : ℝ} {c b : ℂ} (hb : b ≠ 0) :
   have := mem_closedBall_iff_norm.mp (hM hmem)
   linarith [le_abs_self M]
 
-/-- **Open far parts of the ends.**  For finitely many pairwise disjoint sector ends of opening
-less than `2 * π` or half-strip ends contained in `U` and covering it far out, their far parts are
+/-- **Open far parts of the ends.**  For finitely many pairwise disjoint sector ends of positive
+half-opening or half-strip ends contained in `U` and covering it far out, their far parts are
 open, unbounded, pairwise disjoint and preconnected at infinity inside `U`, and still cover `U`
 far out. -/
-theorem exists_far_ends {κ : Type*} [Finite κ] {e' : κ → ℝ} {U : Set ℂ}
+theorem exists_far_ends {κ : Type*} [Finite κ] {α : κ → ℝ} {U : Set ℂ}
     {E : κ → Set ℂ} {c b : κ → ℂ} {ρ : κ → ℝ} {R : ℝ} (hb : ∀ k, b k ≠ 0)
-    (hE : ∀ k, (e' k ∈ Ioo (-3 : ℝ) (-1) ∧
-        E k = {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2}) ∨
-      (e' k = -1 ∧
-        E k = {w : ℂ | ρ k < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi}))
+    (hE : ∀ k, (0 < α k ∧
+        E k = {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < α k}) ∨
+      E k = {w : ℂ | ρ k < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi})
     (hEU : ∀ k, E k ⊆ U) (hUE : ∀ w ∈ U, R < ‖w‖ → ∃ k, w ∈ E k)
     (hEd : Pairwise (Disjoint on E)) :
     ∃ E' : κ → Set ℂ, ∃ R' : ℝ, (∀ k, IsOpen (E' k)) ∧ (∀ k, E' k ⊆ E k) ∧
@@ -308,13 +307,12 @@ theorem exists_far_ends {κ : Type*} [Finite κ] {e' : κ → ℝ} {U : Set ℂ}
     fun k l hkl => (hEd hkl).mono inter_subset_left inter_subset_left, fun w hw hRw => ?_,
     fun k => ?_, fun k => ?_⟩
   · dsimp only
-    rcases hE k with ⟨-, hEk⟩ | ⟨-, hEk⟩ <;> rw [hEk]
+    rcases hE k with ⟨-, hEk⟩ | hEk <;> rw [hEk]
     · -- the far part of the sector is the sector of radius `max (ρ k) 0`
       have hset :
-          {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2} ∩
+          {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < α k} ∩
             {w : ℂ | max (ρ k) 0 < ‖w - c k‖} =
-          {w : ℂ | max (ρ k) 0 < ‖w - c k‖ ∧
-            |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2} := by
+          {w : ℂ | max (ρ k) 0 < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < α k} := by
         ext w
         simp only [mem_inter_iff, mem_ofPred_eq, max_lt_iff]
         tauto
@@ -330,15 +328,14 @@ theorem exists_far_ends {κ : Type*} [Finite κ] {e' : κ → ℝ} {U : Set ℂ}
     have := norm_sub_norm_le w (c k)
     have := le_max_right R (∑ l, (max (ρ l) 0 + ‖c l‖))
     exact (by linarith : max (ρ k) 0 < ‖w - c k‖)
-  · rcases hE k with ⟨-, hEk⟩ | ⟨-, hEk⟩
+  · rcases hE k with ⟨-, hEk⟩ | hEk
     · exact ((isPreconnectedAtInfinityIn_sector (ρ k) _ (hb k)).mono (hEk ▸ hEU k)).subset
         (hEk ▸ inter_subset_left)
     · exact ((isPreconnectedAtInfinityIn_halfStrip (ρ k) (hb k)).mono (hEk ▸ hEU k)).subset
         (hEk ▸ inter_subset_left)
   · dsimp only
-    rcases hE k with ⟨he, hEk⟩ | ⟨-, hEk⟩ <;> rw [hEk]
-    · exact not_isBounded_inter_lt_norm_sub
-        (not_isBounded_sector (by nlinarith [Real.pi_pos, he.2])) _ _
+    rcases hE k with ⟨hα, hEk⟩ | hEk <;> rw [hEk]
+    · exact not_isBounded_inter_lt_norm_sub (not_isBounded_sector hα) _ _
     · exact not_isBounded_inter_lt_norm_sub (not_isBounded_halfStrip (hb k)) _ _
 
 end TauCeti
