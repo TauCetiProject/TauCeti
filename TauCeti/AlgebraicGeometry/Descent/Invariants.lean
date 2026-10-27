@@ -67,6 +67,7 @@ the action `S' ×_S X ⟶ X` and along the second projection `S' ×_S X ⟶ X` a
 noncomputable def invariants (D : DescentDatum p X) : Subring Γ(X.left, ⊤) :=
   RingHom.eqLocus D.act.appTop.hom (pullback.snd p (X.hom ≫ p)).appTop.hom
 
+@[simp]
 theorem mem_invariants_iff {D : DescentDatum p X} {b : Γ(X.left, ⊤)} :
     b ∈ D.invariants ↔ D.act.appTop b = (pullback.snd p (X.hom ≫ p)).appTop b :=
   Iff.rfl
