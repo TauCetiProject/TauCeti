@@ -238,9 +238,7 @@ theorem mem_smul_carrier_iff_exists_inv_partialCycleMap_eq {j : Fin n} {z : ℍ}
       (P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj hg
         (Γ.inv_mem (σ.partialCycleMap_mem hmap j m)) ⟨v, hvg, hvm⟩).symm⟩
   · rw [← hm, mem_smul_set_iff_inv_smul_mem, inv_inv]
-    have hvertex : P.vertex (σ.next^[m] j) = .inl (σ.partialCycleMap j m • z) := by
-      rw [← σ.partialCycleMap_smul_vertex, hz, Sum.smul_inl]
-    exact P.vertex_mem_carrier hvertex
+    exact P.vertex_mem_carrier (σ.vertex_next_iterate_eq_inl hz m)
 
 /-- Every element identifying two finite vertices of a polygon with disjoint translated interiors
 is a partial cycle product. The product occurs before the cycle has made one full turn, namely
