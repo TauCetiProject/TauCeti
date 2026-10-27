@@ -38,9 +38,9 @@ separator `TauCeti.IsMixedSeparator X (TauCeti.arrowFinset Q s t) s t`.
 
 ## Implementation notes
 
-Attainment applies `TauCeti.exists_paths_vertexSeparator_card_eq` to the arrow family obtained by
-deleting the arrows from `s` to `t`, which has the same walks avoiding those arrows, and adds the
-`m` single-arrow paths to the resulting family.
+Attainment applies `TauCeti.exists_paths_vertexSeparator_card_eq` to the arrow family
+`TauCeti.WithoutHom` obtained by deleting the arrows from `s` to `t`, whose walks are the walks
+avoiding those arrows, and adds the `m` single-arrow paths to the resulting family.
 
 ## References
 
@@ -131,40 +131,6 @@ theorem card_le_card_add_card_of_isMixedSeparator [Fintype (Q s t)] {ι : Type*}
 
 section Attainment
 
-variable (s t) in
-/-- The arrow family `Q` with the arrows from `s` to `t` deleted. -/
-private abbrev DeleteHom (v w : V) : Type v :=
-  {_e : Q v w // ¬(v = s ∧ w = t)}
-
-/-- The inclusion of the arrow family with the arrows from `s` to `t` deleted. -/
-private def deleteHomIncl : @Prefunctor V ⟨DeleteHom (Q := Q) s t⟩ V ⟨Q⟩ :=
-  @Prefunctor.mk V ⟨DeleteHom s t⟩ V ⟨Q⟩ id fun e ↦ e.1
-
-/-- Pushing a walk along the inclusion keeps its vertices. -/
-private theorem vertices_mapPath_deleteHomIncl {x y : V}
-    (p : ArrowWalk (DeleteHom (Q := Q) s t) x y) :
-    ArrowWalk.vertices (Q := Q) (@Prefunctor.mapPath V ⟨DeleteHom s t⟩ V ⟨Q⟩ deleteHomIncl x y p) =
-      p.vertices :=
-  (@Prefunctor.vertices_mapPath V V ⟨DeleteHom s t⟩ ⟨Q⟩ deleteHomIncl x y p).trans (List.map_id _)
-
-/-- A walk traversing no arrow from `s` to `t` is a walk of the arrow family with those arrows
-deleted, with the same vertices. -/
-private theorem exists_vertices_deleteHom_eq {x y : V} (p : ArrowWalk Q x y)
-    (hp : ∀ a ∈ p.arrows, ¬(a.1 = s ∧ a.2.1 = t)) :
-    ∃ p' : ArrowWalk (DeleteHom (Q := Q) s t) x y, p'.vertices = p.vertices := by
-  induction p with
-  | nil => exact ⟨ArrowWalk.nil _, rfl⟩
-  | cons q e ih =>
-    obtain ⟨q', hq'⟩ := ih fun a ha ↦ hp a (by simp [ha])
-    refine ⟨q'.cons ⟨e, hp ⟨_, _, e⟩ (by simp)⟩, ?_⟩
-    simp only [ArrowWalk.vertices, Quiver.Path.vertices_cons] at hq' ⊢
-    rw [hq']
-
-/-- The vertices of a single arrow from `s` to `t` are `s` and `t`. -/
-private theorem eq_or_eq_of_mem_vertices_cons_nil {e : Q s t} {v : V}
-    (hv : v ∈ ((ArrowWalk.nil s).cons e).vertices) : v = s ∨ v = t := by
-  simpa [ArrowWalk.vertices, Quiver.Path.vertices_cons] using hv
-
 /-- **Menger's theorem for internally vertex-disjoint directed paths between possibly adjacent
 terminals.** Let `s ≠ t` be vertices of an arrow family on a finite vertex type, with finitely many
 arrows from `s` to `t`. For some `k`, there are a family of distinct directed `s`–`t` paths indexed
@@ -178,14 +144,15 @@ theorem exists_paths_isMixedSeparator_card_eq [Finite V] [Fintype (Q s t)] (hst 
       (∀ i, (P i).IsPath) ∧ (Pairwise fun i j ↦ (P i).InternallyDisjoint (P j)) ∧
       (∀ e, P (.inr e) = (ArrowWalk.nil s).cons e) ∧
       IsMixedSeparator X (arrowFinset Q s t) s t ∧ #X = k := by
-  have hR : IsEmpty (DeleteHom (Q := Q) s t s t) := ⟨fun e ↦ e.2 ⟨rfl, rfl⟩⟩
+  let F : Set (Σ v w, Q v w) := arrowFinset Q s t
+  have hR : IsEmpty (WithoutHom F s t) := ⟨fun e ↦ e.2 (mem_arrowFinset.2 ⟨rfl, rfl⟩)⟩
   obtain ⟨k, P, X, -, hP, hdisj, hs, ht, hX, hk⟩ :=
-    exists_paths_vertexSeparator_card_eq (Q := DeleteHom s t) hst hR
+    exists_paths_vertexSeparator_card_eq (Q := WithoutHom F) hst hR
   let P' : Fin k ⊕ Q s t → ArrowWalk Q s t :=
-    Sum.elim (fun i ↦ @Prefunctor.mapPath V ⟨DeleteHom s t⟩ V ⟨Q⟩ deleteHomIncl s t (P i))
+    Sum.elim (fun i ↦ @Prefunctor.mapPath V ⟨WithoutHom F⟩ V ⟨Q⟩ (WithoutHom.incl F) s t (P i))
       fun e ↦ (ArrowWalk.nil s).cons e
   have hP'l (i : Fin k) : (P' (.inl i)).vertices = (P i).vertices :=
-    vertices_mapPath_deleteHomIncl _
+    WithoutHom.vertices_mapPath_incl _
   have hP'r (e : Q s t) : P' (.inr e) = (ArrowWalk.nil s).cons e := rfl
   -- Every member of `P` visits a vertex other than `s` and `t`, unlike a single arrow.
   have hint (i : Fin k) : ∃ v ∈ (P' (.inl i)).vertices, v ≠ s ∧ v ≠ t :=
@@ -198,29 +165,33 @@ theorem exists_paths_isMixedSeparator_card_eq [Finite V] [Fintype (Q s t)] (hst 
     · rcases j with j | _
       · exact ArrowWalk.internallyDisjoint_def.1 (hdisj fun h ↦ hij (congrArg _ h)) v
           (hP'l i ▸ hvi) (hP'l j ▸ hvj)
-      · exact eq_or_eq_of_mem_vertices_cons_nil hvj
-    · exact eq_or_eq_of_mem_vertices_cons_nil hvi
+      · simpa [hP'r] using hvj
+    · simpa [hP'r] using hvi
   refine ⟨k, P', X, ?_, ?_, hdisj', hP'r, isMixedSeparator_iff.2 ⟨hs, ht, fun p ↦ ?_⟩, hk⟩
   · rintro (i | e) (j | e') h
     · by_contra hij
       obtain ⟨v, hv, hvs, hvt⟩ := hint i
       exact (ArrowWalk.internallyDisjoint_def.1 (hdisj' hij) v hv (h ▸ hv)).elim hvs hvt
     · obtain ⟨v, hv, hvs, hvt⟩ := hint i
-      exact ((eq_or_eq_of_mem_vertices_cons_nil (h ▸ hv)).elim hvs hvt).elim
+      rw [h, hP'r] at hv
+      simp [hvs, hvt] at hv
     · obtain ⟨v, hv, hvs, hvt⟩ := hint j
-      exact ((eq_or_eq_of_mem_vertices_cons_nil (h ▸ hv)).elim hvs hvt).elim
+      rw [← h, hP'r] at hv
+      simp [hvs, hvt] at hv
     · rw [hP'r, hP'r] at h
       simpa using congrArg ArrowWalk.arrows h
   · rintro (i | e)
     · rw [ArrowWalk.isPath_def, hP'l]
       exact (ArrowWalk.isPath_def _).1 (hP i)
     · rw [hP'r]
-      simpa [ArrowWalk.isPath_def, ArrowWalk.vertices, Quiver.Path.vertices_cons] using hst
+      simpa [ArrowWalk.isPath_def] using hst
   · -- A walk avoiding `X` and the arrows from `s` to `t` would survive in the deleted family.
     by_contra h
     simp only [not_or, not_exists, not_and, mem_arrowFinset] at h
-    obtain ⟨p', hp'⟩ := exists_vertices_deleteHom_eq p fun a ha hst ↦ h.2 a ha hst.1 hst.2
-    exact hX (reachableAvoiding_def.2 ⟨p', fun v hv hvX ↦ h.1 v (hp' ▸ hv) hvX⟩)
+    obtain ⟨p', rfl⟩ := WithoutHom.exists_mapPath_incl_eq p fun a ha haF ↦
+      h.2 a ha (mem_arrowFinset.1 haF).1 (mem_arrowFinset.1 haF).2
+    exact hX (reachableAvoiding_def.2
+      ⟨p', fun v hv hvX ↦ h.1 v ((WithoutHom.vertices_mapPath_incl p').symm ▸ hv) hvX⟩)
 
 /-- **Menger's theorem for internally vertex-disjoint directed paths between possibly adjacent
 terminals, predicate form.** Let `s ≠ t` be vertices of an arrow family on a finite vertex type,

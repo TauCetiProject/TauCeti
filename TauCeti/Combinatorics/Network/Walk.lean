@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Card
 public import Mathlib.Order.WellFounded
 public import Mathlib.Data.List.Nodup
 public import TauCeti.Combinatorics.Network.Basic
+public import TauCeti.Combinatorics.Quiver.Prefunctor
 
 /-!
 # Directed walks along an explicit arrow family
@@ -44,6 +45,8 @@ capacity; for residual capacities these are augmenting walks.
   capacity for `c`.
 * `TauCeti.ReachableWithout F s t`: some walk from `s` to `t` traverses no arrow of the set `F`
   of arrows, so `t` stays reachable from `s` after deleting the arrows of `F`.
+* `TauCeti.WithoutHom F`: the arrow family of the arrows outside `F`, with its inclusion
+  `TauCeti.WithoutHom.incl F` into `Q`.
 * `TauCeti.ReachableAvoiding Q X s t`: some walk from `s` to `t` visits no vertex of `X`, so `t`
   stays reachable from `s` after deleting the vertices of `X`.
 * `TauCeti.ArrowWalk.InternallyDisjoint`: two walks from `s` to `t` sharing no vertex other than
@@ -71,7 +74,8 @@ capacity; for residual capacities these are augmenting walks.
 * `TauCeti.Assignment.isAcyclic_iff_forall_not_transGen`: an assignment is acyclic exactly when
   no vertex reaches itself in one or more steps along arrows of positive value.
 * `TauCeti.positiveReachable_iff_nonempty_arrowWalk`: positive reachability is reachability along
-  the arrow family `TauCeti.PositiveHom c` of arrows of positive capacity.
+  the arrow family `TauCeti.PositiveHom c` of arrows of positive capacity, and
+  `TauCeti.reachableWithout_iff_nonempty_arrowWalk` is the counterpart for deleted arrows.
 * `TauCeti.PositiveReachable.mem_of_mem`: a vertex set that no arrow of positive capacity leaves
   contains every vertex positively reachable from one of its members, and
   `TauCeti.ReachableWithout.mem_of_mem` is the counterpart for deleted arrows.
@@ -129,6 +133,22 @@ theorem arrows_nil (s : V) : (nil s : ArrowWalk Q s s).arrows = [] :=
 theorem arrows_cons {s t x : V} (p : ArrowWalk Q s t) (e : Q t x) :
     (p.cons e).arrows = p.arrows ++ [⟨_, _, e⟩] :=
   (rfl)
+
+@[simp]
+theorem vertices_nil (s : V) : (nil s : ArrowWalk Q s s).vertices = [s] :=
+  (rfl)
+
+/-- The vertices of `p.cons e` are those of `p` followed by `x`. This is not a simp lemma, since
+simp already rewrites its left-hand side by `Quiver.Path.vertices_cons`. -/
+theorem vertices_cons {s t x : V} (p : ArrowWalk Q s t) (e : Q t x) :
+    (p.cons e).vertices = p.vertices.concat x :=
+  @Quiver.Path.vertices_cons V ⟨Q⟩ s t x p e
+
+/-- Pushing a walk along a prefunctor that is the identity on vertices keeps its vertices. -/
+theorem vertices_mapPath_of_obj_eq_id {R : V → V → Type*} (φ : @Prefunctor V ⟨Q⟩ V ⟨R⟩)
+    (hφ : @Prefunctor.obj V ⟨Q⟩ V ⟨R⟩ φ = id) {s t : V} (p : ArrowWalk Q s t) :
+    ArrowWalk.vertices (Q := R) (@Prefunctor.mapPath V ⟨Q⟩ V ⟨R⟩ φ s t p) = p.vertices := by
+  rw [vertices, @Prefunctor.vertices_mapPath V V ⟨Q⟩ ⟨R⟩ φ s t p, hφ, List.map_id]
 
 @[simp]
 theorem arrows_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
@@ -230,22 +250,28 @@ theorem IsPath.of_comp_right {s t x : V} {p : ArrowWalk Q s t} {p' : ArrowWalk Q
   rw [isPath_def, hcomp] at hp
   exact hp.of_append_right
 
+/-- The walk before the last arrow of a path is a path. -/
+theorem IsPath.of_cons {s t x : V} {p : ArrowWalk Q s t} {e : Q t x} (hp : (p.cons e).IsPath) :
+    p.IsPath := by
+  rw [isPath_def, vertices_cons, List.concat_eq_append] at hp
+  exact hp.sublist (List.sublist_append_left _ _)
+
+/-- The last vertex of a path is not a vertex of the walk before its last arrow. -/
+theorem IsPath.target_notMem_vertices_of_cons {s t x : V} {p : ArrowWalk Q s t} {e : Q t x}
+    (hp : (p.cons e).IsPath) : x ∉ p.vertices := by
+  rw [isPath_def, vertices_cons, List.concat_eq_append, List.nodup_append] at hp
+  exact fun hx ↦ hp.2.2 x hx x (List.mem_singleton_self x) rfl
+
 /-- A path from `s` to `t` that traverses an arrow `e` from `s` to `t` consists of `e` alone. -/
 theorem IsPath.eq_cons_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) {e : Q s t}
     (he : ⟨s, t, e⟩ ∈ p.arrows) : p = (nil s).cons e := by
-  -- The last vertex of a path `q.cons e'` is not a vertex of `q`.
-  have hlast {x y z : V} (q : ArrowWalk Q x y) (e' : Q y z) (h : (q.cons e').IsPath) :
-      z ∉ q.vertices := fun hz ↦ by
-    rw [isPath_def, vertices, @Quiver.Path.vertices_cons V ⟨Q⟩,
-      List.concat_eq_append, List.nodup_append] at h
-    exact h.2.2 z hz z (List.mem_singleton_self z) rfl
   cases p with
   | nil => simp at he
   | cons q e' =>
     rw [arrows_cons, List.mem_append, List.mem_singleton] at he
     rcases he with he | he
     · -- The target `t` of an arrow of `q` is a vertex of `q`, so `p` would visit `t` twice.
-      refine absurd ?_ (hlast q e' hp)
+      refine absurd ?_ hp.target_notMem_vertices_of_cons
       rw [vertices_eq_cons_map_target_arrows]
       exact List.mem_cons_of_mem _ (List.mem_map_of_mem (f := fun a ↦ a.2.1) he)
     · obtain ⟨rfl, he⟩ := Sigma.mk.inj_iff.1 he
@@ -254,11 +280,8 @@ theorem IsPath.eq_cons_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsP
       cases q with
       | nil => rfl
       | cons q' e'' =>
-        have hq : (cons q' e'').IsPath := by
-          rw [isPath_def, vertices, @Quiver.Path.vertices_cons V ⟨Q⟩,
-            List.concat_eq_append] at hp
-          exact (isPath_def _).2 (hp.sublist (List.sublist_append_left _ _))
-        exact absurd (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ q') (hlast q' e'' hq)
+        exact absurd (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ q')
+          hp.of_cons.target_notMem_vertices_of_cons
 
 /-- **Path extraction.** Every walk contains a path with the same endpoints that traverses only
 arrows of the walk. -/
@@ -682,6 +705,45 @@ theorem ReachableWithout.mem_of_mem {C : Set V} (h : ReachableWithout F s t) (hs
   | cons p e ih =>
     simp only [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at hp
     exact hC e (ih fun a ha ↦ hp a (.inl ha)) (hp _ (.inr rfl))
+
+variable (F) in
+/-- The arrows outside `F`, retaining their identities: the arrow family of `Q` with the arrows of
+`F` deleted, along which reachability without the arrows of `F` travels. -/
+abbrev WithoutHom (v w : V) : Type v :=
+  {e : Q v w // ⟨v, w, e⟩ ∉ F}
+
+variable (F) in
+/-- The inclusion of the arrows outside `F` into the arrow family `Q`. -/
+abbrev WithoutHom.incl : @Prefunctor V ⟨WithoutHom F⟩ V ⟨Q⟩ :=
+  @Prefunctor.mk V ⟨WithoutHom F⟩ V ⟨Q⟩ (fun v ↦ v) fun e ↦ e.1
+
+/-- Pushing a walk along the inclusion of the arrows outside `F` keeps its vertices. -/
+theorem WithoutHom.vertices_mapPath_incl (p : ArrowWalk (WithoutHom F) s t) :
+    ArrowWalk.vertices (Q := Q) (s := s) (t := t)
+      (@Prefunctor.mapPath V ⟨WithoutHom F⟩ V ⟨Q⟩ (incl F) s t p) = p.vertices :=
+  ArrowWalk.vertices_mapPath_of_obj_eq_id _ rfl p
+
+/-- A walk traversing no arrow of `F` is the image of a walk along the arrows outside `F`. -/
+theorem WithoutHom.exists_mapPath_incl_eq (p : ArrowWalk Q s t) (hp : ∀ a ∈ p.arrows, a ∉ F) :
+    ∃ p' : ArrowWalk (WithoutHom F) s t,
+      @Prefunctor.mapPath V ⟨WithoutHom F⟩ V ⟨Q⟩ (incl F) s t p' = p := by
+  induction p with
+  | nil => exact ⟨ArrowWalk.nil s, rfl⟩
+  | cons q e ih =>
+    simp only [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at hp
+    obtain ⟨q', rfl⟩ := ih fun a ha ↦ hp a (.inl ha)
+    exact ⟨q'.cons ⟨e, hp _ (.inr rfl)⟩, rfl⟩
+
+/-- Reachability without the arrows of `F` is reachability along the arrows outside `F`. -/
+theorem reachableWithout_iff_nonempty_arrowWalk :
+    ReachableWithout F s t ↔ Nonempty (ArrowWalk (WithoutHom F) s t) := by
+  constructor
+  · rintro ⟨p, hp⟩
+    exact ⟨(WithoutHom.exists_mapPath_incl_eq p hp).choose⟩
+  · rintro ⟨p⟩
+    induction p with
+    | nil => exact .refl F s
+    | cons _ e ih => exact ih.tail e.1 e.2
 
 end ReachableWithout
 
