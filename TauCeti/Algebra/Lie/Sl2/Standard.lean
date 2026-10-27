@@ -113,7 +113,7 @@ commutative ring.
 The construction and the bracket identities are stated over an arbitrary commutative ring. The
 Cartan eigenspaces and the kernels of the raising and lowering operators need the integer
 coefficients `i`, `n - i` and `2(i - j)` only to be torsion-free (`HasUniqueDiv K`), while
-`TauCeti.Sl2Std.eigenspace_diag_eq_bot` needs no zero divisors to cancel an arbitrary scalar
+`TauCeti.Sl2Std.eigenspace_diag_eq_bot` requires `NoZeroDivisors K` to cancel an arbitrary scalar
 `n - 2i - μ`. The multiplicity count holds over any nontrivial commutative ring without additive
 torsion; a field of characteristic zero is used for irreducibility, where the ladder coefficients
 are actually inverted.
@@ -258,6 +258,9 @@ restated here. -/
   rw [Finset.sum_insert ha, add_apply, ih, Finset.sum_insert ha]
 
 /-! ### The ladder operators in coordinates -/
+
+-- Parenthesized `(rfl)` keeps these as propositional rewrite lemmas rather than `rfl` lemmas
+-- for `dsimp`: downstream definitional simplification cannot unfold the hidden operator bodies.
 
 /-- The raising operator in coordinates. -/
 @[simp] theorem raise_apply (v : Sl2Std K n) (i : Fin (n + 1)) :
