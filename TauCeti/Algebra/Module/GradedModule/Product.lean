@@ -214,8 +214,8 @@ noncomputable def productLiftLinear : N →ₗ[R] productCarrier G :=
 theorem productLiftLinear_apply (x : N) (j : J) :
     (productLiftLinear G H r f hf x).1 j = f j x := by
   rw [productLiftLinear]
-  exact congrFun (LinearMap.codRestrict_apply (productCarrier G) (LinearMap.pi f)
-    (h := productLift_mem G H r f hf) x) j
+  exact (congrFun (LinearMap.codRestrict_apply (productCarrier G) (LinearMap.pi f)
+    (h := productLift_mem G H r f hf) x) j).trans (LinearMap.pi_apply f x j)
 
 /-- The lift has the same common degree as its components. -/
 theorem productLiftLinear_isHomogeneous :
@@ -289,8 +289,9 @@ noncomputable def productLift : N →ₗ[S] productScalarSubmodule G 𝒜 :=
 theorem productLift_apply (x : N) (j : J) :
     (productLift G 𝒜 H r f hf x).1 j = f j x := by
   rw [productLift]
-  exact congrFun (LinearMap.codRestrict_apply (productScalarSubmodule G 𝒜) (LinearMap.pi f)
-    (h := productLift_mem G H r (fun j ↦ (f j).restrictScalars R) hf) x) j
+  exact (congrFun (LinearMap.codRestrict_apply (productScalarSubmodule G 𝒜) (LinearMap.pi f)
+    (h := productLift_mem G H r (fun j ↦ (f j).restrictScalars R) hf) x) j).trans
+    (LinearMap.pi_apply f x j)
 
 /-- The scalar-linear lift retains the common homogeneous degree. -/
 theorem productLift_isHomogeneous :
