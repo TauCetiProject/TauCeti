@@ -144,6 +144,7 @@ theorem pow_add_apply_singleton (κ : Kernel α α) (m n : ℕ) (a b : α) :
 end Composition
 
 /-- The row PMF of a composite kernel is the binding of its row PMFs. -/
+@[simp]
 theorem toPMF_comp [Countable β] [MeasurableSingletonClass β]
     [Countable γ] [MeasurableSingletonClass γ] (κ : Kernel α β)
     (η : Kernel β γ) [IsMarkovKernel κ] [IsMarkovKernel η] (a : α) :
