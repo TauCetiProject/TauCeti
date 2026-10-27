@@ -74,15 +74,25 @@ theorem connectedComponent_mk_eq (i : ι) [PreconnectedSpace (X i)] (x y : X i) 
   exact connectedComponent_eq
     ((isPreconnected_range hc).subset_connectedComponent ⟨x, rfl⟩ ⟨y, rfl⟩)
 
-variable [∀ i, PreconnectedSpace (X i)] [∀ i, Nonempty (X i)]
+variable [∀ i, PreconnectedSpace (X i)]
 
 /-- A chain of nodes identifies the connected components containing any points on its two
-endpoint normalization components. -/
+endpoint normalization components. Unrelated normalization components may be empty. -/
 theorem connectedComponent_mk_eq_of_eqvGen {i j : ι}
     (h : Relation.EqvGen (fun i j ↦ ∃ f, d.fst f = i ∧ d.snd f = j) i j)
     (x : X i) (y : X j) :
     connectedComponent (Quotient.mk (gluedRelSetoid d) ⟨i, x⟩) =
       connectedComponent (Quotient.mk (gluedRelSetoid d) ⟨j, y⟩) := by
+  have hn {a b : ι}
+      (hab : Relation.EqvGen (fun i j ↦ ∃ f, d.fst f = i ∧ d.snd f = j) a b) :
+      Nonempty (X a) ↔ Nonempty (X b) := by
+    induction hab with
+    | rel a b hab =>
+      obtain ⟨f, rfl, rfl⟩ := hab
+      exact iff_of_true ⟨d.fstPt f⟩ ⟨d.sndPt f⟩
+    | refl a => rfl
+    | symm a b hab ih => exact ih.symm
+    | trans a b c hab hbc ih₁ ih₂ => exact ih₁.trans ih₂
   induction h with
   | rel i j h =>
     obtain ⟨f, rfl, rfl⟩ := h
@@ -98,6 +108,7 @@ theorem connectedComponent_mk_eq_of_eqvGen {i j : ι}
   | refl i => exact connectedComponent_mk_eq d i x y
   | symm i j h ih => exact (ih y x).symm
   | trans i j k h₁ h₂ ih₁ ih₂ =>
+    have : Nonempty (X j) := (hn h₁).mp ⟨x⟩
     exact (ih₁ x (Classical.arbitrary (X j))).trans (ih₂ (Classical.arbitrary (X j)) y)
 
 /-- Two points of the normalization descend into the same connected component exactly when
@@ -109,6 +120,8 @@ theorem mem_connectedComponent_mk_iff (x y : Σ i, X i) :
   refine ⟨eqvGen_of_mem_connectedComponent_mk d, fun h ↦ ?_⟩
   rw [connectedComponent_mk_eq_of_eqvGen d h x.2 y.2]
   exact mem_connectedComponent
+
+variable [∀ i, Nonempty (X i)]
 
 /-- The glued curve is preconnected exactly when its dual graph is preconnected. Empty
 normalizations are allowed here. -/
