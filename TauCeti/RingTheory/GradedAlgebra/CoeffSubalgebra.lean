@@ -33,8 +33,10 @@ projective models of a curve are built as `Proj`.
 * `TauCeti.coeffSubalgebra.gradedAlgebra`: the `GradedAlgebra` instance.
 * `TauCeti.coeffSubalgebra.gradeEquiv M n`: the isomorphism `b ↦ b Xⁿ` from `M n` onto the degree
   `n` piece.
-* `TauCeti.coeffSubalgebra.evalOne M`: evaluation at `X = 1`, `∑ bₙ Xⁿ ↦ ∑ bₙ`, when `B` is
-  commutative.
+* `TauCeti.coeffSubalgebra.X M h1`: the central parameter, when `1 ∈ M 1`.
+* `TauCeti.coeffSubalgebra.algebra M h1`: the parameter-ring algebra structure.
+* `TauCeti.coeffSubalgebra.eval M r`: evaluation at a scalar parameter.
+* `TauCeti.coeffSubalgebra.evalOne M`: evaluation at `X = 1`, `∑ bₙ Xⁿ ↦ ∑ bₙ`.
 
 ## Main results
 
@@ -113,6 +115,63 @@ noncomputable def monomial (n : ℕ) (b : B) (hb : b ∈ M n) : coeffSubalgebra 
 theorem coe_monomial (n : ℕ) (b : B) (hb : b ∈ M n) :
     (monomial M n b hb : B[X]) = Polynomial.monomial n b :=
   (rfl)
+
+section parameter
+
+variable (M) (h1 : (1 : B) ∈ M 1)
+
+/-- The central polynomial parameter, when its coefficient belongs to degree one. -/
+noncomputable def X : coeffSubalgebra M := monomial M 1 1 h1
+
+@[simp]
+theorem coe_X : (X M h1 : B[X]) = Polynomial.X := by
+  simp [X, ← monomial_one_one_eq_X]
+
+/-- The polynomial parameter commutes with every element of the coefficient subalgebra. -/
+theorem commute_X (a : coeffSubalgebra M) : Commute (X M h1) a := by
+  apply Subtype.ext
+  simpa using (Polynomial.X_mul (p := (a : B[X])))
+
+/-- Multiplication by the polynomial parameter is injective. -/
+theorem X_mul_injective : Function.Injective (fun a : coeffSubalgebra M ↦ X M h1 * a) := by
+  intro a b h
+  apply Subtype.ext
+  ext n
+  have hc := congrArg (fun p : coeffSubalgebra M ↦ (p : B[X]).coeff (n + 1)) h
+  simpa using hc
+
+/-- The parameter-ring algebra structure, available when the polynomial parameter belongs to
+the coefficient subalgebra. Install it with `letI := coeffSubalgebra.algebra M h1`. -/
+@[instance_reducible]
+noncomputable def algebra : Algebra R[X] (coeffSubalgebra M) :=
+  (Polynomial.aeval (X M h1)).toRingHom.toAlgebra' fun p a ↦ by
+    apply Commute.eq
+    induction p using Polynomial.induction_on' with
+    | add p q hp hq => simpa using hp.add_left hq
+    | monomial n r =>
+      simpa [aeval_def] using
+        Commute.mul_left (Algebra.commutes r a) ((commute_X M h1 a).pow_left n)
+
+@[simp]
+theorem algebraMap_X :
+    letI := algebra M h1
+    algebraMap R[X] (coeffSubalgebra M) Polynomial.X = X M h1 :=
+  Polynomial.aeval_X _
+
+@[simp]
+theorem coe_algebraMap (p : R[X]) :
+    letI := algebra M h1
+    (algebraMap R[X] (coeffSubalgebra M) p : B[X]) = p.map (algebraMap R B) := by
+  exact (Polynomial.aeval_subalgebra_coe p _ (X M h1)).trans (by rw [coe_X]; rfl)
+
+/-- The parameter-ring algebra structure extends the coefficient-ring algebra structure. -/
+theorem isScalarTower :
+    letI := algebra M h1
+    IsScalarTower R R[X] (coeffSubalgebra M) := by
+  let := algebra M h1
+  exact IsScalarTower.of_algebraMap_eq fun r ↦ (Polynomial.aeval (X M h1)).commutes r |>.symm
+
+end parameter
 
 /-- The monomial formed by any single coefficient of an element of `coeffSubalgebra M` lies in
 `coeffSubalgebra M`. -/
@@ -375,27 +434,50 @@ theorem algebraMap_grade_pow_zero_surjective (N : Submodule R B) :
   rw [← hx, Polynomial.monomial_zero_left]
   simp
 
-section evalOne
+variable (M)
 
-variable {A : Type*} [CommSemiring A] [Algebra R A] (N : ℕ → Submodule R A)
-  [SetLike.GradedMonoid N]
+/-- Evaluation at a scalar parameter, also for a noncommutative coefficient algebra. -/
+noncomputable def eval (r : R) : coeffSubalgebra M →ₐ[R] B :=
+  (Polynomial.eval₂AlgHom (AlgHom.id R B) (algebraMap R B r)
+    (fun a ↦ (Algebra.commutes r a).symm)).comp (coeffSubalgebra M).val
 
-/-- Evaluation at `X = 1`, `∑ bₙ Xⁿ ↦ ∑ bₙ`, an `R`-algebra map `coeffSubalgebra N → A`. It
-sends the monomial `b Xⁿ` to `b`. -/
-noncomputable def evalOne : coeffSubalgebra N →ₐ[R] A :=
-  ((Polynomial.aeval (1 : A)).restrictScalars R).comp (coeffSubalgebra N).val
-
-variable {N}
-
-/-- Evaluation at `X = 1` on `coeffSubalgebra N` is polynomial evaluation at `1`. -/
-theorem evalOne_apply (f : coeffSubalgebra N) : evalOne N f = (f : A[X]).eval 1 := by
-  simp [evalOne]
+/-- Scalar evaluation agrees with ambient polynomial evaluation. -/
+theorem eval_apply (r : R) (f : coeffSubalgebra M) :
+    eval M r f = (f : B[X]).eval (algebraMap R B r) :=
+  (rfl)
 
 @[simp]
-theorem evalOne_monomial (n : ℕ) (b : A) (hb : b ∈ N n) : evalOne N (monomial N n b hb) = b := by
+theorem eval_monomial (r : R) (n : ℕ) (b : B) (hb : b ∈ M n) :
+    eval M r (monomial M n b hb) = b * algebraMap R B r ^ n := by
+  simp [eval_apply]
+
+@[simp]
+theorem eval_X (r : R) (h1 : (1 : B) ∈ M 1) :
+    eval M r (X M h1) = algebraMap R B r := by
+  simp [eval_apply]
+
+/-- Evaluation at `X = 1`, `∑ bₙ Xⁿ ↦ ∑ bₙ`, as an `R`-algebra map. -/
+noncomputable def evalOne : coeffSubalgebra M →ₐ[R] B := eval M 1
+
+variable {M} in
+/-- Evaluation at `X = 1` is ambient polynomial evaluation at `1`. -/
+theorem evalOne_apply (f : coeffSubalgebra M) : evalOne M f = (f : B[X]).eval 1 := by
+  simp [evalOne, eval_apply]
+
+variable {M} in
+@[simp]
+theorem evalOne_monomial (n : ℕ) (b : B) (hb : b ∈ M n) :
+    evalOne M (monomial M n b hb) = b := by
   simp [evalOne_apply]
 
-end evalOne
+/-- Evaluation at one is surjective when the graded pieces span the coefficient algebra. -/
+theorem evalOne_surjective (hM : (⨆ n, M n) = ⊤) :
+    Function.Surjective (evalOne M) := by
+  have hrange : (⨆ n, M n) ≤ LinearMap.range (evalOne M).toLinearMap := by
+    refine iSup_le fun n b hb ↦ ?_
+    exact ⟨monomial M n b hb, by simp⟩
+  rw [hM, top_le_iff] at hrange
+  exact LinearMap.range_eq_top.mp hrange
 
 end coeffSubalgebra
 
