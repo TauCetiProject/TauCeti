@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Topology.Algebra.Module.BilinearForm

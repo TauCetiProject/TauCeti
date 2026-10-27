@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
 # Hamiltonian vector fields on symplectic manifolds
