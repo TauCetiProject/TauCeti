@@ -37,7 +37,6 @@ discriminant never vanishes and the curve is elliptic. Its `j`-invariant is
 
 ## Main definitions
 
-* `PeriodPair.instMulActionUnitsComplex`: the rescaling action `c • (ω₁, ω₂) = (c ω₁, c ω₂)`.
 * `PeriodPair.weierstrassCurve`: the Weierstrass curve `y² = x³ - (g₂ / 4) x - g₃ / 4`.
 * `PeriodPair.weierstrassPoint`: the point `(℘(z), ℘'(z) / 2)`, or `0` for `z ∈ Λ`.
 
@@ -73,57 +72,9 @@ open scoped Real
 
 namespace PeriodPair
 
-/-! ### Rescaling a period pair -/
-
-@[ext]
-lemma ext {L L' : PeriodPair} (h₁ : L.ω₁ = L'.ω₁) (h₂ : L.ω₂ = L'.ω₂) : L = L' := by
-  cases L
-  cases L'
-  congr
-
-/-- Multiplying a period pair by a nonzero complex number: `c • (ω₁, ω₂) = (c ω₁, c ω₂)`. Its
-lattice is `c Λ` (`PeriodPair.lattice_smul`). -/
-instance instSMulUnitsComplex : SMul ℂˣ PeriodPair where
-  smul c L :=
-    { ω₁ := c * L.ω₁
-      ω₂ := c * L.ω₂
-      indep := by
-        convert L.indep.map' (LinearMap.mulLeft ℝ (c : ℂ))
-          (LinearMap.ker_eq_bot.mpr (mul_right_injective₀ c.ne_zero)) using 1
-        ext i
-        fin_cases i <;> rfl }
+/-! ### Lattice sums and `℘` under rescaling -/
 
 variable (L : PeriodPair) (c : ℂˣ)
-
-@[simp]
-lemma smul_ω₁ : (c • L).ω₁ = c * L.ω₁ := rfl
-
-@[simp]
-lemma smul_ω₂ : (c • L).ω₂ = c * L.ω₂ := rfl
-
-/-- The rescaling action of `ℂˣ` on period pairs. -/
-instance instMulActionUnitsComplex : MulAction ℂˣ PeriodPair where
-  one_smul L := by ext <;> simp
-  mul_smul c d L := by ext <;> simp [mul_assoc]
-
-/-- The lattice of `c • L` is the image of the lattice of `L` under multiplication by `c`. -/
-lemma lattice_smul : (c • L).lattice = L.lattice.map (LinearMap.mulLeft ℤ (c : ℂ)) := by
-  simp [lattice, Submodule.map_span]
-
-/-- Multiplication by `c` identifies the lattices of `L` and of `c • L`. -/
-def latticeSMulEquiv : L.lattice ≃ₗ[ℤ] (c • L).lattice :=
-  (Submodule.equivMapOfInjective _ (mul_right_injective₀ c.ne_zero) L.lattice).trans
-    (LinearEquiv.ofEq _ _ (L.lattice_smul c).symm)
-
-@[simp]
-lemma coe_latticeSMulEquiv (l : L.lattice) : (L.latticeSMulEquiv c l : ℂ) = c * l := by
-  simp only [latticeSMulEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
-  exact Submodule.coe_equivMapOfInjective_apply ..
-
-@[simp]
-lemma mul_mem_lattice_smul_iff {x : ℂ} : (c : ℂ) * x ∈ (c • L).lattice ↔ x ∈ L.lattice := by
-  rw [lattice_smul, Submodule.mem_map]
-  exact ⟨fun ⟨y, hy, hyx⟩ ↦ mul_right_injective₀ c.ne_zero hyx ▸ hy, fun h ↦ ⟨x, h, rfl⟩⟩
 
 /-- The lattice sums `G n` are homogeneous of degree `-n` in the lattice. -/
 @[simp]
@@ -242,36 +193,6 @@ lemma weierstrassCurve_smul (c : ℂˣ) :
 lemma weierstrassCurve_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
     L.weierstrassCurve = L'.weierstrassCurve := by
   ext <;> simp [g₂, g₃, G_eq_of_lattice_eq h]
-
-lemma ω₁_ne_zero : L.ω₁ ≠ 0 := by
-  simpa using L.indep.ne_zero 0
-
-lemma ω₂_ne_zero : L.ω₂ ≠ 0 := by
-  simpa using L.indep.ne_zero 1
-
-/-- The ratio of the two periods is not real. -/
-lemma im_ω₁_div_ω₂_ne_zero : (L.ω₁ / L.ω₂).im ≠ 0 := by
-  intro h
-  have hr : ((L.ω₁ / L.ω₂).re : ℂ) = L.ω₁ / L.ω₂ := Complex.ext (by simp) (by simp [h])
-  obtain ⟨hs, -⟩ := LinearIndependent.pair_iff.mp L.indep 1 (-(L.ω₁ / L.ω₂).re) (by
-    rw [one_smul, Complex.real_smul, Complex.ofReal_neg, hr, neg_mul,
-      div_mul_cancel₀ _ L.ω₂_ne_zero, add_neg_cancel])
-  exact one_ne_zero hs
-
-/-- **Every lattice is homothetic to `ℤ τ + ℤ`** for some `τ` in the upper half-plane: take
-`τ = ω₁ / ω₂` or `τ = ω₂ / ω₁`, whichever has positive imaginary part. -/
-lemma exists_lattice_eq_smul_periodPair :
-    ∃ (c : ℂˣ) (τ : ℍ), L.lattice = (c • τ.periodPair).lattice := by
-  rcases L.im_ω₁_div_ω₂_ne_zero.lt_or_gt with h | h
-  · have h' : 0 < (L.ω₂ / L.ω₁).im := by
-      rw [← inv_div, Complex.inv_im]
-      exact div_pos (neg_pos.mpr h) (Complex.normSq_pos.mpr (div_ne_zero L.ω₁_ne_zero L.ω₂_ne_zero))
-    refine ⟨Units.mk0 L.ω₁ L.ω₁_ne_zero, .mk _ h', ?_⟩
-    simp only [lattice, smul_ω₁, smul_ω₂, periodPair_ω₁, periodPair_ω₂, Units.val_mk0,
-      mul_div_cancel₀ _ L.ω₁_ne_zero, mul_one, Set.pair_comm]
-  · refine ⟨Units.mk0 L.ω₂ L.ω₂_ne_zero, .mk _ h, ?_⟩
-    simp only [lattice, smul_ω₁, smul_ω₂, periodPair_ω₁, periodPair_ω₂, Units.val_mk0,
-      mul_div_cancel₀ _ L.ω₂_ne_zero, mul_one]
 
 end PeriodPair
 

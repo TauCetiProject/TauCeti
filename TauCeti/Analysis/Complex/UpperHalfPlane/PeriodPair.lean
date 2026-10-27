@@ -35,10 +35,15 @@ For the Weierstrass `ζ` function `PeriodPair.weierstrassZeta` and its quasi-per
 laws `ζ(x / (c z + d); ℤ γz + ℤ) = (c z + d) ζ(x; ℤ z + ℤ)` and
 `η(l / (c z + d); ℤ γz + ℤ) = (c z + d) η(l; ℤ z + ℤ)`, the inputs for weight one.
 
+Finally, `ℂˣ` acts on period pairs by rescaling, `c • (ω₁, ω₂) = (c ω₁, c ω₂)`, with lattice `c Λ`,
+and every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-plane.
+
 ## Main definitions
 
 * `UpperHalfPlane.periodPair`: the period pair `(z, 1)`.
 * `TauCeti.UpperHalfPlane.rowSum`: a row `∑_n (w + n)⁻²` of the lattice series.
+* `PeriodPair.instMulActionUnitsComplex`: the rescaling action `c • (ω₁, ω₂) = (c ω₁, c ω₂)`.
+* `PeriodPair.latticeSMulEquiv`: multiplication by `c` from the lattice of `L` to that of `c • L`.
 
 ## Main results
 
@@ -58,6 +63,8 @@ laws `ζ(x / (c z + d); ℤ γz + ℤ) = (c z + d) ζ(x; ℤ z + ℤ)` and
 * `TauCeti.UpperHalfPlane.tendsto_rowSum_atImInfty`: rows whose imaginary part grows linearly in
   `Im z` vanish at `i∞`.
 * `TauCeti.UpperHalfPlane.rowSum_zero`: the row at `0` is `2 ζ(2)`.
+* `PeriodPair.lattice_smul`: the lattice of `c • L` is `c Λ`.
+* `PeriodPair.exists_lattice_eq_smul_periodPair`: every lattice is homothetic to `ℤ τ + ℤ`.
 -/
 
 public section
@@ -342,3 +349,89 @@ theorem hasSum_weierstrassP_periodPair_rows (z : ℍ) (x : ℂ) :
   simpa [Function.comp_def] using h₁.sub (hasSum_rowSum ((m : ℂ) * z))
 
 end UpperHalfPlane
+
+/-! ### Rescaling a period pair -/
+
+namespace PeriodPair
+
+@[ext]
+lemma ext {L L' : PeriodPair} (h₁ : L.ω₁ = L'.ω₁) (h₂ : L.ω₂ = L'.ω₂) : L = L' := by
+  cases L
+  cases L'
+  congr
+
+/-- Multiplying a period pair by a nonzero complex number: `c • (ω₁, ω₂) = (c ω₁, c ω₂)`. Its
+lattice is `c Λ` (`PeriodPair.lattice_smul`). -/
+instance instSMulUnitsComplex : SMul ℂˣ PeriodPair where
+  smul c L :=
+    { ω₁ := c * L.ω₁
+      ω₂ := c * L.ω₂
+      indep := by
+        convert L.indep.map' (LinearMap.mulLeft ℝ (c : ℂ))
+          (LinearMap.ker_eq_bot.mpr (mul_right_injective₀ c.ne_zero)) using 1
+        ext i
+        fin_cases i <;> rfl }
+
+variable (L : PeriodPair) (c : ℂˣ)
+
+@[simp]
+lemma smul_ω₁ : (c • L).ω₁ = c * L.ω₁ := rfl
+
+@[simp]
+lemma smul_ω₂ : (c • L).ω₂ = c * L.ω₂ := rfl
+
+/-- The rescaling action of `ℂˣ` on period pairs. -/
+instance instMulActionUnitsComplex : MulAction ℂˣ PeriodPair where
+  one_smul L := by ext <;> simp
+  mul_smul c d L := by ext <;> simp [mul_assoc]
+
+/-- The lattice of `c • L` is the image of the lattice of `L` under multiplication by `c`. -/
+lemma lattice_smul : (c • L).lattice = L.lattice.map (LinearMap.mulLeft ℤ (c : ℂ)) := by
+  simp [lattice, Submodule.map_span]
+
+/-- Multiplication by `c` identifies the lattices of `L` and of `c • L`. -/
+def latticeSMulEquiv : L.lattice ≃ₗ[ℤ] (c • L).lattice :=
+  (Submodule.equivMapOfInjective _ (mul_right_injective₀ c.ne_zero) L.lattice).trans
+    (LinearEquiv.ofEq _ _ (L.lattice_smul c).symm)
+
+@[simp]
+lemma coe_latticeSMulEquiv (l : L.lattice) : (L.latticeSMulEquiv c l : ℂ) = c * l := by
+  simp only [latticeSMulEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  exact Submodule.coe_equivMapOfInjective_apply ..
+
+@[simp]
+lemma mul_mem_lattice_smul_iff {x : ℂ} : (c : ℂ) * x ∈ (c • L).lattice ↔ x ∈ L.lattice := by
+  rw [lattice_smul, Submodule.mem_map]
+  exact ⟨fun ⟨y, hy, hyx⟩ ↦ mul_right_injective₀ c.ne_zero hyx ▸ hy, fun h ↦ ⟨x, h, rfl⟩⟩
+
+lemma ω₁_ne_zero : L.ω₁ ≠ 0 := by
+  simpa using L.indep.ne_zero 0
+
+lemma ω₂_ne_zero : L.ω₂ ≠ 0 := by
+  simpa using L.indep.ne_zero 1
+
+/-- The ratio of the two periods is not real. -/
+lemma im_ω₁_div_ω₂_ne_zero : (L.ω₁ / L.ω₂).im ≠ 0 := by
+  intro h
+  have hr : ((L.ω₁ / L.ω₂).re : ℂ) = L.ω₁ / L.ω₂ := Complex.ext (by simp) (by simp [h])
+  obtain ⟨hs, -⟩ := LinearIndependent.pair_iff.mp L.indep 1 (-(L.ω₁ / L.ω₂).re) (by
+    rw [one_smul, Complex.real_smul, Complex.ofReal_neg, hr, neg_mul,
+      div_mul_cancel₀ _ L.ω₂_ne_zero, add_neg_cancel])
+  exact one_ne_zero hs
+
+/-- **Every lattice is homothetic to `ℤ τ + ℤ`** for some `τ` in the upper half-plane: take
+`τ = ω₁ / ω₂` or `τ = ω₂ / ω₁`, whichever has positive imaginary part. -/
+lemma exists_lattice_eq_smul_periodPair :
+    ∃ (c : ℂˣ) (τ : ℍ), L.lattice = (c • τ.periodPair).lattice := by
+  rcases L.im_ω₁_div_ω₂_ne_zero.lt_or_gt with h | h
+  · have h' : 0 < (L.ω₂ / L.ω₁).im := by
+      rw [← inv_div, Complex.inv_im]
+      exact div_pos (neg_pos.mpr h) (Complex.normSq_pos.mpr (div_ne_zero L.ω₁_ne_zero L.ω₂_ne_zero))
+    refine ⟨Units.mk0 L.ω₁ L.ω₁_ne_zero, .mk _ h', ?_⟩
+    simp only [lattice, smul_ω₁, smul_ω₂, periodPair_ω₁, periodPair_ω₂, Units.val_mk0,
+      mul_div_cancel₀ _ L.ω₁_ne_zero, mul_one, Set.pair_comm]
+  · refine ⟨Units.mk0 L.ω₂ L.ω₂_ne_zero, .mk _ h, ?_⟩
+    simp only [lattice, smul_ω₁, smul_ω₂, periodPair_ω₁, periodPair_ω₂, Units.val_mk0,
+      mul_div_cancel₀ _ L.ω₂_ne_zero, mul_one]
+
+end PeriodPair
