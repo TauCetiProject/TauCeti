@@ -20,7 +20,7 @@ valuation residues, so these terms cannot cancel.
 
 ## Main results
 
-* `TauCeti.natCast_differentExponent_eq_addVal_aeval_derivative_of_eisenstein_adjoin_eq_top`
+* `Polynomial.natCast_differentExponent_eq_addVal_aeval_derivative_of_eisenstein_adjoin_eq_top`
   identifies the different exponent with the valuation of `f'(ξ)`.
 * `TauCeti.natCast_differentExponent_eq_iInf_of_eisenstein_adjoin_eq_top` gives the exact
   derivative-term formula for the different exponent.
@@ -40,7 +40,9 @@ noncomputable section
 open ValuativeRel IsLocalRing Polynomial IsDiscreteValuationRing
 open scoped IntermediateField
 
-namespace TauCeti
+namespace Polynomial
+
+open TauCeti
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -72,6 +74,15 @@ theorem natCast_differentExponent_eq_addVal_aeval_derivative_of_eisenstein_adjoi
     _ = addVal 𝒪[L] (aeval ξ (derivative f)) := by
       rw [hscale, Polynomial.derivative_C_mul, map_mul, Polynomial.aeval_C,
         addVal_mul, (addVal_eq_zero_iff).mpr (hlc.map (algebraMap 𝒪[K] 𝒪[L])), zero_add]
+
+end Polynomial
+
+namespace TauCeti
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+  [Algebra.IsSeparable K L]
 
 /-- For a generator of `L/K` that is a root of an Eisenstein polynomial, the different exponent is
 the least valuation of the terms of its polynomial derivative. -/

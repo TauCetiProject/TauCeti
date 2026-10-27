@@ -11,7 +11,6 @@ public import TauCeti.FieldTheory.IntermediateField.RootCount
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Region
 import TauCeti.NumberTheory.LocalField.Eisenstein.RootCount
 import TauCeti.NumberTheory.LocalField.RootCount.Measurable
-import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
 # Root counts of Eisenstein polynomials in the counted extensions
