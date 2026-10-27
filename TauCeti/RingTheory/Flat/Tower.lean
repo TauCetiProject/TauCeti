@@ -40,17 +40,16 @@ For an algebra `M`, this descends flatness from the composite `R → S → M`. -
 theorem of_faithfullyFlat_of_flat [FaithfullyFlat S M] [Flat R M] : Flat R S := by
   rw [iff_lTensor_injectiveₛ]
   intro P _ _ N
+  have key := LinearMap.congr_fun
+    (AlgebraTensorModule.lTensor_comp_cancelBaseChange R S S (M := M) N.subtype)
+  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+    AlgebraTensorModule.coe_lTensor] at key
   rw [← AlgebraTensorModule.coe_lTensor (A := S),
     ← FaithfullyFlat.lTensor_injective_iff_injective S M]
-  have h₀ : Function.Injective (AlgebraTensorModule.lTensor S M N.subtype) := by
-    rw [AlgebraTensorModule.coe_lTensor]
-    exact lTensor_preserves_injective_linearMap N.subtype Subtype.val_injective
-  have h := h₀.comp (AlgebraTensorModule.cancelBaseChange R S S M N).injective
-  rw [← LinearEquiv.coe_coe, ← LinearMap.coe_comp,
-    AlgebraTensorModule.lTensor_comp_cancelBaseChange,
-    LinearMap.coe_comp, LinearEquiv.coe_coe, EquivLike.comp_injective,
-    AlgebraTensorModule.coe_lTensor] at h
-  exact h
+  intro x y hxy
+  apply (AlgebraTensorModule.cancelBaseChange R S S M N).injective
+  apply lTensor_preserves_injective_linearMap N.subtype Subtype.val_injective
+  rw [key, key, hxy]
 
 /-- Flatness over `R` can be tested on any faithfully flat `S`-module. -/
 theorem iff_of_faithfullyFlat [FaithfullyFlat S M] : Flat R S ↔ Flat R M :=
