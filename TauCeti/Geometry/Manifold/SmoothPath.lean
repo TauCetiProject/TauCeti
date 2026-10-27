@@ -17,13 +17,14 @@ This file joins points of a manifold by globally `C^n` curves `γ : ℝ → M` p
 `[0, 1]`, for every finite or infinite `n : ℕ∞`.
 
 Two curves with a common endpoint are concatenated by `TauCeti.Manifold.smoothTrans`. Each curve
-is reparametrized by Mathlib's `Real.smoothTransition`, so that the concatenation is stationary on
-a neighbourhood of the joining time and therefore as regular as the two curves
-(`ContMDiff.smoothTrans`). Near a point `x`, every point is joined to `x` by a `C^n` curve with
-values in a prescribed neighbourhood of `x`: in the extended chart at `x` this is a reparametrized
-segment, which stays in the model range because `range I` is convex
-(`TauCeti.Manifold.eventually_exists_contMDiff_path`). Consequently any two points of a
-preconnected manifold are joined by a `C^n` curve (`TauCeti.Manifold.exists_contMDiff_path`).
+is reparametrized by Mathlib's `Real.smoothTransition`, so that, since the first curve ends where
+the second starts, the concatenation is stationary on a neighbourhood of the joining time and
+therefore as regular as the two curves (`ContMDiff.smoothTrans`). Near a point `x`, every point
+is joined to `x` by a `C^n` curve with values in a prescribed neighbourhood of `x`: in the
+extended chart at `x` this is a reparametrized segment, which stays in the model range because
+`range I` is convex (`TauCeti.Manifold.eventually_exists_contMDiff_path`). Consequently any two
+points of a preconnected manifold are joined by a `C^n` curve
+(`TauCeti.Manifold.exists_contMDiff_path`).
 
 Such curves are what line integrals of differential forms are evaluated on: the concatenation is
 used to compare line integrals along different curves with the same endpoints.
@@ -31,7 +32,7 @@ used to compare line integrals along different curves with the same endpoints.
 ## Main declarations
 
 * `TauCeti.Manifold.smoothTrans γ₁ γ₂`: the concatenation of `γ₁` and `γ₂`, stationary near the
-  joining time `1 / 2`.
+  joining time `1 / 2` when `γ₁ 1 = γ₂ 0`.
 * `ContMDiff.smoothTrans`: the concatenation of `C^n` curves with a common
   endpoint is `C^n`.
 * `TauCeti.Manifold.eventually_exists_contMDiff_path`: points close to `x` are joined to `x` by
@@ -56,9 +57,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The concatenation of two curves `γ₁ γ₂ : ℝ → M`: on `[0, 1 / 2]` it runs along `γ₁` from
 `γ₁ 0` to `γ₁ 1`, and on `[1 / 2, 1]` along `γ₂` from `γ₂ 0` to `γ₂ 1`. Both curves are
-reparametrized by `Real.smoothTransition`, so that the concatenation is stationary on
-`[1 / 3, 2 / 3]`. When `γ₁ 1 = γ₂ 0` it is as regular as the two curves
-(`ContMDiff.smoothTrans`). -/
+reparametrized by `Real.smoothTransition`, so that the concatenation equals `γ₁ 1` on
+`[1 / 3, 1 / 2]` and `γ₂ 0` on `(1 / 2, 2 / 3]`. When `γ₁ 1 = γ₂ 0` it is therefore stationary on
+`[1 / 3, 2 / 3]` and as regular as the two curves (`ContMDiff.smoothTrans`). -/
 def smoothTrans (γ₁ γ₂ : ℝ → M) : ℝ → M :=
   (Iic (1 / 2 : ℝ)).piecewise (fun t ↦ γ₁ (Real.smoothTransition (6 * t - 1)))
     fun t ↦ γ₂ (Real.smoothTransition (6 * t - 4))
