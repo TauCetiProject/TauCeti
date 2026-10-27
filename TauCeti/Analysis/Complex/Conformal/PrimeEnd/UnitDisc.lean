@@ -288,16 +288,10 @@ theorem IsNullChain.exists_nullChainEquivalent_unitDiscRadialChain
     ∃ ζ : ℂ, ‖ζ‖ = 1 ∧ NullChainEquivalent (ball 0 1) C (unitDiscRadialChain ζ) := by
   set D := nullChainDomain (ball (0 : ℂ) 1) C
   have hDb : ∀ n, closure (D n) ⊆ closedBall 0 1 := fun n =>
-    closure_minimal (nullChainDomain_subset.trans (sdiff_subset.trans ball_subset_closedBall))
-      isClosed_closedBall
-  -- the closures of the domains have a common point `ζ`
-  obtain ⟨ζ, hζD⟩ : (⋂ n, closure (D n)).Nonempty :=
-    IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed _
-      (fun n => closure_mono (hC.nullChainDomain_succ_subset n))
-      (fun n => (hC.nonempty_nullChainDomain n).closure)
-      ((isCompact_closedBall 0 1).of_isClosed_subset isClosed_closure (hDb 0))
-      fun _ => isClosed_closure
-  rw [mem_iInter] at hζD
+    closure_minimal (nullChainDomain_subset_self.trans ball_subset_closedBall) isClosed_closedBall
+  -- the impression has a point `ζ`, common to the closures of the domains
+  obtain ⟨ζ, hζD⟩ := (hC.isConnected_nullChainImpression isBounded_ball).nonempty
+  rw [mem_nullChainImpression_iff] at hζD
   -- eventually `ζ` and the whole domain lie close to an endpoint of the crosscut
   have hnear : ∀ δ > 0, ∀ᶠ n in atTop, ∃ x : ℂ, ‖x‖ = 1 ∧ ‖ζ - x‖ ^ 2 ≤ 2 * δ ∧
       ∀ z ∈ D n, ‖z - x‖ ^ 2 ≤ 2 * δ := fun δ hδ =>
