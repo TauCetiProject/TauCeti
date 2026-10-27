@@ -37,7 +37,8 @@ two. This is the form used for nodal curves.
 
 ## Main results
 
-* `TauCeti.fittingIdeal_one_kaehlerDifferential_eq_maximalIdeal`: `Fitt₁(Ω[A⁄K]) = 𝔪`.
+* `Ideal.eq_maximalIdeal_of_formallyUnramified_quotient`: a proper ideal `I` of `A` with `A ⧸ I`
+  unramified over `K` is `𝔪`; in particular `Fitt₁(Ω[A⁄K]) = 𝔪`.
 * `TauCeti.finrank_residueField_tensor_kaehlerDifferential_eq_two`: `dim_κ κ ⊗[A] Ω[A⁄K] = 2`.
 * `TauCeti.finrank_cotangentSpace_eq_two`: `dim_κ 𝔪/𝔪² = 2`.
 * `TauCeti.finrank_tensor_kaehlerDifferential_eq_two`: for `A` not necessarily local, the fibre of
@@ -64,13 +65,12 @@ section LocalRing
 variable {K A : Type*} [Field K] [CommRing A] [Algebra K A] [IsLocalRing A]
   [Algebra.EssFiniteType K A]
 
-/-- **The singular locus at a node is reduced.** If the first Fitting ideal of `Ω[A⁄K]` is a
-proper ideal of the local `K`-algebra `A` with unramified quotient, it is the maximal ideal. -/
-theorem fittingIdeal_one_kaehlerDifferential_eq_maximalIdeal
-    [Algebra.FormallyUnramified K (A ⧸ fittingIdeal A Ω[A⁄K] 1)]
-    (h : fittingIdeal A Ω[A⁄K] 1 ≠ ⊤) :
-    fittingIdeal A Ω[A⁄K] 1 = maximalIdeal A := by
-  set I := fittingIdeal A Ω[A⁄K] 1
+variable (K) in
+/-- **An unramified quotient of a local algebra is its residue field.** A proper ideal of the
+local `K`-algebra `A` whose quotient is unramified over `K` is the maximal ideal. Applied to
+`Fitt₁(Ω[A⁄K])`, this says that the singular locus at a node is reduced. -/
+theorem _root_.Ideal.eq_maximalIdeal_of_formallyUnramified_quotient {I : Ideal A}
+    [Algebra.FormallyUnramified K (A ⧸ I)] (h : I ≠ ⊤) : I = maximalIdeal A := by
   have : Nontrivial (A ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr h
   have : IsLocalRing (A ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
   -- An unramified local algebra over a field is a field.
@@ -89,7 +89,7 @@ the closed point is a plane. -/
 theorem finrank_residueField_tensor_kaehlerDifferential_eq_two
     (h : fittingIdeal A Ω[A⁄K] 1 ≠ ⊤) :
     finrank (ResidueField A) (ResidueField A ⊗[A] Ω[A⁄K]) = 2 := by
-  have hI := fittingIdeal_one_kaehlerDifferential_eq_maximalIdeal h
+  have hI := Ideal.eq_maximalIdeal_of_formallyUnramified_quotient K h
   have : IsNoetherianRing A := Algebra.EssFiniteType.isNoetherianRing K A
   set μ := finrank (ResidueField A) (ResidueField A ⊗[A] Ω[A⁄K])
   -- The closed point is singular, so the fibre has dimension at least two.
@@ -116,7 +116,7 @@ proper ideal of the local `K`-algebra `A` with unramified quotient, the Zariski 
 `𝔪/𝔪²` has dimension two. -/
 theorem finrank_cotangentSpace_eq_two (h : fittingIdeal A Ω[A⁄K] 1 ≠ ⊤) :
     finrank (ResidueField A) (CotangentSpace A) = 2 := by
-  have hI := fittingIdeal_one_kaehlerDifferential_eq_maximalIdeal h
+  have hI := Ideal.eq_maximalIdeal_of_formallyUnramified_quotient K h
   -- The residue field is the unramified quotient `A ⧸ Fitt₁(Ω[A⁄K])`, so it is étale over `K`.
   have : Algebra.FormallyUnramified K (ResidueField A) :=
     .of_equiv (Ideal.quotientEquivAlgOfEq K hI)
