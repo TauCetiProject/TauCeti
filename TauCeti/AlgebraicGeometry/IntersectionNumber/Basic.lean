@@ -52,7 +52,8 @@ with it the bilinearity of the pairing, is not proved here.
 * `LineBundleClass.intersectionNumber_mk_toInvertibleSheaf`: `(-D · C) = -dim_k Γ(D ∩ C)` for an
   effective Cartier divisor `D` meeting a proper curve `C` properly;
 * `LineBundleClass.intersectionNumber_mul` and `LineBundleClass.intersectionNumber_inv`:
-  additivity on a regular proper integral curve;
+  additivity on a regular proper integral curve, bundled as
+  `LineBundleClass.intersectionNumberHom k ι : Pic X →+ ℤ`;
 * `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf`: `(D · C) = dim_k Γ(D ∩ C)` on a
   regular proper integral curve.
 
@@ -68,7 +69,7 @@ with it the bilinearity of the pairing, is not proved here.
 
 public section
 
-open CategoryTheory AlgebraicGeometry Order
+open CategoryTheory AlgebraicGeometry
 open TauCeti.AlgebraicGeometry.Scheme.Modules
 
 namespace TauCeti.AlgebraicGeometry
@@ -154,21 +155,34 @@ finite-dimensional. -/
 @[simp]
 theorem intersectionNumber_mul (a b : LineBundleClass X) :
     intersectionNumber k ι (a * b) = intersectionNumber k ι a + intersectionNumber k ι b := by
-  have hC (y : C) : coheight y ≤ 1 := by
-    exact_mod_cast (coheight_le_topologicalKrullDim y).trans
-      ((relativeDimensionLE_iff_of_field (d := 1) (C ↘ Spec (.of k))).mp inferInstance)
   have : IsLocallyNoetherian C := LocallyOfFiniteType.isLocallyNoetherian (C ↘ Spec (.of k))
   simp only [intersectionNumber_def, pullback_mul]
-  exact eulerDegree_mul k hC _ _
+  exact eulerDegree_mul k (coheight_le_of_relativeDimensionLE_of_field (d := 1) (C ↘ Spec (.of k)))
+    _ _
 
 /-- The inverse class has the opposite intersection number with a proper integral curve whose
 codimension-one local rings are discrete valuation rings. -/
 @[simp]
 theorem intersectionNumber_inv (a : LineBundleClass X) :
     intersectionNumber k ι a⁻¹ = -intersectionNumber k ι a := by
-  have h := intersectionNumber_mul k ι a⁻¹ a
-  rw [inv_mul_cancel, intersectionNumber_one] at h
-  linarith
+  have : IsLocallyNoetherian C := LocallyOfFiniteType.isLocallyNoetherian (C ↘ Spec (.of k))
+  rw [intersectionNumber_def, intersectionNumber_def, ← pullbackHom_apply, map_inv,
+    pullbackHom_apply]
+  exact eulerDegree_inv k (coheight_le_of_relativeDimensionLE_of_field (d := 1) (C ↘ Spec (.of k)))
+    _
+
+/-- The intersection number with a proper integral curve whose codimension-one local rings are
+discrete valuation rings, as a homomorphism `Pic X →+ ℤ` on the additively written Picard
+group. -/
+def intersectionNumberHom : Additive (LineBundleClass X) →+ ℤ :=
+  AddMonoidHom.mk' (fun a ↦ intersectionNumber k ι a.toMul) fun a b ↦
+    intersectionNumber_mul k ι a.toMul b.toMul
+
+/-- The intersection-number homomorphism evaluates to the intersection number. -/
+@[simp]
+lemma intersectionNumberHom_apply (a : Additive (LineBundleClass X)) :
+    intersectionNumberHom k ι a = intersectionNumber k ι a.toMul :=
+  (rfl)
 
 /-- **Intersecting with an effective Cartier divisor on a regular curve.** Let `D` be an effective
 Cartier divisor on `X` with ideal sheaf `I = 𝒪_X(-D)`, so that `𝒪_X(D)` has class the inverse of
@@ -179,11 +193,9 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf {I : X.IdealSheafData}
     (hI : I.IsEffectiveCartier) (hI' : (I.comap ι).IsEffectiveCartier) (s : Spec (.of k)) :
     intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ =
       ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)).finrank s := by
-  have hC (y : C) : coheight y ≤ 1 := by
-    exact_mod_cast (coheight_le_topologicalKrullDim y).trans
-      ((relativeDimensionLE_iff_of_field (d := 1) (C ↘ Spec (.of k))).mp inferInstance)
-  have := InvertibleSheaf.finiteDimensional_cohomology_zero k hC (InvertibleSheaf.trivial C)
-  rw [intersectionNumber_inv, intersectionNumber_mk_toInvertibleSheaf k ι hI hI' s, neg_neg]
+  rw [intersectionNumber_def, ← pullbackHom_apply, map_inv, pullbackHom_apply,
+    hI.pullback_mk_toInvertibleSheaf hI']
+  exact hI'.eulerDegree_inv_mk_toInvertibleSheaf k _ s
 
 end Regular
 

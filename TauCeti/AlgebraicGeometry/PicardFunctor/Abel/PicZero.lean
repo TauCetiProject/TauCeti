@@ -17,10 +17,10 @@ connected fibres. A relative effective Cartier divisor `D` on `X_T = T ×_S X` r
 point `ξ : Spec Ω ⟶ T` with values in a field, to an effective Cartier divisor `D_ξ` on the fibre,
 which is a connected smooth proper curve over `Ω`; the line bundle `𝒪(D)` restricts to `𝒪(D_ξ)`,
 whose degree is the rank of `D_ξ` over `Ω`
-(`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf`). Since the rank
-of `D` is preserved by base change, the fibre degree of the Abel map `D ↦ 𝒪(D)` at `ξ` is the rank
-of `D` at the image of `ξ` (`relativePicardFiberDegree_abelMap_app`), and it is `d` for a divisor
-in `Div^d_{X/S}`.
+(`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf_of_smooth`).
+Since the rank of `D` is preserved by base change, the fibre degree of the Abel map `D ↦ 𝒪(D)` at
+`ξ` is the rank of `D` at the image of `ξ` (`relativePicardFiberDegree_abelMap_app`), and it is `d`
+for a divisor in `Div^d_{X/S}`.
 
 Consequently, for a section `x₀`, the Abel–Jacobi map of degree `d`, `D ↦ 𝒪(D - d • x₀_T)`, takes
 values in the degree-zero Picard functor `Pic⁰_{X/S}`: both `D` and `d • x₀_T` have degree `d` on
@@ -100,8 +100,8 @@ theorem relativePicardFiberDegree_abelMap_app {T : (Over S)ᵒᵖ} {Ω : Type u}
       (IsPullback.of_hasPullback (ξ ≫ T.unop.hom) f).flip
   rw [abelMap_app_apply, relativePicardFiberDegree_mk]
   refine (congrArg (LineBundleClass.eulerDegree Ω) hres).trans ?_
-  rw [Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf Ω _
-    hD'.isEffectiveCartier x]
+  rw [Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf_of_smooth Ω
+    _ hD'.isEffectiveCartier x]
   exact congrArg _ (D.1.finrank_comap_of_isPullback _ g _ ξ hpb x)
 
 /-- A relative effective Cartier divisor of degree `d` has fibre degree `d` under the Abel map:
