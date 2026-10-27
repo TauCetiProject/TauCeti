@@ -151,8 +151,9 @@ theorem exists_apply_apply_eq_of_mem_topologicalClosure_span (L : A →L[𝕜] E
     {l : Filter A} (hl : l.IsApproximateUnit) {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C) {x : E}
     (hx : x ∈ (span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)).topologicalClosure) :
     ∃ a z b, ‖a‖ ≤ C ∧ ‖b‖ ≤ C ∧ L a (R z b) = x := by
-  -- `IsApproximateUnit`'s `neBot` field is `protected`, so the properness of `l` has to be
-  -- restated as a local instance for the one-sided theorems.
+  -- `IsApproximateUnit.neBot` is `protected`, so instance search does not reach it from `hl` and
+  -- `l.NeBot` has to be added to the context by hand: without this line the one-sided theorems
+  -- below cannot synthesize `l.NeBot`.
   have hlneBot : l.NeBot := hl.neBot
   -- The essential part of the bimodule, whose elements are the triple products `a · z · b`.
   set S : Submodule 𝕜 E := span 𝕜 (Set.range fun p : A × E × A ↦ R (L p.1 p.2.1) p.2.2)
