@@ -90,9 +90,9 @@ theorem tendsto_quantile_hypoexponentialMeasure_nhdsGT_zero (hr : ∀ i, 0 < r i
 /-- As the level increases to one, the hypoexponential quantile tends to infinity. -/
 theorem tendsto_quantile_hypoexponentialMeasure_nhdsLT_one (hr : ∀ i, 0 < r i) :
     Tendsto (hypoexponentialMeasure r).quantile (𝓝[<] 1) atTop := by
-  refine tendsto_atTop.2 fun b ↦ ?_
-  filter_upwards [Ioo_mem_nhdsLT (cdf_hypoexponentialMeasure_lt_one hr b)] with u hu
-  exact ((Measure.lt_quantile_iff _ ((cdf_nonneg _ b).trans_lt hu.1) hu.2).2 hu.1).le
+  exact EReal.tendsto_coe_nhds_top_iff.mp
+    (Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one _
+      (cdf_hypoexponentialMeasure_lt_one hr))
 
 /-- At a common positive rate, the hypoexponential quantile is the Erlang quantile. -/
 theorem quantile_hypoexponentialMeasure_const {a : ℝ} (ha : 0 < a) (hu : u ∈ Ioo 0 1) :

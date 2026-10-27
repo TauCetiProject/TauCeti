@@ -21,6 +21,10 @@ coordinates, and neighbourhoods of that vector have positive product measure.
 These facts give continuity and strict increase of the cdf without the partial-fraction
 formula for the density.
 
+The proof of `support_hypoexponentialMeasure` closely follows
+`TauCeti.Probability.support_irwinHallMeasure` from
+`TauCeti.Probability.Distributions.IrwinHall.Support`.
+
 ## References
 
 * S. M. Ross, *Introduction to Probability Models*, 12th ed., Academic Press (2019), Chapter 5.
