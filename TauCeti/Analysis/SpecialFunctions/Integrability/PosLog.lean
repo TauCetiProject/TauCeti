@@ -63,12 +63,14 @@ theorem lintegral_ofReal_posLog_inv_norm_circleMap (hf : MeromorphicOn f (sphere
     ∫⁻ θ in Ioc 0 (2 * π), ENNReal.ofReal (log⁺ ‖f (circleMap c r θ)‖⁻¹) =
       ENNReal.ofReal (2 * π * (circleAverage (fun z ↦ log⁺ ‖f z‖) c r -
         circleAverage (fun z ↦ Real.log ‖f z‖) c r)) := by
-  rw [← hf.circleAverage_posLog_inv_norm, circleAverage_def,
-    intervalIntegral.integral_of_le two_pi_pos.le, smul_eq_mul,
-    ← mul_assoc, mul_inv_cancel₀ two_pi_pos.ne', one_mul,
-    ofReal_integral_eq_lintegral_ofReal
+  have hlintegral : ∫⁻ θ in Ioc 0 (2 * π), ENNReal.ofReal (log⁺ ‖f (circleMap c r θ)‖⁻¹) =
+      ENNReal.ofReal (∫ θ in 0..2 * π, log⁺ ‖f (circleMap c r θ)‖⁻¹) := by
+    rw [intervalIntegral.integral_of_le two_pi_pos.le, ofReal_integral_eq_lintegral_ofReal
       ((intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le).1
         hf.circleIntegrable_posLog_inv_norm)
       (Filter.Eventually.of_forall fun θ ↦ posLog_nonneg)]
+  rw [hlintegral, ← hf.circleAverage_posLog_inv_norm, circleAverage_def, smul_eq_mul]
+  congr 1
+  field_simp
 
 end MeromorphicOn
