@@ -97,6 +97,29 @@ namespace IsIdempotentElem
 
 variable {A : Type*} [Ring A] {C E w : A} {h : ℕ}
 
+/-- Replacing one block of a split operator by the identity gives a unit when the
+complementary block is invertible.
+The inverse is `E + w`, where `w` is the inverse of `C` on the complementary block. -/
+theorem isUnit_add_mul_one_sub (he : IsIdempotentElem E)
+    (hw : C * w = 1 - E) (hw' : w * C = 1 - E) (hEw : E * w = 0)
+    (hwE : w * E = 0) : IsUnit (E + C * (1 - E)) := by
+  have hCE : Commute C E := by
+    have hCw : Commute C w := hw.trans hw'.symm
+    have h1 : Commute C (1 - E) := hw' ▸ hCw.mul_right (Commute.refl C)
+    simpa using (Commute.one_right C).sub_right h1
+  have hcompE : C * (1 - E) * E = 0 := by
+    simp [mul_assoc, sub_mul, he.eq]
+  have hcompw : C * (1 - E) * w = 1 - E := by
+    simp [mul_assoc, sub_mul, hEw, hw]
+  have hEcomp : E * (C * (1 - E)) = 0 := by
+    rw [← mul_assoc, ← hCE.eq, mul_assoc]
+    simp [mul_sub, he.eq]
+  have hwcomp : w * (C * (1 - E)) = 1 - E := by
+    rw [← mul_assoc, hw', he.one_sub.eq]
+  refine isUnit_iff_exists.mpr ⟨E + w, ?_, ?_⟩
+  · simp [mul_add, add_mul, he.eq, hEw, hcompE, hcompw]
+  · simp [mul_add, add_mul, he.eq, hwE, hEcomp, hwcomp]
+
 /-- Let `E` be an idempotent with `C ^ h * E = 0`, and let `w` invert `C` modulo `E`:
 `C * w = w * C = 1 - E`. Then `1 - E = C ^ h * w ^ h`. -/
 theorem one_sub_eq_pow_mul_pow (he : IsIdempotentElem E) (hz : C ^ h * E = 0)
