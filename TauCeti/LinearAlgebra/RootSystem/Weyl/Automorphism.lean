@@ -113,6 +113,6 @@ theorem HasCartanType.weylGroup_eq_top [P.IsRootSystem] {b : P.Base} {t : Dynkin
 /-- **Every automorphism of a root system of type `E₈` lies in its Weyl group.** -/
 theorem weylGroup_eq_top_of_hasCartanType_E8 [P.IsRootSystem] {b : P.Base}
     (h : HasCartanType P b .E8) : P.weylGroup = ⊤ :=
-  h.weylGroup_eq_top DynkinType.diagramSymmetry_E8
+  h.weylGroup_eq_top DynkinType.diagramSymmetry_E8_eq_bot
 
 end TauCeti

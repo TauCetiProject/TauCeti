@@ -51,7 +51,7 @@ The conventions follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, p
 * `TauCeti.lengthPermRankTwo_lengthPermRankTwo` and `TauCeti.lengthPermF4_lengthPermF4`: the length
   permutations are involutions, and `TauCeti.lengthPermRankTwo_apply`,
   `TauCeti.graphPermA_apply` and `TauCeti.lengthPermF4_apply` evaluate them as reversals.
-* `TauCeti.DynkinType.diagramSymmetry_E8`: the diagram of `E₈` has no nontrivial symmetry.
+* `TauCeti.DynkinType.diagramSymmetry_E8_eq_bot`: the diagram of `E₈` has no nontrivial symmetry.
 -/
 
 public section
@@ -407,7 +407,7 @@ private theorem eq_one_of_submatrix_cartanMatrix_E8 {σ : Equiv.Perm (Fin 8)}
   exact congrArg Fin.val (hinj (congrFun hfix i))
 
 /-- **The Dynkin diagram of `E₈` has no nontrivial symmetry.** -/
-theorem diagramSymmetry_E8 : E8.diagramSymmetry = ⊥ :=
+theorem diagramSymmetry_E8_eq_bot : E8.diagramSymmetry = ⊥ :=
   (Subgroup.eq_bot_iff_forall _).mpr fun _ hσ ↦
     eq_one_of_submatrix_cartanMatrix_E8 (cartanMatrix_E8 ▸ mem_diagramSymmetry_iff_submatrix.mp hσ)
 
