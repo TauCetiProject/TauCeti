@@ -1,4 +1,4 @@
-"""Exercise both production retry blocks with failing installer processes."""
+"""Exercise production toolchain retry blocks with failing installer processes."""
 
 import os
 from pathlib import Path
@@ -19,6 +19,12 @@ class InstallRetry(unittest.TestCase):
         commands = [action["runs"]["steps"][-1]["run"], next(
             step["run"] for step in publisher["jobs"]["publish"]["steps"]
             if step.get("id") == "toolchain")]
+        ci = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
+        main_installs = [step["run"] for job in ci["jobs"].values()
+                         for step in job.get("steps", [])
+                         if "elan toolchain install" in step.get("run", "")]
+        self.assertTrue(main_installs, "main CI must exercise a toolchain installation")
+        commands.extend(main_installs)
         for command in commands:
             start = command.index("for toolchain_attempt")
             end = command.index("done", start) + len("done")

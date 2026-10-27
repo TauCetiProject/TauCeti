@@ -75,7 +75,19 @@ jobs:
           rm -f elan.tar.gz elan-init
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
           export PATH="$HOME/.elan/bin:$PATH"
-          elan toolchain install "$(cat lean-toolchain)"
+          # Retry only the identical official toolchain download, never the build.
+          for toolchain_attempt in 1 2 3; do
+            if elan toolchain install "$(cat lean-toolchain)"; then
+              break
+            else
+              toolchain_status=$?
+            fi
+            if [ "$toolchain_attempt" -eq 3 ]; then
+              exit "$toolchain_status"
+            fi
+            echo "::warning::official toolchain install failed; retry $toolchain_attempt/3"
+            sleep "$((toolchain_attempt * 5))"
+          done
           lean --version
           lake --version
 
@@ -241,7 +253,19 @@ jobs:
           rm -f elan.tar.gz elan-init
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
           export PATH="$HOME/.elan/bin:$PATH"
-          elan toolchain install "$(cat lean-toolchain)"
+          # Retry only the identical official toolchain download, never the build.
+          for toolchain_attempt in 1 2 3; do
+            if elan toolchain install "$(cat lean-toolchain)"; then
+              break
+            else
+              toolchain_status=$?
+            fi
+            if [ "$toolchain_attempt" -eq 3 ]; then
+              exit "$toolchain_status"
+            fi
+            echo "::warning::official toolchain install failed; retry $toolchain_attempt/3"
+            sleep "$((toolchain_attempt * 5))"
+          done
           lean --version
           lake --version
 
