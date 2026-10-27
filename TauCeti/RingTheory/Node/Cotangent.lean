@@ -94,8 +94,8 @@ theorem finrank_residueField_tensor_kaehlerDifferential_eq_two
   set μ := finrank (ResidueField A) (ResidueField A ⊗[A] Ω[A⁄K])
   -- The closed point is singular, so the fibre has dimension at least two.
   have h1 : 1 < μ := by
-    rw [← fittingIdeal_map_eq_bot_iff_lt_finrank, hI, Ideal.map_eq_bot_iff_le_ker]
-    exact (ker_residue (R := A)).ge
+    rw [← fittingIdeal_map_eq_bot_iff_lt_finrank, hI, Ideal.map_eq_bot_iff_le_ker,
+      ResidueField.algebraMap_eq, ker_residue]
   refine le_antisymm (not_lt.1 fun h3 ↦ ?_) h1
   -- Otherwise `𝔪 = Fitt₁(Ω[A⁄K]) ≤ 𝔪²`, so `𝔪 = 0` by Nakayama's lemma.
   have hsq : maximalIdeal A ≤ maximalIdeal A • maximalIdeal A := by
@@ -127,7 +127,8 @@ theorem finrank_cotangentSpace_eq_two (h : fittingIdeal A Ω[A⁄K] 1 ≠ ⊤) :
   -- The conormal map `𝔪/𝔪² → κ ⊗[A] Ω[A⁄K]` is then a bijection.
   have hbij := KaehlerDifferential.kerCotangentToTensor_bijective_of_formallyEtale
     (R := K) (P := A) (S := ResidueField A) residue_surjective
-  have hker : RingHom.ker (algebraMap A (ResidueField A)) = maximalIdeal A := ker_residue
+  have hker : RingHom.ker (algebraMap A (ResidueField A)) = maximalIdeal A := by
+    rw [ResidueField.algebraMap_eq, ker_residue]
   have e := LinearEquiv.ofBijective _ hbij
   rw [hker] at e
   rw [← finrank_residueField_tensor_kaehlerDifferential_eq_two h,
@@ -171,7 +172,7 @@ theorem finrank_tensor_kaehlerDifferential_eq_two {L : Type*} [Field L] [Algebra
   · rw [← fittingIdeal_map_eq_bot_iff_lt_finrank, Ideal.map_eq_bot_iff_le_ker] at h3
     have := (fittingIdeal_map_eq_bot_iff_lt_finrank (ResidueField Aₚ) 2).1 <| by
       rw [hfit 2, Ideal.map_map, Ideal.map_eq_bot_iff_le_ker, ← RingHom.comap_ker,
-        show RingHom.ker (algebraMap Aₚ (ResidueField Aₚ)) = maximalIdeal Aₚ from ker_residue]
+        ResidueField.algebraMap_eq, ker_residue]
       exact h3.trans (Localization.AtPrime.under_maximalIdeal (I := p)).ge
     omega
   · exact (fittingIdeal_map_eq_bot_iff_lt_finrank L 1).1 ((Ideal.map_eq_bot_iff_le_ker _).2 h)

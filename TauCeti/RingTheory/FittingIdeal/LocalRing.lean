@@ -64,7 +64,8 @@ theorem fittingIdeal_le_maximalIdeal_pow (k : ℕ) :
     (Ideal.pow_right_mono ?_ _)
   -- The relations vanish in `κ ⊗[R] Rᵘ`, since `κ ⊗ φ` is a surjection between spaces of
   -- the same dimension `μ`.
-  have hker : RingHom.ker (algebraMap R (ResidueField R)) = maximalIdeal R := ker_residue
+  have hker : RingHom.ker (algebraMap R (ResidueField R)) = maximalIdeal R := by
+    rw [ResidueField.algebraMap_eq, ker_residue]
   rw [← hker,
     (TensorProduct.isBaseChange R (Fin μ → R) (ResidueField R)).minorsIdeal_one_le_ker_iff]
   intro x hx
