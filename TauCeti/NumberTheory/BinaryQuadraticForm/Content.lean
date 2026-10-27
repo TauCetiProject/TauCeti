@@ -27,9 +27,15 @@ carrier for proper-equivalence and orbit constructions among forms of that discr
 Intersecting with the positive definite forms gives `PosDefProperClass n`, the proper
 equivalence classes of primitive positive definite forms of discriminant `-n`.
 
+Two forms `(a, B, a'C)` and `(a', B, aC)` sharing the middle coefficient have Dirichlet
+composition `(aa', B, C)`, of the same discriminant `B² - 4aa'C`; if both are primitive so is
+the composition (`isPrimitive_mk_mul_of_isPrimitive`). The principal form of discriminant
+`D ≡ 0, 1 mod 4` is `x² + δxy + ((δ - D)/4)y²` with `δ = D mod 2` (`principalForm`); it is
+primitive of discriminant `D`, and positive definite when `D < 0`.
+
 ## References
 
-* D. A. Cox, *Primes of the Form x² + ny²*, §2.
+* D. A. Cox, *Primes of the Form x² + ny²*, §2, and §3 for Dirichlet composition.
 -/
 
 public section
@@ -357,5 +363,87 @@ theorem stabilizer_primPart (f : BinaryQuadraticForm ℤ) :
     (γ : Matrix.SpecialLinearGroup (Fin 2) ℤ) :
     (γ • f).primPart.discrim = f.primPart.discrim := by
   rw [primPart_smul, discrim_smul]
+
+/-! ### Dirichlet composition of united forms -/
+
+section Composition
+
+variable {a a' B C : ℤ}
+
+/-- The forms `(a, B, a'C)` and `(aa', B, C)` have the same discriminant `B² - 4aa'C`. -/
+theorem discrim_mk_mul_left (a a' B C : ℤ) :
+    (⟨a, B, a' * C⟩ : BinaryQuadraticForm ℤ).discrim =
+      (⟨a * a', B, C⟩ : BinaryQuadraticForm ℤ).discrim := by
+  simp only [discrim_def, discrim]
+  ring
+
+/-- The forms `(a', B, aC)` and `(aa', B, C)` have the same discriminant `B² - 4aa'C`. -/
+theorem discrim_mk_mul_right (a a' B C : ℤ) :
+    (⟨a', B, a * C⟩ : BinaryQuadraticForm ℤ).discrim =
+      (⟨a * a', B, C⟩ : BinaryQuadraticForm ℤ).discrim := by
+  simp only [discrim_def, discrim]
+  ring
+
+/-- **The Dirichlet composition of primitive united forms is primitive.** If `(a, B, a'C)` and
+`(a', B, aC)` are primitive, then so is `(aa', B, C)`. -/
+theorem isPrimitive_mk_mul_of_isPrimitive
+    (hf : (⟨a, B, a' * C⟩ : BinaryQuadraticForm ℤ).IsPrimitive)
+    (hg : (⟨a', B, a * C⟩ : BinaryQuadraticForm ℤ).IsPrimitive) :
+    (⟨a * a', B, C⟩ : BinaryQuadraticForm ℤ).IsPrimitive := by
+  obtain ⟨u, v, w, huvw⟩ := hf.exists_linearCombination_eq_one
+  obtain ⟨u', v', w', huvw'⟩ := hg.exists_linearCombination_eq_one
+  -- every monomial of the product of the two Bézout relations is a multiple of `aa'`, `B` or `C`
+  refine isPrimitive_of_linearCombination_eq_one _ (u * u' + w * w' * C ^ 2)
+    (u * v' * a + v * u' * a' + v * v' * B + v * w' * a * C + w * v' * a' * C)
+    (u * w' * a ^ 2 + w * u' * a' ^ 2) ?_
+  linear_combination (u' * a' + v' * B + w' * (a * C)) * huvw + huvw'
+
+end Composition
+
+/-! ### The principal form -/
+
+section Principal
+
+/-- **The principal form** of discriminant `D`, `x² + δxy + ((δ - D)/4)y²` with `δ = D mod 2`.
+For `D ≡ 0, 1 mod 4` it has discriminant `D` (`discrim_principalForm`). -/
+def principalForm (D : ℤ) : BinaryQuadraticForm ℤ :=
+  ⟨1, D % 2, (D % 2 - D) / 4⟩
+
+/-- The leading coefficient of the principal form is `1`. -/
+@[simp] theorem principalForm_a (D : ℤ) : (principalForm D).a = 1 := (rfl)
+
+/-- The middle coefficient of the principal form is `D mod 2`. -/
+@[simp] theorem principalForm_b (D : ℤ) : (principalForm D).b = D % 2 := (rfl)
+
+/-- The last coefficient of the principal form is `(D mod 2 - D) / 4`. -/
+@[simp] theorem principalForm_c (D : ℤ) : (principalForm D).c = (D % 2 - D) / 4 := (rfl)
+
+/-- The principal form of discriminant `D ≡ 0, 1 mod 4` has discriminant `D`. -/
+theorem discrim_principalForm {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    (principalForm D).discrim = D := by
+  have h4 : 4 * ((D % 2 - D) / 4) = D % 2 - D :=
+    Int.mul_ediv_cancel' (Int.dvd_iff_emod_eq_zero.mpr (by omega))
+  have hsq : D % 2 * (D % 2) = D % 2 := by
+    rcases Int.emod_two_eq_zero_or_one D with h | h <;> rw [h] <;> norm_num
+  rw [discrim_def, discrim, principalForm_a, principalForm_b, principalForm_c]
+  linear_combination hsq - h4
+
+/-- The principal form is primitive. -/
+theorem isPrimitive_principalForm (D : ℤ) : (principalForm D).IsPrimitive :=
+  isPrimitive_of_linearCombination_eq_one _ 1 0 0 (by simp)
+
+/-- The principal form is a primitive form of discriminant `D ≡ 0, 1 mod 4`. -/
+theorem principalForm_mem_primitiveForms {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    principalForm D ∈ primitiveForms D :=
+  (mem_primitiveForms D _).mpr ⟨discrim_principalForm hD, isPrimitive_principalForm D⟩
+
+/-- The principal form of discriminant `-n` is primitive positive definite. -/
+theorem principalForm_mem_posDef_inf_primitiveForms (n : ℕ) [NeZero n]
+    (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
+    principalForm (-n) ∈ posDef n ⊓ primitiveForms (-n) :=
+  (mem_posDef_inf_primitiveForms n).mpr
+    ⟨discrim_principalForm hn, by simp, isPrimitive_principalForm _⟩
+
+end Principal
 
 end TauCeti.BinaryQuadraticForm

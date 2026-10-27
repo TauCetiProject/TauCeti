@@ -269,6 +269,14 @@ theorem existsUnique_lift (φ : B →+* R) (ψ : C →+* R)
   rintro f ⟨hf, hfB, hfC⟩
   exact hom_ext hf (continuous_lift φ ψ h hφ hψ) (by simpa) (by simpa)
 
+/-- The extension of an adic left map is adic. -/
+theorem isAdicHom_lift (φ : B →+* R) (ψ : C →+* R)
+    (h : φ.comp (algebraMap A B) = ψ.comp (algebraMap A C))
+    (hφ : Continuous φ) (hψ : Continuous ψ) (hφa : IsAdicHom φ) :
+    IsAdicHom (lift φ ψ h hφ hψ) :=
+  IsAdicHom.of_comp ((lift_comp_inl φ ψ h hφ hψ).symm ▸ hφa) (continuous_inl A B C)
+    (continuous_lift φ ψ h hφ hψ)
+
 end CompletedTensor
 
 end TauCeti.Huber

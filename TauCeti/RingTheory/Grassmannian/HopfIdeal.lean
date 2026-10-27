@@ -48,6 +48,8 @@ antipode commute with base change (`LinearMap.counit_rTensor` and
 * `Module.Grassmannian.hopfIdealLocus_map`: the formation of `hopfIdealLocus` commutes with base
   change.
 * `Module.Grassmannian.hopfIdealLocus_map_eq_bot`: the Hopf-ideal locus is stable under base change.
+* `Module.Grassmannian.hopfIdealLocus_fg`: for `H` finite over `R`, the ideal `N.hopfIdealLocus` is
+  finitely generated.
 
 ## References
 
@@ -284,5 +286,26 @@ theorem hopfIdealLocus_map (f : A →ₐ[R] B) (N : G(k, A ⊗[R] H; A)) :
 theorem hopfIdealLocus_map_eq_bot {N : G(k, A ⊗[R] H; A)} (hN : N.hopfIdealLocus = ⊥)
     (f : A →ₐ[R] B) : (map f N).hopfIdealLocus = ⊥ := by
   rw [hopfIdealLocus_map, hN, Ideal.map_bot]
+
+/-- For `H` finite over `R`, the ideal `N.hopfIdealLocus` is finitely generated: being a two-sided
+Hopf ideal is cut out by finitely many equations. -/
+theorem hopfIdealLocus_fg [Module.Finite R H] (N : G(k, A ⊗[R] H; A)) : N.hopfIdealLocus.FG := by
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R) (M := H)
+  have : Module.FinitePresentation A (A ⊗[R] H ⧸ N.toSubmodule) :=
+    Module.finitePresentation_of_projective _ _
+  have hN : N.toSubmodule.FG := by
+    simpa using Module.FinitePresentation.fg_ker N.toSubmodule.mkQ N.toSubmodule.mkQ_surjective
+  -- the contents of the multiplications by all `1 ⊗ₜ h` are those for `h` in a finite spanning set
+  rw [hopfIdealLocus, Submodule.iSup_minorsIdeal_one_map_eq (s := (s : Set H)) _
+      (fun h ↦ N.toSubmodule.mkQ ∘ₗ LinearMap.mulLeft A ((1 : A) ⊗ₜ[R] h))
+      (fun _ _ ↦ by ext; simp [tmul_add, add_mul])
+      (fun _ _ ↦ by ext; simp [tmul_smul, ← algebraMap_smul A]) hs,
+    Submodule.iSup_minorsIdeal_one_map_eq (s := (s : Set H)) _
+      (fun h ↦ N.toSubmodule.mkQ ∘ₗ LinearMap.mulRight A ((1 : A) ⊗ₜ[R] h))
+      (fun _ _ ↦ by ext; simp [tmul_add, mul_add])
+      (fun _ _ ↦ by ext; simp [tmul_smul, ← algebraMap_smul A]) hs]
+  refine Submodule.FG.sup (Submodule.FG.sup (Submodule.FG.sup (Submodule.FG.sup
+    (hN.map _).minorsIdeal_one (hN.map _).minorsIdeal_one) (hN.map _).minorsIdeal_one) ?_) ?_ <;>
+    exact Submodule.fg_iSup _ fun _ ↦ (hN.map _).minorsIdeal_one
 
 end Module.Grassmannian
