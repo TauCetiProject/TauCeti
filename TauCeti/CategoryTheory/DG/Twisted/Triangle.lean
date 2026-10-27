@@ -14,10 +14,12 @@ public import Mathlib.CategoryTheory.Triangulated.Pretriangulated
 
 Let `C` be a differential graded category and let `H⁰` be the homotopy category of the twisted
 objects of the additive closure of the shift closure of `C`, with the shift of
-`TauCeti/CategoryTheory/DG/Twisted/HomotopyShift.lean`.  This file equips `H⁰` with the
-distinguished triangles of the pretriangulated envelope of Bondal and Kapranov and proves the
-axioms of a pretriangulated category for them, except for the converse half of the rotation
-axiom.
+`TauCeti/CategoryTheory/DG/Twisted/HomotopyShift.lean`.  This file equips `H⁰` with the cone
+triangles of Bondal and Kapranov as distinguished triangles, and proves the axioms of a
+pretriangulated category for them, except for the converse half of the rotation axiom.  The
+twisting matrices of the objects of `H⁰` are not required to be one-sided, so `H⁰` contains, and is
+in general larger than, the pretriangulated envelope of Bondal and Kapranov, which consists of the
+one-sided twisted objects.
 
 A closed degree-zero morphism `u : P ⟶ Q` has the **cone triangle**
 `P ⟶ Q ⟶ cone u ⟶ P⟦1⟧` (`TauCeti.DGTwistedObject.coneTriangle`), formed by the classes of `u`,
@@ -25,7 +27,8 @@ of the inclusion of `Q` into the cone and of the projection of the cone onto `P�
 of `H⁰` is **distinguished** when it is isomorphic to a cone triangle
 (`TauCeti.DGTwistedObject.distinguishedTriangles`).
 
-* `H⁰` has a zero object, a twisted object with no summands.  The contractible triangle
+* `H⁰` has a zero object, a twisted object with no summands
+  (`TauCeti.DGTwistedObject.isZero_of_isEmpty`).  The contractible triangle
   `X ⟶ X ⟶ 0 ⟶ X⟦1⟧` is isomorphic to the cone triangle of the identity, since `Cone(id)` is
   contractible.
 * Every morphism of `H⁰` is the class of a closed morphism, so it is the base of its cone
@@ -59,8 +62,6 @@ distinguished, is not proved here.
 
 ## Main results
 
-* `TauCeti.DGTwistedObject.isZero_of_isEmpty`: a twisted object with no summands is a zero object
-  of the homotopy category; in particular the homotopy category has a zero object.
 * `TauCeti.DGTwistedObject.isomorphic_distinguished`,
   `TauCeti.DGTwistedObject.contractible_distinguished`,
   `TauCeti.DGTwistedObject.distinguished_cocone_triangle` and
@@ -92,26 +93,6 @@ namespace DGTwistedObject
 open DGHomotopyCategory
 
 variable {R : Type v} [CommRing R]
-
-/-! ### The zero object -/
-
-section zero
-
-variable {E : Type u} [DGCategory R E]
-
-/-- **A twisted object with no summands is a zero object of the homotopy category**: its identity
-is the empty matrix, which is the differential of the zero morphism. -/
-theorem isZero_of_isEmpty (P : DGTwistedObject R (DGAdditiveClosure E)) [IsEmpty P.obj.ι] :
-    IsZero (DGHomotopyCategory.of R P) :=
-  (isZero_of_iff_dgId_mem_dgBoundaries R P).mpr ((mem_dgBoundaries R).mpr
-    ⟨0, (dgHomEquiv R P P 0).injective (DGAdditiveClosure.dgHom_ext R fun i ↦ isEmptyElim i)⟩)
-
-/-- The homotopy category of twisted objects of an additive closure has a zero object: the empty
-direct sum with the zero twist. -/
-instance : HasZeroObject (DGHomotopyCategory R (DGTwistedObject R (DGAdditiveClosure E))) :=
-  ⟨⟨_, isZero_of_isEmpty (ofObj R (⟨PEmpty, PEmpty.elim⟩ : DGAdditiveClosure E))⟩⟩
-
-end zero
 
 variable {C : Type u} [DGCategory R C]
 
@@ -231,9 +212,7 @@ theorem dgDifferential_coneHomOfHomotopy {a : DGHom R 0 P P'} {b : DGHom R 0 Q Q
           (add_zero 1)) (zero_add 1) =
       dgComp R (fromShift P 1) (dgComp R (dgComp R a u' (add_zero 0))
         (extensionInl R (dgDifferential_coneMorphism hu')) (add_zero 0)) (add_zero 1) := by
-    rw [dgComp_coneMorphism, ← dgComp_assoc R _ _ _ (zero_add 1) (add_zero 1) (by omega),
-      dgComp_fromShift 1 a (zero_add 1), mul_zero, Int.negOnePow_zero, one_smul,
-      dgComp_assoc R _ a _ (add_zero 1) (zero_add 0) (by omega),
+    rw [dgComp_coneMorphism, dgMap_dgComp_fromShift_assoc,
       dgComp_assoc R a u' _ (add_zero 0) (add_zero 0) (by omega)]
   have h₃ (x : DGHom R 0 P Q') : dgComp R (dgComp R (fromShift P 1) x (add_zero 1))
         (extensionInl R (dgDifferential_coneMorphism hu')) (add_zero 1) =
@@ -430,9 +409,7 @@ theorem dgDifferential_coneRotateHom : dgDifferential R 0 (coneRotateHom hu) = 0
             (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu)))) (add_zero 1))
         (zero_add 1) := by
     rw [dgComp_assoc R _ _ _ (add_zero 1) (add_zero 0) (by omega), dgComp_coneMorphism,
-      dgComp_coneMorphism, ← dgComp_assoc R _ _ _ (zero_add 1) (add_zero 1) (by omega),
-      dgComp_fromShift 1 u (zero_add 1), mul_zero, Int.negOnePow_zero, one_smul,
-      dgComp_assoc R _ u _ (add_zero 1) (zero_add 0) (by omega)]
+      dgComp_coneMorphism, dgMap_dgComp_fromShift_assoc]
   simp -proj only [coneRotateHom_def, map_add, map_neg, dgDifferential_dgComp,
     dgDifferential_extensionInl, dgDifferential_extensionInr, hu₁, zero_dgComp, dgComp_zero,
     smul_zero, add_zero, zero_add, Int.negOnePow_zero, one_smul, neg_dgComp, h, add_neg_cancel]
@@ -484,24 +461,10 @@ private theorem dgDifferential_extensionFst_toShift_extensionInr :
           (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu)))) (add_zero 0))
         (add_zero 0) := by
     rw [dgComp_assoc R _ _ _ (zero_add 1) (add_neg_cancel 1) (by omega), dgComp_coneMorphism,
-      ← dgComp_assoc R u _ _ (zero_add (-1)) (add_zero (-1)) (by omega),
-      dgComp_toShift 1 u (zero_add (-1)), mul_zero, Int.negOnePow_zero, one_smul,
-      dgComp_assoc R _ _ _ (add_zero (-1)) (add_zero 0) (by omega),
-      dgComp_fromShift_toShift_assoc]
-  -- `Q ⟶ Q⟦1⟧ ⟶ Q` is the identity.
-  have h₂ : dgComp R (toShift Q 1)
-        (dgComp R (coneMorphism R (extensionInl R (dgDifferential_coneMorphism hu)))
-          (extensionInl R (dgDifferential_coneMorphism
-            (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu)))) (add_zero 1))
-        (neg_add_cancel 1) =
-      dgComp R (extensionInl R (dgDifferential_coneMorphism hu))
-        (extensionInl R (dgDifferential_coneMorphism
-          (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu)))) (add_zero 0) := by
-    rw [dgComp_coneMorphism, dgComp_toShift_fromShift_assoc]
-  simp -proj only [dgDifferential_dgComp, dgDifferential_extensionFst, dgDifferential_toShift,
-    dgDifferential_extensionInr, zero_dgComp, zero_add, Int.negOnePow_zero, Int.negOnePow_neg,
-    Int.negOnePow_one, one_smul, Units.neg_smul, neg_dgComp, dgComp_neg, h₁, h₂]
-  abel
+      ← toShift_dgComp_dgMap_assoc, dgComp_fromShift_toShift_assoc]
+  rw [dgDifferential_dgComp, dgDifferential_extensionFst,
+    dgDifferential_dgComp_toShift_extensionInr_cone (dgDifferential_extensionInl R _), neg_dgComp,
+    h₁, Int.negOnePow_zero, one_smul, dgComp_neg, sub_eq_add_neg]
 
 /-- The second square of the rotated cone triangle commutes up to homotopy: the projection of
 `cone u` onto `P⟦1⟧` followed by the comparison morphism `P⟦1⟧ ⟶ cone (Q ⟶ cone u)` and the
@@ -515,14 +478,12 @@ private theorem dgDifferential_extensionFst_toShift_extensionInr_eq_sub :
       dgComp R (extensionSnd R (dgDifferential_coneMorphism hu)) (coneRotateHom hu) (add_zero 0) -
         extensionInl R (dgDifferential_coneMorphism
           (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu))) := by
-  rw [dgDifferential_extensionFst_toShift_extensionInr hu,
-    ← dgId_dgComp R (extensionInl R (dgDifferential_coneMorphism
-      (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu)))),
-    ← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R
-      (dgDifferential_coneMorphism hu)]
-  simp only [coneRotateHom_def, add_dgComp, dgComp_add, neg_dgComp, dgComp_neg,
-    dgComp_extensionInl_extensionFst_assoc, dgComp_extensionInl_extensionSnd_assoc, add_zero,
-    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0)]
+  rw [dgDifferential_extensionFst_toShift_extensionInr hu]
+  refine extension_dgHom_ext ?_ ?_ <;>
+    simp only [coneRotateHom_def, sub_eq_add_neg, dgComp_add, neg_dgComp, dgComp_neg,
+      dgComp_extensionInl_extensionFst_assoc, dgComp_extensionInl_extensionSnd_assoc,
+      dgComp_extensionInr_extensionFst_assoc, dgComp_extensionInr_extensionSnd_assoc, neg_zero,
+      zero_add, add_zero]
   abel
 
 /-- The comparison morphism `cone (Q ⟶ cone u) ⟶ P⟦1⟧` followed by `P⟦1⟧ ⟶ cone (Q ⟶ cone u)`
@@ -552,17 +513,13 @@ private theorem dgDifferential_extensionFst_dgComp_eq_sub :
       dgComp_extensionInl_extensionFst_assoc, dgComp_fromShift_toShift_assoc]
   rw [dgDifferential_dgComp, dgDifferential_extensionFst,
     dgDifferential_extensionFst_toShift_extensionInr hu, neg_dgComp, h, Int.negOnePow_zero,
-    one_smul, ← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R
-      (dgDifferential_coneMorphism
-        (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu))),
-    ← dgId_dgComp R (extensionInl R (dgDifferential_coneMorphism
-      (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu)))),
-    ← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R
-      (dgDifferential_coneMorphism hu)]
-  simp only [coneRotateHom_def, coneRotateInv_def, add_dgComp, dgComp_add, neg_dgComp, dgComp_neg,
-    sub_eq_add_neg, dgComp_extensionInl_extensionFst_assoc,
-    dgComp_extensionInl_extensionSnd_assoc, add_zero,
-    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0)]
+    one_smul]
+  refine extension_dgHom_ext (extension_dgHom_ext ?_ ?_) ?_ <;>
+    simp only [coneRotateHom_def, coneRotateInv_def, sub_eq_add_neg, dgComp_add, neg_dgComp,
+      dgComp_neg, dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+      dgComp_extensionInl_extensionFst_assoc, dgComp_extensionInl_extensionSnd_assoc,
+      dgComp_extensionInr_extensionFst_assoc, dgComp_extensionInr_extensionSnd_assoc,
+      dgComp_dgId, neg_zero, zero_add, add_zero]
   abel
 
 /-- **The rotation isomorphism**: in the homotopy category, the shift `P⟦1⟧` is isomorphic to the
