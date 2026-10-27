@@ -55,10 +55,7 @@ theorem LFunctionTrivChar_eulerProduct_hasProd (N : ℕ) [NeZero N] {s : ℂ} (h
   rw [LFunctionTrivChar, LFunction_eq_LSeries _ hs]
   convert (1 : DirichletCharacter ℂ N).LSeries_eulerProduct_hasProd_subtype hs
     (P := fun p => ¬ (p : ℕ) ∣ N) (fun p hp => ?_) using 3 with p
-  · rw [MulChar.one_apply ((ZMod.isUnit_iff_coprime _ _).mpr
-      ((Nat.Prime.coprime_iff_not_dvd p.1.prop).mpr p.prop)), one_mul]
-  · refine MulChar.map_nonunit _ fun h => ?_
-    rw [ZMod.isUnit_iff_coprime, Nat.Prime.coprime_iff_not_dvd p.prop] at h
-    exact h (not_not.mp hp)
+  · rw [MulChar.one_apply ((ZMod.isUnit_prime_iff_not_dvd p.1.prop).mpr p.prop), one_mul]
+  · exact MulChar.map_nonunit _ (by rwa [ZMod.isUnit_prime_iff_not_dvd p.prop])
 
 end DirichletCharacter

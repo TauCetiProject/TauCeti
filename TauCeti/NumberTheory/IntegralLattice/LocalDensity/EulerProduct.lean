@@ -30,7 +30,7 @@ where `χ_L` is the quadratic character `p ↦ ((-1)^{m+1} det A | p)` of the si
 realized as the Kronecker character of the discriminant `4 (-1)^{m+1} det A`. That character
 already vanishes at every prime of `S`, so `L(s, χ_L)` is its own `S`-truncation. The products
 converge unconditionally (as `HasProd`), and to nonzero values, in rank `1` and in every rank at
-least `3`: in odd rank `m ≥ 0` and every factor is a `ζ(2i)` with `2i ≥ 2`, while in even rank
+least `3`: in odd rank `2m + 1` every factor is a `ζ(2i)` with `2i ≥ 2`, while in even rank
 `2m + 2 ≥ 4` the `L`-value is at `m + 1 ≥ 2`. In rank `1` the product is empty and equals `1`.
 
 In the normalization of Conway and Sloane, whose standard factor `std_p(f)` is `α_p(L)⁻¹`, the
@@ -68,17 +68,19 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
+/-- The modulus `(2 det A).natAbs` of the good primes is nonzero. -/
+private theorem neZero_natAbs_two_mul_det {A : Matrix n n ℤ} (hdet : A.det ≠ 0) :
+    NeZero (2 * A.det).natAbs :=
+  ⟨Int.natAbs_ne_zero.mpr (mul_ne_zero two_ne_zero hdet)⟩
+
 /-- A prime `p ∤ 2 det A` is odd, and the determinant of `A` is a unit in `ℤ_p`. -/
 private theorem ne_two_and_isUnit_det_map {A : Matrix n n ℤ} {p : ℕ} [Fact p.Prime]
     (hp : ¬ p ∣ (2 * A.det).natAbs) :
     p ≠ 2 ∧ IsUnit (A.map (Int.castRingHom ℤ_[p])).det := by
   rw [← Int.natCast_dvd] at hp
-  refine ⟨?_, ?_⟩
-  · rintro rfl
-    exact hp (dvd_mul_right _ _)
-  · rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, PadicInt.isUnit_iff]
-    refine le_antisymm (PadicInt.norm_le_one _) (not_lt.mp fun h => hp ?_)
-    exact ((PadicInt.norm_int_lt_one_iff_dvd _).mp h).mul_left 2
+  refine ⟨?_, isUnit_det_map_padicInt_iff.mpr fun h => hp (h.mul_left 2)⟩
+  rintro rfl
+  exact hp (dvd_mul_right _ _)
 
 /-- At an odd prime the Kronecker symbol of `4 (-1)^m det A` is the quadratic character of the
 signed determinant of the reduction of `A`, the sign in the even-rank local density. -/
@@ -95,8 +97,8 @@ private theorem kroneckerSym_eq_quadraticChar {A : Matrix n n ℤ} {p : ℕ} [Fa
     exact congrArg A.map (funext fun k => map_intCast PadicInt.toZMod k)
   rw [TauCeti.kroneckerSym_eq_legendreSym _ p hp, legendreSym.mul,
     show (4 : ℤ) = 2 ^ 2 by norm_num, legendreSym.sq_one' p h2, one_mul, hmap,
-    ← RingHom.mapMatrix_apply, ← RingHom.map_det, eq_intCast, legendreSym, Int.cast_mul,
-    Int.cast_pow, Int.cast_neg, Int.cast_one]
+    ← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  simp [legendreSym]
 
 /-- The `ζ` part of the product: over the primes `p ∤ N`, the product of
 `∏_{i=1}^{m} (1 - p^{-2i})⁻¹` is `∏_{i=1}^{m} ζ^{(S)}(2i)`, with `S` the primes dividing `N`. -/
@@ -135,7 +137,7 @@ theorem hasProd_inv_half_localDensity_of_card_eq_two_mul_add_one (hA : Aᵀ = A)
     HasProd (fun p : {p : Nat.Primes // ¬ (p : ℕ) ∣ (2 * A.det).natAbs} => ((α p : ℂ) / 2)⁻¹)
       (∏ i ∈ Finset.range m, (∏ q ∈ (2 * A.det).natAbs.primeFactors,
         (1 - (q : ℂ) ^ (-((2 * (i + 1) : ℕ) : ℂ)))) * riemannZeta ((2 * (i + 1) : ℕ) : ℂ)) := by
-  have : NeZero (2 * A.det).natAbs := ⟨Int.natAbs_ne_zero.mpr (mul_ne_zero two_ne_zero hdet)⟩
+  have := neZero_natAbs_two_mul_det hdet
   convert hasProd_prod_inv_one_sub_cpow (2 * A.det).natAbs m using 1 with p
   funext p
   have : Fact (p : ℕ).Prime := ⟨p.1.prop⟩
@@ -143,9 +145,9 @@ theorem hasProd_inv_half_localDensity_of_card_eq_two_mul_add_one (hA : Aᵀ = A)
   rw [tendsto_nhds_unique (hα p p.prop)
     (tendsto_localDensityCount_div_of_card_eq_two_mul_add_one hp2
       (by rw [← transpose_map, hA]) hu hn)]
-  simp only [Complex.cpow_neg, Complex.cpow_natCast]
+  simp only [Complex.cpow_neg, Complex.cpow_natCast, Finset.prod_inv_distrib]
   push_cast
-  rw [mul_div_cancel_left₀ _ two_ne_zero, ← Finset.prod_inv_distrib]
+  ring
 
 /-- **The product of the normalized local densities over the good primes is nonzero, in odd
 rank.** -/
@@ -155,7 +157,7 @@ theorem tprod_inv_half_localDensity_ne_zero_of_card_eq_two_mul_add_one (hA : A�
       Tendsto (fun r => ((A.map (Int.castRingHom ℤ_[p])).localDensityCount r : ℚ) /
         (p : ℚ) ^ (r * (Fintype.card n).choose 2)) atTop (𝓝 (α p))) :
     ∏' p : {p : Nat.Primes // ¬ (p : ℕ) ∣ (2 * A.det).natAbs}, ((α p : ℂ) / 2)⁻¹ ≠ 0 := by
-  have : NeZero (2 * A.det).natAbs := ⟨Int.natAbs_ne_zero.mpr (mul_ne_zero two_ne_zero hdet)⟩
+  have := neZero_natAbs_two_mul_det hdet
   rw [(hasProd_inv_half_localDensity_of_card_eq_two_mul_add_one hA hdet hn hα).tprod_eq]
   exact prod_mul_riemannZeta_ne_zero _ m
 
@@ -189,33 +191,30 @@ theorem hasProd_inv_half_localDensity_of_card_eq_two_mul_add_two (hA : Aᵀ = A)
           (Or.inl (Int.modEq_zero_iff_dvd.mpr (dvd_mul_right 4 _)))
           (mul_ne_zero four_ne_zero (mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))
             hdet))) ((m + 1 : ℕ) : ℂ)) := by
-  have : NeZero (2 * A.det).natAbs := ⟨Int.natAbs_ne_zero.mpr (mul_ne_zero two_ne_zero hdet)⟩
-  set χ := TauCeti.kroneckerChar ℂ (4 * ((-1) ^ (m + 1) * A.det))
-    (Or.inl (Int.modEq_zero_iff_dvd.mpr (dvd_mul_right 4 _)))
-    (mul_ne_zero four_ne_zero (mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) hdet))
-  -- `χ` vanishes at every prime dividing `2 det A`, as such a prime divides `4 (-1)^{m+1} det A`.
-  have hχ := χ.LSeries_eulerProduct_hasProd_subtype
-    (by rw [Complex.natCast_re]; exact_mod_cast (by omega : 1 < m + 1))
-    (P := fun p => ¬ (p : ℕ) ∣ (2 * A.det).natAbs) fun p hp => by
-      rw [TauCeti.kroneckerChar_natCast, Int.cast_eq_zero, TauCeti.kroneckerSym_eq_zero_iff]
-      intro h
-      have hdvd : ((p : ℕ) : ℤ) ∣ 4 * ((-1) ^ (m + 1) * A.det) :=
-        (Int.natCast_dvd.mpr (not_not.mp hp)).trans ⟨2 * (-1) ^ (m + 1), by ring⟩
-      rw [Int.gcd_eq_natAbs_gcd_natAbs, Int.natAbs_natCast,
-        Nat.gcd_eq_right (Int.natCast_dvd.mp hdvd)] at h
-      exact p.prop.ne_one h
-  convert (hasProd_prod_inv_one_sub_cpow (2 * A.det).natAbs m).mul hχ using 1 with p
-  funext p
+  have := neZero_natAbs_two_mul_det hdet
+  refine ((hasProd_prod_inv_one_sub_cpow (2 * A.det).natAbs m).mul
+    (DirichletCharacter.LSeries_eulerProduct_hasProd_subtype _
+      (by rw [Complex.natCast_re]; exact_mod_cast (by omega : 1 < m + 1)) fun p hp => ?_)).congr_fun
+    fun p => ?_
+  · -- The character vanishes at every prime dividing `2 det A`, as such a prime divides
+    -- `4 (-1)^{m+1} det A`.
+    rw [TauCeti.kroneckerChar_natCast, Int.cast_eq_zero, TauCeti.kroneckerSym_eq_zero_iff]
+    intro h
+    have hdvd : ((p : ℕ) : ℤ) ∣ 4 * ((-1) ^ (m + 1) * A.det) :=
+      (Int.natCast_dvd.mpr (not_not.mp hp)).trans ⟨2 * (-1) ^ (m + 1), by ring⟩
+    rw [Int.gcd_eq_natAbs_gcd_natAbs, Int.natAbs_natCast,
+      Nat.gcd_eq_right (Int.natCast_dvd.mp hdvd)] at h
+    exact p.prop.ne_one h
   have : Fact (p : ℕ).Prime := ⟨p.1.prop⟩
   obtain ⟨hp2, hu⟩ := ne_two_and_isUnit_det_map p.prop
   rw [tendsto_nhds_unique (hα p p.prop)
     (tendsto_localDensityCount_div_of_card_eq_two_mul_add_two hp2
       (by rw [← transpose_map, hA]) hu hn), TauCeti.kroneckerChar_natCast,
     kroneckerSym_eq_quadraticChar hp2]
-  simp only [Complex.cpow_neg, Complex.cpow_natCast]
+  simp only [Complex.cpow_neg, Complex.cpow_natCast, Finset.prod_inv_distrib]
   push_cast
-  rw [mul_assoc, mul_div_cancel_left₀ _ two_ne_zero, mul_inv, ← Finset.prod_inv_distrib,
-    mul_comm]
+  simp only [div_eq_mul_inv, mul_inv]
+  ring
 
 /-- **The product of the normalized local densities over the good primes is nonzero, in even rank
 at least `4`.** -/
@@ -225,7 +224,7 @@ theorem tprod_inv_half_localDensity_ne_zero_of_card_eq_two_mul_add_two (hA : A�
       Tendsto (fun r => ((A.map (Int.castRingHom ℤ_[p])).localDensityCount r : ℚ) /
         (p : ℚ) ^ (r * (Fintype.card n).choose 2)) atTop (𝓝 (α p))) :
     ∏' p : {p : Nat.Primes // ¬ (p : ℕ) ∣ (2 * A.det).natAbs}, ((α p : ℂ) / 2)⁻¹ ≠ 0 := by
-  have : NeZero (2 * A.det).natAbs := ⟨Int.natAbs_ne_zero.mpr (mul_ne_zero two_ne_zero hdet)⟩
+  have := neZero_natAbs_two_mul_det hdet
   rw [(hasProd_inv_half_localDensity_of_card_eq_two_mul_add_two hA hdet hm hn hα).tprod_eq]
   exact mul_ne_zero (prod_mul_riemannZeta_ne_zero _ m)
     (DirichletCharacter.LSeries_ne_zero_of_one_lt_re _

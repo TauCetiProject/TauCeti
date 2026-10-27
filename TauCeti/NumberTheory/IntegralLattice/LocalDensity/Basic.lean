@@ -63,6 +63,9 @@ the reduction is split; the hyperbolic plane at `p = 3` has `det = -1`, a nonsqu
 * `Matrix.localDensityCount_one`: the count at level `1` is the number of matrices over `𝔽_p`
   preserving the reduction of `A` modulo `p`; when that reduction is nondegenerate, this is the
   order of its orthogonal group.
+* `Matrix.isUnit_det_map_padicInt_iff`: an integer matrix has unit determinant over `ℤ_p` exactly
+  when `p` does not divide its determinant, so the results above apply at every prime not
+  dividing `2 det A`.
 * `Matrix.tendsto_localDensityCount_div_of_card_eq_two_mul_add_one`,
   `Matrix.tendsto_localDensityCount_div_of_card_eq_two_mul_add_two`: the closed values of the
   local density at such a prime, in odd and in even rank.
@@ -183,6 +186,13 @@ theorem localDensityCount_one (A : Matrix n n ℤ_[p]) :
     funext fun x => by simp [f]
   rw [localDensityCount_def, ← natCard_isometryMatrices_map_ringEquiv (RingEquiv.ofBijective f hf),
     Matrix.map_map, hfun]
+
+/-- An integer matrix has unit determinant over `ℤ_p` exactly when `p` does not divide its
+determinant. -/
+theorem isUnit_det_map_padicInt_iff {A : Matrix n n ℤ} :
+    IsUnit (A.map (Int.castRingHom ℤ_[p])).det ↔ ¬ (p : ℤ) ∣ A.det := by
+  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, eq_intCast,
+    ← PadicInt.norm_int_lt_one_iff_dvd, ← PadicInt.mem_nonunits, mem_nonunits_iff, not_not]
 
 /-- The reduction modulo an odd prime `p` of a symmetric matrix with unit determinant over `ℤ_p`
 is a nondegenerate symmetric matrix over a field of characteristic different from two. -/
