@@ -36,14 +36,14 @@ variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
 omit [MonObj A] in
 /-- Restricting the scalars of a `B`-module along `f : A ⟶ B` and then along `g : B ⟶ A`, where
 `g ≫ f = 𝟙 B`, recovers its action: the identity is equivariant in both directions. -/
-private lemma smul_comp_id_eq (f : A ⟶ B) (g : B ⟶ A) (h : g ≫ f = 𝟙 B) (X : D) [ModObj B X] :
+lemma smul_comp_id_eq (f : A ⟶ B) (g : B ⟶ A) (h : g ≫ f = 𝟙 B) (X : D) [ModObj B X] :
     γ[B, X] ≫ 𝟙 X = B ⊴ₗ 𝟙 X ≫ g ⊵ₗ X ≫ f ⊵ₗ X ≫ γ[B, X] ∧
       (g ⊵ₗ X ≫ f ⊵ₗ X ≫ γ[B, X]) ≫ 𝟙 X = B ⊴ₗ 𝟙 X ≫ γ[B, X] := by
   simp [← comp_actionHomLeft_assoc, h]
 
 /-- A `B`-module is isomorphic, by its identity, to its restriction along `f : A ⟶ B` and then
 along `g : B ⟶ A`, when `g ≫ f = 𝟙 B`. -/
-private def comapCompIso (f : A ⟶ B) (g : B ⟶ A) [IsMonHom f] [IsMonHom g] (h : g ≫ f = 𝟙 B)
+@[expose] def comapCompIso (f : A ⟶ B) (g : B ⟶ A) [IsMonHom f] [IsMonHom g] (h : g ≫ f = 𝟙 B)
     (M : Mod D B) : M ≅ (comap g).obj ((comap f).obj M) where
   hom := Hom.mk' (𝟙 M.X) (smul_comp_id_eq f g h M.X).1
   inv := Hom.mk' (𝟙 M.X) (smul_comp_id_eq f g h M.X).2
@@ -53,7 +53,7 @@ private def comapCompIso (f : A ⟶ B) (g : B ⟶ A) [IsMonHom f] [IsMonHom g] (
 /-- Restriction of scalars along an isomorphism `e : A ≅ B` of monoid objects is an equivalence
 between the categories of `B`-modules and of `A`-modules, with inverse the restriction along
 `e.inv`. -/
-def comapEquivalence (e : A ≅ B) [IsMonHom e.hom] : Mod D B ≌ Mod D A where
+@[expose] def comapEquivalence (e : A ≅ B) [IsMonHom e.hom] : Mod D B ≌ Mod D A where
   functor := comap e.hom
   inverse := comap e.inv
   unitIso := NatIso.ofComponents (comapCompIso e.hom e.inv e.inv_hom_id) fun _ ↦
@@ -69,5 +69,21 @@ lemma comapEquivalence_functor (e : A ≅ B) [IsMonHom e.hom] :
 @[simp]
 lemma comapEquivalence_inverse (e : A ≅ B) [IsMonHom e.hom] :
     (comapEquivalence (D := D) e).inverse = comap e.inv := (rfl)
+
+@[simp]
+lemma comapEquivalence_unitIso_hom_app_hom (e : A ≅ B) [IsMonHom e.hom] (M : Mod D B) :
+    ((comapEquivalence e).unitIso.hom.app M).hom = 𝟙 M.X := (rfl)
+
+@[simp]
+lemma comapEquivalence_unitIso_inv_app_hom (e : A ≅ B) [IsMonHom e.hom] (M : Mod D B) :
+    ((comapEquivalence e).unitIso.inv.app M).hom = 𝟙 M.X := (rfl)
+
+@[simp]
+lemma comapEquivalence_counitIso_hom_app_hom (e : A ≅ B) [IsMonHom e.hom] (M : Mod D A) :
+    ((comapEquivalence e).counitIso.hom.app M).hom = 𝟙 M.X := (rfl)
+
+@[simp]
+lemma comapEquivalence_counitIso_inv_app_hom (e : A ≅ B) [IsMonHom e.hom] (M : Mod D A) :
+    ((comapEquivalence e).counitIso.inv.app M).hom = 𝟙 M.X := (rfl)
 
 end CategoryTheory.Mod
