@@ -115,10 +115,6 @@ theorem continuous_orthogonalGroupLastColumn (n : ℕ) :
 
 variable {n : ℕ}
 
-/-- The last standard basis vector, as a point of the unit sphere. -/
-private def lastSphere (n : ℕ) : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 :=
-  ⟨EuclideanSpace.single (Fin.last n) 1, by simp⟩
-
 /-- The rotation of the unit sphere by an orthogonal matrix. -/
 private def rotateSphere (g : Matrix.orthogonalGroup (Fin n) ℝ) :
     sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → sphere (0 : EuclideanSpace ℝ (Fin n)) 1 :=
@@ -141,10 +137,10 @@ private theorem measurePreserving_rotateSphere (g : Matrix.orthogonalGroup (Fin 
 /-- The reflection of `ℝⁿ⁺¹` exchanging the last basis vector with a point `u` of the sphere. -/
 private def sphereReflection (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     EuclideanSpace ℝ (Fin (n + 1)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
-  (ℝ ∙ ((lastSphere n : EuclideanSpace ℝ (Fin (n + 1))) - u))ᗮ.reflection
+  (ℝ ∙ (EuclideanSpace.single (Fin.last n) (1 : ℝ) - u))ᗮ.reflection
 
 private theorem sphereReflection_last (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    sphereReflection u (lastSphere n) = u :=
+    sphereReflection u (EuclideanSpace.single (Fin.last n) 1) = u :=
   Submodule.reflection_sub (by simp)
 
 /-- The section of the orbit map: the matrix of `sphereReflection u`, an orthogonal matrix whose
@@ -180,15 +176,15 @@ private theorem measurable_sphereSection :
       (sphereSection u : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) := by
   refine Measurable.of_eval_matrix _ fun i j ↦ ?_
   have hw : Continuous fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
-      (lastSphere n : EuclideanSpace ℝ (Fin (n + 1))) - u :=
+      EuclideanSpace.single (Fin.last n) (1 : ℝ) - u :=
     continuous_const.sub continuous_subtype_val
   have hc : Measurable fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
-      inner ℝ ((lastSphere n : EuclideanSpace ℝ (Fin (n + 1))) - u)
+      inner ℝ (EuclideanSpace.single (Fin.last n) (1 : ℝ) - u)
         (EuclideanSpace.single j (1 : ℝ)) /
-        ‖(lastSphere n : EuclideanSpace ℝ (Fin (n + 1))) - u‖ ^ 2 :=
+        ‖EuclideanSpace.single (Fin.last n) (1 : ℝ) - u‖ ^ 2 :=
     (hw.inner continuous_const).measurable.div (hw.norm.pow 2).measurable
   have hwi : Measurable fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
-      ((lastSphere n : EuclideanSpace ℝ (Fin (n + 1))) - u).ofLp i :=
+      (EuclideanSpace.single (Fin.last n) (1 : ℝ) - u).ofLp i :=
     ((PiLp.continuous_apply 2 _ i).comp hw).measurable
   simp only [sphereSection, LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis,
     OrthonormalBasis.coe_toBasis_repr_apply, EuclideanSpace.basisFun_repr,
@@ -276,15 +272,13 @@ private theorem exists_orthogonalBlockSucc_eq_fibreShift
   rw [← orthogonalGroupToLinearIsometryEquiv_single_last_eq_iff]
   -- `s(u)` sends `eₙ` to `u`, `g` sends `u` to `g u`, and the involution `s(g u)` sends `g u` back
   -- to `eₙ`.
-  have hlast : sphereReflection u (EuclideanSpace.single (Fin.last n) 1) = u :=
-    sphereReflection_last u
   have hrot : sphereReflection (rotateSphere g u) (rotateSphere g u) =
       EuclideanSpace.single (Fin.last n) 1 := by
     rw [← sphereReflection_last (rotateSphere g u), sphereReflection,
       Submodule.reflection_reflection]
-    rfl
   simpa only [fibreShift, orthogonalGroupToLinearIsometryEquiv_mul_apply,
-    orthogonalGroupToLinearIsometryEquiv_sphereSection, hlast, ← coe_rotateSphere]
+    orthogonalGroupToLinearIsometryEquiv_sphereSection, sphereReflection_last,
+    ← coe_rotateSphere]
     using hrot
 
 /-- The element of `O(n)` by which left translation by `g` moves the fibre coordinate over `u`:
@@ -318,8 +312,7 @@ private theorem measurable_fibreCorner_mul (g : Matrix.orthogonalGroup (Fin (n +
   have hshift : Measurable fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
       (fibreShift g u : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) := by
     simp only [fibreShift, Submonoid.coe_mul]
-    exact ((measurable_sphereSection.comp
-      ((orthogonalGroupToLinearIsometryEquiv g).continuous.measurable.subtype_map _)).mul
+    exact ((measurable_sphereSection.comp (measurePreserving_rotateSphere g).measurable).mul
       measurable_const).mul measurable_sphereSection
   have hcorner : Measurable fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
       (fibreCorner g u : Matrix (Fin n) (Fin n) ℝ) := by
@@ -427,20 +420,24 @@ theorem orthogonalGroupMeasure_univ_succ (n : ℕ) :
 def orthogonalGroupVolume (n : ℕ) : ℝ :=
   (orthogonalGroupMeasure n).real univ
 
-/-- The volume `vol(SO(n))` of the special orthogonal group, the subgroup of determinant one,
-for the Euclidean measure `TauCeti.orthogonalGroupMeasure` of `O(n)`. -/
+/-- The volume `vol(SO(n))` of the special orthogonal group `Matrix.specialOrthogonalGroup`, the
+subgroup of determinant one, for the Euclidean measure `TauCeti.orthogonalGroupMeasure` of
+`O(n)`. -/
 def specialOrthogonalGroupVolume (n : ℕ) : ℝ :=
-  (orthogonalGroupMeasure n).real {g | (g : Matrix (Fin n) (Fin n) ℝ).det = 1}
+  (orthogonalGroupMeasure n).real
+    {g | (g : Matrix (Fin n) (Fin n) ℝ) ∈ Matrix.specialOrthogonalGroup (Fin n) ℝ}
 
 /-- The volume of `O(n)` is the total mass of its Euclidean measure. -/
 theorem orthogonalGroupVolume_def (n : ℕ) :
     orthogonalGroupVolume n = (orthogonalGroupMeasure n).real univ :=
   (rfl)
 
-/-- The volume of `SO(n)` is the Euclidean measure of the determinant-one matrices in `O(n)`. -/
+/-- The volume of `SO(n)` is the Euclidean measure of the matrices of `O(n)` that lie in
+`Matrix.specialOrthogonalGroup`. -/
 theorem specialOrthogonalGroupVolume_def (n : ℕ) :
     specialOrthogonalGroupVolume n =
-      (orthogonalGroupMeasure n).real {g | (g : Matrix (Fin n) (Fin n) ℝ).det = 1} :=
+      (orthogonalGroupMeasure n).real
+        {g | (g : Matrix (Fin n) (Fin n) ℝ) ∈ Matrix.specialOrthogonalGroup (Fin n) ℝ} :=
   (rfl)
 
 /-- **The volume of the orthogonal group**:
@@ -490,7 +487,11 @@ theorem orthogonalGroupVolume_eq_two_mul_specialOrthogonalGroupVolume {n : ℕ} 
     rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup g.2 with h | h <;> rw [h] <;> norm_num
   have hcompl : orthogonalGroupMeasure (m + 1) Sᶜ = orthogonalGroupMeasure (m + 1) S := by
     rw [← hpre, measure_preimage_mul]
-  rw [orthogonalGroupVolume, specialOrthogonalGroupVolume, measureReal_def, measureReal_def,
+  have hSO : {g : Matrix.orthogonalGroup (Fin (m + 1)) ℝ |
+      (g : Matrix (Fin (m + 1)) (Fin (m + 1)) ℝ) ∈ Matrix.specialOrthogonalGroup _ ℝ} = S := by
+    ext g
+    simp [S, Matrix.mem_specialOrthogonalGroup_iff]
+  rw [orthogonalGroupVolume, specialOrthogonalGroupVolume, hSO, measureReal_def, measureReal_def,
     ← measure_add_measure_compl hS, hcompl, ← two_mul, ENNReal.toReal_mul, ENNReal.toReal_ofNat]
 
 /-- **The volume of the special orthogonal group**:
