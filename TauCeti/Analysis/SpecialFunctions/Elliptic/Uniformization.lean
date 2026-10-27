@@ -241,6 +241,7 @@ lemma weierstrassPoint_zero : L.weierstrassPoint 0 = 0 :=
   L.weierstrassPoint_of_mem (zero_mem _)
 
 /-- The point map vanishes exactly on the lattice. -/
+@[simp]
 lemma weierstrassPoint_eq_zero_iff : L.weierstrassPoint z = 0 ↔ z ∈ L.lattice := by
   refine ⟨fun h ↦ by_contra fun hz ↦ ?_, L.weierstrassPoint_of_mem⟩
   rw [L.weierstrassPoint_of_notMem hz] at h
@@ -258,6 +259,7 @@ lemma periodic_weierstrassPoint (l : L.lattice) : L.weierstrassPoint.Periodic l 
   (L.weierstrassPoint_add_coe · l)
 
 /-- The point map is odd: `-z` goes to `(℘(z), -℘'(z) / 2)`. -/
+@[simp]
 lemma weierstrassPoint_neg (z : ℂ) : L.weierstrassPoint (-z) = -L.weierstrassPoint z := by
   by_cases hz : z ∈ L.lattice
   · rw [L.weierstrassPoint_of_mem hz, L.weierstrassPoint_of_mem (neg_mem hz), Affine.Point.neg_zero]
