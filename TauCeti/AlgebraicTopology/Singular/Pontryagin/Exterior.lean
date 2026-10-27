@@ -9,16 +9,14 @@ public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.AlgebraicTopology.Singular.Pontryagin.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
-public import TauCeti.AlgebraicTopology.TopologicalSimplex
 
 /-!
 # Exterior powers of the first homology of a commutative topological monoid
 
 Let `G` be a monoid object of `TopCat`, for instance a topological monoid, and `k` a commutative
-ring. The Pontryagin product on the singular homology of `G` with coefficients in `k`
-(`TopCat.pontryaginProduct`) is here a bilinear map `Hₚ(G; k) → H_q(G; k) → Hₙ(G; k)`
-(`TopCat.pontryaginMul`), associative and natural in morphisms of monoid objects, and graded
-commutative when `G` is commutative.
+ring. The Pontryagin product on the singular homology of `G` with coefficients in `k` is a
+bilinear map `Hₚ(G; k) → H_q(G; k) → Hₙ(G; k)` (`TopCat.pontryaginMul`), associative and natural
+in morphisms of monoid objects, and graded commutative when `G` is commutative.
 
 When `G` is commutative, the Pontryagin square of every class of degree one vanishes
 (`TopCat.pontryaginMul_self_eq_zero`). Graded commutativity alone only shows that this square has
@@ -29,27 +27,27 @@ components pointwise in a commutative `G` makes the product of a `1`-chain with 
 by term.
 
 Consequently the iterated Pontryagin product of `n` classes of degree one
-(`TopCat.pontryaginMultilinear`), with the class of the identity point as the empty product, is
-alternating (`TopCat.pontryaginAlternatingMap`), and induces a linear
-map `⋀ⁿ H₁(G; k) → Hₙ(G; k)` (`TopCat.pontryaginExteriorPower`), natural in morphisms of
-commutative monoid objects (`TopCat.pontryaginExteriorPower_naturality`), such as continuous
-homomorphisms of tori. For the torus `(S¹)ⁿ` and `k = ℤ` these maps are isomorphisms, the
-description of the homology of a torus as an exterior algebra; this file only constructs them.
+(`TopCat.pontryaginMultilinear`), with the class of the identity point as the empty product and
+`a₀` itself as the product of a single class `a₀`, is alternating
+(`TopCat.pontryaginAlternatingMap`), and induces a linear map `⋀ⁿ H₁(G; k) → Hₙ(G; k)`
+(`TopCat.pontryaginExteriorPower`), natural in morphisms of commutative monoid objects
+(`TopCat.pontryaginExteriorPower_naturality`), such as continuous homomorphisms of tori. In degree
+one it is the canonical identification `⋀¹ H₁(G; k) ≃ H₁(G; k)`
+(`TopCat.pontryaginExteriorPower_one`). For the torus `(S¹)ⁿ` and `k = ℤ` these maps are
+isomorphisms, the description of the homology of a torus as an exterior algebra; this file only
+constructs them.
 
 ## Main definitions
 
-* `TopCat.pontryaginMul`: the Pontryagin product as a bilinear map.
 * `TopCat.pontryaginMultilinear`: the iterated Pontryagin product of classes of degree one.
 * `TopCat.pontryaginAlternatingMap`: the same, as an alternating map, for commutative `G`.
 * `TopCat.pontryaginExteriorPower`: the induced map `⋀ⁿ H₁(G; k) → Hₙ(G; k)`.
 
 ## Main results
 
-* `TopCat.pontryaginMul_assoc`, `TopCat.pontryaginMul_comm`: associativity and graded
-  commutativity.
 * `TopCat.pontryaginMul_self_eq_zero`: the square of a class of degree one vanishes.
-* `TopCat.singularHomologyFunctor_map_pontryaginMul`,
-  `TopCat.singularHomologyFunctor_map_pontryaginMultilinear`,
+* `TopCat.pontryaginExteriorPower_one`: in degree one, it is `exteriorPower.oneEquiv`.
+* `TopCat.singularHomologyFunctor_map_pontryaginMultilinear`,
   `TopCat.pontryaginExteriorPower_naturality`: naturality in morphisms of monoid objects.
 
 ## References
@@ -71,64 +69,7 @@ universe u
 
 namespace TopCat
 
-variable (k : Type u) [CommRing k] (G : TopCat.{u}) [MonObj G]
-
-/-- **The Pontryagin product** on the singular homology of a monoid object `G` of `TopCat` with
-coefficients in a commutative ring `k`, as a bilinear map `Hₚ(G; k) → H_q(G; k) → Hₙ(G; k)` for
-`p + q = n`. -/
-def pontryaginMul (p q n : ℕ) (h : p + q = n) :
-    ((singularHomologyFunctor (ModuleCat.{u} k) p).obj (𝟙_ _)).obj G →ₗ[k]
-      ((singularHomologyFunctor (ModuleCat.{u} k) q).obj (𝟙_ _)).obj G →ₗ[k]
-        ((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).obj G :=
-  TensorProduct.curry (pontryaginProduct G (𝟙_ (ModuleCat.{u} k)) p q n h).hom
-
-variable {k G}
-
-/-- The bilinear Pontryagin product of `a` and `b` is the Pontryagin product of `a ⊗ b`. -/
-lemma pontryaginMul_apply (p q n : ℕ) (h : p + q = n)
-    (a : ((singularHomologyFunctor (ModuleCat.{u} k) p).obj (𝟙_ _)).obj G)
-    (b : ((singularHomologyFunctor (ModuleCat.{u} k) q).obj (𝟙_ _)).obj G) :
-    pontryaginMul k G p q n h a b = pontryaginProduct G (𝟙_ (ModuleCat.{u} k)) p q n h (a ⊗ₜ b) :=
-  (rfl)
-
-/-- **Associativity of the Pontryagin product**: `(a · b) · c = a · (b · c)`. -/
-theorem pontryaginMul_assoc (p q r pq qr n : ℕ) (hpq : p + q = pq) (hqr : q + r = qr)
-    (hn : pq + r = n) (hn' : p + qr = n)
-    (a : ((singularHomologyFunctor (ModuleCat.{u} k) p).obj (𝟙_ _)).obj G)
-    (b : ((singularHomologyFunctor (ModuleCat.{u} k) q).obj (𝟙_ _)).obj G)
-    (c : ((singularHomologyFunctor (ModuleCat.{u} k) r).obj (𝟙_ _)).obj G) :
-    pontryaginMul k G pq r n hn (pontryaginMul k G p q pq hpq a b) c =
-      pontryaginMul k G p qr n hn' a (pontryaginMul k G q r qr hqr b c) := by
-  have := congrArg (fun f ↦ f ((a ⊗ₜ b) ⊗ₜ c))
-    (pontryaginProduct_assoc G (𝟙_ (ModuleCat.{u} k)) p q r pq qr n hpq hqr hn hn')
-  simp only [CategoryTheory.comp_apply, ModuleCat.MonoidalCategory.whiskerRight_apply,
-    ModuleCat.MonoidalCategory.associator_hom_apply] at this
-  exact this
-
-/-- **Graded commutativity of the Pontryagin product**: for a commutative monoid object `G`,
-`a · b = (-1)^(p * q) b · a` for `a ∈ Hₚ(G; k)` and `b ∈ H_q(G; k)`. -/
-theorem pontryaginMul_comm [IsCommMonObj G] (p q n : ℕ) (h : p + q = n)
-    (a : ((singularHomologyFunctor (ModuleCat.{u} k) p).obj (𝟙_ _)).obj G)
-    (b : ((singularHomologyFunctor (ModuleCat.{u} k) q).obj (𝟙_ _)).obj G) :
-    pontryaginMul k G p q n h a b =
-      ((-1 : ℤ) ^ (p * q)) • pontryaginMul k G q p n (by omega) b a := by
-  have := congrArg (fun f ↦ f (a ⊗ₜ b))
-    (pontryaginProduct_comm G (𝟙_ (ModuleCat.{u} k)) p q n h)
-  simpa [pontryaginMul_apply] using this
-
-/-- **Naturality of the Pontryagin product**: a morphism of monoid objects `f : G ⟶ G'` satisfies
-`f_* (a · b) = f_* a · f_* b`. -/
-theorem singularHomologyFunctor_map_pontryaginMul {G' : TopCat.{u}} [MonObj G'] (f : G ⟶ G')
-    [IsMonHom f] (p q n : ℕ) (h : p + q = n)
-    (a : ((singularHomologyFunctor (ModuleCat.{u} k) p).obj (𝟙_ _)).obj G)
-    (b : ((singularHomologyFunctor (ModuleCat.{u} k) q).obj (𝟙_ _)).obj G) :
-    ((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).map f
-        (pontryaginMul k G p q n h a b) =
-      pontryaginMul k G' p q n h
-        (((singularHomologyFunctor (ModuleCat.{u} k) p).obj (𝟙_ _)).map f a)
-        (((singularHomologyFunctor (ModuleCat.{u} k) q).obj (𝟙_ _)).map f b) :=
-  (congrArg (fun g ↦ g (a ⊗ₜ b))
-    (pontryaginProduct_naturality f (𝟙_ (ModuleCat.{u} k)) p q n h)).symm
+variable {k : Type u} [CommRing k] {G : TopCat.{u}} [MonObj G]
 
 section Square
 
@@ -233,6 +174,7 @@ private lemma pontryaginChainMap_self [IsCommMonObj G]
 
 /-- **The Pontryagin square of a class of degree one vanishes** in the homology of a commutative
 monoid object `G` of `TopCat`, with coefficients in any commutative ring. -/
+@[simp]
 theorem pontryaginMul_self_eq_zero [IsCommMonObj G]
     (a : ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).obj G) :
     pontryaginMul k G 1 1 2 rfl a a = 0 := by
@@ -252,7 +194,8 @@ theorem pontryaginMul_self_eq_zero [IsCommMonObj G]
   calc pontryaginMul k G 1 1 2 rfl _ _ =
       ((((toSSet.obj G).chainComplex (𝟙_ (ModuleCat.{u} k))).homologyπ 1 ⊗ₘ
         ((toSSet.obj G).chainComplex (𝟙_ (ModuleCat.{u} k))).homologyπ 1) ≫
-          pontryaginProduct G (𝟙_ (ModuleCat.{u} k)) 1 1 2 rfl) (z ⊗ₜ z) := (rfl)
+          pontryaginProduct G (𝟙_ (ModuleCat.{u} k)) 1 1 2 rfl) (z ⊗ₜ z) :=
+        pontryaginMul_apply _ _ _ _ _ _
     _ = 0 := by
       rw [homologyπ_tensorHom_pontryaginProduct, ← Category.assoc]
       exact (congrArg (((toSSet.obj G).chainComplex (𝟙_ (ModuleCat.{u} k))).homologyπ 2).hom
@@ -267,16 +210,18 @@ section Multilinear
 variable (k G) in
 /-- The iterated Pontryagin product `a₀ · (a₁ · (⋯ · aₙ₋₁))` of `n` classes of degree one, a
 multilinear map `H₁(G; k)ⁿ → Hₙ(G; k)`; the empty product is the class of the identity point
-of `G`. -/
+of `G`, and the product of a single class `a₀` is `a₀`. -/
 def pontryaginMultilinear (n : ℕ) : MultilinearMap k
     (fun _ : Fin n ↦ ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).obj G)
     (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).obj G) :=
   match n with
   | 0 => MultilinearMap.constOfIsEmpty k _
       (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{u} k)) (η[G] PUnit.unit) (1 : k))
-  | n + 1 => LinearMap.uncurryLeft
-      { toFun := fun x ↦ (pontryaginMul k G 1 n (n + 1) (Nat.add_comm 1 n) x).compMultilinearMap
-          (pontryaginMultilinear n)
+  | 1 => MultilinearMap.ofSubsingleton k _ _ 0 LinearMap.id
+  | n + 2 => LinearMap.uncurryLeft
+      { toFun := fun x ↦
+          (pontryaginMul k G 1 (n + 1) (n + 2) (by omega) x).compMultilinearMap
+            (pontryaginMultilinear (n + 1))
         map_add' := fun x y ↦ by rw [map_add, LinearMap.add_compMultilinearMap]
         map_smul' := fun c x ↦ by rw [map_smul, LinearMap.smul_compMultilinearMap]; rfl }
 
@@ -288,13 +233,20 @@ theorem pontryaginMultilinear_zero_apply
       TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{u} k)) (η[G] PUnit.unit) (1 : k) :=
   (rfl)
 
-/-- The iterated Pontryagin product of `n + 1` classes is the product of the first one with the
+/-- The Pontryagin product of a single class of degree one is that class. -/
+@[simp]
+theorem pontryaginMultilinear_one_apply
+    (v : Fin 1 → ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).obj G) :
+    pontryaginMultilinear k G 1 v = v 0 :=
+  (rfl)
+
+/-- The iterated Pontryagin product of `n + 2` classes is the product of the first one with the
 iterated product of the others. -/
-theorem pontryaginMultilinear_succ_apply (n : ℕ)
-    (v : Fin (n + 1) → ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).obj G) :
-    pontryaginMultilinear k G (n + 1) v =
-      pontryaginMul k G 1 n (n + 1) (Nat.add_comm 1 n) (v 0)
-        (pontryaginMultilinear k G n (Fin.tail v)) :=
+theorem pontryaginMultilinear_add_two_apply (n : ℕ)
+    (v : Fin (n + 2) → ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).obj G) :
+    pontryaginMultilinear k G (n + 2) v =
+      pontryaginMul k G 1 (n + 1) (n + 2) (by omega) (v 0)
+        (pontryaginMultilinear k G (n + 1) (Fin.tail v)) :=
   (rfl)
 
 /-- **Naturality of the iterated Pontryagin product** in morphisms of monoid objects. -/
@@ -312,9 +264,12 @@ theorem singularHomologyFunctor_map_pontryaginMultilinear {G' : TopCat.{u}} [Mon
     exact congrArg (fun x ↦ TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{u} k)) x (1 : k))
       (congrArg (fun g ↦ g PUnit.unit) (IsMonHom.one_hom f))
   | succ n ih =>
-    rw [pontryaginMultilinear_succ_apply, pontryaginMultilinear_succ_apply,
-      singularHomologyFunctor_map_pontryaginMul, ih]
-    rfl
+    cases n with
+    | zero => rfl
+    | succ n =>
+      rw [pontryaginMultilinear_add_two_apply, pontryaginMultilinear_add_two_apply,
+        singularHomologyFunctor_map_pontryaginMul, ih]
+      rfl
 
 end Multilinear
 
@@ -333,19 +288,26 @@ private lemma pontryaginMul_pontryaginMultilinear_eq_zero (n : ℕ)
   induction n with
   | zero => exact j.elim0
   | succ n ih =>
-    rw [pontryaginMultilinear_succ_apply]
-    cases j using Fin.cases with
+    cases n with
     | zero =>
-      -- `a · (a · b) = (a · a) · b = 0`
-      rw [← pontryaginMul_assoc 1 1 n 2 (n + 1) (n + 1 + 1) rfl (Nat.add_comm 1 n) (by omega),
-        pontryaginMul_self_eq_zero, map_zero, LinearMap.zero_apply]
-    | succ j =>
-      -- `a · (c · b) = -(c · (a · b))`, and `a · b = 0` as `a` occurs in `b`
-      rw [← pontryaginMul_assoc 1 1 n 2 (n + 1) (n + 1 + 1) rfl (Nat.add_comm 1 n) (by omega),
-        pontryaginMul_comm 1 1 2 rfl, map_zsmul, LinearMap.smul_apply,
-        pontryaginMul_assoc 1 1 n 2 (n + 1) (n + 1 + 1) rfl (Nat.add_comm 1 n) (by omega)
-          (by omega)]
-      exact (congrArg _ ((congrArg _ (ih (Fin.tail w) j)).trans (map_zero _))).trans (smul_zero _)
+      -- `a · a = 0`
+      rw [Subsingleton.elim (α := Fin 1) j 0]
+      exact pontryaginMul_self_eq_zero (w 0)
+    | succ n =>
+      rw [pontryaginMultilinear_add_two_apply]
+      cases j using Fin.cases with
+      | zero =>
+        -- `a · (a · b) = (a · a) · b = 0`
+        rw [← pontryaginMul_assoc 1 1 (n + 1) 2 (n + 2) (n + 2 + 1) rfl (by omega) (by omega),
+          pontryaginMul_self_eq_zero, map_zero, LinearMap.zero_apply]
+      | succ j =>
+        -- `a · (c · b) = -(c · (a · b))`, and `a · b = 0` as `a` occurs in `b`
+        rw [← pontryaginMul_assoc 1 1 (n + 1) 2 (n + 2) (n + 2 + 1) rfl (by omega) (by omega),
+          pontryaginMul_comm 1 1 2 rfl, map_zsmul, LinearMap.smul_apply,
+          pontryaginMul_assoc 1 1 (n + 1) 2 (n + 2) (n + 2 + 1) rfl (by omega) (by omega)
+            (by omega)]
+        exact (congrArg _ ((congrArg _ (ih (Fin.tail w) j)).trans (map_zero _))).trans
+          (smul_zero _)
 
 /-- An iterated Pontryagin product of classes of degree one with a repeated factor vanishes. -/
 private lemma pontryaginMultilinear_eq_zero_of_eq (n : ℕ)
@@ -355,17 +317,20 @@ private lemma pontryaginMultilinear_eq_zero_of_eq (n : ℕ)
   induction n with
   | zero => exact i.elim0
   | succ n ih =>
-    rw [pontryaginMultilinear_succ_apply]
-    cases i using Fin.cases with
-    | zero =>
-      cases j using Fin.cases with
-      | zero => exact (hij rfl).elim
-      | succ j => rw [hv]; exact pontryaginMul_pontryaginMultilinear_eq_zero _ (Fin.tail v) j
-    | succ i =>
-      cases j using Fin.cases with
-      | zero => rw [← hv]; exact pontryaginMul_pontryaginMultilinear_eq_zero _ (Fin.tail v) i
-      | succ j =>
-        rw [ih (Fin.tail v) hv (fun h ↦ hij (congrArg Fin.succ h)), map_zero]
+    cases n with
+    | zero => exact (hij (Subsingleton.elim (α := Fin 1) i j)).elim
+    | succ n =>
+      rw [pontryaginMultilinear_add_two_apply]
+      cases i using Fin.cases with
+      | zero =>
+        cases j using Fin.cases with
+        | zero => exact (hij rfl).elim
+        | succ j => rw [hv]; exact pontryaginMul_pontryaginMultilinear_eq_zero _ (Fin.tail v) j
+      | succ i =>
+        cases j using Fin.cases with
+        | zero => rw [← hv]; exact pontryaginMul_pontryaginMultilinear_eq_zero _ (Fin.tail v) i
+        | succ j =>
+          rw [ih (Fin.tail v) hv (fun h ↦ hij (congrArg Fin.succ h)), map_zero]
 
 variable (k G) in
 /-- For a commutative monoid object `G`, the iterated Pontryagin product of `n` classes of degree
@@ -395,6 +360,13 @@ theorem pontryaginExteriorPower_ιMulti (n : ℕ)
     (v : Fin n → ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).obj G) :
     pontryaginExteriorPower k G n (exteriorPower.ιMulti k n v) = pontryaginMultilinear k G n v :=
   exteriorPower.alternatingMapLinearEquiv_apply_ιMulti _ v
+
+/-- In degree one, the exterior power map is the canonical identification
+`⋀¹ H₁(G; k) ≃ H₁(G; k)`. -/
+theorem pontryaginExteriorPower_one :
+    pontryaginExteriorPower k G 1 = (exteriorPower.oneEquiv k _).toLinearMap :=
+  exteriorPower.linearMap_ext (AlternatingMap.ext fun v ↦ by
+    simp [exteriorPower.oneEquiv_ιMulti])
 
 /-- **Naturality of the exterior power map**: for a morphism `f : G ⟶ G'` of commutative monoid
 objects, `f_* ∘ Φ_G = Φ_G' ∘ ⋀ⁿ f_*`, where `Φ` is `TopCat.pontryaginExteriorPower`. -/
