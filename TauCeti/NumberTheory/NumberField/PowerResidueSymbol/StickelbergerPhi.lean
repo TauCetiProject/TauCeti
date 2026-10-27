@@ -7,7 +7,9 @@ module
 
 public import Mathlib.NumberTheory.JacobiSum.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.LinearAlgebra.SModEq.Basic
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Basic
+import Mathlib.Algebra.CharP.CharAndCard
 import Mathlib.NumberTheory.LegendreSymbol.Complex
 import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 import TauCeti.NumberTheory.GaussSum
@@ -22,7 +24,8 @@ let `ψ` be a nontrivial additive character of `F`, such as `t ↦ ζ_p ^ Tr(t)`
 `g(P) = g(χ_P, ψ)` lives in a field containing `K` and the `p`-th roots of unity, but its `m`-th
 power `Φ(P) = g(P)^m` lies in `𝓞 K` and does not depend on `ψ`. Extended multiplicatively to
 ideals, `Φ` is the element whose principal ideal Stickelberger's relation factors, and from which
-the Eisenstein reciprocity law is deduced.
+the Eisenstein reciprocity law is deduced. For `m = l` prime, `Φ(P) ≡ -1 (mod l)`, hence
+`Φ(A) ≡ ±1 (mod l)` for every ideal `A` whose norm is prime to `l`.
 
 We define `Φ(P)` directly in `𝓞 K` by Mathlib's expansion of the `m`-th power of a Gauss sum of
 a character of order `m` into Jacobi sums (`gaussSum_pow_eq_prod_jacobiSum`):
@@ -42,6 +45,9 @@ into primes, `Φ(A) = ∏ᵢ Φ(Pᵢ)`; the primes whose norm is not prime to `m
 * `Ideal.stickelbergerPhi_top`: `Φ(𝓞 K) = 1`.
 * `Ideal.stickelbergerPhi_norm_sq`: `|σ(Φ(A))|² = N(A)^m` for every complex embedding `σ` of `K`
   and every ideal `A` whose norm is prime to `m`.
+* `Ideal.stickelbergerPhi_modEq`: `Φ(P) ≡ -1 (mod m)` for `m` prime.
+* `Ideal.stickelbergerPhi_modEq_neg_one_pow`: `Φ(A) ≡ (-1)^r (mod m)` for `m` prime, where `r` is
+  the number of prime factors of `A`, counted with multiplicity.
 
 ## References
 
@@ -195,5 +201,81 @@ theorem stickelbergerPhi_ne_zero {A : Ideal (𝓞 K)} (hA : (absNorm A).Coprime 
   have := stickelbergerPhi_norm_sq hA hm (Classical.arbitrary (K →+* ℂ))
   simp only [h, map_zero, norm_zero, zero_pow two_ne_zero] at this
   exact pow_ne_zero m (Nat.cast_ne_zero.mpr hA₀) this.symm
+
+/-- **`Φ(P)` is `-1` modulo `m`.** If `m` is prime and `P` is a maximal ideal whose norm is prime
+to `m`, then `Φ(P) ≡ -1` modulo `m 𝓞 K`. -/
+theorem stickelbergerPhi_modEq [Fact m.Prime] (P : Ideal (𝓞 K)) [P.IsMaximal]
+    (hP : (absNorm P).Coprime m) :
+    stickelbergerPhi P m ≡ -1 [SMOD Ideal.span {(m : 𝓞 K)}] := by
+  have hm : m.Prime := Fact.out
+  let _ := Ideal.Quotient.field P
+  let _ := Fintype.ofFinite (𝓞 K ⧸ P)
+  -- We read `Φ(P)` as a Gauss sum power in the ring `R` of algebraic integers of `ℂ`, through an
+  -- embedding `f : 𝓞 K → R` and a primitive additive character `ψ` with values in `R`.
+  let R := integralClosure ℤ ℂ
+  let σ : K →+* ℂ := Classical.arbitrary _
+  let f : 𝓞 K →+* R := (σ.comp (algebraMap (𝓞 K) K)).codRestrict R.toSubring
+    fun x => (x.isIntegral_coe.map σ.toIntAlgHom :)
+  have hf : Function.Injective f := fun x y h =>
+    (σ.injective.comp (FaithfulSMul.algebraMap_injective _ _)) (congrArg Subtype.val h)
+  let ψ₀ := AddChar.FiniteField.primitiveChar_to_Complex (𝓞 K ⧸ P)
+  -- The values of `ψ₀` are roots of unity, hence algebraic integers.
+  let ψ : AddChar (𝓞 K ⧸ P) R :=
+    { toFun t := ⟨ψ₀ t, IsIntegral.of_pow (Fintype.card_pos (α := 𝓞 K ⧸ P)) <| by
+        rw [← AddChar.map_nsmul_eq_pow, card_nsmul_eq_zero, AddChar.map_zero_eq_one]
+        exact isIntegral_one⟩
+      map_zero_eq_one' := Subtype.ext ψ₀.map_zero_eq_one
+      map_add_eq_mul' a b := Subtype.ext (ψ₀.map_add_eq_mul a b) }
+  have hψ : ψ.IsPrimitive := fun a ha h =>
+    AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive _ ha <|
+      DFunLike.ext _ _ fun t => congrArg Subtype.val (DFunLike.congr_fun h t)
+  -- `m` is invertible in the residue field, since it does not divide `N P`.
+  have hmF : (m : 𝓞 K ⧸ P) ≠ 0 := by
+    refine IsUnit.ne_zero ((isUnit_iff_not_dvd_char _ m).mpr fun h => hm.one_lt.ne' ?_)
+    rw [prime_dvd_char_iff_dvd_card, ← Nat.card_eq_fintype_card, ← absNorm_eq_natCard] at h
+    exact Nat.eq_one_of_dvd_coprimes hP h dvd_rfl
+  have hχ : powerResidueSymbol P m ^ m = 1 := by
+    have := pow_orderOf_eq_one (powerResidueSymbol P m)
+    rwa [orderOf_powerResidueSymbol hP] at this
+  -- In `R`, `f (Φ(P)) + 1 = y * m` by the congruence for Gauss sums.
+  have h := TauCeti.gaussSum_pow_modEq_neg_one (l := m)
+    (χ := (powerResidueSymbol P m)⁻¹.ringHomComp f)
+    (by rw [MulChar.ringHomComp_pow, inv_pow, hχ, inv_one, MulChar.ringHomComp_one])
+    (by rw [AddChar.pow_mulShift]; exact hψ hmF)
+  rw [← stickelbergerPhi_prime P hP hm.two_le hf hψ, SModEq.sub_mem, sub_neg_eq_add,
+    mem_span_singleton'] at h
+  obtain ⟨y, hy⟩ := h
+  -- Hence `(Φ(P) + 1) / m ∈ K` maps to the algebraic integer `y`, so it lies in `𝓞 K`.
+  have hz : σ (((stickelbergerPhi P m + 1 : 𝓞 K) : K) / m) = y := by
+    rw [map_div₀, map_natCast, div_eq_iff (Nat.cast_ne_zero.mpr hm.ne_zero)]
+    -- `f` is the corestriction of `σ` to `R`, so its values are those of `σ`.
+    have hfx : ∀ x, (f x : ℂ) = σ x := fun _ => rfl
+    simpa [hfx] using (congrArg Subtype.val hy).symm
+  obtain ⟨z, hz'⟩ := IsIntegralClosure.isIntegral_iff (A := 𝓞 K) |>.mp <|
+    (isIntegral_algHom_iff σ.toIntAlgHom σ.injective).mp (hz ▸ y.2)
+  rw [SModEq.sub_mem, sub_neg_eq_add, mem_span_singleton']
+  refine ⟨z, RingOfIntegers.coe_injective ?_⟩
+  rw [map_mul, hz', map_natCast, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hm.ne_zero)]
+
+/-- **`Φ(A)` is `±1` modulo `m`.** If `m` is prime and the norm of `A` is prime to `m`, then
+`Φ(A) ≡ (-1)^r` modulo `m 𝓞 K`, where `r` is the number of prime factors of `A` counted with
+multiplicity. -/
+theorem stickelbergerPhi_modEq_neg_one_pow [Fact m.Prime] {A : Ideal (𝓞 K)}
+    (hA : (absNorm A).Coprime m) :
+    stickelbergerPhi A m ≡ (-1) ^ (normalizedFactors A).card [SMOD Ideal.span {(m : 𝓞 K)}] := by
+  induction A using induction_on_prime with
+  | h₁ =>
+    rw [zero_eq_bot, absNorm_bot, Nat.coprime_zero_left] at hA
+    exact absurd hA (Fact.out : m.Prime).ne_one
+  | h₂ A hA' =>
+    rw [isUnit_iff.mp hA', stickelbergerPhi_top, ← one_eq_top, normalizedFactors_one,
+      Multiset.card_zero, pow_zero]
+  | h₃ A P hA₀ hP ih =>
+    have : P.IsMaximal := ((isPrime_of_prime hP).isMaximal hP.ne_zero)
+    rw [map_mul, Nat.coprime_mul_iff_left] at hA
+    rw [stickelbergerPhi_mul hP.ne_zero hA₀, normalizedFactors_mul hP.ne_zero hA₀,
+      normalizedFactors_irreducible hP.irreducible, Multiset.card_add, Multiset.card_singleton,
+      pow_add, pow_one]
+    exact (stickelbergerPhi_modEq P hA.1).mul (ih hA.2)
 
 end Ideal
