@@ -24,7 +24,9 @@ one: a submodule of a projective module is free, and hence projective. This supp
 hereditary condition in terms of Mathlib's projective-dimension predicate.
 
 For a module of projective dimension at most one, the standard free presentation has
-projective kernel and hence is a projective resolution of length one.
+projective kernel and hence is a projective resolution of length one. More generally, for a
+surjection `f` from a projective module onto `M`, the projective dimension of `M` is at most
+`n + 1` exactly when that of `ker f` is at most `n`.
 
 The projective dimensions of the cyclic modules `R ⧸ I` bound those of all modules: by Baer's
 criterion they bound every injective dimension, and the vanishing of all `Ext^{n+1}(-, N)` then
@@ -89,6 +91,17 @@ theorem projective_projectiveShortComplex_X₁ [Small.{v} R] {M : ModuleCat.{v} 
   have h₂ : Projective M.projectiveShortComplex.X₂ := inferInstance
   have h₁ := (M.shortExact_projectiveShortComplex.hasProjectiveDimensionLT_X₃_iff 0 h₂).mp hM
   exact projective_iff_hasProjectiveDimensionLT_one.mpr h₁
+
+/-- **Dimension shifting along a projective presentation.** For a surjection `f : P → M` from a
+projective module, `M` has projective dimension at most `n + 1` exactly when `ker f` has
+projective dimension at most `n`. -/
+theorem _root_.LinearMap.hasProjectiveDimensionLE_succ_iff_ker [Small.{v} R] {P M : Type v}
+    [AddCommGroup P] [Module R P] [Module.Projective R P] [AddCommGroup M] [Module R M]
+    {f : P →ₗ[R] M} (hf : Function.Surjective f) (n : ℕ) :
+    HasProjectiveDimensionLE (ModuleCat.of R M) (n + 1) ↔
+      HasProjectiveDimensionLE (ModuleCat.of R (LinearMap.ker f)) n :=
+  (LinearMap.shortExact_shortComplexKer hf).hasProjectiveDimensionLT_X₃_iff n
+    ((IsProjective.iff_projective P).mp ‹_›)
 
 end TauCeti
 
