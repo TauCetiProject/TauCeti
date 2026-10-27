@@ -38,6 +38,8 @@ reducedness is: a reduced word repeats no letter adjacently, and prefixing a red
 ## Main results
 
 * `CoxeterSystem.IsReduced.isChain_ne`: **a reduced word has no two adjacent equal letters.**
+* `CoxeterSystem.IsReduced.isLeftDescent_wordProd_cons`: the first letter of a reduced word is a
+  left descent of the element it spells.
 * `CoxeterSystem.isReduced_cons_of_isLeftDescent`: a left descent `i` of `w` turns a reduced word
   for `s_i * w` into a reduced word for `w`.
 * `CoxeterSystem.mem_rightInvSeq_of_isRightInversion` and
@@ -113,6 +115,13 @@ theorem IsReduced.isChain_ne {ω : List B} (hω : cs.IsReduced ω) : ω.IsChain 
           rw [hprod] at heq
           simp only [List.length_cons] at heq
           omega
+
+/-- The first letter of a reduced word is a left descent of the element it spells. -/
+theorem IsReduced.isLeftDescent_wordProd_cons {a : B} {ω : List B} (hω : cs.IsReduced (a :: ω)) :
+    cs.IsLeftDescent (π (a :: ω)) a := by
+  have hω' : cs.IsReduced ω := by simpa using hω.drop 1
+  rw [cs.isLeftDescent_iff, cs.wordProd_cons, cs.simple_mul_simple_cancel_left, hω'.eq,
+    ← cs.wordProd_cons, hω.eq, List.length_cons]
 
 end Reduced
 

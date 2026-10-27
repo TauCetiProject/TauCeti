@@ -116,15 +116,9 @@ theorem braidEquivalent_of_isReduced_wordProd_eq {ω ω' : List B}
         intro h; simp [h] at hlen')
       by_cases hij : i = j
       · subst j; exact sameHead i u v hlen hred hred' hp
-      have descent : ∀ a : B, ∀ σ : List B, cs.IsReduced (a :: σ) →
-          cs.IsLeftDescent (cs.wordProd (a :: σ)) a := by
-        intro a σ hσ
-        have ht : cs.IsReduced σ := by simpa using hσ.drop 1
-        rw [cs.isLeftDescent_iff, cs.wordProd_cons, cs.simple_mul_simple_cancel_left,
-          ← cs.wordProd_cons, hσ.eq, ht.eq, List.length_cons]
       obtain ⟨u', v', hu', hv', hpu', hpv', hbraid⟩ :=
-        exists_braidEquivalent_cons_of_isLeftDescent_pair cs hij (descent i u hred)
-          (hp.symm ▸ descent j v hred')
+        exists_braidEquivalent_cons_of_isLeftDescent_pair cs hij hred.isLeftDescent_wordProd_cons
+          (hp.symm ▸ hred'.isLeftDescent_wordProd_cons)
       have h₁ := sameHead i u u' hlen hred hu' hpu'.symm
       have h₂ := sameHead j v v' hlen' hred' hv' (hp.symm.trans hpv'.symm)
       exact h₁.trans (hbraid.trans h₂.symm)
@@ -171,14 +165,8 @@ theorem _root_.CoxeterSystem.isReduced_alternatingWord {i i' : B} {m : ℕ}
       rintro rfl
       rcases hm with hm | hm <;> simp at hm
     -- The first letter of the word is also a left descent, because the word is reduced.
-    have hdesc : ∀ (a : B) (ω : List B), cs.IsReduced (a :: ω) →
-        cs.IsLeftDescent (cs.wordProd (a :: ω)) a := by
-      intro a ω hω
-      have hω' : cs.IsReduced ω := by simpa using hω.drop 1
-      rw [cs.isLeftDescent_iff, cs.wordProd_cons, cs.simple_mul_simple_cancel_left, hω'.eq,
-        ← cs.wordProd_cons, hω.eq, List.length_cons]
     have hhead := alternatingWord_succ' i i' k
-    have hd' := hdesc _ _ (hhead ▸ hred)
+    have hd' := (hhead ▸ hred).isLeftDescent_wordProd_cons
     rw [← hhead] at hd'
     have hmem : cs.wordProd (alternatingWord i i' (k + 1)) ∈ cs.parabolic {i, i'} := by
       have hi := cs.simple_mem_parabolic (J := {i, i'}) (i := i) (by simp)

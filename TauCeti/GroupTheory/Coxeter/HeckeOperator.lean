@@ -128,12 +128,13 @@ theorem heckeLeftMul_mul_self (i : B) :
     simp only [heckeLeftMul_single_of_not_isLeftDescent h, heckeLeftMul_single_of_isLeftDescent h',
       cs.simple_mul_simple_cancel_left]
 
-/-- **Left and right operators commute.** On a basis vector `e w` this is a case analysis on the
-lengths of `w`, `s i * w`, `w * s j` and `s i * w * s j`; in the two cases where lengths cannot
-tell `s i * w` and `w * s j` apart, they are equal by
-`CoxeterSystem.simple_mul_eq_mul_simple_of_length_eq`. -/
+/-- **Left and right operators commute**: `heckeLeftMul cs c i` and `heckeRightMul cs c j`
+commute for all `i` and `j`. -/
 theorem commute_heckeLeftMul_heckeRightMul (i j : B) :
     Commute (cs.heckeLeftMul c i) (cs.heckeRightMul c j) := by
+  -- On a basis vector `e w` this is a case analysis on the lengths of `w`, `s i * w`, `w * s j`
+  -- and `s i * w * s j`; in the two cases where lengths cannot tell `s i * w` and `w * s j`
+  -- apart, they are equal by `CoxeterSystem.simple_mul_eq_mul_simple_of_length_eq`.
   refine Finsupp.lhom_ext fun w r ↦ ?_
   simp only [Module.End.mul_apply]
   have hl := cs.length_simple_mul w i
@@ -155,12 +156,12 @@ theorem commute_heckeLeftMul_heckeRightMul (i j : B) :
     | abel1
 
 variable {c} in
-/-- **An operator commuting with the right operators is determined by its value on `e 1`.**
-Every basis vector `e w` is obtained from `e 1` by right operators along a reduced word for `w`,
-so two such operators agreeing on `e 1` agree everywhere. -/
+/-- **An operator commuting with the right operators is determined by its value on `e 1`.** -/
 theorem ext_of_commute_heckeRightMul {f g : Module.End R (W →₀ R)}
     (hf : ∀ j, Commute f (cs.heckeRightMul c j)) (hg : ∀ j, Commute g (cs.heckeRightMul c j))
     (h : f (single 1 1) = g (single 1 1)) : f = g := by
+  -- Every basis vector `e w` is obtained from `e 1` by right operators along a reduced word for
+  -- `w`; induct on the length of `w`, peeling off a right descent.
   refine Finsupp.lhom_ext' fun w ↦ LinearMap.ext_ring ?_
   simp only [LinearMap.comp_apply, Finsupp.lsingle_apply]
   induction hn : ℓ w using Nat.strong_induction_on generalizing w with
@@ -190,11 +191,12 @@ theorem prod_map_heckeLeftMul_apply_single_one {ω : List B} (hω : cs.IsReduced
       heckeLeftMul_single_of_not_isLeftDescent hi, cs.wordProd_cons]
 
 /-- **The braid relations** for the left operators: the two braid words at `(i, i')` give the
-same operator. Both sides commute with the right operators and send `e 1` to the basis vector of
-the same element, since braid words are reduced (`CoxeterSystem.isReduced_braidWord`). -/
+same operator. -/
 theorem prod_map_heckeLeftMul_braidWord (i i' : B) :
     ((braidWord M i i').map (cs.heckeLeftMul c)).prod =
       ((braidWord M i' i).map (cs.heckeLeftMul c)).prod := by
+  -- Both sides commute with the right operators and send `e 1` to the basis vector of the same
+  -- element, since braid words are reduced (`CoxeterSystem.isReduced_braidWord`).
   have hcomm (ω : List B) (j : B) :
       Commute (ω.map (cs.heckeLeftMul c)).prod (cs.heckeRightMul c j) :=
     Commute.list_prod_left _ _ fun f hf ↦ by
