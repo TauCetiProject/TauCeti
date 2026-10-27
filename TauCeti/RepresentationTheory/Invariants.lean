@@ -76,6 +76,7 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   `Representation.norm` scaled by the inverse of the group order.
 * `Representation.averageMap_apply`: the same identity evaluated at a vector.
 * `Representation.averageMap_comp_ρ`: the averaging projection does not see the action.
+* `Representation.IntertwiningMap.map_averageMap`: intertwining maps commute with averaging.
 * `Representation.range_norm_eq_invariants`: the group sum `Representation.norm ρ` has the
   invariants as its range.
 * `Representation.range_norm_eq_invariants_of_projective`: the same conclusion without
@@ -145,6 +146,14 @@ in the group algebra (`GroupAlgebra.mul_average_right`). -/
 theorem averageMap_comp_ρ (g : G) : ρ.averageMap ∘ₗ ρ g = ρ.averageMap := by
   rw [averageMap, ← asAlgebraHom_single_one, ← Module.End.mul_eq_comp, ← map_mul,
     GroupAlgebra.mul_average_right]
+
+variable {ρ} in
+/-- **Intertwining maps commute with averaging**: an intertwining map `f : ρ → σ` carries the
+averaging projection of `ρ` to that of `σ`. -/
+theorem IntertwiningMap.map_averageMap {W : Type*} [AddCommGroup W] [Module k W]
+    {σ : Representation k G W} (f : IntertwiningMap ρ σ) (v : V) :
+    f (ρ.averageMap v) = σ.averageMap (f v) := by
+  simp only [averageMap_apply, map_smul, map_sum, IntertwiningMap.isIntertwining]
 
 /-- **The group sum has the invariants as its range.** When `#G` is invertible in `k`, the operator
 `Representation.norm ρ = ∑ g, ρ g` maps onto the invariants of `ρ`: it agrees with the averaging
@@ -591,7 +600,9 @@ theorem mapRepresentation_apply (σ : Representation A G M) (g : G) :
 
 end Monoid
 
-variable {A : Type u} {B : Type u'} [CommRing A] [CommRing B] {G : Type*} [Group G]
+section Injective
+
+variable {A : Type u} {B : Type u'} [CommRing A] [Ring B] {G : Type*} [Group G]
   {M : Type v} [AddCommGroup M] [Module A M] (F : ModuleCat.{v} A ⥤ ModuleCat.{v'} B)
 
 variable [Fintype G] [Invertible (Fintype.card G : A)] (σ : Representation A G M)
@@ -599,7 +610,8 @@ variable [Fintype G] [Invertible (Fintype.card G : A)] (σ : Representation A G 
 /-- When `#G` is invertible in `A`, every functor `F` carries the inclusion `M^G ⊆ M` of the
 invariants to an injective map, since the averaging projection retracts the inclusion. For an
 additive `F`, this identifies `F(M^G)` with the invariants of `F(M)`
-(`CategoryTheory.Functor.invariants_mapRepresentation`). -/
+(`CategoryTheory.Functor.invariants_mapRepresentation`). The target coefficient ring `B` need not
+be commutative. -/
 theorem map_ofHom_subtype_invariants_injective :
     Function.Injective (F.map (ModuleCat.ofHom σ.invariants.subtype)).hom := by
   -- The inclusion has the retraction given by the averaging projection.
@@ -611,7 +623,12 @@ theorem map_ofHom_subtype_invariants_injective :
   refine Function.LeftInverse.injective (g := (F.map π).hom) fun y ↦ ?_
   rw [← ModuleCat.comp_apply, ← F.map_comp, h, F.map_id, ModuleCat.id_apply]
 
-variable [F.Additive]
+end Injective
+
+variable {A : Type u} {B : Type u'} [CommRing A] [CommRing B] {G : Type*} [Group G]
+  {M : Type v} [AddCommGroup M] [Module A M] (F : ModuleCat.{v} A ⥤ ModuleCat.{v'} B)
+
+variable [Fintype G] [Invertible (Fintype.card G : A)] (σ : Representation A G M) [F.Additive]
 
 /-- **Additive functors commute with invariants.** When `#G` is invertible in `A`, the invariants
 of `F(M)` are the image of `F(M^G)` under `F` applied to the inclusion `M^G ⊆ M`. -/

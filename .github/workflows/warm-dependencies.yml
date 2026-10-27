@@ -167,6 +167,8 @@ jobs:
           fi
 
       - name: Install the staging sandbox binary and probe the cache boundary
+        # Synthetic infrastructure diagnostics are opt-in, never part of pin updates.
+        if: inputs.capacity
         env:
           BWRAP_VER: 0.9.0-1build1
           BWRAP_DEB_SHA256: dde30d1f24da50446d647ed504ec8dc5a714f171974d054c70a589b48ba38b48

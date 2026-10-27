@@ -36,11 +36,15 @@ compactness nor closedness of `K` carries any measurability with it. (Absent a s
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
 
+For a locally finite measure, Lipschitz postcomposition preserves local integrability on any
+set, without a condition on the value of the outer map at zero.
+
 An `Lᵖ` function for a locally finite restriction of a measure to a set, with `1 ≤ p`, is locally
 integrable on that set.
 
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
+In particular, the squared norm of a continuous compactly supported function is integrable.
 
 A real function with values in `[0, 1]` almost everywhere on a measurable set agrees almost
 everywhere there with a function that is locally integrable on the whole space and everywhere
@@ -64,6 +68,8 @@ everywhere there with a function that is locally integrable on the whole space a
   integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
   every `Lᵖ` on its measurable subsets.
+* `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
+  compactly supported function is integrable.
 
 ## Attribution
 
@@ -287,6 +293,14 @@ section ContinuousOn
 variable {X E : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup E]
 
+/-- The squared norm of a continuous compactly supported function is integrable for any measure
+finite on compact sets. -/
+theorem Continuous.integrable_norm_sq_of_hasCompactSupport {F : Type*}
+    [SeminormedAddCommGroup F] {f : X → F}
+    (hf : Continuous f) (hcf : HasCompactSupport f) : Integrable (fun x ↦ ‖f x‖ ^ 2) μ := by
+  apply Continuous.integrable_of_hasCompactSupport (by fun_prop)
+  exact hcf.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)
+
 /-- A function continuous on a compact set `K` lies in every `Lᵖ` on each measurable subset of
 `K`, for a measure that is finite on compact sets: it is bounded there, and the subset has finite
 measure. -/
@@ -300,3 +314,28 @@ theorem ContinuousOn.memLp_restrict_of_subset_isCompact {f : X → E} {K s : Set
     ((ae_restrict_iff' hs).2 (ae_of_all _ fun x hx => hC x (hsK hx)))
 
 end ContinuousOn
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+variable {X A B : Type*} [MeasurableSpace X] [TopologicalSpace X]
+  [NormedAddCommGroup A] [NormedAddCommGroup B]
+  {μ : Measure X} [IsLocallyFiniteMeasure μ] {s : Set X} {u : X → A}
+  {g : A → B} {C : NNReal}
+
+/-- For a locally finite measure, Lipschitz postcomposition preserves local integrability on any
+set. No condition on the value of the outer map at zero is needed locally. -/
+theorem comp_lipschitz (hu : LocallyIntegrableOn u s μ) (hg : LipschitzWith C g) :
+    LocallyIntegrableOn (g ∘ u) s μ := by
+  intro x hx
+  obtain ⟨t, ht, hut⟩ := hu x hx
+  obtain ⟨v, hv, hμv⟩ := μ.finiteAt_nhds x
+  have huK := hut.mono_set (inter_subset_left (t := v))
+  have : IsFiniteMeasure (μ.restrict (t ∩ v)) :=
+    isFiniteMeasure_restrict.mpr ((measure_mono inter_subset_right).trans_lt hμv).ne
+  refine ⟨t ∩ v, Filter.inter_mem ht (mem_nhdsWithin_of_mem_nhds hv), ?_⟩
+  refine ((huK.norm.const_mul (C : ℝ)).add (integrable_const ‖g 0‖)).mono'
+    (hg.continuous.comp_aestronglyMeasurable huK.aestronglyMeasurable) (.of_forall fun x => ?_)
+  calc ‖g (u x)‖ ≤ ‖g (u x) - g 0‖ + ‖g 0‖ := norm_le_norm_sub_add _ _
+    _ ≤ C * ‖u x‖ + ‖g 0‖ := add_le_add (by simpa using hg.norm_sub_le (u x) 0) le_rfl
+
+end MeasureTheory.LocallyIntegrableOn

@@ -76,13 +76,12 @@ local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 
 /-! ### The chirality element -/
 
-include hQ in
 /-- `Γ` anticommutes with exterior multiplication by a vector of `W`. -/
 private theorem realFockAction_chirality_ι_mul (x : (J.spinPolarizationData hQJ hQnd).W)
     (s : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQnd).W) :
     J.realFockAction hQJ hQnd (chirality Q o) (ExteriorAlgebra.ι ℂ x * s) =
       -(ExteriorAlgebra.ι ℂ x * J.realFockAction hQJ hQnd (chirality Q o) s) := by
-  have h := congr(J.fockAction hQJ hQnd $(ofBaseChangeAux_chirality_mul_ι o hQ ℂ (x : ℂ ⊗[ℝ] V)) s)
+  have h := congr(J.fockAction hQJ hQnd $(ofBaseChangeAux_chirality_mul_ι o ℂ (x : ℂ ⊗[ℝ] V)) s)
   simp only [map_mul, map_neg, Module.End.mul_apply, LinearMap.neg_apply,
     J.fockAction_ι_coe_W hQJ hQnd, ← realFockAction_apply, LinearMap.smul_apply,
     SpinPolarizationData.wedge_apply, map_smul, ← smul_neg] at h
@@ -108,7 +107,7 @@ theorem realFockAction_chirality (b : OrthonormalBasis (Fin 4) ℝ V)
   induction s using CliffordAlgebra.left_induction with
   | algebraMap r => simp [Algebra.algebraMap_eq_smul_one, hvac]
   | add x y hx hy => rw [map_add, map_add, hx, hy]
-  | ι_mul x m hx => simp [J.realFockAction_chirality_ι_mul o hQ hQJ hQnd, hx]
+  | ι_mul x m hx => simp [J.realFockAction_chirality_ι_mul o hQJ hQnd, hx]
 
 include hQ in
 /-- **The positive half-spinors of the Fock module are the even forms** `⋀⁰ W ⊕ ⋀² W`, for the

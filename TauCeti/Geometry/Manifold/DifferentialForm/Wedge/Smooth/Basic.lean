@@ -191,6 +191,13 @@ theorem wedge_apply_one_one (φ : SmoothForm I M ℝ 1) (ψ : SmoothForm I M ℝ
       φ.1 x ![v] * ψ.1 x ![w] - φ.1 x ![w] * ψ.1 x ![v] := by
   rw [coe_wedge, RoughForm.wedge_apply_one_one]
 
+/-- The smooth real-valued wedge of two one-forms, evaluated on an ordered pair of tangent vectors,
+is a determinant. -/
+theorem eval₂_wedge_one_one (φ ψ : SmoothForm I M ℝ 1) (x : M) (v w : TangentSpace I x) :
+    SmoothBundleForm.eval₂ (wedge φ ψ) x v w =
+      φ.1 x ![v] * ψ.1 x ![w] - φ.1 x ![w] * ψ.1 x ![v] := by
+  rw [SmoothBundleForm.eval₂_apply, wedge_apply_one_one]
+
 /-- Swapping smooth paired forms flips the coefficient pairing and contributes the graded sign. -/
 theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l) (x : M)
