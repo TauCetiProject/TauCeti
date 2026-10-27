@@ -37,15 +37,35 @@ namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
+/-- The quadratic form of a Kronecker product on column-stacked matrices is a trace:
+`vec A ⬝ᵥ (V ⊗ₖ U) *ᵥ vec B = trace (Aᵀ * U * B * Vᵀ)`. -/
+theorem _root_.Matrix.vec_dotProduct_kronecker_mulVec_vec {R l m n p : Type*}
+    [NonUnitalCommSemiring R] [Fintype l] [Fintype m] [Fintype n] [Fintype p]
+    (A : Matrix l p R) (U : Matrix l m R) (B : Matrix m n R) (V : Matrix p n R) :
+    A.vec ⬝ᵥ (V ⊗ₖ U) *ᵥ B.vec = (Aᵀ * U * B * Vᵀ).trace := by
+  rw [Matrix.kronecker_mulVec_vec, Matrix.vec_dotProduct_vec]
+  simp only [Matrix.mul_assoc]
+
+omit [DecidableEq ι] [DecidableEq κ] in
+private lemma vec_dotProduct_kronecker_mulVec_vec_of_posSemidef {V : Matrix κ κ ℝ}
+    (hV : V.PosSemidef) (T : Matrix ι κ ℝ) (U : Matrix ι ι ℝ) :
+    T.vec ⬝ᵥ (V ⊗ₖ U) *ᵥ T.vec = (Tᵀ * U * T * V).trace := by
+  rw [Matrix.vec_dotProduct_kronecker_mulVec_vec, (by simpa using hV.isHermitian.eq : Vᵀ = V)]
+
 omit [DecidableEq ι] [DecidableEq κ] in
 /-- For positive semidefinite `U` and `V`, the covariance quadratic form
 `trace (Tᵀ * U * T * V)` is nonnegative. It is the quadratic form of `V ⊗ₖ U` at `vec T`. -/
 theorem _root_.Matrix.PosSemidef.trace_transpose_mul_mul_mul_nonneg {U : Matrix ι ι ℝ}
     {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) (T : Matrix ι κ ℝ) :
     0 ≤ (Tᵀ * U * T * V).trace := by
-  have h := (hV.kronecker hU).dotProduct_mulVec_nonneg T.vec
-  rwa [star_trivial, Matrix.kronecker_mulVec_vec, Matrix.vec_dotProduct_vec,
-    (by simpa using hV.isHermitian.eq : Vᵀ = V), ← Matrix.mul_assoc, ← Matrix.mul_assoc] at h
+  simpa only [star_trivial, vec_dotProduct_kronecker_mulVec_vec_of_posSemidef hV] using
+    (hV.kronecker hU).dotProduct_mulVec_nonneg T.vec
+
+omit [DecidableEq ι] [DecidableEq κ] in
+private lemma coe_toNNReal_trace_transpose_mul_mul_mul {U : Matrix ι ι ℝ}
+    {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) (T : Matrix ι κ ℝ) :
+    ((Tᵀ * U * T * V).trace.toNNReal : ℝ) = (Tᵀ * U * T * V).trace :=
+  Real.coe_toNNReal _ (hU.trace_transpose_mul_mul_mul_nonneg hV T)
 
 private lemma hasLaw_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ ℝ)
     {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef) :
@@ -57,13 +77,12 @@ private lemma hasLaw_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ
     rw [EuclideanSpace.inner_eq_star_dotProduct]
     simp only [star_trivial]
     rw [dotProduct_comm, Matrix.vec_dotProduct_vec]
-  have hsymm : Vᵀ = V := by simpa using hV.isHermitian.eq
   have hquad :
       ⟪WithLp.toLp 2 T.vec, (V ⊗ₖ U).toEuclideanLin (WithLp.toLp 2 T.vec)⟫ =
         (Tᵀ * U * T * V).trace := by
-    simp only [Matrix.toLpLin_apply, Matrix.kronecker_mulVec_vec]
-    rw [hpair, hsymm]
-    simp only [Matrix.mul_assoc]
+    rw [EuclideanSpace.inner_eq_star_dotProduct]
+    simp only [Matrix.toLpLin_apply, WithLp.ofLp_toLp, star_trivial]
+    rw [dotProduct_comm, vec_dotProduct_kronecker_mulVec_vec_of_posSemidef hV]
   refine ⟨(continuous_const.matrix_mul continuous_id).matrix_trace.measurable.aemeasurable, ?_⟩
   have h := map_inner_multivariateGaussian (WithLp.toLp 2 M.vec) (WithLp.toLp 2 T.vec)
     (hV.kronecker hU)
@@ -88,8 +107,8 @@ theorem _root_.ProbabilityTheory.HasLaw.matrixNormal_trace_transpose_mul
     (hX : HasLaw X (matrixNormalMeasure M U V) P) (T : Matrix ι κ ℝ)
     (hU : U.PosSemidef) (hV : V.PosSemidef) :
     HasLaw (fun ω ↦ (Tᵀ * X ω).trace)
-      (gaussianReal (Tᵀ * M).trace (Tᵀ * U * T * V).trace.toNNReal) P := by
-  exact (hasLaw_trace_transpose_mul_matrixNormalMeasure M T hU hV).fun_comp hX
+      (gaussianReal (Tᵀ * M).trace (Tᵀ * U * T * V).trace.toNNReal) P :=
+  (hasLaw_trace_transpose_mul_matrixNormalMeasure M T hU hV).fun_comp hX
 
 /-- Every matrix normal linear statistic has every finite moment, including on the invalid
 covariance branch. -/
@@ -113,7 +132,7 @@ theorem variance_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ ℝ
   rw [← variance_id_map (X := fun X : Matrix ι κ ℝ ↦ (Tᵀ * X).trace)
       hstat.aemeasurable,
     map_trace_transpose_mul_matrixNormalMeasure M T hU hV, variance_id_gaussianReal,
-    Real.coe_toNNReal _ (hU.trace_transpose_mul_mul_mul_nonneg hV T)]
+    coe_toNNReal_trace_transpose_mul_mul_mul hU hV T]
 
 /-- Every matrix normal linear statistic has finite exponential moments of all real orders,
 including the point-mass fallback for invalid covariances. -/
@@ -142,7 +161,7 @@ theorem mgf_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ ℝ)
   rw [← mgf_id_map (X := fun X : Matrix ι κ ℝ ↦ (Tᵀ * X).trace)
       hstat.aemeasurable,
     map_trace_transpose_mul_matrixNormalMeasure M T hU hV,
-    mgf_id_gaussianReal, Real.coe_toNNReal _ (hU.trace_transpose_mul_mul_mul_nonneg hV T)]
+    mgf_id_gaussianReal, coe_toNNReal_trace_transpose_mul_mul_mul hU hV T]
 
 /-- The directional cgf of a matrix normal law is the quadratic polynomial determined by its
 directional mean and variance. -/
@@ -161,6 +180,6 @@ theorem charFun_map_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ 
       Complex.exp (t * (Tᵀ * M).trace * Complex.I -
         (Tᵀ * U * T * V).trace * t ^ 2 / 2) := by
   rw [map_trace_transpose_mul_matrixNormalMeasure M T hU hV, charFun_gaussianReal,
-    Real.coe_toNNReal _ (hU.trace_transpose_mul_mul_mul_nonneg hV T)]
+    coe_toNNReal_trace_transpose_mul_mul_mul hU hV T]
 
 end TauCeti.Probability
