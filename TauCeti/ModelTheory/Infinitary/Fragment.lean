@@ -28,7 +28,7 @@ number. Closure under the formation of formulas is a separate condition, not imp
 ## Main definitions
 
 * `FirstOrder.Language.Fragment`: fragments of `L_{ω₁ω}`, with their `SetLike` and complete
-  lattice structure, meets being intersections.
+  lattice structure, meets being intersections and joins unions.
 * `FirstOrder.Language.Fragment.GeneratedFrom`: reachability from a set of formulas by component
   steps.
 * `FirstOrder.Language.Fragment.generated`: the least fragment containing a set of formulas.
@@ -196,6 +196,68 @@ theorem coe_inf (A B : Fragment L) :
     ((A ⊓ B : Fragment L) : Set (Σ n, L.BoundedFormulaω Empty n)) =
       (A : Set (Σ n, L.BoundedFormulaω Empty n)) ∩ B :=
   Set.ext fun _ => mem_inf
+
+/-- The underlying set of the join of a family of fragments is the union: a union of
+component-closed sets is component-closed. -/
+@[simp, norm_cast]
+theorem coe_sSup (𝒜 : Set (Fragment L)) :
+    ((sSup 𝒜 : Fragment L) : Set (Σ n, L.BoundedFormulaω Empty n)) =
+      ⋃ A ∈ 𝒜, (A : Set (Σ n, L.BoundedFormulaω Empty n)) := by
+  -- the union, as a fragment
+  let U : Fragment L :=
+    { toSet := ⋃ A ∈ 𝒜, (A : Set (Σ n, L.BoundedFormulaω Empty n))
+      imp_left_mem' h := by
+        obtain ⟨A, hA, hp⟩ := Set.mem_iUnion₂.1 h
+        exact Set.mem_iUnion₂.2 ⟨A, hA, A.imp_left_mem hp⟩
+      imp_right_mem' h := by
+        obtain ⟨A, hA, hp⟩ := Set.mem_iUnion₂.1 h
+        exact Set.mem_iUnion₂.2 ⟨A, hA, A.imp_right_mem hp⟩
+      all_mem' h := by
+        obtain ⟨A, hA, hp⟩ := Set.mem_iUnion₂.1 h
+        exact Set.mem_iUnion₂.2 ⟨A, hA, A.all_mem hp⟩
+      iInf_mem' h k := by
+        obtain ⟨A, hA, hp⟩ := Set.mem_iUnion₂.1 h
+        exact Set.mem_iUnion₂.2 ⟨A, hA, A.iInf_mem hp k⟩
+      iSup_mem' h k := by
+        obtain ⟨A, hA, hp⟩ := Set.mem_iUnion₂.1 h
+        exact Set.mem_iUnion₂.2 ⟨A, hA, A.iSup_mem hp k⟩ }
+  refine Set.Subset.antisymm ?_
+    (Set.iUnion₂_subset fun A hA => SetLike.coe_subset_coe.2 (le_sSup hA))
+  exact SetLike.coe_subset_coe.2 (sSup_le (s := 𝒜) (a := U) fun A hA =>
+    IsConcreteLE.le_iff.2 fun _ hp => Set.mem_iUnion₂.2 ⟨A, hA, hp⟩)
+
+/-- A formula belongs to the join of a family of fragments exactly when it belongs to one of
+them. -/
+@[simp]
+theorem mem_sSup {𝒜 : Set (Fragment L)} {p : Σ n, L.BoundedFormulaω Empty n} :
+    p ∈ sSup 𝒜 ↔ ∃ A ∈ 𝒜, p ∈ A := by
+  rw [← SetLike.mem_coe, coe_sSup, Set.mem_iUnion₂]
+  simp
+
+/-- A formula belongs to the join of two fragments exactly when it belongs to one of them. -/
+@[simp]
+theorem mem_sup {A B : Fragment L} {p : Σ n, L.BoundedFormulaω Empty n} :
+    p ∈ A ⊔ B ↔ p ∈ A ∨ p ∈ B := by
+  rw [← sSup_pair, mem_sSup]
+  simp
+
+/-- The underlying set of the join of two fragments is the union. -/
+@[simp, norm_cast]
+theorem coe_sup (A B : Fragment L) :
+    ((A ⊔ B : Fragment L) : Set (Σ n, L.BoundedFormulaω Empty n)) =
+      (A : Set (Σ n, L.BoundedFormulaω Empty n)) ∪ B :=
+  Set.ext fun _ => mem_sup
+
+/-- No formula belongs to the bottom fragment. -/
+@[simp]
+theorem notMem_bot (p : Σ n, L.BoundedFormulaω Empty n) : p ∉ (⊥ : Fragment L) := by
+  rw [← sSup_empty, mem_sSup]
+  simp
+
+/-- The underlying set of the bottom fragment is empty. -/
+@[simp, norm_cast]
+theorem coe_bot : ((⊥ : Fragment L) : Set (Σ n, L.BoundedFormulaω Empty n)) = ∅ :=
+  Set.eq_empty_of_forall_notMem notMem_bot
 
 /-! ### Generated fragments -/
 
