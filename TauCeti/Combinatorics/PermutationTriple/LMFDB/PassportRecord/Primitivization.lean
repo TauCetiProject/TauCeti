@@ -13,7 +13,9 @@ public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.Basic
 # The primitivization of a passport record
 
 The stored primitivization of a row of the LMFDB table of Belyi passports is the label of a row of
-the table of Belyi maps: the primitive Belyi map through which the maps of the passport factor.
+the table of Belyi maps. Here that row is read as sharing the passport of the block quotient of the
+chosen reference triple; this does not identify a particular quotient map, and it does not assert
+that every map of the passport factors through a map of that row.
 A valid passport row carries a block of sheets of its reference triple `t`, and a maximal proper
 one (`TauCeti.PermutationTriple.LMFDB.PassportRecord.IsValidAt`). This file ties the stored label
 to the mathematics through that block rather than through a label lookup:

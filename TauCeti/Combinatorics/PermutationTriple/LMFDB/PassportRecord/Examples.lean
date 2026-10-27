@@ -211,22 +211,6 @@ private theorem toTriple_doubleCoverStoredTriple :
     doubleCoverStoredTriple.toTriple = doubleCoverTriple := by
   ext <;> simp [doubleCoverStoredTriple, doubleCoverTriple]
 
-/-- A degree-two triple whose first two components are nontrivial is unramified over `∞`. -/
-private theorem cycleData_eq_of_degree_two (t : PermutationTriple 2) (h0 : t.σ0 ≠ 1)
-    (h1 : t.σ1 ≠ 1) : t.cycleData = ({2}, {2}, {1, 1}) := by
-  have hnt : ∀ a : Perm (Fin 2), a ≠ 1 → a.computedCycleType = ({2} : Multiset ℕ) := by decide
-  have hinf : ∀ a b c : Perm (Fin 2), c * b * a = 1 → a ≠ 1 → b ≠ 1 → c = 1 := by decide
-  rw [cycleData, hnt _ h0, hnt _ h1, hinf _ _ _ t.product_eq_one h0 h1]
-  decide
-
-/-- The rotation of the four sheets moves the block `{0, 2}` off itself. -/
-private theorem finRotate_image_ne : (finRotate 4 '' {0, 2} : Set (Fin 4)) ≠ {0, 2} := by
-  intro h
-  have : (1 : Fin 4) ∈ (finRotate 4 '' {0, 2} : Set (Fin 4)) := ⟨0, by simp, by decide⟩
-  rw [h] at this
-  revert this
-  decide
-
 /-- The map row `2T1-2_2_1.1-a` certifies the stored primitivization of the passport row of
 `torusTriple`: the quotient of `torusTriple` by the translates `{0, 2}` and `{1, 3}` of the stored
 block is the double cover branched over `0` and `1`. -/
@@ -246,17 +230,16 @@ theorem isPrimitivizationOf_torusPassportRecord :
   refine ⟨rfl, e, ?_⟩
   set Q : ConnectedTriple 2 :=
     ⟨torusTriple.blockQuotient _ e, torusTriple.isConnected_blockQuotient _ e⟩
-  -- The rotation moves the block, so the quotient is branched over `0` and `1` only.
+  -- The quotient is the double cover branched over `0` and `1` computed in
+  -- `blockQuotient_torusTriple`, once the stored block is identified with `{0, 2}`.
   have hQ : Q.1.cycleData = ({2}, {2}, {1, 1}) := by
-    have hi : ((e.symm (e ⟨_, mem_orbit_self _⟩)) : Set (Fin 4)) = {0, 2} := by simp [hBc]
-    refine cycleData_eq_of_degree_two _ (fun h ↦ finRotate_image_ne ?_)
-      (fun h ↦ finRotate_image_ne ?_)
-    · have := coe_symm_blockQuotient_σ0 torusTriple _ e (e ⟨_, mem_orbit_self _⟩)
-      rw [h, Perm.one_apply, hi, torusTriple_σ0] at this
-      exact this.symm
-    · have := coe_symm_blockQuotient_σ1 torusTriple _ e (e ⟨_, mem_orbit_self _⟩)
-      rw [h, Perm.one_apply, hi, torusTriple_σ1] at this
-      exact this.symm
+    have key : ∀ (B : Set (Fin 4)) (_ : B = {0, 2})
+        (e : orbit torusTriple.monodromyGroup B ≃ Fin 2),
+        torusTriple.blockQuotient B e = ofTwo (swap 0 1) (swap 0 1) := by
+      rintro _ rfl e
+      exact blockQuotient_torusTriple e
+    rw [Subtype.coe_mk, key _ hBc e]
+    decide
   -- In degree two the cycle data classify connected triples, so the stored triple lies in the
   -- passport of the quotient.
   have hs0 : doubleCoverStoredTriple.toTriple.IsConnected := by
