@@ -11,8 +11,8 @@ public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 # Improper-integral asymptotics and logarithmic decay
 
 This file extends Mathlib's improper-integral estimates with an asymptotic estimate for weighted
-integrals, integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the closed form
-`∫_A^∞ dy / y² = 1 / A` as a Lebesgue integral.
+integrals, an Abelian limit for the averages `ε ∫_1^∞ t ^ (-ε - 1) g t`, integrability at infinity
+of `(t (1 + log t) ^ 2)⁻¹`, and the closed form `∫_A^∞ dy / y² = 1 / A` as a Lebesgue integral.
 
 ## Main declarations
 
@@ -23,6 +23,9 @@ integrals, integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the clos
   `t ↦ (t (1 + log t) ^ 2)⁻¹` is integrable at infinity.
 * `TauCeti.isLittleO_integral_rpow_sub_one_mul`: a remainder `E t = o(t)` has
   `∫ t in 1..x, t ^ (τ - 1) * E t = o(x ^ (τ + 1))`.
+* `TauCeti.tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero`: if `g t → L` as `t → ∞`, then
+  `ε ∫_1^∞ t ^ (-ε - 1) g t → L` as `ε → 0⁺`. Through Mathlib's `LSeries_eq_mul_integral` this
+  is the Abelian theorem for Dirichlet series.
 -/
 
 public section
@@ -30,6 +33,7 @@ public section
 namespace TauCeti
 
 open Asymptotics Filter MeasureTheory Set
+open scoped Topology
 
 /-- **A remainder `o(t)` integrates to `o(x ^ (τ + 1))` against `t ^ (τ - 1)`.** If `E` is
 interval integrable above `1` and `E t = o(t)`, then for every exponent `τ > -1` the weighted
@@ -95,6 +99,85 @@ theorem isLittleO_integral_rpow_sub_one_mul {E : ℝ → ℝ} {τ : ℝ} (hτ : 
   calc |(∫ t in (1 : ℝ)..T, t ^ (τ - 1) * E t) + ∫ t in T..x, t ^ (τ - 1) * E t|
       ≤ M + |∫ t in T..x, t ^ (τ - 1) * E t| := abs_add_le _ _
     _ ≤ ε * x ^ (τ + 1) := by linarith
+
+/-- **An Abelian limit for the weights `ε t ^ (-ε - 1)`.** If `g` is locally integrable on
+`[1, ∞)` and `g t → L` as `t → ∞`, then the averages `ε ∫_1^∞ t ^ (-ε - 1) g t` of `g` against
+the probability densities `ε t ^ (-ε - 1)` on `(1, ∞)` tend to `L` as `ε → 0⁺`. -/
+theorem tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {g : ℝ → E} {L : E}
+    (hg : LocallyIntegrableOn g (Ici 1)) (hlim : Tendsto g atTop (𝓝 L)) :
+    Tendsto (fun ε : ℝ ↦ ε • ∫ t in Ioi 1, t ^ (-ε - 1) • g t) (𝓝[>] 0) (𝓝 L) := by
+  have hw {ε : ℝ} (hε : 0 < ε) : IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1)) (Ioi 1) :=
+    integrableOn_Ioi_rpow_of_lt (by linarith) zero_lt_one
+  have hw_eq {ε : ℝ} (hε : 0 < ε) : ε * ∫ t in Ioi (1 : ℝ), t ^ (-ε - 1) = 1 := by
+    rw [integral_Ioi_rpow_of_lt (by linarith) zero_lt_one, Real.one_rpow,
+      show -ε - 1 + 1 = -ε by ring]
+    field_simp
+  rw [Metric.tendsto_nhds]
+  intro δ hδ
+  -- Beyond `T'` the function `g` is within `δ / 2` of `L`; the part over `(1, T']` is weighted
+  -- by at most `ε`, so it contributes at most `ε K`.
+  obtain ⟨T, hT⟩ := eventually_atTop.mp
+    (hlim.eventually (Metric.closedBall_mem_nhds L (half_pos hδ)))
+  set T' := max T 1
+  set K := ∫ t in Ioc 1 T', ‖g t - L‖
+  have hgL : IntegrableOn (fun t ↦ g t - L) (Ioc 1 T') :=
+    ((hg.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
+      Ioc_subset_Icc_self).sub (integrableOn_const (by simp))
+  have hsmall : ∀ᶠ ε : ℝ in 𝓝[>] 0, ε * K < δ / 2 := by
+    have : Tendsto (fun ε : ℝ ↦ ε * K) (𝓝[>] 0) (𝓝 (0 * K)) :=
+      (tendsto_nhdsWithin_of_tendsto_nhds tendsto_id).mul_const K
+    exact this.eventually_lt_const (by simpa using half_pos hδ)
+  filter_upwards [hsmall, self_mem_nhdsWithin] with ε hεK (hε : 0 < ε)
+  -- An integrable majorant `b` of `t ^ (-ε - 1) • (g t - L)` on `(1, ∞)`.
+  set b : ℝ → ℝ := fun t ↦ (Ioc 1 T').indicator (fun t ↦ ‖g t - L‖) t + δ / 2 * t ^ (-ε - 1)
+  have hb_ind : IntegrableOn ((Ioc 1 T').indicator fun t ↦ ‖g t - L‖) (Ioi 1) :=
+    (IntegrableOn.integrable_indicator hgL.norm measurableSet_Ioc).integrableOn
+  have hb : IntegrableOn b (Ioi 1) := hb_ind.add ((hw hε).const_mul _)
+  have hbound : ∀ t ∈ Ioi (1 : ℝ), ‖t ^ (-ε - 1) • (g t - L)‖ ≤ b t := by
+    intro t (ht : 1 < t)
+    have hw0 : 0 ≤ t ^ (-ε - 1) := Real.rpow_nonneg (by linarith) _
+    have hw1 : t ^ (-ε - 1) ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos ht.le (by linarith)
+    rw [norm_smul, Real.norm_of_nonneg hw0]
+    by_cases htT : t ≤ T'
+    · rw [show b t = ‖g t - L‖ + δ / 2 * t ^ (-ε - 1) by
+        simp [b, indicator_of_mem (show t ∈ Ioc 1 T' from ⟨ht, htT⟩)]]
+      nlinarith [norm_nonneg (g t - L)]
+    · rw [show b t = δ / 2 * t ^ (-ε - 1) by
+        simp [b, indicator_of_notMem (show t ∉ Ioc 1 T' from fun h ↦ htT h.2)]]
+      have : ‖g t - L‖ ≤ δ / 2 := by
+        simpa [dist_eq_norm] using hT t ((le_max_left T 1).trans (not_le.mp htT).le)
+      nlinarith
+  have hbound_ae : ∀ᵐ t ∂(volume.restrict (Ioi (1 : ℝ))), ‖t ^ (-ε - 1) • (g t - L)‖ ≤ b t :=
+    (ae_restrict_iff' measurableSet_Ioi).mpr (ae_of_all _ hbound)
+  have hmeas : AEStronglyMeasurable (fun t : ℝ ↦ t ^ (-ε - 1) • (g t - L))
+      (volume.restrict (Ioi 1)) := by
+    refine AEStronglyMeasurable.smul ?_ ?_
+    · exact (ContinuousOn.rpow_const continuousOn_id fun t ht ↦
+        Or.inl (zero_lt_one.trans ht).ne').aestronglyMeasurable measurableSet_Ioi
+    · exact (hg.aestronglyMeasurable.mono_set Ioi_subset_Ici_self).sub
+        aestronglyMeasurable_const
+  have hint : IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1) • (g t - L)) (Ioi 1) :=
+    hb.mono' hmeas hbound_ae
+  -- Since the weights have total mass one, subtracting `L` subtracts `L` from the average.
+  have hsplit : ε • ∫ t in Ioi 1, t ^ (-ε - 1) • g t =
+      ε • (∫ t in Ioi 1, t ^ (-ε - 1) • (g t - L)) + L := by
+    have : (fun t : ℝ ↦ t ^ (-ε - 1) • g t) =
+        fun t ↦ t ^ (-ε - 1) • (g t - L) + t ^ (-ε - 1) • L := by
+      ext t
+      rw [← smul_add, sub_add_cancel]
+    rw [this, integral_add hint ((hw hε).smul_const L), integral_smul_const, smul_add,
+      smul_smul, hw_eq hε, one_smul]
+  have hb_eq : ∫ t in Ioi 1, b t = K + δ / 2 * ∫ t in Ioi (1 : ℝ), t ^ (-ε - 1) := by
+    rw [integral_add hb_ind ((hw hε).const_mul _), integral_const_mul,
+      setIntegral_indicator measurableSet_Ioc, inter_eq_right.mpr Ioc_subset_Ioi_self]
+  rw [dist_eq_norm, hsplit, add_sub_cancel_right, norm_smul, Real.norm_of_nonneg hε.le]
+  calc ε * ‖∫ t in Ioi 1, t ^ (-ε - 1) • (g t - L)‖
+      ≤ ε * ∫ t in Ioi 1, b t := by
+        gcongr
+        exact norm_integral_le_of_norm_le hb hbound_ae
+    _ = ε * K + δ / 2 := by rw [hb_eq, mul_add, mul_left_comm, hw_eq hε, mul_one]
+    _ < δ := by linarith
 
 /-- The function `(t (1 + log t) ^ 2)⁻¹` is integrable at infinity. On `Ioi 1` it is dominated
 by Mathlib's log-Cauchy density `(t (1 + (log t) ^ 2))⁻¹`. -/
