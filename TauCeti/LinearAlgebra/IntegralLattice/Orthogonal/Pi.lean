@@ -182,20 +182,10 @@ theorem isEven_pi {L : ∀ i, IntegralLattice (V i)} (hL : ∀ i, (L i).IsEven) 
 /-- An orthogonal sum is positive definite exactly when every summand is. -/
 @[simp]
 theorem isPosDef_pi_iff : (pi L).IsPosDef ↔ ∀ i, (L i).IsPosDef := by
-  classical
-  simp only [isPosDef_iff]
-  constructor
-  · intro h i v hv
-    have hx : (Pi.single i v : ∀ i, V i) ≠ 0 := fun h0 ↦ hv (by simpa using congrFun h0 i)
-    simpa only [pi_form, piForm_single_left, Pi.single_eq_same] using h _ hx
-  · intro h x hx
-    obtain ⟨i, hi⟩ := Function.ne_iff.mp hx
-    have hnonneg (j : ι) : 0 ≤ (L j).form (x j) (x j) := by
-      by_cases hj : x j = 0
-      · simp [hj]
-      · exact (h j _ hj).le
-    rw [pi_form, piForm_apply]
-    exact Finset.sum_pos' (fun j _ ↦ hnonneg j) ⟨i, Finset.mem_univ i, h i _ hi⟩
+  have h : (pi L).form.toQuadraticMap = QuadraticMap.pi fun i ↦ (L i).form.toQuadraticMap := by
+    ext x
+    simp
+  rw [IsPosDef, h, QuadraticMap.posDef_pi_iff]
 
 /-! ## Rank -/
 
