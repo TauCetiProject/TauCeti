@@ -41,6 +41,9 @@ Borel measurable structure on the scalar field.
   `𝕜 × 𝕜ⁿ`.
 * `EuclideanSpace.finTwoEquivProd`: the two coordinates identify `𝕜²` isometrically with the `L²`
   product `WithLp 2 (𝕜 × 𝕜)`.
+* `EuclideanSpace.nonempty_linearIsometry_iff_finrank_le`: a finite-dimensional inner product
+  space embeds isometrically into `EuclideanSpace 𝕜 ι` exactly when its dimension is at most the
+  cardinality of `ι`.
 * `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
   `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
 -/
@@ -197,6 +200,18 @@ theorem finTwoEquivProd_apply_snd (x : EuclideanSpace 𝕜 (Fin 2)) :
 theorem finTwoEquivProd_symm_apply (p : WithLp 2 (𝕜 × 𝕜)) :
     (finTwoEquivProd 𝕜).symm p = WithLp.toLp 2 ![p.fst, p.snd] :=
   (rfl)
+
+/-- A finite-dimensional inner product space admits a linear isometry into `EuclideanSpace 𝕜 ι`
+if and only if its dimension is at most the cardinality of `ι`. -/
+theorem nonempty_linearIsometry_iff_finrank_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] :
+    Nonempty (E →ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) ↔ Module.finrank 𝕜 E ≤ Fintype.card ι := by
+  refine ⟨fun ⟨L⟩ ↦ finrank_euclideanSpace (𝕜 := 𝕜) (ι := ι) ▸
+    LinearMap.finrank_le_finrank_of_injective L.injective, fun h ↦ ?_⟩
+  obtain ⟨f⟩ : Nonempty (Fin (Module.finrank 𝕜 E) ↪ ι) :=
+    Function.Embedding.nonempty_of_card_le (by rwa [Fintype.card_fin])
+  exact ⟨(LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f).comp
+    (stdOrthonormalBasis 𝕜 E).repr.toLinearIsometry⟩
 
 section sumCompl
 
