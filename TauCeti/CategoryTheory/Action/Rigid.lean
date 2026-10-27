@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Action.Monoidal
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Drinfeld
 public import TauCeti.CategoryTheory.Monoidal.Rigid.OfEquivalence
 
@@ -35,21 +34,12 @@ isomorphism of an action is that of its underlying object.
 
 public section
 
-open CategoryTheory MonoidalCategory TauCeti Functor.LaxMonoidal Functor.OplaxMonoidal
+open CategoryTheory MonoidalCategory TauCeti
 
 namespace Action
 
 variable {V : Type*} [Category* V] [MonoidalCategory V] [RightRigidCategory V]
   {H : Type*} [Group H]
-
-omit [MonoidalCategory V] [RightRigidCategory V] in
-/-- The inverse of the counit along which `Action V H` inherits its right duals has identity
-components: its forward component is the identity by definition, so its inverse is too. -/
-private theorem toEquivalence_counitIso_inv_app_app (F : SingleObj H ⥤ V) (x : SingleObj H) :
-    ((functorCategoryEquivalence V H).toAdjunction.toEquivalence.counitIso.app F).inv.app x =
-      𝟙 _ :=
-  Iso.inv_ext (f := ((functorCategoryEquivalence V H).toAdjunction.toEquivalence.counitIso.app
-    F).app x) (Category.comp_id _)
 
 /-- The evaluation of a dual action is the evaluation of the dual of the underlying object. -/
 @[simp]
@@ -66,21 +56,17 @@ theorem evaluation_hom (X : Action V H) : (ε_ X Xᘁ).hom = ε_ X.V X.Vᘁ := b
 object. -/
 @[simp]
 theorem coevaluation_hom (X : Action V H) : (η_ X Xᘁ).hom = η_ X.V X.Vᘁ := by
-  -- As for `Action.evaluation_hom`, except that the inverse of the counit is an identity only
-  -- propositionally, by `toEquivalence_counitIso_inv_app_app`. Its component and whiskering are
-  -- stated between the objects `X.Vᘁ` and `X.V ⊗ X.Vᘁ`, so that `whiskerLeft_id` and
-  -- `Category.comp_id` apply.
-  have hc : (((functorCategoryEquivalence V H).toAdjunction.toEquivalence.counitIso.app
-      ((functorCategoryEquivalence V H).functor.obj X)ᘁ).inv.app (SingleObj.star H) :
-        X.Vᘁ ⟶ X.Vᘁ) = 𝟙 X.Vᘁ :=
-    toEquivalence_counitIso_inv_app_app _ _
-  have h : (η_ X Xᘁ).hom = 𝟙 _ ≫ (η_ X.V X.Vᘁ ≫ whiskerLeft (Y₁ := X.Vᘁ) (Y₂ := X.Vᘁ) X.V
-      (((functorCategoryEquivalence V H).toAdjunction.toEquivalence.counitIso.app
-        ((functorCategoryEquivalence V H).functor.obj X)ᘁ).inv.app (SingleObj.star H))) ≫ 𝟙 _ :=
+  -- As for `Action.evaluation_hom`, take the component at the single object. The counit's
+  -- forward component is the identity by definition, so uniqueness of inverses identifies its
+  -- inverse with the identity too. The stated types let the identity whiskering simplify in `V`.
+  let e : X.Vᘁ ≅ X.Vᘁ :=
+    ((functorCategoryEquivalence V H).toAdjunction.toEquivalence.counitIso.app
+      ((functorCategoryEquivalence V H).functor.obj X)ᘁ).app (SingleObj.star H)
+  have hc : e.inv = 𝟙 X.Vᘁ := Iso.inv_ext (f := e) (Category.comp_id _)
+  have h : (η_ X Xᘁ).hom = 𝟙 _ ≫ (η_ X.V X.Vᘁ ≫ X.V ◁ e.inv) ≫ 𝟙 _ :=
     congrArg (NatTrans.app · (SingleObj.star H)) (map_coevaluation_hasRightDualOfEquivalence
       (functorCategoryEquivalence V H).toAdjunction X)
-  rw [hc] at h
-  simpa using h
+  simpa only [hc, whiskerLeft_id, Category.id_comp, Category.comp_id] using h
 
 variable [BraidedCategory V]
 
@@ -89,11 +75,10 @@ isomorphism of the underlying object. -/
 @[simp]
 theorem drinfeldIso_hom_hom (X : Action V H) :
     (drinfeldIso X).hom.hom = (drinfeldIso X.V).hom := by
-  rw [drinfeldIso_hom_eq, drinfeldIso_hom_eq]
-  simp only [comp_hom, rightUnitor_inv_hom, whiskerLeft_hom, coevaluation_hom,
-    associator_inv_hom, whiskerRight_hom, evaluation_hom, leftUnitor_hom_hom]
-  -- The remaining difference is only in how the double dual `Xᘁᘁ.V = X.Vᘁᘁ` is presented.
-  rfl
+  apply ExactPairing.rightHom_ext (X := X.Vᘁ) (Y := (X.Vᘁ : V)ᘁ)
+  have h := congrArg Hom.hom (drinfeldIso_hom_comp_evaluation X)
+  simp only [comp_hom, whiskerRight_hom, evaluation_hom, β_hom_hom] at h
+  exact h.trans (drinfeldIso_hom_comp_evaluation X.V).symm
 
 /-- The inverse of the Drinfeld isomorphism of an action is, on underlying objects, the inverse
 of the Drinfeld isomorphism of the underlying object. -/
