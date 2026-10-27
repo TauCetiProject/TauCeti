@@ -37,9 +37,9 @@ versions (`TauCeti.FiniteEtaleScheme.galoisEquivalenceCommGrp`). Being equivalen
 categories, these also identify the homomorphisms of group objects on the two sides.
 
 A bilinear alternating pairing `G ⊗ G ⟶ M` of commutative group objects, in the sense of
-`CategoryTheory.IsBilinear` and `CategoryTheory.IsAlternating` (conditions on points with values in
-every object), corresponds under the equivalence to a bilinear alternating pairing of the
-associated Galois sets, and conversely
+`TauCeti.CategoryTheory.IsBilinear` and `TauCeti.CategoryTheory.IsAlternating` (conditions on
+points with values in every object), corresponds under the equivalence to a bilinear alternating
+pairing of the associated Galois sets, and conversely
 (`TauCeti.FiniteEtaleScheme.galoisEquivalenceAlternatingPairingEquiv`). For instance, a
 Galois-equivariant alternating pairing of a finite Galois module with values in the roots of
 unity gives a finite étale group scheme with an alternating pairing.
@@ -213,6 +213,7 @@ theorem galoisEquivalenceCommGrp_inverse_comp_forget :
       CommGrp.forget _ ⋙ (galoisEquivalence K Ω).inverse :=
   (rfl)
 
+open TauCeti.CategoryTheory in
 open scoped Obj in
 /-- **The Galois correspondence transports alternating pairings.** For commutative group objects
 `G` and `M` of finite étale `K`-schemes, bilinear alternating pairings `G ⊗ G ⟶ M` correspond to
@@ -229,6 +230,7 @@ noncomputable def galoisEquivalenceAlternatingPairingEquiv
     rw [Functor.FullyFaithful.tensorHomEquiv_apply, Functor.isBilinear_map_iff,
       Functor.isAlternating_map_iff]
 
+open TauCeti.CategoryTheory in
 open scoped Obj in
 /-- `galoisEquivalenceAlternatingPairingEquiv K Ω` sends a pairing `e` to
 `μ F G G ≫ F.map e`, for `F = (galoisEquivalence K Ω).functor`. -/
@@ -241,6 +243,7 @@ theorem galoisEquivalenceAlternatingPairingEquiv_apply_coe
         (galoisEquivalence K Ω).functor.map e.1 := by
   simp [galoisEquivalenceAlternatingPairingEquiv]
 
+open TauCeti.CategoryTheory in
 open scoped Obj in
 /-- The inverse of `galoisEquivalenceAlternatingPairingEquiv K Ω` sends a pairing `e` of Galois
 sets to the unique morphism `G ⊗ G ⟶ M` whose image under `F = (galoisEquivalence K Ω).functor`

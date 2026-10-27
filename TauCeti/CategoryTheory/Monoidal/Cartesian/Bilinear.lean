@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mon
+public import TauCeti.CategoryTheory.Monoidal.Functor
 
 /-!
 # Bilinear and alternating morphisms of monoid objects
@@ -13,34 +14,35 @@ public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mon
 Let `C` be a cartesian monoidal category and `A`, `B`, `M` monoid objects of `C`. For every object
 `T`, the morphisms `T ⟶ A` (the `T`-valued points of `A`) form a monoid under the pointwise
 product (Mathlib's `CategoryTheory.Hom.monoid`, scoped in `CategoryTheory.MonObj`). A morphism
-`e : A ⊗ B ⟶ M` is *bilinear* (`CategoryTheory.IsBilinear`) if, for every `T`, the pairing
+`e : A ⊗ B ⟶ M` is *bilinear* (`TauCeti.CategoryTheory.IsBilinear`) if, for every `T`, the pairing
 `(a, b) ↦ lift a b ≫ e` of `T`-valued points is multiplicative in each variable, and a morphism
-`e : A ⊗ A ⟶ M` is *alternating* (`CategoryTheory.IsAlternating`) if `lift a a ≫ e = 1` for
-every point `a`. For group schemes over a base `S`, that is `C = Over S`, these are the bilinear and
-alternating pairings of group schemes, such as the Weil pairing `E[N] ×_S E[N] ⟶ μ_N`.
+`e : A ⊗ A ⟶ M` is *alternating* (`TauCeti.CategoryTheory.IsAlternating`) if `lift a a ≫ e = 1`
+for every point `a`. For group schemes over a base `S`, that is `C = Over S`, these are the
+bilinear and alternating pairings of group schemes, such as the Weil pairing
+`E[N] ×_S E[N] ⟶ μ_N`.
 
 Both conditions are stated on points, so they are preserved by every monoidal functor between
 cartesian monoidal categories, which preserves points, products and the pointwise product. For a
-faithful functor they are also reflected, and a fully faithful functor gives a bijection between
-morphisms `A ⊗ B ⟶ M` and `F.obj A ⊗ F.obj B ⟶ F.obj M`
-(`CategoryTheory.Functor.FullyFaithful.tensorHomEquiv`) which matches bilinear and alternating
-morphisms on the two sides. Applied to an equivalence of categories, such as Grothendieck's Galois
-correspondence between finite étale schemes over a field and finite continuous Galois sets, this
-transports alternating pairings of group objects.
+faithful functor they are also reflected, so the bijection between morphisms `A ⊗ B ⟶ M` and
+`F.obj A ⊗ F.obj B ⟶ F.obj M` given by a fully faithful monoidal functor
+(`CategoryTheory.Functor.FullyFaithful.tensorHomEquiv`, in
+`TauCeti.CategoryTheory.Monoidal.Functor`) matches bilinear and alternating morphisms on the two
+sides. Applied to an equivalence of categories, such as Grothendieck's Galois correspondence
+between finite étale schemes over a field and finite continuous Galois sets, this transports
+alternating pairings of group objects.
 
 ## Main definitions
 
-* `CategoryTheory.IsBilinear e`: the morphism `e : A ⊗ B ⟶ M` is bilinear.
-* `CategoryTheory.IsAlternating e`: the morphism `e : A ⊗ A ⟶ M` vanishes on the diagonal.
-* `CategoryTheory.Functor.FullyFaithful.tensorHomEquiv`: for a fully faithful monoidal functor
-  `F`, morphisms `X ⊗ Y ⟶ Z` correspond to morphisms `F.obj X ⊗ F.obj Y ⟶ F.obj Z`.
+* `TauCeti.CategoryTheory.IsBilinear e`: the morphism `e : A ⊗ B ⟶ M` is bilinear.
+* `TauCeti.CategoryTheory.IsAlternating e`: the morphism `e : A ⊗ A ⟶ M` vanishes on the
+  diagonal.
 
 ## Main results
 
-* `CategoryTheory.isAlternating_iff`: alternation is the single identity
+* `TauCeti.CategoryTheory.isAlternating_iff`: alternation is the single identity
   `lift (𝟙 A) (𝟙 A) ≫ e = 1` for the universal point.
-* `CategoryTheory.IsBilinear.map` and `CategoryTheory.IsAlternating.map`: monoidal functors
-  preserve bilinear and alternating morphisms.
+* `TauCeti.CategoryTheory.IsBilinear.map` and `TauCeti.CategoryTheory.IsAlternating.map`:
+  monoidal functors preserve bilinear and alternating morphisms.
 * `CategoryTheory.Functor.isBilinear_map_iff` and `CategoryTheory.Functor.isAlternating_map_iff`:
   faithful monoidal functors reflect them.
 -/
@@ -51,9 +53,9 @@ open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonObj
 
 open scoped MonObj Obj
 
-namespace CategoryTheory
-
 universe v₁ v₂ u₁ u₂
+
+namespace TauCeti.CategoryTheory
 
 variable {C : Type u₁} [Category.{v₁} C] [CartesianMonoidalCategory C]
   {D : Type u₂} [Category.{v₂} D] [CartesianMonoidalCategory D]
@@ -77,6 +79,18 @@ structure IsBilinear [MonObj A] [MonObj B] (e : A ⊗ B ⟶ M) : Prop where
 diagonal: `lift a a ≫ e = 1` for every `T`-valued point `a` of `A`. -/
 def IsAlternating (e : A ⊗ A ⟶ M) : Prop :=
   ∀ ⦃T : C⦄ (a : T ⟶ A), lift a a ≫ e = 1
+
+/-- Unfolding `IsAlternating`: `e` is alternating if and only if `lift a a ≫ e = 1` for every
+`T`-valued point `a` of `A`. -/
+theorem isAlternating_def {e : A ⊗ A ⟶ M} :
+    IsAlternating e ↔ ∀ ⦃T : C⦄ (a : T ⟶ A), lift a a ≫ e = 1 :=
+  Iff.rfl
+
+/-- An alternating morphism is trivial on every diagonal point `lift a a`. -/
+@[simp]
+theorem IsAlternating.lift_self {e : A ⊗ A ⟶ M} (h : IsAlternating e) {T : C} (a : T ⟶ A) :
+    lift a a ≫ e = 1 :=
+  h a
 
 /-- Alternation is a single identity, for the universal point `𝟙 A`: every point `a : T ⟶ A`
 factors as `a ≫ 𝟙 A`. -/
@@ -155,11 +169,21 @@ theorem IsAlternating.map {e : A ⊗ A ⟶ M} (h : IsAlternating e) :
   rw [isAlternating_iff] at h ⊢
   rw [← F.map_id, Functor.Monoidal.lift_μ_assoc, ← F.map_comp, h, F.map_one]
 
-variable {F}
+end Functor
+
+end TauCeti.CategoryTheory
+
+namespace CategoryTheory.Functor
+
+open TauCeti.CategoryTheory
+
+variable {C : Type u₁} [Category.{v₁} C] [CartesianMonoidalCategory C]
+  {D : Type u₂} [Category.{v₂} D] [CartesianMonoidalCategory D]
+  {F : C ⥤ D} [F.Monoidal] {A B M : C} [MonObj M]
 
 /-- A faithful monoidal functor between cartesian monoidal categories reflects bilinear
 morphisms. -/
-theorem Functor.isBilinear_map_iff [F.Faithful] [MonObj A] [MonObj B] {e : A ⊗ B ⟶ M} :
+theorem isBilinear_map_iff [F.Faithful] [MonObj A] [MonObj B] {e : A ⊗ B ⟶ M} :
     IsBilinear (Functor.LaxMonoidal.μ F A B ≫ F.map e) ↔ IsBilinear e := by
   refine ⟨fun h ↦ ⟨fun a a' b ↦ F.map_injective ?_, fun a b b' ↦ F.map_injective ?_⟩,
     fun h ↦ h.map F⟩
@@ -170,36 +194,11 @@ theorem Functor.isBilinear_map_iff [F.Faithful] [MonObj A] [MonObj B] {e : A ⊗
 
 /-- A faithful monoidal functor between cartesian monoidal categories reflects alternating
 morphisms. -/
-theorem Functor.isAlternating_map_iff [F.Faithful] {e : A ⊗ A ⟶ M} :
+theorem isAlternating_map_iff [F.Faithful] {e : A ⊗ A ⟶ M} :
     IsAlternating (Functor.LaxMonoidal.μ F A A ≫ F.map e) ↔ IsAlternating e := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.map F⟩
   rw [isAlternating_iff] at h ⊢
   apply F.map_injective
   rwa [F.map_one, F.map_comp, ← Functor.Monoidal.lift_μ_assoc, F.map_id]
 
-/-- For a fully faithful monoidal functor `F` between cartesian monoidal categories, morphisms
-`X ⊗ Y ⟶ Z` correspond to morphisms `F.obj X ⊗ F.obj Y ⟶ F.obj Z`, by `e ↦ μ F X Y ≫ F.map e`. -/
-noncomputable def Functor.FullyFaithful.tensorHomEquiv (hF : F.FullyFaithful) {X Y Z : C} :
-    (X ⊗ Y ⟶ Z) ≃ (F.obj X ⊗ F.obj Y ⟶ F.obj Z) where
-  toFun e := Functor.LaxMonoidal.μ F X Y ≫ F.map e
-  invFun e := hF.preimage (Functor.OplaxMonoidal.δ F X Y ≫ e)
-  left_inv e := by simp
-  right_inv e := by simp
-
-/-- `Functor.FullyFaithful.tensorHomEquiv` takes `e` to `μ F X Y ≫ F.map e`. -/
-@[simp]
-theorem Functor.FullyFaithful.tensorHomEquiv_apply (hF : F.FullyFaithful) {X Y Z : C}
-    (e : X ⊗ Y ⟶ Z) : hF.tensorHomEquiv e = Functor.LaxMonoidal.μ F X Y ≫ F.map e :=
-  (rfl)
-
-/-- The inverse of `Functor.FullyFaithful.tensorHomEquiv` takes a morphism `e` to the preimage
-of `δ F X Y ≫ e`. -/
-@[simp]
-theorem Functor.FullyFaithful.tensorHomEquiv_symm_apply (hF : F.FullyFaithful) {X Y Z : C}
-    (e : F.obj X ⊗ F.obj Y ⟶ F.obj Z) :
-    hF.tensorHomEquiv.symm e = hF.preimage (Functor.OplaxMonoidal.δ F X Y ≫ e) :=
-  (rfl)
-
-end Functor
-
-end CategoryTheory
+end CategoryTheory.Functor
