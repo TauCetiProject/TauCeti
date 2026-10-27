@@ -101,14 +101,10 @@ theorem eval₂_suspensionForm (p : UnitAddCircle × SmoothMappingTorus φ)
           (timeForm φ).1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] +
         (fiberForm φ σ hσ).eval₂ p.2 (Manifold.tangentSpaceProdEquiv p v).2
           (Manifold.tangentSpaceProdEquiv p w).2 := by
-  rw [suspensionForm_def, SmoothForm.eval₂_apply, SmoothForm.add_toRoughForm, Pi.add_apply,
-    ContinuousAlternatingMap.add_apply, SmoothForm.wedge_apply_one_one,
-    SmoothForm.mpullback_apply, SmoothForm.mpullback_apply, SmoothForm.mpullback_apply,
-    SmoothForm.mpullback_apply, ← SmoothForm.eval₂_apply, SmoothForm.eval₂_mpullback]
-  simp only [mfderiv_fst, mfderiv_snd, Matrix.vec_single_eq_const]
-  rw [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_apply]
-  -- `ContinuousLinearMap.fst` and `ContinuousLinearMap.snd` are the projections of the product.
-  rfl
+  rw [suspensionForm_def, SmoothForm.eval₂_add, SmoothForm.eval₂_wedge_one_one,
+    SmoothForm.eval₂_mpullback_snd]
+  simp only [SmoothForm.mpullback_fst_apply, SmoothForm.mpullback_snd_apply,
+    Matrix.vec_single_eq_const]
 
 /-- In the coordinates `(s, t, x)` of `ℝ × ℝ × M`, the form `Ω` is `ds ∧ dt + σ`: at `(θ, [t, x])`
 it pairs the vector `a ∂_s + b ∂_t + v` with `a' ∂_s + b' ∂_t + v'` to `a b' - a' b + σ(v, v')`.

@@ -536,6 +536,11 @@ theorem eval₂_apply (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x)
     φ.eval₂ x v w = φ.1 x ![v, w] := by
   simp [eval₂]
 
+/-- Evaluation of a sum of degree-two forms is the sum of the evaluations. -/
+theorem eval₂_add (φ ψ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) :
+    (φ + ψ).eval₂ x v w = φ.eval₂ x v w + ψ.eval₂ x v w :=
+  (rfl)
+
 
 section Evaluation
 
