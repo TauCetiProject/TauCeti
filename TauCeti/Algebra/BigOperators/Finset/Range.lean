@@ -168,7 +168,7 @@ over the slice `{(p, k, q) | p + k < N, q + k < N}` of the cube, the summand tra
 This is the three-variable analogue of Mathlib's `Finset.prod_range_diag_flip` and its `to_additive`
 twin `Finset.sum_range_diag_flip`, which flip a diagonally-indexed double sum; here the inner bound
 is `min m n` rather than `m`, and the image is a slice of the cube rather than a second double sum.
-The name and the `Finset.sum_nbij'` proof pattern follow that lemma. -/
+-/
 theorem sum_range_min_diag_flip {B : Type*} [AddCommMonoid B]
     (F : ℕ × ℕ × ℕ → B) (N : ℕ) :
     ∑ w ∈ (range N ×ˢ range N).sigma (fun mn => range (min mn.1 mn.2 + 1)),
