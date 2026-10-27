@@ -41,7 +41,7 @@ both for all simplices of a fine subdivision gives Munkres' secant approximation
   every closed simplex, with the same vertex values as `f`, is the secant map of `f`.
 * `AbstractSimplicialComplex.secantMap_eq_self_iff`: a map is its own secant map exactly when it is
   linear in barycentric coordinates on every closed simplex.
-* `TauCeti.isSimplexImmersion_of_linearMap`: a map of a simplex that is linear in barycentric
+* `LinearMap.isSimplexImmersion`: a map of a simplex that is linear in barycentric
   coordinates and injective on the directions of the simplex is an immersion of the simplex.
 * `AbstractSimplicialComplex.isSimplexImmersion_secantMap_comp_faceInclusion`: the secant map of
   a map that is close to an injective linear map on a closed simplex is an immersion of that
@@ -61,7 +61,7 @@ noncomputable section
 open Set Function AbstractSimplicialComplex TauCeti.SetLike
 open scoped Manifold ContDiff
 
-namespace TauCeti
+namespace LinearMap
 
 variable {ι : Type*} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : WithTop ℕ∞}
 
@@ -69,15 +69,15 @@ variable {ι : Type*} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n 
 
 /-- A map of a closed simplex into a normed space that is linear in barycentric coordinates, and
 injective on the directions of the simplex, is a `Cⁿ` immersion of the simplex for every `n`. -/
-theorem isSimplexImmersion_of_linearMap {σ : Finset ι} (L : (σ → ℝ) →ₗ[ℝ] E)
+theorem isSimplexImmersion {σ : Finset ι} (L : (σ → ℝ) →ₗ[ℝ] E)
     (hL : ∀ v : σ → ℝ, ∑ a, v a = 0 → L v = 0 → v = 0) :
-    IsSimplexImmersion 𝓘(ℝ, E) n fun x : StandardSimplex σ => L fun a => x.1 a := by
+    TauCeti.IsSimplexImmersion 𝓘(ℝ, E) n fun x : StandardSimplex σ => L fun a => x.1 a := by
   -- The domain of `L` is finite dimensional, so `L` is continuous, and it is its own derivative.
   let L' : (σ → ℝ) →L[ℝ] E := L.toContinuousLinearMap
-  exact isSimplexImmersion_iff.mpr ⟨L', fun _ => rfl, L'.contMDiff.contMDiffOn,
+  exact TauCeti.isSimplexImmersion_iff.mpr ⟨L', fun _ => rfl, L'.contMDiff.contMDiffOn,
     fun _ => ⟨L', L'.hasMFDerivWithinAt, hL⟩⟩
 
-end TauCeti
+end LinearMap
 
 /-! ### The secant map of a map out of a realization -/
 
@@ -172,7 +172,7 @@ theorem isSimplexImmersion_secantMap_comp_faceInclusion [DecidableEq ι] {f : Re
     funext x
     simp only [comp_apply, secantMap_faceInclusion, Fintype.linearCombination_apply, hFf]
   rw [hL]
-  refine TauCeti.isSimplexImmersion_of_linearMap _ fun v hv hv0 => ?_
+  refine LinearMap.isSimplexImmersion _ fun v hv hv0 => ?_
   -- The lower bound `(c - ε) * ∑ a, |v a|` on the secant map forces `v = 0`.
   have h := TauCeti.mul_sum_abs_le_norm_linearCombination hF hA hv (hc v hv)
   rw [hv0, norm_zero] at h

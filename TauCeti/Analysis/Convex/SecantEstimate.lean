@@ -34,8 +34,8 @@ on a fine subdivision is again non-degenerate.
 * `TauCeti.norm_linearCombination_sub_le`: the secant estimate on a simplex.
 * `TauCeti.mul_sum_abs_le_norm_linearCombination`: the secant map inherits a lower bound on the
   directions of the simplex from the nearby linear map.
-* `TauCeti.exists_pos_mul_sum_abs_le_norm`: a linear map injective on the directions of the
-  simplex has such a lower bound.
+* `ContinuousLinearMap.exists_pos_mul_sum_abs_le_norm`: a linear map injective on the directions
+  of the simplex has such a lower bound.
 
 ## References
 
@@ -117,6 +117,12 @@ theorem mul_sum_abs_le_norm_linearCombination [DecidableEq α] {F : (α → ℝ)
   rw [sub_sub_cancel, norm_sub_rev] at h'
   linarith
 
+end TauCeti
+
+namespace ContinuousLinearMap
+
+variable {α : Type*} [Fintype α] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
 /-- A linear map which is injective on the directions of the simplex is bounded below on them:
 there is `c > 0` with `c * ∑ a, |v a| ≤ ‖A v‖` for every vector `v` with coordinate sum zero. -/
 theorem exists_pos_mul_sum_abs_le_norm (A : (α → ℝ) →L[ℝ] E)
@@ -142,4 +148,4 @@ theorem exists_pos_mul_sum_abs_le_norm (A : (α → ℝ) →L[ℝ] E)
       gcongr
       linarith
 
-end TauCeti
+end ContinuousLinearMap
