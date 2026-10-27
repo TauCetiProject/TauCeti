@@ -108,6 +108,7 @@ lemma weightedE1_def (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
   (rfl)
 
 /-- The series is linear in the weight: the zero weight. -/
+@[simp]
 lemma weightedE1_zero : weightedE1 (0 : (Fin 2 → ZMod N) → ℂ) = 0 := by
   ext z
   simp [weightedE1]
@@ -160,22 +161,6 @@ private lemma zetaValue_neg (b : Fin 2 → ℤ) (z : ℍ) : zetaValue N (-b) z =
   rw [weierstrassZeta_neg]
   ring
 
-/-- A division point `(b₀ z + b₁) / N` lies in the lattice `ℤ z + ℤ` only if `b ≡ 0 mod N`. -/
-private lemma intCast_comp_eq_zero_of_mem_lattice {b : Fin 2 → ℤ} {z : ℍ}
-    (h : ((b 0 : ℂ) * z + b 1) / N ∈ z.periodPair.lattice) :
-    ((↑) : ℤ → ZMod N) ∘ b = 0 := by
-  have hN : (N : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr (NeZero.ne N)
-  have h' : (((b 0 / (N : ℤ) : ℚ) : ℂ) * z.periodPair.ω₁ +
-      ((b 1 / (N : ℤ) : ℚ) : ℂ) * z.periodPair.ω₂) ∈ z.periodPair.lattice := by
-    convert h using 1
-    push_cast
-    simp only [periodPair_ω₁, periodPair_ω₂]
-    ring
-  obtain ⟨h0, h1⟩ := mul_ω₁_add_mul_ω₂_mem_lattice.mp h'
-  rw [Rat.den_div_intCast_eq_one_iff _ _ hN] at h0 h1
-  ext i
-  fin_cases i <;> simpa [ZMod.intCast_zmod_eq_zero_iff_dvd]
-
 /-- **The corrected division values depend only on the residue**: for `b ≢ 0 mod N`, the value
 of `b` is that of the least nonnegative representatives of `b mod N`. Replacing `b` by `b + N y`
 moves the division point by the lattice vector `y₀ z + y₁`, which changes `ζ` by its
@@ -196,7 +181,7 @@ private lemma zetaValue_eq_lift {b : Fin 2 → ℤ} (hb : ((↑) : ℤ → ZMod 
     rw [← sub_eq_iff_eq_add']
     exact_mod_cast hn
   have hc : ((c 0 : ℂ) * z + c 1) / N ∉ z.periodPair.lattice := fun h ↦ by
-    have h0 := intCast_comp_eq_zero_of_mem_lattice h
+    have h0 := intCast_comp_eq_zero_of_div_mem_lattice_periodPair h
     rw [intCast_comp_lift] at h0
     exact hb h0
   set l : z.periodPair.lattice := ⟨_, intCast_mul_add_intCast_mem_lattice_periodPair z m n⟩
