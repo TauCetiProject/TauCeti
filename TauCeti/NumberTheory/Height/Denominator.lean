@@ -60,16 +60,15 @@ theorem one_le_leadingCoeff_primitiveMinpoly_mul_house_pow_mul_norm {z : K} {w :
   have hmono : (minpoly ℚ z).Monic := minpoly.monic hint
   set P : ℂ[X] := (minpoly ℚ z).map (algebraMap ℚ ℂ) with hP
   have hPmono : P.Monic := hmono.map _
-  have hwroot : P.IsRoot w := by
-    have hw' := (mem_rootSet_of_ne (minpoly.ne_zero hint)).mp hw
+  -- `u` is a root of `P` exactly when it is a complex conjugate of `z`
+  have hroots : ∀ u : ℂ, P.IsRoot u ↔ aeval u (minpoly ℚ z) = 0 := fun u => by
     rw [Polynomial.IsRoot.def, hP, eval_map_algebraMap]
-    exact hw'
+  have hwroot : P.IsRoot w := (hroots w).mpr ((mem_rootSet_of_ne (minpoly.ne_zero hint)).mp hw)
   -- every root of `P` is a complex conjugate of `z`
   have hProots : ∀ u ∈ P.roots, ‖u‖ ≤ house z := by
     intro u hu
-    refine norm_le_house_of_mem_rootSet ?_
-    rw [rootSet_def, Finset.mem_coe, Multiset.mem_toFinset, aroots_def, ← hP]
-    exact hu
+    refine norm_le_house_of_mem_rootSet ((mem_rootSet_of_ne (minpoly.ne_zero hint)).mpr ?_)
+    exact (hroots u).mp ((Polynomial.mem_roots hPmono.ne_zero).mp hu)
   have hPdeg : P.natDegree = (minpoly ℚ z).natDegree := by
     rw [hP, natDegree_map_eq_of_injective (RingHom.injective (algebraMap ℚ ℂ))]
   -- the constant term of `P` is `±w` times the product of its other roots
@@ -145,8 +144,7 @@ theorem zpow_natDenominator_mul_zpow_house_le_norm {z : ℂ} (hz : IsAlgebraic �
       house z ^ (1 - ((minpoly ℚ z).natDegree : ℤ)) ≤ ‖z‖ := by
   set d := (minpoly ℚ z).natDegree
   have hd1 : 1 ≤ d := minpoly.natDegree_pos hz.isIntegral
-  have hDne : Algebra.natDenominator z ≠ 0 :=
-    IsAlgebraic.natDenominator_ne_zero ((IsFractionRing.isAlgebraic_iff ℤ ℚ ℂ).2 hz)
+  have hDne : Algebra.natDenominator z ≠ 0 := Algebra.natDenominator_ne_zero_of_isAlgebraic_rat hz
   have hD : (0 : ℝ) < (Algebra.natDenominator z : ℝ) := by
     exact_mod_cast Nat.pos_of_ne_zero hDne
   have hh : (0 : ℝ) < house z :=

@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Minpoly.Field
 public import Mathlib.RingTheory.Algebraic.Denominator
 public import Mathlib.RingTheory.Polynomial.GaussLemma
 public import TauCeti.Algebra.Polynomial.Reverse
+public import TauCeti.RingTheory.Algebraic.Denominator
 
 import Mathlib.Algebra.Algebra.Hom.Rat
 import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
@@ -309,8 +310,7 @@ theorem natDenominator_dvd_leadingCoeff_primitiveMinpoly {x : K} (hx : IsAlgebra
 degree over `ℤ` as `x` has over `ℚ`: it generates the same field. -/
 theorem natDegree_minpoly_int_natDenominator_smul {x : K} (hx : IsAlgebraic ℚ x) :
     (minpoly ℤ (Algebra.natDenominator x • x)).natDegree = (minpoly ℚ x).natDegree := by
-  have hD0 : Algebra.natDenominator x ≠ 0 :=
-    IsAlgebraic.natDenominator_ne_zero ((IsFractionRing.isAlgebraic_iff ℤ ℚ K).2 hx)
+  have hD0 : Algebra.natDenominator x ≠ 0 := Algebra.natDenominator_ne_zero_of_isAlgebraic_rat hx
   have hy : IsIntegral ℤ (Algebra.natDenominator x • x) := Algebra.isIntegral_natDenominator_smul x
   have hadj : ℚ⟮Algebra.natDenominator x • x⟯ = ℚ⟮x⟯ := by
     have hsmul : Algebra.natDenominator x • x =
@@ -335,7 +335,7 @@ theorem leadingCoeff_primitiveMinpoly_le_natDenominator_pow {x : K} (hx : IsAlge
   set D : ℕ := Algebra.natDenominator x with hD
   have hD0 : D ≠ 0 := by
     rw [hD]
-    exact IsAlgebraic.natDenominator_ne_zero ((IsFractionRing.isAlgebraic_iff ℤ ℚ K).2 hx)
+    exact Algebra.natDenominator_ne_zero_of_isAlgebraic_rat hx
   have hDpos : (0 : ℤ) < (D : ℤ) := by exact_mod_cast Nat.pos_of_ne_zero hD0
   -- `D x` is integral over `ℤ` and generates the same field as `x`, so it has degree `d`.
   have hy : IsIntegral ℤ (D • x) := Algebra.isIntegral_natDenominator_smul x
