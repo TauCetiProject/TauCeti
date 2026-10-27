@@ -68,8 +68,6 @@ theorem integral_symplecticForm_fderiv_prod_Icc_eq_zero
       ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) = 0 := by
   let B := ω.toBilinForm.toContinuousBilinearMap
   have hB (v w : V) : B v w = ω v w := by simp [B]
-  have hreal : (1, 0) = stdComplexLineReal := by ext <;> simp
-  have himag : (0, 1) = stdComplexLineImag := by ext <;> simp
   -- Along the interior of either horizontal side, differentiating the boundary condition
   -- keeps the tangent vector in the closed isotropic subspace.
   have hhorizontal {e : ℝ} (he : e ∈ Icc c d) {L : Submodule ℝ V}
@@ -80,7 +78,7 @@ theorem integral_symplecticForm_fderiv_prod_Icc_eq_zero
         apply intervalIntegral.integral_congr_Ioo_of_le hab
         intro s hs
         have hp : HasDerivAt (fun r : ℝ ↦ ((r, e) : ℝ × ℝ)) stdComplexLineReal s := by
-          rw [← hreal]
+          rw [stdComplexLineReal_eq]
           exact (hasDerivAt_id s).prodMk (hasDerivAt_const s e)
         have hd := ((hu (s, e) ⟨Ioo_subset_Icc_self hs, he⟩).differentiableAt
           (by norm_num)).hasFDerivAt.comp_hasDerivAt s hp
@@ -101,7 +99,7 @@ theorem integral_symplecticForm_fderiv_prod_Icc_eq_zero
   -- All four boundary terms in Green's formula vanish.
   have hgreen := B.integral_bilinear_fderiv_sub_prod_Icc
     (a := (a, c)) (b := (b, d)) ⟨hab, hcd⟩ (by rw [← Icc_prod_Icc]; exact hu)
-  rw [← Icc_prod_Icc, hreal, himag,
+  rw [← Icc_prod_Icc, ← stdComplexLineReal_eq, ← stdComplexLineImag_eq,
     hhorizontal ⟨le_rfl, hcd⟩ hL₀ hbottom, hhorizontal ⟨hcd, le_rfl⟩ hL₁ htop,
     hvertical hleft, hvertical hright] at hgreen
   -- Antisymmetry identifies the interior alternating pairing with twice the area density.
@@ -151,30 +149,10 @@ theorem integral_stdComplexLineEnergyDensity_strip_eq_integral_associatedBilinFo
         ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap =
       ∫ z in univ ×ˢ Icc (0 : ℝ) 1, ω.associatedBilinForm J
         (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag))
-        (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag)) := by
-  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
-  have harea : Integrable (fun z ↦
-      ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) :=
-    Continuous.integrable_of_hasCompactSupport
-      (ω.toBilinForm.toContinuousBilinearMap.continuous₂.comp₂
-        (hdu.clm_apply continuous_const) (hdu.clm_apply continuous_const))
-      ((hc.fderiv (𝕜 := ℝ)).comp_left
-        (g := fun L : (ℝ × ℝ) →L[ℝ] V ↦ ω (L stdComplexLineReal) (L stdComplexLineImag))
-        (by simp))
-  have heq : (∫ z in univ ×ˢ Icc (0 : ℝ) 1,
-      ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap -
-        2 * ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) =
-      ∫ z in univ ×ˢ Icc (0 : ℝ) 1, ω.associatedBilinForm J
-        (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag))
-        (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag)) := by
-    apply integral_congr_ae
-    exact Filter.Eventually.of_forall fun z ↦
-      stdComplexLineEnergyDensity_sub_two_mul_symplecticForm hinv (fderiv ℝ u z).toLinearMap
-  rw [integral_sub
-      (integrable_stdComplexLineEnergyDensity_fderiv ω J (hu.of_le (by norm_num)) hc).integrableOn
-      (harea.const_mul 2).integrableOn, integral_const_mul,
-    integral_symplecticForm_fderiv_strip_eq_zero hu hc hL₀ hL₁ hbottom htop] at heq
-  simpa using heq
+        (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag)) :=
+  integral_stdComplexLineEnergyDensity_eq_of_integral_symplecticForm_eq_zero
+    hinv (hu.of_le (by norm_num)) hc
+    (integral_symplecticForm_fderiv_strip_eq_zero hu hc hL₀ hL₁ hbottom htop)
 
 end SymplecticForm
 
@@ -240,8 +218,7 @@ theorem exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul
     hg hu hc hL₀ hL₁ hbottom htop
   rw [integral_add hi.integrableOn henergy.integrableOn, ← hidentity]
   have hscaled := mul_le_mul_of_nonneg_left htbound hC.le
-  have himag : (0, 1) = stdComplexLineImag := by ext <;> simp
-  rw [himag] at hvalue
+  rw [← stdComplexLineImag_eq] at hvalue
   nlinarith
 
 end TauCeti

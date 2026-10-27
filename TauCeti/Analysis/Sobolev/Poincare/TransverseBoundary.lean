@@ -67,8 +67,7 @@ theorem norm_sub_sq_le_integral_norm_deriv_sq {v : ℝ → V} {a b t : ℝ}
   have hi : IntegrableOn (fun r ↦ ‖deriv v r‖ ^ 2) (Icc a b) :=
     (hd.norm.pow 2).integrableOn_Icc.congr (by
       filter_upwards [heq] with r hr
-      change ‖derivWithin v (Icc a b) r‖ ^ 2 = ‖deriv v r‖ ^ 2
-      rw [hr])
+      exact congrArg (fun x : V ↦ ‖x‖ ^ 2) hr)
   have hbound := (pow_le_pow_left' hFTC 2).trans hHolder
   have hconv : (∫⁻ r in Icc a b, ‖deriv v r‖ₑ ^ 2) =
       ENNReal.ofReal (∫ r in Icc a b, ‖deriv v r‖ ^ 2) := by
