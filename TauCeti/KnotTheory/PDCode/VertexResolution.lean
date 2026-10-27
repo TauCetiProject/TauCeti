@@ -218,6 +218,28 @@ private theorem pinchedTwice_val_of_val_eq_inr {t : Bool} {x : Fin (4 * n) ⊕ F
   · rw [localSmoothing_apply_apply]
     exact PerfectMatching.reconnect_val_val_right h2
 
+/-- The smoothing partner of a slot on a smoothing arc lies on the same smoothing arc. -/
+private theorem localSmoothing_mem_pair {t : Bool} {k m : Fin 4}
+    (hm : m = k ∨ m = D.localSmoothing c t k) :
+    D.localSmoothing c t m = k ∨ D.localSmoothing c t m = D.localSmoothing c t k := by
+  rcases hm with rfl | rfl
+  exacts [.inr rfl, .inl (D.localSmoothing_apply_apply c t _)]
+
+/-- The first reconnection keeps an arc from another crossing to the smoothing arc at slot `2`. -/
+private theorem pinchedOnce_val_inl_of_val_eq_inr_two {t : Bool} {y : Fin (4 * n)} {m : Fin 4}
+    (hx : (D.slotMatching c).val (.inl y) = .inr m) (hm : m = 2 ∨ m = D.localSmoothing c t 2) :
+    (D.pinchedOnce c t).val (.inl y) = .inr m :=
+  PerfectMatching.reconnect_val_of_val_eq hx Sum.inl_ne_inr Sum.inl_ne_inr
+    (by simpa using D.ne_of_localSmoothing c (.inl rfl) hm)
+    (by simpa using D.ne_of_localSmoothing c (.inr rfl) hm)
+
+/-- The first reconnection keeps an arc from the smoothing arc at slot `2` to another crossing. -/
+private theorem pinchedOnce_val_inr_of_val_eq_inl_two {t : Bool} {y : Fin (4 * n)} {m : Fin 4}
+    (hx : (D.slotMatching c).val (.inr m) = .inl y) (hm : m = 2 ∨ m = D.localSmoothing c t 2) :
+    (D.pinchedOnce c t).val (.inr m) = .inl y :=
+  (D.pinchedOnce c t).apply_eq_of_apply_eq
+    (D.pinchedOnce_val_inl_of_val_eq_inr_two c ((D.slotMatching c).apply_eq_of_apply_eq hx) hm)
+
 private theorem isRight_pinchedTwice (t : Bool) (k : Fin 4) :
     ((D.pinchedTwice c t).val (.inr k)).isRight := by
   simp [pinchedTwice_inr]
@@ -318,12 +340,10 @@ private theorem permCongr_smoothingTurn (s : Fin n → Bool) :
   ext x : 1
   rcases x with y | k
   · obtain ⟨⟨i, k⟩, rfl⟩ := (crossingSlotEquiv n).surjective y
-    rw [permCongr_apply, symm_symm, slotEquiv_inl, crossing_apply, smoothingTurn_crossing,
-      Equiv.symm_apply_eq, Perm.sumCongr_apply, Sum.map_inl, smoothingTurn_resolveCrossing,
-      slotEquiv_inl, smoothingChoice_insertNth_succAbove D c t]
-  · rw [permCongr_apply, symm_symm, slotEquiv_inr, crossing_apply, smoothingTurn_crossing,
-      Equiv.symm_apply_eq, Perm.sumCongr_apply, Sum.map_inr, slotEquiv_inr, localSmoothing]
-    cases t <;> simp
+    rw [permCongr_apply, symm_symm, Equiv.symm_apply_eq]
+    simp [slotEquiv_inl, smoothingTurn_crossing, smoothingChoice_insertNth_succAbove D c t]
+  · rw [permCongr_apply, symm_symm, Equiv.symm_apply_eq]
+    cases t <;> simp [slotEquiv_inr, smoothingTurn_crossing, localSmoothing]
 
 /-- The local smoothing is an involution. -/
 private theorem localSmoothing_mul_self : D.localSmoothing c t * D.localSmoothing c t = 1 := by
@@ -481,7 +501,6 @@ theorem resolveCrossing_edgePair_val_of_edgePair_val_eq_crossing {i j : Fin n} {
     (D.resolveCrossing c t).edgePair.val (crossingSlotEquiv n (i, k)) =
       crossingSlotEquiv n (j, l) := by
   obtain ⟨-, -, -, -, -, hm⟩ := D.localSmoothing_facts c t
-  have hSS := D.localSmoothing_apply_apply c t
   rw [← localSmoothing] at h₂
   set S := D.localSmoothing c t
   set M := D.slotMatching c
@@ -497,16 +516,8 @@ theorem resolveCrossing_edgePair_val_of_edgePair_val_eq_crossing {i j : Fin n} {
       ((D.pinchedOnce_val_of_val_eq_inr c hM₁ hA).trans hM₂) Sum.inl_ne_inr Sum.inl_ne_inr
       Sum.inl_ne_inr Sum.inl_ne_inr
   · -- The arc enters `c` on the smoothing arc at slot `2`: the second reconnection continues it.
-    have hSm : S m = 2 ∨ S m = S 2 := by rcases hB with rfl | rfl; exacts [.inr rfl, .inl (hSS 2)]
-    have hx : (D.pinchedOnce c t).val (.inl (crossingSlotEquiv n (i, k))) = .inr m :=
-      PerfectMatching.reconnect_val_of_val_eq hM₁ Sum.inl_ne_inr Sum.inl_ne_inr
-        (by simpa using D.ne_of_localSmoothing c (.inl rfl) hB)
-        (by simpa using D.ne_of_localSmoothing c (.inr rfl) hB)
-    rw [D.pinchedTwice_val_of_val_eq_inr c hx hB]
-    exact PerfectMatching.reconnect_val_of_val_eq hM₂
-      (by simpa using D.ne_of_localSmoothing c (.inl rfl) hSm)
-      (fun h ↦ D.ne_of_localSmoothing c (.inr rfl) hSm (Sum.inr_injective h))
-      Sum.inl_ne_inr Sum.inl_ne_inr
+    rw [D.pinchedTwice_val_of_val_eq_inr c (D.pinchedOnce_val_inl_of_val_eq_inr_two c hM₁ hB) hB]
+    exact D.pinchedOnce_val_inr_of_val_eq_inl_two c hM₂ (D.localSmoothing_mem_pair c hB)
 
 /-- An arc of `D` from a crossing other than `c` to a slot `m` of `c`, continued through the
 smoothing of `c` to a slot `m'` of `c`, and through the smoothing once more to another crossing
@@ -521,7 +532,6 @@ theorem resolveCrossing_edgePair_val_of_edgePair_val_eq_crossing_twice {i j : Fi
       D.crossing (c.succAbove j) l) :
     (D.resolveCrossing c t).edgePair.val (crossingSlotEquiv n (i, k)) =
       crossingSlotEquiv n (j, l) := by
-  have hSS := D.localSmoothing_apply_apply c t
   rw [← localSmoothing] at h₂ h₃
   set S := D.localSmoothing c t
   set M := D.slotMatching c
@@ -539,19 +549,12 @@ theorem resolveCrossing_edgePair_val_of_edgePair_val_eq_crossing_twice {i j : Fi
   rw [resolveCrossing_edgePair_val, PerfectMatching.restrictInl_val_eq_iff]
   rcases D.localSmoothing_pair c hm hm' with ⟨hA, hB⟩ | ⟨hB, hA⟩
   · -- The first reconnection continues the arc to `m'`, and the second continues it to `S m'`.
-    have hSm : S m' = 2 ∨ S m' = S 2 := by rcases hB with rfl | rfl; exacts [.inr rfl, .inl (hSS 2)]
     rw [D.pinchedTwice_val_of_val_eq_inr c ((D.pinchedOnce_val_of_val_eq_inr c hM₁ hA).trans hM₂)
       hB]
-    exact PerfectMatching.reconnect_val_of_val_eq hM₃
-      (by simpa using D.ne_of_localSmoothing c (.inl rfl) hSm)
-      (fun h ↦ D.ne_of_localSmoothing c (.inr rfl) hSm (Sum.inr_injective h))
-      Sum.inl_ne_inr Sum.inl_ne_inr
+    exact D.pinchedOnce_val_inr_of_val_eq_inl_two c hM₃ (D.localSmoothing_mem_pair c hB)
   · -- The second reconnection continues the arc to `S m`, and the first continues it to `S m'`.
-    have hx : (D.pinchedOnce c t).val (.inl (crossingSlotEquiv n (i, k))) = .inr m :=
-      PerfectMatching.reconnect_val_of_val_eq hM₁ Sum.inl_ne_inr Sum.inl_ne_inr
-        (by simpa using D.ne_of_localSmoothing c (.inl rfl) hB)
-        (by simpa using D.ne_of_localSmoothing c (.inr rfl) hB)
-    rw [D.pinchedTwice_val_of_val_eq_inr c hx hB, D.pinchedOnce_val_of_val_eq_inr c hM₂ hA, hM₃]
+    rw [D.pinchedTwice_val_of_val_eq_inr c (D.pinchedOnce_val_inl_of_val_eq_inr_two c hM₁ hB) hB,
+      D.pinchedOnce_val_of_val_eq_inr c hM₂ hA, hM₃]
 
 /-- The `A`-resolution of the kink consists of two crossing-free circles. -/
 theorem crossinglessComponentCount_resolveCrossing_kink_true :
