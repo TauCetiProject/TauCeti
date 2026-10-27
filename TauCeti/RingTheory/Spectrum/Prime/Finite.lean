@@ -20,7 +20,8 @@ each prime ideal not contained in `p`, chosen outside `p`.
 
 This turns local statements into statements about a principal open neighbourhood. For an étale
 algebra `E` over a discrete valuation ring, which has finitely many primes, the localization
-`E[1/f]` is then a local étale algebra, so a discrete valuation ring étale over the base.
+`E[1/f]` is then a local étale algebra and, when its closed point lies over the closed point of
+the base, a discrete valuation ring étale over the base.
 
 ## Main results
 
@@ -49,7 +50,10 @@ instance finite_of_krullDimLE_one [IsDomain R] [IsLocalRing R] [Ring.KrullDimLE 
 /-- **Localizing at a prime of a ring with finitely many primes inverts a single element.** If
 `R` has finitely many prime ideals, then for every prime `p` there is some `f ∉ p` such that
 `R[1/f]` is the localization of `R` at `p`. In particular `R[1/f]` is a local ring whose maximal
-ideal lies over `p`. -/
+ideal lies over `p`.
+
+The proof adapts that of Mathlib's
+`PrimeSpectrum.isLocalization_away_iff_atPrime_of_basicOpen_eq_singleton`. -/
 theorem exists_notMem_isLocalization_atPrime_away [Finite (PrimeSpectrum R)]
     (p : PrimeSpectrum R) :
     ∃ f ∉ p.asIdeal, IsLocalization.AtPrime (Localization.Away f) p.asIdeal := by

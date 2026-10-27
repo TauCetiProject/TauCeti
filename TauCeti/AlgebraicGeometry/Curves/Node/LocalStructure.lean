@@ -40,7 +40,7 @@ is not established here.
 * `AlgebraicGeometry.Scheme.exists_isClosedImmersion_singularLocus_of_isPullback_etale`: after an
   étale extension of the base, an open neighbourhood of a singular point in the singular subscheme
   is an open subscheme of the original singular subscheme and a closed subscheme of the base.
-* `AlgebraicGeometry.Scheme.exists_singularLocus_iso_spec_quotient_of_isPullback_etale`: over a
+* `AlgebraicGeometry.Scheme.exists_singularLocus_iso_Spec_quotient_of_isPullback_etale`: over a
   discrete valuation ring, near a singular point of the special fibre and after an étale extension
   of discrete valuation rings `R → R'`, this closed subscheme is `Spec R'/(h)` with `h = 0` or
   `h = πⁿ`, `n > 0`.
@@ -109,7 +109,7 @@ for every base change `X'` of `X` along `Spec R' ⟶ Spec R`, with projection `g
 open subscheme `σ : W ⟶ Sing(X'/R')` containing a point above `z` maps isomorphically onto an open
 subscheme of `Sing(X/R)` under the projection `q : Sing(X'/R') ⟶ Sing(X/R)`, and is isomorphic
 over `Spec R'` to `Spec R'/(h)`, where `h = 0` or `h = πⁿ` for some `n > 0`. -/
-theorem _root_.AlgebraicGeometry.Scheme.exists_singularLocus_iso_spec_quotient_of_isPullback_etale
+theorem _root_.AlgebraicGeometry.Scheme.exists_singularLocus_iso_Spec_quotient_of_isPullback_etale
     [IsDomain R] [IsDiscreteValuationRing R] {π : R} (hπ : Irreducible π)
     (X : Scheme.{u}) [X.Over (Spec (.of R))]
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R))) :
@@ -141,11 +141,10 @@ theorem _root_.AlgebraicGeometry.Scheme.exists_singularLocus_iso_spec_quotient_o
   obtain ⟨E, _, _, _, _, hE₀, hE⟩ := ((X.singularLocus R).subschemeι ≫
     (X ↘ Spec (.of R))).exists_isClosedImmersion_of_isPullback_isLocalRing_etale z
   -- The closed point of `Spec E` lies over the closed point of `Spec R`, so the local étale
-  -- `R`-algebra `E` is a discrete valuation ring in which `π` remains a uniformizer. The points
-  -- of `Spec` are prime ideals, so `hE₀.trans hz` is an equality of prime ideals.
+  -- `R`-algebra `E` is a discrete valuation ring in which `π` remains a uniformizer.
   have : IsLocalHom (algebraMap R E) :=
-    ((IsLocalRing.local_hom_TFAE (algebraMap R E)).out 5 1).mp
-      congr(PrimeSpectrum.asIdeal $(hE₀.trans hz))
+    (IsLocalRing.isLocalHom_iff_comap_closedPoint _).mpr
+      ((Spec.map_apply ..).symm.trans (hE₀.trans hz))
   have : IsNoetherianRing E := Algebra.FiniteType.isNoetherianRing R E
   have hmax := Algebra.FormallyUnramified.map_maximalIdeal (R := R) (S := E)
   have : _root_.IsRegularLocalRing E := IsRegularLocalRing.of_flat_of_map_maximalIdeal_eq hmax
@@ -163,7 +162,10 @@ theorem _root_.AlgebraicGeometry.Scheme.exists_singularLocus_iso_spec_quotient_o
   obtain ⟨I, e, he⟩ := IsClosedImmersion.Spec_iff.mp hσg
   have hI : I ≠ ⊤ := by
     rintro rfl
-    exact isEmptyElim (α := PrimeSpectrum (E ⧸ (⊤ : Ideal E))) (e.hom w)
+    -- The underlying space of `Spec A` is `PrimeSpectrum A`, which is empty for the zero ring.
+    have : IsEmpty (Spec (.of (E ⧸ (⊤ : Ideal E)))) :=
+      inferInstanceAs (IsEmpty (PrimeSpectrum (E ⧸ (⊤ : Ideal E))))
+    exact isEmptyElim (e.hom w)
   -- Every proper ideal of the discrete valuation ring `E` is zero or a positive power of `(π)`.
   obtain ⟨h, hh, rfl⟩ : ∃ h : R, (h = 0 ∨ ∃ n : ℕ, 0 < n ∧ h = π ^ n) ∧
       I = Ideal.span {algebraMap R E h} := by

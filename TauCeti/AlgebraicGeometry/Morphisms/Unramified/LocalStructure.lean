@@ -140,10 +140,12 @@ theorem exists_isClosedImmersion_isLocalRing_etale_of_unramified [Finite (PrimeS
   have : IsLocalRing (Localization.Away f) :=
     IsLocalization.AtPrime.isLocalRing (Localization.Away f) (j w).asIdeal
   have : Algebra.Etale R (Localization.Away f) := Algebra.Etale.comp R E _
-  -- The closed point of `Spec E[1/f]` lies over `j w`; points of `Spec` are prime ideals.
+  -- The closed point of `Spec E[1/f]` lies over `j w`.
   obtain ⟨w', hw'₁, hw'₂⟩ := Scheme.Pullback.exists_preimage_pullback (f := j)
-    (g := Spec.algebraMap E (Localization.Away f)) w (IsLocalRing.closedPoint _) <|
-      PrimeSpectrum.ext (IsLocalization.AtPrime.under_maximalIdeal _ (j w).asIdeal).symm
+    (g := Spec.algebraMap E (Localization.Away f)) w (IsLocalRing.closedPoint _) <| by
+      refine .trans (PrimeSpectrum.ext ?_) (Spec.map_apply ..).symm
+      rw [PrimeSpectrum.comap_asIdeal]
+      exact (IsLocalization.AtPrime.under_maximalIdeal _ (j w).asIdeal).symm
   refine ⟨Localization.Away f, inferInstance, inferInstance, inferInstance, inferInstance, _,
     pullback.fst _ _ ≫ ι, pullback.snd _ _, w', inferInstance, inferInstance, ?_, ?_, hw'₂⟩
   · rw [Category.assoc, ← hcomm, pullback.condition_assoc, ← Spec.map_comp,
