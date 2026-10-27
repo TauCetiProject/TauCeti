@@ -13,6 +13,8 @@ public import TauCeti.Algebra.Module.ZLattice.Dual
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
+import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+
 /-!
 # The covolume of a lattice in an inner product space
 
@@ -269,16 +271,9 @@ theorem _root_.ZLattice.covolume_sq_eq_det_gram (L : Submodule ℤ E) [DiscreteT
     rw [← ZLattice.rank ℝ L, finrank_eq_card_basis b]
   let o : OrthonormalBasis ι ℝ E :=
     (stdOrthonormalBasis ℝ E).reindex (Fintype.equivFinOfCardEq hcard.symm).symm
-  -- The Gram matrix is `Mᵀ M`, where `M` is the matrix of the lattice basis in orthonormal
-  -- coordinates.
-  have hM : o.toBasis.toMatrix ((↑) ∘ b) = Matrix.of fun i j ↦ o.repr (b j : E) i := by
-    ext i j
-    simp [Basis.toMatrix_apply]
-  have hgram : (Matrix.gram ℝ fun i ↦ (b i : E)).det = o.toBasis.det ((↑) ∘ b) ^ 2 := by
-    rw [Matrix.gram_eq_conjTranspose_mul o, Matrix.det_mul, Matrix.det_conjTranspose,
-      star_trivial, Basis.det_apply, hM, sq]
   rw [ZLattice.covolume_eq_det_mul_measureReal L volume b o.toBasis,
-    o.volume_real_fundamentalDomain, hgram, mul_one, sq_abs]
+    o.volume_real_fundamentalDomain, mul_one, o.det_gram_eq_norm_det_sq]
+  simp [Function.comp_def]
 
 /-- The covolume of the dual of a full lattice is the inverse of the covolume of the lattice. -/
 @[simp]
