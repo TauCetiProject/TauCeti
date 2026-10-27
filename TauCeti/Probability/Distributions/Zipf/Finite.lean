@@ -411,20 +411,8 @@ theorem tendsto_quantile_map_cast_finiteZipfMeasure_nhdsLT_one {N : ℕ} (hN : 0
   filter_upwards [Ioo_mem_nhdsLT (sub_lt_self 1 hmass)] with u hu
   have hu' : u ∈ Ioo (0 : ℝ) 1 :=
     ⟨(sub_nonneg.mpr measureReal_le_one).trans_lt hu.1, hu.2⟩
-  symm
-  rw [Measure.quantile_map_natCast_eq_iff _ hu']
-  refine ⟨?_, fun j hj ↦ ?_⟩
-  · simp only [Set.mem_ofPred_eq, finiteZipfMeasure_real_Iic_self hN s]
-    exact hu'.2.le
-  · by_contra hjN
-    have hsub : (Iic j : Set ℕ) ⊆ ({N} : Set ℕ)ᶜ := by
-      intro k hk
-      exact ne_of_lt (hk.trans_lt (not_le.mp hjN))
-    have hle : (finiteZipfMeasure N s).real (Iic j) ≤
-        1 - (finiteZipfMeasure N s).real {N} := by
-      rw [← probReal_compl_eq_one_sub (measurableSet_singleton N)]
-      exact measureReal_mono hsub
-    exact hu.1.not_ge (hj.trans hle)
+  exact (Measure.quantile_map_natCast_eq_of_measureReal_Iic_eq_one _ hu'
+    (finiteZipfMeasure_real_Iic_self hN s) hu.1).symm
 
 /-- For `s > 1`, the finite Zipf law is the infinite law conditioned to be at most `N`. -/
 theorem finiteZipfMeasure_eq_cond (N : ℕ) {s : ℝ} (hs : 1 < s) :
