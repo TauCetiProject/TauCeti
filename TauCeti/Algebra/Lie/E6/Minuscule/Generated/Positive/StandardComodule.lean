@@ -80,7 +80,8 @@ theorem torusCorestrict_eq_ofWeights :
 
 /-- The general-linear point of a positive numbered root subgroup point, read through its
 generator, is the corresponding concrete root subgroup matrix. -/
-theorem pointToGeneralLinear_comp_generator_inl (i : Fin 6) (A : CommAlgCat.{u} R)
+theorem pointToGeneralLinear_comp_generator_inl_eq_rootSubgroupPoints (i : Fin 6)
+    (A : CommAlgCat.{u} R)
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A) :
     GeneralLinear.pointToGeneralLinear 27
         (toConv (q.ofConv.comp (generator R (.inl i)).hom.toAlgHom)) =
@@ -105,8 +106,9 @@ theorem rootSubgroupPoints_mulVec_mem
     (definingIdeal R) (generator R (.inl i))
     (by simpa only [generator_inl] using
       ((le_definingIdeal_iff R (definingIdeal R)).mp le_rfl).1 i) N q hv
-  simpa only [pointToGeneralLinear_comp_generator_inl R i (CommAlgCat.of R R) q,
-    q, MulEquiv.apply_symm_apply] using h
+  simpa only [
+    pointToGeneralLinear_comp_generator_inl_eq_rootSubgroupPoints R i (CommAlgCat.of R R) q, q,
+    MulEquiv.apply_symm_apply] using h
 
 /-- A subcomodule containing a weight vector contains every vector obtained by one raising step. -/
 theorem single_reflection_mem
@@ -144,7 +146,8 @@ private theorem stable_of_raising_closed (s : Set (Fin 27))
     let q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A :=
       toConv (AlgHom.id R _)
     have hm := congrArg (fun g : Matrix.GeneralLinearGroup (Fin 27) A ↦
-      (g : Matrix (Fin 27) (Fin 27) A) a b) (pointToGeneralLinear_comp_generator_inl R i A q)
+      (g : Matrix (Fin 27) (Fin 27) A) a b)
+      (pointToGeneralLinear_comp_generator_inl_eq_rootSubgroupPoints R i A q)
     rw [← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear] at hm
     simp only [Matrix.map_apply, GeneralLinear.genericMatrix_apply, q,
       AlgHom.id_comp, generator_inl] at hm

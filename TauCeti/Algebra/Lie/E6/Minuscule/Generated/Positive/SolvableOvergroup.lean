@@ -82,7 +82,7 @@ private theorem single_mem_of_raising_step
   have hmem := GeneralLinear.quotientStandardComodule_mulVec_mem k 27 J
     (generator k (.inl i))
     (by simpa only [generator_inl] using ((le_definingIdeal_iff k J).mp hJ).1 i) N p ha
-  rw [pointToGeneralLinear_comp_generator_inl k i (CommAlgCat.of k k) p,
+  rw [pointToGeneralLinear_comp_generator_inl_eq_rootSubgroupPoints k i (CommAlgCat.of k k) p,
     MulEquiv.apply_symm_apply, coe_rootSubgroupPoints_inl, toAdd_ofAdd, one_smul] at hmem
   simpa only [weightTable_reflection, Subcomodule.mem_toSubmodule] using
     weightTable.single_reflection_mem_of_mulVec_mem N.toSubmodule i a
