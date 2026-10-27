@@ -28,6 +28,8 @@ evaluation on pure tensors, `HomologicalComplex.ι_tensorHom_apply`, is specific
 ## Main results
 
 * `HomologicalComplex.ι_tensorHom`: the tensor product of two morphisms on a homogeneous summand.
+* `HomologicalComplex.ιTensorObj_comp_XIsoOfEq_hom`: the inclusion of a homogeneous summand
+  commutes with the identifications of equal degrees.
 * `HomologicalComplex.tensorHom_eq_mapBifunctorMap`: `⊗ₘ` of homological complexes is the
   totalization `HomologicalComplex.mapBifunctorMap` of the two morphisms.
 * `HomologicalComplex.ι_whiskerLeft` and `HomologicalComplex.ι_whiskerRight`: the two whiskerings
@@ -118,6 +120,19 @@ lemma ι_whiskerRight {X Y : HomologicalComplex C c} (f : X ⟶ Y)
     (Z : HomologicalComplex C c) (p q j : I) (h : p + q = j) :
     ιTensorObj X Z p q j h ≫ (f ▷ Z).f j = (f.f p ▷ Z.X q) ≫ ιTensorObj Y Z p q j h := by
   rw [whiskerRight_eq_mapBifunctorMap, ι_tensorHom, id_f, tensorHom_id]
+
+/-- The inclusion of a homogeneous summand into the tensor product of two homological complexes
+is compatible with the identifications `HomologicalComplex.XIsoOfEq` of equal degrees. -/
+@[reassoc]
+lemma ιTensorObj_comp_XIsoOfEq_hom (X Y : HomologicalComplex C c) {p p' q q' j j' : I}
+    (hp : p = p') (hq : q = q') (hj : j = j') (h : p + q = j) :
+    ιTensorObj X Y p q j h ≫ ((X ⊗ Y).XIsoOfEq hj).hom =
+      ((X.XIsoOfEq hp).hom ⊗ₘ (Y.XIsoOfEq hq).hom) ≫
+        ιTensorObj X Y p' q' j' (hp ▸ hq ▸ hj ▸ h) := by
+  subst hp hq hj
+  simp only [XIsoOfEq_rfl, Iso.refl_hom, tensorHom_id, id_whiskerRight, Category.id_comp]
+  -- `X ⊗ Y` is the totalization `HomologicalComplex.tensorObj X Y` by definition
+  exact Category.comp_id _
 
 /-- The degreewise component of the inverse left unitor of homological complexes is the
 component of the auxiliary graded isomorphism `HomologicalComplex.leftUnitor'`, whose value is

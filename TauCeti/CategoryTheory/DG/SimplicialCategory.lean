@@ -37,7 +37,8 @@ their composition `TauCeti.dgComp` (`TauCeti.DGSimplicialCategory.dgMappingSpace
 ## Main definitions
 
 * `TauCeti.dgMappingSpaceFunctor`: the lax monoidal functor `K ↦ DK(τ_{≥ 0} K)` from cochain
-  complexes of `R`-modules to simplicial sets.
+  complexes of `R`-modules to simplicial sets, unfolded by `TauCeti.dgMappingSpaceFunctor_obj`
+  and `TauCeti.dgMappingSpaceFunctor_map`.
 * `TauCeti.DGSimplicialCategory`: the simplicial enrichment `C_Δ` of a differential graded
   category `C`, as Mathlib's `CategoryTheory.TransportEnrichment` along that functor.
 * `TauCeti.dgMappingSpaceVertexEquiv`: the vertices of `DK(τ_{≥ 0} K)` are the degree-zero cycles
@@ -76,9 +77,23 @@ variable (R : Type v) [CommRing R]
 
 /-- The functor sending a cochain complex `K` of `R`-modules to the simplicial set
 `DK(τ_{≥ 0} K)`. -/
-def dgMappingSpaceFunctor : CochainComplex (ModuleCat.{v} R) ℤ ⥤ SSet.{v} :=
+@[expose] def dgMappingSpaceFunctor : CochainComplex (ModuleCat.{v} R) ℤ ⥤ SSet.{v} :=
   embeddingDownNat.truncLE'Functor (ModuleCat.{v} R) ⋙ Γ ⋙
     (Functor.whiskeringRight _ _ _).obj (CategoryTheory.forget (ModuleCat.{v} R))
+
+/-- The simplicial set `DK(τ_{≥ 0} K)` is the underlying simplicial set of the simplicial module
+`Γ(τ_{≥ 0} K)`. -/
+lemma dgMappingSpaceFunctor_obj (K : CochainComplex (ModuleCat.{v} R) ℤ) :
+    (dgMappingSpaceFunctor R).obj K =
+      Γ.obj (K.truncLE' embeddingDownNat) ⋙ CategoryTheory.forget (ModuleCat.{v} R) :=
+  (rfl)
+
+/-- On morphisms, `dgMappingSpaceFunctor` applies `Γ` to the induced map of good truncations and
+forgets the module structure. -/
+lemma dgMappingSpaceFunctor_map {K L : CochainComplex (ModuleCat.{v} R) ℤ} (f : K ⟶ L) :
+    (dgMappingSpaceFunctor R).map f = Functor.whiskerRight
+      (Γ.map (truncLE'Map f embeddingDownNat)) (CategoryTheory.forget (ModuleCat.{v} R)) :=
+  (rfl)
 
 /-- The lax monoidal structure of `K ↦ DK(τ_{≥ 0} K)`: the composite of the lax monoidal good
 truncation, the lax monoidal Dold–Kan functor `Γ` and the lax monoidal forgetful functor from
@@ -129,39 +144,29 @@ private lemma dgMappingSpaceVertexEquiv_apply_coe (K : CochainComplex (ModuleCat
     (dgMappingSpaceVertexEquiv R K y).1 = vertexHom R K y :=
   (rfl)
 
-@[reassoc]
 private lemma Γ_map_truncLE'Map_app_zero_comp_vertexHom {K L : CochainComplex (ModuleCat.{v} R) ℤ}
     (f : K ⟶ L) :
     (Γ.map (truncLE'Map f embeddingDownNat)).app (op ⦋0⦌) ≫ vertexHom R L =
       vertexHom R K ≫ f.f 0 := by
-  rw [vertexHom, Γ_map_app_zero_comp_ΓObjZeroIso_hom_assoc,
-    CochainComplex.truncLE'Map_f_truncLE'ToX_assoc, XIsoOfEq_hom_naturality, vertexHom,
-    Category.assoc, Category.assoc]
+  simp only [vertexHom, Category.assoc, Γ_map_app_zero_comp_ΓObjZeroIso_hom_assoc,
+    CochainComplex.truncLE'Map_f_truncLE'ToX_assoc, XIsoOfEq_hom_naturality]
 
 private lemma singleObjXIsoOfEq_inv_comp_XIsoOfEq_hom {k : ℤ} (hk : k = 0) :
     (singleObjXIsoOfEq (up ℤ) 0 (𝟙_ (ModuleCat.{v} R)) k hk).inv ≫
         ((𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)).XIsoOfEq hk).hom =
       (singleObjXSelf (up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv := by
   subst hk
-  rw [XIsoOfEq_rfl, Iso.refl_hom]
+  rw [XIsoOfEq_rfl, Iso.refl_hom, singleObjXSelf]
+  -- the unit complex is the single complex on `𝟙_` in degree `0`, by definition of `𝟙_`
   exact Category.comp_id _
 
 private lemma ε_Γ_app_zero_comp_vertexHom :
     (ε (Γ : ChainComplex (ModuleCat.{v} R) ℕ ⥤ _)).app (op ⦋0⦌) ≫
         (Γ.map (CochainComplex.truncLE'Unit R)).app (op ⦋0⦌) ≫ vertexHom R _ =
       (singleObjXSelf (up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv := by
-  rw [vertexHom, Γ_map_app_zero_comp_ΓObjZeroIso_hom_assoc, Γ_ε_app_zero_comp_ΓObjZeroIso_hom_assoc,
-    CochainComplex.truncLE'Unit_f_truncLE'ToX_assoc, Iso.inv_hom_id_assoc,
-    singleObjXIsoOfEq_inv_comp_XIsoOfEq_hom]
-
-private lemma ιTensorObj_comp_XIsoOfEq_hom (K L : CochainComplex (ModuleCat.{v} R) ℤ) {p q n : ℤ}
-    (hp : p = 0) (hq : q = 0) (hn : n = 0) (h : p + q = n) :
-    ιTensorObj K L p q n h ≫ ((K ⊗ L).XIsoOfEq hn).hom =
-      ((K.XIsoOfEq hp).hom ⊗ₘ (L.XIsoOfEq hq).hom) ≫ ιTensorObj K L 0 0 0 (by simp) := by
-  subst hp hq hn
-  rw [XIsoOfEq_rfl, XIsoOfEq_rfl, XIsoOfEq_rfl, Iso.refl_hom, Iso.refl_hom, Iso.refl_hom,
-    tensorHom_id, id_whiskerRight, Category.id_comp]
-  exact Category.comp_id _
+  simp only [vertexHom, Γ_map_app_zero_comp_ΓObjZeroIso_hom_assoc,
+    Γ_ε_app_zero_comp_ΓObjZeroIso_hom_assoc, CochainComplex.truncLE'Unit_f_truncLE'ToX_assoc,
+    Iso.inv_hom_id_assoc, singleObjXIsoOfEq_inv_comp_XIsoOfEq_hom]
 
 private lemma μ_Γ_app_zero_comp_vertexHom (K L : CochainComplex (ModuleCat.{v} R) ℤ) :
     (μ (Γ : ChainComplex (ModuleCat.{v} R) ℕ ⥤ _) _ _).app (op ⦋0⦌) ≫
@@ -169,11 +174,9 @@ private lemma μ_Γ_app_zero_comp_vertexHom (K L : CochainComplex (ModuleCat.{v}
       (vertexHom R K ⊗ₘ vertexHom R L) ≫ ιTensorObj K L 0 0 0 (by simp) := by
   rw [vertexHom, Γ_map_app_zero_comp_ΓObjZeroIso_hom_assoc, Γ_μ_app_zero_comp_ΓObjZeroIso_hom_assoc]
   dsimp only [Monoidal.tensorObj_obj]
-  simp only [Category.assoc]
-  rw [CochainComplex.ι_truncLE'TensorHom_f_truncLE'ToX_assoc,
-    ιTensorObj_comp_XIsoOfEq_hom R K L (by simp) (by simp),
-    tensorHom_comp_tensorHom_assoc, tensorHom_comp_tensorHom_assoc, vertexHom, vertexHom]
-  simp only [Category.assoc]
+  simp only [Category.assoc, CochainComplex.ι_truncLE'TensorHom_f_truncLE'ToX_assoc]
+  rw [ιTensorObj_comp_XIsoOfEq_hom K L (p' := 0) (q' := 0) (by simp) (by simp)]
+  simp only [vertexHom, tensorHom_comp_tensorHom_assoc]
 
 /-- The identification of the vertices of `DK(τ_{≥ 0} K)` with the degree-zero cycles of `K` is
 natural in `K`. -/
@@ -219,7 +222,8 @@ namespace DGSimplicialCategory
 /-- The mapping simplicial set of the simplicial enrichment from `X` to `Y` is the underlying
 simplicial set of `DK(τ_{≥ 0} Hom(X, Y))`. -/
 lemma eHom_eq (X Y : DGSimplicialCategory R C) :
-    (X ⟶[SSet.{v}] Y) = (dgMappingSpaceFunctor R).obj (dgHomComplex R (C := C) X Y) :=
+    (X ⟶[SSet.{v}] Y) = Γ.obj ((dgHomComplex R (C := C) X Y).truncLE' embeddingDownNat) ⋙
+      CategoryTheory.forget (ModuleCat.{v} R) :=
   (rfl)
 
 /-- The mapping simplicial sets of the simplicial enrichment are Kan complexes, as underlying
@@ -242,6 +246,8 @@ lemma dgMappingSpaceVertexEquiv_eComp (X Y Z : DGSimplicialCategory R C)
     (dgMappingSpaceVertexEquiv R _ ((eComp SSet.{v} X Y Z).app (op ⦋0⦌) (f, g))).1 =
       dgComp R (C := C) (dgMappingSpaceVertexEquiv R _ f).1 (dgMappingSpaceVertexEquiv R _ g).1
         (add_zero 0) := by
+  rw [TransportEnrichment.eComp_eq]
+  -- a composite of maps of simplicial sets acts on vertices by applying its factors in turn
   refine (dgMappingSpaceVertexEquiv_map R
     (eComp (CochainComplex (ModuleCat.{v} R) ℤ) (C := C) X Y Z)
     ((μ (dgMappingSpaceFunctor R) _ _).app (op ⦋0⦌) (f, g))).trans ?_

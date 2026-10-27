@@ -139,6 +139,13 @@ lemma PInfty_comp_η_alternatingFaceMapComplex :
   · rw [HomologicalComplex.comp_f, PInfty_f_0, Category.id_comp]
   · exact (HomologicalComplex.isZero_single_obj_X _ _ _ (n + 1) (by omega)).eq_of_tgt _ _
 
+omit [MonoidalCategory C] [MonoidalPreadditive C] [HasFiniteCoproducts C] in
+/-- In degree zero, the projection `PInfty` onto normalized chains is the identity, so it does
+not change the degree-zero component of a morphism out of the alternating face map complex. -/
+lemma PInfty_comp_f_zero {X : SimplicialObject C} {Y : ChainComplex C ℕ}
+    (g : (alternatingFaceMapComplex C).obj X ⟶ Y) : (PInfty ≫ g).f 0 = g.f 0 := by
+  rw [HomologicalComplex.comp_f, PInfty_f_0, Category.id_comp]
+
 end CategoryTheory.SimplicialObject
 
 namespace CategoryTheory.Idempotents.DoldKan
@@ -377,16 +384,12 @@ def ΓObjZeroIso (K : ChainComplex C ℕ) : (Γ.obj K) _⦋0⦌ ≅ K.X 0 where
   hom := (PInftyToN.app (Γ.obj K)).f 0 ≫ (counitHom K).f 0
   inv := (inv (counitHom K)).f 0 ≫ (inclusionN.app (Γ.obj K)).f 0
   hom_inv_id := by
-    rw [Category.assoc, ← HomologicalComplex.comp_f_assoc (counitHom K), IsIso.hom_inv_id,
-      HomologicalComplex.id_f, Category.id_comp, ← HomologicalComplex.comp_f,
-      PInftyToN_app_comp_inclusionN_app]
+    rw [Category.assoc, ← HomologicalComplex.comp_f_assoc (counitHom K), IsIso.hom_inv_id]
     -- the degree-zero term of the alternating face map complex of `Γ K` is `(Γ K)₀`
-    exact PInfty_f_0
+    simp [← HomologicalComplex.comp_f, PInfty_f_0]
   inv_hom_id := by
-    rw [Category.assoc, ← HomologicalComplex.comp_f_assoc (inclusionN.app _),
-      inclusionN_app_comp_PInftyToN_app,
-      HomologicalComplex.id_f, Category.id_comp, ← HomologicalComplex.comp_f, IsIso.inv_hom_id,
-      HomologicalComplex.id_f]
+    rw [Category.assoc, ← HomologicalComplex.comp_f_assoc (inclusionN.app _)]
+    simp
 
 private lemma ΓObjZeroIso_hom (K : ChainComplex C ℕ) :
     (ΓObjZeroIso K).hom = (PInftyToN.app (Γ.obj K)).f 0 ≫ (counitHom K).f 0 :=
@@ -397,9 +400,9 @@ private lemma ΓObjZeroIso_hom (K : ChainComplex C ℕ) :
 lemma Γ_map_app_zero_comp_ΓObjZeroIso_hom {K L : ChainComplex C ℕ} (f : K ⟶ L) :
     (Γ.map f).app (op ⦋0⦌) ≫ (ΓObjZeroIso L).hom = (ΓObjZeroIso K).hom ≫ f.f 0 := by
   have h := congrArg (fun g ↦ g.f 0) (PInftyToN.naturality (Γ.map f))
-  simp only [HomologicalComplex.comp_f, alternatingFaceMapComplex_map_f] at h
-  rw [ΓObjZeroIso_hom, ΓObjZeroIso_hom, reassoc_of% h, Category.assoc,
-    ← HomologicalComplex.comp_f, N_map_Γ_map_comp_counitHom, HomologicalComplex.comp_f]
+  have h' := congrArg (fun g ↦ g.f 0) (N_map_Γ_map_comp_counitHom f)
+  simp only [HomologicalComplex.comp_f, alternatingFaceMapComplex_map_f] at h h'
+  simp only [ΓObjZeroIso_hom, Category.assoc, reassoc_of% h, h']
 
 /-- In degree zero, the transpose `S ⟶ Γ K` of a morphism `g : N S ⟶ K` along the Dold–Kan
 equivalence is `g` precomposed with the projection onto normalized chains. -/
@@ -408,17 +411,11 @@ private lemma unit_app_comp_Γ_map_app_zero_comp_ΓObjZeroIso_hom (S : Simplicia
     (unitHom S).app (op ⦋0⦌) ≫ (Γ.map g).app (op ⦋0⦌) ≫ (ΓObjZeroIso K).hom =
       (PInftyToN.app S).f 0 ≫ g.f 0 := by
   have h := congrArg (fun g ↦ g.f 0) (PInftyToN.naturality (unitHom S))
-  simp only [HomologicalComplex.comp_f, alternatingFaceMapComplex_map_f] at h
-  rw [Γ_map_app_zero_comp_ΓObjZeroIso_hom, ΓObjZeroIso_hom, Category.assoc, reassoc_of% h,
-    ← HomologicalComplex.comp_f_assoc (N.map (unitHom S)), N_map_unitHom_comp_counitHom,
-    HomologicalComplex.id_f, Category.id_comp]
-
-omit [IsIdempotentComplete C] [HasFiniteCoproducts C] in
-/-- In degree zero, the projection `PInfty` onto normalized chains is the identity. -/
-private lemma PInfty_comp_f_zero {X : SimplicialObject C} {Y : ChainComplex C ℕ}
-    (g : (alternatingFaceMapComplex C).obj X ⟶ Y) : (PInfty ≫ g).f 0 = g.f 0 := by
-  rw [HomologicalComplex.comp_f]
-  exact Category.id_comp _
+  have h' := congrArg (fun g ↦ g.f 0) (N_map_unitHom_comp_counitHom S)
+  simp only [HomologicalComplex.comp_f, HomologicalComplex.id_f,
+    alternatingFaceMapComplex_map_f] at h h'
+  rw [Γ_map_app_zero_comp_ΓObjZeroIso_hom, ΓObjZeroIso_hom]
+  simp only [Category.assoc, reassoc_of% h, reassoc_of% h']
 
 attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 
@@ -436,7 +433,8 @@ lemma Γ_ε_app_zero_comp_ΓObjZeroIso_hom :
     -- `unitHom` is the unit of the Dold–Kan equivalence with its target retyped
     Γ_ε
   rw [h, NatTrans.comp_app, Category.assoc, unit_app_comp_Γ_map_app_zero_comp_ΓObjZeroIso_hom,
-    N_η, ← HomologicalComplex.comp_f, PInftyToN_app_comp_inclusionN_app_assoc,
+    N_η, ← HomologicalComplex.comp_f]
+  simp only [PInftyToN_app_comp_inclusionN_app_assoc,
     SimplicialObject.PInfty_comp_η_alternatingFaceMapComplex,
     SimplicialObject.alternatingFaceMapComplex_η_f_zero]
 
@@ -454,11 +452,13 @@ lemma Γ_μ_app_zero_comp_ΓObjZeroIso_hom (K L : ChainComplex C ℕ) :
   rw [h, NatTrans.comp_app, Category.assoc, unit_app_comp_Γ_map_app_zero_comp_ΓObjZeroIso_hom,
     N_δ, ← HomologicalComplex.comp_f]
   simp only [Category.assoc, PInftyToN_app_comp_inclusionN_app_assoc, tensorHom_comp_tensorHom]
-  rw [PInfty_comp_f_zero, HomologicalComplex.comp_f, SimplicialObject.alexanderWhitney_f,
-    Fin.sum_univ_one]
+  -- `rw` rather than `simp`: `PInfty_comp_f_zero` must fire before `comp_f` splits the composite,
+  -- and the summands of the Alexander–Whitney map depend on the summation index
+  rw [SimplicialObject.PInfty_comp_f_zero, HomologicalComplex.comp_f,
+    SimplicialObject.alexanderWhitney_f, Fin.sum_univ_one]
   simp only [Fin.val_zero, SimplexCategory.hom_zero_zero (SimplexCategory.subinterval _ _ _),
-    op_id, CategoryTheory.Functor.map_id, tensorHom_id, ΓObjZeroIso_hom]
-  rw [id_whiskerRight, Category.id_comp]
+    op_id, CategoryTheory.Functor.map_id, tensorHom_id, id_whiskerRight, Category.id_comp,
+    ΓObjZeroIso_hom]
   -- The back index `0 - 0` of the Alexander–Whitney summand is `0` only by computation, so the
   -- summand lemma is applied up to definitional unfolding.
   exact ι_tensorHom (PInftyToN.app (Γ.obj K) ≫ counitHom K) (PInftyToN.app (Γ.obj L) ≫ counitHom L)
