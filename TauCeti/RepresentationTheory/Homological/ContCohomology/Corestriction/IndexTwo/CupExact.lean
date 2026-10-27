@@ -168,9 +168,9 @@ private theorem indexTwoShortExact_pairing_incl (U : OpenSubgroup G)
       (trivialF2_two_nsmul_eq_zero G)
     let P := ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)
     let μ := DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-      (trivialF2Pairing_smul_smul G)
+      (fun u => trivialF2Pairing_smul_smul G u)
     let Q := ofDiscreteModulePairing μ (DiscreteCoind.pairing_smul U.toSubgroup U.isOpen'
-      (trivialF2Pairing G) (trivialF2Pairing_smul_smul G))
+      (trivialF2Pairing G) (fun u => trivialF2Pairing_smul_smul G u))
     ∀ a b : (trivialF2 G).V, S.incl (P.bil a b) = Q.bil a (S.incl b) := by
   intro S P μ Q a b
   simp only [S, Q, P, DiscreteCoind.indexTwoShortExact_incl,
@@ -178,7 +178,7 @@ private theorem indexTwoShortExact_pairing_incl (U : OpenSubgroup G)
   -- Restricting to the underlying coefficient carriers identifies the bundled unit.
   change DiscreteCoind.unit G U.toSubgroup _ (trivialF2Pairing G a b) =
     DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-      (trivialF2Pairing_smul_smul G) a (DiscreteCoind.unit G U.toSubgroup _ b)
+      (fun u => trivialF2Pairing_smul_smul G u) a (DiscreteCoind.unit G U.toSubgroup _ b)
   ext g
   rw [DiscreteCoind.pairing_apply, DiscreteCoind.unit_apply, DiscreteCoind.unit_apply,
     trivialF2Pairing_smul_smul]
@@ -190,9 +190,9 @@ private theorem indexTwoShortExact_pairing_proj (U : OpenSubgroup G)
       (trivialF2_two_nsmul_eq_zero G)
     let P := ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)
     let μ := DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-      (trivialF2Pairing_smul_smul G)
+      (fun u => trivialF2Pairing_smul_smul G u)
     let Q := ofDiscreteModulePairing μ (DiscreteCoind.pairing_smul U.toSubgroup U.isOpen'
-      (trivialF2Pairing G) (trivialF2Pairing_smul_smul G))
+      (trivialF2Pairing G) (fun u => trivialF2Pairing_smul_smul G u))
     ∀ (a : (trivialF2 G).V) (b : DiscreteCoind G U.toSubgroup (trivialF2 G).V),
       S.proj (Q.bil a b) = P.bil a (S.proj b) := by
   intro S P μ Q a b
@@ -201,7 +201,7 @@ private theorem indexTwoShortExact_pairing_proj (U : OpenSubgroup G)
   -- The short exact sequence records the underlying additive map of the trace.
   change DiscreteCoind.trace G U.toSubgroup _
     (DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-      (trivialF2Pairing_smul_smul G) a b) =
+      (fun u => trivialF2Pairing_smul_smul G u) a b) =
     trivialF2Pairing G a (DiscreteCoind.trace G U.toSubgroup _ b)
   exact DiscreteCoind.trace_pairing U.toSubgroup U.isOpen'
     (trivialF2Pairing G) (trivialF2Pairing_smul_smul G) a b
@@ -225,9 +225,9 @@ theorem indexTwoDelta_eq_cup_character (U : OpenSubgroup G)
     (trivialF2_two_nsmul_eq_zero G)
   let P := ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)
   let μ := DiscreteCoind.pairing U.toSubgroup U.isOpen' (trivialF2Pairing G)
-    (trivialF2Pairing_smul_smul G)
+    (fun u => trivialF2Pairing_smul_smul G u)
   let Q := ofDiscreteModulePairing μ (DiscreteCoind.pairing_smul U.toSubgroup U.isOpen'
-    (trivialF2Pairing G) (trivialF2Pairing_smul_smul G))
+    (trivialF2Pairing G) (fun u => trivialF2Pairing_smul_smul G u))
   let u := (eqToHom (congrArg (continuousCohomology 0)
     (ofDiscreteModule_trivialF2 G).symm)).hom (cohomF2.one G)
   have hcup := S.delta_cup_right S Q P P

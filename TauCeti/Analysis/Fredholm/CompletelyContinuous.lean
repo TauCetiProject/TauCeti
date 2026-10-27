@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Fredholm.FiniteRank
 public import TauCeti.Analysis.Normed.Operator.CompletelyContinuous
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 
+import Mathlib.Analysis.Normed.Operator.Banach
+
 /-!
 # The Fredholm alternative for completely continuous operators
 
