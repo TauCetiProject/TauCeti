@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.Infinitary.CodedConnectives
 public import TauCeti.ModelTheory.Infinitary.Equiv
+public import TauCeti.ModelTheory.Infinitary.LanguageMap
 public import Mathlib.Data.Set.Countable
 
 /-!
@@ -23,6 +24,7 @@ code no member carry `⊤`, so the conjunction of the empty theory holds in ever
 * `FirstOrder.Language.Theoryω`: the `L_{ω₁ω}` theories of a language.
 * `FirstOrder.Language.Theoryω.Model`: a structure satisfies every sentence of a theory.
 * `FirstOrder.Language.Theoryω.conjunction`: the countable conjunction of a countable theory.
+* `FirstOrder.Language.LHom.onTheoryω`: the image of a theory under a language homomorphism.
 
 ## Main results
 
@@ -33,6 +35,8 @@ code no member carry `⊤`, so the conjunction of the empty theory holds in ever
   the basic laws of modelhood.
 * `FirstOrder.Language.StrongHomClass.theoryω_model_iff`: isomorphic structures are models of the
   same theories.
+* `FirstOrder.Language.LHom.onTheoryω_model`: along an expansion, a structure is a model of the
+  image of a theory exactly when it is a model of the theory.
 
 ## References
 
@@ -46,7 +50,7 @@ code no member carry `⊤`, so the conjunction of the empty theory holds in ever
 
 public section
 
-universe u v w w'
+universe u v u' v' w w'
 
 namespace FirstOrder
 
@@ -128,6 +132,32 @@ theorem realize_conjunction_iff (hT : T.Countable) :
   simp only [Subtype.forall, SentenceInf.realize_def, FormulaInf.realize_def]
 
 end Theoryω
+
+namespace LHom
+
+variable {L' : Language.{u', v'}}
+
+/-- The image of an `L_{ω₁ω}` theory under a language homomorphism: the images of its sentences. -/
+def onTheoryω (g : L →ᴸ L') (T : L.Theoryω) : L'.Theoryω :=
+  g.onBoundedFormulaInf '' T
+
+/-- Membership in the image of a theory. -/
+@[simp]
+theorem mem_onTheoryω {g : L →ᴸ L'} {T : L.Theoryω} {φ : L'.Sentenceω} :
+    φ ∈ g.onTheoryω T ↔ ∃ φ₀ ∈ T, g.onBoundedFormulaInf φ₀ = φ :=
+  Iff.rfl
+
+/-- **Modelhood along an expansion.** If the `L'`-structure on `M` expands its `L`-structure along
+`g`, then `M` is a model of the image of `T` exactly when it is a model of `T`. No injectivity of
+`g` and no countability of `T` is needed. -/
+@[simp]
+theorem onTheoryω_model (g : L →ᴸ L') {M : Type w} [L.Structure M] [L'.Structure M]
+    [g.IsExpansionOn M] (T : L.Theoryω) : (g.onTheoryω T).Model M ↔ T.Model M := by
+  simp only [Theoryω.model_iff, mem_onTheoryω, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂, SentenceInf.realize_def, FormulaInf.realize_def,
+    realize_onBoundedFormulaInf]
+
+end LHom
 
 namespace StrongHomClass
 
