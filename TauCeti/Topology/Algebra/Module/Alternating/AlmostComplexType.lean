@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.End.Aeval
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
@@ -43,7 +44,8 @@ differential forms on an almost complex manifold.
 * `ContinuousAlternatingMap.IsOfType`: a `k`-form has type `(p,q)`.
 * `ContinuousLinearMap.aeval_alternatingDerivation_eq_zero`: the polynomial identity satisfied by
   the derivation of an endomorphism with `J² = -1`.
-* `ContinuousLinearMap.typeProjection`: the projection onto the forms of type `(p,q)`.
+* `ContinuousLinearMap.typeProjection`: for `J² = -1`, the projection onto the forms of type
+  `(p,q)`.
 * `ContinuousLinearMap.sum_typeProjection`: a form is the sum of its components of each type.
 * `ContinuousLinearMap.isOfType_typeProjection`,
   `ContinuousAlternatingMap.IsOfType.typeProjection_self`: the projections land in, and fix, the
@@ -273,17 +275,6 @@ namespace ContinuousLinearMap
 
 section Polynomial
 
-variable {M N : Type*} [AddCommGroup M] [Module ℂ M] [AddCommGroup N] [Module ℂ N]
-
-/-- A linear map intertwining two endomorphisms intertwines every polynomial in them. -/
-private lemma aeval_comp_of_comp_eq {A : M →ₗ[ℂ] N} {x : Module.End ℂ M} {y : Module.End ℂ N}
-    (h : y ∘ₗ A = A ∘ₗ x) (f : ℂ[X]) : aeval y f ∘ₗ A = A ∘ₗ aeval x f := by
-  induction f using Polynomial.induction_on' with
-  | add f g hf hg => simp [LinearMap.add_comp, LinearMap.comp_add, hf, hg]
-  | monomial m a =>
-    simp only [aeval_monomial, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
-      LinearMap.smul_comp, LinearMap.comp_smul, Module.End.commute_pow_left_of_commute h]
-
 /-- The eigenvalue of the derivation on forms of type `(p,q)`. -/
 private def typeEigenvalue (pq : ℕ × ℕ) : ℂ :=
   ((pq.1 : ℂ) - pq.2) * I
@@ -316,9 +307,9 @@ variable {J : V →L[ℝ] V} {k : ℕ}
 section TypeProjection
 
 variable (J) in
-/-- The projection of complex-valued `k`-forms onto the forms of type `(p,q)` for `J`. It is the
-Lagrange basis polynomial at `(p - q) * I` of the nodes `(p' - q') * I`, `p' + q' = k`, evaluated
-at the derivation induced by `J`, and it vanishes unless `p + q = k`. -/
+/-- The Lagrange basis polynomial at `(p - q) * I` of the nodes `(p' - q') * I`, `p' + q' = k`,
+evaluated at the derivation induced by `J` on complex-valued `k`-forms. For `J² = -1` this is the
+projection onto the forms of type `(p,q)` for `J`, and it vanishes unless `p + q = k`. -/
 def typeProjection (p q : ℕ) : Module.End ℂ (V [⋀^Fin k]→L[ℝ] F) :=
   aeval J.alternatingDerivation (Lagrange.basis (Finset.antidiagonal k) typeEigenvalue (p, q))
 
@@ -326,13 +317,11 @@ variable {ω : V [⋀^Fin k]→L[ℝ] F} {p q p' q' : ℕ}
 
 private lemma aeval_apply_of_isOfType (h : ω.IsOfType J p q) (g : ℂ[X]) :
     aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin k]→L[ℝ] F)) g ω =
-      g.eval (typeEigenvalue (p, q)) • ω := by
-  rcases eq_or_ne ω 0 with rfl | hω
-  · simp
-  · exact Module.End.aeval_apply_of_hasEigenvector
-      (Module.End.hasEigenvector_iff.2 ⟨Module.End.mem_eigenspace_iff.2 h.2, hω⟩)
+      g.eval (typeEigenvalue (p, q)) • ω :=
+  Module.End.aeval_apply_of_mem_apply_eq_smul h.2
 
-/-- Every complex-valued form is the sum of its components of each type. -/
+/-- The operators `J.typeProjection p q` with `p + q = k` sum to the identity on `k`-forms. For
+`J² = -1`, this says that every complex-valued form is the sum of its components of each type. -/
 theorem sum_typeProjection (J : V →L[ℝ] V) (ω : V [⋀^Fin k]→L[ℝ] F) :
     ∑ pq ∈ Finset.antidiagonal k, J.typeProjection pq.1 pq.2 ω = ω := by
   simp only [typeProjection, Prod.mk.eta]
@@ -340,6 +329,7 @@ theorem sum_typeProjection (J : V →L[ℝ] V) (ω : V [⋀^Fin k]→L[ℝ] F) :
     Lagrange.sum_basis (typeEigenvalue_injOn k) ⟨(k, 0), by simp⟩, map_one, Module.End.one_apply]
 
 /-- The projection onto type `(p,q)` fixes the forms of type `(p,q)`. -/
+@[simp]
 theorem _root_.ContinuousAlternatingMap.IsOfType.typeProjection_self (h : ω.IsOfType J p q) :
     J.typeProjection p q ω = ω := by
   rw [typeProjection, aeval_apply_of_isOfType h,
@@ -368,7 +358,8 @@ theorem typeProjection_eq_of_sum_eq {η : ℕ × ℕ → V [⋀^Fin k]→L[ℝ] 
   · intro h
     exact absurd (by simpa using hpq) h
 
-/-- The type-`(1,0)` component of a one-form `α` is `(α - I • α ∘ J) / 2`. -/
+/-- On one-forms, `J.typeProjection 1 0` sends `α` to `(α - I • α ∘ J) / 2`. For `J² = -1`, this is
+the type-`(1,0)` component of `α`. -/
 theorem typeProjection_one_zero (J : V →L[ℝ] V) :
     (J.typeProjection 1 0 : Module.End ℂ (V [⋀^Fin 1]→L[ℝ] F)) =
       (2 : ℂ)⁻¹ • (1 - I • J.alternatingDerivation) := by
@@ -385,7 +376,8 @@ theorem typeProjection_one_zero (J : V →L[ℝ] V) :
   match_scalars <;> ring_nf
   norm_num
 
-/-- The type-`(0,1)` component of a one-form `α` is `(α + I • α ∘ J) / 2`. -/
+/-- On one-forms, `J.typeProjection 0 1` sends `α` to `(α + I • α ∘ J) / 2`. For `J² = -1`, this is
+the type-`(0,1)` component of `α`. -/
 theorem typeProjection_zero_one (J : V →L[ℝ] V) :
     (J.typeProjection 0 1 : Module.End ℂ (V [⋀^Fin 1]→L[ℝ] F)) =
       (2 : ℂ)⁻¹ • (1 + I • J.alternatingDerivation) := by
@@ -400,6 +392,75 @@ theorem typeProjection_zero_one (J : V →L[ℝ] V) :
   rw [← neg_add', ← two_mul, inv_neg, mul_inv, inv_I]
   match_scalars <;> ring_nf
   norm_num
+
+/-- Pullback along a continuous linear map, as a complex-linear map of forms. -/
+private def pullback (f : W →L[ℝ] V) : (V [⋀^Fin k]→L[ℝ] F) →ₗ[ℂ] W [⋀^Fin k]→L[ℝ] F where
+  toFun ω := ω.compContinuousLinearMap f
+  map_add' ω ω' := by ext; simp
+  map_smul' c ω := by ext; simp
+
+/-- Composition with a `σ`-semilinear coefficient map, as a `σ`-semilinear map of forms. -/
+private def coeffMap {σ : ℂ →+* ℂ} (L : F →L[ℝ] G) (hL : ∀ (c : ℂ) x, L (c • x) = σ c • L x) :
+    (V [⋀^Fin k]→L[ℝ] F) →ₛₗ[σ] V [⋀^Fin k]→L[ℝ] G where
+  toFun ω := L.compContinuousAlternatingMap ω
+  map_add' ω ω' := by ext; simp
+  map_smul' c ω := by ext; simp [hL]
+
+/-- A `σ`-semilinear coefficient map intertwines the polynomial defining a type projection with
+its image under `σ`. -/
+private lemma aeval_map_basis_compContinuousAlternatingMap {σ : ℂ →+* ℂ} {L : F →L[ℝ] G}
+    (hL : ∀ (c : ℂ) x, L (c • x) = σ c • L x) (p q : ℕ) (ω : V [⋀^Fin k]→L[ℝ] F) :
+    aeval J.alternatingDerivation
+        ((Lagrange.basis (Finset.antidiagonal k) typeEigenvalue (p, q)).map σ)
+        (L.compContinuousAlternatingMap ω) =
+      L.compContinuousAlternatingMap (J.typeProjection p q ω) :=
+  LinearMap.congr_fun (Module.End.aeval_map_comp_of_comp_eq (f := coeffMap (V := V) L hL)
+    (LinearMap.ext (alternatingDerivation_compContinuousAlternatingMap J L)) _) ω
+
+/-- Complex conjugation exchanges the type eigenvalues of `(p,q)` and `(q,p)`. -/
+private lemma conj_typeEigenvalue (pq : ℕ × ℕ) :
+    conj (typeEigenvalue pq) = typeEigenvalue pq.swap := by
+  simp only [typeEigenvalue, map_mul, map_sub, map_natCast, conj_I, Prod.fst_swap, Prod.snd_swap]
+  ring
+
+/-- Complex conjugation exchanges the polynomials defining the type projections onto `(p,q)` and
+`(q,p)`. -/
+private lemma map_conj_basis (p q : ℕ) :
+    (Lagrange.basis (Finset.antidiagonal k) typeEigenvalue (p, q)).map (starRingEnd ℂ) =
+      Lagrange.basis (Finset.antidiagonal k) typeEigenvalue (q, p) := by
+  simp only [Lagrange.basis, Lagrange.basisDivisor, Polynomial.map_prod, Polynomial.map_mul,
+    Polynomial.map_C, Polynomial.map_sub, Polynomial.map_X, map_inv₀, map_sub,
+    conj_typeEigenvalue, Prod.swap_prod_mk]
+  refine Finset.prod_nbij' Prod.swap Prod.swap ?_ ?_ (by simp) (by simp) (by simp) <;>
+  · rintro ⟨a, b⟩ h
+    simp only [Finset.mem_erase, Finset.mem_antidiagonal, ne_eq, Prod.mk.injEq,
+      Prod.swap_prod_mk] at h ⊢
+    omega
+
+/-- Pullback along a map intertwining the endomorphisms commutes with the type projections. -/
+theorem typeProjection_compContinuousLinearMap {K : W →L[ℝ] W} {f : W →L[ℝ] V}
+    (hf : ∀ w, J (f w) = f (K w)) (ω : V [⋀^Fin k]→L[ℝ] F) :
+    K.typeProjection p q (ω.compContinuousLinearMap f) =
+      (J.typeProjection p q ω).compContinuousLinearMap f :=
+  LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq (f := pullback (F := F) f)
+    (LinearMap.ext (alternatingDerivation_compContinuousLinearMap hf)) _) ω
+
+/-- A complex-linear coefficient map commutes with the type projections. -/
+theorem typeProjection_compContinuousAlternatingMap {L : F →L[ℝ] G}
+    (hL : ∀ (c : ℂ) x, L (c • x) = c • L x) (ω : V [⋀^Fin k]→L[ℝ] F) :
+    J.typeProjection p q (L.compContinuousAlternatingMap ω) =
+      L.compContinuousAlternatingMap (J.typeProjection p q ω) := by
+  have h := aeval_map_basis_compContinuousAlternatingMap (σ := RingHom.id ℂ) (J := J) hL p q ω
+  rwa [Polynomial.map_id] at h
+
+/-- A conjugate-linear coefficient map, such as complex conjugation, sends the type-`(p,q)`
+projection to the type-`(q,p)` projection. -/
+theorem typeProjection_compContinuousAlternatingMap_of_map_smul_conj {L : F →L[ℝ] G}
+    (hL : ∀ (c : ℂ) x, L (c • x) = conj c • L x) (ω : V [⋀^Fin k]→L[ℝ] F) :
+    J.typeProjection q p (L.compContinuousAlternatingMap ω) =
+      L.compContinuousAlternatingMap (J.typeProjection p q ω) := by
+  rw [← aeval_map_basis_compContinuousAlternatingMap hL, map_conj_basis]
+  rfl
 
 end TypeProjection
 
@@ -491,36 +552,37 @@ private lemma aeval_alternatingDerivation_nodal (hJ : ∀ v, J (J v) = -v) (k : 
     set P := Lagrange.nodal (Finset.antidiagonal (n + 1)) typeEigenvalue
     have hP : ∀ pq ∈ Finset.antidiagonal (n + 1), P.eval (typeEigenvalue pq) = 0 :=
       fun pq hpq ↦ Lagrange.eval_nodal_at_node hpq
-    -- Shifting the nodes by `±I` sends the degree-`n` eigenvalues to degree-`n + 1` ones.
-    have hplus : aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin n]→L[ℝ] F))
-        (P.comp (X + C I)) = 0 := by
-      refine hvan _ fun ⟨p, q⟩ hpq ↦ ?_
-      rw [eval_comp]
-      convert hP (p + 1, q) (by simpa [Finset.mem_antidiagonal, add_right_comm] using hpq) using 2
-      simp [typeEigenvalue]
-      ring
-    have hminus : aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin n]→L[ℝ] F))
-        (P.comp (X - C I)) = 0 := by
-      refine hvan _ fun ⟨p, q⟩ hpq ↦ ?_
-      rw [eval_comp]
-      convert hP (p, q + 1) (by simpa [Finset.mem_antidiagonal, ← add_assoc] using hpq) using 2
-      simp [typeEigenvalue]
-      ring
+    -- Shifting the nodes by `±I` sends the degree-`n` eigenvalues to degree-`n + 1` ones, so `P`
+    -- annihilates the shifted derivations on degree-`n` forms. By `aeval_comp`, evaluating `P` at
+    -- the shifted derivation is evaluating the shifted polynomial at the derivation.
+    have hplus : aeval (J.alternatingDerivation + algebraMap ℂ _ I :
+        Module.End ℂ (V [⋀^Fin n]→L[ℝ] F)) P = 0 := by
+      have h := hvan (P.comp (X + C I)) fun ⟨p, q⟩ hpq ↦ by
+        rw [eval_comp]
+        convert hP (p + 1, q) (by simpa [Finset.mem_antidiagonal, add_right_comm] using hpq)
+          using 2
+        simp [typeEigenvalue]
+        ring
+      simpa [aeval_comp] using h
+    have hminus : aeval (J.alternatingDerivation - algebraMap ℂ _ I :
+        Module.End ℂ (V [⋀^Fin n]→L[ℝ] F)) P = 0 := by
+      have h := hvan (P.comp (X - C I)) fun ⟨p, q⟩ hpq ↦ by
+        rw [eval_comp]
+        convert hP (p, q + 1) (by simpa [Finset.mem_antidiagonal, ← add_assoc] using hpq) using 2
+        simp [typeEigenvalue]
+        ring
+      simpa [aeval_comp] using h
     ext ω w
     set Ω := aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin (n + 1)]→L[ℝ] F)) P ω
     have hint : ∀ v, interior v Ω = 0 := by
       intro v
-      have h₁ := congrArg (fun T ↦ T ω) (aeval_comp_of_comp_eq
+      have h₁ := congrArg (fun T ↦ T ω) (Module.End.aeval_comp_of_comp_eq
         (interior_sub_comp_alternatingDerivation (F := F) hJ v).symm P)
-      have h₂ := congrArg (fun T ↦ T ω) (aeval_comp_of_comp_eq
+      have h₂ := congrArg (fun T ↦ T ω) (Module.End.aeval_comp_of_comp_eq
         (interior_add_comp_alternatingDerivation (F := F) hJ v).symm P)
       simp only [LinearMap.comp_apply] at h₁ h₂
-      rw [show (J.alternatingDerivation + algebraMap ℂ _ I :
-          Module.End ℂ (V [⋀^Fin n]→L[ℝ] F)) = aeval J.alternatingDerivation (X + C I) by simp,
-        ← aeval_comp, hplus] at h₁
-      rw [show (J.alternatingDerivation - algebraMap ℂ _ I :
-          Module.End ℂ (V [⋀^Fin n]→L[ℝ] F)) = aeval J.alternatingDerivation (X - C I) by simp,
-        ← aeval_comp, hminus] at h₂
+      rw [hplus] at h₁
+      rw [hminus] at h₂
       simp only [LinearMap.zero_apply, LinearMap.sub_apply, LinearMap.add_apply,
         LinearMap.smul_apply] at h₁ h₂
       have h₃ : (2 : ℂ) • interior v Ω = 0 := by
@@ -569,6 +631,7 @@ theorem isOfType_typeProjection (hJ : ∀ v, J (J v) = -v) (hpq : p + q = k)
   ⟨hpq, alternatingDerivation_typeProjection hJ ω⟩
 
 /-- The type-`(p,q)` projection of `k`-forms vanishes unless `p + q = k`. -/
+@[simp]
 theorem typeProjection_eq_zero (hJ : ∀ v, J (J v) = -v) (hpq : p + q ≠ k) :
     (J.typeProjection p q : Module.End ℂ (V [⋀^Fin k]→L[ℝ] F)) = 0 :=
   aeval_alternatingDerivation_eq_zero hJ fun p' q' hpq' ↦
@@ -576,12 +639,14 @@ theorem typeProjection_eq_zero (hJ : ∀ v, J (J v) = -v) (hpq : p + q ≠ k) :
       (j := (p', q')) (fun h ↦ hpq (by obtain ⟨rfl, rfl⟩ := Prod.mk.inj h; exact hpq'))
       (Finset.mem_antidiagonal.2 hpq')
 
-/-- A form has type `(p,q)` exactly when its type-`(p,q)` component is the whole form. -/
+/-- A form has type `(p,q)` exactly when `p + q = k` and its type-`(p,q)` component is the whole
+form. -/
 theorem isOfType_iff_typeProjection_eq (hJ : ∀ v, J (J v) = -v) :
     ω.IsOfType J p q ↔ p + q = k ∧ J.typeProjection p q ω = ω :=
   ⟨fun h ↦ ⟨h.1, h.typeProjection_self⟩, fun ⟨hpq, h⟩ ↦ h ▸ isOfType_typeProjection hJ hpq ω⟩
 
 /-- The type projections are complementary idempotents. -/
+@[simp]
 theorem typeProjection_typeProjection (hJ : ∀ v, J (J v) = -v) (ω : V [⋀^Fin k]→L[ℝ] F) :
     J.typeProjection p' q' (J.typeProjection p q ω) =
       if (p', q') = (p, q) then J.typeProjection p q ω else 0 := by
@@ -591,62 +656,6 @@ theorem typeProjection_typeProjection (hJ : ∀ v, J (J v) = -v) (ω : V [⋀^Fi
       exact (isOfType_typeProjection hJ hpq ω).typeProjection_self
     · exact (isOfType_typeProjection hJ hpq ω).typeProjection_of_ne h
   · simp [typeProjection_eq_zero hJ hpq]
-
-/-- Pullback along a map intertwining almost complex structures commutes with the type
-projections. -/
-theorem typeProjection_compContinuousLinearMap {K : W →L[ℝ] W} (hJ : ∀ v, J (J v) = -v)
-    (hK : ∀ w, K (K w) = -w) {f : W →L[ℝ] V} (hf : ∀ w, J (f w) = f (K w))
-    (ω : V [⋀^Fin k]→L[ℝ] F) :
-    K.typeProjection p q (ω.compContinuousLinearMap f) =
-      (J.typeProjection p q ω).compContinuousLinearMap f := by
-  by_cases hpq : p + q = k
-  · refine typeProjection_eq_of_sum_eq
-      (fun pq hpq' ↦ (isOfType_typeProjection hJ (by simpa using hpq') ω).compContinuousLinearMap
-        hf) ?_ hpq
-    ext v
-    simp only [ContinuousAlternatingMap.sum_apply,
-      ContinuousAlternatingMap.compContinuousLinearMap_apply]
-    rw [← ContinuousAlternatingMap.sum_apply, sum_typeProjection]
-  · ext v
-    simp [typeProjection_eq_zero hJ hpq, typeProjection_eq_zero hK hpq]
-
-/-- A complex-linear coefficient map commutes with the type projections. -/
-theorem typeProjection_compContinuousAlternatingMap [ContinuousConstSMul ℝ G]
-    (hJ : ∀ v, J (J v) = -v) {L : F →L[ℝ] G}
-    (hL : ∀ (c : ℂ) x, L (c • x) = c • L x) (ω : V [⋀^Fin k]→L[ℝ] F) :
-    J.typeProjection p q (L.compContinuousAlternatingMap ω) =
-      L.compContinuousAlternatingMap (J.typeProjection p q ω) := by
-  by_cases hpq : p + q = k
-  · refine typeProjection_eq_of_sum_eq
-      (fun pq hpq' ↦ (isOfType_typeProjection hJ (by simpa using hpq')
-        ω).compContinuousAlternatingMap hL) ?_ hpq
-    ext v
-    simp only [ContinuousAlternatingMap.sum_apply,
-      ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_apply, ← map_sum]
-    rw [← ContinuousAlternatingMap.sum_apply, sum_typeProjection]
-  · ext v
-    simp [typeProjection_eq_zero hJ hpq]
-
-/-- A conjugate-linear coefficient map, such as complex conjugation, sends the type-`(p,q)`
-component to the type-`(q,p)` component. -/
-theorem typeProjection_compContinuousAlternatingMap_of_map_smul_conj [ContinuousConstSMul ℝ G]
-    (hJ : ∀ v, J (J v) = -v) {L : F →L[ℝ] G} (hL : ∀ (c : ℂ) x, L (c • x) = conj c • L x)
-    (ω : V [⋀^Fin k]→L[ℝ] F) :
-    J.typeProjection q p (L.compContinuousAlternatingMap ω) =
-      L.compContinuousAlternatingMap (J.typeProjection p q ω) := by
-  by_cases hpq : p + q = k
-  · refine typeProjection_eq_of_sum_eq (η := fun pq ↦ L.compContinuousAlternatingMap
-        (J.typeProjection pq.2 pq.1 ω))
-      (fun pq hpq' ↦ (isOfType_typeProjection hJ (by simpa [add_comm] using hpq')
-        ω).compContinuousAlternatingMap_of_map_smul_conj hL) ?_ (by rw [add_comm, hpq])
-    rw [← Finset.Nat.sum_antidiagonal_swap]
-    ext v
-    simp only [ContinuousAlternatingMap.sum_apply,
-      ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_apply, Prod.fst_swap,
-      Prod.snd_swap, ← map_sum]
-    rw [← ContinuousAlternatingMap.sum_apply, sum_typeProjection]
-  · ext v
-    simp [typeProjection_eq_zero hJ hpq, typeProjection_eq_zero hJ (by rwa [add_comm] : q + p ≠ k)]
 
 end Decomposition
 
