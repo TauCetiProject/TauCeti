@@ -124,12 +124,14 @@ invariant subspace. -/
 noncomputable def haarAverageMap : V →L[𝕜] V :=
   integratedOperator π hπ 1
 
+omit [CompleteSpace V] in
 /-- The Haar average of the action operators, evaluated at a vector. -/
 theorem haarAverageMap_apply (v : V) :
     haarAverageMap π hπ v = ∫ g, π g v ∂haarProb G := by
   rw [haarAverageMap, integratedOperator_apply]
   simp
 
+omit [CompleteSpace V] in
 /-- The Haar average, evaluated at a vector, is `TauCeti.haarAverage` of that vector's orbit map.
 This is the form in which the translation invariance of Haar averaging applies below. -/
 private theorem haarAverageMap_apply_eq_haarAverage (v : V) :
@@ -182,6 +184,7 @@ theorem comp_haarAverageMap_apply (h : G) (v : V) :
     π h (haarAverageMap π hπ v) = haarAverageMap π hπ v :=
   DFunLike.congr_fun (comp_haarAverageMap π hπ h) v
 
+omit [CompleteSpace V] in
 /-- **The Haar average absorbs the action on the right**: `P ∘ π h = P`. This is right invariance of
 normalized Haar measure, which holds because a compact group is unimodular. -/
 @[simp]
@@ -194,6 +197,7 @@ theorem haarAverageMap_comp (h : G) :
     _ = haarAverage G (𝕜 := 𝕜) (orbitMap π hπ v) := haarAverage_comp_mulRight G _ _
     _ = haarAverageMap π hπ v := (haarAverageMap_apply_eq_haarAverage π hπ v).symm
 
+omit [CompleteSpace V] in
 /-- The Haar average absorbs the action on the right, applied to a vector: `P (π h v) = P v`. -/
 @[simp]
 theorem haarAverageMap_comp_apply (h : G) (v : V) :
