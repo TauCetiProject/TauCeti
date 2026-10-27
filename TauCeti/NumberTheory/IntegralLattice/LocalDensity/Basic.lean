@@ -10,6 +10,7 @@ public import Mathlib.Topology.Instances.Rat
 public import TauCeti.Data.ZMod.MulCastHom
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.FiniteField
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Algebra.BigOperators.Field
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Choose.Basic
@@ -435,8 +436,7 @@ private theorem natCard_ker_tangentHom_succ {A : Matrix n n ℤ_[p]} {e : ℕ}
       _ = _ := by rw [natCard_isSymm, Nat.card_zmod]
   have hcardM (j : ℕ) : Nat.card (Matrix n n (ZMod (p ^ j))) =
       (p ^ j) ^ (Fintype.card n * Fintype.card n) := by
-    rw [← Nat.card_congr (of : (n → n → ZMod (p ^ j)) ≃ _), Nat.card_fun, Nat.card_fun,
-      Nat.card_zmod, Nat.card_eq_fintype_card, ← pow_mul]
+    rw [card_matrix, Nat.card_zmod, Nat.card_eq_fintype_card]
   have hmap (K : AddSubgroup (Matrix n n (ZMod (p ^ (e + 1))))) :
       Nat.card K = Nat.card (K.map ρ) * Nat.card ↥(ρ.ker ⊓ K) := by
     rw [← AddSubgroup.relIndex_ker, AddSubgroup.relIndex_mul_card]
