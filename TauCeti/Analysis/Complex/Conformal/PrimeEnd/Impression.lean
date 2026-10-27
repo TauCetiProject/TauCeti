@@ -14,13 +14,15 @@ import TauCeti.Topology.Connected.LocallyPathConnected
 
 The impression of a null chain is the intersection of the closures of the domains it cuts off.
 Equivalent chains have the same impression, so this defines `PrimeEnd.impression` without
-choosing a representative. For a bounded domain the impression is a nonempty compact connected
-subset of the frontier. These sets relate the boundary seen from inside a domain to its ordinary
-topological boundary; a single prime end may have more than one point in its impression.
+choosing a representative. In a connected open domain the impression is a subset of the
+frontier, and for a bounded domain it is moreover nonempty, compact and connected. These sets
+relate the boundary seen from inside a domain to its ordinary topological boundary; a single
+prime end may have more than one point in its impression.
 
-The frontier assertion uses the fact that the crosscuts of a bounded null chain eventually
-avoid every compact subset of the domain. A compact connected set inside the domain then
-joins any proposed interior impression point to the first crosscut, contradicting nesting.
+The frontier assertion uses the fact that the crosscuts of a null chain eventually avoid every
+compact subset of the domain, which needs no boundedness. A compact connected set inside the
+domain then joins any proposed interior impression point to the first crosscut, contradicting
+nesting.
 
 ## References
 
@@ -95,9 +97,9 @@ theorem isConnected_nullChainImpression (hC : IsNullChain U C) (hU : IsBounded U
     (fun _ => (hU.subset nullChainDomain_subset_self).isCompact_closure)
     (fun n => (hC.isConnected_nullChainDomain n).isPreconnected.closure)
 
-/-- The impression of a bounded null chain in a connected open domain lies in its frontier. -/
+/-- The impression of a null chain in a connected open domain lies in its frontier. -/
 theorem nullChainImpression_subset_frontier (hC : IsNullChain U C) (hU : IsOpen U)
-    (hUc : IsPreconnected U) (hUb : IsBounded U) :
+    (hUc : IsPreconnected U) :
     nullChainImpression U C ⊆ frontier U := by
   intro x hx
   have hxD := mem_nullChainImpression_iff.mp hx
@@ -110,7 +112,7 @@ theorem nullChainImpression_subset_frontier (hC : IsNullChain U C) (hU : IsOpen 
       hU hUc (by simp only [insert_subset_iff, singleton_subset_iff]; exact ⟨hpU, hxU⟩)
   have hxL : x ∈ interior L := hpair (by simp)
   have hpL : p ∈ L := interior_subset (hpair (by simp))
-  obtain ⟨n, hn⟩ := (hC.eventually_disjoint_of_isCompact hU hUb hL hLU).exists
+  obtain ⟨n, hn⟩ := (hC.eventually_disjoint_of_isCompact hU hL hLU).exists
   obtain ⟨z, hzL, hzD⟩ := _root_.mem_closure_iff.mp (hxD n) _ isOpen_interior hxL
   have hLD : L ⊆ nullChainDomain U C n :=
     hLc.subset_nullChainDomain (fun w hw => ⟨hLU hw, disjoint_right.mp hn hw⟩)
@@ -162,13 +164,13 @@ theorem isConnected_impression (p : PrimeEnd U) (hU : IsBounded U) :
     rw [impression_mk]
     exact hC.isConnected_nullChainImpression hU
 
-/-- The impression of a prime end of a bounded connected open domain is a boundary set. -/
-theorem impression_subset_frontier (p : PrimeEnd U) (hU : IsOpen U)
-    (hUc : IsPreconnected U) (hUb : IsBounded U) : p.impression ⊆ frontier U := by
+/-- The impression of a prime end of a connected open domain is a boundary set. -/
+theorem impression_subset_frontier (p : PrimeEnd U) (hU : IsOpen U) (hUc : IsPreconnected U) :
+    p.impression ⊆ frontier U := by
   induction p using PrimeEnd.ind with
   | h C hC =>
     rw [impression_mk]
-    exact hC.nullChainImpression_subset_frontier hU hUc hUb
+    exact hC.nullChainImpression_subset_frontier hU hUc
 
 end PrimeEnd
 

@@ -161,18 +161,41 @@ theorem eventually_norm_sub_lt (hC : IsNullChain U C) (hU : IsBounded U) {ε : �
       mul_lt_mul_of_pos_left (hn z hz w hw) (by positivity)
     _ = ε := by field_simp
 
-/-- Crosscuts of a bounded null chain eventually avoid each compact subset of the open domain. -/
-theorem eventually_disjoint_of_isCompact (hC : IsNullChain U C) (hU : IsOpen U)
-    (hUb : IsBounded U) {K : Set ℂ} (hK : IsCompact K) (hKU : K ⊆ U) :
-    ∀ᶠ n in atTop, Disjoint (C n) K := by
+/-- Crosscuts of a null chain eventually avoid each compact subset of the open domain. -/
+theorem eventually_disjoint_of_isCompact (hC : IsNullChain U C) (hU : IsOpen U) {K : Set ℂ}
+    (hK : IsCompact K) (hKU : K ⊆ U) : ∀ᶠ n in atTop, Disjoint (C n) K := by
   obtain ⟨δ, hδ, hδU⟩ := hK.exists_thickening_subset_open hU hKU
-  filter_upwards [hC.eventually_norm_sub_lt hUb hδ] with n hn
+  obtain ⟨R, hR, hKR⟩ := hK.isBounded.exists_pos_norm_le
+  filter_upwards [hC.eventually_chordal_lt (δ / 2 / (1 + (R + δ) ^ 2)) (by positivity)]
+    with n hn
   refine disjoint_left.mpr fun z hzC hzK => ?_
   obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
   have hxC : x ∈ C n := hrange ▸ ⟨0, γ.source⟩
-  have hxU : x ∈ U := hδU (mem_thickening_iff.mpr ⟨z, hzK, by
-    simpa only [dist_eq_norm] using hn x hxC z hzC⟩)
-  exact (hU.frontier_eq.subset hγ.source_mem_frontier).2 hxU
+  have hxK : δ ≤ infDist x K := not_lt.mp fun h =>
+    (hU.frontier_eq.subset hγ.source_mem_frontier).2
+      (hδU ((mem_thickening_iff_infDist_lt ⟨z, hzK⟩).mpr h))
+  have hmem : δ / 2 ∈ Icc (infDist z K) (infDist x K) := by
+    rw [infDist_zero_of_mem hzK]
+    constructor <;> linarith
+  -- The crosscut runs from `z ∈ K` to its endpoint `x ∉ U`, so it passes through a point `w`
+  -- at distance `δ / 2` from `K`; near `K` chordal and Euclidean distances are comparable.
+  obtain ⟨w, hwC, hwK : infDist w K = δ / 2⟩ :=
+    (hrange ▸ isPreconnected_range γ.continuous).intermediate_value hzC hxC
+      (continuous_infDist_pt K).continuousOn hmem
+  obtain ⟨k, hk, hwk⟩ := (infDist_lt_iff ⟨z, hzK⟩).mp (hwK.trans_lt (half_lt_self hδ))
+  have hw : ‖w‖ ≤ R + δ := by
+    rw [dist_eq_norm] at hwk
+    linarith [norm_le_norm_add_norm_sub' w k, hKR k hk]
+  have hwz : δ / 2 ≤ ‖w - z‖ := by
+    rw [← hwK, ← dist_eq_norm]
+    exact infDist_le_dist_of_mem hzK
+  refine lt_irrefl (δ / 2) ?_
+  calc
+    δ / 2 ≤ (1 + (R + δ) ^ 2) * (‖w - z‖ / √((1 + ‖w‖ ^ 2) * (1 + ‖z‖ ^ 2))) :=
+      hwz.trans (norm_sub_le_mul_chordal hw ((hKR z hzK).trans (by linarith)))
+    _ < (1 + (R + δ) ^ 2) * (δ / 2 / (1 + (R + δ) ^ 2)) :=
+      mul_lt_mul_of_pos_left (hn w hwC z hzC) (by positivity)
+    _ = δ / 2 := by field_simp
 
 /-- The next crosscut lies, inside `U`, in the domain cut off by the previous one. -/
 theorem inter_subset_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
