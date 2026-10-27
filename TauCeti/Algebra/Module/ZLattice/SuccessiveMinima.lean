@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.Flag
 public import TauCeti.Analysis.Convex.Body
 public import TauCeti.Algebra.Module.ZLattice.GaugeBasis
 import TauCeti.Algebra.Order.BigOperators.Factorial
@@ -50,6 +51,8 @@ loss is the factor `∏ i < n, max 1 ((i + 1) / 2) = n! / 2 ^ (n - 1)`
 * `ZLattice.mem_span_image_Iio_of_gauge_lt_successiveMin`: lattice vectors of gauge below the
   `j`-th minimum lie in the span of the first `j` vectors attaining the minima; this is the
   hypothesis of Minkowski's second theorem (`ZLattice.prod_mul_measure_le_two_pow_mul_covolume`).
+* `ZLattice.exists_basis_gauge_eq_successiveMin`: the vectors attaining the minima, as a basis
+  of `E` over `ℝ` whose flags `Basis.flag` contain the lattice vectors below each minimum.
 * `ZLattice.successiveMin_map` and `ZLattice.successiveMin_comap`: the minima are invariant under
   an injective continuous linear map, or a linear equivalence, applied to both the lattice and the
   body.
@@ -335,6 +338,29 @@ theorem successiveMin_isLeast (L : Submodule ℤ E) [DiscreteTopology L] [IsZLat
       LinearIndependent ℝ v ∧ ∀ j, v j ∈ L ∧ v j ∈ t • (K : Set E)} (successiveMin L K i) :=
   ⟨⟨successiveMin_nonneg L K i, (successiveMin_le_iff L hK (successiveMin_nonneg L K i)).1 le_rfl⟩,
     fun _ ⟨ht, _, hv, hvLK⟩ ↦ successiveMin_le ht hv (fun j ↦ (hvLK j).1) fun j ↦ (hvLK j).2⟩
+
+/-- **A real basis attaining the successive minima.** For a discrete spanning lattice `L` and a
+convex body `K` with `0` in its interior, some basis `b` of `E` over `ℝ` consists of vectors of `L`
+with `gauge K (b i) = successiveMin L K i`, so that `b i ∈ successiveMin L K i • K`, for every `i`.
+Moreover every vector of `L` of gauge less than the `i`-th minimum lies in the flag
+`b.flag i.castSucc`, the span of `b 0, …, b (i - 1)`. The body need not be symmetric, and `b` need
+not be a `ℤ`-basis of `L`. -/
+theorem exists_basis_gauge_eq_successiveMin (L : Submodule ℤ E) [DiscreteTopology L]
+    [IsZLattice ℝ L] (hK : 0 ∈ interior (K : Set E)) :
+    ∃ b : Basis (Fin (finrank ℝ E)) ℝ E, (∀ i, b i ∈ L) ∧
+      (∀ i, gauge (K : Set E) (b i) = successiveMin L K i) ∧
+      (∀ i, b i ∈ successiveMin L K i • (K : Set E)) ∧
+      ∀ i, ∀ x ∈ L, gauge (K : Set E) x < successiveMin L K i → x ∈ b.flag i.castSucc := by
+  obtain ⟨a, ha, haL⟩ := exists_linearIndependent_gauge_eq_successiveMin L hK
+  set b := basisOfLinearIndependentOfCardEqFinrank' a ha (Fintype.card_fin _)
+  have hb : ⇑b = a := coe_basisOfLinearIndependentOfCardEqFinrank' a ha _
+  have hflag (i : Fin (finrank ℝ E)) : b.flag i.castSucc = span ℝ (a '' Set.Iio i) := by
+    simp only [Basis.flag, hb, Fin.castSucc_lt_castSucc_iff, Set.Iio_def]
+  refine ⟨b, fun i ↦ hb ▸ (haL i).1, fun i ↦ hb ▸ (haL i).2, fun i ↦ ?_, fun i x hxL hx ↦ ?_⟩
+  · rw [← ConvexBody.gauge_le_iff_mem_smul hK (successiveMin_pos L hK i), hb, (haL i).2]
+  · rw [hflag]
+    exact mem_span_image_Iio_of_gauge_lt_successiveMin hK ha (fun j ↦ (haL j).1)
+      (fun j ↦ (haL j).2.le) hxL hx
 
 /-- **A basis from the successive minima** (Cassels, Chapter V, Lemma 8). For a discrete spanning
 lattice `L` and a symmetric convex body `K` with `0` in its interior, some `ℤ`-basis `b` of `L` has
