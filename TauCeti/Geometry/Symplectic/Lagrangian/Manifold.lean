@@ -164,25 +164,9 @@ theorem IsLagrangianMap.isCoisotropicMap (h : hσ.IsLagrangianMap J f) : hσ.IsC
 the two-form back to zero. -/
 theorem isIsotropicMap_iff_mpullback_eq_zero [IsManifold J ∞ N] (hf : ContMDiff J I ∞ f) :
     hσ.IsIsotropicMap J f ↔ SmoothForm.mpullback f hf σ = 0 := by
-  rw [isIsotropicMap_iff]
-  constructor
-  · intro h
-    have hbundle : (SmoothForm.mpullback f hf σ) =
-        (0 : SmoothForm J N ℝ 2) := by
-      apply SmoothBundleForm.ext_eval₂
-      intro x v w
-      rw [SmoothForm.eval₂_mpullback]
-      simpa using h x v w
-    exact hbundle
-  · intro h x v w
-    have heq := congrArg
-      (fun φ : SmoothForm J N ℝ 2 =>
-        SmoothBundleForm.eval₂ φ x v w) h
-    have htuple : (fun i : Fin 2 ↦ mfderiv J I f x (![v, w] i)) =
-        ![mfderiv J I f x v, mfderiv J I f x w] := by
-      funext i
-      fin_cases i <;> rfl
-    simpa [SmoothForm.eval₂_mpullback, htuple] using heq
+  rw [isIsotropicMap_iff, SmoothBundleForm.ext_eval₂_iff]
+  simp only [SmoothForm.eval₂_mpullback]
+  simp
 
 /-! ### Reparametrization -/
 

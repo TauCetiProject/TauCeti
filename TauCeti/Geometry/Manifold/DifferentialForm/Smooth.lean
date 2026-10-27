@@ -304,6 +304,11 @@ theorem ext_eval₂ {φ ψ : SmoothBundleForm I F V 2}
   rw [hv]
   simpa [eval₂] using h x (v 0) (v 1)
 
+/-- Two smooth bundle-valued two-forms are equal exactly when all ordered-pair evaluations agree. -/
+theorem ext_eval₂_iff {φ ψ : SmoothBundleForm I F V 2} :
+    φ = ψ ↔ ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w :=
+  ⟨fun h ↦ by subst h; intros; rfl, ext_eval₂⟩
+
 section Evaluation
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
