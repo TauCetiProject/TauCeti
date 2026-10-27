@@ -8,7 +8,9 @@ module
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Product
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+public import TauCeti.LinearAlgebra.ExteriorPower.Prod
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
+public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.RingTheory.KoszulComplex.Basic
 
 /-!
@@ -34,7 +36,8 @@ The modules are taken in the universe of the ring, where Mathlib's `ModuleCat` i
 * `TauCeti.koszulComplex.tensorIso`: the isomorphism `K(φ) ⊗ K(ψ) ≅ K(φ.coprod ψ)`, with
   `TauCeti.koszulComplex.subtype_tensorIso_hom_f_ιTensorObj_tmul` computing it on `a ⊗ b`.
 * `TauCeti.koszulComplex.tensorIsoAppend`: for finite sequences `x` and `y`,
-  `K(x) ⊗ K(y) ≅ K(x, y)` with `(x, y) = Fin.append x y`.
+  `K(x) ⊗ K(y) ≅ K(x, y)` with `(x, y) = Fin.append x y`, with
+  `TauCeti.koszulComplex.subtype_tensorIsoAppend_hom_f_ιTensorObj_tmul` computing it on `a ⊗ b`.
 
 ## References
 
@@ -52,6 +55,8 @@ noncomputable section
 universe u
 
 open CategoryTheory MonoidalCategory HomologicalComplex CliffordAlgebra
+open TauCeti.exteriorPower (wedgeTensor coe_wedgeTensor_tmul proj coe_proj_of_mem proj_coe
+  sum_coe_wedgeTensor_map_proj)
 open scoped TensorProduct
 
 namespace TauCeti
@@ -62,23 +67,6 @@ variable {R : Type u} [CommRing R] {M N : Type u} [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N]
 
 variable (φ : Module.Dual R M) (ψ : Module.Dual R N)
-
-section Wedge
-
-variable (R M N) in
-/-- The wedge product `⋀ᵖ M ⊗ ⋀^q N → ⋀ⁿ (M × N)`, `a ⊗ b ↦ a ∧ b`, for `p + q = n`. -/
-private def wedgeTensor (p q n : ℕ) (h : p + q = n) :
-    ⋀[R]^p M ⊗[R] ⋀[R]^q N →ₗ[R] ⋀[R]^n (M × N) :=
-  (LinearEquiv.ofEq _ _ (by rw [h])).toLinearMap ∘ₗ
-    TensorProduct.lift ((exteriorPower.wedge R (M × N) p q).compl₁₂
-      (exteriorPower.map p (LinearMap.inl R M N)) (exteriorPower.map q (LinearMap.inr R M N)))
-
-private theorem coe_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : ⋀[R]^p M)
-    (b : ⋀[R]^q N) :
-    (wedgeTensor R M N p q n h (a ⊗ₜ b) : ExteriorAlgebra R (M × N)) =
-      ExteriorAlgebra.map (LinearMap.inl R M N) a *
-        ExteriorAlgebra.map (LinearMap.inr R M N) b := by
-  simp [wedgeTensor]
 
 /-- The graded Leibniz rule for the Koszul differential of `φ.coprod ψ` on a wedge product. -/
 private theorem coe_koszulDifferential_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n + 1)
@@ -100,8 +88,6 @@ private theorem coe_koszulDifferential_wedgeTensor_tmul (p q n : ℕ) (h : p + q
     LinearMap.coprod_inr, TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower ha,
     smul_mul_assoc]
 
-end Wedge
-
 /-- The comparison map in degree `n`. -/
 private def toKoszul (n : ℕ) :
     (koszulComplex φ ⊗ koszulComplex ψ).X n ⟶ (koszulComplex (φ.coprod ψ)).X n :=
@@ -114,30 +100,6 @@ private theorem toKoszul_ιTensorObj_apply (p q n : ℕ) (h : p + q = n)
   congr($(ι_mapBifunctorDesc (K₁ := koszulComplex φ) (K₂ := koszulComplex ψ)
     (F := curriedTensor (ModuleCat.{u} R)) (c := ComplexShape.down ℕ)
     (fun p q h ↦ ModuleCat.ofHom (wedgeTensor R M N p q n h)) p q h).hom z)
-
-section Proj
-
-variable {X : Type u} [AddCommGroup X] [Module R X]
-
-variable (R X) in
-/-- The projection of the exterior algebra onto its degree-`i` component. -/
-private def proj (i : ℕ) : ExteriorAlgebra R X →ₗ[R] ⋀[R]^i X :=
-  DirectSum.component R ℕ (fun i ↦ ⋀[R]^i X) i ∘ₗ
-    (DirectSum.decomposeLinearEquiv (fun i ↦ ⋀[R]^i X)).toLinearMap
-
-private theorem coe_proj_of_mem {i p : ℕ} {x : ExteriorAlgebra R X} (hx : x ∈ ⋀[R]^p X) :
-    (proj R X i x : ExteriorAlgebra R X) = if p = i then x else 0 := by
-  have : proj R X i x = DirectSum.decompose (fun i ↦ ⋀[R]^i X) x i := rfl
-  rw [this]
-  split_ifs with hpi
-  · subst hpi
-    exact DirectSum.decompose_of_mem_same _ hx
-  · exact DirectSum.decompose_of_mem_ne _ hx hpi
-
-private theorem proj_coe (p : ℕ) (x : ⋀[R]^p X) : proj R X p x = x :=
-  Subtype.ext ((coe_proj_of_mem x.2).trans (by simp))
-
-end Proj
 
 /-- The inverse comparison map in degree `n`, as a linear map. -/
 private def fromKoszulLinear (n : ℕ) :
@@ -152,52 +114,6 @@ private def fromKoszulLinear (n : ℕ) :
 private def fromKoszul (n : ℕ) :
     (koszulComplex (φ.coprod ψ)).X n ⟶ (koszulComplex φ ⊗ koszulComplex ψ).X n :=
   ModuleCat.ofHom (fromKoszulLinear φ ψ n)
-
-/-- In degree `n`, the components of `a ∧ b` in bidegrees `(i, n - i)` add up to the degree-`n`
-component of `a ∧ b`. -/
-private theorem sum_coe_wedgeTensor_map_proj (n : ℕ)
-    (y : ExteriorAlgebra R M ⊗[R] ExteriorAlgebra R N) :
-    ∑ i : Fin (n + 1), (wedgeTensor R M N i (n - i) n (by omega)
-        (TensorProduct.map (proj R M i) (proj R N (n - i)) y) : ExteriorAlgebra R (M × N)) =
-      proj R (M × N) n
-        ((ExteriorAlgebra.prodEquivTensor R M N).symm (GradedTensorProduct.of R _ _ y)) := by
-  induction y using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [map_add, Submodule.coe_add, Finset.sum_add_distrib, hx, hy]
-  | tmul a b =>
-    induction a using DirectSum.Decomposition.inductionOn (fun i ↦ ⋀[R]^i M) with
-    | zero => simp
-    | add a a' ha ha' =>
-      simp only [TensorProduct.add_tmul, map_add, Submodule.coe_add, Finset.sum_add_distrib, ha,
-        ha']
-    | @homogeneous p a =>
-      induction b using DirectSum.Decomposition.inductionOn (fun i ↦ ⋀[R]^i N) with
-      | zero => simp
-      | add b b' hb hb' =>
-        simp only [TensorProduct.tmul_add, map_add, Submodule.coe_add, Finset.sum_add_distrib, hb,
-          hb']
-      | @homogeneous q b =>
-        have hab : ExteriorAlgebra.map (LinearMap.inl R M N) (a : ExteriorAlgebra R M) *
-            ExteriorAlgebra.map (LinearMap.inr R M N) (b : ExteriorAlgebra R N) ∈
-              ⋀[R]^(p + q) (M × N) := by
-          rw [← exteriorPower.coe_map, ← exteriorPower.coe_map]
-          exact SetLike.mul_mem_graded (Submodule.coe_mem _) (Submodule.coe_mem _)
-        simp only [TensorProduct.map_tmul, coe_wedgeTensor_tmul, coe_proj_of_mem a.2,
-          coe_proj_of_mem b.2]
-        rw [← GradedTensorProduct.tmul, ExteriorAlgebra.prodEquivTensor_symm_tmul,
-          coe_proj_of_mem hab]
-        by_cases hpq : p + q = n
-        · rw [ite_eq_left hpq, Finset.sum_eq_single ⟨p, by omega⟩]
-          · simp [show q = n - p by omega]
-          · rintro i - hi
-            have : p ≠ i := fun h ↦ hi (Fin.ext h.symm)
-            simp [this]
-          · simp
-        · rw [ite_eq_right hpq]
-          refine Finset.sum_eq_zero fun i _ ↦ ?_
-          by_cases hi : p = i
-          · have : q ≠ n - i := by omega
-            simp [this]
-          · simp [hi]
 
 private theorem fromKoszul_apply (n : ℕ) (x : ⋀[R]^n (M × N)) :
     (fromKoszul φ ψ n).hom x = ∑ i : Fin (n + 1),
@@ -422,17 +338,12 @@ theorem subtype_tensorIso_hom_f_ιTensorObj_tmul (p q n : ℕ) (h : p + q = n) (
 
 section Sequence
 
-/-- Splitting `R^(m + n)` as `R^m × R^n`, the first `m` and the last `n` coordinates. -/
-private def appendEquiv (m n : ℕ) : (Fin (m + n) → R) ≃ₗ[R] (Fin m → R) × (Fin n → R) :=
-  (LinearEquiv.funCongrLeft R R finSumFinEquiv).trans
-    (LinearEquiv.sumArrowLequivProdArrow (Fin m) (Fin n) R R)
-
-private theorem coprod_comp_appendEquiv {m n : ℕ} (x : Fin m → R) (y : Fin n → R) :
+private theorem coprod_comp_piFinAppend {m n : ℕ} (x : Fin m → R) (y : Fin n → R) :
     (Fintype.linearCombination R x).coprod (Fintype.linearCombination R y) ∘ₗ
-        (appendEquiv m n).toLinearMap =
+        (LinearEquiv.piFinAppend R R m n).toLinearMap =
       Fintype.linearCombination R (Fin.append x y) := by
   ext v
-  simp [appendEquiv, Fintype.linearCombination_apply, Fin.sum_univ_add]
+  simp [Fintype.linearCombination_apply, Fin.sum_univ_add]
 
 /-- **Koszul complexes of concatenated sequences**: for finite sequences `x = (x₁, …, xₘ)` and
 `y = (y₁, …, yₙ)` in `R`, `K(x) ⊗ K(y) ≅ K(x, y)`, where `K(x)` is the Koszul complex of the
@@ -440,7 +351,29 @@ functional `v ↦ ∑ᵢ vᵢ xᵢ` on `Rᵐ` and `(x, y)` is the concatenation 
 def tensorIsoAppend {m n : ℕ} (x : Fin m → R) (y : Fin n → R) :
     koszulComplex (Fintype.linearCombination R x) ⊗ koszulComplex (Fintype.linearCombination R y) ≅
       koszulComplex (Fintype.linearCombination R (Fin.append x y)) :=
-  tensorIso _ _ ≪≫ (mapIso (appendEquiv m n) (coprod_comp_appendEquiv x y)).symm
+  tensorIso _ _ ≪≫ (mapIso (LinearEquiv.piFinAppend R R m n) (coprod_comp_piFinAppend x y)).symm
+
+/-- `tensorIsoAppend x y` sends `a ⊗ b ∈ ⋀ᵖ Rᵐ ⊗ ⋀^q Rⁿ` to the wedge product `a ∧ b` of the images
+of `a` and `b` in `⋀ R^(m + n)`, where `Rᵐ` and `Rⁿ` are included in `R^(m + n)` as the first `m`
+and the last `n` coordinates. -/
+@[simp]
+theorem subtype_tensorIsoAppend_hom_f_ιTensorObj_tmul {m n : ℕ} (x : Fin m → R) (y : Fin n → R)
+    (p q k : ℕ) (h : p + q = k) (a : ⋀[R]^p (Fin m → R)) (b : ⋀[R]^q (Fin n → R)) :
+    (⋀[R]^k (Fin (m + n) → R)).subtype (((tensorIsoAppend x y).hom.f k).hom
+        ((ιTensorObj (koszulComplex (Fintype.linearCombination R x))
+          (koszulComplex (Fintype.linearCombination R y)) p q k h).hom
+          (a ⊗ₜ b : ⋀[R]^p (Fin m → R) ⊗[R] ⋀[R]^q (Fin n → R)))) =
+      ExteriorAlgebra.map
+          ((LinearEquiv.piFinAppend R R m n).symm.toLinearMap ∘ₗ LinearMap.inl R _ _) a *
+        ExteriorAlgebra.map
+          ((LinearEquiv.piFinAppend R R m n).symm.toLinearMap ∘ₗ LinearMap.inr R _ _) b := by
+  rw [tensorIsoAppend, Iso.trans_hom, HomologicalComplex.comp_f, ModuleCat.hom_comp,
+    LinearMap.comp_apply, Iso.symm_hom, mapIso_inv]
+  simp only [map_f]
+  refine (exteriorPower.coe_map _ _).trans ((congrArg (ExteriorAlgebra.map _)
+    (subtype_tensorIso_hom_f_ιTensorObj_tmul _ _ p q k h a b)).trans ?_)
+  rw [map_mul, ← AlgHom.comp_apply, ← AlgHom.comp_apply, ExteriorAlgebra.map_comp_map,
+    ExteriorAlgebra.map_comp_map]
 
 end Sequence
 
