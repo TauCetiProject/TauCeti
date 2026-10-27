@@ -38,6 +38,8 @@ the monic polynomial `TauCeti.Polynomial.monicOfCoeff a` as a function of its co
 * `Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
 * `TauCeti.Polynomial.continuous_coeff_monicOfCoeff`: the coefficients of `monicOfCoeff a` are
   continuous in `a`.
+* `TauCeti.Polynomial.continuous_coeff_prod_X_sub_C`: the coefficients of `∏ i ∈ s, (X - C (f i))`
+  are continuous in the tuple of roots `f`.
 -/
 
 public section
@@ -138,5 +140,20 @@ theorem continuous_coeff_monicOfCoeff {R : Type*} [CommSemiring R] [TopologicalS
     exact continuous_const
   · rw [funext fun a ↦ coeff_eq_zero_of_natDegree_lt ((natDegree_monicOfCoeff a).trans_lt hj)]
     exact continuous_const
+
+/-- The coefficients of `∏ i ∈ s, (X - C (f i))` depend continuously on the tuple `f` of roots.
+
+Each coefficient is, up to sign, an elementary symmetric function of the roots, so continuity of the
+ring operations is all that is used. -/
+theorem continuous_coeff_prod_X_sub_C {ι R : Type*} [CommRing R] [TopologicalSpace R]
+    [IsTopologicalRing R] (s : Finset ι) (k : ℕ) :
+    Continuous fun f : ι → R => (∏ i ∈ s, (X - C (f i))).coeff k := by
+  refine continuous_iff_continuousAt.2 fun f₀ ↦ ?_
+  refine continuousAt_coeff_prod (f := fun i (f : ι → R) ↦ X - C (f i)) s fun i _ j _ ↦ ?_
+  simp only [coeff_sub, coeff_X, coeff_C]
+  split_ifs <;>
+    first
+    | exact continuousAt_const
+    | exact (continuous_const.sub (continuous_apply i)).continuousAt
 
 end TauCeti.Polynomial

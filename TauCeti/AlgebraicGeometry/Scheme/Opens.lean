@@ -49,6 +49,12 @@ noncomputable section
 
 variable {X : Scheme.{u}} {U : X.Opens}
 
+/-- The preimages of two opens covering the target cover the source. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_sup_eq_top {Y : Scheme.{u}}
+    (f : X ⟶ Y) {U V : Y.Opens} (hUV : U ⊔ V = ⊤) :
+    f ⁻¹ᵁ U ⊔ f ⁻¹ᵁ V = ⊤ := by
+  rw [← f.preimage_sup, hUV, f.preimage_top]
+
 /-- If an endomorphism `f` of `X` equals the identity, then so does each of its restriction maps
 `Γ(X, U) ⟶ Γ(X, U)`. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id {f : X ⟶ X}

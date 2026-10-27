@@ -57,7 +57,11 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
 * `SymplecticForm.hamiltonianCurvature_zero_left`,
   `SymplecticForm.hamiltonianCurvature_cylindrical`,
   `SymplecticForm.hamiltonianCurvature_continuation`: the curvature of perturbations without `ds`
-  component.
+  component, and `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`, its local form
+  along a line near which the perturbation is cylindrical.
+* `SymplecticForm.hamiltonianCurvature_congr_of_eventuallyEq`,
+  `SymplecticForm.hamiltonianCurvature_comp_add_right`: the curvature is local in the domain and
+  commutes with domain translations.
 
 ## References
 
@@ -69,7 +73,7 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
 
 public section
 
-open Function MeasureTheory Set
+open Filter Function MeasureTheory Set Topology
 
 namespace TauCeti.SymplecticForm
 
@@ -136,6 +140,41 @@ theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → 
   rw [h.fderiv]
   simp [stdComplexLineReal]
   ring
+
+/-- The curvature only depends on the germs of the perturbation data at the domain point. -/
+theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SymplecticForm V)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ} (hs : Ks =ᶠ[𝓝 z] Ks') (ht : Kt =ᶠ[𝓝 z] Kt') :
+    ω.hamiltonianCurvature Ks Kt z = ω.hamiltonianCurvature Ks' Kt' z := by
+  ext x
+  have hs' : (fun w ↦ Ks w x) =ᶠ[𝓝 z] fun w ↦ Ks' w x := hs.mono fun _ hw ↦ congrFun hw x
+  have ht' : (fun w ↦ Kt w x) =ᶠ[𝓝 z] fun w ↦ Kt' w x := ht.mono fun _ hw ↦ congrFun hw x
+  rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
+    hs.eq_of_nhds, ht.eq_of_nhds]
+
+/-- Curvature commutes with translations of the domain. -/
+theorem hamiltonianCurvature_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (v z : ℝ × ℝ) (x : V) :
+    ω.hamiltonianCurvature (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) z x =
+      ω.hamiltonianCurvature Ks Kt (z + v) x := by
+  simp only [hamiltonianCurvature_def]
+  rw [fderiv_comp_add_right (f := fun w ↦ Kt w x), fderiv_comp_add_right (f := fun w ↦ Ks w x)]
+
+/-- A datum `K = K_s ds + K_t dt` with `K_s = 0` and `K_t` independent of `s` near the line
+`s = c` has zero curvature along that line. -/
+theorem hamiltonianCurvature_eq_zero_of_cylindrical (ω : SymplecticForm V)
+    {Ks Kt : ℝ × ℝ → V → ℝ} {c : ℝ} (hKs : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = 0)
+    (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t)) (t : ℝ) (x : V) :
+    ω.hamiltonianCurvature Ks Kt (c, t) x = 0 := by
+  have hfst : Tendsto Prod.fst (𝓝 ((c, t) : ℝ × ℝ)) (𝓝 c) := continuous_fst.tendsto (c, t)
+  have hs : Ks =ᶠ[𝓝 (c, t)] fun _ _ ↦ 0 := by
+    filter_upwards [hfst.eventually hKs] with w hw
+    funext x
+    simpa using congrFun (hw w.2) x
+  have ht : Kt =ᶠ[𝓝 (c, t)] fun w ↦ Kt (c, w.2) := by
+    filter_upwards [hfst.eventually hKt] with w hw
+    simpa using hw w.2
+  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht]
+  exact ω.hamiltonianCurvature_cylindrical (fun t ↦ Kt (c, t)) (c, t) x
 
 end Curvature
 
