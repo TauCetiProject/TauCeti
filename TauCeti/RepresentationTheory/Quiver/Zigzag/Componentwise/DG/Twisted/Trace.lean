@@ -17,9 +17,10 @@ finite formal twisted object over a commutative ring. Its vertex coefficients ar
 Each diagonal summand has the sign of its formal integer shift.
 
 Opposite coefficients at adjacent vertices occurring in the selected presentations give
-anticyclicity for degree-one compositions. For an endomorphism presentation, this condition
-makes the supertrace kill Maurer–Cartan boundaries and descend to canonical degree-two
-cohomology. The twisted differential itself need not vanish.
+graded cyclicity for complementary degrees p and 2 - p. For an endomorphism presentation,
+the degree-one specialization of this condition makes the supertrace kill Maurer–Cartan
+boundaries and descend to canonical degree-two cohomology. The twisted differential itself
+need not vanish.
 
 This construction concerns the existing formal closure. It supplies neither perfectness nor
 the naturality or triangulated realization required for an all-object Serre identification.
@@ -80,23 +81,23 @@ private def diagonalHomEquiv (X : 𝒮) (i : V) (hX : X.obj.obj = D i) :
   (entryHomEquiv k G X X i i hX hX 2).trans
     ((dgHomComplex k (D i) (D i)).XIsoOfEq (by omega)).toLinearEquiv
 
-private theorem diagonalHomEquiv_comp_one_one (X Y : 𝒮) (i j : V)
-    (hX : X.obj.obj = D i) (hY : Y.obj.obj = D j)
-    (f : DGHom k 1 X Y) (g : DGHom k 1 Y X) :
-    diagonalHomEquiv k G X i hX (dgComp k f g rfl) =
-      dgComp k (entryHomEquiv k G X Y i j hX hY 1 f)
-        (entryHomEquiv k G Y X j i hY hX 1 g) (by omega) := by
-  have hsign := Int.negOnePow_mul_one_sub (X.shift - Y.shift)
-  rw [sub_sub_eq_add_sub, add_sub_assoc] at hsign
+private theorem diagonalHomEquiv_comp (X Y : 𝒮) (i j : V)
+    (hX : X.obj.obj = D i) (hY : Y.obj.obj = D j) {p q : ℤ}
+    (f : DGHom k p X Y) (g : DGHom k q Y X) (h : p + q = 2) :
+    diagonalHomEquiv k G X i hX (dgComp k f g h) =
+      ((X.shift - Y.shift) * (p + (Y.shift - X.shift))).negOnePow •
+        dgComp k (entryHomEquiv k G X Y i j hX hY p f)
+          (entryHomEquiv k G Y X j i hY hX q g) (by omega) := by
   simp only [diagonalHomEquiv, entryHomEquiv, LinearEquiv.trans_apply,
     Iso.toLinearEquiv_apply, ← castDeg_def, DGShiftClosure.dgHomEquiv_dgComp,
-    DGFullSubcategory.dgComp_eq, hsign, one_smul]
+    DGFullSubcategory.dgComp_eq, map_zsmul_unit]
+  congr 1
   rw [homCongr_comp k G hX hY hX]
   simpa only [entryHomEquiv, LinearEquiv.trans_apply, castDeg_self] using
-    (castDeg_dgComp k (p' := 1 + (Y.shift - X.shift))
+    (castDeg_dgComp k (p' := p + (Y.shift - X.shift))
       (n := 2 + (X.shift - X.shift)) (n' := 2) rfl (by omega)
-      (entryHomEquiv k G X Y i j hX hY 1 f)
-      (entryHomEquiv k G Y X j i hY hX 1 g) (by omega)).symm
+      (entryHomEquiv k G X Y i j hX hY p f)
+      (entryHomEquiv k G Y X j i hY hX q g) (by omega)).symm
 
 private def vertexTrace (a : k) (i : V) : DGHom k 2 (D i) (D i) →ₗ[k] k :=
   a • (zigzagAlgebraTrace k G).comp ((Submodule.subtype _).comp (E i i 2).toLinearMap)
@@ -119,37 +120,45 @@ private def shiftedVertexTrace (a : k) (X : 𝒮) (i : V) (hX : X.obj.obj = D i)
     DGHom k 2 X X →ₗ[k] k :=
   X.shift.negOnePow • (vertexTrace k G a i).comp (diagonalHomEquiv k G X i hX).toLinearMap
 
-private theorem shiftedVertexTrace_comp_one_one (c : V → k) (X Y : 𝒮) (i j : V)
+private theorem shiftedVertexTrace_comp (c : V → k) (X Y : 𝒮) (i j : V)
     (hX : X.obj.obj = D i) (hY : Y.obj.obj = D j)
-    (hc : G.Adj i j → c j = -c i) (f : DGHom k 1 X Y) (g : DGHom k 1 Y X) :
-    shiftedVertexTrace k G (c i) X i hX (dgComp k f g rfl) =
-      -shiftedVertexTrace k G (c j) Y j hY (dgComp k g f rfl) := by
-  let F := entryHomEquiv k G X Y i j hX hY 1 f
-  let H := entryHomEquiv k G Y X j i hY hX 1 g
-  have hcyc := vertexTrace_comp k G c i j hc (1 + (Y.shift - X.shift))
+    (hc : G.Adj i j → c j = -c i) (p : ℤ)
+    (f : DGHom k p X Y) (g : DGHom k (2 - p) Y X) :
+    shiftedVertexTrace k G (c i) X i hX (dgComp k f g (by omega)) =
+      (p * (2 - p)).negOnePow •
+        shiftedVertexTrace k G (c j) Y j hY (dgComp k g f (by omega)) := by
+  let F := entryHomEquiv k G X Y i j hX hY p f
+  let H := entryHomEquiv k G Y X j i hY hX (2 - p) g
+  have hcyc := vertexTrace_comp k G c i j hc (p + (Y.shift - X.shift))
     F (castDeg k (by omega) H)
   have hfg : dgComp k (n := 2) F
-      (castDeg k (p' := 2 - (1 + (Y.shift - X.shift))) (by omega) H) (by omega) =
+      (castDeg k (p' := 2 - (p + (Y.shift - X.shift))) (by omega) H) (by omega) =
       dgComp k (n := 2) F H (by omega) := by
     simpa only [castDeg_self] using
-      (dgComp_castDeg k (q' := 2 - (1 + (Y.shift - X.shift)))
+      (dgComp_castDeg k (q' := 2 - (p + (Y.shift - X.shift)))
         (n := 2) (n' := 2) (by omega) rfl F H (by omega))
   have hgf : dgComp k (n := 2)
-      (castDeg k (p' := 2 - (1 + (Y.shift - X.shift))) (by omega) H) F (by omega) =
+      (castDeg k (p' := 2 - (p + (Y.shift - X.shift))) (by omega) H) F (by omega) =
       dgComp k (n := 2) H F (by omega) := by
     simpa only [castDeg_self] using
-      (castDeg_dgComp k (p' := 2 - (1 + (Y.shift - X.shift)))
+      (castDeg_dgComp k (p' := 2 - (p + (Y.shift - X.shift)))
         (n := 2) (n' := 2) (by omega) rfl H F (by omega))
   rw [hfg, hgf] at hcyc
   dsimp only [F, H] at hcyc
   simp only [shiftedVertexTrace, LinearMap.smul_apply, LinearMap.comp_apply,
     LinearEquiv.coe_coe]
-  rw [diagonalHomEquiv_comp_one_one k G X Y i j hX hY f g,
-    diagonalHomEquiv_comp_one_one k G Y X j i hY hX g f,
-    hcyc, smul_smul, Int.negOnePow_mul_two_sub, ← Int.negOnePow_add]
-  rw [add_left_comm X.shift 1 (Y.shift - X.shift), ← add_sub_assoc,
-    add_sub_cancel_left, add_comm 1 Y.shift, Int.negOnePow_succ]
-  simp only [Units.neg_smul]
+  rw [diagonalHomEquiv_comp k G X Y i j hX hY f g (by omega),
+    diagonalHomEquiv_comp k G Y X j i hY hX g f (by omega)]
+  simp only [map_zsmul_unit]
+  rw [hcyc]
+  simp only [smul_smul]
+  congr 1
+  simp only [Int.negOnePow_mul_two_sub, ← Int.negOnePow_add]
+  apply (Int.negOnePow_eq_iff _ _).2
+  -- The two actual composition exponents differ by 2 * (X.shift - Y.shift).
+  -- This evenness witness retains their common factor before cancelling it after raw cyclicity.
+  refine ⟨X.shift - Y.shift, ?_⟩
+  ring
 
 private def matrixTrace (c : V → k) (M : DGAdditiveClosure 𝒮)
     (v : M.ι → V) (hv : ∀ i, (M.X i).obj.obj = D (v i)) : DGHom k 2 M M →ₗ[k] k where
@@ -158,24 +167,24 @@ private def matrixTrace (c : V → k) (M : DGAdditiveClosure 𝒮)
   map_add' f g := by simp only [map_add, Pi.add_apply, Finset.sum_add_distrib]
   map_smul' a f := by simp only [map_smul, Pi.smul_apply, RingHom.id_apply, Finset.smul_sum]
 
-private theorem matrixTrace_comp_one_one (c : V → k) (M N : DGAdditiveClosure 𝒮)
+private theorem matrixTrace_comp (c : V → k) (M N : DGAdditiveClosure 𝒮)
     (v : M.ι → V) (w : N.ι → V)
     (hv : ∀ i, (M.X i).obj.obj = D (v i)) (hw : ∀ j, (N.X j).obj.obj = D (w j))
     (hc : ∀ i j, G.Adj (v i) (w j) → c (w j) = -c (v i))
-    (f : DGHom k 1 M N) (g : DGHom k 1 N M) :
-    matrixTrace k G c M v hv (dgComp k f g rfl) =
-      -matrixTrace k G c N w hw (dgComp k g f rfl) := by
+    (p : ℤ) (f : DGHom k p M N) (g : DGHom k (2 - p) N M) :
+    matrixTrace k G c M v hv (dgComp k f g (by omega)) =
+      (p * (2 - p)).negOnePow • matrixTrace k G c N w hw (dgComp k g f (by omega)) := by
   classical
   unfold matrixTrace
   dsimp only [LinearMap.coe_mk, AddHom.coe_mk]
   simp only [DGAdditiveClosure.dgHomEquiv_dgComp, map_sum]
   rw [Finset.sum_comm]
-  simp only [← Finset.sum_neg_distrib]
+  simp only [Finset.smul_sum]
   apply Finset.sum_congr rfl
   intro j _
   apply Finset.sum_congr rfl
   intro i _
-  exact shiftedVertexTrace_comp_one_one k G c _ _ _ _ (hv i) (hw j) (hc i j) _ _
+  exact shiftedVertexTrace_comp k G c _ _ _ _ (hv i) (hw j) (hc i j) p _ _
 
 private theorem shifted_dgDifferential_eq_zero (X Y : 𝒮) (i j : V)
     (hX : X.obj.obj = D i) (hY : Y.obj.obj = D j) (n : ℤ) (f : DGHom k n X Y) :
@@ -223,18 +232,18 @@ theorem trace_apply (c : V → k) (X : ZigzagProjectiveTwistedClosure k G)
     LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, LinearEquiv.coe_coe,
     ← castDeg_def, vertexTrace_apply, homCongr]
 
-/-- Degree-one compositions between actual formal twisted objects have opposite supertraces. -/
-theorem trace_comp_one_one (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
+/-- Complementary-degree compositions of actual formal twisted objects satisfy graded cyclicity. -/
+theorem trace_comp (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
     (v : X.obj.ι → V) (w : Y.obj.ι → V)
     (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
     (hw : ∀ j, (Y.obj.X j).obj.obj = D (w j))
     (hc : ∀ i j, G.Adj (v i) (w j) → c (w j) = -c (v i))
-    (f : DGHom k 1 X Y) (g : DGHom k 1 Y X) :
-    trace k G c X v hv (dgComp k f g rfl) =
-      -trace k G c Y w hw (dgComp k g f rfl) := by
+    (p : ℤ) (f : DGHom k p X Y) (g : DGHom k (2 - p) Y X) :
+    trace k G c X v hv (dgComp k f g (by omega)) =
+      (p * (2 - p)).negOnePow • trace k G c Y w hw (dgComp k g f (by omega)) := by
   simp only [trace, LinearMap.comp_apply, LinearEquiv.coe_coe,
     DGTwistedObject.dgHomEquiv_dgComp]
-  exact matrixTrace_comp_one_one k G c X.obj Y.obj v w hv hw hc _ _
+  exact matrixTrace_comp k G c X.obj Y.obj v w hv hw hc p _ _
 
 /-- Opposite weights at selected adjacent vertices make the supertrace kill MC boundaries. -/
 theorem trace_dgDifferential (c : V → k) (X : ZigzagProjectiveTwistedClosure k G)
@@ -245,7 +254,8 @@ theorem trace_dgDifferential (c : V → k) (X : ZigzagProjectiveTwistedClosure k
   erw [DGTwistedObject.dgHomEquiv_dgDifferential k 1 f]
   rw [matrix_dgDifferential_eq_zero k G X.obj v hv]
   simp only [zero_add, Int.negOnePow_one, Units.neg_smul, one_smul, map_sub, map_neg]
-  rw [matrixTrace_comp_one_one k G c X.obj X.obj v v hv hv hc]
+  rw [matrixTrace_comp k G c X.obj X.obj v v hv hv hc 1]
+  norm_num only [Int.negOnePow_one, Units.neg_smul, one_smul]
   abel
 
 /-- The supertrace induces a functional on the existing canonical degree-two cohomology. -/
