@@ -23,12 +23,6 @@ No matrix entry `g ↦ σ (g i j)` is such a function, and consequently no `K`-a
 of the coordinate algebra (that is, no endomorphism of the variety `GL_n`, and in particular no
 algebraic representation `GL_n → GL_n`) induces the entrywise map on `K`-points.
 
-The argument restricts a regular function along a one-parameter family in `GL_n(K[T;T⁻¹])` whose
-`(i, j)` entry is `T`: the diagonal torus `T ↦ diag(1, …, T, …, 1)` for a diagonal entry, and the
-transvection `1 + T Eᵢⱼ` otherwise. Naturality of matrix evaluation in the value algebra turns
-the restriction into a Laurent polynomial whose value at every unit `u` is `σ u`, which forces
-`σ = id` by `RingHom.eq_id_of_forall_eval₂_eq`.
-
 The main example is complex conjugation on `GL_n(ℂ)`: it is an automorphism of the abstract group
 `GL_n(ℂ)`, but for `n > 0` it is not a complex algebraic representation. For `n = 0` the group is
 trivial and conjugation is induced by the identity.
@@ -64,7 +58,8 @@ theorem eq_id_of_forall_generalLinearToPoint_eq (σ : K →+* K)
     (h : ∀ g : GL (Fin n) K, (generalLinearToPoint (R := K) n g).ofConv f = σ (g i j)) :
     σ = RingHom.id K := by
   classical
-  -- A point of `GL_n` over `K[T;T⁻¹]` whose `(i, j)` entry is `T`.
+  -- A point of `GL_n` over `K[T;T⁻¹]` whose `(i, j)` entry is `T`: the diagonal torus
+  -- `T ↦ diag(1, …, T, …, 1)` for a diagonal entry, and the transvection `1 + T Eᵢⱼ` otherwise.
   obtain ⟨γ, hγ⟩ : ∃ γ : GL (Fin n) K[T;T⁻¹], γ i j = T 1 := by
     rcases eq_or_ne i j with rfl | hij
     · exact ⟨TauCeti.diagGL (Pi.mulSingle i (isUnit_T 1).unit), by simp⟩
@@ -72,6 +67,8 @@ theorem eq_id_of_forall_generalLinearToPoint_eq (σ : K →+* K)
       · rw [Matrix.det_transvection_of_ne i j hij]
         exact isUnit_one
       · simp [Matrix.transvection, hij]
+  -- Restricting `f` along this point gives a Laurent polynomial whose value at every unit `u` is
+  -- `σ u`, which forces `σ = id`.
   refine σ.eq_id_of_forall_eval₂_eq hσ ((generalLinearToPoint (R := K) n γ).ofConv f) fun u ↦ ?_
   -- Specializing `T` to `u` is evaluation at the specialized matrix, whose `(i, j)` entry is `u`.
   have hu := congrArg (fun x ↦ x.ofConv f)

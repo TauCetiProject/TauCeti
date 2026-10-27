@@ -89,8 +89,7 @@ theorem laurent_eval₂_family_injective {ι : Type*} (f : R →+* S)
   exact congrFun hpq i
 
 /-- **A field endomorphism that is a Laurent polynomial on units is the identity**, provided it
-fixes infinitely many elements. If `σ u = p(u)` for every unit `u`, then `p` agrees with `T` at
-the infinitely many nonzero fixed points of `σ`, so `p = T` and `σ` fixes every unit. -/
+fixes infinitely many elements: if `σ u = p(u)` for every unit `u` of `K`, then `σ = id`. -/
 theorem eq_id_of_forall_eval₂_eq {K : Type*} [Field K] (σ : K →+* K)
     (hσ : {x : K | σ x = x}.Infinite) (p : LaurentPolynomial K)
     (h : ∀ u : Kˣ, eval₂ (RingHom.id K) u p = σ u) : σ = RingHom.id K := by
@@ -98,6 +97,7 @@ theorem eq_id_of_forall_eval₂_eq {K : Type*} [Field K] (σ : K →+* K)
     refine Set.Infinite.of_image Units.val ((hσ.sdiff (Set.finite_singleton 0)).mono ?_)
     rintro x ⟨hx, hx0⟩
     exact ⟨Units.mk0 x hx0, hx, rfl⟩
+  -- `p` agrees with `T` at the infinitely many nonzero fixed points of `σ`, so `p = T`.
   have hp : p = T 1 := by
     refine p.eq_of_infinite_eval₂_eq (T 1) (RingHom.id K) Function.injective_id (hfix.mono ?_)
     intro u hu
