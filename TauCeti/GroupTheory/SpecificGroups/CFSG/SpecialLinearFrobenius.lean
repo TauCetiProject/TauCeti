@@ -29,13 +29,11 @@ The results are stated for an arbitrary coordinate type `ι`, so they apply to t
 at `ι = Fin (rank + 1)` and to any other family whose carrier is a special linear group over the
 closure.
 
-## Main definitions
+## Main definition
 
-* `TauCeti.ValidLieTypeIndex.specialLinearFrobeniusEmbedding`: the coefficient embedding of the
-  finite special linear group into the Frobenius fixed points of the special linear group over the
+* `TauCeti.ValidLieTypeIndex.specialLinearEquivFrobeniusFixedPoints`: the isomorphism between the
+  finite special linear group and the Frobenius fixed points of the special linear group over the
   closure.
-* `TauCeti.ValidLieTypeIndex.specialLinearEquivFrobeniusFixedPoints`: the resulting isomorphism
-  between the finite special linear group and those fixed points.
 
 ## Main results
 
@@ -110,13 +108,13 @@ theorem specialLinear_mem_fixedSubgroup_frobenius_iff
   constructor
   · intro hg i j
     have hentry := congrArg (fun A : SpecialLinearGroup ι d.Closure => A i j) hg
-    change iterateFrobenius d.Closure d.characteristic d.fieldExponent (g i j) = g i j
+    rw [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply]
       at hentry
     simpa only [iterateFrobenius_def, d.fieldOrder_eq_characteristic_pow] using hentry
   · intro hg
     apply Subtype.ext
     ext i j
-    change iterateFrobenius d.Closure d.characteristic d.fieldExponent (g i j) = g i j
+    rw [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply]
     simpa only [iterateFrobenius_def, d.fieldOrder_eq_characteristic_pow] using hg i j
 
 /-- The range of the coefficient embedding of the special linear group is the fixed subgroup of
@@ -130,46 +128,20 @@ theorem specialLinear_range_galoisFieldEmbedding_eq_fixedSubgroup
   rw [specialLinear_mem_range_galoisFieldEmbedding_iff,
     specialLinear_mem_fixedSubgroup_frobenius_iff]
 
-/-- The coefficient embedding of the finite special linear group into the Frobenius fixed points of
-the special linear group over the closure. -/
-def specialLinearFrobeniusEmbedding
-    (d : ValidLieTypeIndex) (ι : Type*) [Fintype ι] [DecidableEq ι] :
-    SpecialLinearGroup ι (GaloisField d.characteristic d.fieldExponent) →*
-      fixedSubgroup (SpecialLinearGroup.map (n := ι)
-        (iterateFrobenius d.Closure d.characteristic d.fieldExponent)) where
-  toFun g := ⟨SpecialLinearGroup.map d.galoisFieldEmbedding g, by
-    rw [← specialLinear_range_galoisFieldEmbedding_eq_fixedSubgroup]
-    exact ⟨g, rfl⟩⟩
-  map_one' := Subtype.ext (map_one _)
-  map_mul' g h := Subtype.ext (map_mul _ g h)
-
-/-- The coefficient embedding of the finite special linear group is bijective. -/
-theorem specialLinearFrobeniusEmbedding_bijective
-    (d : ValidLieTypeIndex) (ι : Type*) [Fintype ι] [DecidableEq ι] :
-    Function.Bijective (specialLinearFrobeniusEmbedding d ι) := by
-  constructor
-  · intro g h heq
-    apply specialLinear_map_galoisFieldEmbedding_injective d
-    exact congrArg Subtype.val heq
-  · intro g
-    have hg : (g : SpecialLinearGroup ι d.Closure) ∈
-        (SpecialLinearGroup.map (n := ι) d.galoisFieldEmbedding).range :=
-      (specialLinear_range_galoisFieldEmbedding_eq_fixedSubgroup d).symm.le g.property
-    obtain ⟨h, hh⟩ := hg
-    exact ⟨h, Subtype.ext hh⟩
-
 /-- **The finite special linear group is the group of Frobenius fixed points of the special linear
-group over the closure.** -/
+group over the closure.** The entrywise coefficient extension is injective and its range is that
+fixed subgroup, so it restricts to an isomorphism onto the fixed points. -/
 def specialLinearEquivFrobeniusFixedPoints
     (d : ValidLieTypeIndex) (ι : Type*) [Fintype ι] [DecidableEq ι] :
     SpecialLinearGroup ι (GaloisField d.characteristic d.fieldExponent) ≃*
       fixedSubgroup (SpecialLinearGroup.map (n := ι)
         (iterateFrobenius d.Closure d.characteristic d.fieldExponent)) :=
-  MulEquiv.ofBijective (specialLinearFrobeniusEmbedding d ι)
-    (specialLinearFrobeniusEmbedding_bijective d ι)
+  (MonoidHom.ofInjective (specialLinear_map_galoisFieldEmbedding_injective d)).trans
+    (MulEquiv.subgroupCongr (specialLinear_range_galoisFieldEmbedding_eq_fixedSubgroup d))
 
 /-- The isomorphism to the Frobenius fixed points is the entrywise extension of coefficients along
 the finite-field embedding. -/
+@[simp]
 theorem specialLinearEquivFrobeniusFixedPoints_coe
     (d : ValidLieTypeIndex) (ι : Type*) [Fintype ι] [DecidableEq ι]
     (g : SpecialLinearGroup ι (GaloisField d.characteristic d.fieldExponent)) :

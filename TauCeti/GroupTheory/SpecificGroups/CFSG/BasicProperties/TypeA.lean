@@ -78,6 +78,7 @@ def specialLinearEquivFixedPoints (r : ℕ) (q : PrimePower)
 
 /-- The isomorphism to the finite special linear group sends a finite-field matrix to the fixed
 point whose image under the carrier equivalence is that matrix read over the closure. -/
+@[simp]
 theorem specialLinearEquivFixedPoints_apply (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.A r q).Valid)
     (g : SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
