@@ -225,9 +225,9 @@ theorem mapAlgHom_apply (ρ : R →ₐ[A] S) (φ : H →+ H') (hφ : ∃ c > 0, 
 
 end AlgHom
 
-section Topology
+section Filtration
 
-variable [AddZeroClass H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddCommGroup R]
+variable [AddZeroClass H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddGroup R]
   [AddCommGroup S] (ρ : R →+ S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
 
 /-- If `φ` rescales periods by `c ≥ 0`, the pushforward sends the period neighbourhood `U_C` into
@@ -237,6 +237,13 @@ theorem map_mem_periodFiltration {c C : ℝ} (hc : 0 ≤ c) (hcφ : ∀ h, N' (�
     map ρ φ hφ a ∈ periodFiltration S N' (c * C) :=
   mem_periodFiltration.2 fun _ hh' =>
     coeff_map_eq_zero_of_lt ρ φ hφ hc hcφ (mem_periodFiltration.1 ha) hh'
+
+end Filtration
+
+section Topology
+
+variable [AddZeroClass H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddCommGroup R]
+  [AddCommGroup S] (ρ : R →+ S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
 
 /-- The pushforward of Novikov series is continuous for the period topologies. -/
 @[fun_prop]
@@ -250,6 +257,21 @@ theorem continuous_map : Continuous (map ρ φ hφ) := by
 
 end Topology
 
+section NonnegSupport
+
+variable [AddMonoid H] [AddMonoid H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [Ring R] [Ring S]
+  (ρ : R →+ S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+
+/-- The pushforward sends series supported in nonnegative periods to series supported in
+nonnegative periods, for any additive coefficient map. -/
+theorem map_mem_nonnegSubring {a : NovikovSeries R H N} (ha : a ∈ nonnegSubring R N) :
+    map ρ φ hφ a ∈ nonnegSubring S N' := by
+  obtain ⟨c, hc, hcφ⟩ := hφ
+  simpa using map_mem_periodFiltration ρ φ _ hc.le hcφ (C := 0)
+    (mem_periodFiltration.2 (mem_nonnegSubring.1 ha))
+
+end NonnegSupport
+
 section TopologyRing
 
 variable [AddMonoid H] [AddMonoid H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [Ring R] [Ring S]
@@ -260,17 +282,9 @@ variable [AddMonoid H] [AddMonoid H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [Ring 
 theorem continuous_mapRingHom : Continuous (mapRingHom ρ φ hφ) :=
   continuous_map (ρ : R →+ S) φ hφ
 
-/-- The pushforward sends series supported in nonnegative periods to series supported in
-nonnegative periods. -/
-theorem map_mem_nonnegSubring {a : NovikovSeries R H N} (ha : a ∈ nonnegSubring R N) :
-    map (ρ : R →+ S) φ hφ a ∈ nonnegSubring S N' := by
-  obtain ⟨c, hc, hcφ⟩ := hφ
-  simpa using map_mem_periodFiltration (ρ : R →+ S) φ _ hc.le hcφ (C := 0)
-    (mem_periodFiltration.2 (mem_nonnegSubring.1 ha))
-
 /-- The restriction of the pushforward ring homomorphism to the nonnegative subrings. -/
 def mapNonnegSubring : nonnegSubring R N →+* nonnegSubring S N' :=
-  (mapRingHom ρ φ hφ).restrict _ _ fun _ ha => map_mem_nonnegSubring ρ φ hφ ha
+  (mapRingHom ρ φ hφ).restrict _ _ fun _ ha => map_mem_nonnegSubring (ρ : R →+ S) φ hφ ha
 
 @[simp]
 theorem coe_mapNonnegSubring (a : nonnegSubring R N) :

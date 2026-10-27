@@ -33,6 +33,8 @@ finitary formulas.
   universe: `realize_iSup`, `realize_iInf`, `realize_inf`, `realize_iff`, `realize_alls`, ….
 * `FirstOrder.Language.BoundedFormula.realize_toInf`: the finitary embedding preserves
   realization, at every carrier.
+* `FirstOrder.Language.Sentence.realize_toInf`: the sentence-level finitary embedding preserves
+  satisfaction.
 
 ## References
 
@@ -228,6 +230,25 @@ valuation of its free variables. The priority is `low` for the same reason as
 theorem SentenceInf.realize_def (φ : L.SentenceInf ι) (M : Type w) [L.Structure M] :
     φ.Realize M ↔ FormulaInf.Realize (M := M) φ Empty.elim :=
   Iff.rfl
+
+/-- A conjunction of sentences holds exactly when both sentences hold. -/
+@[simp]
+theorem SentenceInf.realize_inf {M : Type w} [L.Structure M] {φ ψ : L.SentenceInf ι} :
+    SentenceInf.Realize (φ ⊓ ψ) M ↔ φ.Realize M ∧ ψ.Realize M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_inf]
+
+/-- An infinitary conjunction of sentences holds exactly when every sentence holds. -/
+@[simp]
+theorem SentenceInf.realize_iInf {M : Type w} [L.Structure M] {φs : ι → L.SentenceInf ι} :
+    SentenceInf.Realize (BoundedFormulaInf.iInf φs) M ↔ ∀ i, (φs i).Realize M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_iInf]
+
+/-- The finitary embedding of a sentence preserves satisfaction, at every branching carrier. -/
+@[simp]
+theorem Sentence.realize_toInf (φ : L.Sentence) (M : Type w) [L.Structure M] :
+    SentenceInf.Realize (φ.toInf (ι := ι)) M ↔ M ⊨ φ := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormula.realize_toInf,
+    Sentence.Realize, Formula.Realize, Subsingleton.elim default Empty.elim]
 
 end Language
 
