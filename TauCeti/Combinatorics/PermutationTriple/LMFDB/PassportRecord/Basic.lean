@@ -172,6 +172,28 @@ structure IsValidAt (r : PassportRecord n) (t : ConnectedTriple n) : Prop where
   closure_autGroupGenerators :
     Subgroup.closure {τ | τ ∈ r.autGroupGenerators} = t.1.automorphismGroup
 
+/-- The stored search triple is the stored order triple sorted ascending exactly when it is
+weakly increasing and a rearrangement of the stored order triple. This is the form in which the
+`sortedAbc_eq` clause of validity is checked for a concrete row. -/
+theorem sortedAbc_eq_sort_iff {r : PassportRecord n} :
+    [r.sortedAbc.1, r.sortedAbc.2.1, r.sortedAbc.2.2] =
+        ({r.abc.1, r.abc.2.1, r.abc.2.2} : Multiset ℕ).sort ↔
+      (r.sortedAbc.1 ≤ r.sortedAbc.2.1 ∧ r.sortedAbc.2.1 ≤ r.sortedAbc.2.2) ∧
+        ({r.sortedAbc.1, r.sortedAbc.2.1, r.sortedAbc.2.2} : Multiset ℕ) =
+          {r.abc.1, r.abc.2.1, r.abc.2.2} := by
+  constructor
+  · intro h
+    have hle := Multiset.pairwise_sort ({r.abc.1, r.abc.2.1, r.abc.2.2} : Multiset ℕ) (· ≤ ·)
+    have hperm := Multiset.sort_eq ({r.abc.1, r.abc.2.1, r.abc.2.2} : Multiset ℕ) (· ≤ ·)
+    rw [← h] at hle hperm
+    simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, List.Pairwise.nil] at hle
+    exact ⟨by omega, hperm⟩
+  · rintro ⟨hs, h⟩
+    rw [← h, Multiset.insert_eq_cons, Multiset.insert_eq_cons, ← Multiset.coe_singleton,
+      Multiset.cons_coe, Multiset.cons_coe, Multiset.coe_sort, List.mergeSort_eq_self]
+    simpa using ⟨⟨hs.1, hs.1.trans hs.2⟩, hs.2⟩
+
 namespace IsValidAt
 
 variable {r : PassportRecord n} {t : ConnectedTriple n}
@@ -184,20 +206,14 @@ theorem abc_eq_lcm_lambdas (h : r.IsValidAt t) :
 
 /-- The stored search triple is weakly increasing. -/
 theorem sortedAbc_le (h : r.IsValidAt t) :
-    r.sortedAbc.1 ≤ r.sortedAbc.2.1 ∧ r.sortedAbc.2.1 ≤ r.sortedAbc.2.2 := by
-  have hs := Multiset.pairwise_sort ({r.abc.1, r.abc.2.1, r.abc.2.2} : Multiset ℕ) (· ≤ ·)
-  rw [← h.sortedAbc_eq] at hs
-  simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-    forall_eq, List.Pairwise.nil] at hs
-  omega
+    r.sortedAbc.1 ≤ r.sortedAbc.2.1 ∧ r.sortedAbc.2.1 ≤ r.sortedAbc.2.2 :=
+  (sortedAbc_eq_sort_iff.mp h.sortedAbc_eq).1
 
 /-- The stored search triple is a rearrangement of the stored order triple. -/
 theorem sortedAbc_perm (h : r.IsValidAt t) :
     ({r.sortedAbc.1, r.sortedAbc.2.1, r.sortedAbc.2.2} : Multiset ℕ) =
-      {r.abc.1, r.abc.2.1, r.abc.2.2} := by
-  have hs := Multiset.sort_eq ({r.abc.1, r.abc.2.1, r.abc.2.2} : Multiset ℕ) (· ≤ ·)
-  rw [← h.sortedAbc_eq] at hs
-  exact hs
+      {r.abc.1, r.abc.2.1, r.abc.2.2} :=
+  (sortedAbc_eq_sort_iff.mp h.sortedAbc_eq).2
 
 /-- The stored geometry type is spherical exactly when the reciprocals of the stored orders sum to
 more than one. -/

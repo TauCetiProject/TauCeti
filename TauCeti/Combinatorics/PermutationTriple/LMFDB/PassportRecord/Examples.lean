@@ -36,14 +36,6 @@ namespace TauCeti
 namespace PermutationTriple
 namespace LMFDB
 
-/-- A weakly increasing list `[x, y, z]` is the sort of every rearrangement `{a, b, c}` of it. -/
-private theorem list_eq_sort_of_eq {a b c x y z : ℕ} (hs : x ≤ y ∧ y ≤ z)
-    (h : ({a, b, c} : Multiset ℕ) = {x, y, z}) :
-    [x, y, z] = ({a, b, c} : Multiset ℕ).sort := by
-  rw [h, Multiset.insert_eq_cons, Multiset.insert_eq_cons, ← Multiset.coe_singleton,
-    Multiset.cons_coe, Multiset.cons_coe, Multiset.coe_sort, List.mergeSort_eq_self]
-  simpa using ⟨⟨hs.1, hs.1.trans hs.2⟩, hs.2⟩
-
 /-! ### The primitive passport `3T2-3_2.1_2.1` -/
 
 /-- The passport row of `s3Triple`. It is primitive, so its primitivization block is a single
@@ -78,7 +70,7 @@ theorem isValidAt_s3PassportRecord :
     exact ⟨isConnected_s3Triple, ConnectedTriple.hasPassport_passportOf _⟩
   lambdas_eq := cycleData_s3Triple.symm
   abc_eq := orderTriple_s3Triple.symm
-  sortedAbc_eq := list_eq_sort_of_eq (by decide) (by decide)
+  sortedAbc_eq := PassportRecord.sortedAbc_eq_sort_iff.mpr ⟨by decide, by decide⟩
   g_eq := genus_s3Triple.symm
   geomtype_eq := by
     dsimp only [s3PassportRecord]
@@ -145,7 +137,7 @@ theorem isValidAt_torusPassportRecord :
     exact ⟨isConnected_torusTriple, ConnectedTriple.hasPassport_passportOf _⟩
   lambdas_eq := cycleData_torusTriple.symm
   abc_eq := orderTriple_torusTriple.symm
-  sortedAbc_eq := list_eq_sort_of_eq (by decide) (by decide)
+  sortedAbc_eq := PassportRecord.sortedAbc_eq_sort_iff.mpr ⟨by decide, by decide⟩
   g_eq := genus_torusTriple.symm
   geomtype_eq := geometryType_torusTriple.symm
   exists_transitiveGroupLabel := ⟨⟨0, by simp⟩, rfl, by
