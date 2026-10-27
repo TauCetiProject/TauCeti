@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.BaseChange.Basic
-public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.BaseChange.TensorProduct
 
 /-!
 # Tensor-product scalar extension of preprojective algebras
@@ -17,9 +17,9 @@ algebra commutes with scalar extension:
 image of `x`, and its inverse sends each path class to the corresponding unit pure tensor.
 No flatness or injectivity hypothesis is needed, and loops and multiple arrows are retained.
 
-The universal-property construction is adapted from
-`Zigzag.BaseChange.TensorProduct`: extend the existing coefficient map to the tensor product,
-and construct its inverse by lifting the doubled paths through the preprojective relation.
+The scalar-extension construction is adapted from `Zigzag.BaseChange.TensorProduct`.
+Its inverse uses the shared path-algebra tensor lift to send doubled paths to unit pure
+tensors, then descends through the preprojective relation.
 
 ## References
 
@@ -68,34 +68,11 @@ private theorem scalarExtension_tmul (a : l) (x : preprojectiveAlgebra k Q) :
       a • RingHom.preprojectiveBaseChange (algebraMap k l) x :=
   AlgHom.liftEquiv_tmul (coefficientAlgHom (k := k) (l := l) Q) a x
 
-private def tensorPathAlgHom :
-    pathAlgebra l (Symmetrify Q) →ₐ[l] l ⊗[k] preprojectiveAlgebra k Q := by
-  let g : pathAlgebra k (Symmetrify Q) →ₐ[k] l ⊗[k] preprojectiveAlgebra k Q :=
-    Algebra.TensorProduct.includeRight.comp (preprojectiveMk k Q)
-  refine liftAlgHom l (fun p => g (ofPath p)) ?_ ?_ ?_
-  · intro a b d p q
-    rw [← map_mul, ofPath_mul_ofPath_of_comp]
-  · intro p q hpq
-    rw [← map_mul, ofPath_mul_ofPath_of_not_composable hpq, map_zero]
-  · let _ := Fintype.ofFinite (Symmetrify Q)
-    rw [← map_sum]
-    simp only [← vertexIdempotent_eq_ofPath, ← one_def, map_one]
-
-private theorem tensorPathAlgHom_ofPath (p : Quiver.TotalPath (Symmetrify Q)) :
-    tensorPathAlgHom (k := k) (l := l) Q (ofPath p) =
-      1 ⊗ₜ[k] preprojectiveMk k Q (ofPath p) := by
-  dsimp only [tensorPathAlgHom]
-  refine liftAlgHom_ofPath l _ ?_ ?_ _ p
-  · intro a b d p q
-    rw [← map_mul, ofPath_mul_ofPath_of_comp]
-  · intro p q hpq
-    rw [← map_mul, ofPath_mul_ofPath_of_not_composable hpq, map_zero]
-
-private theorem tensorPathAlgHom_relator :
-    tensorPathAlgHom (k := k) (l := l) Q (preprojectiveRelator l Q) = 0 := by
+private theorem tensorLiftAlgHom_relator :
+    tensorLiftAlgHom (l := l) (preprojectiveMk k Q) (preprojectiveRelator l Q) = 0 := by
   rw [preprojectiveRelator_def]
   simp only [map_sum, map_sub, headBacktrackElem_def, tailBacktrackElem_def,
-    tensorPathAlgHom_ofPath]
+    tensorLiftAlgHom_ofPath]
   simpa only [preprojectiveRelator_def, headBacktrackElem_def, tailBacktrackElem_def,
     map_sum, map_sub, TensorProduct.tmul_sum, TensorProduct.tmul_sub,
     TensorProduct.tmul_zero] using
@@ -103,13 +80,13 @@ private theorem tensorPathAlgHom_relator :
 
 private def scalarExtensionInverse :
     preprojectiveAlgebra l Q →ₐ[l] l ⊗[k] preprojectiveAlgebra k Q :=
-  preprojectiveLift (tensorPathAlgHom (k := k) (l := l) Q)
-    (tensorPathAlgHom_relator (k := k) (l := l) Q)
+  preprojectiveLift (tensorLiftAlgHom (l := l) (preprojectiveMk k Q))
+    (tensorLiftAlgHom_relator (k := k) (l := l) Q)
 
 private theorem scalarExtensionInverse_ofPath (p : Quiver.TotalPath (Symmetrify Q)) :
     scalarExtensionInverse (k := k) (l := l) Q (preprojectiveMk l Q (ofPath p)) =
       1 ⊗ₜ[k] preprojectiveMk k Q (ofPath p) := by
-  rw [scalarExtensionInverse, preprojectiveLift_preprojectiveMk, tensorPathAlgHom_ofPath]
+  rw [scalarExtensionInverse, preprojectiveLift_preprojectiveMk, tensorLiftAlgHom_ofPath]
 
 private theorem scalarExtension_leftInverse :
     (scalarExtensionInverse (k := k) (l := l) Q).comp (scalarExtension (k := k) (l := l) Q) =
@@ -142,25 +119,37 @@ def preprojectiveScalarExtensionEquiv :
     (scalarExtension_rightInverse (k := k) (l := l) Q)
     (scalarExtension_leftInverse (k := k) (l := l) Q)
 
--- Keep these characteristic equations as named rewrites: evaluating either direction eagerly
--- can prevent the generic `AlgEquiv` inverse rules from matching the bundled applications.
-
 /-- The scalar-extension equivalence sends a pure tensor to its scalar times the coefficient
 image of its preprojective class. -/
+@[simp]
 theorem preprojectiveScalarExtensionEquiv_tmul (a : l) (x : preprojectiveAlgebra k Q) :
     preprojectiveScalarExtensionEquiv (k := k) (l := l) Q (a ⊗ₜ[k] x) =
       a • RingHom.preprojectiveBaseChange (algebraMap k l) x := by
   rw [preprojectiveScalarExtensionEquiv, AlgEquiv.ofAlgHom_apply, scalarExtension_tmul]
 
 /-- The inverse scalar-extension equivalence sends a coefficient image to its unit pure tensor. -/
+@[simp]
 theorem preprojectiveScalarExtensionEquiv_symm_baseChange (x : preprojectiveAlgebra k Q) :
     (preprojectiveScalarExtensionEquiv (k := k) (l := l) Q).symm
       (RingHom.preprojectiveBaseChange (algebraMap k l) x) = 1 ⊗ₜ[k] x := by
   apply (preprojectiveScalarExtensionEquiv (k := k) (l := l) Q).injective
   rw [AlgEquiv.apply_symm_apply, preprojectiveScalarExtensionEquiv_tmul, one_smul]
 
+/-- The inverse scalar-extension equivalence sends a scaled coefficient image to its pure
+tensor. -/
+-- Run before generic scalar-map simplification, which leaves a scalar outside a unit tensor
+-- and prevents ordinary simplification of inverse cancellation on pure tensors.
+@[simp 1100]
+theorem preprojectiveScalarExtensionEquiv_symm_smul_baseChange
+    (a : l) (x : preprojectiveAlgebra k Q) :
+    (preprojectiveScalarExtensionEquiv (k := k) (l := l) Q).symm
+      (a • RingHom.preprojectiveBaseChange (algebraMap k l) x) = a ⊗ₜ[k] x := by
+  rw [map_smul, preprojectiveScalarExtensionEquiv_symm_baseChange,
+    TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+
 /-- The inverse scalar-extension equivalence sends each doubled path class to the unit pure
 tensor of that path class over the original coefficient ring. -/
+@[simp]
 theorem preprojectiveScalarExtensionEquiv_symm_preprojectiveMk_ofPath
     (p : Quiver.TotalPath (Symmetrify Q)) :
     (preprojectiveScalarExtensionEquiv (k := k) (l := l) Q).symm
