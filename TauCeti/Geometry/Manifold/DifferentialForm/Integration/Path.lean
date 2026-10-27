@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Interval.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+public import TauCeti.Geometry.Manifold.SmoothPath
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 
 /-!
@@ -31,7 +32,11 @@ integral of the differential of a `C¹` function is its endpoint difference
 integrate to zero around closed curves (`TauCeti.pathIntegral_eq_zero_of_mem_exactForms`). The
 integral is invariant under `C¹` reparametrization (`TauCeti.pathIntegral_comp`), natural under
 pullback (`TauCeti.pathIntegral_mpullback`), and only depends on the values of the form along the
-curve (`TauCeti.pathIntegral_congr`).
+curve (`TauCeti.pathIntegral_congr`) and on the germs of the curve along the interval
+(`TauCeti.pathIntegral_congr_of_eventuallyEq`). It is additive under the smooth concatenation of
+curves (`TauCeti.pathIntegral_smoothTrans`); hence, when it vanishes along every smooth loop at a
+point, it is independent of the smooth curve from that point
+(`TauCeti.pathIntegral_eq_of_forall_pathIntegral_eq_zero`).
 
 ## Main declarations
 
@@ -44,6 +49,9 @@ curve (`TauCeti.pathIntegral_congr`).
   closed `C¹` curves.
 * `TauCeti.pathIntegral_comp`: invariance under `C¹` reparametrization.
 * `TauCeti.pathIntegral_mpullback`: naturality under pullback.
+* `TauCeti.pathIntegral_smoothTrans`: additivity under concatenation of curves.
+* `TauCeti.pathIntegral_eq_of_forall_pathIntegral_eq_zero`: path independence when all loop
+  integrals at a point vanish.
 
 ## References
 
@@ -56,7 +64,7 @@ public section
 noncomputable section
 
 open Set MeasureTheory
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
@@ -89,6 +97,16 @@ theorem pathIntegral_congr {φ ψ : RoughForm I M F 1} {γ : ℝ → M} {a b : �
     (h : ∀ t ∈ uIcc a b, φ (γ t) = ψ (γ t)) : pathIntegral φ γ a b = pathIntegral ψ γ a b := by
   simp only [pathIntegral_def]
   exact intervalIntegral.integral_congr fun t ht ↦ by simp only [h t ht]
+
+/-- Line integrals only depend on the germs of the curve at the points of the interval of
+integration. -/
+theorem pathIntegral_congr_of_eventuallyEq (φ : RoughForm I M F 1) {γ γ' : ℝ → M} {a b : ℝ}
+    (h : ∀ t ∈ uIcc a b, γ =ᶠ[𝓝 t] γ') : pathIntegral φ γ a b = pathIntegral φ γ' a b := by
+  simp only [pathIntegral_def]
+  refine intervalIntegral.integral_congr fun t ht ↦ ?_
+  simp only [Manifold.curveVelocity_apply, (h t ht).mfderiv_eq]
+  -- the identification `tangentSpaceCast` of the tangent spaces at `γ t = γ' t` is the identity
+  exact congrArg (fun x : M ↦ φ x fun _ ↦ (mfderiv 𝓘(ℝ, ℝ) I γ' t 1 : E)) (h t ht).eq_of_nhds
 
 /-! ### The interval of integration -/
 
@@ -187,6 +205,62 @@ theorem pathIntegral_comp {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ) {
   rw [Function.comp_apply, Manifold.curveVelocity_comp (hσ t ht)
     ((hγ (σ t)).mdifferentiableAt one_ne_zero)]
   simpa using (φ (γ (σ t))).map_smul_univ (fun _ ↦ σ' t) fun _ ↦ Manifold.curveVelocity I γ (σ t)
+
+/-- The line integral along the concatenation `TauCeti.Manifold.smoothTrans γ₁ γ₂` of two `C¹`
+curves with a common endpoint is the sum of the line integrals along the two curves. -/
+theorem pathIntegral_smoothTrans {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 0 φ)
+    {γ₁ γ₂ : ℝ → M} (h₁ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ₁) (h₂ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ₂)
+    (h : γ₁ 1 = γ₂ 0) :
+    pathIntegral φ (Manifold.smoothTrans γ₁ γ₂) 0 1 =
+      pathIntegral φ γ₁ 0 1 + pathIntegral φ γ₂ 0 1 := by
+  have hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 (Manifold.smoothTrans γ₁ γ₂) :=
+    ContMDiff.smoothTrans (n := 1) h₁ h₂ h
+  rw [← pathIntegral_add_adjacent (b := 1 / 2) (hφ.intervalIntegrable_apply_curveVelocity hγ _ _)
+    (hφ.intervalIntegrable_apply_curveVelocity hγ _ _)]
+  -- each half is a reparametrization of one of the curves by an affine change of parameter
+  -- followed by `Real.smoothTransition`
+  have hσ (c : ℝ) : ContDiff ℝ 1 fun t : ℝ ↦ Real.smoothTransition (6 * t - c) :=
+    Real.smoothTransition.contDiff.comp (by fun_prop)
+  have hcomp {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (c a b : ℝ) :
+      pathIntegral φ (γ ∘ fun t ↦ Real.smoothTransition (6 * t - c)) a b =
+        pathIntegral φ γ (Real.smoothTransition (6 * a - c))
+          (Real.smoothTransition (6 * b - c)) :=
+    pathIntegral_comp hφ hγ (fun t _ ↦ ((hσ c).differentiable one_ne_zero t).hasDerivAt)
+      ((hσ c).continuous_deriv le_rfl).continuousOn
+  congr 1
+  · rw [pathIntegral_congr_of_eventuallyEq φ
+      (γ' := γ₁ ∘ fun t ↦ Real.smoothTransition (6 * t - 1)) fun t ht ↦ ?_, hcomp h₁]
+    · norm_num [Real.smoothTransition.zero_of_nonpos, Real.smoothTransition.one_of_one_le]
+    · refine (Manifold.smoothTrans_eqOn_left h).eventuallyEq_of_mem (isOpen_Iio.mem_nhds ?_)
+      rw [uIcc_of_le (by norm_num)] at ht
+      exact ht.2.trans_lt (by norm_num)
+  · rw [pathIntegral_congr_of_eventuallyEq φ
+      (γ' := γ₂ ∘ fun t ↦ Real.smoothTransition (6 * t - 4)) fun t ht ↦ ?_, hcomp h₂]
+    · norm_num [Real.smoothTransition.zero_of_nonpos, Real.smoothTransition.one_of_one_le]
+    · refine (Manifold.smoothTrans_eqOn_right h).eventuallyEq_of_mem (isOpen_Ioi.mem_nhds ?_)
+      rw [uIcc_of_le (by norm_num)] at ht
+      exact lt_of_lt_of_le (by norm_num) ht.1
+
+/-- **Path independence.** If the line integral of a continuous `1`-form vanishes along every
+smooth loop at `x₀`, parametrized by `[0, 1]`, then any two smooth curves from `x₀` with a common
+endpoint have the same line integral. -/
+theorem pathIntegral_eq_of_forall_pathIntegral_eq_zero {φ : RoughForm I M F 1}
+    (hφ : IsSmoothForm I 0 φ) {x₀ : M}
+    (h : ∀ γ : ℝ → M, ContMDiff 𝓘(ℝ, ℝ) I ∞ γ → γ 0 = x₀ → γ 1 = x₀ → pathIntegral φ γ 0 1 = 0)
+    {α β : ℝ → M} (hα : ContMDiff 𝓘(ℝ, ℝ) I ∞ α) (hβ : ContMDiff 𝓘(ℝ, ℝ) I ∞ β)
+    (hα0 : α 0 = x₀) (hβ0 : β 0 = x₀) (hαβ : α 1 = β 1) :
+    pathIntegral φ α 0 1 = pathIntegral φ β 0 1 := by
+  -- `α` followed by the reversal of `β` is a smooth loop at `x₀`
+  have hβ' : ContMDiff 𝓘(ℝ, ℝ) I ∞ (β ∘ fun t ↦ 1 - t) :=
+    hβ.comp (contMDiff_iff_contDiff.mpr (by fun_prop))
+  have hαβ' : α 1 = (β ∘ fun t ↦ 1 - t) 0 := by simp [hαβ]
+  have hrev : pathIntegral φ (β ∘ fun t ↦ 1 - t) 0 1 = -pathIntegral φ β 0 1 := by
+    rw [pathIntegral_comp hφ (hβ.of_le (by simp)) (σ' := fun _ ↦ -1)
+      (fun t _ ↦ (hasDerivAt_id' t).const_sub 1) continuousOn_const, sub_zero, sub_self,
+      pathIntegral_symm]
+  have hloop := h _ (hα.smoothTrans hβ' hαβ') (by simp [hα0]) (by simp [hβ0])
+  rwa [pathIntegral_smoothTrans hφ (hα.of_le (by simp)) (hβ'.of_le (by simp)) hαβ', hrev,
+    ← sub_eq_add_neg, sub_eq_zero] at hloop
 
 end Continuous
 
