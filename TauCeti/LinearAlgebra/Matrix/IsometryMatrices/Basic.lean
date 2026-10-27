@@ -305,12 +305,9 @@ theorem natCard_isometryMatrices_eq_pow_mul (hf : Function.Surjective f)
       red X = Y ↔ ∀ i j, X.1 i j - s Y i j ∈ RingHom.ker f := fun Y X => by
     refine Iff.trans ?_ (forall_mem_ker_iff_map_eq_zero (f := f) (D := X.1 - s Y)).symm
     rw [Matrix.map_sub f (map_sub f), hsf, sub_eq_zero, Subtype.ext_iff]
-  have h2' : ∀ x : R, x + x = 0 → x = 0 := fun x hx => by
-    rw [← two_mul] at hx
-    exact (h2.mul_right_eq_zero).mp hx
   have hskew : Nat.card {K : Matrix n n R // (∀ i j, K i j ∈ RingHom.ker f) ∧ Kᵀ = -K} =
       Nat.card (RingHom.ker f) ^ (Fintype.card n).choose 2 :=
-    natCard_transpose_eq_neg (RingHom.ker f).toAddSubgroup h2'
+    natCard_transpose_eq_neg (RingHom.ker f).toAddSubgroup h2.eq_zero_of_add_self_eq_zero
   rw [mul_comm, ← hskew, ← Nat.card_prod]
   -- group the solutions by their reduction; each fibre is a torsor under `hskew`'s matrices
   exact Nat.card_congr <| (Equiv.sigmaFiberEquiv red).symm.trans <|

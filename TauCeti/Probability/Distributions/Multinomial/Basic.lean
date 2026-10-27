@@ -259,6 +259,13 @@ def multinomialToEuclidean (k : ι → ℕ) : EuclideanSpace ℝ ι :=
 theorem multinomialToEuclidean_apply (k : ι → ℕ) (i : ι) :
     multinomialToEuclidean k i = (k i : ℝ) := (rfl)
 
+/-- Pairing a direction with the Euclidean count vector is the corresponding weighted sum. -/
+theorem inner_multinomialToEuclidean [Fintype ι] (θ : EuclideanSpace ℝ ι) (k : ι → ℕ) :
+    inner ℝ θ (multinomialToEuclidean k) = ∑ i, θ i * (k i : ℝ) := by
+  simp only [EuclideanSpace.inner_eq_star_dotProduct, dotProduct, star_trivial,
+    multinomialToEuclidean_apply]
+  exact Finset.sum_congr rfl fun i _ ↦ mul_comm _ _
+
 /-- The cast of count vectors into Euclidean space is measurable. -/
 theorem measurable_multinomialToEuclidean [Finite ι] :
     Measurable (multinomialToEuclidean (ι := ι)) := by

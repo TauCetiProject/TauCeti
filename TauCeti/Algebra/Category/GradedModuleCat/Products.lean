@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
 public import TauCeti.Algebra.Module.GradedModule.Product
 public import Mathlib.CategoryTheory.Limits.Shapes.Products
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Small products of graded modules

@@ -53,6 +53,10 @@ the tensor comparison of `CategoryTheory.Adjunction.leftAdjointOplaxMonoidal`. T
 left adjoint that is lax monoidal for an independent reason, such as restriction of sheaves to an
 open subset, is shown to have invertible oplax tensor comparisons.
 
+For a fully faithful monoidal functor `F`, morphisms `X ⊗ Y ⟶ Z` correspond to morphisms
+`F.obj X ⊗ F.obj Y ⟶ F.obj Z` (`CategoryTheory.Functor.FullyFaithful.tensorHomEquiv`), by
+`e ↦ μ F X Y ≫ F.map e`. This is how a monoidal equivalence transports pairings `X ⊗ Y ⟶ Z`.
+
 Precomposition by a monoidal equivalence also identifies the categories of lax monoidal
 functors and therefore their tensor-automorphism groups. The construction
 `CategoryTheory.Equivalence.precomposeLaxMonoidalEquivalence` refines Mathlib’s
@@ -290,6 +294,37 @@ lemma ofRetract_δ (X Y : C) : letI := ofRetract e hδ hη
 end Retract
 
 end OplaxMonoidal
+
+section FullyFaithful
+
+open MonoidalCategory
+
+variable {F : C ⥤ D} [F.Monoidal]
+
+/-- For a fully faithful monoidal functor `F`, morphisms `X ⊗ Y ⟶ Z` correspond to morphisms
+`F.obj X ⊗ F.obj Y ⟶ F.obj Z`, by `e ↦ μ F X Y ≫ F.map e`. -/
+noncomputable def FullyFaithful.tensorHomEquiv (hF : F.FullyFaithful) {X Y Z : C} :
+    (X ⊗ Y ⟶ Z) ≃ (F.obj X ⊗ F.obj Y ⟶ F.obj Z) where
+  toFun e := LaxMonoidal.μ F X Y ≫ F.map e
+  invFun e := hF.preimage (OplaxMonoidal.δ F X Y ≫ e)
+  left_inv e := by simp
+  right_inv e := by simp
+
+/-- `Functor.FullyFaithful.tensorHomEquiv` takes `e` to `μ F X Y ≫ F.map e`. -/
+@[simp]
+theorem FullyFaithful.tensorHomEquiv_apply (hF : F.FullyFaithful) {X Y Z : C}
+    (e : X ⊗ Y ⟶ Z) : hF.tensorHomEquiv e = LaxMonoidal.μ F X Y ≫ F.map e :=
+  (rfl)
+
+/-- The inverse of `Functor.FullyFaithful.tensorHomEquiv` takes a morphism `e` to the preimage
+of `δ F X Y ≫ e`. -/
+@[simp]
+theorem FullyFaithful.tensorHomEquiv_symm_apply (hF : F.FullyFaithful) {X Y Z : C}
+    (e : F.obj X ⊗ F.obj Y ⟶ F.obj Z) :
+    hF.tensorHomEquiv.symm e = hF.preimage (OplaxMonoidal.δ F X Y ≫ e) :=
+  (rfl)
+
+end FullyFaithful
 
 end CategoryTheory.Functor
 

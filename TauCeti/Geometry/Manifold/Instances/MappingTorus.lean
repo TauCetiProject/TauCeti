@@ -252,6 +252,9 @@ inclusion of `M` as the fibre over the class of `t` in the circle. -/
 def mk (t : ℝ) (x : M) : SmoothMappingTorus φ :=
   Quotient.mk _ (ofProd φ (t, x))
 
+/-- The class `[t, x]` is the orbit of `(t, x)`, read in the cover. -/
+theorem mk_def (t : ℝ) (x : M) : mk φ t x = Quotient.mk _ (ofProd φ (t, x)) := (rfl)
+
 /-- Every point of the mapping torus is the class of a point of `ℝ × M`. -/
 theorem uncurry_mk_surjective : Function.Surjective (Function.uncurry (mk φ)) := fun z ↦ by
   obtain ⟨w, rfl⟩ := Quotient.mk_surjective z

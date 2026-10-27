@@ -100,6 +100,13 @@ theorem isBounded_image (hf : IsAdicHom f) {S : Set A} (hS : IsBounded S) :
   exact hS.image_of_isOpen_map_extendedIdealOfDefinition P Q hf.continuous.continuousAt
     (heq ▸ Q.isOpen_extendedIdealOfDefinition)
 
+/-- Adic homomorphisms carry power-bounded elements to power-bounded elements. -/
+theorem isPowerBounded_map (hf : IsAdicHom f) {a : A} (ha : IsPowerBounded a) :
+    IsPowerBounded (f a) := by
+  obtain ⟨P, Q, heq⟩ := hf.exists_map_extendedIdealOfDefinition_eq
+  exact ha.map_of_isOpen_map_extendedIdealOfDefinition P Q hf.continuous.continuousAt
+    (heq ▸ Q.isOpen_extendedIdealOfDefinition)
+
 end IsAdicHom
 
 namespace IsAdicHom

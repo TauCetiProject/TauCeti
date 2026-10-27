@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
 public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
 public import TauCeti.RingTheory.Node.Blowup
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
-public import TauCeti.RingTheory.RegularLocalRing.Node
+public import TauCeti.RingTheory.RegularLocalRing.Node.Basic
 
 /-!
 # The blowup of the node `xy = πⁿ⁺²` at its origin

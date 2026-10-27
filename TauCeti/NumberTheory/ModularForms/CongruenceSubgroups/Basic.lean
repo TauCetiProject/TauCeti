@@ -38,7 +38,11 @@ of the level: `Γ` is antitone in the level like the other two families, it sits
 two at the same level along the chain `Γ(N) ≤ Γ₁(N) ≤ Γ₀(N)`, and the join of two
 of them is the principal congruence subgroup of the gcd, `Γ(gcd a b) = Γ(a) ⊔ Γ(b)`. That
 identity is Shimura's Lemma 3.28; it is the Chinese remainder theorem for `SL₂`, and it is
-what lets a Hecke operator at level `ab` be analysed one prime at a time.
+what lets a Hecke operator at level `ab` be analysed one prime at a time. It passes to `Γ₁`
+as a product decomposition: every matrix of `Γ₁(gcd a b)` is a product of one of `Γ₁(a)` and one
+of `Γ₁(b)`, while `Γ₁(lcm a b) = Γ₁(a) ⊓ Γ₁(b)`. Together these match the cosets of
+`Γ₁(lcm a b)` in `Γ₁(a)` with those of `Γ₁(b)` in `Γ₁(gcd a b)`, which is how forms of two
+levels neither of which divides the other are compared.
 
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/HeckeRIngs/GL2/Gamma1Pair.lean`, for the index section
@@ -120,7 +124,11 @@ infrastructure independent of the diamond operators.
   elements of `Γ₀`, the shapes the descent factorisations produce.
 * `CongruenceSubgroup.Gamma_lcm_eq_inf`: `Γ(lcm a b) = Γ(a) ⊓ Γ(b)`, with the coprime case
   `CongruenceSubgroup.Gamma_mul_eq_inf_of_coprime`; `CongruenceSubgroup.Gamma0_lcm_eq_inf` and
-  `CongruenceSubgroup.Gamma0_mul_eq_inf_of_coprime` are the same for `Γ₀`.
+  `CongruenceSubgroup.Gamma0_mul_eq_inf_of_coprime` are the same for `Γ₀`, and
+  `CongruenceSubgroup.Gamma1_lcm_eq_inf` for `Γ₁`.
+* `CongruenceSubgroup.exists_mul_eq_of_mem_Gamma1_gcd`: every matrix of `Γ₁(gcd a b)` is a product
+  of one of `Γ₁(a)` and one of `Γ₁(b)`; in particular `Γ₁(gcd a b) = Γ₁(a) ⊔ Γ₁(b)`
+  (`CongruenceSubgroup.Gamma1_gcd_eq_sup`).
 * `CongruenceSubgroup.Gamma0_relIndex_Gamma0_of_coprime`: for coprime `a` and `b`,
   `[Γ₀(b) : Γ₀(a) ⊓ Γ₀(b)] = [SL₂(ℤ) : Γ₀(a)]`.
 * `CongruenceSubgroup.Gamma0_index_mul_of_coprime`: the index of `Γ₀` is multiplicative in the
@@ -920,6 +928,46 @@ levels. -/
 theorem Gamma0_mul_eq_inf_of_coprime {a b : ℕ} (hab : Nat.Coprime a b) :
     Gamma0 (a * b) = Gamma0 a ⊓ Gamma0 b := by
   rw [← hab.lcm_eq_mul, Gamma0_lcm_eq_inf]
+
+/-- **`Γ₁(lcm a b) = Γ₁(a) ⊓ Γ₁(b)`**: the three congruences cutting out `Γ₁` hold modulo
+`lcm a b` exactly when they hold modulo both `a` and `b`. -/
+theorem Gamma1_lcm_eq_inf (a b : ℕ) : Gamma1 (Nat.lcm a b) = Gamma1 a ⊓ Gamma1 b := by
+  refine le_antisymm (le_inf (Gamma1_le_Gamma1_of_dvd (Nat.dvd_lcm_left a b))
+    (Gamma1_le_Gamma1_of_dvd (Nat.dvd_lcm_right a b))) fun γ hγ ↦ ?_
+  obtain ⟨ha, hb⟩ := Subgroup.mem_inf.mp hγ
+  rw [Gamma1_mem] at ha hb ⊢
+  refine ⟨?_, ?_, ?_⟩
+  · simpa using ZMod.intCast_lcm_eq_of_eq_of_eq (y := 1) (by simpa using ha.1) (by simpa using hb.1)
+  · simpa using ZMod.intCast_lcm_eq_of_eq_of_eq (y := 1) (by simpa using ha.2.1)
+      (by simpa using hb.2.1)
+  · simpa using ZMod.intCast_lcm_eq_of_eq_of_eq (y := 0) (by simpa using ha.2.2)
+      (by simpa using hb.2.2)
+
+/-- **Every matrix of `Γ₁(gcd a b)` is a product of one of `Γ₁(a)` and one of `Γ₁(b)`.** The
+subgroup `Γ₁(a)` is not normal, so this product decomposition is stronger than the equality of
+subgroups `Gamma1_gcd_eq_sup`; it is what identifies the cosets of `Γ₁(lcm a b)` in `Γ₁(a)` with
+those of `Γ₁(b)` in `Γ₁(gcd a b)`. -/
+theorem exists_mul_eq_of_mem_Gamma1_gcd {a b : ℕ} {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma1 (Nat.gcd a b)) : ∃ α ∈ Gamma1 a, ∃ β ∈ Gamma1 b, α * β = γ := by
+  -- dividing `γ` on the left by `Tⁿ`, `n` its upper-right entry, lands in
+  -- `Γ(gcd a b) = Γ(a) ⊔ Γ(b)`, where `Γ(a)` is normal; and `Tⁿ` lies in every `Γ₁`
+  have hδ : ModularGroup.T ^ (-(γ 0 1)) * γ ∈ Gamma (Nat.gcd a b) := by
+    obtain ⟨h00, h11, h10⟩ := (Gamma1_mem _ _).mp hγ
+    rw [Gamma_mem]
+    simp [Matrix.mul_apply, Fin.sum_univ_two, ModularGroup.coe_T_zpow, h00, h11, h10]
+  have : (Gamma a).Normal := Gamma_normal a
+  rw [Gamma_gcd_eq_sup, Subgroup.mem_sup_of_normal_left] at hδ
+  obtain ⟨y, hy, z, hz, hyz⟩ := hδ
+  refine ⟨ModularGroup.T ^ (γ 0 1) * y,
+    mul_mem (T_zpow_mem_Gamma1 a _) (Gamma_le_Gamma1 a hy), z, Gamma_le_Gamma1 b hz, ?_⟩
+  rw [mul_assoc, hyz, ← mul_assoc, ← zpow_add, add_neg_cancel, zpow_zero, one_mul]
+
+/-- **`Γ₁(gcd a b) = Γ₁(a) ⊔ Γ₁(b)`**, the `Γ₁` counterpart of `Gamma_gcd_eq_sup`. -/
+theorem Gamma1_gcd_eq_sup (a b : ℕ) : Gamma1 (Nat.gcd a b) = Gamma1 a ⊔ Gamma1 b := by
+  refine le_antisymm (fun γ hγ ↦ ?_) (sup_le (Gamma1_le_Gamma1_of_dvd (Nat.gcd_dvd_left a b))
+    (Gamma1_le_Gamma1_of_dvd (Nat.gcd_dvd_right a b)))
+  obtain ⟨α, hα, β, hβ, rfl⟩ := exists_mul_eq_of_mem_Gamma1_gcd hγ
+  exact mul_mem (Subgroup.mem_sup_left hα) (Subgroup.mem_sup_right hβ)
 
 /-! ### The index of `Γ₀(N)` at every level -/
 
