@@ -49,9 +49,8 @@ with it the bilinearity of the pairing, is not proved here.
 * `LineBundleClass.intersectionNumber_pullback`: the projection formula along a morphism
   `g : X ⟶ Y`, `(g^* a · C) = (a · g_* C)` with `C` regarded on `Y` through `ι ≫ g`;
 * `LineBundleClass.intersectionNumber_eq_zero_of_eq_comp`: every class has intersection number
-  zero with a curve contracted to a point, and so
-  (`LineBundleClass.intersectionNumber_pullback_eq_zero_of_comp_eq`) does every pullback along a
-  morphism contracting the curve;
+  zero with a curve contracted to a point; combined with `intersectionNumber_pullback` applied to
+  `ι ≫ g`, so does every pullback along a morphism `g` contracting the curve;
 * `LineBundleClass.intersectionNumber_mk_toInvertibleSheaf`: `(-D · C) = -dim_k Γ(D ∩ C)` for an
   effective Cartier divisor `D` meeting a proper curve `C` properly;
 * `LineBundleClass.intersectionNumber_mul` and `LineBundleClass.intersectionNumber_inv`:
@@ -121,15 +120,6 @@ theorem intersectionNumber_eq_zero_of_eq_comp {T : Scheme.{u}} (h : C ⟶ T) (j 
     intersectionNumber k ι a = 0 := by
   rw [intersectionNumber_def, w, ← pullback_comp, eq_one_of_forall_specializes ht (pullback j a),
     pullback_one, eulerDegree_one]
-
-/-- **Contracted curves.** If `ι ≫ g` factors through a scheme `T` all of whose points specialize
-to one point, for instance the spectrum of a local ring or of the residue field of a point of `Y`,
-then pullbacks along `g` have intersection number zero with `C`. -/
-theorem intersectionNumber_pullback_eq_zero_of_comp_eq {T : Scheme.{u}} (g : X ⟶ Y) (h : C ⟶ T)
-    (j : T ⟶ Y) (w : ι ≫ g = h ≫ j) {t : T} (ht : ∀ y : T, y ⤳ t) (a : LineBundleClass Y) :
-    intersectionNumber k ι (pullback g a) = 0 := by
-  rw [intersectionNumber_pullback]
-  exact intersectionNumber_eq_zero_of_eq_comp k _ h j w ht a
 
 section Effective
 
