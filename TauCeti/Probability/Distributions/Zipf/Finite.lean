@@ -14,7 +14,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.GeneratingFunction
 public import TauCeti.Probability.Quantile.Discrete
 public import TauCeti.Probability.Distributions.Zipf.Basic
-public import Mathlib.MeasureTheory.Measure.TotalVariation.Basic
+public import TauCeti.Probability.Distributions.Truncation
 import TauCeti.Probability.Cdf
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.NumberTheory.LSeries.Dirichlet
@@ -81,6 +81,16 @@ theorem finiteZipfNormalizer_pos {N : ℕ} (hN : 0 < N) (s : ℝ) :
 theorem finiteZipfNormalizer_zero_right (N : ℕ) : finiteZipfNormalizer N 0 = N := by
   simp [finiteZipfNormalizer, Nat.card_Icc]
 
+private theorem finiteZipfWeight_nonneg (N : ℕ) (s : ℝ) (k : ℕ) :
+    0 ≤ (k : ℝ) ^ (-s) / finiteZipfNormalizer N s :=
+  div_nonneg (Real.rpow_nonneg (Nat.cast_nonneg k) _) (finiteZipfNormalizer_nonneg N s)
+
+private theorem finiteZipfWeight_pos {N k : ℕ} (s : ℝ) (hk : k ∈ Finset.Icc 1 N) :
+    0 < (k : ℝ) ^ (-s) / finiteZipfNormalizer N s := by
+  obtain ⟨hk, hkN⟩ := Finset.mem_Icc.mp hk
+  exact div_pos (Real.rpow_pos_of_pos (Nat.cast_pos.mpr hk) _)
+    (finiteZipfNormalizer_pos (hk.trans hkN) s)
+
 /-- The finite Zipf law, normalized on the positive integers at most `N`.
 The empty support gives zero, and all real exponents are allowed. -/
 def finiteZipfMeasure (N : ℕ) (s : ℝ) : Measure ℕ :=
@@ -116,8 +126,7 @@ theorem isProbabilityMeasure_finiteZipfMeasure {N : ℕ} (hN : 0 < N) (s : ℝ) 
   rw [finiteZipfMeasure_eq_sum_dirac, Measure.finsetSum_apply]
   simp only [Measure.smul_apply, Measure.dirac_apply_of_mem (mem_univ _), smul_eq_mul,
     mul_one]
-  rw [← ENNReal.ofReal_sum_of_nonneg (fun k _ ↦
-    div_nonneg (Real.rpow_nonneg (Nat.cast_nonneg k) _) (finiteZipfNormalizer_nonneg N s)),
+  rw [← ENNReal.ofReal_sum_of_nonneg (fun k _ ↦ finiteZipfWeight_nonneg N s k),
     ← Finset.sum_div, ← finiteZipfNormalizer_def,
     div_self (finiteZipfNormalizer_pos hN s).ne', ENNReal.ofReal_one]
 
@@ -148,27 +157,21 @@ theorem finiteZipfMeasure_real_singleton (N : ℕ) (s : ℝ) (k : ℕ) :
     (finiteZipfMeasure N s).real {k} =
       if k ∈ Finset.Icc 1 N then (k : ℝ) ^ (-s) / finiteZipfNormalizer N s else 0 := by
   rw [measureReal_def, finiteZipfMeasure_singleton]
-  split_ifs <;> simp [ENNReal.toReal_ofReal,
-    div_nonneg (Real.rpow_nonneg (Nat.cast_nonneg k) _) (finiteZipfNormalizer_nonneg N s)]
+  split_ifs <;> simp [ENNReal.toReal_ofReal, finiteZipfWeight_nonneg]
 
 /-- Positive singleton mass is equivalent to membership in the specified support. -/
 theorem finiteZipfMeasure_singleton_ne_zero_iff (N : ℕ) (s : ℝ) (k : ℕ) :
     finiteZipfMeasure N s {k} ≠ 0 ↔ k ∈ Finset.Icc 1 N := by
   rw [finiteZipfMeasure_singleton]
   split_ifs with hk
-  · have hk' : 0 < (k : ℝ) := by exact_mod_cast (Finset.mem_Icc.mp hk).1
-    have hN : 0 < N := (zero_lt_one.trans_le (Finset.mem_Icc.mp hk).1).trans_le
-      (Finset.mem_Icc.mp hk).2
-    simp [div_pos (Real.rpow_pos_of_pos hk' _) (finiteZipfNormalizer_pos hN s), hk]
+  · simp [finiteZipfWeight_pos s hk, hk]
   · simp [hk]
 
 /-- A finite Zipf variable lies almost surely in its finite support. -/
 theorem ae_mem_Icc_finiteZipfMeasure (N : ℕ) (s : ℝ) :
     ∀ᵐ k ∂finiteZipfMeasure N s, k ∈ Finset.Icc 1 N := by
-  rw [ae_iff]
-  simp [finiteZipfMeasure, Measure.finsetSum_apply, Measure.smul_apply,
-    Set.indicator_apply]
-  omega
+  exact ae_iff_of_countable.mpr fun k hk ↦
+    (finiteZipfMeasure_singleton_ne_zero_iff N s k).mp hk
 
 /-- The exact topological support in the discrete native carrier. -/
 theorem support_finiteZipfMeasure (N : ℕ) (s : ℝ) :
@@ -211,8 +214,7 @@ theorem integral_finiteZipfMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpa
     ∫ k, f k ∂finiteZipfMeasure N s =
       ∑ k ∈ Finset.Icc 1 N, ((k : ℝ) ^ (-s) / finiteZipfNormalizer N s) • f k := by
   rw [finiteZipfMeasure_eq_sum_dirac, integral_finsetSum_measure]
-  · simp [ENNReal.toReal_ofReal,
-      div_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _) (finiteZipfNormalizer_nonneg N s)]
+  · simp [ENNReal.toReal_ofReal, finiteZipfWeight_nonneg]
   · exact fun _ _ ↦ (integrable_dirac (by simp)).smul_measure ENNReal.ofReal_ne_top
 
 /-- Every function is integrable under the real cast of a finite Zipf law. -/
@@ -338,9 +340,7 @@ theorem finiteZipfMeasure_real_Iic (N : ℕ) (s : ℝ) (k : ℕ) :
       exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top (measure_ne_top (Measure.dirac i) _))]
   simp only [Measure.smul_apply, smul_eq_mul, ENNReal.toReal_mul,
     Measure.dirac_apply' _ measurableSet_Iic, Set.indicator_apply, Set.mem_Iic,
-    Pi.one_apply, ENNReal.toReal_ofReal
-      (div_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _)
-        (finiteZipfNormalizer_nonneg N s))]
+    Pi.one_apply, ENNReal.toReal_ofReal (finiteZipfWeight_nonneg N s _)]
   rw [finiteZipfNormalizer_def (min N k), Finset.sum_div]
   simp only [apply_ite ENNReal.toReal, ENNReal.toReal_one, ENNReal.toReal_zero,
     mul_ite, mul_one, mul_zero]
@@ -348,6 +348,12 @@ theorem finiteZipfMeasure_real_Iic (N : ℕ) (s : ℝ) (k : ℕ) :
   congr 1
   ext j
   simp [and_assoc]
+
+/-- A nonempty finite Zipf law has full mass below its upper support endpoint. -/
+@[simp]
+theorem finiteZipfMeasure_real_Iic_self {N : ℕ} (hN : 0 < N) (s : ℝ) :
+    (finiteZipfMeasure N s).real (Iic N) = 1 := by
+  rw [finiteZipfMeasure_real_Iic, min_self, div_self (finiteZipfNormalizer_pos hN s).ne']
 
 /-- The cdf of the real cast law, with the negative branch before the natural floor. -/
 theorem cdf_map_cast_finiteZipfMeasure {N : ℕ} (hN : 0 < N) (s x : ℝ) :
@@ -394,8 +400,7 @@ theorem tendsto_quantile_map_cast_finiteZipfMeasure_nhdsLT_one {N : ℕ} (hN : 0
   let _ := isProbabilityMeasure_finiteZipfMeasure hN s
   have hmass : 0 < (finiteZipfMeasure N s).real {N} := by
     rw [finiteZipfMeasure_real_singleton, ite_eq_left (Finset.mem_Icc.mpr ⟨hN, le_rfl⟩)]
-    exact div_pos (Real.rpow_pos_of_pos (Nat.cast_pos.mpr hN) _)
-      (finiteZipfNormalizer_pos hN s)
+    exact finiteZipfWeight_pos s (Finset.mem_Icc.mpr ⟨hN, le_rfl⟩)
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [Ioo_mem_nhdsLT (sub_lt_self 1 hmass)] with u hu
   have hu' : u ∈ Ioo (0 : ℝ) 1 :=
@@ -403,8 +408,7 @@ theorem tendsto_quantile_map_cast_finiteZipfMeasure_nhdsLT_one {N : ℕ} (hN : 0
   symm
   rw [Measure.quantile_map_natCast_eq_iff _ hu']
   refine ⟨?_, fun j hj ↦ ?_⟩
-  · simp only [Set.mem_ofPred_eq, finiteZipfMeasure_real_Iic, min_self,
-      div_self (finiteZipfNormalizer_pos hN s).ne']
+  · simp only [Set.mem_ofPred_eq, finiteZipfMeasure_real_Iic_self hN s]
     exact hu'.2.le
   · by_contra hjN
     have hsub : (Iic j : Set ℕ) ⊆ ({N} : Set ℕ)ᶜ := by
@@ -467,30 +471,12 @@ theorem tvDist_finiteZipfMeasure_zipfMeasure {N : ℕ} (hN : 0 < N) {s : ℝ} (h
     tvDist (finiteZipfMeasure N s) (zipfMeasure s) =
       2 * (1 - (zipfMeasure s).real (Iic N)) := by
   let _ := isProbabilityMeasure_zipfMeasure hs
-  let _ := isProbabilityMeasure_finiteZipfMeasure hN s
-  have hH : IsHahnDecomposition (zipfMeasure s) (finiteZipfMeasure N s) (Iic N) := by
-    refine ⟨measurableSet_Iic, ?_, ?_⟩
-    · rw [finiteZipfMeasure_eq_cond N hs, ProbabilityTheory.cond, Measure.restrict_smul,
-        Measure.restrict_restrict measurableSet_Iic, inter_self]
-      apply Measure.le_iff.mpr
-      intro B hB
-      rw [Measure.smul_apply, smul_eq_mul]
-      have hi : 1 ≤ ((zipfMeasure s) (Iic N))⁻¹ := by
-        simpa using ENNReal.inv_le_inv.mpr (prob_le_one (μ := zipfMeasure s) (s := Iic N))
-      simpa only [one_mul] using mul_le_mul_of_nonneg_right hi
-        (bot_le : (0 : ℝ≥0∞) ≤ (zipfMeasure s).restrict (Iic N) B)
-    · rw [finiteZipfMeasure_eq_cond N hs, ProbabilityTheory.cond, Measure.restrict_smul,
-        Measure.restrict_restrict measurableSet_Iic.compl]
-      simp only [compl_Iic, Ioi_inter_Iic, Ioc_self, Measure.restrict_empty, smul_zero]
-      exact bot_le
-  rw [tvDist_comm, hH.tvDist_eq, probReal_compl_eq_one_sub measurableSet_Iic,
-    finiteZipfMeasure_real_Iic, min_self, div_self (finiteZipfNormalizer_pos hN s).ne']
-  have hzero : (finiteZipfMeasure N s).real (Iic N)ᶜ = 0 := by
-    rw [probReal_compl_eq_one_sub measurableSet_Iic, finiteZipfMeasure_real_Iic,
-      min_self, div_self (finiteZipfNormalizer_pos hN s).ne']
-    norm_num
-  rw [hzero]
-  ring
+  have hmass : zipfMeasure s (Iic N) ≠ 0 := by
+    intro hzero
+    exact ((zipfMeasure_singleton_ne_zero_iff hs 1).mpr one_ne_zero)
+      (measure_mono_null (singleton_subset_iff.mpr hN) hzero)
+  rw [finiteZipfMeasure_eq_cond N hs]
+  exact (zipfMeasure s).tvDist_cond_self measurableSet_Iic hmass
 
 /-- Finite Zipf laws converge to the infinite Zipf law in total variation for `s > 1`. -/
 theorem tendsto_tvDist_finiteZipfMeasure_zipfMeasure {s : ℝ} (hs : 1 < s) :
@@ -502,11 +488,7 @@ theorem tendsto_tvDist_finiteZipfMeasure_zipfMeasure {s : ℝ} (hs : 1 < s) :
     simpa only [measure_univ, ENNReal.toReal_one, measureReal_def, Function.comp_def] using
       (ENNReal.tendsto_toReal (measure_ne_top (zipfMeasure s) univ)).comp
         (tendsto_measure_Iic_atTop (zipfMeasure s))
-  have h : Tendsto (fun N ↦ 2 * (1 - (zipfMeasure s).real (Iic N)))
-      atTop (nhds (2 * (1 - 1 : ℝ))) := (tendsto_const_nhds.sub hmass).const_mul 2
-  simp only [sub_self, mul_zero] at h
-  apply h.congr'
-  filter_upwards [Filter.eventually_gt_atTop 0] with N hN
-  exact (tvDist_finiteZipfMeasure_zipfMeasure hN hs).symm
+  simp_rw [finiteZipfMeasure_eq_cond _ hs]
+  exact (zipfMeasure s).tendsto_tvDist_cond (Eventually.of_forall fun _ ↦ measurableSet_Iic) hmass
 
 end TauCeti.Probability
