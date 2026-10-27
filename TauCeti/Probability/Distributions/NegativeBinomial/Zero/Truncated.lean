@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.NegativeBinomial.Quantile
 public import TauCeti.Probability.Distributions.NegativeBinomial.Transforms
-public import TauCeti.Probability.Distributions.ZeroTruncation
+public import TauCeti.Probability.Distributions.Zero.Truncation
 
 /-!
 # The zero-truncated negative-binomial distribution
@@ -15,7 +15,7 @@ public import TauCeti.Probability.Distributions.ZeroTruncation
 The zero-truncated negative-binomial law with shape `r` and success probability `p` is
 `(negativeBinomialMeasure r p)[|{0}ᶜ]`, the negative-binomial law conditioned on a positive count.
 This file specializes the generic zero-truncation formulas of
-`TauCeti.Probability.Distributions.ZeroTruncation` using the negative-binomial mass `p ^ r` at
+`TauCeti.Probability.Distributions.Zero.Truncation` using the negative-binomial mass `p ^ r` at
 zero:
 
 * the masses `negativeBinomialWeightReal r p k / (1 - p ^ r)` for `k ≠ 0`;

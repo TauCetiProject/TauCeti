@@ -42,6 +42,8 @@ noncommutative ring are allowed.
   projections `lim A → Aₙ`.
 * `TauCeti.ModuleTower.limMap`, `TauCeti.ModuleTower.limOneMap`: the linear maps induced by a
   morphism of towers, with their identity, composition, zero and addition laws.
+* `TauCeti.ModuleTower.limMap_inj`: a morphism out of a tower with surjective transitions is
+  determined by the map it induces on `lim`.
 * `TauCeti.ModuleTower.limMap_injective`, `TauCeti.ModuleTower.limOneMap_surjective`: levelwise
   injective (surjective) morphisms induce injective (surjective) maps on `lim` (`lim¹`).
 * `TauCeti.ModuleTower.subsingleton_limOne_iff`: `lim¹` vanishes if and only if the shift map is
@@ -428,6 +430,15 @@ theorem limMap_zero : limMap (0 : F ⟶ G) = 0 :=
 @[simp]
 theorem limMap_add (f g : F ⟶ G) : limMap (f + g) = limMap f + limMap g :=
   (rfl)
+
+/-- If every transition map of `A` is surjective, a morphism of towers `A ⟶ B` is determined by
+the map it induces on `lim`: every element of `Aₙ` lifts to `lim A`. -/
+theorem limMap_inj (h : ∀ n, Function.Surjective (F.transition n)) {f g : F ⟶ G} :
+    limMap f = limMap g ↔ f = g := by
+  refine ⟨fun hfg ↦ ?_, congrArg limMap⟩
+  ext ⟨n⟩ x
+  obtain ⟨y, rfl⟩ := F.limπ_surjective h n x
+  exact congr(($hfg y : G.Product) n)
 
 /-- The first map of the six-term sequence: `lim A → lim B` is injective when every `Aₙ → Bₙ`
 is. -/

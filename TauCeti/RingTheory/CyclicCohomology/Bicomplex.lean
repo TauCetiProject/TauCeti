@@ -47,6 +47,8 @@ the total differential and its compatibility with cyclic cochains uses bilinear 
 * `TauCeti.cyclicTotalComplex`: the total complex, a cochain complex of `R`-modules.
 * `TauCeti.cyclicCochainsToTotal`, `TauCeti.cyclicCochainComplexToTotal`: the inclusion of cyclic
   cochains into column zero, and the resulting cochain map.
+* `TauCeti.cyclicTotalHomologyMk`: the class of a total cocycle in the cohomology of the total
+  complex.
 
 ## Main results
 
@@ -60,6 +62,8 @@ the total differential and its compatibility with cyclic cochains uses bilinear 
   cochain complex is a quasi-isomorphism when `q + 1` is invertible for every `q < m`.
 * `TauCeti.quasiIso_cyclicCochainComplexToTotal`: over a ring containing `ℚ`, the inclusion is a
   quasi-isomorphism.
+* `TauCeti.homologyMap_cyclicCochainComplexToTotal_mk`: the inclusion sends the class of a cyclic
+  cocycle to the class of the same cochain in column zero.
 
 ## References
 
@@ -789,6 +793,112 @@ theorem quasiIso_cyclicCochainComplexToTotal [Algebra ℚ R] :
   refine fun m ↦ quasiIsoAt_cyclicCochainComplexToTotal R A M m fun q _ ↦ ?_
   simpa using (Nat.cast_add_one_ne_zero (R := ℚ) q).isUnit.map (algebraMap ℚ R)
 
+/-- Over a ring containing `ℚ`, the inclusion of cyclic cochains into column zero is bijective on
+cohomology. -/
+theorem bijective_homologyMap_cyclicCochainComplexToTotal [Algebra ℚ R] (n : ℕ) :
+    Function.Bijective (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) n) :=
+  (ConcreteCategory.isIso_iff_bijective _).1 ((quasiIsoAt_iff_isIso_homologyMap _ _).1
+    ((quasiIso_iff _).1 (quasiIso_cyclicCochainComplexToTotal R A M) n))
+
 end Complex
+
+/-! ### Total cohomology classes -/
+
+section Classes
+
+variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+
+/-- A total cochain is a total cocycle exactly when the differential of the total complex kills
+it. -/
+theorem mem_ker_cyclicTotalDifferential_iff (n : ℕ) (x : cyclicTotalCochains R A M n) :
+    x ∈ LinearMap.ker (cyclicTotalDifferential R A M n) ↔
+      (cyclicTotalComplex R A M).d n (n + 1) ((cyclicTotalComplexXIso R A M n).inv x) = 0 := by
+  rw [LinearMap.mem_ker, (cyclicTotalComplex R A M).moduleCat_d_inv_eq_zero_iff
+    (cyclicTotalDifferential R A M) (cyclicTotalComplex_d R A M)]
+
+/-- The class of a total cocycle in the cohomology of the total complex. -/
+def cyclicTotalHomologyMk (n : ℕ) :
+    LinearMap.ker (cyclicTotalDifferential R A M n) →ₗ[R] (cyclicTotalComplex R A M).homology n :=
+  (cyclicTotalComplex R A M).moduleCatCohomologyClassOfIso (fun n ↦ cyclicTotalCochains R A M n)
+    (fun n ↦ LinearMap.ker (cyclicTotalDifferential R A M n)) (cyclicTotalComplexXIso R A M)
+    (mem_ker_cyclicTotalDifferential_iff R A M) n
+
+variable {R A M}
+
+/-- The class of a total cocycle is the homology class of any cycle of the total complex whose
+underlying total cochain is that cocycle. -/
+theorem cyclicTotalHomologyMk_eq_homologyπ {n : ℕ}
+    (x : LinearMap.ker (cyclicTotalDifferential R A M n)) (z : (cyclicTotalComplex R A M).cycles n)
+    (hz : (cyclicTotalComplexXIso R A M n).hom ((cyclicTotalComplex R A M).iCycles n z) = x.1) :
+    cyclicTotalHomologyMk R A M n x = (cyclicTotalComplex R A M).homologyπ n z :=
+  (cyclicTotalComplex R A M).moduleCatCohomologyClassOfIso_eq_homologyπ _ _ _
+    (mem_ker_cyclicTotalDifferential_iff R A M) x z hz
+
+/-- Every class in the cohomology of the total complex is the class of a total cocycle. -/
+theorem cyclicTotalHomologyMk_surjective (n : ℕ) :
+    Function.Surjective (cyclicTotalHomologyMk R A M n) :=
+  (cyclicTotalComplex R A M).moduleCatCohomologyClassOfIso_surjective _ _ _
+    (mem_ker_cyclicTotalDifferential_iff R A M) n
+
+/-- A total cocycle of degree zero has zero class exactly when it vanishes. -/
+@[simp]
+theorem cyclicTotalHomologyMk_zero_eq_zero_iff
+    (x : LinearMap.ker (cyclicTotalDifferential R A M 0)) :
+    cyclicTotalHomologyMk R A M 0 x = 0 ↔ x = 0 := by
+  rw [cyclicTotalHomologyMk,
+    (cyclicTotalComplex R A M).moduleCatCohomologyClassOfIso_eq_zero_iff_exists
+      _ _ _ _ CochainComplex.prev_nat_zero, (cyclicTotalComplex R A M).shape 0 0 (by simp)]
+  simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+  refine ⟨fun ⟨_, h⟩ ↦ Subtype.ext ?_, fun h ↦ ⟨0, by simp [h]⟩⟩
+  exact ((cyclicTotalComplexXIso R A M 0).inv_hom_id_apply x.1).symm.trans
+    (by rw [← h, map_zero])
+
+/-- A total cocycle of degree `n + 1` has zero class exactly when it is a total coboundary. -/
+@[simp]
+theorem cyclicTotalHomologyMk_succ_eq_zero_iff {n : ℕ}
+    (x : LinearMap.ker (cyclicTotalDifferential R A M (n + 1))) :
+    cyclicTotalHomologyMk R A M (n + 1) x = 0 ↔ ∃ w, cyclicTotalDifferential R A M n w = x.1 := by
+  rw [cyclicTotalHomologyMk,
+    (cyclicTotalComplex R A M).moduleCatCohomologyClassOfIso_eq_zero_iff_exists
+      _ _ _ _ (CochainComplex.prev_nat_succ n)]
+  refine ⟨fun ⟨w, hw⟩ ↦ ⟨(cyclicTotalComplexXIso R A M n).hom w, ?_⟩,
+    fun ⟨w, hw⟩ ↦ ⟨(cyclicTotalComplexXIso R A M n).inv w, ?_⟩⟩
+  · rw [← cyclicTotalComplex_d_apply, hw, Iso.inv_hom_id_apply]
+  · apply (ModuleCat.mono_iff_injective (cyclicTotalComplexXIso R A M (n + 1)).hom).1
+      inferInstance
+    rw [cyclicTotalComplex_d_apply, Iso.inv_hom_id_apply, Iso.inv_hom_id_apply, hw]
+
+/-- A cyclic cocycle, included into column zero, is a total cocycle. -/
+theorem cyclicCochainsToTotal_mem_ker {m : ℕ} (φ : cyclicCocycles R A M m) :
+    cyclicCochainsToTotal R A M m φ.1 ∈ LinearMap.ker (cyclicTotalDifferential R A M m) := by
+  rw [LinearMap.mem_ker, cyclicTotalDifferential_cyclicCochainsToTotal]
+  convert map_zero (cyclicCochainsToTotal R A M (m + 1))
+  exact Subtype.ext (by
+    rw [coe_cyclicHochschildCoboundary_apply]
+    exact (mem_cyclicCocycles_iff R A M).1 φ.2)
+
+end Classes
+
+section CohomologyClasses
+
+variable {R : Type*} {A : Type u} {M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M]
+  [Module R M]
+
+/-- The inclusion of cyclic cochains into column zero sends the class of a cyclic cocycle to the
+class of the corresponding total cocycle. -/
+@[simp]
+theorem homologyMap_cyclicCochainComplexToTotal_mk {m : ℕ} (φ : cyclicCocycles R A M m) :
+    HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m
+        (cyclicCohomology.mk R A M m φ) =
+      cyclicTotalHomologyMk R A M m ⟨_, cyclicCochainsToTotal_mem_ker φ⟩ := by
+  rw [cyclicCohomology.mk_eq_homologyπ R A M φ ((cyclicCochainComplex R A M).moduleCatCyclesMk
+      ((cyclicCochainComplexXIso R A M m).inv φ.1) (m + 1) (CochainComplex.next ℕ m)
+      ((mem_cyclicCocycles_iff_complex R A M m φ.1).1 φ.2)) (by simp),
+    HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
+  exact (cyclicTotalHomologyMk_eq_homologyπ _ _
+    (by simp [cyclicCochainComplexToTotal_f_apply])).symm
+
+end CohomologyClasses
 
 end TauCeti
