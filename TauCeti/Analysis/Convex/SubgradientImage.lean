@@ -33,10 +33,10 @@ of `Ω`, the subgradients of `w` relative to `Ω` at points where `u < w`, and t
 perturbations, are subgradients of `u` relative to `Ω`: this is the comparison step behind the
 comparison principle for the Monge–Ampère equation.
 
-In a proper real inner product space, if real functions `F k` converge to `u` locally uniformly
-on an open set `Ω`, with `u` continuous on `Ω`, their subgradients relative to `Ω` at points of a
-compact `K ⊆ Ω` are eventually bounded. Every open neighbourhood of the subgradient image of `K`
-under `u` eventually contains that of `K` under `F k`.
+In a seminormed real inner product space, if real functions `F k` converge to `u` locally
+uniformly on an open set `Ω`, with `u` continuous on `Ω`, their subgradients relative to `Ω` at
+points of a compact `K ⊆ Ω` are eventually bounded. If the space is proper, every open
+neighbourhood of the subgradient image of `K` under `u` eventually contains that of `K` under `F k`.
 
 ## Main statements
 
@@ -276,10 +276,11 @@ theorem exists_forall_add_inner_add_le_of_forall_frontier_le {Ω : Set E}
 
 end CompactClosure
 
-section Proper
+section Seminormed
 
-variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E] [ProperSpace E]
+variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
 
+open scoped Topology in
 /-- **Subgradients are eventually locally bounded.** Let `F k → u` locally uniformly on an open
 set `Ω`, with `u` continuous on `Ω`, and let `K ⊆ Ω` be compact. Then the subgradients of `F k`
 relative to `Ω` at points of `K` are eventually bounded, uniformly in `k`. -/
@@ -288,19 +289,45 @@ theorem exists_eventually_norm_le_of_tendstoLocallyUniformlyOn {ι : Type*} {l :
     (hFu : TendstoLocallyUniformlyOn F u l Ω) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     ∃ R, ∀ᶠ k in l, ∀ x ∈ K, ∀ y, (∀ x' ∈ Ω, F k x + inner ℝ (x' - x) y ≤ F k x') →
       ‖y‖ ≤ R := by
-  -- `F k` is eventually bounded by `M + 1` on a compact thickening of `K` inside `Ω`.
-  obtain ⟨δ, hδ, hKδ⟩ := hK.exists_cthickening_subset_open hΩ hKΩ
-  obtain ⟨M, hM⟩ := hK.cthickening.exists_bound_of_continuousOn (hu.mono hKδ)
-  refine ⟨2 * (M + 1) / δ, ?_⟩
-  filter_upwards [hFu.eventually_forall_abs_sub_lt hK.cthickening hKδ one_pos]
-    with k hk x hx y hy
-  rw [le_div_iff₀ hδ, mul_comm]
-  refine mul_norm_le_of_forall_add_inner_le hδ.le
-    ((closedBall_subset_cthickening hx δ).trans hKδ) (fun z hz => ?_) hy
-  have hz' := closedBall_subset_cthickening hx δ hz
-  have h := hM z hz'
-  rw [Real.norm_eq_abs] at h
-  linarith [abs_sub_abs_le_abs_sub (F k z) (u z), hk z hz']
+  -- Compact induction combines finitely many local bounds by taking their maximum.
+  -- Each local bound controls a smaller ball, leaving room for the norm estimate at its points.
+  refine hK.induction_on ?_ ?_ ?_ ?_
+  · exact ⟨0, Filter.Eventually.of_forall fun _ x hx => (notMem_empty x hx).elim⟩
+  · rintro s t hst ⟨R, hR⟩
+    exact ⟨R, hR.mono fun _ hk x hx => hk x (hst hx)⟩
+  · rintro s t ⟨R, hR⟩ ⟨S, hS⟩
+    refine ⟨max R S, ?_⟩
+    filter_upwards [hR, hS] with k hkR hkS x hx y hy
+    rcases hx with hx | hx
+    · exact (hkR x hx y hy).trans (le_max_left _ _)
+    · exact (hkS x hx y hy).trans (le_max_right _ _)
+  · intro x hx
+    have hxΩ := hKΩ hx
+    obtain ⟨t, ht, hFt⟩ := hFu _ (dist_mem_uniformity zero_lt_one) x hxΩ
+    rw [hΩ.nhdsWithin_eq hxΩ] at ht
+    have hux : ∀ᶠ z in 𝓝 x, |u z| < |u x| + 1 :=
+      (hu.continuousAt (hΩ.mem_nhds hxΩ)).abs.eventually_lt_const (lt_add_one _)
+    obtain ⟨r, hr, hball⟩ := nhds_basis_closedBall.mem_iff.1
+      (Filter.inter_mem (Filter.inter_mem (hΩ.mem_nhds hxΩ) ht) hux)
+    refine ⟨ball x (r / 2), mem_nhdsWithin_of_mem_nhds (ball_mem_nhds x (half_pos hr)),
+      2 * (|u x| + 2) / (r / 2), ?_⟩
+    filter_upwards [hFt] with k hk z hz y hy
+    have hsub : closedBall z (r / 2) ⊆ closedBall x r :=
+      closedBall_subset_closedBall' (by linarith [mem_ball.1 hz])
+    rw [le_div_iff₀ (half_pos hr), mul_comm]
+    refine mul_norm_le_of_forall_add_inner_le (half_pos hr).le
+      (fun w hw => (hball (hsub hw)).1.1) (fun w hw => ?_) hy
+    have hw' := hball (hsub hw)
+    have huw : |u w| < |u x| + 1 := hw'.2
+    have hF : |F k w - u w| < 1 := by
+      simpa only [Real.dist_eq, abs_sub_comm] using hk w hw'.1.2
+    linarith [abs_sub_abs_le_abs_sub (F k w) (u w)]
+
+end Seminormed
+
+section Proper
+
+variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E] [ProperSpace E]
 
 /-- **Upper semicontinuity of subgradient images.** Let `F k → u` locally uniformly on an open
 set `Ω`, with `u` continuous on `Ω`, and let `K ⊆ Ω` be compact. Then every open set `V`
