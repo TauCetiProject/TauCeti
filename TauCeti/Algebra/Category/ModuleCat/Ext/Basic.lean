@@ -47,7 +47,7 @@ theorem Ext.smul_eq_zero_of_mem_annihilator_right {r : R} (hr : r ∈ Module.ann
     {n : ℕ} (x : Ext N M n) : r • x = 0 := by
   have : r • 𝟙 M = 0 := by
     simp [← ModuleCat.lsmul_eq_smul_id, Module.mem_annihilator_iff_lsmul_eq_zero.mp hr]
-  rw [← Ext.comp_mk₀_id x, ← Ext.comp_smul, ← Ext.mk₀_smul, this, Ext.mk₀_zero, Ext.comp_zero]
+  simp [Ext.smul_eq_comp_mk₀, this]
 
 /-- `Ext N M n` vanishes when the annihilators of `N` and `M` are comaximal. -/
 theorem Ext.subsingleton_of_annihilator_sup_eq_top

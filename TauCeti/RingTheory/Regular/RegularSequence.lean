@@ -30,6 +30,8 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
 
 ## Main results
 
+* `RingTheory.Sequence.IsWeaklyRegular.of_subsingleton`: every finite sequence is weakly regular
+  on a module with at most one element.
 * `RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow`: for a weakly `M`-regular
   sequence `a, b`, the power `bʲ` is regular on `M ⧸ aⁿ M`.
 * `Ideal.exists_mem_isSMulRegular_iff`: `I` contains an `M`-regular element if and only if it lies
@@ -51,6 +53,11 @@ open IsLocalRing RingTheory.Sequence Module Pointwise
 section Pow
 
 variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
+
+/-- Every finite sequence is weakly regular on a module with at most one element. -/
+theorem RingTheory.Sequence.IsWeaklyRegular.of_subsingleton [Subsingleton M] (rs : List R) :
+    IsWeaklyRegular M rs :=
+  ⟨fun _ _ _ _ _ ↦ Subsingleton.elim _ _⟩
 
 /-- If `a, b` is a weakly `M`-regular sequence, then `bʲ` is regular on `M ⧸ aⁿ M`. -/
 theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow {a b : R}

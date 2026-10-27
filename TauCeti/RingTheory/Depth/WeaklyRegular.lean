@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.Ideal.Height
 import Mathlib.RingTheory.KrullDimension.Regular
 import Mathlib.RingTheory.Regular.Flat
 import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
+import TauCeti.RingTheory.Finiteness.Nakayama
+import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Depth as the supremum of lengths of weakly regular sequences
@@ -52,27 +54,7 @@ open IsLocalRing RingTheory.Sequence CategoryTheory Abelian
 
 variable {R : Type u} [CommRing R]
 
-/-- Every finite sequence is weakly regular on a module with at most one element. -/
-theorem RingTheory.Sequence.IsWeaklyRegular.of_subsingleton {M : Type*} [AddCommGroup M]
-    [Module R M] [Subsingleton M] (rs : List R) : IsWeaklyRegular M rs :=
-  ⟨fun _ _ _ _ _ ↦ Subsingleton.elim _ _⟩
-
 namespace Ideal
-
-/-- For a finite module `M`, `I M = M` exactly when `I` and the annihilator of `M` are comaximal. -/
-theorem smul_top_eq_top_iff_sup_annihilator_eq_top {M : Type*} [AddCommGroup M] [Module R M]
-    [Module.Finite R M] (I : Ideal R) :
-    I • (⊤ : Submodule R M) = ⊤ ↔ I ⊔ Module.annihilator R M = ⊤ := by
-  refine ⟨fun hI ↦ ?_, fun h ↦ ?_⟩
-  · -- Nakayama gives `r ∈ I` acting as the identity, so `1 - r` annihilates `M`.
-    obtain ⟨r, hrI, hr⟩ := Submodule.exists_mem_and_smul_eq_self_of_fg_of_le_smul I ⊤
-      Module.Finite.fg_top hI.ge
-    refine (eq_top_iff_one _).2 <| Submodule.mem_sup.2 ⟨r, hrI, 1 - r, ?_, add_sub_cancel r 1⟩
-    exact Module.mem_annihilator.2 fun m ↦ by rw [sub_smul, one_smul, hr m trivial, sub_self]
-  · calc I • (⊤ : Submodule R M) = (I ⊔ Module.annihilator R M) • ⊤ := by
-          rw [Submodule.sup_smul, ← Submodule.annihilator_top, Submodule.annihilator_smul,
-            sup_bot_eq]
-      _ = ⊤ := by rw [h, Submodule.top_smul]
 
 variable [Small.{v} R]
 
@@ -87,9 +69,7 @@ theorem depth_eq_top_of_smul_top_eq_top (I : Ideal R) (M : ModuleCat.{v} R) [Mod
 variable [IsNoetherianRing R]
 
 /-- Let `M` be a finite module over a Noetherian ring and `p` a prime ideal in the support of `M`
-containing `I`. Then the depth of `M` with respect to `I` is at most the height of `p`: an
-`M`-regular sequence in `I` stays regular on the localization `M_p`, whose dimension is at most
-the height of `p`. -/
+containing `I`. Then the depth of `M` with respect to `I` is at most the height of `p`. -/
 theorem depth_le_height (I : Ideal R) (M : ModuleCat.{v} R) [Module.Finite R M] (p : Ideal R)
     [p.IsPrime] (hIp : I ≤ p) (hMp : Module.annihilator R M ≤ p) : I.depth M ≤ p.height := by
   have hI : I • (⊤ : Submodule R M) ≠ ⊤ := fun h ↦ IsPrime.ne_top' <| top_le_iff.1 <|
@@ -101,19 +81,13 @@ theorem depth_le_height (I : Ideal R) (M : ModuleCat.{v} R) [Module.Finite R M] 
   rw [depth_eq_sSup_length_isRegular I M hI.lt_top]
   refine sSup_le ?_
   rintro _ ⟨rs, reg, mem, rfl⟩
+  -- An `M`-regular sequence in `I` stays regular on the localization `Mₚ`, whose dimension is at
+  -- most the height of `p`.
   have regₚ := reg.toIsWeaklyRegular.isRegular_of_isLocalizedModule_of_mem Rₚ p
     (LocalizedModule.mkLinearMap p.primeCompl M) fun r hr ↦ hIp (mem r hr)
-  -- Dividing `Mₚ` by the regular sequence lowers its dimension by the length of the sequence.
-  have hdim := Module.supportDim_add_length_eq_supportDim_of_isRegular _ regₚ
-  have : Nontrivial (Mₚ ⧸ ofList (rs.map (algebraMap R Rₚ)) • (⊤ : Submodule Rₚ Mₚ)) :=
-    regₚ.quot_ofList_smul_nontrivial ⊤
-  obtain ⟨e, he⟩ := WithBot.ne_bot_iff_exists.1 (Module.supportDim_ne_bot_of_nontrivial Rₚ
-    (Mₚ ⧸ ofList (rs.map (algebraMap R Rₚ)) • (⊤ : Submodule Rₚ Mₚ)))
-  rw [← he, List.length_map] at hdim
   refine WithBot.coe_le_coe.1 <| calc
-    ((rs.length : ℕ∞) : WithBot ℕ∞) ≤ (e : WithBot ℕ∞) + rs.length := by
-      exact_mod_cast le_add_self
-    _ = Module.supportDim Rₚ Mₚ := hdim
+    ((rs.length : ℕ∞) : WithBot ℕ∞) = (rs.map (algebraMap R Rₚ)).length := by simp
+    _ ≤ Module.supportDim Rₚ Mₚ := regₚ.length_le_supportDim
     _ ≤ ringKrullDim Rₚ := Module.supportDim_le_ringKrullDim Rₚ Mₚ
     _ = p.height := IsLocalization.AtPrime.ringKrullDim_eq_height p Rₚ
 
