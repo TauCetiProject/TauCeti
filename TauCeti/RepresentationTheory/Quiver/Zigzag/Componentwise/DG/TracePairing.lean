@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
+public import Mathlib.Tactic.NormNum
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.Projective
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.WeightedTrace
 
@@ -43,51 +44,15 @@ attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 
 local notation "Z" => AlgCat.carrier (zigzagAlgebra k G)
 local notation "D" => zigzagAlgebraProjectiveDGRightModule k G
-local notation "e" => fun i : V ↦ zigzagAlgebraBasis k G (Sum.inl i)
-local notation "C" => fun (i j : V) (d : ℤ) ↦
-  cornerSubmodule k (e i) (e j) ⊓ zigzagAlgebraIntegerGrade k G d
 local notation "L" => zigzagAlgebraProjectiveDGHomEquivCorner k G
-
--- The landed dictionary is indexed by target shift s and has DG degree -s.
--- Reindex only this concrete dictionary to expose the pairing's complementary DG degrees.
-private abbrev projectiveDGHomCornerEquiv (i j : V) (d : ℤ) :
-    DGHom k d (D i) (D j) ≃ₗ[k] ↥(C i j d) :=
-  (((dgHomComplex k (D i) (D j)).XIsoOfEq (Int.neg_neg d).symm).toLinearEquiv.trans
-    (L i j (-d))).trans (LinearEquiv.ofEq _ _ (by dsimp only; rw [Int.neg_neg]))
-
-private theorem coe_projectiveCorner_castDeg (i j : V) (s t : ℤ) (h : s = t)
-    (f : DGHom k (-s) (D i) (D j)) :
-    (L i j t (castDeg k (congrArg (fun n : ℤ ↦ -n) h) f) : Z) = (L i j s f : Z) := by
-  subst t
-  simp only [castDeg_self]
-
-private theorem projectiveDGHomCornerEquiv_comp
-    (i j l : V) (a b n : ℤ) (hab : a + b = n)
-    (f : DGHom k a (D i) (D j)) (g : DGHom k b (D j) (D l)) :
-    (projectiveDGHomCornerEquiv k G i l n (dgComp k f g hab) : Z) =
-      (projectiveDGHomCornerEquiv k G i j a f : Z) *
-        (projectiveDGHomCornerEquiv k G j l b g : Z) := by
-  subst n
-  -- The term isomorphisms evaluate as castDeg, while ofEq preserves ambient corner vectors.
-  simp only [projectiveDGHomCornerEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.coe_ofEq_apply, Iso.toLinearEquiv_apply, ← castDeg_def]
-  have hcast := coe_projectiveCorner_castDeg k G i l (-b + -a) (-(a + b)) (by omega)
-    (castDeg k (by omega) (dgComp k f g rfl))
-  calc
-    _ = (L i l (-b + -a) (castDeg k (by omega) (dgComp k f g rfl)) : Z) := by
-      simpa only [castDeg_castDeg] using hcast
-    _ = _ := by
-      simpa only [castDeg_dgComp_eq_castDeg, dgComp_castDeg_eq_castDeg, castDeg_castDeg] using
-        (coe_zigzagAlgebraProjectiveDGHomEquivCorner_comp k G i j l (-a) (-b)
-          (castDeg k (Int.neg_neg a).symm f) (castDeg k (Int.neg_neg b).symm g))
 
 /-- The weighted corner trace pulled back to complementary homogeneous DG morphisms. -/
 def zigzagAlgebraProjectiveDGHomWeightedTracePairing
     (c : V → kˣ) (i j : V) (d : ℤ) :
     DGHom k d (D i) (D j) →ₗ[k] DGHom k (2 - d) (D j) (D i) →ₗ[k] k :=
   (zigzagAlgebraGradedCornerWeightedTracePairing k G c i j d).compl₁₂
-    (projectiveDGHomCornerEquiv k G i j d).toLinearMap
-    (projectiveDGHomCornerEquiv k G j i (2 - d)).toLinearMap
+    (zigzagAlgebraProjectiveDGHomEquivCornerOfDegree k G i j d).toLinearMap
+    (zigzagAlgebraProjectiveDGHomEquivCornerOfDegree k G j i (2 - d)).toLinearMap
 
 /-- The generator pairing is perfect in every pair of complementary DG degrees. -/
 instance zigzagAlgebraProjectiveDGHomWeightedTracePairing_isPerfPair
@@ -104,14 +69,12 @@ theorem zigzagAlgebraProjectiveDGHomWeightedTracePairing_apply
     zigzagAlgebraProjectiveDGHomWeightedTracePairing k G c i j d f g =
       (c i : k) * zigzagAlgebraTrace k G
         (L i i (-2) (dgComp k f g (by omega)) : Z) := by
-  -- Unfold the pullback evaluation; the degree-two reindexing reduces to the original dictionary.
-  change zigzagAlgebraGradedCornerWeightedTracePairing k G c i j d
-      (projectiveDGHomCornerEquiv k G i j d f)
-      (projectiveDGHomCornerEquiv k G j i (2 - d) g) =
-    (c i : k) * zigzagAlgebraTrace k G
-      (projectiveDGHomCornerEquiv k G i i 2 (dgComp k f g (by omega)) : Z)
-  rw [zigzagAlgebraGradedCornerWeightedTracePairing_apply,
-    projectiveDGHomCornerEquiv_comp]
+  rw [zigzagAlgebraProjectiveDGHomWeightedTracePairing, LinearMap.compl₁₂_apply,
+    zigzagAlgebraGradedCornerWeightedTracePairing_apply]
+  simp only [LinearEquiv.coe_coe]
+  rw [← coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_comp
+    k G i j i d (2 - d) 2 (by omega) f g]
+  norm_num only [coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_apply, castDeg_self]
 
 /-- Reversal has the graded trace sign under the edge condition at the selected endpoints. -/
 theorem zigzagAlgebraProjectiveDGHomWeightedTracePairing_flip
@@ -122,13 +85,14 @@ theorem zigzagAlgebraProjectiveDGHomWeightedTracePairing_flip
     zigzagAlgebraProjectiveDGHomWeightedTracePairing k G c i j d f g =
       (d * (2 - d)).negOnePow • ((c j : k) * zigzagAlgebraTrace k G
         (L j j (-2) (dgComp k g f (by omega)) : Z)) := by
-  -- Unfold the pullback evaluation; the degree-two reindexing reduces to the original dictionary.
-  change zigzagAlgebraGradedCornerWeightedTracePairing k G c i j d
-      (projectiveDGHomCornerEquiv k G i j d f)
-      (projectiveDGHomCornerEquiv k G j i (2 - d) g) =
-    (d * (2 - d)).negOnePow • ((c j : k) * zigzagAlgebraTrace k G
-      (projectiveDGHomCornerEquiv k G j j 2 (dgComp k g f (by omega)) : Z))
-  rw [projectiveDGHomCornerEquiv_comp]
-  exact zigzagAlgebraGradedCornerWeightedTracePairing_flip k G c i j hc d _ _
+  have h := zigzagAlgebraGradedCornerWeightedTracePairing_flip k G c i j hc d
+    (zigzagAlgebraProjectiveDGHomEquivCornerOfDegree k G i j d f)
+    (zigzagAlgebraProjectiveDGHomEquivCornerOfDegree k G j i (2 - d) g)
+  rw [← coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_comp
+    k G j i j (2 - d) d 2 (by omega) g f,
+    coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_apply] at h
+  norm_num only [castDeg_self] at h
+  simpa only [zigzagAlgebraProjectiveDGHomWeightedTracePairing, LinearMap.compl₁₂_apply,
+    LinearEquiv.coe_coe] using h
 
 end TauCeti
