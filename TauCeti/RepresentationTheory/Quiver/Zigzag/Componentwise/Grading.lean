@@ -256,6 +256,17 @@ theorem zigzagAlgebraIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
     zigzagAlgebraIntegerGrade k G d = ⊥ :=
   Graded.extendByZero_of_neg _ hd
 
+/-- The signed path grading has no pieces outside degrees zero, one and two. -/
+theorem zigzagAlgebraIntegerGrade_eq_bot_of_not_mem {d : ℤ}
+    (hd : d ∉ ({0, 1, 2} : Finset ℤ)) : zigzagAlgebraIntegerGrade k G d = ⊥ := by
+  by_cases hneg : d < 0
+  · exact zigzagAlgebraIntegerGrade_eq_bot_of_neg k G hneg
+  · have he : (d.toNat : ℤ) = d := Int.toNat_of_nonneg (by omega)
+    rw [← he, zigzagAlgebraIntegerGrade_ofNat]
+    apply zigzagAlgebraGrade_eq_bot_of_three_le
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hd
+    omega
+
 /-- **The integer extension of the componentwise grading is an internal direct sum**: the pieces
 in nonnegative degrees are those of `TauCeti.zigzagAlgebraGrade`, and those in negative degrees
 vanish. -/

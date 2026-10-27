@@ -13,7 +13,6 @@ public import TauCeti.CategoryTheory.DG.FullSubcategory
 public import TauCeti.CategoryTheory.DG.ShiftClosure.Basic
 public import TauCeti.CategoryTheory.DG.Twisted.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.Projective
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Dimension
 
 /-!
 # Finite Hom complexes in the formal twisted closure of zigzag projectives
@@ -21,9 +20,9 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Dimension
 Start with the actual zero-DG vertex projectives, take formal integer shifts and finite sums,
 and allow arbitrary Maurer–Cartan twists on those sums. The resulting formal DG category has
 Hom complexes supported in a finite union of translates of the three path degrees `0, 1, 2`.
-Over a Noetherian commutative ring, every Hom-complex term and its canonical cohomology are
-finitely generated. Over a field they are finite-dimensional, so the existing canonical homotopy
-category is Hom-finite.
+Every Hom-complex term is finitely generated over a commutative coefficient ring. Over a
+Noetherian commutative ring the canonical cohomology is also finitely generated. Over a field
+these modules are finite-dimensional, so the existing canonical homotopy category is Hom-finite.
 
 The support depends on the shifts of the matrix entries: source shift `r` and target shift `s`
 contribute `{r-s, 1+r-s, 2+r-s}`. Twisting preserves these graded vector spaces but changes their
@@ -41,8 +40,9 @@ This formal closure is not identified here with a triangulated realization or a 
 * `TauCeti.ZigzagProjectiveTwistedClosure.subsingleton_dgHom_of_not_mem_homSupport` and
   `TauCeti.ZigzagProjectiveTwistedClosure.subsingleton_homology_of_not_mem_homSupport`:
   the terms and canonical cohomology vanish outside the explicit support.
-* `TauCeti.ZigzagProjectiveTwistedClosure.moduleFinite_dgHom`,
-  `TauCeti.ZigzagProjectiveTwistedClosure.moduleFinite_homology` and
+* `TauCeti.ZigzagProjectiveTwistedClosure.moduleFinite_dgHom`: finite generation of each term
+  over a commutative ring.
+* `TauCeti.ZigzagProjectiveTwistedClosure.moduleFinite_homology` and
   `TauCeti.ZigzagProjectiveTwistedClosure.moduleFinite_hom`: finite generation over a Noetherian
   commutative ring, hence finite-dimensionality over a field.
 
@@ -75,43 +75,16 @@ namespace ZigzagProjectiveTwistedClosure
 local notation "D" => zigzagAlgebraProjectiveDGRightModule k G
 local notation "𝒱" => DGFullSubcategory (fun M ↦ ∃ i : V, M = D i)
 local notation "𝒮" => DGShiftClosure 𝒱
-local notation "C" => fun (i j : V) (n : ℤ) ↦
-  cornerSubmodule k (zigzagAlgebraBasis k G (Sum.inl i)) (zigzagAlgebraBasis k G (Sum.inl j)) ⊓
-    zigzagAlgebraIntegerGrade k G n
-
 section CommRing
 
 variable [CommRing k]
-
-private def vertexHomEquivCorner (i j : V) (n : ℤ) :
-    DGHom k n (D i) (D j) ≃ₗ[k] ↥(C i j n) := by
-  rw [← Int.neg_neg n]
-  exact zigzagAlgebraProjectiveDGHomEquivCorner k G i j (-n)
-
-private theorem integerGrade_eq_bot (n : ℤ) (hn : n ∉ ({0, 1, 2} : Finset ℤ)) :
-    zigzagAlgebraIntegerGrade k G n = ⊥ := by
-  by_cases hneg : n < 0
-  · exact zigzagAlgebraIntegerGrade_eq_bot_of_neg k G hneg
-  · have he : (n.toNat : ℤ) = n := Int.toNat_of_nonneg (by omega)
-    rw [← he, zigzagAlgebraIntegerGrade_ofNat]
-    apply zigzagAlgebraGrade_eq_bot_of_three_le
-    simp only [Finset.mem_insert, Finset.mem_singleton] at hn
-    omega
-
-private theorem subsingleton_vertexHom (i j : V) (n : ℤ)
-    (hn : n ∉ ({0, 1, 2} : Finset ℤ)) : Subsingleton (DGHom k n (D i) (D j)) := by
-  have hc : C i j n = ⊥ := by
-    dsimp only
-    rw [integerGrade_eq_bot k G n hn, inf_bot_eq]
-  have : Subsingleton ↥(C i j n) := by rw [hc]; infer_instance
-  exact (vertexHomEquivCorner k G i j n).toEquiv.subsingleton_congr.mpr inferInstance
 
 private theorem subsingleton_fullHom (X Y : 𝒱) (n : ℤ)
     (hn : n ∉ ({0, 1, 2} : Finset ℤ)) : Subsingleton (DGHom k n X Y) := by
   rcases X with ⟨M, i, rfl⟩
   rcases Y with ⟨N, j, rfl⟩
   simpa only [DGHom, DGFullSubcategory.dgHomComplex_eq] using
-    subsingleton_vertexHom k G i j n hn
+    zigzagAlgebraProjectiveDGHom_subsingleton k G i j n hn
 
 private theorem subsingleton_shiftHom (X Y : 𝒮) (n : ℤ)
     (hn : n ∉ ({X.shift - Y.shift, 1 + X.shift - Y.shift,
@@ -123,14 +96,33 @@ private theorem subsingleton_shiftHom (X Y : 𝒮) (n : ℤ)
   exact (DGShiftClosure.dgHomEquiv k X Y n).toEquiv.subsingleton_congr.mpr inferInstance
 
 /-- The union of the three shifted path degrees over all matrix entries. -/
--- Expose the finite-set formula so importing modules can inspect concrete support bounds.
-@[expose]
 def homSupport (X Y : ZigzagProjectiveTwistedClosure k G) : Finset ℤ :=
   Finset.univ.biUnion fun i : X.obj.ι ↦
     Finset.univ.biUnion fun j : Y.obj.ι ↦
       {(X.obj.X i).shift - (Y.obj.X j).shift,
         1 + (X.obj.X i).shift - (Y.obj.X j).shift,
         2 + (X.obj.X i).shift - (Y.obj.X j).shift}
+
+/-- The support bound is the finite union of the three degrees of each matrix entry. -/
+theorem homSupport_def (X Y : ZigzagProjectiveTwistedClosure k G) :
+    homSupport k G X Y =
+      Finset.univ.biUnion fun i : X.obj.ι ↦
+        Finset.univ.biUnion fun j : Y.obj.ι ↦
+          {(X.obj.X i).shift - (Y.obj.X j).shift,
+            1 + (X.obj.X i).shift - (Y.obj.X j).shift,
+            2 + (X.obj.X i).shift - (Y.obj.X j).shift} := (rfl)
+
+/-- A degree is supported exactly when it occurs in one of the three-degree matrix entries. -/
+@[simp, grind =]
+theorem mem_homSupport_iff (X Y : ZigzagProjectiveTwistedClosure k G) (n : ℤ) :
+    n ∈ homSupport k G X Y ↔
+      ∃ i : X.obj.ι, ∃ j : Y.obj.ι,
+        n = (X.obj.X i).shift - (Y.obj.X j).shift ∨
+          n = 1 + (X.obj.X i).shift - (Y.obj.X j).shift ∨
+          n = 2 + (X.obj.X i).shift - (Y.obj.X j).shift := by
+  rw [homSupport_def]
+  simp only [Finset.mem_biUnion, Finset.mem_univ, true_and, Finset.mem_insert,
+    Finset.mem_singleton]
 
 /-- Every homogeneous Hom space outside the finite matrix-entry support is zero. -/
 theorem subsingleton_dgHom_of_not_mem_homSupport
@@ -142,8 +134,9 @@ theorem subsingleton_dgHom_of_not_mem_homSupport
       Subsingleton (DGHom k n (X.obj.X i) (Y.obj.X j)) := by
     apply subsingleton_shiftHom k G
     intro hij
-    exact hn (Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _,
-      Finset.mem_biUnion.mpr ⟨j, Finset.mem_univ _, hij⟩⟩)
+    apply hn
+    rw [mem_homSupport_iff]
+    exact ⟨i, j, by simpa only [Finset.mem_insert, Finset.mem_singleton] using hij⟩
   infer_instance
 
 /-- Canonical cohomology vanishes outside the same finite support, for arbitrary twists. -/
@@ -160,29 +153,19 @@ theorem subsingleton_homology_of_not_mem_homSupport
     (((K.sc' (n - 1) n (n + 1)).isZero_homology_of_isZero_X₂ hS).of_iso
       (K.homologyIsoSc' (n - 1) n (n + 1) (by simp) (by simp)))
 
-end CommRing
-
-section Noetherian
-
-variable [CommRing k] [IsNoetherianRing k]
-
-private theorem moduleFinite_vertexHom (i j : V) (n : ℤ) :
-    Module.Finite k (DGHom k n (D i) (D j)) :=
-  Module.Finite.equiv (vertexHomEquivCorner k G i j n).symm
-
 private theorem moduleFinite_fullHom (X Y : 𝒱) (n : ℤ) :
     Module.Finite k (DGHom k n X Y) := by
   rcases X with ⟨M, i, rfl⟩
   rcases Y with ⟨N, j, rfl⟩
   simpa only [DGHom, DGFullSubcategory.dgHomComplex_eq] using
-    moduleFinite_vertexHom k G i j n
+    zigzagAlgebraProjectiveDGHom_moduleFinite k G i j n
 
 private theorem moduleFinite_shiftHom (X Y : 𝒮) (n : ℤ) :
     Module.Finite k (DGHom k n X Y) := by
   have := moduleFinite_fullHom k G X.obj Y.obj (n + (Y.shift - X.shift))
   exact Module.Finite.equiv (DGShiftClosure.dgHomEquiv k X Y n).symm
 
-/-- Every Hom-complex term is finite over a Noetherian commutative coefficient ring. -/
+/-- Every Hom-complex term is finite over a commutative coefficient ring. -/
 instance moduleFinite_dgHom (X Y : ZigzagProjectiveTwistedClosure k G) (n : ℤ) :
     Module.Finite k (DGHom k n X Y) := by
   let _ (i : X.obj.ι) (j : Y.obj.ι) :
@@ -191,6 +174,12 @@ instance moduleFinite_dgHom (X Y : ZigzagProjectiveTwistedClosure k G) (n : ℤ)
   have : Module.Finite k (DGHom k n X.obj Y.obj) :=
     Module.Finite.equiv (DGAdditiveClosure.dgHomEquiv k X.obj Y.obj n).symm
   exact Module.Finite.equiv (DGTwistedObject.dgHomEquiv k X Y n).symm
+
+end CommRing
+
+section Noetherian
+
+variable [CommRing k] [IsNoetherianRing k]
 
 /-- Canonical cohomology is finitely generated as a subquotient of a finite Hom-complex term. -/
 instance moduleFinite_homology (X Y : ZigzagProjectiveTwistedClosure k G) (n : ℤ) :
