@@ -58,9 +58,8 @@ theorem manifoldLeviForm_norm_sq_sub_apply
   -- The vectors `v w : E` are passed explicitly, so that they are elaborated as tangent vectors.
   rw [← hd, mvfderiv_apply_eq_mfderiv_apply (fun y ↦ i y - a) x v,
     mvfderiv_apply_eq_mfderiv_apply (fun y ↦ i y - a) x w]
-  simp only [manifoldLeviForm_def, chartAt_self_eq, OpenPartialHomeomorph.refl_symm,
-    OpenPartialHomeomorph.refl_apply, comp_id, leviForm_norm_sq] at h
-  simpa only [manifoldLeviForm_def, comp_def] using h.trans (innerₛₗ_apply_apply ℂ _ _)
+  rw [manifoldLeviForm_eq_leviForm, leviForm_norm_sq] at h
+  simpa only [comp_def] using h.trans (innerₛₗ_apply_apply ℂ _ _)
 
 /-- The Levi diagonal of squared distance is the squared norm of the complex tangent map. -/
 theorem re_manifoldLeviForm_norm_sq_sub_apply_self
