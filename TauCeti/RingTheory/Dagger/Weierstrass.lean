@@ -65,18 +65,15 @@ private theorem exists_mul_add_eq_series_of_isRestricted {ρ r : ℝ} [Fact (0 <
         optionSeries q * optionSeries g + R = optionSeries f := by
   have hr : 1 < r := hρ.trans_le hρr
   -- The split polyradius: `r` in the separated variable and `ρ` in the others. Its coefficient
-  -- polyradius `fun i ↦ c (some i)` reduces to `fun _ ↦ ρ` by `Option.elim`, so the iterated
-  -- ring of `Huber.restrictedOptionEquiv (c := c)` is the ring of power series containing `G`.
-  let c : Option σ → ℝ := fun i ↦ i.elim r (fun _ ↦ ρ)
-  let _ : ∀ i, Fact (0 < c i) := fun i ↦ ⟨by
-    cases i
-    · exact zero_lt_one.trans hr
-    · exact zero_lt_one.trans hρ⟩
-  have hcr (i) : c i ≤ r := by cases i <;> simp [c, hρr]
-  have hρc (i) : ρ ≤ c i := by cases i <;> simp [c, hρr]
+  -- polyradius `fun i ↦ c (some i)` reduces to `fun _ ↦ ρ` by unfolding `splitRadius`, so the
+  -- iterated ring of `Huber.restrictedOptionEquiv (c := c)` is the ring of power series
+  -- containing `G`.
+  let c : Option σ → ℝ := splitRadius r ρ
+  let _ : ∀ i, Fact (0 < c i) := fun i ↦ ⟨splitRadius_pos Fact.out hρr i⟩
   have hc (i) : 0 ≤ c i := (Fact.out : 0 < c i).le
-  let gC : IsRestricted.subring (R := K) c := ⟨g, isRestricted_of_le hgr hc hcr⟩
-  let fC : IsRestricted.subring (R := K) c := ⟨f, isRestricted_of_le hf hc hcr⟩
+  -- Lift `f` and `g` to the split polyradius.
+  let gC : IsRestricted.subring (R := K) c := ⟨g, isRestricted_of_le hgr hc (splitRadius_le hρr)⟩
+  let fC : IsRestricted.subring (R := K) c := ⟨f, isRestricted_of_le hf hc (splitRadius_le hρr)⟩
   let F : PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)) :=
     (Huber.restrictedOptionEquiv (c := c) fC).1
   have hFr : PowerSeries.IsRestricted r F := (Huber.restrictedOptionEquiv (c := c) fC).2
@@ -85,22 +82,21 @@ private theorem exists_mul_add_eq_series_of_isRestricted {ρ r : ℝ} [Fact (0 <
     ext m : 1
     exact Subtype.ext ((Huber.coeff_restrictedOptionEquiv (c := c) gC m).trans (hG m).symm)
   have hGr : PowerSeries.IsRestricted r G := hGC ▸ (Huber.restrictedOptionEquiv (c := c) gC).2
+  -- Divide at the fixed radius `r` over the Banach ring of radius-`ρ` series.
   obtain ⟨Q, R, hQ, hR, hQR⟩ := (PowerSeries.isMulDistinguished_iff_isUnit.mpr
     ⟨hd, hu⟩).exists_mul_add_eq (zero_lt_one.trans hr) hGr hFr
   rw [mul_comm] at hQR
-  let qC := (Huber.restrictedOptionEquiv (c := c)).symm ⟨Q, hQ⟩
-  let q : W' := ⟨qC, mem_washnitzerAlgebra.mpr
-    ⟨ρ, hρ, isRestricted_of_le qC.2 (fun _ ↦ (zero_lt_one.trans hρ).le) hρc⟩⟩
+  -- Pull `Q` and `R` back to the overconvergent algebras and compare formal series.
+  let q : W' := washnitzerAlgebra.ofRestricted hρ (le_splitRadius hρr)
+    ((Huber.restrictedOptionEquiv (c := c)).symm ⟨Q, hQ⟩)
   let φ : IsRestricted.subring (R := K) (fun _ : σ ↦ ρ) →+* W :=
-    (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype.codRestrict
-      (washnitzerAlgebra σ K).toSubring
-      (fun a ↦ mem_washnitzerAlgebra.mpr ⟨ρ, hρ, a.2⟩)
+    washnitzerAlgebra.ofRestricted hρ fun _ ↦ le_rfl
   let Rw := PowerSeries.map φ R
   have hQmap : PowerSeries.map ((washnitzerAlgebra σ K).val :
       washnitzerAlgebra σ K →+* MvPowerSeries σ K) (optionSeries q) =
       PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype Q := by
     rw [washnitzerAlgebra.map_val_optionSeries]
-    simp only [q, qC]
+    simp only [q, washnitzerAlgebra.coe_ofRestricted]
     rw [Huber.coe_restrictedOptionEquiv_symm (c := c)]
     exact (optionEquivLeft σ K).apply_symm_apply _
   have hRmap : PowerSeries.map ((washnitzerAlgebra σ K).val :
