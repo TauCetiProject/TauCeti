@@ -69,8 +69,14 @@ local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
 local notation "E" => ofTwoCocycle c
 
 /-- The central element `K = (0, 1)` of the residue central extension of the form `Φ`. -/
-@[expose] def centralElement : E :=
+def centralElement : E :=
   ofProd c (0, (TrivialLieModule.equiv R C R).symm 1)
+
+/-- The coordinates of `K` are `(0, 1)`. -/
+@[simp]
+theorem ofProd_symm_centralElement :
+    (ofProd c).symm (centralElement Φ hΦ hΦs) = (0, (TrivialLieModule.equiv R C R).symm 1) := by
+  rw [centralElement, Equiv.symm_apply_apply]
 
 /-- The element `K` is central. -/
 theorem centralElement_mem_center : centralElement Φ hΦ hΦs ∈ center R E :=

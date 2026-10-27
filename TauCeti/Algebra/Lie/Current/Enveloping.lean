@@ -157,7 +157,7 @@ def liftOfCurrents (f : C →ₗ[R] A)
     (hf : ∀ u v, f u * f v - f v * f u = f ⁅u, v⁆ + algebraMap R A (a * residuePairing R L Φ u v)) :
     UK →ₐ[R] A :=
   CentralQuotient.lift (extensionHom Φ hΦ hΦs a f hf) <| by
-    rw [centralElement]
+    rw [← (ofProd c).apply_symm_apply (centralElement Φ hΦ hΦs), ofProd_symm_centralElement]
     exact (extensionLinearMap_ofProd Φ hΦ hΦs a f 0 _).trans (by simp)
 
 /-- The lift sends the current generator of `u` to `f u`. -/
@@ -191,7 +191,7 @@ theorem envelopingι_injective (a : K) : Function.Injective (envelopingι Φ hΦ
   obtain ⟨r, hr, -⟩ := (CentralQuotient.ι_eq_algebraMap_iff (centralElement_mem_center Φ hΦ hΦs)
     (centralElement_ne_zero Φ hΦ hΦs) (c := a) (x := ofProd _ (u, 0)) (a := 0)).1
       (by rw [← envelopingι_apply, hu, map_zero])
-  simpa [centralElement] using congrArg (fun v ↦ ((ofProd _).symm v).1) hr
+  simpa using congrArg (fun v ↦ ((ofProd _).symm v).1) hr
 
 end Field
 
