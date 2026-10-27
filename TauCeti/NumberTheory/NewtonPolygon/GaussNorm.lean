@@ -66,15 +66,6 @@ public section
 
 open TauCeti
 
-/-- At a positive radius, a nonzero series with bounded weighted coefficient norms has positive
-Gauss norm. The norm need not be attained. -/
-theorem TauCeti.PowerSeries.gaussNorm_pos {R : Type*} [NormedRing R] {c : ℝ}
-    {f : PowerSeries R} (hc : 0 < c) (hf : f.HasGaussNorm norm c) (hf0 : f ≠ 0) :
-    0 < f.gaussNorm norm c :=
-  (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg).lt_of_ne fun h ↦ hf0 <|
-    (PowerSeries.gaussNorm_eq_zero_iff norm c f norm_zero norm_nonneg
-      (fun _ ↦ norm_eq_zero.mp) hc hf).mp h.symm
-
 namespace PowerSeries
 
 variable {K : Type*} [NormedDivisionRing K] (f : PowerSeries K)
