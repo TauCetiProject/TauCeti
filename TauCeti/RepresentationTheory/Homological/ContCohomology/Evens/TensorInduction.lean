@@ -512,22 +512,8 @@ private theorem tensorContraction_class_graph [LocallyCompactSpace G]
   rw [B.obj.explicitH2AddEquivContinuousCohomologyOfDiscrete_map
     (trivialF2 G) (ContinuousMonoidHom.id G) F f (fun _ ↦ rfl) hf]
   rw [explicitMap2_mk]
-  have hgraph : (trivialF2 G).explicitH2AddEquivContinuousCohomologyOfDiscrete
-      (evensGraphCocycle U s α hU hs hα : H2 G (trivialF2 G).V) =
-        graphClass U hU α hα := by
-    rw [graphClass_eq_cochainClass U hU s hs α hα]
-    refine (trivialF2 G).explicitH2AddEquivContinuousCohomologyOfDiscrete_eq_cochainClass
-      (evensGraphCocycle U s α hU hs hα)
-      (inhomogeneousCochain2 (evensGraphCochain U.toSubgroup s α)
-        (continuous_evensGraphCochain U.toSubgroup s α U.isOpen' hα))
-      (inhomogeneousCochain2_d_eq_zero _ _ (evensGraphCochain_cocycle_identity hU hs)) ?_
-    intro g h
-    rw [coe_evensGraphCocycle]
-    simpa only [inv_one, one_mul, inv_mul_cancel_left] using
-      (inhomogeneousCochain2_apply (evensGraphCochain U.toSubgroup s α)
-        (continuous_evensGraphCochain U.toSubgroup s α U.isOpen' hα) 1 g (g * h)).symm
   simp only [eqToHom_refl, CategoryTheory.id_apply]
-  rw [← hgraph]
+  rw [← evensGraphCocycle_class_eq_graphClass U hU s hs α hα]
   apply congrArg (trivialF2 G).explicitH2AddEquivContinuousCohomologyOfDiscrete
   apply congrArg (fun z : Z2 G (trivialF2 G).V ↦ (z : H2 G (trivialF2 G).V))
   apply Subtype.ext
@@ -541,6 +527,8 @@ private theorem tensorContraction_class_graph [LocallyCompactSpace G]
     smoothTensorInducedGradedResolutionContraction_hom_apply,
     TopRep.gradedCochainComplex_ρ_apply, smoothTensorInducedGradedResolutionHomotopy_def,
     coe_evensGraphCocycle, AddEquiv.apply_symm_apply, ContinuousMonoidHom.coe_id, id_eq]
+  -- The smooth/discrete functor-object carrier is definitionally the tensor-product carrier
+  -- used by `tensorAction_smooth`; default transparency exposes it for both action rewrites.
   erw [TopRep.gradedCochainComplexInvariant_val, tensorAction_smooth, tensorAction_smooth]
   exact tensorRead_graph U hU s hs α hα hlt p.1 p.2
 
