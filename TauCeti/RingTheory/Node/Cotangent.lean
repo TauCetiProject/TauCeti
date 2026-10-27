@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.FittingIdeal.LocalRing
 public import TauCeti.RingTheory.Kaehler.Conormal
 public import Mathlib.RingTheory.Etale.Field
 public import TauCeti.RingTheory.Unramified.LocalRing
-public import Mathlib.RingTheory.Ideal.Cotangent
 
 /-!
 # The cotangent space at a nodal point

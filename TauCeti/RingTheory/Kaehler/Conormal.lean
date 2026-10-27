@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Smooth.Kaehler
 public import Mathlib.RingTheory.Etale.Basic
 
 /-!
