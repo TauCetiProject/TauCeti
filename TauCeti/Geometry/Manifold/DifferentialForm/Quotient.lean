@@ -89,22 +89,6 @@ theorem descend_apply (α : RoughForm I M F k) (y : MulAction.orbitRel.Quotient 
 
 variable {n : WithTop ℕ∞} [IsManifold I n M] [ContMDiffConstSMul I n G M]
 
-omit [IsManifold I n M] in
-/-- The derivative of the orbit projection at `g • x`, composed with the derivative of `g • ·` at
-`x`, is the derivative of the orbit projection at `x`: the orbit projection is invariant. -/
-private theorem mfderiv_quotientMk_smul_apply (hq : MDifferentiable I I
-    (Quotient.mk (MulAction.orbitRel G M))) (hn : n ≠ 0) (g : G) (x : M) (v : TangentSpace I x) :
-    mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) (g • x)
-        (mfderiv I I (g • · : M → M) x v) =
-      mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x v := by
-  have hinv : Quotient.mk (MulAction.orbitRel G M) ∘ (g • · : M → M) =
-      Quotient.mk (MulAction.orbitRel G M) :=
-    funext fun y ↦ Quotient.sound ⟨g, rfl⟩
-  rw [← ContinuousLinearMap.comp_apply, ← mfderiv_comp x (hq (g • x))
-    ((contMDiff_const_smul (I := I) (n := n) g).mdifferentiable hn x), hinv]
-  -- The two sides differ only in how the tangent space at the orbit of `x` is written.
-  rfl
-
 /-- A form invariant under `G` is the pullback of its descent along the orbit projection. -/
 theorem mpullback_quotientMk_descend (hn : n ≠ 0) {α : RoughForm I M F k}
     (hα : ∀ g : G, mpullback I I (g • ·) α = α) :
@@ -120,7 +104,7 @@ theorem mpullback_quotientMk_descend (hn : n ≠ 0) {α : RoughForm I M F k}
           (mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x w) =
         mfderiv I I (g • · : M → M) x w :=
     (hq.isInvertible_mfderiv hn (g • x)).inverse_apply_eq.mpr
-      (mfderiv_quotientMk_smul_apply (hq.mdifferentiable hn) hn g x w).symm
+      (mfderiv_quotientMk_smul_apply hn (hq.mdifferentiable hn (g • x)) w).symm
   -- `tangentSpaceCast` is the identity of the model space.
   have hcast (w : TangentSpace I x) :
       (mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) (g • x)).inverse
