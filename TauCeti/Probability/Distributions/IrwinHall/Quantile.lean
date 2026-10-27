@@ -39,7 +39,7 @@ theorem quantile_irwinHallMeasure_mem_Ioo (hn : 0 < n) (hu : u ∈ Ioo 0 1) :
     (irwinHallMeasure n).quantile u ∈ Ioo 0 (n : ℝ) := by
   have hroot := Measure.cdf_quantile _ (continuous_cdf_irwinHallMeasure hn) hu.1 hu.2
   exact ⟨(cdf_irwinHallMeasure_pos_iff hn).1 (hroot.symm ▸ hu.1),
-    (cdf_irwinHallMeasure_lt_one_iff hn).1 (hroot.symm ▸ hu.2)⟩
+    (cdf_irwinHallMeasure_lt_one_iff n).1 (hroot.symm ▸ hu.2)⟩
 
 /-- An interior Irwin–Hall quantile is the unique root of the alternating truncated-power
 cdf. Every root lies in `(0, n)`, and the formula applies at integer knots as well. -/
@@ -56,8 +56,8 @@ theorem quantile_irwinHallMeasure_eq_iff (hn : 0 < n) (hu : u ∈ Ioo 0 1) :
   · intro hxroot
     have hx : x ∈ Ioo 0 (n : ℝ) :=
       ⟨(cdf_irwinHallMeasure_pos_iff hn).1 (hxroot.symm ▸ hu.1),
-        (cdf_irwinHallMeasure_lt_one_iff hn).1 (hxroot.symm ▸ hu.2)⟩
-    exact (strictMonoOn_cdf_irwinHallMeasure hn).injOn (Ioo_subset_Icc_self hq)
+        (cdf_irwinHallMeasure_lt_one_iff n).1 (hxroot.symm ▸ hu.2)⟩
+    exact (strictMonoOn_cdf_irwinHallMeasure n).injOn (Ioo_subset_Icc_self hq)
       (Ioo_subset_Icc_self hx) (hroot.trans hxroot.symm)
 
 /-- Irwin–Hall quantiles increase strictly at interior probability levels. -/
@@ -65,17 +65,22 @@ theorem strictMonoOn_quantile_irwinHallMeasure (hn : 0 < n) :
     StrictMonoOn (irwinHallMeasure n).quantile (Ioo 0 1) :=
   Measure.strictMonoOn_quantile _ (continuous_cdf_irwinHallMeasure hn)
 
-/-- The Irwin–Hall quantile is continuous on interior probability levels. -/
-theorem continuousOn_quantile_irwinHallMeasure (hn : 0 < n) :
-    ContinuousOn (irwinHallMeasure n).quantile (Ioo 0 1) :=
-  Measure.continuousOn_quantile_of_strictMonoOn _ ordConnected_Icc
-    (strictMonoOn_cdf_irwinHallMeasure hn)
-    (fun _ hu ↦ Ioo_subset_Icc_self (quantile_irwinHallMeasure_mem_Ioo hn hu))
-
 /-- The empty-sum law has constant interior quantile zero. -/
 theorem quantile_irwinHallMeasure_zero (hu : u ∈ Ioo 0 1) :
     (irwinHallMeasure 0).quantile u = 0 := by
   rw [irwinHallMeasure_zero, Measure.quantile_dirac _ hu.1 hu.2.le]
+
+/-- The Irwin–Hall quantile is continuous on interior probability levels,
+including at order zero. -/
+theorem continuousOn_quantile_irwinHallMeasure (n : ℕ) :
+    ContinuousOn (irwinHallMeasure n).quantile (Ioo 0 1) := by
+  by_cases hn : n = 0
+  · subst n
+    exact continuousOn_const.congr fun _ hu ↦ quantile_irwinHallMeasure_zero hu
+  exact Measure.continuousOn_quantile_of_strictMonoOn _ ordConnected_Icc
+    (strictMonoOn_cdf_irwinHallMeasure n)
+    (fun _ hu ↦ Ioo_subset_Icc_self
+      (quantile_irwinHallMeasure_mem_Ioo (Nat.pos_of_ne_zero hn) hu))
 
 /-- Irwin–Hall quantiles tend to zero as the level tends to zero from above,
 including at order zero. -/
@@ -95,18 +100,9 @@ theorem tendsto_quantile_irwinHallMeasure_nhdsGT_zero (n : ℕ) :
 including at order zero. -/
 theorem tendsto_quantile_irwinHallMeasure_nhdsLT_one (n : ℕ) :
     Tendsto (irwinHallMeasure n).quantile (𝓝[<] 1) (𝓝 (n : ℝ)) := by
-  by_cases hn : n = 0
-  · subst n
-    simp only [Nat.cast_zero]
-    apply tendsto_const_nhds.congr'
-    filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
-    exact (quantile_irwinHallMeasure_zero hu).symm
-  have hn' := Nat.pos_of_ne_zero hn
-  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
-  · have ha' := (cdf_irwinHallMeasure_lt_one_iff hn').2 ha
-    filter_upwards [Ioo_mem_nhdsLT ha'] with u hu
-    exact (Measure.lt_quantile_iff _ ((cdf_nonneg _ a).trans_lt hu.1) hu.2).2 hu.1
-  · filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
-    exact (quantile_irwinHallMeasure_mem_Ioo hn' hu).2.trans hb
+  apply EReal.tendsto_coe.1
+  exact Measure.tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one _
+    ((ae_mem_Icc_irwinHallMeasure n).mono fun _ hx ↦ hx.2)
+    (fun _ hx ↦ (cdf_irwinHallMeasure_lt_one_iff n).2 hx)
 
 end TauCeti.Probability

@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.IrwinHall.Support
 public import TauCeti.Probability.Cdf
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.PositivePart
 public import TauCeti.Algebra.Group.ForwardDiff
+import TauCeti.Probability.Distributions.Dirac
 
 /-!
 # Cumulative distribution functions of Irwin–Hall laws
@@ -94,10 +95,14 @@ theorem continuous_cdf_irwinHallMeasure {n : ℕ} (hn : 0 < n) :
   exact Measure.continuous_cdf_of_noAtoms _
 
 /-- The Irwin–Hall cdf increases strictly throughout its closed support interval. -/
-theorem strictMonoOn_cdf_irwinHallMeasure {n : ℕ} (hn : 0 < n) :
-    StrictMonoOn (cdf (irwinHallMeasure n)) (Icc 0 (n : ℝ)) :=
-  Measure.strictMonoOn_cdf_of_subset_support _ ordConnected_Icc
-    (by rw [support_irwinHallMeasure hn])
+theorem strictMonoOn_cdf_irwinHallMeasure (n : ℕ) :
+    StrictMonoOn (cdf (irwinHallMeasure n)) (Icc 0 (n : ℝ)) := by
+  by_cases hn : n = 0
+  · subst n
+    rw [Nat.cast_zero, Icc_self]
+    exact subsingleton_singleton.strictMonoOn _
+  exact Measure.strictMonoOn_cdf_of_subset_support _ ordConnected_Icc
+    (by rw [support_irwinHallMeasure (Nat.pos_of_ne_zero hn)])
 
 /-- A positive-order Irwin–Hall cdf vanishes at and below zero. -/
 @[simp]
@@ -130,13 +135,18 @@ theorem cdf_irwinHallMeasure_pos_iff {n : ℕ} (hn : 0 < n) {x : ℝ} :
     by_cases hxn : (n : ℝ) ≤ x
     · simp [cdf_irwinHallMeasure_of_natCast_le n hxn]
     · exact (cdf_nonneg _ 0).trans_lt
-        (strictMonoOn_cdf_irwinHallMeasure hn ⟨le_rfl, hnR.le⟩
+        (strictMonoOn_cdf_irwinHallMeasure n ⟨le_rfl, hnR.le⟩
           ⟨hx.le, (not_le.1 hxn).le⟩ hx)
 
 /-- An Irwin–Hall cdf leaves positive upper-tail probability exactly below `n`. -/
 @[simp]
-theorem cdf_irwinHallMeasure_lt_one_iff {n : ℕ} (hn : 0 < n) {x : ℝ} :
+theorem cdf_irwinHallMeasure_lt_one_iff (n : ℕ) {x : ℝ} :
     cdf (irwinHallMeasure n) x < 1 ↔ x < n := by
+  by_cases hn : n = 0
+  · subst n
+    simp only [irwinHallMeasure_zero, Nat.cast_zero, cdf_dirac]
+    split_ifs <;> grind
+  have hn : 0 < n := Nat.pos_of_ne_zero hn
   have hnR : (0 : ℝ) < n := by exact_mod_cast hn
   constructor
   · contrapose!
@@ -145,7 +155,7 @@ theorem cdf_irwinHallMeasure_lt_one_iff {n : ℕ} (hn : 0 < n) {x : ℝ} :
   · intro hx
     by_cases hx0 : x ≤ 0
     · simp [cdf_irwinHallMeasure_of_nonpos hn hx0]
-    · exact (strictMonoOn_cdf_irwinHallMeasure hn ⟨(not_le.1 hx0).le, hx.le⟩
+    · exact (strictMonoOn_cdf_irwinHallMeasure n ⟨(not_le.1 hx0).le, hx.le⟩
         ⟨hnR.le, le_rfl⟩ hx).trans_le (cdf_le_one _ _)
 
 end TauCeti.Probability
