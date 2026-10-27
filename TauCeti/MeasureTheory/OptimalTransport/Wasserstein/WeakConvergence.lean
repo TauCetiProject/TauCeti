@@ -101,29 +101,10 @@ theorem levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self
     refine (meas_ge_le_lintegral_div hd.aemeasurable hδ0 hδtop').trans ?_
     exact (ENNReal.div_lt_iff (Or.inl hδ0) (Or.inl hδtop')).2
       (hint.trans hεδsq) |>.le
-  have hsubset : B ×ˢ univ ⊆
-      univ ×ˢ Metric.thickening δ.toReal B ∪ {z : X × X | δ ≤ edist z.1 z.2} := by
-    intro z hz
-    by_cases hzt : z.2 ∈ Metric.thickening δ.toReal B
-    · exact Or.inl ⟨Set.mem_univ _, hzt⟩
-    · refine Or.inr ?_
-      simp only [mem_ofPred_eq]
-      apply le_of_not_gt
-      intro hdist
-      apply hzt
-      rw [Metric.mem_thickening_iff_exists_edist_lt]
-      refine ⟨z.1, hz.1, ?_⟩
-      rwa [edist_comm, ENNReal.ofReal_toReal hδtop']
-  calc
-    μ B = π (B ×ˢ univ) := (hπ.measure_prod_univ hB).symm
-    _ ≤ π (univ ×ˢ Metric.thickening δ.toReal B ∪
-        {z : X × X | δ ≤ edist z.1 z.2}) := measure_mono hsubset
-    _ ≤ π (univ ×ˢ Metric.thickening δ.toReal B) +
-        π {z : X × X | δ ≤ edist z.1 z.2} := measure_union_le _ _
-    _ = ν (Metric.thickening δ.toReal B) +
-        π {z : X × X | δ ≤ edist z.1 z.2} := by
-          rw [hπ.measure_univ_prod Metric.isOpen_thickening.measurableSet]
-    _ ≤ ν (Metric.thickening δ.toReal B) + δ := add_le_add_right hbad _
+  refine (hπ.measure_le_of_measure_setOf_le hbad hB).trans (add_le_add_left (measure_mono ?_) _)
+  rintro y ⟨x, hx, hxy⟩
+  rw [Metric.mem_thickening_iff_exists_edist_lt]
+  exact ⟨x, hx, by rwa [edist_comm, ENNReal.ofReal_toReal hδtop']⟩
 
 end Comparison
 

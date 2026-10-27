@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.SymmetricPower.Restriction
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Comparison
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Pullback.Basic
 
@@ -97,56 +98,17 @@ theorem pullbackSymmetricPowerComparison_app_of_isOpenImmersion (n : ℕ) (M : Y
           ((_root_.SheafOfModules.symmetricPower Y.sheaf n).obj M) ≫
         (Scheme.Modules.restrictSymmetricPowerIso j n).inv.app M ≫
         (_root_.SheafOfModules.symmetricPower U.sheaf n).map
-          ((Scheme.Modules.restrictFunctorIsoPullback j).hom.app M) := by
-  -- Compare transposes under the pullback--pushforward adjunction `A`. The transpose of the
-  -- comparison is `Symⁿ` of the unit followed by the pushforward comparison `q`. On the right,
-  -- the units of `A` and of the restriction adjunction `B` differ by the identification `e` of
-  -- restriction with pullback, and the unit of `B` factors through `q` and the restriction
-  -- isomorphism `r`.
-  let A := Scheme.Modules.pullbackPushforwardAdjunction j
-  let B := Scheme.Modules.restrictAdjunction j
-  let P : U.Modules ⥤ Y.Modules := Scheme.Modules.pushforward j
-  let W₁ : Y.Modules ⥤ Y.Modules := _root_.SheafOfModules.symmetricPower Y.sheaf n
-  let W₂ : U.Modules ⥤ U.Modules := _root_.SheafOfModules.symmetricPower U.sheaf n
-  let q : P ⋙ W₁ ⟶ W₂ ⋙ P :=
-    SheafOfModules.pushforwardSymmetricPowerComparison j.toRingCatSheafHom n
-  let e : Scheme.Modules.restrictFunctor j ≅ Scheme.Modules.pullback j :=
-    Scheme.Modules.restrictFunctorIsoPullback j
-  let r : Scheme.Modules.restrictFunctor j ⋙ W₂ ≅ W₁ ⋙ Scheme.Modules.restrictFunctor j :=
-    Scheme.Modules.restrictSymmetricPowerIso j n
-  have h₁ : A.unit.app (W₁.obj M) ≫
-      P.map ((Scheme.Modules.pullbackSymmetricPowerComparison j n).app M) =
-      W₁.map (A.unit.app M) ≫ q.app _ :=
-    Scheme.Modules.unit_comp_pushforward_map_pullbackSymmetricPowerComparison_app j n M
-  have h₂ : B.unit.app (W₁.obj M) = W₁.map (B.unit.app M) ≫ q.app _ ≫ P.map (r.hom.app M) :=
-    Scheme.Modules.restrictAdjunction_unit_app_symmetricPower j n M
-  have hA : A.unit.app (W₁.obj M) ≫ P.map (e.inv.app (W₁.obj M)) = B.unit.app (W₁.obj M) :=
-    Adjunction.unit_leftAdjointUniq_hom_app A B (W₁.obj M)
-  have hB : B.unit.app M ≫ P.map (e.hom.app M) = A.unit.app M :=
-    Adjunction.unit_leftAdjointUniq_hom_app B A M
-  have hq : W₁.map (P.map (e.hom.app M)) ≫ q.app _ = q.app _ ≫ P.map (W₂.map (e.hom.app M)) :=
-    q.naturality (e.hom.app M)
-  have hr : P.map (r.hom.app M) ≫ P.map (r.inv.app M) = 𝟙 _ :=
-    (P.mapIso (r.app M)).hom_inv_id
-  have key : W₁.map (A.unit.app M) ≫ q.app _ =
-      A.unit.app (W₁.obj M) ≫ P.map (e.inv.app (W₁.obj M) ≫ r.inv.app M ≫ W₂.map (e.hom.app M)) :=
-    calc W₁.map (A.unit.app M) ≫ q.app _
-        = W₁.map (B.unit.app M) ≫ q.app _ ≫ P.map (W₂.map (e.hom.app M)) := by
-          rw [← hB, Functor.map_comp, Category.assoc, hq]
-      _ = B.unit.app (W₁.obj M) ≫ P.map (r.inv.app M) ≫ P.map (W₂.map (e.hom.app M)) := by
-          rw [h₂, Category.assoc, Category.assoc, reassoc_of% hr]
-      _ = _ := by rw [← hA, P.map_comp, P.map_comp, Category.assoc]
-  exact (A.homEquiv _ _).injective ((A.homEquiv_unit _ _ _).trans
-    (h₁.trans (key.trans (A.homEquiv_unit _ _ _).symm)))
+          ((Scheme.Modules.restrictFunctorIsoPullback j).hom.app M) :=
+  pullbackComparison_app_of_isOpenImmersion j _ _ _ _ _ M
+    (Scheme.Modules.unit_comp_pushforward_map_pullbackSymmetricPowerComparison_app j n M)
+    (Scheme.Modules.restrictAdjunction_unit_app_symmetricPower j n M)
 
 /-- Along an open immersion the canonical symmetric-power comparison is invertible for every
 sheaf of modules. -/
 instance isIso_pullbackSymmetricPowerComparison_app_of_isOpenImmersion (n : ℕ) (M : Y.Modules) :
-    IsIso ((Scheme.Modules.pullbackSymmetricPowerComparison j n).app M) := by
-  rw [pullbackSymmetricPowerComparison_app_of_isOpenImmersion]
-  exact Iso.isIso_hom ((Scheme.Modules.restrictFunctorIsoPullback j).symm.app _ ≪≫
-    (Scheme.Modules.restrictSymmetricPowerIso j n).symm.app M ≪≫
-    (_root_.SheafOfModules.symmetricPower U.sheaf n).mapIso
-      ((Scheme.Modules.restrictFunctorIsoPullback j).app M))
+    IsIso ((Scheme.Modules.pullbackSymmetricPowerComparison j n).app M) :=
+  isIso_pullbackComparison_app_of_isOpenImmersion j _ _ _ _ _ M
+    (Scheme.Modules.unit_comp_pushforward_map_pullbackSymmetricPowerComparison_app j n M)
+    (Scheme.Modules.restrictAdjunction_unit_app_symmetricPower j n M)
 
 end TauCeti.AlgebraicGeometry

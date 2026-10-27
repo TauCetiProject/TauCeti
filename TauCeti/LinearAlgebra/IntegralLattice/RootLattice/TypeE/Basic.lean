@@ -253,6 +253,13 @@ theorem coe_typeE₆MinusculeWeightDual :
 noncomputable def typeE₆MinusculeWeightClass : typeE₆RootLattice.DiscriminantGroup :=
   Submodule.Quotient.mk typeE₆MinusculeWeightDual
 
+/-- The minuscule weight `ϖ₁` represents its discriminant class. -/
+@[simp]
+theorem mk_typeE₆MinusculeWeightDual :
+    (Submodule.Quotient.mk typeE₆MinusculeWeightDual : typeE₆RootLattice.DiscriminantGroup) =
+      typeE₆MinusculeWeightClass :=
+  (rfl)
+
 /-- **An integer multiple of `ϖ₁` lies in the type `E₆` root lattice exactly when `3` divides
 it**: the first simple-root coordinate of `ϖ₁` is `4/3`. -/
 theorem zsmul_typeE₆MinusculeWeightClass_eq_zero_iff (k : ℤ) :
@@ -531,6 +538,13 @@ theorem coe_typeE₇MinusculeWeightDual :
 noncomputable def typeE₇MinusculeWeightClass : typeE₇RootLattice.DiscriminantGroup :=
   Submodule.Quotient.mk typeE₇MinusculeWeightDual
 
+/-- The minuscule weight `ϖ₇` represents its discriminant class. -/
+@[simp]
+theorem mk_typeE₇MinusculeWeightDual :
+    (Submodule.Quotient.mk typeE₇MinusculeWeightDual : typeE₇RootLattice.DiscriminantGroup) =
+      typeE₇MinusculeWeightClass :=
+  (rfl)
+
 /-- **An integer multiple of `ϖ₇` lies in the type `E₇` root lattice exactly when `2` divides
 it**: the second simple-root coordinate of `ϖ₇` is `3/2`. -/
 theorem zsmul_typeE₇MinusculeWeightClass_eq_zero_iff (k : ℤ) :
@@ -669,6 +683,14 @@ theorem norm_typeE₈RootLattice_intCast (v : Fin 8 → ℤ) :
     typeE₈RootLattice.norm (fun j ↦ (v j : ℚ)) =
       (((v ᵥ* CartanMatrix.E 8) ⬝ᵥ v : ℤ) : ℚ) := by
   exact norm_ofGramMatrix_basisFun_intCast _ _ v
+
+open _root_.Matrix in
+/-- The rational form of two integer vectors in simple-root coordinates is their integral Cartan
+form. -/
+theorem form_typeE₈RootLattice_intCast (u w : Fin 8 → ℤ) :
+    typeE₈RootLattice.form (fun j ↦ (u j : ℚ)) (fun j ↦ (w j : ℚ)) =
+      (((u ᵥ* CartanMatrix.E 8) ⬝ᵥ w : ℤ) : ℚ) :=
+  form_ofGramMatrix_basisFun_intCast _ _ u w
 
 /-- The `i`-th simple root of the type `E₈` root lattice, as a vector of the ambient space. -/
 -- This is sealed so `Pi.basisFun_apply` does not rewrite beneath it and destabilize the simp API.

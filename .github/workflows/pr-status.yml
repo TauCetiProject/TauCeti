@@ -49,9 +49,7 @@ jobs:
         || (github.event_name == 'issue_comment'
             && github.event.issue.pull_request != null
             && (contains(github.event.comment.body, 'tauceti-scoreboard')
-                || contains(github.event.comment.body, 'tauceti-review-in-progress')
-                || contains(github.event.changes.body.from, 'tauceti-scoreboard')
-                || contains(github.event.changes.body.from, 'tauceti-review-in-progress')))
+                || contains(github.event.changes.body.from, 'tauceti-scoreboard')))
       )
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -95,10 +93,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy

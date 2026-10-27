@@ -270,7 +270,6 @@ theorem realSignature_neg (Q : _root_.QuadraticForm K V)
 section Scaling
 
 variable (Q : _root_.QuadraticForm K V) (w : {w : InfinitePlace K // w.IsReal}) (a : K)
-variable [FiniteDimensional ℝ (TauCeti.RealScalarExtension (V := V) w)]
 
 /-- Scaling by a scalar positive at a real place preserves its positive index. -/
 @[simp]

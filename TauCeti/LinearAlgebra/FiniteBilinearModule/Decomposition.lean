@@ -115,8 +115,7 @@ theorem exists_isometry_prod_pi_generators (A : FiniteQuadraticModule.{u})
     have : Subsingleton A := (Nat.card_eq_one_iff_unique.1 hN).1
     refine ⟨0, Fin.elim0, fun i ↦ i.elim0, Fin.elim0, 0, Fin.elim0, Fin.elim0, 0, Fin.elim0, 0,
       Fin.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, ⟨?_⟩⟩
-    exact { toLinearEquiv := LinearEquiv.ofSubsingleton _ _
-            map_app' x := by simp [Subsingleton.elim x 0] }
+    exact Isometry.ofSubsingleton
   -- Split off a generator `C = A|_H`; its complement `D = A|_{H⊥}` is nondegenerate and smaller.
   obtain ⟨H, hH, hHnd, hgen⟩ := exists_generator_summand hA (hN ▸ hN1)
   let e := A.restrictProdOrthogonalComplementIsometry hHnd

@@ -30,6 +30,10 @@ cusps of `Γ'`, so one needs to know that `Γ` has no further cusps, which
 (`Subgroup.IsArithmetic.isCusp_of_isCusp`: both have the cusps of `SL(2, ℤ)`). Under it the two
 constructions are mutually inverse: the image of `M_k(Γ) → M_k(Γ')` is exactly the
 `Γ`-invariant part of `M_k(Γ')` (`ModularForm.mem_range_restrictₗ_iff`).
+Mathlib's trace enlarges the group by summing translates over coset representatives. When every
+element of `Γ` is a product of an element of `Γ' ≤ Γ` and one of `𝒢`, the cosets of `𝒢` in `Γ`
+and in `Γ'` correspond, so the trace from `𝒢` to `Γ`, restricted to `Γ'`, is the trace from `𝒢`
+to `Γ'` (`CuspForm.restrict_trace`). This is how forms for two non-nested groups are compared.
 
 Translation by a positive-determinant matrix is packaged as the linear map
 `ModularForm.translateₗ`. General `GL₂(ℝ)` translation is only semilinear because a
@@ -67,6 +71,9 @@ AINTLIB `LeanModularForms` project
 * `ModularForm.mem_range_restrictₗ_iff`, `CuspForm.mem_range_restrictₗ_iff`: for `Γ' ≤ Γ` with every
   cusp of `Γ` a cusp of `Γ'`, a form for `Γ'` extends to `Γ` exactly when it is `Γ`-slash
   invariant.
+* `SlashInvariantForm.restrict_trace`, `ModularForm.restrict_trace`, `CuspForm.restrict_trace`:
+  when every element of `Γ` factors as an element of `Γ' ≤ Γ` times an element of `𝒢`, the trace
+  from `𝒢` to `Γ` restricts to the trace from `𝒢` to `Γ'`.
 -/
 
 public section
@@ -434,6 +441,59 @@ lemma mem_range_restrictₗ_iff {R : Type*} [Semiring R] [SMul R ℂ]
     fun hf ↦ ⟨ofSlashInvariant hc f hf, rfl⟩⟩
 
 end CuspForm
+
+/-! ### Restricting a trace along a factorization -/
+
+section RestrictTrace
+
+variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsFiniteRelIndex Γ] [𝒢.IsFiniteRelIndex Γ']
+
+/-- **Restricting a trace along a factorization.** Let `Γ' ≤ Γ` be such that every element of `Γ`
+is a product `x * g` with `x ∈ Γ'` and `g ∈ 𝒢`. Then the trace from `𝒢` to `Γ`, restricted to
+`Γ'`, is the trace from `𝒢` to `Γ'`.
+
+For congruence subgroups, with `𝒢 = Γ₁(b)`, `Γ = Γ₁(gcd a b)` and `Γ' = Γ₁(a)`
+(`CongruenceSubgroup.exists_mul_eq_of_mem_Gamma1_gcd`), it says that the trace from `Γ₁(lcm a b)`
+to `Γ₁(a)` of a form of level `Γ₁(b)` is its trace from `Γ₁(b)` to `Γ₁(gcd a b)`, restricted to
+`Γ₁(a)`. -/
+lemma SlashInvariantForm.restrict_trace (hΓ' : Γ' ≤ Γ)
+    (hmul : ∀ h ∈ Γ, ∃ x ∈ Γ', ∃ g ∈ 𝒢, x * g = h) (f : SlashInvariantForm 𝒢 k) :
+    restrict hΓ' (SlashInvariantForm.trace Γ f) = SlashInvariantForm.trace Γ' f := by
+  let := Fintype.ofFinite (Γ ⧸ 𝒢.subgroupOf Γ)
+  let := Fintype.ofFinite (Γ' ⧸ 𝒢.subgroupOf Γ')
+  -- the two traces sum over `Γ' ⧸ (𝒢 ⊓ Γ')` and `Γ ⧸ (𝒢 ⊓ Γ)`; the coset map induced by the
+  -- inclusion `Γ' → Γ` is injective, and the factorization hypothesis makes it surjective
+  let e := Subgroup.quotientSubgroupOfEmbeddingOfLE 𝒢 hΓ'
+  have he : Function.Bijective e := by
+    refine ⟨e.injective, fun q ↦ ?_⟩
+    induction q using QuotientGroup.induction_on with | H h => ?_
+    obtain ⟨x, hx, g, hg, hxg⟩ := hmul h h.2
+    refine ⟨QuotientGroup.mk ⟨x, hx⟩, Quotient.sound' ?_⟩
+    rw [QuotientGroup.leftRel_apply, Subgroup.mem_subgroupOf]
+    simpa [← hxg] using hg
+  ext τ
+  rw [coe_restrict, coe_trace, coe_trace, Finset.sum_apply, Finset.sum_apply]
+  refine (Fintype.sum_bijective e he _ _ fun q ↦ ?_).symm
+  induction q using QuotientGroup.induction_on with
+  | H x => simp [e, Subgroup.quotientSubgroupOfEmbeddingOfLE_apply_mk, quotientFunc_mk]
+
+/-- **Restricting a trace along a factorization**, for modular forms: see
+`SlashInvariantForm.restrict_trace`. -/
+lemma ModularForm.restrict_trace (hΓ' : Γ' ≤ Γ)
+    (hmul : ∀ h ∈ Γ, ∃ x ∈ Γ', ∃ g ∈ 𝒢, x * g = h) (f : ModularForm 𝒢 k) :
+    restrict hΓ' (ModularForm.trace Γ f) = ModularForm.trace Γ' f :=
+  ModularForm.ext fun τ ↦ congrFun (congrArg DFunLike.coe
+    (SlashInvariantForm.restrict_trace hΓ' hmul f.toSlashInvariantForm)) τ
+
+/-- **Restricting a trace along a factorization**, for cusp forms: see
+`SlashInvariantForm.restrict_trace`. -/
+lemma CuspForm.restrict_trace (hΓ' : Γ' ≤ Γ)
+    (hmul : ∀ h ∈ Γ, ∃ x ∈ Γ', ∃ g ∈ 𝒢, x * g = h) (f : CuspForm 𝒢 k) :
+    restrict hΓ' (CuspForm.trace Γ f) = CuspForm.trace Γ' f :=
+  CuspForm.ext fun τ ↦ congrFun (congrArg DFunLike.coe
+    (SlashInvariantForm.restrict_trace hΓ' hmul f.toSlashInvariantForm)) τ
+
+end RestrictTrace
 
 end ChangeGroup
 

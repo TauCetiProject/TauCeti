@@ -46,6 +46,11 @@ the same small universe.
   on objects, and `TauCeti.SplitK0.lift` the homomorphism it induces.
 * `TauCeti.SplitK0.map` and `TauCeti.SplitK0.mapEquiv`: functoriality for functors preserving
   zero morphisms and binary biproducts, and invariance under equivalences.
+* `TauCeti.SplitK0.BiadditiveInvariant C D G`: a function on pairs of objects which is
+  isomorphism-invariant and biproduct-additive in each variable, and
+  `TauCeti.SplitK0.BiadditiveInvariant.bilift` its descent to a biadditive map.
+* `TauCeti.SplitK0.map₂`: the biadditive map induced by a bifunctor preserving zero morphisms and
+  binary biproducts in each variable.
 * `TauCeti.SplitK0.ofCode`: the class map on the monoid of isomorphism classes of objects.
 
 ## Main results
@@ -57,6 +62,9 @@ the same small universe.
   invariants, and in particular the class map, are additive on finite biproducts.
 * `TauCeti.SplitK0.liftEquiv`: the universal property. Biproduct-additive invariants with values
   in `G` correspond bijectively to homomorphisms `SplitK0 C →+ G`.
+* `TauCeti.SplitK0.BiadditiveInvariant.bilift_of_of` and
+  `TauCeti.SplitK0.BiadditiveInvariant.bilift_unique`: the two-variable universal property, and
+  `TauCeti.SplitK0.map₂_of_of`: a bifunctor sends `([X], [Y])` to `[F(X, Y)]`.
 * `TauCeti.SplitK0.grothendieckAddGroupEquiv`: split `K₀` is the group completion of the additive
   monoid of isomorphism classes of objects.
 
@@ -363,6 +371,111 @@ lemma mapEquiv_toAddMonoidHom (e : C ≌ D) :
 end SplitK0
 
 end Functoriality
+
+section Biadditive
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
+  [EssentiallySmall.{w} C]
+  {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D] [HasBinaryBiproducts D]
+  [EssentiallySmall.{w'} D]
+
+namespace SplitK0
+
+variable (C D) in
+/-- A biadditive invariant for split `K₀`: a function on pairs of objects which, in each variable
+separately, is constant on isomorphism classes and additive on binary biproducts. These are
+exactly the data that descend to a biadditive map `SplitK0 C →+ SplitK0 D →+ G`; see
+`TauCeti.SplitK0.BiadditiveInvariant.bilift` and
+`TauCeti.SplitK0.BiadditiveInvariant.bilift_unique`. -/
+@[ext]
+structure BiadditiveInvariant (G : Type*) [AddCommGroup G] where
+  /-- The value of the invariant on a pair of objects. -/
+  obj : C → D → G
+  /-- Isomorphic objects in the first variable receive equal values. -/
+  map_iso₁ : ∀ ⦃X X' : C⦄, (X ≅ X') → ∀ Y : D, obj X Y = obj X' Y
+  /-- Isomorphic objects in the second variable receive equal values. -/
+  map_iso₂ : ∀ (X : C) ⦃Y Y' : D⦄, (Y ≅ Y') → obj X Y = obj X Y'
+  /-- The invariant is additive on binary biproducts in the first variable. -/
+  map_biprod₁ : ∀ (X X' : C) (Y : D), obj (X ⊞ X') Y = obj X Y + obj X' Y
+  /-- The invariant is additive on binary biproducts in the second variable. -/
+  map_biprod₂ : ∀ (X : C) (Y Y' : D), obj X (Y ⊞ Y') = obj X Y + obj X Y'
+
+namespace BiadditiveInvariant
+
+variable {G : Type*} [AddCommGroup G] (a : BiadditiveInvariant C D G)
+
+/-- The invariant with its first argument fixed. -/
+private def rightInvariant (X : C) : AdditiveInvariant D G where
+  obj := a.obj X
+  map_iso _ _ e := a.map_iso₂ X e
+  map_biprod := a.map_biprod₂ X
+
+omit [EssentiallySmall.{w} C] [EssentiallySmall.{w'} D] in
+private lemma rightInvariant_obj (X : C) : (a.rightInvariant X).obj = a.obj X := (rfl)
+
+/-- The one-sided descents in the second variable, as an additive invariant of the first
+variable with values in the homomorphisms out of `SplitK0 D`. -/
+private noncomputable def leftInvariant : AdditiveInvariant C (SplitK0 D →+ G) where
+  obj X := lift (a.rightInvariant X)
+  map_iso X X' e := hom_ext fun Y => by
+    simpa only [lift_of, rightInvariant_obj] using a.map_iso₁ e Y
+  map_biprod X X' := hom_ext fun Y => by
+    simpa only [AddMonoidHom.add_apply, lift_of, rightInvariant_obj] using a.map_biprod₁ X X' Y
+
+omit [EssentiallySmall.{w} C] in
+private lemma leftInvariant_obj (X : C) : a.leftInvariant.obj X = lift (a.rightInvariant X) :=
+  (rfl)
+
+/-- Descend a biadditive invariant through both split Grothendieck groups. -/
+noncomputable def bilift : SplitK0 C →+ SplitK0 D →+ G :=
+  lift a.leftInvariant
+
+/-- The two-variable descent evaluates on object classes as the original invariant. -/
+@[simp]
+lemma bilift_of_of (X : C) (Y : D) : a.bilift (of X) (of Y) = a.obj X Y := by
+  rw [bilift, lift_of, leftInvariant_obj, lift_of, rightInvariant_obj]
+
+/-- The two-variable descent is the unique biadditive map with the prescribed values on pairs of
+object classes. -/
+theorem bilift_unique (b : SplitK0 C →+ SplitK0 D →+ G)
+    (hb : ∀ (X : C) (Y : D), b (of X) (of Y) = a.obj X Y) : b = a.bilift :=
+  hom_ext fun X => hom_ext fun Y => by rw [hb, bilift_of_of]
+
+end BiadditiveInvariant
+
+variable {K : Type u''} [Category.{v''} K] [HasZeroMorphisms K] [HasBinaryBiproducts K]
+  [EssentiallySmall.{w''} K] (F : C ⥤ D ⥤ K)
+  [∀ X, (F.obj X).PreservesZeroMorphisms] [∀ X, PreservesBiproductsOfShape WalkingPair (F.obj X)]
+  [∀ Y, (F.flip.obj Y).PreservesZeroMorphisms]
+  [∀ Y, PreservesBiproductsOfShape WalkingPair (F.flip.obj Y)]
+
+/-- The class `[F(X, Y)]` of a bifunctor preserving zero morphisms and binary biproducts in each
+variable, as a biadditive invariant. -/
+private noncomputable def map₂Invariant : BiadditiveInvariant C D (SplitK0 K) where
+  obj X Y := of ((F.obj X).obj Y)
+  map_iso₁ _ _ e Y := of_congr ((F.mapIso e).app Y)
+  map_iso₂ X _ _ e := of_congr ((F.obj X).mapIso e)
+  map_biprod₁ X X' Y := by
+    simpa only [map_add, map_of, Functor.flip_obj_obj] using
+      congrArg (map (F.flip.obj Y)) (of_biprod X X')
+  map_biprod₂ X Y Y' := by
+    simpa only [map_add, map_of] using congrArg (map (F.obj X)) (of_biprod Y Y')
+
+/-- **Biadditivity of split `K₀`**: a bifunctor preserving zero morphisms and binary biproducts
+in each variable induces a biadditive map of split Grothendieck groups, sending the pair of classes
+`([X], [Y])` to `[F(X, Y)]`. -/
+noncomputable def map₂ : SplitK0 C →+ SplitK0 D →+ SplitK0 K :=
+  (map₂Invariant F).bilift
+
+/-- The biadditive map induced by a bifunctor sends a pair of object classes to the class of the
+image of the pair. -/
+@[simp]
+lemma map₂_of_of (X : C) (Y : D) : map₂ F (of X) (of Y) = of ((F.obj X).obj Y) :=
+  (map₂Invariant F).bilift_of_of X Y
+
+end SplitK0
+
+end Biadditive
 
 section FiniteBiproducts
 

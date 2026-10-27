@@ -12,9 +12,10 @@ public import TauCeti.AlgebraicGeometry.Compactification.Basic
 
 Pulling back both maps of a compactification gives a compactification over any new base.
 The induced map on interiors is itself a pullback of the original open immersion, and
-maps of compactifications pull back functorially. Scheme-theoretic density of the interior
-is preserved when the base change is flat, using Mathlib's
-`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_isPullback`.
+maps of compactifications pull back functorially, as pullbacks of the original maps of ambient
+schemes; in particular closed immersions of compactifications pull back to closed immersions.
+Scheme-theoretic density of the interior is preserved when the base change is flat, using
+Mathlib's `AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_isPullback`.
 
 ## References
 
@@ -124,6 +125,19 @@ theorem baseChangeMap_hom_h {C D : Compactification f} (h : C ⟶ D) (g : T ⟶ 
     (baseChangeMap h g).hom.h =
       pullback.map C.p g D.p g h.hom.h (𝟙 T) (𝟙 S) (by simp) (by simp) :=
   (rfl)
+
+/-- The pulled-back map of ambient schemes is a pullback of the original map. -/
+theorem isPullback_baseChangeMap {C D : Compactification f} (h : C ⟶ D) (g : T ⟶ S) :
+    IsPullback (pullback.fst C.p g) (baseChangeMap h g).hom.h h.hom.h (pullback.fst D.p g) := by
+  apply IsPullback.of_bot (t := IsPullback.of_hasPullback D.p g)
+  · simpa using IsPullback.of_hasPullback C.p g
+  · simp
+
+/-- Base change preserves closed immersions of compactifications. -/
+instance {C D : Compactification f} (h : C ⟶ D) [IsClosedImmersion h.hom.h] (g : T ⟶ S) :
+    IsClosedImmersion (baseChangeMap h g).hom.h :=
+  MorphismProperty.of_isPullback (isPullback_baseChangeMap h g)
+    (inferInstance : IsClosedImmersion h.hom.h)
 
 /-- Base change acts functorially on all compactifications of a fixed morphism. -/
 -- The object equations must remain available when elaborating dependent morphism formulas.

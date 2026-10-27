@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.LocalizedModule.Cech
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Basic
 public import TauCeti.RingTheory.Huber.ModuleTopology.Basic
 public import Mathlib.Topology.Algebra.IsUniformGroup.Defs
+import Mathlib.Topology.Algebra.Algebra
 
 /-!
 # The topology of the Čech complex of uncompleted rational localisations
@@ -95,6 +96,13 @@ theorem span_numerators_eq_top (hf : Ideal.span (Set.range f) = ⊤) (p : ℕ) :
   refine top_unique ((Ideal.span_pow_eq_top _ hf (p + 1)).symm.le.trans (Ideal.span_mono ?_))
   rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
   exact pow_mem_numerators f p i
+
+/-- Multiplying a degree-`p` numerator by one cover element gives a degree-`p + 1` numerator. -/
+theorem mul_mem_numerators {p : ℕ} {t : B} (ht : t ∈ numerators f p) (a : ι) :
+    t * f a ∈ numerators f (p + 1) := by
+  obtain ⟨j, rfl⟩ := (mem_numerators f).mp ht
+  apply (mem_numerators f).mpr
+  exact ⟨Fin.snoc j a, by simp [Fin.prod_univ_castSucc]⟩
 
 variable [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition B)
 
@@ -183,6 +191,25 @@ theorem isTopologicalAddGroup_faceModuleTopology (hf : Ideal.span (Set.range f) 
   haveI := isModuleTopology_faceModuleTopology f P M hf p S
   IsModuleTopology.isTopologicalAddGroup (Localization.Away (∏ i ∈ S, f i)) _
 
+/-- The natural topology on a localized module makes its action by the original coefficient
+ring continuous. -/
+theorem continuousSMul_faceModuleTopology (hf : Ideal.span (Set.range f) = ⊤) (p : ℕ)
+    (S : Finset ι) :
+    letI := faceModuleTopology f P M hf p S
+    ContinuousSMul B (LocalizedModule (.powers (∏ i ∈ S, f i)) M) := by
+  let _ := faceTopology f P hf p S
+  let _ := faceModuleTopology f P M hf p S
+  have := isModuleTopology_faceModuleTopology f P M hf p S
+  have := IsModuleTopology.toContinuousSMul (Localization.Away (∏ i ∈ S, f i))
+    (LocalizedModule (.powers (∏ i ∈ S, f i)) M)
+  have hc : @Continuous _ _ _ (faceTopology f P hf p S)
+      (algebraMap B (Localization.Away (∏ i ∈ S, f i))) := by
+    rw [faceTopology_eq_locTopology]
+    exact P.continuous_algebraMap_locTopology _ _ _ _
+  have := isTopologicalRing_faceTopology f P hf p S
+  have := continuousSMul_of_algebraMap B (Localization.Away (∏ i ∈ S, f i)) hc
+  exact IsScalarTower.continuousSMul (Localization.Away (∏ i ∈ S, f i))
+
 /-- The topology on the term `∏_{|S| = p + 1} M_{f_S}` of degree `p` of the Čech complex of
 localizations: the product of the natural module topologies of the `M_{f_S}` over the
 uncompleted rational localisations `B(F_p / f_S)`. -/
@@ -220,7 +247,7 @@ theorem termUniformSpace_toTopologicalSpace (hf : Ideal.span (Set.range f) = ⊤
   (rfl)
 
 /-- The term of degree `p` is a uniform additive group for `termUniformSpace`. -/
-theorem isUniformAddGroup_termUniformSpace (hf : Ideal.span (Set.range f) = ⊤) (p : ℕ) :
+instance isUniformAddGroup_termUniformSpace (hf : Ideal.span (Set.range f) = ⊤) (p : ℕ) :
     @IsUniformAddGroup _ (termUniformSpace f P M hf p) _ :=
   @isUniformAddGroup_of_addCommGroup _ _ (termTopology f P M hf p)
     (isTopologicalAddGroup_termTopology f P M hf p)

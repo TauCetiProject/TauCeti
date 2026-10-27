@@ -33,6 +33,8 @@ sets are geodesics, which is how the Dirichlet polygon of a Fuchsian group arise
 * `TauCeti.smul_dirichletDomain`: translating the Dirichlet domain translates its centre.
 * `TauCeti.dist_le_dist_smul_of_mem_dirichletDomain`: a point of the Dirichlet domain is a point
   of its orbit closest to the centre.
+* `TauCeti.isBounded_dirichletDomain_inter_iUnion_smul`: the points of the Dirichlet domain in
+  the orbit of a bounded set form a bounded set.
 * `TauCeti.finite_dirichletCompetitors`: on a bounded set, only finitely many acting elements can
   move the centre to a point at least as close as the centre.
 * `TauCeti.exists_finset_dirichletDomain_inter_eq`: on a bounded set, the Dirichlet domain is
@@ -232,6 +234,18 @@ theorem dist_le_dist_smul_of_mem_dirichletDomain {p x : X} (hx : x ∈ dirichlet
     (g : G) : dist x p ≤ dist (g • x) p :=
   calc dist x p ≤ dist x (g⁻¹ • p) := hx g⁻¹
     _ = dist (g • x) p := by rw [← dist_smul g, smul_inv_smul]
+
+/-- The points of a Dirichlet domain lying in the orbit of a bounded set form a bounded set. -/
+theorem isBounded_dirichletDomain_inter_iUnion_smul (p : X) {K : Set X}
+    (hK : Bornology.IsBounded K) :
+    Bornology.IsBounded (dirichletDomain G p ∩ ⋃ g : G, g • K) := by
+  obtain ⟨R, hR⟩ := hK.subset_closedBall p
+  refine (Metric.isBounded_closedBall (x := p) (r := R)).subset ?_
+  rintro x ⟨hx, hxK⟩
+  obtain ⟨g, y, hy, rfl⟩ := mem_iUnion.mp hxK
+  have h := dist_le_dist_smul_of_mem_dirichletDomain hx g⁻¹
+  rw [inv_smul_smul] at h
+  exact Metric.mem_closedBall.mpr (h.trans (Metric.mem_closedBall.mp (hR hy)))
 
 variable [ProperSpace X] [ProperlyDiscontinuousSMul G X]
 

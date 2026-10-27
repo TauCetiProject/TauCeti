@@ -11,7 +11,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 
 /-!
-# Reciprocal inequalities in ordered fields
+# Inequalities in ordered fields
 
 This file records a bound on a sum of two reciprocals in a linearly ordered field. It turns a lower
 bound on a reciprocal sum `1 / b + 1 / c` with `b ≤ c` into an upper bound on the smaller
@@ -25,6 +25,8 @@ regularization.
 
 It records that for `0 < d`, `0 < a` and `e < a`, the time `d * e / a` lies strictly before `d`;
 this is where a timed piece of duration `d` running across `[0, a]` reaches `e`.
+
+It also records how to remove a term `ε * C` from a bound valid for every `ε > 0`.
 
 Finally, it records the rescaling identity `q |q x - m| = q² |x - m / q|` for `q > 0`, which
 converts between the two usual forms of an approximation `x ≈ m / q`.
@@ -42,6 +44,20 @@ converts between the two usual forms of an approximation `x ≈ m / q`.
 public section
 
 namespace TauCeti
+
+/-- If `a ≤ m + ε * C` for every positive `ε`, then `a ≤ m`. No sign assumption on `C` is
+needed. -/
+theorem le_of_forall_pos_mul_le {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a m C : α} (h : ∀ ε : α, 0 < ε → a ≤ m + ε * C) : a ≤ m := by
+  by_cases hC : 0 < C
+  · by_contra! ham
+    have hε := h ((a - m) / (2 * C)) (by positivity)
+    have heq : (a - m) / (2 * C) * C = (a - m) / 2 := by field_simp
+    rw [heq] at hε
+    linarith
+  · have hε := h 1 one_pos
+    simp only [one_mul] at hε
+    linarith
 
 /-- For `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most `2 / b`. -/
 theorem one_div_add_one_div_le_two_div {α : Type*} [Field α] [LinearOrder α]

@@ -233,73 +233,31 @@ private noncomputable def coindCounitApp (A : SmoothDiscreteTopRep.{u, v, max v 
           (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫
       TopRep.ofHom (coindCounit R G U A))
 
-private theorem coindCounit_cast_naturality {A B : SmoothDiscreteTopRep.{u, v, max v w} R U}
-    (f : A ⟶ B) (hA : ((smoothDiscreteResFunctor R G U).obj ((coindFunctor R G U).obj A)).obj.V =
-      (TopRep.res (U.subtype : U →* G) (coindTopRep R G U A).obj).V)
-    (hB : ((smoothDiscreteResFunctor R G U).obj ((coindFunctor R G U).obj B)).obj.V =
-      (TopRep.res (U.subtype : U →* G) (coindTopRep R G U B).obj).V)
-    (a : ((smoothDiscreteResFunctor R G U).obj ((coindFunctor R G U).obj A)).obj) :
-    coindCounit R G U B
-        (cast hB (((smoothDiscreteResFunctor R G U).map ((coindFunctor R G U).map f)).hom.hom a)) =
-      f.hom.hom (coindCounit R G U A (cast hA a)) := by
-  -- The restricted map is the coinduced map conjugated by casts: read
-  -- `smoothDiscreteResFunctor_map_apply` backwards and turn its transports into casts. The carrier
-  -- equations come from `smoothDiscreteResFunctor_obj`: the carrier of `TopRep.res` is the
-  -- original one by definition.
-  have hres (X : SmoothDiscreteTopRep.{u, v, max v w} R G) :
-      ((smoothDiscreteResFunctor R G U).obj X).obj.V = X.obj.V :=
-    congrArg (·.obj.V) (smoothDiscreteResFunctor_obj R G U X)
-  have hmap : ((smoothDiscreteResFunctor R G U).map ((coindFunctor R G U).map f)).hom.hom a =
-      cast (hres _).symm (((coindFunctor R G U).map f).hom.hom (cast (hres _) a)) := by
-    -- `rw`, not `simp`: `simp` does not rewrite the composite, since it is not type-correct at the
-    -- transparency `simp` checks implicit arguments with (the restricted object carries a
-    -- continuity proof for `Subtype.val` where one for `U.subtype` is expected).
-    rw [← smoothDiscreteResFunctor_map_apply R G U ((coindFunctor R G U).map f) (cast (hres _) a),
-      ← TopRep.hom_comp, ← TopRep.hom_comp, TopRep.comp_apply, TopRep.comp_apply,
-      TopRep.eqToHom_hom_apply, TopRep.eqToHom_hom_apply]
-    simp only [cast_cast, cast_eq]
-  rw [hmap, cast_cast]
-  -- `coindFunctor_map_apply` takes an element of `DiscreteCoind G U A.obj.V`. The ascription
-  -- types the transported element by the carrier of `coindTopRep`, which unfolds to it, so that
-  -- the transports in `h` stay type-correct when rewritten into casts. `dsimp only` removes the
-  -- `have` that the lemma's `show … from` elaborates to.
-  have h := coindFunctor_map_apply R G U f (cast hA a : (coindTopRep R G U A).obj.V) 1
-  dsimp only at h
-  -- After the rewrites `h` is the goal up to unfolding `coindCounit`, which evaluates at `1` by
-  -- definition: its argument lies in the carrier of the restriction of `coindTopRep`, which
-  -- unfolds to `DiscreteCoind`.
-  rwa [← TopRep.hom_comp, ← TopRep.hom_comp, TopRep.comp_apply, TopRep.comp_apply,
-    TopRep.eqToHom_hom_apply, TopRep.eqToHom_hom_apply, cast_cast] at h
-
+-- The explicit universes in `coindCounitApp.{u, v, w}` and `coindCounitNatTrans.{u, v, w}` below
+-- fix `w`, which the arguments determine only through `max v w`. Without them, elaborating these
+-- statements compares types in which `w` is still unsolved, and each comparison unfolds
+-- `smoothDiscreteResFunctor`.
 private theorem coindCounitApp_naturality {A B : SmoothDiscreteTopRep.{u, v, max v w} R U}
     (f : A ⟶ B) :
     (coindFunctor.{u, v, max v w} R G U ⋙ smoothDiscreteResFunctor R G U).map f ≫
-        coindCounitApp R G U B =
-      coindCounitApp R G U A ≫ (𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R U)).map f := by
+        coindCounitApp.{u, v, w} R G U B =
+      coindCounitApp.{u, v, w} R G U A ≫ (𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R U)).map f := by
   ext a
-  -- Both functors are opaque here, so their objects are identified with `coindTopRep` and
-  -- `TopRep.res` only through the public object lemmas. Every transport along those equations
-  -- is a cast of carriers, and the two public map computations close the square pointwise.
-  dsimp only [coindCounitApp, Functor.comp_map, Functor.id_map,
-    ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, TopRep.hom_comp,
-    TopRep.hom_ofHom, ContIntertwiningMap.toContinuousLinearMap_comp,
-    ContinuousLinearMap.comp_apply, ContIntertwiningMap.toContinuousLinearMap_apply]
-  rw [TopRep.eqToHom_hom_apply, TopRep.eqToHom_hom_apply]
-  -- `(… :)` elaborates the lemma before unifying it with the goal; propagating the goal into its
-  -- carrier equations first is about ten times slower.
-  exact (coindCounit_cast_naturality R G U f _ _ a :)
+  -- Both composites send `a` to `f (a 1)` by definition: the transports in `coindCounitApp` are
+  -- identities, and the counit evaluates at `1`.
+  rfl
 
 /-- Evaluation at `1`, natural in the smooth discrete coefficient representation. -/
 noncomputable def coindCounitNatTrans :
     coindFunctor.{u, v, max v w} R G U ⋙ smoothDiscreteResFunctor R G U ⟶
       𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R U) where
-  app := coindCounitApp R G U
+  app := coindCounitApp.{u, v, w} R G U
   -- `(… :)` elaborates the lemma before unifying it with the field's type; propagating that type
   -- into it first is about ten times slower.
   naturality _ _ f := (coindCounitApp_naturality R G U f :)
 
 private theorem coindCounitNatTrans_app_hom_impl (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
-    ((coindCounitNatTrans R G U).app A).hom =
+    ((coindCounitNatTrans.{u, v, w} R G U).app A).hom =
       eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
         ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
           (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Reflection
 public import TauCeti.RepresentationTheory.LSPath.PLPath
+import Mathlib.Algebra.Order.Group.MinMax
 
 /-!
 # Running heights and root operators on piecewise-linear paths
@@ -42,8 +43,9 @@ main result of this file is that the operators do not depend on the chosen prese
 elementary moves (subdividing a segment, inserting a stationary segment) commute with them up to
 the same moves. The weight changes by `-α` under `f_α` and by `α` under `e_α`.
 
-This file works with the ambient operators on all paths. It does not prove that `e_α` and `f_α`
-are partial inverses, nor the integral string-length identities of Littelmann's path crystals.
+This file works with the ambient operators on all paths. That `e_α` and `f_α` are partial
+inverses is proved in `TauCeti.RepresentationTheory.LSPath.PartialInverse`; the integral
+string-length identities of Littelmann's path crystals are not proved here.
 
 ## Main definitions
 
@@ -58,6 +60,10 @@ are partial inverses, nor the integral string-length identities of Littelmann's 
 * `TauCeti.PLPath.minHeight_ofSegments`, `TauCeti.PLPath.minHeight_mul`,
   `TauCeti.PLPath.minHeight_reverse`: the minimal height is independent of the presentation, and
   its behaviour under concatenation and reversal.
+* `TauCeti.PLPath.reflectRecords_append`: capped reflection `TauCeti.PLPath.reflectRecords` of a
+  concatenation.
+* `TauCeti.PLPath.reflectRecords_of_le_listMinHeight`: capped reflection is the identity when
+  the cap is at most the minimal height.
 * `TauCeti.PLPath.lower_ofSegments`: the lowering operator may be computed on any presentation.
 * `TauCeti.PLPath.lower_eq_none_iff`, `TauCeti.PLPath.raise_eq_none_iff`: `f_α π = 0` exactly when
   `f (π 1) - h < 1`, and `e_α π = 0` exactly when `-1 < h`.
@@ -79,52 +85,38 @@ namespace PLPath
 
 open Module Relation
 
-variable {𝕜 : Type*} {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-  [AddCommGroup V] [Module 𝕜 V]
+variable {𝕜 : Type*} {V : Type*}
 
-/-! ### The minimal height -/
+/-! ### The minimal height of a segment list -/
 
-section MinHeight
+section ListMinHeight
+
+variable [Semiring 𝕜] [LinearOrder 𝕜] [AddCommMonoid V] [Module 𝕜 V]
 
 variable (f : Dual 𝕜 V)
 
-/-- The minimal running height of the path presented by a segment list: the minimum of `f` over
-the vertices `0, v₁, v₁ + v₂, …, v₁ + ⋯ + vₙ`, at which the minimum of the piecewise-affine
-function `t ↦ f (π t)` is attained. -/
+/-- The running-height recursion for a segment list. When addition preserves the scalar order,
+this is the minimum of `f` over the vertices `0, v₁, v₁ + v₂, …, v₁ + ⋯ + vₙ`. For a
+piecewise-linear path over an ordered field, the minimum of its affine height on each segment
+is attained at a vertex. -/
 def listMinHeight : List V → 𝕜
   | [] => 0
   | v :: l => min 0 (f v + listMinHeight l)
 
 variable {f} {v w : V} {l l₁ l₂ : List V}
 
-omit [IsStrictOrderedRing 𝕜] in
 @[simp]
 theorem listMinHeight_nil : listMinHeight f ([] : List V) = 0 :=
   (rfl)
 
-omit [IsStrictOrderedRing 𝕜] in
 @[simp]
 theorem listMinHeight_cons (v : V) (l : List V) :
     listMinHeight f (v :: l) = min 0 (f v + listMinHeight f l) :=
   (rfl)
 
-omit [IsStrictOrderedRing 𝕜] in
 theorem listMinHeight_nonpos (l : List V) : listMinHeight f l ≤ 0 := by
   cases l <;> simp
 
-/-- The minimal height is at most the height of each vertex. -/
-theorem listMinHeight_le_apply_sum_take (l : List V) (n : ℕ) :
-    listMinHeight f l ≤ f (l.take n).sum := by
-  induction l generalizing n with
-  | nil => simp
-  | cons v l ih =>
-    cases n with
-    | zero => simp
-    | succ n =>
-      rw [listMinHeight_cons, List.take_succ_cons, List.sum_cons, map_add]
-      exact min_le_of_right_le (by linarith [ih n])
-
-omit [IsStrictOrderedRing 𝕜] in
 /-- The minimal height is the height of some vertex. -/
 theorem exists_listMinHeight_eq (l : List V) : ∃ n, listMinHeight f l = f (l.take n).sum := by
   induction l with
@@ -136,6 +128,20 @@ theorem exists_listMinHeight_eq (l : List V) : ∃ n, listMinHeight f l = f (l.t
     · exact ⟨n + 1, by rw [listMinHeight_cons, min_eq_right h, hn, List.take_succ_cons,
         List.sum_cons, map_add]⟩
 
+variable [IsOrderedAddMonoid 𝕜]
+
+/-- The minimal height is at most the height of each vertex. -/
+theorem listMinHeight_le_apply_sum_take (l : List V) (n : ℕ) :
+    listMinHeight f l ≤ f (l.take n).sum := by
+  induction l generalizing n with
+  | nil => simp
+  | cons v l ih =>
+    cases n with
+    | zero => simp
+    | succ n =>
+      rw [listMinHeight_cons, List.take_succ_cons, List.sum_cons, map_add]
+      exact min_le_of_right_le (add_le_add le_rfl (ih n))
+
 theorem listMinHeight_le_apply_sum (l : List V) : listMinHeight f l ≤ f l.sum := by
   simpa using listMinHeight_le_apply_sum_take (f := f) l l.length
 
@@ -145,6 +151,53 @@ theorem listMinHeight_append (l₁ l₂ : List V) :
   induction l₁ with
   | nil => simpa using (min_eq_right (listMinHeight_nonpos (f := f) l₂)).symm
   | cons v l ih => simp [ih, ← min_add_add_left, min_assoc, add_assoc]
+
+end ListMinHeight
+
+section ListMinHeightReverse
+
+variable [Ring 𝕜] [LinearOrder 𝕜] [IsOrderedAddMonoid 𝕜]
+  [AddCommGroup V] [Module 𝕜 V] {f : Dual 𝕜 V}
+
+/-- Reversing and negating the segments shifts their minimal height by the negative final
+height. -/
+theorem listMinHeight_reverse_map_neg (l : List V) :
+    listMinHeight f (l.map Neg.neg).reverse = listMinHeight f l - f l.sum := by
+  induction l with
+  | nil => simp
+  | cons v l ih =>
+    have hl : listMinHeight f l - f l.sum ≤ -f l.sum := by
+      simpa using sub_le_sub_right (listMinHeight_nonpos (f := f) l) (f l.sum)
+    simp only [List.map_cons, List.reverse_cons, listMinHeight_append, ih, listMinHeight_cons,
+      listMinHeight_nil, map_neg, add_zero, ← List.sum_neg_reverse, List.sum_cons, map_add]
+    -- Translate the minimum for the final reversed segment by the tail's final height.
+    have hshift : -f l.sum + min 0 (-f v) = min (-f l.sum) (-(f v + f l.sum)) := by
+      rw [← min_add_add_left, add_zero]
+      congr 1
+      abel
+    calc
+      min (listMinHeight f l - f l.sum) (-f l.sum + min 0 (-f v)) =
+          min (min (listMinHeight f l - f l.sum) (-f l.sum)) (-(f v + f l.sum)) := by
+        rw [hshift, min_assoc]
+      -- The tail minimum is nonpositive, so its shifted value lies below this endpoint.
+      _ = min (listMinHeight f l - f l.sum) (-(f v + f l.sum)) := by
+        rw [min_eq_left hl]
+      _ = min (-(f v + f l.sum)) (listMinHeight f l - f l.sum) := min_comm _ _
+      -- Translate both candidates back by the total height of the original list.
+      _ = min 0 (f v + listMinHeight f l) - (f v + f l.sum) := by
+        rw [← min_sub_sub_right]
+        congr 1 <;> abel
+
+end ListMinHeightReverse
+
+variable [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V]
+
+/-! ### The minimal height of a path -/
+
+section MinHeight
+
+variable {f : Dual 𝕜 V} {l l₁ l₂ : List V}
 
 theorem listMinHeight_consMerge (v : V) (l : List V) :
     listMinHeight f (consMerge 𝕜 v l) = listMinHeight f (v :: l) := by
@@ -175,17 +228,6 @@ theorem listMinHeight_normalize (l : List V) :
 /-- The minimal height is invariant under the elementary moves. -/
 theorem Move.listMinHeight_eq (h : Move 𝕜 l₁ l₂) : listMinHeight f l₁ = listMinHeight f l₂ := by
   rw [← listMinHeight_normalize, h.normalize_eq, listMinHeight_normalize]
-
-theorem listMinHeight_reverse_map_neg (l : List V) :
-    listMinHeight f (l.map Neg.neg).reverse = listMinHeight f l - f l.sum := by
-  induction l with
-  | nil => simp
-  | cons v l ih =>
-    have hl := listMinHeight_nonpos (f := f) l
-    have hs : ((l.map Neg.neg).reverse).sum = -l.sum := (List.sum_neg_reverse l).symm
-    simp only [List.map_cons, List.reverse_cons, listMinHeight_append, ih, listMinHeight_cons,
-      listMinHeight_nil, map_neg, add_zero, hs, List.sum_cons, map_add, min_def]
-    split_ifs <;> linarith
 
 variable (f) in
 /-- The minimal running height `min_t f (π t)` of a path. -/
@@ -319,6 +361,45 @@ theorem sum_of_listLower_eq_some (h : listLower f x l₁ = some l₂) : l₂.sum
   split_ifs at h with h₁
   rw [← Option.some.inj h, sum_reflectRecords, min_eq_right (by linarith),
     min_eq_left (by linarith), add_sub_cancel_left, one_smul]
+
+/-- Reflecting the records of a concatenation `l₁ ++ l₂` up to the cap `c`: on `l₁`, the later
+heights in `l₂` act as a further cap. -/
+theorem reflectRecords_append (c : 𝕜) (l₁ l₂ : List V) :
+    reflectRecords f x c (l₁ ++ l₂) =
+      reflectRecords f x (min c (f l₁.sum + listMinHeight f l₂)) l₁ ++
+        reflectRecords f x (c - f l₁.sum) l₂ := by
+  induction l₁ generalizing c with
+  | nil => simp
+  | cons v l ih =>
+    have key : min (f v + listMinHeight f (l ++ l₂)) c =
+        min (f v + listMinHeight f l) (min c (f (v :: l).sum + listMinHeight f l₂)) := by
+      rw [listMinHeight_append, List.sum_cons, map_add, ← min_add_add_left, add_assoc]
+      ac_rfl
+    have hcap : min (c - f v) (f l.sum + listMinHeight f l₂) =
+        min c (f (v :: l).sum + listMinHeight f l₂) - f v := by
+      rw [← min_sub_sub_right, List.sum_cons, map_add]
+      congr 1
+      abel
+    have hrest : c - f v - f l.sum = c - f (v :: l).sum := by
+      rw [List.sum_cons, map_add, sub_sub]
+    rw [List.cons_append]
+    by_cases h : 0 < min (f v + listMinHeight f (l ++ l₂)) c
+    · rw [reflectRecords_cons_of_pos h, reflectRecords_cons_of_pos (key ▸ h), key, ih, hcap,
+        hrest, List.cons_append, List.cons_append]
+    · rw [not_lt] at h
+      rw [reflectRecords_cons_of_nonpos h, reflectRecords_cons_of_nonpos (key ▸ h), ih, hcap,
+        hrest, List.cons_append]
+
+/-- Reflecting the records up to a cap that is at most the minimal height does nothing. -/
+@[simp]
+theorem reflectRecords_of_le_listMinHeight (h : c ≤ listMinHeight f l) :
+    reflectRecords f x c l = l := by
+  induction l generalizing c with
+  | nil => exact reflectRecords_nil c
+  | cons v l ih =>
+    rw [listMinHeight_cons] at h
+    rw [reflectRecords_cons_of_nonpos (min_le_of_right_le (h.trans (min_le_left _ _))),
+      ih (by linarith [min_le_right 0 (f v + listMinHeight f l)])]
 
 /-! ### Independence of the presentation -/
 

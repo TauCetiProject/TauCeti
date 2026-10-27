@@ -35,6 +35,10 @@ K₀^gr ≃ ℤ[q,q⁻¹],    [V] ↦ gdim V,    [M{n}] ↦ qⁿ.
 Since `[M{n}] = qⁿ[M]`, the shifts of `M` have pairwise distinct classes, although forgetting the
 grading sends all of them to the same vector space `k`.
 
+Consequently the specialization of `K₀^gr` at any `q = ε` is still free of rank one on the class of
+`M`, with coordinate `gdim V` evaluated at `q = ε`. In particular, at `q = -1` the sign
+`[M{1}] = -[M]` produced by a single shift is a genuine change of class.
+
 ## Main definitions
 
 * `TauCeti.GradedVectorSpace.finite`: the finite graded vector spaces.
@@ -43,6 +47,8 @@ grading sends all of them to the same vector space `k`.
 * `TauCeti.GradedVectorSpace.unitFinite`: the one-dimensional space `M = k` in degree `0`.
 * `TauCeti.GradedVectorSpace.laurentK0Equiv`: the graded dimension
   `K₀^gr ≃ ℤ[q,q⁻¹]` of finite graded vector spaces.
+* `TauCeti.GradedVectorSpace.laurentSpecializationBasis`: the basis `[M]` of `K₀^gr` specialized
+  at `q = ε`.
 
 ## Main results
 
@@ -52,6 +58,8 @@ grading sends all of them to the same vector space `k`.
 * `TauCeti.GradedVectorSpace.laurentK0Equiv_of`: the graded dimension of the class `[V]` is
   `gdim V`.
 * `TauCeti.GradedVectorSpace.of_eq_gradedDimension_smul`: `[V] = gdim V · [M]`.
+* `TauCeti.GradedVectorSpace.mk_neg_one_of_shift_unitFinite_ne`: at `q = -1` the classes of `M{1}`
+  and `M` differ.
 
 ## References
 
@@ -148,6 +156,14 @@ noncomputable def finiteExactStructure : GradedExactStructure (finite k).FullSub
   (GradedExactStructure.abelian _ (shift k)).fullSubcategory (finite k)
     (by simpa using isExtensionClosed_finite k) (by simpa using finite_shift k)
 
+/-- The graded exact structure of finite graded vector spaces is the one induced on the full
+subcategory from the abelian category of graded vector spaces with its grading shift. -/
+theorem finiteExactStructure_def :
+    finiteExactStructure k =
+      (GradedExactStructure.abelian _ (shift k)).fullSubcategory (finite k)
+        (by simpa using isExtensionClosed_finite k) (by simpa using finite_shift k) :=
+  (rfl)
+
 /-- The conflations of finite graded vector spaces are the short exact sequences. -/
 @[simp]
 theorem finiteExactStructure_conflation_iff (S : ShortComplex (finite k).FullSubcategory) :
@@ -169,14 +185,27 @@ private noncomputable def shiftObjApplyIso (V : (finite k).FullSubcategory) (j :
     ((finiteExactStructure k).shift.functor.obj V).obj j ≅ V.obj (j - 1) :=
   Pi.isoApp (shiftObjIso k V) j ≪≫ eqToIso (congrArg V.obj (by simp [sub_eq_add_neg]))
 
-/-- The pieces of the one-dimensional space `M = k` in degree `0` have finite Laurent support. -/
-theorem hasFiniteLaurentSupport_unit : HasFiniteLaurentSupport k fun j ↦ (unit k j : Type u) :=
-  HasFiniteLaurentSupport.of_finset (finiteDimensional_unit_obj k) {0} fun _ hj ↦
-    ModuleCat.subsingleton_of_isZero (isZero_unit_obj k (by simpa using hj))
+/-- A finite-dimensional vector space placed in a single degree `j` is a finite graded vector
+space. -/
+theorem finite_single (j : ℤ) (Y : ModuleCat.{u} k) [Module.Finite k Y] :
+    finite k ((GradedObject.single j).obj Y) := by
+  refine (finite_iff _).2 <| HasFiniteLaurentSupport.of_finset (fun i ↦ ?_) {j} fun i hi ↦
+    ModuleCat.subsingleton_of_isZero
+      (GradedObject.isInitialSingleObjApply j Y i (by simpa using hi)).isZero
+  by_cases hi : i = j
+  · exact Module.Finite.equiv (R := k)
+      (GradedObject.singleObjApplyIsoOfEq j Y i hi).toLinearEquiv.symm
+  · have := ModuleCat.subsingleton_of_isZero
+      (GradedObject.isInitialSingleObjApply j Y i hi).isZero
+    infer_instance
 
 /-- The one-dimensional space `M = k` in degree `0` is finite. -/
 theorem finite_unit : finite k (unit k) :=
-  hasFiniteLaurentSupport_unit k
+  unit_def k ▸ finite_single k 0 (ModuleCat.of k k)
+
+/-- The pieces of the one-dimensional space `M = k` in degree `0` have finite Laurent support. -/
+theorem hasFiniteLaurentSupport_unit : HasFiniteLaurentSupport k fun j ↦ (unit k j : Type u) :=
+  (finite_iff _).1 (finite_unit k)
 
 /-- The one-dimensional space `M = k` in degree `0`, as a finite graded vector space. -/
 noncomputable abbrev unitFinite : (finite k).FullSubcategory :=
@@ -369,6 +398,42 @@ theorem laurentK0Equiv_of (V : (finite k).FullSubcategory) :
 theorem laurentK0Equiv_symm_apply (p : LaurentPolynomial ℤ) :
     (laurentK0Equiv k).symm p = p • LaurentK0.of.{u} (finiteExactStructure k) (unitFinite k) := by
   simp [laurentK0Equiv]
+
+/-! ### Specializations of the graded Grothendieck group -/
+
+/-- The specialization of the graded Grothendieck group of finite graded vector spaces at `q = ε`
+is free of rank one, on the class of `M = k` placed in degree `0`. -/
+noncomputable def laurentSpecializationBasis (ε : ℤˣ) :
+    Module.Basis Unit ℤ (LaurentSpecialization ε (LaurentK0.{u} (finiteExactStructure k))) :=
+  LaurentSpecialization.basis ε
+    ((Module.Basis.singleton Unit (LaurentPolynomial ℤ)).map (laurentK0Equiv k).symm)
+
+/-- The vector of `TauCeti.GradedVectorSpace.laurentSpecializationBasis` is the specialized class
+of `M`. -/
+@[simp]
+theorem laurentSpecializationBasis_apply (ε : ℤˣ) (i : Unit) :
+    laurentSpecializationBasis k ε i =
+      LaurentSpecialization.mk ε (LaurentK0.of.{u} (finiteExactStructure k) (unitFinite k)) := by
+  simp [laurentSpecializationBasis]
+
+/-- The coordinate of a specialized class is its graded dimension evaluated at `q = ε`. -/
+@[simp]
+theorem laurentSpecializationBasis_repr_mk (ε : ℤˣ)
+    (x : LaurentK0.{u} (finiteExactStructure k)) (i : Unit) :
+    (laurentSpecializationBasis k ε).repr (LaurentSpecialization.mk ε x) i =
+      laurentEval ε (laurentK0Equiv k x) := by
+  simp [laurentSpecializationBasis]
+
+/-- **At `q = -1` a single shift changes the class**: the specialized class of `M{1}`, which is
+`-[M]` by `TauCeti.LaurentK0.mk_of_shift_functor_obj`, differs from that of `M`. -/
+theorem mk_neg_one_of_shift_unitFinite_ne :
+    LaurentSpecialization.mk (-1 : ℤˣ) (LaurentK0.of.{u} (finiteExactStructure k)
+        ((finiteExactStructure k).shift.functor.obj (unitFinite k))) ≠
+      LaurentSpecialization.mk (-1 : ℤˣ)
+        (LaurentK0.of.{u} (finiteExactStructure k) (unitFinite k)) := by
+  intro h
+  have := congrArg (fun x ↦ (laurentSpecializationBasis k (-1 : ℤˣ)).repr x ()) h
+  simp at this
 
 end GradedVectorSpace
 

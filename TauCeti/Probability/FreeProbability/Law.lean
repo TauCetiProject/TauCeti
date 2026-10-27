@@ -6,8 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+public import Mathlib.Topology.ContinuousMap.ContinuousSqrt
+public import TauCeti.MeasureTheory.Integral.ContinuousMap
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Probability.Moments.CompactDeterminacy
 
 /-!
 # The law of a selfadjoint element in a C⋆-probability space
@@ -26,6 +31,15 @@ statements about a single selfadjoint noncommutative random variable into statem
 compactly supported measure on the line, which is how free convolutions and free limit theorems
 are formulated analytically.
 
+Conversely, the law is determined by the moments: a compactly supported finite measure whose
+moments are the `φ (a ^ n)` is `μ_a`, so two selfadjoint elements, possibly in different
+C⋆-algebras, have the same law exactly when they have the same moments. And every compactly
+supported finite measure `μ` on `ℝ` is a law, realized in a commutative C⋆-algebra: if `μ` is
+concentrated on the compact set `K`, it is the law of the coordinate `x ↦ x` in `C(K, ℂ)` with
+respect to integration against `μ` on `K`, which is a state when `μ` is a probability measure. So
+the laws of selfadjoint elements with respect to states are exactly the compactly supported
+probability measures on `ℝ`.
+
 ## Main declarations
 
 * `PositiveLinearMap.law φ a`: the law of `a` with respect to `φ`, a finite measure on `ℝ`; it is
@@ -40,12 +54,26 @@ are formulated analytically.
 * `PositiveLinearMap.law_cfc`, `PositiveLinearMap.law_aeval`,
   `PositiveLinearMap.law_smul_add_algebraMap`: the law of `g(a)`, of `p(a)` for a real
   polynomial `p`, and of `r • a + c` is the pushforward of `μ_a` along `g`, `p` and `x ↦ r x + c`.
+* `PositiveLinearMap.eq_law_iff_forall_integral_pow`: a compactly supported finite measure is
+  `μ_a` exactly when its moments are the `φ (a ^ n)`.
+* `PositiveLinearMap.law_eq_law_iff_forall_apply_pow`: two selfadjoint elements have the same law
+  exactly when they have the same moments.
+* `PositiveLinearMap.law_integralPositiveLinearMap_realToRCLike`: in `C(X, ℂ)` for a compact
+  space `X`, the law of a real function `g` with respect to integration against `ν` is the
+  pushforward of `ν` along `g`.
+* `PositiveLinearMap.law_integralPositiveLinearMap_comap_restrict_id`: every finite measure on
+  `ℝ` concentrated on a compact set `K` is the law of the coordinate `x ↦ x` in `C(K, ℂ)`.
 
 ## Implementation notes
 
 The construction follows `ContinuousLinearMap.diagMeasure` in
 `TauCeti/Analysis/InnerProductSpace/BorelCalculus/DiagonalMeasure.lean`, which applies the same
 Riesz–Markov–Kakutani step to a vector state of a normal operator on a Hilbert space.
+
+Moment determinacy is `TauCeti.Measure.ext_of_forall_integral_pow_eq_of_support`, the
+Stone–Weierstrass argument on a compact set containing both supports. The realization in
+`C(X, ℂ)` is identified with the pushforward through its moments rather than through the
+continuous functional calculus, so it uses only powers of the element.
 
 ## References
 
@@ -226,5 +254,73 @@ the law of `a` along `x ↦ r * x + c`. -/
 theorem law_smul_add_algebraMap (ha : IsSelfAdjoint a) (r c : ℝ) :
     law φ (r • a + algebraMap ℝ A c) = (law φ a).map (fun x ↦ r * x + c) := by
   rw [← cfc_const_mul_id r a, ← cfc_add_const c _ a, law_cfc φ ha (fun x ↦ r * x + c)]
+
+/-! ### Moment determinacy -/
+
+variable {φ} in
+/-- **Moment determinacy of the law.** A finite measure on `ℝ` concentrated on a compact set is
+the law `μ_a` of a selfadjoint element `a` exactly when its moments are the moments of `a`:
+`∫ x ^ n dμ = φ (a ^ n)` for every `n`.
+
+The support hypothesis cannot be dropped: the moments are Bochner integrals, which are `0` for
+non-integrable integrands, so a heavy-tailed `μ` can match the moments of `a` without being
+`μ_a`. -/
+theorem eq_law_iff_forall_integral_pow (ha : IsSelfAdjoint a) {μ : Measure ℝ} [IsFiniteMeasure μ]
+    {K : Set ℝ} (hK : IsCompact K) (hμ : μ Kᶜ = 0) :
+    μ = law φ a ↔ ∀ n : ℕ, ((∫ x, x ^ n ∂μ : ℝ) : ℂ) = φ (a ^ n) := by
+  refine ⟨fun h n ↦ h ▸ ofReal_integral_pow_law φ ha n, fun h ↦ ?_⟩
+  refine TauCeti.Measure.ext_of_forall_integral_pow_eq_of_support
+    (hK.union (ContinuousFunctionalCalculus.isCompact_spectrum a)) ?_ ?_ fun n ↦ ?_
+  · exact measure_mono_null (Set.compl_subset_compl.2 Set.subset_union_left) hμ
+  · exact measure_mono_null (Set.compl_subset_compl.2 Set.subset_union_right)
+      (law_compl_spectrum φ a)
+  · exact Complex.ofReal_injective ((h n).trans (ofReal_integral_pow_law φ ha n).symm)
+
+/-- Two selfadjoint elements, possibly in different C⋆-algebras and with respect to different
+positive functionals, have the same law exactly when they have the same moments:
+`μ_a = μ_b ↔ ∀ n, φ (a ^ n) = ψ (b ^ n)`. -/
+theorem law_eq_law_iff_forall_apply_pow {B : Type*} [CStarAlgebra B] [PartialOrder B]
+    [StarOrderedRing B] (ψ : B →ₚ[ℂ] ℂ) {b : B} (ha : IsSelfAdjoint a) (hb : IsSelfAdjoint b) :
+    law φ a = law ψ b ↔ ∀ n : ℕ, φ (a ^ n) = ψ (b ^ n) := by
+  rw [eq_law_iff_forall_integral_pow hb (ContinuousFunctionalCalculus.isCompact_spectrum a)
+    (law_compl_spectrum φ a)]
+  simp_rw [ofReal_integral_pow_law φ ha]
+
+/-! ### Realization of compactly supported measures -/
+
+section Realization
+
+variable {X : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
+  [OpensMeasurableSpace X]
+
+/-- In the commutative C⋆-algebra `C(X, ℂ)` of a compact space `X`, the law of a real continuous
+function `g` with respect to integration against a finite measure `ν` is the pushforward `ν ∘ g⁻¹`
+of `ν` along `g`. -/
+theorem law_integralPositiveLinearMap_realToRCLike (ν : Measure X) [IsFiniteMeasure ν]
+    (g : C(X, ℝ)) :
+    law (ContinuousMap.integralPositiveLinearMap ν) (g.realToRCLike ℂ) = ν.map g := by
+  have hK := isCompact_range g.continuous
+  refine ((eq_law_iff_forall_integral_pow (ContinuousMap.isSelfAdjoint_realToRCLike ℂ) hK ?_).2
+    fun n ↦ ?_).symm
+  · rw [Measure.map_apply g.continuous.measurable hK.isClosed.measurableSet.compl]
+    simp
+  · rw [integral_map g.continuous.aemeasurable (by fun_prop),
+      ContinuousMap.integralPositiveLinearMap_apply, ← integral_complex_ofReal]
+    simp
+
+/-- **Realization of compactly supported laws.** A finite measure `μ` on `ℝ` concentrated on a
+compact set `K` is the law of the coordinate function `x ↦ x` in the commutative C⋆-algebra
+`C(K, ℂ)`, with respect to integration against `μ` on `K`. This functional is a state when `μ` is
+a probability measure (`ContinuousMap.integralPositiveLinearMap_one`). -/
+theorem law_integralPositiveLinearMap_comap_restrict_id {K : Set ℝ} [CompactSpace K]
+    {μ : Measure ℝ} [IsFiniteMeasure μ] (hμ : μ Kᶜ = 0) :
+    law (ContinuousMap.integralPositiveLinearMap (μ.comap ((↑) : K → ℝ)))
+      ((ContinuousMap.restrict K (ContinuousMap.id ℝ)).realToRCLike ℂ) = μ := by
+  have hK : IsCompact K := isCompact_iff_compactSpace.2 ‹_›
+  rw [law_integralPositiveLinearMap_realToRCLike]
+  exact (map_comap_subtype_coe hK.measurableSet μ).trans
+    (Measure.restrict_eq_self_of_ae_mem (ae_iff.2 hμ))
+
+end Realization
 
 end PositiveLinearMap

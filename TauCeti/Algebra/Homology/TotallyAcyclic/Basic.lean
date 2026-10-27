@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.Double
+public import Mathlib.CategoryTheory.ObjectProperty.Shift
 public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.BilinearMap
@@ -238,6 +239,12 @@ namespace TauCeti
 abbrev TotallyAcyclicComplex (A : Type u) [Ring A] :=
   ObjectProperty.FullSubcategory
     (fun P : CochainComplex (ModuleCat.{v} A) ℤ ↦ P.IsTotallyAcyclic)
+
+/-- Total acyclicity is stable under shifts, so totally acyclic complexes inherit the shift of
+cochain complexes. -/
+instance (A : Type u) [Ring A] : ObjectProperty.IsStableUnderShift
+    (fun P : CochainComplex (ModuleCat.{v} A) ℤ ↦ P.IsTotallyAcyclic) ℤ where
+  isStableUnderShiftBy n := ⟨fun _ hP ↦ hP.shift n⟩
 
 variable (A : Type u) [Ring A]
 
