@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import TauCeti.Analysis.Sobolev.Poincare.TransverseBoundary
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Geometry.Symplectic.CompatibleMetric
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 
 /-!
@@ -47,6 +48,12 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 variable {u : ℝ × ℝ → V} {L₀ L₁ : Submodule ℝ V}
 
+omit [FiniteDimensional ℝ V] in
+private lemma alternating_pairing_eq_two_mul (v w : V) :
+    ω v w - ω w v = 2 * ω v w := by
+  rw [← ω.neg_eq v w]
+  ring
+
 /-- The area of a rectangle vanishes for a map whose vertical sides are zero and whose two
 horizontal boundary curves lie in fixed linear isotropic subspaces. -/
 theorem integral_symplecticForm_fderiv_prod_Icc_eq_zero
@@ -61,57 +68,44 @@ theorem integral_symplecticForm_fderiv_prod_Icc_eq_zero
       ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) = 0 := by
   let B := ω.toBilinForm.toContinuousBilinearMap
   have hB (v w : V) : B v w = ω v w := by simp [B]
+  have hreal : (1, 0) = stdComplexLineReal := by ext <;> simp
+  have himag : (0, 1) = stdComplexLineImag := by ext <;> simp
   -- Along the interior of either horizontal side, differentiating the boundary condition
   -- keeps the tangent vector in the closed isotropic subspace.
   have hhorizontal {e : ℝ} (he : e ∈ Icc c d) {L : Submodule ℝ V}
       (hL : ω.IsIsotropic L) (hline : ∀ s ∈ Icc a b, u (s, e) ∈ L) :
-      ∀ s ∈ Ioo a b, B (u (s, e)) (fderiv ℝ u (s, e) stdComplexLineReal) = 0 := by
-    intro s hs
-    have hp : HasDerivAt (fun r : ℝ ↦ ((r, e) : ℝ × ℝ)) stdComplexLineReal s :=
-      (hasDerivAt_id s).prodMk (hasDerivAt_const s e)
-    have hd := ((hu (s, e) ⟨Ioo_subset_Icc_self hs, he⟩).differentiableAt
-      (by norm_num)).hasFDerivAt.comp_hasDerivAt s hp
-    have htangent : fderiv ℝ u (s, e) stdComplexLineReal ∈ L := by
-      have hmem : ∀ᶠ r in 𝓝 s, u (r, e) - u (s, e) ∈ L := by
-        filter_upwards [Icc_mem_nhds hs.1 hs.2] with r hr
-        exact L.sub_mem (hline r hr) (hline s (Ioo_subset_Icc_self hs))
-      simpa using hd.hasFDerivAt.apply_mem_of_eventually_sub_mem L.closed_of_finiteDimensional
-        hmem (1 : ℝ)
-    rw [hB]
-    exact isIsotropic_iff.mp hL _ (hline s (Ioo_subset_Icc_self hs)) _ htangent
-  have hhor₀ : (∫ s in a..b, B (u (s, c)) (fderiv ℝ u (s, c) (1, 0))) = 0 := by
+      (∫ s in a..b, B (u (s, e)) (fderiv ℝ u (s, e) stdComplexLineReal)) = 0 := by
     calc
-      _ = ∫ _s in a..b, (0 : ℝ) := intervalIntegral.integral_congr_Ioo_of_le hab
-        (hhorizontal ⟨le_rfl, hcd⟩ hL₀ hbottom)
+      _ = ∫ _s in a..b, (0 : ℝ) := by
+        apply intervalIntegral.integral_congr_Ioo_of_le hab
+        intro s hs
+        have hp : HasDerivAt (fun r : ℝ ↦ ((r, e) : ℝ × ℝ)) stdComplexLineReal s := by
+          rw [← hreal]
+          exact (hasDerivAt_id s).prodMk (hasDerivAt_const s e)
+        have hd := ((hu (s, e) ⟨Ioo_subset_Icc_self hs, he⟩).differentiableAt
+          (by norm_num)).hasFDerivAt.comp_hasDerivAt s hp
+        have htangent : fderiv ℝ u (s, e) stdComplexLineReal ∈ L := by
+          have hmem : ∀ᶠ r in 𝓝 s, u (r, e) - u (s, e) ∈ L := by
+            filter_upwards [Icc_mem_nhds hs.1 hs.2] with r hr
+            exact L.sub_mem (hline r hr) (hline s (Ioo_subset_Icc_self hs))
+          simpa using hd.hasFDerivAt.apply_mem_of_eventually_sub_mem
+            L.closed_of_finiteDimensional hmem (1 : ℝ)
+        simpa only [hB] using
+          isIsotropic_iff.mp hL _ (hline s (Ioo_subset_Icc_self hs)) _ htangent
       _ = 0 := intervalIntegral.integral_zero
-  have hhor₁ : (∫ s in a..b, B (u (s, d)) (fderiv ℝ u (s, d) (1, 0))) = 0 := by
-    calc
-      _ = ∫ _s in a..b, (0 : ℝ) := intervalIntegral.integral_congr_Ioo_of_le hab
-        (hhorizontal ⟨hcd, le_rfl⟩ hL₁ htop)
-      _ = 0 := intervalIntegral.integral_zero
-  have hvert₀ : (∫ t in c..d, B (u (a, t)) (fderiv ℝ u (a, t) (0, 1))) = 0 := by
+  have hvertical {s : ℝ} (hline : ∀ t ∈ Icc c d, u (s, t) = 0) :
+      (∫ t in c..d, B (u (s, t)) (fderiv ℝ u (s, t) stdComplexLineImag)) = 0 := by
     apply intervalIntegral.integral_zero_ae
     filter_upwards [] with t ht
-    simp [hleft t (by simpa [uIcc_of_le hcd] using uIoc_subset_uIcc ht)]
-  have hvert₁ : (∫ t in c..d, B (u (b, t)) (fderiv ℝ u (b, t) (0, 1))) = 0 := by
-    apply intervalIntegral.integral_zero_ae
-    filter_upwards [] with t ht
-    simp [hright t (by simpa [uIcc_of_le hcd] using uIoc_subset_uIcc ht)]
+    simp [hline t (by simpa [uIcc_of_le hcd] using uIoc_subset_uIcc ht)]
   -- All four boundary terms in Green's formula vanish.
   have hgreen := B.integral_bilinear_fderiv_sub_prod_Icc
     (a := (a, c)) (b := (b, d)) ⟨hab, hcd⟩ (by rw [← Icc_prod_Icc]; exact hu)
-  rw [← Icc_prod_Icc, hhor₀, hhor₁, hvert₀, hvert₁] at hgreen
+  rw [← Icc_prod_Icc, hreal, himag,
+    hhorizontal ⟨le_rfl, hcd⟩ hL₀ hbottom, hhorizontal ⟨hcd, le_rfl⟩ hL₁ htop,
+    hvertical hleft, hvertical hright] at hgreen
   -- Antisymmetry identifies the interior alternating pairing with twice the area density.
-  have halternating (z : ℝ × ℝ) :
-      B (fderiv ℝ u z (1, 0)) (fderiv ℝ u z (0, 1)) -
-        B (fderiv ℝ u z (0, 1)) (fderiv ℝ u z (1, 0)) =
-      2 * ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
-    simp only [hB]
-    have h := ω.neg_eq (fderiv ℝ u z stdComplexLineReal)
-      (fderiv ℝ u z stdComplexLineImag)
-    simp only [stdComplexLineReal, stdComplexLineImag] at h ⊢
-    linarith
-  simp only [halternating, integral_const_mul] at hgreen
+  simp only [hB, alternating_pairing_eq_two_mul, integral_const_mul] at hgreen
   linarith
 
 /-- The symplectic area of a compactly supported smooth map on the strip is zero when its
@@ -224,21 +218,14 @@ theorem exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul
   refine ⟨C + 1, by linarith, ?_⟩
   intro u hu hc hbottom htop
   have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
-  -- Explicit function types fix the norm-power carrier before elaborating compact support.
   have hi : Integrable (fun z ↦ ‖u z‖ ^ 2) :=
-    (show Continuous (fun z ↦ ‖u z‖ ^ 2) from hu.continuous.norm.pow 2)
-      |>.integrable_of_hasCompactSupport
-      (hc.comp_left (g := fun v : V ↦ ‖v‖ ^ 2) (by simp))
+    hu.continuous.integrable_norm_sq_of_hasCompactSupport hc
   have hsi : Integrable (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2) :=
-    (show Continuous (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2) from
-      (hdu.clm_apply continuous_const).norm.pow 2) |>.integrable_of_hasCompactSupport
-      ((hc.fderiv_apply ℝ stdComplexLineReal).comp_left
-        (g := fun v : V ↦ ‖v‖ ^ 2) (by simp))
+    (hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
+      (hc.fderiv_apply ℝ stdComplexLineReal)
   have hti : Integrable (fun z ↦ ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2) :=
-    (show Continuous (fun z ↦ ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2) from
-      (hdu.clm_apply continuous_const).norm.pow 2) |>.integrable_of_hasCompactSupport
-      ((hc.fderiv_apply ℝ stdComplexLineImag).comp_left
-        (g := fun v : V ↦ ‖v‖ ^ 2) (by simp))
+    (hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
+      (hc.fderiv_apply ℝ stdComplexLineImag)
   have henergy : Integrable (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 +
       ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2) := hsi.fun_add hti
   have hvalue := hPoincare u (hu.of_le (by norm_num)) hc hbottom htop
@@ -253,7 +240,8 @@ theorem exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul
     hg hu hc hL₀ hL₁ hbottom htop
   rw [integral_add hi.integrableOn henergy.integrableOn, ← hidentity]
   have hscaled := mul_le_mul_of_nonneg_left htbound hC.le
-  simp only [stdComplexLineImag] at hvalue hscaled ⊢
+  have himag : (0, 1) = stdComplexLineImag := by ext <;> simp
+  rw [himag] at hvalue
   nlinarith
 
 end TauCeti
