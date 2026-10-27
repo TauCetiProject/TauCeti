@@ -91,7 +91,8 @@ theorem minimalRealPeriod_eq_abs_mul {C : VariableChange ℚ} (hC : IsGlobalMini
     (isReducedMinimal_reducedMinimalModel E).isGlobalMinimal (D * C⁻¹)
     (by rw [mul_smul, inv_smul_smul, hD])
   have hu : |(D.u : ℚ)| = |(C.u : ℚ)| := by
-    have h := C₀.abs_baseChange_u (L := ℚ)
+    have h : |((C₀.baseChange ℚ).u : ℚ)| = 1 := by
+      simpa [VariableChange.baseChange] using abs_unit_intCast (α := ℚ) C₀.u
     rw [hC₀] at h
     simpa [abs_mul, abs_inv, mul_inv_eq_one₀, C.u.ne_zero] using h
   rw [minimalRealPeriod, ← hD, realPeriod_baseChange_variableChange, eq_ratCast, ← Rat.cast_abs,

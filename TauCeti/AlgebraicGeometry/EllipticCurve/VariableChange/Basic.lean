@@ -34,10 +34,8 @@ components of `[-1]` at each use. The negation automorphism of `C • E` is that
 by `C` (`negVariableChange_smul`).
 
 Similarly, the components of `C * D⁻¹`, the change of variables carrying `D • W` to `C • W`, are
-recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A change of variables over `ℤ` has `u = ±1`,
-so `|u| = 1` after base change to an ordered ring (`VariableChange.abs_baseChange_u`). A
-translation `x ↦ x + r`, `y ↦ y + t` leaves the discriminant and `c₄` alone
-(`variableChange_translate_Δ`, `variableChange_translate_c₄`).
+recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A translation `x ↦ x + r`, `y ↦ y + t` leaves the
+discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_translate_c₄`).
 
 The negation is the nontrivial automorphism in the `Aut (E, O)`
 milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
@@ -162,12 +160,6 @@ differences of those of `C` and `D`, rescaled by powers of `D.u⁻¹`. -/
     (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) * ↑D.u⁻¹ ^ 3 := by
   simp only [mul_def, inv_def]
   ring
-
-/-- **A change of variables over `ℤ` has `u = ±1`**, so its base change to an ordered ring has
-scaling factor of absolute value `1`. -/
-lemma abs_baseChange_u {L : Type*} [CommRing L] [LinearOrder L] [IsOrderedRing L]
-    (C : VariableChange ℤ) : |((C.baseChange L).u : L)| = 1 := by
-  rcases Int.units_eq_one_or C.u with h | h <;> simp [baseChange, h]
 
 end VariableChange
 
