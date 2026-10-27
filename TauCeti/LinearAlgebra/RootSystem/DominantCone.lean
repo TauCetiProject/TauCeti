@@ -54,6 +54,9 @@ Finiteness is the corollary obtained by forgetting which translate was used.
   simple reflections, has a dominant Weyl translate in the set.**
 * `TauCeti.finite_of_forall_reflection_mem_of_sub_mem_posRootCone`: **a set of weights below `lam`,
   integral on the simple coroots and stable under the simple reflections, is finite.**
+* `RootPairing.dominantWeightsBelow_ssubset_of_mem_of_ne`: a dominant weight strictly below a
+  dominant weight `lam` has strictly fewer dominant weights below it, the well-foundedness of the
+  dominance order.
 * `TauCeti.eq_zero_of_mem_posRootCone_of_forall_coroot'_nonpos`: **the only antidominant member of
   the positive root cone is zero**, the case `lam = 0` of the first statement applied to all the
   natural multiples of a member at once.
@@ -381,5 +384,26 @@ theorem self_mem_dominantWeightsBelow {lam : M}
     (hlam : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i lam = (n : R)) :
     lam ∈ P.dominantWeightsBelow b lam :=
   mem_dominantWeightsBelow.mpr ⟨by simp, hlam⟩
+
+/-- The dominant integral weights below a weight `mu` that lies below `lam` also lie below `lam`:
+the dominance order is transitive. -/
+theorem dominantWeightsBelow_subset_of_mem {lam mu : M} (h : mu ∈ P.dominantWeightsBelow b lam) :
+    P.dominantWeightsBelow b mu ⊆ P.dominantWeightsBelow b lam := fun nu hnu ↦ by
+  rw [mem_dominantWeightsBelow] at h hnu ⊢
+  exact ⟨by simpa using add_mem h.1 hnu.1, hnu.2⟩
+
+/-- **Strictly fewer dominant weights lie below a strictly lower weight.** Let `lam` be dominant
+integral and let `mu ≠ lam` be one of the dominant integral weights below `lam`. Then the dominant
+integral weights below `mu` form a proper subset of those below `lam`, since `lam` itself is not
+below `mu`. This is what makes the dominance order on dominant integral weights well-founded. -/
+theorem dominantWeightsBelow_ssubset_of_mem_of_ne {lam mu : M}
+    (hlam : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i lam = (n : R))
+    (h : mu ∈ P.dominantWeightsBelow b lam) (hne : mu ≠ lam) :
+    P.dominantWeightsBelow b mu ⊂ P.dominantWeightsBelow b lam := by
+  refine (Finset.ssubset_iff_of_subset (dominantWeightsBelow_subset_of_mem h)).mpr
+    ⟨lam, self_mem_dominantWeightsBelow hlam, fun hmem ↦ hne ?_⟩
+  have h0 := eq_zero_of_add_eq_zero_of_mem_posRootCone P b (mem_dominantWeightsBelow.mp h).1
+    (mem_dominantWeightsBelow.mp hmem).1 (by abel)
+  exact (sub_eq_zero.mp h0).symm
 
 end RootPairing

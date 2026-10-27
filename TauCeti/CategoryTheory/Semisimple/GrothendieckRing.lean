@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Basic
 public import TauCeti.CategoryTheory.Semisimple.Finrank
 
@@ -68,6 +69,8 @@ two-dimensional rotation representation `V` has `End V ≅ ℂ`, so `finrank ℝ
   simple classes form a common eigenvector of the fusion matrices.
 * `TauCeti.SplitK0.fusionMatrix_eq_transpose_leftMulMatrix`: the fusion matrix of `S` is the
   transpose of the matrix of left multiplication by `[S]`.
+* `TauCeti.SplitK0.isIntegral_ringHom_apply`: the values of a ring homomorphism out of the
+  Grothendieck ring are algebraic integers.
 
 ## References
 
@@ -214,6 +217,13 @@ theorem simpleBasis_mul_simpleBasis [Fintype (SimpleClasses C)] (S T : SimpleCla
       ∑ U, (simpleMultiplicities (S.repr ⊗ T.repr) U : ℤ) • simpleBasis C U := by
   conv_lhs => rw [← (simpleBasis C).sum_repr (simpleBasis C S * simpleBasis C T)]
   simp_rw [simpleBasis_repr_simpleBasis_mul_simpleBasis]
+
+/-- The values of a ring homomorphism out of the Grothendieck ring of a finite semisimple
+category with finitely many simple classes are algebraic integers, since the Grothendieck ring is
+then a finitely generated abelian group. -/
+theorem isIntegral_ringHom_apply [Finite (SimpleClasses C)] {R : Type*} [Ring R]
+    (ψ : SplitK0 C →+* R) (x : SplitK0 C) : IsIntegral ℤ (ψ x) :=
+  (IsIntegral.of_finite ℤ x).map ψ.toIntAlgHom
 
 end Mul
 

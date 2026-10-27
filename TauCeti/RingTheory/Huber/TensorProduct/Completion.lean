@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.TensorProduct.UniversalProperty
-public import Mathlib.Topology.Algebra.UniformRing
 public import TauCeti.RingTheory.Huber.Pair
+public import Mathlib.Topology.Algebra.UniformRing
 import TauCeti.RingTheory.Huber.Completion.Basic
 
 import TauCeti.RingTheory.Huber.AdicHom.Completion
@@ -23,10 +23,10 @@ Its two coprojections represent compatible continuous ring maps into complete Ha
 nonarchimedean commutative rings, with no adicness condition on these outgoing maps.
 
 This module constructs the ring and its continuous universal property. Rings of integral
-elements are additional data and are not part of this ring-level construction; the only
-statement about them here is that closures of images of rings of integral elements of
-`B ⊗[A] C` are rings of integral elements of the completion. The completed tensor product of
-Huber pairs is in `TauCeti.RingTheory.Huber.TensorProduct.Pair`.
+elements are additional data and are not part of this ring-level construction; the closure of
+the image of a ring of integral elements of `B ⊗[A] C` is again one
+(`TauCeti.Huber.CompletedTensor.isRingOfIntegralElements_topologicalClosure_map_toCompletion`),
+which is what the completed tensor product of Huber pairs uses.
 
 ## References
 
@@ -116,6 +116,23 @@ noncomputable def inr : C →+* CompletedTensor A B C :=
   ext a
   simp [inl, inr, ← Algebra.TensorProduct.algebraMap_apply]
 
+/-- The base algebra structure is induced by the left coprojection. -/
+noncomputable instance : Algebra A (CompletedTensor A B C) :=
+  ((inl A B C).comp (algebraMap A B)).toAlgebra
+
+/-- The base map is the composite through the left factor. -/
+theorem algebraMap_eq_inl : algebraMap A (CompletedTensor A B C) =
+    (inl A B C).comp (algebraMap A B) := (rfl)
+
+/-- The left coprojection preserves the base algebra map. -/
+@[simp] theorem inl_algebraMap (a : A) :
+    inl A B C (algebraMap A B a) = algebraMap A (CompletedTensor A B C) a := (rfl)
+
+/-- The right coprojection preserves the base algebra map. -/
+@[simp] theorem inr_algebraMap (a : A) :
+    inr A B C (algebraMap A C a) = algebraMap A (CompletedTensor A B C) a :=
+  (RingHom.congr_fun (inl_comp_algebraMap A B C) a).symm
+
 /-- The canonical tensor map is continuous. -/
 @[fun_prop] theorem continuous_toCompletion : Continuous (toCompletion A B C) :=
   Completion.continuous_coe _
@@ -139,6 +156,11 @@ theorem isAdicHom_inl : IsAdicHom (inl A B C) :=
 theorem isAdicHom_inr : IsAdicHom (inr A B C) :=
   (isAdicHom_toCompletion A B C).comp (isAdicHom_includeRight_tensorTopology A B C)
 
+/-- The base map to the completed tensor is adic, so completed tensors can be iterated. -/
+instance : IsAdicHom (algebraMap A (CompletedTensor A B C)) := by
+  rw [algebraMap_eq_inl]
+  exact (isAdicHom_inl A B C).comp inferInstance
+
 /-- A Tate left factor makes the completed tensor ring Tate. -/
 instance [IsTateRing B] : IsTateRing (CompletedTensor A B C) :=
   IsTateRing.of_continuous (φ := inl A B C) (continuous_inl A B C)
@@ -154,12 +176,16 @@ theorem ker_toCompletion : RingHom.ker (toCompletion A B C) = (⊥ : Ideal (B �
 /-- Algebraic tensors are dense in the separated completed tensor ring. -/
 theorem denseRange_toCompletion : DenseRange (toCompletion A B C) := Completion.denseRange_coe
 
-/-- The closure of the image of a ring of integral elements of `B ⊗[A] C`, for the tensor
-topology, is a ring of integral elements of the completed tensor ring (Wedhorn, Lemma 7.47). -/
-theorem isRingOfIntegralElements_topologicalClosure_map {P : Subring (B ⊗[A] C)}
-    (hP : IsRingOfIntegralElements P) :
-    IsRingOfIntegralElements (P.map (toCompletion A B C)).topologicalClosure :=
-  hP.completion
+/-- The closure of the image of a ring of integral elements of `B ⊗[A] C` with the tensor
+topology is a ring of integral elements of the completed tensor ring (Wedhorn, Lemma 7.47). -/
+theorem isRingOfIntegralElements_topologicalClosure_map_toCompletion
+    {R : Subring (B ⊗[A] C)}
+    (hR : letI := tensorTopology A B C
+      haveI := isTopologicalRing_tensorTopology A B C
+      haveI := isHuberRing_tensorTopology A B C
+      IsRingOfIntegralElements R) :
+    IsRingOfIntegralElements (R.map (toCompletion A B C)).topologicalClosure :=
+  hR.completion
 
 variable {A B C}
 

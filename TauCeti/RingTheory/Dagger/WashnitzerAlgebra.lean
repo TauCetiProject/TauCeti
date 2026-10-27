@@ -36,6 +36,8 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   `TauCeti.Dagger.washnitzerAlgebra.ofMvPolynomial`: the inclusion of the polynomials.
 * `TauCeti.Dagger.washnitzerAlgebra.toTate`: the inclusion of `W` into the unit-radius Tate
   algebra.
+* `TauCeti.Dagger.washnitzerAlgebra.ofRestricted`: the inclusion into `W` of the series
+  restricted at a polyradius bounded below by some `ρ > 1`.
 
 ## Main results
 
@@ -168,6 +170,29 @@ theorem washnitzerAlgebra_toSubring_le :
 
 namespace washnitzerAlgebra
 
+/-- With no variables, every overconvergent series comes from the coefficient ring. -/
+theorem algebraMap_surjective [IsEmpty σ] :
+    Function.Surjective (algebraMap R (washnitzerAlgebra σ R)) := by
+  intro f
+  obtain ⟨c, hc⟩ := C_surjective (σ := σ) (f : MvPowerSeries σ R)
+  exact ⟨c, Subtype.ext (by simpa [MvPowerSeries.algebraMap_apply] using hc)⟩
+
+/-- Renaming variables along an equivalence preserves overconvergence. -/
+noncomputable def renameAlgEquiv {τ : Type*} (e : σ ≃ τ) :
+    washnitzerAlgebra σ R ≃ₐ[R] washnitzerAlgebra τ R :=
+  AlgEquiv.ofRingEquiv
+    (f := (MvPowerSeries.renameEquiv R e).toRingEquiv.restrict _ _ fun f ↦ by
+      simp only [mem_washnitzerAlgebra, AlgEquiv.coe_toRingEquiv]
+      exact exists_congr fun ρ ↦ and_congr_right fun _ ↦
+        (isRestricted_renameEquiv_iff (R := R) (c := fun _ ↦ ρ) e).symm)
+    fun r ↦ Subtype.ext (rename_C e r)
+
+/-- The renaming equivalence acts on the underlying formal power series by renaming. -/
+@[simp]
+theorem coe_renameAlgEquiv {τ : Type*} (e : σ ≃ τ) (f : washnitzerAlgebra σ R) :
+    (renameAlgEquiv e f : MvPowerSeries τ R) = MvPowerSeries.renameEquiv R e f :=
+  (rfl)
+
 variable (σ R) in
 /-- The variable `Xᵢ` as an element of the Monsky–Washnitzer algebra. -/
 noncomputable def X (i : σ) : washnitzerAlgebra σ R :=
@@ -177,6 +202,21 @@ noncomputable def X (i : σ) : washnitzerAlgebra σ R :=
 @[simp]
 theorem coe_X (i : σ) : (X σ R i : MvPowerSeries σ R) = MvPowerSeries.X i :=
   (rfl)
+
+/-- A variable in the Monsky–Washnitzer algebra over a nontrivial ring is nonzero. -/
+@[simp]
+theorem X_ne_zero [Nontrivial R] (i : σ) : X σ R i ≠ 0 := by
+  intro h
+  have hc := congrArg (fun f : washnitzerAlgebra σ R ↦
+    coeff (Finsupp.single i 1) (f : MvPowerSeries σ R)) h
+  simp at hc
+
+/-- A variable in the Monsky–Washnitzer algebra over a nontrivial ring is not a unit. -/
+@[simp]
+theorem not_isUnit_X [Nontrivial R] (i : σ) : ¬ IsUnit (X σ R i) := by
+  intro h
+  have hu := h.map (constantCoeff.comp (washnitzerAlgebra σ R).val.toRingHom)
+  simp at hu
 
 variable (σ R) in
 /-- The inclusion of the polynomial algebra into the Monsky–Washnitzer algebra. -/
@@ -223,6 +263,20 @@ theorem denseRange_toTate : DenseRange (toTate σ R) := by
     (s := fun _ ↦ 2) (fun _ ↦ zero_le_one) fun _ ↦ one_le_two).mono ?_
   rintro _ ⟨f, rfl⟩
   exact ⟨⟨f, 2, one_lt_two, f.2⟩, Subtype.ext (by simp)⟩
+
+/-- For a polyradius `c` bounded below by some `ρ > 1`, the inclusion of the series restricted at
+`c` into the Monsky–Washnitzer algebra. -/
+noncomputable def ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i) :
+    IsRestricted.subring (R := R) c →+* washnitzerAlgebra σ R :=
+  (IsRestricted.subring (R := R) c).subtype.codRestrict (washnitzerAlgebra σ R).toSubring
+    fun f ↦ mem_washnitzerAlgebra.mpr
+      ⟨ρ, hρ, isRestricted_of_le f.2 (fun _ ↦ (zero_lt_one.trans hρ).le) hc⟩
+
+/-- The inclusion of a restricted subring does not change the underlying series. -/
+@[simp]
+theorem coe_ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i)
+    (f : IsRestricted.subring (R := R) c) : (ofRestricted hρ hc f : MvPowerSeries σ R) = f :=
+  (rfl)
 
 end washnitzerAlgebra
 
