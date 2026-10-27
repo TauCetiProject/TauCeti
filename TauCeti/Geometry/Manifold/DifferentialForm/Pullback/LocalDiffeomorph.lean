@@ -30,10 +30,6 @@ descend to the base.
 
 ## Main results
 
-* `Filter.EventuallyEq.mpullback_eq`: maps that agree near `x` pull forms back to the same
-  value at `x`.
-* `TauCeti.mpullback_apply_eq_mpullback_apply_iff`: if the derivative of `f` at `x` is
-  surjective, two forms have the same pullback at `x` exactly when they agree at `f x`.
 * `IsLocalDiffeomorph.mpullback_injective`: pullback along a surjective local diffeomorphism is
   injective.
 * `IsLocalDiffeomorphAt.contMDiffAt_mpullback_form_iff`,
@@ -64,33 +60,6 @@ variable {E H M E' H' M' F : Type*}
   {k : ℕ} {m n : WithTop ℕ∞} {f g : M → M'} {x : M}
 
 open TauCeti
-
-/-- Maps that agree near `x` pull a form back to the same value at `x`. -/
-theorem Filter.EventuallyEq.mpullback_eq (h : f =ᶠ[𝓝 x] g) (ω : RoughForm I' M' F k) :
-    mpullback I I' f ω x = mpullback I I' g ω x := by
-  have hx : f x = g x := h.eq_of_nhds
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  rw [mpullback_apply, mpullback_apply, h.mfderiv_eq]
-  -- `tangentSpaceCast` is the identity of the model space, so only the base point differs.
-  change ω (f x) (fun i ↦ mfderiv I I' g x (v i)) = ω (g x) (fun i ↦ mfderiv I I' g x (v i))
-  rw [hx]
-
-namespace TauCeti
-
-/-- If the derivative of `f` at `x` is surjective, two forms have the same pullback along `f` at
-`x` exactly when they agree at `f x`. -/
-theorem mpullback_apply_eq_mpullback_apply_iff
-    (hf : Function.Surjective (mfderiv I I' f x)) {ω η : RoughForm I' M' F k} :
-    mpullback I I' f ω x = mpullback I I' f η x ↔ ω (f x) = η (f x) := by
-  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, fun h ↦ ?_⟩
-  · choose w hw using fun i ↦ hf (v i)
-    have h₁ := DFunLike.congr_fun h w
-    simp only [mpullback_apply, hw] at h₁
-    exact h₁
-  · refine ContinuousAlternatingMap.ext fun v ↦ ?_
-    rw [mpullback_apply, mpullback_apply, h]
-
-end TauCeti
 
 /-- Pullback along a surjective `C^n` local diffeomorphism, `n ≠ 0`, is injective on rough
 forms. -/
