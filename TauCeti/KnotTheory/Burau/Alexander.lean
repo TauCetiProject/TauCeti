@@ -158,7 +158,8 @@ private theorem submatrix_burau_strandIncl_mul (t : Rˣ) (b : BraidGroup (n + 1)
     · rw [Matrix.updateCol_ne hv]
       simp [hv, Matrix.one_apply]
   simp only [Matrix.submatrix_sub, Pi.sub_apply]
-  rw [Matrix.submatrix_mul_of_mulVec_single _ _ (burau_strandIncl_mulVec_single t b),
+  rw [Matrix.submatrix_mul_of_mulVec_single _ _
+      (by simpa only [Matrix.mulVec_single_one] using col_burau_strandIncl_last t b),
     submatrix_burau_strandIncl, Matrix.submatrix_one _ (Fin.castSucc_injective _), hsub,
     Matrix.mul_updateCol, Matrix.mul_one, Matrix.mulVec_single]
   ext u v

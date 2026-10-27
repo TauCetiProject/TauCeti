@@ -79,7 +79,7 @@ apiece" bullet of Layer 4 ("knot theory, done properly") of the GeometricTopolog
 * `TauCeti.KnotTheory.burau_mulVec_one` and `TauCeti.KnotTheory.vecMul_burau_geom`: the invariant
   column vector `(1, …, 1)` and the invariant row vector `(1, t, …, t ^ (n - 1))`.
 * `TauCeti.KnotTheory.submatrix_burau_strandIncl` and
-  `TauCeti.KnotTheory.burau_strandIncl_mulVec_single`: adding an uncrossed strand preserves the
+  `TauCeti.KnotTheory.col_burau_strandIncl_last`: adding an uncrossed strand preserves the
   old-strand block and fixes the new strand.
 
 ## References
@@ -580,9 +580,12 @@ theorem vecMul_burau_geom (t : Rˣ) (b : BraidGroup n) :
 
 /-- The new strand of `TauCeti.BraidGroup.strandIncl b` is fixed by the Burau matrix: the last
 column is the last standard basis vector. -/
-theorem burau_strandIncl_mulVec_single (t : Rˣ) (b : BraidGroup (n + 1)) :
-    (burau (n + 2) t (BraidGroup.strandIncl b) : Matrix (Fin (n + 2)) (Fin (n + 2)) R) *ᵥ
-        Pi.single (Fin.last (n + 1)) 1 = Pi.single (Fin.last (n + 1)) 1 := by
+@[simp]
+theorem col_burau_strandIncl_last (t : Rˣ) (b : BraidGroup (n + 1)) :
+    (burau (n + 2) t (BraidGroup.strandIncl b) :
+        Matrix (Fin (n + 2)) (Fin (n + 2)) R).col (Fin.last (n + 1)) =
+      Pi.single (Fin.last (n + 1)) 1 := by
+  rw [← Matrix.mulVec_single_one]
   induction b using BraidGroup.sigma_induction_on with
   | sigma i =>
     rw [BraidGroup.strandIncl_sigma, burau_sigma, coe_burauGL, burauMatrix_mulVec,
@@ -603,6 +606,7 @@ theorem burau_strandIncl_mulVec_single (t : Rˣ) (b : BraidGroup (n + 1)) :
 
 /-- **The Burau matrix of a braid with an uncrossed strand added.** Deleting the new strand's row
 and column recovers the Burau matrix of the original braid. -/
+@[simp]
 theorem submatrix_burau_strandIncl (t : Rˣ) (b : BraidGroup (n + 1)) :
     (burau (n + 2) t (BraidGroup.strandIncl b) :
         Matrix (Fin (n + 2)) (Fin (n + 2)) R).submatrix Fin.castSucc Fin.castSucc =
