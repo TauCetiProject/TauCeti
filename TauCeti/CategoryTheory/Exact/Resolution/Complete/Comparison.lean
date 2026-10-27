@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomotopyCategory
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.CategoryTheory.Exact.Resolution.Complete.Basic
 
@@ -508,6 +509,17 @@ theorem cyclesMap_homotopyEquiv_inv (e : r.Z 0 ≅ r'.Z 0) :
   simp [← cancel_mono (r.ι 0)]
 
 end Homotopy
+
+/-- Two maps of complete resolutions agree in the homotopy category exactly when the difference
+of the morphisms they induce on the cycles in degree zero factors through a projective-injective
+object. -/
+theorem quotient_map_eq_iff {r r' : E.CompleteResolution} (φ ψ : r.complex ⟶ r'.complex) :
+    (HomotopyCategory.quotient C _).map φ = (HomotopyCategory.quotient C _).map ψ ↔
+      E.projectiveInjective.FactorsThrough (cyclesMap φ - cyclesMap ψ) := by
+  rw [← nonempty_homotopy_zero_iff (φ := φ - ψ) (by simp [Preadditive.comp_sub,
+    Preadditive.sub_comp])]
+  exact ⟨fun h ↦ ⟨Homotopy.equivSubZero (HomotopyCategory.homotopyOfEq _ _ h)⟩,
+    fun ⟨h⟩ ↦ HomotopyCategory.eq_of_homotopy _ _ (Homotopy.equivSubZero.symm h)⟩
 
 end CompleteResolution
 
