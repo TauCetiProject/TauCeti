@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.GorensteinProjective.CompleteResolution
-public import TauCeti.Algebra.Homology.TotallyAcyclic.StableCycles
+public import TauCeti.Algebra.Homology.TotallyAcyclic.Stable.Cycles
 
 /-!
 # The stable category of Gorenstein-projective modules as a homotopy category
