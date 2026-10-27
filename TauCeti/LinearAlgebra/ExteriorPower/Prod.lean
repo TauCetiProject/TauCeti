@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Product
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Exterior powers of a product module
@@ -54,8 +56,8 @@ def mulInlInr {i j n : ℕ} (h : i + j = n) : ⋀[R]^i M ⊗[R] ⋀[R]^j N →�
   TensorProduct.lift <| LinearMap.mk₂ R
     (fun a b ↦ ⟨ExteriorAlgebra.map (LinearMap.inl R M N) a *
         ExteriorAlgebra.map (LinearMap.inr R M N) b, h ▸ SetLike.mul_mem_graded
-          (coe_map (LinearMap.inl R M N) a ▸ (map i (LinearMap.inl R M N) a).2)
-          (coe_map (LinearMap.inr R M N) b ▸ (map j (LinearMap.inr R M N) b).2)⟩)
+          (TauCeti.ExteriorAlgebra.map_mem_exteriorPower (LinearMap.inl R M N) a.2)
+          (TauCeti.ExteriorAlgebra.map_mem_exteriorPower (LinearMap.inr R M N) b.2)⟩)
     (fun _ _ _ ↦ Subtype.ext <| by simp [add_mul])
     (fun _ _ _ ↦ Subtype.ext <| by simp)
     (fun _ _ _ ↦ Subtype.ext <| by simp [mul_add])
@@ -96,17 +98,6 @@ theorem prodComponent_mulInlInr_of_ne {i j n : ℕ} (h : i + j = n) {i' : ℕ} (
       DirectSum.component.of, hi.symm]
   | add x y hx hy => rw [map_add, map_add, hx, hy, add_zero]
 
-/-- The degree-`i` projection of an element of `⋀ᵏ P` is the element itself if `k = i`, and `0`
-otherwise. -/
-private theorem proj_coe {P : Type*} [AddCommGroup P] [Module R P] {k : ℕ} (a : ⋀[R]^k P)
-    (i : ℕ) :
-    GradedAlgebra.proj (fun k : ℕ ↦ ⋀[R]^k P) i a =
-      if k = i then (a : ExteriorAlgebra R P) else 0 := by
-  split_ifs with h
-  · subst h
-    exact DirectSum.decompose_of_mem_same (fun k : ℕ ↦ ⋀[R]^k P) a.2
-  · exact DirectSum.decompose_of_mem_ne (fun k : ℕ ↦ ⋀[R]^k P) a.2 h
-
 variable (R M N) in
 /-- The inverse of `ExteriorAlgebra.prodEquivTensor`, on the underlying tensor product of the
 exterior algebras: `a ⊗ b ↦ a ∧ b`. -/
@@ -143,8 +134,10 @@ private theorem sum_prodMul_map_proj (n : ℕ) (z : ExteriorAlgebra R M ⊗[R] E
     | @homogeneous l b =>
       have hmem : prodMul R M N (a ⊗ₜ b) ∈ ⋀[R]^(k + l) (M × N) :=
         (mulInlInr R M N rfl (a ⊗ₜ b)).2
-      simp only [TensorProduct.map_tmul, proj_coe, ite_tmul, tmul_ite, apply_ite (prodMul R M N),
-        map_zero]
+      simp only [TensorProduct.map_tmul,
+        TauCeti.GradedAlgebra.proj_of_mem (fun k : ℕ ↦ ⋀[R]^k M) a.2,
+        TauCeti.GradedAlgebra.proj_of_mem (fun k : ℕ ↦ ⋀[R]^k N) b.2, ite_tmul, tmul_ite,
+        apply_ite (prodMul R M N), map_zero]
       rw [GradedAlgebra.proj_apply]
       by_cases hkl : k + l = n
       · rw [Fintype.sum_eq_single ⟨k, by omega⟩ fun i hi ↦ by

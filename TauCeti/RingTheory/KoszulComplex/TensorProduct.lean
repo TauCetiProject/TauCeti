@@ -32,7 +32,8 @@ The tensor product is the one of `HomologicalComplex`, built from Mathlib's mono
 
 * `TauCeti.koszulComplex.tensorHom φ ψ`: the chain map `K(φ) ⊗ K(ψ) ⟶ K(φ.coprod ψ)`, given on
   the summand `⋀ⁱ M ⊗ ⋀ʲ N` by `a ⊗ b ↦ a ∧ b`.
-* `TauCeti.koszulComplex.tensorIso φ ψ`: this chain map is an isomorphism.
+* `TauCeti.koszulComplex.tensorIso φ ψ`: this chain map is an isomorphism; in each degree its
+  inverse is the sum of the components of `⋀ⁿ (M × N)` (`TauCeti.koszulComplex.tensorIso_inv_f`).
 * `TauCeti.koszulComplex.tensorIsoSumElim x y`: `K(x) ⊗ K(y) ≅ K(x, y)` for finite sequences
   `x` and `y`, where `(x, y)` is the concatenated sequence `Sum.elim x y`.
 
@@ -57,7 +58,10 @@ variable {R : Type u} [CommRing R] {M N : Type u} [AddCommGroup M] [Module R M]
 namespace koszulComplex
 
 /-- The wedge map `⋀ⁱ M ⊗ ⋀ʲ N → ⋀ⁿ (M × N)` for `i + j = n`, as a morphism from the summand
-`K(φ)ᵢ ⊗ K(ψ)ⱼ` of `(K(φ) ⊗ K(ψ))ₙ` to `K(φ.coprod ψ)ₙ`. -/
+`K(φ)ᵢ ⊗ K(ψ)ⱼ` of `(K(φ) ⊗ K(ψ))ₙ` to `K(φ.coprod ψ)ₙ`. The morphism
+`ModuleCat.ofHom (exteriorPower.mulInlInr R M N h)` has source `ModuleCat.of R (⋀ⁱ M ⊗ ⋀ʲ N)`,
+which is only definitionally equal to `K(φ)ᵢ ⊗ K(ψ)ⱼ`; fixing the source and target here lets the
+elementwise computations below elaborate on `a ⊗ₜ b` for `a ∈ K(φ)ᵢ`, `b ∈ K(ψ)ⱼ`. -/
 private def wedge {i j n : ℕ} (h : i + j = n) :
     (koszulComplex φ).X i ⊗ (koszulComplex ψ).X j ⟶ (koszulComplex (φ.coprod ψ)).X n :=
   ModuleCat.ofHom (exteriorPower.mulInlInr R M N h)
@@ -185,24 +189,18 @@ def tensorHom : koszulComplex φ ⊗ koszulComplex ψ ⟶ koszulComplex (φ.copr
         HomologicalComplex.ι_mapBifunctorDesc, curriedTensor_map_app, curriedTensor_obj_map]
       exact wedge_d_of_succ_succ φ ψ h' _ _
 
-@[reassoc]
-private theorem ιTensorObj_tensorHom_f_eq_wedge (i j n : ℕ) (h : i + j = n) :
-    HomologicalComplex.ιTensorObj (koszulComplex φ) (koszulComplex ψ) i j n h ≫
-        (tensorHom φ ψ).f n = wedge φ ψ h := by
-  dsimp only [tensorHom]
-  exact HomologicalComplex.ι_mapBifunctorDesc _ i j h
-
 /-- On the summand `⋀ⁱ M ⊗ ⋀ʲ N` of `(K(φ) ⊗ K(ψ))ₙ`, the chain map `tensorHom φ ψ` is the wedge
 map `a ⊗ b ↦ a ∧ b`. -/
 @[reassoc (attr := simp)]
 theorem ιTensorObj_tensorHom_f (i j n : ℕ) (h : i + j = n) :
     HomologicalComplex.ιTensorObj (koszulComplex φ) (koszulComplex ψ) i j n h ≫
         (tensorHom φ ψ).f n =
-      ModuleCat.ofHom (exteriorPower.mulInlInr R M N h) :=
-  ιTensorObj_tensorHom_f_eq_wedge φ ψ i j n h
+      ModuleCat.ofHom (exteriorPower.mulInlInr R M N h) := by
+  dsimp only [tensorHom]
+  exact HomologicalComplex.ι_mapBifunctorDesc _ i j h
 
 /-- The `(i, j)`-component `⋀ⁿ (M × N) → ⋀ⁱ M ⊗ ⋀ʲ N`, as a morphism from `K(φ.coprod ψ)ₙ` to
-the summand `K(φ)ᵢ ⊗ K(ψ)ⱼ`. -/
+the summand `K(φ)ᵢ ⊗ K(ψ)ⱼ` (with source and target fixed as for `wedge`). -/
 private def component (i j : ℕ) {n : ℕ} :
     (koszulComplex (φ.coprod ψ)).X n ⟶ (koszulComplex φ).X i ⊗ (koszulComplex ψ).X j :=
   ModuleCat.ofHom (exteriorPower.prodComponent R M N i j)
@@ -228,17 +226,16 @@ private theorem tensorHom_f_tensorInv (n : ℕ) : (tensorHom φ ψ).f n ≫ tens
   refine HomologicalComplex.mapBifunctor.hom_ext fun i j h ↦ ?_
   have h' : i + j = n := h
   obtain rfl : j = n - i := by omega
-  simp only [tensorInv, Preadditive.comp_sum, ιTensorObj_tensorHom_f_eq_wedge_assoc]
+  simp only [tensorInv, Preadditive.comp_sum, ιTensorObj_tensorHom_f_assoc]
   rw [Fintype.sum_eq_single ⟨i, by omega⟩ fun k hk ↦ ?_]
-  · rw [reassoc_of% wedge_component]
-    exact (Category.comp_id _).symm
-  · rw [reassoc_of% wedge_component_of_ne φ ψ h' _ fun hki ↦ hk (Fin.ext hki), Limits.zero_comp]
+  · exact ((reassoc_of% wedge_component φ ψ h') _).trans (Category.comp_id _).symm
+  · exact ((reassoc_of% wedge_component_of_ne φ ψ h' _ fun hki ↦ hk (Fin.ext hki)) _).trans
+      Limits.zero_comp
 
 private theorem tensorInv_tensorHom_f (n : ℕ) : tensorInv φ ψ n ≫ (tensorHom φ ψ).f n = 𝟙 _ := by
-  simp only [tensorInv, Preadditive.sum_comp, Category.assoc, ιTensorObj_tensorHom_f_eq_wedge]
+  simp only [tensorInv, Preadditive.sum_comp, Category.assoc, ιTensorObj_tensorHom_f]
   refine ModuleCat.hom_ext <| LinearMap.ext fun x ↦ ?_
-  simp only [ModuleCat.hom_sum, ModuleCat.hom_comp, LinearMap.sum_apply, LinearMap.comp_apply,
-    ModuleCat.hom_id, LinearMap.id_apply]
+  simp only [ModuleCat.hom_sum, LinearMap.sum_apply, ModuleCat.hom_id, LinearMap.id_apply]
   exact exteriorPower.sum_mulInlInr_prodComponent n x
 
 /-- **The Koszul complex of `φ.coprod ψ` is the tensor product of the Koszul complexes of `φ` and
@@ -253,6 +250,16 @@ def tensorIso : koszulComplex φ ⊗ koszulComplex ψ ≅ koszulComplex (φ.copr
 /-- The isomorphism `tensorIso φ ψ` has underlying chain map `tensorHom φ ψ`. -/
 @[simp]
 theorem tensorIso_hom : (tensorIso φ ψ).hom = tensorHom φ ψ :=
+  (rfl)
+
+/-- In degree `n`, the inverse of `tensorIso φ ψ` is the sum of the `(i, n - i)`-components
+`⋀ⁿ (M × N) → ⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N`. -/
+@[simp]
+theorem tensorIso_inv_f (n : ℕ) :
+    (tensorIso φ ψ).inv.f n = ∑ i : Fin (n + 1),
+      ModuleCat.ofHom (exteriorPower.prodComponent R M N i (n - i)) ≫
+        HomologicalComplex.ιTensorObj (koszulComplex φ) (koszulComplex ψ) i (n - i) n
+          (Nat.add_sub_of_le i.is_le) :=
   (rfl)
 
 /-- The chain map `tensorHom φ ψ` is an isomorphism. -/

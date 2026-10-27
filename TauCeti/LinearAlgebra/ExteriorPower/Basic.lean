@@ -45,7 +45,8 @@ injective map embeds `⋀ⁿ V` with its binomial dimension.
 * `exteriorPower.toTensorPower_comp_map` and `exteriorPower.map_comp_fromTensorPower`: the
   antisymmetrization and the canonical surjection are natural in the module.
 * `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
-  under the map induced by `f` is the `n`th power of the degree-one image of `f`.
+  under the map induced by `f` is the `n`th power of the degree-one image of `f`, and
+  `TauCeti.ExteriorAlgebra.map_mem_exteriorPower`: that map preserves each exterior power.
 * `TauCeti.ExteriorAlgebra.ι_mem_exteriorPower_one` and
   `TauCeti.ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one`: the first exterior power consists of
   the vectors, and `ExteriorAlgebra.ιInv` recovers the vector from its image.
@@ -250,6 +251,13 @@ theorem exteriorPower_map_map (n : ℕ) (f : M →ₗ[R] N) :
       ((LinearMap.range f).map (_root_.ExteriorAlgebra.ι R)) ^ n := by
   rw [_root_.ExteriorAlgebra.exteriorPower, Submodule.map_pow,
     _root_.ExteriorAlgebra.ι_range_map_map]
+
+/-- The map of exterior algebras induced by `f` carries the `n`th exterior power into the `n`th
+exterior power. -/
+theorem map_mem_exteriorPower (f : M →ₗ[R] N) {n : ℕ} {x : _root_.ExteriorAlgebra R M}
+    (hx : x ∈ ⋀[R]^n M) : _root_.ExteriorAlgebra.map f x ∈ ⋀[R]^n N := by
+  have h := (exteriorPower.map n f ⟨x, hx⟩).2
+  rwa [exteriorPower.coe_map] at h
 
 /-- A vector lies in the first exterior power. -/
 theorem ι_mem_exteriorPower_one (m : M) : _root_.ExteriorAlgebra.ι R m ∈ ⋀[R]^1 M := by

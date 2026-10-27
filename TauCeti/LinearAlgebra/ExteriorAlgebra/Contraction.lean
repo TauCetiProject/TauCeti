@@ -636,11 +636,9 @@ theorem contractLeft_coprod_map_inl_mul_map_inr {N : Type*} [AddCommGroup N] [Mo
           map (LinearMap.inr R M N) b +
         (-1 : R) ^ i • (map (LinearMap.inl R M N) a *
           map (LinearMap.inr R M N) (contractLeft (Q := (0 : QuadraticForm R N)) ψ b)) := by
-  have ha' : map (LinearMap.inl R M N) a ∈ ⋀[R]^i (M × N) :=
-    exteriorPower.coe_map (LinearMap.inl R M N) ⟨a, ha⟩ ▸
-      (exteriorPower.map i (LinearMap.inl R M N) ⟨a, ha⟩).2
   rw [CliffordAlgebra.contractLeft_mul, contractLeft_coprod_map_inl, contractLeft_map,
-    LinearMap.coprod_inr, TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower ha', smul_mul_assoc]
+    LinearMap.coprod_inr, TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower
+      (TauCeti.ExteriorAlgebra.map_mem_exteriorPower _ ha), smul_mul_assoc]
 
 /-- The contraction by `φ + x · snd` on `e ∧ w`, with `e = (0, 1)`: `d(e ∧ w) = x w - e ∧ d w`. -/
 theorem contractLeft_coprod_ι_inr_mul (φ : Module.Dual R M) (x : R)
