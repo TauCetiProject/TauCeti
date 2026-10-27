@@ -35,6 +35,9 @@ weights.
   coordinates and its last one, with `Fin.snoc` as its inverse.
 * `LinearEquiv.piFinAppend`: the linear splitting of a tuple of length `m + n` into its first `m`
   and its last `n` coordinates, with `Fin.append` as its inverse.
+* `LinearEquiv.coprod_linearCombination_comp_piFinAppend`: under `LinearEquiv.piFinAppend`, the
+  linear combination with concatenated coefficients `Fin.append x y` splits as the sum of those
+  with coefficients `x` and `y`.
 * `Fin.snoc_zero_eq_single`: the tuple of length `n + 1` with vanishing initial segment is the
   one-point family `Pi.single` at the last index.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
@@ -128,6 +131,15 @@ public theorem piFinAppend_apply (v : Fin (m + n) → M) :
 public theorem piFinAppend_symm_apply (p : (Fin m → M) × (Fin n → M)) :
     (piFinAppend R M m n).symm p = Fin.append p.1 p.2 :=
   (rfl)
+
+variable {R M m n} in
+/-- Under the splitting `piFinAppend`, the linear combination with coefficients the concatenation
+`Fin.append x y` is the sum of the linear combinations with coefficients `x` and `y`. -/
+public theorem coprod_linearCombination_comp_piFinAppend (x : Fin m → M) (y : Fin n → M) :
+    (Fintype.linearCombination R x).coprod (Fintype.linearCombination R y) ∘ₗ
+        (piFinAppend R R m n).toLinearMap =
+      Fintype.linearCombination R (Fin.append x y) :=
+  LinearMap.ext fun v ↦ by simp [Fintype.linearCombination_apply, Fin.sum_univ_add]
 
 end FinAppend
 

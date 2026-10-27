@@ -338,20 +338,14 @@ theorem subtype_tensorIso_hom_f_ιTensorObj_tmul (p q n : ℕ) (h : p + q = n) (
 
 section Sequence
 
-private theorem coprod_comp_piFinAppend {m n : ℕ} (x : Fin m → R) (y : Fin n → R) :
-    (Fintype.linearCombination R x).coprod (Fintype.linearCombination R y) ∘ₗ
-        (LinearEquiv.piFinAppend R R m n).toLinearMap =
-      Fintype.linearCombination R (Fin.append x y) := by
-  ext v
-  simp [Fintype.linearCombination_apply, Fin.sum_univ_add]
-
 /-- **Koszul complexes of concatenated sequences**: for finite sequences `x = (x₁, …, xₘ)` and
 `y = (y₁, …, yₙ)` in `R`, `K(x) ⊗ K(y) ≅ K(x, y)`, where `K(x)` is the Koszul complex of the
 functional `v ↦ ∑ᵢ vᵢ xᵢ` on `Rᵐ` and `(x, y)` is the concatenation `Fin.append x y`. -/
 def tensorIsoAppend {m n : ℕ} (x : Fin m → R) (y : Fin n → R) :
     koszulComplex (Fintype.linearCombination R x) ⊗ koszulComplex (Fintype.linearCombination R y) ≅
       koszulComplex (Fintype.linearCombination R (Fin.append x y)) :=
-  tensorIso _ _ ≪≫ (mapIso (LinearEquiv.piFinAppend R R m n) (coprod_comp_piFinAppend x y)).symm
+  tensorIso _ _ ≪≫ (mapIso (LinearEquiv.piFinAppend R R m n)
+    (LinearEquiv.coprod_linearCombination_comp_piFinAppend x y)).symm
 
 /-- `tensorIsoAppend x y` sends `a ⊗ b ∈ ⋀ᵖ Rᵐ ⊗ ⋀^q Rⁿ` to the wedge product `a ∧ b` of the images
 of `a` and `b` in `⋀ R^(m + n)`, where `Rᵐ` and `Rⁿ` are included in `R^(m + n)` as the first `m`
