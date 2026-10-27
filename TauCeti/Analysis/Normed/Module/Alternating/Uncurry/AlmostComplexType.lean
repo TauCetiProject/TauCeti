@@ -18,12 +18,10 @@ alternation interacts with the type decomposition of complex-valued forms for `J
 
 The derivation `J.alternatingDerivation` of `(k+1)`-forms corresponds under alternation to
 `θ ↦ θ ∘ J + J.alternatingDerivation ∘ θ` on families `θ : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F` of
-`k`-forms. Using it, the main theorem identifies the types that can occur in the alternation of a
-first-order variation of a form of type `(p,q)` along a varying `J`: only `(p+2,q-1)`, `(p+1,q)`,
-`(p,q+1)` and `(p-1,q+2)`. The proof only uses that the type-`(P,Q)` projection turns the
-derivation of `J` into multiplication by `(P - Q) * I`: the components of the six alternations
-built from the variation satisfy a linear system whose determinant is
-`(t² + 1)(t² + 9)`, `t = ((P - Q) - (p - q)) * I`, and this is nonzero for every other type.
+`k`-forms. The main theorem concerns a first-order variation `(η, A)` of a pair `(ω, J)`, where
+`ω` has type `(p,q)` and `J² = -1`: the endomorphisms `A v` anticommute with `J`, and `η`
+satisfies the derivative of the type equation. The alternation of `η` then has components of the
+types `(p+2,q-1)`, `(p+1,q)`, `(p,q+1)` and `(p-1,q+2)` only.
 
 On an almost complex manifold this is the pointwise reason why the exterior derivative of a form
 of type `(p,q)` has components of these four types only.
@@ -84,17 +82,6 @@ theorem alternatingDerivation_alternatizeUncurryFin (J : E →L[ℝ] E)
   rw [Fin.sum_univ_succAbove _ i]
   simp [update_of_ne, Fin.removeNth_apply]
 
-/-- The derivation of `J` and the type projections commute. -/
-private lemma typeProjection_alternatingDerivation {J : E →L[ℝ] E} (hJ : ∀ v, J (J v) = -v)
-    {P Q : ℕ} (x : E [⋀^Fin k]→L[ℝ] F) :
-    J.typeProjection P Q (J.alternatingDerivation x) =
-      (((P : ℂ) - Q) * I) • J.typeProjection P Q x := by
-  rw [← alternatingDerivation_typeProjection hJ, typeProjection_eq_aeval]
-  have h := ((commute_X (typePolynomial k P Q)).map
-    (aeval (J.alternatingDerivation : Module.End ℂ (E [⋀^Fin k]→L[ℝ] F)))).eq
-  rw [aeval_X] at h
-  exact (LinearMap.congr_fun h x).symm
-
 /-- In the type-`(P,Q)` component, alternation intertwines the derivation of `J`, which acts there
 by `(P - Q) * I`, with `θ ↦ θ ∘ J + J.alternatingDerivation ∘ θ`. -/
 private lemma smul_typeProjection_alternatizeUncurryFin {J : E →L[ℝ] E} (hJ : ∀ v, J (J v) = -v)
@@ -150,22 +137,6 @@ end ContinuousLinearMap
 namespace ContinuousAlternatingMap
 
 open ContinuousLinearMap
-
-/-- For a form `ω` of type `(p,q)` and an endomorphism `X` anticommuting with `J`, the derivation
-of `J` acts on `X.alternatingDerivation ω` as `(p - q) * I` up to twice the derivation of `X ∘ J`.
-Since `X ∘ J` also anticommutes with `J`, this is why `X` moves the type by `(±1,∓1)`. -/
-private lemma IsOfType.alternatingDerivation_alternatingDerivation_of_anticomm {J X : E →L[ℝ] E}
-    {ω : E [⋀^Fin k]→L[ℝ] F} {p q : ℕ} (hω : ω.IsOfType J p q)
-    (hX : ∀ w, X (J w) = -J (X w)) :
-    J.alternatingDerivation (X.alternatingDerivation ω) =
-      (((p : ℂ) - q) * I) • X.alternatingDerivation ω +
-        (2 : ℂ) • (X ∘L J).alternatingDerivation ω := by
-  have h := alternatingDerivation_alternatingDerivation_sub J X ω
-  have hJX : J ∘L X = -(X ∘L J) := by ext w; simp [hX]
-  rw [hω.alternatingDerivation_eq, map_smul, hJX,
-    alternatingDerivation_eq_fderivCompContinuousLinearMap (-(X ∘L J)), map_neg,
-    ← alternatingDerivation_eq_fderivCompContinuousLinearMap] at h
-  linear_combination (norm := module) h
 
 /-- **Four bidegrees.** Let `ω` be a form of type `(p,q)` for `J` with `J² = -1`, and let
 `(η, A)` be a first-order variation of the pair `(ω, J)` preserving this: `A v` anticommutes with
@@ -233,6 +204,8 @@ theorem IsOfType.typeProjection_alternatizeUncurryFin_eq_zero
     (θ' := c • (γ ∘L J) - (2 : ℂ) • (β ∘L J)) fun v ↦ by simp [hγ]
   simp only [halt_sub, alternatizeUncurryFin_add, alternatizeUncurryFin_smul, hJJ, map_add,
     map_sub, map_smul, map_neg] at e1 e2 e3 e4 e5 e6
+  -- With `t = ((P - Q) - (p - q)) * I`, the determinant of this system is `(t² + 1)(t² + 9)`,
+  -- which is nonzero for every type other than the four bidegrees.
   exact eq_zero_of_typeShift (t := ((P : ℂ) - Q) * I - c)
     (x₂ := J.typeProjection P Q (alternatizeUncurryFin (η ∘L J)))
     (y₁ := J.typeProjection P Q (alternatizeUncurryFin β))

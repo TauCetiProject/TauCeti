@@ -43,7 +43,11 @@ differential forms on an almost complex manifold.
 
 * `ContinuousLinearMap.alternatingDerivation`: an endomorphism of `V` acting as a derivation on
   alternating maps.
+* `ContinuousLinearMap.alternatingDerivation_alternatingDerivation_sub`: the commutator of two
+  derivations is the derivation of the commutator.
 * `ContinuousAlternatingMap.IsOfType`: a `k`-form has type `(p,q)`.
+* `ContinuousAlternatingMap.IsOfType.alternatingDerivation_alternatingDerivation_of_anticomm`:
+  the derivation of an endomorphism anticommuting with `J` shifts the type of a form.
 * `ContinuousLinearMap.aeval_alternatingDerivation_eq_zero`: the polynomial identity satisfied by
   the derivation of an endomorphism with `J² = -1`.
 * `ContinuousLinearMap.typeProjection`: for `J² = -1`, the projection onto the forms of type
@@ -51,6 +55,8 @@ differential forms on an almost complex manifold.
 * `ContinuousLinearMap.typePolynomial`, `ContinuousLinearMap.typeProjection_eq_aeval`: the
   polynomial, independent of `J`, whose value at the derivation is the type projection.
 * `ContinuousLinearMap.sum_typeProjection`: a form is the sum of its components of each type.
+* `ContinuousLinearMap.typeProjection_alternatingDerivation`: the type projections commute with
+  the derivation.
 * `ContinuousLinearMap.isOfType_typeProjection`,
   `ContinuousAlternatingMap.IsOfType.typeProjection_self`: the projections land in, and fix, the
   forms of their type.
@@ -234,6 +240,24 @@ theorem IsOfType.add_eq (h : ω.IsOfType J p q) : p + q = k :=
 theorem IsOfType.alternatingDerivation_eq (h : ω.IsOfType J p q) :
     J.alternatingDerivation ω = (((p : ℂ) - q) * I) • ω :=
   h.2
+
+/-- For a form `ω` of type `(p,q)` and an endomorphism `X` anticommuting with `J`, the derivation
+of `J` acts on `X.alternatingDerivation ω` as `(p - q) * I` up to twice the derivation of `X ∘ J`.
+Since `X ∘ J` also anticommutes with `J`, this is why `X` moves the type by `(±1,∓1)`. -/
+theorem IsOfType.alternatingDerivation_alternatingDerivation_of_anticomm {X : V →L[ℝ] V}
+    (hω : ω.IsOfType J p q) (hX : ∀ w, X (J w) = -J (X w)) :
+    J.alternatingDerivation (X.alternatingDerivation ω) =
+      (((p : ℂ) - q) * I) • X.alternatingDerivation ω +
+        (2 : ℂ) • (X ∘L J).alternatingDerivation ω := by
+  have h := ContinuousLinearMap.alternatingDerivation_alternatingDerivation_sub J X ω
+  have hJX : (J ∘L X).alternatingDerivation ω = -(X ∘L J).alternatingDerivation ω := by
+    ext v
+    simp only [ContinuousLinearMap.alternatingDerivation_apply, ContinuousAlternatingMap.neg_apply,
+      ContinuousLinearMap.comp_apply, hX, ← Finset.sum_neg_distrib]
+    exact Finset.sum_congr rfl fun i _ ↦
+      neg_eq_iff_eq_neg.1 (ω.toAlternatingMap.map_update_neg v i (J (X (v i)))).symm
+  rw [hω.alternatingDerivation_eq, map_smul, hJX] at h
+  linear_combination (norm := module) h
 
 @[simp]
 theorem isOfType_zero_iff : (0 : V [⋀^Fin k]→L[ℝ] F).IsOfType J p q ↔ p + q = k := by
@@ -663,6 +687,17 @@ theorem alternatingDerivation_typeProjection (hJ : ∀ v, J (J v) = -v)
   rw [map_mul, Module.End.mul_apply, map_sub, aeval_X, aeval_C, LinearMap.sub_apply,
     Module.algebraMap_end_apply, LinearMap.zero_apply, sub_eq_zero] at h
   exact h
+
+/-- The derivation of `J` and the type projections commute, so the type-`(p,q)` projection turns
+the derivation into multiplication by `(p - q) * I`. -/
+theorem typeProjection_alternatingDerivation (hJ : ∀ v, J (J v) = -v) (ω : V [⋀^Fin k]→L[ℝ] F) :
+    J.typeProjection p q (J.alternatingDerivation ω) =
+      (((p : ℂ) - q) * I) • J.typeProjection p q ω := by
+  rw [← alternatingDerivation_typeProjection hJ, typeProjection_eq_aeval]
+  have h := ((commute_X (typePolynomial k p q)).map
+    (aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin k]→L[ℝ] F)))).eq
+  rw [aeval_X] at h
+  exact (LinearMap.congr_fun h ω).symm
 
 /-- The type-`(p,q)` component of a form has type `(p,q)`. -/
 theorem isOfType_typeProjection (hJ : ∀ v, J (J v) = -v) (hpq : p + q = k)

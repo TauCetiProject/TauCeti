@@ -37,12 +37,9 @@ maps, while conjugate-linear coefficient maps, such as complex conjugation of co
 forms, exchange the types `(p,q)` and `(q,p)`.
 
 The exterior derivative of a form of type `(p,q)` has components of the four types `(p+2,q-1)`,
-`(p+1,q)`, `(p,q+1)` and `(p-1,q+2)` only. In the chart at a point, the coordinate expressions of
-the form and of `J` satisfy the type equation near the chart point; differentiating it there, and
-differentiating `J² = -1`, gives a first-order variation of the pair preserving type, and the
-alternation of the derivative of the form is the exterior derivative. The fibrewise theorem
-`ContinuousAlternatingMap.IsOfType.typeProjection_alternatizeUncurryFin_eq_zero` then identifies its
-possible types.
+`(p+1,q)`, `(p,q+1)` and `(p-1,q+2)` only. This is the pointwise statement
+`ContinuousAlternatingMap.IsOfType.typeProjection_alternatizeUncurryFin_eq_zero` applied in charts,
+and it holds at boundary and corner points as well.
 
 ## Main declarations
 
@@ -541,12 +538,14 @@ private theorem IsOfType.fderivCompContinuousLinearMap_inChartAt (hφ : φ.IsOfT
   rw [h₃] at h₁
   exact h₁.symm.trans h₂
 
-/-- Differentiating the type equation of `φ` in the chart at `x` gives a first-order variation of
-the pair `(φ x, J x)` preserving type, whose alternation is the exterior derivative of `φ` at `x`.
--/
+/-- At each point `x`, the exterior derivative of a smooth form of type `(p,q)` has no component
+of type `(P,Q)` for `J x` unless `P - p ∈ {-1, 0, 1, 2}`. -/
 private theorem IsOfType.typeProjection_mextDeriv_apply_eq_zero (hφ : φ.IsOfType J p q)
     (x : M) (hP : P + 1 < p ∨ p + 2 < P) :
     (J.toEndomorphism x).typeProjection P Q (mextDeriv φ.1 x) = 0 := by
+  -- Differentiating the type equation of `φ` in the chart at `x`, and differentiating `J² = -1`,
+  -- gives a first-order variation of the pair `(φ x, J x)` preserving type. Its alternation is
+  -- the exterior derivative of `φ` at `x`, so the fibrewise theorem applies.
   set z₀ := extChartAt I x x
   have hd : DifferentiableWithinAt ℝ (φ.1.inChartAt x) (Set.range I) z₀ :=
     (φ.isSmoothForm.contDiffWithinAt_inChartAt_self x).differentiableWithinAt (by simp)
