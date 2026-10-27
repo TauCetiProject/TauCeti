@@ -23,11 +23,13 @@ and `4`.
 
 ## The construction
 
-The gradient norm is a norm on `C_c^∞(Ω)`, so the completion is realized concretely as the closure
-`TauCeti.d1p0Submodule` of the gradients `∇φ` of test functions in `Lᵖ(Ω, E)`. An element is
-therefore recorded by its gradient field, the norm of `TauCeti.D1p0` is exactly the `Lᵖ` norm of
-that gradient, the space is complete, and for `p = 2` it is a Hilbert space with inner product
-`⟪u, v⟫ = ∫_Ω ⟪∇u, ∇v⟫`, inherited from `L²(Ω, E)`.
+The space is realized concretely as the closure `TauCeti.d1p0Submodule` of the gradients `∇φ` of
+test functions in `Lᵖ(Ω, E)`. An element is therefore recorded by its gradient field, the norm of
+`TauCeti.D1p0` is exactly the `Lᵖ` norm of that gradient, the space is complete, and for `p = 2` it
+is a Hilbert space with inner product `⟪u, v⟫ = ∫_Ω ⟪∇u, ∇v⟫`, inherited from `L²(Ω, E)`. The
+construction only assumes the measure finite on compact sets, for which `‖∇φ‖_p` is merely a
+seminorm on `C_c^∞(Ω)`. When the measure has full support, for instance a Haar measure, it is a
+norm, and the closure is the completion of `C_c^∞(Ω)` for it.
 
 ## The Sobolev embedding
 
@@ -87,8 +89,9 @@ section Space
 variable [IsFiniteMeasureOnCompacts mu]
 
 /-- **The homogeneous Sobolev space `D^{1,p}_0(Ω)`**, as a closed subspace of `Lᵖ(Ω, E)`: the
-closure of the gradients `∇φ` of the test functions `φ ∈ C_c^∞(Ω)`. It is the completion of
-`C_c^∞(Ω)` for the gradient norm, each element being recorded by its gradient field. -/
+closure of the gradients `∇φ` of the test functions `φ ∈ C_c^∞(Ω)`, each element being recorded
+by its gradient field. When `mu` has full support, for instance a Haar measure, it is the
+completion of `C_c^∞(Ω)` for the gradient norm. -/
 def d1p0Submodule (mu : Measure E) [IsFiniteMeasureOnCompacts mu] (Omega : Opens E) (p : ENNReal)
     [Fact (1 ≤ p)] : ClosedSubmodule ℝ (Lp E p (mu.restrict Omega)) :=
   (LinearMap.range (gradientTestFunctionLpₗ mu Omega p)).closure
@@ -101,9 +104,11 @@ theorem coe_d1p0Submodule :
   congr 2
   exact funext (gradientTestFunctionLpₗ_apply p)
 
-/-- **The homogeneous Sobolev space `D^{1,p}_0(Ω)`**, the completion of the test functions
-`C_c^∞(Ω)` for the gradient norm `‖∇φ‖_p`. An element is its gradient field in `Lᵖ(Ω, E)`; the
-function it represents is its image under `TauCeti.D1p0.sobolevEmbeddingL`. -/
+/-- **The homogeneous Sobolev space `D^{1,p}_0(Ω)`**, the closure in `Lᵖ(Ω, E)` of the gradients
+of the test functions `C_c^∞(Ω)`, which is their completion for the gradient norm `‖∇φ‖_p` when
+`mu` has full support. An element is its gradient field in `Lᵖ(Ω, E)`. For a Haar measure `mu` and
+a Sobolev conjugate `p⋆ ≠ ∞`, the function it represents is its image under
+`TauCeti.D1p0.sobolevEmbeddingL`. -/
 abbrev D1p0 (mu : Measure E) [IsFiniteMeasureOnCompacts mu] (Omega : Opens E) (p : ENNReal)
     [Fact (1 ≤ p)] := (d1p0Submodule mu Omega p).toSubmodule
 
@@ -181,8 +186,9 @@ variable [mu.IsAddHaarMeasure] {pstar : ENNReal}
 `1/p⋆ + 1/n = 1/p`: the extension by continuity of `φ ↦ φ` from the test functions, along the
 Gagliardo--Nirenberg--Sobolev inequality. It sends an element of `D^{1,p}_0(Ω)` to the function
 whose weak gradient it is (`TauCeti.D1p0.hasWeakFDerivOn_sobolevEmbeddingL`), and it is injective
-(`TauCeti.D1p0.sobolevEmbeddingL_injective`). The results about it assume `p⋆ ≠ ∞`, that is
-`p < n`; without it no such bound holds. -/
+(`TauCeti.D1p0.sobolevEmbeddingL_injective`). The results about it assume `p⋆ ≠ ∞`, the
+hypothesis of Mathlib's `MeasureTheory.eLpNorm_le_eLpNorm_fderiv_of_eq`; for `p⋆ = ∞` the
+definition takes an unspecified value. -/
 def D1p0.sobolevEmbeddingL (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) :
     letI := Fact.mk (one_le_of_inv_add_eq_inv hexp)
     D1p0 mu Omega p →L[ℝ] Lp ℝ pstar (mu.restrict Omega) :=
@@ -312,7 +318,9 @@ theorem D1p0.sobolevEmbeddingL_injective (hpstar : pstar ≠ ∞)
   apply Subtype.ext
   apply Lp.ext
   filter_upwards [hae, Lp.coeFn_zero E p (mu.restrict Omega)] with x hx h0
-  rw [Submodule.coe_zero, h0, Pi.zero_apply, ← norm_eq_zero, ← innerSL_apply_norm ℝ, hx,
-    Pi.zero_apply, norm_zero]
+  -- `innerSL ℝ` is an isometry, so `innerSL ℝ (u x) = 0` forces `u x = 0`.
+  have hux : (u : Lp E p (mu.restrict Omega)) x = 0 := by
+    simpa [innerSL_apply_norm] using congrArg norm hx
+  rw [hux, Submodule.coe_zero, h0, Pi.zero_apply]
 
 end TauCeti

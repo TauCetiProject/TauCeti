@@ -313,9 +313,8 @@ theorem norm_testFunctionLp_le_mul_norm_gradientTestFunctionLp (hpstar : pstar �
     (W1p.ofTestFunctionₗ_mem_w1p0Submodule (mu := mu) (p := p) phi)
   rw [W1p.value_ofTestFunctionₗ, W1p.gradient_ofTestFunctionₗ,
     eLpNorm_congr_ae (testFunctionLp_apply_ae p phi)] at h
-  rw [Lp.norm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae pstar phi), Lp.norm_def,
-    ← Lp.enorm_def, ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (by finiteness) h
+  rw [Lp.norm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae pstar phi), ← toReal_enorm]
+  simpa using ENNReal.toReal_mono (by finiteness) h
 
 /-! ### Subcritical exponents on a bounded domain -/
 
