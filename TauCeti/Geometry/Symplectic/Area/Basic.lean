@@ -12,10 +12,12 @@ import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 
 /-!
-# Integrability and annular Stokes for symplectic area
+# Integrability and Stokes formulas for symplectic area
 
 For a constant symplectic form `ω`, the primitive `λₓ(v) = ½ ω(x, v)` identifies the
-symplectic area of a `C²` map on a closed annulus with the difference of its boundary actions.
+symplectic area of a `C²` map on a closed rectangle with the integral of `λ` over its positively
+oriented boundary (`TauCeti.SymplecticForm.integral_fderiv_apply_prod_Icc`), and the symplectic
+area of a `C²` map on a closed annulus with the difference of its boundary actions.
 The outer and inner circles are both parametrized counterclockwise on `[-π, π]`, and the inner
 action is subtracted. No extension across the inner disc is needed. Together with the
 isoperimetric inequality for the boundary loops, this is the Stokes step used in energy decay
@@ -65,6 +67,28 @@ theorem integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq
     _ ≤ ‖B‖ * ‖fderiv ℝ u z‖ ^ 2 := by
       rw [pow_two, ← mul_assoc]
       gcongr
+
+/-- **Stokes' formula for symplectic area on a rectangle.** If `u` is `C²` at every point of the
+rectangle `Icc a b ⊆ ℝ × ℝ`, its symplectic area over the rectangle is the integral of the
+primitive `λₓ(v) = ½ ω(x, v)` along the positively oriented boundary: the right side minus the
+left side of `t ↦ ½ ω(u, ∂t u)`, minus the top side minus the bottom side of
+`s ↦ ½ ω(u, ∂s u)`. -/
+theorem integral_fderiv_apply_prod_Icc [FiniteDimensional ℝ V] (ω : SymplecticForm V)
+    {u : ℝ × ℝ → V} {a b : ℝ × ℝ} (hle : a ≤ b) (hu : ∀ z ∈ Icc a b, ContDiffAt ℝ 2 u z) :
+    ∫ z in Icc a b, ω (fderiv ℝ u z (1, 0)) (fderiv ℝ u z (0, 1)) =
+      (1 / 2 : ℝ) * (((∫ t in a.2..b.2, ω (u (b.1, t)) (fderiv ℝ u (b.1, t) (0, 1))) -
+          ∫ t in a.2..b.2, ω (u (a.1, t)) (fderiv ℝ u (a.1, t) (0, 1))) -
+        ((∫ s in a.1..b.1, ω (u (s, b.2)) (fderiv ℝ u (s, b.2) (1, 0))) -
+          ∫ s in a.1..b.1, ω (u (s, a.2)) (fderiv ℝ u (s, a.2) (1, 0)))) := by
+  let B := ω.toBilinForm.toContinuousBilinearMap
+  have hB (x y : V) : B x y = ω x y := by simp [B]
+  have hskew (x y : V) : B x y - B y x = 2 * ω x y := by
+    rw [hB, hB, ← ω.neg_eq]
+    ring
+  have hgreen := B.integral_bilinear_fderiv_sub_prod_Icc hle hu
+  simp only [hskew, integral_const_mul] at hgreen
+  simp only [hB] at hgreen
+  linarith
 
 /-- **Stokes' formula for symplectic area on an annulus.** The pullback area of a `C²` map is
 the outer boundary action minus the inner boundary action for the primitive `λₓ(v) = ½ ω(x, v)`.
