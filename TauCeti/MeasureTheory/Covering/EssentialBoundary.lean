@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 public import TauCeti.MeasureTheory.Covering.Besicovitch
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 
@@ -308,6 +308,18 @@ private theorem not_tendsto_measure_inter_closedBall_div_zero {t : Set E} {y : E
   rw [nonpos_iff_eq_zero, ENNReal.ofReal_eq_zero] at h0
   exact absurd h0 (not_le.2 (by positivity))
 
+omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
+/-- A closed ball of a quarter of the radius, centred on the line through `y` and `x` at distance
+at most `ρ / 2` from `y`, lies in the closed ball of radius `ρ` about `y`. -/
+private theorem closedBall_lineMap_subset_closedBall {y x : E} {c ρ : ℝ}
+    (hc : |c| * dist y x ≤ ρ / 2) :
+    closedBall (AffineMap.lineMap y x c) (ρ / 4) ⊆ closedBall y ρ := fun w hw => by
+  rw [mem_closedBall] at hw ⊢
+  have h₁ := dist_left_lineMap y x c
+  rw [Real.norm_eq_abs] at h₁
+  linarith [dist_triangle w (AffineMap.lineMap y x c) y, dist_comm y (AffineMap.lineMap y x c),
+    mul_nonneg (abs_nonneg c) (dist_nonneg (x := y) (y := x))]
+
 /-- For an additive Haar measure, the essential boundary of a closed ball of positive radius is
 its sphere. -/
 theorem essentialBoundary_closedBall (hr : 0 < r) :
@@ -327,12 +339,10 @@ theorem essentialBoundary_closedBall (hr : 0 < r) :
       rw [hy, Real.norm_eq_abs, sub_neg_eq_add, abs_of_pos (by positivity)] at h₁
       have : (1 + ρ / (2 * r)) * r = r + ρ / 2 := by field_simp
       linarith
-    · have h₁ := dist_left_lineMap y x (-(ρ / (2 * r)))
-      rw [mem_closedBall] at hw ⊢
-      rw [hy, Real.norm_eq_abs, abs_neg, abs_of_pos (by positivity),
-        div_mul_eq_mul_div, mul_div_mul_right _ _ hr.ne'] at h₁
-      linarith [dist_triangle w (AffineMap.lineMap y x (-(ρ / (2 * r)))) y, dist_comm y
-        (AffineMap.lineMap y x (-(ρ / (2 * r))))]
+    · refine closedBall_lineMap_subset_closedBall ?_ hw
+      rw [hy, abs_neg, abs_of_pos (by positivity)]
+      field_simp
+      rfl
   · -- Points just inside `y`, towards the centre, form a quarter-radius ball in the ball.
     refine not_tendsto_measure_inter_closedBall_div_zero μ ?_
     filter_upwards [Ioo_mem_nhdsGT hr] with ρ ⟨hρ, hρr⟩
@@ -343,12 +353,10 @@ theorem essentialBoundary_closedBall (hr : 0 < r) :
       rw [hy, Real.norm_eq_abs, abs_of_pos (by linarith)] at h₁
       have : (1 - ρ / (2 * r)) * r = r - ρ / 2 := by field_simp
       linarith [dist_triangle w (AffineMap.lineMap y x (ρ / (2 * r))) x]
-    · have h₁ := dist_left_lineMap y x (ρ / (2 * r))
-      rw [mem_closedBall] at hw ⊢
-      rw [hy, Real.norm_eq_abs, abs_of_pos (by positivity),
-        div_mul_eq_mul_div, mul_div_mul_right _ _ hr.ne'] at h₁
-      linarith [dist_triangle w (AffineMap.lineMap y x (ρ / (2 * r))) y, dist_comm y
-        (AffineMap.lineMap y x (ρ / (2 * r)))]
+    · refine closedBall_lineMap_subset_closedBall ?_ hw
+      rw [hy, abs_of_pos (by positivity)]
+      field_simp
+      rfl
 
 /-- For an additive Haar measure, the essential interior of a closed ball of positive radius is
 the open ball. -/
@@ -370,13 +378,13 @@ theorem essentialInterior_closedBall (hr : 0 < r) :
 /-- For an additive Haar measure, the essential boundary of an open ball of positive radius is
 its sphere. -/
 theorem essentialBoundary_ball (hr : 0 < r) : μ.essentialBoundary (ball x r) = sphere x r := by
-  rw [essentialBoundary_congr (ball_ae_eq_closedBall μ x hr.ne'),
+  rw [essentialBoundary_congr ((μ.addHaar_closedBall_ae_eq_ball_of_ne_zero x r hr.ne').symm),
     essentialBoundary_closedBall μ hr]
 
 /-- For an additive Haar measure, the essential interior of an open ball of positive radius is
 the ball itself. -/
 theorem essentialInterior_ball (hr : 0 < r) : μ.essentialInterior (ball x r) = ball x r := by
-  rw [essentialInterior_congr (ball_ae_eq_closedBall μ x hr.ne'),
+  rw [essentialInterior_congr ((μ.addHaar_closedBall_ae_eq_ball_of_ne_zero x r hr.ne').symm),
     essentialInterior_closedBall μ hr]
 
 end Haar

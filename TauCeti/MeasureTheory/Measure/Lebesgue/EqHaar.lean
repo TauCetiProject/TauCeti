@@ -29,8 +29,7 @@ We also bound the additive Haar measure of the closure of a set in a finite-dime
 normed space by the measure of the unit ball times the dimension power of its diameter. This is
 the elementary estimate converting coverings by sets of small diameter into measure bounds.
 Combined with the diameter bound for Lipschitz images, it bounds the measure of the closure of
-the image of a set under a Lipschitz map. Open and closed balls of nonzero radius agree almost
-everywhere for every additive Haar measure (`MeasureTheory.Measure.ball_ae_eq_closedBall`).
+the image of a set under a Lipschitz map.
 -/
 
 public section
@@ -106,13 +105,6 @@ theorem addHaar_closure_le_mul_ediam_pow (μ : Measure E) [μ.IsAddHaarMeasure] 
     _ = μ (Metric.ball 0 1) * Metric.ediam s ^ Module.finrank ℝ E := by
       rw [addHaar_closedBall μ x Metric.diam_nonneg, mul_comm,
         ENNReal.ofReal_pow Metric.diam_nonneg, Metric.diam, ENNReal.ofReal_toReal hs]
-
-/-- For an additive Haar measure, an open ball of nonzero radius agrees almost everywhere with the
-closed ball, since their difference is a null sphere. -/
-theorem ball_ae_eq_closedBall (μ : Measure E) [μ.IsAddHaarMeasure] (x : E) {r : ℝ}
-    (hr : r ≠ 0) : Metric.ball x r =ᵐ[μ] Metric.closedBall x r :=
-  ae_eq_set.2 ⟨by rw [sdiff_eq_empty.2 Metric.ball_subset_closedBall, measure_empty],
-    by rw [Metric.closedBall_sdiff_ball, addHaar_sphere_of_ne_zero μ x hr]⟩
 
 end Diameter
 
