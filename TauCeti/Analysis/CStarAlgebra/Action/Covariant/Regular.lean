@@ -40,10 +40,10 @@ The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter
 * `TauCeti.CStarAction.CovariantRepresentation.regular`: the regular covariant representation
   `(π, λ)` on `L²(G, H)` induced by `ρ`.
 
-If `ρ` is nondegenerate, so is the regular coefficient representation `π`: along an increasing
-approximate unit `e` of `A`, `π(e) ξ → ξ` for the vectors `r ↦ 𝟙_K(r) ρ(b) w` with `K` compact,
-which span a dense subspace of `L²(G, H)` by inner regularity of `μ`. Conversely, `π` is
-nondegenerate only if `ρ` is, when `μ` is positive on nonempty open sets.
+If `ρ` is nondegenerate, so is the regular coefficient representation `π`, and conversely when `μ`
+is positive on nonempty open sets. Thus a nondegenerate representation of `A` induces a
+nondegenerate regular covariant pair, which is the kind of pair whose integrated form is a
+nondegenerate representation of the crossed product and extends to its multiplier algebra.
 
 ## Main statements
 
