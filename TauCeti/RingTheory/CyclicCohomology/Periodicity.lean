@@ -542,6 +542,7 @@ variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Ring A] [Algebra R A
 
 /-- The map `I : HCⁿ(A; M) → HHⁿ(A, Hom_R(A, M))` on cyclic cohomology factors through the
 cohomology of the total complex. -/
+@[reassoc (attr := simp)]
 theorem homologyMap_cyclicCochainComplexToTotal_comp_homologyMap_cyclicTotalComplexToHochschild
     (n : ℕ) :
     HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) n ≫
