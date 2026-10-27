@@ -225,14 +225,37 @@ def pi (f : ∀ i, Isometry (L i) (M i)) :
     rw [Submodule.mem_map_equiv, mem_pi_carrier_iff, mem_pi_carrier_iff]
     exact forall_congr' fun i ↦ by
       rw [← (f i).symm.apply_mem_carrier_iff, coe_symm]
-      -- The inverse of `LinearEquiv.piCongrRight` evaluates coordinatewise by definition.
-      rfl
+      simp only [LinearEquiv.restrictScalars_symm_apply, LinearEquiv.piCongrRight_symm,
+        LinearEquiv.piCongrRight_apply]
 
 /-- The orthogonal sum of a family of isometries acts coordinatewise. -/
 @[simp]
 theorem pi_apply (f : ∀ i, Isometry (L i) (M i)) (x : ∀ i, V i) (i : ι) :
     pi f x i = f i (x i) :=
   (rfl)
+
+/-- The orthogonal sum of identity isometries is the identity of the orthogonal sum. -/
+@[simp]
+theorem pi_refl : (pi fun i ↦ Isometry.refl (L i)) = Isometry.refl (IntegralLattice.pi L) := by
+  ext x i
+  simp only [pi_apply, refl_apply]
+
+/-- The inverse of an orthogonal sum of isometries is the orthogonal sum of the inverses. -/
+@[simp]
+theorem pi_symm (f : ∀ i, Isometry (L i) (M i)) : (pi f).symm = pi fun i ↦ (f i).symm :=
+  Isometry.ext fun y ↦ EquivLike.injective (pi f) <| by
+    rw [apply_symm_apply]
+    ext i
+    simp only [pi_apply, apply_symm_apply]
+
+/-- Orthogonal sums of isometries preserve composition coordinatewise. -/
+@[simp]
+theorem pi_trans {X : ι → Type*} [∀ i, AddCommGroup (X i)] [∀ i, Module ℚ (X i)]
+    {N : ∀ i, IntegralLattice (X i)} (f : ∀ i, Isometry (L i) (M i))
+    (g : ∀ i, Isometry (M i) (N i)) :
+    (pi f).trans (pi g) = pi fun i ↦ (f i).trans (g i) := by
+  ext x i
+  simp only [trans_apply, pi_apply]
 
 variable (L)
 variable {κ : Type x} [Fintype κ]
@@ -262,6 +285,30 @@ def piCongrLeft (σ : κ ≃ ι) :
 theorem piCongrLeft_apply_apply (σ : κ ≃ ι) (x : ∀ k, V (σ k)) (k : κ) :
     piCongrLeft L σ x (σ k) = x k :=
   Equiv.piCongrLeft_apply_apply V σ x k
+
+/-- The inverse of reindexing an orthogonal sum reads the coordinate in position `k` from
+position `σ k`. -/
+@[simp]
+theorem piCongrLeft_symm_apply (σ : κ ≃ ι) (y : ∀ i, V i) (k : κ) :
+    (piCongrLeft L σ).symm y k = y (σ k) := by
+  conv_rhs => rw [← apply_symm_apply (piCongrLeft L σ) y]
+  exact (piCongrLeft_apply_apply L σ _ k).symm
+
+/-- Reindexing an orthogonal sum along the identity equivalence is the identity. -/
+@[simp]
+theorem piCongrLeft_refl :
+    piCongrLeft L (Equiv.refl ι) = Isometry.refl (IntegralLattice.pi L) := by
+  ext x i
+  exact (piCongrLeft_apply_apply L (Equiv.refl ι) x i).trans
+    (congrFun (refl_apply (IntegralLattice.pi L) x) i).symm
+
+/-- Reindexing commutes with orthogonal sums of isometries: reindexing and then applying `f i` in
+each position `i` agrees with applying `f (σ k)` in each position `k` and then reindexing. -/
+theorem piCongrLeft_trans_pi (σ : κ ≃ ι) (f : ∀ i, Isometry (L i) (M i)) :
+    (piCongrLeft L σ).trans (pi f) = (pi fun k ↦ f (σ k)).trans (piCongrLeft M σ) := by
+  ext x i
+  obtain ⟨k, rfl⟩ := σ.surjective i
+  simp only [trans_apply, pi_apply, piCongrLeft_apply_apply]
 
 end Isometry
 

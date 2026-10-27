@@ -95,9 +95,8 @@ theorem discriminantGroupPiEquiv_glueWordIsometry (hv : ∀ i, (t i).Valid)
     (w : ∀ i, (t i).glueAlphabet (ht i)) (i : ι) :
     discriminantGroupPiEquiv _ (glueWordIsometry t ht hv w) i =
       (t i).glueAlphabetIsometry (hv i) (ht i) (w i) := by
-  rw [glueWordIsometry, discriminantQuadraticIsometryPiOfIsometry_apply]
-  exact congrFun ((discriminantGroupPiEquiv _).apply_symm_apply
-    fun i ↦ (t i).glueAlphabetIsometry (hv i) (ht i) (w i)) i
+  rw [glueWordIsometry]
+  exact discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry _ _ w i
 
 /-- The module of glue words of a finite family of valid simply-laced components is
 nondegenerate. -/

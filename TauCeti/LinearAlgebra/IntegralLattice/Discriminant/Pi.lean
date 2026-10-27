@@ -44,7 +44,8 @@ and permutations of the components.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryPi`: for even nondegenerate summands, this
   equivalence is an isometry of finite quadratic modules.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryPiOfIsometry`: the isometry
-  `Π i, A_i ≅ A_(⊥ i, L i)` induced by summandwise isometries `A_i ≅ A_(L i)`.
+  `Π i, A_i ≅ A_(⊥ i, L i)` induced by summandwise isometries `A_i ≅ A_(L i)`, with coordinates
+  `TauCeti.IntegralLattice.discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry`.
 * `discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry` and
   `discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry`, in
   `TauCeti.IntegralLattice`: naturality of that isometry under coordinatewise isometries
@@ -216,6 +217,17 @@ theorem discriminantQuadraticIsometryPiOfIsometry_apply [∀ i, (L i).IsNondegen
       (discriminantGroupPiEquiv L).symm fun i ↦ f i (x i) :=
   (rfl)
 
+/-- The class induced by summandwise alphabet isometries has as coordinate in the discriminant
+group of each summand the image of the corresponding letter. -/
+@[simp]
+theorem discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry
+    [∀ i, (L i).IsNondegenerate] {hL : ∀ i, (L i).IsEven} {A : ι → FiniteQuadraticModule.{u}}
+    (f : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
+    (x : ∀ i, A i) (i : ι) :
+    discriminantGroupPiEquiv L (discriminantQuadraticIsometryPiOfIsometry L f x) i = f i (x i) := by
+  rw [discriminantQuadraticIsometryPiOfIsometry_apply]
+  exact congrFun ((discriminantGroupPiEquiv L).apply_symm_apply fun i ↦ f i (x i)) i
+
 /-! ## Naturality
 
 The identification `A_(⊥ i, L i) ≃ Π i, A_(L i)` is natural for the two kinds of isometries of
@@ -260,13 +272,11 @@ theorem discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsomet
   -- The carrier of a discriminant quadratic module is the discriminant group only up to
   -- unfolding, so the evaluation lemmas are applied as terms rather than rewritten.
   refine (Isometry.discriminantQuadraticIsometry_apply (Isometry.pi f) (isEven_pi hL) _).trans ?_
-  rw [discriminantQuadraticIsometryPiOfIsometry_apply,
-    discriminantQuadraticIsometryPiOfIsometry_apply]
   apply (discriminantGroupPiEquiv M).injective
   funext i
-  rw [discriminantGroupPiEquiv_discriminantGroupEquiv_pi,
-    congrFun ((discriminantGroupPiEquiv L).apply_symm_apply fun i ↦ a i (x i)) i,
-    congrFun ((discriminantGroupPiEquiv M).apply_symm_apply fun i ↦ b i (g i (x i))) i, h]
+  rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry, h]
+  refine (discriminantGroupPiEquiv_discriminantGroupEquiv_pi f _ i).trans ?_
+  rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry]
   exact ((f i).discriminantQuadraticIsometry_apply (hL i) (a i (x i))).symm
 
 variable (L)
@@ -297,17 +307,13 @@ theorem discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryP
   -- As above, the evaluation lemmas are applied as terms across the carrier unfolding.
   refine (Isometry.discriminantQuadraticIsometry_apply (Isometry.piCongrLeft L σ)
     (isEven_pi fun k ↦ hL (σ k)) _).trans ?_
-  rw [discriminantQuadraticIsometryPiOfIsometry_apply,
-    discriminantQuadraticIsometryPiOfIsometry_apply]
   apply (discriminantGroupPiEquiv L).injective
   funext i
   obtain ⟨k, rfl⟩ := σ.surjective i
-  rw [discriminantGroupPiEquiv_discriminantGroupEquiv_piCongrLeft,
-    congrFun ((discriminantGroupPiEquiv fun k ↦ L (σ k)).apply_symm_apply
-      fun k ↦ a (σ k) (x k)) k,
-    congrFun ((discriminantGroupPiEquiv L).apply_symm_apply
-      fun i ↦ a i (Equiv.piCongrLeft (fun i ↦ A i) σ x i)) (σ k),
+  rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry,
     Equiv.piCongrLeft_apply_apply]
+  refine (discriminantGroupPiEquiv_discriminantGroupEquiv_piCongrLeft L σ _ k).trans ?_
+  rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry]
 
 end Naturality
 
