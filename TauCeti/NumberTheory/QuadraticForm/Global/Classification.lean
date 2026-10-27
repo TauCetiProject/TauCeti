@@ -41,6 +41,8 @@ In global notation, the two exceptions of the local realization theorem
 
 * `formClass_atFinitePlace`: the class of the localization of a form at a finite place is the
   scalar extension of the class of the form.
+* `formClass_atRealPlace`: the class of the localization of a form at a real place is the scalar
+  extension of the class of the form along the real embedding.
 * `atFinitePlace_equivalent_iff_finrank_eq_and_discr_eq_and_finiteHasse_eq`: the localization of
   a global form at a finite place is isometric to a regular local form exactly when their ranks,
   discriminants and Hasse invariants agree.
@@ -91,6 +93,22 @@ theorem formClass_atFinitePlace (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegene
   rw [← formClass_baseChange Q hQ]
   congr 1
   simp only [atFinitePlace_def]
+
+omit [NumberField K] in
+/-- The class of the localization of a form at a real place is the scalar extension of the class
+of the form along the real embedding of the place. -/
+theorem formClass_atRealPlace [Invertible (2 : K)] (Q : _root_.QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (w : {w : InfinitePlace K // w.IsReal}) :
+    letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    formClass (Q.atRealPlace w) (Nondegenerate.atRealPlace hQ w) =
+      RegularFormClass.baseChange ℝ (formClass Q hQ) := by
+  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  rw [← formClass_baseChange Q hQ]
+  -- `atRealPlace` builds its own `Invertible 2` instance on `K`, which agrees with the given one
+  -- because `Invertible 2` is a subsingleton.
+  congr 1
+  convert atRealPlace_def Q w
+  exact Subsingleton.elim _ _
 
 /-- **Local classification at a finite place, in global notation.** The localization of a regular
 form `Q` at a finite place `v` is isometric to a regular form `U` over `K_v` exactly when the rank

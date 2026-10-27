@@ -81,15 +81,12 @@ theorem formClass_atRealPlace_eq_nsmul_hyperbolicClass [Invertible (2 : K)]
     (h : formClass Q hQ = m • hyperbolicClass K) (w : {w : InfinitePlace K // w.IsReal}) :
     formClass (Q.atRealPlace w) (Nondegenerate.atRealPlace hQ w) = m • hyperbolicClass ℝ := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  have hb := formClass_baseChange (L := ℝ) Q hQ
+  have hb := formClass_atRealPlace Q hQ w
   rw [h, RegularFormClass.baseChange_nsmul, RegularFormClass.baseChange_hyperbolicClass] at hb
-  -- `hb` is about the base change along the real embedding, which is the localization by
-  -- `atRealPlace_def`. The localization, `hb` and the goal may carry different `Invertible 2`
-  -- instances, equal because `Invertible 2` is a subsingleton.
-  convert hb using 2
-  · convert atRealPlace_def Q w
-    exact Subsingleton.elim _ _
-  · exact congrArg _ (Subsingleton.elim _ _)
+  -- `baseChange_hyperbolicClass` states its result with the `Invertible 2` instance transported
+  -- from `K`, while the goal uses the canonical instance of `ℝ`; the two are equal because
+  -- `Invertible 2` is a subsingleton.
+  exact hb.trans (by congr 2; exact Subsingleton.elim _ _)
 
 end RealPlace
 
