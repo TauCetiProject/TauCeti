@@ -30,7 +30,8 @@ finite place of the extension.
   forward implication for every nonarchimedean function, `IsNonarchimedean.apply_natCast_le_one`,
   and the reverse one for the norm of a normed division ring,
   `IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one`; here the latter is
-  transferred to absolute values through `WithAbs`.
+  transferred to absolute values through `WithAbs`. Consequently an absolute value lying over a
+  nonarchimedean one is nonarchimedean, `AbsoluteValue.isNonarchimedean_of_liesOver`.
 * `IsNonarchimedean.apply_le_one_of_isIntegral`: a nonarchimedean absolute value on an
   `R`-algebra which is bounded by `1` on the image of `R` is bounded by `1` on every element
   integral over `R`. Over `ℤ` the hypothesis on `R` is automatic,
@@ -76,6 +77,16 @@ theorem isNonarchimedean_iff_forall_natCast_le_one :
     IsNonarchimedean v ↔ ∀ n : ℕ, v n ≤ 1 :=
   ⟨fun hv _ ↦ hv.apply_natCast_le_one (by simp) v.map_one,
     isNonarchimedean_of_forall_natCast_le_one⟩
+
+/-- An absolute value on a field lying over a nonarchimedean absolute value is nonarchimedean: it
+agrees with the latter on the natural numbers, where both are therefore bounded by `1`. -/
+theorem isNonarchimedean_of_liesOver {K : Type*} [CommSemiring K] [Nontrivial K] [Algebra K F]
+    [FaithfulSMul K F] {u : AbsoluteValue K ℝ} [v.LiesOver u] (hu : IsNonarchimedean u) :
+    IsNonarchimedean v :=
+  isNonarchimedean_of_forall_natCast_le_one fun n ↦ by
+    have h : v (algebraMap K F n) = u n := by rw [← LiesOver.under_eq v u, under_def, comp_apply]
+    rw [← map_natCast (algebraMap K F), h]
+    exact hu.apply_natCast_le_one (by simp) (map_one _)
 
 end Field
 
