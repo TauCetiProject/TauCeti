@@ -19,6 +19,8 @@ is an anti-involution of the matrix ring and of the special linear group.
 ## Main declarations
 
 * `Matrix.antitranspose`: the reflection of a square matrix in its antidiagonal.
+* `Matrix.antitranspose_one`, `Matrix.antitranspose_add`: the antitranspose fixes `1` and is
+  additive.
 * `Matrix.antitranspose_mul`: the antitranspose reverses products.
 * `Matrix.det_antitranspose`: the antitranspose preserves determinants.
 * `Matrix.antitranspose_fin_two`: the antitranspose of `(a b; c d)` is `(d b; c a)`.
@@ -32,13 +34,13 @@ variable {α : Type*} {m : ℕ}
 
 /-- The antitranspose of a square matrix: its reflection in the antidiagonal,
 `A.antitranspose i j = A (rev j) (rev i)`. -/
-@[expose] def antitranspose (A : Matrix (Fin m) (Fin m) α) : Matrix (Fin m) (Fin m) α :=
+def antitranspose (A : Matrix (Fin m) (Fin m) α) : Matrix (Fin m) (Fin m) α :=
   Aᵀ.submatrix Fin.rev Fin.rev
 
 @[simp]
 theorem antitranspose_apply (A : Matrix (Fin m) (Fin m) α) (i j : Fin m) :
     A.antitranspose i j = A j.rev i.rev :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem antitranspose_antitranspose (A : Matrix (Fin m) (Fin m) α) :
@@ -46,10 +48,46 @@ theorem antitranspose_antitranspose (A : Matrix (Fin m) (Fin m) α) :
   ext i j
   simp
 
+@[simp]
+theorem antitranspose_zero [Zero α] : (0 : Matrix (Fin m) (Fin m) α).antitranspose = 0 := by
+  ext i j
+  simp
+
+@[simp]
+theorem antitranspose_one [Zero α] [One α] :
+    (1 : Matrix (Fin m) (Fin m) α).antitranspose = 1 := by
+  ext i j
+  simp [one_apply, eq_comm]
+
+@[simp]
+theorem antitranspose_add [Add α] (A B : Matrix (Fin m) (Fin m) α) :
+    (A + B).antitranspose = A.antitranspose + B.antitranspose := by
+  ext i j
+  simp
+
+@[simp]
+theorem antitranspose_neg [Neg α] (A : Matrix (Fin m) (Fin m) α) :
+    (-A).antitranspose = -A.antitranspose := by
+  ext i j
+  simp
+
+@[simp]
+theorem antitranspose_sub [Sub α] (A B : Matrix (Fin m) (Fin m) α) :
+    (A - B).antitranspose = A.antitranspose - B.antitranspose := by
+  ext i j
+  simp
+
+@[simp]
+theorem antitranspose_smul {β : Type*} [SMul β α] (c : β) (A : Matrix (Fin m) (Fin m) α) :
+    (c • A).antitranspose = c • A.antitranspose := by
+  ext i j
+  simp
+
 /-- The antitranspose reverses products. -/
 theorem antitranspose_mul [AddCommMonoid α] [CommMagma α] (A B : Matrix (Fin m) (Fin m) α) :
     (A * B).antitranspose = B.antitranspose * A.antitranspose := by
-  rw [antitranspose, transpose_mul]
+  change (A * B)ᵀ.submatrix Fin.rev Fin.rev = _
+  rw [transpose_mul]
   exact (submatrix_mul_equiv _ _ _ Fin.revPerm _).symm
 
 /-- The antitranspose preserves determinants. -/

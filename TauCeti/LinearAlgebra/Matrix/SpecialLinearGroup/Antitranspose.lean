@@ -19,6 +19,7 @@ preserves determinants and reverses products, so it restricts to an anti-involut
 
 * `Matrix.SpecialLinearGroup.antitranspose`: the antitranspose on `SL(m, R)`.
 * `Matrix.SpecialLinearGroup.antitranspose_mul`: it reverses products.
+* `Matrix.SpecialLinearGroup.antitranspose_inv`: it commutes with inversion.
 * `Matrix.SpecialLinearGroup.antitranspose_antitranspose`: it is an involution.
 * `Matrix.SpecialLinearGroup.antitranspose_T`: it fixes `ModularGroup.T`.
 -/
@@ -46,6 +47,15 @@ theorem antitranspose_mul (g h : SL(m, R)) :
   Subtype.ext (Matrix.antitranspose_mul _ _)
 
 @[simp]
+theorem antitranspose_one : antitranspose (1 : SL(m, R)) = 1 :=
+  Subtype.ext Matrix.antitranspose_one
+
+/-- The antitranspose commutes with inversion. -/
+@[simp]
+theorem antitranspose_inv (g : SL(m, R)) : antitranspose g⁻¹ = (antitranspose g)⁻¹ :=
+  eq_inv_of_mul_eq_one_right <| by rw [← antitranspose_mul, inv_mul_cancel, antitranspose_one]
+
+@[simp]
 theorem antitranspose_antitranspose (g : SL(m, R)) : antitranspose (antitranspose g) = g :=
   Subtype.ext (Matrix.antitranspose_antitranspose _)
 
@@ -53,6 +63,7 @@ theorem antitranspose_antitranspose (g : SL(m, R)) : antitranspose (antitranspos
 @[simp]
 theorem antitranspose_T : antitranspose ModularGroup.T = ModularGroup.T := by
   ext i j
+  rw [coe_antitranspose, Matrix.antitranspose_fin_two, ModularGroup.coe_T]
   fin_cases i <;> fin_cases j <;> rfl
 
 end Matrix.SpecialLinearGroup
