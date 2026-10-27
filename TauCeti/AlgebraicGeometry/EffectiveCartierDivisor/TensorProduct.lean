@@ -31,6 +31,9 @@ of `I_D`, inverting gives `[𝒪_X(D + E)] = [𝒪_X(D)] * [𝒪_X(E)]`, which i
 * `Scheme.IdealSheafData.mul_mem_sections_mul`: products of sections of `I` and `J` are sections
   of `I * J`, and `Scheme.IdealSheafData.sectionsMul` is the resulting multiplication map
   `Γ(I, U) × Γ(J, U) → Γ(I * J, U)`;
+* `Scheme.IdealSheafData.sheafMul`: the multiplication morphism `I ⊗ J ⟶ I * J` of
+  `𝒪_X`-modules, for arbitrary ideal sheaves, characterized by `sheafMul_sheafι` as the
+  restriction of the multiplication of `𝒪_X`;
 * `Scheme.IdealSheafData.tensorProductSheafIso`: `I ⊗ J ≅ I * J` when `J` is effective Cartier,
   with `Scheme.IdealSheafData.tensorProductSheafIso_hom_tmul` computing it on pure tensors;
 * `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_mul`: the line-bundle class of
@@ -157,6 +160,82 @@ private def tensorPresheafHom :
   app U := ModuleCat.MonoidalCategory.tensorLift (fun s t ↦ sectionsMul I J U.unop s t)
     sectionsMul_add_left sectionsMul_smul_left sectionsMul_add_right sectionsMul_smul_right
   naturality f := ModuleCat.MonoidalCategory.tensor_ext fun s t ↦ sectionsMul_map f.unop s t
+
+section SheafMul
+
+open MonoidalCategory
+
+/-- The sectionwise monoidal structure on presheaves of modules over the ring sheaf of `X`.
+Instance search does not find it, nor the two instances below, as it cannot unify the topological
+sheaf `X.sheaf` with a sheaf on a site; they are supplied here. -/
+local instance : MonoidalCategory
+    (_root_.PresheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf X.sheaf).obj) :=
+  TauCeti.SheafOfModules.instMonoidalPresheafOfModulesRingCatSheaf X.sheaf
+
+/-- The monoidal structure on sheaves of modules over the ring sheaf of `X`, as on `X.Modules`. -/
+local instance : MonoidalCategory
+    (SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf X.sheaf)) :=
+  TauCeti.SheafOfModules.monoidalCategory X.sheaf
+
+/-- The inclusion of sheaves of modules into presheaves of modules is lax monoidal. -/
+local instance :
+    (SheafOfModules.forget.{u} (TauCeti.SheafOfModules.ringCatSheaf X.sheaf)).LaxMonoidal :=
+  TauCeti.SheafOfModules.forgetLaxMonoidal X.sheaf
+
+/-- On presheaves, multiplication of local functions `I ⊗ J ⟶ I * J` followed by the inclusion
+into `𝒪_X` is the inclusion `I ⊗ J ⟶ 𝒪_X ⊗ 𝒪_X` followed by the multiplication of `𝒪_X`. -/
+private lemma tensorPresheafHom_comp_sheafι :
+    tensorPresheafHom I J ≫ (I * J).sheafι.val =
+      (I.sheafι.val ⊗ₘ J.sheafι.val) ≫
+        (λ_ (𝟙_ (_root_.PresheafOfModules.{u}
+          (TauCeti.SheafOfModules.ringCatSheaf X.sheaf).obj))).hom := by
+  ext1 U
+  refine ModuleCat.MonoidalCategory.tensor_ext fun s t ↦ ?_
+  -- Both sides are the product of the two local functions: on the left by
+  -- `sheafι_app_sectionMk`, on the right because the left unitor of `𝒪_X(U)` is its
+  -- multiplication.
+  exact (sheafι_app_sectionMk _ _ _).trans rfl
+
+/-- Multiplication of local functions `I ⊗ J ⟶ I * J`, as a morphism of `𝒪_X`-modules out of the
+tensor product. It is the restriction of the multiplication of `𝒪_X` (`sheafMul_sheafι`). -/
+def sheafMul : I.sheaf ⊗ J.sheaf ⟶ (I * J).sheaf :=
+  (SheafOfModules.tensorUnderlyingIso (R := X.sheaf) I.sheaf J.sheaf).hom ≫
+    ((TauCeti.SheafOfModules.sheafificationForgetAdjunction X.sheaf).homEquiv _ _).symm
+      (tensorPresheafHom I J)
+
+/-- On underlying presheaves, `sheafMul` is the sectionwise multiplication `tensorPresheafHom`. -/
+private lemma forget_μ_comp_sheafMul :
+    Functor.LaxMonoidal.μ (SheafOfModules.forget (TauCeti.SheafOfModules.ringCatSheaf X.sheaf))
+        I.sheaf J.sheaf ≫
+      (SheafOfModules.forget (TauCeti.SheafOfModules.ringCatSheaf X.sheaf)).map (sheafMul I J) =
+    tensorPresheafHom I J :=
+  (TauCeti.SheafOfModules.forget_μ_comp_map (R := X.sheaf) (sheafMul I J)).trans
+    ((congrArg _ (Iso.inv_hom_id_assoc _ _)).trans (Equiv.apply_symm_apply _ _))
+
+/-- Multiplication `I ⊗ J ⟶ I * J`, followed by the inclusion `I * J ⟶ 𝒪_X`, is the inclusion
+`I ⊗ J ⟶ 𝒪_X ⊗ 𝒪_X` followed by the multiplication `𝒪_X ⊗ 𝒪_X ≅ 𝒪_X`. As the inclusion is a
+monomorphism, this characterizes `sheafMul`. -/
+@[reassoc]
+theorem sheafMul_sheafι :
+    sheafMul I J ≫ (I * J).sheafι = (I.sheafι ⊗ₘ J.sheafι) ≫ (λ_ (𝟙_ X.Modules)).hom := by
+  refine TauCeti.SheafOfModules.tensor_hom_ext (R := X.sheaf) ?_
+  -- The composites are taken in `X.Modules` and in the category of sheaves of modules over
+  -- `ringCatSheaf X.sheaf`, which agree only up to unfolding, so they are rewritten with `erw`.
+  erw [Functor.map_comp, reassoc_of% forget_μ_comp_sheafMul I J, Functor.map_comp,
+    ← Functor.LaxMonoidal.μ_natural_assoc]
+  -- The inclusion of sheaves of modules has identity unit map, so its left unitality reads
+  -- `μ ≫ forget.map λ = λ` on `𝒪_X`.
+  have h := Functor.LaxMonoidal.left_unitality
+    (F := SheafOfModules.forget (TauCeti.SheafOfModules.ringCatSheaf X.sheaf)) (𝟙_ _)
+  have hε : Functor.LaxMonoidal.ε
+      (SheafOfModules.forget (TauCeti.SheafOfModules.ringCatSheaf X.sheaf)) = 𝟙 _ :=
+    TauCeti.SheafOfModules.forget_ε X.sheaf
+  rw [hε] at h
+  erw [id_whiskerRight, Category.id_comp] at h
+  erw [← h]
+  exact tensorPresheafHom_comp_sheafι I J
+
+end SheafMul
 
 section LocalEquation
 
