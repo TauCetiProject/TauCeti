@@ -194,15 +194,6 @@ theorem orderOf_cycleMap_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.vertex 
     (eq_div_of_mul_eq ht (by rw [mul_comm]; exact hSt))]
   exact hSt
 
-/-- The angle condition `orderOf (cycleMap j) * cycleAngleSum j = 2π` forces the cycle
-transformation to have finite order. -/
-theorem orderOf_cycleMap_ne_zero_of_mul_cycleAngleSum_eq {j : Fin n}
-    (hcyc : (orderOf (σ.cycleMap j) : ℝ) * σ.cycleAngleSum j = 2 * π) :
-    orderOf (σ.cycleMap j) ≠ 0 := by
-  intro h0
-  rw [h0, Nat.cast_zero, zero_mul] at hcyc
-  exact Real.two_pi_pos.ne hcyc
-
 /-- At a finite vertex of a polygon with disjoint translated interiors, the cycle transformation
 has finite order. -/
 theorem orderOf_cycleMap_ne_zero {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z)

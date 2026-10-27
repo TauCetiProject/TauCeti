@@ -541,6 +541,15 @@ theorem cycleAngleSum_pos_of_isLeft_vertex {j : Fin n} (hj : (P.vertex j).isLeft
   exact Finset.sum_pos' (fun i _ ↦ P.interiorAngle_nonneg i)
     ⟨j, σ.self_mem_cycle j, P.interiorAngle_pos_of_isLeft_vertex hj⟩
 
+/-- The angle condition `orderOf (cycleMap j) * cycleAngleSum j = 2π` forces the cycle
+transformation to have finite order. -/
+theorem orderOf_cycleMap_ne_zero_of_mul_cycleAngleSum_eq {j : Fin n}
+    (hcyc : (orderOf (σ.cycleMap j) : ℝ) * σ.cycleAngleSum j = 2 * π) :
+    orderOf (σ.cycleMap j) ≠ 0 := by
+  intro h0
+  rw [h0, Nat.cast_zero, zero_mul] at hcyc
+  exact Real.two_pi_pos.ne hcyc
+
 /-- The angle sum as a sum over the first `cycleLength j` successors of `j`. -/
 theorem cycleAngleSum_eq_sum_range (j : Fin n) :
     σ.cycleAngleSum j =
