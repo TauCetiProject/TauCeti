@@ -204,9 +204,9 @@ private theorem spaComap_spaComap (w : ↥(spa Aplus)) :
 
 omit [IsTopologicalRing A] [IsTopologicalRing B] in
 include hψφ in
-/-- The preimage of `W` under the map of adic spectra induced by `φ` is contained in the image of
-`W`. -/
-private theorem mem_of_spaComap_mem_map (W : Opens ↥(spa Aplus)) (w : ↥(spa Aplus))
+/-- For `ψ` a left inverse of `φ`, a point `w` of `Spa(A, A⁺)` whose pullback along `ψ` lies in the
+preimage of `W` under the map of adic spectra induced by `φ` lies in `W`. -/
+theorem mem_of_spaComap_mem_map (W : Opens ↥(spa Aplus)) (w : ↥(spa Aplus))
     (hw : spaComap ψ hψ Bplus Aplus hplus' w ∈ (Opens.map (spaComapTopHom φ hφ hplus)).obj W) :
     w ∈ W := by
   rw [← spaComap_spaComap φ hφ hplus ψ hψ hψφ hplus' w]

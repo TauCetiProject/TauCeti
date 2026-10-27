@@ -216,6 +216,18 @@ theorem map_spaComapTopHom_obj_spaBasicOpen (T : Finset A) (s : A) :
       (Set.ext_iff.mp (spaComap_preimage_rationalSubset φ hφ Aplus Bplus hplus T s) w).trans
         mem_spaBasicOpen.symm
 
+/-- **A basic open lies in the preimage of a basic open** under the induced map of adic spectra
+exactly when the rational subset it presents lies in the preimage of the other rational subset
+under `comap φ`. -/
+theorem spaBasicOpen_le_map_spaBasicOpen_iff {T : Finset A} {s : A} {T' : Finset B} {s' : B} :
+    spaBasicOpen Bplus T' s' ≤
+        (TopologicalSpace.Opens.map (spaComapTopHom φ hφ hplus)).obj (spaBasicOpen Aplus T s) ↔
+      rationalSubset Bplus T' s' ⊆ comap φ ⁻¹' rationalSubset Aplus T s :=
+  ⟨fun h v hv ↦ mem_spaBasicOpen.mp <| TopologicalSpace.Opens.mem_map.mp <|
+      h ((mem_spaBasicOpen (v := ⟨v, rationalSubset_subset_spa Bplus T' s' hv⟩)).mpr hv),
+    fun h _ hv ↦ TopologicalSpace.Opens.mem_map.mpr <|
+      mem_spaBasicOpen.mpr (h (mem_spaBasicOpen.mp hv))⟩
+
 open CategoryTheory in
 /-- `spaComapTopHom` of the identity homomorphism is the identity morphism. -/
 @[simp]
