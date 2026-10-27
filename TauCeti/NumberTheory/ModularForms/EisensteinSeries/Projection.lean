@@ -41,6 +41,7 @@ primitive-character Eisenstein series is a separate spanning statement.
 public noncomputable section
 
 open Matrix Matrix.SpecialLinearGroup ModularForm CongruenceSubgroup
+open TauCeti.ModularForm
 open _root_.EisensteinSeries
 open scoped MatrixGroups
 
@@ -191,11 +192,9 @@ theorem congruenceEisensteinProjection_mem_modFormCharSpace (hk : 3 ≤ k)
     (χ : (ZMod N)ˣ →* ℂˣ) {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hf : f ∈ modFormCharSpace k χ) :
     congruenceEisensteinProjection (Gamma_le_Gamma1 N) hk f ∈ modFormCharSpace k χ := by
-  rw [mem_modFormCharSpace_iff]
-  intro d
-  rw [diamondOpHom_apply]
-  rw [← congruenceEisensteinProjection_diamondOp,
-    diamondOp_apply_of_mem_modFormCharSpace k χ d hf, map_smul]
+  rw [congruenceEisensteinProjection_def]
+  exact projection_mem_modFormCharSpace _
+    (fun d _ hf ↦ diamondOp_mem_congruenceEisensteinSubspace hk d hf) χ hf
 
 /-- In weight at least three, the restriction of the congruence Eisenstein subspace to a
 nebentypus space is complementary to the cusp forms of that same nebentypus. -/

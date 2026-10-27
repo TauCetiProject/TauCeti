@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Primitive
-public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Descent
+public import TauCeti.NumberTheory.ModularForms.CuspComplementDescent
 
 /-!
 # The weight-two cusp–Eisenstein decomposition for congruence subgroups
@@ -22,7 +22,7 @@ Slashing by `γ ∈ SL(2, ℤ)` replaces the weight `W` of `G₂^W` by `a ↦ W(
 (`TauCeti.EisensteinSeries.weightedG2_slash_apply`). Right multiplication by `SL(2, ℤ)` permutes
 the residues of coprime pairs, so it preserves both conditions on `W`, and the subspace of
 `M₂(Γ(N))` is stable under slashing. The descent is then
-`TauCeti.EisensteinSeries.isCompl_comap_restrictₗ_cuspFormSubmodule` and its nebentypus form.
+`TauCeti.ModularForm.isCompl_comap_restrictₗ_cuspFormSubmodule` and its nebentypus form.
 
 ## Main definitions
 
@@ -50,6 +50,7 @@ the residues of coprime pairs, so it preserves both conditions on `W`, and the s
 public noncomputable section
 
 open Matrix Matrix.SpecialLinearGroup ModularForm CongruenceSubgroup
+open TauCeti.ModularForm
 open _root_.EisensteinSeries
 open scoped MatrixGroups
 
@@ -65,21 +66,6 @@ theorem gammaSlashₗ_weightedG2MF (W : (Fin 2 → ZMod N) → ℂ) (γ : SL(2, 
   apply DFunLike.coe_injective
   rw [coe_gammaSlashₗ, coe_weightedG2MF, coe_weightedG2MF]
   exact (ModularForm.SL_slash _ γ).symm.trans (weightedG2_slash_apply W γ)
-
-/-- Right multiplication of the residues by `γ ∈ SL(2, ℤ)` preserves the primitive weight-two
-weights: it permutes the residues of coprime pairs and does not change the total mass. -/
-theorem comp_vecMul_mem_primitiveG2Weights {W : (Fin 2 → ZMod N) → ℂ}
-    (hW : W ∈ primitiveG2Weights N) (γ : SL(2, ℤ)) :
-    (fun a ↦ W (a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)))) ∈
-      primitiveG2Weights N := by
-  obtain ⟨hsupp, hmass⟩ := mem_primitiveG2Weights_iff.mp hW
-  refine mem_primitiveG2Weights_iff.mpr ⟨fun a ha ↦ ?_, (sum_comp_vecMul W _).trans hmass⟩
-  obtain ⟨x⟩ := hsupp _ ha
-  have hinv : (a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N))) ᵥ*
-      (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) = a := by
-    rw [vecMul_vecMul, ← Matrix.SpecialLinearGroup.coe_mul, ← map_mul, mul_inv_cancel, map_one,
-      Matrix.SpecialLinearGroup.coe_one, vecMul_one]
-  exact ⟨hinv ▸ gammaSetEquiv _ γ⁻¹ x⟩
 
 /-- The primitive weight-two Eisenstein subspace of `M₂(Γ(N))` is stable under slashing by
 `SL(2, ℤ)`. -/

@@ -27,6 +27,10 @@ The character space `modFormCharSpace k χ` (resp. `cuspFormCharSpace k χ`) is 
 bundled type — and membership in it is equivalent to the classical nebentypus transformation
 law `f ∣[k] γ = χ(d_γ) • f` for `γ ∈ Γ₀(N)` (`mem_modFormCharSpace_iff_nebentypus`).
 
+Since the diamond operators preserve the cusp forms, any complement of the cusp forms in
+`M_k(Γ₁(N))` that is stable under the diamond operators has a projection commuting with them,
+and therefore splits each nebentypus space `M_k(N, χ)` against the image of `S_k(N, χ)`.
+
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/HeckeRIngs/GL2/Gamma1Pair.lean`, Chris Birkbeck), realizing Layer 0 of the
 ModularForms roadmap; the roadmap pins these definitions (eigenspace-in-a-`Submodule`, not a
@@ -66,6 +70,13 @@ re-founded slash action with built-in character) and their names. The Hecke pair
   `slash_mapGL_eq_self_of_comp_of_mem_cuspFormCharSpace`: a matrix of `Γ₀(N)` whose lower-right
   entry is `1` modulo a divisor `M` acts trivially on a form whose character is pulled back from
   modulus `M`.
+* `mem_range_cuspToModFormCharSpace_iff`: the image of `S_k(N, χ)` in `M_k(N, χ)` consists of the
+  forms of nebentypus `χ` that are cusp forms.
+* `commute_projection_diamondOp`, `projection_mem_modFormCharSpace`: the projection onto a
+  diamond-stable complement of the cusp forms commutes with the diamond operators, so it
+  preserves each nebentypus space.
+* `isCompl_comap_subtype_range_cuspToModFormCharSpace`: a diamond-stable complement of the cusp
+  forms in `M_k(Γ₁(N))` splits each `M_k(N, χ)` against the image of `S_k(N, χ)`.
 
 ## References
 
@@ -570,6 +581,19 @@ theorem commute_projection_diamondOp {k : ℤ} {d : (ZMod N)ˣ}
     rw [CuspForm.toModularFormₗ_eq_coe, diamondOp_coe_cuspForm]
     exact ModularForm.CuspForm.isCuspForm_toModularFormₗ _
 
+/-- The projection onto a diamond-stable complement of the cusp forms in `M_k(Γ₁(N))` preserves
+each nebentypus space `M_k(N, χ)`. -/
+theorem projection_mem_modFormCharSpace {k : ℤ}
+    {F : Submodule ℂ (ModularForm ((Gamma1 N).map (mapGL ℝ)) k)}
+    (hF : IsCompl F (ModularForm.cuspFormSubmodule ((Gamma1 N).map (mapGL ℝ)) k))
+    (hd : ∀ d : (ZMod N)ˣ, ∀ f ∈ F, diamondOp k d f ∈ F) (χ : (ZMod N)ˣ →* ℂˣ)
+    {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
+    F.projection _ hF f ∈ modFormCharSpace k χ := by
+  rw [mem_modFormCharSpace_iff]
+  intro d
+  rw [diamondOpHom_apply, ← Module.End.mul_apply, ← (commute_projection_diamondOp hF (hd d)).eq,
+    Module.End.mul_apply, diamondOp_apply_of_mem_modFormCharSpace k χ d hf, map_smul]
+
 /-- **A diamond-stable complement of the cusp forms splits each nebentypus space.** If `F` is a
 complement of the cusp forms in `M_k(Γ₁(N))` stable under the diamond operators, then its forms of
 nebentypus `χ` form a complement of the image of `S_k(N, χ)` in `M_k(N, χ)`. -/
@@ -585,14 +609,8 @@ theorem isCompl_comap_subtype_range_cuspToModFormCharSpace {k : ℤ}
     exact Subtype.ext (Submodule.disjoint_def.mp hF.disjoint _ hfF
       ((mem_range_cuspToModFormCharSpace_iff k χ f).mp hfS))
   · refine codisjoint_iff.mpr (eq_top_iff.mpr fun f _ ↦ ?_)
-    -- the projection onto `F` commutes with the diamond operators, so it preserves `χ`
-    have hPχ : F.projection _ hF f ∈ modFormCharSpace k χ := by
-      rw [mem_modFormCharSpace_iff]
-      intro d
-      rw [diamondOpHom_apply, ← Module.End.mul_apply,
-        ← (commute_projection_diamondOp hF (hd d)).eq, Module.End.mul_apply,
-        diamondOp_apply_of_mem_modFormCharSpace k χ d f.2, map_smul]
-    let e : modFormCharSpace k χ := ⟨F.projection _ hF f, hPχ⟩
+    let e : modFormCharSpace k χ :=
+      ⟨F.projection _ hF f, projection_mem_modFormCharSpace hF hd χ f.2⟩
     have he : e ∈ F.comap (modFormCharSpace k χ).subtype := by
       rw [Submodule.mem_comap, Submodule.subtype_apply]
       exact Submodule.projection_apply_mem _ _

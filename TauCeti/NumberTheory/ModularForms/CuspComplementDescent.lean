@@ -31,19 +31,24 @@ nebentypus space (`isCompl_comap_subtype_range_cuspToModFormCharSpace`).
 
 ## Main definitions
 
-* `TauCeti.EisensteinSeries.gammaSlashₗ`: slashing by `γ ∈ SL(2, ℤ)` as an endomorphism of
+* `TauCeti.ModularForm.gammaSlashₗ`: slashing by `γ ∈ SL(2, ℤ)` as an endomorphism of
   `M_k(Γ(N))`.
 
 ## Main results
 
-* `TauCeti.EisensteinSeries.restrict_traceₗ_mem`: the trace from `Γ(N)` to `Γ`, restricted back
+* `TauCeti.ModularForm.gammaSlashₗ_one`, `TauCeti.ModularForm.gammaSlashₗ_mul`,
+  `TauCeti.ModularForm.gammaSlashₗ_of_mem_Gamma`: `gammaSlashₗ` is a right action of
+  `SL(2, ℤ)` on which `Γ(N)` acts trivially.
+* `TauCeti.ModularForm.restrict_diamondOp_eq_gammaSlashₗ`: restricted to `Γ(N)`, a diamond
+  operator is slashing by a representative in `Γ₀(N)`.
+* `TauCeti.ModularForm.restrict_traceₗ_mem`: the trace from `Γ(N)` to `Γ`, restricted back
   to `Γ(N)`, preserves a slash-stable subspace.
-* `TauCeti.EisensteinSeries.isCompl_comap_restrictₗ_cuspFormSubmodule`: a `Γ`-stable
+* `TauCeti.ModularForm.isCompl_comap_restrictₗ_cuspFormSubmodule`: a `Γ`-stable
   complement of the cusp forms of level `Γ(N)` descends to a complement of the cusp forms on
   `Γ ⊇ Γ(N)`.
-* `TauCeti.EisensteinSeries.diamondOp_mem_comap_restrictₗ`: on `Γ₁(N)`, the descended complement
+* `TauCeti.ModularForm.diamondOp_mem_comap_restrictₗ`: on `Γ₁(N)`, the descended complement
   is stable under the diamond operators.
-* `TauCeti.EisensteinSeries.isCompl_comap_restrictₗ_charSpace_range_cuspToModFormCharSpace`: the
+* `TauCeti.ModularForm.isCompl_comap_restrictₗ_charSpace_range_cuspToModFormCharSpace`: the
   descended complement splits `M_k(N, χ)` against the image of `S_k(N, χ)`.
 
 ## References
@@ -57,18 +62,7 @@ public noncomputable section
 open Matrix Matrix.SpecialLinearGroup ModularForm CongruenceSubgroup
 open scoped MatrixGroups Pointwise
 
-namespace TauCeti.EisensteinSeries
-
-/-- The real image of `Γ(N)` is invariant under conjugation by every integral determinant-one
-matrix. This identifies the carrier of its translated modular forms with the original level. -/
-theorem Gamma_map_inv_conjAct_eq (N : ℕ) (γ : SL(2, ℤ)) :
-    ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Gamma N).map (mapGL ℝ) =
-      (Gamma N).map (mapGL ℝ) := by
-  let := Gamma_normal N
-  apply Subgroup.conjAct_pointwise_smul_eq_self
-  apply Subgroup.inv_mem
-  exact Subgroup.le_normalizer_map (H := Gamma N) (mapGL ℝ)
-    (Subgroup.mem_map.mpr ⟨γ, by simp [Subgroup.normalizer_eq_top], rfl⟩)
+namespace TauCeti.ModularForm
 
 variable {N : ℕ} {k : ℤ}
 
@@ -78,10 +72,43 @@ def gammaSlashₗ (γ : SL(2, ℤ)) : Module.End ℂ (ModularForm ((Gamma N).map
     (ModularForm.translateₗ (mapGL ℝ γ) (by simp))
 
 /-- The underlying function of `gammaSlashₗ γ f` is the slash `f ∣[k] γ`. -/
+@[simp]
 theorem coe_gammaSlashₗ (γ : SL(2, ℤ)) (f : ModularForm ((Gamma N).map (mapGL ℝ)) k) :
     ⇑(gammaSlashₗ γ f) = ⇑f ∣[k] mapGL ℝ γ := by
   rw [gammaSlashₗ, LinearMap.comp_apply, ModularForm.restrictₗ_apply, ModularForm.coe_restrict,
     ModularForm.translateₗ_apply, ModularForm.coe_translate]
+
+/-- Slashing by the identity is the identity. -/
+@[simp]
+theorem gammaSlashₗ_one : gammaSlashₗ (N := N) (k := k) 1 = LinearMap.id := by
+  ext f : 1
+  apply DFunLike.coe_injective
+  rw [coe_gammaSlashₗ, map_one, SlashAction.slash_one, LinearMap.id_apply]
+
+/-- Slashing is a right action: slashing by `γ * δ` is slashing by `γ`, then by `δ`. -/
+theorem gammaSlashₗ_mul (γ δ : SL(2, ℤ)) :
+    gammaSlashₗ (N := N) (k := k) (γ * δ) = gammaSlashₗ δ ∘ₗ gammaSlashₗ γ := by
+  ext f : 1
+  apply DFunLike.coe_injective
+  rw [LinearMap.comp_apply, coe_gammaSlashₗ, coe_gammaSlashₗ, coe_gammaSlashₗ, map_mul,
+    SlashAction.slash_mul]
+
+/-- Elements of `Γ(N)` act trivially on `M_k(Γ(N))`. -/
+theorem gammaSlashₗ_of_mem_Gamma {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma N)
+    (f : ModularForm ((Gamma N).map (mapGL ℝ)) k) : gammaSlashₗ γ f = f := by
+  apply DFunLike.coe_injective
+  rw [coe_gammaSlashₗ]
+  exact SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ)
+
+/-- Restricted to `Γ(N)`, the diamond operator `⟨d⟩` on `M_k(Γ₁(N))` is slashing by any
+representative `g ∈ Γ₀(N)` of `d`. -/
+theorem restrict_diamondOp_eq_gammaSlashₗ (d : (ZMod N)ˣ) (g : ↥(Gamma0 N))
+    (hg : (Gamma0Map N).toHomUnits g = d) (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    ModularForm.restrict (Subgroup.map_mono (Gamma_le_Gamma1 N)) (diamondOp k d f) =
+      gammaSlashₗ (g : SL(2, ℤ))
+        (ModularForm.restrict (Subgroup.map_mono (Gamma_le_Gamma1 N)) f) := by
+  apply DFunLike.coe_injective
+  rw [ModularForm.coe_restrict, coe_gammaSlashₗ, ModularForm.coe_restrict, coe_diamondOp k d g hg]
 
 variable [NeZero N] {Γ : Subgroup SL(2, ℤ)}
   {E : Submodule ℂ (ModularForm ((Gamma N).map (mapGL ℝ)) k)}
@@ -155,14 +182,8 @@ theorem diamondOp_mem_comap_restrictₗ (hslash : ∀ γ ∈ Gamma0 N, ∀ f ∈
     diamondOp k d f ∈
       E.comap (ModularForm.restrictₗ _ ℂ (Subgroup.map_mono (Gamma_le_Gamma1 N))) := by
   obtain ⟨g, hg⟩ := Gamma0Map_toHomUnits_surjective (N := N) d
-  have hrestrict : ModularForm.restrict (Subgroup.map_mono (Gamma_le_Gamma1 N))
-      (diamondOp k d f) = gammaSlashₗ (g : SL(2, ℤ))
-        (ModularForm.restrict (Subgroup.map_mono (Gamma_le_Gamma1 N)) f) := by
-    apply DFunLike.coe_injective
-    rw [ModularForm.coe_restrict, coe_gammaSlashₗ, ModularForm.coe_restrict,
-      coe_diamondOp k d g hg]
   rw [Submodule.mem_comap, ModularForm.restrictₗ_apply] at hf ⊢
-  rw [hrestrict]
+  rw [restrict_diamondOp_eq_gammaSlashₗ d g hg]
   exact hslash _ g.2 _ hf
 
 /-- **Descent to a nebentypus.** If `E` is a complement of the cusp forms in `M_k(Γ(N))` stable
@@ -180,4 +201,4 @@ theorem isCompl_comap_restrictₗ_charSpace_range_cuspToModFormCharSpace
 
 end Gamma1
 
-end TauCeti.EisensteinSeries
+end TauCeti.ModularForm
