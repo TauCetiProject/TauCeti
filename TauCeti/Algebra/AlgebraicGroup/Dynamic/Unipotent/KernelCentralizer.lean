@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Diagonalizable
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.KernelCentralizer
 import TauCeti.Order.CompactlyGenerated
+import TauCeti.Order.CompleteLattice.Basic
 
 /-!
 # Contracted subgroups of the centralizer of a character kernel
@@ -47,9 +48,9 @@ finite projective.
   lies in `Z_G(ker α)` and in `U_G(λ)`.
 * `TauCeti.SplitMaximalTorus.lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule`: its Lie
   algebra is `⨆ (n : ℤ) (_ : 0 < n * ⟨α, ψ⟩), 𝔤_{nα}`.
-* `TauCeti.SplitMaximalTorus.lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule_of_pos`:
+* `SplitMaximalTorus.lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule_of_pairing_pos`:
   for `⟨α, ψ⟩ > 0` its Lie algebra is `⨆ n > 0, 𝔤_{nα}`.
-* `TauCeti.SplitMaximalTorus.lieSubalgebra_unipotentCentralizerKerHopfIdeal_of_pairing_eq_zero`:
+* `SplitMaximalTorus.lieSubalgebra_unipotentCentralizerKerHopfIdeal_eq_bot_of_pairing_eq_zero`:
   for `⟨α, ψ⟩ = 0` its Lie algebra is zero.
 * `TauCeti.SplitMaximalTorus.lieSubalgebra_centralizerKerHopfIdeal_toSubmodule_eq_sup`: for
   `⟨α, ψ⟩ ≠ 0` the Lie algebras of `U_G(λ) ∩ Z_G(ker α)`, `Z_G(T)` and `U_G(λ⁻¹) ∩ Z_G(ker α)`
@@ -119,14 +120,6 @@ section Lie
 variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
   [Module.Projective R (Bialgebra.CotangentSpace R H)]
 
-/-- The pairing of a multiple of a character with a cocharacter of the split torus. -/
-private lemma pairing_ofAdd_zsmul (α : ULift.{u} (Fin r) →₀ ℤ) (n : ℤ)
-    (ψ : Multiplicative (ULift.{u} (Fin r) →₀ ℤ) →* Multiplicative ℤ) :
-    DiagonalizableGroup.pairing (Multiplicative.ofAdd (n • α)) ψ =
-      n * DiagonalizableGroup.pairing (Multiplicative.ofAdd α) ψ := by
-  rw [DiagonalizableGroup.pairing_def, DiagonalizableGroup.pairing_def, ofAdd_zsmul, map_zpow,
-    toAdd_zpow, smul_eq_mul]
-
 /-- A tangent vector lies in the Lie algebra of `U_G(λ) ∩ Z_G(ker α)` exactly when it is a sum of
 weight vectors of `T` whose weights are the multiples `n • α` with `0 < n * ⟨α, ψ⟩`. -/
 theorem cotangentLinearEquiv_mem_lieSubalgebra_unipotentCentralizerKerHopfIdeal_iff
@@ -163,7 +156,7 @@ theorem cotangentLinearEquiv_mem_lieSubalgebra_unipotentCentralizerKerHopfIdeal_
   -- Reindex the characters `χ = n • α` by the integers `n`.
   simp only [iSup_and, iSup_exists]
   rw [iSup_comm]
-  simp only [iSup_iSup_eq_left, pairing_ofAdd_zsmul]
+  simp only [iSup_iSup_eq_left, ofAdd_zsmul, DiagonalizableGroup.pairing_zpow_left]
   -- The sides differ only in the carrier `SplitTorus.characterGroup`, which unfolds to
   -- `Multiplicative (ULift (Fin r) →₀ ℤ)` by definition.
   rfl
@@ -187,7 +180,7 @@ theorem lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule
 /-- **For `⟨α, ψ⟩ > 0` the Lie algebra of `U_G(λ) ∩ Z_G(ker α)` is `⨆ n > 0, 𝔤_{nα}`**, the sum
 of the weight spaces of `T` on the positive multiples of `α`; in particular it does not depend on
 the choice of such a `ψ`. -/
-theorem lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule_of_pos
+theorem lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule_of_pairing_pos
     (T : SplitMaximalTorus R H r) (α : ULift.{u} (Fin r) →₀ ℤ)
     (ψ : Multiplicative (ULift.{u} (Fin r) →₀ ℤ) →* Multiplicative ℤ)
     (hψ : 0 < DiagonalizableGroup.pairing (Multiplicative.ofAdd α) ψ) :
@@ -202,7 +195,7 @@ theorem lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule_of_pos
 
 /-- **For `⟨α, ψ⟩ = 0` the Lie algebra of `U_G(λ) ∩ Z_G(ker α)` is zero.** -/
 @[simp]
-theorem lieSubalgebra_unipotentCentralizerKerHopfIdeal_of_pairing_eq_zero
+theorem lieSubalgebra_unipotentCentralizerKerHopfIdeal_eq_bot_of_pairing_eq_zero
     (T : SplitMaximalTorus R H r) (α : ULift.{u} (Fin r) →₀ ℤ)
     (ψ : Multiplicative (ULift.{u} (Fin r) →₀ ℤ) →* Multiplicative ℤ)
     (hψ : DiagonalizableGroup.pairing (Multiplicative.ofAdd α) ψ = 0) :
@@ -210,18 +203,6 @@ theorem lieSubalgebra_unipotentCentralizerKerHopfIdeal_of_pairing_eq_zero
   rw [← LieSubalgebra.toSubmodule_eq_bot,
     lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule]
   simp [hψ]
-
-/-- Splitting the multiples of `α` by the sign of their pairing with `ψ`, when `⟨α, ψ⟩ ≠ 0`. -/
-private lemma iSup_zsmul_eq_sup_sup {M : Type*} [CompleteLattice M] (f : ℤ → M) {c : ℤ}
-    (hc : c ≠ 0) :
-    ⨆ n : ℤ, f n = (⨆ (n : ℤ) (_ : 0 < n * c), f n) ⊔ f 0 ⊔ ⨆ (n : ℤ) (_ : 0 < n * -c), f n := by
-  refine le_antisymm (iSup_le fun n ↦ ?_) (sup_le (sup_le (iSup₂_le fun n _ ↦ le_iSup f n)
-    (le_iSup f 0)) (iSup₂_le fun n _ ↦ le_iSup f n))
-  rcases lt_trichotomy (n * c) 0 with h | h | h
-  · exact le_sup_of_le_right (le_iSup₂_of_le n (by linarith) le_rfl)
-  · obtain rfl : n = 0 := (mul_eq_zero.mp h).resolve_right hc
-    exact le_sup_of_le_left le_sup_right
-  · exact le_sup_of_le_left (le_sup_of_le_left (le_iSup₂_of_le n h le_rfl))
 
 /-- **The Lie algebra of `Z_G(ker α)` is spanned by those of `U_G(λ) ∩ Z_G(ker α)`, `Z_G(T)` and
 `U_G(λ⁻¹) ∩ Z_G(ker α)`** whenever `⟨α, ψ⟩ ≠ 0`: the weight spaces `𝔤_{nα}` split into those with
@@ -235,18 +216,15 @@ theorem lieSubalgebra_centralizerKerHopfIdeal_toSubmodule_eq_sup (T : SplitMaxim
       ((T.unipotentCentralizerKerHopfIdeal α ψ).lieSubalgebra (B := R)).toSubmodule ⊔
         ((BialgHom.centralizerHopfIdeal T.coordinateMap.hom).lieSubalgebra (B := R)).toSubmodule ⊔
         ((T.unipotentCentralizerKerHopfIdeal α ψ⁻¹).lieSubalgebra (B := R)).toSubmodule := by
-  have hinv : DiagonalizableGroup.pairing (Multiplicative.ofAdd α) ψ⁻¹ =
-      -DiagonalizableGroup.pairing (Multiplicative.ofAdd α) ψ := by
-    rw [DiagonalizableGroup.pairing_def, DiagonalizableGroup.pairing_def, MonoidHom.inv_apply,
-      toAdd_inv]
   rw [← centralizerKerHopfIdeal_zero, lieSubalgebra_centralizerKerHopfIdeal_toSubmodule,
     lieSubalgebra_centralizerKerHopfIdeal_toSubmodule,
     lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule,
-    lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule, hinv, ← Submodule.map_sup,
+    lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule,
+    DiagonalizableGroup.pairing_inv_right, ← Submodule.map_sup,
     ← Submodule.map_sup]
   congr 1
-  have h := iSup_zsmul_eq_sup_sup (fun n ↦ Derivation.adjointWeightSpace T.coordinateMap.hom
-    (Multiplicative.ofAdd (n • α))) hψ
+  have h := iSup_int_eq_sup_pos_mul_sup_zero_sup_neg_mul
+    (fun n ↦ Derivation.adjointWeightSpace T.coordinateMap.hom (Multiplicative.ofAdd (n • α))) hψ
   simp only [smul_zero, zero_smul, iSup_const] at h ⊢
   exact h
 
