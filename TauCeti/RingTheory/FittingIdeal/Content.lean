@@ -34,6 +34,8 @@ which `Spec B` lies inside `Z`: the Weil restriction of `Z` along `Spec B → Sp
 
 * `Submodule.minorsIdeal_one_le_iff`: the ideal of `1 × 1` minors lies in `𝔞` exactly when every
   functional maps `N` into `𝔞`.
+* `Submodule.minorsIdeal_le_minorsIdeal_one_pow`: the ideal of `p × p` minors lies in the `p`-th
+  power of the content.
 * `Submodule.minorsIdeal_one_le_iff_le_smul_top`: for projective `M`, `N.minorsIdeal 1` is the
   smallest ideal `𝔞` with `N ≤ 𝔞 • ⊤`.
 * `IsBaseChange.minorsIdeal_one_le_ker_iff`: for projective `M`, the image of `N` in the base
@@ -70,6 +72,20 @@ theorem minorsIdeal_one_le_iff {N : Submodule A M} {𝔞 : Ideal A} :
   refine ⟨fun h φ x hx ↦ h (φ.apply_mem_minorsIdeal_one hx), fun h ↦ ?_⟩
   refine minorsIdeal_le_iff.2 fun f v hv ↦ ?_
   simpa using h (f 0) (v 0) (hv 0)
+
+/-- Every `p × p` minor of `N` is a sum of products of `p` entries, so the ideal of `p × p`
+minors lies in the `p`-th power of the ideal of `1 × 1` minors. -/
+theorem minorsIdeal_le_minorsIdeal_one_pow (N : Submodule A M) (p : ℕ) :
+    N.minorsIdeal p ≤ N.minorsIdeal 1 ^ p := by
+  induction p with
+  | zero => simp
+  | succ p ih =>
+    refine minorsIdeal_le_iff.2 fun f v hv ↦ ?_
+    rw [Matrix.det_succ_row_zero, pow_succ']
+    refine sum_mem fun j _ ↦ ?_
+    rw [mul_assoc]
+    exact Ideal.mul_mem_left _ _ <| Ideal.mul_mem_mul ((f j).apply_mem_minorsIdeal_one (hv 0)) <|
+      ih <| det_mem_minorsIdeal (fun k ↦ f (j.succAbove k)) fun i ↦ hv i.succ
 
 variable [Projective A M]
 
