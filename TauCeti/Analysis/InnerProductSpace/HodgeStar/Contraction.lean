@@ -98,12 +98,14 @@ theorem koszulDifferential_hodgeStar (u : V) {k l : ℕ} (hkl : k + (l + 1) = fi
   have hx : (x : _root_.ExteriorAlgebra ℝ V) * (_root_.ExteriorAlgebra.ι ℝ u * y) =
       (-1 : ℝ) ^ k • (_root_.ExteriorAlgebra.ι ℝ u * x * y) := by
     rw [_root_.ExteriorAlgebra.ι_mul_eq_involute_mul u (x : _root_.ExteriorAlgebra ℝ V),
-      ExteriorAlgebra.involute_of_mem_exteriorPower x.2, smul_mul_assoc, smul_mul_assoc,
-      smul_smul, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul, mul_assoc]
+      ExteriorAlgebra.involute_of_mem_exteriorPower x.2]
+    simp [smul_smul, ← mul_pow, mul_assoc]
+  -- Both inner products are now volumes of the same top form `z`, up to the sign.
   rw [real_inner_comm, ← inner_wedgeLeft_eq_inner_koszulDifferential, real_inner_comm,
     inner_hodgeStar_apply, real_inner_smul_left, inner_hodgeStar_apply,
     wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _ ((-1 : ℝ) ^ k • z) (by simp [z, hx]),
-    wedgePairing_apply_eq_of_coe_mul_eq _ hkl' _ _ z (by simp [z]), map_smul, smul_eq_mul]
+    wedgePairing_apply_eq_of_coe_mul_eq _ hkl' _ _ z (by simp [z])]
+  simp
 
 /-- **Hodge star of a contraction**: for `x ∈ ⋀ᵏ⁺¹ V`, `⋆(ι_u x) = (-1) ^ k u ∧ ⋆x`. -/
 theorem hodgeStar_koszulDifferential (u : V) {k l : ℕ} (hkl : k + (l + 1) = finrank ℝ V)
@@ -115,10 +117,11 @@ theorem hodgeStar_koszulDifferential (u : V) {k l : ℕ} (hkl : k + (l + 1) = fi
   have hlk' : l + 1 + k = finrank ℝ V := by omega
   have h := congrArg (o.hodgeStar hkl)
     (o.koszulDifferential_hodgeStar u hlk hlk' (o.hodgeStar hkl' x))
-  rw [o.hodgeStar_hodgeStar hkl' hlk, map_smul, map_smul, map_smul,
-    o.hodgeStar_hodgeStar hlk' hkl, smul_smul] at h
-  rw [← smul_right_inj (pow_ne_zero ((k + 1) * l) (neg_ne_zero.2 (one_ne_zero (α := ℝ)))), h,
-    smul_smul, ← pow_add, ← pow_add]
+  simp only [o.hodgeStar_hodgeStar hkl' hlk, map_smul, o.hodgeStar_hodgeStar hlk' hkl,
+    smul_smul] at h
+  rw [← smul_right_inj (pow_ne_zero ((k + 1) * l) (neg_ne_zero.2 (one_ne_zero (α := ℝ)))), h]
+  -- It remains to compare the signs.
+  simp only [smul_smul, ← pow_add]
   congr 2
   ring
 
@@ -139,6 +142,6 @@ theorem koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar (u : V) {k l : 
   -- The signs agree: `(k + 1) l + (k + 1 + l) k = l + 2 (k l + j)` where `k (k + 1) = 2 j`.
   obtain ⟨j, hj⟩ := Nat.even_mul_succ_self k
   have he : (k + 1) * l + (k + 1 + l) * k = l + 2 * (k * l + j) := by nlinarith [hj]
-  rw [he, pow_add, pow_mul, neg_one_sq, one_pow, mul_one]
+  simp [he, pow_add, pow_mul]
 
 end Orientation
