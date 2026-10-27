@@ -45,9 +45,11 @@ into primes, `Φ(A) = ∏ᵢ Φ(Pᵢ)`; the primes whose norm is not prime to `m
 * `Ideal.stickelbergerPhi_top`: `Φ(𝓞 K) = 1`.
 * `Ideal.stickelbergerPhi_norm_sq`: `|σ(Φ(A))|² = N(A)^m` for every complex embedding `σ` of `K`
   and every ideal `A` whose norm is prime to `m`.
-* `Ideal.stickelbergerPhi_modEq`: `Φ(P) ≡ -1 (mod m)` for `m` prime.
-* `Ideal.stickelbergerPhi_modEq_neg_one_pow`: `Φ(A) ≡ (-1)^r (mod m)` for `m` prime, where `r` is
-  the number of prime factors of `A`, counted with multiplicity.
+* `Ideal.stickelbergerPhi_modEq`: `Φ(P) ≡ -1 (mod m)` for `m` prime and every maximal ideal `P`
+  whose norm is prime to `m`.
+* `Ideal.stickelbergerPhi_modEq_neg_one_pow`: `Φ(A) ≡ (-1)^r (mod m)` for `m` prime and every ideal
+  `A` whose norm is prime to `m`, where `r` is the number of prime factors of `A`, counted with
+  multiplicity.
 
 ## References
 
