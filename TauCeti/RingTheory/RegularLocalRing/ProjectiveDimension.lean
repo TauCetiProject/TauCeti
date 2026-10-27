@@ -173,7 +173,7 @@ theorem globalDimension_eq_ringKrullDim : globalDimension.{v} R = ringKrullDim R
     exact (globalDimension_le_iff_hasProjectiveDimensionLE R _).mpr
       (hasProjectiveDimensionLE (spanFinrank_maximalIdeal (R := R)).ge)
   · rw [← projectiveDimension_quotient_maximalIdeal_eq_ringKrullDim.{v}]
-    exact projectiveDimension_le_globalDimension _
+    exact ModuleCat.projectiveDimension_le_globalDimension _
 
 end IsRegularLocalRing
 

@@ -24,11 +24,13 @@ dimension is finite, and then it equals the Krull dimension.
 
 ## Main results
 
+* `TauCeti.globalDimension_le_iff`: `globalDimension R ≤ d` iff every module has projective
+  dimension at most `d`, for any `d : WithBot ℕ∞`.
 * `TauCeti.globalDimension_le_iff_hasProjectiveDimensionLE`: `globalDimension R ≤ n` iff every
   module has projective dimension at most `n`, in Mathlib's pointwise vocabulary.
 * `TauCeti.globalDimension_le_tfae`: it suffices to bound the projective dimensions of the finite
   modules, or only of the cyclic modules `R ⧸ I` (Stacks, Lemma 10.109.12 (065T)).
-* `TauCeti.globalDimension_localization_le`: localization does not increase the global dimension
+* `Submonoid.globalDimension_localization_le`: localization does not increase the global dimension
   (Stacks, Lemma 10.109.13 (00O8)).
 * `TauCeti.globalDimension_eq_zero_of_isSemisimpleRing`: a nonzero semisimple ring, for instance
   a field, has global dimension zero.
@@ -63,11 +65,21 @@ variable (R : Type u) [Ring R]
 noncomputable def globalDimension : WithBot ℕ∞ :=
   ⨆ M : ModuleCat.{v} R, projectiveDimension M
 
+/-- Unfolds `globalDimension` as the supremum of the projective dimensions of all modules. -/
+theorem globalDimension_def :
+    globalDimension.{v} R = ⨆ M : ModuleCat.{v} R, projectiveDimension M := by
+  rw [globalDimension]
+
 variable {R} in
 /-- The projective dimension of every module is at most the global dimension of the ring. -/
-theorem projectiveDimension_le_globalDimension (M : ModuleCat.{v} R) :
+theorem _root_.ModuleCat.projectiveDimension_le_globalDimension (M : ModuleCat.{v} R) :
     projectiveDimension M ≤ globalDimension.{v} R :=
   le_iSup (fun M : ModuleCat.{v} R ↦ projectiveDimension M) M
+
+/-- The global dimension is at most `d` iff every module has projective dimension at most `d`. -/
+theorem globalDimension_le_iff (d : WithBot ℕ∞) :
+    globalDimension.{v} R ≤ d ↔ ∀ M : ModuleCat.{v} R, projectiveDimension M ≤ d :=
+  iSup_le_iff
 
 /-- The global dimension is at most `n` iff every module has projective dimension at most `n`. -/
 theorem globalDimension_le_iff_hasProjectiveDimensionLE (n : ℕ) :
@@ -110,7 +122,7 @@ theorem globalDimension_eq_zero_of_isSemisimpleRing [IsSemisimpleRing R] [Nontri
       rw [ModuleCat.isZero_iff_subsingleton, ← (equivShrink.{v} R).subsingleton_congr]
       exact not_subsingleton R
     exact ((projectiveDimension_ge_zero_iff _).mpr hR).trans
-      (projectiveDimension_le_globalDimension _)
+      (ModuleCat.projectiveDimension_le_globalDimension _)
 
 end Ring
 
@@ -121,7 +133,7 @@ variable {R : Type u} [CommRing R]
 /-- **Localization does not increase the global dimension.** For a submonoid `S` of `R`, the
 global dimension of `S⁻¹R` is at most that of `R`. Stacks, Lemma 10.109.13 (00O8). -/
 @[stacks 00O8]
-theorem globalDimension_localization_le [Small.{v} R] (S : Submonoid R) :
+theorem _root_.Submonoid.globalDimension_localization_le [Small.{v} R] (S : Submonoid R) :
     globalDimension.{v} (Localization S) ≤ globalDimension.{v} R := by
   refine iSup_le fun N ↦ ?_
   let : Module R N := Module.compHom N (algebraMap R (Localization S))
@@ -133,7 +145,7 @@ theorem globalDimension_localization_le [Small.{v} R] (S : Submonoid R) :
       (LinearMap.id : N →ₗ[R] N)).extendScalarsOfIsLocalization S (Localization S))
   rw [← projectiveDimension_eq_of_iso e]
   exact (ModuleCat.projectiveDimension_le_projectiveDimension_of_isLocalizedModule S M).trans
-    (projectiveDimension_le_globalDimension M)
+    (ModuleCat.projectiveDimension_le_globalDimension M)
 
 end CommRing
 
