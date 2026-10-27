@@ -120,9 +120,8 @@ theorem connesB_mem_cyclicCoboundaries {n : ℕ}
   obtain ⟨ψ, rfl⟩ := mem_hochschildCoboundaries_succ_iff.1 hφ
   cases n with
   | zero =>
-    -- Every `0`-cochain is cyclic, hence so is its coboundary, on which `B` vanishes.
-    have hψ : ψ ∈ cyclicCochains R A M 0 := by simp
-    simp [connesB_eq_zero_of_mem_cyclicCochains (hochschildCoboundary_mem_cyclicCochains R A M hψ)]
+    -- `B (b ψ) = 0` in degree zero (`connesB_hochschildCoboundary_zero`).
+    simp
   | succ n =>
     -- `B (b ψ) = b (-B ψ)` is the coboundary of a cyclic cochain.
     refine (mem_cyclicCoboundaries_succ_iff R A M).2

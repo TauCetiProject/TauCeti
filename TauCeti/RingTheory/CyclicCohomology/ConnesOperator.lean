@@ -564,11 +564,8 @@ theorem hochschildCoboundary_comp_connesB_add_connesB_comp_hochschildCoboundary 
 cochain `φ`. -/
 @[simp]
 theorem connesB_hochschildCoboundary_zero (φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M) :
-    connesB R A M 0 (hochschildCoboundary R A M 0 φ) = 0 := by
-  ext a
-  simp only [connesB_apply, cyclicNorm_apply, sub_apply, barContraction_apply,
-    cyclicOperator_apply, hochschildCoboundary_zero_apply]
-  simp
+    connesB R A M 0 (hochschildCoboundary R A M 0 φ) = 0 :=
+  connesB_eq_zero_of_mem_cyclicCochains (hochschildCoboundary_mem_cyclicCochains R A M (by simp))
 
 end ConnesB
 
