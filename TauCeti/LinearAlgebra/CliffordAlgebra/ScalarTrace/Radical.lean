@@ -21,8 +21,9 @@ the ideal consists of the linear combinations of ordered monomials containing an
 vector. Equivalently, the coordinates at every monomial with nonzero quadratic weight vanish.
 
 This identifies the algebraic obstruction to faithfulness of scalar-trace metrics. The pairing
-criterion works for arbitrary quadratic forms over fields of characteristic different from two;
-it does not require a positivity assumption.
+criterion holds for every quadratic form on a finite-dimensional vector space over a field in
+which `2` is invertible, and for every quadratic form with a given orthogonal basis over an
+integral domain in which `2` is invertible; it does not require a positivity assumption.
 
 The proofs use the ordered-product basis and its diagonal trace pairing from
 `CliffordAlgebra.scalarTrace_reverse_basis_mul`, and Mathlib's native quadratic radical and
