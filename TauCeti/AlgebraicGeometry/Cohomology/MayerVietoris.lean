@@ -38,7 +38,7 @@ together with the vanishing it gives when `U` and `V` cover `X`.
 * `Scheme.Modules.subsingleton_cohomology_of_two_le_of_isAffineOpen` applies affine-open
   acyclicity when `U`, `V`, and `U ⊓ V` are affine, while the `_of_isAffineHom` variant obtains
   the intersection hypothesis from an affine diagonal, and the `_of_isSeparated` variant supplies
-  it for a separated (for instance proper) scheme over a field.
+  it for a separated (for instance proper) scheme over an affine base.
 
 These statements are the shape in which Mayer-Vietoris is used on a curve. The general theorem
 accepts arbitrary coefficients and explicit acyclicity hypotheses. For quasi-coherent
@@ -203,15 +203,15 @@ theorem subsingleton_cohomology_of_two_le_of_isAffineOpen_of_isAffineHom
     (hUV : U ⊔ V = ⊤) (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) :=
   subsingleton_cohomology_of_two_le_of_isAffineOpen M hU hV (hU.inf hV) hUV n hn
 
-variable {k : Type u} [Field k] [X.Over (Spec (.of k))]
+variable {R : Type u} [CommRing R] [X.Over (Spec (.of R))]
 
-/-- A separated (for instance proper) scheme over a field which is covered by two affine opens has
-no quasi-coherent cohomology in degrees at least two. -/
-theorem subsingleton_cohomology_of_two_le_of_isSeparated [IsSeparated (X ↘ Spec (.of k))]
+/-- A separated (for instance proper) scheme over an affine base `Spec R` which is covered by two
+affine opens has no quasi-coherent cohomology in degrees at least two. -/
+theorem subsingleton_cohomology_of_two_le_of_isSeparated [IsSeparated (X ↘ Spec (.of R))]
     (hcover : ∃ U V : X.Opens, IsAffineOpen U ∧ IsAffineOpen V ∧ U ⊔ V = ⊤) (M : X.Modules)
     [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) := by
   have : IsSeparated (terminal.from X) := by
-    rw [← terminal.comp_from (X ↘ Spec (.of k))]
+    rw [← terminal.comp_from (X ↘ Spec (.of R))]
     infer_instance
   obtain ⟨U, V, hU, hV, hUV⟩ := hcover
   exact subsingleton_cohomology_of_two_le_of_isAffineOpen_of_isAffineHom M hU hV hUV n hn

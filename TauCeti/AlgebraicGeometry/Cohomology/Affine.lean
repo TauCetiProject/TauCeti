@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
 public import Mathlib.AlgebraicGeometry.AffineScheme
+public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
 public import TauCeti.Topology.Sheaves.Cartan
 import TauCeti.AlgebraicGeometry.Modules.Localization
@@ -56,6 +57,8 @@ induction on the number of members.
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffine` and the instance
   `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isQuasicoherent`: the same on
   an affine scheme and on `Spec R`.
+* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffineHom`: the same on the
+  source of an affine morphism (for example a finite morphism) to an affine scheme.
 
 ## References
 
@@ -261,5 +264,13 @@ instance subsingleton_cohomology_succ_of_isQuasicoherent {R : CommRingCat.{u}}
     (N : (Spec R).Modules) [N.IsQuasicoherent] (n : ℕ) :
     Subsingleton (Cohomology N (n + 1)) :=
   subsingleton_cohomology_succ_of_isAffine N n
+
+/-- A quasi-coherent sheaf on the source of an affine morphism to an affine scheme (for example, on
+a scheme finite over a field) has no cohomology in positive degrees. -/
+theorem subsingleton_cohomology_succ_of_isAffineHom {X S : Scheme.{u}} (f : X ⟶ S) [IsAffineHom f]
+    [IsAffine S] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    Subsingleton (Cohomology M (n + 1)) := by
+  have : IsAffine X := isAffine_of_isAffineHom f
+  exact subsingleton_cohomology_succ_of_isAffine M n
 
 end AlgebraicGeometry.Scheme.Modules

@@ -89,7 +89,7 @@ codimension-one local rings are discrete valuation rings, a quasi-coherent sheaf
 no cohomology in degrees at least two. -/
 theorem subsingleton_cohomology_of_two_le_of_isCurveOver (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) :=
-  subsingleton_cohomology_of_two_le_of_isSeparated (k := k) (X.exists_two_affine_opens (k := k)) M
+  subsingleton_cohomology_of_two_le_of_isSeparated (R := k) (X.exists_two_affine_opens (k := k)) M
     n hn
 
 /-- On a proper integral curve over a field whose codimension-one local rings are discrete
@@ -150,7 +150,7 @@ degrees at least two. -/
 theorem subsingleton_cohomology_of_two_le_of_smooth [IsProper (X ↘ Spec (.of k))]
     [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))] [ConnectedSpace X] (M : X.Modules)
     [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) :=
-  subsingleton_cohomology_of_two_le_of_isSeparated (k := k)
+  subsingleton_cohomology_of_two_le_of_isSeparated (R := k)
     (X.exists_two_affine_opens_of_smooth (k := k)) M n hn
 
 variable (k) in
