@@ -100,6 +100,13 @@ theorem cyclicBicomplexHorizontal_of_odd (hp : Odd p) :
     cyclicBicomplexHorizontal R A M p q = cyclicNorm R A M q :=
   ite_eq_right (Nat.not_even_iff_odd.2 hp)
 
+variable (R A M p q) in
+/-- The horizontal differentials are periodic of period two in the column. -/
+@[simp]
+theorem cyclicBicomplexHorizontal_add_two :
+    cyclicBicomplexHorizontal R A M (p + 2) q = cyclicBicomplexHorizontal R A M p q := by
+  simp [cyclicBicomplexHorizontal, Nat.even_add]
+
 /-- Two consecutive horizontal differentials compose to zero: `N (1 - λ) = 0 = (1 - λ) N`. -/
 @[simp]
 theorem cyclicBicomplexHorizontal_succ_mul_cyclicBicomplexHorizontal :
@@ -159,6 +166,13 @@ theorem cyclicBicomplexVertical_of_even (hp : Even p) :
 theorem cyclicBicomplexVertical_of_odd (hp : Odd p) :
     cyclicBicomplexVertical R A M p q = -barCoboundary R A M q :=
   ite_eq_right (Nat.not_even_iff_odd.2 hp)
+
+variable (R A M p q) in
+/-- The vertical differentials are periodic of period two in the column. -/
+@[simp]
+theorem cyclicBicomplexVertical_add_two :
+    cyclicBicomplexVertical R A M (p + 2) q = cyclicBicomplexVertical R A M p q := by
+  simp [cyclicBicomplexVertical, Nat.even_add]
 
 variable (R A M p q) in
 /-- Adjacent squares of the cyclic bicomplex anticommute: going right then up is minus going up
@@ -228,6 +242,12 @@ theorem mem_cyclicTotalCochains_iff {m : ℕ}
     x ∈ cyclicTotalCochains R A M m ↔ ∀ q, m < q → x q = 0 := by
   simp [cyclicTotalCochains, Submodule.mem_pi]
 
+/-- A total cochain of degree `m` vanishes in every row `q > m`. -/
+@[simp]
+theorem coe_cyclicTotalCochains_apply_of_lt {m q : ℕ} (x : cyclicTotalCochains R A M m)
+    (hq : m < q) : (x : ∀ q : ℕ, MultilinearMap R (fun _ : Fin (q + 1) ↦ A) M) q = 0 :=
+  mem_cyclicTotalCochains_iff.1 x.2 q hq
+
 /-- A cochain placed in row `k ≤ m` is a total cochain of degree `m`. -/
 theorem single_mem_cyclicTotalCochains {m k : ℕ} (hk : k ≤ m)
     (φ : MultilinearMap R (fun _ : Fin (k + 1) ↦ A) M) :
@@ -236,6 +256,11 @@ theorem single_mem_cyclicTotalCochains {m k : ℕ} (hk : k ≤ m)
   rw [mem_cyclicTotalCochains_iff]
   intro q hq
   exact Pi.single_eq_of_ne (by omega) _
+
+/-- A total cochain of degree `m` is a total cochain of every degree `n ≥ m`. -/
+theorem cyclicTotalCochains_mono : Monotone (cyclicTotalCochains R A M) := fun m n hmn x hx ↦ by
+  rw [mem_cyclicTotalCochains_iff] at hx ⊢
+  exact fun q hq ↦ hx q (lt_of_le_of_lt hmn hq)
 
 /-- A total cochain of degree `m` vanishing below row `m` is concentrated in column zero. -/
 private theorem eq_single_of_forall_lt {m : ℕ}

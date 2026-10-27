@@ -36,6 +36,8 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   `TauCeti.Dagger.washnitzerAlgebra.ofMvPolynomial`: the inclusion of the polynomials.
 * `TauCeti.Dagger.washnitzerAlgebra.toTate`: the inclusion of `W` into the unit-radius Tate
   algebra.
+* `TauCeti.Dagger.washnitzerAlgebra.ofRestricted`: the inclusion into `W` of the series
+  restricted at a polyradius bounded below by some `ρ > 1`.
 * `TauCeti.Dagger.washnitzerAlgebra.renameEquiv`: renaming the variables along an equivalence.
 
 ## Main results
@@ -226,6 +228,20 @@ theorem denseRange_toTate : DenseRange (toTate σ R) := by
     (s := fun _ ↦ 2) (fun _ ↦ zero_le_one) fun _ ↦ one_le_two).mono ?_
   rintro _ ⟨f, rfl⟩
   exact ⟨⟨f, 2, one_lt_two, f.2⟩, Subtype.ext (by simp)⟩
+
+/-- For a polyradius `c` bounded below by some `ρ > 1`, the inclusion of the series restricted at
+`c` into the Monsky–Washnitzer algebra. -/
+noncomputable def ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i) :
+    IsRestricted.subring (R := R) c →+* washnitzerAlgebra σ R :=
+  (IsRestricted.subring (R := R) c).subtype.codRestrict (washnitzerAlgebra σ R).toSubring
+    fun f ↦ mem_washnitzerAlgebra.mpr
+      ⟨ρ, hρ, isRestricted_of_le f.2 (fun _ ↦ (zero_lt_one.trans hρ).le) hc⟩
+
+/-- The inclusion of a restricted subring does not change the underlying series. -/
+@[simp]
+theorem coe_ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i)
+    (f : IsRestricted.subring (R := R) c) : (ofRestricted hρ hc f : MvPowerSeries σ R) = f :=
+  (rfl)
 
 /-- A renamed series is overconvergent iff the original one is. -/
 private theorem renameEquiv_mem_iff {τ : Type*} (e : σ ≃ τ) (f : MvPowerSeries σ R) :

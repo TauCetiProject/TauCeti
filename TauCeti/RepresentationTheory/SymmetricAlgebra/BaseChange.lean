@@ -38,6 +38,8 @@ representation `ρ.baseChange S`. This file draws the consequences for invariant
   subalgebra, as an algebra equivalence.
 * `Representation.coe_symmetricAlgebraReynolds_scalarTensorBialgEquiv_tmul`: the Reynolds operator
   commutes with scalar extension.
+* `Representation.symmetricAlgebraReynolds_scalarTensorBialgEquiv`: for flat `S`, the same
+  compatibility stated through the invariant-subalgebra equivalence.
 * `Representation.finrank_symmetricAlgebraInvariants_baseChange_inf_homogeneousSubmodule`: the
   graded dimensions of the invariant subalgebra are invariant under scalar extension of fields.
 
@@ -173,6 +175,19 @@ theorem coe_symmetricAlgebraInvariantsBaseChangeEquiv (x : S ⊗[R] ρ.symmetric
         (Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val x) :=
   (rfl)
 
+/-- The inverse of the flat base change of the invariant subalgebra agrees, after inclusion, with
+the inverse of the canonical equivalence `S ⊗[R] Sym M ≃ Sym (S ⊗[R] M)`. -/
+@[simp]
+theorem lTensor_val_symmetricAlgebraInvariantsBaseChangeEquiv_symm
+    (y : (ρ.baseChange S).symmetricAlgebraInvariants) :
+    Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val
+        (ρ.symmetricAlgebraInvariantsBaseChangeEquiv.symm y) =
+      (scalarTensorBialgEquiv (k := R) (K := S) (M := M)).symm y := by
+  apply (scalarTensorBialgEquiv (k := R) (K := S) (M := M)).toAlgEquiv.injective
+  simp only [BialgEquiv.coe_toAlgEquiv]
+  rw [← coe_symmetricAlgebraInvariantsBaseChangeEquiv, AlgEquiv.apply_symm_apply,
+    BialgEquiv.apply_symm_apply]
+
 end Invariants
 
 section Reynolds
@@ -194,6 +209,23 @@ theorem coe_symmetricAlgebraReynolds_scalarTensorBialgEquiv_tmul (s : S)
   rw [averageMap_baseChange, LinearMap.baseChange_tmul] at h
   simpa only [coe_symmetricAlgebraReynolds, Equiv.coe_toIntertwiningMap,
     symmetricAlgebraBaseChangeEquiv_apply] using h.symm
+
+/-- For a flat `R`-algebra `S`, the Reynolds operator of the scalar-extended representation
+corresponds, under `Representation.symmetricAlgebraInvariantsBaseChangeEquiv`, to the scalar
+extension of the Reynolds operator of `ρ`. -/
+theorem symmetricAlgebraReynolds_scalarTensorBialgEquiv [Module.Flat R S]
+    (x : S ⊗[R] SymmetricAlgebra R M) :
+    (ρ.baseChange S).symmetricAlgebraReynolds (scalarTensorBialgEquiv (k := R) (K := S) x) =
+      ρ.symmetricAlgebraInvariantsBaseChangeEquiv
+        ((ρ.symmetricAlgebraReynolds.restrictScalars R).baseChange S x) := by
+  induction x with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul s p =>
+      refine Subtype.ext ?_
+      rw [coe_symmetricAlgebraReynolds_scalarTensorBialgEquiv_tmul,
+        coe_symmetricAlgebraInvariantsBaseChangeEquiv]
+      simp only [LinearMap.baseChange_tmul, LinearMap.restrictScalars_apply,
+        Algebra.TensorProduct.map_tmul, AlgHom.id_apply, Subalgebra.coe_val]
 
 end Reynolds
 

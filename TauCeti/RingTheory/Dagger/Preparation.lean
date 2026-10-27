@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.Distinguished
+public import TauCeti.RingTheory.Dagger.OptionSeries
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
 
 /-!
@@ -116,20 +117,13 @@ private theorem lift_preparation {g : W} {s : ℕ} {ρ r : ℝ} [Fact (0 < ρ)]
       (Huber.restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
         (ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
           Huber.restrictedOptionEquiv (toTate _ K g) := by
-  let c : Option σ → ℝ := fun | none => r | some _ => ρ
-  have hr : 1 < r := hρ.trans_le hρr
-  let : ∀ i, Fact (0 < c i) := fun
-    | none => ⟨zero_lt_one.trans hr⟩
-    | some _ => ⟨zero_lt_one.trans hρ⟩
+  let c : Option σ → ℝ := splitRadius r ρ
+  let : ∀ i, Fact (0 < c i) := fun i ↦ ⟨splitRadius_pos Fact.out hρr i⟩
   let Inner := IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)
   let Flat := IsRestricted.subring (R := K) c
   -- Flatten at the unequal polyradii, then restrict to the common radius `ρ > 1`.
-  let a : Flat →+* W := (Flat.subtype).codRestrict
-    (washnitzerAlgebra (Option σ) K).toSubring fun f ↦ mem_washnitzerAlgebra.mpr
-      ⟨ρ, hρ, MvPowerSeries.isRestricted_of_le f.2 (fun _ ↦ (zero_lt_one.trans hρ).le)
-        (by intro i; cases i <;> simp [c, hρr])⟩
-  let b : Inner →+* W₀ := (Inner.subtype).codRestrict
-    (washnitzerAlgebra σ K).toSubring fun f ↦ mem_washnitzerAlgebra.mpr ⟨ρ, hρ, f.2⟩
+  let a : Flat →+* W := ofRestricted hρ (le_splitRadius hρr)
+  let b : Inner →+* W₀ := ofRestricted hρ fun _ ↦ le_rfl
   let E := a ((Huber.restrictedOptionEquiv (c := c)).symm e)
   let Ω := ω.map b
   refine ⟨E, Ω, ?_, ?_, ?_⟩
@@ -141,12 +135,12 @@ private theorem lift_preparation {g : W} {s : ℕ} {ρ r : ℝ} [Fact (0 < ρ)]
       (Huber.restrictedOptionEquiv (toTate _ K E) : PowerSeries Tate) =
       PowerSeries.map Inner.subtype (e : PowerSeries Inner) := by
     rw [Huber.map_subtype_restrictedOptionEquiv (c := fun _ : Option σ ↦ 1), coe_toTate]
-    simp [E, a, Huber.coe_restrictedOptionEquiv_symm, Inner, c]
+    simp [E, a, Huber.coe_restrictedOptionEquiv_symm, Flat, Inner, c]
   have hΩ : PowerSeries.map (Tate).subtype
       (Ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
       PowerSeries.map Inner.subtype (ω : PowerSeries Inner) := by
     ext m : 1
-    simp [Ω, b]
+    simp [Ω, b, Inner]
   rw [map_mul, hE, hΩ,
     Huber.map_subtype_restrictedOptionEquiv (c := fun _ : Option σ ↦ 1), coe_toTate]
   exact heq
@@ -168,16 +162,12 @@ theorem exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
     exists_isDistinguished_isUnit_of_isDistinguished_one hg hu (ρ₀ := 2) one_lt_two
   let : Fact (0 < ρ) := hρpos
   have hr : 1 < r := hρ.trans_le hρr
-  let c : Option σ → ℝ := fun | none => r | some _ => ρ
-  let : ∀ i, Fact (0 < c i) := fun
-    | none => ⟨zero_lt_one.trans hr⟩
-    | some _ => ⟨zero_lt_one.trans hρ⟩
+  let c : Option σ → ℝ := splitRadius r ρ
+  let : ∀ i, Fact (0 < c i) := fun i ↦ ⟨splitRadius_pos hρpos.out hρr i⟩
   -- Shrink the common convergence radius `r` to `c`; flattening later shrinks `c` to `ρ`.
   let gflat : IsRestricted.subring (R := K) c := ⟨g, MvPowerSeries.isRestricted_of_le hgr
-    (fun i ↦ (Fact.out (p := 0 < c i)).le) (by
-      intro i
-      cases i <;> simp [c, hρr])⟩
-  have hGflat : (Huber.restrictedOptionEquiv (c := c) gflat :
+    (fun i ↦ (Fact.out (p := 0 < c i)).le) (splitRadius_le hρr)⟩
+  have hGflat : ((Huber.restrictedOptionEquiv (c := c) gflat).1 :
       PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ))) = G := by
     ext m : 1
     apply Subtype.ext
