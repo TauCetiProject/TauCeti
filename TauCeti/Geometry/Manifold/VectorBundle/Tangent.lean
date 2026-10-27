@@ -101,6 +101,26 @@ open scoped Bundle Manifold Topology ContDiff
 
 noncomputable section
 
+namespace TangentBundle
+
+variable
+  {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The fibre coordinate of the canonical tangent-bundle trivialization is the tangent coordinate
+change. Keeping this representation bridge named avoids making consumers unfold the chart
+extension when they move between the two APIs. -/
+theorem trivializationAt_apply_tangentCoordChange [IsManifold I 1 M] {x y : M}
+    (v : TangentSpace I y) :
+    (trivializationAt E (TangentSpace I) x ⟨y, v⟩).2 =
+      tangentCoordChange I y x y v := by
+  rw [TangentBundle.trivializationAt_apply, tangentCoordChange_def]
+  rfl
+
+end TangentBundle
+
 namespace TauCeti.Manifold
 
 variable

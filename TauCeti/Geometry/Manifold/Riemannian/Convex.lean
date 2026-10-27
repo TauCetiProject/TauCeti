@@ -68,7 +68,8 @@ its endpoints. -/
 theorem pathELength_convexSegment (hU : Convex ℝ (U : Set F)) (x y : U) :
     pathELength (M := U) 𝓘(ℝ, F) ((U : Set F).convexSegment hU x y) 0 1 =
       ‖((x : F) - (y : F))‖ₑ := by
-  rw [TauCeti.Manifold.pathELength_subtypeVal_comp (contMDiffOn_convexSegment U hU x y)]
+  rw [TauCeti.Manifold.pathELength_subtypeVal_comp
+    ((contMDiffOn_convexSegment U hU x y).mdifferentiableOn one_ne_zero)]
   apply (Manifold.pathELength_congr ((U : Set F).convexSegment_val_eqOn hU x y)).trans
   rw [← ContinuousAffineMap.coe_lineMap_eq]
   exact TauCeti.Manifold.pathELength_lineMap _ _

@@ -7,10 +7,10 @@ module
 
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.RingTheory.DiscreteValuationRing.Hensel
-import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
@@ -130,8 +130,8 @@ theorem exists_card_aroots_eq {f : 𝒪[K][X]} (hf : f.Monic)
     refine ⟨p, q, resultant f (derivative f), fun h ↦ ?_, by rw [← e]; ring⟩
     have hK : Function.Injective (algebraMap 𝒪[K] K) := FaithfulSMul.algebraMap_injective _ _
     have := resultant_ne_zero _ _ hfsep
-    rw [derivative_map, natDegree_map_eq_of_injective hK, natDegree_map_eq_of_injective hK,
-      resultant_map_map, h, map_zero] at this
+    rw [derivative_map, resultant_map_of_natDegree_eq _ (natDegree_map_eq_of_injective hK _)
+      (natDegree_map_eq_of_injective hK _), h, map_zero] at this
     exact this rfl
   obtain ⟨m, hm⟩ : ∃ m : ℕ, (m : ℕ∞) = addVal 𝒪[K] β :=
     ENat.ne_top_iff_exists.1 (by rwa [Ne, addVal_eq_top_iff])

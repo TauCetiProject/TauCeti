@@ -44,6 +44,8 @@ an open invariant subset. The free locus inherits the charts of the ambient mani
   diffeomorphism.
 * `TauCeti.instIsManifoldAddQuotient`, `TauCeti.isLocalDiffeomorph_addQuotientMk`: the same for
   additive actions, on Mathlib's additive orbit space `AddAction.orbitRel.Quotient`.
+* `TauCeti.mfderiv_quotientMk_smul_apply`: the derivative of the orbit projection is invariant
+  under the derivatives of the group elements.
 * `TauCeti.exists_trans_eq_of_mem_atlas_quotient`: every chart of the orbit space is a local
   section of the orbit projection followed by a chart of `M`.
 * `TauCeti.freeLocus.instChartedSpace`, `TauCeti.freeLocus.instIsManifold` and
@@ -249,6 +251,25 @@ theorem isLocalDiffeomorph_quotientMk [IsManifold I n M] :
   (isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := G) (E := M)).isCoveringMap
     |>.isLocalHomeomorph |>.isLocalDiffeomorph_chartedSpaceOfRightInverse
       Quotient.mk_surjective.hasRightInverse.choose_spec (quotientMk_deck (G := G) (M := M))
+
+/-- The derivative of the orbit projection at `g • x`, applied to the derivative of `g • ·` at
+`x`, is the derivative of the orbit projection at `x`: the orbit projection is invariant. -/
+@[to_additive mfderiv_addQuotientMk_vadd_apply /-- The derivative of the additive orbit projection
+at `g +ᵥ x`, applied to the derivative of `g +ᵥ ·` at `x`, is the derivative of the orbit
+projection at `x`: the orbit projection is invariant. -/]
+theorem mfderiv_quotientMk_smul_apply (hn : n ≠ 0) {g : G} {x : M}
+    (hq : MDifferentiableAt I I (Quotient.mk (MulAction.orbitRel G M)) (g • x))
+    (v : TangentSpace I x) :
+    mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) (g • x)
+        (mfderiv I I (g • · : M → M) x v) =
+      mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x v := by
+  have hinv : Quotient.mk (MulAction.orbitRel G M) ∘ (g • · : M → M) =
+      Quotient.mk (MulAction.orbitRel G M) :=
+    funext fun y ↦ Quotient.sound ⟨g, rfl⟩
+  rw [← ContinuousLinearMap.comp_apply, ← mfderiv_comp x hq
+    ((contMDiff_const_smul (I := I) (n := n) g).mdifferentiable hn x), hinv]
+  -- The two sides differ only in how the tangent space at the orbit of `x` is written.
+  rfl
 
 end Quotient
 

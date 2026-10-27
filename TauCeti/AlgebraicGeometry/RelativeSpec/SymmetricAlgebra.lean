@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.DirectSum
-public import TauCeti.AlgebraicGeometry.RelativeSpec.UniversalProperty
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.Pullback
+public import TauCeti.AlgebraicGeometry.RelativeSpec.BaseChange
 
 /-!
 # The relative spectrum of a symmetric algebra
@@ -28,6 +28,12 @@ and pushforward of modules. This is the contravariant linear scheme `𝕍(F)` of
 sheaf; for a finite locally free `E`, the total space of the vector bundle `E` is the relative
 spectrum of the symmetric algebra of the dual of `E`.
 
+The relative spectrum of a symmetric algebra commutes with base change: for `f : Y ⟶ X`,
+`Spec_Y (Sym (f^* F))` is the fibre product `Y ×_X Spec_X (Sym F)`, naturally in `F`
+(`relativeSpecSymmetricAlgebraBaseChangeIso`). This is base change of relative Spec,
+`relativeSpecBaseChangeIso`, applied to the identification `f^* (Sym F) ≅ Sym (f^* F)`
+(`pullbackSymmetricAlgebraIso`).
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraHomEquiv`: morphisms
@@ -37,7 +43,9 @@ spectrum of the symmetric algebra of the dual of `E`.
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraHomIso`: the same bijection as a natural
   isomorphism of functors of points;
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraPullbackHomEquiv`: morphisms
-  `T ⟶ Spec_X (Sym F)` over `X` are linear functionals `q^* F ⟶ 𝒪_T`.
+  `T ⟶ Spec_X (Sym F)` over `X` are linear functionals `q^* F ⟶ 𝒪_T`;
+* `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraBaseChangeIso`: base change of
+  `Spec_X (Sym F)`, naturally in `F`.
 
 ## References
 
@@ -210,6 +218,42 @@ lemma relativeSpecSymmetricAlgebraPullbackHomEquiv_comp_relativeSpec_map
     relativeSpecSymmetricAlgebraPullbackHomEquiv_apply,
     relativeSpecSymmetricAlgebraHomEquiv_comp_relativeSpec_map]
   exact Adjunction.homEquiv_naturality_left_symm _ _ _
+
+
+section BaseChange
+
+variable {Y : Scheme.{u}} (f : Y ⟶ X)
+
+/-- **Base change of the relative spectrum of a symmetric algebra.** For a morphism of schemes
+`f : Y ⟶ X` and a quasicoherent sheaf `F` on `X`, the relative spectrum `Spec_Y (Sym (f^* F))`
+is the base change `Y ×_X Spec_X (Sym F)`, as affine schemes over `Y` and naturally in `F`. It is
+relative Spec of the identification `f^* (Sym F) ≅ Sym (f^* F)` (`pullbackSymmetricAlgebraIso`),
+followed by the base-change isomorphism `relativeSpecBaseChangeIso` of relative Spec. -/
+def relativeSpecSymmetricAlgebraBaseChangeIso :
+    (QuasicoherentSheaf.pullback f).op ⋙ (symmetricAlgebra Y).op ⋙ relativeSpec Y ≅
+      (symmetricAlgebra X).op ⋙ relativeSpec X ⋙ baseChangeAffineSchemeOver f :=
+  Functor.isoWhiskerRight (NatIso.op (pullbackSymmetricAlgebraNatIso f)) (relativeSpec Y) ≪≫
+    Functor.isoWhiskerLeft (symmetricAlgebra X).op (relativeSpecBaseChangeIso f)
+
+/-- The component of `relativeSpecSymmetricAlgebraBaseChangeIso` at `F` is relative Spec of
+`pullbackSymmetricAlgebraIso`, followed by the component of `relativeSpecBaseChangeIso` at
+`Sym F`. -/
+lemma relativeSpecSymmetricAlgebraBaseChangeIso_hom_app (F : (QuasicoherentSheaf X)ᵒᵖ) :
+    (relativeSpecSymmetricAlgebraBaseChangeIso f).hom.app F =
+      (relativeSpec Y).map (pullbackSymmetricAlgebraIso f F.unop).hom.op ≫
+        (relativeSpecBaseChangeIso f).hom.app (op ((symmetricAlgebra X).obj F.unop)) := by
+  simp [relativeSpecSymmetricAlgebraBaseChangeIso]
+
+/-- The inverse component of `relativeSpecSymmetricAlgebraBaseChangeIso` at `F` is the inverse
+component of `relativeSpecBaseChangeIso` at `Sym F`, followed by relative Spec of the inverse of
+`pullbackSymmetricAlgebraIso`. -/
+lemma relativeSpecSymmetricAlgebraBaseChangeIso_inv_app (F : (QuasicoherentSheaf X)ᵒᵖ) :
+    (relativeSpecSymmetricAlgebraBaseChangeIso f).inv.app F =
+      (relativeSpecBaseChangeIso f).inv.app (op ((symmetricAlgebra X).obj F.unop)) ≫
+        (relativeSpec Y).map (pullbackSymmetricAlgebraIso f F.unop).inv.op := by
+  simp [relativeSpecSymmetricAlgebraBaseChangeIso]
+
+end BaseChange
 
 end
 
