@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.NumberTheory.PrimeCounting
-import Mathlib.Analysis.Normed.Group.Tannery
-import Mathlib.Analysis.PSeries
 import TauCeti.Analysis.SpecialFunctions.Complex.LogBounds
 import TauCeti.NumberTheory.SumPrimePow
 
@@ -55,71 +53,6 @@ namespace TauCeti.LSeries
 
 variable {a c : ℕ → ℂ}
 
-/-- For `2 ≤ p` and `‖w‖ ≤ 1`, the partial sum of the Taylor series of `log (1 - w / p)⁻¹` up to
-degree `K` is within `2 / p ^ (K + 1)` of it. This is the local comparison at a single prime. -/
-private theorem norm_log_one_sub_div_inv_sub_sum_Icc_le {p : ℕ} (hp : 2 ≤ p) {w : ℂ}
-    (hw : ‖w‖ ≤ 1) (K : ℕ) :
-    ‖log (1 - w / p)⁻¹ - ∑ k ∈ Icc 1 K, (w / p) ^ k / k‖ ≤ 2 * ((p : ℝ) ^ (K + 1))⁻¹ := by
-  have hp2 : (2 : ℝ) ≤ p := mod_cast hp
-  have hz : ‖w / p‖ ≤ (p : ℝ)⁻¹ := by
-    rw [norm_div, norm_natCast, div_eq_mul_inv]
-    exact mul_le_of_le_one_left (by positivity) hw
-  have hz1 : ‖w / p‖ ≤ 1 / 2 := hz.trans (by rw [one_div]; gcongr)
-  have hpos : 0 < 1 - ‖w / p‖ := by linarith
-  refine (norm_log_one_sub_inv_sub_sum_Icc_le K (by linarith)).trans ?_
-  have h2 : (1 - ‖w / p‖)⁻¹ ≤ 2 := by
-    rw [inv_le_comm₀ hpos two_pos]
-    linarith
-  calc ‖w / p‖ ^ (K + 1) * (1 - ‖w / p‖)⁻¹ / (K + 1)
-      ≤ ‖w / p‖ ^ (K + 1) * (1 - ‖w / p‖)⁻¹ :=
-        div_le_self (by have := inv_pos.mpr hpos; positivity) (by simp)
-    _ ≤ ((p : ℝ)⁻¹) ^ (K + 1) * 2 := by gcongr
-    _ = 2 * ((p : ℝ) ^ (K + 1))⁻¹ := by rw [inv_pow, mul_comm]
-
-/-- For `1 < p` and `‖w‖ ≤ 1`, the Euler factor `1 - w / p` is nonzero. -/
-private theorem one_sub_div_ne_zero {p : ℕ} (hp : 1 < p) {w : ℂ} (hw : ‖w‖ ≤ 1) :
-    1 - w / p ≠ 0 := by
-  refine sub_ne_zero.mpr fun h ↦ ?_
-  have h1 : ‖w / p‖ = 1 := by rw [← h, norm_one]
-  have h2 : (1 : ℝ) < p := mod_cast hp
-  rw [norm_div, norm_natCast, div_eq_one_iff_eq (by positivity)] at h1
-  linarith
-
-/-- The error bounds `p ^ (-(Nat.log p N + 1))`, summed over the primes `p ≤ N`, tend to `0`:
-each is less than `1 / N`, and they are dominated by the summable `1 / p ^ 2`. -/
-private theorem tendsto_sum_primesLE_inv_pow_log_succ :
-    Tendsto (fun N : ℕ ↦ ∑ p ∈ Nat.primesLE N, ((p : ℝ) ^ (p.log N + 1))⁻¹) atTop (𝓝 0) := by
-  set e : ℕ → ℕ → ℝ := fun N p ↦ if p ∈ Nat.primesLE N then ((p : ℝ) ^ (p.log N + 1))⁻¹ else 0
-  have hsum (N : ℕ) : ∑ p ∈ Nat.primesLE N, ((p : ℝ) ^ (p.log N + 1))⁻¹ = ∑' p, e N p := by
-    rw [tsum_eq_sum (s := Nat.primesLE N) fun p hp ↦ by simp [e, hp]]
-    exact sum_congr rfl fun p hp ↦ by simp [e, hp]
-  simp_rw [hsum]
-  have hzero : (0 : ℝ) = ∑' _ : ℕ, (0 : ℝ) := tsum_zero.symm
-  rw [hzero]
-  refine tendsto_tsum_of_dominated_convergence (bound := fun p : ℕ ↦ ((p : ℝ) ^ 2)⁻¹)
-    (Real.summable_nat_pow_inv.mpr one_lt_two) (fun p ↦ ?_) (Eventually.of_forall fun N p ↦ ?_)
-  · -- For fixed `p`, the term is eventually at most `1 / N`, since `N < p ^ (Nat.log p N + 1)`.
-    refine squeeze_zero' (Eventually.of_forall fun N ↦ ?_) ?_
-      tendsto_inv_atTop_nhds_zero_nat
-    · simp only [e]
-      split_ifs <;> positivity
-    · filter_upwards [eventually_gt_atTop 0] with N hN
-      simp only [e]
-      split_ifs with hp
-      · have h := Nat.lt_pow_succ_log_self (Nat.one_lt_of_mem_primesLE hp) N
-        exact inv_anti₀ (mod_cast hN) (mod_cast h.le)
-      · positivity
-  · -- For `p ≤ N`, the exponent `Nat.log p N + 1` is at least `2`.
-    simp only [e]
-    split_ifs with hp
-    · have hp1 := Nat.one_lt_of_mem_primesLE hp
-      have hlog : 1 ≤ p.log N := Nat.log_pos hp1 (Nat.le_of_mem_primesLE hp)
-      rw [norm_inv, norm_pow, Real.norm_natCast]
-      exact inv_anti₀ (by positivity)
-        (pow_le_pow_right₀ (mod_cast hp1.le) (by lia))
-    · simp only [norm_zero]
-      positivity
-
 section Comparison
 
 variable (hc : ∀ p, p.Prime → ‖c p‖ ≤ 1) (ha : ∀ n, ¬IsPrimePow n → a n = 0)
@@ -149,7 +82,7 @@ theorem tendsto_sum_log_one_sub_inv_sub_sum_div :
     Tendsto (fun N : ℕ ↦ ∑ p ∈ Nat.primesLE N, log (1 - c p / p)⁻¹ - ∑ n ∈ Icc 1 N, a n / n)
       atTop (𝓝 0) := by
   refine squeeze_zero_norm (norm_sum_log_one_sub_inv_sub_sum_div_le hc ha ha_pow) ?_
-  simpa [← mul_sum] using tendsto_sum_primesLE_inv_pow_log_succ.const_mul 2
+  simpa [← mul_sum] using Nat.tendsto_sum_primesLE_inv_pow_log_succ.const_mul 2
 
 /-- **Ordered Euler products from ordered partial sums.** If the ordered partial sums
 `∑ n ∈ Icc 1 N, a n / n` converge to `L`, then the finite Euler products
@@ -163,7 +96,7 @@ theorem tendsto_prod_primesLE_inv_of_tendsto_sum {L : ℂ}
   rw [Function.comp_apply, exp_sum]
   refine prod_congr rfl fun p hp ↦ exp_log (inv_ne_zero ?_)
   have hpp := Nat.prime_of_mem_primesLE hp
-  exact one_sub_div_ne_zero hpp.one_lt (hc p hpp)
+  exact one_sub_div_natCast_ne_zero hpp.one_lt (hc p hpp)
 
 /-- **Deleting finitely many Euler factors.** If the ordered partial sums
 `∑ n ∈ Icc 1 N, a n / n` converge to `L` and `S` is a finite set of primes, then the finite Euler
@@ -180,7 +113,7 @@ theorem tendsto_prod_primesLE_filter_notMem_inv_of_tendsto_sum {L : ℂ}
   rw [← prod_filter_mul_prod_filter_not (Nat.primesLE N) (· ∈ S), filter_mem_eq_inter,
     inter_eq_right.mpr hSN, mul_right_comm, ← prod_mul_distrib,
     prod_eq_one fun p hp ↦
-      inv_mul_cancel₀ (one_sub_div_ne_zero (hS p hp).one_lt (hc p (hS p hp))), one_mul]
+      inv_mul_cancel₀ (one_sub_div_natCast_ne_zero (hS p hp).one_lt (hc p (hS p hp))), one_mul]
 
 end Comparison
 

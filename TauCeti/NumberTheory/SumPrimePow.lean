@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.IsPrimePow
 public import Mathlib.Data.Nat.Log
 public import Mathlib.NumberTheory.PrimeCounting
+public import Mathlib.Topology.Instances.Real.Lemmas
+import Mathlib.Analysis.Normed.Group.Tannery
+import Mathlib.Analysis.PSeries
 import Mathlib.Data.Nat.Prime.Int
 
 /-!
@@ -18,10 +21,15 @@ by the prime base: the prime powers `p ^ k ≤ N` with `k ≥ 1` are exactly the
 `p ≤ N` and an exponent `1 ≤ k ≤ Nat.log p N`. This is the finite cutoff identity used to compare
 partial sums of a Dirichlet series supported on prime powers with finite products over primes.
 
+For each prime `p ≤ N`, the first omitted power `p ^ (Nat.log p N + 1)` exceeds `N`. The sum of
+their reciprocals over the primes `p ≤ N` tends to zero as `N → ∞`, which controls the tails left
+out by the regrouping.
+
 ## Main results
 
 * `Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log`: the regrouping of a finite sum of a function
   supported on the prime powers.
+* `Nat.tendsto_sum_primesLE_inv_pow_log_succ`: `∑ p ≤ N, 1 / p ^ (Nat.log p N + 1)` tends to `0`.
 
 ## References
 
@@ -31,7 +39,8 @@ carries it out for the von Mangoldt function.
 
 public section
 
-open Finset
+open Filter Finset
+open scoped Topology
 
 namespace Nat
 
@@ -61,5 +70,41 @@ theorem sum_Icc_eq_sum_primesLE_sum_Icc_log {M : Type*} [AddCommMonoid M] {f : �
       h).1.symm
   _ = _ := sum_congr rfl fun p hp ↦
     sum_image fun _ _ _ _ h ↦ Nat.pow_right_injective (two_le_of_mem_primesLE hp) h
+
+/-- The reciprocals of the first omitted prime powers `p ^ (Nat.log p N + 1)`, summed over the
+primes `p ≤ N`, tend to `0`: each is less than `1 / N`, and they are dominated by the summable
+`1 / p ^ 2`. -/
+theorem tendsto_sum_primesLE_inv_pow_log_succ :
+    Tendsto (fun N : ℕ ↦ ∑ p ∈ primesLE N, ((p : ℝ) ^ (p.log N + 1))⁻¹) atTop (𝓝 0) := by
+  set e : ℕ → ℕ → ℝ := fun N p ↦ if p ∈ primesLE N then ((p : ℝ) ^ (p.log N + 1))⁻¹ else 0
+  have hsum (N : ℕ) : ∑ p ∈ primesLE N, ((p : ℝ) ^ (p.log N + 1))⁻¹ = ∑' p, e N p := by
+    rw [tsum_eq_sum (s := primesLE N) fun p hp ↦ by simp [e, hp]]
+    exact sum_congr rfl fun p hp ↦ by simp [e, hp]
+  simp_rw [hsum]
+  have hzero : (0 : ℝ) = ∑' _ : ℕ, (0 : ℝ) := tsum_zero.symm
+  rw [hzero]
+  refine tendsto_tsum_of_dominated_convergence (bound := fun p : ℕ ↦ ((p : ℝ) ^ 2)⁻¹)
+    (Real.summable_nat_pow_inv.mpr one_lt_two) (fun p ↦ ?_) (Eventually.of_forall fun N p ↦ ?_)
+  · -- For fixed `p`, the term is eventually at most `1 / N`, since `N < p ^ (Nat.log p N + 1)`.
+    refine squeeze_zero' (Eventually.of_forall fun N ↦ ?_) ?_
+      tendsto_inv_atTop_nhds_zero_nat
+    · simp only [e]
+      split_ifs <;> positivity
+    · filter_upwards [eventually_gt_atTop 0] with N hN
+      simp only [e]
+      split_ifs with hp
+      · have h := lt_pow_succ_log_self (one_lt_of_mem_primesLE hp) N
+        exact inv_anti₀ (mod_cast hN) (mod_cast h.le)
+      · positivity
+  · -- For `p ≤ N`, the exponent `Nat.log p N + 1` is at least `2`.
+    simp only [e]
+    split_ifs with hp
+    · have hp1 := one_lt_of_mem_primesLE hp
+      have hlog : 1 ≤ p.log N := log_pos hp1 (le_of_mem_primesLE hp)
+      rw [norm_inv, norm_pow, Real.norm_natCast]
+      exact inv_anti₀ (by positivity)
+        (pow_le_pow_right₀ (mod_cast hp1.le) (by lia))
+    · simp only [norm_zero]
+      positivity
 
 end Nat

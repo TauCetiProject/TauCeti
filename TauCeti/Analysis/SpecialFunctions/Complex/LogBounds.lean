@@ -29,6 +29,10 @@ arbitrary real weight, and this file uses it at weight `1`.
 * `Complex.tsum_taylorSeries_neg_log`: its sum over `ι × ℕ` is `∑' i, -log (1 - r i)`.
 * `Complex.norm_log_one_sub_inv_sub_sum_Icc_le`: the truncation error of the same Taylor series
   for a single `z`, with its `n`-th partial sum `∑ j ∈ Icc 1 n, z ^ j / j`.
+* `Complex.norm_log_one_sub_div_inv_sub_sum_Icc_le`: the same truncation error at `z = w / p`,
+  for `‖w‖ ≤ 1` and a natural number `p ≥ 2`, bounded by `2 / p ^ (n + 1)`.
+* `Complex.one_sub_div_natCast_ne_zero`: for `‖w‖ ≤ 1` and a natural number `p > 1`, the factor
+  `1 - w / p` is nonzero.
 -/
 
 public section
@@ -90,5 +94,37 @@ theorem norm_log_one_sub_inv_sub_sum_Icc_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 
         simp
       linear_combination (z ^ (n + 1) / ((n + 1 : ℕ) : ℂ)) * this
   simpa [hT, sub_eq_add_neg] using norm_log_one_sub_inv_add_logTaylor_neg_le n hz
+
+/-- For `2 ≤ p` and `‖w‖ ≤ 1`, the partial sum of the Taylor series of `log (1 - w / p)⁻¹` up to
+degree `K` is within `2 / p ^ (K + 1)` of it. This is the local comparison at a single prime in an
+Euler product with coefficients of modulus at most one. -/
+theorem norm_log_one_sub_div_inv_sub_sum_Icc_le {p : ℕ} (hp : 2 ≤ p) {w : ℂ}
+    (hw : ‖w‖ ≤ 1) (K : ℕ) :
+    ‖log (1 - w / p)⁻¹ - ∑ k ∈ Finset.Icc 1 K, (w / p) ^ k / k‖ ≤
+      2 * ((p : ℝ) ^ (K + 1))⁻¹ := by
+  have hp2 : (2 : ℝ) ≤ p := mod_cast hp
+  have hz : ‖w / p‖ ≤ (p : ℝ)⁻¹ := by
+    rw [norm_div, norm_natCast, div_eq_mul_inv]
+    exact mul_le_of_le_one_left (by positivity) hw
+  have hz1 : ‖w / p‖ ≤ 1 / 2 := hz.trans (by rw [one_div]; gcongr)
+  have hpos : 0 < 1 - ‖w / p‖ := by linarith
+  refine (norm_log_one_sub_inv_sub_sum_Icc_le K (by linarith)).trans ?_
+  have h2 : (1 - ‖w / p‖)⁻¹ ≤ 2 := by
+    rw [inv_le_comm₀ hpos two_pos]
+    linarith
+  calc ‖w / p‖ ^ (K + 1) * (1 - ‖w / p‖)⁻¹ / (K + 1)
+      ≤ ‖w / p‖ ^ (K + 1) * (1 - ‖w / p‖)⁻¹ :=
+        div_le_self (by have := inv_pos.mpr hpos; positivity) (by simp)
+    _ ≤ ((p : ℝ)⁻¹) ^ (K + 1) * 2 := by gcongr
+    _ = 2 * ((p : ℝ) ^ (K + 1))⁻¹ := by rw [inv_pow, mul_comm]
+
+/-- For `1 < p` and `‖w‖ ≤ 1`, the Euler factor `1 - w / p` is nonzero. -/
+theorem one_sub_div_natCast_ne_zero {p : ℕ} (hp : 1 < p) {w : ℂ} (hw : ‖w‖ ≤ 1) :
+    1 - w / p ≠ 0 := by
+  refine sub_ne_zero.mpr fun h ↦ ?_
+  have h1 : ‖w / p‖ = 1 := by rw [← h, norm_one]
+  have h2 : (1 : ℝ) < p := mod_cast hp
+  rw [norm_div, norm_natCast, div_eq_one_iff_eq (by positivity)] at h1
+  linarith
 
 end Complex
