@@ -26,8 +26,8 @@ below the degree of the last entry, which divides `p` and `q`
 `Polynomial.subresultant_eq_zero_of_lt_natDegree_commonDivisor`), this determines every
 subresultant polynomial of `p` and `q` at an index below `n`, up to nonzero scalars. The left
 input is taken at a formal bound `m` dominating its degree, as in the rest of the subresultant
-API, and the first two statements also need `n ≤ m`; the right input is taken at its actual
-degree.
+API, and the first two statements need `n ≤ m` only for the initial pair; the right input is
+taken at its actual degree.
 
 The structure theorem rests on one Euclidean step, which is available on its own. Below the
 remainder bound, `Polynomial.subresultant_eq_C_mul_subresultant_mod` and its signed form
@@ -79,41 +79,12 @@ theorem _root_.Polynomial.exists_subresultant_eq_C_mul_subresultant_of_getElem?_
   refine ⟨_, sturmSubresultantFactor_ne_zero ha m j, ?_⟩
   simpa using subresultant_eq_sturmSubresultantFactor_mul hp ha hb hj
 
-/-- For consecutive entries `s, t` of the signed remainder sequence after the first, the
-subresultants of `p` and `q` below `deg s` are nonzero multiples of those of `(a, s)` for an
-entry `a` with `t = -(a % s)`, at a formal bound `M` for `a`. For the second entry `s = q` this
-is `(p, q)` itself, and `M = m` bounds `deg s` only if `q.natDegree ≤ m`. -/
-private theorem exists_subresultant_eq_C_mul_subresultant_pred {p q s t : K[X]} {m i : ℕ}
-    (hp : p.natDegree ≤ m)
-    (hs : (sturmSeq p q)[i + 1]? = some s) (ht : (sturmSeq p q)[i + 2]? = some t) :
-    ∃ (a : K[X]) (M : ℕ), a.natDegree ≤ M ∧ (q.natDegree ≤ m → s.natDegree ≤ M) ∧
-      t = -(a % s) ∧
-      ∀ j < s.natDegree, ∃ c : K, c ≠ 0 ∧ subresultant p q m q.natDegree j =
-        C c * subresultant a s M s.natDegree j := by
-  rcases i with _ | i
-  · have hp0 : p ≠ 0 := by
-      rintro rfl
-      simp at hs
-    have hq0 : q ≠ 0 := by
-      rintro rfl
-      simp [sturmSeq_cons hp0] at hs
-    have hs' : s = q := by
-      simpa [sturmSeq_cons hp0, sturmSeq_cons hq0, eq_comm] using hs
-    subst hs'
-    refine ⟨p, m, hp, id, ?_, fun j _ ↦ ⟨1, one_ne_zero, by simp⟩⟩
-    rw [eq_neg_mod_of_getElem?_sturmSeq (a := p) (by simp [sturmSeq_cons hp0]) hs ht, neg_mod]
-  · obtain ⟨a, ha⟩ : ∃ a, (sturmSeq p q)[i + 1]? = some a := by
-      obtain ⟨hlt, -⟩ := List.getElem?_eq_some_iff.mp hs
-      exact ⟨_, List.getElem?_eq_getElem (by omega)⟩
-    refine ⟨a, a.natDegree, le_rfl, fun _ ↦ (natDegree_lt_of_getElem?_sturmSeq ha hs).le, ?_,
-      fun j hj ↦ exists_subresultant_eq_C_mul_subresultant_of_getElem?_sturmSeq hp ha hs hj⟩
-    rw [eq_neg_mod_of_getElem?_sturmSeq ha hs ht, neg_mod]
-
 /-- **Structure theorem for subresultants**, upper index. For consecutive entries `s, t` of the
 signed remainder sequence of `p` and `q` after the first, the subresultant of `p` and `q` at
-index `deg s - 1` is a nonzero multiple of `t`. -/
+index `deg s - 1` is a nonzero multiple of `t`. Only the initial pair additionally requires
+`q.natDegree ≤ m`. -/
 theorem _root_.Polynomial.exists_subresultant_natDegree_sub_one_eq_C_mul_of_getElem?_sturmSeq
-    {p q s t : K[X]} {m i : ℕ} (hp : p.natDegree ≤ m) (hq : q.natDegree ≤ m)
+    {p q s t : K[X]} {m i : ℕ} (hp : p.natDegree ≤ m) (hq : i = 0 → q.natDegree ≤ m)
     (hs : (sturmSeq p q)[i + 1]? = some s) (ht : (sturmSeq p q)[i + 2]? = some t) :
     ∃ c : K, c ≠ 0 ∧ subresultant p q m q.natDegree (s.natDegree - 1) = C c * t := by
   obtain ⟨a, ha⟩ : ∃ a, (sturmSeq p q)[i]? = some a := by
@@ -123,13 +94,14 @@ theorem _root_.Polynomial.exists_subresultant_natDegree_sub_one_eq_C_mul_of_getE
     (sturmSubresultantFactor_ne_zero ha m (s.natDegree - 1))
     (pow_ne_zero _ (neg_ne_zero.mpr (leadingCoeff_ne_zero.mpr
       (ne_zero_of_mem_sturmSeq (List.mem_of_getElem? hs)))))),
-    subresultant_natDegree_sub_one_eq_sturmSubresultantFactor_mul hp (fun _ ↦ hq) ha hs ht⟩
+    subresultant_natDegree_sub_one_eq_sturmSubresultantFactor_mul hp hq ha hs ht⟩
 
 /-- **Structure theorem for subresultants**, lower index. For consecutive entries `s, t` of the
 signed remainder sequence of `p` and `q` after the first, the subresultant of `p` and `q` at
-index `deg t` is a nonzero multiple of `t`. -/
+index `deg t` is a nonzero multiple of `t`. Only the initial pair additionally requires
+`q.natDegree ≤ m`. -/
 theorem _root_.Polynomial.exists_subresultant_natDegree_eq_C_mul_of_getElem?_sturmSeq
-    {p q s t : K[X]} {m i : ℕ} (hp : p.natDegree ≤ m) (hq : q.natDegree ≤ m)
+    {p q s t : K[X]} {m i : ℕ} (hp : p.natDegree ≤ m) (hq : i = 0 → q.natDegree ≤ m)
     (hs : (sturmSeq p q)[i + 1]? = some s) (ht : (sturmSeq p q)[i + 2]? = some t) :
     ∃ c : K, c ≠ 0 ∧ subresultant p q m q.natDegree t.natDegree = C c * t := by
   obtain ⟨a, ha⟩ : ∃ a, (sturmSeq p q)[i]? = some a := by
@@ -142,20 +114,6 @@ theorem _root_.Polynomial.exists_subresultant_natDegree_eq_C_mul_of_getElem?_stu
         (ne_zero_of_mem_sturmSeq (List.mem_of_getElem? hs)))))
       (pow_ne_zero _ (neg_ne_zero.mpr (leadingCoeff_ne_zero.mpr
         (ne_zero_of_mem_sturmSeq (List.mem_of_getElem? ht))))))),
-    subresultant_natDegree_eq_sturmSubresultantFactor_mul hp (fun _ ↦ hq) ha hs ht⟩
-
-/-- **Structure theorem for subresultants**, degree gap. For consecutive entries `s, t` of the
-signed remainder sequence of `p` and `q` after the first, the subresultants of `p` and `q` at
-the indices strictly between `deg t` and `deg s - 1` vanish. -/
-theorem _root_.Polynomial.subresultant_eq_zero_of_getElem?_sturmSeq
-    {p q s t : K[X]} {m i j : ℕ} (hp : p.natDegree ≤ m)
-    (hs : (sturmSeq p q)[i + 1]? = some s) (ht : (sturmSeq p q)[i + 2]? = some t)
-    (htj : t.natDegree < j) (hjs : j + 1 < s.natDegree) :
-    subresultant p q m q.natDegree j = 0 := by
-  obtain ⟨a, M, haM, -, rfl, h⟩ := exists_subresultant_eq_C_mul_subresultant_pred hp hs ht
-  rw [natDegree_neg] at htj
-  obtain ⟨c, -, hS⟩ := h j (by omega)
-  rw [hS, subresultant_eq_zero_of_degree_mod_lt haM
-    ((degree_le_natDegree).trans_lt (by exact_mod_cast htj)) hjs, mul_zero]
+    subresultant_natDegree_eq_sturmSubresultantFactor_mul hp hq ha hs ht⟩
 
 end TauCeti

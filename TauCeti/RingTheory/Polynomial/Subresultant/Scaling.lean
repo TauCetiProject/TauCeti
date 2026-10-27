@@ -193,4 +193,22 @@ theorem subresultant_natDegree_eq_sturmSubresultantFactor_mul
     hrec, coeff_neg, coeff_natDegree]
   simp [mul_assoc]
 
+/-- **Structure theorem for subresultants**, degree gap. For consecutive entries `s, t` of the
+signed remainder sequence of `p` and `q` after the first, the subresultants of `p` and `q` at
+the indices strictly between `deg t` and `deg s - 1` vanish. -/
+theorem subresultant_eq_zero_of_getElem?_sturmSeq
+    {p q s t : K[X]} {m i j : ℕ} (hp : p.natDegree ≤ m)
+    (hs : (sturmSeq p q)[i + 1]? = some s) (ht : (sturmSeq p q)[i + 2]? = some t)
+    (htj : t.natDegree < j) (hjs : j + 1 < s.natDegree) :
+    subresultant p q m q.natDegree j = 0 := by
+  obtain ⟨a, ha⟩ : ∃ a, (sturmSeq p q)[i]? = some a := by
+    have hi := (List.getElem?_eq_some_iff.mp hs).1
+    exact ⟨_, List.getElem?_eq_getElem (by omega)⟩
+  have hrec : t = -(a % s) := by
+    rw [eq_neg_mod_of_getElem?_sturmSeq ha hs ht, neg_mod]
+  rw [hrec, natDegree_neg] at htj
+  rw [subresultant_eq_sturmSubresultantFactor_mul hp ha hs (by omega),
+    subresultant_eq_zero_of_degree_mod_lt (natDegree_le_sturmBound hp ha)
+      ((degree_le_natDegree).trans_lt (by exact_mod_cast htj)) hjs, mul_zero]
+
 end Polynomial
