@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Basic
-public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!

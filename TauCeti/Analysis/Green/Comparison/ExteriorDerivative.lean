@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Green.Comparison.Area.Basic
 public import TauCeti.Analysis.Green.DifferentialForm
-public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
 /-!
 # The planar exterior derivative as an actual area form

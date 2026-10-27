@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Orientation
-public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
 /-!

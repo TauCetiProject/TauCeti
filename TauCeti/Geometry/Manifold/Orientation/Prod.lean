@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Basic
-public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.LinearAlgebra.Orientation.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
