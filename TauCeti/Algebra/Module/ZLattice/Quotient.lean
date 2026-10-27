@@ -53,9 +53,13 @@ instance Submodule.instCompactSpaceOrbitRelQuotient {E : Type*} [NormedAddCommGr
 instance QuotientAddGroup.instCompactSpaceOfIsZLattice {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [FiniteDimensional ℝ E] (L : AddSubgroup E) [DiscreteTopology L]
     [IsZLattice ℝ L.toIntSubmodule] : CompactSpace (E ⧸ L) := by
+  -- Reuse the compact orbit space above. The quotient by L.toIntSubmodule is the quotient
+  -- by L: toIntSubmodule retains L as its underlying additive subgroup.
   let e := L.toIntSubmodule.orbitRelQuotientAddEquiv
   apply e.surjective.compactSpace
   apply isQuotientMap_quotient_mk'.continuous_iff.mpr
+  -- The quotient-map criterion uses Quotient.mk', while the evaluation lemma for e uses
+  -- Quotient.mk with an explicit relation; expose that constructor to apply the lemma.
   change Continuous (fun x : E => e (_root_.Quotient.mk _ x))
   simpa only [e, Submodule.orbitRelQuotientAddEquiv_mk] using
     (show Continuous (Submodule.Quotient.mk : E → E ⧸ L.toIntSubmodule) from
@@ -71,7 +75,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- Real coordinates in a lattice basis, reduced modulo one. -/
 def latticeCircleCoordinates : E →ₜ+ UnitAddTorus ι where
-  toFun x i := ((b.ofZLatticeBasis ℝ L.toIntSubmodule).equivFun x i : UnitAddCircle)
+  toFun x i := ((b.ofZLatticeBasis ℝ L.toIntSubmodule).repr x i : UnitAddCircle)
   map_zero' := by ext i; simp
   map_add' x y := by ext i; simp
   continuous_toFun := by
@@ -82,9 +86,8 @@ def latticeCircleCoordinates : E →ₜ+ UnitAddTorus ι where
 @[simp]
 theorem latticeCircleCoordinates_apply (x : E) (i : ι) :
     b.latticeCircleCoordinates x i =
-      ((b.ofZLatticeBasis ℝ L.toIntSubmodule).repr x i : UnitAddCircle) := by
-  change ((b.ofZLatticeBasis ℝ L.toIntSubmodule).equivFun x i : UnitAddCircle) = _
-  rw [Basis.equivFun_apply]
+      ((b.ofZLatticeBasis ℝ L.toIntSubmodule).repr x i : UnitAddCircle) :=
+  (rfl)
 
 /-- The vectors with integral lattice coordinates are exactly the lattice. -/
 @[simp]
@@ -125,6 +128,8 @@ def quotientLatticeEquiv : (E ⧸ L) ≃ₜ+ UnitAddTorus ι :=
 theorem quotientLatticeEquiv_apply_mk (x : E) (i : ι) :
     b.quotientLatticeEquiv (QuotientAddGroup.mk x) i =
       ((b.ofZLatticeBasis ℝ L.toIntSubmodule).repr x i : UnitAddCircle) := by
+  -- The continuous equivalence extends liftEquiv with continuity proofs. Expose its
+  -- underlying lift so liftEquiv_mk can rewrite through the structure extension.
   change QuotientAddGroup.liftEquiv L b.latticeCircleCoordinates_surjective
     b.ker_latticeCircleCoordinates.symm (QuotientAddGroup.mk x) i = _
   rw [QuotientAddGroup.liftEquiv_mk, ContinuousAddMonoidHom.coe_toAddMonoidHom,

@@ -78,7 +78,7 @@ theorem lieGroupUnitAddTorusEquiv_symm_apply (x : ι → ℝ) :
 
 /-- Circle coordinates of a compact connected commutative Lie group. Each integral period in
 the chosen exponential-kernel basis becomes one full turn in the corresponding circle. -/
-def lieGroupCircleEquiv : G ≃ₜ* (ι → Circle) :=
+def lieGroupPiCircleEquiv : G ≃ₜ* (ι → Circle) :=
   let e := lieGroupUnitAddTorusEquiv b
   let c := Homeomorph.piCongrRight fun _ : ι =>
     AddCircle.homeomorphCircle (one_ne_zero : (1 : ℝ) ≠ 0)
@@ -96,9 +96,11 @@ def lieGroupCircleEquiv : G ≃ₜ* (ι → Circle) :=
         Pi.add_apply, AddCircle.toCircle_add, Pi.mul_apply] }
 
 /-- Multiplicative circle coordinates are the canonical unit-circle images of additive ones. -/
-theorem lieGroupCircleEquiv_apply (g : G) (i : ι) :
-    lieGroupCircleEquiv b g i =
+theorem lieGroupPiCircleEquiv_apply (g : G) (i : ι) :
+    lieGroupPiCircleEquiv b g i =
       AddCircle.toCircle (lieGroupUnitAddTorusEquiv b (Additive.ofMul g) i) := by
+  -- Expose the coordinate homeomorphism stored in the continuous group equivalence so that
+  -- its evaluation lemmas apply; rewriting does not unfold the enclosing structure extension.
   change (Homeomorph.piCongrRight fun _ : ι =>
     AddCircle.homeomorphCircle (one_ne_zero : (1 : ℝ) ≠ 0)) _ i = _
   rw [Homeomorph.piCongrRight_apply, AddCircle.homeomorphCircle_apply]
@@ -106,23 +108,23 @@ theorem lieGroupCircleEquiv_apply (g : G) (i : ι) :
 /-- In circle coordinates, the exponential is the coordinatewise complex exponential, with
 period one in the chosen lattice basis. -/
 @[simp]
-theorem lieGroupCircleEquiv_apply_lieExp (X : LeftInvariantDerivation I G) (i : ι) :
-    lieGroupCircleEquiv b (lieExp X) i =
+theorem lieGroupPiCircleEquiv_apply_lieExp (X : LeftInvariantDerivation I G) (i : ι) :
+    lieGroupPiCircleEquiv b (lieExp X) i =
       Circle.exp (2 * Real.pi * (b.ofZLatticeBasis ℝ _).repr X i) := by
-  rw [lieGroupCircleEquiv_apply, lieGroupUnitAddTorusEquiv_apply_lieExp,
+  rw [lieGroupPiCircleEquiv_apply, lieGroupUnitAddTorusEquiv_apply_lieExp,
     AddCircle.toCircle_apply_mk]
   simp only [div_one]
 
 /-- The inverse circle coordinates exponentiate the real linear combination of lattice basis
 vectors. -/
 @[simp]
-theorem lieGroupCircleEquiv_symm_apply (x : ι → ℝ) :
-    (lieGroupCircleEquiv b).symm (fun i => Circle.exp (2 * Real.pi * x i)) =
+theorem lieGroupPiCircleEquiv_symm_apply (x : ι → ℝ) :
+    (lieGroupPiCircleEquiv b).symm (fun i => Circle.exp (2 * Real.pi * x i)) =
       lieExp ((b.ofZLatticeBasis ℝ _).equivFun.symm x) := by
-  apply (lieGroupCircleEquiv b).injective
+  apply (lieGroupPiCircleEquiv b).injective
   apply funext
   intro i
-  simp only [ContinuousMulEquiv.apply_symm_apply, lieGroupCircleEquiv_apply_lieExp,
+  simp only [ContinuousMulEquiv.apply_symm_apply, lieGroupPiCircleEquiv_apply_lieExp,
     ← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
 
 end Module.Basis
@@ -143,6 +145,6 @@ theorem nonempty_continuousMulEquiv_pi_circle :
     (finrank_ker_lieExpAddMonoidHom (I := I) (G := G)).trans
       (finrank_leftInvariantDerivation_eq_modelVectorSpace
         (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)))
-  exact ⟨Module.Basis.lieGroupCircleEquiv (Module.finBasisOfFinrankEq ℤ L hdim)⟩
+  exact ⟨Module.Basis.lieGroupPiCircleEquiv (Module.finBasisOfFinrankEq ℤ L hdim)⟩
 
 end TauCeti
