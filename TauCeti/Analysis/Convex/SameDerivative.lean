@@ -68,20 +68,6 @@ namespace TauCeti
 open Filter MeasureTheory Set
 open scoped Topology Gradient
 
-section Module
-
-variable {E : Type*} [AddCommGroup E] [Module ℝ E] {u : E → EReal}
-
-/-- The restriction of a convex function to the line `t ↦ y + t • h` is convex on the set of
-parameters where it is finite. -/
-private theorem convexOn_toReal_comp_line (hu : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
-    (hbot : ∀ x, u x ≠ ⊥) (y h : E) :
-    ConvexOn ℝ {t : ℝ | u (y + t • h) ≠ ⊤} fun t => (u (y + t • h)).toReal := by
-  simpa [Function.comp_def, AffineMap.lineMap_apply_module', add_comm] using
-    (convexOn_toReal hu hbot).comp_affineMap (AffineMap.lineMap y (y + h))
-
-end Module
-
 section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {u v : E → EReal} {Ω : Set E}
@@ -138,9 +124,17 @@ private theorem slope_le_slope_of_subset_closure (hu : Convex ℝ {p : E × ℝ 
     HasFDerivAt.comp_hasDerivAt (l := fun x => (u x).toReal) b hfu hline
   have hdv : HasDerivAt (fun t => (v (z - b • h + t • h)).toReal) (f' h) b :=
     HasFDerivAt.comp_hasDerivAt (l := fun x => (v x).toReal) b hfv hline
-  exact ((convexOn_toReal_comp_line hu hubot _ h).slope_le_of_hasDerivAt (huΩ _ hza)
-    (huΩ _ hzb) hab hdu).trans ((convexOn_toReal_comp_line hv hvbot _ h).le_slope_of_hasDerivAt
-      (hvΩ _ hzb) (hvΩ _ hzc) hbc hdv)
+  have hlineMap : (AffineMap.lineMap (z - b • h) (z - b • h + h) : ℝ → E) =
+      fun t => z - b • h + t • h := by
+    ext t
+    simp [AffineMap.lineMap_apply_module', add_comm]
+  have hφ := (convexOn_toReal hu hubot).comp_affineMap
+    (AffineMap.lineMap (z - b • h) (z - b • h + h))
+  have hψ := (convexOn_toReal hv hvbot).comp_affineMap
+    (AffineMap.lineMap (z - b • h) (z - b • h + h))
+  rw [hlineMap] at hφ hψ
+  exact (hφ.slope_le_of_hasDerivAt (huΩ _ hza) (huΩ _ hzb) hab hdu).trans
+    (hψ.le_slope_of_hasDerivAt (hvΩ _ hzb) (hvΩ _ hzc) hbc hdv)
 
 /-- **Convex functions with the same derivative on a dense set differ by a constant.** Let
 `u v : E → EReal` be convex functions (convex real epigraph, never `⊥`) on a real normed space,
@@ -174,10 +168,11 @@ theorem _root_.IsOpen.exists_eq_add_of_subset_closure_hasFDerivAt_eq (hΩ : IsOp
       have := (convex_ball x r).affine_preimage (AffineMap.lineMap x y)
       rwa [hline] at this
     have hIΩ {t : ℝ} (ht : t ∈ I) : x + t • (y - x) ∈ Ω := hball ht
-    have hφ := (convexOn_toReal_comp_line hu hubot x (y - x)).subset
-      (fun t ht => huΩ _ (hIΩ ht)) hIc
-    have hψ := (convexOn_toReal_comp_line hv hvbot x (y - x)).subset
-      (fun t ht => hvΩ _ (hIΩ ht)) hIc
+    have hφ := (convexOn_toReal hu hubot).comp_affineMap (AffineMap.lineMap x y)
+    have hψ := (convexOn_toReal hv hvbot).comp_affineMap (AffineMap.lineMap x y)
+    rw [hline] at hφ hψ
+    have hφ := hφ.subset (fun t ht => huΩ _ (hIΩ ht)) hIc
+    have hψ := hψ.subset (fun t ht => hvΩ _ (hIΩ ht)) hIc
     have hmid {a b c : ℝ} (ha : a ∈ I) (hc : c ∈ I) (hab : a < b) (hbc : b < c) : b ∈ I :=
       hIc.ordConnected.out ha hc ⟨hab.le, hbc.le⟩
     have key := sub_eq_sub_of_slope_le hIo hφ hψ
