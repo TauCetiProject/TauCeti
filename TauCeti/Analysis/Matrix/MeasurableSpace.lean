@@ -26,6 +26,8 @@ of scalars is measurable even at zero.
 
 * `TauCeti.measurable_matrix_vec` — vectorization is measurable.
 * `TauCeti.matrixVecMeasurableEquiv` — vectorization as a measurable equivalence.
+* `TauCeti.measurable_matrix_mul` — matrix multiplication is measurable, and the
+  `MeasurableMul₂` instance it supplies for square matrices.
 * `TauCeti.measurable_matrix_inv` — matrix inversion is measurable, and the `MeasurableInv`
   instance it supplies.
 -/
@@ -66,6 +68,24 @@ theorem matrixVecMeasurableEquiv_symm_apply {m n α : Type*} [MeasurableSpace α
     (x : WithLp p (n × m → α)) :
     (matrixVecMeasurableEquiv p).symm x = Matrix.of fun i j => x.ofLp (j, i) :=
   (rfl)
+
+/-- Matrix multiplication is measurable: each entry of a product is a finite sum of products of
+entries. -/
+@[fun_prop]
+theorem measurable_matrix_mul {l m n R : Type*} [Fintype m] [MeasurableSpace R]
+    [NonUnitalNonAssocSemiring R] [MeasurableMul₂ R] [MeasurableAdd₂ R] :
+    Measurable fun A : Matrix l m R × Matrix m n R => A.1 * A.2 := by
+  rw [Matrix.measurable_iff]
+  intro i j
+  simp only [Matrix.mul_apply]
+  exact Finset.measurable_sum _ fun k _ =>
+    measurable_fst.eval_matrix.mul measurable_snd.eval_matrix
+
+/-- Square matrices inherit `MeasurableMul₂` from the measurability of matrix multiplication, which
+makes the generic `Measurable.mul` dot notation available for matrix-valued maps. -/
+instance {m R : Type*} [Fintype m] [MeasurableSpace R] [NonUnitalNonAssocSemiring R]
+    [MeasurableMul₂ R] [MeasurableAdd₂ R] : MeasurableMul₂ (Matrix m m R) :=
+  ⟨measurable_matrix_mul⟩
 
 variable {m : Type*} [Fintype m] [DecidableEq m] {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜]
   [IsTopologicalRing 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SecondCountableTopology 𝕜]
