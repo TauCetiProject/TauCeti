@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Localization
+public import TauCeti.AlgebraicGeometry.Modules.Pushforward
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 
 /-!
@@ -64,7 +65,7 @@ theorem isLocalizedModule_basicOpenRestrict_pushforward {V : Y.Opens} (g : Γ(Y,
   -- Up to `e`, the restriction maps of `f_* M` and of `M` agree.
   have he' (x : Γ((pushforward f).obj M, V)) :
       e (((pushforward f).obj M).basicOpenRestrict g x) = M.basicOpenRestrict (f.app V g) x := by
-    rw [basicOpenRestrict_apply, (M.basicOpenRestrict_apply (f.app V g) x :)]
+    rw [basicOpenRestrict_apply, M.basicOpenRestrict_apply (f.app V g) x]
     -- `x` is a section of `M` over `f ⁻¹ᵁ V`, and both sides are restrictions of it.
     have h (z : Γ(M, f ⁻¹ᵁ V)) : M.presheaf.map (homOfLE hD.le).op
         (M.presheaf.map (homOfLE (f.preimage_mono (Y.basicOpen_le g))).op z) =
@@ -93,19 +94,15 @@ theorem isLocalizedModule_basicOpenRestrict_pushforward {V : Y.Opens} (g : Γ(Y,
     dsimp only
     rw [← IsScalarTower.algebraMap_smul Γ(Y, Y.basicOpen g) (g ^ n) y,
       ← IsScalarTower.algebraMap_smul Γ(X, X.basicOpen (f.app V g)) (f.app V g ^ n) (e y)]
-    -- `Γ(Y, Y.basicOpen g)` acts on sections of the pushforward through `f.app`.
-    change e ((f.app (Y.basicOpen g) _ : Γ(X, f ⁻¹ᵁ Y.basicOpen g)) •
-      show Γ(M, f ⁻¹ᵁ Y.basicOpen g) from y) = _
-    rw [M.map_smul, RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra, hr, map_pow]
+    rw [TauCeti.AlgebraicGeometry.pushforward_obj_smul, M.map_smul, RingHom.algebraMap_toAlgebra,
+      RingHom.algebraMap_toAlgebra, hr, map_pow]
   · have h' := congrArg e hx
     rw [he', he'] at h'
     obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsLocalizedModule.exists_of_eq
       (S := Submonoid.powers (f.app V g)) (f := M.basicOpenRestrict (f.app V g)) h'
     refine ⟨⟨_, n, rfl⟩, ?_⟩
-    -- `Γ(Y, V)` acts on sections of the pushforward through `f.app`.
-    change (f.app V (g ^ n) • show Γ(M, f ⁻¹ᵁ V) from x₁) =
-      f.app V (g ^ n) • show Γ(M, f ⁻¹ᵁ V) from x₂
-    rw [map_pow]
+    rw [Submonoid.smul_def, Submonoid.smul_def, TauCeti.AlgebraicGeometry.pushforward_obj_smul,
+      TauCeti.AlgebraicGeometry.pushforward_obj_smul, map_pow]
     exact hn
 
 /-- **Pushforward along a quasi-compact quasi-separated morphism preserves quasi-coherence.** -/
