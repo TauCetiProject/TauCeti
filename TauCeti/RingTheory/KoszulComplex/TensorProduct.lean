@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.Algebra.Homology.Monoidal
 public import TauCeti.LinearAlgebra.ExteriorPower.Prod
 public import TauCeti.RingTheory.KoszulComplex.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 
 /-!
 # The Koszul complex of a sum of linear functionals
@@ -36,7 +35,8 @@ The tensor product is the one of `HomologicalComplex`, built from Mathlib's mono
   its inverse is the sum of the components of `⋀ⁿ (M × N)`
   (`TauCeti.koszulComplex.tensorIsoCoprod_inv_f`).
 * `TauCeti.koszulComplex.tensorIsoSumElim x y`: `K(x) ⊗ K(y) ≅ K(x, y)` for finite sequences
-  `x` and `y`, where `(x, y)` is the concatenated sequence `Sum.elim x y`.
+  `x` and `y`, where `(x, y)` is the concatenated sequence `Sum.elim x y`; its components are
+  `TauCeti.koszulComplex.tensorIsoSumElim_hom` and `TauCeti.koszulComplex.tensorIsoSumElim_inv`.
 
 ## References
 
@@ -278,6 +278,26 @@ def tensorIsoSumElim {ι κ : Type u} [Fintype ι] [Fintype κ] (x : ι → R) (
       koszulComplex (Fintype.linearCombination R (Sum.elim x y)) :=
   tensorIsoCoprod _ _ ≪≫ isoOfEquiv (LinearEquiv.sumArrowLequivProdArrow ι κ R R).symm (by
     ext v <;> simp [Fintype.linearCombination_apply, Fintype.sum_sum_type])
+
+/-- The isomorphism `tensorIsoSumElim x y` is the wedge chain map `tensorHomCoprod` followed by the
+map induced by the identification `(ι → R) × (κ → R) ≃ (ι ⊕ κ → R)`. -/
+@[simp]
+theorem tensorIsoSumElim_hom {ι κ : Type u} [Fintype ι] [Fintype κ] (x : ι → R) (y : κ → R) :
+    (tensorIsoSumElim x y).hom = tensorHomCoprod _ _ ≫
+      map (LinearEquiv.sumArrowLequivProdArrow ι κ R R).symm.toLinearMap (by
+        ext v <;> simp [Fintype.linearCombination_apply, Fintype.sum_sum_type]) := by
+  rw [tensorIsoSumElim, Iso.trans_hom, tensorIsoCoprod_hom, isoOfEquiv_hom]
+
+/-- The inverse of `tensorIsoSumElim x y` is the map induced by the identification
+`(ι ⊕ κ → R) ≃ (ι → R) × (κ → R)` followed by the inverse of `tensorIsoCoprod`. -/
+@[simp]
+theorem tensorIsoSumElim_inv {ι κ : Type u} [Fintype ι] [Fintype κ] (x : ι → R) (y : κ → R) :
+    (tensorIsoSumElim x y).inv =
+      map (LinearEquiv.sumArrowLequivProdArrow ι κ R R).toLinearMap (by
+        ext v; simp [Fintype.linearCombination_apply, Fintype.sum_sum_type]) ≫
+        (tensorIsoCoprod _ _).inv := by
+  rw [tensorIsoSumElim, Iso.trans_inv, isoOfEquiv_inv]
+  rfl
 
 end koszulComplex
 
