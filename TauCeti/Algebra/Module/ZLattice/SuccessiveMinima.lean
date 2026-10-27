@@ -74,6 +74,10 @@ loss is the factor `∏ i < n, max 1 ((i + 1) / 2) = n! / 2 ^ (n - 1)`
 
 * J. W. S. Cassels, *An Introduction to the Geometry of Numbers*, Springer, 1959: Chapter VIII,
   §1 (successive minima and their attainment), and Chapter V, Lemma 8 (the basis from the minima).
+* J.-H. Evertse, *Diophantine approximation, Chapter 2: Geometry of numbers*, lecture notes,
+  Leiden University, 2023, §2.3, Lemma 2.8: <https://pub.math.leidenuniv.nl/~evertsejh/dio19-2.pdf>.
+  This is the source of `ZLattice.successiveMin_isLeast_gauge`,
+  `ZLattice.successiveMin_le_iff_finrank` and `ZLattice.successiveMin_smul`.
 -/
 
 public section
