@@ -80,6 +80,19 @@ local notation "𝕢" => Function.Periodic.qParam
 
 /-! ### Twisting by powers of the `q`-parameter -/
 
+/-- The cusp function of `f` has a pole of order at most `k` at `0` exactly when twisting it by
+`q ^ k` gives a nonnegative order. -/
+private theorem neg_le_meromorphicOrderAt_iff {k : ℕ} (hf : MeromorphicAt (cuspFunction h f) 0) :
+    ((-k : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 ↔
+      0 ≤ meromorphicOrderAt (fun q ↦ q ^ k * cuspFunction h f q) 0 := by
+  rw [meromorphicOrderAt_qParam_pow_mul hf]
+  cases meromorphicOrderAt (cuspFunction h f) 0 using WithTop.recTopCoe with
+  | top => simp
+  | coe n =>
+    rw [WithTop.coe_le_coe, ← WithTop.coe_natCast, ← WithTop.coe_add, ← WithTop.coe_zero,
+      WithTop.coe_le_coe]
+    omega
+
 /-- If the cusp function of `f` is meromorphic at `0` with a pole of order at most `k`, then the
 cusp function of `𝕢 ^ k * f` is analytic at `0`. -/
 theorem analyticAt_cuspFunction_qParam_pow_mul (hh : 0 < h) {k : ℕ}
@@ -88,15 +101,8 @@ theorem analyticAt_cuspFunction_qParam_pow_mul (hh : 0 < h) {k : ℕ}
     AnalyticAt ℂ (cuspFunction h (fun τ ↦ 𝕢 h τ ^ k * f τ)) 0 := by
   have hψ : MeromorphicAt (fun q ↦ q ^ k * cuspFunction h f q) 0 :=
     (analyticAt_id.pow k).meromorphicAt.mul hf
-  have hord : 0 ≤ meromorphicOrderAt (fun q ↦ q ^ k * cuspFunction h f q) 0 := by
-    rw [meromorphicOrderAt_qParam_pow_mul hf]
-    cases hn : meromorphicOrderAt (cuspFunction h f) 0 using WithTop.recTopCoe with
-    | top => simp
-    | coe n =>
-      rw [hn] at hk
-      have : -(k : ℤ) ≤ n := WithTop.coe_le_coe.mp hk
-      exact_mod_cast (by omega : (0 : ℤ) ≤ k + n)
-  have han := hψ.meromorphicOrderAt_nonneg_iff_analyticAt_toMeromorphicNFAt.mp hord
+  have han := hψ.meromorphicOrderAt_nonneg_iff_analyticAt_toMeromorphicNFAt.mp
+    ((neg_le_meromorphicOrderAt_iff hf).mp hk)
   refine han.congr (cuspFunction_eventuallyEq_nhds_of_continuousAt ?_ han.continuousAt).symm
   exact (cuspFunction_qParam_pow_mul_eventuallyEq hh k f).trans hψ.eq_nhdsNE_toMeromorphicNFAt
 
@@ -166,15 +172,9 @@ theorem laurentQExpansion_eq_of_analyticAt_qParam_pow_mul (hh : 0 < h) {k : ℕ}
     rw [h₁, inv_mul_cancel_left₀ (pow_ne_zero k hq)]
   have hf : MeromorphicAt (cuspFunction h f) 0 :=
     ((analyticAt_id.pow k).meromorphicAt.inv.mul hk.meromorphicAt).congr heq.symm
-  refine laurentQExpansion_eq hh hf ?_
-  have h₀ := hk.meromorphicOrderAt_nonneg
-  rw [meromorphicOrderAt_congr htw, meromorphicOrderAt_qParam_pow_mul hf] at h₀
-  cases hn : meromorphicOrderAt (cuspFunction h f) 0 using WithTop.recTopCoe with
-  | top => exact le_top
-  | coe n =>
-    rw [hn] at h₀
-    have : (0 : ℤ) ≤ k + n := by exact_mod_cast h₀
-    exact WithTop.coe_le_coe.mpr (by omega)
+  refine laurentQExpansion_eq hh hf ((neg_le_meromorphicOrderAt_iff hf).mpr ?_)
+  rw [← meromorphicOrderAt_congr htw]
+  exact hk.meromorphicOrderAt_nonneg
 
 /-- The Laurent `q`-expansion only depends on the cusp function off `q = 0`. -/
 theorem laurentQExpansion_congr (hh : 0 < h)

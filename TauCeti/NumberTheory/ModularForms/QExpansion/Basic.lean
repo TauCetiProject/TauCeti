@@ -300,15 +300,14 @@ end CuspFunction
 theorem UpperHalfPlane.analyticAt_cuspFunction_qParam_pow (hh : 0 < h) (m : ℕ) :
     AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) 0 := by
   have hq := analyticAt_cuspFunction_qParam hh
-  change AnalyticAt ℂ (cuspFunction h ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ^ m)) 0
-  rw [cuspFunction_pow hq m]
+  rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m, cuspFunction_pow hq m]
   exact hq.pow m
 
 /-- The `q`-expansion of the `m`-th power of the `q`-parameter is `X ^ m`. -/
 theorem UpperHalfPlane.qExpansion_qParam_pow (hh : 0 < h) (m : ℕ) :
     qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) = PowerSeries.X ^ m := by
-  change qExpansion h ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ^ m) = _
-  rw [qExpansion_pow (analyticAt_cuspFunction_qParam hh) m, qExpansion_qParam hh]
+  rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m,
+    qExpansion_pow (analyticAt_cuspFunction_qParam hh) m, qExpansion_qParam hh]
 
 /-- A periodic function whose `q`-expansion has no constant term is asymptotic to its first
 coefficient times `q` at `i∞`: `f τ / q` tends to the coefficient of `q`. -/
