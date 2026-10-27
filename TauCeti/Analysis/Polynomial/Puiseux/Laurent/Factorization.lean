@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.Basic
 public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Basic
 import TauCeti.Analysis.Analytic.Laurent.Exponent
+import TauCeti.Analysis.Analytic.ConstantOrder.Global
+import Mathlib.Analysis.Meromorphic.Order
 
 /-!
 # Construction of nonmonic Puiseux Laurent factorizations
@@ -15,8 +17,8 @@ import TauCeti.Analysis.Analytic.Laurent.Exponent
 A polynomial family with analytic coefficients and nonzero discriminant off a distinguished
 hyperplane splits after substitution by the factorial of its degree. When its leading and
 constant coefficients are powers of the distinguished coordinate times analytic units,
-the roots have Laurent power times unit forms near every point of the hyperplane.
-The integer exponents are independent of the parameter throughout the simply connected base,
+the roots have Laurent power times unit forms on the whole parameter product.
+Both the integer exponents and the analytic units are global throughout the simply connected base,
 and their pole orders are bounded by the substituted leading-coefficient exponent. Degree drops
 and nullified fibers on the hyperplane are allowed.
 
@@ -45,9 +47,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 /-- **Nonmonic Puiseux Laurent factorization with parameters.** Analytic coefficients,
 constant degree and nonzero discriminant off `y = 0`, and power-times-unit leading and
 constant coefficients suffice to construct a complete distinct splitting after `y = t ^ d!`.
-All roots simultaneously have the form `t ^ e * w` near every point of `t = 0`, with one
-integer exponent vector `e ≥ -(d! * a)` on the entire base and point-dependent analytic
-nowhere-zero units.
+All roots simultaneously have the form `t ^ e * w` throughout the punctured product, with one
+integer exponent vector `e ≥ -(d! * a)` and one analytic nowhere-zero unit per label on the
+entire product, including `t = 0`.
 The same root labels have analytic extensions after multiplication by `t ^ (d! * a)`.
 The original fibers on the hyperplane may drop degree or be zero. Degree zero is included. -/
 theorem exists_analyticOnNhd_nonmonic_laurent
@@ -71,11 +73,11 @@ theorem exists_analyticOnNhd_nonmonic_laurent
           Injective (fun i ↦ r i b) ∧
           F (b.1, b.2 ^ d.factorial) =
             C ((F (b.1, b.2 ^ d.factorial)).coeff d) * ∏ i, (X - C (r i b))) ∧
-        ∃ e : Fin d → ℤ, ∀ x ∈ U, ∃ w : Fin d → E × ℂ → ℂ,
+        ∃ e : Fin d → ℤ, ∃ w : Fin d → E × ℂ → ℂ,
           (∀ i, -(d.factorial * a : ℤ) ≤ e i) ∧
-          (∀ i, AnalyticAt ℂ (w i) (x, 0)) ∧ (∀ i, w i (x, 0) ≠ 0) ∧
-          ∀ᶠ b in 𝓝 (x, (0 : ℂ)), (∀ i, w i b ≠ 0) ∧
-            (b.2 ≠ 0 → ∀ i, r i b = b.2 ^ e i * w i b) := by
+          (∀ i, AnalyticOnNhd ℂ (w i) (U ×ˢ ball 0 R')) ∧
+          (∀ i, ∀ b ∈ U ×ˢ ball 0 R', w i b ≠ 0) ∧
+          ∀ b ∈ U ×ˢ (ball 0 R' \ {0}), ∀ i, r i b = b.2 ^ e i * w i b := by
   -- Choose a substituted disc and construct roots with analytically removable poles.
   let R' := min R 1 / 2
   have hR' : 0 < R' := by dsimp only [R']; positivity
@@ -139,11 +141,61 @@ theorem exists_analyticOnNhd_nonmonic_laurent
   obtain ⟨x₀, hx₀⟩ := (inferInstance : Nonempty U)
   obtain ⟨e, he, hform⟩ := exists_laurentExponents_of_isPreconnected
     ⟨x₀, hx₀⟩ (isPreconnected_iff_preconnectedSpace.mpr inferInstance) r hlocal
-  refine ⟨e, fun x hx ↦ ?_⟩
-  choose w hw hw0 hweq using fun i ↦ hform i x hx
-  refine ⟨w, he, hw, hw0, ?_⟩
-  filter_upwards [eventually_all.2 fun i ↦ (hw i).continuousAt.eventually_ne (hw0 i),
-    eventually_all.2 hweq] with b hbne hbeq
-  exact ⟨hbne, fun hb i ↦ hbeq i hb⟩
+  -- Divide each pole-removed branch by its fixed, nonnegative slice order.
+  let m (i : Fin d) : ℕ := (e i + (d.factorial * a : ℕ)).toNat
+  have hm (i : Fin d) : (m i : ℤ) = e i + (d.factorial * a : ℕ) :=
+    Int.toNat_of_nonneg (by have := he i; omega)
+  have horder (i : Fin d) (x : E) (hx : x ∈ U) :
+      analyticOrderAt (fun y ↦ g i (x, y)) 0 = m i := by
+    obtain ⟨w, hw, hw0, hweq⟩ := hform i x hx
+    have hx' : (x, (0 : ℂ)) ∈ U ×ˢ ball 0 R' := ⟨hx, mem_ball_self hR'⟩
+    have hslice := ((hg i).1 (x, 0) hx').curry_right
+    have hmer : meromorphicOrderAt (fun y ↦ g i (x, y)) 0 = (m i : ℤ) := by
+      apply (meromorphicOrderAt_eq_int_iff hslice.meromorphicAt).2
+      refine ⟨fun y ↦ w (x, y), hw.curry_right, hw0, ?_⟩
+      have hline : Tendsto (fun y : ℂ ↦ (x, y)) (𝓝 0) (𝓝 (x, 0)) :=
+        (continuous_const.prodMk continuous_id).tendsto (0 : ℂ)
+      rw [eventually_nhdsWithin_iff]
+      filter_upwards [hline.eventually hweq, ball_mem_nhds (0 : ℂ) hR'] with y hy hyR hy0
+      have hyne : y ≠ 0 := by simpa using hy0
+      have hgi : g i (x, y) = y ^ (d.factorial * a) * r i (x, y) :=
+        (hg i).2 ⟨hx, hyR, hyne⟩
+      rw [hgi, hy hyne]
+      simp only [sub_zero, smul_eq_mul]
+      rw [← mul_assoc]
+      simp only [← zpow_natCast]
+      rw [← zpow_add₀ hyne, hm, add_comm]
+    apply ENat.map_natCast_injective (α := ℤ)
+    simpa only [← hslice.meromorphicOrderAt_eq, ENat.map_natCast] using hmer
+  have hquot (i : Fin d) := ((hg i).1).exists_eq_pow_smul_of_analyticOrderAt
+    hU (mem_ball_self hR') (horder i)
+  choose w hw hw0 hgw using hquot
+  have hrw (b : E × ℂ) (hb : b ∈ U ×ˢ (ball 0 R' \ {0})) (i : Fin d) :
+      r i b = b.2 ^ e i * w i b := by
+    have h := hgw i b ⟨hb.1, hb.2.1⟩
+    rw [(hg i).2 hb] at h
+    simp only [sub_zero, smul_eq_mul] at h
+    apply mul_left_cancel₀ (pow_ne_zero (d.factorial * a) hb.2.2)
+    rw [h, ← mul_assoc]
+    simp only [← zpow_natCast]
+    rw [← zpow_add₀ hb.2.2, hm, add_comm]
+  refine ⟨e, w, he, hw, ?_, hrw⟩
+  intro i b hb
+  by_cases hb0 : b.2 = 0
+  · simpa only [← hb0, Prod.mk.eta] using hw0 i b.1 hb.1
+  · -- The nonzero constant coefficient excludes zero roots away from the hyperplane.
+    have hb' : b ∈ U ×ˢ (ball 0 R' \ {0}) := ⟨hb.1, hb.2, hb0⟩
+    have hroot : (F (b.1, b.2 ^ d.factorial)).IsRoot (r i b) := by
+      rw [(hr b hb').2, IsRoot, eval_mul]
+      simp [eval_prod, Finset.prod_eq_zero (Finset.mem_univ i)]
+    have hconst0 : (F (b.1, b.2 ^ d.factorial)).coeff 0 ≠ 0 := by
+      rw [hconst (b.1, b.2 ^ d.factorial)
+        ⟨hb.1, mapsTo_pow_ball_zero d.factorial_ne_zero hfit hb.2⟩]
+      exact mul_ne_zero (pow_ne_zero _ (pow_ne_zero _ hb0))
+        (hv0 _ ⟨hb.1, mapsTo_pow_ball_zero d.factorial_ne_zero hfit hb.2⟩)
+    intro hwb
+    apply hconst0
+    rw [coeff_zero_eq_eval_zero]
+    simpa only [hrw b hb' i, hwb, mul_zero, IsRoot] using hroot
 
 end TauCeti.Polynomial
