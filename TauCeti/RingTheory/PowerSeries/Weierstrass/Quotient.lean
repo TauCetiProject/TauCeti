@@ -128,7 +128,8 @@ noncomputable def IsDistinguished.polynomialQuotientEquiv
       simp [← hm.natDegree_eq, hm.monic.coeff_natDegree]
     have hp' : IsDistinguished c s (polynomialToRestricted c p : PowerSeries R) := by
       simpa only [coe_polynomialToRestricted] using hp
-    obtain ⟨q, r, hr, hqr⟩ := hp'.exists_mul_add_eq_subring hc hu g
+    obtain ⟨q, r, hr, hqr⟩ :=
+      (isMulDistinguished_iff_isUnit.mpr ⟨hp', hu⟩).exists_mul_add_eq_subring hc g
     refine ⟨Ideal.Quotient.mk _ (PowerSeries.trunc s (r : PowerSeries R)), ?_⟩
     rw [Ideal.quotient_map_mkₐ]
     rw [polynomialToRestricted_trunc_eq_of_coeff_eq_zero r hr, ← hqr, map_add, map_mul]
@@ -251,7 +252,8 @@ theorem IsDistinguished.map_comap_polynomialToRestricted
     (Ideal.unit_mul_mem_iff_mem I he).mp (hfp ▸ hfI)
   have hfJ : f ∈ J := hfp ▸ J.mul_mem_left e (Ideal.mem_map_of_mem _ (Ideal.mem_comap.mpr hpI))
   -- Dividing `x` by `f` leaves a polynomial remainder, which lies in `I`.
-  obtain ⟨q, r, hr, hqr⟩ := hf.exists_mul_add_eq_subring hc hu x
+  obtain ⟨q, r, hr, hqr⟩ :=
+    (isMulDistinguished_iff_isUnit.mpr ⟨hf, hu⟩).exists_mul_add_eq_subring hc x
   have hrI : r ∈ I := eq_sub_of_add_eq' hqr ▸ I.sub_mem hx (I.mul_mem_left q hfI)
   rw [← hqr, ← polynomialToRestricted_trunc_eq_of_coeff_eq_zero r hr]
   refine J.add_mem (J.mul_mem_left q hfJ) (Ideal.mem_map_of_mem _ (Ideal.mem_comap.mpr ?_))

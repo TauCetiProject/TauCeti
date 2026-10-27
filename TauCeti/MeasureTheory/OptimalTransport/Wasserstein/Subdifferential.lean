@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Convex.Strong
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 public import TauCeti.Analysis.GradientFlow.Slope
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.EulerLagrange
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
 

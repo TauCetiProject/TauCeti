@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Composition
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Identity
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Functor
 public import TauCeti.CategoryTheory.Monoidal.Mon
 
@@ -35,12 +36,22 @@ that of `A` transported along the tensor comparison of pullback, which is invert
 quasicoherent. The algebra `B` need not be quasicoherent, so that `B` can be the structure sheaf
 of an arbitrary scheme.
 
+Pullback of algebras is pseudofunctorial: the identity and composition isomorphisms
+`𝟙^* A ≅ A` and `f^* g^* A ≅ (f ≫ g)^* A` are those of the underlying modules, and the bijection
+above is compatible with them and with the corresponding isomorphisms of pushforward. These are
+the inputs for the compatibility of base change of relative spectra with composition.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.QuasicoherentAlgebra.pullback`: pullback of quasicoherent algebras
   along a morphism of schemes;
+* `TauCeti.AlgebraicGeometry.QuasicoherentAlgebra.pullbackId` and
+  `TauCeti.AlgebraicGeometry.QuasicoherentAlgebra.pullbackComp`: its identity and composition
+  isomorphisms, given on underlying modules by Mathlib's `Scheme.Modules.pullbackId` and
+  `Scheme.Modules.pullbackComp`;
 * `TauCeti.AlgebraicGeometry.QuasicoherentAlgebra.pullbackHomEquiv`: the bijection between
-  algebra maps `f^* A ⟶ B` and `A ⟶ f_* B`, natural in `A` and `B`.
+  algebra maps `f^* A ⟶ B` and `A ⟶ f_* B`, natural in `A` and `B`, and compatible with
+  composition (`pullbackHomEquiv_comp`) and identities (`pullbackHomEquiv_id_hom_hom`).
 
 ## References
 
@@ -219,6 +230,110 @@ end QuasicoherentAlgebra
 
 namespace QuasicoherentAlgebra
 
+/-- Converting a commutative monoid in quasicoherent sheaves to a quasicoherent algebra and back
+is the identity. -/
+private def ofCommMonCompToCommMonIso :
+    ofCommMon X ⋙ toCommMon X ≅ 𝟭 (CommMon (QuasicoherentSheaf X)) :=
+  NatIso.ofComponents (fun A ↦ CommMon.mkIso (Iso.refl _) (Category.comp_id _)
+    ((Category.comp_id _).trans ((congrArg (· ≫ μ[A.X]) (id_tensorHom_id _ _)).trans
+      (Category.id_comp _)).symm)) (by
+    intro A B f
+    apply CommMon.hom_ext
+    rfl)
+
+/-- Converting a quasicoherent algebra to a commutative monoid in quasicoherent sheaves and back
+is the identity. -/
+private def toCommMonCompOfCommMonIso :
+    toCommMon X ⋙ ofCommMon X ≅ 𝟭 (QuasicoherentAlgebra X) :=
+  NatIso.ofComponents (fun A ↦ ObjectProperty.isoMk _ (CommMon.mkIso (Iso.refl _)
+    (Category.comp_id _) ((Category.comp_id _).trans ((congrArg (· ≫ μ[A.obj.X])
+      (id_tensorHom_id _ _)).trans (Category.id_comp _)).symm))) (by
+    intro A B f
+    apply ObjectProperty.hom_ext
+    apply CommMon.hom_ext
+    rfl)
+
+variable {X} {Y Z : Scheme.{u}}
+
+variable (X) in
+/-- Pullback of quasicoherent algebras along the identity is naturally the identity. -/
+def pullbackId : pullback (𝟙 X) ≅ 𝟭 (QuasicoherentAlgebra X) :=
+  Functor.isoWhiskerLeft (toCommMon X) (Functor.isoWhiskerRight
+    (Functor.mapCommMonNatIso (QuasicoherentSheaf.pullbackId X) ≪≫ Functor.mapCommMonIdIso)
+      (ofCommMon X)) ≪≫ toCommMonCompOfCommMonIso X
+
+/-- Pullback of quasicoherent algebras respects composition. -/
+def pullbackComp (f : X ⟶ Y) (g : Y ⟶ Z) : pullback g ⋙ pullback f ≅ pullback (f ≫ g) :=
+  Functor.isoWhiskerLeft (toCommMon Z ⋙ (QuasicoherentSheaf.pullback g).mapCommMon)
+      (Functor.isoWhiskerRight (ofCommMonCompToCommMonIso Y)
+        ((QuasicoherentSheaf.pullback f).mapCommMon ⋙ ofCommMon X)) ≪≫
+    Functor.isoWhiskerLeft (toCommMon Z) (Functor.isoWhiskerRight
+      (Functor.mapCommMonCompIso.symm ≪≫
+        Functor.mapCommMonNatIso (QuasicoherentSheaf.pullbackComp f g)) (ofCommMon X))
+
+/-- The identity comparison of algebra pullback is Mathlib's identity comparison of module
+pullback on underlying modules. -/
+@[simp]
+theorem pullbackId_hom_app_hom_hom_hom (A : QuasicoherentAlgebra X) :
+    ((pullbackId X).hom.app A).hom.hom.hom =
+      eqToHom (pullback_obj_X (𝟙 X) A) ≫ (Scheme.Modules.pullbackId X).hom.app A.obj.X := by
+  refine Eq.trans ?_ (QuasicoherentSheaf.pullbackId_hom_app_hom X ⟨A.obj.X, A.property⟩)
+  -- Composites with the identity components of the conversions reduce definitionally.
+  rfl
+
+/-- The inverse identity comparison of algebra pullback is Mathlib's inverse identity comparison
+of module pullback on underlying modules. -/
+@[simp]
+theorem pullbackId_inv_app_hom_hom_hom (A : QuasicoherentAlgebra X) :
+    ((pullbackId X).inv.app A).hom.hom.hom =
+      (Scheme.Modules.pullbackId X).inv.app A.obj.X ≫ eqToHom (pullback_obj_X (𝟙 X) A).symm := by
+  refine Eq.trans ?_ (QuasicoherentSheaf.pullbackId_inv_app_hom X ⟨A.obj.X, A.property⟩)
+  -- Composites with the identity components of the conversions reduce definitionally.
+  rfl
+
+/-- The composition comparison of algebra pullback is Mathlib's composition comparison of module
+pullback on underlying modules. -/
+@[simp]
+theorem pullbackComp_hom_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : QuasicoherentAlgebra Z) :
+    ((pullbackComp f g).hom.app A).hom.hom.hom =
+      eqToHom ((pullback_obj_X f _).trans (congrArg _ (pullback_obj_X g A))) ≫
+        (Scheme.Modules.pullbackComp f g).hom.app A.obj.X ≫
+          eqToHom (pullback_obj_X (f ≫ g) A).symm := by
+  refine Eq.trans ?_ (QuasicoherentSheaf.pullbackComp_hom_app_hom f g ⟨A.obj.X, A.property⟩)
+  have h : (ofCommMonCompToCommMonIso Y).hom.app
+      ((QuasicoherentSheaf.pullback g).mapCommMon.obj ((toCommMon Z).obj A)) = 𝟙 _ :=
+    CommMon.hom_ext _ _ rfl
+  dsimp only [pullbackComp]
+  -- The intermediate functors of `pullbackComp` agree with those of `Iso.trans` only up to
+  -- unfolding `Functor.comp`, so the composite is split with `erw`.
+  erw [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
+    Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, h, CategoryTheory.Functor.map_id,
+    Category.id_comp]
+  rfl
+
+/-- The inverse composition comparison of algebra pullback is Mathlib's inverse composition
+comparison of module pullback on underlying modules. -/
+@[simp]
+theorem pullbackComp_inv_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : QuasicoherentAlgebra Z) :
+    ((pullbackComp f g).inv.app A).hom.hom.hom =
+      eqToHom (pullback_obj_X (f ≫ g) A) ≫ (Scheme.Modules.pullbackComp f g).inv.app A.obj.X ≫
+        eqToHom ((pullback_obj_X f _).trans (congrArg _ (pullback_obj_X g A))).symm := by
+  refine Eq.trans ?_ (QuasicoherentSheaf.pullbackComp_inv_app_hom f g ⟨A.obj.X, A.property⟩)
+  have h : (ofCommMonCompToCommMonIso Y).inv.app
+      ((QuasicoherentSheaf.pullback g).mapCommMon.obj ((toCommMon Z).obj A)) = 𝟙 _ :=
+    CommMon.hom_ext _ _ rfl
+  dsimp only [pullbackComp]
+  -- As in `pullbackComp_hom_app_hom_hom_hom`.
+  erw [Iso.trans_inv, NatTrans.comp_app, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app,
+    Functor.isoWhiskerRight_inv, Functor.whiskerRight_app, Functor.isoWhiskerLeft_inv,
+    Functor.whiskerLeft_app, Functor.isoWhiskerRight_inv, Functor.whiskerRight_app, h,
+    CategoryTheory.Functor.map_id, Category.comp_id]
+  rfl
+
+end QuasicoherentAlgebra
+
+namespace QuasicoherentAlgebra
+
 variable {X} {Y : Scheme.{u}} (f : X ⟶ Y)
 
 /-- A morphism out of the pullback of the underlying module of `A`, transported to the pulled-back
@@ -349,6 +464,59 @@ lemma pullbackHomEquiv_naturality_right (A : QuasicoherentAlgebra Y) {B B' : Com
       pullbackHomEquiv f A B g ≫ (Scheme.Modules.pushforward f).mapCommMon.map b :=
   CommMon.hom_ext _ _ ((congrArg ((Scheme.Modules.pullbackPushforwardAdjunction f).homEquiv _ _)
     (Category.assoc _ _ _).symm).trans (Adjunction.homEquiv_naturality_right _ _ _))
+
+/-- Transposition along pullback of algebras is compatible with composition of scheme morphisms:
+transposing along `f ≫ g`, after the composition isomorphism `(f ≫ g)^* A ≅ f^* g^* A`, is
+transposing along `f` and then along `g`, followed by the composition isomorphism
+`g_* f_* B ≅ (f ≫ g)_* B` of pushforward. -/
+lemma pullbackHomEquiv_comp {Z : Scheme.{u}} (g : Y ⟶ Z) (A : QuasicoherentAlgebra Z)
+    (B : CommMon X.Modules) (φ : ((pullback f).obj ((pullback g).obj A)).obj ⟶ B) :
+    pullbackHomEquiv (f ≫ g) A B (((pullbackComp f g).inv.app A).hom ≫ φ) =
+      pullbackHomEquiv g A _ (pullbackHomEquiv f _ B φ) ≫
+        Functor.mapCommMonCompIso.inv.app B ≫
+          (Functor.mapCommMonNatIso (Scheme.Modules.pushforwardComp f g)).hom.app B := by
+  apply CommMon.hom_ext
+  simp only [CommMon.comp_hom, pullbackHomEquiv_apply_hom_hom,
+    Functor.mapCommMonCompIso_inv_app_hom_hom, Functor.mapCommMonNatIso_hom_app_hom_hom,
+    pullbackComp_inv_app_hom_hom_hom]
+  have h : eqToHom (pullback_obj_X (f ≫ g) A).symm ≫ (eqToHom (pullback_obj_X (f ≫ g) A) ≫
+      (Scheme.Modules.pullbackComp f g).inv.app A.obj.X ≫ eqToHom ((pullback_obj_X f _).trans
+        (congrArg (Scheme.Modules.pullback f).obj (pullback_obj_X g A))).symm) ≫ φ.hom.hom =
+      (Scheme.Modules.pullbackComp f g).inv.app A.obj.X ≫
+        (Scheme.Modules.pullback f).map (eqToHom (pullback_obj_X g A).symm) ≫
+          eqToHom (pullback_obj_X f ((pullback g).obj A)).symm ≫ φ.hom.hom := by
+    rw [eqToHom_map]
+    -- As in `pullbackHomEquiv_naturality_left`, these composites mix the `X.Modules` and
+    -- underlying sheaf category instances, which `rw` and `simp` do not identify.
+    erw [Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    exact congrArg (_ ≫ ·) (eqToHom_trans_assoc _ _ _).symm
+  -- The same instance mixing: the identity comes from `Functor.mapCommMonCompIso`.
+  erw [Category.id_comp, h]
+  rw [← Adjunction.homEquiv_conjugateEquiv
+      ((Scheme.Modules.pullbackPushforwardAdjunction g).comp
+        (Scheme.Modules.pullbackPushforwardAdjunction f)),
+    Scheme.Modules.conjugateEquiv_pullbackComp_inv, Adjunction.comp_homEquiv, Equiv.trans_apply,
+    Adjunction.homEquiv_naturality_left]
+  rfl
+
+/-- Transposition along pullback of algebras by the identity is the identity, through the
+identity isomorphisms `𝟙^* A ≅ A` and `B ≅ 𝟙_* B` of pullback and pushforward. -/
+lemma pullbackHomEquiv_id_hom_hom (A : QuasicoherentAlgebra X) (B : CommMon X.Modules)
+    (φ : A.obj ⟶ B) :
+    (pullbackHomEquiv (𝟙 X) A B (((pullbackId X).hom.app A).hom ≫ φ)).hom.hom =
+      φ.hom.hom ≫ (Scheme.Modules.pushforwardId X).inv.app B.X := by
+  have h : eqToHom (pullback_obj_X (𝟙 X) A).symm ≫ (eqToHom (pullback_obj_X (𝟙 X) A) ≫
+      (Scheme.Modules.pullbackId X).hom.app A.obj.X) ≫ φ.hom.hom =
+        (Scheme.Modules.pullbackId X).hom.app A.obj.X ≫ φ.hom.hom := by
+    -- As in `pullbackHomEquiv_comp`, the composites mix two category instances.
+    erw [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  rw [pullbackHomEquiv_apply_hom_hom, CommMon.comp_hom, pullbackId_hom_app_hom_hom_hom]
+  erw [h]
+  refine (Adjunction.homEquiv_conjugateEquiv Adjunction.id
+    (Scheme.Modules.pullbackPushforwardAdjunction (𝟙 X)) (Scheme.Modules.pullbackId X).hom
+      φ.hom.hom).symm.trans ?_
+  rw [Scheme.Modules.conjugateEquiv_pullbackId_hom]
+  rfl
 
 end QuasicoherentAlgebra
 

@@ -22,7 +22,10 @@ union of its unit translates (`Projectivization.preimage_image_mk'`). These two 
 from Zayn Blore's Mathlib pull request
 [mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117).
 
-Adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
+The file also records `Projectivization.submodule_map`: the line of the image of a projective
+point under an injective semilinear map is the image of its line.
+
+The normalization lemmas are adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights/Northcott.lean),
 commit `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0).
 -/
@@ -75,5 +78,15 @@ lemma exists_rep_apply_eq_one (x : Projectivization K (ι → K)) :
   obtain ⟨i, hi⟩ := Function.ne_iff.mp x.rep_nonzero
   obtain ⟨v, hv, h1, hratio, hmk⟩ := exists_rep_apply_eq_one_of_ne_zero x hi
   exact ⟨v, hv, i, h1, hratio, hmk⟩
+
+/-- The line of the image of a projective point under an injective semilinear map is the image
+of its line. -/
+@[simp]
+theorem submodule_map {D E V W : Type*} [DivisionRing D] [DivisionRing E] [AddCommGroup V]
+    [Module D V] [AddCommGroup W] [Module E W] {σ : D →+* E} [RingHomSurjective σ]
+    (f : V →ₛₗ[σ] W) (hf : Function.Injective f) (x : Projectivization D V) :
+    (map f hf x).submodule = x.submodule.map f := by
+  induction x using ind with
+  | h v hv => simp [map_mk, submodule_mk, Submodule.map_span]
 
 end Projectivization
