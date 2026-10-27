@@ -140,8 +140,10 @@ theorem auslanderReitenStableHomEquiv_symm_pairing
     (g : N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) :
     (auslanderReitenStableHomEquiv f N).symm (auslanderReitenCocyclePairing f g.hom) =
       (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map g := by
-  apply (auslanderReitenStableHomEquiv f N).injective
-  simp
+  let : Module k (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) :=
+    Linear.homModule (R := k) N (ModuleCat.of A (AuslanderReitenTranslate k f))
+  -- `mapLinearMap` has the functor map as its underlying function.
+  exact LinearMap.equivOfSurjectiveOfKerEq_symm_apply _ _ _ _ _ g
 
 /-- Precomposition in the injective stable category corresponds to the dual of
 postcomposition on Hom cocycle classes. -/

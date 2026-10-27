@@ -102,4 +102,11 @@ theorem equivOfSurjectiveOfKerEq_apply (x : M) :
     g.equivOfSurjectiveOfKerEq h hg hh hk (g x) = h x := by
   simp [equivOfSurjectiveOfKerEq]
 
+/-- The inverse equivalence sends the image of an element under the second map to its image
+under the first map. -/
+@[simp]
+theorem equivOfSurjectiveOfKerEq_symm_apply (x : M) :
+    (g.equivOfSurjectiveOfKerEq h hg hh hk).symm (h x) = g x :=
+  (LinearEquiv.symm_apply_eq _).mpr (equivOfSurjectiveOfKerEq_apply g h hg hh hk x).symm
+
 end LinearMap

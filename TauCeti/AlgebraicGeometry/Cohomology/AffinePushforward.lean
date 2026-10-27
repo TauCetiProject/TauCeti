@@ -106,6 +106,16 @@ lemma cohomologyZeroPushforwardBaseLinearEquiv_apply (M : X.Modules)
         (cohomologyZeroBaseLinearEquiv R Y ((pushforward f).obj M) x) := by
   rfl
 
+/-- The inverse degree-zero comparison identifies the same global section on target and
+source. -/
+@[simp]
+lemma cohomologyZeroPushforwardBaseLinearEquiv_symm_apply (M : X.Modules)
+    (x : Cohomology M 0) :
+    (f.cohomologyZeroPushforwardBaseLinearEquiv (R := R) M).symm x =
+      (cohomologyZeroBaseLinearEquiv R Y ((pushforward f).obj M)).symm
+        (cohomologyZeroBaseLinearEquiv R X M x) := by
+  rfl
+
 /-- Zeroth cohomology of a pushforward is finite over the base ring exactly when the original
 zeroth cohomology is finite, with no condition on the morphism. -/
 @[simp]
@@ -189,6 +199,19 @@ lemma cohomologyOnePushforwardBaseLinearEquiv_boundary [IsAffineHom f]
   exact (LinearMap.equivOfSurjectiveOfKerEq_apply _ _ _ _ _ s).trans (congrArg
     (mayerVietorisBoundaryLinear M (f ⁻¹ᵁ U) (f ⁻¹ᵁ V) (f.preimage_sup_eq_top hUV))
     (pushforwardSectionsBaseLinearEquiv_apply R f M (U ⊓ V) s))
+
+/-- The inverse degree-one comparison carries the boundary of a section over the overlap of
+the preimage cover to the boundary of the same section on the target cover. -/
+@[simp]
+lemma cohomologyOnePushforwardBaseLinearEquiv_symm_boundary [IsAffineHom f]
+    [IsLocallyNoetherian Y] [IsLocallyNoetherian X] (M : X.Modules) [M.IsQuasicoherent]
+    (U V : Y.Opens) (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤)
+    (s : Γ(M, f ⁻¹ᵁ U ⊓ f ⁻¹ᵁ V)) :
+    (f.cohomologyOnePushforwardBaseLinearEquiv (R := R) M U V hU hV hUV).symm
+        (mayerVietorisBoundaryLinear M (f ⁻¹ᵁ U) (f ⁻¹ᵁ V) (f.preimage_sup_eq_top hUV) s) =
+      mayerVietorisBoundaryLinear ((pushforward f).obj M) U V hUV s :=
+  (LinearEquiv.symm_apply_eq _).mpr
+    (f.cohomologyOnePushforwardBaseLinearEquiv_boundary M U V hU hV hUV s).symm
 
 /-- On a locally Noetherian target covered by two affine opens, first cohomology of an affine
 pushforward is finite exactly when first cohomology on the locally Noetherian source is finite. -/
