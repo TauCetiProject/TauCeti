@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
-public import Mathlib.Tactic.NormNum
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.Projective
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.WeightedTrace
 
