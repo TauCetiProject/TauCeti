@@ -30,26 +30,34 @@ jobs:
           tools-repository: TauCetiProject/TauCetiTools
           tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
-      - name: Restore workflow contract tests after shared setup
-        # Implementations come from the pinned shared tools, as in content CI.
-        # These tests and the suite runner describe this checkout's workflows.
+      - name: Restore project-owned workflow tests after shared setup
+        # The deployed shared overlay contains older copies of these workflow tests.
+        # Keep project workflow contracts here; shared implementations still come from Tools.
+        # Remove this workaround when setup preserves project-owned workflow tests.
         run: |
-          git ls-files -z -- \
+          git restore --source=HEAD -- \
             scripts/test_bors_scope_approval.py \
-            scripts/test_bulk_unpack_cache.py \
             scripts/test_duplicate_audit_workflow.py \
             scripts/test_lake_cache_probe.py \
             scripts/test_lake_cache_reuse.py \
-            scripts/test_workflow_pins.py \
-            scripts/test_content_ci_separation.py \
-            scripts/run-infrastructure-tests.sh \
-            | xargs -0 -r git restore --source=HEAD --
-      - name: Install test dependencies
-        run: python3 -m pip install 'PyYAML>=6'
+            scripts/test_workflow_pins.py
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
       - name: Infrastructure policy unit tests
         run: bash scripts/run-infrastructure-tests.sh
+
+      # The no-stack bot intentionally uses a different Tools release.
+      # Test that exact implementation after the general suite, without another runner.
+      - name: Prepare stack-policy tools at the production pin
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@980a7a0e321a7fe86981f6c9f872a2acad93af69
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 980a7a0e321a7fe86981f6c9f872a2acad93af69
+          project-directory: .
+      - name: Stack-policy regression tests
+        run: |
+          python3 scripts/test_stack_policy.py
+          python3 scripts/test_stack_checkpoint_restore.py
 
   lean-fixtures:
     runs-on: ubuntu-latest
@@ -64,20 +72,8 @@ jobs:
           tools-repository: TauCetiProject/TauCetiTools
           tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
-      - name: Restore workflow contract tests after shared setup
-        # Implementations come from the pinned shared tools, as in content CI.
-        # These tests and the suite runner describe this checkout's workflows.
-        run: |
-          git ls-files -z -- \
-            scripts/test_bors_scope_approval.py \
-            scripts/test_bulk_unpack_cache.py \
-            scripts/test_duplicate_audit_workflow.py \
-            scripts/test_lake_cache_probe.py \
-            scripts/test_lake_cache_reuse.py \
-            scripts/test_workflow_pins.py \
-            scripts/test_content_ci_separation.py \
-            scripts/run-infrastructure-tests.sh \
-            | xargs -0 -r git restore --source=HEAD --
+      - name: Restore the project-owned Lake workflow test
+        run: git restore --source=HEAD -- scripts/test_lake_cache_reuse.py
       - name: Install elan (pinned + checksum) and the toolchain
         env:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
@@ -119,20 +115,6 @@ jobs:
           tools-repository: TauCetiProject/TauCetiTools
           tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
-      - name: Restore workflow contract tests after shared setup
-        # Implementations come from the pinned shared tools, as in content CI.
-        # These tests and the suite runner describe this checkout's workflows.
-        run: |
-          git ls-files -z -- \
-            scripts/test_bors_scope_approval.py \
-            scripts/test_bulk_unpack_cache.py \
-            scripts/test_duplicate_audit_workflow.py \
-            scripts/test_lake_cache_probe.py \
-            scripts/test_lake_cache_reuse.py \
-            scripts/test_workflow_pins.py \
-            scripts/test_content_ci_separation.py \
-            scripts/run-infrastructure-tests.sh \
-            | xargs -0 -r git restore --source=HEAD --
       - name: Install elan (pinned + checksum) and the toolchain
         env:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2

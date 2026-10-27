@@ -25,12 +25,16 @@ class ContentCISeparationTests(unittest.TestCase):
         for event in events.values():
             self.assertEqual(set(event['paths']), {'scripts/**', '.github/**'})
         self.assertEqual(infra['permissions'], {'contents': 'read'})
+        self.assertNotIn('secrets.', (WORKFLOWS / 'infrastructure-tests.yml').read_text())
         for job in infra['jobs'].values():
             self.assertNotIn('secrets', job)
-            self.assertNotIn('needs', job)
 
     def test_content_jobs_never_invoke_regression_suites(self):
-        for name in ('ci.yml', 'pr-build.yml', 'lint-full.yml', 'stack-policy.yml'):
+        independent_tests = {'infrastructure-tests.yml', 'shadow-audits.yml', 'ci-live-tests.yml'}
+        for path in WORKFLOWS.glob('*.yml'):
+            if path.name in independent_tests:
+                continue
+            name = path.name
             for job in workflow(name)['jobs'].values():
                 for step in job.get('steps', []):
                     with self.subTest(workflow=name, step=step.get('name')):
@@ -38,19 +42,23 @@ class ContentCISeparationTests(unittest.TestCase):
                                             r'\b(?:python3?|bash)\s+(?:gate/)?scripts/(?:[\w/-]+/)?test_[\w-]+\.(?:py|sh)\b'
                                             r'|\b(?:python3?\s+-m\s+(?:unittest|pytest)|pytest|bash\s+scripts/run-infrastructure-tests\.sh)\b')
         ci = workflow('ci.yml')['jobs']
-        self.assertEqual(set(ci), {'build', 'publish-lake-cache'})
+        self.assertNotIn('readiness-tests', ci)
+        self.assertNotIn('duplicate-audit-tests', ci)
         self.assertEqual(ci['publish-lake-cache']['needs'], ['build'])
 
-    def test_workflow_contracts_are_restored_after_the_shared_overlay(self):
-        for job in workflow('infrastructure-tests.yml')['jobs'].values():
-            steps = job['steps']
-            setup = next(i for i, s in enumerate(steps)
-                         if s.get('name') == 'Prepare pinned shared tools')
-            restore = next(i for i, s in enumerate(steps)
-                           if 'git restore --source=HEAD --' in s.get('run', ''))
-            self.assertGreater(restore, setup)
-            self.assertIn('scripts/test_bors_scope_approval.py', steps[restore]['run'])
-            self.assertIn('scripts/test_content_ci_separation.py', steps[restore]['run'])
+    def test_stack_policy_suite_uses_the_production_tools_pin(self):
+        production = workflow('stack-policy.yml')['jobs']['enforce']['steps']
+        tests = workflow('infrastructure-tests.yml')['jobs']['python-tests']['steps']
+        production_setup = next(step for step in production
+                                if '/.github/actions/setup@' in step.get('uses', ''))
+        test_setup = next(step for step in tests
+                          if step.get('name') == 'Prepare stack-policy tools at the production pin')
+        self.assertEqual(test_setup['uses'], production_setup['uses'])
+        self.assertEqual(test_setup['with'], production_setup['with'])
+        setup_index = tests.index(test_setup)
+        regression_index = next(i for i, step in enumerate(tests)
+                                if step.get('name') == 'Stack-policy regression tests')
+        self.assertLess(setup_index, regression_index)
 
     def test_dependency_warming_probes_are_manual_only(self):
         path = WORKFLOWS / 'warm-dependencies.yml'

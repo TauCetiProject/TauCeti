@@ -16,7 +16,6 @@ python3 scripts/test_roadmap_label.py
 python3 scripts/test_roadmap_api.py
 python3 scripts/test_github_api_report.py
 python3 scripts/test_housekeeping.py
-python3 scripts/test_stack_checkpoint_restore.py
 python3 scripts/pr_status/test_pr_labels.py
 python3 scripts/pr_status/test_batch.py
 python3 scripts/pr_status/test_zulip.py
@@ -59,6 +58,5 @@ python3 scripts/test_check_source_options.py
 python3 scripts/test_toolchain_tags.py
 python3 scripts/test_ci_graphs.py
 python3 -m unittest discover -s scripts -p test_ci_live_summary.py
-python3 scripts/test_stack_policy.py
 python3 scripts/test_content_ci_separation.py
 python3 scripts/pr_status/test_readiness.py

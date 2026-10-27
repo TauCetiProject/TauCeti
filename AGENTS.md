@@ -47,7 +47,8 @@ scope do not coincide.
   overrides). Do not try to disable these.
 - Content CI verifies the mathematics. Regression tests of CI tooling belong in
   independent workflows triggered by changes under `scripts/` or `.github/`
-  (the general suite is `Infrastructure tests`). Never make content builds, audits, lint, merge statuses, or cache
+  (the general suite is `Infrastructure tests`). Never make content builds, audits, lint,
+  merge statuses, or cache
   publication depend on infrastructure test suites. Runtime checks needed to establish
   a safe sandbox and validate the actual candidate remain part of content CI.
 - Prefer named definitions, abbreviations, and lemmas to custom term syntax. Local tactic
