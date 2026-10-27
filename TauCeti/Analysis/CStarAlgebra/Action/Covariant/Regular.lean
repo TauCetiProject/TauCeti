@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Basic
+public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Multiplication
 public import TauCeti.RepresentationTheory.Continuous.LeftRegular
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
 import TauCeti.MeasureTheory.Function.Lp.Indicator
+import TauCeti.MeasureTheory.Group.ConvolutionSupport
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Regular covariant representations
@@ -45,6 +47,13 @@ is positive on nonempty open sets. Thus a nondegenerate representation of `A` in
 nondegenerate regular covariant pair, which is the kind of pair whose integrated form is a
 nondegenerate representation of the crossed product and extends to its multiplier algebra.
 
+The integrated regular representation `π ⋊ λ` of `C_c(G, A)` has the matrix coefficients
+`⟪η, (π ⋊ λ)(f) ξ⟫ = ∫ s, ∫ r, ⟪η r, ρ (α_{r⁻¹}(f s)) (ξ (s⁻¹ r))⟫ dr ds`. If `ρ` is faithful and
+`μ` is positive on nonempty open sets, then `π ⋊ λ` is injective on `C_c(G, A)`: testing against
+scalar multiples of fixed vectors by continuous compactly supported functions recovers every
+matrix coefficient `⟪w, ρ (f s) v⟫`. Hence integrated norms of regular representations are norms,
+not merely seminorms, on the convolution algebra.
+
 ## Main statements
 
 * `TauCeti.CStarAction.CovariantRepresentation.coeFn_regular_coefficient`: the coefficient
@@ -55,6 +64,10 @@ nondegenerate representation of the crossed product and extends to its multiplie
   coefficient representation induced by a nondegenerate `ρ` is nondegenerate, and
   `isNondegenerate_regular_coefficient_iff` gives the converse when `μ` is positive on nonempty
   open sets.
+* `TauCeti.CStarAction.CovariantRepresentation.inner_integratedOperator_regular_apply`: the
+  matrix coefficients of the integrated regular representation.
+* `TauCeti.CStarAction.CovariantRepresentation.injective_integratedOperator_regular`: the
+  integrated regular representation induced by a faithful `ρ` is injective on `C_c(G, A)`.
 -/
 
 public section
@@ -62,7 +75,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Topology
-open scoped BoundedContinuousFunction CStarAlgebra ENNReal
+open scoped BoundedContinuousFunction CStarAlgebra CompactlySupported ENNReal InnerProductSpace
 
 namespace TauCeti.CStarAction
 
@@ -271,6 +284,105 @@ theorem isNondegenerate_regular_coefficient_iff [μ.IsOpenPosMeasure] :
   exact norm_eq_zero.1 <| this.resolve_right (by positivity)
 
 end Nondegenerate
+
+section Integrated
+
+variable {α ρ μ}
+
+/-- Matrix coefficients of the integrated regular representation: for `f ∈ C_c(G, A)` and
+`ξ, η ∈ L²(G, H)`,
+`⟪η, (π ⋊ λ)(f) ξ⟫ = ∫ s, ∫ r, ⟪η r, ρ (α_{r⁻¹}(f s)) (ξ (s⁻¹ r))⟫ dr ds`. -/
+theorem inner_integratedOperator_regular_apply (f : C_c(G, A)) (η ξ : Lp H 2 μ) :
+    ⟪η, (regular α ρ μ).integratedOperator μ f ξ⟫_ℂ =
+      ∫ s, ∫ r, ⟪η r, ρ (α r⁻¹ (f s)) (ξ (s⁻¹ * r))⟫_ℂ ∂μ ∂μ := by
+  rw [inner_integratedOperator_apply]
+  congr 1 with s
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_regular_coefficient α ρ μ (f s) ((regular α ρ μ).group s ξ),
+    μ.coeFn_leftRegular (𝕜 := ℂ) 2 s ξ] with r h₁ h₂
+  rw [h₁, regular_group, h₂]
+
+/-- On scalar test vectors `ξ r = φ r • v` and `η r = ψ r • w`, with `φ` continuous and `ψ`
+continuous and compactly supported, the matrix coefficient of the integrated regular
+representation is `∫ r, conj (ψ r) * ∫ s, φ (s⁻¹ r) * ⟪w, ρ (α_{r⁻¹}(f s)) v⟫ ds dr`. -/
+private theorem inner_integratedOperator_regular_toLp_smul (f : C_c(G, A)) {φ ψ : G → ℂ}
+    (hφ : Continuous φ) (hψ : Continuous ψ) (hψs : HasCompactSupport ψ) {v w : H}
+    (hξ : MemLp (fun r => φ r • v) 2 μ) (hη : MemLp (fun r => ψ r • w) 2 μ) :
+    ⟪hη.toLp, (regular α ρ μ).integratedOperator μ f hξ.toLp⟫_ℂ =
+      ∫ r, starRingEnd ℂ (ψ r) * ∫ s, φ (s⁻¹ * r) * ⟪w, ρ (α r⁻¹ (f s)) v⟫_ℂ ∂μ ∂μ := by
+  -- The integrand on `G × G`, which vanishes unless `s ∈ tsupport f` and `r ∈ tsupport ψ`.
+  set F : G → G → ℂ := fun s r =>
+    starRingEnd ℂ (ψ r) * (φ (s⁻¹ * r) * ⟪w, ρ (α r⁻¹ (f s)) v⟫_ℂ)
+  have hFc : Continuous (Function.uncurry F) := by
+    simp only [F, Function.uncurry_def]
+    fun_prop
+  have hFs : HasCompactSupport (Function.uncurry F) :=
+    (f.hasCompactSupport.prod hψs).closure_of_subset fun p hp =>
+      ⟨subset_tsupport _ fun hf => hp (by simp [F, Function.uncurry_def, hf]),
+        subset_tsupport _ fun hψ => hp (by simp [F, Function.uncurry_def, hψ])⟩
+  calc ⟪hη.toLp, (regular α ρ μ).integratedOperator μ f hξ.toLp⟫_ℂ
+      = ∫ s, ∫ r, F s r ∂μ ∂μ := by
+        rw [inner_integratedOperator_regular_apply]
+        congr 1 with s
+        refine integral_congr_ae ?_
+        filter_upwards [hη.coeFn_toLp, (measurePreserving_mul_left μ s⁻¹).quasiMeasurePreserving
+          |>.ae_eq_comp hξ.coeFn_toLp] with r h₁ h₂
+        simp only [Function.comp_apply] at h₂
+        simp only [F, h₁, h₂, inner_smul_left, inner_smul_right, map_smul]
+        ring
+    _ = ∫ r, ∫ s, F s r ∂μ ∂μ := integral_integral_swap_of_hasCompactSupport hFc hFs
+    _ = _ := by simp only [F, integral_const_mul]
+
+variable [μ.IsOpenPosMeasure]
+
+/-- The integrated regular representation induced by a faithful representation `ρ` of `A` is
+injective on `C_c(G, A)`, for a measure positive on nonempty open sets such as a Haar measure. -/
+theorem injective_integratedOperator_regular (hρ : Function.Injective ρ) :
+    Function.Injective ((regular α ρ μ).integratedOperator μ) := by
+  refine (injective_iff_map_eq_zero _).2 fun f hf => ?_
+  -- It suffices that every matrix coefficient `k s = ⟪w, ρ (f s) v⟫` vanishes.
+  suffices hk : ∀ v w : H, ∀ s, ⟪w, ρ (f s) v⟫_ℂ = 0 by
+    ext s
+    refine hρ ?_
+    rw [CompactlySupportedContinuousMap.zero_apply, map_zero]
+    exact ContinuousLinearMap.ext fun v => ext_inner_left ℂ fun w => by simpa using hk v w s
+  intro v w
+  set k : G → ℂ := fun s => ⟪w, ρ (f s) v⟫_ℂ
+  have hkc : Continuous k := by fun_prop
+  have hks : HasCompactSupport k :=
+    f.hasCompactSupport.mono fun s hs hzero => hs (by simp [k, hzero])
+  -- Test the vector `ξ r = φ r • v`, with `φ x = conj (k x⁻¹)`, against `η r = g r • w`, where
+  -- `g r = ∫ s, φ (s⁻¹ r) * ⟪w, ρ (α_{r⁻¹}(f s)) v⟫` is continuous and compactly supported.
+  set φ : G → ℂ := fun x => starRingEnd ℂ (k x⁻¹)
+  have hφc : Continuous φ := by fun_prop
+  have hφs : HasCompactSupport φ :=
+    (hks.comp_homeomorph (Homeomorph.inv G)).comp_left (g := starRingEnd ℂ) (map_zero _)
+  set K : G → G → ℂ := fun r s => φ (s⁻¹ * r) * ⟪w, ρ (α r⁻¹ (f s)) v⟫_ℂ
+  have hKs (r s : G) (h : K r s ≠ 0) : s ∈ tsupport f ∧ s⁻¹ * r ∈ tsupport φ :=
+    ⟨subset_tsupport _ fun hf => h (by simp [K, hf]),
+      subset_tsupport _ fun hφ => h (by simp [K, hφ])⟩
+  set g : G → ℂ := fun r => ∫ s, K r s ∂μ
+  have hgc : Continuous g :=
+    continuous_integral_of_compact_support μ f.hasCompactSupport
+      (by simp only [K, Function.uncurry_def]; fun_prop) fun r s h => (hKs r s h).1
+  have hgs : HasCompactSupport g :=
+    hasCompactSupport_integral_of_inv_mul_mem μ f.hasCompactSupport hφs hKs
+  have hξ : MemLp (fun r => φ r • v) 2 μ :=
+    (hφc.smul continuous_const).memLp_of_hasCompactSupport hφs.smul_right
+  have hη : MemLp (fun r => g r • w) 2 μ :=
+    (hgc.smul continuous_const).memLp_of_hasCompactSupport hgs.smul_right
+  -- Since `(π ⋊ λ)(f) = 0`, this matrix coefficient `∫ conj (g r) * g r` vanishes, so `g = 0`.
+  have hg0 := inner_integratedOperator_regular_toLp_smul (α := α) (ρ := ρ) f hφc hgc hgs hξ hη
+  rw [hf, zero_apply, inner_zero_right] at hg0
+  have hg1 := congrFun (hgc.eq_zero_of_integral_conj_mul_self_eq_zero
+    (hgc.memLp_of_hasCompactSupport (μ := μ) hgs) hg0.symm) 1
+  -- At the identity, `g 1 = ∫ conj (k s) * k s`, so `k = 0`.
+  refine congrFun (hkc.eq_zero_of_integral_conj_mul_self_eq_zero
+    (hkc.memLp_of_hasCompactSupport (μ := μ) hks) ?_)
+  simpa [g, K, φ, k] using hg1
+
+end Integrated
 
 end CovariantRepresentation
 
