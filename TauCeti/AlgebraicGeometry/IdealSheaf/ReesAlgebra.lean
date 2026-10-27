@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.TensorProduct
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
+public import TauCeti.AlgebraicGeometry.IdealSheaf.TensorProduct
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Basic
 
 /-!
@@ -43,8 +43,6 @@ in the symmetric monoidal category of `𝒪_X`-modules.
 
 * `Scheme.IdealSheafData.reesMul_sheafι` and `Scheme.IdealSheafData.reesOne_sheafι`: the
   multiplication and the unit are the restrictions of those of `𝒪_X`.
-* `Scheme.IdealSheafData.range_sheafι_app_pow`: over an affine open `U`, the sections of `Iⁿ` are
-  the ideal `I(U)ⁿ`.
 * `Scheme.IdealSheafData.reesAlgebra_obj_X`, `Scheme.IdealSheafData.mul_reesAlgebra` and
   `Scheme.IdealSheafData.one_reesAlgebra`: the homogeneous components, multiplication and unit of
   the Rees algebra.
@@ -70,13 +68,6 @@ open TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}} (I : X.IdealSheafData)
 
-/-- Over an affine open `U`, the sections of `Iⁿ`, the degree-`n` component of the Rees algebra,
-are the regular functions in the ideal `I(U)ⁿ`. -/
-theorem range_sheafι_app_pow (U : X.affineOpens) (n : ℕ) :
-    Set.range (Scheme.Modules.Hom.app (I ^ n).sheafι U) = ((I.ideal U ^ n : Ideal Γ(X, U)) :
-      Set Γ(X, U)) := by
-  rw [range_sheafι_app, sections_eq_ideal, ideal_pow, Pi.pow_apply]
-
 /-- The inclusion `I ⟶ 𝒪_X`, read as a morphism to the monoidal unit of `X.Modules`, so that
 composites with morphisms out of tensor products are formed in a single category. -/
 private def sheafιUnit (J : X.IdealSheafData) : J.sheaf ⟶ 𝟙_ X.Modules :=
@@ -89,6 +80,15 @@ private instance (J : X.IdealSheafData) : Mono J.sheafιUnit :=
 @[reassoc]
 private lemma eqToHom_sheafιUnit {J K : X.IdealSheafData} (h : J = K) :
     eqToHom (congrArg sheaf h) ≫ K.sheafιUnit = J.sheafιUnit := by
+  subst h
+  exact Category.id_comp _
+
+/-- Transport along an equality of exponents commutes with the inclusions of the powers of `I`
+into `𝒪_X`. The equality of exponents is a side condition, so that `simp` can apply this to any
+transport between powers of `I`. -/
+@[reassoc]
+private lemma eqToHom_pow_sheafιUnit {m n : ℕ} (h : m = n) (h' : (I ^ m).sheaf = (I ^ n).sheaf) :
+    eqToHom h' ≫ (I ^ n).sheafιUnit = (I ^ m).sheafιUnit := by
   subst h
   exact Category.id_comp _
 
@@ -135,28 +135,28 @@ private lemma reesOne_sheafιUnit : I.reesOne ≫ (I ^ 0).sheafιUnit = 𝟙 _ :
 private lemma reesOne_whiskerRight_reesMul (n : ℕ) :
     (I.reesOne ▷ (I ^ n).sheaf) ≫ I.reesMul 0 n =
       (λ_ (I ^ n).sheaf).hom ≫ eqToHom (congrArg (fun k ↦ (I ^ k).sheaf) (zero_add n).symm) := by
-  rw [← cancel_mono (I ^ (0 + n)).sheafιUnit, Category.assoc, Category.assoc,
-    reesMul_sheafιUnit, eqToHom_sheafιUnit (congrArg (I ^ ·) (zero_add n).symm),
-    whiskerRight_comp_tensorHom_assoc, reesOne_sheafιUnit, id_tensorHom, leftUnitor_naturality]
+  rw [← cancel_mono (I ^ (0 + n)).sheafιUnit]
+  simp (disch := omega) only [Category.assoc, reesMul_sheafιUnit, eqToHom_pow_sheafιUnit,
+    whiskerRight_comp_tensorHom_assoc, reesOne_sheafιUnit]
+  monoidal
 
 /-- The unit of the Rees algebra is a right identity for its multiplication. -/
 private lemma whiskerLeft_reesOne_reesMul (n : ℕ) :
     ((I ^ n).sheaf ◁ I.reesOne) ≫ I.reesMul n 0 =
       (ρ_ (I ^ n).sheaf).hom ≫ eqToHom (congrArg (fun k ↦ (I ^ k).sheaf) (add_zero n).symm) := by
-  rw [← cancel_mono (I ^ (n + 0)).sheafιUnit, Category.assoc, Category.assoc,
-    reesMul_sheafιUnit, eqToHom_sheafιUnit (congrArg (I ^ ·) (add_zero n).symm),
-    whiskerLeft_comp_tensorHom_assoc, reesOne_sheafιUnit, tensorHom_id, unitors_equal,
-    rightUnitor_naturality]
+  rw [← cancel_mono (I ^ (n + 0)).sheafιUnit]
+  simp (disch := omega) only [Category.assoc, reesMul_sheafιUnit, eqToHom_pow_sheafιUnit,
+    whiskerLeft_comp_tensorHom_assoc, reesOne_sheafιUnit]
+  monoidal
 
 /-- The multiplication of the Rees algebra is associative. -/
 private lemma reesMul_assoc (i j k : ℕ) :
     (I.reesMul i j ▷ (I ^ k).sheaf) ≫ I.reesMul (i + j) k =
       (α_ _ _ _).hom ≫ ((I ^ i).sheaf ◁ I.reesMul j k) ≫ I.reesMul i (j + k) ≫
         eqToHom (congrArg (fun k ↦ (I ^ k).sheaf) (add_assoc i j k).symm) := by
-  rw [← cancel_mono (I ^ (i + j + k)).sheafιUnit, Category.assoc, reesMul_sheafιUnit,
-    whiskerRight_comp_tensorHom_assoc, reesMul_sheafιUnit, Category.assoc, Category.assoc,
-    Category.assoc, eqToHom_sheafιUnit (congrArg (I ^ ·) (add_assoc i j k).symm),
-    reesMul_sheafιUnit, whiskerLeft_comp_tensorHom_assoc, reesMul_sheafιUnit]
+  rw [← cancel_mono (I ^ (i + j + k)).sheafιUnit]
+  simp (disch := omega) only [Category.assoc, reesMul_sheafιUnit, eqToHom_pow_sheafιUnit,
+    whiskerRight_comp_tensorHom_assoc, whiskerLeft_comp_tensorHom_assoc]
   -- Both sides are `(Iⁱ ⊗ Iʲ) ⊗ Iᵏ ⟶ (𝒪_X ⊗ 𝒪_X) ⊗ 𝒪_X` followed by structural isomorphisms.
   monoidal
 
@@ -164,9 +164,10 @@ private lemma reesMul_assoc (i j k : ℕ) :
 private lemma braiding_reesMul (i j : ℕ) :
     (β_ (I ^ i).sheaf (I ^ j).sheaf).hom ≫ I.reesMul j i =
       I.reesMul i j ≫ eqToHom (congrArg (fun k ↦ (I ^ k).sheaf) (add_comm i j)) := by
-  rw [← cancel_mono (I ^ (j + i)).sheafιUnit, Category.assoc, Category.assoc,
-    reesMul_sheafιUnit, eqToHom_sheafιUnit (congrArg (I ^ ·) (add_comm i j)),
-    reesMul_sheafιUnit, ← BraidedCategory.braiding_naturality_assoc]
+  rw [← cancel_mono (I ^ (j + i)).sheafιUnit]
+  simp (disch := omega) only [Category.assoc, reesMul_sheafιUnit, eqToHom_pow_sheafιUnit,
+    ← BraidedCategory.braiding_naturality_assoc]
+  -- The remaining identity is the commutativity of the multiplication of `𝒪_X`.
   exact congrArg (_ ≫ ·) (IsCommMonObj.mul_comm (𝟙_ X.Modules))
 
 /-- The Rees algebra `⨁ₙ Iⁿ` of an ideal sheaf `I`, as a graded quasi-coherent `𝒪_X`-algebra.
