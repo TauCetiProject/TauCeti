@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ENat.BigOperators
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Order
+import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
 # The vanishing order at the cusp
@@ -117,17 +118,6 @@ lemma qExpansionOrderAtCusp_mul {f g : ℍ → ℂ} (hf : AnalyticAt ℂ (cuspFu
   push_cast
   ring
 
-private lemma cuspFunction_const (h : ℝ) (c : ℂ) :
-    UpperHalfPlane.cuspFunction h (fun _ ↦ c) = fun _ ↦ c := by
-  have h_lim : Filter.limUnder (𝓝[≠] (0 : ℂ))
-      (((fun _ ↦ c : ℍ → ℂ) ∘ ofComplex) ∘ Function.Periodic.invQParam h) = c :=
-    Filter.Tendsto.limUnder_eq tendsto_const_nhds
-  rw [UpperHalfPlane.cuspFunction, Function.Periodic.cuspFunction, h_lim]
-  exact Function.update_eq_self 0 (fun _ ↦ c)
-
-private lemma cuspFunction_one (h : ℝ) : cuspFunction h (1 : ℍ → ℂ) = 1 :=
-  cuspFunction_const h 1
-
 /-- Every constant function has cusp order zero: a nonzero constant by the nonvanishing
 constant term, the zero function by the junk value. -/
 @[simp]
@@ -140,7 +130,7 @@ lemma qExpansionOrderAtCusp_const (h : ℝ) (c : ℂ) : qExpansionOrderAtCusp h 
       show (qExpansion h fun _ ↦ (0 : ℂ)) = 0 from qExpansion_zero h, PowerSeries.order_zero]
     rfl
   · exact qExpansionOrderAtCusp_eq_zero_of_cuspFunction_ne_zero (by
-      rw [cuspFunction_const]
+      rw [UpperHalfPlane.cuspFunction_const]
       exact hc)
 
 /-- The constant-one function has cusp order zero. -/
@@ -148,37 +138,20 @@ lemma qExpansionOrderAtCusp_const (h : ℝ) (c : ℂ) : qExpansionOrderAtCusp h 
 lemma qExpansionOrderAtCusp_one (h : ℝ) : qExpansionOrderAtCusp h (1 : ℍ → ℂ) = 0 :=
   qExpansionOrderAtCusp_const h 1
 
-private lemma cuspFunction_pow {f : ℍ → ℂ} (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
-    ∀ n : ℕ, cuspFunction h (f ^ n) = cuspFunction h f ^ n
-  | 0 => by rw [pow_zero, pow_zero]; exact cuspFunction_one h
-  | n + 1 => by
-    rw [pow_succ, pow_succ, ← cuspFunction_pow hf n,
-      cuspFunction_mul (by rw [cuspFunction_pow hf n]; exact (hf.continuousAt.pow n))
-        hf.continuousAt]
-
-private lemma qExpansion_pow {f : ℍ → ℂ} (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
-    ∀ n : ℕ, qExpansion h (f ^ n) = qExpansion h f ^ n
-  | 0 => by rw [pow_zero, pow_zero, qExpansion_one]
-  | n + 1 => by
-    have h_an : AnalyticAt ℂ (cuspFunction h (f ^ n)) 0 := by
-      rw [cuspFunction_pow hf n]
-      exact hf.pow n
-    rw [pow_succ, pow_succ, qExpansion_mul h_an hf, qExpansion_pow hf n]
-
 /-- The cusp order multiplies under powers, with no finiteness hypothesis: for an
 identically vanishing expansion both sides take the junk value at positive exponents,
 and at exponent zero both sides are genuinely zero. -/
 lemma qExpansionOrderAtCusp_pow {f : ℍ → ℂ} (n : ℕ) (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
     qExpansionOrderAtCusp h (f ^ n) = n * qExpansionOrderAtCusp h f := by
   simp only [qExpansionOrderAtCusp_def]
-  rw [qExpansion_pow hf n, PowerSeries.order_pow, nsmul_eq_mul, ENat.toNat_mul]
+  rw [UpperHalfPlane.qExpansion_pow hf n, PowerSeries.order_pow, nsmul_eq_mul, ENat.toNat_mul]
   simp
 
 private lemma cuspFunction_prod {ι : Type*} {f : ι → ℍ → ℂ} (s : Finset ι)
     (hf : ∀ i ∈ s, AnalyticAt ℂ (cuspFunction h (f i)) 0) :
     cuspFunction h (∏ i ∈ s, f i) = ∏ i ∈ s, cuspFunction h (f i) := by
   induction s using Finset.cons_induction with
-  | empty => simpa using cuspFunction_one h
+  | empty => simpa using UpperHalfPlane.cuspFunction_one h
   | cons a s ha ih =>
     have h_prev := ih fun i hi ↦ hf i (Finset.mem_cons_of_mem hi)
     rw [Finset.prod_cons, Finset.prod_cons, ← h_prev,

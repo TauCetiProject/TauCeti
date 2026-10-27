@@ -310,11 +310,7 @@ theorem qExpansion_qParam_mul_j_mul_qExpansion_discriminant :
     one_mem_strictPeriods_SL
   have hE := ModularFormClass.analyticAt_cuspFunction_zero (E₄.pow 3) one_pos
     one_mem_strictPeriods_SL
-  have hq : AnalyticAt ℂ (cuspFunction 1 (fun τ : ℍ ↦ 𝕢 1 τ)) 0 :=
-    analyticAt_cuspFunction_zero one_pos
-      (TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex one_ne_zero)
-      (Function.Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe)
-      ((qParam_tendsto_atImInfty one_pos).isBigO_one ℝ)
+  have hq := TauCeti.UpperHalfPlane.analyticAt_cuspFunction_qParam one_pos
   have hfun : (fun τ : ℍ ↦ 𝕢 1 τ * j τ) * ⇑CuspForm.discriminant =
       (fun τ : ℍ ↦ 𝕢 1 τ) * ⇑(E₄.pow 3) := by
     rw [ModularForm.coe_pow]
@@ -353,15 +349,10 @@ analytic cusp function of `q j` divided by `q`. -/
 theorem cuspFunction_j_eventuallyEq :
     cuspFunction 1 j =ᶠ[𝓝[≠] 0]
       fun q ↦ cuspFunction 1 (fun τ : ℍ ↦ Periodic.qParam 1 τ * j τ) q / q := by
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
-  simp only [mem_compl_iff, mem_singleton_iff] at hq
-  simp only [UpperHalfPlane.cuspFunction, Periodic.cuspFunction_eq_of_nonzero _ _ hq,
-    Function.comp_apply]
-  have hpos := Periodic.im_invQParam_pos_of_norm_lt_one one_pos
-    (mem_ball_zero_iff.mp hqn) hq
-  rw [ofComplex_apply_of_im_pos hpos, Periodic.qParam_right_inv one_ne_zero hq]
-  exact (mul_div_cancel_left₀ _ hq).symm
+  filter_upwards [TauCeti.UpperHalfPlane.cuspFunction_qParam_pow_mul_eventuallyEq one_pos 1 j,
+    self_mem_nhdsWithin] with q h₁ hq
+  simp only [pow_one] at h₁
+  rw [h₁, mul_div_cancel_left₀ _ hq]
 
 /-- The modular invariant is meromorphic at zero in its width-one q-coordinate. -/
 theorem meromorphicAt_cuspFunction_j : _root_.MeromorphicAt (cuspFunction 1 j) 0 :=

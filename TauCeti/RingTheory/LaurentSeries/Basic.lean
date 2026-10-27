@@ -106,6 +106,7 @@ theorem orderTop_coe_of_ne_zero {R : Type*} [Semiring R] {f : R⟦X⟧} (hf : f 
 
 /-- The `WithTop ℤ`-valued order of a power series coerced to `R⸨X⸩` is its order, read in
 `WithTop ℤ`; both are `⊤` exactly for the zero series. -/
+@[simp]
 theorem orderTop_coe {R : Type*} [Semiring R] (f : R⟦X⟧) :
     (f : R⸨X⸩).orderTop = f.order.map ((↑) : ℕ → ℤ) := by
   rcases eq_or_ne f 0 with rfl | hf
