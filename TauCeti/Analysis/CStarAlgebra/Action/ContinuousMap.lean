@@ -63,7 +63,7 @@ theorem ofMulAction_apply_apply (g : G) (f : C(X, ℂ)) (x : X) :
 
 end TauCeti.CStarAction
 
-namespace TauCeti.Circle
+namespace Circle
 
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/
@@ -93,7 +93,7 @@ theorem star_coordinate_mul : star coordinate * coordinate = 1 := by
 theorem coordinate_mul_star : coordinate * star coordinate = 1 := by
   rw [mul_comm, star_coordinate_mul]
 
-end TauCeti.Circle
+end Circle
 
 namespace TauCeti.CStarAction
 

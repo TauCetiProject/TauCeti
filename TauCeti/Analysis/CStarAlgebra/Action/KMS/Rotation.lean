@@ -40,7 +40,7 @@ open scoped ComplexOrder
 
 namespace TauCeti.CStarAction
 
-open TauCeti.Circle
+open Circle (coordinate coordinate_mul_star star_coordinate_mul)
 
 variable {X : Type*} [TopologicalSpace X] [CompactSpace X]
 
