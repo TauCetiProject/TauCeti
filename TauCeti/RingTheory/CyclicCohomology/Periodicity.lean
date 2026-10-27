@@ -171,7 +171,7 @@ end Cochains
 
 section Differential
 
-variable {R A M : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+variable {R A M : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
 /-- Moving the component of a total cochain of degree `m` in row `k` two columns to the right
