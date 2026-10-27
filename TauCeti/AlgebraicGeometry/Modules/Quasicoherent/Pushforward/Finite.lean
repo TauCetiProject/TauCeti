@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
+public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Noetherian
 
@@ -55,8 +56,7 @@ private theorem exists_isFinite_presentation_over_pushforward [IsLocallyNoetheri
     (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType] (f : X ⟶ Y) [IsFinite f]
     (U : Y.affineOpens) : ∃ P : (((pushforward f).obj M).over U.1).Presentation, P.IsFinite := by
   let N := (pushforward f).obj M
-  have : N.IsQuasicoherent :=
-    TauCeti.AlgebraicGeometry.isQuasicoherent_pushforward_of_isAffineHom f M
+  have : N.IsQuasicoherent := Scheme.Modules.isQuasicoherent_pushforward M f
   have : IsOpenImmersion U.2.fromSpec := U.2.isOpenImmersion_fromSpec
   let K := N.restrict U.2.fromSpec
   have : K.IsQuasicoherent := inferInstance

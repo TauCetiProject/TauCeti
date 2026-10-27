@@ -6,29 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
-public import Mathlib.AlgebraicGeometry.Modules.Tilde
-public import TauCeti.AlgebraicGeometry.Modules.Pushforward
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
+public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 
 /-!
-# Pushforward of quasicoherent modules along isomorphisms and morphisms of spectra
+# Pushforward of quasicoherent sheaves along morphisms of spectra
 
-Let `φ : R ⟶ S` be a morphism of commutative rings. Pushforward along the induced morphism
-`Spec S ⟶ Spec R` preserves quasicoherent modules. Indeed, Mathlib identifies quasicoherence on
-a spectrum with invertibility of the canonical map from the sheaf associated to global sections,
-and proves that this map remains invertible after pushforward along `Spec φ`.
+Let `φ : R ⟶ S` be a morphism of commutative rings. The induced morphism
+`Spec S ⟶ Spec R` is affine, hence quasi-compact and separated, so pushforward along it
+preserves quasicoherent modules by
+`AlgebraicGeometry.Scheme.Modules.isQuasicoherent_pushforward`.
 
 The resulting functor `QuasicoherentSheaf.pushforwardSpecMap` is the pushforward operation along
 a morphism of spectra. It is compatible with identities and composition of ring maps. This
 calculation is the affine-local input for constructing the
 quasicoherent coordinate algebra `p_* 𝒪_V` of an affine morphism `p : V ⟶ X`.
 
-Pushforward along a scheme isomorphism also preserves quasicoherence, via the comparison
-with restriction along its inverse.
-
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_pushforward_specMap`: pushforward along a
-  morphism of spectra preserves quasicoherence;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pushforwardSpecMap`: the induced functor on
   quasicoherent sheaves;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pushforwardSpecMapId`,
@@ -38,7 +33,7 @@ with restriction along its inverse.
 ## References
 
 * The Stacks Project, Tag 01LC: pushforward along a quasi-compact and quasi-separated morphism
-  preserves quasi-coherence. The case of a morphism of spectra is the one formalized here.
+  preserves quasi-coherence.
 -/
 
 public section
@@ -50,30 +45,6 @@ namespace TauCeti
 universe u
 
 noncomputable section
-
-variable {R S : CommRingCat.{u}} (f : R ⟶ S)
-
-/-- Pushforward of a quasicoherent module along `Spec S ⟶ Spec R` is quasicoherent. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_pushforward_specMap
-    (M : (Spec S).Modules) [M.IsQuasicoherent] :
-    ((Scheme.Modules.pushforward (Spec.map f)).obj M).IsQuasicoherent :=
-  (_root_.AlgebraicGeometry.isQuasicoherent_iff_isIso_fromTildeΓ _).2
-    (_root_.AlgebraicGeometry.isIso_fromTildeΓ_pushforward f M)
-
-namespace AlgebraicGeometry
-
-open _root_.AlgebraicGeometry.Scheme.Modules
-
-variable {X Y : Scheme.{u}}
-
-/-- Pushforward along a scheme isomorphism preserves quasicoherence. -/
-theorem isQuasicoherent_pushforward_of_iso (e : X ≅ Y) (M : X.Modules)
-    [M.IsQuasicoherent] : ((pushforward e.hom).obj M).IsQuasicoherent :=
-  (SheafOfModules.isQuasicoherent Y.ringCatSheaf).prop_of_iso
-    ((pushforwardIsoRestrictFunctor e).app M).symm
-      (_root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_restrictFunctor e.inv M)
-
-end AlgebraicGeometry
 
 namespace AlgebraicGeometry.QuasicoherentSheaf
 
@@ -89,7 +60,7 @@ def pushforwardSpecMap (f : R ⟶ S) :
   (_root_.SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).lift
     ((_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).ι ⋙
       Scheme.Modules.pushforward (Spec.map f))
-    fun M ↦ Scheme.Modules.isQuasicoherent_pushforward_specMap f M.obj
+    fun M ↦ Scheme.Modules.isQuasicoherent_pushforward M.obj (Spec.map f)
 
 /-- The underlying module of affine quasicoherent pushforward is ordinary module pushforward. -/
 @[simp]

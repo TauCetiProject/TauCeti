@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
+public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
@@ -64,7 +65,7 @@ instance _root_.AlgebraicGeometry.Scheme.Hom.isQuasicoherent_cokernel_unitToPush
     (cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom)).IsQuasicoherent := by
   have : (SheafOfModules.unit X.ringCatSheaf).IsQuasicoherent :=
     AlgebraicGeometry.isQuasicoherent_structureSheaf X
-  have h := isQuasicoherent_pushforward_of_isAffineHom f (SheafOfModules.unit X.ringCatSheaf)
+  have h := Scheme.Modules.isQuasicoherent_pushforward (SheafOfModules.unit X.ringCatSheaf) f
   have : ((SheafOfModules.pushforward f.toRingCatSheafHom).obj
       (SheafOfModules.unit X.ringCatSheaf)).IsQuasicoherent := by
     simpa only [Scheme.Modules.pushforward] using h
