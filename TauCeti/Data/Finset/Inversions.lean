@@ -34,9 +34,13 @@ composition (`Finset.neg_one_pow_card_inversions_comp`).
   `f b < f a`.
 * `Finset.card_inversions_insert`: adjoining a new element `a` to `s` adds the inversions
   involving `a`.
+* `Finset.card_inversions_insert_add_card_filter_lt`: for an injective map, the same comparison
+  of `insert a s` with `s` as a count of elements, up to an even number.
 * `Finset.neg_one_pow_card_inversions_insert`: the inversion sign of an injective map on
   `insert a s`, compared with that on `s`, is the sign relating the position of `a` in `s` to the
   position of `f a` in `f(s)`.
+* `Finset.even_card_inversions_comp`: the inversion counts of `f` on `s`, of `g` on `f(s)` and of
+  `g ∘ f` on `s` add up to an even number.
 * `Finset.neg_one_pow_card_inversions_comp`: the inversion sign of `g ∘ f` on `s` is the product
   of the inversion signs of `f` on `s` and of `g` on `f(s)`.
 -/
@@ -118,7 +122,7 @@ theorem card_inversions_insert (f : α → β) {s : Finset α} {a : α} (ha : a 
 /-- For an injective map and `a ∉ s`, the inversions on `insert a s` and the elements of `s`
 below `a` together count the inversions on `s` and the elements of `s` whose image lies below
 `f a`, up to an even number. -/
-private theorem card_inversions_insert_add_card_filter_lt {f : α → β} (hf : Injective f)
+theorem card_inversions_insert_add_card_filter_lt {f : α → β} (hf : Injective f)
     {s : Finset α} {a : α} (ha : a ∉ s) :
     #((insert a s).inversions f) + #{b ∈ s | b < a} =
       #(s.inversions f) + #{b ∈ s | f b < f a} + 2 * #{b ∈ s | b < a ∧ f a < f b} := by
@@ -148,7 +152,7 @@ theorem neg_one_pow_card_inversions_insert {R : Type*} [Monoid R] [HasDistribNeg
 
 /-- The parities of the inversion counts of `f` on `s`, of `g` on `f(s)` and of `g ∘ f` on `s` add
 up to zero. -/
-private theorem even_card_inversions_comp {f : α ↪ β} {g : β → γ} (hg : Injective g)
+theorem even_card_inversions_comp {f : α ↪ β} {g : β → γ} (hg : Injective g)
     (s : Finset α) :
     Even (#(s.inversions (g ∘ f)) + #(s.inversions f) + #((s.map f).inversions g)) := by
   classical

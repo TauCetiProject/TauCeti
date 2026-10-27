@@ -74,6 +74,16 @@ def IsCubeReindexCompatible (F : Finset ι ⥤ C) (G : Finset κ ⥤ C) (e : ι 
     F.map (homOfLE (S.subset_insert a)) ≫ (α (insert a S)).hom =
       (α S).hom ≫ G.map (homOfLE (map_subset_map.2 (S.subset_insert a)))
 
+omit [LinearOrder κ] in
+/-- Unfolding `Functor.IsCubeReindexCompatible`: the vertex isomorphisms commute with every edge
+map `F(S) ⟶ F(S ∪ {a})` with `a ∉ S`. -/
+theorem isCubeReindexCompatible_iff {F : Finset ι ⥤ C} {G : Finset κ ⥤ C} {e : ι ≃ κ}
+    {α : ∀ S : Finset ι, F.obj S ≅ G.obj (S.map e.toEmbedding)} :
+    IsCubeReindexCompatible F G e α ↔ ∀ (S : Finset ι) (a : ι), a ∉ S →
+      F.map (homOfLE (S.subset_insert a)) ≫ (α (insert a S)).hom =
+        (α S).hom ≫ G.map (homOfLE (map_subset_map.2 (S.subset_insert a))) :=
+  Iff.rfl
+
 namespace IsCubeReindexCompatible
 
 omit [LinearOrder κ] in
@@ -157,8 +167,8 @@ private lemma ι_cubeComplexReindexXInv {r : ℤ} (S : {S : Finset ι // (#S : �
     G.cubeComplexι (mapVertex e S) ≫ F.cubeComplexReindexXInv e α r =
       (-1 : ℤ) ^ #(S.1.inversions e) • (α S.1).inv ≫ F.cubeComplexι S := by
   refine F.cubeComplex_hom_ext' fun T ↦ ?_
-  rw [Category.assoc, cubeComplexReindexXInv, cubeComplexLift_π, Preadditive.comp_zsmul,
-    Preadditive.zsmul_comp, Category.assoc]
+  simp only [cubeComplexReindexXInv, Category.assoc, cubeComplexLift_π, Preadditive.comp_zsmul,
+    Preadditive.zsmul_comp]
   by_cases h : S = T
   · subst h
     simp
@@ -172,18 +182,14 @@ private def cubeComplexReindexXIso (r : ℤ) : F.cubeComplex.X r ≅ G.cubeCompl
   inv := F.cubeComplexReindexXInv e α r
   hom_inv_id := by
     refine F.cubeComplex_hom_ext fun S ↦ ?_
-    rw [F.ι_cubeComplexReindexXHom_assoc, Preadditive.zsmul_comp, Category.assoc,
-      ι_cubeComplexReindexXInv, Preadditive.comp_zsmul, Iso.hom_inv_id_assoc, smul_smul,
-      ← mul_pow]
-    simp
+    simp [ι_cubeComplexReindexXHom_assoc, ι_cubeComplexReindexXInv, Preadditive.zsmul_comp,
+      Preadditive.comp_zsmul, smul_smul, ← mul_pow]
   inv_hom_id := by
     refine G.cubeComplex_hom_ext fun ⟨T, hT⟩ ↦ ?_
     obtain ⟨S, rfl⟩ : ∃ S : Finset ι, S.map e.toEmbedding = T :=
       ⟨T.map e.symm.toEmbedding, by simp [map_map]⟩
-    rw [← Category.assoc, F.ι_cubeComplexReindexXInv e α ⟨S, by simpa using hT⟩,
-      Preadditive.zsmul_comp, Category.assoc, ι_cubeComplexReindexXHom, Preadditive.comp_zsmul,
-      Iso.inv_hom_id_assoc, smul_smul, ← mul_pow]
-    simp
+    simp [F.ι_cubeComplexReindexXInv_assoc e α ⟨S, by simpa using hT⟩, ι_cubeComplexReindexXHom,
+      Preadditive.zsmul_comp, Preadditive.comp_zsmul, smul_smul, ← mul_pow]
 
 variable {F e α} in
 /-- The degreewise isomorphisms `cubeComplexReindexXIso` commute with the differentials. -/
@@ -191,14 +197,14 @@ private lemma cubeComplexReindexXIso_hom_comp_d (hα : IsCubeReindexCompatible F
     F.cubeComplexReindexXHom e α r ≫ G.cubeComplex.d r (r + 1) =
       F.cubeComplex.d r (r + 1) ≫ F.cubeComplexReindexXHom e α (r + 1) := by
   refine F.cubeComplex_hom_ext fun S ↦ ?_
-  rw [F.ι_cubeComplexReindexXHom_assoc, Preadditive.zsmul_comp, Category.assoc,
-    ι_cubeComplex_d, F.ι_cubeComplex_d_assoc, Preadditive.comp_sum, Finset.smul_sum,
-    Preadditive.sum_comp]
+  simp only [ι_cubeComplexReindexXHom_assoc, ι_cubeComplex_d, ι_cubeComplex_d_assoc,
+    Preadditive.zsmul_comp, Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc,
+    Finset.smul_sum]
   -- Match the edge `S ⟶ S ∪ {a}` of `F` with the edge `e(S) ⟶ e(S) ∪ {e a}` of `G`.
   refine (Fintype.sum_equiv (e.subtypeEquiv fun a ↦ by simp) _ _ fun a ↦ ?_).symm
   have ha : a.1 ∉ S.1 := mem_compl.1 a.2
-  simp only [Equiv.subtypeEquiv_apply, Preadditive.zsmul_comp, Category.assoc,
-    F.ι_cubeComplexReindexXHom, Preadditive.comp_zsmul, smul_smul]
+  simp only [Equiv.subtypeEquiv_apply, F.ι_cubeComplexReindexXHom, Preadditive.comp_zsmul,
+    smul_smul]
   rw [← Category.assoc (F.map _), hα S.1 a.1 ha, Category.assoc]
   congr 1
   · rw [filter_map, card_map]
