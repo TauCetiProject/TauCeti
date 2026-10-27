@@ -203,10 +203,15 @@ theorem isPreconnectedAtInfinityIn_halfStripExterior (ρ : ℝ) {c b : ℂ} (hb 
   rw [hset]
   exact (isPreconnectedAtInfinityIn_halfStripExterior_zero_one _).preimage_div_sub hb
 
-/-- A sector of half-opening at most `π` and nonnegative radius is open. -/
-theorem isOpen_sector {ρ α : ℝ} {c b : ℂ} (hb : b ≠ 0) (hρ : 0 ≤ ρ) (hα : α ≤ Real.pi) :
+/-- A sector of nonnegative radius is open. -/
+theorem isOpen_sector {ρ α : ℝ} {c b : ℂ} (hρ : 0 ≤ ρ) :
     IsOpen {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < α} := by
   have hnorm : Continuous fun w : ℂ => ‖w - c‖ := by fun_prop
+  -- With `b = 0` or half-opening above `π`, the angular condition does not depend on `w`.
+  rcases eq_or_ne b 0 with rfl | hb
+  · by_cases hα : 0 < α <;> simp [hα, isOpen_lt continuous_const hnorm]
+  rcases lt_or_ge Real.pi α with hα | hα
+  · simpa [(abs_arg_le_pi _).trans_lt hα] using isOpen_lt continuous_const hnorm
   have hdiv : Continuous fun w : ℂ => (w - c) / b := by fun_prop
   refine isOpen_iff_mem_nhds.mpr fun w hw => ?_
   -- Off the centre, the argument is continuous inside the sector, including half-opening `π`.
@@ -239,8 +244,14 @@ theorem not_isBounded_inter_lt_norm_sub {E : Type*} [SeminormedAddCommGroup E] {
     · exact Or.inr (mem_closedBall_iff_norm.mpr (not_lt.mp hw'))
 
 /-- A sector of positive half-opening is unbounded. -/
-theorem not_isBounded_sector {ρ α : ℝ} {c b : ℂ} (hb : b ≠ 0) (hα : 0 < α) :
-    ¬IsBounded {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < α} := fun hE => by
+theorem not_isBounded_sector {ρ α : ℝ} {c b : ℂ} (hα : 0 < α) :
+    ¬IsBounded {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < α} := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · -- with `b = 0` the angular condition is vacuous
+    convert not_isBounded_inter_lt_norm_sub (NormedSpace.unbounded_univ ℝ ℂ) c ρ using 2
+    ext w
+    simp [hα]
+  intro hE
   obtain ⟨M, hM⟩ := hE.subset_closedBall c
   let t := (|M| + |ρ| + 1) / ‖b‖
   have ht : 0 < t := by dsimp [t]; positivity
@@ -304,7 +315,7 @@ theorem exists_far_ends {κ : Type*} [Finite κ] {e' : κ → ℝ} {U : Set ℂ}
     fun k l hkl => (hEd hkl).mono inter_subset_left inter_subset_left, fun w hw hRw => ?_,
     fun k => ?_, fun k => ?_⟩
   · dsimp only
-    rcases hE k with ⟨he, hEk⟩ | ⟨-, hEk⟩ <;> rw [hEk]
+    rcases hE k with ⟨-, hEk⟩ | ⟨-, hEk⟩ <;> rw [hEk]
     · -- the far part of the sector is the sector of radius `max ρ 0`
       have hset : {w : ℂ | ρ < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < (-e' k - 1) * Real.pi / 2} ∩
           {w : ℂ | max ρ 0 < ‖w - c k‖} =
@@ -313,7 +324,7 @@ theorem exists_far_ends {κ : Type*} [Finite κ] {e' : κ → ℝ} {U : Set ℂ}
         simp only [mem_inter_iff, mem_ofPred_eq, max_lt_iff]
         tauto
       rw [hset]
-      exact isOpen_sector (hb k) (le_max_right ρ 0) (by nlinarith [Real.pi_pos, he.1])
+      exact isOpen_sector (le_max_right ρ 0)
     · exact (isOpen_halfStrip ρ (c k) (b k)).inter (isOpen_lt continuous_const (by fun_prop))
   · -- far from `0`, a point is far from every centre
     obtain ⟨k, hk⟩ := hUE w hw ((le_max_left _ _).trans_lt hRw)
@@ -331,7 +342,7 @@ theorem exists_far_ends {κ : Type*} [Finite κ] {e' : κ → ℝ} {U : Set ℂ}
   · dsimp only
     rcases hE k with ⟨he, hEk⟩ | ⟨-, hEk⟩ <;> rw [hEk]
     · exact not_isBounded_inter_lt_norm_sub
-        (not_isBounded_sector (hb k) (by nlinarith [Real.pi_pos, he.2])) _ _
+        (not_isBounded_sector (by nlinarith [Real.pi_pos, he.2])) _ _
     · exact not_isBounded_inter_lt_norm_sub (not_isBounded_halfStrip (hb k)) _ _
 
 end TauCeti
