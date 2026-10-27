@@ -89,11 +89,6 @@ variable (O : NumberFieldOrder K)
 
 /-! ### Extension of Picard classes to the maximal order -/
 
-/-- Every order is contained in the maximal order. -/
-theorem toSubalgebra_le_maximalNumberFieldOrder :
-    O.toSubalgebra ≤ (maximalNumberFieldOrder K).toSubalgebra :=
-  O.le_ringOfIntegers.trans_eq (maximalNumberFieldOrder_toSubalgebra K).symm
-
 /-- **Extension of ideal classes to the maximal order.** The Picard class of an invertible
 fractional ideal `I` of `O` goes to the ideal class of `I 𝓞 K`. -/
 def picToClassGroup : Pic O →* ClassGroup (𝓞 K) :=
@@ -130,8 +125,8 @@ private theorem mem_span_contraction_iff (J : integralIdealsPrimeTo O.conductorM
       obtain ⟨j, hj, rfl⟩ := hy
       refine ⟨maximalOrderRingEquiv K a * j, Ideal.mul_mem_left _ _ hj, ?_⟩
       have ha := algebraMap_maximalOrderRingEquiv a
-      rw [Subalgebra.smul_def, RingOfIntegers.coe_eq_algebraMap, map_mul, ha]
-      rfl
+      rw [Subalgebra.smul_def, RingOfIntegers.coe_eq_algebraMap, map_mul, ha, smul_eq_mul,
+        Subalgebra.algebraMap_apply]
   · rintro ⟨j, hj, rfl⟩
     -- `J` is the extension of its contraction, as `J` is prime to the conductor.
     have hJ : (J : Ideal (𝓞 K)) = ((J : Ideal (𝓞 K)).comap
@@ -151,9 +146,9 @@ private theorem mem_span_contraction_iff (J : integralIdealsPrimeTo O.conductorM
       have ha := algebraMap_maximalOrderRingEquiv ((maximalOrderRingEquiv K).symm a)
       rw [RingEquiv.apply_symm_apply] at ha
       have h := Submodule.smul_mem _ ((maximalOrderRingEquiv K).symm a) hy
-      rw [Subalgebra.smul_def] at h
-      rw [smul_eq_mul, RingOfIntegers.coe_eq_algebraMap, map_mul, ha]
-      exact h
+      rw [Subalgebra.smul_def, smul_eq_mul] at h
+      rwa [smul_eq_mul, RingOfIntegers.coe_eq_algebraMap, map_mul, ha, Subalgebra.algebraMap_apply,
+        ← RingOfIntegers.coe_eq_algebraMap]
 
 /-- **Extension recovers the ideal class.** For an ideal `J` of `𝓞 K` prime to the conductor, the
 extension of the Picard class of its contraction `J ∩ O` is the ideal class of `J`. -/
@@ -213,8 +208,8 @@ private theorem unitsResidueSignHom_conductorModulus (ε : (𝓞 K)ˣ) :
   refine Prod.ext (Units.ext ?_) (O.conductorModulus_signs_eq_one _)
   rw [unitsResidueSignHom_apply, residueSignHom_fst, coe_residueHom,
     residue_eq _ (a := (ε : 𝓞 K)) (b := 1) (by simp) (by simp [coe_unitsToPrimeToSubgroup]),
-    eq_comm, coe_residueEquiv_eq_mk_iff]
-  rfl
+    eq_comm, coe_residueEquiv_eq_mk_iff, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+    MonoidHom.coe_ofClass]
 
 /-- The residue of a principal ray class generator, read off the residue-and-sign presentation. -/
 private theorem exists_residueSignHom_conductorModulus {x : primeToSubgroup O.conductorModulus}
@@ -317,8 +312,7 @@ theorem mem_orderResidueUnits_iff {u : (𝓞 K ⧸ O.conductor)ˣ} :
     set v := Ideal.Quotient.mk (O.conductor.comap
       (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K)) (⟨β, hβ⟩ : O.toRingOfIntegers)
     have hqv : q v = u := by
-      rw [hu, Ideal.quotientMap_mk]
-      rfl
+      rw [hu, Ideal.quotientMap_mk, AlgHom.coe_toRingHom, Subalgebra.coe_val]
     -- `v` is a nonzerodivisor, since `q` is injective and `q v` is a unit; in the finite ring
     -- `O ⧸ 𝔣` it is therefore a unit.
     have hv : IsUnit v := IsArtinianRing.isUnit_of_mem_nonZeroDivisors <|
@@ -327,13 +321,6 @@ theorem mem_orderResidueUnits_iff {u : (𝓞 K ⧸ O.conductor)ˣ} :
         have h := congrArg q ha
         rwa [map_mul, map_zero, hqv, Units.mul_left_eq_zero] at h
     exact ⟨hv.unit, Units.ext (by simpa using hqv)⟩
-
-/-- An algebraic integer congruent to an element of `O` modulo the conductor lies in `O`. -/
-private theorem mem_toRingOfIntegers_of_mk_eq {α β : 𝓞 K} (hβ : β ∈ O.toRingOfIntegers)
-    (h : Ideal.Quotient.mk O.conductor α = Ideal.Quotient.mk O.conductor β) :
-    α ∈ O.toRingOfIntegers := by
-  simpa using O.toRingOfIntegers.add_mem
-    (O.conductor_le_toRingOfIntegers (Ideal.Quotient.eq.mp h)) hβ
 
 /-- **The units of the order are the units of `𝓞 K` with residue in `(O ⧸ 𝔣)ˣ`.** A unit `ε` of
 `𝓞 K` whose residue modulo the conductor is the residue of an element of `O` lies in `O`, and so
