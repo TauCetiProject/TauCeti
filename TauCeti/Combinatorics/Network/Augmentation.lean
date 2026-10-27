@@ -298,8 +298,9 @@ theorem card_filter_pos_sub_walkAssignment_bottleneck_lt {f : Assignment Q K} {s
     simpa only [one_nsmul] using
       nsmul_le_nsmul_left (hpos _ ha).le (List.one_le_count_iff.2 ha)
 
-/-- Subtracting a walk of positive arrows, weighted by its bottleneck, leaves a nonnegative
-assignment in the same additive subgroup and strictly decreases the number of positive arrows. -/
+/-- Subtracting a walk of positive arrows that traverses no arrow twice, weighted by its
+bottleneck, leaves a nonnegative assignment in the same additive subgroup and strictly decreases
+the number of positive arrows. -/
 theorem sub_walkAssignment_bottleneck_spec {S : Type*} [SetLike S K] [AddSubgroupClass S K]
     (H : S) {f : Assignment Q K} (hf : 0 ≤ f)
     (hH : ∀ ⦃x y : V⦄ (e : Q x y), f e ∈ H) {s t : V} {p : ArrowWalk Q s t}
