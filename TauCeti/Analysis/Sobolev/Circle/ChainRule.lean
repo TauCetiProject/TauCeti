@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.Circle.Precomp
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
+import TauCeti.Analysis.Fourier.Monomial
 
 /-!
 # Circle diffeomorphisms act on `H¹`: the chain rule
@@ -64,52 +65,6 @@ namespace TauCeti
 namespace CircleSobolev
 
 variable {T : ℝ} [hT : Fact (0 < T)] {φ : AddCircle T → AddCircle T}
-
-omit hT in
-/-- **Integration by parts against a reparametrized monomial.** For a `C¹` lift `F`,
-`∫₀ᵀ e_{-n}(y) F'(y) (2πim/T) e_m(F y) dy = (2πin/T) ∫₀ᵀ e_{-n}(y) e_m(F y) dy`, since the
-integrand of the difference is the derivative of the `T`-periodic function
-`y ↦ e_{-n}(y) e_m(F y)`. -/
-private theorem integral_fourier_mul_deriv_fourier_comp {F F' : ℝ → ℝ}
-    (hF : ∀ x, HasDerivAt F (F' x) x) (hper : ∀ x, F (x + T) = F x + T) (hF'c : Continuous F')
-    (m n : ℤ) :
-    ∫ y in (0 : ℝ)..T, fourier (-n) (y : AddCircle T) *
-        ((F' y : ℂ) * (2 * π * I * m / T * fourier m (F y : AddCircle T))) =
-      2 * π * I * n / T * ∫ y in (0 : ℝ)..T, fourier (-n) (y : AddCircle T) *
-        fourier m (F y : AddCircle T) := by
-  have hFc : Continuous F := continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
-  have he (k : ℤ) : Continuous fun y : ℝ ↦ fourier k (y : AddCircle T) :=
-    (fourier k).continuous.comp continuous_quotient_mk'
-  have hA : Continuous fun y : ℝ ↦ fourier (-n) (y : AddCircle T) *
-      fourier m (F y : AddCircle T) := (he _).mul ((he m).comp hFc)
-  have hB : Continuous fun y : ℝ ↦ fourier (-n) (y : AddCircle T) *
-      ((F' y : ℂ) * (2 * π * I * m / T * fourier m (F y : AddCircle T))) :=
-    (he _).mul ((continuous_ofReal.comp hF'c).mul (continuous_const.mul ((he m).comp hFc)))
-  -- The derivative of `y ↦ e_{-n}(y) e_m(F y)`.
-  have hderiv (y : ℝ) : HasDerivAt
-      (fun y : ℝ ↦ fourier (-n) (y : AddCircle T) * fourier m (F y : AddCircle T))
-      (2 * π * I * ↑(-n) / T * (fourier (-n) (y : AddCircle T) * fourier m (F y : AddCircle T)) +
-        fourier (-n) (y : AddCircle T) *
-          ((F' y : ℂ) * (2 * π * I * m / T * fourier m (F y : AddCircle T)))) y := by
-    have h : HasDerivAt (fun y : ℝ ↦ fourier m (F y : AddCircle T))
-        ((F' y : ℂ) * (2 * π * I * m / T * fourier m (F y : AddCircle T))) y := by
-      rw [← real_smul]
-      exact (hasDerivAt_fourier T m (F y)).scomp y (hF y)
-    convert (hasDerivAt_fourier T (-n) y).mul h using 1
-    ring
-  have hcA : Continuous fun y : ℝ ↦ 2 * π * I * ↑(-n) / T *
-      (fourier (-n) (y : AddCircle T) * fourier m (F y : AddCircle T)) :=
-    continuous_const.mul hA
-  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt (fun y _ ↦ hderiv y)
-    ((hcA.add hB).intervalIntegrable 0 T)
-  have hend : fourier (-n) ((T : ℝ) : AddCircle T) * fourier m (F T : AddCircle T) =
-      fourier (-n) ((0 : ℝ) : AddCircle T) * fourier m (F 0 : AddCircle T) := by
-    rw [show F T = F 0 + T by simpa using hper 0, coe_add, coe_period, add_zero, coe_zero]
-  rw [hend, sub_self, intervalIntegral.integral_add
-    (hcA.intervalIntegrable 0 T) (hB.intervalIntegrable 0 T),
-    intervalIntegral.integral_const_mul] at hFTC
-  push_cast at hFTC
-  linear_combination hFTC
 
 section Lift
 
