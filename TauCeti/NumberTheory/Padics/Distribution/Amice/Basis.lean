@@ -185,6 +185,14 @@ theorem coeff_amicePolynomial_eq_zero {h n k : ℕ} (a : ℤ_[p]) (hk : n < k) :
     (amicePolynomial p h n a).coeff k = 0 :=
   coeff_eq_zero_of_natDegree_lt ((natDegree_amicePolynomial_le h n a).trans_lt hk)
 
+/-- The disc expansion of Amice's polynomial: `∑_{k ≤ n} cₖ wᵏ = ⌊n / pʰ⌋! (a + pʰ w choose n)`,
+where `cₖ` are the coefficients of `amicePolynomial p h n a`. -/
+theorem sum_range_coeff_amicePolynomial_mul_pow (h n : ℕ) (a w : ℤ_[p]) :
+    ∑ k ∈ Finset.range (n + 1), (amicePolynomial p h n a).coeff k * w ^ k =
+      ((n / p ^ h)! : ℤ_[p]) * Ring.choose (a + (p : ℤ_[p]) ^ h * w) n := by
+  rw [← eval_amicePolynomial,
+    eval_eq_sum_range' (Nat.lt_succ_of_le (natDegree_amicePolynomial_le h n a))]
+
 end Integrality
 
 /-! ### Amice's vectors in the analytic stages -/
@@ -258,15 +266,12 @@ theorem eval_amiceTerm (n : ℕ) (e : E) :
     eval S (amiceTerm p h n e) = PadicInt.mahlerTerm ((n / p ^ h)! • e) n := by
   ext x
   obtain ⟨⟨a, w⟩, rfl⟩ := (PadicInt.discHomeomorph p h).surjective x
-  rw [PadicInt.discHomeomorph_apply, eval_natCast_val_add_mul, PadicInt.mahlerTerm_apply,
-    mahler_apply,
+  rw [PadicInt.discHomeomorph_apply, eval_natCast_val_add_mul,
     tsum_eq_sum (s := Finset.range (n + 1)) fun k hk ↦ by
       simp [coeff_amicePolynomial_eq_zero _ (by simpa using hk : n < k)]]
-  simp only [amiceTerm_apply, smul_smul, ← Finset.sum_smul]
-  rw [← Nat.cast_smul_eq_nsmul ℤ_[p], smul_smul, mul_comm (Ring.choose _ _),
-    ← eval_amicePolynomial,
-    eval_eq_sum_range' (Nat.lt_succ_of_le (natDegree_amicePolynomial_le h n _))]
-  exact congrArg (· • e) (Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _)
+  simp [smul_smul, ← Finset.sum_smul, mul_comm (w ^ _), sum_range_coeff_amicePolynomial_mul_pow,
+    PadicInt.mahlerTerm_apply, mahler_apply, mul_comm (Ring.choose _ _),
+    ← Nat.cast_smul_eq_nsmul ℤ_[p]]
 
 private theorem summable_amiceTerm (c : C₀(ℕ, E)) : Summable fun n ↦ amiceTerm p h n (c n) :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <|
