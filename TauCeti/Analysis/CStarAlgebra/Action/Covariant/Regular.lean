@@ -341,17 +341,6 @@ injective on `C_c(G, A)`, for a measure positive on nonempty open sets such as a
 theorem injective_integratedOperator_regular (hρ : Function.Injective ρ) :
     Function.Injective ((regular α ρ μ).integratedOperator μ) := by
   refine (injective_iff_map_eq_zero _).2 fun f hf => ?_
-  -- A continuous compactly supported `h` with `∫ conj (h x) * h x = 0` vanishes.
-  have eq_zero {h : G → ℂ} (hc : Continuous h) (hs : HasCompactSupport h)
-      (h0 : ∫ x, starRingEnd ℂ (h x) * h x ∂μ = 0) (x : G) : h x = 0 := by
-    by_contra hx
-    have hpos := Continuous.integral_pos_of_hasCompactSupport_nonneg_nonzero (μ := μ)
-      (f := fun x => ‖h x‖ ^ 2) (by fun_prop)
-      (hs.comp_left (g := fun z : ℂ => ‖z‖ ^ 2) (by simp)) (fun _ => by positivity)
-      (by simpa using hx)
-    simp_rw [Complex.conj_mul'] at h0
-    norm_cast at h0
-    exact hpos.ne' h0
   -- It suffices that every matrix coefficient `k s = ⟪w, ρ (f s) v⟫` vanishes.
   suffices hk : ∀ v w : H, ∀ s, ⟪w, ρ (f s) v⟫_ℂ = 0 by
     ext s
@@ -386,9 +375,11 @@ theorem injective_integratedOperator_regular (hρ : Function.Injective ρ) :
   -- Since `(π ⋊ λ)(f) = 0`, this matrix coefficient `∫ conj (g r) * g r` vanishes, so `g = 0`.
   have hg0 := inner_integratedOperator_regular_toLp_smul (α := α) (ρ := ρ) f hφc hgc hgs hξ hη
   rw [hf, zero_apply, inner_zero_right] at hg0
-  have hg1 := eq_zero hgc hgs hg0.symm 1
+  have hg1 := congrFun (hgc.eq_zero_of_integral_conj_mul_self_eq_zero
+    (hgc.memLp_of_hasCompactSupport (μ := μ) hgs) hg0.symm) 1
   -- At the identity, `g 1 = ∫ conj (k s) * k s`, so `k = 0`.
-  refine eq_zero hkc hks ?_
+  refine congrFun (hkc.eq_zero_of_integral_conj_mul_self_eq_zero
+    (hkc.memLp_of_hasCompactSupport (μ := μ) hks) ?_)
   simpa [g, K, φ, k] using hg1
 
 end Integrated
