@@ -80,13 +80,13 @@ variable (T 𝒜) [GradedAlgebra (T.grading 𝒜)]
 
 /-- The inclusion of a subalgebra into the ambient algebra, as a homomorphism of graded algebras
 for the induced grading. -/
-@[expose] def gradedVal : T.grading 𝒜 →ₐᵍ[R] 𝒜 where
+def gradedVal : T.grading 𝒜 →ₐᵍ[R] 𝒜 where
   __ := T.val
   map_mem := mem_grading_iff T 𝒜 |>.mp
 
 @[simp]
 theorem coe_gradedVal : ⇑(T.gradedVal 𝒜) = Subtype.val :=
-  rfl
+  (rfl)
 
 /-- The homogeneous components of an element of a graded subalgebra are its homogeneous
 components in the ambient algebra. -/

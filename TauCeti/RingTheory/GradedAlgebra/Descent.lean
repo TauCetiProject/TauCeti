@@ -91,26 +91,32 @@ theorem mem_descendedGrading_iff {i : ι} {a : D.descended} :
   Subalgebra.mem_grading_iff _ _
 
 /-- The inclusion of the descended algebra into `B`, as a homomorphism of graded rings. -/
-@[expose] def descendedGradedVal : D.descendedGrading ℬ →+*ᵍ ℬ where
+def descendedGradedVal : D.descendedGrading ℬ →+*ᵍ ℬ where
   __ := (D.descended.val : D.descended →+* B)
   map_mem := D.mem_descendedGrading_iff ℬ |>.mp
 
 omit [DecidableEq ι] [AddMonoid ι] in
 @[simp]
 theorem coe_descendedGradedVal : ⇑(D.descendedGradedVal ℬ) = Subtype.val :=
-  rfl
+  (rfl)
+
+omit [DecidableEq ι] [AddMonoid ι] in
+/-- The inclusion of the descended graded algebra commutes with the structure maps from `R`. -/
+theorem descendedGradedVal_algebraMap (r : R) :
+    D.descendedGradedVal ℬ (algebraMap R D.descended r) = algebraMap R B r :=
+  D.descended.val.commutes r
 
 variable [GradedAlgebra ℬ] [D.IsGraded ℬ]
 
 /-- The coaction of a graded descent datum, as a homomorphism of graded `S`-algebras from `B` to
 `S ⊗[R] B` with the base-changed grading. -/
-@[expose] def gradedCoaction : ℬ →ₐᵍ[S] fun i ↦ ((ℬ i).restrictScalars R).baseChange S where
+def gradedCoaction : ℬ →ₐᵍ[S] fun i ↦ ((ℬ i).restrictScalars R).baseChange S where
   __ := D.coaction
   map_mem := IsGraded.coaction_mem
 
 @[simp]
 theorem coe_gradedCoaction : ⇑(D.gradedCoaction ℬ) = D.coaction :=
-  rfl
+  (rfl)
 
 /-- The coaction of a graded descent datum commutes with taking homogeneous components. -/
 theorem coaction_decompose (b : B) (i : ι) :
