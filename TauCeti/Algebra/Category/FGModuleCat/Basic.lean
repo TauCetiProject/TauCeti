@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.RingTheory.Finiteness.Prod
 
@@ -30,6 +31,9 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
   the analogue of Mathlib's `ModuleCat.biprodIsoProd`, with its projection lemmas
   `FGModuleCat.biprodIsoProd_inv_comp_fst` and `FGModuleCat.biprodIsoProd_inv_comp_snd`.
 * `FGModuleCat.finrank_biprod`: rank is additive on biproducts of finite free modules.
+* `TauCeti.FGModuleCat.homLinearEquivOfIsScalarTower`: for an algebra `R` over a field `k`,
+  morphisms into `FGModuleCat.of R M` are the `R`-linear maps into `M`, `k`-linearly for the
+  original `k`-action on `M` rather than the category's restricted scalar action.
 -/
 
 public section
@@ -38,7 +42,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe u v
+universe u v w
 
 /-- The linear map underlying `FGModuleCat.ofHom f` is `f`. -/
 @[simp]
@@ -127,5 +131,41 @@ theorem _root_.FGModuleCat.finrank_biprod (R : Type u) [Ring R] [StrongRankCondi
       Module.finrank R X + Module.finrank R Y :=
   (FGModuleCat.isoToLinearEquiv (FGModuleCat.biprodIsoProd X Y)).finrank_eq.trans
     Module.finrank_prod
+
+
+namespace FGModuleCat
+
+variable (k : Type w) [Field k] {R : Type u} [Ring R] [Algebra k R] {M : Type v}
+  [AddCommGroup M] [Module R M] [Module.Finite R M] [Module k M] [IsScalarTower k R M]
+
+/-- Category morphisms into `M` identify with linear maps into `M`, respecting its original
+`k`-action rather than the category's restricted scalar action. -/
+noncomputable def homLinearEquivOfIsScalarTower (N : FGModuleCat.{v} R) :
+    (N ⟶ FGModuleCat.of R M) ≃ₗ[k] (N →ₗ[R] M) where
+  toFun f := f.hom.hom
+  invFun f := FGModuleCat.ofHom f
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' c f := by
+    apply LinearMap.ext
+    intro x
+    -- `ModuleCat.linearOverField` acts on morphisms through `ModuleCat.moduleOfAlgebraModule`,
+    -- so `(c • f) x` unfolds by definition to `algebraMap k R c • f x`.
+    exact algebraMap_smul R c (f.hom.hom x)
+
+/-- The comparison preserves the underlying linear map. -/
+@[simp]
+theorem homLinearEquivOfIsScalarTower_apply (N : FGModuleCat.{v} R)
+    (f : N ⟶ FGModuleCat.of R M) :
+    homLinearEquivOfIsScalarTower k N f = f.hom.hom := (rfl)
+
+/-- The inverse comparison bundles a linear map as a category morphism. -/
+@[simp]
+theorem homLinearEquivOfIsScalarTower_symm_apply (N : FGModuleCat.{v} R)
+    (f : N →ₗ[R] M) :
+    (homLinearEquivOfIsScalarTower k N).symm f = FGModuleCat.ofHom f := (rfl)
+
+end FGModuleCat
 
 end TauCeti

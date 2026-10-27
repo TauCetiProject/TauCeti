@@ -45,7 +45,7 @@ variable {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
 
 /-- If `s` generates `A`, the centralizer of its scalar actions is the algebra of
 `A`-linear endomorphisms. -/
-def centralizerScalarEquiv (s : Set A) (hs : Algebra.adjoin R s = ⊤) :
+def centralizerLsmulAlgEquivEnd (s : Set A) (hs : Algebra.adjoin R s = ⊤) :
     Subalgebra.centralizer R (Algebra.lsmul R R M '' s) ≃ₐ[R] Module.End A M where
   toFun f :=
     { __ := f.val
@@ -76,14 +76,14 @@ def centralizerScalarEquiv (s : Set A) (hs : Algebra.adjoin R s = ⊤) :
 
 /-- The centralizer equivalence preserves the underlying function. -/
 @[simp]
-theorem centralizerScalarEquiv_apply (s : Set A) (hs : Algebra.adjoin R s = ⊤)
+theorem centralizerLsmulAlgEquivEnd_apply (s : Set A) (hs : Algebra.adjoin R s = ⊤)
     (f : Subalgebra.centralizer R (Algebra.lsmul R R M '' s)) (x : M) :
-    centralizerScalarEquiv s hs f x = f.val x := (rfl)
+    centralizerLsmulAlgEquivEnd s hs f x = f.val x := (rfl)
 
 /-- The inverse centralizer equivalence restricts scalars. -/
 @[simp]
-theorem centralizerScalarEquiv_symm_apply (s : Set A) (hs : Algebra.adjoin R s = ⊤)
+theorem centralizerLsmulAlgEquivEnd_symm_apply (s : Set A) (hs : Algebra.adjoin R s = ⊤)
     (f : Module.End A M) :
-    ((centralizerScalarEquiv s hs).symm f).val = f.restrictScalars R := (rfl)
+    ((centralizerLsmulAlgEquivEnd s hs).symm f).val = f.restrictScalars R := (rfl)
 
 end TauCeti

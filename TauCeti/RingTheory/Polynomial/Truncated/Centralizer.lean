@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Cyclic
 public import TauCeti.Combinatorics.Enumerative.Partition.ColumnSquares
 public import TauCeti.LinearAlgebra.End.Centralizer
@@ -77,7 +78,7 @@ theorem finrank_centralizer_pi_cyclic_root_pow {ι : Type*} [Fintype ι] (len : 
     exact h.trans ((AlgHom.range_eq_top _).mpr (AlgEquiv.toOpposite K _).surjective)
   let M := (i : ι) → ((AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
     Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ len i)})
-  have e := centralizerScalarEquiv (M := M) _ hgen
+  have e := centralizerLsmulAlgEquivEnd (M := M) _ hgen
   rw [Set.image_singleton] at e
   rw [e.toLinearEquiv.finrank_eq]
   exact finrank_end_pi_cyclic_root_pow len hlen
