@@ -40,7 +40,8 @@ divides `Δ(E)`.
 * `WeierstrassCurve.VariableChange.minimalRealPeriod_smul`: it depends only on the
   `ℚ`-isomorphism class of `E`.
 * `WeierstrassCurve.minimalRealPeriod_eq_abs_mul`: if `C • E` is globally minimal, the real period
-  of `E` is `|u| Ω(E)`, with `u` the scaling factor of `C`.
+  of `E` is `|u| Ω(E_ℝ)`, with `u` the scaling factor of `C` and `Ω(E_ℝ)` the real period of the
+  equation `E` over `ℝ`.
 * `WeierstrassCurve.IsGlobalMinimal.minimalRealPeriod_eq`: every global minimal equation computes
   the real period of `E`.
 * `WeierstrassCurve.realPeriod_baseChange_le_minimalRealPeriod` and
@@ -79,7 +80,8 @@ theorem minimalRealPeriod_pos : 0 < E.minimalRealPeriod :=
 
 /-- **The real period of an elliptic curve over `ℚ`, from any global minimal equation**: if a
 change of variables `C` carries `E` to a globally minimal equation, the real period of `E` is
-`|u| Ω(E)`, with `u` the scaling factor of `C`. -/
+`|u| Ω(E_ℝ)`, with `u` the scaling factor of `C` and `Ω(E_ℝ)` the real period of the base change
+`E.baseChange ℝ` of the equation `E`. -/
 theorem minimalRealPeriod_eq_abs_mul {C : VariableChange ℚ} (hC : IsGlobalMinimal ℤ (C • E)) :
     E.minimalRealPeriod = |((C.u : ℚ) : ℝ)| * (E.baseChange ℝ).realPeriod := by
   obtain ⟨D, hD⟩ := exists_smul_eq_reducedMinimalModel E
@@ -89,15 +91,9 @@ theorem minimalRealPeriod_eq_abs_mul {C : VariableChange ℚ} (hC : IsGlobalMini
     (isReducedMinimal_reducedMinimalModel E).isGlobalMinimal (D * C⁻¹)
     (by rw [mul_smul, inv_smul_smul, hD])
   have hu : |(D.u : ℚ)| = |(C.u : ℚ)| := by
-    have h := congrArg (fun C' : VariableChange ℚ => ((C'.u : ℚˣ) : ℚ)) hC₀
-    simp only [VariableChange.baseChange, VariableChange.map_u, Units.coe_map,
-      MonoidHom.coe_ofClass, VariableChange.mul_inv_u, Units.val_mul] at h
-    have h1 : |((C₀.u : ℤ) : ℚ)| = 1 := by
-      rcases Int.units_eq_one_or C₀.u with h0 | h0 <;> simp [h0]
-    rw [algebraMap_int_eq, eq_intCast] at h
-    rw [h, abs_mul, Units.val_inv_eq_inv_val, abs_inv,
-      mul_inv_eq_one₀ (abs_ne_zero.mpr C.u.ne_zero)] at h1
-    exact h1
+    have h := C₀.abs_baseChange_u (L := ℚ)
+    rw [hC₀] at h
+    simpa [abs_mul, abs_inv, mul_inv_eq_one₀, C.u.ne_zero] using h
   rw [minimalRealPeriod, ← hD, realPeriod_baseChange_variableChange, eq_ratCast, ← Rat.cast_abs,
     hu, Rat.cast_abs]
 
@@ -115,16 +111,9 @@ global minimal equation. -/
 theorem realPeriod_baseChange_le_minimalRealPeriod [IsIntegral ℤ E] :
     (E.baseChange ℝ).realPeriod ≤ E.minimalRealPeriod := by
   obtain ⟨D, hD⟩ := exists_smul_eq_reducedMinimalModel E
-  -- The minimal discriminant `u⁻¹² Δ(E)` is at most `|Δ(E)|`, so `|u| ≥ 1`.
-  have hΔ := abs_Δ_reducedMinimalModel_le E
-  rw [← hD, variableChange_Δ, abs_mul, abs_pow] at hΔ
-  have hE : 0 < |E.Δ| := abs_pos.mpr E.isUnit_Δ.ne_zero
-  have hu : 1 ≤ |(D.u : ℚ)| := by
-    have h12 := (pow_le_one_iff_of_nonneg (abs_nonneg _) (by norm_num : 12 ≠ 0)).mp
-      ((mul_le_iff_le_one_left hE).mp hΔ)
-    rwa [Units.val_inv_eq_inv_val, abs_inv, inv_le_one₀ (abs_pos.mpr D.u.ne_zero)] at h12
-  rw [minimalRealPeriod, ← hD, realPeriod_baseChange_variableChange, eq_ratCast, ← Rat.cast_abs]
-  exact le_mul_of_one_le_left (realPeriod_pos _).le (by exact_mod_cast hu)
+  rw [minimalRealPeriod, ← hD, realPeriod_baseChange_variableChange, eq_ratCast]
+  exact le_mul_of_one_le_left (realPeriod_pos _).le
+    (by exact_mod_cast one_le_abs_u_of_smul_eq_reducedMinimalModel E hD)
 
 /-- **Among integral equations, the global minimal ones are those of largest real period**: an
 equation of `E` with integer coefficients has the real period of `E` exactly when it is globally
@@ -132,16 +121,10 @@ minimal. -/
 theorem realPeriod_baseChange_eq_minimalRealPeriod_iff [IsIntegral ℤ E] :
     (E.baseChange ℝ).realPeriod = E.minimalRealPeriod ↔ IsGlobalMinimal ℤ E := by
   obtain ⟨D, hD⟩ := exists_smul_eq_reducedMinimalModel E
-  -- Both sides say that the scaling factor `u` of the change of variables to the reduced minimal
-  -- model has `|u| = 1`: the left one through `Ω_min = |u| Ω(E)`, the right one through
-  -- `Δ_min = u⁻¹² Δ(E)`.
-  have hE : 0 < |E.Δ| := abs_pos.mpr E.isUnit_Δ.ne_zero
-  have hΩ : 0 < (E.baseChange ℝ).realPeriod := realPeriod_pos _
-  rw [← abs_Δ_reducedMinimalModel_eq_iff, minimalRealPeriod, ← hD,
-    realPeriod_baseChange_variableChange, eq_ratCast, ← Rat.cast_abs, eq_comm,
-    mul_eq_right₀ hΩ.ne', variableChange_Δ, abs_mul, abs_pow, mul_eq_right₀ hE.ne',
-    pow_eq_one_iff_of_nonneg (abs_nonneg _) (by norm_num : 12 ≠ 0), Units.val_inv_eq_inv_val,
-    abs_inv, inv_eq_one]
+  -- Since `Ω_min = |u| Ω(E_ℝ)`, equality says `|u| = 1` for the scaling factor `u` of the change of
+  -- variables to the reduced minimal model.
+  rw [← abs_u_eq_one_iff_isGlobalMinimal E hD, minimalRealPeriod, ← hD,
+    realPeriod_baseChange_variableChange, eq_ratCast, eq_comm, mul_eq_right₀ (realPeriod_pos _).ne']
   exact_mod_cast Iff.rfl
 
 namespace VariableChange

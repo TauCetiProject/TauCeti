@@ -308,6 +308,7 @@ theorem realPeriod_variableChange (C : VariableChange ℝ) :
 
 /-- For a Weierstrass curve `V` over a ring `R` with an algebra map to `ℝ` (such as `ℚ`), the real
 period of the base change of `C • V` is `|u|` times that of `V`, `u` being read in `ℝ`. -/
+@[simp]
 theorem realPeriod_baseChange_variableChange {R : Type*} [CommRing R] [Algebra R ℝ]
     (C : VariableChange R) (V : WeierstrassCurve R) :
     ((C • V).baseChange ℝ).realPeriod = |algebraMap R ℝ C.u| * (V.baseChange ℝ).realPeriod := by
