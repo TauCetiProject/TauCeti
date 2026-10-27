@@ -7,18 +7,18 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsQuotient.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
-public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
+public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
+public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.LinearAlgebra.Submodule.Quotient
 
 /-!
 # Cohomology comparison through an affine morphism
 
 For a morphism `f : X ⟶ Y` over a ring `R`, zeroth cohomology of `f_* M` is finite
-exactly when that of `M` is finite. If `f` is affine and `Y` is locally Noetherian with a cover
-by two affine opens, the same holds in degree one for quasicoherent `M` when `X` is locally
-Noetherian. Both first cohomology groups are computed
-by the same sections on the overlap modulo differences of restrictions. These results allow
+exactly when that of `M` is finite. If `f` is affine and `Y` has a cover by two affine opens, the
+same holds in degree one for quasicoherent `M`. Both first cohomology groups are computed by the
+same sections on the overlap modulo differences of restrictions. These results allow
 cohomological finiteness on the projective line to be transported to finite covers.
 
 ## References
@@ -124,10 +124,10 @@ theorem moduleFinite_cohomology_zero_pushforward_iff (M : X.Modules) :
       Module.Finite R (Cohomology M 0) :=
   Module.Finite.equiv_iff (f.cohomologyZeroPushforwardBaseLinearEquiv (R := R) M)
 
-/-- On a locally Noetherian target covered by two affine opens, first cohomology of an affine
-pushforward agrees with that on the locally Noetherian source as a module over the base ring. -/
+/-- On a target covered by two affine opens, first cohomology of an affine pushforward agrees with
+that on the source as a module over the base ring. -/
 def cohomologyOnePushforwardBaseLinearEquiv [IsAffineHom f]
-    [IsLocallyNoetherian Y] [IsLocallyNoetherian X] (M : X.Modules) [M.IsQuasicoherent]
+    (M : X.Modules) [M.IsQuasicoherent]
     (U V : Y.Opens) (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤) :
     Cohomology ((pushforward f).obj M) 1 ≃ₗ[R] Cohomology M 1 := by
   -- Restrict the two Mayer–Vietoris boundaries to the common scalar ring `R`.
@@ -146,12 +146,6 @@ def cohomologyOnePushforwardBaseLinearEquiv [IsAffineHom f]
   have := isScalarTower_cohomology R Y N 1
   have := isScalarTower_cohomology R X M 1
   have hpre := f.preimage_sup_eq_top hUV
-  have : IsNoetherianRing Γ(Y, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
-  have : IsNoetherianRing Γ(Y, V) := IsLocallyNoetherian.component_noetherian ⟨V, hV⟩
-  have : IsNoetherianRing Γ(X, f ⁻¹ᵁ U) :=
-    IsLocallyNoetherian.component_noetherian ⟨_, hU.preimage f⟩
-  have : IsNoetherianRing Γ(X, f ⁻¹ᵁ V) :=
-    IsLocallyNoetherian.component_noetherian ⟨_, hV.preimage f⟩
   let : Module R Γ(M, f ⁻¹ᵁ (U ⊓ V)) :=
     Module.compHom _ ((X.baseRingToStructurePresheaf R).app (op (f ⁻¹ᵁ (U ⊓ V)))).hom
   let e := pushforwardSectionsBaseLinearEquiv (R := R) f M (U ⊓ V)
@@ -183,7 +177,7 @@ def cohomologyOnePushforwardBaseLinearEquiv [IsAffineHom f]
 on the preimage cover. The section types are identified by pushforward and `f.preimage_inf`. -/
 @[simp]
 lemma cohomologyOnePushforwardBaseLinearEquiv_boundary [IsAffineHom f]
-    [IsLocallyNoetherian Y] [IsLocallyNoetherian X] (M : X.Modules) [M.IsQuasicoherent]
+    (M : X.Modules) [M.IsQuasicoherent]
     (U V : Y.Opens) (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤)
     (s : Γ((pushforward f).obj M, U ⊓ V)) :
     dsimp% only [pushforward_obj_obj]
@@ -204,7 +198,7 @@ lemma cohomologyOnePushforwardBaseLinearEquiv_boundary [IsAffineHom f]
 the preimage cover to the boundary of the same section on the target cover. -/
 @[simp]
 lemma cohomologyOnePushforwardBaseLinearEquiv_symm_boundary [IsAffineHom f]
-    [IsLocallyNoetherian Y] [IsLocallyNoetherian X] (M : X.Modules) [M.IsQuasicoherent]
+    (M : X.Modules) [M.IsQuasicoherent]
     (U V : Y.Opens) (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤)
     (s : Γ(M, f ⁻¹ᵁ U ⊓ f ⁻¹ᵁ V)) :
     (f.cohomologyOnePushforwardBaseLinearEquiv (R := R) M U V hU hV hUV).symm
@@ -213,10 +207,10 @@ lemma cohomologyOnePushforwardBaseLinearEquiv_symm_boundary [IsAffineHom f]
   (LinearEquiv.symm_apply_eq _).mpr
     (f.cohomologyOnePushforwardBaseLinearEquiv_boundary M U V hU hV hUV s).symm
 
-/-- On a locally Noetherian target covered by two affine opens, first cohomology of an affine
-pushforward is finite exactly when first cohomology on the locally Noetherian source is finite. -/
+/-- On a target covered by two affine opens, first cohomology of an affine pushforward is finite
+exactly when first cohomology on the source is finite. -/
 theorem moduleFinite_cohomology_one_pushforward_iff_of_two_affine_opens [IsAffineHom f]
-    [IsLocallyNoetherian Y] [IsLocallyNoetherian X] (M : X.Modules) [M.IsQuasicoherent]
+    (M : X.Modules) [M.IsQuasicoherent]
     (U V : Y.Opens) (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤) :
     Module.Finite R (Cohomology ((pushforward f).obj M) 1) ↔
       Module.Finite R (Cohomology M 1) :=
