@@ -252,6 +252,38 @@ theorem dgComp_coneHomOfHomotopy_extensionSnd (a : DGHom R 0 P P') (b : DGHom R 
     dgComp_extensionInl_extensionSnd, dgComp_extensionInr_extensionSnd, dgComp_zero, dgComp_dgId,
     zero_add, add_zero]
 
+/-- The inclusion of `P⟦1⟧` into `cone u` followed by the morphism of cones induced by `a`, `b`
+and `k` is the shift of `a` followed by the inclusion of `P'⟦1⟧` into `cone u'`, minus
+`P⟦1⟧ ⟶ P` followed by `k` and the inclusion of `Q'` into `cone u'`. -/
+@[simp↓]
+theorem dgComp_extensionInr_coneHomOfHomotopy (a : DGHom R 0 P P') (b : DGHom R 0 Q Q')
+    (k : DGHom R (-1) P Q') :
+    dgComp R (extensionInr R (dgDifferential_coneMorphism hu)) (coneHomOfHomotopy hu hu' a b k)
+        (add_zero 0) =
+      dgComp R ((shiftFunctor R 1).dgMap 0 a) (extensionInr R (dgDifferential_coneMorphism hu'))
+          (add_zero 0) -
+        dgComp R (dgComp R (fromShift P 1) k (add_neg_cancel 1))
+          (extensionInl R (dgDifferential_coneMorphism hu')) (add_zero 0) := by
+  simp only [coneHomOfHomotopy_def, dgComp_add, dgComp_extensionInr_extensionFst_assoc,
+    dgComp_extensionInr_extensionSnd_assoc, zero_add, neg_dgComp, sub_eq_add_neg]
+
+/-- The morphism of cones induced by `a`, `b` and `k` followed by the projection of `cone u'`
+onto `Q'` is the projection of `cone u` onto `Q` followed by `b`, minus the projection onto
+`P⟦1⟧` followed by `P⟦1⟧ ⟶ P` and `k`. -/
+@[simp↓]
+theorem dgComp_coneHomOfHomotopy_extensionFst (a : DGHom R 0 P P') (b : DGHom R 0 Q Q')
+    (k : DGHom R (-1) P Q') :
+    dgComp R (coneHomOfHomotopy hu hu' a b k) (extensionFst R (dgDifferential_coneMorphism hu'))
+        (add_zero 0) =
+      dgComp R (extensionFst R (dgDifferential_coneMorphism hu)) b (add_zero 0) -
+        dgComp R (extensionSnd R (dgDifferential_coneMorphism hu))
+          (dgComp R (fromShift P 1) k (add_neg_cancel 1)) (add_zero 0) := by
+  simp only [coneHomOfHomotopy_def, add_dgComp,
+    dgComp_assoc R _ _ (extensionFst R (dgDifferential_coneMorphism hu')) (add_zero 0)
+      (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_extensionFst, dgComp_extensionInr_extensionFst, dgComp_zero, dgComp_dgId,
+    add_zero, neg_dgComp, dgComp_neg, sub_eq_add_neg]
+
 /-- **The morphism of cone triangles induced by a homotopy-commutative square**: closed morphisms
 `a : P ⟶ P'` and `b : Q ⟶ Q'` with `d k = u ≫ b - a ≫ u'` give the morphism of triangles
 `(a, b, TauCeti.DGTwistedObject.coneHomOfHomotopy a b k)` from the cone triangle of `u` to the
@@ -421,16 +453,58 @@ theorem dgDifferential_coneRotateInv : dgDifferential R 0 (coneRotateInv hu) = 0
   rw [dgComp_assoc R _ _ _ (zero_add 1) (add_zero 1) (by omega), dgComp_coneMorphism,
     dgComp_extensionInl_extensionSnd, dgComp_zero, dgComp_zero]
 
+/-- The comparison morphism `P⟦1⟧ ⟶ cone (Q ⟶ cone u)` followed by the projection onto `cone u`
+is the inclusion of `P⟦1⟧` into `cone u`. -/
+@[simp↓]
+theorem dgComp_coneRotateHom_extensionFst :
+    dgComp R (coneRotateHom hu) (extensionFst R (dgDifferential_coneMorphism
+        (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu)))) (add_zero 0) =
+      extensionInr R (dgDifferential_coneMorphism hu) := by
+  simp only [coneRotateHom_def, add_dgComp,
+    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_extensionFst, dgComp_extensionInr_extensionFst, dgComp_zero, dgComp_dgId,
+    add_zero]
+
+/-- The comparison morphism `P⟦1⟧ ⟶ cone (Q ⟶ cone u)` followed by the projection onto `Q⟦1⟧`
+is minus the shift of `u`. -/
+@[simp↓]
+theorem dgComp_coneRotateHom_extensionSnd :
+    dgComp R (coneRotateHom hu) (extensionSnd R (dgDifferential_coneMorphism
+        (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu)))) (add_zero 0) =
+      -(shiftFunctor R 1).dgMap 0 u := by
+  simp only [coneRotateHom_def, add_dgComp,
+    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_extensionSnd, dgComp_extensionInr_extensionSnd, dgComp_zero, dgComp_dgId,
+    zero_add]
+
+/-- The inclusion of `cone u` into `cone (Q ⟶ cone u)` followed by the comparison morphism
+`cone (Q ⟶ cone u) ⟶ P⟦1⟧` is the projection of `cone u` onto `P⟦1⟧`. -/
+@[simp↓]
+theorem dgComp_extensionInl_coneRotateInv :
+    dgComp R (extensionInl R (dgDifferential_coneMorphism
+        (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu)))) (coneRotateInv hu)
+        (add_zero 0) =
+      extensionSnd R (dgDifferential_coneMorphism hu) := by
+  simp only [coneRotateInv_def, dgComp_extensionInl_extensionFst_assoc]
+
+/-- The inclusion of `Q⟦1⟧` into `cone (Q ⟶ cone u)` followed by the comparison morphism
+`cone (Q ⟶ cone u) ⟶ P⟦1⟧` vanishes. -/
+@[simp↓]
+theorem dgComp_extensionInr_coneRotateInv :
+    dgComp R (extensionInr R (dgDifferential_coneMorphism
+        (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu)))) (coneRotateInv hu)
+        (add_zero 0) =
+      0 := by
+  simp only [coneRotateInv_def, dgComp_extensionInr_extensionFst_assoc]
+
 /-- The comparison morphism `P⟦1⟧ ⟶ cone (Q ⟶ cone u)` followed by its inverse
 `cone (Q ⟶ cone u) ⟶ P⟦1⟧` is the identity. -/
 @[simp↓]
 theorem dgComp_coneRotateHom_coneRotateInv :
     dgComp R (coneRotateHom hu) (coneRotateInv hu) (add_zero 0) =
       dgId R ((shiftFunctor R 1).obj P) := by
-  simp only [coneRotateHom_def, coneRotateInv_def, add_dgComp,
-    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
-    dgComp_extensionInl_extensionFst_assoc, dgComp_extensionInr_extensionFst_assoc,
-    dgComp_extensionInr_extensionSnd, dgComp_zero, add_zero]
+  rw [coneRotateInv_def, ← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_coneRotateHom_extensionFst, dgComp_extensionInr_extensionSnd]
 
 /-- The differential of the projection of `cone u` onto `Q`, followed by `Q ⟶ Q⟦1⟧` and the
 inclusion of `Q⟦1⟧` into `cone (Q ⟶ cone u)`: this degree `-1` morphism is the homotopy behind
@@ -576,11 +650,7 @@ noncomputable def coneTriangleRotateIso :
               (dgDifferential_extensionInl R (dgDifferential_coneMorphism hu))))
             ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R _)) := by
         rw [coneRotateIso_hom]
-        refine (homOf_comp_eq_homOf_of_dgComp_eq R _ _ _ ?_).symm
-        simp only [coneRotateHom_def, add_dgComp,
-          dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
-          dgComp_extensionInl_extensionSnd, dgComp_extensionInr_extensionSnd, dgComp_zero,
-          dgComp_dgId, zero_add]
+        exact (homOf_comp_eq_homOf_of_dgComp_eq R _ _ _ (dgComp_coneRotateHom_extensionSnd hu)).symm
       refine (congrArg (fun f ↦ _ ≫ f) ((CategoryTheory.shiftFunctor _ (1 : ℤ)).map_id _)).trans
         ((Category.comp_id _).trans ?_)
       exact ((congrArg Neg.neg (shiftFunctor_map_homOf 1 u ((mem_dgCycles R).mpr hu))).trans
