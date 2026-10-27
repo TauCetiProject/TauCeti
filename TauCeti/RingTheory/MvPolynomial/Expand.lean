@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Flat.Rank
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.MvPolynomial.Expand
 public import Mathlib.RingTheory.RingHom.Flat
+public import TauCeti.Data.Finsupp.DivMod
 public import TauCeti.RingTheory.RingHom.Basis
 
 /-!
@@ -192,38 +193,19 @@ section Repr
 
 variable (σ R : Type*) [CommRing R] (n : ℕ) [NeZero n]
 
-/-- An exponent vector `d` splits as `n • (d / n) + d % n`, with remainders in `Fin n`. -/
-private noncomputable def expDivMod : (σ →₀ ℕ) ≃ (σ →₀ Fin n) × (σ →₀ ℕ) where
-  toFun d := (d.mapRange (Fin.ofNat n) (Fin.ofNat_zero n), d.mapRange (· / n) (Nat.zero_div n))
-  invFun βγ := βγ.1.mapRange Fin.val (Fin.val_zero n) + n • βγ.2
-  left_inv d := by
-    ext i
-    simp [Nat.mod_add_div]
-  right_inv βγ := by
-    have hn : 0 < n := Nat.pos_of_neZero n
-    ext i
-    · simp [Nat.mod_eq_of_lt (βγ.1 i).isLt]
-    · simp [Nat.add_mul_div_left _ _ hn, Nat.div_eq_of_lt (βγ.1 i).isLt]
-
 /-- The coordinates of a polynomial over the image of `expand n`: the coefficient at `β` collects
 the monomials whose exponents are `β` modulo `n`, with these remainders removed and the
 exponents divided by `n`. -/
 private noncomputable def expandRepr : MvPolynomial σ R ≃+ ((σ →₀ Fin n) →₀ MvPolynomial σ R) :=
-  AddMonoidAlgebra.coeffAddEquiv.trans <| (Finsupp.domCongr (expDivMod σ n)).trans <|
+  AddMonoidAlgebra.coeffAddEquiv.trans <|
+    (Finsupp.domCongr (Finsupp.modDivEquiv (σ := σ) n)).trans <|
     Finsupp.curryAddEquiv.trans <| Finsupp.mapRange.addEquiv AddMonoidAlgebra.coeffAddEquiv.symm
 
 variable {σ R n}
 
-private theorem expDivMod_nsmul_add (γ d : σ →₀ ℕ) :
-    expDivMod σ n (n • γ + d) = ((expDivMod σ n d).1, γ + (expDivMod σ n d).2) := by
-  have hn : 0 < n := Nat.pos_of_neZero n
-  ext i
-  · simp [expDivMod]
-  · simp [expDivMod, Nat.mul_add_div hn]
-
 private theorem expandRepr_monomial (d : σ →₀ ℕ) (r : R) :
     expandRepr σ R n (monomial d r) =
-      Finsupp.single (expDivMod σ n d).1 (monomial (expDivMod σ n d).2 r) := by
+      Finsupp.single (Finsupp.modDivEquiv n d).1 (monomial (Finsupp.modDivEquiv n d).2 r) := by
   simp [expandRepr, ← single_eq_monomial]
 
 /-- The coordinates over the image of `expand n` are linear over that image. -/
@@ -233,8 +215,9 @@ private theorem _root_.MvPolynomial.expandRepr_expand_mul (a b : MvPolynomial σ
   | monomial γ r =>
     induction b using MvPolynomial.induction_on' with
     | monomial d s =>
-      rw [expand_monomial, monomial_mul_monomial, expandRepr_monomial, expDivMod_nsmul_add,
-        expandRepr_monomial, Finsupp.smul_single, smul_eq_mul, monomial_mul_monomial]
+      rw [expand_monomial, monomial_mul_monomial, expandRepr_monomial,
+        Finsupp.modDivEquiv_nsmul_add, expandRepr_monomial, Finsupp.smul_single, smul_eq_mul,
+        monomial_mul_monomial]
     | add b₁ b₂ h₁ h₂ => rw [mul_add, map_add, h₁, h₂, map_add, smul_add]
   | add a₁ a₂ h₁ h₂ => rw [map_add, add_mul, map_add, h₁, h₂, add_smul]
 
@@ -251,8 +234,8 @@ noncomputable def basisExpand :
 @[simp]
 theorem basisExpand_apply (β : σ →₀ Fin n) :
     basisExpand σ R n β = monomial (β.mapRange Fin.val (Fin.val_zero n)) 1 := by
-  have hβ : expDivMod σ n (β.mapRange Fin.val (Fin.val_zero n)) = (β, 0) :=
-    Prod.ext (by ext i; simp [expDivMod]) (by ext i; simp [expDivMod, Nat.div_eq_of_lt (β i).isLt])
+  have hβ : Finsupp.modDivEquiv n (β.mapRange Fin.val (Fin.val_zero n)) = (β, 0) :=
+    (Equiv.eq_symm_apply _).1 (by simp)
   rw [basisExpand, RingHom.basisOfAddEquiv_apply, AddEquiv.symm_apply_eq, expandRepr_monomial, hβ,
     ← C_apply, C_1]
 

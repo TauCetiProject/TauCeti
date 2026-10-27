@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.Frobenius.Etale
 import Mathlib.Algebra.Field.ULift
 import TauCeti.AlgebraicGeometry.Frobenius.Iterate
+import TauCeti.AlgebraicGeometry.Scheme.ToSpecZMod
 import TauCeti.RingTheory.MvPolynomial.Expand
 
 /-!
@@ -27,10 +28,11 @@ relative Frobenius of `X` is a base change of that of `𝔸(σ; S)`
 relative dimension `n` is locally of this form, so this is the local computation of the rank of
 the relative Frobenius of a smooth morphism.
 
-Over `𝔽_p` the Frobenius of `𝔽_p` is the identity, the Frobenius twist of `𝔸(σ; 𝔽_p)` is
-`𝔸(σ; 𝔽_p)` itself and the relative Frobenius is `Spec` of `MvPolynomial.expand p`, which is
-free of rank `p ^ n` (`TauCeti.MvPolynomial.finrank_expand`). For a general `S`, the relative
-Frobenius of `𝔸(σ; S)` is the base change of that of `𝔸(σ; 𝔽_p)` along `S ⟶ Spec 𝔽_p`
+Over `𝔽_p` the Frobenius of `𝔽_p` is the identity (`AlgebraicGeometry.Scheme.frobenius_spec_zmod`),
+the Frobenius twist of `𝔸(σ; 𝔽_p)` is `𝔸(σ; 𝔽_p)` itself and the relative Frobenius is `Spec` of
+`MvPolynomial.expand p`, which is free of rank `p ^ n` (`TauCeti.MvPolynomial.finrank_expand`).
+For a general `S`, the relative Frobenius of `𝔸(σ; S)` is the base change of that of `𝔸(σ; 𝔽_p)`
+along the structure morphism `S ⟶ Spec 𝔽_p` (`AlgebraicGeometry.Scheme.toSpecZMod`)
 (`AlgebraicGeometry.Scheme.Hom.isPullback_relativeFrobenius_of_isPullback`).
 
 ## Main results
@@ -60,20 +62,6 @@ open Scheme
 
 variable (σ : Type u) {S : Scheme.{u}} {p : ℕ} [Fact p.Prime]
 
-/-- The structure morphism `S ⟶ Spec 𝔽_p` of a scheme in which `p` vanishes. -/
-private noncomputable def toSpecPrimeField (hS : (p : Γ(S, ⊤)) = 0) :
-    S ⟶ Spec (.of (ULift.{u} (ZMod p))) :=
-  S.toSpecΓ ≫ Spec.map (CommRingCat.ofHom <|
-    (ZMod.castHom (ringChar.dvd hS) Γ(S, ⊤)).comp ULift.ringEquiv.toRingHom)
-
-/-- The absolute Frobenius of `Spec 𝔽_p` is the identity. -/
-private theorem frobenius_spec_primeField :
-    (Spec (.of (ULift.{u} (ZMod p)))).frobenius p (natCast_spec_eq_zero _) = 𝟙 _ := by
-  rw [← Spec_map_powRingHom _ (CharP.cast_eq_zero _ p)]
-  convert Spec.map_id (CommRingCat.of (ULift.{u} (ZMod p)))
-  ext x
-  simp [TauCeti.powRingHom_apply, ZMod.pow_card]
-
 /-- The absolute Frobenius of `Spec 𝔽_p[X_i]` is `Spec` of `expand p`. -/
 private theorem frobenius_spec_mvPolynomial :
     (Spec (.of (MvPolynomial σ (ULift.{u} (ZMod p))))).frobenius p (natCast_spec_eq_zero _) =
@@ -98,7 +86,7 @@ private theorem isPullback_relativeFrobenius_spec_primeField :
         (MvPolynomial.expand p : MvPolynomial σ (ULift.{u} (ZMod p)) →ₐ[_] _).toRingHom)) := by
   -- the projection from the Frobenius twist is an isomorphism, as the Frobenius of `𝔽_p` is
   have : IsIso ((Spec (.of (ULift.{u} (ZMod p)))).frobenius p (natCast_spec_eq_zero _)) := by
-    rw [frobenius_spec_primeField]; infer_instance
+    rw [frobenius_spec_zmod]; infer_instance
   refine IsPullback.of_vert_isIso ⟨?_⟩
   rw [Hom.relativeFrobenius_fst_assoc, frobenius_naturality _ (natCast_spec_eq_zero _),
     frobenius_spec_mvPolynomial]
@@ -115,7 +103,7 @@ private theorem exists_isPullback_relativeFrobenius :
         (Spec.map (CommRingCat.ofHom
           (MvPolynomial.expand p : MvPolynomial σ (ULift.{u} (ZMod p)) →ₐ[_] _).toRingHom)) b :=
   ⟨_, _, (Hom.isPullback_relativeFrobenius_of_isPullback (natCast_spec_eq_zero _)
-    (isPullback_map (n := σ) (toSpecPrimeField hS))).paste_vert
+    (isPullback_map (n := σ) (S.toSpecZMod hS))).paste_vert
       (isPullback_relativeFrobenius_spec_primeField σ) |>.flip⟩
 
 /-- **The relative Frobenius of affine space is flat.** -/
