@@ -83,6 +83,12 @@ its eight weights so that opposite weights sit at local positions `ℓ` and `7 -
 def oppositeIndex (a : Fin 24) : Fin 24 :=
   ⟨8 * (a.val / 8) + (7 - a.val % 8), by omega⟩
 
+/-- The value of the opposite index: position `ℓ` of a block goes to position `7 - ℓ` of the same
+block. -/
+theorem val_oppositeIndex (a : Fin 24) :
+    (oppositeIndex a).val = 8 * (a.val / 8) + (7 - a.val % 8) :=
+  (rfl)
+
 /-- The weight at the opposite index is the negative weight. -/
 @[simp]
 theorem d4TripledWeight_oppositeIndex (a : Fin 24) :
@@ -108,6 +114,11 @@ opposite weight. It depends only on the position of `a` inside its block, and ag
 `oppositeIndex a`. -/
 def pairingSign (a : Fin 24) : ℤ :=
   ![1, -1, 1, -1, -1, 1, -1, 1] ⟨a.val % 8, by omega⟩
+
+/-- Compute the pairing sign from its lookup table at the position of `a` inside its block. -/
+theorem pairingSign_apply (a : Fin 24) :
+    pairingSign a = ![1, -1, 1, -1, -1, 1, -1, 1] ⟨a.val % 8, by omega⟩ :=
+  (rfl)
 
 /-- The pairing sign takes the same value at a basis index and at its opposite. -/
 @[simp]
