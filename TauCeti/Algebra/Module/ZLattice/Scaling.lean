@@ -56,6 +56,12 @@ first statement does not extend to `|c| < 1`.
 * W. Ebeling, *Lattices and Codes*, 3rd ed., Springer, 2013, Chapter 1.
 * J. H. Conway, N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, 3rd ed., Springer, 1999,
   Chapter 2, §2.
+
+## Source note
+
+The statements and proofs of this file adapt the earlier, unmerged Tau Ceti formalization in
+[TauCeti PR #20860](https://github.com/TauCetiProject/TauCeti/pull/20860) by
+@tauceti-ai-for-science, ported here to current `main`.
 -/
 
 public section
