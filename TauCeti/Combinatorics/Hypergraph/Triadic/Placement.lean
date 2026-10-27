@@ -61,7 +61,8 @@ count which an induced counting lemma compares with `H.inducedCopyCount F`.
   product of the cell sizes.
 * `TauCeti.Colored3Graph.inducedCopyCount_eq_sum_placedInducedCopyCount`: over a polyad
   decomposition, the induced count is the sum of the placed counts.
-* `TauCeti.Colored3Graph.expectedInducedCountAt_le_placementInjectionCount`: the local prediction
+* `TauCeti.Colored3Graph.expectedInducedCountAt_nonneg`,
+  `TauCeti.Colored3Graph.expectedInducedCountAt_le_placementInjectionCount`: the local prediction
   lies between zero and the injection count.
 
 ## References
