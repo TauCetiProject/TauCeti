@@ -74,14 +74,13 @@ def Corestrict (f : C →ₗc[R] D) : Comodule R D M where
   coact := corestrictCoact (R := R) (C := C) (D := D) (M := M) f
   coassoc := by
     ext m
-    simp only [corestrictCoact, LinearMap.comp_apply, LinearMap.rTensor_map,
-      LinearMap.comp_id, LinearEquiv.coe_coe]
-    rw [← LinearMap.map_rTensor, ← TensorProduct.map_map_assoc, coassoc_apply]
-    simp [LinearMap.lTensor_def, TensorProduct.map_map, CoalgHomClass.map_comp_comul]
+    simp only [corestrictCoact_eq_lTensor, LinearMap.comp_apply, LinearEquiv.coe_coe]
+    rw [LinearMap.assoc_rTensor_lTensor_comp, coassoc_apply]
+    rw [← LinearMap.lTensor_def, ← LinearMap.lTensor_comp_apply,
+      f.map_comp_comul, LinearMap.lTensor_comp_apply]
   lTensor_counit_comp_coact := by
-    ext m
-    simpa [corestrictCoact, LinearMap.lTensor_def, TensorProduct.map_map] using
-      lTensor_counit_coact (R := R) (C := C) (M := M) m
+    rw [corestrictCoact_eq_lTensor, ← LinearMap.comp_assoc, ← LinearMap.lTensor_comp,
+      f.counit_comp, Comodule.lTensor_counit_comp_coact]
 
 /-- The corestricted coaction is `(id ⊗ f) ∘ ρ`. -/
 @[simp]
