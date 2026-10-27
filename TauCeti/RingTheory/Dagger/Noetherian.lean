@@ -60,14 +60,8 @@ private theorem fg_of_isDistinguished_mem [IsNoetherianRing W] {I : Ideal W'} {g
   let : Algebra W W' := (optionC (σ := σ) (R := K)).toRingHom.toAlgebra
   let Y : W' := X (Option σ) K none
   let J : Ideal W' := Ideal.span {g}
-  -- Evaluating a polynomial over `W` at `Y` and separating `Y` again recovers the polynomial.
-  have hev (r : Polynomial W) :
-      optionSeries (Polynomial.aeval Y r) = (r : PowerSeries W) := by
-    have h : (optionSeries : W' →ₐ[K] PowerSeries W).toRingHom.comp
-        (Polynomial.aeval (R := W) Y).toRingHom = Polynomial.coeToPowerSeries.ringHom :=
-      Polynomial.ringHom_ext (fun a ↦ by simp [RingHom.algebraMap_toAlgebra])
-        (by simp [Y])
-    exact RingHom.congr_fun h r
+  have hev (r : Polynomial W) : optionSeries (Polynomial.aeval Y r) = (r : PowerSeries W) :=
+    optionSeries_eval₂_optionC_X_none r
   -- Division by `g` makes the remainders of degree `< s` surject onto `W' ⧸ (g)`.
   let φ : Polynomial.degreeLT W s →ₗ[W] W' ⧸ J :=
     ((Ideal.Quotient.mkₐ W J).comp (Polynomial.aeval Y)).toLinearMap ∘ₗ

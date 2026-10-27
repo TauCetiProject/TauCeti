@@ -192,6 +192,18 @@ theorem optionC_X (i : σ) : optionC (X σ R i) = X (Option σ) R (some i) :=
 theorem optionC_injective : Function.Injective (optionC (σ := σ) (R := R)) := fun f g h ↦
   PowerSeries.C_injective (by simpa using congrArg optionSeries h)
 
+/-- Evaluating a polynomial with overconvergent coefficients in `σ` at `Y = X none` along `optionC`
+and separating `Y` again recovers the polynomial as a univariate series. -/
+@[simp]
+theorem optionSeries_eval₂_optionC_X_none (r : Polynomial (washnitzerAlgebra σ R)) :
+    optionSeries (r.eval₂ (optionC (σ := σ) (R := R) : _ →+* _) (X (Option σ) R none)) =
+      (r : PowerSeries (washnitzerAlgebra σ R)) := by
+  have h : (optionSeries : washnitzerAlgebra (Option σ) R →ₐ[R] _).toRingHom.comp
+      (Polynomial.eval₂RingHom (optionC (σ := σ) (R := R) : _ →+* _) (X (Option σ) R none)) =
+        Polynomial.coeToPowerSeries.ringHom :=
+    Polynomial.ringHom_ext (fun a ↦ by simp) (by simp)
+  exact RingHom.congr_fun h r
+
 /-- Mapping the separated coefficients into the unit-radius Tate algebra agrees with
 the restricted-series iteration. -/
 @[simp]
