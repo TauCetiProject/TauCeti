@@ -64,15 +64,6 @@ variable (k : Type v) [CommSemiring k] {A : Type u} [Semiring A] [Algebra k A]
 variable {k}
 variable {e f : A}
 
-/-- An element of the corner `eAf` lies in the left ideal `Af`, without any idempotency
-assumption. -/
-theorem mem_span_singleton_of_mem_cornerSubmodule {e f x : A}
-    (hx : x ∈ cornerSubmodule k e f) : x ∈ (Ideal.span {f} : Ideal A) := by
-  rw [cornerSubmodule_def, LinearMap.mem_range] at hx
-  obtain ⟨y, hy⟩ := hx
-  exact Ideal.mem_span_singleton'.2 ⟨e * y, by
-    simpa only [LinearMap.mulLeftRight_apply] using hy⟩
-
 /-- The value at the generator of a homomorphism `Ae → Af` lies in the corner `eAf`. -/
 theorem apply_generator_mem_cornerSubmodule (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (φ : (Ideal.span {e} : Ideal A) →ₗ[A] (Ideal.span {f} : Ideal A)) :

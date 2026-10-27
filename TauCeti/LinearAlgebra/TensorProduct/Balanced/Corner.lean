@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
-public import TauCeti.RingTheory.Idempotents.Hom
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
+public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 /-!
 # Balanced tensor products with an idempotent ideal
