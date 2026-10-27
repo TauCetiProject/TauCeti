@@ -192,26 +192,6 @@ private theorem presentationLimitMap_comp_presentationLimitHom {U₁ : Opens ↥
 -- `(B, B⁺)` along the homeomorphism `Spa(B, B⁺) → Spa(A, A⁺)` induced by `φ`; its components are
 -- assembled from the base-change maps `A⟨T/s⟩ → B⟨φ(T)/φ(s)⟩` of the universal property.
 
-omit [IsTopologicalRing A] [IsTopologicalRing B] in
-include hψφ in
-/-- Pulling back along `ψ` and then along `φ` is the identity of `Spa(A, A⁺)`. -/
-private theorem spaComap_spaComap (w : ↥(spa Aplus)) :
-    spaComap φ hφ Aplus Bplus hplus (spaComap ψ hψ Bplus Aplus hplus' w) = w := by
-  have hcomp : ψ.comp φ = RingHom.id A := RingHom.ext hψφ
-  refine Subtype.ext ?_
-  rw [spaComap_val, spaComap_val, ← Function.comp_apply (f := comap φ), ← comap_comp, hcomp,
-    comap_id, id]
-
-omit [IsTopologicalRing A] [IsTopologicalRing B] in
-include hψφ in
-/-- For `ψ` a left inverse of `φ`, a point `w` of `Spa(A, A⁺)` whose pullback along `ψ` lies in the
-preimage of `W` under the map of adic spectra induced by `φ` lies in `W`. -/
-theorem mem_of_spaComap_mem_map (W : Opens ↥(spa Aplus)) (w : ↥(spa Aplus))
-    (hw : spaComap ψ hψ Bplus Aplus hplus' w ∈ (Opens.map (spaComapTopHom φ hφ hplus)).obj W) :
-    w ∈ W := by
-  rw [← spaComap_spaComap φ hφ hplus ψ hψ hψφ hplus' w]
-  exact Opens.mem_map.mp hw
-
 /-- The comparison maps of `φ` and `ψ` as an isomorphism of presentation limits. -/
 private noncomputable def presentationLimitIso (W : Opens ↥(spa Aplus)) :
     presentationLimit (P := P) Aplus W ≅

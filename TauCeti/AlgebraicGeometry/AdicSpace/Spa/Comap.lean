@@ -37,6 +37,8 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
 * `TauCeti.ValuationSpectrum.continuous_spaComap`: `spaComap` is continuous.
 * `TauCeti.ValuationSpectrum.spaComap_id`, `spaComap_comp`, `spaComapTopHom_id`,
   `spaComapTopHom_comp`: contravariant functoriality.
+* `TauCeti.ValuationSpectrum.spaComap_spaComap`, `mem_of_spaComap_mem_map`: pulling back along a
+  left inverse of `φ` and then along `φ` is the identity.
 * `TauCeti.ValuationSpectrum.comap_preimage_rationalSubset_inter_spa`,
   `spaComap_preimage_rationalSubset`, `map_spaComapTopHom_obj_spaBasicOpen`: preimages of
   rational subsets.
@@ -122,6 +124,17 @@ theorem spaComap_comp {φ : A →+* B} (hφ : Continuous φ) {ψ : B →+* C} (h
         (fun a ha ↦ hψ_plus (φ a) (hφ_plus a ha)) =
       spaComap φ hφ Aplus Bplus hφ_plus ∘ spaComap ψ hψ Bplus Cplus hψ_plus :=
   funext fun ⟨v, _⟩ ↦ Subtype.ext (congr_fun (comap_comp φ ψ) v)
+
+/-- Pulling back along a left inverse `ψ` of `φ` and then along `φ` is the identity of
+`Spa(A, A⁺)`. -/
+theorem spaComap_spaComap (φ : A →+* B) (hφ : Continuous φ) {Aplus : Subring A}
+    {Bplus : Subring B} (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (ψ : B →+* A) (hψ : Continuous ψ)
+    (hψφ : ∀ a, ψ (φ a) = a) (hplus' : ∀ b ∈ Bplus, ψ b ∈ Aplus) (w : ↥(spa Aplus)) :
+    spaComap φ hφ Aplus Bplus hplus (spaComap ψ hψ Bplus Aplus hplus' w) = w := by
+  have hcomp : ψ.comp φ = RingHom.id A := RingHom.ext hψφ
+  refine Subtype.ext ?_
+  rw [spaComap_val, spaComap_val, ← Function.comp_apply (f := comap φ), ← comap_comp, hcomp,
+    comap_id, id]
 
 open scoped Classical in
 /-- Preimage of a rational subset under `comap φ`, after intersecting with `spa Bplus`:
@@ -262,6 +275,17 @@ theorem map_spaComapTopHom_comp_obj {C : Type v} [CommRing C] [TopologicalSpace 
       (TopologicalSpace.Opens.map (spaComapTopHom ψ hψ hplus')).obj
         ((TopologicalSpace.Opens.map (spaComapTopHom φ hφ hplus)).obj U) := by
   rw [spaComapTopHom_comp, TopologicalSpace.Opens.map_comp_obj]
+
+/-- For `ψ` a left inverse of `φ`, a point `w` of `Spa(A, A⁺)` whose pullback along `ψ` lies in the
+preimage of `W` under the map of adic spectra induced by `φ` lies in `W`. -/
+theorem mem_of_spaComap_mem_map (ψ : B →+* A) (hψ : Continuous ψ) (hψφ : ∀ a, ψ (φ a) = a)
+    (hplus' : ∀ b ∈ Bplus, ψ b ∈ Aplus) (W : TopologicalSpace.Opens ↥(spa Aplus))
+    (w : ↥(spa Aplus))
+    (hw : spaComap ψ hψ Bplus Aplus hplus' w ∈
+      (TopologicalSpace.Opens.map (spaComapTopHom φ hφ hplus)).obj W) :
+    w ∈ W := by
+  rw [← spaComap_spaComap φ hφ hplus ψ hψ hψφ hplus' w]
+  exact TopologicalSpace.Opens.mem_map.mp hw
 
 end TopCat
 
