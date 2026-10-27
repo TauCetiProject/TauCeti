@@ -82,11 +82,7 @@ theorem formClass_atRealPlace_eq_nsmul_hyperbolicClass [Invertible (2 : K)]
     formClass (Q.atRealPlace w) (Nondegenerate.atRealPlace hQ w) = m • hyperbolicClass ℝ := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   have hb := formClass_atRealPlace Q hQ w
-  rw [h, RegularFormClass.baseChange_nsmul, RegularFormClass.baseChange_hyperbolicClass] at hb
-  -- `baseChange_hyperbolicClass` states its result with the `Invertible 2` instance transported
-  -- from `K`, while the goal uses the canonical instance of `ℝ`; the two are equal because
-  -- `Invertible 2` is a subsingleton.
-  exact hb.trans (by congr 2; exact Subsingleton.elim _ _)
+  rwa [h, RegularFormClass.baseChange_nsmul, RegularFormClass.baseChange_hyperbolicClass] at hb
 
 end RealPlace
 
@@ -146,10 +142,6 @@ theorem formClass_atFinitePlace_eq_nsmul_hyperbolicClass {Q : _root_.QuadraticFo
     formClass (Q.atFinitePlace v) (Nondegenerate.atFinitePlace hQ v) =
       m • hyperbolicClass (v.adicCompletion K) := by
   have hb := formClass_atFinitePlace Q hQ v
-  rw [h, RegularFormClass.baseChange_nsmul, RegularFormClass.baseChange_hyperbolicClass] at hb
-  -- `baseChange_hyperbolicClass` states its result with the `Invertible 2` instance transported
-  -- from `K`, while the goal uses the canonical instance of `K_v`; the two are equal because
-  -- `Invertible 2` is a subsingleton.
-  exact hb.trans (by congr 2; exact Subsingleton.elim _ _)
+  rwa [h, RegularFormClass.baseChange_nsmul, RegularFormClass.baseChange_hyperbolicClass] at hb
 
 end QuadraticForm
