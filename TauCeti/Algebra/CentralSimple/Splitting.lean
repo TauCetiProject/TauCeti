@@ -80,9 +80,9 @@ lemmas and the degree-size characterization hold at that generality. Central sim
 finite-dimensionality enter only in the existence theorems for splitting fields.
 
 Splitting ascends along field towers: if `L` splits `A`, so does every field extension `M` of `L`
-(`TauCeti.Algebra.IsSplittingField.of_isScalarTower`), and the matrix size does not change. So a
-splitting field may always be enlarged, for instance to its normal closure in order to obtain a
-Galois splitting field. This holds for an arbitrary, possibly noncommutative, `K`-algebra `A`.
+(`TauCeti.Algebra.IsSplittingField.of_isScalarTower`), and the matrix size does not change. A
+finite separable splitting extension may therefore be enlarged to its normal closure to obtain a
+finite Galois splitting extension. Ascent holds for any, possibly noncommutative, `K`-algebra `A`.
 
 ## References
 
