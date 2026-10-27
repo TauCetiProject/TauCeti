@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Affinoid.Basic
 public import Mathlib.RingTheory.Finiteness.Defs
+public import TauCeti.Analysis.Normed.Ring.Ultra
 
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
@@ -23,6 +24,12 @@ distinguished-variable induction adapts the central construction in
 `TauCeti.MvPowerSeries.finite_quotient_of_isMaximal`: a nonzero relation becomes distinguished
 after a change of variables, so Weierstrass division makes the algebra finite over the image of
 a Tate algebra with one fewer variable. Applying induction to that image retains nilpotents.
+
+The changes of variables are isometries of Gauss norms, so for a presentation
+`π : K⟨X₁, …, Xₙ⟩ → A` the normalisation can be chosen to send the Gauss unit ball into the image
+under `π` of the Gauss unit ball (`AlgHom.exists_finite_injective_map_unitClosedBall_le`). This
+compatibility relates the supremum seminorm of `A` to integrality over the presentation ring
+`π(K⟨X₁, …, Xₙ⟩°)`.
 -/
 
 public section
@@ -37,14 +44,17 @@ variable {K : Type u} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 local notation "Tate " σ:max => IsRestricted.subring (R := K) (fun _ : σ ↦ 1)
 
-/-- Removing a distinguished variable gives a finite map from a smaller Tate algebra. -/
+/-- Removing a distinguished variable gives a finite map from a smaller Tate algebra, sending
+each element of the Gauss unit ball to the image of an element of the Gauss unit ball. -/
 private theorem exists_finite_map_of_not_injective {σ : Type*} [Finite σ]
     {A : Type*} [CommRing A] [Algebra K A] (π : Tate (Option σ) →ₐ[K] A)
     (hπ : Function.Surjective π) (hne : ¬ Function.Injective π) :
-    ∃ γ : Tate σ →ₐ[K] A, γ.Finite := by
+    ∃ γ : Tate σ →ₐ[K] A, γ.Finite ∧ ∀ y, ‖y‖ ≤ 1 → ∃ z, ‖z‖ ≤ 1 ∧ π z = γ y := by
   obtain ⟨f, hf, hf0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     (mt (RingHom.injective_iff_ker_eq_bot (f := π.toRingHom)).mpr hne)
-  obtain ⟨e, s, hd, hu⟩ := MvPowerSeries.exists_algEquiv_isDistinguished_isUnit f hf0
+  obtain ⟨α, hα, s, hd, hu⟩ :=
+    MvPowerSeries.exists_restrictedTriangularEquiv_isDistinguished_isUnit f hf0
+  let e := MvPowerSeries.restrictedTriangularEquiv (R := K) α hα
   let R := Tate σ
   let S := PowerSeries.IsRestricted.subring (R := R) 1
   let _ : Algebra K S := ((algebraMap R S).comp (algebraMap K R)).toAlgebra
@@ -67,7 +77,12 @@ private theorem exists_finite_map_of_not_injective {σ : Type*} [Finite σ]
     exact ⟨Ideal.Quotient.mk I (Φ g), (hqmk _).trans (by simp [ψ])⟩
   have : Module.Finite R (S ⧸ I) := hd.finite_quotient zero_lt_one hu
   let γ : R →ₐ[K] A := ψ.comp (IsScalarTower.toAlgHom K R S)
-  refine ⟨γ, ?_⟩
+  -- The change of variables `Φ` preserves Gauss norms.
+  have hΦ (z : Tate (Option σ)) : ‖Φ z‖ = ‖z‖ :=
+    (Huber.norm_restrictedOptionEquiv (e z)).trans (MvPowerSeries.norm_restrictedTriangularEquiv ..)
+  refine ⟨γ, ?_, fun y hy ↦ ⟨Φ.symm (algebraMap R S y), by
+    rw [← hΦ, AlgEquiv.apply_symm_apply]
+    exact (MvPowerSeries.norm_algebraMap_isRestrictedSubring y).trans_le hy, rfl⟩⟩
   have hcoeff : (algebraMap R (S ⧸ I)).Finite := by
     rw [RingHom.finite_algebraMap]
     infer_instance
@@ -83,30 +98,40 @@ omit [CompleteSpace K] in
 private theorem exists_finite_injective_of_bijective {σ : Type*} [Finite σ]
     {A : Type*} [CommRing A] [Algebra K A] (π : Tate σ →ₐ[K] A)
     (hπ : Function.Bijective π) :
-    ∃ (n : ℕ) (g : Tate (Fin n) →ₐ[K] A), Function.Injective g ∧ g.Finite := by
+    ∃ (n : ℕ) (g : Tate (Fin n) →ₐ[K] A), Function.Injective g ∧ g.Finite ∧
+      ∀ x, ‖x‖ ≤ 1 → ∃ y, ‖y‖ ≤ 1 ∧ π y = g x := by
   let := Fintype.ofFinite σ
   let r : Tate (Fin (Fintype.card σ)) ≃ₐ[K] Tate σ :=
     IsRestricted.renameAlgEquiv (Fintype.equivFin σ).symm fun _ ↦ 1
   exact ⟨_, π.comp r.toAlgHom, hπ.1.comp r.injective,
-    AlgHom.Finite.of_surjective _ (hπ.2.comp r.surjective)⟩
+    AlgHom.Finite.of_surjective _ (hπ.2.comp r.surjective),
+    fun x hx ↦ ⟨r x, (IsRestricted.norm_renameAlgEquiv (Fintype.equivFin σ).symm
+      (fun _ ↦ (1 : ℝ)) x).trans_le hx, rfl⟩⟩
 
-/-- Normalisation for an arbitrary finite-variable Tate presentation. -/
+/-- Normalisation for an arbitrary finite-variable Tate presentation, sending each element of
+the Gauss unit ball to the image of an element of the Gauss unit ball. -/
 private theorem exists_finite_injective_of_surjective {σ : Type v} [Finite σ]
     {A : Type w} [CommRing A] [Algebra K A] [Nontrivial A]
     (π : Tate σ →ₐ[K] A) (hπ : Function.Surjective π) :
-    ∃ (n : ℕ) (g : Tate (Fin n) →ₐ[K] A), Function.Injective g ∧ g.Finite := by
+    ∃ (n : ℕ) (g : Tate (Fin n) →ₐ[K] A), Function.Injective g ∧ g.Finite ∧
+      ∀ x, ‖x‖ ≤ 1 → ∃ y, ‖y‖ ≤ 1 ∧ π y = g x := by
   suffices H : ∀ (B : Type w) [CommRing B] [Algebra K B] [Nontrivial B]
       (π : Tate σ →ₐ[K] B), Function.Surjective π →
-      ∃ (n : ℕ) (g : Tate (Fin n) →ₐ[K] B), Function.Injective g ∧ g.Finite by
+      ∃ (n : ℕ) (g : Tate (Fin n) →ₐ[K] B), Function.Injective g ∧ g.Finite ∧
+        ∀ x, ‖x‖ ≤ 1 → ∃ y, ‖y‖ ≤ 1 ∧ π y = g x by
     exact H A π hπ
   refine Finite.induction_empty_option
     (P := fun σ ↦ ∀ (A : Type w) [CommRing A] [Algebra K A] [Nontrivial A]
       (π : Tate σ →ₐ[K] A), Function.Surjective π →
-      ∃ (n : ℕ) (g : Tate (Fin n) →ₐ[K] A), Function.Injective g ∧ g.Finite)
+      ∃ (n : ℕ) (g : Tate (Fin n) →ₐ[K] A), Function.Injective g ∧ g.Finite ∧
+        ∀ x, ‖x‖ ≤ 1 → ∃ y, ‖y‖ ≤ 1 ∧ π y = g x)
     (fun {α β} e ih A _ _ _ π hπ ↦ ?_) (fun A _ _ _ π hπ ↦ ?_)
     (fun ih A _ _ _ π hπ ↦ ?_) σ
   · let r : Tate α ≃ₐ[K] Tate β := IsRestricted.renameAlgEquiv e fun _ ↦ 1
-    exact ih A (π.comp r.toAlgHom) (hπ.comp r.surjective)
+    obtain ⟨n, g, hg, hgf, hball⟩ := ih A (π.comp r.toAlgHom) (hπ.comp r.surjective)
+    refine ⟨n, g, hg, hgf, fun x hx ↦ ?_⟩
+    obtain ⟨y, hy, hyx⟩ := hball x hx
+    exact ⟨r y, (IsRestricted.norm_renameAlgEquiv e (fun _ ↦ (1 : ℝ)) y).trans_le hy, hyx⟩
   · apply exists_finite_injective_of_bijective π ⟨?_, hπ⟩
     intro a b hab
     obtain ⟨x, rfl⟩ := algebraMap_isRestrictedSubring_surjective (R := K) a
@@ -115,13 +140,17 @@ private theorem exists_finite_injective_of_surjective {σ : Type v} [Finite σ]
     rw [(FaithfulSMul.algebraMap_injective K A) hab]
   · by_cases h : Function.Injective π
     · exact exists_finite_injective_of_bijective π ⟨h, hπ⟩
-    · obtain ⟨γ, hγ⟩ := exists_finite_map_of_not_injective π hπ h
-      obtain ⟨n, g, hg, hgf⟩ := ih γ.range γ.rangeRestrict γ.rangeRestrict_surjective
+    · obtain ⟨γ, hγ, hγball⟩ := exists_finite_map_of_not_injective π hπ h
+      obtain ⟨n, g, hg, hgf, hball⟩ := ih γ.range γ.rangeRestrict γ.rangeRestrict_surjective
       have hval : γ.range.val.Finite := by
         apply AlgHom.Finite.of_comp_finite (f := γ.rangeRestrict)
         rw [AlgHom.val_comp_rangeRestrict]
         exact hγ
-      exact ⟨n, γ.range.val.comp g, Subtype.val_injective.comp hg, hval.comp hgf⟩
+      refine ⟨n, γ.range.val.comp g, Subtype.val_injective.comp hg, hval.comp hgf,
+        fun x hx ↦ ?_⟩
+      obtain ⟨y, hy, hyx⟩ := hball x hx
+      obtain ⟨z, hz, hzy⟩ := hγball y hy
+      exact ⟨z, hz, hzy.trans (congrArg Subtype.val hyx)⟩
 
 /-- **Affinoid Noether normalisation.** Every nonzero affinoid algebra over a complete
 ultrametric field is finite over an injectively embedded finite-variable Tate algebra.
@@ -130,6 +159,25 @@ theorem IsAffinoidAlgebra.exists_finite_injective {A : Type*} [CommRing A] [Alge
     [Nontrivial A] (hA : IsAffinoidAlgebra K A) :
     ∃ (n : ℕ) (g : Tate (Fin n) →ₐ[K] A), Function.Injective g ∧ g.Finite := by
   obtain ⟨n, π, hπ⟩ := (isAffinoidAlgebra_iff K A).mp hA
-  exact exists_finite_injective_of_surjective π hπ
+  obtain ⟨d, g, hg, hgf, -⟩ := exists_finite_injective_of_surjective π hπ
+  exact ⟨d, g, hg, hgf⟩
 
 end TauCeti
+
+/-- **Affinoid Noether normalisation adapted to a presentation.** For a Tate presentation `π` of
+a nonzero algebra, a finite injective map `g` from a Tate algebra can be chosen to send the
+Gauss unit ball into the image under `π` of the Gauss unit ball. -/
+theorem AlgHom.exists_finite_injective_map_unitClosedBall_le {K : Type*} [NormedField K]
+    [IsUltrametricDist K] [CompleteSpace K] {σ : Type*} [_root_.Finite σ] {A : Type*} [CommRing A]
+    [Algebra K A] [Nontrivial A]
+    (π : MvPowerSeries.IsRestricted.subring (R := K) (fun _ : σ ↦ 1) →ₐ[K] A)
+    (hπ : Function.Surjective π) :
+    ∃ (n : ℕ) (g : MvPowerSeries.IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1) →ₐ[K] A),
+      Function.Injective g ∧ g.Finite ∧
+        (Subring.unitClosedBall _).map g.toRingHom ≤
+          (Subring.unitClosedBall _).map π.toRingHom := by
+  obtain ⟨n, g, hg, hgf, hball⟩ := TauCeti.exists_finite_injective_of_surjective π hπ
+  refine ⟨n, g, hg, hgf, ?_⟩
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨y, hy, hyx⟩ := hball x (Subring.mem_unitClosedBall.mp hx)
+  exact ⟨y, Subring.mem_unitClosedBall.mpr hy, hyx⟩
