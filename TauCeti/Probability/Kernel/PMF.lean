@@ -120,38 +120,6 @@ theorem existsUnique_isMarkovKernel_of_tsum_eq_one [Countable α]
 
 end ToPMF
 
-section Composition
-
-variable [Countable α] [MeasurableSingletonClass α]
-
-/-- Composition of discrete transition kernels is row-wise PMF binding. -/
-@[simp]
-theorem ofPMF_comp_ofPMF [Countable β] [MeasurableSingletonClass β]
-    (p : α → PMF β) (q : β → PMF γ) :
-    ofPMF q ∘ₖ ofPMF p = ofPMF (fun a => (p a).bind q) := by
-  ext a s hs
-  simp only [comp_apply' _ _ _ hs, ofPMF_apply, PMF.toMeasure_bind_apply _ _ _ hs,
-    lintegral_countable', PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _)]
-  exact tsum_congr fun b => mul_comm _ _
-
-/-- Discrete Chapman–Kolmogorov: sum over the intermediate state. -/
-theorem pow_add_apply_singleton (κ : Kernel α α) (m n : ℕ) (a b : α) :
-    (κ ^ (m + n)) a {b} = ∑' c, (κ ^ m) a {c} * (κ ^ n) c {b} := by
-  rw [pow_add_apply_eq_lintegral _ _ _ _ (measurableSet_singleton _),
-    lintegral_countable']
-  exact tsum_congr fun c => mul_comm _ _
-
-end Composition
-
-/-- The row PMF of a composite kernel is the binding of its row PMFs. -/
-@[simp]
-theorem toPMF_comp [Countable β] [MeasurableSingletonClass β]
-    [Countable γ] [MeasurableSingletonClass γ] (κ : Kernel α β)
-    (η : Kernel β γ) [IsMarkovKernel κ] [IsMarkovKernel η] (a : α) :
-    (η ∘ₖ κ).toPMF a = (κ.toPMF a).bind η.toPMF := by
-  ext c
-  simp [toPMF_apply, PMF.bind_apply, comp_apply', lintegral_countable', mul_comm]
-
 end ProbabilityTheory.Kernel
 
 namespace PMF
@@ -169,3 +137,39 @@ theorem toMeasure_bind (p : PMF α) (q : α → PMF β) :
   exact tsum_congr fun a => mul_comm _ _
 
 end PMF
+
+namespace ProbabilityTheory.Kernel
+
+variable {α β γ : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace γ]
+
+section Composition
+
+variable [Countable α] [MeasurableSingletonClass α]
+
+/-- Composition of discrete transition kernels is row-wise PMF binding. -/
+@[simp]
+theorem ofPMF_comp_ofPMF [Countable β] [MeasurableSingletonClass β]
+    (p : α → PMF β) (q : β → PMF γ) :
+    ofPMF q ∘ₖ ofPMF p = ofPMF (fun a => (p a).bind q) := by
+  ext a : 1
+  rw [comp_apply, ofPMF_apply, ofPMF_apply, PMF.toMeasure_bind]
+
+/-- Discrete Chapman–Kolmogorov: sum over the intermediate state. -/
+theorem pow_add_apply_singleton (κ : Kernel α α) (m n : ℕ) (a b : α) :
+    (κ ^ (m + n)) a {b} = ∑' c, (κ ^ m) a {c} * (κ ^ n) c {b} := by
+  rw [pow_add_apply_eq_lintegral _ _ _ _ (measurableSet_singleton _),
+    lintegral_countable']
+  exact tsum_congr fun c => mul_comm _ _
+
+end Composition
+
+/-- The row PMF of a composite kernel is the binding of its row PMFs. -/
+@[simp]
+theorem toPMF_comp [Countable β] [MeasurableSingletonClass β]
+    [Countable γ] [MeasurableSingletonClass γ] (κ : Kernel α β)
+    (η : Kernel β γ) [IsMarkovKernel κ] [IsMarkovKernel η] (a : α) :
+    (η ∘ₖ κ).toPMF a = (κ.toPMF a).bind η.toPMF := by
+  apply PMF.toMeasure_injective
+  rw [toPMF_toMeasure, PMF.toMeasure_bind, ofPMF_toPMF, toPMF_toMeasure, comp_apply]
+
+end ProbabilityTheory.Kernel
