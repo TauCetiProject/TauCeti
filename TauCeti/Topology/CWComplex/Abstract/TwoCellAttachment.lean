@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.AlgebraicTopology.FundamentalGroup.TwoCellAttachment
+public import TauCeti.Topology.CWComplex.Abstract.AttachCells
 public import TauCeti.Topology.CWComplex.Abstract.CellAttachment
+public import TauCeti.Topology.CWComplex.Abstract.Trans
 
 import TauCeti.Topology.UnitInterval.OpenSquare
 
@@ -32,6 +34,11 @@ attaching 2-cells along loops in a Hausdorff space gives a Hausdorff space. This
 presentation complex of a group presentation, built from squares, start the tower of
 `TauCeti.killHomotopyGroups`.
 
+Read through Mathlib's categorical `AttachCells` (`TauCeti.TwoCellAttachment.attachCells`), the
+comparison also transfers CW structures: if `X` is a Hausdorff CW complex without cells of
+dimension at least `2`, such as a wedge of circles, then `TwoCellAttachment γ` is a CW complex
+(`TauCeti.TwoCellAttachment.cwComplex`) whose cells are those of `X` and the attached squares.
+
 ## Main definitions
 
 * `TauCeti.TwoCellAttachment.diskCell`: the characteristic map of the `i`-th cell, on the disk.
@@ -39,6 +46,12 @@ presentation complex of a group presentation, built from squares, start the towe
   circle of the disk.
 * `TauCeti.TwoCellAttachment.isoCellAttachment`: the isomorphism
   `cellAttachment (attachingMap γ) ≅ TwoCellAttachment γ`.
+* `TauCeti.TwoCellAttachment.attachCells`: `TwoCellAttachment γ` is obtained from `X` by attaching
+  2-disks, in the sense of `AttachCells`.
+* `TauCeti.TwoCellAttachment.cwComplex`: the CW structure on `TwoCellAttachment γ` over a CW
+  complex of dimension at most `1`, with its cells described by
+  `TauCeti.TwoCellAttachment.cwComplexCellEquiv` and
+  `TauCeti.TwoCellAttachment.cwComplexCellTwoEquiv`.
 
 ## Main results
 
@@ -220,6 +233,100 @@ theorem cellAttachmentCell_isoCellAttachment_hom (i : ι) :
 attachment of disks (`TauCeti.instT2SpaceCellAttachment`). -/
 instance instT2Space [T2Space X] : T2Space (TwoCellAttachment γ) :=
   (TopCat.homeoOfIso (isoCellAttachment γ)).t2Space
+
+/-! ### The CW structure -/
+
+/-- `TwoCellAttachment γ` is obtained from `X` by attaching 2-disks, in the sense of Mathlib's
+categorical `AttachCells` structure, along the inclusion of `X`. The cells are the characteristic
+maps `TauCeti.TwoCellAttachment.diskCell γ i` (`TauCeti.TwoCellAttachment.attachCells_cell`),
+indexed by `ι` through `TauCeti.TwoCellAttachment.attachCellsEquiv`. -/
+def attachCells :
+    HomotopicalAlgebra.AttachCells.{u} (TopCat.RelativeCWComplex.basicCell 2)
+      (TopCat.ofHom (incl γ)) :=
+  (cellAttachmentAttachCells (attachingMap γ)).ofArrowIso
+    (Arrow.isoMk (Iso.refl _) (isoCellAttachment γ) (by simp))
+
+/-- The cells of `TauCeti.TwoCellAttachment.attachCells γ` are indexed by `ι`. -/
+def attachCellsEquiv : (attachCells γ).ι ≃ ι :=
+  Equiv.refl _
+
+/-- The cells of `TauCeti.TwoCellAttachment.attachCells γ` are the characteristic maps of the
+squares, read on the disk. -/
+@[simp]
+lemma attachCells_cell (i : ι) :
+    (attachCells γ).cell ((attachCellsEquiv γ).symm i) = diskCell γ i :=
+  (Category.assoc _ _ _).symm.trans <|
+    (congrArg (· ≫ (isoCellAttachment γ).hom) (cellAttachmentAttachCells_cell _ i)).trans
+      (cellAttachmentCell_isoCellAttachment_hom γ i)
+
+section CWComplex
+
+open Topology.RelCWComplex (map)
+
+variable [T2Space X] [Topology.CWComplex (univ : Set X)]
+  (hX : ∀ m, 2 ≤ m → IsEmpty (RelCWComplex.cell (univ : Set X) m))
+
+/-- **Attaching 2-cells to a CW complex of dimension at most one gives a CW complex.** If `X` is
+a Hausdorff CW complex with no cells of dimension at least `2`, then `TwoCellAttachment γ` is a CW
+complex. Its cells of dimension other than `2` are the cells of `X`, included by `incl γ`
+(`TauCeti.TwoCellAttachment.cwComplexCellEquiv`), and its `2`-cells are the attached squares,
+indexed by `ι` (`TauCeti.TwoCellAttachment.cwComplexCellTwoEquiv`). -/
+@[instance_reducible]
+def cwComplex : Topology.CWComplex (univ : Set (TwoCellAttachment γ)) :=
+  (attachCells γ).toRelativeCWComplex.cwComplexTrans hX fun _ hm ↦
+    (attachCells γ).isEmpty_toRelativeCWComplex_attachCells_ι hm.ne _
+
+/-- The `m`-cells of `TauCeti.TwoCellAttachment.cwComplex` are the `m`-cells of `X` and the cells
+of `TauCeti.TwoCellAttachment.attachCells γ` attached in dimension `m`. -/
+private abbrev cwComplexCellEquiv' (m : ℕ) :
+    @RelCWComplex.cell _ _ (univ : Set (TwoCellAttachment γ)) ∅
+      (cwComplex γ hX).instRelCWComplex m ≃
+      RelCWComplex.cell (univ : Set X) m ⊕
+        ((attachCells γ).toRelativeCWComplex.attachCells m (not_isMax m)).ι :=
+  TopCat.RelativeCWComplex.cwComplexTransCellEquiv _ _ _ m
+
+/-- The cells of `TauCeti.TwoCellAttachment.cwComplex` of dimension `m ≠ 2` are the cells of
+`X`. -/
+def cwComplexCellEquiv {m : ℕ} (hm : m ≠ 2) :
+    @RelCWComplex.cell _ _ (univ : Set (TwoCellAttachment γ)) ∅
+      (cwComplex γ hX).instRelCWComplex m ≃
+      RelCWComplex.cell (univ : Set X) m :=
+  haveI := (attachCells γ).isEmpty_toRelativeCWComplex_attachCells_ι hm (not_isMax m)
+  (cwComplexCellEquiv' γ hX m).trans (Equiv.sumEmpty _ _)
+
+/-- The `2`-cells of `TauCeti.TwoCellAttachment.cwComplex` are indexed by `ι`. -/
+def cwComplexCellTwoEquiv :
+    @RelCWComplex.cell _ _ (univ : Set (TwoCellAttachment γ)) ∅
+      (cwComplex γ hX).instRelCWComplex 2 ≃ ι :=
+  haveI := hX 2 le_rfl
+  ((cwComplexCellEquiv' γ hX 2).trans (Equiv.emptySum _ _)).trans
+    ((attachCells γ).toRelativeCWComplexAttachCellsEquiv.trans (attachCellsEquiv γ))
+
+/-- The characteristic map of a cell of `X` of dimension `m ≠ 2`, as a cell of
+`TauCeti.TwoCellAttachment.cwComplex`, is its characteristic map in `X` followed by `incl γ`. -/
+@[simp]
+lemma coe_map_cwComplexCellEquiv_symm {m : ℕ} (hm : m ≠ 2)
+    (i : RelCWComplex.cell (univ : Set X) m) :
+    ⇑(@map _ _ (univ : Set (TwoCellAttachment γ)) ∅ (cwComplex γ hX).instRelCWComplex m
+        ((cwComplexCellEquiv γ hX hm).symm i)) = incl γ ∘ map m i :=
+  TopCat.RelativeCWComplex.coe_map_cwComplexTransCellEquiv_symm_inl (X := TopCat.of X) _ _ _ m i
+
+/-- The characteristic map of the `2`-cell indexed by `i` is the characteristic map
+`TauCeti.TwoCellAttachment.diskCell γ i` of the `i`-th square, read on the closed unit ball of the
+sup norm through the radial homeomorphism `TauCeti.diskHomeomorphClosedBall`. -/
+@[simp]
+lemma map_cwComplexCellTwoEquiv_symm (i : ι) (y : Metric.closedBall (0 : Fin 2 → ℝ) 1) :
+    @map _ _ (univ : Set (TwoCellAttachment γ)) ∅ (cwComplex γ hX).instRelCWComplex 2
+        ((cwComplexCellTwoEquiv γ hX).symm i) y =
+      diskCell γ i ((diskHomeomorphClosedBall 2).symm y) := by
+  have := hX 2 le_rfl
+  refine (TopCat.RelativeCWComplex.map_cwComplexTransCellEquiv_symm_inr _ _ _ 2
+    ((attachCells γ).toRelativeCWComplexAttachCellsEquiv.symm ((attachCellsEquiv γ).symm i))
+    y).trans ?_
+  rw [HomotopicalAlgebra.AttachCells.toRelativeCWComplex_cells_ι, Equiv.apply_symm_apply,
+    attachCells_cell]
+
+end CWComplex
 
 end TwoCellAttachment
 

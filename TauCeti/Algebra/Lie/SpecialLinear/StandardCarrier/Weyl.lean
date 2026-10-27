@@ -65,7 +65,7 @@ cut out from. -/
 theorem points_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
     points r A =
       kostantToralPointsSubgroup (rootGenerator r) (cartanGenerator r) (rep r)
-        (lattice r).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (lattice r).toAddSubgroup (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A := by
   rw [points_def, kostantToralPointsSubgroup_def, definingIdeal_def]
 
@@ -74,7 +74,7 @@ the type `A_r` carrier. -/
 noncomputable def simpleWeylPoint (i : Fin r) (A : Type v) [CommRing A] : points r A :=
   (MulEquiv.subgroupCongr (points_eq_kostantToralPointsSubgroup r A)).symm
     (kostantToralWeylPoint (rootGenerator r) (cartanGenerator r) (rep r)
-      (lattice r).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (lattice r).toAddSubgroup (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) (.inl i) (.inr i) A)
 
 /-- In the coordinate basis, the Weyl representative is the matrix of the integral Weyl
@@ -83,7 +83,7 @@ theorem coe_simpleWeylPoint (i : Fin r) (A : Type v) [CommRing A] :
     (simpleWeylPoint r i A : Matrix.GeneralLinearGroup (Fin (r + 1)) A) =
       Units.map (LinearMap.toMatrixAlgEquiv ((latticeBasis r).baseChange A)).toMulEquiv
         (kostantWeylGL (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+          (rep_kostantForm_mem_lattice r)
           (isNilpotent_rep_rootGenerator r (.inl i)) (isNilpotent_rep_rootGenerator r (.inr i))
           A) := by
   rw [simpleWeylPoint, MulEquiv.subgroupCongr_symm_apply, coe_kostantToralWeylPoint]
@@ -99,7 +99,7 @@ theorem map_simpleWeylPoint (i : Fin r) {A : Type u} {B : Type v} [CommRing A] [
   simp only [simpleWeylPoint, MulEquiv.subgroupCongr_symm_apply]
   have hmap := congrArg Subtype.val
     (map_kostantToralWeylPoint (rootGenerator r) (cartanGenerator r) (rep r)
-      (lattice r).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (lattice r).toAddSubgroup (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) φ (.inl i) (.inr i))
   simpa only [GeneralLinear.coe_mapHopfIdealPointsSubgroup, MulEquiv.subgroupCongr_apply,
     RingHom.toIntAlgHom_toRingHom] using hmap
@@ -113,7 +113,7 @@ theorem simpleWeylPoint_conj_rootSubgroupPoints (i : Fin r) (A : Type v) [CommRi
   have hconj := congrArg Subtype.val
     (kostantToralWeylPoint_conj_rootSubgroupPoints (wt := weight r) (i := .inl i) (j := .inr i)
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (isNilpotent_rep_rootGenerator r)
+      (rep_kostantForm_mem_lattice r) (isNilpotent_rep_rootGenerator r)
       (latticeBasis r) (isSl2Triple_rep_rootGenerator r i) A u)
   apply Subtype.ext
   simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_simpleWeylPoint, coe_rootSubgroupPoints,
@@ -134,7 +134,7 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin r) (A : Type v) [CommRin
   have hconj := congrArg Subtype.val
     (kostantToralWeylPoint_conj_weightTorusPoints (wt := weight r) (i := .inl i) (j := .inr i)
       (c := i) (α := rootGeneratorWeight r (.inl i)) (rootGenerator r) (cartanGenerator r)
-      (rep r) (lattice r).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep r) (lattice r).toAddSubgroup (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (isSl2Triple_rep_rootGenerator r i)
       (fun q => lie_cartanGenerator_rootGenerator r (.inl i) q)
       (lie_cartanGenerator_rootGenerator_inr r i) (isCartanWeightVector_latticeBasis r) A s)
@@ -198,7 +198,7 @@ private theorem weylUnit_apply_single (i : Fin r) (j : Fin (r + 1)) :
 
 private theorem kostantWeylRestrict_latticeBasis (i : Fin r) (j : Fin (r + 1)) :
     kostantWeylRestrict (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r (.inl i)) (isNilpotent_rep_rootGenerator r (.inr i))
         (latticeBasis r j) =
       (if j = i.castSucc then (-1 : ℤ) else 1) •
@@ -220,7 +220,7 @@ theorem coe_simpleWeylPoint_apply (i : Fin r) (A : Type v) [CommRing A] (a b : F
   -- The mapped unit's value is definitionally the basis matrix of its underlying endomorphism.
   change (LinearMap.toMatrixAlgEquiv ((latticeBasis r).baseChange A)
     (kostantWeylGL (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r (.inl i)) (isNilpotent_rep_rootGenerator r (.inr i))
       A).val) a b = _
   rw [kostantWeylGL_val, LinearMap.toMatrixAlgEquiv_apply, Module.Basis.baseChange_apply,
@@ -274,7 +274,7 @@ theorem simpleWeylPoint_conj_rootSubgroupPoints_inr (i : Fin r) (A : Type v) [Co
     have hconj := congrArg Subtype.val
       (kostantToralWeightTorusPoints_conj_rootSubgroupPoints (i := .inl i)
         (α := rootGeneratorWeight r (.inl i)) (rootGenerator r) (cartanGenerator r) (rep r)
-        (lattice r).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (lattice r).toAddSubgroup (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)
         (isCartanWeightVector_latticeBasis r)
         (fun q => lie_cartanGenerator_rootGenerator r (.inl i) q) A (Pi.mulSingle i (-1))

@@ -5,23 +5,32 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Projection.PrincipalAngle
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.OpNorm
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.SinTheta.Basic
+public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# Frobenius and Ky Fan Davis–Kahan `sin Θ` bounds
+# Davis–Kahan `sin Θ` bounds for concrete norms
 
 The Davis–Kahan bounds for an arbitrary unitarily invariant seminorm specialize to the
-Frobenius norm and every Ky Fan norm. Both the residual form, for a trial map `X`, and the
-perturbation form, for invariant subspaces of two self-adjoint operators, have constant `1`
-under interval/exterior spectral separation.
+operator norm, the Frobenius norm and every Ky Fan norm, with constant `1` under
+interval/exterior spectral separation.
 
-The reverse interval/exterior orientation is also available for each norm. These specialize
-the general bounds in `UnitarilyInvariantSeminorm.SinTheta.Basic`.
+The Frobenius and Ky Fan bounds include both the residual form, for a trial map `X`, and the
+perturbation form, for invariant subspaces of two self-adjoint operators. The reverse
+interval/exterior orientation is also available for these two norms. The operator-norm
+perturbation bound controls the directed sine map `Submodule.sinThetaMap`.
+
+These specialize the general bounds in `UnitarilyInvariantSeminorm.SinTheta.Basic`.
 
 ## Main results
 
-All results below are in the `TauCeti.UnitarilyInvariantSeminorm` namespace.
+* `Submodule.mul_norm_sinThetaMap_le_norm_sub_of_pointIntervalExteriorGap`:
+  the operator-norm perturbation bound for the directed sine map.
+
+The following declarations are in the `TauCeti.UnitarilyInvariantSeminorm` namespace.
 
 * `mul_frobenius_starProjection_comp_le_frobenius_sylvester_apply`:
   the Frobenius residual bound.
@@ -122,3 +131,24 @@ theorem mul_kyFan_starProjection_comp_starProjection_le_kyFan_sub_swap (k : ℕ)
   (kyFan 𝕜 E E k).mul_map_starProjection_comp_starProjection_le_map_sub_swap hA hB hU hV h
 
 end TauCeti.UnitarilyInvariantSeminorm
+
+namespace Submodule
+
+variable {𝕜 E : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+
+/-- An interval/exterior spectral gap bounds the directed sine between invariant
+subspaces by the operator perturbation. -/
+theorem mul_norm_sinThetaMap_le_norm_sub_of_pointIntervalExteriorGap
+    (U V : Submodule 𝕜 E) {A B : E →L[𝕜] E}
+    (hA : (A : E →ₗ[𝕜] E).IsSymmetric) (hB : (B : E →ₗ[𝕜] E).IsSymmetric)
+    (hU : ∀ x ∈ U, A x ∈ U) (hV : ∀ x ∈ V, B x ∈ V) {a b δ : ℝ}
+    (hgap : Module.End.PointIntervalExteriorGap (A : E →ₗ[𝕜] E) U
+      (B : E →ₗ[𝕜] E) Vᗮ a b δ) :
+    δ * ‖U.sinThetaMap V‖ ≤ ‖B - A‖ := by
+  simpa only [sinThetaMap_def, TauCeti.UnitarilyInvariantSeminorm.opNorm_apply,
+    map_sub, LinearMap.toContinuousLinearMap_coe] using
+    (TauCeti.UnitarilyInvariantSeminorm.mul_map_starProjection_comp_starProjection_le_map_sub
+      (TauCeti.UnitarilyInvariantSeminorm.opNorm 𝕜 E E) hA hB hU hV hgap)
+
+end Submodule

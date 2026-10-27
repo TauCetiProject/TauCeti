@@ -7,7 +7,9 @@ module
 
 public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 public import Mathlib.RingTheory.KrullDimension.Field
+public import Mathlib.RingTheory.Ideal.AssociatedPrime.Localization
 public import TauCeti.RingTheory.Depth
+import TauCeti.RingTheory.KrullDimension.Module
 
 /-!
 # Cohen–Macaulay modules over a local ring
@@ -34,6 +36,11 @@ The zero module is Cohen–Macaulay by convention: its depth is `⊤` while its 
   dimension zero, such as a field, is Cohen–Macaulay.
 * `Module.isCohenMacaulay_self_of_isDomain_of_krullDimLE_one`: a Noetherian local domain of
   dimension at most one, such as a discrete valuation ring, is Cohen–Macaulay over itself.
+* `Module.IsCohenMacaulay.ringKrullDim_quotient_eq_supportDim` and
+  `Module.IsCohenMacaulay.associatedPrimes_eq_minimalPrimes`: a Cohen–Macaulay module is unmixed.
+  For every associated prime `p`, the dimension of `R ⧸ p` is the dimension of the support, and
+  the associated primes are exactly the minimal primes of the support, so there are no embedded
+  primes (Stacks, Lemma 10.103.7 (0BUS)).
 -/
 
 public section
@@ -134,6 +141,40 @@ theorem isCohenMacaulay_of_krullDimLE_zero [Ring.KrullDimLE 0 R] : IsCohenMacaul
   refine isCohenMacaulay_iff_supportDim_le_depth.2 <|
     (supportDim_le_ringKrullDim R M).trans <| (Ring.krullDimLE_iff.1 ‹_›).trans ?_
   exact_mod_cast zero_le
+
+/-- Over a Noetherian local ring, the quotient by an associated prime of a Cohen–Macaulay module
+has the dimension of the support of the module. Stacks, Lemma 10.103.7 (0BUS); H. Matsumura,
+*Commutative Ring Theory*, Theorem 17.3 (i). -/
+@[stacks 0BUS]
+theorem IsCohenMacaulay.ringKrullDim_quotient_eq_supportDim (h : IsCohenMacaulay R M)
+    {p : Ideal R} (hp : IsAssociatedPrime p M) : ringKrullDim (R ⧸ p) = supportDim R M := by
+  have : Nontrivial M :=
+    not_subsingleton_iff_nontrivial.1 fun _ ↦ not_isAssociatedPrime_of_subsingleton hp
+  exact le_antisymm hp.ringKrullDim_quotient_le_supportDim
+    (h.depth_eq ▸ depth_le_ringKrullDim_quotient_of_isAssociatedPrime hp)
+
+/-- The associated primes of a Cohen–Macaulay module over a Noetherian local ring are the minimal
+primes of its support: a Cohen–Macaulay module has no embedded primes. Stacks, Lemma 10.103.7
+(0BUS). -/
+@[stacks 0BUS]
+theorem IsCohenMacaulay.associatedPrimes_eq_minimalPrimes (h : IsCohenMacaulay R M) :
+    associatedPrimes R M = (annihilator R M).minimalPrimes := by
+  refine Set.Subset.antisymm (fun p hp ↦ ?_)
+    (associatedPrimes.minimalPrimes_annihilator_subset_associatedPrimes R M)
+  have hp : IsAssociatedPrime p M := AssociatedPrimes.mem_iff.1 hp
+  have : Nontrivial M :=
+    not_subsingleton_iff_nontrivial.1 fun _ ↦ not_isAssociatedPrime_of_subsingleton hp
+  refine ⟨⟨hp.isPrime, Submodule.annihilator_top (R := R) (M := M) ▸ hp.annihilator_le⟩,
+    fun q ⟨hq, hann⟩ hqp ↦ by_contra fun hpq ↦ ?_⟩
+  -- A prime `q ⊊ p` of the support would give `dim (R ⧸ p) + 1 ≤ dim (R ⧸ q) ≤ dim Supp M`,
+  -- while `dim (R ⧸ p) = dim Supp M` is finite.
+  have hle := (TauCeti.ringKrullDim_quotient_add_one_le_of_lt (lt_of_le_not_ge hqp hpq)).trans
+    (supportDim_eq_ringKrullDim_quotient_annihilator R M ▸
+      ringKrullDim_le_of_surjective _ (Ideal.Quotient.factor_surjective hann))
+  rw [h.ringKrullDim_quotient_eq_supportDim hp] at hle
+  obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := R) (M := M)
+  rw [hk] at hle
+  exact absurd (by exact_mod_cast hle : k + 1 ≤ k) (Nat.not_succ_le_self k)
 
 end Module
 

@@ -35,9 +35,7 @@ theorem WittRing.eq_zero_of_dimMod2_eq_zero_of_isSepClosed {x : WittRing K}
   obtain ⟨m, hm⟩ := heven
   have hq : q = m • hyperbolicClass K :=
     RegularFormClass.rank_injective_of_isSepClosed (by
-      rw [← RegularFormClass.rankHom_apply (m • hyperbolicClass K), map_nsmul,
-        RegularFormClass.rankHom_apply, rank_hyperbolicClass]
-      simpa [hm, nsmul_eq_mul] using (Nat.mul_two m).symm)
+      rw [rank_nsmul_hyperbolicClass, hm, two_mul])
   rw [hq, map_nsmul, wittClass_hyperbolicClass, smul_zero]
 
 /-- Dimension modulo two is an isomorphism for the Witt ring of a separably closed field. -/

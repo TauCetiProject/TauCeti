@@ -7,11 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
 public import TauCeti.Topology.CWComplex.Classical.CWType
-import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
-import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
-import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
-import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
-import TauCeti.AlgebraicTopology.Homotopy.Whitehead
+import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
 
 /-!
 # Uniqueness of `K(G, 1)` spaces of CW type
@@ -28,15 +24,11 @@ with the identifications of both fundamental groups with `G`
 (`TauCeti.IsAspherical.exists_homotopyEquiv_classifyingSpace`). So the classifying space is well
 defined up to homotopy equivalence among spaces of CW type.
 
-The cellular classifying space of a presentation of `π₁(X, x)` maps into both spaces by pointed
-maps realizing any homomorphism of fundamental groups
-(`TauCeti.exists_mapOfEq_cellularClassifyingSpace`). Choosing these maps `f` into `X` and `g` into
-`Y` to realize an identification `ψ` and `φ ∘ ψ`, both are weak homotopy equivalences, because all
-the spaces are aspherical. Since `X` has CW type, the identity of `X` lifts through `f` up to
-homotopy to a map `s` from `X` to the cellular classifying space, and `g ∘ s` is a weak homotopy
-equivalence between spaces of CW type, hence a homotopy equivalence by Whitehead's theorem. The
-homotopy from `f ∘ s` to the identity moves the base point, which is why the realization of `φ`
-involves a change of base point
+The cellular classifying space `C` of a presentation of `π₁(X, x)` is homotopy equivalent to both
+spaces by homotopy equivalences `f : C ≃ₕ X` and `g : C ≃ₕ Y` whose forward maps are pointed and
+realize an identification `ψ` and `φ ∘ ψ` (`TauCeti.cellularClassifyingSpaceHomotopyEquiv`). The
+composite `g ∘ f⁻¹` is the required homotopy equivalence. The homotopy from `f ∘ f⁻¹` to the
+identity moves the base point, which is why the realization of `φ` involves a change of base point
 (`ContinuousMap.Homotopy.exists_path_fundamentalGroupMulEquivOfPath_map_comp`).
 
 The hypothesis of CW type on both spaces cannot be dropped: a point and the Warsaw circle are both
@@ -87,27 +79,14 @@ theorem IsAspherical.exists_homotopyEquiv {X Y : Type u} [TopologicalSpace X]
     exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace (FundamentalGroup X x)
   obtain ⟨ψ⟩ := hC.nonempty_fundamentalGroupMulEquiv
   have : PathConnectedSpace (cellularClassifyingSpace R) := hC.isAspherical.pathConnectedSpace
-  have hπ {Z : Type u} [TopologicalSpace Z] {z : Z} (hZ : IsAspherical Z z) :
-      ∀ k, 2 ≤ k → Subsingleton (π_ k Z z) := fun k hk ↦ by
-    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hk
-    exact hZ.subsingleton_homotopyGroup n
-  -- Pointed maps from the cellular classifying space realizing `ψ` and `φ ∘ ψ`.
-  obtain ⟨f, hf, hfψ⟩ := exists_mapOfEq_cellularClassifyingSpace R (hπ hX) ψ.toMonoidHom
-  obtain ⟨g, hg, hgψ⟩ :=
-    exists_mapOfEq_cellularClassifyingSpace R (hπ hY) (ψ.trans φ).toMonoidHom
-  have hfw : f.IsWeakHomotopyEquivalence :=
-    (hC.isAspherical.isWeakHomotopyEquivalence_iff hX hf).2 (hfψ ▸ ψ.bijective)
-  have hgw : g.IsWeakHomotopyEquivalence :=
-    (hC.isAspherical.isWeakHomotopyEquivalence_iff hY hg).2 (hgψ ▸ (ψ.trans φ).bijective)
-  -- A homotopy right inverse `s` of `f`; then `g ∘ s` is a weak homotopy equivalence.
-  obtain ⟨s, ⟨H⟩⟩ := hfw.exists_comp_homotopic (ContinuousMap.id X)
-  have hgs : (g.comp s).IsWeakHomotopyEquivalence :=
-    hgw.comp (hfw.of_postcomp (ContinuousMap.IsWeakHomotopyEquivalence.id.of_homotopic ⟨H.symm⟩))
-  refine ⟨hgs.homotopyEquiv, ?_⟩
-  rw [hgs.homotopyEquiv_toFun]
-  refine H.exists_path_fundamentalGroupMulEquivOfPath_map_comp hf hg φ.toMonoidHom ?_
-  rw [hfψ, hgψ]
-  exact (MulEquiv.toMonoidHom_trans ψ φ).symm
+  -- Pointed homotopy equivalences from the cellular classifying space realizing `ψ` and `φ ∘ ψ`.
+  set f := cellularClassifyingSpaceHomotopyEquiv R hX ψ
+  set g := cellularClassifyingSpaceHomotopyEquiv R hY (ψ.trans φ)
+  -- `f⁻¹` is a homotopy right inverse of `f`, so `g ∘ f⁻¹` realizes `φ` up to basepoint change.
+  refine ⟨f.symm.trans g, f.right_inv.some.exists_path_fundamentalGroupMulEquivOfPath_map_comp
+    (cellularClassifyingSpaceHomotopyEquiv_toFun_basepoint R hX ψ)
+    (cellularClassifyingSpaceHomotopyEquiv_toFun_basepoint R hY (ψ.trans φ)) φ.toMonoidHom
+    (MonoidHom.ext fun a ↦ by simp [f])⟩
 
 /-- **Two `K(G, 1)` spaces of CW type are homotopy equivalent.** See
 `TauCeti.IsAspherical.exists_homotopyEquiv` for a homotopy equivalence realizing a prescribed

@@ -31,12 +31,12 @@ namespace AlgHom
 
 open TauCeti
 
-variable {k A B : Type*} [Field k] [CommRing A] [CommRing B] [Algebra k A] [Algebra k B]
+variable {k A B : Type*} [Field k] [Semiring A] [CommRing B] [Algebra k A] [Algebra k B]
   [Module.Finite k A] [IsReduced B] [ConnectedSpace (PrimeSpectrum B)]
 
 /-- An algebra map from a finite-dimensional algebra into a connected reduced algebra is the
 constant map determined by evaluation at any rational point. The target algebra need not be
-of finite type, and the source algebra need not be reduced. -/
+of finite type, and the source algebra need not be reduced or commutative. -/
 theorem eq_algebraMap_comp_of_moduleFinite (f : A →ₐ[k] B) (e : B →ₐ[k] k) :
     f = (Algebra.ofId k B).comp (e.comp f) := by
   let _ : Nontrivial B := e.toRingHom.domain_nontrivial

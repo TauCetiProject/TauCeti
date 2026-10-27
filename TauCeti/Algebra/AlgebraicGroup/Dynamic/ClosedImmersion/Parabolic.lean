@@ -91,10 +91,7 @@ theorem mem_parabolic_iff_of_surjective (φ : H →ₐc[R] K) (hφ : Function.Su
     obtain ⟨x, rfl⟩ := hφ y
     rw [← hvalue x]
     exact TauCeti.exists_toLaurent_eq_iff.mp ⟨F.ofConv x, rfl⟩ n hn
-  obtain ⟨E, hE⟩ := TauCeti.exists_algHom_toLaurent_comp_eq_iff.mpr hcoeff
-  apply mem_parabolic_of_eq (F := toConv E)
-  rw [ofPolyPoint_apply]
-  exact congrArg toConv hE
+  exact mem_parabolic_iff_forall_coeff_conjugate_eq_zero.mpr hcoeff
 
 /-- The dynamic parabolic of a closed subgroup is its intersection with the ambient dynamic
 parabolic, as a subgroup functor on all commutative value algebras. -/

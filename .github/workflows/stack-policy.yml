@@ -24,26 +24,40 @@ permissions:
   contents: read
   actions: read
 
-# Coalesce repeated events for one PR/fork branch before the global job queue.
-# Backlog runs have unique groups and cannot replace each other here.
+# Automatic wakes collapse globally; current PR metadata and the published
+# checkpoint cover replaced events. Explicit/manual and scheduled requests stay
+# distinct and share the job's mutation lock with the automatic consumer.
 concurrency:
   group: >-
-    ${{ github.event_name == 'pull_request_target' && format('no-stack-pr-{0}', github.event.pull_request.number)
-      || github.event_name == 'workflow_run' && format('no-stack-wake-{0}-{1}', github.event.workflow_run.head_repository.id, github.event.workflow_run.head_branch)
-      || format('no-stack-backlog-{0}', github.run_id) }}
+    ${{ github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
+      && vars.NO_STACK_APPLY == 'true'
+      && (github.event_name == 'workflow_run' || (github.event_name == 'pull_request_target'
+        && (github.event.action != 'edited' || github.event.changes.base != null)))
+      && 'no-stack-automatic-batch' || format('no-stack-request-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
   enforce:
-    if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.NO_STACK_APPLY == 'true')
-    # One mutation lock across all PRs and backlog sweeps; retries cannot race
-    # duplicate comments. GitHub rejects new arrivals when all 100 slots are full.
+    if: >-
+      github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
+      && (github.event_name == 'workflow_dispatch' || vars.NO_STACK_APPLY == 'true')
+      && (github.event_name != 'pull_request_target' || github.event.action != 'edited'
+        || github.event.changes.base != null)
+    # One mutation lock across automatic batches, scheduled sweeps and explicit
+    # requests. At most one automatic batch waits here; its newer wake stays at
+    # workflow concurrency, without filling this queue with one job per PR.
     concurrency:
       group: tauceti-no-stacking
       cancel-in-progress: false
       queue: max
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      REQUESTED_PR: ${{ inputs.pr || 0 }}
+      APPLY_ENABLED: ${{ (vars.NO_STACK_APPLY == 'true' || (vars.NO_STACK_APPLY == 'dispatch' && github.event_name == 'workflow_dispatch' && inputs.pr > 0)) && (github.event_name != 'workflow_dispatch' || !inputs.dry-run) }}
+      # Only full apply batches own progress. Focused manual and dry runs must
+      # never advance automatic coverage or broaden a dispatch-only canary.
+      BATCH_ENABLED: ${{ vars.NO_STACK_APPLY == 'true' && (inputs.pr || 0) == 0 && (github.event_name != 'workflow_dispatch' || !inputs.dry-run) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,13 +67,15 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@02db6ea51c27553cb6271e605612a56169ae72f6
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@980a7a0e321a7fe86981f6c9f872a2acad93af69
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 02db6ea51c27553cb6271e605612a56169ae72f6
+          tools-ref: 980a7a0e321a7fe86981f6c9f872a2acad93af69
           project-directory: .
       - name: Test trusted policy
-        run: python3 scripts/test_stack_policy.py
+        run: |
+          python3 scripts/test_stack_policy.py
+          python3 scripts/test_stack_checkpoint_restore.py
       - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         id: app-token
         with:
@@ -70,18 +86,69 @@ jobs:
           permission-contents: read
           permission-issues: read
           permission-pull-requests: write
+      - name: Restore latest trusted batch progress
+        if: env.BATCH_ENABLED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/stack-policy-in" "$RUNNER_TEMP/stack-policy-out"
+          rm -f "$RUNNER_TEMP/stack-policy-in/state.json"
+          # Inspect artifacts directly: replaced wakes have no checkpoint and
+          # must not crowd the last useful state out of a run listing.
+          if ! ids=$(gh api "repos/$REPO/actions/artifacts?name=stack-policy-progress&per_page=100" \
+            --jq '.artifacts | sort_by(.created_at) | reverse | .[] | select(.expired == false) | .workflow_run.id'); then
+            echo '::notice::Checkpoint index unavailable; inspecting all current open PRs.'
+            exit 0
+          fi
+          for id in $ids; do
+            if ! trusted=$(gh api "repos/$REPO/actions/runs/$id" --jq '
+              .repository.full_name == "TauCetiProject/TauCeti" and
+              .path == ".github/workflows/stack-policy.yml" and
+              (.event == "pull_request_target" or
+                ((.event == "workflow_run" or .event == "schedule" or .event == "workflow_dispatch") and
+                  .head_branch == "main" and .head_repository.full_name == "TauCetiProject/TauCeti"))'); then
+              echo '::notice::Checkpoint producer unavailable; inspecting all current open PRs.'
+              break
+            fi
+            if [ "$trusted" = true ]; then
+              if ! gh run download "$id" -R "$REPO" -n stack-policy-progress -D "$RUNNER_TEMP/stack-policy-in"; then
+                rm -f "$RUNNER_TEMP/stack-policy-in/state.json"
+                echo '::notice::Checkpoint download unavailable; inspecting all current open PRs.'
+              fi
+              break
+            fi
+          done
+          # No artifact (including expired state) requests a resumable full recovery.
       - name: Inspect current source and enforce confirmed stacks
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           STACK_HISTORY_TOKEN: ${{ github.token }}
           STACK_ACTOR: ${{ steps.app-token.outputs.app-slug }}[bot]
-          REQUESTED_PR: ${{ inputs.pr || 0 }}
-          APPLY_ENABLED: ${{ (vars.NO_STACK_APPLY == 'true' || (vars.NO_STACK_APPLY == 'dispatch' && github.event_name == 'workflow_dispatch' && inputs.pr > 0)) && (github.event_name != 'workflow_dispatch' || !inputs.dry-run) }}
         run: |
+          set -euo pipefail
           args=()
           if [ "$APPLY_ENABLED" = true ]; then args+=(--apply); fi
+          if [ "$BATCH_ENABLED" = true ]; then
+            mkdir -p "$RUNNER_TEMP/stack-policy-out"
+            args+=(--state-in "$RUNNER_TEMP/stack-policy-in/state.json"
+              --state-out "$RUNNER_TEMP/stack-policy-out/state.json")
+            if [ "$GITHUB_EVENT_NAME" = schedule ] || [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+              args+=(--sweep)
+            fi
+          fi
           python3 scripts/stack_policy.py --github-event "$GITHUB_EVENT_PATH" \
             --pr "$REQUESTED_PR" --report stack-policy.jsonl "${args[@]}"
+      - name: Save batch progress
+        if: always() && env.BATCH_ENABLED == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stack-policy-progress
+          path: ${{ runner.temp }}/stack-policy-out/state.json
+          if-no-files-found: error
+          retention-days: 14
+          overwrite: true
       - name: Publish audit
         if: always()
         run: |

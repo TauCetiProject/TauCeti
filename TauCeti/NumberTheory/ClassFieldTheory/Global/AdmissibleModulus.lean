@@ -179,10 +179,8 @@ variable {M : Type} [Field M] [NumberField M] [Algebra L M] [Algebra K M] [IsSca
 /-- **Admissibility passes to subextensions**: a norm from `M` is a norm from every intermediate
 field `L`. -/
 theorem IsAdmissibleModulus.tower_bot {𝔪 : Modulus K} (h : IsAdmissibleModulus K M 𝔪) :
-    IsAdmissibleModulus K L 𝔪 := by
-  refine h.trans ?_
-  rintro _ ⟨y, rfl⟩
-  exact ⟨ideleClassNormMap L M y, DFunLike.congr_fun (ideleClassNormMap_comp K L M) y⟩
+    IsAdmissibleModulus K L 𝔪 :=
+  h.trans (range_ideleClassNormMap_le_of_algHom (IsScalarTower.toAlgHom K L M))
 
 /-! ### The conductor -/
 
