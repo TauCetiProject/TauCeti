@@ -179,8 +179,12 @@ theorem exists_apply_apply_eq_of_mem_topologicalClosure_span (L : A →L[𝕜] E
     refine closure_minimal ?_ isClosed_closure hy
     intro w hw
     obtain ⟨c, rfl⟩ := hw
-    exact map_mem_closure (f := R.flip c) (R.flip c).continuous hx
-      (Set.image_subset_iff.1 (image_flip_span_le L R hR c))
+    -- `S` is invariant under right multiplication by `c`, hence so is its closure.
+    have hinv : S ∈ Module.End.invtSubmodule (R.flip c).toLinearMap :=
+      (Module.End.mem_invtSubmodule_iff_mapsTo (R.flip c).toLinearMap).2
+        (Set.image_subset_iff.1 (image_flip_span_le L R hR c))
+    exact (Module.End.mem_invtSubmodule_iff_mapsTo (R.flip c).toLinearMap).1
+      (Submodule.topologicalClosure_mem_invtSubmodule hinv) hx
   obtain ⟨a, z, ha, -, -, hLaz⟩ :=
     exists_apply_eq_of_mem_topologicalClosure_span L hL hC
       hl.tendsto_mul_right (Submodule.topologicalClosure_mono hAE hyS) one_pos
