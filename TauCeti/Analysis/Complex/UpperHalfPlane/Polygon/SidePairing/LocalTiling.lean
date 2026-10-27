@@ -120,19 +120,6 @@ theorem localNeighbors_of_mem_interior {x : ℍ} (hx : x ∈ interior P.carrier)
 
 /-! ### The cycle of a finite vertex -/
 
-variable {σ}
-
-/-- The angle condition at a finite vertex forces its cycle transformation to have finite
-order. -/
-private theorem orderOf_cycleMap_pos {j : Fin n}
-    (hcyc : (orderOf (σ.cycleMap j) : ℝ) * σ.cycleAngleSum j = 2 * π) :
-    0 < orderOf (σ.cycleMap j) := by
-  refine Nat.pos_of_ne_zero fun h ↦ ?_
-  rw [h, Nat.cast_zero, zero_mul] at hcyc
-  exact Real.two_pi_pos.ne hcyc
-
-variable (σ)
-
 /-- **The local neighbours of a finite vertex** are the inverse partial cycle products, provided
 the cycle transformation there has finite order. -/
 theorem localNeighbors_eq_range {j : Fin n} {x : ℍ} (hx : P.vertex j = .inl x)
@@ -170,7 +157,8 @@ theorem finite_localNeighbors
   · exact mem_insert _ _
   · exact mem_insert_of_mem _ (.inl (mem_range_self i))
   · refine mem_insert_of_mem _ (.inr (mem_iUnion.2 ⟨j, m % _, Nat.mod_lt _ ?_, ?_⟩))
-    · exact Nat.mul_pos (orderOf_cycleMap_pos (hcyc j x hj)) (σ.cycleLength_pos j)
+    · exact Nat.mul_pos (Nat.pos_of_ne_zero
+        (σ.orderOf_cycleMap_ne_zero_of_mul_cycleAngleSum_eq (hcyc j x hj))) (σ.cycleLength_pos j)
     · simp only [partialCycleMap_mod_orderOf_mul_cycleLength]
 
 /-! ### The local tiling axioms -/
@@ -196,7 +184,8 @@ private theorem inv_mem_localNeighbors
     exact σ.one_mem_localNeighbors _
   · have := σ.inv_map_mem_localNeighbors (σ.map_smul_mem_side hi)
     rwa [map_pair, inv_inv, ← inv_inv (σ.map i)] at this
-  · obtain ⟨m', hm'⟩ := σ.exists_partialCycleMap_eq_inv (orderOf_cycleMap_pos (hcyc j x hj)) m
+  · obtain ⟨m', hm'⟩ := σ.exists_partialCycleMap_eq_inv
+      (Nat.pos_of_ne_zero (σ.orderOf_cycleMap_ne_zero_of_mul_cycleAngleSum_eq (hcyc j x hj))) m
     rw [inv_inv, ← inv_inv (σ.partialCycleMap j m), ← hm']
     exact σ.inv_partialCycleMap_mem_localNeighbors
       (by rw [σ.vertex_next_iterate_eq_inl hj, hm', inv_inv]) m'
@@ -210,12 +199,13 @@ private theorem mul_mem_localNeighbors
   by_cases hv : ∃ j, P.vertex j = .inl x
   · -- around a finite vertex, consecutive partial cycle products compose
     obtain ⟨j, hj⟩ := hv
-    have hpos := orderOf_cycleMap_pos (hcyc j x hj)
+    have hpos := Nat.pos_of_ne_zero
+      (σ.orderOf_cycleMap_ne_zero_of_mul_cycleAngleSum_eq (hcyc j x hj))
     rw [σ.localNeighbors_eq_range hj hpos] at hh ⊢
     obtain ⟨m, rfl⟩ := hh
     have hj' := σ.vertex_next_iterate_eq_inl hj m
-    rw [inv_inv, σ.localNeighbors_eq_range hj'
-      (orderOf_cycleMap_pos (hcyc _ _ hj'))] at hk
+    rw [inv_inv, σ.localNeighbors_eq_range hj' (Nat.pos_of_ne_zero
+      (σ.orderOf_cycleMap_ne_zero_of_mul_cycleAngleSum_eq (hcyc _ _ hj')))] at hk
     obtain ⟨m', rfl⟩ := hk
     exact ⟨m + m', by simp only [partialCycleMap_add, mul_inv_rev]⟩
   push Not at hv
@@ -289,7 +279,8 @@ private theorem eq_one_of_interior_inter_smul_interior_nonempty
   by_cases hv : ∃ j, P.vertex j = .inl y
   · -- the tiles met during one full turn about a finite vertex have disjoint interiors
     obtain ⟨j, hj⟩ := hv
-    have hpos := orderOf_cycleMap_pos (hcyc j y hj)
+    have hpos := Nat.pos_of_ne_zero
+      (σ.orderOf_cycleMap_ne_zero_of_mul_cycleAngleSum_eq (hcyc j y hj))
     rw [σ.localNeighbors_eq_range hj hpos] at hg
     obtain ⟨m, rfl⟩ := hg
     have hT : 0 < orderOf (σ.cycleMap j) * σ.cycleLength j :=

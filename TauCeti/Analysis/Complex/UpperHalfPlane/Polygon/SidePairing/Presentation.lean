@@ -360,14 +360,10 @@ private theorem sideWord_inv_partialCycleMap_mul (hmap : ∀ i, σ.map i ∈ Γ)
     σ.sideWord (σ.partialCycleMap j a)⁻¹ *
         σ.sideWord (σ.partialCycleMap j a * (σ.partialCycleMap j b)⁻¹) =
       σ.sideWord (σ.partialCycleMap j b)⁻¹ := by
-  set N := orderOf (σ.cycleMap j) * σ.cycleLength j with hN
-  -- a full turn around the vertex returns to the identity
-  have hN1 : σ.partialCycleMap j N = 1 := by
-    rw [hN, partialCycleMap_mul_cycleLength, pow_orderOf_eq_one]
-  have hper : σ.next^[N] j = j := P.vertex_injective <| by
-    rw [← σ.partialCycleMap_smul_vertex, hN1, one_smul]
+  set N := orderOf (σ.cycleMap j) * σ.cycleLength j
+  -- after a full turn around the vertex the partial cycle products start again
   have hNb : σ.partialCycleMap j (N + b) = σ.partialCycleMap j b := by
-    rw [partialCycleMap_add, hper, hN1, mul_one]
+    simpa using σ.partialCycleMap_mul_orderOf_mul_cycleLength_add j 1 b
   have hk := σ.vertex_next_iterate_eq_inl hj a
   obtain ⟨c, hc⟩ : ∃ c, N + b = a + c := ⟨N + b - a, by omega⟩
   have ht : σ.partialCycleMap j a * (σ.partialCycleMap j b)⁻¹ =
