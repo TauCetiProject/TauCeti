@@ -119,7 +119,7 @@ This is intentionally a named value, not an instance. Callers that need typeclas
 operations should use `coordinateHopfAlgebra`, or install this value in a deliberately local
 scope. -/
 @[instance_reducible]
-private noncomputable def hopfAlgebra : HopfAlgebra R (CoordinateRing R m) := by
+noncomputable def hopfAlgebra : HopfAlgebra R (CoordinateRing R m) := by
   letI : Bialgebra R (CoordinateRing R m) := bialgebra R m
   exact HopfAlgebra.ofAlgHom (antipode R m)
     (mul_antipode_rTensor_comul R m) (mul_antipode_lTensor_comul R m)
@@ -149,7 +149,7 @@ private theorem hopfAlgebra_antipode :
   heq_of_eq rfl
 
 /-- The coordinate ring bundled with its upper-unitriangular Hopf-algebra structure. -/
-noncomputable def coordinateHopfAlgebra : CommHopfAlgCat R :=
+@[expose] noncomputable def coordinateHopfAlgebra : CommHopfAlgCat R :=
   letI : HopfAlgebra R (CoordinateRing R m) := hopfAlgebra R m
   CommHopfAlgCat.of R (CoordinateRing R m)
 
