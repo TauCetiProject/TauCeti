@@ -544,7 +544,9 @@ whose residue field has two elements, for instance `ℤ_[2]`, and let `C` and `C
 with unit Gram determinants in bases of the same size, with every `C x x` divisible by `2`. If a
 linear map `φ` carries `C'` to `C` modulo `𝔪`, and the self-pairings modulo `2𝔪`, that is
 `C' x y - C (φ x) (φ y) ∈ 𝔪` and `C' x x - C (φ x) (φ x) ∈ 2𝔪` for all `x` and `y`, then `C` and
-`C'` are isometric. Thus `C` is determined by the residue of the quadratic form `x ↦ C x x / 2`.
+`C'` are isometric. Thus `C` is determined by its reduction modulo `𝔪` together with its
+self-pairings modulo `2𝔪`; when `2` is a non-zero-divisor, as in `ℤ_[2]`, these amount to the
+residue of the quadratic form `x ↦ C x x / 2`.
 The condition on the diagonal cannot be dropped: `!![0, 1; 1, 0]` and `!![2, 1; 1, 2]` agree modulo
 `2`, but they are not isometric over `ℤ_[2]`. -/
 theorem IsSymm.equivalent_of_sub_mem_maximalIdeal_of_even (hR : Nat.card (ResidueField R) = 2)
