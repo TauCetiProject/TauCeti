@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.Distribution.LocalConstancy
 public import TauCeti.Analysis.Distribution.TestFunction.DualEquiv
-import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Topology.Algebra.Monoid
 
 /-!
@@ -144,17 +144,9 @@ theorem existsUnique_eq_ofFun_const_of_forall_lineDerivOp_eq_zero (T : 𝓓'(Ω,
 theorem lineDerivOp_ofFun_const (c : F) (v : E) :
     ∂_{v} (ofFun Ω (fun _ ↦ c) μ ⊤) = 0 := by
   ext φ
-  set dφ : 𝓓(Ω, ℝ) := ∂_{v} φ
-  have hd : ∫ x, dφ x ∂μ = 0 := by
-    have h := integral_bilinear_hasLineDerivAt_right_eq_neg_left_of_integrable (μ := μ)
-      (B := ContinuousLinearMap.lsmul ℝ ℝ) (f := fun _ ↦ (1 : ℝ)) (f' := fun _ ↦ 0)
-      (g := φ) (g' := dφ) (v := v) (by simp)
-      (by simpa using dφ.continuous.integrable_of_hasCompactSupport dφ.hasCompactSupport)
-      (by simpa using φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport)
-      (fun x _ ↦ by simpa using (hasFDerivAt_const (1 : ℝ) x).hasLineDerivAt v) (fun x _ ↦ ?_)
-    · simpa using h
-    · rw [TestFunction.lineDerivOp_apply]
-      exact ((φ.contDiff.differentiable (by simp) x).lineDifferentiableAt).hasLineDerivAt
+  have hd : ∫ x, (∂_{v} φ) x ∂μ = 0 := by
+    simpa only [TestFunction.lineDerivOp_apply] using TestFunction.integral_lineDeriv_eq_zero
+      (μ := μ) φ v
   simp only [lineDerivOp_apply_apply, ofFun_apply (locallyIntegrableOn_const c),
     integral_smul_const, FunLike.coe_neg, Pi.neg_apply, integral_neg, zero_apply]
   exact smul_eq_zero_of_left (neg_eq_zero.2 hd) c

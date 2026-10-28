@@ -338,6 +338,65 @@ private theorem iteratedFDeriv_integral_mul_sub (ρ : 𝓓(V, ℝ)) {φ : E → 
   rw [hc, h, convolution_def]
   simp
 
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- A convolution `x ↦ ∫ y, φ y * ρ (x - y) ∂μ` minus a finite combination of translates
+`ρ (· - z)` with weights `c z * φ z` is supported in `tsupport ρ + tsupport φ`. -/
+private theorem tsupport_sub_subset_add {ρ : 𝓓(V, ℝ)} {φ : E → ℝ} (hφc : HasCompactSupport φ)
+    {s : Finset E} {c : E → ℝ} {ψ ψu : 𝓓(Ω, ℝ)} (hψ : ∀ x, ψ x = ∫ y, φ y * ρ (x - y) ∂μ)
+    (hψu : ⇑ψu = ∑ z ∈ s, fun x ↦ c z * φ z * ρ (x - z)) :
+    tsupport (ψ - ψu) ⊆ tsupport ρ + tsupport φ := by
+  have hvan : ∀ x ∉ tsupport ρ + tsupport φ, ∀ y, φ y * ρ (x - y) = 0 := fun x hx y ↦ by
+    by_cases hy : y ∈ tsupport φ
+    · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx ⟨x - y, h, y, hy, sub_add_cancel x y⟩,
+        mul_zero]
+    · rw [image_eq_zero_of_notMem_tsupport hy, zero_mul]
+  refine closure_minimal (fun x hx ↦ by_contra fun hxL ↦ hx ?_)
+    (ρ.hasCompactSupport.isCompact.add hφc).isClosed
+  simp [hψ, hψu, mul_assoc, hvan x hxL]
+
+/-- **Riemann sums of a convolution.** Let `u` be a simple function such that the derivatives of
+order at most `N` of the integrand `φ y * ρ (x - y)` change by at most `η` when `y ∈ tsupport φ`
+is replaced by `u y`. Then the derivatives of order at most `N` of the convolution
+`x ↦ ∫ y, φ y * ρ (x - y) ∂μ` and of its Riemann sum along `u`, a finite combination of translates
+of `ρ`, differ by at most `η * μ.real (tsupport φ)`. -/
+private theorem norm_iteratedFDeriv_sub_riemannSum_le (ρ : 𝓓(V, ℝ)) {φ : E → ℝ}
+    (hφ : Continuous φ) (hφc : HasCompactSupport φ) (u : SimpleFunc E E) {N : ℕ} {η : ℝ}
+    (hu : ∀ x, ∀ y ∈ tsupport φ,
+      dist (fun i : Fin (N + 1) ↦ φ y • iteratedFDeriv ℝ i ρ (x - y))
+        (fun i : Fin (N + 1) ↦ φ (u y) • iteratedFDeriv ℝ i ρ (x - u y)) ≤ η)
+    {ψ ψu : 𝓓(Ω, ℝ)} (hψ : ∀ x, ψ x = ∫ y, φ y * ρ (x - y) ∂μ)
+    (hψu : ⇑ψu = ∑ z ∈ u.range, fun x ↦ μ.real (tsupport φ ∩ u ⁻¹' {z}) * φ z * ρ (x - z))
+    {i : ℕ} (hi : i ≤ N) (x : E) :
+    ‖iteratedFDeriv ℝ i ⇑(ψ - ψu) x‖ ≤ η * μ.real (tsupport φ) := by
+  have hK : IsCompact (tsupport φ) := hφc
+  have hiω : ((i : ℕ) : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
+  have hρz (z : E) : ContDiff ℝ ∞ fun x ↦ ρ (x - z) :=
+    ρ.contDiff.comp (contDiff_id.sub contDiff_const)
+  have hD : iteratedFDeriv ℝ i ⇑ψu x = ∑ z ∈ u.range,
+      μ.real (tsupport φ ∩ u ⁻¹' {z}) • (φ z • iteratedFDeriv ℝ i ρ (x - z)) := by
+    rw [hψu, iteratedFDeriv_sum_apply fun z _ ↦
+      ((contDiff_const.mul (hρz z)).contDiffAt.of_le hiω)]
+    refine Finset.sum_congr rfl fun z _ ↦ ?_
+    have hsmul : (fun x ↦ μ.real (tsupport φ ∩ u ⁻¹' {z}) * φ z * ρ (x - z)) =
+        fun x ↦ (μ.real (tsupport φ ∩ u ⁻¹' {z}) * φ z) • ρ (x - z) := by
+      simp_rw [smul_eq_mul]
+    rw [hsmul, iteratedFDeriv_const_smul_apply' ((hρz z).contDiffAt.of_le hiω),
+      iteratedFDeriv_comp_sub, mul_smul]
+  have hsetint : ∫ y in tsupport φ, φ y • iteratedFDeriv ℝ i ρ (x - y) ∂μ =
+      ∫ y, φ y • iteratedFDeriv ℝ i ρ (x - y) ∂μ :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
+      rw [image_eq_zero_of_notMem_tsupport hy, zero_smul]
+  rw [FunLike.coe_sub, iteratedFDeriv_sub_apply (ψ.contDiff.contDiffAt.of_le hiω)
+    (ψu.contDiff.contDiffAt.of_le hiω), hD, funext hψ, iteratedFDeriv_integral_mul_sub ρ hφ,
+    norm_sub_rev, ← hsetint]
+  refine SimpleFunc.norm_sum_measureReal_smul_sub_setIntegral_le u hK.isClosed.measurableSet
+    hK.measure_lt_top.ne (Continuous.integrable_of_hasCompactSupport ?_ hφc.smul_right).integrableOn
+    fun y hy ↦ ?_
+  · exact hφ.smul ((ρ.contDiff.continuous_iteratedFDeriv (by exact_mod_cast le_top)).comp
+      (continuous_const.sub continuous_id))
+  · rw [← dist_eq_norm]
+    exact (dist_le_pi_dist _ _ ⟨i, Nat.lt_succ_of_le hi⟩).trans (hu x y hy)
+
 /-- **Pairing a distribution with a convolution.** Let `φ` be a compactly supported continuous
 function such that `ρ (· - y)` is supported in `Ω` for every `y` in the support of `φ`. Then the
 convolution `x ↦ ∫ y, φ y * ρ (x - y) ∂μ`, a test function on `Ω`, is mapped by `T` to the integral
@@ -389,10 +448,6 @@ theorem apply_eq_integral_smul_translatePairing [CompleteSpace F] (T : 𝓓'(Ω,
       ∫ y, φ y • T.translatePairing ρ y ∂μ :=
     setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
       rw [image_eq_zero_of_notMem_tsupport hy, zero_smul]
-  have hsetint₂ (i : ℕ) (x : E) : ∫ y in K, φ y • iteratedFDeriv ℝ i ρ (x - y) ∂μ =
-      ∫ y, φ y • iteratedFDeriv ℝ i ρ (x - y) ∂μ :=
-    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
-      rw [image_eq_zero_of_notMem_tsupport hy, zero_smul]
   -- The Riemann sum on the regularization side.
   have hR₁ : ‖T ψu - ∫ y, φ y • T.translatePairing ρ y ∂μ‖ ≤ η * m := by
     rw [hTψu, ← hsetint₁]
@@ -403,40 +458,13 @@ theorem apply_eq_integral_smul_translatePairing [CompleteSpace F] (T : 𝓓'(Ω,
     exact (h₁ ((hu y hy).trans_le (min_le_left _ _))).le
   -- The Riemann sums on the test-function side, uniformly for all derivatives of order `≤ N`.
   have hR₂ : ∀ i ≤ N, ∀ x, ‖iteratedFDeriv ℝ i ⇑(ψ - ψu) x‖ ≤ η * m := by
-    intro i hi x
-    have hiω : ((i : ℕ) : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
-    have hρz (z : E) : ContDiff ℝ ∞ fun x ↦ ρ (x - z) :=
-      ρ.contDiff.comp (contDiff_id.sub contDiff_const)
-    have hD : iteratedFDeriv ℝ i ⇑ψu x =
-        ∑ z ∈ u.range, μ.real (K ∩ u ⁻¹' {z}) • (φ z • iteratedFDeriv ℝ i ρ (x - z)) := by
-      rw [hψu, iteratedFDeriv_sum_apply fun z _ ↦
-        ((contDiff_const.mul (hρz z)).contDiffAt.of_le hiω)]
-      refine Finset.sum_congr rfl fun z _ ↦ ?_
-      rw [show (fun x ↦ w z * ρ (x - z)) = w z • fun x ↦ ρ (x - z) from rfl,
-        iteratedFDeriv_const_smul_apply ((hρz z).contDiffAt.of_le hiω),
-        iteratedFDeriv_comp_sub, mul_smul]
-    rw [FunLike.coe_sub, iteratedFDeriv_sub_apply (ψ.contDiff.contDiffAt.of_le hiω)
-      (ψu.contDiff.contDiffAt.of_le hiω), hD, funext hψ, iteratedFDeriv_integral_mul_sub ρ hφ,
-      norm_sub_rev, ← hsetint₂]
-    refine SimpleFunc.norm_sum_measureReal_smul_sub_setIntegral_le u hKm hμK
-      (Continuous.integrable_of_hasCompactSupport ?_ hφc.smul_right).integrableOn fun y hy ↦ ?_
-    · exact hφ.smul ((ρ.contDiff.continuous_iteratedFDeriv (by exact_mod_cast le_top)).comp
-        (continuous_const.sub continuous_id))
-    · have hd : dist (x, y) (x, u y) < δ₂ := by
-        rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg]
-        exact (hu y hy).trans_le (min_le_right _ _)
-      rw [← dist_eq_norm]
-      exact (dist_le_pi_dist _ _ ⟨i, Nat.lt_succ_of_le hi⟩).trans (h₂ hd).le
+    refine fun i hi ↦ norm_iteratedFDeriv_sub_riemannSum_le ρ hφ hφc u (fun x y hy ↦ ?_) hψ hψu hi
+    have hd : dist (x, y) (x, u y) < δ₂ := by
+      rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg]
+      exact (hu y hy).trans_le (min_le_right _ _)
+    exact (h₂ hd).le
   -- `ψ - ψu` is supported in `L`, so the finite order of `T` on `L` bounds `T (ψ - ψu)`.
-  have hsupp : tsupport (ψ - ψu) ⊆ L := by
-    have hvan : ∀ x ∉ L, ∀ y, φ y * ρ (x - y) = 0 := fun x hx y ↦ by
-      by_cases hy : y ∈ K
-      · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx ⟨x - y, h, y, hy, sub_add_cancel x y⟩,
-          mul_zero]
-      · rw [image_eq_zero_of_notMem_tsupport hy, zero_mul]
-    refine closure_minimal (fun x hx ↦ by_contra fun hxL ↦ hx ?_) hL.isClosed
-    simp [hψ, hψu, w, mul_assoc, hvan x hxL]
-  have hTd := hT (ψ - ψu) hsupp (η * m) (by positivity) hR₂
+  have hTd := hT (ψ - ψu) (tsupport_sub_subset_add hφc hψ hψu) (η * m) (by positivity) hR₂
   calc dist (T ψ) (∫ y, φ y • T.translatePairing ρ y ∂μ)
       ≤ ‖T (ψ - ψu)‖ + ‖T ψu - ∫ y, φ y • T.translatePairing ρ y ∂μ‖ := by
         rw [dist_eq_norm, map_sub]
