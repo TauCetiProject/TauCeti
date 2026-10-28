@@ -26,11 +26,16 @@ the `l`-th power is additive modulo `l`, so `g(χ, ψ)^l ≡ g(χ^l, ψ^l) = g(1
 `l R` as soon as `ψ ^ l` is nontrivial. This is the congruence behind `Φ(P) ≡ -1 (mod l)` for the
 `l`-th power `Φ(P)` of the Gauss sum of the `l`-th power residue character.
 
+If `F` has characteristic `p` and `ψ` is invariant under the Frobenius `x ↦ x ^ p`, as every
+additive character factoring through the trace to `𝔽_p` is, then reindexing the Gauss sum by the
+Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`.
+
 ## Main results
 
 * `TauCeti.norm_gaussSum`: `‖g(χ, ψ)‖ = √#F`.
 * `TauCeti.gaussSum_pow_modEq_neg_one`: `g(χ, ψ)^l ≡ -1 (mod l)` when `χ ^ l = 1` and
   `ψ ^ l ≠ 1`.
+* `TauCeti.gaussSum_pow_char`: `g(χ ^ p, ψ) = g(χ, ψ)` when `ψ (x ^ p) = ψ x`.
 
 ## References
 
@@ -69,5 +74,16 @@ theorem gaussSum_pow_modEq_neg_one {R : Type*} [CommRing R] [IsDomain R] {l : �
     gaussSum, map_sum, map_sum, sum_pow_char]
   simp only [map_mul, mul_pow, ← map_pow, ← MulChar.pow_apply' χ (Fact.out : l.Prime).ne_zero,
     AddChar.pow_apply]
+
+/-- **Gauss sums are invariant under the Frobenius.** If `F` has characteristic `p` and the
+additive character `ψ` satisfies `ψ (x ^ p) = ψ x`, then `g(χ ^ p, ψ) = g(χ, ψ)` for every
+multiplicative character `χ`. -/
+theorem gaussSum_pow_char {R : Type*} [CommRing R] {p : ℕ} [Fact p.Prime] [CharP F p]
+    (χ : MulChar F R) {ψ : AddChar F R} (hψ : ∀ x, ψ (x ^ p) = ψ x) :
+    gaussSum (χ ^ p) ψ = gaussSum χ ψ := by
+  conv_rhs => rw [gaussSum, ← (frobeniusEquiv F p).toEquiv.sum_comp]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  rw [RingEquiv.toEquiv_eq_coe, EquivLike.coe_coe, frobeniusEquiv_apply, frobenius_def, hψ,
+    MulChar.pow_apply' χ (Fact.out : p.Prime).ne_zero, map_pow]
 
 end TauCeti

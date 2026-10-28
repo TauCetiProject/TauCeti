@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Basic
 import Mathlib.Algebra.CharP.CharAndCard
 import Mathlib.NumberTheory.LegendreSymbol.Complex
 import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
-import TauCeti.NumberTheory.GaussSum
+import TauCeti.NumberTheory.GaussSum.Basic
 
 /-!
 # The Gauss sum power `Φ(P) = g(P)^m`
