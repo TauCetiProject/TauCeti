@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Ideal.Height
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.FiniteType
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.HilbertIdeal
 import TauCeti.LinearAlgebra.SymmetricAlgebra.KrullDimension
+import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.KrullDimension.Integral
 
@@ -72,40 +73,38 @@ theorem ringKrullDim_symmetricAlgebraInvariants :
     ringKrullDim ρ.symmetricAlgebraInvariants = ringKrullDim (SymmetricAlgebra R M) :=
   (TauCeti.ringKrullDim_eq_of_isIntegral_of_faithfulSMul ..).symm
 
-/-- Over a domain, the only prime of `Sym M` lying over the ideal `A₊` of invariants with zero
-constant term is the irrelevant ideal `S₊`. -/
-theorem eq_irrelevant_of_liesOver [IsDomain R] (P : Ideal (SymmetricAlgebra R M)) [P.IsPrime]
-    [P.LiesOver ((HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal.under
-      ρ.symmetricAlgebraInvariants)] :
-    P = (HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal := by
-  let := ρ.symmetricAlgebraMulSemiringAction
-  have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
-  have := ρ.isInvariant_symmetricAlgebraInvariants
-  have : SMulCommClass G ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M) :=
-    ρ.symmetricAlgebraInvariants_eq_fixedPoints ▸ inferInstance
-  -- The primes over `A₊` form one `G`-orbit, so `P` is a translate of `S₊`.
-  obtain ⟨g, hg⟩ := Algebra.IsInvariant.exists_smul_of_under_eq ρ.symmetricAlgebraInvariants
-    (SymmetricAlgebra R M) G (HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal P
-    Ideal.LiesOver.over
-  -- `S₊` is `G`-stable, so every translate of it is `S₊` itself.
-  have hmem (g : G) (p : SymmetricAlgebra R M)
-      (hp : p ∈ HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)) :
-      g • p ∈ HomogeneousIdeal.irrelevant (homogeneousSubmodule R M) :=
-    ρ.symmetricAlgebra_mem_irrelevant g hp
-  ext p
-  rw [hg, Ideal.mem_pointwise_smul_iff_inv_smul_mem]
-  exact ⟨fun hp ↦ by simpa using hmem g _ hp, hmem g⁻¹ p⟩
-
 /-- **The fibre over the vertex has a single point.** Over a domain, the irrelevant ideal `S₊` is
 the only prime of `Sym M` lying over the ideal `A₊` of invariants with zero constant term. -/
 theorem primesOver_under_irrelevant_eq_singleton [IsDomain R] :
     ((HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal.under
         ρ.symmetricAlgebraInvariants).primesOver (SymmetricAlgebra R M) =
       {(HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal} := by
-  ext P
-  refine ⟨fun ⟨_, _⟩ ↦ ρ.eq_irrelevant_of_liesOver P, ?_⟩
-  rintro rfl
-  exact ⟨inferInstance, inferInstance⟩
+  let := ρ.symmetricAlgebraMulSemiringAction
+  have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+  have : SMulCommClass G ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M) :=
+    ρ.symmetricAlgebraInvariants_eq_fixedPoints ▸ inferInstance
+  have : Algebra.IsInvariant ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M)
+      (⊤ : Subgroup G) :=
+    ⟨fun b hb ↦ ρ.isInvariant_symmetricAlgebraInvariants.isInvariant b
+      fun g ↦ hb ⟨g, Subgroup.mem_top g⟩⟩
+  -- `S₊` is `G`-stable, so the whole group lies in its stabilizer.
+  refine Ideal.primesOver_under_eq_singleton_of_le_stabilizer _ (H := (⊤ : Subgroup G)) _
+    fun g _ ↦ ?_
+  have hmem (g : G) (p : SymmetricAlgebra R M)
+      (hp : p ∈ HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)) :
+      g • p ∈ HomogeneousIdeal.irrelevant (homogeneousSubmodule R M) :=
+    ρ.symmetricAlgebra_mem_irrelevant g hp
+  ext p
+  rw [Ideal.mem_pointwise_smul_iff_inv_smul_mem]
+  exact ⟨fun hp ↦ by simpa using hmem g _ hp, hmem g⁻¹ p⟩
+
+/-- Over a domain, the only prime of `Sym M` lying over the ideal `A₊` of invariants with zero
+constant term is the irrelevant ideal `S₊`. -/
+theorem eq_irrelevant_of_liesOver [IsDomain R] (P : Ideal (SymmetricAlgebra R M)) [P.IsPrime]
+    [P.LiesOver ((HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal.under
+      ρ.symmetricAlgebraInvariants)] :
+    P = (HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal :=
+  ρ.primesOver_under_irrelevant_eq_singleton.subset ⟨inferInstance, inferInstance⟩
 
 end CommRing
 
