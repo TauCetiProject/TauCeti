@@ -24,15 +24,21 @@ on them, this is the transpose of the substitution action
 (`TauCeti.TraceFormulaMatrixModule.periodAction_binaryFormDual`).
 
 Popa and Zagier's Proposition 2 says that every solution `ξ` of the period relation (A)
-`(1 - S)·ξ - Tₙ^∞·(1 - S) ∈ (1 - T)·ℛₙ` acts on period polynomials as the Hecke operator `Tₙ`.
+`(1 - S)·ξ - Tₙ^∞·(1 - S) ∈ (1 - T)·ℛₙ` acts on period polynomials as the classical Hecke
+operator `Tₙ`.
 On modular symbols this is the identity
 
 `∑ c_M {∞, 0} ⊗ (P ∣ adj M) = ∑_{(a b; 0 d) ∈ ℳₙ^∞} {∞, b/d} ⊗ (P ∣ adj (a b; 0 d))`
 
-(`TauCeti.TraceFormulaMatrixModule.PeriodRelation.symbolAction_eq`). Its right-hand side is
-`∑ {a∞, a0} ⊗ (P ∣ adj a)`, the sum of the translates of `{∞, 0} ⊗ P` by the upper-triangular
-representatives `a = (a b; 0 d)` of `Γ \ ℳₙ`; for `n > 0` these are the matrices with `ad = n`,
-`a > 0` and `0 ≤ b < d`, and the sum is the Hecke operator `Tₙ ({∞, 0} ⊗ P)`.
+(`TauCeti.TraceFormulaMatrixModule.PeriodRelation.symbolAction_eq`). Its right-hand side
+`TauCeti.TraceFormulaMatrixModule.upperTriangularSymbol` is `∑ {a∞, a0} ⊗ (P ∣ adj a)`, the sum
+of the translates of `{∞, 0} ⊗ P` by the upper-triangular representatives `a = (a b; 0 d)` of
+`Γ \ ℳₙ`; for `n > 0` these are the matrices with `ad = n`, `a > 0` and `0 ≤ b < d`. For `n > 0`
+this is the classical Hecke operator `Tₙ` applied to `{∞, 0} ⊗ P`, which runs over all
+determinant-`n` double cosets `Γ diag(a, d) Γ` with `a ∣ d`. Identifying it with the sum of the
+double-coset operators `TauCeti.ModularSymbols.heckeSymbol` over these cosets is not proved here;
+for non-squarefree `n` this sum has more terms than the single double coset `Γ diag(1, n) Γ` of
+`TauCeti.ModularSymbols.heckeTSymbol`.
 
 The proof applies to the relation (A) the linear map `M ↦ {∞, M0} ⊗ (P ∣ adj M)`. Left
 multiplication by `g ∈ SL(2, ℤ)` replaces its value by `{g⁻¹∞, M0} ⊗ (P ∣ adj M)`. For `g = T`
@@ -44,14 +50,16 @@ The period map of a level-one cusp form `f` is a functional on `𝕄_w(SL(2, ℤ
 form attached to its restriction to the symbols `{∞, 0} ⊗ P` is the period polynomial `r_f`. So
 `TauCeti.TraceFormulaMatrixModule.PeriodRelation.periodAction_binaryFormDual` expresses the
 action of `ξ` on `r_f` through the periods of `f` on the symbols `∑ {a∞, a0} ⊗ (P ∣ adj a)`.
-Identifying these with the periods of `Tₙ f` is the Hecke equivariance of the period map
-(`TauCeti.ModularSymbols.periodMap_heckeSlashCuspFormEnd`), applied to the double cosets of
-determinant `n`.
+Identifying these with the periods of `Tₙ f` would combine the identification above with the
+Hecke equivariance of the period map (`TauCeti.ModularSymbols.periodMap_heckeSlashCuspFormEnd`),
+applied to the double cosets of determinant `n`.
 
 ## Main definitions
 
 * `TauCeti.TraceFormulaMatrixModule.symbolAction hw`: the action
   `ξ ↦ (P ↦ ∑ c_M {∞, 0} ⊗ (P ∣ adj M))` of `ℛₙ` on level-one modular symbols.
+* `TauCeti.TraceFormulaMatrixModule.upperTriangularSymbol R n w`: the map
+  `P ↦ ∑_{(a b; 0 d) ∈ ℳₙ^∞} {∞, b/d} ⊗ (P ∣ adj (a b; 0 d))`.
 
 ## Main results
 
@@ -59,8 +67,7 @@ determinant `n`.
   `ξ` on the binary form attached to `φ ∘ {∞, 0}` is the binary form attached to
   `φ ∘ symbolAction ξ`.
 * `TauCeti.TraceFormulaMatrixModule.PeriodRelation.symbolAction_eq`: for `n ≠ 0`, a solution of
-  the period relation (A) acts on `{∞, 0}` as the sum over `ℳₙ^∞`, the Hecke operator `Tₙ`
-  when `n > 0`.
+  the period relation (A) acts on `{∞, 0}` as `upperTriangularSymbol`, the sum over `ℳₙ^∞`.
 * `TauCeti.TraceFormulaMatrixModule.PeriodRelation.periodAction_binaryFormDual`: the same
   statement for the action on binary forms attached to functionals on modular symbols, such as
   period polynomials.
@@ -93,21 +100,15 @@ transpose of the substitution action `TauCeti.TraceFormulaMatrixModule.periodAct
 noncomputable def symbolAction (hw : Even w) :
     R[TraceFormulaMatrixModule n] →ₗ[R]
       homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R ⊤ w :=
-  (Finsupp.lsum R fun x ↦ (LinearMap.id : R →ₗ[R] R).smulRight
-      (Quotient.lift (fun A : TraceFormulaMatrix n ↦
-          symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ) ∘ₗ binaryFormAdjugateRep R w A.1)
-        (fun A B h ↦ by
-          rcases h with rfl | rfl
-          · rfl
-          · rw [TraceFormulaMatrix.val_neg, binaryFormAdjugateRep_neg_of_even hw]) x)) ∘ₗ
-    (MonoidAlgebra.coeffLinearEquiv R).toLinearMap
+  linearLift (fun A ↦ symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ) ∘ₗ binaryFormAdjugateRep R w A.1)
+    fun A ↦ by rw [TraceFormulaMatrix.val_neg, binaryFormAdjugateRep_neg_of_even hw]
 
 /-- A basis element `c • [M]` acts by `P ↦ c • {∞, 0} ⊗ (P ∣ adj M)`. -/
 @[simp]
 theorem symbolAction_single (hw : Even w) (A : TraceFormulaMatrix n) (c : R) :
     symbolAction hw (single (mk A) c) =
       c • (symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ) ∘ₗ binaryFormAdjugateRep R w A.1) := by
-  simp [symbolAction]
+  rw [symbolAction, linearLift_single]
 
 /-- **The action on modular symbols is the transpose of the action on binary forms.** For a
 functional `φ` on the level-one modular symbols, the substitution action of `ξ` on the binary
@@ -124,6 +125,28 @@ theorem periodAction_binaryFormDual (hw : Even w) (ξ : R[TraceFormulaMatrixModu
     induction x using TraceFormulaMatrixModule.induction with | h A => ?_
     rw [periodAction_single, symbolAction_single, binaryFormAction_mk, LinearMap.smul_apply,
       binaryFormRep_binaryFormDual, LinearMap.comp_smul, _root_.map_smul, LinearMap.comp_assoc]
+
+/-! ### The sum over the upper-triangular representatives -/
+
+variable (R n w) in
+/-- **The sum over the upper-triangular representatives** of `Γ \ ℳₙ`: the map sending a binary
+form `P` to `∑ {∞, b/d} ⊗ (P ∣ adj (a b; 0 d))`, the sum over `FixedDetMatrices.reps n`. Each
+summand is the translate `{a∞, a0} ⊗ (P ∣ adj a)` of `{∞, 0} ⊗ P` by `a = (a b; 0 d)`. For `n > 0`
+this is the classical Hecke operator `Tₙ`, over all determinant-`n` double cosets, applied to
+`{∞, 0} ⊗ P`; its identification with `TauCeti.ModularSymbols.heckeSymbol` is not proved here. -/
+noncomputable def upperTriangularSymbol :
+    homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R ⊤ w :=
+  ∑ A : FixedDetMatrices.reps n,
+    symbol ⊤ ∞ (((A.1.1 0 1 : ℚ) / A.1.1 1 1 : ℚ) : OnePoint ℚ) ∘ₗ binaryFormAdjugateRep R w A.1.1
+
+/-- The value of `upperTriangularSymbol R n w` at `P` is
+`∑ {∞, b/d} ⊗ (P ∣ adj (a b; 0 d))`. -/
+theorem upperTriangularSymbol_apply (P : homogeneousSubmodule (Fin 2) R w) :
+    upperTriangularSymbol R n w P =
+      ∑ A : FixedDetMatrices.reps n,
+        symbol ⊤ ∞ (((A.1.1 0 1 : ℚ) / A.1.1 1 1 : ℚ) : OnePoint ℚ)
+          (binaryFormAdjugateRep R w A.1.1 P) := by
+  simp [upperTriangularSymbol]
 
 /-! ### The auxiliary map `M ↦ {∞, M0} ⊗ (P ∣ adj M)` -/
 
@@ -176,16 +199,11 @@ private theorem cuspSymbol_smul (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormul
 private noncomputable def cuspSymbolAction (hn : n ≠ 0) (hw : Even w) :
     R[TraceFormulaMatrixModule n] →ₗ[R]
       homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R ⊤ w :=
-  (Finsupp.lsum R fun x ↦ (LinearMap.id : R →ₗ[R] R).smulRight
-      (Quotient.lift (cuspSymbol hn) (fun A B h ↦ by
-          rcases h with rfl | rfl
-          · rfl
-          · exact cuspSymbol_neg hn hw B) x)) ∘ₗ
-    (MonoidAlgebra.coeffLinearEquiv R).toLinearMap
+  linearLift (cuspSymbol hn) (cuspSymbol_neg hn hw)
 
 private theorem cuspSymbolAction_single (hn : n ≠ 0) (hw : Even w) (A : TraceFormulaMatrix n)
-    (c : R) : cuspSymbolAction hn hw (single (mk A) c) = c • cuspSymbol (w := w) hn A := by
-  simp [cuspSymbolAction]
+    (c : R) : cuspSymbolAction hn hw (single (mk A) c) = c • cuspSymbol (w := w) hn A :=
+  linearLift_single _ _ A c
 
 /-- The auxiliary map kills `(1 - T)·ℛₙ`: left multiplication by `T` does not change it. -/
 private theorem cuspSymbolAction_ofMulAction_T (hn : n ≠ 0) (hw : Even w)
@@ -216,13 +234,10 @@ private theorem cuspSymbolAction_sub_ofMulAction_S (hn : n ≠ 0) (hw : Even w)
       cuspSymbol, ← smul_sub, ← LinearMap.sub_comp,
       ← symbol_add_symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ), add_sub_cancel_right]
 
-/-- The auxiliary map sends `Tₙ^∞` to `Tₙ ({∞, 0} ⊗ P)`. -/
+/-- The auxiliary map sends `Tₙ^∞` to `upperTriangularSymbol`, the sum over `ℳₙ^∞`. -/
 private theorem cuspSymbolAction_upperTriangularSum (hn : n ≠ 0) (hw : Even w) :
-    cuspSymbolAction hn hw (upperTriangularSum R n) =
-      ∑ A : FixedDetMatrices.reps n,
-        symbol ⊤ ∞ (((A.1.1 0 1 : ℚ) / A.1.1 1 1 : ℚ) : OnePoint ℚ) ∘ₗ
-          binaryFormAdjugateRep R w A.1.1 := by
-  rw [upperTriangularSum_eq_sum_reps, map_sum]
+    cuspSymbolAction hn hw (upperTriangularSum R n) = upperTriangularSymbol R n w := by
+  rw [upperTriangularSum_eq_sum_reps, map_sum, upperTriangularSymbol]
   refine Finset.sum_congr rfl fun A _ ↦ ?_
   -- `|b| < |d|` forces `d ≠ 0`
   have hd : A.1.1 1 1 ≠ 0 := abs_pos.mp ((abs_nonneg _).trans_lt A.2.2.2.2)
@@ -251,15 +266,12 @@ private theorem cuspSymbolAction_ofMulAction_op_S_upperTriangularSum (hn : n ≠
 
 `∑ c_M {∞, 0} ⊗ (P ∣ adj M) = ∑_{(a b; 0 d)} {∞, b/d} ⊗ (P ∣ adj (a b; 0 d))`,
 
-the sum on the right running over the upper-triangular representatives
-`FixedDetMatrices.reps n` of `Γ \ ℳₙ`, on which `(a b; 0 d)` sends `∞` to `∞` and `0` to `b/d`.
-For `n > 0` the right-hand side is the Hecke operator `Tₙ` applied to `{∞, 0} ⊗ P`. -/
+the sum `upperTriangularSymbol R n w` on the right running over the upper-triangular
+representatives `FixedDetMatrices.reps n` of `Γ \ ℳₙ`, on which `(a b; 0 d)` sends `∞` to `∞` and
+`0` to `b/d`. -/
 theorem PeriodRelation.symbolAction_eq (hn : n ≠ 0) (hw : Even w)
     {ξ : R[TraceFormulaMatrixModule n]} (h : PeriodRelation R n ξ) :
-    symbolAction hw ξ =
-      ∑ A : FixedDetMatrices.reps n,
-        symbol ⊤ ∞ (((A.1.1 0 1 : ℚ) / A.1.1 1 1 : ℚ) : OnePoint ℚ) ∘ₗ
-          binaryFormAdjugateRep R w A.1.1 := by
+    symbolAction hw ξ = upperTriangularSymbol R n w := by
   obtain ⟨ζ, hζ⟩ := periodRelation_iff.1 h
   have hΞ := congrArg (cuspSymbolAction (w := w) hn hw) hζ
   simp only [LinearMap.sub_apply, Module.End.one_apply, map_sub,
@@ -271,16 +283,14 @@ theorem PeriodRelation.symbolAction_eq (hn : n ≠ 0) (hw : Even w)
 /-- **Popa–Zagier, Proposition 2.** Let `n ≠ 0`, let `ξ` be a solution of the period relation
 (A), and let `φ` be a functional on the level-one modular symbols. The substitution action of `ξ`
 on the binary form attached to `P ↦ φ ({∞, 0} ⊗ P)` is the binary form attached to
-`P ↦ φ (∑ {∞, b/d} ⊗ (P ∣ adj (a b; 0 d)))`, the sum over the upper-triangular representatives
-`(a b; 0 d)` of `Γ \ ℳₙ`. For `φ` the period map of a level-one cusp form `f`, the former binary
-form is the period polynomial `r_f`. -/
+`φ ∘ upperTriangularSymbol R n w`, that is, to `P ↦ φ (∑ {∞, b/d} ⊗ (P ∣ adj (a b; 0 d)))`, the
+sum over the upper-triangular representatives `(a b; 0 d)` of `Γ \ ℳₙ`. For `φ` the period map of
+a level-one cusp form `f`, the former binary form is the period polynomial `r_f`. -/
 theorem PeriodRelation.periodAction_binaryFormDual (hn : n ≠ 0) (hw : Even w)
     {ξ : R[TraceFormulaMatrixModule n]} (h : PeriodRelation R n ξ)
     (φ : ModularSymbols R ⊤ w →ₗ[R] R) :
     periodAction hw ξ (binaryFormDual R w (φ ∘ₗ symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ))) =
-      binaryFormDual R w (φ ∘ₗ ∑ A : FixedDetMatrices.reps n,
-        symbol ⊤ ∞ (((A.1.1 0 1 : ℚ) / A.1.1 1 1 : ℚ) : OnePoint ℚ) ∘ₗ
-          binaryFormAdjugateRep R w A.1.1) := by
+      binaryFormDual R w (φ ∘ₗ upperTriangularSymbol R n w) := by
   rw [TraceFormulaMatrixModule.periodAction_binaryFormDual, h.symbolAction_eq hn hw]
 
 end TauCeti.TraceFormulaMatrixModule
