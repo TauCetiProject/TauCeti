@@ -54,11 +54,15 @@ private theorem sumSubtype_consParts {V : Option ι → Set α} {m : Option ι �
   simp [Sym.coe_sumSubtype, Fintype.sum_option, consParts, consDegrees,
     _root_.Sym.coe_cons, Multiset.cons_add]
 
-private noncomputable def consBlock (m : Option ι → ℕ) (a : ℂ)
-    (c : ∀ i, Fin (m i) → ℂ) : ∀ i, Fin (consDegrees m i) → ℂ
-  | none => Sym.coeffEquiv ℂ (m none + 1)
-      (Sym.cons a ((Sym.coeffEquiv ℂ (m none)).symm (c none)))
-  | some i => c (some i)
+private noncomputable def consBlockMap (m : Option ι → ℕ) (a : ℂ) :
+    ∀ i, (Fin (m i) → ℂ) → Fin (consDegrees m i) → ℂ
+  | none => fun c => Sym.coeffEquiv ℂ (m none + 1)
+      (Sym.cons a ((Sym.coeffEquiv ℂ (m none)).symm c))
+  | some _ => id
+
+private noncomputable def consBlock (m : Option ι → ℕ) (a : ℂ) :
+    (∀ i, Fin (m i) → ℂ) → ∀ i, Fin (consDegrees m i) → ℂ :=
+  Pi.map (consBlockMap m a)
 
 omit [Fintype ι] in
 @[simp]
@@ -71,17 +75,19 @@ omit [Fintype ι] in
 private theorem consBlock_some (m : Option ι → ℕ) (a : ℂ) (c : ∀ i, Fin (m i) → ℂ) (i : ι) :
     consBlock m a c (some i) = c (some i) := (rfl)
 
+omit [Fintype ι] in
+private theorem analyticAt_consBlockMap (m : Option ι → ℕ) (a : ℂ) (i : Option ι)
+    (c : Fin (m i) → ℂ) : AnalyticAt ℂ (consBlockMap m a i) c := by
+  cases i with
+  | none => exact Sym.analyticAt_coeffEquiv_cons_coeffEquiv_symm a c
+  | some i => exact analyticAt_id
+
 private theorem analyticAt_consBlock (m : Option ι → ℕ) (a : ℂ)
     (c : ∀ i, Fin (m i) → ℂ) : AnalyticAt ℂ (consBlock m a) c := by
   refine AnalyticAt.pi fun i => ?_
-  cases i with
-  | none =>
-    exact (Sym.analyticAt_coeffEquiv_cons_coeffEquiv_symm a (c none)).comp
-      (f := fun x : (∀ i, Fin (m i) → ℂ) => x none)
-      ((ContinuousLinearMap.proj (R := ℂ) (φ := fun i => Fin (m i) → ℂ) none).analyticAt c)
-  | some i =>
-    exact (ContinuousLinearMap.proj (R := ℂ)
-      (φ := fun i => Fin (m i) → ℂ) (some i)).analyticAt c
+  exact (analyticAt_consBlockMap m a i (c i)).comp
+    (f := fun x : (∀ i, Fin (m i) → ℂ) => x i)
+    ((ContinuousLinearMap.proj (R := ℂ) (φ := fun i => Fin (m i) → ℂ) i).analyticAt c)
 
 omit [Fintype ι] in
 private theorem fderiv_consBlock_injective [Finite ι] (m : Option ι → ℕ) (a : ℂ)
@@ -89,34 +95,22 @@ private theorem fderiv_consBlock_injective [Finite ι] (m : Option ι → ℕ) (
     Function.Injective (fderiv ℂ (consBlock m a) c) := by
   classical
   let := Fintype.ofFinite ι
-  let f : ∀ i, (Fin (m i) → ℂ) → Fin (consDegrees m i) → ℂ := fun i => match i with
-    | none => fun d => Sym.coeffEquiv ℂ (m none + 1)
-        (Sym.cons a ((Sym.coeffEquiv ℂ (m none)).symm d))
-    | some _ => id
-  have hblock : consBlock m a = Pi.map f := by
-    funext x i
-    cases i with
-    | none => exact consBlock_none m a x
-    | some i => exact consBlock_some m a x i
-  have hf (i) : DifferentiableAt ℂ (f i) (c i) := by
-    cases i with
-    | none =>
-      exact (Sym.analyticAt_coeffEquiv_cons_coeffEquiv_symm a (c none)).differentiableAt
-    | some i => exact differentiableAt_id
-  let d := fun i => fderiv ℂ (f i) (c i)
+  have hf (i) : DifferentiableAt ℂ (consBlockMap m a i) (c i) :=
+    (analyticAt_consBlockMap m a i (c i)).differentiableAt
+  let d := fun i => fderiv ℂ (consBlockMap m a i) (c i)
   -- Native pi differentiation composes every block with its projection in one step.
-  have hd : HasFDerivAt (Pi.map f) (ContinuousLinearMap.piMap d) c := by
-    simp only [ContinuousLinearMap.piMap]
+  have hd : HasFDerivAt (consBlock m a) (ContinuousLinearMap.piMap d) c := by
+    rw [consBlock, ContinuousLinearMap.piMap]
     exact hasFDerivAt_pi.mpr fun i => (hf i).hasFDerivAt.comp c (hasFDerivAt_apply i c)
-  rw [hblock, hd.fderiv, ContinuousLinearMap.coe_piMap']
+  rw [hd.fderiv, ContinuousLinearMap.coe_piMap']
   refine Function.Injective.piMap fun i => ?_
   cases i with
   | none =>
     -- Normalize the dependent block degree in the derivative's codomain instances.
-    dsimp +instances only [d, f, consDegrees]
+    dsimp +instances only [d, consBlockMap, consDegrees]
     exact Sym.fderiv_coeffEquiv_cons_coeffEquiv_symm_injective a (c none)
   | some i =>
-    dsimp +instances only [d, f, consDegrees]
+    dsimp +instances only [d, consBlockMap, consDegrees]
     rw [fderiv_id]
     exact Function.injective_id
 
@@ -143,10 +137,12 @@ private theorem symOpenPartialHomeomorph_cons_apply
   -- Reduce the declared block equations and their degree-indexed instances explicitly.
   cases i with
   | none =>
-    dsimp +instances only [consParts, consBlock, consDegrees]
+    rw [consBlock_none]
+    dsimp +instances only [consParts, consDegrees]
     rw [_root_.Sym.map_cons, Equiv.symm_apply_apply]
   | some i =>
-    dsimp +instances only [consParts, consBlock, consDegrees]
+    rw [consBlock_some]
+    dsimp +instances only [consParts, consDegrees]
 
 omit [Fintype ι] in
 private theorem analyticAt_cons_coordinates [Finite ι] (m : Option ι → ℕ)

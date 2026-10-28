@@ -57,6 +57,17 @@ end ContinuousLinearEquiv
 
 namespace TauCeti
 
+private theorem coe_piCurry_symm_trans_piCongrLeft_symm (R : Type*) [Semiring R] (E : Type*)
+    [TopologicalSpace E] [AddCommMonoid E] [Module R E]
+    {ι : Type*} {κ : ι → Type*} {ι' : Type*} (e : (Σ i, κ i) ≃ ι') :
+    ((LinearEquiv.piCurry R (fun _ _ => E)).symm.trans
+      (LinearEquiv.piCongrLeft R (fun _ : Sigma κ => E) e.symm).symm :
+        (∀ i, κ i → E) → (ι' → E)) = piSigmaConstHomeomorph E e := by
+  ext x j
+  simp only [LinearEquiv.trans_apply, LinearEquiv.piCongrLeft, LinearEquiv.symm_symm,
+    Equiv.symm_symm, LinearEquiv.piCongrLeft'_apply, LinearEquiv.piCurry_symm_apply,
+    piSigmaConstHomeomorph_apply, Sigma.uncurry]
+
 /-- Regrouping a family of tuples along a bijection of the sigma index, as a continuous linear
 equivalence. The underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`. -/
 def piSigmaConstContinuousLinearEquiv (R : Type*) [Semiring R] (E : Type*)
@@ -65,19 +76,16 @@ def piSigmaConstContinuousLinearEquiv (R : Type*) [Semiring R] (E : Type*)
     (∀ i, κ i → E) ≃L[R] (ι' → E) where
   toLinearEquiv := (LinearEquiv.piCurry R (fun _ _ => E)).symm.trans
     (LinearEquiv.piCongrLeft R (fun _ : Sigma κ => E) e.symm).symm
-  continuous_toFun := (piSigmaConstHomeomorph E e).continuous.congr fun x => by
-    funext j
-    simp only [LinearMap.toFun_eq_coe, LinearEquiv.coe_toLinearMap,
-      piSigmaConstHomeomorph_apply, LinearEquiv.trans_apply,
-      LinearEquiv.piCongrLeft, LinearEquiv.symm_symm, Equiv.symm_symm,
-      LinearEquiv.piCongrLeft'_apply, LinearEquiv.piCurry_symm_apply, Sigma.uncurry]
+  continuous_toFun := by
+    rw [LinearMap.toFun_eq_coe, LinearEquiv.coe_toLinearMap,
+      coe_piCurry_symm_trans_piCongrLeft_symm]
+    exact (piSigmaConstHomeomorph E e).continuous
   continuous_invFun := (piSigmaConstHomeomorph E e).symm.continuous.congr fun x => by
-    funext i j
-    simp only [LinearEquiv.invFun_eq_symm, piSigmaConstHomeomorph_symm_apply,
-      LinearEquiv.symm_trans_apply,
-      LinearEquiv.piCongrLeft, LinearEquiv.symm_symm, Equiv.symm_symm,
-      LinearEquiv.piCurry_apply, Sigma.curry, LinearEquiv.piCongrLeft'_symm_apply,
-      Equiv.piCongrLeft'_symm, Equiv.piCongrLeft'_apply]
+    rw [LinearEquiv.invFun_eq_symm]
+    apply ((LinearEquiv.piCurry R (fun _ _ => E)).symm.trans
+      (LinearEquiv.piCongrLeft R (fun _ : Sigma κ => E) e.symm).symm).injective
+    rw [LinearEquiv.apply_symm_apply, coe_piCurry_symm_trans_piCongrLeft_symm,
+      Homeomorph.apply_symm_apply]
 
 /-- The continuous linear regrouping has the existing regrouping homeomorphism as its function. -/
 @[simp]
@@ -86,12 +94,8 @@ theorem coe_piSigmaConstContinuousLinearEquiv (R : Type*) [Semiring R] (E : Type
     {ι : Type*} {κ : ι → Type*} {ι' : Type*} (e : (Σ i, κ i) ≃ ι') :
     (piSigmaConstContinuousLinearEquiv R E e : (∀ i, κ i → E) → (ι' → E)) =
       piSigmaConstHomeomorph E e := by
-  ext x j
-  simp only [piSigmaConstContinuousLinearEquiv, ContinuousLinearEquiv.coe_mk,
-    LinearEquiv.trans_apply,
-    LinearEquiv.piCongrLeft, LinearEquiv.symm_symm, Equiv.symm_symm,
-    LinearEquiv.piCongrLeft'_apply, LinearEquiv.piCurry_symm_apply,
-    piSigmaConstHomeomorph_apply, Sigma.uncurry]
+  simpa only [piSigmaConstContinuousLinearEquiv, ContinuousLinearEquiv.coe_mk] using
+    coe_piCurry_symm_trans_piCongrLeft_symm R E e
 
 /-- The inverse continuous linear regrouping has the inverse regrouping homeomorphism as its
 function. -/
