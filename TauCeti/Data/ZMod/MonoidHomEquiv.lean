@@ -26,6 +26,8 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
 ## Main results
 
 * `Multiplicative.mem_zpowers_ofAdd_one`: the element `1` generates `ℤ/Nℤ`.
+* `Multiplicative.forall_zmod_ne_one_iff`: the nonidentity elements of `ℤ/Nℤ` are the classes of
+  `0 < k < N`.
 * `TauCeti.zmodMonoidHomEquiv_symm_apply` and `TauCeti.zmodProdMonoidHomEquiv_symm_apply`: the
   homomorphism of `g` sends `a` to `g ^ a.val`, and that of `(g, h)` sends `(a, b)` to
   `g ^ a.val * h ^ b.val`.
@@ -41,6 +43,17 @@ variable {N : ℕ}
 theorem Multiplicative.mem_zpowers_ofAdd_one (x : Multiplicative (ZMod N)) :
     x ∈ Subgroup.zpowers (.ofAdd 1) :=
   ⟨x.toAdd.cast, by simp [← ofAdd_zsmul]⟩
+
+/-- An element of `ℤ/Nℤ`, written multiplicatively, other than the identity is `ofAdd k` for some
+`0 < k < N`. -/
+theorem Multiplicative.forall_zmod_ne_one_iff [NeZero N] {p : Multiplicative (ZMod N) → Prop} :
+    (∀ g, g ≠ 1 → p g) ↔ ∀ k : ℕ, 0 < k → k < N → p (.ofAdd (k : ZMod N)) := by
+  refine ⟨fun h k hk hkN ↦ h _ ?_, fun h g hg ↦ ?_⟩
+  · rw [Ne, ← ofAdd_zero, Multiplicative.ofAdd.injective.eq_iff, ZMod.natCast_eq_zero_iff]
+    exact Nat.not_dvd_of_pos_of_lt hk hkN
+  · have hval : g.toAdd.val ≠ 0 := by
+      rwa [Ne, ZMod.val_eq_zero, toAdd_eq_zero]
+    simpa using h _ (Nat.pos_of_ne_zero hval) (ZMod.val_lt g.toAdd)
 
 namespace TauCeti
 
