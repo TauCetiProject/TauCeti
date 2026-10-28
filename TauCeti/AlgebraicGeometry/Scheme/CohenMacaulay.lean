@@ -162,11 +162,12 @@ theorem isCohenMacaulay_iff_forall_affineOpens :
     have := IsLocallyNoetherian.component_noetherian U
     let y : PrimeSpectrum Γ(X, U) := ⟨p, inferInstance⟩
     have hy : U.2.fromSpec y ∈ (U : X.Opens) := U.2.range_fromSpec.le ⟨y, rfl⟩
-    let := TopCat.Presheaf.algebra_section_stalk X.presheaf ⟨U.2.fromSpec y, hy⟩
-    have : IsLocalization.AtPrime (X.presheaf.stalk (U.2.fromSpec y)) p :=
-      U.2.isLocalization_stalk' y hy
-    exact (IsLocalization.AtPrime.isCohenMacaulay_self_iff p _).mp
+    have hp : U.2.primeIdealOf ⟨U.2.fromSpec y, hy⟩ = y :=
+      (IsAffineOpen.isOpenImmersion_fromSpec U.2).base_open.injective
+        (U.2.fromSpec_primeIdealOf ⟨_, hy⟩)
+    have h := (isCohenMacaulay_stalk_iff_of_isAffineOpen U.2 ⟨_, hy⟩).mp
       (IsCohenMacaulay.isCohenMacaulay_stalk (U.2.fromSpec y))
+    rwa [hp] at h
   · have : IsLocallyNoetherian X := ⟨fun U ↦ (h U).1⟩
     refine ⟨fun x ↦ ?_⟩
     obtain ⟨U, hU, hx, -⟩ := exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top x)
@@ -188,9 +189,11 @@ theorem isCohenMacaulay_iff_forall_satisfiesSerreS :
       ∀ n, Module.SatisfiesSerreS n Γ(X, U) Γ(X, U) := by
   rw [isCohenMacaulay_iff_forall_affineOpens]
   refine forall_congr' fun U ↦ and_congr_right fun _ ↦ ?_
-  -- `LocalizedModule p.primeCompl Γ(X, U)` is by definition the localization
-  -- `Localization.AtPrime p`, an abbreviation for the same Ore localization.
-  exact Module.forall_satisfiesSerreS_iff_forall_isCohenMacaulay.symm
+  refine ((Module.forall_satisfiesSerreS_iff_forall_isCohenMacaulay (R := Γ(X, U))
+    (M := Γ(X, U))).trans (forall_congr' fun p ↦ forall_congr' fun _ ↦ ?_)).symm
+  exact ((IsLocalizedModule.iso p.primeCompl (Algebra.linearMap Γ(X, U)
+    (Localization.AtPrime p))).extendScalarsOfIsLocalization p.primeCompl
+    (Localization.AtPrime p)).isCohenMacaulay_iff
 
 /-- The spectrum of a ring `R` is Cohen–Macaulay exactly when `R` is Noetherian and its
 localization at every prime is Cohen–Macaulay. Stacks, Definition 10.103.12 (0AAH) on the ring
@@ -200,17 +203,18 @@ theorem isCohenMacaulay_Spec_iff (R : CommRingCat.{u}) :
     (Spec R).IsCohenMacaulay ↔ IsNoetherianRing R ∧ ∀ (p : Ideal R) [p.IsPrime],
       Module.IsCohenMacaulay (Localization.AtPrime p) (Localization.AtPrime p) := by
   rw [isCohenMacaulay_iff_forall_stalk, isLocallyNoetherian_Spec]
-  refine and_congr_right fun _ ↦ ⟨fun h p hp ↦ ?_, fun h x ↦ ?_⟩
-  · let x : Spec R := ⟨p, hp⟩
-    let : Algebra R ((Spec R).presheaf.stalk x) := StructureSheaf.stalkAlgebra R x
-    have : IsLocalization.AtPrime ((Spec R).presheaf.stalk x) p :=
-      StructureSheaf.IsLocalization.to_stalk R x
-    exact (IsLocalization.AtPrime.isCohenMacaulay_self_iff p _).mp (h x)
-  · have : x.asIdeal.IsPrime := x.isPrime
+  refine and_congr_right fun _ ↦ ?_
+  -- The stalk of `Spec R` at `x` is the localization of `R` at the prime `x`.
+  have key (x : Spec R) [x.asIdeal.IsPrime] :
+      Module.IsCohenMacaulay ((Spec R).presheaf.stalk x) ((Spec R).presheaf.stalk x) ↔
+        Module.IsCohenMacaulay (Localization.AtPrime x.asIdeal)
+          (Localization.AtPrime x.asIdeal) := by
     let : Algebra R ((Spec R).presheaf.stalk x) := StructureSheaf.stalkAlgebra R x
     have : IsLocalization.AtPrime ((Spec R).presheaf.stalk x) x.asIdeal :=
       StructureSheaf.IsLocalization.to_stalk R x
-    exact (IsLocalization.AtPrime.isCohenMacaulay_self_iff x.asIdeal _).mpr (h _)
+    exact IsLocalization.AtPrime.isCohenMacaulay_self_iff x.asIdeal _
+  exact ⟨fun h p hp ↦ (key ⟨p, hp⟩).mp (h _),
+    fun h x ↦ have := x.isPrime; (key x).mpr (h _)⟩
 
 /-- A regular scheme is Cohen–Macaulay, since regular local rings are Cohen–Macaulay. -/
 instance IsCohenMacaulay.of_isRegular [TauCeti.AlgebraicGeometry.IsRegular X] :
