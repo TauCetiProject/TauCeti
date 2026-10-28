@@ -18,8 +18,8 @@ parameter sets with unique derivatives, including nondegenerate closed intervals
 
 The proof reads the native along-curve derivative in one fixed chart near each parameter.
 Chart independence identifies that reading with the sum of the derivative of the section
-coordinates and the Christoffel contraction. Smoothness of the connection is required locally
-on the trivialization base sets, as in `ContMDiffCovariantDerivativeOn`.
+coordinates and the Christoffel contraction. The connection is required to be `C^n` locally
+on the trivialization base sets, as in `ContMDiffCovariantDerivativeOn E n`.
 
 The coordinate identification uses `CovariantDerivative.symmL_alongCurveInChartWithin`, and
 the connection regularity is supplied by `TauCeti.Manifold.contMDiffOn_christoffelMap`.
