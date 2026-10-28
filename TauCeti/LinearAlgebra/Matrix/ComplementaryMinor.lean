@@ -23,19 +23,6 @@ combinatorial factor, and no pair of index subsets has to be ordered. Choosing t
 enumerate a subset and its complement in increasing order recovers the classical statement for
 index sets.
 
-## The proof
-
-Everything comes from one auxiliary matrix `Q`. In the columns that `τ` takes from `m` it repeats
-the corresponding columns of `B`; in the columns that `τ` takes from `p` it carries the standard
-basis vector at the matching `σ`-image. Read through `σ` and `τ`, the matrix `Q` is block
-triangular with an identity block, so its determinant is the minor of `B` on the rows `σ (m)` and
-the columns `τ (m)`, up to the two signs.
-
-Multiplying by `A` collapses the first group of columns, because `A * B = 1` there, and turns the
-second group into columns of `A`: read through `τ` on both sides, `A * Q` is block triangular the
-other way round, with determinant the complementary minor of `A` on the rows `τ (p)` and the
-columns `σ (p)`. Comparing the two evaluations of `det (A * Q) = det A * det Q` is the identity.
-
 ## Why this file
 
 Tau Ceti already has the `h`--`e` duality `TauCeti.hsymmToeplitz_mul_esymmToeplitz`, saying that
@@ -91,6 +78,15 @@ theorem det_submatrix_inr_eq_sign_mul_det_mul_det_submatrix_inl
     (A.submatrix (⇑τ ∘ Sum.inr) (⇑σ ∘ Sum.inr)).det =
       ((Perm.sign σ : ℤ) : R) * ((Perm.sign τ : ℤ) : R) * A.det *
         (B.submatrix (⇑σ ∘ Sum.inl) (⇑τ ∘ Sum.inl)).det := by
+  -- Everything comes from one auxiliary matrix `Q`. In the columns that `τ` takes from `m` it
+  -- repeats the corresponding columns of `B`; in the columns that `τ` takes from `p` it carries
+  -- the standard basis vector at the matching `σ`-image. Read through `σ` and `τ`, the matrix `Q`
+  -- is block triangular with an identity block, so its determinant is the minor of `B` on the
+  -- rows `σ (m)` and the columns `τ (m)`, up to the two signs. Multiplying by `A` collapses the
+  -- first group of columns, because `A * B = 1` there, and turns the second group into columns
+  -- of `A`: read through `τ` on both sides, `A * Q` is block triangular the other way round, with
+  -- determinant the complementary minor of `A` on the rows `τ (p)` and the columns `σ (p)`.
+  -- Comparing the two evaluations of `det (A * Q) = det A * det Q` is the identity.
   classical
   set Q : Matrix (m ⊕ p) (m ⊕ p) R := of fun x y =>
     Sum.elim (fun _ : m => B x y) (fun i : p => if x = σ (Sum.inr i) then 1 else 0) (τ.symm y)
