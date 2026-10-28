@@ -160,6 +160,10 @@ end Henselian
 example : Nonempty (algebra (⊥ : Ideal R) ≃ₐ[R] R) :=
   ⟨algEquivOfHenselianRing ⊥⟩
 
+-- A henselian pair is fixed by henselization.
+example (I : Ideal R) [HenselianRing R I] : Nonempty (algebra I ≃ₐ[R] R) :=
+  ⟨algEquivOfHenselianRing I⟩
+
 -- The ordinary henselization of the finite field `𝔽₅` is `𝔽₅`.
 example : Nonempty (algebra (⊥ : Ideal (ZMod 5)) ≃ₐ[ZMod 5] ZMod 5) :=
   ⟨algEquivOfHenselianRing ⊥⟩

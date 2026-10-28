@@ -193,4 +193,10 @@ instance henselian : HenselianRing (algebra I) (extended I) where
     · rw [← hb₀, ← stage_hom_apply I φ (b none), ← map_sub, ← map_stage_map_algebraMap I D]
       exact Ideal.mem_map_of_mem _ hc
 
+-- The derivative condition on a simple root is not automatic: `X ^ 2 - 1` over `𝔽₂` has the root
+-- `1`, at which its derivative vanishes.
+example : (X ^ 2 - 1 : (ZMod 2)[X]).IsRoot 1 ∧
+    ¬ IsUnit ((X ^ 2 - 1 : (ZMod 2)[X]).derivative.eval 1) :=
+  ⟨by simp, by simp⟩
+
 end TauCeti.Henselization
