@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Neck
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Curvature bounds when turning off Hamiltonian perturbations
@@ -14,7 +13,8 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 For `K = K_s ds + K_t dt`, scaling both components by a domain-independent real number `r`
 does not simply scale the curvature. With the convention
 `R_K = ∂s K_t - ∂t K_s - {K_s, K_t}`, the exact formula is
-`R_(rK) = r R_K + (r - r²) {K_s, K_t}`.
+`R_(rK) = r R_K + (r - r²) {K_s, K_t}`, proved in
+`SymplecticForm.hamiltonianCurvature_const_smul` in the energy module.
 Consequently, for `0 ≤ r ≤ 1`, an integrable target-uniform bound `M` on `|R_K|` and a bound
 `P` on `|{K_s, K_t}|` give the uniform curvature allowance `∫ (M + P / 4)`.
 This controls the curvature term in the energy identity during a homotopy from zero to `K`.
@@ -44,65 +44,25 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {Ks Kt : ℝ × ℝ → V → ℝ}
 
-/-- Scaling a Hamiltonian one-form has a quadratic Poisson-bracket correction to curvature.
-No differentiability is required: constant scaling respects the totalized derivatives. -/
-theorem hamiltonianCurvature_const_smul (ω : SymplecticForm V) (r : ℝ)
-    (Ks Kt : ℝ × ℝ → V → ℝ) (z : ℝ × ℝ) (x : V) :
-    ω.hamiltonianCurvature (r • Ks) (r • Kt) z x =
-      r * ω.hamiltonianCurvature Ks Kt z x +
-        (r - r ^ 2) * ω.poissonBracket (Ks z) (Kt z) x := by
-  have hscale (K : ℝ × ℝ → V → ℝ) :
-      fderiv ℝ (fun w ↦ r * K w x) z = r • fderiv ℝ (fun w ↦ K w x) z :=
-    congrFun (fderiv_const_smul_field r) z
-  simp only [hamiltonianCurvature_def, Pi.smul_apply, smul_eq_mul,
-    poissonBracket_const_smul_left, poissonBracket_const_smul_right]
-  rw [hscale Kt, hscale Ks]
-  simp only [smul_apply, smul_eq_mul]
-  ring
-
-/-- Turning off a perturbation costs at most one quarter of the absolute Poisson bracket,
-in addition to the original absolute curvature. The bound is uniform for `r ∈ [0, 1]`. -/
-theorem abs_hamiltonianCurvature_const_smul_le (ω : SymplecticForm V) {r : ℝ}
-    (hr : r ∈ Icc (0 : ℝ) 1) (Ks Kt : ℝ × ℝ → V → ℝ) (z : ℝ × ℝ) (x : V) :
-    |ω.hamiltonianCurvature (r • Ks) (r • Kt) z x| ≤
-      |ω.hamiltonianCurvature Ks Kt z x| + |ω.poissonBracket (Ks z) (Kt z) x| / 4 := by
-  have hnonneg : 0 ≤ r - r ^ 2 := by nlinarith [hr.1, hr.2]
-  have hquarter : r - r ^ 2 ≤ 1 / 4 := by nlinarith [sq_nonneg (r - 1 / 2)]
-  rw [hamiltonianCurvature_const_smul]
-  calc
-    |r * ω.hamiltonianCurvature Ks Kt z x +
-        (r - r ^ 2) * ω.poissonBracket (Ks z) (Kt z) x| ≤
-        r * |ω.hamiltonianCurvature Ks Kt z x| +
-          (r - r ^ 2) * |ω.poissonBracket (Ks z) (Kt z) x| := by
-      exact (abs_add_le _ _).trans_eq (by
-        rw [abs_mul, abs_mul, abs_of_nonneg hr.1, abs_of_nonneg hnonneg])
-    _ ≤ _ := by
-      have h₁ := mul_le_mul_of_nonneg_right hr.2
-        (abs_nonneg (ω.hamiltonianCurvature Ks Kt z x))
-      have h₂ := mul_le_mul_of_nonneg_right hquarter
-        (abs_nonneg (ω.poissonBracket (Ks z) (Kt z) x))
-      linarith
-
-/-- On a compact coordinate domain, integrable bounds on curvature and the Poisson bracket
+/-- On a measurable coordinate domain, integrable bounds on curvature and the Poisson bracket
 control the integrated absolute curvature throughout the scaling homotopy. -/
 theorem integral_abs_hamiltonianCurvature_const_smul_le (ω : SymplecticForm V) {r : ℝ}
-    (hr : r ∈ Icc (0 : ℝ) 1) {T : Set (ℝ × ℝ)} (hT : IsCompact T)
-    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hTU : T ⊆ U)
-    {u : ℝ × ℝ → V} (hu : ContinuousOn u U)
-    (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
-    (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ))
+    (hr : r ∈ Icc (0 : ℝ) 1) {T : Set (ℝ × ℝ)} (hT : MeasurableSet T)
+    {u : ℝ × ℝ → V}
     {M P : ℝ × ℝ → ℝ}
     (hM : ∀ z ∈ T, ∀ x, |ω.hamiltonianCurvature Ks Kt z x| ≤ M z)
     (hP : ∀ z ∈ T, ∀ x, |ω.poissonBracket (Ks z) (Kt z) x| ≤ P z)
     (hMi : IntegrableOn M T) (hPi : IntegrableOn P T) :
     ∫ z in T, |ω.hamiltonianCurvature (r • Ks) (r • Kt) z (u z)| ≤
       ∫ z in T, M z + P z / 4 := by
-  have hcont := ω.continuousOn_hamiltonianCurvature_comp (Ks := r • Ks) (Kt := r • Kt) hU hu
-    (hKs.const_smul r) (hKt.const_smul r)
-  refine setIntegral_mono_on ((hcont.abs.mono hTU).integrableOn_compact hT)
-    (hMi.add (hPi.div_const 4)) hT.measurableSet fun z hz ↦ ?_
-  exact (ω.abs_hamiltonianCurvature_const_smul_le hr Ks Kt z (u z)).trans
-    (add_le_add (hM z hz (u z)) (div_le_div_of_nonneg_right (hP z hz (u z)) (by norm_num)))
+  have hbound (z : ℝ × ℝ) (hz : z ∈ T) :
+      |ω.hamiltonianCurvature (r • Ks) (r • Kt) z (u z)| ≤ M z + P z / 4 :=
+    (ω.abs_hamiltonianCurvature_const_smul_le hr Ks Kt z (u z)).trans
+      (add_le_add (hM z hz (u z)) (div_le_div_of_nonneg_right (hP z hz (u z)) (by norm_num)))
+  by_cases hfi : IntegrableOn (fun z ↦ |ω.hamiltonianCurvature (r • Ks) (r • Kt) z (u z)|) T
+  · exact setIntegral_mono_on hfi (hMi.add (hPi.div_const 4)) hT hbound
+  · rw [integral_undef hfi]
+    exact setIntegral_nonneg hT fun z hz ↦ (abs_nonneg _).trans (hbound z hz)
 
 /-- The scaling allowance persists after inserting any cylindrical neck. Thus scaling to zero
 and stretching the neck have one common integrated curvature bound. -/
