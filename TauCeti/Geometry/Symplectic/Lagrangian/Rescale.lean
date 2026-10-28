@@ -44,8 +44,9 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 @[simp]
 theorem isIsotropicMap_smul_iff (c : ℝ) (hc : c ≠ 0) :
     (hσ.smul c hc).IsIsotropicMap J f ↔ hσ.IsIsotropicMap J f := by
-  simp only [isIsotropicMap_iff, SmoothForm.eval₂_apply, SmoothForm.smul_toRoughForm,
-    Pi.smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul, mul_eq_zero, hc, false_or]
+  simp only [isIsotropicMap_iff_forall]
+  refine forall_congr' fun x ↦ ?_
+  rw [hσ.symplecticFormAt_smul c hc, SymplecticForm.isIsotropic_rescale_iff]
 
 /-- Coisotropic tangent images are unchanged by nonzero constant rescaling. -/
 @[simp]
@@ -82,10 +83,8 @@ theorem IsExactLagrangianMap.smul {θ : SmoothForm I M ℝ 1} {h : N → ℝ}
     (hσ.smul c hc).IsExactLagrangianMap J (c • θ) f (c • h) := by
   refine ⟨(hσ.isLagrangianMap_smul_iff c hc).2 hL.isLagrangianMap,
     (contDiff_id.const_smul c).comp_contMDiff hL.contMDiff_primitive, ?_⟩
-  have hfun : RoughForm.ofFunction J (c • h) = c • RoughForm.ofFunction J h := by
-    ext x v
-    simp
-  rw [SmoothForm.smul_toRoughForm, mpullback_smul, hL.mpullback_eq, hfun, mextDeriv_smul]
+  rw [SmoothForm.smul_toRoughForm, mpullback_smul, hL.mpullback_eq, RoughForm.ofFunction_smul,
+    mextDeriv_smul]
 
 /-- Simultaneous rescaling of an ambient primitive and a specified primitive function preserves
 and reflects exactness. -/

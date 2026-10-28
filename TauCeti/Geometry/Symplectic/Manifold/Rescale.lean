@@ -39,9 +39,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 @[simp]
 theorem isNondegenerate_smul_iff (c : ℝ) (hc : c ≠ 0) :
     (c • σ).IsNondegenerate ↔ σ.IsNondegenerate := by
-  simp only [isNondegenerate_iff_separatingLeft, SmoothForm.eval₂_apply,
-    SmoothForm.smul_toRoughForm, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
-    smul_eq_mul, mul_eq_zero, hc, false_or]
+  simp only [isNondegenerate_iff_separatingLeft, SmoothForm.eval₂_smul, smul_eq_mul, mul_eq_zero,
+    hc, false_or]
 
 /-- A nonzero multiple of a nondegenerate smooth two-form is nondegenerate. -/
 theorem IsNondegenerate.smul (hσ : σ.IsNondegenerate) (c : ℝ) (hc : c ≠ 0) :
@@ -82,7 +81,8 @@ theorem IsNondegenerate.symplecticFormAt_smul (hσ : σ.IsNondegenerate) (c : �
     (hσ.smul c hc).symplecticFormAt x = (hσ.symplecticFormAt x).rescale c hc := by
   apply SymplecticForm.toBilinForm_injective
   ext v w
-  simp [IsNondegenerate.symplecticFormAt_apply, SmoothForm.eval₂_apply]
+  simp only [IsNondegenerate.symplecticFormAt_apply, SmoothForm.eval₂_smul,
+    SymplecticForm.rescale_apply, smul_eq_mul]
 
 /-- Constant rescaling preserves the convention relating a symplectic form and its chosen
 primitive, including negative scale factors. -/
