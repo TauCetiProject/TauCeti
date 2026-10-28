@@ -550,6 +550,11 @@ theorem eval₂_add (φ ψ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x
     (φ + ψ).eval₂ x v w = φ.eval₂ x v w + ψ.eval₂ x v w :=
   (rfl)
 
+/-- Evaluation of the negative of a degree-two form is the negative of the evaluation. -/
+theorem eval₂_neg (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) :
+    (-φ).eval₂ x v w = -φ.eval₂ x v w :=
+  (rfl)
+
 
 section Evaluation
 
