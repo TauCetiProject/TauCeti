@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Integral
 public import TauCeti.AlgebraicGeometry.Frobenius.Twist
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism.Basic
 
@@ -19,10 +18,11 @@ underlying spaces. The same holds for the relative Frobenius `F_{X/S} : X ⟶ X^
 `X` over `S`, for their iterates, and so for every morphism `f` admitting a morphism `g` in the
 other direction such that both `f ≫ g` and `g ≫ f` are iterated absolute Frobenii.
 
-A universal homeomorphism is written here in Mathlib's form
-`(topologically @IsHomeomorph).universally f`. It follows that the absolute and relative Frobenius
-and their iterates are surjective, universally injective (radicial) and universally closed; being
-moreover affine, they are integral.
+A universal homeomorphism is proved here in Mathlib's form
+`(topologically @IsHomeomorph).universally f` and recorded as an instance of
+`TauCeti.AlgebraicGeometry.IsUniversalHomeomorphism`. It follows that the absolute and relative
+Frobenius and their iterates are surjective, universally injective (radicial), universally closed
+and integral.
 
 The key input is `AlgebraicGeometry.Scheme.universally_isHomeomorph_of_comp_eq_iterateFrobenius`:
 if `f ≫ g` and `g ≫ f` are the `n`-fold absolute Frobenius of `X` and of `Y`, then on every base
@@ -40,8 +40,8 @@ inverse continuous maps of underlying spaces.
 * `AlgebraicGeometry.Scheme.Hom.universally_isHomeomorph_relativeFrobenius` and
   `AlgebraicGeometry.Scheme.Hom.universally_isHomeomorph_iterateRelativeFrobenius`: the relative
   Frobenius and its iterates are universal homeomorphisms.
-* Instances: these morphisms are `Surjective`, `UniversallyInjective`, `UniversallyClosed` and
-  `IsIntegralHom`.
+* Instances: these morphisms are instances of `TauCeti.AlgebraicGeometry.IsUniversalHomeomorphism`,
+  hence `Surjective`, `UniversallyInjective`, `UniversallyClosed` and `IsIntegralHom`.
 
 ## References
 
@@ -51,7 +51,7 @@ inverse continuous maps of underlying spaces.
 
 public section
 
-open CategoryTheory Limits MorphismProperty
+open CategoryTheory Limits MorphismProperty TauCeti.AlgebraicGeometry
 
 universe u
 
@@ -100,41 +100,15 @@ theorem universally_isHomeomorph_frobenius (hX : (p : Γ(X, ⊤)) = 0) :
     (topologically @IsHomeomorph).universally (X.frobenius p hX) := by
   simpa using universally_isHomeomorph_iterateFrobenius hX 1
 
-instance surjective_iterateFrobenius (hX : (p : Γ(X, ⊤)) = 0) (n : ℕ) :
-    Surjective (X.iterateFrobenius p hX n) :=
-  .of_universally_isHomeomorph <| universally_isHomeomorph_iterateFrobenius hX n
+/-- The iterated absolute Frobenius is a universal homeomorphism. -/
+instance isUniversalHomeomorphism_iterateFrobenius (hX : (p : Γ(X, ⊤)) = 0) (n : ℕ) :
+    IsUniversalHomeomorphism (X.iterateFrobenius p hX n) :=
+  ⟨universally_isHomeomorph_iterateFrobenius hX n⟩
 
-instance universallyInjective_iterateFrobenius (hX : (p : Γ(X, ⊤)) = 0) (n : ℕ) :
-    UniversallyInjective (X.iterateFrobenius p hX n) :=
-  .of_universally_isHomeomorph <| universally_isHomeomorph_iterateFrobenius hX n
-
-instance universallyClosed_iterateFrobenius (hX : (p : Γ(X, ⊤)) = 0) (n : ℕ) :
-    UniversallyClosed (X.iterateFrobenius p hX n) :=
-  .of_universally_isHomeomorph <| universally_isHomeomorph_iterateFrobenius hX n
-
-instance surjective_frobenius (hX : (p : Γ(X, ⊤)) = 0) : Surjective (X.frobenius p hX) :=
-  .of_universally_isHomeomorph <| universally_isHomeomorph_frobenius hX
-
-instance universallyInjective_frobenius (hX : (p : Γ(X, ⊤)) = 0) :
-    UniversallyInjective (X.frobenius p hX) :=
-  .of_universally_isHomeomorph <| universally_isHomeomorph_frobenius hX
-
-instance universallyClosed_frobenius (hX : (p : Γ(X, ⊤)) = 0) :
-    UniversallyClosed (X.frobenius p hX) :=
-  .of_universally_isHomeomorph <| universally_isHomeomorph_frobenius hX
-
-/-- **The absolute Frobenius is integral.** -/
-instance isIntegralHom_frobenius (hX : (p : Γ(X, ⊤)) = 0) : IsIntegralHom (X.frobenius p hX) :=
-  -- `F_X` is affine, since it pulls back every open to itself, and universally closed
-  have : IsAffineHom (X.frobenius p hX) := ⟨fun U hU ↦ by rwa [frobenius_preimage]⟩
-  IsIntegralHom.iff_universallyClosed_and_isAffineHom.2 ⟨inferInstance, inferInstance⟩
-
-/-- **The iterated absolute Frobenius is integral.** -/
-instance isIntegralHom_iterateFrobenius (hX : (p : Γ(X, ⊤)) = 0) (n : ℕ) :
-    IsIntegralHom (X.iterateFrobenius p hX n) := by
-  induction n with
-  | zero => rw [iterateFrobenius_zero]; infer_instance
-  | succ n ih => rw [iterateFrobenius_succ]; infer_instance
+/-- The absolute Frobenius is a universal homeomorphism. -/
+instance isUniversalHomeomorphism_frobenius (hX : (p : Γ(X, ⊤)) = 0) :
+    IsUniversalHomeomorphism (X.frobenius p hX) :=
+  ⟨universally_isHomeomorph_frobenius hX⟩
 
 end Absolute
 
@@ -157,46 +131,15 @@ theorem universally_isHomeomorph_relativeFrobenius :
     (natCast_eq_zero_of_hom (pullback.snd _ _) hS) 1
     (by simp) (by simp)
 
-instance surjective_iterateRelativeFrobenius (n : ℕ) :
-    Surjective (π.iterateRelativeFrobenius p hS n) :=
-  .of_universally_isHomeomorph <| universally_isHomeomorph_iterateRelativeFrobenius π p hS n
+/-- The iterated relative Frobenius is a universal homeomorphism. -/
+instance isUniversalHomeomorphism_iterateRelativeFrobenius (n : ℕ) :
+    IsUniversalHomeomorphism (π.iterateRelativeFrobenius p hS n) :=
+  ⟨universally_isHomeomorph_iterateRelativeFrobenius π p hS n⟩
 
-instance universallyInjective_iterateRelativeFrobenius (n : ℕ) :
-    UniversallyInjective (π.iterateRelativeFrobenius p hS n) :=
-  .of_universally_isHomeomorph <| universally_isHomeomorph_iterateRelativeFrobenius π p hS n
-
-instance universallyClosed_iterateRelativeFrobenius (n : ℕ) :
-    UniversallyClosed (π.iterateRelativeFrobenius p hS n) :=
-  .of_universally_isHomeomorph <| universally_isHomeomorph_iterateRelativeFrobenius π p hS n
-
-instance surjective_relativeFrobenius : Surjective (π.relativeFrobenius p hS) :=
-  .of_universally_isHomeomorph <| universally_isHomeomorph_relativeFrobenius π p hS
-
-instance universallyInjective_relativeFrobenius :
-    UniversallyInjective (π.relativeFrobenius p hS) :=
-  .of_universally_isHomeomorph <| universally_isHomeomorph_relativeFrobenius π p hS
-
-instance universallyClosed_relativeFrobenius : UniversallyClosed (π.relativeFrobenius p hS) :=
-  .of_universally_isHomeomorph <| universally_isHomeomorph_relativeFrobenius π p hS
-
-/-- **The iterated relative Frobenius is integral.** -/
-instance isIntegralHom_iterateRelativeFrobenius (n : ℕ) :
-    IsIntegralHom (π.iterateRelativeFrobenius p hS n) :=
-  -- its composite with the projection `X^{(p^n)} ⟶ X`, which is integral and hence separated as
-  -- a base change of `F_S^n`, is the integral morphism `F_X^n`
-  have : IsSeparated (pullback.fst π (S.iterateFrobenius p hS n)) := .of_isAffineHom _
-  have : IsIntegralHom (π.iterateRelativeFrobenius p hS n ≫ pullback.fst _ _) := by
-    rw [iterateRelativeFrobenius_fst]; infer_instance
-  .of_comp _ (pullback.fst _ _)
-
-/-- **The relative Frobenius is integral.** -/
-instance isIntegralHom_relativeFrobenius : IsIntegralHom (π.relativeFrobenius p hS) :=
-  -- its composite with the projection `X^{(p)} ⟶ X`, which is integral and hence separated as a
-  -- base change of `F_S`, is the integral morphism `F_X`
-  have : IsSeparated (pullback.fst π (S.frobenius p hS)) := .of_isAffineHom _
-  have : IsIntegralHom (π.relativeFrobenius p hS ≫ pullback.fst _ _) := by
-    rw [relativeFrobenius_fst]; infer_instance
-  .of_comp _ (pullback.fst _ _)
+/-- The relative Frobenius is a universal homeomorphism. -/
+instance isUniversalHomeomorphism_relativeFrobenius :
+    IsUniversalHomeomorphism (π.relativeFrobenius p hS) :=
+  ⟨universally_isHomeomorph_relativeFrobenius π p hS⟩
 
 end Hom
 

@@ -74,9 +74,8 @@ theorem not_isUniversalHomeomorphism_Spec_galoisField_two (p : ℕ) [Fact p.Prim
   rw [isUniversalHomeomorphism_Spec_algebraMap_iff]
   intro _
   have hs := IsPurelyInseparable.surjective_algebraMap_of_isSeparable (ZMod p) (GaloisField p 2)
-  have hbot : (⊥ : Subalgebra (ZMod p) (GaloisField p 2)) = ⊤ :=
-    Algebra.eq_top_iff.mpr fun x ↦ (hs x).elim fun y hy ↦ hy ▸ Subalgebra.algebraMap_mem _ y
-  have := Subalgebra.bot_eq_top_iff_finrank_eq_one.mp hbot
+  have := Module.finrank_of_bijective_algebraMap
+    ⟨(algebraMap (ZMod p) (GaloisField p 2)).injective, hs⟩
   rw [GaloisField.finrank p two_ne_zero] at this
   exact absurd this (by norm_num)
 

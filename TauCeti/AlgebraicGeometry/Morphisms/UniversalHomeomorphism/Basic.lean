@@ -49,6 +49,9 @@ is integral, surjective on prime spectra, and any two ring maps from `S` to a fi
 
 * [Stacks Project, Section 29.46](https://stacks.math.columbia.edu/tag/04DC), universal
   homeomorphisms.
+* [TauCetiProject/TauCeti#18102](https://github.com/TauCetiProject/TauCeti/pull/18102) by
+  @sqrt-of-2, an earlier draft whose structure (the class via `mk_iff`, the universally-closed
+  criterion, integrality via `isAffineHom_of_isInducing`) this file follows.
 -/
 
 public section
@@ -60,21 +63,6 @@ universe u
 namespace AlgebraicGeometry
 
 variable {X Y : Scheme.{u}} {f : X ⟶ Y}
-
-/-- A universal homeomorphism is surjective. -/
-theorem Surjective.of_universally_isHomeomorph (hf : (topologically @IsHomeomorph).universally f) :
-    Surjective f :=
-  ⟨(universally_le _ _ hf).surjective⟩
-
-/-- A universal homeomorphism is universally injective. -/
-theorem UniversallyInjective.of_universally_isHomeomorph
-    (hf : (topologically @IsHomeomorph).universally f) : UniversallyInjective f :=
-  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.injective) _ hf⟩
-
-/-- A universal homeomorphism is universally closed. -/
-theorem UniversallyClosed.of_universally_isHomeomorph
-    (hf : (topologically @IsHomeomorph).universally f) : UniversallyClosed f :=
-  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ hf⟩
 
 /-- **Field-valued criterion for universal injectivity of affine morphisms.** The morphism
 `Spec S ⟶ Spec R` induced by `φ : R ⟶ S` is universally injective iff any two ring maps from `S`
@@ -137,16 +125,16 @@ theorem isHomeomorph [IsUniversalHomeomorphism f] : IsHomeomorph f :=
 
 /-- A universal homeomorphism is surjective. -/
 instance (priority := 900) surjective [IsUniversalHomeomorphism f] : Surjective f :=
-  .of_universally_isHomeomorph universally_isHomeomorph
+  ⟨(isHomeomorph f).surjective⟩
 
 /-- A universal homeomorphism is universally closed. -/
 instance (priority := 900) universallyClosed [IsUniversalHomeomorphism f] : UniversallyClosed f :=
-  .of_universally_isHomeomorph universally_isHomeomorph
+  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ universally_isHomeomorph⟩
 
 /-- A universal homeomorphism is universally injective. -/
 instance (priority := 900) universallyInjective [IsUniversalHomeomorphism f] :
     UniversallyInjective f :=
-  .of_universally_isHomeomorph universally_isHomeomorph
+  ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.injective) _ universally_isHomeomorph⟩
 
 /-- A universal homeomorphism is affine: its underlying map is a closed embedding. -/
 instance (priority := 900) isAffineHom [IsUniversalHomeomorphism f] : IsAffineHom f :=
