@@ -10,11 +10,11 @@ public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import Mathlib.Analysis.Calculus.Rademacher
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.BoundedVariation.Coarea
 import TauCeti.Analysis.Calculus.FDeriv.InfDist
+import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
@@ -44,8 +44,8 @@ while its parallel perimeters tend to twice its length.
 The shell formula is the coarea formula
 `LocallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fderiv` for the truncated distance
 `x ↦ min (infDist x s) r`. Its superlevel sets at levels `0 ≤ t < r` are the complements of the
-closed parallel sets, and by Rademacher's theorem its derivative has norm one almost everywhere
-on the shell (`TauCeti.norm_fderiv_infDist_eq_one`) and vanishes almost everywhere off it. The
+closed parallel sets, and its derivative has norm one almost everywhere on the shell
+(`TauCeti.norm_fderiv_infDist_ae_eq_indicator`) and vanishes almost everywhere off it. The
 derivative statement is then the fundamental theorem of calculus at a point of continuity.
 
 ## Main results
@@ -88,10 +88,8 @@ private theorem measurable_perimeter_cthickening (s : Set E) :
     ext t
     by_cases ht : t < 0
     · rw [piecewise_eq_of_mem _ _ _ ht, cthickening_of_nonpos ht.le]
-    · rw [piecewise_eq_of_notMem _ _ _ ht, ← perimeter_compl (s := cthickening t s)]
-      congr 1
-      ext x
-      simp [mem_cthickening_iff_infDist_le hs (not_lt.1 ht)]
+    · rw [piecewise_eq_of_notMem _ _ _ ht, ← perimeter_compl (s := cthickening t s),
+        compl_cthickening_eq_setOf_lt_infDist hs (not_lt.1 ht)]
   rw [hfun]
   exact measurable_const.piecewise measurableSet_Iio
     (measurable_perimeter_setOf_lt (continuous_infDist_pt s).aemeasurable)
@@ -101,9 +99,7 @@ one on the open shell `thickening r s \ closure s` and vanishes off it. -/
 private theorem enorm_fderiv_min_infDist_ae_eq {s : Set E} (hs : s.Nonempty) {r : ℝ} :
     (fun x => ‖fderiv ℝ (fun y => min (infDist y s) r) x‖ₑ) =ᵐ[μ]
       (thickening r s \ closure s).indicator 1 := by
-  have hlip : LipschitzWith 1 fun y => min (infDist y s) r :=
-    (lipschitz_infDist_pt (s := s)).min_const r
-  filter_upwards [hlip.ae_differentiableAt (μ := μ)] with x hx
+  filter_upwards [norm_fderiv_infDist_ae_eq_indicator (μ := μ) hs] with x hx
   by_cases hcl : x ∈ closure s
   · -- On the closure the truncated distance attains its minimum.
     have hmin : IsLocalMin (fun y => min (infDist y s) r) x := by
@@ -130,10 +126,8 @@ private theorem enorm_fderiv_min_infDist_ae_eq {s : Set E} (hs : s.Nonempty) {r 
   have hloc : (fun y => min (infDist y s) r) =ᶠ[𝓝 x] (infDist · s) := by
     filter_upwards [(continuous_infDist_pt s).continuousAt.eventually_lt continuousAt_const hr]
       with y hy using min_eq_left hy.le
-  have hd : DifferentiableAt ℝ (infDist · s) x := hx.congr_of_eventuallyEq hloc.symm
   have hmem : x ∈ thickening r s \ closure s := ⟨(mem_thickening_iff_infDist_lt hs).2 hr, hcl⟩
-  rw [hloc.fderiv_eq, indicator_of_mem hmem, ← ofReal_norm,
-    norm_fderiv_infDist_eq_one hs hcl hd]
+  rw [hloc.fderiv_eq, indicator_of_mem hmem, ← ofReal_norm, hx, indicator_of_mem hcl]
   simp
 
 /-- **The volume of a parallel shell is the integral of the parallel perimeters.** Against an
@@ -156,10 +150,11 @@ theorem measure_thickening_sdiff_closure_eq_lintegral_perimeter (s : Set E) (r :
       (Ico 0 r).indicator fun t => perimeter μ ⊤ (cthickening t s) := by
     ext t
     by_cases ht : t ∈ Ico 0 r
-    · rw [indicator_of_mem ht, ← perimeter_compl (s := cthickening t s)]
+    · rw [indicator_of_mem ht, ← perimeter_compl (s := cthickening t s),
+        compl_cthickening_eq_setOf_lt_infDist hs ht.1]
       congr 1
       ext x
-      simp [u, lt_min_iff, ht.2, mem_cthickening_iff_infDist_le hs ht.1]
+      simp [u, lt_min_iff, ht.2]
     rw [indicator_of_notMem ht]
     rcases not_and_or.1 ht with ht | ht
     · have : {x | t < u x} = univ :=
@@ -178,7 +173,7 @@ theorem measure_thickening_sdiff_closure_eq_lintegral_perimeter (s : Set E) (r :
 /-- **The volume of a closed parallel shell is the integral of the parallel perimeters.** Against
 an additive Haar measure, for every bounded set `s` and every `r`, the volume of the closed shell
 `cthickening r s \ closure s` is the integral over `0 < t < r` of the perimeters of the closed
-`t`-neighbourhoods of `s`. In particular the level set `{x | infDist x s = r}` is null. -/
+`t`-neighbourhoods of `s`. -/
 theorem measure_cthickening_sdiff_closure_eq_lintegral_perimeter {s : Set E}
     (hs : Bornology.IsBounded s) (r : ℝ) :
     μ (cthickening r s \ closure s) = ∫⁻ t in Ioo 0 r, perimeter μ ⊤ (cthickening t s) := by
@@ -229,20 +224,13 @@ private theorem tendsto_perimeter_cthickening {K : Set E} (hK : IsCompact K)
     (hlim : limsup (fun t => perimeter μ ⊤ (cthickening t K)) (𝓝[>] 0) ≤ perimeter μ ⊤ K) :
     Tendsto (fun t => perimeter μ ⊤ (cthickening t K)) (𝓝[>] 0) (𝓝 (perimeter μ ⊤ K)) := by
   have hshell : Tendsto (fun t => μ (cthickening t K \ K)) (𝓝[>] 0) (𝓝 0) := by
-    have h := tendsto_measure_biInter_gt (μ := μ) (s := fun t => cthickening t K \ K) (a := 0)
-      (fun t _ => (isClosed_cthickening.measurableSet.diff
-        hK.isClosed.measurableSet).nullMeasurableSet)
-      (fun i j _ hij => sdiff_subset_sdiff_left (cthickening_mono hij K))
-      ⟨1, one_pos, ((hK.cthickening (r := 1)).measure_lt_top.trans_le' (measure_mono
-        sdiff_subset)).ne⟩
-    have hinter : (⋂ t > (0 : ℝ), cthickening t K \ K) = ∅ := by
-      rw [eq_empty_iff_forall_notMem]
-      intro x hx
-      simp only [mem_iInter, Set.mem_sdiff] at hx
-      refine (hx 1 one_pos).2 ?_
-      rw [← hK.isClosed.closure_eq, closure_eq_iInter_cthickening]
-      exact mem_iInter₂.2 fun t ht => (hx t ht).1
-    rwa [hinter, measure_empty] at h
+    have h : Tendsto (fun t => μ (cthickening t K) - μ K) (𝓝[>] 0) (𝓝 (μ K - μ K)) :=
+      ENNReal.Tendsto.sub ((tendsto_measure_cthickening_of_isCompact hK).mono_left
+        nhdsWithin_le_nhds) tendsto_const_nhds (Or.inr hK.measure_lt_top.ne)
+    rw [tsub_self] at h
+    refine h.congr fun t => ?_
+    rw [measure_sdiff (self_subset_cthickening K) hK.isClosed.measurableSet.nullMeasurableSet
+      hK.measure_lt_top.ne]
   refine tendsto_of_le_liminf_of_limsup_le ?_ hlim
   refine perimeter_le_liminf (Eventually.of_forall fun t =>
     isClosed_cthickening.measurableSet.nullMeasurableSet)
@@ -284,15 +272,12 @@ theorem _root_.IsCompact.hasDerivWithinAt_measureReal_add_smul_closedBall {K : S
       perimeter μ ⊤ K) :
     HasDerivWithinAt (fun t : ℝ => μ.real (K + t • closedBall (0 : E) 1))
       (perimeter μ ⊤ K).toReal (Ici 0) 0 := by
-  -- For `t ≥ 0` the outer parallel set is the closed `t`-thickening of `K`.
-  have hpar {t : ℝ} (ht : 0 ≤ t) : K + t • closedBall (0 : E) 1 = cthickening t K := by
-    rw [smul_unitClosedBall_of_nonneg ht, hK.add_closedBall_zero ht]
   set f : ℝ → ℝ≥0∞ := fun t => perimeter μ ⊤ (cthickening t K)
   have hf0 : f 0 = perimeter μ ⊤ K := by simp [f, hK.isClosed.closure_eq]
   have hlimf : Tendsto f (𝓝[>] 0) (𝓝 (perimeter μ ⊤ K)) := by
     refine tendsto_perimeter_cthickening hK ((limsup_congr ?_).trans_le hlim)
     filter_upwards [self_mem_nhdsWithin] with t ht
-    simp only [hpar (le_of_lt ht)]
+    simp only [hK.add_smul_closedBall_eq_cthickening ht.le]
   have hg : ContinuousWithinAt (fun t => (f t).toReal) (Ioi 0) 0 := by
     simpa [ContinuousWithinAt, hf0, Function.comp_def] using (ENNReal.tendsto_toReal hP).comp hlimf
   -- By the fundamental theorem of calculus, the integral of the parallel perimeters has right
@@ -304,7 +289,7 @@ theorem _root_.IsCompact.hasDerivWithinAt_measureReal_add_smul_closedBall {K : S
     (s := Ici 0) (t := Ioi 0) IntervalIntegrable.refl hmeas hg).const_add (μ.real K)
   have hvol {t : ℝ} (ht : t ∈ Ici 0) :
       μ.real (K + t • closedBall (0 : E) 1) = μ.real K + ∫ τ in 0..t, (f τ).toReal := by
-    rw [hpar ht]
+    rw [hK.add_smul_closedBall_eq_cthickening ht]
     exact measureReal_cthickening_eq_add_integral_perimeter hK ht
   exact (hderiv.congr (fun t ht => hvol ht) (hvol self_mem_Ici)).congr_deriv
     (congrArg ENNReal.toReal hf0)

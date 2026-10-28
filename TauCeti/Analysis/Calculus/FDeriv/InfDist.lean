@@ -5,73 +5,105 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Basic
-public import Mathlib.Topology.MetricSpace.HausdorffDistance
-import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.TangentCone.Real
+public import Mathlib.Analysis.Calculus.Rademacher
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
 
 /-!
 # The derivative of the distance to a set
 
-In a proper real normed space, the distance `x ↦ infDist x s` to a nonempty set `s` is
-`1`-Lipschitz, so its derivative has norm at most one wherever it exists. Away from the closure
-of `s` the norm is exactly one (`TauCeti.norm_fderiv_infDist_eq_one`): moving from `x` straight
-towards a nearest point of the closure decreases the distance at unit speed. Combined with
-Rademacher's theorem, this says that the distance function solves the eikonal equation
-`‖D (infDist · s)‖ = 1` almost everywhere off the closure of `s`. This is the identity that turns
-the coarea formula for the distance function into a formula for the volume of parallel sets.
+In a real normed space, the distance `x ↦ infDist x s` to a nonempty set `s` is `1`-Lipschitz,
+so its derivative has norm at most one wherever it exists. Away from the closure of `s` the norm
+is exactly one (`TauCeti.norm_fderiv_infDist_eq_one`): moving from `x` straight towards an almost
+nearest point of `s` decreases the distance at almost unit speed. Combined with Rademacher's
+theorem, this says that in a finite-dimensional space the distance function solves the eikonal
+equation `‖D (infDist · s)‖ = 1` almost everywhere off the closure of `s`, while its derivative
+vanishes on the closure (`TauCeti.norm_fderiv_infDist_ae_eq_indicator`). This is the identity that
+turns the coarea formula for the distance function into a formula for the volume of parallel
+sets.
 -/
 
 public section
 
-open Metric Set
+open Metric Set MeasureTheory Filter
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- **The distance to a set solves the eikonal equation.** In a proper real normed space, at
-every point `x` off the closure of a nonempty set `s` where the distance function
-`infDist · s` is differentiable, its derivative has norm one. -/
+/-- **The distance to a set solves the eikonal equation.** In a real normed space, at every point
+`x` off the closure of a nonempty set `s` where the distance function `infDist · s` is
+differentiable, its derivative has norm one. -/
 theorem norm_fderiv_infDist_eq_one {s : Set E} (hs : s.Nonempty) {x : E} (hx : x ∉ closure s)
     (hd : DifferentiableAt ℝ (infDist · s) x) : ‖fderiv ℝ (infDist · s) x‖ = 1 := by
-  obtain ⟨p, hpc, hp⟩ := exists_mem_closure_infDist_eq_dist hs x
+  set f' := fderiv ℝ (infDist · s) x
   have hpos : 0 < infDist x s :=
     infDist_nonneg.lt_of_ne' fun h => hx ((mem_closure_iff_infDist_zero hs).2 h)
   set d := infDist x s
-  have hv : ‖p - x‖ = d := by rw [hp, dist_comm, dist_eq_norm]
-  -- On the segment from `x` to a nearest point `p`, the distance decreases at unit speed.
-  have hline : ∀ t ∈ Icc (0 : ℝ) 1, infDist (x + t • (p - x)) s = d - t * d := by
-    intro t ht
-    have hdist : dist (x + t • (p - x)) p = (1 - t) * d := by
-      rw [dist_eq_norm, show x + t • (p - x) - p = (1 - t) • (x - p) by module, norm_smul,
-        Real.norm_of_nonneg (sub_nonneg.2 ht.2), ← dist_eq_norm, ← hp]
-    have hdist' : dist x (x + t • (p - x)) = t * d := by
-      rw [dist_eq_norm, sub_add_cancel_left, norm_neg, norm_smul, Real.norm_of_nonneg ht.1, hv]
-    refine le_antisymm ?_ ?_
-    · calc infDist (x + t • (p - x)) s ≤ dist (x + t • (p - x)) p := by
-            rw [← infDist_closure]; exact infDist_le_dist_of_mem hpc
-        _ = d - t * d := by rw [hdist]; ring
-    · linarith [infDist_le_infDist_add_dist (x := x) (y := x + t • (p - x)) (s := s)]
-  have hmem : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
-  have hderiv : HasDerivWithinAt (fun t : ℝ => infDist (x + t • (p - x)) s)
-      (fderiv ℝ (infDist · s) x (p - x)) (Icc 0 1) 0 := by
-    have hlin : HasDerivAt (fun t : ℝ => x + t • (p - x)) (p - x) 0 := by
-      simpa only [one_smul] using
-        HasDerivAt.const_add x ((hasDerivAt_id' (0 : ℝ)).smul_const (p - x))
-    exact (hd.hasFDerivAt.comp_hasDerivAt_of_eq 0 hlin (by simp)).hasDerivWithinAt
-  have haff : HasDerivWithinAt (fun t : ℝ => infDist (x + t • (p - x)) s) (-d) (Icc 0 1) 0 := by
-    have h : HasDerivAt (fun t : ℝ => d - t * d) (-d) 0 := by
-      simpa only [one_mul] using HasDerivAt.const_sub d ((hasDerivAt_id' (0 : ℝ)).mul_const d)
-    exact h.hasDerivWithinAt.congr hline (hline 0 hmem)
-  have heq : fderiv ℝ (infDist · s) x (p - x) = -d :=
-    (uniqueDiffOn_Icc_zero_one 0 hmem).eq_deriv _ hderiv haff
-  refine le_antisymm ?_ ?_
+  refine le_antisymm ?_ (le_of_forall_pos_lt_add fun ε hε => ?_)
   · simpa using norm_fderiv_le_of_lipschitz ℝ (lipschitz_infDist_pt (s := s)) (x₀ := x)
-  · have hop := (fderiv ℝ (infDist · s) x).le_opNorm (p - x)
-    rw [heq, norm_neg, Real.norm_of_nonneg hpos.le, hv] at hop
-    exact le_of_mul_le_mul_right (by rwa [one_mul]) hpos
+  -- On a ball of radius `δ` about `x`, the linearisation error is at most `ε / 2` times the step.
+  obtain ⟨δ, hδ, hδx⟩ := eventually_nhds_iff_ball.1
+    ((hasFDerivAt_iff_isLittleO.1 hd.hasFDerivAt).def (half_pos hε))
+  set t := min (δ / 2) (min (ε / 2) d)
+  have ht : 0 < t := lt_min (half_pos hδ) (lt_min (half_pos hε) hpos)
+  have htδ : t < δ := (min_le_left _ _).trans_lt (half_lt_self hδ)
+  have htε : t ≤ ε / 2 := (min_le_right _ _).trans (min_le_left _ _)
+  have htd : t ≤ d := (min_le_right _ _).trans (min_le_right _ _)
+  -- An almost nearest point `q ∈ s`, at distance `ρ < d + t * t`, and the unit vector `v` from
+  -- `x` towards it.
+  obtain ⟨q, hq, hqx⟩ := (infDist_lt_iff hs).1 (lt_add_of_pos_right d (mul_pos ht ht))
+  set ρ := ‖x - q‖
+  have hρd : d ≤ ρ := (infDist_le_dist_of_mem hq).trans_eq (dist_eq_norm x q)
+  have hρlt : ρ < d + t * t := (dist_eq_norm x q).symm.trans_lt hqx
+  have hρ : 0 < ρ := hpos.trans_le hρd
+  set v := ρ⁻¹ • (q - x)
+  have hv : ‖v‖ = 1 := by
+    rw [norm_smul, norm_inv, norm_norm, norm_sub_rev q x, inv_mul_cancel₀ hρ.ne']
+  -- Moving a distance `t` towards `q` brings the distance to `s` down to at most `ρ - t`.
+  have hup : infDist (x + t • v) s ≤ ρ - t := by
+    have hc : 0 ≤ 1 - t * ρ⁻¹ := by
+      rw [sub_nonneg, ← div_eq_mul_inv, div_le_one hρ]; exact htd.trans hρd
+    calc infDist (x + t • v) s ≤ dist (x + t • v) q := infDist_le_dist_of_mem hq
+      _ = (1 - t * ρ⁻¹) * ρ := by
+        rw [dist_eq_norm, show x + t • v - q = (1 - t * ρ⁻¹) • (x - q) by simp only [v]; module,
+          norm_smul, Real.norm_of_nonneg hc]
+      _ = ρ - t := by field_simp
+  have hy := hδx (x + t • v) (by
+    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, hv, mul_one,
+      Real.norm_of_nonneg ht.le]
+    exact htδ)
+  rw [add_sub_cancel_left, map_smul, smul_eq_mul, norm_smul, hv, mul_one,
+    Real.norm_of_nonneg ht.le, Real.norm_eq_abs] at hy
+  have hlin := (abs_le.1 hy).1
+  -- Hence `f' v < t - 1 + ε / 2`, while `-f' v ≤ ‖f'‖` since `v` is a unit vector.
+  have hfv : f' v < t - 1 + ε / 2 :=
+    lt_of_mul_lt_mul_left (by nlinarith) ht.le
+  have hop : -f' v ≤ ‖f'‖ := by
+    have h := f'.le_opNorm v
+    rw [hv, mul_one, Real.norm_eq_abs] at h
+    exact (neg_le_abs _).trans h
+  linarith
+
+section Rademacher
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
+  [μ.IsAddHaarMeasure]
+
+/-- **The distance to a set solves the eikonal equation almost everywhere.** Against an additive
+Haar measure on a finite-dimensional real normed space, the derivative of the distance to a
+nonempty set `s` has norm one at almost every point off the closure of `s`, and vanishes on the
+closure. -/
+theorem norm_fderiv_infDist_ae_eq_indicator {s : Set E} (hs : s.Nonempty) :
+    (fun x => ‖fderiv ℝ (infDist · s) x‖) =ᵐ[μ] (closure s)ᶜ.indicator 1 := by
+  filter_upwards [(lipschitz_infDist_pt (s := s)).ae_differentiableAt (μ := μ)] with x hx
+  by_cases hcl : x ∈ closure s
+  · -- On the closure the distance attains its minimum.
+    have hmin : IsLocalMin (infDist · s) x := Eventually.of_forall fun y => by
+      simp only [(mem_closure_iff_infDist_zero hs).1 hcl]
+      exact infDist_nonneg
+    rw [hmin.fderiv_eq_zero, indicator_of_notMem (not_not.2 hcl), norm_zero]
+  · rw [indicator_of_mem hcl, norm_fderiv_infDist_eq_one hs hcl hx, Pi.one_apply]
+
+end Rademacher
 
 end TauCeti
