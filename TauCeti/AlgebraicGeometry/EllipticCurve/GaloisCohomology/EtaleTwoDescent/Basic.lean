@@ -228,15 +228,16 @@ variable [W.IsElliptic] [W.toAffine.IsCharNeTwoNF]
 
 /- The component at an irreducible factor of the explicit étale-algebra descent map is the
 rootwise descent unit `x - θ`, including the corrected value at a `2`-torsion point. -/
-private theorem explicitFactor_eq_twoDescentUnit [DecidableEq K] (p : W.toAffine.f.Factors)
+private theorem explicitFactor_eq_twoDescentUnit (p : W.toAffine.f.Factors)
     (P : W.toAffine.Point) :
+    open scoped Classical in
     AdjoinRoot.modPowEquivPiFactors W.toAffine.f_ne_zero W.toAffine.squarefree_f 2
         (W.toAffine.μ₀ P) p =
       QuotientGroup.mk ((W.baseChange (𝕃 p)).twoDescentUnit
         (factorRoot_nonsingular W p)
         (WeierstrassCurve.Affine.evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF _ _)
         (W.toAffine.pointMap (𝕃 p) P)) := by
-  obtain rfl : ‹DecidableEq K› = Classical.decEq K := Subsingleton.elim _ _
+  classical
   match P with
   | 0 =>
       rw [W.toAffine.μ₀_zero, map_one, Pi.one_apply, map_zero,
@@ -263,8 +264,9 @@ private theorem explicitFactor_eq_twoDescentUnit [DecidableEq K] (p : W.toAffine
             (ne_root_of_eval_f_ne_zero W p hx)]
 
 /-- The named factor projection sends `μ₀(P)` to the power class of its rootwise descent unit. -/
-theorem explicitFactor_μ₀_eq_twoDescentUnit [DecidableEq K] (p : W.toAffine.f.Factors)
+theorem explicitFactor_μ₀_eq_twoDescentUnit (p : W.toAffine.f.Factors)
     (P : W.toAffine.Point) :
+    open scoped Classical in
     explicitFactor W p (W.toAffine.μ₀ P) =
       powerClassHom (𝕃 p)ˣ 2
         ((W.baseChange (𝕃 p)).twoDescentUnit
@@ -423,6 +425,8 @@ classes of the étale algebra of the `2`-division cubic (Silverman X.1.4). -/
 theorem cohomologicalMap_kummerMap [DecidableEq K] (h2 : IsUnit ((2 : ℕ) : K))
     (P : W.toAffine.Point) :
     cohomologicalMap W h2 (.ofAdd (W.kummerMap 2 h2 P)) = W.toAffine.μ₀ P := by
+  -- The factorwise comparison uses classical decidable equality.
+  obtain rfl : ‹DecidableEq K› = Classical.decEq K := Subsingleton.elim _ _
   refine (explicitFactorEquiv W).injective (funext fun p ↦ ?_)
   simp only [explicitFactorEquiv_apply]
   have h2p : IsUnit ((2 : ℕ) : 𝕃 p) := by simpa only [map_natCast] using h2.map (ι p)
