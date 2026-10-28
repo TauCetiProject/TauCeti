@@ -45,6 +45,8 @@ at the sink `t`. A loop at `v` enters and leaves `v`, so it contributes nothing 
 * `TauCeti.sum_excessAt_eq_arrowSum_sub`: the total excess on a vertex set `S` is the value
   entering `S` minus the value leaving `S`.
 * `TauCeti.sum_excessAt`: the total excess over all vertices vanishes.
+* `TauCeti.sum_excessAt_eq_zero_of_forall_mem_iff`: the total excess vanishes on a vertex set
+  that no arrow enters or leaves.
 * `TauCeti.excessAt_single`: a single arrow from `x` to `y` carrying `q` has excess `q` at `y` and
   `-q` at `x`.
 * `TauCeti.excessAt_source_eq_neg_sink`: an assignment conserved away from `s` and `t` has opposite
@@ -411,6 +413,18 @@ vertex and leaves exactly one vertex. -/
 theorem sum_excessAt (f : Assignment Q K) : ∑ v, excessAt f v = 0 := by
   simp only [excessAt_def, sum_sub_distrib]
   rw [sum_comm, sub_self]
+
+/-- A vertex set that no arrow enters or leaves, such as a union of weakly connected components,
+has total excess zero. -/
+theorem sum_excessAt_eq_zero_of_forall_mem_iff (f : Assignment Q K) {S : Finset V}
+    (hS : ∀ ⦃x y⦄, Q x y → (x ∈ S ↔ y ∈ S)) : ∑ v ∈ S, excessAt f v = 0 := by
+  classical
+  have h {T : Finset V} (hT : ∀ ⦃x y⦄, Q x y → x ∈ T → y ∈ T) : arrowSum f T Tᶜ = 0 :=
+    sum_eq_zero fun _ hx ↦ sum_eq_zero fun _ hy ↦ sum_eq_zero fun e _ ↦
+      absurd (hT e hx) (mem_compl.1 hy)
+  rw [sum_excessAt_eq_arrowSum_sub, h fun _ _ e hx ↦ (hS e).1 hx, sub_zero]
+  simpa only [compl_compl] using
+    h (T := Sᶜ) fun _ _ e hx ↦ by simpa only [mem_compl, hS e] using hx
 
 /-- If an assignment is conserved at every vertex other than `s` and `t`, then its excesses at `s`
 and `t` are opposite. In particular a flow loses at its source exactly what it delivers to its

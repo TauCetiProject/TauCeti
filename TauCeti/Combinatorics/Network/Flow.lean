@@ -50,6 +50,8 @@ flows is assembled.
 * `TauCeti.Flow.arrowSum_le_arrowSum_univ`: a flow carries at most the total capacity across any
   pair of vertex sets.
 * `TauCeti.map_cutBound`: cut bounds commute with additive coefficient maps.
+* `TauCeti.neg_cutBound_le_sum_excessAt` and `TauCeti.sum_excessAt_le_cutBound_compl`: cut bounds
+  bound the total excess of an assignment between `lo` and `hi` on any vertex set.
 * `TauCeti.BoundedFlow.cutBound_sub_val` and `TauCeti.BoundedFlow.val_eq_cutBound_iff`: the gap
   between a cut bound and the value is the residual capacity leaving the cut, so the value attains
   the cut bound exactly when no residual arrow of positive capacity leaves the cut.
@@ -113,6 +115,26 @@ theorem map_cutBound [DecidableEq V] {L F : Type*} [AddCommGroup L] [FunLike F K
     [AddMonoidHomClass F K L] (φ : F) (lo hi : Assignment Q K) (S : Finset V) :
     φ (cutBound lo hi S) = cutBound (lo.map φ) (hi.map φ) S := by
   rw [cutBound_def, cutBound_def, map_sub, map_arrowSum, map_arrowSum]
+
+section Ordered
+
+variable [Preorder K] [AddLeftMono K] [DecidableEq V] {lo hi f : Assignment Q K}
+
+/-- An assignment between `lo` and `hi` has total excess on `S` at least minus the cut bound
+of `S`. -/
+theorem neg_cutBound_le_sum_excessAt (hf : f ∈ Set.Icc lo hi) (S : Finset V) :
+    -cutBound lo hi S ≤ ∑ v ∈ S, excessAt f v := by
+  rw [sum_excessAt_eq_arrowSum_sub, cutBound_def, neg_sub]
+  exact sub_le_sub (arrowSum_mono hf.1 _ _) (arrowSum_mono hf.2 _ _)
+
+/-- An assignment between `lo` and `hi` has total excess on `S` at most the cut bound of the
+complement of `S`. -/
+theorem sum_excessAt_le_cutBound_compl (hf : f ∈ Set.Icc lo hi) (S : Finset V) :
+    ∑ v ∈ S, excessAt f v ≤ cutBound lo hi Sᶜ := by
+  rw [sum_excessAt_eq_arrowSum_sub, cutBound_def, compl_compl]
+  exact sub_le_sub (arrowSum_mono hf.2 _ _) (arrowSum_mono hf.1 _ _)
+
+end Ordered
 
 namespace BoundedFlow
 
