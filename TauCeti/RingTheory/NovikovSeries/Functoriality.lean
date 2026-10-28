@@ -36,7 +36,7 @@ coefficient at its exponent (`TauCeti.NovikovSeries.coeff_algebraMap_addSubgroup
 restriction of coefficients `comap K.subtype` to `K` satisfies the projection formula
 `comap (b * a) = b * comap a` for `b` in `Nov(R, K, N|K)`
 (`TauCeti.NovikovSeries.comap_subtype_algebraMap_mul`). Applied to the inclusion of a
-finite-index subgroup of exponents, these maps compare the Novikov rings of a finite cyclic
+finite-index subgroup of exponents, these maps compare the Novikov rings of a finite abelian
 covering and of its base.
 
 ## Main definitions

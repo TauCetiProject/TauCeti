@@ -18,9 +18,10 @@ Let `N : H →+ ℝ` be a period homomorphism on an additive commutative group `
 be a subgroup, with the restricted period map `N.comp K.subtype`. By
 `TauCeti.NovikovSeries.instAlgebraAddSubgroup`, the pushforward along the inclusion `K → H` makes
 `Nov(R, H, N)` an algebra over `Nov(R, K, N|K)`. For an abelian covering of a base space with deck
-group `H`, the subgroup `K` is the deck group of that covering over an intermediate finite cyclic
-covering of the base, whose own deck group is `H ⧸ K`; this is the extension along which the norm
-and trace of Novikov series are taken.
+group `H`, the subgroup `K` is the deck group of that covering over an intermediate abelian
+covering of the base, whose own deck group is `H ⧸ K`. When `K` has finite index this intermediate
+covering is a finite abelian covering, and this is the extension along which the norm and trace
+of Novikov series are taken.
 
 By the projection formula `TauCeti.NovikovSeries.comap_subtype_algebraMap_mul`, if `K` has finite
 index and `s : H ⧸ K → H` picks a representative of each coset, the monomials `e^(s q)` form a
