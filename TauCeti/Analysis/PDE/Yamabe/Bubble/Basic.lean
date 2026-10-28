@@ -174,20 +174,17 @@ theorem bubble_rpow_four_div_finrank_sub_two (hn : finrank ℝ E ≠ 2) {t : ℝ
     norm_num
   rw [bubble_apply, ← Real.rpow_mul (by positivity), hexp, Real.rpow_natCast]
 
-section Gradient
-
-variable [CompleteSpace E]
-
-/-- **The gradient of a bubble**:
-`∇U_{t,b}(x) = -((n - 2) / (t² + ‖x - b‖²)) U_{t,b}(x) (x - b)`, where `n` is the dimension of
-`E`. -/
-theorem hasGradientAt_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
-    HasGradientAt (bubble t b)
-      (-(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b)) x := by
+/-- The canonical map to the dual gives the differential without completeness; only its Riesz
+inverse, used to define the gradient, needs completeness. -/
+private theorem hasFDerivAt_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
+    HasFDerivAt (bubble t b)
+      (toDualMap ℝ E
+        (-(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b))) x := by
   set k : ℝ := ((finrank ℝ E : ℝ) - 2) / 2
   have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
   -- Write the bubble as `F ∘ q` with `q y = t² + ‖y - b‖²` and `F s = (2 t s⁻¹) ^ k`.
-  have hq : HasFDerivAt (fun y : E ↦ t ^ 2 + ‖y - b‖ ^ 2) (toDual ℝ E ((2 : ℝ) • (x - b))) x := by
+  have hq : HasFDerivAt (fun y : E ↦ t ^ 2 + ‖y - b‖ ^ 2)
+      (toDualMap ℝ E ((2 : ℝ) • (x - b))) x := by
     refine (((hasStrictFDerivAt_norm_sq (x - b)).hasFDerivAt.comp x
       ((hasFDerivAt_id x).sub_const b)).const_add (t ^ 2)).congr_fderiv ?_
     ext v
@@ -201,7 +198,6 @@ theorem hasGradientAt_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
     simp [bubble_apply, div_eq_mul_inv, k]
   have h := hF.comp_hasFDerivAt x hq
   rw [← hU, ← map_smul, smul_smul] at h
-  rw [hasGradientAt_iff_hasFDerivAt]
   refine h.congr_fderiv ?_
   congr 2
   rw [bubble_apply, div_eq_mul_inv,
@@ -209,6 +205,19 @@ theorem hasGradientAt_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
   simp only [k]
   field_simp
 
+section Gradient
+
+variable [CompleteSpace E] in
+/-- **The gradient of a bubble**:
+`∇U_{t,b}(x) = -((n - 2) / (t² + ‖x - b‖²)) U_{t,b}(x) (x - b)`, where `n` is the dimension of
+`E`. -/
+theorem hasGradientAt_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
+    HasGradientAt (bubble t b)
+      (-(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b)) x := by
+  rw [hasGradientAt_iff_hasFDerivAt, toDual_apply_eq_toDualMap_apply]
+  exact hasFDerivAt_bubble ht b x
+
+variable [CompleteSpace E] in
 /-- The gradient of a bubble, as a value of `gradient`. -/
 theorem gradient_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
     ∇ (bubble t b) x =
@@ -220,11 +229,12 @@ theorem norm_fderiv_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
     ‖fderiv ℝ (bubble t b) x‖ =
       |(finrank ℝ E : ℝ) - 2| * bubble t b x * ‖x - b‖ /
         (t ^ 2 + ‖x - b‖ ^ 2) := by
-  rw [(hasGradientAt_bubble ht b x).hasFDerivAt.fderiv, LinearIsometryEquiv.norm_map,
+  rw [(hasFDerivAt_bubble ht b x).fderiv, LinearIsometry.norm_map,
     norm_smul, norm_neg, Real.norm_eq_abs, abs_mul, abs_div,
     abs_of_pos (bubble_pos ht b x), abs_of_pos (by positivity : 0 < t ^ 2 + ‖x - b‖ ^ 2)]
   ring
 
+variable [CompleteSpace E] in
 /-- The squared norm of the differential of a bubble is the radial function
 `((n - 2) / (2 t)) ² ‖x - b‖² (2 t / (t² + ‖x - b‖²)) ^ n`. -/
 theorem norm_fderiv_bubble_sq {t : ℝ} (ht : 0 < t) (b x : E) :

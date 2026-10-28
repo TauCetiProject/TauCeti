@@ -56,7 +56,6 @@ theorem bubble_le_rpow_norm_sub (hn : 2 ≤ finrank ℝ E) {t : ℝ} (ht : 0 < t
       congr 2
       ring
 
-variable [CompleteSpace E] in
 /-- A logarithmic derivative bound for the bubble away from its centre. It is often convenient
 when a cutoff estimate already contains the bubble itself. -/
 theorem norm_fderiv_bubble_le_div_norm_sub {t : ℝ} (ht : 0 < t) {b x : E}
@@ -78,7 +77,6 @@ theorem norm_fderiv_bubble_le_rpow_norm_sub (hn : 2 ≤ finrank ℝ E) {t : ℝ}
     {b x : E} (hx : x ≠ b) :
     ‖fderiv ℝ (bubble t b) x‖ ≤ ((finrank ℝ E : ℝ) - 2) *
       (2 * t) ^ (((finrank ℝ E : ℝ) - 2) / 2) * ‖x - b‖ ^ (1 - (finrank ℝ E : ℝ)) := by
-  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   have hr : 0 < ‖x - b‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hx)
   have hn' : 0 ≤ (finrank ℝ E : ℝ) - 2 := by
     have : (2 : ℝ) ≤ finrank ℝ E := by exact_mod_cast hn
@@ -92,6 +90,7 @@ theorem norm_fderiv_bubble_le_rpow_norm_sub (hn : 2 ≤ finrank ℝ E) {t : ℝ}
       exact div_le_div_of_nonneg_right
         (mul_le_mul_of_nonneg_left (bubble_le_rpow_norm_sub hn ht hx) hn') hr.le
     _ = _ := by
+      -- Subtract one from the bubble exponent so `Real.rpow_sub_one` divides by the radius.
       rw [show 1 - (finrank ℝ E : ℝ) = (2 - (finrank ℝ E : ℝ)) - 1 by ring,
         Real.rpow_sub_one hr.ne']
       ring
@@ -134,6 +133,7 @@ theorem norm_fderiv_mul_bubble_le (hn : 2 ≤ finrank ℝ E) {t R : ℝ} (ht : 0
   have hu := ((contDiff_bubble ht.ne' b : ContDiff ℝ 1 (bubble t b)).differentiable
     one_ne_zero).differentiableAt (x := x)
   have hrpow : R ^ (1 - (finrank ℝ E : ℝ)) = R ^ (2 - (finrank ℝ E : ℝ)) / R := by
+    -- The subtraction-by-one form lets `Real.rpow_sub_one` extract the factor `1 / R`.
     rw [show 1 - (finrank ℝ E : ℝ) = (2 - (finrank ℝ E : ℝ)) - 1 by ring,
       Real.rpow_sub_one hR.ne']
   have hmul : fderiv ℝ (fun y ↦ χ y * bubble t b y) x =
