@@ -62,6 +62,96 @@ noncomputable def totalizationXIso (S : ShortComplex (CochainComplex C (ZMod n))
   homotopyCofiber.XIsoBiprod (homotopyCofiber.descShortComplex S) i (i + 1) rfl ≪≫
     biprod.mapIso (homotopyCofiber.XIsoBiprod S.f (i + 1) (i + 1 + 1) rfl) (Iso.refl _)
 
+section Coordinates
+
+open homotopyCofiber
+
+variable (S : ShortComplex (CochainComplex C (ZMod n))) (i : ZMod n)
+
+/-- The outer cone's left inclusion inserts the first two coordinate summands. -/
+@[reassoc]
+theorem inlX_totalizationXIso_hom :
+    inlX (descShortComplex S) (i + 1) i rfl ≫ (totalizationXIso S i).hom =
+      (XIsoBiprod S.f (i + 1) (i + 1 + 1) rfl).hom ≫ biprod.inl := by
+  dsimp only [totalizationXIso, Iso.trans_hom, biprod.mapIso_hom, Iso.refl_hom]
+  -- Keep relation proofs typed for the dependent cone coordinate API.
+  generalize_proofs
+  simp
+
+/-- The last term is the rightmost summand of the totalization coordinates. -/
+@[reassoc (attr := simp)]
+theorem inrX_totalizationXIso_hom :
+    inrX (descShortComplex S) i ≫ (totalizationXIso S i).hom = biprod.inr := by
+  dsimp only [totalizationXIso, Iso.trans_hom, biprod.mapIso_hom, Iso.refl_hom]
+  -- Keep relation proofs typed for the dependent cone coordinate API.
+  generalize_proofs
+  simp
+
+/-- The shifted first term is the leftmost summand of the totalization coordinates. -/
+@[reassoc (attr := simp)]
+theorem inlX_inlX_totalizationXIso_hom :
+    inlX S.f (i + 1 + 1) (i + 1) rfl ≫ inlX (descShortComplex S) (i + 1) i rfl ≫
+      (totalizationXIso S i).hom = biprod.inl ≫ biprod.inl := by
+  rw [inlX_totalizationXIso_hom]
+  generalize_proofs
+  simp
+
+/-- The shifted middle term is the middle summand of the totalization coordinates. -/
+@[reassoc (attr := simp)]
+theorem inrX_inlX_totalizationXIso_hom :
+    inrX S.f (i + 1) ≫ inlX (descShortComplex S) (i + 1) i rfl ≫
+      (totalizationXIso S i).hom = biprod.inr ≫ biprod.inl := by
+  rw [inlX_totalizationXIso_hom]
+  generalize_proofs
+  simp
+
+/-- On the first summand, the two cone shifts give `d_K` and the off-diagonal entry `-f`. -/
+@[reassoc]
+theorem inlX_inlX_totalization_d :
+    inlX S.f (i + 1 + 1) (i + 1) rfl ≫ inlX (descShortComplex S) (i + 1) i rfl ≫
+      (totalization S).d i (i + 1) ≫ (totalizationXIso S (i + 1)).hom =
+        S.X₁.d (i + 1 + 1) (i + 1 + 1 + 1) ≫ biprod.inl ≫ biprod.inl -
+          S.f.f (i + 1 + 1) ≫ biprod.inr ≫ biprod.inl := by
+  generalize_proofs
+  simp only [totalization, homotopyCofiber_d]
+  rw [inlX_d_assoc _ _ _ _ (by rfl) (by rfl)]
+  generalize_proofs
+  simp only [Preadditive.add_comp, Preadditive.comp_add, Preadditive.comp_neg, Category.assoc,
+    inlX_descShortComplex_f_assoc, Preadditive.neg_comp]
+  simp only [homotopyCofiber_d]
+  rw [inlX_d_assoc _ _ _ _ (by rfl) (by rfl)]
+  generalize_proofs
+  simp only [homotopyCofiber_X, inlX_totalizationXIso_hom, Preadditive.add_comp,
+    Preadditive.neg_comp, Category.assoc, inlX_XIsoBiprod_hom_assoc, neg_add_rev, neg_neg,
+    inrX_totalizationXIso_hom, zero_comp, add_zero]
+  generalize_proofs
+  simp [add_comm, sub_eq_add_neg]
+
+/-- On the middle summand, the totalization differential has entries `-d_L` and `g`. -/
+@[reassoc]
+theorem inrX_inlX_totalization_d :
+    inrX S.f (i + 1) ≫ inlX (descShortComplex S) (i + 1) i rfl ≫
+      (totalization S).d i (i + 1) ≫ (totalizationXIso S (i + 1)).hom =
+        -S.X₂.d (i + 1) (i + 1 + 1) ≫ biprod.inr ≫ biprod.inl +
+          S.g.f (i + 1) ≫ biprod.inr := by
+  generalize_proofs
+  simp only [totalization, homotopyCofiber_d]
+  rw [inlX_d_assoc _ _ _ _ (by rfl) (by rfl)]
+  generalize_proofs
+  simp only [Preadditive.add_comp, Preadditive.comp_add, Preadditive.comp_neg, Preadditive.neg_comp,
+    Category.assoc, homotopyCofiber_d, inrX_d_assoc, inrX_descShortComplex_f_assoc,
+    inrX_inlX_totalizationXIso_hom, inrX_totalizationXIso_hom]
+
+/-- On the last summand, the totalization differential is `d_M`. -/
+@[reassoc]
+theorem inrX_totalization_d :
+    inrX (descShortComplex S) i ≫ (totalization S).d i (i + 1) ≫
+      (totalizationXIso S (i + 1)).hom = S.X₃.d i (i + 1) ≫ biprod.inr := by
+  simp only [totalization, homotopyCofiber_d, inrX_d_assoc,
+    inrX_totalizationXIso_hom]
+
+end Coordinates
+
 /-- A morphism of short complexes gives a commutative square between their cone comparisons. -/
 private noncomputable def totalizationArrowMap
     {S T : ShortComplex (CochainComplex C (ZMod n))} (α : S ⟶ T) :
@@ -126,15 +216,11 @@ theorem totalizationMap_f_comp_totalizationXIso_hom
 @[simp]
 theorem totalizationMap_id (S : ShortComplex (CochainComplex C (ZMod n))) :
     totalizationMap (𝟙 S) = 𝟙 (totalization S) := by
-  have h : totalizationArrowMap (𝟙 S) = 𝟙 _ := by
-    apply Arrow.hom_ext
-    · simp only [totalizationArrowMap_left, Arrow.id_left]
-      convert homotopyCofiber.mapArrowHom_id S.f
-        (fun j ↦ ⟨j - 1, by simp⟩) using 1 <;> rfl
-    · rfl
-  unfold totalizationMap
-  rw [h, homotopyCofiber.mapArrowHom_id]
-  rfl
+  ext i
+  rw [← cancel_mono (totalizationXIso S i).hom]
+  simp only [totalizationMap_f_comp_totalizationXIso_hom, ShortComplex.id_τ₁,
+    ShortComplex.id_τ₂, ShortComplex.id_τ₃, id_f, Category.id_comp]
+  ext <;> simp
 
 /-- Totalization preserves composition. -/
 @[reassoc, simp]
@@ -144,9 +230,8 @@ theorem totalizationMap_comp
   have h : totalizationArrowMap (α ≫ β) = totalizationArrowMap α ≫ totalizationArrowMap β := by
     apply Arrow.hom_ext
     · simp only [totalizationArrowMap_left, Arrow.comp_left]
-      convert homotopyCofiber.mapArrowHom_comp S.f T.f U.f
-        (fun j ↦ ⟨j - 1, by simp⟩)
-        (Arrow.homMk α.τ₁ α.τ₂ α.comm₁₂) (Arrow.homMk β.τ₁ β.τ₂ β.comm₁₂) using 1 <;> rfl
+      rw [← homotopyCofiber.mapArrowHom_comp]
+      congr 1
     · rfl
   unfold totalizationMap
   rw [h, homotopyCofiber.mapArrowHom_comp]

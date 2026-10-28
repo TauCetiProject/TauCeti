@@ -215,8 +215,8 @@ evaluation at `a`. -/
 theorem polynomialExtensionMulXSubCHomotopyEquiv_hom [DecidableRel c.Rel]
     (hc : ∀ j, ∃ i, c.Rel i j) (a : A) :
     (K.polynomialExtensionMulXSubCHomotopyEquiv hc a).hom =
-      homotopyCofiber.desc _ (K.polynomialExtensionEval a)
-        (Homotopy.ofEq (K.polynomialExtensionMul_X_sub_C_comp_polynomialExtensionEval a)) :=
+      homotopyCofiber.descShortComplex
+        (ShortComplex.mk _ _ (K.polynomialExtensionMul_X_sub_C_comp_polynomialExtensionEval a)) :=
   (K.evalShortComplexSplitting a).homotopyCofiberHomotopyEquiv_hom hc
 
 /-- The homotopy inverse in `polynomialExtensionMulXSubCHomotopyEquiv` is the inclusion of the
