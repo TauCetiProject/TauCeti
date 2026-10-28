@@ -67,7 +67,8 @@ anti-involution `(a b; c d) ↦ (d b; c a)`, which exchanges the left and right 
 public section
 
 open MonoidAlgebra MulAction Representation ModularGroup
-open Matrix.SpecialLinearGroup (antitranspose)
+open Matrix.SpecialLinearGroup (antitranspose commute_ofMulAction_one_add
+  commute_ofMulAction_one_add_add_sq)
 open scoped MatrixGroups RightActions
 
 namespace TauCeti.TraceFormulaMatrixModule

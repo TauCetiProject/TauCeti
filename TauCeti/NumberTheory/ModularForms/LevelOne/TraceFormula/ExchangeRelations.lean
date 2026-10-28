@@ -180,14 +180,17 @@ section CommRing
 variable [CommRing k]
 
 /-- Left multiplication by `g` on `k[ℳₙ]` commutes with right multiplication by `1 + h`. -/
-theorem commute_ofMulAction_one_add (g : SL(2, ℤ)) (h : PSL(2, ℤ)) :
-    Commute (ρL g) (1 + ρR (.op h)) :=
+theorem _root_.Matrix.SpecialLinearGroup.commute_ofMulAction_one_add (g : SL(2, ℤ))
+    (h : PSL(2, ℤ)) : Commute (ρL g) (1 + ρR (.op h)) :=
   (Commute.one_right _).add_right (commute_ofMulAction _ _)
 
 /-- Left multiplication by `g` on `k[ℳₙ]` commutes with right multiplication by `1 + h + h²`. -/
-theorem commute_ofMulAction_one_add_add_sq (g : SL(2, ℤ)) (h : PSL(2, ℤ)) :
-    Commute (ρL g) (1 + ρR (.op h) + ρR (.op h) ^ 2) :=
-  (commute_ofMulAction_one_add g h).add_right ((commute_ofMulAction _ _).pow_right 2)
+theorem _root_.Matrix.SpecialLinearGroup.commute_ofMulAction_one_add_add_sq (g : SL(2, ℤ))
+    (h : PSL(2, ℤ)) : Commute (ρL g) (1 + ρR (.op h) + ρR (.op h) ^ 2) :=
+  (g.commute_ofMulAction_one_add h).add_right ((commute_ofMulAction _ _).pow_right 2)
+
+open _root_.Matrix.SpecialLinearGroup (commute_ofMulAction_one_add
+  commute_ofMulAction_one_add_add_sq)
 
 -- applying `f` to (A), `(1 - S) f ξ ∈ (1 - T) k[ℳₙ]`, so `f ξ ∈ 𝓘` by the Choie–Zagier criterion
 private theorem PeriodRelation.apply_mem_sup [Invertible (2 : k)] [Invertible (3 : k)] (hn : n ≠ 0)
