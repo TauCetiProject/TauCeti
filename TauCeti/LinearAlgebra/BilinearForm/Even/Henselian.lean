@@ -400,26 +400,6 @@ private theorem IsSymm.exists_pair_mem_span_of_sub_mem (hR : Nat.card (ResidueFi
       ((hu.unit⁻¹.isUnit.pow 2).mul (by simpa [add_comm] using unit_add hm₂))
     exact ⟨e, e.2, f, f.2, by simpa using h.1, by simpa using h.2.1, by simpa using h.2.2⟩
 
-/-- A vector `s` of the span of a pair with Gram matrix `!![2q, 1; 1, 2q]`, pairing into `𝔪` with
-both vectors of the pair, has coordinates in `𝔪`. -/
-private theorem IsSymm.exists_mem_maximalIdeal_of_mem_span_pair
-    (h2 : (2 : R) ∈ maximalIdeal R) {B : BilinForm R M} (hB : B.IsSymm) {e f : M} {q : R}
-    (h₁ : B e f = 1) (he : B e e = 2 * q) (hf : B f f = 2 * q) {s : M}
-    (hs : s ∈ Submodule.span R {e, f}) (hse : B s e ∈ maximalIdeal R)
-    (hsf : B s f ∈ maximalIdeal R) :
-    ∃ α ∈ maximalIdeal R, ∃ β ∈ maximalIdeal R, s = α • e + β • f := by
-  obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp hs
-  have hfe : B f e = 1 := by rw [← hB.eq, h₁]
-  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, he, hf,
-    h₁, hfe, mul_one] at hse hsf
-  have hβ : β ∈ maximalIdeal R := by
-    rw [show β = α * (2 * q) + β - α * q * 2 by ring]
-    exact (maximalIdeal R).sub_mem hse ((maximalIdeal R).mul_mem_left (α * q) h2)
-  have hα : α ∈ maximalIdeal R := by
-    rw [show α = α + β * (2 * q) - β * q * 2 by ring]
-    exact (maximalIdeal R).sub_mem hsf ((maximalIdeal R).mul_mem_left (β * q) h2)
-  exact ⟨α, hα, β, hβ, rfl⟩
-
 /-- The inductive core of `LinearMap.BilinForm.IsSymm.equivalent_of_sub_mem_maximalIdeal_of_even`.
 -/
 private theorem equivalent_of_sub_mem_maximalIdeal_of_even_aux (hR : Nat.card (ResidueField R) = 2)
@@ -501,7 +481,8 @@ private theorem equivalent_of_sub_mem_maximalIdeal_of_even_aux (hR : Nat.card (R
       simp only [map_add, map_smul, smul_eq_mul]
       exact (maximalIdeal R).add_mem ((maximalIdeal R).mul_mem_left γ (hx' e' ⟨0, rfl⟩))
         ((maximalIdeal R).mul_mem_left δ (hx' f' ⟨1, rfl⟩))
-    obtain ⟨α, hα, β, hβ, hαβ⟩ := hC.exists_mem_maximalIdeal_of_mem_span_pair h2 h₁ hee hff hs
+    obtain ⟨α, hα, β, hβ, hαβ⟩ := hC.exists_mem_maximalIdeal_of_mem_span_pair (h₁ ▸ isUnit_one)
+      (hee ▸ (maximalIdeal R).mul_mem_right q h2) (hff ▸ (maximalIdeal R).mul_mem_right q h2) hs
       (hpair e he (Submodule.subset_span (by simp))) (hpair f hf (Submodule.subset_span (by simp)))
     exact ⟨α, hα, β, hβ, by rw [← hαβ, sub_add_cancel]⟩
   -- On the complements, `ψ` carries `C'` to `C` modulo `𝔪`, and modulo `2𝔪` on the diagonal.
