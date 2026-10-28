@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Data.Finset.Sort
 public import TauCeti.Probability.FreeProbability.Cumulant.Multilinear
 public import TauCeti.Probability.FreeProbability.Cumulant.Product
 public import TauCeti.Probability.FreeProbability.Independence
@@ -96,17 +97,6 @@ private theorem mem_union_of_sup_comap_eq_top {f : α → α} (hf : MonotoneOn f
     exact mem_singleton_self s) hi]
   exact hz
 
-/-- Collapsing a position `j` onto the position `i < j` adjacent to it in `s` is monotone on `s`,
-identifies no two positions other than `i` and `j`, and makes `s` smaller. -/
-private theorem collapse_spec {i j : α} (hi : i ∈ s) (hj : j ∈ s) (hij : i < j)
-    (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) :
-    MonotoneOn (fun z => if z = j then i else z) s ∧
-      (∀ {u v}, (if u = j then i else u) = (if v = j then i else v) → u ≠ v →
-        (u = i ∨ u = j) ∧ (v = i ∨ v = j)) ∧
-      #(s.image fun z => if z = j then i else z) < #s :=
-  ⟨fun z hz w _ hzw => by grind [hadj z hz], fun huv hne => by grind,
-    card_image_le.lt_of_ne fun h => hij.ne (card_image_iff.1 h hi hj (by simp))⟩
-
 /-- The inductive step when two adjacent letters `a i`, `a j` of a mixed word have equal labels:
 grouping them into the letter `a i * a j` gives a shorter mixed word, whose cumulant is the
 cumulant of `a` plus contributions of noncrossing partitions `π ≠ 1` that vanish by induction. -/
@@ -117,7 +107,7 @@ private theorem freeCumulant_eq_zero_of_label_eq
     (hxy : ℓ x ≠ ℓ y) {i j : α} (hi : i ∈ s) (hj : j ∈ s) (hij : i < j)
     (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) (hℓ : ℓ i = ℓ j) : freeCumulant φ a s = 0 := by
   -- Collapse `j` onto `i`; this preserves labels and the order of the positions of `s`.
-  obtain ⟨hf, hfeq, hcard⟩ := collapse_spec hi hj hij hadj
+  obtain ⟨hf, hfeq, hcard⟩ := Finset.collapse_adjacent_spec hi hj hij hadj
   set f : α → α := fun z => if z = j then i else z
   have hfℓ : ∀ z, ℓ (f z) = ℓ z := fun z => by by_cases h : z = j <;> simp [f, h, hℓ]
   -- The grouped word is shorter, and its letters lie in the subalgebras, since grouping preserves
@@ -143,12 +133,13 @@ private theorem freeCumulant_eq_zero_of_label_eq
   · exact prod_freeCumulant_eq_zero_of_mixed ih ha hπtop (π.1.part_mem.2 hj) hz'
       (π.1.mem_part_self.2 hj) (hℓ ▸ hzi)
 
-/-- The case when all adjacent labels of a word differ: centring the letters does not change the
-cumulant, and every noncrossing partition has an interval part, along which the centred word
-alternates, so its moment vanishes by freeness. -/
+/-- A word of length greater than one whose adjacent labels differ has zero free cumulant when its
+letters belong to freely independent subalgebras and the functional is normalised. -/
 private theorem freeCumulant_eq_zero_of_isChain (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1)
     {a : α → A} (ha : ∀ x ∈ s, a x ∈ B (ℓ x)) (hs : 1 < #s)
     (halt : (s.sort.map ℓ).IsChain (· ≠ ·)) : freeCumulant φ a s = 0 := by
+  -- Centre the letters. Each noncrossing partition has an interval part on which the centred
+  -- word alternates, so freeness makes its moment vanish.
   set b : α → A := fun z => a z + algebraMap R A (-φ (a z)) with hb
   have hbc : ∀ z, φ (b z) = 0 := fun z => by
     simp [hb, Algebra.algebraMap_eq_smul_one, hφ]
