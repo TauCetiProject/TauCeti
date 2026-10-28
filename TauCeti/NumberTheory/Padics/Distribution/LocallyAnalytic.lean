@@ -27,7 +27,8 @@ Evaluation descends to a linear map into continuous functions, with range equal 
 union of the stage evaluation images. For p-regular coefficients, `eval_injective` makes this
 a linear identification with that union. The equivalence is the native
 `LinearEquiv.ofInjective (eval S) (eval_injective S hpE)`, whose target is the range submodule
-described by `range_eval`. No topology is put on the algebraic direct limit here.
+described by `range_eval_eq_iSup`. Its stage formulas are `ofInjective_eval_ofStage` and
+`ofInjective_eval_symm_apply`. No topology is put on the algebraic direct limit here.
 -/
 
 public section
@@ -102,6 +103,24 @@ theorem eval_injective (hpE : IsSMulRegular E (p : ℤ_[p])) :
     (fun _ _ hhk c ↦ AnalyticStage.eval_transitionLE S hhk c)
     (fun h ↦ AnalyticStage.eval_injective (h := h) S hpE)
 
+/-- The native evaluation equivalence sends a stage class to its evaluated function. -/
+@[simp]
+theorem ofInjective_eval_ofStage (hpE : IsSMulRegular E (p : ℤ_[p])) {h : ℕ}
+    (c : AnalyticStage p h E) :
+    LinearEquiv.ofInjective (eval S) (eval_injective S hpE) (ofStage S h c) =
+      ⟨AnalyticStage.eval S c, LinearMap.mem_range.mpr ⟨ofStage S h c, eval_ofStage S h c⟩⟩ := by
+  ext
+  simp
+
+/-- The inverse evaluation equivalence sends a stage function to its stage class. -/
+@[simp]
+theorem ofInjective_eval_symm_apply (hpE : IsSMulRegular E (p : ℤ_[p])) {h : ℕ}
+    (c : AnalyticStage p h E) (hc : AnalyticStage.eval S c ∈ (eval S).range) :
+    (LinearEquiv.ofInjective (eval S) (eval_injective S hpE)).symm
+      ⟨AnalyticStage.eval S c, hc⟩ = ofStage S h c := by
+  apply eval_injective S hpE
+  simp
+
 /-- The evaluation range is exactly the union of the stage evaluation images, without an
 injectivity assertion. -/
 theorem range_eval :
@@ -115,6 +134,19 @@ theorem range_eval :
   · intro hf
     obtain ⟨h, c, rfl⟩ := Set.mem_iUnion.mp hf
     exact ⟨ofStage S h c, eval_ofStage S h c⟩
+
+/-- The evaluation range is the supremum of the stage evaluation submodules. -/
+theorem range_eval_eq_iSup :
+    LinearMap.range (eval (p := p) (E := E) S) =
+      ⨆ h, LinearMap.range (AnalyticStage.eval (p := p) (h := h) (E := E) S).toLinearMap := by
+  have hmono : Monotone (fun h ↦
+      LinearMap.range (AnalyticStage.eval (p := p) (h := h) (E := E) S).toLinearMap) := by
+    intro h k hhk f ⟨c, hc⟩
+    exact ⟨AnalyticStage.transitionLE S hhk c, (AnalyticStage.eval_transitionLE S hhk c).trans hc⟩
+  apply SetLike.coe_injective
+  rw [Submodule.coe_iSup_of_directed _ hmono.directed_le]
+  simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
+    range_eval (p := p) (E := E) S
 
 end LocallyAnalytic
 
