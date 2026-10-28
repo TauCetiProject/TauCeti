@@ -135,6 +135,7 @@ theorem extClass_zero (M : (discreteModules.{max u w} A).FullSubcategory) :
   simp
 
 /-- Every continuous inner derivation has zero extension class. -/
+@[simp]
 theorem extClass_inner (b : A)
     (hb : Continuous (innerDerivation R b : Module.End R A))
     (M : (discreteModules.{max u w} A).FullSubcategory) : extClass hb M = 0 := by
