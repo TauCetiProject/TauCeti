@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Interior
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The interior Calderón–Zygmund estimate for continuous coefficients
@@ -34,7 +35,8 @@ coefficients need not be bounded, which is why `f` is assumed to lie in `Lᵖ(Ω
 The interior estimate on balls
 (`TauCeti.PDE.exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_eq_of_abs_sub_le`)
 gives constants `C₀` and `δ > 0`, depending only on `n` and `p`. By continuity of `a`, every
-`x ∈ K` is the centre of a ball `B(x, 2rₓ) ⊆ Ω` on which `|aᵢⱼ - aᵢⱼ(x)| ≤ δ λₓ`, so the ball
+`x ∈ K` is the centre of a ball `B(x, 2rₓ) ⊆ Ω` on which `|aᵢⱼ - aᵢⱼ(x)| ≤ δ λₓ`
+(`ContinuousAt.exists_ball_subset_forall_abs_sub_le`), so the ball
 estimate with the coefficients frozen at `A = a(x)` bounds `‖D²u‖_{Lᵖ(B(x, rₓ))}` by `f` and `u`.
 By compactness finitely many of the balls `B(x, rₓ)` cover `K`, and the `Lᵖ` norm on `K` is at
 most the sum of the `Lᵖ` norms on these balls
@@ -59,25 +61,6 @@ open MeasureTheory TopologicalSpace Metric Filter
 open scoped ENNReal NNReal InnerProductSpace Topology
 
 variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- Around a point `x` of an open set `Ω` at which `a` is continuous, for every `ε > 0` there is
-a ball `B(x, 2r) ⊆ Ω` on which every entry of `a` differs from its value at `x` by at most `ε`. -/
-private theorem exists_ball_subset_forall_abs_sub_le {Omega : Opens (EuclideanSpace ℝ (Fin n))}
-    {a : EuclideanSpace ℝ (Fin n) → Matrix (Fin n) (Fin n) ℝ} {x : EuclideanSpace ℝ (Fin n)}
-    (hxΩ : x ∈ Omega) (hcont : ContinuousAt a x) {ε : ℝ} (hε : 0 < ε) :
-    ∃ r : ℝ, 0 < r ∧ ball x (2 * r) ⊆ Omega ∧
-      ∀ y ∈ ball x (2 * r), ∀ i j, |a y i j - a x i j| ≤ ε := by
-  have hev : ∀ᶠ y in 𝓝 x, y ∈ Omega ∧ ∀ i j, |a y i j - a x i j| ≤ ε := by
-    refine Eventually.and (Omega.isOpen.mem_nhds hxΩ)
-      (eventually_all.2 fun i => eventually_all.2 fun j => ?_)
-    have hij : ContinuousAt (fun y => a y i j) x :=
-      (continuous_id.matrix_elem i j).continuousAt.comp hcont
-    filter_upwards [Metric.tendsto_nhds.1 hij ε hε] with y hy
-    exact (Real.dist_eq _ _ ▸ hy).le
-  obtain ⟨ρ, hρ, hρx⟩ := Metric.eventually_nhds_iff_ball.1 hev
-  refine ⟨ρ / 2, half_pos hρ, ?_, ?_⟩ <;> rw [mul_div_cancel₀ ρ two_ne_zero]
-  · exact fun y hy => (hρx y hy).1
-  · exact fun y hy => (hρx y hy).2
 
 /-- **The ball estimate with norms on `Ω`.** On a ball `B(x₀, 2r) ⊆ Ω` on which `a` oscillates
 around an elliptic matrix `A` by at most `δ λ`, the interior estimate on balls bounds `D²u` on
@@ -181,8 +164,13 @@ theorem exists_lpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_continuousAt (h
     exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm hn hp hp_top
   -- Around each point of `K`, a ball in `Ω` on which `a` oscillates by at most `δ λₓ`.
   choose! lam hlam hA using hell
-  choose! r hr hrΩ hosc using fun x hx =>
-    exists_ball_subset_forall_abs_sub_le (hKΩ hx) (hcont x hx) (mul_pos hδ (hlam x hx))
+  have hsmall : ∀ x ∈ K, ∃ r : ℝ, 0 < r ∧ ball x (2 * r) ⊆ Omega ∧
+      ∀ y ∈ ball x (2 * r), ∀ i j, |a y i j - a x i j| ≤ δ * lam x := fun x hx => by
+    obtain ⟨ρ, hρ, hρΩ, hρa⟩ := (hcont x hx).exists_ball_subset_forall_abs_sub_le
+      (Omega.isOpen.mem_nhds (hKΩ hx)) (mul_pos hδ (hlam x hx))
+    rw [← mul_div_cancel₀ ρ two_ne_zero] at hρΩ hρa
+    exact ⟨ρ / 2, half_pos hρ, hρΩ, hρa⟩
+  choose! r hr hrΩ hosc using hsmall
   obtain ⟨t, htK, hcover⟩ :=
     hK.elim_nhds_subcover (fun x => ball x (r x)) fun x hx => ball_mem_nhds x (hr x hx)
   set c : EuclideanSpace ℝ (Fin n) → ℝ := fun x =>
