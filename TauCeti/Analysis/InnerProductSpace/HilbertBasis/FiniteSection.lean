@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 
 /-!
 # Finite sections in a Hilbert basis
@@ -38,25 +39,24 @@ namespace HilbertBasis
 /-- Include the first `n + 1` coordinates in the Hilbert space. -/
 noncomputable def finiteInclusion (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     EuclideanSpace 𝕜 (Fin (n + 1)) →ₗᵢ[𝕜] H :=
-  LinearMap.isometryOfInner
-    { toFun := fun x ↦ ∑ i : Fin (n + 1), x i • b i
-      map_add' := by intros; simp [add_smul, Finset.sum_add_distrib]
-      map_smul' := by intros; simp [mul_smul, Finset.smul_sum] }
-    (by
-      intro x y
-      simpa [PiLp.inner_apply, mul_comm] using
-        (b.orthonormal.comp Fin.val Fin.val_injective).inner_sum x y Finset.univ)
+  (b.orthonormal.comp Fin.val Fin.val_injective).synthesisMapIsometry
 
 /-- Inclusion is the finite basis expansion. -/
 theorem finiteInclusion_apply (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
     (x : EuclideanSpace 𝕜 (Fin (n + 1))) :
-    b.finiteInclusion n x = ∑ i : Fin (n + 1), x i • b i := (rfl)
+    b.finiteInclusion n x = ∑ i : Fin (n + 1), x i • b i :=
+  (b.orthonormal.comp Fin.val Fin.val_injective).synthesisMapIsometry_apply x
 
 /-- Including a finite coordinate vector gives the corresponding Hilbert basis vector. -/
 @[simp]
 theorem finiteInclusion_single (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
     (i : Fin (n + 1)) : b.finiteInclusion n (PiLp.single 2 i (1 : 𝕜)) = b i := by
-  simp [finiteInclusion_apply, PiLp.single_apply]
+  change (b.orthonormal.comp Fin.val Fin.val_injective).synthesisMapIsometry _ = _
+  have h := (b.orthonormal.comp Fin.val Fin.val_injective).synthesisMapIsometry_single i (1 : 𝕜)
+  simp only [Function.comp_apply, one_smul] at h
+  convert h using 2
+  ext j
+  simp [EuclideanSpace.single, PiLp.single_apply]
 
 variable [CompleteSpace H]
 
@@ -69,10 +69,9 @@ noncomputable def coordinateCutoff (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
 @[simp]
 theorem coordinateCutoff_apply (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H)
     (i : Fin (n + 1)) : b.coordinateCutoff n x i = b.repr x i := by
-  have h := ContinuousLinearMap.adjoint_inner_right
-    (b.finiteInclusion n).toContinuousLinearMap (PiLp.single 2 i (1 : 𝕜)) x
-  simpa [coordinateCutoff, EuclideanSpace.inner_single_left, finiteInclusion_apply,
-    PiLp.single_apply, HilbertBasis.repr_apply_apply] using h
+  simpa only [coordinateCutoff, finiteInclusion, Function.comp_apply,
+    HilbertBasis.repr_apply_apply] using
+    (b.orthonormal.comp Fin.val Fin.val_injective).adjoint_synthesisMapIsometry_apply x i
 
 /-- The adjoint of coordinate restriction is the finite-coordinate inclusion. -/
 @[simp]
