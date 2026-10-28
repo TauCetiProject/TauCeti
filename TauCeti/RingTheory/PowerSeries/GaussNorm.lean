@@ -74,6 +74,7 @@ closed unit disc next to its Gauss points.
 * `TauCeti.PowerSeries.hasGaussNorm_add` and `TauCeti.PowerSeries.hasGaussNorm_mul`: bounded
   weighted coefficient norms are preserved by addition and multiplication over an ultrametric
   seminormed ring, at any nonnegative radius.
+* `TauCeti.PowerSeries.gaussNorm_mul_le`: the Gauss norm is submultiplicative on such series.
 * `PowerSeries.HasGaussNorm.isRestricted_of_abs_lt`: bounded weighted coefficients at `c'` give
   restrictedness at every `c` with `|c| < c'`.
 * `TauCeti.PowerSeries.gaussNorm_eq_of_forall_le`: the Gauss norm is attained at a degree whose
@@ -139,6 +140,11 @@ namespace TauCeti.PowerSeries
 
 open Filter
 open scoped Topology
+
+/-- A monic polynomial of degree `s` has coefficient `1` in degree `s` as a power series. -/
+theorem _root_.Polynomial.IsMonicOfDegree.coeff_coe_self {R : Type*} [Semiring R] {s : ℕ}
+    {p : Polynomial R} (hp : p.IsMonicOfDegree s) : (p : PowerSeries R).coeff s = 1 := by
+  rw [Polynomial.coeff_coe, ← hp.natDegree_eq, hp.monic.coeff_natDegree]
 
 section SeminormedRing
 
@@ -224,6 +230,15 @@ theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
                 (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg)
   exact ⟨_, Set.forall_mem_range.mpr key⟩
 
+/-- The Gauss norm is submultiplicative on power series with bounded weighted coefficient norms
+over an ultrametric seminormed ring, at a nonnegative radius. -/
+theorem gaussNorm_mul_le (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
+    (hg : g.HasGaussNorm norm c) :
+    (f * g).gaussNorm norm c ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
+  MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) f g (fun _ ↦ hc) norm_nonneg
+    norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero hf.hasMvGaussNorm
+    hg.hasMvGaussNorm
+
 end Ultrametric
 
 /-- If the weighted coefficient in degree `s` dominates every other one, the Gauss norm is the
@@ -253,6 +268,14 @@ variable {R : Type*} [NormedRing R] {c : ℝ} {f : PowerSeries R}
 theorem hasGaussNorm_of_isRestricted (hf : f.IsRestricted c) :
     f.HasGaussNorm norm c :=
   ((PowerSeries.isRestricted_iff c f).mp hf).bddAbove_range_of_cofinite
+
+/-- At a positive radius, a nonzero series with bounded weighted coefficient norms has positive
+Gauss norm. The norm need not be attained. -/
+theorem gaussNorm_pos (hc : 0 < c) (hf : f.HasGaussNorm norm c) (hf0 : f ≠ 0) :
+    0 < f.gaussNorm norm c :=
+  (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg).lt_of_ne fun h ↦ hf0 <|
+    (PowerSeries.gaussNorm_eq_zero_iff norm c f norm_zero norm_nonneg
+      (fun _ ↦ norm_eq_zero.mp) hc hf).mp h.symm
 
 /-- **Bounded weighted coefficients give restrictedness at smaller radii.** If the weighted
 coefficient norms `‖aₙ‖ c'ⁿ` are bounded, then `‖aₙ‖ cⁿ → 0` for every `c` with `|c| < c'`, being
@@ -338,26 +361,18 @@ structure IsDistinguished : Prop where
 
 /-- A distinguished series has positive Gauss norm, without any sign assumption on the radius. -/
 theorem IsDistinguished.gaussNorm_pos (hf : IsDistinguished c s f) :
-    0 < f.gaussNorm norm c := by
-  have hpow : 0 ≤ c ^ (2 * (s + 1)) := by
-    rw [pow_mul]
-    exact pow_nonneg (sq_nonneg c) _
-  exact lt_of_le_of_lt (mul_nonneg (norm_nonneg _) hpow)
+    0 < f.gaussNorm norm c :=
+  lt_of_le_of_lt (mul_nonneg (norm_nonneg _) (pow_mul c 2 (s + 1) ▸ pow_nonneg (sq_nonneg c) _))
     (hf.norm_coeff_mul_pow_lt (2 * (s + 1)) (by omega))
 
 /-- A distinguished series is nonzero. -/
 theorem IsDistinguished.ne_zero (hf : IsDistinguished c s f) : f ≠ 0 := by
   rintro rfl
-  have h := hf.gaussNorm_pos
-  rw [PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)] at h
-  exact absurd h (lt_irrefl 0)
+  exact hf.gaussNorm_pos.ne' (PowerSeries.gaussNorm_zero norm c norm_zero)
 
 /-- The coefficient of a distinguished series in its distinguished degree is nonzero. -/
-theorem IsDistinguished.coeff_ne_zero (hf : IsDistinguished c s f) : f.coeff s ≠ 0 := by
-  intro h
-  have hpos := hf.gaussNorm_pos
-  rw [← hf.norm_coeff_mul_pow_eq, h] at hpos
-  simp at hpos
+theorem IsDistinguished.coeff_ne_zero (hf : IsDistinguished c s f) : f.coeff s ≠ 0 := fun h ↦ by
+  simpa [← hf.norm_coeff_mul_pow_eq, h] using hf.gaussNorm_pos
 
 /-- The weighted coefficient norms of a distinguished series are bounded above. -/
 theorem IsDistinguished.hasGaussNorm (hf : IsDistinguished c s f) :
@@ -528,9 +543,7 @@ leading coefficient, and every later coefficient vanishes. -/
 theorem isDistinguished_of_isMonicOfDegree [NormOneClass R] (hc : 0 < c) {p : Polynomial R}
     (hp : p.IsMonicOfDegree s) (hle : ∀ k < s, ‖p.coeff k‖ * c ^ k ≤ c ^ s) :
     IsDistinguished c s (p : PowerSeries R) := by
-  have hs : p.coeff s = 1 := by
-    rw [← hp.natDegree_eq]
-    exact hp.monic.coeff_natDegree
+  have hs : p.coeff s = 1 := (Polynomial.coeff_coe p s).symm.trans hp.coeff_coe_self
   have hzero (m : ℕ) (hm : s < m) : p.coeff m = 0 :=
     Polynomial.coeff_eq_zero_of_natDegree_lt (hp.natDegree_eq ▸ hm)
   have hnorm : (p : PowerSeries R).gaussNorm norm c = c ^ s := by
@@ -875,9 +888,7 @@ private theorem gaussNorm_mul_eq_of_norm_coeff_mul_pow_eq (hc : 0 < c)
     (hk : ‖(f * g).coeff k‖ * c ^ k = f.gaussNorm norm c * g.gaussNorm norm c) :
     (f * g).gaussNorm norm c = f.gaussNorm norm c * g.gaussNorm norm c :=
   le_antisymm
-    (MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) f g (fun _ ↦ hc.le)
-      norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
-      hbf.hasMvGaussNorm hbg.hasMvGaussNorm)
+    (gaussNorm_mul_le hc.le hbf hbg)
     (hk.symm.trans_le (PowerSeries.le_gaussNorm norm c (f * g) (hasGaussNorm_mul hc.le hbf hbg) k))
 
 /-- If degrees `i` and `j` attain the Gauss norms of `f` and `g`, the product of the two

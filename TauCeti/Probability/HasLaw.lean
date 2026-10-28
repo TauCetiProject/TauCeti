@@ -15,7 +15,8 @@ public import TauCeti.MeasureTheory.Measure.Dirac
 
 Conditioning a map on the preimage of a measurable event conditions its law on that event.
 This allows conditional distribution identities proved on a canonical law to be used for
-arbitrary random variables with that law, including null conditioning events.
+arbitrary random variables with that law, including null conditioning events. Likewise,
+almost everywhere measurability for a law pulls back along a random variable with that law.
 
 A finite-mass measurable atom of a source measure is an obstruction to a prescribed law: every
 almost-everywhere measurable map sends its whole mass to a single point of a standard Borel target.
@@ -26,6 +27,8 @@ transporting Dirac measures and for laws that are null on singletons.
 ## Main results
 
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
+* `ProbabilityTheory.HasLaw.aemeasurable_of_ae_eq_comp` — a map almost everywhere equal to an
+  a.e. measurable map composed with a random variable of the right law is a.e. measurable;
 * `ProbabilityTheory.HasLaw.measure_singleton_le` — the law of `T` gives `{T x}` at least the
   mass the source gives `{x}`, with `ProbabilityTheory.HasLaw.measure_singleton_eq_zero` and
   `TauCeti.Probability.not_hasLaw_of_measure_singleton_ne_zero` its reading for a law that is
@@ -115,6 +118,13 @@ a target measure. -/
 theorem not_hasLaw_of_measure_singleton_ne_zero [NullSingletonClass ν] {x : X}
     (hx : μ {x} ≠ 0) (T : X → Y) : ¬HasLaw T ν μ :=
   fun h ↦ hx (h.measure_singleton_eq_zero x)
+
+/-- A map almost everywhere equal to `T ∘ s`, where `s` has law `μ` and `T` is `μ`-almost
+everywhere measurable, is almost everywhere measurable. -/
+theorem _root_.ProbabilityTheory.HasLaw.aemeasurable_of_ae_eq_comp {Ω : Type*}
+    [MeasurableSpace Ω] {m : Measure Ω} {s : Ω → X} {U : Ω → Y} (hs : HasLaw s μ m)
+    (hT : AEMeasurable T μ) (h : U =ᵐ[m] T ∘ s) : AEMeasurable U m :=
+  ((hasLaw_map hT).comp hs).aemeasurable.congr h.symm
 
 /-- An a.e. measurable map transports a Dirac measure exactly onto the Dirac measure at its
 value. The a.e. measurability is exactly what `ProbabilityTheory.HasLaw` already asks for. -/

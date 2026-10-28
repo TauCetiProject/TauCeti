@@ -38,8 +38,12 @@ noncommutative ring are allowed.
 * `TauCeti.ModuleTower.lim`, `TauCeti.ModuleTower.limOne`: its kernel and cokernel.
 * `TauCeti.ModuleTower.mem_lim`: `lim` consists of the families compatible with the transitions.
 * `TauCeti.ModuleTower.isLimitLimCone`: `lim`, with its projections, is a limit of the tower.
+* `TauCeti.ModuleTower.limπ_surjective`: if the transitions are surjective, so are the
+  projections `lim A → Aₙ`.
 * `TauCeti.ModuleTower.limMap`, `TauCeti.ModuleTower.limOneMap`: the linear maps induced by a
   morphism of towers, with their identity, composition, zero and addition laws.
+* `TauCeti.ModuleTower.limMap_inj`: a morphism out of a tower with surjective transitions is
+  determined by the map it induces on `lim`.
 * `TauCeti.ModuleTower.limMap_injective`, `TauCeti.ModuleTower.limOneMap_surjective`: levelwise
   injective (surjective) morphisms induce injective (surjective) maps on `lim` (`lim¹`).
 * `TauCeti.ModuleTower.subsingleton_limOne_iff`: `lim¹` vanishes if and only if the shift map is
@@ -304,6 +308,22 @@ theorem subsingleton_limOne_of_surjective (h : ∀ n, Function.Surjective (F.tra
     Subsingleton F.limOne :=
   F.subsingleton_limOne_iff.2 (F.shift_surjective h)
 
+/-- If every transition map of a tower is surjective, then so is every projection
+`lim A → Aₙ`: an element of `Aₙ` lifts step by step to a compatible family. -/
+theorem limπ_surjective (h : ∀ n, Function.Surjective (F.transition n)) (n : ℕ) :
+    Function.Surjective (F.limπ n) := by
+  intro y
+  -- Lifts `g j ∈ A_{n + j}` of `y`, each chosen as a preimage of the previous one.
+  let g : ∀ j, F.obj (op (n + j)) := fun j ↦
+    Nat.rec (motive := fun j ↦ F.obj (op (n + j))) y (fun j x ↦ (h (n + j) x).choose) j
+  have hg (j : ℕ) : F.transition (n + j) (g (j + 1)) = g j := (h (n + j) (g j)).choose_spec
+  have hgy (j : ℕ) : F.transitionOfLE (Nat.le_add_right n j) (g j) = y := by
+    induction j with
+    | zero => exact LinearMap.congr_fun (F.transitionOfLE_refl n) y
+    | succ j ih => rwa [← hg j, transitionOfLE_transition] at ih
+  refine ⟨⟨fun k ↦ F.transitionOfLE (Nat.le_add_left k n) (g k), F.mem_lim.2 fun k ↦ ?_⟩, hgy n⟩
+  rw [transition_transitionOfLE, ← hg k, transitionOfLE_transition]
+
 end Basic
 
 section Functoriality
@@ -410,6 +430,15 @@ theorem limMap_zero : limMap (0 : F ⟶ G) = 0 :=
 @[simp]
 theorem limMap_add (f g : F ⟶ G) : limMap (f + g) = limMap f + limMap g :=
   (rfl)
+
+/-- If every transition map of `A` is surjective, a morphism of towers `A ⟶ B` is determined by
+the map it induces on `lim`: every element of `Aₙ` lifts to `lim A`. -/
+theorem limMap_inj (h : ∀ n, Function.Surjective (F.transition n)) {f g : F ⟶ G} :
+    limMap f = limMap g ↔ f = g := by
+  refine ⟨fun hfg ↦ ?_, congrArg limMap⟩
+  ext ⟨n⟩ x
+  obtain ⟨y, rfl⟩ := F.limπ_surjective h n x
+  exact congr(($hfg y : G.Product) n)
 
 /-- The first map of the six-term sequence: `lim A → lim B` is injective when every `Aₙ → Bₙ`
 is. -/

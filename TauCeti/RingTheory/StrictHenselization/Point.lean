@@ -75,7 +75,7 @@ noncomputable def Neighbourhood.toTriple
   { carrier := point.obj.left
     commRing := inferInstance
     algebra := inferInstance
-    etale := (isPointedNeighbourhood_iff R Ω _).mp point.property
+    etale := inferInstance
     data := (pointDataEquiv : PointData R point.obj.left Ω ≃ _).symm
       (ULift.algEquiv.toAlgHom.comp point.obj.hom.hom) }
 

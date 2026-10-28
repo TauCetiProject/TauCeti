@@ -69,4 +69,14 @@ lemma shiftCyclesIso_hom_iCycles (n i i' : ℤ) (hi : n + i = i') :
   -- `HomologicalComplex.iCycles` is the inclusion of the cycles of `HomologicalComplex.sc`.
   rfl
 
+/-- The isomorphism `CochainComplex.shiftCyclesIso` is natural in the complex. -/
+@[reassoc]
+lemma shiftCyclesIso_hom_naturality {L : CochainComplex C ℤ} (φ : K ⟶ L) (n i i' : ℤ)
+    (hi : n + i = i') :
+    HomologicalComplex.cyclesMap (φ⟦n⟧') i ≫ (L.shiftCyclesIso n i i' hi).hom =
+      (K.shiftCyclesIso n i i' hi).hom ≫ HomologicalComplex.cyclesMap φ i' := by
+  rw [← cancel_mono (L.iCycles i')]
+  obtain rfl : i' = i + n := by lia
+  simp [CochainComplex.shiftFunctor_map_f']
+
 end CochainComplex
