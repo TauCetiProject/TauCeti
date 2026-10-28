@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.FieldTheory.Kummer.Cyclic
 public import TauCeti.RingTheory.LaurentSeries.Level.Adjoin
-public import TauCeti.RingTheory.LaurentSeries.Substitution
+public import TauCeti.RingTheory.LaurentSeries.Rescale
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
@@ -42,8 +42,6 @@ algebraically closed of characteristic zero.
 
 ## Main results
 
-* `TauCeti.LaurentSeries.rescale_expand`: rescaling commutes with expansion `X ↦ X ^ d` up to
-  raising the scalar to the `d`-th power.
 * `TauCeti.LaurentSeries.Level.kummer_parameter`: the Kummer automorphism attached to `η` sends
   `u` to `η u`.
 * `TauCeti.LaurentSeries.Level.isSplittingField` and `TauCeti.LaurentSeries.Level.isGalois`: with
@@ -67,23 +65,6 @@ open scoped LaurentSeries
 namespace TauCeti.LaurentSeries
 
 variable {K : Type*} [Field K]
-
-/-- Rescaling an expanded series by `a` is expanding the series rescaled by `a ^ d`:
-`f ((a X) ^ d) = (f (a ^ d X)) (X ^ d)`. -/
-theorem rescale_expand (a : Kˣ) (d : ℕ+) (f : K⸨X⸩) :
-    rescale a (expand K d f) = expand K d (rescale (a ^ (d : ℕ)) f) := by
-  ext n
-  rw [coeff_rescale]
-  by_cases hn : (d : ℤ) ∣ n
-  · obtain ⟨k, rfl⟩ := hn
-    rw [coeff_expand_mul, coeff_expand_mul, coeff_rescale, zpow_mul, zpow_natCast,
-      Units.val_pow_eq_pow_val]
-  · rw [coeff_expand_of_not_dvd d f hn, coeff_expand_of_not_dvd d _ hn, mul_zero]
-
-/-- Rescaling by a `d`-th root of unity fixes every series expanded by `X ↦ X ^ d`. -/
-theorem rescale_expand_of_pow_eq_one {a : Kˣ} {d : ℕ+} (ha : a ^ (d : ℕ) = 1) (f : K⸨X⸩) :
-    rescale a (expand K d f) = expand K d f := by
-  rw [rescale_expand, ha, map_one, AlgEquiv.one_apply]
 
 namespace Level
 
@@ -246,7 +227,8 @@ theorem coeff_levelKummer (η : rootsOfUnity d K) (x : level K d) (k : ℤ) :
       ((η : Kˣ) : K) ^ k * ((x : puiseuxField K) : HahnSeries ℚ K).coeff ((k : ℚ) / d) := by
   obtain ⟨f, hf⟩ : ∃ f, levelEmbedding K d f = x := (mem_level_iff K d x).mp x.2
   rw [coe_levelKummer_of_coe_eq η hf.symm, ← hf, coe_levelEmbedding, coe_levelEmbedding,
-    coeff_ramifiedEmbedding_intCast_div, coeff_ramifiedEmbedding_intCast_div, coeff_rescale]
+    coeff_ramifiedEmbedding_intCast_div, coeff_ramifiedEmbedding_intCast_div, coeff_rescale,
+    Units.val_zpow_eq_zpow_val]
 
 /-- **Restriction of Kummer automorphisms.** For `n ∣ m`, the Kummer automorphism of level `m`
 attached to `η` restricts on level `n` to the Kummer automorphism attached to `η ^ (m / n)`. -/
@@ -274,6 +256,12 @@ variable (K d) [HasEnoughRootsOfUnity K d]
 the Puiseux field is a Galois extension of `K⸨X⸩`. -/
 instance isGalois_level : IsGalois K⸨X⸩ (level K d) :=
   IsGalois.of_algEquiv (levelEquiv K d)
+
+/-- If the coefficient field has a primitive `d`-th root of unity, then the level-`d` subfield of
+the Puiseux field is a normal extension of `K⸨X⸩`, so Galois automorphisms of larger fields
+restrict to it. Instance search does not find this through `isGalois_level` in reasonable time. -/
+instance normal_level : Normal K⸨X⸩ (level K d) :=
+  IsGalois.to_normal
 
 /-- If the coefficient field has a primitive `d`-th root of unity, then the Galois group of the
 level-`d` subfield of the Puiseux field over `K⸨X⸩` is the group of `d`-th roots of unity of `K`.

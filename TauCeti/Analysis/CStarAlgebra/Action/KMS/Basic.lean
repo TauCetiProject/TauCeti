@@ -33,7 +33,8 @@ surjective equivariant homomorphisms, where it guarantees that the norm is prese
 
 The strip lies above the real axis for `β > 0` and below it for `β < 0`. For `β = 0` it is the
 real axis itself, and the `0`-KMS states are exactly the tracial states, `isKMSState_zero_iff`;
-at `β = 0` the definition does not force invariance under `α`.
+at `β = 0` the definition does not force invariance under `α`. On a commutative algebra every
+state is a `0`-KMS state, `isKMSState_zero_iff_of_comm`.
 
 The KMS function of a pair is unique, `IsKMSFunction.eqOn`, by Schwarz reflection across the
 real axis, and it is bounded on the strip by `‖φ‖ ‖a‖ ‖b‖`, `IsKMSFunction.norm_le`, by the
@@ -157,20 +158,14 @@ theorem norm_le (hF : α.IsKMSFunction β φ a b F) {z : ℂ} (hz : z ∈ im ⁻
 
 end IsKMSFunction
 
-/-- For an entire analytic `b`, the function `z ↦ φ (a α_z(b))` is entire. -/
-private theorem differentiable_apply_mul_entireExtension (hb : α.IsEntireAnalytic b) :
-    Differentiable ℂ fun z => φ (a * α.entireExtension b z) :=
-  φ.differentiable.comp
-    ((ContinuousLinearMap.mul ℂ A a).differentiable.comp hb.differentiable_entireExtension)
-
 namespace IsKMSFunction
 
 /-- For an entire analytic `b`, the KMS function of the pair `a, b` is `z ↦ φ (a α_z(b))`. -/
 theorem apply_eq_apply_mul_entireExtension (hF : α.IsKMSFunction β φ a b F)
     (hb : α.IsEntireAnalytic b) {z : ℂ} (hz : z ∈ im ⁻¹' uIcc 0 β) :
     F z = φ (a * α.entireExtension b z) :=
-  hF.eqOn_of_apply_ofReal (differentiable_apply_mul_entireExtension hb).continuous.continuousOn
-    (differentiable_apply_mul_entireExtension hb).differentiableOn
+  hF.eqOn_of_apply_ofReal hb.differentiable_apply_mul_entireExtension.continuous.continuousOn
+    hb.differentiable_apply_mul_entireExtension.differentiableOn
     (fun t => by rw [hb.entireExtension_ofReal]) hz
 
 /-- **Analytic KMS identity.** If the pair `a, b` has a KMS function and `b` is entire analytic,
@@ -189,8 +184,8 @@ theorem isKMSFunction_apply_mul_entireExtension_iff (hb : α.IsEntireAnalytic b)
       ∀ t : ℝ, φ (a * α.entireExtension b (t + β * I)) =
         φ (α (Multiplicative.ofAdd t) b * a) := by
   refine ⟨fun h => h.apply_ofReal_add_mul_I, fun h => ⟨?_, ?_, ?_, ?_, h⟩⟩
-  · exact (differentiable_apply_mul_entireExtension hb).continuous.continuousOn
-  · exact (differentiable_apply_mul_entireExtension hb).differentiableOn
+  · exact hb.differentiable_apply_mul_entireExtension.continuous.continuousOn
+  · exact hb.differentiable_apply_mul_entireExtension.differentiableOn
   · simpa [image_image] using (φ.comp (ContinuousLinearMap.mul ℂ A a)).lipschitzWith.isBounded_image
       (hb.isBounded_image_im_preimage (s := uIcc 0 β) (Metric.isBounded_Icc _ _))
   · exact fun t => by rw [hb.entireExtension_ofReal]
@@ -256,6 +251,12 @@ theorem isKMSState_zero_iff :
     refine ((ω : A →L[ℂ] ℂ).le_opNorm _).trans ?_
     gcongr
     exact (norm_mul_le _ _).trans_eq (by rw [StarAlgEquiv.norm_map])
+
+/-- On a commutative C⋆-algebra every state is a `0`-KMS state, for every dynamics. -/
+theorem isKMSState_zero_iff_of_comm {B : Type*} [NonUnitalCommCStarAlgebra B] [PartialOrder B]
+    [StarOrderedRing B] {γ : CStarAction (Multiplicative ℝ) B} {ψ : B →P[ℂ] ℂ} :
+    γ.IsKMSState 0 ψ ↔ ‖(ψ : B →L[ℂ] ℂ)‖ = 1 := by
+  simp [isKMSState_zero_iff, mul_comm]
 
 /-! ### Invariance of KMS states -/
 

@@ -21,6 +21,11 @@ dense set for Banach `Λ`. For such a parameter the zeros of `s (·, l)` then fo
 whose dimension is the Fredholm index. This is the abstract transversality package used to show
 that moduli spaces cut out by a generic perturbation are manifolds.
 
+If the slice linearizations have negative index at all zeros, regularity is equivalent to
+absence of zeros. Thus zero-free parameters form a residual, dense set: a negative expected
+dimension means an empty moduli space. The index need not be constant, and its sign is required
+only at actual zeros.
+
 Smoothness of the section is required only at zeros, and all hypotheses are stated for the
 intrinsic linearizations. The manifold structure on the zeros also uses a smooth bundle. The
 finite differentiability threshold is the current Sard--Smale bound `(dim ker)² + 1`, not the
@@ -40,6 +45,11 @@ inverse chart, so non-regular section zeros give non-regular coordinate zeros.
 * `TauCeti.eventually_residual_exists_isManifold_sectionZero`: for a residual set of parameters,
   the zeros form a `C^n` manifold of dimension the index, with a `C^n` immersion whose tangent
   spaces are the kernels.
+* `TauCeti.isRegularSectionParameter_iff_forall_ne_zero_of_index_neg`: with negative slice
+  indices at zeros, regularity is equivalent to absence of zeros.
+* `TauCeti.mem_residual_setOf_forall_section_ne_zero_of_index_neg` and
+  `TauCeti.dense_setOf_forall_section_ne_zero_of_index_neg`: zero-free parameters form a residual,
+  dense set when the slice indices at zeros are negative.
 
 ## References
 
@@ -85,6 +95,23 @@ theorem isRegularSectionParameter_iff {l : Λ} :
       ∀ x, s (x, l) = 0 → Surjective
         (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l)) (fun y ↦ s (y, l)) x) :=
   (Iff.rfl)
+
+/-- When every zero of a parameter slice has negative index, the parameter is regular if and
+only if that slice has no zeros. This implication needs no smoothness or Fredholm assumption:
+surjectivity alone forces the algebraic index to be nonnegative. -/
+theorem isRegularSectionParameter_iff_forall_ne_zero_of_index_neg {l : Λ}
+    (hindex : ∀ x, s (x, l) = 0 → LinearMap.index
+      (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l))
+        (fun y ↦ s (y, l)) x).toLinearMap < 0) :
+    IsRegularSectionParameter (F := F) X b s l ↔ ∀ x, s (x, l) ≠ 0 := by
+  rw [isRegularSectionParameter_iff]
+  constructor
+  · intro hl x hx
+    have hi := hindex x hx
+    rw [LinearMap.index_of_surjective (hl x hx)] at hi
+    exact (not_lt_of_ge (Int.natCast_nonneg _)) hi
+  · intro hl x hx
+    exact (hl x hx).elim
 
 /-- In a trivial bundle, a parameter is regular exactly when the fiber-valued equation
 `f (·, l) = 0` has surjective manifold derivative at each of its solutions. -/
@@ -337,5 +364,28 @@ theorem eventually_residual_exists_isManifold_sectionZero {d : ℕ}
     (fun x hx ↦ ContMDiffAt.comp (g := fun w ↦ (⟨b w, s w⟩ : TotalSpace F E))
       (f := fun y ↦ (y, l)) x (hcont (x, l) hx) (contMDiffAt_id.prodMk contMDiffAt_const))
     (fun x hx ↦ hFred (x, l) hx) hl (fun x hx ↦ hindex (x, l) hx)
+
+variable
+  (hindex : ∀ z, s z = 0 → LinearMap.index (sectionLinearization (F := F) 𝓘(ℝ, X)
+    (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1).toLinearMap < 0)
+
+include hindex
+
+/-- **Generic absence of negative-index zeros.** If the slice linearization is Fredholm of
+negative index at each zero and the total section is transverse to zero, zero-free parameters
+form a residual set. Second countability is needed only for the universal zero set. -/
+theorem mem_residual_setOf_forall_section_ne_zero_of_index_neg :
+    {l | ∀ x, s (x, l) ≠ 0} ∈ residual Λ := by
+  filter_upwards [mem_residual_setOf_isRegularSectionParameter hcont hFred htotal hn] with l hl
+  exact (isRegularSectionParameter_iff_forall_ne_zero_of_index_neg
+    (fun x hx ↦ hindex (x, l) hx)).mp hl
+
+/-- Zero-free parameters of a transverse universal section with negative slice indices are
+dense in the Banach parameter space. In particular they occur arbitrarily near any prescribed
+parameter, without a constant-index assumption. -/
+theorem dense_setOf_forall_section_ne_zero_of_index_neg :
+    Dense {l | ∀ x, s (x, l) ≠ 0} :=
+  dense_of_mem_residual
+    (mem_residual_setOf_forall_section_ne_zero_of_index_neg hcont hFred htotal hn hindex)
 
 end TauCeti

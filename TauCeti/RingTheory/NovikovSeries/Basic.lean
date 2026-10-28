@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Group.Finsupp
 public import Mathlib.Algebra.Group.Support
 public import Mathlib.Algebra.Module.Basic
@@ -379,6 +380,13 @@ def coeffAddMonoidHom [AddMonoid R] : NovikovSeries R H N →+ (H → R) where
 theorem coeffAddMonoidHom_apply [AddMonoid R] (a : NovikovSeries R H N) :
     coeffAddMonoidHom a = a.coeff := by
   rfl
+
+/-- A coefficient of a finite sum of Novikov series is the sum of the coefficients. -/
+@[simp]
+theorem coeff_sum [AddCommMonoid R] {ι : Type*} (s : Finset ι) (f : ι → NovikovSeries R H N)
+    (h : H) : (∑ i ∈ s, f i).coeff h = ∑ i ∈ s, (f i).coeff h := by
+  have hs := congrFun (map_sum (coeffAddMonoidHom (R := R) (N := N)) f s) h
+  simpa only [coeffAddMonoidHom_apply, Finset.sum_apply] using hs
 
 instance [Semiring S] [AddCommMonoid R] [Module S R] : Module S (NovikovSeries R H N) :=
   (funext (coeffAddMonoidHom_apply (R := R) (N := N)) ▸ coeff_injective).module S coeffAddMonoidHom

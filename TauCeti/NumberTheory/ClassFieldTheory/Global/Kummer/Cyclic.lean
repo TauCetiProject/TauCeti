@@ -83,17 +83,9 @@ theorem exists_auxiliaryKummerNorms_of_finrank_prime {p : ℕ} (hp : p.Prime)
   have : Fact (Nat.card Gal(F/K)).Prime := ⟨by rw [IsGalois.card_aut_eq_finrank, hF]; exact hp⟩
   have : IsCyclic Gal(F/K) := isCyclic_of_prime_card (p := Nat.card Gal(F/K)) rfl
   -- Enlarge the prescribed set by class generators, ramified places and places above `p`.
-  obtain ⟨C, hC, hgen⟩ := ClassGroup.exists_finite_closure_classGroupMk_image_eq_top (R := 𝓞 K)
-  have hP : {v : HeightOneSpectrum (𝓞 K) | (p : 𝓞 K) ∈ v.asIdeal}.Finite :=
-    (Ring.HasFiniteQuotients.finite_setOfPred_mem (p : 𝓞 K)
-      (Nat.cast_ne_zero.mpr hp.ne_zero)).preimage HeightOneSpectrum.asIdeal_injective.injOn
-  let S := S₀ ∪ hC.toFinset ∪ TauCeti.NumberField.ramifiedSupport K F ∪ hP.toFinset
-  have hCS : C ⊆ (S : Set _) := fun v hv ↦ by simp [S, hv]
-  have hcl : Subgroup.closure (HeightOneSpectrum.classGroupMk ''
-      (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤ :=
-    top_unique (hgen ▸ Subgroup.closure_mono (Set.image_mono hCS))
-  have hpS (v : HeightOneSpectrum (𝓞 K)) (hv : (p : 𝓞 K) ∈ v.asIdeal) : v ∈ S := by
-    simp [S, hP.mem_toFinset.mpr hv]
+  obtain ⟨S, hS₀S, hcl, hpS⟩ := ClassGroup.exists_finset_superset_closure_classGroupMk_image_eq_top
+    (S₀ ∪ TauCeti.NumberField.ramifiedSupport K F) (a := (p : 𝓞 K))
+    (Nat.cast_ne_zero.mpr hp.ne_zero)
   have hur (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ (S : Set _)) :
       ∃ w : HeightOneSpectrum (𝓞 F), w.asIdeal.LiesOver v.asIdeal ∧
         Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := by
@@ -101,7 +93,7 @@ theorem exists_auxiliaryKummerNorms_of_finrank_prime {p : ℕ} (hp : p.Prime)
     have : w.asIdeal.LiesOver v.asIdeal := hw ▸ inferInstance
     refine ⟨w, inferInstance, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport v ?_
       w.asIdeal⟩
-    exact fun hram ↦ hv (by simp [S, hram])
+    exact fun hram ↦ hv (hS₀S (Finset.mem_union_right _ hram))
   let M := kummerField (SeparableClosure K) p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)
   have hFM : F ≤ M := TauCeti.NumberField.le_kummerField_sUnits_of_isCyclic hcl hF.dvd hur
   let F' := IntermediateField.restrict hFM
@@ -133,7 +125,7 @@ theorem exists_auxiliaryKummerNorms_of_finrank_prime {p : ℕ} (hp : p.Prime)
       _ = Module.finrank F' M * Module.finrank K F' := congrArg₂ (· * ·) hcard hF'.symm
       _ = Module.finrank K M := (mul_comm _ _).trans (Module.finrank_mul_finrank K F' M)
       _ = p ^ (Fintype.card (InfinitePlace K) + S.card) := hdegree
-  refine ⟨S, (by intro v hv; simp [S, hv]), hcl, hpS, T, hST, hcount, hsurj, ?_⟩
+  refine ⟨S, Finset.union_subset_left hS₀S, hcl, hpS, T, hST, hcount, hsurj, ?_⟩
   exact (range_ideleClassNormMap_eq_of_algEquiv e).symm ▸ hnorm
 
 end TauCeti.ClassFieldTheory

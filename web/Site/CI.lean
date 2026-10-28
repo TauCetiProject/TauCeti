@@ -56,7 +56,7 @@ def failuresGraph : Html := dailyChart "ci-failures.svg"
   "Failed PR builds per day by cause, and the failure rate"
   "Failed PR builds by cause; the dashed line is the share of PR builds that failed."
 def minutesGraph : Html := dailyChart "ci-runner-minutes.svg"
-  "Build minutes per day on Namespace and on GitHub-hosted runners, and cancelled PR builds"
+  "Build minutes per day on GitHub, Namespace, eastanglia and leanfro, and cancelled PR builds"
   "Build minutes per day."
 def queueGraph : Html := dailyChart "ci-merge-queue.svg"
   "GitHub merge-queue and bors builds per day by outcome, and PRs landed"
@@ -84,12 +84,17 @@ Build activity and runner queues across Tau Ceti. The charts update automaticall
 # Understanding the fleet
 
 Where does Tau Ceti's continuous integration run, and how long does it wait? Every pull request
-is built in a sandbox, on one of two kinds of runner. GitHub-hosted runners cost nothing for a
-public repository, but the organisation may run only twenty GitHub-hosted jobs at once, across
-all of its repositories. Namespace runners are faster and have no such cap, but every minute is
-paid for. So a pull-request build takes a GitHub runner while one is free and overflows to
-Namespace when they are all taken. Merge validation through the GitHub queue or bors runs on
-Namespace; human-reviewed infrastructure changes can land directly.
+is built in a sandbox. The fleet uses GitHub, Namespace, and the operator-provided servers
+*eastanglia* and *leanfro*. Pull-request builds prefer GitHub, then eastanglia, then leanfro when it accepts
+PR jobs, then Namespace. Bors staging builds prefer leanfro, then eastanglia, then Namespace,
+then GitHub. Currently leanfro accepts staging only. Each choice depends on available capacity;
+a host that is busy, offline or does not accept that job class is skipped.
+
+The eastanglia server has two job slots shared across PR and staging builds; leanfro has one staging slot.
+Namespace has an approximate shared cap of twenty queued or running build jobs. Concurrent
+picker decisions can briefly overshoot it. GitHub-hosted jobs are free for public repositories,
+and the organisation can run twenty at once; the picker reserves headroom for control jobs by
+sending new builds elsewhere once twelve GitHub jobs are busy. Namespace minutes are paid for.
 
 The fleet timelines have three panels on one time axis. The top panel shows how many jobs were
 running, averaged over each bin and stacked by runner and kind, against the twenty-job cap on
@@ -140,8 +145,8 @@ source coverage. The static fallback charts include complete UTC days only.
 
 How long does a build take, and how long does it wait before starting? A pull-request build
 restores what it can from the artifact cache and compiles the rest, then runs the audits and lints.
-Builds on Namespace run on eight-core machines and those on GitHub-hosted runners on four, so the two
-lines are different machines doing broadly similar work, not the same builds timed twice.
+PR build durations and waits are separated by runner; the merge-validation series combines
+staging builds across providers. These timings reflect different runner sizes and workloads.
 
 :::blob durationGraph
 :::
@@ -150,22 +155,25 @@ lines are different machines doing broadly similar work, not the same builds tim
 :::
 
 Where does a build's time go? The build, the audits and the two lints run in one sandboxed step.
-Where a build recorded its own phases, that step is split into them, with any time the phases do
-not cover shown as unattributed; otherwise it appears as one block.
+For a sample of successful builds with recorded phases, that step is split into them, with any time the phases do
+not cover shown as unattributed. Days with recorded phase samples use the sampled
+builds for the phase means; other days retain coarse API step timings.
 
 :::blob phasesGraph
 :::
 
 Why do builds fail? Each failed pull-request build is classified by the step that failed and the
-error lines it printed: a Lean error, one of the lints, one of the audits, a policy check (scope,
+available error lines it printed: a Lean error, one of the lints, one of the audits, a policy check (scope,
 size, pins), a timeout, or an infrastructure fault such as a cache download. The classification is
-by pattern, so it is a guide rather than a verdict.
+by pattern, so it is a guide rather than a verdict. Optional failure details are
+limited to recent builds; unavailable causes remain unknown.
 
 :::blob failuresGraph
 :::
 
 What does it cost? Namespace bills every minute; GitHub-hosted minutes cost nothing for a public
-repository. The chart counts the minutes of build jobs. A cancelled PR build is usually one that a
+repository. The eastanglia and leanfro servers contribute operator-provided capacity. The chart counts build-job
+minutes separately for each runner provider. A cancelled PR build is usually one that a
 newer push to the same pull request replaced before it finished, whose minutes bought nothing.
 
 :::blob minutesGraph
@@ -191,15 +199,16 @@ line. Direct merges of human-reviewed infrastructure PRs are included.
 # Where the data comes from
 
 The data comes from [TauCetiCI](https://github.com/TauCetiProject/TauCetiCI). Its live reporting
-service receives GitHub workflow and job events, records trusted summaries, and repairs missing
-data within a shared GitHub request budget. New and corrected records update the affected time
+service receives GitHub workflow and job events, repairs current missing data and samples optional details
+within a shared GitHub request budget. New and corrected records update the affected time
 buckets. Reports update independently of this website's build, and the page checks for published
 updates once a minute while visible. Reading this page does not trigger GitHub API requests.
 During validation or an outage, the page retains its static or last successful reports.
 
 The [live report manifest](https://ci-data.taucetiproject.org/v1/ci/manifest.json) records
-publication times, source coverage and pending details. The downloadable database remains
-published as a release for anyone who wants to ask their own questions. Each chart uses its own source
+publication times, source coverage and pending details. The existing downloadable database remains available as a historical release;
+it is refreshed only for an explicit analysis. Static fallbacks cache the published
+charts rather than rebuilding them from the database. Each chart uses its own source
 coverage: fleet charts require organisation-wide job history, daily build charts require Tau Ceti
 build jobs, failure and phase charts require detailed enrichment, and the merge timelines use
 the latest observations and recorded runs. Explicitly unavailable records are reported as source

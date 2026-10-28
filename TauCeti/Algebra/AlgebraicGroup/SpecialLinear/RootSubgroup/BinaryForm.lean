@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BinaryForm
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BinaryForm.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Invariants
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
 

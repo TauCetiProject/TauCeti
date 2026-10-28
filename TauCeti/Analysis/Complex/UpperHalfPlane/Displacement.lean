@@ -73,6 +73,8 @@ by both kinds of element, except by dilations with `s` close to `0`.
   distance it moves any point.
 * `Matrix.SpecialLinearGroup.abs_trace_commutatorElement_sub_two_le`: the trace of a commutator is
   controlled by the distances its two factors move a common point.
+* `Matrix.ProjectiveSpecialLinearGroup.dist_smul_le_dist_smul_of_smul_eq_self`: two elements fixing
+  a common point compare their displacements in the same way at every point.
 
 ## References
 
@@ -369,3 +371,30 @@ theorem one_add_two_mul_sq_le_cosh_dist_smul {g : SL(2, ℝ)} (h₀₀ : g 0 0 =
   nlinarith [sq_nonneg (z.re ^ 2 + z.im ^ 2 - g 0 1 ^ 2), mul_pos hr hy]
 
 end Matrix.SpecialLinearGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
+/-- **Elements fixing a common point compare their displacements uniformly.** If
+`g, k ∈ PSL(2, ℝ)` fix `w ∈ ℍ` and `g` moves some point `y₀ ≠ w` at most as far as `k` does, then
+`g` moves every point of `ℍ` at most as far as `k` does. Indeed each of them moves `y` a distance
+`δ` with `cosh δ = 1 + κ sinh² (dist y w)`, for a constant `κ` depending only on the element
+(`Matrix.SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self`). -/
+theorem dist_smul_le_dist_smul_of_smul_eq_self {g k : PSL(2, ℝ)} {w y₀ : ℍ} (hg : g • w = w)
+    (hk : k • w = w) (hy₀ : y₀ ≠ w) (h : dist (g • y₀) y₀ ≤ dist (k • y₀) y₀) (y : ℍ) :
+    dist (g • y) y ≤ dist (k • y) y := by
+  obtain ⟨A, rfl⟩ := QuotientGroup.mk_surjective g
+  obtain ⟨B, rfl⟩ := QuotientGroup.mk_surjective k
+  simp only [UpperHalfPlane.pslMk_smul] at hg hk h ⊢
+  have hA := SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self hg
+  have hB := SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self hk
+  have hs₀ : 0 < Real.sinh (dist y₀ w) ^ 2 := pow_pos (Real.sinh_pos_iff.2 (dist_pos.2 hy₀)) 2
+  have h₀ : Real.cosh (dist (A • y₀) y₀) ≤ Real.cosh (dist (B • y₀) y₀) :=
+    Real.cosh_le_cosh.2 (by simpa only [abs_dist] using h)
+  rw [hA, hB] at h₀
+  have h₁ : Real.cosh (dist (A • y) y) ≤ Real.cosh (dist (B • y) y) := by
+    rw [hA, hB]
+    have := le_of_mul_le_mul_right (by linarith) hs₀
+    nlinarith [sq_nonneg (Real.sinh (dist y w))]
+  simpa only [abs_dist] using Real.cosh_le_cosh.1 h₁
+
+end Matrix.ProjectiveSpecialLinearGroup
