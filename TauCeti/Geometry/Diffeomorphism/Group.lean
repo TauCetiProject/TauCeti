@@ -106,6 +106,12 @@ theorem coe_mul (f g : M ≃ₘ^n⟮I, I⟯ M) : ⇑(f * g) = f ∘ g := rfl
 @[simp]
 theorem coe_inv (f : M ≃ₘ^n⟮I, I⟯ M) : ⇑(f⁻¹) = f.symm := rfl
 
+/-- A natural power of a self-diffeomorphism coerces to the iterate of the underlying function. -/
+theorem coe_pow (f : M ≃ₘ^n⟮I, I⟯ M) (j : ℕ) : ⇑(f ^ j) = (⇑f)^[j] := by
+  induction j with
+  | zero => rfl
+  | succ j ih => rw [pow_succ, coe_mul, ih, Function.iterate_succ]
+
 /-- Multiplication of self-diffeomorphisms acts by applying the right factor, then the left. -/
 @[simp]
 theorem mul_apply (f g : M ≃ₘ^n⟮I, I⟯ M) (x : M) : (f * g) x = f (g x) := rfl
