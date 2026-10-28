@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 public import TauCeti.Algebra.Group.Conj
 public import TauCeti.Algebra.Group.NormalizerQuotient.Conjugation
 import Mathlib.Tactic.Group
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 import TauCeti.Topology.Homotopy.Path
 
 /-!
@@ -21,8 +24,9 @@ and the induced transport of the normalizer quotient `N(H) / H` used for deck gr
 attached to subgroups. It also descends basepoint change to conjugacy classes, where the result is
 independent of the chosen path.
 
-It also records the element-level behaviour of the transport: path-quotient formulas and its
-compatibility with concatenation of paths.
+It also records the element-level behaviour of the transport: path-quotient formulas, its
+compatibility with concatenation of paths and with induced maps, and the comparison of the maps
+induced by freely homotopic maps, which differ by basepoint change along the trace of the homotopy.
 
 Mathlib already supplies the fundamental-group isomorphism
 `FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are the computation
@@ -43,6 +47,16 @@ rules, subgroup, and normalizer-quotient bookkeeping built on it.
   path is the composite of the basepoint changes.
 * `FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj`: basepoint change along a loop is
   conjugation by its class.
+* `FundamentalGroup.map_fundamentalGroupMulEquivOfPath`: induced maps commute with basepoint
+  change.
+* `FundamentalGroup.map_surjective_of_path`: surjectivity of an induced map transports along
+  paths.
+* `ContinuousMap.Homotopy.fundamentalGroupMulEquivOfPath_evalAt_map`: **freely homotopic maps
+  induce the same map on fundamental groups, up to basepoint change along the trace of the
+  homotopy.**
+* `ContinuousMap.Homotopy.exists_path_fundamentalGroupMulEquivOfPath_map_comp`: composing with a
+  homotopy right inverse `s` of `f` realizes, up to basepoint change, any homomorphism through
+  which `g_*` factors via `f_*`.
 * `FundamentalGroup.conjClassesEquivOfPath`: the induced equivalence of conjugacy classes.
 * `FundamentalGroup.conjClassesEquivOfPath_eq`: this equivalence is independent of the path.
 * `FundamentalGroup.conjClassesEquivOfPathConnected_trans`: canonical conjugacy-class transport
@@ -175,6 +189,104 @@ lemma fundamentalGroupMulEquivOfPath_refl
       MulEquiv.refl (FundamentalGroup X x) := by
   ext g
   simp
+
+open CategoryTheory in
+/-- **Induced maps commute with basepoint change.** Changing basepoint along `γ` and then applying
+`f` is applying `f` and then changing basepoint along the image path `γ.map f.continuous`. -/
+lemma map_fundamentalGroupMulEquivOfPath {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    {x₀ x₁ : X} (f : C(X, Y)) (γ : Path x₀ x₁) (g : FundamentalGroup X x₀) :
+    map f x₁ (fundamentalGroupMulEquivOfPath γ g) =
+      fundamentalGroupMulEquivOfPath (γ.map f.continuous) (map f x₀ g) := by
+  -- `FundamentalGroupoid.map f` sends the class of `γ` to the class of `γ.map f.continuous` by
+  -- definition, so the image of the basepoint-change isomorphism is the one along the image path.
+  have hα : (FundamentalGroupoid.map f).mapIso ((Groupoid.isoEquivHom _ _).symm ⟦γ⟧) =
+      (Groupoid.isoEquivHom _ _).symm ⟦γ.map f.continuous⟧ := Iso.ext rfl
+  ext
+  refine (Functor.map_conj (FundamentalGroupoid.map f) _ g).trans ?_
+  rw [hα]
+  -- Mathlib defines basepoint change as `Iso.conj` and `FundamentalGroup.map` as
+  -- `Functor.mapEnd`, so the two sides now agree by unfolding these definitions.
+  rfl
+
+/-- **Surjectivity of an induced map moves along paths.** If `f` induces a surjection of
+fundamental groups at `x₀`, then it induces one at every point joined to `x₀` by a path. -/
+lemma map_surjective_of_path {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    (f : C(X, Y)) {x₀ x₁ : X} (γ : Path x₀ x₁) (hf : Function.Surjective (map f x₀)) :
+    Function.Surjective (map f x₁) := by
+  intro h
+  obtain ⟨k, hk⟩ := hf ((fundamentalGroupMulEquivOfPath (γ.map f.continuous)).symm h)
+  exact ⟨fundamentalGroupMulEquivOfPath γ k, by
+    rw [map_fundamentalGroupMulEquivOfPath, hk, MulEquiv.apply_symm_apply]⟩
+
+open CategoryTheory in
+/-- **Freely homotopic maps induce the same map on fundamental groups, up to basepoint change.**
+A homotopy `H` from `f₀` to `f₁` moves the image of the basepoint `x` along its trace
+`H.evalAt x`, and changing basepoint along this trace carries the map induced by `f₀` to the map
+induced by `f₁`. This is the naturality of Mathlib's
+`FundamentalGroupoidFunctor.homotopicMapsNatIso`, read on endomorphisms of `x`. -/
+lemma _root_.ContinuousMap.Homotopy.fundamentalGroupMulEquivOfPath_evalAt_map {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] {f₀ f₁ : C(X, Y)} (H : f₀.Homotopy f₁) (x : X)
+    (g : FundamentalGroup X x) :
+    fundamentalGroupMulEquivOfPath (H.evalAt x) (map f₀ x g) = map f₁ x g := by
+  let α : FundamentalGroupoid.mk (f₀ x) ≅ FundamentalGroupoid.mk (f₁ x) :=
+    (Groupoid.isoEquivHom _ _).symm ⟦H.evalAt x⟧
+  -- The component of `homotopicMapsNatIso H` at `x` is `α.hom`, by `homotopicMapsNatIso_app`.
+  have h : (FundamentalGroupoid.map f₀).map g.asHom ≫ α.hom =
+      α.hom ≫ (FundamentalGroupoid.map f₁).map g.asHom := by
+    have h := (FundamentalGroupoidFunctor.homotopicMapsNatIso H).naturality g.asHom
+    rwa [FundamentalGroupoidFunctor.homotopicMapsNatIso_app] at h
+  ext
+  exact (Iso.conj_apply_asHom α _).trans
+    ((congrArg (α.inv ≫ ·) h).trans (Iso.inv_hom_id_assoc α _))
+
+/-- **Basepoint change through a homotopy right inverse.** If `s` is a right inverse of `f` up to
+the homotopy `H`, then `g ∘ s` induces on fundamental groups any homomorphism `φ` with
+`φ ∘ f_* = g_*`, up to a change of base point in the target. The path changing the base point
+combines the image under `g` of a path from `w` to `s x` with a loop at `y` correcting by an inner
+automorphism. -/
+lemma _root_.ContinuousMap.Homotopy.exists_path_fundamentalGroupMulEquivOfPath_map_comp
+    {W X Y : Type*} [TopologicalSpace W] [TopologicalSpace X] [TopologicalSpace Y]
+    [PathConnectedSpace W] {f : C(W, X)} {g : C(W, Y)} {s : C(X, W)}
+    (H : (f.comp s).Homotopy (ContinuousMap.id X)) {w : W} {x : X} {y : Y} (hf : f w = x)
+    (hg : g w = y) (φ : FundamentalGroup X x →* FundamentalGroup Y y)
+    (hφ : φ.comp (mapOfEq f hf) = mapOfEq g hg) :
+    ∃ γ : Path (g (s x)) y,
+      ∀ a, fundamentalGroupMulEquivOfPath γ (map (g.comp s) x a) = φ a := by
+  subst hf hg
+  rw [FundamentalGroup.mapOfEq_rfl, FundamentalGroup.mapOfEq_rfl] at hφ
+  let α : Path w (s (f w)) := PathConnectedSpace.somePath _ _
+  -- The trace of `H` at `f w`, read as a path ending at `f w` rather than at `id (f w)`.
+  let δ : Path (f (s (f w))) (f w) := H.evalAt (f w)
+  let c : FundamentalGroup X (f w) :=
+    fromPath (Path.Homotopic.Quotient.mk ((α.map f.continuous).trans δ))
+  let ℓ : Path (g w) (g w) := Quotient.out (toPath (φ c))
+  refine ⟨(α.map g.continuous).symm.trans ℓ, fun a ↦ ?_⟩
+  obtain ⟨b, hb⟩ := (fundamentalGroupMulEquivOfPath α).surjective (map s (f w) a)
+  -- Both `(f ∘ s)_* a` and `(g ∘ s)_* a` are computed through `b`, by naturality of basepoint
+  -- change.
+  have hfs : map (f.comp s) (f w) a =
+      fundamentalGroupMulEquivOfPath (α.map f.continuous) (map f w b) := by
+    rw [map_comp, MonoidHom.comp_apply, ← hb, map_fundamentalGroupMulEquivOfPath]
+  have hgs : map (g.comp s) (f w) a =
+      fundamentalGroupMulEquivOfPath (α.map g.continuous) (map g w b) := by
+    rw [map_comp, MonoidHom.comp_apply, ← hb, map_fundamentalGroupMulEquivOfPath]
+  -- The trace formula for `H` gives `f_* b = c⁻¹ a c`.
+  have h₁ : c * map f w b * c⁻¹ = a := calc
+    _ = fundamentalGroupMulEquivOfPath ((α.map f.continuous).trans δ) (map f w b) := by
+      rw [fundamentalGroupMulEquivOfPath_eq_conj, MulAut.conj_apply]
+    _ = a := by
+      rw [fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply, ← hfs]
+      exact (H.fundamentalGroupMulEquivOfPath_evalAt_map (f w) a).trans
+        (DFunLike.congr_fun (map_id (f w)) a)
+  -- Hence `(g ∘ s)_* a`, moved back to `y` along `g ∘ α`, is `g_* b = φ (c⁻¹ a c)`.
+  calc
+    _ = fundamentalGroupMulEquivOfPath ℓ (map g w b) := by
+      rw [hgs, fundamentalGroupMulEquivOfPath_trans, MulEquiv.trans_apply,
+        fundamentalGroupMulEquivOfPath_symm, MulEquiv.symm_apply_apply]
+    _ = φ (c * map f w b * c⁻¹) := by
+      rw [fundamentalGroupMulEquivOfPath_eq_conj, fromPath_mk_out, ← hφ]
+      simp
+    _ = φ a := by rw [h₁]
 
 /-- Changing basepoint along a path induces an equivalence between conjugacy classes in the two
 fundamental groups. -/

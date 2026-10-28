@@ -15,7 +15,9 @@ import TauCeti.NumberTheory.Padics.PadicIntegers
 The scale and norm ideals of the integral form on `ℤ_p ⊗[ℤ] L` are the extensions to `ℤ_p`
 of the corresponding ideals of `L`. In particular, their generators can be read directly from
 an integral Gram matrix. At an odd prime the ideals coincide, because `2` is a unit; at the
-dyadic prime their difference distinguishes the parity types of unimodular Jordan blocks.
+dyadic prime their difference distinguishes the parity types of unimodular Jordan blocks. In
+particular a lattice is even exactly when its dyadic localization is
+(`TauCeti.IntegralLattice.isEven_iff_forall_two_dvd_localIntegralForm_apply_self`).
 
 These are ideals of the integral localization, not of the completed rational space.
 
@@ -77,5 +79,19 @@ theorem not_isEven_iff_exists_isUnit_localIntegralForm_two :
   rw [L.isEven_iff_localNormIdeal_le_span_two, ← hmax]
   simp only [localNormIdeal, LinearMap.BilinForm.normIdeal_le_iff,
     IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, not_forall, not_not]
+
+/-- **Evenness is detected by the dyadic localization.** A lattice is even exactly when every value
+`B(x, x)` of its localized integral form at `2` is divisible by `2` in `ℤ_[2]`. -/
+theorem isEven_iff_forall_two_dvd_localIntegralForm_apply_self :
+    L.IsEven ↔ ∀ x : L.LocalCarrier 2, (2 : ℤ_[2]) ∣ L.localIntegralForm 2 x x := by
+  simp only [L.isEven_iff_localNormIdeal_le_span_two, LinearMap.BilinForm.normIdeal_le_iff,
+    Ideal.mem_span_singleton]
+
+variable {L} in
+/-- **The dyadic localization of an even lattice is even.** Every value `B(x, x)` of the localized
+integral form of an even lattice at `2` is divisible by `2` in `ℤ_[2]`. -/
+theorem IsEven.two_dvd_localIntegralForm_apply_self (heven : L.IsEven)
+    (x : L.LocalCarrier 2) : (2 : ℤ_[2]) ∣ L.localIntegralForm 2 x x :=
+  L.isEven_iff_forall_two_dvd_localIntegralForm_apply_self.mp heven x
 
 end TauCeti.IntegralLattice

@@ -21,7 +21,9 @@ orientation-independent injectivity from
 The homogeneous corner dimensions satisfy the resulting second-order recursion.
 Reindexing by the vertices of the graph identifies the denominator with the zigzag
 graded Cartan matrix at `q = -X`. This is an identity of formal power series, with no
-claim about a finite Ext-Euler pairing. Non-Dynkin trees are not covered.
+claim about a finite Ext-Euler pairing. Non-Dynkin trees are not covered here; over a field the
+Hilbert series of every connected non-Dynkin graph is
+`TauCeti.preprojectiveHilbertSeries_eq_inv_of_not_exists_dynkinType_iso`.
 
 ## References
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import Mathlib.FieldTheory.Galois.Infinite
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.FieldTheory.Galois.Restriction
 import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality

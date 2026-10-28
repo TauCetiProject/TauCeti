@@ -349,7 +349,8 @@ private theorem ramifiedPrimes_iSup_of_isGalois
           F ≤ IntermediateField.fixedField (P.inertia Gal(K/ℚ)) := by
       rw [notMem_ramifiedPrimes_iff_forall_inertia_le (K := K) (F := F)
         (fixingSubgroup Gal(K/ℚ) (F : Set K)) hp]
-      exact forall₃_congr fun P _ _ => (IntermediateField.le_iff_le _ _).symm
+      exact forall₃_congr fun P _ _ ↦
+        (IntermediateField.le_fixedField_iff_le_fixingSubgroup _ _).symm
     simp only [key, iSup_le_iff]
     exact ⟨fun h i P hP hPp => h P hP hPp i, fun h P hP hPp i => h i P hP hPp⟩
   · simp [mem_ramifiedPrimes_iff, hp]

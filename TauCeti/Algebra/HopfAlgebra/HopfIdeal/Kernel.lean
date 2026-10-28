@@ -283,7 +283,7 @@ theorem isReduced_quotient_kerOfSurjective [IsReduced K] (f : H →ₐc[R] K)
 @[simp]
 theorem kerOfSurjective_mkBialgHom (I : HopfIdeal R H) :
     kerOfSurjective (Bialgebra.Quotient.mkBialgHom I.toIdeal)
-      Ideal.Quotient.mk_surjective = I := by
+      (Bialgebra.Quotient.mkBialgHom_surjective I.toIdeal) = I := by
   ext x
   refine (mem_kerOfSurjective _ _).trans ?_
   rw [Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal]

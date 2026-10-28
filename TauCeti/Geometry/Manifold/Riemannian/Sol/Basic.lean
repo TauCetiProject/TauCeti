@@ -44,8 +44,8 @@ homomorphism from `Sol` into its isometry group, and already its image acts tran
 
 * W. P. Thurston, *Three-Dimensional Geometry and Topology, Vol. 1*, Princeton (1997), §3.8
   (the eight model geometries).
-* P. Scott, *The geometries of 3-manifolds*, Bull. London Math. Soc. 15 (1983) 401–487, §5
-  (the geometry Sol and its metric).
+* P. Scott, *The geometries of 3-manifolds*, Bull. London Math. Soc. 15 (1983) 401–487,
+  Section 4, pp. 470–472 (the geometry Sol and its metric).
 -/
 
 public section

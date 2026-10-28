@@ -178,6 +178,15 @@ variable {K : _root_.PreAbstractSimplicialComplex α}
 variable {L : _root_.PreAbstractSimplicialComplex β}
 variable {M : _root_.PreAbstractSimplicialComplex γ}
 
+/-- A simplicial map with a left inverse is injective on vertices. -/
+theorem injective_of_comp_eq_id [DecidableEq α] [DecidableEq β]
+    (f : _root_.PreAbstractSimplicialComplex.SimplicialMap K L)
+    (g : _root_.PreAbstractSimplicialComplex.SimplicialMap L K)
+    (hgf : g.comp f = _root_.PreAbstractSimplicialComplex.SimplicialMap.id K) :
+    Function.Injective f :=
+  Function.LeftInverse.injective (g := g)
+    (fun x => by simpa using congrArg (fun k => k x) hgf)
+
 /-- A simplicial map induces a monotone map between face posets by taking the image of every face.
 -/
 def faceOrderHom [DecidableEq β]

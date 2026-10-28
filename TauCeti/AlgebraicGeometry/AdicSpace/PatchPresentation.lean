@@ -253,7 +253,10 @@ private lemma isClopen_patchTopology_of_mem_basicOpens :
 lemma isCompact_of_isClosed_patchTopology {U : Set (Spv A)}
     (hU : @IsClosed (Spv A) (patchTopology A) U) : IsCompact U :=
   isCompact_of_isClosed_generateFrom (t' := patchTopology A) instTopologicalSpace_eq_generateFrom
-    compactSpace_patchTopology isClopen_patchTopology_of_mem_basicOpens hU
+    compactSpace_patchTopology
+    (fun u hu ↦ @IsClopen.isOpen (Spv A) (patchTopology A) u
+      (isClopen_patchTopology_of_mem_basicOpens u hu))
+    hU
 
 /-- A basic open of `Spv A` is quasi-compact. -/
 lemma isCompact_basicOpen (f s : A) : IsCompact (basicOpen f s) :=

@@ -81,7 +81,7 @@ theorem pow_card_eq_self_iff_mem_range_algebraMap {K L : Type*} [Field K] [Finty
   -- `X ^ q - X` splits over `K` with every element a root, and `Splits.image_rootSet`
   -- transports that root set along `K → L`
   have hne : (X ^ Fintype.card K - X : K[X]) ≠ 0 :=
-    _root_.FiniteField.X_pow_card_sub_X_ne_zero K Fintype.one_lt_card
+    Polynomial.X_pow_sub_X_ne_zero Fintype.one_lt_card
   have hsplits : ((X ^ Fintype.card K - X : K[X]).map (algebraMap K K)).Splits :=
     IsSplittingField.splits (L := K) (X ^ Fintype.card K - X)
   have himg := hsplits.image_rootSet (Algebra.ofId K L)

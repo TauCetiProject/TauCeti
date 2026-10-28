@@ -68,6 +68,21 @@ theorem le_identityComponent (I : HopfIdeal k H) : I ≤ I.identityComponent := 
   rw [mem_identityComponent, (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mpr hx]
   exact zero_mem _
 
+/-- A connected closed subgroup of a closed subgroup `N` is contained in the identity
+component of `N`. The inequalities are reversed because they compare defining ideals. -/
+theorem identityComponent_le_of_le {I J : HopfIdeal k H} (hIJ : I ≤ J)
+    (hJ : geometricallyConnectedCommHopfAlgProperty k
+      (FiniteTypeCommHopfAlgCat.quotient H J).obj) :
+    I.identityComponent ≤ J := by
+  let f := CommHopfAlgCat.quotientMapOfLe H.obj hIJ
+  let _ : ConnectedSpace (PrimeSpectrum (FiniteTypeCommHopfAlgCat.quotient H J)) :=
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace k _ hJ
+  intro x hx
+  apply (CommHopfAlgCat.mkQuotient_eq_zero_iff H.obj J x).mp
+  rw [← CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe H.obj hIJ]
+  exact CommHopfAlgCat.identityComponentHopfIdeal_toIdeal_le_ker_of_connected f
+    (HopfIdeal.mem_toIdeal.mpr ((mem_identityComponent I x).mp hx))
+
 /-- Computing the coordinate algebra of `N°` inside `G` or inside `N` gives isomorphic
 commutative Hopf algebras. -/
 def identityComponentQuotientIso (I : HopfIdeal k H) :

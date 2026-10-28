@@ -17,7 +17,7 @@ import Mathlib.Analysis.Convex.Mul
 Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `0 < λ ≤ Λ`, and let
 `u ∈ H¹(Ω)` be a weak supersolution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` in `Ω`,
 
 meaning `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, which is bounded below by a constant
 `ε > 0`. Then `log u` is a Sobolev function with weak gradient `∇u / u`
@@ -82,7 +82,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
 
 /-- **The logarithmic Caccioppoli inequality.** Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ ε`
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ ε`
 almost everywhere for some `ε > 0`. Then for every smooth `ψ` compactly supported in `Ω`,
 
 `∫_Ω ψ² (‖∇u‖ / u)² ≤ (2Λ/λ)² ∫_Ω ‖∇ψ‖²`.
@@ -112,7 +112,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_div_value_sq_le
 
 /-- **The gradient of `log u` on balls.** There is a constant `C ≥ 0`, depending only on the
 dimension, with the following property. Let `a` be measurable and uniformly elliptic on `Ω` with
-constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` with
+constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` with
 `u ≥ ε` almost everywhere for some `ε > 0`. Then on every ball with `B(x₀, 2r) ⊆ Ω`,
 
 `∫_{B(x₀, r)} (‖∇u‖ / u)² ≤ C (Λ/λ)² |B(x₀, r)| / r²`.
@@ -137,7 +137,7 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le :
   intro mu _ Omega a lam Lam u ε x₀ r h ha hu hε hεu hr hball
   have hlam := h.pos
   -- A cutoff equal to `1` on `B(x₀, r)`, supported in `closedBall x₀ (3r/2)`, with `‖∇ψ‖ ≤ 2c/r`.
-  obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg⟩ := hcut x₀ hr (by linarith : r < 3 * r / 2)
+  obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le (by linarith : r < 3 * r / 2)
   have hR : 3 * r / 2 - r = r / 2 := by ring
   rw [hR] at hψg
   have hclosed : Metric.closedBall x₀ (3 * r / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
@@ -210,7 +210,7 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le :
 /-- **The logarithm of a positive supersolution has bounded mean oscillation.** There is a
 constant `C ≥ 0`, depending only on the dimension, with the following property. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a
-weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` with `u ≥ ε` almost everywhere for some `ε > 0`. Then on
+weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` with `u ≥ ε` almost everywhere for some `ε > 0`. Then on
 every ball with `B(x₀, 2r) ⊆ Ω`,
 
 `⨍_{B(x₀, r)} |log u - ⨍_{B(x₀, r)} log u| ≤ C Λ/λ`.

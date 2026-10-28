@@ -91,6 +91,13 @@ theorem ι_spinVectorAction_apply (x : spinGroup Q) (m : M) :
       exact spinGroup.coe_star
     rw [hunit, hinv]
 
+/-- A Spin element sends `m` to `w` when it moves `ι Q m` past itself as `ι Q w`. -/
+theorem spinVectorAction_eq_of_mul_ι_eq (x : spinGroup Q) {m w : M}
+    (h : (x : CliffordAlgebra Q) * ι Q m = ι Q w * x) :
+    spinVectorAction Q x m = w := by
+  apply ι_injective Q
+  rw [ι_spinVectorAction_apply, h, mul_assoc, spinGroup.mul_star_self_of_mem x.2, mul_one]
+
 /-- Conjugation by a spin element preserves the quadratic form. -/
 @[simp]
 theorem spinVectorAction_map_app (x : spinGroup Q) (m : M) :

@@ -9,14 +9,26 @@ public import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.Tactic.Ring
 
 /-!
-# Equivalences for consecutive blocks of natural numbers
+# Equivalences for finite indices and consecutive blocks of natural numbers
 
+The equivalence omitting the last finite index embeds preceding indices by `Fin.castSucc`.
 The quotient-remainder equivalence identifies a natural number with a block number and a
 position inside that block. This file records the induced block permutations and compatibility
 of nested blocks with the finite-product indexing equivalence.
 -/
 
 public section
+
+namespace TauCeti
+
+/-- Omitting the last index embeds each preceding index by `Fin.castSucc`. -/
+@[simp]
+theorem finSuccAboveEquiv_last_apply (n : ℕ) (i : Fin n) :
+    finSuccAboveEquiv (Fin.last n) i = ⟨i.castSucc, Fin.castSucc_ne_last i⟩ :=
+  (finSuccAboveEquiv_apply (Fin.last n) i).trans
+    (by apply Subtype.ext; exact Fin.succAbove_last_apply i)
+
+end TauCeti
 
 /-- The permutation of path coordinates that permutes the consecutive blocks of width `m` by `τ`
 and preserves the position inside each block. -/

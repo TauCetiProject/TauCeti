@@ -17,7 +17,8 @@ pullback--pushforward adjunction equation. In degree one the comparison is an is
 
 The comparison is the input for proving that symmetric powers commute with pullback on
 quasicoherent modules. That stronger invertibility statement in arbitrary degree requires the
-affine calculation and descent and is not asserted here.
+affine calculation and descent; it is proved in
+`TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Pullback.Quasicoherent`.
 
 ## Main declaration
 
@@ -55,6 +56,16 @@ theorem pullbackSymmetricPowerComparison_eq (n : ℕ) :
       TauCeti.SheafOfModules.pullbackSymmetricPowerComparison
         (pullbackPushforwardAdjunction f) n :=
   (rfl)
+
+/-- The mate of the scheme comparison under the pullback--pushforward adjunction is the
+pushforward comparison along `f.toRingCatSheafHom`. -/
+-- Not a simp lemma: `mateEquiv_apply` expands its left-hand side first.
+theorem mateEquiv_pullbackSymmetricPowerComparison (n : ℕ) :
+    mateEquiv (pullbackPushforwardAdjunction f) (pullbackPushforwardAdjunction f)
+        (pullbackSymmetricPowerComparison f n) =
+      TauCeti.SheafOfModules.pushforwardSymmetricPowerComparison f.toRingCatSheafHom n :=
+  TauCeti.SheafOfModules.mateEquiv_pullbackSymmetricPowerComparison
+    (pullbackPushforwardAdjunction f) n
 
 /-- The adjunction equation characterizing the pullback comparison for modules on schemes. -/
 theorem unit_comp_pushforward_map_pullbackSymmetricPowerComparison_app

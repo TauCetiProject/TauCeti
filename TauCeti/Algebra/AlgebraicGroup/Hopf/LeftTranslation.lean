@@ -15,6 +15,9 @@ Left translation by a base-valued point is an automorphism of the coordinate alg
 Its pullback is convolution of the constant point with the universal point, in that order.
 This is the source translation that intertwines a representation's orbit map with the
 linear action on its target. The formula holds on points over every commutative algebra.
+Equivalently, left translation applies the point to the first tensor factor of the
+comultiplication, and it fixes a point valued in an algebra with injective structure map only
+when the translating point is the identity.
 
 ## References
 
@@ -46,6 +49,18 @@ theorem toConv_leftTranslationAlgEquiv (g : WithConv (H →ₐ[R] R)) :
     rfl
   rw [hcomp, comp_pointConjugationAlgHom, toConv_rightTranslationAlgEquiv]
   simp [mul_assoc]
+
+/-- Left translation evaluates by applying the point to the first tensor factor of the
+comultiplication. -/
+theorem leftTranslationAlgEquiv_apply (g : WithConv (H →ₐ[R] R)) (x : H) :
+    leftTranslationAlgEquiv g x =
+      TensorProduct.lid R H (g.ofConv.toLinearMap.rTensor H (Coalgebra.comul x)) := by
+  have h := DFunLike.congr_fun (congrArg ofConv (toConv_leftTranslationAlgEquiv g)) x
+  rw [ofConv_toConv, AlgHom.convMul_apply] at h
+  refine h.trans ?_
+  induction Coalgebra.comul (R := R) x using TensorProduct.inductionOn with
+  | tmul a b => simp [Algebra.smul_def]
+  | add y z hy hz => simp only [map_add, hy, hz]
 
 /-- Precomposition by left translation multiplies an arbitrary algebra-valued point
 on the left by the constant translating point. -/
@@ -86,5 +101,21 @@ theorem leftTranslationAlgEquiv_inv (g : WithConv (H →ₐ[R] R)) :
     leftTranslationAlgEquiv g⁻¹ = (leftTranslationAlgEquiv g)⁻¹ := by
   apply eq_inv_of_mul_eq_one_left
   rw [← leftTranslationAlgEquiv_mul, mul_inv_cancel, leftTranslationAlgEquiv_one]
+
+/-- Left translation by a base-valued point fixes a point valued in an algebra with injective
+structure map only when the translating point is the identity. Thus the left translation action
+of the rational points is free on algebra-valued points. -/
+theorem comp_leftTranslationAlgEquiv_eq_self_iff {A : Type*} [CommRing A] [Algebra R A]
+    (hA : Function.Injective (algebraMap R A)) (g : WithConv (H →ₐ[R] R)) (x : H →ₐ[R] A) :
+    x.comp (leftTranslationAlgEquiv g).toAlgHom = x ↔ g = 1 := by
+  have hmul := toConv_comp_leftTranslationAlgEquiv g (toConv x)
+  rw [ofConv_toConv] at hmul
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [h] at hmul
+    exact AlgHom.mapValue_injective (φ := Algebra.ofId R A) hA
+      ((mul_eq_right.mp hmul.symm).trans (map_one _).symm)
+  · rw [h, leftTranslationAlgEquiv_one]
+    ext a
+    simp
 
 end TauCeti.HopfAlgebra

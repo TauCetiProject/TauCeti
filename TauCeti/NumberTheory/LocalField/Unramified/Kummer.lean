@@ -153,8 +153,8 @@ theorem explicitRes1_kummerMap_eq_zero_iff (hn : IsUnit (n : K)) (hp : ¬ ringCh
     have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) E
     have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) E
     have hur : IsUnramified K E := (inertiaSubgroup_le_fixingSubgroup_iff E).1 <|
-      (IntermediateField.le_iff_le _ _).1 (IntermediateField.adjoin_simple_le_iff.2 fun σ ↦
-        h σ σ.2)
+      (IntermediateField.le_fixedField_iff_le_fixingSubgroup _ _).1
+        (IntermediateField.adjoin_simple_le_iff.2 fun σ ↦ h σ σ.2)
     -- in `E`, `a = yⁿ`, and the normalized valuation of `E` extends that of `K`
     have hx0 : x ≠ 0 := by simp [x]
     set y : Eˣ := Units.mk0 ⟨x, IntermediateField.mem_adjoin_simple_self K x⟩

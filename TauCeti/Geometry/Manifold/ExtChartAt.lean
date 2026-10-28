@@ -22,13 +22,17 @@ admit finite open chart covers whose coordinate images lie in compact subsets of
 even without Hausdorffness.
 
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
-without differentiability assumptions.
+without differentiability assumptions; for a boundaryless model, their domains are open. On an
+open subset, extended charts are restrictions of the ambient ones, so near a chart point the
+inverse charts of nested open subsets differ only by the inclusion. Over `ℝ`, every chart point has
+a convex neighbourhood within the model range, inside the chart target, on which flat calculus
+applies even when the manifold has boundary.
 
 ## Main results
 
 * `TauCeti.measurableEmbedding_extChartAt_restrict`: an extended chart restricted to its source is
   a measurable embedding.
-* `TauCeti.MeasurableSet.image_extChartAt`: the image of a measurable subset of a chart source is
+* `MeasurableSet.image_extChartAt`: the image of a measurable subset of a chart source is
   measurable in the model space.
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
   manifold.
@@ -36,11 +40,14 @@ without differentiability assumptions.
   continuous only on their measurable domain.
 * `TauCeti.exists_finite_precompact_chart_cover`: finite open chart covers with compact
   coordinate bounds for compact subsets of manifolds modelled on a locally compact space.
+* `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
+  chart point within the model range, inside the chart target, with unique derivatives and
+  interior accumulating at the chart point.
 -/
 
 public section
 
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -70,6 +77,33 @@ theorem injOn_extChartAt_coordChange (α β : M) {s : Set M}
   rw [PartialEquiv.trans_source, PartialEquiv.symm_source, Set.mem_inter_iff,
     Set.mem_preimage, (extChartAt I α).left_inv (hsub hx).1]
   exact ⟨(extChartAt I α).map_source (hsub hx).1, (hsub hx).2⟩
+
+omit [ChartedSpace H M] in
+/-- For a boundaryless model, the domain of the change of coordinates between two charts is
+open. -/
+theorem _root_.ModelWithCorners.isOpen_extendCoordChange_source [I.Boundaryless]
+    {e e' : OpenPartialHomeomorph M H} : IsOpen (I.extendCoordChange e e').source :=
+  (e.continuousOn_extend_symm (I := I)).isOpen_inter_preimage e.isOpen_extend_target
+    e'.isOpen_extend_source
+
+/-- The extended chart of an open subset at a point sends that point to the same coordinates as
+the extended chart of a larger open subset at its image under the inclusion. -/
+theorem extChartAt_inclusion_self {U V : TopologicalSpace.Opens M} (h : U ≤ V) (x : U) :
+    extChartAt I (TopologicalSpace.Opens.inclusion h x) (TopologicalSpace.Opens.inclusion h x) =
+      extChartAt I x x := by
+  simp [extChartAt, TopologicalSpace.Opens.chartAt_eq]
+
+/-- Near the chart image of a point of an open subset, the inverse extended chart of a larger
+open subset is the inclusion composed with the inverse extended chart of the smaller one. -/
+theorem extChartAt_inclusion_symm_eventuallyEq {U V : TopologicalSpace.Opens M} (h : U ≤ V)
+    (x : U) :
+    (extChartAt I (TopologicalSpace.Opens.inclusion h x)).symm =ᶠ[nhds (extChartAt I x x)]
+      TopologicalSpace.Opens.inclusion h ∘ (extChartAt I x).symm := by
+  have hc : Filter.Tendsto I.symm (nhds (extChartAt I x x))
+      (nhds (chartAt H (TopologicalSpace.Opens.inclusion h x) (Set.inclusion h x))) := by
+    simpa [extChartAt, TopologicalSpace.Opens.chartAt_eq] using
+      I.continuous_symm.tendsto (extChartAt I x x)
+  exact (TopologicalSpace.Opens.chartAt_inclusion_symm_eventuallyEq h).comp_tendsto hc
 
 /-- An extended chart target is measurable in the model space. -/
 theorem measurableSet_extChartAt_target [MeasurableSpace E] [OpensMeasurableSpace E]
@@ -171,9 +205,10 @@ theorem IsChartMeasurable.image_extChartAt [MeasurableSpace E] {s : Set M}
 
 /-- Pulling a chart-measurable subset of one chart back along a map continuous on a
 measurable parameter domain gives a measurable subset of that domain. No measurable structure on
-the manifold or continuity outside the parameter domain is required. -/
+the manifold or continuity outside the parameter domain is required. The parameter space only needs
+open sets to be measurable. -/
 theorem IsChartMeasurable.measurableSet_inter_preimage [MeasurableSpace E] [BorelSpace E]
-    {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
+    {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
     {Q : X → M} {D : Set X} {s : Set M} (hs : IsChartMeasurable I s) (hQ : ContinuousOn Q D)
     (hD : MeasurableSet D) (α : M) (hsource : s ⊆ (extChartAt I α).source) :
     MeasurableSet (D ∩ Q ⁻¹' s) := by
@@ -187,30 +222,16 @@ theorem IsChartMeasurable.measurableSet_inter_preimage [MeasurableSpace E] [Bore
     (continuousOn_extChartAt α).comp hq.continuousOn (fun _ hx ↦ hx)
   have hm : Measurable (U.piecewise Ψ (fun _ ↦ 0)) :=
     hΨ.measurable_piecewise continuousOn_const hU.measurableSet
-  have he : q ⁻¹' s = U ∩ (U.piecewise Ψ (fun _ ↦ 0)) ⁻¹' ((extChartAt I α) '' s) := by
-    ext x
-    constructor
-    · intro hx
-      have hu : x ∈ U := hsource hx
-      refine ⟨hu, ?_⟩
-      rw [Set.mem_preimage, Set.piecewise_eq_of_mem U _ _ hu]
-      exact Set.mem_image_of_mem _ hx
-    · rintro ⟨hu, hz⟩
-      rw [Set.mem_preimage, Set.piecewise_eq_of_mem U _ _ hu] at hz
-      obtain ⟨y, hy, heq⟩ := hz
-      have hxy : y = q x := (extChartAt I α).injOn (hsource hy) hu heq
-      -- Expose membership in the preimage so the chart injectivity equality rewrites its point.
-      change q x ∈ s
-      rwa [← hxy]
+  have heq : Set.EqOn (U.piecewise Ψ (fun _ ↦ 0)) Ψ U :=
+    fun _ hx ↦ Set.piecewise_eq_of_mem U _ _ hx
+  have he : U ∩ (U.piecewise Ψ (fun _ ↦ 0)) ⁻¹' ((extChartAt I α) '' s) = q ⁻¹' s := by
+    rw [heq.inter_preimage_eq]
+    simpa only [U, Ψ, Set.preimage_comp, Set.preimage_inter, Set.inter_comm] using
+      congrArg (Set.preimage q) ((extChartAt I α).injOn.preimage_image_inter hsource)
   have hpre : MeasurableSet (q ⁻¹' s) := by
-    rw [he]
+    rw [← he]
     exact hU.measurableSet.inter ((hs.image_extChartAt α hsource).preimage hm)
-  have himage : Subtype.val '' (q ⁻¹' s) = D ∩ Q ⁻¹' s := by
-    ext x
-    simp only [Set.mem_image, Set.mem_preimage, Set.mem_inter_iff]
-    exact ⟨fun ⟨y, hy, he⟩ ↦ he ▸ ⟨y.property, hy⟩,
-      fun ⟨hx, hqx⟩ ↦ ⟨⟨x, hx⟩, hqx, rfl⟩⟩
-  rw [← himage]
+  rw [← Subtype.image_preimage_coe D (Q ⁻¹' s)]
   exact hD.subtype_image hpre
 
 /-- Every point has an open neighborhood whose extended-chart image is contained in a compact
@@ -306,5 +327,31 @@ theorem extChartAt_source_zeroDim {E M : Type*} [NormedAddCommGroup E]
       (Subsingleton.elim _ _)
   · rintro rfl
     exact mem_extChartAt_source y
+
+
+/-- A neighbourhood of the chart point within the model range on which flat arguments in a
+chart apply: it lies in the chart target, is convex with unique derivatives, and its interior
+accumulates at the chart point. It is the intersection of a small ball with `range I`, so it
+need not be open when `M` has boundary or corners. -/
+theorem exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt {E H M : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [ChartedSpace H M] (x₀ : M) :
+    ∃ s : Set E, s ⊆ (extChartAt I x₀).target ∧ UniqueDiffOn ℝ s ∧ Convex ℝ s ∧
+      s ∈ 𝓝[Set.range I] extChartAt I x₀ x₀ ∧ extChartAt I x₀ x₀ ∈ s ∧
+      extChartAt I x₀ x₀ ∈ closure (interior s) := by
+  obtain ⟨ε, hε, hsub⟩ : ∃ ε > 0, Metric.ball (extChartAt I x₀ x₀) ε ∩ Set.range I ⊆
+      (extChartAt I x₀).target :=
+    Metric.mem_nhdsWithin_iff.mp (extChartAt_target_mem_nhdsWithin x₀)
+  have hx : extChartAt I x₀ x₀ ∈ Set.range I :=
+    extChartAt_target_subset_range x₀ (mem_extChartAt_target x₀)
+  refine ⟨Metric.ball (extChartAt I x₀ x₀) ε ∩ Set.range I, hsub, ?_,
+    (convex_ball _ _).inter I.convex_range, ?_, ⟨Metric.mem_ball_self hε, hx⟩, ?_⟩
+  · rw [Set.inter_comm]
+    exact I.uniqueDiffOn.inter Metric.isOpen_ball
+  · rw [Set.inter_comm]
+    exact inter_mem_nhdsWithin _ (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hε))
+  · rw [interior_inter, Metric.isOpen_ball.interior_eq]
+    exact Metric.isOpen_ball.inter_closure
+      ⟨Metric.mem_ball_self hε, I.range_subset_closure_interior hx⟩
 
 end TauCeti

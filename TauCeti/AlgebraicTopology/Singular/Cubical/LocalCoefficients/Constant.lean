@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
-public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Normalized
+public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
+public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.ChainComplex
 
 /-!
 # Constant coefficients in cubical chains
@@ -18,7 +18,8 @@ between the direct sum of copies of `R`, indexed by the singular cubes, and the 
 functions on those cubes.  It sends the summand of a cube to the corresponding singleton chain.
 
 The equivalence commutes with boundaries and carries the degenerate submodule onto the ordinary
-degenerate submodule, so it descends to normalized chains.
+degenerate submodule, so it descends to normalized chains and gives an isomorphism of chain
+complexes.  This isomorphism is natural in the space.
 
 ## Main definitions
 
@@ -26,6 +27,8 @@ degenerate submodule, so it descends to normalized chains.
   unnormalized chains.
 * `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainConstantEquiv`: the equivalence on
   normalized chains.
+* `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplexConstantIso`: the induced
+  isomorphism of chain complexes.
 
 ## Main statements
 
@@ -37,6 +40,8 @@ degenerate submodule, so it descends to normalized chains.
   equivalences commute with boundaries.
 * `TauCeti.LocalCoefficientSystem.twistedCubicalChainConstantEquiv_degenerate`: it identifies the
   degenerate submodules.
+* `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplexConstantIso_hom_naturality`:
+  the chain-complex isomorphism commutes with maps of spaces.
 
 ## References
 
@@ -178,6 +183,89 @@ theorem normalizedTwistedCubicalChainConstantEquiv_boundary (n : ℕ) :
     normalizedTwistedCubicalChainConstantEquiv_mk, NormalizedCubicalChain.boundary_mk] using
     congrArg Submodule.Quotient.mk (LinearMap.congr_fun (twistedCubicalChainConstantEquiv_boundary
       (R := R) (X := X) n) x)
+
+/-- The normalized constant-coefficient equivalence is natural in the space. -/
+theorem normalizedTwistedCubicalChainConstantEquiv_naturality {Y : TopCat.{v}}
+    (f : C(X, Y)) (n : ℕ) :
+    (normalizedTwistedCubicalChainConstantEquiv R Y n).toLinearMap ∘ₗ
+        NormalizedTwistedCubicalChain.map f
+          ((constantFunctor Y).obj (ModuleCat.of R R)) n =
+      NormalizedCubicalChain.map R f n ∘ₗ
+        (normalizedTwistedCubicalChainConstantEquiv R X n).toLinearMap ∘ₗ
+          NormalizedTwistedCubicalChain.coefficientMap
+            (pullbackConstantIso f (ModuleCat.of R R)).hom n := by
+  refine NormalizedTwistedCubicalChain.hom_ext fun c ↦ LinearMap.ext fun a ↦ ?_
+  -- The fibres of the constant systems and of their pullback are all `R` by definition, since
+  -- `constantFunctor_obj_obj` is `rfl`; so the transports `(eqToIso _).hom` produced by
+  -- `normalizedTwistedCubicalChainConstantEquiv_ofCube` are identities and `a` serves as an
+  -- element of `R` throughout.  The component of `pullbackConstantIso` is removed in the last
+  -- step by `pullbackConstantIso_hom_app`.
+  calc
+    _ = (Submodule.Quotient.mk (single (f.comp c) a) : NormalizedCubicalChain Y R n) :=
+      (congrArg _ (NormalizedTwistedCubicalChain.map_ofCube c a)).trans
+        (normalizedTwistedCubicalChainConstantEquiv_ofCube (f.comp c) a)
+    _ = NormalizedCubicalChain.map R f n (Submodule.Quotient.mk (single c a)) :=
+      ((NormalizedCubicalChain.map_mk (R := R) f _).trans
+        (congrArg _ (CubicalChain.map_single (R := R) f c a))).symm
+    _ = NormalizedCubicalChain.map R f n (normalizedTwistedCubicalChainConstantEquiv R X n
+          (NormalizedTwistedCubicalChain.ofCube _ c (𝟙 (ModuleCat.of R R) a))) :=
+      congrArg _ (normalizedTwistedCubicalChainConstantEquiv_ofCube c _).symm
+    _ = _ := congrArg _ ((congrArg (fun b ↦ normalizedTwistedCubicalChainConstantEquiv R X n
+          (NormalizedTwistedCubicalChain.ofCube _ c b))
+        (ConcreteCategory.congr_hom (pullbackConstantIso_hom_app f _ _) a)).symm.trans
+      (congrArg _ (NormalizedTwistedCubicalChain.coefficientMap_ofCube _ c a).symm))
+
+variable {Z : TopCat.{u}}
+
+variable (R Z) in
+/-- The normalized cubical chain complex of the constant rank-one local system is the ordinary
+normalized cubical chain complex. -/
+def normalizedTwistedCubicalChainComplexConstantIso :
+    ((constantFunctor Z).obj (ModuleCat.of R R)).normalizedTwistedCubicalChainComplex ≅
+      (normalizedCubicalChainComplex R).obj Z := by
+  exact HomologicalComplex.Hom.isoOfComponents
+    (fun n ↦ (normalizedTwistedCubicalChainConstantEquiv R Z n).toModuleIso) fun i j hij ↦ by
+      obtain rfl : j + 1 = i := hij
+      simp only [LinearEquiv.toModuleIso_hom, normalizedTwistedCubicalChainComplex,
+        normalizedCubicalChainComplex, normalizedCubicalChainComplexObj, ChainComplex.of_d,
+        ← ModuleCat.ofHom_comp]
+      exact congrArg ModuleCat.ofHom
+        (normalizedTwistedCubicalChainConstantEquiv_boundary (R := R) (X := Z) j).symm
+
+/-- The forward chain-complex isomorphism has the normalized constant-coefficient equivalence as
+its component in each degree. -/
+@[simp]
+theorem normalizedTwistedCubicalChainComplexConstantIso_hom_f (n : ℕ) :
+    (normalizedTwistedCubicalChainComplexConstantIso R Z).hom.f n =
+      ModuleCat.ofHom (normalizedTwistedCubicalChainConstantEquiv R Z n).toLinearMap :=
+  (rfl)
+
+/-- The inverse chain-complex isomorphism has the inverse normalized constant-coefficient
+equivalence as its component in each degree. -/
+@[simp]
+theorem normalizedTwistedCubicalChainComplexConstantIso_inv_f (n : ℕ) :
+    (normalizedTwistedCubicalChainComplexConstantIso R Z).inv.f n =
+      ModuleCat.ofHom (normalizedTwistedCubicalChainConstantEquiv R Z n).symm.toLinearMap :=
+  (rfl)
+
+/-- The chain-complex identification of constant-coefficient cubical chains is natural in the
+space. -/
+@[reassoc]
+theorem normalizedTwistedCubicalChainComplexConstantIso_hom_naturality
+    {W : TopCat.{u}} (f : Z ⟶ W) :
+    normalizedTwistedCubicalChainComplexMap f.hom
+          ((constantFunctor W).obj (ModuleCat.of R R)) ≫
+        (normalizedTwistedCubicalChainComplexConstantIso R W).hom =
+      normalizedTwistedCubicalChainComplexCoefficientMap
+          (pullbackConstantIso f.hom (ModuleCat.of R R)).hom ≫
+          (normalizedTwistedCubicalChainComplexConstantIso R Z).hom ≫
+          (normalizedCubicalChainComplex R).map f := by
+  ext n : 1
+  simp only [HomologicalComplex.comp_f, normalizedTwistedCubicalChainComplexMap_f,
+    normalizedTwistedCubicalChainComplexCoefficientMap_f,
+    normalizedTwistedCubicalChainComplexConstantIso_hom_f, normalizedCubicalChainComplex_map_f]
+  exact congrArg ModuleCat.ofHom
+    (normalizedTwistedCubicalChainConstantEquiv_naturality (R := R) (f := f.hom) n)
 
 end LocalCoefficientSystem
 

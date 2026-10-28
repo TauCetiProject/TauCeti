@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Simple
+public import Mathlib.CategoryTheory.Preadditive.HomOrthogonal
+public import Mathlib.CategoryTheory.Preadditive.Schur
 public import Mathlib.CategoryTheory.Skeletal
 
 /-!
@@ -18,6 +19,8 @@ in this type exactly isomorphism of representatives, while retaining a chosen re
 
 The type is invariant under equivalence of categories.  This lets finiteness assumptions and sums
 over simple classes be transported without choosing a separate indexing family of objects.
+In a preadditive category with kernels, Schur's lemma makes the chosen representatives of
+distinct simple classes hom orthogonal.
 
 ## Main declarations
 
@@ -26,7 +29,9 @@ over simple classes be transported without choosing a separate indexing family o
 * `TauCeti.SimpleClasses.eq_iff_nonempty_iso`: two classes are equal exactly when their
   representatives are isomorphic;
 * `TauCeti.SimpleClasses.equiv`: an equivalence of categories induces an equivalence between their
-  types of simple classes.
+  types of simple classes;
+* `TauCeti.SimpleClasses.homOrthogonal_repr`: in a preadditive category with kernels, the chosen
+  representatives of distinct simple classes are hom orthogonal (Schur's lemma).
 -/
 
 public section
@@ -139,6 +144,17 @@ theorem equiv_apply_classOf (e : C ≌ D) (X : C) [Simple X] :
     (classOfReprIso _).symm⟩
 
 end Equivalence
+
+/-- Distinct isomorphism classes of simple objects have no nonzero morphisms between their
+representatives. -/
+theorem homOrthogonal_repr {D : Type u₁} [Category.{v₁} D] [Preadditive D] [HasKernels D] :
+    HomOrthogonal (repr (C := D)) := by
+  intro S T h
+  apply subsingleton_of_forall_eq (0 : S.repr ⟶ T.repr)
+  intro f
+  by_contra hf
+  have := isIso_of_hom_simple hf
+  exact h ((eq_iff_nonempty_iso S T).2 ⟨asIso f⟩)
 
 end SimpleClasses
 

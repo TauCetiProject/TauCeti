@@ -27,7 +27,8 @@ This file records the basic behaviour of these counts: the zero shell of an anis
 in particular of a positive definite one, is `{0}`, so `r_L(0) = 1`; negative norms are not
 represented by a positive semidefinite lattice; in rank zero the zero shell is `{0}` and every
 other shell is empty, so `r_L(0) = 1` and `r_L(n) = 0` for `n ≠ 0`; and an isometry carries shells
-onto shells, so representation numbers are isometry invariants.
+onto shells, so representation numbers are isometry invariants, and so is the sublattice spanned
+by a shell.
 
 Representation numbers are the counts that the theta series of a positive definite lattice
 expands; that identification is not made here.
@@ -49,6 +50,10 @@ expands; that identification is not made here.
 * `TauCeti.IntegralLattice.Isometry.carrierEquiv_image_vectorsOfNorm` and
   `TauCeti.IntegralLattice.Isometry.representationNumber_eq`: isometries carry shells onto shells
   and preserve representation numbers.
+* `TauCeti.IntegralLattice.Isometry.map_span_vectorsOfNorm` and
+  `TauCeti.IntegralLattice.Isometry.span_vectorsOfNorm_eq_top_iff`: isometries carry the span of a
+  shell onto the span of the corresponding shell, so whether a shell spans the lattice is an
+  isometry invariant.
 
 ## References
 
@@ -168,6 +173,19 @@ theorem carrierEquiv_image_vectorsOfNorm (e : Isometry L M) (n : ℚ) :
     refine ⟨e.carrierEquiv.symm y, ?_, e.carrierEquiv.apply_symm_apply y⟩
     rw [← e.carrierEquiv_mem_vectorsOfNorm_iff, e.carrierEquiv.apply_symm_apply]
     exact hy
+
+/-- An isometry carries the span of each shell of the source onto the span of the shell of the
+same norm of the target. -/
+theorem map_span_vectorsOfNorm (e : Isometry L M) (n : ℚ) :
+    (Submodule.span ℤ (L.vectorsOfNorm n)).map (e.carrierEquiv : L →ₗ[ℤ] M) =
+      Submodule.span ℤ (M.vectorsOfNorm n) := by
+  rw [Submodule.map_span, LinearEquiv.coe_coe, e.carrierEquiv_image_vectorsOfNorm]
+
+/-- Spanning the lattice by vectors of a given norm is an isometry invariant. For norm two this
+says that the root sublattice is the whole lattice. -/
+theorem span_vectorsOfNorm_eq_top_iff (e : Isometry L M) (n : ℚ) :
+    Submodule.span ℤ (L.vectorsOfNorm n) = ⊤ ↔ Submodule.span ℤ (M.vectorsOfNorm n) = ⊤ := by
+  rw [← e.map_span_vectorsOfNorm, Submodule.map_eq_top_iff]
 
 /-- Representation numbers are isometry invariants. -/
 theorem representationNumber_eq (e : Isometry L M) (n : ℚ) :

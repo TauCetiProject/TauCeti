@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.RamifiedPrimes
+public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt2.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.Different
 import TauCeti.NumberTheory.NumberField.Quadratic.Norm
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
@@ -58,17 +59,6 @@ theory. -/
 private theorem minpoly_eq_X_sq_sub_C (hmin : minpoly ℤ θ = X ^ 2 - 2) :
     minpoly ℤ θ = X ^ 2 - C 2 := by
   rw [hmin, map_ofNat]
-
-omit [NumberField K] in
-/-- The defining identity `θ² = 2`. -/
-@[simp]
-theorem sq_eq_two (hmin : minpoly ℤ θ = X ^ 2 - 2) : θ ^ 2 = 2 := by
-  rw [gen_sq (minpoly_eq_X_sq_sub_C hmin), map_ofNat]
-
-/-- `ℚ(√2)` has degree `2`. -/
-theorem finrank_eq_two (hmin : minpoly ℤ θ = X ^ 2 - 2)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : Module.finrank ℚ K = 2 :=
-  finrank_rat_eq_two (minpoly_eq_X_sq_sub_C hmin) hgen
 
 /-- **The ring of integers of `ℚ(√2)` is `ℤ[θ]`**: the radicand `2` is squarefree and not `1`
 modulo `4`. -/

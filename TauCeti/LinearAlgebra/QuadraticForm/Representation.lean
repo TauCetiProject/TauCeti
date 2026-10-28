@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.Prod
-public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.QuadraticForm.Prod
+public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # Representation by quadratic forms
@@ -28,6 +28,9 @@ summands, the first with some unit value and the second on a nonzero space, isot
 equivalent to such a shared opposite unit value. These results provide the basic bridge from value
 questions to isotropy questions, following Lam, *Introduction to Quadratic Forms over Fields*,
 I.2.3 and I.3.5.
+
+A represented regular form splits off from a regular finite-dimensional ambient form as an
+orthogonal summand with regular complement.
 -/
 
 public section
@@ -63,6 +66,12 @@ theorem isRepresentedBy_iff {M' : Type*}
 theorem restrict_isRepresentedBy (Q : QuadraticMap R M N)
     (U : Submodule R M) : (Q.restrict U).IsRepresentedBy Q :=
   (isRepresentedBy_iff _ _).mpr ⟨U.subtype, Subtype.coe_injective, fun _ ↦ rfl⟩
+
+/-- The left factor of an orthogonal product is represented by the product. -/
+theorem isRepresentedBy_prod_left (Q₁ : QuadraticMap R M N)
+    {M₂ : Type*} [AddCommMonoid M₂] [Module R M₂] (Q₂ : QuadraticMap R M₂ N) :
+    Q₁.IsRepresentedBy (Q₁.prod Q₂) :=
+  ⟨Isometry.inl Q₁ Q₂, LinearMap.inl_injective⟩
 
 /-- The right factor of an orthogonal product is represented by the product. -/
 theorem isRepresentedBy_prod_right (Q₁ : QuadraticMap R M N)
@@ -261,6 +270,23 @@ theorem Represents.of_isSquare_div {K V : Type*} [Semifield K] [AddCommMonoid V]
   simpa only [← hr, smul_eq_mul, div_mul_cancel₀ b ha] using h.smul_mul_self r
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- **A represented finite-dimensional regular form splits off.** If a finite-dimensional regular
+form `Q₁` is represented by a regular form `Q`, then `Q ≅ Q₁ ⊥ Q|_P` for a subspace `P` on which
+`Q` is regular, namely the orthogonal complement of the image of `Q₁`. -/
+theorem IsRepresentedBy.exists_equivalent_prod [Invertible (2 : K)]
+    {V₁ : Type*} [AddCommGroup V₁] [Module K V₁] [FiniteDimensional K V₁]
+    {Q : QuadraticForm K V} {Q₁ : QuadraticForm K V₁} (h : Q₁.IsRepresentedBy Q)
+    (hQ₁ : Q₁.Nondegenerate) (hQ : Q.Nondegenerate) :
+    ∃ P : Submodule K V, (Q.restrict P).Nondegenerate ∧ Q.Equivalent (Q₁.prod (Q.restrict P)) := by
+  obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff Q₁ Q).mp h
+  let e : Q₁.IsometryEquiv (Q.restrict (LinearMap.range f)) :=
+    { toLinearEquiv := LinearEquiv.ofInjective f hf
+      map_app' := hfQ }
+  have hW := e.nondegenerate_iff.mp hQ₁
+  exact ⟨_, hQ.nondegenerate_restrict_orthogonal hW,
+    ⟨(IsometryEquiv.prodRestrictOrthogonal Q _ hW.isCompl_orthogonal).symm.trans
+      (e.symm.prod (IsometryEquiv.refl _))⟩⟩
 
 /-- For a quadratic form with trivial radical, every nonzero isotropic vector `x` has an
 isotropic partner `y` with `polar Q x y = 1`, so that `x, y` is a hyperbolic pair. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 public import TauCeti.Algebra.Lie.E7.Minuscule.BaseChange
+public import TauCeti.Algebra.Lie.E7.Minuscule.WeightAction
 import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
 import TauCeti.Algebra.Lie.E7.Minuscule.PointsFunctor
@@ -178,11 +179,6 @@ private theorem rootSubgroupPoints_mulVec_mem
         Matrix.GeneralLinearGroup (Fin 56) k) : Matrix (Fin 56) (Fin 56) k) *ᵥ w ∈ N := by
   exact points_mulVec_mem k N (rootSubgroupPoints i k (Multiplicative.ofAdd 1)) hw
 
-/-- The character of the weight torus corresponding to a minuscule-basis index. -/
-noncomputable abbrev minusculeCharacter (a : Fin 56) :
-    Multiplicative (Fin 7 →₀ ℤ) :=
-  SplitTorus.weightCharacter (DynkinType.e7MinusculeWeight a)
-
 private theorem torusCorestrict_eq_ofWeights :
     let _ := standardComodule k
     Comodule.Corestrict (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom =
@@ -193,29 +189,6 @@ private theorem torusCorestrict_eq_ofWeights :
   rw [← _root_.CommHopfAlgCat.hom_comp,
     coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
     GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
-
-private theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
-  intro a b h
-  apply DynkinType.e7MinusculeWeight_injective
-  funext i
-  simpa only [minusculeCharacter, SplitTorus.toAdd_weightCharacter] using
-    congrArg (fun χ : Multiplicative (Fin 7 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
-
-private theorem positiveRoot_mulVec_single_sub (i : Fin 7) (a : Fin 56)
-    (ha : DynkinType.e7MinusculeWeight a i = -1) :
-    (((rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd 1) :
-        Matrix.GeneralLinearGroup (Fin 56) k) : Matrix (Fin 56) (Fin 56) k) *ᵥ
-          Pi.single a 1) - Pi.single a 1 =
-      Pi.single (DynkinType.e7MinusculeReflection i a) 1 := by
-  rw [coe_rootSubgroupPoints_inl, Matrix.add_mulVec, Matrix.one_mulVec,
-    Matrix.smul_mulVec]
-  simp only [toAdd_ofAdd, one_smul]
-  have hmatrix : raisingMatrix i = weightTable.raisingMatrix i := by
-    ext b c
-    simp
-  rw [hmatrix]
-  rw [Matrix.mulVec_single_one, weightTable.raisingMatrix_map_col]
-  simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
 
 private theorem negativeRoot_mulVec_single_sub (i : Fin 7) (a : Fin 56)
     (ha : DynkinType.e7MinusculeWeight a i = 1) :

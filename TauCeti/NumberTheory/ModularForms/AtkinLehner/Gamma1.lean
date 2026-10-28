@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Normalizer
 public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Operator
 public import TauCeti.NumberTheory.ModularForms.Fricke.Operator
 import Mathlib.LinearAlgebra.Matrix.Integer
@@ -73,6 +74,9 @@ up to a scalar there. At `Q = N` the Fricke matrix gives the Fricke operator of
   `TauCeti.atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp_of_mem_cuspFormCharSpace`:
   for `W₁₁ ≡ 1` modulo `N / Q`, the square on `M_k(N, χ_Q χ_{N/Q})` is the constant
   `Q ^ (k - 2) χ_Q(-1) χ_{N/Q}(Q)⁻¹` of Atkin and Li.
+* `atkinLehnerNormalizer_sq_smul_atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1` and its
+  cusp-form counterpart: after normalizing by `(√Q) ^ (2 - k)`, that square on a nebentypus
+  space is the constant `χ_Q(-1) χ_{N/Q}(Q)⁻¹`.
 
 ## References
 
@@ -478,5 +482,40 @@ theorem atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp_of_mem_cuspF
       (h.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq hγ hsq) f,
     diamondOpCusp_apply_of_mem_cuspFormCharSpace k _ _ hf, smul_smul,
     h.mul_comp_unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hM ψ φ hγ hsq]
+
+/-- **Atkin and Li's square of the normalized `𝒲_Q` on a nebentypus space**: under the hypotheses
+of `atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1_of_mem_modFormCharSpace`, the square of
+`𝒲_Q = (√Q) ^ (2 - k) • W_Q` is the constant `χ_Q(-1) χ_{N/Q}(Q)⁻¹`, the square of the normalizer
+cancelling the factor `Q ^ (k - 2)`. -/
+theorem atkinLehnerNormalizer_sq_smul_atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1
+    (hQ : 0 < Q) (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M)
+    (hM : ((M 1 1 : ℤ) : ZMod (N / Q)) = 1) (ψ : (ZMod Q)ˣ →* ℂˣ) (φ : (ZMod (N / Q))ˣ →* ℂˣ)
+    {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ modFormCharSpace k
+      (ψ.comp (ZMod.unitsMap hQN) * φ.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hQN)))) :
+    atkinLehnerNormalizer Q k ^ 2 •
+        atkinLehnerOperatorGamma1 hQ hQN h k (atkinLehnerOperatorGamma1 hQ hQN h k f) =
+      (↑(ψ (-1) * (φ (ZMod.unitOfCoprime Q (h.isExactDivisor hQ.ne' hQN).coprime))⁻¹) : ℂ) •
+        f := by
+  rw [atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1_of_mem_modFormCharSpace hQ hQN h hM ψ φ
+    hf, smul_smul, ← mul_assoc, atkinLehnerNormalizer_sq_mul hQ.ne', one_mul]
+
+/-- **Atkin and Li's square of the normalized `𝒲_Q` on a nebentypus space of cusp forms**: under
+the hypotheses of
+`atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp_of_mem_cuspFormCharSpace`, the square
+of `𝒲_Q = (√Q) ^ (2 - k) • W_Q` is the constant `χ_Q(-1) χ_{N/Q}(Q)⁻¹`, the square of the
+normalizer cancelling the factor `Q ^ (k - 2)`. -/
+theorem atkinLehnerNormalizer_sq_smul_atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp
+    (hQ : 0 < Q) (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M)
+    (hM : ((M 1 1 : ℤ) : ZMod (N / Q)) = 1) (ψ : (ZMod Q)ˣ →* ℂˣ) (φ : (ZMod (N / Q))ˣ →* ℂˣ)
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ cuspFormCharSpace k
+      (ψ.comp (ZMod.unitsMap hQN) * φ.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hQN)))) :
+    atkinLehnerNormalizer Q k ^ 2 •
+        atkinLehnerOperatorGamma1Cusp hQ hQN h k (atkinLehnerOperatorGamma1Cusp hQ hQN h k f) =
+      (↑(ψ (-1) * (φ (ZMod.unitOfCoprime Q (h.isExactDivisor hQ.ne' hQN).coprime))⁻¹) : ℂ) •
+        f := by
+  rw [atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp_of_mem_cuspFormCharSpace hQ hQN
+    h hM ψ φ hf, smul_smul, ← mul_assoc, atkinLehnerNormalizer_sq_mul hQ.ne', one_mul]
 
 end TauCeti

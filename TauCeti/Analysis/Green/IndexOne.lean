@@ -50,10 +50,11 @@ theorem green_ac_index_one {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ} {P Q : �
       hγ hclosed (fun h ↦ hz (hregion (mem_filledHull_iff.mpr h)))
   have h := green_ac_winding hab hγ hclosed hU (subset_filledHull.trans hregion) hP hQ hzero
   have hw : (fun z ↦ windingWeight γ a b z * curl P Q z) = D.indicator (curl P Q) := by
-    rw [hγ.windingWeight_eq_indicator_of_index_one hclosed hindex]
+    rw [hγ.windingWeight_eq_indicator_of_index hclosed 1
+      (fun z hz ↦ by simpa using hindex z hz)]
     ext z
     by_cases hz : z ∈ D
-    · simp only [D, indicator_of_mem hz, one_mul]
+    · simp only [D, indicator_of_mem hz, Int.cast_one, one_mul]
     · simp only [D, indicator_of_notMem hz, zero_mul]
   refine ⟨h.1, (h.2.1.mono_set hDU).congr_fun (fun z hz ↦ ?_) hD, ?_⟩
   · rw [hw, indicator_of_mem hz]

@@ -7,8 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveExactOrder.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
-import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # The finite étale cover of points of naive exact order
@@ -81,19 +82,14 @@ structural morphism is surjective. -/
 instance surjective_naiveExactOrderOpens :
     Surjective ((E.naiveExactOrderOpens hN).ι ≫ (E.torsion N).X.hom) := by
   refine ⟨fun s ↦ ?_⟩
-  let L := AlgebraicClosure (S.residueField s)
-  let t : Spec (.of L) ⟶ S :=
-    Spec.map (CommRingCat.ofHom (algebraMap (S.residueField s) L)) ≫ S.fromSpecResidueField s
-  have hNL : (N : L) ≠ 0 := by
-    rw [← map_natCast (algebraMap (S.residueField s) L)]
-    exact (map_ne_zero_iff _ (algebraMap (S.residueField s) L).injective).mpr (hN s)
-  obtain ⟨P, hP⟩ := E.exists_isOfNaiveExactOrder_over t hNL
+  let t := S.fromSpecAlgebraicClosure s
+  obtain ⟨P, hP⟩ := E.exists_isOfNaiveExactOrder_over t
+    (hN s).isUnit.natCast_ne_zero_of_algebra
   let u := (E.naiveExactOrderRepresentableBy hN).homEquiv.symm
     ⟨P, mem_naiveExactOrderSubfunctor_obj.mpr hP⟩
-  obtain ⟨a⟩ : Nonempty (Spec (.of L)) := inferInstance
+  obtain ⟨a⟩ : Nonempty (Spec (.of (AlgebraicClosure (S.residueField s)))) := inferInstance
   refine ⟨u.left a, ?_⟩
   have hu : u.left ≫ (E.naiveExactOrderOpens hN).ι ≫ (E.torsion N).X.hom = t := Over.w u
-  rw [← Scheme.Hom.comp_apply, hu]
-  exact Scheme.fromSpecResidueField_apply s _
+  rw [← Scheme.Hom.comp_apply, hu, Scheme.fromSpecAlgebraicClosure_apply]
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom

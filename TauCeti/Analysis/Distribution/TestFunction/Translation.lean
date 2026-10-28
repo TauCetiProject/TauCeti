@@ -6,18 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Topology.Algebra.Support
 
 /-!
 # Translation of test functions
 
 This file translates a test function on an open set `V` in the opposite direction to a vector
-`h`, producing a test function on any open set `Ω` that contains `V + h`. This is the common
-test-function operation used to prove translation invariance of weak derivatives.
+`h`, producing a test function on any open set `Ω` that contains `V + h`. The codomain may be
+any real normed space. This is the common test-function operation used to prove translation
+invariance of weak derivatives and distributional variation.
 
 ## Main declarations
 
 * `TauCeti.translateTestFunction`: translate a test function while changing its domain.
 * `TauCeti.translateTestFunction_apply`: evaluation of a translated test function.
+* `TauCeti.fderiv_translateTestFunction`: Fréchet derivatives commute with translation.
 * `TauCeti.lineDeriv_translateTestFunction`: directional derivatives commute with translation.
 -/
 
@@ -27,16 +30,17 @@ noncomputable section
 
 namespace TauCeti
 
-open Set TopologicalSpace
+open Set TestFunction TopologicalSpace
 open scoped Distributions
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Omega V : Opens E} {h : E}
 
 /-- Translate a test function in the opposite direction, regarding it as a test function on an
 open set containing the translated support. -/
-def translateTestFunction (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, ℝ)) :
-    𝓓(Omega, ℝ) :=
+def translateTestFunction (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, F)) :
+    𝓓(Omega, F) :=
   ⟨fun y => phi (y - h),
     phi.contDiff.comp (contDiff_id.sub contDiff_const),
     by
@@ -44,34 +48,30 @@ def translateTestFunction (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, ℝ)) :
         phi.hasCompactSupport.comp_homeomorph (Homeomorph.addRight (-h)),
     by
       intro y hy
-      have hy' : y + -h ∈ tsupport (phi : E → ℝ) := by
-        have hfun : (fun z => phi (z - h)) =
-            (phi : E → ℝ) ∘ (Homeomorph.addRight (-h) : E → E) := by
-          funext z
-          simp only [Function.comp_apply, sub_eq_add_neg]
-          apply congrArg phi
-          rfl
-        have hycomp : y ∈ tsupport
-            ((phi : E → ℝ) ∘ (Homeomorph.addRight (-h) : E → E)) := by
-          rw [← hfun]
-          exact hy
-        rw [tsupport_comp_eq_preimage] at hycomp
-        exact hycomp
-      simpa only [sub_eq_add_neg, neg_add_cancel_right] using hVO (phi.tsupport_subset hy')⟩
+      rw [tsupport_comp_sub_right] at hy
+      simpa using hVO (phi.tsupport_subset hy)⟩
 
 /-- Translating a test function evaluates it at the oppositely translated point. -/
 @[simp]
 theorem translateTestFunction_apply (hVO : MapsTo (· + h) V Omega)
-    (phi : 𝓓(V, ℝ)) (y : E) : translateTestFunction hVO phi y = phi (y - h) :=
+    (phi : 𝓓(V, F)) (y : E) : translateTestFunction hVO phi y = phi (y - h) :=
   (rfl)
+
+/-- The Fréchet derivative of a translated test function is the translated Fréchet
+derivative. -/
+@[simp]
+theorem fderiv_translateTestFunction (hVO : MapsTo (· + h) V Omega)
+    (phi : 𝓓(V, F)) (y : E) :
+    fderiv ℝ (translateTestFunction hVO phi : E → F) y = fderiv ℝ (phi : E → F) (y - h) :=
+  fderiv_comp_sub (f := (phi : E → F)) h
 
 /-- The directional derivative of a translated test function is the translated directional
 derivative. -/
 @[simp]
 theorem lineDeriv_translateTestFunction (hVO : MapsTo (· + h) V Omega)
-    (phi : 𝓓(V, ℝ)) (y w : E) :
-    lineDeriv ℝ (translateTestFunction hVO phi : E → ℝ) y w =
-      lineDeriv ℝ (phi : E → ℝ) (y - h) w := by
+    (phi : 𝓓(V, F)) (y w : E) :
+    lineDeriv ℝ (translateTestFunction hVO phi : E → F) y w =
+      lineDeriv ℝ (phi : E → F) (y - h) w := by
   simp only [lineDeriv, translateTestFunction_apply, sub_eq_add_neg]
   congr 1
   funext t

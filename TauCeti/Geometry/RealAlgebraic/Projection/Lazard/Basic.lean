@@ -193,8 +193,8 @@ theorem zero_mem_lazardProjection_iff [CharZero R] (hB : F.IsIrreducibleBasis B)
   · rwa [← content_eq_zero_iff.1 hf0]
   · exact absurd (leadingCoeff_eq_zero.1 hb0) (hB.irreducible b hb).ne_zero
   · exact absurd (trailingCoeff_eq_zero.1 hb0) (hB.irreducible b hb).ne_zero
-  · exact absurd hb0 (hB.discr_ne_zero hb)
-  · exact absurd h0 (hB.resultant_ne_zero hb hb' hne)
+  · exact absurd hb0 (hB.isSquarefreeBasis.discr_ne_zero hb)
+  · exact absurd h0 (hB.isSquarefreeBasis.resultant_ne_zero hb hb' hne)
 
 end IsIrreducibleBasis
 

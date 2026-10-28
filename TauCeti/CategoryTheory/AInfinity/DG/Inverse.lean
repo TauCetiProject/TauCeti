@@ -8,7 +8,7 @@ module
 public import TauCeti.CategoryTheory.AInfinity.DG.Basic
 public import TauCeti.CategoryTheory.AInfinity.StrictFunctor.Basic
 public import TauCeti.CategoryTheory.AInfinity.ToDGCategory
-public import TauCeti.CategoryTheory.DG.Functor
+public import TauCeti.CategoryTheory.DG.Functor.Basic
 
 /-!
 # Differential graded categories are the `A∞` categories with vanishing higher operations

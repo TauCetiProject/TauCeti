@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
-public import TauCeti.Geometry.Manifold.Morse.Index
+public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
 /-!
 # Morse functions under boundaryless model transport
 
 Passing from an arbitrary boundaryless model to its vector-space-valued atlas preserves
-nondegenerate critical points, the Morse index, and the Morse property on any subset.
+critical points, nondegenerate critical points, the Morse index, and the Morse property on any
+subset.
 These comparisons use the identical extended charts, not a new choice of Morse coordinates.
 Thus self-modelled local constructions can be applied without changing the critical-point data.
 -/
@@ -28,6 +29,16 @@ namespace BoundarylessModel
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M]
+
+/-- Critical points are unchanged by the boundaryless model transport. -/
+@[simp]
+theorem criticalPoints_eq (f : M → ℝ) :
+    criticalPoints 𝓘(ℝ, E) (f ∘ (homeomorph I M).symm) =
+      (homeomorph I M).symm ⁻¹' criticalPoints I f := by
+  ext x
+  rw [mem_preimage, mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero,
+    mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero, extChartAt_eq, coe_homeomorph_symm]
+  rfl
 
 /-- Nondegenerate critical points are unchanged by the boundaryless model transport. -/
 @[simp]

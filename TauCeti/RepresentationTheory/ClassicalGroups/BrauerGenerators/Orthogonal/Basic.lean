@@ -29,8 +29,9 @@ commutes with the diagonal orthogonal action. The loop value is where the dimens
 closed loop, a cup stacked under a cap, evaluates to the trace `n` of the dot product.
 
 The cap, the cup and the relations need no subtraction, so they are stated over a commutative
-semiring, as are the two invariance statements for a bare matrix; only the orthogonal group
-itself, and hence the last three results, needs a commutative ring.
+semiring, as are the two invariance statements for a bare matrix; only the two statements that an
+antisymmetric tensor is killed by the cap, which do subtract, and the orthogonal group itself need
+a commutative ring.
 
 The two invariance statements are recorded for a bare matrix rather than only for an element of
 `Matrix.orthogonalGroup (Fin n) k`, because they consume the defining identity from opposite
@@ -54,8 +55,17 @@ statement that the symmetric group sits inside the Brauer algebra as the diagram
 
 * `TauCeti.orthogonalCap_comp_orthogonalCup`: the loop value, `cap ∘ cup = n`.
 * `TauCeti.orthogonalCup_injective`: the cup is injective as soon as `V ≠ 0`, so a cup may be
-  cancelled from the top of a diagram.
+  cancelled from the top of a diagram, and `TauCeti.orthogonalCap_surjective`: the cap is
+  surjective there, its companion.
+* `TauCeti.range_orthogonalCup`: the image of the cup is the line spanned by the invariant form.
+* `TauCeti.sub_permTensorAction_swap_mem_ker_orthogonalCap` and
+  `TauCeti.mem_ker_orthogonalCap_of_permTensorAction_swap_eq_neg`: the antisymmetrization `x - s x`
+  of any tensor is killed by the cap, and so is every antisymmetric tensor once `2` is regular,
+  the cap being symmetric.
 * `TauCeti.orthogonalCupCap_mul_self`: `e * e = n • e`.
+* `TauCeti.ker_orthogonalCupCap` and `TauCeti.range_orthogonalCupCap`: the generator `e` has the
+  same kernel as the cap and the same image as the cup, so the kernel and image calculus of `e`
+  never leaves the cap/cup level.
 * `TauCeti.permTensorAction_swap_mul_orthogonalCupCap` and
   `TauCeti.orthogonalCupCap_mul_permTensorAction_swap`: `s * e = e` and `e * s = e`.
 * `TauCeti.permTensorAction_swap_mul_self`: `s * s = 1`.
@@ -118,6 +128,16 @@ theorem orthogonalCap_tprod (v : Fin 2 → (Fin n → k)) :
     orthogonalCap k n (PiTensorProduct.tprod k v) = v 0 ⬝ᵥ v 1 := by
   rw [orthogonalCap, PiTensorProduct.lift.tprod, orthogonalCapMultilinear_apply]
 
+/-- **The cap is surjective** once there is a coordinate to contract: it sends the pure tensor
+`e₀ ⊗ e₀` of the first standard basis vector with itself to `1`. No invertibility of the loop
+value is needed, which is why the codimension counts downstream survive in every
+characteristic. -/
+theorem orthogonalCap_surjective [NeZero n] : Function.Surjective (orthogonalCap k n) := by
+  intro c
+  refine ⟨c • PiTensorProduct.tprod k fun _ : Fin 2 => Pi.single (0 : Fin n) (1 : k), ?_⟩
+  rw [map_smul, orthogonalCap_tprod]
+  simp
+
 end Cap
 
 section Cup
@@ -168,6 +188,15 @@ theorem orthogonalCup_injective [NeZero n] : Function.Injective (orthogonalCup k
   intro a b hab
   rw [← firstCoordProd_orthogonalCup k n a, ← firstCoordProd_orthogonalCup k n b, hab]
 
+/-- The image of the cup is the line spanned by the invariant form `∑ⱼ eⱼ ⊗ eⱼ`, the cup being
+multiplication by that form. -/
+theorem range_orthogonalCup :
+    LinearMap.range (orthogonalCup k n) = Submodule.span k {orthogonalCup k n 1} := by
+  have h : orthogonalCup k n =
+      LinearMap.toSpanSingleton k (⨂[k]^2 (Fin n → k)) (orthogonalCup k n 1) :=
+    LinearMap.ext_ring (by rw [LinearMap.toSpanSingleton_apply, one_smul])
+  rw [← LinearMap.range_toSpanSingleton (R := k) (orthogonalCup k n 1), ← h]
+
 end Cup
 
 section Loop
@@ -205,6 +234,32 @@ noncomputable def orthogonalCupCap : Module.End k (⨂[k]^2 (Fin n → k)) :=
 theorem orthogonalCupCap_apply (x : ⨂[k]^2 (Fin n → k)) :
     orthogonalCupCap k n x = orthogonalCup k n (orthogonalCap k n x) :=
   (rfl)
+
+/-- **The kernel of the Brauer generator `e = cup ∘ cap` is the kernel of the cap alone**: the cup
+may be cancelled from the top of the diagram, being injective once `V ≠ 0`; and in dimension zero
+the cap is itself the zero map, so both kernels are everything. -/
+theorem ker_orthogonalCupCap :
+    LinearMap.ker (orthogonalCupCap k n) = LinearMap.ker (orthogonalCap k n) := by
+  ext x
+  simp only [LinearMap.mem_ker, orthogonalCupCap_apply]
+  refine ⟨fun h => ?_, fun h => by rw [h, map_zero]⟩
+  rcases eq_zero_or_neZero n with rfl | hn
+  · have hcap : orthogonalCap k 0 = 0 := by
+      ext v
+      simp
+    simp [hcap]
+  · exact orthogonalCup_injective k n (by rw [h, map_zero])
+
+/-- **The image of the Brauer generator `e = cup ∘ cap` is the image of the cup alone**, the cap
+being surjective once `V ≠ 0`. For `n = 0` the cup is the zero map and both images are `⊥`. -/
+theorem range_orthogonalCupCap :
+    LinearMap.range (orthogonalCupCap k n) = LinearMap.range (orthogonalCup k n) := by
+  rw [orthogonalCupCap]
+  obtain _ | m := n
+  · have hcup : orthogonalCup k 0 = 0 := LinearMap.ext_ring (by simp)
+    rw [hcup, LinearMap.zero_comp, LinearMap.range_zero, LinearMap.range_zero]
+  · rw [LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top_of_surjective _ (orthogonalCap_surjective k (m + 1)))]
 
 /-- **The relation `e² = δ e`** at the loop value `δ = n`: the middle of `e * e` is a closed
 loop. -/
@@ -326,6 +381,35 @@ end CommSemiring
 section CommRing
 
 variable [CommRing k]
+
+section Antisymmetric
+
+/-- **The antisymmetrization of a tensor is killed by the cap**: the cap is unchanged by the
+crossing, because the coordinate dot product is symmetric. -/
+theorem sub_permTensorAction_swap_mem_ker_orthogonalCap (x : ⨂[k]^2 (Fin n → k)) :
+    x - permTensorAction k n 2 (Equiv.swap 0 1) x ∈ LinearMap.ker (orthogonalCap k n) := by
+  have h : orthogonalCap k n (permTensorAction k n 2 (Equiv.swap 0 1) x) =
+      orthogonalCap k n x :=
+    LinearMap.congr_fun (orthogonalCap_comp_permTensorAction_swap k n) x
+  rw [LinearMap.mem_ker, map_sub, h, sub_self]
+
+/-- **An antisymmetric tensor is killed by the cap.** This is the exterior square sitting inside
+the kernel of the cap. Regularity of `2` is not what identifies the antisymmetric tensors as the
+`-1`-eigenspace of the crossing — that is a matter of definition, in every characteristic — but
+what turns the vanishing of the antisymmetrization into the vanishing of the contraction: the cap
+is unchanged by the crossing, so it kills `x - s · x`, which is `2 • x` once `s · x = -x`, and
+that says `2 * cap x = 0`; cancelling the regular `2` leaves `cap x = 0`. So this is not the
+two-strand case of the downstream `TauCeti.mem_harmonicTensors_of_forall_swap_eq_neg`, which
+inverts `2` rather than merely cancelling it; over a ring where `2` is regular but not
+invertible — `ℤ`, say — only the statement here applies. -/
+theorem mem_ker_orthogonalCap_of_permTensorAction_swap_eq_neg (h2 : IsRegular (2 : k))
+    {x : ⨂[k]^2 (Fin n → k)} (hx : permTensorAction k n 2 (Equiv.swap 0 1) x = -x) :
+    x ∈ LinearMap.ker (orthogonalCap k n) := by
+  have h := sub_permTensorAction_swap_mem_ker_orthogonalCap k n x
+  rw [hx, sub_neg_eq_add, ← two_smul k x, LinearMap.mem_ker, map_smul, smul_eq_mul] at h
+  exact LinearMap.mem_ker.2 (h2.left.mul_left_eq_zero_iff.mp h)
+
+end Antisymmetric
 
 /-- The cap is invariant under the diagonal action of the orthogonal group. -/
 theorem orthogonalCap_comp_tensorPower (g : Matrix.orthogonalGroup (Fin n) k) :

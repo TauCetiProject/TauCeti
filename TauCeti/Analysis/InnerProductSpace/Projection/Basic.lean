@@ -19,7 +19,8 @@ hypothesis on the ambient space, where the adjoint of a bounded operator need no
 
 A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
 `dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
-same dimension.
+same dimension. The orthogonal complement of a nonzero vector has codimension one, and fewer than
+`dim E` vectors have a common nonzero orthogonal vector.
 
 For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` for
 `u ∈ U` transfers to the same lower bound `k ‖v‖² ≤ ‖P_U v‖²` for `v ∈ V`.
@@ -34,11 +35,18 @@ nonzero vector of `U` is orthogonal to `V`.
 Compressing the square of the difference `P_U - P_V` to `U`, from either side, gives
 `P_U - P_U P_V P_U`.
 
+A linear map agrees with its composition with the orthogonal projection onto the orthogonal
+complement of its kernel whenever the kernel admits an orthogonal projection.
+
 ## Main results
 
 * `Submodule.norm_starProjection_comp_starProjection_comm`: `‖P_U P_V‖ = ‖P_V P_U‖`.
 * `Submodule.finrank_range_comp_starProjection_le`: `rank (T P_U) ≤ dim U`.
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
+* `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
+  for a nonzero vector `v`.
+* `TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
+  have a common nonzero orthogonal vector.
 * `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for finite-dimensional
   subspaces with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U` transfers to the same
   bound on `‖P_U v‖²` over `V`.
@@ -51,6 +59,8 @@ Compressing the square of the difference `P_U - P_V` to `U`, from either side, g
 * `Submodule.starProjection_sub_starProjection_sq_mul_starProjection`,
   `Submodule.starProjection_mul_starProjection_sub_starProjection_sq`:
   `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
+* `LinearMap.apply_sub_starProjection_ker`,
+  `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component.
 -/
 
 public section
@@ -129,6 +139,14 @@ theorem finrank_inf_orthogonal_comm [FiniteDimensional 𝕜 U] [FiniteDimensiona
   rw [T.finrank_range_adjoint, hT, ← hker] at h₂
   rw [← hker] at h₁
   omega
+
+/-- In a finite-dimensional inner product space, the orthogonal complement of the span of a
+nonzero vector has codimension one. Unlike `Submodule.finrank_orthogonal_span_singleton`, the
+dimension of the ambient space is not fixed in advance. -/
+theorem finrank_orthogonal_span_singleton_eq_finrank_sub_one [FiniteDimensional 𝕜 E] {v : E}
+    (hv : v ≠ 0) : Module.finrank 𝕜 (𝕜 ∙ v)ᗮ = Module.finrank 𝕜 E - 1 := by
+  have := Module.finrank_pos_iff_exists_ne_zero (R := 𝕜).2 ⟨v, hv⟩
+  exact finrank_add_finrank_orthogonal' <| by rw [finrank_span_singleton hv]; omega
 
 /-- For finite-dimensional subspaces with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` on
 the cosines of `U` towards `V` transfers to the same lower bound for `V` towards `U`. -/
@@ -222,3 +240,56 @@ theorem starProjection_mul_starProjection_sub_starProjection_sq :
   abel
 
 end Submodule
+
+namespace TauCeti
+
+open scoped InnerProductSpace
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- Fewer than `dim E` vectors have a common nonzero orthogonal vector: the orthogonal complement
+of their span is nontrivial. -/
+theorem exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank (s : Finset E)
+    (hs : s.card < Module.finrank 𝕜 E) : ∃ e : E, e ≠ 0 ∧ ∀ u ∈ s, ⟪u, e⟫_𝕜 = 0 := by
+  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (by omega)
+  set K := Submodule.span 𝕜 (s : Set E)
+  have hK : Module.finrank 𝕜 K < Module.finrank 𝕜 E := (finrank_span_finset_le_card s).trans_lt hs
+  obtain ⟨e, he, he₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (p := Kᗮ) fun h ↦ by
+    have := K.finrank_add_finrank_orthogonal
+    rw [h, finrank_bot] at this
+    omega
+  exact ⟨e, he₀, fun u hu ↦ Submodule.inner_right_of_mem_orthogonal (Submodule.subset_span hu) he⟩
+
+end TauCeti
+
+namespace LinearMap
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [AddCommMonoid F] [Module 𝕜 F]
+
+/-- A linear map does not see the component of a vector in its kernel. -/
+@[simp]
+theorem apply_sub_starProjection_ker (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonalProjection]
+    (x : E) : u (x - u.ker.starProjection x) = u x := by
+  have hx := Submodule.starProjection_apply_mem u.ker x
+  rw [mem_ker] at hx
+  simpa only [map_add, hx, add_zero] using
+    congrArg u (sub_add_cancel x (u.ker.starProjection x))
+
+end LinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+
+/-- Composing a continuous linear map with the orthogonal projection onto the orthogonal
+complement of its kernel does not change it. -/
+@[simp]
+theorem comp_starProjection_orthogonal_ker (u : E →L[𝕜] F) [u.ker.HasOrthogonalProjection] :
+    u ∘L u.kerᗮ.starProjection = u := by
+  ext x
+  simpa only [comp_apply, Submodule.starProjection_orthogonal_val, coe_coe] using
+    u.toLinearMap.apply_sub_starProjection_ker x
+
+end ContinuousLinearMap

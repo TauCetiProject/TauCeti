@@ -24,12 +24,12 @@ In the arithmetic application `G` is the absolute Galois group of a global field
 discrete `G_K`-module, the index runs over the places `v` of `K`, `H v = G_{K_v}` maps to `G_K`
 through a choice of embedding of separable closures, and `N v` is the corresponding module over
 `K_v`. The `m`-Selmer group and the Shafarevich–Tate group of an elliptic curve
-(`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/Selmer.lean`) are the Selmer groups of
-two Selmer structures of this kind. Allowing a coefficient map `M → N i`, rather than restricting
-the action on `M` itself, is what lets the local module be formed over a separable closure of the
-local field. Rubin also requires the local conditions at almost all places to be the unramified
-classes; that is a property of a Selmer structure over a global field, not part of the data here,
-and none of the statements below use it.
+(`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/Selmer/Basic.lean`) are the Selmer
+groups of two Selmer structures of this kind. Allowing a coefficient map `M → N i`, rather than
+restricting the action on `M` itself, is what lets the local module be formed over a separable
+closure of the local field. Rubin also requires the local conditions at almost all places to be
+the unramified classes; that is a property of a Selmer structure over a global field, not part of
+the data here, and none of the statements below use it.
 
 ## Main definitions
 

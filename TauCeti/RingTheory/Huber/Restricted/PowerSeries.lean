@@ -7,10 +7,9 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
-public import Mathlib.Order.Filter.ZeroAndBoundedAtFilter
+public import TauCeti.Order.Filter.ZeroAndBoundedAtFilter
 import Mathlib.Data.Finsupp.Encodable
 import TauCeti.Topology.LiftTendstoCofinite
-import TauCeti.Order.Filter.ZeroAndBoundedAtFilter
 import TauCeti.RingTheory.Huber.Bounded
 import TauCeti.Topology.Algebra.Module.Submodule
 
@@ -34,6 +33,8 @@ where the convergent/restricted power series ring is (5.6.1) in §5.6.
 * `restrictedMvPowerSeriesSubringVal`: the inclusion `A⟨T₁, …, Tₖ⟩ → MvPowerSeries (Fin k) A` as
   an `A`-algebra map. `A⟨T⟩` is a `Subring` carrying an `Algebra A` instance rather than a
   `Subalgebra`, so `Subalgebra.val` does not apply.
+* `restrictedMvPowerSeriesSubmodule.instAddCommGroup`: restricted module series have additive
+  inverses whenever their coefficients do and negation is continuous, even over semiring scalars.
 * `isRestricted_of_hasFiniteSupport`: the introduction rule at module coefficients — finitely many
   nonzero coefficients suffice.
 * `isRestricted_pi_iff`: restrictedness of a series with coefficients in a product is
@@ -559,6 +560,37 @@ theorem mem_restrictedMvPowerSeriesSubmodule {k : ℕ} {A M : Type*} [Semiring A
     {f : MvPowerSeries (Fin k) M} :
     f ∈ restrictedMvPowerSeriesSubmodule k A M ↔ IsRestricted f := (Iff.rfl)
 
+/-- Restricted series with additive-group coefficients and continuous negation have additive
+inverses even over semiring scalars. The usual submodule instance takes precedence when the
+scalars form a ring. -/
+instance (priority := 100) restrictedMvPowerSeriesSubmodule.instAddCommGroup
+    (k : ℕ) (A M : Type*) [Semiring A] [AddCommGroup M] [TopologicalSpace M]
+    [Module A M] [ContinuousAdd M] [ContinuousNeg M] [ContinuousConstSMul A M] :
+    AddCommGroup (restrictedMvPowerSeriesSubmodule k A M) :=
+  -- Reuse the submodule's additive submonoid directly so the group operations also match
+  -- the native ring-scalar instance at typeclass-search transparency.
+  fast_instance% AddSubgroupClass.toAddCommGroup
+    ({ (restrictedMvPowerSeriesSubmodule k A M).toAddSubmonoid with
+        neg_mem' := fun hf ↦ mem_restrictedMvPowerSeriesSubmodule.mpr
+          (mem_restrictedMvPowerSeriesSubmodule.mp hf).neg } :
+      AddSubgroup (MvPowerSeries (Fin k) M))
+
+/-- Negation of a restricted series is coefficientwise negation. -/
+@[simp]
+theorem coe_neg_restrictedMvPowerSeriesSubmodule {k : ℕ} {A M : Type*} [Semiring A]
+    [AddCommGroup M] [TopologicalSpace M] [Module A M] [ContinuousAdd M] [ContinuousNeg M]
+    [ContinuousConstSMul A M] (f : restrictedMvPowerSeriesSubmodule k A M) :
+    ((-f : restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) =
+      -(f : MvPowerSeries (Fin k) M) := (rfl)
+
+/-- Subtraction of restricted series is coefficientwise subtraction. -/
+@[simp]
+theorem coe_sub_restrictedMvPowerSeriesSubmodule {k : ℕ} {A M : Type*} [Semiring A]
+    [AddCommGroup M] [TopologicalSpace M] [Module A M] [ContinuousAdd M] [ContinuousNeg M]
+    [ContinuousConstSMul A M] (f g : restrictedMvPowerSeriesSubmodule k A M) :
+    ((f - g : restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) =
+      (f : MvPowerSeries (Fin k) M) - (g : MvPowerSeries (Fin k) M) := (rfl)
+
 /-- **Coefficientwise extensionality** for `M⟨T₁, …, Tₖ⟩`. Mathlib's `MvPowerSeries.ext` is stated
 in a `Semiring` section, so it does not apply at module coefficients; without this a consumer has
 to reach for `Subtype.ext (funext …)` and cross the `MvPowerSeries`-is-a-`def` gap by hand. -/
@@ -569,6 +601,24 @@ theorem restrictedMvPowerSeriesSubmodule_ext {k : ℕ} {A M : Type*} [Semiring A
     (h : ∀ s, ((f : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) s =
       ((g : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) s) : f = g :=
   Subtype.ext (funext h)
+
+/-- The monomial `m Tˢ` with coefficient `m ∈ M`, as an `A`-linear map `M → M⟨T₁, …, Tₖ⟩`. -/
+noncomputable def restrictedMvPowerSeriesSubmoduleMonomial {k : ℕ} {A M : Type*} [Semiring A]
+    [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
+    [ContinuousConstSMul A M] (s : Fin k →₀ ℕ) :
+    M →ₗ[A] restrictedMvPowerSeriesSubmodule k A M :=
+  (LinearMap.single A (fun _ : Fin k →₀ ℕ ↦ M) s).codRestrict _ fun _ ↦
+    mem_restrictedMvPowerSeriesSubmodule.mpr <| isRestricted_of_hasFiniteSupport <|
+      (Set.finite_singleton s).subset Pi.support_single_subset
+
+/-- The coefficients of the monomial `m Tˢ`: `m` at `s` and `0` elsewhere. -/
+@[simp]
+theorem coeff_restrictedMvPowerSeriesSubmoduleMonomial {k : ℕ} {A M : Type*} [Semiring A]
+    [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
+    [ContinuousConstSMul A M] (s : Fin k →₀ ℕ) (m : M) (t : Fin k →₀ ℕ) :
+    (((restrictedMvPowerSeriesSubmoduleMonomial (A := A) s m :
+        restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) :
+      (Fin k →₀ ℕ) → M) t = (Pi.single s m : (Fin k →₀ ℕ) → M) t := (rfl)
 
 /-- **`M ↦ M⟨T₁, …, Tₖ⟩` is functorial**: an `A`-linear map continuous **at `0`** induces one on
 restricted series, coefficientwise. Only continuity at `0` is used — see `IsRestricted.map`. -/
@@ -592,6 +642,18 @@ theorem coeff_restrictedMvPowerSeriesSubmoduleMap {k : ℕ} {A M N : Type*} [Sem
     (((restrictedMvPowerSeriesSubmoduleMap (k := k) φ hφ f :
         restrictedMvPowerSeriesSubmodule k A N) : MvPowerSeries (Fin k) N) :
       (Fin k →₀ ℕ) → N) s = φ (((f : MvPowerSeries (Fin k) M) : (Fin k →₀ ℕ) → M) s) := (rfl)
+
+/-- The map induced on restricted series by a linear map `φ` sends `m Tˢ` to `φ(m) Tˢ`. -/
+@[simp]
+theorem restrictedMvPowerSeriesSubmoduleMap_monomial {k : ℕ} {A M N : Type*} [Semiring A]
+    [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
+    [ContinuousConstSMul A M] [AddCommMonoid N] [TopologicalSpace N] [Module A N]
+    [ContinuousAdd N] [ContinuousConstSMul A N] (φ : M →ₗ[A] N) (hφ : ContinuousAt φ 0)
+    (s : Fin k →₀ ℕ) (m : M) :
+    restrictedMvPowerSeriesSubmoduleMap φ hφ (restrictedMvPowerSeriesSubmoduleMonomial s m) =
+      restrictedMvPowerSeriesSubmoduleMonomial s (φ m) := by
+  ext t
+  by_cases ht : t = s <;> simp [ht]
 
 /-- The identity induces the identity. -/
 @[simp]
@@ -639,7 +701,7 @@ The hypothesis is the filter inequality the proof actually consumes rather than 
 which is strictly stronger here: these modules carry `ContinuousAdd` rather than
 `IsTopologicalAddGroup`, so without translation invariance global openness does not follow from
 openness at `0`. A caller holding `IsOpenMap φ` — over a Tate ring, from
-`TauCeti.Huber.IsTateRing.isOpenMap` — passes `map_zero φ ▸ hopen.nhds_le 0`. -/
+`LinearMap.isOpenMap_of_isTateRing` — passes `map_zero φ ▸ hopen.nhds_le 0`. -/
 theorem restrictedMvPowerSeriesSubmoduleMap_surjective {k : ℕ} {A M N : Type*} [Semiring A]
     [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
     [ContinuousConstSMul A M] [(nhds (0 : M)).IsCountablyGenerated]

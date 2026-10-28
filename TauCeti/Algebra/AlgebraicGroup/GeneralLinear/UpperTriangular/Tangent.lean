@@ -13,9 +13,11 @@ public import TauCeti.Algebra.Lie.GeneralLinear.Borel
 # Solvability of the upper triangular tangent Lie algebra
 
 The Lie algebra of the upper triangular general linear group is solvable over every
-commutative coefficient ring. The weight-parabolic tangent equivalence identifies it with
-upper triangular matrices. This lets solvability pass to the Lie algebra of a group embedded
-in the upper triangular group, as in the Lie--Kolchin theorem.
+commutative coefficient ring. The tangent-image criterion identifies its image inside the
+ambient general-linear Lie algebra with upper triangular matrices, so root-space containment
+can be tested in matrix coordinates. The weight-parabolic tangent equivalence also identifies
+the subgroup's own Lie algebra with these matrices. This lets solvability pass to the Lie
+algebra of a group embedded in the upper triangular group, as in the Lie--Kolchin theorem.
 
 The identification uses `GeneralLinear.weightParabolicTangentLieEquiv` with the standard
 strictly decreasing weights, and solvability is `TauCeti.isSolvable_upperTriangular`.
@@ -30,6 +32,18 @@ universe u v
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {R : Type u} [CommRing R] {B : Type v} [CommRing B] [Algebra R B]
+
+/-- A tangent vector lies in the upper-triangular subgroup exactly when its matrix is
+upper triangular, over any coefficient algebra. -/
+theorem mem_lieSubalgebra_definingHopfIdeal_iff {n : ℕ}
+    (d : Derivation R (GeneralLinear.coordinateHopfAlgebra R n)
+      (Bialgebra.CounitAlgebra R (GeneralLinear.coordinateHopfAlgebra R n) B)) :
+    d ∈ HopfIdeal.lieSubalgebra (B := B) (definingHopfIdeal R n) ↔
+      tangentMatrix n d ∈ TauCeti.upperTriangular B (Fin n) := by
+  rw [definingHopfIdeal, mem_lieSubalgebra_weightParabolicDefiningHopfIdeal_iff,
+    TauCeti.mem_upperTriangular_iff]
+  simp only [Matrix.BlockTriangular, Function.comp_apply, OrderDual.toDual_lt_toDual,
+    weights_lt_weights_iff]
 
 /-- The coefficient-valued tangent Lie algebra of the upper triangular general linear group
 is solvable over every commutative coefficient ring. -/

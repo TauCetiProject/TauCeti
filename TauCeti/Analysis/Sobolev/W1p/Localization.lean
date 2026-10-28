@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.CompactSupport
-public import TauCeti.Analysis.Sobolev.W1p.Extension
+public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Sobolev.W1p.Multiplication
-public import TauCeti.Analysis.Sobolev.W1p.Restriction
 
 /-!
 # Sobolev localization across a chart boundary
@@ -23,7 +21,9 @@ support condition avoids the artificial boundary of the chart, while allowing no
 values at the physical boundary of `Ω`. Restricting the result to `U` recovers `ψ u`,
 and localizing the restriction of a function on `Ω` equals multiplication by `ψ` there.
 These identities allow local boundary constructions to be assembled with a partition of
-unity.
+unity. For `p < ∞`, localizing the restriction of a `W^{1,p}_0(Ω)` function to an open set
+`V` lands in `W^{1,p}_0(V)` when `V ∩ tsupport ψ ⊆ Ω` and `Ω ∩ tsupport ψ ⊆ V`
+(`TauCeti.W1p.localizeL_restrictL_mem_w1p0Submodule`).
 
 The construction reuses `TauCeti.W1p.contDiffSMulL` and zero extension of the ambient
 value-gradient jet; admissibility follows from
@@ -70,11 +70,10 @@ private theorem localize_mem (hU : U ≤ Ω) (hψ : ContDiff ℝ ∞ ψ) (hM : 0
   refine (hw.congr_ae hvalue.symm).congr_ae_deriv ?_
   filter_upwards [hgradient] with x hx
   dsimp only [w] at hx ⊢
-  ext v
-  simp only [Sobolev1JetLp.candidateWeakFDeriv_apply,
-    Sobolev1JetLp.gradient_extendByZeroₗᵢ, ← W1p.gradient_coe]
+  rw [Sobolev1JetLp.candidateWeakFDeriv_def, Sobolev1JetLp.gradient_extendByZeroₗᵢ,
+    ← W1p.gradient_coe]
   by_cases hxU : x ∈ (U : Set E) <;>
-    simp [hx, hxU, real_inner_comm]
+    simp [hx, hxU]
 
 /-- Multiply a Sobolev function on `U` by a smooth cutoff, then extend it by zero to `Ω`.
 The relative support condition permits nonzero values on the physical boundary of `Ω`.
@@ -181,5 +180,42 @@ theorem W1p.localizeL_restrictL (hU : U ≤ Ω) (hψ : ContDiff ℝ ∞ ψ) (hM 
   · rw [indicator_of_mem hxU, hz hxU]
   · have hxψ : x ∉ tsupport ψ := fun hxs => hxU (hs ⟨hxΩ, hxs⟩)
     simp [indicator_of_notMem hxU, image_eq_zero_of_notMem_tsupport hxψ]
+
+/-- Localizing a zero-boundary Sobolev function from `Ω` to `V` preserves zero boundary
+values when the two domains agree wherever the cutoff can be nonzero. -/
+theorem W1p.localizeL_restrictL_mem_w1p0Submodule {V : Opens E} (hp : p ≠ (∞ : ℝ≥0∞))
+    (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (hV : (V : Set E) ∩ tsupport ψ ⊆ Ω)
+    (hΩ : (Ω : Set E) ∩ tsupport ψ ⊆ V) {u : W1p μ Ω p}
+    (hu : u ∈ w1p0Submodule μ Ω p) :
+    W1p.localizeL (inf_le_right : Ω ⊓ V ≤ V) ψ hψ hM
+      (fun x hx => hψM x hx.1) (fun x hx => hgM x hx.1)
+      (fun _ hx => ⟨hV hx, hx.1⟩) (W1p.restrictL inf_le_left u) ∈
+        w1p0Submodule μ V p := by
+  let T := (W1p.localizeL (μ := μ) (p := p) (inf_le_right : Ω ⊓ V ≤ V) ψ hψ hM
+    (fun x hx => hψM x hx.1) (fun x hx => hgM x hx.1)
+    (fun _ hx => ⟨hV hx, hx.1⟩)).comp (W1p.restrictL inf_le_left)
+  refine w1p0Submodule_subset_of_isClosed
+    ((w1p0Submodule μ V p).isClosed.preimage T.continuous) (fun φ => ?_) hu
+  have hK := φ.hasCompactSupport.inter_right (isClosed_tsupport ψ)
+  have hKV : tsupport (φ : E → ℝ) ∩ tsupport ψ ⊆ V :=
+    fun x hx => hΩ ⟨φ.tsupport_subset hx.1, hx.2⟩
+  refine W1p.mem_w1p0Submodule_of_isCompact hp hK hKV ?_
+  have hrestrict := (ae_restrict_iff' (Ω ⊓ V).isOpen.measurableSet).1
+    (W1p.value_restrictL_ae (p := p) (inf_le_left : Ω ⊓ V ≤ Ω)
+      (W1p.ofTestFunctionₗ μ Ω p φ))
+  have hφ := (ae_restrict_iff' Ω.isOpen.measurableSet).1 (testFunctionLp_apply_ae (mu := μ) p φ)
+  filter_upwards [W1p.value_localizeL_ae (μ := μ) (p := p) inf_le_right hψ hM
+      (fun x hx => hψM x hx.1) (fun x hx => hgM x hx.1)
+      (fun _ hx => ⟨hV hx, hx.1⟩) (W1p.restrictL inf_le_left (W1p.ofTestFunctionₗ μ Ω p φ)),
+    ae_restrict_of_ae hrestrict, ae_restrict_of_ae hφ] with x hx hr hf hxK
+  rw [ContinuousLinearMap.comp_apply, hx]
+  by_cases hxU : x ∈ ((Ω ⊓ V : Opens E) : Set E)
+  · rw [indicator_of_mem hxU, hr hxU, W1p.value_ofTestFunctionₗ, hf hxU.1]
+    by_cases hxψ : x ∈ tsupport ψ
+    · rw [image_eq_zero_of_notMem_tsupport (fun hxφ => hxK ⟨hxφ, hxψ⟩), smul_zero]
+    · rw [image_eq_zero_of_notMem_tsupport hxψ, zero_smul]
+  · exact indicator_of_notMem hxU _
 
 end TauCeti

@@ -46,8 +46,9 @@ extra rewrites in those proofs (`map_C`, `coe_mapRingHom`) only move that `C` pa
 `polyEval_cusp_ψ` is where the three transport lemmas above earn their keep. `Cusp.lean` collapses
 `ψ₂`, `Ψ₃` and `preΨ₄` on `cusp R` to `2Y`, `3X⁴` and `2X⁶`; rewriting the transports backwards
 turns `polyEval (cusp ℤ) 1 1 (curve.ψ n)` into those three evaluated at `(1, 1)`, which are `2`,
-`3` and `2` — so the sequence is `normEDS 2 3 2`, and the identity of #3364 finishes it. That is
-the only reason this file imports `Cusp.lean`.
+`3` and `2` — so the sequence is `normEDS 2 3 2`, and `normEDS_two_three_two_eq_intCast`
+(`NumberTheory/EllipticDivisibilitySequence/NormEDS.lean`) finishes it. That is the only reason
+this file imports `Cusp.lean`.
 
 **`polyEval_cusp_φ` does not port as written, and the reason is the module system rather than a
 missing prerequisite.** The source closes it with `simp_rw [φ, map_sub, …, polyEval]`, unfolding
@@ -65,8 +66,8 @@ and seventh transports `evalEval_ψc` and `evalEval_ω`, needed `ψc`, `two_mul_
 `map_ω` — the `ω` API this passage once recorded as not yet here. `DivisionPolynomial/Omega.lean`
 now supplies all four, on top of `reducedInvarNum_eq_reducedInvarDenom_mul`, so they are below:
 `evalEval_ψc` and `evalEval_ω` close the transport family, `polyEval_cusp_ψc` reads the
-complement off `complEDS₂_two_three_two`, and `polyEval_cusp_ω` divides the cusp evaluation of
-`two_mul_ω` by two.
+complement off `complEDS₂_two_three_two_eq_two`, and `polyEval_cusp_ω` divides the cusp
+evaluation of `two_mul_ω` by two.
 
 ## Provenance
 
@@ -85,10 +86,10 @@ in the copyright header.
 `polyEval_cusp_ψ` and `polyEval_cusp_φ` adapt that same file's declarations of those names, at the
 roadmap's NagellLutz pin `dev/modular-curves @ 9fec8eba7652`. Three changes. `ψ` and `φ` need
 qualifying, because this file opens `Universal` rather than `WeierstrassCurve` alone. The source's
-`normEDS_two_three_two` hint is dropped rather than renamed — `normEDS_two_three_two_eq_id` is
-redundant here, since #3364's general `normEDS_two_three_two_eq_intCast` is `@[simp]` and reaches
-the same normal form first. And `polyEval_cusp_φ`'s proof is restructured for the reason given
-above: the source's unfold of `polyEval` is unavailable, so each `map_*` names its ring hom.
+`normEDS_two_three_two` hint is unnecessary here, since the general
+`normEDS_two_three_two_eq_intCast` is `@[simp]` and reaches the same normal form first. And
+`polyEval_cusp_φ`'s proof is restructured for the reason given above: the source's unfold of
+`polyEval` is unavailable, so each `map_*` names its ring hom.
 The source's `polyEval_cusp_ψc` and `polyEval_cusp_ω` are adapted below (read at
 `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`), with the same two mechanical changes as
 their siblings — qualified names, ring-hom-named `map_*` rewrites in place of unfolding
@@ -154,7 +155,7 @@ lemma evalEval_φ : (W.φ n).evalEval x y = polyEval W x y (curve.φ n) := by
 no hypothesis on any coefficient.
 
 The proof recognises the family as a `normEDS` outright, which is what puts the whole `normEDS` API
-— including `NormEDS.lean`'s `universalNormEDS_ne_zero` — within reach of the universal division
+— including `Universal.lean`'s `universalNormEDS_ne_zero` — within reach of the universal division
 polynomials. The elliptic-*sequence* consequence is the shift `s = 0`, which
 `IsEllipticNet.isEllipticSequence` reads off; consumers that need a nonzero shift, as the
 addition formula for `n • (X, Y)` does, need the net. -/
@@ -165,7 +166,7 @@ lemma isEllipticNet_polyToField_ψ :
           (polyToField (Polynomial.C curve.preΨ₄)) := by
     funext n; rw [ψ_eq_normEDS, _root_.map_normEDS]
   rw [h]
-  exact isEllipticNet_normEDS _ _ _
+  exact IsEllipticNet.normEDS _ _ _
 
 /-- **On the cusp curve at `(1, 1)`, the `n`-division polynomial evaluates to `n`.** -/
 lemma polyEval_cusp_ψ : polyEval (cusp ℤ) 1 1 (curve.ψ n) = n := by

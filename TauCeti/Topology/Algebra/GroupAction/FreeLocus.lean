@@ -44,6 +44,12 @@ def freeLocus : SubMulAction G X where
 theorem mem_freeLocus {x : X} : x ∈ freeLocus G X ↔ MulAction.stabilizer G x = ⊥ :=
   Iff.rfl
 
+/-- A nonidentity element of a group moves every point in the free locus. -/
+theorem smul_ne_of_ne_one {x : X} (hx : x ∈ freeLocus G X) {g : G} (hg : g ≠ 1) :
+    g • x ≠ x := fun h ↦
+  hg (Subgroup.mem_bot.1
+    ((mem_freeLocus G X).1 hx ▸ MulAction.mem_stabilizer_iff.2 h))
+
 /-- Representatives of the same orbit have equivalent free-locus membership. -/
 theorem mem_freeLocus_iff_of_quotientMk_eq {x y : X}
     (h : (Quotient.mk (MulAction.orbitRel G X) x : MulAction.orbitRel.Quotient G X) =

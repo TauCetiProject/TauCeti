@@ -45,6 +45,8 @@ extension of scalars to a larger field is
   scheme-theoretic fibre characterization.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.isPureDimensional_fiber`: the
   scheme-theoretic fibre formulation.
+* `TauCeti.AlgebraicGeometry.PureRelativeDimension.unique`: a morphism with nonempty source has
+  at most one pure relative dimension.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.of_locallyQuasiFinite`: locally quasi-finite
   morphisms have pure relative dimension zero.
 * `TauCeti.AlgebraicGeometry.pureRelativeDimension_iff_of_field`: over a field, pure relative
@@ -131,6 +133,13 @@ theorem isPureDimensional_fiber (f : X ⟶ Y) [PureRelativeDimension d f] (y : Y
     IsPureDimensional d (f.fiber y) :=
   ((pureRelativeDimension_iff_relativeDimensionLE_and_isPureDimensional_fiber f).mp
     inferInstance).2 y
+
+/-- A morphism with nonempty source has at most one pure relative dimension. -/
+theorem unique {e : ℕ} (f : X ⟶ Y) [Nonempty X] [PureRelativeDimension d f]
+    [PureRelativeDimension e f] : d = e := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  have : Nonempty (f ⁻¹' {f x}) := ⟨⟨x, rfl⟩⟩
+  exact (isPureDimensional_preimage (f := f) (f x)).unique (isPureDimensional_preimage (f x))
 
 /-- A locally quasi-finite morphism has pure relative dimension zero. -/
 instance (priority := low) of_locallyQuasiFinite (f : X ⟶ Y) [LocallyQuasiFinite f] :

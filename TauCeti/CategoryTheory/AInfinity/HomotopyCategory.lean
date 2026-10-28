@@ -196,6 +196,20 @@ theorem homClass_eq_iff {X Y : C} {f g : homModule (R := R) X Y}
   · rintro ⟨h, hh⟩
     exact ⟨homInclusion X Y h, by rw [← 𝒞.homInclusion_homDifferential, hh]⟩
 
+/-- Two closed degree-zero morphisms represent the same Hom class exactly when their
+difference is the differential of some morphism, of any degree. -/
+theorem homClass_eq_iff_sub_mem_range {X Y : C} {f g : homModule (R := R) X Y}
+    (hf : f ∈ 𝒞.homCyclesZero X Y) (hg : g ∈ 𝒞.homCyclesZero X Y) :
+    𝒞.homClass f hf = 𝒞.homClass g hg ↔
+      f - g ∈ LinearMap.range (𝒞.homDifferential X Y) := by
+  refine ⟨fun h ↦ ?_, fun ⟨h, hh⟩ ↦ ?_⟩
+  · obtain ⟨h, hh⟩ := (𝒞.homClass_eq_iff hf hg).mp h
+    exact ⟨h, hh⟩
+  · apply Subtype.ext
+    rw [coe_homClass, coe_homClass, 𝒞.toAInfinityAlgebra.cohomologyClass_eq_iff, ← map_sub,
+      𝒞.toAInfinityAlgebra.boundaries_def, LinearMap.mem_range]
+    exact ⟨homInclusion X Y h, by rw [← 𝒞.homInclusion_homDifferential, hh]⟩
+
 /-- A closed degree-zero morphism represents zero exactly when it is a boundary. -/
 @[simp]
 theorem homClass_eq_zero_iff {X Y : C} {f : homModule (R := R) X Y}

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Basic
+import Mathlib.Geometry.Manifold.BumpFunction
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -19,7 +21,9 @@ the pointwise `(1,3)` curvature tensor, ready for contraction or pairing with a 
 The construction uses globally smooth extensions of fibre vectors and the pointwise
 independence theorem `CovariantDerivative.curvatureOperator_congr`. Its characteristic
 equation `curvatureTensor_apply` computes it on any smooth fields and section, so callers
-do not depend on the chosen extensions. No metric or torsion assumption is needed.
+do not depend on the chosen extensions; `curvatureTensor_apply_of_contMDiffOn` does so for
+inputs which are only smooth near the point, such as local frames. No metric or torsion
+assumption is needed.
 
 The sign convention is that of J. M. Lee, *Introduction to Riemannian Manifolds*,
 2nd ed., Springer GTM 176 (2018), Chapter 7, pp. 196–198:
@@ -165,6 +169,33 @@ theorem curvatureTensor_apply (x : M)
     cov.curvatureTensor x (X x) (Y x) (σ x) = cov.curvatureOperator X Y σ x :=
   curvatureValue_eq cov x hX hY hσ
 
+/-- The pointwise tensor agrees with the curvature operator on vector fields and a bundle section
+which are smooth on a neighbourhood of the point, such as the members of a local frame. -/
+theorem curvatureTensor_apply_of_contMDiffOn (x : M) {U : Set M} (hU : IsOpen U) (hx : x ∈ U)
+    {X Y : Π y : M, TangentSpace I y} {σ : Π y : M, V y}
+    (hX : CMDiff[U] ∞ (T% X)) (hY : CMDiff[U] ∞ (T% Y)) (hσ : CMDiff[U] ∞ (T% σ)) :
+    cov.curvatureTensor x (X x) (Y x) (σ x) = cov.curvatureOperator X Y σ x := by
+  -- Cut the inputs off by a bump function equal to one near `x` and supported in `U`.
+  obtain ⟨ρ, hρ, -⟩ :=
+    (SmoothBumpFunction.nhds_basis_support (I := I) (hU.mem_nhds hx)).mem_iff.mp (hU.mem_nhds hx)
+  have hX' : CMDiff ∞ (T% ((ρ : M → ℝ) • X)) :=
+    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρ hX
+  have hY' : CMDiff ∞ (T% ((ρ : M → ℝ) • Y)) :=
+    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρ hY
+  have hσ' : CMDiff ∞ (T% ((ρ : M → ℝ) • σ)) :=
+    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρ hσ
+  have hρx : (ρ : M → ℝ) x = 1 := ρ.eventuallyEq_one.self_of_nhds
+  -- The cut-off fields agree with the inputs near `x`. The tangent fields are compared at the
+  -- type `TangentSpace I y`, which is `E` by definition, so `rfl` closes the comparison.
+  rw [curvatureOperator_congr_of_eventuallyEq hX' hY' hσ'
+    (ρ.eventuallyEq_one.mono fun y hy ↦ by
+      simp only [Pi.smul_apply', hy, Pi.one_apply, one_smul]; rfl)
+    (ρ.eventuallyEq_one.mono fun y hy ↦ by
+      simp only [Pi.smul_apply', hy, Pi.one_apply, one_smul]; rfl)
+    (ρ.eventuallyEq_one.mono fun y hy ↦ by simp only [Pi.smul_apply', hy, Pi.one_apply, one_smul]),
+    ← curvatureTensor_apply cov x hX' hY' hσ']
+  simp only [Pi.smul_apply', hρx, one_smul]
+
 /-- Evaluation on smooth sections uniquely characterizes the pointwise curvature tensor. -/
 theorem eq_curvatureTensor_iff (x : M)
     (R : TangentSpace I x →ₗ[ℝ] TangentSpace I x →ₗ[ℝ] V x →ₗ[ℝ] V x) :
@@ -182,6 +213,22 @@ theorem eq_curvatureTensor_iff (x : M)
     obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F w
     rw [curvatureTensor_apply cov x hX hY hσ]
     exact h X Y σ hX hY hσ
+
+/-- Two smooth connections which agree on every smooth section have the same curvature tensor.
+A connection is unconstrained on sections which are not differentiable, so this is the form in
+which two connections determined by the same data, such as two Levi-Civita connections of one
+metric, are compared. -/
+theorem curvatureTensor_congr {cov' : CovariantDerivative I F V}
+    [ContMDiffCovariantDerivative cov' ∞]
+    (h : ∀ σ : Π y : M, V y, CMDiff ∞ (T% σ) → ∀ y, cov σ y = cov' σ y) (x : M) :
+    cov.curvatureTensor x = cov'.curvatureTensor x := by
+  refine (eq_curvatureTensor_iff cov' x _).2 fun X Y σ hX hY hσ ↦ ?_
+  have hinner (Z : Π y : M, TangentSpace I y) :
+      (fun y ↦ cov σ y (Z y)) = fun y ↦ cov' σ y (Z y) :=
+    funext fun y ↦ by rw [h σ hσ y]
+  rw [curvatureTensor_apply cov x hX hY hσ, curvatureOperator_apply, curvatureOperator_apply,
+    hinner Y, hinner X, h σ hσ x, h _ (cov'.contMDiff_apply hY hσ) x,
+    h _ (cov'.contMDiff_apply hX hσ) x]
 
 /-- Swapping the two tangent-vector arguments negates the curvature endomorphism. -/
 theorem curvatureTensor_antisymm (x : M) (u v : TangentSpace I x) :

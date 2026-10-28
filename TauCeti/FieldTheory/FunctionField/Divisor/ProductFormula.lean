@@ -29,7 +29,9 @@ strictly stronger than nonconstancy.
 
 * `TauCeti.Divisor.degree_zeros` and `TauCeti.Divisor.degree_poles` compute the two effective
   parts of the principal divisor of a function transcendental over `k`.
-* `TauCeti.Divisor.degree_principal` is the product formula.
+* `TauCeti.Divisor.degree_principal` is the product formula, and
+  `TauCeti.Divisor.degree_zeros_eq_degree_poles` restates it as equality of the degrees of the
+  zero and pole divisors.
 * `TauCeti.Place.finrank_adjoin_eq_mul_degree_of_ord_eq_neg`: `[F : k(z)] = n * deg P` for a
   function `z` whose only pole is `P`, of order `n`.
 * `TauCeti.Divisor.succ_le_dim_nsmul_poles` is the growth estimate for the powers of one
@@ -261,6 +263,11 @@ theorem degree_principal (hF : IsFunctionField k F) (z : Fˣ) :
   · rw [principal_eq_zero_of_isAlgebraic hF hz, degree_zero]
   · rw [← zeros_sub_poles hF z, degree_sub, degree_zeros hF z hz, degree_poles hF z hz,
       sub_self]
+
+/-- The zero and pole divisors of every nonzero function have the same degree. -/
+theorem degree_zeros_eq_degree_poles (hF : IsFunctionField k F) (z : Fˣ) :
+    degree (zeros hF z) = degree (poles hF z) := by
+  rw [← sub_eq_zero, ← degree_sub, zeros_sub_poles, degree_principal]
 
 /-- Residue-degree weighting agrees with the function-field divisor degree. -/
 private theorem weightedDegree_placeDegree_eq_degree (D : Divisor k F) :

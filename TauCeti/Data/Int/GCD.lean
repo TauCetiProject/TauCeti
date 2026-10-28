@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Int.GCD
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.Ring.Divisibility.Basic
+import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -19,6 +20,8 @@ interacts with `gcd(c, n)`.
 
 ## Main results
 
+* `TauCeti.Int.isCoprime_div_gcd_div_gcd`: dividing `c` and `n` by `gcd(c, n)` leaves coprime
+  quotients.
 * `TauCeti.Int.gcd_dvd_of_dvd_mul_sub_mul_add_mul`: if `c` is prime to `d`, the congruence
   forces `gcd(c, n) ∣ c'`.
 * `TauCeti.Int.gcd_eq_gcd_of_dvd_mul_sub_mul_add_mul`: if both pairs are coprime, the congruence
@@ -28,13 +31,21 @@ interacts with `gcd(c, n)`.
   `c' = g c₁'`, the congruence holds for some `j` exactly when `gcd(g, m) ∣ c₁ d' - c₁' d`
   (the converse needing `c₁` and `c₁'` prime to `m`).
 
-Their consumer is the cusp count of `Γ₀(N)` in
-`TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/Count.lean`.
+Their consumers are the cusp counts of `Γ₀(N)` and `Γ₁(N)` in
+`TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/`.
 -/
 
 public section
 
 namespace TauCeti.Int
+
+/-- Dividing an integer `c` and a nonzero natural number `n` by `gcd(c, n)` leaves coprime
+quotients. This is `isCoprime_div_gcd_div_gcd` with the gcd taken in `ℕ`, the form in which it
+describes `c / gcd(c, n)` as a residue modulo `n / gcd(c, n)`. -/
+theorem isCoprime_div_gcd_div_gcd {n : ℕ} (hn : n ≠ 0) (c : ℤ) :
+    IsCoprime (c / Int.gcd c n) ((n / Int.gcd c n : ℕ) : ℤ) := by
+  rw [Int.natCast_div, Int.isCoprime_iff_gcd_eq_one]
+  exact Int.gcd_ediv_gcd_ediv_gcd_of_ne_zero_right (by exact_mod_cast hn)
 
 /-- If `n ∣ c d' - c' d + j c c'` and `c` is prime to `d`, then `gcd(c, n)` divides `c'`. -/
 theorem gcd_dvd_of_dvd_mul_sub_mul_add_mul {n c d c' d' j : ℤ} (hcd : IsCoprime c d)

@@ -56,7 +56,7 @@ omit [IsTopologicalGroup F] in
 theorem orientationQuotient_isMulCommutative (χ : F →ₜ* ℤ_[p]ˣ) :
     IsMulCommutative (orientationQuotient χ) :=
   Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
-    (Abelianization.commutator_subset_ker χ.toMonoidHom)
+    (Abelianization.commutator_le_ker χ.toMonoidHom)
 
 /-- Labute's conjugation gives an action by additive automorphisms. -/
 private theorem labuteAction_laws (χ : F →ₜ* ℤ_[p]ˣ) (α β : orientationQuotient χ)

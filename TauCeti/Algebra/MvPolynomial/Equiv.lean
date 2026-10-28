@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.Polynomial.Derivative
+public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.Data.Finsupp.Fin
 
 /-!
@@ -188,6 +189,21 @@ theorem polynomial_eval_map_finSuccEquiv (φ : R →+* S) (s : Fin n → S) (y :
 
 end Map
 
+/-- Rotating the last variable to coordinate zero before singling it out is the same as
+singling out the last variable directly. This identifies the coordinate-zero convention for
+polynomial families with the last-coordinate convention for successive base specialization. -/
+theorem finSuccEquiv_rename_finRotate (f : MvPolynomial (Fin (n + 1)) R) :
+    finSuccEquiv R n (rename (finRotate (n + 1)) f) =
+      optionEquivLeft R (Fin n) (rename finSuccEquivLast f) := by
+  have h : (finSuccEquiv R n).toAlgHom.comp (rename (finRotate (n + 1))) =
+      (optionEquivLeft R (Fin n)).toAlgHom.comp (rename finSuccEquivLast) := by
+    apply algHom_ext
+    intro i
+    refine Fin.lastCases ?_ (fun j ↦ ?_) i
+    · simp [finSuccEquiv_X_zero, optionEquivLeft_X_none]
+    · simp [finSuccEquiv_X_succ, optionEquivLeft_X_some]
+  exact DFunLike.congr_fun h f
+
 /-- Moving the polynomial variable into the coefficient ring maps a constant multivariate
 polynomial by the univariate constant-coefficient homomorphism. -/
 theorem optionEquivRight_optionEquivLeft_symm_C {σ : Type*} (g : MvPolynomial σ R) :
@@ -222,6 +238,27 @@ theorem eval₂Hom_optionEquivRight_optionEquivLeft_symm {σ S : Type*} [CommSem
     · intro g
       simpa only [RingHom.comp_apply, RingHom.coe_coe, Polynomial.coe_mapRingHom,
         Polynomial.map_C] using hC g
+    · simp
+  exact RingHom.congr_fun h p
+
+/-- Moving the univariate variable into the coefficient ring and then taking constant
+coefficients of all coefficients recovers the constant coefficient in the univariate
+variable. -/
+theorem map_constantCoeff_optionEquivRight_optionEquivLeft_symm {σ : Type*}
+    (p : Polynomial (MvPolynomial σ R)) :
+    map Polynomial.constantCoeff (((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) p) =
+      p.coeff 0 := by
+  have hC : Polynomial.constantCoeff.comp (Polynomial.C : R →+* Polynomial R) = RingHom.id R := by
+    ext
+    simp
+  have h : (map (Polynomial.constantCoeff (R := R))).comp
+      ((optionEquivLeft R σ).symm.trans (optionEquivRight R σ) :
+        Polynomial (MvPolynomial σ R) →+* MvPolynomial σ (Polynomial R)) =
+        Polynomial.constantCoeff := by
+    apply Polynomial.ringHom_ext
+    · intro g
+      rw [RingHom.comp_apply, RingHom.coe_coe, optionEquivRight_optionEquivLeft_symm_C, map_map,
+        hC, map_id, Polynomial.constantCoeff_apply, Polynomial.coeff_C_zero]
     · simp
   exact RingHom.congr_fun h p
 

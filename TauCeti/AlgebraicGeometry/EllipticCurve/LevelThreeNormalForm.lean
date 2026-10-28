@@ -89,6 +89,8 @@ the bases (`WeierstrassCurve.UniversalLevelThree.existsUnique_lift`).
 * `WeierstrassCurve.toLevelThreeNormalForm_map`: the change of variables commutes with base change.
 * `WeierstrassCurve.exists_variableChange_levelThreeNormalForm_iff`: for elliptic `W` the
   hypotheses are also necessary.
+* `WeierstrassCurve.isUnit_three_of_eval_Ψ₃_eq_zero`: on an elliptic curve, two roots of `Ψ₃`
+  differing by a unit force `3` to be a unit.
 * `WeierstrassCurve.UniversalLevelThree.existsUnique_lift`: the universal property of the
   level-three normal form over `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`.
 * `WeierstrassCurve.UniversalLevelThree.map_lift`, `WeierstrassCurve.UniversalLevelThree.eq_lift`,
@@ -279,6 +281,27 @@ theorem IsThreeTorsionBasis.map (h : W.IsThreeTorsionBasis x₁ y₁ x₂ y₂) 
     rw [map_ψ₂, Polynomial.map_mapRingHom_evalEval]
     exact h.isUnit_ψ₂_snd.map φ
   isUnit_sub := by simpa using h.isUnit_sub.map φ
+
+/-- **Roots of `Ψ₃` in characteristic `3`.** On an elliptic curve, if the `3`-division polynomial
+`Ψ₃` vanishes at `x₁` and at `x₂` and `x₂ - x₁` is a unit, then `3` is a unit. Over a field of
+characteristic `3`, the polynomial `Ψ₃ = b₂X³ + b₈` of a nonsingular curve has at most one root. -/
+theorem isUnit_three_of_eval_Ψ₃_eq_zero [W.IsElliptic] (h₁ : W.Ψ₃.eval x₁ = 0)
+    (h₂ : W.Ψ₃.eval x₂ = 0) (hx : IsUnit (x₂ - x₁)) : IsUnit (3 : R) := by
+  rw [eval_Ψ₃] at h₁ h₂
+  -- `b₂ (x₂ - x₁)³ = Ψ₃(x₂) - Ψ₃(x₁)` modulo `3`, so `3` divides `b₂`
+  obtain ⟨β, hβ⟩ : (3 : R) ∣ W.b₂ := (hx.pow 3).dvd_mul_right.mp
+    ⟨-(x₂ ^ 4 - x₁ ^ 4 + W.b₂ * x₁ * x₂ * (x₂ - x₁) + W.b₄ * (x₂ ^ 2 - x₁ ^ 2) +
+      W.b₆ * (x₂ - x₁)), by linear_combination h₂ - h₁⟩
+  -- then `b₈ = Ψ₃(x₁)` modulo `3`, then `b₄² = b₂b₆ - 4b₈`, and finally `Δ`
+  obtain ⟨γ, hγ⟩ : (3 : R) ∣ W.b₈ :=
+    ⟨-(x₁ ^ 4 + β * x₁ ^ 3 + W.b₄ * x₁ ^ 2 + W.b₆ * x₁), by linear_combination h₁ - x₁ ^ 3 * hβ⟩
+  obtain ⟨δ, hδ⟩ : (3 : R) ∣ W.b₄ ^ 2 :=
+    ⟨β * W.b₆ - 4 * γ, by linear_combination W.b_relation + W.b₆ * hβ - 4 * hγ⟩
+  refine isUnit_of_dvd_unit ⟨-9 * β ^ 2 * γ - 8 * W.b₄ * δ - 9 * W.b₆ ^ 2 + 9 * β * W.b₄ * W.b₆,
+    ?_⟩ W.isUnit_Δ
+  rw [Δ]
+  linear_combination -W.b₂ ^ 2 * hγ + (9 * W.b₄ * W.b₆ - 3 * γ * (W.b₂ + 3 * β)) * hβ -
+    8 * W.b₄ * hδ
 
 /-! ### Changes of variables to level-three normal form -/
 

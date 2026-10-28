@@ -40,7 +40,8 @@ Conjugating a magnetic translation by `ν` changes the sign of the one-form
 * `TauCeti.cotangentFiberNeg`, with `TauCeti.cotangentLiouvilleForm_cotangentFiberNeg` and
   `TauCeti.strongDualCotangentSymplecticForm_cotangentFiberNeg`.
 * `TauCeti.cotangentLiouvilleField`, with
-  `TauCeti.strongDualCotangentSymplecticForm_cotangentLiouvilleField`.
+  `TauCeti.strongDualCotangentSymplecticForm_cotangentLiouvilleField` and
+  `TauCeti.curryLeft_extDeriv_neg_cotangentLiouvilleForm`.
 * `TauCeti.cotangentFiberTranslate`, with its derivative `TauCeti.fderiv_cotangentFiberTranslate`,
   `TauCeti.cotangentLiouvilleForm_cotangentFiberTranslate` (`Ψ_σ^*λ = λ - π^*σ`) and
   `TauCeti.strongDualCotangentSymplecticForm_fderiv_cotangentFiberTranslate`
@@ -124,6 +125,16 @@ lemma cotangentLiouvilleField_cotangentFiberNeg (x : V × StrongDual ℝ V) :
     cotangentLiouvilleField (cotangentFiberNeg x) =
       cotangentFiberNeg (cotangentLiouvilleField x) := by
   simp
+
+/-- The radial field `p ∂_p` satisfies `ι_{p ∂_p} d(-λ) = -λ` for the tautological form
+`λ = p dq`. -/
+lemma curryLeft_extDeriv_neg_cotangentLiouvilleForm (x : V × StrongDual ℝ V) :
+    (extDeriv (-cotangentLiouvilleForm) x).curryLeft (cotangentLiouvilleField x) =
+      -cotangentLiouvilleForm x := by
+  have h := extDeriv_smul (x := x) (-1 : ℝ) (cotangentLiouvilleForm (V := V))
+  rw [neg_one_smul, neg_one_smul] at h
+  ext v
+  simp [h]
 
 /-! ### Magnetic translation -/
 

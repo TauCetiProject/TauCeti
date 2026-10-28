@@ -50,6 +50,17 @@ variable [(J.restrictScalars R).IsCoideal]
 theorem mkBialgHom_toAlgHom :
     (mkBialgHom (R := R) J).toAlgHom = Ideal.Quotient.mkₐ R J := rfl
 
+/-- The quotient bialgebra morphism is surjective. -/
+theorem mkBialgHom_surjective : Function.Surjective (mkBialgHom (R := R) J) := by
+  intro q
+  obtain ⟨h, rfl⟩ := Ideal.Quotient.mk_surjective q
+  exact ⟨h, mkBialgHom_apply (R := R) J h⟩
+
+/-- The ring homomorphism underlying the quotient bialgebra morphism is surjective. -/
+instance instRingHomSurjectiveMkBialgHom :
+    RingHomSurjective (mkBialgHom (R := R) J : H →+* H ⧸ J) :=
+  ⟨mkBialgHom_surjective (R := R) J⟩
+
 /-- A bialgebra morphism out of `H` which kills a two-sided coideal `J` factors through the
 quotient bialgebra `H ⧸ J`. -/
 noncomputable def liftBialgHom (f : H →ₐc[R] K)

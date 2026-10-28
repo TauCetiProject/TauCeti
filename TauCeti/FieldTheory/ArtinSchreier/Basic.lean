@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.GroupTheory.Coset.Card
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
-public import TauCeti.Algebra.Polynomial.Degree.Operations
 
 /-!
 # Artin–Schreier extensions

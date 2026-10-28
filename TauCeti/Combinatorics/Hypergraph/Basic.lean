@@ -31,6 +31,8 @@ vertex type.
   vertex type as its vertex set.
 * `TauCeti.UniformHypergraph.empty` and `TauCeti.UniformHypergraph.complete`.
 * `TauCeti.UniformHypergraph.edgeDensity`: the rational edge density.
+* `TauCeti.UniformHypergraph.blockDensity`: the rational density of the edges inside a finite
+  block of vertices.
 
 ## Main results
 
@@ -39,6 +41,9 @@ vertex type.
 * `TauCeti.UniformHypergraph.edgeDensity_nonneg` and `TauCeti.UniformHypergraph.edgeDensity_le_one`.
 * `TauCeti.UniformHypergraph.edgeDensity_empty` and
   `TauCeti.UniformHypergraph.edgeDensity_complete`.
+* `TauCeti.UniformHypergraph.blockDensity_nonneg`, `TauCeti.UniformHypergraph.blockDensity_le_one`
+  and `TauCeti.UniformHypergraph.blockDensity_univ`: block densities lie in `[0, 1]` and agree
+  with the edge density on the whole vertex type.
 
 ## References
 
@@ -175,6 +180,74 @@ theorem edgeDensity_complete [Fintype V] (hr : r ≤ Fintype.card V) :
 theorem edgeDensity_eq_zero_of_card_lt [Fintype V] (H : UniformHypergraph r V)
     (hr : Fintype.card V < r) : H.edgeDensity = 0 := by
   simp [edgeDensity, Nat.choose_eq_zero_of_lt hr]
+
+/-! ### Block density -/
+
+section BlockDensity
+
+variable [DecidableEq V]
+
+/-- The **block density** of an `r`-uniform hypergraph in a finite block `s` of vertices: the
+number of edges inside `s` over the number `(#s).choose r` of possible edges inside `s`. It is
+`0` when `#s < r`. -/
+def blockDensity (H : UniformHypergraph r V) (s : Finset V) : ℚ :=
+  (#(H.edges.filter (· ⊆ s)) : ℚ) / ((#s).choose r : ℚ)
+
+/-- The block density is the number of edges inside the block over the number of possible edges
+inside it. -/
+theorem blockDensity_def (H : UniformHypergraph r V) (s : Finset V) :
+    H.blockDensity s = (#(H.edges.filter (· ⊆ s)) : ℚ) / ((#s).choose r : ℚ) := (rfl)
+
+/-- The edges inside a block are `r`-element subsets of the block. -/
+theorem filter_edges_subset_powersetCard (H : UniformHypergraph r V) (s : Finset V) :
+    H.edges.filter (· ⊆ s) ⊆ s.powersetCard r := fun e he =>
+  Finset.mem_powersetCard.2 ⟨(Finset.mem_filter.1 he).2, H.edge_card e (Finset.mem_filter.1 he).1⟩
+
+/-- A block `s` contains at most `(#s).choose r` edges. -/
+theorem card_filter_edges_le (H : UniformHypergraph r V) (s : Finset V) :
+    #(H.edges.filter (· ⊆ s)) ≤ (#s).choose r :=
+  (Finset.card_le_card (H.filter_edges_subset_powersetCard s)).trans_eq
+    (Finset.card_powersetCard r s)
+
+/-- The block density is nonnegative. -/
+theorem blockDensity_nonneg (H : UniformHypergraph r V) (s : Finset V) : 0 ≤ H.blockDensity s := by
+  rw [blockDensity_def]
+  positivity
+
+/-- The block density is at most `1`. -/
+theorem blockDensity_le_one (H : UniformHypergraph r V) (s : Finset V) : H.blockDensity s ≤ 1 := by
+  rw [blockDensity_def]
+  exact div_le_one_of_le₀ (by exact_mod_cast H.card_filter_edges_le s) (by positivity)
+
+/-- In a block with fewer than `r` vertices there are no possible edges, and the block density is
+`0`. -/
+theorem blockDensity_eq_zero_of_card_lt (H : UniformHypergraph r V) {s : Finset V}
+    (hs : #s < r) : H.blockDensity s = 0 := by
+  simp [blockDensity_def, Nat.choose_eq_zero_of_lt hs]
+
+/-- The empty hypergraph has block density `0` in every block. -/
+@[simp]
+theorem blockDensity_empty (s : Finset V) : (empty r V).blockDensity s = 0 := by
+  simp [blockDensity_def]
+
+/-- The complete hypergraph has block density `1` in every block with at least `r` vertices. -/
+theorem blockDensity_complete [Fintype V] {s : Finset V} (hs : r ≤ #s) :
+    (complete r V).blockDensity s = 1 := by
+  have hfilter : (complete r V).edges.filter (· ⊆ s) = s.powersetCard r := by
+    ext e
+    simp only [Finset.mem_filter, mem_edges_complete, Finset.mem_powersetCard]
+    exact and_comm
+  rw [blockDensity_def, hfilter, Finset.card_powersetCard]
+  exact div_self (by exact_mod_cast (Nat.choose_pos hs).ne')
+
+/-- On the whole vertex type, the block density is the edge density. -/
+@[simp]
+theorem blockDensity_univ [Fintype V] (H : UniformHypergraph r V) :
+    H.blockDensity Finset.univ = H.edgeDensity := by
+  rw [blockDensity_def, edgeDensity_def, Finset.card_univ,
+    Finset.filter_true_of_mem fun e _ => Finset.subset_univ e]
+
+end BlockDensity
 
 end UniformHypergraph
 

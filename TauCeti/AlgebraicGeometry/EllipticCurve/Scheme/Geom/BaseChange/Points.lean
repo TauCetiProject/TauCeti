@@ -278,7 +278,7 @@ square of elliptic curves over `f : S' ⟶ S`, the square formed by the zero sec
 is a pullback square. -/
 theorem isPullback_zero_of_isPullback : IsPullback E'.zero f g E.zero := by
   refine IsPullback.of_right ?_ h0 hg.flip
-  rw [zero_comp_structureMap, zero_comp_structureMap]
+  rw [E'.zero_comp, E.zero_comp]
   exact IsPullback.of_horiz_isIso ⟨by simp⟩
 
 include hg h0 in
@@ -295,7 +295,7 @@ theorem left_apply_eq_zero_iff_of_isPullback (P : 𝟙_ (Over S') ⟶ Over.mk E'
   have hw : E'.zero (hP.isoPullback.inv z) = P.left s' := by
     rw [← Scheme.Hom.comp_apply, IsPullback.isoPullback_inv_fst, hz]
   have hs : hP.isoPullback.inv z = s' := by
-    rw [← section_apply E'.zero_comp_structureMap (hP.isoPullback.inv z), hw,
+    rw [← section_apply E'.zero_comp (hP.isoPullback.inv z), hw,
       section_apply (left_comp_structureMap P)]
   rw [← hw, hs]
 

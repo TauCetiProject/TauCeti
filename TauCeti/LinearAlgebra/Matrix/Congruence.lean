@@ -14,11 +14,16 @@ import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 For a rectangular matrix `M`, congruence `A ↦ M * A * Mᵀ` can be moved across a trace pairing
 or a determinant pencil `det (1 + c • (B * _))` by congruating the test matrix `B` with the
-transpose instead. These identities transport Wishart trace transforms along congruence.
+transpose instead. These identities transport Wishart trace transforms along congruence. The file
+also records the scalar regrouping that produces a congruence in the first place: expanding the
+two weights of a doubly indexed family along the rows of `M` replaces the weight matrix by its
+congruate.
 
 ## Main results
 
 * `Matrix.trace_mul_congruence` — `trace (B * (M * A * Mᵀ)) = trace ((Mᵀ * B * M) * A)`.
+* `Matrix.sum_sum_smul_congruence` — expanding the weights of `∑ x y, A x y • T x y` along the
+  rows of `M` congruates `A`.
 * `Matrix.det_one_add_smul_transpose_mul_mul`,
   `Matrix.det_one_sub_smul_transpose_mul_mul` — the corresponding determinant pencil identities,
   instances of the Weinstein--Aronszajn identity `Matrix.det_one_add_mul_comm`.
@@ -76,5 +81,38 @@ theorem submatrix_one_mul_mul_submatrix_one {m n R : Type*} [Fintype n] [Decidab
       A.submatrix f f := by
   ext i j
   simp [Matrix.mul_apply, Matrix.one_apply, Finset.sum_ite_eq, Finset.sum_ite_eq']
+
+/-- **Congruence from a double expansion of the weights.** Pushing a matrix `M` through both
+indices of a doubly indexed family `T` in a module turns the weight matrix `A` into the congruate
+`M * A * Mᵀ`. The family is arbitrary, so the regrouping serves both a bivector in a tensor square
+and two slots of a larger tensor power, where those two slots cannot be split off as a tensor
+square. -/
+theorem sum_sum_smul_congruence {m n R P : Type*} [Fintype m] [Fintype n] [CommSemiring R]
+    [AddCommMonoid P] [Module R P] (M : Matrix m n R) (A : Matrix n n R) (T : m → m → P) :
+    ∑ x : n, ∑ y : n, A x y • ∑ a : m, ∑ b : m, (M a x * M b y) • T a b =
+      ∑ a : m, ∑ b : m, (M * A * Mᵀ) a b • T a b := by
+  have hcoef : ∀ a b : m, ∑ x : n, ∑ y : n, A x y * (M a x * M b y) = (M * A * Mᵀ) a b := by
+    intro a b
+    rw [Matrix.mul_apply, Finset.sum_comm]
+    refine Finset.sum_congr rfl fun y _ => ?_
+    rw [Matrix.mul_apply, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun x _ => ?_
+    simp only [Matrix.transpose_apply]
+    ring
+  calc ∑ x : n, ∑ y : n, A x y • ∑ a : m, ∑ b : m, (M a x * M b y) • T a b
+      = ∑ x : n, ∑ y : n, ∑ a : m, ∑ b : m, (A x y * (M a x * M b y)) • T a b := by
+        simp only [Finset.smul_sum, smul_smul]
+    -- move the two outer sums past the two inner ones, one adjacent swap at a time
+    _ = ∑ x : n, ∑ a : m, ∑ y : n, ∑ b : m, (A x y * (M a x * M b y)) • T a b :=
+        Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+    _ = ∑ a : m, ∑ x : n, ∑ y : n, ∑ b : m, (A x y * (M a x * M b y)) • T a b := Finset.sum_comm
+    _ = ∑ a : m, ∑ x : n, ∑ b : m, ∑ y : n, (A x y * (M a x * M b y)) • T a b :=
+        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+    _ = ∑ a : m, ∑ b : m, ∑ x : n, ∑ y : n, (A x y * (M a x * M b y)) • T a b :=
+        Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+    _ = ∑ a : m, ∑ b : m, (M * A * Mᵀ) a b • T a b := by
+        refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
+        simp only [← Finset.sum_smul]
+        rw [hcoef a b]
 
 end Matrix

@@ -227,7 +227,6 @@ a separable isogeny over a separably closed field is surjective on points. -/
 theorem pointCoeffMap_ofIsogeny_surjective : Function.Surjective (ofIsogeny φ).pointCoeffMap := by
   intro P
   have := isSeparable_map φ (algebraMap K (SeparableClosure K))
-  have := (W₂⁄(SeparableClosure K)).toAffine.isIntegrallyClosed_coordinateRing
   obtain ⟨Q, hQ⟩ := (φ.map (algebraMap K (SeparableClosure K))).toPointHom_surjective
     (W₂.pointCoeffEquiv.symm P)
   refine ⟨W₁.pointCoeffEquiv Q, (pointCoeffMap_pointCoeffEquiv _ _).trans ?_⟩

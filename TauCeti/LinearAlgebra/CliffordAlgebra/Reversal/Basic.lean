@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 -- Private: `noncomm_ring` is used only in the proof of `ι_mul_ι_mul_ι_add_reverse`.
 import Mathlib.Tactic.NoncommRing

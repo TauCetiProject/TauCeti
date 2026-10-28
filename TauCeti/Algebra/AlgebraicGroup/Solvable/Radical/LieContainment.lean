@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.IdentityComponent
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Construction
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Lie
+public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Lie
+import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Quotient
 import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 
 /-!
@@ -17,6 +19,10 @@ Over an algebraically closed field of characteristic zero, the identity componen
 normal closed subgroup with solvable Lie algebra lies in the solvable radical. Consequently
 the subgroup's entire tangent Lie algebra lies in the tangent Lie algebra of the radical.
 The subgroup itself can be disconnected, and need not lie in the radical.
+
+For a connected ambient group, the Lie algebra of its solvable radical is exactly the
+radical of its Lie algebra. This comparison links group-theoretic semisimplicity with
+Lie-algebra semisimplicity and Cartan's criterion.
 
 This is the passage from a normal subgroup realizing a solvable Lie ideal to containment
 of that ideal in `Lie(R(G))`. It uses the solvable-Lie-algebra criterion from `Solvable.Lie`,
@@ -75,3 +81,51 @@ theorem IsNormal.lieSubalgebra_le_solvableRadical (hI : I.IsNormal)
   exact fun x hx ↦ hd x (hle hx)
 
 end TauCeti.HopfIdeal
+
+namespace TauCeti.FiniteTypeCommHopfAlgCat
+
+universe u
+
+/-- For a connected affine group over an algebraically closed field of characteristic zero,
+the Lie algebra of its solvable radical equals the solvable radical of its Lie algebra. -/
+theorem lieIdeal_solvableRadicalDefiningIdeal_eq_radical
+    {k : Type u} [Field k] [IsAlgClosed k] [CharZero k]
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) [ConnectedSpace (PrimeSpectrum H)] :
+    (isNormal_solvableRadicalDefiningIdeal H).lieIdeal (B := k) =
+      LieAlgebra.radical k (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
+  let L := Module.Dual k (Bialgebra.CotangentSpace k H)
+  let e : L ≃ₗ⁅k⁆ Derivation k H (Bialgebra.CounitAlgebra k H k) :=
+    Derivation.cotangentDualLieEquiv
+  obtain ⟨I, hI, hLie⟩ := exists_isNormal_lieSubalgebra_eq_radical H
+  have hLie' : I.lieSubalgebra (B := k) =
+      (LieAlgebra.radical k L).toLieSubalgebra.comap e.symm.toLieHom := hLie
+  have hmap : (I.lieSubalgebra (B := k)).map e.symm.toLieHom =
+      (LieAlgebra.radical k L).toLieSubalgebra := by
+    ext x
+    simp only [LieSubalgebra.mem_map, hLie', LieSubalgebra.mem_comap,
+      LieEquiv.coe_toLieHom]
+    exact ⟨fun ⟨d, hd, hdx⟩ ↦ hdx ▸ hd,
+      fun hx ↦ ⟨e x, by simpa only [LieEquiv.symm_apply_apply] using hx,
+        e.symm_apply_apply x⟩⟩
+  have : LieAlgebra.IsSolvable (LieAlgebra.radical k L).toLieSubalgebra := by
+    exact LieAlgebra.radicalIsSolvable k L
+  let _ : LieAlgebra.IsSolvable (I.lieSubalgebra (B := k)) :=
+    (LieAlgebra.solvable_iff_equiv_solvable
+      (e.symm.ofSubalgebras _ _ hmap)).mpr inferInstance
+  have hle := hI.lieSubalgebra_le_solvableRadical
+  refine le_antisymm
+    (isSolvableRadicalCandidate_solvableRadicalDefiningIdeal H).lieIdeal_le_radical ?_
+  have hker : LieAlgebra.IsSolvable e.toLieHom.ker := by
+    rw [(LieHom.ker_eq_bot e.toLieHom).mpr e.injective]
+    infer_instance
+  rw [← LieIdeal.radical_map_eq e.toLieHom e.surjective hker,
+    LieIdeal.map_le_iff_le_comap]
+  intro x hx
+  rw [LieIdeal.mem_comap, ← LieIdeal.mem_toLieSubalgebra,
+    HopfIdeal.IsNormal.lieIdeal_toLieSubalgebra]
+  apply hle
+  rw [hLie', LieSubalgebra.mem_comap]
+  simpa only [LieEquiv.coe_toLieHom, LieEquiv.symm_apply_apply,
+    LieIdeal.mem_toLieSubalgebra] using hx
+
+end TauCeti.FiniteTypeCommHopfAlgCat

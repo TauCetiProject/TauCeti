@@ -25,9 +25,13 @@ The **Mihlin–Hörmander multiplier theorem**
 (`TauCeti.exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le`) says that if
 `2N > n`, then for every `1 < p < ∞` the `L²` Fourier multiplier `T_m`
 (`MeasureTheory.Lp.fourierMultiplierCLM`) is bounded in the `Lᵖ` norm, `‖T_m f‖_p ≤ C A ‖f‖_p`,
-with `C` independent of `m` and `A`. The symbols of the Riesz transforms and of
+with `C` independent of `m` and `A`. For a symbol of temperate growth, the multiplier on
+tempered distributions therefore maps every `f ∈ Lᵖ` to an `Lᵖ` function with the same bound
+(`TauCeti.exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le`), by density of
+the Schwartz functions in `Lᵖ`. The symbols of the Riesz transforms and of
 `∂_v ∂_w Δ⁻¹`, and more generally every symbol that is smooth away from the origin and
-homogeneous of degree `0`, satisfy Mihlin's condition of every order.
+homogeneous of degree `0`, satisfy Mihlin's condition of every order
+(`TauCeti.exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq`).
 
 ## The argument
 
@@ -124,7 +128,7 @@ private theorem exists_setIntegral_norm_fourierInv_mihlinTrunc_sub_sub_le {N : �
         ∫ x in {x | 2 * ‖h‖ < ‖x‖},
           ‖𝓕⁻ (mihlinTrunc hm n) (x - h) - 𝓕⁻ (mihlinTrunc hm n) x‖ ≤ B := by
   obtain ⟨C₀, hC₀, hpiece⟩ :=
-    (mihlinBump (V := V)).exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le (F := ℂ) N
+    (mihlinBump (V := V)).exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le N
   obtain ⟨C, hC, hK⟩ :=
     SchwartzMap.exists_setIntegral_norm_fourierInv_sum_sub_sub_le (H := ℂ)
       (stdOrthonormalBasis ℝ V) hN
@@ -133,7 +137,7 @@ private theorem exists_setIntegral_norm_fourierInv_mihlinTrunc_sub_sub_le {N : �
     (fun j _ k hk i ξ ↦ ?_) h
   · refine (subset_tsupport _).trans ((mihlinBump.tsupport_littlewoodPaleyPiece_subset hm j).trans
       ?_)
-    simp [mihlinBump]
+    exact fun ξ hξ ↦ mem_closedBall_zero_iff.2 (by simpa [mihlinBump] using hξ.2)
   · rw [← LineDeriv.iteratedLineDerivOp_const_eq_iter_lineDerivOp,
       SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv]
     refine ((iteratedFDeriv ℝ k (mihlinBump.littlewoodPaleyPiece hm j : V → ℂ) ξ).le_opNorm
@@ -342,5 +346,63 @@ theorem exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le [Nontri
   gcongr
   · simp [← ofReal_norm]
   · exact hC hmc hmcA (c • m') hcm' f
+
+/-- **The Mihlin–Hörmander multiplier theorem on `Lᵖ`.** Let `V` be a real inner product space of
+finite dimension `n ≥ 1`, let `2N > n` and `1 < p < ∞`. There is a constant `C` such that for
+every symbol `m` of temperate growth satisfying Mihlin's condition of order `N` with constant `A`,
+
+`‖D^k m ξ‖ ≤ A / ‖ξ‖ ^ k` for every `k ≤ N` and every `ξ ≠ 0`,
+
+the Fourier multiplier `𝓕⁻ (m • 𝓕 f)` of the tempered distribution of any `f ∈ Lᵖ(V, F)` is an
+`Lᵖ` function `g` with `‖g‖_p ≤ C A ‖f‖_p`. -/
+theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le [Nontrivial V]
+    {N : ℕ} (hN : finrank ℝ V < 2 * N) {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    ∃ C : ℝ≥0, ∀ {m : V → ℂ}, m.HasTemperateGrowth → ∀ {A : ℝ≥0},
+      (∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k m ξ‖ ≤ A / ‖ξ‖ ^ k) →
+      ∀ f : Lp F p (volume : Measure V), ∃ g : Lp F p (volume : Measure V),
+        TemperedDistribution.fourierMultiplierCLM F m (f : 𝓢'(V, F)) = g ∧
+          ‖g‖ ≤ C * A * ‖f‖ := by
+  obtain ⟨C, hC⟩ :=
+    exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le (F := F) hN hp hp_top
+  refine ⟨C, fun {m} hm {A} hmA f ↦ ?_⟩
+  -- The symbol is bounded, by Mihlin's condition of order zero away from the origin.
+  have hm_bdd : MemLp m (∞ : ℝ≥0∞) volume := by
+    refine memLp_top_of_bound hm.1.continuous.aestronglyMeasurable A ?_
+    filter_upwards [Measure.ae_ne volume 0] with ξ hξ
+    simpa using hmA 0 (Nat.zero_le _) ξ hξ
+  -- On Schwartz functions the multiplier agrees with the `L²` multiplier, so it satisfies the
+  -- `Lᵖ` bound of `exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le`.
+  set T : 𝓢(V, F) →L[ℂ] 𝓢(V, F) := SchwartzMap.fourierMultiplierCLM F m
+  have hS : ∀ φ : 𝓢(V, F), ‖(T φ).toLp p‖ ≤ C * A * ‖φ.toLp p‖ := by
+    intro φ
+    have h := hC hm.1.contDiffOn hmA (hm_bdd.toLp m) hm_bdd.coeFn_toLp (φ.toLp 2)
+    rw [SchwartzMap.toLp_fourierMultiplierCLM_eq hm hm_bdd,
+      eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ 2 _),
+      eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ 2 _)] at h
+    rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ p _),
+      eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ p _)]
+    have hfin : eLpNorm (φ : V → F) p volume ≠ (∞ : ℝ≥0∞) := (φ.memLp p).eLpNorm_ne_top
+    calc _ ≤ ((C : ℝ≥0∞) * A * eLpNorm (φ : V → F) p volume).toReal :=
+          ENNReal.toReal_mono (by finiteness) h
+      _ = _ := by simp [ENNReal.toReal_mul]
+  -- Extend `φ ↦ (T φ).toLp p` from the dense Schwartz functions to all of `Lᵖ`, by the bound.
+  set e : 𝓢(V, F) →ₗ[ℂ] Lp F p (volume : Measure V) :=
+    (SchwartzMap.toLpCLM ℂ F p (volume : Measure V)).toLinearMap
+  have he : DenseRange e := SchwartzMap.denseRange_toLpCLM (F := F) (μ := volume) hp_top
+  set S : 𝓢(V, F) →ₗ[ℂ] Lp F p (volume : Measure V) := e ∘ₗ T.toLinearMap
+  have hSe : ∀ φ, ‖S φ‖ ≤ C * A * ‖e φ‖ := hS
+  refine ⟨S.extendOfNorm e f, ?_, LinearMap.norm_extendOfNorm_apply_le he _ hSe f⟩
+  -- Both sides are continuous in `f` and agree on the dense Schwartz functions.
+  refine congrFun (he.equalizer (g := fun f ↦ TemperedDistribution.fourierMultiplierCLM F m
+    (f : 𝓢'(V, F))) (h := fun f ↦ ((S.extendOfNorm e f : Lp F p volume) : 𝓢'(V, F)))
+    (TemperedDistribution.fourierMultiplierCLM F m ∘L
+      Lp.toTemperedDistributionCLM F volume p).continuous
+    ((Lp.toTemperedDistributionCLM F volume p).continuous.comp (S.extendOfNorm e).continuous)
+    (funext fun φ ↦ ?_)) f
+  simp only [Function.comp_apply, LinearMap.extendOfNorm_eq he ⟨_, hSe⟩]
+  simp only [S, e, T, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, SchwartzMap.toLpCLM_apply,
+    Lp.toTemperedDistribution_toLp_eq,
+    TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq hm]
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
 public import TauCeti.Probability.HasLaw
+import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
 
 /-!
 # The Monge problem
@@ -49,6 +50,8 @@ non-top value implies feasibility.
   map `T`, the objective of the Monge problem;
 * `TauCeti.mongeCost c μ ν` — the Monge value: the infimum of `TauCeti.transportMapCost c μ T`
   over the transport maps `T` from `μ` to `ν`, and `∞` when there are none;
+* `TauCeti.transportMapCost_smul` and `TauCeti.mongeCost_smul` — homogeneity under scaling of the
+  source, respectively of both marginals;
 * `TauCeti.IsMongeMinimizer c μ ν T` — `T` is a transport map attaining the Monge value;
 * `TauCeti.IsKantorovichOptimalTransportMap c μ ν T` — `T` is a transport map whose cost is the
   Kantorovich value `TauCeti.transportCost c μ ν`.
@@ -57,6 +60,10 @@ non-top value implies feasibility.
 
 * `TauCeti.transportCost_le_mongeCost` — **the Monge-to-Kantorovich relaxation inequality**, the
   Monge value dominates the Kantorovich value;
+* `TauCeti.mongeCost_zero_measure` and `TauCeti.mongeCost_eq_transportCost_zero_measure` — at
+  zero mass, with a nonempty target type, both values vanish;
+* `TauCeti.mongeCost_eq_transportCost_of_normalized` — equality of the two values for the
+  measures rescaled by a nonzero finite source mass transfers to the source and its target;
 * `TauCeti.transportCost_lt_mongeCost_dirac` — the inequality is strict for a Dirac source and
   a target that is null on singletons, where
   `TauCeti.mongeCost_eq_top_of_measure_singleton_ne_zero` makes the Monge problem infeasible
@@ -71,6 +78,10 @@ non-top value implies feasibility.
 * `TauCeti.isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan` — the equality case
   of the relaxation: a transport map attains the Kantorovich value exactly when its graph plan
   is an optimal plan;
+* `TauCeti.lintegral_eq_transportCost_of_ae_eq_comp` and `TauCeti.lintegral_le_of_ae_eq_comp` —
+  if `U = T ∘ s` almost everywhere for an optimal transport map `T` from `μ` to the law of `U`
+  and a map `s` of law `μ`, then `s` attains the transport cost and minimises the cost of
+  `(s', U)` among maps `s'` of law `μ`;
 * `TauCeti.isKantorovichOptimalTransportMap_id` and `TauCeti.mongeCost_self_eq_zero` — for a
   cost vanishing on the diagonal the identity transports any measure onto itself at no cost;
 * `TauCeti.isKantorovichOptimalTransportMap_dirac_dirac` and `TauCeti.mongeCost_dirac_dirac` —
@@ -133,6 +144,12 @@ theorem transportMapCost_zero_measure (c : X × Y → ℝ≥0∞) (T : X → Y) 
     transportMapCost c (0 : Measure X) T = 0 := by
   rw [transportMapCost_def, lintegral_zero_measure]
 
+/-- Scaling the source measure scales the cost of a fixed transport map. -/
+@[simp]
+theorem transportMapCost_smul (a : ℝ≥0∞) (c : X × Y → ℝ≥0∞) (μ : Measure X) (T : X → Y) :
+    transportMapCost c (a • μ) T = a * transportMapCost c μ T := by
+  rw [transportMapCost_def, transportMapCost_def, lintegral_smul_measure, smul_eq_mul]
+
 /-- The cost of a transport map only depends on the map up to `μ`-almost everywhere equality,
 which is the equivalence `ProbabilityTheory.HasLaw` is invariant under. -/
 theorem transportMapCost_congr (h : T =ᵐ[μ] S) (c : X × Y → ℝ≥0∞) :
@@ -173,6 +190,29 @@ def mongeCost (c : X × Y → ℝ≥0∞) (μ : Measure X) (ν : Measure Y) : �
 /-- The Monge value as the infimum of the costs of all transport maps. -/
 theorem mongeCost_def :
     mongeCost c μ ν = ⨅ (T : X → Y) (_ : HasLaw T ν μ), transportMapCost c μ T := (rfl)
+
+/-- **Homogeneity of the Monge cost.** Scaling both marginals by the same nonzero finite factor
+scales the Monge value by that factor. The nonzero assumption is necessary: at zero mass a
+transport map need not exist when the target type is empty. -/
+theorem mongeCost_smul (ha₀ : a ≠ 0) (ha : a ≠ ∞) (c : X × Y → ℝ≥0∞)
+    (μ : Measure X) (ν : Measure Y) :
+    mongeCost c (a • μ) (a • ν) = a * mongeCost c μ ν := by
+  have hLaw (T : X → Y) : HasLaw T (a • ν) (a • μ) ↔ HasLaw T ν μ := by
+    constructor
+    · intro hT
+      have hTm : AEMeasurable T μ := (aemeasurable_smul_measure_iff ha₀).1 hT.aemeasurable
+      refine ⟨hTm, ?_⟩
+      have hmap := hT.map_eq
+      rw [Measure.map_smul a hTm] at hmap
+      apply_fun (a⁻¹ • ·) at hmap
+      simpa only [smul_smul, ENNReal.inv_mul_cancel ha₀ ha, one_smul] using hmap
+    · intro hT
+      refine ⟨(aemeasurable_smul_measure_iff ha₀).2 hT.aemeasurable, ?_⟩
+      rw [Measure.map_smul a hT.aemeasurable, hT.map_eq]
+  rw [mongeCost_def, mongeCost_def]
+  simp_rw [hLaw, transportMapCost_smul]
+  symm
+  simp only [ENNReal.mul_iInf_of_ne ha₀ ha]
 
 /-- Every transport map bounds the Monge value from above. -/
 theorem mongeCost_le_transportMapCost (hT : HasLaw T ν μ) (c : X × Y → ℝ≥0∞) :
@@ -220,6 +260,49 @@ theorem transportCost_le_mongeCost (c : X × Y → ℝ≥0∞) (μ : Measure X) 
     transportCost c μ ν ≤ mongeCost c μ ν :=
   le_mongeCost fun T hT ↦ by
     rw [transportMapCost_def]; exact transportCost_le_lintegral_of_hasLaw hT c
+
+/-- At zero mass a constant map transports the zero source onto the zero target at no cost, so the
+Monge value vanishes. The target type must be nonempty for such a map to exist. -/
+@[simp]
+theorem mongeCost_zero_measure [Nonempty Y] (c : X × Y → ℝ≥0∞) :
+    mongeCost c (0 : Measure X) (0 : Measure Y) = 0 := by
+  have hT : HasLaw (fun _ : X ↦ Classical.arbitrary Y) (0 : Measure Y) (0 : Measure X) :=
+    ⟨measurable_const.aemeasurable, by simp⟩
+  exact nonpos_iff_eq_zero.1 <|
+    (mongeCost_le_transportMapCost hT c).trans_eq (transportMapCost_zero_measure c _)
+
+/-- At zero mass the Monge and Kantorovich values agree, both being zero, as soon as the target
+type is nonempty. -/
+theorem mongeCost_eq_transportCost_zero_measure [Nonempty Y] (c : X × Y → ℝ≥0∞) :
+    mongeCost c (0 : Measure X) (0 : Measure Y) = transportCost c 0 0 :=
+  le_antisymm ((mongeCost_zero_measure c).trans_le bot_le) (transportCost_le_mongeCost c 0 0)
+
+/-- Equality of the Monge and Kantorovich values for the measures obtained by rescaling a nonzero
+finite source `μ` and a target `ν` by the mass of `μ` transfers to `μ` and `ν` themselves. The
+rescaled source is a probability measure, and the rescaled target is one when `ν univ = μ univ`.
+Combined with `TauCeti.mongeCost_eq_transportCost_zero_measure`, this reduces equality for finite
+measures of equal mass to the probability case. -/
+theorem mongeCost_eq_transportCost_of_normalized [IsFiniteMeasure μ] (hμ : μ ≠ 0)
+    (hnorm : mongeCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν) =
+      transportCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν)) :
+    mongeCost c μ ν = transportCost c μ ν := by
+  have hm₀ : μ univ ≠ 0 := mt Measure.measure_univ_eq_zero.1 hμ
+  have hm_top : μ univ ≠ ∞ := measure_ne_top μ univ
+  have hscale (ρ : Measure X) : μ univ • ((μ univ)⁻¹ • ρ) = ρ := by
+    rw [smul_smul, ENNReal.mul_inv_cancel hm₀ hm_top, one_smul]
+  have hscaleY (ρ : Measure Y) : μ univ • ((μ univ)⁻¹ • ρ) = ρ := by
+    rw [smul_smul, ENNReal.mul_inv_cancel hm₀ hm_top, one_smul]
+  calc
+    mongeCost c μ ν =
+        mongeCost c (μ univ • ((μ univ)⁻¹ • μ))
+          (μ univ • ((μ univ)⁻¹ • ν)) := by rw [hscale, hscaleY]
+    _ = μ univ * mongeCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν) :=
+      mongeCost_smul hm₀ hm_top c _ _
+    _ = μ univ * transportCost c ((μ univ)⁻¹ • μ) ((μ univ)⁻¹ • ν) := by
+      rw [hnorm]
+    _ = transportCost c (μ univ • ((μ univ)⁻¹ • μ))
+        (μ univ • ((μ univ)⁻¹ • ν)) := (transportCost_smul hm_top c _ _).symm
+    _ = transportCost c μ ν := by rw [hscale, hscaleY]
 
 /-! ### Optimal transport maps -/
 
@@ -310,6 +393,46 @@ theorem isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan (hT : H
       ← transportMapCost_eq_lintegral_graphPlan hT.aemeasurable hc, h.transportMapCost_eq]
   · rw [transportMapCost_eq_lintegral_graphPlan hT.aemeasurable hc,
       lintegral_graphPlan hT.aemeasurable hc, h]
+
+section Factor
+
+variable {α : Type*} [MeasurableSpace α] {m : Measure α} {U : α → Y} {s s' : α → X}
+
+/-- **A factor through an optimal map attains the transport cost.** Let `T` be an optimal
+transport map for a measurable cost `c` from `μ` to the law of `U : α → Y`, and let `s : α → X`
+have law `μ` with `U = T ∘ s` almost everywhere. Then the pair `(s, U)` pushes `m` to the graph
+plan of `T`, so `∫⁻ c (s ω, U ω) dm` is the optimal transport cost from `μ` to the law of `U`. -/
+theorem lintegral_eq_transportCost_of_ae_eq_comp (hc : Measurable c)
+    (hT : IsKantorovichOptimalTransportMap c μ (m.map U) T) (hs : HasLaw s μ m)
+    (h : U =ᵐ[m] T ∘ s) :
+    ∫⁻ ω, c (s ω, U ω) ∂m = transportCost c μ (m.map U) := by
+  have hT' : AEMeasurable T (m.map s) := hs.map_eq ▸ hT.aemeasurable
+  have hU : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT.aemeasurable h
+  have hgraph : m.map (fun ω => (s ω, U ω)) = graphPlan T μ := by
+    rw [Measure.map_congr (f := fun ω => (s ω, U ω)) (g := fun ω => (s ω, T (s ω)))
+        (h.mono fun ω hω => Prod.ext rfl hω), graphPlan_def, ← hs.map_eq,
+      AEMeasurable.map_map_of_aemeasurable (aemeasurable_prodMk_self hT') hs.aemeasurable]
+    rfl
+  refine (lintegral_map' hc.aemeasurable (hs.aemeasurable.prodMk hU)).symm.trans ?_
+  rw [hgraph]
+  exact ((isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hT.toHasLaw
+    hc.aemeasurable).1 hT).lintegral_eq
+
+/-- **A factor through an optimal map is cost-minimising.** Let `T` be an optimal transport map
+for a measurable cost `c` from `μ` to the law of `U : α → Y`, and let `s : α → X` have law `μ`
+with `U = T ∘ s` almost everywhere. Then among all maps `s'` of law `μ`, `s` minimises the cost
+`∫⁻ c (s' ω, U ω) dm`. -/
+theorem lintegral_le_of_ae_eq_comp (hc : Measurable c)
+    (hT : IsKantorovichOptimalTransportMap c μ (m.map U) T) (hs : HasLaw s μ m)
+    (h : U =ᵐ[m] T ∘ s) (hs' : HasLaw s' μ m) :
+    ∫⁻ ω, c (s ω, U ω) ∂m ≤ ∫⁻ ω, c (s' ω, U ω) ∂m := by
+  have hU : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT.aemeasurable h
+  rw [lintegral_eq_transportCost_of_ae_eq_comp hc hT hs h]
+  refine le_of_le_of_eq ?_ (lintegral_map' hc.aemeasurable (hs'.aemeasurable.prodMk hU))
+  exact transportCost_le_lintegral
+    (isCoupling_map_prodMk_of_aemeasurable hs'.aemeasurable hU hs'.map_eq rfl) c
+
+end Factor
 
 /-! ### Transporting a measure to itself -/
 

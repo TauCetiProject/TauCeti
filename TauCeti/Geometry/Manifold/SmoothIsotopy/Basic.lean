@@ -127,7 +127,7 @@ theorem isSmoothEmbedding_right (F : SmoothIsotopy f₀ f₁) :
 
 /-- Forgetting smoothness gives a continuous isotopy through embeddings. -/
 def toIsotopy (F : SmoothIsotopy f₀ f₁) :
-    Isotopy (_root_.toContinuousMap f₀) (_root_.toContinuousMap f₁) where
+    Isotopy (ContinuousMap.ofClass f₀) (ContinuousMap.ofClass f₁) where
   toFun := F
   continuous_toFun := F.contMDiff.continuous
   map_zero_left := F.map_zero_left
@@ -141,7 +141,7 @@ theorem toIsotopy_apply (F : SmoothIsotopy f₀ f₁) (p : unitInterval × M) :
 
 /-- Smooth isotopy implies the existing continuous isotopy relation. -/
 theorem isotopic (F : SmoothIsotopy f₀ f₁) :
-    Isotopic (_root_.toContinuousMap f₀) (_root_.toContinuousMap f₁) :=
+    Isotopic (ContinuousMap.ofClass f₀) (ContinuousMap.ofClass f₁) :=
   Isotopic.of_isotopy F.toIsotopy
 
 /-- The constant smooth isotopy at a smooth embedding. -/
@@ -236,7 +236,7 @@ theorem symm (h : SmoothIsotopic f₀ f₁) : SmoothIsotopic f₁ f₀ := by
 
 /-- Smoothly isotopic maps are isotopic after forgetting smoothness. -/
 theorem isotopic (h : SmoothIsotopic f₀ f₁) :
-    Isotopic (_root_.toContinuousMap f₀) (_root_.toContinuousMap f₁) := by
+    Isotopic (ContinuousMap.ofClass f₀) (ContinuousMap.ofClass f₁) := by
   obtain ⟨F⟩ := smoothIsotopic_def.mp h
   exact F.isotopic
 

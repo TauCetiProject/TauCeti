@@ -84,13 +84,13 @@ private theorem finite_quotient_option {σ : Type*} [Finite σ]
   let _ : Algebra K S := ((algebraMap R S).comp (algebraMap K R)).toAlgebra
   have : IsScalarTower K R S := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
   let Φ : Tate (Option σ) ≃ₐ[K] S :=
-    e.trans (AlgEquiv.ofRingEquiv (f := Huber.restrictedOptionEquiv)
-      Huber.restrictedOptionEquiv_algebraMap)
+    e.trans (AlgEquiv.ofRingEquiv (f := restrictedOptionEquiv)
+      restrictedOptionEquiv_algebraMap)
   let m' := m.map (Φ : Tate (Option σ) →+* S)
   have : m'.IsMaximal := Ideal.map_isMaximal_of_equiv (Φ : Tate (Option σ) ≃+* S)
   -- `S ⧸ m'` is a quotient of `S ⧸ (Φ f)`, which is finite over `R` by Weierstrass division.
   have := hd.finite_quotient zero_lt_one hu
-  have hle : Ideal.span {Huber.restrictedOptionEquiv (e f)} ≤ m' :=
+  have hle : Ideal.span {restrictedOptionEquiv (e f)} ≤ m' :=
     Ideal.span_le.mpr (Set.singleton_subset_iff.mpr (Ideal.mem_map_of_mem _ hfm))
   have : Module.Finite R (S ⧸ m') :=
     Module.Finite.of_surjective (Ideal.Quotient.factorₐ R hle).toLinearMap
@@ -128,10 +128,8 @@ theorem finite_quotient_of_isMaximal {σ : Type*} [Finite σ] (m : Ideal (Tate �
     have hm : m = (m.comap r).map r := (Ideal.map_comap_of_surjective _ r.surjective m).symm
     exact Module.Finite.equiv (Ideal.quotientEquivAlg (m.comap r) m r hm).toLinearEquiv
   · -- Without variables every series is a constant, so the Tate algebra is `K`.
-    have hsurj : Function.Surjective (Algebra.linearMap K (Tate PEmpty)) := fun g ↦
-      let ⟨r, hr⟩ := C_surjective (σ := PEmpty) (g : MvPowerSeries PEmpty K)
-      ⟨r, Subtype.ext hr⟩
-    have := Module.Finite.of_surjective _ hsurj
+    have := Module.Finite.of_surjective (Algebra.linearMap K (Tate PEmpty))
+      algebraMap_isRestrictedSubring_surjective
     exact Module.Finite.of_surjective (Ideal.Quotient.mkₐ K m).toLinearMap
       (Ideal.Quotient.mkₐ_surjective K m)
 

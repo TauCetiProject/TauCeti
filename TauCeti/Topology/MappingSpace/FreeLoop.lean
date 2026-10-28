@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Topology.Connected.PathConnected
+public import TauCeti.Topology.CompactOpen
 
 /-!
 # Paths of free loops and the contractible free loops
@@ -78,13 +79,11 @@ theorem coe_constContractibleLoop (q : Q) :
   -- the underlying free loop of the subtype element built there is the constant loop
   rfl
 
-/-- The constant loops form a topological embedding `Q → 𝓛₀Q`: evaluation at the point
-`1` of the circle is a continuous left inverse. -/
+/-- The constant loops form a topological embedding `Q → 𝓛₀Q`, the codomain restriction of the
+embedding of constant maps. -/
 theorem isEmbedding_constContractibleLoop :
     Topology.IsEmbedding (constContractibleLoop (Q := Q)) :=
-  Function.LeftInverse.isEmbedding (f := fun γ : contractibleLoops Q => (γ : C(Circle, Q)) 1)
-    (fun _ => rfl) ((continuous_eval_const (1 : Circle)).comp continuous_subtype_val)
-    constContractibleLoop.continuous
+  ContinuousMap.isEmbedding_const.codRestrict _ const_mem_contractibleLoops
 
 /-- Every loop along a path of free loops that starts at a constant loop is contractible: a path
 in `ConstLoopPath Q` is a path in `𝓛₀Q`. -/

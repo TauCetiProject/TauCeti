@@ -30,6 +30,9 @@ one-point compactification of `ℚ` as source and the Sierpiński space as both 
 `(f, g)` with `f ⁻¹' {⊤} ∪ g ⁻¹' {⊤} = univ` do not form an open set. Topological groups are
 regular, so these are the continuity statements behind the pointwise operations on the iterated
 function spaces `C(G, C(G, …))` of the coinduced resolution of a topological representation.
+
+Finally, the constant maps embed `Y` in `C(X, Y)` whenever `X` is nonempty
+(`ContinuousMap.isEmbedding_const`): evaluation at any point is a continuous left inverse.
 -/
 
 public section
@@ -93,5 +96,11 @@ theorem continuous_prodMk {Z : Type*} [TopologicalSpace Z] [RegularSpace X] :
   filter_upwards [hf.prod_mk hg] with p hp y hy
   obtain ⟨x, hxt, hyC⟩ := Set.mem_iUnion₂.mp (hKt hy)
   exact hVW x (htK x hxt) ⟨hp.1 x hxt ⟨hy, hyC⟩, hp.2 x hxt ⟨hy, hyC⟩⟩
+
+/-- Constant maps embed the target in the compact-open mapping space whenever the source is
+nonempty. Evaluation at any point is a continuous left inverse. -/
+theorem isEmbedding_const [Nonempty X] : Topology.IsEmbedding (const X : Y → C(X, Y)) :=
+  Function.LeftInverse.isEmbedding (f := fun f : C(X, Y) ↦ f (Classical.arbitrary X))
+    (fun _ ↦ rfl) (continuous_eval_const _) continuous_const'
 
 end ContinuousMap

@@ -8,10 +8,11 @@ module
 public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Descent
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Tower
 
 /-!
 # The Kummer map of multiplication by two is `x - e`
@@ -62,6 +63,12 @@ unit is the image of the Kummer cocycle `σ ↦ σ Q - Q` of `P`.
 * `WeierstrassCurve.coe_toMul_twoTorsionCharacter`: the character is `1` on `{O, T}` and `-1` off
   it.
 * `WeierstrassCurve.twoTorsionCharacter_eq_weilPairing`: the character is `e₂(·, T)`.
+* `WeierstrassCurve.twoTorsionCharacter_eq_weilPairingCoeff`: the same, as an equality with the
+  coefficient map `WeierstrassCurve.weilPairingCoeff` of `T`.
+* `WeierstrassCurve.explicitMap1_explicitCoeff1_twoTorsionCharacter_torsionRes`: the character
+  is natural under change of field.
+* `WeierstrassCurve.kummerIso_powerClassMap_of_kummerIso_eq`: the same naturality, read through
+  the Kummer isomorphism on power classes.
 * `WeierstrassCurve.explicitCoeff1_twoTorsionCharacter_kummerMap`: the image of the Kummer class of
   `P` under the character is the Kummer class of `x(P) - e`.
 
@@ -90,9 +97,7 @@ variable {K : Type*} [Field K] [DecidableEq K] (W : WeierstrassCurve K) {e t : K
 /-- **The point `T` of order two, as an element of `E(Kˢ)[2]`**: its image under
 `WeierstrassCurve.baseTorsionCoeff`. -/
 def twoTorsionCoeff : W.TorsionCoeff 2 :=
-  W.baseTorsionCoeff 2 ⟨some e t hT, by
-    rw [AddSubgroup.torsionBy.nsmul_iff, two_nsmul,
-      (Affine.Point.some_add_self_eq_zero_iff hT).2 hψ]⟩
+  W.baseTorsionCoeff 2 ⟨some e t hT, Affine.Point.some_mem_torsionBy_two hT hψ⟩
 
 /-- `twoTorsionCoeff` is the image of `T` in `E(Kˢ)`. -/
 @[simp]
@@ -244,7 +249,132 @@ theorem twoTorsionCharacter_eq_weilPairing [W.IsElliptic] (h2 : IsUnit ((2 : ℕ
   rw [twoTorsionCharacter_apply, ite_eq_right hS,
     (eq_zero_or_eq_mu2NegOne (e (φ S))).resolve_left he]
 
+/-- **`twoTorsionCharacter` is the coefficient map `WeierstrassCurve.weilPairingCoeff` of `T`**,
+the bundled form of `WeierstrassCurve.twoTorsionCharacter_eq_weilPairing`. -/
+theorem twoTorsionCharacter_eq_weilPairingCoeff [W.IsElliptic] (h2 : IsUnit ((2 : ℕ) : K)) :
+    W.twoTorsionCharacter hT hψ h2 =
+      W.weilPairingCoeff 2 h2 ⟨some e t hT, Affine.Point.some_mem_torsionBy_two hT hψ⟩ := by
+  ext S
+  rw [twoTorsionCharacter_eq_weilPairing, weilPairingCoeff_apply, twoTorsionCoeff]
+
 end Character
+
+/-! ### Naturality of the character under change of field -/
+
+section ChangeOfField
+
+variable {K : Type*} [Field K] (W : WeierstrassCurve K)
+
+private theorem explicitCoeff1_twoTorsionCharacter_cast {M : Type*} [Field M] [DecidableEq M]
+    {V V' : WeierstrassCurve M} (h : V = V') [V.IsElliptic] [V'.IsElliptic] {e : M}
+    (hT : V.toAffine.Nonsingular e 0) (hψ : V.toAffine.polynomialY.evalEval e 0 = 0)
+    (hT' : V'.toAffine.Nonsingular e 0) (hψ' : V'.toAffine.polynomialY.evalEval e 0 = 0)
+    (h2 : IsUnit ((2 : ℕ) : M)) (x : H1 (AbsoluteGaloisGroup M) (V.TorsionCoeff 2)) :
+    explicitCoeff1 _ _ (V'.twoTorsionCharacter hT' hψ' h2) continuous_of_discreteTopology
+        (explicitCoeff1Equiv _ _
+          (AddEquiv.cast (M := fun V : WeierstrassCurve M ↦ V.TorsionCoeff 2) h)
+          continuous_of_discreteTopology continuous_of_discreteTopology
+          (cast_torsionCoeff_smul h) x) =
+      explicitCoeff1 _ _ (V.twoTorsionCharacter hT hψ h2) continuous_of_discreteTopology x := by
+  subst h
+  -- after `subst`, the transport is the identity on cocycles: `AddEquiv.cast rfl` is the identity
+  -- by definition, which is what the final `rfl` uses
+  induction x using QuotientAddGroup.induction_on with
+  | _ z =>
+    rw [explicitCoeff1Equiv_mk]
+    exact congrArg (explicitCoeff1 _ _ _ _) (congrArg _ (Subtype.ext (funext fun g ↦
+      (cocyclesMap1_apply _ _ _ _ _ _ _ _ z g).trans rfl)))
+
+/-- **The character in a tower**: restriction along a tower `K → F → M`, followed by the transport
+of `E[2]` from `(W⁄F)⁄M` to `W⁄M`, carries the character `e₂(·, (e, 0))` of `(W⁄F)⁄M` to the
+character at the same point of `W⁄M`, after restriction from `K` to `M`. -/
+theorem explicitCoeff1_twoTorsionCharacter_torsionRes_torsionRes [W.IsElliptic]
+    {F : Type*} [Field F] [Algebra K F]
+    {M : Type*} [Field M] [Algebra K M] [Algebra F M] [IsScalarTower K F M] [DecidableEq M]
+    (τ₁ : SeparableClosure K →ₐ[K] SeparableClosure F)
+    (τ' : SeparableClosure F →ₐ[F] SeparableClosure M)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure M) {e : M}
+    (hT : ((W.baseChange F).baseChange M).toAffine.Nonsingular e 0)
+    (hψ : ((W.baseChange F).baseChange M).toAffine.polynomialY.evalEval e 0 = 0)
+    (hT' : (W.baseChange M).toAffine.Nonsingular e 0)
+    (hψ' : (W.baseChange M).toAffine.polynomialY.evalEval e 0 = 0)
+    (h2M : IsUnit ((2 : ℕ) : M)) (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)) :
+    explicitCoeff1 _ _ (((W.baseChange F).baseChange M).twoTorsionCharacter hT hψ h2M)
+        continuous_of_discreteTopology ((W.baseChange F).torsionRes τ' 2 (W.torsionRes τ₁ 2 c)) =
+      explicitCoeff1 _ _ ((W.baseChange M).twoTorsionCharacter hT' hψ' h2M)
+        continuous_of_discreteTopology (W.torsionRes τ 2 c) := by
+  rw [W.torsionRes_torsionRes τ₁ τ' τ]
+  exact explicitCoeff1_twoTorsionCharacter_cast _ hT' hψ' hT hψ h2M _
+
+/-- **Naturality of the character under change of field**: restriction from `F` to `M` carries
+the image of a class under the character `e₂(·, (e, 0))` over `F` to the image under the
+character at `(e, 0)` over `M`, both after restriction from `K`. -/
+theorem explicitMap1_explicitCoeff1_twoTorsionCharacter_torsionRes [W.IsElliptic]
+    {F : Type*} [Field F] [Algebra K F] [DecidableEq F]
+    {M : Type*} [Field M] [Algebra K M] [Algebra F M] [IsScalarTower K F M] [DecidableEq M]
+    (τ₁ : SeparableClosure K →ₐ[K] SeparableClosure F)
+    (τ' : SeparableClosure F →ₐ[F] SeparableClosure M)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure M) {e : F}
+    (hT : (W.baseChange F).toAffine.Nonsingular e 0)
+    (hψ : (W.baseChange F).toAffine.polynomialY.evalEval e 0 = 0)
+    (hT' : (W.baseChange M).toAffine.Nonsingular (algebraMap F M e) 0)
+    (hψ' : (W.baseChange M).toAffine.polynomialY.evalEval (algebraMap F M e) 0 = 0)
+    (h2F : IsUnit ((2 : ℕ) : F)) (h2M : IsUnit ((2 : ℕ) : M))
+    (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)) :
+    explicitMap1 _ _ _ _ (absoluteGaloisGroupMap τ') (kummerCoeffBaseChange 2 τ')
+        continuous_of_discreteTopology (kummerCoeffBaseChange_smul 2 τ')
+        (explicitCoeff1 _ _ ((W.baseChange F).twoTorsionCharacter hT hψ h2F)
+          continuous_of_discreteTopology (W.torsionRes τ₁ 2 c)) =
+      explicitCoeff1 _ _ ((W.baseChange M).twoTorsionCharacter hT' hψ' h2M)
+        continuous_of_discreteTopology (W.torsionRes τ 2 c) := by
+  have hTM : ((W.baseChange F).baseChange M).toAffine.Nonsingular (algebraMap F M e) 0 := by
+    have := ((W.baseChange F).toAffine.map_nonsingular (algebraMap F M).injective e 0).mpr hT
+    rwa [_root_.map_zero] at this
+  have hψM :
+      ((W.baseChange F).baseChange M).toAffine.polynomialY.evalEval (algebraMap F M e) 0 = 0 :=
+    (show W.baseChange M = (W.baseChange F).baseChange M from
+      (W.map_baseChange (IsScalarTower.toAlgHom K F M)).symm) ▸ hψ'
+  -- the point `(e, 0)` of `W⁄F` goes to the point `(e, 0)` of `(W⁄F)⁄M`
+  have hTT : (⟨.some (algebraMap F M e) 0 hTM, Affine.Point.some_mem_torsionBy_two hTM hψM⟩ :
+        AddSubgroup.torsionBy ((W.baseChange F).baseChange M).toAffine.Point (2 : ℕ)).val =
+      (W.baseChange F).toAffine.pointMap M (⟨.some e 0 hT,
+        Affine.Point.some_mem_torsionBy_two hT hψ⟩ :
+        AddSubgroup.torsionBy (W.baseChange F).toAffine.Point (2 : ℕ)).val := by
+    simp only [Affine.pointMap_some, _root_.map_zero]
+  rw [twoTorsionCharacter_eq_weilPairingCoeff,
+    explicitMap1_explicitCoeff1_weilPairingCoeff (W.baseChange F) 2 h2F τ' hTT,
+    ← twoTorsionCharacter_eq_weilPairingCoeff _ hTM hψM]
+  exact explicitCoeff1_twoTorsionCharacter_torsionRes_torsionRes W τ₁ τ' τ hTM hψM hT' hψ' h2M c
+
+/-- **Naturality of the character, on power classes**: if the Kummer isomorphism over `F` sends a
+power class `x` to the image of a class under `e₂(·, (e, 0))` over `F`, then the Kummer
+isomorphism over `M` sends the image of `x` in `M` to the image under the character at `(e, 0)`
+over `M`, both after restriction from `K`. This is
+`WeierstrassCurve.explicitMap1_explicitCoeff1_twoTorsionCharacter_torsionRes` read through the
+Kummer isomorphism. -/
+theorem kummerIso_powerClassMap_of_kummerIso_eq [W.IsElliptic]
+    {F : Type*} [Field F] [Algebra K F] [DecidableEq F]
+    {M : Type*} [Field M] [Algebra K M] [Algebra F M] [IsScalarTower K F M] [DecidableEq M]
+    (τ₁ : SeparableClosure K →ₐ[K] SeparableClosure F)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure M) {e : F}
+    (hT : (W.baseChange F).toAffine.Nonsingular e 0)
+    (hψ : (W.baseChange F).toAffine.polynomialY.evalEval e 0 = 0)
+    (hT' : (W.baseChange M).toAffine.Nonsingular (algebraMap F M e) 0)
+    (hψ' : (W.baseChange M).toAffine.polynomialY.evalEval (algebraMap F M e) 0 = 0)
+    (h2F : IsUnit ((2 : ℕ) : F)) (h2M : IsUnit ((2 : ℕ) : M))
+    (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)) {x : powerClassQuotient Fˣ 2}
+    (hx : kummerIso F 2 h2F x = .ofAdd (explicitCoeff1 _ _
+      ((W.baseChange F).twoTorsionCharacter hT hψ h2F) continuous_of_discreteTopology
+      (W.torsionRes τ₁ 2 c))) :
+    kummerIso M 2 h2M (powerClassMap 2 (Units.map (algebraMap F M : F →* M)) x) =
+      .ofAdd (explicitCoeff1 _ _ ((W.baseChange M).twoTorsionCharacter hT' hψ' h2M)
+        continuous_of_discreteTopology (W.torsionRes τ 2 c)) := by
+  let τ' : SeparableClosure F →ₐ[F] SeparableClosure M := IsSepClosed.lift
+  apply Multiplicative.toAdd.injective
+  rw [← explicitMap1_kummerIso 2 τ' h2F, hx, toAdd_ofAdd, toAdd_ofAdd,
+    W.explicitMap1_explicitCoeff1_twoTorsionCharacter_torsionRes τ₁ τ' τ hT hψ hT' hψ']
+
+end ChangeOfField
 
 /-! ### The map `P ↦ x(P) - e` and the Kummer map -/
 

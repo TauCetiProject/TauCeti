@@ -96,21 +96,7 @@ theorem firstOrder_ae_eq_zero_of_value_ae_eq_zero
     (hu : ∀ᵐ x ∂mu.restrict (V : Set E), value (k + 1) u x = 0) :
     ∀ᵐ x ∂mu.restrict (V : Set E),
       (firstOrder k u : Sobolev1JetLp mu Omega p) x = 0 := by
-  let v := firstOrder k u
-  have hval : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value v x = 0 := by
-    simpa only [v, value_firstOrder] using hu
-  have hgrad := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero hV hval
-  have hvalmu := (ae_restrict_iff' V.isOpen.measurableSet).1 hval
-  have hgradmu := (ae_restrict_iff' V.isOpen.measurableSet).1 hgrad
-  have hvalApply := (ae_restrict_iff' Omega.isOpen.measurableSet).1
-    (W1p.value_apply_ae v)
-  have hgradApply := (ae_restrict_iff' Omega.isOpen.measurableSet).1
-    (W1p.gradient_apply_ae v)
-  rw [ae_restrict_iff' V.isOpen.measurableSet]
-  filter_upwards [hvalmu, hgradmu, hvalApply, hgradApply] with
-    x hv hg hv' hg' hxV
-  exact (WithLp.ext_iff _).2 (Prod.ext ((hv' (hV hxV)).symm.trans (hv hxV))
-    ((hg' (hV hxV)).symm.trans (hg hxV)))
+  exact W1p.coe_ae_eq_zero_of_value_ae_eq_zero hV (by simpa only [value_firstOrder] using hu)
 
 private theorem firstOrder_ae_eq_zero_of_value_ae_eq_zero_of_isCompact
     (k : ℕ) (u : Wkp mu ⊤ p (k + 1)) {K : Set E} (hK : IsCompact K)

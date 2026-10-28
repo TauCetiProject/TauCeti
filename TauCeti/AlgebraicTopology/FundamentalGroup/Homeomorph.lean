@@ -40,6 +40,8 @@ the unit circle `Circle ⊆ ℂ`, obtained from the additive-circle computation 
 * `TauCeti.FundamentalGroup.mapOfEq_comp`: `mapOfEq g hg (mapOfEq f hf p) = mapOfEq (g.comp f) _ p`.
 * `TauCeti.FundamentalGroup.mapOfEq_id`: `mapOfEq (ContinuousMap.id X) h = id`.
 * `TauCeti.FundamentalGroup.mapOfEq_rfl`: along the reflexivity proof, `mapOfEq` is `map`.
+* `TauCeti.FundamentalGroup.mapOfEq_fromPath_eq_one_iff`: the induced map kills the class of a
+  loop exactly when the image of the loop is nullhomotopic.
 * `TauCeti.FundamentalGroup.homeomorphMulEquivOfEq`: `π₁(X, x) ≃* π₁(Y, y)` from `e : X ≃ₜ Y`
   with `e x = y`.
 * `TauCeti.FundamentalGroup.homeomorphMulEquiv`: `π₁(X, x) ≃* π₁(Y, e x)`.
@@ -100,6 +102,19 @@ theorem mapOfEq_congr {f₁ f₂ : C(X, Y)} (hfe : f₁ = f₂) (h₁ : f₁ x =
     _root_.FundamentalGroup.mapOfEq f₁ h₁ p = _root_.FundamentalGroup.mapOfEq f₂ h₂ p := by
   subst hfe
   rfl
+
+/-- **A loop is killed exactly when its image is nullhomotopic.** The induced map `mapOfEq f h`
+sends the class of a loop `q` to `1` if and only if the image of `q` under `f` is homotopic,
+relative to its endpoints, to the constant path. -/
+theorem mapOfEq_fromPath_eq_one_iff (f : C(X, Y)) (h : f x = y) (q : Path x x) :
+    _root_.FundamentalGroup.mapOfEq f h
+        (_root_.FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk q)) = 1 ↔
+      (q.map f.continuous).Homotopic (Path.refl (f x)) := by
+  subst h
+  rw [_root_.FundamentalGroup.mapOfEq_apply, Path.Homotopic.Quotient.cast_rfl_rfl,
+    _root_.FundamentalGroup.one_def, ← Path.Homotopic.Quotient.mk_map]
+  exact ⟨fun h => Quotient.exact (congrArg CategoryTheory.End.asHom h),
+    fun h => congrArg CategoryTheory.End.of (Quotient.sound h)⟩
 
 /-- If `g ∘ f` is the identity, then the induced map of `g` undoes the induced map of `f`. -/
 theorem mapOfEq_mapOfEq_of_comp_eq_id (g : C(Y, X)) (f : C(X, Y)) (hf : f x = y) (hg : g y = x)

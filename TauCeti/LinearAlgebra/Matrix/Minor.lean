@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.Algebra.Regular.Defs
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
+
+import Mathlib.Algebra.Regular.Pow
 
 /-!
 # Pair minors and principal minors
@@ -28,7 +31,7 @@ statement to be sign-correct.
 A principal minor of a square matrix, indexed by an arbitrary (possibly infinite) type, is the
 determinant of its restriction to the rows and columns indexed by a finite set of indices.
 `Matrix.principalMinor` names it; it is the building block of the principal-minor series
-`det (1 - T A)` in `TauCeti.Analysis.Matrix.CharPowerSeries`.
+`det (1 - T A)` in `TauCeti.Analysis.Matrix.CharPowerSeries.Basic`.
 
 ## Main definitions
 
@@ -46,8 +49,15 @@ determinant of its restriction to the rows and columns indexed by a finite set o
 * `Matrix.pairMinor_mul`: Cauchy--Binet, expanding a minor of a product over the increasing pairs
   of the middle index type.
 * `Matrix.principalMinor_empty`: the empty principal minor is `1`.
-* `Matrix.principalMinor_submatrix_equiv`: principal minors are invariant under reindexing the
-  rows and columns by the same equivalence.
+* `Matrix.principalMinor_submatrix`: principal minors of a restriction along an embedding of
+  index types, in particular their invariance under reindexing.
+* `Matrix.principalMinor_transpose`, `Matrix.principalMinor_map`, `Matrix.principalMinor_smul`,
+  `Matrix.principalMinor_mul_column`: principal minors under transposition, ring morphisms,
+  scaling, and scaling of each row.
+* `Matrix.principalMinor_eq_zero_of_row_eq_zero`: a principal minor through a vanishing row is
+  zero.
+* `Matrix.principalMinor_eq_of_diagonal_intertwining`: principal minors are unchanged by
+  intertwining with a diagonal matrix whose entries are regular.
 -/
 
 public section
@@ -158,15 +168,66 @@ theorem principalMinor_def (A : Matrix ι ι R) (s : Finset ι) :
 theorem principalMinor_empty (A : Matrix ι ι R) : A.principalMinor ∅ = 1 := by
   rw [principalMinor_def, det_isEmpty]
 
-/-- Principal minors are invariant under reindexing the rows and columns by the same
-equivalence. -/
-theorem principalMinor_submatrix_equiv (A : Matrix κ κ R) (e : ι ≃ κ) (s : Finset ι) :
-    (A.submatrix e e).principalMinor s = A.principalMinor (s.map e.toEmbedding) := by
-  let g : s ≃ s.map e.toEmbedding := e.subtypeEquiv fun _ ↦ by simp
+/-- A principal minor of the restriction of `A` along an embedding `e` of index types is the
+principal minor of `A` on the image of the indices under `e`. In particular, principal minors are
+invariant under reindexing the rows and columns by the same equivalence. -/
+theorem principalMinor_submatrix (A : Matrix κ κ R) (e : ι ↪ κ) (s : Finset ι) :
+    (A.submatrix e e).principalMinor s = A.principalMinor (s.map e) := by
   rw [principalMinor_def, principalMinor_def,
-    ← det_submatrix_equiv_self g (A.submatrix Subtype.val Subtype.val), submatrix_submatrix,
-    submatrix_submatrix]
-  exact congrArg det (ext fun i j ↦ by simp [g])
+    ← det_submatrix_equiv_self (s.equivMap e) (A.submatrix Subtype.val Subtype.val),
+    submatrix_submatrix, submatrix_submatrix]
+  rfl
+
+/-- Principal minors are unchanged by transposition. -/
+@[simp]
+theorem principalMinor_transpose (A : Matrix ι ι R) (s : Finset ι) :
+    Aᵀ.principalMinor s = A.principalMinor s := by
+  rw [principalMinor_def, principalMinor_def, ← transpose_submatrix, det_transpose]
+
+/-- A ring morphism carries a principal minor to the principal minor of the mapped matrix. -/
+@[simp]
+theorem principalMinor_map {S : Type*} [CommRing S] (f : R →+* S) (A : Matrix ι ι R)
+    (s : Finset ι) : (A.map f).principalMinor s = f (A.principalMinor s) := by
+  rw [principalMinor_def, principalMinor_def, RingHom.map_det, RingHom.mapMatrix_apply,
+    submatrix_map]
+
+/-- Scaling a matrix by `c` scales its principal minor on `s` by `c ^ #s`. -/
+@[simp]
+theorem principalMinor_smul (c : R) (A : Matrix ι ι R) (s : Finset ι) :
+    (c • A).principalMinor s = c ^ s.card * A.principalMinor s := by
+  rw [principalMinor_def, principalMinor_def, ← Fintype.card_coe s, ← det_smul]
+  congr 1
+
+/-- Scaling each row `i` of a matrix by `v i` scales its principal minor on `s` by
+`∏ i ∈ s, v i`. -/
+@[simp]
+theorem principalMinor_mul_column (v : ι → R) (A : Matrix ι ι R) (s : Finset ι) :
+    (of fun i j ↦ v i * A i j).principalMinor s = (∏ i ∈ s, v i) * A.principalMinor s := by
+  rw [principalMinor_def, principalMinor_def, ← Finset.prod_coe_sort s v, ← det_mul_column]
+  congr 1
+
+/-- A principal minor vanishes on a set containing an index whose row vanishes on that set. -/
+theorem principalMinor_eq_zero_of_row_eq_zero {A : Matrix ι ι R} {s : Finset ι} {i : ι}
+    (hi : i ∈ s) (h : ∀ j ∈ s, A i j = 0) : A.principalMinor s = 0 :=
+  det_eq_zero_of_row_eq_zero ⟨i, hi⟩ fun j ↦ h j j.2
+
+/-- Diagonal intertwining with regular entries preserves principal minors. The pointwise
+relation expresses `A D = D B` without requiring the index type to be finite. The diagonal
+entries need not be units, and the coefficient ring may have zero divisors. -/
+theorem principalMinor_eq_of_diagonal_intertwining {A B : Matrix ι ι R} {d : ι → R}
+    (s : Finset ι) (hd : ∀ i : s, IsRegular (d i))
+    (h : ∀ i j : s, A i j * d j = d i * B i j) :
+    A.principalMinor s = B.principalMinor s := by
+  rw [principalMinor_def, principalMinor_def]
+  apply (IsRegular.prod (s := Finset.univ) (f := fun i : s ↦ d i) fun i _ ↦ hd i).left
+  dsimp only
+  have hmatrix :
+      Matrix.of (fun i j : s ↦ d j * A i j) = Matrix.of (fun i j : s ↦ d i * B i j) := by
+    ext i j
+    exact (mul_comm _ _).trans (h i j)
+  rw [← det_mul_row (fun i : s ↦ d i) (A.submatrix Subtype.val Subtype.val),
+    ← det_mul_column (fun i : s ↦ d i) (B.submatrix Subtype.val Subtype.val)]
+  exact congrArg Matrix.det hmatrix
 
 end Principal
 

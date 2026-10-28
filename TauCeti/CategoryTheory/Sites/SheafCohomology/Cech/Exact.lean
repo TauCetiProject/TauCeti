@@ -52,6 +52,8 @@ left and right terms agree up to a shift of one degree, by the degreewise lemmas
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_shortExact`: for a coefficient sequence
   short exact at the terminal object and at finite products of members, acyclicity of the middle
   and right terms implies acyclicity of the left term.
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_X₃_of_shortExact`: for such a coefficient
+  sequence, acyclicity of the left and middle terms implies acyclicity of the right term.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_resolution`: a presheaf with a resolution by
   acyclic presheaves, exact at the terminal object and at the finite products of members, is
   acyclic.
@@ -186,6 +188,21 @@ theorem quasiIso_cechAugmentation_of_shortExact (S : ShortComplex (Cᵒᵖ ⥤ A
     (hST.map_of_exact (HomologicalComplex.single A (ComplexShape.up ℕ) 0))
     (shortExact_map_cechComplexFunctor U S hSU) h₂ h₃
 
+/-- **Čech acyclicity passes to the cokernel of a locally short exact coefficient sequence.**
+If a sequence of presheaves is short exact at the terminal object and at every finite product of
+members of `U`, and `U` is acyclic for the left and middle presheaves, then `U` is acyclic for the
+right presheaf as well. Exactness at other objects is not required. -/
+theorem quasiIso_cechAugmentation_X₃_of_shortExact (S : ShortComplex (Cᵒᵖ ⥤ A))
+    (hST : (S.map ((evaluation Cᵒᵖ A).obj (op T))).ShortExact)
+    (hSU : ∀ (n : ℕ) (a : Fin (n + 1) → ι),
+      (S.map ((evaluation Cᵒᵖ A).obj (op (∏ᶜ fun j ↦ U (a j))))).ShortExact)
+    (h₁ : QuasiIso (cechAugmentation U hT S.X₁))
+    (h₂ : QuasiIso (cechAugmentation U hT S.X₂)) :
+    QuasiIso (cechAugmentation U hT S.X₃) :=
+  HomologicalComplex.HomologySequence.quasiIso_τ₃ (cechAugmentationShortComplexHom U hT S)
+    (hST.map_of_exact (HomologicalComplex.single A (ComplexShape.up ℕ) 0))
+    (shortExact_map_cechComplexFunctor U S hSU) h₁ h₂
+
 /-! ### Acyclic resolutions
 
 For a sequence of presheaves `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` that is short exact at `T` and at the finite
@@ -200,8 +217,7 @@ variable {S : ShortComplex (Cᵒᵖ ⥤ A)}
   (hSU : ∀ (n : ℕ) (a : Fin (n + 1) → ι),
     (S.map ((evaluation Cᵒᵖ A).obj (op (∏ᶜ fun j ↦ U (a j))))).ShortExact)
 
-include hST hSU
-
+include hST hSU in
 /-- The source and the target of the augmentation of `S` are short exact sequences of complexes. -/
 private lemma shortExact_map_single_and_cechComplexFunctor :
     (S.map ((evaluation Cᵒᵖ A).obj (op T) ⋙
@@ -210,6 +226,7 @@ private lemma shortExact_map_single_and_cechComplexFunctor :
   ⟨hST.map_of_exact (HomologicalComplex.single A (ComplexShape.up ℕ) 0),
     shortExact_map_cechComplexFunctor U S hSU⟩
 
+include hST hSU in
 /-- In degree `0`, the augmentation of `X₁` is injective on cohomology if that of `X₂` is an
 isomorphism. -/
 private lemma mono_homologyMap_cechAugmentation_X₁_zero
@@ -222,6 +239,7 @@ private lemma mono_homologyMap_cechAugmentation_X₁_zero
   exact HomologicalComplex.HomologySequence.mono_homologyMap_τ₁ φ hS₁ hS₂ 0
     (fun _ hi ↦ absurd hi (by simp)) (fun _ hi ↦ absurd hi (by simp)) inferInstance
 
+include hST hSU in
 /-- In degree `0`, the augmentation of `X₁` is a quasi-isomorphism if that of `X₂` is, and that of
 `X₃` is injective on cohomology. -/
 private lemma quasiIsoAt_cechAugmentation_X₁_zero
@@ -236,6 +254,7 @@ private lemma quasiIsoAt_cechAugmentation_X₁_zero
     HomologicalComplex.HomologySequence.isIso_homologyMap_τ₁ φ hS₁ hS₂ 0
       (fun _ hi ↦ absurd hi (by simp)) (fun _ hi ↦ absurd hi (by simp)) inferInstance h₃
 
+include hST hSU in
 /-- **Dimension shifting.** If the augmentation of `X₂` is a quasi-isomorphism, then the
 augmentation of `X₁` is a quasi-isomorphism in degree `n + 1` as soon as that of `X₃` is one in
 degree `n`. -/
@@ -257,8 +276,6 @@ private lemma quasiIsoAt_cechAugmentation_X₁_succ (h₂ : QuasiIso (cechAugmen
   · -- the cohomology of a complex concentrated in degree `0` vanishes in degree `n + 1`
     exact mono_of_source_iso_zero _
       (CochainComplex.exactAt_succ_single_obj (S.X₃.obj (op T)) n).isZero_homology.isoZero
-
-omit hST hSU
 
 /-- **Čech acyclicity from an acyclic resolution.** Let `ε : P ⋙ single₀ ⟶ K` be a morphism from
 a presheaf `P`, placed in degree `0`, to a presheaf of cochain complexes `K`, which is a

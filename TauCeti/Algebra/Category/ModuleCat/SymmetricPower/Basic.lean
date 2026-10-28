@@ -43,6 +43,39 @@ abbrev symmetricPower (M : ModuleCat.{v} R) (n : ℕ) : ModuleCat.{max u v} R :=
 
 namespace symmetricPower
 
+/-- Two morphisms out of `M.symmetricPower n` agree when they agree on every product of `n`
+generators. -/
+theorem hom_ext {M : ModuleCat.{v} R} {N : ModuleCat.{max u v} R} {n : ℕ}
+    {f g : M.symmetricPower n ⟶ N}
+    (h : ∀ (l : List M), l.length = n →
+      ∀ (hl : (l.map (SymmetricAlgebra.ι R M)).prod ∈
+        TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n),
+        f ⟨_, hl⟩ = g ⟨_, hl⟩) :
+    f = g := by
+  ext ⟨x, hx⟩
+  have hspan := TauCeti.SymmetricAlgebra.homogeneousSubmodule_eq_span R M n
+  suffices ∀ y (hy : y ∈ Submodule.span R {p | ∃ l : List M, l.length = n ∧
+      (l.map (SymmetricAlgebra.ι R M)).prod = p})
+      (hy' : y ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n),
+      f ⟨y, hy'⟩ = g ⟨y, hy'⟩ from this x (hspan ▸ hx) hx
+  intro y hy
+  induction hy using Submodule.span_induction with
+  | mem y hy =>
+    obtain ⟨l, hl, rfl⟩ := hy
+    exact h l hl
+  | zero => intro _; exact (map_zero f.hom).trans (map_zero g.hom).symm
+  | add y z hy hz ihy ihz =>
+    intro _
+    have hy' := hspan ▸ hy
+    have hz' := hspan ▸ hz
+    exact (map_add f.hom ⟨y, hy'⟩ ⟨z, hz'⟩).trans
+      ((congrArg₂ (· + ·) (ihy hy') (ihz hz')).trans (map_add g.hom ⟨y, hy'⟩ ⟨z, hz'⟩).symm)
+  | smul r y hy ih =>
+    intro _
+    have hy' := hspan ▸ hy
+    exact (map_smul f.hom r ⟨y, hy'⟩).trans
+      ((congrArg (r • ·) (ih hy')).trans (map_smul g.hom r ⟨y, hy'⟩).symm)
+
 /-- The morphism on `n`-th symmetric powers induced by a morphism of modules: the restriction of
 the induced map of symmetric algebras. -/
 noncomputable def map {M N : ModuleCat.{v} R} (f : M ⟶ N) (n : ℕ) :
@@ -55,6 +88,13 @@ noncomputable def map {M N : ModuleCat.{v} R} (f : M ⟶ N) (n : ℕ) :
 lemma coe_map_apply {M N : ModuleCat.{v} R} (f : M ⟶ N) (n : ℕ) (x : M.symmetricPower n) :
     Subtype.val (map f n x) = SymmetricAlgebra.map R f.hom x.1 :=
   (rfl)
+
+/-- The morphism induced on symmetric powers is the ring homomorphism of symmetric algebras
+induced by the underlying linear map, regarded as a semilinear map. -/
+lemma coe_map_apply_eq_mapₛₗ {M N : ModuleCat.{v} R} (f : M ⟶ N) (n : ℕ)
+    (x : M.symmetricPower n) :
+    Subtype.val (map f n x) = SymmetricAlgebra.mapₛₗ f.hom x.1 :=
+  (coe_map_apply f n x).trans (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_map f.hom) x.1).symm
 
 variable (R) in
 /-- The functor `ModuleCat R ⥤ ModuleCat R` which sends a module to its `n`-th symmetric

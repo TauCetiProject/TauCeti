@@ -548,6 +548,12 @@ theorem Modulus.mem_integralIdealsPrimeTo {𝔪 : Modulus K} {I : Ideal (𝓞 K)
     I ∈ integralIdealsPrimeTo 𝔪 ↔ 𝔪.IsCoprimeTo I :=
   NumberFieldArithmetic.mem_integralIdealsAway_iff.trans Modulus.isCoprimeTo_iff.symm
 
+/-- A generator of an integral ideal prime to a modulus is nonzero, since such an ideal is. -/
+theorem ne_zero_of_coe_eq_span_singleton {𝔪 : Modulus K} {J : integralIdealsPrimeTo 𝔪} {β : 𝓞 K}
+    (hJ : (J : Ideal (𝓞 K)) = Ideal.span {β}) : β ≠ 0 := fun h ↦
+  (Modulus.isCoprimeTo_iff_sup_eq_top.mp (Modulus.mem_integralIdealsPrimeTo.mp J.2)).1
+    (by rw [hJ, h, Ideal.span_singleton_eq_bot])
+
 /-- **The integral prime-to monoid is antitone in the modulus**: the support of a divisor `𝔪` of
 `𝔫` is contained in that of `𝔫`, so an ideal prime to `𝔫` is prime to `𝔪`. -/
 theorem integralIdealsPrimeTo_antitone {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :

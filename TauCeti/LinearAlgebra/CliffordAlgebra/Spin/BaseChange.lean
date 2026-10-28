@@ -37,7 +37,7 @@ algebra with involution.
   for orthogonal automorphisms.
 * `CliffordAlgebra.spinGroupBaseChange_spinTransvection` identifies the scalar extension of a
   canonical transvection lift.
-* `TauCeti.CliffordAlgebra.spinGroupBaseChange_comp_spinTransvectionHom` transports the entire
+* `TauCeti.CliffordAlgebra.spinGroupBaseChange_comp_transvectionLiftHom` transports the entire
   quotient root-subgroup homomorphism.
 * `CliffordAlgebra.spinGroupBaseChange_baseChange` identifies direct and successive scalar
   extension.
@@ -295,10 +295,10 @@ variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
 /-- Extending scalars along a field extension carries the canonical Spin root-subgroup
 homomorphism to that of the extended quotient parameters, preserving its additive composition
 law. -/
-theorem spinGroupBaseChange_comp_spinTransvectionHom [Invertible (2 : L)]
+theorem spinGroupBaseChange_comp_transvectionLiftHom [Invertible (2 : L)]
     {Q : QuadraticForm K V} {u : V} (hQ : Q.Nondegenerate) (hu : Q u = 0) :
-    (spinGroupBaseChange (A := L) Q).toAdditive.comp (spinTransvectionHom hQ hu) =
-      (spinTransvectionHom (QuadraticForm.Nondegenerate.baseChange hQ)
+    (spinGroupBaseChange (A := L) Q).toAdditive.comp (transvectionLiftHom hQ hu) =
+      (transvectionLiftHom (QuadraticForm.Nondegenerate.baseChange hQ)
         (u := 1 ⊗ₜ[K] u) (by simp [QuadraticForm.baseChange_tmul, hu])).comp
           (transvectionParameterBaseChange (A := L) Q u).toAddMonoidHom := by
   apply AddMonoidHom.ext
@@ -308,8 +308,8 @@ theorem spinGroupBaseChange_comp_spinTransvectionHom [Invertible (2 : L)]
     apply Additive.toMul.injective
     simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply,
       LinearMap.toAddMonoidHom_coe, transvectionParameterBaseChange_mk, toMul_ofMul]
-    rw [toMul_spinTransvectionHom_mk hQ hu huw, spinGroupBaseChange_spinTransvection,
-      toMul_spinTransvectionHom_mk]
+    rw [toMul_transvectionLiftHom_mk hQ hu huw, spinGroupBaseChange_spinTransvection,
+      toMul_transvectionLiftHom_mk]
 
 end TauCeti.CliffordAlgebra
 

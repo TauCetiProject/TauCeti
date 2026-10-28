@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.GroupWithZero.Units.Basic
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.PermutationGL
+import Mathlib.Data.Finite.Perm
 
 /-!
 # The Weyl group of the unitary group
@@ -38,6 +39,10 @@ torus.
   symmetric group `Equiv.Perm (Fin n)`.
 
 ## Main results
+
+* `TauCeti.mem_normalizer_unitaryTorus_iff`: normalizer elements are exactly products of a diagonal
+  unitary matrix and a permutation matrix.
+* `TauCeti.natCard_normalizerQuotient_unitaryTorus`: the Weyl group has `n!` elements.
 
 * `TauCeti.mem_normalizer_unitaryTorus_iff_toUnits_mem`: normalizing the unitary diagonal torus is
   normalizing the diagonal torus of `GL_n(ℂ)`.
@@ -197,5 +202,46 @@ theorem unitaryTorusNormalizerQuotientMulEquivPerm_symm_apply (σ : Equiv.Perm (
         ⟨permutationUnitary σ, permutationUnitary_mem_normalizer σ⟩ := by
   apply unitaryTorusNormalizerQuotientMulEquivPerm.injective
   simp
+
+/-- **The normalizer of the diagonal torus of `U(n)` consists of the monomial unitary matrices**:
+the products of a diagonal unitary matrix and a permutation matrix. -/
+theorem mem_normalizer_unitaryTorus_iff {g : unitaryGroup (Fin n) ℂ} :
+    g ∈ Subgroup.normalizer (unitaryTorus (Fin n) : Set (unitaryGroup (Fin n) ℂ)) ↔
+      ∃ z : Fin n → Circle, ∃ σ : Equiv.Perm (Fin n),
+        g = unitaryTorusHom (Fin n) z * permutationUnitary σ := by
+  refine ⟨fun hg => ?_, ?_⟩
+  · obtain ⟨d, σ, hdσ⟩ := mem_normalizer_diagonalTorus_iff_exists.mp
+      (mem_normalizer_unitaryTorus_iff_toUnits_mem.mp hg)
+    -- Removing the permutation factor leaves a diagonal unitary matrix.
+    have hdiag : g * (permutationUnitary σ)⁻¹ ∈ unitaryTorus (Fin n) := by
+      rw [mem_unitaryTorus_iff_toUnits_mem, map_mul, map_inv, hdσ,
+        toUnits_permutationUnitary, mul_inv_cancel_right]
+      exact mem_diagonalTorus_iff_exists_diagGL.mpr ⟨d, rfl⟩
+    obtain ⟨z, hz⟩ := mem_unitaryTorus_iff_exists_unitaryTorusHom.mp hdiag
+    exact ⟨z, σ, by rw [hz, inv_mul_cancel_right]⟩
+  · rintro ⟨z, σ, rfl⟩
+    exact Subgroup.mul_mem _ (Subgroup.le_normalizer (unitaryTorusHom_mem_unitaryTorus z))
+      (permutationUnitary_mem_normalizer σ)
+
+/-- A monomial factorization of a unitary normalizer element determines its coordinate
+permutation. -/
+theorem unitaryTorusNormalizerPerm_eq_of_eq_unitaryTorusHom_mul_permutationUnitary
+    (g : Subgroup.normalizer (unitaryTorus (Fin n) : Set (unitaryGroup (Fin n) ℂ)))
+    (z : Fin n → Circle) (σ : Equiv.Perm (Fin n))
+    (h : (g : unitaryGroup (Fin n) ℂ) = unitaryTorusHom (Fin n) z * permutationUnitary σ) :
+    unitaryTorusNormalizerPerm g = σ := by
+  rw [unitaryTorusNormalizerPerm_apply]
+  refine diagonalNormalizerPerm_eq_of_eq_diagGL_mul_permutationGL _
+    (fun i => Circle.toUnits (z i)) σ ?_
+  -- Reduce the GL-normalizer subtype's value projection to `Unitary.toUnits ↑g` so rewriting
+  -- `h` does not also change the constructor's dependent normalizer-membership proof.
+  change Unitary.toUnits (g : unitaryGroup (Fin n) ℂ) = _
+  rw [h, map_mul, toUnits_unitaryTorusHom, toUnits_permutationUnitary]
+
+/-- The Weyl group of `U(n)` has `n!` elements. -/
+theorem natCard_normalizerQuotient_unitaryTorus :
+    Nat.card (unitaryTorus (Fin n)).normalizerQuotient = n.factorial := by
+  rw [Nat.card_congr unitaryTorusNormalizerQuotientMulEquivPerm.toEquiv, Nat.card_perm,
+    Nat.card_fin]
 
 end TauCeti

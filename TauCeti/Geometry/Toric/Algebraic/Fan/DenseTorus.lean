@@ -24,6 +24,12 @@ obtained on every affine chart by the face localization from the zero cone.
 * `TauCeti.Toric.Fan.isOpenImmersion_denseTorusι`: the inclusion is an open immersion.
 * `TauCeti.Toric.Fan.denseTorusι_face`: the inclusion agrees with face localization on every
   affine chart.
+* `TauCeti.Toric.Fan.denseTorusι_eq_affineToricChartι`: the inclusion is the chart inclusion of
+  the zero cone.
+* `TauCeti.Toric.Fan.isIso_denseTorusι_ofCone_bot`: the toric scheme of the fan of the zero cone
+  is its dense torus.
+* `TauCeti.Toric.FanHom.denseTorusι_comp_algebraicMap`: a toric map restricts on dense tori to
+  the torus morphism induced by its lattice map.
 
 ## References
 
@@ -81,4 +87,43 @@ theorem denseTorusι_face (Φ : Fan i) (σ : Φ.cones) :
     (faceAffineToricSchemeMap_comp_affineToricChartι (Φ := Φ)
       (τ := botCone Φ (Nonempty.intro σ)) (σ := σ) hbot)
 
+/-- The dense-torus inclusion is the affine chart inclusion of the zero cone. -/
+theorem denseTorusι_eq_affineToricChartι (Φ : Fan i) (hΦ₀ : Nonempty Φ.cones)
+    (h : (⊥ : PointedCone ℝ V) ∈ Φ.cones) :
+    Φ.denseTorusι hΦ₀ = Φ.affineToricChartι ⟨⊥, h⟩ := by
+  rw [Φ.denseTorusι_eq hΦ₀ (Nonempty.intro ⟨⊥, h⟩), denseTorusι_face Φ ⟨⊥, h⟩,
+    faceAffineToricSchemeMap_id, Category.id_comp]
+
+/-- The toric scheme of the fan of the zero cone is the dense torus: its dense-torus inclusion is
+an isomorphism. -/
+instance isIso_denseTorusι_ofCone_bot (hi : IsIntegralLattice i)
+    (h : Nonempty (ofCone hi (isToricCone_bot i)).cones) :
+    IsIso ((ofCone hi (isToricCone_bot i)).denseTorusι h) := by
+  rw [denseTorusι_eq_affineToricChartι _ h ((mem_ofCone_cones hi _).2 (.refl ⊥))]
+  infer_instance
+
 end TauCeti.Toric.Fan
+
+namespace TauCeti.Toric.FanHom
+
+universe u
+
+variable {N N' : Type u} {V V' : Type*} [AddCommGroup N] [AddCommGroup N']
+  [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V']
+  {i : N →+ V} {i' : N' →+ V'} {Φ : Fan i} {Ψ : Fan i'}
+
+/-- On dense tori, the toric map of a fan morphism is the torus morphism induced by its lattice
+map. -/
+@[reassoc]
+theorem denseTorusι_comp_algebraicMap (f : FanHom Φ Ψ) (hΦ₀ : Nonempty Φ.cones) :
+    Φ.denseTorusι hΦ₀ ≫ f.algebraicMap =
+      affineToricSchemeMap (σ := ⊥) (τ := ⊥) Φ.lattice Ψ.lattice f.latticeMap f.realMap
+          f.map_lattice (by simp [Set.MapsTo]) ≫
+        Ψ.denseTorusι ⟨⟨_, f.leastCone_mem hΦ₀.some.2⟩⟩ := by
+  have hΦ : (⊥ : PointedCone ℝ V) ∈ Φ.cones := Φ.bot_mem hΦ₀.some.2
+  have hΨ : (⊥ : PointedCone ℝ V') ∈ Ψ.cones := Ψ.bot_mem (f.leastCone_mem hΦ₀.some.2)
+  rw [Φ.denseTorusι_eq_affineToricChartι hΦ₀ hΦ, Ψ.denseTorusι_eq_affineToricChartι _ hΨ]
+  exact f.affineToricChartι_comp_algebraicMap_of_leastCone_eq ⟨⊥, hΦ⟩ ⟨⊥, hΨ⟩
+    (le_antisymm (f.leastCone_le hΦ hΨ (Submodule.map_bot _).le) bot_le) (by simp [Set.MapsTo])
+
+end TauCeti.Toric.FanHom

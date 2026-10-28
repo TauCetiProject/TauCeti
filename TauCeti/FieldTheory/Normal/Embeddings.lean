@@ -110,7 +110,7 @@ theorem eq_one_of_forall_smul_eq (hgen : IntermediateField.normalClosure F L M =
       rw [IntermediateField.mem_fixingSubgroup_iff]
       rintro _ ⟨x, rfl⟩
       exact AlgEquiv.apply_of_smul_eq (h f) x
-    apply (IntermediateField.le_iff_le H f.fieldRange).2
+    apply (IntermediateField.le_fixedField_iff_le_fixingSubgroup H f.fieldRange).2
     rw [hH, Subgroup.closure_le, Set.singleton_subset_iff]
     exact hσ
   have htop : (⊤ : IntermediateField F M) ≤ IntermediateField.fixedField H := by
@@ -118,7 +118,8 @@ theorem eq_one_of_forall_smul_eq (hgen : IntermediateField.normalClosure F L M =
     -- letting `iSup_le` match through the definition.
     rw [← hgen, normalClosure_def]
     exact iSup_le hfix
-  rw [IntermediateField.le_iff_le, IntermediateField.fixingSubgroup_top, le_bot_iff] at htop
+  rw [IntermediateField.le_fixedField_iff_le_fixingSubgroup, IntermediateField.fixingSubgroup_top,
+    le_bot_iff] at htop
   have : σ ∈ (⊥ : Subgroup (M ≃ₐ[F] M)) := htop ▸ Subgroup.subset_closure rfl
   simpa using this
 

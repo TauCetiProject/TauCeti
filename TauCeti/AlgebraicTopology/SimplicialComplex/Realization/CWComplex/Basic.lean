@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Cell
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.CharacteristicMap
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellMap
 
 /-!
 # The CW structure on a simplicial realization
@@ -21,9 +23,10 @@ A linear order on the vertex type chooses one enumeration of each face.  This av
 cells and fixes the orientations of the characteristic maps.  The resulting open and closed
 cells themselves depend only on the underlying faces.  The equivalence `realizationCellEquiv`
 identifies the cells of `realizationCWComplex K` with `RealizationCell K`, through which its open
-cells, closed cells, and cell frontiers are described by barycentric supports. The CW
+cells, closed cells, and cell frontiers are described by barycentric supports.  In positive
+dimensions, each frontier is the union of its codimension-one closed cells.  The CW
 filtration stage `skeletonLT n` consists of points with at most `n` nonzero barycentric
-coordinates.
+coordinates.  The attaching maps are injective, so this CW structure is regular.
 
 ## References
 
@@ -41,27 +44,19 @@ namespace AbstractSimplicialComplex
 
 variable {ι : Type*} [LinearOrder ι]
 
-/-- The `n`-dimensional cells of the realization of `K`: its faces with `n + 1` vertices. -/
-abbrev RealizationCell (K : AbstractSimplicialComplex ι) (n : ℕ) :=
-  {σ : TauCeti.SetLike.Face K // σ.1.card = n + 1}
-
 namespace RealizationCell
 
 variable {K : AbstractSimplicialComplex ι} {n : ℕ}
 
-/-- The increasing enumeration of the vertices of a simplicial cell. -/
-def vertexEmbedding (c : RealizationCell K n) : Fin (n + 1) ↪ ι :=
-  (c.1.1.orderEmbOfFin c.2).toEmbedding
-
-/-- The increasing enumeration has the cell's face as its image. -/
-@[simp]
-theorem image_vertexEmbedding (c : RealizationCell K n) :
-    Finset.univ.image c.vertexEmbedding = c.1.1 :=
-  Finset.image_orderEmbOfFin_univ c.1.1 c.2
-
 /-- The characteristic map of a simplicial cell, using its increasing vertex enumeration. -/
 def characteristicMap (c : RealizationCell K n) : PartialEquiv (Fin n → ℝ) (Realization K) :=
   simplexCharacteristicMap K c.vertexEmbedding (c.image_vertexEmbedding.symm ▸ c.1.2)
+
+/-- A cell's characteristic map uses its increasing vertex enumeration. -/
+theorem characteristicMap_def (c : RealizationCell K n) :
+    c.characteristicMap =
+      simplexCharacteristicMap K c.vertexEmbedding (c.image_vertexEmbedding.symm ▸ c.1.2) :=
+  (rfl)
 
 /-- The source of a simplicial cell's characteristic map is the open unit ball. -/
 @[simp]
@@ -74,6 +69,11 @@ theorem characteristicMap_source (c : RealizationCell K n) :
 theorem characteristicMap_target (c : RealizationCell K n) :
     c.characteristicMap.target = {x : Realization K | x.1.support = c.1.1} := by
   rw [characteristicMap, simplexCharacteristicMap_target, image_vertexEmbedding]
+
+/-- A cell's characteristic map is injective on the closed ball. -/
+theorem injOn_characteristicMap_closedBall (c : RealizationCell K n) :
+    InjOn c.characteristicMap (closedBall 0 1) :=
+  injOn_simplexCharacteristicMap_closedBall K c.vertexEmbedding _
 
 /-- The open ball maps onto the points whose support is the cell's face. -/
 @[simp]
@@ -253,6 +253,20 @@ theorem cellFrontier_realizationCellEquiv_symm (K : AbstractSimplicialComplex ι
       {x : Realization K | x.1.support ⊂ c.1.1} :=
   c.image_characteristicMap_sphere
 
+/-- The frontier of a positive-dimensional realization cell is the union of the closed cells
+obtained by deleting one vertex. -/
+theorem cellFrontier_realizationCellEquiv_symm_eq_iUnion_face
+    (K : AbstractSimplicialComplex ι) (c : RealizationCell K (n + 1)) :
+    letI := realizationCWComplex K
+    RelCWComplex.cellFrontier (n + 1) ((realizationCellEquiv K (n + 1)).symm c) =
+      ⋃ j : Fin (n + 2),
+        RelCWComplex.closedCell n ((realizationCellEquiv K n).symm (c.face j)) := by
+  let := realizationCWComplex K
+  ext x
+  simp only [cellFrontier_realizationCellEquiv_symm,
+    closedCell_realizationCellEquiv_symm, Set.mem_ofPred_eq, Set.mem_iUnion]
+  exact (c.exists_subset_face_iff_ssubset x.1.support).symm
+
 /-- Stage `n` of the CW filtration consists exactly of points with at most `n` nonzero
 barycentric coordinates. Stage zero is empty and stage infinity is the whole realization. -/
 @[simp]
@@ -290,3 +304,27 @@ theorem skeletonLT_realizationCWComplex (K : AbstractSimplicialComplex ι) (n : 
         rfl
 
 end AbstractSimplicialComplex
+
+namespace TauCeti
+
+variable {ι : Type*} [LinearOrder ι]
+variable {K : _root_.AbstractSimplicialComplex ι} {n : ℕ}
+
+/-- **Simplicial realizations are regular CW complexes**: the attaching map of every simplicial
+cell is injective, since its characteristic map is injective on the closed ball. -/
+theorem cellAttachingMap_realization_injective
+    (c : _root_.AbstractSimplicialComplex.RealizationCell K n) :
+    letI := _root_.AbstractSimplicialComplex.realizationCWComplex K
+    Function.Injective
+      (cellAttachingMap (_root_.AbstractSimplicialComplex.realizationCellEquiv K n |>.symm c)) := by
+  let := _root_.AbstractSimplicialComplex.realizationCWComplex K
+  intro z z' h
+  have h' := congrArg Subtype.val h
+  rw [coe_cellAttachingMap_apply, coe_cellAttachingMap_apply,
+    _root_.AbstractSimplicialComplex.map_realizationCellEquiv_symm] at h'
+  exact (TopCat.isClosedEmbedding_diskBoundaryInclusion n).injective
+    ((diskHomeomorphClosedBall n).injective (Subtype.ext
+      (c.injOn_characteristicMap_closedBall (diskHomeomorphClosedBall n _).2
+        (diskHomeomorphClosedBall n _).2 h')))
+
+end TauCeti

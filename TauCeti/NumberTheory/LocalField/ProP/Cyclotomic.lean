@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.ProP.Marked
+public import TauCeti.NumberTheory.LocalField.ProP.Marked.Basic
 
 /-!
 # The marked pro-`p` Galois group of `ℚ_p(μ_p)`

@@ -11,7 +11,7 @@ public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import Mathlib.MeasureTheory.Function.Floor
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Approximation by interval step functions
@@ -30,22 +30,32 @@ open scoped Topology BoundedContinuousFunction
 
 namespace MeasureTheory
 
-variable {E : Type*} [NormedAddCommGroup E]
+variable {E : Type*}
 
-/-- Sampling at the left endpoints of intervals of width `δ` starting at `a`. -/
+/-- Sampling at the left endpoints of intervals of width `δ` starting at `a`.
+Points to the left of `a` are sampled at `a` when `0 < δ`. -/
 def intervalStep (a δ : ℝ) (g : ℝ → E) (t : ℝ) : E :=
   g (a + (⌊(t - a) / δ⌋₊ : ℝ) * δ)
 
-private theorem measurable_sample (a δ : ℝ) :
-    Measurable (fun t : ℝ ↦ a + (⌊(t - a) / δ⌋₊ : ℝ) * δ) := by
-  fun_prop
-
-/-- Sampling a bounded continuous function gives a step function integrable on a finite interval. -/
-theorem integrableOn_intervalStep (a b δ : ℝ) (g : ℝ →ᵇ E) :
+variable [NormedAddCommGroup E] in
+/-- Sampling any function gives a step function integrable on a finite interval. -/
+theorem integrableOn_intervalStep (a b δ : ℝ) (g : ℝ → E) :
     IntegrableOn (intervalStep a δ g) (Ioc a b) := by
-  apply (integrable_const ‖g‖).mono'
-    (g.continuous.stronglyMeasurable.comp_measurable (measurable_sample a δ)).aestronglyMeasurable
-  exact Filter.Eventually.of_forall fun t ↦ g.norm_coe_le_norm _
+  have hm : StronglyMeasurable (intervalStep a δ g) := by
+    unfold intervalStep
+    exact (StronglyMeasurable.of_discrete (f := fun n : ℕ ↦ g (a + n * δ))).comp_measurable
+      (by fun_prop : Measurable fun t : ℝ ↦ ⌊(t - a) / δ⌋₊)
+  have hfinite : (intervalStep a δ g '' Icc a b).Finite := by
+    have h := (Nat.floor_mono.map_bddAbove
+      (isCompact_Icc.bddAbove_image (by fun_prop : ContinuousOn (fun t : ℝ ↦ (t - a) / δ)
+        (Icc a b)))).finite
+    unfold intervalStep
+    simpa only [image_image, Function.comp_def] using
+      h.image (fun n : ℕ ↦ g (a + n * δ))
+  obtain ⟨C, hC⟩ := hfinite.isBounded.exists_norm_le
+  apply volume.integrableOn_of_bounded measure_Ioc_lt_top.ne hm.aestronglyMeasurable
+  exact (ae_restrict_mem measurableSet_Ioc).mono fun t ht ↦
+    hC _ (mem_image_of_mem _ ⟨ht.1.le, ht.2⟩)
 
 private theorem sample_bounds {a δ t : ℝ} (hδ : 0 < δ) (hat : a ≤ t) :
     a ≤ a + (⌊(t - a) / δ⌋₊ : ℝ) * δ ∧
@@ -61,34 +71,29 @@ private theorem sample_bounds {a δ t : ℝ} (hδ : 0 < δ) (hat : a ≤ t) :
   · linarith
   · linarith
 
-/-- Left-node sampling on a sufficiently fine uniform subdivision gives uniform approximation. -/
-theorem exists_intervalStep_norm_sub_le (g : ℝ →ᵇ E) {a b ε : ℝ}
-    (hab : a < b) (hε : 0 < ε) :
+/-- Left-node sampling on a sufficiently fine uniform subdivision uniformly approximates a
+function continuous on a compact interval. -/
+theorem exists_intervalStep_dist_lt [PseudoMetricSpace E] (g : ℝ → E) {a b ε : ℝ}
+    (hg : ContinuousOn g (Icc a b)) (hab : a < b) (hε : 0 < ε) :
     ∃ N : ℕ, 0 < N ∧ ∀ t ∈ Icc a b,
-      ‖intervalStep a ((b - a) / N) g t - g t‖ ≤ ε := by
+      dist (intervalStep a ((b - a) / N) g t) (g t) < ε := by
   obtain ⟨η, hη, hg⟩ := Metric.uniformContinuousOn_iff.mp
-    (isCompact_Icc.uniformContinuousOn_of_continuous g.continuous.continuousOn) ε hε
-  obtain ⟨n, hn⟩ := exists_nat_one_div_lt (div_pos hη (sub_pos.mpr hab))
-  let N := n + 1
-  have hN : (0 : ℝ) < N := by dsimp [N]; positivity
-  have hδ : 0 < (b - a) / N := div_pos (sub_pos.mpr hab) hN
+    (isCompact_Icc.uniformContinuousOn_of_continuous hg) ε hε
+  obtain ⟨N, hN⟩ := exists_nat_gt ((b - a) / η)
+  have hNpos : (0 : ℝ) < N := (div_pos (sub_pos.mpr hab) hη).trans hN
+  have hδ : 0 < (b - a) / N := div_pos (sub_pos.mpr hab) hNpos
   have hmesh : (b - a) / N < η := by
-    have h := mul_lt_mul_of_pos_right hn (sub_pos.mpr hab)
-    rw [div_mul_cancel₀ _ (sub_pos.mpr hab).ne'] at h
-    dsimp [N]
-    push_cast
-    convert h using 1
-    ring
-  refine ⟨N, by dsimp [N]; positivity, fun t ht ↦ ?_⟩
+    rw [div_lt_iff₀ hNpos]
+    simpa only [mul_comm] using (div_lt_iff₀ hη).mp hN
+  refine ⟨N, Nat.cast_pos.mp hNpos, fun t ht ↦ ?_⟩
   obtain ⟨hs0, hs1, hs2⟩ := sample_bounds hδ ht.1
   have hs : a + (⌊(t - a) / ((b - a) / N)⌋₊ : ℝ) * ((b - a) / N) ∈ Icc a b :=
     ⟨hs0, hs1.trans ht.2⟩
   have hd : dist (a + (⌊(t - a) / ((b - a) / N)⌋₊ : ℝ) * ((b - a) / N)) t < η := by
     rw [Real.dist_eq, abs_of_nonpos (sub_nonpos.mpr hs1)]
     linarith
-  simpa only [intervalStep, dist_eq_norm] using (hg _ hs t ht hd).le
+  simpa only [intervalStep] using hg _ hs t ht hd
 
-omit [NormedAddCommGroup E] in
 /-- The sampled step function is constant between two successive subdivision nodes. -/
 theorem intervalStep_eq {a δ t : ℝ} (hδ : 0 < δ) (g : ℝ → E) (i : ℕ)
     (ht : t ∈ Ico (a + i * δ) (a + (i + 1) * δ)) :
@@ -106,13 +111,14 @@ theorem intervalStep_eq {a δ t : ℝ} (hδ : 0 < δ) (g : ℝ → E) (i : ℕ)
 
 /-- An integrable function on a finite interval can be approximated in `L¹` by finite interval
 step functions. -/
-theorem IntegrableOn.exists_intervalStep_integral_norm_sub_le [NormedSpace ℝ E]
+theorem IntegrableOn.exists_intervalStep_integral_norm_sub_le
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
     {f : ℝ → E} {a b ε : ℝ} (hf : IntegrableOn f (Ioc a b))
     (hab : a < b) (hε : 0 < ε) :
     ∃ N : ℕ, 0 < N ∧ ∃ g : ℝ →ᵇ E,
       (∫ t in Ioc a b, ‖intervalStep a ((b - a) / N) g t - f t‖) ≤ ε := by
   obtain ⟨g, hg, hgi⟩ := hf.exists_boundedContinuous_integral_sub_le (half_pos hε)
-  obtain ⟨N, hN, hs⟩ := exists_intervalStep_norm_sub_le g hab
+  obtain ⟨N, hN, hs⟩ := exists_intervalStep_dist_lt g g.continuous.continuousOn hab
     (div_pos (half_pos hε) (sub_pos.mpr hab))
   refine ⟨N, hN, g, ?_⟩
   have hsi := integrableOn_intervalStep a b ((b - a) / N) g
@@ -120,7 +126,8 @@ theorem IntegrableOn.exists_intervalStep_integral_norm_sub_le [NormedSpace ℝ E
     calc
       _ ≤ ∫ _ in Ioc a b, (ε / 2) / (b - a) := by
         apply integral_mono_ae (hsi.sub hgi).norm (integrable_const _)
-        exact (ae_restrict_mem measurableSet_Ioc).mono fun t ht ↦ hs t ⟨ht.1.le, ht.2⟩
+        exact (ae_restrict_mem measurableSet_Ioc).mono fun t ht ↦ by
+          simpa only [dist_eq_norm, Pi.sub_apply] using (hs t ⟨ht.1.le, ht.2⟩).le
       _ = ε / 2 := by
         rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
           ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Abelian
 public import Mathlib.FieldTheory.Galois.Infinite
+public import Mathlib.NumberTheory.NumberField.Basic
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbelianLayer
 
@@ -102,7 +103,7 @@ This turns a class-field correspondence that preserves the order on subgroups in
 order-reversing correspondence on fields. -/
 theorem classField_le_classField_iff (V W : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :
     classField F W ≤ classField F V ↔ V ≤ W :=
-  (le_iff_le V.toSubgroup (classField F W)).trans <| by
+  (le_fixedField_iff_le_fixingSubgroup V.toSubgroup (classField F W)).trans <| by
     rw [fixingSubgroup_classField]
     exact Iff.rfl
 
@@ -131,6 +132,12 @@ instance isGalois_classField (V : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :
     IsGalois F (classField F V) :=
   (InfiniteGalois.normal_iff_isGalois (classField F V)).1
     (by simpa only [fixingSubgroup_classField] using V.isNormal')
+
+/-- The class field of an open normal subgroup of `G_F` is a number field when `F` is, being a
+finite extension of `F`. -/
+instance numberField_classField [NumberField F] (V : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :
+    NumberField (classField F V) :=
+  .of_module_finite F _
 
 /-- Cutting out the class field of `V` and then taking the open normal subgroup that fixes it
 recovers `V`. -/

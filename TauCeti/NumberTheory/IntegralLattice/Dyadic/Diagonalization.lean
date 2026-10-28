@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.BilinearForm.Odd
+public import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
-import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import Mathlib.LinearAlgebra.Determinant
 
 /-!
@@ -43,11 +42,8 @@ theorem exists_basis_iIsOrtho_isUnit_localIntegralForm_two
         ∀ i, IsUnit (L.localIntegralForm 2 (b i) (b i)) := by
   classical
   let b := (Module.finBasis ℤ L).baseChange ℤ_[2]
-  have hperf : (L.localIntegralForm 2).IsPerfPair :=
-    b.isPerfPair_of_isUnit_det _
-      (L.det_toMatrix_localIntegralForm 2 (Module.finBasis ℤ L) ▸ hdet)
-  exact BilinForm.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self
-    (L.isSymm_localIntegralForm 2) b
+  exact (L.isSymm_localIntegralForm 2).exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self b
+    (L.det_toMatrix_localIntegralForm 2 (Module.finBasis ℤ L) ▸ hdet)
     (L.not_isEven_iff_exists_isUnit_localIntegralForm_two.mp hodd)
 
 /-- A lattice unimodular at `2` is diagonalizable over `ℤ₂` exactly when it is odd

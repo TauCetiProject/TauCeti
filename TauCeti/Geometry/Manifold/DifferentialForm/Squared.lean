@@ -82,9 +82,17 @@ theorem mextDeriv_mextDeriv (φ : RoughForm I M F k)
 @[simp]
 theorem SmoothForm.mextDeriv_mextDeriv (φ : SmoothForm I M F k) :
     mextDeriv (mextDeriv φ.1) = 0 := by
-  have hφ := (isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)
-  exact TauCeti.mextDeriv_mextDeriv φ.1 ((isSmoothBundleForm_def 2 φ.1).mpr
-    (hφ.of_le (by simp)))
+  have hφ : IsSmoothBundleForm (I := I) (F := F) (V := Trivial M F) 2 φ.1 := by
+    rw [isSmoothBundleForm_def]
+    exact φ.contMDiff.of_le (by simp)
+  exact TauCeti.mextDeriv_mextDeriv φ.1 hφ
+
+/-- The second exterior derivative of the `0`-form of a `C²` function vanishes. -/
+@[simp]
+theorem mextDeriv_mextDeriv_ofFunction {f : M → F} (hf : ContMDiff I 𝓘(ℝ, F) 2 f) :
+    mextDeriv (mextDeriv (RoughForm.ofFunction I f)) = 0 :=
+  mextDeriv_mextDeriv _ ((isSmoothBundleForm_def _ _).mpr
+    (isSmoothForm_ofFunction_iff.mpr hf).contMDiff)
 
 variable (I) in
 /-- Successive exterior derivatives compose to zero as linear maps. -/

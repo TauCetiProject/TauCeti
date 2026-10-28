@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.DeFinetti.Theorem
 public import TauCeti.Probability.Exchangeability.FullyExchangeable
+public import TauCeti.Probability.Process.Array
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 -- Non-public: evaluating a random probability measure at a fixed measurable set is measurable.
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Ext
@@ -22,9 +23,9 @@ for each row, the array `(a, k) ↦ Y (a, π a k)` has the law of `Y`. This is t
 array of successors of a Markov exchangeable process, and it is stronger than asking that each row
 be exchangeable on its own, because the permutations may be chosen independently.
 
-Reading an array column by column gives the process `arrayColumn Y : ℕ → Ω → (ι → α)`, whose
+Reading an array column by column gives the process `arrayCol Y : ℕ → Ω → (ι → α)`, whose
 `k`-th value is the vector of the `k`-th entries of all rows. Row exchangeability contains the
-diagonal case `π = fun _ => σ`, so `arrayColumn Y` is a fully exchangeable process valued in
+diagonal case `π = fun _ => σ`, so `arrayCol Y` is a fully exchangeable process valued in
 `ι → α`, which for countable `ι` and standard Borel `α` is again standard Borel. De Finetti's
 theorem therefore hands the columns a directing measure `λ : Ω → ProbabilityMeasure (ι → α)`.
 
@@ -35,16 +36,18 @@ the directing measure distinct rows are independent, while the entries are ident
 within each row. This is the mixture-of-independent-i.i.d.-rows form that the Diaconis–Freedman
 representation of Markov exchangeable processes consumes.
 
-## Main definitions
+## Main definition
 
 * `TauCeti.Probability.RowExchangeable`: invariance of the array law under independent
-  permutations of the individual rows;
-* `TauCeti.Probability.arrayColumn`: the array read as a process of columns.
+  permutations of the individual rows.
+
+The symmetry-free column process `TauCeti.Probability.arrayCol` and its measurability API live
+in `TauCeti.Probability.Process.Array`.
 
 ## Main results
 
 * `TauCeti.Probability.RowExchangeable.fullyExchangeable_row` and
-  `TauCeti.Probability.RowExchangeable.fullyExchangeable_arrayColumn`: each row, and the column
+  `TauCeti.Probability.RowExchangeable.fullyExchangeable_arrayCol`: each row, and the column
   process, is fully exchangeable;
 * `TauCeti.Probability.rowExchangeable_iff_forall_prodCongrRight_mem_finitary`: it suffices to
   check families of row permutations that move only finitely many cells altogether;
@@ -107,19 +110,6 @@ namespace Probability
 
 variable {Ω α ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [Countable ι]
 
-/-- The array `Y` read as a process of columns: the `k`-th column is the vector of the `k`-th
-entries of all rows. -/
-def arrayColumn (Y : ι × ℕ → Ω → α) (k : ℕ) (ω : Ω) : ι → α :=
-  fun a => Y (a, k) ω
-
--- The parentheses in `(rfl)` opt out of the exported-theorem exposure check, so that this, the
--- complete computational API of `arrayColumn`, can be stated without exposing its body.
-omit [MeasurableSpace Ω] [MeasurableSpace α] [Countable ι] in
-@[simp]
-theorem arrayColumn_apply (Y : ι × ℕ → Ω → α) (k : ℕ) (ω : Ω) (a : ι) :
-    arrayColumn Y k ω a = Y (a, k) ω :=
-  (rfl)
-
 /-- **Row exchangeability.** The law of the array is invariant under permuting the entries of each
 row by a permutation of time chosen separately for that row.
 
@@ -178,11 +168,6 @@ theorem rowExchangeable_iff_forall_prodCongrRight_mem_finitary [IsFiniteMeasure 
         congrArg (fun k => Y (q.1, k) ω) (hτ q hq)
     rwa [heq] at hτmap
 
-/-- Every column of an array with a.e. measurable entries is a.e. measurable. -/
-theorem aemeasurable_arrayColumn (hY : ∀ p, AEMeasurable (Y p) μ) (k : ℕ) :
-    AEMeasurable (arrayColumn Y k) μ :=
-  AEMeasurable.of_eval fun a => hY (a, k)
-
 /-- **Each row of a row exchangeable array is fully exchangeable.** -/
 theorem RowExchangeable.fullyExchangeable_row (h : RowExchangeable μ Y)
     (hY : ∀ p, AEMeasurable (Y p) μ) (a : ι) :
@@ -203,9 +188,9 @@ theorem RowExchangeable.fullyExchangeable_row (h : RowExchangeable μ Y)
 
 /-- **The column process of a row exchangeable array is fully exchangeable.** This is the diagonal
 case `π = fun _ => σ` of the definition. -/
-theorem RowExchangeable.fullyExchangeable_arrayColumn (h : RowExchangeable μ Y)
+theorem RowExchangeable.fullyExchangeable_arrayCol (h : RowExchangeable μ Y)
     (hY : ∀ p, AEMeasurable (Y p) μ) :
-    FullyExchangeable μ (arrayColumn Y) := by
+    FullyExchangeable μ (arrayCol Y) := by
   intro σ
   have hcol : Measurable fun y : ι × ℕ → α => fun (k : ℕ) (a : ι) => y (a, k) :=
     Measurable.of_eval fun k => Measurable.of_eval fun a => measurable_pi_apply (a, k)
@@ -217,14 +202,14 @@ theorem RowExchangeable.fullyExchangeable_arrayColumn (h : RowExchangeable μ Y)
       (AEMeasurable.of_eval fun p => hY (p.1, σ p.2)),
     AEMeasurable.map_map_of_aemeasurable hcol.aemeasurable
       (AEMeasurable.of_eval fun p => hY p)] at hmap
-  have hleft : (fun ω (i : ℕ) => arrayColumn Y (σ i) ω) =
+  have hleft : (fun ω (i : ℕ) => arrayCol Y (σ i) ω) =
       fun (x : Ω) (k : ℕ) (a : ι) => Y (a, σ k) x := by
     funext ω k a
-    rw [arrayColumn_apply]
-  have hright : (fun ω (i : ℕ) => arrayColumn Y i ω) =
+    rw [arrayCol_apply]
+  have hright : (fun ω (i : ℕ) => arrayCol Y i ω) =
       fun (x : Ω) (k : ℕ) (a : ι) => Y (a, k) x := by
     funext ω k a
-    rw [arrayColumn_apply]
+    rw [arrayCol_apply]
   rw [pathLaw, hleft, hright]
   simpa [Function.comp_def] using hmap
 
@@ -246,11 +231,11 @@ theorem RowExchangeable.map_values {β : Type*} [MeasurableSpace β] (h : RowExc
   simpa [Function.comp_def] using hmap
 
 /-- **The exchangeability of the columns.** -/
-theorem RowExchangeable.exchangeable_arrayColumn (h : RowExchangeable μ Y)
+theorem RowExchangeable.exchangeable_arrayCol (h : RowExchangeable μ Y)
     (hY : ∀ p, AEMeasurable (Y p) μ) :
-    Exchangeable μ (arrayColumn Y) :=
-  FullyExchangeable.exchangeable (h.fullyExchangeable_arrayColumn hY)
-    (aemeasurable_arrayColumn hY)
+    Exchangeable μ (arrayCol Y) :=
+  FullyExchangeable.exchangeable (h.fullyExchangeable_arrayCol hY)
+    (aemeasurable_arrayCol hY)
 
 section TwoTimes
 
@@ -358,7 +343,7 @@ The proof is the second-moment computation described in the module docstring: th
 that make up the mean square of the difference are, by the two-block pattern lemma, one and the
 same array probability. -/
 theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangeable μ Y)
-    (hlam : MixedIIDWith μ (arrayColumn Y) lam)
+    (hlam : MixedIIDWith μ (arrayCol Y) lam)
     {F G : Finset ι} (hFG : Disjoint F G) {B : ι → Set α}
     (hB : ∀ a, a ∈ F ∨ a ∈ G → MeasurableSet (B a)) :
     ∀ᵐ ω ∂μ, (lam ω : Measure (ι → α)) (Set.pi (↑F ∪ ↑G) B) =
@@ -366,7 +351,7 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
   classical
   -- each entry is a coordinate of its column, which the witness makes a.e. measurable
   have hY : ∀ p, AEMeasurable (Y p) μ := fun p => by
-    simpa only [arrayColumn_apply] using (hlam.aemeasurable p.2).eval p.1
+    simpa only [arrayCol_apply] using (hlam.aemeasurable p.2).eval p.1
   set C : Set (ι → α) := Set.pi (↑F) B with hC
   set D : Set (ι → α) := Set.pi (↑G) B with hD
   have hCm : MeasurableSet C := MeasurableSet.pi F.countable_toSet fun a ha =>
@@ -377,16 +362,16 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
   have hunion : Set.pi (↑F ∪ ↑G) B = C ∩ D := Set.union_pi
   simp only [hunion]
   have hmem : ∀ (H : Finset ι) (k : ℕ) (ω : Ω),
-      arrayColumn Y k ω ∈ Set.pi (↑H : Set ι) B ↔ ∀ a ∈ H, Y (a, k) ω ∈ B a := by
+      arrayCol Y k ω ∈ Set.pi (↑H : Set ι) B ↔ ∀ a ∈ H, Y (a, k) ω ∈ B a := by
     intro H k ω; simp [Set.mem_pi]
   -- Every mixed moment of `lam` on these boxes is the probability of an array event.
   have hblock : ∀ {r : ℕ} (k : Fin r → ℕ), Function.Injective k → ∀ E : Fin r → Set (ι → α),
       (∀ j, MeasurableSet (E j)) →
         ∫⁻ ω, ∏ j, (lam ω : Measure (ι → α)) (E j) ∂μ =
-          μ {ω | ∀ j, arrayColumn Y (k j) ω ∈ E j} := by
+          μ {ω | ∀ j, arrayCol Y (k j) ω ∈ E j} := by
     intro r k hk E hE
     rw [← hlam.blockLaw_univ_pi k hk E hE,
-      blockLaw_apply_rectangle μ (arrayColumn Y) k (fun j => hlam.aemeasurable (k j)) E hE]
+      blockLaw_apply_rectangle μ (arrayCol Y) k (fun j => hlam.aemeasurable (k j)) E hE]
   set T : ℝ≥0∞ := μ {ω | (∀ a ∈ F, Y (a, 0) ω ∈ B a ∧ Y (a, 1) ω ∈ B a) ∧
     ∀ a ∈ G, Y (a, 0) ω ∈ B a ∧ Y (a, 1) ω ∈ B a} with hT
   have hinj2 : Function.Injective (![0, 1] : Fin 2 → ℕ) := by
@@ -426,23 +411,12 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
       (by norm_num) (by norm_num)]
     congr 1
     ext ω
-    simp only [Set.mem_ofPred_eq]
-    constructor
-    · intro hall
-      have e0 : arrayColumn Y 0 ω ∈ C ∩ D := hall 0
-      have e1 : arrayColumn Y 1 ω ∈ C := hall 1
-      have e2 : arrayColumn Y 2 ω ∈ D := hall 2
-      exact ⟨fun a ha => ⟨e0.1 a ha, e1 a ha⟩, fun a ha => ⟨e0.2 a ha, e2 a ha⟩⟩
-    · rintro ⟨hF, hG⟩ j
-      -- `fin_cases` and simplification compute the finite-vector lookup; `hC` and `hD` expose
-      -- the boxes, after which membership reduces definitionally to their coordinate conditions.
-      fin_cases j
-      · simp only [hC, hD]
-        exact ⟨fun a ha => (hF a ha).1, fun a ha => (hG a ha).1⟩
-      · simp only [hC]
-        exact fun a ha => (hF a ha).2
-      · simp only [hD]
-        exact fun a ha => (hG a ha).2
+    simp only [Set.mem_ofPred_eq, Fin.forall_fin_succ, IsEmpty.forall_iff, and_true, Fin.isValue,
+      Matrix.cons_val_zero, Matrix.cons_val_succ, Set.mem_inter_iff, hC, hD, hmem]
+    exact ⟨fun ⟨⟨hF0, hG0⟩, hF1, hG2⟩ =>
+        ⟨fun a ha => ⟨hF0 a ha, hF1 a ha⟩, fun a ha => ⟨hG0 a ha, hG2 a ha⟩⟩,
+      fun ⟨hF, hG⟩ => ⟨⟨fun a ha => (hF a ha).1, fun a ha => (hG a ha).1⟩,
+        fun a ha => (hF a ha).2, fun a ha => (hG a ha).2⟩⟩
   -- Third pattern: each half twice, at times `0, 1` in `F` and `2, 3` in `G`.
   have hT3 : ∫⁻ ω, (lam ω : Measure (ι → α)) C * (lam ω : Measure (ι → α)) C *
       (lam ω : Measure (ι → α)) D * (lam ω : Measure (ι → α)) D ∂μ = T := by
@@ -457,26 +431,12 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
       (by norm_num) (by norm_num)]
     congr 1
     ext ω
-    simp only [Set.mem_ofPred_eq]
-    constructor
-    · intro hall
-      have e0 : arrayColumn Y 0 ω ∈ C := hall 0
-      have e1 : arrayColumn Y 1 ω ∈ C := hall 1
-      have e2 : arrayColumn Y 2 ω ∈ D := hall 2
-      have e3 : arrayColumn Y 3 ω ∈ D := hall 3
-      exact ⟨fun a ha => ⟨e0 a ha, e1 a ha⟩, fun a ha => ⟨e2 a ha, e3 a ha⟩⟩
-    · rintro ⟨hF, hG⟩ j
-      -- As above, each branch computes the vector index and uses the named box equalities before
-      -- reducing box membership to coordinate conditions.
-      fin_cases j
-      · simp only [hC]
-        exact fun a ha => (hF a ha).1
-      · simp only [hC]
-        exact fun a ha => (hF a ha).2
-      · simp only [hD]
-        exact fun a ha => (hG a ha).1
-      · simp only [hD]
-        exact fun a ha => (hG a ha).2
+    simp only [Set.mem_ofPred_eq, Fin.forall_fin_succ, IsEmpty.forall_iff, and_true, Fin.isValue,
+      Matrix.cons_val_zero, Matrix.cons_val_succ, hC, hD, hmem]
+    exact ⟨fun ⟨hF0, hF1, hG2, hG3⟩ =>
+        ⟨fun a ha => ⟨hF0 a ha, hF1 a ha⟩, fun a ha => ⟨hG2 a ha, hG3 a ha⟩⟩,
+      fun ⟨hF, hG⟩ => ⟨fun a ha => (hF a ha).1, fun a ha => (hF a ha).2,
+        fun a ha => (hG a ha).1, fun a ha => (hG a ha).2⟩⟩
   -- The mean square of the difference is `T - 2T + T = 0`.
   have hlam_meas := hlam.measurable_mixingRepresentative
   have hprob : ∀ (ω : Ω) (S : Set (ι → α)), (lam ω : Measure (ι → α)) S ≤ 1 := fun _ _ =>
@@ -593,7 +553,7 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
 gives to the box `{x | ∀ a ∈ F, x a ∈ B a}` is almost surely the product of the masses it gives to
 the individual rows. -/
 theorem RowExchangeable.ae_apply_pi_eq_prod [IsFiniteMeasure μ] (h : RowExchangeable μ Y)
-    (hlam : MixedIIDWith μ (arrayColumn Y) lam)
+    (hlam : MixedIIDWith μ (arrayCol Y) lam)
     {B : ι → Set α} (F : Finset ι) (hB : ∀ a ∈ F, MeasurableSet (B a)) :
     ∀ᵐ ω ∂μ, (lam ω : Measure (ι → α)) (Set.pi (↑F) B) =
       ∏ a ∈ F, (lam ω : Measure (ι → α)) {x : ι → α | x a ∈ B a} := by
@@ -626,7 +586,7 @@ column's contribution into one factor per row it constrains. Injectivity enters 
 cells in a single column pairwise distinct as rows, and it makes the two nested products a single
 product over cells. -/
 theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeasure μ]
-    (h : RowExchangeable μ Y) (hlam : MixedIIDWith μ (arrayColumn Y) lam)
+    (h : RowExchangeable μ Y) (hlam : MixedIIDWith μ (arrayCol Y) lam)
     {r : ℕ} {c : Fin r → ι × ℕ} (hc : Function.Injective c)
     {B : Fin r → Set α} (hB : ∀ t, MeasurableSet (B t)) :
     μ {ω | ∀ t, Y (c t) ω ∈ B t} =
@@ -661,7 +621,7 @@ theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeas
     MeasurableSet.pi (F j).countable_toSet fun a _ => htarget_meas a j
   -- The cell event is the event that every column lands in its box.
   have hset : {ω | ∀ t, Y (c t) ω ∈ B t} =
-      {ω | ∀ j : Fin m, arrayColumn Y (j : ℕ) ω ∈ Set.pi (↑(F j)) fun a => target a j} := by
+      {ω | ∀ j : Fin m, arrayCol Y (j : ℕ) ω ∈ Set.pi (↑(F j)) fun a => target a j} := by
     ext ω
     simp only [Set.mem_ofPred_eq, Set.mem_pi]
     constructor
@@ -670,8 +630,8 @@ theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeas
       intro t ht
       have h1 : (c t).1 = a := congrArg Prod.fst ht
       have h2 : g t = j := congrArg Prod.snd ht
-      have hval : arrayColumn Y (j : ℕ) ω a = Y (c t) ω := by
-        rw [arrayColumn_apply, ← hcell t, h1, h2]
+      have hval : arrayCol Y (j : ℕ) ω a = Y (c t) ω := by
+        rw [arrayCol_apply, ← hcell t, h1, h2]
       rw [hval]
       exact hω t
     · intro hω t
@@ -679,8 +639,8 @@ theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeas
         Finset.mem_image_of_mem _ (by simp)
       have := hω (g t) ((c t).1) (Finset.mem_coe.2 hmem)
       rw [htarget_eq t] at this
-      rwa [arrayColumn_apply, hcell t] at this
-  rw [hset, ← blockLaw_apply_rectangle μ (arrayColumn Y) (fun j : Fin m => (j : ℕ))
+      rwa [arrayCol_apply, hcell t] at this
+  rw [hset, ← blockLaw_apply_rectangle μ (arrayCol Y) (fun j : Fin m => (j : ℕ))
       (fun j => hlam.aemeasurable (j : ℕ)) _ hD_meas,
     hlam.blockLaw_univ_pi (fun j : Fin m => (j : ℕ)) Fin.val_injective _ hD_meas]
   -- Split each column's mass into one factor per constrained row, then merge the two products.
@@ -716,12 +676,12 @@ directing measure almost surely factors over the rows: conditionally on it, the 
 independent as well as identically distributed within each row. -/
 theorem RowExchangeable.exists_directing_pi_eq_prod [StandardBorelSpace α] [Nonempty α]
     [IsFiniteMeasure μ] (h : RowExchangeable μ Y) (hY : ∀ p, AEMeasurable (Y p) μ) :
-    ∃ lam : Ω → ProbabilityMeasure (ι → α), ConditionallyIIDWith μ (arrayColumn Y) lam ∧
+    ∃ lam : Ω → ProbabilityMeasure (ι → α), ConditionallyIIDWith μ (arrayCol Y) lam ∧
       ∀ (B : ι → Set α) (F : Finset ι), (∀ a ∈ F, MeasurableSet (B a)) →
         ∀ᵐ ω ∂μ, (lam ω : Measure (ι → α)) (Set.pi (↑F) B) =
           ∏ a ∈ F, (lam ω : Measure (ι → α)) {x : ι → α | x a ∈ B a} := by
   obtain ⟨lam, hlam⟩ := ConditionallyIID.exists_directing
-    (deFinetti (X := arrayColumn Y) (aemeasurable_arrayColumn hY) (h.exchangeable_arrayColumn hY))
+    (deFinetti (X := arrayCol Y) (aemeasurable_arrayCol hY) (h.exchangeable_arrayCol hY))
   exact ⟨lam, hlam, fun B F hB =>
     h.ae_apply_pi_eq_prod (mixedIIDWith_of_conditionallyIIDWith hlam) F hB⟩
 

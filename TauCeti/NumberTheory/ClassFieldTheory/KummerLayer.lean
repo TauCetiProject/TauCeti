@@ -89,7 +89,7 @@ theorem mem_kummerLayer_iff {σ : AbsoluteGaloisGroup K} :
   -- Membership in the open normal subgroup is membership in its underlying fixing subgroup.
   have hmem : σ ∈ kummerLayer n Δ ↔ σ ∈ (kummerField (SeparableClosure K) n Δ).fixingSubgroup :=
     Iff.rfl
-  rw [hmem, ← Subgroup.zpowers_le, ← le_iff_le, kummerField_le_iff]
+  rw [hmem, ← Subgroup.zpowers_le, ← le_fixedField_iff_le_fixingSubgroup, kummerField_le_iff]
   simp only [mem_fixedField_iff, Subgroup.forall_mem_zpowers]
   refine forall₄_congr fun _ _ x _ ↦ ⟨fun h ↦ by simpa using h 1, fun h k ↦ ?_⟩
   -- The powers of `σ` fix `x` because they lie in the stabilizer of `x`, which contains `σ`.

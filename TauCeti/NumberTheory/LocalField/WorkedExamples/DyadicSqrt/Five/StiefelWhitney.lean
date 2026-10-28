@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.WorkedExamples.DyadicSqrt.Five.Basic
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.QuadraticExtension
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.CupPadicTwo
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.PadicTwo
 import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
 import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Transfer
 import TauCeti.Algebra.Group.Units.Basic

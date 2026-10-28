@@ -15,7 +15,8 @@ Let `f : S →+* R` be a morphism of commutative rings and `M` an `R`-module. Re
 scalars has a natural symmetric-power comparison `Symⁿ_S M ⟶ Symⁿ_R M`, sending a product
 `m₁ ⋯ mₙ` of elements of `M` over `S` to the same product over `R`. It is the restriction to
 degree-`n` parts of the ring homomorphism of symmetric algebras `SymmetricAlgebra.mapₛₗ` induced
-by the identity of `M`, viewed as an `f`-semilinear map. It need not be an isomorphism. This
+by the identity of `M`, viewed as an `f`-semilinear map. It is an isomorphism when `f` is
+bijective, although this need not hold for a general ring map. This
 supplies the sectionwise maps for symmetric powers of pushforwards of module presheaves, in the
 same way as `TauCeti.ModuleCat.restrictScalarsExteriorPowerComparison` does for exterior powers.
 -/
@@ -88,6 +89,45 @@ theorem coe_restrictScalarsSymmetricPowerComparison_app_apply (n : ℕ)
       ((restrictScalarsSymmetricPowerComparison f n).app M) x) =
       SymmetricAlgebra.mapₛₗ ((ModuleCat.semilinearMapAddEquiv f _ M).symm (𝟙 _)) x.1 :=
   coe_restrictScalarsSymmetricPowerApp_apply f n M x
+
+/-- Restriction along an isomorphism of coefficient rings preserves symmetric powers. -/
+theorem isIso_restrictScalarsSymmetricPowerComparison_app_of_bijective
+    (hf : Function.Bijective f) (n : ℕ) (M : ModuleCat.{max u v w} R) :
+    IsIso ((restrictScalarsSymmetricPowerComparison f n).app M) := by
+  let e := RingEquiv.ofBijective f hf
+  let N := (ModuleCat.restrictScalars f).obj M
+  let g : M →ₛₗ[e.symm.toRingHom] N :=
+    { toFun := id
+      map_add' _ _ := rfl
+      map_smul' r m := by
+        -- The action on `N` is the original action precomposed with `f`.
+        change r • m = f (e.symm r) • m
+        exact congrArg (· • m) (e.apply_symm_apply r).symm }
+  let h := homogeneousSubmoduleMapₛₗ g n
+  have hleft (x : N.symmetricPower n) :
+      h (((restrictScalarsSymmetricPowerComparison f n).app M) x) = x := by
+    apply Subtype.ext
+    dsimp only [h]
+    erw [TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply,
+      coe_restrictScalarsSymmetricPowerComparison_app_apply]
+    have eq := SymmetricAlgebra.mapₛₗ_comp_mapₛₗ
+      ((_root_.ModuleCat.semilinearMapAddEquiv f _ M).symm (𝟙 _)) g
+      (LinearMap.id : N →ₗ[S] N) (fun r ↦ e.symm_apply_apply r) (fun _ ↦ rfl)
+    exact (RingHom.congr_fun eq x.1).trans
+      (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl) (fun _ ↦ rfl)) x.1)
+  have hright (x : M.symmetricPower n) :
+      ((restrictScalarsSymmetricPowerComparison f n).app M) (h x) = x := by
+    apply Subtype.ext
+    dsimp only [h]
+    erw [coe_restrictScalarsSymmetricPowerComparison_app_apply,
+      TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply]
+    have eq := SymmetricAlgebra.mapₛₗ_comp_mapₛₗ g
+      ((_root_.ModuleCat.semilinearMapAddEquiv f _ M).symm (𝟙 _))
+      (LinearMap.id : M →ₗ[R] M) (fun r ↦ e.apply_symm_apply r) (fun _ ↦ rfl)
+    exact (RingHom.congr_fun eq x.1).trans
+      (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl) (fun _ ↦ rfl)) x.1)
+  exact (ConcreteCategory.isIso_iff_bijective _).mpr
+    ⟨Function.LeftInverse.injective hleft, Function.RightInverse.surjective hright⟩
 
 end
 

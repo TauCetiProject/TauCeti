@@ -289,6 +289,15 @@ theorem W1p.norm_compAffineIsometryEquivL_le (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U
     g.lipschitzWith.locallyLipschitz.locallyLipschitzOn
     fun x _ => g.norm_fderiv_le x
 
+/-- Rigid changes of coordinates preserve zero Sobolev boundary values for finite exponent. -/
+theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule (hp : p ≠ (∞ : ℝ≥0∞))
+    (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p}
+    (hu : u ∈ w1p0Submodule volume V p) :
+    W1p.compAffineIsometryEquivL g hUV u ∈ w1p0Submodule volume U p := by
+  rw [W1p.compAffineIsometryEquivL]
+  exact W1p.compMeasurePreservingL_mem_w1p0Submodule hp
+    g.toHomeomorph.isProperMap _ _ _ _ hu
+
 end AffineIsometry
 
 end TauCeti

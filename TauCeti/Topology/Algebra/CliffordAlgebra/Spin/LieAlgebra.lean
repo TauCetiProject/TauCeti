@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Subgroup.Units
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Characterization
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Star
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Normed
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Closed
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
@@ -46,9 +47,7 @@ open TauCeti
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
-local instance realCliffordStarModule (p q : ℕ) :
-    StarModule ℝ (CliffordAlgebra (realCliffordForm p q)) where
-  star_smul := CliffordAlgebra.star_smul
+attribute [local instance] starModule_of_trivialStar
 
 private theorem mem_even_of_forall_exp_smul_mem_even
     (p q : ℕ) (x : CliffordAlgebra (realCliffordForm p q))

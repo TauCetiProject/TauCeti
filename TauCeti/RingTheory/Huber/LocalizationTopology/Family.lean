@@ -13,14 +13,16 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 
 Wedhorn's Proposition and Definition 5.51 localises a nonarchimedean ring `A` at a family of
 denominators `s = (sᵢ)_{i ∈ ι}`, each with its own set of numerators `Tᵢ ⊆ A`, subject to the
-standing hypothesis that every `Tᵢ · A` is open. This file treats a finite index type and finite
-numerator sets `Tᵢ`, the generality of the single-denominator construction it is built on, which
-takes a `Finset` of numerators and a localisation `IsLocalization.Away` at one element. In this
+standing hypothesis that every `Tᵢ · A` is open. This file treats a finite index type and
+arbitrary numerator sets `Tᵢ`. The single-denominator construction it is built on takes a
+localisation `IsLocalization.Away` at one element, which is why the index type is finite. In this
 case the underlying ring is the algebraic localisation
 `A[1/s₁, …, 1/sₙ] = A[1/∏ᵢ sᵢ]`, the candidate ring of definition is
 `D = A₀[t/sᵢ : i ∈ ι, t ∈ Tᵢ]`, and the resulting topological ring `A(T/s)` has the universal
-property: the `sᵢ` become units and every fraction `t/sᵢ` is power-bounded, and every continuous
-homomorphism to a nonarchimedean ring with these two properties extends uniquely.
+property: the `sᵢ` become units and each set of fractions `Tᵢ/sᵢ` is power-bounded, and every
+continuous homomorphism to a nonarchimedean ring with these two properties extends uniquely.
+Here a set is power-bounded when the submonoid it generates is bounded; for a finite `Tᵢ` this
+says each fraction `t/sᵢ` is power-bounded (`TauCeti.Huber.isBounded_submonoidClosure`).
 
 This file reduces the family to the single-denominator construction
 `TauCeti.Huber.PairOfDefinition.locTopology` at the product `∏ᵢ sᵢ`. Over the common denominator,
@@ -55,8 +57,10 @@ That the topology does not depend on the pair of definition is
 * `TauCeti.Huber.PairOfDefinition.isPowerBounded_of_algebraMap_mul_eq_familyNumerators`: in
   `A(T/s)` every fraction `t/sᵢ` is power-bounded. Each `sᵢ` is a unit there because it divides
   `∏ⱼ sⱼ` (`IsLocalization.Away.isUnit_of_dvd`).
+* `TauCeti.Huber.PairOfDefinition.isBounded_submonoidClosure_familyNumerators`: in `A(T/s)` the
+  fractions `t/sᵢ`, for all `i` and all `t ∈ Tᵢ` together, form a power-bounded set.
 * `PairOfDefinition.existsUnique_continuous_ringHom_locTopology_familyNumerators`: the universal
-  property of `A(T/s)`.
+  property of `A(T/s)`, asking each set of fractions `φ(Tᵢ)/φ(sᵢ)` to be power-bounded.
 * `PairOfDefinition.existsUnique_continuous_ringHom_completion_locTopology_familyNumerators`: the
   universal property of its completion `A⟨T/s⟩`, for complete Hausdorff targets.
 
@@ -84,21 +88,21 @@ variable {A : Type*} [CommMonoid A]
 /-- **The numerators of `A(T/s)` over the common denominator.** For a family of numerator sets
 `Tᵢ` and denominators `sᵢ`, these are the products `t · ∏_{j ≠ i} sⱼ` with `t ∈ Tᵢ`: the
 numerators that put `t/sᵢ` over `∏ⱼ sⱼ`. -/
-noncomputable def familyNumerators (T : ι → Finset A) (s : ι → A) : Finset A := by
+noncomputable def familyNumerators (T : ι → Set A) (s : ι → A) : Set A := by
   classical
-  exact Finset.univ.biUnion fun i ↦ (T i).image (· * ∏ j ∈ Finset.univ.erase i, s j)
+  exact ⋃ i, (· * ∏ j ∈ Finset.univ.erase i, s j) '' T i
 
 /-- Membership in `familyNumerators T s`: the elements are the `t · ∏_{j ≠ i} sⱼ` with `t ∈ Tᵢ`. -/
 @[simp]
-theorem mem_familyNumerators [DecidableEq ι] {T : ι → Finset A} {s : ι → A} {x : A} :
+theorem mem_familyNumerators [DecidableEq ι] {T : ι → Set A} {s : ι → A} {x : A} :
     x ∈ familyNumerators T s ↔ ∃ i, ∃ t ∈ T i, t * ∏ j ∈ Finset.univ.erase i, s j = x := by
   classical
-  simp only [familyNumerators, Finset.mem_biUnion, Finset.mem_univ, true_and, Finset.mem_image]
+  simp only [familyNumerators, Set.mem_iUnion, Set.mem_image]
   -- the definition erases `i` with the classical instance, the statement with the given one
   convert Iff.rfl
 
 /-- The rescaled numerator `t · ∏_{j ≠ i} sⱼ` of `t ∈ Tᵢ` is one of `familyNumerators T s`. -/
-theorem mul_prod_erase_mem_familyNumerators [DecidableEq ι] {T : ι → Finset A} {s : ι → A} {i : ι}
+theorem mul_prod_erase_mem_familyNumerators [DecidableEq ι] {T : ι → Set A} {s : ι → A} {i : ι}
     {t : A} (ht : t ∈ T i) : t * ∏ j ∈ Finset.univ.erase i, s j ∈ familyNumerators T s :=
   mem_familyNumerators.mpr ⟨i, t, ht, rfl⟩
 
@@ -107,20 +111,40 @@ theorem mul_prod_erase_mem_familyNumerators [DecidableEq ι] {T : ι → Finset 
 `Fintype.prod_unique` for the denominator, this identifies the family presentation with the
 ordinary presentation `T, s`. -/
 @[simp]
-theorem familyNumerators_unique [Unique ι] (T : ι → Finset A) (s : ι → A) :
+theorem familyNumerators_unique [Unique ι] (T : ι → Set A) (s : ι → A) :
     familyNumerators T s = T default := by
   classical
   ext x
-  simp [Finset.univ_unique, Unique.exists_iff]
+  simp [mem_familyNumerators, Finset.univ_unique, Unique.exists_iff]
 
 end CommMonoid
 
 variable {A : Type*} [CommRing A]
 variable (s : ι → A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away (∏ i, s i) S]
 
+/-- Over the common denominator `∏ⱼ sⱼ`, the fractions of the single presentation are the
+fractions `t/sᵢ`: along a ring homomorphism inverting every `sᵢ`, the numerator
+`t · ∏_{j ≠ i} sⱼ` divided by `∏ⱼ sⱼ` is `t` divided by `sᵢ`. -/
+private theorem image_familyNumerators (T : ι → Set A) {B : Type*} [CommRing B] {φ : A →+* B}
+    (hs : ∀ i, IsUnit (φ (s i))) (hprod : IsUnit (φ (∏ i, s i))) :
+    (fun x ↦ φ x * ↑hprod.unit⁻¹) '' familyNumerators T s =
+      ⋃ i, (fun t ↦ φ t * ↑(hs i).unit⁻¹) '' T i := by
+  classical
+  have key (i : ι) (t : A) :
+      φ (t * ∏ j ∈ Finset.univ.erase i, s j) * ↑hprod.unit⁻¹ = φ t * ↑(hs i).unit⁻¹ := by
+    rw [map_mul, map_prod φ s, mul_assoc, Finset.prod_erase_mul_units_inv _ _ (Finset.mem_univ i)
+      (hprod.unit_spec.trans (map_prod φ s _)) (hs i).unit_spec]
+  ext y
+  simp only [Set.mem_image, Set.mem_iUnion, mem_familyNumerators]
+  constructor
+  · rintro ⟨_, ⟨i, t, ht, rfl⟩, rfl⟩
+    exact ⟨i, t, ht, (key i t).symm⟩
+  · rintro ⟨i, t, ht, rfl⟩
+    exact ⟨_, ⟨i, t, ht, rfl⟩, key i t⟩
+
 namespace PairOfDefinition
 
-variable [TopologicalSpace A] (P : PairOfDefinition A) (T : ι → Finset A)
+variable [TopologicalSpace A] (P : PairOfDefinition A) (T : ι → Set A)
 
 /-! ### The ring of definition -/
 
@@ -175,14 +199,14 @@ theorem mem_locSubring_familyNumerators_of_algebraMap_mul_eq {i : ι} {t : A} (h
 then some power of the ideal of definition has all its fractions `b / ∏ᵢ sᵢ` in
 `A₀[t/sᵢ : i ∈ ι, t ∈ Tᵢ]`, so `locTopology` is defined on `A(T/s)`. -/
 theorem hasDenominatorPower_familyNumerators [IsTopologicalRing A]
-    (hT : ∀ i, IsOpen (Ideal.span (T i : Set A) : Set A)) :
+    (hT : ∀ i, IsOpen (Ideal.span (T i) : Set A)) :
     HasDenominatorPower P (familyNumerators T s) (∏ i, s i) S := by
   classical
   -- the numerators over the partial product `∏_{j ∈ F} sⱼ` of the denominators used so far
-  let U (F : Finset ι) : Finset A := F.biUnion fun i ↦ (T i).image (· * ∏ j ∈ F.erase i, s j)
+  let U (F : Finset ι) : Set A := ⋃ i ∈ F, (· * ∏ j ∈ F.erase i, s j) '' T i
   have mem_U {F : Finset ι} {i : ι} (hi : i ∈ F) {t : A} (ht : t ∈ T i) :
       t * ∏ j ∈ F.erase i, s j ∈ U F :=
-    Finset.mem_biUnion.mpr ⟨i, hi, Finset.mem_image_of_mem _ ht⟩
+    Set.mem_biUnion hi (Set.mem_image_of_mem _ ht)
   -- adding one denominator at a time is `hasDenominatorPower_mul`
   have key (F : Finset ι) :
       HasDenominatorPower P (U F) (∏ j ∈ F, s j) (Localization.Away (∏ j ∈ F, s j)) := by
@@ -214,9 +238,9 @@ theorem hasDenominatorPower_familyNumerators [IsTopologicalRing A]
 
 /-! ### The universal property -/
 
-/-- **The fractions `t/sᵢ` are power-bounded in `A(T/s)`.** Each `sᵢ` is also a unit in `A(T/s)`,
-since it divides `∏ⱼ sⱼ` (`IsLocalization.Away.isUnit_of_dvd`), so `A(T/s)` itself satisfies the
-conditions of its universal property. -/
+/-- **Each fraction `t/sᵢ` is power-bounded in `A(T/s)`**, since it lies in the bounded subring
+`D`. That `A(T/s)` satisfies the conditions of its universal property, in which the fractions must
+form a power-bounded set, is the stronger `isBounded_submonoidClosure_familyNumerators`. -/
 theorem isPowerBounded_of_algebraMap_mul_eq_familyNumerators [SeparatelyContinuousMul A]
     (hden : HasDenominatorPower P (familyNumerators T s) (∏ i, s i) S) {i : ι} {t : A}
     (ht : t ∈ T i) {x : S} (hx : algebraMap A S (s i) * x = algebraMap A S t) :
@@ -225,48 +249,54 @@ theorem isPowerBounded_of_algebraMap_mul_eq_familyNumerators [SeparatelyContinuo
   isPowerBounded_of_mem_locSubring P _ _ S hden
     (mem_locSubring_familyNumerators_of_algebraMap_mul_eq s S P T ht hx)
 
+/-- **The fractions `t/sᵢ` form a power-bounded set in `A(T/s)`**: the submonoid generated by all
+of them, for every `i` and every `t ∈ Tᵢ`, is bounded, since it lies in the bounded subring `D`. -/
+theorem isBounded_submonoidClosure_familyNumerators [SeparatelyContinuousMul A]
+    (hden : HasDenominatorPower P (familyNumerators T s) (∏ i, s i) S) :
+    letI := locTopology P (familyNumerators T s) (∏ i, s i) S hden
+    IsBounded (Submonoid.closure
+      {x : S | ∃ i, ∃ t ∈ T i, algebraMap A S (s i) * x = algebraMap A S t} : Set S) :=
+  isBounded_submonoidClosure_of_subset_locSubring P _ _ S hden <| by
+    rintro _ ⟨i, t, ht, hx⟩
+    exact mem_locSubring_familyNumerators_of_algebraMap_mul_eq s S P T ht hx
+
 /-- **Wedhorn 5.51, the universal property of `A(T/s)`.** A ring homomorphism `φ : A →+* B` into
 a nonarchimedean ring extends to `A(T/s)` in exactly one continuous way, provided `φ` is
-continuous, every `φ sᵢ` is a unit, and every fraction `φ t / φ sᵢ` with `t ∈ Tᵢ` is
-power-bounded. -/
+continuous, every `φ sᵢ` is a unit, and for every `i` the fractions `φ t / φ sᵢ` with `t ∈ Tᵢ`
+form a power-bounded set: the submonoid they generate is bounded. -/
 theorem existsUnique_continuous_ringHom_locTopology_familyNumerators {B : Type*} [CommRing B]
     [TopologicalSpace B] [NonarchimedeanRing B] [IsTopologicalRing A]
     (hden : HasDenominatorPower P (familyNumerators T s) (∏ i, s i) S) {φ : A →+* B}
     (hφ : ContinuousAt φ 0) (hs : ∀ i, IsUnit (φ (s i)))
-    (hpow : ∀ i, ∀ t ∈ T i, IsPowerBounded (φ t * ↑(hs i).unit⁻¹)) :
+    (hpow : ∀ i, IsBounded (Submonoid.closure ((fun t ↦ φ t * ↑(hs i).unit⁻¹) '' T i) : Set B)) :
     letI := locTopology P (familyNumerators T s) (∏ i, s i) S hden
     ∃! f : S →+* B, Continuous f ∧ f.comp (algebraMap A S) = φ := by
-  classical
   have hprod : IsUnit (φ (∏ i, s i)) := by simpa [map_prod] using hs
-  refine existsUnique_continuous_ringHom_locTopology P _ _ S hden hφ hprod fun x hx ↦ ?_
-  obtain ⟨i, t, ht, rfl⟩ := mem_familyNumerators.mp hx
-  rw [map_mul, map_prod φ s, mul_assoc, Finset.prod_erase_mul_units_inv _ _ (Finset.mem_univ i)
-    (hprod.unit_spec.trans (map_prod φ s _)) (hs i).unit_spec]
-  exact hpow i t ht
+  refine existsUnique_continuous_ringHom_locTopology_of_isBounded_submonoidClosure P _ _ S hden
+    hφ hprod ?_
+  rw [image_familyNumerators s T hs hprod]
+  exact isBounded_submonoidClosure_iUnion hpow
 
 /-- **The universal property of the completion `A⟨T/s⟩`**, for complete Hausdorff targets: a ring
-homomorphism `φ : A →+* B` continuous at zero, with every `φ sᵢ` a unit and every fraction
-`φ t / φ sᵢ` with `t ∈ Tᵢ` power-bounded, extends to the completion of `A(T/s)` in exactly one
-continuous way. -/
+homomorphism `φ : A →+* B` continuous at zero, with every `φ sᵢ` a unit and for every `i` the
+fractions `φ t / φ sᵢ` with `t ∈ Tᵢ` forming a power-bounded set, extends to the completion of
+`A(T/s)` in exactly one continuous way. -/
 theorem existsUnique_continuous_ringHom_completion_locTopology_familyNumerators {B : Type*}
     [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B]
     [T0Space B] [IsTopologicalRing A]
     (hden : HasDenominatorPower P (familyNumerators T s) (∏ i, s i) S)
     {φ : A →+* B} (hφ : ContinuousAt φ 0) (hs : ∀ i, IsUnit (φ (s i)))
-    (hpow : ∀ i, ∀ t ∈ T i, IsPowerBounded (φ t * ↑(hs i).unit⁻¹)) :
+    (hpow : ∀ i, IsBounded (Submonoid.closure ((fun t ↦ φ t * ↑(hs i).unit⁻¹) '' T i) : Set B)) :
     letI := locUniformSpace P (familyNumerators T s) (∏ i, s i) S hden
     letI := isUniformAddGroup_locUniformSpace P (familyNumerators T s) (∏ i, s i) S hden
     letI := isTopologicalRing_locUniformSpace P (familyNumerators T s) (∏ i, s i) S hden
     ∃! g : UniformSpace.Completion S →+* B,
       Continuous g ∧ g.comp (toCompletionLoc P (familyNumerators T s) (∏ i, s i) S hden) = φ := by
-  classical
   have hprod : IsUnit (φ (∏ i, s i)) := by simpa [map_prod] using hs
-  refine existsUnique_continuous_ringHom_completion_locTopology P _ _ S hden hφ hprod
-    fun x hx ↦ ?_
-  obtain ⟨i, t, ht, rfl⟩ := mem_familyNumerators.mp hx
-  rw [map_mul, map_prod φ s, mul_assoc, Finset.prod_erase_mul_units_inv _ _ (Finset.mem_univ i)
-    (hprod.unit_spec.trans (map_prod φ s _)) (hs i).unit_spec]
-  exact hpow i t ht
+  refine existsUnique_continuous_ringHom_completion_locTopology_of_isBounded_submonoidClosure P _ _
+    S hden hφ hprod ?_
+  rw [image_familyNumerators s T hs hprod]
+  exact isBounded_submonoidClosure_iUnion hpow
 
 end PairOfDefinition
 

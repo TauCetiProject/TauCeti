@@ -545,9 +545,8 @@ theorem dedekindCubic_isCommonIndexDivisor_two : IsCommonIndexDivisor 2 K := by
 
 /-- **Dedekind's cubic field is not monogenic**: its ring of integers is not `ℤ[α]` for any
 algebraic integer `α`. -/
-theorem dedekindCubic_not_isMonogenic : ¬ IsMonogenic K := by
-  rw [isMonogenic_iff_exists_index_eq_one]
-  exact (dedekindCubic_isCommonIndexDivisor_two hmin hgen).not_exists_index_eq_one (by norm_num)
+theorem dedekindCubic_not_isMonogenic : ¬ IsMonogenic K :=
+  (dedekindCubic_isCommonIndexDivisor_two hmin hgen).not_isMonogenic (by norm_num)
 
 end TauCeti.NumberField
 

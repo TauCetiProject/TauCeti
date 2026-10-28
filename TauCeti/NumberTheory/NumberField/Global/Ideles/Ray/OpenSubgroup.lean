@@ -34,6 +34,16 @@ components of a congruence idele are then separately in `V`.
 Since the ray subgroups and the idele congruence subgroups are themselves open, a subgroup of the
 idele class group or of the idele group is open exactly when it contains one of them.
 
+As the ray subgroups of two moduli generate the ray subgroup of their greatest common divisor,
+the moduli whose ray subgroup lies in a given open subgroup `U` are exactly the multiples of a
+least one, the **conductor** of `U` (`OpenSubgroup.ideleClassConductor`). Applied to the norm
+group of an extension of number fields, it is the conductor of that extension.
+
+## Main definitions
+
+* `OpenSubgroup.ideleClassConductor`: the least modulus whose ray subgroup lies in an open subgroup
+  of the idele class group.
+
 ## Main results
 
 * `TauCeti.GlobalNumberFields.ofCompletion_mem_connectedComponentOfOne`: every idele concentrated
@@ -53,6 +63,10 @@ idele class group or of the idele group is open exactly when it contains one of 
   class group contains a ray subgroup.
 * `TauCeti.GlobalNumberFields.isOpen_iff_exists_raySubgroup_le`: a subgroup of the idele class
   group is open exactly when it contains a ray subgroup.
+* `OpenSubgroup.ideleClassConductor_dvd_iff`: the conductor of `U` divides `𝔪` exactly when the
+  ray subgroup of `𝔪` lies in `U`.
+* `OpenSubgroup.ideleClassConductor_inf`: the conductor of `U ⊓ V` is the least common multiple of
+  the conductors of `U` and `V`.
 
 ## References
 
@@ -209,3 +223,67 @@ theorem isOpen_iff_exists_raySubgroup_le (U : Subgroup (IdeleClassGroup (𝓞 K)
   ⟨exists_raySubgroup_le_of_isOpen U, fun ⟨𝔪, h⟩ ↦ Subgroup.isOpen_mono h (isOpen_raySubgroup 𝔪)⟩
 
 end TauCeti.GlobalNumberFields
+
+/-! ### The conductor of an open subgroup -/
+
+namespace OpenSubgroup
+
+open TauCeti.GlobalNumberFields
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **The conductor of an open subgroup of the idele class group**: the least modulus whose ray
+subgroup lies in `U`. Every modulus whose ray subgroup lies in `U` is a multiple of it
+(`ideleClassConductor_dvd_iff`). -/
+def ideleClassConductor (U : OpenSubgroup (IdeleClassGroup (𝓞 K) K)) : Modulus K :=
+  Modulus.wellFounded_dvd_and_ne.min {𝔪 | raySubgroup 𝔪 ≤ U.toSubgroup}
+    (exists_raySubgroup_le_of_isOpen U.toSubgroup U.isOpen)
+
+/-- The ray subgroup of the conductor of `U` lies in `U`. -/
+theorem raySubgroup_ideleClassConductor_le (U : OpenSubgroup (IdeleClassGroup (𝓞 K) K)) :
+    raySubgroup U.ideleClassConductor ≤ U :=
+  Modulus.wellFounded_dvd_and_ne.min_mem {𝔪 | raySubgroup 𝔪 ≤ U.toSubgroup}
+    (exists_raySubgroup_le_of_isOpen U.toSubgroup U.isOpen)
+
+/-- **The universal property of the conductor**: the conductor of `U` divides `𝔪` exactly when the
+ray subgroup of `𝔪` lies in `U`. -/
+theorem ideleClassConductor_dvd_iff {U : OpenSubgroup (IdeleClassGroup (𝓞 K) K)}
+    {𝔪 : Modulus K} : U.ideleClassConductor ∣ 𝔪 ↔ raySubgroup 𝔪 ≤ U := by
+  refine ⟨fun h ↦ (raySubgroup_antitone h).trans (raySubgroup_ideleClassConductor_le U),
+    fun h ↦ ?_⟩
+  -- The greatest common divisor of the conductor and `𝔪` again has its ray subgroup in `U`, so by
+  -- minimality it is the conductor.
+  have hgcd : raySubgroup (U.ideleClassConductor.gcd 𝔪) ≤ U := by
+    rw [raySubgroup_gcd]
+    exact sup_le (raySubgroup_ideleClassConductor_le U) h
+  have hmin := Modulus.wellFounded_dvd_and_ne.not_lt_min {𝔪 | raySubgroup 𝔪 ≤ U.toSubgroup} hgcd
+  have heq : U.ideleClassConductor.gcd 𝔪 = U.ideleClassConductor :=
+    not_not.mp fun hne ↦ hmin ⟨Modulus.gcd_dvd_left _ _, hne⟩
+  exact heq ▸ Modulus.gcd_dvd_right _ _
+
+/-- A larger open subgroup has a smaller conductor. -/
+theorem ideleClassConductor_dvd_of_le {U V : OpenSubgroup (IdeleClassGroup (𝓞 K) K)}
+    (h : U ≤ V) : V.ideleClassConductor ∣ U.ideleClassConductor :=
+  ideleClassConductor_dvd_iff.mpr ((raySubgroup_ideleClassConductor_le U).trans h)
+
+/-- The whole idele class group has the trivial conductor. -/
+@[simp]
+theorem ideleClassConductor_top :
+    (⊤ : OpenSubgroup (IdeleClassGroup (𝓞 K) K)).ideleClassConductor = Modulus.one K :=
+  Modulus.eq_one_of_dvd_one (ideleClassConductor_dvd_iff.mpr le_top)
+
+/-- **The conductor of an intersection is the least common multiple of the conductors.** -/
+@[simp]
+theorem ideleClassConductor_inf (U V : OpenSubgroup (IdeleClassGroup (𝓞 K) K)) :
+    (U ⊓ V).ideleClassConductor = U.ideleClassConductor.lcm V.ideleClassConductor :=
+  Modulus.dvd_antisymm
+    (ideleClassConductor_dvd_iff.mpr (by
+      rw [toSubgroup_inf]
+      exact le_inf ((raySubgroup_antitone (Modulus.dvd_lcm_left _ _)).trans
+          (raySubgroup_ideleClassConductor_le U))
+        ((raySubgroup_antitone (Modulus.dvd_lcm_right _ _)).trans
+          (raySubgroup_ideleClassConductor_le V))))
+    (Modulus.lcm_dvd (ideleClassConductor_dvd_of_le inf_le_left)
+      (ideleClassConductor_dvd_of_le inf_le_right))
+
+end OpenSubgroup

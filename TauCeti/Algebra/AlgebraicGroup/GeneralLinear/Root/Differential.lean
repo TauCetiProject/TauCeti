@@ -107,9 +107,9 @@ theorem tangentMatrix_derivationComp_eq_smul_of_map_genericMatrix
     map_mul, map_intCast]
   ring
 
-section Field
+section Cotangent
 
-variable {k : Type u} [Field k] {n : ℕ} {i j : Fin n}
+variable {k : Type u} [CommRing k] {n : ℕ} {i j : Fin n}
 
 /-- The unit tangent vector of `𝔾ₐ` maps to the matrix unit `Eᵢⱼ` in the fixed cotangent-dual
 model of the Lie algebra of `GLₙ`. -/
@@ -138,6 +138,6 @@ theorem cotangentDual_rootSubgroup_unit_mem_adjointWeightSpace (hij : i ≠ j) :
   rw [cotangentDual_rootSubgroup_unit hij]
   exact matrixUnitTangent_mem_adjointWeightSpace i j
 
-end Field
+end Cotangent
 
 end TauCeti.GeneralLinear

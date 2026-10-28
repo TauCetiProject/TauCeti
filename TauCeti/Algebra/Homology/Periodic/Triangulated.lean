@@ -106,10 +106,7 @@ theorem homotopyCategory_mem_distTriang_iff
 
 variable {C n}
 
-section MappingCone
-
-omit [HasZeroObject C]
-
+omit [HasZeroObject C] in
 /-- The mapping-cone triangle of a periodic chain map in the homotopy category. Its last
 morphism is the negative cone projection, followed by the quotient's shift comparison. -/
 @[expose, implicit_reducible]
@@ -118,36 +115,42 @@ noncomputable def mappingConeTriangle {X Y : CochainComplex C (ZMod n)} (f : X �
   (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).mapTriangle.obj
     (Triangle.mk f (homotopyCofiber.inr f) (-coneProjection f))
 
+omit [HasZeroObject C] in
 /-- The first vertex of the mapping-cone triangle is the source's homotopy class. -/
 @[simp]
 theorem mappingConeTriangle_obj₁ {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
     (mappingConeTriangle f).obj₁ =
       (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).obj X := rfl
 
+omit [HasZeroObject C] in
 /-- The second vertex of the mapping-cone triangle is the target's homotopy class. -/
 @[simp]
 theorem mappingConeTriangle_obj₂ {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
     (mappingConeTriangle f).obj₂ =
       (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).obj Y := rfl
 
+omit [HasZeroObject C] in
 /-- The third vertex of the mapping-cone triangle is the cone's homotopy class. -/
 @[simp]
 theorem mappingConeTriangle_obj₃ {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
     (mappingConeTriangle f).obj₃ =
       (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).obj (homotopyCofiber f) := rfl
 
+omit [HasZeroObject C] in
 /-- The first arrow of the mapping-cone triangle is the original chain map's homotopy class. -/
 @[simp]
 theorem mappingConeTriangle_mor₁ {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
     (mappingConeTriangle f).mor₁ =
       (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map f := rfl
 
+omit [HasZeroObject C] in
 /-- The second arrow of the mapping-cone triangle is the cone inclusion's homotopy class. -/
 @[simp]
 theorem mappingConeTriangle_mor₂ {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
     (mappingConeTriangle f).mor₂ =
       (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map (homotopyCofiber.inr f) := rfl
 
+omit [HasZeroObject C] in
 /-- The third arrow of the mapping-cone triangle is minus the cone projection, with the
 quotient's shift comparison. -/
 @[simp]
@@ -156,8 +159,6 @@ theorem mappingConeTriangle_mor₃ {X Y : CochainComplex C (ZMod n)} (f : X ⟶ 
       (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map (-coneProjection f) ≫
         ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).commShiftIso (1 : ℤ)).hom.app X :=
   rfl
-
-end MappingCone
 
 /-- **Mapping-cone triangles are distinguished.** For a morphism `f : X ⟶ Y` of periodic
 complexes, the image in the homotopy category of the triangle

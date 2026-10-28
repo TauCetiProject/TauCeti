@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Morse.Boundary
+public import TauCeti.Analysis.Calculus.Morse.Boundary.Basic
 
 /-!
 # The Morse-index grading of the mod-two boundary
@@ -105,14 +105,7 @@ variable [FiniteDimensional ℝ E]
 variable (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
   (hM : HasNondegenerateCriticalPointsOn f univ)
   (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c})
-  (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-    IsNondegenerateCriticalPoint f b →
-    z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-    z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-    Submodule.span ℝ (tangentConeAt ℝ
-        (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-      Submodule.span ℝ (tangentConeAt ℝ
-        (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤)
+  (htr : IsMorseSmale f hf)
 
 /-- The total boundary of a chain concentrated in index `n + 1` has zero coefficient outside
 index `n`. -/

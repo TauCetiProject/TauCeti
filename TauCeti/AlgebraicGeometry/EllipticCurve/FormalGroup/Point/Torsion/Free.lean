@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.KerReduction
-public import TauCeti.RingTheory.FormalGroup.NSMul
+public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 -- Proof-only: evaluating a power series at a point, and evaluating a renamed series.
 import TauCeti.RingTheory.MvPowerSeries.Rename
 import TauCeti.RingTheory.PowerSeries.Evaluation
@@ -79,11 +79,7 @@ theorem coe_nsmul (n : ℕ) (P : FormalGroupPoint W I) :
   | zero => simp
   | succ n ih =>
     set a : Fin 2 → PowerSeries O := ![(formalGroup W).nsmulSeries n, PowerSeries.X]
-    have ha : MvPowerSeries.HasSubst a :=
-      MvPowerSeries.hasSubst_of_constantCoeff_zero fun s ↦ by
-        fin_cases s
-        · exact (formalGroup W).constantCoeff_nsmulSeries n
-        · exact PowerSeries.constantCoeff_X
+    have ha : MvPowerSeries.HasSubst a := (formalGroup W).hasSubst_nsmulSeries_X n
     -- the values of the substituted family are the parameters of `n • P` and of `P`
     have hval : (fun s ↦ PowerSeries.aeval P.hasEval (a s)) = ![((n • P : FormalGroupPoint W I) :
         O), (P : O)] := by

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.OfCommRing
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward.Basic
+import Mathlib.Algebra.Category.ModuleCat.Sheaf.Localization
+import Mathlib.CategoryTheory.Sites.PreservesLocallyBijective
 
 /-!
 # Sheafifying a sectionwise pushforward comparison
@@ -31,7 +33,9 @@ formula for `T.map`, which is how `SheafOfModules.exteriorPower` and
   `unit_comp_forget_map_sheafifyPushforwardComparison_app`;
 * `TauCeti.SheafOfModules.sheafifyPushforwardComparison_app_comp_pushforward_map`: the comparison
   is compatible with sheafified maps out of `T_S` and `T_R` whose sectionwise maps are compatible
-  with `c`, as for the identifications of first exterior and symmetric powers with the module.
+  with `c`, as for the identifications of first exterior and symmetric powers with the module;
+* `TauCeti.SheafOfModules.isIso_sheafifyPushforwardComparison`: the comparison is invertible
+  when the sectionwise comparison is invertible and the functor of sites is cocontinuous.
 -/
 
 public section
@@ -206,6 +210,52 @@ theorem sheafifyPushforwardComparison_app_comp_pushforward_map
   exact (Adjunction.homEquiv_unit
     (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)) _ _
     ((eS ((_root_.SheafOfModules.pushforward φ).obj M)).inv ≫ fS)).symm
+
+/-- Along a continuous and cocontinuous functor, sheafification carries an invertible
+sectionwise pushforward comparison to an invertible comparison of sheaves of modules. -/
+instance isIso_sheafifyPushforwardComparison [F.IsCocontinuous J K] [IsIso c] :
+    IsIso (sheafifyPushforwardComparison φ eS hS eR hR c) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro M
+  let P := PR.obj M.val
+  let η := (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app P
+  let L := PresheafOfModules.sheafification (𝟙 (ringCatSheaf S).obj)
+  have hη : IsIso (L.map ((presheafPushforward φ).map η)) := by
+    -- Sheafification inverts exactly the maps that are locally bijective on additive presheaves.
+    change ((MorphismProperty.isomorphisms _).inverseImage L)
+      ((presheafPushforward φ).map η)
+    rw [← PresheafOfModules.inverseImage_W_toPresheaf_eq_inverseImage_isomorphisms]
+    have eq : (PresheafOfModules.toPresheaf _).map ((presheafPushforward φ).map η) =
+        Functor.whiskerLeft F.op (CategoryTheory.toSheafify K P.presheaf) := by
+      have he := PresheafOfModules.toPresheaf_map_sheafificationAdjunction_unit_app
+        (𝟙 (ringCatSheaf R).obj) P
+      exact congrArg (Functor.whiskerLeft F.op) he
+    -- Evaluate the inverse-image morphism property before applying its section equation.
+    change J.W ((PresheafOfModules.toPresheaf _).map ((presheafPushforward φ).map η))
+    rw [eq]
+    exact (J.W_iff_isLocallyBijective _).mpr
+      ⟨Presheaf.isLocallyInjective_whisker J K F _,
+        Presheaf.isLocallySurjective_whisker J K F _⟩
+  have hc : IsIso (L.map (c.app M.val)) :=
+    (L.mapIso ((asIso c).app M.val)).isIso_hom
+  have he : IsIso (L.map ((presheafPushforward φ).map
+      ((_root_.SheafOfModules.forget _).map (eR M).inv))) := by infer_instance
+  dsimp only [η, P] at hη
+  have hmap : IsIso (L.map (sheafifyPushforwardPresheafMap φ eR c M)) := by
+    dsimp only [sheafifyPushforwardPresheafMap]
+    erw [Functor.map_comp, Functor.map_comp, Functor.map_comp]
+    exact IsIso.comp_isIso' hc (IsIso.comp_isIso' hη he)
+  dsimp only [L] at hmap
+  -- The transpose is sheafification of the presheaf map followed by the counit.
+  change IsIso ((eS _).hom ≫
+    ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).homEquiv _ _).symm
+      (sheafifyPushforwardPresheafMap φ eR c M))
+  erw [Adjunction.homEquiv_counit]
+  have hi : IsIso ((eS ((_root_.SheafOfModules.pushforward φ).obj M)).hom) := by infer_instance
+  have hj : IsIso ((PresheafOfModules.sheafificationAdjunction
+    (𝟙 (ringCatSheaf S).obj)).counit.app
+      ((_root_.SheafOfModules.pushforward φ).obj (TR.obj M))) := by infer_instance
+  exact IsIso.comp_isIso' hi (IsIso.comp_isIso' hmap hj)
 
 end
 

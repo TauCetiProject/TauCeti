@@ -14,7 +14,10 @@ Mathlib defines the quotient `HomotopyGroup N X x` of the generalized loop space
 supplies the map induced by a based continuous map (postcomposition of generalized loops, in
 `TauCeti.Topology.Homotopy.GenLoop.Map`) on homotopy classes: it respects identity and composition,
 handles constant maps and subsingleton targets, and is a monoid homomorphism in positive
-dimensions.
+dimensions. In dimension one it is Mathlib's induced map `FundamentalGroup.mapOfEq` of fundamental
+groups, read through `HomotopyGroup.pi1EquivFundamentalGroup`, so in particular one is bijective
+exactly when the other is. Every homotopy group of a subsingleton space is itself a subsingleton
+(`HomotopyGroup.subsingleton_of_subsingleton`).
 
 The covering-map isomorphisms on `π_n` for `n ≥ 2`
 (`TauCeti.Topology.Homotopy.HomotopyGroup.Covering`) are stated with it.
@@ -60,6 +63,12 @@ theorem map_continuousMap_const_apply (y : Y) (hy : (ContinuousMap.const X y) x 
   intro p
   rw [map_mk]
   exact congrArg _ (GenLoop.map_continuousMap_const y p)
+
+/-- Every homotopy group of a subsingleton space is a subsingleton: any two generalized loops
+in it are equal. This includes dimension zero. -/
+instance subsingleton_of_subsingleton [Subsingleton X] : Subsingleton (HomotopyGroup N X x) :=
+  ⟨fun a b ↦ Quotient.inductionOn₂ a b fun f g ↦
+    congrArg _ (_root_.GenLoop.ext f g fun _ ↦ Subsingleton.elim _ _)⟩
 
 /-- A based map into a subsingleton space induces the same map as the constant map at the
 target basepoint. -/
@@ -139,6 +148,14 @@ theorem map_congr {f₁ f₂ : C(X, Y)} (hfe : f₁ = f₂) (h₁ : f₁ x = y) 
   subst hfe
   rfl
 
+/-- Composition law for a commuting triangle: if `g ∘ f = h`, then the composite of the maps
+induced by `f` and `g` on homotopy classes is the map induced by `h`. -/
+theorem map_comp_map_of_comp_eq {g : C(Y, Z)} {f : C(X, Y)} {h : C(X, Z)} (hgf : g.comp f = h)
+    (hg : g y = z) (hf : f x = y) (hh : h x = z) :
+    map (N := N) g hg ∘ map f hf = map h hh := by
+  subst hgf
+  exact map_comp_map g hg f hf
+
 /-- If `g ∘ f` is the identity, then the induced map of `g` undoes the induced map of `f` on
 homotopy classes. -/
 theorem map_map_of_comp_eq_id (g : C(Y, X)) (f : C(X, Y)) (hf : f x = y) (hg : g y = x)
@@ -214,5 +231,31 @@ theorem map_mul [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
 theorem map_one [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y) :
     map f hf (1 : HomotopyGroup N X x) = 1 :=
   (mapHom f hf).map_one
+
+/-- In dimension one, the induced map on homotopy groups is the induced map on fundamental groups,
+under Mathlib's identification `pi1EquivFundamentalGroup` of `π_1` with the fundamental group. -/
+@[simp]
+theorem pi1EquivFundamentalGroup_map (f : C(X, Y)) (hf : f x = y) (a : π_ 1 X x) :
+    pi1EquivFundamentalGroup (map f hf a) =
+      FundamentalGroup.mapOfEq f hf (pi1EquivFundamentalGroup a) := by
+  induction a using Quotient.inductionOn with
+  | h p =>
+  rw [FundamentalGroup.mapOfEq_apply]
+  -- Both sides are classes of the loop `t ↦ f (p t)`.
+  refine congrArg FundamentalGroup.fromPath
+    (congrArg Path.Homotopic.Quotient.mk (Path.ext (funext fun t => ?_)))
+  simp [genLoopEquivOfUnique, GenLoop.map_apply]
+
+/-- In dimension one, a map induces a bijection on homotopy groups exactly when it induces a
+bijection of fundamental groups. -/
+theorem bijective_map_iff_bijective_mapOfEq (f : C(X, Y)) (hf : f x = y) :
+    Function.Bijective (map (N := Fin 1) f hf) ↔
+      Function.Bijective (FundamentalGroup.mapOfEq f hf) := by
+  have h : ⇑(FundamentalGroup.mapOfEq f hf) =
+      pi1EquivFundamentalGroup ∘ map f hf ∘ pi1EquivFundamentalGroup.symm := by
+    funext γ
+    simp
+  rw [h, Function.Bijective.of_comp_iff' (Equiv.bijective _),
+    Function.Bijective.of_comp_iff _ (Equiv.bijective _)]
 
 end HomotopyGroup

@@ -124,7 +124,9 @@ theorem gradedSplitExact_isProjective_of_isZero_homotopy
     ← map_add, hk]
 
 /-- The injective presentation `M → Cone(id M) → M[1]`. -/
-noncomputable def coneIdentityInjectivePresentation
+-- Exposed so that its middle and cokernel terms are definitionally the identity cone and the
+-- shift, which the typing of the maps between these presentations requires.
+@[expose] noncomputable def coneIdentityInjectivePresentation
     (M : CurvedDGRightModuleCat.{u, u, u} h) :
     (gradedSplitExact (h := h)).InjectivePresentation
       (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) where

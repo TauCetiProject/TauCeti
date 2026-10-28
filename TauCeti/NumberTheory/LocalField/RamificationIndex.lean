@@ -7,9 +7,11 @@ module
 
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import Mathlib.RingTheory.RamificationInertia.Basic
+public import TauCeti.Algebra.Order.Floor.Div
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Orthogonality
 
 /-!
@@ -52,6 +54,10 @@ filtration.
 * `TauCeti.addVal_sum_algebraMap_mul_pow_of_irreducible`: the first `e(L/K)` powers of a
   uniformizer of `L` are orthogonal, so an `𝒪[K]`-linear combination of them has the least
   term valuation.
+* `TauCeti.le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible` and
+  `TauCeti.ramificationIndex_mul_le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible`: the
+  preimage of a valuation ball of `𝒪[L]` under the coefficient map `c ↦ ∑ c i ϖ ^ i` on
+  `Fin n → 𝒪[K]` is a box of powers of `𝓂[K]`, and a cube at radii divisible by `e(L/K)`.
 * `TauCeti.ramificationIndex_eq_iff`: `e` is the only natural number with that property.
 * `TauCeti.ramificationIndex_pos`: the ramification index is positive.
 * `TauCeti.normalizedValuation_algebraMap_irreducible` and
@@ -443,6 +449,31 @@ theorem addVal_sum_algebraMap_mul_pow_of_irreducible {ϖ : 𝒪[L]} (hϖ : Irred
     exact hij (Fin.ext hijval)
   rw [IsDiscreteValuationRing.addVal_sum_eq_iInf_of_ne _ hdistinct]
   exact iInf_congr hterm
+
+/-- **Valuation balls in uniformizer coordinates.** For a uniformizer `ϖ` of `L` and `n ≤ e(L/K)`,
+the coefficient vectors `c : Fin n → 𝒪[K]` with `r ≤ v_L(∑ c i ϖ ^ i)` form the box whose `i`-th
+factor is the `ceil((r - i) / e(L/K))`-th power of the maximal ideal of `𝒪[K]`. -/
+theorem le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ)
+    {n : ℕ} (hn : n ≤ ramificationIndex K L) (c : Fin n → 𝒪[K]) (r : ℕ) :
+    (r : ℕ∞) ≤ IsDiscreteValuationRing.addVal 𝒪[L]
+        (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) ↔
+      ∀ i : Fin n, c i ∈ 𝓂[K] ^ ((r - (i : ℕ)) ⌈/⌉ ramificationIndex K L) := by
+  rw [addVal_sum_algebraMap_mul_pow_of_irreducible hϖ hn c, le_iInf_iff]
+  refine forall_congr' fun i ↦ ?_
+  rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
+  exact ENat.natCast_le_nsmul_add_iff_ceilDiv_le ramificationIndex_pos _ _ _
+
+/-- **Valuation cubes in uniformizer coordinates.** At a radius `e(L/K) * ρ` divisible by the
+ramification index, the box of `le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible` is the cube
+in which every coefficient belongs to `𝓂[K] ^ ρ`. -/
+theorem ramificationIndex_mul_le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible {ϖ : 𝒪[L]}
+    (hϖ : Irreducible ϖ) {n : ℕ} (hn : n ≤ ramificationIndex K L) (c : Fin n → 𝒪[K]) (ρ : ℕ) :
+    ((ramificationIndex K L * ρ : ℕ) : ℕ∞) ≤ IsDiscreteValuationRing.addVal 𝒪[L]
+        (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) ↔
+      ∀ i : Fin n, c i ∈ 𝓂[K] ^ ρ := by
+  rw [le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible hϖ hn c]
+  refine forall_congr' fun i ↦ ?_
+  rw [Nat.ceilDiv_mul_sub_of_lt (i.isLt.trans_le hn)]
 
 variable (K L) in
 /-- The maximal ideal of `𝒪[K]` generates the `e(L/K)`-th power of the maximal ideal of `𝒪[L]`.

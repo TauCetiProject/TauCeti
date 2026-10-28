@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.MonotoneExtension
 public import TauCeti.Analysis.Complex.Conformal.Biholomorph
 public import TauCeti.Topology.ClusterSet
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
+import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 
 /-!
 # Boundary injectivity via inverse cluster sets
@@ -32,6 +33,8 @@ Adapted from D. Cureton, `sphere-six-complex`,
   cluster set of the inverse.
 * `TauCeti.isPreconnected_boundary_fiber_of_isPreconnected_image_approach`
   — connected approach regions ⇒ preconnected boundary fibres.
+* `TauCeti.subsingleton_sphere_fiber_of_isPreconnectedApproachAt` — a boundary point with
+  preconnected approach regions has at most one preimage on the circle.
 * `TauCeti.injOn_closedBall_of_isPreconnected_image_approach` —
   end-to-end reduction to `IsPreconnectedApproachAt`.
 
@@ -223,6 +226,44 @@ theorem isPreconnected_frontier_fiber_of_image_approach
     exact isPreconnected_empty
 
 variable {c : ℂ} {r : ℝ}
+
+/-- **A boundary point with preconnected approach regions has at most one preimage.**  Let `F` be
+continuous on a closed disc, extending an injective holomorphic map `f` on the open disc.  If the
+image `f '' ball c r` has preconnected approach regions at `a`, then at most one point of the
+bounding circle is sent to `a` by `F`.
+
+This is the pointwise form of `TauCeti.injOn_closedBall_of_isPreconnected_image_approach`: no
+condition is placed at the other boundary points, so it applies to images whose boundary is
+locally connected but not a Jordan curve. -/
+theorem subsingleton_sphere_fiber_of_isPreconnectedApproachAt
+    (hr : 0 < r)
+    (hfd : DifferentiableOn ℂ f (ball c r))
+    (hfi : InjOn f (ball c r))
+    (hFc : ContinuousOn F (closedBall c r))
+    (hFf : EqOn F f (ball c r))
+    (hloc : IsPreconnectedApproachAt (f '' ball c r) a) :
+    {z | z ∈ sphere c r ∧ F z = a}.Subsingleton := by
+  have hcl : closure (ball c r) = closedBall c r := closure_ball c hr.ne'
+  by_cases ha : a ∈ frontier (f '' ball c r)
+  · have hpre : IsPreconnected {z : sphere c r | F z = a} := by
+      have h := isPreconnected_boundary_fiber_of_isPreconnected_image_approach isOpen_ball
+        isBounded_ball (isOpen_image_of_differentiableOn_of_injOn isOpen_ball hfd hfi) hfi
+        (hcl.symm ▸ hFc) hFf (hfd.invFunOn isOpen_ball hfi).continuousOn ha hloc
+      rw [frontier_ball c hr.ne'] at h
+      exact h
+    have hsub :=
+      (isJordanCurve_sphere c hr).subsingleton_fiber_of_isPreconnected_of_interior_eq_empty
+      (hFc.mono sphere_subset_closedBall).domRestrict hpre
+      (interior_setOf_eq_eq_empty_of_injOn hr hFc (hfd.congr fun z hz => hFf hz)
+        (hfi.congr hFf.symm) a)
+    rintro z ⟨hz, hza⟩ w ⟨hw, hwa⟩
+    exact congrArg Subtype.val (hsub (x := ⟨z, hz⟩) (y := ⟨w, hw⟩) hza hwa)
+  · rintro z ⟨hz, hza⟩
+    refine absurd ?_ ha
+    rw [← hza]
+    refine image_frontier_subset_frontier_image isOpen_ball hfd hfi (hcl.symm ▸ hFc) hFf
+      ⟨z, ?_, rfl⟩
+    rwa [frontier_ball c hr.ne']
 
 /-- The preceding inverse-cluster reduction, specialized to a disc
 and fed to Tau Ceti's monotone-extension theorem. -/
