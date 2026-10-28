@@ -17,7 +17,7 @@ residue modulo `I ^ n`. The hypothesis is membership of every element in
 `Ideal.primaryComponent M I`. No finite generation or Noetherian hypothesis is needed.
 
 `TauCeti.AdicCompletion.torsionModule` constructs this module structure. The residue formula
-`TauCeti.AdicCompletion.torsionModule_smul_eq` characterizes its action. Every `R`-linear map
+`AdicCompletion.torsion_smul_eq` characterizes its action. Every `R`-linear map
 between such modules is linear for these completion actions, and restriction of scalars recovers
 the original action of `R`.
 
@@ -138,15 +138,30 @@ def torsionModule : Module (AdicCompletion I R) M where
     rw [torsionAction_eq hM 0 hn]
     simp [torsionActionAt]
 
+end TauCeti.AdicCompletion
+
+namespace AdicCompletion
+
+variable {R : Type*} [CommRing R] {I : Ideal R}
+variable {M : Type*} [AddCommGroup M] [Module R M]
+
 /-- A completed scalar acts on an element killed by `I ^ n` through its residue modulo
 `I ^ n`. This formula permits any representative of the residue. -/
-theorem torsionModule_smul_eq
-    (a : AdicCompletion I R) (x : M) {n : ℕ} (r : R)
+theorem torsion_smul_eq (a : AdicCompletion I R)
+    (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I) (x : M) {n : ℕ} (r : R)
     (hx : x ∈ Submodule.torsionBySet R M ↑(I ^ n))
     (ha : evalₐ I n a = Ideal.Quotient.mk (I ^ n) r) :
     letI := TauCeti.AdicCompletion.torsionModule hM
     a • x = r • x := by
   exact (torsionAction_eq hM a hx).trans (torsionActionAt_eq hx ha)
+
+end AdicCompletion
+
+namespace TauCeti.AdicCompletion
+
+variable {R : Type*} [CommRing R] {I : Ideal R}
+variable {M : Type*} [AddCommGroup M] [Module R M]
+variable (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
 
 /-- The canonical completion action extends the scalar tower from `R`. -/
 instance torsionModule_isScalarTower :
@@ -156,7 +171,8 @@ instance torsionModule_isScalarTower :
   apply IsScalarTower.of_algebraMap_smul
   intro r x
   obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem M I x).mp (hM x)
-  exact torsionModule_smul_eq hM _ x r hn (evalₐ_of I n r)
+  exact _root_.AdicCompletion.torsion_smul_eq _ hM x r hn
+    (_root_.AdicCompletion.evalₐ_of I n r)
 
 end TauCeti.AdicCompletion
 
@@ -180,8 +196,8 @@ theorem map_adicCompletion_smul (f : M →ₗ[R] N) (a : AdicCompletion I R) (x 
     intro r
     rw [← f.map_smul, hn r, f.map_zero]
   obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n a)
-  rw [TauCeti.AdicCompletion.torsionModule_smul_eq hM a x r hn hr.symm,
-    TauCeti.AdicCompletion.torsionModule_smul_eq hN a (f x) r hfx hr.symm, f.map_smul]
+  rw [a.torsion_smul_eq hM x r hn hr.symm,
+    a.torsion_smul_eq hN (f x) r hfx hr.symm, f.map_smul]
 
 end LinearMap
 
