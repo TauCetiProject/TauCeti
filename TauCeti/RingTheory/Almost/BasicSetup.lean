@@ -54,6 +54,8 @@ pseudouniformiser.
   isomorphism.
 * `TauCeti.Almost.BasicSetup.IsFilteredPrincipal.powersGenerate`: condition (A) implies
   condition (B).
+* `Submodule.mulMap_top_top_bijective`: the multiplication map `R ⊗[R] R → R` is bijective; it
+  makes `(V, V)` a basic setup.
 
 ## References
 
@@ -66,6 +68,17 @@ pseudouniformiser.
 public section
 
 open TensorProduct
+
+/-- The multiplication map `R ⊗[R] R → R` of the top submodule of `R` is the identification
+`R ⊗[R] R ≃ R`, hence bijective. -/
+theorem Submodule.mulMap_top_top_bijective {R : Type*} [CommSemiring R] :
+    Function.Bijective (Submodule.mulMap (⊤ : Submodule R R) (⊤ : Submodule R R)) := by
+  have : Submodule.mulMap (⊤ : Submodule R R) (⊤ : Submodule R R) =
+      ((TensorProduct.congr Submodule.topEquiv Submodule.topEquiv).trans
+        (TensorProduct.lid R R)).toLinearMap :=
+    TensorProduct.ext' fun x y ↦ by simp
+  rw [this]
+  exact LinearEquiv.bijective _
 
 namespace TauCeti.Almost
 
@@ -271,20 +284,9 @@ end IsAlmostIso
 
 /-! ### The classical and the zero setups -/
 
-/-- For `m = V`, the multiplication map `m~ = V ⊗[V] V → V` is the identification
-`V ⊗[V] V ≃ V`, hence bijective. -/
-private theorem mulMap_top_bijective :
-    Function.Bijective (Submodule.mulMap (⊤ : Ideal V) (⊤ : Ideal V)) := by
-  have : Submodule.mulMap (⊤ : Ideal V) (⊤ : Ideal V) =
-      ((TensorProduct.congr Submodule.topEquiv Submodule.topEquiv).trans
-        (TensorProduct.lid V V)).toLinearMap :=
-    TensorProduct.ext' fun x y ↦ by simp
-  rw [this]
-  exact LinearEquiv.bijective _
-
 /-- For `m = V`, the module `m~ = V ⊗[V] V` is flat. -/
 theorem flat_tilde_top : Module.Flat V ((⊤ : Ideal V) ⊗[V] (⊤ : Ideal V)) :=
-  .of_linearEquiv (LinearEquiv.ofBijective _ mulMap_top_bijective)
+  .of_linearEquiv (LinearEquiv.ofBijective _ Submodule.mulMap_top_top_bijective)
 
 variable (V) in
 /-- The classical setup `(V, V)`, for which almost mathematics is ordinary commutative algebra
@@ -313,7 +315,7 @@ theorem zero_ideal : (zero V).ideal = ⊥ :=
 /-- For the classical setup, the multiplication map `m~ → m` is bijective. -/
 theorem classical_tildeToIdeal_bijective : Function.Bijective (classical V).tildeToIdeal :=
   -- `(classical V).tildeMul` is `Submodule.mulMap ⊤ ⊤`, and `coe_tildeToIdeal` holds by `rfl`.
-  ⟨fun _ _ hst ↦ mulMap_top_bijective.1 (congrArg Subtype.val hst),
+  ⟨fun _ _ hst ↦ Submodule.mulMap_top_top_bijective.1 (congrArg Subtype.val hst),
     (classical V).tildeToIdeal_surjective⟩
 
 /-- The ideal of the zero setup is zero; hence `(zero V).tilde` is zero as well. -/
