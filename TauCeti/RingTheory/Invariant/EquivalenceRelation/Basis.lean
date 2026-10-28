@@ -85,10 +85,10 @@ include hb
 private theorem map_linearCombination (r : ι →₀ (algebraMap A B).eqLocus t) :
     t (Finsupp.linearCombination _ a r) =
       Finsupp.linearCombination A b (r.mapRange Subtype.val rfl) := by
-  rw [Finsupp.linearCombination_apply, Finsupp.linearCombination_apply,
-    Finsupp.sum_mapRange_index (by simp), map_finsuppSum]
-  refine Finsupp.sum_congr fun i _ ↦ ?_
-  rw [Subring.smul_def, smul_eq_mul, map_mul, ← mem_eqLocus.mp (r i).2, hb, Algebra.smul_def]
+  have ht (c : (algebraMap A B).eqLocus t) : t (algebraMap _ A c) = algebraMap A B c :=
+    (mem_eqLocus.mp c.2).symm
+  simp [Finsupp.linearCombination_apply, Finsupp.sum_mapRange_index, map_finsuppSum,
+    Algebra.smul_def, hb, ht]
 
 private theorem linearIndependent : LinearIndependent ((algebraMap A B).eqLocus t) a := by
   refine linearIndependent_iff.mpr fun r hr ↦ ?_
