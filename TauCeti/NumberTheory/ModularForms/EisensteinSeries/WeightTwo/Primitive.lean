@@ -45,6 +45,8 @@ finite-dimensional space, it is then bijective.
 
 ## Main results
 
+* `TauCeti.EisensteinSeries.comp_vecMul_mem_primitiveG2Weights`: right multiplication of the
+  residues by `SL(2, ℤ)` preserves the primitive weights.
 * `TauCeti.EisensteinSeries.disjoint_primitiveG2Subspace_cuspFormSubmodule`: the subspace meets
   the cusp forms only in `0`.
 * `TauCeti.EisensteinSeries.sup_primitiveG2Subspace_cuspFormSubmodule_eq_top`: together with the
@@ -91,6 +93,21 @@ zero. -/
 theorem mem_primitiveG2Weights_iff {W : (Fin 2 → ZMod N) → ℂ} :
     W ∈ primitiveG2Weights N ↔
       (∀ a, W a ≠ 0 → Nonempty (gammaSet N 1 a)) ∧ ∑ a, W a = 0 := Iff.rfl
+
+/-- Right multiplication of the residues by `γ ∈ SL(2, ℤ)` preserves the primitive weight-two
+weights: it permutes the residues of coprime pairs and does not change the total mass. -/
+theorem comp_vecMul_mem_primitiveG2Weights {W : (Fin 2 → ZMod N) → ℂ}
+    (hW : W ∈ primitiveG2Weights N) (γ : SL(2, ℤ)) :
+    (fun a ↦ W (a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)))) ∈
+      primitiveG2Weights N := by
+  obtain ⟨hsupp, hmass⟩ := mem_primitiveG2Weights_iff.mp hW
+  refine mem_primitiveG2Weights_iff.mpr ⟨fun a ha ↦ ?_, (sum_comp_vecMul W _).trans hmass⟩
+  obtain ⟨x⟩ := hsupp _ ha
+  have hinv : (a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N))) ᵥ*
+      (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) = a := by
+    rw [vecMul_vecMul, ← Matrix.SpecialLinearGroup.coe_mul, ← map_mul, mul_inv_cancel, map_one,
+      Matrix.SpecialLinearGroup.coe_one, vecMul_one]
+  exact ⟨hinv ▸ gammaSetEquiv _ γ⁻¹ x⟩
 
 /-! ### The row-sum operator on even weights -/
 

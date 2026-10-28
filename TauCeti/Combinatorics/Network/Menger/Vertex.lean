@@ -152,21 +152,16 @@ theorem exists_paths_vertexSeparator_sum_eq [Finite V] [DecidableEq V] (c : V �
   let R : V → V → Type := fun v w ↦ PLift (Nonempty (Q v w))
   let φ : @Prefunctor V ⟨Q⟩ V ⟨R⟩ := @Prefunctor.mk V ⟨Q⟩ V ⟨R⟩ id fun e ↦ ⟨⟨e⟩⟩
   let ψ : @Prefunctor V ⟨R⟩ V ⟨Q⟩ := @Prefunctor.mk V ⟨R⟩ V ⟨Q⟩ id fun e ↦ Classical.choice e.down
-  have hφ {x y : V} (p : ArrowWalk Q x y) :
-      ArrowWalk.vertices (Q := R) (@Prefunctor.mapPath V ⟨Q⟩ V ⟨R⟩ φ x y p) = p.vertices :=
-    (@Prefunctor.vertices_mapPath V V ⟨Q⟩ ⟨R⟩ φ x y p).trans (List.map_id _)
-  have hψ {x y : V} (p : ArrowWalk R x y) :
-      ArrowWalk.vertices (Q := Q) (@Prefunctor.mapPath V ⟨R⟩ V ⟨Q⟩ ψ x y p) = p.vertices :=
-    (@Prefunctor.vertices_mapPath V V ⟨R⟩ ⟨Q⟩ ψ x y p).trans (List.map_id _)
   obtain ⟨k, P, X, hP, hPv, hs, ht, hX, hk⟩ := exists_paths_vertexSeparator_sum_eq_of_finite
     (Q := R) c hst ⟨fun e ↦ hadj.false (Classical.choice e.down)⟩
   refine ⟨k, fun i ↦ @Prefunctor.mapPath V ⟨R⟩ V ⟨Q⟩ ψ s t (P i), X, fun i ↦ ?_,
     fun v hvs hvt ↦ ?_, hs, ht, fun h ↦ hX ?_, hk⟩
-  · rw [ArrowWalk.isPath_def, hψ]
+  · rw [ArrowWalk.isPath_def, ArrowWalk.vertices_mapPath_of_obj_eq_id ψ rfl]
     exact (ArrowWalk.isPath_def _).1 (hP i)
-  · simpa only [hψ] using hPv v hvs hvt
+  · simpa only [ArrowWalk.vertices_mapPath_of_obj_eq_id ψ rfl] using hPv v hvs hvt
   · obtain ⟨p, hp⟩ := reachableAvoiding_def.1 h
-    exact reachableAvoiding_def.2 ⟨@Prefunctor.mapPath V ⟨Q⟩ V ⟨R⟩ φ s t p, by rwa [hφ]⟩
+    exact reachableAvoiding_def.2 ⟨@Prefunctor.mapPath V ⟨Q⟩ V ⟨R⟩ φ s t p,
+      by rwa [ArrowWalk.vertices_mapPath_of_obj_eq_id φ rfl]⟩
 
 /-! ### Internally vertex-disjoint paths -/
 

@@ -309,7 +309,7 @@ theorem integral_deriv_mul_integral_eq_neg (h : IsContinuityEquation μ v a b) {
   have h0 := h.integral_integral_fderiv_eq_zero_of_norm_fderiv_le hφ hφC hφs
   -- The two terms of the identity are separately integrable in time.
   have h₁ : IntegrableOn (fun t ↦ deriv η t * ∫ x, u (t, x) ∂μ t) (Ioo a b) :=
-    (h.integrableOn_integral_of_norm_le hu.continuous.measurable huM).bdd_mul
+    (h.integrableOn_integral_of_norm_le hu.continuous.stronglyMeasurable huM).bdd_mul
       hη'.aestronglyMeasurable (ae_of_all _ hA')
   have h₂ : IntegrableOn (fun t ↦ η t * ∫ x, fderiv ℝ u (t, x) (1, v t x) ∂μ t) (Ioo a b) :=
     (h.integrableOn_integral_fderiv_of_norm_fderiv_le hDu).bdd_mul

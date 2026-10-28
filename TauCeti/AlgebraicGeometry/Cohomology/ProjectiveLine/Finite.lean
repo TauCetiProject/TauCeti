@@ -38,10 +38,10 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Modules
 
-/-- A quasicoherent sheaf on a locally Noetherian scheme affine over the projective line
-has no cohomology in degrees at least two. -/
+/-- A quasicoherent sheaf on a scheme affine over the projective line has no cohomology in
+degrees at least two. -/
 theorem subsingleton_cohomology_of_two_le_of_isAffineHom_to_projectiveLine
-    (R : Type u) [CommRing R] {X : Scheme.{u}} [IsLocallyNoetherian X]
+    (R : Type u) [CommRing R] {X : Scheme.{u}}
     (f : X ⟶ projectiveLine R) [IsAffineHom f]
     (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) :
     Subsingleton (Cohomology M n) := by
@@ -62,7 +62,6 @@ include f
 sheaf needs to be flat over `R`. -/
 theorem finite_cohomology_of_isFinite_to_projectiveLine (M : X.Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) : Module.Finite R (Cohomology M n) := by
-  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian f
   let N : SheafOfModules (projectiveLine R).ringCatSheaf := (pushforward f).obj M
   have : N.IsFinitePresentation := isFinitePresentation_pushforward_of_isFinite f M
   have : N.IsFiniteType := inferInstance

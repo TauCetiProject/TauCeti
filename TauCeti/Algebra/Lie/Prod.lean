@@ -32,6 +32,8 @@ product.
 * `TauCeti.LieModuleHom.fst` and `TauCeti.LieModuleHom.snd`: the two projections.
 * `TauCeti.LieModuleHom.inl` and `TauCeti.LieModuleHom.inr`: the two inclusions.
 * `TauCeti.LieModuleHom.prod`: the pairing of two morphisms with the same domain.
+* `LieSubmodule.prodFst` and `LieSubmodule.prodSnd`: the projections of a product Lie submodule.
+  A nonzero coordinate guarantees surjectivity onto an irreducible factor.
 * `TauCeti.LieModuleEquiv.prodComm`: swapping the factors is an equivalence.
 * `TauCeti.lie_prod_apply`: the componentwise bracket on a product.
 * `LieHom.prodRepresentation`: the product of two explicit Lie representations.
@@ -204,6 +206,54 @@ theorem comap_lieSpan_diagonal_inl_eq_top_of_mem [LieModule.IsIrreducible R L M]
   simpa using hmem
 
 end TauCeti
+
+namespace LieSubmodule
+
+universe u v w w₁
+
+variable {R : Type u} {L : Type v} {M : Type w} {N : Type w₁}
+variable [CommRing R] [LieRing L] [AddCommGroup M] [Module R M] [LieRingModule L M]
+  [AddCommGroup N] [Module R N] [LieRingModule L N]
+
+/-- The first projection of a Lie submodule of a product. -/
+def prodFst (S : LieSubmodule R L (M × N)) : S →ₗ⁅R,L⁆ M :=
+  (TauCeti.LieModuleHom.fst R L M N).comp S.incl
+
+/-- The second projection of a Lie submodule of a product. -/
+def prodSnd (S : LieSubmodule R L (M × N)) : S →ₗ⁅R,L⁆ N :=
+  (TauCeti.LieModuleHom.snd R L M N).comp S.incl
+
+@[simp]
+theorem prodFst_apply (S : LieSubmodule R L (M × N)) (p : S) :
+    S.prodFst p = (p : M × N).1 := by
+  simp only [prodFst, LieModuleHom.comp_apply, incl_apply, TauCeti.LieModuleHom.fst_apply]
+
+@[simp]
+theorem prodSnd_apply (S : LieSubmodule R L (M × N)) (p : S) :
+    S.prodSnd p = (p : M × N).2 := by
+  simp only [prodSnd, LieModuleHom.comp_apply, incl_apply, TauCeti.LieModuleHom.snd_apply]
+
+/-- A Lie submodule of a product projects onto an irreducible first factor if it contains a pair
+with nonzero first coordinate. -/
+theorem prodFst_surjective_of_mem_of_ne_zero [LieModule.IsIrreducible R L M]
+    (S : LieSubmodule R L (M × N)) {m : M} {n : N} (hmn : (m, n) ∈ S) (hm : m ≠ 0) :
+    Function.Surjective S.prodFst := by
+  refine (LieModuleHom.range_eq_top _).mp ?_
+  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot => hm ?_
+  have hmem : m ∈ LieModuleHom.range S.prodFst := ⟨⟨(m, n), hmn⟩, by simp⟩
+  simpa only [hbot, mem_bot] using hmem
+
+/-- A Lie submodule of a product projects onto an irreducible second factor if it contains a pair
+with nonzero second coordinate. -/
+theorem prodSnd_surjective_of_mem_of_ne_zero [LieModule.IsIrreducible R L N]
+    (S : LieSubmodule R L (M × N)) {m : M} {n : N} (hmn : (m, n) ∈ S) (hn : n ≠ 0) :
+    Function.Surjective S.prodSnd := by
+  refine (LieModuleHom.range_eq_top _).mp ?_
+  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot => hn ?_
+  have hmem : n ∈ LieModuleHom.range S.prodSnd := ⟨⟨(m, n), hmn⟩, by simp⟩
+  simpa only [hbot, mem_bot] using hmem
+
+end LieSubmodule
 
 namespace LieHom
 
