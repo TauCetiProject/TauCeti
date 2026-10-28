@@ -91,21 +91,25 @@ noncomputable def heckeRightMul (i : B) : Module.End R (W →₀ R) :=
 variable {cs c}
 
 /-- **Left multiplication, length increase.** -/
+@[simp]
 theorem heckeLeftMul_single_of_not_isLeftDescent {w : W} {i : B} (h : ¬cs.IsLeftDescent w i)
     (r : R) : cs.heckeLeftMul c i (single w r) = single (s i * w) r := by
   simp [heckeLeftMul, h]
 
 /-- **Left multiplication, length decrease.** -/
+@[simp]
 theorem heckeLeftMul_single_of_isLeftDescent {w : W} {i : B} (h : cs.IsLeftDescent w i)
     (r : R) : cs.heckeLeftMul c i (single w r) = c • single w r + single (s i * w) r := by
   simp [heckeLeftMul, h, mul_comm]
 
 /-- **Right multiplication, length increase.** -/
+@[simp]
 theorem heckeRightMul_single_of_not_isRightDescent {w : W} {i : B} (h : ¬cs.IsRightDescent w i)
     (r : R) : cs.heckeRightMul c i (single w r) = single (w * s i) r := by
   simp [heckeRightMul, h]
 
 /-- **Right multiplication, length decrease.** -/
+@[simp]
 theorem heckeRightMul_single_of_isRightDescent {w : W} {i : B} (h : cs.IsRightDescent w i)
     (r : R) : cs.heckeRightMul c i (single w r) = c • single w r + single (w * s i) r := by
   simp [heckeRightMul, h, mul_comm]
