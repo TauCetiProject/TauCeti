@@ -32,7 +32,9 @@ theorem mk0_five_mem_unitFiltration_two :
     (TauCeti.Padic.irreducible_natCast_self 2)]
   norm_num only [Units.val_mk0]
   have htwo : ((2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = 2 := map_ofNat (Subring.subtype 𝒪[ℚ_[2]]) 2
-  have hfour : (4 : ℚ_[2]) = 2 ^ 2 := by norm_num
-  rw [htwo, hfour, map_pow]
+  rw [valuation_four_eq_pow (K := ℚ_[2]) (by norm_num)
+    (TauCeti.Padic.irreducible_natCast_self 2), _root_.Padic.natCastValuation_self, mul_one]
+  norm_num only [Nat.cast_ofNat]
+  rw [htwo]
 
 end Padic
