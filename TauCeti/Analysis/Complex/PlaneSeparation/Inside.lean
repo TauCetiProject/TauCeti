@@ -10,6 +10,7 @@ import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.PlaneSeparation.RiemannSphere
 import TauCeti.Topology.ConnectedComponents
+import TauCeti.Topology.Compactification.OnePoint.FilledHull
 
 /-!
 # The Jordan curve theorem: the inside of a Jordan curve is connected
@@ -54,39 +55,6 @@ namespace TauCeti
 
 open Bornology Set
 open scoped OnePoint
-
-/-- In the Riemann sphere, the closure of a bounded component of the complement of a closed set
-`K ⊆ ℂ` adds only points of `K`. -/
-private theorem closure_image_coe_connectedComponentIn_subset {K : Set ℂ} (hK : IsClosed K)
-    {x : ℂ} (hx : x ∈ filledHull K) :
-    closure (((↑) : ℂ → OnePoint ℂ) '' connectedComponentIn Kᶜ x) ⊆
-      (↑) '' (connectedComponentIn Kᶜ x ∪ K) := by
-  have hD : IsCompact (closure (connectedComponentIn Kᶜ x)) :=
-    (mem_filledHull_iff.mp hx).isCompact_closure
-  refine (closure_minimal (image_mono subset_closure)
-    (hD.image OnePoint.continuous_coe).isClosed).trans (image_mono fun y hy => ?_)
-  by_contra hyD
-  rw [mem_union, not_or] at hyD
-  exact frontier_connectedComponentIn_subset_compl hK.isOpen_compl x
-    ⟨hy, by rw [hK.isOpen_compl.connectedComponentIn.interior_eq]; exact hyD.1⟩ hyD.2
-
-/-- A point of the Riemann sphere outside the image of a bounded component of the complement of a
-closed set `K ⊆ ℂ` cannot be joined to that component by a path avoiding the image of `K`. -/
-private theorem not_joinedIn_compl_image_coe {K : Set ℂ} (hK : IsClosed K) {x : ℂ}
-    (hx : x ∈ filledHull K \ K) {w : OnePoint ℂ}
-    (hw : w ∉ ((↑) : ℂ → OnePoint ℂ) '' connectedComponentIn Kᶜ x) :
-    ¬ JoinedIn (((↑) : ℂ → OnePoint ℂ) '' K)ᶜ (x : OnePoint ℂ) w := by
-  intro h
-  have hU : IsOpen (((↑) : ℂ → OnePoint ℂ) '' connectedComponentIn Kᶜ x) :=
-    OnePoint.isOpenEmbedding_coe.isOpenMap _ hK.isOpen_compl.connectedComponentIn
-  have hsub := (isConnected_range h.somePath.continuous).isPreconnected
-    |>.subset_of_closure_inter_subset hU
-      ⟨x, ⟨0, by simp⟩, mem_image_of_mem _ (mem_connectedComponentIn hx.2)⟩ ?_
-  · exact hw (hsub ⟨1, by simp⟩)
-  · rintro _ ⟨hcl, t, rfl⟩
-    obtain ⟨y, hy | hy, hyt⟩ := closure_image_coe_connectedComponentIn_subset hK hx.1 hcl
-    · exact ⟨y, hy, hyt⟩
-    · exact absurd ⟨y, hy, hyt⟩ (h.somePath_mem t)
 
 /-- **A Jordan curve has only one bounded complementary component.** Two points of the inside
 `filledHull C \ C` of a Jordan curve `C ⊆ ℂ` lie in the same component of `Cᶜ`. -/
