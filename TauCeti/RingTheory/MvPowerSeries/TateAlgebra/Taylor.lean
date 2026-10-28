@@ -67,26 +67,10 @@ theorem restrictedTranslate_polynomial (p : MvPolynomial (Fin k) R) :
     restrictedTranslate a ha ⟨(p : MvPowerSeries (Fin k) R), p.isRestricted r⟩ =
       ⟨(MvPolynomial.taylor a p : MvPowerSeries (Fin k) R),
         (MvPolynomial.taylor a p).isRestricted r⟩ := by
-  induction p using MvPolynomial.induction_on with
-  | C b =>
-    have h : (⟨((MvPolynomial.C b : MvPolynomial (Fin k) R) : MvPowerSeries (Fin k) R),
-        (MvPolynomial.C b).isRestricted r⟩ : IsRestricted.subring (R := R) r) =
-          algebraMap R _ b := Subtype.ext (by simp [coe_algebraMap_isRestrictedSubring])
-    rw [h, AlgHom.commutes, ← h, MvPolynomial.taylor_C]
-  | add p q hp hq =>
-    have h : (⟨((p + q : MvPolynomial (Fin k) R) : MvPowerSeries (Fin k) R),
-        (p + q).isRestricted r⟩ : IsRestricted.subring (R := R) r) =
-          ⟨(p : MvPowerSeries (Fin k) R), p.isRestricted r⟩ +
-            ⟨(q : MvPowerSeries (Fin k) R), q.isRestricted r⟩ := Subtype.ext (by simp)
-    rw [h, map_add, hp, hq]
-    exact Subtype.ext (by simp)
-  | mul_X p i hp =>
-    have h : (⟨((p * MvPolynomial.X i : MvPolynomial (Fin k) R) : MvPowerSeries (Fin k) R),
-        (p * MvPolynomial.X i).isRestricted r⟩ : IsRestricted.subring (R := R) r) =
-          ⟨(p : MvPowerSeries (Fin k) R), p.isRestricted r⟩ *
-            ⟨X i, isRestricted_monomial r (Finsupp.single i 1) 1⟩ := Subtype.ext (by simp)
-    rw [h, map_mul, hp, restrictedTranslate_X]
-    exact Subtype.ext (by simp [coe_algebraMap_isRestrictedSubring])
+  rw [← polynomialToRestricted_apply, ← polynomialToRestricted_apply, ← AlgHom.comp_apply,
+    ← AlgHom.comp_apply]
+  refine DFunLike.congr_fun (MvPolynomial.algHom_ext fun i ↦ ?_) p
+  simp [← MvPolynomial.algebraMap_eq]
 
 /-- **The coefficients of a translate are Hasse derivatives**: the coefficient of `Xᵛ` in
 `f(X + a)` is the value `(∂^ν f)(a)` of the `ν`-th Hasse derivative of `f` at `a`. -/

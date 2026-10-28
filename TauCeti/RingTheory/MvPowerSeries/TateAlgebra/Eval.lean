@@ -155,17 +155,13 @@ theorem restrictedEval₂_X (i : Fin k) :
 theorem restrictedEval₂_polynomial (p : MvPolynomial (Fin k) R) :
     restrictedEval₂ φ a hφ ha ⟨(p : MvPowerSeries (Fin k) R), p.isRestricted c⟩ =
       MvPolynomial.eval₂ φ a p := by
-  induction p using MvPolynomial.induction_on with
-  | C r =>
-    rw [MvPolynomial.eval₂_C, ← restrictedEval₂_algebraMap φ a hφ ha r]
-    exact congrArg _ (Subtype.ext (by simp))
-  | add p q hp hq =>
-    rw [MvPolynomial.eval₂_add, ← hp, ← hq, ← map_add]
-    exact congrArg _ (Subtype.ext (by simp))
-  | mul_X p i hp =>
-    rw [MvPolynomial.eval₂_mul, MvPolynomial.eval₂_X, ← hp,
-      ← restrictedEval₂_X φ a hφ ha i, ← map_mul]
-    exact congrArg _ (Subtype.ext (by simp))
+  rw [← TauCeti.MvPowerSeries.polynomialToRestricted_apply, ← MvPolynomial.coe_eval₂Hom]
+  refine DFunLike.congr_fun (MvPolynomial.ringHom_ext
+    (f := (restrictedEval₂ φ a hφ ha).comp
+      (TauCeti.MvPowerSeries.polynomialToRestricted c).toRingHom)
+    (fun b ↦ ?_) fun i ↦ ?_) p
+  · simp [← MvPolynomial.algebraMap_eq, restrictedEval₂_algebraMap]
+  · simp [restrictedEval₂_X]
 
 variable [∀ i, Fact (0 < c i)]
 
