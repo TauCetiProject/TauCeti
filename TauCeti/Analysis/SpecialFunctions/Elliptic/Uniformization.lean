@@ -68,6 +68,8 @@ the point map is injective near every lattice point.
 * `PeriodPair.weierstrassPoint_add_coe`, `PeriodPair.weierstrassPoint_neg`,
   `PeriodPair.weierstrassPoint_eq_zero_iff`: the point map is `Λ`-periodic, odd, and vanishes
   exactly on `Λ`.
+* `PeriodPair.inv_derivWeierstrassP_eq`, `PeriodPair.weierstrassP_div_derivWeierstrassP_eq`:
+  `1 / ℘'` and `℘ / ℘'` near a lattice point `l₀`, in terms of `℘_{l₀}` and `℘'_{l₀}`.
 * `PeriodPair.analyticAt_weierstrassP_div_derivWeierstrassP`,
   `PeriodPair.analyticAt_inv_derivWeierstrassP`: the coordinates `℘ / ℘'` and `1 / ℘'` of the
   chart at infinity are holomorphic on its domain `{℘' ≠ 0} ∪ Λ`.
@@ -300,9 +302,16 @@ open Filter Topology
 
 variable (L : PeriodPair) {l₀ : ℂ}
 
+/-- The denominator `(z - l₀)³ ℘'_{l₀}(z) - 2` of `PeriodPair.inv_derivWeierstrassP_eq` is
+holomorphic at `l₀`, where it takes the value `-2`. -/
+private lemma analyticAt_denominator (l₀ : ℂ) :
+    AnalyticAt ℂ (fun z ↦ (z - l₀) ^ 3 * ℘'[L - l₀] z - 2) l₀ ∧
+      (l₀ - l₀) ^ 3 * ℘'[L - l₀] l₀ - 2 ≠ 0 :=
+  ⟨by fun_prop, by simp⟩
+
 /-- Near a lattice point `l₀`, `1 / ℘'` is a holomorphic function divided by a holomorphic function
 that is `-2` at `l₀`. The identity holds everywhere, including the junk value `℘'(l₀)⁻¹ = 0`. -/
-private lemma inv_derivWeierstrassP_eq (hl₀ : l₀ ∈ L.lattice) (z : ℂ) :
+lemma inv_derivWeierstrassP_eq (hl₀ : l₀ ∈ L.lattice) (z : ℂ) :
     (℘'[L] z)⁻¹ = (z - l₀) ^ 3 / ((z - l₀) ^ 3 * ℘'[L - l₀] z - 2) := by
   rcases eq_or_ne z l₀ with rfl | hz
   · simp [L.derivWeierstrassP_coe ⟨z, hl₀⟩]
@@ -312,7 +321,7 @@ private lemma inv_derivWeierstrassP_eq (hl₀ : l₀ ∈ L.lattice) (z : ℂ) :
 
 /-- Near a lattice point `l₀`, `℘ / ℘'` is `z - l₀` times a quotient of holomorphic functions whose
 value at `l₀` is `1 / (-2)`. -/
-private lemma weierstrassP_div_derivWeierstrassP_eq (hl₀ : l₀ ∈ L.lattice) (z : ℂ) :
+lemma weierstrassP_div_derivWeierstrassP_eq (hl₀ : l₀ ∈ L.lattice) (z : ℂ) :
     ℘[L] z / ℘'[L] z = (z - l₀) * (((z - l₀) ^ 2 * (℘[L - l₀] z - 1 / l₀ ^ 2) + 1) /
       ((z - l₀) ^ 3 * ℘'[L - l₀] z - 2)) := by
   rcases eq_or_ne z l₀ with rfl | hz
@@ -327,7 +336,7 @@ private lemma analyticAt_cofactor (l₀ : ℂ) :
     AnalyticAt ℂ (fun z ↦ ((z - l₀) ^ 2 * (℘[L - l₀] z - 1 / l₀ ^ 2) + 1) /
       ((z - l₀) ^ 3 * ℘'[L - l₀] z - 2)) l₀ :=
   (by fun_prop : AnalyticAt ℂ (fun z ↦ (z - l₀) ^ 2 * (℘[L - l₀] z - 1 / l₀ ^ 2) + 1) l₀).div
-    (by fun_prop) (by simp)
+    (L.analyticAt_denominator l₀).1 (L.analyticAt_denominator l₀).2
 
 /-- The coordinate `1 / ℘'` of the chart at infinity is holomorphic on the domain of that chart:
 where `℘' ≠ 0`, and at the lattice points, where it vanishes. -/
@@ -336,7 +345,8 @@ lemma analyticAt_inv_derivWeierstrassP {z₀ : ℂ} (h : ℘'[L] z₀ ≠ 0 ∨ 
   rcases h with h | hz₀
   · exact (L.analyticOnNhd_derivWeierstrassP z₀ fun hz ↦ h (L.derivWeierstrassP_coe ⟨z₀, hz⟩)).inv h
   · simp_rw [L.inv_derivWeierstrassP_eq hz₀]
-    exact (by fun_prop : AnalyticAt ℂ (fun z ↦ (z - z₀) ^ 3) z₀).div (by fun_prop) (by simp)
+    exact (by fun_prop : AnalyticAt ℂ (fun z ↦ (z - z₀) ^ 3) z₀).div
+      (L.analyticAt_denominator z₀).1 (L.analyticAt_denominator z₀).2
 
 /-- The coordinate `℘ / ℘'` of the chart at infinity is holomorphic on the domain of that chart:
 where `℘' ≠ 0`, and at the lattice points, where it vanishes. -/
@@ -361,12 +371,23 @@ lemma hasDerivAt_weierstrassP_div_derivWeierstrassP (hl₀ : l₀ ∈ L.lattice)
 /-- `℘'` has no zeros in a punctured neighbourhood of a lattice point. -/
 lemma eventually_derivWeierstrassP_ne_zero (hl₀ : l₀ ∈ L.lattice) :
     ∀ᶠ z in 𝓝[≠] l₀, ℘'[L] z ≠ 0 := by
-  have h := (show AnalyticAt ℂ (fun z ↦ (z - l₀) ^ 3 * ℘'[L - l₀] z - 2) l₀ by fun_prop)
-    |>.continuousAt.eventually_ne (by simp : _ ≠ (0 : ℂ))
+  have h := (L.analyticAt_denominator l₀).1.continuousAt.eventually_ne
+    (L.analyticAt_denominator l₀).2
   filter_upwards [nhdsWithin_le_nhds h, self_mem_nhdsWithin] with z hz (hzl : z ≠ l₀) h0
   have := L.inv_derivWeierstrassP_eq hl₀ z
   rw [h0, inv_zero, eq_comm, div_eq_zero_iff] at this
   exact this.elim (fun h ↦ sub_ne_zero.mpr hzl (pow_eq_zero_iff three_ne_zero |>.mp h)) hz
+
+/-- Off the lattice, the projective coordinates `[℘ : ℘' / 2 : 1]` of the point map in the affine
+chart are nonsingular and represent the point map. -/
+private lemma nonsingular_toAffine_affineChart {z : ℂ} (hz : z ∉ L.lattice) :
+    L.weierstrassCurve.toProjective.Nonsingular ![℘[L] z, ℘'[L] z / 2, 1] ∧
+      Projective.Point.toAffine L.weierstrassCurve.toProjective ![℘[L] z, ℘'[L] z / 2, 1] =
+        L.weierstrassPoint z := by
+  have hn : L.weierstrassCurve.toProjective.Nonsingular ![℘[L] z, ℘'[L] z / 2, 1] :=
+    (Projective.nonsingular_some _ _).mpr (L.nonsingular_weierstrassP hz)
+  rw [Projective.Point.toAffine_some hn, L.weierstrassPoint_of_notMem hz]
+  exact ⟨hn, rfl⟩
 
 /-- The projective coordinates `[2 ℘ / ℘' : 1 : 2 / ℘']` of the point map in the chart at
 infinity are nonsingular and represent the point map on the domain of that chart. -/
@@ -380,16 +401,26 @@ private lemma nonsingular_toAffine_chartAtInfinity {z : ℂ} (h : ℘'[L] z ≠ 
     have hu : IsUnit (2 * (℘'[L] z)⁻¹) := by simp [h]
     have he : ![2 * (℘[L] z / ℘'[L] z), 1, 2 * (℘'[L] z)⁻¹] =
         (2 * (℘'[L] z)⁻¹) • ![℘[L] z, ℘'[L] z / 2, 1] := by
-      ext i; fin_cases i <;> simp <;> field_simp
-    have hn : L.weierstrassCurve.toProjective.Nonsingular ![℘[L] z, ℘'[L] z / 2, 1] :=
-      (Projective.nonsingular_some _ _).mpr (L.nonsingular_weierstrassP hz)
-    rw [he, Projective.nonsingular_smul _ hu, Projective.Point.toAffine_smul _ hu,
-      Projective.Point.toAffine_some hn, L.weierstrassPoint_of_notMem hz]
-    exact ⟨hn, rfl⟩
+      ext i
+      fin_cases i <;>
+        simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
+          Matrix.cons_val_one, Matrix.cons_val, Pi.smul_apply, smul_eq_mul] <;> field_simp
+    rw [he, Projective.nonsingular_smul _ hu, Projective.Point.toAffine_smul _ hu]
+    exact L.nonsingular_toAffine_affineChart hz
   · have he : ![2 * (℘[L] z / ℘'[L] z), 1, 2 * (℘'[L] z)⁻¹] = ![0, 1, 0] := by
       simp [L.weierstrassP_coe ⟨z, hz⟩, L.derivWeierstrassP_coe ⟨z, hz⟩]
     rw [he, Projective.Point.toAffine_zero, L.weierstrassPoint_of_mem hz]
     exact ⟨Projective.nonsingular_zero, rfl⟩
+
+/-- A triple of functions holomorphic at `z₀` is holomorphic at `z₀` as a map to `Fin 3 → ℂ`. -/
+private lemma analyticAt_vecCons₃ {f g h : ℂ → ℂ} {z₀ : ℂ} (hf : AnalyticAt ℂ f z₀)
+    (hg : AnalyticAt ℂ g z₀) (hh : AnalyticAt ℂ h z₀) :
+    AnalyticAt ℂ (fun z ↦ ![f z, g z, h z]) z₀ := by
+  rw [analyticAt_pi_iff]
+  intro i
+  fin_cases i <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val] <;> assumption
 
 /-- **The point map is holomorphic.** Near every `z₀ ∈ ℂ`, the point `(℘(z), ℘'(z) / 2)` (the
 point at infinity for `z ∈ Λ`) has a holomorphic lift to nonsingular projective coordinates: the
@@ -400,13 +431,9 @@ theorem exists_analyticAt_toAffine_eq_weierstrassPoint (z₀ : ℂ) :
         Projective.Point.toAffine L.weierstrassCurve.toProjective (P z) = L.weierstrassPoint z := by
   by_cases hz₀ : z₀ ∈ L.lattice
   · refine ⟨fun z ↦ ![2 * (℘[L] z / ℘'[L] z), 1, 2 * (℘'[L] z)⁻¹], ?_, ?_⟩
-    · have h₁ := L.analyticAt_weierstrassP_div_derivWeierstrassP (.inr hz₀)
-      have h₂ := L.analyticAt_inv_derivWeierstrassP (.inr hz₀)
-      rw [analyticAt_pi_iff]
-      intro i
-      fin_cases i <;>
-        simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
-          Matrix.cons_val_one, Matrix.cons_val] <;> fun_prop
+    · exact analyticAt_vecCons₃
+        (analyticAt_const.mul (L.analyticAt_weierstrassP_div_derivWeierstrassP (.inr hz₀)))
+        analyticAt_const (analyticAt_const.mul (L.analyticAt_inv_derivWeierstrassP (.inr hz₀)))
     · filter_upwards [eventually_nhdsWithin_iff.mp (L.eventually_derivWeierstrassP_ne_zero hz₀)]
         with z hz
       refine L.nonsingular_toAffine_chartAtInfinity ?_
@@ -414,18 +441,10 @@ theorem exists_analyticAt_toAffine_eq_weierstrassPoint (z₀ : ℂ) :
       · exact .inr hz₀
       · exact .inl (hz hne)
   · refine ⟨fun z ↦ ![℘[L] z, ℘'[L] z / 2, 1], ?_, ?_⟩
-    · have h₁ := L.analyticOnNhd_weierstrassP z₀ hz₀
-      have h₂ := L.analyticOnNhd_derivWeierstrassP z₀ hz₀
-      rw [analyticAt_pi_iff]
-      intro i
-      fin_cases i <;>
-        simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
-          Matrix.cons_val_one, Matrix.cons_val] <;> fun_prop
-    · filter_upwards [L.isClosed_lattice.isOpen_compl.mem_nhds hz₀] with z (hz : z ∉ L.lattice)
-      have hn : L.weierstrassCurve.toProjective.Nonsingular ![℘[L] z, ℘'[L] z / 2, 1] :=
-        (Projective.nonsingular_some _ _).mpr (L.nonsingular_weierstrassP hz)
-      rw [Projective.Point.toAffine_some hn, L.weierstrassPoint_of_notMem hz]
-      exact ⟨hn, rfl⟩
+    · exact analyticAt_vecCons₃ (L.analyticOnNhd_weierstrassP z₀ hz₀)
+        ((L.analyticOnNhd_derivWeierstrassP z₀ hz₀).div_const) analyticAt_const
+    · filter_upwards [L.isClosed_lattice.isOpen_compl.mem_nhds hz₀] with z hz
+      exact L.nonsingular_toAffine_affineChart hz
 
 /-- The coordinate `℘ / ℘'` of the chart at infinity is a function of the point
 `(℘(z), ℘'(z) / 2)`. -/
