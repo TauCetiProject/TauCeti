@@ -81,6 +81,7 @@ noncomputable def complexInnerProductSpace (J : AlmostComplexStructure V)
 /-- The induced complex inner product uses exactly the complex scalar action determined by `J`.
 This equation identifies the inherited module even when the construction is opaque downstream.
 -/
+@[simp]
 lemma complexInnerProductSpace_toModule (J : AlmostComplexStructure V)
     (hJ : ∀ v, ‖J v‖ = ‖v‖) :
     (J.complexInnerProductSpace hJ).toNormedSpace.toModule = J.complexModule := by
@@ -104,6 +105,7 @@ lemma complexInnerProductSpace_smul_def (J : AlmostComplexStructure V)
 
 /-- The Hermitian metric has real part the original metric and imaginary part `⟪J v,w⟫_ℝ`.
 -/
+@[simp]
 lemma complexInnerProductSpace_inner (J : AlmostComplexStructure V)
     (hJ : ∀ v, ‖J v‖ = ‖v‖) (v w : V) :
     letI := J.complexInnerProductSpace hJ
