@@ -11,11 +11,12 @@ public import TauCeti.Geometry.Manifold.VectorBundle.MaximalAtlas
 /-!
 # A real-smooth gauge that is not holomorphic
 
-The holomorphic trivializations of a holomorphic vector bundle are the members of the maximal
-atlas of the groupoid `contMDiffFiberwiseLinear B F 𝓘(ℂ, EB) n`, and a change of frame must be
-a holomorphic gauge (`Bundle.Trivialization.transFiberwiseLinear_mem_maximalAtlas_iff`). This
-file shows that the restriction to that maximal atlas is necessary, already for the trivial
-line bundle `Bundle.Trivial ℂ ℂ` over `ℂ`.
+For positive regularity `n ≠ 0`, the holomorphic trivializations of a holomorphic vector bundle
+are the members of the maximal atlas of the groupoid `contMDiffFiberwiseLinear B F 𝓘(ℂ, EB) n`,
+and a change of frame must be a holomorphic gauge
+(`Bundle.Trivialization.transFiberwiseLinear_mem_maximalAtlas_iff`). This file shows that the
+restriction to that maximal atlas is necessary, already for the trivial line bundle
+`Bundle.Trivial ℂ ℂ` over `ℂ`.
 
 The gauge `TauCeti.expReGauge` multiplies the fibre by `exp (re z)`. It is complex linear on
 every fibre and real smooth in `z`, but not holomorphic. The gauge transform

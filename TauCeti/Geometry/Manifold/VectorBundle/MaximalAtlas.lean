@@ -15,7 +15,8 @@ modelled on `B × F`, whose charts are the trivializations of the bundle's atlas
 for a `C^n` vector bundle these charts are compatible for the groupoid
 `contMDiffFiberwiseLinear B F IB n` of bi-`C^n` fiberwise linear maps. The maximal atlas of that
 groupoid is the set of all trivializations compatible with the bundle's `C^n` structure. Over
-`𝓘(ℂ, EB)` it is the maximal atlas of holomorphic trivializations of a holomorphic vector bundle.
+`𝓘(ℂ, EB)` and for positive regularity `n ≠ 0` it is the maximal atlas of holomorphic
+trivializations of a holomorphic vector bundle; for `n = 0` it only records continuity.
 
 This file characterizes that maximal atlas by gauges. For two linear trivializations `e` and
 `e'`, the coordinate change `e.symm ≫ₕ e'` lies in the groupoid exactly when the fibrewise
@@ -48,6 +49,17 @@ maximal atlas.
 * `Bundle.Trivialization.contMDiffWithinAt_iff_of_mem_maximalAtlas`,
   `Bundle.Trivialization.contMDiffAt_section_iff_of_mem_maximalAtlas`: smoothness of maps into
   the total space and of sections can be read off in any member of the maximal atlas.
+
+## Provenance
+
+No formal source is vendored. The proofs follow Mathlib's
+`Mathlib/Geometry/Manifold/VectorBundle/Basic.lean` and
+`Mathlib/Geometry/Manifold/VectorBundle/FiberwiseLinear.lean`, by Floris van Doorn and Heather
+Macbeth: the proof of `ContMDiffFiberwiseLinear.hasGroupoid` and the characterization
+`mem_contMDiffFiberwiseLinear_iff` drive the groupoid criterion, the gauge transform is built from
+`FiberwiseLinear.openPartialHomeomorph`, and the section criteria extend
+`Bundle.Trivialization.contMDiffWithinAt_iff` and `Bundle.Trivialization.contMDiffAt_section_iff`
+from trivializations of the bundle's atlas to the maximal atlas.
 
 ## References
 
@@ -382,17 +394,14 @@ theorem contMDiffAt_section_iff_of_mem_maximalAtlas
       ContMDiffAt IB 𝓘(𝕜, F) n (fun x ↦ (e ⟨x, σ x⟩).2) b₀ :=
   contMDiffWithinAt_section_iff_of_mem_maximalAtlas he hb₀
 
-/-- A section of a `C^n` vector bundle is `C^n` on an open subset of the base set of a member of
-the maximal atlas of `C^n` trivializations exactly when its coordinate in that member is. -/
+/-- A section of a `C^n` vector bundle is `C^n` on a subset of the base set of a member of the
+maximal atlas of `C^n` trivializations exactly when its coordinate in that member is. -/
 theorem contMDiffOn_section_iff_of_mem_maximalAtlas
     (he : e.toOpenPartialHomeomorph ∈
       (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F E))
-    {σ : ∀ x, E x} {a : Set B} (ha : IsOpen a) (ha' : a ⊆ e.baseSet) :
+    {σ : ∀ x, E x} {a : Set B} (ha : a ⊆ e.baseSet) :
     ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (σ x)) a ↔
-      ContMDiffOn IB 𝓘(𝕜, F) n (fun x ↦ (e ⟨x, σ x⟩).2) a := by
-  refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩ <;>
-  have := (h x hx).contMDiffAt <| ha.mem_nhds hx
-  · exact ((contMDiffAt_section_iff_of_mem_maximalAtlas he (ha' hx)).mp this).contMDiffWithinAt
-  · exact ((contMDiffAt_section_iff_of_mem_maximalAtlas he (ha' hx)).mpr this).contMDiffWithinAt
+      ContMDiffOn IB 𝓘(𝕜, F) n (fun x ↦ (e ⟨x, σ x⟩).2) a :=
+  forall₂_congr fun _ hx ↦ contMDiffWithinAt_section_iff_of_mem_maximalAtlas he (ha hx)
 
 end Bundle.Trivialization
