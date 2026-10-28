@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
+public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 public import TauCeti.Data.Fin.Tuple.Sort
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
@@ -63,6 +64,9 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 * `LinearMap.IsSymmetric.negativeSpectralSubspace` and
   `LinearMap.IsSymmetric.positiveSpectralSubspace`: the negative and positive halves of the
   finite-dimensional spectral splitting.
+* `LinearMap.IsSymmetric.finrank_le_ncard_pos_eigenvalues` and
+  `LinearMap.IsSymmetric.re_inner_pos_of_mem_positiveSpectralSubspace`: the positive spectral
+  subspace has the largest dimension among subspaces with strictly positive Rayleigh form.
 * `LinearMap.IsSymmetric.eigenvalues_rev_of_anticommute`: if an invertible operator anticommutes
   with `T`, the `i`-th largest eigenvalue of `T` is minus its `i`-th smallest.
 * `finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute`, in the
@@ -365,6 +369,63 @@ theorem finrank_positiveSpectralSubspace (hT : T.IsSymmetric)
       {i | 0 < hT.eigenvalues hn i}.ncard := by
   rw [positiveSpectralSubspace]
   exact hT.finrank_eigenvectorSpan hn _
+
+/-- A subspace on which a symmetric operator has strictly positive Rayleigh form has dimension
+at most the number of positive eigenvalues, counted with multiplicity. Zero eigenvalues do not
+contribute to this bound. -/
+theorem finrank_le_ncard_pos_eigenvalues (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
+    (P : Submodule 𝕜 E) (hP : ∀ x ∈ P, x ≠ 0 → 0 < RCLike.re ⟪T x, x⟫_𝕜) :
+    Module.finrank 𝕜 P ≤ {i | 0 < hT.eigenvalues hn i}.ncard := by
+  classical
+  let b := hT.eigenvectorBasis hn
+  let s : Finset (Fin n) := {i | hT.eigenvalues hn i ≤ 0}
+  -- A positive subspace meets the nonpositive spectral subspace only at zero.
+  have hdis : Disjoint P (b.spanIndices s) := by
+    apply Submodule.disjoint_def.mpr
+    intro x hxP hxW
+    by_contra hx
+    have hle := hT.re_inner_apply_self_le_of_mem_spanIndices hn
+      (s := s) (c := 0) (by simp [s]) hxW
+    exact (hP x hxP hx).not_ge (by simpa using hle)
+  have hd := Submodule.finrank_add_finrank_le_of_disjoint hdis
+  rw [b.finrank_spanIndices, hn] at hd
+  have hc : s.card + {i | 0 < hT.eigenvalues hn i}.ncard = n := by
+    simpa [s, Set.ncard_eq_toFinset_card', not_le] using
+      (Finset.card_filter_add_card_filter_not (s := Finset.univ)
+        (fun i : Fin n ↦ hT.eigenvalues hn i ≤ 0))
+  omega
+
+/-- The Rayleigh form is strictly positive on every nonzero vector in the positive spectral
+subspace. Thus this subspace attains the largest possible dimension of a positive subspace. -/
+theorem re_inner_pos_of_mem_positiveSpectralSubspace (hT : T.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n)
+    {x : E} (hx : x ∈ hT.positiveSpectralSubspace hn) (hx0 : x ≠ 0) :
+    0 < RCLike.re ⟪T x, x⟫_𝕜 := by
+  classical
+  let b := hT.eigenvectorBasis hn
+  let s : Finset (Fin n) := {i | 0 < hT.eigenvalues hn i}
+  -- Read the spectral subspace through the existing selected-coordinate API.
+  have hx : x ∈ b.spanIndices s := by
+    simpa only [positiveSpectralSubspace, eigenvectorSpan, OrthonormalBasis.spanIndices_eq_span,
+      Finset.coe_filter, Finset.coe_univ, Set.sep_univ, Finset.mem_univ, true_and, s, b] using hx
+  rw [hT.re_inner_apply_self_eq_sum_eigenvalues_mul_sq hn]
+  have hnonneg (i : Fin n) : 0 ≤ hT.eigenvalues hn i * ‖b.repr x i‖ ^ 2 := by
+    by_cases hi : i ∈ s
+    · exact mul_nonneg (le_of_lt (by simpa [s] using hi)) (sq_nonneg _)
+    · rw [b.repr_eq_zero_of_mem_spanIndices hx hi]; simp
+  apply Finset.sum_pos' (fun i _ ↦ hnonneg i)
+  have hcoord : ∃ i, b.repr x i ≠ 0 := by
+    by_contra! h
+    apply hx0
+    apply b.repr.injective
+    ext i
+    simpa using h i
+  obtain ⟨i, hi⟩ := hcoord
+  have his : i ∈ s := by
+    by_contra his
+    exact hi (b.repr_eq_zero_of_mem_spanIndices hx his)
+  exact ⟨i, Finset.mem_univ _, mul_pos (by simpa [s] using his)
+    (sq_pos_of_ne_zero (by simpa using hi))⟩
 
 /-- A symmetric operator preserves its negative spectral subspace. -/
 theorem map_negativeSpectralSubspace_le (hT : T.IsSymmetric)

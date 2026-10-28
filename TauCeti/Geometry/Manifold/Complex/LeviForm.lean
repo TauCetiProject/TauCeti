@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Pseudoconvex
+public import TauCeti.Analysis.Complex.Pseudoconvex.Spectrum
 public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 public import TauCeti.Geometry.Manifold.Morse.Hessian
@@ -78,6 +78,8 @@ index is at most `dim_ℂ E + q`.
 * `TauCeti.IsManifoldStronglyPseudoconvexAt.manifoldMorseIndex_le` and
   `TauCeti.IsManifoldStrictlyPlurisubharmonicAt.manifoldMorseIndex_le`: the manifold Morse index
   bounds `λ ≤ n + q` and `λ ≤ n` at critical points.
+* `TauCeti.isManifoldStronglyPseudoconvexAt_iff_le_ncard_pos_eigenvalues`: strong
+  pseudoconvexity counts the strictly positive eigenvalues of the Levi operator in a chart.
 
 ## References
 
@@ -366,6 +368,21 @@ theorem isManifoldStronglyPseudoconvexAt_iff [FiniteDimensional ℂ E] {q : ℕ}
     IsManifoldStronglyPseudoconvexAt E q f x ↔ ∃ P : Submodule ℂ E,
       finrank ℂ E ≤ finrank ℂ P + q ∧ ∀ v ∈ P, v ≠ 0 → 0 < (manifoldLeviForm E f x v v).re :=
   isStronglyPseudoconvexAt_iff
+
+/-- **The manifold eigenvalue criterion for strong pseudoconvexity.** In the preferred
+holomorphic chart, the Levi operator has at least `dim_ℂ E - q` strictly positive eigenvalues,
+with multiplicity, exactly when the function is strongly `q`-pseudoconvex at the point. The
+Hermitian inner product on the model space is arbitrary. -/
+theorem isManifoldStronglyPseudoconvexAt_iff_le_ncard_pos_eigenvalues
+    {F N : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+    [TopologicalSpace N] [ChartedSpace F N] {f : N → ℝ} {x : N} {q : ℕ}
+    (hf : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 f x) :
+    IsManifoldStronglyPseudoconvexAt F q f x ↔
+      finrank ℂ F ≤
+        {i | 0 < (isSymmetric_leviOperator hf.contDiffAt_comp_chartAt_symm).eigenvalues rfl i}.ncard
+          + q := by
+  rw [IsManifoldStronglyPseudoconvexAt]
+  exact isStronglyPseudoconvexAt_iff_le_ncard_pos_eigenvalues hf.contDiffAt_comp_chartAt_symm
 
 /-- Strict plurisubharmonicity on a complex manifold in terms of the real critical Hessian: `f` is
 strictly plurisubharmonic at `x` exactly when `Hess f(v, v) + Hess f(I • v, I • v) > 0` for every
