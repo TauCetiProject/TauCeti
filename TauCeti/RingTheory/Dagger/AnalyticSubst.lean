@@ -174,15 +174,8 @@ theorem analyticSubst_self [NormOneClass R] :
       rw [toTate_X, norm_X]) = AlgHom.id R _ :=
   AlgHom.ext fun f ↦ toTate_injective <| by
     rw [toTate_analyticSubst, AlgHom.id_apply]
-    exact DFunLike.congr_fun ((TauCeti.MvPowerSeries.eq_restrictedAnalyticSubst _ _
-      (AlgHom.id R _) continuous_id fun i ↦ (toTate_X i).symm).symm) _
-
-/-- Analytic substitution of `h` into `g(h)` keeps the unit Gauss norm at most `1`. -/
-theorem norm_toTate_analyticSubst_le_one (h : Fin m → washnitzerAlgebra τ R)
-    (hh : ∀ j, ‖toTate τ R (h j)‖ ≤ 1) (g : Fin k → washnitzerAlgebra (Fin m) R)
-    (hg : ∀ i, ‖toTate (Fin m) R (g i)‖ ≤ 1) (i : Fin k) :
-    ‖toTate τ R (analyticSubst h hh (g i))‖ ≤ 1 :=
-  (norm_toTate_analyticSubst_le h hh (g i)).trans (hg i)
+    simp only [toTate_X]
+    exact DFunLike.congr_fun TauCeti.MvPowerSeries.restrictedAnalyticSubst_self _
 
 /-- **Composition of analytic substitutions**: substituting `h` into `f(g)` is substituting the
 series `g(h)` into `f`. -/
@@ -191,7 +184,7 @@ theorem analyticSubst_comp (g : Fin k → washnitzerAlgebra (Fin m) R)
     (hh : ∀ j, ‖toTate τ R (h j)‖ ≤ 1) :
     (analyticSubst h hh).comp (analyticSubst g hg) =
       analyticSubst (fun i ↦ analyticSubst h hh (g i))
-        (norm_toTate_analyticSubst_le_one h hh g hg) :=
+        (fun i ↦ (norm_toTate_analyticSubst_le h hh (g i)).trans (hg i)) :=
   AlgHom.ext fun f ↦ toTate_injective <| by
     simp only [AlgHom.comp_apply, toTate_analyticSubst,
       TauCeti.MvPowerSeries.restrictedAnalyticSubst_restrictedAnalyticSubst]

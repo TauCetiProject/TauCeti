@@ -274,6 +274,7 @@ theorem toTate_injective : Function.Injective (toTate σ R) :=
   fun f g h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)
 
 /-- The inclusion into the Tate algebra sends the variable `Xᵢ` to the variable `Xᵢ`. -/
+@[simp]
 theorem toTate_X (i : σ) :
     toTate σ R (X σ R i) = ⟨MvPowerSeries.X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ :=
   Subtype.ext (by simp)
