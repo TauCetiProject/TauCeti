@@ -247,24 +247,24 @@ theorem stableLevyMeasure_abs_gt_pos (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
   rw [heq]
   positivity
 
-/-- The cutoff Lévy measure has finite mass. -/
-theorem stableLevyMeasure_abs_gt_ne_top (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
-    (hε : 0 < ε) :
+/-- The cutoff Lévy measure has finite mass for all parameters. -/
+theorem stableLevyMeasure_abs_gt_ne_top (hε : 0 < ε) :
     stableLevyMeasure α β {x | ε < |x|} ≠ ∞ := by
-  rw [stableLevyMeasure_abs_gt hα hβ hε]
-  exact ENNReal.ofReal_ne_top
+  by_cases h : 0 < α ∧ α < 2 ∧ |β| ≤ 1
+  · rw [stableLevyMeasure_abs_gt ⟨h.1, h.2.1⟩ h.2.2 hε]
+    exact ENNReal.ofReal_ne_top
+  · simp [stableLevyMeasure_eq_zero_of_not h]
 
-/-- Restricting the stable Lévy measure away from zero gives a finite measure. -/
-theorem isFiniteMeasure_stableLevyMeasure_restrict_abs_gt (hα : α ∈ Ioo 0 2)
-    (hβ : |β| ≤ 1) (hε : 0 < ε) :
+/-- Restricting the stable Lévy measure away from zero gives a finite measure for all parameters. -/
+theorem isFiniteMeasure_stableLevyMeasure_restrict_abs_gt (hε : 0 < ε) :
     IsFiniteMeasure ((stableLevyMeasure α β).restrict {x | ε < |x|}) :=
-  isFiniteMeasure_restrict.mpr (stableLevyMeasure_abs_gt_ne_top hα hβ hε)
+  isFiniteMeasure_restrict.mpr (stableLevyMeasure_abs_gt_ne_top hε)
 
 /-- Normalizing jumps larger than a positive cutoff gives a probability jump law. -/
 theorem isProbabilityMeasure_cond_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
     (hε : 0 < ε) :
     IsProbabilityMeasure (cond (stableLevyMeasure α β) {x | ε < |x|}) := by
   exact cond_isProbabilityMeasure_of_finite (stableLevyMeasure_abs_gt_pos hα hβ hε).ne'
-    (stableLevyMeasure_abs_gt_ne_top hα hβ hε)
+    (stableLevyMeasure_abs_gt_ne_top hε)
 
 end TauCeti.Probability
