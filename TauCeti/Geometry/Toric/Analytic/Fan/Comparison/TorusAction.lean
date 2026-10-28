@@ -142,7 +142,7 @@ theorem coe_smul (t : ComplexTorus N) (p : Φ.AlgebraicComplexPoint) :
         Φ.algebraicRealizationActionChartMap σ := by
     apply pullback.hom_ext <;> simp
   rw [hp, Category.assoc, Φ.algebraicRealizationActionChartMap_comp_algebraicRealizationAction,
-    ← Category.assoc, ← spec_map_smul_eq_lift_comp_affineToricSchemeAction]
+    ← Category.assoc, ← specMap_smul_eq_lift_comp_affineToricSchemeAction]
 
 /-- The glued torus translations on algebraic complex points satisfy the group action laws. -/
 noncomputable instance instMulActionComplexTorus :
