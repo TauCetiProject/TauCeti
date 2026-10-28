@@ -10,6 +10,8 @@ public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.RingTheory.LaurentSeries.ContinuousDerivation
 public import TauCeti.RingTheory.LaurentSeries.Substitution
 
+import TauCeti.Topology.Algebra.Module.ModuleTopology
+
 /-!
 # Continuous Kähler differentials of formal Laurent series
 
@@ -191,10 +193,9 @@ theorem finrank_eq_one : Module.finrank K⸨X⸩ (ContinuousKaehlerDifferential 
 
 /-- The universal derivation `d` is continuous. -/
 theorem continuous_D : Continuous (D K) :=
-  (Derivation.continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul.mpr
-    ⟨D K (single 1 1), fun f ↦ by
-      rw [laurentSeriesDerivation_apply, ← equivLaurentSeries_D,
-        equivLaurentSeries_smul_D_single_one]⟩)
+  (equivLaurentSeries K).toHomeomorph.comp_continuous_iff.mp <| by
+    simpa only [ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_def,
+      equivLaurentSeries_D] using (LaurentSeries.continuous_derivative (K := K))
 
 variable {K}
 
@@ -215,6 +216,7 @@ theorem _root_.Derivation.liftKaehlerDifferential_eq_toSpanSingleton_comp
     (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ) :
     δ.liftKaehlerDifferential = LinearMap.toSpanSingleton K⸨X⸩ M (δ (single 1 1)) ∘ₗ
       (laurentSeriesDerivation K).liftKaehlerDifferential := by
+  have : T2Space M := ModuleTopology.t2Space (Module.Free.chooseBasis K⸨X⸩ M)
   ext f
   simp [δ.apply_eq_laurentSeriesDerivation_smul hδ f]
 

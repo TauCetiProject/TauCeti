@@ -17,7 +17,8 @@ Dimension-counting criteria for nontrivial submodule intersection: two subspaces
 finite-dimensional space whose dimensions sum to more than the ambient dimension meet
 nontrivially, and a subspace of rank greater than the rank of a linear map `f` meets `ker f`
 nontrivially. Dually, the preimage of a subspace `W` under a linear map out of an
-`m`-dimensional space has codimension at most the codimension of `W`.
+`m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
+dimension at least `n` exactly when it contains `n` linearly independent vectors.
 
 The rank of a product `V.prod W` of free submodules is the sum of their ranks over any
 semiring satisfying the strong rank condition. Consequently, the rank of a product map
@@ -60,6 +61,17 @@ theorem finrank_add_finrank_le_finrank_comap_add_finrank {M N : Type*} [AddCommG
   have h₃ := W.finrank_quotient_add_finrank
   rw [hker] at h₁
   omega
+
+/-- A set spans a subspace of dimension at least `n` exactly when it contains `n` linearly
+independent vectors. -/
+theorem le_finrank_span_iff_exists_linearIndependent {s : Set E} [Module.Finite 𝕜 (span 𝕜 s)]
+    {n : ℕ} :
+    n ≤ finrank 𝕜 (span 𝕜 s) ↔ ∃ v : Fin n → E, LinearIndependent 𝕜 v ∧ ∀ i, v i ∈ s := by
+  refine ⟨fun h ↦ ?_, fun ⟨v, hv, hvs⟩ ↦ ?_⟩
+  · obtain ⟨f, hfs, -, hf⟩ := exists_fun_fin_finrank_span_eq 𝕜 s
+    exact ⟨f ∘ Fin.castLE h, hf.comp _ (Fin.castLE_injective h), fun i ↦ hfs _⟩
+  · have := finrank_mono (span_mono (R := 𝕜) (Set.range_subset_iff.2 hvs))
+    rwa [finrank_span_eq_card hv, Fintype.card_fin] at this
 
 end DivisionRing
 

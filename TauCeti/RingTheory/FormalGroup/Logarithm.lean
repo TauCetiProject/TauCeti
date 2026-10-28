@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.MvPowerSeries.Derivative
 public import TauCeti.RingTheory.FormalGroup.Hom
 
 import Mathlib.RingTheory.PowerSeries.WellKnown
+import TauCeti.RingTheory.PowerSeries.Derivative
 
 /-!
 # The invariant differential and the logarithm of a formal group law
@@ -43,6 +44,7 @@ and `e^T - 1`.
 
 * `FormalGroup.invariantDifferential`: the coefficient `P(T)` of the normalised invariant
   differential `ω = P(T) dT` of `F`.
+* `FormalGroup.invariantDerivation`: the dual derivation `F_X(0, T) d/dT`.
 * `FormalGroup.log`: the formal logarithm of `F`, over a `ℚ`-algebra.
 * `FormalGroup.exp`: the formal exponential of `F`, the compositional inverse of `FormalGroup.log`.
 
@@ -55,12 +57,17 @@ and `e^T - 1`.
   invariant**, `P(F(X, Y)) · F_X(X, Y) = P(X)`.
 * `FormalGroup.subst_invariantDifferential_mul_pderiv_one`: for commutative `F`, the same in the
   second variable, `P(F(X, Y)) · F_Y(X, Y) = P(Y)`.
+* `FormalGroup.invariantDifferential_mul_invariantDerivation`: multiplying the invariant
+  derivative by `P(T)` recovers the ordinary derivative.
+* `FormalGroup.invariantDerivation_log`: the invariant derivative of `log_F` is `1`.
+* `FormalGroup.map_invariantDerivation`: the invariant derivation commutes with coefficient maps.
 * `FormalGroup.subst_toPowerSeries_log`: `log_F(F(X, Y)) = log_F(X) + log_F(Y)`.
 * `FormalGroup.subst_subst_toPowerSeries_log`: the same at any pair of power series that can be
   substituted.
 * `FormalGroup.subst_toPowerSeries_eq_add_iff`: a power series `g` satisfies
   `g(F(X, Y)) = g(X) + g(Y)` exactly when it is a scalar multiple of `log_F`.
 * `FormalGroup.subst_exp_log` and `FormalGroup.subst_log_exp`: `log_F` and `exp_F` are inverse.
+* `FormalGroup.derivative_exp`: `exp_F'(T) = F_X(0, exp_F(T))`.
 * `FormalGroup.toPowerSeries_eq_subst_exp`: `F(X, Y) = exp_F(log_F(X) + log_F(Y))`.
 * `FormalGroup.logIso`: the strict isomorphism from `F` to the additive formal group, with
   forward homomorphism `FormalGroup.logHom` and inverse `FormalGroup.expHom`.
@@ -170,6 +177,36 @@ theorem invariantDifferential_mul_subst_pderiv :
     F.invariantDifferential * subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries) = 1 :=
   PowerSeries.invOfUnit_mul _ _ (by simp [constantCoeff_derivZeroX])
 
+/-- The invariant derivation `F_X(0, T) d/dT` of a formal group law. Its dual invariant
+differential is `dT / F_X(0, T)`. -/
+noncomputable def invariantDerivation :
+    Derivation R (PowerSeries R) (PowerSeries R) :=
+  (subst ![(0 : PowerSeries R), PowerSeries.X] (pderiv 0 F.toPowerSeries)) •
+    PowerSeries.derivative
+
+theorem invariantDerivation_apply (g : PowerSeries R) :
+    F.invariantDerivation g =
+      subst ![(0 : PowerSeries R), PowerSeries.X] (pderiv 0 F.toPowerSeries) *
+        PowerSeries.derivative g := (rfl)
+
+/-- The invariant derivation commutes with change of coefficients. -/
+@[simp]
+theorem map_invariantDerivation {S : Type*} [CommRing S] (f : R →+* S) (g : PowerSeries R) :
+    PowerSeries.map f (F.invariantDerivation g) =
+      (F.map f).invariantDerivation (PowerSeries.map f g) := by
+  have hA : PowerSeries.map f (subst ![(0 : PowerSeries R), PowerSeries.X]
+      (pderiv 0 F.toPowerSeries)) =
+      subst ![(0 : PowerSeries S), PowerSeries.X] (pderiv 0 (F.map f).toPowerSeries) := by
+    ext n
+    simp [PowerSeries.coeff_map, coeff_subst_zero_X, coeff_pderiv]
+  simp only [invariantDerivation_apply, map_mul, PowerSeries.derivative_map, hA]
+
+/-- Multiplying the invariant derivative by the invariant differential's coefficient
+recovers the ordinary derivative. -/
+theorem invariantDifferential_mul_invariantDerivation (g : PowerSeries R) :
+    F.invariantDifferential * F.invariantDerivation g = PowerSeries.derivative g := by
+  rw [invariantDerivation_apply, ← mul_assoc, invariantDifferential_mul_subst_pderiv, one_mul]
+
 /-- **The invariant differential is invariant** (Silverman IV.4.2): `ω(F(X, Y)) = ω(X)`, that is
 `P(F(X, Y)) · F_X(X, Y) = P(X)`. -/
 theorem subst_invariantDifferential_mul_pderiv :
@@ -270,6 +307,12 @@ theorem derivative_log : PowerSeries.derivative F.log = F.invariantDifferential 
     rw [Nat.cast_smul_eq_nsmul, nsmul_eq_mul, mul_comm, Nat.cast_succ]
   rw [PowerSeries.coeff_derivative, coeff_log, hn, smul_smul]
   simp [mul_inv_cancel₀ (Nat.cast_add_one_ne_zero (R := ℚ) n)]
+
+/-- The invariant derivative of the formal logarithm is one. -/
+@[simp]
+theorem invariantDerivation_log : F.invariantDerivation F.log = 1 := by
+  rw [invariantDerivation_apply, derivative_log, mul_comm,
+    invariantDifferential_mul_subst_pderiv]
 
 /-- **The logarithm is additive along `F`** (Silverman IV.5.2):
 `log_F(F(X, Y)) = log_F(X) + log_F(Y)`. -/
@@ -373,6 +416,27 @@ theorem subst_exp_log : PowerSeries.subst F.exp F.log = PowerSeries.X :=
 @[simp]
 theorem subst_log_exp : PowerSeries.subst F.log F.exp = PowerSeries.X :=
   PowerSeries.subst_substInvOfIsUnit_left _ F.constantCoeff_log _
+
+/-- The formal exponential solves the invariant differential equation
+`exp_F'(T) = F_X(0, exp_F(T))`. -/
+theorem derivative_exp :
+    PowerSeries.derivative F.exp =
+      PowerSeries.subst F.exp
+        (subst ![(0 : PowerSeries R), PowerSeries.X] (pderiv 0 F.toPowerSeries)) := by
+  have hsub := PowerSeries.HasSubst.of_constantCoeff_zero' F.constantCoeff_exp
+  have hd : PowerSeries.subst F.exp F.invariantDifferential *
+      PowerSeries.derivative F.exp = 1 := by
+    rw [← F.derivative_log, ← PowerSeries.derivative_subst hsub, F.subst_exp_log]
+    exact PowerSeries.derivative_X
+  have hi := congrArg (PowerSeries.subst F.exp) F.invariantDifferential_mul_subst_pderiv
+  rw [PowerSeries.subst_mul hsub, PowerSeries.subst_one hsub] at hi
+  calc
+    PowerSeries.derivative F.exp =
+        (PowerSeries.subst F.exp F.invariantDifferential *
+          PowerSeries.subst F.exp
+            (subst ![(0 : PowerSeries R), PowerSeries.X] (pderiv 0 F.toPowerSeries))) *
+          PowerSeries.derivative F.exp := by rw [hi, one_mul]
+    _ = _ := by rw [mul_right_comm, hd, one_mul]
 
 /-- **A formal group law over a `ℚ`-algebra is strictly isomorphic to the additive one**
 (Silverman IV.5.2): `F(X, Y) = exp_F(log_F(X) + log_F(Y))`. -/
