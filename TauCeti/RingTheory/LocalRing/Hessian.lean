@@ -30,11 +30,14 @@ ideal `(f, D₁ f, …, Dₙ f)` is the maximal ideal exactly when `f ∈ 𝔪²
 determinant of `f` is a unit (`TauCeti.span_range_apply_sup_span_singleton_eq_maximalIdeal_iff`).
 For a nonzero `f` in the local ring at a closed point of a smooth `n`-dimensional variety, with
 `x` local coordinates there, this ideal cuts out the singular locus of the hypersurface `f = 0`,
-and the criterion says that this locus is the reduced closed point exactly when the hypersurface
-has an ordinary double point there. For two coordinates, the nondegeneracy of
-`a s² + b s t + c t²` is the condition that its discriminant `b² - 4ac` be a unit
-(`TauCeti.isUnit_det_hessian_iff_isUnit_discrim`), in every characteristic; the coordinates `s, t`
-need only lie in `𝔪` for this.
+and the criterion says that this locus is the reduced closed point exactly when `f ∈ 𝔪²` and
+the Hessian determinant of `f` is a unit, that is, the quadratic part of `f` has nondegenerate
+polar form. This agrees with the ordinary double point condition except in characteristic `2`
+with `n` odd: there the polar matrix `Q + Qᵀ` is alternating of odd size, hence singular, so
+that an ordinary double point such as `x₁² + x₂ x₃` never has a unit Hessian determinant. For
+two coordinates, the nondegeneracy of `a s² + b s t + c t²` is the condition that its
+discriminant `b² - 4ac` be a unit (`TauCeti.isUnit_det_hessian_iff_isUnit_discrim`), in every
+characteristic; the coordinates `s, t` need only lie in `𝔪` for this.
 
 ## Main definitions
 

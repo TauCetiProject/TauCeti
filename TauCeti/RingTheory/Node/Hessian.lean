@@ -24,9 +24,10 @@ singular locus of `A`; the results below are stated for the Fitting ideal itself
 
 The scheme-theoretic criterion for a node asks that this singular locus be unramified over `K`
 and pass through the closed point. This file shows that it forces the quadratic part of `f` to
-be nondegenerate: `f ∈ 𝔪²`, and the Hessian determinant `det (∂²f/∂xᵢ∂xⱼ)` is a unit. More
-precisely, the closed subscheme cut out by the Fitting ideal is the reduced closed point exactly
-when these two conditions hold.
+be nondegenerate: `f ∈ 𝔪²`, and the Hessian determinant `det (∂²f/∂xᵢ∂xⱼ)` is a unit, that is,
+the polar form of the quadratic part of `f` is nondegenerate. More precisely, the closed
+subscheme cut out by the Fitting ideal is the reduced closed point exactly when these two
+conditions hold.
 For a plane curve, `n = 2`, and writing `f = a s² + b s t + c t²` with `a, b, c ∈ P`, the
 second condition says that the discriminant `b² - 4ac` is a unit
 (`TauCeti.isUnit_det_hessian_iff_isUnit_discrim`). Geometrically, the quadratic part of `f` then
@@ -62,7 +63,7 @@ namespace TauCeti
 variable {K P ι : Type*} [CommRing P] [IsLocalRing P] [Fintype ι] [DecidableEq ι] [Nonempty ι]
   {x : ι → P} {f : P}
 
-/-- **The Fitting ideal of a hypersurface at an ordinary double point.** If the differentials
+/-- **The Fitting ideal of a hypersurface with nondegenerate Hessian.** If the differentials
 `dxᵢ` of coordinates generating `𝔪` form a basis of `Ω[P⁄K]`, and `f ∈ 𝔪`, then the closed
 subscheme of `P ⧸ (f)` cut out by the `(|ι| - 1)`-st Fitting ideal of its differentials (the
 singular locus, in the smooth setting of the module docstring) is the reduced closed point exactly
