@@ -480,12 +480,9 @@ theorem mem_wildInertiaSubgroup_iff_forall_finiteGaloisLowerRamificationGroup
       rw [Units.val_pow_eq_pow_val, Units.val_mk0, div_pow, ← smul_pow', hym, AlgEquiv.smul_def,
         AlgEquiv.commutes, div_self ((_root_.map_ne_zero _).2 a.ne_zero), Units.val_one]
     have hmL : ¬ ringChar 𝓀[L] ∣ m := hchar ▸ hm
-    have hmL0 : (m : L) ≠ 0 :=
-      natCast_ne_zero_of_isUnit (IsLocalRing.isUnit_natCast_iff_not_dvd.2 hmL)
-    have hz : z = 1 := Subgroup.disjoint_def.1 (disjoint_rootsOfUnity_unitFiltration (i := 1) hmL0
-      fun q hq hqL hqm ↦ natCastValuation_lt_sub_one_mul_of_lt_of_dvd hmL0
-        (by rw [(natCastValuation_eq_zero_iff_not_dvd L m hmL0).2 hmL]; exact one_pos) hq hqL hqm)
-      hzm hz1
+    have hz : z = 1 := Subgroup.disjoint_def.1
+      (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit
+        (IsLocalRing.isUnit_natCast_iff_not_dvd.2 hmL)) hzm hz1
     have hτy : τ • y = y := by
       have := congrArg Units.val hz
       rwa [Units.val_mk0, Units.val_one, div_eq_one_iff_eq hy0] at this
