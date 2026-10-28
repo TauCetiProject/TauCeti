@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Localization.Integral
 
 import Mathlib.RingTheory.Localization.Finiteness
@@ -28,6 +29,17 @@ Mathlib's `IsLocalization.integralClosure` states this for the literal subalgebr
 * `TauCeti.finite_integralClosure_of_span_eq_top`: conversely, finiteness of the integral closure
   is local on `Spec R`: it holds as soon as it holds for the localizations `R_{f_i}` at elements
   `f_i` generating the unit ideal.
+* `TauCeti.integralClosureMapAlgebra`: the integral closure of `Rf` in `Sf` as an algebra over the
+  integral closure of `R` in `S`, with its scalar-tower lemmas
+  `isScalarTower_integralClosureMapAlgebra_left` and
+  `isScalarTower_integralClosureMapAlgebra_right`; this is the structure Mathlib's
+  `IsLocalization.integralClosure` asks its caller to supply.
+* `TauCeti.IsLocalization.isIntegrallyClosedIn`: if `R` is integrally closed in `S`, then `M⁻¹R` is
+  integrally closed in `M⁻¹S`. Ported from T. Dupuy, T. Tucker and Z. Wang,
+  [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
+  `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
+  `lean/Pcf/Stacks/Common/EtaleNormal.lean`, where it is
+  `Pcf.Stacks.isIntegrallyClosedIn_of_isLocalization`.
 -/
 
 public section
@@ -93,32 +105,64 @@ section IntegralClosureLocalization
 variable {R : Type*} [CommRing R] (S L : Type*) [CommRing S] [Algebra R S] [CommRing L]
   [Algebra R L] [Algebra S L] [IsScalarTower R S L]
 
-variable (R) in
-/-- The integral closure of `S` in `L` as an algebra over the integral closure of `R` in `L`,
-through the inclusion: an element of `L` integral over `R` is integral over `S`. -/
-private abbrev integralClosureAlgebra : Algebra (integralClosure R L) (integralClosure S L) :=
+/-- The integral closure of `Rf` in `Sf` as an algebra over the integral closure of `R` in `S`,
+where `Rf` and `Sf` are `R`- and `S`-algebras with `Rf → Sf` compatible: an element of `S` integral
+over `R` maps to an element of `Sf` integral over `Rf`. -/
+abbrev integralClosureMapAlgebra (R S Rf Sf : Type*) [CommRing R] [CommRing S]
+    [CommRing Rf] [CommRing Sf] [Algebra R S] [Algebra R Rf] [Algebra S Sf] [Algebra Rf Sf]
+    [Algebra R Sf] [IsScalarTower R S Sf] [IsScalarTower R Rf Sf] :
+    Algebra (integralClosure R S) (integralClosure Rf Sf) :=
   RingHom.toAlgebra
-    { toFun x := ⟨x, x.2.tower_top⟩
-      map_one' := rfl
-      map_mul' _ _ := rfl
-      map_zero' := rfl
-      map_add' _ _ := rfl }
+    { toFun y := ⟨algebraMap S Sf y, (y.2.map (IsScalarTower.toAlgHom R S Sf)).tower_top⟩
+      map_one' := Subtype.ext (map_one _)
+      map_mul' _ _ := Subtype.ext (map_mul _ _ _)
+      map_zero' := Subtype.ext (map_zero _)
+      map_add' _ _ := Subtype.ext (map_add _ _ _) }
+
+/-- The map `integralClosure R S → integralClosure Rf Sf` of `integralClosureMapAlgebra` is
+compatible with the inclusion into `Sf`. -/
+theorem isScalarTower_integralClosureMapAlgebra_right (R S Rf Sf : Type*) [CommRing R]
+    [CommRing S] [CommRing Rf] [CommRing Sf] [Algebra R S] [Algebra R Rf] [Algebra S Sf]
+    [Algebra Rf Sf] [Algebra R Sf] [IsScalarTower R S Sf] [IsScalarTower R Rf Sf] :
+    letI := integralClosureMapAlgebra R S Rf Sf
+    IsScalarTower (integralClosure R S) (integralClosure Rf Sf) Sf :=
+  letI := integralClosureMapAlgebra R S Rf Sf
+  .of_algebraMap_eq fun _ ↦ rfl
+
+/-- The map `integralClosure R S → integralClosure Rf Sf` of `integralClosureMapAlgebra` is
+compatible with the structure maps from `R`. -/
+theorem isScalarTower_integralClosureMapAlgebra_left (R S Rf Sf : Type*) [CommRing R]
+    [CommRing S] [CommRing Rf] [CommRing Sf] [Algebra R S] [Algebra R Rf] [Algebra S Sf]
+    [Algebra Rf Sf] [Algebra R Sf] [IsScalarTower R S Sf] [IsScalarTower R Rf Sf] :
+    letI := integralClosureMapAlgebra R S Rf Sf
+    IsScalarTower R (integralClosure R S) (integralClosure Rf Sf) :=
+  letI := integralClosureMapAlgebra R S Rf Sf
+  .of_algebraMap_eq fun _ ↦ Subtype.ext <| by
+    simp [RingHom.algebraMap_toAlgebra, ← IsScalarTower.algebraMap_apply]
+
+/-- The structure map of `integralClosureMapAlgebra` is `algebraMap S Sf` on underlying
+elements. -/
+@[simp]
+theorem coe_algebraMap_integralClosureMapAlgebra (R S Rf Sf : Type*) [CommRing R] [CommRing S]
+    [CommRing Rf] [CommRing Sf] [Algebra R S] [Algebra R Rf] [Algebra S Sf] [Algebra Rf Sf]
+    [Algebra R Sf] [IsScalarTower R S Sf] [IsScalarTower R Rf Sf] (y : integralClosure R S) :
+    letI := integralClosureMapAlgebra R S Rf Sf
+    ((algebraMap (integralClosure R S) (integralClosure Rf Sf) y : integralClosure Rf Sf) : Sf) =
+      algebraMap S Sf y := rfl
 
 /-- If `S` is a localization of `R` at `M`, then the integral closure of `S` in `L` is the
 localization at `M` of the integral closure of `R` in `L`, as an algebra over it through the
 inclusion. -/
 private theorem isLocalization_integralClosure (M : Submonoid R) [IsLocalization M S] :
-    letI := integralClosureAlgebra R S L
+    letI := integralClosureMapAlgebra R L S L
     IsScalarTower R (integralClosure R L) (integralClosure S L) ∧
       IsLocalization (Algebra.algebraMapSubmonoid (integralClosure R L) M)
         (integralClosure S L) := by
-  let := integralClosureAlgebra R S L
-  have : IsScalarTower (integralClosure R L) (integralClosure S L) L :=
-    .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower R (integralClosure R L) (integralClosure S L) :=
-    .of_algebraMap_eq fun _ ↦ Subtype.ext <| by simp [RingHom.algebraMap_toAlgebra]
-  exact ⟨this, isLocalization_algebraMapSubmonoid_of_isIntegralClosure (M := M) (Rₘ := S)
-    (L := L) (S := integralClosure R L) (Sₘ := integralClosure S L)⟩
+  let := integralClosureMapAlgebra R L S L
+  have := isScalarTower_integralClosureMapAlgebra_right R L S L
+  exact ⟨isScalarTower_integralClosureMapAlgebra_left R L S L,
+    isLocalization_algebraMapSubmonoid_of_isIntegralClosure (M := M) (Rₘ := S) (L := L)
+      (S := integralClosure R L) (Sₘ := integralClosure S L)⟩
 
 end IntegralClosureLocalization
 
@@ -129,7 +173,7 @@ theorem finite_integralClosure_of_isLocalization {R : Type*} [CommRing R] (M : S
     (S L : Type*) [CommRing S] [Algebra R S] [IsLocalization M S] [CommRing L] [Algebra R L]
     [Algebra S L] [IsScalarTower R S L] [Module.Finite R (integralClosure R L)] :
     Module.Finite S (integralClosure S L) := by
-  let := integralClosureAlgebra R S L
+  let := integralClosureMapAlgebra R L S L
   obtain ⟨_, _⟩ := isLocalization_integralClosure S L M
   exact .of_isLocalization R (integralClosure R L) M
 
@@ -145,11 +189,58 @@ theorem finite_integralClosure_of_span_eq_top {R : Type*} [CommRing R] (L : Type
     (H : ∀ f, Module.Finite (Rₚ f) (integralClosure (Rₚ f) L)) :
     Module.Finite R (integralClosure R L) := by
   -- The integral closure of `R_f` in `L` is the localization of that of `R` away from `f`.
-  let (f : t) := integralClosureAlgebra R (Rₚ f) L
+  let (f : t) := integralClosureMapAlgebra R L (Rₚ f) L
   have (f : t) := (isLocalization_integralClosure (Rₚ f) L (.powers f.1)).1
   have (f : t) := (isLocalization_integralClosure (Rₚ f) L (.powers f.1)).2
   exact Module.Finite.of_localizationSpan' t ht
     (fun f ↦ (IsScalarTower.toAlgHom R _ (integralClosure (Rₚ f) L)).toLinearMap) H
+
+section IsIntegrallyClosedIn
+
+variable {R S Rf Sf : Type*} [CommRing R] [CommRing S] [CommRing Rf] [CommRing Sf]
+  [Algebra R S] [Algebra R Rf] [Algebra S Sf] [Algebra Rf Sf] [Algebra R Sf]
+  [IsScalarTower R S Sf] [IsScalarTower R Rf Sf]
+
+/-- Being integrally closed in an algebra is preserved by localizing both rings at the same
+submonoid of the base: if `R` is integrally closed in `S`, then `M⁻¹R` is integrally closed in
+`M⁻¹S`. It is not an instance: the submonoid `M` does not appear in the conclusion, so it
+cannot be found by typeclass search. -/
+theorem IsLocalization.isIntegrallyClosedIn (M : Submonoid R) [IsLocalization M Rf]
+    [IsLocalization (Algebra.algebraMapSubmonoid S M) Sf] [IsIntegrallyClosedIn R S] :
+    IsIntegrallyClosedIn Rf Sf := by
+  rw [isIntegrallyClosedIn_iff]
+  refine ⟨?_, fun {x} hx ↦ ?_⟩
+  · -- `Algebra.algebraMapSubmonoid S M` is defined as `M.map (algebraMap R S)`, the form that
+    -- `IsLocalization.algebraMap_eq_map_map_submonoid` expects.
+    have : IsLocalization (M.map (algebraMap R S)) Sf :=
+      ‹IsLocalization (Algebra.algebraMapSubmonoid S M) Sf›
+    rw [IsLocalization.algebraMap_eq_map_map_submonoid M S Rf Sf]
+    exact IsLocalization.map_injective_of_injective (M := M) (g := algebraMap R S) Rf Sf
+      (isIntegrallyClosedIn_iff.mp ‹IsIntegrallyClosedIn R S›).1
+  · -- Use that `integralClosure Rf Sf` is the localization of `integralClosure R S` at `M`.
+    let := integralClosureMapAlgebra R S Rf Sf
+    have := isScalarTower_integralClosureMapAlgebra_right R S Rf Sf
+    have := isScalarTower_integralClosureMapAlgebra_left R S Rf Sf
+    have hloc := IsLocalization.integralClosure (R := R) (S := S) (Rf := Rf) (Sf := Sf) M
+    obtain ⟨⟨⟨y, hy⟩, _, m, hm, rfl⟩, e⟩ := IsLocalization.surj
+      (Algebra.algebraMapSubmonoid (integralClosure R S) M) (⟨x, hx⟩ : integralClosure Rf Sf)
+    obtain ⟨r, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp hy
+    refine ⟨IsLocalization.mk' Rf r ⟨m, hm⟩, ?_⟩
+    have e' := congrArg Subtype.val e
+    have hu : IsUnit (algebraMap R Sf m) := by
+      rw [IsScalarTower.algebraMap_apply R S Sf]
+      exact IsLocalization.map_units Sf
+        (⟨algebraMap R S m, Algebra.mem_algebraMapSubmonoid_of_mem (⟨m, hm⟩ : M)⟩ :
+          Algebra.algebraMapSubmonoid S M)
+    refine (hu.mul_left_inj).mp ?_
+    have h1 := congrArg (algebraMap Rf Sf) (IsLocalization.mk'_spec Rf r (⟨m, hm⟩ : M))
+    -- `e'`: `x * algebraMap R Sf m = algebraMap R Sf r`
+    simp only [coe_algebraMap_integralClosureMapAlgebra, map_mul, ← IsScalarTower.algebraMap_apply]
+      at h1 e'
+    rw [h1]
+    exact e'.symm
+
+end IsIntegrallyClosedIn
 
 end TauCeti
 
