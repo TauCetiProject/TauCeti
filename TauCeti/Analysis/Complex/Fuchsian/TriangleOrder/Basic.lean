@@ -179,6 +179,7 @@ theorem order_cusp : cusp.order = 0 := by
   rw [order]
 
 /-- The order attached to a triangle vertex vanishes exactly at a cusp. -/
+@[simp]
 theorem order_eq_zero_iff (p : TriangleOrder) : p.order = 0 ↔ p = cusp := by
   cases p with
   | elliptic m hm =>
