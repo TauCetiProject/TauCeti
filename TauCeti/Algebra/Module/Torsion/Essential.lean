@@ -61,12 +61,8 @@ theorem IsEssential.primaryComponent_eq_top {N : Submodule R M} (hN : IsEssentia
   let P := Submodule.span R {x}
   have : Module.Finite R P := Module.Finite.iff_fg.mpr (fg_span_singleton x)
   have htrace : N.comap P.subtype ≤ I.primaryComponent P := by
-    intro y hy
-    obtain ⟨n, hn⟩ := (I.primaryComponent_mem M (y : M)).mp (hNI hy)
-    refine (I.primaryComponent_mem P y).mpr ⟨n, ?_⟩
-    rw [mem_torsionBySet_iff] at hn ⊢
-    intro r
-    exact Subtype.ext (hn r)
+    rw [← I.primaryComponent_comap_subtype P]
+    exact comap_mono hNI
   obtain ⟨n, hn⟩ := (hN.comap P.subtype).exists_pow_smul_eq_bot I htrace
   refine (I.primaryComponent_mem M x).mpr ⟨n, ?_⟩
   rw [mem_torsionBySet_iff]
@@ -75,6 +71,6 @@ theorem IsEssential.primaryComponent_eq_top {N : Submodule R M} (hN : IsEssentia
   have hz : (r : R) • (⟨x, hx⟩ : P) ∈ I ^ n • (⊤ : Submodule R P) :=
     Submodule.smul_mem_smul r.prop (mem_top : (⟨x, hx⟩ : P) ∈ (⊤ : Submodule R P))
   rw [hn, mem_bot] at hz
-  exact congrArg P.subtype hz
+  simpa only [map_smul, map_zero, subtype_apply] using congrArg P.subtype hz
 
 end TauCeti
