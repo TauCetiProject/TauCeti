@@ -112,27 +112,21 @@ theorem exists_parametric_morse_chart [CompleteSpace P] (hf : ContDiff ℝ (n + 
     exists_parametric_morse_normal_form hf hcrit hH hn
   have haUV : (a, (0 : E)) ∈ U ×ˢ V := ⟨haU, h0V⟩
   have hUV : IsOpen (U ×ˢ V) := hU.prod hV
-  have hΦa : ContDiffAt ℝ n Φ (a, 0) :=
-    (hΦ (a, 0) haUV).contDiffAt (hUV.mem_nhds haUV)
-  have hΦd' : HasFDerivAt Φ
-      (ContinuousLinearEquiv.refl ℝ (P × E) : (P × E) →L[ℝ] (P × E)) (a, 0) := by
-    simpa using hΦd
-  have hn' : (n : ℕ∞ω) ≠ 0 := by simpa using hn
-  have hstrict := hΦa.hasStrictFDerivAt' hΦd' hn'
-  let p := hΦa.toOpenPartialHomeomorph Φ hΦd' hn'
+  have hn' : 1 ≤ (n : ℕ∞ω) :=
+    ENat.one_le_iff_ne_zero_withTop.2 (by simpa using hn)
+  obtain ⟨Θ, hΘ, haΘ, hΘsub, hΘsymm⟩ :=
+    ContDiffOn.exists_openPartialHomeomorph hΦ hUV haUV hn'
+      (e := ContinuousLinearEquiv.refl ℝ (P × E)) hΦd.fderiv.symm
   -- Choose a product source to retain a common fiber neighborhood.
-  have hgood : U ×ˢ V ∩ p.source ∈ 𝓝 (a, (0 : E)) :=
-    Filter.inter_mem (hUV.mem_nhds haUV)
-      (p.open_source.mem_nhds (hΦa.mem_toOpenPartialHomeomorph_source hΦd' hn'))
-  obtain ⟨W, Z, hW, haW, hZ, h0Z, hWZ⟩ := mem_nhds_prod_iff'.mp hgood
-  let ψ := p.restrOpen (W ×ˢ Z) (hW.prod hZ)
+  obtain ⟨W, Z, hW, haW, hZ, h0Z, hWZ⟩ :=
+    mem_nhds_prod_iff'.mp (Θ.open_source.mem_nhds haΘ)
+  let ψ := Θ.restrOpen (W ×ˢ Z) (hW.prod hZ)
   have hsource : ψ.source = W ×ˢ Z := by
     rw [OpenPartialHomeomorph.restrOpen_source]
     apply inter_eq_right.mpr
-    exact fun z hz ↦ (hWZ hz).2
+    exact hWZ
   have hψ : (ψ : P × E → P × E) = Φ := by
-    simp only [ψ, OpenPartialHomeomorph.coe_restrOpen, p,
-      ContDiffAt.toOpenPartialHomeomorph_coe]
+    simpa only [ψ, OpenPartialHomeomorph.coe_restrOpen] using hΘ
   refine ⟨ψ, W, Z, hW, hZ, haW, h0Z, hsource, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simpa only [hψ] using hΦfst
   · simpa only [hψ] using hΦ0
@@ -140,13 +134,9 @@ theorem exists_parametric_morse_chart [CompleteSpace P] (hf : ContDiff ℝ (n + 
     have hi := congrArg Prod.fst (ψ.right_inv hz)
     rwa [hψ, hΦfst] at hi
   · rw [hψ]
-    exact hΦ.mono (fun z hz ↦ (hWZ (hsource ▸ hz)).1)
+    exact hΦ.mono (fun z hz ↦ hΘsub (hWZ (hsource ▸ hz)))
+  · exact hΘsymm.mono inter_subset_left
   · intro z hz
-    have hy : ψ.symm z ∈ W ×ˢ Z := hsource ▸ ψ.map_target hz
-    have hforward : ContDiffAt ℝ n Φ (ψ.symm z) :=
-      (hΦ (ψ.symm z) (hWZ hy).1).contDiffAt (hUV.mem_nhds (hWZ hy).1)
-    exact (hstrict.contDiffAt_toOpenPartialHomeomorph_symm hz.1 hforward).contDiffWithinAt
-  · intro z hz
-    simpa only [hψ] using hΦeq z (hWZ (hsource ▸ hz)).1
+    simpa only [hψ] using hΦeq z (hΘsub (hWZ (hsource ▸ hz)))
 
 end TauCeti
