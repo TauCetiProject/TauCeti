@@ -100,10 +100,11 @@ theorem cliffordRestriction_map (x : ⋀[ℝ]^2 V) :
   -- `f` is an isometry of the quadratic forms `Q v = -‖v‖²` and `Q' v = -‖v‖²`.
   let e : Q.IsometryEquiv Q' := f.toQuadraticIsometryEquiv (c := -1)
     (fun v ↦ (hQ v).trans (neg_one_mul _).symm) (fun v ↦ (hQ' v).trans (neg_one_mul _).symm)
+  have he (v : V) : e.toIsometry v = f v := congrFun (f.coe_toQuadraticIsometryEquiv _ _) v
   have h := LinearMap.congr_fun (comp_eq_map_comp_of_forall_ι
-    (f := e.toIsometry) hU (bivectorExterior Q x))
+    (f := e.toIsometry) (fun v ↦ he v ▸ hU v) (bivectorExterior Q x))
   -- The isometry of quadratic forms has the same underlying linear map as `f`.
-  have hf : e.toIsometry.toLinearMap = f.toLinearMap := rfl
+  have hf : e.toIsometry.toLinearMap = f.toLinearMap := LinearMap.ext he
   rw [map_bivectorExterior, hf] at h
   ext ψ'
   have hψ := h (U.symm ψ')

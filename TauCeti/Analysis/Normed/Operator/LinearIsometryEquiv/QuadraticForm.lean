@@ -33,7 +33,7 @@ variable {V V' : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- A linear isometry equivalence is an isometry equivalence between quadratic forms that are the
 same multiple of the squared norm, `Q v = c * ‖v‖²` and `Q' v = c * ‖v‖²`. -/
-@[expose] def toQuadraticIsometryEquiv (f : V ≃ₗᵢ[ℝ] V') (hQ : ∀ v, Q v = c * ‖v‖ ^ 2)
+def toQuadraticIsometryEquiv (f : V ≃ₗᵢ[ℝ] V') (hQ : ∀ v, Q v = c * ‖v‖ ^ 2)
     (hQ' : ∀ v, Q' v = c * ‖v‖ ^ 2) : Q.IsometryEquiv Q' :=
   { f.toLinearEquiv with map_app' v := by simp [hQ, hQ'] }
 
@@ -41,6 +41,14 @@ same multiple of the squared norm, `Q v = c * ‖v‖²` and `Q' v = c * ‖v‖
 @[simp]
 theorem coe_toQuadraticIsometryEquiv (f : V ≃ₗᵢ[ℝ] V') (hQ : ∀ v, Q v = c * ‖v‖ ^ 2)
     (hQ' : ∀ v, Q' v = c * ‖v‖ ^ 2) : ⇑(f.toQuadraticIsometryEquiv hQ hQ') = f :=
-  rfl
+  (rfl)
+
+/-- The underlying linear equivalence of the isometry equivalence of quadratic forms induced by
+`f` is that of `f`. -/
+@[simp]
+theorem toLinearEquiv_toQuadraticIsometryEquiv (f : V ≃ₗᵢ[ℝ] V')
+    (hQ : ∀ v, Q v = c * ‖v‖ ^ 2) (hQ' : ∀ v, Q' v = c * ‖v‖ ^ 2) :
+    (f.toQuadraticIsometryEquiv hQ hQ').toLinearEquiv = f.toLinearEquiv :=
+  (rfl)
 
 end LinearIsometryEquiv
