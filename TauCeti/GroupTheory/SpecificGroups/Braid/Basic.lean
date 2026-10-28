@@ -288,7 +288,7 @@ theorem transposition_mul_self (i : Fin (n - 1)) :
 
 /-- Right multiplication by an adjacent transposition is an involution. -/
 @[simp]
-theorem mul_transposition_mul_transposition (σ : Equiv.Perm (Fin n)) (i : Fin (n - 1)) :
+theorem mul_transposition_mul_self (σ : Equiv.Perm (Fin n)) (i : Fin (n - 1)) :
     σ * transposition i * transposition i = σ :=
   Equiv.mul_swap_mul_self _ _ _
 

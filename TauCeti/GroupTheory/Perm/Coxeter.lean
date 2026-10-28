@@ -14,7 +14,7 @@ public import TauCeti.GroupTheory.SpecificGroups.Braid.Basic
 The symmetric group on `n` letters is the Coxeter group of type `A_{n-1}`: with the adjacent
 transpositions `s i = (i i+1)`, `i < n - 1`, as simple reflections, `Equiv.Perm (Fin n)` is
 presented by the Coxeter matrix `CoxeterMatrix.A (n - 1)`. This file constructs that Coxeter
-system, `Equiv.Perm.coxeterSystem n`, and identifies its combinatorics:
+system, `TauCeti.permCoxeterSystem n`, and identifies its combinatorics:
 
 * a simple reflection `s i` is a right descent of `σ` exactly when `σ` reverses the order of the
   two letters `i` and `i + 1`;
@@ -33,14 +33,15 @@ Iwahori–Hecke algebra is defined.
 
 ## Main definitions
 
-* `Equiv.Perm.coxeterSystem n`: the Coxeter system of type `A_{n-1}` on `Equiv.Perm (Fin n)`.
+* `TauCeti.permCoxeterSystem n`: the Coxeter system of type `A_{n-1}` on `Equiv.Perm (Fin n)`.
 
 ## Main results
 
-* `Equiv.Perm.coxeterSystem_simple`: its simple reflections are the adjacent transpositions.
-* `Equiv.Perm.isRightDescent_coxeterSystem_iff` and `Equiv.Perm.isLeftDescent_coxeterSystem_iff`:
+* `TauCeti.permCoxeterSystem_simple`: its simple reflections are the adjacent transpositions.
+* `TauCeti.isRightDescent_permCoxeterSystem_iff` and `TauCeti.isLeftDescent_permCoxeterSystem_iff`:
   descents are the reversed adjacent pairs of `σ` and of `σ⁻¹`.
-* `Equiv.Perm.length_coxeterSystem`: the Coxeter length is the number of inversions.
+* `TauCeti.permCoxeterSystem_length_eq_card_inversion`: the Coxeter length is the number of
+  inversions.
 * `TauCeti.BraidGroup.permHom_eq_toCoxeterGroup`: the strand permutation of a braid is the
   canonical map from the Artin group of type `A` onto its Coxeter group.
 
@@ -64,7 +65,7 @@ public section
 
 open TauCeti TauCeti.BraidGroup
 
-namespace Equiv.Perm
+namespace TauCeti
 
 variable {n : ℕ}
 
@@ -89,7 +90,7 @@ private theorem orderOf_transposition_mul_transposition (i j : Fin (n - 1)) :
             (transposition i * transposition j * transposition i) := by
           rw [transposition_braid hadj]
       _ = 1 := by
-          simp only [← mul_assoc, mul_transposition_mul_transposition, transposition_mul_self]
+          simp only [← mul_assoc, mul_transposition_mul_self, transposition_mul_self]
   · have h2 : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i := by omega
     rw [coxeterMatrixA_eq_two h2]
     refine orderOf_eq_prime ?_ hne
@@ -184,14 +185,14 @@ private theorem exchange_toPerm (ω : List (Fin (n - 1))) (i : Fin (n - 1))
       (ω'.map transposition).prod (strand i) := by
     simpa [hω'] using hlt
   obtain ⟨j, hj, he⟩ := exists_prod_eraseIdx_eq_mul_transposition ω' hrev
-  rw [hω', mul_transposition_mul_transposition] at he
+  rw [hω', mul_transposition_mul_self] at he
   have hle := (isLeast_wordLength σ).2 ⟨ω'.eraseIdx j, by rw [toPerm_wordProd, he], rfl⟩
   rw [List.length_eraseIdx_of_lt hj] at hle
   omega
 
 /-- The symmetric group `Equiv.Perm (Fin n)` as the Coxeter group of type `A_{n-1}`, with the
 adjacent transpositions `TauCeti.BraidGroup.transposition i` as simple reflections. -/
-noncomputable def coxeterSystem (n : ℕ) :
+noncomputable def permCoxeterSystem (n : ℕ) :
     CoxeterSystem (CoxeterMatrix.A (n - 1)) (Equiv.Perm (Fin n)) :=
   (CoxeterMatrix.A (n - 1)).toCoxeterSystem.ofExchange (toPerm n) (wordLength n)
     (fun i j ↦ by
@@ -202,34 +203,34 @@ noncomputable def coxeterSystem (n : ℕ) :
 /-- The simple reflections of the type-`A` Coxeter system on `Equiv.Perm (Fin n)` are the
 adjacent transpositions. -/
 @[simp]
-theorem coxeterSystem_simple (i : Fin (n - 1)) :
-    (coxeterSystem n).simple i = transposition i := by
-  rw [coxeterSystem, CoxeterSystem.ofExchange_simple, toPerm_simple]
+theorem permCoxeterSystem_simple (i : Fin (n - 1)) :
+    (permCoxeterSystem n).simple i = transposition i := by
+  rw [permCoxeterSystem, CoxeterSystem.ofExchange_simple, toPerm_simple]
 
 /-- A word in the type-`A` Coxeter system on `Equiv.Perm (Fin n)` spells the product of the
 corresponding adjacent transpositions. -/
 @[simp]
-theorem coxeterSystem_wordProd (ω : List (Fin (n - 1))) :
-    (coxeterSystem n).wordProd ω = (ω.map transposition).prod := by
-  rw [CoxeterSystem.wordProd, funext coxeterSystem_simple]
+theorem permCoxeterSystem_wordProd (ω : List (Fin (n - 1))) :
+    (permCoxeterSystem n).wordProd ω = (ω.map transposition).prod := by
+  rw [CoxeterSystem.wordProd, funext permCoxeterSystem_simple]
 
 /-- Right multiplication by `s i` shortens a permutation that reverses the order of the letters
 `i` and `i + 1`. -/
 private theorem length_mul_transposition_lt {σ : Equiv.Perm (Fin n)} {i : Fin (n - 1)}
     (h : σ (strandSucc i) < σ (strand i)) :
-    (coxeterSystem n).length (σ * transposition i) < (coxeterSystem n).length σ := by
-  obtain ⟨ω, hω, rfl⟩ := (coxeterSystem n).exists_isReduced σ
-  rw [coxeterSystem_wordProd] at h
+    (permCoxeterSystem n).length (σ * transposition i) < (permCoxeterSystem n).length σ := by
+  obtain ⟨ω, hω, rfl⟩ := (permCoxeterSystem n).exists_isReduced σ
+  rw [permCoxeterSystem_wordProd] at h
   obtain ⟨j, hj, he⟩ := exists_prod_eraseIdx_eq_mul_transposition ω h
-  have hle := (coxeterSystem n).length_wordProd_le (ω.eraseIdx j)
-  rw [coxeterSystem_wordProd, he, List.length_eraseIdx_of_lt hj] at hle
-  rw [hω.eq, coxeterSystem_wordProd]
+  have hle := (permCoxeterSystem n).length_wordProd_le (ω.eraseIdx j)
+  rw [permCoxeterSystem_wordProd, he, List.length_eraseIdx_of_lt hj] at hle
+  rw [hω.eq, permCoxeterSystem_wordProd]
   omega
 
 /-- **Right descents of a permutation.** The simple reflection `s i` is a right descent of `σ`
 exactly when `σ` reverses the order of the letters `i` and `i + 1`. -/
-theorem isRightDescent_coxeterSystem_iff {σ : Equiv.Perm (Fin n)} {i : Fin (n - 1)} :
-    (coxeterSystem n).IsRightDescent σ i ↔ σ (strandSucc i) < σ (strand i) := by
+theorem isRightDescent_permCoxeterSystem_iff {σ : Equiv.Perm (Fin n)} {i : Fin (n - 1)} :
+    (permCoxeterSystem n).IsRightDescent σ i ↔ σ (strandSucc i) < σ (strand i) := by
   refine ⟨fun hd ↦ ?_, fun h ↦ by
     simpa [CoxeterSystem.IsRightDescent] using length_mul_transposition_lt h⟩
   rcases (σ.injective.ne (strand_ne_strandSucc i).symm).lt_or_gt with h | hlt
@@ -237,15 +238,15 @@ theorem isRightDescent_coxeterSystem_iff {σ : Equiv.Perm (Fin n)} {i : Fin (n -
   exfalso
   have hlen := length_mul_transposition_lt (σ := σ * transposition i) (i := i)
     (by simpa using hlt)
-  rw [mul_transposition_mul_transposition] at hlen
-  rw [CoxeterSystem.IsRightDescent, coxeterSystem_simple] at hd
+  rw [mul_transposition_mul_self] at hlen
+  rw [CoxeterSystem.IsRightDescent, permCoxeterSystem_simple] at hd
   omega
 
 /-- **Left descents of a permutation.** The simple reflection `s i` is a left descent of `σ`
 exactly when `σ⁻¹` reverses the order of the letters `i` and `i + 1`. -/
-theorem isLeftDescent_coxeterSystem_iff {σ : Equiv.Perm (Fin n)} {i : Fin (n - 1)} :
-    (coxeterSystem n).IsLeftDescent σ i ↔ σ⁻¹ (strandSucc i) < σ⁻¹ (strand i) := by
-  rw [← CoxeterSystem.isRightDescent_inv_iff, isRightDescent_coxeterSystem_iff]
+theorem isLeftDescent_permCoxeterSystem_iff {σ : Equiv.Perm (Fin n)} {i : Fin (n - 1)} :
+    (permCoxeterSystem n).IsLeftDescent σ i ↔ σ⁻¹ (strandSucc i) < σ⁻¹ (strand i) := by
+  rw [← CoxeterSystem.isRightDescent_inv_iff, isRightDescent_permCoxeterSystem_iff]
 
 /-- Right multiplication by `s i` adds one inversion to a permutation that keeps the letters `i`
 and `i + 1` in order. -/
@@ -289,39 +290,39 @@ private theorem card_inversions_mul_transposition {σ : Equiv.Perm (Fin n)} {i :
 
 /-- **The Coxeter length of a permutation is its number of inversions**, the pairs of letters
 `x < y` with `σ y < σ x`. -/
-theorem length_coxeterSystem (σ : Equiv.Perm (Fin n)) :
-    (coxeterSystem n).length σ =
+theorem permCoxeterSystem_length_eq_card_inversion (σ : Equiv.Perm (Fin n)) :
+    (permCoxeterSystem n).length σ =
       (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ σ p.2 < σ p.1).card := by
-  induction hk : (coxeterSystem n).length σ generalizing σ with
+  induction hk : (permCoxeterSystem n).length σ generalizing σ with
   | zero =>
-    rw [(coxeterSystem n).length_eq_zero_iff] at hk
+    rw [(permCoxeterSystem n).length_eq_zero_iff] at hk
     subst hk
     rw [eq_comm, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
     rintro p - ⟨h₁, h₂⟩
     exact lt_asymm h₁ h₂
   | succ k ih =>
     have hσ : σ ≠ 1 := fun h ↦ by simp [h] at hk
-    obtain ⟨i, hi⟩ := (coxeterSystem n).exists_rightDescent_of_ne_one hσ
-    have hdesc := isRightDescent_coxeterSystem_iff.mp hi
-    have hlen : (coxeterSystem n).length (σ * transposition i) = k := by
-      have := (coxeterSystem n).length_mul_simple σ i
+    obtain ⟨i, hi⟩ := (permCoxeterSystem n).exists_rightDescent_of_ne_one hσ
+    have hdesc := isRightDescent_permCoxeterSystem_iff.mp hi
+    have hlen : (permCoxeterSystem n).length (σ * transposition i) = k := by
+      have := (permCoxeterSystem n).length_mul_simple σ i
       rw [CoxeterSystem.IsRightDescent] at hi
-      rw [coxeterSystem_simple] at this hi
+      rw [permCoxeterSystem_simple] at this hi
       omega
     have hcard := card_inversions_mul_transposition (σ := σ * transposition i) (i := i)
       (by simpa using hdesc)
-    rw [mul_transposition_mul_transposition] at hcard
+    rw [mul_transposition_mul_self] at hcard
     rw [hcard, ← ih _ hlen]
 
-end Equiv.Perm
+end TauCeti
 
 namespace TauCeti.BraidGroup
 
 /-- The strand permutation of a braid is the canonical map from the Artin group of type `A` onto
 its Coxeter group, realized as the symmetric group. -/
 theorem permHom_eq_toCoxeterGroup (n : ℕ) :
-    permHom n = ArtinGroup.toCoxeterGroup (Equiv.Perm.coxeterSystem n) :=
+    permHom n = ArtinGroup.toCoxeterGroup (TauCeti.permCoxeterSystem n) :=
   hom_ext fun i ↦ by
-    rw [permHom_sigma, sigma_eq_gen, ArtinGroup.toCoxeterGroup_gen, Equiv.Perm.coxeterSystem_simple]
+    rw [permHom_sigma, sigma_eq_gen, ArtinGroup.toCoxeterGroup_gen, permCoxeterSystem_simple]
 
 end TauCeti.BraidGroup
