@@ -40,7 +40,7 @@ the dimension of the largest linear subspace in the cone
 (`ModelWithCorners.finrank_sub_depthAt_le_of_hasFDerivWithinAt`). Applied to chart transitions in
 both directions this gives chart independence, and applied to a map with injective differential
 it shows that local diffeomorphisms and diffeomorphisms preserve the depth
-(`IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_apply`).
+(`IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_eq`).
 
 ## Main definitions
 
@@ -58,7 +58,7 @@ it shows that local diffeomorphisms and diffeomorphisms preserve the depth
 * `ModelWithCorners.depthAt_extend_eq_depth`: the depth does not depend on the chart.
 * `MDifferentiableAt.finrank_sub_depth_le`: a map with injective differential does not decrease
   the dimension of the largest linear subspace in the cone.
-* `IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_apply`: (local) diffeomorphisms preserve the
+* `IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_eq`: (local) diffeomorphisms preserve the
   depth.
 
 ## Implementation notes
@@ -136,7 +136,7 @@ theorem exists_finrank_add_depthAt_eq (hy : y ∈ range I) :
 variable [FiniteDimensional ℝ E]
 
 open Classical in
-/-- Every linear subspace in the positive tangent cone has dimension at most the codimension
+/-- Every linear subspace in the positive tangent cone has dimension at most the dimension
 complementary to the depth. -/
 theorem finrank_add_depthAt_le (V : Submodule ℝ E)
     (hV : (V : Set E) ⊆ posTangentConeAt (range I) y) :
@@ -191,13 +191,7 @@ theorem depthAt_eq_zero_iff (hy : y ∈ range I) : I.depthAt y = 0 ↔ y ∈ int
     have h₂ := hf a ha
     rw [map_sub] at h₁
     linarith
-  · apply mem_posTangentConeAt_of_frequently_mem
-    refine Eventually.frequently ?_
-    have hcont : Tendsto (fun t : ℝ ↦ y + t • v) (𝓝[>] 0) (𝓝 y) := by
-      have : Tendsto (fun t : ℝ ↦ y + t • v) (𝓝 0) (𝓝 (y + (0 : ℝ) • v)) :=
-        (continuous_const.add (continuous_id.smul continuous_const)).tendsto 0
-      simpa using this.mono_left nhdsWithin_le_nhds
-    exact hcont.eventually (mem_interior_iff_mem_nhds.mp hint)
+  · simp [tangentConeAt_of_mem_nhds (mem_interior_iff_mem_nhds.mp hint)]
 
 variable [FiniteDimensional ℝ E']
 
@@ -212,9 +206,7 @@ theorem finrank_sub_depthAt_le_of_mapsTo (hy : y ∈ range I) {y' : E'} {D : E �
   have hW := finrank_add_depthAt_le (I := I') (y := y') (V.map D) <| by
     rintro _ ⟨v, hv, rfl⟩
     exact hmaps (hV hv)
-  have hVD := LinearMap.finrank_range_of_inj (f := D.comp V.subtype) (hD.comp V.injective_subtype)
-  rw [LinearMap.range_comp, Submodule.range_subtype] at hVD
-  rw [hVD] at hW
+  rw [← (Submodule.equivMapOfInjective D hD V).finrank_eq] at hW
   have := depthAt_le_finrank (I := I) y
   omega
 
@@ -435,7 +427,7 @@ theorem IsLocalDiffeomorphAt.depth_eq (hn : n ≠ 0) {f : M → N} {x : M}
 
 /-- A diffeomorphism preserves the depth. -/
 @[simp]
-theorem Diffeomorph.depth_apply (hn : n ≠ 0) (Φ : M ≃ₘ^n⟮I, I'⟯ N) (x : M) :
+theorem Diffeomorph.depth_eq (hn : n ≠ 0) (Φ : M ≃ₘ^n⟮I, I'⟯ N) (x : M) :
     I'.depth (Φ x) = I.depth x :=
   (Φ.isLocalDiffeomorph x).depth_eq hn
 

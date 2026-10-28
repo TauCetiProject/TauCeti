@@ -86,8 +86,8 @@ theorem TauCeti.uniqueDiffOn_pi_halfSpace {ι : Type*} (i : ι) (a : ℝ) :
     fun x hx ↦ hx.le
 
 /-- The differential of a map carries the positive tangent cone of a set into the positive tangent
-cone of its image. This is the positive-cone form of `HasFDerivWithinAt.mapsTo_tangent_cone`,
-whose proof it follows. -/
+cone of its image. This is the positive-cone form of `HasFDerivWithinAt.mapsTo_tangent_cone`. -/
+-- The proof follows Mathlib's proof of `HasFDerivWithinAt.mapsTo_tangent_cone`.
 theorem HasFDerivWithinAt.mapsTo_posTangentConeAt {E F : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} {f' : E →L[ℝ] F}
     {s : Set E} {x : E} (h : HasFDerivWithinAt f f' s x) :
