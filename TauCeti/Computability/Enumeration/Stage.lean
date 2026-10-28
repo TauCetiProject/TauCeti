@@ -28,8 +28,8 @@ is fresh at most once: it has a unique entry stage.
   the first stage is fresh at some stage.
 * `TauCeti.Enumeration.finite_prefix_stabilizes`: under monotone stages, the stages eventually
   agree with the limit below any bound.
-* `TauCeti.Enumeration.stageLimit_comp_of_cofinal`: under monotone stages, reindexing by a
-  cofinal clock does not change the limit; in particular neither does shifting the stages.
+* `TauCeti.Enumeration.stageLimit_comp_of_cofinal`: under monotone stages, reindexing by a clock
+  with cofinal range does not change the limit; in particular neither does shifting the stages.
 
 ## References
 
@@ -120,8 +120,9 @@ theorem finite_prefix_stabilizes {A : ℕ → Finset ℕ} (hA : Monotone A) (u :
     · exact hs₁ s ((le_max_left _ _).trans hs) x hx
     · exact ⟨fun h => ⟨s, h⟩, fun h => hA ((le_max_right _ _).trans hs) (ht h)⟩
 
-/-- **Reindexing by a cofinal clock.** Under monotone stages, reading the stages along a clock
-`c` that eventually passes every stage gives the same limit. -/
+/-- **Reindexing by a clock with cofinal range.** Under monotone stages, reading the stages along a
+clock `c` whose range is cofinal, so that every stage is at most some value of `c`, gives the same
+limit. The clock need not increase: it may return to small stages infinitely often. -/
 theorem stageLimit_comp_of_cofinal {A : ℕ → Finset ℕ} (hA : Monotone A) {c : ℕ → ℕ}
     (hc : ∀ s, ∃ t, s ≤ c t) : stageLimit (A ∘ c) = stageLimit A := by
   ext x
