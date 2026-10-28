@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.CohenMacaulay.Normal
 public import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 import TauCeti.RingTheory.KrullDimension.Integral
+import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
 
 /-!
 # Regular parameters on finite normal local algebras
@@ -108,16 +109,12 @@ a pair of base parameters regular on both the base and the algebra. -/
 theorem exists_regular_parameters_of_finite_normal
     (hinj : Function.Injective (algebraMap A B)) (hdim : ringKrullDim A = 2) :
     ∃ x y : A, span {x, y} = maximalIdeal A ∧ IsRegular A [x, y] ∧ IsRegular B [x, y] := by
-  classical
-  obtain ⟨s, hcard, hspan⟩ :=
-    Submodule.FG.exists_span_finset_card_eq_spanFinrank (maximalIdeal A).fg_of_isNoetherianRing
+  obtain ⟨x, y, hxy⟩ := exists_span_pair_eq_maximalIdeal hdim
+  refine ⟨x, y, hxy, ?_, isRegular_pair_of_finite_normal hinj hdim hxy⟩
   have hrank : (maximalIdeal A).spanFinrank = 2 := by
     have h := _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := A)
     rw [hdim] at h
     exact_mod_cast h
-  obtain ⟨x, y, _, rfl⟩ := Finset.card_eq_two.mp (hcard.trans hrank)
-  have hxy : span {x, y} = maximalIdeal A := by simpa using hspan
-  refine ⟨x, y, hxy, ?_, isRegular_pair_of_finite_normal hinj hdim hxy⟩
   exact isRegular_of_ofList_eq_maximalIdeal
     (by rw [ofList_cons, ofList_singleton, ← span_insert]; exact hxy)
     (by simp [hrank])
