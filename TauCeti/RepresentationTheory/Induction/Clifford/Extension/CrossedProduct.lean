@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.CrossedProduct.Noncommutative.Basic
-public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Commutant
+public import TauCeti.Algebra.CrossedProduct.Noncommutative.Gauge
+public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Gauge
 
 /-!
 # The crossed system of a Clifford section
@@ -20,6 +20,11 @@ coefficients in `CategoryTheory.End A` and indices in the actual inertia quotien
 This construction retains noncommutative coefficients and does not assume that the section's
 automorphisms form an action. No simplicity, scalar-Schur, semisimplicity, characteristic, or
 finite-group assumption is required.
+
+For any two normalized sections, `cliffordCrossedProductEquiv` compares the resulting algebras
+by the actual section difference. It fixes the commutant and sends each basis element to the
+corresponding section-difference multiple, giving independence of the chosen section up to
+algebra isomorphism.
 
 ## References
 
@@ -65,5 +70,63 @@ theorem cliffordCrossedSystem_action (s : (groupExtension A).Section) (hs : s 1 
 theorem cliffordCrossedSystem_factor (s : (groupExtension A).Section) (hs : s 1 = 1)
     (q r : Quotient A) :
     (cliffordCrossedSystem A s hs).factor q r = factorSetFun s (q, r) := (rfl)
+
+/-- The crossed-product algebras of two normalized Clifford sections are isomorphic.
+The map from the `t`-algebra to the `s`-algebra fixes the commutant and multiplies the
+basis element at `q` by the actual section difference `t(q)s(q)⁻¹` in the kernel. -/
+noncomputable def cliffordCrossedProductEquiv
+    (s t : (groupExtension A).Section) (hs : s 1 = 1) (ht : t 1 = 1) :
+    CrossedSystem.Algebra (cliffordCrossedSystem A t ht) ≃ₐ[k]
+      CrossedSystem.Algebra (cliffordCrossedSystem A s hs) := by
+  let b := sectionDiff t s
+  have hb : b 1 = 1 := by
+    apply (groupExtension A).inl_injective
+    simp only [b, inl_sectionDiff, hs, ht, inv_one, one_mul, map_one]
+  have hst : s.gauge b = t := s.gauge_sectionDiff t
+  refine CrossedSystem.Algebra.gaugeEquiv _ _ b hb ?_ ?_
+  · intro q f
+    simpa only [cliffordCrossedSystem_action, hst] using commutantAction_gauge A s b q f
+  · intro q r
+    have h := congrArg (fun d : (End A)ˣ => (d : End A))
+      (factorSetFun_clifford_gauge A s b q r)
+    simpa [hst] using h
+
+/-- The section comparison fixes every coefficient in the commutant. -/
+@[simp]
+theorem cliffordCrossedProductEquiv_inc
+    (s t : (groupExtension A).Section) (hs : s 1 = 1) (ht : t 1 = 1) (f : End A) :
+    cliffordCrossedProductEquiv A s t hs ht
+      (CrossedSystem.Algebra.inc (cliffordCrossedSystem A t ht) f) =
+        CrossedSystem.Algebra.inc (cliffordCrossedSystem A s hs) f := by
+  simp [cliffordCrossedProductEquiv]
+
+/-- The section comparison sends `[q]` to `sectionDiff t s q [q]`. -/
+@[simp]
+theorem cliffordCrossedProductEquiv_basis
+    (s t : (groupExtension A).Section) (hs : s 1 = 1) (ht : t 1 = 1) (q : Quotient A) :
+    cliffordCrossedProductEquiv A s t hs ht
+      (CrossedSystem.Algebra.basis (cliffordCrossedSystem A t ht) q) =
+        (↑(sectionDiff t s q) : End A) •
+          CrossedSystem.Algebra.basis (cliffordCrossedSystem A s hs) q := by
+  simp [cliffordCrossedProductEquiv]
+
+/-- The inverse section comparison fixes every coefficient in the commutant. -/
+@[simp]
+theorem cliffordCrossedProductEquiv_symm_inc
+    (s t : (groupExtension A).Section) (hs : s 1 = 1) (ht : t 1 = 1) (f : End A) :
+    (cliffordCrossedProductEquiv A s t hs ht).symm
+      (CrossedSystem.Algebra.inc (cliffordCrossedSystem A s hs) f) =
+        CrossedSystem.Algebra.inc (cliffordCrossedSystem A t ht) f := by
+  simp [cliffordCrossedProductEquiv]
+
+/-- The inverse section comparison uses the inverse of the section difference. -/
+@[simp]
+theorem cliffordCrossedProductEquiv_symm_basis
+    (s t : (groupExtension A).Section) (hs : s 1 = 1) (ht : t 1 = 1) (q : Quotient A) :
+    (cliffordCrossedProductEquiv A s t hs ht).symm
+      (CrossedSystem.Algebra.basis (cliffordCrossedSystem A s hs) q) =
+        (↑(sectionDiff t s q)⁻¹ : End A) •
+          CrossedSystem.Algebra.basis (cliffordCrossedSystem A t ht) q := by
+  simp [cliffordCrossedProductEquiv]
 
 end FDRep
