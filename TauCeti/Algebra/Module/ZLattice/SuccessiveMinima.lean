@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.ZLattice.GaugeBasis
 import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
 import TauCeti.Algebra.Order.BigOperators.Factorial
 import TauCeti.Analysis.Convex.Gauge
+import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 
 /-!
@@ -49,6 +50,14 @@ loss is the factor `∏ i < n, max 1 ((i + 1) / 2) = n! / 2 ^ (n - 1)`
   (`ZLattice.successiveMin_isLeast`).
 * `ZLattice.monotone_successiveMin` and `ZLattice.successiveMin_pos`: the minima are positive and
   nondecreasing.
+* `ZLattice.successiveMin_le_iff_finrank` and `ZLattice.successiveMin_isLeast_gauge`: the
+  thresholds of `ZLattice.successiveMin_le_iff` as the dimension of the span of the lattice vectors
+  in `t • K`, or of gauge at most `t`; `ZLattice.successiveMin_zero_le_iff` is the first minimum
+  as the least dilate containing a nonzero lattice vector.
+* `ZLattice.successiveMin_antitone_body`, `ZLattice.successiveMin_antitone_lattice` and
+  `ZLattice.successiveMin_smul`: enlarging the body or the lattice decreases the minima, and
+  dilating the body by `c > 0` divides them by `c`.
+* `ZLattice.finite_setOf_gauge_le`: a discrete lattice has finitely many vectors of bounded gauge.
 * `ZLattice.mem_span_image_Iio_of_gauge_lt_successiveMin`: lattice vectors of gauge below the
   `j`-th minimum lie in the span of the first `j` vectors attaining the minima; this is the
   hypothesis of Minkowski's second theorem (`ZLattice.prod_mul_measure_le_two_pow_mul_covolume`).
@@ -69,6 +78,10 @@ loss is the factor `∏ i < n, max 1 ((i + 1) / 2) = n! / 2 ^ (n - 1)`
 * J. W. S. Cassels, *An Introduction to the Geometry of Numbers*, Springer, 1959: Chapter VIII,
   §1 (successive minima and their attainment) and Lemma 2 (a lattice basis adapted to the minima),
   and Chapter V, Lemma 8 (the basis from the minima).
+* J.-H. Evertse, *Diophantine approximation, Chapter 2: Geometry of numbers*, lecture notes,
+  Leiden University, 2023, §2.3, Lemma 2.8: <https://pub.math.leidenuniv.nl/~evertsejh/dio19-2.pdf>.
+  This is the source of `ZLattice.successiveMin_isLeast_gauge`,
+  `ZLattice.successiveMin_le_iff_finrank` and `ZLattice.successiveMin_smul`.
 -/
 
 public section
@@ -104,6 +117,19 @@ theorem successiveMin_le {i : Fin (finrank ℝ E)} {t : ℝ} (ht : 0 ≤ t) {v :
     (hv : LinearIndependent ℝ v) (hvL : ∀ j, v j ∈ L) (hvK : ∀ j, v j ∈ t • (K : Set E)) :
     successiveMin L K i ≤ t :=
   csInf_le ⟨0, fun _ hs ↦ hs.1⟩ ⟨ht, v, hv, fun j ↦ ⟨hvL j, hvK j⟩⟩
+
+/-- **Scaling the body.** Dilating the body by `c > 0` divides every successive minimum by `c`.
+No hypothesis on the lattice or the body is needed. -/
+theorem successiveMin_smul (L : Submodule ℤ E) (K : ConvexBody E) {c : ℝ} (hc : 0 < c)
+    (i : Fin (finrank ℝ E)) : successiveMin L (c • K) i = successiveMin L K i / c := by
+  -- The dilation factors admissible for `c • K` are those for `K` divided by `c`.
+  rw [successiveMin_def, successiveMin_def, div_eq_inv_mul, ← smul_eq_mul,
+    ← Real.sInf_smul_of_nonneg (inv_nonneg.2 hc.le)]
+  congr 1
+  ext t
+  simp only [Set.mem_smul_set_iff_inv_smul_mem₀ (inv_ne_zero hc.ne'), inv_inv, smul_eq_mul,
+    Set.mem_ofPred_eq, ConvexBody.coe_smul, smul_smul, mul_comm t c,
+    mul_nonneg_iff_of_pos_left hc]
 
 /-- **Lattice vectors below a minimum.** Let `a` be independent lattice vectors with
 `gauge K (a i) ≤ successiveMin L K i` for every `i`, such as the vectors attaining the minima
@@ -194,6 +220,20 @@ end map
 
 variable [FiniteDimensional ℝ E]
 
+/-- **Gauge sublevels of a lattice are finite.** For a discrete `ℤ`-submodule `L` of the
+finite-dimensional real normed space `E` and a convex body `K` with `0` in its interior, only
+finitely many vectors of `L` have gauge at most `r`. The body need not be symmetric. -/
+theorem finite_setOf_gauge_le (L : Submodule ℤ E) [DiscreteTopology L]
+    (hK : 0 ∈ interior (K : Set E)) (r : ℝ) :
+    {x : E | x ∈ L ∧ gauge (K : Set E) x ≤ r}.Finite := by
+  -- The sublevel lies in the bounded dilate `c • K` with `c = max r 0 + 1`.
+  have hc : 0 < max r 0 + 1 := by positivity
+  refine (AddSubgroup.finite_inter L.toAddSubgroup (K.isBounded.smul₀ (max r 0 + 1))).subset ?_
+  rintro x ⟨hxL, hx⟩
+  refine ⟨?_, hxL⟩
+  rw [← ConvexBody.gauge_le_iff_mem_smul hK hc]
+  linarith [le_max_left r 0]
+
 /-- Let `L` be a discrete `ℤ`-submodule spanning the finite-dimensional real normed space `E`, and
 let `K` be a convex body with `0` in its interior. Outside any proper subspace `V`, `L` has a vector
 of least gauge with respect to `K` among the vectors of `L` outside `V`. -/
@@ -204,15 +244,9 @@ theorem exists_mem_notMem_forall_gauge_le (L : Submodule ℤ E) [DiscreteTopolog
     by_contra! h
     exact hV (eq_top_iff.2 ((IsZLattice.span_top (K := ℝ) (L := L)).symm.le.trans (span_le.2 h)))
   set c := gauge (K : Set E) y₀
-  have hc : 0 < c + 1 := by linarith [gauge_nonneg (s := (K : Set E)) y₀]
-  -- The candidates of gauge at most `c` lie in the bounded set `(c + 1) • K`, so are finite.
+  -- The candidates of gauge at most `c` are finitely many.
   set S := {y : E | y ∈ L ∧ y ∉ V ∧ gauge (K : Set E) y ≤ c}
-  have hS : S.Finite := by
-    refine (AddSubgroup.finite_inter L.toAddSubgroup (K.isBounded.smul₀ (c + 1))).subset ?_
-    rintro y ⟨hyL, -, hy⟩
-    refine ⟨?_, hyL⟩
-    rw [← ConvexBody.gauge_le_iff_mem_smul hK hc]
-    linarith
+  have hS : S.Finite := (finite_setOf_gauge_le L hK c).subset fun y hy ↦ ⟨hy.1, hy.2.2⟩
   obtain ⟨w, ⟨hwL, hwV, hwc⟩, hmin⟩ :=
     S.exists_min_image (gauge (K : Set E)) hS ⟨y₀, hy₀L, hy₀V, le_rfl⟩
   refine ⟨w, hwL, hwV, fun y hyL hyV ↦ ?_⟩
@@ -342,6 +376,75 @@ theorem successiveMin_isLeast (L : Submodule ℤ E) [DiscreteTopology L] [IsZLat
       LinearIndependent ℝ v ∧ ∀ j, v j ∈ L ∧ v j ∈ t • (K : Set E)} (successiveMin L K i) :=
   ⟨⟨successiveMin_nonneg L K i, (successiveMin_le_iff L hK (successiveMin_nonneg L K i)).1 le_rfl⟩,
     fun _ ⟨ht, _, hv, hvLK⟩ ↦ successiveMin_le ht hv (fun j ↦ (hvLK j).1) fun j ↦ (hvLK j).2⟩
+
+/-- **The successive minima as rank thresholds.** For `t ≥ 0`, the `i`-th successive minimum is
+at most `t` exactly when the vectors of `L` in the dilate `t • K` span a subspace of dimension at
+least `i + 1`. -/
+theorem successiveMin_le_iff_finrank (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
+    (hK : 0 ∈ interior (K : Set E)) {i : Fin (finrank ℝ E)} {t : ℝ} (ht : 0 ≤ t) :
+    successiveMin L K i ≤ t ↔ i + 1 ≤ finrank ℝ (span ℝ ((L : Set E) ∩ t • (K : Set E))) := by
+  rw [successiveMin_le_iff L hK ht, Submodule.le_finrank_span_iff_exists_linearIndependent]
+  simp only [Set.mem_inter_iff, SetLike.mem_coe]
+
+/-- **The successive minima as gauge thresholds.** The `i`-th successive minimum is the least
+`t ≥ 0` such that the vectors of `L` of gauge at most `t` span a subspace of dimension at least
+`i + 1`. The body need not be symmetric. -/
+theorem successiveMin_isLeast_gauge (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
+    (hK : 0 ∈ interior (K : Set E)) (i : Fin (finrank ℝ E)) :
+    IsLeast {t : ℝ | 0 ≤ t ∧
+      i + 1 ≤ finrank ℝ (span ℝ {x : E | x ∈ L ∧ gauge (K : Set E) x ≤ t})}
+      (successiveMin L K i) := by
+  -- For `t > 0` the gauge sublevel is the set of lattice vectors in `t • K`.
+  have hset {t : ℝ} (ht : 0 < t) :
+      {x : E | x ∈ L ∧ gauge (K : Set E) x ≤ t} = (L : Set E) ∩ t • (K : Set E) := by
+    ext x
+    simp [ConvexBody.gauge_le_iff_mem_smul hK ht]
+  refine ⟨⟨successiveMin_nonneg L K i, ?_⟩, fun t ⟨ht, hrank⟩ ↦ ?_⟩
+  · rw [hset (successiveMin_pos L hK i),
+      ← successiveMin_le_iff_finrank L hK (successiveMin_nonneg L K i)]
+  rcases ht.eq_or_lt with rfl | ht
+  · -- Only the zero vector has gauge at most zero, so the sublevel spans the zero subspace.
+    have hbot : span ℝ {x : E | x ∈ L ∧ gauge (K : Set E) x ≤ 0} = ⊥ :=
+      span_eq_bot.2 fun x ⟨_, hx⟩ ↦ by
+        by_contra hx0
+        exact ((ConvexBody.gauge_pos_iff hK).2 hx0).not_ge hx
+    rw [hbot, finrank_bot] at hrank
+    omega
+  · rw [hset ht] at hrank
+    exact (successiveMin_le_iff_finrank L hK ht.le).2 hrank
+
+/-- **The first successive minimum.** For `t ≥ 0`, the first successive minimum is at most `t`
+exactly when the dilate `t • K` contains a nonzero vector of `L`. -/
+theorem successiveMin_zero_le_iff (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
+    (hK : 0 ∈ interior (K : Set E)) (hE : 0 < finrank ℝ E) {t : ℝ} (ht : 0 ≤ t) :
+    successiveMin L K ⟨0, hE⟩ ≤ t ↔ ∃ x ∈ L, x ≠ 0 ∧ x ∈ t • (K : Set E) := by
+  rw [successiveMin_le_iff L hK ht]
+  refine ⟨fun ⟨v, hv, hvLK⟩ ↦ ⟨v 0, (hvLK 0).1, hv.ne_zero 0, (hvLK 0).2⟩,
+    fun ⟨x, hxL, hx0, hxK⟩ ↦ ?_⟩
+  have hx : LinearIndependent ℝ fun _ : Fin 1 ↦ x := .of_subsingleton 0 hx0
+  exact ⟨_, hx, fun _ ↦ ⟨hxL, hxK⟩⟩
+
+/-- **Enlarging the body decreases the successive minima.** If `K ⊆ K'` and `0` is in the
+interior of `K`, then every successive minimum of `L` with respect to `K'` is at most the
+corresponding minimum with respect to `K`. -/
+theorem successiveMin_antitone_body (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
+    (hK : 0 ∈ interior (K : Set E)) {K' : ConvexBody E} (hKK' : K ≤ K')
+    (i : Fin (finrank ℝ E)) : successiveMin L K' i ≤ successiveMin L K i := by
+  obtain ⟨v, hv, hvLK⟩ :=
+    (successiveMin_le_iff L hK (successiveMin_nonneg L K i)).1 le_rfl
+  exact successiveMin_le (successiveMin_nonneg L K i) hv (fun j ↦ (hvLK j).1)
+    fun j ↦ Set.smul_set_mono (SetLike.coe_subset_coe.2 hKK') (hvLK j).2
+
+/-- **Enlarging the lattice decreases the successive minima.** If `L ≤ M` for a discrete
+spanning lattice `L`, then every successive minimum of `M` with respect to `K` is at most the
+corresponding minimum of `L`. -/
+theorem successiveMin_antitone_lattice (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
+    (hK : 0 ∈ interior (K : Set E)) {M : Submodule ℤ E} (hLM : L ≤ M)
+    (i : Fin (finrank ℝ E)) : successiveMin M K i ≤ successiveMin L K i := by
+  obtain ⟨v, hv, hvLK⟩ :=
+    (successiveMin_le_iff L hK (successiveMin_nonneg L K i)).1 le_rfl
+  exact successiveMin_le (successiveMin_nonneg L K i) hv (fun j ↦ hLM (hvLK j).1)
+    fun j ↦ (hvLK j).2
 
 /-- **A real basis attaining the successive minima.** For a discrete spanning lattice `L` and a
 convex body `K` with `0` in its interior, some basis `b` of `E` over `ℝ` consists of vectors of `L`
