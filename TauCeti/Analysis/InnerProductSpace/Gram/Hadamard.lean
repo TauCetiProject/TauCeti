@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
+public import Mathlib.Analysis.Matrix.PosDef
 
 /-!
 # Hadamard's inequality for Gram determinants
@@ -36,6 +37,8 @@ Gram/covolume calculation of J.-M. Couveignes, *Enumerating number fields*, Ann.
   in an orthonormal basis.
 * `OrthonormalBasis.det_gram_eq_norm_det_sq`: the Gram determinant of a family is the squared
   norm of its coordinate determinant in an orthonormal basis.
+* `Matrix.ofReal_re_det_gram`, `Matrix.re_det_gram_nonneg`: the Gram determinant is real, with
+  nonnegative real part.
 * `Matrix.det_gram_le_prod_norm_sq`, `Matrix.re_det_gram_le_prod_norm_sq`: Hadamard's inequality
   for Gram determinants, in `ComplexOrder` and for the real part.
 * `Matrix.re_det_gram_le_pow`: the uniform form, `re (det (gram 𝕜 v)) ≤ D ^ card ι` when every
@@ -83,11 +86,24 @@ theorem det_gram_eq_norm_det_sq (b : OrthonormalBasis ι 𝕜 E) (v : ι → E) 
     (Matrix.gram 𝕜 v).det = (‖b.toBasis.det v‖ : 𝕜) ^ 2 := by
   rw [Matrix.gram_eq_conjTranspose_mul b, Matrix.det_mul, Matrix.det_conjTranspose,
     RCLike.star_def, RCLike.conj_mul, Module.Basis.det_apply]
-  congr 3
+  have hM : b.toBasis.toMatrix v = Matrix.of fun i j ↦ b.repr (v j) i := by
+    ext; simp [Module.Basis.toMatrix_apply]
+  rw [hM]
 
 end OrthonormalBasis
 
 namespace Matrix
+
+/-- The Gram determinant of a finite family is real: it is the image of its real part. -/
+@[simp]
+theorem ofReal_re_det_gram (v : ι → E) :
+    ((RCLike.re (gram 𝕜 v).det : ℝ) : 𝕜) = (gram 𝕜 v).det := by
+  rw [← RCLike.conj_eq_iff_re, RCLike.conj_eq_iff_im]
+  exact (RCLike.nonneg_iff.1 (posSemidef_gram 𝕜 v).det_nonneg).2
+
+/-- The real part of the Gram determinant of a finite family is nonnegative. -/
+theorem re_det_gram_nonneg (v : ι → E) : 0 ≤ RCLike.re (gram 𝕜 v).det :=
+  (RCLike.nonneg_iff.1 (posSemidef_gram 𝕜 v).det_nonneg).1
 
 /-- **Hadamard's inequality for Gram determinants.** In any inner product space, the Gram
 determinant of a finite family is at most the product of the squared norms of its vectors. The
