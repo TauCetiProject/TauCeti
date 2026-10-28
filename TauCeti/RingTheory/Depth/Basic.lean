@@ -36,6 +36,8 @@ The regular-sequence transfer lemmas for linear maps live in
   of the maximal ideal lowers the depth by exactly one.
 * `IsLocalRing.depth_add_length_eq_depth_of_isRegular`: dividing a finite module by an `M`-regular
   sequence `r₁, …, rₙ` lowers the depth by exactly `n`.
+* `RingEquiv.depth_self_eq`: isomorphic Noetherian local rings have the same depth over
+  themselves.
 * `IsLocalRing.depth_hom_ge`: depth at least one or two passes from the target
   module to the module of linear maps (Stacks, Lemma 15.24.10 (0AV5)).
 * `IsLocalRing.depth_le_ringKrullDim_quotient_of_isAssociatedPrime`: the depth of a finite module
@@ -251,6 +253,31 @@ theorem depth_hom_ge {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing
       by simp [List.length_take, Nat.min_eq_left length]⟩
 
 end IsLocalRing
+
+namespace RingEquiv
+
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [IsLocalRing R] [IsLocalRing S]
+
+/-- A ring isomorphism carries regular sequences in the maximal ideal to regular sequences in the
+maximal ideal, so it can only increase the depth of a Noetherian local ring over itself. -/
+private theorem depth_self_le [IsNoetherianRing R] [IsNoetherianRing S] (e : R ≃+* S) :
+    depth (ModuleCat.of R R) ≤ depth (ModuleCat.of S S) := by
+  rw [depth_eq_sSup_length_isRegular, depth_eq_sSup_length_isRegular]
+  refine sSup_le_sSup ?_
+  rintro _ ⟨rs, reg, mem, rfl⟩
+  refine ⟨rs.map e, (e.toAddEquiv.isRegular_congr (List.forall₂_map_right_iff.mpr
+    (List.forall₂_same.mpr fun r _ x ↦ map_mul e r x))).1 reg, ?_, by simp⟩
+  simp only [List.mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  intro r hr
+  simpa [mem_maximalIdeal, mem_nonunits_iff] using mem r hr
+
+/-- Isomorphic Noetherian local rings have the same depth over themselves. -/
+theorem depth_self_eq [IsNoetherianRing R] (e : R ≃+* S) :
+    depth (ModuleCat.of R R) = depth (ModuleCat.of S S) :=
+  have : IsNoetherianRing S := isNoetherianRing_of_ringEquiv R e
+  le_antisymm (depth_self_le e) (depth_self_le e.symm)
+
+end RingEquiv
 
 namespace TauCeti
 
