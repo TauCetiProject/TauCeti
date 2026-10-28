@@ -38,6 +38,7 @@ theorem cochainToGradedResolution_apply (n : ℕ) (z : (homogeneousCochains X).X
       DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n z.val := (rfl)
 
 /-- The included cochain is homogeneous of its original degree. -/
+@[simp↓]
 theorem cochainToGradedResolution_mem (n : ℕ) (z : (homogeneousCochains X).X n) :
     X.cochainToGradedResolution n z ∈ X.gradedResolutionPiece n :=
   X.lof_mem_gradedResolutionPiece n z.val
@@ -45,6 +46,7 @@ theorem cochainToGradedResolution_mem (n : ℕ) (z : (homogeneousCochains X).X n
 variable [DiscreteTopology R]
 
 /-- The included cochain is invariant under the group action on the total resolution. -/
+@[simp↓]
 theorem cochainToGradedResolution_invariant (n : ℕ) (z : (homogeneousCochains X).X n)
     (g : G) :
     X.gradedResolutionTopRep.ρ g (X.cochainToGradedResolution n z) =
@@ -54,6 +56,7 @@ theorem cochainToGradedResolution_invariant (n : ℕ) (z : (homogeneousCochains 
 
 omit [DiscreteTopology R] in
 /-- Inclusion of homogeneous cochains commutes with the differential. -/
+@[simp↓]
 theorem gradedResolutionDifferential_cochainToGradedResolution (n : ℕ)
     (z : (homogeneousCochains X).X n) :
     X.gradedResolutionDifferential (X.cochainToGradedResolution n z) =
