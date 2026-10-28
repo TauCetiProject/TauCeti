@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+public import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
+public import Mathlib.Data.Finset.Max
 
 /-!
 # Products of antitone sequences over finite sets of indices
 
-For a nonnegative antitone sequence `f : ℕ → R` in an ordered commutative semiring, the product
-of `f` over a finite set `s` of indices is largest when `s` is an initial segment: it is at most
-the product over `range #s` (`Finset.prod_le_prod_range_card`). If `s` has `n + 1` elements and
-is not the initial segment `range (n + 1)`, then it contains an index at least `n + 1`, and its
-product is at most `(∏ i ∈ range n, f i) * f (n + 1)`
+For a nonnegative antitone sequence `f : ℕ → R` in an ordered commutative monoid with zero, the
+product of `f` over a finite set `s` of indices is largest when `s` is an initial segment: it is
+at most the product over `range #s` (`Finset.prod_le_prod_range_card`). If `s` has `n + 1`
+elements and is not the initial segment `range (n + 1)`, then it contains an index at least
+`n + 1`, and its product is at most `(∏ i ∈ range n, f i) * f (n + 1)`
 (`Finset.prod_le_prod_range_mul_of_not_subset`). For a strictly decreasing positive sequence the
 right-hand side is strictly smaller than the product over `range (n + 1)`, which gives an explicit
 gap between the initial segment and every other set of the same size. This is how a dominant term
@@ -25,12 +26,14 @@ public section
 
 namespace Finset
 
-variable {R : Type*} [CommSemiring R] [PartialOrder R] [IsOrderedRing R] {f : ℕ → R}
+variable {R : Type*} [CommMonoidWithZero R] [Preorder R] [ZeroLEOneClass R] [PosMulMono R]
+  {f : ℕ → R}
 
 /-- For a nonnegative antitone sequence `f`, the product of `f` over a finite set `s` of indices
 is at most its product over the initial segment `range #s` of the same size. -/
 theorem prod_le_prod_range_card (hf₀ : ∀ i, 0 ≤ f i) (hf : Antitone f) (s : Finset ℕ) :
     ∏ i ∈ s, f i ≤ ∏ i ∈ range #s, f i := by
+  have := PosMulMono.toMulPosMono (α := R)
   induction h : #s generalizing s with
   | zero => simp [card_eq_zero.1 h]
   | succ n ih =>
@@ -52,6 +55,7 @@ the initial segment `range (n + 1)` has product at most `(∏ i ∈ range n, f i
 theorem prod_le_prod_range_mul_of_not_subset (hf₀ : ∀ i, 0 ≤ f i) (hf : Antitone f)
     {s : Finset ℕ} {n : ℕ} (hs : #s = n + 1) (hsub : ¬s ⊆ range (n + 1)) :
     ∏ i ∈ s, f i ≤ (∏ i ∈ range n, f i) * f (n + 1) := by
+  have := PosMulMono.toMulPosMono (α := R)
   obtain ⟨m, hms, hm⟩ := not_subset.1 hsub
   rw [mem_range, not_lt] at hm
   rw [← mul_prod_erase s f hms, mul_comm]

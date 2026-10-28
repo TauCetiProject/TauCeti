@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Order.BigOperators.Antitone
 public import TauCeti.Analysis.Matrix.CharPowerSeries.Basic
 
 /-!
@@ -25,7 +24,8 @@ matrix with entries `(d i)⁻¹ * A i j`. If the leading principal minor of `B` 
 
 The leading principal minor of `A` on `range n` has exactly this norm
 (`Matrix.norm_principalMinor_eq_prod`), while every other principal minor of size `n` is
-bounded by `(∏ i ∈ range (n - 1), ‖d i‖) * ‖d n‖`, which is strictly smaller because the norms
+bounded by `(∏ i ∈ range (n - 1), ‖d i‖) * ‖d n‖`
+(`Matrix.norm_principalMinor_le_prod_range_mul`), which is strictly smaller because the norms
 decrease strictly. By the ultrametric inequality the leading minor dominates the convergent sum
 defining `cₙ`.
 
@@ -51,17 +51,6 @@ open Filter Finset Topology
 namespace Matrix
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] {A : Matrix ℕ ℕ K} {d : ℕ → K}
-
-/-- Every principal minor of size `n + 1` other than the leading one on `range (n + 1)` has norm
-at most `(∏ i ∈ range n, ‖d i‖) * ‖d (n + 1)‖`, when `‖A i j‖ ≤ ‖d i‖` and the norms of `d`
-decrease. -/
-private theorem norm_principalMinor_le_prod_range_mul (hdec : Antitone fun i ↦ ‖d i‖)
-    (hA : ∀ i j, ‖A i j‖ ≤ ‖d i‖) {s : Finset ℕ} {n : ℕ} (hs : #s = n + 1)
-    (hne : s ≠ range (n + 1)) :
-    ‖A.principalMinor s‖ ≤ (∏ i ∈ range n, ‖d i‖) * ‖d (n + 1)‖ :=
-  (norm_principalMinor_le hA s).trans <| prod_le_prod_range_mul_of_not_subset
-    (fun _ ↦ norm_nonneg _) hdec hs fun hsub ↦
-      hne (eq_of_subset_of_card_le hsub (by rw [hs, card_range]))
 
 /-- **Exact coefficients from a dominant minor.** Let `‖A i j‖ ≤ ‖d i‖`, where the norms of `d`
 decrease strictly and tend to zero. If the normalised matrix with entries `(d i)⁻¹ * A i j` has
