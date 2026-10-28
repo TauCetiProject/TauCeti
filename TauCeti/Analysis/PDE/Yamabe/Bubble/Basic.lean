@@ -234,7 +234,6 @@ theorem norm_fderiv_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
     abs_of_pos (bubble_pos ht b x), abs_of_pos (by positivity : 0 < t ^ 2 + ‖x - b‖ ^ 2)]
   ring
 
-variable [CompleteSpace E] in
 /-- The squared norm of the differential of a bubble is the radial function
 `((n - 2) / (2 t)) ² ‖x - b‖² (2 t / (t² + ‖x - b‖²)) ^ n`. -/
 theorem norm_fderiv_bubble_sq {t : ℝ} (ht : 0 < t) (b x : E) :
@@ -246,8 +245,7 @@ theorem norm_fderiv_bubble_sq {t : ℝ} (ht : 0 < t) (b x : E) :
     have ha : 0 < 2 * t / (t ^ 2 + ‖x - b‖ ^ 2) := by positivity
     rw [bubble_apply, ← Real.rpow_mul_natCast ha.le, show ((finrank ℝ E : ℝ) - 2) / 2 * (2 : ℕ) =
       (finrank ℝ E : ℝ) - 2 by push_cast; ring, Real.rpow_sub ha, Real.rpow_natCast, Real.rpow_two]
-  rw [(hasGradientAt_bubble ht b x).hasFDerivAt.fderiv, LinearIsometryEquiv.norm_map, norm_smul,
-    mul_pow, norm_neg, Real.norm_eq_abs, sq_abs, mul_pow, hU2]
+  rw [norm_fderiv_bubble ht b x, div_pow, mul_pow, mul_pow, sq_abs, hU2]
   field_simp
 
 end Gradient
