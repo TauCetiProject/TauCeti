@@ -246,11 +246,9 @@ instance isIso_homologyMap_cyclicTotalComplexToHochschild_zero :
     exact Subtype.ext (by simp)
 
 variable {R A M} in
-/-- In degree one, the projection onto column zero `H^1(Tot) → HH^1(A, Hom_R(A, M))` is injective:
-the column-one component of a total cocycle of degree one is a `0`-cochain killed by the cyclic
-norm, which is the identity on `0`-cochains, so the cocycle is concentrated in column zero, where a
-Hochschild coboundary `b χ` is the total differential of `χ`. This is the exactness of the SBI
-sequence at `H^1(Tot)`. -/
+/-- For a possibly nonunital algebra, the projection onto column zero
+`H^1(Tot) → HH^1(A, Hom_R(A, M))` is injective. This is the exactness of the SBI sequence at
+`H^1(Tot)`. -/
 theorem injective_homologyMap_cyclicTotalComplexToHochschild_one :
     Function.Injective
       (HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) 1) := by
@@ -263,7 +261,8 @@ theorem injective_homologyMap_cyclicTotalComplexToHochschild_one :
   let w : cyclicTotalCochains R A M 0 := ⟨Pi.single 0 χ, single_mem_cyclicTotalCochains le_rfl χ⟩
   rw [cyclicTotalHomologyMk_succ_eq_zero_iff]
   refine ⟨w, Subtype.ext (funext fun q ↦ ?_)⟩
-  -- the column-two component of `D x = 0` says `N (x 0) = 0`
+  -- The column-two component of `D x = 0` says `N (x 0) = 0`; since the cyclic norm is the
+  -- identity on `0`-cochains, the column-one component vanishes.
   have hD := congrArg (fun z : cyclicTotalCochains R A M 2 ↦ z.1 0) (LinearMap.mem_ker.1 x.2)
   simp only [cyclicTotalDifferential_apply_zero, cyclicBicomplexHorizontal_of_odd odd_one] at hD
   obtain rfl | rfl | hq : q = 0 ∨ q = 1 ∨ 1 < q := by omega
