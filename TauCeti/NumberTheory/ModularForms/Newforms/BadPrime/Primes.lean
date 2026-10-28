@@ -37,7 +37,8 @@ The LMFDB lists the bad primes of a newform as the prime divisors of its level (
 * `HeckeRing.GL2.Newform.badPrimes_eq_primeFactors`: the bad primes of a newform of level `N`
   are the prime factors of `N`.
 * `HeckeRing.GL2.Newform.mem_badPrimes_iff_zero_mem_satakeParameters`: a prime is bad exactly
-  when one of the Satake parameters there vanishes, so that the Euler factor is linear.
+  when one of the Satake parameters there vanishes, so that the Euler factor has degree at most
+  one.
 * `HeckeRing.GL2.Newform.mem_badPrimes_iff_forall_qExpansion_coeff_prime_pow`: a prime `p` is
   bad exactly when `a_{p^r} = a_p^r` for every `r`.
 * `HeckeRing.GL2.Newform.primeFactors_eq_of_forall_qExpansion_coeff_eq`: two newforms whose
@@ -105,7 +106,7 @@ theorem finite_badPrimes (f : Newform N k) : f.badPrimes.Finite := by
   exact N.primeFactors.finite_toSet
 
 /-- **A prime is bad exactly when a Satake parameter there vanishes**, that is, when the Euler
-factor `(1 - α_p T)(1 - β_p T)` of `L(s, f)` at `p` is linear. -/
+factor `(1 - α_p T)(1 - β_p T)` of `L(s, f)` at `p` has degree at most one. -/
 theorem mem_badPrimes_iff_zero_mem_satakeParameters (f : Newform N k) {p : ℕ} :
     p ∈ f.badPrimes ↔ p.Prime ∧ 0 ∈ f.satakeParameters p := by
   rw [mem_badPrimes_iff_dvd]
