@@ -15,9 +15,10 @@ public import TauCeti.Algebra.Module.GradedModule.Generated
 
 For a bounded-below internally graded module, the positive-degree part of the algebra cannot
 surject onto the whole module unless the module is zero. More generally, homogeneous generators
-modulo the positive-degree action generate the module itself. In particular, over a nonnegatively
-graded algebra, a bounded-below module is generated in degree `d` exactly when every homogeneous
-piece outside degree `d` lies in `A₊ M`.
+modulo the positive-degree action generate the module itself. This generation result holds for
+locally finite linearly ordered cancellative additive commutative monoids of degrees, including
+`ℕ` and `ℤ`. In particular, over a nonnegatively graded algebra, a bounded-below module is generated
+in degree `d` exactly when every homogeneous piece outside degree `d` lies in `A₊ M`.
 
 The last criterion expresses concentration of `M / A₊ M` in degree `d` without choosing a
 presentation of that quotient. It detects the generating degrees of terms of minimal graded
@@ -27,7 +28,7 @@ is essential; no finite-generation hypothesis is required when a lower bound is 
 
 The positive-degree action `A₊ M` is itself a homogeneous submodule, stable under degree-zero
 scalars: its degree-`p` components are sums of products `a • y` with `a` of positive degree `i`
-and `y` of degree `p - i`.
+and `y` of degree `q` with `i + q = p`.
 
 ## References
 
