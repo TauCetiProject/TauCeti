@@ -170,11 +170,7 @@ theorem isUniformAddGroup : IsUniformAddGroup T :=
 /-- The Gauss topology makes `T` a topological ring. -/
 theorem isTopologicalRing : IsTopologicalRing T :=
   have := isUniformAddGroup hu
-  { continuous_mul := (continuous_iff hu).mpr fun i ↦ by
-      simp only [map_mul]
-      exact continuous_mul.comp
-        (((uniformContinuous_restrict hu i).continuous.comp continuous_fst).prodMk
-          ((uniformContinuous_restrict hu i).continuous.comp continuous_snd)) }
+  { continuous_mul := (hu.isInducing.continuousMul (restrictFamily hT)).continuous_mul }
 
 /-- Polynomial truncations converge in the Gauss norms at all the radii simultaneously, for any
 inclusion `φ` of the polynomials into `T`. -/
