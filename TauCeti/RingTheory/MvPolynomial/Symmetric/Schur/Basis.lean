@@ -95,10 +95,7 @@ open Finset MvPolynomial
 vector. -/
 def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
     n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card (Fin d)} where
-  toFun μ := ⟨μ, by
-    have hcard := μ.parts.card_nsmul_le_sum (a := 1) (fun x hx => μ.parts_pos hx)
-    have hparts : μ.parts.card ≤ n := by simpa [μ.parts_sum] using hcard
-    exact hparts.trans (by simpa using h)⟩
+  toFun μ := ⟨μ, μ.card_parts_le.trans (by simpa using h)⟩
   invFun μ := μ.1
   left_inv _ := rfl
   right_inv _ := Subtype.ext rfl
@@ -316,15 +313,28 @@ theorem coe_schurPolyBasis (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.
   rw [h]
   rfl
 
+/-- **The coordinates of a Schur expansion**: if a symmetric homogeneous polynomial is a combination
+`∑_λ c_λ s_λ` of the Schur polynomials of *all* partitions of `n`, its coordinate in the Schur
+basis at a partition the alphabet records is `c_μ`.  The partitions with more parts than the
+alphabet has letters contribute nothing, their Schur polynomials vanishing. -/
+theorem schurPolyBasis_repr_of_coe_eq_sum {p : symmetricHomogeneousSubmodule σ R n}
+    {c : n.Partition → R} (hp : (p : MvPolynomial σ R) = ∑ l, c l • schurPoly σ R l)
+    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
+    (schurPolyBasis σ R n).repr p μ = c μ.1 := by
+  have h : p = ∑ ν, c ν.1 • schurPolyBasis σ R n ν := by
+    refine Subtype.ext ?_
+    simp only [hp, Submodule.coe_sum, Submodule.coe_smul, coe_schurPolyBasis]
+    rw [← Fintype.sum_subtype_add_sum_subtype (fun l : n.Partition => l.parts.card ≤
+      Fintype.card σ), Fintype.sum_eq_zero (fun l : {l : n.Partition // ¬_} => _)
+      fun l => by rw [schurPoly_eq_zero_of_card_lt _ (not_le.mp l.2), smul_zero], add_zero]
+  rw [h, Module.Basis.repr_sum_self]
+
 /-- In an alphabet with at least `n` letters, the Schur polynomials of all partitions of
 `n` are linearly independent. Thus their coefficients in a finite expansion are unique. -/
 theorem linearIndependent_schurPoly (h : n ≤ Fintype.card σ) :
     LinearIndependent R (schurPoly σ R : n.Partition → MvPolynomial σ R) := by
   let f (μ : n.Partition) : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} :=
-    ⟨μ, by
-      have hc := μ.parts.card_nsmul_le_sum (a := 1) (fun x hx ↦ μ.parts_pos hx)
-      have : μ.parts.card ≤ n := by simpa [μ.parts_sum] using hc
-      exact this.trans h⟩
+    ⟨μ, μ.card_parts_le.trans h⟩
   have hf : Function.Injective f := fun _ _ he ↦ congrArg Subtype.val he
   simpa only [Function.comp_def, Submodule.subtype_apply, coe_schurPolyBasis, f] using
     ((schurPolyBasis σ R n).linearIndependent.comp f hf).map'

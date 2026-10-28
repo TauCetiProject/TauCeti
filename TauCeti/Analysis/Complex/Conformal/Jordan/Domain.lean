@@ -13,7 +13,7 @@ public import TauCeti.Topology.UniformlyLocallyConnected
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Complex.Conformal.Biholomorph
 import TauCeti.Analysis.Complex.Conformal.SimplyConnected
-import TauCeti.Analysis.Complex.PlaneSeparation.TwoComponents
+import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 
 /-!
 # Jordan domains, and the domains a conformal map takes onto a disc
@@ -56,7 +56,7 @@ are.
   frontier statement `TauCeti.isJordanCurve_frontier_of_convex` that generalises the circle.
 * `TauCeti.isJordanDomain_ball` — its special case at a disc of positive radius, the basic example
   and the one Carathéodory's theorem compares every other Jordan domain to.
-* `TauCeti.IsJordanCurve.isJordanDomain_filledHull_sdiff`: the inside of a Jordan curve is a
+* `TauCeti.IsJordanCurve.isJordanDomain_filledHull_sdiff` — the inside of a Jordan curve is a
   Jordan domain.
 * `TauCeti.IsJordanDomain.isSimplyConnected` — a Jordan domain is simply connected, its frontier
   being connected; so it satisfies the hypotheses of the Riemann mapping theorem.
@@ -157,7 +157,7 @@ theorem IsJordanCurve.isJordanDomain_filledHull_sdiff {C : Set ℂ} (hC : IsJord
   isOpen := hC.isClosed.isOpen_filledHull_sdiff
   isConnected := hC.isConnected_filledHull_sdiff
   isBounded := (isBounded_filledHull.mpr hC.isCompact.isBounded).subset sdiff_subset
-  isJordanCurve_frontier := by rw [hC.frontier_filledHull_sdiff]; exact hC
+  isJordanCurve_frontier := hC.frontier_filledHull_sdiff.symm ▸ hC
 
 /-! ## Elementary consequences of being a Jordan domain -/
 

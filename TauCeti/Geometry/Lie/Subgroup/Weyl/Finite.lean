@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.Torus
 public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
-import TauCeti.Geometry.Lie.Exponential.CommutativeGroup
+import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 import TauCeti.Geometry.Lie.Subgroup.CartanChart
 import TauCeti.Geometry.Lie.Subgroup.Differential
 import TauCeti.Geometry.Lie.Adjoint.Representation.Basic

@@ -27,7 +27,7 @@ operator has no proper extension sharing a resolvent point. The pointwise resolv
 holds over rings, and resolvents commute over division rings. For topological additive groups, an
 invertible continuous linear perturbation gives another resolvent. Over commutative rings
 with continuous scalar multiplication by constants, the resolvent of an everywhere defined
-continuous linear operator agrees with Mathlib's algebraic resolvent.
+continuous linear operator agrees with Mathlib's algebraic resolvent, and their spectra agree.
 
 On normed spaces over nontrivially normed fields the continuous linear inverse is bounded;
 Neumann perturbations and openness of the resolvent set are developed in
@@ -134,6 +134,15 @@ def resolventSet (A : X →ₗ.[𝕜] X) : Set 𝕜 :=
 theorem mem_resolventSet_iff :
     lambda ∈ resolventSet A ↔ ∃ R : X →L[𝕜] X, IsResolventAt A lambda R :=
   Iff.rfl
+
+/-- The spectrum of a partial linear map consists of the scalars whose shifts do not admit
+continuous linear two-sided inverses. -/
+def spectrum (A : X →ₗ.[𝕜] X) : Set 𝕜 := A.resolventSetᶜ
+
+/-- Membership in the partial-operator spectrum is failure of resolvent membership. -/
+@[simp]
+theorem mem_spectrum_iff (A : X →ₗ.[𝕜] X) (z : 𝕜) :
+    z ∈ A.spectrum ↔ z ∉ A.resolventSet := (Iff.rfl)
 
 /-- Exhibiting an inverse puts `lambda` in the resolvent set. -/
 theorem IsResolventAt.mem_resolventSet (h : IsResolventAt A lambda R) :
@@ -407,6 +416,15 @@ theorem _root_.ContinuousLinearMap.mem_resolventSet_toPMap_top_iff
     ⟨fun ⟨_, hR⟩ => hR.isUnit_toPMap_top,
       fun h => ⟨_, h.isResolventAt_toPMap_top⟩⟩
 
+/-- For a continuous linear operator on the full domain, the partial-operator spectrum agrees
+with Mathlib's algebraic spectrum in `X →L[𝕜] X`. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.spectrum_toPMap_top (T : X →L[𝕜] X) :
+    (T.toLinearMap.toPMap ⊤).spectrum = _root_.spectrum 𝕜 T := by
+  ext z
+  simp only [mem_spectrum_iff, ContinuousLinearMap.mem_resolventSet_toPMap_top_iff,
+    _root_.spectrum.mem_iff, _root_.spectrum.mem_resolventSet_iff]
+
 /-- **The continuous-operator bridge, value half.** For a continuous linear operator, the
 partial-map resolvent is Mathlib's algebraic resolvent. -/
 @[simp]
@@ -420,20 +438,5 @@ theorem _root_.ContinuousLinearMap.resolvent_toPMap_top
 end ContinuousOperator
 
 end LinearPMap
-
-namespace TauCeti
-
-variable {𝕜 E : Type*} [Ring 𝕜] [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
-
-/-- The spectrum of a partial linear map consists of the scalars whose shifts do not admit
-continuous linear two-sided inverses. -/
-def _root_.LinearPMap.spectrum (A : E →ₗ.[𝕜] E) : Set 𝕜 := A.resolventSetᶜ
-
-/-- Membership in the partial-operator spectrum is failure of resolvent membership. -/
-@[simp]
-theorem _root_.LinearPMap.mem_spectrum_iff (A : E →ₗ.[𝕜] E) (z : 𝕜) :
-    z ∈ A.spectrum ↔ z ∉ A.resolventSet := (Iff.rfl)
-
-end TauCeti
 
 end

@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fintype.Order
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.Order.GaloisConnection.Basic
+public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.Topology.Instances.EReal.Lemmas
 public import TauCeti.Data.EReal.Operations
 
@@ -88,6 +89,9 @@ marginal integrals of a dual pair meaningful.
 * `TauCeti.IsCConcave.exists_real_conjugate` — for a bounded cost, a `c`-concave potential with a
   finite value and its transform are bounded real potentials, each the real
   infimal transform of the other.
+* `TauCeti.exists_boundedContinuousFunction_of_eq_iInf_sub` — for a bounded uniformly continuous
+  cost, two real potentials each the infimal transform of the other are bounded continuous
+  functions.
 
 This is the finite-real algebraic slice of Layer 2, item 2 of the optimal-transport roadmap.
 
@@ -105,6 +109,8 @@ This is the finite-real algebraic slice of Layer 2, item 2 of the optimal-transp
 public section
 
 noncomputable section
+
+open scoped BoundedContinuousFunction
 
 namespace TauCeti
 
@@ -326,6 +332,65 @@ theorem uniformContinuous_iInf_sub [PseudoMetricSpace Y] [Nonempty X]
   have h2 := key y y' hy'
   rw [Real.dist_eq, abs_lt]
   constructor <;> linarith
+
+/-- **Regularity of conjugate potentials.** Let `c` be a bounded uniformly continuous cost on a
+product of nonempty pseudometric spaces, and let `φ`, `ψ` be real potentials each of which is the
+real infimal transform of the other: `φ x = ⨅ y, (c (x, y) - ψ y)` and
+`ψ y = ⨅ x, (c (x, y) - φ x)`. Then both are bounded and uniformly continuous, so they are bounded
+continuous functions.
+
+The infima are taken in `ℝ`, where an unbounded infimum takes the junk value `0`; the bounds on
+`c` rule this out. -/
+theorem exists_boundedContinuousFunction_of_eq_iInf_sub [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] [Nonempty X] [Nonempty Y] {c : X × Y → ℝ} (hc : UniformContinuous c)
+    {m M : ℝ} (hcm : ∀ z, m ≤ c z) (hcM : ∀ z, c z ≤ M) {φ : X → ℝ} {ψ : Y → ℝ}
+    (hφ : ∀ x, φ x = ⨅ y, (c (x, y) - ψ y)) (hψ : ∀ y, ψ y = ⨅ x, (c (x, y) - φ x)) :
+    ∃ (φ' : X →ᵇ ℝ) (ψ' : Y →ᵇ ℝ), ⇑φ' = φ ∧ ⇑ψ' = ψ := by
+  obtain ⟨x₀⟩ := ‹Nonempty X›
+  obtain ⟨y₀⟩ := ‹Nonempty Y›
+  -- An infimum is bounded by its value at `y₀`, or is the junk value `0` if it is unbounded.
+  have hφle (x : X) : φ x ≤ max (M - ψ y₀) 0 := by
+    rw [hφ x]
+    by_cases hb : BddBelow (Set.range fun y ↦ c (x, y) - ψ y)
+    · exact (ciInf_le hb y₀).trans ((sub_le_sub_right (hcM _) _).trans (le_max_left _ _))
+    · rw [Real.iInf_of_not_bddBelow hb]
+      exact le_max_right _ _
+  have hψle (y : Y) : ψ y ≤ max (M - φ x₀) 0 := by
+    rw [hψ y]
+    by_cases hb : BddBelow (Set.range fun x ↦ c (x, y) - φ x)
+    · exact (ciInf_le hb x₀).trans ((sub_le_sub_right (hcM _) _).trans (le_max_left _ _))
+    · rw [Real.iInf_of_not_bddBelow hb]
+      exact le_max_right _ _
+  have hbψ (y : Y) : BddBelow (Set.range fun x ↦ c (x, y) - φ x) :=
+    ⟨m - max (M - ψ y₀) 0, Set.forall_mem_range.2 fun x ↦ by linarith [hcm (x, y), hφle x]⟩
+  have hbφ (x : X) : BddBelow (Set.range fun y ↦ c (x, y) - ψ y) :=
+    ⟨m - max (M - φ x₀) 0, Set.forall_mem_range.2 fun y ↦ by linarith [hcm (x, y), hψle y]⟩
+  have hφge (x : X) : m - max (M - φ x₀) 0 ≤ φ x := by
+    rw [hφ x]
+    exact le_ciInf fun y ↦ by linarith [hcm (x, y), hψle y]
+  have hψge (y : Y) : m - max (M - ψ y₀) 0 ≤ ψ y := by
+    rw [hψ y]
+    exact le_ciInf fun x ↦ by linarith [hcm (x, y), hφle x]
+  -- The sections of a uniformly continuous cost share a uniform modulus of continuity.
+  have hmod := Metric.uniformContinuous_iff.1 hc
+  have hψu : UniformContinuous ψ := by
+    have h := uniformContinuous_iInf_sub (c := c) (φ := φ) (fun ε hε ↦ by
+      obtain ⟨δ, hδ, h⟩ := hmod ε hε
+      exact ⟨δ, hδ, fun x y y' hy ↦ h (by simpa [Prod.dist_eq] using hy)⟩) hbψ
+    rwa [← funext hψ] at h
+  have hφu : UniformContinuous φ := by
+    have h := uniformContinuous_iInf_sub (c := fun z : Y × X ↦ c (z.2, z.1)) (φ := ψ)
+      (fun ε hε ↦ by
+        obtain ⟨δ, hδ, h⟩ := hmod ε hε
+        exact ⟨δ, hδ, fun y x x' hx ↦ h (by simpa [Prod.dist_eq] using hx)⟩) hbφ
+    rwa [← funext hφ] at h
+  set C := |m| + max (M - φ x₀) 0 + max (M - ψ y₀) 0
+  exact ⟨.ofNormedAddCommGroup φ hφu.continuous C fun x ↦ abs_le.2
+      ⟨by linarith [hφge x, neg_abs_le m, le_max_right (M - ψ y₀) 0],
+        by linarith [hφle x, abs_nonneg m, le_max_right (M - φ x₀) 0]⟩,
+    .ofNormedAddCommGroup ψ hψu.continuous C fun y ↦ abs_le.2
+      ⟨by linarith [hψge y, neg_abs_le m, le_max_right (M - φ x₀) 0],
+        by linarith [hψle y, abs_nonneg m, le_max_right (M - ψ y₀) 0]⟩, rfl, rfl⟩
 
 /-- A `c`-transform is upper semicontinuous when each function in its defining infimum is upper
 semicontinuous. -/

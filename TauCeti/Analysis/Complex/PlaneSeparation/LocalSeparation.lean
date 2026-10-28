@@ -8,25 +8,22 @@ module
 public import TauCeti.Analysis.Complex.PlaneSeparation.JordanCurve
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Complex.PlaneSeparation.TwoComponents
+import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Contour.Winding.Separation
 
 /-!
 # Complementary components at a straight point of a Jordan curve
 
-If a Jordan curve agrees locally with a line at one point, the two sides of the line near that
-point lie in different complementary components, and exactly one of them lies inside the curve.
-This locates the inside of a simple polygon from a single edge, without a convexity assumption.
-
 An interior point of a nondegenerate straight segment has a ball in which the segment
 agrees with its supporting line. This supplies the local line hypothesis for polygonal curves.
 
-Points on the same side of the straight piece are joined by a convex half-ball missing the curve.
-Points on opposite sides lie in different components of the complement by the segment-crossing
-theorem `TauCeti.Contour.notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton`.
-Since the inside of a Jordan curve is a single complementary component
+Points on opposite sides of a straight piece of a Jordan curve lie in different components of the
+complement by the segment-crossing theorem
+`TauCeti.Contour.notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton`. Since the
+inside of a Jordan curve is a single complementary component
 (`TauCeti.IsJordanCurve.filledHull_sdiff_eq_connectedComponentIn`), exactly one of the two sides
-lies inside the curve.
+lies inside the curve. This identifies the inside of a simple polygon from the side of any one of
+its edges, without a convexity assumption.
 
 ## Main results
 

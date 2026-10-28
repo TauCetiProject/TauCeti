@@ -313,9 +313,10 @@ theorem hasFiniteMoment_generalizedGeodesic {γ : Measure (E × E × E)} [IsFini
     HasFiniteMoment q (generalizedGeodesic γ t) := by
   rw [Measure.fst, Measure.snd, Measure.map_map measurable_fst measurable_snd] at h₀
   rw [Measure.snd, Measure.snd, Measure.map_map measurable_snd measurable_snd] at h₁
-  have h := ((memLp_of_hasFiniteMoment_map (measurable_fst.comp measurable_snd) h₀).const_smul
-    (1 - t)).add ((memLp_of_hasFiniteMoment_map (measurable_snd.comp measurable_snd) h₁).const_smul
-    t)
+  have h := ((memLp_of_hasFiniteMoment_map
+    (measurable_fst.comp measurable_snd).aemeasurable h₀).const_smul (1 - t)).add
+    ((memLp_of_hasFiniteMoment_map
+      (measurable_snd.comp measurable_snd).aemeasurable h₁).const_smul t)
   rw [generalizedGeodesic_def, hasFiniteMoment_map_iff_memLp_edist (by fun_prop) 0]
   exact (memLp_congr_enorm h.aestronglyMeasurable (by fun_prop) (.of_forall fun w ↦ by simp)).1 h
 

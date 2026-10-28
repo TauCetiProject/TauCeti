@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SimpleMapping
-import TauCeti.Analysis.Complex.PlaneSeparation.TwoComponents
+import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 
 /-!
 # The filled interior of a simple Schwarz--Christoffel polygon
 
-A simple compactified Schwarz--Christoffel boundary is a Jordan curve. By the Jordan curve
-theorem its bounded complementary component is the filled hull of the boundary minus the
-boundary itself. The Schwarz--Christoffel primitive maps the upper half-plane
-bijectively onto this filled interior. This identifies the target of the direct map without
-requiring convexity, including polygons with reentrant corners.
+A simple compactified Schwarz--Christoffel boundary is a Jordan curve, so its bounded
+complementary component is the filled hull of the boundary minus the boundary itself. The
+Schwarz--Christoffel primitive maps the upper half-plane bijectively onto this filled interior.
+This identifies the target of the direct map without requiring convexity, including polygons with
+reentrant corners.
 
 ## References
 

@@ -1128,6 +1128,20 @@ theorem ReducedTensorWords.gradedCoderivEquivTaylor_symm_apply (G : InternalGrad
         (isGradedCoderivation_gradedCoderiv G F q)⟩ :=
   by rfl
 
+/-- The graded Taylor expansion is additive in the Taylor map. -/
+@[simp]
+theorem ReducedTensorWords.gradedCoderiv_add (G : InternalGrading R M)
+    (F₁ F₂ : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
+    gradedCoderiv G (F₁ + F₂) q = gradedCoderiv G F₁ q + gradedCoderiv G F₂ q :=
+  congrArg Subtype.val (map_add (gradedCoderivEquivTaylor G q).symm F₁ F₂)
+
+/-- The graded Taylor expansion is `R`-linear in the Taylor map. -/
+@[simp]
+theorem ReducedTensorWords.gradedCoderiv_smul (G : InternalGrading R M) (c : R)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
+    gradedCoderiv G (c • F) q = c • gradedCoderiv G F q :=
+  congrArg Subtype.val (map_smul (gradedCoderivEquivTaylor G q).symm c F)
+
 end GradedCoderiv
 
 /-! ### Graded commutators of graded coderivations -/

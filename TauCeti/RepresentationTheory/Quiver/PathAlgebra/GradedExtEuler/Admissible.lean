@@ -135,12 +135,8 @@ theorem isGradedExtBoundedBy_two_of_finite_source [FiniteDimensional k (pathAlge
       Module.Finite.of_restrictScalars_finite k (pathAlgebra k Q) Z
     have hCA : Module.Finite (pathAlgebra k Q) (GradedModuleCat.cokernelObj i) :=
       Module.Finite.of_restrictScalars_finite k (pathAlgebra k Q) _
-    let S := ShortComplex.mk i (GradedModuleCat.cokernelπ i) (by simp)
-    have hS : S.ShortExact :=
-      { exact := GradedModuleCat.exact_iff.mpr (LinearMap.exact_map_mkQ_range i.hom)
-        mono_f := hi
-        epi_g := (GradedModuleCat.epi_iff_surjective _).mpr (Submodule.mkQ_surjective _) }
-    simpa only [max_self] using (ih _ (hn ▸ hdimZ) Z hZA rfl).of_shortExact₂' hS
+    simpa only [max_self] using (ih _ (hn ▸ hdimZ) Z hZA rfl).of_shortExact₂'
+      (GradedModuleCat.shortExact_cokernelπ i)
       (ih _ (hn ▸ hdimC) (GradedModuleCat.cokernelObj i) hCA rfl)
 
 end TauCeti.PathAlgebra

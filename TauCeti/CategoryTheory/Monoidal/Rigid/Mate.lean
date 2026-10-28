@@ -45,7 +45,8 @@ morphism.
   agree once they agree after coevaluation;
 * `CategoryTheory.leftAdjointMate_rightAdjointMate` and
   `CategoryTheory.rightAdjointMate_leftAdjointMate`: taking the opposite-handed mate recovers the
-  original morphism;
+  original morphism, so `CategoryTheory.rightAdjointMate_injective`;
+* `CategoryTheory.Iso.rightAdjointMate`: the isomorphism `Yᘁ ≅ Xᘁ` induced by `X ≅ Y`;
 * `CategoryTheory.ExactPairing.rightMate`: the right adjoint mate with respect to explicit exact
   pairings, characterized by `CategoryTheory.ExactPairing.rightMate_comp_evaluation` and
   `CategoryTheory.ExactPairing.coevaluation_comp_rightMate`, with `rightMate_id` and
@@ -77,7 +78,10 @@ morphism.
   as left mates;
 * `CategoryTheory.ExactPairing.leftMate_rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightMate_leftDualIso_hom`: the opposite-handed mate of the
-  comparison between two duals is an identity.
+  comparison between two duals is an identity;
+* `CategoryTheory.ExactPairing.leftMate_rightDualIso_inv` and
+  `CategoryTheory.ExactPairing.rightMate_leftDualIso_inv`: the opposite-handed mate of the
+  inverse comparison between two duals is the comparison between the two opposite-handed duals.
 
 ## References
 
@@ -462,6 +466,22 @@ theorem rightMate_leftDualIso_hom {X₁ X₂ Y Z : C} (p₁ : ExactPairing X₁ 
       rw [rightMate_comp_evaluation, leftDualIso_hom, leftMate_comp_evaluation])
   rw [← Category.comp_id (leftDualIso p₁ p₂).hom, comp_rightMate p₁ p₂ q, h, Category.comp_id]
 
+/-- If `X` has two right duals `Y₁` and `Y₂` and `Z` is a left dual of `Y₁`, then the left mate
+of the inverse comparison `Y₂ ⟶ Y₁` is the comparison `leftDualIso q p₁ : Z ≅ X` of the two left
+duals of `Y₁`. -/
+theorem leftMate_rightDualIso_inv {X Y₁ Y₂ Z : C} (p₁ : ExactPairing X Y₁)
+    (p₂ : ExactPairing X Y₂) (q : ExactPairing Z Y₁) :
+    leftMate p₂ q (rightDualIso p₁ p₂).inv = (leftDualIso q p₁).hom := by
+  rw [rightDualIso_inv, ← rightDualIso_hom, leftMate_rightDualIso_hom, ← leftDualIso_hom]
+
+/-- If `Y` has two left duals `X₁` and `X₂` and `Z` is a right dual of `X₁`, then the right mate
+of the inverse comparison `X₂ ⟶ X₁` is the comparison `rightDualIso q p₁ : Z ≅ Y` of the two
+right duals of `X₁`. -/
+theorem rightMate_leftDualIso_inv {X₁ X₂ Y Z : C} (p₁ : ExactPairing X₁ Y)
+    (p₂ : ExactPairing X₂ Y) (q : ExactPairing X₁ Z) :
+    rightMate p₂ q (leftDualIso p₁ p₂).inv = (rightDualIso q p₁).hom := by
+  rw [leftDualIso_inv, ← leftDualIso_hom, rightMate_leftDualIso_hom, ← rightDualIso_hom]
+
 end CategoryTheory.ExactPairing
 
 namespace CategoryTheory
@@ -486,6 +506,31 @@ theorem rightAdjointMate_leftAdjointMate {X Y : C} [HasLeftDual X] [HasLeftDual 
     _ = X ◁ leftAdjointMate f ≫ ε_ (ᘁX) X :=
       rightAdjointMate_comp_evaluation (leftAdjointMate f)
     _ = _ := leftAdjointMate_comp_evaluation f
+
+/-- Taking right adjoint mates is injective: the left adjoint mate is a left inverse. -/
+theorem rightAdjointMate_injective {X Y : C} [HasRightDual X] [HasRightDual Y] :
+    Function.Injective (rightAdjointMate : (X ⟶ Y) → (Yᘁ ⟶ Xᘁ)) :=
+  Function.LeftInverse.injective leftAdjointMate_rightAdjointMate
+
+/-- An isomorphism `X ≅ Y` induces an isomorphism `Yᘁ ≅ Xᘁ` of right duals, whose components are
+the right adjoint mates of those of `X ≅ Y`. -/
+def Iso.rightAdjointMate {X Y : C} [HasRightDual X] [HasRightDual Y] (e : X ≅ Y) : Yᘁ ≅ Xᘁ where
+  hom := e.homᘁ
+  inv := e.invᘁ
+  hom_inv_id := by rw [← comp_rightAdjointMate, e.inv_hom_id, rightAdjointMate_id]
+  inv_hom_id := by rw [← comp_rightAdjointMate, e.hom_inv_id, rightAdjointMate_id]
+
+/-- The component of `Iso.rightAdjointMate e` is the right adjoint mate of that of `e`. -/
+@[simp]
+theorem Iso.rightAdjointMate_hom {X Y : C} [HasRightDual X] [HasRightDual Y] (e : X ≅ Y) :
+    e.rightAdjointMate.hom = e.homᘁ :=
+  (rfl)
+
+/-- The inverse of `Iso.rightAdjointMate e` is the right adjoint mate of the inverse of `e`. -/
+@[simp]
+theorem Iso.rightAdjointMate_inv {X Y : C} [HasRightDual X] [HasRightDual Y] (e : X ≅ Y) :
+    e.rightAdjointMate.inv = e.invᘁ :=
+  (rfl)
 
 end CategoryTheory
 
