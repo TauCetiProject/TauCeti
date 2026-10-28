@@ -83,7 +83,6 @@ theorem eventuallyEq_sectionCoord_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x 
 
 variable {n : ℕ∞ω}
   [IsManifold I (n + 1) M]
-  [ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I]
   [ContMDiffVectorBundle (n + 1) E (TangentSpace I : M → Type _) I]
 
 /-- Covariant differentiation loses one derivative for an arbitrary section lift along a curve.
@@ -109,6 +108,8 @@ theorem contMDiffWithinAt_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x : M}
     ((contMDiffAt_extChartAt' (by
       simpa only [TangentBundle.trivializationAt_baseSet] using hx)).comp_contMDiffWithinAt
         t hγ).contDiffWithinAt
+  have : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    ContMDiffVectorBundle.of_le hn
   have hΓ : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] E →L[𝕜] E) n
       (christoffelMap (Module.finBasis 𝕜 E)
         (cov.isCovariantDerivativeOn (s := e.baseSet))) (γ t) :=
