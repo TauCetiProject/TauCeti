@@ -86,8 +86,8 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_herbrand`: `G^{φ(u)} = G_u`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_antitone`: the upper filtration
   decreases, and each `G^v` is normal.
-* `TauCeti.LocalFieldsRamification.exists_upperRamificationGroup_natCast_eq_bot`: `G^n = 1` for
-  every large enough natural number `n`.
+* `TauCeti.LocalFieldsRamification.exists_forall_upperRamificationGroup_natCast_eq_bot`:
+  `G^n = 1` for every large enough natural number `n`.
 
 ## References
 
@@ -657,12 +657,12 @@ theorem upperRamificationGroup_natCast (n : ℕ) :
 
 /-- The upper ramification filtration of a finite Galois extension of local fields is trivial at
 every large enough natural index. -/
-theorem exists_upperRamificationGroup_natCast_eq_bot :
+theorem exists_forall_upperRamificationGroup_natCast_eq_bot :
     ∃ N : ℕ, ∀ n : ℕ, N ≤ n →
       upperRamificationGroup K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ = ⊥ := by
-  obtain ⟨N, hN⟩ := exists_forall_lowerRamificationGroup_eq_bot K L
-  refine ⟨N.toNat, fun n hn ↦ ?_⟩
+  obtain ⟨N, hN⟩ := exists_forall_lowerRamificationGroup_natCast_eq_bot K L
+  refine ⟨N, fun n hn ↦ ?_⟩
   rw [upperRamificationGroup_natCast]
-  exact hN _ (by have := self_le_psiNat K L n; omega)
+  exact hN _ (hn.trans (self_le_psiNat K L n))
 
 end TauCeti.LocalFieldsRamification
