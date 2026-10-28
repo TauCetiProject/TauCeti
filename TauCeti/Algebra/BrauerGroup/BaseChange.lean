@@ -97,8 +97,9 @@ instances, so there is no glue here.
 
 The three universes are independent: the base field, the algebra and the extension field are
 unrelated, and the scalar extension lands in `Type (max w v)` because that is where `L ⊗[K] A`
-lives. It is `TauCeti.BrauerGroup.baseChange` that has to pin them together, because the identity
-of `BrauerGroup K` is the class of `K` itself. -/
+lives. The group homomorphism `TauCeti.BrauerGroup.baseChange` starts with algebras in the
+universe of `K` and permits an extension field in a larger universe, so its target algebras
+live in the universe of that field. -/
 abbrev CSA.baseChange (A : CSA.{u, v} K) : CSA.{w, max w v} L := CSA.of L (L ⊗[K] A)
 
 /-- **Base change respects Brauer equivalence**, so it descends to a map of Brauer classes.
@@ -115,11 +116,26 @@ theorem isBrauerEquivalent_baseChange_congr {A B : CSA.{u, v} K} (h : IsBrauerEq
     ((Algebra.TensorProduct.congr (AlgEquiv.refl (R := L) (A₁ := L)) e).trans
       (Algebra.matrixCoeffBaseChangeAlgEquiv K L (Fin m) (B : Type v)))
 
+/-- Scalar extension along a surjective field map reflects Brauer equivalence.
+The matrix sizes in a witness are preserved in both directions. -/
+theorem isBrauerEquivalent_baseChange_iff_of_surjective
+    (h : Function.Surjective (algebraMap K L)) (A B : CSA.{u, v} K) :
+    IsBrauerEquivalent (CSA.baseChange L A) (CSA.baseChange L B) ↔
+      IsBrauerEquivalent A B := by
+  constructor
+  · rintro ⟨n, m, hn, hm, ⟨e⟩⟩
+    let eA := AlgEquiv.ofBijective (Algebra.TensorProduct.includeRight : A →ₐ[K] L ⊗[K] A)
+      (Algebra.TensorProduct.includeRight_bijective ⟨(algebraMap K L).injective, h⟩)
+    let eB := AlgEquiv.ofBijective (Algebra.TensorProduct.includeRight : B →ₐ[K] L ⊗[K] B)
+      (Algebra.TensorProduct.includeRight_bijective ⟨(algebraMap K L).injective, h⟩)
+    exact ⟨n, m, hn, hm, ⟨eA.mapMatrix.trans ((e.restrictScalars K).trans eB.symm.mapMatrix)⟩⟩
+  · exact isBrauerEquivalent_baseChange_congr L
+
 end ScalarExtension
 
 namespace BrauerGroup
 
-variable (K : Type u) [Field K] (L : Type u) [Field L] [Algebra K L]
+variable (K : Type u) [Field K] (L : Type (max u v)) [Field L] [Algebra K L]
 
 /-! ### The homomorphism -/
 
@@ -130,10 +146,13 @@ It is well defined by `TauCeti.isBrauerEquivalent_baseChange_congr`, multiplicat
 `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`, and unital by
 `Algebra.TensorProduct.rid`.
 
+The extension field may live in a larger universe than `K`. In particular this map applies
+to the actual upward extension `ULift K / K`.
+
 The `Quotient.liftOn` is an implementation detail, kept unexposed: the interface is
 `TauCeti.BrauerGroup.baseChange_mk`, and every statement below is phrased and proved through
 that. -/
-def baseChange : BrauerGroup.{u, u} K →* BrauerGroup.{u, u} L where
+def baseChange : BrauerGroup.{u, u} K →* BrauerGroup.{max u v, max u v} L where
   toFun x := Quotient.liftOn x (fun A ↦ mk (CSA.baseChange L A))
     fun _ _ h ↦ Quotient.sound (isBrauerEquivalent_baseChange_congr L h)
   map_one' := mk_eq_mk_of_algEquiv (Algebra.TensorProduct.rid K L L)
@@ -152,6 +171,18 @@ theorem baseChange_mk (A : CSA.{u, u} K) : baseChange K L (mk A) = mk (CSA.baseC
   -- `baseChange` needs no `@[expose]`.
   (rfl)
 
+/-- Scalar extension along an isomorphism of fields is injective on Brauer classes, even
+when the fields live in different universes. -/
+theorem baseChange_injective_of_surjective (h : Function.Surjective (algebraMap K L)) :
+    Function.Injective (baseChange K L) := by
+  intro x y
+  induction x using BrauerGroup.inductionOn with
+  | h A =>
+    induction y using BrauerGroup.inductionOn with
+    | h B =>
+      simp only [baseChange_mk, mk_eq_mk_iff]
+      exact (isBrauerEquivalent_baseChange_iff_of_surjective L h A B).mp
+
 /-! ### Functoriality -/
 
 /-- **Base change along the identity is the identity**: `K ⊗[K] A ≃ₐ[K] A`. -/
@@ -161,7 +192,8 @@ theorem baseChange_self : baseChange K K = MonoidHom.id (BrauerGroup.{u, u} K) :
   induction x using BrauerGroup.inductionOn with
   | h A => exact mk_eq_mk_of_algEquiv (Algebra.TensorProduct.lid K A)
 
-variable (M : Type u) [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
+variable (M : Type (max u v w)) [Field M] [Algebra K M] [Algebra L M]
+  [IsScalarTower K L M]
 
 /-- **Base change composes along a tower** `K → L → M`, by
 `TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv`: extending to `L` and then to `M` is
@@ -169,7 +201,9 @@ extending to `M` in one step. With `TauCeti.BrauerGroup.baseChange_self` this is
 law a functor from fields to abelian groups would need; the functor itself, with its action on an
 arbitrary map of fields, is not constructed here. -/
 @[simp]
-theorem baseChange_comp : (baseChange L M).comp (baseChange K L) = baseChange K M := by
+theorem baseChange_comp :
+    (baseChange.{max u v, w} L M).comp (baseChange.{u, v} K L) =
+      baseChange.{u, max v w} K M := by
   ext x
   induction x using BrauerGroup.inductionOn with
   | h A => exact mk_eq_mk_of_algEquiv (Algebra.TensorProduct.baseChangeTowerAlgEquiv K L A M)
@@ -201,7 +235,7 @@ the trivial homomorphism: an algebraically closed field has trivial Brauer group
 (`TauCeti.subsingleton_brauerGroup_of_isAlgClosed`), and there is nowhere else for a class to
 go. -/
 theorem baseChange_eq_one_of_isAlgClosed [IsAlgClosed L] : baseChange K L = 1 := by
-  have := subsingleton_brauerGroup_of_isAlgClosed.{u, u} (K := L)
+  have := subsingleton_brauerGroup_of_isAlgClosed.{max u v, max u v} (K := L)
   ext x
   exact Subsingleton.elim _ _
 
