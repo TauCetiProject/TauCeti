@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Algebra
 public import TauCeti.Analysis.CStarAlgebra.Action.Hom
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Equivariant maps of twisted convolution algebras
@@ -45,55 +46,48 @@ convolution. -/
 theorem map_convolution (φ : Hom α β) (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
     (f g : C_c(G, A)) (s : G) :
     φ (α.convolution μ f g s) = ∫ r, φ (f r) * β r (φ (g (r⁻¹ * s))) ∂μ := by
-  let L : A →L[ℂ] B :=
-    { toLinearMap := (φ : A →ₗ[ℂ] B), cont := map_continuous _ }
-  have hL (a : A) : L a = φ a := rfl
-  have hint : Integrable (fun r => f r * α r (g (r⁻¹ * s))) μ :=
-    (by fun_prop : Continuous fun r => f r * α r (g (r⁻¹ * s))).integrable_of_hasCompactSupport
-      f.hasCompactSupport.mul_right
   rw [convolution_apply]
-  exact (L.integral_comp_comm hint).symm.trans (by simp only [hL, map_mul, map_action])
+  simpa only [AddMonoidHom.coe_ofClass, map_mul, map_action] using
+    (AddMonoidHom.integral_comp_comm (φ : A →+ B) (map_continuous φ)
+      (α.integrable_integrand f g μ s)).symm
 
 end Convolution
 
 variable [LocallyCompactSpace G] [MeasurableSpace G] [OpensMeasurableSpace G]
 
+omit [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [OpensMeasurableSpace G] in
+private theorem compLeft_apply (φ : Hom α β) (f : C_c(G, A)) (s : G) :
+    (f.compLeft ⟨φ, map_continuous φ⟩) s = φ (f s) :=
+  CompactlySupportedContinuousMap.compLeft_apply (g := ⟨φ, map_continuous φ⟩) (map_zero φ) f s
+
 /-- The map of compact-support twisted convolution algebras induced by an equivariant
 coefficient homomorphism. -/
 def convolutionMap (φ : Hom α β) (μ : Measure G) [IsFiniteMeasureOnCompacts μ] :
     ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] ConvolutionAlgebra β μ where
-  toFun f := .toConv (f.ofConv.compLeft ⟨φ, map_continuous φ.toNonUnitalStarAlgHom⟩)
+  toFun f := .toConv (f.ofConv.compLeft ⟨φ, map_continuous φ⟩)
   map_zero' := by
     apply ConvolutionAlgebra.ext
     ext s
-    simp [CompactlySupportedContinuousMap.compLeft_apply
-      (g := ⟨φ, map_continuous φ⟩) (map_zero φ)]
+    simp [compLeft_apply]
   map_add' f g := by
     apply ConvolutionAlgebra.ext
     ext s
-    simp [CompactlySupportedContinuousMap.compLeft_apply
-      (g := ⟨φ, map_continuous φ⟩) (map_zero φ)]
+    simp [compLeft_apply]
   map_smul' c f := by
     apply ConvolutionAlgebra.ext
     ext s
-    simp [CompactlySupportedContinuousMap.compLeft_apply
-      (g := ⟨φ, map_continuous φ⟩) (map_zero φ)]
+    simp [compLeft_apply]
   map_mul' f g := by
     apply ConvolutionAlgebra.ext
     ext s
-    simp only [ConvolutionAlgebra.ofConv_mul,
-      CompactlySupportedContinuousMap.compLeft_apply
-      (g := ⟨φ, map_continuous φ⟩) (map_zero φ), ContinuousMap.coe_mk]
+    simp only [ConvolutionAlgebra.ofConv_mul, compLeft_apply]
     rw [map_convolution, convolution_apply]
-    simp only [CompactlySupportedContinuousMap.compLeft_apply
-      (g := ⟨φ, map_continuous φ⟩) (map_zero φ), ContinuousMap.coe_mk]
+    simp only [compLeft_apply]
   map_star' f := by
     apply ConvolutionAlgebra.ext
     ext s
     simp only [ConvolutionAlgebra.ofConv_star, twistedInvolution_apply,
-      CompactlySupportedContinuousMap.compLeft_apply
-        (g := ⟨φ, map_continuous φ⟩) (map_zero φ), ContinuousMap.coe_mk,
-      map_smul, map_action, map_star]
+      compLeft_apply, map_smul, map_action, map_star]
 
 variable {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
 
@@ -101,8 +95,7 @@ variable {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
 @[simp]
 theorem convolutionMap_apply (φ : Hom α β) (f : ConvolutionAlgebra α μ) (s : G) :
     (φ.convolutionMap μ f).ofConv s = φ (f.ofConv s) :=
-  CompactlySupportedContinuousMap.compLeft_apply
-    (g := ⟨φ, map_continuous φ⟩) (map_zero φ) _ _
+  compLeft_apply φ f.ofConv s
 
 /-- The identity coefficient map induces the identity convolution map. -/
 @[simp]
