@@ -40,6 +40,8 @@ section over `U` is determined by its restriction to `U ∩ D(a)`.
   bijective when `D(a), D(b) ⊆ U` for a weakly `M`-regular sequence `a, b`.
 * `TauCeti.AlgebraicGeometry.tilde_toOpen_bijective_of_two_le_depth`: for a finite module over a
   Noetherian ring, `M → M~(U)` is bijective when `depth M_p ≥ 2` at every prime `p ∉ U`.
+* `AlgebraicGeometry.Scheme.Opens.algebraMap_bijective_of_two_le_depth`: the structure-sheaf
+  form, with depth measured on the local rings of `R`.
 
 ## References
 
@@ -198,3 +200,29 @@ theorem tilde_toOpen_bijective_of_two_le_depth [IsNoetherianRing R] (M : ModuleC
     (StructureSheaf.toOpenₗ_bijective_of_isWeaklyRegular hreg (hD a (by simp)) (hD b (by simp)))
 
 end TauCeti.AlgebraicGeometry
+
+/-- **Hartogs principle for the structure sheaf of an affine scheme.** If a Noetherian ring
+has depth at least two at every prime outside `U`, the canonical map from the ring to the
+sections over `U` is bijective. -/
+@[stacks 0E9I "affine structure-sheaf case"]
+theorem AlgebraicGeometry.Scheme.Opens.algebraMap_bijective_of_two_le_depth
+    {R : CommRingCat.{u}} [IsNoetherianRing R] (U : (Spec R).Opens)
+    (h : ∀ p : PrimeSpectrum R, p ∉ U →
+      2 ≤ depth (ModuleCat.of (Localization.AtPrime p.asIdeal) (Localization.AtPrime p.asIdeal))) :
+    Function.Bijective (algebraMap R Γ(Spec R, U)) := by
+  have hdepth (p : PrimeSpectrum R) (hp : p ∉ U) :
+      2 ≤ depth (ModuleCat.of (Localization.AtPrime p.asIdeal)
+        (LocalizedModule p.asIdeal.primeCompl R)) := by
+    -- The module localization of `R` and the ring localization `Rₚ` are canonically isomorphic.
+    let e := (IsLocalizedModule.iso p.asIdeal.primeCompl
+      (Algebra.linearMap R (Localization.AtPrime p.asIdeal))).extendScalarsOfIsLocalization
+        p.asIdeal.primeCompl (Localization.AtPrime p.asIdeal)
+    rw [IsLocalRing.depth_eq_of_linearEquiv e]
+    exact h p hp
+  have hbij := TauCeti.AlgebraicGeometry.tilde_toOpen_bijective_of_two_le_depth
+    (ModuleCat.of R R) U hdepth
+  -- `tilde.toOpen` differs from the structure-sheaf map only by the canonical sections iso.
+  let e := ((tilde.modulesSpecToSheafIso (ModuleCat.of R R)).app (op U)).symm.toLinearEquiv
+  apply (e.bijective.of_comp_iff' _).mp
+  convert hbij using 1
+  rfl
