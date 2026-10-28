@@ -86,7 +86,7 @@ theorem re_leviForm_mfderiv_nonpos_of_isLocalMax
     (hf'.comp z (hG.restrict_scalars ℝ)) (hmax'.congr heq) (tangentSpaceCastModel I x v)
   rw [leviForm_comp_apply hf' hG, hGz] at hnonpos
   -- Identify the coordinate derivative with the actual tangent map, retaining the canonical casts.
-  simpa only [G, z, ← tangentSpaceCastModel_mfderiv_apply
+  simpa only [G, z, ← MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply
     (hg.mdifferentiableAt (by norm_num))] using hnonpos
 
 /-- For a real function that is `C²` near the image of a complex `C²` map from a nonempty

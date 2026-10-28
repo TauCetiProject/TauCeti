@@ -45,7 +45,7 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`: on a boundaryless manifold, the
   coordinate expression of a `C^n` (resp. differentiable) map into a normed space is `C^n` (resp.
   differentiable) at the chart image of the point.
-* `TauCeti.tangentSpaceCastModel_mfderiv_apply`: on a boundaryless source, the coordinate
+* `MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply`: on a boundaryless source, the coordinate
   derivative is the manifold derivative transported by the canonical tangent-to-model casts.
 * `TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm`: conversely, a map into a
   normed space is differentiable whenever its preferred coordinate expression is.
@@ -285,12 +285,10 @@ theorem _root_.MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm
   rw [hf.mvfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ,
     writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp]
 
-namespace TauCeti
-
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- On a boundaryless source, the manifold derivative, transported to the model spaces by the
 canonical tangent casts, is the Fréchet derivative of the preferred coordinate expression. -/
-theorem tangentSpaceCastModel_mfderiv_apply {g : M → M'}
+theorem _root_.MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply {g : M → M'}
     (hg : MDifferentiableAt I I' g x) (v : TangentSpace I x) :
     tangentSpaceCastModel I' (g x) (mfderiv I I' g x v) =
       fderiv 𝕜 (writtenInExtChartAt I I' x g) (extChartAt I x x)
@@ -298,8 +296,6 @@ theorem tangentSpaceCastModel_mfderiv_apply {g : M → M'}
   rw [hg.mfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     ContinuousLinearEquiv.apply_symm_apply]
-
-end TauCeti
 
 section SelfModel
 
