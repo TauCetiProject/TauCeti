@@ -28,7 +28,7 @@ the product is the product of the canonical symplectic forms of the factors:
 `Φ^* (pr₁^* ω_M + pr₂^* ω_N) = ω_(M × N)`
 (`TauCeti.CotangentBundle.mpullback_prodDiffeomorph_symplecticForm`).
 
-Both identities are also stated along the inverse diffeomorphism, where they read
+Both identities equivalently hold along the inverse diffeomorphism, where they read
 `(Φ⁻¹)^* λ_(M × N) = pr₁^* λ_M + pr₂^* λ_N` and `(Φ⁻¹)^* ω_(M × N) = pr₁^* ω_M + pr₂^* ω_N`.
 
 ## References

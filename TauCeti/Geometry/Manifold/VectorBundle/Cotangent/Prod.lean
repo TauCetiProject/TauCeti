@@ -179,6 +179,7 @@ theorem proj_prodDiffeomorph_snd (z : CotangentBundle (I.prod J) (M × N)) :
 
 /-- The first component of `prodDiffeomorph z` evaluates a tangent vector `v` of `M` as `z`
 evaluates its image under the differential of the slice inclusion `x ↦ (x, y)`. -/
+@[simp]
 theorem prodDiffeomorph_fst_snd_apply (z : CotangentBundle (I.prod J) (M × N))
     (v : TangentSpace I (prodDiffeomorph I J M N z).1.proj) :
     (prodDiffeomorph I J M N z).1.2 v =
@@ -187,6 +188,7 @@ theorem prodDiffeomorph_fst_snd_apply (z : CotangentBundle (I.prod J) (M × N))
 
 /-- The second component of `prodDiffeomorph z` evaluates a tangent vector `v` of `N` as `z`
 evaluates its image under the differential of the slice inclusion `y ↦ (x, y)`. -/
+@[simp]
 theorem prodDiffeomorph_snd_snd_apply (z : CotangentBundle (I.prod J) (M × N))
     (v : TangentSpace J (prodDiffeomorph I J M N z).2.proj) :
     (prodDiffeomorph I J M N z).2.2 v =
@@ -201,6 +203,7 @@ theorem proj_prodDiffeomorph_symm (w : CotangentBundle I M × CotangentBundle J 
 
 /-- The inverse of `prodDiffeomorph` combines covectors `a` at `x` and `b` at `y` into the
 covector `a ∘ d pr₁ + b ∘ d pr₂` at `(x, y)`. -/
+@[simp]
 theorem prodDiffeomorph_symm_snd_apply (w : CotangentBundle I M × CotangentBundle J N)
     (v : TangentSpace (I.prod J) ((prodDiffeomorph I J M N).symm w).proj) :
     ((prodDiffeomorph I J M N).symm w).2 v =
