@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 import Mathlib.Algebra.CharP.Algebra
@@ -34,8 +35,12 @@ since the linear coefficient of `[p]_F` is `p = 0`.
 Over a field `K` of characteristic `p` this exponent is the **height** of `F`; it is `⊤` when
 `[p]_F = 0`, as for the additive formal group law. The multiplicative formal group law has
 height one, since `[p](T) = (1 + T) ^ p - 1 = T ^ p`. The height is unchanged by extension of
-the base field. Over a ring, the leading coefficient of `[p]_F` need not be a unit, and the
-exponent no longer measures the height in the usual sense; so the height is defined over fields.
+the base field, and it does not depend on the coordinate: a nonzero homomorphism `f` from `F` to
+`G` satisfies `f ∘ [p]_F = [p]_G ∘ f`, and over a field orders multiply under substitution, so
+`[p]_F` and `[p]_G` have the same order. In particular isomorphic formal group laws, such as `F`
+and its change of coordinate `φ • F`, have the same height. Over a ring, the leading coefficient
+of `[p]_F` need not be a unit, and the exponent no longer measures the height in the usual sense;
+so the height is defined over fields.
 
 ## Main definitions
 
@@ -53,6 +58,11 @@ exponent no longer measures the height in the usual sense; so the height is defi
   exactly when `[p]_F = 0`, and height `h` exactly when `[p]_F` has order `p ^ h`.
 * `FormalGroup.one_le_height`: the height is at least one.
 * `FormalGroup.height_map`: the height is invariant under extension of the base field.
+* `TauCeti.FormalGroupHom.order_nsmulSeries_eq`: over an integral domain, if there is a nonzero
+  homomorphism from `F` to `G`, then `[n]_F` and `[n]_G` have the same order.
+* `TauCeti.FormalGroupHom.height_eq` and `TauCeti.FormalGroupIso.height_eq`: formal group laws
+  related by a nonzero homomorphism, in particular isomorphic ones, have the same height.
+* `FormalGroup.height_smul`: the height is unchanged by a change of coordinate.
 * `FormalGroup.height_𝔾ₐ` and `FormalGroup.height_𝔾ₘ`: the additive formal group law has height
   `⊤` and the multiplicative one has height `1`.
 
@@ -238,5 +248,62 @@ theorem height_𝔾ₘ [Fact p.Prime] [CharP K p] : (𝔾ₘ : FormalGroup K).he
     add_sub_cancel_left, pow_one, PowerSeries.order_X_pow]
 
 end Height
+
+end FormalGroup
+
+namespace TauCeti
+
+namespace FormalGroupHom
+
+section Order
+
+variable {R : Type*} [CommRing R] [NoZeroDivisors R] {F G : FormalGroup R}
+
+/-- **A nonzero homomorphism preserves the order of multiplication by `n`.** Over an integral
+domain, if `f` is a nonzero homomorphism of formal group laws from `F` to `G`, then `[n]_F` and
+`[n]_G` have the same order, since `f ∘ [n]_F = [n]_G ∘ f` and orders multiply under
+substitution. -/
+theorem order_nsmulSeries_eq (f : FormalGroupHom F G) (hf : f.toPowerSeries ≠ 0) (n : ℕ) :
+    (F.nsmulSeries n).order = (G.nsmulSeries n).order := by
+  have h := congrArg PowerSeries.order (f.subst_nsmulSeries n)
+  rw [PowerSeries.order_subst (F.constantCoeff_nsmulSeries n),
+    PowerSeries.order_subst f.zero_constantCoeff, mul_comm] at h
+  -- `ord f` is a positive natural number, so it can be cancelled
+  have h0 : f.toPowerSeries.order ≠ 0 :=
+    PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.mpr f.zero_constantCoeff
+  have ht : f.toPowerSeries.order ≠ ⊤ := PowerSeries.order_eq_top.not.mpr hf
+  exact le_antisymm ((ENat.mul_le_mul_left_iff h0 ht).mp h.le)
+    ((ENat.mul_le_mul_left_iff h0 ht).mp h.ge)
+
+end Order
+
+variable {K : Type*} [Field K] {F G : FormalGroup K}
+
+/-- **Height is preserved by nonzero homomorphisms**: if there is a nonzero homomorphism of formal
+group laws from `F` to `G` over a field, then `F` and `G` have the same height. -/
+theorem height_eq (f : FormalGroupHom F G) (hf : f.toPowerSeries ≠ 0) (p : ℕ) :
+    F.height p = G.height p := by
+  simp only [FormalGroup.height, ← PowerSeries.order_eq_top, f.order_nsmulSeries_eq hf]
+
+end FormalGroupHom
+
+/-- **Coordinate independence of height**: isomorphic formal group laws over a field have the same
+height. -/
+theorem FormalGroupIso.height_eq {K : Type*} [Field K] {F G : FormalGroup K}
+    (e : FormalGroupIso F G) (p : ℕ) : F.height p = G.height p := by
+  refine e.toHom.height_eq (fun h0 ↦ PowerSeries.X_ne_zero (R := K) ?_) p
+  -- the inverse of `e` would send `0` to `X`
+  have h := e.subst_invHom_toHom
+  rwa [h0, ← PowerSeries.coe_substAlgHom e.invHom.hasSubst, map_zero, eq_comm] at h
+
+end TauCeti
+
+namespace FormalGroup
+
+/-- The height is unchanged by a change of coordinate `φ • F`. -/
+@[simp]
+theorem height_smul {K : Type*} [Field K] (φ : TauCeti.FormalCoordinate K) (F : FormalGroup K)
+    (p : ℕ) : (φ • F).height p = F.height p :=
+  ((smulIso φ F).height_eq p).symm
 
 end FormalGroup
