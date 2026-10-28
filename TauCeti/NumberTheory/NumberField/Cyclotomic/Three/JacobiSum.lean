@@ -119,3 +119,40 @@ theorem jacobiSum_powerResidueSymbol_eq_of_isPrimaryEisenstein [IsCyclotomicExte
     (huniq π ⟨Associated.refl π, hπ⟩).symm
 
 end Ideal
+
+section Examples
+
+open Ideal
+
+variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {3} ℚ K]
+  [HasEnoughRootsOfUnity (𝓞 K) 3]
+
+/- The primary element `π = -1 - 3ω` generates a prime of norm `7`, and the Jacobi sum of the
+cubic residue symbol at that prime is `π` itself. The norm is read off from `π ^ 2 - π + 7 = 0`,
+which forces trace `1` and norm `7`. -/
+example {ζ : K} (hζ : IsPrimitiveRoot ζ 3) {P : Ideal (𝓞 K)} [P.IsMaximal] [Fintype (𝓞 K ⧸ P)]
+    (hP : P = span {((-1 : ℤ) : 𝓞 K) + (-3 : ℤ) * hζ.toInteger}) :
+    jacobiSum (powerResidueSymbol P 3) (powerResidueSymbol P 3) =
+      ((-1 : ℤ) : 𝓞 K) + (-3 : ℤ) * hζ.toInteger := by
+  refine jacobiSum_powerResidueSymbol_eq_of_isPrimaryEisenstein ?_ hP
+    (by rw [hζ.isPrimaryEisenstein_add_mul_iff]; decide)
+  have : Algebra.IsQuadraticExtension ℤ (𝓞 K) := ⟨TauCeti.finrank_ringOfIntegers_three⟩
+  have hω := IsCyclotomicExtension.Rat.Three.eta_sq hζ
+  rw [IsCyclotomicExtension.Rat.Three.coe_eta] at hω
+  have h := Algebra.IsQuadraticExtension.sq_sub_trace_smul_add_norm_eq_zero ℤ
+    (((-1 : ℤ) : 𝓞 K) + (-3 : ℤ) * hζ.toInteger)
+  generalize Algebra.trace ℤ (𝓞 K) (((-1 : ℤ) : 𝓞 K) + (-3 : ℤ) * hζ.toInteger) = T at h
+  generalize hN : Algebra.norm ℤ (((-1 : ℤ) : 𝓞 K) + (-3 : ℤ) * hζ.toInteger) = N at h
+  have h0 : (((T + N - 8 : ℤ) : 𝓞 K) + ((3 * T - 3 : ℤ) : 𝓞 K) * hζ.toInteger) = 0 := by
+    rw [zsmul_eq_mul, algebraMap_int_eq, eq_intCast] at h
+    push_cast at h ⊢
+    linear_combination h - 9 * hω
+  -- Both coordinates of `h0` vanish, so `T = 1` and `N = 7`.
+  obtain ⟨h1, h2⟩ := (hζ.intCast_dvd_intCast_add_intCast_mul_toInteger_iff
+    (by rw [Nat.totient_prime Nat.prime_three]) (m := 0) (a := T + N - 8) (b := 3 * T - 3)).mp
+      (by rw [Int.cast_zero, h0])
+  rw [zero_dvd_iff] at h1 h2
+  rw [hP, absNorm_span_singleton, hN, show N = 7 by omega]
+  decide
+
+end Examples
