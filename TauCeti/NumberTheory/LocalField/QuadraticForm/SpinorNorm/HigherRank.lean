@@ -81,8 +81,7 @@ theorem exists_reflectionPairSpecialOrthogonal_spinorNorm_eq (Q : QuadraticForm 
   rw [spinorNorm_reflectionPairSpecialOrthogonal]
   have hv' : unitOfInvertible (Q v) = b := Units.ext hv
   rw [hv', hb']
-  simp only [squareClassHom_apply]
-  apply Multiplicative.ofAdd.injective
+  rw [squareClassHom_eq_iff]
   apply (squareClass_eq_iff_isSquare_mul _ _).mpr
   refine ⟨a * unitOfInvertible (Q w), ?_⟩
   ac_rfl
@@ -114,9 +113,9 @@ theorem index_range_spinToSpecialOrthogonal_of_three_le_finrank (Q : QuadraticFo
     (spinToSpecialOrthogonal Q).range.index =
       4 * Nat.card 𝓀[K] ^ natCastValuation K 2 (Invertible.ne_zero (2 : K)) := by
   rw [range_spinToSpecialOrthogonal_eq_ker_spinorNorm Q hQ,
-    Subgroup.index_ker (G' := Multiplicative (SquareClassGroup K)),
+    Subgroup.index_ker (G' := (Kˣ ⧸ Subgroup.square Kˣ)),
     MonoidHom.range_eq_top.mpr (spinorNorm_surjective_of_three_le_finrank Q hQ hV),
-    Subgroup.card_top, Nat.card_congr Multiplicative.toAdd]
+    Subgroup.card_top, natCard_multiplicativeSquareClassGroup]
   exact natCard_squareClassGroup _
 
 /-- Away from residue characteristic two, the Spin image in a regular local special orthogonal

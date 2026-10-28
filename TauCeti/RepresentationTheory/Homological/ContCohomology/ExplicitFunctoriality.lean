@@ -778,6 +778,50 @@ theorem explicitCoeff1_eq_nsmul (f : M →+[G] M) (hf : Continuous f) {k : ℕ}
     exact congrArg (fun z : Z1 G M ↦ (z : H1 G M))
       (Subtype.ext (funext fun g ↦ (cocyclesMap1_apply _ _ _ _ _ _ _ _ c g).trans (hk _)))
 
+section Additive
+
+variable {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+  [DistribMulAction G N] [ContinuousSMul G N]
+
+/-- A coefficient map which is the pointwise sum of two coefficient maps induces the sum of their
+maps on explicit `H¹`. -/
+theorem explicitCoeff1_eq_add (f g h : M →+[G] N) (hf : Continuous f) (hg : Continuous g)
+    (hh : Continuous h) (hfg : ∀ m, h m = f m + g m) :
+    explicitCoeff1 G M h hh = explicitCoeff1 G M f hf + explicitCoeff1 G M g hg := by
+  refine AddMonoidHom.ext fun x ↦ ?_
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [AddMonoidHom.add_apply, explicitCoeff1_mk, explicitCoeff1_mk, explicitCoeff1_mk,
+      ← QuotientAddGroup.mk_add]
+    congr 1
+    ext g
+    exact hfg _
+
+/-- A coefficient map which is the pointwise negation of a coefficient map induces the negation
+of its map on explicit `H¹`. -/
+theorem explicitCoeff1_eq_neg (f g : M →+[G] N) (hf : Continuous f) (hg : Continuous g)
+    (hfg : ∀ m, g m = -f m) : explicitCoeff1 G M g hg = -explicitCoeff1 G M f hf := by
+  refine AddMonoidHom.ext fun x ↦ ?_
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [AddMonoidHom.neg_apply, explicitCoeff1_mk, explicitCoeff1_mk, ← QuotientAddGroup.mk_neg]
+    congr 1
+    ext g
+    exact hfg _
+
+/-- A coefficient map which vanishes pointwise induces zero on explicit `H¹`. -/
+theorem explicitCoeff1_eq_zero (f : M →+[G] N) (hf : Continuous f) (hf₀ : ∀ m, f m = 0) :
+    explicitCoeff1 G M f hf = 0 := by
+  refine AddMonoidHom.ext fun x ↦ ?_
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [AddMonoidHom.zero_apply, explicitCoeff1_mk, ← QuotientAddGroup.mk_zero]
+    congr 1
+    ext g
+    exact hf₀ _
+
+end Additive
+
 /-- Coefficient maps on explicit `H¹` respect composition. -/
 theorem explicitCoeff1_comp {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction G N] [ContinuousSMul G N]

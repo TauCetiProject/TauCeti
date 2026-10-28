@@ -37,6 +37,8 @@ a nonzero nilpotent element is not uniform.
 * `TauCeti.Huber.IsUniform.nilradical_le_closure_bot`: in a uniform Tate ring every nilpotent
   element lies in the closure of zero.
 * `TauCeti.Huber.IsUniform.isReduced`: a Hausdorff uniform Tate ring is reduced.
+* `TauCeti.Huber.IsUniform.isAdicComplete_span_singleton`: in a complete Hausdorff uniform Huber
+  ring, `A°` is `a`-adically complete for every pseudouniformiser `a ∈ A°`.
 
 Discrete rings are uniform (`TauCeti.Huber.IsUniform.of_discreteTopology`), and so are normed
 division rings, by `TauCeti.Huber.IsUniform.of_normedDivisionRing` in
@@ -164,6 +166,26 @@ theorem IsUniform.isReduced [IsTateRing A] [IsUniform A] [T0Space A] : IsReduced
   exact IsUniform.isReduced_of_isPseudoUniformizer hϖ
 
 end Huber
+
+section Complete
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [CompleteSpace A] [T0Space A] [IsHuberRing A] [IsUniform A]
+
+/-- In a complete Hausdorff uniform Huber ring, `A°` is open and bounded, hence `a`-adically
+complete for every pseudouniformiser `a ∈ A°`. -/
+theorem IsUniform.isAdicComplete_span_singleton (a : powerBoundedSubring A)
+    (ha : IsPseudoUniformizer (a : A)) :
+    IsAdicComplete (Ideal.span {a}) (powerBoundedSubring A) := by
+  obtain ⟨P, hP⟩ := isUniform_iff_exists_pairOfDefinition_ringOfDefinition_eq.mp ‹IsUniform A›
+  -- `P.ringOfDefinition` is a projection, so transport along `hP` through a free variable
+  obtain ⟨S, hS, hc⟩ : ∃ S : Subring A, S = powerBoundedSubring A ∧
+      ∀ ϖ : S, IsPseudoUniformizer (ϖ : A) → IsAdicComplete (Ideal.span {ϖ}) S :=
+    ⟨_, hP, P.isAdicComplete_span_singleton⟩
+  subst hS
+  exact hc a ha
+
+end Complete
 
 end TauCeti.Huber
 

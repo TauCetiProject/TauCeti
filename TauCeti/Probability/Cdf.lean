@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.Probability.CDF
 public import Mathlib.Topology.Order.LeftRightLim
+import TauCeti.MeasureTheory.Group.Measure
 
 /-!
 # Cumulative distribution functions
@@ -45,6 +46,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   an atomless real law;
 * `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
   its cdf;
+* `MeasureTheory.Measure.cdf_neg_of_measure_singleton_eq_zero` computes the cdf of a reflected
+  law away from atoms;
 * `MeasureTheory.Measure.cdf_map_abs_of_nonneg` and `MeasureTheory.Measure.cdf_map_abs_of_neg`
   evaluate the cdf of the image of a real law under absolute value, and
   `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant` specializes it to symmetric laws;
@@ -108,6 +111,17 @@ theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsN
     (x : ℝ) : μ.real (Iio (-x)) = 1 - cdf μ x := by
   rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def, ← compl_Iic,
     measureReal_compl measurableSet_Iic, probReal_univ, cdf_eq_real]
+
+/-- **The cumulative distribution function of the reflected law.** If `μ` has no atom at `-x`,
+the law of `-X` puts mass `1 - cdf μ (-x)` on `Iic x`. -/
+theorem cdf_neg_of_measure_singleton_eq_zero {μ : Measure ℝ} [IsProbabilityMeasure μ] {x : ℝ}
+    (hx : μ {-x} = 0) : cdf μ.neg x = 1 - cdf μ (-x) := by
+  have hpre : (Neg.neg ⁻¹' Iic x : Set ℝ) = (Iio (-x))ᶜ := by
+    ext y
+    simp
+  rw [cdf_eq_real, neg_def, map_measureReal_apply measurable_neg measurableSet_Iic, hpre,
+    measureReal_compl measurableSet_Iio, probReal_univ, measureReal_congr (Iio_ae_eq_Iic' hx),
+    cdf_eq_real]
 
 /-- The cdf of the image of `μ` under absolute value at a nonnegative point `x` is the mass of
 `[-x, x]`, that is, the cdf of `μ` at `x` minus its left limit at `-x`. -/

@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.InverseGamma.Moments
 public import TauCeti.Probability.Distributions.Wishart.Inverse.Basic
 
-import TauCeti.Analysis.Matrix.PosSemidef
+import TauCeti.Analysis.Matrix.PosSemidef.Basic
 import TauCeti.Analysis.Matrix.Sqrt
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Integrable
