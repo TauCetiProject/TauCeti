@@ -84,6 +84,17 @@ theorem ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty
   rw [ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow _ hc, ord_X_eq_zero_of_ne hP.1 hP.2.2, h1,
     mul_zero, mul_zero, add_zero]
 
+/-- Away from `0`, `1` and `∞`, the function `t (t - 1)` is a unit. -/
+theorem valuation_X_mul_X_sub_one_of_notMem_zeroOneInfty {P : Place k (RatFunc k)}
+    (hP : P ∉ zeroOneInfty k) : P.valuation (RatFunc.X * (RatFunc.X - 1)) = 1 := by
+  have he : (RatFunc.X * (RatFunc.X - 1) : RatFunc k) =
+      algebraMap k (RatFunc k) 1 * RatFunc.X ^ (1 : ℤ) * (RatFunc.X - 1) ^ (1 : ℤ) := by
+    simp
+  rw [he, valuation_eq_exp_neg_ord _
+    (RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero one_ne_zero 1 1),
+    ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty hP one_ne_zero,
+    neg_zero, WithZero.exp_zero]
+
 end Place
 
 variable {k F : Type*} [Field k] [CharZero k] [Field F] [Algebra k F] [Algebra (RatFunc k) F]
