@@ -26,7 +26,8 @@ the finite cyclic group it generates, since every element of that group acts by 
 * `SetLike.contMDiffConstSMul`: a subobject, such as a submonoid, a subgroup or a submodule, of
   a type acting by `C^n` maps also acts by `C^n` maps.
 * `Diffeomorph.constSmul`: the diffeomorphism given by a fixed element of a pointwise-smooth
-  group action.
+  group action. It sends the identity element to the identity diffeomorphism and products to
+  composites (`Diffeomorph.constSmul_one`, `Diffeomorph.constSmul_mul`).
 * `TauCeti.contMDiff_smul_of_mem_zpowers`: if an element of finite order acts by a `C^n` map, so
   does every element of the cyclic group it generates.
 -/
@@ -94,6 +95,21 @@ lemma constSmul_symm :
     (constSmul I n g : M ≃ₘ^n⟮I, I⟯ M).symm = constSmul I n g⁻¹ :=
   Diffeomorph.ext fun x ↦ by
     rw [constSmul_symm_apply, constSmul_apply]
+
+/-- The identity element acts by the identity diffeomorphism. -/
+@[to_additive (attr := simp)
+  /-- The zero element acts by the identity diffeomorphism. -/]
+lemma constSmul_one : constSmul I n (1 : G) = Diffeomorph.refl I M n :=
+  Diffeomorph.ext fun x ↦ one_smul G x
+
+/-- The diffeomorphism of a product of group elements is the composite of their diffeomorphisms,
+the right-hand factor acting first. -/
+@[to_additive
+  /-- The diffeomorphism of a sum of additive-group elements is the composite of their
+  diffeomorphisms, the right-hand summand acting first. -/]
+lemma constSmul_mul (h : G) :
+    constSmul I n (g * h) = (constSmul I n h).trans (constSmul I n g : M ≃ₘ^n⟮I, I⟯ M) :=
+  Diffeomorph.ext fun x ↦ mul_smul g h x
 
 end Diffeomorph
 
