@@ -56,7 +56,7 @@ theorem exists_prime_natCast_ne_zero (R : Type*) [AddMonoidWithOne R] [NeZero (1
     ∃ ℓ : ℕ, ℓ.Prime ∧ (ℓ : R) ≠ 0 := by
   by_cases h2 : ((2 : ℕ) : R) = 0
   · refine ⟨3, Nat.prime_three, fun h3 ↦ one_ne_zero (α := R) ?_⟩
-    rwa [show (3 : ℕ) = 2 + 1 from rfl, Nat.cast_add, h2, zero_add, Nat.cast_one] at h3
+    simpa only [h2, zero_add] using (Nat.cast_succ (R := R) 2).symm.trans h3
   · exact ⟨2, Nat.prime_two, h2⟩
 
 variable {R : Type*} [Ring R] (p n : ℕ) [ExpChar R p]

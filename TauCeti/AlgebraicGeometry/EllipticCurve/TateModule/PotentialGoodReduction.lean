@@ -14,6 +14,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.DiscreteValuationRing
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
+import TauCeti.NumberTheory.LocalField.NatCastValuation
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Extension
 
 /-!
@@ -300,10 +301,7 @@ theorem hasPotentialGoodReduction_of_tateModuleGaloisRepresentation_eq_one
   have : IsMinimal 𝒪[M] (C • W⁄M) := hC ▸ inferInstance
   have hℓM : (ℓ : 𝓀[M]) ≠ 0 := by
     rwa [← map_natCast (algebraMap 𝓀[K] 𝓀[M]), map_ne_zero_iff _ (algebraMap 𝓀[K] 𝓀[M]).injective]
-  have hℓK : (ℓ : K) ≠ 0 :=
-    natCast_ne_zero_of_isUnit ((IsLocalRing.residue_ne_zero_iff_isUnit _).1 (by rwa [map_natCast]))
-  have hℓ' : (ℓ : AlgebraicClosure M) ≠ 0 := by
-    simpa using (map_ne_zero (algebraMap K (AlgebraicClosure M))).2 hℓK
+  have hℓ' : (ℓ : AlgebraicClosure M) ≠ 0 := natCast_ne_zero_of_residueField_natCast_ne_zero hℓ
   -- By the criterion of Néron, Ogg and Shafarevich over `M`, it suffices that every `τ ∈ I_M`
   -- fixes the points of `ℓ`-power order of `C • W` over `M^{alg}`.
   refine hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one _ hℓM fun τ hτ ↦
@@ -318,8 +316,7 @@ theorem hasPotentialGoodReduction_of_tateModuleGaloisRepresentation_eq_one
   let σ : AlgebraicClosure K ≃ₐ[M] AlgebraicClosure K := (φ.symm.trans τ').trans φ
   have hσ (z : AlgebraicClosure M) : φ (τ' z) = σ (φ z) := by
     simp [σ]
-  have hℓ'' : (ℓ : AlgebraicClosure K) ≠ 0 := by
-    simpa using (map_ne_zero (algebraMap K (AlgebraicClosure K))).2 hℓK
+  have hℓ'' : (ℓ : AlgebraicClosure K) ≠ 0 := natCast_ne_zero_of_residueField_natCast_ne_zero hℓ
   have hfix := (tateModuleGaloisRepresentation_eq_one_iff hℓ'').1 <| h (σ.restrictScalars K)
     ((φ.toRingEquiv.mem_inertiaSubgroup_iff_of_semiconj (τ := τ')
       (σ := σ.restrictScalars K) hσ).2 hτ)
@@ -389,8 +386,7 @@ theorem hasPotentialGoodReduction_of_finite_image_tateModuleGaloisRepresentation
       (inertiaSubgroup K : Set (Field.absoluteGaloisGroup K))).Finite) :
     W.HasPotentialGoodReduction 𝒪[K] :=
   have ⟨M, _, hM⟩ := W.exists_tateModuleGaloisRepresentation_eq_one_of_finite_image
-    (natCast_ne_zero_of_isUnit ((IsLocalRing.residue_ne_zero_iff_isUnit _).1
-      (by rwa [map_natCast]))) h
+    (natCast_ne_zero_of_residueField_natCast_ne_zero hℓ) h
   W.hasPotentialGoodReduction_of_tateModuleGaloisRepresentation_eq_one M hℓ hM
 
 open scoped Classical in
