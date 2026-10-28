@@ -99,8 +99,7 @@ universe u u' v v'
 
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
-variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
-variable [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F']
 
 /-! ### Evaluating a polynomial integral at a place -/
 
@@ -115,29 +114,26 @@ noncomputable def integersEval (y : F') : P.integers[X] →+* F' :=
 
 variable {P}
 
-omit [Algebra k F'] [IsScalarTower k F F'] in
 theorem integersEval_eq_aeval_map (y : F') (g : P.integers[X]) :
     P.integersEval y g = aeval y (g.map (algebraMap P.integers F)) := by
   rw [aeval_def, eval₂_map]
   rfl
 
-omit [Algebra k F'] [IsScalarTower k F F'] in
 @[simp]
 theorem integersEval_C (y : F') (a : P.integers) :
     P.integersEval y (C a) = algebraMap F F' (a : F) := by
   rw [integersEval, coe_eval₂RingHom, eval₂_C, RingHom.comp_apply,
     ValuationSubring.algebraMap_apply]
 
-omit [Algebra k F'] [IsScalarTower k F F'] in
 @[simp]
 theorem integersEval_X (y : F') : P.integersEval y (X : P.integers[X]) = y := by
   rw [integersEval, coe_eval₂RingHom, eval₂_X]
 
+variable [Algebra k F'] [IsScalarTower k F F'] in
 theorem integersEval_algebraMap (y : F') (c : k) :
     P.integersEval y (C (algebraMap k P.integers c)) = algebraMap k F' c := by
   rw [integersEval_C, coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply]
 
-omit [Algebra k F'] [IsScalarTower k F F'] in
 /-- A polynomial over `𝒪_P` vanishing at `y` is divisible by any monic `φ` over `𝒪_P` whose image
 in `F[X]` is the minimal polynomial of `y`: division by a monic polynomial does not leave
 `𝒪_P[X]`, so divisibility may be tested over `F`. -/
@@ -157,13 +153,14 @@ section Integral
 
 variable [FiniteDimensional F F']
 
-omit [Algebra k F'] [IsScalarTower k k' F'] in
 /-- A polynomial over `𝒪_P` whose image in `F[X]` is the minimal polynomial of `y : F'` is monic,
 because `𝒪_P → F` is injective. -/
 private theorem monic_of_map_eq_minpoly {P : Place k F} {y : F'} {φ : P.integers[X]}
     (hmin : φ.map (algebraMap P.integers F) = minpoly F y) : φ.Monic :=
   Polynomial.monic_of_injective (IsFractionRing.injective P.integers F)
     (hmin ▸ minpoly.monic (IsIntegral.of_finite F y))
+
+variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 /-- A root `y : F'` of a polynomial over `𝒪_P` whose image in `F[X]` is the minimal polynomial of
 `y` is integral at every place of `F' / k'` lying over `P`: that polynomial is monic, the
@@ -185,7 +182,8 @@ end Integral
 
 section Residue
 
-variable (k F) [FiniteDimensional F F']
+variable (k F) [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [FiniteDimensional F F']
 
 /-- **Kummer's theorem at a single place, in residue-field form**: if `g` is monic over `𝒪_P` with
 irreducible reduction `γ` over the residue field `F_P`, and `g (y)` vanishes at a place `P'` of
@@ -262,8 +260,6 @@ end Residue
 
 section Kummer
 
-variable [FiniteDimensional F F'] [Algebra.IsIntegral k k']
-
 /-- Every monic polynomial over the residue field `F_P` lifts to a monic polynomial over the
 valuation ring `𝒪_P`. -/
 theorem exists_monic_map_residue_eq (P : Place k F) {γ : P.ResidueField[X]} (hγ : γ.Monic) :
@@ -271,6 +267,9 @@ theorem exists_monic_map_residue_eq (P : Place k F) {γ : P.ResidueField[X]} (h�
   obtain ⟨g, hmap, -, hmonic⟩ := lifts_and_natDegree_eq_and_monic
     ((lifts_iff_coeff_lifts γ).mpr fun n ↦ IsLocalRing.residue_surjective (γ.coeff n)) hγ
   exact ⟨g, hmonic, hmap⟩
+
+variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [FiniteDimensional F F'] [Algebra.IsIntegral k k']
 
 /-- **Kummer's theorem** (Stichtenoth, Theorem 3.3.7), for one irreducible factor.  Let `P` be a
 place of `F / k`, let `y : F'` be a root of a monic `φ ∈ 𝒪_P[X]` whose image in `F[X]` is the
@@ -449,29 +448,7 @@ section Monogenic
 
 open IsDedekindDomain UniqueFactorizationMonoid
 
-variable [Algebra.IsIntegral k k']
-
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
-
-/-- The constants of `F' / k'` lie in the integral closure `𝒪'_P` of `𝒪_P` in `F'`, because they
-are integral over `k ⊆ 𝒪_P`. -/
-private theorem algebraMap_mem_integralClosure (P : Place k F) (c : k') :
-    algebraMap k' F' c ∈ integralClosure P.integers F' :=
-  have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply P.integers F F',
-      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
-  (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
-
-/-- The action of the constants `k'` on the local model `𝒪'_P`. -/
-private noncomputable instance algebraConstantsIntegralClosure (P : Place k F) :
-    Algebra k' (integralClosure P.integers F') :=
-  ((algebraMap k' F').codRestrict _ (algebraMap_mem_integralClosure P)).toAlgebra
-
-private instance isScalarTowerConstantsIntegralClosure (P : Place k F) :
-    IsScalarTower k' (integralClosure P.integers F') F' :=
-  .of_algebraMap_eq fun _ ↦ rfl
-
-variable [FiniteDimensional F F']
 
 variable (k) in
 /-- The place of the maximal ideal of `𝒪_P` is `P`. -/
@@ -489,14 +466,12 @@ private theorem ofPrime_maximalIdeal (P : Place k F) :
 
 variable {P : Place k F} {y : F'}
 
-omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] in
 /-- Under monogenicity, `y` lies in the local model `𝒪'_P`. -/
 private theorem mem_integralClosure_of_adjoin_eq
     (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
     y ∈ integralClosure P.integers F' :=
   hy ▸ Algebra.subset_adjoin rfl
 
-omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] in
 /-- Under monogenicity, `𝒪'_P = 𝒪_P[y]` as an algebra over itself. -/
 private theorem adjoin_eq_top_of_adjoin_eq
     (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
@@ -507,14 +482,12 @@ private theorem adjoin_eq_top_of_adjoin_eq
   rw [AlgHom.map_adjoin, Set.image_singleton, Algebra.map_top, Subalgebra.range_val]
   exact hy
 
-omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] in
 /-- Under monogenicity, `𝒪'_P` is a finite `𝒪_P`-module. -/
 private theorem moduleFinite_integralClosure_of_adjoin_eq
     (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F') :
     Module.Finite P.integers (integralClosure P.integers F') :=
   hy ▸ Algebra.finite_adjoin_simple_of_isIntegral (mem_integralClosure_of_adjoin_eq hy)
 
-omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] in
 /-- The monic polynomial `φ` over `𝒪_P` lifting the minimal polynomial of `y` over `F` is the
 minimal polynomial of `y` over `𝒪_P`, viewed in the local model `𝒪'_P`. -/
 private theorem minpoly_eq_of_adjoin_eq {φ : P.integers[X]}
@@ -528,7 +501,6 @@ private theorem minpoly_eq_of_adjoin_eq {φ : P.integers[X]}
   exact (minpoly.isIntegrallyClosed_eq_field_fractions' F
     (mem_integralClosure_of_adjoin_eq hy)).symm
 
-omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] in
 /-- Under monogenicity, `P` is prime to the conductor of `𝒪_P[y]` in `𝒪'_P`: that conductor is
 the unit ideal. -/
 private theorem conductor_sup_eq_top_of_adjoin_eq
@@ -557,6 +529,27 @@ private def normalizedFactorsEquiv {φ : P.integers[X]}
     rw [Set.mem_ofPred_eq, minpoly_eq_of_adjoin_eq hmin hy]
     rfl
 
+variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsIntegral k k']
+
+/-- The constants of `F' / k'` lie in the integral closure `𝒪'_P` of `𝒪_P` in `F'`, because they
+are integral over `k ⊆ 𝒪_P`. -/
+private theorem algebraMap_mem_integralClosure (P : Place k F) (c : k') :
+    algebraMap k' F' c ∈ integralClosure P.integers F' :=
+  have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply P.integers F F',
+      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
+  (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
+
+/-- The action of the constants `k'` on the local model `𝒪'_P`. -/
+private noncomputable instance algebraConstantsIntegralClosure (P : Place k F) :
+    Algebra k' (integralClosure P.integers F') :=
+  ((algebraMap k' F').codRestrict _ (algebraMap_mem_integralClosure P)).toAlgebra
+
+private instance isScalarTowerConstantsIntegralClosure (P : Place k F) :
+    IsScalarTower k' (integralClosure P.integers F') F' :=
+  .of_algebraMap_eq fun _ ↦ rfl
+
+variable [FiniteDimensional F F']
 variable (k k' F) (P)
 
 open scoped Classical in
