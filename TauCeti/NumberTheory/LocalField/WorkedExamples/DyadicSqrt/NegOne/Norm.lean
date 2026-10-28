@@ -16,6 +16,14 @@ The radicand `-1` has defect exponent one and `v₂(2) = 1`, so the depth-two pr
 are norms. The square classes `1` and `5` have explicit sum-of-two-squares representatives.
 In depth one, `3` is a nonnorm. This verifies both sides of the conductor threshold in the
 smallest ramified dyadic case.
+
+## References
+
+* The [QuadraticFormInvariants roadmap, Layer 6B](https://github.com/TauCetiProject/TauCetiRoadmap/blob/6d197422/TauCetiRoadmap/QuadraticFormInvariants/README.md),
+  for the prescribed dyadic norm controls.
+* O. T. O'Meara, *Introduction to Quadratic Forms*, §63A, for the defect and norm computation.
+* J.-P. Serre, *A Course in Arithmetic*, Chapter III, §1, for the dyadic Hilbert symbol.
+
 -/
 
 public section
@@ -35,15 +43,17 @@ theorem unitFiltration_two_le_quadraticNormSubgroup_neg_one_padicTwo :
   norm_num [dyadicLevel_def, Padic.natCastValuation_self] at h ⊢
   exact h
 
-/-- The two unit norm classes modulo squares have the elementary representatives
-`1 = 1² + 0²` and `5 = 1² + 2²`. -/
-example : (∃ x y : ℚ_[2], (1 : ℚ_[2]) = x ^ 2 + y ^ 2) ∧
-    (∃ x y : ℚ_[2], (5 : ℚ_[2]) = x ^ 2 + y ^ 2) := by
-  constructor
-  · exact ⟨1, 0, by norm_num⟩
-  · exact ⟨1, 2, by norm_num⟩
+/-- The unit norm class `1` has the representative `1 = 1² + 0²`. -/
+theorem exists_eq_sq_add_sq_one_padicTwo :
+    ∃ x y : ℚ_[2], (1 : ℚ_[2]) = x ^ 2 + y ^ 2 :=
+  ⟨1, 0, by norm_num⟩
 
-/-- `3` is the depth-one principal unit which is not a norm from `ℚ₂(i)`. -/
+/-- The unit norm class `5` has the representative `5 = 1² + 2²`. -/
+theorem exists_eq_sq_add_sq_five_padicTwo :
+    ∃ x y : ℚ_[2], (5 : ℚ_[2]) = x ^ 2 + y ^ 2 :=
+  ⟨1, 2, by norm_num⟩
+
+/-- `3` is a depth-one principal unit which is not a norm from `ℚ₂(i)`. -/
 theorem three_mem_unitFiltration_one_not_mem_quadraticNormSubgroup_neg_one_padicTwo :
     let b : ℚ_[2]ˣ := Units.mk0 3 (by norm_num)
     b ∈ unitFiltration ℚ_[2] 1 ∧ b ∉ quadraticNormSubgroup (-1 : ℚ_[2]) := by

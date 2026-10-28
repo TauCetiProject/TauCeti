@@ -17,6 +17,14 @@ Put `π = √2`. The unit `1 + π` is the norm of `(π + 1/2) + (1/2)√5`, but 
 `u²(1 - 5t²)` and `-5u²(1 - 5t²)` with integral `u,t` miss a unit norm. The obstruction is the
 coefficient of `π` in the Eisenstein integral basis `(1, π)`: it is divisible by `2` in every
 such integral norm, whereas that coefficient in `1 + π` is `1`.
+
+## References
+
+* The [QuadraticFormInvariants roadmap, Layer 6B](https://github.com/TauCetiProject/TauCetiRoadmap/blob/6d197422/TauCetiRoadmap/QuadraticFormInvariants/README.md),
+  for the prescribed dyadic norm controls.
+* O. T. O'Meara, *Introduction to Quadratic Forms*, §63A, for the defect and norm computation.
+* J.-P. Serre, *A Course in Arithmetic*, Chapter III, §1, for the dyadic Hilbert symbol.
+
 -/
 
 public section
@@ -113,7 +121,7 @@ theorem not_exists_integral_norm_one_add_sqrtTwo :
 
 /-- Neither of the square-root-coordinate families with integral parameters contains the
 unit norm `1 + √2`. In particular restricting `u` to units cannot repair these families. -/
-theorem not_mem_naive_integral_norm_families (u t : 𝒪[DyadicSqrtTwo]) :
+theorem integral_norm_families_ne_one_add_sqrtTwo (u t : 𝒪[DyadicSqrtTwo]) :
     (u : DyadicSqrtTwo) ^ 2 * (1 - 5 * (t : DyadicSqrtTwo) ^ 2) ≠ 1 + sqrtTwo ∧
       -5 * (u : DyadicSqrtTwo) ^ 2 * (1 - 5 * (t : DyadicSqrtTwo) ^ 2) ≠ 1 + sqrtTwo := by
   constructor
