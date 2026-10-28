@@ -8,17 +8,24 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order
 public import TauCeti.Analysis.Analytic.Order
 public import TauCeti.Analysis.Complex.Periodic
+public import Mathlib.RingTheory.PowerSeries.Expand
+
+import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
-# The order of a `q`-expansion under period rescaling
+# The `q`-expansion and its order under period rescaling
 
 The order of the `q`-expansion of a periodic, bounded, holomorphic function on the upper
 half-plane equals the analytic order of its `cuspFunction` at `0`; consequently, passing
 from period `h` to period `m * h` multiplies the order by `m`. This is the vanishing-order
-bookkeeping feeding the finite-index Sturm bound.
+bookkeeping feeding the finite-index Sturm bound. The expansion itself is rescaled the same way:
+since `𝕢 (m * h) ^ m = 𝕢 h`, the expansion at period `m * h` is the expansion at period `h` in
+the variable `q ^ m`. This is what lets expansions at cusps of different widths be compared at a
+common period.
 
 ## Main declarations
 
+* `TauCeti.qExpansion_nat_mul`: `qExpansion (m * h) g = expand m (qExpansion h g)`.
 * `TauCeti.qExpansion_nat_mul_order`: `(qExpansion (m * h) g).order = (qExpansion h g).order * m`.
 
 ## References
@@ -57,6 +64,25 @@ lemma cuspFunction_nat_mul_eventuallyEq {g : ℍ → ℂ} {m : ℕ} (hh : 0 < h)
   have hτq : Periodic.qParam ((m : ℝ) * h) τ = q := Periodic.qParam_right_inv hmh.ne' hq_ne
   rw [← hτq, TauCeti.Periodic.qParam_nat_mul_pow hm.ne', eq_cuspFunction τ hmh.ne' hg_per_mh,
     eq_cuspFunction τ hh.ne' hg_per]
+
+/-- **The `q`-expansion at period `m * h` is the expansion at period `h` in the variable
+`q ^ m`**: its coefficients are those at period `h`, placed at the multiples of `m`. -/
+lemma qExpansion_nat_mul {g : ℍ → ℂ} {m : ℕ} (hh : 0 < h) (hm : 0 < m)
+    (hg_per : Periodic (g ∘ ofComplex) h) (hg_bdd : IsBoundedAtImInfty g) (hg_mdiff : MDiff g) :
+    qExpansion (m * h : ℝ) g = PowerSeries.expand m hm.ne' (qExpansion h g) := by
+  have hmh : (0 : ℝ) < m * h := by positivity
+  have hg_per_mh : Periodic (g ∘ ofComplex) (m * h : ℝ) := by simpa using hg_per.nat_mul m
+  ext j
+  refine (UpperHalfPlane.qExpansion_coeff_unique
+    (c := fun j ↦ (PowerSeries.expand m hm.ne' (qExpansion h g)).coeff j) hmh
+    (analyticAt_cuspFunction_zero hmh hg_per_mh hg_mdiff hg_bdd) (fun τ ↦ ?_) j).symm
+  -- the expansion at period `h`, in the variable `𝕢 h = 𝕢 (m * h) ^ m`, reindexed along `m ℕ`
+  have hs := hasSum_qExpansion hh hg_per hg_mdiff hg_bdd τ
+  rw [← TauCeti.Periodic.qParam_nat_mul_pow hm.ne' (τ : ℂ)] at hs
+  have hinj : Injective fun n : ℕ ↦ m * n := fun _ _ e ↦ Nat.eq_of_mul_eq_mul_left hm e
+  refine (hinj.hasSum_iff fun x hx ↦ ?_).mp (hs.congr_fun fun n ↦ ?_)
+  · rw [PowerSeries.coeff_expand_of_not_dvd _ _ _ fun ⟨n, hn⟩ ↦ hx ⟨n, hn.symm⟩, zero_smul]
+  · simp [PowerSeries.coeff_expand_mul, ← pow_mul]
 
 /-- The order of the `q`-expansion at period `m * h` is `m` times the order at period `h`. -/
 lemma qExpansion_nat_mul_order {g : ℍ → ℂ} {m : ℕ} (hh : 0 < h) (hm : 0 < m)

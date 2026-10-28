@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
+public import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
@@ -58,6 +59,10 @@ Eisenstein series through their constant terms.
   `q`-expansion at a cusp on the representative.
 * `ModularForm.qExpansionAt_diamondOp`: diamond operators act on the `q`-expansions at the
   cusps by left multiplication of cusp representatives.
+* `ModularForm.exists_qExpansion_translate_eq_expand_qExpansionAt`: at a strict period `N` of
+  the cusp, the expansion of `f ∣ γ` is `ModularForm.qExpansionAt γ f` in the variable `q ^ m`,
+  where `m` is `N` divided by the width of the cusp. On a group containing `Γ(N)` this compares
+  the expansions at all cusps at the one common period `N`.
 * `ModularForm.tendsto_translate_constantTermAt`: `f ∣ γ` tends to the constant term at `i∞`.
 * `ModularForm.constantTermAt_mul_left`, `ModularForm.constantTermAt_mul_T_zpow`,
   `ModularForm.constantTermAt_neg`, `ModularForm.constantTermAt_mul_of_c_eq_zero`: the
@@ -223,6 +228,29 @@ theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
   exact qExpansion_smul (ModularFormClass.analyticAt_cuspFunction_zero
     (translate f (mapGL ℝ γ)) (Γγ.strictWidthInfty_pos_iff.mpr Fact.out)
     Γγ.strictWidthInfty_mem_strictPeriods) _
+
+/-- **The expansion at a cusp, read at a common period.** If `N` is a strict period at the cusp
+represented by `γ`, it is a multiple `m` of the width there, and the expansion of `f ∣ γ` at
+period `N` is `qExpansionAt γ f` in the variable `q ^ m`. -/
+theorem exists_qExpansion_translate_eq_expand_qExpansionAt {N : ℕ} (hN : 0 < N)
+    {γ : SL(2, ℤ)} (hNγ : (N : ℝ) ∈ (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).strictPeriods)
+    (f : ModularForm Γ k) : ∃ (m : ℕ) (hm : 0 < m),
+      qExpansion N (translate f (mapGL ℝ γ)) = PowerSeries.expand m hm.ne' (qExpansionAt γ f) := by
+  let Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ
+  have hw : 0 < Γγ.strictWidthInfty := Γγ.strictWidthInfty_pos_iff.mpr Fact.out
+  -- `N` is a multiple `a` of the integer cusp width, itself a multiple `m` of the strict width
+  obtain ⟨m, hm0, hm⟩ := TauCeti.Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty
+    (𝒢 := Γγ)
+  obtain ⟨a, ha⟩ := TauCeti.Subgroup.natCast_mem_strictPeriods_iff.mp hNγ
+  have ha0 : 0 < a := Nat.pos_of_mul_pos_left (ha ▸ hN)
+  refine ⟨a * m, Nat.mul_pos ha0 hm0, ?_⟩
+  have hNw : (N : ℝ) = ((a * m : ℕ) : ℝ) * Γγ.strictWidthInfty := by
+    rw [ha, Nat.cast_mul, Nat.cast_mul, hm]
+    ring
+  rw [qExpansionAt_apply, hNw]
+  exact TauCeti.qExpansion_nat_mul hw (Nat.mul_pos ha0 hm0)
+    (SlashInvariantFormClass.periodic_comp_ofComplex _ Γγ.strictWidthInfty_mem_strictPeriods)
+    (ModularFormClass.bdd_at_infty _) (ModularFormClass.holo _)
 
 /-- The constant term of `f` at the cusp represented by `γ ∈ SL₂(ℤ)`, as a linear functional.
 
