@@ -49,6 +49,7 @@ this sense have the same limit.
 * `TauCeti.Perfectoid.uniformTilt.commRing`: its commutative ring structure (the instance
   `uniformTilt.instCommRing`), with the multiplication of `Perfection B p` and the limit addition.
 * `TauCeti.Perfectoid.uniformTilt.coeff n : uniformTilt p B →* B`: the `n`-th coordinate.
+* `TauCeti.Perfectoid.uniformTilt.mk`: the element with a given compatible system of coordinates.
 
 ## Main results
 
@@ -172,7 +173,7 @@ private theorem pow_mul_mem_scaledSubgroup {N k e : ℕ} (hke : k ≤ e) {z : B}
 private theorem add_pow_sub_pow_sub_pow_mem {N : ℕ} {S T : B}
     (hS : S ∈ boundSubgroup p c (N + 1)) (hT : T ∈ boundSubgroup p c (N + 1)) :
     (S + T) ^ p - S ^ p - T ^ p ∈ scaledSubgroup p c N 1 := by
-  rw [add_pow_prime_eq' hp.out, show ∀ a b d : B, a + b + d - a - b = d from fun _ _ _ ↦ by ring,
+  rw [add_pow_prime_eq' hp.out, add_assoc, add_sub_cancel_left, add_sub_cancel_left,
     Finset.mul_sum]
   refine AddSubgroup.sum_mem _ fun j hj ↦ ?_
   have hj := Finset.mem_Ioo.mp hj
@@ -207,8 +208,9 @@ It vanishes for odd `p`, and is `2 * S ^ 2` for `p = 2`. -/
 private theorem neg_pow_add_pow_mem {N : ℕ} {S : B} (hS : S ∈ boundSubgroup p c (N + 1)) :
     (-S) ^ p + S ^ p ∈ scaledSubgroup p c N 1 := by
   rcases hp.out.eq_two_or_odd' with h | h
-  · have h' : (-S) ^ p + S ^ p = (p : B) ^ 1 * S ^ p := by
-      rw [(show Even p by rw [h]; exact even_two).neg_pow, pow_one, ← two_mul, h, Nat.cast_ofNat]
+  · have hev : Even p := h ▸ even_two
+    have h' : (-S) ^ p + S ^ p = (p : B) ^ 1 * S ^ p := by
+      rw [hev.neg_pow, pow_one, ← two_mul, h, Nat.cast_ofNat]
     rw [h']
     refine pow_mul_mem_scaledSubgroup le_rfl ?_
     have h'' := (pow_mem_boundSubgroup_iff (c := c) (M := N) (n := 1)).mpr hS
@@ -224,7 +226,7 @@ private theorem add_pow_mul_pow_pow_sub_pow_pow_mem {k : ℕ} (hk : k ≠ 0) :
   | 0, N, β, δ, _, hδ => by
     simpa using mem_scaledSubgroup.mpr ⟨δ, hδ, rfl⟩
   | n + 1, N, β, δ, hβ, hδ => by
-    rw [show N + (n + 1) = N + 1 + n by omega] at hβ hδ
+    rw [← add_assoc, add_right_comm] at hβ hδ
     obtain ⟨δ', hδ', he⟩ :=
       mem_scaledSubgroup.mp (add_pow_mul_pow_pow_sub_pow_pow_mem hk n (N + 1) hβ hδ)
     have he' : (β + (p : B) ^ k * δ) ^ p ^ n = β ^ p ^ n + (p : B) ^ (k + n) * δ' := by
@@ -379,7 +381,7 @@ private theorem tiltLim_succ_pow (hc : IsUnit (c : B)) {σ : ℕ → B}
     (hσ : IsQuasiCompatible p c σ) (i : ℕ) : tiltLim p σ (i + 1) ^ p = tiltLim p σ i := by
   refine tendsto_nhds_unique (((tendsto_tiltLim hc hσ (i + 1)).pow p).congr fun m ↦ ?_)
     ((tendsto_add_atTop_iff_nat 1).mpr (tendsto_tiltLim hc hσ i))
-  rw [← pow_mul, ← pow_succ, show i + 1 + m = i + (m + 1) by omega]
+  rw [← pow_mul, ← pow_succ, add_assoc, add_comm 1 m]
 
 /-- The limits form a quasi-compatible (indeed compatible) sequence for the same bound. -/
 private theorem isQuasiCompatible_tiltLim (hc : IsUnit (c : B)) {σ : ℕ → B}
@@ -417,6 +419,11 @@ private theorem val_mul (x y : Perfection B p) : (x * y).1 = x.1 * y.1 := rfl
 
 private theorem val_pow (x : Perfection B p) (i m : ℕ) : x.1 (i + m) ^ p ^ m = x.1 i :=
   Perfection.coeffMonoidHom_pow_p_pow' x i m
+
+/-- The element of the tilt with a given compatible system `(x n)ₙ` of `p`-th roots as its
+coordinates. -/
+def mk (x : ℕ → B) (hx : ∀ n, x (n + 1) ^ p = x n) : uniformTilt p B :=
+  (⟨x, hx⟩ : Perfection B p)
 
 section Zero
 
@@ -553,6 +560,11 @@ noncomputable def coeff (n : ℕ) : uniformTilt p B →* B :=
 private theorem coeff_apply (x : uniformTilt p B) (n : ℕ) :
     coeff p B n x = (x : Perfection B p).1 n := rfl
 
+/-- The coordinates of `uniformTilt.mk x hx` are the terms of `x`. -/
+@[simp]
+theorem coeff_mk (x : ℕ → B) (hx : ∀ n, x (n + 1) ^ p = x n) (n : ℕ) :
+    coeff p B n (mk x hx) = x n := (rfl)
+
 private theorem coeff_add_eq (x y : uniformTilt p B) (n : ℕ) :
     coeff p B n (x + y) = tiltLim p ((x : Perfection B p).1 + (y : Perfection B p).1) n := rfl
 
@@ -565,6 +577,10 @@ theorem ext {x y : uniformTilt p B} (h : ∀ n, coeff p B n x = coeff p B n y) :
 @[simp]
 theorem coeff_pow_p (x : uniformTilt p B) (n : ℕ) : coeff p B (n + 1) x ^ p = coeff p B n x :=
   Perfection.coeffMonoidHom_pow_p' x n
+
+/-- Every element of the tilt is built by `uniformTilt.mk` from its coordinates. -/
+@[simp]
+theorem mk_coeff (x : uniformTilt p B) : mk (fun n ↦ coeff p B n x) (coeff_pow_p x) = x := (rfl)
 
 /-- Iterating `coeff_pow_p`: `(x⁽ⁿ⁺ᵐ⁾) ^ p ^ m = x⁽ⁿ⁾`. -/
 @[simp]
