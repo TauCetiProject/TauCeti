@@ -79,7 +79,8 @@ private theorem exists_finite_map_of_not_injective {σ : Type*} [Finite σ]
   let γ : R →ₐ[K] A := ψ.comp (IsScalarTower.toAlgHom K R S)
   -- The change of variables `Φ` preserves Gauss norms.
   have hΦ (z : Tate (Option σ)) : ‖Φ z‖ = ‖z‖ :=
-    (Huber.norm_restrictedOptionEquiv (e z)).trans (MvPowerSeries.norm_restrictedTriangularEquiv ..)
+    (MvPowerSeries.norm_restrictedOptionEquiv (e z)).trans
+      (MvPowerSeries.norm_restrictedTriangularEquiv ..)
   refine ⟨γ, ?_, fun y hy ↦ ⟨Φ.symm (algebraMap R S y), by
     rw [← hΦ, AlgEquiv.apply_symm_apply]
     exact (MvPowerSeries.norm_algebraMap_isRestrictedSubring y).trans_le hy, rfl⟩⟩
