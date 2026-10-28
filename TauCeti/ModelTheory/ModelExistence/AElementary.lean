@@ -42,9 +42,9 @@ formation closure of `A`, countability of the language or nonemptiness of the ca
 * D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, Chapter 1.
 * Ported from `cameronfreer/infinitary-logic` at commit
   `518a366cba97b1ae8c4dc64a297a396939bc3e0b`, `InfinitaryLogic/ModelTheory/AElementary.lean`.
-* Divergences from that source: the carriers may live in different universes from the language;
-  monotonicity in the fragment and isomorphism transport are added; the atomic cases are proved
-  from Mathlib's term realization along homomorphisms.
+* Divergences from that source: monotonicity in the fragment and isomorphism transport are added;
+  the atomic cases are proved from Mathlib's term realization along homomorphisms. As in the
+  source, the language and the carriers live in independent universes.
 -/
 
 public section
