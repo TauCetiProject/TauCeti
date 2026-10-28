@@ -148,8 +148,7 @@ theorem eq_of_range_mulVecLin_eq {H' : Matrix (Fin m) (Fin k) ℤ} (h : H.IsHerm
         h'.eq_zero_of_lt j)
       (h'.pivot_dvd_of_mem_range_mulVecLin (hHH'.symm ▸ H.col_mem_range_mulVecLin j) fun _ ↦
         h.eq_zero_of_lt j)
-  ext i j
-  refine congrFun (?_ : H.col j = H'.col j) i
+  refine ext_col fun j ↦ ?_
   -- The difference of the two columns `j` is a lattice vector `H *ᵥ c` vanishing below `p j`.
   obtain ⟨c, hc⟩ : H'.col j - H.col j ∈ LinearMap.range H.mulVecLin :=
     sub_mem (hHH' ▸ H'.col_mem_range_mulVecLin j) (H.col_mem_range_mulVecLin j)
