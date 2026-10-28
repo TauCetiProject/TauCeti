@@ -27,9 +27,9 @@ integral of the perimeters of the closed parallel sets of `s`:
 `μ(s_r \ closure s) = ∫_0^r P(cthickening t s) dt`,
 
 where `s_r = Metric.thickening r s` is the open `r`-neighbourhood of `s`
-(`TauCeti.measure_thickening_sdiff_closure_eq_lintegral_perimeter`). For bounded `s` the closed
+(`TauCeti.measure_thickening_sdiff_closure_eq_setLIntegral_perimeter`). For bounded `s` the closed
 neighbourhood has the same shell volume
-(`TauCeti.measure_cthickening_sdiff_closure_eq_lintegral_perimeter`). No measurability, finite
+(`TauCeti.measure_cthickening_sdiff_closure_eq_setLIntegral_perimeter`). No measurability, finite
 perimeter or regularity hypothesis on `s` is needed.
 
 For a compact set `K` the closed neighbourhoods are the outer parallel sets
@@ -50,9 +50,9 @@ derivative statement is then the fundamental theorem of calculus at a point of c
 
 ## Main results
 
-* `TauCeti.measure_thickening_sdiff_closure_eq_lintegral_perimeter`: the open shell volume is
+* `TauCeti.measure_thickening_sdiff_closure_eq_setLIntegral_perimeter`: the open shell volume is
   the integral of the perimeters of the closed parallel sets.
-* `TauCeti.measure_cthickening_sdiff_closure_eq_lintegral_perimeter`: the same for the closed
+* `TauCeti.measure_cthickening_sdiff_closure_eq_setLIntegral_perimeter`: the same for the closed
   shell around a bounded set.
 * `IsCompact.hasDerivWithinAt_measureReal_add_smul_closedBall`: the right derivative at zero of
   the parallel volume of a compact set is its perimeter, when the parallel perimeters are upper
@@ -134,7 +134,7 @@ private theorem enorm_fderiv_min_infDist_ae_eq {s : Set E} (hs : s.Nonempty) {r 
 additive Haar measure, for every set `s` and every `r`, the volume of the open shell
 `thickening r s \ closure s` is the integral over `0 < t < r` of the perimeters of the closed
 `t`-neighbourhoods of `s`. -/
-theorem measure_thickening_sdiff_closure_eq_lintegral_perimeter (s : Set E) (r : ℝ) :
+theorem measure_thickening_sdiff_closure_eq_setLIntegral_perimeter (s : Set E) (r : ℝ) :
     μ (thickening r s \ closure s) = ∫⁻ t in Ioo 0 r, perimeter μ ⊤ (cthickening t s) := by
   rcases le_or_gt r 0 with hr | hr
   · simp [thickening_of_nonpos hr, Ioo_eq_empty_of_le hr]
@@ -174,7 +174,7 @@ theorem measure_thickening_sdiff_closure_eq_lintegral_perimeter (s : Set E) (r :
 an additive Haar measure, for every bounded set `s` and every `r`, the volume of the closed shell
 `cthickening r s \ closure s` is the integral over `0 < t < r` of the perimeters of the closed
 `t`-neighbourhoods of `s`. -/
-theorem measure_cthickening_sdiff_closure_eq_lintegral_perimeter {s : Set E}
+theorem measure_cthickening_sdiff_closure_eq_setLIntegral_perimeter {s : Set E}
     (hs : Bornology.IsBounded s) (r : ℝ) :
     μ (cthickening r s \ closure s) = ∫⁻ t in Ioo 0 r, perimeter μ ⊤ (cthickening t s) := by
   rcases lt_or_ge r 0 with hr | hr
@@ -203,7 +203,7 @@ theorem measure_cthickening_sdiff_closure_eq_lintegral_perimeter {s : Set E}
       (fun i j _ hij => Ioo_subset_Ioo_right hij)
       ⟨r + 1, by linarith, by
         rw [withDensity_apply _ measurableSet_Ioo,
-          ← measure_thickening_sdiff_closure_eq_lintegral_perimeter]
+          ← measure_thickening_sdiff_closure_eq_setLIntegral_perimeter]
         exact ((hs.thickening).measure_lt_top.trans_le' (measure_mono sdiff_subset)).ne⟩
     have hinter : (⋂ ρ > r, Ioo (0 : ℝ) ρ) = Ioc 0 r := by
       ext t
@@ -214,7 +214,7 @@ theorem measure_cthickening_sdiff_closure_eq_lintegral_perimeter {s : Set E}
   have heq : (fun ρ => μ (thickening ρ s \ closure s)) = fun ρ => ν (Ioo 0 ρ) := by
     ext ρ
     rw [withDensity_apply _ measurableSet_Ioo,
-      measure_thickening_sdiff_closure_eq_lintegral_perimeter]
+      measure_thickening_sdiff_closure_eq_setLIntegral_perimeter]
   rw [heq] at hμ
   rw [tendsto_nhds_unique hμ hν, withDensity_apply _ measurableSet_Ioo]
 
@@ -250,7 +250,7 @@ private theorem measureReal_cthickening_eq_add_integral_perimeter {K : Set E} (h
   have hfin : μ (cthickening t K) ≠ ∞ := (hK.cthickening (r := t)).measure_lt_top.ne
   have hint : μ (cthickening t K \ K) = ∫⁻ τ in Ioo 0 t, perimeter μ ⊤ (cthickening τ K) := by
     simpa [hK.isClosed.closure_eq] using
-      measure_cthickening_sdiff_closure_eq_lintegral_perimeter (μ := μ) hK.isBounded t
+      measure_cthickening_sdiff_closure_eq_setLIntegral_perimeter (μ := μ) hK.isBounded t
   have hlt : ∫⁻ τ in Ioo 0 t, perimeter μ ⊤ (cthickening τ K) ≠ ∞ :=
     hint ▸ measure_ne_top_of_subset sdiff_subset hfin
   rw [intervalIntegral.integral_of_le ht, integral_Ioc_eq_integral_Ioo,
