@@ -51,12 +51,8 @@ theorem finiteInclusion_apply (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
 @[simp]
 theorem finiteInclusion_single (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
     (i : Fin (n + 1)) : b.finiteInclusion n (PiLp.single 2 i (1 : 𝕜)) = b i := by
-  change (b.orthonormal.comp Fin.val Fin.val_injective).synthesisMapIsometry _ = _
-  have h := (b.orthonormal.comp Fin.val Fin.val_injective).synthesisMapIsometry_single i (1 : 𝕜)
-  simp only [Function.comp_apply, one_smul] at h
-  convert h using 2
-  ext j
-  simp [EuclideanSpace.single, PiLp.single_apply]
+  rw [finiteInclusion_apply]
+  simp [PiLp.single_apply]
 
 variable [CompleteSpace H]
 
