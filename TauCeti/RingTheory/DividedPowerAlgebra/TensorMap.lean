@@ -37,7 +37,8 @@ multiplicative homogeneous polynomial laws on `A`.
 
 ## Implementation notes
 
-The product `x ⊗ y ↦ Γ(inl)(x) Γ(inr)(y)` maps `Γ^d_R(M) ⊗[R] Γ^d_R(N)` to `Γ^{2d}_R(M × N)`.
+The product `x ⊗ y ↦ Γ(inl)(x) Γ(inr)(y)` (`DividedPowerAlgebra.homogeneousProdMul`) maps
+`Γ^d_R(M) ⊗[R] Γ^d_R(N)` to `Γ^{2d}_R(M × N)`.
 The law `(m, n) ↦ γ_d(m ⊗ n)` is homogeneous of degree `2d` on `M × N`, so by Roby
 representability (`DividedPowerAlgebra.homogeneousLawEquiv`) it is represented by a linear map
 `Γ^{2d}_R(M × N) → Γ^d_R(M ⊗[R] N)`. The tensor map is the composite. Its values on products of
@@ -69,40 +70,6 @@ variable {M N M' N' : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid N] [M
   [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
 
 variable (R M N) in
-/-- The product `x ⊗ y ↦ Γ(inl)(x) Γ(inr)(y)`, from `Γ^d_R(M) ⊗[R] Γ^e_R(N)` to
-`Γ^{d + e}_R(M × N)`. -/
-private def prodMul (d e : ℕ) :
-    homogeneousSubmodule (R := R) (M := M) d ⊗[R] homogeneousSubmodule (R := R) (M := N) e →ₗ[R]
-      homogeneousSubmodule (R := R) (M := M × N) (d + e) :=
-  TensorProduct.lift <| LinearMap.mk₂ R
-    (fun x y ↦ ⟨map R (LinearMap.inl R M N) x * map R (LinearMap.inr R M N) y,
-      mul_mem_homogeneousSubmodule (map_mem_homogeneousSubmodule _ x.2)
-        (map_mem_homogeneousSubmodule _ y.2)⟩)
-    (fun _ _ _ ↦ Subtype.ext <| by simp [add_mul])
-    (fun _ _ _ ↦ Subtype.ext <| by simp)
-    (fun _ _ _ ↦ Subtype.ext <| by simp [mul_add])
-    (fun _ _ _ ↦ Subtype.ext <| by simp)
-
-private theorem coe_prodMul_tmul (d e : ℕ) (x : homogeneousSubmodule (R := R) (M := M) d)
-    (y : homogeneousSubmodule (R := R) (M := N) e) :
-    (prodMul R M N d e (x ⊗ₜ y) : DividedPowerAlgebra R (M × N)) =
-      map R (LinearMap.inl R M N) x * map R (LinearMap.inr R M N) y := by
-  simp [prodMul]
-
-/-- The product map is natural in both modules. -/
-private theorem prodMul_comp_map (d e : ℕ) (f : M →ₗ[R] M') (g : N →ₗ[R] N') :
-    prodMul R M' N' d e ∘ₗ
-        TensorProduct.map (mapHomogeneousSubmodule f d) (mapHomogeneousSubmodule g e) =
-      mapHomogeneousSubmodule (f.prodMap g) (d + e) ∘ₗ prodMul R M N d e := by
-  have hinl : f.prodMap g ∘ₗ LinearMap.inl R M N = LinearMap.inl R M' N' ∘ₗ f := by
-    ext <;> simp
-  have hinr : f.prodMap g ∘ₗ LinearMap.inr R M N = LinearMap.inr R M' N' ∘ₗ g := by
-    ext <;> simp
-  refine TensorProduct.ext' fun x y ↦ Subtype.ext ?_
-  simp only [LinearMap.comp_apply, TensorProduct.map_tmul, coe_prodMul_tmul,
-    coe_mapHomogeneousSubmodule_apply, map_mul, ← AlgHom.comp_apply, ← map_comp, hinl, hinr]
-
-variable (R M N) in
 /-- The law `(m, n) ↦ γ_d(m ⊗ n)` on `M × N`, homogeneous of degree `d + d`. -/
 private def tensorLaw (d : ℕ) :
     PolynomialLaw.homogeneousSubmodule R (M × N)
@@ -118,9 +85,11 @@ private theorem tensorLaw_comp (d : ℕ) (f : M →ₗ[R] M') (g : N →ₗ[R] N
         (tensorLaw R M N d) := by
   have hmk : (TensorProduct.mk R M' N').toPolynomialLaw₂.comp (f.prodMap g).toPolynomialLaw =
       (TensorProduct.map f g).toPolynomialLaw.comp (TensorProduct.mk R M N).toPolynomialLaw₂ := by
-    rw [← LinearMap.toPolynomialLaw₂_compl₁₂, ← LinearMap.toPolynomialLaw₂_compr₂]
-    -- Both bilinear maps send `(m, n)` to `f m ⊗ g n`.
-    congr 1
+    have hbil : (TensorProduct.mk R M' N').compl₁₂ f g =
+        (TensorProduct.mk R M N).compr₂ (TensorProduct.map f g) := by
+      ext m n
+      simp
+    rw [← LinearMap.toPolynomialLaw₂_compl₁₂, ← LinearMap.toPolynomialLaw₂_compr₂, hbil]
   simp only [tensorLaw, ← PolynomialLaw.comp_assoc, hmk]
   simp only [PolynomialLaw.comp_assoc, gamma_comp_toPolynomialLaw]
 
@@ -132,7 +101,7 @@ coefficient formula `homogeneousTensorMap_tmul_prod_dp`. -/
 def homogeneousTensorMap (d : ℕ) :
     homogeneousSubmodule (R := R) (M := M) d ⊗[R] homogeneousSubmodule (R := R) (M := N) d →ₗ[R]
       homogeneousSubmodule (R := R) (M := M ⊗[R] N) d :=
-  (homogeneousLawEquiv R (M × N) _ (d + d)).symm (tensorLaw R M N d) ∘ₗ prodMul R M N d d
+  (homogeneousLawEquiv R (M × N) _ (d + d)).symm (tensorLaw R M N d) ∘ₗ homogeneousProdMul R M N d d
 
 open MvPolynomial in
 /-- The mixed coefficient formula for the tensor map: for families `m : ι → M`, `n : κ → N` and
@@ -151,13 +120,13 @@ theorem homogeneousTensorMap_tmul_prod_dp (d : ℕ) {ι κ : Type*} [Fintype ι]
   let v : ι ⊕ κ → M × N := Sum.elim (fun i ↦ (m i, 0)) (fun j ↦ (0, n j))
   have hk : ∑ j, Finsupp.sumElim a b j = d + d := by
     simp [Fintype.sum_sum_type, ha, hb]
-  have hprod : prodMul R M N d d
+  have hprod : homogeneousProdMul R M N d d
       (⟨∏ i, dp R (a i) (m i), prod_dp_mem_homogeneousSubmodule_of_sum_eq m a ha⟩ ⊗ₜ
         ⟨∏ j, dp R (b j) (n j), prod_dp_mem_homogeneousSubmodule_of_sum_eq n b hb⟩) =
       ⟨∏ j, dp R (Finsupp.sumElim a b j) (v j),
         prod_dp_mem_homogeneousSubmodule_of_sum_eq v _ hk⟩ := by
     apply Subtype.ext
-    simp [coe_prodMul_tmul, Fintype.prod_sum_type, v, map_prod]
+    simp [coe_homogeneousProdMul_tmul, Fintype.prod_sum_type, v, map_prod]
   rw [homogeneousTensorMap, LinearMap.comp_apply, hprod,
     homogeneousLawEquiv_symm_apply_prod_dp (d + d) _ v _ hk,
     PolynomialLaw.coeff_apply, tensorLaw, PolynomialLaw.toFun_comp_apply, Fintype.sum_sum_type]
@@ -198,7 +167,7 @@ theorem homogeneousTensorMap_comp_map (d : ℕ) (f : M →ₗ[R] M') (g : N →�
   have hrep := (homogeneousLawEquiv_symm_comp_mapHomogeneousSubmodule_eq_iff (d + d)
     (f.prodMap g) (mapHomogeneousSubmodule (TensorProduct.map f g) d) _ _).mpr
       (tensorLaw_comp d f g)
-  simp only [homogeneousTensorMap, LinearMap.comp_assoc, prodMul_comp_map]
+  simp only [homogeneousTensorMap, LinearMap.comp_assoc, homogeneousProdMul_comp_map]
   simp only [← LinearMap.comp_assoc, hrep]
 
 end DividedPowerAlgebra

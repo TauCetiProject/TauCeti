@@ -114,18 +114,10 @@ theorem toPolynomialLaw₂_compl₁₂ (B : M' →ₗ[R] N' →ₗ[R] P) (f : M 
   ext S _ _ x
   simp only [PolynomialLaw.comp_toFun', Function.comp_apply, toPolynomialLaw_toFun',
     toPolynomialLaw₂_toFun']
-  -- The law is quadratic, so prove the underlying identity of bilinear expressions.
-  suffices h : ∀ y z : S ⊗[R] (M × N),
-      BilinMap.baseChange S ((B.compl₁₂ f g).compl₁₂ (fst R M N) (snd R M N)) y z =
-        BilinMap.baseChange S (B.compl₁₂ (fst R M' N') (snd R M' N'))
-          ((f.prodMap g).baseChange S y) ((f.prodMap g).baseChange S z) from h x x
-  intro y z
-  induction y using TensorProduct.inductionOn with
-  | add y y' hy hy' => simp only [map_add, add_apply, hy, hy']
-  | tmul s p =>
-    induction z using TensorProduct.inductionOn with
-    | add z z' hz hz' => simp only [map_add, hz, hz']
-    | tmul t q => simp
+  have hB : (B.compl₁₂ f g).compl₁₂ (fst R M N) (snd R M N) =
+      (B.compl₁₂ (fst R M' N') (snd R M' N')).compl₁₂ (f.prodMap g) (f.prodMap g) := by
+    ext <;> simp
+  rw [hB, BilinMap.baseChange_compl₁₂, compl₁₂_apply]
 
 /-- Postcomposing a bilinear map with a linear map postcomposes its law with the law of the
 linear map. -/
@@ -134,17 +126,9 @@ theorem toPolynomialLaw₂_compr₂ (B : M →ₗ[R] N →ₗ[R] P) (h : P →�
   ext S _ _ x
   simp only [PolynomialLaw.comp_toFun', Function.comp_apply, toPolynomialLaw_toFun',
     toPolynomialLaw₂_toFun']
-  -- The law is quadratic, so prove the underlying identity of bilinear expressions.
-  suffices H : ∀ y z : S ⊗[R] (M × N),
-      BilinMap.baseChange S ((B.compr₂ h).compl₁₂ (fst R M N) (snd R M N)) y z =
-        h.baseChange S (BilinMap.baseChange S (B.compl₁₂ (fst R M N) (snd R M N)) y z) from
-    H x x
-  intro y z
-  induction y using TensorProduct.inductionOn with
-  | add y y' hy hy' => simp only [map_add, add_apply, hy, hy']
-  | tmul s p =>
-    induction z using TensorProduct.inductionOn with
-    | add z z' hz hz' => simp only [map_add, hz, hz']
-    | tmul t q => simp
+  have hB : (B.compr₂ h).compl₁₂ (fst R M N) (snd R M N) =
+      (B.compl₁₂ (fst R M N) (snd R M N)).compr₂ h := by
+    ext <;> simp
+  rw [hB, BilinMap.baseChange_compr₂, compr₂_apply]
 
 end LinearMap
