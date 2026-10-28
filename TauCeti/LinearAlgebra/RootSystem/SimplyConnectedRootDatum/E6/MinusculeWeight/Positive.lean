@@ -21,7 +21,7 @@ subgroup of the twenty-seven-dimensional minuscule representation can reach.
 
 All minuscule weights have the same length for the reflection-invariant root form, so
 `RootPairing.InvariantForm.reflTransGen_of_sub_eq_sum` builds the path: it takes raising steps
-from the lower endpoint, by induction along the order of the weight table.
+from the lower endpoint, by induction on the simple-root coefficients.
 Positivity is used only on a nonzero difference in the root lattice; the roots need not span the
 full fundamental-weight lattice over the integers.
 
@@ -95,8 +95,7 @@ theorem e6Minuscule_raisingPath_iff_mem_posRootCone (a b : Fin 27) :
     have hai : μ x i = -1 := by
       rw [hpair] at hi
       rcases e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one x i with h | h | h <;> omega
-    refine ⟨e6MinusculeReflection i x, (e6MinusculeReflection_lt_iff i x).mpr hai,
-      (e6MinusculeRaisingStep_iff _ _).mpr ⟨i, hai, rfl⟩, ?_⟩
+    refine ⟨e6MinusculeReflection i x, (e6MinusculeRaisingStep_iff _ _).mpr ⟨i, hai, rfl⟩, ?_⟩
     rw [e6MinusculeWeight_reflection, hai]
     simp
 

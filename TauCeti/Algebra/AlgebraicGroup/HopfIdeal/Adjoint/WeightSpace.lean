@@ -221,51 +221,6 @@ universe v
 variable {R : Type u} [CommRing R] {n : ℕ} {τ : Type v}
 variable (I : HopfIdeal R (GeneralLinear.coordinateHopfAlgebra R n))
 
-/-- Relabelling the torus coordinates along an equivalence identifies the two character
-lattices. -/
-private def relabelCharacterEquiv {κ : Type*} (e : τ ≃ κ) :
-    Multiplicative (τ →₀ ℤ) ≃* Multiplicative (κ →₀ ℤ) :=
-  AddEquiv.toMultiplicative (Finsupp.domCongr e)
-
-private theorem relabelCharacterEquiv_single {κ : Type*} (e : τ ≃ κ)
-    (α : Multiplicative (τ →₀ ℤ)) :
-    MonoidAlgebra.domCongrBialgEquiv R R (relabelCharacterEquiv e) (MonoidAlgebra.single α 1) =
-      MonoidAlgebra.single (relabelCharacterEquiv e α) 1 := by
-  simp only [MonoidAlgebra.domCongrBialgEquiv, BialgEquiv.ofAlgEquiv_apply]
-  exact MonoidAlgebra.domCongr_single (R := R) (A := R) (relabelCharacterEquiv e) α 1
-
-private theorem relabelCharacterEquiv_weightCharacter [Fintype τ] {κ : Type*} [Fintype κ]
-    (e : τ ≃ κ) (v : τ → ℤ) :
-    relabelCharacterEquiv e (SplitTorus.weightCharacter v) =
-      SplitTorus.weightCharacter (fun i : κ ↦ v (e.symm i)) := by
-  apply Multiplicative.toAdd.injective
-  ext i
-  simp [relabelCharacterEquiv, Finsupp.domCongr]
-
-private theorem relabel_weightTorusCoordinateBialgHom [Finite τ] {κ : Type u} [Finite κ]
-    (e : τ ≃ κ) (w : Fin n → τ → ℤ) :
-    (MonoidAlgebra.domCongrBialgEquiv R R (relabelCharacterEquiv e)).toBialgHom.comp
-        (GeneralLinear.weightTorusCoordinateBialgHom (S := R) w) =
-      (GeneralLinear.weightTorusCoordinateMap (fun a (i : κ) ↦ w a (e.symm i))).hom := by
-  let _ : Fintype τ := Fintype.ofFinite τ
-  let _ : Fintype κ := Fintype.ofFinite κ
-  apply GeneralLinear.coordinateHopfAlgebra_bialgHom_ext R n
-  intro a b
-  rw [BialgHom.comp_apply, GeneralLinear.weightTorusCoordinateBialgHom_X,
-    GeneralLinear.weightTorusCoordinateMap_X]
-  split_ifs with hab
-  · -- The direct torus map uses the finitely supported representative of its character;
-    -- the bialgebra equivalence acts through the same underlying function.
-    change MonoidAlgebra.domCongrBialgEquiv R R (relabelCharacterEquiv e)
-        (MonoidAlgebra.single
-          (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (w a))) 1) = _
-    rw [relabelCharacterEquiv_single]
-    congr 1
-    rw [← SplitTorus.weightCharacter_coe, ← SplitTorus.weightCharacter_coe,
-      Finsupp.coe_equivFunOnFinite_symm, Finsupp.coe_equivFunOnFinite_symm]
-    exact relabelCharacterEquiv_weightCharacter e (w a)
-  · exact map_zero _
-
 variable [Fintype τ]
 variable [Module.Finite R
   (Bialgebra.CotangentSpace R (GeneralLinear.coordinateHopfAlgebra R n ⧸ I.toIdeal))]
@@ -288,17 +243,20 @@ theorem mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom (w : Fin n �
         GeneralLinear.tangentMatrix n
           (quotientLieHom I (Derivation.cotangentLinearEquiv (B := R) x)) i j = 0 := by
   let e : τ ≃ ULift.{u} (Fin (Fintype.card τ)) := (Fintype.equivFin τ).trans Equiv.ulift.symm
-  let π' := (MonoidAlgebra.domCongrBialgEquiv R R (relabelCharacterEquiv e)).toBialgHom.comp π
+  let eM := AddEquiv.toMultiplicative (Finsupp.domCongr (M := ℤ) e)
+  let π' := (MonoidAlgebra.domCongrBialgEquiv R R eM).toBialgHom.comp π
   have hπ' : π'.comp (Bialgebra.Quotient.mkBialgHom I.toIdeal) =
       (GeneralLinear.weightTorusCoordinateMap (fun a i ↦ w a (e.symm i))).hom := by
-    rw [BialgHom.comp_assoc, hπ, relabel_weightTorusCoordinateBialgHom]
-  rw [← Derivation.adjointWeightSpace_domCongr (relabelCharacterEquiv e) π α,
+    rw [BialgHom.comp_assoc, hπ,
+      GeneralLinear.domCongrBialgEquiv_comp_weightTorusCoordinateBialgHom,
+      GeneralLinear.hom_weightTorusCoordinateMap]
+  rw [← Derivation.adjointWeightSpace_domCongr eM π α,
     mem_adjointWeightSpace_iff_of_weightTorus I _ π' hπ']
   have hchar (a b : Fin n) :
       SplitTorus.weightCharacter ((fun i ↦ w a (e.symm i)) - fun i ↦ w b (e.symm i)) =
-        relabelCharacterEquiv e (SplitTorus.weightCharacter (w a - w b)) :=
-    (relabelCharacterEquiv_weightCharacter e (w a - w b)).symm
-  simp only [hchar, ne_eq, (relabelCharacterEquiv e).injective.eq_iff]
+        eM (SplitTorus.weightCharacter (w a - w b)) :=
+    (SplitTorus.toMultiplicative_domCongr_weightCharacter e (w a - w b)).symm
+  simp only [hchar, ne_eq, eM.injective.eq_iff]
 
 /-- **Vanishing adjoint weight spaces from vanishing coordinates.** If every generic matrix entry
 whose weight difference is `α` vanishes in the quotient coordinate algebra, the adjoint weight

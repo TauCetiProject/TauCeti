@@ -107,22 +107,22 @@ theorem apply_self_eq_of_forall_exists_foldl {X κ : Type*} {μ : X → M} {e : 
   rw [hfold, hfold]
 
 /-- **Raising paths between vectors of equal length.** Let `μ` be an injective family of vectors of
-equal length, indexed by a type with a well-founded order, for an invariant form that is positive
-on the nonzero vectors of the root span. Suppose that
-whenever a root `α_{f j}` has negative coroot value on `μ a`, an `r`-step leads from `a` to a
-smaller index `a'` with `μ a' = μ a + α_{f j}`. Then `r`-paths lead from `a` to every `b` for
+equal length for an invariant form that is positive on the nonzero vectors of the root span.
+Suppose that whenever a root `α_{f j}` has negative coroot value on `μ a`, an `r`-step leads from
+`a` to an index `a'` with `μ a' = μ a + α_{f j}`. Then `r`-paths lead from `a` to every `b` for
 which `μ b - μ a` is a natural combination of the roots `α_{f j}`. -/
 theorem reflTransGen_of_sub_eq_sum [LinearOrder R] [IsStrictOrderedRing R]
     (hpos : ∀ v ∈ P.rootSpan R, v ≠ 0 → 0 < B.form v v)
-    {X : Type*} [LT X] [WellFoundedLT X] {μ : X → M} (hμ : Function.Injective μ)
+    {X : Type*} {μ : X → M} (hμ : Function.Injective μ)
     (hlen : ∀ a b, B.form (μ a) (μ a) = B.form (μ b) (μ b))
     {κ : Type*} [Fintype κ] {f : κ → ι} {r : X → X → Prop}
-    (hstep : ∀ a j, P.coroot' (f j) (μ a) < 0 → ∃ a' < a, r a a' ∧ μ a' = μ a + P.root (f j))
+    (hstep : ∀ a j, P.coroot' (f j) (μ a) < 0 → ∃ a', r a a' ∧ μ a' = μ a + P.root (f j))
     {a b : X} {c : κ → ℕ} (h : μ b - μ a = ∑ j, c j • P.root (f j)) :
     Relation.ReflTransGen r a b := by
   classical
-  induction a using WellFoundedLT.induction generalizing c with
-  | ind a ih =>
+  -- Each raising step lowers the total coefficient `∑ j, c j` by one.
+  induction hn : ∑ j, c j using Nat.strong_induction_on generalizing a c with
+  | _ n ih =>
   by_cases hab : a = b
   · subst hab
     exact .refl
@@ -132,8 +132,11 @@ theorem reflTransGen_of_sub_eq_sum [LinearOrder R] [IsStrictOrderedRing R]
     (hpos _ (Submodule.subset_span (Set.mem_range_self i)) (P.ne_zero i)).le
   obtain ⟨j, -, hcj, hj⟩ := B.exists_pos_and_coroot'_neg_of_apply_self_eq hroot (hlen a b)
     (hpos _ hspan (sub_ne_zero.mpr (hμ.ne (Ne.symm hab)))) h
-  obtain ⟨a', ha', hr, hμa'⟩ := hstep a j hj
-  refine .head hr (ih a' ha' (c := Function.update c j (c j - 1)) ?_)
+  obtain ⟨a', hr, hμa'⟩ := hstep a j hj
+  have hlt : ∑ i, Function.update c j (c j - 1) i < n := hn ▸ Finset.sum_lt_sum
+    (fun i _ ↦ by rcases eq_or_ne i j with rfl | hi <;> simp [Function.update_of_ne, *])
+    ⟨j, Finset.mem_univ j, by simpa using hcj⟩
+  refine .head hr (ih _ hlt (a := a') (c := Function.update c j (c j - 1)) ?_ rfl)
   -- Lowering the coefficient of `α_{f j}` by one removes one copy of `α_{f j}` from the sum.
   have hsum : ∑ i, c i • P.root (f i) =
       (∑ i, Function.update c j (c j - 1) i • P.root (f i)) + P.root (f j) := by

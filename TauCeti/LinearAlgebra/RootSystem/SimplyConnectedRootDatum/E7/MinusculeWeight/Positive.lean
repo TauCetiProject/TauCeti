@@ -19,7 +19,7 @@ empty path accounts for equal endpoints.
 
 The proof uses the reflection-invariant root form and the existing weight table: all minuscule
 weights have the same length, so `RootPairing.InvariantForm.reflTransGen_of_sub_eq_sum` builds
-a raising path from the lower endpoint, by induction along the order of the weight table.
+a raising path from the lower endpoint, by induction on the simple-root coefficients.
 Positivity is used only on a nonzero difference in the root lattice; the roots need not span the
 full fundamental-weight lattice over the integers.
 -/
@@ -90,8 +90,7 @@ theorem e7Minuscule_raisingPath_iff_mem_posRootCone (a b : Fin 56) :
     have hai : μ x i = -1 := by
       rw [hpair] at hi
       rcases e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one x i with h | h | h <;> omega
-    refine ⟨e7MinusculeReflection i x, (e7MinusculeReflection_lt_iff i x).mpr hai,
-      (e7MinusculeRaisingStep_iff _ _).mpr ⟨i, hai, rfl⟩, ?_⟩
+    refine ⟨e7MinusculeReflection i x, (e7MinusculeRaisingStep_iff _ _).mpr ⟨i, hai, rfl⟩, ?_⟩
     rw [e7MinusculeWeight_reflection, hai]
     simp
 

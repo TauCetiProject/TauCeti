@@ -71,6 +71,15 @@ theorem toAdd_weightCharacter (μ : σ → ℤ) (j : σ) :
     Multiplicative.toAdd (weightCharacter μ) j = μ j := by
   simp [weightCharacter]
 
+/-- Relabelling the exponent coordinates along `e` relabels the weight character. -/
+theorem toMultiplicative_domCongr_weightCharacter {τ : Type*} [Fintype τ] (e : σ ≃ τ)
+    (μ : σ → ℤ) :
+    AddEquiv.toMultiplicative (Finsupp.domCongr e) (weightCharacter μ) =
+      weightCharacter fun j ↦ μ (e.symm j) := by
+  apply Multiplicative.toAdd.injective
+  ext j
+  simp [Finsupp.domCongr]
+
 /-- The character of an exponent vector is trivial exactly when the exponent vector is zero. -/
 @[simp]
 theorem weightCharacter_eq_one_iff {μ : σ → ℤ} : weightCharacter μ = 1 ↔ μ = 0 := by
