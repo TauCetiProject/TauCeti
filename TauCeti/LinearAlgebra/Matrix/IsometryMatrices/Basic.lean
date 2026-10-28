@@ -48,6 +48,8 @@ the matrix `M * (1 + ½ A⁻¹ E)` is a solution, since all quadratic terms in t
   count is invariant under reindexing and under ring isomorphisms.
 * `Matrix.natCard_isometryMatrices_eq_mul`: the count is the number of images under a ring
   homomorphism times the size of the fibre above `1`, when all solutions are invertible.
+* `Matrix.transposeMulMulEquiv`: the solutions of `Yᵀ * A * Y = B` only depend on `A` and `B` up
+  to congruence by invertible matrices.
 * `Matrix.exists_map_eq_of_mem_isometryMatrices_map`: solutions lift across a surjection with
   square-zero kernel.
 * `Matrix.isometryMatricesFiberEquiv`: the solutions congruent to a given one modulo a
@@ -225,6 +227,57 @@ theorem natCard_isometryMatrices_transpose_mul_mul {A P : Matrix n n R} (hP : Is
     rw [Matrix.mul_assoc, hQP, Matrix.mul_one]
   · simp only [← Matrix.mul_assoc, hPQ, Matrix.one_mul]
     rw [Matrix.mul_assoc, hPQ, Matrix.mul_one]
+
+section Congruence
+
+variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
+  {A A' P : Matrix m m R} {B B' Q : Matrix k k R}
+
+/-- **Solutions of `Yᵀ * A * Y = B` under congruence of `A` and `B`.** If `Pᵀ * A * P = A'` and
+`Qᵀ * B * Q = B'` for invertible `P` and `Q`, then `Y ↦ P * Y * Q⁻¹` matches the solutions of
+`Yᵀ * A' * Y = B'` with those of `Yᵀ * A * Y = B`. -/
+noncomputable def transposeMulMulEquiv (hP : IsUnit P.det) (hQ : IsUnit Q.det)
+    (hA : Pᵀ * A * P = A') (hB : Qᵀ * B * Q = B') :
+    {Y : Matrix m k R // Yᵀ * A' * Y = B'} ≃ {Y : Matrix m k R // Yᵀ * A * Y = B} where
+  toFun Y := ⟨P * Y.1 * Q⁻¹, by
+    calc (P * Y.1 * Q⁻¹)ᵀ * A * (P * Y.1 * Q⁻¹)
+        = Q⁻¹ᵀ * (Y.1ᵀ * (Pᵀ * A * P) * Y.1) * Q⁻¹ := by
+          simp only [transpose_mul, Matrix.mul_assoc]
+      _ = (Q * Q⁻¹)ᵀ * B * (Q * Q⁻¹) := by
+          rw [hA, Y.2, ← hB]
+          simp only [transpose_mul, Matrix.mul_assoc]
+      _ = B := by rw [mul_nonsing_inv Q hQ, transpose_one, Matrix.one_mul, Matrix.mul_one]⟩
+  invFun Y := ⟨P⁻¹ * Y.1 * Q, by
+    calc (P⁻¹ * Y.1 * Q)ᵀ * A' * (P⁻¹ * Y.1 * Q)
+        = Qᵀ * (Y.1ᵀ * ((P * P⁻¹)ᵀ * A * (P * P⁻¹)) * Y.1) * Q := by
+          rw [← hA]
+          simp only [transpose_mul, Matrix.mul_assoc]
+      _ = B' := by
+          rw [mul_nonsing_inv P hP, transpose_one, Matrix.one_mul, Matrix.mul_one, Y.2, ← hB,
+            Matrix.mul_assoc]⟩
+  left_inv Y := Subtype.ext <| by
+    simp only [← Matrix.mul_assoc, nonsing_inv_mul P hP, Matrix.one_mul]
+    rw [Matrix.mul_assoc, nonsing_inv_mul Q hQ, Matrix.mul_one]
+  right_inv Y := Subtype.ext <| by
+    simp only [← Matrix.mul_assoc, mul_nonsing_inv P hP, Matrix.one_mul]
+    rw [Matrix.mul_assoc, mul_nonsing_inv Q hQ, Matrix.mul_one]
+
+/-- `Matrix.transposeMulMulEquiv` sends a solution `Y` to `P * Y * Q⁻¹`. -/
+@[simp]
+theorem transposeMulMulEquiv_apply_coe (hP : IsUnit P.det) (hQ : IsUnit Q.det)
+    (hA : Pᵀ * A * P = A') (hB : Qᵀ * B * Q = B') (Y : {Y : Matrix m k R // Yᵀ * A' * Y = B'}) :
+    (transposeMulMulEquiv hP hQ hA hB Y : Matrix m k R) = P * Y.1 * Q⁻¹ :=
+  -- `(rfl)` keeps the definitional unfolding of the equivalence out of the exported interface.
+  (rfl)
+
+/-- The inverse of `Matrix.transposeMulMulEquiv` sends a solution `Y` to `P⁻¹ * Y * Q`. -/
+@[simp]
+theorem transposeMulMulEquiv_symm_apply_coe (hP : IsUnit P.det) (hQ : IsUnit Q.det)
+    (hA : Pᵀ * A * P = A') (hB : Qᵀ * B * Q = B') (Y : {Y : Matrix m k R // Yᵀ * A * Y = B}) :
+    ((transposeMulMulEquiv hP hQ hA hB).symm Y : Matrix m k R) = P⁻¹ * Y.1 * Q :=
+  (rfl)
+
+end Congruence
 
 section SquareZero
 
