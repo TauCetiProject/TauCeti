@@ -25,9 +25,12 @@ scheme `D` give
 `dim H⁰ - dim H¹` and `H⁰(X, 𝒪_X)`, `H¹(X, 𝒪_X)` are assumed finite-dimensional. When `I` is the
 ideal sheaf `𝒪_X(-D)` of an effective Cartier divisor `D`, this says that the line bundle `𝒪_X(-D)`
 has Euler-characteristic degree `-dim_k Γ(D, 𝒪_D)`
-(`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_toInvertibleSheaf`). On a connected
-smooth proper curve over `k` the degree is additive, so `𝒪_X(D)` has degree
-`dim_k Γ(D, 𝒪_D)` (`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf`).
+(`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_toInvertibleSheaf`). On a proper integral
+curve over `k` whose codimension-one local rings are discrete valuation rings the degree is
+additive, so `𝒪_X(D)` has degree `dim_k Γ(D, 𝒪_D)`
+(`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf`); in particular
+this holds on every connected smooth proper curve over `k`
+(`Scheme.IdealSheafData.IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf_of_smooth`).
 This is the classical `deg 𝒪_X(D) = deg D` for effective divisors, with the degree of `D` read off
 as the rank of its closed subscheme, the notion of degree used for relative effective Cartier
 divisors in families.
@@ -81,6 +84,32 @@ end FiniteCohomology
 
 end Finite
 
+section Regular
+
+variable [IsIntegral X]
+  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+  [IsProper (X ↘ Spec (.of k))] [RelativeDimensionLE 1 (X ↘ Spec (.of k))]
+  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)]
+
+/-- **The degree of `𝒪_X(D)` on a regular curve.** On a proper integral curve over a field `k`
+whose codimension-one local rings are discrete valuation rings and whose `H¹(X, 𝒪_X)` is
+finite-dimensional, the line bundle `𝒪_X(D)` of an effective Cartier divisor `D` has
+Euler-characteristic degree `dim_k Γ(D, 𝒪_D)`, the rank of the finite morphism `D ⟶ Spec k`. -/
+theorem IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf (hI : I.IsEffectiveCartier)
+    (s : Spec (.of k)) :
+    LineBundleClass.eulerDegree k (LineBundleClass.mk hI.toInvertibleSheaf)⁻¹ =
+      (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
+  -- Over a field every effective Cartier divisor is relative, hence finite over `k`.
+  have : IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)) :=
+    ((isRelativeEffectiveCartier_iff_isEffectiveCartier I _).mpr hI).isFinite
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have hX := coheight_le_of_relativeDimensionLE_of_field (d := 1) (X ↘ Spec (.of k))
+  have := InvertibleSheaf.finiteDimensional_cohomology_zero k hX (InvertibleSheaf.trivial X)
+  rw [LineBundleClass.eulerDegree_inv k hX, LineBundleClass.eulerDegree_mk,
+    hI.eulerDegree_toInvertibleSheaf k I s, neg_neg]
+
+end Regular
+
 section Smooth
 
 variable [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
@@ -89,16 +118,12 @@ variable [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spe
 /-- **The degree of `𝒪_X(D)` on a smooth curve.** On a connected smooth proper curve over a
 field `k`, the line bundle `𝒪_X(D)` of an effective Cartier divisor `D` has Euler-characteristic
 degree `dim_k Γ(D, 𝒪_D)`, the rank of the finite morphism `D ⟶ Spec k`. The geometric
-hypotheses supply the finiteness of `D` over `k`, the finiteness of `H⁰(X, 𝒪_X)` and
-`H¹(X, 𝒪_X)`, and the additivity of the degree; no rational point or perfect-field assumption is
-needed. -/
-theorem IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf (hI : I.IsEffectiveCartier)
-    (s : Spec (.of k)) :
+hypotheses supply integrality, discrete valuation rings in codimension one and the finiteness of
+`H¹(X, 𝒪_X)`; no rational point or perfect-field assumption is needed. -/
+theorem IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf_of_smooth
+    (hI : I.IsEffectiveCartier) (s : Spec (.of k)) :
     LineBundleClass.eulerDegree k (LineBundleClass.mk hI.toInvertibleSheaf)⁻¹ =
       (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
-  -- Over a field every effective Cartier divisor is relative, hence finite over `k`.
-  have : IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)) :=
-    ((isRelativeEffectiveCartier_iff_isEffectiveCartier I _).mpr hI).isFinite
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
   have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
@@ -109,14 +134,9 @@ theorem IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf (hI : I.IsEffect
   have hdim : topologicalKrullDim X = 1 :=
     topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k))
   have := finiteDimensional_cohomology_one_trivial_of_isProper k hdim
-  have := InvertibleSheaf.finiteDimensional_cohomology_zero k
-    (fun x ↦ by exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim x).trans hdim.le)
-    (InvertibleSheaf.trivial X)
-  have h := LineBundleClass.eulerDegree_mul_of_smooth k (LineBundleClass.mk hI.toInvertibleSheaf)
-    (LineBundleClass.mk hI.toInvertibleSheaf)⁻¹
-  rw [mul_inv_cancel, LineBundleClass.eulerDegree_one, LineBundleClass.eulerDegree_mk,
-    hI.eulerDegree_toInvertibleSheaf k I s] at h
-  linarith
+  have : RelativeDimensionLE 1 (X ↘ Spec (.of k)) :=
+    (relativeDimensionLE_iff_of_field _).mpr (by exact_mod_cast hdim.le)
+  exact hI.eulerDegree_inv_mk_toInvertibleSheaf k I s
 
 end Smooth
 

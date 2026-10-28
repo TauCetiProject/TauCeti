@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.PID
@@ -32,10 +33,10 @@ span.
 
 ## Main results
 
+* `Matrix.intPoints_ker_mulVecLin`: the integral points of a rational matrix kernel are its
+  integral kernel.
 * `Submodule.toLp_mem_realSpan_iff`: the rational points of `V.realSpan` are the points of `V`.
 * `Submodule.mem_intPoints_of_smul_mem`: the integral points of `V` are saturated in `ℤ^ι`.
-* `Matrix.intPoints_ker_mulVecLin`: the integral points of the rational solution space of
-  `A y = 0` are the integral solutions.
 * `Submodule.linearIndependent_intCast_basis_intPoints`,
   `Submodule.span_intCast_basis_intPoints`: a `ℤ`-basis of the integral points of `V` is a
   `ℚ`-basis of `V`.
@@ -356,17 +357,25 @@ end Submodule
 
 namespace Matrix
 
-variable {ι m : Type*} [Fintype ι]
+open scoped Matrix
 
-/-- The integral points of the space of rational solutions of `A y = 0` are the integral solutions
-of `A y = 0`. -/
+variable {ι : Type*} [Fintype ι]
+
+/-- The integral points of the rational kernel of an integer matrix are precisely its
+integral kernel. -/
 @[simp]
-theorem intPoints_ker_mulVecLin (A : Matrix m ι ℤ) :
-    (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).intPoints = LinearMap.ker A.mulVecLin := by
+theorem intPoints_ker_mulVecLin {m : Type*} (A : Matrix m ι ℤ) :
+    (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).intPoints =
+      LinearMap.ker A.mulVecLin := by
   ext z
-  have h : A.map ((↑) : ℤ → ℚ) *ᵥ (fun i ↦ (z i : ℚ)) = fun i ↦ ((A *ᵥ z) i : ℚ) :=
-    funext fun i ↦ (RingHom.map_mulVec (Int.castRingHom ℚ) A z i).symm
-  simp [h, funext_iff]
+  simp only [Submodule.mem_intPoints, LinearMap.mem_ker, Matrix.mulVecLin_apply, funext_iff,
+    Pi.zero_apply]
+  exact forall_congr' fun i ↦ by
+    have hcast : ((A *ᵥ z) i : ℚ) =
+        (A.map ((↑) : ℤ → ℚ) *ᵥ (fun j ↦ (z j : ℚ))) i := by
+      simpa only [Int.coe_castRingHom, Function.comp_def] using
+        RingHom.map_mulVec (Int.castRingHom ℚ) A z i
+    rw [← hcast, Int.cast_eq_zero]
 
 end Matrix
 

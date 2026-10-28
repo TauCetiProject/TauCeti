@@ -17,6 +17,10 @@ commutative semiring, provided that the coefficient homomorphism is injective. T
 particular to reconstructing a polynomial from specializations of an invertible variable to
 successive powers of an indeterminate. Evaluation at a single transcendental unit also detects
 Laurent polynomials over a commutative ring.
+
+As a consequence, an endomorphism of a field that fixes infinitely many elements and agrees with a
+Laurent polynomial at every unit is the identity (`RingHom.eq_id_of_forall_eval₂_eq`). For
+instance complex conjugation is not a Laurent polynomial function on `ℂˣ`.
 -/
 
 public section
@@ -83,6 +87,25 @@ theorem laurent_eval₂_family_injective {ι : Type*} (f : R →+* S)
   refine hu.mono ?_
   rintro x ⟨i, rfl⟩
   exact congrFun hpq i
+
+/-- **A field endomorphism that is a Laurent polynomial on units is the identity**, provided it
+fixes infinitely many elements: if `σ u = p(u)` for every unit `u` of `K`, then `σ = id`. -/
+theorem eq_id_of_forall_eval₂_eq {K : Type*} [Field K] (σ : K →+* K)
+    (hσ : {x : K | σ x = x}.Infinite) (p : LaurentPolynomial K)
+    (h : ∀ u : Kˣ, eval₂ (RingHom.id K) u p = σ u) : σ = RingHom.id K := by
+  have hfix : {u : Kˣ | σ u = u}.Infinite := by
+    refine Set.Infinite.of_image Units.val ((hσ.sdiff (Set.finite_singleton 0)).mono ?_)
+    rintro x ⟨hx, hx0⟩
+    exact ⟨Units.mk0 x hx0, hx, rfl⟩
+  -- `p` agrees with `T` at the infinitely many nonzero fixed points of `σ`, so `p = T`.
+  have hp : p = T 1 := by
+    refine p.eq_of_infinite_eval₂_eq (T 1) (RingHom.id K) Function.injective_id (hfix.mono ?_)
+    intro u hu
+    simp [h, hu.out]
+  ext x
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · simpa [hp] using (h (Units.mk0 x hx)).symm
 
 end RingHom
 

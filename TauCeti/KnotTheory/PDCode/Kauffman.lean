@@ -415,6 +415,13 @@ that choice. -/
       stateWeight s a * bif c then a else a⁻¹ := by
   simp [stateWeight_def, Fin.prod_univ_castSucc]
 
+/-- Extending a state by a choice at an inserted crossing `i` multiplies its weight by the weight
+of that choice. -/
+@[simp] theorem stateWeight_insertNth (i : Fin (n + 1)) (c : Bool) (s : Fin n → Bool) (a : Rˣ) :
+    stateWeight (Fin.insertNth (α := fun _ ↦ Bool) i c s) a =
+      (bif c then a else a⁻¹) * stateWeight s a := by
+  simp [stateWeight_def, Fin.prod_univ_succAbove _ i]
+
 end StateWeight
 
 section Bracket

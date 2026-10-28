@@ -55,6 +55,8 @@ Everything here concerns one completion. The comparison of two completions along
   representative.
 * `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
   an element of `K` of valuation one maps to a unit of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersSubmodule`: `𝒪_v` as an
+  `R`-submodule of `K_v`, whose quotient `K_v ⧸ 𝒪_v` is the module of principal parts at `v`.
 
 ## Implementation notes
 
@@ -476,6 +478,25 @@ theorem residueFieldEquivAdicCompletionIntegers_apply_mk (a : R) :
         (algebraMap R (v.adicCompletionIntegers K) a) := (rfl)
 
 end SingleCompletion
+
+variable (K) in
+/-- The local integers `𝒪_v` as an `R`-submodule of the completion `K_v` at a finite place `v`.
+The quotient `K_v ⧸ 𝒪_v` is the module of principal parts at `v`. -/
+noncomputable def adicCompletionIntegersSubmodule (v : HeightOneSpectrum R) :
+    Submodule R (v.adicCompletion K) where
+  carrier := v.adicCompletionIntegers K
+  add_mem' := add_mem
+  zero_mem' := zero_mem _
+  smul_mem' r x hx := by
+    rw [Algebra.smul_def]
+    exact mul_mem (coe_mem_adicCompletionIntegers v r) hx
+
+variable (K) in
+/-- Membership in `adicCompletionIntegersSubmodule` is membership in the local integers. -/
+@[simp]
+theorem mem_adicCompletionIntegersSubmodule {v : HeightOneSpectrum R} {x : v.adicCompletion K} :
+    x ∈ v.adicCompletionIntegersSubmodule K ↔ x ∈ v.adicCompletionIntegers K :=
+  Iff.rfl
 
 end IsDedekindDomain.HeightOneSpectrum
 

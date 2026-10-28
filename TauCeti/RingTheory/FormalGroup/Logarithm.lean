@@ -48,6 +48,9 @@ and `e^T - 1`.
 
 ## Main results
 
+* `TauCeti.FormalGroupHom.derivative_eq_zero_iff`: a homomorphism has zero derivative exactly
+  when its linear coefficient vanishes, over any commutative coefficient ring.
+
 * `FormalGroup.subst_invariantDifferential_mul_pderiv`: **the invariant differential is
   invariant**, `P(F(X, Y)) · F_X(X, Y) = P(X)`.
 * `FormalGroup.subst_invariantDifferential_mul_pderiv_one`: for commutative `F`, the same in the
@@ -463,3 +466,44 @@ theorem exp_𝔾ₘ : (𝔾ₘ (R := R)).exp = PowerSeries.exp R - 1 := by
     (PowerSeries.subst_log_exp_sub_one R)]
 
 end FormalGroup
+
+namespace TauCeti.FormalGroupHom
+
+open MvPowerSeries
+
+variable {R : Type*} [CommRing R] {F G : FormalGroup R}
+
+/-- A homomorphism of formal groups has zero derivative exactly when its tangent map is zero.
+This holds over arbitrary coefficient rings, without commutativity of the formal groups. -/
+theorem derivative_eq_zero_iff (f : FormalGroupHom F G) :
+    PowerSeries.derivative f.toPowerSeries = 0 ↔ PowerSeries.coeff 1 f.toPowerSeries = 0 := by
+  constructor
+  · intro h
+    have := congrArg (PowerSeries.coeff 0) h
+    simpa [PowerSeries.coeff_derivative] using this
+  · intro hf
+    have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+    have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
+    have hd := congrArg (pderiv (R := R) 0) f.hom
+    rw [PowerSeries.pderiv_subst hF, pderiv_subst (.toMvPowerSeries f.zero_constantCoeff),
+      Fin.sum_univ_two] at hd
+    have h := congrArg (subst (![0, PowerSeries.X] : Fin 2 → PowerSeries R)) hd
+    simp only [PowerSeries.toMvPowerSeries_eq_subst,
+      PowerSeries.pderiv_subst (PowerSeries.HasSubst.X _), pderiv_X_self,
+      pderiv_X_of_ne (by decide : (1 : Fin 2) ≠ 0), mul_one, mul_zero, add_zero] at h
+    rw [subst_mul ha, subst_powerSeriesSubst ha hF, F.zero_add PowerSeries.HasSubst.X',
+      PowerSeries.X_subst, subst_mul ha,
+      subst_powerSeriesSubst ha (PowerSeries.HasSubst.X 0), subst_X ha,
+      Matrix.cons_val_zero, PowerSeries.subst_zero_eq_C_constantCoeff] at h
+    simp only [Algebra.algebraMap_self,
+      ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_derivative,
+      zero_add, zero_mul, Nat.cast_zero, hf, map_zero, mul_zero] at h
+    have hP := F.invariantDifferential_mul_subst_pderiv
+    calc PowerSeries.derivative f.toPowerSeries
+        = (PowerSeries.derivative f.toPowerSeries *
+          subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries)) *
+            F.invariantDifferential := by
+          rw [mul_assoc, mul_comm _ F.invariantDifferential, hP, mul_one]
+      _ = 0 := by rw [h, zero_mul]
+
+end TauCeti.FormalGroupHom

@@ -7,10 +7,9 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
-public import Mathlib.Order.Filter.ZeroAndBoundedAtFilter
+public import TauCeti.Order.Filter.ZeroAndBoundedAtFilter
 import Mathlib.Data.Finsupp.Encodable
 import TauCeti.Topology.LiftTendstoCofinite
-import TauCeti.Order.Filter.ZeroAndBoundedAtFilter
 import TauCeti.RingTheory.Huber.Bounded
 import TauCeti.Topology.Algebra.Module.Submodule
 
@@ -34,6 +33,8 @@ where the convergent/restricted power series ring is (5.6.1) in §5.6.
 * `restrictedMvPowerSeriesSubringVal`: the inclusion `A⟨T₁, …, Tₖ⟩ → MvPowerSeries (Fin k) A` as
   an `A`-algebra map. `A⟨T⟩` is a `Subring` carrying an `Algebra A` instance rather than a
   `Subalgebra`, so `Subalgebra.val` does not apply.
+* `restrictedMvPowerSeriesSubmodule.instAddCommGroup`: restricted module series have additive
+  inverses whenever their coefficients do and negation is continuous, even over semiring scalars.
 * `isRestricted_of_hasFiniteSupport`: the introduction rule at module coefficients — finitely many
   nonzero coefficients suffice.
 * `isRestricted_pi_iff`: restrictedness of a series with coefficients in a product is
@@ -559,6 +560,37 @@ theorem mem_restrictedMvPowerSeriesSubmodule {k : ℕ} {A M : Type*} [Semiring A
     {f : MvPowerSeries (Fin k) M} :
     f ∈ restrictedMvPowerSeriesSubmodule k A M ↔ IsRestricted f := (Iff.rfl)
 
+/-- Restricted series with additive-group coefficients and continuous negation have additive
+inverses even over semiring scalars. The usual submodule instance takes precedence when the
+scalars form a ring. -/
+instance (priority := 100) restrictedMvPowerSeriesSubmodule.instAddCommGroup
+    (k : ℕ) (A M : Type*) [Semiring A] [AddCommGroup M] [TopologicalSpace M]
+    [Module A M] [ContinuousAdd M] [ContinuousNeg M] [ContinuousConstSMul A M] :
+    AddCommGroup (restrictedMvPowerSeriesSubmodule k A M) :=
+  -- Copy onto the declared carrier and reuse its existing additive monoid, so the module
+  -- action and the usual ring-scalar operations remain definitionally compatible.
+  fast_instance% AddSubgroupClass.toAddCommGroup
+    ((Filter.zeroAtFilterAddSubgroup (β := M) (Filter.cofinite : Filter (Fin k →₀ ℕ))).copy
+      (restrictedMvPowerSeriesSubmodule k A M : Set (MvPowerSeries (Fin k) M))
+      (Set.ext fun _ ↦ mem_restrictedMvPowerSeriesSubmodule.trans <|
+        isRestricted_iff.trans Filter.mem_zeroAtFilterAddSubgroup.symm))
+
+/-- Negation of a restricted series is coefficientwise negation. -/
+@[simp]
+theorem coe_neg_restrictedMvPowerSeriesSubmodule {k : ℕ} {A M : Type*} [Semiring A]
+    [AddCommGroup M] [TopologicalSpace M] [Module A M] [ContinuousAdd M] [ContinuousNeg M]
+    [ContinuousConstSMul A M] (f : restrictedMvPowerSeriesSubmodule k A M) :
+    ((-f : restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) =
+      -(f : MvPowerSeries (Fin k) M) := (rfl)
+
+/-- Subtraction of restricted series is coefficientwise subtraction. -/
+@[simp]
+theorem coe_sub_restrictedMvPowerSeriesSubmodule {k : ℕ} {A M : Type*} [Semiring A]
+    [AddCommGroup M] [TopologicalSpace M] [Module A M] [ContinuousAdd M] [ContinuousNeg M]
+    [ContinuousConstSMul A M] (f g : restrictedMvPowerSeriesSubmodule k A M) :
+    ((f - g : restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) =
+      (f : MvPowerSeries (Fin k) M) - (g : MvPowerSeries (Fin k) M) := (rfl)
+
 /-- **Coefficientwise extensionality** for `M⟨T₁, …, Tₖ⟩`. Mathlib's `MvPowerSeries.ext` is stated
 in a `Semiring` section, so it does not apply at module coefficients; without this a consumer has
 to reach for `Subtype.ext (funext …)` and cross the `MvPowerSeries`-is-a-`def` gap by hand. -/
@@ -669,7 +701,7 @@ The hypothesis is the filter inequality the proof actually consumes rather than 
 which is strictly stronger here: these modules carry `ContinuousAdd` rather than
 `IsTopologicalAddGroup`, so without translation invariance global openness does not follow from
 openness at `0`. A caller holding `IsOpenMap φ` — over a Tate ring, from
-`TauCeti.Huber.IsTateRing.isOpenMap` — passes `map_zero φ ▸ hopen.nhds_le 0`. -/
+`LinearMap.isOpenMap_of_isTateRing` — passes `map_zero φ ▸ hopen.nhds_le 0`. -/
 theorem restrictedMvPowerSeriesSubmoduleMap_surjective {k : ℕ} {A M N : Type*} [Semiring A]
     [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
     [ContinuousConstSMul A M] [(nhds (0 : M)).IsCountablyGenerated]

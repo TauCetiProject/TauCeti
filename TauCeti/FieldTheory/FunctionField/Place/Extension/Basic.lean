@@ -296,12 +296,6 @@ section Restrict
 
 variable (k F) (P' : Place k' F')
 
-/-- The order function of `P'` restricted to `F` is the order function of the restricted
-valuation. -/
-private theorem ord_comap (f : F) :
-    Valuation.ord (P'.valuation.comap (algebraMap F F')) f = P'.ord (algebraMap F F' f) := by
-  rw [Valuation.ord_def, ord_def, Valuation.comap_apply]
-
 /-- The valuation of `P'` restricted to `F` is nontrivial: an algebraic extension of a field
 contained in a valuation ring is contained in that valuation ring, so a place of `F'` trivial on
 `F` would have all of `F'` as its valuation ring. -/
@@ -364,11 +358,9 @@ private theorem valuation_restrict :
 the order function at `P'` is `e(P' ∣ P)` times the order function at `P`. -/
 theorem ord_algebraMap_restrict (f : F) :
     P'.ord (algebraMap F F' f) = ramificationIdx F P' * (P'.restrict k F).ord f := by
-  have key : (P'.restrict k F).ord f =
-      Valuation.ord (P'.valuation.comap (algebraMap F F')).normalization f := by
-    rw [ord_def, valuation_restrict, Valuation.ord_def]
-  rw [← ord_comap F P' f, ramificationIdx, key,
-    ← Valuation.ord_normalization_mul_ordIndex _ f, mul_comm]
+  simpa only [Valuation.ord_comap, ← valuation_restrict k F P', ord_valuation,
+    ramificationIdx_def, mul_comm] using
+    (Valuation.ord_normalization_mul_ordIndex (P'.valuation.comap (algebraMap F F')) f).symm
 
 /-- Restriction scales the multiplicative valuation by the ramification index. -/
 theorem valuation_algebraMap_restrict (f : F) :
@@ -942,12 +934,7 @@ theorem linearIndependent_pow_fin_ramificationIdx {t : F'} (ht : P'.ord t = 1) :
     have hmap : algebraMap F F' (c j) ≠ 0 := by simpa using hjc
     refine ⟨m, ?_⟩
     rw [hA, P'.ord_mul hmap (pow_ne_zero _ ht0), P'.ord_pow, ht, mul_one,
-      ← ord_comap F P' (c j), hm]
-    have hidx : Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) = e :=
-      rfl.trans he.symm
-    have hidx' : (Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) : ℤ) = e := by
-      exact_mod_cast hidx
-    rw [hidx']
+      ← ord_valuation, ← Valuation.ord_comap, hm, ← ramificationIdx_def, ← he]
   have hA₁ : A j₁ ≠ 0 := by simp [hA, hj₁, ht0]
   exact (sum_ne_zero_of_ord_eq_mul_add_natCast P' A hAord hA₁) hsum
 
