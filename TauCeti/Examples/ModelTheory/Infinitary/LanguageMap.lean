@@ -17,7 +17,9 @@ module, through public statements only:
   when its image holds in an `L[[ℕ]]`-expansion of it, however the constants are interpreted;
 * consequently, the truth of the image does not depend on the interpretation of the constants;
 * a relation symbol mapped by a language map is read in the target structure, with no expansion
-  hypothesis.
+  hypothesis;
+* a language map commutes with embedding a finitary formula, weakening it and transporting it to
+  another carrier, all at once.
 -/
 
 universe u v w
@@ -60,3 +62,10 @@ example {L : Language.{u, v}} {L' : Language.{u, v}} (g : L →ᴸ L') {M : Type
     LHom.onTerm, Term.realize_var]
   -- the quantified variable fills the only slot, so the valuation is constant at it
   exact Iff.rfl
+
+-- Translating commutes with embedding a finitary formula, weakening it and recoding its carrier.
+example {L L' : Language.{u, v}} (g : L →ᴸ L') {ι κ : Type*} {α : Type*} {m n : ℕ}
+    (φ : L.BoundedFormula α m) (h : m ≤ n) (c : TauCeti.IndexCoding ι κ) :
+    g.onBoundedFormulaInf (((φ.toInf : L.BoundedFormulaInf ι α m).castLE h).reindex c) =
+      (((g.onBoundedFormula φ).toInf : L'.BoundedFormulaInf ι α m).castLE h).reindex c := by
+  simp

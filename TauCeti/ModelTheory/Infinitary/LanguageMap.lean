@@ -7,6 +7,8 @@ module
 
 public import TauCeti.ModelTheory.Infinitary.Semantics
 public import Mathlib.ModelTheory.LanguageMap
+public import TauCeti.ModelTheory.Infinitary.Operations
+public import TauCeti.ModelTheory.Infinitary.Reindex
 
 /-!
 # Language maps on infinitary formulas
@@ -32,6 +34,13 @@ result.
   formula is realized exactly when the formula is.
 * `FirstOrder.Language.LHom.id_onBoundedFormulaInf` and
   `FirstOrder.Language.LHom.comp_onBoundedFormulaInf`: the action is functorial.
+* `FirstOrder.Language.LHom.onBoundedFormulaInf_toInf`,
+  `FirstOrder.Language.LHom.onBoundedFormulaInf_mapBound`,
+  `FirstOrder.Language.LHom.onBoundedFormulaInf_castLE` and
+  `FirstOrder.Language.LHom.onBoundedFormulaInf_reindex`: the action commutes with the embedding
+  of finitary formulas, with relabelling and weakening of bound-variable slots, and with
+  transport along a coding of carriers; along the way it commutes with `⊥`, `⊤`, negation and the
+  coded connectives `iInfAlong` and `iSupAlong`.
 * `FirstOrder.Language.LEquiv.realize_onBoundedFormulaInf`: realization is preserved by
   translation along a language equivalence, the target structure being the reduct along the
   inverse map.
@@ -152,6 +161,115 @@ theorem comp_onBoundedFormulaInf (g : L' →ᴸ L'') (f : L →ᴸ L') {n : ℕ}
     (g.comp f).onBoundedFormulaInf φ = g.onBoundedFormulaInf (f.onBoundedFormulaInf φ) := by
   induction φ with
   | falsum => rfl
+  | equal t₁ t₂ => simp
+  | rel R ts => simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+/-! ### Commutation with the operations on formulas -/
+
+/-- A language map commutes with relabelling the variables of a term. -/
+@[simp]
+theorem onTerm_relabel {β γ : Type*} (g : L →ᴸ L') (h : β → γ) (t : L.Term β) :
+    g.onTerm (t.relabel h) = (g.onTerm t).relabel h := by
+  induction t with
+  | var => rfl
+  | func f ts ih => simp [Term.relabel, ih]
+
+section Connectives
+
+variable (g : L →ᴸ L') {n : ℕ}
+
+/-- A language map fixes `⊥`. -/
+@[simp]
+theorem onBoundedFormulaInf_bot :
+    g.onBoundedFormulaInf (⊥ : L.BoundedFormulaInf ι α n) = ⊥ := by
+  rw [BoundedFormulaInf.bot_def, BoundedFormulaInf.bot_def, onBoundedFormulaInf_falsum]
+
+/-- A language map commutes with negation. -/
+@[simp]
+theorem onBoundedFormulaInf_not (φ : L.BoundedFormulaInf ι α n) :
+    g.onBoundedFormulaInf φ.not = (g.onBoundedFormulaInf φ).not := by
+  rw [BoundedFormulaInf.not, BoundedFormulaInf.not, onBoundedFormulaInf_imp,
+    onBoundedFormulaInf_falsum]
+
+/-- A language map fixes `⊤`. -/
+@[simp]
+theorem onBoundedFormulaInf_top :
+    g.onBoundedFormulaInf (⊤ : L.BoundedFormulaInf ι α n) = ⊤ := by
+  rw [BoundedFormulaInf.top_def, BoundedFormulaInf.top_def, onBoundedFormulaInf_not,
+    onBoundedFormulaInf_falsum]
+
+/-- A language map commutes with coded conjunctions. -/
+@[simp]
+theorem onBoundedFormulaInf_iInfAlong {ι' : Type*} (c : TauCeti.IndexCoding ι' ι)
+    (φs : ι' → L.BoundedFormulaInf ι α n) :
+    g.onBoundedFormulaInf (BoundedFormulaInf.iInfAlong c φs) =
+      BoundedFormulaInf.iInfAlong c fun i => g.onBoundedFormulaInf (φs i) := by
+  rw [BoundedFormulaInf.iInfAlong_def, BoundedFormulaInf.iInfAlong_def, onBoundedFormulaInf_iInf]
+  -- padding with `⊤` commutes with the map, which fixes `⊤`
+  have := TauCeti.IndexCoding.comp_pad c g.onBoundedFormulaInf ⊤ φs
+  rw [onBoundedFormulaInf_top] at this
+  exact congrArg _ this
+
+/-- A language map commutes with coded disjunctions. -/
+@[simp]
+theorem onBoundedFormulaInf_iSupAlong {ι' : Type*} (c : TauCeti.IndexCoding ι' ι)
+    (φs : ι' → L.BoundedFormulaInf ι α n) :
+    g.onBoundedFormulaInf (BoundedFormulaInf.iSupAlong c φs) =
+      BoundedFormulaInf.iSupAlong c fun i => g.onBoundedFormulaInf (φs i) := by
+  rw [BoundedFormulaInf.iSupAlong_def, BoundedFormulaInf.iSupAlong_def, onBoundedFormulaInf_iSup]
+  -- padding with `⊥` commutes with the map, which fixes `⊥`
+  have := TauCeti.IndexCoding.comp_pad c g.onBoundedFormulaInf ⊥ φs
+  rw [onBoundedFormulaInf_bot] at this
+  exact congrArg _ this
+
+end Connectives
+
+/-- A language map commutes with the embedding of finitary formulas: translating a finitary
+formula and then embedding it is embedding it and then translating. -/
+@[simp]
+theorem onBoundedFormulaInf_toInf (g : L →ᴸ L') {n : ℕ} (φ : L.BoundedFormula α n) :
+    g.onBoundedFormulaInf (φ.toInf : L.BoundedFormulaInf ι α n) = (g.onBoundedFormula φ).toInf := by
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp [Term.bdEqual]
+  | rel R ts => simp [Relations.boundedFormula]; rfl
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+
+/-- A language map commutes with relabelling the bound-variable slots. -/
+@[simp]
+theorem onBoundedFormulaInf_mapBound (g : L →ᴸ L') :
+    ∀ {m n : ℕ} (f : Fin m → Fin n) (φ : L.BoundedFormulaInf ι α m),
+      g.onBoundedFormulaInf (φ.mapBound f) = (g.onBoundedFormulaInf φ).mapBound f := by
+  intro m n f φ
+  induction φ generalizing n with
+  | falsum => simp
+  | equal t₁ t₂ => simp
+  | rel R ts => simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+/-- A language map commutes with weakening. -/
+@[simp]
+theorem onBoundedFormulaInf_castLE (g : L →ᴸ L') {m n : ℕ} (h : m ≤ n)
+    (φ : L.BoundedFormulaInf ι α m) :
+    g.onBoundedFormulaInf (φ.castLE h) = (g.onBoundedFormulaInf φ).castLE h := by
+  rw [BoundedFormulaInf.castLE_def, BoundedFormulaInf.castLE_def, onBoundedFormulaInf_mapBound]
+
+/-- A language map commutes with transporting formulas along a coding of carriers. -/
+@[simp]
+theorem onBoundedFormulaInf_reindex {κ : Type*} (g : L →ᴸ L') (c : TauCeti.IndexCoding ι κ) :
+    ∀ {n : ℕ} (φ : L.BoundedFormulaInf ι α n),
+      g.onBoundedFormulaInf (φ.reindex c) = (g.onBoundedFormulaInf φ).reindex c := by
+  intro n φ
+  induction φ with
+  | falsum => simp
   | equal t₁ t₂ => simp
   | rel R ts => simp
   | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
