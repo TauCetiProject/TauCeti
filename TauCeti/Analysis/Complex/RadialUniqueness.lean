@@ -32,6 +32,12 @@ boundary point along almost every radius ending in an arc of the circle.
 * `AnalyticOnNhd.le_circleAverage_log_norm` — Jensen's inequality from below: the circle average
   of `log ‖f‖` is at least `k * log r + log ‖τ‖`, where `k` is the order of `f` at the centre and
   `τ` its trailing coefficient there.
+* `AnalyticOnNhd.exists_forall_le_circleAverage_log_norm` — a uniform lower bound for these
+  averages on circles with radii in `[s, R)`.
+* `AnalyticOnNhd.volume_setOf_circleMap_eq_zero` — zeros on an interior circle occur at a null
+  set of angles when the analytic function is nonzero somewhere in the disc.
+* `TauCeti.volume_setOf_tendsto_circleMap_nhdsNE_zero` — a Fatou bound for radial sequences
+  tending to zero through nonzero values.
 * `TauCeti.eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le` — a function
   whose circle averages of `log⁺ ‖f‖` are bounded on circles with radii accumulating at `R`, and
   whose radial limit is `0` on a set of angles of positive measure, vanishes on the disc.
@@ -113,7 +119,8 @@ private lemma volume_setOf_tendsto_circleMap_inter_Ioc_ne_zero {l : Filter ℝ} 
 
 /-- By Jensen's inequality, the circle averages of `log ‖f‖` of a function analytic on `ball c R`
 are bounded below on the circles about `c` with radii in `[s, R)`, for any `s > 0`. -/
-private lemma exists_forall_le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (ball c R))
+theorem _root_.AnalyticOnNhd.exists_forall_le_circleAverage_log_norm
+    (hf : AnalyticOnNhd ℂ f (ball c R))
     {s : ℝ} (hs : 0 < s) :
     ∃ L, ∀ r ∈ Ico s R, L ≤ circleAverage (fun z ↦ Real.log ‖f z‖) c r := by
   refine ⟨analyticOrderNatAt f c * Real.log s + Real.log ‖meromorphicTrailingCoeffAt f c‖,
@@ -125,7 +132,8 @@ private lemma exists_forall_le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f 
 
 /-- If `f` is analytic on `ball c R` and nonzero somewhere there, the angles at which it vanishes on
 a circle about `c` of radius `r ∈ (0, R)` form a null set. -/
-private lemma volume_setOf_circleMap_eq_zero (hf : AnalyticOnNhd ℂ f (ball c R)) {w : ℂ}
+theorem _root_.AnalyticOnNhd.volume_setOf_circleMap_eq_zero
+    (hf : AnalyticOnNhd ℂ f (ball c R)) {w : ℂ}
     (hw : w ∈ ball c R) (hfw : f w ≠ 0) (hr : 0 < r) (hrR : r < R) :
     volume {θ | f (circleMap c r θ) = 0} = 0 := by
   refine Set.Countable.measure_zero (((finite_setOf_mem_and_eq_zero_of_isCompact hf
@@ -136,7 +144,7 @@ private lemma volume_setOf_circleMap_eq_zero (hf : AnalyticOnNhd ℂ f (ball c R
 /-- **Fatou's lemma on circles.** If `f` is analytic on the circles about `c` of radii `ρ n`, and
 the circle averages of `log⁺ ‖f‖⁻¹` on them are at most `B`, then the angles in one period along
 which `f (circleMap c (ρ n) θ)` tends to `0` through nonzero values form a null set. -/
-private lemma volume_setOf_tendsto_circleMap_nhdsNE_zero {ρ : ℕ → ℝ} {B : ℝ}
+theorem volume_setOf_tendsto_circleMap_nhdsNE_zero {ρ : ℕ → ℝ} {B : ℝ}
     (hf : ∀ n, AnalyticOnNhd ℂ f (sphere c |ρ n|))
     (hB : ∀ n, circleAverage (fun z ↦ log⁺ ‖f z‖⁻¹) c (ρ n) ≤ B) :
     volume {θ ∈ Ioc 0 (2 * π) | Tendsto (fun n ↦ f (circleMap c (ρ n) θ)) atTop (𝓝[≠] 0)} = 0 := by
@@ -177,7 +185,7 @@ theorem eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_l
   have hR : 0 < R := pos_of_mem_ball hw
   have han : AnalyticOnNhd ℂ f (ball c R) := hf.analyticOnNhd isOpen_ball
   -- By Jensen's inequality the averages of `log ‖f‖` are at least `L` on circles near the boundary.
-  obtain ⟨L, hL⟩ := exists_forall_le_circleAverage_log_norm han (half_pos hR)
+  obtain ⟨L, hL⟩ := han.exists_forall_le_circleAverage_log_norm (half_pos hR)
   -- Radii `ρ n ∈ (R / 2, R)` tending to `R` along which the averages of `log⁺ ‖f‖` are at most `C`.
   obtain ⟨ρ, hρlim, hρ⟩ := exists_seq_forall_of_frequently
     (hC.and_eventually (Ioo_mem_nhdsLT (half_lt_self hR)))
@@ -190,7 +198,7 @@ theorem eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_l
   -- the averages of `log⁺ ‖f‖⁻¹ = log⁺ ‖f‖ - log ‖f‖` on the circles are at most `C - L`.
   refine volume_setOf_tendsto_circleMap_inter_Ioc_ne_zero hE hlim <| measure_mono_null ?_ <|
     measure_union_null (measure_iUnion_null fun n ↦
-      volume_setOf_circleMap_eq_zero han hw hfw (hρ0 n) (hρ n).2.2)
+      han.volume_setOf_circleMap_eq_zero hw hfw (hρ0 n) (hρ n).2.2)
     (volume_setOf_tendsto_circleMap_nhdsNE_zero (B := C - L) (fun n ↦ han.mono (hsphere n))
       fun n ↦ ?_)
   · rintro θ ⟨hθ, hθI⟩
