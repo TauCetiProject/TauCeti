@@ -104,12 +104,21 @@ differential modules to the homotopy class of the same morphism of one-periodic 
     ExactStructure.homologicalComplexSplitStableToHomotopy C (ComplexShape.up (ZMod 1))
       (fun i ↦ ⟨i + 1, rfl⟩)
 
+/-- The comparison is the stable equivalence induced by
+`TauCeti.DifferentialModule.onePeriodicComplexEquivalence`, followed by the periodic
+stable-to-homotopy comparison. -/
+theorem stableToHomotopy_eq :
+    stableToHomotopy C = (stableOnePeriodicComplexEquivalence C).functor ⋙
+      ExactStructure.homologicalComplexSplitStableToHomotopy C (ComplexShape.up (ZMod 1))
+        (fun i ↦ ⟨i + 1, rfl⟩) :=
+  (rfl)
+
 /-- The comparison restricts to the homotopy quotient of one-periodic complexes on differential
 modules. -/
 theorem projectiveStableFunctor_comp_stableToHomotopy :
     (ExactStructure.split C).differentialModule.projectiveStableFunctor ⋙ stableToHomotopy C =
       toOnePeriodicComplex C ⋙ HomotopyCategory.quotient C (ComplexShape.up (ZMod 1)) := by
-  rw [stableToHomotopy, StableConflationExact.stableEquivalence_functor,
+  rw [stableToHomotopy_eq, StableConflationExact.stableEquivalence_functor,
     StableConflationExact.stableFunctor_eq_map, ← Functor.assoc,
     MorphismIdeal.quotientFunctor_comp_map, Functor.assoc,
     ExactStructure.projectiveStableFunctor_comp_homologicalComplexSplitStableToHomotopy,
@@ -139,14 +148,13 @@ theorem stableToHomotopy_map {M N : DifferentialModule C} (φ : M ⟶ N) :
 
 /-- The stable-to-homotopy comparison preserves addition of morphisms. -/
 instance : (stableToHomotopy C).Additive := by
-  unfold stableToHomotopy
-  rw [StableConflationExact.stableEquivalence_functor,
+  rw [stableToHomotopy_eq, StableConflationExact.stableEquivalence_functor,
     StableConflationExact.stableFunctor_eq_map]
   infer_instance
 
 /-- The comparison is an equivalence, as the composite of two equivalences. -/
 instance : (stableToHomotopy C).IsEquivalence := by
-  unfold stableToHomotopy
+  rw [stableToHomotopy_eq]
   infer_instance
 
 /-- **The stable category of differential modules is `K₁(C)`.** The projective stable category
