@@ -30,7 +30,8 @@ and the fact that it is inverse to restricting a refinement to the parts of the 
 the fact that restriction undoes `Finpartition.extend` and deletes a singleton part,
 the behavior of intersections of parts under refinement, the symmetry of lying in a common part,
 the determination of a partition by its parts through each point, the parts of a restriction, the
-monotonicity of `Finpartition.part` under refinement, the coarse parent
+monotonicity of `Finpartition.part` under refinement, the parts of the coarsest partition through
+each point, the coarse parent
 `Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
 summation formulas for the fine parts below a coarse part and for sums over points of functions of
 the fine and coarse parts through them, the fact that a set with at most two elements has no finite
@@ -330,6 +331,10 @@ theorem part_mono (h : P ≤ Q) (a : α) : P.part a ⊆ Q.part a := by
     rw [Q.part_eq_of_mem hC (hPC (P.mem_part_self.2 ha))]
     exact hPC
   · simp [P.part_eq_empty.2 ha]
+
+/-- In the partition of `s` into one part, the part through each point of `s` is `s`. -/
+theorem part_top {a : α} (ha : a ∈ s) : (⊤ : Finpartition s).part a = s :=
+  part_eq_of_mem _ (by simp [parts_top (Finset.ne_empty_of_mem ha)]) ha
 
 /-- Lying in the same part of a finite partition is symmetric. -/
 theorem mem_part_comm {a b : α} : b ∈ P.part a ↔ a ∈ P.part b := by

@@ -60,7 +60,9 @@ only a meet, not a join, so the join in `NC(s)` is characterised by its universa
 * `TauCeti.NoncrossingPartition.univ_eq_bot_top_of_pair` — a set with at most two elements has
   only the partitions into singletons and into one part, which differ by
   `TauCeti.NoncrossingPartition.bot_ne_top_of_one_lt_card` once it has two elements; a
-  one-element set has a unique noncrossing partition.
+  one-element set has a unique noncrossing partition, and
+  `TauCeti.NoncrossingPartition.bot_eq_top_iff_card_le_one` says that these two partitions
+  coincide exactly for sets with at most one element.
 
 ## References
 
@@ -441,6 +443,16 @@ theorem bot_ne_top_of_one_lt_card (hs : 1 < #s) : (⊥ : NoncrossingPartition s)
   simp only [coe_bot, coe_top, Finpartition.card_bot,
     Finpartition.parts_top (card_pos.1 (zero_lt_one.trans hs)).ne_empty, card_singleton] at this
   omega
+
+/-- The partition into singletons and the partition into one part are the same noncrossing
+partition of `s` exactly when `s` has at most one element. -/
+theorem bot_eq_top_iff_card_le_one : (⊥ : NoncrossingPartition s) = ⊤ ↔ #s ≤ 1 := by
+  refine ⟨fun h => not_lt.1 fun hs => bot_ne_top_of_one_lt_card hs h, fun h => ?_⟩
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.1 h with h | h
+  · obtain rfl := card_eq_zero.1 h
+    exact Subsingleton.elim _ _
+  · obtain ⟨i, rfl⟩ := card_eq_one.1 h
+    exact Subsingleton.elim _ _
 
 /-- A noncrossing partition of a set with at most two elements is either the partition into
 singletons or the partition into one part. -/
