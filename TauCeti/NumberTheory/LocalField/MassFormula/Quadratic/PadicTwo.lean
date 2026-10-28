@@ -73,14 +73,10 @@ namespace TauCeti
 private theorem irreducible_two_padicTwo : Irreducible (2 : 𝒪[ℚ_[2]]) := by
   exact_mod_cast Padic.irreducible_natCast_self 2
 
-/-- The element `2` of the ring of integers of `ℚ_2`, read in `ℚ_2`. -/
-private theorem coe_two_integerRing_padicTwo : ((2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = 2 := by
-  exact_mod_cast SubringClass.coe_natCast 𝒪[ℚ_[2]] 2
-
 /-- The element `m * 2` of the ring of integers of `ℚ_2`, read in `ℚ_2`. -/
 private theorem coe_intCast_mul_two_padicTwo (m : ℤ) :
     (((m : 𝒪[ℚ_[2]]) * 2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = m * 2 := by
-  rw [MulMemClass.coe_mul, SubringClass.coe_intCast, coe_two_integerRing_padicTwo]
+  rw [MulMemClass.coe_mul, SubringClass.coe_intCast, _root_.Padic.coe_two_integerRing 2]
 
 /-! ### The two families of ramified quadratic extensions -/
 

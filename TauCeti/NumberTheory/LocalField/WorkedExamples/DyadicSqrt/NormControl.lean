@@ -38,10 +38,6 @@ namespace TauCeti.DyadicSqrtTwo
 private theorem coe_five_integerRing : ((5 : 𝒪[DyadicSqrtTwo]) : DyadicSqrtTwo) = 5 :=
   map_ofNat (Subring.subtype 𝒪[DyadicSqrtTwo]) 5
 
-@[simp]
-private theorem coe_two_padicIntegerRing : ((2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = 2 :=
-  map_ofNat (Subring.subtype 𝒪[ℚ_[2]]) 2
-
 /-- Over the ramified base `ℚ₂(√2)`, radicand `5` is still the unramified quadratic
 class: its norms are exactly the elements of even normalized valuation. -/
 theorem exists_eq_sq_sub_five_mul_sq_iff_even_normalizedValuation (b : DyadicSqrtTwoˣ) :
@@ -75,12 +71,12 @@ theorem one_add_sqrtTwo_eq_sq_sub_five_mul_sq :
 
 /-- The unit norm `1 + √2` has no integral representation in the square-root basis for
 radicand `5`. The maximal order of that quadratic extension is essential. -/
-theorem not_exists_integral_norm_one_add_sqrtTwo :
+theorem not_exists_integerRing_sq_sub_five_mul_sq_eq_one_add_sqrtTwo :
     ¬ ∃ x y : 𝒪[DyadicSqrtTwo], (x : DyadicSqrtTwo) ^ 2 - 5 * (y : DyadicSqrtTwo) ^ 2 =
       1 + sqrtTwo := by
   obtain ⟨B, hB0, hB1, -, -⟩ := exists_basis_integerRing_of_sq_eq_of_irreducible
     (K := ℚ_[2]) (L := DyadicSqrtTwo) (a := 2) (Padic.irreducible_natCast_self 2)
-    (x := sqrtTwo) (by simpa only [coe_two_padicIntegerRing, map_ofNat] using sqrtTwo_sq)
+    (x := sqrtTwo) (by simpa only [_root_.Padic.coe_two_integerRing 2, map_ofNat] using sqrtTwo_sq)
   have hB1' : B 1 = integerSqrtTwo := Subtype.ext (hB1.trans coe_integerSqrtTwo.symm)
   have hπ : integerSqrtTwo ^ 2 = (2 : 𝒪[DyadicSqrtTwo]) := by
     apply Subtype.ext
@@ -110,26 +106,33 @@ theorem not_exists_integral_norm_one_add_sqrtTwo :
       _ = _ := h
   rw [← hB0, ← hB1'] at hc
   have hcoeff := congrArg (fun z => B.repr z 1) hc
-  simp at hcoeff
+  simp only [map_add, map_smul, Module.Basis.repr_self, Finsupp.add_apply,
+    Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul, Fin.zero_ne_one,
+    ↓reduceIte, mul_zero, mul_one, zero_add] at hcoeff
   have h2 : Irreducible (2 : 𝒪[ℚ_[2]]) := by
     simpa using Padic.irreducible_natCast_self 2
   exact h2.not_isUnit (isUnit_of_dvd_one ⟨_, hcoeff.symm⟩)
 
-/-- Neither of the square-root-coordinate families with integral parameters contains the
-unit norm `1 + √2`. In particular restricting `u` to units cannot repair these families. -/
-theorem integral_norm_families_ne_one_add_sqrtTwo (u t : 𝒪[DyadicSqrtTwo]) :
-    (u : DyadicSqrtTwo) ^ 2 * (1 - 5 * (t : DyadicSqrtTwo) ^ 2) ≠ 1 + sqrtTwo ∧
-      -5 * (u : DyadicSqrtTwo) ^ 2 * (1 - 5 * (t : DyadicSqrtTwo) ^ 2) ≠ 1 + sqrtTwo := by
-  constructor
-  · intro h
-    apply not_exists_integral_norm_one_add_sqrtTwo
-    refine ⟨u, u * t, ?_⟩
-    simp only [Subring.coe_mul]
-    linear_combination h
-  · intro h
-    apply not_exists_integral_norm_one_add_sqrtTwo
-    refine ⟨5 * u * t, u, ?_⟩
-    simp only [Subring.coe_mul, coe_five_integerRing]
-    linear_combination h
+/-- The first square-root-coordinate family with integer-ring parameters misses
+`1 + √2`, despite this element being a unit norm. -/
+theorem integerRing_sq_mul_one_sub_five_mul_sq_ne_one_add_sqrtTwo
+    (u t : 𝒪[DyadicSqrtTwo]) :
+    (u : DyadicSqrtTwo) ^ 2 * (1 - 5 * (t : DyadicSqrtTwo) ^ 2) ≠ 1 + sqrtTwo := by
+  intro h
+  apply not_exists_integerRing_sq_sub_five_mul_sq_eq_one_add_sqrtTwo
+  refine ⟨u, u * t, ?_⟩
+  simp only [Subring.coe_mul]
+  linear_combination h
+
+/-- The second square-root-coordinate family with integer-ring parameters also misses
+`1 + √2`. Restricting the first parameter to units cannot repair either family. -/
+theorem integerRing_neg_five_mul_sq_mul_one_sub_five_mul_sq_ne_one_add_sqrtTwo
+    (u t : 𝒪[DyadicSqrtTwo]) :
+    -5 * (u : DyadicSqrtTwo) ^ 2 * (1 - 5 * (t : DyadicSqrtTwo) ^ 2) ≠ 1 + sqrtTwo := by
+  intro h
+  apply not_exists_integerRing_sq_sub_five_mul_sq_eq_one_add_sqrtTwo
+  refine ⟨5 * u * t, u, ?_⟩
+  simp only [Subring.coe_mul, coe_five_integerRing]
+  linear_combination h
 
 end TauCeti.DyadicSqrtTwo

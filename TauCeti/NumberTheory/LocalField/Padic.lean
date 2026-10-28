@@ -69,6 +69,10 @@ variable (p : ℕ) [Fact p.Prime]
 
 namespace Padic
 
+/-- The integer-ring inclusion sends `2` to `2` in the `p`-adic field. -/
+theorem coe_two_integerRing : ((2 : 𝒪[ℚ_[p]]) : ℚ_[p]) = 2 :=
+  map_ofNat (Subring.subtype 𝒪[ℚ_[p]]) 2
+
 /-- The metric uniformity on `ℚ_[p]` agrees with the additive-group uniformity determined by its
 valuation topology. This identifies the uniformity used by the normed-field structure with the
 one used by additive topological-group completeness. -/
