@@ -67,26 +67,35 @@ namespace Matrix
 variable {K : Type*} [Field K] [AdmissibleAbsValues K] {m n p m' n' : Type*}
 
 /-- The multiplicative entry height of a matrix: the projective multiplicative height of the
-tuple of its entries, indexed by pairs of a row and a column. -/
-noncomputable def mulHeight (A : Matrix m n K) : ℝ :=
-  Height.mulHeight fun q : m × n ↦ A q.1 q.2
+finite tuple of its entries, indexed by pairs of a row and a column. The construction uses a
+finite enumeration; `mulHeight_def` identifies it with the entry tuple independently of that
+enumeration. -/
+noncomputable def mulHeight [Finite m] [Finite n] (A : Matrix m n K) : ℝ :=
+  letI := Fintype.ofFinite (m × n)
+  Height.mulHeight ((fun q : m × n ↦ A q.1 q.2) ∘ (Fintype.equivFin (m × n)).symm)
 
 /-- The logarithmic entry height of a matrix, the logarithm of `Matrix.mulHeight`. -/
-noncomputable def logHeight (A : Matrix m n K) : ℝ := Real.log A.mulHeight
+noncomputable def logHeight [Finite m] [Finite n] (A : Matrix m n K) : ℝ := Real.log A.mulHeight
+
+variable [Finite m] [Finite n]
 
 theorem mulHeight_def (A : Matrix m n K) :
-    A.mulHeight = Height.mulHeight fun q : m × n ↦ A q.1 q.2 := (rfl)
+    A.mulHeight = Height.mulHeight fun q : m × n ↦ A q.1 q.2 := by
+  dsimp [mulHeight]
+  exact Height.mulHeight_comp_equiv _ _
 
 theorem logHeight_eq_log_mulHeight (A : Matrix m n K) : A.logHeight = Real.log A.mulHeight :=
   (rfl)
 
 /-- The logarithmic entry height is the logarithmic height of the tuple of entries. -/
 theorem logHeight_def (A : Matrix m n K) :
-    A.logHeight = Height.logHeight fun q : m × n ↦ A q.1 q.2 := (rfl)
+    A.logHeight = Height.logHeight fun q : m × n ↦ A q.1 q.2 := by
+  rw [logHeight_eq_log_mulHeight, mulHeight_def, Height.logHeight_eq_log_mulHeight]
 
 @[simp]
 theorem mulHeight_zero : (0 : Matrix m n K).mulHeight = 1 :=
-  Height.mulHeight_zero
+  by simpa only [mulHeight_def, zero_apply, Pi.zero_def, Pi.zero_apply] using
+    (Height.mulHeight_zero : Height.mulHeight (0 : m × n → K) = 1)
 
 @[simp]
 theorem logHeight_zero : (0 : Matrix m n K).logHeight = 0 := by
@@ -94,7 +103,8 @@ theorem logHeight_zero : (0 : Matrix m n K).logHeight = 0 := by
 
 @[simp]
 theorem mulHeight_neg (A : Matrix m n K) : (-A).mulHeight = A.mulHeight :=
-  Height.mulHeight_neg (fun q : m × n ↦ A q.1 q.2)
+  by simpa only [mulHeight_def, neg_apply, Pi.neg_def, Pi.neg_apply] using
+    Height.mulHeight_neg (fun q : m × n ↦ A q.1 q.2)
 
 @[simp]
 theorem logHeight_neg (A : Matrix m n K) : (-A).logHeight = A.logHeight := by
@@ -103,19 +113,25 @@ theorem logHeight_neg (A : Matrix m n K) : (-A).logHeight = A.logHeight := by
 /-- The entry height does not change under reindexing the rows and the columns along
 equivalences, in particular under `Matrix.reindex`. -/
 @[simp]
-theorem mulHeight_submatrix_equiv (A : Matrix m n K) (e₁ : m' ≃ m) (e₂ : n' ≃ n) :
+theorem mulHeight_submatrix_equiv [Finite m'] [Finite n'] (A : Matrix m n K)
+    (e₁ : m' ≃ m) (e₂ : n' ≃ n) :
     (A.submatrix e₁ e₂).mulHeight = A.mulHeight :=
-  mulHeight_comp_equiv (e₁.prodCongr e₂) (fun q : m × n ↦ A q.1 q.2)
+  by simpa only [mulHeight_def, submatrix_apply, Function.comp_def,
+      Equiv.prodCongr_apply, Prod.map_fst, Prod.map_snd] using
+    mulHeight_comp_equiv (e₁.prodCongr e₂) (fun q : m × n ↦ A q.1 q.2)
 
 @[simp]
-theorem logHeight_submatrix_equiv (A : Matrix m n K) (e₁ : m' ≃ m) (e₂ : n' ≃ n) :
+theorem logHeight_submatrix_equiv [Finite m'] [Finite n'] (A : Matrix m n K)
+    (e₁ : m' ≃ m) (e₂ : n' ≃ n) :
     (A.submatrix e₁ e₂).logHeight = A.logHeight := by
   rw [logHeight_eq_log_mulHeight, mulHeight_submatrix_equiv, logHeight_eq_log_mulHeight]
 
 /-- The entry height does not change under transposition. -/
 @[simp]
 theorem mulHeight_transpose (A : Matrix m n K) : Aᵀ.mulHeight = A.mulHeight :=
-  mulHeight_comp_equiv (Equiv.prodComm n m) (fun q : m × n ↦ A q.1 q.2)
+  by simpa only [mulHeight_def, transpose_apply, Function.comp_def,
+      Equiv.prodComm_apply, Prod.fst_swap, Prod.snd_swap] using
+    mulHeight_comp_equiv (Equiv.prodComm n m) (fun q : m × n ↦ A q.1 q.2)
 
 @[simp]
 theorem logHeight_transpose (A : Matrix m n K) : Aᵀ.logHeight = A.logHeight := by
@@ -126,23 +142,26 @@ height one. -/
 @[simp]
 theorem mulHeight_eq_one_of_subsingleton [Subsingleton m] [Subsingleton n] (A : Matrix m n K) :
     A.mulHeight = 1 :=
-  Height.mulHeight_eq_one_of_subsingleton _
+  by simpa only [mulHeight_def] using
+    Height.mulHeight_eq_one_of_subsingleton (fun q : m × n ↦ A q.1 q.2)
 
 @[simp]
 theorem logHeight_eq_zero_of_subsingleton [Subsingleton m] [Subsingleton n]
     (A : Matrix m n K) : A.logHeight = 0 :=
-  Height.logHeight_eq_zero_of_subsingleton _
-
-variable [Finite m] [Finite n]
+  by simpa only [logHeight_def] using
+    Height.logHeight_eq_zero_of_subsingleton (fun q : m × n ↦ A q.1 q.2)
 
 theorem one_le_mulHeight (A : Matrix m n K) : 1 ≤ A.mulHeight :=
-  Height.one_le_mulHeight _
+  by simpa only [mulHeight_def] using
+    Height.one_le_mulHeight (fun q : m × n ↦ A q.1 q.2)
 
 theorem mulHeight_pos (A : Matrix m n K) : 0 < A.mulHeight :=
-  Height.mulHeight_pos _
+  by simpa only [mulHeight_def] using
+    Height.mulHeight_pos (fun q : m × n ↦ A q.1 q.2)
 
 theorem mulHeight_ne_zero (A : Matrix m n K) : A.mulHeight ≠ 0 :=
-  Height.mulHeight_ne_zero _
+  by simpa only [mulHeight_def] using
+    Height.mulHeight_ne_zero (fun q : m × n ↦ A q.1 q.2)
 
 theorem logHeight_nonneg (A : Matrix m n K) : 0 ≤ A.logHeight :=
   Real.log_nonneg A.one_le_mulHeight
@@ -151,7 +170,8 @@ theorem logHeight_nonneg (A : Matrix m n K) : 0 ≤ A.logHeight :=
 @[simp]
 theorem mulHeight_smul (A : Matrix m n K) {c : K} (hc : c ≠ 0) :
     (c • A).mulHeight = A.mulHeight :=
-  mulHeight_smul_eq_mulHeight (fun q : m × n ↦ A q.1 q.2) hc
+  by simpa only [mulHeight_def, smul_apply, Pi.smul_def, Pi.smul_apply] using
+    mulHeight_smul_eq_mulHeight (fun q : m × n ↦ A q.1 q.2) hc
 
 @[simp]
 theorem logHeight_smul (A : Matrix m n K) {c : K} (hc : c ≠ 0) :
@@ -175,7 +195,9 @@ theorem logHeight_one [DecidableEq n] : (1 : Matrix n n K).logHeight = 0 := by
 may be repeated or omitted. -/
 theorem mulHeight_submatrix_le [Finite m'] [Finite n'] (A : Matrix m n K) (f : m' → m)
     (g : n' → n) : (A.submatrix f g).mulHeight ≤ A.mulHeight :=
-  mulHeight_comp_le (Prod.map f g) (fun q : m × n ↦ A q.1 q.2)
+  by simpa only [mulHeight_def, submatrix_apply, Function.comp_def,
+      Prod.map_fst, Prod.map_snd] using
+    mulHeight_comp_le (Prod.map f g) (fun q : m × n ↦ A q.1 q.2)
 
 theorem logHeight_submatrix_le [Finite m'] [Finite n'] (A : Matrix m n K) (f : m' → m)
     (g : n' → n) : (A.submatrix f g).logHeight ≤ A.logHeight :=
@@ -201,13 +223,13 @@ private theorem mul_entries_eq_linearMap_apply [Fintype n] (A : Matrix m n K)
 private theorem mulHeight_mul_entries_le [Finite p] (A : Matrix m n K)
     (B : Matrix n p K) :
     Height.mulHeight ((fun q : (m × p) × n ↦ A q.1.1 q.2) * fun q : (m × p) × n ↦ B q.2 q.1.2) ≤
-      A.mulHeight * B.mulHeight :=
-  (Height.mulHeight_mul_le _ _).trans <| mul_le_mul
+      A.mulHeight * B.mulHeight := by
+  rw [mulHeight_def, mulHeight_def]
+  exact (Height.mulHeight_mul_le _ _).trans <| mul_le_mul
     (mulHeight_comp_le (fun q : (m × p) × n ↦ (q.1.1, q.2)) fun q : m × n ↦ A q.1 q.2)
     (mulHeight_comp_le (fun q : (m × p) × n ↦ (q.2, q.1.2)) fun q : n × p ↦ B q.1 q.2)
-    (Height.mulHeight_pos _).le A.mulHeight_pos.le
+    (Height.mulHeight_pos _).le (Height.mulHeight_pos _).le
 
-omit [Finite n] in
 /-- **The entry height of a matrix product.** For a nonempty inner index type `n`, the entry
 height of `A * B` is at most `(#n) ^ totalWeight K` times the product of the entry heights of `A`
 and `B`. -/
@@ -226,7 +248,6 @@ theorem mulHeight_mul_le [Fintype n] [Nonempty n] [Finite p] (A : Matrix m n K)
         rw [Height.mulHeight_one, mul_one, mul_assoc]
         exact mul_le_mul_of_nonneg_left hc hpos
 
-omit [Finite n] in
 /-- The logarithmic form of `Matrix.mulHeight_mul_le`. It needs no nonemptiness hypothesis,
 because `Real.log 0 = 0`. -/
 theorem logHeight_mul_le [Fintype n] [Finite p] (A : Matrix m n K) (B : Matrix n p K) :
@@ -258,7 +279,8 @@ height of a matrix over `F`, computed over `L`, is its entry height over `F` rai
 @[simp]
 theorem mulHeight_map_algebraMap (A : Matrix m n F) :
     (A.map (algebraMap F L)).mulHeight = A.mulHeight ^ Module.finrank F L :=
-  NumberField.mulHeight_algebraMap (fun q : m × n ↦ A q.1 q.2)
+  by simpa only [mulHeight_def, map_apply, Function.comp_def] using
+    NumberField.mulHeight_algebraMap (fun q : m × n ↦ A q.1 q.2)
 
 @[simp]
 theorem logHeight_map_algebraMap (A : Matrix m n F) :
@@ -270,7 +292,6 @@ end NumberField
 
 /-! ### Integer matrices over `ℚ` -/
 
-omit [Finite m] [Finite n] in
 /-- Over `ℚ`, the entry height of an integer matrix with coprime entries is the largest absolute
 value of its entries. -/
 theorem mulHeight_map_intCast_eq [Fintype m] [Fintype n] {A : Matrix m n ℤ}
@@ -286,7 +307,6 @@ theorem mulHeight_map_intCast_eq [Fintype m] [Fintype n] {A : Matrix m n ℤ}
     funext fun q ↦ map_apply ..
   rw [mulHeight_def, hcomp, Rat.mulHeight_eq_max_abs_of_gcd_eq_one hA]
 
-omit [Finite m] [Finite n] in
 /-- Over `ℚ`, the logarithmic entry height of an integer matrix with coprime entries is the
 logarithm of the largest absolute value of its entries. -/
 theorem logHeight_map_intCast_eq [Fintype m] [Fintype n] {A : Matrix m n ℤ}
