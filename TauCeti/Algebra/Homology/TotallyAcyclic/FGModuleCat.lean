@@ -54,6 +54,14 @@ private lemma forget₂_mapHomologicalComplex_obj_X (P : CochainComplex (FGModul
       (P.X n).obj := by
   rw [Functor.mapHomologicalComplex_obj_X, FGModuleCat.forget₂_obj]
 
+/-- The differentials of the underlying complex of modules are the underlying morphisms of the
+differentials. -/
+private lemma forget₂_mapHomologicalComplex_obj_d (P : CochainComplex (FGModuleCat.{v} A) ℤ)
+    (i j : ℤ) :
+    (((forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A)).mapHomologicalComplex _).obj P).d i j =
+      (P.d i j).hom := by
+  rw [Functor.mapHomologicalComplex_obj_d, FGModuleCat.forget₂_map]
+
 variable [IsNoetherianRing A] [Small.{v} A]
 
 /-- **Total acyclicity in `mod-A` is total acyclicity of modules**: a cochain complex of finitely
@@ -67,6 +75,10 @@ theorem isTotallyAcyclicProjective_iff_isTotallyAcyclic
   have hac : ((F.mapHomologicalComplex _).obj P).Acyclic ↔ P.Acyclic :=
     forall_congr' fun n ↦ (P.sc n).exact_map_iff_of_faithful F
   rw [isTotallyAcyclicProjective_iff_factor]
+  -- Below, linear maps out of the terms of the underlying complex of modules are used as linear
+  -- maps out of the underlying modules of the terms of `P`, and conversely. This is the
+  -- definitional equality of `forget₂_mapHomologicalComplex_obj_X`; the differentials agree by
+  -- `forget₂_mapHomologicalComplex_obj_d`.
   constructor
   · rintro ⟨hproj, hP, h⟩
     refine ⟨fun n ↦ ?_, fun n ↦ ?_, hac.2 hP, fun i j k hij hjk φ ↦ ⟨fun hφ ↦ ?_, ?_⟩⟩
@@ -81,14 +93,16 @@ theorem isTotallyAcyclicProjective_iff_isTotallyAcyclic
       have := Module.Projective.of_equiv e.symm
       have := FGModuleCat.projective_of_moduleProjective A Q
       obtain rfl : i = j - 1 := by lia
+      -- `φ` is defined on the term `(P.X j).obj`, by `forget₂_mapHomologicalComplex_obj_X`.
       have hφ' (x : P.X (j - 1)) : φ ((P.d (j - 1) j).hom.hom x) = 0 := by
-        simpa using LinearMap.congr_fun hφ x
+        simpa [forget₂_mapHomologicalComplex_obj_d] using LinearMap.congr_fun hφ x
       let ψ : P.X j ⟶ Q := ObjectProperty.homMk (ModuleCat.ofHom (e.symm.toLinearMap ∘ₗ φ))
       obtain ⟨g, hg⟩ := h j k hjk Q ψ (ObjectProperty.hom_ext _ (ModuleCat.hom_ext
         (LinearMap.ext fun x ↦ by simp [ψ, hφ'])))
+      -- `g.hom.hom` is defined on `(P.X k).obj`, the term of the underlying complex in degree `k`.
       refine ⟨e.toLinearMap ∘ₗ g.hom.hom, LinearMap.ext fun x ↦ ?_⟩
       have := congrArg e (LinearMap.congr_fun (congrArg (fun f ↦ f.hom.hom) hg) x)
-      simpa [ψ] using this
+      simpa [ψ, forget₂_mapHomologicalComplex_obj_d] using this
     · rintro ⟨g, rfl⟩
       refine LinearMap.ext fun x ↦ ?_
       have := LinearMap.congr_fun (congrArg (fun f ↦ f.hom.hom) (P.d_comp_d i j k)) x
@@ -102,9 +116,13 @@ theorem isTotallyAcyclicProjective_iff_isTotallyAcyclic
       have : Module.Projective A (P.X n) := ModuleCat.projective_of_module_projective (P.X n).obj
       exact FGModuleCat.projective_of_moduleProjective A (P.X n)
     · have := FGModuleCat.moduleProjective_of_projective Q
+      -- `φ.hom.hom` is a linear map out of the term of the underlying complex in degree `i`, and
+      -- the resulting `g` out of the one in degree `j`, by `forget₂_mapHomologicalComplex_obj_X`.
       obtain ⟨g, hg⟩ := ((hP'.exact_hom_projective (Q := Q) (i - 1) i j (by lia) hij)
-        φ.hom.hom).1 (LinearMap.ext fun x ↦ congrArg (fun f ↦ f.hom.hom x) hφ)
-      exact ⟨FGModuleCat.ofHom g, ObjectProperty.hom_ext _ (ModuleCat.hom_ext hg)⟩
+        φ.hom.hom).1 (LinearMap.ext fun x ↦ by
+          simpa [forget₂_mapHomologicalComplex_obj_d] using congrArg (fun f ↦ f.hom.hom x) hφ)
+      exact ⟨ObjectProperty.homMk (ModuleCat.ofHom g), ObjectProperty.hom_ext _
+        (ModuleCat.hom_ext (by simpa [forget₂_mapHomologicalComplex_obj_d] using hg))⟩
 
 end CochainComplex
 
