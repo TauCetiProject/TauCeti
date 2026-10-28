@@ -172,7 +172,7 @@ variable (𝕜 G) in
 /-- On a discrete group every bounded function lies in `ucbSubalgebra 𝕜 G`, since the defining
 condition only involves `u = 1`. -/
 theorem ucbSubalgebra_eq_top [DiscreteTopology G] : ucbSubalgebra 𝕜 G = ⊤ :=
-  eq_top_iff.2 fun f _ ε hε => by simp [nhds_discrete, hε]
+  eq_top_iff.2 fun f _ => mem_ucbSubalgebra_iff.2 fun ε hε => by simp [nhds_discrete, hε]
 
 variable (G) in
 /-- The real bounded continuous functions `f` on `G` such that `f (u * x)` is uniformly close to
