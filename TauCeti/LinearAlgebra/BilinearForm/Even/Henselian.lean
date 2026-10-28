@@ -261,6 +261,22 @@ private theorem IsSymm.exists_pair_of_even (hR : Nat.card (ResidueField R) = 2) 
     (hT _ e₂.2).1 (hT _ f₂.2).1 (hT _ e₂.2).2 (hT _ f₂.2).2
   exact ⟨e, f, h.1, Or.inl h.2⟩
 
+/-- Even forms with unit Gram determinant in rank below two are isometric to any form in the same
+rank: in rank zero both modules are trivial, and an even unimodular form has no rank one. -/
+private theorem equivalent_of_lt_two_of_even (hR : Nat.card (ResidueField R) = 2) {n : ℕ}
+    (hn : n < 2) (hBeven : ∀ x, 2 ∣ B x x) (b : Basis (Fin n) R M) (c : Basis (Fin n) R N)
+    (hBdet : IsUnit (B.toMatrix b).det) : B.Equivalent C := by
+  rcases n with _ | _ | _
+  · have hM (x : M) : x = 0 := b.repr.injective (Subsingleton.elim _ _)
+    have hφ (x y : M) : C (b.equiv c (Equiv.refl _) x) (b.equiv c (Equiv.refl _) y) = B x y := by
+      simp [hM x, hM y]
+    exact ⟨{ toLinearEquiv := b.equiv c (Equiv.refl _), map_app' := hφ }⟩
+  · have h2 := two_mem_maximalIdeal_of_card_residueField_eq_two hR
+    obtain ⟨i, hi, -⟩ := exists_index_ne_zero_isUnit_apply_of_not_isUnit_diag_of_isUnit_det B b
+      (fun h ↦ (mem_maximalIdeal _).mp h2 (isUnit_of_dvd_unit (hBeven _) h)) hBdet
+    exact absurd (by omega) hi
+  · omega
+
 /-- The inductive core of the classification of even unimodular forms. -/
 private theorem equivalent_of_isSquare_det_mul_det_of_even (hR : Nat.card (ResidueField R) = 2)
     (h3 : ¬ IsSquare (-3 : R)) (n : ℕ) :
@@ -277,17 +293,9 @@ private theorem equivalent_of_isSquare_det_mul_det_of_even (hR : Nat.card (Resid
   have hcancel {u x : R} (hu : IsUnit u) (h : IsSquare (u ^ 2 * x)) : IsSquare x := by
     have := (IsSquare.sq (↑hu.unit⁻¹ : R)).mul h
     rwa [← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul] at this
-  rcases n with _ | _ | m
-  · -- In rank zero both modules are trivial.
-    have hP (x : P) : x = 0 := b.repr.injective (Subsingleton.elim _ _)
-    have hφ (x y : P) : C (b.equiv c (Equiv.refl _) x) (b.equiv c (Equiv.refl _) y) = B x y := by
-      simp [hP x, hP y]
-    exact ⟨{ toLinearEquiv := b.equiv c (Equiv.refl _), map_app' := hφ }⟩
-  · -- An even unimodular form has no rank one.
-    exfalso
-    obtain ⟨i, hi, -⟩ := exists_index_ne_zero_isUnit_apply_of_not_isUnit_diag_of_isUnit_det B b
-      (fun h ↦ (mem_maximalIdeal _).mp h2 (isUnit_of_dvd_unit (hBeven _) h)) hBdet
-    exact hi (by omega)
+  obtain hn | hn := lt_or_ge n 2
+  · exact equivalent_of_lt_two_of_even hR hn hBeven b c hBdet
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 + 1 := ⟨n - 2, by omega⟩
   obtain ⟨eB, fB, hB₁, hBp⟩ := hB.exists_pair_of_even hR hBeven b hBdet
   obtain ⟨eC, fC, hC₁, hCp⟩ := hC.exists_pair_of_even hR hCeven c hCdet
   -- If the two binary blocks agree, split them off and use the inductive hypothesis.
@@ -368,10 +376,9 @@ private theorem IsSymm.exists_pair_mem_span_of_sub_mem (hR : Nat.card (ResidueFi
     (hf : B f₀ f₀ - 2 * q ∈ Ideal.span {2} * maximalIdeal R) :
     ∃ e ∈ Submodule.span R {e₀, f₀}, ∃ f ∈ Submodule.span R {e₀, f₀},
       B e f = 1 ∧ B e e = 2 * q ∧ B f f = 2 * q := by
-  have unit_add {m : R} (hm : m ∈ maximalIdeal R) : IsUnit (1 + m) := by
-    simpa using isUnit_one_sub_self_of_mem_nonunits (-m) ((maximalIdeal R).neg_mem hm)
   set W := Submodule.span R {e₀, f₀}
-  have hu : IsUnit (B e₀ f₀) := by simpa using unit_add h₁
+  have hu : IsUnit (B e₀ f₀) := by
+    simpa using TauCeti.isUnit_add_of_isUnit_of_not_isUnit isUnit_one ((mem_maximalIdeal _).mp h₁)
   set v : R := ↑hu.unit⁻¹ with hv
   have hvu : v * B e₀ f₀ = 1 := hu.val_inv_mul
   -- Work in `W`, with `e₀` and `v f₀`, which pair to `1`.
@@ -394,9 +401,78 @@ private theorem IsSymm.exists_pair_mem_span_of_sub_mem (hR : Nat.card (ResidueFi
   · obtain ⟨e, f, h⟩ := hBW.exists_hyperbolic_of_mem_maximalIdeal hxy hxx hyy (by simpa using hm₁)
     exact ⟨e, e.2, f, f.2, by simpa using h.1, by simpa using h.2.1, by simpa using h.2.2⟩
   · obtain ⟨e, f, h⟩ := hBW.exists_two_one_one_two_of_isUnit hR hxy hxx hyy
-      (by simpa [add_comm] using unit_add hm₁)
-      ((hu.unit⁻¹.isUnit.pow 2).mul (by simpa [add_comm] using unit_add hm₂))
+      (by simpa [add_comm] using
+        TauCeti.isUnit_add_of_isUnit_of_not_isUnit isUnit_one ((mem_maximalIdeal _).mp hm₁))
+      ((hu.unit⁻¹.isUnit.pow 2).mul (by simpa [add_comm] using
+        TauCeti.isUnit_add_of_isUnit_of_not_isUnit isUnit_one ((mem_maximalIdeal _).mp hm₂)))
     exact ⟨e, e.2, f, f.2, by simpa using h.1, by simpa using h.2.1, by simpa using h.2.2⟩
+
+/-- **Projecting away from a binary block.** Let `C` be symmetric, let `φ` carry a form `C'` to `C`
+modulo `𝔪`, and the self-pairings modulo `2𝔪`, and let `e, f` in the span of `φ e'` and `φ f'` have
+Gram matrix `!![2q, 1; 1, 2q]` for `C`. Let `T` be orthogonal to `e, f` for `C`, and `T'` orthogonal
+to `e', f'` for `C'`. Then a map `ψ : T' → T` agreeing with `φ` modulo the span of `e` and `f` still
+carries `C'` to `C` modulo `𝔪`, and the self-pairings modulo `2𝔪`: the discarded component of each
+`φ x` has coordinates in `𝔪`. -/
+private theorem IsSymm.sub_mem_restrict_of_sub_mem_span_pair (h2 : (2 : R) ∈ maximalIdeal R)
+    {C : BilinForm R M} {C' : BilinForm R N} (hC : C.IsSymm) {φ : N →ₗ[R] M}
+    (hφ : ∀ x y, C' x y - C (φ x) (φ y) ∈ maximalIdeal R)
+    (hφ₂ : ∀ x, C' x x - C (φ x) (φ x) ∈ Ideal.span {2} * maximalIdeal R) {e f : M} {e' f' : N}
+    {q : R} (h₁ : C e f = 1) (hee : C e e = 2 * q) (hff : C f f = 2 * q)
+    (he : e ∈ Submodule.span R {φ e', φ f'}) (hf : f ∈ Submodule.span R {φ e', φ f'})
+    {T : Submodule R M} (hT : T ≤ C.orthogonal (Submodule.span R {e, f})) {T' : Submodule R N}
+    (hT' : T' ≤ C'.orthogonal (Submodule.span R {e', f'})) (ψ : T' →ₗ[R] T)
+    (hψ : ∀ x : T', φ x - ψ x ∈ Submodule.span R {e, f}) :
+    (∀ x y, C'.restrict T' x y - C.restrict T (ψ x) (ψ y) ∈ maximalIdeal R) ∧
+      ∀ x, C'.restrict T' x x - C.restrict T (ψ x) (ψ x) ∈ Ideal.span {2} * maximalIdeal R := by
+  -- The component of `φ x` discarded by `ψ` has coordinates in `𝔪`.
+  have hcoord (x : T') : ∃ α ∈ maximalIdeal R, ∃ β ∈ maximalIdeal R,
+      φ x = α • e + β • f + ψ x := by
+    -- `φ x` pairs into `𝔪` with the span of `φ e'` and `φ f'`, which contains `e` and `f`.
+    have hpair (z : M) (hz : z ∈ Submodule.span R {φ e', φ f'})
+        (hzS : z ∈ Submodule.span R {e, f}) : C (φ x - ψ x) z ∈ maximalIdeal R := by
+      rw [map_sub, LinearMap.sub_apply, hC.eq (ψ x), hT (ψ x).2 z hzS, sub_zero]
+      obtain ⟨γ, δ, rfl⟩ := Submodule.mem_span_pair.mp hz
+      have hx' (u : N) (hu : u ∈ ({e', f'} : Set N)) : C (φ x) (φ u) ∈ maximalIdeal R := by
+        have h0 : C' u x = 0 := hT' x.2 u (Submodule.subset_span hu)
+        have := hφ u x
+        rw [h0, zero_sub, ← hC.eq] at this
+        simpa using (maximalIdeal R).neg_mem this
+      simp only [map_add, map_smul, smul_eq_mul]
+      exact (maximalIdeal R).add_mem ((maximalIdeal R).mul_mem_left γ (hx' e' (by simp)))
+        ((maximalIdeal R).mul_mem_left δ (hx' f' (by simp)))
+    obtain ⟨α, hα, β, hβ, hαβ⟩ := hC.exists_mem_maximalIdeal_of_mem_span_pair (h₁ ▸ isUnit_one)
+      (hee ▸ (maximalIdeal R).mul_mem_right q h2) (hff ▸ (maximalIdeal R).mul_mem_right q h2)
+      (hψ x) (hpair e he (Submodule.subset_span (by simp)))
+      (hpair f hf (Submodule.subset_span (by simp)))
+    exact ⟨α, hα, β, hβ, by rw [← hαβ, sub_add_cancel]⟩
+  -- The discarded components change the pairings by multiples of their coordinates.
+  have hfe : C f e = 1 := by rw [← hC.eq, h₁]
+  have hTe (z : T) : C z e = 0 := (hC.eq _ _).trans (hT z.2 e (Submodule.subset_span (by simp)))
+  have hTf (z : T) : C z f = 0 := (hC.eq _ _).trans (hT z.2 f (Submodule.subset_span (by simp)))
+  have hdiff {x y : T'} {α β α' β' : R} (hx : φ x = α • e + β • f + ψ x)
+      (hy : φ y = α' • e + β' • f + ψ y) : C (φ x) (φ y) - C (ψ x) (ψ y) =
+        α * α' * (2 * q) + α * β' + β * α' + β * β' * (2 * q) := by
+    rw [hx, hy]
+    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hee, hff,
+      h₁, hfe, hTe, hTf, hC.eq e (ψ y : M), hC.eq f (ψ y : M)]
+    ring
+  refine ⟨fun x y ↦ ?_, fun x ↦ ?_⟩
+  · obtain ⟨α, hα, β, hβ, hx⟩ := hcoord x
+    obtain ⟨α', -, β', -, hy⟩ := hcoord y
+    simp only [restrict_apply, LinearMap.domRestrict_apply]
+    rw [← sub_add_sub_cancel _ (C (φ x) (φ y)), hdiff hx hy]
+    refine (maximalIdeal R).add_mem (hφ x y) ?_
+    rw [show α * α' * (2 * q) + α * β' + β * α' + β * β' * (2 * q) =
+      α * (α' * (2 * q) + β') + β * (α' + β' * (2 * q)) by ring]
+    exact (maximalIdeal R).add_mem ((maximalIdeal R).mul_mem_right _ hα)
+      ((maximalIdeal R).mul_mem_right _ hβ)
+  · obtain ⟨α, hα, β, hβ, hx⟩ := hcoord x
+    simp only [restrict_apply, LinearMap.domRestrict_apply]
+    rw [← sub_add_sub_cancel _ (C (φ x) (φ x)), hdiff hx hx]
+    refine Ideal.add_mem _ (hφ₂ x) (Ideal.mem_span_singleton_mul.mpr
+      ⟨α * (α * q + β) + β * β * q, ?_, by ring⟩)
+    exact (maximalIdeal R).add_mem ((maximalIdeal R).mul_mem_right _ hα)
+      ((maximalIdeal R).mul_mem_right _ ((maximalIdeal R).mul_mem_right _ hβ))
 
 /-- The inductive core of `LinearMap.BilinForm.IsSymm.equivalent_of_sub_mem_maximalIdeal_of_even`.
 -/
@@ -416,18 +492,9 @@ private theorem equivalent_of_sub_mem_maximalIdeal_of_even_aux (hR : Nat.card (R
     obtain ⟨z, -, hz⟩ := Ideal.mem_span_singleton_mul.mp (hφ₂ x)
     obtain ⟨c, hc⟩ := hCeven (φ x)
     exact ⟨c + z, by linear_combination -hz + hc⟩
-  rcases n with _ | _ | m
-  · -- In rank zero both modules are trivial.
-    have hP (x : P) : x = 0 := b.repr.injective (Subsingleton.elim _ _)
-    have hψ (x y : P) :
-        C' (b.equiv b' (Equiv.refl _) x) (b.equiv b' (Equiv.refl _) y) = C x y := by
-      simp [hP x, hP y]
-    exact ⟨{ toLinearEquiv := b.equiv b' (Equiv.refl _), map_app' := hψ }⟩
-  · -- An even unimodular form has no rank one.
-    exfalso
-    obtain ⟨i, hi, -⟩ := exists_index_ne_zero_isUnit_apply_of_not_isUnit_diag_of_isUnit_det C b
-      (fun h ↦ (mem_maximalIdeal _).mp h2 (isUnit_of_dvd_unit (hCeven _) h)) hdet
-    exact hi (by omega)
+  obtain hn | hn := lt_or_ge n 2
+  · exact equivalent_of_lt_two_of_even hR hn hCeven b b' hdet
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 + 1 := ⟨n - 2, by omega⟩
   -- A binary block of `C'` with Gram matrix `!![2q, 1; 1, 2q]`, with `q = 0` or `q = 1`.
   obtain ⟨i, -, hi⟩ := exists_index_ne_zero_isUnit_apply_of_not_isUnit_diag_of_isUnit_det C' b'
     (fun h ↦ (mem_maximalIdeal _).mp h2 (isUnit_of_dvd_unit (hC'even _) h)) hdet'
@@ -458,65 +525,19 @@ private theorem equivalent_of_sub_mem_maximalIdeal_of_even_aux (hR : Nat.card (R
   obtain ⟨hc, t, w, -, hdetT⟩ := hC.exists_basis_orthogonal (k := 2) b hG hGdet
   obtain ⟨hc', t', w', -, hdetT'⟩ := hC'.exists_basis_orthogonal (k := 2) b' hG' hGdet
   -- Project the image of the complement of the block of `C'` to the complement of the block of
-  -- `C`. The discarded component lies in the block, with coordinates in `𝔪`.
-  set ψ : T' →ₗ[R] T := T.projectionOnto S hc.symm ∘ₗ φ ∘ₗ T'.subtype
-  have hψ (x : T') : ∃ α ∈ maximalIdeal R, ∃ β ∈ maximalIdeal R,
-      φ x = α • e + β • f + ψ x := by
-    have hs : φ x - ψ x ∈ Submodule.span R {e, f} := by
-      simp only [ψ, LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
+  -- `C`. This still carries `C'` to `C` modulo `𝔪`, and modulo `2𝔪` on the diagonal.
+  obtain ⟨hψ, hψ₂⟩ := hC.sub_mem_restrict_of_sub_mem_span_pair h2 hφ hφ₂ h₁ hee hff he hf
+    (T := T) (hS ▸ le_rfl) (T' := T') (by simp only [T', Matrix.range_cons_cons_empty, le_rfl])
+    (T.projectionOnto S hc.symm ∘ₗ φ ∘ₗ T'.subtype) fun x ↦ by
+      simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
         Submodule.coe_projectionOnto_apply]
       exact hS ▸ Submodule.sub_projection_mem hc.symm (φ x)
-    -- `φ x` pairs into `𝔪` with the span of `φ e'` and `φ f'`, which contains `e` and `f`.
-    have hpair (z : P) (hz : z ∈ Submodule.span R {φ e', φ f'})
-        (hzS : z ∈ Submodule.span R {e, f}) : C (φ x - ψ x) z ∈ maximalIdeal R := by
-      rw [map_sub, LinearMap.sub_apply, hC.eq (ψ x), (ψ x).2 z (hS ▸ hzS), sub_zero]
-      obtain ⟨γ, δ, rfl⟩ := Submodule.mem_span_pair.mp hz
-      have hx' (u : Q) (hu : u ∈ Set.range ![e', f']) : C (φ x) (φ u) ∈ maximalIdeal R := by
-        have h0 : C' u x = 0 := x.2 u (Submodule.subset_span hu)
-        have := hφ u x
-        rw [h0, zero_sub, ← hC.eq] at this
-        simpa using (maximalIdeal R).neg_mem this
-      simp only [map_add, map_smul, smul_eq_mul]
-      exact (maximalIdeal R).add_mem ((maximalIdeal R).mul_mem_left γ (hx' e' ⟨0, rfl⟩))
-        ((maximalIdeal R).mul_mem_left δ (hx' f' ⟨1, rfl⟩))
-    obtain ⟨α, hα, β, hβ, hαβ⟩ := hC.exists_mem_maximalIdeal_of_mem_span_pair (h₁ ▸ isUnit_one)
-      (hee ▸ (maximalIdeal R).mul_mem_right q h2) (hff ▸ (maximalIdeal R).mul_mem_right q h2) hs
-      (hpair e he (Submodule.subset_span (by simp))) (hpair f hf (Submodule.subset_span (by simp)))
-    exact ⟨α, hα, β, hβ, by rw [← hαβ, sub_add_cancel]⟩
-  -- On the complements, `ψ` carries `C'` to `C` modulo `𝔪`, and modulo `2𝔪` on the diagonal.
-  have hfe : C f e = 1 := by rw [← hC.eq, h₁]
-  have hTe (z : T) : C z e = 0 := (hC.eq _ _).trans (z.2 e (Submodule.subset_span ⟨0, rfl⟩))
-  have hTf (z : T) : C z f = 0 := (hC.eq _ _).trans (z.2 f (Submodule.subset_span ⟨1, rfl⟩))
-  have hdiff {x y : T'} {α β α' β' : R} (hx : φ x = α • e + β • f + ψ x)
-      (hy : φ y = α' • e + β' • f + ψ y) : C (φ x) (φ y) - C (ψ x) (ψ y) =
-        α * α' * (2 * q) + α * β' + β * α' + β * β' * (2 * q) := by
-    rw [hx, hy]
-    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hee, hff,
-      h₁, hfe, hTe, hTf, hC.eq e (ψ y : P), hC.eq f (ψ y : P)]
-    ring
   refine hC.equivalent_of_equivalent_restrict_orthogonal hC' hG hG' hGdet hc hc'
-    (ih m (by omega) (hC.restrict _) (hC'.restrict _) (fun x ↦ hCeven x) t t' ?_ ?_ ψ
-      (fun x y ↦ ?_) fun x ↦ ?_)
+    (ih m (by omega) (hC.restrict _) (hC'.restrict _) (fun x ↦ hCeven x) t t' ?_ ?_ _ hψ hψ₂)
   · rw [hdetT] at hdet
     exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hdet)
   · rw [hdetT'] at hdet'
     exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hdet')
-  · obtain ⟨α, hα, β, hβ, hx⟩ := hψ x
-    obtain ⟨α', -, β', -, hy⟩ := hψ y
-    simp only [restrict_apply, LinearMap.domRestrict_apply]
-    rw [← sub_add_sub_cancel _ (C (φ x) (φ y)), hdiff hx hy]
-    refine (maximalIdeal R).add_mem (hφ x y) ?_
-    rw [show α * α' * (2 * q) + α * β' + β * α' + β * β' * (2 * q) =
-      α * (α' * (2 * q) + β') + β * (α' + β' * (2 * q)) by ring]
-    exact (maximalIdeal R).add_mem ((maximalIdeal R).mul_mem_right _ hα)
-      ((maximalIdeal R).mul_mem_right _ hβ)
-  · obtain ⟨α, hα, β, hβ, hx⟩ := hψ x
-    simp only [restrict_apply, LinearMap.domRestrict_apply]
-    rw [← sub_add_sub_cancel _ (C (φ x) (φ x)), hdiff hx hx]
-    refine Ideal.add_mem _ (hφ₂ x) (Ideal.mem_span_singleton_mul.mpr
-      ⟨α * (α * q + β) + β * β * q, ?_, by ring⟩)
-    exact (maximalIdeal R).add_mem ((maximalIdeal R).mul_mem_right _ hα)
-      ((maximalIdeal R).mul_mem_right _ ((maximalIdeal R).mul_mem_right _ hβ))
 
 /-- **An even unimodular form is determined by its reduction.** Let `R` be a Henselian local ring
 whose residue field has two elements, for instance `ℤ_[2]`, and let `C` and `C'` be symmetric forms

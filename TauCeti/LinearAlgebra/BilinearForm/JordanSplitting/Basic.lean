@@ -511,6 +511,15 @@ theorem IsJordanSplitting.free [IsLocalRing R] [Module.Flat R M] [Module.Finite 
     h.isInternal.submodule_iSupIndep.isCompl_biSup_ne h.isInternal.submodule_iSup_eq_top j
   ((N j).finite_free_of_isCompl hc).2
 
+/-- The constituent `N k` of a Jordan splitting is orthogonal, on both sides, to the constituents of
+index in any set `s` not containing `k`. -/
+private theorem IsJordanSplitting.apply_eq_zero_of_mem_of_mem_biSup
+    (h : B.IsJordanSplitting π N) {k : ℕ} {s : Set ℕ} (hk : k ∉ s) {u v : M} (hu : u ∈ N k)
+    (hv : v ∈ ⨆ i ∈ s, N i) : B u v = 0 ∧ B v u = 0 := by
+  have hdisj : Disjoint ({k} : Set ℕ) s := Set.disjoint_singleton_left.mpr hk
+  exact ⟨B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj (by simpa using hu) hv,
+    B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj.symm hv (by simpa using hu)⟩
+
 /-- Vectors of the constituents of index below `m ≤ j` of a Jordan splitting which pair into
 `π ^ j R` with these constituents pair with each other into `π ^ (2 * j + 1 - m) R`, since their
 components of index `i` are divisible by `π ^ (j - i)`. For `m = j` this is `π ^ (j + 1) R`. -/
@@ -524,18 +533,14 @@ private theorem IsJordanSplitting.pow_dvd_apply_of_mem_biSup_Iio
     obtain rfl : x = 0 := by simpa using hx
     simp
   | succ m ih =>
-    have hset : Set.Iio (m + 1) = insert m (Set.Iio m) := by
-      ext i
-      simp only [Set.mem_Iio, Set.mem_insert_iff]
-      omega
-    rw [hset, iSup_insert] at hx hy hxz hyz
+    rw [show Set.Iio (m + 1) = insert m (Set.Iio m) from Order.Iio_succ_eq_insert m,
+      iSup_insert] at hx hy hxz hyz
     obtain ⟨a, ha, x, hx', rfl⟩ := Submodule.mem_sup.mp hx
     obtain ⟨b, hb, y, hy', rfl⟩ := Submodule.mem_sup.mp hy
-    have hdisj : Disjoint ({m} : Set ℕ) (Set.Iio m) := by simp
     have h₁ {u v : M} (hu : u ∈ N m) (hv : v ∈ ⨆ i ∈ Set.Iio m, N i) : B u v = 0 :=
-      B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj (by simpa using hu) hv
+      (h.apply_eq_zero_of_mem_of_mem_biSup (by simp) hu hv).1
     have h₂ {u v : M} (hv : v ∈ ⨆ i ∈ Set.Iio m, N i) (hu : u ∈ N m) : B v u = 0 :=
-      B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj.symm hv (by simpa using hu)
+      (h.apply_eq_zero_of_mem_of_mem_biSup (by simp) hu hv).2
     simp only [map_add, LinearMap.add_apply, h₁ ha hy', h₂ hx' hb, add_zero, zero_add]
     refine dvd_add ?_ ((pow_dvd_pow π (by omega)).trans
       (ih (by omega) hx' hy' (fun z hz ↦ ?_) fun z hz ↦ ?_))
@@ -570,17 +575,13 @@ private theorem IsJordanSplitting.pow_add_two_dvd_apply_self_of_mem_biSup_Iio
   rcases j with _ | k
   · obtain rfl : x = 0 := by simpa using hx
     simp
-  have hset : Set.Iio (k + 1) = insert k (Set.Iio k) := by
-    ext i
-    simp only [Set.mem_Iio, Set.mem_insert_iff]
-    omega
-  rw [hset, iSup_insert] at hx hxz
+  rw [show Set.Iio (k + 1) = insert k (Set.Iio k) from Order.Iio_succ_eq_insert k,
+    iSup_insert] at hx hxz
   obtain ⟨a, ha, x, hx', rfl⟩ := Submodule.mem_sup.mp hx
-  have hdisj : Disjoint ({k} : Set ℕ) (Set.Iio k) := by simp
   have h₁ {u v : M} (hu : u ∈ N k) (hv : v ∈ ⨆ i ∈ Set.Iio k, N i) : B u v = 0 :=
-    B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj (by simpa using hu) hv
+    (h.apply_eq_zero_of_mem_of_mem_biSup (by simp) hu hv).1
   have h₂ {u v : M} (hv : v ∈ ⨆ i ∈ Set.Iio k, N i) (hu : u ∈ N k) : B v u = 0 :=
-    B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj.symm hv (by simpa using hu)
+    (h.apply_eq_zero_of_mem_of_mem_biSup (by simp) hu hv).2
   simp only [map_add, LinearMap.add_apply, h₁ ha hx', h₂ hx' ha, add_zero, zero_add]
   refine dvd_add ?_ ?_
   · -- The component in the `π ^ k`-modular constituent `N k` is `π` times a vector of `N k`,
@@ -609,11 +610,7 @@ private theorem IsJordanSplitting.pow_add_two_dvd_apply_self_of_mem_biSup_Ici
     omega
   rw [hset, iSup_insert] at hx
   obtain ⟨a, ha, d, hd, rfl⟩ := Submodule.mem_sup.mp hx
-  have hdisj : Disjoint ({j + 1} : Set ℕ) (Set.Ici (j + 2)) := by simp
-  have had : B a d = 0 :=
-    B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj (by simpa using ha) hd
-  have hda : B d a = 0 :=
-    B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj.symm hd (by simpa using ha)
+  obtain ⟨had, hda⟩ := h.apply_eq_zero_of_mem_of_mem_biSup (by simp) ha hd
   simp only [map_add, LinearMap.add_apply, had, hda, add_zero, zero_add]
   exact dvd_add (hnext a ha) (h.pow_dvd_apply_of_mem_biSup hd d)
 
