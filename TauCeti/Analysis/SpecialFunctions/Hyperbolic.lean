@@ -92,6 +92,7 @@ theorem _root_.Real.tanh_nonneg {x : ℝ} (hx : 0 ≤ x) : 0 ≤ Real.tanh x := 
   simpa only [Real.tanh_zero] using Real.tanh_strictMono.monotone hx
 
 /-- The hyperbolic tangent is negative exactly on the negative reals. -/
+@[simp]
 theorem _root_.Real.tanh_neg_iff {x : ℝ} : Real.tanh x < 0 ↔ x < 0 := by
   simpa only [Real.tanh_zero] using @Real.tanh_lt_tanh_iff x 0
 
@@ -105,6 +106,7 @@ theorem _root_.Real.continuous_tanh : Continuous Real.tanh := by
 
 /-- The hyperbolic tangent is smooth: it is the quotient of `sinh` by the positive function
 `cosh`. -/
+@[fun_prop]
 theorem _root_.Real.contDiff_tanh {n : WithTop ℕ∞} : ContDiff ℝ n Real.tanh := by
   simp_rw [funext Real.tanh_eq_sinh_div_cosh]
   exact Real.contDiff_sinh.div Real.contDiff_cosh fun x ↦ (Real.cosh_pos x).ne'

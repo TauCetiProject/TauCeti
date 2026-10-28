@@ -91,9 +91,8 @@ theorem hasFDerivAt_log_norm_of_ne {x : E} (hx : x ≠ 0) :
 /-- Away from the origin, the derivative of `x ↦ log ‖x‖` has norm `‖x‖⁻¹`. -/
 theorem norm_fderiv_log_norm_of_ne {x : E} (hx : x ≠ 0) :
     ‖fderiv ℝ (fun y : E ↦ Real.log ‖y‖) x‖ = ‖x‖⁻¹ := by
-  rw [(hasFDerivAt_log_norm_of_ne hx).fderiv, norm_smul, innerSL_apply_norm, norm_inv, norm_pow,
-    norm_norm]
   have : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
+  simp [(hasFDerivAt_log_norm_of_ne hx).fderiv, norm_smul, innerSL_apply_norm]
   field_simp
 
 /-- The Hessian of `x ↦ ‖x‖ ^ p` away from the origin, evaluated on two directions. -/
@@ -368,12 +367,11 @@ theorem laplacian_log_norm_of_ne {x : E} (hx : x ≠ 0) :
     ring
   have hlog : deriv (fun t : ℝ ↦ Real.log t / 2) = fun t ↦ t⁻¹ / 2 := by
     funext t
-    rw [deriv_div_const, Real.deriv_log]
+    simp
   rw [hcomp, ContDiffAt.laplacian_comp (q := fun y : E ↦ ‖y‖ ^ 2)
     ((Real.contDiffAt_log.2 ht).div_const _) (contDiff_norm_sq ℝ).contDiffAt, laplacian_norm_sq,
-    hlog, deriv_div_const, deriv_inv, norm_gradient_eq_norm_fderiv, fderiv_norm_sq_apply,
-    RCLike.norm_nsmul ℝ, innerSL_apply_norm, nsmul_eq_mul]
-  dsimp only
+    hlog, norm_gradient_eq_norm_fderiv]
+  simp [fderiv_norm_sq_apply, RCLike.norm_nsmul ℝ, innerSL_apply_norm]
   field_simp
   ring
 

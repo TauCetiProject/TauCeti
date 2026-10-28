@@ -34,9 +34,9 @@ is `e^(2 s) (ds² + g_(S^(n - 1)))`, so the torpedo metric is `e^(2 w(s)) (ds² 
 with the *torpedo profile* `w = TauCeti.torpedoProfile`, `Φ(ρ) = w(log ρ) - log ρ`:
 
 * for `s ≤ -2`, `w(s) = log R - log (cosh s)` with `R = TauCeti.torpedoCapRadius`, and the metric
-  is the round metric `(2 R / (1 + ‖y‖²))² ⟪v, w⟫` of the sphere of radius `R` in stereographic
-  coordinates;
-* for `s ≥ -1`, `w(s) = 0`, and the metric is the cylinder metric `‖y‖⁻² ⟪v, w⟫ = ds² + dθ²`.
+  is the round metric `(2 R / (1 + ‖y‖²))² ⟪ξ, η⟫` (on tangent vectors `ξ`, `η`) of the sphere of
+  radius `R` in stereographic coordinates;
+* for `s ≥ -1`, `w(s) = 0`, and the metric is the cylinder metric `‖y‖⁻² ⟪ξ, η⟫ = ds² + dθ²`.
 
 The slope `v = w' = TauCeti.torpedoSlope` is `-tanh s` on the cap, cut off by a smooth step, so it
 is antitone with `0 ≤ v < 1`. By the conformal change formula, away from the centre the scalar
@@ -282,7 +282,7 @@ theorem contDiff_torpedoExponent_norm : ContDiff ℝ ∞ fun y : F ↦ torpedoEx
 variable (F) in
 /-- The **torpedo metric** on a real inner product space `F`: the Euclidean metric multiplied by
 the conformal factor `e^(2 Φ(‖y‖))`. It is the round metric of radius `torpedoCapRadius` in
-stereographic coordinates on the ball of radius `e⁻²`, and the cylinder metric `‖y‖⁻² ⟪v, w⟫` of
+stereographic coordinates on the ball of radius `e⁻²`, and the cylinder metric `‖y‖⁻² ⟪ξ, η⟫` of
 `ℝ × S^(n - 1)` outside the ball of radius `e⁻¹`. -/
 def torpedoMetric : ContMDiffRiemannianMetric 𝓘(ℝ, F) ∞ F (fun y : F ↦ TangentSpace 𝓘(ℝ, F) y) :=
   ((riemannianMetricVectorSpace F).ofLE le_top).rescale (fun y ↦ exp (2 * torpedoExponent ‖y‖))
@@ -388,6 +388,8 @@ theorem scalarCurvature_torpedoMetric_of_ne_zero {y : F} (hy : y ≠ 0) :
   have hscal : ((riemannianMetricVectorSpace F).ofLE
       (le_top : (∞ : WithTop ℕ∞) ≤ ω)).scalarCurvature y = 0 := by
     rw [ContMDiffRiemannianMetric.scalarCurvature_eq_scalarCurvature_leviCivitaConnection _
+      -- Mathlib's `RiemannianBundle` instance on the tangent spaces of `F` is defined to be the
+      -- standard metric `(riemannianMetricVectorSpace F).toRiemannianMetric`, so this is `rfl`.
       (by rw [ContMDiffRiemannianMetric.toRiemannianMetric_ofLE]; rfl),
       TauCeti.Manifold.scalarCurvature_leviCivitaConnection_model_space]
   have hm := ContMDiffRiemannianMetric.toRiemannianMetric_ofLE (riemannianMetricVectorSpace F)
@@ -401,18 +403,9 @@ theorem scalarCurvature_torpedoMetric_of_ne_zero {y : F} (hy : y ≠ 0) :
   have hG : (letI : RiemannianBundle (fun z : F ↦ TangentSpace 𝓘(ℝ, F) z) :=
       ⟨((riemannianMetricVectorSpace F).ofLE (le_top : (∞ : WithTop ℕ∞) ≤ ω)).toRiemannianMetric⟩
       ‖Manifold.mgradient 𝓘(ℝ, F) (fun z ↦ torpedoExponent ‖z‖) y‖) =
-      ‖∇ (fun z : F ↦ torpedoExponent ‖z‖) y‖ := by
-    -- The norm of the fibre depends on the installed metric, so generalise it before
-    -- identifying it with the standard one.
-    have key : ∀ I : RiemannianBundle (fun z : F ↦ TangentSpace 𝓘(ℝ, F) z),
-        I.g = (riemannianMetricVectorSpace F).toRiemannianMetric →
-        (letI := I; ‖Manifold.mgradient 𝓘(ℝ, F) (fun z ↦ torpedoExponent ‖z‖) y‖) =
-          ‖∇ (fun z : F ↦ torpedoExponent ‖z‖) y‖ := by
-      rintro ⟨g⟩ hg
-      rw [TauCeti.Manifold.mgradient_eq_gradient_of_eq (inst := ⟨g⟩) hg]
-      subst hg
-      exact norm_tangentSpace_vectorSpace
-    exact key ⟨_⟩ hm
+      ‖∇ (fun z : F ↦ torpedoExponent ‖z‖) y‖ :=
+    TauCeti.Manifold.norm_mgradient_eq_norm_gradient_of_eq
+      (inst := ⟨((riemannianMetricVectorSpace F).ofLE le_top).toRiemannianMetric⟩) hm _ y
   have hρ : 0 < ‖y‖ := norm_pos_iff.2 hy
   have hexp : (exp (2 * torpedoExponent ‖y‖))⁻¹ =
       exp (-2 * torpedoProfile (log ‖y‖)) * ‖y‖ ^ 2 := by
