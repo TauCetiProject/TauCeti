@@ -101,14 +101,6 @@ structure IsDivisorSectionAt (D : WeilDivisor X) (f : X → ℂ) (x : X) : Prop 
   /-- Where `D` allows a pole, the value at `x` is the normalized value `0`. -/
   apply_eq_zero : 0 < D x → f x = 0
 
-/-- A divisor allows no pole on a punctured neighbourhood of any point. -/
-private theorem eventually_nonpos_nhdsNE (E : WeilDivisor X) (x : X) :
-    ∀ᶠ y in 𝓝[≠] x, E y ≤ 0 := by
-  have := ChartedSpace.t1Space ℂ X
-  filter_upwards [(E.support.eventually_cofinite_notMem).filter_mono (nhdsNE_le_cofinite x)]
-    with y hy
-  exact (Finsupp.notMem_support_iff.1 hy).le
-
 namespace IsDivisorSectionAt
 
 variable {D : WeilDivisor X} {f g : X → ℂ} {x : X}
@@ -161,8 +153,9 @@ theorem const_smul (hf : IsDivisorSectionAt D f x) (c : ℂ) : IsDivisorSectionA
 theorem indicator (hf : IsDivisorSectionAt D f x) {E : WeilDivisor X} (h : D ≤ E) :
     IsDivisorSectionAt E ({y | E y ≤ 0}.indicator f) x := by
   have hev : {y | E y ≤ 0}.indicator f =ᶠ[𝓝[≠] x] f := by
-    filter_upwards [eventually_nonpos_nhdsNE E x] with y hy
-    exact Set.indicator_of_mem (show y ∈ {y | E y ≤ 0} from hy) f
+    have := ChartedSpace.t1Space ℂ X
+    filter_upwards [E.eventually_eq_zero_nhdsNE x] with y hy
+    exact Set.indicator_of_mem (show y ∈ {y | E y ≤ 0} from hy.le) f
   exact
   { meromorphicAt := hf.meromorphicAt.congr hev.symm
     neg_le_meromorphicOrderAt := by
@@ -411,8 +404,9 @@ theorem divisorSheafMapOfLE_app_injective {E : WeilDivisor X} (h : D ≤ E) (U :
     tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
       (continuous_subtype_val.continuousAt.mono_left nhdsWithin_le_nhds)
       (eventually_nhdsWithin_of_forall fun _ hy ↦ Subtype.coe_injective.ne hy)
+  have := ChartedSpace.t1Space ℂ X
   have hev : ∀ᶠ y : U in 𝓝[≠] x, E y ≤ 0 :=
-    hval.eventually (eventually_nonpos_nhdsNE E x)
+    hval.eventually ((E.eventually_eq_zero_nhdsNE x).mono fun _ hy ↦ hy.le)
   filter_upwards [hev] with y hy _
   simpa [Set.indicator_of_mem (s := {y : U | E y ≤ 0}) hy] using congrFun hfg' y
 
@@ -425,12 +419,15 @@ theorem divisorSheafMapOfLE_refl : divisorSheafMapOfLE (le_refl D) = 𝟙 (divis
   apply ModuleCat.hom_ext
   apply LinearMap.ext
   intro f
+  apply (divisorSheafSectionsEquiv D U.unop).injective
   apply Subtype.ext
+  rw [divisorSheafMapOfLE_app]
   funext y
   by_cases hy : D y ≤ 0
-  · exact Set.indicator_of_mem (show y ∈ {y : U.unop | D y ≤ 0} from hy) f.1
-  · exact (Set.indicator_of_notMem (show y ∉ {y : U.unop | D y ≤ 0} from hy) f.1).trans
-      (apply_eq_zero_of_mem_divisorSections f.2 (not_le.1 hy)).symm
+  · exact Set.indicator_of_mem (show y ∈ {y : U.unop | D y ≤ 0} from hy) _
+  · exact (Set.indicator_of_notMem (show y ∉ {y : U.unop | D y ≤ 0} from hy) _).trans
+      (apply_eq_zero_of_mem_divisorSections (divisorSheafSectionsEquiv D U.unop f).2
+        (not_le.1 hy)).symm
 
 /-- The maps `𝒪_D ⟶ 𝒪_E` compose. -/
 @[reassoc (attr := simp)]
@@ -441,12 +438,11 @@ theorem divisorSheafMapOfLE_comp {E F : WeilDivisor X} (hDE : D ≤ E) (hEF : E 
   funext U
   apply ModuleCat.hom_ext
   apply LinearMap.ext
-  rintro ⟨f, -⟩
+  intro f
+  apply (divisorSheafSectionsEquiv F U.unop).injective
   apply Subtype.ext
-  -- Unfold the composite into the two indicator functions it is made of.
-  change {z : U.unop | F z ≤ 0}.indicator ({z : U.unop | E z ≤ 0}.indicator f) =
-    {z : U.unop | F z ≤ 0}.indicator f
-  rw [Set.indicator_indicator]
+  rw [TopCat.Sheaf.comp_app, ModuleCat.hom_comp, LinearMap.comp_apply, divisorSheafMapOfLE_app,
+    divisorSheafMapOfLE_app, divisorSheafMapOfLE_app, Set.indicator_indicator]
   congr 1
   exact Set.inter_eq_left.2 fun z hz ↦ (hEF z).trans hz
 
