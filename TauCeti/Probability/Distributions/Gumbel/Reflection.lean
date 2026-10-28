@@ -6,7 +6,6 @@ Authors: Codex, The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Gumbel.Basic
-import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.Gumbel.PDF
 import TauCeti.Probability.Quantile.Map
 
@@ -20,8 +19,18 @@ Reflecting a maximum-convention Gumbel variable produces the minimum convention.
 
 and quantile `-m + s * log (-log (1 - u))`. Thus the reflected location is `-m`.
 The measure is kept as the reflection of `gumbelMeasure`; no parallel family definition is
-needed. The quantile formula uses the upper-quantile reflection identity, which is essential for
-general laws with atoms, together with the coincidence of the two interior Gumbel quantiles.
+needed.
+
+## Main results
+
+* `TauCeti.Probability.gumbelMeasure_map_neg` identifies the reflected law as an exponential
+  pushforward, with the random-variable form
+  `TauCeti.Probability.hasLaw_neg_gumbelMeasure_of_hasLaw_expMeasure`;
+* `TauCeti.Probability.cdf_neg_gumbelMeasure_eq` computes the cdf;
+* `TauCeti.Probability.quantile_neg_gumbelMeasure` computes the interior quantile;
+* `TauCeti.Probability.tendsto_quantile_neg_gumbelMeasure_nhdsGT_zero` and
+  `TauCeti.Probability.tendsto_quantile_neg_gumbelMeasure_nhdsLT_one` give the one-sided
+  endpoint limits of the quantile.
 
 ## References
 
@@ -68,20 +77,11 @@ theorem cdf_neg_gumbelMeasure_eq (hs : 0 < s) (m x : ℝ) :
       1 - Real.exp (-Real.exp ((x + m) / s)) := by
   let _ : IsProbabilityMeasure (gumbelMeasure m s) :=
     isProbabilityMeasure_gumbelMeasure hs m
-  have hneg : Neg.neg = fun y : ℝ => 0 + (-1) * y := by
-    funext y
-    ring
   have hsingleton : gumbelMeasure m s {-x} = 0 := by
     rw [gumbelMeasure_eq_withDensity]
     exact withDensity_absolutelyContinuous volume _ (measure_singleton _)
-  have hleft : (gumbelMeasure m s).real (Iio (-x)) = cdf (gumbelMeasure m s) (-x) := by
-    rw [cdf_eq_real, ← measureReal_congr (Iio_ae_eq_Iic' hsingleton)]
-  rw [Measure.neg_def]
-  conv_lhs =>
-    rw [hneg, cdf_map_affine_of_neg (a := 0) (b := -1) (by norm_num)]
-  simp only [sub_zero, div_neg, div_one, hleft, cdf_gumbelMeasure_eq hs]
-  congr 3
-  ring_nf
+  rw [Measure.cdf_neg_of_measure_singleton_eq_zero hsingleton, cdf_gumbelMeasure_eq hs,
+    show -((-x - m) / s) = (x + m) / s by ring]
 
 /-- The interior quantile of the reflected positive-scale Gumbel law. This is the
 minimum-convention formula with reflected location `-m`. -/

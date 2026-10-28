@@ -43,7 +43,8 @@ mass of `μ`. Every quantile at a level strictly between `0` and `1` lies in suc
   `MeasureTheory.Measure.quantile_map_of_monotone` and
   `MeasureTheory.Measure.upperQuantile_map_of_monotone`;
 * `MeasureTheory.Measure.quantile_neg`, `MeasureTheory.Measure.upperQuantile_neg` — the quantiles
-  of the reflected law;
+  of the reflected law, with `MeasureTheory.Measure.cdf_neg_of_measure_singleton_eq_zero` its
+  cumulative distribution function away from atoms;
 * `MeasureTheory.Measure.quantile_map_of_antitoneOn`,
   `MeasureTheory.Measure.upperQuantile_map_of_antitoneOn` — the quantiles of a pushforward along a
   nonincreasing continuous map, with the global forms
@@ -178,6 +179,17 @@ strictly between `0` and `1` is minus the quantile of the law of `X` at the comp
     measureReal_compl measurableSet_Iic, probReal_univ, le_neg,
     quantile_le_iff μ (by linarith) (by linarith), cdf_eq_real]
   constructor <;> intro h <;> linarith
+
+/-- **The cumulative distribution function of the reflected law.** If `μ` has no atom at `-x`,
+the law of `-X` puts mass `1 - cdf μ (-x)` on `Iic x`. -/
+theorem cdf_neg_of_measure_singleton_eq_zero [IsProbabilityMeasure μ] {x : ℝ} (hx : μ {-x} = 0) :
+    cdf μ.neg x = 1 - cdf μ (-x) := by
+  have hpre : (Neg.neg ⁻¹' Iic x : Set ℝ) = (Iio (-x))ᶜ := by
+    ext y
+    simp
+  rw [cdf_eq_real, neg_def, map_measureReal_apply measurable_neg measurableSet_Iic, hpre,
+    measureReal_compl measurableSet_Iio, probReal_univ, measureReal_congr (Iio_ae_eq_Iic' hx),
+    cdf_eq_real]
 
 /-- Pushing forward along a nonincreasing map `g` is pushing the reflected law forward along the
 map `x ↦ g (-x)`, which is nondecreasing and continuous on the reflected interval, and that

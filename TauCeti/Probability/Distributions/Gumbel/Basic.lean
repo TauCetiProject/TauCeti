@@ -34,8 +34,11 @@ the representation of a logistic variable as a difference of independent Gumbel 
 * `TauCeti.Probability.measurable_gumbelMeasure` proves measurability in the parameters;
 * `TauCeti.Probability.cdf_gumbelMeasure_eq` computes the cdf;
 * `TauCeti.Probability.support_gumbelMeasure` identifies its topological support;
-* `TauCeti.Probability.quantile_gumbelMeasure` computes the quantile, and the two following
-  theorems give its one-sided endpoint limits.
+* `TauCeti.Probability.quantile_gumbelMeasure` computes the quantile, and
+  `TauCeti.Probability.upperQuantile_gumbelMeasure` shows that the upper quantile agrees with it;
+* `TauCeti.Probability.tendsto_quantile_gumbelMeasure_nhdsGT_zero` and
+  `TauCeti.Probability.tendsto_quantile_gumbelMeasure_nhdsLT_one` give the one-sided endpoint
+  limits of the quantile.
 
 ## References
 
@@ -189,26 +192,16 @@ private theorem cdf_gumbelQuantileFormula (hs : 0 < s) (m : ℝ) {u : ℝ}
 /-- The quantile of a positive-scale Gumbel law is `m - s * log (-log u)` for every interior
 level `u`. -/
 theorem quantile_gumbelMeasure (hs : 0 < s) (m : ℝ) {u : ℝ} (hu : u ∈ Ioo 0 1) :
-    (gumbelMeasure m s).quantile u = m - s * Real.log (-Real.log u) := by
-  have hcdf := cdf_gumbelQuantileFormula hs m hu
-  have hq := Measure.quantile_cdf (gumbelMeasure m s)
-    ((strictMono_cdf_gumbelMeasure hs m).strictMonoOn _) (x := m - s * Real.log (-Real.log u))
-    (by rw [hcdf]; exact hu)
-  rwa [hcdf] at hq
+    (gumbelMeasure m s).quantile u = m - s * Real.log (-Real.log u) :=
+  Measure.quantile_eq_of_cdf_eq _ ((strictMono_cdf_gumbelMeasure hs m).strictMonoOn _)
+    (cdf_gumbelQuantileFormula hs m hu) hu
 
 /-- For a positive-scale Gumbel law, the upper and lower interior quantiles coincide and have
 the usual closed form. -/
 theorem upperQuantile_gumbelMeasure (hs : 0 < s) (m : ℝ) {u : ℝ} (hu : u ∈ Ioo 0 1) :
-    (gumbelMeasure m s).upperQuantile u = m - s * Real.log (-Real.log u) := by
-  have hcdf := cdf_gumbelQuantileFormula hs m hu
-  rw [Measure.upperQuantile_def]
-  have hset : {x : ℝ | u < cdf (gumbelMeasure m s) x} =
-      Ioi (m - s * Real.log (-Real.log u)) := by
-    ext x
-    simp only [mem_ofPred_eq, mem_Ioi]
-    conv_lhs => rw [← hcdf]
-    exact (strictMono_cdf_gumbelMeasure hs m).lt_iff_lt
-  rw [hset, csInf_Ioi]
+    (gumbelMeasure m s).upperQuantile u = m - s * Real.log (-Real.log u) :=
+  Measure.upperQuantile_eq_of_cdf_eq _ ((strictMono_cdf_gumbelMeasure hs m).strictMonoOn _)
+    (cdf_gumbelQuantileFormula hs m hu) hu
 
 /-- The Gumbel quantile tends to the lower endpoint `-∞` as the level tends to zero from
 above. -/
