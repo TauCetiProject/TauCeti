@@ -42,13 +42,13 @@ The restriction of `L` to `(ker L)ᗮ` is an isomorphism onto `F`, whose Jacobia
   measurable sets.
 * `LinearMap.measurable_setLIntegral_preimage_singleton`: measurability of the fibre integrals
   of a surjective linear map.
-* `TauCeti.ae_euclideanHausdorffMeasure_inter_preimage_singleton_eq_zero`: almost every fibre
+* `LinearMap.ae_euclideanHausdorffMeasure_inter_preimage_singleton_eq_zero`: almost every fibre
   of a Lebesgue-null set is Hausdorff-null.
-* `TauCeti.ae_ae_eq_restrict_preimage_singleton`: ambient a.e. equality descends to almost
+* `LinearMap.ae_ae_eq_restrict_preimage_singleton`: ambient a.e. equality descends to almost
   every fibre.
-* `TauCeti.aemeasurable_setLIntegral_preimage_singleton`: a.e.-measurable
+* `LinearMap.aemeasurable_setLIntegral_preimage_singleton`: a.e.-measurable
   weights have a.e.-measurable fibre integrals.
-* `TauCeti.ae_nullMeasurableSet_restrict_preimage_singleton`: Lebesgue-measurable sets are
+* `LinearMap.ae_nullMeasurableSet_restrict_preimage_singleton`: Lebesgue-measurable sets are
   Hausdorff measurable on almost every fibre.
 * `Submodule.lintegral_setLIntegral_preimage_orthogonalProjectionOnto`: slicing by orthogonal
   projections.
@@ -157,7 +157,7 @@ theorem lintegral_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F) {g : E �
 
 end LinearMap
 
-namespace TauCeti
+namespace LinearMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -197,7 +197,7 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_singleton_eq_zero (L : E →
   · filter_upwards [L.ae_preimage_singleton_eq_empty volume hL] with y hy
     simp [hy]
 
-end TauCeti
+end LinearMap
 
 namespace LinearMap
 
@@ -218,9 +218,9 @@ theorem lintegral_euclideanHausdorffMeasure_inter_preimage_singleton (L : E →�
   have hut : volume (u \ t) = 0 :=
     (ae_eq_set.1 (hs.toMeasurable_ae_eq.trans hst.symm)).1
   -- Almost every fibre of the null set `u \ t` is null.
-  have hnull := TauCeti.ae_euclideanHausdorffMeasure_inter_preimage_singleton_eq_zero L hut
+  have hnull := L.ae_euclideanHausdorffMeasure_inter_preimage_singleton_eq_zero hut
   rw [← measure_congr hst,
-    ← TauCeti.lintegral_euclideanHausdorffMeasure_inter_preimage_singleton_of_measurableSet L ht]
+    ← L.lintegral_euclideanHausdorffMeasure_inter_preimage_singleton_of_measurableSet ht]
   refine lintegral_congr_ae (hnull.mono fun y hy ↦ le_antisymm ?_ (measure_mono ?_))
   · calc μHE[finrank ℝ E - finrank ℝ F] (s ∩ L ⁻¹' {y})
         ≤ μHE[finrank ℝ E - finrank ℝ F] (t ∩ L ⁻¹' {y} ∪ (u \ t) ∩ L ⁻¹' {y}) := by
@@ -251,7 +251,7 @@ theorem lintegral_setLIntegral_preimage_orthogonalProjectionOnto (K : Submodule 
 
 end Submodule
 
-namespace TauCeti
+namespace LinearMap
 
 open Function
 
@@ -292,4 +292,4 @@ theorem ae_nullMeasurableSet_restrict_preimage_singleton (L : E →ₗ[ℝ] F)
   filter_upwards [ae_ae_eq_restrict_preimage_singleton L hs.toMeasurable_ae_eq] with y hy
   exact (measurableSet_toMeasurable volume s).nullMeasurableSet.congr hy
 
-end TauCeti
+end LinearMap
