@@ -38,7 +38,7 @@ example :
   let := Language.emptyStructure (M := Fin 1)
   let := Language.emptyStructure (M := Fin 2)
   intro h
-  have := h.realize_sentence_iff (Fragment.mem_ofSentence _)
+  have := h.realize_sentenceInf_iff (Fragment.mem_ofSentence _)
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all,
     BoundedFormulaInf.realize_equal, Term.realize_var] at this
   -- `∀ x y, x = y` holds in `Fin 1` but fails at `0 ≠ 1` in `Fin 2`

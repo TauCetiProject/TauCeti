@@ -16,10 +16,11 @@ member `⟨n, φ⟩` of `A` holds of `f ∘ a` in `M` exactly when it holds of `
 `a : Fin n → N`. It is stated as an equivalence, since a fragment need not contain negations.
 
 The fragment Tarski–Vaught criterion upgrades a witness condition to `A`-elementarity: if, for
-every universal member `∀ x, φ` of `A` and every tuple from `N`, a counterexample to `φ` in `M`
-can be found in the image of `N`, then `f` is `A`-elementary. The witnesses are elements, so no
-substitution of terms enters the induction, which uses exactly the component closure of `A`. No
-formation closure of `A`, countability of the language or nonemptiness of the carriers is needed.
+every universal member `∀ x, φ` of `A` and every tuple from `N`, whenever `φ` has a counterexample
+in `M` at that tuple it has one in the image of `N`, then `f` is `A`-elementary. The witnesses
+are elements, so no substitution of terms enters the induction, which uses exactly the component
+closure of `A`. No formation closure of `A`, countability of the language or nonemptiness of the
+carriers is needed.
 
 ## Main definitions
 
@@ -32,7 +33,7 @@ formation closure of `A`, countability of the language or nonemptiness of the ca
   lemma.
 * `FirstOrder.Language.AElementary.mono`: `A`-elementarity passes to smaller fragments.
 * `FirstOrder.Language.Equiv.aElementary`: an isomorphism is `A`-elementary for every `A`.
-* `FirstOrder.Language.AElementary.realize_sentence_iff` and
+* `FirstOrder.Language.AElementary.realize_sentenceInf_iff` and
   `FirstOrder.Language.AElementary.theoryω_model_iff`: sentences and theories of `A` hold in `N`
   exactly when they hold in `M`.
 * `FirstOrder.Language.aElementary_of_tarskiVaught`: the fragment Tarski–Vaught criterion.
@@ -75,6 +76,12 @@ namespace AElementary
 
 variable {A B : Fragment L}
 
+/-- An `A`-elementary embedding preserves and reflects every member of `A` at every tuple. -/
+theorem realize_iff {f : N ↪[L] M} (h : AElementary A f) {n : ℕ} {φ : L.BoundedFormulaω Empty n}
+    (hφ : (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) (a : Fin n → N) :
+    φ.Realize Empty.elim (f ∘ a) ↔ φ.Realize Empty.elim a :=
+  h φ hφ a
+
 /-- The identity embedding is `A`-elementary. -/
 theorem refl (A : Fragment L) : AElementary A (Embedding.refl L M) :=
   fun _ _ _ => Iff.rfl
@@ -82,23 +89,23 @@ theorem refl (A : Fragment L) : AElementary A (Embedding.refl L M) :=
 /-- `A`-elementary embeddings compose. -/
 theorem comp {f : N ↪[L] M} {g : P ↪[L] N} (hf : AElementary A f) (hg : AElementary A g) :
     AElementary A (f.comp g) :=
-  fun φ hφ a => (hf φ hφ (g ∘ a)).trans (hg φ hφ a)
+  fun _ hφ a => (hf.realize_iff hφ (g ∘ a)).trans (hg.realize_iff hφ a)
 
 /-- **Two out of three.** If `f` and `f ∘ g` are `A`-elementary, so is `g`. -/
 theorem of_comp {f : N ↪[L] M} {g : P ↪[L] N} (hf : AElementary A f)
     (hfg : AElementary A (f.comp g)) : AElementary A g :=
-  fun φ hφ a => (hf φ hφ (g ∘ a)).symm.trans (hfg φ hφ a)
+  fun _ hφ a => (hf.realize_iff hφ (g ∘ a)).symm.trans (hfg.realize_iff hφ a)
 
 /-- `A`-elementarity passes to smaller fragments. -/
 theorem mono {f : N ↪[L] M} (hAB : A ≤ B) (h : AElementary B f) : AElementary A f :=
-  fun φ hφ a => h φ (IsConcreteLE.le_iff.1 hAB hφ) a
+  fun _ hφ a => h.realize_iff (IsConcreteLE.le_iff.1 hAB hφ) a
 
 /-- **Sentences of `A`** hold in `N` exactly when they hold in `M`. -/
-theorem realize_sentence_iff {f : N ↪[L] M} (h : AElementary A f) {φ : L.Sentenceω}
+theorem realize_sentenceInf_iff {f : N ↪[L] M} (h : AElementary A f) {φ : L.Sentenceω}
     (hφ : (⟨0, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
     SentenceInf.Realize φ M ↔ SentenceInf.Realize φ N := by
   simp only [SentenceInf.realize_def, FormulaInf.realize_def]
-  rw [← h φ hφ default]
+  rw [← h.realize_iff hφ default]
   -- the empty tuples of `M` agree
   exact Iff.of_eq (congrArg _ (Subsingleton.elim _ _))
 
@@ -107,7 +114,7 @@ theorem theoryω_model_iff {f : N ↪[L] M} (h : AElementary A f) {T : L.Theory�
     (hT : ∀ φ ∈ T, (⟨0, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
     T.Model M ↔ T.Model N := by
   simp only [Theoryω.model_iff]
-  exact forall₂_congr fun φ hφ => h.realize_sentence_iff (hT φ hφ)
+  exact forall₂_congr fun φ hφ => h.realize_sentenceInf_iff (hT φ hφ)
 
 end AElementary
 
@@ -119,8 +126,8 @@ theorem Equiv.aElementary (A : Fragment L) (e : N ≃[L] M) : AElementary A e.to
   rwa [Subsingleton.elim (e ∘ (Empty.elim : Empty → N)) Empty.elim] at h
 
 /-- **The fragment Tarski–Vaught criterion.** If, for every universal member `∀ x, φ` of `A` and
-every tuple `a` from `N`, a counterexample to `φ` at `f ∘ a` in `M` can be found in the image of
-`f`, then `f` is `A`-elementary. -/
+every tuple `a` from `N`, whenever `φ` has a counterexample at `f ∘ a` in `M` it has one in the
+image of `f`, then `f` is `A`-elementary. -/
 theorem aElementary_of_tarskiVaught {A : Fragment L} (f : N ↪[L] M)
     (htv : ∀ {n : ℕ} (φ : L.BoundedFormulaω Empty (n + 1)),
       (⟨n, φ.all⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A → ∀ a : Fin n → N,
