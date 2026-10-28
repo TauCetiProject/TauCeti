@@ -26,6 +26,9 @@ structure on a many-object quiver be stated as structure on a single graded modu
 many-object analogue of an algebra over the product of copies of the ground ring indexed by the
 objects.
 
+The total module, its grading, and the inclusion and projection maps work over any ring.
+The Koszul twists and multilinear operations in this file use commutative scalars.
+
 The inclusion and projection of a single hom module are `homInclusion` and `homProjection`.
 They are `DirectSum.lof` and `DirectSum.component`; `homInclusion` is defined with classical
 decidable equality on objects, so that no decidability assumption on the objects enters the
@@ -74,7 +77,9 @@ namespace TauCeti.GradedLinearQuiver
 
 universe u u' v v' w
 
-variable (R : Type w) [CommRing R] (C : Type u) [GradedLinearQuiver.{u, v, w} R C]
+section Ring
+
+variable (R : Type w) [Ring R] (C : Type u) [GradedLinearQuiver.{u, v, w} R C]
 
 /-- The **total module of morphisms** of a graded linear quiver: the external direct sum of the
 hom modules of all ordered pairs of objects. -/
@@ -206,6 +211,12 @@ theorem isHomogeneous_homInclusion (X Y : C) :
   rw [LinearMap.isHomogeneous_def]
   intro p f hf
   rwa [add_zero, homInclusion_mem_totalGrading_piece_iff]
+
+end Ring
+
+section CommRing
+
+variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
 
 /-- The Koszul twist of the total module of morphisms acts on each hom module by its own Koszul
 twist. -/
@@ -379,5 +390,7 @@ theorem IsPathCompatible.compLinearMap_koszulTwist {C' : Type u'}
   eq_zero_of_ne s t x i j hij hne := by
     simpa only [MultilinearMap.compLinearMap_apply, koszulTwist_homInclusion] using
       hf.eq_zero_of_ne s t (fun k ↦ (grading (R := R) _ _).koszulTwist (q k) (x k)) i j hij hne
+
+end CommRing
 
 end TauCeti.GradedLinearQuiver

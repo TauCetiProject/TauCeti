@@ -9,6 +9,7 @@ public import Mathlib.Topology.Instances.ENNReal.Lemmas
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 public import TauCeti.FieldTheory.IntermediateField.RootCount
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Separable
+import TauCeti.NumberTheory.LocalField.Eisenstein.RootCount
 import TauCeti.NumberTheory.LocalField.RootCount.Measurable
 
 /-!
@@ -31,6 +32,15 @@ polynomial. When `f` is separable it has `n` roots in the separable closure. Sep
 needed: an inseparable Eisenstein polynomial, which exists in equal characteristic, is irreducible
 and so has no root at all in the separable closure.
 
+For additive Haar measure, the inseparable Eisenstein polynomials form a null set, so the sum
+identity holds almost everywhere on the Eisenstein region, including in equal characteristic.
+
+For a single `L ∈ σ_K(n)`, the root count of an Eisenstein polynomial is a finite sum of ball
+indicators: if the uniformizers of `L` are covered by pairwise disjoint balls of order `r` larger
+than the discriminant exponent `d(L)`, then `L.rootCount a` is the number of these balls that
+contain a root. The balls do not depend on `a`, so integrating `L.rootCount` over the Eisenstein
+polynomials reduces to measuring, ball by ball, the polynomials with a root in that ball.
+
 For the integration itself, each root count is almost everywhere measurable on the Eisenstein
 region, for any measure on coefficient space. This holds because the Eisenstein region lies in the
 integer box, where root counts are measurable (`IntermediateField.aemeasurable_rootCount`).
@@ -41,19 +51,22 @@ integer box, where root counts are measurable (`IntermediateField.aemeasurable_r
   the root counts over `σ_K(n)` sum to `n`.
 * `TauCeti.ae_tsum_rootCount_eq`: for additive Haar measure, this identity holds almost
   everywhere on the Eisenstein region, including in equal characteristic.
+* `IntermediateField.rootCount_eq_sum_ite_of_eisenstein`: for `L ∈ σ_K(n)`, the root count of an
+  Eisenstein polynomial of degree `n` is the number of balls containing a root, in any disjoint
+  cover of the uniformizers of `L` by balls of order larger than `d(L)`.
 * `TauCeti.aemeasurable_rootCount_restrict_eisensteinSet`: for `L ∈ σ_K(n)`, the root count in `L`
   is almost everywhere measurable on the Eisenstein region.
 
 ## References
 
 * J.-P. Serre, *Une « formule de masse » pour les extensions totalement ramifiées de degré donné
-  d'un corps local*, C. R. Acad. Sci. Paris Sér. A **286** (1978), 1031–1036, §2.
+  d'un corps local*, C. R. Acad. Sci. Paris Sér. A **286** (1978), 1031–1036, §§2–3.
 -/
 
 public section
 noncomputable section
 
-open ValuativeRel Polynomial MeasureTheory
+open ValuativeRel Polynomial IsDiscreteValuationRing MeasureTheory
 open scoped IntermediateField ENNReal
 
 namespace TauCeti
@@ -129,6 +142,44 @@ theorem ae_tsum_rootCount_eq {n : ℕ} (hn : 0 < n)
     ae_separable_monicOfCoeff_restrict_eisensteinSet hn μ] with a ha hsep
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
   exact tsum_rootCount_eq_of_separable he hf hsep
+
+open Classical in
+/-- **The root count in a counted extension as a sum over balls.** Let `L ∈ σ_K(n)`, with its
+canonical local-field structure, and let `f` be an Eisenstein polynomial over `𝒪[K]` with image
+`monicOfCoeff a` over `K`, for `a : Fin n → K`. Let `C` index a family of pairwise disjoint balls
+`v_L(x - c) ≥ r` covering the uniformizers of `L`, of order `r` larger than the discriminant
+exponent `d(L)`. Then `L.rootCount a` is the number of these balls containing a root of `f`. -/
+theorem _root_.IntermediateField.rootCount_eq_sum_ite_of_eisenstein {n : ℕ}
+    {L : IntermediateField K (SeparableClosure K)} (hL : L ∈ totallyRamifiedOfDegree K n) :
+    letI := (mem_totallyRamifiedOfDegree_iff.1 hL).2.finite
+    letI := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+    letI := finiteIntermediateFieldTopology K (SeparableClosure K) L
+    haveI := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+    haveI := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+    ∀ {a : Fin n → K} {f : 𝒪[K][X]}, f.IsEisensteinAt 𝓂[K] →
+      f.map (algebraMap 𝒪[K] K) = monicOfCoeff a → ∀ {r : ℕ}, L.discriminantExponent < r →
+      ∀ C : Finset 𝒪[L], {x : 𝒪[L] | addVal 𝒪[L] x = 1} ⊆
+        ⋃ c ∈ C, {x : 𝒪[L] | (r : ℕ∞) ≤ addVal 𝒪[L] (x - c)} →
+      (C : Set 𝒪[L]).PairwiseDisjoint (fun c ↦ {x : 𝒪[L] | (r : ℕ∞) ≤ addVal 𝒪[L] (x - c)}) →
+        L.rootCount a =
+          ∑ c ∈ C, if ∃ z : 𝒪[L], aeval z f = 0 ∧ (r : ℕ∞) ≤ addVal 𝒪[L] (z - c) then 1 else 0 := by
+  have hL' := mem_totallyRamifiedOfDegree_iff.1 hL
+  let _ := hL'.2.finite
+  let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+  let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+  have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+  intro a f he hf r hr C hcover hdisj
+  have hmonic : f.Monic := (FaithfulSMul.algebraMap_injective 𝒪[K] K).monic_map_iff.mpr
+    (hf ▸ monic_monicOfCoeff a)
+  -- `d(L)` is the different exponent of `L / K`, as `L / K` has inertia degree one.
+  have htr := (IntermediateField.isTotallyRamified_iff L).1 hL'.2
+  rw [IntermediateField.discriminantExponent_eq,
+    discriminantExponent_eq_inertiaDegree_mul_differentExponent, htr.inertiaDegree_eq_one,
+    one_mul] at hr
+  rw [L.rootCount_def, ← hf, aroots_eq_map_roots_integerRing L hmonic, Multiset.card_map]
+  exact card_roots_map_eq_sum_ite_of_eisenstein he ((natDegree_eq_of_map_eq hf).trans hL'.1.symm)
+    hr C hcover hdisj
 
 /-- **The root counts are measurable on the Eisenstein region.** For `L ∈ σ_K(n)` and any measure
 `μ` on the coefficient space `Fin n → K`, the root count `a ↦ L.rootCount a` is almost everywhere
