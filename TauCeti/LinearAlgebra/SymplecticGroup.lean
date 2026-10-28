@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.SymplecticGroup
+public import Mathlib.LinearAlgebra.UnitaryGroup
 
 -- Non-public: `noncomm_ring` normalises the conjugation identities below, and the Schur complement
 -- evaluates `det J`, but no statement mentions either.
@@ -36,6 +37,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.J_mul_neg_J`, `Matrix.neg_J_mul_J` and `Matrix.isUnit_J`: the canonical skew-symmetric
   matrix is a unit, with inverse `-J`.
 * `Matrix.det_J`: its determinant is `1`.
+* `Matrix.star_J` and `Matrix.J_mem_unitaryGroup`: over a ring with trivial star, such as `ℝ`,
+  its adjoint is `-J` and it is orthogonal.
 * `Matrix.J_apply_swap` and `Matrix.sum_J_mul_J`: the two entrywise identities for `J`, its
   antisymmetry and the pairing of a row with itself; `Matrix.sum_sum_J_mul_J` is the double sum of
   the latter, `tr (J * Jᵀ) = 2 * card l`.
@@ -80,6 +83,19 @@ theorem det_J : (J l R).det = 1 := by
   have hJ : J l R * fromBlocks 1 1 0 1 = fromBlocks 0 (-1) 1 1 := by
     simp [J, fromBlocks_multiply]
   simpa [det_fromBlocks_zero₂₁, det_fromBlocks_one₂₂] using congrArg det hJ
+
+omit [Fintype l] in
+/-- Over a ring with trivial star, such as `ℝ`, the adjoint of the canonical skew-symmetric matrix
+is its transpose `-J`. -/
+@[simp]
+theorem star_J [StarRing R] [TrivialStar R] : star (J l R) = -J l R := by
+  rw [star_eq_conjTranspose, conjTranspose_eq_transpose_of_trivial, J_transpose]
+
+/-- Over a ring with trivial star, such as `ℝ`, the canonical skew-symmetric matrix is orthogonal:
+its adjoint is `Jᵀ = -J = J⁻¹`. -/
+theorem J_mem_unitaryGroup [StarRing R] [TrivialStar R] : J l R ∈ unitaryGroup (l ⊕ l) R := by
+  rw [mem_unitaryGroup_iff', star_J]
+  exact neg_J_mul_J l R
 
 omit [Fintype l] in
 /-- `J` is antisymmetric, entrywise: `Jᵀ = -J` read at a pair of indices. -/

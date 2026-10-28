@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Algebra.Algebra.StrictPositivity
 
+import Mathlib.Algebra.Star.UnitaryStarAlgAut
+
 /-!
 # The polar decomposition of an invertible element
 
@@ -41,7 +43,8 @@ abstract algebra, where invertibility makes the factor an element of the unitary
 
 ## Main declarations
 
-* `CFC.sqrt_unitary_mul_mul_star`: the square root commutes with conjugation by a unitary.
+* `CFC.sqrt_unitary_mul_mul_star`, `CFC.rpow_unitary_mul_mul_star`: the square root and the
+  real powers commute with conjugation by a unitary.
 * `Units.polarUnitary a`: the unitary factor of the polar decomposition of `a`.
 * `Units.sqrt_mul_star_mul_polarUnitary`, `Units.polarUnitary_mul_sqrt_star_mul`: the left and
   right polar decompositions `a = √(a a⋆) u` and `a = u √(a⋆ a)`.
@@ -65,6 +68,7 @@ public section
 noncomputable section
 
 open Ring
+open scoped NNReal
 
 variable {A : Type*} [PartialOrder A] [Ring A] [StarRing A] [StarOrderedRing A]
 
@@ -87,6 +91,23 @@ theorem sqrt_unitary_mul_mul_star (u : unitary A) (x : A) :
   · have hux : ¬0 ≤ (u : A) * x * star (u : A) := by
       rwa [Unitary.isUnit_coe.star_right_conjugate_nonneg_iff]
     rw [sqrt_of_not_nonneg hx, sqrt_of_not_nonneg hux, mul_zero, zero_mul]
+
+/-- Real powers commute with conjugation by a unitary: `(u x u⋆) ^ s = u x ^ s u⋆`. Conjugation
+by `u` is a continuous star algebra automorphism, which commutes with the continuous functional
+calculus; when `x ^ s` is the junk value `0`, so is `(u x u⋆) ^ s`. -/
+theorem rpow_unitary_mul_mul_star (u : unitary A) (x : A) (s : ℝ) :
+    ((u : A) * x * star (u : A)) ^ s = u * x ^ s * star (u : A) := by
+  rw [rpow_def, rpow_def]
+  by_cases hx : 0 ≤ x
+  · by_cases hf : ContinuousOn (fun t : ℝ≥0 ↦ t ^ s) (spectrum ℝ≥0 x)
+    · exact (StarAlgHomClass.map_cfc (S := ℝ) (Unitary.conjStarAlgAut ℝ A u) _ x hf
+        ((continuous_mul_const _).comp (continuous_const_mul _)) hx
+        (star_right_conjugate_nonneg hx _)).symm
+    · rw [cfc_apply_of_not_continuousOn _ hf, cfc_apply_of_not_continuousOn _ (by simpa using hf),
+        mul_zero, zero_mul]
+  · have hux : ¬0 ≤ (u : A) * x * star (u : A) := by
+      rwa [Unitary.isUnit_coe.star_right_conjugate_nonneg_iff]
+    rw [cfc_apply_of_not_predicate _ hx, cfc_apply_of_not_predicate _ hux, mul_zero, zero_mul]
 
 end CFC
 
