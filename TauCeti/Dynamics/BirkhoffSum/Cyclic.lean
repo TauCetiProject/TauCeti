@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.BirkhoffSum.Average
+public import Mathlib.Dynamics.PeriodicPts.Defs
 import Mathlib.Tactic.Abel
 
 /-!
@@ -27,9 +28,43 @@ Chapter V, section on logarithmic transformations.
 
 public section
 
+open Function Finset
+
+/-- The orbit sum at a periodic point is invariant under the generator. -/
+theorem Function.IsPeriodicPt.birkhoffSum_apply_eq {X E : Type*} [AddCommMonoid E]
+    {r : X → X} {m : ℕ} {x : X} (hx : IsPeriodicPt r m x) (b : X → E) :
+    birkhoffSum r b m (r x) = birkhoffSum r b m x := by
+  cases m with
+  | zero => simp
+  | succ n =>
+    rw [birkhoffSum_succ_apply, ← iterate_succ_apply, hx.eq,
+      birkhoffSum_succ_apply', add_comm]
+
+/-- The difference of weighted orbit sums telescopes at a periodic point. -/
+theorem Function.IsPeriodicPt.sum_range_nsmul_iterate_apply_sub {X E : Type*}
+    [AddCommGroup E] {r : X → X} {m : ℕ} {x : X} (hx : IsPeriodicPt r m x) (b : X → E) :
+    (∑ j ∈ range m, j • b (r^[j] (r x))) - (∑ j ∈ range m, j • b (r^[j] x)) =
+      m • b x - birkhoffSum r b m x := by
+  have hterm (j : ℕ) :
+      j • b (r^[j] (r x)) - j • b (r^[j] x) =
+        ((j + 1) • b (r^[j + 1] x) - j • b (r^[j] x)) - b (r^[j + 1] x) := by
+    simp only [iterate_succ_apply, add_nsmul, one_nsmul]
+    abel
+  rw [← sum_sub_distrib]
+  simp_rw [hterm]
+  rw [sum_sub_distrib, sum_range_sub (fun j ↦ j • b (r^[j] x))]
+  simpa [birkhoffSum, hx.eq, iterate_succ_apply] using
+    congrArg (m • b x - ·) (hx.birkhoffSum_apply_eq b)
+
 namespace TauCeti
 
-open Function Finset
+/-- An orbit average equals a prescribed value when the orbit sum is `m` times that value. -/
+theorem birkhoffAverage_eq_of_birkhoffSum_eq_nsmul {𝕜 X E : Type*}
+    [DivisionSemiring 𝕜] [AddCommMonoid E] [Module 𝕜 E]
+    {r : X → X} {b : X → E} {m : ℕ} {x : X} {a : E}
+    (hm : (m : 𝕜) ≠ 0) (hsum : birkhoffSum r b m x = m • a) :
+    birkhoffAverage 𝕜 r b m x = a := by
+  simp [birkhoffAverage, hsum, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul, hm]
 
 variable {𝕜 X E : Type*} [DivisionRing 𝕜] [AddCommGroup E] [Module 𝕜 E]
 
@@ -70,56 +105,37 @@ theorem cyclicCorrection_neg (r : X → X) (b : X → E) (m : ℕ) :
     cyclicCorrection 𝕜 r (-b) m = -cyclicCorrection 𝕜 r b m := by
   simpa using cyclicCorrection_sub (𝕜 := 𝕜) r 0 b m
 
-/-- A cyclic orbit sum is invariant under the generator. -/
-theorem birkhoffSum_comp_of_iterate_eq_id (r : X → X) (b : X → E) {m : ℕ}
-    (hr : r^[m] = id) (x : X) :
-    birkhoffSum r b m (r x) = birkhoffSum r b m x := by
-  have h := birkhoffSum_apply_sub_birkhoffSum r b m x
-  rw [hr, id_eq, sub_self, sub_eq_zero] at h
-  exact h
-
-/-- The weighted orbit correction changes a section into its invariant cyclic average. -/
-theorem cyclicCorrection_comp_sub (r : X → X) (b : X → E) {m : ℕ}
-    (hr : r^[m] = id) (hm : (m : 𝕜) ≠ 0) (x : X) :
+/-- At a periodic point, the weighted orbit correction changes a section into its cyclic
+average. -/
+theorem cyclicCorrection_apply_sub_cyclicCorrection (r : X → X) (b : X → E) {m : ℕ}
+    {x : X} (hx : IsPeriodicPt r m x) (hm : (m : 𝕜) ≠ 0) :
     cyclicCorrection 𝕜 r b m (r x) - cyclicCorrection 𝕜 r b m x =
       birkhoffAverage 𝕜 r b m x - b x := by
-  have hterm (j : ℕ) :
-      j • b (r^[j] (r x)) - j • b (r^[j] x) =
-        ((j + 1) • b (r^[j + 1] x) - j • b (r^[j] x)) - b (r^[j + 1] x) := by
-    simp only [iterate_succ_apply, add_nsmul, one_nsmul]
-    abel
-  have hsum : (∑ j ∈ range m, j • b (r^[j] (r x))) -
-        (∑ j ∈ range m, j • b (r^[j] x)) =
-      m • b x - birkhoffSum r b m x := by
-    rw [← sum_sub_distrib]
-    simp_rw [hterm]
-    rw [sum_sub_distrib, sum_range_sub (fun j ↦ j • b (r^[j] x))]
-    simp only [hr, id_eq, zero_nsmul, sub_zero, iterate_succ_apply]
-    rw [← birkhoffSum, birkhoffSum_comp_of_iterate_eq_id r b hr]
-  rw [cyclicCorrection_apply, cyclicCorrection_apply, ← smul_sub, hsum,
-    birkhoffAverage, smul_sub, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul]
-  simp [hm, neg_smul, sub_eq_add_neg, add_comm]
+  rw [cyclicCorrection_apply, cyclicCorrection_apply, ← smul_sub,
+    hx.sum_range_nsmul_iterate_apply_sub b]
+  simp [birkhoffAverage, ← Nat.cast_smul_eq_nsmul 𝕜, smul_add, smul_smul, hm,
+    neg_smul, sub_eq_add_neg, add_comm]
 
 /-- If the cyclic sum of a section is `m • a` for a section `a`, the weighted
 correction normalizes it to `a`. -/
-theorem add_cyclicCorrection_comp_sub (r : X → X) (b a : X → E) {m : ℕ}
+theorem add_cyclicCorrection_apply_sub (r : X → X) (b a : X → E) {m : ℕ}
     (hr : r^[m] = id) (hm : (m : 𝕜) ≠ 0)
     (hsum : ∀ x, birkhoffSum r b m x = m • a x) (x : X) :
     b x + cyclicCorrection 𝕜 r b m (r x) - cyclicCorrection 𝕜 r b m x = a x := by
-  have h := cyclicCorrection_comp_sub (𝕜 := 𝕜) r b hr hm x
-  rw [birkhoffAverage, hsum, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul, inv_mul_cancel₀ hm,
-    one_smul] at h
-  rw [add_sub_assoc, h]
+  have hx : IsPeriodicPt r m x := congrFun hr x
+  rw [add_sub_assoc, cyclicCorrection_apply_sub_cyclicCorrection r b hx hm,
+    birkhoffAverage_eq_of_birkhoffSum_eq_nsmul hm (hsum x)]
   abel
 
 /-- A section can be normalized to an invariant section by a change of fibre coordinates
 exactly when its orbit sum is `m` times that invariant section. -/
-theorem exists_add_comp_sub_eq_iff (r : X → X) (b a : X → E) {m : ℕ}
+theorem exists_add_apply_sub_eq_iff (r : X → X) (b a : X → E) {m : ℕ}
     (hr : r^[m] = id) (hm : (m : 𝕜) ≠ 0) (ha : a ∘ r = a) :
     (∃ c : X → E, ∀ x, b x + c (r x) - c x = a x) ↔
       ∀ x, birkhoffSum r b m x = m • a x := by
   constructor
   · rintro ⟨c, hc⟩ x
+    have hx : IsPeriodicPt r m x := congrFun hr x
     have hb : b = a - (c ∘ r - c) := by
       ext y
       have h := hc y
@@ -128,14 +144,14 @@ theorem exists_add_comp_sub_eq_iff (r : X → X) (b a : X → E) {m : ℕ}
         b y = (b y + c (r y) - c y) - (c (r y) - c y) := by abel
         _ = a y - (c (r y) - c y) := by rw [h]
     rw [hb, birkhoffSum_sub_apply, birkhoffSum_sub_apply, birkhoffSum_comp_apply,
-      birkhoffSum_comp_of_iterate_eq_id r c hr, sub_self, sub_zero]
+      hx.birkhoffSum_apply_eq c, sub_self, sub_zero]
     exact birkhoffSum_apply_of_comp_eq ha m x
   · intro hsum
-    exact ⟨cyclicCorrection 𝕜 r b m, add_cyclicCorrection_comp_sub r b a hr hm hsum⟩
+    exact ⟨cyclicCorrection 𝕜 r b m, add_cyclicCorrection_apply_sub r b a hr hm hsum⟩
 
 /-- Two changes of fibre coordinates give the same normalized translation section exactly when
 their difference is invariant under the generator. -/
-theorem add_comp_sub_eq_iff_sub_invariant (r : X → X) (b a c d : X → E)
+theorem add_apply_sub_eq_iff_sub_comp_eq (r : X → X) (b a c d : X → E)
     (hc : ∀ x, b x + c (r x) - c x = a x) :
     (∀ x, b x + d (r x) - d x = a x) ↔ (d - c) ∘ r = d - c := by
   constructor

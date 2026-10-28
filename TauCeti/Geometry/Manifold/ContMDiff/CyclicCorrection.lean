@@ -45,17 +45,18 @@ theorem contMDiff_cyclicCorrection {r : X → X} {b : X → E}
     (ContMDiff.sum fun j _ ↦ (contMDiff_const (I' := 𝓘(𝕜))).smul (hb.comp (hr.iterate j)))
 
 /-- A `C^n` cyclic translation section can be normalized to an invariant section by a `C^n`
-change of fibre coordinates exactly when its orbit sum has the prescribed invariant value. -/
-theorem exists_contMDiff_add_comp_sub_eq_iff {r : X → X} {b a : X → E} {m : ℕ}
+change of fibre coordinates exactly when its orbit sum is `m` times the prescribed invariant
+section `a`. -/
+theorem exists_contMDiff_add_apply_sub_eq_iff {r : X → X} {b a : X → E} {m : ℕ}
     (hr : ContMDiff I I n r) (hb : ContMDiff I 𝓘(𝕜, E) n b)
     (hperiod : r^[m] = id) (hm : (m : 𝕜) ≠ 0) (ha : a ∘ r = a) :
     (∃ c : X → E, ContMDiff I 𝓘(𝕜, E) n c ∧ ∀ x, b x + c (r x) - c x = a x) ↔
       ∀ x, birkhoffSum r b m x = m • a x := by
   constructor
   · rintro ⟨c, -, hc⟩
-    exact (exists_add_comp_sub_eq_iff (𝕜 := 𝕜) r b a hperiod hm ha).mp ⟨c, hc⟩
+    exact (exists_add_apply_sub_eq_iff (𝕜 := 𝕜) r b a hperiod hm ha).mp ⟨c, hc⟩
   · intro hsum
     exact ⟨cyclicCorrection 𝕜 r b m, contMDiff_cyclicCorrection hr hb m,
-      add_cyclicCorrection_comp_sub r b a hperiod hm hsum⟩
+      add_cyclicCorrection_apply_sub r b a hperiod hm hsum⟩
 
 end TauCeti
