@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import TauCeti.Algebra.Module.ZLattice.Rank
+import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # Successive minima of an arbitrary set with respect to a submodule
@@ -36,11 +37,11 @@ Minkowski's second theorem.
 * `MeasureTheory.successiveMin_le_of_lt_setFinrank` and
   `MeasureTheory.lt_setFinrank_smul_inter_of_successiveMin_lt`: a dilate whose lattice vectors
   span a subspace of dimension greater than `i` bounds the `i`-th minimum from above, and
-  conversely, for an absorbent set star-convex about `0`, every dilate by a factor strictly above
-  the minimum is such a dilate.
-* `MeasureTheory.exists_linearIndependent_of_successiveMin_lt`: for a convex neighbourhood of `0`,
-  every dilate by a factor strictly above the `i`-th minimum contains `i + 1` linearly independent
-  vectors of `L`.
+  conversely, for discrete `L`, `i < finrank ℤ L` and an absorbent set star-convex about `0`,
+  every dilate by a factor strictly above the minimum is such a dilate.
+* `MeasureTheory.exists_linearIndependent_of_successiveMin_lt`: for discrete `L`,
+  `i < finrank ℤ L` and a convex neighbourhood of `0`, every dilate by a factor strictly above the
+  `i`-th minimum contains `i + 1` linearly independent vectors of `L`.
 
 ## References
 
@@ -156,9 +157,9 @@ theorem exists_linearIndependent_of_successiveMin_lt [DiscreteTopology L] {r : �
   have hri := lt_setFinrank_smul_inter_of_successiveMin_lt
     (hsc.starConvex (mem_of_mem_nhds hs₀)) (absorbent_nhds_zero hs₀) hi hr
   rw [Set.finrank] at hri
-  obtain ⟨f, hf, -, hfli⟩ := exists_fun_fin_finrank_span_eq ℝ (r • s ∩ (L : Set E))
-  refine ⟨fun j ↦ ⟨f (Fin.castLE hri j), (hf _).2⟩, fun j ↦ hf _, ?_⟩
+  obtain ⟨f, hfli, hf⟩ := le_finrank_span_iff_exists_linearIndependent.mp hri
+  refine ⟨fun j ↦ ⟨f j, (hf j).2⟩, hf, ?_⟩
   rw [← L.subtype.linearIndependent_iff (ker_subtype L)]
-  exact (hfli.comp _ (Fin.castLE_injective hri)).restrict_scalars' ℤ
+  exact hfli.restrict_scalars' ℤ
 
 end MeasureTheory
