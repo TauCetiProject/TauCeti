@@ -145,29 +145,23 @@ theorem isResiduallyFree_iff_isSeparatedBy :
 
 /-- A fully residually free group is residually free. -/
 theorem IsFullyResiduallyFree.isResiduallyFree (h : IsFullyResiduallyFree G) :
-    IsResiduallyFree G := fun g hg => by
-  classical
-  obtain ⟨ι, φ, hφ⟩ := h {g} (by simpa using hg)
-  exact ⟨ι, φ, hφ g (Finset.mem_singleton_self g)⟩
+    IsResiduallyFree G :=
+  isResiduallyFree_iff_isSeparatedBy.2
+    (isFullyResiduallyFree_iff_isDiscriminatedBy.1 h).isSeparatedBy
 
 /-- A group with an injective homomorphism to a residually free group is residually free. In
 particular subgroups of residually free groups are residually free. -/
 theorem IsResiduallyFree.of_injective (h : IsResiduallyFree G) {f : H →* G}
-    (hf : Function.Injective f) : IsResiduallyFree H := by
-  rw [isResiduallyFree_iff_fin_two] at h ⊢
-  intro x hx
-  obtain ⟨φ, hφ⟩ := h (f x) ((map_ne_one_iff f hf).2 hx)
-  exact ⟨φ.comp f, hφ⟩
+    (hf : Function.Injective f) : IsResiduallyFree H :=
+  isResiduallyFree_iff_isSeparatedBy.2 <|
+    (isResiduallyFree_iff_isSeparatedBy.1 h).of_injective ⟨f, fun _ => by simp⟩ hf
 
 /-- A group with an injective homomorphism to a fully residually free group is fully residually
 free. In particular subgroups of fully residually free groups are fully residually free. -/
 theorem IsFullyResiduallyFree.of_injective (h : IsFullyResiduallyFree G) {f : H →* G}
-    (hf : Function.Injective f) : IsFullyResiduallyFree H := by
-  classical
-  rw [isFullyResiduallyFree_iff_fin_two] at h ⊢
-  intro s hs
-  obtain ⟨φ, hφ⟩ := h (s.image f) (by simpa [map_ne_one_iff f hf] using hs)
-  exact ⟨φ.comp f, fun x hx => hφ (f x) (Finset.mem_image_of_mem f hx)⟩
+    (hf : Function.Injective f) : IsFullyResiduallyFree H :=
+  isFullyResiduallyFree_iff_isDiscriminatedBy.2 <|
+    (isFullyResiduallyFree_iff_isDiscriminatedBy.1 h).of_injective ⟨f, fun _ => by simp⟩ hf
 
 /-- A free group is fully residually free. -/
 theorem isFullyResiduallyFree_of_isFreeGroup [IsFreeGroup G] : IsFullyResiduallyFree G :=
