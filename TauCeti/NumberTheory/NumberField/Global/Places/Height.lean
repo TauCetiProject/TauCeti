@@ -45,8 +45,8 @@ normalized absolute value, `mulHeight x = ∏ᶠ v, max_i ‖x_i‖_v`.
   `2 * logHeight₁ x = ∑ᶠ v, |log ‖x‖_v|`.
 * `TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁`:
   `|log ‖x‖_v| ≤ logHeight₁ x`.
-* `IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_mul_log_absNorm_le_logHeight₁`: Liouville's
-  inequality at a finite place, `ord_v(x) log N(v) ≤ logHeight₁ x`.
+* `IsDedekindDomain.HeightOneSpectrum.abs_log_valuation_mul_log_absNorm_le_logHeight₁`: Liouville's
+  inequality at a finite place, `|ord_v(x)| log N(v) ≤ logHeight₁ x`.
 * `TauCeti.GlobalNumberFields.finsum_comp_log_normalizedAbsValue_eq_sum`: for `f` with `f 0 = 0`
   and `x` a unit outside a finite set `S` of finite places, `∑ᶠ v, f (log ‖x‖_v)` is a finite sum
   over `S` and the infinite places.
@@ -201,14 +201,15 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- **Liouville's inequality at a finite place.** The order `-WithZero.log (v.valuation K x)` of an
-element `x` of a number field at a finite place `v`, weighted by the logarithm of the norm of `v`,
-is at most the logarithmic height of `x`. Both sides vanish at `x = 0`. -/
-theorem neg_log_valuation_mul_log_absNorm_le_logHeight₁ (v : HeightOneSpectrum (𝓞 K)) (x : K) :
-    -WithZero.log (v.valuation K x) * log (Ideal.absNorm v.asIdeal) ≤ logHeight₁ x := by
-  rw [neg_mul, ← NumberField.HeightOneSpectrum.log_adicAbv,
+/-- **Liouville's inequality at a finite place.** The absolute value of the order
+`-WithZero.log (v.valuation K x)` of an element `x` of a number field at a finite place `v`,
+weighted by the logarithm of the norm of `v`, is at most the logarithmic height of `x`. Both sides
+vanish at `x = 0`. -/
+theorem abs_log_valuation_mul_log_absNorm_le_logHeight₁ (v : HeightOneSpectrum (𝓞 K)) (x : K) :
+    |WithZero.log (v.valuation K x)| * log (Ideal.absNorm v.asIdeal) ≤ logHeight₁ x := by
+  rw [Int.cast_abs, ← abs_of_nonneg (log_natCast_nonneg (Ideal.absNorm v.asIdeal)), ← abs_mul,
+    ← NumberField.HeightOneSpectrum.log_adicAbv,
     ← TauCeti.GlobalNumberFields.normalizedAbsValue_inl]
-  exact (neg_le_abs _).trans
-    (TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁ _ x)
+  exact TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁ _ x
 
 end IsDedekindDomain.HeightOneSpectrum

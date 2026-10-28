@@ -5,20 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Degrees
 public import Mathlib.NumberTheory.Height.NumberField
 public import TauCeti.NumberTheory.NumberField.Global.Places.Height
-import Mathlib.Algebra.FiniteSupport.Basic
-import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
+public import TauCeti.RingTheory.MvPolynomial.AbvEval
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
-import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+
+import all Mathlib.NumberTheory.Height.Basic
 
 /-!
 # Heights of values of integer polynomials
 
 Let `P ∈ ℤ[X_i : i ∈ ι]` have partial degrees `degreeOf i P ≤ L i` and length
 `ℓ(P) = ∑_s |c_s|`, the sum of the absolute values of its coefficients. For a point `x` of a
-field `K`, the value `P(x) = ∑_s c_s ∏ i, x_i ^ s_i` is bounded place by place:
+field `K`, the value `P(x) = ∑_s c_s ∏ i, x_i ^ s_i` is bounded place by place
+(`AbsoluteValue.apply_aeval_le`, `IsNonarchimedean.apply_aeval_le`):
 
 * at an arbitrary absolute value `v`, `v(P(x)) ≤ ℓ(P) ∏ i, max(v(x_i), 1) ^ L i`;
 * at a nonarchimedean `v`, the integer coefficients have `v(c_s) ≤ 1` and the ultrametric
@@ -28,7 +28,7 @@ Multiplying these local bounds over the admissible absolute values of `K` gives 
 value: `h(P(x)) ≤ totalWeight K * log ℓ(P) + ∑ i, L i * h(x_i)`.
 
 Over a number field `totalWeight K = [K : ℚ]`. Combined with the product formula, in the form
-`ord_v(y) log N(v) ≤ h(y)` at a finite place `v`, this bounds the order at `v` of a nonzero value
+`|ord_v(y)| log N(v) ≤ h(y)` at a finite place `v`, this bounds the order at `v` of a nonzero value
 `P(x)`: `ord_v P(x) log N(v) ≤ [K : ℚ] log ℓ(P) + ∑ i, L i * h(x_i)`. This Liouville-type
 estimate is the polynomial evaluation bound of Yu's theory of linear forms in `p`-adic logarithms:
 the auxiliary polynomial values there are nonzero algebraic numbers whose order at the prime is
@@ -36,13 +36,17 @@ compared with an analytic upper bound.
 
 ## Main results
 
-* `AbsoluteValue.apply_prod_pow_le`: `v(∏ i, x_i ^ s_i) ≤ ∏ i, max(v(x_i), 1) ^ L i` for `s ≤ L`.
-* `AbsoluteValue.apply_aeval_le`: `v(P(x)) ≤ ℓ(P) ∏ i, max(v(x_i), 1) ^ L i`.
-* `IsNonarchimedean.apply_aeval_le`: `v(P(x)) ≤ ∏ i, max(v(x_i), 1) ^ L i` for nonarchimedean `v`.
 * `Height.mulHeight₁_aeval_le`: `H(P(x)) ≤ ℓ(P) ^ totalWeight K * ∏ i, H(x_i) ^ L i` for `P ≠ 0`.
 * `Height.logHeight₁_aeval_le`: `h(P(x)) ≤ totalWeight K * log ℓ(P) + ∑ i, L i * h(x_i)`.
 * `IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_aeval_mul_log_absNorm_le`: the order bound
   `ord_v P(x) log N(v) ≤ [K : ℚ] log ℓ(P) + ∑ i, L i * h(x_i)` over a number field `K`.
+
+## Implementation notes
+
+The finiteness of the multiplicative support of the nonarchimedean local factors
+`max (v x) 1` rests on `Height.hasFiniteMulSupport_max_nonarchAbsVal`, which is `private` in
+`Mathlib/NumberTheory/Height/Basic.lean`; it is reached by `import all`, as in
+`TauCeti/NumberTheory/Height/Affine.lean`.
 
 ## References
 
@@ -58,73 +62,11 @@ open Finset MvPolynomial
 
 variable {ι : Type*} [Fintype ι]
 
-namespace AbsoluteValue
-
-variable {R : Type*} [CommRing R] [Nontrivial R]
-
-/-- A monomial `∏ i, x_i ^ s_i` with exponents `s_i ≤ L i` has absolute value at most
-`∏ i, max(v(x_i), 1) ^ L i`. -/
-theorem apply_prod_pow_le (v : AbsoluteValue R ℝ) {s L : ι → ℕ} (hs : ∀ i, s i ≤ L i)
-    (x : ι → R) : v (∏ i, x i ^ s i) ≤ ∏ i, max (v (x i)) 1 ^ L i := by
-  rw [map_prod]
-  refine prod_le_prod₀ (fun i _ ↦ by positivity) fun i _ ↦ ?_
-  rw [v.map_pow]
-  exact (pow_le_pow_left₀ (v.nonneg _) (le_max_left _ _) _).trans
-    (pow_le_pow_right₀ (le_max_right _ _) (hs i))
-
-/-- The value of an integer polynomial `P` with partial degrees `degreeOf i P ≤ L i` at a point
-`x` has absolute value at most `ℓ(P) ∏ i, max(v(x_i), 1) ^ L i`, where `ℓ(P)` is the sum of the
-absolute values of the coefficients of `P`. -/
-theorem apply_aeval_le (v : AbsoluteValue R ℝ) {P : MvPolynomial ι ℤ} {L : ι → ℕ}
-    (hL : ∀ i, P.degreeOf i ≤ L i) (x : ι → R) :
-    v (aeval x P) ≤ (∑ s ∈ P.support, |(P.coeff s : ℝ)|) * ∏ i, max (v (x i)) 1 ^ L i := by
-  rw [aeval_def, eval₂_eq', sum_mul]
-  refine (v.sum_le _ _).trans <| sum_le_sum fun s hs ↦ ?_
-  have hc : v (P.coeff s : R) ≤ |(P.coeff s : ℝ)| := by
-    rw [← v.apply_natAbs_eq]
-    exact (v.apply_nat_le_self _).trans_eq (by rw [Nat.cast_natAbs, Int.cast_abs])
-  rw [v.map_mul, algebraMap_int_eq, eq_intCast]
-  exact mul_le_mul hc (v.apply_prod_pow_le
-    (fun i ↦ (monomial_le_degreeOf i hs).trans (hL i)) x) (v.nonneg _) (abs_nonneg _)
-
-end AbsoluteValue
-
-namespace IsNonarchimedean
-
-variable {R : Type*} [CommRing R] [Nontrivial R]
-
-/-- At a nonarchimedean absolute value the value of an integer polynomial `P` with partial
-degrees `degreeOf i P ≤ L i` at a point `x` has absolute value at most
-`∏ i, max(v(x_i), 1) ^ L i`: the integer coefficients have absolute value at most `1`. -/
-theorem apply_aeval_le {v : AbsoluteValue R ℝ} (hv : IsNonarchimedean v)
-    {P : MvPolynomial ι ℤ} {L : ι → ℕ} (hL : ∀ i, P.degreeOf i ≤ L i) (x : ι → R) :
-    v (aeval x P) ≤ ∏ i, max (v (x i)) 1 ^ L i := by
-  rcases P.support.eq_empty_or_nonempty with hP | hP
-  · rw [support_eq_empty.mp hP, map_zero, v.map_zero]
-    positivity
-  rw [aeval_def, eval₂_eq']
-  refine (hv.apply_sum_le_sup hP).trans <| sup'_le _ _ fun s hs ↦ ?_
-  rw [v.map_mul, algebraMap_int_eq, eq_intCast]
-  exact (mul_le_mul (hv.apply_intCast_le_one (by simp) v.map_one v.map_neg)
-    (v.apply_prod_pow_le (fun i ↦ (monomial_le_degreeOf i hs).trans (hL i)) x) (v.nonneg _)
-    zero_le_one).trans_eq (one_mul _)
-
-end IsNonarchimedean
-
 namespace Height
 
 variable {K : Type*} [Field K] [AdmissibleAbsValues K]
 
 open AdmissibleAbsValues Real
-
-/-- Only finitely many nonarchimedean admissible absolute values of `x` exceed `1`. -/
--- Mathlib's `Height.hasFiniteMulSupport_max_nonarchAbsVal` states this but is private.
-@[fun_prop]
-private theorem hasFiniteMulSupport_max_one (x : K) :
-    (fun v : nonarchAbsVal ↦ max (v.val x) 1).HasFiniteMulSupport := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [Function.HasFiniteMulSupport]
-  exact (hasFiniteMulSupport hx).max (by simp [Function.HasFiniteMulSupport])
 
 /-- The multiplicative height of the value at `x` of a nonzero integer polynomial `P` with partial
 degrees `degreeOf i P ≤ L i` is at most `ℓ(P) ^ totalWeight K * ∏ i, H(x_i) ^ L i`, where `ℓ(P)`
@@ -134,11 +76,7 @@ theorem mulHeight₁_aeval_le {P : MvPolynomial ι ℤ} (hP : P ≠ 0) {L : ι �
     mulHeight₁ (aeval x P) ≤
       (∑ s ∈ P.support, |(P.coeff s : ℝ)|) ^ totalWeight K * ∏ i, mulHeight₁ (x i) ^ L i := by
   set A := ∑ s ∈ P.support, |(P.coeff s : ℝ)|
-  -- `ℓ(P) ≥ 1`, since `P` has a nonzero integer coefficient.
-  have hA : 1 ≤ A := by
-    obtain ⟨s, hs⟩ := support_nonempty.mpr hP
-    refine le_trans ?_ (single_le_sum (fun s _ ↦ abs_nonneg _) hs)
-    exact_mod_cast Int.one_le_abs (mem_support_iff.mp hs)
+  have hA : 1 ≤ A := one_le_sum_abs_coeff hP
   set g : AbsoluteValue K ℝ → ℝ := fun v ↦ ∏ i, max (v (x i)) 1 ^ L i
   have hg (v : AbsoluteValue K ℝ) : 1 ≤ g v :=
     one_le_prod₀ fun i _ ↦ one_le_pow₀ (le_max_right _ _)
@@ -181,9 +119,8 @@ theorem logHeight₁_aeval_le {P : MvPolynomial ι ℤ} {L : ι → ℕ}
         ∑ i, L i * logHeight₁ (x i) := by
   rcases eq_or_ne P 0 with rfl | hP
   · simpa using sum_nonneg fun i _ ↦ mul_nonneg (Nat.cast_nonneg _) (zero_le_logHeight₁ (x i))
-  have hA : 0 < ∑ s ∈ P.support, |(P.coeff s : ℝ)| := by
-    obtain ⟨s, hs⟩ := support_nonempty.mpr hP
-    exact sum_pos' (fun s _ ↦ abs_nonneg _) ⟨s, hs, by simpa using mem_support_iff.mp hs⟩
+  have hA : 0 < ∑ s ∈ P.support, |(P.coeff s : ℝ)| :=
+    zero_lt_one.trans_le (one_le_sum_abs_coeff hP)
   simp only [logHeight₁_eq_log_mulHeight₁]
   rw [← log_pow, ← sum_congr rfl fun i _ ↦ log_pow (mulHeight₁ (x i)) (L i),
     ← log_prod fun i _ ↦ by positivity, ← log_mul (by positivity) (by positivity)]
@@ -212,7 +149,8 @@ theorem neg_log_valuation_aeval_mul_log_absNorm_le (v : HeightOneSpectrum (𝓞 
       Module.finrank ℚ K * log (∑ s ∈ P.support, |(P.coeff s : ℝ)|) +
         ∑ i, L i * Height.logHeight₁ (x i) := by
   rw [← totalWeight_eq_finrank]
-  exact (v.neg_log_valuation_mul_log_absNorm_le_logHeight₁ _).trans
-    (Height.logHeight₁_aeval_le hL x)
+  exact (mul_le_mul_of_nonneg_right (Int.cast_abs (R := ℝ) ▸ neg_le_abs _)
+    (log_natCast_nonneg _)).trans <|
+    (v.abs_log_valuation_mul_log_absNorm_le_logHeight₁ _).trans (Height.logHeight₁_aeval_le hL x)
 
 end IsDedekindDomain.HeightOneSpectrum
