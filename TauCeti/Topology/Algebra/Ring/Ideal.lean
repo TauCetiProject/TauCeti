@@ -88,10 +88,12 @@ is available to instance search wherever `I` is known to be closed; this follows
 instance instT1Space [IsClosed (I : Set R)] : T1Space (R ⧸ I) := (t1Space_iff I).mpr ‹_›
 
 /-- The image of `x` in `R ⧸ I` lies in the closure of zero exactly when `x` lies in the closure
-of `I`. The quotient map is open and continuous, so preimages commute with closures, and the
-preimage of zero is `I`. -/
+of `I`. -/
+@[simp]
 theorem mk_mem_closure_zero_iff {x : R} :
     Ideal.Quotient.mk I x ∈ closure ({0} : Set (R ⧸ I)) ↔ x ∈ closure (I : Set R) := by
+  -- The quotient map is open and continuous, so preimages commute with closures, and the
+  -- preimage of zero is `I`.
   have hopen : IsOpenMap (Ideal.Quotient.mk I) := QuotientAddGroup.isOpenMap_coe
   have hpre : Ideal.Quotient.mk I ⁻¹' ({0} : Set (R ⧸ I)) = (I : Set R) := by
     ext a
