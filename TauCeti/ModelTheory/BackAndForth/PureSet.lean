@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.BackAndForth.Equivalence
-public import Mathlib.Data.Set.Card
+public import TauCeti.Data.Set.Card
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Back-and-forth equivalence of pure sets
@@ -47,23 +48,6 @@ namespace TauCeti
 open FirstOrder Fin Set
 
 variable {M : Type w} {N : Type w'} {n : ℕ} {a : Fin n → M} {b : Fin n → N}
-
-/-- Appending one element to each tuple preserves the equality pattern exactly when the old
-patterns agree and the new element repeats the same entries on both sides. -/
-private theorem snoc_eq_iff_snoc_eq {x : M} {y : N} :
-    (∀ i j, (snoc a x : Fin (n + 1) → M) i = (snoc a x : Fin (n + 1) → M) j ↔
-      (snoc b y : Fin (n + 1) → N) i = (snoc b y : Fin (n + 1) → N) j) ↔
-      (∀ i j, a i = a j ↔ b i = b j) ∧ ∀ i, a i = x ↔ b i = y := by
-  simp only [Fin.forall_fin_succ', snoc_castSucc, snoc_last, eq_comm (a := x), eq_comm (a := y),
-    iff_self, and_true]
-  exact ⟨fun h => ⟨fun i => (h.1 i).1, fun i => (h.1 i).2⟩,
-    fun h => ⟨fun i => ⟨h.1 i, h.2 i⟩, h.2⟩⟩
-
-/-- Adding a fresh element to a set removes one element from its complement. -/
-private theorem encard_compl_insert_add_one {s : Set M} {x : M} (hx : x ∉ s) :
-    (insert x s)ᶜ.encard + 1 = sᶜ.encard := by
-  rw [← encard_sdiff_singleton_add_one (mem_compl hx), insert_eq, compl_union, sdiff_eq,
-    inter_comm]
 
 /-- Truncating at `t + 1` and then at `t` is truncating at `t`. -/
 private theorem min_min_add_one (c t : ℕ∞) : min (min c (t + 1)) t = min c t := by
@@ -124,9 +108,9 @@ theorem bfEquiv_empty_of_encard_compl_range_eq (hab : ∀ i j, a i = a j ↔ b i
     have h' : min (range a)ᶜ.encard (⊤ + 1) = min (range b)ᶜ.encard (⊤ + 1) := by simpa
     refine (BFEquiv.add_one α a b).mpr ⟨ih hab h, fun x => ?_, fun y => ?_⟩
     · obtain ⟨y, hxy, hm⟩ := exists_forth hab h' x
-      exact ⟨y, ih (snoc_eq_iff_snoc_eq.mpr ⟨hab, hxy⟩) (by simpa using hm)⟩
+      exact ⟨y, ih (forall_snoc_eq_iff_snoc_eq.mpr ⟨hab, hxy⟩) (by simpa using hm)⟩
     · obtain ⟨x, hxy, hm⟩ := exists_forth (fun i j => (hab i j).symm) h'.symm y
-      exact ⟨x, ih (snoc_eq_iff_snoc_eq.mpr ⟨hab, fun i => (hxy i).symm⟩)
+      exact ⟨x, ih (forall_snoc_eq_iff_snoc_eq.mpr ⟨hab, fun i => (hxy i).symm⟩)
         (by simpa using hm.symm)⟩
   | limit α hα ih => exact (BFEquiv.limit hα a b).mpr fun β hβ => ih β hβ hab h
 
@@ -141,7 +125,7 @@ theorem bfEquiv_empty_natCast_iff (k : ℕ) (a : Fin n → M) (b : Fin n → N) 
   | zero => simp [sameAtomicType_empty_iff]
   | succ k ih =>
     rw [Nat.cast_succ, BFEquiv.add_one]
-    simp only [ih, snoc_eq_iff_snoc_eq, Nat.cast_succ]
+    simp only [ih, forall_snoc_eq_iff_snoc_eq, Nat.cast_succ]
     constructor
     · rintro ⟨⟨hab, -⟩, hforth, hback⟩
       refine ⟨hab, ?_⟩

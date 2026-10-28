@@ -31,6 +31,9 @@ is obtained by inserting the first entry into the corresponding image for the ta
   away from the first (last) one commutes with dropping the first (last) entry.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
+* `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
+  equality pattern exactly when the old patterns agree and the new entries repeat the same
+  positions.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -100,6 +103,18 @@ theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
 theorem snoc_tail_comp_rev {α : Type*} {n : ℕ} (a : Fin (n + 1) → α) :
     snoc (tail a ∘ rev) (a 0) = a ∘ rev := by
   rw [← cons_comp_rev, cons_self_tail]
+
+/-- Appending one entry to each of two tuples gives the same equality pattern exactly when the
+old patterns agree and the new entries repeat the same positions. -/
+theorem forall_snoc_eq_iff_snoc_eq {β : Sort*} {n : ℕ} {a : Fin n → α} {b : Fin n → β} {x : α}
+    {y : β} :
+    (∀ i j, (snoc a x : Fin (n + 1) → α) i = (snoc a x : Fin (n + 1) → α) j ↔
+      (snoc b y : Fin (n + 1) → β) i = (snoc b y : Fin (n + 1) → β) j) ↔
+      (∀ i j, a i = a j ↔ b i = b j) ∧ ∀ i, a i = x ↔ b i = y := by
+  simp only [Fin.forall_fin_succ', snoc_castSucc, snoc_last, eq_comm (a := x), eq_comm (a := y),
+    iff_self, and_true]
+  exact ⟨fun h => ⟨fun i => (h.1 i).1, fun i => (h.1 i).2⟩,
+    fun h => ⟨fun i => ⟨h.1 i, h.2 i⟩, h.2⟩⟩
 
 section ContractNth
 
