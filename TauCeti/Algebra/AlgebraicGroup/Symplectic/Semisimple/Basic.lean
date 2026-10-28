@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.StandardComodule
-public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Over
+public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Scalar
 import TauCeti.Algebra.AlgebraicGroup.Symplectic.Reductive.Basic
 import TauCeti.Algebra.AlgebraicGroup.Symplectic.BaseChange
@@ -26,7 +26,7 @@ representation identifies its defining ideal with the augmentation ideal.
 
 The argument is `HopfIdeal.eq_augmentation_of_isFaithful_of_isNormal_of_isSolvable_of_pow_eq_one`
 applied to the standard symplectic comodule, as in
-`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Semisimple` with the determinant replaced by the
+`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Semisimple.Basic` with the determinant replaced by the
 alternating form. Reducedness of the subgroup is needed: this does not assert triviality of the
 nonreduced connected central subgroup scheme `μ₂` in characteristic two. The rank-zero case,
 where the carrier of the standard representation is a singleton, is handled separately.
@@ -37,8 +37,6 @@ where the carrier of the standard representation is a singleton, is handled sepa
   solvable closed subgroup of `Sp₂ₘ` over an algebraically closed field is trivial.
 * `TauCeti.Symplectic.semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra`:
   **`Sp₂ₘ` is semisimple over every field.**
-* `TauCeti.Symplectic.semisimpleCommHopfAlgPropertyOver_finiteTypeCoordinateHopfAlgebra`:
-  `Sp₂ₘ` is a semisimple group scheme over every commutative ring.
 
 ## References
 
@@ -105,20 +103,6 @@ theorem semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
   exact semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_isReduced_isSolvable k _ G
     hred.smooth hred.geometricallyConnected e fun I hI _ _ _ ↦
       eq_augmentation_of_isNormal_of_isSolvable m I hI
-
-/-- **The standard symplectic group is semisimple over every commutative base ring**, in every
-rank and without a restriction on characteristic: it is smooth over the base and each geometric
-fiber is the standard symplectic group over that field. -/
-theorem semisimpleCommHopfAlgPropertyOver_finiteTypeCoordinateHopfAlgebra
-    (R : Type u) [CommRing R] (m : ℕ) :
-    semisimpleCommHopfAlgPropertyOver R (finiteTypeCoordinateHopfAlgebra R m) := by
-  rw [semisimpleCommHopfAlgPropertyOver_iff]
-  refine ⟨?_, fun k _ _ _ ↦ ?_⟩
-  · exact (smoothCommHopfAlgProperty_iff _).mp
-      (smoothCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra R m)
-  · exact (semisimpleCommHopfAlgProperty k).prop_of_iso
-      (finiteTypeCoordinateHopfAlgebraBaseChangeIso R k m).symm
-      (semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra k m)
 
 end
 

@@ -33,6 +33,8 @@ base-changed object is identified with the original points evaluated on `K`-alge
 * `FiniteTypeCommHopfAlgCat.baseChangeMap_includeLeft_injective` and
   `FiniteTypeCommHopfAlgCat.baseChangeMap_includeRight_injective`: the base-changed coordinate
   inclusions into a product are injective.
+* `FiniteTypeCommHopfAlgCat.baseChangeTowerIso`: base change along a tower `k → E → K` agrees
+  with base change along the composite.
 * `FiniteTypeCommHopfAlgCat.baseChangeIsoOfObjIso`: lift an isomorphism between specified
   underlying base-changed objects to the finite-type full subcategory.
 * `FiniteTypeCommHopfAlgCat.baseChangePointsMulEquiv`: the inherited point equivalence
@@ -246,6 +248,20 @@ theorem baseChangeIsoOfObjIso_hom
       (eqToIso (congrArg (CommHopfAlgCat.baseChange (K := K)) hH) ≪≫ e ≪≫
         eqToIso hH'.symm).hom := by
   simp only [baseChangeIsoOfObjIso, ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom]
+
+section Tower
+
+variable (k K) {E : Type v} [CommRing E] [Algebra k E] [Algebra E K] [IsScalarTower k E K]
+
+/-- **Base change of finite-type commutative Hopf algebras composes in stages.** For a tower
+`k → E → K`, extending a finite-type coordinate Hopf algebra to `E` and then to `K` agrees with
+extending it to `K` in one step. This is `CommHopfAlgCat.baseChangeTowerIso` in the finite-type
+full subcategory. -/
+noncomputable def baseChangeTowerIso (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
+    baseChange (K := K) (baseChange (K := E) H) ≅ baseChange (K := K) H :=
+  ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso k K H.obj)
+
+end Tower
 
 variable (A : CommAlgCat.{x} K)
 

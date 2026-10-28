@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
-public import TauCeti.Algebra.AlgebraicGroup.FiniteType.Product
+public import TauCeti.Algebra.AlgebraicGroup.Smooth.Fiberwise
 import TauCeti.Algebra.AlgebraicGroup.Reductive.Product
-import TauCeti.Algebra.AlgebraicGroup.Smooth.Product
 
 /-!
 # Reductive affine group schemes over a ring
@@ -19,7 +18,8 @@ geometric fibers. In Hopf coordinates, its geometric fibers are the scalar exten
 The finite-type ambient category and smoothness give finite presentation; neither reducedness
 of `R` nor a field hypothesis on `R` is required.
 
-`reductiveCommHopfAlgPropertyOver` keeps this condition separate from the ambient category and
+`reductiveCommHopfAlgPropertyOver` is `smoothFiberwiseCommHopfAlgPropertyOver` for the
+fieldwise reductive property. It keeps this condition separate from the ambient category and
 from the choice of a maximal torus. Its base-change theorem permits an integral group scheme
 and its specializations to be recognized using the same condition. Direct products of reductive
 group schemes are reductive, because scalar extension commutes with tensor products of
@@ -42,9 +42,7 @@ universe u
 and all of its geometric fibers are connected reductive groups. -/
 def reductiveCommHopfAlgPropertyOver (R : Type u) [CommRing R] :
     ObjectProperty (FiniteTypeCommHopfAlgCat.{u, u} R) :=
-  fun H ↦ Algebra.Smooth R H ∧
-    ∀ (k : Type u) [Field k] [Algebra R k] [IsAlgClosed k],
-      reductiveCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.baseChange (K := k) H)
+  smoothFiberwiseCommHopfAlgPropertyOver reductiveCommHopfAlgProperty R
 
 /-- The geometric-fiber characterization of a reductive affine group scheme over a ring. -/
 @[simp]
@@ -54,20 +52,13 @@ theorem reductiveCommHopfAlgPropertyOver_iff (R : Type u) [CommRing R]
       Algebra.Smooth R H ∧
         ∀ (k : Type u) [Field k] [Algebra R k] [IsAlgClosed k],
           reductiveCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.baseChange (K := k) H) :=
-  Iff.rfl
+  smoothFiberwiseCommHopfAlgPropertyOver_iff _ R H
 
 /-- Reductivity over a ring is invariant under coordinate-Hopf-algebra isomorphism. -/
 instance (R : Type u) [CommRing R] :
-    (reductiveCommHopfAlgPropertyOver R).IsClosedUnderIsomorphisms where
-  of_iso e hH := by
-    refine ⟨?_, ?_⟩
-    · apply (smoothCommHopfAlgProperty_iff _).mp
-      exact (smoothCommHopfAlgProperty R).prop_of_iso
-        ((finiteTypeCommHopfAlgProperty R).ι.mapIso e)
-        ((smoothCommHopfAlgProperty_iff _).mpr hH.1)
-    · intro k _ _ _
-      exact (reductiveCommHopfAlgProperty k).prop_of_iso
-        ((FiniteTypeCommHopfAlgCat.baseChangeFunctor (K := k)).mapIso e) (hH.2 k)
+    (reductiveCommHopfAlgPropertyOver R).IsClosedUnderIsomorphisms :=
+  inferInstanceAs <| ObjectProperty.IsClosedUnderIsomorphisms <|
+    smoothFiberwiseCommHopfAlgPropertyOver reductiveCommHopfAlgProperty R
 
 namespace reductiveCommHopfAlgPropertyOver
 
@@ -75,43 +66,27 @@ variable {R : Type u} [CommRing R] {H : FiniteTypeCommHopfAlgCat.{u, u} R}
 
 /-- A reductive group scheme is smooth over its base. -/
 theorem smooth (hH : reductiveCommHopfAlgPropertyOver R H) : Algebra.Smooth R H :=
-  hH.1
+  smoothFiberwiseCommHopfAlgPropertyOver.smooth hH
 
 /-- Every geometric fiber of a reductive group scheme is reductive. -/
 theorem geometricFiber (hH : reductiveCommHopfAlgPropertyOver R H)
     (k : Type u) [Field k] [Algebra R k] [IsAlgClosed k] :
     reductiveCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.baseChange (K := k) H) :=
-  hH.2 k
+  smoothFiberwiseCommHopfAlgPropertyOver.geometricFiber hH k
 
 /-- Reductivity of affine group schemes is preserved by arbitrary base change. -/
 theorem baseChange (hH : reductiveCommHopfAlgPropertyOver R H)
     (S : Type u) [CommRing S] [Algebra R S] :
-    reductiveCommHopfAlgPropertyOver S (FiniteTypeCommHopfAlgCat.baseChange (K := S) H) := by
-  let _ : Algebra.Smooth R H := hH.smooth
-  refine ⟨inferInstance, ?_⟩
-  intro k _ _ _
-  let _ : Algebra R k := (algebraMap S k).comp (algebraMap R S) |>.toAlgebra
-  let _ : IsScalarTower R S k := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  let e : FiniteTypeCommHopfAlgCat.baseChange (K := k)
-        (FiniteTypeCommHopfAlgCat.baseChange (K := S) H) ≅
-      FiniteTypeCommHopfAlgCat.baseChange (K := k) H :=
-    ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso R k H.obj)
-  exact (reductiveCommHopfAlgProperty k).prop_of_iso e.symm (hH.geometricFiber k)
+    reductiveCommHopfAlgPropertyOver S (FiniteTypeCommHopfAlgCat.baseChange (K := S) H) :=
+  smoothFiberwiseCommHopfAlgPropertyOver.baseChange hH S
 
 /-- **A direct product of reductive group schemes over a ring is reductive.** The tensor product
 is the coordinate Hopf algebra of the direct product of groups. -/
 theorem tensorProduct {K : FiniteTypeCommHopfAlgCat.{u, u} R}
     (hH : reductiveCommHopfAlgPropertyOver R H) (hK : reductiveCommHopfAlgPropertyOver R K) :
-    reductiveCommHopfAlgPropertyOver R (FiniteTypeCommHopfAlgCat.tensorProduct H K) := by
-  refine ⟨?_, fun k _ _ _ ↦ ?_⟩
-  · exact (smoothCommHopfAlgProperty_iff _).mp <|
-      smoothCommHopfAlgProperty.tensorProduct H.obj K.obj
-        ((smoothCommHopfAlgProperty_iff _).mpr hH.smooth)
-        ((smoothCommHopfAlgProperty_iff _).mpr hK.smooth)
-  · exact (reductiveCommHopfAlgProperty k).prop_of_iso
-      (FiniteTypeCommHopfAlgCat.baseChangeTensorProductIso k H K).symm
-      (reductiveCommHopfAlgProperty.tensorProduct _ _ (hH.geometricFiber k)
-        (hK.geometricFiber k))
+    reductiveCommHopfAlgPropertyOver R (FiniteTypeCommHopfAlgCat.tensorProduct H K) :=
+  smoothFiberwiseCommHopfAlgPropertyOver.tensorProduct
+    (fun _ _ _ ↦ reductiveCommHopfAlgProperty.tensorProduct) hH hK
 
 end reductiveCommHopfAlgPropertyOver
 

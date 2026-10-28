@@ -14,7 +14,7 @@ import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Irreducible
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.LowRank
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Reductive
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Smooth
-import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Semisimple
+import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Semisimple.Basic
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -33,9 +33,9 @@ representation identifies its defining ideal with the augmentation ideal.
 
 The argument is `HopfIdeal.eq_augmentation_of_isFaithful_of_isNormal_of_isSolvable_of_pow_eq_one`
 applied to the standard special orthogonal comodule, as in
-`TauCeti.Algebra.AlgebraicGroup.Symplectic.Semisimple` with the alternating form replaced by the
-symmetric form. The characteristic restriction is the one under which `SOₙ` is known to be smooth
-and geometrically connected.
+`TauCeti.Algebra.AlgebraicGroup.Symplectic.Semisimple.Basic` with the alternating form replaced by
+the symmetric form. The characteristic restriction is the one under which `SOₙ` is known to be
+smooth and geometrically connected.
 
 ## Main declarations
 
