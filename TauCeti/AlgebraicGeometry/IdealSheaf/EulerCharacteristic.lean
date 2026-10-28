@@ -5,9 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
 public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
+public import TauCeti.AlgebraicGeometry.IdealSheaf.TensorSequence
+public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
+public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
+public import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
 
 /-!
 # The Euler characteristic of an ideal sheaf
@@ -22,6 +27,16 @@ scheme `D` give
 (`Scheme.IdealSheafData.eulerCharBelow_sheaf`), where `χ` is the degree-`2` truncation
 `dim H⁰ - dim H¹` and `H⁰(X, 𝒪_X)`, `H¹(X, 𝒪_X)` are assumed finite-dimensional.
 
+More generally, for a line bundle `L` on `X`, tensoring the sequence with `L` gives
+`0 ⟶ L ⊗ I ⟶ L ⟶ L ⊗ ι_* 𝒪_D ⟶ 0`. By the projection formula the last term is the direct image
+of the pullback of `L` to `D`, a line bundle on a discrete scheme and hence trivial. So `L ⊗ I`
+has finite-dimensional `H⁰` and `H¹` exactly when `L` does
+(`Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff`), and then
+
+  `χ(L ⊗ I) = χ(L) - dim_k Γ(D, 𝒪_D)`
+
+(`Scheme.IdealSheafData.eulerCharBelow_tensor_sheaf`). No hypothesis on `X` is needed.
+
 The rank is Mathlib's `Scheme.Hom.finrank` of the finite morphism `D ⟶ Spec k`, evaluated at a
 point of `Spec k`; it is `dim_k Γ(D, 𝒪_D)` by
 `AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_of_field`.
@@ -31,11 +46,14 @@ point of `Spec k`; it is `dim_k Γ(D, 𝒪_D)` by
 * R. Hartshorne, *Algebraic Geometry*: Lemma III.2.10 and Theorem III.3.5 (the cohomology of
   `𝒪_D`), and the proof of Theorem IV.1.3 (Riemann–Roch), where degrees are computed from the
   same kind of exact sequence.
+* [The Stacks Project, Section 33.44](https://stacks.math.columbia.edu/tag/0AYQ): degrees on
+  proper curves, and the change of Euler characteristic under twisting by an effective Cartier
+  divisor.
 -/
 
 public section
 
-open CategoryTheory Limits AlgebraicGeometry
+open CategoryTheory Limits MonoidalCategory AlgebraicGeometry
 open TauCeti.AlgebraicGeometry Scheme.Modules
 
 universe u
@@ -60,6 +78,144 @@ section Finite
 
 variable [IsFinite (I.subschemeι ≫ X ↘ Spec (.of k))]
 
+/-- `H⁰` of the direct image `ι_* 𝒪_{V(I)}` of the structure sheaf of a closed subscheme finite
+over `k` is finite-dimensional. -/
+private lemma finiteDimensional_cohomology_zero_pushforward :
+    FiniteDimensional k (Cohomology ((Scheme.Modules.pushforward I.subschemeι).obj
+      (SheafOfModules.unit I.subscheme.ringCatSheaf)) 0) := by
+  let _ : I.subscheme.Over (Spec (.of k)) := ⟨I.subschemeι ≫ X ↘ Spec (.of k)⟩
+  have : I.subschemeι.IsOver (Spec (.of k)) := ⟨rfl⟩
+  let M : I.subscheme.Modules := SheafOfModules.unit I.subscheme.ringCatSheaf
+  let _ : Algebra k Γ(I.subscheme, ⊤) := (baseRingToGlobalSections k I.subscheme).toAlgebra
+  have : Module.Finite k Γ(M, ⊤) :=
+    -- The base-ring module structure on the global sections of `𝒪_{V(I)}` is the one given by
+    -- the algebra structure, both being restriction of scalars along
+    -- `baseRingToGlobalSections`.
+    (I.subschemeι ≫ X ↘ Spec (.of k)).moduleFinite_appTop (algebraMap_eq k I)
+  refine (Scheme.Hom.moduleFinite_cohomology_pushforward_iff I.subschemeι k M 0).mpr ?_
+  exact Module.Finite.equiv (cohomologyZeroBaseLinearEquiv k I.subscheme M).symm
+
+include k in
+/-- `H¹` of the direct image `ι_* 𝒪_{V(I)}` of the structure sheaf of a closed subscheme finite
+over `k` vanishes, the closed subscheme being affine. -/
+private lemma subsingleton_cohomology_one_pushforward :
+    Subsingleton (Cohomology ((Scheme.Modules.pushforward I.subschemeι).obj
+      (SheafOfModules.unit I.subscheme.ringCatSheaf)) 1) := by
+  let _ : I.subscheme.Over (Spec (.of k)) := ⟨I.subschemeι ≫ X ↘ Spec (.of k)⟩
+  let _ : IsFinite (I.subscheme ↘ Spec (.of k)) :=
+    inferInstanceAs (IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)))
+  let M : I.subscheme.Modules := SheafOfModules.unit I.subscheme.ringCatSheaf
+  have := subsingleton_cohomology_succ_of_isAffineHom (I.subscheme ↘ Spec (.of k)) M 0
+  exact (cohomologyPushforwardIso I.subschemeι M 1).addCommGroupIsoToAddEquiv.toEquiv.subsingleton
+
+/-- The truncated Euler characteristic of the direct image `ι_* 𝒪_{V(I)}` is the rank of the
+closed subscheme `V(I)` over `k`. -/
+private lemma eulerCharBelow_pushforward (s : Spec (.of k)) :
+    eulerCharBelow k X ((Scheme.Modules.pushforward I.subschemeι).obj
+      (SheafOfModules.unit I.subscheme.ringCatSheaf)) 2 =
+      (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
+  let _ : I.subscheme.Over (Spec (.of k)) := ⟨I.subschemeι ≫ X ↘ Spec (.of k)⟩
+  have : I.subschemeι.IsOver (Spec (.of k)) := ⟨rfl⟩
+  let _ : IsFinite (I.subscheme ↘ Spec (.of k)) :=
+    inferInstanceAs (IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)))
+  rw [Scheme.Hom.eulerCharBelow_pushforward_structureSheaf I.subschemeι k s 1,
+    comp_over I.subschemeι (Spec (.of k))]
+
+section Tensor
+
+variable (L : InvertibleSheaf X)
+
+include k in
+/-- On the closed subscheme `V(I)`, finite over `k` and hence discrete, every line bundle is
+trivial; so tensoring `ι_* 𝒪_{V(I)}` with a line bundle `L` on `X`, which by the projection formula
+is the direct image of the pullback of `L` to `V(I)`, does not change it. -/
+private lemma nonempty_tensor_pushforward_iso :
+    Nonempty (L.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj
+        (SheafOfModules.unit I.subscheme.ringCatSheaf) ≅
+      (Scheme.Modules.pushforward I.subschemeι).obj
+        (SheafOfModules.unit I.subscheme.ringCatSheaf)) := by
+  have : IsLocallyArtinian I.subscheme :=
+    .of_locallyQuasiFinite (I.subschemeι ≫ X ↘ Spec (.of k))
+  obtain ⟨e⟩ := LineBundleClass.mk_eq_one_iff.mp
+    (Subsingleton.elim (LineBundleClass.mk ((InvertibleSheaf.pullback I.subschemeι).obj L)) 1)
+  exact ⟨FiniteLocallyFreeSheaf.tensorPushforwardUnitIso I.subschemeι
+      ((InvertibleSheaf.toFiniteLocallyFree X).obj L) ≪≫
+    (Scheme.Modules.pushforward I.subschemeι).mapIso
+      (eqToIso (FiniteLocallyFreeSheaf.pullback_obj_obj _ _) ≪≫
+        eqToIso (InvertibleSheaf.pullback_obj_obj _ _).symm ≪≫ e)⟩
+
+variable {k L} in
+/-- **Twisting by an ideal sheaf preserves finiteness of cohomology.** If `I ⊆ 𝒪_X` cuts out a
+closed subscheme finite over the field `k` and `L` is a line bundle on `X`, then `H⁰` and `H¹` of
+`L ⊗ I` are finite-dimensional exactly when those of `L` are. -/
+theorem finiteDimensional_cohomology_tensor_sheaf_iff :
+    (∀ i < 2, FiniteDimensional k (Cohomology (L.obj ⊗ I.sheaf) i)) ↔
+      ∀ i < 2, FiniteDimensional k (Cohomology L.obj i) := by
+  let S := (ShortComplex.mk _ _ I.sheafι_toPushforwardSubscheme).map (tensorLeft L.obj)
+  -- `L` is finite locally free, so tensoring with it preserves the exact sequence of `V(I)`.
+  have hS : S.ShortExact :=
+    I.shortExact_tensor_toPushforwardSubscheme ((InvertibleSheaf.toFiniteLocallyFree X).obj L).obj
+  obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I L
+  have : FiniteDimensional k (Cohomology S.X₃ 0) :=
+    (finiteDimensional_cohomology_congr k e₃ 0).mpr
+      (finiteDimensional_cohomology_zero_pushforward k I)
+  have : FiniteDimensional k (Cohomology S.X₃ 1) := by
+    have := subsingleton_cohomology_one_pushforward k I
+    exact (finiteDimensional_cohomology_congr k e₃ 1).mpr inferInstance
+  -- The middle term is `L ⊗ 𝒪_X ≅ L`.
+  have h₂ (i : ℕ) : FiniteDimensional k (Cohomology S.X₂ i) ↔
+      FiniteDimensional k (Cohomology L.obj i) :=
+    finiteDimensional_cohomology_congr k (ρ_ L.obj) i
+  refine ⟨fun h i hi ↦ ?_, fun h i hi ↦ ?_⟩ <;> obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
+  · have : FiniteDimensional k (Cohomology S.X₁ 0) := h 0 hi
+    exact (h₂ 0).mp (finiteDimensional_cohomology_X₂ k X hS 0)
+  · have : FiniteDimensional k (Cohomology S.X₁ 1) := h 1 hi
+    exact (h₂ 1).mp (finiteDimensional_cohomology_X₂ k X hS 1)
+  · -- `H⁰(L ⊗ I)` is a subspace of `H⁰(L)`.
+    have : FiniteDimensional k (Cohomology S.X₂ 0) := (h₂ 0).mpr (h 0 (by omega))
+    have := hS.mono_f
+    refine Module.Finite.of_injective (cohomologyMapBaseLinear k X S.f 0) fun x y hxy ↦ ?_
+    rw [cohomologyMapBaseLinear_apply, cohomologyMapBaseLinear_apply, cohomologyFunctor_map] at hxy
+    exact cohomologyMap_injective S.f hxy
+  · have : FiniteDimensional k (Cohomology S.X₂ 1) := (h₂ 1).mpr (h 1 (by omega))
+    exact finiteDimensional_cohomology_X₁ k X hS 0 1 rfl
+
+/-- **The Euler characteristic of a twisted ideal sheaf.** If `I ⊆ 𝒪_X` cuts out a closed
+subscheme `D` finite over the field `k` and `L` is a line bundle on `X` with finite-dimensional
+`H⁰(X, L)` and `H¹(X, L)`, then `χ(L ⊗ I) = χ(L) - dim_k Γ(D, 𝒪_D)`, with `χ = dim H⁰ - dim H¹`
+and the dimension of `Γ(D, 𝒪_D)` written as the rank of `D ⟶ Spec k` at the point `s`. For the
+trivial line bundle this is `eulerCharBelow_sheaf`. -/
+theorem eulerCharBelow_tensor_sheaf [FiniteDimensional k (Cohomology L.obj 0)]
+    [FiniteDimensional k (Cohomology L.obj 1)] (s : Spec (.of k)) :
+    eulerCharBelow k X (L.obj ⊗ I.sheaf) 2 =
+      eulerCharBelow k X L.obj 2 - (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
+  let S := (ShortComplex.mk _ _ I.sheafι_toPushforwardSubscheme).map (tensorLeft L.obj)
+  -- `L` is finite locally free, so tensoring with it preserves the exact sequence of `V(I)`.
+  have hS : S.ShortExact :=
+    I.shortExact_tensor_toPushforwardSubscheme ((InvertibleSheaf.toFiniteLocallyFree X).obj L).obj
+  obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I L
+  have hvan : Subsingleton (Cohomology S.X₃ 1) := by
+    have := subsingleton_cohomology_one_pushforward k I
+    exact (cohomologyBaseLinearEquivOfIso k e₃ 1).subsingleton
+  have h₂ (i : ℕ) (hi : i < 2) : FiniteDimensional k (Cohomology S.X₂ i) := by
+    refine (finiteDimensional_cohomology_congr k (ρ_ L.obj) i).mpr ?_
+    interval_cases i <;> infer_instance
+  have h₁ (i : ℕ) (hi : i < 2) (_ : 0 < i) : FiniteDimensional k (Cohomology S.X₁ i) :=
+    (finiteDimensional_cohomology_tensor_sheaf_iff (k := k) I (L := L)).mpr
+      (fun j hj ↦ by interval_cases j <;> infer_instance) i hi
+  have hδ : cohomologyδBaseLinear k X hS 1 2 rfl = 0 :=
+    LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, LinearMap.zero_apply]
+  have h : eulerCharBelow k X (L.obj ⊗ 𝟙_ X.Modules) 2 = eulerCharBelow k X (L.obj ⊗ I.sheaf) 2 +
+      eulerCharBelow k X (L.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj
+        (SheafOfModules.unit I.subscheme.ringCatSheaf)) 2 :=
+    eulerCharBelow_eq_add_of_cohomologyδ_eq_zero k hS 1 h₁ h₂ hδ
+  -- The terms of the sequence are `L ⊗ I`, `L ⊗ 𝒪_X ≅ L` and `L ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}`.
+  rw [eulerCharBelow_congr k (ρ_ L.obj) 2, eulerCharBelow_congr k e₃ 2,
+    eulerCharBelow_pushforward k I s] at h
+  exact eq_sub_of_add_eq h.symm
+
+end Tensor
+
 section FiniteCohomology
 
 variable [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0)]
@@ -74,55 +230,10 @@ theorem eulerCharBelow_sheaf (s : Spec (.of k)) :
     eulerCharBelow k X I.sheaf 2 =
       eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 -
         (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
-  let S := ShortComplex.mk _ _ I.sheafι_toPushforwardSubscheme
-  have hS : S.ShortExact := I.shortExact_toPushforwardSubscheme
-  let e : SheafOfModules.free (R := X.ringCatSheaf) PUnit ≅ SheafOfModules.unit X.ringCatSheaf :=
-    TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf
-  -- `H⁰` and `H¹` of `𝒪_X` are finite-dimensional.
-  have h₂ (i : ℕ) (hi : i < 2) : FiniteDimensional k (Cohomology S.X₂ i) := by
-    dsimp only [S]
-    refine (finiteDimensional_cohomology_congr k e i).mp ?_
-    rw [← InvertibleSheaf.trivial_obj]
-    interval_cases i <;> infer_instance
-  -- `H⁰` of `ι_* 𝒪_{V(I)}` is finite-dimensional and its `H¹` vanishes.
-  let _ : I.subscheme.Over (Spec (.of k)) := ⟨I.subschemeι ≫ X ↘ Spec (.of k)⟩
-  have : I.subschemeι.IsOver (Spec (.of k)) := ⟨rfl⟩
-  let _ : IsFinite (I.subscheme ↘ Spec (.of k)) :=
-    inferInstanceAs (IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)))
-  let M : I.subscheme.Modules := SheafOfModules.unit I.subscheme.ringCatSheaf
-  have : FiniteDimensional k (Cohomology S.X₃ 0) := by
-    let _ : Algebra k Γ(I.subscheme, ⊤) := (baseRingToGlobalSections k I.subscheme).toAlgebra
-    have : Module.Finite k Γ(M, ⊤) :=
-      -- The base-ring module structure on the global sections of `𝒪_{V(I)}` is the one given by
-      -- the algebra structure, both being restriction of scalars along
-      -- `baseRingToGlobalSections`.
-      (I.subschemeι ≫ X ↘ Spec (.of k)).moduleFinite_appTop (algebraMap_eq k I)
-    dsimp only [S]
-    refine (Scheme.Hom.moduleFinite_cohomology_pushforward_iff I.subschemeι k M 0).mpr ?_
-    exact Module.Finite.equiv (cohomologyZeroBaseLinearEquiv k I.subscheme M).symm
-  have hvan : Subsingleton (Cohomology S.X₃ 1) := by
-    have := subsingleton_cohomology_succ_of_isAffineHom (I.subscheme ↘ Spec (.of k)) M 0
-    dsimp only [S]
-    exact (cohomologyPushforwardIso I.subschemeι M 1).addCommGroupIsoToAddEquiv.toEquiv.subsingleton
-  -- `H¹(X, I)` sits between `H⁰(ι_* 𝒪_{V(I)})` and `H¹(X, 𝒪_X)`, so it is finite-dimensional.
-  have h₁ (i : ℕ) (hi : i < 2) (hi' : 0 < i) :
-      FiniteDimensional k (Cohomology S.X₁ i) := by
-    obtain rfl : i = 1 := by omega
-    have := h₂ 1 (by omega)
-    exact finiteDimensional_cohomology_X₁ k X hS 0 1 rfl
-  have hδ : cohomologyδBaseLinear k X hS 1 2 rfl = 0 :=
-    LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, LinearMap.zero_apply]
-  have h := eulerCharBelow_eq_add_of_cohomologyδ_eq_zero k hS 1 h₁ h₂ hδ
-  -- The terms of the sequence are `I`, `𝒪_X` and `ι_* 𝒪_{V(I)}`.
-  dsimp only [S] at h
-  have h₀ : eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 =
-      eulerCharBelow k X (SheafOfModules.unit X.ringCatSheaf) 2 := by
-    rw [InvertibleSheaf.trivial_obj]
-    exact eulerCharBelow_congr k e 2
-  have h₃ := Scheme.Hom.eulerCharBelow_pushforward_structureSheaf I.subschemeι k s 1
-  -- `V(I)` lies over `k` through `X`, so its rank is that of `V(I) ⟶ X ⟶ Spec k`.
-  rw [comp_over I.subschemeι (Spec (.of k))]
-  linarith
+  rw [← eulerCharBelow_tensor_sheaf k I (InvertibleSheaf.trivial X) s]
+  -- `I` is `𝒪_X ⊗ I`.
+  exact eulerCharBelow_congr k
+    (whiskerRightIso (InvertibleSheaf.trivialObjIsoUnit X) I.sheaf ≪≫ λ_ _).symm 2
 
 end FiniteCohomology
 
