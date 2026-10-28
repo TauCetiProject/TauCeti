@@ -50,7 +50,7 @@ def posDiagonalSubgroup : Subgroup (GL ι 𝕜) where
   inv_mem' := by
     rintro g ⟨d, hd, hg⟩
     exact ⟨d⁻¹, fun i => inv_pos.2 (hd i),
-      coe_inv_of_coe_eq_diagonal (fun i => (hd i).ne') hg⟩
+      coe_inv_of_coe_eq_diagonal hg⟩
 
 variable {ι 𝕜}
 
@@ -77,8 +77,7 @@ theorem apply_diag_pos_of_mem_posDiagonalSubgroup {g : GL ι 𝕜}
 inverses of its diagonal entries. -/
 theorem coe_inv_of_mem_posDiagonalSubgroup {g : GL ι 𝕜} (hg : g ∈ posDiagonalSubgroup ι 𝕜) :
     ((g⁻¹ : GL ι 𝕜) : Matrix ι ι 𝕜) = diagonal fun i => ((g : Matrix ι ι 𝕜) i i)⁻¹ :=
-  coe_inv_of_coe_eq_diagonal (fun i => (apply_diag_pos_of_mem_posDiagonalSubgroup hg i).ne')
-    (coe_eq_diagonal_of_mem_posDiagonalSubgroup hg)
+  coe_inv_of_coe_eq_diagonal (coe_eq_diagonal_of_mem_posDiagonalSubgroup hg)
 
 variable (𝕜) in
 /-- The positive diagonal subgroup lies in the diagonal torus. -/

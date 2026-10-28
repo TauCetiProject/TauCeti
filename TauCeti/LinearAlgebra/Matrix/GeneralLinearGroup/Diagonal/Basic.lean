@@ -352,13 +352,17 @@ section DivisionRing
 
 variable [DivisionRing k]
 
-/-- The inverse of an invertible matrix that is the diagonal matrix of a family of nonzero scalars
-is the diagonal matrix of their inverses. -/
-theorem coe_inv_of_coe_eq_diagonal {g : GL ι k} {d : ι → k} (hd : ∀ i, d i ≠ 0)
-    (hg : (g : Matrix ι ι k) = diagonal d) : ((g⁻¹ : GL ι k) : Matrix ι ι k) = diagonal d⁻¹ :=
-  Units.inv_eq_of_mul_eq_one_left <| by
-    rw [hg, diagonal_mul_diagonal, ← diagonal_one]
-    exact congrArg diagonal (funext fun i => inv_mul_cancel₀ (hd i))
+/-- The inverse of an invertible matrix that is the diagonal matrix of a family of scalars is the
+diagonal matrix of their inverses. The scalars are automatically nonzero, by invertibility. -/
+theorem coe_inv_of_coe_eq_diagonal {g : GL ι k} {d : ι → k}
+    (hg : (g : Matrix ι ι k) = diagonal d) : ((g⁻¹ : GL ι k) : Matrix ι ι k) = diagonal d⁻¹ := by
+  have hd (i : ι) : d i ≠ 0 := by
+    have h := congrFun (congrFun g.mul_inv i) i
+    rw [hg, diagonal_mul, one_apply_eq] at h
+    exact left_ne_zero_of_mul_eq_one h
+  refine Units.inv_eq_of_mul_eq_one_left ?_
+  rw [hg, diagonal_mul_diagonal, ← diagonal_one]
+  exact congrArg diagonal (funext fun i => inv_mul_cancel₀ (hd i))
 
 end DivisionRing
 

@@ -150,7 +150,7 @@ private theorem coe_iwasawaDiagonal (g : GL (Fin n) ℝ) :
 private theorem coe_inv_iwasawaDiagonal (g : GL (Fin n) ℝ) :
     (((iwasawaDiagonal g)⁻¹ : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) =
       diagonal fun i => (gramCholesky g i i)⁻¹ :=
-  coe_inv_of_coe_eq_diagonal (fun i => (gramCholesky_diag_pos g i).ne') (coe_iwasawaDiagonal g)
+  coe_inv_of_coe_eq_diagonal (coe_iwasawaDiagonal g)
 
 private theorem iwasawaDiagonal_mem (g : GL (Fin n) ℝ) :
     iwasawaDiagonal g ∈ posDiagonalSubgroup (Fin n) ℝ :=
