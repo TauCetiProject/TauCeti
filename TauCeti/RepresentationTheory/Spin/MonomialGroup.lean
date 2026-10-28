@@ -9,9 +9,6 @@ public import Mathlib.GroupTheory.FiniteAbelian.Duality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup
 public import TauCeti.RepresentationTheory.Induction.Restriction
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
--- Non-public: `Nat.card_zpowers` turns the order of `ε` into the order of the subgroup it
--- generates.
-import Mathlib.Data.ZMod.QuotientGroup
 -- Non-public: `IsPrimitiveRoot.neg_one_of_two_ne_zero` and `rootsOfUnity.isCyclic` supply the
 -- square roots of unity of a field in which `2` is invertible.
 import TauCeti.RingTheory.RootsOfUnity.Basic
@@ -21,48 +18,34 @@ import TauCeti.RingTheory.RootsOfUnity.Basic
 
 Let `b` be an orthogonal basis of a quadratic module `(M, Q)` whose generators square to `±1`,
 indexed by a type with `n` elements. The group `CliffordAlgebra.monomialGroup Q b` of signed
-monomials `±e_s` has `2 ^ (n + 1)` elements and its central element `ε = -1` generates a subgroup
-of order two, `CliffordAlgebra.monomialGroupSign Q b`.
+monomials `±e_s`, its central element `ε = -1`, the sign subgroup `⟨ε⟩` it generates and the
+quotient by that subgroup are built in `TauCeti.LinearAlgebra.CliffordAlgebra.MonomialGroup`:
+over a nontrivial coefficient ring in which `2` is invertible the group has `2 ^ (n + 1)` elements,
+the sign subgroup has two, and the quotient is commutative with every element of order dividing
+two and has `2 ^ n` elements. Every count below inherits those two hypotheses on the coefficient
+ring `R`; in characteristic two `ε = 1`, the sign subgroup is trivial and the counts fail.
 
-Quotienting by that subgroup forgets the sign. The quotient is **commutative, with every element
-of order dividing two**: two signed monomials commute or anticommute, so their commutator is `1`
-or `ε`, and the square of a signed monomial is `±1`. It has `2 ^ n` elements, one for each index
-set `s`.
-
-A representation of the group of signed monomials on which `ε` acts by the identity is the same as
-a representation of this quotient. Over an algebraically closed field such a representation is
-irreducible exactly when it is a line, because the quotient is commutative; and over any field in
-which `2` is invertible the quotient has exactly `2 ^ n` characters, which are therefore precisely
-the irreducible representations of the group of signed monomials on which `ε` acts trivially. The
-complementary sector, where `ε` acts by `-1`, is the one
-`CliffordAlgebra.monomialGroupLift` identifies with the Clifford modules.
-
-## Main definitions
-
-* `CliffordAlgebra.monomialGroupEpsilon`: the central element `ε = -1`, named.
-* `CliffordAlgebra.monomialGroupSign`: the central subgroup `⟨ε⟩` it generates.
-* `CliffordAlgebra.monomialGroupSignCharEquiv`: the characters killing `ε` are the characters of
-  the quotient.
+This file turns those group-theoretic facts into representation theory. A representation of the
+group of signed monomials on which `ε` acts by the identity is the same as a representation of the
+quotient. Over an algebraically closed field such a representation is irreducible exactly when it
+is a line, because the quotient is commutative; and over any field `F` in which `2` is invertible
+the quotient has exactly `2 ^ n` characters, which are therefore precisely the irreducible
+representations of the group of signed monomials on which `ε` acts trivially. The field of the
+representations and the coefficient ring of the Clifford algebra are independent. The complementary
+sector, where `ε` acts by `-1`, is the one `CliffordAlgebra.monomialGroupLift` identifies with the
+Clifford modules.
 
 ## Main results
 
-* `CliffordAlgebra.mem_monomialGroupSign_iff`: the sign subgroup is `{1, ε}`.
-* `CliffordAlgebra.natCard_monomialGroupSign`: it has order two.
-* `CliffordAlgebra.commutator_monomialGroup_le_monomialGroupSign`,
-  `CliffordAlgebra.isMulCommutative_quotient_monomialGroupSign` and
-  `CliffordAlgebra.exponent_quotient_monomialGroupSign_dvd_two`: the quotient is commutative of
-  exponent dividing two.
-* `CliffordAlgebra.natCard_quotient_monomialGroupSign`: the quotient has `2 ^ n` elements.
-* `CliffordAlgebra.natCard_monoidHom_quotient_monomialGroupSign` and
-  `CliffordAlgebra.natCard_monomialGroupChar_monomialGroupEpsilon_eq_one`: over a field in which
-  `2` is invertible there are exactly `2 ^ n` characters of the quotient, equivalently `2 ^ n`
-  characters of the group of signed monomials sending `ε` to `1`.
 * `CliffordAlgebra.finrank_eq_one_of_monomialGroupEpsilon_eq_one`: over an algebraically closed
   field, an irreducible representation on which `ε` acts trivially is a line, and
   `CliffordAlgebra.ofLinearCharacter_comp_mk_apply_monomialGroupEpsilon` runs the correspondence
   backwards, from a character of the quotient to such a representation.
-* `CliffordAlgebra.finite_monomialGroup`: the group of signed monomials of a finite orthogonal
-  basis is finite.
+* `CliffordAlgebra.natCard_monoidHom_quotient_monomialGroupSign` and
+  `CliffordAlgebra.natCard_monomialGroupChar_monomialGroupEpsilon_eq_one`: for a finite orthogonal
+  basis of `n` generators squaring to `±1` over a nontrivial ring in which `2` is invertible, and
+  with values in a field in which `2` is invertible, there are exactly `2 ^ n` characters of the
+  quotient, equivalently `2 ^ n` characters of the group of signed monomials sending `ε` to `1`.
 
 ## References
 
@@ -75,113 +58,10 @@ public section
 
 namespace CliffordAlgebra
 
-variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M] (Q : QuadraticForm R M)
+variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M] {Q : QuadraticForm R M}
+  (v : I → M)
 
-/-! ### The central element `ε` and the subgroup it generates -/
-
-/-- **The central element `ε = -1`** of the group of signed monomials. The construction of the
-group spells this element out as `⟨-1, neg_one_mem_monomialGroup v⟩`; the sign subgroup and the
-character statements below are phrased with this name instead. -/
-def monomialGroupEpsilon (v : I → M) : monomialGroup Q v :=
-  ⟨-1, neg_one_mem_monomialGroup v⟩
-
-/-- **The sign subgroup `⟨ε⟩`** of the group of signed monomials: the central subgroup generated by
-`ε = -1`. Quotienting by it forgets the sign of a signed monomial. -/
-def monomialGroupSign (v : I → M) : Subgroup (monomialGroup Q v) :=
-  Subgroup.zpowers (monomialGroupEpsilon Q v)
-
-variable {Q} (v : I → M)
-
-@[simp]
-theorem coe_monomialGroupEpsilon :
-    (monomialGroupEpsilon Q v : (CliffordAlgebra Q)ˣ) = -1 :=
-  (rfl)
-
-@[simp]
-theorem monomialGroupEpsilon_mul_self :
-    monomialGroupEpsilon Q v * monomialGroupEpsilon Q v = 1 :=
-  Subtype.ext (by simp)
-
-theorem monomialGroupEpsilon_mem_monomialGroupSign :
-    monomialGroupEpsilon Q v ∈ monomialGroupSign Q v :=
-  Subgroup.mem_zpowers _
-
-/-- **The sign subgroup is `{1, ε}`**: `ε` squares to `1`, so its powers are itself and the
-identity. -/
-theorem mem_monomialGroupSign_iff {u : monomialGroup Q v} :
-    u ∈ monomialGroupSign Q v ↔ u = 1 ∨ u = monomialGroupEpsilon Q v := by
-  refine ⟨?_, ?_⟩
-  · rw [monomialGroupSign, Subgroup.mem_zpowers_iff]
-    rintro ⟨k, rfl⟩
-    rcases Int.even_or_odd k with ⟨m, rfl⟩ | ⟨m, rfl⟩
-    · exact Or.inl (by
-        rw [← two_mul, zpow_mul, zpow_two, monomialGroupEpsilon_mul_self, one_zpow])
-    · exact Or.inr (by
-        rw [zpow_add_one, zpow_mul, zpow_two, monomialGroupEpsilon_mul_self, one_zpow, one_mul])
-  · rintro (rfl | rfl)
-    · exact one_mem _
-    · exact monomialGroupEpsilon_mem_monomialGroupSign v
-
-instance monomialGroupSign_normal : (monomialGroupSign Q v).Normal :=
-  Subgroup.normal_of_le_center (Subgroup.zpowers_le.mpr (neg_one_mem_center_monomialGroup v))
-
-/-! ### The quotient by the sign subgroup -/
-
-/-- **The commutator of two signed monomials lies in the sign subgroup.** Signed monomials of
-pairwise orthogonal generators commute or anticommute, so their commutator is `1` or `ε`;
-`CliffordAlgebra.commutator_monomialGroup_le_monomialGroupSign` is the subgroup form. -/
-theorem inv_mul_mul_comm_mem_monomialGroupSign
-    (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j)) (c u : monomialGroup Q v) :
-    (c * u)⁻¹ * (u * c) ∈ monomialGroupSign Q v := by
-  rcases (monomialGroup_commuteOrNeg v hv c u).out with h | h
-  · refine (mem_monomialGroupSign_iff v).mpr (Or.inl ?_)
-    rw [inv_mul_eq_one]
-    exact Subtype.ext h.eq
-  · refine (mem_monomialGroupSign_iff v).mpr (Or.inr (Subtype.ext ?_))
-    have hcu : ((c * u : monomialGroup Q v) : (CliffordAlgebra Q)ˣ)
-        = -((u * c : monomialGroup Q v) : (CliffordAlgebra Q)ˣ) := by
-      simpa [neg_mul] using h.eq
-    push_cast [hcu]
-    simp
-
-/-- **The commutator subgroup of the group of signed monomials lies in the sign subgroup**, which
-is the subgroup form of `CliffordAlgebra.inv_mul_mul_comm_mem_monomialGroupSign`. -/
-theorem commutator_monomialGroup_le_monomialGroupSign
-    (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j)) :
-    commutator (monomialGroup Q v) ≤ monomialGroupSign Q v := by
-  rw [commutator_def, Subgroup.commutator_le]
-  intro c _ u _
-  have hcomm : c * u * c⁻¹ * u⁻¹ = (u⁻¹ * c⁻¹)⁻¹ * (c⁻¹ * u⁻¹) := by group
-  rw [commutatorElement_def, hcomm]
-  exact inv_mul_mul_comm_mem_monomialGroupSign v hv u⁻¹ c⁻¹
-
-/-- **The quotient of the group of signed monomials by its sign subgroup is commutative**, because
-the commutator subgroup lies in the sign subgroup. -/
-theorem isMulCommutative_quotient_monomialGroupSign
-    (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j)) :
-    IsMulCommutative (monomialGroup Q v ⧸ monomialGroupSign Q v) :=
-  Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
-    (commutator_monomialGroup_le_monomialGroupSign v hv)
-
-/-! ### Characters and irreducible representations on which `ε` acts trivially -/
-
-/-- **The characters of the group of signed monomials that send `ε` to `1` are the characters of
-the quotient by the sign subgroup.** A character kills `ε` exactly when it kills the subgroup `ε`
-generates, so it factors through the quotient. -/
-def monomialGroupSignCharEquiv {H : Type*} [Group H] :
-    {χ : monomialGroup Q v →* H // χ (monomialGroupEpsilon Q v) = 1} ≃
-      ((monomialGroup Q v ⧸ monomialGroupSign Q v) →* H) where
-  toFun χ := QuotientGroup.lift _ χ.1 fun u hu ↦ by
-    rcases (mem_monomialGroupSign_iff v).mp hu with rfl | rfl
-    · exact map_one _
-    · exact χ.2
-  invFun ψ := ⟨ψ.comp (QuotientGroup.mk' (monomialGroupSign Q v)), by
-    have hε := (QuotientGroup.eq_one_iff (N := monomialGroupSign Q v)
-      (monomialGroupEpsilon Q v)).mpr (monomialGroupEpsilon_mem_monomialGroupSign v)
-    simp [hε]⟩
-  left_inv _ := Subtype.ext (MonoidHom.ext fun _ ↦ rfl)
-  right_inv ψ := MonoidHom.ext fun x ↦ by
-    induction x using QuotientGroup.induction_on with | H u => rfl
+/-! ### Irreducible representations on which `ε` acts trivially -/
 
 /-- **An irreducible representation of the group of signed monomials on which `ε` acts trivially
 is a line**, over an algebraically closed field. Such a representation factors through the quotient
@@ -206,12 +86,13 @@ theorem finrank_eq_one_of_monomialGroupEpsilon_eq_one
   exact Representation.IsIrreducible.finrank_eq_one_of_isMulCommutative
     (ρ.ofQuotient (monomialGroupSign Q v))
 
-/-- **Each character of the quotient by the sign subgroup gives an irreducible representation of
-the group of signed monomials on which `ε` acts trivially.** The representation is the line carrying
-the character of the class (`Representation.ofLinearCharacter`, irreducible by
-`Representation.isIrreducible_ofLinearCharacter`), and distinct characters give distinct
-representations by `Representation.ofLinearCharacter_injective`. -/
-theorem ofLinearCharacter_comp_mk_apply_monomialGroupEpsilon {F : Type*} [Field F]
+/-- **Each character of the quotient by the sign subgroup gives a representation of the group of
+signed monomials on which `ε` acts trivially.** The representation is the line carrying the
+character of the class, `Representation.ofLinearCharacter`; over a field it is irreducible by
+`Representation.isIrreducible_ofLinearCharacter`, and distinct characters give distinct
+representations by `Representation.ofLinearCharacter_injective`. The identity itself needs no more
+of the coefficients than a commutative semiring. -/
+theorem ofLinearCharacter_comp_mk_apply_monomialGroupEpsilon {F : Type*} [CommSemiring F]
     (χ : (monomialGroup Q v ⧸ monomialGroupSign Q v) →* Fˣ) :
     Representation.ofLinearCharacter (χ.comp (QuotientGroup.mk' (monomialGroupSign Q v)))
       (monomialGroupEpsilon Q v) = 1 := by
@@ -220,81 +101,9 @@ theorem ofLinearCharacter_comp_mk_apply_monomialGroupEpsilon {F : Type*} [Field 
   refine LinearMap.ext fun x ↦ ?_
   simp [hε]
 
-variable [Invertible (2 : R)] [LinearOrder I]
-
-/-- In a Clifford algebra over a nontrivial ring in which `2` is invertible and whose module has a
-basis, `1` and `-1` are distinct: they are opposite coordinates of the monomial indexed by the
-empty set. -/
-private theorem one_ne_neg_one_cliffordAlgebra [Nontrivial R] (b : Module.Basis I R M) :
-    (1 : CliffordAlgebra Q) ≠ -1 := by
-  intro h
-  have h1 : (basis Q b).repr (1 : CliffordAlgebra Q) ∅ = 1 := by
-    rw [← basis_empty (Q := Q) (b := b), Module.Basis.repr_self]
-    simp
-  have h2 : (basis Q b).repr (1 : CliffordAlgebra Q) ∅ = -1 := by
-    rw [h, map_neg, Finsupp.neg_apply, h1]
-  rw [h1] at h2
-  exact Invertible.ne_zero (2 : R) (by linear_combination h2)
-
-variable {b : Module.Basis I R M}
-
-/-- **A signed monomial squares into the sign subgroup**: when the generators square to `±1`, so
-does every basis monomial `e_s`. -/
-theorem mul_self_mem_monomialGroupSign (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
-    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (u : monomialGroup Q b) :
-    u * u ∈ monomialGroupSign Q b := by
-  have hval : (((u * u : monomialGroup Q b) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = 1 ∨
-      (((u * u : monomialGroup Q b) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = -1 := by
-    obtain ⟨s, hs | hs⟩ := (mem_monomialGroup_iff hb hQ).mp u.2
-    · simpa [hs] using basis_mul_self_eq_or hb hQ s
-    · simpa [hs, neg_mul_neg] using basis_mul_self_eq_or hb hQ s
-  refine (mem_monomialGroupSign_iff b).mpr ?_
-  rcases hval with h | h
-  · exact Or.inl (Subtype.ext (Units.ext h))
-  · exact Or.inr (Subtype.ext (Units.ext h))
-
-/-- **The quotient by the sign subgroup has exponent dividing two.** -/
-theorem exponent_quotient_monomialGroupSign_dvd_two
-    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
-    Monoid.exponent (monomialGroup Q b ⧸ monomialGroupSign Q b) ∣ 2 := by
-  refine Monoid.exponent_dvd_of_forall_pow_eq_one fun x ↦ ?_
-  induction x using QuotientGroup.induction_on with | H u =>
-  rw [pow_two, ← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff]
-  exact mul_self_mem_monomialGroupSign hb hQ u
-
-/-! ### The orders of the sign subgroup and of the quotient -/
-
-/-- **The group of signed monomials of a finite orthogonal basis is finite.** -/
-theorem finite_monomialGroup [Finite I] [Nontrivial R]
-    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
-    Finite (monomialGroup Q b) := by
-  have : Fintype I := Fintype.ofFinite I
-  have h : Nat.card (monomialGroup Q b) ≠ 0 := by
-    rw [natCard_monomialGroup hb hQ]
-    positivity
-  exact (Nat.card_ne_zero.mp h).2
-
-/-- **The sign subgroup has order two**: `ε` squares to `1` and is not `1`. -/
-theorem natCard_monomialGroupSign [Nontrivial R] :
-    Nat.card (monomialGroupSign Q b) = 2 := by
-  have hne : monomialGroupEpsilon Q b ≠ 1 := by
-    intro h
-    refine one_ne_neg_one_cliffordAlgebra (Q := Q) b ?_
-    simpa using (congrArg (fun g : monomialGroup Q b ↦
-      ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) h).symm
-  rw [monomialGroupSign, Nat.card_zpowers]
-  exact orderOf_eq_prime (by rw [pow_two, monomialGroupEpsilon_mul_self]) hne
-
-/-- **The quotient by the sign subgroup has `2 ^ n` elements**, one for each of the `2 ^ n` index
-sets: the group of signed monomials has `2 ^ (n + 1)` elements and the sign subgroup has two. -/
-theorem natCard_quotient_monomialGroupSign [Fintype I] [Nontrivial R]
-    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
-    Nat.card (monomialGroup Q b ⧸ monomialGroupSign Q b) = 2 ^ Fintype.card I := by
-  have h := (monomialGroupSign Q b).card_eq_card_quotient_mul_card_subgroup
-  rw [natCard_monomialGroup hb hQ, natCard_monomialGroupSign, pow_succ] at h
-  exact (Nat.eq_of_mul_eq_mul_right two_pos h).symm
-
 /-! ### The characters of the quotient -/
+
+variable [Invertible (2 : R)] [LinearOrder I] {b : Module.Basis I R M}
 
 /-- **The quotient by the sign subgroup has exactly `2 ^ n` characters** with values in a field in
 which `2` is invertible: it is a finite commutative group of exponent dividing two with `2 ^ n`
