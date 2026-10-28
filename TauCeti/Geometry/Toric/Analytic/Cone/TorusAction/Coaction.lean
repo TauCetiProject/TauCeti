@@ -49,8 +49,11 @@ theorem affineCoordinateRingCoaction_eval (hi : IsIntegralLattice i)
     default_apply_single, mul_one]
 
 /-- On complex points, the affine scheme action is the character action. The two points of the
-action domain are paired by the fibre-product universal property over `Spec ℂ`. -/
-@[simp, reassoc (attr := simp)]
+action domain are paired by the fibre-product universal property over `Spec ℂ`.
+
+The comparison is intended for explicit rewrites: applying it again to the translated torus point
+in the pairing would produce an infinite expansion. -/
+@[reassoc]
 theorem specMap_smul_eq_lift_comp_affineToricSchemeAction
     {N : Type} {V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
     {i : N →+ V} (hi : IsIntegralLattice i)
