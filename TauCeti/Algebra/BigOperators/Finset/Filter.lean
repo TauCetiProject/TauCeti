@@ -43,13 +43,13 @@ theorem _root_.Finset.prod_filter_or_eq_of_not {ι M : Type*} [DecidableEq ι] [
   split_ifs <;> simp
 
 /-- If `u i ^ 2 = 1` whenever `0 < k i`, and `∏_{i ∈ s} u i ^ (k i - j) = 1` for every `j`, then
-the product of the `u i` with `k i = m` is `1` for every `m ≥ 1`. Multiplying the identities at
-`j = m - 1` and `j = m` isolates the product over `k i ≥ m`, and the product over `k i = m` is a
-quotient of two such. -/
+the product of the `u i` with `k i = m` is `1` for every `m ≥ 1`. -/
 theorem _root_.Finset.prod_filter_eq_one_of_forall_prod_pow_tsub_eq_one {ι M : Type*}
     [CommMonoid M] (s : Finset ι) (k : ι → ℕ) (u : ι → M) (hu : ∀ i ∈ s, 0 < k i → u i ^ 2 = 1)
     (h : ∀ j, ∏ i ∈ s, u i ^ (k i - j) = 1) {m : ℕ} (hm : 0 < m) :
     ∏ i ∈ s with k i = m, u i = 1 := by
+  -- Multiplying the identities at `j = m - 1` and `j = m` isolates the product over `k i ≥ m`,
+  -- and the product over `k i = m` is a quotient of two such.
   have hT (m : ℕ) (hm : 0 < m) : ∏ i ∈ s with m ≤ k i, u i = 1 := by
     calc ∏ i ∈ s with m ≤ k i, u i = ∏ i ∈ s, u i ^ ((k i - (m - 1)) + (k i - m)) := by
           rw [Finset.prod_filter]

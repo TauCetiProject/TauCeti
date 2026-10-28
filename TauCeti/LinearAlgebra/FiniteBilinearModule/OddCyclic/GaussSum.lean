@@ -342,12 +342,12 @@ theorem scaledGaussSum_oddCyclic_of_le {p : ℕ} (hp : Odd p) {k j : ℕ} (hkj :
   simp only [hzero, AddChar.map_zero_eq_one, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
     mul_one, ← Nat.card_eq_fintype_card, hcard, Nat.cast_pow]
 
-/-- **The Gauss sum of `q_θ^{(p)}(p^e)`** is `(θ/p)^e` times that of `q_1^{(p)}(p^e)`: by
-Nikulin's values, the Gauss-sum invariants differ by `4eη`, where `(θ/p) = (-1)^η`. -/
+/-- **The Gauss sum of `q_θ^{(p)}(p^e)`** is `(θ/p)^e` times that of `q_1^{(p)}(p^e)`. -/
 theorem gaussSum_oddCyclic_eq_legendreSym_pow_mul {p : ℕ} [Fact p.Prime] (hp : Odd p) (e : ℕ)
     {θ : ℤ} (hθ : IsCoprime (p : ℤ) θ) :
     (oddCyclic (p ^ e) hp.pow θ).gaussSum =
       legendreSym p θ ^ e * (oddCyclic (p ^ e) hp.pow 1).gaussSum := by
+  -- By Nikulin's values, the Gauss-sum invariants differ by `4eη`, where `(θ/p) = (-1)^η`.
   have hθ0 : (θ : ZMod p) ≠ 0 := ((ZMod.coe_int_isUnit_iff_isCoprime θ p).2 hθ).ne_zero
   have hnd (t : ℤ) (ht : IsCoprime (p : ℤ) t) : (oddCyclic (p ^ e) hp.pow t).IsNondegenerate := by
     rw [isNondegenerate_oddCyclic_iff]
