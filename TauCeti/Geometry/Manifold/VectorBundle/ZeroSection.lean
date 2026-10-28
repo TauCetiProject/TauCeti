@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
-import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Tangent spaces along the zero section
@@ -24,8 +23,8 @@ neighbourhood theorem.
 
 The horizontal computation generalizes Mathlib's
 `TangentBundle.tangentMap_tangentBundle_pure`, by Sébastien Gouëzel and Floris van Doorn,
-from tangent bundles to vector bundles. The vertical computation uses the total-space
-curve criterion in `TauCeti.Manifold.hasMFDerivAt_totalSpace_curve_iff`.
+from tangent bundles to vector bundles. The vertical computation uses the scalar-curve case
+`TauCeti.Manifold.hasMFDerivAt_totalSpace_smul_curve` of the total-space curve criterion.
 
 ## References
 
@@ -84,27 +83,17 @@ theorem zeroSectionTangentEquiv_symm_inr (b : B) (v : V b) :
     (zeroSectionTangentEquiv (I := I) b).symm (0, v) =
       mfderiv 𝓘(𝕜) (I.prod 𝓘(𝕜, F))
         (fun t : 𝕜 ↦ (⟨b, t • v⟩ : TotalSpace F V)) 0 (1 : 𝕜) := by
+  -- The scalar line through `v` has velocity `(0, ξ)` at `0`, with `ξ` the fibre
+  -- coordinate of `v`.
   have hd : HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, F))
       (fun t : 𝕜 ↦ (⟨b, t • v⟩ : TotalSpace F V)) 0
       ((1 : 𝕜 →L[𝕜] 𝕜).smulRight
-        ((0 : E), (trivializationAt F V b).continuousLinearMapAt 𝕜 b v)) := by
-    rw [TauCeti.Manifold.hasMFDerivAt_totalSpace_curve_iff]
-    have hcoord (t : 𝕜) :
-        (trivializationAt F V b (⟨b, t • v⟩ : TotalSpace F V)).2 =
-          t • (trivializationAt F V b).continuousLinearMapAt 𝕜 b v := by
-      rw [Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _
-        (mem_baseSet_trivializationAt F V b)]
-      exact ((trivializationAt F V b).linear 𝕜
-        (mem_baseSet_trivializationAt F V b)).map_smul t v
-    refine ⟨(FiberBundle.continuousAt_totalSpace F _).2 ⟨continuousAt_const, ?_⟩,
-      ?_, ?_⟩
-    · simp_rw [hcoord]
-      exact (continuous_id.smul continuous_const).continuousAt
-    · simpa only using hasDerivAt_const (0 : 𝕜) (extChartAt I b b)
-    · simpa only [hcoord, one_smul] using
-        (hasDerivAt_id' (0 : 𝕜)).smul_const
-          ((trivializationAt F V b).continuousLinearMapAt 𝕜 b v)
-  rw [hd.mfderiv, zeroSectionTangentEquiv_symm_apply]
+        ((0 : E), (trivializationAt F V b (⟨b, v⟩ : TotalSpace F V)).2)) := by
+    simpa only [one_smul] using TauCeti.Manifold.hasMFDerivAt_totalSpace_smul_curve
+      (⟨b, v⟩ : TotalSpace F V) (hasDerivAt_id' (0 : 𝕜))
+  rw [hd.mfderiv, zeroSectionTangentEquiv_symm_apply,
+    Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _
+      (mem_baseSet_trivializationAt F V b)]
   exact (one_smul 𝕜 _).symm
 
 variable [IsManifold I 1 B] [ContMDiffVectorBundle 1 F V I]
