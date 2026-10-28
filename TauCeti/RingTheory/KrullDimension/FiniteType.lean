@@ -89,10 +89,10 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
   `A[1/f]` with `f ≠ 0`.
 * `MvPolynomial.height_eq_natCard_of_isMaximal`: every maximal ideal of `k[Xᵢ | i ∈ ι]`, for `ι`
   finite, has height the number of variables.
-* `Ideal.isMaximal_under_of_finiteType`: along a homomorphism of `k`-algebras `A → B` with `B`
-  finitely generated, maximal ideals of `B` contract to maximal ideals of `A`.
-* `Ideal.height_eq_height_under_of_finite_of_finiteType`: a finite faithful extension of domains
-  preserves prime heights when the base is a finitely generated algebra over a field.
+* `Ideal.isMaximal_under_of_finiteType`: along a homomorphism of `R`-algebras `A → B`, for `R` a
+  Jacobson ring and `B` finitely generated, maximal ideals of `B` contract to maximal ideals of `A`.
+* `Ideal.height_eq_height_under_of_isIntegral_of_finiteType`: an integral faithful extension of
+  domains preserves prime heights when the base is a finitely generated algebra over a field.
 * `TauCeti.topologicalKrullDim_inter_eq_of_finiteType`: in `Spec A`, a nonempty open part of an
   irreducible closed subset has the dimension of that subset.
 * `Ideal.height_add_ringKrullDim_quotient_of_finiteType`: the dimension formula
@@ -113,10 +113,11 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
   primes in finitely generated domains over a field, and the dimension formula)
 * [Stacks Project, Tags 00P0–00P4](https://stacks.math.columbia.edu/tag/00P4) (local dimension of
   `Spec A` for `A` of finite type over a field)
-* The finite-extension height theorem is ported from T. Dupuy, T. Tucker and Z. Wang,
+* The height theorem for integral extensions generalises, from finite to integral extensions,
+  `Pcf.height_under_eq_of_finite_of_finiteType` in `lean/Pcf/Bounding/Divisors.lean`, ported from
+  T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization), commit
-  `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
-  `Pcf.height_under_eq_of_finite_of_finiteType` in `lean/Pcf/Bounding/Divisors.lean`.
+  `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0).
 -/
 
 public section
@@ -128,12 +129,12 @@ open Topology PrimeSpectrum
 
 variable {k : Type*} [Field k]
 
-/-- If a `k`-algebra `A` is integral over a polynomial ring `k[Xᵢ | i ∈ ι]` in finitely many
-variables embedded in it, then `A` has Krull dimension the number of variables. -/
+/-- If a ring `A` is integral over a polynomial ring `k[Xᵢ | i ∈ ι]` in finitely many variables
+embedded in it, then `A` has Krull dimension the number of variables. -/
 theorem ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial {ι A : Type*} [Finite ι]
-    [CommRing A] [Algebra k A] (g : MvPolynomial ι k →ₐ[k] A) (hinj : Function.Injective g)
+    [CommRing A] (g : MvPolynomial ι k →+* A) (hinj : Function.Injective g)
     (hint : g.IsIntegral) : ringKrullDim A = Nat.card ι := by
-  algebraize [g.toRingHom]
+  algebraize [g]
   have : FaithfulSMul (MvPolynomial ι k) A := (faithfulSMul_iff_algebraMap_injective _ _).2 hinj
   rw [ringKrullDim_eq_of_isIntegral_of_faithfulSMul (R := MvPolynomial ι k),
     MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
@@ -145,36 +146,49 @@ theorem finiteRingKrullDim_of_finiteType (A : Type*) [CommRing A] [Nontrivial A]
     [Algebra.FiniteType k A] : FiniteRingKrullDim A := by
   obtain ⟨s, g, hinj, hint⟩ := exists_integral_inj_algHom_of_fg k A
   exact .of_ringKrullDim_eq_natCast
-    (ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g hinj hint)
+    (ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hint)
+
+/-- Along an integral algebra with going down, the height of a prime is the height of the prime
+below it: chains of primes descend by going down and contract injectively by incomparability. -/
+private theorem height_eq_height_under_of_isIntegral_of_hasGoingDown {R S : Type*} [CommRing R]
+    [CommRing S] [Algebra R S] [Algebra.IsIntegral R S] [Algebra.HasGoingDown R S]
+    (P : Ideal S) [P.IsPrime] : P.height = (P.under R).height := by
+  have h := Order.height_eq_of_strictMono (comap (algebraMap R S))
+    primeSpectrumComap_strictMono_of_isIntegral (fun a b hb ↦ by
+      have : a.asIdeal.LiesOver (comap (algebraMap R S) a).asIdeal := ⟨rfl⟩
+      obtain ⟨Q, hQ, hQp, hQo⟩ :=
+        Ideal.exists_ideal_lt_liesOver_of_lt (p := b.asIdeal) a.asIdeal hb
+      exact ⟨⟨Q, hQp⟩, hQ, PrimeSpectrum.ext hQo.over.symm⟩) ⟨P, ‹_›⟩
+  rwa [← height_eq_orderHeight, ← height_eq_orderHeight] at h
 
 variable (k) in
-/-- A finite faithful extension of domains preserves prime heights when the base is a finitely
+/-- An integral faithful extension of domains preserves prime heights when the base is a finitely
 generated algebra over a field. -/
-theorem _root_.Ideal.height_eq_height_under_of_finite_of_finiteType {R S : Type*}
+theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_finiteType {R S : Type*}
     [CommRing R] [CommRing S] [IsDomain S] [Algebra k R]
-    [Algebra.FiniteType k R] [Algebra R S] [Module.Finite R S] [FaithfulSMul R S]
+    [Algebra.FiniteType k R] [Algebra R S] [Algebra.IsIntegral R S] [FaithfulSMul R S]
     (prime : Ideal S) [prime.IsPrime] : prime.height = (prime.under R).height := by
   have : IsDomain R := (FaithfulSMul.algebraMap_injective R S).isDomain (algebraMap R S)
-  obtain ⟨numVars, embedding, hinj, hfinite⟩ := exists_finite_inj_algHom_of_fg k R
+  obtain ⟨numVars, embedding, hinj, hint⟩ := exists_integral_inj_algHom_of_fg k R
   let polynomial := MvPolynomial (Fin numVars) k
   let : Algebra polynomial R := embedding.toRingHom.toAlgebra
-  have : Module.Finite polynomial R := hfinite
+  have : Algebra.IsIntegral polynomial R := ⟨hint⟩
   have : FaithfulSMul polynomial R :=
     (faithfulSMul_iff_algebraMap_injective polynomial R).mpr hinj
   let : Algebra polynomial S := ((algebraMap R S).comp (algebraMap polynomial R)).toAlgebra
   have : IsScalarTower polynomial R S := IsScalarTower.of_algebraMap_eq' rfl
-  have : Module.Finite polynomial S := Module.Finite.trans R S
+  have : Algebra.IsIntegral polynomial S := Algebra.IsIntegral.trans R
   have : FaithfulSMul polynomial S :=
     (faithfulSMul_iff_algebraMap_injective polynomial S).mpr
       ((FaithfulSMul.algebraMap_injective R S).comp hinj)
-  have : IsNoetherianRing R := Algebra.FiniteType.isNoetherianRing k R
-  have : IsNoetherianRing S := IsNoetherianRing.of_finite R S
+  -- `polynomial` is integrally closed, so the integral extensions `R` and `S` of it, both
+  -- domains, have going down over it.
   calc
     prime.height = (prime.under polynomial).height :=
-      Ideal.height_eq_height_under_of_quasiFinite prime
+      height_eq_height_under_of_isIntegral_of_hasGoingDown prime
     _ = ((prime.under R).under polynomial).height := by rw [Ideal.under_under]
     _ = (prime.under R).height :=
-      (Ideal.height_eq_height_under_of_quasiFinite (prime.under R)).symm
+      (height_eq_height_under_of_isIntegral_of_hasGoingDown (prime.under R)).symm
 
 /-- The Krull dimension of `K ⊗[k] A`, for a Noetherian `k`-algebra `K` and a finitely generated
 `k`-algebra `A`, is the sum of the Krull dimensions of `K` and `A`. -/
@@ -198,7 +212,7 @@ theorem ringKrullDim_tensorProduct_of_isNoetherianRing_of_finiteType (K A : Type
     rw [ringKrullDim_eq_of_isIntegral_of_faithfulSMul (R := K ⊗[k] MvPolynomial (Fin s) k),
       ringKrullDim_eq_of_ringEquiv (MvPolynomial.algebraTensorAlgEquiv k K).toRingEquiv,
       MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite,
-      ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g hinj hfin.to_isIntegral]
+      ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hfin.to_isIntegral]
 
 /-- The Krull dimension of a finitely generated algebra over a field is unchanged by extending
 the base field. -/
@@ -216,7 +230,7 @@ theorem ringKrullDim_eq_toNat_trdeg (A : Type*) [CommRing A] [IsDomain A] [Algeb
   -- Noether normalization `k[X₁, …, Xₛ] → A` gives `dim A = s`, and the variables form a
   -- transcendence basis of `A` since `A` is integral, hence algebraic, over them.
   obtain ⟨s, g, hinj, hint⟩ := exists_integral_inj_algHom_of_fg k A
-  rw [ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g hinj hint]
+  rw [ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hint]
   algebraize [g.toRingHom]
   have : FaithfulSMul (MvPolynomial (Fin s) k) A :=
     (faithfulSMul_iff_algebraMap_injective _ _).2 hinj
@@ -228,10 +242,10 @@ theorem ringKrullDim_eq_toNat_trdeg (A : Type*) [CommRing A] [IsDomain A] [Algeb
 variable (k) in
 /-- A finitely generated domain `A` over a field `k` has Krull dimension the transcendence degree
 over `k` of its fraction field `K`. -/
-theorem ringKrullDim_eq_toNat_trdeg_of_isFractionRing (A K : Type*) [CommRing A] [IsDomain A]
-    [Algebra k A] [Algebra.FiniteType k A] [Field K] [Algebra A K] [Algebra k K]
-    [IsScalarTower k A K] [IsFractionRing A K] :
-    ringKrullDim A = (Algebra.trdeg k K).toNat := by
+theorem ringKrullDim_eq_toNat_trdeg_of_isFractionRing (A K : Type*) [CommRing A] [Algebra k A]
+    [Algebra.FiniteType k A] [Field K] [Algebra A K] [Algebra k K] [IsScalarTower k A K]
+    [IsFractionRing A K] : ringKrullDim A = (Algebra.trdeg k K).toNat := by
+  have : IsDomain A := (IsFractionRing.injective A K).isDomain (algebraMap A K)
   have : FaithfulSMul A K :=
     (faithfulSMul_iff_algebraMap_injective _ _).2 (IsFractionRing.injective _ _)
   have := IsLocalization.isAlgebraic K (nonZeroDivisors A)
@@ -254,10 +268,12 @@ theorem ringKrullDim_eq_of_isAlgebraic (A B : Type*) [CommRing A] [CommRing B] [
 
 variable (k) in
 /-- Inverting a nonzero element of a finitely generated domain over a field does not change its
-Krull dimension. -/
+Krull dimension: this holds for any localization `B` of `A` away from `f`. -/
 theorem ringKrullDim_localization_away {A : Type*} [CommRing A] [IsDomain A] [Algebra k A]
-    [Algebra.FiniteType k A] {f : A} (hf : f ≠ 0) :
-    ringKrullDim (Localization.Away f) = ringKrullDim A := by
+    [Algebra.FiniteType k A] {f : A} (hf : f ≠ 0) (B : Type*) [CommRing B] [Algebra A B]
+    [IsLocalization.Away f B] : ringKrullDim B = ringKrullDim A := by
+  rw [ringKrullDim_eq_of_ringEquiv
+    (IsLocalization.algEquiv (Submonoid.powers f) B (Localization.Away f)).toRingEquiv]
   have hle := powers_le_nonZeroDivisors_of_noZeroDivisors hf
   have : FaithfulSMul A (Localization.Away f) :=
     (faithfulSMul_iff_algebraMap_injective _ _).2 (IsLocalization.injective _ hle)
@@ -293,20 +309,24 @@ theorem _root_.MvPolynomial.height_eq_natCard_of_isMaximal {ι : Type*} [Finite 
     rw [← e.height_map M, Polynomial.height_eq_height_add_one (P.under (MvPolynomial α k)) P,
       IH, Finite.card_option, Nat.cast_add, Nat.cast_one]
 
-variable (k) in
-/-- Let `A → B` be a homomorphism of algebras over a field `k`, with `B` finitely generated over
-`k`. Then every maximal ideal of `B` contracts to a maximal ideal of `A`. -/
-theorem _root_.Ideal.isMaximal_under_of_finiteType {A B : Type*} [CommRing A] [CommRing B]
-    [Algebra k A] [Algebra k B] [Algebra A B] [IsScalarTower k A B] [Algebra.FiniteType k B]
-    (q : Ideal B) [q.IsMaximal] : (q.under A).IsMaximal := by
-  -- `A ⧸ q ∩ A` is a domain embedded in the field `B ⧸ q`, which is finite over `k` by Zariski's
-  -- lemma; so it is integral over `k`, hence a field.
+/-- Let `A → B` be a homomorphism of algebras over a Jacobson ring `R`, with `B` finitely generated
+over `R`. Then every maximal ideal of `B` contracts to a maximal ideal of `A`. -/
+theorem _root_.Ideal.isMaximal_under_of_finiteType (R : Type*) {A B : Type*} [CommRing R]
+    [IsJacobsonRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B] [Algebra A B]
+    [IsScalarTower R A B] [Algebra.FiniteType R B] (q : Ideal B) [q.IsMaximal] :
+    (q.under A).IsMaximal := by
+  -- The field `B ⧸ q` is finite over `R` by Zariski's lemma, hence integral over `A`; so its zero
+  -- ideal contracts to a maximal ideal of `A`, which is `q ∩ A`.
   let := Ideal.Quotient.field q
-  have : Module.Finite k (B ⧸ q) := finite_of_finite_type_of_isJacobsonRing k (B ⧸ q)
-  have : Module.Finite k (A ⧸ q.under A) :=
-    .of_injective (Ideal.quotientMapₐ q (IsScalarTower.toAlgHom k A B) le_rfl).toLinearMap
-      Ideal.quotientMap_injective
-  exact Ideal.Quotient.maximal_of_isField _ (isField_of_isIntegral_of_isField' (Field.toIsField k))
+  have : Module.Finite R (B ⧸ q) := finite_of_finite_type_of_isJacobsonRing R (B ⧸ q)
+  have : Module.Finite A (B ⧸ q) := .of_restrictScalars_finite R A (B ⧸ q)
+  have h : ((⊥ : Ideal (B ⧸ q)).under A).IsMaximal := Ideal.IsMaximal.under A ⊥
+  have hker : (⊥ : Ideal (B ⧸ q)).under A = q.under A := by
+    ext a
+    rw [Ideal.mem_comap, Ideal.mem_comap, Ideal.mem_bot,
+      IsScalarTower.algebraMap_apply A B (B ⧸ q), Ideal.Quotient.algebraMap_eq,
+      Ideal.Quotient.eq_zero_iff_mem]
+  rwa [hker] at h
 
 variable (k) in
 /-- In the spectrum of a finitely generated algebra over a field, a nonempty open part `Z ∩ U` of
@@ -347,7 +367,8 @@ theorem topologicalKrullDim_inter_eq_of_finiteType {A : Type*} [CommRing A] [Alg
           |>.topologicalKrullDim_eq
     _ = topologicalKrullDim (PrimeSpectrum (Localization.Away g')) := by
         rw [PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim,
-          PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim, ringKrullDim_localization_away k hg]
+          PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim,
+          ringKrullDim_localization_away k hg (Localization.Away g')]
     _ ≤ topologicalKrullDim ↥(Z ∩ U) :=
         ((hi.isEmbedding.comp hj.isEmbedding).isInducing.codRestrict hsub).topologicalKrullDim_le
 
@@ -367,7 +388,8 @@ private theorem ringKrullDim_quotient_add_one_of_height_eq_one {A : Type*} [Comm
   have : FaithfulSMul R A := (faithfulSMul_iff_algebraMap_injective _ _).2 hinj
   have : Module.Finite R A := hfin
   set Q := P.under R
-  have hQ : Q.height = 1 := Ideal.height_eq_height_under_of_finite_of_finiteType (R := R) k P ▸ hP
+  have hQ : Q.height = 1 :=
+    Ideal.height_eq_height_under_of_isIntegral_of_finiteType (R := R) k P ▸ hP
   obtain ⟨f, hf⟩ := UniqueFactorizationMonoid.isPrincipal_of_height_eq_one hQ
   have hfQ : f ∈ Q := by
     rw [hf]
