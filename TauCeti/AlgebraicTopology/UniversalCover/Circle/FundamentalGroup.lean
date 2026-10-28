@@ -426,6 +426,16 @@ def expLoop : Path (1 : Circle) 1 where
 theorem expLoop_apply (t : unitInterval) : expLoop t = Circle.exp (2 * Real.pi * t) :=
   (rfl)
 
+/-- The counterclockwise loop covers the whole circle. -/
+theorem expLoop_surjective : Function.Surjective expLoop := by
+  intro z
+  obtain ⟨r, ⟨hr₀, hr₁⟩, hr⟩ : z ∈ Circle.exp '' Set.Icc 0 (0 + 2 * Real.pi) := by
+    rw [Circle.periodic_exp.image_Icc Real.two_pi_pos, Circle.exp_surjective.range_eq]
+    exact Set.mem_univ z
+  refine ⟨⟨r / (2 * Real.pi), div_nonneg hr₀ Real.two_pi_pos.le,
+    (div_le_one Real.two_pi_pos).mpr (by simpa using hr₁)⟩, ?_⟩
+  simpa [expLoop_apply, mul_div_cancel₀ _ Real.two_pi_pos.ne'] using hr
+
 /-- **The counterclockwise loop generates `π₁(S¹)` positively.** The isomorphism
 `π₁(Circle, 1) ≃* Multiplicative ℤ` sends the class of `t ↦ exp(2πit)` to `ofAdd 1`. -/
 @[simp]
