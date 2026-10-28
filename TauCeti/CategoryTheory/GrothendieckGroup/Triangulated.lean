@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.CategoryTheory.Triangulated.Adjunction
 public import Mathlib.CategoryTheory.Triangulated.Subcategory
+public import TauCeti.CategoryTheory.Triangulated.FullSubcategory
 
 /-!
 # Triangulated `K₀` of a pretriangulated category
@@ -498,15 +499,15 @@ theorem of_fullSubcategory_distTriang {T : Triangle C} (hT : T ∈ distTriang C)
     (h₂ : P T.obj₂) (h₃ : P T.obj₃) :
     (of (⟨T.obj₂, h₂⟩ : P.FullSubcategory) : TriangulatedK0 P.FullSubcategory) =
       of (⟨T.obj₁, h₁⟩ : P.FullSubcategory) + of (⟨T.obj₃, h₃⟩ : P.FullSubcategory) := by
-  -- Complete the first morphism to a distinguished triangle of the subcategory; its third vertex
-  -- is isomorphic to `T.obj₃` in the ambient category, hence in the subcategory.
-  obtain ⟨Z, g, h, hT'⟩ := distinguished_cocone_triangle
-    (P.fullyFaithfulι.preimage T.mor₁ : (⟨T.obj₁, h₁⟩ : P.FullSubcategory) ⟶ ⟨T.obj₂, h₂⟩)
-  have e := Triangle.π₃.mapIso (isoTriangleOfIso₁₂ _ _ (P.ι.map_distinguished _ hT') hT
-    (Iso.refl _) (Iso.refl _)
-    ((Category.comp_id _).trans ((P.fullyFaithfulι.map_preimage (X := ⟨T.obj₁, h₁⟩)
-      (Y := ⟨T.obj₂, h₂⟩) T.mor₁).trans (Category.id_comp _).symm)))
-  exact (of_distTriang hT').trans (congrArg (_ + ·) (of_congr (P.fullyFaithfulι.preimageIso e)))
+  -- `T` is isomorphic to the image of a distinguished triangle of the subcategory.
+  obtain ⟨T', hT', ⟨e⟩⟩ := P.exists_distTriang_mapTriangle_iso hT h₁ h₂
+  rw [← of_congr (P.fullyFaithfulι.preimageIso (X := T'.obj₁) (Y := ⟨T.obj₁, h₁⟩)
+      (Triangle.π₁.mapIso e)),
+    ← of_congr (P.fullyFaithfulι.preimageIso (X := T'.obj₂) (Y := ⟨T.obj₂, h₂⟩)
+      (Triangle.π₂.mapIso e)),
+    ← of_congr (P.fullyFaithfulι.preimageIso (X := T'.obj₃) (Y := ⟨T.obj₃, h₃⟩)
+      (Triangle.π₃.mapIso e))]
+  exact of_distTriang hT'
 
 end FullSubcategory
 

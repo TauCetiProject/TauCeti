@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Embedding.StupidTrunc
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Basic
+public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Generation
 public import TauCeti.CategoryTheory.GrothendieckGroup.BoundedComplex
 public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
 public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
@@ -152,54 +153,41 @@ theorem of_boundedSingleFunctor_obj (n : ℤ) (X : C) :
   rw [Functor.comp_obj, of_shift] at h
   rw [← h, smul_smul, ← Units.val_mul, Int.units_mul_self, Units.val_one, one_smul]
 
-/-- The induction behind `TauCeti.TriangulatedK0.of_bounded_quotient_obj`, on the upper bound of
-a complex: splitting off the top term expresses a complex as an extension of a shorter complex by
-a complex concentrated in a single degree. -/
-private lemma of_bounded_quotient_obj_aux (a : ℤ) : ∀ b, a - 1 ≤ b →
-    ∀ (K : CochainComplex C ℤ) (_ : K.IsStrictlyGE a) (_ : K.IsStrictlyLE b)
-      (hK : CochainComplex.bounded C K),
+/-- The statement of `TauCeti.TriangulatedK0.of_bounded_quotient_obj` for the Euler
+characteristic, proved by induction on bounded complexes: splitting off the top term expresses a
+complex as an extension of a shorter complex by a complex concentrated in a single degree. -/
+private lemma of_bounded_quotient_obj_aux (K : CochainComplex C ℤ)
+    (hK : CochainComplex.bounded C K) {s : Finset ℤ} (hs : ∀ n ∉ s, IsZero (K.X n)) :
+    (of ((HomotopyCategory.Bounded.quotient C).obj ⟨K, hK⟩) :
+      TriangulatedK0 (HomotopyCategory.Bounded C)) =
+      SplitK0.toBoundedHomotopy C (SplitK0.eulerChar K s) := by
+  refine CochainComplex.bounded_induction (motive := fun K ↦
+    ∀ (hK : CochainComplex.bounded C K) (s : Finset ℤ), (∀ n ∉ s, IsZero (K.X n)) →
       (of ((HomotopyCategory.Bounded.quotient C).obj ⟨K, hK⟩) :
         TriangulatedK0 (HomotopyCategory.Bounded C)) =
-        SplitK0.toBoundedHomotopy C (SplitK0.eulerChar K (Finset.Icc a b)) := by
-  intro b hb
-  induction b, hb using Int.leInduction with
-  | base =>
-    intro K _ _ hK
-    have hK0 : IsZero K := (IsZero.iff_id_eq_zero _).2 (HomologicalComplex.hom_ext _ _ fun i ↦
-      (K.isZero_X_of_notMem_Icc a (a - 1) (n := i) (by simp)).eq_of_src _ _)
-    rw [Finset.Icc_eq_empty (by omega), SplitK0.eulerChar_empty, map_zero]
+        SplitK0.toBoundedHomotopy C (SplitK0.eulerChar K s)) ?_ ?_ K hK hK s hs
+  · intro K hK0 hK s hs
+    rw [SplitK0.eulerChar_eq_eulerChar_of_isZero K hs (t := ∅)
+      (fun n _ ↦ (HomologicalComplex.eval _ _ n).map_isZero hK0), SplitK0.eulerChar_empty,
+      map_zero]
     refine of_eq_zero_of_isZero (IsZero.of_full_of_faithful_of_isZero
       (HomotopyCategory.Bounded.ι C) _ ?_)
     rw [ObjectProperty.ι_obj, HomotopyCategory.Bounded.quotient_obj_obj]
     exact Functor.map_isZero _ hK0
-  | succ b hb ih =>
-    intro K _ _ hK
+  · intro K b hK hb ih hK' s hs
+    obtain ⟨a₀, -, _, -⟩ := (CochainComplex.bounded_iff _ _).1 hK
+    -- A lower bound which is at most `b + 1`, so that `Icc a (b + 1)` splits off `b + 1`.
+    let a := min a₀ (b + 1)
+    have : K.IsStrictlyGE a := K.isStrictlyGE_of_ge a a₀ (min_le_left _ _)
     let X₃ := K.stupidTrunc (ComplexShape.embeddingUpIntLE b)
-    have hb₁ : CochainComplex.bounded C ((single C (.up ℤ) (b + 1)).obj (K.X (b + 1))) :=
-      (CochainComplex.bounded_iff _ _).2 ⟨b + 1, b + 1, inferInstance, inferInstance⟩
-    have hb₃ : CochainComplex.bounded C X₃ :=
-      (CochainComplex.bounded_iff _ _).2 ⟨a, b, inferInstance, inferInstance⟩
-    let T := CochainComplex.trianglehOfDegreewiseSplit _ (K.topShortComplexSplitting b)
-    have h₁ : HomotopyCategory.bounded C T.obj₁ :=
-      (HomotopyCategory.bounded_quotient_obj_iff _).2 (by simpa using hb₁)
-    have h₂ : HomotopyCategory.bounded C T.obj₂ :=
-      (HomotopyCategory.bounded_quotient_obj_iff _).2 (by simpa using hK)
-    have h₃ : HomotopyCategory.bounded C T.obj₃ :=
-      (HomotopyCategory.bounded_quotient_obj_iff _).2 (by simpa using hb₃)
-    have hT := of_fullSubcategory_distTriang (HomotopyCategory.bounded C)
-      (CochainComplex.trianglehOfDegreewiseSplit_distinguished _ _) h₁ h₂ h₃
-    -- The three vertices of the splitting triangle are the bounded homotopy classes of the top
-    -- term in degree `b + 1`, of `K`, and of its truncation `X₃`.
-    rw [of_bounded_eq_of_obj_eq (K := ⟨T.obj₂, h₂⟩)
-        (L := (HomotopyCategory.Bounded.quotient C).obj ⟨K, hK⟩)
-        (by simp [T, HomotopyCategory.Bounded.quotient_obj_obj]),
-      of_bounded_eq_of_obj_eq (K := ⟨T.obj₁, h₁⟩)
-        (L := (HomotopyCategory.Bounded.quotient C).obj ⟨_, hb₁⟩)
-        (by simp [T, HomotopyCategory.Bounded.quotient_obj_obj]),
-      of_bounded_eq_of_obj_eq (K := ⟨T.obj₃, h₃⟩)
-        (L := (HomotopyCategory.Bounded.quotient C).obj ⟨X₃, hb₃⟩)
-        (by simp [T, X₃, HomotopyCategory.Bounded.quotient_obj_obj]),
-      ← of_boundedSingleFunctor_obj_eq_of_quotient_obj] at hT
+    obtain ⟨T, hT, ⟨e₁⟩, ⟨e₂⟩, ⟨e₃⟩⟩ :=
+      TauCeti.HomotopyCategory.Bounded.exists_distTriang_top K hK' b
+    -- The truncation has the terms of `K` in degrees `≤ b` and zero terms above.
+    have hs₃ : ∀ n ∉ s, IsZero (X₃.X n) := fun n hn ↦ by
+      by_cases hnb : n ≤ b
+      · have := K.isIso_πStupidTruncLE_f b hnb
+        exact (hs n hn).of_iso (asIso ((K.πStupidTruncLE b).f n)).symm
+      · exact K.isZero_stupidTrunc_embeddingUpIntLE_X b (by omega)
     have hX₃ : SplitK0.eulerChar X₃ (Finset.Icc a b) = SplitK0.eulerChar K (Finset.Icc a b) := by
       rw [SplitK0.eulerChar_def, SplitK0.eulerChar_def]
       refine Finset.sum_congr rfl fun n hn ↦ ?_
@@ -208,10 +196,15 @@ private lemma of_bounded_quotient_obj_aux (a : ℤ) : ∀ b, a - 1 ≤ b →
     have hIcc : Finset.Icc a (b + 1) = insert (b + 1) (Finset.Icc a b) := by
       ext n
       simp only [Finset.mem_Icc, Finset.mem_insert]
+      have : a ≤ b + 1 := min_le_right _ _
       omega
-    rw [hT, of_boundedSingleFunctor_obj, ← SplitK0.toBoundedHomotopy_of, ← map_zsmul,
-      ih X₃ inferInstance inferInstance hb₃, hX₃, hIcc, SplitK0.eulerChar_insert K (by simp),
-      map_add]
+    rw [← of_congr e₂, of_distTriang hT, of_congr e₁, of_congr e₃, of_boundedSingleFunctor_obj,
+      ← SplitK0.toBoundedHomotopy_of, ← map_zsmul, ih _ s hs₃,
+      SplitK0.eulerChar_eq_eulerChar_of_isZero K hs (t := Finset.Icc a (b + 1))
+        (fun n hn ↦ K.isZero_X_of_notMem_Icc a (b + 1) hn),
+      SplitK0.eulerChar_eq_eulerChar_of_isZero X₃ hs₃ (t := Finset.Icc a b)
+        (fun n hn ↦ X₃.isZero_X_of_notMem_Icc a b hn),
+      hX₃, hIcc, SplitK0.eulerChar_insert K (by simp), map_add]
 
 /-- **The class of a bounded complex** in triangulated `K₀` of the bounded homotopy category is
 the alternating sum of the classes of its terms, each placed in degree zero. The sum runs over any
@@ -222,11 +215,7 @@ theorem of_bounded_quotient_obj (K : CochainComplex.Bounded C) {s : Finset ℤ}
       TriangulatedK0 (HomotopyCategory.Bounded C)) =
       ∑ n ∈ s, (n.negOnePow : ℤ) • of ((HomotopyCategory.Bounded.singleFunctor C 0).obj
         (K.obj.X n)) := by
-  obtain ⟨a, b, ha, hb⟩ := (CochainComplex.bounded_iff _ _).1 K.property
-  have hb' : K.obj.IsStrictlyLE (max b (a - 1)) := K.obj.isStrictlyLE_of_le b _ (le_max_left _ _)
-  rw [of_bounded_quotient_obj_aux a _ (le_max_right _ _) K.obj ha hb' K.property,
-    SplitK0.eulerChar_eq_eulerChar_of_isZero _
-      (fun _ hn ↦ K.obj.isZero_X_of_notMem_Icc a (max b (a - 1)) hn) hs]
+  rw [of_bounded_quotient_obj_aux K.obj K.property hs]
   simp [SplitK0.eulerChar_def, SplitK0.toBoundedHomotopy_of]
 
 end TriangulatedK0
