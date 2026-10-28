@@ -29,8 +29,9 @@ of left cosets. This is the permutation module `A[G ⧸ U]`, of order `|A| ^ [G 
 
 ## Main results
 
-* `TauCeti.discreteCoindAddEquivAlgebraic_trace`: the auxiliary coefficient comparison identifies
-  the algebraic coinduction–restriction counit with the discrete trace.
+* `TauCeti.discreteCoindAddEquivAlgebraic_trace`: for a discrete group `G` and a finite-index
+  subgroup `U`, the counit of `Rep.coindResAdjunction` on `Rep.ofDistribMulAction ℤ G M`,
+  composed with `discreteCoindAddEquivAlgebraic`, equals `DiscreteCoind.trace`.
 * `TauCeti.DiscreteCoind.instFinite`: `Coind_U^G A` is finite for finite `A` and finite-index
   `U`, since restriction to a right transversal is injective.
 * `TauCeti.DiscreteCoind.sum_single`: for an open finite-index `U`, a coinduced function is the
@@ -262,13 +263,15 @@ end DiscreteCoind
 
 section DiscreteAlgebraicComparison
 
-variable (G M : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
+variable (G : Type u) (M : Type (max u v)) [Group G] [TopologicalSpace G] [DiscreteTopology G]
   [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   (U : Subgroup G) [U.FiniteIndex] [DistribMulAction G M] [ContinuousSMul G M]
 
 open Classical in
-/-- The algebraic coinduction–restriction counit agrees with the discrete trace after the
-additive coinduction comparison. -/
+/-- For a discrete group `G` and a finite-index subgroup `U`, the counit of
+`Rep.coindResAdjunction` on `Rep.ofDistribMulAction ℤ G M`, composed with
+`discreteCoindAddEquivAlgebraic`, equals `DiscreteCoind.trace`. The coefficient universe contains
+the group universe, as required by the coinduction–restriction adjunction. -/
 theorem discreteCoindAddEquivAlgebraic_trace (f : DiscreteCoind G U M) :
     ((Rep.coindResAdjunction ℤ U).counit.app (Rep.ofDistribMulAction ℤ G M)).hom
         (discreteCoindAddEquivAlgebraic G M U f) = DiscreteCoind.trace G U M f := by

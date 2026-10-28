@@ -37,8 +37,10 @@ multiplication on `G`.
   `G`-representations;
 * `TauCeti.discreteCoindEquivAlgebraic`: for an open subgroup `U`, the linear equivalence between
   locally constant coinduction and Mathlib's `Representation.coindV`;
-* `TauCeti.discreteCoindAddEquivAlgebraic`: the additive comparison for a discrete group,
-  preserving the caller's coefficient action;
+* `TauCeti.discreteCoindAddEquivAlgebraic`: for a discrete group `G`, a subgroup `U`, and an
+  arbitrary `DistribMulAction U M`, the additive equivalence
+  `DiscreteCoind G U M ≃+ Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)`; the coefficient
+  action need not be restricted from `G`;
 * `TauCeti.algebraicCoindCounit`: evaluation at `1` on algebraic coinduction with its discrete
   topology, for comparing the two restriction–evaluation Shapiro maps.
 
@@ -601,12 +603,15 @@ end AlgebraicCounit
 
 section DiscreteAlgebraicComparison
 
-variable (G M : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
+universe u v
+
+variable (G : Type u) (M : Type v) [Group G] [TopologicalSpace G] [DiscreteTopology G]
   [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   (U : Subgroup G) [DistribMulAction U M] [ContinuousSMul U M]
 
-/-- For a discrete group, locally constant coinduction is additively equivalent to algebraic
-coinduction of the caller's coefficient action. -/
+/-- For a discrete group `G`, a subgroup `U`, and an arbitrary `DistribMulAction U M`, the
+additive equivalence `DiscreteCoind G U M ≃+ Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)`.
+The coefficient action need not be restricted from `G`. -/
 noncomputable def discreteCoindAddEquivAlgebraic :
     DiscreteCoind G U M ≃+ Rep.coind U.subtype
       (Rep.ofDistribMulAction ℤ U M) :=
@@ -636,14 +641,25 @@ theorem discreteCoindAddEquivAlgebraic_smul (g : G) (f : DiscreteCoind G U M) :
   discreteCoindEquivAlgebraic_smul ℤ G ⟨U, isOpen_discrete _⟩
     ⟨ofDiscreteModule ℤ U M, ofDiscreteModule_isSmoothDiscrete ℤ U M⟩ g f
 
+end DiscreteAlgebraicComparison
+
+section DiscreteAlgebraicCounit
+
+universe u v
+
+variable (G : Type u) (M : Type (max u v)) [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  (U : Subgroup G) [DistribMulAction U M] [ContinuousSMul U M]
+
 /-- The algebraic restriction–coinduction counit evaluates at the identity after the additive
-coinduction comparison. -/
+coinduction comparison. The coefficient universe contains the group universe, as required by
+the restriction–coinduction adjunction. -/
 theorem discreteCoindAddEquivAlgebraic_eval (f : DiscreteCoind G U M) :
     ((Rep.resCoindAdjunction ℤ U.subtype).counit.app
       (Rep.ofDistribMulAction ℤ U M)).hom (discreteCoindAddEquivAlgebraic G M U f) = f 1 := by
   exact (Rep.resCoindAdjunction_counit_app_hom_apply U.subtype _ _).trans
     (discreteCoindAddEquivAlgebraic_apply G M U f 1)
 
-end DiscreteAlgebraicComparison
+end DiscreteAlgebraicCounit
 
 end TauCeti

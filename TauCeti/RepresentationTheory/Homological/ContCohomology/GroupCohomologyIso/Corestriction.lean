@@ -26,10 +26,9 @@ using the same corestriction normalization.
 The comparison also identifies the explicit Shapiro map with ordinary Shapiro after transporting
 coinduced coefficients by `discreteCoindAddEquivAlgebraic`.
 
-Both corestrictions are inverse Shapiro followed by the coefficient trace. The proof uses the
-existing comparison between locally constant and algebraic coinduction, identifies the Shapiro
-maps through restriction and evaluation at the identity, and identifies the traces through
-inversion of cosets. No new cochain formula for corestriction is introduced.
+Both corestrictions factor as inverse Shapiro followed by the coefficient trace. The additive
+equivalence between locally constant and algebraic coinduction identifies the Shapiro maps
+through restriction and evaluation at `1`, and identifies the traces through inversion of cosets.
 
 The coefficient ring is `ℤ`, and the group and coefficient carrier lie in `Type`, because
 `explicitH2IsoGroupCohomology` compares with the group cohomology of
