@@ -47,8 +47,9 @@ and products add the two divisor bounds.
   `TauCeti.RiemannSurface.meromorphicOrderAt_eq_of_mem_maximalAtlas`: chart independence.
 * `TauCeti.RiemannSurface.tendsto_zero_iff_meromorphicOrderAt_pos`: the order is positive exactly
   where the function tends to zero.
-* `TauCeti.RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt`: a holomorphic function
-  is meromorphic.
+* `TauCeti.RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt` and
+  `TauCeti.RiemannSurface.meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt`: a holomorphic
+  function is meromorphic, of nonnegative order.
 * `TauCeti.RiemannSurface.MeromorphicAt.comp` and `TauCeti.RiemannSurface.meromorphicOrderAt_comp`:
   pullback along a holomorphic map, with the order formula.
 * `TauCeti.RiemannSurface.meromorphicAt_const`, `TauCeti.RiemannSurface.MeromorphicAt.add`,
@@ -170,16 +171,27 @@ theorem meromorphicOrderAt_eq_of_mem_maximalAtlas :
 
 end ChartIndependence
 
-/-- A function holomorphic near `x` is meromorphic at `x`. -/
-theorem meromorphicAt_of_eventually_mdifferentiableAt [CompleteSpace E]
-    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) : MeromorphicAt f x := by
+/-- A function holomorphic near `x` has an analytic representative in the preferred chart at
+`x`. -/
+private theorem analyticAt_comp_chartAt_symm [CompleteSpace E]
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) :
+    AnalyticAt ℂ (f ∘ (chartAt ℂ x).symm) (chartAt ℂ x x) := by
   have hcx := mem_chart_source ℂ x
-  refine AnalyticAt.meromorphicAt ?_
   rw [Complex.analyticAt_iff_eventually_differentiableAt]
   filter_upwards [(chartAt ℂ x).open_target.mem_nhds ((chartAt ℂ x).map_source hcx),
     ((chartAt ℂ x).tendsto_symm hcx).eventually hf] with z hz hfz
   exact mdifferentiableAt_iff_differentiableAt.1
     (hfz.comp z (mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ x) hz))
+
+/-- A function holomorphic near `x` is meromorphic at `x`. -/
+theorem meromorphicAt_of_eventually_mdifferentiableAt [CompleteSpace E]
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) : MeromorphicAt f x :=
+  (analyticAt_comp_chartAt_symm hf).meromorphicAt
+
+/-- A function holomorphic near `x` has nonnegative order at `x`. -/
+theorem meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt [CompleteSpace E]
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) : 0 ≤ meromorphicOrderAt f x :=
+  (analyticAt_comp_chartAt_symm hf).meromorphicOrderAt_nonneg
 
 /-! ### Pullback along a holomorphic map -/
 
