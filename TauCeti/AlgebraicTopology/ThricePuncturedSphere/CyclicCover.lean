@@ -387,10 +387,10 @@ theorem snd_rotate_apply (z : CyclicCover m a b) :
       cexp (2 * π * I / m) * z.snd :=
   (rfl)
 
-/-- On the superelliptic curve `y⁴ = t (t − 1)` the rotation is `y ↦ i · y`, as
-`exp (2πi / 4) = i`. -/
-theorem snd_rotate_apply_four (z : CyclicCover 4 1 1) :
-    ((rotate (m := 4) (a := 1) (b := 1) : CyclicCover 4 1 1 ≃ₜ CyclicCover 4 1 1) z).snd =
+/-- On the fourth-power covers `y⁴ = tᵃ (t − 1)ᵇ`, such as the superelliptic curve
+`y⁴ = t (t − 1)`, the rotation is `y ↦ i · y`, as `exp (2πi / 4) = i`. -/
+theorem snd_rotate_apply_four (z : CyclicCover 4 a b) :
+    ((rotate (m := 4) (a := a) (b := b) : CyclicCover 4 a b ≃ₜ CyclicCover 4 a b) z).snd =
       I * z.snd := by
   rw [snd_rotate_apply, show 2 * π * I / (4 : ℕ) = π / 2 * I by push_cast; ring,
     exp_pi_div_two_mul_I]
@@ -403,6 +403,23 @@ theorem rotate_smul_fiberPoint (k : ℕ) :
   refine Subtype.ext (Pullback.ext rfl ?_)
   rw [deck.fiber_smul_coe, snd_rotate_apply, snd_fiberPoint, snd_fiberPoint, pow_succ',
     ← mul_assoc]
+
+/-- The `k`-th power of the rotation multiplies `y` by `ζ ^ k`. -/
+private theorem snd_rotate_pow_smul (k : ℕ) (z : CyclicCover m a b) :
+    (rotate (m := m) (a := a) (b := b) ^ k • z).snd = ζ ^ k * z.snd := by
+  induction k with
+  | zero => rw [pow_zero, one_smul, pow_zero, one_mul]
+  | succ k ih => rw [pow_succ', mul_smul, pow_succ', mul_assoc, ← ih]; rfl
+
+/-- The rotation `y ↦ ζ · y` of a cyclic cover has order `m`. -/
+theorem orderOf_rotate : orderOf (rotate (m := m) (a := a) (b := b)) = m := by
+  refine (orderOf_eq_orderOf_iff.2 ?_).trans (isPrimitiveRoot_ζ (m := m)).eq_orderOf.symm
+  refine fun n ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hz := snd_rotate_pow_smul n (fiberPoint (m := m) (a := a) (b := b) 0).1
+    rw [h, one_smul] at hz
+    exact (mul_eq_right₀ (mul_ne_zero (pow_ne_zero _ (exp_ne_zero _)) (exp_ne_zero _))).1 hz.symm
+  · exact Subtype.ext (Homeomorph.ext fun z ↦
+      Pullback.ext (deck.proj_smul _ z) ((snd_rotate_pow_smul n z).trans (by rw [h, one_mul]; rfl)))
 
 section Connected
 
@@ -418,12 +435,6 @@ theorem coe_deckMulEquivAutomorphismGroup_rotate :
   rw [IsCoveringMap.coe_deckMulEquivAutomorphismGroup_apply, fiberEquiv_symm_apply,
     rotate_smul_fiberPoint, fiberEquiv_fiberPoint]
   exact Fin.ext ((Fin.coe_finRotate_pow 1 i).symm.trans (by rw [pow_one]))
-
-/-- The rotation `y ↦ ζ · y` of a connected cyclic cover has order `m`. -/
-theorem orderOf_rotate : orderOf (rotate (m := m) (a := a) (b := b)) = m := by
-  rw [← (isCoveringMap_fst.deckMulEquivAutomorphismGroup fiberEquiv).orderOf_eq,
-    ← Subgroup.orderOf_coe, coe_deckMulEquivAutomorphismGroup_rotate,
-    orderOf_finRotate (NeZero.ne m)]
 
 /-- A connected cyclic cover is regular: its deck group has order `m`, the number of sheets. -/
 theorem natCard_deck :
