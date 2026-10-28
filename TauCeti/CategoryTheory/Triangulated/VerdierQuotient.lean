@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Localization.Triangulated
 public import Mathlib.CategoryTheory.Triangulated.Generators
+public import TauCeti.CategoryTheory.ObjectProperty.Retract
 
 /-!
 # Kernels and triangle functors out of Verdier quotients
@@ -63,23 +64,13 @@ variable {C : Type*} [Category* C] [HasZeroObject C] [Preadditive C] [HasShift C
   {E : Type*} [Category* E] [HasZeroObject E] [Preadditive E] [HasShift E ℤ]
   [∀ n : ℤ, (shiftFunctor E n).Additive] [Pretriangulated E]
 
-/-! ### Zero objects and kernels of triangle functors -/
-
-/-- The zero objects of a category are closed under isomorphisms. -/
-instance {D : Type*} [Category* D] :
-    ObjectProperty.IsClosedUnderIsomorphisms (IsZero (C := D)) where
-  of_iso e hX := hX.of_iso e.symm
+/-! ### Zero objects -/
 
 /-- The zero objects of a pretriangulated category form a triangulated subcategory. -/
 instance : ObjectProperty.IsTriangulated (IsZero (C := E)) where
   exists_zero := ⟨0, isZero_zero E, isZero_zero E⟩
   isStableUnderShiftBy n := ⟨fun _ hX ↦ (shiftFunctor E n).map_isZero hX⟩
   toIsTriangulatedClosed₂ := .mk' fun T hT h₁ h₃ ↦ Triangle.isZero₂_of_isZero₁₃ T hT h₁ h₃
-
-/-- The kernel of any functor to a category with zero morphisms is stable under retracts. -/
-instance {B D : Type*} [Category* B] [Category* D] [HasZeroMorphisms D] (F : B ⥤ D) :
-    F.kernel.IsStableUnderRetracts where
-  of_retract h hY := IsZero.of_mono (h.map F).i hY
 
 /-! ### Triangle functors inverting `P.trW` -/
 

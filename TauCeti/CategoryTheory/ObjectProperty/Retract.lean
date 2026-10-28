@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Idempotents.Basic
+public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
 
 /-!
-# Idempotent completeness of full subcategories closed under retracts
+# Stability under retracts: zero objects, inverse images, idempotent completeness
+
+Zero objects are stable under retracts, and so is the inverse image of any property stable under
+retracts; together these make the kernel `Functor.kernel` of every functor stable under retracts.
 
 If idempotents split in a category `C` and an object property `P` is stable under retracts, then
 idempotents split in the full subcategory of `P`: an idempotent of a `P`-object splits in `C`
@@ -20,6 +24,10 @@ endomorphisms.
 
 ## Main results
 
+* `CategoryTheory.ObjectProperty.isStableUnderRetracts_isZero`: a retract of a zero object is a
+  zero object.
+* `CategoryTheory.ObjectProperty.isStableUnderRetracts_inverseImage`: the inverse image of a
+  property stable under retracts is stable under retracts.
 * `CategoryTheory.ObjectProperty.isIdempotentComplete_fullSubcategory`: the full subcategory of a
   property stable under retracts in an idempotent-complete category is idempotent complete.
 -/
@@ -27,6 +35,24 @@ endomorphisms.
 public section
 
 namespace CategoryTheory.ObjectProperty
+
+open Limits
+
+/-- **A retract of a zero object is a zero object**: maps into or out of the retract factor
+through the zero object. -/
+instance isStableUnderRetracts_isZero {C : Type*} [Category* C] :
+    IsStableUnderRetracts (IsZero (C := C)) where
+  of_retract {X Y} h hY := ⟨fun Z ↦ ⟨⟨h.i ≫ hY.to_ Z⟩, fun f ↦ by
+      rw [← Category.id_comp f, ← h.retract, Category.assoc, hY.eq_of_src (h.r ≫ f)]; rfl⟩,
+    fun Z ↦ ⟨⟨hY.from_ Z ≫ h.r⟩, fun f ↦ by
+      rw [← Category.comp_id f, ← h.retract, ← Category.assoc, hY.eq_of_tgt (f ≫ h.i)]; rfl⟩⟩
+
+/-- The inverse image of a property stable under retracts is stable under retracts, since
+functors preserve retracts. -/
+instance isStableUnderRetracts_inverseImage {C D : Type*} [Category* C] [Category* D]
+    (P : ObjectProperty D) [P.IsStableUnderRetracts] (F : C ⥤ D) :
+    (P.inverseImage F).IsStableUnderRetracts where
+  of_retract h hY := P.prop_of_retract (h.map F) hY
 
 /-- **A full subcategory stable under retracts of an idempotent-complete category is idempotent
 complete**: an idempotent splits in the ambient category through a retract of its object, which
