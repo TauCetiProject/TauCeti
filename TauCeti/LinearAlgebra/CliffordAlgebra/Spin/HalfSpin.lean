@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 
 /-!
@@ -27,7 +27,7 @@ descends to the half-spin representations `ρ^±([s, z]) = z ρ^±(s)` of
 four-manifold.
 
 When `W^ε` has complex dimension two, `ρ(x* x) = det(ρ x)` on `W^ε` for every even `x`
-(`CliffordAlgebra.map_star_mul_self_apply_of_mem_even`), so every Spin element acts with
+(`CliffordAlgebra.evenHalfSpinAction_reverseEven_mul_self`), so every Spin element acts with
 determinant one, and `[s, z]` acts with determinant `z²`: the determinant line of `W^±` is the
 square of the twisting circle. If `W` is moreover a Hermitian Clifford module, the generators
 acting skew-adjointly, both representations are unitary.
@@ -82,10 +82,8 @@ def halfSpinRep : Representation ℂ (spinGroup Q) (eigenspace (ρ (chirality Q 
 
 /-- `halfSpinRep` is `evenHalfSpinAction` at the Spin element, viewed as an even element. -/
 theorem halfSpinRep_apply (s : spinGroup Q) :
-    halfSpinRep o ρ ε s = evenHalfSpinAction o ρ ε ⟨s, spinGroup.mem_even s.2⟩ := by
-  simp only [halfSpinRep, AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
-    AlgHom.toRingHom_toMonoidHom, MonoidHom.coe_comp, MonoidHom.coe_ofClass, Function.comp_apply]
-  exact congrArg (evenHalfSpinAction o ρ ε) (Subtype.ext (coe_spinGroupToEven_apply Q s))
+    halfSpinRep o ρ ε s = evenHalfSpinAction o ρ ε (spinGroupToEven Q s) :=
+  (rfl)
 
 /-- `halfSpinRep` is the restriction of the Clifford action. -/
 @[simp]
@@ -128,9 +126,8 @@ theorem det_halfSpinRep (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε)
   have : Nontrivial (eigenspace (ρ (chirality Q o)) ε) :=
     Module.nontrivial_of_finrank_eq_succ h₂
   -- `s* s = 1` for `s ∈ Spin`, so `1 = det (ρ s) • 1` on `W^ε`.
-  have h := evenHalfSpinAction_star_mul_self o ρ ε hQ h₂ (spinGroup.mem_even s.2)
-  rw [← halfSpinRep_apply,
-    (Subtype.ext (spinGroup.star_mul_self_of_mem s.2) : (⟨_, _⟩ : even Q) = 1), map_one] at h
+  have h := evenHalfSpinAction_reverseEven_mul_self o ρ ε hQ h₂ (spinGroupToEven Q s)
+  rw [reverseEven_spinGroupToEven_mul_self, map_one, ← halfSpinRep_apply] at h
   exact (smul_left_injective ℂ (one_ne_zero (α := Module.End ℂ (eigenspace _ ε)))
     ((one_smul ℂ _).trans h)).symm
 
