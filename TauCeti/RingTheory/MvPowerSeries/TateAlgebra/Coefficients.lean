@@ -18,7 +18,7 @@ unit-radius case identifies the native restricted-series module with the model s
 norm, and it sends a restricted monomial to the corresponding coordinate vector.
 
 The construction specializes the module-valued coefficient comparison
-`TauCeti.MvPowerSeries.IsRestrictedFamily.coeffLinearIsometryEquiv`; the family seminorm
+`TauCeti.MvPowerSeries.IsRestrictedFamily.UnitRadius.coeffLinearIsometryEquiv`; the family seminorm
 agrees with the Gauss norm on the native restricted-series subring.
 
 The discrete-topology wrapper is essential when `σ` is infinite: the exponent type may carry a
@@ -71,10 +71,13 @@ noncomputable def restrictedCoeffLinearIsometryEquiv :
     IsRestricted.subring (R := R) (fun _ : σ ↦ 1) ≃ₗᵢ[R]
       C₀(WithDiscreteTopology (σ →₀ ℕ), R) where
   toLinearEquiv := (IsRestrictedFamily.subringLinearEquiv.restrictScalars R).trans
-    (IsRestrictedFamily.coeffLinearIsometryEquiv (σ := σ) (E := R) R).toLinearEquiv
-  norm_map' f :=
-    ((IsRestrictedFamily.coeffLinearIsometryEquiv (σ := σ) (E := R) R).norm_map _).trans
-      (IsRestrictedFamily.norm_subringLinearEquiv f)
+    ((IsRestrictedFamily.UnitRadius.toAddSubgroupLinearEquiv R).symm.trans
+      (IsRestrictedFamily.UnitRadius.coeffLinearIsometryEquiv (σ := σ) (E := R) R).toLinearEquiv)
+  norm_map' f := by
+    simp only [LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply,
+      LinearIsometryEquiv.coe_toLinearEquiv,
+      IsRestrictedFamily.UnitRadius.toAddSubgroupLinearEquiv_symm_apply,
+      LinearIsometryEquiv.norm_map, IsRestrictedFamily.UnitRadius.norm_subringLinearEquiv]
 
 /-- The coefficient isometry evaluates a restricted series at each exponent by taking that
 coefficient. -/
@@ -86,7 +89,9 @@ theorem restrictedCoeffLinearIsometryEquiv_apply
   rw [← LinearIsometryEquiv.coe_toLinearEquiv]
   simp only [restrictedCoeffLinearIsometryEquiv, LinearEquiv.trans_apply,
     LinearEquiv.restrictScalars_apply, LinearIsometryEquiv.coe_toLinearEquiv,
-    IsRestrictedFamily.coeffLinearIsometryEquiv_apply, IsRestrictedFamily.coe_subringLinearEquiv]
+    IsRestrictedFamily.UnitRadius.coeffLinearIsometryEquiv_apply,
+    IsRestrictedFamily.UnitRadius.toAddSubgroupLinearEquiv_symm_apply,
+    IsRestrictedFamily.coe_subringLinearEquiv]
 
 /-- The inverse coefficient isometry builds the restricted series with the prescribed null
 coefficient family. -/
