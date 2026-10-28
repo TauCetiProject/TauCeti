@@ -110,9 +110,9 @@ theorem neg_apply (a : UnitRadius σ E) (t : σ →₀ ℕ) : (-a) t = -a t := (
 theorem sub_apply (a b : UnitRadius σ E) (t : σ →₀ ℕ) : (a - b) t = a t - b t := (rfl)
 
 theorem add_apply (a b : UnitRadius σ E) (t : σ →₀ ℕ) : (a + b) t = a t + b t := by
-  change ((a.toAddSubgroup + b.toAddSubgroup :
-    IsRestrictedFamily.addSubgroup E (fun _ : σ ↦ 1)) : (σ →₀ ℕ) → E) t = _
-  simp only [AddSubgroup.coe_add, Pi.add_apply]
+  simpa only [AddSubgroup.coe_add, Pi.add_apply] using
+    congrArg (fun f : IsRestrictedFamily.addSubgroup E (fun _ : σ ↦ 1) ↦
+      (f : (σ →₀ ℕ) → E) t) (toAddSubgroup_add a b)
 
 /-- The Gauss-topological family and the existing algebraic subgroup have the same addition. -/
 noncomputable def toAddSubgroupAddEquiv :
