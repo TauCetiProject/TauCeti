@@ -146,6 +146,7 @@ variable {ι : Type*} [Fintype ι] {E : ι → Type*} [∀ i, SeminormedAddCommG
 
 /-- At any polyradius, a family with coefficients in a finite product is restricted exactly
 when each coordinate family is restricted. The product has its maximum seminorm. -/
+@[simp]
 theorem isRestrictedFamily_pi_iff {a : (σ →₀ ℕ) → ∀ i, E i} :
     IsRestrictedFamily c a ↔ ∀ i, IsRestrictedFamily c (fun t ↦ a t i) := by
   constructor
