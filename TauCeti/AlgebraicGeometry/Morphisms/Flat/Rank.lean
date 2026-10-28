@@ -86,11 +86,10 @@ theorem finiteLocallyFree_iff_of_iso {S : Scheme.{u}} {X Y : Over S} (e : X ≅ 
         ∀ s, X.hom.finrank s = k) ↔
       (IsFinite Y.hom ∧ Flat Y.hom ∧ LocallyOfFinitePresentation Y.hom ∧
         ∀ s, Y.hom.finrank s = k) := by
-  rw [← Over.w e.hom, MorphismProperty.cancel_left_of_respectsIso (P := @IsFinite),
-    MorphismProperty.cancel_left_of_respectsIso (P := @Flat),
-    MorphismProperty.cancel_left_of_respectsIso (P := @LocallyOfFinitePresentation)]
-  refine and_congr_right fun _ ↦ and_congr_right fun _ ↦ and_congr_right fun _ ↦ ?_
-  rw [Scheme.Hom.finrank_comp_left_of_isIso]
+  rw [MorphismProperty.over_iso_iff @IsFinite e, MorphismProperty.over_iso_iff @Flat e,
+    MorphismProperty.over_iso_iff @LocallyOfFinitePresentation e]
+  exact and_congr_right fun _ ↦ and_congr_right fun _ ↦ and_congr_right fun _ ↦ by
+    rw [finrank_eq_of_nonempty_iso_over ⟨e⟩]
 
 end TauCeti
 
