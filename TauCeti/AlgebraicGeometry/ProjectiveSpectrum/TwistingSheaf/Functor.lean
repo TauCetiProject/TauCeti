@@ -49,7 +49,10 @@ the structure sheaf.
   and `AlgebraicGeometry.Proj.twistingSheaf.comap_mul`: compatibility with fractions, with the
   sections `r / 1` and with multiplication.
 * `AlgebraicGeometry.Proj.twistingSheafMap_comp` and `AlgebraicGeometry.Proj.twistingSheafMap_id`:
-  compatibility with composition and identities.
+  compatibility with composition and identities, with the sectionwise forms
+  `AlgebraicGeometry.Proj.twistingSheafMap_app_apply_of_eq_comp` and
+  `AlgebraicGeometry.Proj.twistingSheafMap_app_apply_of_eq_id` for graded homomorphisms only
+  propositionally equal to a composite or to the identity.
 
 ## References
 
@@ -278,6 +281,36 @@ theorem twistingSheafMap_id (n : ℤ) :
     AddCommGrpCat.hom_id, AddMonoidHom.comp_apply, AddMonoidHom.id_apply]
   -- The remaining identity and `eqToHom` restriction maps act trivially on values.
   exact twistingSheaf.ext fun x ↦ localizationsMap_id x.1 _
+
+/-- **The morphisms of twisting sheaves are compatible with composition, on sections**: for a
+graded ring homomorphism `h` equal to `g.comp f`, the image of a section under the morphism
+induced by `h`, restricted along `(Proj.map f)⁻¹ (Proj.map g)⁻¹ V = (Proj.map h)⁻¹ V`, is its
+image under the morphism induced by `f` followed by the one induced by `g`. -/
+theorem twistingSheafMap_app_apply_of_eq_comp (g : ℬ →+*ᵍ 𝒞) (hg : 𝒞₊ ≤ ℬ₊.map g)
+    (h : 𝒜 →+*ᵍ 𝒞) (hh : 𝒞₊ ≤ 𝒜₊.map h) (hgf : h = g.comp f) (n : ℤ) (V : (Proj 𝒜).Opens)
+    (s : Γ(twistingSheaf 𝒜 n, V)) :
+    (twistingSheaf 𝒞 n).presheaf.map
+        (eqToHom (show map g hg ⁻¹ᵁ map f hf ⁻¹ᵁ V = map h hh ⁻¹ᵁ V by
+          subst hgf; rw [map_comp f g hf hg]; rfl)).op ((twistingSheafMap h hh n).app V s) =
+      (twistingSheafMap g hg n).app (map f hf ⁻¹ᵁ V) ((twistingSheafMap f hf n).app V s) := by
+  subst hgf
+  have := ConcreteCategory.congr_hom
+    congr(Scheme.Modules.Hom.app $(twistingSheafMap_comp f hf g hg n) V) s
+  -- the pushforward comparison isomorphisms are identities on sections
+  exact this
+
+/-- **The morphism of twisting sheaves induced by the identity is the identity, on sections**: for
+a graded ring homomorphism `g` equal to the identity, the image of a section under the morphism
+induced by `g`, restricted along `(Proj.map g)⁻¹ V = V`, is the section itself. -/
+theorem twistingSheafMap_app_apply_of_eq_id (g : 𝒜 →+*ᵍ 𝒜) (hg : 𝒜₊ ≤ 𝒜₊.map g)
+    (hgid : g = GradedRingHom.id 𝒜) (n : ℤ) (V : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 𝒜 n, V)) :
+    (twistingSheaf 𝒜 n).presheaf.map (eqToHom (show V = map g hg ⁻¹ᵁ V by
+        subst hgid; rw [map_id]; rfl)).op ((twistingSheafMap g hg n).app V s) = s := by
+  subst hgid
+  have := ConcreteCategory.congr_hom
+    congr(Scheme.Modules.Hom.app $(twistingSheafMap_id (𝒜 := 𝒜) n) V) s
+  -- the pushforward comparison isomorphisms are identities on sections
+  exact this
 
 end Proj
 
