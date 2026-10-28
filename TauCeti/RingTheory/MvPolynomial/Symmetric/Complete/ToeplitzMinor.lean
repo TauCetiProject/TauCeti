@@ -24,7 +24,7 @@ This is the determinantal half of the passage from the Jacobi--Trudi identity
 polynomials of size the number of rows of a shape, to its dual (transpose) form, a determinant of
 elementary ones of size the number of columns: the two matrices are complementary minors of the
 two Toeplitz matrices, for the permutations that read off the beta-numbers of a partition and of
-its conjugate. Choosing those permutations is a separate combinatorial step and is not done here.
+its conjugate.
 
 The signs of the entries of the elementary Toeplitz matrix come apart into a row factor and a
 column factor, since `(-1)^{j - i}` and `(-1)^i (-1)^j` agree whenever `j ≥ i`, and the entry
@@ -83,7 +83,8 @@ theorem esymmToeplitz_apply_eq_neg_one_pow_mul (N : ℕ) (i j : Fin N) :
     have hsum : (i : ℕ) + (j : ℕ) = ((j : ℕ) - (i : ℕ)) + 2 * (i : ℕ) := by omega
     have hpow : (-1 : MvPolynomial σ R) ^ ((j : ℕ) - (i : ℕ)) =
         (-1 : MvPolynomial σ R) ^ (i : ℕ) * (-1 : MvPolynomial σ R) ^ (j : ℕ) := by
-      rw [← pow_add, hsum, pow_add, pow_mul, neg_one_sq, one_pow, mul_one]
+      rw [← pow_add, hsum, pow_add, pow_mul]
+      simp
     rw [htoNat, hpow, mul_assoc]
   · have hneg : ((j : ℤ) - i) < 0 := by omega
     rw [esymmInt_of_neg hneg, mul_zero, mul_zero, mul_zero]

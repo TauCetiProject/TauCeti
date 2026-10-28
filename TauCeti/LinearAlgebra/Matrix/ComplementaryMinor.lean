@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Jacobi's complementary-minor identity
@@ -60,8 +59,8 @@ matrices in it.
   for an arbitrary index type, split by a chosen equivalence with a sum.
 * `Matrix.det_submatrix_comp_inr_eq_sign_mul_det_submatrix_comp_inl_of_det_eq_one`: the form the
   identity takes for a pair of inverse matrices of determinant one.
-* `Matrix.det_submatrix_comp_inr_nonsing_inv`: the form it takes for a matrix and its nonsingular
-  inverse.
+* `Matrix.det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl_nonsing_inv`: the
+  form it takes for a matrix and its nonsingular inverse.
 
 ## References
 
@@ -79,10 +78,6 @@ open Equiv
 namespace Matrix
 
 variable {m p n R : Type*} [CommRing R] [Fintype m] [Fintype p] [DecidableEq m] [DecidableEq p]
-
-/-- The image in a commutative ring of a unit of `ℤ` squares to `1`. -/
-private theorem intCast_units_mul_self (s : ℤˣ) : ((s : ℤ) : R) * ((s : ℤ) : R) = 1 := by
-  rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
 
 /-- **Jacobi's complementary-minor identity.** For mutually inverse matrices `A` and `B` indexed
 by `m ⊕ p`, and permutations `σ`, `τ` of that index type, the minor of `A` on the rows `τ (p)` and
@@ -106,14 +101,12 @@ theorem det_submatrix_inr_eq_sign_mul_det_mul_det_submatrix_inl
         (B.submatrix (⇑σ ∘ Sum.inr) (⇑τ ∘ Sum.inl)) 1 := by
     ext u v
     rcases u with u | u <;> rcases v with v | v <;> simp [hQ, Matrix.one_apply]
-  have hdetB : (B.submatrix (⇑σ ∘ Sum.inl) (⇑τ ∘ Sum.inl)).det =
-      ((Perm.sign τ : ℤ) : R) * (((Perm.sign σ : ℤ) : R) * Q.det) := by
-    have hsub : Q.submatrix σ τ = (Q.submatrix σ id).submatrix id τ := by
+  have hdetQ : Q.det = ((Perm.sign τ : ℤ) : R) *
+      (((Perm.sign σ : ℤ) : R) * (B.submatrix (⇑σ ∘ Sum.inl) (⇑τ ∘ Sum.inl)).det) := by
+    have hback : Q = ((Q.submatrix σ τ).submatrix ⇑σ.symm id).submatrix id ⇑τ.symm := by
       simp [Matrix.submatrix_submatrix]
-    have hdet := congrArg Matrix.det hQblocks
-    rw [hsub, Matrix.det_permute', Matrix.det_permute, Matrix.det_fromBlocks_zero₁₂,
-      Matrix.det_one, mul_one] at hdet
-    exact hdet.symm
+    rw [hback, Matrix.det_permute', Matrix.det_permute, hQblocks,
+      Matrix.det_fromBlocks_zero₁₂, Matrix.det_one, mul_one, Perm.sign_symm, Perm.sign_symm]
   -- Multiplying by `A` collapses the columns carrying `B` and exposes columns of `A`.
   have hcol₁ : ∀ (x : m ⊕ p) (j : m),
       (A * Q) x (τ (Sum.inl j)) = if x = τ (Sum.inl j) then 1 else 0 := by
@@ -138,12 +131,8 @@ theorem det_submatrix_inr_eq_sign_mul_det_mul_det_submatrix_inl
       Matrix.det_one, one_mul] at hdet
     exact hdet.symm
   -- The two evaluations of `det (A * Q)` meet.
-  have hsq₁ := intCast_units_mul_self (R := R) (Perm.sign σ)
-  have hsq₂ := intCast_units_mul_self (R := R) (Perm.sign τ)
-  rw [hdetA, hdetB]
-  linear_combination
-    (-(A.det * ((Perm.sign τ : ℤ) : R) * ((Perm.sign τ : ℤ) : R) * Q.det)) * hsq₁ +
-      (-(A.det * Q.det)) * hsq₂
+  rw [hdetA, hdetQ]
+  ring
 
 /-- **Jacobi's complementary-minor identity** for an arbitrary index type `n`, split into two
 groups of indices by an equivalence `e : m ⊕ p ≃ n`. -/
@@ -172,8 +161,9 @@ theorem det_submatrix_comp_inr_eq_sign_mul_det_submatrix_comp_inl_of_det_eq_one
 /-- Jacobi's complementary-minor identity written with the nonsingular inverse: for a matrix with
 invertible determinant, a minor of the matrix is read off the complementary minor of its
 inverse. -/
-theorem det_submatrix_comp_inr_nonsing_inv [Fintype n] [DecidableEq n] (A : Matrix n n R)
-    (hA : IsUnit A.det) (e : m ⊕ p ≃ n) (σ τ : Perm n) :
+theorem det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl_nonsing_inv
+    [Fintype n] [DecidableEq n] (A : Matrix n n R) (hA : IsUnit A.det) (e : m ⊕ p ≃ n)
+    (σ τ : Perm n) :
     (A.submatrix (⇑τ ∘ ⇑e ∘ Sum.inr) (⇑σ ∘ ⇑e ∘ Sum.inr)).det =
       ((Perm.sign σ : ℤ) : R) * ((Perm.sign τ : ℤ) : R) * A.det *
         (A⁻¹.submatrix (⇑σ ∘ ⇑e ∘ Sum.inl) (⇑τ ∘ ⇑e ∘ Sum.inl)).det :=
