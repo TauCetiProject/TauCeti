@@ -35,6 +35,8 @@ injectivity.
 * `TauCeti.GroupAlgGeom.GX G X`: the free `G`-group `G[X] = Monoid.Coprod G (FreeGroup X)`.
 * `TauCeti.GroupAlgGeom.eval ι v`: evaluation `G[X] →* H` at a point `v : X → H`.
 * `TauCeti.GroupAlgGeom.wordMap ι w`: the map on tuples defined by substituting words `w`.
+* `TauCeti.GroupAlgGeom.coordChange ι σ hσ`: the action on points of a change of coordinates, a
+  `G`-automorphism `σ` of `G[X]`.
 * `TauCeti.GroupAlgGeom.homEquiv ι`: `G[X]` is free on `X` among groups under `G`:
   `G`-homomorphisms `G[X] → H` correspond to points `X → H`.
 
@@ -321,6 +323,63 @@ theorem eval_comp_map {Y : Type*} (f : K →* G) (e : Y → X) :
 theorem eval_map {Y : Type*} (f : K →* G) (e : Y → X) (w : GX K Y) :
     eval ι v (Monoid.Coprod.map f (FreeGroup.map e) w) = eval (ι.comp f) (v ∘ e) w :=
   DFunLike.congr_fun (eval_comp_map f e) w
+
+/-! ### Changes of coordinates -/
+
+section ChangeOfCoordinates
+
+variable (σ : GX G X ≃* GX G X) (hσ : ∀ g, σ (inl g) = inl g)
+
+include hσ in
+/-- A `G`-automorphism of `G[X]` is substitution of its values on the variables. -/
+theorem eval_inl_mulEquiv :
+    eval (inl : G →* GX G X) (fun x => σ (inr (FreeGroup.of x))) = σ :=
+  eval_eq_of_comp_inl (f := (σ : GX G X →* GX G X)) (MonoidHom.ext hσ)
+
+variable (ι) in
+/-- The action on points of a change of coordinates `σ`, a `G`-automorphism of `G[X]`: the point
+`v` goes to the point `x ↦ σ(x)(v)`, at which evaluation is evaluation at `v` precomposed
+with `σ`. -/
+def coordChange : (X → H) ≃ (X → H) where
+  toFun := wordMap ι fun x => σ (inr (FreeGroup.of x))
+  invFun := wordMap ι fun x => σ.symm (inr (FreeGroup.of x))
+  left_inv v := by
+    have hσ' (g : G) : σ.symm (inl g) = inl g := σ.symm_apply_eq.2 (hσ g).symm
+    rw [wordMap_wordMap, eval_inl_mulEquiv σ hσ]
+    funext x
+    simp
+  right_inv v := by
+    have hσ' (g : G) : σ.symm (inl g) = inl g := σ.symm_apply_eq.2 (hσ g).symm
+    rw [wordMap_wordMap, eval_inl_mulEquiv σ.symm hσ']
+    funext x
+    simp
+
+/-- A change of coordinates acts on points by the word map of the images of the variables. -/
+theorem coe_coordChange :
+    ⇑(coordChange ι σ hσ) = wordMap ι fun x => σ (inr (FreeGroup.of x)) :=
+  (rfl)
+
+/-- The coordinate `x` of `coordChange ι σ hσ v` is the value of `σ(x)` at `v`. -/
+@[simp]
+theorem coordChange_apply (v : X → H) (x : X) :
+    coordChange ι σ hσ v x = eval ι v (σ (inr (FreeGroup.of x))) := by
+  simp [coe_coordChange]
+
+/-- Evaluation at `coordChange ι σ hσ v` is evaluation at `v` precomposed with `σ`. -/
+@[simp]
+theorem eval_coordChange (v : X → H) (w : GX G X) :
+    eval ι (coordChange ι σ hσ v) w = eval ι v (σ w) := by
+  have h := DFunLike.congr_fun (eval_comp_eval (ι := ι) (fun x => σ (inr (FreeGroup.of x))) v) w
+  rw [MonoidHom.comp_apply, eval_inl_mulEquiv σ hσ] at h
+  simpa [coe_coordChange] using h.symm
+
+/-- The inverse of the action of `σ` on points is the action of `σ⁻¹`. -/
+theorem coordChange_symm :
+    (coordChange ι σ hσ).symm =
+      coordChange ι σ.symm fun g => σ.symm_apply_eq.2 (hσ g).symm :=
+  (rfl)
+
+end ChangeOfCoordinates
 
 /-! ### Degenerate cases and noncommutativity of `G[X]` -/
 

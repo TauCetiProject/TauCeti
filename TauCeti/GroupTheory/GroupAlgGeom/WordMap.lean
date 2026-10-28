@@ -42,7 +42,6 @@ radical of `σ⁻¹(S)` with the preimage of the radical of `S`, so the coordina
   `G`-homomorphism of coordinate groups.
 * `TauCeti.GroupAlgGeom.CoordGroup.gHomEquivWordMap`: `G`-homomorphisms of coordinate groups
   correspond to word maps of algebraic sets.
-* `TauCeti.GroupAlgGeom.coordChange`: the action of a change of coordinates on points.
 * `TauCeti.GroupAlgGeom.CoordGroup.congr`: the isomorphism of coordinate groups induced by a
   change of coordinates.
 
@@ -50,8 +49,6 @@ radical of `σ⁻¹(S)` with the preimage of the radical of `S`, so the coordina
 
 * `TauCeti.GroupAlgGeom.mapsTo_wordMap_V_iff`: a word map sends `V_H(S)` into `V_H(T)` exactly
   when substituting it into `T` lands in the radical of `S`.
-* `TauCeti.GroupAlgGeom.CoordGroup.eq_of_forall_evalGHom_eq`: elements of a coordinate group are
-  separated by evaluation at the solutions.
 * `TauCeti.GroupAlgGeom.CoordGroup.pointMap_injective`,
   `TauCeti.GroupAlgGeom.CoordGroup.range_pointMap`, `TauCeti.GroupAlgGeom.CoordGroup.pointMap_comp`:
   the anti-equivalence of algebraic sets and coordinate groups.
@@ -95,17 +92,6 @@ theorem Rad_le_comap_eval_of_mapsTo {w : Y → GX G X}
     exact mem_Rad.1 hu _ (hw hv)
 
 namespace CoordGroup
-
-/-- Elements of the coordinate group `G_{R(S)}` are separated by evaluation at the solutions of
-`S` in `H`. -/
-theorem eq_of_forall_evalGHom_eq {q q' : CoordGroup ι S}
-    (h : ∀ v (hv : v ∈ V ι S), evalGHom v hv q = evalGHom v hv q') : q = q' := by
-  obtain ⟨u, rfl⟩ := QuotientGroup.mk_surjective q
-  obtain ⟨u', rfl⟩ := QuotientGroup.mk_surjective q'
-  refine QuotientGroup.eq.2 (mem_Rad.2 fun v hv => ?_)
-  have huv := h v hv
-  simp only [evalGHom_mk] at huv
-  simp [huv]
 
 /-- The `G`-homomorphism `G_{R(T)} → G_{R(S)}` induced by a word map `V_H(S) → V_H(T)`: it sends
 the class of an equation `u ∈ G[Y]` to the class of `u(w) ∈ G[X]`. -/
@@ -236,55 +222,6 @@ end CoordGroup
 section ChangeOfCoordinates
 
 variable (σ : GX G X ≃* GX G X) (hσ : ∀ g, σ (inl g) = inl g)
-
-include hσ in
-/-- A `G`-automorphism of `G[X]` is substitution of its values on the variables. -/
-theorem eval_inl_mulEquiv :
-    eval (inl : G →* GX G X) (fun x => σ (inr (FreeGroup.of x))) = σ :=
-  eval_eq_of_comp_inl (f := (σ : GX G X →* GX G X)) (MonoidHom.ext hσ)
-
-variable (ι) in
-/-- The action on points of a change of coordinates `σ`, a `G`-automorphism of `G[X]`: the point
-`v` goes to the point `x ↦ σ(x)(v)`, at which evaluation is evaluation at `v` precomposed
-with `σ`. -/
-def coordChange : (X → H) ≃ (X → H) where
-  toFun := wordMap ι fun x => σ (inr (FreeGroup.of x))
-  invFun := wordMap ι fun x => σ.symm (inr (FreeGroup.of x))
-  left_inv v := by
-    have hσ' (g : G) : σ.symm (inl g) = inl g := σ.symm_apply_eq.2 (hσ g).symm
-    rw [wordMap_wordMap, eval_inl_mulEquiv σ hσ]
-    funext x
-    simp
-  right_inv v := by
-    have hσ' (g : G) : σ.symm (inl g) = inl g := σ.symm_apply_eq.2 (hσ g).symm
-    rw [wordMap_wordMap, eval_inl_mulEquiv σ.symm hσ']
-    funext x
-    simp
-
-/-- A change of coordinates acts on points by the word map of the images of the variables. -/
-theorem coe_coordChange :
-    ⇑(coordChange ι σ hσ) = wordMap ι fun x => σ (inr (FreeGroup.of x)) :=
-  (rfl)
-
-/-- The coordinate `x` of `coordChange ι σ hσ v` is the value of `σ(x)` at `v`. -/
-@[simp]
-theorem coordChange_apply (v : X → H) (x : X) :
-    coordChange ι σ hσ v x = eval ι v (σ (inr (FreeGroup.of x))) := by
-  simp [coe_coordChange]
-
-/-- Evaluation at `coordChange ι σ hσ v` is evaluation at `v` precomposed with `σ`. -/
-@[simp]
-theorem eval_coordChange (v : X → H) (w : GX G X) :
-    eval ι (coordChange ι σ hσ v) w = eval ι v (σ w) := by
-  have h := DFunLike.congr_fun (eval_comp_eval (ι := ι) (fun x => σ (inr (FreeGroup.of x))) v) w
-  rw [MonoidHom.comp_apply, eval_inl_mulEquiv σ hσ] at h
-  simpa [coe_coordChange] using h.symm
-
-/-- The inverse of the action of `σ` on points is the action of `σ⁻¹`. -/
-theorem coordChange_symm :
-    (coordChange ι σ hσ).symm =
-      coordChange ι σ.symm fun g => σ.symm_apply_eq.2 (hσ g).symm :=
-  (rfl)
 
 /-- The points that a change of coordinates `σ` sends into `V_H(T)` form `V_H(σ(T))`. -/
 theorem preimage_coordChange_V (T : Set (GX G X)) :
