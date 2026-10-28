@@ -247,8 +247,7 @@ theorem exists_auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap
   let M := kummerField E p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)
   let _ : NeZero p := ⟨hp.ne_zero⟩
   have : HasEnoughRootsOfUnity K p :=
-    hasEnoughRootsOfUnity_of_isPrimitiveRoot
-      (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K))
+    (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)).hasEnoughRootsOfUnity
   obtain ⟨T, hST, hcard, hsurj, hsplit⟩ :=
     exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective hp S hpS hζ hroots L
   have hram : TauCeti.NumberField.ramifiedSupport K L ⊆ S := fun _ hv ↦

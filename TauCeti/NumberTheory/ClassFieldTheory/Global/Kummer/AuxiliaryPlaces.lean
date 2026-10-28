@@ -76,8 +76,7 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
   classical
   let _ : NeZero p := ⟨hp.ne_zero⟩
   let _ : HasEnoughRootsOfUnity K p :=
-    hasEnoughRootsOfUnity_of_isPrimitiveRoot
-      (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K))
+    (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)).hasEnoughRootsOfUnity
   let Δ := (S : Set (HeightOneSpectrum (𝓞 K))).unit K
   let M := kummerField E p Δ
   let _ : (powMonoidHom p : Kˣ →* Kˣ).range.IsFiniteRelIndex Δ :=

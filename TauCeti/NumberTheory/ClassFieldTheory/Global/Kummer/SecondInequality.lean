@@ -59,8 +59,7 @@ theorem exists_auxiliaryKummerIdeleClassSubgroup_index_eq_finrank
         (GlobalNumberFields.ideleClassNormMap K L).range := by
   have : NeZero p := ⟨hp.ne_zero⟩
   have : HasEnoughRootsOfUnity K p :=
-    hasEnoughRootsOfUnity_of_isPrimitiveRoot
-      (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K))
+    (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)).hasEnoughRootsOfUnity
   obtain ⟨T, hST, hcard, hsurj, hnorm⟩ :=
     exists_auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap hp S hpS hζ hroots L
   have hindex := index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card hp hST hcl hpS hsurj
@@ -107,8 +106,7 @@ theorem index_range_ideleClassNormMap_eq_finrank_of_le_kummerField_sUnits
     (GlobalNumberFields.ideleClassNormMap K L).range.index = Module.finrank K L := by
   have : NeZero p := ⟨hp.ne_zero⟩
   have : HasEnoughRootsOfUnity K p :=
-    hasEnoughRootsOfUnity_of_isPrimitiveRoot
-      (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K))
+    (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)).hasEnoughRootsOfUnity
   -- These instances give `IsGalois K L` via `isAbelianGalois_kummerField`.
   exact le_antisymm
     (Nat.le_of_dvd Module.finrank_pos

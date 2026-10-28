@@ -93,8 +93,7 @@ theorem exists_mem_intermediateField_pow_eq_iff_forall_exists_pow_eq_mk [NeZero 
   have hαM : (α : M) ^ n = algebraMap K M a := by
     rw [← map_pow, hα, ← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply (𝓞 K) K M]
   have : HasEnoughRootsOfUnity K n :=
-    hasEnoughRootsOfUnity_of_isPrimitiveRoot
-      (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K))
+    (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)).hasEnoughRootsOfUnity
   exact L.exists_mem_pow_eq_iff_of_pow_eq hαM
 
 end TauCeti.NumberField
