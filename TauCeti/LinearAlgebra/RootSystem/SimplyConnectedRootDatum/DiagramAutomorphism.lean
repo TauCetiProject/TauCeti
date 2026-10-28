@@ -293,6 +293,49 @@ weight map, so it permutes the simple coroots by `σ⁻¹`. -/
     (diagramAut ht hσ).toHom.coweightMap = (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap :=
   (rfl)
 
+/-- The actual coweight equivalence is precomposition by the node permutation. -/
+theorem diagramAut_coweightEquiv (hσ : σ ∈ t.diagramSymmetry) :
+    RootPairing.Equiv.coweightEquiv (diagramAut ht hσ) =
+      LinearEquiv.funCongrLeft ℤ ℤ σ := by
+  ext v i
+  simp only [RootPairing.Equiv.coweightEquiv_apply, diagramAut_coweightMap,
+    LinearEquiv.coe_coe]
+
+/-- The native transpose action precomposes cocharacter coordinates by the node permutation. -/
+@[simp]
+theorem diagramAut_coweightEquiv_apply (hσ : σ ∈ t.diagramSymmetry)
+    (v : Fin t.rank → ℤ) (i : Fin t.rank) :
+    RootPairing.Equiv.coweightEquiv (diagramAut ht hσ) v i = v (σ i) := by
+  rw [diagramAut_coweightEquiv]
+  rfl
+
+/-- The inverse native map is the forward action on simple-coroot coordinates. -/
+@[simp]
+theorem diagramAut_coweightEquiv_symm_apply (hσ : σ ∈ t.diagramSymmetry)
+    (v : Fin t.rank → ℤ) (i : Fin t.rank) :
+    (RootPairing.Equiv.coweightEquiv (diagramAut ht hσ)).symm v i = v (σ.symm i) := by
+  rw [diagramAut_coweightEquiv]
+  rfl
+
+/-- The native transpose map sends a simple coroot to the inverse-permuted simple coroot. -/
+theorem diagramAut_coweightEquiv_coroot (hσ : σ ∈ t.diagramSymmetry) (j : Fin t.rank) :
+    RootPairing.Equiv.coweightEquiv (diagramAut ht hσ)
+        ((t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht j)) =
+      (t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht (σ.symm j)) := by
+  ext i
+  simp only [diagramAut_coweightEquiv_apply, coroot_simpleIndex, Pi.single_apply]
+  congr 1
+  exact propext σ.eq_symm_apply.symm
+
+/-- The inverse native coweight map sends each simple coroot forward by the node permutation. -/
+theorem diagramAut_coweightEquiv_symm_coroot (hσ : σ ∈ t.diagramSymmetry) (j : Fin t.rank) :
+    (RootPairing.Equiv.coweightEquiv (diagramAut ht hσ)).symm
+        ((t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht j)) =
+      (t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht (σ j)) := by
+  apply (RootPairing.Equiv.coweightEquiv (diagramAut ht hσ)).injective
+  rw [LinearEquiv.apply_symm_apply, diagramAut_coweightEquiv_coroot,
+    Equiv.symm_apply_apply]
+
 /-- **An automorphism of the pinned datum is the diagram automorphism as soon as its weight map is**
 the coordinate permutation, since an automorphism of a root pairing is determined by that map. -/
 theorem eq_diagramAut {g : (t.simplyConnectedRootDatum ht).Aut} (hσ : σ ∈ t.diagramSymmetry)

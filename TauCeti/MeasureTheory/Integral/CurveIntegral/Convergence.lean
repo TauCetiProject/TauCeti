@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Function.Holder
 /-!
 # Convergence of integrals of bounded 1-forms
 
+A 1-form continuous on the trace of an absolutely continuous curve is integrable along it.
 Bounded continuous 1-forms preserve convergence of actual integrals along absolutely
 continuous curves under uniform convergence of curves and `L¹` convergence of derivatives.
 The statements use the raw-curve integral `∫ t in a..b, ω (γ t) (deriv γ t)`.
@@ -30,17 +31,19 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {γ : ℝ → E}
   {ω : E → E →L[ℝ] F}
 
-/-- A bounded continuous 1-form is integrable along an absolutely continuous curve. -/
-theorem intervalIntegrable_oneForm_of_continuous_bounded
-    (hγ : AbsolutelyContinuousOnInterval γ a b) (hω : Continuous ω)
-    {C : ℝ} (hbound : ∀ z, ‖ω z‖ ≤ C) :
+/-- A 1-form that is continuous on the trace of an absolutely continuous curve is integrable
+along it. -/
+theorem intervalIntegrable_oneForm_of_continuousOn
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hω : ContinuousOn ω (γ '' uIcc a b)) :
     IntervalIntegrable (fun t ↦ ω (γ t) (deriv γ t)) volume a b := by
+  have hc : ContinuousOn (ω ∘ γ) (uIcc a b) := hω.comp hγ.continuousOn (mapsTo_image γ _)
+  obtain ⟨C, hC⟩ := isCompact_uIcc.exists_bound_of_continuousOn hc
   rw [intervalIntegrable_iff]
   exact (ContinuousLinearMap.id ℝ (E →L[ℝ] F)).integrable_of_bilin_of_bdd_left C
-    ((hω.comp_continuousOn (hγ.continuousOn.mono uIoc_subset_uIcc)).aestronglyMeasurable
-      measurableSet_uIoc) (Eventually.of_forall fun t ↦ hbound (γ t))
+    ((hc.mono uIoc_subset_uIcc).aestronglyMeasurable measurableSet_uIoc)
+    ((ae_restrict_iff' measurableSet_uIoc).2
+      (Eventually.of_forall fun t ht ↦ hC t (uIoc_subset_uIcc ht)))
     hγ.intervalIntegrable_deriv_of_finiteDimensional.def'
-
 
 /-- Uniform convergence of AC curves and `L¹` convergence of their derivatives imply
 convergence of the raw integrals `∫ t in a..b, ω (γ t) (deriv γ t)`

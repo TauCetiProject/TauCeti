@@ -43,6 +43,7 @@ theorem IsSmoothDiscrete.quotient {G : Type*} [Group G] [TopologicalSpace G]
   have : DiscreteTopology X.V := hX.discreteTopology
   have : DiscreteTopology (X.V ⧸ W) :=
     QuotientAddGroup.discreteTopology (N := W.toAddSubgroup) (isOpen_discrete _)
-  exact hX.of_surjective (TopRep.quotientπ X W hW) (TopRep.quotientπ_surjective X W hW)
+  exact .of_surjective (TopRep.quotientπ X W hW) (TopRep.quotientπ_surjective X W hW)
+    hX.stabilizer_isOpen
 
 end TauCeti

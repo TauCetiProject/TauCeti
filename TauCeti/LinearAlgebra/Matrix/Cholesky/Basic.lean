@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.LDL
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 import Mathlib.Algebra.Order.Star.Real
+import Mathlib.LinearAlgebra.Matrix.Swap
 import TauCeti.Analysis.Matrix.LDL
 
 /-!
@@ -25,6 +27,9 @@ triangular and positive on the diagonal.
 * `TauCeti.cholesky` constructs the Cholesky factor of a positive-definite matrix, and
   `TauCeti.cholesky_coe` gives its closed form in terms of the LDL decomposition.
 * `TauCeti.cholesky_mul_transpose` proves the Cholesky reconstruction identity.
+* `Matrix.PosDef.exists_generalLinearGroup_mul_transpose_eq_and_apply_eq_zero` factors a
+  positive-definite matrix as `C * Cᵀ` with `C` invertible and a prescribed row of `C`
+  supported on a single entry.
 
 ## References
 
@@ -144,3 +149,49 @@ theorem cholesky_injective {p : ℕ} : Function.Injective (@cholesky p) :=
   Function.LeftInverse.injective fun A ↦ choleskyReconstruction_cholesky A
 
 end TauCeti
+
+namespace Matrix.PosDef
+
+open TauCeti
+
+variable {p : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
+
+/-- A positive-definite matrix factors as `C * Cᵀ` with `C` invertible and with the `i`-th row of
+`C` vanishing off a single column `j`. -/
+theorem exists_generalLinearGroup_mul_transpose_eq_and_apply_eq_zero (hS : S.PosDef)
+    (i : Fin p) :
+    ∃ (C : Matrix.GeneralLinearGroup (Fin p) ℝ) (j : Fin p),
+      (C : Matrix (Fin p) (Fin p) ℝ) * (C : Matrix (Fin p) (Fin p) ℝ)ᵀ = S ∧
+        ∀ a, a ≠ j → (C : Matrix (Fin p) (Fin p) ℝ) i a = 0 := by
+  -- Swap the indices `i` and `0`, take the Cholesky factor, whose first row is supported on its
+  -- first entry, and swap back to move that row to position `i`.
+  set j : Fin p := ⟨0, i.pos⟩
+  set P : Matrix (Fin p) (Fin p) ℝ := Matrix.swap ℝ i j with hPdef
+  have hPP : P * P = 1 := Matrix.swap_mul_self i j
+  have hPt : Pᵀ = P := Matrix.transpose_swap i j
+  have hPS : (P * S * P).PosDef := by
+    simpa [Matrix.conjTranspose_eq_transpose_of_trivial, hPt] using
+      hS.mul_mul_conjTranspose_same
+        (Matrix.vecMul_injective_iff_isUnit.2 ⟨⟨P, P, hPP, hPP⟩, rfl⟩)
+  let A : PosDefMatrix p := ⟨⟨P * S * P, Matrix.isHermitian_iff_isSelfAdjoint.1 hPS.1⟩, hPS⟩
+  set L : Matrix (Fin p) (Fin p) ℝ := (cholesky A).1
+  have hL : L * Lᵀ = P * S * P := cholesky_mul_transpose A
+  have hC : P * L * (P * L)ᵀ = S := by
+    calc P * L * (P * L)ᵀ = P * (L * Lᵀ) * P := by
+          rw [Matrix.transpose_mul, hPt, Matrix.mul_assoc, Matrix.mul_assoc, Matrix.mul_assoc]
+      _ = (P * P) * S * (P * P) := by rw [hL]; simp only [Matrix.mul_assoc]
+      _ = S := by rw [hPP, Matrix.one_mul, Matrix.mul_one]
+  have hdet : (P * L).det ≠ 0 := by
+    intro h
+    have := congrArg Matrix.det hC
+    rw [Matrix.det_mul, Matrix.det_transpose, h, zero_mul] at this
+    exact hS.det_pos.ne' this.symm
+  set C := Matrix.GeneralLinearGroup.mkOfDetNeZero (P * L) hdet
+  have hcoe : (C : Matrix (Fin p) (Fin p) ℝ) = P * L := rfl
+  refine ⟨C, j, hcoe ▸ hC, fun a ha ↦ ?_⟩
+  -- the `i`-th row of `P * L` is the first row of the lower-triangular `L`
+  have hja : j < a := Fin.lt_def.2 (Nat.pos_of_ne_zero fun h ↦ ha (Fin.ext h))
+  rw [hcoe, hPdef, Matrix.swap_mul_apply_left]
+  exact (cholesky A).2.1 (by simpa using hja)
+
+end Matrix.PosDef

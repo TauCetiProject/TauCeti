@@ -42,8 +42,9 @@ the same condition as the sign `+1`.
   Kummer classes agree exactly when the corresponding quaternion symbols agree.
 * `TauCeti.cup_kummerClass_congr`: the binary cup identity `(a) ∪ (b) = (c) ∪ (d)` for isometric
   binary forms `⟨a, b⟩ ≅ ⟨c, d⟩`.
-* `TauCeti.cup_kummerClass_neg_self` and `TauCeti.cup_kummerClass_eq_zero_of_add_eq_one`: the
-  relations `(a) ∪ (-a) = 0` and, for `a + b = 1`, `(a) ∪ (b) = 0`.
+* `TauCeti.cup_kummerClass_neg_self`, `TauCeti.cup_kummerClass_self` and
+  `TauCeti.cup_kummerClass_eq_zero_of_add_eq_one`: the relations `(a) ∪ (-a) = 0`,
+  `(a) ∪ (a) = (a) ∪ (-1)` and, for `a + b = 1`, `(a) ∪ (b) = 0`.
 
 ## References
 
@@ -59,11 +60,13 @@ noncomputable section
 
 namespace TauCeti
 
+universe u
+
 open _root_.ContinuousCohomology
 
 open scoped Quaternion
 
-variable {K : Type} [Field K] [Invertible (2 : K)]
+variable {K : Type u} [Field K] [Invertible (2 : K)]
 
 /-- **The cup product of two Kummer classes vanishes exactly when the quaternion symbol is
 trivial**: `(a) ∪ (b) = 0` in `H²(G_K, 𝔽₂)` if and only if `[(a, b)] = 1` in `Br(K)`. -/
@@ -138,6 +141,15 @@ theorem cup_kummerClass_neg_self (a : Kˣ) :
       0 :=
   (cup_kummerClass_eq_zero_iff_quaternionClass_eq_one a (-a)).2
     (BrauerGroup.quaternionClass_neg_self a)
+
+/-- The relation `(a) ∪ (a) = (a) ∪ (-1)`, the cohomological form of `[(a, a)] = [(a, -1)]`. -/
+@[simp]
+theorem cup_kummerClass_self (a : Kˣ) :
+    (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass a) =
+      (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass (-1)) := by
+  have h := cup_kummerClass_neg_self a
+  rw [← neg_one_mul, kummerClass_mul, map_add] at h
+  rw [eq_neg_of_add_eq_zero_right h, ZModModule.neg_eq_self]
 
 /-- **The Steinberg relation**: `(a) ∪ (b) = 0` for units `a` and `b` with `a + b = 1`. -/
 theorem cup_kummerClass_eq_zero_of_add_eq_one {a b : Kˣ} (hab : (a : K) + b = 1) :

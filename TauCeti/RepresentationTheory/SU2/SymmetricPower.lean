@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
 public import TauCeti.RepresentationTheory.SU2.Basic
 import TauCeti.Algebra.GroupWithZero.Units.Basic
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 
 /-!
 # The symmetric powers of the standard representation of `SU(2)`

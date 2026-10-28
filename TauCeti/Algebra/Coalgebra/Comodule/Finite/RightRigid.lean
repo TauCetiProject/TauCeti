@@ -54,22 +54,6 @@ variable (H : Type v) [Semiring H] [HopfAlgebra k H]
 
 attribute [local instance] Comodule.dual Comodule.tensor
 
-private theorem dualCoact_coord_eq_sum {M : FGComoduleCat.{u, v, u} k H}
-    (b : Module.Basis (Module.Basis.ofVectorSpaceIndex k M) k M)
-    (i : Module.Basis.ofVectorSpaceIndex k M) :
-    Comodule.dualCoact (R := k) (H := H) (M := M) (b.coord i) =
-      ∑ j, b.coord j ⊗ₜ[k]
-        HopfAlgebra.antipode k
-          (Comodule.matrixCoefficient (R := k) (C := H) (b.coord i) (b j)) := by
-  classical
-  apply (dualTensorHom_bijective (R := k) (M := M) (N := H)).1
-  apply b.ext
-  intro j
-  rw [Comodule.dualTensorHom_dualCoact_apply]
-  simp only [map_sum, LinearMap.sum_apply, dualTensorHom_apply, Module.Basis.coord_apply,
-    Module.Basis.repr_self_apply]
-  simp
-
 private theorem lid_map_contractLeft_tensorCombine {M : FGComoduleCat.{u, v, u} k H}
     (x : Module.Dual k M ⊗[k] H) (y : M ⊗[k] H) :
     TensorProduct.lid k H
@@ -160,7 +144,7 @@ private theorem tensorCoact_coevaluation_apply_one (M : FGComoduleCat.{u, v, u} 
   simp only [map_sum, Comodule.tensorCoact_tmul,
     Comodule.coact_eq_sum_basis_matrixCoefficient (C := H) (Module.Basis.ofVectorSpace k M),
     Comodule.dual_coact,
-    dualCoact_coord_eq_sum k H (Module.Basis.ofVectorSpace k M),
+    Comodule.dualCoact_eq_sum (Module.Basis.ofVectorSpace k M), Module.Basis.coe_dualBasis,
     TensorProduct.sum_tmul, TensorProduct.tmul_sum,
     Comodule.tensorCombine_tmul_tmul]
   let bt := (Module.Basis.ofVectorSpace k M).tensorProduct

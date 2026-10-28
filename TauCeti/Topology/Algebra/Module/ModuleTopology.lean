@@ -11,7 +11,11 @@ public import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Topology.Compactness.LocallyCompact
 
 /-!
-# Finite-dimensional module topology in coordinates
+# Module topology in coordinates
+
+The module topology on a module with a basis over a Hausdorff topological semiring is Hausdorff.
+Its basis coordinates give a continuous injection into a product of copies of the scalars; the
+basis may be infinite.
 
 For a module over a topological semiring with a finite basis, the module topology is the
 coordinate topology through that basis. This identifies the canonical topology used on quadratic
@@ -38,7 +42,16 @@ namespace ModuleTopology
 
 variable {K V ι : Type*} [Semiring K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [AddCommMonoid V] [Module K V] [TopologicalSpace V] [IsModuleTopology K V]
-  [Finite ι]
+
+/-- The module topology is Hausdorff when the scalars are Hausdorff and the module has a basis,
+including an infinite basis. -/
+theorem t2Space (b : _root_.Module.Basis ι K V) [T2Space K] : T2Space V :=
+  T2Space.of_injective_continuous
+    (f := fun x i ↦ b.coord i x)
+    (fun _ _ h ↦ b.ext_elem (congrFun h))
+    (continuous_pi fun i ↦ IsModuleTopology.continuous_of_linearMap (b.coord i))
+
+variable [Finite ι]
 
 /-- Coordinates through a finite basis give a homeomorphism for the module topology. -/
 noncomputable def equivFunHomeomorph (b : _root_.Module.Basis ι K V) : V ≃ₜ (ι → K) :=
@@ -57,12 +70,6 @@ theorem equivFunHomeomorph_symm_apply (b : _root_.Module.Basis ι K V) (c : ι �
     (equivFunHomeomorph b).symm c = b.equivFun.symm c := by
   simp [equivFunHomeomorph]
 
-
-/-- The module topology is Hausdorff when the scalars are Hausdorff and the module has a finite
-basis. -/
-theorem t2Space (b : _root_.Module.Basis ι K V) [T2Space K] : T2Space V :=
-  (equivFunHomeomorph b).symm.t2Space
-
 /-- The module topology is locally compact when the scalars are locally compact and the module
 has a finite basis. -/
 theorem locallyCompactSpace (b : _root_.Module.Basis ι K V) [LocallyCompactSpace K] :
@@ -77,16 +84,15 @@ theorem sigmaCompactSpace (b : _root_.Module.Basis ι K V) [SigmaCompactSpace K]
 
 end ModuleTopology
 
+/-- The module topology on a free module over a Hausdorff topological semiring is Hausdorff. -/
+theorem t2Space_moduleTopology {R V : Type*} [Semiring R] [TopologicalSpace R]
+    [IsTopologicalSemiring R] [T2Space R] [AddCommMonoid V] [Module R V] [Module.Free R V] :
+    @T2Space V (moduleTopology R V) := by
+  let _ : TopologicalSpace V := moduleTopology R V
+  exact ModuleTopology.t2Space (Module.Free.chooseBasis R V)
+
 variable {K V : Type*} [DivisionRing K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-
-/-- The module topology of a finite-dimensional space over a Hausdorff division ring equipped
-with a topological semiring structure is Hausdorff. -/
-theorem t2Space_moduleTopology [T2Space K] :
-    @T2Space V (moduleTopology K V) := by
-  let _ : TopologicalSpace V := moduleTopology K V
-  let b := Module.finBasis K V
-  exact ModuleTopology.t2Space b
 
 /-- The module topology of a finite-dimensional space over a locally compact division ring
 equipped with a topological semiring structure is locally compact. -/

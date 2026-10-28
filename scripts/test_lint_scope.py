@@ -671,7 +671,8 @@ class PrBuildWiringTest(unittest.TestCase):
 
     def repair_exemption(self, event, files, env=None, api=None):
         """Run pr-build's empty-repair-PR exemption, extracted from the Scope guard step, with a fake
-        `gh` that prints `api` (or fails when it is None). Returns (repair_pr, routed_to_human)."""
+        metadata helper that prints `api` (or fails when it is None).
+        Returns (repair_pr, routed_to_human)."""
         wf = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
         (job,) = [j for j in wf["jobs"].values()
                   if any("Build exact candidate under bwrap" in s.get("name", "")
@@ -685,15 +686,16 @@ class PrBuildWiringTest(unittest.TestCase):
                       .replace("${{ steps.pr.outputs.num }}", "12"))
         with tempfile.TemporaryDirectory() as d:
             d = pathlib.Path(d)
-            gh = d / "gh"
-            gh.write_text("#!/usr/bin/env bash\n" + ("exit 1\n" if api is None else
-                                                    f"printf '%s\\n' {shlex.quote(api)}\n"))
-            gh.chmod(0o755)
+            helper = d / "github_api.py"
+            helper.write_text("raise SystemExit(1)\n" if api is None else f"print({api!r})\n")
+            lookup = "python3 gate/scripts/github_api.py"
+            self.assertIn(lookup, block)
+            block = block.replace(lookup, f"{shlex.quote(sys.executable)} {shlex.quote(str(helper))}")
             github_env = d / "github_env"
             github_env.write_text("")
             out = subprocess.run(
                 ["bash", "-c", f"set -uo pipefail\nfiles={shlex.quote(files)}\n{block}"],
-                env={**os.environ, "PATH": f"{d}:{os.environ['PATH']}", "GITHUB_ENV": str(github_env),
+                env={**os.environ, "GITHUB_ENV": str(github_env),
                      "PR_HEAD_REF": "", "PR_HEAD_REPO": "", "PR_USER": "", **(env or {})},
                 capture_output=True, text=True)
             self.assertEqual(out.returncode, 0, out.stderr)

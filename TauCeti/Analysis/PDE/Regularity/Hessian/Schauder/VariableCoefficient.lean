@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Basic
 public import Mathlib.Topology.MetricSpace.HolderNorm
 import TauCeti.Analysis.Holder.Lp
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -50,12 +51,6 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-- An entry of a second derivative has norm at most the operator norm of that derivative. -/
-private theorem norm_hessian_entry_le (H : E [×2]→L[ℝ] ℝ) (i j : Fin (n + 1)) :
-    ‖H ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]‖ ≤ ‖H‖ := by
-  simpa [Fin.prod_univ_two] using
-    H.le_opNorm ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]
-
 /-- The error of freezing a Hölder coefficient field has the product Hölder bound. -/
 private theorem holderWith_frozen_hessian_error {α ε L J B : ℝ≥0}
     {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -72,33 +67,18 @@ private theorem holderWith_frozen_hessian_error {α ε L J B : ℝ≥0}
       simpa only [edist_sub_left] using hL i j x y
     have hh : HolderWith J α (fun x => H x
         ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]) := by
-      apply holderOnWith_univ.mp
-      apply HolderOnWith.of_dist_le
-      intro x _ y _
-      calc dist (H x ![EuclideanSpace.single i 1, EuclideanSpace.single j 1])
-            (H y ![EuclideanSpace.single i 1, EuclideanSpace.single j 1])
-          ≤ dist (H x) (H y) := by
-            simpa only [dist_eq_norm, ← sub_apply] using
-              norm_hessian_entry_le (H x - H y) i j
-        _ ≤ _ := hJ.dist_le x y
+      simpa using holderOnWith_univ.mp
+        ((holderOnWith_univ.mpr hJ).apply_orthonormalBasis (EuclideanSpace.basisFun _ ℝ) i j)
     have hp := (ContinuousLinearMap.mul ℝ ℝ).holderWith_comp₂ hc hh
       (Mf := ε) (Mg := B)
       (fun x => by simpa [Real.norm_eq_abs, abs_sub_comm] using ha x i j)
-      (fun x => (norm_hessian_entry_le (H x) i j).trans (hB x))
+      (fun x => by
+        simpa using ((H x).norm_apply_orthonormalBasis_le (EuclideanSpace.basisFun _ ℝ) i j).trans
+          (hB x))
     simpa only [ContinuousLinearMap.opNNNorm_mul, one_mul,
       ContinuousLinearMap.mul_apply'] using hp
-  apply holderOnWith_univ.mp
-  apply HolderOnWith.of_dist_le
-  intro x _ y _
-  simp only [dist_eq_norm, ← Finset.sum_sub_distrib]
-  calc ‖∑ i, ∑ j, ((A i j - a x i j) * H x ![EuclideanSpace.single i 1,
-        EuclideanSpace.single j 1] - (A i j - a y i j) *
-          H y ![EuclideanSpace.single i 1, EuclideanSpace.single j 1])‖
-      ≤ ∑ i, ∑ j, (ε * J + B * L) * dist x y ^ (α : ℝ) := by
-        refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ => ?_)
-        exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ => by
-          simpa [dist_eq_norm] using (hterm i j).dist_le x y)
-    _ = _ := by simp [dist_eq_norm]; ring
+  exact (HolderWith.sum fun i _ => HolderWith.sum fun j _ => hterm i j).mono
+    (le_of_eq (by simp [Finset.card_univ]; ring))
 
 /-- **Global a priori Schauder estimate for coefficients of small oscillation.**
 For `0 < α < 1` there is `C > 0`, depending only on dimension and `α`, with the following

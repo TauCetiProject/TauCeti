@@ -201,6 +201,23 @@ theorem measurePreserving_cellFin [NeZero m] :
     volume_preimage_cellIdx i.isLt, ProbabilityTheory.uniformOn_univ, Measure.count_singleton,
     Fintype.card_fin, one_div]
 
+/-- Every cell of the unit interval is nonempty: the cell index map onto `Fin m` is surjective. -/
+theorem cellFin_surjective [NeZero m] : Function.Surjective (cellFin m) := by
+  intro i
+  have h : (volume : Measure I) (cellFin m ⁻¹' {i}) ≠ 0 := by
+    rw [preimage_cellFin_singleton, volume_preimage_cellIdx i.isLt]
+    exact ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top m)
+  obtain ⟨x, hx⟩ := nonempty_of_measure_ne_zero h
+  exact ⟨x, hx⟩
+
+/-- **The cells of a set of indices.** The union of the cells indexed by `C` has volume the
+proportion `|C| / m` of indices it contains. -/
+theorem volume_real_preimage_cellFin [NeZero m] (C : Finset (Fin m)) :
+    volume.real (cellFin m ⁻¹' (C : Set (Fin m))) = C.card / m := by
+  rw [measurePreserving_cellFin.measureReal_preimage C.measurableSet.nullMeasurableSet,
+    measureReal_def, ProbabilityTheory.uniformOn_univ]
+  simp [ENNReal.toReal_div]
+
 variable {V E : Type*} [Fintype V] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
 open scoped Classical in

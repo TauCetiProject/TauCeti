@@ -46,7 +46,9 @@ whose size is fixed by how often the erased letter occurred.
 
 * `TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_diagramSchurPoly`: **the expansion of
   `h_{c₀} ⋯ h_{c_{k-1}}` in the Schur polynomials**, for an arbitrary sequence of degrees, and
-  `TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly`, the same in a finite alphabet.
+  `TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly`, the same in a finite alphabet,
+  and `TauCeti.prod_hsymm_eq_sum_coeff_schurPoly_smul_schurPoly`, with the exponents indexed by a
+  second finite alphabet and the Kostka numbers read off as coefficients of Schur polynomials.
 * `TauCeti.hsymmPart_eq_sum_kostkaNumber_smul_schurPoly`: **`h_ν = ∑_μ K_{μν} s_μ`** for a partition
   `ν`, in a finite alphabet.
 * `TauCeti.coeff_hsymmPart`: the coefficient of `h_ν` at an arbitrary monomial `x^d` is
@@ -170,6 +172,26 @@ theorem prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly {σ : Type*} [Finty
   rw [map_prod, map_sum] at h
   simp only [rename_hsymm, map_smul, ← schurPoly_eq_rename] at h
   exact h
+
+/-- For an exponent vector `l` on `σ` of total degree `n`, the product of the complete homogeneous
+symmetric polynomials `h_{lᵢ}` in the alphabet `τ` is `∑_{μ ⊢ n} c_μ s_μ`, where `c_μ` is the
+coefficient of `x^l` in the Schur polynomial `s_μ` in the alphabet `σ`: both are the Kostka number
+`K_{μ l}`.  This is `TauCeti.prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly` with the
+exponent vector indexed by `σ` rather than by its numbering. -/
+theorem prod_hsymm_eq_sum_coeff_schurPoly_smul_schurPoly {σ : Type*} [Fintype σ]
+    (τ : Type*) [Fintype τ] [DecidableEq τ] {n : ℕ} {l : σ →₀ ℕ} (hl : l.degree = n) :
+    ∏ i, hsymm τ R (l i) =
+      ∑ μ : n.Partition, (schurPoly σ R μ).coeff l • schurPoly τ R μ := by
+  -- Number the alphabet `σ` as in `TauCeti.schurPoly`.
+  let e := Fintype.equivFin σ
+  have hdeg : (Finsupp.equivMapDomain e l).degree = n := by
+    rw [Finsupp.degree_eq_sum, ← hl, Finsupp.degree_eq_sum]
+    exact Fintype.sum_equiv e.symm _ _ fun i => by simp
+  rw [Fintype.prod_equiv e _ (fun i => hsymm τ R (Finsupp.equivMapDomain e l i)) fun i => by simp,
+    prod_hsymm_eq_sum_diagramKostkaNumber_smul_schurPoly _ hdeg]
+  refine sum_congr rfl fun μ _ => ?_
+  rw [coeff_schurPoly, Finsupp.equivMapDomain_eq_mapDomain, ← Finsupp.mapDomain_comp,
+    Function.comp_def]
 
 /-- **`h_ν = ∑_μ K_{μν} s_μ`.**  In a finite alphabet, the product `h_ν = h_{ν₁} ⋯ h_{ν_k}` of the
 complete homogeneous symmetric polynomials over the parts of a partition `ν` of `n` expands in the

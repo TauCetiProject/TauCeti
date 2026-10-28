@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Weighted
 public import TauCeti.NumberTheory.ModularForms.Parity
 import TauCeti.Data.ZMod.Divisibility
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # Eisenstein series with character
@@ -40,8 +41,17 @@ which are not treated in this file.
 ## Main results
 
 * `TauCeti.EisensteinSeries.charWeight_intCast`: the weight evaluated at an integer pair.
-* `TauCeti.EisensteinSeries.charWeight_vecMul_inv`: the transformation of the weight under
-  `Γ₀(N)`.
+* `TauCeti.EisensteinSeries.charWeight_vecMul_inv`,
+  `TauCeti.EisensteinSeries.charWeight_vecMul_map_inv`: the transformation of the weight under
+  `Γ₀(N)`, on integer pairs and on residue pairs.
+* `TauCeti.EisensteinSeries.sum_charWeight_eq_zero`: unless both characters are trivial, the
+  weights sum to zero over the residue pairs modulo `N`.
+* `TauCeti.EisensteinSeries.tsum_charWeight_mul_zpow`: the sum of the weight over the multiples
+  of an integer pair against `n^(-k)`, which gives the constant terms of the series with
+  character at the cusps.
+* `TauCeti.EisensteinSeries.slash_Gamma1_eq_self_of_slash_Gamma0_eq`,
+  `TauCeti.EisensteinSeries.mem_modFormCharSpace_of_slash_Gamma0_eq`: a function on which `Γ₀(N)`
+  acts by `ψ(d) φ(d)` is `Γ₁(N)`-invariant, and a modular form of this kind lies in `M_k(N, ψφ)`.
 * `TauCeti.EisensteinSeries.charEisensteinSeriesMF_apply`: the series formula.
 * `TauCeti.EisensteinSeries.charEisensteinSeriesMF_mem_modFormCharSpace`: `G_k^{ψ,φ}` lies in
   `M_k(N, ψφ)`.
@@ -94,7 +104,107 @@ theorem charWeight_intCast [NeZero N] (huv : u * v ∣ N) (x : Fin 2 → ℤ) :
   · rw [ZMod.natCast_val_div_eq_intCast_div huv h]
   · rfl
 
+/-- Scaling the first coordinate of an integer pair by `R`, coprime to `v`, and the second by `S`
+multiplies the weight by `ψ(R) φ⁻¹(S)`. -/
+private lemma charWeight_intCast_mul [NeZero N] (huv : u * v ∣ N) {R : ℤ}
+    (hR : IsCoprime (v : ℤ) R) (S : ℤ) (x : Fin 2 → ℤ) :
+    charWeight N ψ φ ((↑) ∘ ![R * x 0, S * x 1]) =
+      ψ (R : ZMod u) * φ⁻¹ (S : ZMod v) * charWeight N ψ φ ((↑) ∘ x) := by
+  have hv0 : (v : ℤ) ≠ 0 := by
+    have : v ≠ 0 := fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (by simpa [h] using huv))
+    exact_mod_cast this
+  rw [charWeight_intCast ψ φ huv, charWeight_intCast ψ φ huv]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+  by_cases h : (v : ℤ) ∣ x 0
+  · have hR' : (v : ℤ) ∣ R * x 0 := h.mul_left R
+    simp only [h, hR', ↓reduceIte]
+    obtain ⟨e, he⟩ := h
+    rw [he, mul_left_comm, Int.mul_ediv_cancel_left _ hv0, Int.mul_ediv_cancel_left _ hv0]
+    push_cast
+    rw [map_mul, map_mul]
+    ring
+  · simp [h, mt hR.dvd_of_dvd_mul_left h]
+
+/-- If scaling the coordinates of residue pairs by units `R` and `S` multiplies the weight by a
+constant `ψ(R) φ⁻¹(S) ≠ 1`, the weights sum to zero. -/
+private lemma sum_charWeight_eq_zero_of_mul [NeZero N] (huv : u * v ∣ N) {R S : ℤ}
+    (hR : IsUnit (R : ZMod N)) (hS : IsUnit (S : ZMod N)) (hRv : IsCoprime (v : ℤ) R)
+    (h : ψ (R : ZMod u) * φ⁻¹ (S : ZMod v) ≠ 1) : ∑ a, charWeight N ψ φ a = 0 := by
+  let f : (Fin 2 → ZMod N) → Fin 2 → ZMod N := fun a ↦ ![(R : ZMod N) * a 0, (S : ZMod N) * a 1]
+  have hf : Function.Bijective f := Finite.injective_iff_bijective.mp fun a b hab ↦ by
+    funext i
+    fin_cases i
+    · exact hR.mul_left_cancel (congrFun hab 0)
+    · exact hS.mul_left_cancel (congrFun hab 1)
+  have hW (a : Fin 2 → ZMod N) :
+      charWeight N ψ φ (f a) = ψ (R : ZMod u) * φ⁻¹ (S : ZMod v) * charWeight N ψ φ a := by
+    obtain ⟨x, rfl⟩ : ∃ x : Fin 2 → ℤ, (↑) ∘ x = a := ⟨fun i ↦ ((a i).val : ℤ), by ext i; simp⟩
+    have hx : f ((↑) ∘ x) = (↑) ∘ ![R * x 0, S * x 1] := by
+      funext i
+      fin_cases i <;> simp [f]
+    rw [hx, charWeight_intCast_mul ψ φ huv hRv]
+  have hsum := hf.sum_comp (charWeight N ψ φ)
+  simp only [hW, ← Finset.mul_sum] at hsum
+  by_contra h0
+  exact h ((mul_eq_right₀ h0).mp hsum)
+
+/-- **The weight of a nontrivial pair has total mass zero**: if `ψ` or `φ` is nontrivial, the
+weights of all residue pairs modulo `N` sum to zero. This is what lets the weight-two series with
+character be summed without regularization. -/
+theorem sum_charWeight_eq_zero [NeZero N] (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1) :
+    ∑ a, charWeight N ψ φ a = 0 := by
+  -- a unit modulo a divisor `m` of `N` lifts to a unit `r` modulo `N`, read as an integer
+  have hlift {m : ℕ} (hm : m ∣ N) (w : (ZMod m)ˣ) : ∃ R : ℤ, IsUnit (R : ZMod N) ∧
+      IsCoprime (v : ℤ) R ∧ (R : ZMod m) = w := by
+    obtain ⟨r, rfl⟩ := ZMod.unitsMap_surjective hm w
+    refine ⟨((r : ZMod N).val : ℤ), by simp, Nat.isCoprime_iff_coprime.mpr ?_, ?_⟩
+    · exact ((ZMod.val_coe_unit_coprime r).coprime_dvd_right (dvd_of_mul_left_dvd huv)).symm
+    · simp [ZMod.unitsMap_val]
+  rcases h with h | h
+  · obtain ⟨w, hw⟩ := MulChar.ne_one_iff.mp h
+    obtain ⟨R, hR, hRv, hRw⟩ := hlift (dvd_of_mul_right_dvd huv) w
+    refine sum_charWeight_eq_zero_of_mul ψ φ huv (S := 1) hR (by simp) hRv ?_
+    simpa [hRw] using hw
+  · obtain ⟨w, hw⟩ := MulChar.ne_one_iff.mp h
+    obtain ⟨S, hS, -, hSw⟩ := hlift (dvd_of_mul_left_dvd huv) w
+    refine sum_charWeight_eq_zero_of_mul ψ φ huv (R := 1) (by simp) hS isCoprime_one_right ?_
+    simpa [hSw, MulChar.inv_apply_eq_inv'] using hw
+
 variable {k : ℤ}
+
+/-- The sum of the character weight over the multiples of an integer pair `(-c, a)`: it vanishes
+unless `v ∣ c`, and otherwise factors through the series of `ψ φ⁻¹`. The identity holds for
+every exponent `k`; it is used for the constant terms of the series with character in weight
+`k ≥ 3` and, for pairs other than the trivial one, in weight two. -/
+theorem tsum_charWeight_mul_zpow [NeZero N] (huv : u * v ∣ N) (c a : ℤ) :
+    ∑' n : ℤ, charWeight N ψ φ ((↑) ∘ ![-(n * c), n * a]) * (n : ℂ) ^ (-k) =
+      if (v : ℤ) ∣ c then
+        ψ ((-(c / v) : ℤ) : ZMod u) * φ⁻¹ (a : ZMod v) *
+          ∑' n : ℤ, ψ (n : ZMod u) * φ⁻¹ (n : ZMod v) * (n : ℂ) ^ (-k)
+      else 0 := by
+  simp only [charWeight_intCast ψ φ huv, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  split_ifs with hc
+  · obtain ⟨c, rfl⟩ := hc
+    have hv : (v : ℤ) ≠ 0 := by
+      have : v ≠ 0 := fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (by simpa [h] using huv))
+      exact_mod_cast this
+    rw [Int.mul_ediv_cancel_left _ hv, ← tsum_mul_left]
+    refine tsum_congr fun n ↦ ?_
+    have hdvd : (v : ℤ) ∣ -(n * (v * c)) := Dvd.intro (-(n * c)) (by ring)
+    have hfactor : -(n * (v * c)) = (v : ℤ) * (n * -c) := by ring
+    have hquot : -(n * (v * c)) / (v : ℤ) = n * -c := by
+      rw [hfactor, Int.mul_ediv_cancel_left _ hv]
+    rw [hquot]
+    simp only [hdvd, ↓reduceIte, Int.cast_mul, map_mul]
+    ring
+  · refine (tsum_congr fun n ↦ ?_).trans tsum_zero
+    split_ifs with hn
+    · rw [MulChar.map_nonunit φ⁻¹, mul_zero, zero_mul]
+      intro hu
+      rw [ZMod.coe_int_isUnit_iff_isCoprime] at hu
+      exact hc ((hu.of_mul_right_left).dvd_of_dvd_mul_left (by simpa using hn))
+    · rw [zero_mul]
 
 /-- **The transformation of the weight under `Γ₀(N)`.** For `γ ∈ Γ₀(N)` with lower-right entry
 `d`, right multiplication by `γ⁻¹` multiplies the weight by `ψ(d) φ(d)`. -/
@@ -161,6 +271,16 @@ theorem charWeight_vecMul_inv [NeZero N] (huv : u * v ∣ N) {γ : SL(2, ℤ)} (
   · exact absurd (hiff.mpr h'') h
   · simp
 
+/-- **The transformation of the weight under `Γ₀(N)`, on residues.** For `γ ∈ Γ₀(N)` with
+lower-right entry `d`, right multiplication of residue pairs by the reduction of `γ⁻¹` multiplies
+the weight by `ψ(d) φ(d)`. -/
+theorem charWeight_vecMul_map_inv [NeZero N] (huv : u * v ∣ N) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma0 N) (a : Fin 2 → ZMod N) :
+    charWeight N ψ φ (a ᵥ* (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N))) =
+      ψ (γ 1 1 : ZMod u) * φ (γ 1 1 : ZMod v) * charWeight N ψ φ a := by
+  obtain ⟨x, rfl⟩ : ∃ x : Fin 2 → ℤ, (↑) ∘ x = a := ⟨fun i ↦ ((a i).val : ℤ), by ext i; simp⟩
+  rw [← intCast_comp_vecMul, charWeight_vecMul_inv ψ φ huv hγ]
+
 /-! ### The Eisenstein series with character -/
 
 /-- **The transformation law** (Diamond–Shurman, §4.5): for `γ ∈ Γ₀(N)` with lower-right
@@ -173,8 +293,40 @@ theorem weightedEisensteinSeries_charWeight_slash [NeZero N] (huv : u * v ∣ N)
   rw [weightedEisensteinSeries_slash_apply, ← weightedEisensteinSeries_smul]
   congr 1
   ext a
-  obtain ⟨x, rfl⟩ : ∃ x : Fin 2 → ℤ, (↑) ∘ x = a := ⟨fun i ↦ ((a i).val : ℤ), by ext i; simp⟩
-  rw [← intCast_comp_vecMul, charWeight_vecMul_inv ψ φ huv hγ, Pi.smul_apply, smul_eq_mul]
+  rw [charWeight_vecMul_map_inv ψ φ huv hγ, Pi.smul_apply, smul_eq_mul]
+
+/-- **Invariance under `Γ₁(N)`**: if every `γ ∈ Γ₀(N)` with lower-right entry `d` acts on `F` in
+weight `k` by the scalar `ψ(d) φ(d)`, then `F` is invariant under the image of `Γ₁(N)`. -/
+theorem slash_Gamma1_eq_self_of_slash_Gamma0_eq (huv : u * v ∣ N) {F : ℍ → ℂ}
+    (hF : ∀ γ ∈ Gamma0 N, F ∣[k] γ = (ψ (γ 1 1 : ZMod u) * φ (γ 1 1 : ZMod v)) • F)
+    {γ : GL (Fin 2) ℝ} (hγ : γ ∈ (Gamma1 N).map (mapGL ℝ)) : F ∣[k] γ = F := by
+  obtain ⟨g, hg, rfl⟩ := Subgroup.mem_map.mp hγ
+  obtain ⟨hg0, hg1⟩ := mem_Gamma1_iff.mp hg
+  have h1 {m : ℕ} (hm : m ∣ N) : ((g 1 1 : ℤ) : ZMod m) = 1 := by
+    rw [← map_intCast (ZMod.castHom hm (ZMod m)), hg1, map_one]
+  -- `SL_slash`: slashing by `g` is slashing by its image `mapGL ℝ g`
+  have hslash : F ∣[k] mapGL ℝ g = _ := (SL_slash _ g).symm.trans (hF g hg0)
+  rw [hslash, h1 (dvd_of_mul_right_dvd huv), h1 (dvd_of_mul_left_dvd huv),
+    map_one, map_one, one_mul, one_smul]
+
+/-- **The nebentypus from the `Γ₀(N)` law**: a modular form for `Γ₁(N)` on which every
+`γ ∈ Γ₀(N)` with lower-right entry `d` acts in weight `k` by `ψ(d) φ(d)` lies in `M_k(N, ψφ)`, the
+characters being raised to level `N`. -/
+theorem mem_modFormCharSpace_of_slash_Gamma0_eq (huv : u * v ∣ N)
+    (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)
+    (hf : ∀ γ ∈ Gamma0 N, ⇑f ∣[k] γ = (ψ (γ 1 1 : ZMod u) * φ (γ 1 1 : ZMod v)) • ⇑f) :
+    f ∈ modFormCharSpace k
+      (ψ.changeLevel (dvd_of_mul_right_dvd huv) *
+        φ.changeLevel (dvd_of_mul_left_dvd huv)).toUnitHom := by
+  rw [mem_modFormCharSpace_iff_nebentypus]
+  intro g
+  -- `SL_slash`: slashing by `g` is slashing by its image `mapGL ℝ g`
+  have hslash : ⇑f ∣[k] mapGL ℝ (g : SL(2, ℤ)) = _ := (SL_slash _ _).symm.trans (hf _ g.2)
+  rw [hslash, MulChar.coe_toUnitHom, MulChar.coeToFun_mul,
+    Pi.mul_apply, DirichletCharacter.changeLevel_eq_cast_of_dvd,
+    DirichletCharacter.changeLevel_eq_cast_of_dvd]
+  simp [Gamma0Map, ZMod.cast_intCast (dvd_of_mul_right_dvd huv),
+    ZMod.cast_intCast (dvd_of_mul_left_dvd huv)]
 
 variable [NeZero N]
 
@@ -185,16 +337,10 @@ underlying function does not depend on `N`. -/
 def charEisensteinSeriesMF (hk : 3 ≤ k) (huv : u * v ∣ N) :
     ModularForm ((Gamma1 N).map (mapGL ℝ)) k :=
   ModularForm.ofSlashInvariant Subgroup.IsArithmetic.isCusp_of_isCusp
-    (weightedEisensteinSeriesMF (charWeight N ψ φ) hk) fun γ hγ ↦ by
-      obtain ⟨g, hg, rfl⟩ := Subgroup.mem_map.mp hγ
-      obtain ⟨hg0, hg1⟩ := mem_Gamma1_iff.mp hg
-      have h1 {m : ℕ} (hm : m ∣ N) : ((g 1 1 : ℤ) : ZMod m) = 1 := by
-        rw [← map_intCast (ZMod.castHom hm (ZMod m)), hg1, map_one]
-      -- `SL_slash`: slashing by `g` is slashing by its image `mapGL ℝ g`
-      have hslash : weightedEisensteinSeries (charWeight N ψ φ) k ∣[k] mapGL ℝ g = _ :=
-        (SL_slash _ g).symm.trans (weightedEisensteinSeries_charWeight_slash ψ φ huv hg0)
-      rw [coe_weightedEisensteinSeriesMF, hslash, h1 (dvd_of_mul_right_dvd huv),
-        h1 (dvd_of_mul_left_dvd huv), map_one, map_one, one_mul, one_smul]
+    (weightedEisensteinSeriesMF (charWeight N ψ φ) hk) fun _ hγ ↦ by
+      rw [coe_weightedEisensteinSeriesMF]
+      exact slash_Gamma1_eq_self_of_slash_Gamma0_eq ψ φ huv
+        (fun _ hg ↦ weightedEisensteinSeries_charWeight_slash ψ φ huv hg) hγ
 
 /-- The Eisenstein series with character is the series weighted by `charWeight N ψ φ`. -/
 @[simp]
@@ -215,26 +361,15 @@ theorem charEisensteinSeriesMF_mem_modFormCharSpace (hk : 3 ≤ k) (huv : u * v 
     charEisensteinSeriesMF ψ φ hk huv ∈ modFormCharSpace k
       (ψ.changeLevel (dvd_of_mul_right_dvd huv) *
         φ.changeLevel (dvd_of_mul_left_dvd huv)).toUnitHom := by
-  rw [mem_modFormCharSpace_iff_nebentypus]
-  intro g
-  -- `SL_slash`: slashing by `g` is slashing by its image `mapGL ℝ g`
-  have hslash : weightedEisensteinSeries (charWeight N ψ φ) k ∣[k] mapGL ℝ (g : SL(2, ℤ)) = _ :=
-    (SL_slash _ _).symm.trans (weightedEisensteinSeries_charWeight_slash ψ φ huv g.2)
-  rw [coe_charEisensteinSeriesMF, hslash, MulChar.coe_toUnitHom, MulChar.coeToFun_mul,
-    Pi.mul_apply, DirichletCharacter.changeLevel_eq_cast_of_dvd,
-    DirichletCharacter.changeLevel_eq_cast_of_dvd]
-  simp [Gamma0Map, ZMod.cast_intCast (dvd_of_mul_right_dvd huv),
-    ZMod.cast_intCast (dvd_of_mul_left_dvd huv)]
+  refine mem_modFormCharSpace_of_slash_Gamma0_eq ψ φ huv _ fun _ hg ↦ ?_
+  rw [coe_charEisensteinSeriesMF]
+  exact weightedEisensteinSeries_charWeight_slash ψ φ huv hg
 
 /-- **Parity**: the Eisenstein series with character vanishes unless `ψ(-1) φ(-1) = (-1)^k`. -/
 theorem charEisensteinSeriesMF_eq_zero (hk : 3 ≤ k) (huv : u * v ∣ N)
     (h : ψ (-1) * φ (-1) ≠ (-1) ^ k) : charEisensteinSeriesMF ψ φ hk huv = 0 := by
   have hmem := charEisensteinSeriesMF_mem_modFormCharSpace ψ φ hk huv
   rwa [modFormCharSpace_eq_bot_of_char_neg_one_ne, Submodule.mem_bot] at hmem
-  have hneg {m : ℕ} (hm : m ∣ N) (χ : DirichletCharacter ℂ m) :
-      χ.changeLevel hm (-1) = χ (-1) := by
-    simpa using
-      DirichletCharacter.changeLevel_eq_cast_of_dvd' χ hm (a := -1) isCoprime_one_left.neg_left
-  simpa [MulChar.coe_toUnitHom, hneg] using h
+  simpa [MulChar.coe_toUnitHom] using h
 
 end TauCeti.EisensteinSeries
