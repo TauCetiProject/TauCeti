@@ -19,9 +19,10 @@ Two ring homomorphisms `s t : A →+* B` give two morphisms `Spec B ⇉ Spec A`.
 **equivalence relation** (`RingHom.IsSpecEquivRel s t`) when, for every commutative ring `T`, the
 map sending a point `x : B →+* T` of `Spec B` to the pair of points `(x ∘ s, x ∘ t)` of `Spec A` is
 injective and its image is an equivalence relation on the points `A →+* T` of `Spec A`. Thus
-`Spec B` is a subfunctor of `Spec A × Spec A` which is reflexive, symmetric and transitive. The
-kernel pair `Spec (A ⊗[C] A) ⇉ Spec A` of any `Spec A ⟶ Spec C` is an example
-(`RingHom.isSpecEquivRel_tensorProduct`).
+`Spec B` is a subfunctor of `Spec A × Spec A` which is reflexive, symmetric and transitive. For
+any commutative semiring `C` in an independent universe, the two inclusions `A ⇉ A ⊗[C] A` give an
+example (`RingHom.isSpecEquivRel_tensorProduct`). When `C` is a commutative ring, this is the
+kernel pair `Spec (A ⊗[C] A) ⇉ Spec A` of `Spec A ⟶ Spec C`.
 
 The ring of **invariants** of the relation is the equalizer `C = {a : s a = t a}`
 (`RingHom.eqLocus s t`); its spectrum is the candidate for the quotient `Spec A / Spec B`. This
@@ -65,7 +66,9 @@ relation does not come from the action of a finite group.
   invariants.
 * `RingHom.IsSpecEquivRel.isIntegral`: if `s` is finite locally free, `A` is integral over the
   ring of invariants `RingHom.eqLocus s t`.
-* `RingHom.isSpecEquivRel_tensorProduct`: the kernel pair of `C → A` is an equivalence relation.
+* `RingHom.isSpecEquivRel_tensorProduct`: for commutative semiring scalars `C` in an independent
+  universe, the two inclusions `A ⇉ A ⊗[C] A` define an equivalence relation. For ring scalars, this
+  is the kernel pair of `Spec A ⟶ Spec C`.
 * `RingHom.IsSpecEquivRel.projectiveNorm_mem_eqLocus`: if `s` is finite locally free, the norm of
   `t f` along `s` is an invariant.
 * `RingHom.IsSpecEquivRel.comap_subtype_eqLocus_surjective` and
@@ -159,10 +162,12 @@ theorem inv_symm : h.inv.symm = h.inv := by
 
 end IsSpecEquivRel
 
-/-- The **kernel pair** of `Spec A ⟶ Spec C` is an equivalence relation: the two morphisms
-`Spec (A ⊗[C] A) ⇉ Spec A` given by the two inclusions relate two points of `Spec A` exactly when
-they agree on `C`. -/
-theorem isSpecEquivRel_tensorProduct (C A : Type u) [CommRing C] [CommRing A] [Algebra C A] :
+/-- The two inclusions `A ⇉ A ⊗[C] A` define an equivalence relation on `Spec A`: two points
+are related exactly when they agree on `C`. The scalars `C` may be a commutative semiring in an
+independent universe. When `C` is a commutative ring, this is the **kernel pair** of
+`Spec A ⟶ Spec C`. -/
+theorem isSpecEquivRel_tensorProduct (C : Type*) (A : Type u) [CommSemiring C] [CommRing A]
+    [Algebra C A] :
     (includeLeftRingHom : A →+* A ⊗[C] A).IsSpecEquivRel includeRight.toRingHom := by
   -- both inclusions agree on `C`
   have hC : (includeLeftRingHom : A →+* A ⊗[C] A).comp (algebraMap C A) =

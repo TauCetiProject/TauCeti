@@ -95,13 +95,10 @@ theorem coeff_localPowerSeries (D : EulerProductData K)
       D (P.primeIdealPow n) :=
   IdealArithmeticFunction.coeff_localPowerSeries D.toIdealArithmeticFunction P n
 
-/-- The degree-zero prime-power coefficient is one. -/
+/-- Euler-product data take the unit ideal to one. -/
 @[simp]
-theorem apply_primeIdealPow_zero (D : EulerProductData K)
-    (P : HeightOneSpectrum (𝓞 K)) : D (P.primeIdealPow 0) = 1 := by
-  have hpow : P.primeIdealPow 0 = 1 := Subtype.ext (by simp)
-  rw [hpow]
-  exact D.isMultiplicative.map_one
+theorem apply_one (D : EulerProductData K) : D 1 = 1 :=
+  D.isMultiplicative.map_one
 
 /-- The local power series has constant coefficient one. -/
 @[simp]

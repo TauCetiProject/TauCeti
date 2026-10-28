@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.MetricDerivative.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Normed.Affine.AddTorsor
 
 /-!
 # Gluing absolutely continuous curves
 
 Absolute continuity on adjacent intervals implies absolute continuity on their union in a
 pseudometric space. This permits splitting and reassembling raw curves with either orientation,
-and gluing finite subdivisions, including subdivisions into affine cells. In particular a
-polygonal curve (`TauCeti.IsPolygonalOnInterval`) is absolutely continuous.
+and gluing finite subdivisions, including subdivisions into affine cells in a real seminormed
+space. In particular a polygonal curve (`TauCeti.IsPolygonalOnInterval`) is absolutely continuous.
 -/
 
 public section
@@ -103,7 +103,7 @@ theorem of_subdivision {N : ℕ} {s : Fin (N + 1) → ℝ}
 
 /-- A finite increasing subdivision with affine interpolation on every cell gives an absolutely
 continuous curve. The subdivision may have no cells. -/
-theorem of_affine_subdivision {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem of_affine_subdivision {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
     {f : ℝ → E} {a b : ℝ} {N : ℕ} {s : Fin (N + 1) → ℝ}
     (hs : StrictMono s) (ha : s 0 = a) (hb : s (Fin.last N) = b)
     (hsegments : ∀ i : Fin N, ∀ t ∈ Set.Icc (s i.castSucc) (s i.succ),
@@ -113,15 +113,17 @@ theorem of_affine_subdivision {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     AbsolutelyContinuousOnInterval f a b := by
   have hedge (i : Fin N) :
       AbsolutelyContinuousOnInterval f (s i.castSucc) (s i.succ) := by
-    have hc : ContDiffOn ℝ 1
-        (fun t : ℝ ↦ f (s i.castSucc) +
-          ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
-            (f (s i.succ) - f (s i.castSucc)))
-        (Set.uIcc (s i.castSucc) (s i.succ)) := by fun_prop
-    apply hc.absolutelyContinuousOnInterval.congr
+    have hparam : LipschitzWith ‖(s i.succ - s i.castSucc)⁻¹‖₊
+        (fun t : ℝ ↦ (t - s i.castSucc) / (s i.succ - s i.castSucc)) := by
+      simpa only [Function.comp_def, smul_eq_mul, mul_one, sub_eq_add_neg, div_eq_inv_mul]
+        using (lipschitzWith_smul (s i.succ - s i.castSucc)⁻¹).comp
+          (isometry_add_right (-s i.castSucc)).lipschitzWith
+    have hc := (lipschitzWith_lineMap (f (s i.castSucc)) (f (s i.succ))).comp hparam
+    apply hc.lipschitzOnWith.absolutelyContinuousOnInterval.congr
     intro t ht
     rw [Set.uIcc_of_le (hs i.castSucc_lt_succ).le] at ht
-    exact (hsegments i t ht).symm
+    simpa only [Function.comp_apply, AffineMap.lineMap_apply_module', add_comm] using
+      (hsegments i t ht).symm
   simpa only [ha, hb] using of_subdivision hedge
 
 end AbsolutelyContinuousOnInterval
@@ -139,7 +141,7 @@ the affine interpolation of its successive vertex values on every closed cell. -
 
 /-- A polygonal curve is absolutely continuous: its finitely many affine cells glue together. -/
 theorem TauCeti.IsPolygonalOnInterval.absolutelyContinuousOnInterval {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {a b : ℝ}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {a b : ℝ}
     (h : TauCeti.IsPolygonalOnInterval f a b) : AbsolutelyContinuousOnInterval f a b := by
   obtain ⟨N, _, s, hs, ha, hb, hsegments⟩ := h
   exact AbsolutelyContinuousOnInterval.of_affine_subdivision hs ha hb hsegments
