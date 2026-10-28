@@ -91,8 +91,8 @@ theorem exists_subset_range_ι_of_isCompact
     ∃ n, K ⊆ range (c.ι.app n) := by
   by_contra! h
   have hmono {m n : ℕ} (hmn : m ≤ n) : range (c.ι.app m) ⊆ range (c.ι.app n) := by
-    rintro _ ⟨y, rfl⟩
-    exact ⟨F.map (homOfLE hmn) y, by rw [← ConcreteCategory.comp_apply, c.w]⟩
+    rw [← c.w (homOfLE hmn), TopCat.coe_comp]
+    exact range_comp_subset_range _ _
   have hcover (p : c.pt) : ∃ n, p ∈ range (c.ι.app n) := by
     obtain ⟨n, y, rfl⟩ :=
       Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) p
@@ -133,9 +133,10 @@ every continuous map from a compact space factors continuously through a single 
 theorem exists_lift_of_compactSpace [∀ n, T1Space (F.obj n)] (hc : IsColimit c)
     (hι : ∀ n, IsEmbedding (c.ι.app n)) {X : Type*} [TopologicalSpace X] [CompactSpace X]
     (g : C(X, c.pt)) : ∃ n, ∃ g' : C(X, F.obj n), (c.ι.app n).hom.comp g' = g := by
-  have hF ⦃i j : ℕ⦄ (hij : i ≤ j) : Function.Injective (F.map (homOfLE hij)) := fun a b hab ↦
-    (hι i).injective <| by rw [← c.w (homOfLE hij), ConcreteCategory.comp_apply, hab,
-      ← ConcreteCategory.comp_apply]
+  have hF ⦃i j : ℕ⦄ (hij : i ≤ j) : Function.Injective (F.map (homOfLE hij)) :=
+    Function.Injective.of_comp (f := c.ι.app j) <| by
+      rw [← TopCat.coe_comp, c.w]
+      exact (hι i).injective
   obtain ⟨n, hn⟩ := exists_subset_range_ι_of_isCompact hF hc (isCompact_range g.continuous)
   choose f hf using fun p ↦ hn ⟨p, rfl⟩
   have hfg : c.ι.app n ∘ f = g := funext hf
