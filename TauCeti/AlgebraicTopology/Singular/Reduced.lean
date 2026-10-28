@@ -93,6 +93,12 @@ lemma singularHomology₀ε_singularHomology₀Section {X : TopCat.{w}} [PathCon
   rw [← IsIso.inv_eq_of_inv_hom_id (singularHomology₀Section_singularHomology₀ε R x),
     IsIso.hom_inv_id]
 
+/-- On a path-connected space every self-map induces the identity on zeroth homology. -/
+lemma singularHomology₀_map_eq_id_of_pathConnectedSpace {X : TopCat.{w}} [PathConnectedSpace X]
+    (c : X ⟶ X) : ((singularHomologyFunctor C 0).obj R).map c = 𝟙 _ := by
+  rw [← cancel_mono (X.singularHomology₀ε R), singularHomologyMap_singularHomology₀ε,
+    Category.id_comp]
+
 /-- The section is natural in the chosen point under continuous maps. -/
 @[reassoc (attr := simp)]
 lemma singularHomology₀Section_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (x : X) :

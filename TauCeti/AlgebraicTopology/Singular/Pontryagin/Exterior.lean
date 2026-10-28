@@ -54,6 +54,11 @@ isomorphisms in every degree, the description of the homology of a torus as an e
   one, it is `exteriorPower.oneEquiv`.
 * `TopCat.singularHomologyFunctor_map_pontryaginMultilinear`,
   `TopCat.pontryaginExteriorPower_naturality`: naturality in morphisms of monoid objects.
+* `TopCat.surjective_pontryaginExteriorPower_of_comp_eq_id`,
+  `TopCat.map_mem_range_pontryaginExteriorPower`: surjectivity of the exterior power map passes to
+  retracts, and the image of a morphism of monoid objects lies in its range.
+* `TopCat.pontryaginMul_mem_range_pontryaginExteriorPower`: the range of the exterior power map is
+  closed under the Pontryagin product with classes of degree one.
 
 ## References
 
@@ -408,6 +413,52 @@ theorem pontryaginExteriorPower_naturality {G' : TopCat.{u}} [MonObj G'] [IsComm
           (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).map f).hom :=
   exteriorPower.linearMap_ext (AlternatingMap.ext fun v ↦ by
     simp [singularHomologyFunctor_map_pontryaginMultilinear, Function.comp_def])
+
+/-- A morphism of commutative monoid objects with a right inverse carries surjectivity of the
+exterior power map `⋀ⁿ H₁ → Hₙ` from its source to its target. -/
+theorem surjective_pontryaginExteriorPower_of_comp_eq_id {G' : TopCat.{u}} [MonObj G']
+    [IsCommMonObj G'] (f : G ⟶ G') [IsMonHom f] (g : G' ⟶ G) (hgf : g ≫ f = 𝟙 G') {n : ℕ}
+    (h : Function.Surjective (pontryaginExteriorPower k G n)) :
+    Function.Surjective (pontryaginExteriorPower k G' n) := by
+  intro y
+  obtain ⟨w, hw⟩ := h (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).map g y)
+  refine ⟨exteriorPower.map n (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).map f).hom
+    w, ?_⟩
+  rw [← LinearMap.comp_apply, ← pontryaginExteriorPower_naturality, LinearMap.comp_apply, hw]
+  calc _ = ((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).map (g ≫ f) y := by
+        rw [Functor.map_comp, CategoryTheory.comp_apply]
+    _ = y := by rw [hgf, CategoryTheory.Functor.map_id, CategoryTheory.id_apply]
+
+/-- The image of a class under a morphism of commutative monoid objects whose source has a
+surjective exterior power map `⋀ⁿ H₁ → Hₙ` lies in the image of the exterior power map of the
+target. -/
+theorem map_mem_range_pontryaginExteriorPower {G' : TopCat.{u}} [MonObj G'] [IsCommMonObj G']
+    (f : G ⟶ G') [IsMonHom f] {n : ℕ} (h : Function.Surjective (pontryaginExteriorPower k G n))
+    (x : ((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).obj G) :
+    ((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).map f x ∈
+      LinearMap.range (pontryaginExteriorPower k G' n) := by
+  obtain ⟨w, rfl⟩ := h x
+  exact ⟨_, (LinearMap.congr_fun (pontryaginExteriorPower_naturality f n) w).symm⟩
+
+/-- The Pontryagin product of a class of degree one with a class in the image of
+`⋀ⁿ⁺¹ H₁ → Hₙ₊₁` lies in the image of `⋀ⁿ⁺² H₁ → Hₙ₊₂`. -/
+theorem pontryaginMul_mem_range_pontryaginExteriorPower (n : ℕ)
+    (x : ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).obj G)
+    (w : ⋀[k]^(n + 1) (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).obj G)) :
+    pontryaginMul k G 1 (n + 1) (n + 2) (by omega) x (pontryaginExteriorPower k G (n + 1) w) ∈
+      LinearMap.range (pontryaginExteriorPower k G (n + 2)) := by
+  -- the quotient by the image kills the product with `x` on every `ιMulti` generator
+  have key : (LinearMap.range (pontryaginExteriorPower k G (n + 2))).mkQ ∘ₗ
+      pontryaginMul k G 1 (n + 1) (n + 2) (by omega) x ∘ₗ pontryaginExteriorPower k G (n + 1) =
+        0 :=
+    exteriorPower.linearMap_ext (AlternatingMap.ext fun v ↦ by
+      simp only [LinearMap.compAlternatingMap_apply, LinearMap.zero_compAlternatingMap,
+        LinearMap.comp_apply, Submodule.mkQ_apply, zero_apply, Submodule.Quotient.mk_eq_zero]
+      refine ⟨exteriorPower.ιMulti k (n + 2) (Fin.cons x v), ?_⟩
+      rw [pontryaginExteriorPower_ιMulti, pontryaginMultilinear_add_two_apply, Fin.cons_zero,
+        Fin.tail_cons]
+      exact congrArg _ (pontryaginExteriorPower_ιMulti (n + 1) v).symm)
+  exact (Submodule.Quotient.mk_eq_zero _).1 (LinearMap.congr_fun key w)
 
 end Alternating
 
