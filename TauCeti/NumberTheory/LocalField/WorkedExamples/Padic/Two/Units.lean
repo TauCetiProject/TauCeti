@@ -26,12 +26,13 @@ namespace Padic
 open TauCeti
 
 /-- The unit `5` belongs to `1 + 4ℤ₂`. -/
-theorem five_mem_unitFiltration_two :
+theorem mk0_five_mem_unitFiltration_two :
     Units.mk0 (5 : ℚ_[2]) (by norm_num) ∈ unitFiltration ℚ_[2] 2 := by
   rw [mem_unitFiltration_iff_valuation_sub_one_le (by decide : 2 ≠ 0)
     (TauCeti.Padic.irreducible_natCast_self 2)]
   norm_num only [Units.val_mk0]
   have htwo : ((2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = 2 := map_ofNat (Subring.subtype 𝒪[ℚ_[2]]) 2
-  rw [htwo, show (4 : ℚ_[2]) = 2 ^ 2 by norm_num, map_pow]
+  have hfour : (4 : ℚ_[2]) = 2 ^ 2 := by norm_num
+  rw [htwo, hfour, map_pow]
 
 end Padic
