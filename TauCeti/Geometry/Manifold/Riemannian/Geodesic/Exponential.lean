@@ -80,7 +80,7 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-variable [FiniteDimensional ℝ E] [I.Boundaryless]
+variable [FiniteDimensional ℝ E]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
@@ -98,23 +98,24 @@ with initial velocity `v`.  Outside `expDomain I M p` it takes the junk value `p
 def riemannianExp (p : M) (v : TangentSpace I p) : M :=
   maximalGeodesic I M p v 1
 
-omit [I.Boundaryless] in
 /-- A tangent vector lies in the domain of the exponential map exactly when its maximal geodesic
 interval contains `1`. -/
 @[simp] theorem mem_expDomain_iff {p : M} {v : TangentSpace I p} :
     v ∈ expDomain I M p ↔ (1 : ℝ) ∈ geodesicInterval I M p v :=
   Iff.rfl
 
-omit [I.Boundaryless] in
 /-- The exponential map is the maximal geodesic evaluated at time `1`. -/
 theorem riemannianExp_def (p : M) (v : TangentSpace I p) :
     riemannianExp I M p v = maximalGeodesic I M p v 1 := by
   rfl
 
-omit [I.Boundaryless] in
 /-- The zero vector lies in the domain of the exponential map. -/
 theorem zero_mem_expDomain (p : M) : (0 : TangentSpace I p) ∈ expDomain I M p := by
   simp only [mem_expDomain_iff, geodesicInterval_zero, mem_univ]
+
+section Boundaryless
+
+variable [I.Boundaryless]
 
 /-- The exponential map sends the zero vector to the base point. -/
 @[simp] theorem riemannianExp_zero [T2Space M] (p : M) :
@@ -357,6 +358,8 @@ theorem isLocalDiffeomorphAt_riemannianExp_zero [T2Space M] (p : M) :
     BoundarylessManifold.isInteriorPoint (by simp)
     (mfderiv_riemannianExp_zero (I := I) p).symm
 
+end Boundaryless
+
 /-! ### Completeness at a point -/
 
 variable (I M) in
@@ -365,7 +368,6 @@ variable (I M) in
 def IsGeodesicallyCompleteAt (p : M) : Prop :=
   ∀ v : TangentSpace I p, geodesicInterval I M p v = univ
 
-omit [I.Boundaryless] in
 /-- **Completeness at a point via the exponential map.**  The exponential map at `p` is defined on
 all of `T_p M` exactly when every geodesic leaving `p` is defined for all time. -/
 theorem expDomain_eq_univ_iff {p : M} :
@@ -379,7 +381,6 @@ theorem expDomain_eq_univ_iff {p : M} :
   · rw [mem_expDomain_iff, h v]
     exact mem_univ _
 
-omit [I.Boundaryless] in
 /-- Geodesic completeness at a point is equivalent to every initial velocity admitting a
 geodesic at time `1`. -/
 theorem isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval {p : M} :
@@ -388,7 +389,6 @@ theorem isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval {p : M} :
   rw [← expDomain_eq_univ_iff, eq_univ_iff_forall]
   simp only [mem_expDomain_iff]
 
-omit [I.Boundaryless] in
 /-- Failure of geodesic completeness supplies an initial velocity whose geodesic is undefined
 at time `1`. -/
 theorem not_isGeodesicallyCompleteAt_iff_exists_one_notMem_geodesicInterval {p : M} :

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
+import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.CosetMinimum
 
 /-!
 # Spinor glue lattices `Dₙ⁺`
@@ -19,6 +20,9 @@ In positive rank the order-two spinor subgroup is quadratic-isotropic and
 Lagrangian; the general gluing theorem therefore proves unimodularity.
 In particular, the construction supplies `D₁₆⁺`, while at rank eight it is the
 coordinate model of `E₈`. The rank-zero lattice is included as well.
+
+Beyond rank eight the spinor coset has minimal norm `n / 4 > 2`, so every root of `Dₙ⁺` lies in
+`Dₙ` and the roots do not span `Dₙ⁺`; at rank eight the spinor coset contains roots of `E₈`.
 
 The subgroup and intermediate carrier are defined in every rank. The two-coset
 description needs even rank,
@@ -69,37 +73,20 @@ theorem mem_checkerboardPlusCarrier_iff (hn : Even n) (x : Fin n → ℚ) :
     x ∈ (checkerboardPlusCarrier n).1 ↔
       x ∈ (checkerboardLattice n).carrier ∨
         x - checkerboardSpinor n ∈ (checkerboardLattice n).carrier := by
-  rw [checkerboardPlusCarrier,
-    (checkerboardLattice n).mem_intermediateCarrierOfDiscriminantSubgroup_iff]
-  constructor
-  · rintro ⟨hxdual, hx⟩
-    rw [mem_checkerboardSpinorSubgroup_iff n hn] at hx
-    rcases hx with hx | hx
-    · left
-      exact ((checkerboardLattice n).discriminantGroup_mk_eq_zero_iff
-        ⟨x, hxdual⟩).mp hx
-    · right
-      rw [checkerboardSpinorClass_def] at hx
-      exact ((checkerboardLattice n).discriminantGroup_mk_eq_iff
-        ⟨x, hxdual⟩ ⟨checkerboardSpinor n, checkerboardSpinor_mem_dualCarrier⟩).mp hx
-  · rintro (hx | hx)
-    · have hxdual := (checkerboardLattice n).le_dualCarrier hx
-      refine ⟨hxdual, ?_⟩
-      rw [mem_checkerboardSpinorSubgroup_iff n hn]
-      left
-      exact ((checkerboardLattice n).discriminantGroup_mk_eq_zero_iff
-        ⟨x, hxdual⟩).mpr hx
-    · have hxdiff := (checkerboardLattice n).le_dualCarrier hx
-      have hxdual : x ∈ (checkerboardLattice n).dualCarrier := by
-        have hadd := (checkerboardLattice n).dualCarrier.add_mem hxdiff
-          checkerboardSpinor_mem_dualCarrier
-        simpa only [sub_add_cancel] using hadd
-      refine ⟨hxdual, ?_⟩
-      rw [mem_checkerboardSpinorSubgroup_iff n hn]
-      right
-      rw [checkerboardSpinorClass_def]
-      exact ((checkerboardLattice n).discriminantGroup_mk_eq_iff
-        ⟨x, hxdual⟩ ⟨checkerboardSpinor n, checkerboardSpinor_mem_dualCarrier⟩).mpr hx
+  rw [checkerboardPlusCarrier, checkerboardSpinorSubgroup, checkerboardSpinorClass_def]
+  refine (checkerboardLattice n).mem_intermediateCarrierOfDiscriminantSubgroup_zmultiples_iff
+    checkerboardSpinor_mem_dualCarrier ?_ x
+  rw [← checkerboardSpinorClass_def, two_nsmul, ← two_zsmul]
+  exact two_zsmul_checkerboardSpinorClass_of_even n hn
+
+/-- In even rank, the spinor enlargement is the union of `Dₙ` and `g + Dₙ`, for any `g` congruent
+to the spinor modulo `Dₙ`. -/
+theorem mem_checkerboardPlusCarrier_iff_of_sub_mem (hn : Even n) {g : Fin n → ℚ}
+    (hg : g - checkerboardSpinor n ∈ checkerboardCarrier n) (x : Fin n → ℚ) :
+    x ∈ (checkerboardPlusCarrier n).1 ↔
+      x ∈ checkerboardCarrier n ∨ x - g ∈ checkerboardCarrier n := by
+  rw [mem_checkerboardPlusCarrier_iff n hn, checkerboardLattice_carrier,
+    ← sub_add_sub_cancel x g (checkerboardSpinor n), Submodule.add_mem_iff_left _ hg]
 
 /-- The subgroup recovered from the spinor enlargement is the spinor subgroup. -/
 @[simp]
@@ -229,6 +216,42 @@ theorem discriminant_checkerboardPlusLattice (hn : 8 ∣ n) :
     (checkerboardPlusLattice n hn).discriminant = 1 :=
   (checkerboardPlusLattice n hn).isUnimodular_iff_discriminant_eq_one.mp
     (isUnimodular_checkerboardPlusLattice n hn)
+
+/-- **Beyond rank eight, the roots of `Dₙ⁺` lie in `Dₙ`.** A vector of the spinor coset has
+every coordinate in `ℤ + 1/2`, hence norm at least `n / 4 > 2`. At `n = 8` the spinor coset
+does contain roots, those of the coordinate model of `E₈`. -/
+theorem mem_checkerboardLattice_carrier_of_mem_vectorsOfNorm_two (hn : 8 ∣ n) (hn8 : 8 < n)
+    {x : checkerboardPlusLattice n hn}
+    (hx : x ∈ (checkerboardPlusLattice n hn).vectorsOfNorm 2) :
+    (x : Fin n → ℚ) ∈ (checkerboardLattice n).carrier := by
+  have hmem : (x : Fin n → ℚ) ∈ (checkerboardPlusCarrier n).1 :=
+    checkerboardPlusLattice_carrier n hn ▸ x.2
+  rw [mem_checkerboardPlusCarrier_iff n (even_iff_two_dvd.mpr (dvd_trans (by decide) hn))] at hmem
+  refine hmem.resolve_right fun hs ↦ ?_
+  rw [checkerboardLattice_carrier] at hs
+  have hbound := div_four_le_checkerboardLattice_form_self_of_sub_checkerboardSpinor_mem hs
+  rw [mem_vectorsOfNorm, norm_apply, checkerboardPlusLattice_form] at hx
+  have hn8' : (8 : ℚ) < n := by exact_mod_cast hn8
+  linarith
+
+/-- **Beyond rank eight, the roots of `Dₙ⁺` do not span it.** They span at most `Dₙ`, which
+misses the spinor vector. -/
+theorem span_vectorsOfNorm_two_checkerboardPlusLattice_ne_top (hn : 8 ∣ n) (hn8 : 8 < n) :
+    Submodule.span ℤ ((checkerboardPlusLattice n hn).vectorsOfNorm 2) ≠ ⊤ := by
+  have : NeZero n := ⟨by omega⟩
+  intro htop
+  have hs : checkerboardSpinor n ∈ (checkerboardPlusLattice n hn).carrier := by
+    rw [checkerboardPlusLattice_carrier,
+      mem_checkerboardPlusCarrier_iff n (even_iff_two_dvd.mpr (dvd_trans (by decide) hn)),
+      sub_self]
+    exact Or.inr (zero_mem _)
+  have hle : Submodule.span ℤ ((checkerboardPlusLattice n hn).vectorsOfNorm 2) ≤
+      (checkerboardLattice n).carrier.comap (checkerboardPlusLattice n hn).carrier.subtype :=
+    Submodule.span_le.mpr fun x hx ↦
+      mem_checkerboardLattice_carrier_of_mem_vectorsOfNorm_two n hn hn8 hx
+  have hmem := hle (htop ▸ Submodule.mem_top (x := (⟨_, hs⟩ : checkerboardPlusLattice n hn)))
+  rw [Submodule.mem_comap, Submodule.subtype_apply, checkerboardLattice_carrier] at hmem
+  exact checkerboardSpinor_notMem_checkerboardCarrier n hmem
 
 /-- The rank of `Dₙ⁺` is `n`. -/
 @[simp]

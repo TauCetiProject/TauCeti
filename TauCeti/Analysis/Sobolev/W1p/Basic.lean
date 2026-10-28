@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.Dual
-import TauCeti.Analysis.Sobolev.GraphStep
+import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -64,7 +64,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
   `TauCeti.W1p.gradient_coe` identifying them with the components of the ambient jet.
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
-  the value vanishes on an open subset.
+  the value vanishes on an open subset, and with it the whole jet
+  (`TauCeti.W1p.coe_ae_eq_zero_of_value_ae_eq_zero`).
 * `TauCeti.W1p.const`: on a domain of finite measure, a constant function is an element of
   `W^{1,p}(Ω)` with weak gradient `0`.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_contDiffOn`: a `C¹` function on `Ω` with `u` and
@@ -275,6 +276,11 @@ variable [InnerProductSpace ℝ E] [Fact (1 <= p)]
 /-- The candidate weak Fréchet derivative recorded by the gradient component of a Sobolev jet. -/
 def Sobolev1JetLp.candidateWeakFDeriv (J : Sobolev1JetLp mu Omega p) : E → E →L[ℝ] ℝ :=
   fun x => innerSL ℝ (Sobolev1JetLp.gradient J x)
+
+/-- The defining formula of the candidate weak Fréchet derivative. It is not a simp lemma: simp
+evaluates the candidate at a vector with `Sobolev1JetLp.candidateWeakFDeriv_apply`. -/
+theorem Sobolev1JetLp.candidateWeakFDeriv_def (J : Sobolev1JetLp mu Omega p) (x : E) :
+    Sobolev1JetLp.candidateWeakFDeriv J x = innerSL ℝ (Sobolev1JetLp.gradient J x) := (rfl)
 
 @[simp]
 theorem Sobolev1JetLp.candidateWeakFDeriv_apply (J : Sobolev1JetLp mu Omega p) (x v : E) :
@@ -612,8 +618,7 @@ theorem W1p.hasWeakFDerivOn (u : W1p mu Omega p) :
 component is. -/
 theorem W1p.locallyIntegrableOn_gradient (u : W1p mu Omega p) :
     LocallyIntegrableOn (W1p.gradient u : E → E) (Omega : Set E) mu :=
-  locallyIntegrableOn_of_locallyIntegrable_restrict
-    ((Lp.memLp (W1p.gradient u)).locallyIntegrable Fact.out)
+  Lp.locallyIntegrableOn (W1p.gradient u) Fact.out
 
 section
 variable [BorelSpace E]
@@ -631,6 +636,19 @@ theorem W1p.gradient_ae_eq_zero_of_value_ae_eq_zero {V : Opens E} (hV : V ≤ Om
     rw [map_zero]
     simpa using hx
   exact innerSL_inj.1 h0
+
+/-- **A Sobolev function vanishing on an open subset has vanishing jet there.** Both the value
+and, by `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`, the weak gradient vanish. -/
+theorem W1p.coe_ae_eq_zero_of_value_ae_eq_zero {V : Opens E} (hV : V ≤ Omega)
+    {u : W1p mu Omega p} (hu : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value u x = 0) :
+    ∀ᵐ x ∂mu.restrict (V : Set E), (u : Sobolev1JetLp mu Omega p) x = 0 := by
+  have hgrad := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero hV hu
+  have hvalApply := (ae_restrict_iff' Omega.isOpen.measurableSet).1 (W1p.value_apply_ae u)
+  have hgradApply := (ae_restrict_iff' Omega.isOpen.measurableSet).1 (W1p.gradient_apply_ae u)
+  rw [ae_restrict_iff' V.isOpen.measurableSet] at hu hgrad ⊢
+  filter_upwards [hu, hgrad, hvalApply, hgradApply] with x hv hg hv' hg' hxV
+  exact (WithLp.ext_iff _).2 (Prod.ext ((hv' (hV hxV)).symm.trans (hv hxV))
+    ((hg' (hV hxV)).symm.trans (hg hxV)))
 
 /-- Two Sobolev functions are equal when their `Lᵖ` value components are equal.  Uniqueness of
 weak derivatives determines the gradient component. -/

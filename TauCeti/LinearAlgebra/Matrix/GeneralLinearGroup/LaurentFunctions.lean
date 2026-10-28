@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.LaurentFunctions
 -- `TauCeti.diagGL`, the diagonal embedding of the torus points, and `TauCeti.det_diagGL`.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 -- `TauCeti.Matrix.GeneralLinearGroup.rationalFunctions`, restricted along `diagGL` below.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.Basic
 
 /-!
 # Restricting a rational function on `GL n R` to the diagonal torus

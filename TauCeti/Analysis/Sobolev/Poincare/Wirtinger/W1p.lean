@@ -9,9 +9,12 @@ public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
+import TauCeti.MeasureTheory.Function.LocallyAEConst
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 
 /-!
@@ -56,6 +59,8 @@ on a subdomain `U` whose closure is a compact subset of `Ω`.  Two limits are th
   for a ball contained in `Ω`, with both sides written as integrals over the ball.
 * `TauCeti.W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset`: the same bound in `L¹`,
   for a ball contained in `Ω` and any `u ∈ W^{1,p}(Ω)`.
+* `TauCeti.W1p.exists_value_ae_eq_const_of_gradient_eq_zero`: on a preconnected `Ω`, a Sobolev
+  function with vanishing weak gradient is almost everywhere constant.
 
 ## References
 
@@ -188,26 +193,18 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
   have hSRpos : 0 < mu.real S := ENNReal.toReal_pos hS0 hSfin
   have hSR0 : mu.real S ≠ 0 := hSRpos.ne'
   -- The means over `S ∩ V n` converge to the mean over `S`.
-  have hSVmono : Monotone fun n ↦ S ∩ V n := fun m n hmn ↦
-    inter_subset_inter_right _ (hVmono hmn)
-  have hSVunion : ⋃ n, S ∩ V n = S := by
-    rw [← inter_iUnion, hVunion, inter_eq_left.2 hS]
-  have hSVmeas : ∀ n, NullMeasurableSet (S ∩ V n) mu := fun n ↦
-    hSm.inter (hVopen n).measurableSet.nullMeasurableSet
-  have hmeasR : Tendsto (fun n ↦ mu.real (S ∩ V n)) atTop (𝓝 (mu.real S)) := by
-    refine (ENNReal.tendsto_toReal hSfin).comp ?_
-    simpa [hSVunion, Function.comp_def] using tendsto_measure_iUnion_atTop (μ := mu) hSVmono
+  have hSV : S ⊆ ⋃ n, V n := hVunion ▸ hS
+  have hmeasR : Tendsto (fun n ↦ mu.real (S ∩ V n)) atTop (𝓝 (mu.real S)) :=
+    tendsto_measureReal_inter_of_monotone hVmono hSV hSfin
   have hint : IntegrableOn (W1p.value u) S mu := by
     have : IsFiniteMeasure (mu.restrict S) :=
       ⟨by rw [Measure.restrict_apply_univ]; exact hSfin.lt_top⟩
     exact ((Lp.memLp (W1p.value u)).mono_measure
       (Measure.restrict_mono hS le_rfl)).integrable Fact.out
   have ha : Tendsto (fun n ↦ ⨍ y in S ∩ V n, W1p.value u y ∂mu) atTop
-      (𝓝 (⨍ y in S, W1p.value u y ∂mu)) := by
-    simp only [setAverage_eq, smul_eq_mul]
-    refine (hmeasR.inv₀ hSR0).mul ?_
-    simpa [hSVunion] using
-      tendsto_setIntegral_of_monotone₀ hSVmeas hSVmono (by rwa [hSVunion])
+      (𝓝 (⨍ y in S, W1p.value u y ∂mu)) :=
+    tendsto_setAverage_inter_of_monotone hVmono hSV
+      (fun n ↦ hSm.inter (hVopen n).measurableSet.nullMeasurableSet) hSfin hint
   -- The inequality on each piece, with the constant of the whole domain in the numerator.
   set K : ℝ := mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) with hKdef
   have hpiece : ∀ n, mu (S ∩ V n) ≠ 0 →
@@ -315,23 +312,8 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
     exact (measure_ball_pos mu c hR).ne'
   have hconst : mu.real (ball 0 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) /
       mu.real (Omega : Set E) ≤ 2 ^ (finrank ℝ E + 1) * R := by
-    rcases subsingleton_or_nontrivial E with _ | _
-    · -- In a zero-dimensional space every set has diameter `0`, so the left side vanishes.
-      rw [Metric.diam_subsingleton Set.subsingleton_of_subsingleton,
-        zero_pow (Nat.succ_ne_zero _), mul_zero, zero_div]
-      exact mul_nonneg (by positivity) hR.le
-    · have homega : 0 < mu.real (ball (0 : E) 1) :=
-        ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
-      have hmeas : mu.real (Omega : Set E) = R ^ finrank ℝ E * mu.real (ball (0 : E) 1) := by
-        rw [hOmega, measureReal_def, measureReal_def, Measure.addHaar_ball mu c hR.le,
-          ENNReal.toReal_mul, ENNReal.toReal_ofReal (pow_nonneg hR.le _)]
-      rw [hmeas, div_le_iff₀ (by positivity)]
-      calc mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1)
-          ≤ mu.real (ball (0 : E) 1) * (2 * R) ^ (finrank ℝ E + 1) := by
-            gcongr
-            rw [hOmega]
-            exact Metric.diam_ball hR.le
-        _ = 2 ^ (finrank ℝ E + 1) * R * (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) := by ring
+    rw [hOmega]
+    exact mu.addHaar_real_ball_mul_diam_ball_pow_div_le c hR
   refine (W1p.eLpNorm_value_sub_setAverage_le_of_convex hp (hOmega ▸ convex_ball c R)
     (hOmega ▸ Metric.isBounded_ball (x := c) (r := R))
     Omega.isOpen.measurableSet.nullMeasurableSet subset_rfl hpos u).trans
@@ -424,5 +406,39 @@ theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : 
     rw [hx]
   · congr 1
     exact lintegral_congr_ae (hgrad.mono fun x hx ↦ by simp only [hx])
+
+/-! ### Functions with vanishing gradient -/
+
+/-- A Sobolev function with vanishing weak gradient is almost everywhere constant on every ball
+contained in its domain, by the `L¹` Poincaré–Wirtinger inequality on that ball. -/
+private theorem W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero {u : W1p mu Omega p}
+    (hu : W1p.gradient u = 0) {x : E} {r : ℝ} (hr : 0 < r) (hxr : ball x r ⊆ (Omega : Set E)) :
+    ∃ c : ℝ, ∀ᵐ y ∂mu.restrict (ball x r), W1p.value u y = c := by
+  have : IsFiniteMeasure (mu.restrict (ball x r)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  set m := ⨍ y in ball x r, W1p.value u y ∂mu
+  have hP := W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hr hxr u
+  have hgrad : ∫ y in ball x r, ‖W1p.gradient u y‖ ∂mu = 0 := by
+    refine integral_eq_zero_of_ae (ae_restrict_of_ae_restrict_of_subset hxr ?_)
+    filter_upwards [(Lp.ext_iff.1 hu).trans (Lp.coeFn_zero _ _ _)] with y hy
+    simp [hy]
+  rw [hgrad, mul_zero] at hP
+  have hint : IntegrableOn (fun y ↦ |W1p.value u y - m|) (ball x r) mu :=
+    ((((Lp.memLp (W1p.value u)).mono_measure (Measure.restrict_mono hxr le_rfl)).integrable
+      Fact.out).sub (integrable_const m)).abs
+  have hzero := (integral_eq_zero_iff_of_nonneg (fun _ ↦ abs_nonneg _) hint).1
+    (hP.antisymm (integral_nonneg fun _ ↦ abs_nonneg _))
+  exact ⟨m, hzero.mono fun y hy ↦ sub_eq_zero.1 (abs_eq_zero.1 hy)⟩
+
+/-- **A Sobolev function with vanishing gradient on a connected domain is constant.** If `Ω` is
+preconnected and the weak gradient of `u ∈ W^{1,p}(Ω)` vanishes, then `u` agrees almost everywhere
+on `Ω` with a constant. -/
+theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
+    (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} (hu : W1p.gradient u = 0) :
+    ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c := by
+  refine hconn.exists_ae_eq_const_of_forall_nhds fun x hx => ?_
+  obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hr hxr
+  exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
 
 end TauCeti

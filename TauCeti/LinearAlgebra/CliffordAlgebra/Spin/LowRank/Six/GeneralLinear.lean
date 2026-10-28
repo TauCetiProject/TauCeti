@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.Spin.Structure
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Center
 import Mathlib.Algebra.Central.Matrix
-import Mathlib.Algebra.GroupWithZero.Idempotent
 
 /-!
 # The even unitary group of a split six-dimensional quadratic space
@@ -83,62 +82,26 @@ private theorem matrixProdReverse_one_zero
     [Nonempty n] [Invertible (2 : K)] (hQ : Q.Nondegenerate) (hV : finrank K V = 6)
     (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) :
     matrixProdReverse e (1, 0) = (0, 1) := by
-  let : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  let p : Matrix n n K × Matrix n n K := (1, 0)
-  have hp : p ∈ Subalgebra.center K (Matrix n n K × Matrix n n K) := by
-    simp [p, Subalgebra.mem_center_iff]
+  have : FiniteDimensional K V := Module.finite_of_finrank_eq_succ hV
+  have hp : ((1, 0) : Matrix n n K × Matrix n n K) ∈ Subalgebra.center K _ := by
+    simp [Subalgebra.mem_center_iff]
+  -- Reversal is an involution fixing `0` and `1`, so the image of `(1, 0)` is neither of them.
+  have hinv := matrixProdReverse_involutive e (1, 0)
   -- The image is a central idempotent, so its matrix coordinates are scalar idempotents.
-  have hrcenter := matrixProdReverse_mem_center e hp
-  rw [Subalgebra.center_prod, Subalgebra.mem_prod] at hrcenter
-  obtain ⟨a, ha⟩ := (Algebra.IsCentral.mem_center_iff K).mp hrcenter.1
-  obtain ⟨b, hb⟩ := (Algebra.IsCentral.mem_center_iff K).mp hrcenter.2
-  have hidem : matrixProdReverse e p * matrixProdReverse e p = matrixProdReverse e p := by
-    rw [← matrixProdReverse_mul]
-    simp [p]
-  have haidem : a * a = a := by
-    have h := congrArg (fun z : Matrix n n K × Matrix n n K => z.1) hidem
-    simp only [Prod.fst_mul, ha, ← map_mul] at h
-    exact (algebraMap K (Matrix n n K)).injective h
-  have hbidem : b * b = b := by
-    have h := congrArg (fun z : Matrix n n K × Matrix n n K => z.2) hidem
-    simp only [Prod.snd_mul, hb, ← map_mul] at h
-    exact (algebraMap K (Matrix n n K)).injective h
-  -- Involutivity excludes zero and one; the central fixed-point theorem excludes `p` itself.
-  have hane : matrixProdReverse e p ≠ 0 := by
-    intro h
-    have h' := congrArg (matrixProdReverse e) h
-    simp [matrixProdReverse_involutive e p, p] at h'
-  have hbne : matrixProdReverse e p ≠ 1 := by
-    intro h
-    have h' := congrArg (matrixProdReverse e) h
-    simp [matrixProdReverse_involutive e p, matrixProdReverse_one, p] at h'
-  have hpne : matrixProdReverse e p ≠ p := by
-    intro h
-    have hp' : e.symm p ∈ Subalgebra.center K (even Q) := by
-      rw [← Subalgebra.map_center_eq e.symm]
-      exact Subalgebra.mem_map.mpr ⟨p, hp, rfl⟩
-    have hfix : reverseEven Q (e.symm p) = e.symm p := by
-      apply e.injective
-      simpa [matrixProdReverse_apply] using h
-    obtain ⟨c, hc⟩ :=
-      (CliffordAlgebra.reverseEven_eq_self_iff_of_mem_center_of_finrank_eq_six hQ hV hp').mp
-        hfix
-    have hpScalar : p = algebraMap K (Matrix n n K × Matrix n n K) c := by
-      simpa using congrArg e hc
-    have hc0 : c = 0 := by
-      have h := congrArg (fun z : Matrix n n K × Matrix n n K => z.2) hpScalar
-      exact (algebraMap K (Matrix n n K)).injective (by simpa [p] using h.symm)
-    simp [p, hc0] at hpScalar
-  -- Of the four pairs of scalar idempotents, only the complementary projector remains.
-  have ha01 : a = 0 ∨ a = 1 := IsIdempotentElem.iff_eq_zero_or_one.mp haidem
-  have hb01 : b = 0 ∨ b = 1 := IsIdempotentElem.iff_eq_zero_or_one.mp hbidem
-  have hr : matrixProdReverse e p = (algebraMap K _ a, algebraMap K _ b) :=
-    Prod.ext ha hb
-  rcases ha01 with rfl | rfl <;> rcases hb01 with rfl | rfl
-  · exact False.elim (hane (by simpa [Prod.ext_iff] using hr))
-  · simpa [p] using hr
-  · exact False.elim (hpne (by simpa [p] using hr))
-  · exact False.elim (hbne (by simpa [Prod.ext_iff] using hr))
+  have hc := matrixProdReverse_mem_center e hp
+  simp only [Subalgebra.center_prod, Subalgebra.mem_prod, Algebra.IsCentral.mem_center_iff K] at hc
+  obtain ⟨⟨a, ha⟩, b, hb⟩ := hc
+  have hr : matrixProdReverse e (1, 0) = (algebraMap K _ a, algebraMap K _ b) := Prod.ext ha hb
+  obtain ⟨rfl | rfl, rfl | rfl⟩ : (a = 1 ∨ a = 0) ∧ (b = 1 ∨ b = 0) := by
+    simpa [hr, ← map_mul, mul_right_eq_self₀] using (matrixProdReverse_mul e (1, 0) (1, 0)).symm
+  · simp [hr, Prod.mk_one_one, matrixProdReverse_one, Prod.ext_iff] at hinv
+  · -- Then `(1, 0)` is a reversal-fixed central element, hence a scalar, which it is not.
+    obtain ⟨c, hc⟩ := (CliffordAlgebra.reverseEven_eq_self_iff_of_mem_center_of_finrank_eq_six
+      hQ hV (MulEquivClass.apply_mem_center e.symm hp)).mp
+        (e.injective (by simpa [matrixProdReverse_apply] using hr))
+    simpa using congrArg (fun x ↦ (e x).1 - (e x).2) hc
+  · simpa using hr
+  · simp [hr, Prod.mk_zero_zero, Prod.ext_iff] at hinv
 
 private theorem matrixProdReverse_fst_one_zero
     [Nonempty n] [Invertible (2 : K)] (hQ : Q.Nondegenerate) (hV : finrank K V = 6)
@@ -339,7 +302,79 @@ namespace TauCeti
 
 open _root_.CliffordAlgebra Module
 
-universe u
+section Polarized
+
+variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+
+namespace SpinPolarizationData
+
+/-- The remainder line of a polarization of a six-dimensional quadratic space vanishes. -/
+theorem line_eq_bot_of_finrank_eq_six (hV : finrank K V = 6) : P.line = ⊥ :=
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  P.line_eq_bot_of_even_finrank (hV ▸ by decide)
+
+/-- A polarization of a six-dimensional quadratic space has a three-dimensional isotropic
+summand `W`. -/
+theorem finrank_W_eq_three_of_finrank_eq_six (hV : finrank K V = 6) : finrank K P.W = 3 :=
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  P.finrank_W_eq_of_finrank_eq_two_mul hV
+
+/-- A polarization of a six-dimensional quadratic space has a nonzero isotropic summand `W`. -/
+theorem W_ne_bot_of_finrank_eq_six (hV : finrank K V = 6) : P.W ≠ ⊥ :=
+  Submodule.nontrivial_iff_ne_bot.mp <|
+    Module.nontrivial_of_finrank_eq_succ (P.finrank_W_eq_three_of_finrank_eq_six hV)
+
+end SpinPolarizationData
+
+/-- The even half-spin module of a polarized six-dimensional quadratic space has dimension
+four. -/
+theorem finrank_spinPlus_eq_four_of_finrank_eq_six (hV : finrank K V = 6) :
+    finrank K (spinPlus Q P) = 4 := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  rw [finrank_spinPlus P (P.W_ne_bot_of_finrank_eq_six hV),
+    P.finrank_W_eq_three_of_finrank_eq_six hV]
+  norm_num
+
+/-- The basis `Module.finBasisOfFinrankEq` of the even half-spin module of a polarized
+six-dimensional quadratic space. It is the basis in which `Algebra.endAlgEquivMatrix` computes the
+first factor of `TauCeti.SpinPolarizationData.evenCliffordEquivProdMatrix`. -/
+noncomputable def spinPlusFinBasisOfFinrankEqSix (hV : finrank K V = 6) :
+    Basis (Fin 4) K (spinPlus Q P) :=
+  haveI : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  Module.finBasisOfFinrankEq K (spinPlus Q P) (finrank_spinPlus_eq_four_of_finrank_eq_six P hV)
+
+/-- `TauCeti.spinPlusFinBasisOfFinrankEqSix` is the basis `Module.finBasisOfFinrankEq` for the
+dimension count `TauCeti.finrank_spinPlus_eq_four_of_finrank_eq_six`. -/
+theorem spinPlusFinBasisOfFinrankEqSix_def [FiniteDimensional K (spinPlus Q P)]
+    (hV : finrank K V = 6) :
+    spinPlusFinBasisOfFinrankEqSix P hV =
+      Module.finBasisOfFinrankEq K (spinPlus Q P)
+        (finrank_spinPlus_eq_four_of_finrank_eq_six P hV) :=
+  -- `(rfl)`, not `rfl`: the body of `spinPlusFinBasisOfFinrankEqSix` is not `@[expose]`d.
+  (rfl)
+
+/-- The first matrix factor of a polarized six-dimensional Spin element is the matrix of its
+even half-spin action in the basis `TauCeti.spinPlusFinBasisOfFinrankEqSix`. -/
+theorem coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
+    [Invertible (2 : K)] [FiniteDimensional K V] (hV : finrank K V = 6)
+    (s : spinGroup Q) :
+    (AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+        (P.evenCliffordEquivProdMatrix (l := 3) (P.W_ne_bot_of_finrank_eq_six hV) hV)
+        (P.nondegenerate_of_line_eq_bot (P.line_eq_bot_of_finrank_eq_six hV)) hV
+        (spinGroupToEvenUnitary Q s) :
+        Matrix (Fin 4) (Fin 4) K) =
+      LinearMap.toMatrix (spinPlusFinBasisOfFinrankEqSix P hV) (spinPlusFinBasisOfFinrankEqSix P hV)
+        (spinPlusAction Q P (P.line_eq_bot_of_finrank_eq_six hV)
+          (spinGroupToEven Q s)) := by
+  -- Plain `simp` first rewrites the matrix size `2 ^ (3 - 1)`, after which
+  -- `evenCliffordEquivProdMatrix_apply` no longer applies.
+  simp only [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
+    CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply,
+    SpinPolarizationData.evenCliffordEquivProdMatrix_apply, Algebra.endAlgEquivMatrix_apply,
+    spinPlusFinBasisOfFinrankEqSix_def]
+
+end Polarized
 
 variable (K : Type u) [Field K]
 

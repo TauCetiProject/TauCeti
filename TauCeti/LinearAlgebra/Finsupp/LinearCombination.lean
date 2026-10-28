@@ -10,10 +10,11 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
 
 /-!
-# Linear combinations from independence and from Noetherianity
+# Linear combinations in submodules, independent families and Noetherian modules
 
-This file collects three complements to Mathlib's description of the span of a family by linear
-combinations: membership in the span of a *linearly independent* family is witnessed by a unique
+This file complements Mathlib's description of the span of a family by linear combinations:
+coercion from a submodule commutes with linear combinations, membership in the span of a
+*linearly independent* family is witnessed by a unique
 finitely supported combination, and in a *Noetherian* module every sequence has a term that is a
 linear combination of its predecessors. A linear map sending each vector of a finite family
 to the corresponding standard basis vector of `ι → R` is a left inverse of the linear combination
@@ -34,6 +35,15 @@ public section
 section
 
 variable {ι R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- Coercing a linear combination in a submodule gives the corresponding combination in the
+ambient module. -/
+@[simp, norm_cast]
+theorem _root_.Submodule.coe_linearCombination {p : Submodule R M} (v : ι → p) (a : ι →₀ R) :
+    (Finsupp.linearCombination R v a : M) =
+      Finsupp.linearCombination R (fun i ↦ (v i : M)) a := by
+  simpa only [Submodule.subtype_apply, Function.comp_def] using
+    Finsupp.apply_linearCombination R p.subtype v a
 
 /-- An element lies in the span of a linearly independent family exactly when it has a unique
 finitely supported expression in that family. -/

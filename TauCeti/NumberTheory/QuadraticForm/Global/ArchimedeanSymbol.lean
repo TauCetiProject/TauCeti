@@ -161,6 +161,17 @@ theorem units_map_ringEquivRealOfIsReal_algebraMap (w : {w : InfinitePlace K // 
   Units.ext (by simp)
 
 omit [NumberField K] in
+/-- At a real place `w`, the Hilbert symbol of the images of two global units in the completion
+`K_w` is the real Hilbert symbol of their images under the real embedding at `w`. -/
+theorem hilbertSymbol_completion_eq_unitAtRealPlace (w : {w : InfinitePlace K // w.IsReal})
+    (a b : Kˣ) :
+    hilbertSymbol (Units.map (algebraMap K w.1.Completion).toMonoidHom a)
+        (Units.map (algebraMap K w.1.Completion).toMonoidHom b) =
+      hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) := by
+  rw [← hilbertSymbol_units_map_ringEquiv (Completion.ringEquivRealOfIsReal w.2),
+    units_map_ringEquivRealOfIsReal_algebraMap, units_map_ringEquivRealOfIsReal_algebraMap]
+
+omit [NumberField K] in
 /-- Over the completion at a complex place, every Hilbert symbol is `1`: the completion is
 isomorphic to `ℂ`, where every element is a square. -/
 theorem hilbertSymbol_completion_eq_one_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex)

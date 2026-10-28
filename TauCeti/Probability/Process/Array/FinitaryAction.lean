@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 public import TauCeti.Probability.Process.Array
-public import TauCeti.Probability.Process.Array.Tail
+public import TauCeti.Probability.Process.Array.Tail.Basic
 public import Mathlib.MeasureTheory.Group.Arithmetic
 
 /-!

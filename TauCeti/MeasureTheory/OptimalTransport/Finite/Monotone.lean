@@ -98,7 +98,7 @@ theorem IsMonotone.sum_le_le_eq_min {A : TransportMatrix μ ν} (hA : A.IsMonoto
   classical
   have h := Finsupp.sum_indicator_prod_eq_inf
     (Finsupp.equivFunOnFinite.symm A.toRealFun) A.toRealFun_nonneg
-    hA.isChain_support (isLowerSet_Iic i) (isLowerSet_Iic j)
+    hA.isChain_support (IsLowerSet.Iic i) (IsLowerSet.Iic j)
   rw [← Finsupp.sum_mapDomain_index
     (h := fun a (r : ℝ) ↦ (Set.Iic i).indicator (fun _ ↦ r) a)
     (by simp) (by simp [Set.indicator_add]),

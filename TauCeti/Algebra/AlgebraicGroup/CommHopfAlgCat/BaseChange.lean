@@ -31,6 +31,9 @@ evaluated on `K`-algebras.
 * `CommHopfAlgCat.baseChangeAlgEquiv`: the underlying algebra of base change, available as
   `H.baseChangeAlgEquiv`.
 * `CommHopfAlgCat.baseChangeMap`: scalar extension of a coordinate morphism.
+* `CommHopfAlgCat.baseChangeMap_injective_hom`: scalar extension along an injective algebra map
+  distinguishes coordinate morphisms whose target is flat over the ground ring.
+* `CommHopfAlgCat.baseChangeMap_unit_comp_counit`: base change preserves the trivial morphism.
 * `CommHopfAlgCat.baseChangeMap_surjective`: base change preserves surjectivity.
 * `CommHopfAlgCat.baseChangeMap_surjective_of_iso`: surjectivity in isomorphic presentations.
 * `CommHopfAlgCat.baseChangeMap_injective`: flat base change preserves injectivity.
@@ -98,6 +101,34 @@ lemma baseChangeMap_apply_tmul {H L : _root_.CommHopfAlgCat.{v} k}
     (baseChangeMap (K := K) φ).hom (s ⊗ₜ[k] h) = s ⊗ₜ[k] φ.hom h := by
   rw [hom_baseChangeMap, _root_.Bialgebra.TensorProduct.map_tmul,
     _root_.BialgHom.id_apply]
+
+/-- Scalar extension along an injective algebra map distinguishes coordinate morphisms
+whose target is flat over the ground ring. In particular this applies to field extensions. -/
+theorem baseChangeMap_injective_hom {H L : _root_.CommHopfAlgCat.{v} k} [Module.Flat k L]
+    (hK : Function.Injective (algebraMap k K)) :
+    Function.Injective (baseChangeMap (K := K) (H := H) (L := L)) := by
+  intro f g h
+  apply _root_.CommHopfAlgCat.hom_ext
+  ext x
+  apply Algebra.TensorProduct.includeRight_injective hK
+  have hx := congrArg (fun φ => φ.hom (1 ⊗ₜ[k] x)) h
+  rw [baseChangeMap_apply_tmul, baseChangeMap_apply_tmul] at hx
+  exact hx
+
+/-- Scalar extension preserves the trivial morphism, the unit composed with the counit. -/
+@[simp]
+theorem baseChangeMap_unit_comp_counit {H L : _root_.CommHopfAlgCat.{v} k} :
+    baseChangeMap (K := K) (_root_.CommHopfAlgCat.ofHom
+      ((Bialgebra.unitBialgHom k L).comp (Bialgebra.counitBialgHom k H))) =
+      _root_.CommHopfAlgCat.ofHom
+        ((Bialgebra.unitBialgHom K (baseChange (K := K) L)).comp
+          (Bialgebra.counitBialgHom K (baseChange (K := K) H))) := by
+  apply _root_.CommHopfAlgCat.hom_ext
+  apply _root_.BialgHom.coe_toAlgHom_injective
+  apply Algebra.TensorProduct.ext'
+  intro s x
+  simp [Bialgebra.unitBialgHom, Algebra.algebraMap_eq_smul_one,
+    Algebra.TensorProduct.one_def, TensorProduct.smul_tmul']
 
 /-- Base change along `k → K` preserves surjectivity of a morphism of commutative Hopf
 algebras. -/

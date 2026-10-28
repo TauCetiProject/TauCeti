@@ -14,7 +14,9 @@ public import TauCeti.Algebra.Coalgebra.Convolution
 The pullback of `(g, h) ↦ (g, gh)` is an automorphism of `H ⊗[R] H`. It fixes
 the left factor and sends the right factor to comultiplication. Its inverse uses
 the antipode in the left factor. This is the algebraic change of coordinates used
-in the canonical map for a quotient by a closed subgroup.
+in the canonical map for a quotient by a closed subgroup. The mirror shear along
+`(g, h) ↦ (g h, h⁻¹)` is also recorded; after comultiplication it contracts to
+`x ↦ x ⊗ 1`.
 -/
 
 public section
@@ -94,5 +96,43 @@ theorem tensorShearMulRight_symm_tmul (a b : H) :
     change (HopfAlgebra.antipodeAlgHom R H x ⊗ₜ[R] 1) * (1 ⊗ₜ[R] y) = _
     simp [HopfAlgebra.antipodeAlgHom]
   | add x y hx hy => simp [hx, hy]
+
+/-- The mirror tensor shear, which pulls back along `(g, h) ↦ (g h, h⁻¹)`. -/
+noncomputable def tensorShearMulLeftInvRight : H ⊗[R] H →ₐ[R] H ⊗[R] H :=
+  lift (Bialgebra.comulAlgHom R H) (includeRight.comp (HopfAlgebra.antipodeAlgHom R H))
+    (fun _ _ ↦ .all _ _)
+
+/-- On pure tensors the mirror tensor shear is `a ⊗ b ↦ Δ(a) * (1 ⊗ S(b))`, the pullback along
+`(g, h) ↦ (g h, h⁻¹)`. -/
+@[simp]
+theorem tensorShearMulLeftInvRight_tmul (a b : H) :
+    tensorShearMulLeftInvRight (R := R) (a ⊗ₜ[R] b) =
+      Coalgebra.comul (R := R) a * (1 ⊗ₜ[R] HopfAlgebra.antipode R b) := by
+  simp [tensorShearMulLeftInvRight]
+
+/-- Applying the mirror tensor shear after comultiplication leaves the left coordinate. -/
+@[simp]
+theorem tensorShearMulLeftInvRight_comul (x : H) :
+    tensorShearMulLeftInvRight (R := R) (Coalgebra.comul (R := R) x) =
+      x ⊗ₜ[R] (1 : H) := by
+  let Φ : H ⊗[R] (H ⊗[R] H) →ₗ[R] H ⊗[R] H :=
+    (LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).lTensor H).lTensor H
+  have hshear (y : H ⊗[R] H) :
+      tensorShearMulLeftInvRight (R := R) y =
+        Φ (TensorProduct.assoc R H H H ((Coalgebra.comul (R := R)).rTensor H y)) := by
+    induction y with
+    | add y z hy hz => simp only [map_add, hy, hz]
+    | tmul a b =>
+      simp only [tensorShearMulLeftInvRight_tmul, LinearMap.rTensor_tmul]
+      induction Coalgebra.comul (R := R) a with
+      | add y z hy hz => simp only [add_mul, map_add, TensorProduct.add_tmul, hy, hz]
+      | tmul c d => simp [Φ]
+  have hΦ : Φ ∘ₗ (Coalgebra.comul (R := R) (A := H)).lTensor H =
+      (Algebra.linearMap R H).lTensor H ∘ₗ (Coalgebra.counit (R := R) (A := H)).lTensor H := by
+    rw [← LinearMap.lTensor_comp, LinearMap.comp_assoc, HopfAlgebra.mul_antipode_lTensor_comul,
+      LinearMap.lTensor_comp]
+  rw [hshear, Coalgebra.coassoc_apply, ← LinearMap.comp_apply (f := Φ), hΦ,
+    LinearMap.comp_apply, Coalgebra.lTensor_counit_comul]
+  simp
 
 end TauCeti.HopfAlgebra

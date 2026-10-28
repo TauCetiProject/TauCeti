@@ -15,16 +15,16 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 /-!
 # Energy estimates for a first-order operator on the line
 
-For a continuously differentiable family of symmetric operators `A(s)` on a real inner product
-space, integration by parts gives
+For a continuously differentiable family of operators `A(s)` on a real inner product
+space, symmetric wherever the path is nonzero, integration by parts gives
 
 `∫ ‖u' + A u‖² = ∫ ‖u'‖² + ∫ ‖A u‖² - ∫ ⟪u, A' u⟫`.
 
 We prove this identity for compactly supported `C¹` paths, without a finite-dimensionality or
 completeness assumption on the target. A spectral gap for `A` and a small upper bound on the
-quadratic form of `A'` give a coercive estimate. When `A` has uniformly bounded-below limits at
-both ends and `A'` tends to zero, we obtain a uniform estimate for paths supported outside a
-compact interval. These estimates for bounded coefficients are inputs to the Fredholm property
+quadratic form of `A'` give a coercive estimate. Global estimates with an interior error and
+coercivity outside a compact interval are developed in `EnergyEstimate.Global`. These estimates
+for bounded coefficients are inputs to the Fredholm property
 of `d/ds + A(s)`; they do not assert surjectivity or the Fredholm property, nor treat unbounded
 transverse operators on a strip.
 
@@ -65,9 +65,10 @@ theorem integrable_norm_apply_sq_and_inner_deriv_apply (hA : ContDiff ℝ 1 A) (
   exact ⟨hiA, hiCorr⟩
 
 /-- The energy identity for `d/ds + A(s)`. The coefficient derivative contributes with a minus
-sign; symmetry is needed only for the coefficients, not assumed separately for their derivative. -/
+sign. Symmetry is needed only on the support of the path, and is not assumed separately for the
+coefficient derivative. -/
 theorem integral_norm_deriv_add_sq_eq (hA : ContDiff ℝ 1 A)
-    (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) (hu : ContDiff ℝ 1 u)
+    (hsym : ∀ s ∈ Function.support u, (A s).toLinearMap.IsSymmetric) (hu : ContDiff ℝ 1 u)
     (hc : HasCompactSupport u) :
     (∫ s, ‖deriv u s + A s (u s)‖ ^ 2) =
       (∫ s, ‖deriv u s‖ ^ 2) + (∫ s, ‖A s (u s)‖ ^ 2) -
@@ -92,9 +93,11 @@ theorem integral_norm_deriv_add_sq_eq (hA : ContDiff ℝ 1 A)
       ((hA.differentiable one_ne_zero s).hasDerivAt.clm_apply
         (hu.differentiable one_ne_zero s).hasDerivAt) using 1
     simp only [inner_add_right]
-    rw [← (hsym s).apply_clm (u s) (deriv u s),
-      real_inner_comm (A s (u s)) (deriv u s)]
-    ring
+    by_cases hs : u s = 0
+    · simp [hs]
+    · rw [← (hsym s hs).apply_clm (u s) (deriv u s),
+        real_inner_comm (A s (u s)) (deriv u s)]
+      ring
   have hzero := integral_eq_zero_of_hasDerivAt_of_integrable hder
     ((hiCross.const_mul 2).add hiCorr)
     ((hu.inner ℝ (hA.clm_apply hu)).continuous.integrable_of_hasCompactSupport hpot)
@@ -109,10 +112,10 @@ theorem integral_norm_deriv_add_sq_eq (hA : ContDiff ℝ 1 A)
   linarith
 
 /-- A spectral gap and a bound on the coefficient derivative give a coercive estimate for a
-compactly supported path. Both bounds need hold only where the path is nonzero. The estimate is
-useful when `β < α²`, but is valid without that extra hypothesis. -/
+compactly supported path. Symmetry and both bounds need hold only where the path is nonzero.
+The estimate is useful when `β < α²`, but is valid without that extra hypothesis. -/
 theorem integral_norm_deriv_sq_add_mul_integral_norm_sq_le (hA : ContDiff ℝ 1 A)
-    (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) (hu : ContDiff ℝ 1 u)
+    (hsym : ∀ s ∈ Function.support u, (A s).toLinearMap.IsSymmetric) (hu : ContDiff ℝ 1 u)
     (hc : HasCompactSupport u) {α β : ℝ} (hα : 0 ≤ α)
     (hgap : ∀ s ∈ Function.support u, α * ‖u s‖ ≤ ‖A s (u s)‖)
     (hsmall : ∀ s ∈ Function.support u, ⟪u s, deriv A s (u s)⟫_ℝ ≤ β * ‖u s‖ ^ 2) :
@@ -140,68 +143,5 @@ theorem integral_norm_deriv_sq_add_mul_integral_norm_sq_le (hA : ContDiff ℝ 1 
     · exact hsmall s hs
   rw [integral_norm_deriv_add_sq_eq hA hsym hu hc]
   nlinarith
-
--- The eventual bounds needed for the energy estimate at either end of the line.
-private theorem eventually_energy_bounds {l : Filter ℝ} {B : E →L[ℝ] E} {α : ℝ}
-    (hα : 0 < α) (hB : ∀ v, α * ‖v‖ ≤ ‖B v‖)
-    (hlim : Tendsto A l (𝓝 B)) (hdlim : Tendsto (deriv A) l (𝓝 0)) :
-    ∀ᶠ s in l, (∀ v, α / 2 * ‖v‖ ≤ ‖A s v‖) ∧ ‖deriv A s‖ ≤ α ^ 2 / 8 := by
-  have h₁ := hlim (Metric.ball_mem_nhds B (by positivity : 0 < α / 2))
-  have h₂ := hdlim (Metric.ball_mem_nhds 0 (by positivity : 0 < α ^ 2 / 8))
-  filter_upwards [h₁, h₂] with s hs hd
-  simp only [mem_preimage, Metric.mem_ball, dist_eq_norm, sub_zero] at hs hd
-  refine ⟨fun v ↦ ?_, hd.le⟩
-  have hdiff := ((A s - B).le_opNorm v).trans
-    (mul_le_mul_of_nonneg_right hs.le (norm_nonneg v))
-  rw [sub_apply] at hdiff
-  nlinarith [hB v, norm_sub_norm_le (B v) (A s v), norm_sub_rev (B v) (A s v)]
-
-/-- **Coercivity at infinity.** If the symmetric coefficients tend in operator norm to operators
-with a common positive lower bound, and their derivative tends to zero at both ends, then
-`d/ds + A(s)` controls the `L²` value and derivative of every compactly supported `C¹` path
-supported outside one fixed compact interval. In finite dimension, invertible limits supply the
-required lower bound. -/
-theorem exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
-    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
-    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0)) :
-    ∃ R > 0, ∀ (u : ℝ → E), ContDiff ℝ 1 u → HasCompactSupport u →
-      Function.support u ⊆ {s | R ≤ |s|} →
-      (∫ s, ‖deriv u s‖ ^ 2) + (α ^ 2 / 8) * (∫ s, ‖u s‖ ^ 2) ≤
-        ∫ s, ‖deriv u s + A s (u s)‖ ^ 2 := by
-  have hhalf : 0 < α / 2 := by positivity
-  have hpos := eventually_energy_bounds hα hplus htop hdtop
-  have hneg := eventually_energy_bounds hα hminus hbot hdbot
-  obtain ⟨rplus, hrplus⟩ := eventually_atTop.mp hpos
-  obtain ⟨rminus, hrminus⟩ := eventually_atBot.mp hneg
-  let R := max 1 (max rplus (-rminus))
-  have hRpos : 0 < R := lt_of_lt_of_le zero_lt_one (le_max_left _ _)
-  -- The two limiting gaps persist under an operator-norm perturbation of size `α / 2`.
-  have htail : ∀ s, R ≤ |s| →
-      (∀ v, α / 2 * ‖v‖ ≤ ‖A s v‖) ∧ ‖deriv A s‖ ≤ α ^ 2 / 8 := by
-    intro s hs
-    rcases le_or_gt 0 s with hsign | hsign
-    · have hsp : rplus ≤ s := by
-        have : rplus ≤ R := (le_max_left _ _).trans (le_max_right _ _)
-        rw [abs_of_nonneg hsign] at hs
-        exact this.trans hs
-      exact hrplus s hsp
-    · have hsm : s ≤ rminus := by
-        have : -rminus ≤ R := (le_max_right _ _).trans (le_max_right _ _)
-        rw [abs_of_neg hsign] at hs
-        linarith
-      exact hrminus s hsm
-  -- Apply the energy estimate with gap `α / 2` and derivative bound `α² / 8`.
-  refine ⟨R, hRpos, fun u hu hc hs ↦ ?_⟩
-  have hest := integral_norm_deriv_sq_add_mul_integral_norm_sq_le hA hsym hu hc hhalf.le
-    (fun s hu ↦ (htail s (hs hu)).1 (u s))
-    (β := α ^ 2 / 8) (fun s hu ↦ ?_)
-  · have hcoeff : (α / 2) ^ 2 - α ^ 2 / 8 = α ^ 2 / 8 := by ring
-    rwa [hcoeff] at hest
-  · grw [real_inner_le_norm, (deriv A s).le_opNorm, (htail s (hs hu)).2]
-    ring_nf
-    rfl
 
 end TauCeti

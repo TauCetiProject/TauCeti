@@ -11,7 +11,6 @@ public import TauCeti.Probability.Process.PathLaw.Joint
 -- Non-public: mixing-law uniqueness is used only inside the proof of
 -- `ConditionallyIIDWith.jointPathLaw_eq_of_pathLaw_eq`.
 import TauCeti.Probability.Exchangeability.MixedIID.Mixture
-import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # The full-path joint disintegration
@@ -109,9 +108,8 @@ theorem ConditionallyIIDWith.jointPathLaw_eq_iidMixtureLaw [IsFiniteMeasure μ]
     map_prefixProjPair_iidMixtureLaw
       (P := (id : ProbabilityMeasure α → ProbabilityMeasure α)) measurable_id n]
   simp only [id_eq]
-  rw [← hF, TauCeti.MeasureTheory.bind_map h.measurable_directing.aemeasurable
+  rw [← hF, Measure.bind_map h.measurable_directing.aemeasurable
     hker.aemeasurable]
-  rfl
 
 /-- **The joint law of a directing measure and a path is a function of the path law.** Two
 conditionally i.i.d. processes with the same path law — on possibly different sample spaces — have

@@ -74,7 +74,9 @@ available in the `AdicCompletionExtension` scope.
   `IsDedekindDomain.HeightOneSpectrum.decompositionEquiv`: for `L/K` Galois the decomposition
   group of `w` is the Galois group of `L_w/K_v`.
 * `IsDedekindDomain.HeightOneSpectrum.isGalois_adicCompletion`: for `L/K` Galois the local
-  extension `L_w/K_v` is Galois; and
+  extension `L_w/K_v` is Galois, and
+  `IsDedekindDomain.HeightOneSpectrum.isAbelianGalois_adicCompletion`: for `L/K` abelian it is
+  abelian; and
   `IsDedekindDomain.HeightOneSpectrum.card_algEquiv_adicCompletion`: a locally Galois completion
   has `e(w ∣ v) · f(w ∣ v)` automorphisms.
 * `IsDedekindDomain.HeightOneSpectrum.finrank_adicCompletion_fixedField`: for a subgroup `H` of
@@ -316,8 +318,8 @@ theorem stabilizer_eq_bot_of_adjoin_eq_top {s : Set L} (hs : IntermediateField.a
     (h : ∀ x ∈ s, algebraMap L (w.adicCompletion L) x ∈
       (algebraMap (v.adicCompletion K) (w.adicCompletion L)).range) :
     MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal = ⊥ := by
-  rw [eq_bot_iff, ← IntermediateField.fixingSubgroup_top, ← hs, ← IntermediateField.le_iff_le,
-    IntermediateField.adjoin_le_iff]
+  rw [eq_bot_iff, ← IntermediateField.fixingSubgroup_top, ← hs,
+    ← IntermediateField.le_fixedField_iff_le_fixingSubgroup, IntermediateField.adjoin_le_iff]
   exact fun x hx τ ↦ apply_eq_self_of_algebraMap_mem_range τ (h x hx)
 
 /-! ### The decomposition group is the local Galois group -/
@@ -409,6 +411,23 @@ scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.isGalois_adicCompletion
 
 end IsGalois
+
+section IsAbelianGalois
+
+variable (v w) [IsAbelianGalois K L]
+
+/-- **A completion of an abelian extension is abelian.** For `L/K` abelian the local extension
+`L_w/K_v` at a finite place `w` of `L` is an abelian Galois extension. -/
+-- The Galois group of `L_w/K_v` is the decomposition group of `w`, a subgroup of `Gal(L/K)`.
+theorem isAbelianGalois_adicCompletion :
+    IsAbelianGalois (v.adicCompletion K) (w.adicCompletion L) :=
+  have := (decompositionEquiv v w).surjective.isMulCommutative
+  ⟨⟩
+
+scoped[AdicCompletionExtension] attribute [instance]
+  IsDedekindDomain.HeightOneSpectrum.isAbelianGalois_adicCompletion
+
+end IsAbelianGalois
 
 section IsGaloisAdicCompletion
 

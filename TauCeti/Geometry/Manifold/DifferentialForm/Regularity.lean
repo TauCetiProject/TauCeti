@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 
 /-!
 # Regularity of differential forms in charts
@@ -24,11 +25,17 @@ Conversely, flat regularity of a coordinate expression gives regularity of the s
 manifold exterior derivative takes
 `C^p` sections to `C^n` sections whenever `n + 1 ≤ p`, on any manifold of class `C²` over any
 model with corners.
-In particular it maps smooth `k`-forms to smooth `(k+1)`-forms.
+In particular it maps smooth `k`-forms to smooth `(k+1)`-forms. A form supported compactly inside
+a chart extends by zero with the same regularity within the model range, and exterior
+differentiation commutes with this extension.
 
 ## Main declarations
 
 * `TauCeti.RoughForm.contDiffWithinAt_inChartAt`: a `C^n` section has `C^n` chart expressions.
+* `TauCeti.RoughForm.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt`: on a `C^(n+1)`
+  manifold, `C^n` regularity of chart expressions transfers between overlapping charts.
+* `TauCeti.contMDiffAt_mpullback_extChartAt`: a flat form that is `C^n` within the model range
+  pulls back along a chart to a `C^n` section.
 * `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`: the exterior
   derivative lowers regularity by one.
 * `TauCeti.mextDeriv_mem_smoothForms`: the exterior derivative preserves smooth forms.
@@ -196,6 +203,15 @@ theorem isSmoothBundleForm_mextDeriv [IsManifold I 2 M] {p n : WithTop ℕ∞}
   exact contMDiffOn_mextDerivWithin φ (hφ.of_le hnp).contMDiffOn
     (uniqueMDiffOn_univ (I := I)) (by simp)
 
+/-- The exterior derivative of a `C¹` form is a continuous section. -/
+theorem IsSmoothForm.continuous_mextDeriv [IsManifold I 2 M]
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I 1 φ) :
+    IsSmoothForm I 0 (mextDeriv φ) := by
+  rw [isSmoothForm_def]
+  exact (isSmoothBundleForm_def 0 _).mp
+    (isSmoothBundleForm_mextDeriv φ ((isSmoothBundleForm_def 1 _).mpr hφ.contMDiff)
+      (n := 0) (by simp))
+
 /-- The exterior derivative of a smooth fixed-coefficient form is smooth. -/
 theorem mextDeriv_mem_smoothForms [IsManifold I 2 M] {φ : RoughForm I M F k}
     (hφ : φ ∈ smoothForms I M F k) : mextDeriv φ ∈ smoothForms I M F (k + 1) :=
@@ -214,35 +230,68 @@ theorem IsSmoothForm.contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
     (hφ.contMDiff x).contMDiffWithinAt
   simpa only [preimage_univ, univ_inter] using hc
 
+/-- Exterior differentiation commutes with finite sums of C1 forms. The differentiability
+hypotheses ensure additivity of the coordinate derivatives. -/
+theorem mextDeriv_sum [IsManifold I 1 M] {ι : Type*}
+    (φ : ι → RoughForm I M F k) (s : Finset ι) (hφ : ∀ i ∈ s, IsSmoothForm I 1 (φ i)) :
+    TauCeti.mextDeriv (∑ i ∈ s, φ i) = ∑ i ∈ s, TauCeti.mextDeriv (φ i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih =>
+    have hrest := fun j hj ↦ hφ j (Finset.mem_insert_of_mem hj)
+    rw [Finset.sum_insert hi, Finset.sum_insert hi]
+    funext x
+    have hi' := (hφ i (Finset.mem_insert_self i s)).contDiffWithinAt_inChartAt_self x
+    have hs' := (IsSmoothForm.sum φ s hrest).contDiffWithinAt_inChartAt_self x
+    rw [TauCeti.mextDeriv_add
+      (hi'.differentiableWithinAt one_ne_zero) (hs'.differentiableWithinAt one_ne_zero)]
+    exact congrArg (fun ψ : RoughForm I M F (k + 1) ↦ TauCeti.mextDeriv (φ i) x + ψ x)
+      (ih hrest)
+
+/-- Coordinate regularity of a form transfers between preferred charts: regularity within the
+model range in the chart at `β`, at the image of a point of the overlap, gives the same regularity
+in the chart at `α`. The coordinate change and its derivative must have one more order of
+regularity, so the manifold is `C^(n+1)`. -/
+theorem RoughForm.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt {n : WithTop ℕ∞}
+    [IsManifold I (n + 1) M] (φ : RoughForm I M F k) {α β : M} {z : E}
+    (hz : z ∈ (extChartAt I α).target) (hβ : (extChartAt I α).symm z ∈ (extChartAt I β).source)
+    (h : ContDiffWithinAt ℝ n (φ.inChartAt β) (range I)
+      (extChartAt I β ((extChartAt I α).symm z))) :
+    ContDiffWithinAt ℝ n (φ.inChartAt α) (range I) z := by
+  have : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+  let T := extChartAt I β ∘ (extChartAt I α).symm
+  have hzr : z ∈ range I := extChartAt_target_subset_range α hz
+  have hsource : z ∈ ((extChartAt I α).symm ≫ extChartAt I β).source := by
+    rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
+    exact ⟨hz, hβ⟩
+  have hT : ContDiffWithinAt ℝ (n + 1) T (range I) z :=
+    contDiffWithinAt_ext_coord_change β α hsource
+  have hmap : MapsTo T (range I) (range I) := fun ζ _ ↦
+    ⟨chartAt H β ((extChartAt I α).symm ζ), rfl⟩
+  have hcomp := h.comp z (hT.of_le le_self_add) hmap
+  have hD := hT.fderivWithin_right I.uniqueDiffOn le_rfl hzr
+  have hp := ((ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM
+    (𝕜 := ℝ) (ι := Fin k) (G := F) n).comp_contDiffWithinAt hD).clm_apply hcomp
+  have heq : φ.inChartAt α =ᶠ[𝓝[range I] z] fun ζ ↦
+      (φ.inChartAt β (T ζ)).compContinuousLinearMap (fderivWithin ℝ T (range I) ζ) := by
+    have h₁ := extChartAt_target_mem_nhdsWithin_of_mem hz
+    have h₂ : (extChartAt I α).symm ⁻¹' (extChartAt I β).source ∈ 𝓝[range I] z :=
+      (continuousAt_extChartAt_symm'' hz).continuousWithinAt.preimage_mem_nhdsWithin
+        (extChartAt_source_mem_nhds' hβ)
+    filter_upwards [h₁, h₂] with ζ hζ hζβ
+    exact φ.inChartAt_eq_compContinuousLinearMap hζ hζβ
+  exact hp.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin hzr)
+
 /-- A C1 form has C1 coefficients at every point of each preferred chart target on a C2
 manifold. The coordinate cocycle transports both the form and the chart derivative. -/
 theorem IsSmoothForm.contDiffWithinAt_inChartAt [IsManifold I 2 M]
     {φ : RoughForm I M F k} (hφ : IsSmoothForm I 1 φ) (α : M) {z : E}
     (hz : z ∈ (extChartAt I α).target) :
-    ContDiffWithinAt ℝ 1 (φ.inChartAt α) (range I) z := by
-  let y := (extChartAt I α).symm z
-  let T := extChartAt I y ∘ (extChartAt I α).symm
-  have hzr : z ∈ range I := extChartAt_target_subset_range α hz
-  have hsource : z ∈ ((extChartAt I α).symm ≫ extChartAt I y).source := by
-    rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
-    exact ⟨hz, mem_extChartAt_source y⟩
-  have hT : ContDiffWithinAt ℝ 2 T (range I) z :=
-    contDiffWithinAt_ext_coord_change y α hsource
-  have hmap : MapsTo T (range I) (range I) := fun ζ _ ↦
-    ⟨chartAt H y ((extChartAt I α).symm ζ), rfl⟩
-  have hcomp := (hφ.contDiffWithinAt_inChartAt_self y).comp z (hT.of_le (by norm_num)) hmap
-  have hD := hT.fderivWithin_right I.uniqueDiffOn (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2) hzr
-  have hp := ((ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM
-    (𝕜 := ℝ) (ι := Fin k) (G := F) 1).comp_contDiffWithinAt hD).clm_apply hcomp
-  have heq : φ.inChartAt α =ᶠ[𝓝[range I] z] fun ζ ↦
-      (φ.inChartAt y (T ζ)).compContinuousLinearMap (fderivWithin ℝ T (range I) ζ) := by
-    have h₁ := extChartAt_target_mem_nhdsWithin_of_mem hz
-    have h₂ : (extChartAt I α).symm ⁻¹' (extChartAt I y).source ∈ 𝓝[range I] z :=
-      (continuousAt_extChartAt_symm'' hz).continuousWithinAt.preimage_mem_nhdsWithin
-        (extChartAt_source_mem_nhds' (mem_extChartAt_source y))
-    filter_upwards [h₁, h₂] with ζ hζ hζy
-    exact φ.inChartAt_eq_compContinuousLinearMap hζ hζy
-  exact hp.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin hzr)
+    ContDiffWithinAt ℝ 1 (φ.inChartAt α) (range I) z :=
+  have : IsManifold I (1 + 1) M := IsManifold.of_le (n := 2) (by norm_num)
+  φ.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt (n := 1) hz
+    (mem_extChartAt_source _) (hφ.contDiffWithinAt_inChartAt_self _)
 
 /-- On a `C²` manifold, the actual exterior derivative read in any preferred chart is the
 flat exterior derivative of the original coordinate expression. -/
@@ -253,14 +302,13 @@ theorem IsSmoothForm.inChartAt_mextDeriv_eq [IsManifold I 2 M]
   φ.inChartAt_mextDeriv hz
     ((hφ.contDiffWithinAt_inChartAt_self _).differentiableWithinAt one_ne_zero)
 
-/-- Regularity of the coordinate expression in each point's own preferred chart implies
-regularity of the differential-form section. -/
-theorem IsSmoothForm.of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
-    {r : WithTop ℕ∞} {φ : RoughForm I M F k}
-    (hφ : ∀ x, ContDiffWithinAt ℝ r (φ.inChartAt x) (range I) (extChartAt I x x)) :
-    IsSmoothForm I r φ := by
-  rw [isSmoothForm_def]
-  intro x
+/-- Regularity of a form's coordinate expression in its own preferred chart implies pointwise
+regularity of its bundle section, including within the full model range at boundary points. -/
+theorem contMDiffAt_form_of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
+    {r : WithTop ℕ∞} {φ : RoughForm I M F k} {x : M}
+    (hφ : ContDiffWithinAt ℝ r (φ.inChartAt x) (range I) (extChartAt I x x)) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) r
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x := by
   rw [contMDiffAt_section x, contMDiffAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
   have heq : (fun z ↦ (trivializationAt (E [⋀^Fin k]→L[ℝ] F)
@@ -269,8 +317,61 @@ theorem IsSmoothForm.of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
           𝓝[range I] (extChartAt I x x)] φ.inChartAt x := by
     filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
     exact (φ.inChartAt_eq_trivializationAt x hz).symm
-  exact (hφ x).congr_of_eventuallyEq heq (heq.self_of_nhdsWithin
+  exact hφ.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin
     (extChartAt_target_subset_range x (mem_extChartAt_target x)))
+
+/-- Regularity of a form's coordinate expression in any preferred chart, at the image of a point
+of its source, implies regularity of the bundle section at that point. -/
+theorem contMDiffAt_form_of_contDiffWithinAt_inChartAt {n : WithTop ℕ∞} [IsManifold I 1 M]
+    [IsManifold I (n + 1) M] {φ : RoughForm I M F k} {α x : M}
+    (hx : x ∈ (extChartAt I α).source)
+    (hφ : ContDiffWithinAt ℝ n (φ.inChartAt α) (range I) (extChartAt I α x)) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x := by
+  refine contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_
+  rw [← extChartAt_to_inv (I := I) x] at hx hφ
+  exact φ.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt
+    (mem_extChartAt_target x) hx hφ
+
+/-- The pullback of a flat form along a preferred extended chart is `C^n` at a point of the chart
+source when the flat form is `C^n` within the model range at the chart image of the point. The flat
+form need not be regular on a neighbourhood in the model space, which matters at boundary
+points. -/
+theorem contMDiffAt_mpullback_extChartAt {n : WithTop ℕ∞} [IsManifold I 1 M]
+    [IsManifold I (n + 1) M] {η : E → E [⋀^Fin k]→L[ℝ] F} {α x : M}
+    (hx : x ∈ (extChartAt I α).source)
+    (hη : ContDiffWithinAt ℝ n η (range I) (extChartAt I α x)) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y
+        (mpullback I 𝓘(ℝ, E) (extChartAt I α) (η : RoughForm 𝓘(ℝ, E) E F k) y)) x := by
+  have heq : (mpullback I 𝓘(ℝ, E) (extChartAt I α) (η : RoughForm 𝓘(ℝ, E) E F k)).inChartAt α
+      =ᶠ[𝓝[range I] extChartAt I α x] η := by
+    filter_upwards [extChartAt_target_mem_nhdsWithin' hx] with z hz
+    exact RoughForm.inChartAt_mpullback_extChartAt _ α hz
+  exact contMDiffAt_form_of_contDiffWithinAt_inChartAt hx (hη.congr_of_eventuallyEq heq
+    (heq.self_of_nhdsWithin (extChartAt_target_subset_range α ((extChartAt I α).map_source hx))))
+
+/-- Regularity of the coordinate expression in each point's own preferred chart implies
+regularity of the differential-form section. -/
+theorem IsSmoothForm.of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
+    {r : WithTop ℕ∞} {φ : RoughForm I M F k}
+    (hφ : ∀ x, ContDiffWithinAt ℝ r (φ.inChartAt x) (range I) (extChartAt I x x)) :
+    IsSmoothForm I r φ := by
+  rw [isSmoothForm_def]
+  exact fun x ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self (hφ x)
+
+/-- The `0`-form of a function is a `C^n` form exactly when the function is `C^n`. -/
+@[simp]
+theorem isSmoothForm_ofFunction_iff [IsManifold I 1 M] {n : WithTop ℕ∞} {f : M → F} :
+    IsSmoothForm I n (RoughForm.ofFunction I f) ↔ ContMDiff I 𝓘(ℝ, F) n f := by
+  have key : ∀ x, ContDiffWithinAt ℝ n ((RoughForm.ofFunction I f).inChartAt x) (range I)
+      (extChartAt I x x) ↔ ContMDiffAt I 𝓘(ℝ, F) n f x := fun x ↦ by
+    rw [RoughForm.inChartAt_ofFunction, contMDiffAt_iff_source,
+      contMDiffWithinAt_iff_contDiffWithinAt]
+    exact (ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E F (Fin 0)).toContinuousLinearEquiv
+      |>.comp_contDiffWithinAt_iff
+  exact ⟨fun h x ↦ (key x).1 (h.contDiffWithinAt_inChartAt_self x),
+    fun h ↦ IsSmoothForm.of_contDiffWithinAt_inChartAt_self fun x ↦ (key x).2 (h x)⟩
 
 end Regularity
 
@@ -294,6 +395,18 @@ theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
     exact contDiffWithinAt_const
   exact hflat _ _ _
 
+/-- Over the model space `𝓘(ℝ, E)`, a form is a `C^n` section exactly when it is a `C^n`
+function into the space of alternating maps. -/
+@[simp] theorem isSmoothForm_modelSpace_iff {n : WithTop ℕ∞} {φ : RoughForm 𝓘(ℝ, E) E F k} :
+    IsSmoothForm 𝓘(ℝ, E) n φ ↔ ContDiff ℝ (E := E) (F := E [⋀^Fin k]→L[ℝ] F) n φ := by
+  have key (x : E) : ContDiffWithinAt ℝ n (φ.inChartAt x) (range 𝓘(ℝ, E))
+      (extChartAt 𝓘(ℝ, E) x x) ↔ ContDiffAt ℝ (E := E) (F := E [⋀^Fin k]→L[ℝ] F) n φ x := by
+    simp only [RoughForm.inChartAt_modelSpace, modelWithCornersSelf_coe, range_id]
+    exact contDiffWithinAt_univ
+  exact ⟨fun h ↦ contDiff_iff_contDiffAt.mpr fun x ↦
+      (key x).mp (h.contDiffWithinAt_inChartAt_self x),
+    fun h ↦ IsSmoothForm.of_contDiffWithinAt_inChartAt_self fun x ↦ (key x).mpr h.contDiffAt⟩
+
 variable (I) in
 /-- The exterior derivative as a real linear map on smooth fixed-coefficient forms. -/
 def mextDerivₗ [IsManifold I 2 M] (k : ℕ) :
@@ -304,11 +417,9 @@ def mextDerivₗ [IsManifold I 2 M] (k : ℕ) :
     funext x
     apply mextDeriv_add
     · simpa using φ.1.differentiableWithinAt_inChartAt (s := Set.univ) (x := x)
-        (((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothForms.mp φ.2)).mdifferentiable
-          (by simp)).mdifferentiableAt.mdifferentiableWithinAt
+        (φ.mdifferentiableAt x).mdifferentiableWithinAt
     · simpa using ψ.1.differentiableWithinAt_inChartAt (s := Set.univ) (x := x)
-        (((isSmoothBundleForm_def ∞ ψ.1).mp (mem_smoothForms.mp ψ.2)).mdifferentiable
-          (by simp)).mdifferentiableAt.mdifferentiableWithinAt
+        (ψ.mdifferentiableAt x).mdifferentiableWithinAt
   map_smul' c φ := Subtype.ext (mextDeriv_smul c φ.1)
 
 variable (I) in
@@ -317,5 +428,86 @@ variable (I) in
 theorem mextDerivₗ_apply [IsManifold I 2 M] (k : ℕ) (φ : SmoothForm I M F k) :
     (mextDerivₗ I k φ : RoughForm I M F (k + 1)) = mextDeriv φ.1 :=
   (rfl)
+
+namespace SmoothForm
+
+/-- The exterior derivative commutes with transport across an equality of degrees. -/
+theorem mextDerivₗ_cast [IsManifold I 2 M]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) :
+    mextDerivₗ I m
+        (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h α) =
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q)
+        (congrArg (fun q : ℕ ↦ q + 1) h) (mextDerivₗ I n α) := by
+  cases h
+  simp
+
+end SmoothForm
+
+/-- A coordinate form supported compactly inside the chart extends with the same regularity
+within the model range. Regularity outside the model range is unnecessary. -/
+theorem RoughForm.contDiffOn_indicator_inChartAt {r : WithTop ℕ∞}
+    (φ : RoughForm I M F k) (α : M)
+    (hφ : ∀ z ∈ (extChartAt I α).target,
+      ContDiffWithinAt ℝ r (φ.inChartAt α) (range I) z)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
+    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source) :
+    ContDiffOn ℝ r ((extChartAt I α).target.indicator (φ.inChartAt α)) (range I) := by
+  classical
+  intro z hz
+  by_cases ht : z ∈ (extChartAt I α).target
+  · exact (hφ z ht).congr_of_eventuallyEq (φ.indicator_inChartAt_eventuallyEq α ht)
+      (indicator_of_mem ht _)
+  · have hn : z ∉ _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) :=
+      φ.notMem_tsupport_indicator_inChartAt α hc hs ht
+    have he : (extChartAt I α).target.indicator (φ.inChartAt α) =ᶠ[𝓝 z] 0 := by
+      filter_upwards [(_root_.isClosed_tsupport _).isOpen_compl.mem_nhds hn] with y hy
+      exact image_eq_zero_of_notMem_tsupport hy
+    exact (contDiffAt_const.congr_of_eventuallyEq he).contDiffWithinAt
+
+/-- For a form supported inside one chart, exterior differentiation of its zero extension
+is the zero extension of its actual manifold exterior derivative, throughout the model range. -/
+theorem IsSmoothForm.extDerivWithin_indicator_inChartAt [IsManifold I 2 M]
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I 1 φ) (α : M)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
+    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source) :
+    EqOn (extDerivWithin ((extChartAt I α).target.indicator (φ.inChartAt α)) (range I))
+      ((extChartAt I α).target.indicator ((TauCeti.mextDeriv φ).inChartAt α)) (range I) := by
+  classical
+  intro z hz
+  by_cases ht : z ∈ (extChartAt I α).target
+  · rw [indicator_of_mem ht, hφ.inChartAt_mextDeriv_eq α ht, extDerivWithin,
+      extDerivWithin]
+    exact congrArg ContinuousAlternatingMap.alternatizeUncurryFin
+      ((φ.indicator_inChartAt_eventuallyEq α ht).fderivWithin_eq (indicator_of_mem ht _))
+  · rw [indicator_of_notMem ht]
+    have hn : z ∉ _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) :=
+      φ.notMem_tsupport_indicator_inChartAt α hc hs ht
+    rw [extDerivWithin,
+      (HasFDerivWithinAt.of_notMem_tsupport ℝ (s := range I) hn).fderivWithin
+        (I.uniqueDiffOn z hz)]
+    exact map_zero _
+
+/-- A compact chart-supported `C¹` form whose support avoids the boundary has a globally `C¹`
+coordinate extension by zero. No integration or finite-dimensional hypothesis is required. -/
+theorem IsSmoothForm.contDiff_indicator_inChartAt [IsManifold I 2 M]
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I 1 φ) (α : M)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
+    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source)
+    (hd : Disjoint (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) (I.boundary M)) :
+    ContDiff ℝ 1 ((extChartAt I α).target.indicator (φ.inChartAt α)) := by
+  classical
+  apply contDiff_iff_contDiffAt.mpr
+  intro y
+  by_cases hy : y ∈ _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α))
+  · have ht := mem_interior_iff_mem_nhds.mp
+      (φ.tsupport_indicator_inChartAt_subset_interior α hc hs hd hy)
+    have hr : range I ∈ 𝓝 y := mem_of_superset ht (extChartAt_target_subset_range α)
+    have he : (extChartAt I α).target.indicator (φ.inChartAt α) =ᶠ[𝓝 y] φ.inChartAt α := by
+      filter_upwards [ht] with z hz
+      exact indicator_of_mem hz _
+    have hy := (hφ.contDiffWithinAt_inChartAt α (mem_of_mem_nhds ht)).contDiffAt hr
+    exact hy.congr_of_eventuallyEq he
+  · exact contDiffAt_const.congr_of_eventuallyEq (notMem_tsupport_iff_eventuallyEq.mp hy)
 
 end TauCeti

@@ -16,10 +16,8 @@ structure presheaf of `Spa(B, B⁺)` is a sheaf. A morphism of pre-adic spaces
 `f : Spa(B, B⁺) ⟶ Spa(A, A⁺)` gives a continuous ring homomorphism `A → B` by pullback on global
 sections (`presentationLimitHomRingHom`). This file shows that `f` is determined by it, and that it
 recovers `φ` from the morphism `Spa(φ)` induced by a continuous ring homomorphism `φ`. Hence `f` is
-the morphism induced by its global-sections map whenever that map carries open ideals to ideals
-generating open ideals, the condition under which `Spa(φ)` is constructed. That condition holds,
-for instance, when `A` is a Tate ring (`TauCeti.Huber.IsTateRing.isOpen_map_of_isOpen`). This is
-the affinoid case of the universal property of `Spa(A, A⁺)`.
+the morphism induced by its global-sections map. This is the affinoid case of the universal
+property of `Spa(A, A⁺)`.
 
 ## Main results
 
@@ -28,8 +26,7 @@ the affinoid case of the universal property of `Spa(A, A⁺)`.
 * `TauCeti.ValuationSpectrum.presentationLimitHomRingHom_presentationLimitPreAdicSpaceComap`: the
   global-sections map of `Spa(φ)` is `φ`.
 * `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComap_presentationLimitHomRingHom`: a
-  morphism is `Spa` of its global-sections map, when that map carries open ideals to ideals
-  generating open ideals.
+  morphism is `Spa` of its global-sections map.
 
 ## References
 
@@ -145,15 +142,14 @@ global sections recovers a continuous ring homomorphism `φ : A → B` from the 
 @[simp]
 theorem presentationLimitHomRingHom_presentationLimitPreAdicSpaceComap
     (φ : A →+* B) (hφ : Continuous φ)
-    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) → IsOpen (J.map φ : Set B))
     (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
     (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
       (presentationLimitPresheaf P' Bplus)) :
     presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP'
-      (presentationLimitPreAdicSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf) = φ := by
+      (presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf) = φ := by
   have hc0 : toPresentationLimit (P := P) Aplus ⊤ ≫
       eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op ⊤)).symm ≫
-      (presentationLimitPresheafComap φ hφ hopen hplus hBplus hsheaf).app (Opposite.op ⊤) =
+      (presentationLimitPresheafComap φ hφ hplus hBplus hsheaf).app (Opposite.op ⊤) =
       ObjectProperty.homMk (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A) ≫
           (⟨φ, hφ⟩ : _root_.TopCommRingCat.of A ⟶ _root_.TopCommRingCat.of B) ≫
           eqToHom (CompleteSeparatedTopCommRingCat.of_obj B).symm) ≫
@@ -166,12 +162,12 @@ theorem presentationLimitHomRingHom_presentationLimitPreAdicSpaceComap
     rfl
   have h : (presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫
       TopCommRingCat.isCompleteSeparated.ι.map
-        ((presentationLimitPreAdicSpaceComap φ hφ hopen hplus hAplus hBplus hP hP'
+        ((presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP'
           hsheaf).toHom.c.app (Opposite.op ⊤)) =
       (⟨φ, hφ⟩ : _root_.TopCommRingCat.of A ⟶ _root_.TopCommRingCat.of B) ≫
         (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').inv := by
-    have hg := presentationLimitPreAdicSpaceComap_toHom φ hφ hopen hplus hAplus hBplus hP hP' hsheaf
-    generalize presentationLimitPreAdicSpaceComap φ hφ hopen hplus hAplus hBplus hP hP' hsheaf = g
+    have hg := presentationLimitPreAdicSpaceComap_toHom φ hφ hplus hAplus hBplus hP hP' hsheaf
+    generalize presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf = g
       at hg ⊢
     rw [hg, presentationLimitPresheafedSpaceComap_c, presentationLimitPreAdicSpaceTopIso_inv,
       presentationLimitPreAdicSpaceTopIso_inv]
@@ -200,26 +196,22 @@ theorem presentationLimitHomRingHom_presentationLimitPreAdicSpaceComap
 
 /-- **A morphism into an affinoid pre-adic spectrum is induced by its map of global sections**:
 for complete Hausdorff `A` and `B` and `Spa(B, B⁺)` with a sheaf as structure presheaf, a morphism
-`f : Spa(B, B⁺) ⟶ Spa(A, A⁺)` is the morphism induced by its global-sections map, as soon as that
-map carries open ideals to ideals generating open ideals (so that the induced morphism is
-defined). The plus rings are preserved when `B⁺` is open and integrally closed
-(`presentationLimitHomRingHom_mem_plus`). -/
+`f : Spa(B, B⁺) ⟶ Spa(A, A⁺)` is the morphism induced by its global-sections map. The plus rings
+are preserved when `B⁺` is open and integrally closed (`presentationLimitHomRingHom_mem_plus`). -/
 theorem presentationLimitPreAdicSpaceComap_presentationLimitHomRingHom
     (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
       (presentationLimitPresheaf P' Bplus))
     (f : presentationLimitPreAdicSpace P' Bplus hBplus hP' ⟶
       presentationLimitPreAdicSpace P Aplus hAplus hP)
-    (hopen : ∀ ⦃J : Ideal A⦄, IsOpen (J : Set A) →
-      IsOpen (J.map (presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f) : Set B))
     (hplus : ∀ a ∈ Aplus, presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f a ∈
       Bplus) :
     presentationLimitPreAdicSpaceComap
         (presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f)
         (continuous_presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f)
-        hopen hplus hAplus hBplus hP hP' hsheaf = f :=
+        hplus hAplus hBplus hP hP' hsheaf = f :=
   presentationLimitPreAdicSpace_hom_ext P Aplus hAplus hP P' Bplus hBplus hP' hsheaf
     (presentationLimitHomRingHom_presentationLimitPreAdicSpaceComap P Aplus hAplus hP P' Bplus
-      hBplus hP' _ _ hopen hplus hsheaf)
+      hBplus hP' _ _ hplus hsheaf)
 
 end TauCeti.ValuationSpectrum
 

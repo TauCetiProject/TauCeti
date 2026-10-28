@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Valuation.Extension
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
 public import Mathlib.RingTheory.Algebraic.Basic
+public import Mathlib.Algebra.Polynomial.Roots
+import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import Mathlib.RingTheory.Localization.Integral
 import Mathlib.RingTheory.Valuation.Integral
 
@@ -33,6 +35,8 @@ the two valuative topologies.
   canonical valuation on `A`.
 * `TauCeti.integerRingAlgebra`: the induced algebra structure on the valuation rings.
 * `TauCeti.residueFieldAlgebra`: the induced algebra structure on the residue fields.
+* `TauCeti.aroots_eq_map_roots_integerRing`: the roots in `L` of a monic polynomial over the
+  valuation ring of `K` are its roots in the valuation ring of `L`.
 * `IsAlgebraic.exists_ne_zero_vle`: a nonzero algebraic element has value at least that of some
   nonzero base-field element.
 -/
@@ -84,6 +88,24 @@ noncomputable instance residueFieldAlgebra : Algebra 𝓀ᵥ[K] 𝓀ᵥ[L] :=
 theorem coe_algebraMap_integerRing (x : 𝒪ᵥ[K]) :
     ((algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x : 𝒪ᵥ[L]) : L) = algebraMap K L (x : K) :=
   Valuation.HasExtension.coe_algebraMap_valuationSubring_eq (valuation K) (valuation L) x
+
+open Polynomial in
+variable (L) in
+/-- The roots in `L` of a monic polynomial over `𝒪ᵥ[K]` are integral, so they are the images of
+its roots in `𝒪ᵥ[L]`, with the same multiplicities. -/
+theorem aroots_eq_map_roots_integerRing {p : 𝒪ᵥ[K][X]} (hp : p.Monic) :
+    (p.map (algebraMap 𝒪ᵥ[K] K)).aroots L =
+      (p.map (algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L])).roots.map (algebraMap 𝒪ᵥ[L] L) := by
+  classical
+  set P := p.map (algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L])
+  have hι : Function.Injective (algebraMap 𝒪ᵥ[L] L) := FaithfulSMul.algebraMap_injective _ _
+  have hPL : (p.map (algebraMap 𝒪ᵥ[K] K)).map (algebraMap K L) = P.map (algebraMap 𝒪ᵥ[L] L) := by
+    rw [map_map, map_map, ← IsScalarTower.algebraMap_eq, ← IsScalarTower.algebraMap_eq]
+  rw [aroots_def, hPL, ← filter_roots_map_range_eq_map_roots hι, Multiset.filter_eq_self.2]
+  intro x hx
+  have hv := Valuation.integer.integers (valuation L)
+  exact RingHom.mem_range.2 <| hv.exists_of_le_one <| hv.isIntegral_iff_v_le_one.1 <|
+    roots_mem_integralClosure (hp.map _) (by rwa [aroots_def])
 
 end TauCeti
 

@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsQuotient.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.Genus
 public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
-public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
+public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 public import TauCeti.AlgebraicGeometry.Scheme.SectionsBaseChange
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
@@ -21,44 +22,52 @@ public import Mathlib.RingTheory.TensorProduct.IsBaseChangeRightExact
 
 Let `X` be a scheme over a commutative ring `R`, let `R → R'` be a flat ring map, and let
 `Y = X ×_R R'` be the base change, given as a pullback square `H` over `Spec R' ⟶ Spec R`. This
-file proves flat base change in degree one for quasicoherent sheaves on a two-affine cover, and
-records the structure-sheaf consequences in degrees zero and one:
+file proves base change in degree zero for quasicoherent sheaves on a quasi-compact
+quasi-separated scheme, and in degree one on a two-affine cover, and records the structure-sheaf
+consequences:
 
+* `H⁰(Y, g^* M) ≅ R' ⊗_R H⁰(X, M)` for flat `R → R'`, when `X` is quasi-compact and
+  quasi-separated, using the canonical pullback of global sections;
 * `H¹(Y, g^* M) ≅ R' ⊗_R H¹(X, M)` for a quasicoherent `M` and an arbitrary base-ring
-  map, when `X` and `Y` are locally Noetherian and `X` has a two-affine cover with affine
-  intersection;
+  map, when `X` has a two-affine cover with affine intersection;
 * `H⁰(Y, 𝒪_Y) ≅ R' ⊗_R H⁰(X, 𝒪_X)` when `X` is quasi-compact and quasi-separated;
-* `H¹(Y, 𝒪_Y) ≅ R' ⊗_R H¹(X, 𝒪_X)` under the same two-affine hypotheses.
+* `H¹(Y, 𝒪_Y) ≅ R' ⊗_R H¹(X, 𝒪_X)` for flat `R → R'`, when `X` is quasi-separated and covered by
+  two affine opens.
 
 Over a field `k` and a field extension `K / k`, these say that `dim_k H⁰(X, 𝒪_X)` and, for `X`
-locally of finite type over `k` and covered by two affine opens, `dim_k H¹(X, 𝒪_X)` do not change
+quasi-separated and covered by two affine opens, `dim_k H¹(X, 𝒪_X)` do not change
 under base change to `K`; when moreover `H¹(X, 𝒪_X)` is finite-dimensional, so is `H¹` after base
 change, and the genus does not change either. Smooth proper curves are covered by two affine
-opens, so this applies to them (`TauCeti.AlgebraicGeometry.Curves.GenusBaseChange`).
+opens, so this applies to them (`TauCeti.AlgebraicGeometry.Curves.Genus.BaseChange`).
 
 The structure sheaf is written as the trivial line bundle `(InvertibleSheaf.trivial X).obj`, as for
-the genus `Scheme.genus`. The isomorphisms are stated as `Nonempty` linear equivalences: in degree
-one the construction depends on the chosen cover, and no naturality is claimed. The coefficient
-comparison uses the canonical pullback `(Scheme.Modules.pullback g).obj M`.
+the genus `Scheme.genus`. The degree-one isomorphisms are stated as `Nonempty` linear
+equivalences: their construction depends on the chosen cover, and no naturality is claimed.
+The degree-zero coefficient equivalence is canonical and has the expected section equation on
+`1 ⊗ x`. Coefficient comparisons use the canonical pullback `(Scheme.Modules.pullback g).obj M`.
 
 On sections, flat base change is
 `AlgebraicGeometry.isIso_pushoutSection_of_isQuasiSeparated_of_flat_right`: for a quasi-compact
 quasi-separated open `W ⊆ X`, `Γ(Y, g⁻¹ W) = R' ⊗_R Γ(X, W)`, restated over the base ring as
-`TauCeti.AlgebraicGeometry.isBaseChange_sectionsBaseChange`. For a cover `X = U ∪ V` whose
-members have vanishing first cohomology, the Mayer–Vietoris sequence presents `H¹(X, 𝒪_X)` as
-the cokernel of `Γ(U) × Γ(V) → Γ(U ∩ V)`
+`TauCeti.AlgebraicGeometry.isBaseChange_sectionsBaseChange`. For quasicoherent coefficients it is
+`AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSections_of_isQuasiSeparated`. For a cover
+`X = U ∪ V` whose members have vanishing first cohomology, the Mayer–Vietoris sequence presents
+`H¹(X, 𝒪_X)` as the cokernel of `Γ(U) × Γ(V) → Γ(U ∩ V)`
 (`TauCeti.AlgebraicGeometry.ker_mayerVietorisBoundaryLinear`), and tensor products preserve
-cokernels (`IsBaseChange.of_right_exact`). Affine opens with Noetherian rings of sections have
-vanishing higher cohomology by Serre's vanishing theorem, before and after base change.
+cokernels (`IsBaseChange.of_right_exact`). Affine opens have vanishing higher cohomology by
+Serre's vanishing theorem, before and after base change.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.linearEquivTensorCohomologyZeroPullback`: canonical flat base
+  change for `H⁰` of quasicoherent coefficients on a quasi-compact quasi-separated scheme.
 * `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_tensor_cohomology_zero_trivial`,
   `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_tensor_cohomology_one_trivial`: flat base
   change for `H⁰` and `H¹` of the structure sheaf.
 * `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_tensor_cohomology_one_pullback`: base change
   for `H¹` of a quasicoherent sheaf on a two-affine cover, along any base-ring map.
-* `TauCeti.AlgebraicGeometry.finrank_cohomology_one_pullback_eq_of_isPullback` and
+* `TauCeti.AlgebraicGeometry.finrank_cohomology_zero_pullback_eq_of_isPullback`,
+  `TauCeti.AlgebraicGeometry.finrank_cohomology_one_pullback_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_one_pullback_of_isPullback`: dimension
   and finiteness consequences over field extensions.
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_zero_trivial_eq_of_isPullback`,
@@ -243,7 +252,7 @@ include H hUV in
 /-- The core coefficient comparison: base change preserves first cohomology for a quasicoherent
 sheaf on a two-affine cover with affine intersection. -/
 private lemma nonempty_linearEquiv_tensor_cohomology_one_pullback_aux
-    (M : X.Modules) [M.IsQuasicoherent] [IsLocallyNoetherian X]
+    (M : X.Modules) [M.IsQuasicoherent]
     (hU : IsAffineOpen U) (hV : IsAffineOpen V)
     (hInter : IsAffineOpen (U ⊓ V))
     (hU' : Subsingleton (cohomologyOn ((Scheme.Modules.pullback g).obj M) 1 (g ⁻¹ᵁ U)))
@@ -264,12 +273,10 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_pullback_aux
     fun _ ↦ IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have hUV' : g ⁻¹ᵁ U ⊔ g ⁻¹ᵁ V = ⊤ := by
     rw [← Scheme.Hom.preimage_sup, hUV, Scheme.Hom.preimage_top]
-  have hU₁ : Subsingleton (cohomologyOn M 1 U) := by
-    have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
-    exact Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen M hU 0
-  have hV₁ : Subsingleton (cohomologyOn M 1 V) := by
-    have : IsNoetherianRing Γ(X, V) := IsLocallyNoetherian.component_noetherian ⟨V, hV⟩
-    exact Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen M hV 0
+  have hU₁ : Subsingleton (cohomologyOn M 1 U) :=
+    Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen M hU 0
+  have hV₁ : Subsingleton (cohomologyOn M 1 V) :=
+    Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen M hV 0
   -- Over the intersection, `g ⁻¹ᵁ (U ⊓ V)` is definitionally `g ⁻¹ᵁ U ⊓ g ⁻¹ᵁ V`
   -- (`Scheme.Hom.preimage_inf` is `rfl`), so the pullback of sections needs no transport.
   exact nonempty_linearEquiv_tensor_cohomology_one_of_isBaseChange U V hUV M N hUV'
@@ -285,15 +292,14 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_pullback_aux
 
 include H in
 /-- **Base change for `H¹` of a quasicoherent sheaf on a two-affine cover.** Let `X` be a
-locally Noetherian scheme over `R`, covered by affine opens `U` and `V` whose intersection is
-affine. Let `Y = X ×_R R'` be a locally Noetherian base change along any ring map. Then the
+scheme over `R`, covered by affine opens `U` and `V` whose intersection is affine. Let
+`Y = X ×_R R'` be its base change along any ring map. Then the
 first cohomology of the pullback of a quasicoherent sheaf `M` is the scalar extension of
 `H¹(X, M)` from `R` to `R'`.
 
 No flatness hypothesis is imposed on `R → R'`, and no finiteness or flatness hypothesis is
 imposed on `M`. -/
-theorem nonempty_linearEquiv_tensor_cohomology_one_pullback
-    [IsLocallyNoetherian X] [IsLocallyNoetherian Y] (M : X.Modules) [M.IsQuasicoherent]
+theorem nonempty_linearEquiv_tensor_cohomology_one_pullback (M : X.Modules) [M.IsQuasicoherent]
     {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V)
     (hInter : IsAffineOpen (U ⊓ V)) (hUV : U ⊔ V = ⊤) :
     Nonempty (R' ⊗[R] Cohomology M 1 ≃ₗ[R']
@@ -301,25 +307,21 @@ theorem nonempty_linearEquiv_tensor_cohomology_one_pullback
   have : IsAffineHom g := MorphismProperty.of_isPullback H.flip inferInstance
   have hU' := hU.preimage g
   have hV' := hV.preimage g
-  have : IsNoetherianRing Γ(Y, g ⁻¹ᵁ U) :=
-    IsLocallyNoetherian.component_noetherian ⟨g ⁻¹ᵁ U, hU'⟩
   have hU₁ : Subsingleton
       (cohomologyOn ((Scheme.Modules.pullback g).obj M) 1 (g ⁻¹ᵁ U)) :=
     Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen _ hU' 0
-  have : IsNoetherianRing Γ(Y, g ⁻¹ᵁ V) :=
-    IsLocallyNoetherian.component_noetherian ⟨g ⁻¹ᵁ V, hV'⟩
   have hV₁ : Subsingleton
       (cohomologyOn ((Scheme.Modules.pullback g).obj M) 1 (g ⁻¹ᵁ V)) :=
     Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen _ hV' 0
   exact nonempty_linearEquiv_tensor_cohomology_one_pullback_aux H U V hUV M hU hV hInter hU₁ hV₁
 
 include H in
-/-- **Flat base change for `H¹(X, 𝒪_X)` on a two-affine cover.** Let `X` be a locally Noetherian
+/-- **Flat base change for `H¹(X, 𝒪_X)` on a two-affine cover.** Let `X` be a quasi-separated
 scheme over `R` covered by two affine opens, and let `Y = X ×_R R'` be its base change along a
-flat ring map `R → R'`, also locally Noetherian. Then `H¹(Y, 𝒪_Y) ≅ R' ⊗_R H¹(X, 𝒪_X)` as
+flat ring map `R → R'`. Then `H¹(Y, 𝒪_Y) ≅ R' ⊗_R H¹(X, 𝒪_X)` as
 `R'`-modules. -/
 theorem nonempty_linearEquiv_tensor_cohomology_one_trivial [Module.Flat R R']
-    [IsLocallyNoetherian X] [IsLocallyNoetherian Y] {U V : X.Opens} (hU : IsAffineOpen U)
+    [QuasiSeparatedSpace X] {U V : X.Opens} (hU : IsAffineOpen U)
     (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤) :
     Nonempty (R' ⊗[R] Cohomology (InvertibleSheaf.trivial X).obj 1 ≃ₗ[R']
       Cohomology (InvertibleSheaf.trivial Y).obj 1) := by
@@ -327,10 +329,6 @@ theorem nonempty_linearEquiv_tensor_cohomology_one_trivial [Module.Flat R R']
   have : IsAffineHom g := MorphismProperty.of_isPullback H.flip inferInstance
   have hU' := hU.preimage g
   have hV' := hV.preimage g
-  have := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
-  have := IsLocallyNoetherian.component_noetherian ⟨V, hV⟩
-  have := IsLocallyNoetherian.component_noetherian ⟨g ⁻¹ᵁ U, hU'⟩
-  have := IsLocallyNoetherian.component_noetherian ⟨g ⁻¹ᵁ V, hV'⟩
   obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_structureModule H U V hUV
     hU.isCompact hV.isCompact
     (Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen _ hU 0)
@@ -348,6 +346,70 @@ theorem nonempty_linearEquiv_tensor_cohomology_one_trivial [Module.Flat R R']
 end CohomologyOne
 
 end TwoOpens
+
+attribute [local instance] isScalarTower_cohomology
+
+include H in
+/-- **Flat base change for `H⁰`.** The canonical equivalence `R' ⊗_R H⁰(X, M) ≃ H⁰(Y, g^* M)` for
+a quasi-coherent sheaf `M` on a quasi-compact quasi-separated scheme `X` over `R` and a flat ring
+map `R → R'`. Neither Noetherianity nor finiteness of the coefficients is required. Its action on
+`1 ⊗ x` is characterized by `linearEquivTensorCohomologyZeroPullback_one_tmul`. -/
+def linearEquivTensorCohomologyZeroPullback [Module.Flat R R'] [CompactSpace X]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent] :
+    R' ⊗[R] Cohomology M 0 ≃ₗ[R'] Cohomology ((Scheme.Modules.pullback g).obj M) 0 := by
+  let N := (Scheme.Modules.pullback g).obj M
+  -- Use the canonical base-ring actions on top sections, and restrict the target action along
+  -- `R → R'`. The native action of global functions on top sections is retained.
+  let : Module R Γ(M, ⊤) := Module.compHom _ ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom
+  have : IsScalarTower R Γ(X, ⊤) Γ(M, ⊤) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  -- The target actions are given on every open, so that they also apply to sections over the
+  -- inverse image `g ⁻¹ᵁ ⊤` of top, on which pullback of sections lands.
+  let : ∀ W' : Y.Opens, Module R' Γ(N, W') := fun W' ↦
+    Module.compHom _ ((Y.baseRingToStructurePresheaf R').app (op W')).hom
+  have : ∀ W' : Y.Opens, IsScalarTower R' Γ(Y, W') Γ(N, W') :=
+    fun _ ↦ IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have : IsScalarTower R' Γ(Y, ⊤) Γ(N, ⊤) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  let : ∀ W' : Y.Opens, Module R Γ(N, W') := fun _ ↦ Module.compHom _ (algebraMap R R')
+  have : ∀ W' : Y.Opens, IsScalarTower R R' Γ(N, W') :=
+    fun _ ↦ IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  -- Pullback lands in sections over `g ⁻¹ᵁ ⊤`, which is `⊤` by definition.
+  let σtop : Γ(M, ⊤) →ₗ[R] Γ(N, ⊤) := g.pullbackSectionsBaseLinear M ⊤ H.toCommSq
+  have hσ : IsBaseChange R' σtop :=
+    g.isBaseChange_pullbackSections_of_isQuasiSeparated M H isCompact_univ isQuasiSeparated_univ
+  let eX := (cohomologyZeroLinearEquiv M).restrictScalars R
+  let eY := (cohomologyZeroLinearEquiv N).restrictScalars R'
+  exact (eX.baseChange R R' _ _).trans (hσ.equiv.trans eY.symm)
+
+/-- The zeroth-cohomology comparison sends `1 ⊗ x` to the pullback of the section represented
+by `x`. -/
+@[simp]
+lemma linearEquivTensorCohomologyZeroPullback_one_tmul [Module.Flat R R'] [CompactSpace X]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent] (x : Cohomology M 0) :
+    cohomologyZeroEquiv ((Scheme.Modules.pullback g).obj M)
+        (linearEquivTensorCohomologyZeroPullback H M ((1 : R') ⊗ₜ[R] x)) =
+      g.pullbackSections M ⊤ (cohomologyZeroEquiv M x) := by
+  let N := (Scheme.Modules.pullback g).obj M
+  let : Module R Γ(M, ⊤) := Module.compHom _ ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom
+  have : IsScalarTower R Γ(X, ⊤) Γ(M, ⊤) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  -- The target actions are given on every open, so that they also apply to sections over the
+  -- inverse image `g ⁻¹ᵁ ⊤` of top, on which pullback of sections lands.
+  let : ∀ W' : Y.Opens, Module R' Γ(N, W') := fun W' ↦
+    Module.compHom _ ((Y.baseRingToStructurePresheaf R').app (op W')).hom
+  have : ∀ W' : Y.Opens, IsScalarTower R' Γ(Y, W') Γ(N, W') :=
+    fun _ ↦ IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have : IsScalarTower R' Γ(Y, ⊤) Γ(N, ⊤) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  let : ∀ W' : Y.Opens, Module R Γ(N, W') := fun _ ↦ Module.compHom _ (algebraMap R R')
+  have : ∀ W' : Y.Opens, IsScalarTower R R' Γ(N, W') :=
+    fun _ ↦ IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  rw [← cohomologyZeroLinearEquiv_apply]
+  simp only [linearEquivTensorCohomologyZeroPullback, LinearEquiv.trans_apply,
+    LinearEquiv.baseChange_tmul, LinearEquiv.restrictScalars_apply,
+    LinearEquiv.restrictScalars_symm_apply, LinearEquiv.apply_symm_apply,
+    cohomologyZeroLinearEquiv_apply]
+  -- The tensor comparison uses the native top-section carrier, whereas pullback is initially
+  -- expressed on the inverse image of top. The characteristic equations identify these maps.
+  erw [IsBaseChange.equiv_tmul, Scheme.Hom.pullbackSectionsBaseLinear_apply]
+  exact one_smul R' (g.pullbackSections M ⊤ (cohomologyZeroEquiv M x))
 
 include H in
 /-- **Flat base change for `H⁰(X, 𝒪_X)`.** For a quasi-compact quasi-separated scheme `X` over
@@ -379,87 +441,65 @@ variable {k K : Type u} [Field k] [Field K] [Algebra k K]
     (Spec.map (CommRingCat.ofHom (algebraMap k K))))
 
 include H in
-/-- Over a field, `H¹(X_K, g^*M) ≅ K ⊗_k H¹(X, M)` for quasicoherent coefficients on a
-scheme locally of finite type over `k` with a two-affine cover having affine intersection. -/
-private theorem nonempty_linearEquiv_tensor_cohomology_one_pullback_of_field
-    [LocallyOfFiniteType (X ↘ Spec (.of k))] (M : X.Modules) [M.IsQuasicoherent]
-    {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V)
-    (hInter : IsAffineOpen (U ⊓ V)) (hUV : U ⊔ V = ⊤) :
-    Nonempty (K ⊗[k] Cohomology M 1 ≃ₗ[K]
-      Cohomology ((Scheme.Modules.pullback g).obj M) 1) := by
-  have : LocallyOfFiniteType (Y ↘ Spec (.of K)) := MorphismProperty.of_isPullback H inferInstance
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have := LocallyOfFiniteType.isLocallyNoetherian (Y ↘ Spec (.of K))
-  exact nonempty_linearEquiv_tensor_cohomology_one_pullback H M hU hV hInter hUV
+/-- The dimension of zeroth cohomology of quasicoherent coefficients on a quasi-compact
+quasi-separated scheme over a field is invariant under extension of the base field. -/
+theorem finrank_cohomology_zero_pullback_eq_of_isPullback [CompactSpace X]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent] :
+    finrank K (Cohomology ((Scheme.Modules.pullback g).obj M) 0) =
+      finrank k (Cohomology M 0) := by
+  let e := linearEquivTensorCohomologyZeroPullback H M
+  rw [← e.finrank_eq, Module.finrank_baseChange]
 
 include H in
 /-- The dimension of `H¹` of a quasicoherent sheaf does not change under extension of the base
-field, when the scheme is locally of finite type and has a two-affine cover with affine
-intersection. The coefficients after base change are the canonical pullback sheaf. -/
-theorem finrank_cohomology_one_pullback_eq_of_isPullback
-    [LocallyOfFiniteType (X ↘ Spec (.of k))] (M : X.Modules) [M.IsQuasicoherent]
+field, when the scheme has a two-affine cover with affine intersection. The coefficients after
+base change are the canonical pullback sheaf. -/
+theorem finrank_cohomology_one_pullback_eq_of_isPullback (M : X.Modules) [M.IsQuasicoherent]
     {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V)
     (hInter : IsAffineOpen (U ⊓ V)) (hUV : U ⊔ V = ⊤) :
     finrank K (Cohomology ((Scheme.Modules.pullback g).obj M) 1) =
       finrank k (Cohomology M 1) := by
-  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_pullback_of_field
-    H M hU hV hInter hUV
+  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_pullback H M hU hV hInter hUV
   rw [← e.finrank_eq, Module.finrank_baseChange]
 
 include H in
 /-- First cohomology of a quasicoherent sheaf stays finite-dimensional under extension of the
-base field, when the scheme is locally of finite type and has a two-affine cover with affine
-intersection. -/
-theorem finiteDimensional_cohomology_one_pullback_of_isPullback
-    [LocallyOfFiniteType (X ↘ Spec (.of k))] (M : X.Modules) [M.IsQuasicoherent]
-    {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V)
+base field, when the scheme has a two-affine cover with affine intersection. -/
+theorem finiteDimensional_cohomology_one_pullback_of_isPullback (M : X.Modules)
+    [M.IsQuasicoherent] {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V)
     (hInter : IsAffineOpen (U ⊓ V)) (hUV : U ⊔ V = ⊤)
     [FiniteDimensional k (Cohomology M 1)] :
     FiniteDimensional K (Cohomology ((Scheme.Modules.pullback g).obj M) 1) := by
-  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_pullback_of_field
-    H M hU hV hInter hUV
+  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_pullback H M hU hV hInter hUV
   exact Module.Finite.equiv e
 
 include H in
-/-- Over a field, `H¹(X_K, 𝒪) ≅ K ⊗_k H¹(X, 𝒪)` for a scheme `X` locally of finite type over `k`
-covered by two affine opens, and a field extension `K / k`. -/
-private theorem nonempty_linearEquiv_tensor_cohomology_one_trivial_of_field
-    [LocallyOfFiniteType (X ↘ Spec (.of k))] {U V : X.Opens} (hU : IsAffineOpen U)
-    (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤) :
-    Nonempty (K ⊗[k] Cohomology (InvertibleSheaf.trivial X).obj 1 ≃ₗ[K]
-      Cohomology (InvertibleSheaf.trivial Y).obj 1) := by
-  have : LocallyOfFiniteType (Y ↘ Spec (.of K)) := MorphismProperty.of_isPullback H inferInstance
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have := LocallyOfFiniteType.isLocallyNoetherian (Y ↘ Spec (.of K))
-  exact nonempty_linearEquiv_tensor_cohomology_one_trivial H hU hV hUV
-
-include H in
-/-- The dimension of `H¹(X, 𝒪_X)` does not change under extension of the base field, for a scheme
-locally of finite type over a field and covered by two affine opens. -/
-theorem finrank_cohomology_one_trivial_eq_of_isPullback [LocallyOfFiniteType (X ↘ Spec (.of k))]
+/-- The dimension of `H¹(X, 𝒪_X)` does not change under extension of the base field, for a
+quasi-separated scheme over a field covered by two affine opens. -/
+theorem finrank_cohomology_one_trivial_eq_of_isPullback [QuasiSeparatedSpace X]
     {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤) :
     finrank K (Cohomology (InvertibleSheaf.trivial Y).obj 1) =
       finrank k (Cohomology (InvertibleSheaf.trivial X).obj 1) := by
-  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_trivial_of_field H hU hV hUV
+  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_trivial H hU hV hUV
   rw [← e.finrank_eq, Module.finrank_baseChange]
 
 include H in
-/-- `H¹(X, 𝒪_X)` stays finite-dimensional under extension of the base field, for a scheme locally
-of finite type over a field and covered by two affine opens. -/
+/-- `H¹(X, 𝒪_X)` stays finite-dimensional under extension of the base field, for a
+quasi-separated scheme over a field covered by two affine opens. -/
 theorem finiteDimensional_cohomology_one_trivial_of_isPullback
-    [LocallyOfFiniteType (X ↘ Spec (.of k))] {U V : X.Opens} (hU : IsAffineOpen U)
+    [QuasiSeparatedSpace X] {U V : X.Opens} (hU : IsAffineOpen U)
     (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤)
     [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)] :
     FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj 1) := by
-  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_trivial_of_field H hU hV hUV
+  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_trivial H hU hV hUV
   exact Module.Finite.equiv e
 
 include H in
-/-- **The genus does not change under extension of the base field**, for a scheme locally of
-finite type over a field, covered by two affine opens, and with finite-dimensional `H¹(X, 𝒪_X)`.
+/-- **The genus does not change under extension of the base field**, for a quasi-separated scheme
+over a field, covered by two affine opens, and with finite-dimensional `H¹(X, 𝒪_X)`.
 The finite-dimensionality of `H¹` after base change, needed to form the genus of `Y`, follows
 from that before, by `finiteDimensional_cohomology_one_trivial_of_isPullback`. -/
-theorem genus_eq_of_isPullback [LocallyOfFiniteType (X ↘ Spec (.of k))] {U V : X.Opens}
+theorem genus_eq_of_isPullback [QuasiSeparatedSpace X] {U V : X.Opens}
     (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hUV : U ⊔ V = ⊤)
     [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)] :
     haveI := finiteDimensional_cohomology_one_trivial_of_isPullback H hU hV hUV

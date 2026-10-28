@@ -29,6 +29,8 @@ matrix `2I - c` is not positive definite; see
 
 ## Main results
 
+* `TauCeti.add_one_mul_le_of_two_mul_le_add`: a sequence with `2 s_0 ≤ s_1` and
+  `2 s_{j+1} ≤ s_{j+2} + s_j` up to `n` satisfies `(n + 1) s_0 ≤ s_n`.
 * `TauCeti.add_one_mul_sum_mul_le_sum_mul`: under these hypotheses,
   `(m + 1) ∑_j δ_j d_0(j) ≤ ∑_j δ_j d_m(j)`.
 -/
@@ -36,6 +38,28 @@ matrix `2I - c` is not positive definite; see
 public section
 
 namespace TauCeti
+
+/-- **Linear growth under a second-order inequality.** A sequence with `2 s_0 ≤ s_1` and
+`2 s_{j+1} ≤ s_{j+2} + s_j` whenever `j + 2 ≤ n` has increments at least `s_0` up to `n`, so
+`(n + 1) s_0 ≤ s_n`. -/
+theorem add_one_mul_le_of_two_mul_le_add {S : Type*} [CommRing S] [LinearOrder S]
+    [IsStrictOrderedRing S] {s : ℕ → S} {n : ℕ} (h1 : 2 * s 0 ≤ s 1)
+    (h : ∀ j, j + 2 ≤ n → 2 * s (j + 1) ≤ s (j + 2) + s j) : ((n : S) + 1) * s 0 ≤ s n := by
+  have hstep (j : ℕ) (hj : j + 1 ≤ n) :
+      s 0 ≤ s (j + 1) - s j ∧ ((j : S) + 2) * s 0 ≤ s (j + 1) := by
+    induction j with
+    | zero => constructor <;> [linarith; (push_cast; linarith)]
+    | succ j ih =>
+      obtain ⟨h₁, h₂⟩ := ih (by omega)
+      have h₃ := h j (by omega)
+      push_cast
+      constructor <;> linarith
+  cases n with
+  | zero => simp
+  | succ n =>
+    have := (hstep n le_rfl).2
+    push_cast
+    linarith
 
 /-- **Linear growth of weighted sums under a second-order inequality.** If `d_m(j) ≥ 0` satisfy
 `∑_i c_{ij} d_0(i) ≤ d_1(j)` and `∑_i c_{ij} d_{m+1}(i) ≤ d_{m+2}(j) + d_m(j)`, and a
@@ -66,14 +90,6 @@ theorem add_one_mul_sum_mul_le_sum_mul {ι : Type*} [Fintype ι] {S : Type*} [Co
   have hs2 : ∀ m, 2 * s (m + 1) ≤ s (m + 2) + s m := by
     intro m
     simpa only [hs, mul_add, Finset.sum_add_distrib] using key _ _ (hd0 (m + 1)) (h2 m)
-  have hstep : ∀ m, s 0 ≤ s (m + 1) - s m ∧ ((m : S) + 1) * s 0 ≤ s m := by
-    intro m
-    induction m with
-    | zero => constructor <;> [linarith; simp]
-    | succ m ih =>
-      have := hs2 m
-      push_cast
-      constructor <;> linarith [ih.1, ih.2]
-  exact (hstep m).2
+  exact add_one_mul_le_of_two_mul_le_add hs1 fun j _ => hs2 j
 
 end TauCeti

@@ -201,7 +201,7 @@ value at which the column relation breaks. -/
 theorem sum_monoidHom_apply_eq_card_of_mem_commutator {g : G} (hg : g ∈ commutator G) :
     ∑ χ : G →* Mˣ, (χ g : M) = Nat.card (G →* Mˣ) := by
   have h (χ : G →* Mˣ) : (χ g : M) = 1 := by
-    rw [MonoidHom.mem_ker.mp (Abelianization.commutator_subset_ker χ hg), Units.val_one]
+    rw [MonoidHom.mem_ker.mp (Abelianization.commutator_le_ker χ hg), Units.val_one]
   simp [h, Nat.card_eq_fintype_card]
 
 /-- **Column orthogonality fails for every finite non-commutative group.** In a non-commutative

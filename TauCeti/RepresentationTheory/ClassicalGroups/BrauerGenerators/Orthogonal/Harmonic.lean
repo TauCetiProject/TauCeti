@@ -180,20 +180,10 @@ theorem harmonicTensors_two_eq_ker_orthogonalCupCap :
 
 /-- **On two strands the harmonic tensors are the traceless tensors**: the kernel of the cap, the
 contraction of the two slots against the coordinate dot product. The arc is the cap followed by a
-cup, and the cup is injective for `V ≠ 0`, so the two kernels agree; in dimension zero the cap is
-itself the zero map and both kernels are everything. -/
+cup, and the two have the same kernel by `TauCeti.ker_orthogonalCupCap`. -/
 theorem harmonicTensors_two_eq_ker_orthogonalCap :
     harmonicTensors k n 2 = LinearMap.ker (orthogonalCap k n) := by
-  rw [harmonicTensors_two_eq_ker_orthogonalCupCap]
-  ext x
-  simp only [LinearMap.mem_ker, orthogonalCupCap_apply]
-  refine ⟨fun h => ?_, fun h => by rw [h, map_zero]⟩
-  rcases eq_zero_or_neZero n with rfl | hn
-  · have hcap : orthogonalCap k 0 = 0 := by
-      ext v
-      simp
-    simp [hcap]
-  · exact orthogonalCup_injective k n (by rw [h, map_zero])
+  rw [harmonicTensors_two_eq_ker_orthogonalCupCap, ker_orthogonalCupCap]
 
 /-! ### Stability under the two actions -/
 
@@ -224,7 +214,8 @@ theorem map_permTensorAction_harmonicTensors (σ : Equiv.Perm (Fin d)) :
 /-- **At an invertible loop value the harmonic tensors avoid the image of an arc.** An arc acts on
 its own image by the loop value `n`, so a harmonic tensor in that image is `n⁻¹` times zero. This
 is the easy half of the statement that the trace filtration of `V^{⊗d}` splits off its harmonic
-part in the semisimple range. -/
+part, which over a star-ordered field is
+`TauCeti.isCompl_harmonicTensors_iSup_range_orthogonalCupCapAt`. -/
 theorem harmonicTensors_inf_range_orthogonalCupCapAt [Invertible (n : k)] {i j : Fin d}
     (hij : i ≠ j) :
     harmonicTensors k n d ⊓ LinearMap.range (orthogonalCupCapAt k n d i j) = ⊥ := by

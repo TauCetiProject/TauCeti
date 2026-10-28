@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
-public import TauCeti.Geometry.Manifold.Riemannian.Sphere
+public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 
 /-!
 # Linear isometries act on the round sphere by Riemannian isometries

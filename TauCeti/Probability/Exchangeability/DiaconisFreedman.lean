@@ -96,7 +96,7 @@ theorem mixedMarkovChainWith_of_rowExchangeable [Countable α]
     [MeasurableSingletonClass α] [IsProbabilityMeasure μ]
     (hX : ∀ i, AEMeasurable (X i) μ) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀)
     (hY : ∀ᵐ ω ∂μ, ∀ n, Y (visitCell (fun j => X j ω) n) ω = X (n + 1) ω)
-    (hrow : RowExchangeable μ Y) (hlam : MixedIIDWith μ (arrayColumn Y) lam) :
+    (hrow : RowExchangeable μ Y) (hlam : MixedIIDWith μ (arrayCol Y) lam) :
     MixedMarkovChainWith μ X (fun _ => diracProba a₀) fun ω a =>
       (lam ω).map (fun x => x a) := by
   classical

@@ -5,12 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Equalizer
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+import TauCeti.Data.ZMod.MonoidHomEquiv
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ZModProdAut
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
+import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 
 /-!
 # Naive level structures on an elliptic curve
@@ -48,7 +52,10 @@ For a finite group `A` and a homomorphism `u : A →* E(H)` to the points of `E`
 scheme `H` over `S`, the points of `H` at which `u` is injective on the fibre form an open subset,
 the **naive locus** of `u` (`EllipticCurveGeom.naiveLocus`), since the zero section has closed
 image. When `u` is universal among homomorphisms from `A`, as the universal pair of points of
-`E[N]` is for `A = (ℤ/Nℤ)²`, the naive locus represents the naive `A`-structures.
+`E[N]` is for `A = (ℤ/Nℤ)²`, the naive locus represents the naive `A`-structures. If `N` is
+invertible on `S` and every point `u a` is killed by `N`, the naive locus is also closed
+(`EllipticCurveGeom.isClopen_naiveLocus`), because two points killed by `N` agree on an open and
+closed set; so it is finite over `S` when `H` is (`EllipticCurveGeom.isFinite_naiveLocusOver_hom`).
 
 The group law on points of `E` is written multiplicatively, following `EllipticCurveGeom.mulBy`.
 
@@ -76,10 +83,17 @@ The group law on points of `E` is written multiplicatively, following `EllipticC
   injectivity on fibres is injectivity on the fibre over every residue field.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOpen_naiveLocus`: for finite `A`, the naive locus
   is open, and `range_left_subset_naiveLocus_iff` characterises the points landing in it.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClopen_naiveLocus` and
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFinite_naiveLocusOver_hom`: where `N` is
+  invertible and `u` takes values killed by `N`, the naive locus is open and closed, and finite
+  over `S` when `H` is.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_iff`: the naive
   `[Γ₁(N)]` condition, as `kP` missing the zero section for `0 < k < N`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_prod_iff`: the naive
   `[Γ(N)]` condition, as `aP + bQ` missing the zero section for `(a, b) ≠ 0`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_three_prod_iff`: the naive
+  `[Γ(3)]` condition, as `P` and `Q` missing the zero section and `Q` differing from `±P` at every
+  point.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`: over a
   separably closed field in which `N` is invertible, the naive `[Γ(N)]`-structures are the bases of
   `E[N](K)`.
@@ -175,7 +189,7 @@ theorem mem_naiveLocus_iff {h : H.left} :
 /-- For a finite group `A`, the naive locus is open: it is the complement of the finitely many
 closed sets where some `u a` with `a ≠ 1` meets the closed image of the zero section. -/
 theorem isOpen_naiveLocus [Finite A] : IsOpen (naiveLocus u) := by
-  have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp_structureMap
+  have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp
   have h : naiveLocus u = ⋂ a ∈ {a : A | a ≠ 1}, ((u a).left ⁻¹' Set.range E.zero)ᶜ := by
     ext h
     simp only [naiveLocus, Set.mem_ofPred_eq, Set.mem_iInter, Set.mem_compl_iff, Set.mem_preimage]
@@ -227,6 +241,43 @@ theorem naiveLocusOver_hom_mem [Finite A] {W : MorphismProperty Scheme.{u}}
     [W.IsStableUnderComposition] (hW : @IsOpenImmersion ≤ W) (h : W H.hom) :
     W (naiveLocusOver u).hom :=
   W.comp_mem _ _ (hW _ inferInstance) h
+
+/-- **The naive locus is closed where `N` is invertible.** If the natural number `N` is invertible
+in every residue field of `S` and every point `u a` is killed by `N`, then the naive locus of `u` is
+open and closed in `H`, for a finite group `A`. Each point `u a` with `a ≠ 1` meets the zero section
+on the set where it agrees with the zero point, and two points killed by `N` agree on an open and
+closed set (`EllipticCurveGeom.isClopen_range_equalizer_ι_left_of_mulBy_eq_one`). -/
+theorem isClopen_naiveLocus [Finite A] {N : ℕ} (hN : ∀ s : S, (N : S.residueField s) ≠ 0)
+    (hu : ∀ a, u a ^ N = 1) : IsClopen (naiveLocus u) := by
+  have h : naiveLocus u = ⋂ (a : A) (_ : a ≠ 1), (Set.range (equalizer.ι (u a) 1).left)ᶜ := by
+    ext h
+    simp [range_equalizer_ι_left_one]
+  rw [h]
+  refine isClopen_iInter_of_finite fun a ↦ isClopen_iInter_of_finite fun _ ↦
+    (E.isClopen_range_equalizer_ι_left_of_mulBy_eq_one (n := N) (fun s ↦ ?_) ?_ (by simp)).compl
+  · exact_mod_cast hN s
+  · rw [comp_mulBy, zpow_natCast, hu a]
+
+/-- Where `N` is invertible and every point `u a` is killed by `N`, the inclusion of the naive locus
+of `u` into `H` is a closed immersion as well as an open immersion. -/
+theorem isClosedImmersion_naiveLocusι_left [Finite A] {N : ℕ}
+    (hN : ∀ s : S, (N : S.residueField s) ≠ 0) (hu : ∀ a, u a ^ N = 1) :
+    IsClosedImmersion (naiveLocusι u).left := by
+  rw [naiveLocusι_left]
+  apply IsClosedImmersion.of_isPreimmersion
+  rw [Scheme.Opens.range_ι, coe_naiveLocusOpens]
+  exact (isClopen_naiveLocus u hN hu).isClosed
+
+/-- **The naive locus is finite where `N` is invertible.** If `H` is finite over `S`, the natural
+number `N` is invertible in every residue field of `S` and every point `u a` is killed by `N`, then
+the naive locus of `u` is finite over `S`, for a finite group `A`: it is a closed subscheme of
+`H`. -/
+theorem isFinite_naiveLocusOver_hom [Finite A] {N : ℕ} (hN : ∀ s : S, (N : S.residueField s) ≠ 0)
+    (hu : ∀ a, u a ^ N = 1) [IsFinite H.hom] : IsFinite (naiveLocusOver u).hom := by
+  have := isClosedImmersion_naiveLocusι_left u hN hu
+  rw [naiveLocusι_left] at this
+  dsimp only [naiveLocusOver, Over.mk_hom]
+  infer_instance
 
 end NaiveLocus
 
@@ -287,6 +338,43 @@ theorem IsFiberwiseInjective.disjoint_range (h : E.IsFiberwiseInjective φ) {a b
   subst t
   exact hab (h.left_apply_injective s ht.symm)
 
+/-- The divisor of a fibrewise injective finite family is the scheme-theoretic union of its
+disjoint sections. -/
+theorem IsFiberwiseInjective.pointsDivisor_eq_iInf_ker [Fintype A]
+    (hφ : E.IsFiberwiseInjective φ) : E.pointsDivisor φ = ⨅ a, (φ a).left.ker := by
+  rw [pointsDivisor_def]
+  apply Scheme.IdealSheafData.prod_eq_iInf_of_pairwise_disjoint_support
+  intro a b hab
+  apply disjoint_iff.mpr
+  apply SetLike.coe_injective
+  simpa only [Set.inf_eq_inter, Set.bot_eq_empty, TopologicalSpace.Closeds.coe_inf,
+    TopologicalSpace.Closeds.coe_bot, coe_support_ker_left] using
+    (hφ.disjoint_range hab).eq_bot
+
+/-- The divisor of a fibrewise injective finite family killed by `N` is contained in `E[N]`,
+expressed as the reverse inclusion of ideal sheaves. -/
+theorem IsFiberwiseInjective.ker_torsionι_left_le_pointsDivisor [Fintype A]
+    (hφ : E.IsFiberwiseInjective φ) {N : ℕ} (hkill : ∀ a, φ a ^ N = 1) :
+    (E.torsionι N).left.ker ≤ E.pointsDivisor φ := by
+  rw [hφ.pointsDivisor_eq_iInf_ker]
+  refine le_iInf fun a ↦ ?_
+  have hx : φ a ≫ E.mulBy N = 1 := by rw [comp_mulBy, zpow_natCast, hkill]
+  simpa [← Over.comp_left, E.torsionLift_torsionι (φ a) hx] using
+    Scheme.Hom.le_ker_comp (E.torsionLift (φ a) hx).left (E.torsionι N).left
+
+/-- **Points agree on the fibre over a point exactly when they agree there.** Two `S`-points `P`
+and `Q` of `E` have the same base change to the fibre `E_{κ(s)}` of `E` over the residue field
+`κ(s)` of a point `s` of `S` exactly when `P` and `Q` take the same value at `s`. -/
+theorem pointsPullback_fromSpecResidueField_eq_iff (P Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap)
+    (s : S) :
+    pointsPullback (E.isPullback_baseChange (S.fromSpecResidueField s)) (by simp) P =
+        pointsPullback (E.isPullback_baseChange (S.fromSpecResidueField s)) (by simp) Q ↔
+      P.left s = Q.left s := by
+  obtain ⟨p⟩ : Nonempty (Spec (S.residueField s)) := inferInstance
+  rw [eq_comm, eq_pointsPullback_iff, pointsPullback_left_comp, eq_comm]
+  conv_rhs => rw [← Scheme.fromSpecResidueField_apply s p]
+  exact comp_eq_comp_iff_of_section (left_comp_structureMap _) (left_comp_structureMap _) _ p
+
 /-- **Injectivity on fibres is checked on residue fields.** A homomorphism `φ : A →* E(S)` is
 injective on every fibre exactly when, for every point `s` of `S`, `φ` followed by restriction to
 the fibre `E_{κ(s)}` of `E` over the residue field `κ(s)` is injective. -/
@@ -337,6 +425,34 @@ theorem isFiberwiseInjective_zmod_prod_iff {N : ℕ} [NeZero N]
   simp only [hφ, isFiberwiseInjective_iff, ne_eq, ← ofAdd_eq_one]
   exact ⟨fun h a b ↦ h _, fun h z ↦ h z.toAdd.1 z.toAdd.2⟩
 
+/-- **The naive `[Γ(3)]` condition.** A homomorphism `φ : (ℤ/3ℤ)² →* E(S)`, given by the pair of
+`S`-points `P = φ (1, 0)` and `Q = φ (0, 1)` of `E[3]`, is injective on every fibre exactly when
+`P` and `Q` miss the zero section and `Q` is neither `P` nor `-P` over every point of `S`: every
+nonzero element of `(ℤ/3ℤ)²` is, up to sign, one of `(1, 0)`, `(0, 1)`, `(1, 1)` and `(-1, 1)`. -/
+theorem isFiberwiseInjective_zmod_three_prod_iff
+    {φ : Multiplicative (ZMod 3 × ZMod 3) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)} :
+    E.IsFiberwiseInjective φ ↔
+      (∀ s, (φ (.ofAdd (1, 0))).left s ≠ E.zero s) ∧ (∀ s, (φ (.ofAdd (0, 1))).left s ≠ E.zero s) ∧
+        ∀ s, (φ (.ofAdd (0, 1))).left s ≠ (φ (.ofAdd (1, 0))).left s ∧
+          (φ (.ofAdd (0, 1))).left s ≠ ((φ (.ofAdd (1, 0))).left ≫ E.neg) s := by
+  rw [isFiberwiseInjective_iff_forall_residueField]
+  simp only [← forall_and]
+  refine forall_congr' fun s ↦ ?_
+  set ψ := (pointsPullback (E.isPullback_baseChange (S.fromSpecResidueField s)) (by simp)).comp φ
+  -- `(1, 1)` and `(-1, 1)` are `(0, 1) - (-1, 0)` and `(0, 1) - (1, 0)`
+  have hadd : (.ofAdd (1, 1) : Multiplicative (ZMod 3 × ZMod 3)) =
+      .ofAdd (0, 1) / (.ofAdd (1, 0))⁻¹ := by
+    decide
+  have hsub : (.ofAdd (-1, 1) : Multiplicative (ZMod 3 × ZMod 3)) =
+      .ofAdd (0, 1) / .ofAdd (1, 0) := by
+    decide
+  have hψ (a b) : ψ a = ψ b ↔ (φ a).left s = (φ b).left s :=
+    pointsPullback_fromSpecResidueField_eq_iff _ _ s
+  rw [injective_zmod_three_prod_iff, hadd, hsub, map_div, map_div, ne_eq, ne_eq, ne_eq, ne_eq,
+    div_eq_one, div_eq_one, ← map_one ψ, hψ, hψ, hψ, hψ]
+  simp only [map_one, map_inv, hom_inv_left]
+  exact and_congr_right fun _ ↦ and_congr_right fun _ ↦ and_comm
+
 /-! ### Naive `[Γ(N)]`-structures over a separably closed field -/
 
 section SepClosed
@@ -352,12 +468,7 @@ theorem isFiberwiseInjective_iff_range_eq_ker (hN : (N : K) ≠ 0)
     E.IsFiberwiseInjective φ ↔ φ.range = (IsMonHom.monoidHom (E.mulBy N) _).ker := by
   have : NeZero N := ⟨by rintro rfl; exact hN Nat.cast_zero⟩
   -- `φ` takes values in `E[N](K)`, which has `N²` elements, as many as `(ℤ/Nℤ)²`
-  have hle : φ.range ≤ (IsMonHom.monoidHom (E.mulBy N) _).ker := by
-    rintro _ ⟨a, rfl⟩
-    have ha : a ^ N = 1 := Multiplicative.toAdd.injective <| by
-      ext <;> simp [nsmul_eq_mul]
-    rw [MonoidHom.mem_ker, IsMonHom.monoidHom_apply, comp_mulBy, zpow_natCast, ← map_pow, ha,
-      map_one]
+  have hle := range_le_ker_mulBy φ
   have hker : Nat.card (IsMonHom.monoidHom (E.mulBy N) (𝟙_ (Over (Spec (.of K))))).ker = N ^ 2 := by
     rw [← Nat.card_congr (E.torsionPointsMulEquiv N _).toEquiv,
       E.natCard_torsion (n := N) (by exact_mod_cast hN), Int.natAbs_natCast]

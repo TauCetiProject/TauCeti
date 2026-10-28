@@ -49,7 +49,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 namespace IsAdaptedPseudoGradient
 
 variable (hX : IsAdaptedPseudoGradient f X)
-include hX
 
 /-- **The stable manifold is an embedded open disc.** For a critical point `x` of index `k` on a
 manifold of dimension `n`, the stable manifold `W^s(x)` of the flow of an adapted pseudo-gradient is

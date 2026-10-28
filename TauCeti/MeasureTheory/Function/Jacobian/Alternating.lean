@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
+public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import Mathlib.MeasureTheory.Function.Jacobian
 
 /-!

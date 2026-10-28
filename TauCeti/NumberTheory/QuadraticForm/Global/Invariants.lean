@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
-public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 
 /-!

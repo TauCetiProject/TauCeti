@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.RamificationInertia.Valuation
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Ramification
 public import TauCeti.RingTheory.DedekindDomain.SInteger.SelmerGroup.Basic
 
 /-!

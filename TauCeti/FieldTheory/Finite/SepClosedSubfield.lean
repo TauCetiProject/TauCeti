@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Finite.GaloisField
 public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.Algebra.CharP.Frobenius.Fixed
 public import TauCeti.FieldTheory.Finite.FrobeniusFixed
+public import TauCeti.FieldTheory.Galois.FixedField
 
 /-!
 # The finite subfields of a separably closed field of positive characteristic
@@ -36,6 +37,11 @@ extension of the prime field.
   `GaloisField p n`.
 * `TauCeti.exists_mem_frobeniusFixedSubfield`: an algebraic closure of the prime field is the union
   of these subfields.
+* `TauCeti.natCard_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow` and
+  `TauCeti.finrank_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow`: over a finite field `k`
+  with `q` elements, the fixed field in a separable closure of the `r`-th power of the arithmetic
+  Frobenius `FiniteField.frobeniusAlgEquivOfAlgebraic` has `q ^ r` elements and degree `r` over
+  `k`, for `r ≠ 0`.
 
 ## References
 
@@ -68,7 +74,7 @@ whole of `K` while `X ^ 1 - X = 0` has empty root set. -/
 theorem coe_frobeniusFixedSubfield_eq_rootSet (hn : n ≠ 0) :
     (frobeniusFixedSubfield K p n : Set K) = (X ^ p ^ n - X : K[X]).rootSet K := by
   have hne : (X ^ p ^ n - X : K[X]) ≠ 0 :=
-    FiniteField.X_pow_card_pow_sub_X_ne_zero K hn (Fact.out (p := p.Prime)).one_lt
+    X_pow_sub_X_ne_zero (Nat.one_lt_pow hn (Fact.out (p := p.Prime)).one_lt)
   ext a
   simp [Polynomial.mem_rootSet, hne, sub_eq_zero]
 
@@ -134,7 +140,7 @@ theorem card_frobeniusFixedSubfield (hn : n ≠ 0) :
     IsSepClosed.splits_domain _ hsep
   rw [Nat.card_congr (frobeniusFixedSubfieldEquivRootSet K p n hn), Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hsep hsplit,
-    FiniteField.X_pow_card_pow_sub_X_natDegree_eq K hn (Fact.out (p := p.Prime)).one_lt]
+    natDegree_X_pow_sub_X (Nat.one_lt_pow hn (Fact.out (p := p.Prime)).one_lt)]
 
 /-- The Frobenius-fixed subfield of a separably closed field is a copy of Mathlib's
 `GaloisField p n`, the two being finite fields of the same cardinality. The isomorphism is not
@@ -149,6 +155,51 @@ theorem nonempty_frobeniusFixedSubfield_ringEquiv_galoisField (hn : n ≠ 0) :
     card_frobeniusFixedSubfield K p n hn, GaloisField.card p n hn]
 
 end IsSepClosed
+
+/-! ## The fixed field of a power of the arithmetic Frobenius -/
+
+section FrobeniusPow
+
+open IntermediateField
+
+variable (k L : Type*) [Field k] [Fintype k] [Field L] [Algebra k L] [Algebra.IsAlgebraic k L]
+  [IsSepClosed L]
+
+/-- **The extension of degree `r` inside a separable closure has `q ^ r` elements.** Let `k` be a
+finite field with `q` elements and `L` an algebraic extension of `k` that is separably closed, for
+instance an algebraic closure. For `r ≠ 0`, the fixed field of the `r`-th power of the arithmetic
+Frobenius `x ↦ x ^ q` of `L` has `q ^ r` elements: it is the Frobenius-fixed subfield
+`TauCeti.frobeniusFixedSubfield` for the exponent `q ^ r`. -/
+theorem natCard_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow {r : ℕ} (hr : r ≠ 0) :
+    Nat.card (fixedField (Subgroup.zpowers (FiniteField.frobeniusAlgEquivOfAlgebraic k L ^ r))) =
+      Fintype.card k ^ r := by
+  obtain ⟨n, hp, hn⟩ := FiniteField.card k (ringChar k)
+  have : Fact (ringChar k).Prime := ⟨hp⟩
+  have : CharP L (ringChar k) := charP_of_injective_algebraMap (algebraMap k L).injective _
+  have h (x : L) :
+      x ∈ fixedField (Subgroup.zpowers (FiniteField.frobeniusAlgEquivOfAlgebraic k L ^ r)) ↔
+        x ∈ frobeniusFixedSubfield L (ringChar k) (n * r) := by
+    rw [mem_fixedField_zpowers_iff, AlgEquiv.coe_pow,
+      FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate, mem_frobeniusFixedSubfield, hn,
+      ← pow_mul]
+  rw [Nat.card_congr (Equiv.subtypeEquivRight h),
+    card_frobeniusFixedSubfield L _ _ (mul_ne_zero n.ne_zero hr), hn, pow_mul]
+
+/-- The fixed field of the `r`-th power of the arithmetic Frobenius of a separably closed algebraic
+extension of a finite field `k` has degree `r` over `k`, for `r ≠ 0`. -/
+theorem finrank_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow {r : ℕ} (hr : r ≠ 0) :
+    Module.finrank k
+      (fixedField (Subgroup.zpowers (FiniteField.frobeniusAlgEquivOfAlgebraic k L ^ r))) = r := by
+  have hcard := natCard_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow k L hr
+  have : Finite
+      (fixedField (Subgroup.zpowers (FiniteField.frobeniusAlgEquivOfAlgebraic k L ^ r))) :=
+    Nat.finite_of_card_ne_zero (by rw [hcard]; positivity)
+  have := Fintype.ofFinite
+    (fixedField (Subgroup.zpowers (FiniteField.frobeniusAlgEquivOfAlgebraic k L ^ r)))
+  rw [Nat.card_eq_fintype_card, Module.card_eq_pow_finrank (K := k)] at hcard
+  exact Nat.pow_right_injective Fintype.one_lt_card hcard
+
+end FrobeniusPow
 
 /-! ## Exhaustion over an algebraic prime field -/
 

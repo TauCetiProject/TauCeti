@@ -154,3 +154,22 @@ instance instIsCancelSMulUniversalGSpace : IsCancelSMul G (universalGSpace G) :=
       ⟨x, ⟨x, hv, hgx⟩, hv⟩
 
 end TauCeti
+
+namespace MonoidHom
+
+open TauCeti
+
+variable {G H : Type*} [Group G] [Group H]
+
+/-- The map of Milnor total spaces induced by a homomorphism is equivariant for that
+homomorphism. -/
+@[simp]
+theorem universalGSpaceMap_smul (φ : G →* H) (g : G) (x : universalGSpace G) :
+    φ.universalGSpaceMap (g • x) = φ g • φ.universalGSpaceMap x := by
+  apply Subtype.ext
+  simp only [universalGSpaceMap_val, universalGSpace_smul_val, ← Finsupp.mapDomain_comp]
+  congr 1
+  funext v
+  simp
+
+end MonoidHom

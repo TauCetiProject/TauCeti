@@ -270,14 +270,13 @@ theorem map_jointNoiseCongr_noiseMeasure (perm : Equiv.Perm ℕ) :
 
 section Codings
 
-variable {α : Type*} [MeasurableSpace α]
+variable {α : Type*}
 
 /-- The separately exchangeable Aldous--Hoover coding. -/
 def separateArray (f : I × I × I × I → α)
     (p : ℕ × ℕ) (u : NoiseIndex Axis (ℕ × ℕ) → I) : α :=
   f (u .global, u (.vertex .row p.1), u (.vertex .column p.2), u (.cell p))
 
-omit [MeasurableSpace α] in
 @[simp]
 theorem separateArray_apply (f : I × I × I × I → α)
     (p : ℕ × ℕ) (u : NoiseIndex Axis (ℕ × ℕ) → I) :
@@ -285,7 +284,6 @@ theorem separateArray_apply (f : I × I × I × I → α)
       f (u .global, u (.vertex .row p.1), u (.vertex .column p.2), u (.cell p)) :=
   (rfl)
 
-omit [MeasurableSpace α] in
 /-- Pathwise equivariance of the separate coding under the corresponding noise reindexing. -/
 theorem separateArray_reindex (f : I × I × I × I → α)
     (rowPerm colPerm : Equiv.Perm ℕ) (u : NoiseIndex Axis (ℕ × ℕ) → I)
@@ -298,7 +296,7 @@ theorem separateArray_reindex (f : I × I × I × I → α)
 
 /-- A measurable separate Aldous--Hoover coding is measurable as an array-valued random
 variable. -/
-theorem measurable_separateArray (f : I × I × I × I → α) (hf : Measurable f) :
+theorem measurable_separateArray [MeasurableSpace α] (f : I × I × I × I → α) (hf : Measurable f) :
     Measurable fun u : NoiseIndex Axis (ℕ × ℕ) → I => fun p => separateArray f p u :=
   Measurable.of_eval fun p => hf.comp
     ((measurable_pi_apply (NoiseIndex.global : NoiseIndex Axis (ℕ × ℕ))).prodMk
@@ -312,7 +310,6 @@ def jointArray (f : I × I × I × I → α)
     (p : ℕ × ℕ) (u : NoiseIndex Unit (Sym2 ℕ) → I) : α :=
   f (u .global, u (.vertex () p.1), u (.vertex () p.2), u (.cell s(p.1, p.2)))
 
-omit [MeasurableSpace α] in
 @[simp]
 theorem jointArray_apply (f : I × I × I × I → α)
     (p : ℕ × ℕ) (u : NoiseIndex Unit (Sym2 ℕ) → I) :
@@ -320,7 +317,6 @@ theorem jointArray_apply (f : I × I × I × I → α)
       f (u .global, u (.vertex () p.1), u (.vertex () p.2), u (.cell s(p.1, p.2))) :=
   (rfl)
 
-omit [MeasurableSpace α] in
 /-- Pathwise equivariance of the joint coding under the corresponding noise reindexing. -/
 theorem jointArray_reindex (f : I × I × I × I → α)
     (perm : Equiv.Perm ℕ) (u : NoiseIndex Unit (Sym2 ℕ) → I)
@@ -330,7 +326,6 @@ theorem jointArray_reindex (f : I × I × I × I → α)
   simp only [jointArray_apply, jointNoiseCongr_apply_global, jointNoiseCongr_apply_vertex,
     jointNoiseCongr_apply_cell, jointCellPerm_apply, Sym2.map_mk]
 
-omit [MeasurableSpace α] in
 /-- Swapping the two indices of a joint coding only swaps its two vertex-noise arguments.  The
 cell-noise argument is unchanged because it is indexed by the unordered pair `Sym2.mk i j`. -/
 theorem jointArray_apply_swap (f : I × I × I × I → α)
@@ -339,7 +334,6 @@ theorem jointArray_apply_swap (f : I × I × I × I → α)
       f (u .global, u (.vertex () j), u (.vertex () i), u (.cell s(i, j))) := by
   rw [jointArray_apply, Sym2.eq_swap]
 
-omit [MeasurableSpace α] in
 /-- A kernel symmetric in its two vertex variables produces a pathwise symmetric array.  This is
 the symmetry condition needed when the jointly exchangeable Aldous--Hoover coding is specialized
 to random graphs and other undirected arrays. -/
@@ -352,7 +346,7 @@ theorem jointArray_symmetric_of
   exact (hf _ _ _ _).symm
 
 /-- A measurable joint Aldous--Hoover coding is measurable as an array-valued random variable. -/
-theorem measurable_jointArray (f : I × I × I × I → α) (hf : Measurable f) :
+theorem measurable_jointArray [MeasurableSpace α] (f : I × I × I × I → α) (hf : Measurable f) :
     Measurable fun u : NoiseIndex Unit (Sym2 ℕ) → I => fun p => jointArray f p u :=
   Measurable.of_eval fun p => hf.comp
     ((measurable_pi_apply (NoiseIndex.global : NoiseIndex Unit (Sym2 ℕ))).prodMk

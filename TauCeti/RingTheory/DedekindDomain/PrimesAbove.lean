@@ -103,14 +103,14 @@ theorem under_surjective [FaithfulSMul R B] :
 
 section UnderTower
 
-variable {A C : Type*} [CommRing A] [IsDomain A] [CommRing C] [IsDomain C]
+variable {A C : Type*} [CommRing A] [CommRing C] [IsDomain C]
   [Algebra A R] [Algebra R C] [Algebra A C] [IsScalarTower A R C]
-  [Algebra.IsIntegral A R] [Algebra.IsIntegral R C]
+  [Algebra.IsIntegral R C]
 
 /-- Contracting a height-one prime through an intermediate integral domain agrees with direct
 contraction. -/
 @[simp]
-theorem under_under (w : HeightOneSpectrum C) :
+theorem under_under [IsDomain A] [Algebra.IsIntegral A R] (w : HeightOneSpectrum C) :
     letI : Algebra.IsIntegral A C := Algebra.IsIntegral.trans R
     (w.under R).under A = w.under A := by
   apply asIdeal_injective
@@ -141,7 +141,6 @@ def liesOverTowerEquiv (v : HeightOneSpectrum A) :
     rfl
   right_inv u := Subtype.ext (by rfl)
 
-omit [IsDomain A] [Algebra.IsIntegral A R] in
 @[simp]
 theorem liesOverTowerEquiv_apply (v : HeightOneSpectrum A)
     (p : Σ w : {w : HeightOneSpectrum R // w.asIdeal.LiesOver v.asIdeal},
@@ -149,7 +148,6 @@ theorem liesOverTowerEquiv_apply (v : HeightOneSpectrum A)
     (liesOverTowerEquiv (R := R) (C := C) v p).1 = p.2.1 :=
   by simp [liesOverTowerEquiv]
 
-omit [IsDomain A] [Algebra.IsIntegral A R] in
 /-- The inverse of `liesOverTowerEquiv` passes through the contraction of `u` to `R`. -/
 @[simp]
 theorem liesOverTowerEquiv_symm_apply_fst (v : HeightOneSpectrum A)
@@ -157,7 +155,6 @@ theorem liesOverTowerEquiv_symm_apply_fst (v : HeightOneSpectrum A)
     ((liesOverTowerEquiv (R := R) v).symm u).1.1 = u.1.under R :=
   by simp [liesOverTowerEquiv]
 
-omit [IsDomain A] [Algebra.IsIntegral A R] in
 /-- The inverse of `liesOverTowerEquiv` keeps `u` as the top prime. -/
 @[simp]
 theorem liesOverTowerEquiv_symm_apply_snd (v : HeightOneSpectrum A)

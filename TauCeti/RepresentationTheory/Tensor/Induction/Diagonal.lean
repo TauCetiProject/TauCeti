@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Basic
+public import TauCeti.RepresentationTheory.Tensor.Induction.Naturality.Basic
 import Mathlib.Data.ZMod.Basic
 
 /-!
@@ -16,8 +17,8 @@ An invariant vector of a subgroup representation gives an invariant vector of it
 induction: put the same vector in every coset factor. The monomial action fixes this tensor
 because its subgroup coordinates fix the vector and its permutation only reorders identical
 factors. The resulting function is natural in intertwining maps and agrees under the existing
-change-of-transversal comparisons. For finitely many cosets it is homogeneous of degree the
-number of cosets, and for one coset it recovers the original vector.
+change-of-transversal and change-of-group comparisons. For finitely many cosets it is homogeneous
+of degree the number of cosets, and for one coset it recovers the original vector.
 
 Applied to an invariant element of a coinduced resolution term, this is the diagonal tensor
 used on representatives in the multiplicative transfer. This file concerns invariant vectors;
@@ -84,6 +85,73 @@ theorem tensorInducedChangeTransversal_tensorInducedDiagonal (ρ : Representatio
   congr 1
   funext i
   exact x.property ((U.monomialChangeTransversal s t).left i)
+
+section ChangeOfGroup
+
+variable {G' : Type y} [Group G'] {U' : Subgroup G'}
+
+/-- The change-of-group comparison for tensor induction carries the diagonal of a restricted
+invariant vector to the diagonal of the original vector. This is the representative-level
+naturality used by the inflation law for the multiplicative transfer. -/
+theorem tensorInducedMapEquiv_tensorInducedDiagonal (ρ : Representation R U' M)
+    (φ : G →* G') (ψ : U →* U')
+    (hψ : ∀ u, (ψ u : G') = φ u) (e : G ⧸ U ≃ G' ⧸ U')
+    (he : ∀ g : G, e g = (φ g : G' ⧸ U')) (s : U.LeftTransversal)
+    (x : ρ.invariants) :
+    Subgroup.tensorInducedMapEquiv φ ψ hψ e he s ρ
+        (tensorInducedDiagonal (ρ.comp ψ) s
+          ⟨x, fun u ↦ x.property (ψ u)⟩) =
+      (ρ.tensorInducedDiagonal (s.map φ e he) x :
+        ⨂[R] _ : G' ⧸ U', M) := by
+  simp only [coe_tensorInducedDiagonal, Subgroup.tensorInducedMapEquiv_apply_tprod]
+
+/-- The inverse change-of-group comparison carries the target diagonal back to the diagonal of
+the restricted invariant vector. -/
+theorem tensorInducedMapEquiv_symm_tensorInducedDiagonal (ρ : Representation R U' M)
+    (φ : G →* G') (ψ : U →* U')
+    (hψ : ∀ u, (ψ u : G') = φ u) (e : G ⧸ U ≃ G' ⧸ U')
+    (he : ∀ g : G, e g = (φ g : G' ⧸ U')) (s : U.LeftTransversal)
+    (x : ρ.invariants) :
+    (Subgroup.tensorInducedMapEquiv φ ψ hψ e he s ρ).symm
+        (ρ.tensorInducedDiagonal (s.map φ e he) x) =
+      (tensorInducedDiagonal (ρ.comp ψ) s
+        ⟨x, fun u ↦ x.property (ψ u)⟩ :
+        ⨂[R] _ : G ⧸ U, M) := by
+  simp only [coe_tensorInducedDiagonal, Subgroup.tensorInducedMapEquiv_symm_apply_tprod]
+
+/-- For a quotient by a normal subgroup contained in `U`, the tensor-induction comparison
+carries the diagonal of an inflated invariant vector to the diagonal in the quotient. -/
+theorem tensorInducedQuotientEquiv_tensorInducedDiagonal
+    {N : Subgroup G} [N.Normal] (ρ : Representation R (U.map (QuotientGroup.mk' N)) M)
+    (hNU : N ≤ U) (s : U.LeftTransversal)
+    (x : ρ.invariants) :
+    Subgroup.tensorInducedQuotientEquiv N hNU s ρ
+        (tensorInducedDiagonal (ρ.comp ((QuotientGroup.mk' N).subgroupMap U)) s
+          ⟨x, fun u ↦ x.property ((QuotientGroup.mk' N).subgroupMap U u)⟩) =
+      (ρ.tensorInducedDiagonal
+          (s.map (QuotientGroup.mk' N) (QuotientGroup.quotientEquivQuotientMapOfLE hNU)
+            (QuotientGroup.quotientEquivQuotientMapOfLE_mk hNU)) x :
+        ⨂[R] _ : (G ⧸ N) ⧸ U.map (QuotientGroup.mk' N), M) := by
+  simp only [coe_tensorInducedDiagonal,
+    Subgroup.tensorInducedQuotientEquiv_apply_tprod]
+
+/-- The inverse quotient comparison carries the quotient diagonal back to the diagonal of the
+inflated invariant vector. -/
+theorem tensorInducedQuotientEquiv_symm_tensorInducedDiagonal
+    {N : Subgroup G} [N.Normal] (ρ : Representation R (U.map (QuotientGroup.mk' N)) M)
+    (hNU : N ≤ U) (s : U.LeftTransversal)
+    (x : ρ.invariants) :
+    (Subgroup.tensorInducedQuotientEquiv N hNU s ρ).symm
+        (ρ.tensorInducedDiagonal
+          (s.map (QuotientGroup.mk' N) (QuotientGroup.quotientEquivQuotientMapOfLE hNU)
+            (QuotientGroup.quotientEquivQuotientMapOfLE_mk hNU)) x) =
+      (tensorInducedDiagonal (ρ.comp ((QuotientGroup.mk' N).subgroupMap U)) s
+        ⟨x, fun u ↦ x.property ((QuotientGroup.mk' N).subgroupMap U u)⟩ :
+        ⨂[R] _ : G ⧸ U, M) := by
+  simp only [coe_tensorInducedDiagonal,
+    Subgroup.tensorInducedQuotientEquiv_symm_apply_tprod]
+
+end ChangeOfGroup
 
 namespace IntertwiningMap
 

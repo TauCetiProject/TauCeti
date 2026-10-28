@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Additive Haar measures on Euclidean space and Lebesgue measure on `ι → ℝ`
@@ -92,7 +93,7 @@ theorem measure_preimage_ofLp_closedBall_le [Nonempty ι] (μ : Measure (Euclide
   have hs : 0 < √(Fintype.card ι : ℝ) := sqrt_card_pos
   -- The ball contains the cube of half-side `r / √n`.
   have hsub : ofLp ⁻¹' ball (ofLp x) (r / √(Fintype.card ι)) ⊆ ball x r := by
-    convert preimage_ofLp_ball_subset_ball x (r / √(Fintype.card ι)) using 2
+    convert PiLp.preimage_ofLp_ball_subset_ball x (r / √(Fintype.card ι)) using 2
     field_simp
   refine le_trans (le_of_eq ?_) (mul_le_mul_right (measure_mono hsub) _)
   rw [measure_preimage_ofLp_closedBall he _ hr.le, measure_preimage_ofLp_ball he _ (by positivity),
@@ -115,3 +116,29 @@ theorem measurePreserving_consEquivL (n : ℕ) : MeasurePreserving (consEquivL �
   refine Fin.cases ?_ (fun j => ?_) i <;> simp
 
 end EuclideanSpace
+
+namespace TauCeti
+
+open MeasureTheory EuclideanSpace
+
+/-- Projection onto the unique coordinate of a Euclidean line preserves actual volume. -/
+theorem volume_preserving_euclideanSpace_proj {ι : Type*} [hι : Fintype ι] [Unique ι] (i : ι) :
+    MeasurePreserving (proj (𝕜 := ℝ) i) volume volume := by
+  have he : hι = Unique.fintype := Subsingleton.elim _ _
+  cases he
+  have hm := (volume_preserving_funUnique ι ℝ).comp (PiLp.volume_preserving_ofLp ι)
+  convert hm using 1
+  funext z
+  exact congrArg (fun j ↦ z j) (Subsingleton.elim i default)
+
+/-- The unique-coordinate projection is a measurable embedding, so normalized volume
+transport also applies to arbitrary restricted integrals. -/
+theorem measurableEmbedding_euclideanSpace_proj {ι : Type*} [Unique ι] (i : ι) :
+    MeasurableEmbedding (proj (𝕜 := ℝ) i) := by
+  have hm := (PiLp.equivOfUnique 2 ℝ (fun _ : ι ↦ ℝ)).toHomeomorph.isClosedEmbedding
+    |>.measurableEmbedding
+  convert hm using 1
+  funext z
+  exact congrArg (fun j ↦ z j) (Subsingleton.elim i default)
+
+end TauCeti

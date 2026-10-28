@@ -12,14 +12,14 @@ public import Mathlib.NumberTheory.LegendreSymbol.Complex
 -- Non-public: nontriviality of the canonical primitive complex additive character of `F`.
 import TauCeti.NumberTheory.LegendreSymbol.Complex
 -- Non-public: bundling a representation with `FDRep.of` preserves its character.
-import TauCeti.RepresentationTheory.FDRep
+import TauCeti.RepresentationTheory.FDRep.Basic
 -- Non-public: Frobenius reciprocity for class functions turns each pairing with an induced
 -- character into a sum over the inducing subgroup.
 import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
 -- Non-public: the `q`-power map fixes the units coming from `F`.
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
 -- Non-public: lifting a unit of `E` lying in `F` to a unit of `F`.
-import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Algebra.Group.Units.Basic
 -- Non-public: a nontrivial additive character of a finite field sums to zero.
 import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 -- Non-public: a nontrivial character of a finite group into a domain sums to zero.

@@ -45,8 +45,8 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
   [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x)]
   {f : M → ℝ} {x : M}
 
@@ -61,7 +61,6 @@ def IsEuclidean : Prop :=
     inner ℝ v w = φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) ⬝ᵥ
       φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y w)
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The defining property of a Morse chart in which the metric is Euclidean. -/
 theorem isEuclidean_iff : φ.IsEuclidean ↔ ∀ y ∈ φ.toChart.source, ∀ v w : TangentSpace 𝓘(ℝ, E) y,
     inner ℝ v w = φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) ⬝ᵥ
@@ -70,7 +69,6 @@ theorem isEuclidean_iff : φ.IsEuclidean ↔ ∀ y ∈ φ.toChart.source, ∀ v 
 
 variable {φ}
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- In a Morse chart in which the metric is Euclidean, the metric is the dot product of the
 coordinates. -/
 theorem IsEuclidean.inner_eq (hφ : φ.IsEuclidean) {y : M} (hy : y ∈ φ.toChart.source)
@@ -78,6 +76,8 @@ theorem IsEuclidean.inner_eq (hφ : φ.IsEuclidean) {y : M} (hy : y ∈ φ.toCha
     inner ℝ v w = φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) ⬝ᵥ
       φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y w) :=
   hφ y hy v w
+
+variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
 
 /-- **In a Morse chart in which the metric is Euclidean, the negative gradient is the linear field
 of the chart**, `z ↦ (-wᵢ zᵢ)ᵢ`. -/
@@ -87,11 +87,12 @@ theorem IsEuclidean.neg_mgradient_eq_field (hφ : φ.IsEuclidean) {y : M}
     have hdf : mvfderiv 𝓘(ℝ, E) f y v =
         ∑ i, φ.weight i * φ.coord (φ.toChart y) i *
           φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) i := by
-      -- `mvfderiv` composes `mfderiv` with `NormedSpace.fromTangentSpace`, which is the identity of
-      -- `ℝ`, so the two agree definitionally; Mathlib has no rewrite lemma between them.
-      change mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y v = _
-      rw [mfderiv_eq_fderiv_comp_of_eqOn φ.mem_maximalAtlas φ.eqOn_quadratic hy
-        (φ.differentiableAt_quadratic _)]
+      -- `mvfderiv` composes `mfderiv` with `NormedSpace.fromTangentSpace`, which is the identity
+      -- on the underlying type `ℝ` of `TangentSpace 𝓘(ℝ) (f y)` and has no Mathlib `simp` lemma.
+      rw [mvfderiv, ContinuousLinearMap.comp_apply,
+        mfderiv_eq_fderiv_comp_of_eqOn
+          (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy
+          (φ.differentiableAt_quadratic _)]
       exact φ.fderiv_quadratic_apply _ _
     have hX : φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (-φ.field y)) =
         fun i ↦ φ.weight i * φ.coord (φ.toChart y) i := by
@@ -108,6 +109,8 @@ theorem IsEuclidean.neg_mgradient_eq_field (hφ : φ.IsEuclidean) {y : M}
 
 end MorseChart
 
+variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
+
 /-- **The negative gradient is an adapted pseudo-gradient** for a smooth function `f` and a smooth
 metric that is Euclidean in a Morse chart at each critical point of `f`. -/
 theorem isAdaptedPseudoGradient_neg_mgradient
@@ -117,8 +120,7 @@ theorem isAdaptedPseudoGradient_neg_mgradient
     IsAdaptedPseudoGradient f fun y ↦ -mgradient 𝓘(ℝ, E) f y where
   contMDiff := by
     have : IsManifold 𝓘(ℝ, E) (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
-    have h := contMDiff_mgradient (I := 𝓘(ℝ, E)) (n := ∞) (f := -f) hf.neg
-    simpa only [mgradient_neg] using h
+    exact contMDiff_neg_mgradient (n := ∞) hf
   mvfderiv_apply_lt_zero y hy := by
     have hg : mgradient 𝓘(ℝ, E) f y ≠ 0 := by
       rwa [ne_eq, mgradient_eq_zero_iff, mvfderiv_eq_zero_iff]

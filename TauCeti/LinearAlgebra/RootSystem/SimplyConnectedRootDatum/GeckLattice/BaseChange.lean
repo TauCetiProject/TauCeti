@@ -461,6 +461,17 @@ theorem geckWeightTorusIntegralCoordinateMap_def :
   rw [geckWeightTorusIntegralCoordinateMap]
   simp
 
+/-- Composing the quotient morphism of the Geck carrier with the integral Geck weight-torus map
+recovers the general-linear weight torus of the Geck coordinate weights. -/
+@[simp]
+theorem mkQuotient_comp_geckWeightTorusIntegralCoordinateMap :
+    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
+          (t.geckDefiningIdeal ht) ≫
+        t.geckWeightTorusIntegralCoordinateMap ht =
+      GeneralLinear.weightTorusCoordinateMap (t.geckWeightFin ht) := by
+  rw [geckWeightTorusIntegralCoordinateMap_def]
+  exact mkQuotient_comp_kostantWeightTorusToralCoordinateMap _ _ _ _ _ _ _ _
+
 /-- The base-changed Geck weight-torus coordinate map factored through the transported Geck
 carrier. -/
 noncomputable def geckWeightTorusToBaseChangeCoordinateMap :

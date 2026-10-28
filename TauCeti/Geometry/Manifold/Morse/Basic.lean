@@ -217,7 +217,8 @@ theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero [Charted
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
     IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x :=
   hf.isManifoldNondegenerateCriticalPoint
-    ((mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm hf.contMDiff x).1 hx)
+    ((mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm
+      (hf.contMDiff.mdifferentiableAt (by simp))).1 hx)
 
 /-- A Morse function is Morse on every subset. -/
 theorem IsMorse.isMorseOn {I : ModelWithCorners ℝ E H}

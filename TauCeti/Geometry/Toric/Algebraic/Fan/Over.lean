@@ -119,6 +119,14 @@ instance isOver_algebraicMap (f : FanHom Φ Ψ) :
       (affineCoordinateRingMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
         _).toRingHom)) (Spec (.of ℂ))
 
+/-- The algebraic morphism induced by a fan morphism commutes with the structure morphisms of the
+two fan schemes to `Spec ℂ`. -/
+@[reassoc (attr := simp)]
+theorem algebraicMap_comp_algebraicRealizationStructureMap (f : FanHom Φ Ψ) :
+    f.algebraicMap ≫ Ψ.algebraicRealizationStructureMap = Φ.algebraicRealizationStructureMap := by
+  rw [← Fan.algebraicRealization_over, ← Fan.algebraicRealization_over]
+  exact comp_over f.algebraicMap (Spec (.of ℂ))
+
 end FanHom
 
 end TauCeti.Toric

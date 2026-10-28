@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.PlacePermutation.Archimedean
-public import TauCeti.NumberTheory.NumberField.Units.LogEmbedding
+public import TauCeti.NumberTheory.NumberField.Units.Log.Embedding
 import TauCeti.Algebra.Module.ZLattice.BaseChange
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Lattice
 

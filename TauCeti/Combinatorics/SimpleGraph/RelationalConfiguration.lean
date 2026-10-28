@@ -10,6 +10,7 @@ public import Mathlib.ModelTheory.Graph
 public import Mathlib.MeasureTheory.Constructions.SimpleGraph
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 public import Mathlib.Combinatorics.SimpleGraph.Maps
+public import TauCeti.Combinatorics.SimpleGraph.Maps
 import Mathlib.Tactic.FinCases
 import TauCeti.Combinatorics.SimpleGraph.Measurable
 
@@ -21,6 +22,9 @@ relational configuration of it is a truth value for every atom `adj(u, v)`, incl
 atoms `adj(v, v)`. The configurations that are symmetric and false on the diagonal are exactly the
 simple graphs: this file identifies `SimpleGraph V` with them as a measurable equivalence, and
 shows that pulling a graph back along a vertex map corresponds to restricting its configuration.
+Forgetting the simple-graph conditions, a configuration is just its array of truth values on the
+adjacency atoms (`TauCeti.RelationalConfiguration.adjArrayEquiv`), and the array of a simple graph
+is its adjacency array.
 
 ## Main definitions
 
@@ -28,7 +32,9 @@ shows that pulling a graph back along a vertex map corresponds to restricting it
   symmetric and irreflexive;
 * `SimpleGraph.toRelationalConfiguration` — the configuration of a simple graph;
 * `SimpleGraph.relationalConfigurationEquiv` — the measurable equivalence between simple graphs and
-  symmetric irreflexive configurations.
+  symmetric irreflexive configurations;
+* `TauCeti.RelationalConfiguration.adjArrayEquiv` — the measurable equivalence between
+  configurations of the language of graphs and `Bool`-valued arrays.
 
 ## Main results
 
@@ -42,6 +48,8 @@ shows that pulling a graph back along a vertex map corresponds to restricting it
   simple graphs commutes with restriction;
 * `TauCeti.RelationalConfiguration.IsSimpleGraph.restrict` — restriction preserves symmetry and
   irreflexivity, also along non-injective vertex maps;
+* `SimpleGraph.adjArrayEquiv_toRelationalConfiguration` — the array of the configuration of a
+  simple graph is its adjacency array;
 * `SimpleGraph.relationalConfigurationEquiv_comap` and
   `SimpleGraph.relationalConfigurationEquiv_symm_restrict` — the equivalence commutes with
   restriction in both directions.
@@ -129,6 +137,59 @@ theorem ae_isSimpleGraph_map_restrict [Countable V] (f : V → W)
     ∀ᵐ c ∂μ.map (restrict f), IsSimpleGraph c := by
   rw [ae_map_iff (measurable_restrict f).aemeasurable measurableSet_setOf_isSimpleGraph]
   filter_upwards [hμ] with c hc using hc.restrict f
+
+/-! ### Configurations as arrays -/
+
+/-- The structure of the language of graphs in which `adj(u, v)` holds exactly when the array
+`x` is `true` at `(u, v)`. -/
+@[instance_reducible]
+private def arrayStructure (x : V × V → Bool) : Language.graph.Structure V where
+  RelMap | .adj => fun v => x (v 0, v 1) = true
+
+/-- In the structure of an array, `adj` holds at a pair of vertices exactly when the array is
+`true` there. -/
+private theorem relMap_adj_arrayStructure (x : V × V → Bool) (v : Fin 2 → V) :
+    (arrayStructure x).RelMap .adj v ↔ x (v 0, v 1) = true := Iff.rfl
+
+/-- The configuration of an array: `adj(u, v)` takes the value of the array at `(u, v)`. -/
+private noncomputable def ofArray (x : V × V → Bool) : RelationalConfiguration Language.graph V :=
+  @ofStructure Language.graph V (arrayStructure x)
+
+private theorem eval_ofArray_adjAtom (x : V × V → Bool) (u v : V) :
+    (ofArray x).eval (adjAtom u v) = x (u, v) := by
+  rw [ofArray, adjAtom, @eval_ofStructure _ _ (arrayStructure x)]
+  simp [relMap_adj_arrayStructure]
+
+private theorem measurable_ofArray : Measurable (ofArray : (V × V → Bool) → _) :=
+  measurable_iff.2 fun a => by
+    induction a using Atom.induction_adjAtom with
+    | h u v =>
+      simp only [eval_ofArray_adjAtom]
+      exact measurable_pi_apply _
+
+/-- **Configurations of the language of graphs are `Bool`-valued arrays**: a configuration is
+determined by its truth values on the adjacency atoms `adj(u, v)`, one for each ordered pair of
+vertices, and these truth values can be prescribed freely. -/
+noncomputable def adjArrayEquiv : RelationalConfiguration Language.graph V ≃ᵐ (V × V → Bool) where
+  toFun c p := c.eval (adjAtom p.1 p.2)
+  invFun := ofArray
+  left_inv c := ext fun a => by
+    induction a using Atom.induction_adjAtom with
+    | h u v => exact eval_ofArray_adjAtom _ u v
+  right_inv x := funext fun p => eval_ofArray_adjAtom x p.1 p.2
+  measurable_toFun := measurable_pi_iff.2 fun _ => measurable_eval _
+  measurable_invFun := measurable_ofArray
+
+/-- The array of a configuration records its truth value on each adjacency atom. -/
+@[simp]
+theorem adjArrayEquiv_apply (c : RelationalConfiguration Language.graph V) (p : V × V) :
+    adjArrayEquiv c p = c.eval (adjAtom p.1 p.2) := (rfl)
+
+/-- The configuration of an array takes the prescribed truth value on each adjacency atom. -/
+@[simp]
+theorem eval_adjArrayEquiv_symm_adjAtom (x : V × V → Bool) (u v : V) :
+    (adjArrayEquiv.symm x).eval (adjAtom u v) = x (u, v) :=
+  eval_ofArray_adjAtom x u v
 
 end RelationalConfiguration
 
@@ -241,6 +302,14 @@ theorem isProbabilityMeasure_comap_toRelationalConfiguration [Countable V]
     IsProbabilityMeasure (μ.comap toRelationalConfiguration) :=
   measurableEmbedding_toRelationalConfiguration.isProbabilityMeasure_comap <| by
     rwa [range_toRelationalConfiguration]
+
+/-- The array of the configuration of a simple graph is its adjacency array. -/
+@[simp]
+theorem adjArrayEquiv_toRelationalConfiguration (G : SimpleGraph V) :
+    adjArrayEquiv G.toRelationalConfiguration = G.adjArray := by
+  classical
+  funext ⟨u, v⟩
+  simp
 
 /-! ### Compatibility with restriction -/
 

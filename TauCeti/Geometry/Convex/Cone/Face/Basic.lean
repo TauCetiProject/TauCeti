@@ -8,17 +8,31 @@ module
 public import Mathlib.Geometry.Convex.Cone.Face.Basic
 
 /-!
-# The zero face of a salient cone
+# Elementary faces of pointed cones
 
 Mathlib's `ConvexCone.Salient` records that a convex cone contains no line. This file records the
-consequence of salience for the face lattice of a pointed cone: the zero cone is a face.
+consequence of salience for the face lattice of a pointed cone: the zero cone is a face. It also
+records that a face of a cone cuts out a face of every smaller cone.
 
 ## Main declarations
 
 * `ConvexCone.Salient.bot_isFaceOf`: the zero cone is a face of a salient pointed cone.
+* `PointedCone.IsFaceOf.inf_of_le`: a face of a cone meets a smaller cone in a face of the
+  smaller cone.
 -/
 
 public section
+
+namespace PointedCone.IsFaceOf
+
+variable {R V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R] [AddCommGroup V]
+  [Module R V] {C F τ : PointedCone R V}
+
+/-- A face `F` of a cone `τ` meets a cone `C ≤ τ` in a face of `C`. -/
+theorem inf_of_le (hF : F.IsFaceOf τ) (hC : C ≤ τ) : (C ⊓ F).IsFaceOf C := by
+  simpa [inf_eq_left.2 hC] using (PointedCone.IsFaceOf.refl C).inf hF
+
+end PointedCone.IsFaceOf
 
 namespace ConvexCone.Salient
 

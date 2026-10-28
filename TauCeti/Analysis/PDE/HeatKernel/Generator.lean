@@ -104,7 +104,7 @@ theorem heatSemigroup_sub_eq_integral (hp : p ≠ ∞) (hφ : ContDiff ℝ 2 φ)
     rw [Measure.prod_restrict]
     filter_upwards [ae_restrict_mem (measurableSet_Ioc.prod hAm)] with z hz
     exact norm_heatKernel_convolution_le hz.1.1 (ae_of_all _ hC₂) z.2
-  set I := Set.setIntegralLp (𝕜 := ℝ) (F := F) (p := p) (mu := (volume : Measure E)) A hA
+  set I := Set.setIntegralLp (𝕜 := ℝ) (F := F) (p := p) (μ := (volume : Measure E)) A hA
   calc ∫ x in A, (S.realOperator t f - f) x
       = ∫ x in A, ((heatKernel t ⋆ φ) x - φ x) := by
         refine integral_congr_ae (ae_restrict_of_ae ?_)

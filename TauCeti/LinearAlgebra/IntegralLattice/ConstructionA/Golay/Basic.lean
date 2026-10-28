@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -40,6 +40,19 @@ theorem constructionALattice_eq_integralLattice :
     constructionALattice = ConstructionA.integralLattice 2 code.toAddSubgroup
       (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual := by
   rw [constructionALattice]
+
+/-- The Golay Construction A carrier is the lattice of integer lifts of Golay codewords. -/
+theorem constructionALattice_carrier :
+    constructionALattice.carrier = ConstructionA.lattice 2 code.toAddSubgroup :=
+  (congrArg IntegralLattice.carrier constructionALattice_eq_integralLattice).trans
+    (ConstructionA.integralLattice_carrier 2 code.toAddSubgroup
+      (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual)
+
+/-- The Golay Construction A form is the halved coordinate dot product. -/
+theorem constructionALattice_form : constructionALattice.form = ConstructionA.form 2 :=
+  (congrArg IntegralLattice.form constructionALattice_eq_integralLattice).trans
+    (ConstructionA.integralLattice_form 2 code.toAddSubgroup
+      (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual)
 
 /-- The named Golay Construction A lattice inherits the nondegeneracy of Construction A. -/
 instance instIsNondegenerateConstructionALattice : constructionALattice.IsNondegenerate := by

@@ -184,7 +184,7 @@ theorem algorithmicConductor_freyCurve_dvd {A B : ℤ} (hAB : IsCoprime A B)
   rw [Int.absNorm_span_singleton, Int.natAbs_mul, Int.natAbs_pow] at hn
   have h2 : ¬ 2 ^ 12 ∣ 16 * (A * B * (A + B)).natAbs ^ 2 := by
     have := (two_pow_twelve_dvd_freyCurve_Δ_iff (A := A) (B := B)).not.2 h16
-    contrapose! this
+    contrapose this
     rw [freyCurve_Δ_eq_mul_sq]
     exact Int.natAbs_dvd_natAbs.1 (by simpa [Int.natAbs_mul, Int.natAbs_pow] using this)
   rw [← Int.ideal_span_absNorm_eq_self (algorithmicConductor ℤ _),

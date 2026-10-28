@@ -5,8 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Arrays.RowCoding
-import TauCeti.MeasureTheory.Measure.MixtureInjective
+public import TauCeti.Probability.Exchangeability.Arrays.Coding
+public import TauCeti.Probability.Process.Array.RowCoding
 
 /-!
 # The canonical row-coding law of a separately exchangeable array
@@ -15,10 +15,10 @@ The first-stage representation of a separately exchangeable array draws a random
 column paths, then independently draws one uniform variable for each row and samples that row
 from `P`. The resulting array law is `rowCodingArrayLaw`.
 
-The law is canonical: its image under currying is the de Finetti barycenter of the law of `P`.
-Consequently, two finite laws on random path measures give the same array law exactly when they
-are equal. In particular, the mixing law in the row-coding representation of a separately
-exchangeable array is unique.
+The general results in `Probability.Process.Array.RowCoding` identify the image under currying
+with the de Finetti barycenter of the law of `P`, and show that finite mixing laws are determined
+by their array laws. Here this gives uniqueness of the mixing law in the row-coding
+representation of a separately exchangeable array.
 
 This first-stage canonicality identifies the invariant random path law independently of a
 chosen directing measure, for its resolution into column and cell noise.
@@ -67,34 +67,6 @@ theorem separatelyExchangeable_rowCodingArrayLaw
     (μ := rowCodingArrayLaw π) (X := fun p x ↦ x p)
     (fun p ↦ (measurable_pi_apply p).aemeasurable)).2
   exact ⟨⟨π, inferInstance⟩, hπ, by simp⟩
-
-/-- Currying the canonical row-coding array law gives the de Finetti barycenter of its mixing
-law. This identifies the parameter law from the array law. -/
-@[simp]
-theorem map_curry_rowCodingArrayLaw (π : Measure (ProbabilityMeasure (ℕ → α))) :
-    (rowCodingArrayLaw π).map (MeasurableEquiv.curry ℕ ℕ α) = Measure.deFinettiBarycenter π := by
-  rw [rowCodingArrayLaw_eq_map_snd, map_snd_arrayRowCodingLaw,
-    Measure.map_map (MeasurableEquiv.measurable _) measurable_uncurry]
-  have h : (MeasurableEquiv.curry ℕ ℕ α) ∘ Function.uncurry = id := by
-    funext x
-    rfl
-  rw [h, Measure.map_id]
-
-/-- The row-coding array law determines every finite mixing law on path measures. -/
-theorem eq_of_rowCodingArrayLaw_eq {π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
-    [IsFiniteMeasure π₁]
-    (h : rowCodingArrayLaw π₁ = rowCodingArrayLaw π₂) : π₁ = π₂ := by
-  apply TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq
-  have h' := congrArg (fun ρ : Measure (ℕ × ℕ → α) ↦
-    ρ.map (MeasurableEquiv.curry ℕ ℕ α)) h
-  simpa only [map_curry_rowCodingArrayLaw, Measure.deFinettiBarycenter_def] using h'
-
-/-- Equality of finite mixing laws is equivalent to equality of their row-coding array laws. -/
-@[simp]
-theorem rowCodingArrayLaw_inj {π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α))}
-    [IsFiniteMeasure π₁] :
-    rowCodingArrayLaw π₁ = rowCodingArrayLaw π₂ ↔ π₁ = π₂ :=
-  ⟨eq_of_rowCodingArrayLaw_eq, fun h ↦ congrArg rowCodingArrayLaw h⟩
 
 /-- **Canonical row-coding representation.** A separately exchangeable array has a unique law on
 path measures which is invariant under column reindexing and whose row-coding array law is the

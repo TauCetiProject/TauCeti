@@ -29,6 +29,9 @@ a derivation on `K` over `R`. Writing `W_X` and `W_Y` for the partial derivative
 * `WeierstrassCurve.Affine.derivation_slope_of_X_ne` and
   `WeierstrassCurve.Affine.derivation_slope_self_of_Y_ne`: the chain rule for the chord and the
   tangent slope.
+* `WeierstrassCurve.Affine.derivation_addX_slope_of_right_constant`: when the second point has
+  constant coordinates for the derivation, translation preserves `dx / W_Y` without requiring
+  `W_Y` to be nonzero at that constant point.
 * `WeierstrassCurve.Affine.derivation_addX_slope`: if `(x₃, y₃)` is the sum of two points
   `(x₁, y₁)` and `(x₂, y₂)` of `W⁄K` at which `W_Y` does not vanish (when `x₁ ≠ x₂`), then
   `D x₃ = W_Y(x₃, y₃) • (W_Y(x₁, y₁)⁻¹ • D x₁ + W_Y(x₂, y₂)⁻¹ • D x₂)`; when `W_Y(x₃, y₃)` is
@@ -238,6 +241,23 @@ private theorem derivation_addX_slope_of_X_ne [DecidableEq K] {x₁ x₂ y₁ y�
     h₁.derivation_Y_eq_smul_derivation_X D hu₁, h₂.derivation_Y_eq_smul_derivation_X D hu₂,
     slope_of_X_ne hx]
   linear_combination (norm := module) c₁ • D x₁ + c₂ • D x₂
+
+/-- **Translating by a constant point preserves `dx / W_Y`.** If the second point has constant
+coordinates for `D`, the differential of the sum's `x`-coordinate depends only on the first
+point. No nonvanishing hypothesis on `W_Y` at the constant point is needed. -/
+theorem derivation_addX_slope_of_right_constant [DecidableEq K] {x₁ x₂ y₁ y₂ : K}
+    (h₁ : (W⁄K).toAffine.Equation x₁ y₁) (h₂ : (W⁄K).toAffine.Equation x₂ y₂) (hx : x₁ ≠ x₂)
+    (hu₁ : (W⁄K).toAffine.polynomialY.evalEval x₁ y₁ ≠ 0)
+    (hx₂ : D x₂ = 0) (hy₂ : D y₂ = 0) :
+    D ((W⁄K).toAffine.addX x₁ x₂ ((W⁄K).toAffine.slope x₁ x₂ y₁ y₂)) =
+      (W⁄K).toAffine.polynomialY.evalEval
+          ((W⁄K).toAffine.addX x₁ x₂ ((W⁄K).toAffine.slope x₁ x₂ y₁ y₂))
+          ((W⁄K).toAffine.addY x₁ x₂ y₁ ((W⁄K).toAffine.slope x₁ x₂ y₁ y₂)) •
+        (((W⁄K).toAffine.polynomialY.evalEval x₁ y₁)⁻¹ • D x₁) := by
+  have c₁ := (W⁄K).toAffine.chord_coeff₁ h₁ h₂ hx hu₁
+  rw [derivation_addX W D, derivation_slope_of_X_ne D hx,
+    h₁.derivation_Y_eq_smul_derivation_X D hu₁, hx₂, hy₂, slope_of_X_ne hx]
+  linear_combination (norm := module) c₁ • D x₁
 
 private theorem derivation_addX_slope_of_Y_ne [DecidableEq K] {x y : K}
     (h : (W⁄K).toAffine.Equation x y) (hy : y ≠ (W⁄K).toAffine.negY x y) :

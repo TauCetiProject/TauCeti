@@ -172,7 +172,7 @@ variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteD
 
 /-- A Lipschitz map sends the complement of its regular points, where it is differentiable with
 nonzero Jacobian, to a null set. -/
-private theorem euclideanHausdorffMeasure_image_compl_setOf_regular (hf : LipschitzWith K f) :
+theorem euclideanHausdorffMeasure_image_compl_setOf_regular (hf : LipschitzWith K f) :
     μHE[finrank ℝ U]
       (f '' {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).normDet ≠ 0}ᶜ) = 0 := by
   -- By Rademacher's theorem, the nondifferentiability points form a null set.

@@ -13,7 +13,9 @@ public import TauCeti.Probability.Process.Array
 A cell context records a hidden block and the row and column strips adjacent to an observed
 cell. An ordered-pair context retains the contexts of both directed cells. Its square context
 also records the two diagonal entries. These measurable observations supply the conditioning
-variables for conditional laws of array entries.
+variables for conditional laws of array entries. The square context can also be recovered from
+the restriction of the array to the crossing hidden strips and the diagonal, which is the form
+used when those observations have already been generated.
 
 The constructions apply to arbitrary arrays and arbitrary hidden enumerations, without
 injectivity, distinctness, or symmetry assumptions. Their coordinate equations, measurability,
@@ -59,6 +61,7 @@ theorem cellContext_colStrip_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × �
   (rfl)
 
 /-- Reading a cell context from an array is measurable. -/
+@[fun_prop]
 theorem measurable_cellContext [MeasurableSpace α] (e f : ℕ → ℕ) (i j : ℕ) :
     Measurable (cellContext (α := α) e f i j) :=
   ((Measurable.of_eval fun p => measurable_pi_apply (e p.1, f p.2)).prodMk
@@ -94,14 +97,14 @@ def offDiagonalPairContext (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α)
 /-- The first component is the context of the forward directed cell. -/
 @[simp]
 theorem offDiagonalPairContext_fst (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
-    (offDiagonalPairContext e i j x).1 = cellContext e e i j x := by
-  simp only [offDiagonalPairContext]
+    (offDiagonalPairContext e i j x).1 = cellContext e e i j x :=
+  (rfl)
 
 /-- The second component is the context of the reverse directed cell. -/
 @[simp]
 theorem offDiagonalPairContext_snd (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
-    (offDiagonalPairContext e i j x).2 = cellContext e e j i x := by
-  simp only [offDiagonalPairContext]
+    (offDiagonalPairContext e i j x).2 = cellContext e e j i x :=
+  (rfl)
 
 /-- Reversing the visible vertices swaps their two directed contexts. -/
 theorem offDiagonalPairContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
@@ -109,6 +112,7 @@ theorem offDiagonalPairContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × �
   simp only [offDiagonalPairContext, Prod.swap]
 
 /-- Reading the context of an off-diagonal pair is measurable. -/
+@[fun_prop]
 theorem measurable_offDiagonalPairContext [MeasurableSpace α] (e : ℕ → ℕ) (i j : ℕ) :
     Measurable (offDiagonalPairContext (α := α) e i j) :=
   (measurable_cellContext e e i j).prodMk (measurable_cellContext e e j i)
@@ -152,6 +156,7 @@ theorem offDiagonalPairSquareContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ
   simp only [offDiagonalPairSquareContext, offDiagonalPairContext_swap e i j, Prod.map, Prod.swap]
 
 /-- Reading the square context of an off-diagonal pair is measurable. -/
+@[fun_prop]
 theorem measurable_offDiagonalPairSquareContext [MeasurableSpace α] (e : ℕ → ℕ) (i j : ℕ) :
     Measurable (offDiagonalPairSquareContext (α := α) e i j) :=
   (measurable_offDiagonalPairContext e i j).prodMk
@@ -165,5 +170,71 @@ theorem offDiagonalPairSquareContext_pairReindex (e : ℕ → ℕ) (i j : ℕ)
       offDiagonalPairSquareContext e (perm i) (perm j) x := by
   simp only [offDiagonalPairSquareContext, offDiagonalPairContext_pairReindex e i j perm he,
     pairReindex_apply]
+
+/-! ## Square contexts from crossing strips and the diagonal -/
+
+variable (e : ℕ → ℕ) (i j : ℕ)
+
+/-- The square context of `(i, j)` read off the crossing strips and the diagonal: every position
+the context looks at lies in a hidden row, in a hidden column, or on the diagonal. -/
+def offDiagonalPairSquareContextOfStripsAndDiagonal
+    (y : (((Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2} :
+      Set (ℕ × ℕ))) → α) :
+    ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) × (α × α) :=
+  ((((fun q => y ⟨(e q.1, e q.2),
+        Set.mem_union_left _ (Set.mem_union_right _ ⟨Set.mem_range_self q.1, Set.mem_univ _⟩)⟩,
+      fun b => y ⟨(i, e b),
+        Set.mem_union_left _ (Set.mem_union_left _ ⟨Set.mem_univ _, Set.mem_range_self b⟩)⟩),
+      fun a => y ⟨(e a, j),
+        Set.mem_union_left _ (Set.mem_union_right _ ⟨Set.mem_range_self a, Set.mem_univ _⟩)⟩),
+    ((fun q => y ⟨(e q.1, e q.2),
+        Set.mem_union_left _ (Set.mem_union_right _ ⟨Set.mem_range_self q.1, Set.mem_univ _⟩)⟩,
+      fun b => y ⟨(j, e b),
+        Set.mem_union_left _ (Set.mem_union_left _ ⟨Set.mem_univ _, Set.mem_range_self b⟩)⟩),
+      fun a => y ⟨(e a, i),
+        Set.mem_union_left _ (Set.mem_union_right _ ⟨Set.mem_range_self a, Set.mem_univ _⟩)⟩)),
+    (y ⟨(i, i), Set.mem_union_right _ (Set.mem_ofPred.2 rfl)⟩,
+      y ⟨(j, j), Set.mem_union_right _ (Set.mem_ofPred.2 rfl)⟩))
+
+/-- Reading the square context off the crossing strips and the diagonal is measurable. -/
+@[fun_prop]
+theorem measurable_offDiagonalPairSquareContextOfStripsAndDiagonal [MeasurableSpace α] :
+    Measurable (offDiagonalPairSquareContextOfStripsAndDiagonal (α := α) e i j) :=
+  ((((Measurable.of_eval fun _ => measurable_pi_apply _).prodMk
+      (Measurable.of_eval fun _ => measurable_pi_apply _)).prodMk
+        (Measurable.of_eval fun _ => measurable_pi_apply _)).prodMk
+    (((Measurable.of_eval fun _ => measurable_pi_apply _).prodMk
+      (Measurable.of_eval fun _ => measurable_pi_apply _)).prodMk
+        (Measurable.of_eval fun _ => measurable_pi_apply _))).prodMk
+    ((measurable_pi_apply _).prodMk (measurable_pi_apply _))
+
+/-- Reading the square context off the crossing strips and the diagonal of an array recovers its
+square context, so the square context factors through the restriction of the array to the
+crossing strips and the diagonal. -/
+@[simp]
+theorem offDiagonalPairSquareContextOfStripsAndDiagonal_comp_domRestrict :
+    offDiagonalPairSquareContextOfStripsAndDiagonal (α := α) e i j ∘
+        ((Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2} :
+          Set (ℕ × ℕ)).domRestrict =
+      offDiagonalPairSquareContext e i j := by
+  funext x
+  refine Prod.ext (Prod.ext ?_ ?_) ?_
+  · simp only [Function.comp_apply, offDiagonalPairSquareContext_fst, offDiagonalPairContext_fst]
+    refine Prod.ext (Prod.ext (funext fun q => ?_) (funext fun b => ?_)) (funext fun a => ?_) <;>
+      simp [offDiagonalPairSquareContextOfStripsAndDiagonal]
+  · simp only [Function.comp_apply, offDiagonalPairSquareContext_fst, offDiagonalPairContext_snd]
+    refine Prod.ext (Prod.ext (funext fun q => ?_) (funext fun b => ?_)) (funext fun a => ?_) <;>
+      simp [offDiagonalPairSquareContextOfStripsAndDiagonal]
+  · simp only [Function.comp_apply, offDiagonalPairSquareContext_snd]
+    rfl
+
+/-- Reading the square context of the reversed pair off the crossing strips and the diagonal swaps
+both the two directed contexts and the two diagonal entries. -/
+theorem offDiagonalPairSquareContextOfStripsAndDiagonal_swap
+    (y : (((Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2} :
+      Set (ℕ × ℕ))) → α) :
+    offDiagonalPairSquareContextOfStripsAndDiagonal e j i y =
+      Prod.map Prod.swap Prod.swap (offDiagonalPairSquareContextOfStripsAndDiagonal e i j y) :=
+  (rfl)
 
 end TauCeti.Probability

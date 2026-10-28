@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 
 /-!
@@ -13,7 +14,8 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 
 The canonical identification `cohomFpZeroLinearEquiv` sends zeroth continuous cohomology to
 the underlying coefficient value in `ZMod p`. In particular, the cohomology module is finite
-over `ZMod p`; when `p` is prime, it is a finite-dimensional vector space over `𝔽_p`.
+over `ZMod p`; when `p` is prime, it is a finite-dimensional vector space over `𝔽_p`, of
+dimension one (`finrank_cohomFp_zero`).
 
 This identification specializes Mathlib's `ContinuousCohomology.zeroIso`, composed with
 `LinearEquiv.ofTop` for the trivial action and `trivialFpEquiv` for the coefficient value.
@@ -44,5 +46,10 @@ theorem cohomFpZeroLinearEquiv_apply (x : cohomFp p G 0) :
 /-- Zeroth continuous cohomology with trivial coefficients is finite as a `ZMod p`-module. -/
 instance : Module.Finite (ZMod p) (cohomFp p G 0) :=
   Module.Finite.equiv (cohomFpZeroLinearEquiv p G).symm
+
+/-- Zeroth continuous cohomology with trivial `ZMod p` coefficients has dimension one. -/
+@[simp]
+theorem finrank_cohomFp_zero : Module.finrank (ZMod p) (cohomFp p G 0) = 1 :=
+  (cohomFpZeroLinearEquiv p G).finrank_eq.trans (CommSemiring.finrank_self (ZMod p))
 
 end TauCeti

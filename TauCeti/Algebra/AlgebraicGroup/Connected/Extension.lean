@@ -6,12 +6,10 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Coinvariants
-import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Coordinate
+public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Coordinate
 import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Quotient
-import TauCeti.RingTheory.RingHom.FaithfullyFlat
+public import TauCeti.RingTheory.RingHom.FaithfullyFlat
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
 
 /-!
@@ -64,43 +62,10 @@ theorem connectedSpace_of_connected_kernel (f : Q ⟶ G)
     [ConnectedSpace (PrimeSpectrum (quotient G (kernelHopfIdeal f)))] :
     ConnectedSpace (PrimeSpectrum G) := by
   classical
-  let H : FiniteTypeCommHopfAlgCat.{u, u} k :=
-    ⟨G, (finiteTypeCommHopfAlgProperty_iff G).mpr inferInstance⟩
   let _ : IsNoetherianRing G := Algebra.FiniteType.isNoetherianRing k G
-  let _ := FiniteTypeCommHopfAlgCat.instGroupConnectedComponents H
   let z : PrimeSpectrum G := Bialgebra.augmentationPoint k G
   let e : G := PrimeSpectrum.connectedComponentIdempotent z
-  -- The kernel is contained in the identity component, so component functions descend.
-  have hI : HopfAlgebra.identityComponentHopfIdeal (k := k) (H := G) ≤
-      kernelHopfIdeal f := by
-    intro x hx
-    exact (mkQuotient_eq_zero_iff G (kernelHopfIdeal f) x).mp
-      (identityComponentHopfIdeal_toIdeal_le_ker_of_connected
-        (mkQuotient G (kernelHopfIdeal f)) hx)
-  have hcoinv : ∀ x, (FiniteTypeCommHopfAlgCat.componentCoordinateHom H).hom x ∈
-      (kernelHopfIdeal f).coinvariants := by
-    apply (HopfIdeal.forall_hom_mem_coinvariants_iff _).mpr
-    rw [FiniteTypeCommHopfAlgCat.kernelHopfIdeal_componentCoordinateHom]
-    exact hI
-  have hecoinv : e ∈ (kernelHopfIdeal f).coinvariants := by
-    let C := ConnectedComponents (PrimeSpectrum H)
-    have he := hcoinv ((ConstantGroup.functionAlgEquiv k C).symm (Pi.single 1 1))
-    rw [FiniteTypeCommHopfAlgCat.componentCoordinateHom_apply,
-      FiniteTypeCommHopfAlgCat.componentCoordinateMap_indicator] at he
-    have heq : PrimeSpectrum.connectedComponentsIdempotent
-        (1 : ConnectedComponents (PrimeSpectrum H)) = e :=
-      (congrArg PrimeSpectrum.connectedComponentsIdempotent
-        (FiniteTypeCommHopfAlgCat.rationalKernelPoint_one_component H).symm).trans
-        (PrimeSpectrum.connectedComponentsIdempotent_mk _)
-    rwa [heq] at he
-  rw [coinvariants_kernelHopfIdeal_eq_range f hf] at hecoinv
-  obtain ⟨a, ha⟩ := hecoinv
-  have ha' : f.hom a = e := ha
-  have hinj : Function.Injective f.hom := hf.injective
-  have haidem : IsIdempotentElem a := by
-    apply hinj
-    rw [map_mul, ha']
-    exact PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent z
+  obtain ⟨a, haidem, ha'⟩ := f.exists_map_eq_identityComponentIdempotent hf
   -- Connectedness of the target makes the descended identity-component idempotent one.
   have heone : e = 1 := by
     rcases eq_zero_or_eq_one_of_isIdempotentElem haidem with hzero | hone

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.Valuation.Center
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 -- Proof-only: the normalization of a valuation, which is how a merely bounded one is brought into

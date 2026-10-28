@@ -50,7 +50,7 @@ orthogonal group is witnessed by the split torus instead
 * M. Eichler, *Quadratische Formen und orthogonale Gruppen*, Springer (1952).
 * `CliffordAlgebra.continuous_lipschitzVectorAction_toLinearMap`, for the finite-basis
   endomorphism-continuity argument factored through `Module.Basis.continuous_iff_apply`.
-* `CliffordAlgebra.continuous_spinTransvectionHom`, for the quotient-descent argument.
+* `CliffordAlgebra.continuous_transvectionLiftHom`, for the quotient-descent argument.
 -/
 
 public section

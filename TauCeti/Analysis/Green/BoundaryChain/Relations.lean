@@ -78,6 +78,13 @@ private def nullChainSubgroup (d : Coordinate) (U : Set ℂ) : AddSubgroup Bound
   add_mem' := .add
   neg_mem' := .neg
 
+/-- Geometric comparisons compose by actual cancellation of the intermediate chain. -/
+theorem NullChain.trans {d : Coordinate} {U : Set ℂ} {c e f : BoundaryChain}
+    (hce : NullChain d U (c - e)) (hef : NullChain d U (e - f)) :
+    NullChain d U (c - f) := by
+  convert hce.add hef using 1
+  abel
+
 /-- Integer multiplicities preserve geometric null-chain certificates. -/
 theorem NullChain.zsmul {d : Coordinate} {U : Set ℂ} {c : BoundaryChain}
     (h : NullChain d U c) (n : ℤ) : NullChain d U (n • c) :=

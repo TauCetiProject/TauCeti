@@ -63,12 +63,9 @@ theorem le_of_mul_le_laplacian_add_fderiv_le_frontier {K : Set E} (hK : IsCompac
   let u : E := ‖v‖⁻¹ • v
   have hu : ‖u‖ = 1 := norm_smul_inv_norm hv
   let w : E → ℝ := fun y => Real.exp ((β + 1) * ⟪u, y⟫)
-  have hwpos (y : E) : 0 < w y := Real.exp_pos _
   have hwcd : ContDiff ℝ 2 w := (contDiff_exp_inner _ u).of_le (by norm_cast)
-  obtain ⟨C, hC⟩ := hK.bddAbove_image hwcd.continuous.continuousOn
-  have hC0 : 0 ≤ C := (hwpos x).le.trans (hC (Set.mem_image_of_mem w hxK))
-  apply le_of_forall_pos_mul_le hC0
-  intro ε hε
+  refine BddAbove.le_of_forall_pos_exists_add_mul_le
+    (hK.bddAbove_image hwcd.continuous.continuousOn) fun ε hε => ?_
   obtain ⟨z, hzK, hzmax⟩ := hK.exists_isMaxOn ⟨x, hxK⟩
     (hcont.add (hwcd.continuous.continuousOn.const_smul ε))
   have hfz : f z ≤ m :=
@@ -76,11 +73,8 @@ theorem le_of_mul_le_laplacian_add_fderiv_le_frontier {K : Set E} (hK : IsCompac
       (fun h hlt => (mul_nonneg (hc h) (hm.trans hlt.le)).trans (hsub h)) (fun hz => hbdry hz) hzK
       (fun _ => hwcd.contDiffAt)
       (fun hz => laplacian_add_fderiv_exp_inner_pos_of_norm_le hu (hb hz) z) hzmax
-  have hxle : f x + ε * w x ≤ f z + ε * w z := by
-    simpa [smul_eq_mul] using hzmax hxK
-  have hwzC : ε * w z ≤ ε * C :=
-    mul_le_mul_of_nonneg_left (hC (Set.mem_image_of_mem w hzK)) hε.le
-  nlinarith [mul_nonneg hε.le (hwpos x).le]
+  refine ⟨z, hzK, ?_, hfz⟩
+  simpa only [Pi.add_apply, Pi.smul_apply, smul_eq_mul] using isMaxOn_iff.mp hzmax x hxK
 
 /-- **Weak minimum principle for `-Δ - b·∇ + c`.** This is the negation-dual of
 `le_of_mul_le_laplacian_add_fderiv_le_frontier`. -/

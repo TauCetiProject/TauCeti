@@ -25,34 +25,57 @@ larger commit is inspected alone, without an aggregate byte cap, in the same
 compacting session. Each source blob remains limited to 4 MiB and each model launch
 to 30 minutes. The batching target does not bound the conversation's live context. For larger inputs,
 one narrowly scoped reader exposes only numbered pages of the immutable prepared
-input. Continuation tokens serialize reads. The same conversation may use native
+input. Continuation tokens serialize reads; the reader rejects skipping unread pages
+and reports the next unread page and remaining count. The same conversation may use native
 compaction and re-read pages, then returns one verdict for the entire batch. There
 are no independent partial inspections or combined partial approvals. A pass also
 requires the reader's receipt to cover every page and the verdict to echo the token
 following the last page's contents; delivery alone does not prove understanding.
-Findings and unresolved questions must survive compaction, and the
-reviewer must return incomplete if it cannot finish the inspection.
+Findings and unresolved questions must survive compaction. Remaining unread pages
+are work to continue; actual uncertainty about code requires an incomplete verdict
+with an explanation.
 
 Individual commits are inspected in order: a later revert cannot conceal an earlier
 dangerous version. Candidate code is never executed. The model has no GitHub
 credential, general filesystem access, shell or editing authority; trusted Worker
-code verifies its structured verdict and updates the ref. A finding, incomplete
-review or unsupported source blob stops the cursor for human attention.
-Provider service errors without a final model answer may be retried without human
-source attestation. The Worker makes at most two automatic retries with backoff,
-resuming the same retained conversation with unchanged source, inspection policy,
-model, tool restrictions and read receipt. Progress notes and all failed requests
-are retained. Findings, incomplete verdicts, malformed answers/streams and
-unauthorized tools cannot be retried as service errors. Exhausted retries leave
-the cursor blocked until a later service recovery; an admin may use the Worker's
-`retry-service --state DIR --reason ...` command to continue the same retained
-inspection. Only a complete pass and confirmed reference update clear that block. Local input bundles, actual launchers/environments/prompts,
-transcripts, read receipts, native Codex
-compaction/usage records, verdicts and advancement records are retained by the worker.
+code verifies its structured verdict and updates the ref. In judgment protocol v3,
+the model returns only `verdict` and `findings`, plus the final `read_token` for
+paged inputs. The Worker attaches the immutable input digest and ordered commit
+list from its own launch record. Model output never supplies that identity;
+unknown response fields are rejected. Complete coverage and final-token checks
+remain required, and host-owned identity does not establish source safety.
+A source finding, explained uncertainty or unsupported source blob stops the
+cursor for human attention.
+
+Luna's native persistent goal tools are enabled with the objective of inspecting the
+whole immutable bundle while preserving findings and unresolved code questions.
+Goal state survives Worker restarts separately from temporary provider credentials.
+The noninteractive Codex client ends after a turn; the Worker owns continuation.
+Goal completion never establishes source safety or authorizes a cursor update.
+
+For Codex Luna, provider service failures, timeouts and eligible mechanical output
+failures may resume the same native conversation without human source attestation.
+The Worker also continues an `unfinished` answer with empty findings, a premature
+empty-finding pass with unread pages, or a cleanly ended turn without a final answer.
+Coverage determines remaining reading work, never approval. The exact native UUID,
+source bundle, notes and findings are retained; no independent partial approvals
+are combined. Haiku supports native compaction within its inspection; retained-session
+automatic recovery currently supports Codex only.
+Immediate continuations share at most three launches, with 5- and 10-second delays. Afterward,
+the ordinary worker loop uses a durable 5/10/20/40/60-minute backoff, capped at
+one recovery invocation per hour. Each invocation rechecks hard quota limits,
+admin authority, the current cursor, exact next main prefix, unchanged input,
+native UUID, reader, catalog, launcher and exact inspection prompt. It preserves
+all prior findings and notes. Only a fresh complete passing judgment and confirmed
+reference update clear the block. Native history and reader receipts are durable
+while the model runs, including if the Worker dies before capturing stdout.
+Local input bundles, actual launchers/environments/prompts, transcripts, read
+receipts, native Codex compaction/usage records, verdicts, retry budgets and
+advancement records are retained by the worker.
 A recognized pre-inspection commit-budget block from an older planner can be archived and
 replanned when the exact next commit fits the current limits. That does not attest the
-commit or retry a model verdict; source findings and incomplete verdicts still
-require human attention.
+commit or retry a model verdict; source findings and explained uncertainty about
+code still require human attention.
 After inspecting every intermediate commit themselves, an admin can use the Worker's
 explicit `attest --through SHA --reason ...` command for an oversized range or to
 resolve a finding. It records human evidence and repeats the same ancestry and
@@ -64,30 +87,45 @@ at most 20 commits, and the workload target can select fewer. Audit-only workers
 inspect any nonempty backlog. Audit blocks preserve the cursor and release gate,
 while the combined worker can continue bump/progress work.
 
-When private Zulip notifications are configured on the trusted worker, a new source
-finding, incomplete inspection or operational pause sends a direct message to the
-configured recipient with the affected commit range, recorded diagnostic and local
-evidence paths. Repeated alerts for the same blocked range and kind are suppressed
+When private Zulip notifications are configured on the trusted worker, a source
+finding or explained code-safety uncertainty sends an immediate direct message
+marked **Human review required**, with the affected commit range, recorded diagnostic
+and local evidence paths. Routine unfinished turns and provider failures stay in
+local logs while automatic recovery handles them. An **Operational stall** DM is
+sent only if the same cursor has remained held for at least one hour after the
+first observed operational pause. It explains that no source finding is recorded
+and eligible automatic recovery continues. The timer is durable across retries,
+changed attempts and Worker restarts; cursor advancement starts a fresh delay.
+These notification rules never clear a block, waive source review or change recovery
+eligibility. Repeated alerts for the same blocked range and kind are suppressed
 using durable receipts. Failed delivery backs off and is retried on subsequent audit
 rounds. No GitHub issue is created. The bot credential and configuration path are
 excluded from the isolated reviewer's environment. Without notification configuration,
 reporting remains in the local evidence and worker logs. Failed notification delivery
 does not clear an audit block or prevent unrelated maintenance.
 
-An unexplained `incomplete` answer with an empty findings list, or a paged `pass`
-whose input digest omits only its final character, may receive bounded output repair
-in the same retained Luna conversation. The exact ordered commits and remaining
-schema must validate; paged input must have complete receipt coverage and the correct
-final token. A repaired answer must echo the exact full digest. The response schema
-fixes that digest to prevent copying errors. Earlier source findings and explained
-incomplete verdicts remain binding. The repair preserves all notes and uncertainty;
-only a new complete passing answer can approve the original batch. Service retries
-and repairs share at most three launches per invocation. Each batch permits at most two
-explicit admin `repair-output --state DIR --reason ...` invocation. Failed answers,
-repair counts and recovery kinds are retained in the evidence and ledger. Exhausted
-repairs remain blocked. The original pre-profile incident has a narrowly pinned
-compatibility continuation for its exact reader-context failure; it does not permit
-other explained incomplete verdicts to be retried.
+Automatic mechanical repair requires an empty-finding pass, complete page
+coverage and a final-output validation failure, such as a damaged reader token or
+legacy copied commit identity. It never converts that answer into approval. A
+reviewed version-1 or version-2 launcher profile can migrate in the same retained
+Luna session, preserving the original evidence. A version-2 coverage-only incomplete
+is eligible only when its exact diagnostic matches a closed grammar, the actual
+unread page range and final reader token. The native final and any ledger record
+must agree; additional findings and unknown prose remain blocked. There is no
+exception for a particular commit SHA. The response schema requires no SHA or digest
+copying. An unexplained empty `incomplete` may receive bounded immediate repair,
+but is not scheduled again afterward. Source findings, explained uncertainty about
+code, unknown profiles, unauthorized tools and mismatched evidence remain blocked.
+Missing coverage always blocks approval, even when it permits continuing the
+inspection. Findings in earlier native history or ledger records remain binding after retries, compaction and restarts. Provider recovery may preserve an
+earlier mechanical answer, but never rerolls a source finding or explained uncertainty.
+
+Historical administrative `retry-service`, `repair-output` and narrowly pinned
+reader continuations remain restricted to their original profiles. They do not
+widen ordinary automatic recovery eligibility. Operational recovery needs no
+manual command or human source attestation; source findings still require review.
+Only a complete passing safety judgment, full delivery coverage when paged, its
+final token and a confirmed ref update can advance the cursor.
 
 Local blocks are not a shared authorization service. Administrators must not evade
 a finding by changing worker IDs, and should keep admin credentials out of ordinary

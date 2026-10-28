@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Abelian.SerreClass.Basic
 public import Mathlib.CategoryTheory.Abelian.LeftDerived
+public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 
 /-!
 # Object properties of homology and left derived functors
@@ -29,14 +29,17 @@ open Limits
 
 universe u v u' v'
 
-variable {C : Type u} [Category.{v} C] [Abelian C] (P : ObjectProperty C)
+variable {C : Type u} [Category.{v} C] (P : ObjectProperty C)
   [P.IsClosedUnderSubobjects] [P.IsClosedUnderQuotients]
 
 /-- A property closed under subobjects and quotients passes from a term of a complex to homology
-in the same degree. -/
-lemma prop_homology {ι : Type*} {c : ComplexShape ι} (K : HomologicalComplex C c) (i : ι)
-    (h : P (K.X i)) : P (K.homology i) :=
+in the same degree, whenever that homology exists. -/
+lemma prop_homology [HasZeroMorphisms C] {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex C c) (i : ι) [K.HasHomology i] (h : P (K.X i)) :
+    P (K.homology i) :=
   P.prop_of_epi (K.homologyπ i) (P.prop_of_mono (K.iCycles i) h)
+
+variable [Abelian C]
 
 /-- If an additive functor sends every projective object into a class closed under subobjects
 and quotients, all its left derived functors take values in that class. -/

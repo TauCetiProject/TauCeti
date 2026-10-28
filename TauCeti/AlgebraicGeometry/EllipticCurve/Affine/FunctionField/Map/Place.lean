@@ -70,13 +70,6 @@ namespace WeierstrassCurve.Affine.FunctionField
 
 variable {F K : Type*} [Field F] [Field K] (W : WeierstrassCurve.Affine F) (f : F →+* K)
 
-/-- The coordinate ring of an elliptic curve is a Dedekind domain, over any field; this is used
-for both `W` and `W.map f`. -/
-local instance {L : Type*} [Field L] (V : WeierstrassCurve.Affine L) [V.IsElliptic] :
-    IsDedekindDomain V.CoordinateRing :=
-  have := isIntegrallyClosed_coordinateRing V
-  V.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- **The restriction of a place of `K(W.map f)` to `F(W)` is trivial on `F`**, since `f` carries
 the constants of `F(W)` to constants of `K(W.map f)`. -/
 theorem isTrivialOn_comap_valuation_map (w : Place K (W.map f).FunctionField) :

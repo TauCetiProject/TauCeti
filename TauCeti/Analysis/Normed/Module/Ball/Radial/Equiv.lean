@@ -19,6 +19,12 @@ product neighbourhoods of the sphere even when the seminorm has a nonzero kernel
 `homeomorphUnitSphereProd`: the positive-norm locus replaces the complement of the origin. The
 construction follows those homeomorphisms, with the domain and the proof that the inverse lands in
 it adapted to seminorms.
+
+Reparametrizing the radius by an open embedding `ρ : Y → ℝ` with positive values gives an open
+embedding `(u, y) ↦ ρ y • u` of `sphere (0 : E) 1 × Y` into `E`
+(`Topology.IsOpenEmbedding.smul_coe_sphere`). With `Y = ℝ` and `ρ` an increasing homeomorphism
+onto an interval of radii, such as `t ↦ r * exp t` or the logistic sigmoid, this is a product
+neighbourhood of a round sphere: a bicollar whose zero slice is the sphere of radius `ρ 0`.
 -/
 
 public section
@@ -101,5 +107,20 @@ theorem homeomorphUnitSphereProdOfNormPos_symm_apply_coe
     (p : sphere (0 : E) 1 × Ioi (0 : ℝ)) :
     ((homeomorphUnitSphereProdOfNormPos E).symm p : E) = (p.2 : ℝ) • (p.1 : E) := by
   simp [homeomorphUnitSphereProdOfNormPos]
+
+variable {E} in
+/-- **Polar coordinates with a reparametrized radius.** If `ρ : Y → ℝ` is an open embedding with
+positive values, then `(u, y) ↦ ρ y • u` is an open embedding of `sphere (0 : E) 1 × Y` into
+`E`, onto the vectors whose norm lies in the range of `ρ`. -/
+theorem _root_.Topology.IsOpenEmbedding.smul_coe_sphere {Y : Type*} [TopologicalSpace Y]
+    {ρ : Y → ℝ} (hρ : Topology.IsOpenEmbedding ρ) (hpos : ∀ y, 0 < ρ y) :
+    Topology.IsOpenEmbedding fun q : sphere (0 : E) 1 × Y => ρ q.2 • (q.1 : E) := by
+  have hρ' : Topology.IsOpenEmbedding (codRestrict ρ (Ioi 0) fun y ↦ mem_Ioi.2 (hpos y)) := by
+    refine ⟨hρ.isEmbedding.codRestrict _ _, ?_⟩
+    rw [range_codRestrict]
+    exact hρ.isOpen_range.preimage continuous_subtype_val
+  exact (isOpen_lt continuous_const continuous_norm).isOpenEmbedding_subtypeVal.comp
+    ((homeomorphUnitSphereProdOfNormPos E).symm.isOpenEmbedding.comp
+      (Topology.IsOpenEmbedding.id.prodMap hρ'))
 
 end TauCeti

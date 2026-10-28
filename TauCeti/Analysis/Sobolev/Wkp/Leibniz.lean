@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # The Leibniz rule for the weak gradient and the weak Hessian
@@ -22,12 +24,19 @@ the recorded weak derivatives of any Sobolev function whose value is `ζ u`:
 
   (`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul`), where `D²w` is
   `TauCeti.Wkp.iteratedGradient 1 w`, a field of endomorphisms of `E`, and `a ⊗ b` denotes the
-  rank-one map `v ↦ ⟪a, v⟫ b`.
+  rank-one map `v ↦ ⟪a, v⟫ b`. The remainder `∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ` is at most
+  `2 ‖∇ζ‖ ‖∇u‖ + ‖D²ζ‖ |u|` pointwise in operator norm (`TauCeti.norm_leibnizRemainder_le`).
 
 Nothing is assumed about `ζ` beyond smoothness, nor about `Ω` beyond openness: the formulas follow
 from uniqueness of weak derivatives, so they hold for every `w` with value `ζ u`, however it was
 produced. When `ζ` has compact support in `Ω` and `p < ∞`, such a `w` exists in `W^{k,p}_0(Ω)` by
 `TauCeti.Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul`.
+
+Such a `w` also exists in `W^{k,p}(Ω)` whenever `ζ` is smooth on an open set containing the
+compact set `closure Ω` (`TauCeti.Wkp.exists_value_ae_eq_mul_of_contDiffOn`), for every
+`1 ≤ p ≤ ∞`. The factor need not be smooth away from `closure Ω`: this is the
+form in which the derivatives of a coefficient field smooth on a larger domain act on Sobolev
+functions on a compactly contained subdomain.
 
 The Hessian formula is what localizes a second-order estimate. Writing `L = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼ`, it
 gives `L(ζ u) = ζ L u + (terms in ∇u and u)`, so an estimate for compactly supported functions,
@@ -43,6 +52,26 @@ applied to `ζ u`, controls `ζ D²u` by `ζ L u` and lower-order norms of `u`.
 public section
 
 namespace TauCeti
+
+open scoped Gradient
+
+section LeibnizRemainder
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+
+/-- The Leibniz remainder `∇ζ ⊗ v + v ⊗ ∇ζ + s D²ζ` of the weak Hessian of `ζ u`
+(`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul`, with `v = ∇u` and `s = u`) is at
+most `2 ‖∇ζ‖ ‖v‖ + ‖D²ζ‖ |s|` in operator norm. -/
+theorem norm_leibnizRemainder_le (zeta : E → ℝ) (v : E) (s : ℝ) (x : E) :
+    ‖(innerSL ℝ (∇ zeta x)).smulRight v + (innerSL ℝ v).smulRight (∇ zeta x)
+        + s • fderiv ℝ (∇ zeta) x‖ ≤
+      2 * ‖∇ zeta x‖ * ‖v‖ + ‖fderiv ℝ (∇ zeta) x‖ * ‖s‖ := by
+  refine norm_add₃_le.trans (le_of_eq ?_)
+  rw [ContinuousLinearMap.norm_smulRight_apply, ContinuousLinearMap.norm_smulRight_apply,
+    innerSL_apply_norm, innerSL_apply_norm, norm_smul]
+  ring
+
+end LeibnizRemainder
 
 namespace Wkp
 
@@ -93,6 +122,45 @@ theorem iteratedGradient_one_ae_eq_of_value_ae_eq_mul (hzeta : ContDiff ℝ ∞ 
   filter_upwards [(hasWeakFDerivOn_iteratedGradient 0 w).ae_eq h] with x hx
   simp only [hx, Pi.add_apply, value_succ, hfd]
   abel
+
+/-- **Smooth multiplication in `W^{k,p}`.** Let `Ω` have compact closure inside an open set `U`.
+If `ψ` is smooth on `U` and `u ∈ W^{k,p}(Ω)`, then `ψ u` lies in `W^{k,p}(Ω)`: some element of
+`W^{k,p}(Ω)` has value `ψ u` almost everywhere on `Ω`.
+
+No bound on `ψ` or its derivatives is assumed: they are bounded on the compact set `closure Ω`,
+which is all the proof uses. -/
+theorem exists_value_ae_eq_mul_of_contDiffOn {U : Set E} (hU : IsOpen U)
+    (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
+    {psi : E → ℝ} (hpsi : ContDiffOn ℝ ∞ psi U) (u : Wkp mu Omega p k) :
+    ∃ w : Wkp mu Omega p k, (value k w : E → ℝ) =ᵐ[mu.restrict Omega]
+      fun x => psi x * value k u x := by
+  -- A function continuous on `U` is bounded on `Ω`, so multiplying by it preserves `Lᵖ(Ω)`.
+  have hLp : ∀ {phi : E → ℝ}, ContinuousOn phi U → ∀ f : Lp ℝ p (mu.restrict Omega),
+      ∃ g : Lp ℝ p (mu.restrict Omega), (g : E → ℝ) =ᵐ[mu.restrict Omega]
+        fun x => phi x * f x := fun {phi} hphi f => by
+    have h : MemLp (fun x => phi x * f x) p (mu.restrict Omega) :=
+      ((hphi.mono hΩU).memLp_top_restrict_of_subset_isCompact hΩ Omega.isOpen.measurableSet
+        subset_closure).fun_mul (Lp.memLp f)
+    exact ⟨h.toLp _, h.coeFn_toLp⟩
+  induction k generalizing psi with
+  | zero => simpa only [value_zero] using hLp hpsi.continuousOn (value 0 u)
+  | succ k ih =>
+    obtain ⟨g, hg⟩ := hLp hpsi.continuousOn (value (k + 1) u)
+    set b := stdOrthonormalBasis ℝ E
+    refine (exists_value_eq_of_forall_hasWeakLineDerivOn b g k fun i => ?_).imp
+      fun w (hw : value (k + 1) w = g) => hw ▸ hg
+    -- `∂ᵢ(ψ u) = ψ ∂ᵢu + (∂ᵢψ) u`, and both summands lie in `W^{k,p}(Ω)` by induction.
+    obtain ⟨d, hd⟩ := exists_hasWeakLineDerivOn_value k u (b i)
+    obtain ⟨w₁, hw₁⟩ := ih hpsi d
+    obtain ⟨w₂, hw₂⟩ := ih ((hpsi.fderiv_of_isOpen hU (by simp)).clm_apply contDiffOn_const)
+      (lowerOrder k u)
+    refine ⟨w₁ + w₂, (((hd.contDiffOn_smul (hpsi.mono (subset_closure.trans hΩU))).congr_ae
+      ?_).congr_ae_deriv ?_)⟩
+    · filter_upwards [hg] with x hx
+      rw [hx, smul_eq_mul]
+    · filter_upwards [value_add k w₁ w₂ ▸ Lp.coeFn_add (value k w₁) (value k w₂), hw₁, hw₂]
+        with x hx h₁ h₂
+      rw [hx, Pi.add_apply, h₁, h₂, ← value_succ, smul_eq_mul, smul_eq_mul]
 
 end Wkp
 

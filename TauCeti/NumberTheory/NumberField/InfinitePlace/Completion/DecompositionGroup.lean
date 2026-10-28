@@ -277,8 +277,8 @@ of `w` is trivial. -/
 theorem stabilizer_eq_bot_of_adjoin_eq_top {s : Set L} (hs : IntermediateField.adjoin K s = ⊤)
     (h : ∀ x ∈ s, algebraMap L w.Completion x ∈ (algebraMap v.Completion w.Completion).range) :
     MulAction.stabilizer (L ≃ₐ[K] L) w = ⊥ := by
-  rw [eq_bot_iff, ← IntermediateField.fixingSubgroup_top, ← hs, ← IntermediateField.le_iff_le,
-    IntermediateField.adjoin_le_iff]
+  rw [eq_bot_iff, ← IntermediateField.fixingSubgroup_top, ← hs,
+    ← IntermediateField.le_fixedField_iff_le_fixingSubgroup, IntermediateField.adjoin_le_iff]
   exact fun x hx τ ↦ apply_eq_self_of_algebraMap_mem_range τ (h x hx)
 
 variable (v w) in

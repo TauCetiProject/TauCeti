@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Generation.FiniteQuotient
+public import TauCeti.NumberTheory.LocalField.GeneratorRank
 public import TauCeti.Topology.Algebra.Group.Generation
 import TauCeti.Topology.Algebra.Group.Profinite.Generation
 
 /-!
-# Topological finite generation of a local absolute Galois group
+# Topological finite generation and the generator rank of a local absolute Galois group
 
 Let `K` be a finite extension of `ℚ_p`, `N = [K : ℚ_p]`, and `P_K` the wild inertia subgroup of
 the absolute Galois group `G_K`. Every finite quotient of `G_K` through which `⁅P_K, P_K⁆` dies
@@ -23,6 +24,13 @@ This is the passage from the finite quotients to the profinite group in the proo
 Finite generation is recorded on its own, so that the natural-valued generator rank of `G_K` is
 only ever read once its hypothesis is available.
 
+The same tuple bounds the generator rank `d(G_K)` by `N + 2`. Together with the lower bound
+`TauCeti.le_topologicalGeneratorRankNat_absoluteGaloisGroup`, this computes it exactly:
+
+```text
+d(G_K) = N + 2.
+```
+
 The statement of finite generation mentions neither `p` nor the `ℚ_p`-algebra structure of `K`,
 but it is false without them: the absolute Galois group of `𝔽_q((t))` is not topologically
 finitely generated. So `p` is included explicitly, together with the instances depending on it.
@@ -33,6 +41,12 @@ finitely generated. So `p` is included explicitly, together with the instances d
   topologically generates `G_K` together with `⁅P_K, P_K⁆`.
 * `TauCeti.isTopologicallyFinitelyGenerated_absoluteGaloisGroup`: `G_K` is topologically finitely
   generated.
+* `TauCeti.topologicalGeneratorRankNat_absoluteGaloisGroup_le`: `d(G_K) ≤ [K : ℚ_p] + 2`.
+* `TauCeti.topologicalGeneratorRankNat_absoluteGaloisGroup`: `d(G_K) = [K : ℚ_p] + 2`.
+* `TauCeti.exists_finset_card_eq_finrank_add_two_absoluteGaloisGroup`: some finite subset of
+  `G_K` with exactly `[K : ℚ_p] + 2` elements generates a dense subgroup of `G_K`.
+* `TauCeti.rank_absoluteGaloisGroup`: `[K : ℚ_p] + 2` is the least cardinality of such a
+  finite subset.
 
 ## References
 
@@ -69,5 +83,55 @@ theorem isTopologicallyFinitelyGenerated_absoluteGaloisGroup :
   obtain ⟨x, hx⟩ := exists_tuple_generating_mod_wildInertiaCommutator p K
   exact (Set.finite_range x).isTopologicallyFinitelyGenerated
     (topologicalClosure_eq_top_of_sup_wildInertiaCommutator hx)
+
+/-- **The upper bound for the generator rank of a local absolute Galois group** (NSW (7.4.1)).
+For a finite extension `K` of `ℚ_p`, the absolute Galois group `G_K` is topologically generated
+by `[K : ℚ_p] + 2` elements: the tuple of
+`TauCeti.exists_tuple_generating_mod_wildInertiaCommutator` generates `G_K` by the Frattini
+reduction along wild inertia. -/
+theorem topologicalGeneratorRankNat_absoluteGaloisGroup_le
+    (hG : IsTopologicallyFinitelyGenerated (Field.absoluteGaloisGroup K)) :
+    topologicalGeneratorRankNat (Field.absoluteGaloisGroup K) hG ≤
+      Module.finrank ℚ_[p] K + 2 := by
+  classical
+  obtain ⟨x, hx⟩ := exists_tuple_generating_mod_wildInertiaCommutator p K
+  calc topologicalGeneratorRankNat (Field.absoluteGaloisGroup K) hG
+      ≤ (Finset.univ.image x).card := topologicalGeneratorRankNat_le hG (by
+        simpa using topologicalClosure_eq_top_of_sup_wildInertiaCommutator hx)
+    _ ≤ Module.finrank ℚ_[p] K + 2 := Finset.card_image_le.trans (by simp)
+
+/-- **The generator rank of a local absolute Galois group** (NSW (7.4.1)). For a finite extension
+`K` of `ℚ_p`, the absolute Galois group `G_K` needs exactly `[K : ℚ_p] + 2` topological
+generators. A witness of topological finite generation is
+`TauCeti.isTopologicallyFinitelyGenerated_absoluteGaloisGroup`. -/
+theorem topologicalGeneratorRankNat_absoluteGaloisGroup
+    (hG : IsTopologicallyFinitelyGenerated (Field.absoluteGaloisGroup K)) :
+    topologicalGeneratorRankNat (Field.absoluteGaloisGroup K) hG =
+      Module.finrank ℚ_[p] K + 2 :=
+  (topologicalGeneratorRankNat_absoluteGaloisGroup_le p K hG).antisymm
+    (le_topologicalGeneratorRankNat_absoluteGaloisGroup p K hG)
+
+/-- **A minimal topological generating set of a local absolute Galois group.** For a finite
+extension `K` of `ℚ_p`, some finite subset of `G_K` with exactly `[K : ℚ_p] + 2` elements
+generates a dense subgroup; by
+`TauCeti.finrank_add_two_le_card_of_topologicalClosure_closure_eq_top_absoluteGaloisGroup` no
+smaller one does. -/
+theorem exists_finset_card_eq_finrank_add_two_absoluteGaloisGroup :
+    ∃ s : Finset (Field.absoluteGaloisGroup K), s.card = Module.finrank ℚ_[p] K + 2 ∧
+      (Subgroup.closure (s : Set (Field.absoluteGaloisGroup K))).topologicalClosure = ⊤ := by
+  have hG := isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K
+  rw [← topologicalGeneratorRankNat_absoluteGaloisGroup p K hG]
+  exact exists_finset_card_eq_topologicalGeneratorRankNat hG
+
+/-- **The generator rank of a local absolute Galois group as a least cardinality** (NSW
+(7.4.1)). For a finite extension `K` of `ℚ_p`, the least cardinality of a finite subset of
+`G_K` generating a dense subgroup is `[K : ℚ_p] + 2`. -/
+theorem rank_absoluteGaloisGroup :
+    IsLeast {m : ℕ | ∃ s : Finset (Field.absoluteGaloisGroup K), s.card = m ∧
+      (Subgroup.closure (s : Set (Field.absoluteGaloisGroup K))).topologicalClosure = ⊤}
+      (Module.finrank ℚ_[p] K + 2) := by
+  refine ⟨exists_finset_card_eq_finrank_add_two_absoluteGaloisGroup p K, ?_⟩
+  rintro m ⟨s, rfl, hs⟩
+  exact finrank_add_two_le_card_of_topologicalClosure_closure_eq_top_absoluteGaloisGroup p K s hs
 
 end TauCeti

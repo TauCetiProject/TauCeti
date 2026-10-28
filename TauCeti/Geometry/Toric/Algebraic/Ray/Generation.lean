@@ -26,8 +26,16 @@ integral basis, hence linearly independent, so a regular cone is simplicial.
   its rays.
 * `TauCeti.Toric.ToricRay.nonempty_of_ne_bot`: a nonzero salient finitely generated cone has a
   ray.
+* `TauCeti.Toric.ToricRay.le_iff_forall_mem_faceFinset`: a salient finitely generated face lies
+  in a cone exactly when all of its rays do.
+* `TauCeti.Toric.ToricRay.exists_mem_faceFinset_not_le_of_not_le`: a salient finitely generated
+  face not contained in a cone has a ray not contained in it.
+* `TauCeti.Toric.ToricRay.faceFinset_nonempty`: a nonzero salient finitely generated face contains
+  a ray.
 * `TauCeti.Toric.IsToricCone.hull_primitiveGenerator`: a toric cone is the cone hull of its
   primitive ray generators.
+* `TauCeti.Toric.IsToricCone.le_of_isFaceOf_of_sum_primitiveGenerator_mem`: a face of a toric
+  cone containing the sum of its primitive ray generators is the whole cone.
 * `TauCeti.Toric.mem_dualSemigroup_iff_primitiveGenerator`: an integral character lies in the dual
   semigroup of a toric cone exactly when it is nonnegative on every primitive ray generator.
 * `TauCeti.Toric.mem_dualSemigroup_iff_of_isPrimitiveGenerator`: the same criterion for any
@@ -70,6 +78,31 @@ theorem ToricRay.nonempty_of_ne_bot (hσ : σ.FG) (hsal : (σ : ConvexCone ℝ V
   rw [iSup_of_empty] at hgen
   exact hσ0 hgen.symm
 
+/-- A salient finitely generated face `σ` of a cone `τ` lies in a cone `F` exactly when every ray
+of `τ` contained in `σ` does, since `σ` is the join of its rays. -/
+theorem ToricRay.le_iff_forall_mem_faceFinset {τ F : PointedCone ℝ V} (hστ : σ.IsFaceOf τ)
+    (hσ : σ.FG) (hsal : (σ : ConvexCone ℝ V).Salient) :
+    σ ≤ F ↔ ∀ ρ ∈ ToricRay.faceFinset hστ hσ, ρ.toPointedCone ≤ F := by
+  refine ⟨fun h ρ hρ ↦ ((ToricRay.mem_faceFinset _ _).1 hρ).trans h, fun h ↦ ?_⟩
+  rw [← ToricRay.iSup_toPointedCone hσ hsal]
+  refine iSup_le fun ρ ↦ ?_
+  simpa using h (ToricRay.faceEmbedding hστ ρ) (ToricRay.faceEmbedding_mem_faceFinset _ _ ρ)
+
+/-- A salient finitely generated face `σ` of a cone `τ` not contained in a cone `F` contains a ray
+of `τ` not contained in `F`. -/
+theorem ToricRay.exists_mem_faceFinset_not_le_of_not_le {τ F : PointedCone ℝ V}
+    (hστ : σ.IsFaceOf τ) (hσ : σ.FG) (hsal : (σ : ConvexCone ℝ V).Salient) (hσF : ¬σ ≤ F) :
+    ∃ ρ ∈ ToricRay.faceFinset hστ hσ, ¬ρ.toPointedCone ≤ F := by
+  by_contra! h
+  exact hσF ((ToricRay.le_iff_forall_mem_faceFinset hστ hσ hsal).2 h)
+
+/-- A nonzero salient finitely generated face of a cone contains a ray of the cone. -/
+theorem ToricRay.faceFinset_nonempty {τ : PointedCone ℝ V} (hστ : σ.IsFaceOf τ) (hσ : σ.FG)
+    (hsal : (σ : ConvexCone ℝ V).Salient) (hσ0 : σ ≠ ⊥) :
+    (ToricRay.faceFinset hστ hσ).Nonempty := by
+  obtain ⟨ρ⟩ := ToricRay.nonempty_of_ne_bot hσ hsal hσ0
+  exact ⟨ToricRay.faceEmbedding hστ ρ, ToricRay.faceEmbedding_mem_faceFinset _ _ ρ⟩
+
 /-- A toric cone in an integral lattice is the cone hull of its primitive ray generators. -/
 theorem IsToricCone.hull_primitiveGenerator (hi : IsIntegralLattice i) (hσ : IsToricCone i σ) :
     PointedCone.hull ℝ (i '' Set.range (primitiveGenerator hi hσ)) = σ := by
@@ -80,6 +113,20 @@ theorem IsToricCone.hull_primitiveGenerator (hi : IsIntegralLattice i) (hσ : Is
     rw [ρ.eq_hull_singleton (hσ.salient.anti ρ.1.isFaceOf.le) (primitiveGenerator_mem hi hσ ρ)
       (by simpa using hi.injective.ne (primitiveGenerator_ne_zero hi hσ ρ))]
     exact Submodule.span_mono (Set.singleton_subset_iff.2 ⟨_, ⟨ρ, rfl⟩, rfl⟩)
+
+/-- A face of a toric cone `σ` containing the sum of the primitive generators of all rays of `σ`
+contains `σ`: by the face property it contains every primitive generator, and these span `σ`. -/
+theorem IsToricCone.le_of_isFaceOf_of_sum_primitiveGenerator_mem (hi : IsIntegralLattice i)
+    (hσ : IsToricCone i σ) {F : PointedCone ℝ V} (hF : F.IsFaceOf σ)
+    (hu : i (∑ ρ ∈ ToricRay.faceFinset (PointedCone.IsFaceOf.refl σ) hσ.fg,
+      primitiveGenerator hi hσ ρ) ∈ F) : σ ≤ F := by
+  have hsum : ∑ ν : ToricRay.faceFinset (PointedCone.IsFaceOf.refl σ) hσ.fg,
+      i (primitiveGenerator hi hσ ν) ∈ F := by
+    rwa [Finset.sum_coe_sort _ fun ν ↦ i (primitiveGenerator hi hσ ν), ← map_sum]
+  refine (hσ.hull_primitiveGenerator hi).ge.trans (Submodule.span_le.2 ?_)
+  rintro _ ⟨_, ⟨ρ, rfl⟩, rfl⟩
+  exact hF.mem_of_sum_mem (fun ν ↦ ν.1.1.isFaceOf.le (primitiveGenerator_mem hi hσ ν.1)) hsum
+    ⟨ρ, (ToricRay.mem_faceFinset _ _).2 ρ.1.isFaceOf.le⟩
 
 /-- An integral character lies in the dual semigroup of a toric cone exactly when it is
 nonnegative on every primitive ray generator. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.ChiSquared
+public import TauCeti.Probability.Distributions.ChiSquared.Basic
 public import TauCeti.Probability.Distributions.FisherSnedecor.Basic
 public import TauCeti.Probability.Distributions.Gamma.Beta
 

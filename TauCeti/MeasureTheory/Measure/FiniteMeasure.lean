@@ -17,11 +17,18 @@ When the underlying σ-algebra is countably generated, singletons are measurable
 
 On a finite measurable space, a probability measure is the sum of its singleton masses.
 
+Narrow convergence of finite measures `μs i → μ` tests against a fixed bounded continuous function.
+It also passes to integrands `fs i` converging uniformly to a bounded continuous `f`:
+`∫ fs i dμs i → ∫ f dμ`. This is what makes `t ↦ ∫ u (t, x) dμₜ(x)` continuous along a narrowly
+continuous curve of finite measures when `u` is bounded continuous and uniformly continuous in time.
+
 ## Main results
 
 * `MeasureTheory.FiniteMeasure.instMeasurableSingletonClass`
 * `MeasureTheory.ProbabilityMeasure.instMeasurableSingletonClass`
 * `MeasureTheory.Measure.sum_singleton_eq_one`
+* `MeasureTheory.FiniteMeasure.tendsto_integral_of_tendstoUniformly`: narrow convergence against
+  uniformly convergent integrands.
 
 ## Implementation
 
@@ -102,5 +109,45 @@ theorem Measure.sum_singleton_eq_one {κ : Type*} [Fintype κ] [MeasurableSpace 
     [MeasurableSingletonClass κ] (ν : Measure κ) [IsProbabilityMeasure ν] :
     ∑ k, ν {k} = 1 := by
   rw [sum_measure_singleton, Finset.coe_univ, measure_univ]
+
+section NarrowConvergence
+
+open Filter Topology
+open scoped BoundedContinuousFunction
+
+/-- **Narrow convergence against uniformly convergent integrands.** If the finite measures `μs i`
+converge narrowly to `μ` and the functions `fs i`, eventually almost everywhere strongly
+measurable, converge uniformly to a bounded continuous function `f`, then
+`∫ fs i dμs i` converges to `∫ f dμ`. -/
+theorem FiniteMeasure.tendsto_integral_of_tendstoUniformly [TopologicalSpace α]
+    [OpensMeasurableSpace α] {ι : Type*} {l : Filter ι} {μs : ι → FiniteMeasure α}
+    {μ : FiniteMeasure α} (hμ : Tendsto μs l (𝓝 μ)) {fs : ι → α → ℝ} {f : α →ᵇ ℝ}
+    (hf : TendstoUniformly fs f l) (hfs : ∀ᶠ i in l, AEStronglyMeasurable (fs i) (μs i)) :
+    Tendsto (fun i ↦ ∫ x, fs i x ∂(μs i : Measure α)) l (𝓝 (∫ x, f x ∂(μ : Measure α))) := by
+  -- It suffices that `∫ (fs i - f) dμs i → 0`, which is bounded by `sup ‖fs i - f‖ * mass`.
+  suffices h : Tendsto (fun i ↦ ∫ x, fs i x ∂(μs i : Measure α) - ∫ x, f x ∂(μs i : Measure α))
+      l (𝓝 0) by
+    simpa using h.add (FiniteMeasure.tendsto_iff_forall_integral_tendsto.1 hμ f)
+  have hmass : Tendsto (fun i ↦ ((μs i).mass : ℝ)) l (𝓝 (μ.mass : ℝ)) :=
+    (NNReal.continuous_coe.tendsto _).comp ((FiniteMeasure.continuous_mass.tendsto μ).comp hμ)
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  have hK : 0 < (μ.mass : ℝ) + 1 := by positivity
+  filter_upwards [Metric.tendstoUniformly_iff.1 hf (ε / ((μ.mass : ℝ) + 1)) (by positivity),
+    hmass.eventually (eventually_lt_nhds (lt_add_one (μ.mass : ℝ))), hfs] with i hi hmi hfi
+  have hbound : ∀ x, ‖fs i x - f x‖ ≤ ε / ((μ.mass : ℝ) + 1) := fun x ↦ by
+    rw [← dist_eq_norm, dist_comm]
+    exact (hi x).le
+  have hint : Integrable (fs i) (μs i : Measure α) :=
+    ((integrable_const (‖f‖ + ε / ((μ.mass : ℝ) + 1))).mono' hfi (ae_of_all _ fun x ↦
+      (norm_le_norm_add_norm_sub' (fs i x) (f x)).trans
+        (add_le_add (f.norm_coe_le_norm x) (hbound x))))
+  rw [dist_zero_right, ← integral_sub hint (f.integrable _)]
+  refine (norm_integral_le_of_norm_le_const (ae_of_all _ hbound)).trans_lt ?_
+  rw [measureReal_def, ← FiniteMeasure.ennreal_mass, ENNReal.coe_toReal, div_mul_eq_mul_div,
+    div_lt_iff₀ hK]
+  exact mul_lt_mul_of_pos_left hmi hε
+
+end NarrowConvergence
 
 end MeasureTheory

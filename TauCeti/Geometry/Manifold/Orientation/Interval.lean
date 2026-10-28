@@ -107,6 +107,32 @@ theorem Manifold.Orientation.map_orientationAt_interval (x : Icc a b) :
     rw [Module.Ray.units_smul_of_neg (-1) (by norm_num)]
     exact _root_.neg_neg R.orientation
 
+/-- The increasing and decreasing interval orientations admit tangent bases whose actual
+inclusion velocities are respectively one and minus one, including at the endpoints. -/
+theorem exists_interval_tangent_bases {a b : ℝ} [Fact (a < b)] (x : Icc a b) :
+    ∃ B C : Module.Basis (Fin 1) ℝ (EuclideanSpace ℝ (Fin 1)),
+      B.orientation = (Manifold.Orientation.interval a b).orientationAt x ∧
+      C.orientation = (-Manifold.Orientation.interval a b).orientationAt x ∧
+      subtypeValIccTangentEquiv x (B 0) = 1 ∧ subtypeValIccTangentEquiv x (C 0) = -1 := by
+  let e := subtypeValIccTangentEquiv x
+  let B := (Module.Basis.singleton (Fin 1) ℝ).map e.symm.toLinearEquiv
+  have hB : B.orientation = (Manifold.Orientation.interval a b).orientationAt x := by
+    rw [Module.Basis.orientation_map]
+    rw [← Manifold.Orientation.map_orientationAt_interval x]
+    exact (Orientation.map (Fin 1) e.toLinearEquiv).symm_apply_apply _
+  let C := B.unitsSMul (fun _ ↦ (-1 : ℝˣ))
+  have hC : C.orientation = (-Manifold.Orientation.interval a b).orientationAt x := by
+    rw [Manifold.Orientation.orientationAt_neg, ← hB]
+    -- Express the negated manifold orientation on its model before applying basis scaling.
+    change (B.unitsSMul _).orientation = -B.orientation
+    rw [Module.Basis.orientation_unitsSMul]
+    simp only [Fin.prod_univ_one, inv_neg, inv_one]
+    exact Module.Ray.units_smul_of_neg (-1) (by norm_num) _
+  refine ⟨B, C, hB, hC, ?_, ?_⟩
+  · simp [B, e, Module.Basis.map_apply]
+  · by_cases hx : (x : ℝ) < b <;>
+      simp [C, Module.Basis.unitsSMul_apply, B, e, Module.Basis.map_apply, hx]
+
 /-- The interval charted structure, with its model dimension written as a successor so that
 zero-dimensional boundary constructions infer the canonical interval charts. -/
 @[reducible] local instance intervalSuccessorChartedSpace :

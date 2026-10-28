@@ -42,7 +42,7 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `M / p` along a chain of divisibilities.
 * `ZMod.zmultiples_coe_unit_eq_top` — a unit of `ZMod d` generates `ZMod d` additively, so that
   translation by it is a single cycle; its consumer is the genus-one Heegaard diagram of a lens
-  space in `TauCeti/LowDimTopology/Heegaard/LensSpace.lean`.
+  space in `TauCeti/LowDimTopology/Heegaard/LensSpace/Diagram.lean`.
 * `ZMod.eq_of_cast_eq_of_coprime` — the uniqueness half of the Chinese remainder theorem: two
   residues modulo `a * b`, with `a` and `b` coprime, that agree modulo `a` and modulo `b` are
   equal. Its consumer is the cyclotomic normalization of the local Artin map in
@@ -54,6 +54,9 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `TauCeti/NumberTheory/ClassFieldTheory/Global/Cyclotomic/Input.lean` and the cyclotomic
   normalization of the local Artin map in
   `TauCeti/NumberTheory/ClassFieldTheory/Local/ExplicitCyclotomicSymbol/ArtinMap.lean`.
+* `TauCeti.ZMod.unitOfIsCoprime_div_eq_iff` — two quotients `a / b` and `a' / b'` of integer
+  units modulo `n` agree exactly when `n ∣ a b' - a' b`. Its consumer is the cusp label of
+  `Γ₀(N)` in `TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/Count.lean`.
 -/
 
 public section
@@ -194,6 +197,17 @@ theorem ZMod.eq_of_cast_eq_of_coprime {a b : ℕ} (h : a.Coprime b) {x y : ZMod 
 namespace TauCeti
 
 namespace ZMod
+
+/-- **Equality of quotients of integer units.** For integers `a`, `b`, `a'` and `b'` prime to
+`n`, the units `a / b` and `a' / b'` of `ZMod n` agree exactly when `n ∣ a b' - a' b`. -/
+theorem unitOfIsCoprime_div_eq_iff {n : ℕ} {a b a' b' : ℤ} (ha : IsCoprime a n)
+    (hb : IsCoprime b n) (ha' : IsCoprime a' n) (hb' : IsCoprime b' n) :
+    ZMod.unitOfIsCoprime a ha / ZMod.unitOfIsCoprime b hb =
+        ZMod.unitOfIsCoprime a' ha' / ZMod.unitOfIsCoprime b' hb' ↔
+      (n : ℤ) ∣ a * b' - a' * b := by
+  rw [div_eq_div_iff_mul_eq_mul, Units.ext_iff]
+  simp only [Units.val_mul, ZMod.coe_unitOfIsCoprime, ← Int.cast_mul]
+  rw [ZMod.intCast_eq_intCast_iff_dvd_sub, ← dvd_neg, neg_sub]
 
 /-- **The order of the residue-cardinality class.** If `q > 1` and `N > 0`, the class of `q` in
 `(ZMod (q ^ N - 1))ˣ` has exact order `N`. This is the elementary arithmetic behind the choice of

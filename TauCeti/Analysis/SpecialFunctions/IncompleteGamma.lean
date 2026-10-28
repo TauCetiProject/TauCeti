@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import TauCeti.Analysis.SpecialFunctions.Erf
+public import TauCeti.Analysis.SpecialFunctions.Gamma
 
 /-!
 # The lower incomplete gamma function
@@ -49,7 +50,11 @@ the parameter range.
   `TauCeti.lowerIncompleteGamma_le_Gamma` and `TauCeti.regularizedGamma_le_one`;
 * `TauCeti.regularizedGamma_one` — `P(1, x) = 1 - e ^ (-x)` for `0 ≤ x`, the exponential cdf.
 * `TauCeti.Real.erf_eq_regularizedGamma_half_sq` — the error function is the regularized
-  incomplete gamma function of shape `1 / 2` after squaring, on the nonnegative half-line.
+  incomplete gamma function of shape `1 / 2` after squaring, on the nonnegative half-line;
+* `TauCeti.strictMonoOn_regularizedGamma`, `TauCeti.regularizedGamma_pos_iff`,
+  `TauCeti.regularizedGamma_lt_one` — strict monotonicity on `[0, ∞)` and the exact range;
+* `TauCeti.measurable_lowerIncompleteGamma`, `TauCeti.measurable_regularizedGamma` — joint
+  measurability in the shape parameter and the argument.
 
 ## Implementation
 
@@ -432,6 +437,76 @@ theorem Real.erf_eq_regularizedGamma_half_sq {x : ℝ} (hx : 0 ≤ x) :
   · simp
   · exact sub_eq_zero.mp (by simpa [g] using (hc x hx).trans hc0)
 
+/-! ### Strict monotonicity, range and measurability -/
+
+/-- `γ(s, ·)` is strictly increasing on `[0, ∞)`, for `0 < s`: its derivative
+`x ^ (s - 1) * exp (-x)` is positive on `(0, ∞)`. -/
+theorem strictMonoOn_lowerIncompleteGamma (hs : 0 < s) :
+    StrictMonoOn (lowerIncompleteGamma s) (Ici 0) := by
+  refine strictMonoOn_of_deriv_pos (convex_Ici 0)
+    (continuous_lowerIncompleteGamma s).continuousOn fun x hx => ?_
+  rw [interior_Ici] at hx
+  rw [deriv_lowerIncompleteGamma hs hx]
+  exact mul_pos (Real.rpow_pos_of_pos hx _) (Real.exp_pos _)
+
+/-- `P(s, ·)` is strictly increasing on `[0, ∞)`, for `0 < s`. -/
+theorem strictMonoOn_regularizedGamma (hs : 0 < s) :
+    StrictMonoOn (regularizedGamma s) (Ici 0) := fun u hu v hv huv => by
+  rw [regularizedGamma_eq_div, regularizedGamma_eq_div]
+  gcongr
+  exact strictMonoOn_lowerIncompleteGamma hs hu hv huv
+
+/-- For `0 < s`, `P(s, x)` is positive exactly on the open half-line `0 < x`. -/
+theorem regularizedGamma_pos_iff (hs : 0 < s) : 0 < regularizedGamma s x ↔ 0 < x := by
+  refine ⟨fun h => not_le.1 fun hx => h.ne' (regularizedGamma_eq_zero_of_nonpos_right s hx),
+    fun hx => ?_⟩
+  simpa using strictMonoOn_regularizedGamma hs (mem_Ici.2 le_rfl) (mem_Ici.2 hx.le) hx
+
+/-- `P(s, x)` is positive for `0 < s` and `0 < x`. -/
+theorem regularizedGamma_pos (hs : 0 < s) (hx : 0 < x) : 0 < regularizedGamma s x :=
+  (regularizedGamma_pos_iff hs).2 hx
+
+/-- `P(s, x)` is strictly less than `1`, for every parameter value: for `0 < s` it stays strictly
+below its limit `1`. -/
+theorem regularizedGamma_lt_one (s x : ℝ) : regularizedGamma s x < 1 := by
+  rcases le_or_gt s 0 with hs | hs
+  · rw [regularizedGamma_eq_zero_of_nonpos_left hs]
+    exact zero_lt_one
+  calc regularizedGamma s x ≤ regularizedGamma s (max x 0) :=
+        regularizedGamma_monotone s (le_max_left x 0)
+    _ < regularizedGamma s (max x 0 + 1) :=
+        strictMonoOn_regularizedGamma hs (le_max_right x 0)
+          ((le_max_right x 0).trans (le_add_of_nonneg_right zero_le_one)) (lt_add_one _)
+    _ ≤ 1 := regularizedGamma_le_one s _
+
+/-- `γ(s, x)` is jointly measurable in the shape parameter and the argument. -/
+@[fun_prop]
+theorem measurable_lowerIncompleteGamma :
+    Measurable fun p : ℝ × ℝ => lowerIncompleteGamma p.1 p.2 := by
+  -- Read as an integral over `ℝ` of an integrand that is jointly measurable in `(s, x, t)`, the
+  -- truncation at `max x 0` becoming an indicator.
+  have key : (fun p : ℝ × ℝ => lowerIncompleteGamma p.1 p.2) = fun p => if 0 < p.1 then
+      ∫ t, (Ioc 0 (max p.2 0)).indicator (fun t => t ^ (p.1 - 1) * Real.exp (-t)) t else 0 := by
+    ext ⟨s, x⟩
+    simp only [lowerIncompleteGamma]
+    rw [intervalIntegral.integral_of_le (le_max_right x 0), integral_indicator measurableSet_Ioc]
+  have hS : MeasurableSet {q : (ℝ × ℝ) × ℝ | q.2 ∈ Ioc 0 (max q.1.2 0)} :=
+    (measurableSet_lt measurable_const measurable_snd).inter
+      (measurableSet_le measurable_snd (by fun_prop))
+  have hF : Measurable fun q : (ℝ × ℝ) × ℝ =>
+      (Ioc 0 (max q.1.2 0)).indicator (fun t => t ^ (q.1.1 - 1) * Real.exp (-t)) q.2 := by
+    simp only [indicator_apply]
+    exact Measurable.ite hS (by fun_prop) measurable_const
+  rw [key]
+  exact Measurable.ite (measurableSet_lt measurable_const measurable_fst)
+    hF.stronglyMeasurable.integral_prod_right'.measurable measurable_const
+
+/-- `P(s, x)` is jointly measurable in the shape parameter and the argument. -/
+@[fun_prop]
+theorem measurable_regularizedGamma :
+    Measurable fun p : ℝ × ℝ => regularizedGamma p.1 p.2 := by
+  simp only [regularizedGamma_eq_div]
+  exact measurable_lowerIncompleteGamma.div (Real.measurable_Gamma.comp measurable_fst)
 end TauCeti
 
 end

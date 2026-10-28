@@ -9,8 +9,7 @@ public import Mathlib.Analysis.Convex.StrictConvexSpace
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import TauCeti.MeasureTheory.OptimalTransport.Cost.NoCrossing
-import TauCeti.MeasureTheory.Function.ConditionalExpectation
+import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.PlanInterpolation
 
 /-!
 # The continuity equation along the linear interpolation of a map
@@ -24,7 +23,10 @@ measurable map, for instance a transport map from `μ` to its image law `T₊ μ
 from `μ₀ = μ` to `μ₁ = T₊ μ`. When `μ` and `T₊ μ` are probability laws of finite `p`-th moment and
 the graph plan of `T` is an optimal coupling for `W_p`, these laws trace a geodesic segment of
 `P_p (E)` (`TauCeti.WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul`). This file
-describes the curve in Eulerian terms.
+describes the curve in Eulerian terms. It is the displacement interpolation of the graph plan of
+`T`, so apart from the description of the barycentric velocity as a conditional expectation, the
+results are the case `π = graphPlan T μ` of those for plans
+(`TauCeti.exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn` and its companions).
 
 If the displacement `T x - x` has finite first moment, then `μₜ` solves the continuity equation on
 `(0, 1)` with the *barycentric velocity* `vₜ y = E_μ [T X - X | Fₜ X = y]`, the average
@@ -130,35 +132,23 @@ theorem exists_isContinuityEquation_map_smul_add_smul_of_injOn (μ : Measure E) 
       (∀ᵐ t, t ∈ Ioo 0 1 → ∀ᵐ x ∂μ, v t ((1 - t) • x + t • T x) = T x - x) ∧
       ∀ p : ℝ, ∫⁻ t in Ioo 0 1, ∫⁻ y, ‖v t y‖ₑ ^ p ∂μ.map (fun x ↦ (1 - t) • x + t • T x) =
         ∫⁻ x, ‖T x - x‖ₑ ^ p ∂μ := by
-  obtain ⟨v, hce, hv, -⟩ := exists_isContinuityEquation_map_smul_add_smul μ hT hint
-  have : IsFiniteMeasure (volume.restrict (Ioo (0 : ℝ) 1)) := ⟨by simp⟩
-  -- the time and position map `G` is injective on `A`, so conditioning on it is trivial
-  set G : ℝ × E → ℝ × E := fun q ↦ (q.1, (1 - q.1) • q.2 + q.1 • T q.2)
-  have hG : Measurable G := by fun_prop
-  have hGinj : InjOn G A := by
-    rintro ⟨t, x⟩ hx ⟨t', x'⟩ hx' he
-    obtain ⟨rfl, he⟩ := Prod.mk.inj he
-    exact Prod.ext rfl (hinj t hx hx' he)
-  have hW : Integrable (fun x ↦ T x - x) μ :=
-    ⟨(hT.sub measurable_id).aestronglyMeasurable, hasFiniteIntegral_iff_enorm.2 hint⟩
-  have hae : ∀ᵐ q ∂(volume.restrict (Ioo 0 1)).prod μ,
-      v q.1 ((1 - q.1) • q.2 + q.1 • T q.2) = T q.2 - q.2 := by
-    filter_upwards [MeasureTheory.condExp_comap_ae_eq_of_injOn hG hA hAμ hGinj
-      (hW.comp_snd (volume.restrict (Ioo 0 1)))] with q hq
-    rw [← hq]
-    exact congrFun hv q
-  have hae' : ∀ᵐ t, t ∈ Ioo 0 1 → ∀ᵐ x ∂μ, v t ((1 - t) • x + t • T x) = T x - x := by
-    rw [← ae_restrict_iff' measurableSet_Ioo]
-    exact Measure.ae_ae_of_ae_prod hae
-  refine ⟨v, hce, hae', fun p ↦ ?_⟩
-  have hvm (t : ℝ) : Measurable (v t) := hce.measurable_velocity.comp measurable_prodMk_left
-  calc ∫⁻ t in Ioo 0 1, ∫⁻ y, ‖v t y‖ₑ ^ p ∂μ.map (fun x ↦ (1 - t) • x + t • T x)
-      = ∫⁻ t in Ioo (0 : ℝ) 1, ∫⁻ x, ‖T x - x‖ₑ ^ p ∂μ := by
-        refine setLIntegral_congr_fun_ae measurableSet_Ioo ?_
-        filter_upwards [hae'] with t ht hmem
-        rw [lintegral_map ((hvm t).enorm.pow_const p) (by fun_prop)]
-        exact lintegral_congr_ae ((ht hmem).mono fun x hx ↦ by simp [hx])
-    _ = ∫⁻ x, ‖T x - x‖ₑ ^ p ∂μ := by simp
+  -- apply the plan version to the graph plan of `T`, with the graph points lying over `A`
+  let A' : Set (ℝ × (E × E)) := {q | (q.1, q.2.1) ∈ A ∧ q.2.2 = T q.2.1}
+  have hA' : MeasurableSet A' :=
+    (hA.preimage (by fun_prop)).inter (measurableSet_eq_fun (by fun_prop) (by fun_prop))
+  have hA'π : ∀ᵐ q ∂(volume.restrict (Ioo 0 1)).prod (graphPlan T μ), q ∈ A' := by
+    rw [Measure.ae_prod_mem_iff_ae_ae_mem hA']
+    filter_upwards [(Measure.ae_prod_mem_iff_ae_ae_mem hA).1 hAμ] with t ht
+    rw [ae_graphPlan_iff hT.aemeasurable (hA'.preimage measurable_prodMk_left)]
+    exact ht.mono fun _ hx ↦ ⟨hx, rfl⟩
+  obtain ⟨v, hce, hv, hact⟩ := exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn
+    (graphPlan T μ) (by rwa [lintegral_graphPlan hT.aemeasurable (by fun_prop)]) hA' hA'π
+    fun t ↦ by
+      rintro ⟨x, _⟩ ⟨hx, (rfl : _ = T x)⟩ ⟨x', _⟩ ⟨hx', (rfl : _ = T x')⟩ he
+      exact congrArg (fun x ↦ (x, T x)) (hinj t hx hx' he)
+  simp (disch := fun_prop) only [map_graphPlan hT.aemeasurable,
+    lintegral_graphPlan hT.aemeasurable] at hce hact
+  exact ⟨v, hce, hv.mono fun t ht hmem ↦ ae_of_ae_graphPlan hT.aemeasurable (ht hmem), hact⟩
 
 /-- **The velocity along a linear interpolation injective on a fixed set.** The special case of
 `exists_isContinuityEquation_map_smul_add_smul_of_injOn` in which, for almost every
@@ -174,22 +164,20 @@ theorem exists_isContinuityEquation_map_smul_add_smul_of_ae_injOn (μ : Measure 
       (∀ᵐ t, t ∈ Ioo 0 1 → ∀ᵐ x ∂μ, v t ((1 - t) • x + t • T x) = T x - x) ∧
       ∀ p : ℝ, ∫⁻ t in Ioo 0 1, ∫⁻ y, ‖v t y‖ₑ ^ p ∂μ.map (fun x ↦ (1 - t) • x + t • T x) =
         ∫⁻ x, ‖T x - x‖ₑ ^ p ∂μ := by
-  -- `U` is a measurable set of full measure in `(0, 1)` of times at which the interpolation is
-  -- injective on `S`
-  set N := toMeasurable volume {t | ¬(t ∈ Ioo (0 : ℝ) 1 → InjOn (fun x ↦ (1 - t) • x + t • T x) S)}
-  set U := Ioo (0 : ℝ) 1 \ N
-  have hU : MeasurableSet U := measurableSet_Ioo.diff (measurableSet_toMeasurable _ _)
-  have hUμ : ∀ᵐ t ∂volume.restrict (Ioo (0 : ℝ) 1), t ∈ U := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioo,
-      ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.1
-        ((measure_toMeasurable _).trans (ae_iff.1 hinj)))] with t ht htN using ⟨ht, htN⟩
-  have hUinj (t : ℝ) (ht : t ∈ U) : InjOn (fun x ↦ (1 - t) • x + t • T x) S := by
-    by_contra h
-    exact ht.2 (subset_toMeasurable _ _ fun h' ↦ h (h' ht.1))
-  exact exists_isContinuityEquation_map_smul_add_smul_of_injOn μ hT hint (hU.prod hS)
-    ((Measure.ae_prod_mem_iff_ae_ae_mem (hU.prod hS)).2
-      (hUμ.mono fun _ ht ↦ hSμ.mono fun _ hx ↦ ⟨ht, hx⟩))
-    fun t _ hx _ hx' ↦ hUinj t hx.1 hx.2 hx'.2
+  -- apply the plan version to the graph plan of `T`, with the graph points lying over `S`
+  let S' : Set (E × E) := {z | z.1 ∈ S ∧ z.2 = T z.1}
+  have hS' : MeasurableSet S' :=
+    (measurable_fst hS).inter (measurableSet_eq_fun measurable_snd (hT.comp measurable_fst))
+  have hS'π : ∀ᵐ z ∂graphPlan T μ, z ∈ S' :=
+    (ae_graphPlan_iff hT.aemeasurable hS').2 (hSμ.mono fun _ hx ↦ ⟨hx, rfl⟩)
+  obtain ⟨v, hce, hv, hact⟩ := exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_ae_injOn
+    (graphPlan T μ) (by rwa [lintegral_graphPlan hT.aemeasurable (by fun_prop)]) hS' hS'π
+    (hinj.mono fun t ht hmem ↦ by
+      rintro ⟨x, _⟩ ⟨hx, (rfl : _ = T x)⟩ ⟨x', _⟩ ⟨hx', (rfl : _ = T x')⟩ he
+      exact congrArg (fun x ↦ (x, T x)) (ht hmem hx hx' he))
+  simp (disch := fun_prop) only [map_graphPlan hT.aemeasurable,
+    lintegral_graphPlan hT.aemeasurable] at hce hact
+  exact ⟨v, hce, hv.mono fun t ht hmem ↦ ae_of_ae_graphPlan hT.aemeasurable (ht hmem), hact⟩
 
 /-- **The velocity along an optimal linear interpolation.** Let `E` be strictly convex, let
 `1 < p < ∞`, and let `μ` be a finite measure on `E` and `T` a measurable map whose graph plan is
@@ -213,49 +201,9 @@ theorem exists_isContinuityEquation_map_smul_add_smul_of_isOptimalCoupling
       (∀ᵐ t, t ∈ Ioo 0 1 → ∀ᵐ x ∂μ, v t ((1 - t) • x + t • T x) = T x - x) ∧
       ∫⁻ t in Ioo 0 1, ∫⁻ y, ‖v t y‖ₑ ^ p.toReal ∂μ.map (fun x ↦ (1 - t) • x + t • T x) =
         wassersteinEDist p μ ν ^ p.toReal := by
-  have hp₁ : 1 < p.toReal := by
-    simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
-  have hc : Continuous fun z : E × E ↦ edist z.1 z.2 ^ p.toReal :=
-    ENNReal.continuous_rpow_const.comp continuous_edist
-  have hcost : transportCost (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) μ ν =
-      wassersteinEDist p μ ν ^ p.toReal :=
-    (wassersteinEDist_rpow_eq_transportCost continuous_edist.measurable
-      (zero_lt_one.trans hp).ne' hp_top μ ν).symm
-  -- the `p`-th moment of the displacement is the optimal cost
-  have hmom : ∫⁻ x, ‖T x - x‖ₑ ^ p.toReal ∂μ = wassersteinEDist p μ ν ^ p.toReal := by
-    rw [← hcost, ← hopt.lintegral_eq, lintegral_graphPlan hT.aemeasurable
-      hc.measurable.aemeasurable]
-    simp only [edist_eq_enorm_sub, enorm_sub_rev]
-  have hmom_fin : ∫⁻ x, ‖T x - x‖ₑ ^ p.toReal ∂μ ≠ ∞ :=
-    hmom ▸ ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg hfin
-  -- so the displacement has finite first moment
-  have hint : ∫⁻ x, ‖T x - x‖ₑ ∂μ < ∞ := by
-    have hle (a : ℝ≥0∞) : a ≤ 1 + a ^ p.toReal := by
-      rcases le_total a 1 with ha | ha
-      · exact ha.trans le_self_add
-      · calc a = a ^ (1 : ℝ) := (ENNReal.rpow_one a).symm
-          _ ≤ a ^ p.toReal := ENNReal.rpow_le_rpow_of_exponent_le ha hp₁.le
-          _ ≤ 1 + a ^ p.toReal := le_add_self
-    calc ∫⁻ x, ‖T x - x‖ₑ ∂μ ≤ ∫⁻ x, 1 + ‖T x - x‖ₑ ^ p.toReal ∂μ := lintegral_mono fun x ↦ hle _
-      _ = μ univ + ∫⁻ x, ‖T x - x‖ₑ ^ p.toReal ∂μ := by
-        rw [lintegral_add_left measurable_const, lintegral_const, one_mul]
-      _ < ∞ := ENNReal.add_lt_top.2 ⟨measure_lt_top μ univ, hmom_fin.lt_top⟩
-  -- the optimal plan is concentrated on its support, which is cyclically monotone
-  have hgraph : Measurable fun x ↦ (x, T x) := measurable_id.prodMk hT
-  set S := (fun x ↦ (x, T x)) ⁻¹' (graphPlan T μ).support
-  have hS : MeasurableSet S := Measure.isClosed_support.measurableSet.preimage hgraph
-  have hSμ : ∀ᵐ x ∂μ, x ∈ S := by
-    have h := Measure.measure_compl_support (μ := graphPlan T μ)
-    rw [graphPlan_def, Measure.map_apply hgraph Measure.isClosed_support.measurableSet.compl,
-      ← graphPlan_def] at h
-    exact measure_eq_zero_iff_ae_notMem.1 h |>.mono fun x hx ↦ not_not.1 hx
-  have hmono := hopt.isCyclicallyMonotone_support hc (hcost ▸
-    ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg hfin)
-  have hinj : ∀ᵐ t, t ∈ Ioo (0 : ℝ) 1 → InjOn (fun x ↦ (1 - t) • x + t • T x) S :=
-    .of_forall fun t ht x hx y hy he ↦
-      congrArg Prod.fst (hmono.injOn_smul_add_smul hp₁ ht hx hy he)
   obtain ⟨v, hce, hv, hact⟩ :=
-    exists_isContinuityEquation_map_smul_add_smul_of_ae_injOn μ hT hint hS hSμ hinj
-  exact ⟨v, hce, hv, (hact p.toReal).trans hmom⟩
+    exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_isOptimalCoupling hp hp_top hopt hfin
+  simp (disch := fun_prop) only [map_graphPlan hT.aemeasurable] at hce hact
+  exact ⟨v, hce, hv.mono fun t ht hmem ↦ ae_of_ae_graphPlan hT.aemeasurable (ht hmem), hact⟩
 
 end TauCeti

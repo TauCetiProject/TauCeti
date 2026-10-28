@@ -26,6 +26,7 @@ generation then identifies it with a finite-rank free abelian group.
 
 * `TauCeti.splitTorusCommHopfAlgProperty_coordinateRing`: the coordinate Hopf algebra of a
   finitely generated torsion-free commutative group is a split torus.
+* `TauCeti.splitTorusCommHopfAlgProperty.groupLikeSpanned`: every split torus is diagonalizable.
 * `iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduced`: a finite-type
   commutative Hopf algebra over a field is a torus exactly when it is of multiplicative type,
   geometrically connected, and geometrically reduced.
@@ -74,6 +75,18 @@ theorem splitTorusCommHopfAlgProperty_coordinateRing (K : Type u) [CommRing K]
   exact ⟨n, ⟨ObjectProperty.isoMk _ <| _root_.CommHopfAlgCat.isoMk
     (MonoidAlgebra.domCongrBialgEquiv K K
       ((AddEquiv.toMultiplicative (Finsupp.domCongr Equiv.ulift)).trans e.symm))⟩⟩
+
+/-- **Every split torus is diagonalizable:** its coordinate Hopf algebra is spanned by its
+group-like elements. -/
+@[grind →]
+theorem splitTorusCommHopfAlgProperty.groupLikeSpanned
+    (k : Type u) [Field k] (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (hH : splitTorusCommHopfAlgProperty k H) :
+    DiagonalizableGroup.groupLikeSpannedProperty k H := by
+  obtain ⟨n, ⟨e⟩⟩ := (splitTorusCommHopfAlgProperty_iff k H).mp hH
+  exact (DiagonalizableGroup.groupLikeSpannedProperty k).prop_of_iso e
+    ((DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mpr
+      (MonoidAlgebra.groupLikeSetSpan_eq_top (R := k) _))
 
 namespace torusCommHopfAlgProperty
 

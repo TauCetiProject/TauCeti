@@ -32,6 +32,14 @@ for a covering map with no group acting, of Mathlib's `IsQuotientCoveringMap.isO
 that the rest of the file consumes. Finally, the quotient covering map of a finite group has
 finite fibres, which is what makes it a finite covering with a transfer on singular chains.
 
+For a discrete additive subgroup `L` of a topological additive group `E`, the orbit projection
+`E → AddAction.orbitRel.Quotient L E` for translation by `L` is a quotient covering map. Unlike
+Mathlib's `isAddQuotientCoveringMap_quotientMk_of_properlyDiscontinuousVAdd`, this needs no local
+compactness or separation axiom: discreteness of `L` alone provides neighbourhoods whose
+translates are pairwise disjoint (Mathlib's
+`Topology.IsQuotientMap.isAddQuotientCoveringMap_of_addSubgroup`). For a lattice `L` this is the
+covering of the torus `E / L` by `E`.
+
 ## Main results
 
 * `IsCoveringMap.isOpenQuotientMap`: a surjective covering map is an open quotient map.
@@ -39,6 +47,10 @@ finite fibres, which is what makes it a finite covering with a transfer on singu
   the quotient by the whole group is a covering map.
 * `IsQuotientCoveringMap.finite_fiber`: the quotient covering map of a finite group has finite
   fibres.
+* `IsQuotientCoveringMap.image_smul_set`: the quotient covering map has the same image on a set
+  and on its translates.
+* `AddSubgroup.isAddQuotientCoveringMap_quotientMk`: the orbit projection for translation by a
+  discrete additive subgroup is a quotient covering map.
 
 ## Implementation notes
 
@@ -205,4 +217,19 @@ theorem _root_.IsQuotientCoveringMap.finite_fiber [Finite G] (hq : IsQuotientCov
   obtain ⟨e, rfl⟩ := hq.surjective x
   exact Finite.of_equiv G (hq.fiberEquivGroup ⟨e, rfl⟩).symm
 
+/-- The quotient covering map has the same image on a set and on each of its translates. -/
+theorem _root_.IsQuotientCoveringMap.image_smul_set (hq : IsQuotientCoveringMap q G) (g : G)
+    (s : Set E) : q '' (g • s) = q '' s := by
+  rw [← Set.image_smul, Set.image_image]
+  simp_rw [hq.map_smul]
+
 end TauCeti
+
+/-- The orbit projection `E → E / L` for translation by a discrete additive subgroup `L` of a
+topological additive group is a quotient covering map for the translation action of `L`. -/
+theorem AddSubgroup.isAddQuotientCoveringMap_quotientMk {E : Type*} [AddGroup E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] (L : AddSubgroup E) [DiscreteTopology L] :
+    IsAddQuotientCoveringMap (Quotient.mk (AddAction.orbitRel L E)) L :=
+  isQuotientMap_quotient_mk'.isAddQuotientCoveringMap_of_addSubgroup L
+    (isDiscrete_iff_discreteTopology.2 ‹_›) fun {_ _} ↦
+      Quotient.eq.trans QuotientAddGroup.rightRel_apply

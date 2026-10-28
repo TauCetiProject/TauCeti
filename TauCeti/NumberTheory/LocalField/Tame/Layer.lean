@@ -25,7 +25,7 @@ The local-field structures on `L` may be any structures compatible with `K`.
 Its canonical embedding into the separable closure identifies the arithmetic fixing subgroup
 with the same product `P_K U` in the algebraic-closure model.
 
-The quotient comparison specializes `TauCeti.absoluteGaloisGroupQuotientEquiv`, and the pair
+The quotient comparison specializes `TauCeti.absoluteGaloisGroupQuotientEquivOfEq`, and the pair
 is the image of the frame supplied by `TauCeti.exists_tameFrame_quotient`.
 
 ## References
@@ -153,28 +153,15 @@ theorem galoisSubgroup_tameLayerEmbedding_comap
 def quotientTameLayerEquiv (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K)) :
     Field.absoluteGaloisGroup K ⧸ (tameLayerSubgroup K U).toSubgroup ≃ₜ*
       Gal(tameLayer K U/K) :=
-  -- Specify both carriers: the fixing subgroup uses the automorphism group instances,
-  -- while the source quotient uses the derived absolute Galois group instances.
-  ((show Field.absoluteGaloisGroup K ≃ₜ* Gal(AlgebraicClosure K/K) from
-      ContinuousMulEquiv.refl _).quotientCongr
-    (tameLayerSubgroup K U).toSubgroup (tameLayer K U).fixingSubgroup
-    (by
-      change (tameLayerSubgroup K U).toSubgroup.map (MonoidHom.id _) = _
-      rw [Subgroup.map_id]
-      exact (fixingSubgroup_tameLayer K U).symm)).trans
-      (absoluteGaloisGroupQuotientEquiv K (tameLayer K U))
+  absoluteGaloisGroupQuotientEquivOfEq (fixingSubgroup_tameLayer K U).symm
 
 /-- The quotient identification is restriction of automorphisms to the tame layer. -/
 @[simp]
 theorem quotientTameLayerEquiv_mk (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
     (σ : Field.absoluteGaloisGroup K) :
     quotientTameLayerEquiv K U (QuotientGroup.mk σ) =
-      AlgEquiv.restrictNormalHom (tameLayer K U) σ := by
-  rw [quotientTameLayerEquiv, ContinuousMulEquiv.trans_apply,
-    ContinuousMulEquiv.quotientCongr_mk
-      (show Field.absoluteGaloisGroup K ≃ₜ* Gal(AlgebraicClosure K/K) from
-        ContinuousMulEquiv.refl _)]
-  exact absoluteGaloisGroupQuotientEquiv_mk σ
+      AlgEquiv.restrictNormalHom (tameLayer K U) σ :=
+  absoluteGaloisGroupQuotientEquivOfEq_mk _ σ
 
 /-- The inverse quotient identification sends a restricted automorphism back to its class. -/
 @[simp]
@@ -182,8 +169,8 @@ theorem quotientTameLayerEquiv_symm_restrictNormalHom
     (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
     (σ : Field.absoluteGaloisGroup K) :
     (quotientTameLayerEquiv K U).symm (AlgEquiv.restrictNormalHom (tameLayer K U) σ) =
-      QuotientGroup.mk σ := by
-  rw [← quotientTameLayerEquiv_mk, ContinuousMulEquiv.symm_apply_apply]
+      QuotientGroup.mk σ :=
+  absoluteGaloisGroupQuotientEquivOfEq_symm_restrictNormalHom _ σ
 
 /-- The layer fixed by `P_K U` is tamely ramified for any compatible local-field structures. -/
 theorem isTamelyRamified_tameLayer (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
@@ -192,7 +179,7 @@ theorem isTamelyRamified_tameLayer (U : OpenNormalSubgroup (Field.absoluteGalois
     IsTamelyRamified K (tameLayer K U) := by
   apply (le_maximalTameExtension_iff (tameLayer K U)).mp
   rw [← InfiniteGalois.fixedField_fixingSubgroup (maximalTameExtension K (AlgebraicClosure K)),
-    IntermediateField.le_iff_le, fixingSubgroup_tameLayer,
+    IntermediateField.le_fixedField_iff_le_fixingSubgroup, fixingSubgroup_tameLayer,
     ← wildInertiaSubgroup_def]
   exact le_sup_left
 

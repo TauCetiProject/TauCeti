@@ -48,10 +48,41 @@ noncomputable section
 public section
 
 variable {ι M N : Type*} [AddCommGroup M] [Module ℚ M] [AddCommGroup N] [Module ℚ N]
-  {P : RootPairing ι ℚ M N} [P.IsCrystallographic] [P.IsReduced] {b : P.Base}
-  [Fintype ι] [DecidableEq ι]
+  {P : RootPairing ι ℚ M N} {b : P.Base} [Fintype ι]
 
-omit [P.IsReduced] in
+private lemma omega_mulVec_apply (x : b.support ⊕ ι → ℚ) (q : b.support ⊕ ι) :
+    let _i := P.indexNeg
+    (ω b *ᵥ x) q = match q with
+      | Sum.inl q => x (.inl q)
+      | Sum.inr q => x (.inr (-q)) := by
+  classical
+  let _i := P.indexNeg
+  rcases q with q | q
+  · simp [ω, Matrix.mulVec, dotProduct, Matrix.one_apply]
+  · simp only [ω, Matrix.mulVec, dotProduct, Fintype.sum_sum_type,
+      Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂, Matrix.zero_apply, zero_mul,
+      Finset.sum_const_zero, zero_add, Matrix.of_apply, ite_mul, one_mul]
+    have hiff (a : ι) : q = -a ↔ a = -q := by
+      rw [eq_comm, neg_eq_iff_eq_neg]
+    simp_rw [hiff]
+    simp
+
+variable [DecidableEq ι]
+
+private lemma omega_mulVec_single (j : b.support ⊕ ι) :
+    let _i := P.indexNeg
+    ω b *ᵥ Pi.single j 1 = match j with
+      | Sum.inl j => Pi.single (.inl j) 1
+      | Sum.inr j => Pi.single (.inr (-j)) 1 := by
+  classical
+  let _i := P.indexNeg
+  ext q
+  rw [omega_mulVec_apply]
+  rcases j with j | j <;> rcases q with q | q <;>
+    simp [Pi.single_apply, -indexNeg_neg, neg_eq_iff_eq_neg]
+
+variable [P.IsCrystallographic]
+
 private lemma e_mulVec_v_eq_zero (s : b.support) {j : ι} (hj : P.root j + P.root s ≠ 0)
     (hroot : P.root s + P.root j ∉ range P.root) :
     e s *ᵥ v b j = 0 := by
@@ -66,6 +97,25 @@ private lemma e_mulVec_v_eq_zero (s : b.support) {j : ι} (hj : P.root j + P.roo
   · simp [e, v, hneg']
   · have hk : P.root k ≠ P.root s + P.root j := fun hk => hroot ⟨k, hk⟩
     simp [e, v, hk]
+
+private lemma dividedPower_f_eq_omega_mul_dividedPower_e_mul_omega (s : b.support) (n : ℕ) :
+    TauCeti.Associative.dividedPower n (f s) =
+      ω b * TauCeti.Associative.dividedPower n (e s) * ω b := by
+  have hp : ω b * f s ^ n = e s ^ n * ω b := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+        rw [pow_succ, pow_succ, ← mul_assoc, ih, mul_assoc, ω_mul_f, ← mul_assoc]
+  rw [TauCeti.Associative.dividedPower_def, TauCeti.Associative.dividedPower_def]
+  calc
+    (n.factorial : ℚ)⁻¹ • f s ^ n =
+        (n.factorial : ℚ)⁻¹ • (ω b * (ω b * f s ^ n)) := by
+          rw [← mul_assoc, ω_mul_ω, one_mul]
+    _ = (n.factorial : ℚ)⁻¹ • (ω b * (e s ^ n * ω b)) := by rw [hp]
+    _ = ω b * ((n.factorial : ℚ)⁻¹ • e s ^ n) * ω b := by
+      rw [← smul_mul_assoc, ← mul_assoc, smul_mul_assoc, ← mul_smul_comm]
+
+variable [P.IsReduced]
 
 private lemma e_pow_mulVec_v_eq_zero_or_exists (s : b.support) {j : ι}
     (hj : let _i := P.indexNeg; j ≠ -s) (n : ℕ) :
@@ -258,55 +308,6 @@ private theorem exists_intCast_dividedPower_e_mulVec_single (s : b.support) (n :
           field_simp
         rw [hcoeff]
         exact hv ((P.chainBotCoeff s j + n).choose n) k q
-
-omit [P.IsReduced] in
-private lemma dividedPower_f_eq_omega_mul_dividedPower_e_mul_omega (s : b.support) (n : ℕ) :
-    TauCeti.Associative.dividedPower n (f s) =
-      ω b * TauCeti.Associative.dividedPower n (e s) * ω b := by
-  have hp : ω b * f s ^ n = e s ^ n * ω b := by
-    induction n with
-    | zero => simp
-    | succ n ih =>
-        rw [pow_succ, pow_succ, ← mul_assoc, ih, mul_assoc, ω_mul_f, ← mul_assoc]
-  rw [TauCeti.Associative.dividedPower_def, TauCeti.Associative.dividedPower_def]
-  calc
-    (n.factorial : ℚ)⁻¹ • f s ^ n =
-        (n.factorial : ℚ)⁻¹ • (ω b * (ω b * f s ^ n)) := by
-          rw [← mul_assoc, ω_mul_ω, one_mul]
-    _ = (n.factorial : ℚ)⁻¹ • (ω b * (e s ^ n * ω b)) := by rw [hp]
-    _ = ω b * ((n.factorial : ℚ)⁻¹ • e s ^ n) * ω b := by
-      rw [← smul_mul_assoc, ← mul_assoc, smul_mul_assoc, ← mul_smul_comm]
-
-omit [P.IsCrystallographic] [P.IsReduced] [DecidableEq ι] in
-private lemma omega_mulVec_apply (x : b.support ⊕ ι → ℚ) (q : b.support ⊕ ι) :
-    let _i := P.indexNeg
-    (ω b *ᵥ x) q = match q with
-      | Sum.inl q => x (.inl q)
-      | Sum.inr q => x (.inr (-q)) := by
-  classical
-  let _i := P.indexNeg
-  rcases q with q | q
-  · simp [ω, Matrix.mulVec, dotProduct, Matrix.one_apply]
-  · simp only [ω, Matrix.mulVec, dotProduct, Fintype.sum_sum_type,
-      Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂, Matrix.zero_apply, zero_mul,
-      Finset.sum_const_zero, zero_add, Matrix.of_apply, ite_mul, one_mul]
-    have hiff (a : ι) : q = -a ↔ a = -q := by
-      rw [eq_comm, neg_eq_iff_eq_neg]
-    simp_rw [hiff]
-    simp
-
-omit [P.IsCrystallographic] [P.IsReduced] in
-private lemma omega_mulVec_single (j : b.support ⊕ ι) :
-    let _i := P.indexNeg
-    ω b *ᵥ Pi.single j 1 = match j with
-      | Sum.inl j => Pi.single (.inl j) 1
-      | Sum.inr j => Pi.single (.inr (-j)) 1 := by
-  classical
-  let _i := P.indexNeg
-  ext q
-  rw [omega_mulVec_apply]
-  rcases j with j | j <;> rcases q with q | q <;>
-    simp [Pi.single_apply, -indexNeg_neg, neg_eq_iff_eq_neg]
 
 private theorem exists_intCast_dividedPower_f_mulVec_single (s : b.support) (n : ℕ)
     (j q : b.support ⊕ ι) :

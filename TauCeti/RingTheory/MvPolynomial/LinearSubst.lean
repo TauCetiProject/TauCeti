@@ -7,8 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import Mathlib.RepresentationTheory.Basic
-public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.Algebra.MvPolynomial.PDeriv
+public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # Linear changes of variables in multivariate polynomials
@@ -38,8 +38,9 @@ forms of degree `n`, through which the modular group acts on period polynomials.
 * `MvPolynomial.linearSubst_mul`: the substitution is a right action.
 * `MvPolynomial.pderiv_linearSubst`: the chain rule
   `∂/∂Xⱼ (linearSubst M p) = ∑ᵢ Mᵢⱼ linearSubst M (∂p/∂Xᵢ)`.
-* `MvPolynomial.exists_aeval_pderiv_linearSubst_ne_zero`: an invertible substitution preserves
-  the nonsingularity of the zeros of a polynomial.
+* `MvPolynomial.exists_aeval_pderiv_linearSubst_ne_zero`: a substitution with nonzero
+  determinant preserves nonvanishing of the gradient at nonzero zeros over a faithful algebra
+  without zero divisors.
 * `MvPolynomial.map_linearSubst`: changing coefficients commutes with substitution.
 * `MvPolynomial.linearSubst_diagonal_monomial`: a diagonal matrix scales each monomial by
   the product of its diagonal entries raised to the corresponding exponents.
@@ -175,19 +176,20 @@ theorem pderiv_linearSubst (M : Matrix σ σ R) (j : σ) (p : MvPolynomial σ R)
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simp [pderiv_X, Pi.single_apply, mul_comm]
 
-/-- **An invertible linear change of variables preserves nonsingularity**: if at every nonzero
-zero `b ∈ Kˢ` of `p` some partial derivative of `p` is nonzero, then the same holds for
-`linearSubst M p` when `det M ≠ 0`. -/
-theorem exists_aeval_pderiv_linearSubst_ne_zero [DecidableEq σ] {k K : Type*} [Field k] [Field K]
-    [Algebra k K] {p : MvPolynomial σ k} {M : Matrix σ σ k} (hM : M.det ≠ 0)
+/-- A linear substitution with nonzero determinant preserves nonvanishing of the gradient at
+nonzero zeros: if at every nonzero zero `b ∈ Kˢ` of `p` some partial derivative of `p` is
+nonzero, then the same holds for `linearSubst M p`. The coefficient ring embeds faithfully
+into the evaluation algebra `K`, which has no zero divisors. -/
+theorem exists_aeval_pderiv_linearSubst_ne_zero [DecidableEq σ] {k K : Type*} [CommRing k]
+    [CommRing K] [NoZeroDivisors K] [Algebra k K] [FaithfulSMul k K]
+    {p : MvPolynomial σ k} {M : Matrix σ σ k} (hM : M.det ≠ 0)
     (hp : ∀ b : σ → K, b ≠ 0 → aeval b p = 0 → ∃ l, aeval b (pderiv l p) ≠ 0)
     {b : σ → K} (hb : b ≠ 0) (hpb : aeval b (linearSubst M p) = 0) :
     ∃ l, aeval b (pderiv l (linearSubst M p)) ≠ 0 := by
   set M' := M.map (algebraMap k K)
   have hM' : M'.det ≠ 0 := by
-    have : M'.det = algebraMap k K M.det := by rw [RingHom.map_det]; rfl
-    rw [this]
-    exact (map_ne_zero _).mpr hM
+    simpa only [M', ← RingHom.mapMatrix_apply, ← RingHom.map_det] using
+      (FaithfulSMul.algebraMap_eq_zero_iff k K).not.mpr hM
   rw [aeval_linearSubst] at hpb
   obtain ⟨l, hl⟩ := hp (M' *ᵥ b) (fun h ↦ hb (eq_zero_of_mulVec_eq_zero hM' h)) hpb
   by_contra! h
@@ -222,41 +224,13 @@ theorem IsHomogeneous.linearSubst {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHo
   rw [linearSubst_eq_aeval, ← one_mul n]
   exact hp.aeval _ fun i ↦ IsHomogeneous.sum _ _ _ fun j _ ↦ isHomogeneous_C_mul_X (M i j) j
 
-omit [Fintype σ] in
-/-- The scalar action on a monomial induced by `Xᵢ ↦ c Xᵢ`. -/
-private theorem aeval_C_mul_X_monomial (c : R) (d : σ →₀ ℕ) (r : R) :
-    MvPolynomial.aeval (fun i ↦ C c * X i) (monomial d r) =
-      c ^ d.degree • monomial d r := by
-  induction d using Finsupp.induction with
-  | zero => simp
-  | single_add i e d _ _ ih =>
-      rw [monomial_single_add, map_mul, map_pow, aeval_X, ih, map_add,
-        Finsupp.degree_single, pow_add]
-      simp [mul_pow, smul_eq_C_mul, mul_assoc, mul_left_comm, mul_comm]
-
-omit [Fintype σ] in
-/-- Substituting `Xᵢ ↦ c Xᵢ` in a form of degree `n` multiplies it by `cⁿ`. -/
-theorem IsHomogeneous.aeval_C_mul_X {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n)
-    (c : R) : MvPolynomial.aeval (fun i ↦ C c * X i) p = c ^ n • p := by
-  induction hp using IsWeightedHomogeneous.induction_on with
-  | zero => simp
-  | add p q _ _ ihp ihq => simp [ihp, ihq, smul_add]
-  | monomial d r hr =>
-      rw [aeval_C_mul_X_monomial]
-      congr 1
-      exact congrArg (c ^ ·) (by simpa [Finsupp.degree_eq_weight_one, Pi.one_def] using hr)
-
 /-- Rescaling the matrix by `c` rescales a form of degree `n` by `cⁿ`. -/
 theorem IsHomogeneous.linearSubst_smul {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n)
     (c : R) (M : Matrix σ σ R) :
     MvPolynomial.linearSubst (c • M) p = c ^ n • MvPolynomial.linearSubst M p := by
-  have hM : MvPolynomial.linearSubst (c • M) =
-      (MvPolynomial.aeval fun i ↦ C c * X i).comp (MvPolynomial.linearSubst M) := by
-    refine algHom_ext fun i ↦ ?_
-    simp only [linearSubst_X, AlgHom.comp_apply, map_sum, map_mul, aeval_X, aeval_C,
-      algebraMap_eq, Matrix.smul_apply, smul_eq_mul, map_mul C]
-    exact Finset.sum_congr rfl fun _ _ ↦ by ring
-  rw [hM, AlgHom.comp_apply, (hp.linearSubst M).aeval_C_mul_X]
+  simpa only [linearSubst_eq_aeval, Pi.smul_def, Finset.smul_sum, Matrix.smul_apply,
+    smul_eq_mul, smul_eq_C_mul, map_mul, mul_assoc] using
+    hp.aeval_smul (S := R) (A := MvPolynomial σ R) (fun i ↦ ∑ j, C (M i j) * X j) c
 
 /-- On forms of degree `n`, negating the matrix multiplies by `(-1)ⁿ`. -/
 theorem IsHomogeneous.linearSubst_neg {R : Type*} [CommRing R] {p : MvPolynomial σ R} {n : ℕ}

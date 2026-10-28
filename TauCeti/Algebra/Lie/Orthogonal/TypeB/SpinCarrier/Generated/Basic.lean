@@ -175,7 +175,7 @@ variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
 
 /-- The coordinate Hopf algebras of the generators over `K` are the scalar extensions of those
 over `k`. -/
-private noncomputable def generatorCoordinateAlgebraBaseChangeIso :
+noncomputable def generatorCoordinateAlgebraBaseChangeIso :
     ∀ j, CommHopfAlgCat.baseChange (K := K) (generatorCoordinateAlgebra n k j) ≅
       generatorCoordinateAlgebra n K j
   | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
@@ -185,7 +185,7 @@ private noncomputable def generatorCoordinateAlgebraBaseChangeIso :
 
 /-- Each generator over `K` is the scalar extension of the corresponding generator over `k`, read
 through the coordinate identifications of `GL_(2^(n+1))` and of the generator's domain. -/
-private theorem generatorCoordinateMap_baseChange (j : (Fin (n + 1) ⊕ Fin (n + 1)) ⊕ Unit) :
+theorem generatorCoordinateMap_baseChange (j : (Fin (n + 1) ⊕ Fin (n + 1)) ⊕ Unit) :
     ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).inv ≫
         CommHopfAlgCat.baseChangeMap (generatorCoordinateMap n k j)) ≫
         (generatorCoordinateAlgebraBaseChangeIso n k K j).hom =

@@ -117,7 +117,8 @@ private theorem exists_zeroAtInftyContinuousMap_ae_eq (hk : finrank ℝ E < 2 * 
   have hvolume : (volume : Measure E).restrict ((⊤ : Opens E) : Set E) = volume := by simp
   set w : Lp ℝ 2 (volume : Measure E) := castLpₗᵢ (𝕜 := ℝ) hvolume (value k u)
   have hw : ∀ x, w x = value k u x := coeFn_castLpₗᵢ hvolume _
-  have hS := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq k w).mpr
+  have hS := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq ENNReal.one_lt_two
+    ENNReal.ofNat_ne_top k w).mpr
     ⟨u, .of_forall fun x => (hw x).symm⟩
   obtain ⟨g, hg⟩ := hS.exists_zeroAtInftyContinuousMap_ae_eq (by exact_mod_cast hk)
   -- The complex representative is real almost everywhere, so its real part represents `u`.

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Stalk
 public import TauCeti.AlgebraicGeometry.LineBundle.Germ
+public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 import all TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
@@ -182,6 +183,13 @@ theorem rationalDifferentialStalk_symm_apply (x : X) (η : Ω[X.presheaf.stalk x
 section Invertible
 
 variable [SheafOfModules.isInvertible X (X.relativeDifferentials R)]
+
+/-- If the differential sheaf is invertible, the differentials of the function field form a
+one-dimensional vector space over it: they are the generic stalk of the differential sheaf. -/
+theorem finrank_kaehlerDifferential_functionField_of_isInvertible :
+    Module.finrank X.functionField Ω[X.functionField⁄R] = 1 :=
+  (relativeDifferentialsGenericStalkEquiv R).finrank_eq.symm.trans
+    (Scheme.Modules.finrank_stalk_of_isInvertible _ _)
 
 /-- A differential section is determined by its rational value when the differential sheaf is
 invertible, in particular on a scheme smooth of relative dimension one. -/

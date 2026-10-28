@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 public import TauCeti.Analysis.Complex.LocalNormalForm
+public import TauCeti.Topology.Covering.LocalPower
+import TauCeti.Analysis.Complex.RiemannSurface.IdentityTheorem
 
 /-!
 # Local power coordinates for holomorphic maps of Riemann surfaces
@@ -20,7 +22,11 @@ neighbourhood of the source point.
 
 This supplies actual biholomorphic coordinates at ramification points, rather than just a count
 of nearby fibres. They are the local models used to remove and replace branch discs in the
-branched-cover Euler-characteristic argument.
+branched-cover Euler-characteristic argument. The theorem
+`TauCeti.RiemannSurface.isLocalPowerAt_localMultiplicity` packages the same coordinates in the
+topological `TauCeti.IsLocalPowerAt` vocabulary used by branched covers. In particular, on a
+connected Riemann surface every fibre of a nonconstant holomorphic map is discrete
+(`TauCeti.RiemannSurface.eventually_apply_ne_of_ne_const`).
 
 ## References
 
@@ -102,5 +108,48 @@ theorem exists_chart_eq_pow_localMultiplicity
     have h := hpow (c y) hy.2
     simpa only [F, c.left_inv hy.1, c.left_inv hx, b,
       OpenPartialHomeomorph.trans_apply] using h
+
+/-- A holomorphic map that is nonconstant near `x` is locally the power map whose exponent is
+its local multiplicity. This is the topological local-power formulation of
+`exists_chart_eq_pow_localMultiplicity`. -/
+theorem isLocalPowerAt_localMultiplicity
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    (hne : ¬ EventuallyConst f (𝓝 x)) : IsLocalPowerAt f x (localMultiplicity f x) := by
+  let e' := chartAt ℂ (f x)
+  let τ := Homeomorph.addRight (-e' (f x))
+  let ψ := e'.trans τ.toOpenPartialHomeomorph
+  obtain ⟨e, -, hxe, hex, -, hpow⟩ := exists_chart_eq_pow_localMultiplicity hf hne
+    (chart_mem_maximalAtlas (f x)) (mem_chart_source ℂ (f x)) univ_mem
+  have hψ (y) : ψ y = e' y - e' (f x) := by
+    rw [OpenPartialHomeomorph.trans_apply, sub_eq_add_neg]
+    rfl
+  have hψ_source : ψ.source = e'.source := by
+    rw [OpenPartialHomeomorph.trans_source, Homeomorph.toOpenPartialHomeomorph_source,
+      preimage_univ, inter_univ]
+  rw [isLocalPowerAt_iff]
+  refine ⟨e, ψ, hxe, ?_, hex, ?_, ?_⟩
+  · intro y hy
+    rw [hψ_source]
+    exact (hpow y hy).1
+  · rw [hψ, sub_self]
+  · intro w hw
+    have hy : e.symm w ∈ e.source := e.map_target hw
+    rw [hψ]
+    simpa only [e.right_inv hw] using (hpow _ hy).2
+
+/-- **Discreteness of the fibres.** On a connected Riemann surface, a holomorphic map other than the
+constant map with value `y₀` takes the value `y₀` at no point of a punctured neighbourhood of any
+point. -/
+theorem eventually_apply_ne_of_ne_const [PreconnectedSpace X]
+    (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) {y₀ : Y} (h : f ≠ fun _ ↦ y₀) (x : X) :
+    ∀ᶠ y in 𝓝[≠] x, f y ≠ y₀ := by
+  have := ChartedSpace.t1Space ℂ Y
+  rcases eq_or_ne (f x) y₀ with hx | hx
+  · obtain ⟨x₁, hx₁⟩ : ∃ x₁, f x₁ ≠ f x := by
+      by_contra! hc
+      exact h (funext fun y ↦ (hc y).trans hx)
+    exact hx ▸ (isLocalPowerAt_localMultiplicity (.of_forall hf)
+      (not_eventuallyConst_of_ne hf hx₁ x)).eventually_ne
+  · exact nhdsWithin_le_nhds ((hf x).continuousAt.eventually (isOpen_ne.mem_nhds hx))
 
 end TauCeti.RiemannSurface

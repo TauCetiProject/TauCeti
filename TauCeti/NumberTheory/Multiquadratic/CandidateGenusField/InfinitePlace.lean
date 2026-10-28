@@ -61,6 +61,6 @@ ramifies. This is the archimedean half of the genus-field identification in the 
 theorem isUnramifiedAtInfinitePlaces_candidateGenusField (hd : Squarefree d) (hneg : d < 0) :
     IsUnramifiedAtInfinitePlaces (candidateGenusFieldBase hd) (candidateGenusField hd) :=
   haveI := isTotallyComplex_candidateGenusFieldBase hd hneg
-  NumberField.IsUnramifiedAtInfinitePlaces_of_isTotallyComplex
+  IsTotallyComplex.isUnramifiedAtInfinitePlaces
 
 end TauCeti.Multiquadratic

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
 public import TauCeti.Probability.Process.Cylinder
+import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
 # The conditional rectangle common ending for de Finetti
@@ -40,8 +41,8 @@ The joint-law formulation is Kallenberg's conditional i.i.d. identity (*Probabil
 Invariance Principles*, 2005, §1.1, equation (2)). The rectangle-extension argument is the
 joint-space analogue of the common-ending strategy in `cameronfreer/exchangeability`
 (`DeFinetti/CommonEnding.lean`, pin `e0532e59ceff23edab44dda9ab0655debbc9cc22`), adapted to Tau
-Ceti's stronger `ConditionallyIIDWith` predicate and Mathlib's `generateFrom_eq_prod`,
-`generateFrom_pi`, and π-system API.
+Ceti's stronger `ConditionallyIIDWith` predicate; the extension from rectangles is the general
+box-rectangle extensionality `MeasureTheory.Measure.ext_prod_pi`.
 -/
 
 public section
@@ -55,30 +56,6 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-
-/-- Two finite measures on `γ × (∀ i, β i)` agree if they agree on products of a measurable set
-in `γ` and a measurable box in the finite product. -/
-private theorem measure_eq_of_forall_prod_univ_pi
-    {γ ι : Type*} [MeasurableSpace γ] [Finite ι]
-    {β : ι → Type*} [∀ i, MeasurableSpace (β i)]
-    {μ ν : Measure (γ × (∀ i, β i))} [IsFiniteMeasure μ]
-    (h : ∀ (S : Set γ), MeasurableSet S →
-      ∀ B : ∀ i, Set (β i), (∀ i, MeasurableSet (B i)) →
-        μ (S ×ˢ Set.univ.pi B) = ν (S ×ˢ Set.univ.pi B)) :
-    μ = ν := by
-  let := Fintype.ofFinite ι
-  refine ext_of_generate_finite
-    (Set.image2 (· ×ˢ ·) {S : Set γ | MeasurableSet S}
-      (Set.pi Set.univ '' Set.pi Set.univ fun i => {B : Set (β i) | MeasurableSet B}))
-    ?_ ?_ ?_ ?_
-  · exact (generateFrom_eq_prod generateFrom_measurableSet generateFrom_pi
-      isCountablySpanning_measurableSet
-      (IsCountablySpanning.pi fun _ => isCountablySpanning_measurableSet)).symm
-  · exact isPiSystem_measurableSet.prod isPiSystem_pi
-  · rintro _ ⟨S, hS, _, ⟨B, hB, rfl⟩, rfl⟩
-    exact h S hS B fun i => hB i (Set.mem_univ i)
-  · simpa using h Set.univ MeasurableSet.univ (fun _ => Set.univ)
-      (fun _ => MeasurableSet.univ)
 
 /-- **Conditional common de Finetti ending.** If the joint law of a measurable random probability
 measure `ν` and every injective finite block agrees with
@@ -99,7 +76,7 @@ theorem conditionallyIID_of_jointRectangles {ι : Type*} {μ : Measure Ω} [IsFi
   refine ConditionallyIIDWith.intro hX hν fun m k hk => ?_
   have : IsFiniteMeasure (μ.map fun ω => (ν ω, fun i : Fin m => X (k i) ω)) :=
     inferInstance
-  exact measure_eq_of_forall_prod_univ_pi (h_rect m k hk)
+  exact Measure.ext_prod_pi (h_rect m k hk)
 
 /-- **Set-integral common de Finetti ending.** If for every **strictly monotone** block the mass of
 a directing-measure event met with a block cylinder is the set-integral of the product of the

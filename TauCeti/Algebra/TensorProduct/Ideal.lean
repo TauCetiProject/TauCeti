@@ -64,6 +64,14 @@ theorem tmul_mem_leftTensorIdeal {I : Ideal A} {x : A} (hx : x ∈ I) (y : B) :
   rw [h]
   exact Ideal.mul_mem_left _ _ (includeLeft_mem_leftTensorIdeal R B hx)
 
+/-- Membership in `I ⊗ B` is membership in the range of tensoring the subtype of `I` on the
+right. -/
+theorem mem_leftTensorIdeal_iff {I : Ideal A} {x : A ⊗[R] B} :
+    x ∈ leftTensorIdeal R B I ↔
+      x ∈ LinearMap.range ((I.restrictScalars R).subtype.rTensor B) := by
+  rw [leftTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
+    ← Submodule.restrictScalars_mem R, Ideal.map_includeLeft_eq]
+
 /-- The order universal property for `I ⊗ B`. -/
 theorem leftTensorIdeal_le_iff {I : Ideal A} {J : Ideal (A ⊗[R] B)} :
     leftTensorIdeal R B I ≤ J ↔
@@ -122,6 +130,14 @@ theorem tmul_mem_rightTensorIdeal {I : Ideal B} (x : A) {y : B} (hy : y ∈ I) :
     simp
   rw [h]
   exact Ideal.mul_mem_left _ _ (includeRight_mem_rightTensorIdeal R A hy)
+
+/-- Membership in `A ⊗ I` is membership in the range of tensoring the subtype of `I` on the
+left. -/
+theorem mem_rightTensorIdeal_iff {I : Ideal B} {x : A ⊗[R] B} :
+    x ∈ rightTensorIdeal R A I ↔
+      x ∈ LinearMap.range ((I.restrictScalars R).subtype.lTensor A) := by
+  rw [rightTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
+    ← Submodule.restrictScalars_mem R, Ideal.map_includeRight_eq]
 
 /-- The order universal property for `A ⊗ I`. -/
 theorem rightTensorIdeal_le_iff {I : Ideal B} {J : Ideal (A ⊗[R] B)} :

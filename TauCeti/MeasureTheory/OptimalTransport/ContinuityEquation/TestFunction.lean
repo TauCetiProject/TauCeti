@@ -45,8 +45,8 @@ derivative is the limit of its products with the spatial cut-offs `x ↦ χ (x /
 * `TauCeti.IsContinuityEquation.integral_integral_fderiv_eq_zero_of_norm_fderiv_le`: it holds
   against every `C¹` test function with bounded derivative and support in `(a, b) × E`.
 * `TauCeti.IsContinuityEquation.integral_deriv_mul_integral_eq_neg`: for a bounded `C¹` function
-  `ψ` of space alone with bounded derivative, the weak time derivative of `t ↦ ∫ ψ dμₜ` on `(a, b)`
-  is `t ↦ ∫ ⟨∇ ψ, vₜ⟩ dμₜ`.
+  `u` of time and space with bounded derivative, the weak time derivative of `t ↦ ∫ u (t, ·) dμₜ`
+  on `(a, b)` is `t ↦ ∫ (∂ₜ u + ⟨∇ₓ u, vₜ⟩) dμₜ`.
 
 ## References
 
@@ -66,32 +66,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
   [FiniteDimensional ℝ E] [BorelSpace E] {μ : ℝ → Measure E} {v : ℝ → E → E} {a b : ℝ}
 
 namespace IsContinuityEquation
-
-/-- For almost every time `t ∈ (a, b)`, the slice `μₜ` is finite and `vₜ` is `μₜ`-integrable. -/
-private lemma ae_isFiniteMeasure_and_integrable (h : IsContinuityEquation μ v a b) :
-    ∀ᵐ t ∂volume.restrict (Ioo a b), IsFiniteMeasure (μ t) ∧ Integrable (v t) (μ t) := by
-  have hm : Measurable fun t ↦ μ t univ := (Measure.measurable_coe .univ).comp h.measurable
-  filter_upwards [ae_lt_top hm h.lintegral_measure_univ_lt_top.ne,
-    ae_lt_top' (h.aemeasurable_lintegral (f := fun t x ↦ ‖v t x‖ₑ) h.measurable_velocity.enorm)
-      h.lintegral_lintegral_enorm_lt_top.ne] with t h₁ h₂
-  exact ⟨⟨h₁⟩, (h.measurable_velocity.comp measurable_prodMk_left).aestronglyMeasurable, h₂⟩
-
-/-- The total mass of `μₜ` is integrable over `(a, b)`. -/
-private lemma integrableOn_measureReal_univ (h : IsContinuityEquation μ v a b) :
-    IntegrableOn (fun t ↦ (μ t).real univ) (Ioo a b) := by
-  simp_rw [measureReal_def]
-  exact integrable_toReal_of_lintegral_ne_top
-    ((Measure.measurable_coe .univ).comp h.measurable).aemeasurable
-    h.lintegral_measure_univ_lt_top.ne
-
-/-- The `μₜ`-integral of `‖vₜ‖` is integrable over `(a, b)`. -/
-private lemma integrableOn_integral_norm (h : IsContinuityEquation μ v a b) :
-    IntegrableOn (fun t ↦ ∫ x, ‖v t x‖ ∂μ t) (Ioo a b) := by
-  refine (integrable_toReal_of_lintegral_ne_top
-    (h.aemeasurable_lintegral (f := fun t x ↦ ‖v t x‖ₑ) h.measurable_velocity.enorm)
-    h.lintegral_lintegral_enorm_lt_top.ne).congr (ae_of_all _ fun t ↦ ?_)
-  exact (integral_norm_eq_lintegral_enorm
-    (h.measurable_velocity.comp measurable_prodMk_left).aestronglyMeasurable).symm
 
 /-- **Dominated convergence for test functions.** If `C¹` compactly supported functions `ψ n`
 have derivatives converging pointwise to those of `φ`, with a bound `C (1 + ‖w‖)` on their values
@@ -292,80 +266,72 @@ theorem integral_integral_fderiv_eq_zero_of_norm_fderiv_le (h : IsContinuityEqua
       simpa only [Function.comp_def, map_zero] using (hcont.tendsto (0, 0)).comp h0
     simpa using (hχ1.mul tendsto_const_nhds).add (tendsto_const_nhds.mul hDχ0)
 
-/-- **The weak time derivative of `t ↦ ∫ ψ dμₜ`.** For a bounded `C¹` function `ψ` of space with
-bounded derivative, the function `t ↦ ∫ ψ dμₜ` has weak derivative `t ↦ ∫ ⟨∇ ψ, vₜ⟩ dμₜ` on
-`(a, b)`: for every `C¹` function `η` with support in `(a, b)`,
-`∫_a^b η' (t) ∫ ψ dμₜ dt = - ∫_a^b η (t) ∫ ⟨∇ ψ (x), vₜ x⟩ dμₜ(x) dt`. -/
+/-- **The weak time derivative of `t ↦ ∫ u (t, ·) dμₜ`.** For a bounded `C¹` function `u` of
+time and space with bounded derivative, the function `t ↦ ∫ u (t, x) dμₜ(x)` has weak derivative
+`t ↦ ∫ (∂ₜ u (t, x) + ⟨∇ₓ u (t, x), vₜ x⟩) dμₜ(x)` on `(a, b)`, the integrand being written as the
+space-time derivative `fderiv ℝ u (t, x)` applied to `(1, v t x)`: for every `C¹` function `η` with
+support in `(a, b)`,
+`∫_a^b η' (t) ∫ u (t, x) dμₜ(x) dt = - ∫_a^b η (t) ∫ fderiv ℝ u (t, x) (1, vₜ x) dμₜ(x) dt`. -/
 theorem integral_deriv_mul_integral_eq_neg (h : IsContinuityEquation μ v a b) {η : ℝ → ℝ}
-    (hη : ContDiff ℝ 1 η) (hηs : tsupport η ⊆ Ioo a b) {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ)
-    {M M' : ℝ} (hψM : ∀ x, ‖ψ x‖ ≤ M) (hDψ : ∀ x, ‖fderiv ℝ ψ x‖ ≤ M') :
-    ∫ t in Ioo a b, deriv η t * ∫ x, ψ x ∂μ t =
-      -∫ t in Ioo a b, η t * ∫ x, fderiv ℝ ψ x (v t x) ∂μ t := by
+    (hη : ContDiff ℝ 1 η) (hηs : tsupport η ⊆ Ioo a b) {u : ℝ × E → ℝ} (hu : ContDiff ℝ 1 u)
+    {M M' : ℝ} (huM : ∀ q, ‖u q‖ ≤ M) (hDu : ∀ q, ‖fderiv ℝ u q‖ ≤ M') :
+    ∫ t in Ioo a b, deriv η t * ∫ x, u (t, x) ∂μ t =
+      -∫ t in Ioo a b, η t * ∫ x, fderiv ℝ u (t, x) (1, v t x) ∂μ t := by
   have hηc : HasCompactSupport η :=
     isCompact_of_isClosed_isBounded (isClosed_tsupport η) ((isBounded_Ioo a b).subset hηs)
   have hη' : Continuous (deriv η) := hη.continuous_deriv le_rfl
   obtain ⟨A, hA⟩ := hη.continuous.bounded_above_of_compact_support hηc
   obtain ⟨A', hA'⟩ := hη'.bounded_above_of_compact_support hηc.deriv
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hψM 0)
+  have hM : 0 ≤ M := (norm_nonneg _).trans (huM 0)
   have hA0 : 0 ≤ A := (norm_nonneg _).trans (hA 0)
   have hηd : Differentiable ℝ η := hη.differentiable one_ne_zero
-  have hψd : Differentiable ℝ ψ := hψ.differentiable one_ne_zero
-  have hψm : Measurable ψ := hψ.continuous.measurable
-  -- The space-time test function `φ (t, x) = η t * ψ x`.
-  let φ : ℝ × E → ℝ := fun q ↦ η q.1 * ψ q.2
-  have hφd (q : ℝ × E) : HasFDerivAt φ (η q.1 • (fderiv ℝ ψ q.2).comp (snd ℝ ℝ E) +
-      ψ q.2 • (fderiv ℝ η q.1).comp (fst ℝ ℝ E)) q :=
-    ((hηd q.1).hasFDerivAt.comp q hasFDerivAt_fst).mul
-      ((hψd q.2).hasFDerivAt.comp q hasFDerivAt_snd)
+  have hud : Differentiable ℝ u := hu.differentiable one_ne_zero
+  -- The space-time test function `φ (t, x) = η t * u (t, x)`.
+  let φ : ℝ × E → ℝ := fun q ↦ η q.1 * u q
+  have hφd (q : ℝ × E) :
+      HasFDerivAt φ (η q.1 • fderiv ℝ u q + u q • (fderiv ℝ η q.1).comp (fst ℝ ℝ E)) q :=
+    ((hηd q.1).hasFDerivAt.comp q hasFDerivAt_fst).mul (hud q).hasFDerivAt
   have hφ1 (t : ℝ) (x w : E) :
-      fderiv ℝ φ (t, x) (1, w) = η t * fderiv ℝ ψ x w + ψ x * deriv η t := by
+      fderiv ℝ φ (t, x) (1, w) = η t * fderiv ℝ u (t, x) (1, w) + u (t, x) * deriv η t := by
     simp [(hφd (t, x)).fderiv]
   have hφC (q : ℝ × E) : ‖fderiv ℝ φ q‖ ≤ A * M' + M * A' := by
     rw [(hφd q).fderiv]
     refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul]
-    · exact mul_le_mul (hA _) ((opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
-        (ContinuousLinearMap.norm_snd_le ℝ ℝ E)) |>.trans (hDψ _)) (norm_nonneg _) hA0
-    · refine mul_le_mul (hψM _) ((opNorm_comp_le _ _).trans (mul_le_of_le_one_right
+    · exact mul_le_mul (hA _) (hDu _) (norm_nonneg _) hA0
+    · refine mul_le_mul (huM _) ((opNorm_comp_le _ _).trans (mul_le_of_le_one_right
         (norm_nonneg _) (ContinuousLinearMap.norm_fst_le ℝ ℝ E)) |>.trans ?_) (norm_nonneg _) hM
       rw [← norm_deriv_eq_norm_fderiv]
       exact hA' _
   have hφs : tsupport φ ⊆ Ioo a b ×ˢ univ :=
     tsupport_mul_subset_left.trans <| (tsupport_comp_subset_preimage η continuous_fst).trans
       fun q hq ↦ ⟨hηs hq, mem_univ _⟩
-  have hφ : ContDiff ℝ 1 φ := (hη.comp contDiff_fst).mul (hψ.comp contDiff_snd)
+  have hφ : ContDiff ℝ 1 φ := (hη.comp contDiff_fst).mul hu
   have h0 := h.integral_integral_fderiv_eq_zero_of_norm_fderiv_le hφ hφC hφs
   -- The two terms of the identity are separately integrable in time.
-  have hDψv : Measurable (uncurry fun t x ↦ fderiv ℝ ψ x (v t x)) :=
-    (measurable_fderiv_apply ℝ ψ).comp (measurable_snd.prodMk h.measurable_velocity)
-  have h₁ : IntegrableOn (fun t ↦ deriv η t * ∫ x, ψ x ∂μ t) (Ioo a b) := by
-    refine (h.integrableOn_measureReal_univ.const_mul (A' * M)).mono'
-      (hη'.aestronglyMeasurable.mul (h.aestronglyMeasurable_integral (f := fun _ x ↦ ψ x)
-        (hψm.comp measurable_snd).stronglyMeasurable)) ?_
-    filter_upwards [h.ae_isFiniteMeasure_and_integrable] with t ⟨_, _⟩
-    rw [norm_mul, mul_assoc]
-    exact mul_le_mul (hA' t) (norm_integral_le_of_norm_le_const (ae_of_all _ hψM)) (norm_nonneg _)
-      ((norm_nonneg _).trans (hA' t))
-  have h₂ : IntegrableOn (fun t ↦ η t * ∫ x, fderiv ℝ ψ x (v t x) ∂μ t) (Ioo a b) := by
-    refine (h.integrableOn_integral_norm.const_mul (A * M')).mono'
-      (hη.continuous.aestronglyMeasurable.mul
-        (h.aestronglyMeasurable_integral hDψv.stronglyMeasurable)) ?_
-    filter_upwards [h.ae_isFiniteMeasure_and_integrable] with t ⟨_, hvi⟩
-    rw [norm_mul, mul_assoc, ← integral_const_mul]
-    refine mul_le_mul (hA t) (norm_integral_le_of_norm_le (hvi.norm.const_mul M')
-      (ae_of_all _ fun x ↦ ?_)) (norm_nonneg _) hA0
-    exact ((fderiv ℝ ψ x).le_opNorm _).trans (mul_le_mul_of_nonneg_right (hDψ x) (norm_nonneg _))
+  have h₁ : IntegrableOn (fun t ↦ deriv η t * ∫ x, u (t, x) ∂μ t) (Ioo a b) :=
+    (h.integrableOn_integral_of_norm_le hu.continuous.stronglyMeasurable huM).bdd_mul
+      hη'.aestronglyMeasurable (ae_of_all _ hA')
+  have h₂ : IntegrableOn (fun t ↦ η t * ∫ x, fderiv ℝ u (t, x) (1, v t x) ∂μ t) (Ioo a b) :=
+    (h.integrableOn_integral_fderiv_of_norm_fderiv_le hDu).bdd_mul
+      hη.continuous.aestronglyMeasurable (ae_of_all _ hA)
+  -- At almost every time, both terms are integrable in space.
+  have hDuv : Measurable (uncurry fun t x ↦ fderiv ℝ u (t, x) (1, v t x)) :=
+    (measurable_fderiv_apply ℝ u).comp
+      (measurable_id.prodMk (measurable_const.prodMk h.measurable_velocity))
+  have hDuB (t : ℝ) (x : E) : ‖fderiv ℝ u (t, x) (1, v t x)‖ ≤ M' * (1 + ‖v t x‖) :=
+    (fderiv ℝ u _).le_of_opNorm_le_of_le (hDu _) (norm_prod_le_iff.2 ⟨by simp, by simp⟩)
   refine eq_neg_of_add_eq_zero_left ?_
   rw [← integral_add h₁ h₂, ← h0]
   refine integral_congr_ae ?_
   filter_upwards [h.ae_isFiniteMeasure_and_integrable] with t ⟨_, hvi⟩
-  have hψi : Integrable ψ (μ t) := (integrable_const M).mono' hψm.aestronglyMeasurable
-    (ae_of_all _ hψM)
-  have hDψi : Integrable (fun x ↦ fderiv ℝ ψ x (v t x)) (μ t) :=
-    (hvi.norm.const_mul M').mono' (hDψv.comp measurable_prodMk_left).aestronglyMeasurable
-      (ae_of_all _ fun x ↦ ((fderiv ℝ ψ x).le_opNorm _).trans
-        (mul_le_mul_of_nonneg_right (hDψ x) (norm_nonneg _)))
+  have hui : Integrable (fun x ↦ u (t, x)) (μ t) :=
+    (integrable_const M).mono' (hu.continuous.comp (Continuous.prodMk_right t)).aestronglyMeasurable
+      (ae_of_all _ fun x ↦ huM _)
+  have hDui : Integrable (fun x ↦ fderiv ℝ u (t, x) (1, v t x)) (μ t) :=
+    (((integrable_const 1).add hvi.norm).const_mul M').mono'
+      (hDuv.comp measurable_prodMk_left).aestronglyMeasurable (ae_of_all _ fun x ↦ hDuB t x)
   simp_rw [hφ1]
-  rw [integral_add (hDψi.const_mul _) (hψi.mul_const _), integral_const_mul, integral_mul_const]
+  rw [integral_add (hDui.const_mul _) (hui.mul_const _), integral_const_mul, integral_mul_const]
   ring
 
 end IsContinuityEquation

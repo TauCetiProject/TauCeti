@@ -37,6 +37,10 @@ finite Hasse sign exactly at the finite places of `R`.
 
 ## Main results
 
+* `QuadraticForm.nondegenerate_weightedSumSquares_one_neg`,
+  `QuadraticForm.nondegenerate_weightedSumSquares_neg_self_mul`: both planes are regular.
+* `QuadraticForm.discr_formClass_weightedSumSquares_neg_self_mul`: they have the same
+  discriminant.
 * `QuadraticForm.finiteHasse_weightedSumSquares_one_neg`: `s_v(⟨1, -β⟩) = 1`.
 * `QuadraticForm.finiteHasse_weightedSumSquares_neg_self_mul`: `s_v(⟨α, -αβ⟩) = (α, β)_v`.
 * `QuadraticForm.equivalent_atFinitePlace_binary_one_neg_iff_hilbertSymbol_eq_one`: at a finite
@@ -56,6 +60,44 @@ public section
 open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap TauCeti
 
 namespace QuadraticForm
+
+section Planes
+
+variable {K : Type*} [Field K] [Invertible (2 : K)]
+
+/-- The norm plane `⟨1, -β⟩` is regular. -/
+theorem nondegenerate_weightedSumSquares_one_neg (b : Kˣ) :
+    (weightedSumSquares K ![1, -(b : K)]).Nondegenerate :=
+  nondegenerate_weightedSumSquares fun i => by fin_cases i <;> simp [isRegular_iff_ne_zero]
+
+/-- The scaled norm plane `⟨α, -αβ⟩` is regular. -/
+theorem nondegenerate_weightedSumSquares_neg_self_mul (a b : Kˣ) :
+    (weightedSumSquares K ![(a : K), -(a * b : K)]).Nondegenerate :=
+  nondegenerate_weightedSumSquares fun i => by fin_cases i <;> simp [isRegular_iff_ne_zero]
+
+/-- The planes `⟨α, -αβ⟩` and `⟨1, -β⟩` have the same discriminant, since `-α²β` and `-β`
+differ by a square. -/
+theorem discr_formClass_weightedSumSquares_neg_self_mul (a b : Kˣ) :
+    RegularFormClass.discr
+        (formClass _ (nondegenerate_weightedSumSquares_neg_self_mul a b)) =
+      RegularFormClass.discr (formClass _ (nondegenerate_weightedSumSquares_one_neg b)) := by
+  have discr_of_eq (c : Fin 2 → K) (w : Fin 2 → Kˣ) (hc : c = fun i => (w i : K))
+      (h : (weightedSumSquares K c).Nondegenerate) :
+      RegularFormClass.discr (formClass (weightedSumSquares K c) h) =
+        squareClass (∏ i, w i) := by
+    subst c
+    exact discr_formClass_weightedSumSquares w h
+  have h₁ := discr_of_eq ![1, -(b : K)] ![(1 : Kˣ), -b]
+    (by funext i; fin_cases i <;> simp) (nondegenerate_weightedSumSquares_one_neg b)
+  have h₂ := discr_of_eq ![(a : K), -(a * b : K)] ![a, -(a * b)]
+    (by funext i; fin_cases i <;> simp) (nondegenerate_weightedSumSquares_neg_self_mul a b)
+  rw [h₂, h₁, squareClass_eq_iff_isSquare_mul]
+  refine ⟨a * b, Units.ext ?_⟩
+  simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Units.val_mul,
+    Units.val_neg, Units.val_one]
+  ring
+
+end Planes
 
 variable {K : Type*} [Field K] [NumberField K]
 

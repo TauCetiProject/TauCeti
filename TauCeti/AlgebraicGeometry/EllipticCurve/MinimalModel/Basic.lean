@@ -490,6 +490,15 @@ theorem HasGoodReduction.hasGoodReduction_minimal {W : WeierstrassCurve K}
   rw [hasGoodReduction_minimal_iff, valuation_Δ_eq_of_isMinimal_smul R C hC]
   exact h.goodReduction
 
+/-- A curve with multiplicative reduction has bad reduction on its chosen minimal equation. -/
+theorem HasMultiplicativeReduction.not_hasGoodReduction_minimal {W : WeierstrassCurve K}
+    [W.HasMultiplicativeReduction R] : ¬ (W.minimal R).HasGoodReduction R := by
+  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
+  have hval := W.valuation_Δ_eq_of_isMinimal_smul R C hC
+  intro hgood
+  exact (inferInstance : W.HasMultiplicativeReduction R).badReduction.ne
+    (hval.symm.trans hgood.goodReduction)
+
 /-- **An integral equation has good reduction exactly when the discriminant of its integral model
 is a unit.** Such an equation is automatically minimal, so no minimality hypothesis appears. -/
 theorem hasGoodReduction_iff_isUnit_integralModel_Δ (W : WeierstrassCurve K) [IsIntegral R W] :

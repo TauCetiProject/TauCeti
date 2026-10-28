@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Beta
+import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import TauCeti.Analysis.SpecialFunctions.Gamma
 
 /-!
 # Euler's beta integrals, in real-valued form
@@ -38,6 +40,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 
 * `TauCeti.intervalIntegrable_rpow_mul_one_sub_rpow` — interval integrability of the beta
   integrand between any two points of `[0, 1]`;
+* `TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff` — the sharp integrability criterion at both
+  endpoints of the unit interval;
 * `TauCeti.integral_rpow_mul_one_sub_rpow` — Euler's beta integral,
   `∫ t in 0..1, t ^ (a - 1) * (1 - t) ^ (b - 1) = Β(a, b)`;
 * `TauCeti.hasDerivAt_rpow_mul_one_sub_rpow` — the derivative of `t ^ a * (1 - t) ^ b`;
@@ -47,6 +51,9 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   `TauCeti.integral_rpow_mul_one_add_rpow` — Euler's second beta integral and its sharp
   integrability criterion,
   `∫ x in Ioi 0, x ^ (a - 1) * (1 + x) ^ (-(a + b)) = Β(a, b)`;
+* `TauCeti.integral_rpow_mul_one_add_sq_rpow` — the radial form
+  `∫ y in Ioi 0, y ^ (s - 1) * (1 + y ^ 2) ^ (-r / 2) = Β(s / 2, (r - s) / 2) / 2` of the second
+  integral, obtained by substituting `u = y ^ 2`;
 * `TauCeti.abs_deriv_smul_one_add_rpow` — the change-of-variables identity relating the first and
   second beta-integral kernels under the chart `u ↦ u / (1 - u)`;
 * `TauCeti.integrable_one_add_sq_rpow`, `TauCeti.integral_one_add_sq_rpow`,
@@ -55,7 +62,10 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   `1 / 2 < s`, with total mass `√ν * Β(1 / 2, s - 1 / 2)`;
 * `ProbabilityTheory.beta_comm` — symmetry of `Β`;
 * `ProbabilityTheory.beta_one_right` — the value `Β(a, 1) = 1 / a`;
-* `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`.
+* `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
+* `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
+* `ProbabilityTheory.tendsto_natCast_mul_beta_atTop` — `n Β(n, s) → 0` along the natural numbers
+  for `s > 1`.
 
 ## Implementation notes
 
@@ -119,6 +129,54 @@ theorem intervalIntegrable_rpow_mul_one_sub_rpow (ha : 0 < a) (hb : 0 < b) {u v 
   refine key.mono_set (uIcc_subset_uIcc ?_ ?_) <;>
     rw [uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
   exacts [hu, hv]
+
+/-- If the beta integrand is interval integrable on the unit interval, then its exponent at the
+left endpoint is greater than `-1`. -/
+private theorem pos_of_intervalIntegrable_rpow_mul_one_sub_rpow
+    (h : IntervalIntegrable
+      (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume 0 1) :
+    0 < a := by
+  have hhalf : IntervalIntegrable
+      (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume 0 (1 / 2) :=
+    h.mono_set (by
+      rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2), uIcc_of_le zero_le_one]
+      exact Icc_subset_Icc_right (by norm_num))
+  have hg : ContinuousOn (fun t : ℝ => (1 - t) ^ (-(b - 1))) (uIcc 0 (1 / 2)) :=
+    (continuousOn_const.sub continuousOn_id).rpow_const fun t ht => Or.inl (by
+      rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at ht
+      linarith [ht.2] : (1 : ℝ) - t ≠ 0)
+  have hcancel := hhalf.mul_continuousOn hg
+  have hpow : IntervalIntegrable (fun t : ℝ => t ^ (a - 1)) volume 0 (1 / 2) :=
+    hcancel.congr_uIoo fun t ht => by
+      rw [uIoo_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)] at ht
+      have h1t : 0 < 1 - t := by linarith [ht.2]
+      dsimp only
+      rw [mul_assoc, ← Real.rpow_add h1t, add_neg_cancel, Real.rpow_zero, mul_one]
+  have ha := (intervalIntegral.integrableOn_Ioo_rpow_iff
+      (by norm_num : (0 : ℝ) < 1 / 2)).1
+    ((intervalIntegrable_iff_integrableOn_Ioo_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)).1
+      hpow)
+  linarith
+
+/-- The beta integrand is integrable on the open unit interval exactly when both parameters are
+positive. This includes the sharp failure at either endpoint when the corresponding exponent is
+at most `-1`. -/
+theorem integrableOn_rpow_mul_one_sub_rpow_iff :
+    IntegrableOn (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) (Ioo 0 1) ↔
+      0 < a ∧ 0 < b := by
+  constructor
+  · intro h
+    have hI : IntervalIntegrable
+        (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ (b - 1)) volume 0 1 :=
+      (intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one).2 h
+    refine ⟨pos_of_intervalIntegrable_rpow_mul_one_sub_rpow hI, ?_⟩
+    have hreflected := (hI.comp_sub_left 1).symm
+    exact pos_of_intervalIntegrable_rpow_mul_one_sub_rpow (a := b) (b := a) (by
+      simpa [sub_sub_cancel, mul_comm] using hreflected)
+  · rintro ⟨ha, hb⟩
+    exact (intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one).1
+      (intervalIntegrable_rpow_mul_one_sub_rpow ha hb
+        (mem_Icc.2 ⟨le_rfl, zero_le_one⟩) (mem_Icc.2 ⟨zero_le_one, le_rfl⟩))
 
 /-- Euler's beta integral, in real-valued interval form: for positive parameters the integral of
 `t ^ (a - 1) * (1 - t) ^ (b - 1)` over `[0, 1]` is `Β(a, b)`. -/
@@ -408,6 +466,26 @@ theorem integral_one_add_sq_div_rpow {ν s : ℝ} (hν : 0 < ν) (hs : 1 / 2 < s
   simp only [Real.inv_sqrt_mul_sq hν.le, abs_of_nonneg (Real.sqrt_nonneg ν), smul_eq_mul] at h
   rw [h, integral_one_add_sq_rpow hs]
 
+/-- **Euler's second beta integral in radial form.** For `0 < s < r`, the substitution `u = y ^ 2`
+gives `∫ y in Ioi 0, y ^ (s - 1) * (1 + y ^ 2) ^ (-r / 2) = Β(s / 2, (r - s) / 2) / 2`. This is
+the radial integral of the Japanese bracket power `(1 + ‖x‖ ^ 2) ^ (-r / 2)`. -/
+theorem integral_rpow_mul_one_add_sq_rpow {r : ℝ} (hs : 0 < s) (hsr : s < r) :
+    ∫ y in Ioi (0 : ℝ), y ^ (s - 1) * (1 + y ^ 2) ^ (-r / 2) =
+      beta (s / 2) ((r - s) / 2) / 2 := by
+  have h := integral_comp_rpow_Ioi
+    (fun u : ℝ ↦ u ^ (s / 2 - 1) * (1 + u) ^ (-(s / 2 + (r - s) / 2))) two_ne_zero
+  rw [integral_rpow_mul_one_add_rpow (by positivity) (by linarith)] at h
+  rw [← h, ← integral_div]
+  refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
+  have hpow : (y ^ (2 : ℝ)) ^ (s / 2 - 1) * y = y ^ (s - 1) := by
+    rw [← Real.rpow_mul hy.le, ← Real.rpow_add_one hy.ne']
+    congr 1
+    ring
+  have hexp : -(s / 2 + (r - s) / 2) = -r / 2 := by ring
+  rw [← hpow, Real.rpow_two, hexp, abs_two, show (2 : ℝ) - 1 = 1 by norm_num, Real.rpow_one,
+    smul_eq_mul]
+  ring
+
 end SecondIntegral
 
 end TauCeti
@@ -433,5 +511,71 @@ theorem beta_add_one_left (ha : a ≠ 0) (hab : a + b ≠ 0) :
   rw [ProbabilityTheory.beta, ProbabilityTheory.beta, hshift, Real.Gamma_add_one ha,
     Real.Gamma_add_one hab]
   field_simp
+
+/-- Shifting one unit from the second beta parameter to the first gives a rational ratio. -/
+theorem beta_add_one_sub_one_div (ha : 0 < a) (hb : 1 < b) :
+    beta (a + 1) (b - 1) / beta a b = a / (b - 1) := by
+  have hab : a + (b - 1) ≠ 0 := by linarith
+  have hb1 : b - 1 ≠ 0 := by linarith
+  have hbase : beta a (b - 1) ≠ 0 := (beta_pos ha (by linarith)).ne'
+  have hleft : beta (a + 1) (b - 1) =
+      a / (a + (b - 1)) * beta a (b - 1) :=
+    beta_add_one_left ha.ne' hab
+  have hright : beta a b =
+      (b - 1) / (a + (b - 1)) * beta a (b - 1) := by
+    calc
+      beta a b = beta b a := beta_comm a b
+      _ = beta ((b - 1) + 1) a := by ring_nf
+      _ = (b - 1) / ((b - 1) + a) * beta (b - 1) a :=
+        beta_add_one_left hb1 (by linarith)
+      _ = (b - 1) / (a + (b - 1)) * beta a (b - 1) := by
+        rw [beta_comm (b - 1) a, add_comm (b - 1) a]
+  rw [hleft, hright]
+  field_simp
+
+/-- Shifting two units from the second beta parameter to the first gives a rational ratio. -/
+theorem beta_add_two_sub_two_div (ha : 0 < a) (hb : 2 < b) :
+    beta (a + 2) (b - 2) / beta a b =
+      a * (a + 1) / ((b - 1) * (b - 2)) := by
+  have hstep1 := beta_add_one_sub_one_div ha (by linarith : 1 < b)
+  have hstep2 := beta_add_one_sub_one_div (a := a + 1) (b := b - 1)
+    (by linarith) (by linarith)
+  have hsub : (b - 1) - 1 = b - 2 := by ring
+  rw [hsub] at hstep2
+  have hbeta : beta (a + 1) (b - 1) ≠ 0 :=
+    (beta_pos (by linarith) (by linarith)).ne'
+  have hb1 : b - 1 ≠ 0 := by linarith
+  have hb2 : b - 2 ≠ 0 := by linarith
+  have ha2 : a + 2 = (a + 1) + 1 := by ring
+  rw [ha2]
+  calc
+    beta ((a + 1) + 1) (b - 2) / beta a b =
+        (beta ((a + 1) + 1) (b - 2) / beta (a + 1) (b - 1)) *
+          (beta (a + 1) (b - 1) / beta a b) := by field_simp
+    _ = ((a + 1) / (b - 2)) * (a / (b - 1)) := by rw [hstep1, hstep2]
+    _ = a * (a + 1) / ((b - 1) * (b - 2)) := by
+      field_simp [hb1, hb2]
+
+/-- Euler's beta function at the symmetric shape parameters `3 / 2`. -/
+@[simp]
+theorem beta_three_halves_three_halves : beta (3 / 2) (3 / 2) = Real.pi / 8 := by
+  have hg := Real.Gamma_nat_add_one_add_half 0
+  norm_num at hg
+  rw [beta, hg]
+  norm_num
+  nlinarith [Real.sq_sqrt Real.pi_pos.le]
+
+open Filter Topology in
+/-- The values `n B(n, s)` tend to zero for `s > 1`: they equal `Γ(s) Γ(n + 1) / Γ(n + s)`, which
+decays like `Γ(s) n ^ (1 - s)`. -/
+theorem tendsto_natCast_mul_beta_atTop {s : ℝ} (hs : 1 < s) :
+    Tendsto (fun n : ℕ => n * beta n s) atTop (𝓝 0) := by
+  have hlim := (Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop hs).const_mul
+    (Real.Gamma s)
+  rw [mul_zero] at hlim
+  refine hlim.congr' ?_
+  filter_upwards [eventually_ne_atTop 0] with n hn
+  rw [beta, Real.Gamma_add_one (Nat.cast_ne_zero.mpr hn)]
+  ring
 
 end ProbabilityTheory

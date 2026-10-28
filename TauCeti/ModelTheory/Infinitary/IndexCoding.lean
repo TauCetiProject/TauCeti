@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Logic.Encodable.Basic
 public import Mathlib.Logic.Embedding.Basic
+public import Mathlib.Data.Set.Lattice.Indexed
 
 /-!
 # Index codings
@@ -185,6 +186,13 @@ theorem ofEquiv_trans (e₁ : ι ≃ κ) (e₂ : κ ≃ μ) :
   refine ext rfl (funext fun m ↦ ?_)
   simp [ofEquiv, trans]
 
+/-- Composing the coding of an equivalence with the coding of its inverse gives the identity
+coding. -/
+@[simp]
+theorem ofEquiv_trans_ofEquiv_symm (e : ι ≃ κ) :
+    (ofEquiv e).trans (ofEquiv e.symm) = IndexCoding.id ι := by
+  rw [← ofEquiv_trans, Equiv.self_trans_symm, ofEquiv_refl]
+
 /-- Total extension of a family along a coding: decoded indices select a branch, undecodable
 ones get the default. -/
 def pad {β : Sort*} (c : IndexCoding ι κ) (default : β) (f : ι → β) : κ → β :=
@@ -251,6 +259,19 @@ theorem exists_pad_false_iff (c : IndexCoding ι κ) (p : ι → Prop) :
     | some i => exact ⟨i, by simpa only [pad_of_decode_some c hd] using hk⟩
   · rintro ⟨i, hi⟩
     exact ⟨c.encode i, by simpa only [pad_encode] using hi⟩
+
+/-- Taking the union of sets assigned to a padded family preserves the original union
+when the default is assigned the empty set. -/
+@[simp]
+theorem iUnion_pad_of_eq_empty {β : Sort*} {γ : Type*} (c : IndexCoding ι κ)
+    {g : β → Set γ} {d : β} (hd : g d = ∅) (f : ι → β) :
+    (⋃ k, g (c.pad d f k)) = ⋃ i, g (f i) := by
+  ext x
+  simp only [Set.mem_iUnion]
+  have hpad := congrFun (c.comp_pad (fun b => x ∈ g b) d f)
+  simp only [Function.comp_apply, hd, Set.mem_empty_iff_false] at hpad
+  simp_rw [hpad]
+  exact c.exists_pad_false_iff _
 
 end IndexCoding
 

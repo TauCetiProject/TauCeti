@@ -27,12 +27,18 @@ absolute height; in particular the absolute height is invariant under field embe
 
 * `NumberField.mulHeight_algebraMap`: `H_L(x) = H_K(x) ^ [L : K]`, together with the scalar and
   logarithmic versions.
+* `NumberField.mulHeight₁_natCast`: a positive natural number `n` has height `n ^ [K : ℚ]` over
+  `K`.
 * `NumberField.mulHeight_ringEquiv`: a ring isomorphism of number fields preserves relative height,
   together with the scalar and logarithmic versions.
 * `NumberField.absMulHeight₁_eq_rpow`: for `x` in a number field `K`, the absolute height of `x` is
   `H_K(x) ^ (1 / [K : ℚ])`.
 * `NumberField.absMulHeight₁_eq_of_minpoly_eq`: equal rational minimal polynomials give equal
   absolute heights.
+* `NumberField.absMulHeight₁_ratCast`: the absolute height of a rational number is its height
+  over `ℚ`.
+* `NumberField.absMulHeight₁_pow`: `H(x ^ n) = H(x) ^ n`.
+* `NumberField.absMulHeight₁_inv`: `H(x⁻¹) = H(x)`.
 
 ## References
 
@@ -56,7 +62,7 @@ theorem mulHeight_mul_absNorm_span_range {y : ι → 𝓞 K} (hy : y ≠ 0) :
     mulHeight (fun i ↦ (y i : K)) * (span (Set.range y)).absNorm =
       ∏ v : InfinitePlace K, (⨆ i, v (y i)) ^ v.mult := by
   have hy' : (fun i ↦ (y i : K)) ≠ 0 := by
-    contrapose! hy
+    contrapose hy
     ext i
     exact congrFun hy i
   rw [mulHeight_eq hy', mul_assoc, mul_comm (∏ᶠ _, _), absNorm_mul_finprod_finitePlace_eq_one hy,
@@ -69,7 +75,7 @@ private theorem mulHeight_algebraMap_coe (y : ι → 𝓞 K) :
   · simp [← Pi.zero_def]
   set z : ι → 𝓞 L := fun i ↦ algebraMap (𝓞 K) (𝓞 L) (y i)
   have hz : z ≠ 0 := by
-    contrapose! hy
+    contrapose hy
     funext i
     exact (map_eq_zero_iff _ (RingOfIntegers.algebraMap.injective K L)).mp (congrFun hy i)
   -- `z` is a local definition, so `rw [Set.range_comp]` cannot see the composition in it.
@@ -130,6 +136,18 @@ theorem logHeight₁_algebraMap (x : K) :
     logHeight₁ (algebraMap K L x) = finrank K L * logHeight₁ x := by
   rw [logHeight₁_eq_log_mulHeight₁, mulHeight₁_algebraMap, Real.log_pow,
     logHeight₁_eq_log_mulHeight₁]
+
+/-- The multiplicative height of a positive natural number `n` over a number field `K` is
+`n ^ [K : ℚ]`. Relative heights are not invariant under extension: over `ℚ(i)` the height of `2`
+is `4`. -/
+theorem mulHeight₁_natCast (n : ℕ) [NeZero n] : mulHeight₁ (n : K) = n ^ finrank ℚ K := by
+  rw [← map_natCast (algebraMap ℚ K), mulHeight₁_algebraMap, Rat.mulHeight₁_natCast]
+
+/-- The logarithmic height of a positive natural number `n` over a number field `K` is
+`[K : ℚ] * log n`. -/
+theorem logHeight₁_natCast (n : ℕ) [NeZero n] :
+    logHeight₁ (n : K) = finrank ℚ K * Real.log n := by
+  rw [logHeight₁_eq_log_mulHeight₁, mulHeight₁_natCast, Real.log_pow]
 
 section RingEquiv
 
@@ -239,11 +257,94 @@ theorem absLogHeight₁_map (f : F →+* F') (x : F) : absLogHeight₁ (f x) = a
 
 end MinpolyEq
 
-/-- The rational number `2` has relative height `2 ^ [K : ℚ]` over a number field `K`; for
-`K = ℚ(i)` this is `4`. Relative heights are not invariant under extension. -/
-example (K : Type*) [Field K] [NumberField K] : mulHeight₁ (2 : K) = 2 ^ finrank ℚ K := by
-  rw [← map_ofNat (algebraMap ℚ K) 2, mulHeight₁_algebraMap, Rat.mulHeight₁_eq_max]
-  norm_num
+section Cast
+
+variable {F : Type*} [Field F] [CharZero F]
+
+/-- The absolute height of a rational number in a characteristic-zero field is its height
+over `ℚ`. -/
+@[simp]
+theorem absMulHeight₁_ratCast (q : ℚ) : absMulHeight₁ (q : F) = mulHeight₁ q := by
+  rw [← eq_ratCast (algebraMap ℚ F), absMulHeight₁_map, absMulHeight₁_eq_rpow, finrank_self,
+    Nat.cast_one, inv_one, Real.rpow_one]
+
+/-- The absolute logarithmic height of a rational number in a characteristic-zero field is its
+logarithmic height over `ℚ`. -/
+@[simp]
+theorem absLogHeight₁_ratCast (q : ℚ) : absLogHeight₁ (q : F) = logHeight₁ q := by
+  rw [absLogHeight₁, absMulHeight₁_ratCast, logHeight₁_eq_log_mulHeight₁]
+
+/-- The absolute height of `0` is `1`. -/
+@[simp]
+theorem absMulHeight₁_zero : absMulHeight₁ (0 : F) = 1 := by
+  rw [← Rat.cast_zero, absMulHeight₁_ratCast, mulHeight₁_zero]
+
+/-- The absolute logarithmic height of `0` is `0`. -/
+@[simp]
+theorem absLogHeight₁_zero : absLogHeight₁ (0 : F) = 0 := by
+  rw [absLogHeight₁, absMulHeight₁_zero, Real.log_one]
+
+/-- The absolute height of `1` is `1`. -/
+@[simp]
+theorem absMulHeight₁_one : absMulHeight₁ (1 : F) = 1 := by
+  rw [← Rat.cast_one, absMulHeight₁_ratCast, mulHeight₁_one]
+
+/-- The absolute logarithmic height of `1` is `0`. -/
+@[simp]
+theorem absLogHeight₁_one : absLogHeight₁ (1 : F) = 0 := by
+  rw [absLogHeight₁, absMulHeight₁_one, Real.log_one]
+
+/-- The absolute height of a positive natural number `n` is `n`. -/
+theorem absMulHeight₁_natCast (n : ℕ) [NeZero n] : absMulHeight₁ (n : F) = n := by
+  rw [← Rat.cast_natCast, absMulHeight₁_ratCast, Rat.mulHeight₁_natCast]
+
+/-- The absolute logarithmic height of a positive natural number `n` is `log n`. -/
+theorem absLogHeight₁_natCast (n : ℕ) [NeZero n] : absLogHeight₁ (n : F) = Real.log n := by
+  rw [absLogHeight₁, absMulHeight₁_natCast]
+
+end Cast
+
+section PowInv
+
+variable {F : Type*} [Field F] [CharZero F]
+
+/-- The absolute height of a power is the power of the absolute height. This includes
+transcendental elements, whose positive powers are transcendental and all have the junk
+height `1`. -/
+theorem absMulHeight₁_pow (x : F) (n : ℕ) : absMulHeight₁ (x ^ n) = absMulHeight₁ x ^ n := by
+  by_cases hx : IsIntegral ℚ x
+  · have : FiniteDimensional ℚ ℚ⟮x⟯ := adjoin.finiteDimensional hx
+    have : NumberField ℚ⟮x⟯ := {}
+    rw [← AdjoinSimple.algebraMap_gen ℚ x, ← map_pow, absMulHeight₁_map, absMulHeight₁_map,
+      absMulHeight₁_eq_rpow, absMulHeight₁_eq_rpow, mulHeight₁_pow,
+      Real.rpow_pow_comm (mulHeight₁_nonneg _)]
+  · rcases n.eq_zero_or_pos with rfl | hn
+    · simp
+    · rw [absMulHeight₁, dite_eq_right fun h ↦ hx (h.of_pow hn), absMulHeight₁, dite_eq_right hx,
+        one_pow]
+
+/-- The absolute logarithmic height of `x ^ n` is `n` times that of `x`. -/
+theorem absLogHeight₁_pow (x : F) (n : ℕ) : absLogHeight₁ (x ^ n) = n * absLogHeight₁ x := by
+  rw [absLogHeight₁, absMulHeight₁_pow, Real.log_pow, absLogHeight₁]
+
+/-- The absolute height of `x⁻¹` is the absolute height of `x`. This includes `x = 0`, where
+`0⁻¹ = 0`, and transcendental elements, whose inverses are transcendental. -/
+@[simp]
+theorem absMulHeight₁_inv (x : F) : absMulHeight₁ x⁻¹ = absMulHeight₁ x := by
+  by_cases hx : IsIntegral ℚ x
+  · have : FiniteDimensional ℚ ℚ⟮x⟯ := adjoin.finiteDimensional hx
+    have : NumberField ℚ⟮x⟯ := {}
+    rw [← AdjoinSimple.algebraMap_gen ℚ x, ← map_inv₀, absMulHeight₁_map, absMulHeight₁_map,
+      absMulHeight₁_eq_rpow, absMulHeight₁_eq_rpow, mulHeight₁_inv]
+  · have hx' : ¬IsIntegral ℚ x⁻¹ := fun h ↦ hx (by simpa using h.inv)
+    rw [absMulHeight₁, dite_eq_right hx', absMulHeight₁, dite_eq_right hx]
+
+/-- The absolute logarithmic height of `x⁻¹` is the absolute logarithmic height of `x`. -/
+@[simp]
+theorem absLogHeight₁_inv (x : F) : absLogHeight₁ x⁻¹ = absLogHeight₁ x := by
+  rw [absLogHeight₁, absMulHeight₁_inv, absLogHeight₁]
+
+end PowInv
 
 /-- The absolute height of `2 / 3` is `3`, computed in `ℂ`. -/
 example : absMulHeight₁ ((2 / 3 : ℚ) : ℂ) = 3 := by

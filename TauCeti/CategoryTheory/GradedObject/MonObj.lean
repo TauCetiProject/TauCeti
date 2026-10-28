@@ -19,9 +19,11 @@ same as a family of homogeneous multiplications `X i ⊗ X j ⟶ X (i + j)` toge
 `𝟙_ C ⟶ X 0`, subject to the graded associativity and unit laws. This file proves the
 introduction direction of that description: it assembles such homogeneous data into a monoid
 object, a commutative monoid object when the homogeneous multiplications commute, and recognizes
-morphisms of monoid objects by their homogeneous components. This is how graded algebras such as
-symmetric algebras, which are naturally described degree by degree, are given the structure of
-monoid objects in graded objects.
+morphisms of monoid objects by their homogeneous components. In the other direction, it extracts
+the homogeneous unit and multiplications, together with their laws, from a monoid object in
+graded objects, and their graded commutativity from a commutative one. This is how graded
+algebras such as symmetric algebras, which are naturally described degree by degree, are given
+and used as monoid objects in graded objects.
 
 Homogeneous data can be transported along a lax monoidal functor `F : C ⥤ D`: given
 identifications `e n : Y n ≅ F.obj (X n)`, the multiplications
@@ -45,6 +47,13 @@ passes to sheaves along sheafification.
 * `CategoryTheory.GradedObject.isMonHom_of_homogeneous`: a morphism of graded objects between
   monoid objects is a monoid morphism once it preserves the unit in degree zero and the
   multiplication of homogeneous components;
+* `CategoryTheory.Mon.mul` and `CategoryTheory.Mon.one`: the homogeneous multiplication
+  and degree-zero unit extracted from a monoid object in graded objects, together with their
+  associativity, unit, and functoriality laws; `CategoryTheory.CommMon.mul_comm` is their
+  graded commutativity for a commutative monoid object;
+* `CategoryTheory.Mon.hom_ext_of_epi_mul`: morphisms out of an `ℕ`-graded monoid object
+  generated in degree one, in the sense that its unit and the multiplications
+  `A.X n ⊗ A.X 1 ⟶ A.X (n + 1)` are epimorphisms, are determined by their degree-one components;
 * `CategoryTheory.GradedObject.mul_assoc_of_laxMonoidal`,
   `CategoryTheory.GradedObject.one_mul_of_laxMonoidal`,
   `CategoryTheory.GradedObject.mul_one_of_laxMonoidal` and
@@ -264,9 +273,13 @@ end AddCommMonoid
 
 section LaxMonoidal
 
-variable {I : Type*} [AddMonoid I] {C D : Type*} [Category* C] [Category* D]
+variable {C D : Type*} [Category* C] [Category* D]
   [MonoidalCategory C] [MonoidalCategory D] {F : C ⥤ D} [F.LaxMonoidal]
-  {X : GradedObject I C} {Y : GradedObject I D} {e : ∀ n, Y n ≅ F.obj (X n)}
+
+section AddSemigroup
+
+variable {I : Type*} [AddSemigroup I] {X : GradedObject I C} {Y : GradedObject I D}
+  {e : ∀ n, Y n ≅ F.obj (X n)}
   (mul : ∀ i j, X i ⊗ X j ⟶ X (i + j)) (mul' : ∀ i j, Y i ⊗ Y j ⟶ Y (i + j))
   (hmul : ∀ i j, mul' i j =
     ((e i).hom ⊗ₘ (e j).hom) ≫ Functor.LaxMonoidal.μ F (X i) (X j) ≫ F.map (mul i j) ≫
@@ -305,6 +318,18 @@ lemma mul_assoc_of_laxMonoidal
         simp only [Category.assoc, tensorHom_comp_tensorHom_assoc, Iso.inv_hom_id,
           Iso.inv_hom_id_assoc, Category.comp_id, Category.id_comp]
 
+end AddSemigroup
+
+section Add
+
+variable {I : Type*} [Add I] {X : GradedObject I C} {Y : GradedObject I D}
+  {e : ∀ n, Y n ≅ F.obj (X n)}
+  (mul : ∀ i j, X i ⊗ X j ⟶ X (i + j)) (mul' : ∀ i j, Y i ⊗ Y j ⟶ Y (i + j))
+  (hmul : ∀ i j, mul' i j =
+    ((e i).hom ⊗ₘ (e j).hom) ≫ Functor.LaxMonoidal.μ F (X i) (X j) ≫ F.map (mul i j) ≫
+      (e (i + j)).inv)
+include hmul
+
 /-- Morphisms transported along a lax monoidal functor `F` and identifications
 `e n : Y n ≅ F.obj (X n)`, `e' n : Y' n ≅ F.obj (X' n)` commute with the transported homogeneous
 multiplications when the original morphisms commute with the original ones. -/
@@ -323,6 +348,18 @@ lemma map_mul_of_laxMonoidal {X' : GradedObject I C} {Y' : GradedObject I D}
     Category.comp_id]
   rw [← tensorHom_comp_tensorHom_assoc, Functor.LaxMonoidal.μ_natural_assoc, ← F.map_comp_assoc,
     map_mul, F.map_comp_assoc]
+
+end Add
+
+section AddZeroClass
+
+variable {I : Type*} [AddZeroClass I] {X : GradedObject I C} {Y : GradedObject I D}
+  {e : ∀ n, Y n ≅ F.obj (X n)}
+  (mul : ∀ i j, X i ⊗ X j ⟶ X (i + j)) (mul' : ∀ i j, Y i ⊗ Y j ⟶ Y (i + j))
+  (hmul : ∀ i j, mul' i j =
+    ((e i).hom ⊗ₘ (e j).hom) ≫ Functor.LaxMonoidal.μ F (X i) (X j) ≫ F.map (mul i j) ≫
+      (e (i + j)).inv)
+include hmul
 
 variable (one : 𝟙_ C ⟶ X 0) (one' : 𝟙_ D ⟶ Y 0)
   (hone : one' = Functor.LaxMonoidal.ε F ≫ F.map one ≫ (e 0).inv)
@@ -374,11 +411,13 @@ lemma mul_one_of_laxMonoidal
         rw [reassoc_of% core, rightUnitor_naturality_assoc,
           TauCeti.eqToHom_eq_iso_hom_map_eqToHom F e (add_zero n).symm]
 
+end AddZeroClass
+
 end LaxMonoidal
 
 section LaxBraided
 
-variable {I : Type*} [AddCommMonoid I] {C D : Type*} [Category* C] [Category* D]
+variable {I : Type*} [AddCommMagma I] {C D : Type*} [Category* C] [Category* D]
   [MonoidalCategory C] [MonoidalCategory D] [BraidedCategory C] [BraidedCategory D]
   {F : C ⥤ D} [F.LaxBraided] {X : GradedObject I C} {Y : GradedObject I D}
   {e : ∀ n, Y n ≅ F.obj (X n)}
@@ -402,3 +441,201 @@ lemma mul_comm_of_laxBraided
 end LaxBraided
 
 end CategoryTheory.GradedObject
+
+namespace CategoryTheory.Mon
+
+variable {I : Type*} [AddMonoid I] [DecidableEq I] {C : Type*} [Category* C]
+  [MonoidalCategory C]
+  [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
+  [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
+  [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
+  [HasInitial C]
+  [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
+  [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+  [∀ (X₁ X₂ X₃ X₄ : GradedObject I C),
+    GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
+
+/-- Multiplication of homogeneous components of a monoid object in graded objects. -/
+def mul (A : Mon (GradedObject I C)) (i j : I) : A.X i ⊗ A.X j ⟶ A.X (i + j) :=
+  GradedObject.Monoidal.ιTensorObj A.X A.X i j (i + j) rfl ≫ μ[A.X] (i + j)
+
+/-- Homogeneous multiplication is the restriction of the monoid multiplication to the
+corresponding summand. -/
+theorem mul_eq (A : Mon (GradedObject I C)) (i j : I) :
+    A.mul i j =
+      GradedObject.Monoidal.ιTensorObj A.X A.X i j (i + j) rfl ≫ μ[A.X] (i + j) := (rfl)
+
+/-- Multiplication through the summand of degree `n = i + j` is homogeneous multiplication
+followed by the transport along `i + j = n`. -/
+theorem ιTensorObj_mul (A : Mon (GradedObject I C)) {i j n : I} (h : i + j = n) :
+    GradedObject.Monoidal.ιTensorObj A.X A.X i j n h ≫ μ[A.X] n =
+      A.mul i j ≫ eqToHom (congrArg A.X h) := by
+  subst h
+  rw [eqToHom_refl, Category.comp_id]
+  rfl
+
+/-- Homogeneous multiplication is associative, up to the transport identifying the degrees
+`i + (j + k)` and `i + j + k`. -/
+@[reassoc]
+theorem mul_assoc (A : Mon (GradedObject I C)) (i j k : I) :
+    (A.mul i j ▷ A.X k) ≫ A.mul (i + j) k =
+      (α_ _ _ _).hom ≫ (A.X i ◁ A.mul j k) ≫ A.mul i (j + k) ≫
+        eqToHom (congrArg A.X (add_assoc i j k).symm) := by
+  have h := congrArg (GradedObject.Monoidal.ιTensorObj₃' A.X A.X A.X i j k _ rfl ≫ ·)
+    (congrFun (MonObj.mul_assoc A.X) (i + j + k))
+  -- The components of the monoidal structure maps of graded objects are displayed through the
+  -- instance, while the summand-inclusion lemmas are stated for the underlying constructions.
+  change GradedObject.Monoidal.ιTensorObj₃' A.X A.X A.X i j k _ rfl ≫
+      GradedObject.Monoidal.tensorHom μ[A.X] (𝟙 A.X) (i + j + k) ≫ μ[A.X] (i + j + k) =
+    GradedObject.Monoidal.ιTensorObj₃' A.X A.X A.X i j k _ rfl ≫
+      (GradedObject.Monoidal.associator A.X A.X A.X).hom (i + j + k) ≫
+      GradedObject.Monoidal.tensorHom (𝟙 A.X) μ[A.X] (i + j + k) ≫
+        μ[A.X] (i + j + k) at h
+  rw [GradedObject.Monoidal.ιTensorObj₃'_associator_hom_assoc,
+    GradedObject.Monoidal.ιTensorObj₃_eq_assoc _ _ _ i j k _ _ (j + k) rfl,
+    GradedObject.Monoidal.ι_tensorHom_assoc, ιTensorObj_mul,
+    GradedObject.Monoidal.ιTensorObj₃'_eq_assoc _ _ _ i j k _ _ (i + j) rfl,
+    GradedObject.Monoidal.ι_tensorHom_assoc] at h
+  simpa only [mul, GradedObject.categoryOfGradedObjects_id, tensorHom_id, id_tensorHom,
+    comp_whiskerRight, whiskerLeft_comp, Category.assoc] using h
+
+/-- A morphism of monoid objects in graded objects commutes with multiplication on every pair of
+homogeneous components. -/
+@[reassoc]
+theorem map_mul {A B : Mon (GradedObject I C)} (f : A ⟶ B) (i j : I) :
+    (f.hom i ⊗ₘ f.hom j) ≫ B.mul i j = A.mul i j ≫ f.hom (i + j) := by
+  have hmul := congrFun (IsMonHom.mul_hom f.hom) (i + j)
+  -- The monoidal instance on graded objects stores its tensor map as the concrete `tensorHom`;
+  -- there is no public equation relating the typeclass projection to that implementation.
+  change μ[A.X] (i + j) ≫ f.hom (i + j) =
+    GradedObject.Monoidal.tensorHom f.hom f.hom (i + j) ≫ μ[B.X] (i + j) at hmul
+  rw [mul_eq, mul_eq]
+  rw [← Category.assoc, ← GradedObject.Monoidal.ι_tensorHom f.hom f.hom i j (i + j) rfl,
+    Category.assoc, ← hmul, Category.assoc]
+
+/-- The unit of a monoid object in graded objects, regarded as a morphism to its degree-zero
+component. -/
+def one (A : Mon (GradedObject I C)) : 𝟙_ C ⟶ A.X 0 :=
+  (GradedObject.Monoidal.tensorUnit₀ (C := C)).inv ≫ η[A.X] 0
+
+/-- The homogeneous unit is the degree-zero component of the monoid unit, after identifying the
+degree-zero part of the graded tensor unit with the tensor unit of the underlying category. -/
+theorem one_eq (A : Mon (GradedObject I C)) :
+    A.one = (GradedObject.Monoidal.tensorUnit₀ (C := C)).inv ≫ η[A.X] 0 := (rfl)
+
+/-- A morphism of monoid objects in graded objects preserves the unit in degree zero. -/
+@[reassoc, simp]
+theorem one_map {A B : Mon (GradedObject I C)} (f : A ⟶ B) :
+    A.one ≫ f.hom 0 = B.one := by
+  have hone := congrFun (IsMonHom.one_hom f.hom) 0
+  -- Composition of graded-object morphisms is stored componentwise, but its typeclass
+  -- projection has no public component equation.
+  change η[A.X] 0 ≫ f.hom 0 = η[B.X] 0 at hone
+  rw [one_eq, one_eq]
+  rw [Category.assoc, hone]
+
+/-- The unit is a left identity for homogeneous multiplication, up to the transport identifying
+the degrees `0 + n` and `n`. -/
+@[reassoc (attr := simp)]
+theorem one_mul (A : Mon (GradedObject I C)) (n : I) :
+    (A.one ▷ A.X n) ≫ A.mul 0 n =
+      (λ_ (A.X n)).hom ≫ eqToHom (congrArg A.X (zero_add n).symm) := by
+  have h : (λ_ A.X).inv ≫ η[A.X] ▷ A.X ≫ μ[A.X] = 𝟙 A.X := by
+    rw [MonObj.one_mul, Iso.inv_hom_id]
+  replace h := congrFun h n
+  dsimp only [GradedObject.categoryOfGradedObjects_comp] at h
+  -- The graded monoidal instance has no public equations identifying its unitor and whiskering
+  -- projections with the concrete constructions used by the component lemmas below.
+  change (GradedObject.Monoidal.leftUnitor A.X).inv n ≫
+    GradedObject.Monoidal.tensorHom η[A.X] (𝟙 A.X) n ≫ μ[A.X] n = 𝟙 A.X n at h
+  rw [GradedObject.Monoidal.leftUnitor_inv_apply] at h
+  simp only [Category.assoc] at h
+  rw [GradedObject.Monoidal.ι_tensorHom_assoc, ιTensorObj_mul] at h
+  rw [← Iso.inv_comp_eq, ← cancel_mono (eqToHom (congrArg A.X (zero_add n)))]
+  simpa only [one_eq, GradedObject.categoryOfGradedObjects_id, tensorHom_id, comp_whiskerRight,
+    Category.assoc, eqToHom_trans, eqToHom_refl] using h
+
+/-- The unit is a right identity for homogeneous multiplication, up to the transport identifying
+the degrees `n + 0` and `n`. -/
+@[reassoc (attr := simp)]
+theorem mul_one (A : Mon (GradedObject I C)) (n : I) :
+    (A.X n ◁ A.one) ≫ A.mul n 0 =
+      (ρ_ (A.X n)).hom ≫ eqToHom (congrArg A.X (add_zero n).symm) := by
+  have h : (ρ_ A.X).inv ≫ A.X ◁ η[A.X] ≫ μ[A.X] = 𝟙 A.X := by
+    rw [MonObj.mul_one, Iso.inv_hom_id]
+  replace h := congrFun h n
+  dsimp only [GradedObject.categoryOfGradedObjects_comp] at h
+  -- As for `one_mul`, this identifies the unitor and whiskering projections of the graded
+  -- monoidal instance with the concrete constructions used by their component lemmas.
+  change (GradedObject.Monoidal.rightUnitor A.X).inv n ≫
+    GradedObject.Monoidal.tensorHom (𝟙 A.X) η[A.X] n ≫ μ[A.X] n = 𝟙 A.X n at h
+  rw [GradedObject.Monoidal.rightUnitor_inv_apply] at h
+  simp only [Category.assoc] at h
+  rw [GradedObject.Monoidal.ι_tensorHom_assoc, ιTensorObj_mul] at h
+  rw [← Iso.inv_comp_eq, ← cancel_mono (eqToHom (congrArg A.X (add_zero n)))]
+  simpa only [one_eq, GradedObject.categoryOfGradedObjects_id, id_tensorHom, whiskerLeft_comp,
+    Category.assoc, Category.comp_id, eqToHom_trans, eqToHom_refl] using h
+
+end CategoryTheory.Mon
+
+namespace CategoryTheory.Mon
+
+variable {C : Type*} [Category* C] [MonoidalCategory C]
+  [∀ (X₁ X₂ : GradedObject ℕ C), GradedObject.HasTensor X₁ X₂]
+  [∀ (X₁ X₂ X₃ : GradedObject ℕ C), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
+  [∀ (X₁ X₂ X₃ : GradedObject ℕ C), GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
+  [HasInitial C]
+  [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
+  [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+  [∀ (X₁ X₂ X₃ X₄ : GradedObject ℕ C), GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
+
+/-- Morphisms out of an `ℕ`-graded monoid object `A` generated in degree one are determined by
+their degree-one components. Here generation in degree one means that the unit `𝟙_ C ⟶ A.X 0`
+and the multiplications `A.X n ⊗ A.X 1 ⟶ A.X (n + 1)` are epimorphisms. -/
+theorem hom_ext_of_epi_mul {A B : Mon (GradedObject ℕ C)} [Epi A.one] [∀ n, Epi (A.mul n 1)]
+    {f g : A ⟶ B} (h : f.hom 1 = g.hom 1) : f = g := by
+  refine Hom.ext (GradedObject.hom_ext _ _ fun n ↦ ?_)
+  induction n with
+  | zero => rw [← cancel_epi A.one, one_map, one_map]
+  | succ n ih => rw [← cancel_epi (A.mul n 1), ← map_mul, ← map_mul, ih, h]
+
+end CategoryTheory.Mon
+
+namespace CategoryTheory.CommMon
+
+variable {I : Type*} [AddCommMonoid I] [DecidableEq I] {C : Type*} [Category* C]
+  [MonoidalCategory C] [BraidedCategory C]
+  [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
+  [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
+  [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
+  [HasInitial C]
+  [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
+  [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+  [∀ (X₁ X₂ X₃ X₄ : GradedObject I C),
+    GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
+
+/-- Homogeneous multiplication of a commutative monoid object is commutative, stated for the
+underlying graded object, whose components are displayed without the `toMon` wrapper. -/
+private theorem mul_comm_aux (X : GradedObject I C) [MonObj X] [IsCommMonObj X] (i j : I) :
+    (β_ (X i) (X j)).hom ≫ (Mon.mk X).mul j i =
+      (Mon.mk X).mul i j ≫ eqToHom (congrArg X (add_comm i j)) := by
+  have h := congrArg (GradedObject.Monoidal.ιTensorObj X X i j (i + j) rfl ≫ ·)
+    (congrFun (IsCommMonObj.mul_comm X) (i + j))
+  -- As for `Mon.mul_assoc`, display the braiding component through its underlying construction.
+  change GradedObject.Monoidal.ιTensorObj X X i j (i + j) rfl ≫
+      (GradedObject.Monoidal.braiding X X).hom (i + j) ≫ μ[X] (i + j) = (Mon.mk X).mul i j at h
+  dsimp only [GradedObject.Monoidal.braiding] at h
+  rw [GradedObject.Monoidal.ι_tensorObjDesc_assoc, Category.assoc,
+    Mon.ιTensorObj_mul (Mon.mk X)] at h
+  rw [← h]
+  simp
+
+/-- Homogeneous multiplication of a commutative monoid object in graded objects is commutative,
+up to the transport identifying the degrees `i + j` and `j + i`. -/
+@[reassoc]
+theorem mul_comm (A : CommMon (GradedObject I C)) (i j : I) :
+    (β_ (A.toMon.X i) (A.toMon.X j)).hom ≫ A.toMon.mul j i =
+      A.toMon.mul i j ≫ eqToHom (congrArg A.toMon.X (add_comm i j)) :=
+  mul_comm_aux A.X i j
+
+end CategoryTheory.CommMon

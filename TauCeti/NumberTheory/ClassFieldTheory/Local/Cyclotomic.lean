@@ -144,7 +144,7 @@ private theorem absoluteGaloisGroupRestrictEquiv_apply_of_pow_natCard_pow_eq_sel
   let : CommGroup Gal(𝓤 f/K) := IsCyclic.commGroup
   have hmem : x ∈ 𝓤 f := rootSet_subset_unramifiedExtension K _ f <| by
     rw [mem_rootSet]
-    refine ⟨FiniteField.X_pow_card_pow_sub_X_ne_zero _ hf Finite.one_lt_card, ?_⟩
+    refine ⟨X_pow_sub_X_ne_zero (Nat.one_lt_pow hf Finite.one_lt_card), ?_⟩
     simp [hx]
   -- The restriction of `σ` to the unramified extension is arithmetic Frobenius, since both
   -- represent the Artin symbol of `π` in its abelian Galois group.

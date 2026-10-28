@@ -331,6 +331,11 @@ theorem swapColumns_apply (a b : Fin n) (x : GridState n) (c : Fin n) :
     x.swapColumns a b c = x (Equiv.swap a b c) := by
   simp [swapColumns, relabelColumns]
 
+/-- A column read off the row it occupies after a column swap. -/
+theorem eq_swap_of_swapColumns_apply_eq {x : GridState n} {a b c d : Fin n}
+    (h : x.swapColumns a b c = x d) : c = Equiv.swap a b d :=
+  Equiv.swap_apply_eq_iff.mp (x.toPerm.injective (by rwa [swapColumns_apply] at h))
+
 /-- Swapping columns is symmetric in the two chosen columns. -/
 theorem swapColumns_comm (a b : Fin n) (x : GridState n) :
     x.swapColumns a b = x.swapColumns b a := by

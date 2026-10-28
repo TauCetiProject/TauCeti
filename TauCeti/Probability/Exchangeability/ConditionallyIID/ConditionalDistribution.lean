@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
 public import Mathlib.Probability.Kernel.CondDistrib
-import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.ProductKernel
 
 /-!
@@ -46,7 +45,7 @@ theorem ConditionallyIIDWith.condDistrib_block_ae_eq_pi [StandardBorelSpace α] 
     TauCeti.MeasureTheory.iidBlockKernel m
   have hK : μ.map (fun ω => (ν ω, fun i : Fin m => X (k i) ω)) = μ.map ν ⊗ₘ K := by
     rw [h.jointLaw_eq_disintegration k hk, Measure.compProd_eq_comp_prod,
-      TauCeti.MeasureTheory.bind_map h.measurable_directing.aemeasurable
+      Measure.bind_map h.measurable_directing.aemeasurable
         (Kernel.id ×ₖ K).measurable.aemeasurable]
     congr 1
     funext ω

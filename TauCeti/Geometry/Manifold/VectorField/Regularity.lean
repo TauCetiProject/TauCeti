@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
@@ -19,12 +20,15 @@ manifold differential of a function to tangent vectors whose base point varies.
 
 * `contMDiff_tangentBundle_mk_zero`: smoothness of the zero tangent vector over a varying point.
 * `contMDiff_tangentBundle_mk_constBase`: smoothness of a varying model vector over a fixed point.
-* `mvfderiv_apply_eq_mfderiv_apply`: identifies `mvfderiv` with `mfderiv` when the target is a
-  normed vector space.
+* `TauCeti.mdifferentiableAt_mvfderiv_apply`: a directional derivative of a `C²` function
+  along a differentiable vector field is differentiable at the point.
 * `ContMDiff.contMDiff_mvfderiv_apply`: applying the differential of a `C^n` function on the
   tangent bundle is `C^m` when `m + 1 ≤ n`.
 * `ContMDiffOn.contMDiffOn_mvfderiv_apply`: the derivative of a `C^n` function along a `C^m`
   vector field is `C^m` on an open set, when `m + 1 ≤ n`.
+* `ContMDiffOn.contMDiffOn_mvfderiv_snd_apply`: the partial derivative in the second variable of
+  a `C^n` function on a product, along a `C^m` family of tangent vectors, is jointly `C^m` on an
+  open set, when `m + 1 ≤ n`.
 * `ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_apply`: the lifted directional derivative
   `z ↦ (f z, df_z ξ)` of a `C^n` map from an open subset of a normed space into a manifold is
   `C^m` into the tangent bundle, when `m + 1 ≤ n`.
@@ -48,6 +52,8 @@ public section
 
 open Bundle Manifold Set
 open scoped ContDiff Manifold
+
+section
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -101,15 +107,6 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
 
 end TangentBundleInputs
 
-omit [IsManifold I 1 M] in
-/-- For a normed vector-space target, the tangent-space identification in `mvfderiv` is the
-canonical one, so evaluating it agrees with evaluating `mfderiv`. -/
-@[simp] theorem mvfderiv_apply_eq_mfderiv_apply (f : M → F) (x : M) (v : TangentSpace I x) :
-    mvfderiv I f x v = mfderiv I 𝓘(𝕜, F) f x v := by
-  rw [mvfderiv, ContinuousLinearMap.comp_apply]
-  -- `fromTangentSpace` is Mathlib's explicit interface for this canonical identification.
-  rfl
-
 /-- The map that applies the differential of a `C^n` function to tangent vectors is `C^m` on the
 tangent bundle when `m + 1 ≤ n`. -/
 theorem ContMDiff.contMDiff_mvfderiv_apply {f : M → F}
@@ -159,6 +156,41 @@ theorem ContMDiffOn.contMDiffOn_mvfderiv_apply {f : M → F} {s : Set M}
       = mfderivWithin I 𝓘(𝕜, F) f s y (A y) := by
     exact tangentMapWithin_snd
   rw [hval, mfderivWithin_of_isOpen hs hy, mvfderiv_apply_eq_mfderiv_apply]
+
+section Partial
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
+
+/-- The partial derivative in the second variable of a `C^n` function on a product, applied to a
+`C^m` family of tangent vectors, is jointly `C^m` on an open set, when `m + 1 ≤ n`. For a
+parameter manifold `N`, this is the joint regularity of the derivative along `M` of a family of
+functions on `M`, as the parameter varies. -/
+theorem ContMDiffOn.contMDiffOn_mvfderiv_snd_apply {f : N × M → F} {W : Set (N × M)}
+    {A : Π q : N × M, TangentSpace I q.2}
+    (hf : ContMDiffOn (J.prod I) 𝓘(𝕜, F) n f W) (hW : IsOpen W)
+    (hA : ContMDiffOn (J.prod I) I.tangent m
+      (fun q ↦ (TotalSpace.mk' E q.2 (A q) : TangentBundle I M)) W)
+    (hmn : m + 1 ≤ n) :
+    ContMDiffOn (J.prod I) 𝓘(𝕜, F) m (fun q ↦ mvfderiv I (fun y ↦ f (q.1, y)) q.2 (A q)) W := by
+  -- The tangent vector `(0, A q)` to the product, which has no component along `N`.
+  have hlift : ContMDiffOn (J.prod I) (J.prod I).tangent m
+      (fun q ↦ (equivTangentBundleProd J N I M).symm (⟨q.1, 0⟩, ⟨q.2, A q⟩)) W :=
+    contMDiff_equivTangentBundleProd_symm.comp_contMDiffOn
+      ((contMDiff_tangentBundle_mk_zero contMDiff_fst).contMDiffOn.prodMk hA)
+  refine (hf.contMDiffOn_mvfderiv_apply hW hlift hmn).congr fun q hq ↦ ?_
+  have hfq : MDifferentiableAt (J.prod I) 𝓘(𝕜, F) f q :=
+    ((hf q hq).contMDiffAt (hW.mem_nhds hq)).mdifferentiableAt
+      (ne_of_gt (lt_of_lt_of_le (by simp) hmn))
+  -- Differentiate `f` along the slice `y ↦ (q.1, y)`, whose differential is `inr`. The composite
+  -- is `fun y ↦ f (q.1, y)` and `inr v` is `(0, v)`, both by definition.
+  have h := mvfderiv_comp_apply (g := f) (f := fun y : M ↦ (q.1, y)) q.2 hfq
+    (mdifferentiableAt_const.prodMk mdifferentiableAt_id) (A q)
+  rw [mfderiv_prod_right] at h
+  exact h
+
+end Partial
 
 /-- **The lifted directional derivative of a `C^(m+1)` map is `C^m`.** If `f` is `C^n` on an open
 set `U` of a normed space and `m + 1 ≤ n`, then for every fixed direction `ξ` the map
@@ -276,3 +308,46 @@ theorem MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartA
     (by
       rw [extChartAt_to_inv]
       exact VectorField.mpullbackWithin_extChartAt_symm_apply V (mem_extChartAt_source x))
+
+end
+
+namespace TauCeti
+
+section DirectionalDerivative
+
+open Filter
+open scoped Topology
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I (minSmoothness 𝕜 2) M]
+
+/-- Let `f` be a vector-valued function that is `C^n` at `x` with `n ≥ minSmoothness 𝕜 2` (so `C²`
+over `ℝ` or `ℂ`), and let `U` be a vector field differentiable at `x`. Then the directional
+derivative `y ↦ df_y (U y)` is differentiable at `x`. -/
+theorem mdifferentiableAt_mvfderiv_apply
+    {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M}
+    (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n)
+    (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
+    MDiffAt (fun y ↦ mvfderiv I f y (U y)) x := by
+  have h2n : (2 : ℕ∞ω) ≤ n :=
+    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
+  have htangent : MDiffAt (fun y ↦ tangentMap I 𝓘(𝕜, F) f
+      (U y : TangentBundle I M)) x :=
+    ((hf.contMDiffAt_tangentMap (m := 1) (by norm_num; exact h2n)).mdifferentiableAt
+      (by norm_num)).comp x hU
+  have hsnd : MDiffAt (fun p : TangentBundle 𝓘(𝕜, F) F ↦ @id F p.2)
+      (tangentMap I 𝓘(𝕜, F) f (U x : TangentBundle I M)) :=
+    (contMDiff_snd_tangentBundle_modelSpace F 𝓘(𝕜, F)
+      (n := 1)).mdifferentiable (by norm_num) |>.mdifferentiableAt
+  apply (hsnd.comp x htangent).congr_of_eventuallyEq
+  filter_upwards with y
+  rw [Function.comp_apply, tangentMap_snd, mvfderiv_apply_eq_mfderiv_apply]
+  rfl
+
+end DirectionalDerivative
+
+end TauCeti

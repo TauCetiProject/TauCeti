@@ -148,6 +148,17 @@ theorem mem_verticalRegion : z ∈ verticalRegion a b lower upper ↔
 theorem mem_horizontalRegion : z ∈ horizontalRegion a b lower upper ↔
     z.im ∈ Icc a b ∧ z.re ∈ Icc (lower z.im) (upper z.im) := Iff.rfl
 
+/-- Continuous functions on a real product rectangle remain continuous in complex coordinates. -/
+theorem continuousOn_rectangle_of_prod {a b : ℝ × ℝ} {f : ℝ × ℝ → ℝ}
+    (hf : ContinuousOn f (Icc a b)) :
+    ContinuousOn (fun z : ℂ ↦ f (z.re, z.im))
+      (verticalRegion a.1 b.1 (fun _ ↦ a.2) (fun _ ↦ b.2)) := by
+  have hcoord : Continuous (fun z : ℂ ↦ (z.re, z.im)) := by fun_prop
+  apply hf.comp hcoord.continuousOn
+  intro z hz
+  rw [mem_verticalRegion] at hz
+  exact ⟨⟨hz.1.1, hz.2.1⟩, ⟨hz.1.2, hz.2.2⟩⟩
+
 /-- In real product coordinates the vertical cell has the indicated interval fibers. -/
 theorem preimage_measurableEquivRealProd_symm_verticalRegion :
     Complex.measurableEquivRealProd.symm ⁻¹' verticalRegion a b lower upper =

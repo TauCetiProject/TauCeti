@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
+public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
+public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.PartitionOfUnity
 import Mathlib.Topology.Compactness.LocallyFinite
@@ -23,6 +24,8 @@ function whose fibre at `x` is
 
 A locally finite partition of unity has only finitely many terms meeting a compact form support.
 The weights give a finite decomposition; containment in charts requires subordination separately.
+Extension by zero in a chart preserves compact support when the form is supported inside that
+chart; on its target the extension has the same germ within the model range.
 -/
 
 public section
@@ -86,6 +89,23 @@ theorem tsupport_smul (c : ℝ) (φ : RoughForm I X F k) (hc : c ≠ 0) :
     simp [h]
 
 end SMul
+
+/-- The zero form has compact topological support. -/
+theorem isCompact_tsupport_zero :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (0 : RoughForm I X F k)) := by
+  -- Identify the dependent zero section with a fixed-codomain zero function so that
+  -- the function `tsupport_zero` simplification applies.
+  change IsCompact (_root_.tsupport (0 : X → E [⋀^Fin k]→L[ℝ] F))
+  simp
+
+/-- The sum of two forms with compact topological support has compact topological support. -/
+theorem isCompact_tsupport_add [ContinuousAdd F] {φ ψ : RoughForm I X F k}
+    (hφ : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) φ))
+    (hψ : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ψ)) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (φ + ψ)) :=
+  -- The dependent tangent fibres are definitionally the model space `E`, so the form is a
+  -- function with the fixed codomain from which `HasCompactSupport.add` infers its argument.
+  HasCompactSupport.add (f := (show X → E [⋀^Fin k]→L[ℝ] F from φ)) hφ hψ
 
 /-- The topological support of a pullback is contained in the preimage of the original support. -/
 theorem tsupport_mpullback_subset_preimage {f : X → Y} (hf : Continuous f)
@@ -192,3 +212,77 @@ theorem eq_sum_fun_smul {n : ℕ} (φ : RoughForm I M F k) (ρ : Fin n → M →
     simp [hz]
 
 end TauCeti.RoughForm
+
+namespace TauCeti
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
+
+/-- The coordinate extension of a form supported inside a chart has support inside the compact
+coordinate image of the original support. -/
+theorem RoughForm.tsupport_indicator_inChartAt_subset (φ : RoughForm I M F k) (α : M)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
+    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source) :
+    _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) ⊆
+      (extChartAt I α) '' (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) := by
+  classical
+  have hK := hc.image_of_continuousOn ((continuousOn_extChartAt α).mono hs)
+  apply closure_minimal _ hK.isClosed
+  intro z hz
+  have ht : z ∈ (extChartAt I α).target := by
+    by_contra ht
+    exact hz (indicator_of_notMem ht _)
+  refine ⟨(extChartAt I α).symm z, ?_, (extChartAt I α).right_inv ht⟩
+  apply _root_.subset_tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ
+  intro hzero
+  apply hz
+  rw [indicator_of_mem ht]
+  ext v
+  rw [RoughForm.inChartAt_apply, hzero]
+  rfl
+
+/-- The zero extension of a compact chart-supported form has no support outside the target. -/
+theorem RoughForm.notMem_tsupport_indicator_inChartAt (φ : RoughForm I M F k) (α : M)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
+    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source)
+    {z : E} (hz : z ∉ (extChartAt I α).target) :
+    z ∉ _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) := by
+  intro ht
+  obtain ⟨x, hx, rfl⟩ := φ.tsupport_indicator_inChartAt_subset α hc hs ht
+  exact hz ((extChartAt I α).map_source (hs hx))
+
+/-- Compact support survives extension by zero from a chart containing the form's support. -/
+theorem RoughForm.hasCompactSupport_indicator_inChartAt (φ : RoughForm I M F k) (α : M)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ)) (hs :
+    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source) :
+    HasCompactSupport ((extChartAt I α).target.indicator (φ.inChartAt α)) :=
+  (hc.image_of_continuousOn ((continuousOn_extChartAt α).mono hs)).of_isClosed_subset
+    (_root_.isClosed_tsupport _) (φ.tsupport_indicator_inChartAt_subset α hc hs)
+
+/-- On the target, extension by zero has the same germ within the model range as the original
+coordinate form. -/
+theorem RoughForm.indicator_inChartAt_eventuallyEq (φ : RoughForm I M F k) (α : M)
+    {z : E} (hz : z ∈ (extChartAt I α).target) :
+    (extChartAt I α).target.indicator (φ.inChartAt α) =ᶠ[𝓝[range I] z] φ.inChartAt α := by
+  classical
+  filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem hz] with y hy
+  exact indicator_of_mem hy _
+
+/-- The zero extension of a compact chart-supported form whose support avoids the boundary
+is supported inside the interior of the coordinate target. -/
+theorem RoughForm.tsupport_indicator_inChartAt_subset_interior [IsManifold I 1 M]
+    (φ : RoughForm I M F k) (α : M) (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ))
+    (hs : (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source)
+    (hd : Disjoint (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) (I.boundary M)) :
+    _root_.tsupport ((extChartAt I α).target.indicator (φ.inChartAt α)) ⊆
+      interior (extChartAt I α).target := by
+  intro y hy
+  obtain ⟨x, hx, rfl⟩ := φ.tsupport_indicator_inChartAt_subset α hc hs hy
+  apply mem_interior_iff_mem_nhds.mpr
+  exact ModelWithCorners.extChartAt_target_mem_nhds_of_isInteriorPoint (k := 1)
+    one_ne_zero α (hs hx)
+    ((I.isInteriorPoint_iff_not_isBoundaryPoint x).mpr
+      (fun hb ↦ Set.disjoint_left.mp hd hx hb))
+
+end TauCeti
