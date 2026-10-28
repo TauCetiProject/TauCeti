@@ -37,6 +37,8 @@ at the level of DG morphisms.
   `TauCeti.DGTwistedObject.shiftFunctorZero_hom_app_of` and
   `TauCeti.DGTwistedObject.shiftFunctorAdd_hom_app_of`: the shift of `H⁰` and its isomorphisms
   are induced by the DG shift and the comparison morphisms.
+* `TauCeti.DGTwistedObject.shiftFunctorComm_hom_app_of`: the isomorphism `P⟦a⟧⟦b⟧ ≅ P⟦b⟧⟦a⟧`
+  commuting the shifts is the class of `TauCeti.DGTwistedObject.shiftCommHom`.
 
 ## References
 
@@ -289,6 +291,40 @@ theorem shiftFunctorAdd_inv_app_of (a b : ℤ) :
       homOf R (shiftAddInv P a b) ((mem_dgCycles R).mpr (dgDifferential_shiftAddInv P a b)) := by
   rw [ShiftMkCore.shiftFunctorAdd_eq]
   rfl
+
+/-- The isomorphism `P⟦a⟧⟦b⟧ ≅ P⟦b⟧⟦a⟧` commuting the shifts is the class of
+`TauCeti.DGTwistedObject.shiftCommHom`. -/
+@[simp]
+theorem shiftFunctorComm_hom_app_of (a b : ℤ) :
+    (shiftFunctorComm
+        (DGHomotopyCategory R (DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C)))) a
+          b).hom.app (DGHomotopyCategory.of R P) =
+      homOf R (shiftCommHom P a b) ((mem_dgCycles R).mpr (dgDifferential_shiftCommHom P a b)) := by
+  rw [shiftFunctorComm, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, shiftFunctorAdd',
+    Iso.trans_hom, NatTrans.comp_app, eqToIso.hom, eqToHom_app, shiftFunctorAdd_inv_app_of,
+    shiftFunctorAdd_hom_app_of]
+  have h : homOf R (shiftAddInv P a b) ((mem_dgCycles R).mpr (dgDifferential_shiftAddInv P a b)) ≫
+      homOf R (dgComp R (fromShift P (a + b)) (toShift P (b + a)) (by omega))
+        ((mem_dgCycles R).mpr (dgDifferential_dgComp_fromShift_toShift P _ _ _)) ≫
+      homOf R (shiftAddHom P b a) ((mem_dgCycles R).mpr (dgDifferential_shiftAddHom P b a)) =
+      homOf R (shiftCommHom P a b) ((mem_dgCycles R).mpr (dgDifferential_shiftCommHom P a b)) := by
+    simp only [homOf_comp, dgCompZero_def]
+    congr 1
+    exact (shiftCommHom_eq_dgComp_shiftAddInv P a b).symm
+  -- The identity `P⟦a + b⟧ = P⟦b + a⟧` is rewritten only up to the definitional unfolding of the
+  -- shift of the homotopy category, so it is substituted by `exact`.
+  exact (congrArg (fun t ↦ _ ≫ t ≫ _)
+    (eqToHom_mapDGHomotopyCategory_shiftFunctor (add_comm a b) _)).trans h
+
+/-- The inverse of the isomorphism `P⟦a⟧⟦b⟧ ≅ P⟦b⟧⟦a⟧` commuting the shifts is the class of
+`TauCeti.DGTwistedObject.shiftCommHom P b a`. -/
+@[simp]
+theorem shiftFunctorComm_inv_app_of (a b : ℤ) :
+    (shiftFunctorComm
+        (DGHomotopyCategory R (DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C)))) a
+          b).inv.app (DGHomotopyCategory.of R P) =
+      homOf R (shiftCommHom P b a) ((mem_dgCycles R).mpr (dgDifferential_shiftCommHom P b a)) := by
+  rw [← Iso.symm_hom, shiftFunctorComm_symm, shiftFunctorComm_hom_app_of]
 
 end homotopy
 

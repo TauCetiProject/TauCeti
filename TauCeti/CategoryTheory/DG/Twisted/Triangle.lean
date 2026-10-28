@@ -47,7 +47,8 @@ of `H⁰` is **distinguished** when it is isomorphic to a cone triangle
   by the projections onto `Q`, the comparison morphism `Q ⟶ Q⟦1⟧` and the inclusion of `Q⟦1⟧`.
 
 The converse half of the rotation axiom, that a triangle whose rotation is distinguished is
-distinguished, is not proved here.
+distinguished, is proved in `TauCeti/CategoryTheory/DG/Twisted/Pretriangulated.lean`, which
+assembles the pretriangulated structure.
 
 ## Main definitions
 
@@ -194,8 +195,8 @@ theorem dgDifferential_coneHomOfHomotopy {a : DGHom R 0 P P'} {b : DGHom R 0 Q Q
     {k : DGHom R (-1) P Q'} (ha : dgDifferential R 0 a = 0) (hb : dgDifferential R 0 b = 0)
     (hk : dgDifferential R (-1) k = dgComp R u b (add_zero 0) - dgComp R a u' (add_zero 0)) :
     dgDifferential R 0 (coneHomOfHomotopy hu hu' a b k) = 0 := by
-  have ha' : dgDifferential R 0 ((shiftFunctor R 1).dgMap 0 a) = 0 := by
-    rw [← (shiftFunctor R 1).dgMap_dgDifferential, ha, map_zero]
+  have ha' : dgDifferential R 0 ((shiftFunctor R 1).dgMap 0 a) = 0 :=
+    (shiftFunctor R 1).dgDifferential_dgMap_eq_zero ha
   -- After the Leibniz rule, every term is the projection onto `P⟦1⟧` followed by a degree-one
   -- morphism `P⟦1⟧ ⟶ cone u'`; these are brought to the form `P⟦1⟧ ⟶ P ⟶ Q' ⟶ cone u'`.
   have h₁ : dgComp R (dgComp R (extensionSnd R (dgDifferential_coneMorphism hu)) (coneMorphism R u)
@@ -429,8 +430,8 @@ theorem coneRotateInv_def :
 
 /-- The comparison morphism `P⟦1⟧ ⟶ cone (Q ⟶ cone u)` is closed. -/
 theorem dgDifferential_coneRotateHom : dgDifferential R 0 (coneRotateHom hu) = 0 := by
-  have hu₁ : dgDifferential R 0 ((shiftFunctor R 1).dgMap 0 u) = 0 := by
-    rw [← (shiftFunctor R 1).dgMap_dgDifferential, hu, map_zero]
+  have hu₁ : dgDifferential R 0 ((shiftFunctor R 1).dgMap 0 u) = 0 :=
+    (shiftFunctor R 1).dgDifferential_dgMap_eq_zero hu
   -- Both terms are `P⟦1⟧ ⟶ P ⟶ Q ⟶ cone u ⟶ cone (Q ⟶ cone u)`, with opposite signs.
   have h : dgComp R (dgComp R (coneMorphism R u) (extensionInl R (dgDifferential_coneMorphism hu))
         (add_zero 1)) (extensionInl R (dgDifferential_coneMorphism

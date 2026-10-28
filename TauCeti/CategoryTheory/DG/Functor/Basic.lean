@@ -191,6 +191,11 @@ theorem dgMap_mem_dgCycles {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgCycles R 
     F.dgMap 0 f ∈ dgCycles R (F.obj X) (F.obj Y) :=
   map_mem_dgCycles R (F.map X Y) hf
 
+/-- A DG functor sends closed morphisms to closed morphisms. -/
+theorem dgDifferential_dgMap_eq_zero {X Y : C} {n : ℤ} {f : DGHom R n X Y}
+    (hf : dgDifferential R n f = 0) : dgDifferential R n (F.dgMap n f) = 0 := by
+  rw [← dgMap_dgDifferential, hf, map_zero]
+
 /-- The underlying functor of a DG functor acts on closed morphisms by its degree-zero map. -/
 @[simp]
 theorem dgClosedHom_forget_map
