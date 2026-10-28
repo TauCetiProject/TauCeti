@@ -352,7 +352,7 @@ theorem abs_setIntegral_ball_norm_sub_rpow_mul_bubble_rpow_criticalExponent_sub_
   exact abs_setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow_sub_mul_log_le μ hn₀.ne'
     (by ring) ht hR b
 
-omit [BorelSpace E] in
+omit [FiniteDimensional ℝ E] [BorelSpace E] in
 /-- In dimension `n > 2`, the truncated energy moment of order `n - 2` is `((n - 2) / (2 t))²`
 times the truncated critical moment of order `n`. -/
 private lemma setIntegral_ball_energyMoment_eq (μ : Measure E) (hn : 2 < finrank ℝ E) {t : ℝ}
