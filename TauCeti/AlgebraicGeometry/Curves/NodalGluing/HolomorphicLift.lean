@@ -57,14 +57,9 @@ variable {ι Flag : Type*} {X : ι → Type*} [∀ i, TopologicalSpace (X i)]
 The flags are isolated, so continuity removes each possible singularity. -/
 theorem mdifferentiable_liftHomeomorph
     (hf : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) (liftHomeomorph h hN hX hX') (flagPointSet d)ᶜ) :
-    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (liftHomeomorph h hN hX hX') := by
-  intro x
-  refine mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE
-    (liftHomeomorph h hN hX hX').continuous.continuousAt ?_
-  have hflags : (flagPointSet d)ᶜ ∈ codiscrete (Σ i, X i) :=
-    (flagPointSet_finite d).compl_mem_codiscrete
-  filter_upwards [mem_codiscrete_iff_forall_mem_nhdsNE.mp hflags x] with y hy
-  exact (hf y hy).mdifferentiableAt ((flagPointSet_finite d).isClosed.isOpen_compl.mem_nhds hy)
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (liftHomeomorph h hN hX hX') :=
+  (flagPointSet_finite d).mdifferentiable_of_continuous_of_compl
+    (liftHomeomorph h hN hX hX').continuous hf
 
 namespace Iso
 
@@ -81,7 +76,7 @@ def ofHolomorphicLift
         (mdifferentiable_liftHomeomorph hf)
       have he : (liftHomeomorph h hN hX hX').isHomeomorph.homeomorph
           (liftHomeomorph h hN hX hX') = liftHomeomorph h hN hX hX' :=
-        Homeomorph.ext fun _ ↦ rfl
+        Homeomorph.ext fun _ ↦ by simp
       rw [he] at hi
       exact hi.contMDiff)
 
@@ -99,6 +94,16 @@ theorem gluedCurveHomeomorph_ofHolomorphicLift
     (ofHolomorphicLift hf).gluedCurveHomeomorph = h :=
   gluedCurveHomeomorph_ofGluedCurveHomeomorph
 
+/-- Lifting the descent of an analytic nodal isomorphism recovers that isomorphism. -/
+@[simp]
+theorem ofHolomorphicLift_gluedCurveHomeomorph (e : Iso 𝓘(ℂ) ω d d')
+    {hf : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ)
+      (liftHomeomorph e.gluedCurveHomeomorph e.gluedCurveHomeomorph_mem_nodeSet_iff hX hX')
+      (flagPointSet d)ᶜ} :
+    ofHolomorphicLift hf = e :=
+  Iso.ext fun x ↦ by
+    rw [coe_ofHolomorphicLift, liftHomeomorph_gluedCurveHomeomorph]
+
 end Iso
 
 /-- A node-preserving homeomorphism is induced by a unique analytic nodal isomorphism exactly
@@ -107,18 +112,12 @@ theorem existsUnique_iso_gluedCurveHomeomorph_eq_iff :
     (∃! e : Iso 𝓘(ℂ) ω d d', e.gluedCurveHomeomorph = h) ↔
       MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) (liftHomeomorph h hN hX hX') (flagPointSet d)ᶜ := by
   constructor
-  · rintro ⟨e, he, -⟩
-    have hl : ⇑e = liftHomeomorph h hN hX hX' :=
-      eq_liftHomeomorph e.continuous (fun x ↦ by rw [← he, e.gluedCurveHomeomorph_mk])
-    rw [← hl]
+  · rintro ⟨e, rfl, -⟩
+    rw [Iso.liftHomeomorph_gluedCurveHomeomorph]
     exact (e.toDiffeomorph.contMDiff.mdifferentiable (by simp)).mdifferentiableOn
   · intro hf
     refine ⟨Iso.ofHolomorphicLift hf, Iso.gluedCurveHomeomorph_ofHolomorphicLift hf, ?_⟩
-    intro e he
-    apply Iso.ext
-    have hl : ⇑e = liftHomeomorph h hN hX hX' :=
-      eq_liftHomeomorph e.continuous (fun x ↦ by rw [← he, e.gluedCurveHomeomorph_mk])
-    intro x
-    rw [Iso.coe_ofHolomorphicLift, ← hl]
+    intro e rfl
+    exact (Iso.ofHolomorphicLift_gluedCurveHomeomorph e).symm
 
 end TauCeti.NodalGluing
