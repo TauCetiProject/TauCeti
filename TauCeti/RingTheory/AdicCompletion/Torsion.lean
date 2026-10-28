@@ -17,7 +17,7 @@ residue modulo `I ^ n`. The hypothesis is membership of every element in
 `Ideal.primaryComponent M I`. No finite generation or Noetherian hypothesis is needed.
 
 `TauCeti.AdicCompletion.torsionModule` constructs this module structure. The residue formula
-`AdicCompletion.torsionModule_smul_eq` characterizes its action. Every `R`-linear map
+`TauCeti.AdicCompletion.torsionModule_smul_eq` characterizes its action. Every `R`-linear map
 between such modules is linear for these completion actions, and restriction of scalars recovers
 the original action of `R`.
 
@@ -108,8 +108,8 @@ def torsionModule : Module (AdicCompletion I R) M where
     -- The scalar operation is the action defined above.
     change torsionAction hM a 0 = 0
     rw [torsionAction_eq hM a (Submodule.zero_mem (Submodule.torsionBySet R M ↑(I ^ 0)))]
-    exact congrArg Subtype.val (smul_zero (evalₐ I 0 a) :
-      evalₐ I 0 a • (0 : Submodule.torsionBySet R M ↑(I ^ 0)) = 0)
+    simp only [torsionActionAt, (Submodule.mk_eq_zero _ _).mpr rfl, smul_zero,
+      Submodule.coe_zero]
   smul_add a x y := by
     -- Expand the scalar operation of this structure before applying its residue formula.
     change torsionAction hM a (x + y) = torsionAction hM a x + torsionAction hM a y
@@ -121,8 +121,10 @@ def torsionModule : Module (AdicCompletion I R) M where
       Submodule.torsionBySet_le_torsionBySet_pow _ _ (Nat.le_max_right _ _) I hm
     rw [torsionAction_eq hM a (Submodule.add_mem _ hx hy), torsionAction_eq hM a hx,
       torsionAction_eq hM a hy]
-    exact congrArg Subtype.val (smul_add (evalₐ I (max n m) a)
-      (⟨x, hx⟩ : Submodule.torsionBySet R M ↑(I ^ (max n m))) ⟨y, hy⟩)
+    have hxy : (⟨x + y, Submodule.add_mem _ hx hy⟩ :
+        Submodule.torsionBySet R M ↑(I ^ (max n m))) = ⟨x, hx⟩ + ⟨y, hy⟩ :=
+      Subtype.ext (by simp only [Submodule.coe_add])
+    simp only [torsionActionAt, hxy, smul_add, Submodule.coe_add]
   add_smul a b x := by
     -- Expand the scalar operation of this structure before applying its residue formula.
     change torsionAction hM (a + b) x = torsionAction hM a x + torsionAction hM b x
@@ -136,14 +138,6 @@ def torsionModule : Module (AdicCompletion I R) M where
     rw [torsionAction_eq hM 0 hn]
     simp [torsionActionAt]
 
-end TauCeti.AdicCompletion
-
-namespace AdicCompletion
-
-variable {R : Type*} [CommRing R] {I : Ideal R}
-variable {M : Type*} [AddCommGroup M] [Module R M]
-variable (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
-
 /-- A completed scalar acts on an element killed by `I ^ n` through its residue modulo
 `I ^ n`. This formula permits any representative of the residue. -/
 theorem torsionModule_smul_eq (a : AdicCompletion I R) (x : M) {n : ℕ} (r : R)
@@ -152,16 +146,6 @@ theorem torsionModule_smul_eq (a : AdicCompletion I R) (x : M) {n : ℕ} (r : R)
     letI := TauCeti.AdicCompletion.torsionModule hM
     a • x = r • x := by
   exact (torsionAction_eq hM a hx).trans (torsionActionAt_eq hx ha)
-
-end AdicCompletion
-
-namespace TauCeti.AdicCompletion
-
-open _root_.AdicCompletion
-
-variable {R : Type*} [CommRing R] {I : Ideal R}
-variable {M : Type*} [AddCommGroup M] [Module R M]
-variable (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
 
 /-- The canonical completion action extends the scalar tower from `R`. -/
 instance torsionModule_isScalarTower :
@@ -195,8 +179,8 @@ theorem map_adicCompletion_smul (f : M →ₗ[R] N) (a : AdicCompletion I R) (x 
     intro r
     rw [← f.map_smul, hn r, f.map_zero]
   obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n a)
-  rw [AdicCompletion.torsionModule_smul_eq hM a x r hn hr.symm,
-    AdicCompletion.torsionModule_smul_eq hN a (f x) r hfx hr.symm, f.map_smul]
+  rw [TauCeti.AdicCompletion.torsionModule_smul_eq hM a x r hn hr.symm,
+    TauCeti.AdicCompletion.torsionModule_smul_eq hN a (f x) r hfx hr.symm, f.map_smul]
 
 end LinearMap
 
