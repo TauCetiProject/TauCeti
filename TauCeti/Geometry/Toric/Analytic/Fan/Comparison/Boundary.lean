@@ -90,8 +90,9 @@ theorem isManifold_algebraicBoundaryComponent (n : ℕ∞ω)
       (AlgebraicComplexPoint.boundaryComponent Φ ρ) :=
   (algebraicAnalyticBoundaryHomeomorph hΦ ρ).isLocalHomeomorph.isManifold_chartedSpaceComap
 
-/-- The boundary restriction of the algebraic–analytic comparison is a biholomorphism for the
-pulled-back component atlas, for every differentiability order. -/
+/-- The boundary restriction of the algebraic–analytic comparison is a complex diffeomorphism
+of order `n` for the pulled-back component atlas. At analytic order `n = ω`, it is a
+biholomorphism. -/
 noncomputable def algebraicAnalyticBoundaryDiffeomorph (n : ℕ∞ω) :
     letI := algebraicBoundaryComponentChartedSpace hΦ ρ
     AlgebraicComplexPoint.boundaryComponent Φ ρ ≃ₘ^n⟮
@@ -102,7 +103,8 @@ noncomputable def algebraicAnalyticBoundaryDiffeomorph (n : ℕ∞ω) :
   exact (h.isLocalDiffeomorph_chartedSpaceComap (n := n)).diffeomorphOfBijective
     (algebraicAnalyticBoundaryHomeomorph hΦ ρ).bijective
 
-/-- The component biholomorphism commutes with the ambient boundary inclusions. -/
+/-- The component complex diffeomorphism of order `n` commutes with the ambient boundary
+inclusions. -/
 @[simp]
 theorem coe_algebraicAnalyticBoundaryDiffeomorph_apply (n : ℕ∞ω)
     (x : AlgebraicComplexPoint.boundaryComponent Φ ρ) :
@@ -111,7 +113,8 @@ theorem coe_algebraicAnalyticBoundaryDiffeomorph_apply (n : ℕ∞ω)
   simp only [algebraicAnalyticBoundaryDiffeomorph, coe_diffeomorphOfBijective,
     coe_algebraicAnalyticBoundaryHomeomorph_apply]
 
-/-- The inverse component biholomorphism commutes with the inverse ambient comparison. -/
+/-- The inverse component complex diffeomorphism of order `n` commutes with the inverse ambient
+comparison. -/
 @[simp]
 theorem coe_algebraicAnalyticBoundaryDiffeomorph_symm_apply (n : ℕ∞ω)
     (x : Φ.analyticBoundaryComponent hΦ ρ) :
@@ -123,8 +126,9 @@ theorem coe_algebraicAnalyticBoundaryDiffeomorph_symm_apply (n : ℕ∞ω)
   rw [← coe_algebraicAnalyticBoundaryDiffeomorph_apply hΦ ρ n,
     Diffeomorph.apply_symm_apply, Equiv.apply_symm_apply]
 
-/-- If the analytic boundary-component inclusion is a holomorphic smooth embedding, the
-algebraic complex-point inclusion is one too, for the component comparison atlas. -/
+/-- If the analytic boundary-component inclusion is a complex smooth embedding of order `n`,
+the algebraic complex-point inclusion is one too, for the component comparison atlas.
+At analytic order `n = ω`, these are holomorphic embeddings. -/
 theorem isSmoothEmbedding_subtypeVal_boundaryComponent (n : ℕ∞ω)
     [IsManifold 𝓘(ℂ, Fin (Module.finrank ℤ N - 1) → ℂ) n
       (Φ.analyticBoundaryComponent hΦ ρ)]
@@ -172,8 +176,9 @@ theorem exists_isManifold_boundaryComponent_isSmoothEmbedding :
     isManifold_algebraicBoundaryComponent hΦ ρ ω,
     isSmoothEmbedding_subtypeVal_boundaryComponent hΦ ρ ω hι⟩
 
-/-- At every algebraic complex point, one holomorphic coordinate chart simultaneously presents
-all boundary components through that point as distinct coordinate hyperplanes. -/
+/-- At every algebraic complex point, one complex coordinate chart of differentiability order
+`n` simultaneously presents all boundary components through that point as distinct coordinate
+hyperplanes. At analytic order `n = ω`, the chart is holomorphic. -/
 theorem exists_partialDiffeomorph_boundaryComponent_normalForm
     (x : Φ.AlgebraicComplexPoint) (n : ℕ∞ω) :
     letI := algebraicComplexPointChartedSpace hΦ
