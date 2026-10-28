@@ -70,10 +70,12 @@ private theorem analyticAt_consBlock (m : Option ι → ℕ) (a : ℂ)
     exact (ContinuousLinearMap.proj (R := ℂ)
       (φ := fun i => Fin (m i) → ℂ) (some i)).analyticAt c
 
-private theorem fderiv_consBlock_injective (m : Option ι → ℕ) (a : ℂ)
+omit [Fintype ι] in
+private theorem fderiv_consBlock_injective [Finite ι] (m : Option ι → ℕ) (a : ℂ)
     (c : ∀ i, Fin (m i) → ℂ) :
     Function.Injective (fderiv ℂ (consBlock m a) c) := by
   classical
+  let := Fintype.ofFinite ι
   have ha := (analyticAt_consBlock m a c).differentiableAt
   intro u v huv
   funext i
@@ -122,7 +124,8 @@ private theorem symOpenPartialHomeomorph_cons_apply
   funext i
   cases i <;> simp [consParts, consBlock, consDegrees, _root_.Sym.map_cons] <;> rfl
 
-private theorem analyticAt_cons_coordinates (m : Option ι → ℕ)
+omit [Fintype ι] in
+private theorem analyticAt_cons_coordinates [Finite ι] (m : Option ι → ℕ)
     (e : (Σ i, Fin (m i)) ≃ Fin n)
     (e' : (Σ i, Fin (consDegrees m i)) ≃ Fin (n + 1)) (a : ℂ) (c : Fin n → ℂ) :
     AnalyticAt ℂ (fun x => piSigmaConstHomeomorph ℂ e'
@@ -130,6 +133,7 @@ private theorem analyticAt_cons_coordinates (m : Option ι → ℕ)
     Function.Injective (fderiv ℂ (fun x => piSigmaConstHomeomorph ℂ e'
       (consBlock m a ((piSigmaConstHomeomorph ℂ e).symm x))) c) := by
   classical
+  let := Fintype.ofFinite ι
   let E := ((LinearEquiv.piCurry ℂ (fun (_ : Option ι) _ => ℂ)).symm.trans
     (LinearEquiv.piCongrLeft' ℂ (fun _ => ℂ) e)).toContinuousLinearEquiv
   let E' := ((LinearEquiv.piCurry ℂ (fun (_ : Option ι) _ => ℂ)).symm.trans
@@ -227,7 +231,8 @@ private theorem isImmersionAt_cons_of_common_charts [T2Space α] [ChartedSpace �
     ((contMDiffAt_of_mem_maximalAtlas hD (hlocal s hs).1).mdifferentiableAt (by simp)) hDC
   have hsm : ContMDiffOn 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, Fin (n + 1) → ℂ) ω
       (Sym.cons (z : α)) C.source := fun t ht => (hsmooth t ht).contMDiffWithinAt
-  exact hsm.isImmersionAt_of_hasLeftInverse_mfderiv C.open_source hs (by simp) (isDiffImmersionAt_iff.mp hdiff)
+  exact hsm.isImmersionAt_of_hasLeftInverse_mfderiv C.open_source hs (by simp)
+    (isDiffImmersionAt_iff.mp hdiff)
 
 /-- Adjoining a fixed point to unordered tuples on a Hausdorff complex curve is an analytic
 smooth embedding for the elementary-symmetric charted structures. Its image is the basepoint
