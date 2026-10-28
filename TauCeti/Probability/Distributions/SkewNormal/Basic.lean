@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Quantile
 public import TauCeti.Probability.Distributions.Gaussian.OwensT
+import TauCeti.Probability.Cdf.Density
 import TauCeti.Probability.Distributions.Affine
 
 /-!
@@ -295,15 +296,11 @@ theorem skewNormalMeasure_eq_gaussianReal (hs : 0 < s) (m : ℝ) :
   congr 1
   ext x
   rw [skewNormalPDF_eq_ofReal, gaussianPDF, skewNormalPDFReal_of_pos hs, zero_mul,
-    cdf_gaussianReal_self 0 one_ne_zero, gaussianPDFReal_zero_one, gaussianPDFReal_def, hv]
+    cdf_gaussianReal_self 0 one_ne_zero, div_eq_inv_mul (x - m), gaussianPDFReal_inv_mul hs.ne',
+    gaussianPDFReal_sub, abs_of_pos hs]
   congr 1
-  have hsqrt : √(2 * Real.pi * s ^ 2) = √(2 * Real.pi) * s := by
-    rw [Real.sqrt_mul (by positivity), Real.sqrt_sq hs.le]
-  have hexp : -(((x - m) / s) ^ 2 / 2) = -(x - m) ^ 2 / (2 * s ^ 2) := by
-    field_simp
-  rw [hsqrt, hexp]
-  have := Real.sqrt_pos.mpr (by positivity : (0 : ℝ) < 2 * Real.pi)
   field_simp
+  rw [mul_zero, zero_add, Real.toNNReal_of_nonneg (sq_nonneg s)]
 
 /-! ### Affine transport and shape reflection -/
 
@@ -374,24 +371,18 @@ theorem skewNormalMeasure_eq_map_skewNormalMeasure_zero_one (hs : 0 < s) (m α :
 
 /-- For a positive scale the skew-normal cdf is strictly increasing. -/
 theorem strictMono_cdf_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
-    StrictMono (cdf (skewNormalMeasure m s α)) := by
-  have h : cdf (skewNormalMeasure m s α) = fun x =>
-      cdf (gaussianReal 0 1) ((x - m) / s) - 2 * Real.owensT ((x - m) / s) α :=
-    funext (cdf_skewNormalMeasure_eq hs m α)
-  rw [h]
-  exact strictMono_of_deriv_pos fun x => by
-    rw [(hasDerivAt_cdf_gaussianReal_sub_two_mul_owensT_skewNormalPDFReal hs m α x).deriv]
-    exact skewNormalPDFReal_pos hs m α x
+    StrictMono (cdf (skewNormalMeasure m s α)) :=
+  have := isProbabilityMeasure_skewNormalMeasure hs m α
+  strictMono_cdf_of_eq_withDensity
+    (by rw [skewNormalMeasure_eq_withDensity, funext (skewNormalPDF_eq_ofReal m s α)])
+    (measurable_skewNormalPDFReal m s α).aemeasurable (skewNormalPDFReal_pos hs m α)
 
 /-- For a positive scale the skew-normal cdf is continuous. -/
 theorem continuous_cdf_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
     Continuous (cdf (skewNormalMeasure m s α)) := by
-  have h : cdf (skewNormalMeasure m s α) = fun x =>
-      cdf (gaussianReal 0 1) ((x - m) / s) - 2 * Real.owensT ((x - m) / s) α :=
-    funext (cdf_skewNormalMeasure_eq hs m α)
-  rw [h]
-  exact continuous_iff_continuousAt.mpr fun x =>
-    (hasDerivAt_cdf_gaussianReal_sub_two_mul_owensT_skewNormalPDFReal hs m α x).continuousAt
+  have := isProbabilityMeasure_skewNormalMeasure hs m α
+  rw [skewNormalMeasure_eq_withDensity] at this ⊢
+  exact Measure.continuous_cdf_of_noAtoms _
 
 /-- **The quantile function of the skew-normal law** is the Owen-T root: at a level `0 < u < 1`,
 the quantile is the unique `x` with `Φ(y) - 2 * T(y, α) = u`, where `y = (x - m) / s`. -/
