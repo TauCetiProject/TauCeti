@@ -24,6 +24,8 @@ It uses Mathlib's `2π` Fourier convention.
 * `TauCeti.continuous_fourierAtom`: Fourier atoms are continuous in the spatial variable.
 * `TauCeti.norm_fourierAtom`: Fourier atoms have unit norm.
 * `TauCeti.integrable_fourierAtom`: Fourier atoms are integrable against a finite measure.
+* `TauCeti.fourierAtom_add_left` and `TauCeti.fourierAtom_add_right`: a Fourier atom is an
+  additive character of each argument.
 * `TauCeti.fourierAtom_zero_left` and `TauCeti.fourierAtom_zero_right`: a Fourier atom is `1`
   when either argument is `0`.
 -/
@@ -67,6 +69,16 @@ theorem fourierAtom_zero_left (v : V) : fourierAtom (0 : V) v = 1 := by
 reason as `fourierAtom_zero_left`. -/
 theorem fourierAtom_zero_right (q : V) : fourierAtom q (0 : V) = 1 := by
   simp [fourierAtom]
+
+/-- A Fourier atom is an additive character of its first argument. -/
+theorem fourierAtom_add_left (q r v : V) :
+    fourierAtom (q + r) v = fourierAtom q v * fourierAtom r v := by
+  simp only [fourierAtom, inner_add_right, neg_add, AddChar.map_add_eq_mul, Circle.coe_mul]
+
+/-- A Fourier atom is an additive character of its second argument. -/
+theorem fourierAtom_add_right (q v w : V) :
+    fourierAtom q (v + w) = fourierAtom q v * fourierAtom q w := by
+  simp only [fourierAtom, inner_add_left, neg_add, AddChar.map_add_eq_mul, Circle.coe_mul]
 
 /-- Fourier atoms turn spatial subtraction into a rank-one positive-definite kernel. -/
 theorem fourierAtom_sub (q v w : V) :
