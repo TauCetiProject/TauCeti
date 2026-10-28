@@ -54,8 +54,6 @@ generates the entire integral kernel. The bound includes `k = 0`, when both side
   points of `V` whose sup norms have product at most `H(V)`.
 * `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_norm_le`: Bombieri and Vaaler's
   Theorem 2 over `ℤ`, in the sup norm.
-* `Submodule.exists_basis_intPoints_prod_norm_le`: a basis of all integral points of `V` with
-  product bound `k! / 2 ^ (k - 1) * H(V)`.
 * `Matrix.exists_basis_ker_mulVecLin_prod_norm_le`: a basis of the entire integral kernel
   with product bound `k! / 2 ^ (k - 1) * √det (A Aᵀ) / g`.
 
@@ -126,31 +124,6 @@ theorem exists_linearIndependent_intPoints_prod_norm_le (V : Submodule ℚ (ι �
 
 end Submodule
 
-namespace Submodule
-
-open scoped Matrix
-
-variable {ι : Type*} [Fintype ι] [LinearOrder ι]
-
-/-- A rational subspace of dimension `k` has a basis of its integral points whose product of
-sup norms is bounded by `k! / 2 ^ (k - 1)` times its absolute Euclidean height. The basis
-generates all integral points, rather than merely a sublattice of finite index. -/
-theorem exists_basis_intPoints_prod_norm_le (V : Submodule ℚ (ι → ℚ)) :
-    ∃ b : Basis (Fin (finrank ℚ V)) ℤ V.intPoints,
-      ∏ l, ‖(b l : ι → ℤ)‖ ≤
-        (finrank ℚ V).factorial / 2 ^ (finrank ℚ V - 1) * V.subspaceHeight := by
-  obtain ⟨b, hb⟩ := V.exists_basis_intPoints_prod_norm_le_prod_successiveMin
-  have hmin := V.prod_successiveMin_intLattice_le_subspaceHeight
-    Submodule.coe_cubeSlice.ge (fun _ ↦ Submodule.neg_mem_cubeSlice.2)
-  have hle := hb.trans (mul_le_mul_of_nonneg_left hmin (by positivity))
-  have hresult : ∃ b : Basis (Fin (finrank ℝ V.realSpan)) ℤ V.intPoints,
-      ∏ l, ‖(b l : ι → ℤ)‖ ≤
-        (finrank ℝ V.realSpan).factorial / 2 ^ (finrank ℝ V.realSpan - 1) * V.subspaceHeight :=
-    ⟨b, hle⟩
-  rwa [Submodule.finrank_realSpan] at hresult
-
-end Submodule
-
 namespace Matrix
 
 variable {ι : Type*} [Fintype ι] [LinearOrder ι] {p : ℕ}
@@ -196,9 +169,15 @@ theorem exists_basis_ker_mulVecLin_prod_norm_le {p : ℕ} {A : Matrix (Fin p) ι
         (Fintype.card ι - p).factorial / 2 ^ (Fintype.card ι - p - 1) *
           √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
   let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  have hresult := Submodule.exists_basis_intPoints_prod_norm_le
-    (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin)
-  rw [intPoints_ker_mulVecLin, finrank_ker_mulVecLin_map hA,
+  let V := LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin
+  obtain ⟨b, hb⟩ := V.exists_basis_intPoints_prod_norm_le_prod_successiveMin
+  have hmin := V.prod_successiveMin_intLattice_le_subspaceHeight
+    Submodule.coe_cubeSlice.ge (fun _ ↦ Submodule.neg_mem_cubeSlice.2)
+  have hresult : ∃ b : Basis (Fin (finrank ℝ V.realSpan)) ℤ V.intPoints,
+      ∏ l, ‖(b l : ι → ℤ)‖ ≤
+        (finrank ℝ V.realSpan).factorial / 2 ^ (finrank ℝ V.realSpan - 1) * V.subspaceHeight :=
+    ⟨b, hb.trans (mul_le_mul_of_nonneg_left hmin (by positivity))⟩
+  rw [Submodule.finrank_realSpan, intPoints_ker_mulVecLin, finrank_ker_mulVecLin_map hA,
     ← Submodule.covolume_intLattice, Matrix.covolume_intLattice_ker_mulVecLin hA] at hresult
   simpa only [mul_div_assoc] using hresult
 
