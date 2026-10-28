@@ -56,26 +56,6 @@ namespace PreAbstractSimplicialComplex
 variable {ι : Type*} [LinearOrder ι] {K : PreAbstractSimplicialComplex ι} {k : ℕ}
   {ρ : Finset (K.EdgewiseVertex k)} {u w : K.EdgewiseVertex k}
 
-/-! ### Counting entries in initial segments -/
-
-/-- In a face of the edgewise subdivision, the number of entries of a vertex `u` in a lower set
-exceeds that of any other vertex `w` by at most one. -/
-private theorem card_filter_le_card_filter_add_one (hρ : ρ ∈ K.edgewiseSubdivision k)
-    (hu : u ∈ ρ) (hw : w ∈ ρ) {p : ι → Prop} [DecidablePred p] (hp : Antitone p) :
-    #{l | p (u.1 l)} ≤ #{l | p (w.1 l)} + 1 := by
-  cases k with
-  | zero => simp
-  | succ m =>
-    -- Drop the first entry of `u`; the `l + 1`-st entry of `u` dominates the `l`-th of `w`.
-    rw [Fin.card_filter_univ_succ']
-    have h₁ : #{l : Fin m | p (u.1 l.succ)} ≤ #{l : Fin m | p (w.1 l.castSucc)} :=
-      card_le_card (monotone_filter_right _ fun l _ hl =>
-        hp (le_of_lt_of_mem_edgewiseSubdivision hρ hw hu (Fin.castSucc_lt_succ (i := l))) hl)
-    have h₂ : #{l : Fin m | p (w.1 l.castSucc)} ≤ #{l | p (w.1 l)} :=
-      card_le_card_of_injOn Fin.castSucc (fun l hl => by simpa using hl)
-        (Fin.castSucc_injective m).injOn
-    split_ifs <;> omega
-
 /-! ### Mesh and fatness -/
 
 /-- The vertices of a face of the `k`-th edgewise subdivision are placed at distance at most
