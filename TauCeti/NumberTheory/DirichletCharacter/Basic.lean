@@ -38,6 +38,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   `d ∣ N` correspond to the characters modulo `d`.
 * `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
   at naturals prime to the new level.
+* `DirichletCharacter.changeLevel_trans_mul_toUnitHom`: raising a product of characters through an
+  intermediate level, read on unit homomorphisms.
 * `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`:
   changing the level preserves the value at `-1`, hence parity.
 * `DirichletCharacter.conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply`: a primitivity
@@ -202,6 +204,16 @@ prime to the new level. -/
 theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter R d) {m : ℕ} (hm : m.Coprime n) : changeLevel h χ m = χ m := by
   simpa using changeLevel_eq_cast_of_dvd' χ h (a := (m : ℤ)) (Nat.isCoprime_iff_coprime.mpr hm)
+
+/-- **Raising a product through an intermediate level.** If `a ∣ m`, `b ∣ m` and `m ∣ n`, the
+product of `χ₁` and `χ₂` raised directly to level `n` is, on units, their product raised to
+level `m` composed with the reduction `(ZMod n)ˣ → (ZMod m)ˣ`. -/
+theorem changeLevel_trans_mul_toUnitHom {R : Type*} [CommMonoidWithZero R] {a b m n : ℕ}
+    (χ₁ : DirichletCharacter R a) (χ₂ : DirichletCharacter R b) (h₁ : a ∣ m) (h₂ : b ∣ m)
+    (h : m ∣ n) :
+    (changeLevel (h₁.trans h) χ₁ * changeLevel (h₂.trans h) χ₂).toUnitHom =
+      (changeLevel h₁ χ₁ * changeLevel h₂ χ₂).toUnitHom.comp (ZMod.unitsMap h) := by
+  rw [changeLevel_trans χ₁ h₁ h, changeLevel_trans χ₂ h₂ h, ← map_mul, changeLevel_toUnitHom]
 
 /-- Raising the level of a Dirichlet character does not change its value at `-1`. -/
 @[simp]

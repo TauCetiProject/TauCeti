@@ -13,7 +13,6 @@ public import TauCeti.Algebra.Lie.Symplectic.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Datum
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 import TauCeti.Algebra.Lie.Sl2.WeightString
 
@@ -359,15 +358,15 @@ private theorem lie_positiveRootMatrix_negativeRootMatrix_self (i : Fin (n + 1))
     ⁅positiveRootMatrix n i, negativeRootMatrix n i⁆ = cartanGeneratorMatrix n i := by
   by_cases hi : i = Fin.last n
   · subst i
-    rw [positiveRootMatrix_last, negativeRootMatrix_last, lie_single_single]
+    rw [positiveRootMatrix_last, negativeRootMatrix_last, Matrix.lie_single_single]
     ext a b
     cases a <;> cases b <;>
       simp [cartanGeneratorMatrix, DynkinType.TypeC.weight_apply, diagonal_apply,
         single_apply] <;>
       split_ifs <;> simp_all [Fin.ext_iff, Fin.val_last] <;> omega
   · rw [positiveRootMatrix_of_ne_last n i hi, negativeRootMatrix_of_ne_last n i hi,
-      sub_lie, lie_sub, lie_sub, lie_single_single, lie_single_single, lie_single_single,
-      lie_single_single]
+      sub_lie, lie_sub, lie_sub, Matrix.lie_single_single, Matrix.lie_single_single,
+      Matrix.lie_single_single, Matrix.lie_single_single]
     obtain ⟨k, rfl⟩ := Fin.eq_castSucc_of_ne_last hi
     ext a b
     cases a <;> cases b <;>
@@ -382,18 +381,18 @@ private theorem lie_positiveRootMatrix_negativeRootMatrix_of_ne
   · subst i
     have hj : j ≠ Fin.last n := Ne.symm hij
     rw [positiveRootMatrix_last, negativeRootMatrix_of_ne_last n j hj, lie_sub,
-      lie_single_single, lie_single_single]
+      Matrix.lie_single_single, Matrix.lie_single_single]
     ext a b
     cases a <;> cases b <;> simp [hj, Ne.symm hj]
   · by_cases hj : j = Fin.last n
     · subst j
       rw [positiveRootMatrix_of_ne_last n i hi, negativeRootMatrix_last, sub_lie,
-        lie_single_single, lie_single_single]
+        Matrix.lie_single_single, Matrix.lie_single_single]
       ext a b
       cases a <;> cases b <;> simp [hi, Ne.symm hi]
     · rw [positiveRootMatrix_of_ne_last n i hi, negativeRootMatrix_of_ne_last n j hj,
-        sub_lie, lie_sub, lie_sub, lie_single_single, lie_single_single, lie_single_single,
-        lie_single_single]
+        sub_lie, lie_sub, lie_sub, Matrix.lie_single_single, Matrix.lie_single_single,
+        Matrix.lie_single_single, Matrix.lie_single_single]
       have hsucc : Order.succ i ≠ Order.succ j :=
         (Order.succ_eq_succ_iff_of_not_isMax (not_isMax_iff_ne_top.2 hi)
           (not_isMax_iff_ne_top.2 hj)).not.2 hij

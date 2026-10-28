@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Group.Action.End
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Algebra.Module.Submodule.Equiv
+public import Mathlib.LinearAlgebra.BilinearMap
 
 /-!
 # Linear equivalences and their underlying maps
@@ -22,10 +23,13 @@ submodule.
 Postcomposition with an isomorphism of targets also transports hom spaces over auxiliary
 scalars, even when the ring defining the linear maps is noncommutative.
 For coordinate transport, forgetting linearity gives the corresponding additive word
-equivalence, with the same direction on coordinates.
+equivalence, with the same direction on coordinates. A commutative square of linear maps with
+isomorphisms on its vertical sides transports the ranges of precomposition on hom spaces.
 
 ## Main results
 
+* `LinearEquiv.map_range_lcomp`: transport of precomposition ranges along an isomorphism
+  of arrows, over a semiring and with any compatible hom-space scalars and target.
 * `LinearEquiv.homCongrRight`: an isomorphism of targets induces an equivalence of hom spaces
   over the auxiliary scalar semiring.
 
@@ -87,6 +91,33 @@ theorem homCongrRight_symm_apply (e : N ≃ₗ[A] P) (f : S →ₗ[A] P) (s : S)
   (rfl)
 
 end HomCongrRight
+
+section Precomposition
+
+variable {R P₀ P₁ Q₀ Q₁ : Type*} [Semiring R]
+  [AddCommMonoid P₀] [Module R P₀] [AddCommMonoid P₁] [Module R P₁]
+  [AddCommMonoid Q₀] [Module R Q₀] [AddCommMonoid Q₁] [Module R Q₁]
+
+/-- An isomorphism of arrows transports the range of precomposition on hom spaces.
+The common target and its commuting scalar action are arbitrary; in particular, the target
+may be `R` with scalars `Rᵐᵒᵖ`, as for opposite module duals. -/
+theorem map_range_lcomp (e₀ : P₀ ≃ₗ[R] Q₀) (e₁ : P₁ ≃ₗ[R] Q₁)
+    (S N : Type*) [Semiring S] [AddCommMonoid N] [Module R N] [Module S N]
+    [SMulCommClass R S N] {p : P₁ →ₗ[R] P₀} {q : Q₁ →ₗ[R] Q₀}
+    (hsquare : e₀.toLinearMap ∘ₗ p = q ∘ₗ e₁.toLinearMap) :
+    (LinearMap.range (p.lcomp S N)).map (e₁.congrLeft N S).toLinearMap =
+      LinearMap.range (q.lcomp S N) := by
+  rw [← LinearMap.range_comp]
+  have hcomp :
+      (e₁.congrLeft N S).toLinearMap.comp (p.lcomp S N) =
+        (q.lcomp S N).comp (e₀.congrLeft N S).toLinearMap := by
+    ext φ x
+    simp only [LinearMap.comp_apply, LinearMap.lcomp_apply]
+    apply congrArg φ
+    simpa using congrArg e₀.symm (LinearMap.congr_fun hsquare (e₁.symm x))
+  rw [hcomp, LinearEquiv.range_comp]
+
+end Precomposition
 
 section Intertwining
 
