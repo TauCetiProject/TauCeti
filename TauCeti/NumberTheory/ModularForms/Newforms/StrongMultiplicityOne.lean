@@ -277,8 +277,8 @@ private theorem false_of_mul_dvd_of_not_mul_dvd {M L q : ℕ} [NeZero M] [NeZero
   have hFχ : F ∈ cuspFormCharSpace k χ :=
     CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd h1N f.χ f.mem_charSpace
   have hGχ : G ∈ cuspFormCharSpace k χ := by
-    have := CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd h1M g.χ g.mem_charSpace
-    rwa [show g.χ.comp (ZMod.unitsMap ((Dvd.intro_left 1 rfl).trans h1M)) = χ from hχ.symm] at this
+    rw [hχ]
+    exact CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd h1M g.χ g.mem_charSpace
   set D := F - G with hD
   have hDχ : D ∈ cuspFormCharSpace k χ := Submodule.sub_mem _ hFχ hGχ
   have heig : ∀ p : ℕ, p.Prime → Nat.Coprime p L → ∃ c : ℂ,

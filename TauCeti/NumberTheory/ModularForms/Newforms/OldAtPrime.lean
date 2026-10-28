@@ -140,7 +140,7 @@ theorem cuspFormsOldAt_le_of_prime [NeZero N] {L : ℕ} (hq : q.Prime) (hL : q *
     have hdL : d * M ∣ L := by
       obtain ⟨t, rfl⟩ := hML
       have h1 : d ∣ q * t := Nat.dvd_of_mul_dvd_mul_right (Nat.pos_of_ne_zero (NeZero.ne M))
-        (by rwa [show q * (M * t) = q * t * M by ring] at hdM)
+        (by rwa [mul_comm M t, ← mul_assoc] at hdM)
       have h2 : d ∣ t :=
         (Nat.Coprime.symm ((Nat.Prime.coprime_iff_not_dvd hq).mpr hqd)).dvd_of_dvd_mul_left h1
       rw [mul_comm d M]
