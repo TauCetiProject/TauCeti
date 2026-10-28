@@ -26,7 +26,7 @@ plus one. These identities allow stopping-time arguments to be applied to excurs
 
 ## References
 
-* J. R. Norris, *Markov Chains* (1997), §1.4, for successive visits and return times.
+* J. R. Norris, *Markov Chains* (1997), §1.5, for successive passage times and excursion lengths.
 -/
 
 public section
@@ -57,12 +57,26 @@ have occurred through time `n`. -/
 theorem successiveVisit_le_iff :
     successiveVisit X a k ω ≤ n ↔ k < visitCount (fun i => X i ω) a (n + 1) := by
   rw [successiveVisit_def]
-  erw [hittingAfter_le_iff]
+  simp only [Nat.cast_withTop]
+  rw [hittingAfter_le_iff (i := n)]
   constructor
   · rintro ⟨j, hj, hk⟩
     exact hk.trans_le (visitCount_monotone _ _ (Nat.succ_le_succ hj.2))
   · intro hk
     exact ⟨n, ⟨Nat.zero_le n, le_rfl⟩, hk⟩
+
+/-- The visit indexed by `k` occurs strictly before `n` exactly when at least `k + 1`
+visits have occurred before time `n`. -/
+@[simp]
+theorem successiveVisit_lt_iff :
+    successiveVisit X a k ω < n ↔ k < visitCount (fun i => X i ω) a n := by
+  cases n with
+  | zero => simp
+  | succ n =>
+    rw [← successiveVisit_le_iff (n := n)]
+    simp only [Nat.cast_withTop]
+    rw [WithTop.lt_iff_exists_coe, WithTop.le_coe_iff]
+    simp only [WithTop.coe_lt_coe, Nat.lt_succ_iff]
 
 /-- A finite successive visit records both the state and the number of earlier visits. -/
 @[simp]
@@ -70,39 +84,9 @@ theorem successiveVisit_eq_coe_iff :
     successiveVisit X a k ω = n ↔
       X n ω = a ∧ visitCount (fun i => X i ω) a n = k := by
   classical
-  constructor
-  · intro h
-    have hlt := successiveVisit_le_iff.mp h.le
-    have hle : visitCount (fun i => X i ω) a n ≤ k := by
-      cases n with
-      | zero => simp
-      | succ n =>
-        have hn : ¬ successiveVisit X a k ω ≤ n := by
-          rw [h]
-          exact (WithTop.coe_lt_coe.mpr (Nat.lt_succ_self n)).not_ge
-        simpa only [successiveVisit_le_iff, not_lt] using hn
-    rw [visitCount_succ] at hlt
-    split_ifs at hlt with hx
-    · exact ⟨hx, by omega⟩
-    · omega
-  · rintro ⟨hx, hc⟩
-    apply le_antisymm
-    · apply successiveVisit_le_iff.mpr
-      rw [visitCount_succ_of_eq (x := fun i => X i ω) hx, hc]
-      omega
-    · by_contra hn
-      have hlt : successiveVisit X a k ω < n := lt_of_not_ge hn
-      cases n with
-      | zero => simp at hlt
-      | succ n =>
-        have ht : successiveVisit X a k ω ≤ n := by
-          cases ht : successiveVisit X a k ω with
-          | top => simp [ht] at hlt
-          | coe j =>
-            rw [ht] at hlt
-            exact WithTop.coe_le_coe.mpr (Nat.le_of_lt_succ (WithTop.coe_lt_coe.mp hlt))
-        have := successiveVisit_le_iff.mp ht
-        omega
+  rw [eq_iff_le_not_lt, successiveVisit_le_iff, successiveVisit_lt_iff, not_lt,
+    visitCount_succ]
+  split_ifs with hx <;> simp_all; omega
 
 /-- A missing visit is infinity, rather than the combinatorial visit time's junk value. -/
 @[simp]
@@ -163,7 +147,10 @@ theorem successiveVisit_zero (X : ℕ → Ω → α) (a : α) :
   funext ω
   apply WithTop.eq_of_forall_le_coe_iff
   intro n
-  erw [successiveVisit_le_iff, hittingAfter_le_iff]
+  simp only [← Nat.cast_withTop]
+  rw [successiveVisit_le_iff]
+  simp only [Nat.cast_withTop]
+  rw [hittingAfter_le_iff (i := n)]
   simp only [visitCount_pos_iff, Set.mem_Icc, Set.mem_singleton_iff]
   constructor
   · rintro ⟨j, hj, hx⟩
@@ -178,7 +165,10 @@ theorem successiveVisit_succ_eq_hittingAfter (h : successiveVisit X a k ω = n) 
   obtain ⟨hx, hc⟩ := successiveVisit_eq_coe_iff.mp h
   apply WithTop.eq_of_forall_le_coe_iff
   intro m
-  erw [successiveVisit_le_iff, hittingAfter_le_iff]
+  simp only [← Nat.cast_withTop]
+  rw [successiveVisit_le_iff]
+  simp only [Nat.cast_withTop]
+  rw [hittingAfter_le_iff (i := m)]
   constructor
   · intro hm
     let j := visitTime (fun i => X i ω) a (k + 1)
@@ -205,7 +195,7 @@ theorem successiveVisit_succ_eq_hittingAfter (h : successiveVisit X a k ω = n) 
         visitCount_monotone _ _ (Nat.succ_le_succ hj.2)
 
 /-- For a process starting at `a`, visit one is the first positive return. -/
-theorem successiveVisit_one_of_start (h : X 0 ω = a) :
+theorem successiveVisit_one_eq_hittingAfter_of_zero (h : X 0 ω = a) :
     successiveVisit X a 1 ω = hittingAfter X {a} 1 ω := by
   apply successiveVisit_succ_eq_hittingAfter (k := 0) (n := 0)
   exact successiveVisit_eq_coe_iff.mpr ⟨h, visitCount_zero _ _⟩
@@ -217,9 +207,10 @@ theorem successiveVisit_gap_eq_length_excursion_add_one
     m - n = (excursion (fun i => X i ω) a k).length + 1 := by
   obtain ⟨hx, hc⟩ := successiveVisit_eq_coe_iff.mp h
   obtain ⟨hy, hd⟩ := successiveVisit_eq_coe_iff.mp hnext
-  have hn : visitTime (fun i => X i ω) a k = n := by rw [← hc, visitTime_visitCount hx]
-  have hm : visitTime (fun i => X i ω) a (k + 1) = m := by
-    rw [← hd, visitTime_visitCount hy]
+  have hn : visitTime (fun i => X i ω) a k = n :=
+    WithTop.coe_inj.mp ((successiveVisit_eq_visitTime ⟨n, hx, hc⟩).symm.trans h)
+  have hm : visitTime (fun i => X i ω) a (k + 1) = m :=
+    WithTop.coe_inj.mp ((successiveVisit_eq_visitTime ⟨m, hy, hd⟩).symm.trans hnext)
   have hnm : n < m := by
     by_contra hle
     have := visitCount_monotone (fun i => X i ω) a (le_of_not_gt hle)
@@ -235,20 +226,24 @@ theorem _root_.MeasureTheory.Adapted.isStoppingTime_successiveVisit
     (ha : MeasurableSet ({a} : Set α)) (k : ℕ) :
     IsStoppingTime ℱ (successiveVisit X a k) := by
   intro n
-  let : MeasurableSpace Ω := ℱ n
   have heq : {ω | successiveVisit X a k ω ≤ n} =
       {ω | k < visitCount (fun i => X i ω) a (n + 1)} :=
     Set.ext fun _ => successiveVisit_le_iff
-  erw [heq]
-  exact measurableSet_preimage (measurable_visitCount_comp a (n + 1) ha
-    (fun i hi => hX.measurable_le (Nat.le_of_lt_succ hi)))
-      (measurableSet_Ioi : MeasurableSet (Set.Ioi k))
+  simp only [Nat.cast_withTop] at heq
+  rw [heq]
+  exact measurableSet_preimage
+    (@measurable_visitCount_comp α _ Ω (ℱ n) (fun ω i => X i ω) a (n + 1) ha
+      (fun i hi => hX.measurable_le (Nat.le_of_lt_succ hi)))
+    (measurableSet_Ioi : MeasurableSet (Set.Ioi k))
 
 /-- With measurable coordinates, each successive visit is measurable. -/
 @[fun_prop]
 theorem measurable_successiveVisit (hX : ∀ n, Measurable (X n))
     (ha : MeasurableSet ({a} : Set α)) (k : ℕ) : Measurable (successiveVisit X a k) := by
-  have h : Adapted (Filtration.const ℕ ‹MeasurableSpace Ω› le_rfl) X := fun n => by exact hX n
+  have h : Adapted (Filtration.const ℕ ‹MeasurableSpace Ω› le_rfl) X := by
+    intro n
+    -- Measurability depends on the filtration value through its domain instance.
+    exact (Filtration.const_apply n).symm ▸ hX n
   exact (h.isStoppingTime_successiveVisit ha k).measurable'
 
 end TauCeti.Probability
