@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Group.BallSphere
-public import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
-public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
+public import TauCeti.Geometry.Manifold.Boundary.Collar.ClosedBall
 public import TauCeti.Geometry.Manifold.LocallyFlat.Concordance.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Smooth
 public import TauCeti.KnotTheory.Slice.Basic
@@ -77,83 +76,6 @@ namespace TauCeti
 open Metric Set Topology Module
 open scoped EuclideanSpace Manifold
 
-/-! ### Radial coordinates -/
-
-section Radial
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- Polar coordinates on the complement of the origin, with time `t` on the sphere of radius
-`exp (t - 1)`: time `1` is the unit sphere, and the times `t ≤ 1` fill the punctured closed unit
-ball. -/
-private def polar (q : sphere (0 : V) 1 × ℝ) : V :=
-  Real.exp (q.2 - 1) • (q.1 : V)
-
-private theorem polar_apply (q : sphere (0 : V) 1 × ℝ) :
-    polar q = Real.exp (q.2 - 1) • (q.1 : V) :=
-  (rfl)
-
-private theorem norm_polar (q : sphere (0 : V) 1 × ℝ) : ‖polar q‖ = Real.exp (q.2 - 1) := by
-  rw [polar_apply, norm_smul, norm_eq_of_mem_sphere q.1, mul_one, Real.norm_eq_abs,
-    abs_of_pos (Real.exp_pos _)]
-
-private theorem polar_ne_zero (q : sphere (0 : V) 1 × ℝ) : polar q ≠ 0 := by
-  rw [← norm_pos_iff, norm_polar]
-  exact Real.exp_pos _
-
-private theorem isOpenEmbedding_polar : IsOpenEmbedding (polar (V := V)) :=
-  (Real.isOpenEmbedding_exp.comp (Homeomorph.subRight (1 : ℝ)).isOpenEmbedding).smul_coe_sphere
-    fun _ => Real.exp_pos _
-
-private theorem mem_range_polar {v : V} (hv : v ≠ 0) : v ∈ range (polar (V := V)) := by
-  have hv' : 0 < ‖v‖ := norm_pos_iff.2 hv
-  refine ⟨(⟨‖v‖⁻¹ • v, by simp [norm_smul, hv'.ne']⟩, 1 + Real.log ‖v‖), ?_⟩
-  simp [polar_apply, Real.exp_log hv', smul_smul, hv'.ne']
-
-/-- The radial collar of the boundary sphere of the closed unit ball, parametrized by the
-half-line model `EuclideanHalfSpace 1`: the point at normal coordinate `s ≥ 0` above `u` is
-`exp (-s) • u`. -/
-private def ballCollar (q : sphere (0 : V) 1 × EuclideanHalfSpace 1) : closedBall (0 : V) 1 :=
-  ⟨Real.exp (-q.2.1 0) • (q.1 : V), by
-    rw [mem_closedBall_zero_iff, norm_smul, norm_eq_of_mem_sphere q.1, mul_one, Real.norm_eq_abs,
-      abs_of_pos (Real.exp_pos _)]
-    exact Real.exp_le_one_iff.2 (neg_nonpos.2 q.2.2)⟩
-
-private theorem coe_ballCollar (q : sphere (0 : V) 1 × EuclideanHalfSpace 1) :
-    (ballCollar q : V) = Real.exp (-q.2.1 0) • (q.1 : V) :=
-  (rfl)
-
-private theorem range_ballCollar :
-    range (ballCollar (V := V)) = {y : closedBall (0 : V) 1 | (y : V) ≠ 0} := by
-  ext y
-  refine ⟨?_, fun hy => ?_⟩
-  · rintro ⟨q, rfl⟩
-    rw [mem_ofPred_eq, coe_ballCollar]
-    exact smul_ne_zero (Real.exp_pos _).ne' (ne_zero_of_mem_unit_sphere q.1)
-  have hy' : 0 < ‖(y : V)‖ := norm_pos_iff.2 hy
-  have hlog : Real.log ‖(y : V)‖ ≤ 0 :=
-    Real.log_nonpos (norm_nonneg _) (mem_closedBall_zero_iff.1 y.2)
-  refine ⟨(⟨‖(y : V)‖⁻¹ • (y : V), by simp [norm_smul, hy'.ne']⟩,
-    EuclideanHalfSpace.normalRay (-Real.log ‖(y : V)‖)), Subtype.ext ?_⟩
-  rw [coe_ballCollar, EuclideanHalfSpace.normalRay_coe_apply, max_eq_left (neg_nonneg.2 hlog),
-    neg_neg, Real.exp_log hy']
-  simp [smul_smul, hy'.ne']
-
-private theorem isOpenEmbedding_ballCollar : IsOpenEmbedding (ballCollar (V := V)) := by
-  -- Read in `V`, the collar is the open embedding `(u, r) ↦ exp r • u` after the embedding
-  -- `s ↦ -s` of the half-line into the real line.
-  have hcoord : IsEmbedding fun s : EuclideanHalfSpace 1 => -s.1 0 :=
-    Function.LeftInverse.isEmbedding (f := fun r : ℝ => EuclideanHalfSpace.normalRay (-r))
-      (fun s => by simp) (EuclideanHalfSpace.continuous_normalRay.comp continuous_neg)
-      (by fun_prop)
-  have hexp : IsEmbedding fun q : sphere (0 : V) 1 × ℝ => Real.exp q.2 • (q.1 : V) :=
-    (Real.isOpenEmbedding_exp.smul_coe_sphere Real.exp_pos).isEmbedding
-  refine ⟨IsEmbedding.subtypeVal.of_comp_iff.1 (hexp.comp (IsEmbedding.id.prodMap hcoord)), ?_⟩
-  rw [range_ballCollar]
-  exact isOpen_ne_fun continuous_subtype_val continuous_const
-
-end Radial
-
 /-! ### Capping a collared track -/
 
 section Cap
@@ -162,10 +84,10 @@ section Cap
 The `Circle`-typed adapters below let `rw` match without unfolding `Circle` to the complex sphere
 at its restricted transparency level. Their proofs reuse the generic radial-coordinate API. -/
 private def polarC (q : Circle × ℝ) : ℂ :=
-  Real.exp (q.2 - 1) • (q.1 : ℂ)
+  polar (V := ℂ) q
 
 private theorem polarC_apply (q : Circle × ℝ) : polarC q = Real.exp (q.2 - 1) • (q.1 : ℂ) :=
-  (rfl)
+  polar_apply (V := ℂ) q
 
 private theorem norm_polarC (q : Circle × ℝ) : ‖polarC q‖ = Real.exp (q.2 - 1) :=
   norm_polar (V := ℂ) q

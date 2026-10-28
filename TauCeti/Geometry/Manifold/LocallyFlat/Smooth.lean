@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
@@ -62,8 +62,7 @@ read off it.
 * `TauCeti.isOpenEmbedding_of_isImmersionOfComplement_of_isEmbedding` and
   `TauCeti.isLocallyFlat_subtypeVal`: the codimension-zero end, where local flatness is openness of
   the embedding.
-* `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv` and
-  `TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_sub_eq`: for models `ℝᵏ` and `ℝᵐ` the complement is
+* `TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_sub_eq`: for models `ℝᵏ` and `ℝᵐ` the complement is
   `ℝᵐ⁻ᵏ`, so a smooth embedding of boundaryless manifolds is locally flat with Euclidean complement.
 
 ## Implementation notes
@@ -267,24 +266,6 @@ section Euclidean
 
 variable {k m : ℕ} {I : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin k)) H}
   {J : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin m)) G}
-
-/-- The complement of a `C^n` immersion of a nonempty manifold modelled on `ℝᵏ`, possibly with
-boundary or corners, into a manifold modelled on `ℝᵐ` is a copy of `ℝʲ`, for `j = m - k`: the
-immersion's normal form at any point splits `ℝᵐ` as `ℝᵏ` times the complement. -/
-theorem _root_.Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv [Nonempty M]
-    (h : IsImmersion I J n f) {j : ℕ} (hj : m - k = j) :
-    Nonempty (h.complement ≃L[ℝ] EuclideanSpace ℝ (Fin j)) := by
-  obtain ⟨x⟩ := ‹Nonempty M›
-  let L := (h.isImmersionOfComplement_complement x).equiv
-  have : FiniteDimensional ℝ (EuclideanSpace ℝ (Fin k) × h.complement) :=
-    L.symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℝ h.complement :=
-    Module.Finite.of_surjective (LinearMap.snd ℝ (EuclideanSpace ℝ (Fin k)) _) Prod.snd_surjective
-  refine ⟨ContinuousLinearEquiv.ofFinrankEq ?_⟩
-  have := L.toLinearEquiv.finrank_eq
-  rw [Module.finrank_prod, finrank_euclideanSpace_fin, finrank_euclideanSpace_fin] at this
-  rw [finrank_euclideanSpace_fin]
-  omega
 
 /-- **A `C^n` embedding of boundaryless manifolds modelled on `ℝᵏ` and `ℝᵐ` is locally flat with
 Euclidean complement**: if `j = m - k`, it is locally flat with tangential model `ℝᵏ` and
