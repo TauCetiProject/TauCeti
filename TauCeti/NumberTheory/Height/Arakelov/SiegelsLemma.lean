@@ -78,7 +78,7 @@ end Submodule
 
 namespace Matrix
 
-variable {ι : Type*} [Fintype ι] [LinearOrder ι] {p : ℕ}
+variable {ι : Type*} [Fintype ι] {p : ℕ}
 
 /-- **Bombieri and Vaaler's Siegel lemma over `ℤ`, in the sup norm.** Let `A` be a `p × n` integer
 matrix with linearly independent rows and `p < n`, and let `g` be the greatest common divisor of
