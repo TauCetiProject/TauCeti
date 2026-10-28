@@ -87,12 +87,16 @@ theorem t2Space_iff_isClosed_chartRel :
     Homeomorph.symm_trans_apply, Homeomorph.sigmaProdDistrib_symm_apply,
     Homeomorph.prodComm_symm, Homeomorph.coe_prodComm, Prod.swap, mem_chartRel_iff, eq_comm]
 
+/-- The images of the charts cover the glued space. -/
+theorem iUnion_range_ι : ⋃ i, range (D.toGlueData.ι i) = univ :=
+  iUnion_eq_univ_iff.2 fun x ↦ D.ι_jointly_surjective x
+
 /-- A glued space with countably many second-countable charts is second countable. -/
 instance secondCountableTopology [Countable D.J]
     [∀ i, SecondCountableTopology (D.U i)] : SecondCountableTopology D.toGlueData.glued := by
   let U : D.J → Set D.toGlueData.glued := fun i ↦ range (D.toGlueData.ι i)
   have hU (i : D.J) : IsOpen (U i) := (D.ι_isOpenEmbedding i).isOpen_range
-  have hcover : ⋃ i, U i = univ := iUnion_eq_univ_iff.2 fun x ↦ D.ι_jointly_surjective x
+  have hcover : ⋃ i, U i = univ := D.iUnion_range_ι
   let hCount : ∀ i : D.J, SecondCountableTopology (U i) := fun i ↦
     (D.ι_isOpenEmbedding i).isEmbedding.toHomeomorph.symm.isEmbedding.secondCountableTopology
   exact TopologicalSpace.secondCountableTopology_of_countable_cover hU hcover
@@ -102,7 +106,7 @@ instance locallyCompactSpace [∀ i, LocallyCompactSpace (D.U i)] :
     LocallyCompactSpace D.toGlueData.glued := by
   let U : D.J → Set D.toGlueData.glued := fun i ↦ range (D.toGlueData.ι i)
   have hU (i : D.J) : IsOpen (U i) := (D.ι_isOpenEmbedding i).isOpen_range
-  have hcover : ⋃ i, U i = univ := iUnion_eq_univ_iff.2 fun x ↦ D.ι_jointly_surjective x
+  have hcover : ⋃ i, U i = univ := D.iUnion_range_ι
   let hCompact : ∀ i : D.J, LocallyCompactSpace (U i) := fun i ↦
     (D.ι_isOpenEmbedding i).isEmbedding.toHomeomorph.symm.isOpenEmbedding.locallyCompactSpace
   exact TauCeti.locallyCompactSpace_of_isOpen_cover hU hcover
@@ -120,10 +124,8 @@ chain of charts with consecutive nonempty overlaps. -/
 theorem transGen_of_preconnectedSpace [PreconnectedSpace D.toGlueData.glued] {i j : D.J}
     (hi : Nonempty (D.U i)) (hj : Nonempty (D.U j)) :
     Relation.TransGen (fun i j ↦ Nonempty (D.V (i, j))) i j := by
-  have hcover : ⋃ i, range (D.toGlueData.ι i) = univ :=
-    iUnion_eq_univ_iff.2 fun x ↦ D.ι_jointly_surjective x
   refine Relation.TransGen.mono (fun i j h ↦ (D.range_ι_inter_range_ι_nonempty_iff i j).1 h) _ _ <|
-    IsPreconnected.transGen_of_iUnion (hcover ▸ isPreconnected_univ)
+    IsPreconnected.transGen_of_iUnion (D.iUnion_range_ι ▸ isPreconnected_univ)
       (fun i ↦ (D.ι_isOpenEmbedding i).isOpen_range) i j ?_ ?_
   · exact range_nonempty_iff_nonempty.2 hi
   · exact range_nonempty_iff_nonempty.2 hj
@@ -140,9 +142,9 @@ theorem preconnectedSpace_iff_reflTransGen [∀ i, PreconnectedSpace (D.U i)] :
   -- sets whose intersection graph is preconnected.
   let t : Set D.J := {i | Nonempty (D.U i)}
   have hcover : ⋃ i ∈ t, range (D.toGlueData.ι i) = univ := by
-    refine eq_univ_of_forall fun x ↦ ?_
-    obtain ⟨i, y, rfl⟩ := D.ι_jointly_surjective x
-    exact mem_biUnion (x := i) ⟨y⟩ (mem_range_self y)
+    rw [← D.iUnion_range_ι]
+    exact iUnion_congr fun i ↦ (iUnion_congr_Prop range_nonempty_iff_nonempty.symm
+      fun _ ↦ rfl).trans (iUnion_nonempty_self _)
   rw [← hcover]
   refine IsPreconnected.biUnion_of_reflTransGen
     (fun i _ ↦ isPreconnected_range (D.toGlueData.ι i).hom.continuous) fun i hi j hj ↦ ?_
