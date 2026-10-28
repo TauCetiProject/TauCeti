@@ -208,12 +208,8 @@ theorem isCompl_span_timeVectorField_ker_mfderiv_proj (y : SmoothMappingTorus φ
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_smul, hT, smul_eq_mul,
       mul_one] at hw'
     rw [hw', zero_smul]
-  · -- Every tangent vector `w` is `dp(w) T + (w - dp(w) T)`, with the second term vertical.
-    refine Submodule.eq_top_iff'.2 fun w ↦ Submodule.mem_sup.2
-      ⟨f w • timeVectorField φ y, Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _),
-        w - f w • timeVectorField φ y, ?_, add_sub_cancel _ _⟩
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, map_smul, hT, smul_eq_mul,
-      mul_one, sub_self]
+  · exact LinearMap.span_singleton_sup_ker_eq_top f.toLinearMap
+      (by rw [f.coe_coe, hT]; exact one_ne_zero)
 
 /-! ### Fiber forms -/
 
