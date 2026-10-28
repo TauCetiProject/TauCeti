@@ -132,7 +132,8 @@ instance isGaloisGroup [Nontrivial A] [h : IsFiniteEtaleTorsor G A B] : IsGalois
   rw [h0, Ideal.span_singleton_eq_bot.mpr rfl] at hspan
   exact bot_ne_top hspan
 
-/-- A finite étale `G`-torsor is finite projective of constant rank `|G|`. -/
+/-- A finite étale `G`-torsor has rank `|G|` at every prime of the base: its stalk rank
+`Module.rankAtStalk` is constantly `Nat.card G`. -/
 theorem rankAtStalk_eq_card [h : IsFiniteEtaleTorsor G A B] (p : PrimeSpectrum A) :
     Module.rankAtStalk (R := A) B p = Nat.card G := by
   have := h.finite
