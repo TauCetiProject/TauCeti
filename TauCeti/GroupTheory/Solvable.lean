@@ -14,6 +14,7 @@ import Mathlib.Data.SetLike.Fintype
 import Mathlib.GroupTheory.QuotientGroup.Simple
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.Order.Atoms.Finite
+import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # Derived words and solvable groups
@@ -25,7 +26,8 @@ Consequently, a group is solvable exactly when one derived word is identically o
 that solvability is invariant under isomorphism, and the characterization of solvability for
 direct products via the two surjective projections and the converse product instance, that a
 nontrivial finite solvable group has a normal subgroup of prime index, and that in a perfect group
-a normal subgroup supplemented by a solvable subgroup is the whole group.
+a normal subgroup supplemented by a solvable subgroup, or by a subgroup normalizing a solvable
+subgroup whose conjugates generate the group, is the whole group.
 
 The identity formulation is useful when a group is represented by an affine scheme: an identity
 between derived words can be checked on a schematically dense family of points, while the
@@ -41,6 +43,9 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
   quotient lies in a normal subgroup of prime index.
 * `Subgroup.Normal.eq_top_of_self_sup_eq_top_of_isSolvable`: in a perfect group, a normal
   subgroup supplemented by a solvable subgroup is the whole group.
+* `Subgroup.Normal.eq_top_of_self_sup_eq_top_of_le_normalizer`: in a perfect group, a normal
+  subgroup supplemented by a subgroup normalizing a solvable subgroup whose conjugates generate the
+  group is the whole group.
 * `TauCeti.DerivedWordArgs`: the recursively paired arguments of a derived word.
 * `TauCeti.derivedWord`: the balanced iterated commutator word.
 * `TauCeti.map_derivedWord`: derived words commute with group homomorphisms.
@@ -113,11 +118,27 @@ theorem _root_.Subgroup.Normal.eq_top_of_self_sup_eq_top_of_isSolvable {G : Type
   by_contra hN
   have : Nontrivial (G ⧸ N) := QuotientGroup.nontrivial_iff.mpr hN
   have hrange : ((QuotientGroup.mk' N).comp H.subtype).range = ⊤ := by
-    rw [MonoidHom.range_comp, Subgroup.range_subtype, ← bot_sup_eq (H.map _),
-      ← QuotientGroup.map_mk'_self N, ← Subgroup.map_sup, hNH,
-      Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective N)]
+    rw [MonoidHom.range_comp, Subgroup.range_subtype, QuotientGroup.map_mk'_eq_top]
+    exact hNH
   exact Group.IsPerfect.not_isSolvable (G ⧸ N)
     (Group.isSolvable_of_surjective (MonoidHom.range_eq_top.mp hrange))
+
+/-- In a perfect group, let `U` be a solvable subgroup whose conjugates generate the group, and let
+`B` normalize `U`. Then a normal subgroup `H` supplemented by `B`, in the sense that `H ⊔ B = ⊤`, is
+the whole group: modulo `H` the image of `B` is everything, so the image of `U` is normal and hence
+everything, and `Subgroup.Normal.eq_top_of_self_sup_eq_top_of_isSolvable` applies to `U`. -/
+theorem _root_.Subgroup.Normal.eq_top_of_self_sup_eq_top_of_le_normalizer {G : Type*} [Group G]
+    [Group.IsPerfect G] {H : Subgroup G} [H.Normal] {B U : Subgroup G} [Group.IsSolvable U]
+    (hBU : B ≤ Subgroup.normalizer (U : Set G)) (hU : Subgroup.normalClosure (U : Set G) = ⊤)
+    (hHB : H ⊔ B = ⊤) : H = ⊤ := by
+  have hπ := QuotientGroup.mk'_surjective H
+  have : (U.map (QuotientGroup.mk' H)).Normal := by
+    rw [← Subgroup.normalizer_eq_top_iff, eq_top_iff, ← QuotientGroup.map_mk'_eq_top.mpr hHB]
+    exact (Subgroup.map_mono hBU).trans (Subgroup.le_normalizer_map _)
+  refine Subgroup.Normal.eq_top_of_self_sup_eq_top_of_isSolvable (H := U)
+    (QuotientGroup.map_mk'_eq_top.mp ?_)
+  rw [eq_top_iff, ← Subgroup.map_top_of_surjective _ hπ, ← hU, Subgroup.map_normalClosure _ _ hπ]
+  exact Subgroup.normalClosure_le_normal (Subgroup.coe_map _ U).ge
 
 universe u v
 

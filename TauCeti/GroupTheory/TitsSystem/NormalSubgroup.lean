@@ -24,9 +24,15 @@ Combined with a solvable subgroup `U` normalized by `B` whose conjugates generat
 of `G`, so `G / Z` is simple as soon as `S` is nonempty. This is the abstract simplicity
 criterion behind the simplicity of the finite groups of Lie type.
 
-Irreducibility is stated as a hypothesis on the simple reflections: every subset `J` of `S` that
-commutes elementwise with its complement is empty or all of `S`. For nonempty `S` this says
-exactly that the Coxeter graph of `(W, S)` is connected, that is, that `(W, S)` is irreducible.
+Irreducibility, `TauCeti.TitsSystem.IsIrreducible`, is a condition on the simple reflections:
+every subset `J` of `S` that commutes elementwise with its complement is empty or all of `S`. For
+nonempty `S` this says exactly that the Coxeter graph of `(W, S)` is connected, that is, that
+`(W, S)` is irreducible.
+
+## Main definitions
+
+* `TauCeti.TitsSystem.IsIrreducible`: every set of simple reflections commuting elementwise with
+  its complement is empty or everything.
 
 ## Main results
 
@@ -56,7 +62,17 @@ universe u
 
 variable {G : Type u} [Group G] (T : TitsSystem G)
 
-local prefix:100 "ℓ " => T.simpleGenerators.wordLength
+/-- The Weyl group of a Tits system is **irreducible** if every set `J` of simple reflections that
+commutes elementwise with its complement is empty or all of `S`. For nonempty `S` this says exactly
+that the Coxeter graph of `(W, S)` is connected. -/
+def IsIrreducible : Prop :=
+  ∀ J : Set T.simple, (∀ s ∈ J, ∀ t ∉ J, (s : T.WeylGroup) * t = t * s) → J = ∅ ∨ J = Set.univ
+
+/-- Unfolds `TauCeti.TitsSystem.IsIrreducible`. -/
+theorem isIrreducible_iff : T.IsIrreducible ↔
+    ∀ J : Set T.simple, (∀ s ∈ J, ∀ t ∉ J, (s : T.WeylGroup) * t = t * s) →
+      J = ∅ ∨ J = Set.univ :=
+  Iff.rfl
 
 /-- If `H` is normal, every Bruhat cell contained in `H ⊔ B` meets `H`. -/
 private theorem exists_mem_bruhatCell_of_subset_sup {H : Subgroup G} [H.Normal]
@@ -69,40 +85,6 @@ private theorem exists_mem_bruhatCell_of_subset_sup {H : Subgroup G} [H.Normal]
   rw [← T.bruhatCell_mul_subgroupB w]
   exact ⟨n, hn, b⁻¹, inv_mem hb, by simp only [← hhb, mul_inv_cancel_right]⟩
 
-/-- If two simple reflections `s` and `t` do not commute, then `t s` has length two and `t s t`
-has length three. -/
-private theorem wordLength_mul_mul_eq_three {s t : T.WeylGroup} (hs : s ∈ T.simple)
-    (ht : t ∈ T.simple) (hst : s * t ≠ t * s) :
-    ℓ (t * s) = 2 ∧ ℓ (t * s * t) = 3 := by
-  have hts : t * s ≠ 1 := by
-    intro h
-    rw [eq_inv_of_mul_eq_one_right h, T.inv_simple ht] at hst
-    exact hst rfl
-  have h2 : ℓ (t * s) = 2 := by
-    have h := T.wordLength_simple_mul ht s
-    rw [T.wordLength_simple hs] at h
-    rcases h with h | h
-    · exact h
-    · have h0 : ℓ (t * s) = 0 := by omega
-      exact absurd ((Group.Generators.wordLength_eq_zero_iff _).mp h0) hts
-  refine ⟨h2, ?_⟩
-  rcases T.wordLength_mul_simple (t * s) ht with h | h
-  · omega
-  · -- Otherwise `t` shortens `t s` on the right, and the exchange condition deletes a letter.
-    obtain ⟨j, hj, hprod⟩ := T.exists_eraseIdx_prod_eq_of_wordLength_lt_right
-      (l := [t, s]) (by simp [hs, ht]) ht
-      (by simp only [List.prod_cons, List.prod_nil, mul_one]; omega)
-    obtain _ | _ | j := j
-    · -- Deleting `t` leaves `t s t = s`, so `t s = s t`.
-      have hprod : t * s * t = s := by simpa using hprod
-      refine absurd ?_ hst
-      calc s * t = t * s * t * t := by rw [hprod]
-        _ = t * s := T.simple_mul_simple_cancel_right _ ht
-    · -- Deleting `s` leaves `t s t = t`, so `t s = 1`.
-      have hprod : t * s * t = t := by simpa using hprod
-      exact absurd (mul_eq_right.mp hprod) hts
-    · simp at hj
-
 /-- **The key step of Tits's theorem on normal subgroups.** If `H` is normal, a simple reflection
 whose Bruhat cell lies in `H ⊔ B` commutes with every simple reflection whose cell does not. -/
 theorem simple_mul_comm_of_bruhatCell_subset_sup {H : Subgroup G} [H.Normal]
@@ -113,7 +95,8 @@ theorem simple_mul_comm_of_bruhatCell_subset_sup {H : Subgroup G} [H.Normal]
   -- Otherwise `B t B · B s B · B t B` is the single cell of the reduced word `t s t`. Conjugating
   -- an element of `H ∩ B s B` by an element of `B t B` puts that cell, and hence `B t B`, in `H B`.
   by_contra hst
-  obtain ⟨h2, h3⟩ := T.wordLength_mul_mul_eq_three hs ht hst
+  have h2 := T.wordLength_simple_mul_simple_of_ne ht hs fun h ↦ hst (by rw [h])
+  have h3 := T.wordLength_simple_mul_simple_mul_simple_of_mul_ne ht hs (Ne.symm hst)
   obtain ⟨h, hh, hhs⟩ := T.exists_mem_bruhatCell_of_subset_sup hsH
   obtain ⟨m, -, hm⟩ := T.exists_mem_bruhatCell t
   have hconj : (m : G) * h * (m : G)⁻¹ ∈ T.bruhatCell (t * s * t) := by
@@ -141,12 +124,10 @@ theorem exists_standardParabolic_eq_sup_of_normal (H : Subgroup G) [H.Normal] :
 /-- **Normal subgroups for an irreducible Weyl group.** If every set of simple reflections
 commuting elementwise with its complement is empty or everything, then a normal subgroup `H`
 either lies in the normal core `⋂ g B g⁻¹` of `B` or satisfies `H ⊔ B = G`. -/
-theorem le_normalCore_or_sup_eq_top_of_normal
-    (hirr : ∀ J : Set T.simple, (∀ s ∈ J, ∀ t ∉ J, (s : T.WeylGroup) * t = t * s) →
-      J = ∅ ∨ J = Set.univ)
+theorem le_normalCore_or_sup_eq_top_of_normal (hirr : T.IsIrreducible)
     (H : Subgroup G) [H.Normal] : H ≤ T.subgroupB.normalCore ∨ H ⊔ T.subgroupB = ⊤ := by
   obtain ⟨J, hJ, hcomm⟩ := T.exists_standardParabolic_eq_sup_of_normal H
-  rcases hirr J hcomm with rfl | rfl
+  rcases T.isIrreducible_iff.mp hirr J hcomm with rfl | rfl
   · exact Or.inl (Subgroup.normal_le_normalCore.mpr
       (sup_eq_right.mp (hJ.symm.trans T.standardParabolic_empty)))
   · exact Or.inr (hJ.symm.trans T.standardParabolic_univ)
@@ -154,35 +135,18 @@ theorem le_normalCore_or_sup_eq_top_of_normal
 /-- **Tits's simplicity theorem, for normal subgroups.** Suppose the Weyl group is irreducible,
 `G` is perfect, and `U` is a solvable subgroup normalized by `B` whose conjugates generate `G`.
 Then every normal subgroup of `G` either lies in the normal core `⋂ g B g⁻¹` of `B` or is `G`. -/
-theorem le_normalCore_or_eq_top_of_normal
-    (hirr : ∀ J : Set T.simple, (∀ s ∈ J, ∀ t ∉ J, (s : T.WeylGroup) * t = t * s) →
-      J = ∅ ∨ J = Set.univ)
+theorem le_normalCore_or_eq_top_of_normal (hirr : T.IsIrreducible)
     [Group.IsPerfect G] {U : Subgroup G} [Group.IsSolvable U]
     (hBU : T.subgroupB ≤ Subgroup.normalizer (U : Set G))
     (hU : Subgroup.normalClosure (U : Set G) = ⊤)
-    (H : Subgroup G) [H.Normal] : H ≤ T.subgroupB.normalCore ∨ H = ⊤ := by
-  refine (T.le_normalCore_or_sup_eq_top_of_normal hirr H).imp_right fun hHB ↦ ?_
-  -- In `G ⧸ H` the image of `B` is everything, so the image of `U` is normal; as it normally
-  -- generates the quotient, it is the whole quotient, that is, `H ⊔ U = G`.
-  have hπ := QuotientGroup.mk'_surjective H
-  have hB : T.subgroupB.map (QuotientGroup.mk' H) = ⊤ := by
-    rw [← bot_sup_eq (T.subgroupB.map _), ← QuotientGroup.map_mk'_self H, ← Subgroup.map_sup,
-      hHB, Subgroup.map_top_of_surjective _ hπ]
-  have : (U.map (QuotientGroup.mk' H)).Normal := by
-    rw [← Subgroup.normalizer_eq_top_iff, eq_top_iff, ← hB]
-    exact (Subgroup.map_mono hBU).trans (Subgroup.le_normalizer_map _)
-  have hUH : U.map (QuotientGroup.mk' H) = ⊤ := by
-    rw [eq_top_iff, ← Subgroup.map_top_of_surjective _ hπ, ← hU, Subgroup.map_normalClosure _ _ hπ]
-    exact Subgroup.normalClosure_le_normal (Subgroup.coe_map _ U).ge
-  refine Subgroup.Normal.eq_top_of_self_sup_eq_top_of_isSolvable (H := U) ?_
-  rw [sup_comm, ← QuotientGroup.ker_mk' H, ← Subgroup.comap_map_eq, hUH, Subgroup.comap_top]
+    (H : Subgroup G) [H.Normal] : H ≤ T.subgroupB.normalCore ∨ H = ⊤ :=
+  (T.le_normalCore_or_sup_eq_top_of_normal hirr H).imp_right
+    (Subgroup.Normal.eq_top_of_self_sup_eq_top_of_le_normalizer hBU hU)
 
 /-- **Tits's simplicity theorem.** Suppose there is at least one simple reflection, the Weyl group
 is irreducible, `G` is perfect, and `U` is a solvable subgroup normalized by `B` whose conjugates
 generate `G`. Then the quotient of `G` by the normal core `⋂ g B g⁻¹` of `B` is simple. -/
-theorem isSimpleGroup_quotient_normalCore (hS : T.simple.Nonempty)
-    (hirr : ∀ J : Set T.simple, (∀ s ∈ J, ∀ t ∉ J, (s : T.WeylGroup) * t = t * s) →
-      J = ∅ ∨ J = Set.univ)
+theorem isSimpleGroup_quotient_normalCore (hS : T.simple.Nonempty) (hirr : T.IsIrreducible)
     [Group.IsPerfect G] {U : Subgroup G} [Group.IsSolvable U]
     (hBU : T.subgroupB ≤ Subgroup.normalizer (U : Set G))
     (hU : Subgroup.normalClosure (U : Set G) = ⊤) :
