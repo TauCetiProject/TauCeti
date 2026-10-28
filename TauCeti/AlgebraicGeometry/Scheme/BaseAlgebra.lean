@@ -284,6 +284,20 @@ def _root_.AlgebraicGeometry.Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion
     refine congr($he c).trans ?_
     exact (IsScalarTower.algebraMap_apply k R y.asIdeal.ResidueField c).symm
 
+/-- The residue-field algebra equivalence of an open immersion is residue-field pullback along
+`g`, followed by Mathlib's identification of the residue field of `Spec R` at `y` with
+`y.asIdeal.ResidueField`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion_apply
+    {R : CommRingCat.{u}} (g : Spec R ⟶ X) [IsOpenImmersion g] (φ : CommRingCat.of k ⟶ R)
+    (hφ : Spec.map φ = g ≫ X ↘ Spec (.of k)) (y : Spec R) (a : X.residueField (g y)) :
+    letI := φ.hom.toAlgebra
+    haveI := y.isPrime
+    g.residueFieldAlgEquivOfIsOpenImmersion φ hφ y a =
+      (Scheme.Spec.residueFieldIso R y).hom (g.residueFieldMap y a) := by
+  unfold Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion
+  rfl
+
 end OpenImmersion
 
 section FunctionFieldMap
