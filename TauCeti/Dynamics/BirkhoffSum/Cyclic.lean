@@ -116,15 +116,14 @@ theorem cyclicCorrection_apply_sub_cyclicCorrection (r : X → X) (b : X → E) 
   simp [birkhoffAverage, ← Nat.cast_smul_eq_nsmul 𝕜, smul_add, smul_smul, hm,
     neg_smul, sub_eq_add_neg, add_comm]
 
-/-- If the cyclic sum of a section is `m • a` for a section `a`, the weighted
-correction normalizes it to `a`. -/
-theorem add_cyclicCorrection_apply_sub (r : X → X) (b a : X → E) {m : ℕ}
-    (hr : r^[m] = id) (hm : (m : 𝕜) ≠ 0)
-    (hsum : ∀ x, birkhoffSum r b m x = m • a x) (x : X) :
-    b x + cyclicCorrection 𝕜 r b m (r x) - cyclicCorrection 𝕜 r b m x = a x := by
-  have hx : IsPeriodicPt r m x := congrFun hr x
+/-- If the cyclic sum of a section at a periodic point is `m • a`, the weighted
+correction normalizes its value at that point to `a`. -/
+theorem add_cyclicCorrection_apply_sub (r : X → X) (b : X → E) {a : E} {m : ℕ}
+    {x : X} (hx : IsPeriodicPt r m x) (hm : (m : 𝕜) ≠ 0)
+    (hsum : birkhoffSum r b m x = m • a) :
+    b x + cyclicCorrection 𝕜 r b m (r x) - cyclicCorrection 𝕜 r b m x = a := by
   rw [add_sub_assoc, cyclicCorrection_apply_sub_cyclicCorrection r b hx hm,
-    birkhoffAverage_eq_of_birkhoffSum_eq_nsmul hm (hsum x)]
+    birkhoffAverage_eq_of_birkhoffSum_eq_nsmul hm hsum]
   abel
 
 /-- A section can be normalized to an invariant section by a change of fibre coordinates
@@ -147,7 +146,8 @@ theorem exists_add_apply_sub_eq_iff (r : X → X) (b a : X → E) {m : ℕ}
       hx.birkhoffSum_apply_eq c, sub_self, sub_zero]
     exact birkhoffSum_apply_of_comp_eq ha m x
   · intro hsum
-    exact ⟨cyclicCorrection 𝕜 r b m, add_cyclicCorrection_apply_sub r b a hr hm hsum⟩
+    exact ⟨cyclicCorrection 𝕜 r b m,
+      fun x ↦ add_cyclicCorrection_apply_sub r b (congrFun hr x) hm (hsum x)⟩
 
 /-- Two changes of fibre coordinates give the same normalized translation section exactly when
 their difference is invariant under the generator. -/

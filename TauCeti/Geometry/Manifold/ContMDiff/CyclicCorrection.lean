@@ -57,6 +57,6 @@ theorem exists_contMDiff_add_apply_sub_eq_iff {r : X → X} {b a : X → E} {m :
     exact (exists_add_apply_sub_eq_iff (𝕜 := 𝕜) r b a hperiod hm ha).mp ⟨c, hc⟩
   · intro hsum
     exact ⟨cyclicCorrection 𝕜 r b m, contMDiff_cyclicCorrection hr hb m,
-      add_cyclicCorrection_apply_sub r b a hperiod hm hsum⟩
+      fun x ↦ add_cyclicCorrection_apply_sub r b (congrFun hperiod x) hm (hsum x)⟩
 
 end TauCeti
