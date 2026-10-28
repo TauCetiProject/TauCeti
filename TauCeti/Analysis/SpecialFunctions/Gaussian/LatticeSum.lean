@@ -26,7 +26,9 @@ centre `c`.
 * `Real.gaussianLatticeSum` — the Gaussian lattice sum `Z(c, s)`.
 * `Real.hasSum_gaussianLatticeSum` and `Real.gaussianLatticeSum_pos` — convergence and positivity
   for `s ≠ 0`; `Real.gaussianLatticeSum_zero_right` records the totalized value `0` at `s = 0`.
-* `Real.summable_pow_mul_exp_neg_sub_sq` — convergence of the lattice sums with polynomial weights.
+* `Real.summable_pow_mul_exp_neg_sub_sq` — convergence of the lattice sums with polynomial weights;
+  `Real.summable_abs_pow_mul_exp_neg_sub_sq_div` is the absolute version for any positive
+  denominator, as used for domination arguments.
 * `Real.gaussianLatticeSum_add_intCast`, `Real.gaussianLatticeSum_periodic`,
   `Real.gaussianLatticeSum_neg_left` and `Real.gaussianLatticeSum_intCast_sub` — invariance under
   integer translations and reflections of the centre.
@@ -68,7 +70,7 @@ theorem gaussianLatticeSum_def (c s : ℝ) :
 
 /-- Gaussian lattice sums with absolute polynomial weights converge, by comparison with the
 bound used for the terms of `jacobiTheta₂`. -/
-private theorem summable_abs_pow_mul_exp_neg_sub_sq_div (k : ℕ) (c : ℝ) {b : ℝ} (hb : 0 < b) :
+theorem summable_abs_pow_mul_exp_neg_sub_sq_div (k : ℕ) (c : ℝ) {b : ℝ} (hb : 0 < b) :
     Summable fun n : ℤ => |(n : ℝ)| ^ k * rexp (-((n : ℝ) - c) ^ 2 / b) := by
   have hT : 0 < (1 / b) / π := div_pos (one_div_pos.2 hb) pi_pos
   refine (summable_pow_mul_jacobiTheta₂_term_bound ((1 / b) * |c| / π) hT k).of_nonneg_of_le
@@ -163,9 +165,12 @@ theorem gaussianLatticeSum_eq_jacobiTheta₂ (c s : ℝ) :
       (jacobiTheta₂ (-I * c / (2 * π * s ^ 2)) (I / (2 * π * s ^ 2))).re := by
   rcases eq_or_ne s 0 with rfl | hs
   · simp [jacobiTheta₂_undef]
-  rw [jacobiTheta₂, tsum_congr fun n => jacobiTheta₂_term_eq n c hs, ← ofReal_tsum, ofReal_re,
-    tsum_mul_left, ← gaussianLatticeSum_def, ← mul_assoc, ← exp_add, neg_div, neg_add_cancel,
-    exp_zero, one_mul]
+  have hθ : jacobiTheta₂ (-I * c / (2 * π * s ^ 2)) (I / (2 * π * s ^ 2)) =
+      ((rexp (c ^ 2 / (2 * s ^ 2)) * gaussianLatticeSum c s : ℝ) : ℂ) := by
+    rw [jacobiTheta₂, tsum_congr fun n => jacobiTheta₂_term_eq n c hs, ← ofReal_tsum,
+      tsum_mul_left, gaussianLatticeSum_def]
+  rw [hθ, ofReal_re, ← mul_assoc, ← exp_add]
+  simp [neg_div]
 
 /-- The derivative in the centre of a single term `n ^ k * exp (-(n - x) ^ 2 / (2 * s ^ 2))`. -/
 private theorem hasDerivAt_pow_mul_exp_neg_sub_sq (k : ℕ) (n : ℤ) {s : ℝ} (hs : s ≠ 0) (x : ℝ) :
@@ -273,16 +278,7 @@ theorem continuousAt_gaussianLatticeSum (c : ℝ) {s : ℝ} (hs : s ≠ 0) :
 
 /-- The Gaussian lattice sum is jointly measurable in the centre and the width. -/
 theorem measurable_gaussianLatticeSum :
-    Measurable fun p : ℝ × ℝ => gaussianLatticeSum p.1 p.2 := by
-  classical
-  have hS : IsOpen {p : ℝ × ℝ | p.2 ≠ 0} := isOpen_ne_fun continuous_snd continuous_const
-  have heq : (fun p : ℝ × ℝ => gaussianLatticeSum p.1 p.2) =
-      {p : ℝ × ℝ | p.2 ≠ 0}.piecewise (fun p => gaussianLatticeSum p.1 p.2) 0 := by
-    ext p
-    by_cases hp : p.2 = 0 <;> simp [Set.piecewise, hp]
-  rw [heq]
-  exact ContinuousOn.measurable_piecewise
-    (fun p hp => (continuousAt_gaussianLatticeSum p.1 hp).continuousWithinAt)
-    continuousOn_const hS.measurableSet
+    Measurable fun p : ℝ × ℝ => gaussianLatticeSum p.1 p.2 :=
+  Measurable.tsum fun n => by fun_prop
 
 end Real
