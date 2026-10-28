@@ -16,7 +16,9 @@ import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.RingTheory.Nakayama
+import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.LinearAlgebra.SesquilinearForm.TorsionFree
 import TauCeti.LinearAlgebra.Submodule.Compl
 import TauCeti.Order.SupIndep
@@ -49,8 +51,10 @@ On these vectors `x`, the form `B` agrees modulo `π ^ (j + 1)` with its values 
 to the constituent `N j` (`LinearMap.BilinForm.IsJordanSplitting.exists_pow_succ_dvd_sub`): the
 form `π ^ (-j) B` modulo `π` factors through the residue form of the unimodular rescaling of `N j`.
 Comparing two splittings through these projections shows that their unimodular rescalings at each
-index have the same residue forms. For symmetric forms on finite free modules over a Henselian
-local domain with finite residue field and two invertible, this decides their isometry class
+index have the same residue forms, which reduces the isometry of their constituents to that of
+these rescalings (`LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_forall_unimodular`).
+For symmetric forms on finite free modules over a Henselian local domain with finite residue field
+and two invertible, this decides their isometry class
 (`LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_equivalent` in
 `TauCeti.LinearAlgebra.BilinearForm.Henselian`). Without the Henselian hypothesis it fails: over
 `ℤ` localized at `3`, the rank-one forms `⟨1⟩` and `⟨7⟩` have the same residue form but are not
@@ -85,6 +89,9 @@ constituent of type II between constituents of type II
   `π ^ j R`, the form is congruent modulo `π ^ (j + 1)` to its pullback along the projection to
   the `j`-th constituent, and between neighbours even at their own scales its self-pairings are
   congruent modulo `π ^ (j + 2)`.
+* `LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_forall_unimodular`: through these
+  congruences, the isometry of two constituents of isometric forms reduces to that of their
+  unimodular rescalings.
 
 ## References
 
@@ -689,6 +696,73 @@ theorem IsJordanSplitting.exists_pow_succ_dvd_sub (h : B.IsJordanSplitting π N)
     rw [hxx]
     exact dvd_add (h.pow_add_two_dvd_apply_self_of_mem_biSup_Iio hπ hprev ha (hpair hx hd hxe))
       (h.pow_add_two_dvd_apply_self_of_mem_biSup_Ici hnext hd)
+
+/-- **Comparing Jordan constituents through their unimodular rescalings.** Over a local domain, let
+`B` be a symmetric form on a finite free module, isometric to a form `B'`, and let `N` and `N'` be
+Jordan splittings of `B` and `B'` with respect to the same nonzero non-unit `π`. To show that the
+constituents `N j` and `N' j` are isometric, it suffices to show that their unimodular rescalings
+`C` and `C'` (with `π ^ j C = B` on `N j`) are isometric, knowing that they are symmetric with unit
+Gram determinants in bases of the same size, and that a linear map `φ` (the projection to `N j`
+along the other constituents, pulled back by the isometry) carries `C'` to `C` modulo `π`, and on
+the diagonal modulo `π ^ 2` when the neighbouring constituents of `N j` are even at their own
+scales. -/
+theorem IsJordanSplitting.equivalent_restrict_of_forall_unimodular [IsDomain R] [IsLocalRing R]
+    [Module.Free R M] [Module.Finite R M] {M' : Type*} [AddCommGroup M'] [Module R M']
+    {B' : BilinForm R M'} {N' : ℕ → Submodule R M'} (h : B.IsJordanSplitting π N)
+    (h' : B'.IsJordanSplitting π N') (hB : B.IsSymm) (hBB' : B.Equivalent B') (hπ : π ≠ 0)
+    (hπ' : ¬IsUnit π) (j : ℕ)
+    (H : ∀ (C : BilinForm R (N j)) (C' : BilinForm R (N' j)), C.IsSymm → C'.IsSymm →
+      (∀ x y : N j, π ^ j * C x y = B x y) → ∀ {n : ℕ} (b : Basis (Fin n) R (N j))
+      (b' : Basis (Fin n) R (N' j)), IsUnit (C.toMatrix b).det → IsUnit (C'.toMatrix b').det →
+      ∀ φ : N' j →ₗ[R] N j, (∀ x y, π ∣ C' x y - C (φ x) (φ y)) →
+      ((∀ w ∈ N (j - 1), π ^ j ∣ B w w) → (∀ w ∈ N (j + 1), π ^ (j + 2) ∣ B w w) →
+        ∀ x, π ^ 2 ∣ C' x x - C (φ x) (φ x)) → C.Equivalent C') :
+    (B.restrict (N j)).Equivalent (B'.restrict (N' j)) := by
+  obtain ⟨e⟩ := _root_.id hBB'
+  set ε := e.toLinearEquiv
+  have hε (u v : M) : B' (ε u) (ε v) = B u v := e.map_app v u
+  have hεs (u v : M') : B (ε.symm u) (ε.symm v) = B' u v := by
+    rw [← hε, ε.apply_symm_apply, ε.apply_symm_apply]
+  have : Module.Finite R M' := Module.Finite.equiv ε
+  have : Module.Free R M' := Module.Free.of_equiv ε
+  have := h.finite j
+  have := h.free j
+  have := h'.finite j
+  have := h'.free j
+  have hπnz : π ∈ nonZeroDivisors R := mem_nonZeroDivisors_of_ne_zero hπ
+  have hπj : π ^ j ∈ nonZeroDivisors R := pow_mem hπnz j
+  -- Write the constituents as `π ^ j` times the unimodular forms `C` and `C'`.
+  obtain ⟨C, hC, hCp⟩ := isModular_def.mp (h.isModular j)
+  obtain ⟨C', hC', hC'p⟩ := isModular_def.mp (h'.isModular j)
+  have hCapp (x y : N j) : π ^ j * C x y = B x y := by
+    simpa using LinearMap.congr_fun₂ hC x y
+  have hC'app (x y : N' j) : π ^ j * C' x y = B' x y := by
+    simpa using LinearMap.congr_fun₂ hC' x y
+  have hB' : B'.IsSymm := ⟨fun x y ↦ by rw [← hεs, ← hεs, hB.eq]⟩
+  have hCs : C.IsSymm := ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors hπj).mp (by
+    rw [hCapp, hCapp, hB.eq])⟩
+  have hC's : C'.IsSymm := ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors hπj).mp (by
+    rw [hC'app, hC'app, hB'.eq])⟩
+  -- The projection to `N j` carries `C'` to `C` modulo `π`, and on the diagonal modulo `π ^ 2`.
+  obtain ⟨f, -, hf, hf₂⟩ := h.exists_pow_succ_dvd_sub hπnz j
+  have hdvd (x : N' j) (z : M) : π ^ j ∣ B (ε.symm x) z := by
+    rw [← hε, ε.apply_symm_apply]
+    exact h'.pow_dvd_apply x.2 (ε z)
+  have hsub {x y : N' j} {k : ℕ} (hc : π ^ (j + k) ∣
+      B (ε.symm x) (ε.symm y) - B (f (ε.symm x)) (f (ε.symm y))) :
+      π ^ k ∣ C' x y - C (f (ε.symm x)) (f (ε.symm y)) := by
+    obtain ⟨c, hc⟩ := hc
+    exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors hπj).mp (by
+      rw [mul_sub, hC'app, hCapp, ← mul_assoc, ← pow_add, ← hc, hεs])⟩
+  let b := Module.finBasis R (N j)
+  let b' := (Module.finBasis R (N' j)).reindex
+    (finCongr (h.finrank_eq_of_equivalent h' hBB' hπ hπ' j).symm)
+  obtain ⟨u⟩ := H C C' hCs hC's hCapp b b' (b.isUnit_det_of_isPerfPair C hCp)
+    (b'.isUnit_det_of_isPerfPair C' hC'p) (f ∘ₗ ε.symm.toLinearMap ∘ₗ (N' j).subtype)
+    (fun x y ↦ by simpa using hsub (k := 1) (hf _ _ (hdvd x) (hdvd y)))
+    fun hprev hnext x ↦ hsub (k := 2) (hf₂ hprev hnext _ (hdvd x))
+  rw [← hC, ← hC']
+  exact (equivalent_smul_iff hπj).mpr ⟨u⟩
 
 end Constituents
 

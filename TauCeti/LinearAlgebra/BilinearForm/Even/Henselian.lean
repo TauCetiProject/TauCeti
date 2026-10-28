@@ -11,10 +11,8 @@ public import Mathlib.RingTheory.Henselian
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Even.Basic
-import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
-import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.LocalRing.Basic
 
@@ -552,8 +550,10 @@ and `S'` be Jordan splittings of `B` and `B'` with respect to `2`. Suppose that 
 the condition on `S (j - 1)` is vacuous for `j = 0`, and zero constituents are of type II. Then the
 constituents `S j` and `S' j` are isometric.
 
-Without the condition on the neighbours, constituents are not unique: over `ℤ_[2]` the forms
-`⟨1⟩ ⊥ ⟨2⟩` and `⟨3⟩ ⊥ ⟨6⟩` are isometric, while `⟨1⟩` and `⟨3⟩` are not. -/
+Without the condition on the neighbours, constituents of type II are not unique: over `ℤ_[2]` the
+forms `!![0, 1; 1, 0] ⊥ ⟨2⟩` and `!![2, 1; 1, 2] ⊥ ⟨-6⟩` are isometric, while their constituents
+`!![0, 1; 1, 0]` and `!![2, 1; 1, 2]` of index `0`, both of type II, are not: the ratio `-3` of
+their determinants is not a square. Here the neighbour `⟨2⟩` is of type I. -/
 theorem IsJordanSplitting.equivalent_restrict_of_equivalent_of_even
     (hR : Nat.card (ResidueField R) = 2) (h20 : (2 : R) ≠ 0) [Module.Free R M] [Module.Finite R M]
     (hS : B.IsJordanSplitting 2 S) (hS' : B'.IsJordanSplitting 2 S') (hB : B.IsSymm)
@@ -561,60 +561,18 @@ theorem IsJordanSplitting.equivalent_restrict_of_equivalent_of_even
     (hprev : ∀ x ∈ S (j - 1), 2 ^ j ∣ B x x) (hnext : ∀ x ∈ S (j + 1), 2 ^ (j + 2) ∣ B x x) :
     (B.restrict (S j)).Equivalent (B'.restrict (S' j)) := by
   have h2 := two_mem_maximalIdeal_of_card_residueField_eq_two hR
-  obtain ⟨e⟩ := _root_.id hBB'
-  set ε := e.toLinearEquiv
-  have hε (u v : M) : B' (ε u) (ε v) = B u v := e.map_app v u
-  have hεs (u v : N) : B (ε.symm u) (ε.symm v) = B' u v := by
-    rw [← hε, ε.apply_symm_apply, ε.apply_symm_apply]
-  have : Module.Finite R N := Module.Finite.equiv ε
-  have : Module.Free R N := Module.Free.of_equiv ε
-  have := hS.finite j
-  have := hS.free j
-  have := hS'.finite j
-  have := hS'.free j
-  have h2nz : (2 : R) ∈ nonZeroDivisors R := mem_nonZeroDivisors_of_ne_zero h20
-  have hπj : (2 : R) ^ j ∈ nonZeroDivisors R := pow_mem h2nz j
-  -- Write the constituents as `2 ^ j` times the unimodular forms `C` and `C'`.
-  obtain ⟨C, hC, hCp⟩ := isModular_def.mp (hS.isModular j)
-  obtain ⟨C', hC', hC'p⟩ := isModular_def.mp (hS'.isModular j)
-  have hCapp (x y : S j) : 2 ^ j * C x y = B x y := by
-    simpa using LinearMap.congr_fun₂ hC x y
-  have hC'app (x y : S' j) : 2 ^ j * C' x y = B' x y := by
-    simpa using LinearMap.congr_fun₂ hC' x y
-  have hB' : B'.IsSymm := ⟨fun x y ↦ by rw [← hεs, ← hεs, hB.eq]⟩
-  have hCs : C.IsSymm := ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors hπj).mp (by
-    rw [hCapp, hCapp, hB.eq])⟩
-  have hC's : C'.IsSymm := ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors hπj).mp (by
-    rw [hC'app, hC'app, hB'.eq])⟩
-  have hCeven (x : S j) : 2 ∣ C x x := by
+  refine hS.equivalent_restrict_of_forall_unimodular hS' hB hBB' h20
+    ((mem_maximalIdeal 2).mp h2) j fun C _ hCs hC's hCapp _ b b' hdet hdet' φ hφ hφ₂ ↦
+      hCs.equivalent_of_sub_mem_maximalIdeal_of_even hR hC's (fun x ↦ ?_) b b' hdet hdet' φ
+        (fun x y ↦ Ideal.mem_of_dvd _ (hφ x y) h2) fun x ↦ ?_
+  · -- The unimodular rescaling of a constituent of type II is even.
     obtain ⟨c, hc⟩ := hj x x.2
-    exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors hπj).mp (by rw [hCapp, hc, pow_succ,
-      mul_assoc])⟩
-  -- The projection to `S j` carries `C'` to `C` modulo `2`, and on the diagonal modulo `4`.
-  obtain ⟨f, -, hf, hf₂⟩ := hS.exists_pow_succ_dvd_sub h2nz j
-  have hdvd (x : S' j) (z : M) : 2 ^ j ∣ B (ε.symm x) z := by
-    rw [← hε, ε.apply_symm_apply]
-    exact hS'.pow_dvd_apply x.2 (ε z)
-  have hsub {x y : S' j} {k : ℕ} {c : R}
-      (hc : B (ε.symm x) (ε.symm y) - B (f (ε.symm x)) (f (ε.symm y)) = 2 ^ (j + k) * c) :
-      C' x y - C (f (ε.symm x)) (f (ε.symm y)) = 2 ^ k * c :=
-    (mul_cancel_left_mem_nonZeroDivisors hπj).mp (by
-      rw [mul_sub, hC'app, hCapp, ← mul_assoc, ← pow_add, ← hc, hεs])
-  let b := Module.finBasis R (S j)
-  let b' := (Module.finBasis R (S' j)).reindex
-    (finCongr (hS.finrank_eq_of_equivalent hS' hBB' h20 ((mem_maximalIdeal 2).mp h2) j).symm)
-  set φ := f ∘ₗ ε.symm.toLinearMap ∘ₗ (S' j).subtype
-  have hφ (x y : S' j) : C' x y - C (φ x) (φ y) ∈ maximalIdeal R := by
-    obtain ⟨c, hc⟩ := hf (ε.symm x) (ε.symm y) (hdvd x) (hdvd y)
-    simpa [φ, hsub (k := 1) hc] using (maximalIdeal R).mul_mem_right c h2
-  have hφ₂ (x : S' j) : C' x x - C (φ x) (φ x) ∈ Ideal.span {2} * maximalIdeal R := by
-    obtain ⟨c, hc⟩ := hf₂ hprev hnext (ε.symm x) (hdvd x)
-    simpa [φ, hsub (k := 2) hc] using Ideal.mem_span_singleton_mul.mpr
-      ⟨2 * c, (maximalIdeal R).mul_mem_right c h2, by ring⟩
-  obtain ⟨u⟩ := hCs.equivalent_of_sub_mem_maximalIdeal_of_even hR hC's hCeven b b'
-    (b.isUnit_det_of_isPerfPair C hCp) (b'.isUnit_det_of_isPerfPair C' hC'p) φ hφ hφ₂
-  rw [← hC, ← hC']
-  exact (equivalent_smul_iff hπj).mpr ⟨u⟩
+    exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors (pow_mem (mem_nonZeroDivisors_of_ne_zero h20)
+      j)).mp (by rw [hCapp, hc, pow_succ, mul_assoc])⟩
+  · -- Between neighbours of type II, the self-pairings agree modulo `4`.
+    obtain ⟨c, hc⟩ := hφ₂ hprev hnext x
+    rw [hc]
+    exact Ideal.mem_span_singleton_mul.mpr ⟨2 * c, (maximalIdeal R).mul_mem_right c h2, by ring⟩
 
 /-- **Classification of dyadic forms whose Jordan constituents are all of type II.** Let `R` be a
 Henselian local domain whose residue field has two elements and in which `2 ≠ 0`, for instance
