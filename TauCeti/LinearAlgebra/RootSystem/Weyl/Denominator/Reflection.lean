@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.DotAction
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Sign
 
@@ -58,76 +58,24 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   (P : RootPairing ι R M N) [Finite ι] [CharZero R] (b : P.Base)
   [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
 
-/-- A simple reflection permutes the denominator factors away from its own simple root. -/
-private lemma prod_erase_reflection_weylDenominator [DecidableEq ι] {i : ι}
-    (hi : i ∈ b.support) :
-    ∏ j ∈ (posRootsFinset P b).erase i,
-        (1 - AddMonoidAlgebra.single (-(P.reflection i) (P.root j)) (1 : ℤ)) =
-      ∏ j ∈ (posRootsFinset P b).erase i,
-        (1 - AddMonoidAlgebra.single (-P.root j) (1 : ℤ)) := by
-  let e := P.reflectionPerm i
-  refine Finset.prod_bij (fun j _ ↦ e j) ?_ ?_ ?_ ?_
-  · intro j hj
-    rw [Finset.mem_erase] at hj ⊢
-    have hmap := (bijOn_reflectionPerm_posRoots_diff_singleton P b hi).mapsTo ⟨
-      (mem_posRootsFinset P b _).mp hj.2, by simpa using hj.1⟩
-    exact ⟨by simpa using hmap.2, (mem_posRootsFinset P b _).mpr hmap.1⟩
-  · intro j _ k _ h
-    exact e.injective h
-  · intro j hj
-    rw [Finset.mem_erase] at hj
-    have hjset : j ∈ posRoots P b \ {i} := ⟨
-      (mem_posRootsFinset P b _).mp hj.2, by simpa using hj.1⟩
-    obtain ⟨k, hk, hkj⟩ :=
-      (bijOn_reflectionPerm_posRoots_diff_singleton P b hi).surjOn hjset
-    refine ⟨k, ?_, hkj⟩
-    rw [Finset.mem_erase]
-    exact ⟨by simpa using hk.2, (mem_posRootsFinset P b _).mpr hk.1⟩
-  · intro j _
-    rw [RootPairing.root_reflectionPerm]
-
 /-- **A simple reflection sends the Weyl denominator to `-e^{αᵢ} Δ`.**
 
 The reflection permutes the factors belonging to the positive roots other than `αᵢ`. Its one
 exceptional factor changes from `1 - e^{-αᵢ}` to `1 - e^{αᵢ}`, and
-`1 - e^{αᵢ} = -e^{αᵢ}(1 - e^{-αᵢ})`. -/
+`1 - e^{αᵢ} = -e^{αᵢ}(1 - e^{-αᵢ})`. This is the case `w = sᵢ` of
+`TauCeti.mapDomain_smul_weylDenominator`, `αᵢ` being the only inversion of `sᵢ`. -/
 @[simp]
 theorem mapDomain_reflection_weylDenominator {i : ι} (hi : i ∈ b.support) :
     AddMonoidAlgebra.mapDomain (P.reflection i) (weylDenominator P b) =
       -AddMonoidAlgebra.single (P.root i) 1 * weylDenominator P b := by
   classical
-  let A := AddMonoidAlgebra ℤ M
-  let F : ι → A := fun j ↦ 1 - AddMonoidAlgebra.single (-P.root j) 1
-  have hiPos : i ∈ posRootsFinset P b :=
-    (mem_posRootsFinset P b i).mpr (support_subset_posRoots P b hi)
-  -- Read the reflection as a ring homomorphism of the group algebra to distribute over the
-  -- product of denominator factors.
-  have hring : AddMonoidAlgebra.mapDomain (R := ℤ) (P.reflection i) (weylDenominator P b) =
-      AddMonoidAlgebra.mapDomainRingHom ℤ (P.reflection i).toAddEquiv.toAddMonoidHom
-        (weylDenominator P b) := rfl
-  rw [hring, weylDenominator_def, map_prod]
-  simp only [map_sub, map_one, AddMonoidAlgebra.mapDomainRingHom_apply,
-    AddMonoidAlgebra.mapDomain_single, map_neg]
-  -- `mapDomainRingHom` retains the additive-hom coercion; expose the underlying linear map so
-  -- the reflected-root API rewrites the product factors.
-  change (∏ x ∈ posRootsFinset P b,
-    (1 - AddMonoidAlgebra.single (-(P.reflection i) (P.root x)) 1)) = _
-  rw [← Finset.prod_erase_mul (posRootsFinset P b) (fun j ↦
-    1 - AddMonoidAlgebra.single (-(P.reflection i) (P.root j)) 1) hiPos]
-  rw [prod_erase_reflection_weylDenominator P b hi]
-  rw [RootPairing.reflection_apply_self, neg_neg]
-  rw [← Finset.prod_erase_mul (posRootsFinset P b) F hiPos]
-  dsimp only [F, A]
-  have hfactor :
-      1 - AddMonoidAlgebra.single (P.root i) (1 : ℤ) =
-        -AddMonoidAlgebra.single (P.root i) 1 *
-          (1 - AddMonoidAlgebra.single (-P.root i) 1) := by
-    rw [mul_sub, mul_one, neg_mul, AddMonoidAlgebra.single_mul_single,
-      AddMonoidAlgebra.one_def]
-    simp
-    ring
-  rw [hfactor]
-  ring
+  have hinv : inversionsFinset P b (RootPairing.weylGroup.ofIdx P i)⁻¹ = {i} := by
+    rw [RootPairing.weylGroup.ofIdx_inv_eq, ← Finset.coe_inj, coe_inversionsFinset,
+      inversions_ofIdx P b hi, Finset.coe_singleton]
+  have h := mapDomain_smul_weylDenominator P b (RootPairing.weylGroup.ofIdx P i)
+  simp only [RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul, hinv,
+    Finset.sum_singleton, Finset.card_singleton, pow_one] at h
+  rw [h, AddMonoidAlgebra.single_neg]
 
 variable [Invertible (2 : R)]
 
