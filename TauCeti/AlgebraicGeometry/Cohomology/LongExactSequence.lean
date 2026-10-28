@@ -41,7 +41,8 @@ varies the coefficients.
 * `Scheme.Modules.finiteDimensional_cohomology_X₂`: in a short exact sequence, `Hⁱ(X, M₂)` is
   finite-dimensional when `Hⁱ(X, M₁)` and `Hⁱ(X, M₃)` are, and
   `Scheme.Modules.finiteDimensional_cohomology_X₁`: `Hⁱ⁺¹(X, M₁)` is finite-dimensional when
-  `Hⁱ(X, M₃)` and `Hⁱ⁺¹(X, M₂)` are;
+  `Hⁱ(X, M₃)` and `Hⁱ⁺¹(X, M₂)` are, and `Scheme.Modules.finiteDimensional_cohomology_zero_X₁`:
+  `H⁰(X, M₁)` is finite-dimensional when `H⁰(X, M₂)` is;
 * `Scheme.Modules.exact_sections` and `Scheme.Modules.sections_injective`: global sections are
   left exact, and `Scheme.Modules.sections_surjective`: they are exact on the right as soon as
   `H¹(X, M₁)` vanishes. This last statement is the form in which the sequence is normally used;
@@ -312,6 +313,16 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
     rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
     exact exact_cohomologyδ_cohomologyMap hS n₀ n₁ h x
   exact finiteDimensional_of_exact hex
+
+omit hS in
+/-- `H⁰(X, M₁)` embeds into `H⁰(X, M₂)`, so it is finite-dimensional as soon as `H⁰(X, M₂)` is. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_zero_X₁
+    (hS : S.ShortExact) [FiniteDimensional k (Cohomology S.X₂ 0)] :
+    FiniteDimensional k (Cohomology S.X₁ 0) := by
+  have := hS.mono_f
+  refine Module.Finite.of_injective (cohomologyMapBaseLinear k X S.f 0) fun a b hab ↦ ?_
+  rw [cohomologyMapBaseLinear_apply, cohomologyMapBaseLinear_apply, cohomologyFunctor_map] at hab
+  exact cohomologyMap_injective S.f hab
 
 end Field
 

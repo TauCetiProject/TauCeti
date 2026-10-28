@@ -48,13 +48,6 @@ noncomputable section
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y)
 
-/-- `E` is right dual to its dual `E^∨` in the category of sheaves of modules, so that tensoring
-with `E^∨` is left adjoint to tensoring with `E`. -/
-private abbrev exactPairingObjDual (E : FiniteLocallyFreeSheaf Y) :
-    ExactPairing E.obj (dual E).obj :=
-  letI : ExactPairing (dual E).obj E.obj := exactPairingOfIsIsoDualTensorIhom (Y := E.obj)
-  BraidedCategory.exactPairing_swap _ _
-
 /-- **The projection formula.** For a finite locally free sheaf `E` on `Y` and any morphism
 `f : X ⟶ Y`, tensoring a direct image with `E` is the direct image of the tensor product with
 `f^* E`: `E ⊗ f_* N ≅ f_* (f^* E ⊗ N)`, naturally in the sheaf of modules `N` on `X`. -/
@@ -63,8 +56,7 @@ def pushforwardTensorLeftIso :
       tensorLeft ((pullback f).obj E).obj ⋙ Scheme.Modules.pushforward f :=
   letI := exactPairingObjDual E
   letI := exactPairingObjDual ((pullback f).obj E)
-  haveI : (dual E).obj.IsQuasicoherent :=
-    (fun F : FiniteLocallyFreeSheaf Y ↦ (inferInstance : F.obj.IsQuasicoherent)) (dual E)
+  haveI : (dual E).obj.IsQuasicoherent := ((toQuasicoherent Y).obj (dual E)).property
   let d : (Scheme.Modules.pullback f).obj (dual E).obj ≅ (dual ((pullback f).obj E)).obj :=
     eqToIso (pullback_obj_obj f (dual E)).symm ≪≫
       (Scheme.Modules.isFiniteLocallyFree X).ι.mapIso (pullbackDualIso f E)

@@ -144,6 +144,37 @@ private lemma nonempty_tensor_pushforward_iso :
       (eqToIso (FiniteLocallyFreeSheaf.pullback_obj_obj _ _) ≪≫
         eqToIso (InvertibleSheaf.pullback_obj_obj _ _).symm ≪≫ e)⟩
 
+/-- The exact sequence of `V(I)` tensored with `L`:
+`0 ⟶ L ⊗ I ⟶ L ⊗ 𝒪_X ⟶ L ⊗ ι_* 𝒪_{V(I)} ⟶ 0`. -/
+private abbrev tensorSequence : ShortComplex X.Modules :=
+  (ShortComplex.mk _ _ I.sheafι_toPushforwardSubscheme).map (tensorLeft L.obj)
+
+/-- `L` is finite locally free, so tensoring with it preserves the exact sequence of `V(I)`. -/
+private lemma shortExact_tensorSequence : (tensorSequence I L).ShortExact :=
+  I.shortExact_tensor_toPushforwardSubscheme ((InvertibleSheaf.toFiniteLocallyFree X).obj L).obj
+
+omit [IsFinite (I.subschemeι ≫ X ↘ Spec (.of k))] in
+/-- The middle term of the tensored sequence is `L ⊗ 𝒪_X ≅ L`. -/
+private lemma finiteDimensional_cohomology_tensorSequence_X₂_iff (i : ℕ) :
+    FiniteDimensional k (Cohomology (tensorSequence I L).X₂ i) ↔
+      FiniteDimensional k (Cohomology L.obj i) :=
+  finiteDimensional_cohomology_congr k (ρ_ L.obj) i
+
+/-- `H⁰` of the last term `L ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}` is finite-dimensional. -/
+private lemma finiteDimensional_cohomology_zero_tensorSequence_X₃ :
+    FiniteDimensional k (Cohomology (tensorSequence I L).X₃ 0) := by
+  obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I L
+  exact (finiteDimensional_cohomology_congr k e₃ 0).mpr
+    (finiteDimensional_cohomology_zero_pushforward k I)
+
+include k in
+/-- `H¹` of the last term `L ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}` vanishes. -/
+private lemma subsingleton_cohomology_one_tensorSequence_X₃ :
+    Subsingleton (Cohomology (tensorSequence I L).X₃ 1) := by
+  obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I L
+  have := subsingleton_cohomology_one_pushforward k I
+  exact (cohomologyBaseLinearEquivOfIso k e₃ 1).subsingleton
+
 variable {k L} in
 /-- **Twisting by an ideal sheaf preserves finiteness of cohomology.** If `I ⊆ 𝒪_X` cuts out a
 closed subscheme finite over the field `k` and `L` is a line bundle on `X`, then `H⁰` and `H¹` of
@@ -151,33 +182,19 @@ closed subscheme finite over the field `k` and `L` is a line bundle on `X`, then
 theorem finiteDimensional_cohomology_tensor_sheaf_iff :
     (∀ i < 2, FiniteDimensional k (Cohomology (L.obj ⊗ I.sheaf) i)) ↔
       ∀ i < 2, FiniteDimensional k (Cohomology L.obj i) := by
-  let S := (ShortComplex.mk _ _ I.sheafι_toPushforwardSubscheme).map (tensorLeft L.obj)
-  -- `L` is finite locally free, so tensoring with it preserves the exact sequence of `V(I)`.
-  have hS : S.ShortExact :=
-    I.shortExact_tensor_toPushforwardSubscheme ((InvertibleSheaf.toFiniteLocallyFree X).obj L).obj
-  obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I L
-  have : FiniteDimensional k (Cohomology S.X₃ 0) :=
-    (finiteDimensional_cohomology_congr k e₃ 0).mpr
-      (finiteDimensional_cohomology_zero_pushforward k I)
-  have : FiniteDimensional k (Cohomology S.X₃ 1) := by
-    have := subsingleton_cohomology_one_pushforward k I
-    exact (finiteDimensional_cohomology_congr k e₃ 1).mpr inferInstance
-  -- The middle term is `L ⊗ 𝒪_X ≅ L`.
-  have h₂ (i : ℕ) : FiniteDimensional k (Cohomology S.X₂ i) ↔
-      FiniteDimensional k (Cohomology L.obj i) :=
-    finiteDimensional_cohomology_congr k (ρ_ L.obj) i
+  have hS := shortExact_tensorSequence I L
+  have h₂ := finiteDimensional_cohomology_tensorSequence_X₂_iff k I L
+  have := finiteDimensional_cohomology_zero_tensorSequence_X₃ k I L
+  have := subsingleton_cohomology_one_tensorSequence_X₃ k I L
   refine ⟨fun h i hi ↦ ?_, fun h i hi ↦ ?_⟩ <;> obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
-  · have : FiniteDimensional k (Cohomology S.X₁ 0) := h 0 hi
+  · have : FiniteDimensional k (Cohomology (tensorSequence I L).X₁ 0) := h 0 hi
     exact (h₂ 0).mp (finiteDimensional_cohomology_X₂ k X hS 0)
-  · have : FiniteDimensional k (Cohomology S.X₁ 1) := h 1 hi
+  · have : FiniteDimensional k (Cohomology (tensorSequence I L).X₁ 1) := h 1 hi
     exact (h₂ 1).mp (finiteDimensional_cohomology_X₂ k X hS 1)
   · -- `H⁰(L ⊗ I)` is a subspace of `H⁰(L)`.
-    have : FiniteDimensional k (Cohomology S.X₂ 0) := (h₂ 0).mpr (h 0 (by omega))
-    have := hS.mono_f
-    refine Module.Finite.of_injective (cohomologyMapBaseLinear k X S.f 0) fun x y hxy ↦ ?_
-    rw [cohomologyMapBaseLinear_apply, cohomologyMapBaseLinear_apply, cohomologyFunctor_map] at hxy
-    exact cohomologyMap_injective S.f hxy
-  · have : FiniteDimensional k (Cohomology S.X₂ 1) := (h₂ 1).mpr (h 1 (by omega))
+    have : FiniteDimensional k (Cohomology (tensorSequence I L).X₂ 0) := (h₂ 0).mpr (h 0 hi)
+    exact finiteDimensional_cohomology_zero_X₁ k X hS
+  · have : FiniteDimensional k (Cohomology (tensorSequence I L).X₂ 1) := (h₂ 1).mpr (h 1 hi)
     exact finiteDimensional_cohomology_X₁ k X hS 0 1 rfl
 
 /-- **The Euler characteristic of a twisted ideal sheaf.** If `I ⊆ 𝒪_X` cuts out a closed
@@ -189,18 +206,14 @@ theorem eulerCharBelow_tensor_sheaf [FiniteDimensional k (Cohomology L.obj 0)]
     [FiniteDimensional k (Cohomology L.obj 1)] (s : Spec (.of k)) :
     eulerCharBelow k X (L.obj ⊗ I.sheaf) 2 =
       eulerCharBelow k X L.obj 2 - (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
-  let S := (ShortComplex.mk _ _ I.sheafι_toPushforwardSubscheme).map (tensorLeft L.obj)
-  -- `L` is finite locally free, so tensoring with it preserves the exact sequence of `V(I)`.
-  have hS : S.ShortExact :=
-    I.shortExact_tensor_toPushforwardSubscheme ((InvertibleSheaf.toFiniteLocallyFree X).obj L).obj
+  have hS := shortExact_tensorSequence I L
   obtain ⟨e₃⟩ := nonempty_tensor_pushforward_iso k I L
-  have hvan : Subsingleton (Cohomology S.X₃ 1) := by
-    have := subsingleton_cohomology_one_pushforward k I
-    exact (cohomologyBaseLinearEquivOfIso k e₃ 1).subsingleton
-  have h₂ (i : ℕ) (hi : i < 2) : FiniteDimensional k (Cohomology S.X₂ i) := by
-    refine (finiteDimensional_cohomology_congr k (ρ_ L.obj) i).mpr ?_
+  have := subsingleton_cohomology_one_tensorSequence_X₃ k I L
+  have h₂ (i : ℕ) (hi : i < 2) : FiniteDimensional k (Cohomology (tensorSequence I L).X₂ i) := by
+    refine (finiteDimensional_cohomology_tensorSequence_X₂_iff k I L i).mpr ?_
     interval_cases i <;> infer_instance
-  have h₁ (i : ℕ) (hi : i < 2) (_ : 0 < i) : FiniteDimensional k (Cohomology S.X₁ i) :=
+  have h₁ (i : ℕ) (hi : i < 2) (_ : 0 < i) :
+      FiniteDimensional k (Cohomology (tensorSequence I L).X₁ i) :=
     (finiteDimensional_cohomology_tensor_sheaf_iff (k := k) I (L := L)).mpr
       (fun j hj ↦ by interval_cases j <;> infer_instance) i hi
   have hδ : cohomologyδBaseLinear k X hS 1 2 rfl = 0 :=
