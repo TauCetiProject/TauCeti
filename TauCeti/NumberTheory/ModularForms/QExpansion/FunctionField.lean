@@ -68,7 +68,7 @@ variable {Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ] (D : Γ.CuspDatum)
 
 /-- Off `q = 0`, the cusp function of the pullback of a function on the compactified quotient,
 read in the scaling of `D`, is the function read in the cusp chart of `D`. -/
-theorem cuspFunction_eventuallyEq_comp_cuspChart_symm (H : Γ.CompactifiedQuotient → ℂ) :
+private theorem cuspFunction_eventuallyEq_comp_cuspChart_symm (H : Γ.CompactifiedQuotient → ℂ) :
     cuspFunction D.width (fun z ↦ H (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z))))
       =ᶠ[𝓝[≠] 0] H ∘ (cuspChart D le_rfl).symm := by
   have h := comp_cuspChart_symm_eventuallyEq (F := H) D le_rfl fun _ ↦ rfl
