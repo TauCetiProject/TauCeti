@@ -84,8 +84,9 @@ finite quotients of `G_K` through which `⁅P_K, P_K⁆` dies by tuples of a fix
   to a finite normal subextension `L` lies in `G_1` of `L/K`.
 * `TauCeti.mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem`: `P_K` is the inverse limit of
   the finite-level groups `G_1`.
-* `TauCeti.mem_wildInertiaSubgroup_iff_forall_finiteGaloisLowerRamificationGroup`: the same
-  criterion on finite Galois intermediate fields with their induced local-field structures.
+* `TauCeti.mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem_finiteGaloisLowerRamificationGroup`
+  gives the same criterion on finite Galois intermediate fields with their induced
+  local-field structures.
 * `TauCeti.isProP_wildInertiaSubgroup`: `P_K` is pro-`p`.
 * `TauCeti.le_wildInertiaSubgroup_of_isProP`: every pro-`p` subgroup of `I_K` lies in `P_K`.
 * `TauCeti.isProPSylow_wildInertiaSubgroup` and
@@ -423,7 +424,7 @@ variable {K} in
 /-- **Wild inertia in canonical finite Galois coordinates.** An absolute Galois automorphism
 is wild exactly when its restriction to every finite Galois subextension belongs to `G₁`,
 using the local-field structures induced from the base field. -/
-theorem mem_wildInertiaSubgroup_iff_forall_finiteGaloisLowerRamificationGroup
+theorem mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem_finiteGaloisLowerRamificationGroup
     {σ : Gal(AlgebraicClosure K/K)} :
     σ ∈ wildInertiaSubgroup K ↔
       ∀ L : FiniteGaloisIntermediateField K (AlgebraicClosure K),
@@ -500,7 +501,7 @@ theorem mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem {σ : Gal(Algebrai
       [FiniteDimensional K L] [Normal K L],
       AlgEquiv.restrictNormal σ L ∈ lowerRamificationGroup K L 1 := by
   refine ⟨fun hσ L _ _ _ _ _ _ ↦ restrictNormal_mem_lowerRamificationGroup_one L hσ, fun h ↦ ?_⟩
-  apply mem_wildInertiaSubgroup_iff_forall_finiteGaloisLowerRamificationGroup.2
+  apply mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem_finiteGaloisLowerRamificationGroup.2
   intro L
   let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L.toIntermediateField
   let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) L.toIntermediateField
