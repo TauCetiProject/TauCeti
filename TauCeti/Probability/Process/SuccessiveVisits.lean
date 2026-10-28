@@ -149,6 +149,18 @@ theorem successiveVisit_monotone (X : ℕ → Ω → α) (a : α) (ω : Ω) :
   intro n hn
   exact successiveVisit_le_iff.mpr (hij.trans_lt (successiveVisit_le_iff.mp hn))
 
+/-- After a finite visit, the next visit occurs strictly later, even if it is infinity. -/
+theorem successiveVisit_lt_succ (h : successiveVisit X a k ω ≠ ⊤) :
+    successiveVisit X a k ω < successiveVisit X a (k + 1) ω := by
+  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp h
+  obtain ⟨hx, hc⟩ := successiveVisit_eq_coe_iff.mp hn.symm
+  rw [← hn]
+  apply lt_of_not_ge
+  intro hnext
+  have hcount := successiveVisit_le_iff.mp hnext
+  rw [visitCount_succ_of_eq (x := fun i => X i ω) hx, hc] at hcount
+  exact (lt_irrefl _) hcount
+
 private theorem successiveVisit_eq_hittingAfter_of_counts {s : ℕ}
     (h : ∀ m, k < visitCount (fun i => X i ω) a (m + 1) ↔
       ∃ j ∈ Set.Icc s m, X j ω = a) :
@@ -221,9 +233,9 @@ theorem successiveVisit_gap_eq_length_excursion_add_one
   have hm : visitTime (fun i => X i ω) a (k + 1) = m :=
     WithTop.coe_inj.mp ((successiveVisit_eq_visitTime ⟨m, hy, hd⟩).symm.trans hnext)
   have hnm : n < m := by
-    by_contra hle
-    have := visitCount_monotone (fun i => X i ω) a (le_of_not_gt hle)
-    omega
+    have hfinite : successiveVisit X a k ω ≠ ⊤ := by simp [h]
+    have hlt := successiveVisit_lt_succ hfinite
+    simpa only [h, hnext, Nat.cast_withTop, WithTop.coe_lt_coe] using hlt
   rw [length_excursion, hn, hm]
   omega
 
