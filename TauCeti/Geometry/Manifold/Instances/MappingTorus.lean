@@ -77,6 +77,8 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
   exactly when `s` is an integer `k` and `x` is a fixed point of `φ ^ k`.
 * `TauCeti.SmoothMappingTorus.isFixedPt_flow_mk_iff_mem_zmultiples`: the periods of the orbit
   through `[t, x]` are the integer multiples of the minimal period of `x` under `φ`.
+* `TauCeti.SmoothMappingTorus.mk_eq_mk_iff_sub_mem_zmultiples`: `[t, x] = [s, x]` exactly when
+  `t - s` is an integer multiple of the minimal period of `x`.
 * `TauCeti.SmoothMappingTorus.contMDiff_uncurry_flow`: the suspension flow is jointly `C^n`.
 * `TauCeti.SmoothMappingTorus.mfderiv_mk_apply`,
   `TauCeti.SmoothMappingTorus.mfderiv_proj_mfderiv_uncurry_mk`: the differential of a fibre
@@ -289,6 +291,13 @@ theorem mk_eq_mk_iff {t s : ℝ} {x y : M} :
 theorem mk_add_intCast (t : ℝ) (k : ℤ) (x : M) : mk φ (t + k) x = mk φ t ((φ ^ k) x) :=
   (mk_eq_mk_iff φ).2 ⟨k, rfl, by simp⟩
 
+/-- Moving the real coordinate by a natural number `j` changes the fibre coordinate by the iterate
+`φ^[j]`. -/
+@[simp]
+theorem mk_add_natCast (t : ℝ) (j : ℕ) (y : M) : mk φ (t + j) y = mk φ t ((⇑φ)^[j] y) := by
+  have h := mk_add_intCast φ t j y
+  rwa [Int.cast_natCast, zpow_natCast, Diffeomorph.coe_pow] at h
+
 /-- Moving the real coordinate once around the circle changes the fibre coordinate by `φ`. -/
 @[simp]
 theorem mk_add_one (t : ℝ) (x : M) : mk φ (t + 1) x = mk φ t (φ x) := by
@@ -448,6 +457,13 @@ theorem isFixedPt_flow_mk_iff_mem_zmultiples {s t : ℝ} {x : M} :
     exact ⟨m, by push_cast; ring⟩
   · rintro ⟨m, rfl⟩
     exact ⟨m * Function.minimalPeriod φ x, by push_cast; ring, (h _).2 (dvd_mul_left _ _)⟩
+
+/-- Two points `[t, x]` and `[s, x]` with the same fibre coordinate agree exactly when `t - s` is
+an integer multiple of the minimal period of `x` under `φ`. -/
+theorem mk_eq_mk_iff_sub_mem_zmultiples {t s : ℝ} {x : M} :
+    mk φ t x = mk φ s x ↔ t - s ∈ AddSubgroup.zmultiples (Function.minimalPeriod φ x : ℝ) := by
+  rw [← isFixedPt_flow_mk_iff_mem_zmultiples φ (t := s), Function.IsFixedPt, flow_mk,
+    add_sub_cancel]
 
 section Manifold
 

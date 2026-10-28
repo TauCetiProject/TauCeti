@@ -34,8 +34,9 @@ the orbit of the suspension flow through `[0, x]` parametrized by its time
   one periodic orbit of `φ` all give the same oriented image, and two periodic points give the same
   image exactly when they lie on the same orbit of `φ`; otherwise the images are disjoint.
 
-In the symplectic manifold `S¹ × Y_φ`, the products of these curves with the circle are the
-embedded tori attached to the periodic orbits of `φ`, as in periodic Floer homology.
+When `φ` preserves a symplectic form on `M`, the products of these curves with the circle are
+the embedded tori in the symplectic manifold `S¹ × Y_φ` attached to the periodic orbits of `φ`,
+as in periodic Floer homology.
 
 ## Main definitions
 
@@ -44,8 +45,6 @@ embedded tori attached to the periodic orbits of `φ`, as in periodic Floer homo
 
 ## Main results
 
-* `TauCeti.SmoothMappingTorus.mk_eq_mk_iff_sub_mem_zmultiples`: `[t, x] = [s, x]` exactly when
-  `t - s` is an integer multiple of the minimal period of `x`.
 * `TauCeti.SmoothMappingTorus.injective_closedOrbit_iff`: the curve is injective exactly when `d`
   is the minimal period of `x`.
 * `TauCeti.SmoothMappingTorus.range_closedOrbit`: its image is the orbit of the suspension flow
@@ -85,25 +84,12 @@ section Topology
 
 variable (φ : M ≃ₘ^n⟮I, I⟯ M) {x : M} {d : ℕ}
 
-/-- Moving the real coordinate by a natural number `j` changes the fibre coordinate by the iterate
-`φ^[j]`. -/
-@[simp]
-theorem mk_add_natCast (t : ℝ) (j : ℕ) (y : M) : mk φ (t + j) y = mk φ t ((⇑φ)^[j] y) := by
-  have h := mk_add_intCast φ t j y
-  rwa [Int.cast_natCast, zpow_natCast, Diffeomorph.coe_pow] at h
-
-/-- Two points `[t, x]` and `[s, x]` with the same fibre coordinate agree exactly when `t - s` is
-an integer multiple of the minimal period of `x` under `φ`. -/
-theorem mk_eq_mk_iff_sub_mem_zmultiples {t s : ℝ} :
-    mk φ t x = mk φ s x ↔ t - s ∈ AddSubgroup.zmultiples (minimalPeriod φ x : ℝ) := by
-  rw [← isFixedPt_flow_mk_iff_mem_zmultiples φ (t := s), IsFixedPt, flow_mk, add_sub_cancel]
-
 /-- For a periodic point `x` of `φ` with period `d`, the curve `t ↦ [t, x]` is `d`-periodic. -/
 theorem periodic_mk (hx : IsPeriodicPt φ d x) : Periodic (fun t ↦ mk φ t x) d := fun t ↦ by
   refine (mk_eq_mk_iff_sub_mem_zmultiples φ).2 ?_
   obtain ⟨k, hk⟩ := hx.minimalPeriod_dvd
   refine AddSubgroup.mem_zmultiples_iff.2 ⟨k, ?_⟩
-  rw [add_sub_cancel_left, hk, zsmul_eq_mul, Int.cast_natCast, Nat.cast_mul, mul_comm]
+  simp [hk, zsmul_eq_mul, mul_comm]
 
 /-- The closed orbit of the suspension flow through `[0, x]`, for a periodic point `x` of `φ` with
 period `d`: the curve `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`. It is injective exactly when `d` is the
@@ -117,6 +103,11 @@ variable (hx : IsPeriodicPt φ d x)
 @[simp]
 theorem closedOrbit_coe (t : ℝ) : closedOrbit φ hx t = mk φ t x := (rfl)
 
+/-- Read on the real line, the closed orbit is the curve `t ↦ [t, x]`. -/
+@[simp]
+theorem closedOrbit_comp_coe :
+    closedOrbit φ hx ∘ ((↑) : ℝ → AddCircle (d : ℝ)) = fun t ↦ mk φ t x := (rfl)
+
 /-- The closed orbit is injective exactly when its period `d` is the minimal period of `x`. -/
 theorem injective_closedOrbit_iff : Injective (closedOrbit φ hx) ↔ minimalPeriod φ x = d := by
   constructor
@@ -128,9 +119,10 @@ theorem injective_closedOrbit_iff : Injective (closedOrbit φ hx) ↔ minimalPer
         rw [closedOrbit_coe, closedOrbit_coe, mk_eq_mk_iff_sub_mem_zmultiples, sub_zero]
         exact AddSubgroup.mem_zmultiples _)
     obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 (QuotientAddGroup.eq_iff_sub_mem.1 h₀)
-    rw [sub_zero, zsmul_eq_mul] at hk
+    have hk' : (minimalPeriod φ x : ℝ) = (d : ℝ) * k := by
+      simpa [zsmul_eq_mul, mul_comm] using hk.symm
     have hdvd : d ∣ minimalPeriod φ x :=
-      Int.natCast_dvd_natCast.1 ⟨k, by rw [mul_comm]; exact_mod_cast hk.symm⟩
+      Int.natCast_dvd_natCast.1 ⟨k, by exact_mod_cast hk'⟩
     exact Nat.dvd_antisymm hx.minimalPeriod_dvd hdvd
   · intro hd θ θ' h
     induction θ using QuotientAddGroup.induction_on
@@ -140,9 +132,7 @@ theorem injective_closedOrbit_iff : Injective (closedOrbit φ hx) ↔ minimalPer
 
 /-- The closed orbit is continuous. -/
 theorem continuous_closedOrbit : Continuous (closedOrbit φ hx) := by
-  have h : closedOrbit φ hx ∘ ((↑) : ℝ → AddCircle (d : ℝ)) = uncurry (mk φ) ∘ fun t ↦ (t, x) :=
-    funext fun t ↦ closedOrbit_coe φ hx t
-  rw [(QuotientAddGroup.isQuotientMap_mk _).continuous_iff, h]
+  rw [(QuotientAddGroup.isQuotientMap_mk _).continuous_iff, closedOrbit_comp_coe]
   exact (continuous_uncurry_mk φ).comp (continuous_id.prodMk continuous_const)
 
 /-- The suspension flow moves along the closed orbit: the time-`s` map sends `γ θ` to
@@ -275,9 +265,7 @@ variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M]
 theorem contMDiff_closedOrbit : ContMDiff 𝓘(ℝ) (𝓘(ℝ).prod I) n (closedOrbit φ hx) := by
   rw [← (AddCircle.isLocalDiffeomorph_coe (d : ℝ) n).contMDiff_comp_iff
     QuotientAddGroup.mk_surjective le_rfl]
-  have h : closedOrbit φ hx ∘ ((↑) : ℝ → AddCircle (d : ℝ)) = uncurry (mk φ) ∘ fun t ↦ (t, x) :=
-    funext fun t ↦ closedOrbit_coe φ hx t
-  rw [h]
+  rw [closedOrbit_comp_coe]
   exact (contMDiff_uncurry_mk φ).comp (contMDiff_id.prodMk contMDiff_const)
 
 end Smooth
@@ -296,8 +284,8 @@ theorem hasMFDerivAt_closedOrbit (θ : AddCircle (d : ℝ)) :
   have hd : MDifferentiableAt 𝓘(ℝ) (𝓘(ℝ).prod I) (closedOrbit φ hx) t :=
     ((contMDiff_closedOrbit φ hx) _).mdifferentiableAt (by simp)
   -- Read on `ℝ`, the closed orbit is the orbit `s ↦ [s, x]` of the suspension flow.
-  have hc : closedOrbit φ hx ∘ ((↑) : ℝ → AddCircle (d : ℝ)) = fun s ↦ flow φ s (mk φ 0 x) :=
-    funext fun s ↦ by simp
+  have hc : closedOrbit φ hx ∘ ((↑) : ℝ → AddCircle (d : ℝ)) = fun s ↦ flow φ s (mk φ 0 x) := by
+    simp only [closedOrbit_comp_coe, flow_mk, zero_add]
   have hlift : HasMFDerivAt 𝓘(ℝ) (𝓘(ℝ).prod I) (closedOrbit φ hx ∘ ((↑) : ℝ → AddCircle (d : ℝ)))
       t ((1 : ℝ →L[ℝ] ℝ).smulRight (timeVectorField φ (closedOrbit φ hx t))) := by
     have h := isMIntegralCurve_flow φ (mk φ 0 x) t
