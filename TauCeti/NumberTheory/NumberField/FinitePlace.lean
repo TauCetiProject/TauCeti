@@ -35,6 +35,9 @@ finite extension over a prime `v`, `NumberField.FinitePlace.mk_apply_algebraMap`
 `equivHeightOneSpectrum_symm_apply_algebraMap` with `FinitePlace.mk`: on the base, the finite place
 of `w` is the `e * f`-th power of that of `v`.
 
+`NumberField.HeightOneSpectrum.log_adicAbv` reads the logarithm of the `v`-adic absolute value
+as the additive valuation times `log N(v)`, the form in which valuations enter height estimates.
+
 Finally, `NumberField.FinitePlace.hasFiniteMulSupport_iSup` records that the maximum of the
 finite-place absolute values of the coordinates of a nonzero finite tuple is `1` at all but
 finitely many finite places.
@@ -107,3 +110,19 @@ theorem hasFiniteMulSupport_iSup {ι : Type*} [Finite ι] {y : ι → K} (hy : y
   exact .iSup fun i ↦ FinitePlace.hasFiniteMulSupport i.property
 
 end NumberField.FinitePlace
+
+namespace NumberField.HeightOneSpectrum
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- The logarithm of the `v`-adic absolute value of `x` is the logarithm of the norm of `v` times
+the additive `v`-adic valuation `WithZero.log (v.valuation K x)`. Both sides vanish at `x = 0`. -/
+theorem log_adicAbv (v : HeightOneSpectrum (𝓞 K)) (x : K) :
+    Real.log (adicAbv K v x) =
+      WithZero.log (v.valuation K x) * Real.log (Ideal.absNorm v.asIdeal) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rw [adicAbv_def, WithZeroMulInt.toNNReal_neg_apply _ ((v.valuation K).ne_zero_iff.mpr hx),
+    NNReal.coe_zpow, NNReal.coe_natCast, Real.log_zpow]
+
+end NumberField.HeightOneSpectrum
