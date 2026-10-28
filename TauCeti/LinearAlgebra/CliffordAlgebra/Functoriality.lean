@@ -101,7 +101,7 @@ theorem map_equivOfIsometry_even (e : Q₁.IsometryEquiv Q₂) :
     exact (equivOfIsometry e).apply_symm_apply y
 
 /-- An isometry equivalence maps the vectors of `Q₁` onto the vectors of `Q₂`. -/
-theorem map_range_ι_equivOfIsometry (e : Q₁.IsometryEquiv Q₂) :
+theorem ι_range_map_equivOfIsometry (e : Q₁.IsometryEquiv Q₂) :
     (LinearMap.range (ι Q₁)).map (equivOfIsometry e).toLinearMap = LinearMap.range (ι Q₂) :=
   (ι_range_map_map e.toIsometry).trans <|
     (congrArg _ (LinearEquiv.range e.toLinearEquiv)).trans (Submodule.map_top _)
@@ -112,7 +112,7 @@ theorem map_evenOdd_equivOfIsometry (e : Q₁.IsometryEquiv Q₂) (i : ZMod 2) :
     (evenOdd Q₁ i).map (equivOfIsometry e).toLinearMap = evenOdd Q₂ i := by
   rw [evenOdd, evenOdd, Submodule.map_iSup]
   refine iSup_congr fun j ↦ ?_
-  rw [← map_range_ι_equivOfIsometry e]
+  rw [← ι_range_map_equivOfIsometry e]
   -- `AlgEquiv.toLinearMap` is an abbreviation for the linear map underlying the algebra map.
   exact Submodule.map_pow _ (equivOfIsometry e).toAlgHom j
 
