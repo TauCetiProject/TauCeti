@@ -14,8 +14,8 @@ public import TauCeti.NumberTheory.Padics.Distribution.AnalyticStage
 At level `h`, the coefficient vectors vanishing above degree `k` form the submodule
 `polynomialSubmodule S k`. When `p^h ≠ 0`, restricting to the indices
 `ZMod (p^h) × Fin (k+1)` identifies it isometrically with the finite product of coefficient
-modules, and degree truncations converge in norm. Degree truncation is always a contractive
-projection onto this submodule, and the union over all degrees is dense.
+modules. Degree truncation is always a contractive projection onto this submodule and converges
+in norm to the original coefficient vector. The union over all degrees is dense.
 
 For coefficients in a complete ultrametric `ℤ_p`-module, these vectors evaluate on each
 disc to a polynomial in the normalized coordinate `w = (x-a)/p^h`. The polynomial on a
@@ -215,21 +215,24 @@ section Approximation
 variable (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E]
 
 /-- Degree truncations converge in the Gauss norm to the original analytic coefficient vector. -/
-theorem tendsto_polynomialTruncation [NeZero (p ^ h)] (c : AnalyticStage p h E) :
+theorem tendsto_polynomialTruncation (c : AnalyticStage p h E) :
     Tendsto (fun k ↦ polynomialTruncation S k c) atTop (𝓝 c) := by
-  let u (k : ℕ) : Finset (ZMod (p ^ h) × ℕ) := Finset.univ ×ˢ Finset.range (k + 1)
-  have hu : Tendsto u atTop atTop := by
-    refine tendsto_atTop.2 fun s ↦ ?_
-    refine eventually_atTop.2 ⟨s.sup Prod.snd, fun k hk ↦ ?_⟩
-    intro i hi
-    exact Finset.mem_product.mpr ⟨Finset.mem_univ _, Finset.mem_range.mpr <|
-      Nat.lt_succ_of_le ((Finset.le_sup (f := Prod.snd) hi).trans hk)⟩
-  have hset (k : ℕ) : {i : ZMod (p ^ h) × ℕ | i.2 ≤ k} = (u k : Set _) := by
-    ext i
-    simp [u]
-  simpa only [polynomialTruncation, hset, ZeroAtInftyContinuousMap.indicatorCLM_finset_apply,
-    Function.comp_def]
-    using (ZeroAtInftyContinuousMap.hasSum_single c).comp hu
+  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
+  -- Only finitely many coordinates have norm at least ε / 2; bound their degrees.
+  have hfin : {i : ZMod (p ^ h) × ℕ | ¬‖c i‖ < ε / 2}.Finite :=
+    eventually_cofinite.1 (NormedAddGroup.tendsto_nhds_zero.1 c.tendsto_cofinite _ (half_pos hε))
+  obtain ⟨N, hN⟩ := (hfin.image Prod.snd).bddAbove
+  refine ⟨N, fun k hk ↦ ?_⟩
+  rw [dist_eq_norm]
+  refine ((ZeroAtInftyContinuousMap.norm_le (half_pos hε).le).2 fun i ↦ ?_).trans_lt
+    (half_lt_self hε)
+  rw [ZeroAtInftyContinuousMap.sub_apply, polynomialTruncation_apply]
+  split_ifs with hi
+  · simp [le_of_lt (half_pos hε)]
+  · have hsmall : ‖c i‖ < ε / 2 := by
+      by_contra hbad
+      exact hi ((hN (Set.mem_image_of_mem Prod.snd hbad)).trans hk)
+    simpa using hsmall.le
 
 /-- Discwise polynomial coefficient vectors are dense in every analytic stage. -/
 theorem dense_iUnion_polynomialSubmodule :
