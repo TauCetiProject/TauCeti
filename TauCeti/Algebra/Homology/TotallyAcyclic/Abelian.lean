@@ -219,8 +219,7 @@ variable (Q : C)
 
 /-- The disk `Q --𝟙--> Q` of a projective object is a totally acyclic complex of projectives. -/
 lemma isTotallyAcyclicProjective_disk [Projective Q] : (disk Q).IsTotallyAcyclicProjective := by
-  have := isIso_disk_d Q
-  refine isTotallyAcyclicProjective_iff_factor.2 ⟨projective_disk_X Q, disk_acyclic Q,
+  refine isTotallyAcyclicProjective_iff_factor.2 ⟨projective_disk_X Q, acyclic_disk Q,
     fun i j hij Q' _ φ hφ ↦ ?_⟩
   by_cases h₀ : i = -1
   · subst h₀

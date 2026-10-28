@@ -305,17 +305,16 @@ private lemma isTotallyAcyclic_disk [Module.Finite A M] [Projective M] :
     by_cases h₀ : n = -1
     · subst h₀
       exact Module.Finite.equiv
-        (HomologicalComplex.doubleXIso₀ (𝟙 M) up_rel_neg_one_zero).symm.toLinearEquiv
+        (diskXIso₀ M).symm.toLinearEquiv
     by_cases h₁ : n = 0
     · subst h₁
       exact Module.Finite.equiv
-        (HomologicalComplex.doubleXIso₁ (𝟙 M) up_rel_neg_one_zero (by decide)).symm.toLinearEquiv
+        (diskXIso₁ M).symm.toLinearEquiv
     have := ModuleCat.subsingleton_of_isZero (isZero_disk_X M n h₀ h₁)
     infer_instance
   projective := projective_disk_X M
-  acyclic := disk_acyclic M
+  acyclic := acyclic_disk M
   exact_dual i j k hij hjk := by
-    have := isIso_disk_d M
     by_cases h₀ : j = -1
     · subst h₀
       obtain rfl : k = 0 := by lia

@@ -21,6 +21,8 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
 
 * `FGModuleCat.hom_hom_ofHom`: the linear map underlying `FGModuleCat.ofHom f` is `f`, the
   analogue of Mathlib's `ModuleCat.hom_ofHom`.
+* `FGModuleCat.forget₂_obj`, `FGModuleCat.forget₂_map`: the forgetful functor to `ModuleCat R`
+  takes underlying modules and morphisms.
 * `FGModuleCat.hom_hom_add`, `FGModuleCat.hom_hom_smul`: morphisms of finitely generated modules
   add and scale pointwise, the companions of Mathlib's `FGModuleCat.hom_hom_comp` and
   `FGModuleCat.hom_hom_id`.
@@ -51,6 +53,20 @@ theorem _root_.FGModuleCat.hom_hom_ofHom {R : Type u} [Ring R] {V W : Type v} [A
     [Module R V] [Module.Finite R V] [AddCommGroup W] [Module R W] [Module.Finite R W]
     (f : V →ₗ[R] W) : (FGModuleCat.ofHom f).hom.hom = f :=
   (rfl)
+
+/-- The forgetful functor from finitely generated modules sends an object to its underlying
+module: it is the inclusion of a full subcategory. -/
+@[simp]
+theorem _root_.FGModuleCat.forget₂_obj {R : Type u} [Ring R] (X : FGModuleCat.{v} R) :
+    (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).obj X = X.obj :=
+  rfl
+
+/-- The forgetful functor from finitely generated modules sends a morphism to its underlying
+morphism of modules. -/
+@[simp]
+theorem _root_.FGModuleCat.forget₂_map {R : Type u} [Ring R] {X Y : FGModuleCat.{v} R}
+    (f : X ⟶ Y) : (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map f = f.hom :=
+  rfl
 
 /-- The linear map underlying a sum of morphisms of finitely generated modules is the sum of the
 linear maps underlying them: addition of morphisms in a full subcategory of `ModuleCat R` is the
