@@ -85,6 +85,8 @@ integral on the right need not be an area and the circle integral on the left ne
   so the branch cut at `±π` fixed in the definition is immaterial.
 * `TauCeti.lintegral_circleLIntegral_eq_lintegral` — **polar Fubini**: the circle integrals about
   any centre integrate over the radii to the plane integral.
+* `TauCeti.lintegral_Ioc_lintegral_Ioi_circleMap_eq_lintegral` — polar Fubini with the angle
+  outside: the radial integrals over one period of angles add up to the plane integral.
 * `TauCeti.circleLIntegral_sq_le` — **Cauchy–Schwarz on the circle**: the square of the circle
   integral of `g` is at most the circumference times the circle integral of `g ^ 2`.
 * `TauCeti.lintegral_circleLIntegral_sq_div_le_lintegral_sq` — the **length–area inequality**.
@@ -270,6 +272,20 @@ theorem lintegral_circleLIntegral_eq_lintegral (hg : Measurable g) (ζ : ℂ) :
         rw [← Complex.lintegral_comp_polarCoord_symm fun z => g (ζ + z), _root_.polarCoord_target]
         simp_rw [smul_eq_mul, add_polarCoord_symm_eq_circleMap]
     _ = ∫⁻ z, g z := lintegral_add_left_eq_self g ζ
+
+/-- **Polar Fubini with the angle outside.** Over one period of angles, the integrals of a
+measurable weight along the rays from `ζ`, against the polar Jacobian `ρ dρ`, add up to its plane
+integral. This is `TauCeti.lintegral_circleLIntegral_eq_lintegral` with the order of integration
+exchanged, the form in which a weight is integrated along radii rather than along circles. -/
+theorem lintegral_Ioc_lintegral_Ioi_circleMap_eq_lintegral (hg : Measurable g) (ζ : ℂ) (t : ℝ) :
+    ∫⁻ θ in Ioc t (t + 2 * π), ∫⁻ ρ in Ioi (0 : ℝ), ENNReal.ofReal ρ * g (circleMap ζ ρ θ) =
+      ∫⁻ z, g z := by
+  have hjoint : Measurable fun p : ℝ × ℝ => ENNReal.ofReal p.2 * g (circleMap ζ p.2 p.1) :=
+    (ENNReal.measurable_ofReal.comp measurable_snd).mul
+      (hg.comp ((continuous_circleMap_uncurry ζ).comp continuous_swap).measurable)
+  rw [lintegral_lintegral_swap hjoint.aemeasurable, ← lintegral_circleLIntegral_eq_lintegral hg ζ]
+  refine setLIntegral_congr_fun measurableSet_Ioi fun ρ _ => ?_
+  rw [circleLIntegral_eq_lintegral_Ioc g ζ ρ t, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
 
 /-! ### Cauchy–Schwarz on a circle, and the length–area inequality -/
 
