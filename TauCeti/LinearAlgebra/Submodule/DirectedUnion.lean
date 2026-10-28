@@ -16,24 +16,22 @@ This file gives the universal property of a directed union of submodules. A comp
 linear maps on the members of a directed family glues to a linear map on any submodule of their
 supremum.
 
-The construction `TauCeti.Submodule.iSupLift` is the linear analogue of
+The construction `Submodule.iSupLift` is the linear analogue of
 `Subalgebra.iSupLift`. It uses `Set.iUnionLift` and the directedness of the family to prove that the
 local maps agree on overlaps.
 
 ## Main declarations
 
-* `TauCeti.Submodule.iSupLift`: glue compatible linear maps on a directed family of submodules.
-* `TauCeti.Submodule.iSupLift_inclusion` and `TauCeti.Submodule.iSupLift_of_mem`: pointwise
+* `Submodule.iSupLift`: glue compatible linear maps on a directed family of submodules.
+* `Submodule.iSupLift_inclusion` and `Submodule.iSupLift_of_mem`: pointwise
   evaluation rules for the glued map.
-* `TauCeti.Submodule.iSupLift_mk`: the glued map agrees with each prescribed map.
-* `TauCeti.Submodule.iSupLift_comp_inclusion`: restricting the glued map recovers each prescribed
+* `Submodule.iSupLift_mk`: the glued map agrees with each prescribed map.
+* `Submodule.iSupLift_comp_inclusion`: restricting the glued map recovers each prescribed
   map.
-* `TauCeti.Submodule.iSupLift_unique`: the restriction property characterizes the glued map.
+* `Submodule.iSupLift_unique`: the restriction property characterizes the glued map.
 -/
 
 public section
-
-namespace TauCeti
 
 universe u v w x
 
@@ -153,5 +151,3 @@ theorem iSupLift_unique {K : ι → Submodule R M} {dir : Directed (· ≤ ·) K
     (iSupLift_mk (dir := dir) (hf := hf) (m := ⟨m, hi⟩) m.2).symm
 
 end Submodule
-
-end TauCeti
