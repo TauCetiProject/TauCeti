@@ -74,6 +74,15 @@ h1, h2, h3 {
 
 main { max-width: var(--max); margin: 0 auto; padding: 0 1.25rem; }
 
+/* ---- blog ---- */
+.post-list { list-style: none; padding: 0; margin: 1.5rem 0 3rem; }
+.post-list > li { padding: 1.5rem 0; border-top: 1px solid var(--line); }
+.post-list .title { font-family: var(--display); font-size: 1.5rem; font-weight: 600; }
+main .metadata { color: var(--muted); font-size: 0.9rem; margin: 0.5rem 0 1.25rem; }
+main .authors { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
+main .categories { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; list-style: none; padding: 0; }
+.post-list p, main > p { max-width: 75ch; }
+
 /* ---- hero ---- */
 .hero {
   display: grid;
