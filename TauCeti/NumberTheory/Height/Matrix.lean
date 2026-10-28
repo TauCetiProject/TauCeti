@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Mul
-public import TauCeti.NumberTheory.Height.NumberField
+public import TauCeti.NumberTheory.Height.ProjectiveTuple
 import Mathlib.NumberTheory.Height.MvPolynomial
 
 /-!
@@ -37,6 +37,8 @@ computed from its maximal minors (`Submodule.relativeSubspaceHeight`).
 ## Main definitions
 
 * `Matrix.mulHeight A`, `Matrix.logHeight A`: the multiplicative and logarithmic entry heights.
+* `Matrix.absMulHeight A`, `Matrix.absLogHeight A`: their absolute versions, invariant under
+  embeddings of characteristic-zero fields and given by degree roots/division over number fields.
 
 ## Main results
 
@@ -143,16 +145,16 @@ theorem mulHeight_transpose (A : Matrix m n K) : Aᵀ.mulHeight = A.mulHeight :=
 theorem logHeight_transpose (A : Matrix m n K) : Aᵀ.logHeight = A.logHeight := by
   simp [logHeight_eq_log_mulHeight]
 
-/-- A matrix with at most one row and at most one column, such as a `1 × 1` matrix, has entry
-height one. -/
+/-- A matrix with at most one entry, including every matrix with an empty dimension, has
+entry height one. -/
 @[simp]
-theorem mulHeight_eq_one_of_subsingleton [Subsingleton m] [Subsingleton n] (A : Matrix m n K) :
+theorem mulHeight_eq_one_of_subsingleton [Subsingleton (m × n)] (A : Matrix m n K) :
     A.mulHeight = 1 :=
   by simpa only [mulHeight_def] using
     Height.mulHeight_eq_one_of_subsingleton (fun q : m × n ↦ A q.1 q.2)
 
 @[simp]
-theorem logHeight_eq_zero_of_subsingleton [Subsingleton m] [Subsingleton n]
+theorem logHeight_eq_zero_of_subsingleton [Subsingleton (m × n)]
     (A : Matrix m n K) : A.logHeight = 0 :=
   by simpa only [logHeight_def] using
     Height.logHeight_eq_zero_of_subsingleton (fun q : m × n ↦ A q.1 q.2)
@@ -261,9 +263,12 @@ theorem logHeight_mul_le [Fintype n] [Finite p] (A : Matrix m n K) (B : Matrix n
   let x : (m × p) × n → K := fun q ↦ A q.1.1 q.2
   let y : (m × p) × n → K := fun q ↦ B q.2 q.1.2
   have hc : Height.logHeight (x * y) ≤ A.logHeight + B.logHeight := by
-    rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight,
-      Height.logHeight_eq_log_mulHeight, ← Real.log_mul A.mulHeight_ne_zero B.mulHeight_ne_zero]
-    exact Real.log_le_log (Height.mulHeight_pos _) (mulHeight_mul_entries_le A B)
+    rw [logHeight_def, logHeight_def]
+    exact (Height.logHeight_mul_le x y).trans <| add_le_add
+      (Height.logHeight_comp_le (fun q : (m × p) × n ↦ (q.1.1, q.2))
+        fun q : m × n ↦ A q.1 q.2)
+      (Height.logHeight_comp_le (fun q : (m × p) × n ↦ (q.2, q.1.2))
+        fun q : n × p ↦ B q.1 q.2)
   calc (A * B).logHeight
       ≤ totalWeight K * Real.log (Nat.card n) + Height.logHeight (x * y) +
           Height.logHeight (1 : n → K) := by
@@ -273,11 +278,54 @@ theorem logHeight_mul_le [Fintype n] [Finite p] (A : Matrix m n K) (B : Matrix n
         rw [Height.logHeight_one, add_zero, add_assoc]
         exact add_le_add le_rfl hc
 
+/-! ### Absolute entry heights -/
+
+section Absolute
+
+variable {F F' : Type*} [Field F] [CharZero F] [Field F'] [CharZero F']
+
+/-- The absolute multiplicative entry height of a matrix in characteristic zero. It is the
+absolute projective height of the entry tuple, with value one when some entry is transcendental.
+Over number fields, `absMulHeight_eq_rpow` computes it as a degree root of the relative height. -/
+noncomputable def absMulHeight (A : Matrix m n F) : ℝ :=
+  TauCeti.absoluteProjectiveTupleHeight fun q : m × n ↦ A q.1 q.2
+
+/-- The absolute logarithmic entry height, the logarithm of `Matrix.absMulHeight`. -/
+noncomputable def absLogHeight (A : Matrix m n F) : ℝ := Real.log A.absMulHeight
+
+/-- Absolute multiplicative entry height is invariant under field embeddings. -/
+@[simp]
+theorem absMulHeight_map (f : F →+* F') (A : Matrix m n F) :
+    (A.map f).absMulHeight = A.absMulHeight := by
+  simpa only [absMulHeight, map_apply, Function.comp_def] using
+    TauCeti.absoluteProjectiveTupleHeight_comp f (fun q : m × n ↦ A q.1 q.2)
+
+/-- Absolute logarithmic entry height is invariant under field embeddings. -/
+@[simp]
+theorem absLogHeight_map (f : F →+* F') (A : Matrix m n F) :
+    (A.map f).absLogHeight = A.absLogHeight := by
+  rw [absLogHeight, absMulHeight_map, absLogHeight]
+
+end Absolute
+
 /-! ### Extensions of number fields -/
 
 section NumberField
 
 variable {F L : Type*} [Field F] [Field L] [NumberField F] [NumberField L] [Algebra F L]
+
+/-- In a number field, absolute multiplicative entry height is the degree root of the
+relative entry height. -/
+theorem absMulHeight_eq_rpow (A : Matrix m n F) :
+    A.absMulHeight = A.mulHeight ^ (Module.finrank ℚ F : ℝ)⁻¹ := by
+  rw [absMulHeight, TauCeti.absoluteProjectiveTupleHeight_eq, mulHeight_def]
+
+/-- In a number field, absolute logarithmic entry height is relative logarithmic entry height
+divided by the degree over the rationals. -/
+theorem absLogHeight_eq_div (A : Matrix m n F) :
+    A.absLogHeight = A.logHeight / Module.finrank ℚ F := by
+  rw [absLogHeight, absMulHeight_eq_rpow, Real.log_rpow A.mulHeight_pos,
+    logHeight_eq_log_mulHeight, inv_mul_eq_div]
 
 /-- **Entry heights in an extension.** For an extension of number fields `L / F`, the entry
 height of a matrix over `F`, computed over `L`, is its entry height over `F` raised to the degree
