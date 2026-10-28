@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Oriented
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 -- Private: the orthogonal-basis computations are used only inside proofs.
 import TauCeti.Algebra.CharP.Invertible
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
@@ -65,7 +65,9 @@ two-forms to trace-free endomorphisms of `W⁺`; that trace statement is not mad
 ## Main results
 
 * `CliffordAlgebra.chirality_eq_neg_volumeElement`: `Γ` is minus the volume element
-  `CliffordAlgebra.volumeElement Q o` of the oriented four-space.
+  `CliffordAlgebra.volumeElement Q o` of the oriented four-space, and
+  `CliffordAlgebra.ofBaseChangeAux_chirality`: its image in the complexified Clifford algebra is
+  the normalized complex volume element `CliffordAlgebra.complexVolume Q o`.
 * `CliffordAlgebra.chirality_eq`: `Γ = -c(e₁) c(e₂) c(e₃) c(e₄)` for every positively
   oriented orthonormal basis `e`.
 * `CliffordAlgebra.chirality_mul_self`: `Γ² = 1`.
@@ -139,6 +141,12 @@ theorem chirality_eq_neg_volumeElement : chirality Q o = -volumeElement Q o := b
   rw [chirality_def, volumeElement_def]
 
 variable {Q}
+
+/-- **The chirality element is the normalized complex volume element**: the image of `Γ` in the
+complexified Clifford algebra is `CliffordAlgebra.complexVolume Q o = i ^ 2 c(e₁) ⋯ c(e₄)`. -/
+theorem ofBaseChangeAux_chirality : ofBaseChangeAux ℂ Q (chirality Q o) = complexVolume Q o := by
+  rw [chirality_eq_neg_volumeElement, map_neg, complexVolume_def]
+  norm_num
 
 section Form
 

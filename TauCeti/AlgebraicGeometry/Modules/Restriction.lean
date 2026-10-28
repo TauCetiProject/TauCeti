@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Free
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExtensionByZero
 
 /-!
-# Restriction of module sheaves preserves limits and injectives
+# Restriction of module sheaves preserves limits, injectives, and free modules
 
 Restriction along an open immersion has a left adjoint, given by sheafifying the corresponding
 presheaf pullback along the functor taking an open to its image. It therefore preserves limits,
@@ -19,7 +20,8 @@ along an open immersion also preserves limits, since it is naturally isomorphic 
 
 Restriction preserves injective module sheaves because its left adjoint, extension by zero,
 is exact. Thus injective resolutions may be restricted to an open subscheme without losing
-injectivity of their terms.
+injectivity of their terms. Being a left adjoint that preserves the structure sheaf, restriction
+also sends free module sheaves to free module sheaves on the same generators.
 
 The adjunction is Mathlib's `SheafOfModules.PullbackConstruction.adjunction`; the underlying
 presheaf right adjoint is `PresheafOfModules.instIsRightAdjointPushforward`.
@@ -101,5 +103,17 @@ noncomputable instance
     {X Y : Scheme.{u}} (f : X ⟶ Y) [IsOpenImmersion f] :
     PreservesLimits (pullback f) :=
   preservesLimits_of_natIso (restrictFunctorIsoPullback f)
+
+/-- Restriction along an open immersion sends the free module on `ι` to the free module on `ι`. -/
+noncomputable def restrictFreeIso {X Y : Scheme.{u}} (f : Y ⟶ X) [IsOpenImmersion f]
+    (ι : Type u) :
+    restrict (SheafOfModules.free (R := X.ringCatSheaf) ι) f ≅
+      SheafOfModules.free (R := Y.ringCatSheaf) ι :=
+  -- The functor is rebound with its type as a functor between categories of sheaves of modules,
+  -- where `SheafOfModules.mapFreeIso` seeks its colimit-preservation instance.
+  let G : SheafOfModules X.ringCatSheaf ⥤ SheafOfModules Y.ringCatSheaf := restrictFunctor f
+  have : PreservesColimitsOfShape (Discrete ι) G :=
+    (restrictAdjunction f).leftAdjoint_preservesColimits.preservesColimitsOfShape
+  (SheafOfModules.mapFreeIso G ι (restrictUnitIso f).symm).symm
 
 end AlgebraicGeometry.Scheme.Modules

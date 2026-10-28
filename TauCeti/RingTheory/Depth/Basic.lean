@@ -28,6 +28,8 @@ The regular-sequence transfer lemmas for linear maps live in
 
 * `RingTheory.Sequence.IsRegular.mem_maximalIdeal`: over a local ring, every element of an
   `M`-regular sequence lies in the maximal ideal.
+* `RingTheory.Sequence.IsRegular.length_le_supportDim`: over a Noetherian local ring, the length
+  of an `M`-regular sequence on a finite module `M` is at most the dimension of its support.
 * `IsLocalRing.depth_le_supportDim`: the depth of a finite nonzero module over a Noetherian local
   ring is at most the dimension of its support (Stacks, Lemma 10.72.3 (00LK)).
 * `IsLocalRing.depth_quotSMulTop_succ_eq_depth`: dividing a finite module by an `M`-regular element
@@ -67,6 +69,18 @@ theorem RingTheory.Sequence.IsRegular.mem_maximalIdeal {R : Type*} [CommRing R] 
   rw [Ideal.eq_top_of_isUnit_mem (Ideal.ofList rs) (Ideal.subset_span hr)
     (notMem_maximalIdeal.1 h), Submodule.top_smul]
 
+/-- Over a Noetherian local ring, the length of an `M`-regular sequence on a finite module `M` is at
+most the dimension of the support of `M`. -/
+theorem RingTheory.Sequence.IsRegular.length_le_supportDim {R : Type*} [CommRing R]
+    [IsLocalRing R] [IsNoetherianRing R] {M : Type*} [AddCommGroup M] [Module R M]
+    [Module.Finite R M] {rs : List R} (reg : IsRegular M rs) :
+    (rs.length : WithBot ℕ∞) ≤ Module.supportDim R M := by
+  have := reg.quot_ofList_smul_nontrivial ⊤
+  obtain ⟨e, he⟩ := WithBot.ne_bot_iff_exists.1
+    (Module.supportDim_ne_bot_of_nontrivial R (M ⧸ Ideal.ofList rs • (⊤ : Submodule R M)))
+  rw [← Module.supportDim_add_length_eq_supportDim_of_isRegular rs reg, ← he]
+  exact_mod_cast le_add_self
+
 namespace IsLocalRing
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R]
@@ -81,13 +95,7 @@ theorem depth_le_supportDim [IsNoetherianRing R] [Module.Finite R M] [Nontrivial
   rw [← hd, WithBot.coe_le_coe, depth_eq_sSup_length_isRegular]
   refine sSup_le ?_
   rintro _ ⟨rs, reg, -, rfl⟩
-  have := reg.quot_ofList_smul_nontrivial ⊤
-  obtain ⟨e, he⟩ := WithBot.ne_bot_iff_exists.1
-    (Module.supportDim_ne_bot_of_nontrivial R (M ⧸ Ideal.ofList rs • (⊤ : Submodule R M)))
-  have h := Module.supportDim_add_length_eq_supportDim_of_isRegular rs reg
-  rw [← hd, ← he] at h
-  have h' : e + rs.length = d := by exact_mod_cast h
-  exact h' ▸ le_add_self
+  exact WithBot.coe_le_coe.1 (hd ▸ reg.length_le_supportDim)
 
 /-- Dividing a module `M` by an `M`-regular element `x` lowers the depth by at most one. No
 finiteness or Noetherian hypothesis is needed. -/
