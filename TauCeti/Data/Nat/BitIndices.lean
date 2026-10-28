@@ -5,13 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.Colex
 public import Mathlib.Data.Nat.BitIndices
+public import Mathlib.Data.Nat.Bitwise
 
 /-!
-# Finding set bits by bounded filtering
+# Set bits and binary finite-set codes
 
 The increasing list of set bits of a natural number can be obtained by testing every index
-below the number. This finite-search description is useful for effective binary coding.
+below the number. Mathlib's `Finset.equivBitIndices` identifies natural numbers with finite
+sets of natural numbers, using `∑ x ∈ D, 2 ^ x` as the code of a finite set `D`.
+
+Bitwise union, intersection and difference decode to the corresponding finite-set operations.
+Bounded filtering keeps the requested members of a binary code, and least-element search returns
+`none` precisely for the zero code.
+
+## References
+
+* Mathlib's `Finset.equivBitIndices` supplies the binary finite-set equivalence.
 -/
 
 public section
@@ -26,5 +37,87 @@ theorem bitIndices_eq_filter_range (n : ℕ) :
   simp only [mem_bitIndices, List.mem_filter, List.mem_range]
   exact ⟨fun h => ⟨(i.lt_two_pow_self.trans_le (ge_two_pow_of_testBit h)), h⟩,
     fun h => h.2⟩
+
+end Nat
+
+namespace Finset
+
+/-- Binary union decodes to finite-set union. -/
+theorem equivBitIndices_lor (m n : ℕ) :
+    equivBitIndices (m ||| n) = equivBitIndices m ∪ equivBitIndices n := by
+  ext x
+  simp [equivBitIndices]
+
+/-- Binary intersection decodes to finite-set intersection. -/
+theorem equivBitIndices_land (m n : ℕ) :
+    equivBitIndices (m &&& n) = equivBitIndices m ∩ equivBitIndices n := by
+  ext x
+  simp [equivBitIndices]
+
+/-- Binary difference decodes to finite-set difference. -/
+theorem equivBitIndices_ldiff (m n : ℕ) :
+    equivBitIndices (Nat.ldiff m n) = equivBitIndices m \ equivBitIndices n := by
+  ext x
+  simp [equivBitIndices, Nat.testBit_ldiff]
+
+end Finset
+
+namespace Nat
+
+/-- Keep the members of the binary-coded finite set `n` that lie below `b` and satisfy `p`. -/
+def filterBitIndices (n b : ℕ) (p : ℕ → Bool) : ℕ :=
+  Finset.equivBitIndices.symm ((Finset.equivBitIndices n).filter (fun x => x < b ∧ p x))
+
+/-- Decoding bounded filtering gives the corresponding filtered finite set. -/
+theorem equivBitIndices_filterBitIndices (n b : ℕ) (p : ℕ → Bool) :
+    Finset.equivBitIndices (filterBitIndices n b p) =
+      (Finset.equivBitIndices n).filter (fun x => x < b ∧ p x) :=
+  Finset.equivBitIndices.apply_symm_apply _
+
+/-- The result of bounded filtering contains exactly the requested members. -/
+@[simp]
+theorem testBit_filterBitIndices (n b x : ℕ) (p : ℕ → Bool) :
+    (filterBitIndices n b p).testBit x = (n.testBit x && decide (x < b) && p x) := by
+  apply Bool.eq_iff_iff.mpr
+  have h := congrArg (fun s : Finset ℕ => x ∈ s)
+    (equivBitIndices_filterBitIndices n b p)
+  simpa [Finset.equivBitIndices, and_assoc] using Iff.of_eq h
+
+/-- The least member of a binary-coded finite set, or `none` for the empty set. -/
+def leastBitIndex (n : ℕ) : Option ℕ := n.bitIndices.head?
+
+/-- Least-element search is the head of the increasing list of set bits. -/
+theorem leastBitIndex_def (n : ℕ) : leastBitIndex n = n.bitIndices.head? := by
+  unfold leastBitIndex
+  rfl
+
+/-- Least-element search succeeds precisely at a member below every other member. -/
+@[simp]
+theorem leastBitIndex_eq_some_iff (n k : ℕ) :
+    leastBitIndex n = some k ↔ k ∈ Finset.equivBitIndices n ∧
+      ∀ x ∈ Finset.equivBitIndices n, k ≤ x := by
+  have hs := n.bitIndices_sorted.pairwise
+  cases h : n.bitIndices with
+  | nil => simp [leastBitIndex, Finset.equivBitIndices, h]
+  | cons a l =>
+    rw [h, List.pairwise_cons] at hs
+    simp only [leastBitIndex, List.head?_cons, Option.some.injEq,
+      Finset.equivBitIndices_apply, h, List.mem_toFinset, List.mem_cons]
+    constructor
+    · rintro rfl
+      exact ⟨Or.inl rfl, fun x hx => hx.elim (fun h => h.ge) (fun h => (hs.1 x h).le)⟩
+    · rintro ⟨hk, hmin⟩
+      exact le_antisymm (hk.elim (fun h => h.ge) (fun h => (hs.1 k h).le))
+        (hmin a (Or.inl rfl))
+
+/-- Least-element search returns `none` exactly for the zero code. -/
+@[simp]
+theorem leastBitIndex_eq_none_iff (n : ℕ) : leastBitIndex n = none ↔ n = 0 := by
+  simp only [leastBitIndex, List.head?_eq_none_iff]
+  constructor
+  · intro h
+    simpa [h] using (sum_map_two_pow_bitIndices n).symm
+  · rintro rfl
+    exact bitIndices_zero
 
 end Nat
