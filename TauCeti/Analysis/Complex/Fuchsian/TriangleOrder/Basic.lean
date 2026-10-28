@@ -178,6 +178,14 @@ theorem order_elliptic (m : ℕ) (hm : 2 ≤ m) : (elliptic m hm).order = m := b
 theorem order_cusp : cusp.order = 0 := by
   rw [order]
 
+/-- The order attached to a triangle vertex vanishes exactly at a cusp. -/
+theorem order_eq_zero_iff (p : TriangleOrder) : p.order = 0 ↔ p = cusp := by
+  cases p with
+  | elliptic m hm =>
+      have hm0 : m ≠ 0 := (lt_of_lt_of_le (by decide) hm).ne'
+      simp [hm0]
+  | cusp => simp
+
 /-- The interior angle attached to a triangle vertex: `π / m` at an elliptic vertex of order
 `m`, and `0` at a cusp. -/
 def angle (p : TriangleOrder) : ℝ :=

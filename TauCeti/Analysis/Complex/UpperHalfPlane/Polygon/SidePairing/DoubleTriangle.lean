@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.DoubleTriangle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Basic
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Triangle.Group
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.CycleOrder
 
 /-!
@@ -57,6 +58,8 @@ relations of the triangle group.
 * `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap_mul_cycleAngleSum`: if every angle of
   `P` is `π / m` for a natural number `m`, the double satisfies the angle condition of Poincaré's
   polygon theorem.
+* `ConvexPolygon.isParabolic_doubleTriangleSidePairing_cycleMap`: the cycle transformations at the
+  ideal vertices of the double are parabolic, the cusp condition of Poincaré's polygon theorem.
 
 ## References
 
@@ -274,13 +277,32 @@ theorem orderOf_doubleTriangleSidePairing_cycleMap_mul_cycleAngleSum
   obtain ⟨m, hm⟩ := hP ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)
   have hleft : (P.vertex ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)).isLeft := by
     rw [← isLeft_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁), hz, Sum.isLeft_inl]
-  have hm0 : m ≠ 0 := by
-    rintro rfl
-    rw [Nat.cast_zero, div_zero, interiorAngle_eq_zero_iff, ← Sum.not_isLeft, hleft] at hm
-    exact hm rfl
+  have hm0 : m ≠ 0 := P.ne_zero_of_interiorAngle_eq_pi_div hleft hm
   have hm0' : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hm0
   rw [orderOf_doubleTriangleSidePairing_cycleMap hm0 hm, doubleTriangleSidePairing_cycleAngleSum,
     hm]
   field_simp
+
+/-- **The cusp condition of Poincaré's theorem.** The cycle transformations at the ideal vertices
+of the double are parabolic. -/
+theorem isParabolic_doubleTriangleSidePairing_cycleMap (j : Fin 4) (ξ : OnePoint ℝ)
+    (hξ : (P.doubleTriangle h₀ h₁).vertex j = .inr ξ) :
+    Matrix.ProjectiveSpecialLinearGroup.IsParabolic
+      ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j) := by
+  have hright : (P.vertex ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)).isRight := by
+    rw [← isRight_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁), hξ, Sum.isRight_inr]
+  obtain ⟨η, hη⟩ := Sum.isRight_iff.1 hright
+  have hv := P.isParabolic_vertexReflectionComp hη
+  replace hv := Matrix.ProjectiveSpecialLinearGroup.isParabolic_inv_iff.2 hv
+  fin_cases j
+  · simpa [vertexReflectionComp_zero] using hv
+  · -- the cycle through the mirror image of `P 2` is conjugate to the one at `P 2`
+    have h := (P.doubleTriangleSidePairing h₀ h₁).cycleMap_next 3
+    rw [doubleTriangleSidePairing_next, Equiv.swap_apply_right] at h
+    simp only [Fin.mk_one]
+    rw [h, Matrix.ProjectiveSpecialLinearGroup.isParabolic_conj_iff]
+    simpa [vertexReflectionComp_two] using hv
+  · simpa [vertexReflectionComp_one] using hv
+  · simpa [vertexReflectionComp_two] using hv
 
 end TauCeti.UpperHalfPlane.ConvexPolygon

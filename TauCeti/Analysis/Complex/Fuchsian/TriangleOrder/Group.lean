@@ -99,25 +99,11 @@ theorem triangleGroup_eq_closure_range_doubleTriangleSidePairing_map :
 
 variable {h₀ h₁}
 
-/-- The cycle transformations at the ideal vertices of the double are parabolic. -/
-private theorem isParabolic_doubleTriangleSidePairing_cycleMap (j : Fin 4) (ξ : OnePoint ℝ)
-    (hξ : (P.doubleTriangle h₀ h₁).vertex j = .inr ξ) :
-    IsParabolic ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j) := by
-  have hright : (P.vertex ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)).isRight := by
-    rw [← isRight_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁), hξ, Sum.isRight_inr]
-  obtain ⟨η, hη⟩ := Sum.isRight_iff.1 hright
-  have hv := P.isParabolic_vertexReflectionComp hη
-  replace hv := Matrix.ProjectiveSpecialLinearGroup.isParabolic_inv_iff.2 hv
-  fin_cases j
-  · simpa [vertexReflectionComp_zero] using hv
-  · -- the cycle through the mirror image of `P 2` is conjugate to the one at `P 2`
-    have h := (P.doubleTriangleSidePairing h₀ h₁).cycleMap_next 3
-    rw [doubleTriangleSidePairing_next, Equiv.swap_apply_right] at h
-    simp only [Fin.mk_one]
-    rw [h, Matrix.ProjectiveSpecialLinearGroup.isParabolic_conj_iff]
-    simpa [vertexReflectionComp_two] using hv
-  · simpa [vertexReflectionComp_one] using hv
-  · simpa [vertexReflectionComp_two] using hv
+/-- The side-pairing maps of the double lie in the triangle group. -/
+theorem doubleTriangleSidePairing_map_mem_triangleGroup (i : Fin 4) :
+    (P.doubleTriangleSidePairing h₀ h₁).map i ∈ P.triangleGroup := by
+  rw [triangleGroup_eq_closure_range_doubleTriangleSidePairing_map h₀ h₁]
+  exact Subgroup.subset_closure ⟨i, rfl⟩
 
 /-- If every angle of `P` is `π / m` for a natural number `m`, the translates of the double of
 `P` by the triangle group are locally finite, and those of its interior are pairwise disjoint. -/
@@ -134,21 +120,12 @@ private theorem locallyFinite_and_disjoint_doubleTriangle
   exact ⟨(P.doubleTriangleSidePairing h₀ h₁).locallyFinite_smul_carrier_of_isParabolic hcyc hpar,
     (P.doubleTriangleSidePairing h₀ h₁).disjoint_smul_interior_carrier_of_isParabolic hcyc hpar⟩
 
-/-- The side-pairing maps of the double lie in the triangle group. -/
-private theorem doubleTriangleSidePairing_map_mem_triangleGroup (i : Fin 4) :
-    (P.doubleTriangleSidePairing h₀ h₁).map i ∈ P.triangleGroup := by
-  rw [triangleGroup_eq_closure_range_doubleTriangleSidePairing_map h₀ h₁]
-  exact Subgroup.subset_closure ⟨i, rfl⟩
-
 /-- At a finite vertex of `P` with angle `π / m`, the vertex transformation has order `m`. -/
 private theorem orderOf_vertexReflectionComp_of_acute (h₀ : P.interiorAngle 0 < π / 2)
     (h₁ : P.interiorAngle 1 < π / 2) {i : Fin 3} {z : ℍ}
     (hz : P.vertex i = .inl z) {m : ℕ} (hm : P.interiorAngle i = π / m) :
     orderOf (P.vertexReflectionComp i) = m := by
-  have hm0 : m ≠ 0 := by
-    rintro rfl
-    rw [Nat.cast_zero, div_zero, interiorAngle_eq_zero_iff, hz] at hm
-    exact Bool.false_ne_true hm
+  have hm0 : m ≠ 0 := P.ne_zero_of_interiorAngle_eq_pi_div (by simp [hz]) hm
   rw [← orderOf_inv]
   fin_cases i
   · simpa [vertexReflectionComp_zero] using
@@ -185,6 +162,23 @@ private theorem interiorAngle_eq_pi_div_order (hp : P.interiorAngle 0 = p.angle)
   rw [← TriangleOrder.angle_eq_pi_div_order]
   fin_cases i <;> simpa
 
+/-- Some relabelling of a triangle with typed angles has acute angles at the ends of side `0`,
+and the translates of its double by the triangle group are locally finite, with pairwise disjoint
+interiors. -/
+private theorem exists_rotate_locallyFinite_and_disjoint_doubleTriangle
+    (hp : P.interiorAngle 0 = p.angle) (hq : P.interiorAngle 1 = q.angle)
+    (hr : P.interiorAngle 2 = r.angle) :
+    ∃ (k : Fin 3) (h₀ : (P.rotate k).interiorAngle 0 < π / 2)
+      (h₁ : (P.rotate k).interiorAngle 1 < π / 2),
+      (LocallyFinite fun γ : (P.rotate k).triangleGroup ↦
+        (γ : PSL(2, ℝ)) • ((P.rotate k).doubleTriangle h₀ h₁).carrier) ∧
+      ∀ γ : (P.rotate k).triangleGroup, γ ≠ 1 →
+        Disjoint ((γ : PSL(2, ℝ)) • interior ((P.rotate k).doubleTriangle h₀ h₁).carrier)
+          (interior ((P.rotate k).doubleTriangle h₀ h₁).carrier) := by
+  obtain ⟨k, h₀, h₁⟩ := P.exists_interiorAngle_rotate_lt_pi_div_two
+  exact ⟨k, h₀, h₁, locallyFinite_and_disjoint_doubleTriangle fun i ↦
+    ⟨_, (interiorAngle_rotate P k i).trans (interiorAngle_eq_pi_div_order hp hq hr _)⟩⟩
+
 /-- **The fundamental domain of a triangle group.** If the angles of `P` are given by a typed
 triple, and those at the ends of side `0` are acute, the double of `P` is a fundamental domain for
 the triangle group. -/
@@ -203,10 +197,9 @@ finite covolume. -/
 theorem isCofinite_triangleGroup (hp : P.interiorAngle 0 = p.angle)
     (hq : P.interiorAngle 1 = q.angle) (hr : P.interiorAngle 2 = r.angle) :
     P.triangleGroup.IsCofinite := by
-  obtain ⟨k, h₀, h₁⟩ := P.exists_interiorAngle_rotate_lt_pi_div_two
+  obtain ⟨k, h₀, h₁, hlf, hdisj⟩ :=
+    exists_rotate_locallyFinite_and_disjoint_doubleTriangle hp hq hr
   rw [← P.triangleGroup_rotate k]
-  obtain ⟨hlf, hdisj⟩ := locallyFinite_and_disjoint_doubleTriangle (h₀ := h₀) (h₁ := h₁)
-    fun i ↦ ⟨_, (interiorAngle_rotate P k i).trans (interiorAngle_eq_pi_div_order hp hq hr _)⟩
   exact ((P.rotate k).doubleTriangleSidePairing h₀ h₁).isCofinite
     doubleTriangleSidePairing_map_mem_triangleGroup hlf hdisj
 
@@ -290,11 +283,8 @@ private theorem triangleGroupHom_injective_of_acute (h₀ : P.interiorAngle 0 < 
       rcases σ.mem_relators_iff.1 hw with ⟨i, rfl⟩ | ⟨j, z, hz, rfl⟩
       · fin_cases i <;> simp [σ, SidePairing.sideRelator_def, Fin.rev]
       · have hj := interiorAngle_eq_pi_div_order hp hq hr ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)
-        have hm0 : (![p, q, r] ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)).order ≠ 0 := by
-          intro h0
-          rw [h0, Nat.cast_zero, div_zero, interiorAngle_eq_zero_iff,
-            ← isRight_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁), hz] at hj
-          exact Bool.false_ne_true hj
+        have hm0 := P.ne_zero_of_interiorAngle_eq_pi_div
+          (by rw [← isLeft_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁), hz, Sum.isLeft_inl]) hj
         rw [map_pow, orderOf_doubleTriangleSidePairing_cycleMap hm0 hj]
         fin_cases j
         · simp [σ, SidePairing.cycleWord_def, SidePairing.partialCycleWord_succ]
@@ -413,14 +403,10 @@ theorem natCard_stabilizer_triangleGroup (hp : P.interiorAngle 0 = p.angle)
     (hq : P.interiorAngle 1 = q.angle) (hr : P.interiorAngle 2 = r.angle) {i : Fin 3} {z : ℍ}
     (hz : P.vertex i = .inl z) :
     Nat.card (stabilizer P.triangleGroup z) = (![p, q, r] i).order := by
-  obtain ⟨k, h₀, h₁⟩ := P.exists_interiorAngle_rotate_lt_pi_div_two
+  obtain ⟨k, h₀, h₁, hlf, hdisj⟩ :=
+    exists_rotate_locallyFinite_and_disjoint_doubleTriangle hp hq hr
   have hi := interiorAngle_eq_pi_div_order hp hq hr i
-  have hm : (![p, q, r] i).order ≠ 0 := by
-    intro h
-    rw [h, Nat.cast_zero, div_zero, interiorAngle_eq_zero_iff, hz] at hi
-    exact Bool.false_ne_true hi
-  obtain ⟨hlf, hdisj⟩ := locallyFinite_and_disjoint_doubleTriangle (h₀ := h₀) (h₁ := h₁)
-    fun i ↦ ⟨_, (interiorAngle_rotate P k i).trans (interiorAngle_eq_pi_div_order hp hq hr _)⟩
+  have hm := P.ne_zero_of_interiorAngle_eq_pi_div (by simp [hz]) hi
   rw [← P.triangleGroup_rotate k]
   exact natCard_stabilizer_of_doubleTriangle doubleTriangleSidePairing_map_mem_triangleGroup hdisj
     (i := i - k) (by rw [vertex_rotate, sub_add_cancel, hz]) hm
@@ -448,9 +434,8 @@ theorem natCard_ellipticOrbits_triangleGroup (hp : P.interiorAngle 0 = p.angle)
     (hq : P.interiorAngle 1 = q.angle) (hr : P.interiorAngle 2 = r.angle) :
     Nat.card P.triangleGroup.ellipticOrbits =
       (Finset.univ.filter fun i ↦ ![p, q, r] i ≠ .cusp).card := by
-  obtain ⟨k, h₀, h₁⟩ := P.exists_interiorAngle_rotate_lt_pi_div_two
-  obtain ⟨hlf, hdisj⟩ := locallyFinite_and_disjoint_doubleTriangle (h₀ := h₀) (h₁ := h₁)
-    fun i ↦ ⟨_, (interiorAngle_rotate P k i).trans (interiorAngle_eq_pi_div_order hp hq hr _)⟩
+  obtain ⟨k, h₀, h₁, hlf, hdisj⟩ :=
+    exists_rotate_locallyFinite_and_disjoint_doubleTriangle hp hq hr
   have h := interiorAngle_rotate_eq_angle hp hq hr k
   rw [← P.triangleGroup_rotate k, natCard_ellipticOrbits_of_doubleTriangle (h 0) (h 1) (h 2)
     doubleTriangleSidePairing_map_mem_triangleGroup
@@ -464,9 +449,8 @@ theorem natCard_cuspOrbit_triangleGroup (hp : P.interiorAngle 0 = p.angle)
     (hq : P.interiorAngle 1 = q.angle) (hr : P.interiorAngle 2 = r.angle) :
     Nat.card P.triangleGroup.CuspOrbit =
       (Finset.univ.filter fun i ↦ ![p, q, r] i = .cusp).card := by
-  obtain ⟨k, h₀, h₁⟩ := P.exists_interiorAngle_rotate_lt_pi_div_two
-  obtain ⟨hlf, hdisj⟩ := locallyFinite_and_disjoint_doubleTriangle (h₀ := h₀) (h₁ := h₁)
-    fun i ↦ ⟨_, (interiorAngle_rotate P k i).trans (interiorAngle_eq_pi_div_order hp hq hr _)⟩
+  obtain ⟨k, h₀, h₁, hlf, hdisj⟩ :=
+    exists_rotate_locallyFinite_and_disjoint_doubleTriangle hp hq hr
   have h := interiorAngle_rotate_eq_angle hp hq hr k
   rw [← P.triangleGroup_rotate k, natCard_cuspOrbit_of_doubleTriangle (h 0) (h 1) (h 2)
     doubleTriangleSidePairing_map_mem_triangleGroup hlf hdisj]
