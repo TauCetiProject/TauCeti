@@ -20,6 +20,7 @@ with `F`, so one vanishes exactly when the other does.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
+* `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
@@ -76,6 +77,20 @@ theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x
   rw [mvfderiv_comp_apply x hφ.mdifferentiableAt hg, mvfderiv_eq_fderiv,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     NormedSpace.fromTangentSpace_apply, mvfderiv_apply_eq_mfderiv_apply]
+
+/-- The derivative of a vector-valued function, read in the target space, commutes with
+multiplication by a constant scalar acting continuously on the target, such as a complex scalar on
+a complex normed space regarded as a real one. -/
+theorem mvfderiv_const_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass 𝕜 R F]
+    [ContinuousConstSMul R F] {g : M → F} {x : M} (hg : MDiffAt g x) (c : R) :
+    mvfderiv I (fun y ↦ c • g y) x = c • mvfderiv I g x := by
+  have hcg : MDiffAt (fun y ↦ c • g y) x :=
+    ((c • ContinuousLinearMap.id 𝕜 F).mdifferentiableAt (x := g x)).comp x hg
+  rw [hcg.mvfderiv, hg.mvfderiv]
+  have hd := hg.differentiableWithinAt_writtenInExtChartAt
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+    Function.comp_def, id] at hd ⊢
+  exact fderivWithin_const_smul I.uniqueDiffWithinAt_image hd c
 
 /-- The derivative of a vector-valued function, read in the target space, vanishes exactly when
 its manifold derivative does. -/
