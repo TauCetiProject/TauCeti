@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Height.Arakelov.IntMatrix
--- Proof-only: Minkowski's convex body theorem against Vaaler's slice of the cube.
-import TauCeti.Algebra.Module.ZLattice.CubeSlice
+public import TauCeti.NumberTheory.Height.Arakelov.BombieriVaaler
 
 /-!
 # Siegel's lemma in the sup norm, after Bombieri and Vaaler
@@ -25,10 +23,11 @@ Hadamard's inequality, `√det (A Aᵀ)` is at most the product of the Euclidean
 bound, it depends on `A` only through its rational row space, since it is the height of the
 solution space.
 
-The lattice of integral points of `V` has covolume `H(V)` in the real span of `V`
-(`Submodule.covolume_intLattice`), so the statement is the case of integral lattices of
-`ZLattice.exists_ne_zero_mem_abs_le_covolume_rpow`, which combines Minkowski's convex body theorem
-with Vaaler's cube-slicing theorem.
+The independent primitive vectors of
+`Submodule.exists_linearIndependent_intPoints_prod_norm_le` have product of sup norms at most
+`H(V)`. At least one has norm at most the kth root of that bound. Thus this theorem is the
+smallest-vector corollary of the existing product theorem and uses the same cube-slicing and
+Minkowski second-theorem implementation.
 
 ## Main results
 
@@ -59,21 +58,21 @@ contains a nonzero integral point `z` whose sup norm is at most `H(V) ^ (1 / k)`
 the absolute Euclidean height of `V` and `k` its dimension. -/
 theorem exists_ne_zero_mem_intPoints_norm_le {V : Submodule ℚ (ι → ℚ)} (hV : V ≠ ⊥) :
     ∃ z ∈ V.intPoints, z ≠ 0 ∧ ‖z‖ ≤ V.subspaceHeight ^ (finrank ℚ V : ℝ)⁻¹ := by
-  have hW : V.realSpan ≠ ⊥ := by
-    rwa [ne_eq, ← finrank_eq_zero, finrank_realSpan, finrank_eq_zero]
-  obtain ⟨w, hw, hw0, hwle⟩ := ZLattice.exists_ne_zero_mem_abs_le_covolume_rpow V.intLattice hW
-  rw [covolume_intLattice, finrank_realSpan] at hwle
-  -- The integral point of `V` with the coordinates of `w`.
-  set z := V.intPointsEquivIntLattice.symm ⟨w, hw⟩
-  have hz (i : ι) : (((z : ι → ℤ) i : ℤ) : ℝ) = (w : EuclideanSpace ℝ ι) i :=
-    intCast_intPointsEquivIntLattice_symm_apply V ⟨w, hw⟩ i
-  refine ⟨z, z.2, fun h ↦ hw0 ?_, ?_⟩
-  · ext i
-    simp [← hz, h]
-  · rw [pi_norm_le_iff_of_nonneg (Real.rpow_pos_of_pos (subspaceHeight_pos V) _).le]
-    intro i
-    rw [Int.norm_eq_abs, hz]
-    exact hwle i
+  have : Nontrivial V := Submodule.nontrivial_iff_ne_bot.mpr hV
+  have hk : 0 < finrank ℚ V := finrank_pos
+  have : Nonempty (Fin (finrank ℚ V)) := ⟨⟨0, hk⟩⟩
+  obtain ⟨z, hz, hzV, _, hle⟩ := V.exists_linearIndependent_intPoints_prod_norm_le
+  have hex : ∃ i, ‖z i‖ ≤ V.subspaceHeight ^ (finrank ℚ V : ℝ)⁻¹ := by
+    by_contra! h
+    have hprod := Finset.prod_lt_prod_of_nonempty₀
+      (fun _ _ => Real.rpow_pos_of_pos (Submodule.subspaceHeight_pos V) _)
+      (fun i _ => h i) Finset.univ_nonempty
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+      Real.rpow_inv_natCast_pow (Submodule.subspaceHeight_pos V).le hk.ne'] at hprod
+    exact hprod.not_ge hle
+  obtain ⟨i, hi⟩ := hex
+  exact ⟨z i, hzV i, hz.ne_zero i, hi⟩
+
 
 end Submodule
 
@@ -88,7 +87,7 @@ its maximal minors. Then `A x = 0` has a nonzero integral solution `x` with
 theorem exists_ne_zero_mulVec_eq_zero_norm_le {A : Matrix (Fin p) ι ℤ}
     (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) (hp : p < Fintype.card ι) :
     ∃ x : ι → ℤ, x ≠ 0 ∧ A *ᵥ x = 0 ∧
-      ‖x‖ ≤ (√((A * Aᵀ).det : ℝ) / ((Finset.univ.gcd (plucker A.row) : ℤ) : ℝ)) ^
+      ‖x‖ ≤ (√((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ)) ^
         ((Fintype.card ι : ℝ) - p)⁻¹ := by
   -- The solution space has dimension `n - p`, by rank–nullity.
   have hfin : finrank ℚ (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin) =
@@ -101,12 +100,8 @@ theorem exists_ne_zero_mulVec_eq_zero_norm_le {A : Matrix (Fin p) ι ℤ}
     rw [ne_eq, ← Submodule.finrank_eq_zero, hfin]
     omega
   -- Its height is `√det (A Aᵀ) / g`.
-  have hg : ((Finset.univ.gcd (plucker A.row) : ℤ) : ℝ) ≠ 0 :=
-    Int.cast_ne_zero.mpr fun h ↦ (gcd_plucker_row_eq_zero_iff A).mp h hA
-  have hH : V.subspaceHeight =
-      √((A * Aᵀ).det : ℝ) / ((Finset.univ.gcd (plucker A.row) : ℤ) : ℝ) := by
-    rw [eq_div_iff hg, mul_comm]
-    exact gcd_plucker_row_mul_subspaceHeight_ker_mulVecLin A
+  have hH : V.subspaceHeight = √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) :=
+    (Submodule.covolume_intLattice V).symm.trans (covolume_intLattice_ker_mulVecLin hA)
   obtain ⟨x, hx, hx0, hxle⟩ := Submodule.exists_ne_zero_mem_intPoints_norm_le hV
   refine ⟨x, hx0, ?_, ?_⟩
   · rw [Submodule.mem_intPoints, LinearMap.mem_ker, mulVecLin_apply] at hx
