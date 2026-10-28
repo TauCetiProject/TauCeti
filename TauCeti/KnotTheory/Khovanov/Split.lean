@@ -277,7 +277,8 @@ theorem fiberwiseSplit_const_circleBasis (b : Bool) :
   rw [hl]
   generalize l false = b₀, l true = b₁
   cases b <;> cases b₀ <;> cases b₁ <;>
-    simp [Fintype.univ_bool, Finset.filter_insert, Finset.filter_singleton]
+    simp [Fintype.univ_bool, Finset.filter_insert, Finset.filter_singleton,
+      -circleBasis_const_false]
 
 /-- Splitting along a surjection whose only non-singleton fibre is `{p, q}` obeys
 `Δ X = X ⊗ X` and `Δ 1 = X ⊗ 1 + 1 ⊗ X` on the circles `p` and `q`; every other circle retains

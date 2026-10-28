@@ -139,11 +139,15 @@ theorem circleBasis_repr_tprod [Fintype ι] (x : ι → R[ε]) (l : ι → Bool)
     (circleBasis R ι).repr (tprod R x) l = ∏ i, (labelBasis R).repr (x i) (l i) :=
   Basis.piTensorProduct_repr_tprod_apply _ x l
 
-/-- The labelling with `1` on every circle is the unit of the circle tensor. -/
+/-- The labelling with `1` on every circle is the unit of the circle tensor. It is a pre-simp
+lemma since `circleBasis_apply` would otherwise expand the basis vector first. -/
+@[simp↓]
 theorem circleBasis_const_false [Finite ι] : circleBasis R ι (fun _ ↦ false) = 1 := by
   rw [circleBasis_apply, labelBasis_false, PiTensorProduct.one_def, Pi.one_def]
 
-/-- The labelling with `X` on the circle `i` and `1` elsewhere is `X` placed in the factor `i`. -/
+/-- The labelling with `X` on the circle `i` and `1` elsewhere is `X` placed in the factor `i`.
+It is a pre-simp lemma since `circleBasis_apply` would otherwise expand the basis vector first. -/
+@[simp↓]
 theorem circleBasis_update_const_false [Finite ι] [DecidableEq ι] (i : ι) :
     circleBasis R ι (Function.update (fun _ ↦ false) i true) =
       singleAlgHom (A := fun _ ↦ R[ε]) i ε := by

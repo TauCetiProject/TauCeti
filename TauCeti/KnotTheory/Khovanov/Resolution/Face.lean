@@ -74,19 +74,6 @@ variable {n : ℕ} (D : PDCode n) {s t₁ t₂ u : Fin n → Bool} {c c' : Fin n
   (ht₂u : ∀ j, j ≠ c → t₂ j = u j) (hc₂' : t₂ c ≠ u c)
   (R : Type u) [CommSemiring R]
 
-/-- Two correspondences of resolved circles that send the circle of every half-edge to its circle
-and retain every crossing-free label are equal. -/
-private theorem resolvedCircle_funext {s t : Fin n → Bool}
-    {φ ψ : D.ResolvedCircle s → D.ResolvedCircle t}
-    (hφ : ∀ x : Fin (4 * n), φ (.inl ⟦x⟧) = .inl ⟦x⟧)
-    (hψ : ∀ x : Fin (4 * n), ψ (.inl ⟦x⟧) = .inl ⟦x⟧)
-    (hφ' : ∀ i, φ (.inr i) = .inr i) (hψ' : ∀ i, ψ (.inr i) = .inr i) : φ = ψ := by
-  funext C
-  rcases C with C | i
-  · induction C using Quotient.ind
-    rw [hφ, hψ]
-  · rw [hφ', hψ']
-
 /-- If only one circle of `t'` passes through each of `c` and `c'`, and `t` agrees with `t'` away
 from these crossings, then every circle of `t` lies on a circle of `t'`. -/
 private theorem forall_card_circlesAt_eq_one_of_eq_of_ne {t t' : Fin n → Bool}

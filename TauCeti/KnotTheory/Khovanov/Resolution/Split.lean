@@ -115,6 +115,7 @@ theorem resolutionSplitMap_circleBasis (l : D.ResolvedCircle s → Bool) :
 
 /-- Splitting the unit gives `X ⊗ 1 + 1 ⊗ X` on the two circles through `c`, with `1` on
 every other circle. -/
+@[simp]
 theorem resolutionSplitMap_one :
     D.resolutionSplitMap hst hc ht R 1 =
       PiTensorProduct.singleAlgHom (A := fun _ : D.ResolvedCircle t ↦ R[ε])

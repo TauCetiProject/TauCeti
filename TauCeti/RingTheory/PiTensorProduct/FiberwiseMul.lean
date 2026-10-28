@@ -138,6 +138,7 @@ theorem toLinearMap_fiberwiseMul_equiv (e : σ ≃ τ) :
 
 /-- For a constant family, multiplying along a section of a surjection `f` and then along `f` is
 the identity. In particular, multiplication along a surjection is surjective. -/
+@[simp]
 theorem fiberwiseMul_fiberwiseMul_surjInv [Fintype τ] [DecidableEq σ] {f : σ → τ}
     (hf : Function.Surjective f) (x : ⨂[R] _ : τ, B) :
     fiberwiseMul (A := fun _ ↦ B) f (fiberwiseMul (A := fun _ ↦ B) (Function.surjInv hf) x) =
