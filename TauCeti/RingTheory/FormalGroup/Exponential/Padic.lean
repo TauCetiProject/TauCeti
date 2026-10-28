@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.FormalGroup.Exponential.Norm
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.NumberTheory.Padics.Distribution.Amice.Norm
+import TauCeti.NumberTheory.Padics.Factorial
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -49,10 +49,10 @@ theorem norm_coeff_exp_le (n : ℕ) :
   have hnorm : ‖(n.factorial : K)‖ = ‖(n.factorial : ℚ_[p])‖ := by
     simpa only [map_natCast] using norm_algebraMap' K (n.factorial : ℚ_[p])
   rw [hnorm]
-  have h := inv_anti₀ (pow_pos (TauCeti.amiceRadius_pos (p := p) 0) n)
-    (TauCeti.amiceRadius_pow_le_norm_factorial (p := p) 0 n)
-  simpa only [TauCeti.amiceRadius_def, pow_zero, mul_one, Nat.div_one, one_div,
-    Real.rpow_neg (by positivity : (0 : ℝ) ≤ p), inv_pow, inv_inv] using h
+  have h := inv_anti₀ (Real.rpow_pos_of_pos (by exact_mod_cast hp.out.pos : (0 : ℝ) < p) _)
+    (Padic.rpow_neg_div_le_norm_factorial (p := p) n)
+  simpa only [Real.rpow_neg (by positivity : (0 : ℝ) ≤ p), inv_inv, div_eq_mul_inv,
+    ← Real.rpow_natCast, ← Real.rpow_mul (by positivity : (0 : ℝ) ≤ p), mul_comm] using h
 
 /-- The formal exponential of an integral formal group converges absolutely over any normed
 field over `ℚ_p` on the standard p-adic exponential disc, including for `p = 2`. -/
