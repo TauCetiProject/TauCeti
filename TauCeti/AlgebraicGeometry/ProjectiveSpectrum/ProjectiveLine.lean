@@ -18,6 +18,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 public import TauCeti.RingTheory.Localization.Away.Basic
+import Mathlib.RingTheory.Polynomial.Ideal
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SchemeTheoreticallyDominant
 
 /-!
@@ -31,8 +32,10 @@ symmetric algebra of `R²`, whose two standard basis vectors are the homogeneous
 It is covered by the two standard affine charts `D₊(Xᵢ)`. The chart `D₊(Xᵢ)` is the spectrum of
 the degree-zero part `R[X₀, X₁]_(Xᵢ)` of the localization away from `Xᵢ`, and dehomogenization,
 setting `Xᵢ = 1` and the other coordinate to `X`, identifies it with the polynomial ring `R[X]`:
-the fraction `p / Xᵢⁿ` of a form `p` of degree `n` goes to `p` with `Xᵢ = 1`. The projective line
-`ℙ¹_R` is proper over `R`, as the Proj of the symmetric algebra of a finite module
+the fraction `p / Xᵢⁿ` of a form `p` of degree `n` goes to `p` with `Xᵢ = 1`.
+Each chart `Spec R[X] ⟶ ℙ¹_R` is a schematically dense open immersion over any ring.
+The projective line `ℙ¹_R` is proper over `R`, as the Proj of the symmetric algebra of a finite
+module
 (`TauCeti.SymmetricAlgebra.instIsProperOver`), and smooth of relative dimension one over `R`, since
 each chart is the affine line `Spec R[X]`; it is integral when `R` is a domain, and its local
 rings are regular when `R` is a regular ring. Its formation commutes with every change of base
@@ -50,6 +53,10 @@ function `X₁ / X₀` on that chart going to `X`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.awayEquivPolynomial R i`: the ring of the chart
   `D₊(Xᵢ)` is `R[X]`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.awayι R i`: the open immersion of that chart.
+* `TauCeti.AlgebraicGeometry.projectiveLine.polynomialChartι R i`: that chart with source
+  literally `Spec R[X]`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.infinitySection R`: the section `[0 : 1]`; over a
+  field `K`, `TauCeti.AlgebraicGeometry.projectiveLine.infinity K` is its single image point.
 * `TauCeti.AlgebraicGeometry.projectiveLine.chartSectionsEquiv R i`: the functions on the chart
   `D₊(Xᵢ)` are the polynomials `R[X]`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.baseChangeProjection R S`: for an `R`-algebra `S`, the
@@ -59,6 +66,17 @@ function `X₁ / X₀` on that chart going to `X`.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.projectiveLine.coord_mem_nonZeroDivisors`: homogeneous coordinates
+  are nonzerodivisors over any ring, so every `polynomialChartι` is schematically dense.
+* `TauCeti.AlgebraicGeometry.projectiveLine.opensRange_polynomialChartι` and
+  `TauCeti.AlgebraicGeometry.projectiveLine.polynomialChartι_preimage_basicOpen_rev`: the chart
+  ranges are the standard basic opens and their overlap is the locus where `X` is invertible.
+* `TauCeti.AlgebraicGeometry.projectiveLine.range_polynomialChartι_union`: the two ranges cover.
+* `TauCeti.AlgebraicGeometry.projectiveLine.range_infinitySection`: the infinity section is the
+  complement of the zeroth chart over any ring; it is a closed immersion and misses that chart
+  by `TauCeti.AlgebraicGeometry.projectiveLine.infinitySection_notMem_range_polynomialChartι`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.compl_range_polynomialChartι`: over a field the
+  complement is the singleton `infinity`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.awayEquivPolynomial_mk`: the chart isomorphism
   sends `p / Xᵢⁿ` to the dehomogenization of `p`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.iSup_basicOpen_coord_eq_top`,
@@ -105,6 +123,18 @@ coordinates. It is a scheme over `Spec R` through `TauCeti.SymmetricAlgebra.proj
 by `TauCeti.SymmetricAlgebra.instIsProperOver`. -/
 noncomputable abbrev projectiveLine : Scheme.{u} :=
   Proj (SymmetricAlgebra.homogeneousSubmodule R (Fin 2 → R))
+
+/-- The zero section of the affine line has image the vanishing locus of its coordinate. -/
+theorem range_Spec_map_evalRingHom_zero :
+    Set.range (Spec.map (CommRingCat.ofHom (evalRingHom (0 : R)))) =
+      {q : Spec (.of R[X]) | X ∈ q.asIdeal} := by
+  -- `Spec.map_apply` identifies the maps pointwise, but rewriting leaves `Spec`-indexed
+  -- ranges that do not elaborate at rewrite transparency. Identify both carriers here.
+  change Set.range (PrimeSpectrum.comap (evalRingHom (0 : R))) =
+    {q : PrimeSpectrum R[X] | X ∈ q.asIdeal}
+  rw [range_comap_of_surjective _ _ (eval_surjective (0 : R)), ker_evalRingHom]
+  ext q
+  simp [PrimeSpectrum.mem_zeroLocus]
 
 namespace projectiveLine
 
@@ -243,7 +273,7 @@ noncomputable def polynomialChartι (i : Fin 2) : Spec (.of R[X]) ⟶ projective
   Spec.map (awayEquivPolynomial R i).toRingEquiv.toCommRingCatIso.hom ≫ awayι R i
 
 /-- The polynomial chart is the chart-ring equivalence followed by the standard open immersion. -/
-theorem polynomialChartι_eq (i : Fin 2) :
+theorem polynomialChartι_def (i : Fin 2) :
     polynomialChartι R i =
       Spec.map (awayEquivPolynomial R i).toRingEquiv.toCommRingCatIso.hom ≫ awayι R i :=
   (rfl)
@@ -257,7 +287,7 @@ instance (i : Fin 2) : IsSchemeTheoreticallyDominant (polynomialChartι R i) := 
   have : IsSchemeTheoreticallyDominant (awayι R i) :=
     Proj.isSchemeTheoreticallyDominant_awayι 𝒜 (coord_mem R i) one_pos
       (coord_mem_nonZeroDivisors R i)
-  rw [polynomialChartι_eq]
+  rw [polynomialChartι_def]
   infer_instance
 
 /-- Each polynomial chart is a morphism over `Spec R`. -/
@@ -284,13 +314,25 @@ theorem opensRange_polynomialChartι (i : Fin 2) :
 theorem polynomialChartι_preimage_basicOpen_rev (i : Fin 2) :
     polynomialChartι R i ⁻¹ᵁ Proj.basicOpen 𝒜 (coord R i.rev) =
       PrimeSpectrum.basicOpen (X : R[X]) := by
-  -- Preimages of the composite are iterated preimages on the two chart carriers.
+  -- The preimage notation projects to the continuous map; this `change` exposes the
+  -- composite and its iterated preimage without rewriting the dependent open carriers.
   change Spec.map (awayEquivPolynomial R i).toRingEquiv.toCommRingCatIso.hom ⁻¹ᵁ
     (awayι R i ⁻¹ᵁ Proj.basicOpen 𝒜 (coord R i.rev)) = _
   rw [Proj.awayι_preimage_basicOpen 𝒜 (coord_mem R i) one_pos (coord_mem R i.rev) one_pos,
     SpecMap_preimage_basicOpen]
   simp [Away.isLocalizationElem]
+  -- The remaining map is the underlying function of `awayEquivPolynomial_mk`.
   rfl
+
+/-- A point of one polynomial chart lies in the other chart exactly off its zero locus. -/
+theorem polynomialChartι_mem_range_iff (i : Fin 2) (q : Spec (.of R[X])) :
+    polynomialChartι R i q ∈ Set.range (polynomialChartι R i.rev) ↔ X ∉ q.asIdeal := by
+  rw [← Scheme.Hom.coe_opensRange, opensRange_polynomialChartι]
+  -- Open preimage membership is definitionally membership of the image point.
+  change q ∈ polynomialChartι R i ⁻¹ᵁ Proj.basicOpen 𝒜 (coord R i.rev) ↔ _
+  rw [polynomialChartι_preimage_basicOpen_rev]
+  -- `Spec` has the prime-spectrum carrier, with its native basic-open membership.
+  exact PrimeSpectrum.mem_basicOpen X q
 
 /-- **The standard charts `D₊(Xᵢ)` cover the projective line.** -/
 theorem iSup_basicOpen_coord_eq_top : ⨆ i, Proj.basicOpen 𝒜 (coord R i) = ⊤ :=
@@ -312,6 +354,88 @@ theorem basicOpen_coord_sup_eq_top :
   refine eq_top_iff.mpr fun p _ ↦ TopologicalSpace.Opens.mem_sup.mpr ?_
   have hp : p ∈ (⊤ : (projectiveLine R).Opens) := trivial
   rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup, Fin.exists_fin_two] at hp
+
+/-- The two polynomial chart ranges cover the projective line. -/
+theorem range_polynomialChartι_union :
+    Set.range (polynomialChartι R 0) ∪ Set.range (polynomialChartι R 1) = Set.univ := by
+  rw [← Scheme.Hom.coe_opensRange, ← Scheme.Hom.coe_opensRange,
+    opensRange_polynomialChartι, opensRange_polynomialChartι,
+    ← TopologicalSpace.Opens.coe_sup, basicOpen_coord_sup_eq_top]
+  exact TopologicalSpace.Opens.coe_top
+
+/-- The infinity section of the projective line, given by the zero point of the chart
+`D₊(X₁)`, with homogeneous coordinates `[0 : 1]`. -/
+noncomputable def infinitySection : Spec (.of R) ⟶ projectiveLine R :=
+  Spec.map (CommRingCat.ofHom (evalRingHom (0 : R))) ≫ polynomialChartι R 1
+
+/-- The infinity section factors through the zero section of the opposite polynomial chart. -/
+theorem infinitySection_def : infinitySection R =
+    Spec.map (CommRingCat.ofHom (evalRingHom (0 : R))) ≫ polynomialChartι R 1 :=
+  (rfl)
+
+/-- The point at infinity is a section over the base ring. -/
+@[simp]
+theorem infinitySection_over :
+    infinitySection R ≫ (projectiveLine R ↘ Spec (.of R)) = 𝟙 _ := by
+  rw [infinitySection_def, Category.assoc, polynomialChartι_over, ← Spec.map_comp]
+  rw [← Spec.map_id (.of R)]
+  congr 1
+  ext c
+  simp
+
+instance : IsClosedImmersion (infinitySection R) := by
+  have : IsClosedImmersion (infinitySection R ≫ (projectiveLine R ↘ Spec (.of R))) := by
+    rw [infinitySection_over]
+    infer_instance
+  exact IsClosedImmersion.of_comp _ (projectiveLine R ↘ Spec (.of R))
+
+/-- The boundary of the affine-line chart is precisely the infinity section, over any base ring. -/
+theorem range_infinitySection :
+    Set.range (infinitySection R) = (Set.range (polynomialChartι R 0))ᶜ := by
+  ext p
+  constructor
+  · rintro ⟨q, rfl⟩ hp
+    have hq := (Set.ext_iff.mp (range_Spec_map_evalRingHom_zero R) _).mp ⟨q, rfl⟩
+    exact (polynomialChartι_mem_range_iff R 1 _).mp
+      (by simpa only [infinitySection_def, Scheme.Hom.comp_apply,
+        show (1 : Fin 2).rev = 0 from Fin.rev_last 1] using hp) hq
+  · intro hp
+    have hc : p ∈ Set.range (polynomialChartι R 0) ∪ Set.range (polynomialChartι R 1) := by
+      rw [range_polynomialChartι_union]
+      trivial
+    obtain ⟨q, rfl⟩ := hc.resolve_left hp
+    have hq : X ∈ q.asIdeal := not_not.mp (fun hn ↦
+      hp ((polynomialChartι_mem_range_iff R 1 q).mpr hn))
+    obtain ⟨r, hr⟩ := (Set.ext_iff.mp (range_Spec_map_evalRingHom_zero R) q).mpr hq
+    exact ⟨r, by simp only [infinitySection_def, Scheme.Hom.comp_apply, hr]⟩
+
+/-- Every point of the infinity section lies outside the affine-line chart. -/
+@[simp↓]
+theorem infinitySection_notMem_range_polynomialChartι (x : Spec (.of R)) :
+    infinitySection R x ∉ Set.range (polynomialChartι R 0) := by
+  exact (Set.ext_iff.mp (range_infinitySection R) _).mp ⟨x, rfl⟩
+
+variable (K : Type u) [Field K]
+
+/-- The point `[0 : 1]` at infinity on the projective line over a field. -/
+noncomputable def infinity : projectiveLine K := infinitySection K default
+
+/-- Over a field the affine-line chart has exactly one boundary point. -/
+theorem compl_range_polynomialChartι :
+    (Set.range (polynomialChartι K 0))ᶜ = {infinity K} := by
+  rw [← range_infinitySection]
+  ext p
+  constructor
+  · rintro ⟨q, rfl⟩
+    exact congrArg (infinitySection K) (Subsingleton.elim q default)
+  · rintro rfl
+    exact ⟨default, rfl⟩
+
+/-- The affine-line chart misses the point at infinity. -/
+@[simp↓]
+theorem infinity_notMem_range_polynomialChartι :
+    infinity K ∉ Set.range (polynomialChartι K 0) :=
+  infinitySection_notMem_range_polynomialChartι K default
 
 /-- The standard chart `D₊(Xᵢ)` is an affine open of the projective line. -/
 theorem isAffineOpen_basicOpen_coord (i : Fin 2) :
