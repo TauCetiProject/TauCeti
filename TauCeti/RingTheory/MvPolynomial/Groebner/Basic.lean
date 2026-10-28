@@ -36,6 +36,9 @@ a Gröbner basis decide ideal membership.
   by a Gröbner basis of `I`, `f₁ - f₂ ∈ I` if and only if `r₁ = r₂`. In particular remainders on
   division by a Gröbner basis are unique (`MonomialOrder.IsGroebnerBasis.eq_of_isRemainder`) and
   a remainder vanishes exactly on `I` (`MonomialOrder.IsGroebnerBasis.remainder_eq_zero_iff_mem`).
+* `MonomialOrder.IsGroebnerBasis.isRemainder_zero_iff_mem`: `0` is a remainder of `f` on division
+  by a Gröbner basis of `I` if and only if `f ∈ I`, whatever the leading coefficients of the basis:
+  every element of `I` has a standard representation (Adams–Loustaunau, Theorem 4.1.12).
 * `MonomialOrder.IsGroebnerBasis.ideal_eq_span`: a Gröbner basis generates its ideal.
 * `MonomialOrder.isGroebnerBasis_iff_isRemainder_zero`: `G ⊆ I` is a Gröbner basis of `I` if and
   only if every element of `I` has remainder `0` on division by `G`.
@@ -50,6 +53,9 @@ The definitions `IsRemainder` and `IsGroebnerBasis` are those of Junyu Guo and H
 Mathlib pull request 29203, upstreamed from the WuProver Gröbner basis project.
 
 * D. Cox, J. Little, D. O'Shea, *Ideals, Varieties, and Algorithms*, Chapter 2, §§5–6.
+* W. W. Adams, P. Loustaunau, *An Introduction to Gröbner Bases*, Graduate Studies in
+  Mathematics 3, American Mathematical Society, 1994, §4.1: Gröbner bases over rings and standard
+  representations.
 -/
 
 public section
@@ -132,6 +138,13 @@ theorem toWithBotSyn_withBotDegree_add_le_iff {p q : MvPolynomial σ R} (hp : p 
       m.toSyn (m.degree p) + m.toSyn (m.degree q) ≤ m.toSyn (m.degree f) := by
   simp [(m.withBotDegree_eq_coe_degree_iff _).2, toWithBotSyn_apply_coe, ← WithBot.coe_add, *]
 
+/-- The `WithBot` degree of a polynomial is at most its degree. -/
+private theorem toWithBotSyn_withBotDegree_le_toSyn_degree (p : MvPolynomial σ R) :
+    m.toWithBotSyn (m.withBotDegree p) ≤ m.toSyn (m.degree p) := by
+  classical
+  rw [withBotDegree_eq]
+  split_ifs <;> simp [toWithBotSyn_apply_coe]
+
 /-- The remainders of `0` are exactly `0`. -/
 @[simp]
 theorem isRemainder_zero_left_iff : m.IsRemainder 0 B r ↔ r = 0 := by
@@ -146,29 +159,35 @@ theorem isRemainder_zero_left_iff : m.IsRemainder 0 B r ↔ r = 0 := by
     zero_add] at hg
   exact hg.symm
 
-/-- If `0` is a remainder of a nonzero `f` on division by `B`, then the leading monomial of `f` is
-divisible by the leading monomial of a nonzero element of `B`. -/
-theorem exists_degree_le_degree_of_isRemainder_zero (h : m.IsRemainder f B 0) (hf : f ≠ 0) :
-    ∃ b ∈ B, b ≠ 0 ∧ m.degree b ≤ m.degree f := by
+/-- If `0` is a remainder of `f` on division by `B`, then the leading term of `f` lies in the ideal
+spanned by the leading terms of `B`. -/
+theorem leadingTerm_mem_span_leadingTerm_of_isRemainder_zero (h : m.IsRemainder f B 0) :
+    m.leadingTerm f ∈ Ideal.span (m.leadingTerm '' B) := by
   classical
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
   obtain ⟨g, hfg, hdeg⟩ := h.exists_linearCombination
   rw [add_zero, Finsupp.linearCombination_apply, Finsupp.sum] at hfg
-  have hmem : m.degree f ∈ (∑ b ∈ g.support, g b • (b : MvPolynomial σ R)).support := by
-    rw [← hfg]
-    exact m.degree_mem_support hf
-  obtain ⟨b, -, hb⟩ := Finset.mem_biUnion.1 (support_sum hmem)
-  rw [smul_eq_mul] at hb
-  have hgb0 : g b ≠ 0 := fun h ↦ by simp [h] at hb
-  have hb0 : (b : MvPolynomial σ R) ≠ 0 := fun h ↦ by simp [h] at hb
-  -- The degree condition gives `deg b + deg g_b ≤ deg f`, and `deg f` is a monomial of
-  -- `g_b * b`, so the two sides are equal.
-  have hle := (toWithBotSyn_withBotDegree_add_le_iff hb0 hgb0 hf).1 (hdeg b)
-  have hge : m.toSyn (m.degree f) ≤
-      m.toSyn (m.degree (b : MvPolynomial σ R)) + m.toSyn (m.degree (g b)) :=
-    (m.le_degree hb).trans (m.toSyn_degree_mul_le.trans_eq (add_comm _ _))
-  have heq : m.degree f = m.degree (b : MvPolynomial σ R) + m.degree (g b) :=
-    m.toSyn.injective (by rw [map_add]; exact le_antisymm hge hle)
-  exact ⟨b, b.2, hb0, heq ▸ le_self_add⟩
+  -- `lt f` is the sum of the `deg f` terms of the products `g_b * b`.
+  have hlt : m.leadingTerm f = ∑ b ∈ g.support,
+      monomial (m.degree f) ((g b * (b : MvPolynomial σ R)).coeff (m.degree f)) := by
+    simp_rw [← map_sum, ← coeff_sum, ← smul_eq_mul, ← hfg, leadingTerm, leadingCoeff]
+  refine hlt ▸ sum_mem fun b _ ↦ ?_
+  by_cases hb : m.degree f ∈ (g b * (b : MvPolynomial σ R)).support
+  · have hgb0 : g b ≠ 0 := fun h ↦ by simp [h] at hb
+    have hb0 : (b : MvPolynomial σ R) ≠ 0 := fun h ↦ by simp [h] at hb
+    -- The degree condition gives `deg b + deg g_b ≤ deg f`, and `deg f` is a monomial of
+    -- `g_b * b`, so the two sides are equal and the `deg f` term is `lt g_b * lt b`.
+    have hle := (toWithBotSyn_withBotDegree_add_le_iff hb0 hgb0 hf).1 (hdeg b)
+    have heq : m.degree f = m.degree (g b) + m.degree (b : MvPolynomial σ R) :=
+      m.toSyn.injective <| by
+        rw [map_add]
+        exact le_antisymm ((m.le_degree hb).trans m.toSyn_degree_mul_le)
+          ((add_comm _ _).trans_le hle)
+    rw [heq, coeff_mul_of_degree_add, ← monomial_mul_monomial]
+    exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨b, b.2, rfl⟩)
+  · rw [notMem_support_iff.1 hb, map_zero]
+    exact zero_mem _
 
 /-- Every monomial of an element of the ideal spanned by the leading terms of `G` is divisible by
 the leading monomial of a nonzero element of `G`. -/
@@ -183,6 +202,36 @@ theorem exists_degree_le_of_mem_span_leadingTerm {p : MvPolynomial σ R}
     exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨m.degree g, ⟨g, hg, rfl⟩, rfl⟩)
   obtain ⟨_, ⟨g, ⟨hgG, hg0⟩, rfl⟩, hgc⟩ := mem_ideal_span_monomial_image.1 (hle hp) c hc
   exact ⟨g, hgG, by simpa using hg0, hgc⟩
+
+/-- If `0` is a remainder of a nonzero `f` on division by `B`, then the leading monomial of `f` is
+divisible by the leading monomial of a nonzero element of `B`. -/
+theorem exists_degree_le_degree_of_isRemainder_zero (h : m.IsRemainder f B 0) (hf : f ≠ 0) :
+    ∃ b ∈ B, b ≠ 0 ∧ m.degree b ≤ m.degree f :=
+  exists_degree_le_of_mem_span_leadingTerm (leadingTerm_mem_span_leadingTerm_of_isRemainder_zero h)
+    (by rw [m.support_leadingTerm' hf]; exact Finset.mem_singleton_self _)
+
+/-- The coefficient of `X^D` in an element of the ideal spanned by the leading terms of `G` lies in
+the ideal of `R` spanned by the leading coefficients of those `g ∈ G` with `deg g ≤ D`. -/
+theorem coeff_mem_span_leadingCoeff {p : MvPolynomial σ R}
+    (hp : p ∈ Ideal.span (m.leadingTerm '' G)) (D : σ →₀ ℕ) :
+    p.coeff D ∈ Ideal.span (m.leadingCoeff '' {g ∈ G | m.degree g ≤ D}) := by
+  classical
+  induction hp using Submodule.span_induction generalizing D with
+  | mem x hx =>
+    obtain ⟨g, hg, rfl⟩ := hx
+    rw [leadingTerm, coeff_monomial]
+    split_ifs with h
+    · exact Ideal.subset_span ⟨g, ⟨hg, h.le⟩, rfl⟩
+    · exact zero_mem _
+  | zero => simp
+  | add x y _ _ hx hy => simpa using add_mem (hx D) (hy D)
+  | smul a x _ hx =>
+    -- Each term `a_e * x_{e'}` of the `D` coefficient of `a * x` has `e' ≤ D`.
+    rw [smul_eq_mul, coeff_mul]
+    refine sum_mem fun e he ↦ Ideal.mul_mem_left _ _ <|
+      Ideal.span_mono (Set.image_mono ?_) (hx e.2)
+    rw [Finset.mem_antidiagonal] at he
+    exact fun g hg ↦ ⟨hg.1, hg.2.trans (he ▸ le_add_self)⟩
 
 /-- A Gröbner basis of `I` is contained in `I`. -/
 theorem IsGroebnerBasis.subset (h : m.IsGroebnerBasis G I) : G ⊆ I :=
@@ -306,19 +355,121 @@ theorem IsGroebnerBasis.remainder_eq_zero_iff_mem (h : m.IsGroebnerBasis G I)
     (hr : m.IsRemainder f G r) : r = 0 ↔ f ∈ I := by
   simpa using (h.sub_mem_iff hr (isRemainder_zero_left_iff.2 rfl)).symm
 
-/-- For a Gröbner basis of `I` whose nonzero members have unit leading coefficients, `0` is a
-remainder of `f` exactly when `f ∈ I`. -/
-theorem IsGroebnerBasis.isRemainder_zero_iff_mem (h : m.IsGroebnerBasis G I)
-    (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) : m.IsRemainder f G 0 ↔ f ∈ I := by
-  refine ⟨fun hr ↦ (h.remainder_eq_zero_iff_mem hr).1 rfl, fun hf ↦ ?_⟩
-  obtain ⟨r, hr⟩ := exists_isRemainder hG f
-  rwa [(h.remainder_eq_zero_iff_mem hr).2 hf] at hr
+variable (m) in
+/-- The polynomials `∑ g_b * b` over `b ∈ B` with `deg b + deg g_b ≤ d` for every `b`: the
+`R`-span of the monomial multiples of elements of `B` of degree at most `d`. -/
+private def boundedSpan (B : Set (MvPolynomial σ R)) (d : WithBot m.syn) :
+    Submodule R (MvPolynomial σ R) where
+  carrier := {p | ∃ g : B →₀ MvPolynomial σ R,
+    p = Finsupp.linearCombination _ (fun b : B ↦ (b : MvPolynomial σ R)) g ∧
+    ∀ b : B, m.toWithBotSyn (m.withBotDegree (b : MvPolynomial σ R)) +
+      m.toWithBotSyn (m.withBotDegree (g b)) ≤ d}
+  zero_mem' := ⟨0, by simp, by simp⟩
+  add_mem' := by
+    rintro _ _ ⟨g, rfl, hg⟩ ⟨g', rfl, hg'⟩
+    refine ⟨g + g', by rw [map_add], fun b ↦ ?_⟩
+    refine (add_le_add_right (m.withBotDegree_add_le _ _) _).trans ?_
+    rw [← max_add_add_left]
+    exact max_le (hg b) (hg' b)
+  smul_mem' := by
+    rintro r _ ⟨g, rfl, hg⟩
+    refine ⟨r • g, by rw [LinearMap.map_smul_of_tower], fun b ↦ le_trans ?_ (hg b)⟩
+    exact add_le_add_right (m.withBotDegree_le_withBotDegree_of_support_subset support_smul) _
 
-/-- A Gröbner basis of `I` whose nonzero members have unit leading coefficients generates `I`. -/
-theorem IsGroebnerBasis.ideal_eq_span (h : m.IsGroebnerBasis G I)
-    (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) : I = Ideal.span G := by
+/-- `boundedSpan m B d` is monotone in the bound `d`. -/
+private theorem boundedSpan_mono {d d' : WithBot m.syn} (hdd' : d ≤ d') :
+    boundedSpan m B d ≤ boundedSpan m B d' := by
+  rintro _ ⟨g, rfl, hg⟩
+  exact ⟨g, rfl, fun b ↦ (hg b).trans hdd'⟩
+
+/-- An element of `boundedSpan m B d` lies in the ideal spanned by `B`. -/
+private theorem mem_span_of_mem_boundedSpan {d : WithBot m.syn} {p : MvPolynomial σ R}
+    (hp : p ∈ boundedSpan m B d) : p ∈ Ideal.span B := by
+  obtain ⟨g, rfl, -⟩ := hp
+  exact (Finsupp.mem_span_iff_linearCombination _ _ _).2 ⟨g, rfl⟩
+
+/-- An element of `boundedSpan m B d` has degree at most `d`. -/
+private theorem withBotDegree_le_of_mem_boundedSpan {d : WithBot m.syn} {p : MvPolynomial σ R}
+    (hp : p ∈ boundedSpan m B d) : m.toWithBotSyn (m.withBotDegree p) ≤ d := by
+  obtain ⟨g, rfl, hg⟩ := hp
+  rw [Finsupp.linearCombination_apply, Finsupp.sum]
+  refine m.withBotDegree_sum_le.trans (Finset.sup_le fun b _ ↦ ?_)
+  exact (m.toWithBotSyn_withBotDegree_mul_le _ _).trans ((add_comm _ _).trans_le (hg b))
+
+/-- An element of the ideal of `R` spanned by the leading coefficients of those `g ∈ G` with
+`deg g ≤ D` is the coefficient of `X^D` in an element of `boundedSpan m G D`. -/
+private theorem span_leadingCoeff_le_map_boundedSpan (D : σ →₀ ℕ) :
+    Ideal.span (m.leadingCoeff '' {g ∈ G | m.degree g ≤ D}) ≤
+      (boundedSpan m G (m.toSyn D)).map (lcoeff R D) := by
+  classical
+  rw [Ideal.span_le]
+  rintro _ ⟨g, ⟨hgG, hgD⟩, rfl⟩
+  -- `lc g` is the `D` coefficient of `X^(D - deg g) * g`.
+  refine ⟨monomial (D - m.degree g) 1 * g,
+    ⟨Finsupp.single ⟨g, hgG⟩ (monomial (D - m.degree g) 1), by simp, fun b ↦ ?_⟩, ?_⟩
+  · rw [Finsupp.single_apply]
+    split_ifs with h
+    · subst h
+      refine (add_le_add (toWithBotSyn_withBotDegree_le_toSyn_degree _)
+        ((toWithBotSyn_withBotDegree_le_toSyn_degree _).trans
+          (WithBot.coe_le_coe.2 (m.degree_monomial_le _)))).trans_eq ?_
+      rw [← WithBot.coe_add, ← map_add, add_tsub_cancel_of_le hgD]
+    · simp
+  · simp [coeff_monomial_mul', tsub_tsub_cancel_of_le hgD, leadingCoeff]
+
+/-- If `q` has degree at most that of `f ≠ 0` and the same coefficient of `X^(deg f)`, then
+`f - q` has smaller degree than `f`. -/
+private theorem withBotDegree_sub_lt {q : MvPolynomial σ R} (hf : f ≠ 0)
+    (hq : m.toWithBotSyn (m.withBotDegree q) ≤ m.toWithBotSyn (m.withBotDegree f))
+    (hqf : q.coeff (m.degree f) = m.leadingCoeff f) :
+    m.toWithBotSyn (m.withBotDegree (f - q)) < m.toWithBotSyn (m.withBotDegree f) := by
+  refine lt_of_le_of_ne ?_ fun heq ↦ ?_
+  · simpa [sub_eq_add_neg] using
+      (m.withBotDegree_add_le f (-q)).trans (max_le le_rfl (by rwa [withBotDegree_neg]))
+  rw [EmbeddingLike.apply_eq_iff_eq, withBotDegree_eq_withBotDegree_iff] at heq
+  have := m.degree_mem_support fun h0 ↦ hf (heq.2.1 h0)
+  rw [heq.1, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at this
+  exact this rfl
+
+/-- **Standard representations** (Adams–Loustaunau, Theorem 4.1.12): every element `f` of `I` is
+`∑ g_b * b` over a Gröbner basis `G` of `I` with `deg b + deg g_b ≤ deg f` for every `b`. The
+proof is by well-founded induction on `deg f`, and needs no condition on leading coefficients. -/
+private theorem IsGroebnerBasis.mem_boundedSpan (h : m.IsGroebnerBasis G I) (hf : f ∈ I) :
+    f ∈ boundedSpan m G (m.toWithBotSyn (m.withBotDegree f)) := by
+  classical
+  induction hd : m.toWithBotSyn (m.withBotDegree f) using WellFoundedLT.induction
+    generalizing f with
+  | ind d ih =>
+  subst hd
+  rcases eq_or_ne f 0 with rfl | hf0
+  · exact zero_mem _
+  have hW : m.toWithBotSyn (m.withBotDegree f) = m.toSyn (m.degree f) := by
+    rw [(m.withBotDegree_eq_coe_degree_iff f).2 hf0, toWithBotSyn_apply_coe]
+  -- Some `q ∈ boundedSpan m G (deg f)` has the same leading coefficient as `f`, and then
+  -- `f - q ∈ I` has smaller degree than `f`.
+  have hlt : m.leadingTerm f ∈ Ideal.span (m.leadingTerm '' G) :=
+    h.span_leadingTerm_image ▸ Ideal.subset_span ⟨f, hf, rfl⟩
+  have hc := coeff_mem_span_leadingCoeff hlt (m.degree f)
+  rw [leadingTerm, coeff_monomial, ite_eq_left rfl] at hc
+  obtain ⟨q, hq, hqf⟩ := span_leadingCoeff_le_map_boundedSpan (m.degree f) hc
+  rw [← hW] at hq
+  have hdeg := withBotDegree_sub_lt hf0 (withBotDegree_le_of_mem_boundedSpan hq) hqf
+  have hqI : q ∈ I := Ideal.span_le.2 h.subset (mem_span_of_mem_boundedSpan hq)
+  have := add_mem (boundedSpan_mono hdeg.le (ih _ hdeg (sub_mem hf hqI) rfl)) hq
+  rwa [sub_add_cancel] at this
+
+/-- For a Gröbner basis `G` of `I`, `0` is a remainder of `f` on division by `G` exactly when
+`f ∈ I`. No condition on the leading coefficients of `G` is needed. -/
+theorem IsGroebnerBasis.isRemainder_zero_iff_mem (h : m.IsGroebnerBasis G I) :
+    m.IsRemainder f G 0 ↔ f ∈ I := by
+  refine ⟨fun hr ↦ (h.remainder_eq_zero_iff_mem hr).1 rfl, fun hf ↦ ?_⟩
+  obtain ⟨g, hg, hdeg⟩ := h.mem_boundedSpan hf
+  exact ⟨⟨g, by rwa [add_zero], hdeg⟩, by simp⟩
+
+/-- A Gröbner basis of `I` generates `I`. -/
+theorem IsGroebnerBasis.ideal_eq_span (h : m.IsGroebnerBasis G I) : I = Ideal.span G := by
   refine le_antisymm (fun f hf ↦ ?_) (Ideal.span_le.2 h.subset)
-  simpa using ((h.isRemainder_zero_iff_mem hG).2 hf).sub_mem_span
+  simpa using (h.isRemainder_zero_iff_mem.2 hf).sub_mem_span
 
 /-- Remainders on division by a Gröbner basis whose nonzero members have unit leading
 coefficients exist and are unique. -/
@@ -327,13 +478,14 @@ theorem IsGroebnerBasis.existsUnique_isRemainder (h : m.IsGroebnerBasis G I)
     ∃! r, m.IsRemainder f G r :=
   (exists_isRemainder hG f).elim fun r hr ↦ ⟨r, hr, fun _ hr' ↦ h.eq_of_isRemainder hr' hr⟩
 
-/-- A subset `G` of `I` whose nonzero members have unit leading coefficients is a Gröbner basis of
-`I` if and only if every element of `I` has remainder `0` on division by `G`. -/
-theorem isGroebnerBasis_iff_isRemainder_zero (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) :
+/-- A subset `G` of `I` is a Gröbner basis of `I` if and only if every element of `I` has remainder
+`0` on division by `G`. -/
+theorem isGroebnerBasis_iff_isRemainder_zero :
     m.IsGroebnerBasis G I ↔ G ⊆ I ∧ ∀ f ∈ I, m.IsRemainder f G 0 := by
-  refine ⟨fun h ↦ ⟨h.subset, fun f hf ↦ (h.isRemainder_zero_iff_mem hG).2 hf⟩, fun ⟨hGI, h0⟩ ↦ ?_⟩
-  exact (isGroebnerBasis_iff_forall_exists_degree_le_degree hG).2
-    ⟨hGI, fun p hp hp0 ↦ exists_degree_le_degree_of_isRemainder_zero (h0 p hp) hp0⟩
+  refine ⟨fun h ↦ ⟨h.subset, fun f ↦ h.isRemainder_zero_iff_mem.2⟩, fun ⟨hGI, h0⟩ ↦ .mk hGI ?_⟩
+  refine le_antisymm (Ideal.span_le.2 ?_) (Ideal.span_mono (Set.image_mono hGI))
+  rintro _ ⟨f, hf, rfl⟩
+  exact leadingTerm_mem_span_leadingTerm_of_isRemainder_zero (h0 f hf)
 
 end CommRing
 
