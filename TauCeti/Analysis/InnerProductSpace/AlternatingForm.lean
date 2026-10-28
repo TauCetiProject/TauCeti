@@ -207,7 +207,8 @@ theorem alternatingFormInner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
 variable {ι : Type*} [LinearOrder ι]
 
 /-- The wedges of the dual basis `b*` and the coordinates of `⋀ᵏ V` in the basis induced by `b`:
-`⟪b*_{i₁} ∧ ⋯ ∧ b*_{iₖ}, x⟫` is the coordinate of `x` at `{i₁ < ⋯ < iₖ}`. -/
+`⟪b*_{i₁} ∧ ⋯ ∧ b*_{iₖ}, w₁ ∧ ⋯ ∧ wₖ⟫` is the coordinate of `w₁ ∧ ⋯ ∧ wₖ` at
+`{i₁ < ⋯ < iₖ}`. -/
 theorem inner_ιMulti_dualBasis [Finite ι] (b : Basis ι ℝ V) {k : ℕ} (s : powersetCard ι k)
     (w : Fin k → V) :
     ⟪ιMulti ℝ k (LinearMap.BilinForm.dualBasis (innerₗ V) nondegenerate_inner b ∘

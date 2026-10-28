@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 
 /-!
 # Metric trace of a bilinear form
@@ -62,19 +63,10 @@ theorem bilinFormTrace_eq_sum_inv_gram {ι : Type*} [Fintype ι] [DecidableEq ι
     (B : BilinForm ℝ W) (b : Module.Basis ι ℝ W) :
     bilinFormTrace B = ∑ i, ∑ j, (Matrix.gram ℝ b)⁻¹ i j * B (b i) (b j) := by
   set Ginv := (Matrix.gram ℝ b)⁻¹
-  have hinv : Ginv * Matrix.gram ℝ b = 1 :=
-    Matrix.nonsing_inv_mul _ <| isUnit_iff_ne_zero.mpr <|
-      Matrix.det_gram_ne_zero_iff_linearIndependent.mpr b.linearIndependent
   -- `d i` is the vector representing the `i`-th coordinate functional of `b`.
   let d : ι → W := fun i ↦ ∑ j, Ginv i j • b j
   have hd (i : ι) (w : W) : ⟪d i, w⟫_ℝ = b.repr w i := by
-    have hlin : (innerₛₗ ℝ (d i) : W →ₗ[ℝ] ℝ) = b.coord i := by
-      refine b.ext fun k ↦ ?_
-      have hik := congrFun (congrFun hinv i) k
-      simp only [Matrix.mul_apply, Matrix.gram_apply, Matrix.one_apply] at hik
-      simp only [innerₛₗ_apply_apply, d, sum_inner, real_inner_smul_left, hik,
-        Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply, eq_comm]
-    simpa only [innerₛₗ_apply_apply, Module.Basis.coord_apply] using LinearMap.congr_fun hlin w
+    simpa only [dualBasis_innerₗ_eq_sum] using inner_dualBasis_left b i w
   have htensor : InnerProductSpace.canonicalCovariantTensor W = ∑ i, b i ⊗ₜ[ℝ] d i := by
     let v := stdOrthonormalBasis ℝ W
     rw [InnerProductSpace.canonicalCovariantTensor_eq_sum W v]

@@ -40,8 +40,8 @@ API replace them.
 * `Riemannian.Tensor.chartGramMatrix`: the metric Gram matrix in this frame.
 * `Riemannian.Tensor.chartGramMatrix_eq_toMatrix`: on the base set, it is the matrix of the fiber
   inner product in the basis given by the trivialization.
-* `Riemannian.Tensor.gram_symmL_finBasis_reindex`: it is the Gram matrix of the inverse
-  trivialization applied to a reindexing of the basis of the model space.
+* `Riemannian.Tensor.gram_basisAt_finBasis_reindex`: it is the Gram matrix of the basis of the
+  tangent space given by the trivialization and a reindexing of the basis of the model space.
 * `Riemannian.Tensor.posDef_chartGramMatrix`: positive-definiteness on the base set.
 * `Riemannian.Tensor.chartGramMatrix_det_pos`: strict positivity of its determinant there.
 * `Riemannian.Tensor.contMDiffOn_chartGramMatrix_entry`: smoothness of Gram-matrix entries.
@@ -136,14 +136,15 @@ theorem chartGramMatrix_apply (α : M) (x : M) (i j : Fin (Module.finrank ℝ E)
     chartGramMatrix (I := I) α x i j =
       inner ℝ (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := (rfl)
 
-/-- The chart Gram matrix, reindexed along `σ`, is the Gram matrix of the inverse trivialization
-applied to the reindexed basis `Module.finBasis ℝ E`. -/
-theorem gram_symmL_finBasis_reindex {ι : Type*} (σ : Fin (Module.finrank ℝ E) ≃ ι) (α x : M) :
-    Matrix.gram ℝ (fun i ↦ (trivializationAt E (TangentSpace I) α).symmL ℝ x
-      ((Module.finBasis ℝ E).reindex σ i)) =
+/-- The chart Gram matrix, reindexed along `σ`, is the Gram matrix of the basis of the tangent
+space given by the trivialization at `α` and the reindexed basis `Module.finBasis ℝ E`. -/
+theorem gram_basisAt_finBasis_reindex {ι : Type*} (σ : Fin (Module.finrank ℝ E) ≃ ι) (α : M)
+    {x : M} (hx : x ∈ (trivializationAt E (TangentSpace I) α).baseSet) :
+    Matrix.gram ℝ ((trivializationAt E (TangentSpace I) α).basisAt
+      ((Module.finBasis ℝ E).reindex σ) hx) =
       (chartGramMatrix (I := I) α x).submatrix σ.symm σ.symm := by
   ext i j
-  simp [Matrix.gram_apply, chartLocalFrame_eq_symmL]
+  simp [Matrix.gram_apply, TauCeti.Manifold.basisAt_apply, chartLocalFrame_eq_symmL]
 
 /-- On the chart domain, the Gram matrix at `α` is the matrix of the inner product in the basis
 of the tangent space given by the trivialization at `α`. -/
@@ -255,6 +256,11 @@ tangent-trivialization base set this is the inverse of a positive-definite matri
 def chartInvGramMatrix (α : M) (x : M) :
     Matrix (Fin (Module.finrank ℝ E)) (Fin (Module.finrank ℝ E)) ℝ :=
   (chartGramMatrix (I := I) α x)⁻¹
+
+/-- The inverse coordinate-metric matrix is the matrix inverse of the chart Gram matrix. This
+unfolds `Riemannian.Tensor.chartInvGramMatrix` outside the module where it is defined. -/
+theorem chartInvGramMatrix_def (α x : M) :
+    chartInvGramMatrix (I := I) α x = (chartGramMatrix (I := I) α x)⁻¹ := (rfl)
 
 /-- On the chart source, the inverse Gram matrix is a left inverse. -/
 @[simp]

@@ -10,10 +10,10 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
-import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Riemannian volume forms
@@ -27,7 +27,7 @@ characterization is that it evaluates to `1` on every positively oriented orthon
 
 For a `C^n` metric on a `C^(n+1)` manifold the volume form is a `C^n` form
 (`TauCeti.isSmoothForm_riemannianVolumeForm`): in the frame of a tangent trivialization its value
-is `±√(det g)`, the square root of the determinant of the chart Gram matrix, with a sign that is
+is `±√(det g)`, the chart volume density `TauCeti.chartVolumeDensity`, with a sign that is
 locally constant because the orientation is.
 
 ## References
@@ -128,37 +128,32 @@ open scoped Topology
 
 open scoped Classical in
 /-- The volume of the frame of a tangent trivialization: at a point `y` of the base set of the
-trivialization at `x`, with frame `e.symmL y ∘ b` for `b` a reindexing of the standard basis of
-the model space, the volume form is `±√(det G)` for the chart Gram matrix `G`, with sign `+`
-exactly when the frame is positively oriented. -/
-private theorem riemannianVolumeForm_symmL (o : Manifold.Orientation I M (Fin m))
+trivialization `e` at `x`, the volume form on the basis `e.basisAt b` of the tangent space, for `b`
+a reindexing of the standard basis of the model space, is `±√(det G)`, the chart volume density
+up to sign, with sign `+` exactly when the frame is positively oriented. -/
+private theorem riemannianVolumeForm_basisAt (o : Manifold.Orientation I M (Fin m))
     (σ : Fin (finrank ℝ E) ≃ Fin m) {x y : M}
     (hy : y ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
-    riemannianVolumeForm o y (fun i ↦ (trivializationAt E (TangentSpace I) x).symmL ℝ y
-      ((Module.finBasis ℝ E).reindex σ i)) =
+    riemannianVolumeForm o y
+      ((trivializationAt E (TangentSpace I) x).basisAt ((Module.finBasis ℝ E).reindex σ) hy) =
       if ((Module.finBasis ℝ E).reindex σ).orientation =
           (trivializationAt E (TangentSpace I) x).mapOrientation (Fin m) hy (o.orientationAt y)
-        then √(Riemannian.Tensor.chartGramMatrix (I := I) x y).det
-        else -√(Riemannian.Tensor.chartGramMatrix (I := I) x y).det := by
+        then chartVolumeDensity (I := I) x y
+        else -chartVolumeDensity (I := I) x y := by
   set e := trivializationAt E (TangentSpace I) x
   set b := (Module.finBasis ℝ E).reindex σ
   let := o.fact_finrank_tangentSpace y
-  -- The frame `B = e.symmL y ∘ b` is the image of `b` under the inverse trivialization.
-  let B : Basis (Fin m) ℝ (TangentSpace I y) := b.map (e.linearEquivAt ℝ y hy).symm
-  have hB : ⇑B = fun i ↦ e.symmL ℝ y (b i) := by
-    funext i
-    rw [Module.Basis.map_apply, Trivialization.linearEquivAt_symm_apply,
-      Trivialization.symmL_apply _ hy]
-  have hdet : (Matrix.gram ℝ B).det = (Riemannian.Tensor.chartGramMatrix (I := I) x y).det := by
-    rw [hB, Riemannian.Tensor.gram_symmL_finBasis_reindex, Matrix.det_submatrix_equiv_self]
-  have hor : B.orientation = o.orientationAt y ↔
+  have hdet : (Matrix.gram ℝ (e.basisAt b hy)).det =
+      (Riemannian.Tensor.chartGramMatrix (I := I) x y).det := by
+    rw [Riemannian.Tensor.gram_basisAt_finBasis_reindex, Matrix.det_submatrix_equiv_self]
+  have hor : (e.basisAt b hy).orientation = o.orientationAt y ↔
       b.orientation = e.mapOrientation (Fin m) hy (o.orientationAt y) := by
-    rw [Module.Basis.orientation_map, Trivialization.mapOrientation_apply, ← Orientation.map_symm,
-      Equiv.symm_apply_eq]
-  rw [riemannianVolumeForm_apply, ← hB, ← hdet]
+    rw [Trivialization.basisAt, Module.Basis.orientation_map, Trivialization.mapOrientation_apply,
+      ← Orientation.map_symm, Equiv.symm_apply_eq]
+  rw [riemannianVolumeForm_apply, chartVolumeDensity_def, ← hdet]
   split_ifs with h
-  · exact (o.orientationAt y).volumeForm_apply_eq_sqrt_det_gram B (hor.2 h)
-  · exact (o.orientationAt y).volumeForm_apply_eq_neg_sqrt_det_gram B (mt hor.1 h)
+  · exact (o.orientationAt y).volumeForm_apply_eq_sqrt_det_gram _ (hor.2 h)
+  · exact (o.orientationAt y).volumeForm_apply_eq_neg_sqrt_det_gram _ (mt hor.1 h)
 
 variable {n : WithTop ℕ∞} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
@@ -168,51 +163,39 @@ volume form of an orientation is a `C^n` top form. -/
 theorem isSmoothForm_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m)) :
     IsSmoothForm I n (riemannianVolumeForm o) := by
   classical
-  rw [isSmoothForm_def]
-  intro x
-  rw [contMDiffAt_section]
+  rw [isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply]
+  intro x v
   set e := trivializationAt E (TangentSpace I) x
   have hm : finrank ℝ E = m := by simpa using o.card_eq.symm
   let σ : Fin (finrank ℝ E) ≃ Fin m := finCongr hm
   let b : Basis (Fin m) ℝ E := (Module.finBasis ℝ E).reindex σ
-  let D : E [⋀^Fin m]→L[ℝ] ℝ := AlternatingMap.toContinuousAlternatingMap b.det
-  -- In the trivialization at `x`, the volume form is its value `c y` on the frame `e.symmL y ∘ b`
-  -- times the top form `b.det`.
-  let c : M → ℝ := fun y ↦ riemannianVolumeForm o y (fun i ↦ e.symmL ℝ y (b i))
-  have hcoord : (fun y ↦ (trivializationAt (E [⋀^Fin m]→L[ℝ] ℝ)
-      (fun x ↦ TangentSpace I x [⋀^Fin m]→L[ℝ] ℝ) x ⟨y, riemannianVolumeForm o y⟩).2) =
-      fun y ↦ ContinuousLinearMap.toSpanSingleton ℝ D (c y) := by
-    funext y
-    ext v
-    rw [RoughForm.trivializationAt_apply_snd, ContinuousAlternatingMap.apply_eq_det_mul _ b]
-    simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply,
-      ContinuousLinearMap.toSpanSingleton_apply, ContinuousAlternatingMap.smul_apply,
-      AlternatingMap.coe_toContinuousAlternatingMap, smul_eq_mul, D, c, mul_comm,
-      Function.comp_def, e]
-  rw [hcoord]
-  refine (ContinuousLinearMap.toSpanSingleton ℝ D).contMDiffAt.comp x ?_
-  -- Near `x`, `c` is `±√(det G)` with a constant sign, since the orientation is locally constant
-  -- in the trivialization, and `det G` is `C^n` and positive.
   have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
   have hbase : e.baseSet ∈ 𝓝 x := e.open_baseSet.mem_nhds hx
-  let g : M → ℝ := fun y ↦ (Riemannian.Tensor.chartGramMatrix (I := I) x y).det
-  have hgx : g x ≠ 0 := (Riemannian.Tensor.chartGramMatrix_det_pos (I := I) x hx).ne'
-  have hsqrt : ContMDiffAt I 𝓘(ℝ) n (fun y ↦ √(g y)) x :=
-    (Real.contDiffAt_sqrt hgx).comp_contMDiffAt
-      ((Riemannian.Tensor.contMDiffOn_chartGramMatrix_det (I := I) (n := n) x).contMDiffAt hbase)
+  -- On the base set, the value on `e.symmL y ∘ v` is the volume of the frame `e.basisAt b`
+  -- times `b.det v`.
+  have hval (y : M) (hy : y ∈ e.baseSet) : riemannianVolumeForm o y (e.symmL ℝ y ∘ v) =
+      riemannianVolumeForm o y (e.basisAt b hy) * b.det v := by
+    have h := ContinuousAlternatingMap.apply_eq_det_mul
+      ((riemannianVolumeForm o y).compContinuousLinearMap (e.symmL ℝ y)) b v
+    rw [ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      ContinuousAlternatingMap.compContinuousLinearMap_apply] at h
+    rw [h, mul_comm]
+    congr 2
+    funext i
+    rw [Function.comp_apply, TauCeti.Manifold.basisAt_apply]
+  -- Near `x`, that volume is `±chartVolumeDensity` with a constant sign, since the orientation is
+  -- locally constant in the trivialization, and the chart volume density is `C^n`.
+  have hρ : ContMDiffAt I 𝓘(ℝ) n (chartVolumeDensity (I := I) x) x :=
+    (contMDiffOn_chartVolumeDensity (I := I) x).contMDiffAt hbase
   have hconst := o.toVectorBundleOrientation.eventually_mapOrientation_eq (by simp [hm]) e hx
   simp only [Manifold.Orientation.toVectorBundleOrientation_apply] at hconst
   by_cases hP : b.orientation = e.mapOrientation (Fin m) hx (o.orientationAt x)
-  · refine hsqrt.congr_of_eventuallyEq ?_
+  · refine (hρ.mul (contMDiffAt_const (c := b.det v))).congr_of_eventuallyEq ?_
     filter_upwards [hconst, hbase] with y hy hyb
-    simp only [c, b, e, g]
-    rw [riemannianVolumeForm_symmL o σ hyb, hy hyb]
-    exact ite_eq_left hP
-  · refine hsqrt.neg.congr_of_eventuallyEq ?_
+    rw [Pi.mul_apply, hval y hyb, riemannianVolumeForm_basisAt o σ hyb, hy hyb, ite_eq_left hP]
+  · refine (hρ.neg.mul (contMDiffAt_const (c := b.det v))).congr_of_eventuallyEq ?_
     filter_upwards [hconst, hbase] with y hy hyb
-    simp only [c, b, e, g]
-    rw [riemannianVolumeForm_symmL o σ hyb, hy hyb]
-    exact ite_eq_right hP
+    rw [Pi.mul_apply, hval y hyb, riemannianVolumeForm_basisAt o σ hyb, hy hyb, ite_eq_right hP]
 
 end Smooth
 

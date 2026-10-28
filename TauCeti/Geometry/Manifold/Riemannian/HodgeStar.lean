@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
@@ -73,6 +74,7 @@ def hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) :
       (hkl.trans (o.fact_finrank_tangentSpace x).out.symm)).toLinearMap ∘ₗ LinearMap.proj x
 
 /-- The Hodge star of a form at a point is the Hodge star of the tangent space. -/
+@[simp]
 theorem hodgeStar_apply (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
     (φ : RoughForm I M ℝ k) (x : M) :
     hodgeStar o hkl φ x =
@@ -131,12 +133,9 @@ private theorem hodgeStar_symmL_apply (o : Manifold.Orientation I M (Fin m)) (hk
   set b := (Module.finBasis ℝ E).reindex σ
   let := o.fact_finrank_tangentSpace y
   let L := e.linearEquivAt ℝ y hy
-  -- The frame `B = e.symmL y ∘ b` is the image of `b` under the inverse trivialization.
-  let B : Basis (Fin m) ℝ (TangentSpace I y) := b.map L.symm
-  have hB : ⇑B = fun i ↦ e.symmL ℝ y (b i) := by
-    funext i
-    rw [Module.Basis.map_apply, Trivialization.linearEquivAt_symm_apply,
-      Trivialization.symmL_apply _ hy]
+  -- The frame `B = e.symmL y ∘ b` is the basis of the tangent space given by the trivialization.
+  let B : Basis (Fin m) ℝ (TangentSpace I y) := e.basisAt b hy
+  have hB : ⇑B = fun i ↦ e.symmL ℝ y (b i) := funext (Manifold.basisAt_apply b hy)
   have hL (w : E) : L (e.symmL ℝ y w) = w := by
     have : e.symmL ℝ y w = L.symm w := by
       rw [Trivialization.linearEquivAt_symm_apply, Trivialization.symmL_apply _ hy]
@@ -144,15 +143,8 @@ private theorem hodgeStar_symmL_apply (o : Manifold.Orientation I M (Fin m)) (hk
   -- Its Gram matrix is the reindexed chart Gram matrix, with the reindexed inverse.
   have hinv : (Matrix.gram ℝ B)⁻¹ =
       (Riemannian.Tensor.chartInvGramMatrix (I := I) x y).submatrix σ.symm σ.symm := by
-    have hgram : Matrix.gram ℝ B =
-        (Riemannian.Tensor.chartGramMatrix (I := I) x y).submatrix σ.symm σ.symm := by
-      rw [hB, Riemannian.Tensor.gram_symmL_finBasis_reindex]
-    have hy' : y ∈ (chartAt H x).source := by
-      simpa only [e, TangentBundle.trivializationAt_baseSet] using hy
-    rw [hgram]
-    apply Matrix.inv_eq_left_inv
-    rw [Matrix.submatrix_mul_equiv,
-      Riemannian.Tensor.chartInvGramMatrix_mul_chartGramMatrix _ hy', Matrix.submatrix_one_equiv]
+    rw [Riemannian.Tensor.gram_basisAt_finBasis_reindex, Matrix.inv_submatrix_equiv,
+      Riemannian.Tensor.chartInvGramMatrix_def]
   rw [RoughForm.hodgeStar_apply, Orientation.formHodgeStar_apply_eq_volumeForm_mul_sum _ _ B,
     riemannianVolumeForm_apply, ← hB, hinv]
   congr 1
@@ -160,13 +152,13 @@ private theorem hodgeStar_symmL_apply (o : Manifold.Orientation I M (Fin m)) (hk
   congr 1
   · simp only [hB, Function.comp_def, e]
   -- Read the determinant in the frame back in the model space through the trivialization.
-  rw [Module.Basis.det_map, LinearEquiv.symm_symm]
+  rw [show B = b.map L.symm from (rfl), Module.Basis.det_map, LinearEquiv.symm_symm]
   congr 1
   funext i
   simp only [Function.comp_apply]
   generalize Fin.cast _ i = j
   induction j using Fin.addCases with
-  | left a => simp [B, map_sum, map_smul]
+  | left a => simp [map_sum, map_smul]
   | right a =>
     simp only [Fin.append_right, Function.comp_apply]
     exact hL _
@@ -183,12 +175,8 @@ theorem IsSmoothForm.hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k +
   classical
   -- Read in the trivialization at `x`, it suffices that each value on a fixed tuple `v` of model
   -- vectors is `C^n` at `x`.
-  rw [isSmoothForm_def]
-  intro x
-  rw [contMDiffAt_section]
-  simp_rw [RoughForm.trivializationAt_apply_snd]
-  rw [contMDiffAt_continuousAlternatingMap_apply]
-  intro v
+  rw [isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply] at hφ ⊢
+  intro x v
   set e := trivializationAt E (TangentSpace I) x
   have hm : finrank ℝ E = m := by simpa using o.card_eq.symm
   let σ : Fin (finrank ℝ E) ≃ Fin m := finCongr hm
@@ -198,12 +186,8 @@ theorem IsSmoothForm.hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k +
     e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' x)
   -- Every ingredient of `hodgeStar_symmL_apply` is `C^n` at `x`: the coordinates of `φ` and of
   -- the volume form, and the inverse chart Gram matrix.
-  have hφc := contMDiffAt_continuousAlternatingMap_apply.1 <| by
-    simpa only [RoughForm.trivializationAt_apply_snd] using
-      (contMDiffAt_section x).1 ((isSmoothForm_def n φ).1 hφ x)
-  have hvc := contMDiffAt_continuousAlternatingMap_apply.1 (by
-    simpa only [RoughForm.trivializationAt_apply_snd] using (contMDiffAt_section x).1
-      ((isSmoothForm_def n _).1 (isSmoothForm_riemannianVolumeForm (n := n) o) x)) b
+  have hvc := (isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply _).1
+    (isSmoothForm_riemannianVolumeForm (n := n) o) x b
   let G' : M → Matrix (Fin m) (Fin m) ℝ := fun y ↦
     (Riemannian.Tensor.chartInvGramMatrix (I := I) x y).submatrix σ.symm σ.symm
   have hG' (i j : Fin m) : ContMDiffAt I 𝓘(ℝ) n (fun y ↦ G' y i j) x :=
@@ -225,17 +209,15 @@ theorem IsSmoothForm.hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k +
       simp only [Fin.append_right]
       exact contMDiffAt_const
   have hsum : ContMDiffAt I 𝓘(ℝ) n (fun y ↦
-      (riemannianVolumeForm o y).compContinuousLinearMap (e.symmL ℝ y) b *
-      ∑ s : powersetCard (Fin m) k, (φ y).compContinuousLinearMap (e.symmL ℝ y)
-        (b ∘ powersetCard.ofFinEmbEquiv.symm s) * D (W s y)) x :=
-    hvc.mul (contMDiffAt_finsetSum (t := Finset.univ) fun s _ ↦ (hφc _).mul (hW s))
+      riemannianVolumeForm o y (e.symmL ℝ y ∘ b) *
+      ∑ s : powersetCard (Fin m) k, φ y (e.symmL ℝ y ∘ (b ∘ powersetCard.ofFinEmbEquiv.symm s)) *
+        D (W s y)) x :=
+    hvc.mul (contMDiffAt_finsetSum (t := Finset.univ) fun s _ ↦ (hφ x _).mul (hW s))
   -- On the base set, the value of `⋆φ` is given by `hodgeStar_symmL_apply`.
   refine hsum.congr_of_eventuallyEq ?_
   filter_upwards [hbase] with y hy
-  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    hodgeStar_symmL_apply o hkl φ σ hy v]
-  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def, D,
-    AlternatingMap.coe_toContinuousAlternatingMap, W, G', b, e]
+  rw [hodgeStar_symmL_apply o hkl φ σ hy v]
+  simp only [Function.comp_def, D, AlternatingMap.coe_toContinuousAlternatingMap, W, G', b, e]
 
 end Smooth
 
@@ -263,6 +245,12 @@ theorem hodgeStar_hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l 
     (hlk : l + k = m) (α : SmoothForm I M ℝ k) :
     hodgeStar o hlk (hodgeStar o hkl α) = (-1 : ℝ) ^ (k * l) • α :=
   Subtype.ext (RoughForm.hodgeStar_hodgeStar o hkl hlk α)
+
+/-- Reversing the orientation negates the Hodge star of smooth forms. -/
+@[simp]
+theorem hodgeStar_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (α : SmoothForm I M ℝ k) : hodgeStar (-o) hkl α = -hodgeStar o hkl α :=
+  Subtype.ext (RoughForm.hodgeStar_neg_orientation o hkl α)
 
 end SmoothForm
 
