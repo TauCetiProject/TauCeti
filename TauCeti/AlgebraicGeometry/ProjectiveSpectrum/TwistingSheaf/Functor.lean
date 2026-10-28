@@ -294,9 +294,11 @@ theorem twistingSheafMap_app_apply_of_eq_comp (g : ℬ →+*ᵍ 𝒞) (hg : 𝒞
           subst hgf; rw [map_comp f g hf hg]; rfl)).op ((twistingSheafMap h hh n).app V s) =
       (twistingSheafMap g hg n).app (map f hf ⁻¹ᵁ V) ((twistingSheafMap f hf n).app V s) := by
   subst hgf
-  have := ConcreteCategory.congr_hom
-    congr(Scheme.Modules.Hom.app $(twistingSheafMap_comp f hf g hg n) V) s
-  -- the pushforward comparison isomorphisms are identities on sections
+  have := congr((Scheme.Modules.Hom.app $(twistingSheafMap_comp f hf g hg n) V).hom s)
+  simp only [Scheme.Modules.Hom.comp_app, Scheme.Modules.pushforward_map_app,
+    Scheme.Modules.pushforwardCongr_hom_app_app, Scheme.Modules.pushforwardComp_hom_app_app] at this
+  -- the remaining composites are of maps whose sources and targets agree with those in the goal
+  -- only definitionally, so `simp` cannot split them; they unfold to the goal
   exact this
 
 /-- **The morphism of twisting sheaves induced by the identity is the identity, on sections**: for
@@ -307,9 +309,11 @@ theorem twistingSheafMap_app_apply_of_eq_id (g : 𝒜 →+*ᵍ 𝒜) (hg : 𝒜�
     (twistingSheaf 𝒜 n).presheaf.map (eqToHom (show V = map g hg ⁻¹ᵁ V by
         subst hgid; rw [map_id]; rfl)).op ((twistingSheafMap g hg n).app V s) = s := by
   subst hgid
-  have := ConcreteCategory.congr_hom
-    congr(Scheme.Modules.Hom.app $(twistingSheafMap_id (𝒜 := 𝒜) n) V) s
-  -- the pushforward comparison isomorphisms are identities on sections
+  have := congr((Scheme.Modules.Hom.app $(twistingSheafMap_id (𝒜 := 𝒜) n) V).hom s)
+  simp only [Scheme.Modules.Hom.comp_app, Scheme.Modules.pushforwardCongr_hom_app_app,
+    Scheme.Modules.pushforwardId_hom_app_app, Scheme.Modules.Hom.id_app] at this
+  -- the remaining composites are of maps whose sources and targets agree with those in the goal
+  -- only definitionally, so `simp` cannot split them; they unfold to the goal
   exact this
 
 end Proj

@@ -41,8 +41,6 @@ is the localization away from `f` in degree zero
 * `CategoryTheory.CommMon.bijective_twistingSheafMap_app_restrictGradedSections`: the map of
   twisting sheaves along a transition map of the charts of the relative `Proj` is bijective on
   sections over the locus where `f` is invertible.
-* `CategoryTheory.CommMon.proj_map_restrictGradedSections_preimage_basicOpen_eq_top`: the chart over
-  `D(f)` maps into the locus of the chart over `U` where `f` is invertible.
 
 ## References
 
@@ -84,29 +82,13 @@ theorem _root_.CategoryTheory.CommMon.bijective_twistingSheafMap_app_restrictGra
       rw [CommMon.restrictGradedSectionsGradedHom_toRingHom]
       exact A.isLocalization_gradedSections_basicOpen hU f) hW
 
-/-- The chart `Proj (⨁ n, Γ(Aₙ, D(f)))` of the relative `Proj` maps into the locus of the chart
-`Proj (⨁ n, Γ(Aₙ, U))` where the image of `f` in degree zero is invertible. -/
-theorem _root_.CategoryTheory.CommMon.proj_map_restrictGradedSections_preimage_basicOpen_eq_top
-    (i : X.basicOpen f ⟶ U) :
-    Proj.map _ (A.irrelevant_le_map_restrictGradedSectionsGradedHom f hU i) ⁻¹ᵁ
-      Proj.basicOpen _ (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U)) f) = ⊤ := by
-  have := Subsingleton.elim i (homOfLE (X.basicOpen_le f))
-  subst this
-  -- the restriction of `f` to `D(f)` is a unit, so it lies in no homogeneous prime
-  have hunit : IsUnit (A.restrictGradedSectionsGradedHom (homOfLE (X.basicOpen_le f))
-      (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U)) f)) := by
-    rw [CommMon.restrictGradedSectionsGradedHom_apply, CommMon.restrictGradedSections_algebraMap]
-    exact (X.toRingedSpace.isUnit_res_basicOpen f).map _
-  rw [Proj.map_preimage_basicOpen, eq_top_iff]
-  exact fun y _ ↦ (Proj.mem_basicOpen _ _ _).mpr fun h ↦
-    y.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ h hunit)
-
 end BasicOpen
 
 open Scheme.AffineZariskiSite
 
 /-- The gluing datum of the twisting sheaves `𝒪(n)` of the charts `Proj (⨁ n, Γ(Aₙ, U))` of the
 relative `Proj`, with the maps of twisting sheaves induced by restriction of sections. -/
+@[expose, simps]
 noncomputable def _root_.CategoryTheory.CommMon.relativeProjTwistingSheafGlueData (n : ℤ) :
     ModulesGlueData A.relativeProjGluingData.functor where
   obj U := Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n
@@ -122,10 +104,16 @@ noncomputable def _root_.CategoryTheory.CommMon.relativeProjTwistingSheafGlueDat
 /-- The **twisting sheaf `𝒪(n)` on the relative `Proj`** of a graded algebra `A` on `X` with
 quasi-coherent homogeneous components, glued from the twisting sheaves `𝒪(n)` of the charts
 `Proj (⨁ n, Γ(Aₙ, U))` over the affine opens `U` of `X`. -/
-@[stacks 01NR]
+@[expose, stacks 01NR "construction only; quasi-coherence and the graded map are not yet here"]
 noncomputable def _root_.CategoryTheory.CommMon.relativeProjTwistingSheaf (n : ℤ) :
     A.relativeProj.Modules :=
   (A.relativeProjTwistingSheafGlueData n).glued
+
+/-- The twisting sheaf `𝒪(n)` on the relative `Proj` is the glued module of the gluing datum of the
+twisting sheaves of the charts. -/
+theorem _root_.CategoryTheory.CommMon.relativeProjTwistingSheaf_def (n : ℤ) :
+    A.relativeProjTwistingSheaf n = (A.relativeProjTwistingSheafGlueData n).glued :=
+  (rfl)
 
 /-- The maps of twisting sheaves along the transition maps of the charts of the relative `Proj`
 are bijective on sections over opens inside the images of the transition maps. -/
@@ -138,7 +126,7 @@ theorem _root_.CategoryTheory.CommMon.bijective_relativeProjTwistingSheafGlueDat
   obtain ⟨f, rfl⟩ := leOfHom i
   refine A.bijective_twistingSheafMap_app_restrictGradedSections V.2 f _ n fun _ hw ↦ ?_
   obtain ⟨y, rfl⟩ := hW hw
-  exact (A.proj_map_restrictGradedSections_preimage_basicOpen_eq_top V.2 f _).ge trivial
+  exact (A.proj_map_restrictGradedSections_preimage_basicOpen_eq_top f V.2 _).ge trivial
 
 /-- **The restriction of `𝒪(n)` to a chart of the relative `Proj` is `𝒪(n)`**: over an affine
 open `U` of `X`, the restriction of the twisting sheaf `𝒪(n)` of the relative `Proj` to the chart
@@ -149,5 +137,14 @@ noncomputable def _root_.CategoryTheory.CommMon.restrictRelativeProjTwistingShea
       Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n :=
   (A.relativeProjTwistingSheafGlueData n).restrictGluedIso
     (A.bijective_relativeProjTwistingSheafGlueData_map_app n) U
+
+/-- The isomorphism from the restriction of `𝒪(n)` to a chart of the relative `Proj` to the
+twisting sheaf of the chart is the morphism adjoint to the projection of the glued module. -/
+@[simp]
+theorem _root_.CategoryTheory.CommMon.restrictRelativeProjTwistingSheafIso_hom (n : ℤ)
+    (U : X.AffineZariskiSite) :
+    (A.restrictRelativeProjTwistingSheafIso n U).hom =
+      (A.relativeProjTwistingSheafGlueData n).restrictGluedHom U :=
+  ModulesGlueData.restrictGluedIso_hom _ _ U
 
 end TauCeti

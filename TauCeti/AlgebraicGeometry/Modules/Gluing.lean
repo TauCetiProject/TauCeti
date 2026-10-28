@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Limits
 public import Mathlib.AlgebraicGeometry.Gluing
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.Basic
+public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
 /-!
@@ -57,35 +58,6 @@ open CategoryTheory Limits Opposite AlgebraicGeometry
 namespace TauCeti
 
 universe u
-
-section LocallyDirected
-
-variable {J : Type u} [SmallCategory J] (F : J ⥤ Scheme.{u})
-  [∀ {i j} (f : i ⟶ j), IsOpenImmersion (F.map f)] [(F ⋙ Scheme.forget).IsLocallyDirected]
-  [Quiver.IsThin J]
-
-/-- In the colimit of a thin locally directed diagram of open immersions, the part of `F j` lying
-over the image of `F i` is the image of `F f`, for any `f : i ⟶ j`. -/
-theorem _root_.AlgebraicGeometry.Scheme.IsLocallyDirected.preimage_opensRange_ι_le {i j : J}
-    (f : i ⟶ j) : colimit.ι F j ⁻¹ᵁ (colimit.ι F i).opensRange ≤ (F.map f).opensRange := by
-  rintro y ⟨x, hx⟩
-  obtain ⟨k, fi, fj, z, rfl, rfl⟩ := (Scheme.IsLocallyDirected.ι_eq_ι_iff F).mp hx
-  exact ⟨F.map fi z, by rw [← Scheme.Hom.comp_apply, ← F.map_comp, Subsingleton.elim (fi ≫ f) fj]⟩
-
-/-- In the colimit of a thin locally directed diagram of open immersions, the opens
-`U ⊓ ιₖ(F k)`, for `k` mapping to both `i` and `j`, cover the preimage in `F j` of an open `U`
-contained in the image of `F i`. -/
-theorem _root_.AlgebraicGeometry.Scheme.IsLocallyDirected.preimage_le_iSup_preimage_inf_opensRange
-    {i j : J} {U : (colimit F).Opens} (hU : U ≤ (colimit.ι F i).opensRange) :
-    colimit.ι F j ⁻¹ᵁ U ≤
-      ⨆ k : Σ k : J, (k ⟶ j) × (k ⟶ i), colimit.ι F j ⁻¹ᵁ (U ⊓ (colimit.ι F k.1).opensRange) := by
-  intro y hy
-  obtain ⟨x, hx⟩ := hU hy
-  obtain ⟨k, fi, fj, z, rfl, rfl⟩ := (Scheme.IsLocallyDirected.ι_eq_ι_iff F).mp hx
-  refine TopologicalSpace.Opens.mem_iSup.mpr ⟨⟨k, fj, fi⟩, hy, z, ?_⟩
-  rw [← Scheme.Hom.comp_apply, colimit.w]
-
-end LocallyDirected
 
 /-- A **gluing datum of modules** on a diagram of schemes `F : J ⥤ Scheme`: a sheaf of modules
 `Mⱼ` on each `F j`, with transition morphisms `Mⱼ ⟶ (F f)_* Mᵢ` for `f : i ⟶ j`, compatible with
@@ -238,7 +210,8 @@ private theorem eq_of_restrict_eq {i j : J} {U : (colimit F).Opens}
 
 /-- The morphism from the restriction of the glued module to `F i` to `Mᵢ`, adjoint to the
 projection `glued ⟶ (ιᵢ)_* Mᵢ` under the restriction–pushforward adjunction of `ιᵢ`. It is an
-isomorphism (`TauCeti.ModulesGlueData.restrictGluedIso`). -/
+isomorphism when the transition morphisms are bijective over opens inside the images of the
+transition maps (`TauCeti.ModulesGlueData.isIso_restrictGluedHom`). -/
 def restrictGluedHom (i : J) : D.glued.restrict (colimit.ι F i) ⟶ D.obj i :=
   ((Scheme.Modules.restrictAdjunction (colimit.ι F i)).homEquiv _ _).symm (D.π i)
 
