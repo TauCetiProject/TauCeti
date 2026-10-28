@@ -8,8 +8,9 @@ module
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.PicEquivalence
 public import TauCeti.NumberTheory.BinaryQuadraticForm.PrimitiveReduced
 public import Mathlib.NumberTheory.NumberField.ClassNumber
-public import Mathlib.RingTheory.DedekindDomain.PID
+public import Mathlib.RingTheory.UniqueFactorizationDomain.Defs
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Examples
+import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
 import TauCeti.NumberTheory.NumberField.Global.Orders.Maximal
 
 /-!
@@ -126,13 +127,9 @@ theorem classNumber_neg_twenty_eq_two :
 not a unique factorization domain. -/
 theorem not_uniqueFactorizationMonoid_neg_twenty :
     ¬ UniqueFactorizationMonoid (𝓞 (QuadraticAlgebra ℚ ((-(20 : ℕ) : ℤ) : ℚ) 0)) := by
-  intro h
-  -- a Dedekind domain with unique factorization is a principal ideal domain, of class number one
-  have h1 := NumberField.classNumber_eq_one_iff.mpr <|
-    IsPrincipalIdealRing.of_isDedekindDomain_of_uniqueFactorizationMonoid
-      (𝓞 (QuadraticAlgebra ℚ ((-(20 : ℕ) : ℤ) : ℚ) 0))
-  rw [classNumber_neg_twenty_eq_two] at h1
-  exact absurd h1 (by decide)
+  rw [← NumberField.classNumber_eq_one_iff_uniqueFactorizationMonoid,
+    classNumber_neg_twenty_eq_two]
+  decide
 
 end Examples
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.RingTheory.ClassGroup.ExtendedHom
+public import Mathlib.RingTheory.DedekindDomain.PID
 
 import TauCeti.NumberTheory.ClassGroup.Equiv
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
@@ -24,7 +25,9 @@ underlying ring isomorphism `e.toRingEquiv`.
 
 Consequently the class number of a number field is an isomorphism invariant, and it can be
 computed from any ring isomorphic to the ring of integers, such as an explicit integral model:
-`Nat.card (ClassGroup R) = classNumber K` for every ring isomorphism `R ≃+* 𝓞 K`.
+`Nat.card (ClassGroup R) = classNumber K` for every ring isomorphism `R ≃+* 𝓞 K`. In the same way
+the native Dedekind equivalences *class number one ⇔ principal ideal domain ⇔ unique factorization
+domain* hold for every such model `R`, not only for `𝓞 K` itself.
 
 ## Main definitions and results
 
@@ -37,6 +40,12 @@ computed from any ring isomorphic to the ring of integers, such as an explicit i
 * `RingEquiv.classNumber_eq`: isomorphic number fields have equal class numbers.
 * `RingEquiv.natCard_classGroup_eq_classNumber`: a ring isomorphic to `𝓞 K` has `classNumber K`
   ideal classes.
+* `NumberField.classNumber_eq_one_iff_uniqueFactorizationMonoid`: `classNumber K = 1` exactly when
+  `𝓞 K` is a unique factorization domain.
+* `RingEquiv.classNumber_eq_one_iff_isPrincipalIdealRing`,
+  `RingEquiv.classNumber_eq_one_iff_uniqueFactorizationMonoid`: for a ring `R ≃+* 𝓞 K`,
+  `classNumber K = 1` exactly when `R` is a principal ideal domain, respectively a unique
+  factorization domain.
 
 ## Source note
 
@@ -113,5 +122,42 @@ model of `𝓞 K`. -/
 theorem natCard_classGroup_eq_classNumber {R : Type*} [CommRing R] [IsDomain R] [NumberField K]
     (f : R ≃+* 𝓞 K) : Nat.card (ClassGroup R) = classNumber K :=
   (Nat.card_congr (ClassGroup.mulEquiv f).toEquiv).trans Nat.card_eq_fintype_card
+
+/-- **Class number one for a model of the ring of integers.** For a ring `R` isomorphic to the ring
+of integers of `K`, the class number of `K` is `1` exactly when `R` is a principal ideal ring. -/
+theorem classNumber_eq_one_iff_isPrincipalIdealRing {R : Type*} [CommRing R] [NumberField K]
+    (f : R ≃+* 𝓞 K) : classNumber K = 1 ↔ IsPrincipalIdealRing R :=
+  classNumber_eq_one_iff.trans
+    ⟨fun _ ↦ .of_surjective f.symm.toRingHom f.symm.surjective,
+      fun _ ↦ .of_surjective f.toRingHom f.surjective⟩
+
+end RingEquiv
+
+namespace NumberField
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **Class number one is unique factorization.** The class number of a number field `K` is `1`
+exactly when `𝓞 K` is a unique factorization domain: a principal ideal domain has unique
+factorization, and a Dedekind domain with unique factorization is a principal ideal domain. -/
+theorem classNumber_eq_one_iff_uniqueFactorizationMonoid :
+    classNumber K = 1 ↔ UniqueFactorizationMonoid (𝓞 K) :=
+  classNumber_eq_one_iff.trans
+    ⟨fun _ ↦ inferInstance,
+      fun _ ↦ IsPrincipalIdealRing.of_isDedekindDomain_of_uniqueFactorizationMonoid (𝓞 K)⟩
+
+end NumberField
+
+namespace RingEquiv
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **Unique factorization in a model of the ring of integers.** For a ring `R` isomorphic to
+the ring of integers of `K`, the class number of `K` is `1` exactly when `R` is a unique
+factorization domain. -/
+theorem classNumber_eq_one_iff_uniqueFactorizationMonoid {R : Type*} [CommRing R]
+    (f : R ≃+* 𝓞 K) : classNumber K = 1 ↔ UniqueFactorizationMonoid R :=
+  NumberField.classNumber_eq_one_iff_uniqueFactorizationMonoid.trans
+    (f.toMulEquiv.uniqueFactorizationMonoid_iff).symm
 
 end RingEquiv
