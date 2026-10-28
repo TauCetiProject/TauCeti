@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Extension
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.CategoryTheory.Adjunction.Unique
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 
 /-!
 # Extension of scalars along a ring homomorphism of noncommutative rings, as a functor
@@ -114,6 +113,21 @@ composite functor, which `simp` unfolds. -/
 theorem adjunction_unit_app_apply (M : ModuleCat.{max v u₂} R) (m : M) :
     (adjunction f).unit.app M m = tmul f 1 m :=
   adjunctionHomEquiv_apply f (𝟙 _) m
+
+/-- The counit of the adjunction is `s ⊗ n ↦ s • n`. Not `@[simp]`: its left-hand side mentions
+the composite functor, which `simp` unfolds. -/
+theorem adjunction_counit_app_tmul (N : ModuleCat.{max v u₂} S) (s : S)
+    (n : (ModuleCat.restrictScalars f).obj N) :
+    (adjunction f).counit.app N (tmul f s n) = s • (show N from n) :=
+  adjunctionHomEquiv_symm_apply f (𝟙 _) s n
+
+@[simp]
+theorem adjunction_homEquiv_symm_apply_tmul {M : ModuleCat.{max v u₂} R}
+    {N : ModuleCat.{max v u₂} S} (ψ : M ⟶ (ModuleCat.restrictScalars f).obj N) (s : S) (m : M) :
+    ((adjunction f).homEquiv M N).symm ψ (tmul f s m) = s • ψ m := by
+  rw [Adjunction.homEquiv_counit]
+  exact (congrArg ((adjunction f).counit.app N) (map_tmul (f := f) ψ.hom s m)).trans
+    (adjunction_counit_app_tmul f N s (ψ m))
 
 end Ring
 

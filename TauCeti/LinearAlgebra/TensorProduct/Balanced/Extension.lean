@@ -155,13 +155,8 @@ theorem induction_on {C : BalancedExtension f P → Prop} (x : BalancedExtension
   BalancedTensorProduct.induction_on ℤ R x (fun s p ↦ tmul ((Scalars.of f).symm s) p) add
 
 /-- The extension of the zero module is zero. -/
-instance [Subsingleton P] : Subsingleton (BalancedExtension f P) where
-  allEq x y := by
-    have h (z : BalancedExtension f P) : z = 0 := by
-      induction z using induction_on with
-      | tmul s p => rw [Subsingleton.elim p 0, tmul_zero]
-      | add x y hx hy => rw [hx, hy, add_zero]
-    rw [h x, h y]
+instance [Subsingleton P] : Subsingleton (BalancedExtension f P) :=
+  inferInstanceAs (Subsingleton (_ ⧸ _))
 
 variable {Q : Type w} [AddCommGroup Q] [Module S Q]
 
