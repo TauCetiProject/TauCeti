@@ -15,6 +15,9 @@ import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 The coordinate expression of a differential form is the fiber coordinate of its section in the
 existing alternating tangent-bundle trivialization. Consequently even `C⁰` section regularity
 implies coordinate continuity on the extended chart target, including boundary and corner points.
+In the trivialization at any point, the fiber coordinate of a form at `y` is the form pulled back
+along the inverse tangent trivialization at `y` (`TauCeti.RoughForm.trivializationAt_apply_snd`),
+with no chart-domain hypothesis.
 -/
 
 public section
@@ -29,6 +32,18 @@ namespace TauCeti
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
+
+/-- The fiber coordinate of a form in the alternating-bundle trivialization at `x` is the form
+pulled back along the inverse tangent trivialization at `x`. -/
+theorem RoughForm.trivializationAt_apply_snd (φ : RoughForm I M F k) (x y : M) :
+    (trivializationAt (E [⋀^Fin k]→L[ℝ] F) (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F) x
+      ⟨y, φ y⟩).2 =
+      (φ y).compContinuousLinearMap ((trivializationAt E (TangentSpace I) x).symmL ℝ y) := by
+  rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply]
+  simp only [ContinuousAlternatingMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization]
+  -- Composition with the identity of the trivial coefficient bundle is the identity.
+  rfl
 
 /-- On an extended chart target, the form's coordinate expression is exactly its section's
 fiber coordinate in the preferred alternating-bundle trivialization. -/

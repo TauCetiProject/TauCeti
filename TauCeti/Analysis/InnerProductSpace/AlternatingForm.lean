@@ -27,7 +27,9 @@ Manifolds*. It carries the contraction by `⟪u, ·⟫` to the interior product
 wedges by Gram determinants, defines the pointwise inner product of `k`-forms,
 `TauCeti.alternatingFormInner`. For an orthonormal basis `(eᵢ)` it is
 `⟨α, β⟩ = ∑_{i₁ < ⋯ < iₖ} α(e_{i₁}, …, e_{iₖ}) β(e_{i₁}, …, e_{iₖ})`, so the increasing wedges of
-the dual coframe are orthonormal.
+the dual coframe are orthonormal. For an arbitrary basis `b`, with dual basis `b*` for the inner
+product, a form is represented by `∑ α(b_{i₁}, …, b_{iₖ}) b*_{i₁} ∧ ⋯ ∧ b*_{iₖ}`
+(`TauCeti.alternatingFormEquiv_symm_eq_sum`).
 
 ## Main definitions
 
@@ -40,6 +42,8 @@ the dual coframe are orthonormal.
 * `TauCeti.alternatingFormEquiv_koszulDifferential`: it carries the contraction by `⟪u, ·⟫` to
   the interior product by `u`.
 * `TauCeti.alternatingFormInner_eq_sum`: the inner product of forms in an orthonormal basis.
+* `TauCeti.alternatingFormEquiv_symm_eq_sum`: the element of `⋀ᵏ V` representing a form, in
+  an arbitrary basis.
 
 ## References
 
@@ -199,5 +203,41 @@ theorem alternatingFormInner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
       ιMulti_family, OrthonormalBasis.coe_toBasis]
   rw [hs, real_inner_comm ((alternatingFormEquiv V k).symm β),
     inner_alternatingFormEquiv_symm_ιMulti, inner_alternatingFormEquiv_symm_ιMulti]
+
+variable {ι : Type*} [LinearOrder ι]
+
+/-- The wedges of the dual basis `b*` and the coordinates of `⋀ᵏ V` in the basis induced by `b`:
+`⟪b*_{i₁} ∧ ⋯ ∧ b*_{iₖ}, x⟫` is the coordinate of `x` at `{i₁ < ⋯ < iₖ}`. -/
+theorem inner_ιMulti_dualBasis [Finite ι] (b : Basis ι ℝ V) {k : ℕ} (s : powersetCard ι k)
+    (w : Fin k → V) :
+    ⟪ιMulti ℝ k (LinearMap.BilinForm.dualBasis (innerₗ V) nondegenerate_inner b ∘
+        powersetCard.ofFinEmbEquiv.symm s), ιMulti ℝ k w⟫ =
+      (b.exteriorPower k).repr (ιMulti ℝ k w) s := by
+  have := Fintype.ofFinite ι
+  rw [inner_ιMulti_ιMulti, basis_repr_apply, ιMultiDual_apply_ιMulti]
+  congr 1
+  ext i j
+  simp [inner_dualBasis_left]
+
+/-- **A form in an arbitrary basis**: the element of `⋀ᵏ V` representing a form `α` is
+`∑ α(b_{i₁}, …, b_{iₖ}) b*_{i₁} ∧ ⋯ ∧ b*_{iₖ}`, the sum running over the increasing `k`-tuples
+`i₁ < ⋯ < iₖ`, where `b*` is the dual basis of `b` for the inner product. -/
+theorem alternatingFormEquiv_symm_eq_sum [Fintype ι] (b : Basis ι ℝ V) {k : ℕ}
+    (α : V [⋀^Fin k]→L[ℝ] ℝ) :
+    (alternatingFormEquiv V k).symm α = ∑ s : powersetCard ι k,
+      α (b ∘ powersetCard.ofFinEmbEquiv.symm s) •
+        ιMulti ℝ k (LinearMap.BilinForm.dualBasis (innerₗ V) nondegenerate_inner b ∘
+          powersetCard.ofFinEmbEquiv.symm s) := by
+  classical
+  -- Both sides have the same inner product with each basis vector `b_{t₁} ∧ ⋯ ∧ b_{tₖ}`.
+  refine InnerProductSpace.ext_inner_left_basis (b.exteriorPower k) fun t ↦ ?_
+  have ht : b.exteriorPower k t = ιMulti ℝ k (b ∘ powersetCard.ofFinEmbEquiv.symm t) := by
+    rw [basis_apply, ιMulti_family]
+  simp only [inner_sum, real_inner_smul_right]
+  simp_rw [real_inner_comm _ (b.exteriorPower k t)]
+  conv_rhs => enter [2, s]; rw [ht, inner_ιMulti_dualBasis, ← ht, Basis.repr_self,
+    Finsupp.single_apply]
+  rw [ht, inner_alternatingFormEquiv_symm_ιMulti]
+  simp
 
 end TauCeti

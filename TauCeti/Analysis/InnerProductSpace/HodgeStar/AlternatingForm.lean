@@ -23,6 +23,12 @@ turns the `L²` pairing of forms on an oriented Riemannian manifold into an inte
 form. The star is an isometry, satisfies `⋆⋆ = (-1) ^ (k l)` on `k`-forms, and changes sign
 with the orientation.
 
+In an arbitrary basis `b`, with dual basis `b*` for the inner product, the star is computed by
+`(⋆α)(w) = ∑ α(b_{i₁}, …, b_{iₖ}) vol(b*_{i₁}, …, b*_{iₖ}, w₁, …, wₗ)`
+(`Orientation.formHodgeStar_apply_eq_sum`). Writing `b*` through the inverse Gram matrix of `b`
+(`Orientation.formHodgeStar_apply_eq_volumeForm_mul_sum`), in the coordinate frame of a Riemannian
+metric this expresses the star through the inverse metric and the volume of the frame.
+
 ## Main definitions
 
 * `Orientation.formHodgeStar`: the Hodge star of alternating forms.
@@ -32,6 +38,9 @@ with the orientation.
 * `Orientation.wedge_formHodgeStar_apply`: `α ∧ ⋆β = ⟨α, β⟩ vol`.
 * `Orientation.formHodgeStar_formHodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
 * `Orientation.alternatingFormInner_formHodgeStar`: the star preserves the inner product of forms.
+* `Orientation.formHodgeStar_apply_eq_sum`: the star in an arbitrary basis.
+* `Orientation.formHodgeStar_apply_eq_volumeForm_mul_sum`: the star through the inverse Gram
+  matrix of an arbitrary basis.
 
 ## References
 
@@ -43,7 +52,7 @@ public section
 
 noncomputable section
 
-open Module exteriorPower TauCeti
+open Module exteriorPower TauCeti Set
 open scoped RealInnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -132,5 +141,51 @@ theorem formHodgeStar_neg_orientation {k l : ℕ} (hkl : k + l = finrank ℝ V)
     (α : V [⋀^Fin k]→L[ℝ] ℝ) : (-o).formHodgeStar hkl α = -o.formHodgeStar hkl α := by
   obtain ⟨a, rfl⟩ := (alternatingFormEquiv V k).surjective α
   simp
+
+/-- **The Hodge star of forms in an arbitrary basis**: if `b` is a basis of `V` and `b*` its dual
+basis for the inner product, then `(⋆α)(w₁, …, wₗ)` is the sum over the increasing `k`-tuples
+`i₁ < ⋯ < iₖ` of `α(b_{i₁}, …, b_{iₖ}) vol(b*_{i₁}, …, b*_{iₖ}, w₁, …, wₗ)`. -/
+theorem formHodgeStar_apply_eq_sum {ι : Type*} [LinearOrder ι] [Fintype ι] {k l : ℕ}
+    (hkl : k + l = finrank ℝ V) (b : Basis ι ℝ V) (α : V [⋀^Fin k]→L[ℝ] ℝ) (w : Fin l → V) :
+    o.formHodgeStar hkl α w = ∑ s : powersetCard ι k, α (b ∘ powersetCard.ofFinEmbEquiv.symm s) *
+      o.volumeForm (Fin.append (LinearMap.BilinForm.dualBasis (innerₗ V) nondegenerate_inner b ∘
+        powersetCard.ofFinEmbEquiv.symm s) w ∘ Fin.cast (hkl.trans _i.out).symm) := by
+  -- Re-indexing a wedge of vectors along a cast of `Fin` does not change it.
+  have key : ∀ {N : ℕ} (h : N = k + l) (f : Fin (k + l) → V),
+      ExteriorAlgebra.ιMulti ℝ N (f ∘ Fin.cast h) = ExteriorAlgebra.ιMulti ℝ (k + l) f := by
+    rintro N rfl f
+    rfl
+  rw [o.formHodgeStar_apply, alternatingFormEquiv_symm_eq_sum b, map_sum, LinearMap.sum_apply]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  rw [map_smul, LinearMap.smul_apply, smul_eq_mul, wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _
+    (ιMulti ℝ _ (Fin.append (LinearMap.BilinForm.dualBasis (innerₗ V) nondegenerate_inner b ∘
+      powersetCard.ofFinEmbEquiv.symm s) w ∘ Fin.cast hkl.symm))
+    (by rw [ιMulti_apply_coe, ιMulti_apply_coe, ιMulti_apply_coe,
+      ExteriorAlgebra.ιMulti_mul_ιMulti, key]), o.volumeEquiv_ιMulti]
+  simp only [Function.comp_def, finCongr_apply, Fin.cast_cast]
+
+/-- **The Hodge star of forms through the inverse Gram matrix**: for a basis `b` of `V` indexed by
+`Fin n` with Gram matrix `G`, `(⋆α)(w)` is `vol(b)` times the sum over the increasing `k`-tuples
+`i₁ < ⋯ < iₖ` of `α(b_{i₁}, …, b_{iₖ})` times the `b`-determinant of
+`(∑ⱼ (G⁻¹)_{i₁ j} bⱼ, …, ∑ⱼ (G⁻¹)_{iₖ j} bⱼ, w₁, …, wₗ)`. -/
+theorem formHodgeStar_apply_eq_volumeForm_mul_sum {k l : ℕ} (hkl : k + l = finrank ℝ V)
+    (b : Basis (Fin n) ℝ V) (α : V [⋀^Fin k]→L[ℝ] ℝ) (w : Fin l → V) :
+    o.formHodgeStar hkl α w = o.volumeForm b * ∑ s : powersetCard (Fin n) k,
+      α (b ∘ powersetCard.ofFinEmbEquiv.symm s) *
+        b.det (Fin.append (fun i ↦ ∑ j,
+          (Matrix.gram ℝ b)⁻¹ (powersetCard.ofFinEmbEquiv.symm s i) j • b j) w ∘
+            Fin.cast (hkl.trans _i.out).symm) := by
+  rw [o.formHodgeStar_apply_eq_sum hkl b, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  have hdual : LinearMap.BilinForm.dualBasis (innerₗ V) nondegenerate_inner b ∘
+      powersetCard.ofFinEmbEquiv.symm s = fun i ↦ ∑ j,
+        (Matrix.gram ℝ b)⁻¹ (powersetCard.ofFinEmbEquiv.symm s i) j • b j := by
+    funext i
+    exact dualBasis_innerₗ_eq_sum b _
+  have hvol : ∀ v, o.volumeForm v = o.volumeForm b * b.det v := fun v ↦ by
+    conv_lhs => rw [AlternatingMap.eq_smul_basis_det b o.volumeForm]
+    simp
+  rw [hdual, hvol]
+  ring
 
 end Orientation
