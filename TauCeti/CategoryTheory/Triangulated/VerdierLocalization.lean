@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Localization.CalculusOfFractions.Preadditive
-public import Mathlib.CategoryTheory.Localization.Triangulated
-public import Mathlib.CategoryTheory.Shift.Localization
 public import Mathlib.CategoryTheory.Triangulated.Subcategory
+public import TauCeti.CategoryTheory.Localization.Triangulated
 public import TauCeti.CategoryTheory.ObjectProperty.Retract
 
 /-!
@@ -26,10 +24,10 @@ functors between two Verdier localizations.
   triangulated subcategory `P` exactly when it belongs to `P`.
 * The zero objects of a pretriangulated category form a thick triangulated subcategory, so the
   objects killed by a triangle functor do as well.
-* A localizer morphism given by a triangle functor induces a triangle functor on triangulated
-  localizations. For `P ≤ Q` the identity functor is such a localizer morphism from `P.trW` to
-  `Q.trW`, and so induces a comparison triangle functor between the Verdier quotients by `P`
-  and by `Q`, compatible with the two localization functors up to natural isomorphism.
+* For `P ≤ Q` the identity functor is a localizer morphism from `P.trW` to `Q.trW`, and so
+  induces a comparison triangle functor between the Verdier quotients by `P` and by `Q`
+  (`CategoryTheory.LocalizerMorphism.isTriangulated_localizedFunctor`), compatible with the two
+  localization functors up to natural isomorphism.
 
 ## Main definitions
 
@@ -42,8 +40,6 @@ functors between two Verdier localizations.
   only if it kills `P`.
 * `CategoryTheory.ObjectProperty.TrWLocalization.isZero_obj_iff`: the kernel of the Verdier
   localization at a thick triangulated subcategory `P` is `P`.
-* `CategoryTheory.LocalizerMorphism.isTriangulated_localizedFunctor`: the functor induced on
-  triangulated localizations by a triangulated localizer morphism is a triangle functor.
 
 ## References
 
@@ -140,29 +136,5 @@ instance (h : P ≤ Q) : (trWLocalizerMorphismOfLE h).functor.IsTriangulated :=
   inferInstanceAs (𝟭 C).IsTriangulated
 
 end ObjectProperty
-
-namespace LocalizerMorphism
-
-variable {C₁ C₂ D₁ D₂ : Type*} [Category* C₁] [Category* C₂] [Category* D₁] [Category* D₂]
-  [HasZeroObject C₁] [HasZeroObject C₂] [HasZeroObject D₁] [HasZeroObject D₂]
-  [Preadditive C₁] [Preadditive C₂] [Preadditive D₁] [Preadditive D₂]
-  [HasShift C₁ ℤ] [HasShift C₂ ℤ] [HasShift D₁ ℤ] [HasShift D₂ ℤ]
-  [∀ n : ℤ, (shiftFunctor C₁ n).Additive] [∀ n : ℤ, (shiftFunctor C₂ n).Additive]
-  [∀ n : ℤ, (shiftFunctor D₁ n).Additive] [∀ n : ℤ, (shiftFunctor D₂ n).Additive]
-  [Pretriangulated C₁] [Pretriangulated C₂] [Pretriangulated D₁] [Pretriangulated D₂]
-  {W₁ : MorphismProperty C₁} {W₂ : MorphismProperty C₂}
-  [W₁.IsCompatibleWithShift ℤ] [W₂.IsCompatibleWithShift ℤ] [W₁.HasLeftCalculusOfFractions]
-  (Φ : LocalizerMorphism W₁ W₂) [Φ.functor.CommShift ℤ] [Φ.functor.IsTriangulated]
-  (L₁ : C₁ ⥤ D₁) [L₁.IsLocalization W₁] [L₁.CommShift ℤ] [L₁.IsTriangulated]
-  (L₂ : C₂ ⥤ D₂) [L₂.IsLocalization W₂] [L₂.CommShift ℤ] [L₂.IsTriangulated]
-
-/-- The functor induced on triangulated localizations by a localizer morphism whose underlying
-functor is a triangle functor is itself a triangle functor. -/
-instance isTriangulated_localizedFunctor : (Φ.localizedFunctor L₁ L₂).IsTriangulated := by
-  have := Localization.essSurj_mapArrow L₁ W₁
-  have := Φ.natTransCommShift_hom (M := ℤ) L₁ L₂ (Φ.localizedFunctor L₁ L₂) (CatCommSq.iso ..)
-  exact Functor.isTriangulated_of_precomp_iso (CatCommSq.iso Φ.functor L₁ L₂ _).symm
-
-end LocalizerMorphism
 
 end CategoryTheory
