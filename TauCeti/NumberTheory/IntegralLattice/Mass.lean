@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.IntegralLattice.ClassNumber
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.ProperClass
+public import TauCeti.NumberTheory.IntegralLattice.ProperClassNumber
 public import Mathlib.Algebra.BigOperators.Finprod
 
 /-!
@@ -21,7 +20,8 @@ the sum over the classes in the genus of `L` (`TauCeti.IntegralLattice.genusClas
 
   `m⁺(L) = ∑_{cls⁺ M ∈ gen L} 1 / |SO(M)|`,
 
-the sum over the proper classes of the lattices in the genus. Both are sums over finite sets when
+the sum over the proper classes of the lattices in the genus
+(`TauCeti.IntegralLattice.genusProperClasses`). Both are sums over finite sets when
 the genus contains finitely many classes, which holds for definite lattices
 (`TauCeti.IntegralLattice.IsPosDef.finite_genusClasses`) and in rank at most one. They are defined
 for every lattice, through `finsum`, and the comparison theorems carry the finiteness of the genus
@@ -46,14 +46,11 @@ the genus of `E₈ ⊕ E₈`.
 
 ## Main definitions
 
-* `TauCeti.IntegralLattice.properGenusClasses`: the proper classes in the genus of `L`.
 * `TauCeti.IntegralLattice.mass`: the mass `m(L)` of the genus of `L`.
 * `TauCeti.IntegralLattice.properMass`: the proper mass `m⁺(L)` of the genus of `L`.
 
 ## Main results
 
-* `TauCeti.IntegralLattice.finite_properGenusClasses_iff`: the genus has finitely many proper
-  classes exactly when it has finitely many classes.
 * `TauCeti.IntegralLattice.properMass_eq_two_mul_mass`: in positive rank, `m⁺ = 2m`.
 * `TauCeti.IntegralLattice.mass_eq_one_of_finrank_eq_zero` and
   `TauCeti.IntegralLattice.properMass_eq_one_of_finrank_eq_zero`: in rank zero, `m = m⁺ = 1`.
@@ -79,44 +76,6 @@ universe u
 variable {V : Type u} {W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
   {L M : IntegralLattice V}
 
-section ProperGenusClasses
-
-/-- The proper classes in the genus of `L`: the proper classes of the lattices in the ambient
-space of `L` which have the same genus as `L`. -/
-def properGenusClasses (L : IntegralLattice V) : Set (ProperIsometryQuotient V) :=
-  ProperIsometryQuotient.toIsometryQuotient ⁻¹' L.genusClasses
-
-/-- A proper class lies in the genus of `L` exactly when its class does. -/
-theorem mem_properGenusClasses_iff {c : ProperIsometryQuotient V} :
-    c ∈ L.properGenusClasses ↔ c.toIsometryQuotient ∈ L.genusClasses :=
-  Iff.rfl
-
-/-- The proper class of `M` lies in the genus of `L` exactly when `M` has the same genus as
-`L`. -/
-@[simp]
-theorem properIsometryClass_mem_properGenusClasses_iff :
-    M.properIsometryClass ∈ L.properGenusClasses ↔ L.SameGenus M := by
-  rw [mem_properGenusClasses_iff, toIsometryQuotient_properIsometryClass,
-    isometryClass_mem_genusClasses_iff]
-
-/-- Lattices of the same genus have the same proper classes in their genus. -/
-theorem SameGenus.properGenusClasses_eq (h : L.SameGenus M) :
-    L.properGenusClasses = M.properGenusClasses := by
-  rw [properGenusClasses, properGenusClasses, h.genusClasses_eq]
-
-/-- Every class in the genus of `L` is the class of a proper class in the genus of `L`. -/
-theorem image_toIsometryQuotient_properGenusClasses (L : IntegralLattice V) :
-    ProperIsometryQuotient.toIsometryQuotient '' L.properGenusClasses = L.genusClasses :=
-  Set.image_preimage_eq _ ProperIsometryQuotient.toIsometryQuotient_surjective
-
-/-- The genus of `L` contains finitely many proper classes exactly when it contains finitely many
-classes. -/
-theorem finite_properGenusClasses_iff : L.properGenusClasses.Finite ↔ L.genusClasses.Finite := by
-  refine ⟨fun h ↦ L.image_toIsometryQuotient_properGenusClasses ▸ h.image _, fun h ↦ ?_⟩
-  exact h.preimage' fun c _ ↦ finite_preimage_toIsometryQuotient c
-
-end ProperGenusClasses
-
 section Mass
 
 /-- The **mass** of the genus of `L`: the sum of `1 / |O(M)|` over the classes `cls M` in the genus
@@ -135,7 +94,7 @@ As for `TauCeti.IntegralLattice.mass`, a proper class whose special isometry gro
 contributes `0`, and a genus with infinitely many proper classes has proper mass `0`, so the
 proper mass has its classical meaning only for definite lattices. -/
 noncomputable def properMass (L : IntegralLattice V) : ℚ :=
-  ∑ᶠ c ∈ L.properGenusClasses, ((Nat.card (specialOrthogonalGroup c.out) : ℚ))⁻¹
+  ∑ᶠ c ∈ L.genusProperClasses, ((Nat.card (specialOrthogonalGroup c.out) : ℚ))⁻¹
 
 theorem mass_def (L : IntegralLattice V) :
     L.mass = ∑ᶠ c ∈ L.genusClasses, ((Nat.card (Isometry c.out c.out) : ℚ))⁻¹ :=
@@ -143,7 +102,7 @@ theorem mass_def (L : IntegralLattice V) :
 
 theorem properMass_def (L : IntegralLattice V) :
     L.properMass =
-      ∑ᶠ c ∈ L.properGenusClasses, ((Nat.card (specialOrthogonalGroup c.out) : ℚ))⁻¹ :=
+      ∑ᶠ c ∈ L.genusProperClasses, ((Nat.card (specialOrthogonalGroup c.out) : ℚ))⁻¹ :=
   (rfl)
 
 /-- **The mass is an invariant of the genus.** Lattices of the same genus have the same mass, even
@@ -164,9 +123,8 @@ theorem SameGenus.properMass_eq {M : IntegralLattice W} (h : L.SameGenus M) :
   obtain ⟨f⟩ := h.nonempty_linearEquiv
   refine finsum_mem_eq_of_bijOn (properIsometryQuotientEquiv f)
     ((Equiv.image_eq_iff_bijOn _).mp <| Set.ext fun d ↦ ?_) fun d _ ↦ ?_
-  · rw [Set.mem_image_equiv, mem_properGenusClasses_iff, mem_properGenusClasses_iff,
-      ← isometryQuotientEquiv_mem_genusClasses_iff f h,
-      ← toIsometryQuotient_properIsometryQuotientEquiv, Equiv.apply_symm_apply]
+  · rw [Set.mem_image_equiv, ← properIsometryQuotientEquiv_mem_genusProperClasses_iff f h,
+      Equiv.apply_symm_apply]
   · obtain ⟨e, -⟩ := d.exists_isProper_transport_out f
     rw [((d.out.transportIsometry f).trans e).natCard_specialOrthogonalGroup_eq]
 
@@ -177,8 +135,8 @@ private theorem ncard_mul_inv_natCard_specialOrthogonalGroup (hV : 0 < finrank �
     ((ProperIsometryQuotient.toIsometryQuotient ⁻¹' {c}).ncard : ℚ) *
         ((Nat.card (specialOrthogonalGroup c.out) : ℚ))⁻¹ =
       2 * ((Nat.card (Isometry c.out c.out) : ℚ))⁻¹ := by
-  have h := ncard_preimage_toIsometryQuotient_mul_index hV c.out
-  rw [isometryClass_out] at h
+  have h := natCard_preimage_toIsometryQuotient_mul_index c.out hV
+  rw [isometryClass_out, Nat.card_coe_set_eq] at h
   have hi : ((specialOrthogonalGroup c.out).index : ℚ) ≠ 0 :=
     Nat.cast_ne_zero.mpr fun h₀ ↦ by rw [h₀, mul_zero] at h; omega
   have h' : ((ProperIsometryQuotient.toIsometryQuotient ⁻¹' {c}).ncard : ℚ) *
@@ -193,11 +151,11 @@ theorem properMass_eq_two_mul_mass (hL : L.genusClasses.Finite) (hn : 0 < finran
     L.properMass = 2 * L.mass := by
   classical
   have hV : 0 < finrank ℚ V := L.finrank_carrier ▸ hn
-  have hP := finite_properGenusClasses_iff.mpr hL
+  have hP := finite_genusProperClasses_iff.mpr hL
   rw [properMass_def, mass_def, finsum_mem_eq_finite_toFinset_sum _ hP,
     finsum_mem_eq_finite_toFinset_sum _ hL, Finset.mul_sum,
     ← Finset.sum_fiberwise_of_maps_to (g := ProperIsometryQuotient.toIsometryQuotient)
-      (t := hL.toFinset) fun d hd ↦ by simpa [mem_properGenusClasses_iff] using hd]
+      (t := hL.toFinset) fun d hd ↦ by simpa [mem_genusProperClasses_iff] using hd]
   refine Finset.sum_congr rfl fun c hc ↦ ?_
   -- Every proper class over `c` has a special isometry group of the same order as `c.out`.
   have hfib : ∀ d ∈ {d ∈ hP.toFinset | d.toIsometryQuotient = c},
@@ -212,7 +170,7 @@ theorem properMass_eq_two_mul_mass (hL : L.genusClasses.Finite) (hn : 0 < finran
     ext d
     simp only [Finset.coe_filter, Set.Finite.mem_toFinset, Set.mem_preimage,
       Set.mem_singleton_iff]
-    refine ⟨fun hd ↦ hd.2, fun hd ↦ ⟨mem_properGenusClasses_iff.mpr ?_, hd⟩⟩
+    refine ⟨fun hd ↦ hd.2, fun hd ↦ ⟨mem_genusProperClasses_iff.mpr ?_, hd⟩⟩
     rw [hd]
     exact hL.mem_toFinset.mp hc
   rw [Finset.sum_congr rfl hfib, Finset.sum_const, nsmul_eq_mul, ← Set.ncard_coe_finset, hcard,
@@ -232,10 +190,8 @@ theorem mass_eq_one_of_finrank_eq_zero (h : finrank ℤ L = 0) : L.mass = 1 := b
 /-- In rank zero the proper mass is `1`, so `m⁺ = 2m` fails there. -/
 theorem properMass_eq_one_of_finrank_eq_zero (h : finrank ℤ L = 0) : L.properMass = 1 := by
   have := subsingleton_of_finrank_eq_zero h
-  have hP : L.properGenusClasses = {L.properIsometryClass} :=
-    Set.Subsingleton.eq_singleton_of_mem Set.subsingleton_of_subsingleton
-      (properIsometryClass_mem_properGenusClasses_iff.mpr (SameGenus.refl L))
-  rw [properMass_def, hP, finsum_mem_singleton, Nat.card_unique, Nat.cast_one, inv_one]
+  rw [properMass_def, genusProperClasses_eq_singleton_of_finrank_le_one (h.trans_le zero_le_one),
+    finsum_mem_singleton, Nat.card_unique, Nat.cast_one, inv_one]
 
 /-- In rank one the mass is `1/2`: the genus is the single class of `L`, and `O(L) = {±1}`. -/
 theorem mass_eq_inv_two_of_finrank_eq_one (h : finrank ℤ L = 1) : L.mass = 2⁻¹ := by

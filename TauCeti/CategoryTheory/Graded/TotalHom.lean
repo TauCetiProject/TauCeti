@@ -26,6 +26,9 @@ structure on a many-object quiver be stated as structure on a single graded modu
 many-object analogue of an algebra over the product of copies of the ground ring indexed by the
 objects.
 
+The total module, its grading, the inclusion and projection maps, and their Koszul-twist
+compatibilities work over any ring. The multilinear operations use commutative scalars.
+
 The inclusion and projection of a single hom module are `homInclusion` and `homProjection`.
 They are `DirectSum.lof` and `DirectSum.component`; `homInclusion` is defined with classical
 decidable equality on objects, so that no decidability assumption on the objects enters the
@@ -74,7 +77,9 @@ namespace TauCeti.GradedLinearQuiver
 
 universe u u' v v' w
 
-variable (R : Type w) [CommRing R] (C : Type u) [GradedLinearQuiver.{u, v, w} R C]
+section Ring
+
+variable (R : Type w) [Ring R] (C : Type u) [GradedLinearQuiver.{u, v, w} R C]
 
 /-- The **total module of morphisms** of a graded linear quiver: the external direct sum of the
 hom modules of all ordered pairs of objects. -/
@@ -213,7 +218,7 @@ twist. -/
 theorem koszulTwist_homInclusion (q : ℤ) (X Y : C) (f : homModule (R := R) X Y) :
     (totalGrading R C).koszulTwist q (homInclusion X Y f) =
       homInclusion X Y ((grading (R := R) X Y).koszulTwist q f) := by
-  simpa using LinearMap.congr_fun ((isHomogeneous_homInclusion X Y).koszulTwist_comp q) f
+  simpa using (isHomogeneous_homInclusion X Y).koszulTwist_apply q f
 
 /-- The Koszul twist of the total module of morphisms preserves each hom module. -/
 theorem koszulTwist_mem_range_homInclusion (q : ℤ) {X Y : C} {u : TotalHom R C}
@@ -222,6 +227,12 @@ theorem koszulTwist_mem_range_homInclusion (q : ℤ) {X Y : C} {u : TotalHom R C
   obtain ⟨f, rfl⟩ := hu
   rw [koszulTwist_homInclusion]
   exact LinearMap.mem_range_self _ _
+
+end Ring
+
+section CommRing
+
+variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
 
 /-- **Multilinear maps on homogeneous elements are controlled by homogeneous morphisms.** A
 multilinear map out of the total module of morphisms sends every tuple of elements of degrees `d`
@@ -379,5 +390,7 @@ theorem IsPathCompatible.compLinearMap_koszulTwist {C' : Type u'}
   eq_zero_of_ne s t x i j hij hne := by
     simpa only [MultilinearMap.compLinearMap_apply, koszulTwist_homInclusion] using
       hf.eq_zero_of_ne s t (fun k ↦ (grading (R := R) _ _).koszulTwist (q k) (x k)) i j hij hne
+
+end CommRing
 
 end TauCeti.GradedLinearQuiver

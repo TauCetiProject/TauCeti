@@ -11,7 +11,7 @@ public import Mathlib.GroupTheory.PGroup
 -- Non-public: `Representation.IsIrreducible.nontrivial` supplies the nontriviality that the
 -- normal-subgroup corollary needs.
 import TauCeti.RepresentationTheory.Irreducible
--- Non-public: `AddCommGroup.zmodModule` makes a `p`-torsion abelian group a `ZMod p`-module, used
+-- Non-public: `AddCommMonoid.zmodModule` makes a `p`-torsion additive monoid a `ZMod p`-module
 -- only to build a finite invariant set inside a proof.
 import Mathlib.Algebra.Module.ZMod
 -- Non-public: `Module.finite_of_finite`, `Module.natCard_eq_pow_finrank` and the field structure of
@@ -23,11 +23,13 @@ import Mathlib.Algebra.Field.ZMod
 /-!
 # Invariants of a representation whose elements have `p`-power order in characteristic `p`
 
-Over a commutative ring `k` of characteristic `p`, a representation `ρ` of a finite group on a
-nonzero module, in which every `ρ g` has order a power of `p`, always has a nonzero invariant
-vector: `Representation.invariants_ne_bot_of_forall_pow_eq_one`. No finiteness or dimension
-hypothesis on the module is needed, and `k` may be infinite. Over a field this is the modular
-counterpart of the characteristic-free `Representation.IsIrreducible.invariants_eq_bot`, which
+Over a semiring `k` of characteristic `p`, a representation `ρ` of a finite monoid on a
+nonzero module, in which every `ρ g` has order a power of `p`, always has a nonzero fixed
+vector: `Representation.exists_ne_zero_apply_eq_self_of_forall_pow_eq_one`. No finiteness or
+dimension hypothesis on the module is needed, and `k` may be infinite or noncommutative. Over a
+commutative ring, `Representation.invariants_ne_bot_of_forall_pow_eq_one` states this for a group
+using the invariant submodule. Over a field and for a group this is the modular counterpart of
+`Representation.IsIrreducible.invariants_eq_bot`, which
 says that a nontrivial irreducible representation has no nonzero invariant vector; together they
 say that such a representation is irreducible only if it is the trivial representation on a line.
 Equivalently: over a field of characteristic `p`, the trivial module is the only irreducible
@@ -42,17 +44,17 @@ representation in characteristic `p`: its nonzero invariant subspace is stable u
 whole group and must be the entire representation. This reduces the classification of simple
 representations to the quotient by such a subgroup.
 
-The whole-group invariant-vector statements assume the acting group is finite. For an infinite
+The fixed-vector statements assume the acting monoid is finite. For an infinite
 group, the analogous statement is Kolchin's theorem, which fixes a vector of a
 *finite-dimensional* vector space under a group of unipotent operators. The normal-subgroup
 corollary here requires finiteness only of the subgroup.
 
 ## Main results
 
-* `Representation.invariants_ne_bot_of_forall_pow_eq_one`: **a representation of a finite group
-  over a ring of characteristic `p`, all of whose elements act with `p`-power order, has a nonzero
-  invariant vector**, with `Representation.exists_ne_zero_apply_eq_self_of_forall_pow_eq_one` its
-  elementwise form.
+* `Representation.exists_ne_zero_apply_eq_self_of_forall_pow_eq_one`: **a representation of a
+  finite monoid over a semiring of characteristic `p`, whose elements act with `p`-power order,
+  has a nonzero fixed vector**, with `Representation.invariants_ne_bot_of_forall_pow_eq_one` its
+  invariant-submodule form over a commutative ring.
 * `Representation.IsIrreducible.comp_eq_trivial_of_isPGroup`: a finite normal `p`-subgroup
   acts trivially on an irreducible representation in characteristic `p`.
 
@@ -70,10 +72,10 @@ namespace Representation
 
 universe u v w
 
-section CommRing
+section Semiring
 
-variable {k : Type u} {G : Type v} {V : Type w} [CommRing k] [Group G]
-  [AddCommGroup V] [Module k V] (p : ℕ) [Fact p.Prime]
+variable {k : Type u} {G : Type v} {V : Type w} [Semiring k] [Monoid G]
+  [AddCommMonoid V] [Module k V] (p : ℕ) [Fact p.Prime]
 
 /-- The `ZMod p`-span of the orbit of a nonzero vector is a finite invariant set whose cardinality
 `p` divides. It is delivered as a set because only its cardinality, its zero element and its
@@ -85,7 +87,11 @@ private theorem exists_finite_stable_set [CharP k p] [Finite G] (ρ : Representa
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   have hptors : ∀ x : V, p • x = 0 := fun x => by
     rw [← Nat.cast_smul_eq_nsmul k, CharP.cast_eq_zero, zero_smul]
-  have _izmod : Module (ZMod p) V := AddCommGroup.zmodModule hptors
+  have _izmod : Module (ZMod p) V := AddCommMonoid.zmodModule hptors
+  -- `p`-torsion supplies additive inverses via the `ZMod p`-module, as required by
+  -- `Module.natCard_eq_pow_finrank` below. This construction definitionally extends the
+  -- ambient `AddCommMonoid V`, so all module and submodule structures share addition and zero.
+  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup (ZMod p)
   obtain ⟨N, hN⟩ : ∃ N : Submodule (ZMod p) V,
       N = Submodule.span (ZMod p) (Set.range fun g : G => ρ g v) := ⟨_, rfl⟩
   -- the span of a finite set over a finite field is a finite set
@@ -110,66 +116,80 @@ private theorem exists_finite_stable_set [CharP k p] [Finite G] (ρ : Representa
     exact Submodule.subset_span ⟨g * h, by simp⟩
   exact hle hx
 
-/-- A group acting with `p`-power orders on a finite invariant set whose cardinality `p` divides
+/-- A monoid acting with `p`-power orders on a finite invariant set whose cardinality `p` divides
 fixes a nonzero vector, because the zero vector is a fixed point it cannot be alone. -/
-private theorem exists_ne_zero_mem_invariants_of_stable (ρ : Representation k G V)
+private theorem exists_ne_zero_fixed_vector_of_stable (ρ : Representation k G V)
     (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) {A : Set V} (hAfin : A.Finite) (hA0 : (0 : V) ∈ A)
     (hpA : p ∣ Nat.card A) (hstab : ∀ g : G, ∀ x ∈ A, ρ g x ∈ A) :
-    ∃ v ∈ ρ.invariants, v ≠ 0 := by
+    ∃ v : V, v ≠ 0 ∧ ∀ g : G, ρ g v = v := by
   have : Finite A := hAfin.to_subtype
-  -- the restricted action of `G` on `A`; `hsmul` and `hφ` are its two defining evaluations
+  -- the restricted action of `G` on `A`; `hsmul` records its defining evaluation
   let _ : SMul G A := ⟨fun g x => ⟨ρ g x, hstab g x x.2⟩⟩
   have hsmul : ∀ (g : G) (x : A), ((g • x : A) : V) = ρ g x := fun _ _ => rfl
   let _ : MulAction G A :=
     { one_smul := fun x => Subtype.ext (by rw [hsmul]; simp)
       mul_smul := fun g h x =>
         Subtype.ext (by rw [hsmul, hsmul, hsmul, map_mul]; exact Module.End.mul_apply _ _ _) }
-  have hφ : ∀ (g : G) (x : A), ((MulAction.toPermHom G A g x : A) : V) = ρ g x := fun _ _ => rfl
-  -- the image of `G` in the permutations of `A` is a `p`-group
-  have hPG : IsPGroup p (MulAction.toPermHom G A).range := by
-    intro σ
+  let φ : G →* Function.End A := MulAction.toEndHom
+  have hφ : ∀ (g : G) (x : A), ((φ g x : A) : V) = ρ g x := fun _ _ => rfl
+  let H := MonoidHom.mrange φ
+  -- Every element of the image has `p`-power order, so the image monoid is a group.
+  have hpow (σ : H) : ∃ n : ℕ, σ ^ p ^ n = 1 := by
     obtain ⟨g, hg⟩ := σ.2
     obtain ⟨n, hn⟩ := hρ g
     refine ⟨n, Subtype.ext ?_⟩
-    simp only [Subgroup.coe_pow, OneMemClass.coe_one]
+    simp only [SubmonoidClass.coe_pow, OneMemClass.coe_one]
     rw [← hg, ← map_pow]
-    ext x
+    funext x
+    apply Subtype.ext
     rw [hφ, map_pow, hn]
     exact Module.End.one_apply _
+  let _ : Group H := groupOfIsUnit fun σ => by
+    obtain ⟨n, hn⟩ := hpow σ
+    exact (isOfFinOrder_iff_pow_eq_one.2 ⟨p ^ n, pow_pos (Fact.out : p.Prime).pos _, hn⟩).isUnit
+  have hPG : IsPGroup p H := hpow
+  -- The image monoid acts by evaluation of its underlying endomorphism.
+  have hval : ∀ (σ : H) (x : A), σ • x = (σ : Function.End A) x := fun _ _ => rfl
   -- the zero vector is a fixed point, so the orbit count produces a second one
-  have h0 : (⟨0, hA0⟩ : A) ∈ MulAction.fixedPoints (MulAction.toPermHom G A).range A := by
+  have h0 : (⟨0, hA0⟩ : A) ∈ MulAction.fixedPoints H A := by
     intro σ
     obtain ⟨g, hg⟩ := σ.2
-    refine Subtype.ext ?_
-    -- a subgroup of the permutations acts through the ambient permutation, which `hφ` evaluates
-    have hval : ((σ • (⟨0, hA0⟩ : A) : A) : V) = ((σ : Equiv.Perm A) ⟨0, hA0⟩ : A) := rfl
-    rw [hval, ← hg, hφ]
+    rw [hval]
+    apply Subtype.ext
+    rw [← hg, hφ]
     simp
   obtain ⟨b, hb, hne⟩ :=
     hPG.exists_fixed_point_of_prime_dvd_card_of_fixed_point (α := A) hpA h0
-  refine ⟨(b : V), fun g => ?_, fun h => hne (Subtype.ext h.symm)⟩
+  refine ⟨(b : V), fun h => hne (Subtype.ext h.symm), fun g => ?_⟩
   -- the element of the image named by `g` acts as `ρ g`, again by the definition of the action
-  exact congrArg Subtype.val (hb ⟨MulAction.toPermHom G A g, g, rfl⟩)
+  exact congrArg Subtype.val (hb ⟨φ g, g, rfl⟩)
 
-/-- **A representation of a finite group in which every element acts with `p`-power order, over a
-ring of characteristic `p`, has a nonzero invariant vector.** Neither finite generation nor finite
-dimensionality of the module is assumed, and `k` may be infinite. -/
-theorem invariants_ne_bot_of_forall_pow_eq_one [CharP k p] [Finite G] [Nontrivial V]
-    (ρ : Representation k G V) (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) :
-    ρ.invariants ≠ ⊥ := by
-  obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  obtain ⟨A, hAfin, hA0, -, hpA, hstab⟩ := exists_finite_stable_set p ρ hv
-  obtain ⟨w, hw, hwne⟩ := exists_ne_zero_mem_invariants_of_stable p ρ hρ hAfin hA0 hpA hstab
-  exact fun h => hwne (by simpa [h] using hw)
-
-/-- The elementwise form of `Representation.invariants_ne_bot_of_forall_pow_eq_one`: a nonzero
-vector fixed by every group element. -/
+/-- **A representation of a finite monoid in which every element acts with `p`-power order, over a
+semiring of characteristic `p`, has a nonzero fixed vector.** Neither finite generation nor finite
+dimensionality of the module is assumed, and `k` may be infinite or noncommutative. -/
 theorem exists_ne_zero_apply_eq_self_of_forall_pow_eq_one [CharP k p] [Finite G] [Nontrivial V]
     (ρ : Representation k G V) (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) :
     ∃ v : V, v ≠ 0 ∧ ∀ g : G, ρ g v = v := by
-  obtain ⟨v, hv, hv0⟩ :=
-    (Submodule.ne_bot_iff _).1 (ρ.invariants_ne_bot_of_forall_pow_eq_one p hρ)
-  exact ⟨v, hv0, hv⟩
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  obtain ⟨A, hAfin, hA0, -, hpA, hstab⟩ := exists_finite_stable_set p ρ hv
+  exact exists_ne_zero_fixed_vector_of_stable p ρ hρ hAfin hA0 hpA hstab
+
+end Semiring
+
+section CommRing
+
+variable {k : Type u} {G : Type v} {V : Type w} [CommRing k] [Group G]
+  [AddCommGroup V] [Module k V] (p : ℕ) [Fact p.Prime]
+
+/-- The invariant-submodule form of
+`Representation.exists_ne_zero_apply_eq_self_of_forall_pow_eq_one` over a commutative ring:
+a representation of a finite group acting with `p`-power orders in characteristic `p` has a
+nonzero invariant vector. No finiteness hypothesis on the module is assumed. -/
+theorem invariants_ne_bot_of_forall_pow_eq_one [CharP k p] [Finite G] [Nontrivial V]
+    (ρ : Representation k G V) (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) :
+    ρ.invariants ≠ ⊥ := by
+  obtain ⟨v, hv0, hv⟩ := ρ.exists_ne_zero_apply_eq_self_of_forall_pow_eq_one p hρ
+  exact (Submodule.ne_bot_iff _).2 ⟨v, hv, hv0⟩
 
 end CommRing
 

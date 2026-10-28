@@ -64,30 +64,17 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-private noncomputable def restrictedTangentInner
-    (g : RiemannianMetric (fun x : M ↦ TangentSpace I x)) {U : Opens M} (x : U) :
-    TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
-  let e := TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x
-  e.symm.arrowCongr (e.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ)) (g.inner x.1)
-
-private theorem restrictedTangentInner_apply
-    (g : RiemannianMetric (fun x : M ↦ TangentSpace I x)) {U : Opens M}
-    (x : U) (v w : TangentSpace I x) :
-    restrictedTangentInner g x v w =
-      g.inner (x : M) (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x v)
-        (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x w) := by
-  rfl
-
 /-- Restrict a Riemannian metric on a tangent bundle to an open submanifold. -/
 noncomputable def restrictOpenTangentSpace
     (g : RiemannianMetric (fun x : M ↦ TangentSpace I x)) (U : Opens M) :
     RiemannianMetric (fun x : U ↦ TangentSpace I x) where
-  inner := restrictedTangentInner g
+  inner := TauCeti.Manifold.restrictOpenTangentSpaceBilinear g.inner U
   symm x v w := by
-    rw [restrictedTangentInner_apply, restrictedTangentInner_apply]
+    rw [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply,
+      TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply]
     exact g.symm x.1 _ _
   pos x v hv := by
-    rw [restrictedTangentInner_apply]
+    rw [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply]
     exact g.pos x.1 _
       ((TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).toLinearEquiv.map_ne_zero_iff.mpr hv)
   continuousAt x := by
@@ -96,13 +83,14 @@ noncomputable def restrictOpenTangentSpace
           (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x v)) 0 :=
       (g.continuousAt x.1).comp_of_eq
         (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).continuousAt (map_zero _)
-    simpa only [restrictedTangentInner_apply] using h
+    simpa only [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply] using h
   isVonNBounded x := by
-    have heq : {v | restrictedTangentInner g x v v < 1} =
+    have heq : {v | TauCeti.Manifold.restrictOpenTangentSpaceBilinear g.inner U x v v < 1} =
         (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).symm.toContinuousLinearMap ''
           {v | g.inner x.1 v v < 1} := by
-      simp only [restrictedTangentInner_apply, ContinuousLinearEquiv.coe_coe,
-        ContinuousLinearEquiv.image_symm_eq_preimage, Set.preimage_ofPred_eq]
+      simp only [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply,
+        ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.image_symm_eq_preimage,
+        Set.preimage_ofPred_eq]
     rw [heq]
     exact (g.isVonNBounded x.1).image
       (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).symm.toContinuousLinearMap
@@ -115,8 +103,8 @@ theorem restrictOpenTangentSpace_inner
     (x : U) (v w : TangentSpace I x) :
     (g.restrictOpenTangentSpace U).inner x v w =
       g.inner (x : M) (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x v)
-        (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x w) := by
-  rfl
+        (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x w) :=
+  TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply g.inner U x v w
 
 /-- The restricted metric is the pullback of the ambient metric along the differential of the
 open-submanifold inclusion. -/
@@ -143,59 +131,7 @@ noncomputable def restrictOpenTangentSpace
     (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (U : Opens M) :
     ContMDiffRiemannianMetric I n E (fun x : U ↦ TangentSpace I x) :=
   { g.toRiemannianMetric.restrictOpenTangentSpace U with
-  contMDiff x := by
-    -- Pull ambient `C^n` regularity back along the inclusion and compare the inherited and ambient
-    -- tangent-bundle coordinates on a common neighbourhood of `x`.
-    rw [contMDiffAt_section]
-    have h := g.contMDiff.contMDiffAt.comp x
-      (contMDiff_subtype_val (I := I) (U := U)).contMDiffAt
-    rw [contMDiffAt_totalSpace] at h
-    apply h.2.congr_of_eventuallyEq
-    filter_upwards [
-      (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) x),
-      continuousAt_subtype_val.eventually
-        ((trivializationAt E (TangentSpace I : M → Type _) x.1).open_baseSet.mem_nhds
-          (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x.1)),
-      TauCeti.Manifold.eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq
-        (I := I) x] with y hyU hyM hsymm
-    have hyU' : y ∈ (chartAt H x).source := by simpa using hyU
-    have hyM' : (y : M) ∈ (chartAt H (x : M)).source := hyM
-    have hyUhom : y ∈ (trivializationAt (E →L[ℝ] ℝ)
-        (fun z : U ↦ TangentSpace I z →L[ℝ] ℝ) x).baseSet := by
-      simpa using hyU'
-    have hyMhom : (y : M) ∈ (trivializationAt (E →L[ℝ] ℝ)
-        (fun z : M ↦ TangentSpace I z →L[ℝ] ℝ) (x : M)).baseSet := by
-      simpa using hyM'
-    ext v w
-    simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
-      Trivialization.continuousLinearMapAt_apply, Trivialization.symmL_apply,
-      Trivialization.linearMapAt_apply,
-      hyU, hyUhom, hyMhom, ContinuousLinearMap.coe_comp, Function.comp_apply,
-      ite_true]
-    rw [Bundle.RiemannianMetric.restrictOpenTangentSpace_inner]
-    simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_baseSet,
-      Set.mem_univ, ite_true, Trivial.trivialization_apply,
-      Bundle.ContMDiffRiemannianMetric.toRiemannianMetric,
-      Bundle.ContMDiffRiemannianMetric.toContinuousRiemannianMetric,
-      Bundle.ContinuousRiemannianMetric.toRiemannianMetric]
-    have hsymm' (z : E) :
-        TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) y
-            ((trivializationAt E (TangentSpace I : U → Type _) x).symm y z) =
-          (trivializationAt E (TangentSpace I : M → Type _) (x : M)).symmL ℝ (y : M) z := by
-      simpa only [Trivialization.symmL_apply _ hyU] using hsymm z
-    have hp :
-        (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) y
-            ((trivializationAt E (TangentSpace I : U → Type _) x).symm y v),
-          TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) y
-            ((trivializationAt E (TangentSpace I : U → Type _) x).symm y w)) =
-        ((trivializationAt E (TangentSpace I : M → Type _) (x : M)).symmL ℝ (y : M) v,
-          (trivializationAt E (TangentSpace I : M → Type _) (x : M)).symmL ℝ (y : M) w) :=
-      Prod.ext (hsymm' v) (hsymm' w)
-    simpa only using
-      congrArg (fun p : TangentSpace I (y : M) × TangentSpace I (y : M) ↦
-        g.inner (y : M) p.1 p.2) hp
-  }
+  contMDiff x := TauCeti.Manifold.contMDiffAt_restrictOpenTangentSpaceBilinear (g.contMDiff x) }
 
 /-- Restricting a `C^n` Riemannian metric evaluates the ambient metric through the canonical
 tangent-space identification. -/
@@ -374,21 +310,19 @@ variable
   {U : Opens M}
 
 /-- Path length is intrinsic: restricting the metric of `M` to an open submanifold `U` does not
-change the length of a `C¹` curve read in `U`. -/
+change the length of a differentiable curve read in `U`. -/
 @[simp]
 theorem pathELength_subtypeVal_comp {γ : ℝ → U} {a b : ℝ}
-    (hγ : CMDiff[Icc a b] 1 γ) :
+    (hγ : MDiff[Icc a b] γ) :
     pathELength I γ a b = pathELength I ((Subtype.val : U → M) ∘ γ) a b := by
   rw [pathELength_eq_lintegral_mfderiv_Icc, pathELength_eq_lintegral_mfderiv_Icc,
     ← MeasureTheory.restrict_Ioo_eq_restrict_Icc]
   refine MeasureTheory.setLIntegral_congr_fun measurableSet_Ioo fun t ht ↦ ?_
-  have hd : ContMDiffAt 𝓘(ℝ, ℝ) I 1 γ t :=
-    (hγ t (Set.Ioo_subset_Icc_self ht)).contMDiffAt (Icc_mem_nhds ht.1 ht.2)
-  have hval : ContMDiffAt I I 1 (Subtype.val : U → M) (γ t) :=
-    contMDiff_subtype_val (γ t)
-  have hv' : MDiffAt (Subtype.val : U → M) (γ t) := hval.mdifferentiableAt one_ne_zero
-  have hd' : MDiffAt γ t := hd.mdifferentiableAt one_ne_zero
-  rw [(HasMFDerivAt.comp t hv'.hasMFDerivAt hd'.hasMFDerivAt).mfderiv, mfderiv_subtype_val]
+  have hd : MDiffAt γ t :=
+    (hγ t (Set.Ioo_subset_Icc_self ht)).mdifferentiableAt (Icc_mem_nhds ht.1 ht.2)
+  have hv : MDiffAt (Subtype.val : U → M) (γ t) :=
+    (contMDiff_subtype_val (γ t)).mdifferentiableAt one_ne_zero
+  rw [(HasMFDerivAt.comp t hv.hasMFDerivAt hd.hasMFDerivAt).mfderiv, mfderiv_subtype_val]
   simp
 
 end TauCeti.Manifold
@@ -409,7 +343,7 @@ theorem riemannianEDist_le_riemannianEDist_subtype (U : Opens M) (x y : U) :
     riemannianEDist I (x : M) (y : M) ≤ riemannianEDist I x y := by
   refine TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength (M := U)
     (I := I) fun γ h0 h1 hγ ↦ ?_
-  rw [TauCeti.Manifold.pathELength_subtypeVal_comp hγ]
+  rw [TauCeti.Manifold.pathELength_subtypeVal_comp (hγ.mdifferentiableOn one_ne_zero)]
   exact Manifold.riemannianEDist_le_pathELength
     (contMDiff_subtype_val.comp_contMDiffOn hγ)
     (congrArg Subtype.val h0) (congrArg Subtype.val h1) zero_le_one

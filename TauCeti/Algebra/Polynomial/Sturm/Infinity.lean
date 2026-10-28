@@ -11,7 +11,9 @@ public import TauCeti.Algebra.Polynomial.Eval.Infinity
 /-! # Sturm–Tarski with infinite endpoints
 
 Leading coefficients and degree parity compute the sign variations at both
-infinities. Together with one-sided signs at finite endpoints, these give
+infinities. These satisfy the append, negation and zero-deletion laws of
+`List.signVariations`, and are unchanged by multiplying every entry by a common
+nonzero polynomial. Together with one-sided signs at finite endpoints, they give
 half-line and whole-field Sturm–Tarski identities for signed remainder chains
 and for `Polynomial.sturmSeq`, including root counts. Finite endpoints may be
 roots of any chain entry.
@@ -64,6 +66,32 @@ theorem signVariationsAtTop_map {S : Type*} [Semiring S] [LinearOrder S]
     rw [leadingCoeff_map_of_injective hf.injective]
     exact hf.sign_comp _
 
+/-- The variations at positive infinity of a concatenation are those of the two parts, plus one
+exactly when the last nonzero leading coefficient of the first part and the first nonzero leading
+coefficient of the second part have opposite signs. -/
+theorem signVariationsAtTop_append (cs ds : List R[X]) :
+    signVariationsAtTop (cs ++ ds) =
+      signVariationsAtTop cs +
+        (if List.lastSign (cs.map leadingCoeff) * List.firstSign (ds.map leadingCoeff) = -1
+          then 1 else 0) +
+        signVariationsAtTop ds := by
+  simp only [signVariationsAtTop_def, List.map_append, List.signVariations_append]
+
+/-- The variations at positive infinity split at any nonzero entry. -/
+theorem signVariationsAtTop_append_cons_of_ne_zero (cs ds : List R[X]) {p : R[X]} (hp : p ≠ 0) :
+    signVariationsAtTop (cs ++ p :: ds) =
+      signVariationsAtTop (cs ++ [p]) + signVariationsAtTop (p :: ds) := by
+  simpa only [signVariationsAtTop_def, List.map_append, List.map_cons, List.map_nil] using
+    List.signVariations_append_cons_of_ne_zero _ _ (leadingCoeff_ne_zero.2 hp)
+
+/-- Deleting the zero entries does not change the variations at positive infinity. -/
+@[simp]
+theorem signVariationsAtTop_filter_ne_zero (cs : List R[X]) :
+    signVariationsAtTop (cs.filter fun p ↦ !decide (p = 0)) = signVariationsAtTop cs := by
+  rw [signVariationsAtTop_def, signVariationsAtTop_def,
+    ← List.signVariations_filter_ne_zero (cs.map _), List.filter_map]
+  simp [Function.comp_def]
+
 end Semiring
 
 section Ring
@@ -110,9 +138,90 @@ theorem signVariationsAtBot_map {S : Type*} [Ring S] [LinearOrder S]
     simpa only [map_mul, map_pow, map_neg, map_one] using
       hf.sign_comp (p.leadingCoeff * (-1) ^ p.natDegree)
 
+/-- The variations at negative infinity of a concatenation are those of the two parts, plus one
+exactly when the last nonzero parity-adjusted leading coefficient of the first part and the first
+nonzero one of the second part have opposite signs. -/
+theorem signVariationsAtBot_append (cs ds : List R[X]) :
+    signVariationsAtBot (cs ++ ds) =
+      signVariationsAtBot cs +
+        (if List.lastSign (cs.map fun p ↦ p.leadingCoeff * (-1) ^ p.natDegree) *
+            List.firstSign (ds.map fun p ↦ p.leadingCoeff * (-1) ^ p.natDegree) = -1
+          then 1 else 0) +
+        signVariationsAtBot ds := by
+  simp only [signVariationsAtBot_def, List.map_append, List.signVariations_append]
+
+/-- The variations at negative infinity split at any nonzero entry. -/
+theorem signVariationsAtBot_append_cons_of_ne_zero (cs ds : List R[X]) {p : R[X]} (hp : p ≠ 0) :
+    signVariationsAtBot (cs ++ p :: ds) =
+      signVariationsAtBot (cs ++ [p]) + signVariationsAtBot (p :: ds) := by
+  simpa only [signVariationsAtBot_def, List.map_append, List.map_cons, List.map_nil] using
+    List.signVariations_append_cons_of_ne_zero _ _
+      ((isUnit_neg_one.pow _).mul_left_eq_zero.not.2 (leadingCoeff_ne_zero.2 hp))
+
+/-- Deleting the zero entries does not change the variations at negative infinity. -/
+@[simp]
+theorem signVariationsAtBot_filter_ne_zero (cs : List R[X]) :
+    signVariationsAtBot (cs.filter fun p ↦ !decide (p = 0)) = signVariationsAtBot cs := by
+  rw [signVariationsAtBot_def, signVariationsAtBot_def,
+    ← List.signVariations_filter_ne_zero (cs.map _), List.filter_map]
+  simp [Function.comp_def, (isUnit_neg_one.pow _).mul_left_eq_zero]
+
+/-- Negating every entry does not change the variations at positive infinity. -/
+@[simp]
+theorem signVariationsAtTop_map_neg [AddLeftStrictMono R] (cs : List R[X]) :
+    signVariationsAtTop (cs.map Neg.neg) = signVariationsAtTop cs := by
+  simpa only [signVariationsAtTop_def, List.map_map, Function.comp_def, leadingCoeff_neg] using
+    List.signVariations_map_of_sign_eq_neg Left.sign_neg (cs.map leadingCoeff)
+
+/-- Negating every entry does not change the variations at negative infinity. -/
+@[simp]
+theorem signVariationsAtBot_map_neg [AddLeftStrictMono R] (cs : List R[X]) :
+    signVariationsAtBot (cs.map Neg.neg) = signVariationsAtBot cs := by
+  simpa only [signVariationsAtBot_def, List.map_map, Function.comp_def, leadingCoeff_neg,
+    natDegree_neg, neg_mul] using
+    List.signVariations_map_of_sign_eq_neg Left.sign_neg
+      (cs.map fun p ↦ p.leadingCoeff * (-1) ^ p.natDegree)
+
+variable [IsStrictOrderedRing R]
+
+/-- Multiplying every entry by a common nonzero polynomial does not change the variations at
+positive infinity. -/
+theorem signVariationsAtTop_map_mul (cs : List R[X]) {d : R[X]} (hd : d ≠ 0) :
+    signVariationsAtTop (cs.map (d * ·)) = signVariationsAtTop cs := by
+  simpa only [signVariationsAtTop_def, List.map_map, Function.comp_def, leadingCoeff_mul] using
+    List.signVariations_map_mul_left (cs.map leadingCoeff) (leadingCoeff_ne_zero.2 hd)
+
+/-- Multiplying every entry by a common nonzero polynomial does not change the variations at
+negative infinity. -/
+theorem signVariationsAtBot_map_mul (cs : List R[X]) {d : R[X]} (hd : d ≠ 0) :
+    signVariationsAtBot (cs.map (d * ·)) = signVariationsAtBot cs := by
+  have h (p : R[X]) : (d * p).leadingCoeff * (-1) ^ (d * p).natDegree =
+      d.leadingCoeff * (-1) ^ d.natDegree * (p.leadingCoeff * (-1) ^ p.natDegree) := by
+    rcases eq_or_ne p 0 with rfl | hp
+    · simp
+    rw [leadingCoeff_mul, natDegree_mul hd hp, pow_add]
+    rcases neg_one_pow_eq_or R d.natDegree with h | h <;> simp [h, mul_assoc]
+  simpa only [signVariationsAtBot_def, List.map_map, Function.comp_def, h] using
+    List.signVariations_map_mul_left (cs.map fun p ↦ p.leadingCoeff * (-1) ^ p.natDegree)
+      ((isUnit_neg_one.pow _).mul_left_eq_zero.not.2 (leadingCoeff_ne_zero.2 hd))
+
 end Ring
 
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- Multiplying both inputs by a common nonzero polynomial does not change the variations at
+positive infinity of their signed remainder sequence. -/
+@[simp]
+theorem signVariationsAtTop_sturmSeq_mul_left {r : R[X]} (hr : r ≠ 0) (p q : R[X]) :
+    signVariationsAtTop (sturmSeq (r * p) (r * q)) = signVariationsAtTop (sturmSeq p q) := by
+  rw [sturmSeq_mul_left hr, signVariationsAtTop_map_mul _ hr]
+
+/-- Multiplying both inputs by a common nonzero polynomial does not change the variations at
+negative infinity of their signed remainder sequence. -/
+@[simp]
+theorem signVariationsAtBot_sturmSeq_mul_left {r : R[X]} (hr : r ≠ 0) (p q : R[X]) :
+    signVariationsAtBot (sturmSeq (r * p) (r * q)) = signVariationsAtBot (sturmSeq p q) := by
+  rw [sturmSeq_mul_left hr, signVariationsAtBot_map_mul _ hr]
 
 /-- The variation count stabilizes at positive infinity, even for lists containing zero. -/
 theorem exists_signVariationsAtTop (cs : List (Polynomial R)) :

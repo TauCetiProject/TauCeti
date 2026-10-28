@@ -15,6 +15,10 @@ public import Mathlib.RingTheory.MatrixAlgebra
 -- `Mathlib.RingTheory.TensorProduct.Maps`, hence `Algebra.TensorProduct.congr`, used in the same
 -- body, which is why that is not imported again here.
 public import TauCeti.Algebra.TensorProduct.BaseChange
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 
 /-!
 # Base change of a matrix algebra
@@ -38,6 +42,10 @@ The same statement with an arbitrary, possibly noncommutative, coefficient algeb
 equivalence, whose target `Matrix n n S` is `Matrix n n (S ⊗[R] R)` only up to
 `Algebra.TensorProduct.rid`; and it is the first equivalence, applied to the scalar matrices, that
 makes the second one go through.
+
+The dimension calculation `TauCeti.Algebra.finrank_eq_sq_of_algEquiv_matrix` recovers the square
+dimension of a `K`-algebra from a matrix presentation after scalar extension. The extension algebra
+may be any nontrivial commutative `K`-algebra; it need not be a field.
 -/
 
 public section
@@ -106,6 +114,17 @@ theorem matrixCoeffBaseChangeAlgEquiv_symm_single (i j : n) (s : S) (a : A) :
   (matrixCoeffBaseChangeAlgEquiv R S n A).symm_apply_eq.mpr <| by
     ext p q
     simp [Matrix.single_apply, apply_ite (s ⊗ₜ[R] ·)]
+
+/-- If scalar extension of a `K`-algebra to a nontrivial commutative `K`-algebra `L` is an
+`n × n` matrix algebra over `L`, then its dimension over `K` is `n ^ 2`.
+
+Neither finite-dimensionality of `A` nor a field structure on `L` needs to be assumed. -/
+theorem finrank_eq_sq_of_algEquiv_matrix (K : Type*) [Field K] (A : Type*) [Ring A]
+    [Algebra K A] (L : Type*) [CommRing L] [Nontrivial L] [Algebra K L]
+    {n : ℕ} (e : L ⊗[K] A ≃ₐ[L] Matrix (Fin n) (Fin n) L) :
+    Module.finrank K A = n ^ 2 := by
+  rw [← Module.finrank_baseChange (R := L) (S := K) (M' := A), e.toLinearEquiv.finrank_eq]
+  simp [Module.finrank_matrix, sq]
 
 end Algebra
 

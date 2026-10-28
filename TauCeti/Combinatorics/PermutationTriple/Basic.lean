@@ -254,6 +254,18 @@ def equivOppositeConvention (n : ℕ) : PermutationTriple n ≃
 @[simp] theorem equivOppositeConvention_apply_coe :
     (equivOppositeConvention n t).1 = (t.σ0⁻¹, t.σ1⁻¹, t.σinf⁻¹) := (rfl)
 
+@[simp] theorem equivOppositeConvention_symm_apply_σ0
+    (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
+    ((equivOppositeConvention n).symm p).σ0 = p.1.1⁻¹ := (rfl)
+
+@[simp] theorem equivOppositeConvention_symm_apply_σ1
+    (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
+    ((equivOppositeConvention n).symm p).σ1 = p.1.2.1⁻¹ := (rfl)
+
+@[simp] theorem equivOppositeConvention_symm_apply_σinf
+    (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
+    ((equivOppositeConvention n).symm p).σinf = p.1.2.2⁻¹ := (rfl)
+
 /-! ### Relabeling the sheets -/
 
 /-- Relabeling the sheets by `τ` conjugates all three components simultaneously. -/

@@ -30,10 +30,9 @@ its determinant is `(-1) ^ rank L`; so `SO(L)` is a proper subgroup in odd rank.
 A self-isometry is the same as a rational isometry of the ambient form which, together with its
 inverse, preserves the carrier; `toIsometryGroup` and `ofIsometryGroup` pass between the two. The
 self-isometries acting trivially on the finite quotient `L / d L` form the principal congruence
-subgroup of level `d`, which has finite index for `d ≠ 0`. The determinant of a self-isometry is
-also the determinant of the rational automorphism of the ambient space that it extends, and
-conjugation by an isometry `L ≅ M` identifies `O(L)` with `O(M)`, preserving determinants. In
-rank at most one `SO(L)` is trivial, and in rank one `O(L) = {±1}`.
+subgroup of level `d`, which has finite index for `d ≠ 0`. Conjugation by an isometry `L ≅ M`
+identifies `O(L)` with `O(M)`, preserving determinants. In rank at most one `SO(L)` is trivial,
+and in rank one `O(L) = {±1}`.
 
 ## Main definitions
 
@@ -72,8 +71,6 @@ rank at most one `SO(L)` is trivial, and in rank one `O(L) = {±1}`.
   subgroup has finite index.
 * `TauCeti.IntegralLattice.Isometry.mem_range_toIsometryGroup_iff`: a rational isometry comes from
   a self-isometry exactly when it preserves membership in the carrier.
-* `TauCeti.IntegralLattice.Isometry.det_toLinearMap`: the determinant of a self-isometry is the
-  determinant of its ambient rational automorphism.
 * `TauCeti.IntegralLattice.Isometry.natCard_isometry_eq`: isometric lattices have isometry groups
   of the same order.
 * `TauCeti.IntegralLattice.Isometry.det_conjMulEquiv` and
@@ -463,31 +460,7 @@ theorem finiteIndex_congruenceSubgroup (L : IntegralLattice V) {d : ℤ} (hd : d
   · rw [congruenceSubgroup_neg]
     infer_instance
 
-/-! ### The ambient determinant and conjugation -/
-
-/-- In the ambient basis `L.rationalBasis`, the matrix of a self-isometry of `L` is its integer
-matrix in the chosen `ℤ`-basis of `L`, with entries cast to `ℚ`. -/
-theorem toMatrix_rationalBasis (g : Isometry L L) :
-    LinearMap.toMatrix L.rationalBasis L.rationalBasis ((g : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) =
-      (LinearMap.toMatrix (Module.Free.chooseBasis ℤ L) (Module.Free.chooseBasis ℤ L)
-        (g.carrierEquiv : L →ₗ[ℤ] L)).map (Int.cast : ℤ → ℚ) := by
-  set b := Module.Free.chooseBasis ℤ L
-  ext i j
-  have h : (g : V ≃ₗ[ℚ] V) (L.rationalBasis j) =
-      ∑ k, ((b.repr (g.carrierEquiv (b j)) k : ℤ) : ℚ) • L.rationalBasis k := by
-    rw [rationalBasis_apply, coe_toLinearEquiv, ← coe_carrierEquiv_apply]
-    conv_lhs => rw [← b.sum_repr (g.carrierEquiv (b j))]
-    simp only [Submodule.coe_sum, Submodule.coe_smul, rationalBasis_apply, Int.cast_smul_eq_zsmul]
-    rfl
-  rw [LinearMap.toMatrix_apply, LinearEquiv.coe_coe, h, L.rationalBasis.repr_sum_self,
-    Matrix.map_apply, LinearMap.toMatrix_apply, LinearEquiv.coe_coe]
-
-/-- The determinant of a self-isometry of `L` is the determinant of the rational linear
-automorphism of the ambient space that it extends. -/
-theorem det_toLinearMap (g : Isometry L L) :
-    LinearMap.det ((g : V ≃ₗ[ℚ] V) : V →ₗ[ℚ] V) = ((det L g : ℤ) : ℚ) := by
-  rw [← LinearMap.det_toMatrix L.rationalBasis, toMatrix_rationalBasis, ← Int.cast_det,
-    LinearMap.det_toMatrix, coe_det]
+/-! ### Conjugation -/
 
 variable {W : Type*} [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W}
 
