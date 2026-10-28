@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Cohomology
-public import TauCeti.Algebra.Coalgebra.Comodule.Inverse
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Comodule.Inverse
 
 /-!
 # Inverses of right A-infinity module morphisms
 
 A morphism of right A-infinity modules has a two-sided inverse precisely when its unary
-component is bijective. The inverse bar map is the inverse of the original comodule map;
+component is bijective. This property is recorded by `TauCeti.AInfinityRightModuleHom.IsIso`.
+The inverse bar map is the inverse of the original comodule map;
 word-length triangularity establishes its bijectivity. The inverse preserves degree and
 commutes with the bar differentials, so it is again a module morphism.
 
@@ -107,6 +107,12 @@ theorem linearPart_inverse (f : AInfinityRightModuleHom MM NN)
   rw [LinearEquiv.coe_coe, LinearEquiv.ofBijective_symm_apply_apply,
     ← LinearMap.comp_apply, h, LinearMap.id_apply]
 
+/-- The unary component of the inverse is bijective. -/
+theorem linearPart_inverse_bijective (f : AInfinityRightModuleHom MM NN)
+    (hf : Function.Bijective f.linearPart) : Function.Bijective (f.inverse hf).linearPart := by
+  rw [linearPart_inverse]
+  exact (LinearEquiv.ofBijective f.linearPart hf).symm.bijective
+
 /-- A left inverse of a module morphism with bijective unary component is its inverse. -/
 theorem eq_inverse_of_comp_eq_id_left {f : AInfinityRightModuleHom MM NN}
     {g : AInfinityRightModuleHom NN MM} (hf : Function.Bijective f.linearPart)
@@ -145,23 +151,60 @@ theorem inverse_comp {P : Type*} [AddCommGroup P] [Module R P]
     rw [comp_assoc, ← comp_assoc (g.inverse hg), inverse_comp_cancel, id_comp,
       inverse_comp_cancel])).symm
 
-/-- A module morphism has a two-sided inverse exactly when its unary component is bijective. -/
-theorem exists_inverse_iff_linearPart_bijective (f : AInfinityRightModuleHom MM NN) :
-    (∃ g : AInfinityRightModuleHom NN MM,
+/-- A right A-infinity module morphism is an isomorphism when it has a two-sided inverse. -/
+def IsIso (f : AInfinityRightModuleHom MM NN) : Prop :=
+  ∃ g : AInfinityRightModuleHom NN MM,
+    g.comp f = AInfinityRightModuleHom.id MM ∧ f.comp g = AInfinityRightModuleHom.id NN
+
+/-- A module morphism is an isomorphism exactly when it has a two-sided inverse. -/
+theorem isIso_def (f : AInfinityRightModuleHom MM NN) :
+    f.IsIso ↔ ∃ g : AInfinityRightModuleHom NN MM,
       g.comp f = AInfinityRightModuleHom.id MM ∧
-      f.comp g = AInfinityRightModuleHom.id NN) ↔ Function.Bijective f.linearPart := by
-  constructor
-  · rintro ⟨g, hgf, hfg⟩
-    apply Function.bijective_iff_has_inverse.2
-    refine ⟨g.linearPart, fun x ↦ ?_, fun y ↦ ?_⟩
-    · have h := congrArg linearPart hgf
-      rw [linearPart_comp, linearPart_id] at h
-      exact LinearMap.congr_fun h x
-    · have h := congrArg linearPart hfg
-      rw [linearPart_comp, linearPart_id] at h
-      exact LinearMap.congr_fun h y
-  · intro hf
-    exact ⟨f.inverse hf, f.inverse_comp_cancel hf, f.comp_inverse_cancel hf⟩
+      f.comp g = AInfinityRightModuleHom.id NN :=
+  Iff.rfl
+
+/-- The identity module morphism is an isomorphism. -/
+@[simp]
+theorem isIso_id (MM : AInfinityRightModule AA M) : (AInfinityRightModuleHom.id MM).IsIso :=
+  ⟨AInfinityRightModuleHom.id MM, comp_id _, comp_id _⟩
+
+/-- Isomorphisms of right A-infinity modules are closed under composition. -/
+theorem IsIso.comp {P : Type*} [AddCommGroup P] [Module R P]
+    {PP : AInfinityRightModule AA P} {g : AInfinityRightModuleHom NN PP}
+    {f : AInfinityRightModuleHom MM NN} (hg : g.IsIso) (hf : f.IsIso) : (g.comp f).IsIso := by
+  obtain ⟨g', hg₁, hg₂⟩ := hg
+  obtain ⟨f', hf₁, hf₂⟩ := hf
+  refine ⟨f'.comp g', ?_, ?_⟩
+  · rw [comp_assoc, ← comp_assoc g', hg₁, id_comp, hf₁]
+  · rw [comp_assoc, ← comp_assoc f, hf₂, id_comp, hg₂]
+
+/-- A module morphism with bijective unary component is an isomorphism. -/
+theorem isIso_of_linearPart_bijective (f : AInfinityRightModuleHom MM NN)
+    (hf : Function.Bijective f.linearPart) : f.IsIso :=
+  ⟨f.inverse hf, f.inverse_comp_cancel hf, f.comp_inverse_cancel hf⟩
+
+/-- The inverse of a module morphism with bijective unary component is an isomorphism. -/
+theorem isIso_inverse (f : AInfinityRightModuleHom MM NN)
+    (hf : Function.Bijective f.linearPart) : (f.inverse hf).IsIso :=
+  ⟨f, f.comp_inverse_cancel hf, f.inverse_comp_cancel hf⟩
+
+/-- The unary component of an isomorphism of right A-infinity modules is bijective. -/
+theorem IsIso.linearPart_bijective {f : AInfinityRightModuleHom MM NN} (h : f.IsIso) :
+    Function.Bijective f.linearPart := by
+  obtain ⟨g, hgf, hfg⟩ := h
+  apply Function.bijective_iff_has_inverse.2
+  refine ⟨g.linearPart, fun x ↦ ?_, fun y ↦ ?_⟩
+  · have h := congrArg linearPart hgf
+    rw [linearPart_comp, linearPart_id] at h
+    exact LinearMap.congr_fun h x
+  · have h := congrArg linearPart hfg
+    rw [linearPart_comp, linearPart_id] at h
+    exact LinearMap.congr_fun h y
+
+/-- A module morphism is an isomorphism exactly when its unary component is bijective. -/
+theorem isIso_iff_linearPart_bijective (f : AInfinityRightModuleHom MM NN) :
+    f.IsIso ↔ Function.Bijective f.linearPart :=
+  ⟨IsIso.linearPart_bijective, f.isIso_of_linearPart_bijective⟩
 
 /-- A module morphism with bijective unary component is a quasi-isomorphism. -/
 theorem isQuasiIso_of_linearPart_bijective (f : AInfinityRightModuleHom MM NN)
@@ -173,6 +216,10 @@ theorem isQuasiIso_of_linearPart_bijective (f : AInfinityRightModuleHom MM NN)
       cohomologyMap_id, LinearMap.id_apply]
   · rw [← LinearMap.comp_apply, ← cohomologyMap_comp, comp_inverse_cancel,
       cohomologyMap_id, LinearMap.id_apply]
+
+/-- An isomorphism of right A-infinity modules is a quasi-isomorphism. -/
+theorem IsIso.isQuasiIso {f : AInfinityRightModuleHom MM NN} (h : f.IsIso) : f.IsQuasiIso :=
+  f.isQuasiIso_of_linearPart_bijective h.linearPart_bijective
 
 /-- Between modules with zero unary differentials, a quasi-isomorphism has bijective unary
 component. Thus minimal modules admit actual inverses rather than only homotopy inverses. -/
@@ -186,13 +233,11 @@ theorem isQuasiIso_iff_linearPart_bijective_of_differential_eq_zero
   exact and_congr Iff.rfl (forall_congr' fun y ↦ exists_congr fun x ↦ eq_comm)
 
 /-- Every quasi-isomorphism between minimal right A-infinity modules has a two-sided inverse. -/
-theorem exists_inverse_iff_isQuasiIso_of_differential_eq_zero
+theorem isIso_iff_isQuasiIso_of_differential_eq_zero
     (f : AInfinityRightModuleHom MM NN) (hM : MM.differential = 0)
     (hN : NN.differential = 0) :
-    (∃ g : AInfinityRightModuleHom NN MM,
-      g.comp f = AInfinityRightModuleHom.id MM ∧
-      f.comp g = AInfinityRightModuleHom.id NN) ↔ f.IsQuasiIso := by
-  rw [exists_inverse_iff_linearPart_bijective,
+    f.IsIso ↔ f.IsQuasiIso := by
+  rw [isIso_iff_linearPart_bijective,
     isQuasiIso_iff_linearPart_bijective_of_differential_eq_zero f hM hN]
 
 end TauCeti.AInfinityRightModuleHom

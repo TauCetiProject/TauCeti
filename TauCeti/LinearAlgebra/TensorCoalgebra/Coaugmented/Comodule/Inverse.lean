@@ -54,11 +54,6 @@ theorem cofreeLift_tmul_subword (φ : M ⊗[R] TensorWords R A →ₗ[R] N)
     comul_eq_deconcatenation, deconcatenation_subword, TensorProduct.tmul_sum, map_sum,
     TensorProduct.assoc_symm_tmul, LinearMap.rTensor_tmul]
 
-end Expansion
-
-variable [CommSemiring R] [AddCommGroup A] [Module R A]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-
 /-- A cofree lift with zero empty-word component is locally nilpotent. Each application
 strictly shortens the surviving word; no common exponent on all words is required. -/
 theorem exists_pow_cofreeLift_apply_eq_zero
@@ -66,22 +61,9 @@ theorem exists_pow_cofreeLift_apply_eq_zero
     (hφ : ∀ m, φ (m ⊗ₜ[R] (1 : TensorWords R A)) = 0)
     (z : M ⊗[R] TensorWords R A) :
     ∃ k, ((Comodule.Hom.cofreeLift (C := TensorWords R A) φ).toLinearMap ^ k) z = 0 := by
-  let F := (Comodule.Hom.cofreeLift (C := TensorWords R A) φ).toLinearMap
-  -- The vectors annihilated by some power form a submodule.
-  let S : Submodule R (M ⊗[R] TensorWords R A) :=
-    { carrier := {z | ∃ k, (F ^ k) z = 0}
-      zero_mem' := ⟨0, map_zero _⟩
-      add_mem' := by
-        rintro x y ⟨i, hi⟩ ⟨j, hj⟩
-        exact ⟨max i j, by rw [map_add,
-          Module.End.pow_map_zero_of_le (le_max_left _ _) hi,
-          Module.End.pow_map_zero_of_le (le_max_right _ _) hj, add_zero]⟩
-      smul_mem' := by
-        rintro c x ⟨i, hi⟩
-        exact ⟨i, by rw [map_smul, hi, smul_zero]⟩ }
-  have hstep (w) (hw : F w ∈ S) : w ∈ S := by
-    obtain ⟨k, hk⟩ := hw
-    exact ⟨k + 1, by rw [pow_succ, Module.End.mul_apply, hk]⟩
+  let F : Module.End R (M ⊗[R] TensorWords R A) :=
+    (Comodule.Hom.cofreeLift (C := TensorWords R A) φ).toLinearMap
+  let S := F.nilpotentSubmodule
   -- The empty prefix contributes zero, and all other cuts have a shorter suffix.
   have hword : ∀ b (m : M) {n : ℕ} (x : Fin n → A) (a : ℕ),
       a + b ≤ n → m ⊗ₜ[R] subword R x a b ∈ S := by
@@ -89,7 +71,7 @@ theorem exists_pow_cofreeLift_apply_eq_zero
     induction b using Nat.strong_induction_on with
     | h b ih =>
       intro m n x a hab
-      apply hstep
+      apply (F.apply_mem_nilpotentSubmodule_iff _).1
       dsimp only [F]
       rw [Comodule.Hom.coe_toLinearMap, cofreeLift_tmul_subword]
       refine S.sum_mem fun c hc ↦ ?_
@@ -114,7 +96,12 @@ theorem exists_pow_cofreeLift_apply_eq_zero
     induction z using TensorProduct.inductionOn with
     | tmul m w => exact hall m Submodule.mem_top
     | add x y hx hy => exact S.add_mem hx hy
-  exact hz
+  exact (F.mem_nilpotentSubmodule_iff z).1 hz
+
+end Expansion
+
+variable [CommSemiring R] [AddCommGroup A] [Module R A]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-- A cofree-comodule endomorphism which is the identity on empty words is bijective. -/
 theorem bijective_of_tmul_one_eq_self

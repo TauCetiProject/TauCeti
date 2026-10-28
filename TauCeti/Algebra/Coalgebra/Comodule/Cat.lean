@@ -387,14 +387,7 @@ coactions. -/
       map_coact := h }
   inv :=
     { toLinearMap := e.symm.toLinearMap
-      map_coact := by
-        ext n
-        have hn : TensorProduct.map e.toLinearMap LinearMap.id
-              (Comodule.coact (R := R) (C := C) (M := M) (e.symm n)) =
-            Comodule.coact (R := R) (C := C) (M := N) n := by
-          simpa using LinearMap.congr_fun h (e.symm n)
-        have hn' := congrArg (TensorProduct.map e.symm.toLinearMap LinearMap.id) hn
-        simpa [TensorProduct.map_map] using hn'.symm }
+      map_coact := e.map_coact_symm h }
   hom_inv_id := by
       ext m
       exact e.symm_apply_apply m

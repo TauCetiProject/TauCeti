@@ -32,6 +32,9 @@ If no nonzero vector is killed by every `f i`, then `Module.End.wordKer f d = �
 a locally nilpotent family with this property can only act on the zero module. Operators lowering
 a grading by `ℕ`, such as divided differences on a polynomial ring, form locally nilpotent families.
 
+The vectors killed by some power of a single endomorphism form
+`Module.End.nilpotentSubmodule`, the union of the kernels of its iterates.
+
 ## Main results
 
 * `Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero`: `1 + f` is a unit when `f` is
@@ -106,6 +109,38 @@ theorem TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add {ι : Type*} [AddMon
 
 end Ring
 
+section NilpotentSubmodule
+
+namespace Module.End
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- The submodule of vectors annihilated by some power of an endomorphism. -/
+def nilpotentSubmodule (f : Module.End R M) : Submodule R M :=
+  ⨆ n, f.iterateKer n
+
+/-- Membership in the nilpotent submodule means annihilation by some power. -/
+@[simp]
+theorem mem_nilpotentSubmodule_iff (f : Module.End R M) (x : M) :
+    x ∈ f.nilpotentSubmodule ↔ ∃ n, (f ^ n) x = 0 := by
+  rw [nilpotentSubmodule, Submodule.mem_iSup_of_directed _ f.iterateKer.monotone.directed_le]
+  exact exists_congr fun n ↦ Iff.rfl
+
+/-- Applying an endomorphism preserves and reflects membership in its nilpotent submodule. -/
+theorem apply_mem_nilpotentSubmodule_iff (f : Module.End R M) (x : M) :
+    f x ∈ f.nilpotentSubmodule ↔ x ∈ f.nilpotentSubmodule := by
+  simp only [mem_nilpotentSubmodule_iff]
+  constructor
+  · rintro ⟨k, hk⟩
+    exact ⟨k + 1, by rw [pow_succ, Module.End.mul_apply, hk]⟩
+  · rintro ⟨k, hk⟩
+    exact ⟨k, by rw [← Module.End.mul_apply, ← pow_succ, pow_succ',
+      Module.End.mul_apply, hk, map_zero]⟩
+
+end Module.End
+
+end NilpotentSubmodule
+
 section Finsupp
 
 open Finsupp
@@ -121,18 +156,7 @@ theorem Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt
     (f : Module.End R (ι →₀ R)) (w : ι → α) (hw : WellFounded (InvImage (· < ·) w))
     (hf : ∀ i, ∀ j ∈ (f (single i 1)).support, w j < w i) (x : ι →₀ R) :
     ∃ k, (f ^ k) x = 0 := by
-  let N : Submodule R (ι →₀ R) :=
-    { carrier := {x | ∃ k, (f ^ k) x = 0}
-      add_mem' := by
-        rintro x y ⟨a, ha⟩ ⟨b, hb⟩
-        refine ⟨max a b, ?_⟩
-        rw [map_add, Module.End.pow_map_zero_of_le (le_max_left _ _) ha,
-          Module.End.pow_map_zero_of_le (le_max_right _ _) hb, add_zero]
-      zero_mem' := ⟨0, map_zero _⟩
-      smul_mem' := by
-        rintro c x ⟨a, ha⟩
-        exact ⟨a, by rw [map_smul, ha, smul_zero]⟩ }
-  have hN : ∀ x, x ∈ N ↔ ∃ k, (f ^ k) x = 0 := fun _ ↦ Iff.rfl
+  let N := f.nilpotentSubmodule
   -- Well-founded induction on the weight: `f (single i 1)` involves only basis vectors of
   -- smaller weight, each of which is killed by a power of `f` by induction.
   have hsingle : ∀ i, single i (1 : R) ∈ N := by
@@ -144,8 +168,7 @@ theorem Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt
         refine Submodule.sum_mem _ fun j hj ↦ ?_
         rw [← Finsupp.smul_single_one]
         exact N.smul_mem _ (ih j (hf i j hj))
-      obtain ⟨k, hk⟩ := (hN _).1 hfi
-      exact (hN _).2 ⟨k + 1, by rw [pow_succ, Module.End.mul_apply, hk]⟩
+      exact (f.apply_mem_nilpotentSubmodule_iff _).1 hfi
   have hx : x ∈ N := by
     induction x using Finsupp.induction_linear with
     | zero => exact N.zero_mem
@@ -153,7 +176,7 @@ theorem Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt
     | single i c =>
       rw [← Finsupp.smul_single_one]
       exact N.smul_mem _ (hsingle i)
-  exact (hN x).1 hx
+  exact (f.mem_nilpotentSubmodule_iff x).1 hx
 
 end Finsupp
 
