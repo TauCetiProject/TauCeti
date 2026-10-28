@@ -43,24 +43,6 @@ section CommRing
 variable {R G M : Type*} [CommRing R] [Monoid G] [AddCommMonoid M] [Module R M]
   (ρ : Representation R G M)
 
-/-- The class of an invariant modulo the Hilbert ideal is its constant term. -/
-@[simp]
-theorem mk_symmetricAlgebraHilbertIdeal_coe (a : ρ.symmetricAlgebraInvariants) :
-    Ideal.Quotient.mk ρ.symmetricAlgebraHilbertIdeal (a : SymmetricAlgebra R M) =
-      algebraMap R (SymmetricAlgebra R M ⧸ ρ.symmetricAlgebraHilbertIdeal)
-        (SymmetricAlgebra.algebraMapInv (a : SymmetricAlgebra R M)) := by
-  have ha : (a : SymmetricAlgebra R M) - algebraMap R _
-      (SymmetricAlgebra.algebraMapInv (a : SymmetricAlgebra R M)) ∈
-        ρ.symmetricAlgebraHilbertIdeal := by
-    apply ρ.mem_symmetricAlgebraHilbertIdeal_of_mem
-    · exact ρ.symmetricAlgebraInvariants.sub_mem a.2
-        (ρ.symmetricAlgebraInvariants.algebraMap_mem _)
-    · rw [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant_eq_ker_algebraMapInv,
-        RingHom.mem_ker]
-      simp
-  rw [IsScalarTower.algebraMap_apply R (SymmetricAlgebra R M), Ideal.Quotient.algebraMap_eq]
-  exact Ideal.Quotient.eq.mpr ha
-
 /-- Relations between lifts of linearly independent coinvariant classes have coefficients
 with zero constant term. This is minimality of the presentation over the invariants. -/
 theorem algebraMapInv_eq_zero_of_sum_smul_eq_zero {ι : Type*}

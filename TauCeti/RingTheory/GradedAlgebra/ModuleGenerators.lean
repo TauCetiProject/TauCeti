@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Finite
+public import TauCeti.Algebra.Module.GradedModule.Nakayama
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 
@@ -21,8 +22,8 @@ This is the module form of graded Nakayama used to construct minimal homogeneous
 over invariant subalgebras. It does not assert that the lifted generators are linearly independent
 over `B`.
 
-The degree induction uses Mathlib's `DirectSum.coe_decompose_mul_of_right_mem`. The homogeneous
-quotient basis is Mathlib's `DirectSum.IsInternal.collectedBasis`.
+Generation uses `TauCeti.InternalGrading.eq_top_of_piece_le_sup_positive_smul_top`. The
+homogeneous quotient basis is Mathlib's `DirectSum.IsInternal.collectedBasis`.
 -/
 
 public section
@@ -83,31 +84,26 @@ theorem span_eq_top_of_span_quotient_eq_top {ι : Type*} (b : ι → A)
     obtain ⟨u, hu, hux⟩ := hq'
     refine ⟨u, Submodule.span_le_restrictScalars R B _ hu, ?_⟩
     exact Ideal.Quotient.eq.mp hux.symm
-  have pieces (n : ℕ) : ∀ x ∈ 𝒜 n, x ∈ U := by
-    induction n using Nat.strong_induction_on with
-    | h n ih =>
-      intro x hx
-      obtain ⟨u, hu, hz⟩ := hmod x
-      obtain ⟨m, c, g, hcg⟩ := Submodule.mem_span_set'.1 hz
-      have hzU : (decompose 𝒜 (x - u) n : A) ∈ U := by
-        rw [← hcg, ← GradedAlgebra.proj_apply, map_sum]
-        refine U.sum_mem fun i _ ↦ ?_
-        obtain ⟨hgB, d, hd, hgd⟩ := (g i).2
-        simp only [smul_eq_mul]
-        rw [GradedAlgebra.proj_apply, coe_decompose_mul_of_right_mem 𝒜 n hgd]
-        split_ifs with hdn
-        · rw [mul_comm]
-          exact U.smul_mem ⟨g i, hgB⟩ (ih (n - d) (by omega) _ (SetLike.coe_mem _))
-        · exact U.zero_mem
-      have hxu : x = (decompose 𝒜 u n : A) + (decompose 𝒜 (x - u) n : A) := by
-        rw [← AddMemClass.coe_add, ← DirectSum.add_apply, ← decompose_add, add_sub_cancel,
-          decompose_of_mem_same 𝒜 hx]
-      rw [hxu]
-      exact U.add_mem (hU n hu) hzU
-  apply top_unique
-  intro x _
-  rw [← sum_support_decompose 𝒜 x]
-  exact U.sum_mem fun n _ ↦ pieces n _ (SetLike.coe_mem _)
+  let 𝓑 (n : ℕ) : Submodule R B := (𝒜 n).comap B.val.toLinearMap
+  let G := TauCeti.InternalGrading.ofDecomposition 𝒜
+  have : SetLike.GradedSMul 𝓑 G.piece := by
+    dsimp only [G]
+    rw [TauCeti.InternalGrading.ofDecomposition_piece]
+    exact ⟨fun _ _ _ _ ha hx => SetLike.GradedMul.mul_mem ha hx⟩
+  apply TauCeti.InternalGrading.eq_top_of_piece_le_sup_positive_smul_top 𝓑 U
+    ((TauCeti.InternalGrading.isHomogeneous_ofDecomposition_piece_iff 𝒜
+      (U.restrictScalars R)).mpr hU) 0 (fun p hp => (Nat.not_lt_zero p hp).elim)
+  intro n x _
+  obtain ⟨u, hu, hz⟩ := hmod x
+  refine Submodule.mem_sup.mpr ⟨u, hu, x - u, ?_, add_sub_cancel _ _⟩
+  obtain ⟨m, c, g, hcg⟩ := Submodule.mem_span_set'.1 hz
+  rw [← hcg]
+  refine Submodule.sum_mem _ fun i _ => ?_
+  obtain ⟨hgB, d, hd, hgd⟩ := (g i).2
+  have hg : (⟨g i, hgB⟩ : B) ∈ ⨆ (n : ℕ) (_ : 0 < n), 𝓑 n :=
+    Submodule.mem_iSup_of_mem d (Submodule.mem_iSup_of_mem hd hgd)
+  simpa only [Subalgebra.smul_def, smul_eq_mul, mul_comm] using
+    Submodule.smul_mem_smul hg (Submodule.mem_top (x := c i) (R := R))
 
 end Subalgebra
 

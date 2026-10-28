@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Int.Interval
+public import Mathlib.Order.WellFoundedSet
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Generated
 
@@ -44,29 +46,40 @@ universe uk uA uM
 
 variable {k : Type uk} [CommSemiring k] {A : Type uA} [Semiring A] [Algebra k A]
   {M : Type uM} [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
-  (𝒜 : ℤ → Submodule k A) {G : InternalGrading k M} [SetLike.GradedSMul 𝒜 G.piece]
+
+section OrderedDegrees
+
+variable {ι : Type} [DecidableEq ι] [AddCancelCommMonoid ι] [LinearOrder ι]
+  (𝒜 : ι → Submodule k A) {G : InternalGrading k M ι} [SetLike.GradedSMul 𝒜 G.piece]
 
 /-- The degree-`p` component of an element of `A₊ M` is a sum of products `a • y` with `a` of
-some positive degree `i` and `y` of degree `p - i`. -/
+some positive degree `i` and `y` of degree `q`, where `i + q = p`. -/
 theorem decompose_mem_span_of_mem_positive_smul_top {x : M}
-    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) (p : ℤ) :
+    (hx : x ∈ (⨆ (i : ι) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) (p : ι) :
     (decompose G.piece x p : M) ∈ Submodule.span k
-      {z | ∃ i, 0 < i ∧ ∃ a ∈ 𝒜 i, ∃ y ∈ G.piece (p - i), a • y = z} := by
+      {z | ∃ i q, 0 < i ∧ i + q = p ∧ ∃ a ∈ 𝒜 i, ∃ y ∈ G.piece q, a • y = z} := by
   classical
-  set S := Submodule.span k {z | ∃ i, 0 < i ∧ ∃ a ∈ 𝒜 i, ∃ y ∈ G.piece (p - i), a • y = z}
-  refine Submodule.smul_induction_on hx (fun a ha y _ => ?_) (fun x y hx hy => ?_)
+  set S := Submodule.span k
+    {z | ∃ i q, 0 < i ∧ i + q = p ∧ ∃ a ∈ 𝒜 i, ∃ y ∈ G.piece q, a • y = z}
+  refine Submodule.smul_induction_on hx (fun a ha y hyTop => ?_) (fun x y hx hy => ?_)
   · refine Submodule.iSup_induction _ (motive := fun a =>
       (decompose G.piece (a • y) p : M) ∈ S) ha (fun i a ha => ?_) ?_ ?_
     · refine Submodule.iSup_induction _ (motive := fun a =>
         (decompose G.piece (a • y) p : M) ∈ S) ha (fun hi a ha => ?_) ?_ ?_
-      · let f : M →ₗ[k] M := Algebra.lsmul k k M a
-        have hf : TauCeti.LinearMap.IsHomogeneous f G.piece G.piece i :=
-          TauCeti.LinearMap.isHomogeneous_def.mpr fun q z hz => by
-            simpa [f, add_comm] using SetLike.GradedSMul.smul_mem ha hz
-        have h := hf.map_decompose (p - i) y
-        rw [sub_add_cancel] at h
-        simpa only [f, Algebra.lsmul_apply] using h ▸ Submodule.subset_span
-          ⟨i, hi, a, ha, _, (decompose G.piece y (p - i)).property, rfl⟩
+      · clear hyTop
+        induction y using DirectSum.Decomposition.inductionOn G.piece with
+        | zero => simp
+        | @homogeneous q y =>
+          have hay : a • (y : M) ∈ G.piece (i + q) :=
+            SetLike.GradedSMul.smul_mem ha y.property
+          by_cases hp : i + q = p
+          · rw [← hp, decompose_of_mem_same G.piece hay]
+            exact Submodule.subset_span ⟨i, q, hi, hp, a, ha, y, y.property, rfl⟩
+          · rw [decompose_of_mem_ne G.piece hay hp]
+            exact S.zero_mem
+        | add y z hy hz =>
+          simpa only [smul_add, decompose_add, DirectSum.add_apply, Submodule.coe_add] using
+            S.add_mem hy hz
       · simp
       · intro a b ha hb
         simpa only [add_smul, decompose_add, DirectSum.add_apply, Submodule.coe_add] using
@@ -77,44 +90,45 @@ theorem decompose_mem_span_of_mem_positive_smul_top {x : M}
         S.add_mem ha hb
   · simpa only [decompose_add, DirectSum.add_apply, Submodule.coe_add] using S.add_mem hx hy
 
+variable [IsOrderedCancelAddMonoid ι]
+
 /-- A component of `A₊ M` lies in an `A`-submodule if all lower-degree pieces do. The positive
 scalar lowers the degree of the module component needed to compute that component. -/
-theorem decompose_mem_of_mem_positive_smul_top (U : Submodule A M) {p : ℤ}
+theorem decompose_mem_of_mem_positive_smul_top (U : Submodule A M) {p : ι}
     (hU : ∀ q < p, ∀ x ∈ G.piece q, x ∈ U) {x : M}
-    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
+    (hx : x ∈ (⨆ (i : ι) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
     (decompose G.piece x p : M) ∈ U := by
   refine (Submodule.span_le (p := U.restrictScalars k)).mpr ?_
     (decompose_mem_span_of_mem_positive_smul_top 𝒜 hx p)
-  rintro _ ⟨i, hi, a, -, y, hy, rfl⟩
-  exact U.smul_mem a (hU (p - i) (by omega) y hy)
+  rintro _ ⟨i, q, hi, rfl, a, -, y, hy, rfl⟩
+  exact U.smul_mem a (hU q (lt_add_of_pos_left q hi) y hy)
 
-/-- **Graded Nakayama for homogeneous generators.** In a bounded-below graded module, if each
-homogeneous piece lies in the sum of a homogeneous `A`-submodule and the positive-degree action
-on the module, then that submodule is the whole module. This is generation modulo `A₊`. -/
-theorem eq_top_of_piece_le_sup_positive_smul_top (U : Submodule A M)
-    (hhom : SetLike.IsHomogeneous G.piece U) (b : ℤ)
+/-- **Graded Nakayama for homogeneous generators.** In a bounded-below graded module with
+locally finite ordered degrees (in particular `ℕ` or `ℤ`), if each homogeneous piece lies in the
+sum of a homogeneous `A`-submodule and the positive-degree action, then that submodule is the
+whole module. This is generation modulo `A₊`. -/
+theorem eq_top_of_piece_le_sup_positive_smul_top [LocallyFiniteOrder ι] (U : Submodule A M)
+    (hhom : SetLike.IsHomogeneous G.piece U) (b : ι)
     (hbelow : ∀ p < b, G.piece p = ⊥)
     (hU : ∀ p, G.piece p ≤ U.restrictScalars k ⊔
-      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) : U = ⊤ := by
-  have pieces : ∀ n : ℕ, ∀ x ∈ G.piece (b + n), x ∈ U := by
-    intro n
-    induction n using Nat.strong_induction_on with
-    | h n ih =>
-      intro x hx
-      obtain ⟨y, hy, z, hz, rfl⟩ := Submodule.mem_sup.mp (hU _ hx)
-      have lower : ∀ q < b + n, ∀ x ∈ G.piece q, x ∈ U := by
-        intro q hq x hx
-        by_cases hqb : q < b
-        · rw [hbelow q hqb] at hx
-          have hz : x = 0 := by simpa using hx
-          rw [hz]
-          exact U.zero_mem
-        · have heq : b + (q - b).toNat = q := by omega
-          exact ih (q - b).toNat (by omega) x (heq.symm ▸ hx)
-      rw [← decompose_of_mem_same G.piece hx, decompose_add,
-        DirectSum.add_apply, Submodule.coe_add]
-      exact U.add_mem (hhom _ hy)
-        (decompose_mem_of_mem_positive_smul_top 𝒜 U lower hz)
+      (⨆ (i : ι) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) : U = ⊤ := by
+  have hwf := (show BddBelow (Set.Ici b) from ⟨b, fun _ hp => hp⟩).wellFoundedOn_lt
+  have pieces (p : ι) (hp : b ≤ p) : ∀ x ∈ G.piece p, x ∈ U := by
+    refine hwf.induction (P := fun p => ∀ x ∈ G.piece p, x ∈ U) hp
+      fun p _ ih x hx => ?_
+    obtain ⟨y, hy, z, hz, rfl⟩ := Submodule.mem_sup.mp (hU _ hx)
+    have lower : ∀ q < p, ∀ x ∈ G.piece q, x ∈ U := by
+      intro q hq x hx
+      by_cases hqb : q < b
+      · rw [hbelow q hqb] at hx
+        have hz : x = 0 := by simpa using hx
+        rw [hz]
+        exact U.zero_mem
+      · exact ih q (le_of_not_gt hqb) hq x hx
+    rw [← decompose_of_mem_same G.piece hx, decompose_add,
+      DirectSum.add_apply, Submodule.coe_add]
+    exact U.add_mem (hhom _ hy)
+      (decompose_mem_of_mem_positive_smul_top 𝒜 U lower hz)
   apply top_unique
   intro x _
   classical
@@ -124,8 +138,12 @@ theorem eq_top_of_piece_le_sup_positive_smul_top (U : Submodule A M)
   · have hz := (Submodule.eq_bot_iff _).mp (hbelow p hp) _ (decompose G.piece x p).property
     rw [hz]
     exact U.zero_mem
-  · have heq : b + (p - b).toNat = p := by omega
-    exact pieces (p - b).toNat _ (heq.symm ▸ (decompose G.piece x p).property)
+  · exact pieces p (le_of_not_gt hp) _ (decompose G.piece x p).property
+
+end OrderedDegrees
+
+variable (𝒜 : ℤ → Submodule k A) {G : InternalGrading k M}
+  [SetLike.GradedSMul 𝒜 G.piece]
 
 /-- **Graded Nakayama.** A bounded-below graded module satisfying `A₊ M = M` is zero. -/
 theorem subsingleton_of_positive_smul_top_eq_top (b : ℤ)
@@ -146,7 +164,7 @@ theorem isHomogeneous_positive_smul_top :
     SetLike.IsHomogeneous G.piece ((⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) := by
   intro p x hx
   refine Submodule.span_le.mpr ?_ (decompose_mem_span_of_mem_positive_smul_top 𝒜 hx p)
-  rintro _ ⟨i, hi, a, ha, y, -, rfl⟩
+  rintro _ ⟨i, q, hi, -, a, ha, y, -, rfl⟩
   exact Submodule.smul_mem_smul (Submodule.mem_iSup_of_mem i (Submodule.mem_iSup_of_mem hi ha))
     Submodule.mem_top
 
