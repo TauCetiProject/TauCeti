@@ -13,8 +13,12 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
 
 The canonical internal-Hom comparison respects the identity and composition isomorphisms
 of module pullback. These equations allow base change of internal Hom to be iterated without
-choosing new comparison maps. The source is quasicoherent and the target is arbitrary; neither
-flatness nor invertibility of the internal-Hom comparison is assumed.
+choosing new comparison maps. The source is quasicoherent and the target is arbitrary; these
+coherence equations assume neither flatness nor invertibility of the internal-Hom comparison.
+
+If the comparison along `f` is invertible, the composition criterion identifies invertibility
+along `f ≫ g` with invertibility of the pullback along `f` of the comparison along `g`. This
+allows invertibility to be checked on open covers.
 
 The equations use Mathlib's `Scheme.Modules.pullbackId` and `pullbackComp`, and the canonical
 tensor comparison of module pullback. For finite locally free sources they also describe the

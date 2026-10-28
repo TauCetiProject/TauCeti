@@ -249,13 +249,6 @@ def sheafificationForgetAdjunction :
       _root_.SheafOfModules.forget (ringCatSheaf R) :=
   PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)
 
-/-- The sheafification--forgetful adjunction is the sheafification adjunction along the
-identity coefficient map. -/
-theorem sheafificationForgetAdjunction_def :
-    sheafificationForgetAdjunction R =
-      PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj) :=
-  (rfl)
-
 /-- The counit of `sheafificationForgetAdjunction` at a sheaf of modules `M` is the
 identification `sheafificationIso` of the sheafification of `M.val` with `M`. -/
 lemma sheafificationForgetAdjunction_counit_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
@@ -315,8 +308,9 @@ theorem _root_.SheafOfModules.sheafificationAdjunction_μ_eq_forget_μ
   let := (PresheafOfModules.sheafificationAdjunction
     (𝟙 (ringCatSheaf R).obj)).rightAdjointLaxMonoidal
   rw [Adjunction.rightAdjointLaxMonoidal_μ, Adjunction.homEquiv_unit, forget_μ,
-    sheafificationForgetAdjunction_def, SheafOfModules.tensorUnderlyingIso_inv,
+    sheafificationForgetAdjunction, SheafOfModules.tensorUnderlyingIso_inv,
     sheafificationIso_hom, sheafificationIso_hom]
+  -- Restriction of scalars along the identity acts definitionally as the identity on morphisms.
   rfl
 
 variable {R}

@@ -41,25 +41,15 @@ private theorem isIso_pullbackIhomComparison_app_of_restrictFunctor
     IsIso ((pullbackIhomComparison M j).app N) := by
   let P := Scheme.Modules.pullback j
   let : P.Monoidal := Functor.Monoidal.ofOplaxMonoidal P
-  let := (Scheme.Modules.restrictAdjunction j).leftAdjointOplaxMonoidal
-  let σ := (Adjunction.leftAdjointUniq (Scheme.Modules.restrictAdjunction j)
-    (Scheme.Modules.pullbackPushforwardAdjunction j)).inv
-  have hσ : conjugateEquiv (Scheme.Modules.restrictAdjunction j)
-      (Scheme.Modules.pullbackPushforwardAdjunction j) σ = 𝟙 _ := by
-    simp [σ, Adjunction.leftAdjointUniq]
-  have ht (A B : Y.Modules) :=
-    Adjunction.app_tensor_comp_δ_of_conjugateEquiv _ _ hσ A B
-  have hd (A B : Y.Modules) : δ (Scheme.Modules.restrictFunctor j) A B =
-      inv (μ (Scheme.Modules.restrictFunctor j) A B) := by
-    rw [Adjunction.leftAdjointOplaxMonoidal_δ]
-    exact ((Scheme.Modules.restrictAdjunction j).inv_μ_eq_homEquiv_symm
-      (Scheme.Modules.restrictAdjunction_counit_app_tensor j) A B).symm
+  let σ := (Scheme.Modules.restrictFunctorIsoPullback j).inv
   have hm : μ P M ((ihom M).obj N) ≫ σ.app (M ⊗ (ihom M).obj N) =
       (σ.app M ⊗ₘ σ.app ((ihom M).obj N)) ≫
         μ (Scheme.Modules.restrictFunctor j) M ((ihom M).obj N) := by
     apply (cancel_epi (δ P M ((ihom M).obj N))).mp
     rw [← Category.assoc, Functor.Monoidal.δ_μ, Category.id_comp]
-    rw [← Category.assoc, ← ht, hd, Category.assoc, IsIso.inv_hom_id, Category.comp_id]
+    rw [← Category.assoc,
+      ← Scheme.Modules.restrictFunctorIsoPullback_inv_app_tensor,
+      Category.assoc, IsIso.inv_hom_id, Category.comp_id]
   have hP : IsIso ((P.ihomComparison M).app N) :=
     (P.isIso_ihomComparison_app_iff_of_natIso (Scheme.Modules.restrictFunctor j)
       (Scheme.Modules.restrictFunctorIsoPullback j).symm M N hm).mpr hR

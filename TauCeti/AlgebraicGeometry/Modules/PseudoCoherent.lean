@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Module.PseudoCoherent.ChainComplex
-public import TauCeti.AlgebraicGeometry.Modules.Restriction
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
 /-!

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Monoidal
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Pushforward
+import TauCeti.CategoryTheory.Monoidal.Functor
 
 /-!
 # Tensor products under the slice equivalence for an open subscheme
@@ -135,18 +136,12 @@ theorem overFunctorEquiv_hom_tensor (M N : X.Modules) :
   have h := overFunctorEquiv_hom_tensor_direct U M N
   have hμ := SheafOfModules.overFunctor_μ_eq_pushforward_μ (R := X.sheaf) (X := U) M N
   dsimp only at h ⊢
-  have hcomp := @Functor.LaxMonoidal.comp_μ _ _ _ _ _ _ _ _ _ F (overEquiv U).functor
+  have hcomp := Functor.LaxMonoidal.comp_μ_congr F (overEquiv U).functor
+    (SheafOfModules.overFunctorMonoidal (R := X.sheaf) (X := U)).toLaxMonoidal
     (TauCeti.SheafOfModules.pushforwardLaxMonoidal
-      (S := X.sheaf.over U) (R := X.sheaf) (𝟙 (X.ringCatSheaf.over U))) _ M N
-  rw [hcomp] at h
-  have hcompNative := @Functor.LaxMonoidal.comp_μ _ _ _ _ _ _ _ _ _ F
-    (overEquiv U).functor
-    (SheafOfModules.overFunctorMonoidal (R := X.sheaf) (X := U)).toLaxMonoidal _ M N
-  exact (congrArg (· ≫ (overFunctorEquiv U).hom.app (M ⊗ N : X.Modules)) hcompNative).trans
-    ((congrArg (fun a ↦
-      (Functor.LaxMonoidal.μ (overEquiv U).functor (F.obj M) (F.obj N) ≫
-        (overEquiv U).functor.map a) ≫
-        (overFunctorEquiv U).hom.app (M ⊗ N : X.Modules)) hμ).trans h)
+      (S := X.sheaf.over U) (R := X.sheaf) (𝟙 (X.ringCatSheaf.over U))) M N hμ
+  rw [hcomp]
+  exact h
 
 end AlgebraicGeometry.Scheme.Modules
 

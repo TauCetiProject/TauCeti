@@ -65,10 +65,17 @@ theorem _root_.SheafOfModules.overFunctor_μ_app_tmul
   let As := PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)
   let Ls := As.rightAdjointLaxMonoidal
   let rawSourceMu := @Functor.LaxMonoidal.μ _ _ _ _ _ _ Fs Ls M N
+  -- Precomposition evaluates the pushed-forward `rawSourceMu` definitionally at the source
+  -- object, and restriction of scalars along the identity leaves this morphism unchanged.
   have hp' := congrArg (fun z ↦ (rawSourceMu.app ((Over.forget X).op.obj V)).hom z) hp
+  -- Starting with the source forgetful tensor map, pass to the raw sheafification tensor
+  -- map, insert the pushforward tensor map, then compare with the raw slice tensor map.
+  -- `erw` identifies the semireducibly equal coefficient sheaves `ringCatSheaf (R.over X)`
+  -- and `(ringCatSheaf R).over X`.
+  erw [← hs, ← hp', ← hh]
+  -- The raw and canonical slice tensor maps agree as well.
   exact (congrArg ((Functor.LaxMonoidal.μ
-    (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N).val.app V) ht).symm.trans
-    (hh.trans (hp'.trans hs))
+    (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N).val.app V) ht).symm
 
 /-- The tensor comparison obtained by localization for slice restriction agrees with its
 canonical pushforward tensor comparison. -/
