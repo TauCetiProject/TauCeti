@@ -51,6 +51,7 @@ modules are the representations of `G` in which `ε` acts by `-1`.
   modulo `ε + 1`**.
 * `CliffordAlgebra.monomialGroupLift`: algebra maps from the Clifford algebra are the monoid maps
   from the group sending `ε` to `-1`.
+* `CliffordAlgebra.monomialGroupInvolute`: the grade involution, as an automorphism of the group.
 
 ## Main results
 
@@ -116,6 +117,49 @@ theorem exists_monomialGroup_val_eq_ι {i : I} (h : IsUnit (Q (v i))) :
 theorem neg_one_mem_center_monomialGroup :
     (⟨-1, neg_one_mem_monomialGroup v⟩ : monomialGroup Q v) ∈ Subgroup.center (monomialGroup Q v) :=
   Subgroup.mem_center_iff.mpr fun _ ↦ Subtype.ext (Units.ext (by simp))
+
+/-- The grade involution maps the group of signed monomials into itself: it fixes `-1` and sends
+a generator `ι Q (v i)` to `-ι Q (v i)`. -/
+theorem units_map_involute_mem_monomialGroup {u : (CliffordAlgebra Q)ˣ}
+    (hu : u ∈ monomialGroup Q v) :
+    Units.map (involute : CliffordAlgebra Q →ₐ[R] _).toMonoidHom u ∈ monomialGroup Q v := by
+  rw [monomialGroup_def] at hu ⊢
+  induction hu using Subgroup.closure_induction with
+  | mem u hu =>
+    rcases hu with hu | ⟨i, hu⟩
+    · exact Subgroup.subset_closure (Or.inl (by simp [hu]))
+    · -- The image `-ι Q (v i)` is the product of `-1` and the generator `ι Q (v i)`.
+      have h : Units.map (involute : CliffordAlgebra Q →ₐ[R] _).toMonoidHom u = -1 * u :=
+        Units.ext (by simp [hu])
+      rw [h]
+      exact mul_mem (Subgroup.subset_closure (Or.inl rfl))
+        (Subgroup.subset_closure (Or.inr ⟨i, hu⟩))
+  | one => simp
+  | mul u w _ _ hu hw => simpa using mul_mem hu hw
+  | inv u _ hu => simpa using inv_mem hu
+
+/-- **The grade involution as an automorphism of the group of signed monomials.** For an orthogonal
+basis it sends the signed monomial `±e_s` to `±(-1) ^ #s e_s`. -/
+noncomputable def monomialGroupInvolute : monomialGroup Q v ≃* monomialGroup Q v where
+  toFun g := ⟨_, units_map_involute_mem_monomialGroup v g.2⟩
+  invFun g := ⟨_, units_map_involute_mem_monomialGroup v g.2⟩
+  left_inv _ := Subtype.ext (Units.ext (involute_involute _))
+  right_inv _ := Subtype.ext (Units.ext (involute_involute _))
+  map_mul' _ _ := Subtype.ext (map_mul _ _ _)
+
+/-- The value of the image of a signed monomial under `CliffordAlgebra.monomialGroupInvolute` is
+the grade involution of its value. -/
+@[simp]
+theorem coe_monomialGroupInvolute_apply (g : monomialGroup Q v) :
+    ((monomialGroupInvolute v g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      involute ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
+  (rfl)
+
+/-- `CliffordAlgebra.monomialGroupInvolute` is its own inverse. -/
+@[simp]
+theorem monomialGroupInvolute_symm :
+    (monomialGroupInvolute v).symm = monomialGroupInvolute (Q := Q) v :=
+  (rfl)
 
 /-! ### The group algebra of the group of signed monomials -/
 
