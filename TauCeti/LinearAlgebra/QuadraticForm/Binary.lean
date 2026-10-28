@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.SquareClass
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -277,7 +278,13 @@ theorem anisotropic_binary_one_one_iff {F : Type*} [Field F] :
 /-- **Worked example.** Over `ℚ` the binary forms `⟨1, 1⟩` and `⟨2, 2⟩` are isometric: their
 discriminants `1` and `4` agree modulo squares, and both represent `2`, once as `1² + 1²` and once
 as `2 · 1² + 2 · 0²`. Concretely `x² + y²` becomes `2 s² + 2 t²` under `(s, t) ↦ (s - t, s + t)`. -/
-example : (weightedSumSquares ℚ ![(1 : ℚ), 1]).Equivalent (weightedSumSquares ℚ ![(2 : ℚ), 2]) := by
+example : BinaryStep (fun _ : Fin 2 => (1 : ℚˣ))
+    (fun _ : Fin 2 => Units.mk0 (2 : ℚ) two_ne_zero) := by
+  refine BinaryStep.of_pair 0 1 (by decide) ?_ ?_
+  · intro i hi0 hi1
+    fin_cases i <;> contradiction
+  change (weightedSumSquares ℚ ![(1 : ℚ), 1]).Equivalent
+    (weightedSumSquares ℚ ![(2 : ℚ), 2])
   have : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
   have hu : ((Units.mk0 (2 : ℚ) two_ne_zero : ℚˣ) : ℚ) = 2 := rfl
   have key := equivalent_binary_iff (R := ℚ) 1 1 (Units.mk0 2 two_ne_zero)

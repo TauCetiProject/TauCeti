@@ -460,4 +460,17 @@ example :
     ((RegularFormClass.anisotropic_mk _).mpr anisotropic_presentedForm_one_one),
     RegularFormClass.wittIndex_hyperbolicClass⟩
 
+/-- The forms `⟨1, 1⟩` and `⟨1, -1⟩` over the rationals have the same rank but are not
+isometric: the former is anisotropic while `(1, 1)` is isotropic for the latter. -/
+example : ¬ (presentedForm (⟨2, ![1, 1]⟩ : RegularFormPresentation ℚ)).Equivalent
+    (presentedForm (⟨2, ![1, -1]⟩ : RegularFormPresentation ℚ)) := by
+  let : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
+  intro h
+  have ha := h.anisotropic_iff.mp anisotropic_presentedForm_one_one
+  have hz : presentedForm (⟨2, ![1, -1]⟩ : RegularFormPresentation ℚ) ![1, 1] = 0 := by
+    rw [presentedForm_one_neg_one, hyperbolicPlane_apply]
+    norm_num
+  have h0 := congrFun (ha ![1, 1] hz) 0
+  norm_num at h0
+
 end TauCeti
