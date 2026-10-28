@@ -63,8 +63,7 @@ private theorem norm_det_le_prod_norm_fin {n : ℕ} (b : OrthonormalBasis (Fin n
   have h : finrank 𝕜 E = Fintype.card (Fin n) := finrank_eq_card_basis b.toBasis
   set e := InnerProductSpace.gramSchmidtOrthonormalBasis h v
   have hdet : b.toBasis.det v = b.toBasis.det e * e.toBasis.det v := by
-    rw [Module.Basis.det_apply, Module.Basis.det_apply, Module.Basis.det_apply, ← Matrix.det_mul,
-      ← e.coe_toBasis, Module.Basis.toMatrix_mul_toMatrix]
+    simpa using congrFun (congrArg DFunLike.coe (b.toBasis.det.eq_smul_basis_det e.toBasis)) v
   rw [hdet, norm_mul, b.det_to_matrix_orthonormalBasis e, one_mul,
     InnerProductSpace.gramSchmidtOrthonormalBasis_det, norm_prod]
   gcongr with i
