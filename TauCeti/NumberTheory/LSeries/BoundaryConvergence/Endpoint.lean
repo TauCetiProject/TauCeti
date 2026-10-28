@@ -56,14 +56,6 @@ namespace TauCeti.LSeries
 
 variable {a : ℕ → ℂ} {M : ℝ} {z : ℂ}
 
-/-- On the open step `(log n, log (n + 1))`, `n > 0`, the floor of `exp t` is `n`. -/
-private theorem floor_exp_eq_of_mem_Ioo {n : ℕ} (hn : (0 : ℝ) < n) {t : ℝ}
-    (ht : t ∈ Ioo (Real.log n) (Real.log (n + 1))) : ⌊Real.exp t⌋₊ = n := by
-  have hlo : (n : ℝ) < Real.exp t := by simpa [Real.exp_log hn] using Real.exp_lt_exp.mpr ht.1
-  have hhi : Real.exp t < n + 1 := by
-    simpa [Real.exp_log (by positivity : (0 : ℝ) < n + 1)] using Real.exp_lt_exp.mpr ht.2
-  exact (Nat.floor_eq_iff (Real.exp_pos t).le).mpr ⟨hlo.le, hhi⟩
-
 /-- **The Laplace integral over one step.** For `n ≠ 0`, the step function `t ↦ a ⌊exp t⌋₊`
 equals `a n` on `(log n, log (n + 1))`, so its Laplace integral over `[log n, log (n + 1)]` is
 `a n ∫ x in n..n+1, x ^ (-z - 1)`. -/
@@ -75,7 +67,7 @@ theorem intervalIntegral_floor_exp_mul_cexp_neg_mul (a : ℕ → ℂ) {n : ℕ} 
     ← intervalIntegral.integral_const_mul]
   refine intervalIntegral.integral_congr_Ioo_of_le
     (Real.log_le_log hn' (by linarith)) fun t ht ↦ ?_
-  rw [floor_exp_eq_of_mem_Ioo hn' ht]
+  rw [Real.floor_exp_eq_of_mem_Ioo hn' ht]
 
 /-- The step function `t ↦ a ⌊exp t⌋₊` times `exp (-z t)` is interval integrable on each step
 `[log n, log (n + 1)]`, `n ≠ 0`, where it agrees with `a n exp (-z t)` away from the
@@ -87,7 +79,7 @@ theorem intervalIntegrable_floor_exp_mul_cexp_neg_mul (a : ℕ → ℂ) {n : ℕ
   refine ((by fun_prop : Continuous fun t : ℝ ↦ a n * cexp (-z * t)).intervalIntegrable
     _ _).congr_uIoo fun t ht ↦ ?_
   rw [uIoo_of_le (Real.log_le_log hn' (by linarith))] at ht
-  simp only [floor_exp_eq_of_mem_Ioo hn' ht]
+  simp only [Real.floor_exp_eq_of_mem_Ioo hn' ht]
 
 /-- **The truncated Laplace transform of the step function.** For every `N`, the Laplace integral
 of `t ↦ a ⌊exp t⌋₊` over `[0, log (N + 1)]` is the partial sum up to `N` of the Dirichlet series
